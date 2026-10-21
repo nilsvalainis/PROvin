@@ -1002,3 +1002,187 @@ html.iriss-log-printing .iriss-log-print-root .iriss-log-map-shell {
 .iriss-log-pin-cluster.open .iriss-log-pin-label {
   display: none;
 }
+
+/* Maršruta sākums/beigas un šabloni: izcelti kā kartītes ar ikonu. */
+.iriss-log-endpoint-add {
+  margin-top: 4px;
+  display: block;
+  width: 100%;
+  border: 1px dashed #c7c7cc;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #6e6e73;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+.iriss-log-endpoint-add:hover {
+  border-color: var(--iriss-log-focus);
+  color: var(--iriss-log-focus);
+}
+.iriss-log-endpoint {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--iriss-log-line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 8px 10px;
+}
+.iriss-log-endpoint-picker {
+  margin-top: 4px;
+  border-radius: 14px;
+  background: var(--iriss-log-surface-2);
+  padding: 10px;
+}
+.iriss-log-tpl {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid var(--iriss-log-line);
+  border-radius: 12px;
+  background: #fff;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.iriss-log-tpl:hover {
+  border-color: var(--iriss-log-focus);
+  box-shadow: 0 0 0 1px var(--iriss-log-focus);
+}
+.iriss-log-tpl-pick {
+  display: flex;
+  min-height: 52px;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  text-align: left;
+}
+.iriss-log-tpl-icon {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #eef2ff;
+  color: #3730a3;
+}
+.iriss-log-tpl-edit-btn {
+  display: inline-flex;
+  width: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid var(--iriss-log-line);
+  color: #6e6e73;
+}
+.iriss-log-tpl-edit-btn:hover {
+  background: var(--iriss-log-surface-2);
+  color: #1d1d1f;
+}
+.iriss-log-tpl-edit {
+  border: 1px solid var(--iriss-log-focus);
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px;
+}
+
+/* Adreses meklēšana rakstot (kā Google Maps). */
+.iriss-log-ac {
+  position: relative;
+}
+.iriss-log-ac-field {
+  display: flex;
+  height: 40px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--iriss-log-line);
+  border-radius: 999px;
+  background: #fff;
+  padding: 0 14px;
+  color: #6e6e73;
+}
+.iriss-log-ac-field:focus-within {
+  border-color: var(--iriss-log-focus);
+  box-shadow: 0 0 0 1px var(--iriss-log-focus);
+}
+.iriss-log-ac-field input {
+  min-width: 0;
+  height: 100%;
+  flex: 1 1 auto;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+  color: #1d1d1f;
+  font-size: 14px;
+  outline: none;
+}
+.iriss-log-ac-spin {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 2px solid #d2d2d7;
+  border-top-color: var(--iriss-log-focus);
+  border-radius: 999px;
+  animation: iriss-log-spin 0.7s linear infinite;
+}
+@keyframes iriss-log-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.iriss-log-ac-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 30;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(11, 12, 16, 0.18);
+  padding: 4px 0;
+}
+.iriss-log-ac-list button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  color: #6e6e73;
+  text-align: left;
+}
+.iriss-log-ac-list button.on {
+  background: var(--iriss-log-surface-2);
+}
+.iriss-log-ac-list .m {
+  display: block;
+  overflow: hidden;
+  color: #1d1d1f;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.iriss-log-ac-list .s {
+  display: block;
+  overflow: hidden;
+  color: #6e6e73;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.iriss-log-ac-note {
+  margin-top: 4px;
+  padding: 0 4px;
+  color: #6e6e73;
+  font-size: 12px;
+}
+.iriss-log-ac-note.bad {
+  color: #c2362b;
+}

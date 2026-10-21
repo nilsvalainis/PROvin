@@ -17,6 +17,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { IrissAddressAutocomplete, type PickedAddress } from "@/components/admin/iriss-logistika/IrissAddressAutocomplete";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
 import {
   CARGO_BUCKET_ADD_LV,
@@ -32,6 +33,8 @@ import {
   isCargoBucket,
   logisticsCarTitle,
   moveCargoCar,
+  ROUTE_TEMPLATE_TYPE_LV,
+  ROUTE_TEMPLATE_TYPES,
   setCargoRouteEnabled,
   setCargoRouteEndpoint,
   setCargoShowOnMap,
@@ -39,6 +42,7 @@ import {
   type CargoPlanState,
   type CargoRouteEndpoint,
   type CargoRouteTemplate,
+  type RouteTemplateType,
 } from "@/lib/iriss-logistics-cargo-plan";
 import { logisticsGoogleMapsDirUrl } from "@/lib/iriss-logistics-maps-dir";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
@@ -55,6 +59,8 @@ type Props = {
   /** `base`: tikko mainītais plāns, ko aprēķins izmanto (nevis veco stāvokli). */
   onRefreshDirections: (bucket: "next" | "after", base?: CargoPlanState) => void;
   routeUi?: Record<"next" | "after", { busy: boolean; notice: string }>;
+  /** Pēc šablona pievienošanas, labošanas vai dzēšanas pārlādē sarakstu. */
+  onTemplatesChanged?: () => void;
   /** Citu klientu auto ar roku: marka, modelis, adrese no ģeokodētāja. */
   onAddManual?: (bucket: CargoBucket, input: ManualCarInput) => Promise<boolean>;
 };
@@ -98,6 +104,7 @@ export function IrissLogistikaCargoPlan({
   onRowHover,
   onRefreshDirections,
   routeUi,
+  onTemplatesChanged,
   onAddManual,
 }: Props) {
   const byId = useMemo(() => new Map(orders.map((o) => [o.id, o])), [orders]);
@@ -263,6 +270,7 @@ export function IrissLogistikaCargoPlan({
                   onPlanChange={onPlanChange}
                   onRefreshDirections={(base) => onRefreshDirections(cargoBucket, base)}
                   busy={routeUi?.[cargoBucket].busy ?? false}
+                  onTemplatesChanged={onTemplatesChanged ?? (() => undefined)}
                   error={routeUi?.[cargoBucket].notice ?? ""}
                 >
                   {rows}
@@ -417,9 +425,7 @@ function ManualCarAdd({ bucket, onAdd }: { bucket: CargoBucket; onAdd: (bucket: 
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
   const [client, setClient] = useState("");
-  const [q, setQ] = useState("");
-  const [choices, setChoices] = useState<Array<{ formatted: string; lat: number; lng: number }>>([]);
-  const [picked, setPicked] = useState<{ formatted: string; lat: number; lng: number } | null>(null);
+  const [picked, setPicked] = useState<PickedAddress | null>(null);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -428,30 +434,8 @@ function ManualCarAdd({ bucket, onAdd }: { bucket: CargoBucket; onAdd: (bucket: 
     setMake("");
     setModel("");
     setClient("");
-    setQ("");
-    setChoices([]);
     setPicked(null);
     setNotice("");
-  }
-
-  async function search() {
-    const address = q.trim();
-    if (address.length < 4) {
-      setNotice("Ieraksti pilnāku adresi.");
-      return;
-    }
-    setBusy(true);
-    const res = await fetch("/api/admin/iriss-logistics/geocode", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ address, choices: true }),
-    }).catch(() => null);
-    setBusy(false);
-    const body = res?.ok ? ((await res.json()) as { choices?: Array<{ formatted: string; lat: number; lng: number }>; notice?: string }) : {};
-    setChoices(body.choices ?? []);
-    setPicked(null);
-    setNotice(body.notice ?? (body.choices?.length ? "Izvēlies precīzo adresi:" : "Adrese nav atrasta."));
   }
 
   async function save() {
@@ -479,42 +463,17 @@ function ManualCarAdd({ bucket, onAdd }: { bucket: CargoBucket; onAdd: (bucket: 
         <input className="iriss-log-manual-input" value={model} onChange={(e) => setModel(e.target.value)} placeholder="Modelis" />
       </div>
       <input className="iriss-log-manual-input mt-2 w-full" value={client} onChange={(e) => setClient(e.target.value)} placeholder="Klients vai piezīme (nav obligāti)" />
-      <div className="mt-2 flex gap-2">
-        <input
-          className="iriss-log-manual-input min-w-0 flex-1"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              void search();
-            }
+      <div className="mt-2">
+        <IrissAddressAutocomplete
+          placeholder="Adrese: sāc rakstīt iela, pilsēta vai indekss"
+          onPick={(a) => {
+            setPicked(a);
+            setNotice("");
           }}
-          placeholder="Adrese: iela, pasta indekss, pilsēta"
         />
-        <button type="button" className="iriss-log-btn-sec h-9 min-h-9 px-3 text-[12.5px]" disabled={busy} onClick={() => void search()}>
-          Atrast
-        </button>
+        {picked ? <p className="mt-1 truncate text-[12px] text-[#15803d]">Kartē: {picked.formatted}</p> : null}
       </div>
       {notice ? <p className="mt-1.5 text-[12px] text-[#6e6e73]">{notice}</p> : null}
-      {choices.length > 0 ? (
-        <ul className="mt-1 space-y-1">
-          {choices.map((c) => (
-            <li key={`${c.lat},${c.lng}`}>
-              <button
-                type="button"
-                className={`iriss-log-manual-choice ${picked?.formatted === c.formatted ? "on" : ""}`}
-                onClick={() => {
-                  setPicked(c);
-                  setNotice("");
-                }}
-              >
-                {c.formatted}
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
       <div className="mt-2.5 flex justify-end gap-2">
         <button type="button" className="iriss-log-btn-sec h-9 min-h-9 px-3 text-[12.5px]" onClick={reset}>
           Atcelt
@@ -557,6 +516,7 @@ function RouteBlock({
   onRefreshDirections,
   busy,
   error,
+  onTemplatesChanged,
   children,
 }: {
   bucket: "next" | "after";
@@ -570,6 +530,7 @@ function RouteBlock({
   onRefreshDirections: (base?: CargoPlanState) => void;
   busy: boolean;
   error: string;
+  onTemplatesChanged: () => void;
   children: ReactNode;
 }) {
   const route = plan.routes[bucket];
@@ -595,6 +556,7 @@ function RouteBlock({
         templates={templates}
         onOpen={() => setAddressFor({ bucket, end: "start" })}
         onClose={() => setAddressFor(null)}
+        onTemplatesChanged={onTemplatesChanged}
         onPick={(v) => {
           const next = setCargoRouteEndpoint(plan, bucket, "start", v);
           onPlanChange(next);
@@ -611,6 +573,7 @@ function RouteBlock({
         templates={templates}
         onOpen={() => setAddressFor({ bucket, end: "end" })}
         onClose={() => setAddressFor(null)}
+        onTemplatesChanged={onTemplatesChanged}
         onPick={(v) => {
           const next = setCargoRouteEndpoint(plan, bucket, "end", v);
           onPlanChange(next);
@@ -657,7 +620,106 @@ function RouteBlock({
   );
 }
 
+function TemplateIcon({ type }: { type: RouteTemplateType }) {
+  if (type === "port") {
+    return (
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <circle cx="12" cy="5" r="2" />
+        <path d="M12 7v14M5 12H3a9 9 0 0 0 18 0h-2M8 10h8" />
+      </svg>
+    );
+  }
+  if (type === "border") {
+    return (
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <path d="M5 21V4M5 4h11l-2 4 2 4H5" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+      <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" />
+      <circle cx="12" cy="9.5" r="2.5" />
+    </svg>
+  );
+}
+
+function TemplateEditor({
+  tpl,
+  onDone,
+  onTemplatesChanged,
+}: {
+  tpl: CargoRouteTemplate;
+  onDone: () => void;
+  onTemplatesChanged: () => void;
+}) {
+  const [name, setName] = useState(tpl.name);
+  const [type, setType] = useState<RouteTemplateType>(tpl.type);
+  const [picked, setPicked] = useState<PickedAddress | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const url = `/api/admin/iriss-logistics/route-templates/${encodeURIComponent(tpl.id)}`;
+
+  async function save() {
+    if (!name.trim()) return setError("Ieraksti nosaukumu.");
+    setBusy(true);
+    const res = await fetch(url, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim(), type, ...(picked ? { address: picked.formatted, lat: picked.lat, lng: picked.lng } : {}) }),
+    }).catch(() => null);
+    setBusy(false);
+    if (!res?.ok) return setError("Neizdevās saglabāt.");
+    onTemplatesChanged();
+    onDone();
+  }
+
+  async function remove() {
+    if (!window.confirm(`Dzēst šablonu "${tpl.name}"?`)) return;
+    setBusy(true);
+    const res = await fetch(url, { method: "DELETE", credentials: "include" }).catch(() => null);
+    setBusy(false);
+    if (!res?.ok) return setError("Neizdevās dzēst.");
+    onTemplatesChanged();
+    onDone();
+  }
+
+  return (
+    <div className="iriss-log-tpl-edit">
+      <div className="flex gap-2">
+        <input className="iriss-log-manual-input min-w-0 flex-1" value={name} onChange={(e) => setName(e.target.value)} placeholder="Nosaukums" autoFocus />
+        <select className="iriss-log-manual-input" value={type} onChange={(e) => setType(e.target.value as RouteTemplateType)} aria-label="Veids">
+          {ROUTE_TEMPLATE_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {ROUTE_TEMPLATE_TYPE_LV[t]}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="mt-2">
+        <IrissAddressAutocomplete defaultValue={tpl.address} placeholder="Adrese" onPick={setPicked} />
+        {picked ? <p className="mt-1 text-[12px] text-[#15803d]">Jaunā adrese: {picked.formatted}</p> : null}
+      </div>
+      {error ? <p className="mt-1.5 text-[12px] text-[#c2362b]">{error}</p> : null}
+      <div className="mt-2 flex items-center gap-2">
+        <button type="button" className="text-[12.5px] font-medium text-[#c2362b]" disabled={busy} onClick={() => void remove()}>
+          Dzēst
+        </button>
+        <span className="flex-1" />
+        <button type="button" className="iriss-log-btn-sec h-9 min-h-9 px-3 text-[12.5px]" onClick={onDone}>
+          Atcelt
+        </button>
+        <button type="button" className="iriss-log-btn-dark h-9 min-h-9 px-3 text-[12.5px]" disabled={busy} onClick={() => void save()}>
+          Saglabāt
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function EndpointRow({
+  label,
   empty,
   value,
   open,
@@ -665,6 +727,7 @@ function EndpointRow({
   onOpen,
   onClose,
   onPick,
+  onTemplatesChanged,
 }: {
   label: string;
   empty: string;
@@ -674,97 +737,107 @@ function EndpointRow({
   onOpen: () => void;
   onClose: () => void;
   onPick: (v: CargoRouteEndpoint | null) => void;
+  onTemplatesChanged: () => void;
 }) {
-  const [q, setQ] = useState("");
-  const [choices, setChoices] = useState<Array<{ formatted: string; lat: number; lng: number }>>([]);
   const [saveTpl, setSaveTpl] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [tplName, setTplName] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
 
-  async function search() {
-    const address = q.trim();
-    if (address.length < 4) return;
-    const res = await fetch("/api/admin/iriss-logistics/geocode", {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ address, choices: true }),
-    });
-    const body = (await res.json()) as { choices?: Array<{ formatted: string; lat: number; lng: number }>; notice?: string };
-    setChoices(body.choices ?? []);
-    setNotice(body.notice ?? (body.choices?.length ? "" : "Adrese nav atrasta."));
-  }
-
-  async function pickChoice(choice: { formatted: string; lat: number; lng: number }) {
+  async function pickAddress(addr: PickedAddress) {
     const point: CargoRouteEndpoint = {
-      label: choice.formatted,
-      address: choice.formatted,
-      lat: choice.lat,
-      lng: choice.lng,
+      label: addr.name || addr.formatted,
+      address: addr.formatted,
+      lat: addr.lat,
+      lng: addr.lng,
       type: "other",
       templateId: "",
     };
     if (saveTpl) {
-      await fetch("/api/admin/iriss-logistics/route-templates", {
+      const res = await fetch("/api/admin/iriss-logistics/route-templates", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: q.trim() || choice.formatted, address: choice.formatted, lat: choice.lat, lng: choice.lng, type: "other" }),
-      });
+        body: JSON.stringify({ name: tplName.trim() || addr.name || addr.formatted, address: addr.formatted, lat: addr.lat, lng: addr.lng, type: "other" }),
+      }).catch(() => null);
+      const body = (res?.ok ? await res.json().catch(() => ({})) : {}) as { template?: CargoRouteTemplate };
+      if (body.template) point.templateId = body.template.id;
+      if (body.template) point.label = body.template.name;
+      onTemplatesChanged();
     }
     onPick(point);
   }
 
   if (!value && !open) {
     return (
-      <button type="button" className="mt-1 w-full rounded-[10px] px-1 py-2 text-left text-[13px] font-medium text-[#6e6e73]" onClick={onOpen}>
+      <button type="button" className="iriss-log-endpoint-add" onClick={onOpen}>
         {empty}
       </button>
     );
   }
   if (value && !open) {
     return (
-      <div className="mt-1 flex items-center gap-2 px-1 py-1.5 text-[13px]">
-        <span className="min-w-0 flex-1 truncate font-medium">{value.label || value.address}</span>
-        <button type="button" className="text-[12px] text-[#6e6e73]" onClick={() => onPick(null)} aria-label="Notīrīt">
+      <div className="iriss-log-endpoint">
+        <span className="iriss-log-tpl-icon">
+          <TemplateIcon type={value.type} />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[11px] font-semibold uppercase tracking-wide text-[#8e8e93]">{label}</span>
+          <span className="block truncate text-[14px] font-semibold">{value.label || value.address}</span>
+        </span>
+        <button type="button" className="text-[12.5px] font-medium text-[var(--iriss-log-focus)]" onClick={onOpen}>
+          Mainīt
+        </button>
+        <button type="button" className="px-1 text-[13px] text-[#6e6e73]" onClick={() => onPick(null)} aria-label="Noņemt">
           ✕
         </button>
       </div>
     );
   }
   return (
-    <div className="mt-1 rounded-[14px] bg-[var(--iriss-log-surface-2)] p-2">
-      <p className="px-1 text-[11px] font-semibold uppercase tracking-wide text-[#6e6e73]">Šabloni</p>
-      <ul>
-        {templates.map((tpl) => (
-          <li key={tpl.id}>
-            <button type="button" className="w-full rounded-[10px] px-2 py-1.5 text-left text-[13px]" onClick={() => onPick(endpointFromTemplate(tpl))}>
-              {tpl.name}
-            </button>
-          </li>
-        ))}
-      </ul>
-      <input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") void search();
-        }}
-        placeholder="Meklēt adresi"
-        className="mt-1 h-9 w-full rounded-[10px] border border-[var(--iriss-log-line)] bg-white px-2 text-[13px]"
-      />
-      {choices.map((c) => (
-        <button key={`${c.lat},${c.lng}`} type="button" className="mt-1 block w-full rounded-[10px] px-2 py-1.5 text-left text-[12.5px]" onClick={() => void pickChoice(c)}>
-          {c.formatted}
+    <div className="iriss-log-endpoint-picker">
+      <div className="flex items-center justify-between px-0.5">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6e6e73]">{label}: šabloni</p>
+        <button type="button" className="text-[12.5px] font-medium text-[#6e6e73]" onClick={onClose}>
+          Aizvērt
         </button>
-      ))}
-      {notice ? <p className="px-1 pt-1 text-[12px] text-[#6e6e73]">{notice}</p> : null}
-      <label className="mt-2 flex items-center gap-2 px-1 text-[12px]">
-        <input type="checkbox" checked={saveTpl} onChange={(e) => setSaveTpl(e.target.checked)} />
+      </div>
+      <ul className="mt-1.5 space-y-1.5">
+        {templates.map((tpl) =>
+          editId === tpl.id ? (
+            <li key={tpl.id}>
+              <TemplateEditor tpl={tpl} onDone={() => setEditId(null)} onTemplatesChanged={onTemplatesChanged} />
+            </li>
+          ) : (
+            <li key={tpl.id} className="iriss-log-tpl">
+              <button type="button" className="iriss-log-tpl-pick" onClick={() => onPick(endpointFromTemplate(tpl))}>
+                <span className="iriss-log-tpl-icon">
+                  <TemplateIcon type={tpl.type} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[14px] font-semibold">{tpl.name}</span>
+                  <span className="block truncate text-[12px] text-[#6e6e73]">{tpl.address}</span>
+                </span>
+              </button>
+              <button type="button" className="iriss-log-tpl-edit-btn" aria-label={`Labot ${tpl.name}`} title="Labot" onClick={() => setEditId(tpl.id)}>
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4" />
+                </svg>
+              </button>
+            </li>
+          ),
+        )}
+      </ul>
+      <p className="mt-3 px-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#6e6e73]">Cita adrese</p>
+      <div className="mt-1.5">
+        <IrissAddressAutocomplete placeholder="Sāc rakstīt adresi vai vietu" onPick={(a) => void pickAddress(a)} />
+      </div>
+      <label className="mt-2 flex items-center gap-2 px-0.5 text-[12.5px]">
+        <input type="checkbox" className="h-4 w-4 accent-[#1d1d1f]" checked={saveTpl} onChange={(e) => setSaveTpl(e.target.checked)} />
         Saglabāt kā šablonu
       </label>
-      <a href="#iriss-log-route-templates" className="mt-1 block px-1 text-[12px] font-medium text-[var(--iriss-log-focus)]" onClick={onClose}>
-        Pārvaldīt šablonus
-      </a>
+      {saveTpl ? (
+        <input className="iriss-log-manual-input mt-1.5 w-full" value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder="Šablona nosaukums, piem. Rostoka" />
+      ) : null}
     </div>
   );
 }

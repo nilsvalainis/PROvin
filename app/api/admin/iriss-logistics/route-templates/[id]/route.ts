@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { irissLogisticsScopeHeader, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
+import { irissLogisticsScopeHeader, logisticsCabinetWriteForbidden, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
 import { isRouteTemplateType } from "@/lib/iriss-logistics-cargo-plan";
 import { deleteRouteTemplate, listRouteTemplates, upsertRouteTemplate } from "@/lib/iriss-logistics-cargo-store";
 import { geocodeLogisticsAddress } from "@/lib/iriss-logistics-geocode-server";
@@ -12,6 +12,8 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function PATCH(req: Request, ctx: Ctx) {
   const gate = await requireIrissLogisticsApi();
   if (!gate.ok) return gate.response;
+  const denied = logisticsCabinetWriteForbidden(gate.actor);
+  if (denied) return denied;
   const { id } = await ctx.params;
   const existing = (await listRouteTemplates()).find((t) => t.id === id);
   if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
@@ -51,6 +53,8 @@ export async function PATCH(req: Request, ctx: Ctx) {
 export async function DELETE(_req: Request, ctx: Ctx) {
   const gate = await requireIrissLogisticsApi();
   if (!gate.ok) return gate.response;
+  const denied = logisticsCabinetWriteForbidden(gate.actor);
+  if (denied) return denied;
   const { id } = await ctx.params;
   const ok = await deleteRouteTemplate(id);
   if (!ok) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });

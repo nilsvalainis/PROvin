@@ -20,10 +20,11 @@ export const LOGISTICS_MAPS_API_FIELD: Record<LogisticsMapsApi, keyof LogisticsM
   geocode_place: "geocodePlace",
   search_destinations: "searchDestinations",
   directions: "directions",
+  autocomplete: "autocomplete",
 };
 
 export function emptyLogisticsMapsDayUsage(): LogisticsMapsDayUsage {
-  return { mapsJs: 0, geocoding: 0, geocodePlace: 0, searchDestinations: 0, directions: 0 };
+  return { mapsJs: 0, geocoding: 0, geocodePlace: 0, searchDestinations: 0, directions: 0, autocomplete: 0 };
 }
 
 export function logisticsMapsMonthKey(at = new Date()): string {
@@ -48,6 +49,7 @@ export function emptyLogisticsMapsUsageMonth(month: string): LogisticsMapsUsageM
     geocodePlace: 0,
     searchDestinations: 0,
     directions: 0,
+    autocomplete: 0,
     days: {},
   };
 }

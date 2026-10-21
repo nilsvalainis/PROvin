@@ -134,7 +134,19 @@ describe("IRISS Loģistika kravu plāns", () => {
           updatedAt: "",
         }),
       }),
-    ).toBe("1. Rostoka\n2. Volvo XC60\n3. DE-PL robeža Frankfurt (Oder)");
+    ).toBe("1. Rostoka\n2. Volvo XC60\n3. Frankfurt (Oder)");
+  });
+
+  it("shortens the old default template names but keeps names the user changed", async () => {
+    const { shortenLegacyRouteTemplateNames } = await import("@/lib/iriss-logistics-cargo-plan");
+    const base = { address: "", lat: 1, lng: 1, type: "port" as const, createdAt: "", updatedAt: "" };
+    const out = shortenLegacyRouteTemplateNames([
+      { ...base, id: "tpl-stena-travemunde", name: "Stena Line osta, Travemünde" },
+      { ...base, id: "tpl-de-pl-gorlitz", name: "Mana robeža" },
+      { ...base, id: "tpl-x", name: "DE-PL robeža Görlitz" },
+    ]);
+    expect(out.changed).toBe(true);
+    expect(out.items.map((t) => t.name)).toEqual(["Travemünde", "Mana robeža", "DE-PL robeža Görlitz"]);
   });
 
   it("clusters pins that share a place", () => {
