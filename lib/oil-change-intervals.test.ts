@@ -54,9 +54,20 @@ describe("isEngineOilChangeWork", () => {
 });
 
 describe("classifyOilIntervalKind", () => {
-  it("treats a jump past 30 000 km or 24 months as a data gap", () => {
-    expect(classifyOilIntervalKind(39_100, 34, [15_000, 16_000])).toBe("gap");
-    expect(classifyOilIntervalKind(8_000, 30, [15_000])).toBe("gap");
+  const audiOem = { km: 30_000, kmMin: null, months: 24 };
+
+  it("treats a jump past 2x the interval as a data gap", () => {
+    expect(classifyOilIntervalKind(65_000, 10, [15_000, 16_000], audiOem)).toBe("gap");
+    expect(classifyOilIntervalKind(8_000, 50, [15_000], audiOem)).toBe("gap");
+    expect(classifyOilIntervalKind(65_000, 10, [15_000, 16_000])).toBe("gap");
+    expect(classifyOilIntervalKind(8_000, 50, [15_000])).toBe("gap");
+  });
+
+  it("keeps a recorded-to-recorded step over OEM as observed, not missing data", () => {
+    expect(classifyOilIntervalKind(34_786, 10, [34_786, 33_733], audiOem)).toBe("observed");
+    expect(classifyOilIntervalKind(33_733, 16, [34_786, 33_733], audiOem)).toBe("observed");
+    expect(classifyOilIntervalKind(39_100, 34, [15_000, 16_000], audiOem)).toBe("observed");
+    expect(classifyOilIntervalKind(8_000, 30, [15_000], audiOem)).toBe("observed");
   });
 
   it("keeps two similar long-life dealer steps in the observed pool", () => {
@@ -64,7 +75,7 @@ describe("classifyOilIntervalKind", () => {
     expect(classifyOilIntervalKind(28_200, 22, [29_800, 28_200])).toBe("observed");
   });
 
-  it("drops a relative outlier against a tight dealer median", () => {
+  it("drops a relative outlier against a tight dealer median when OEM is unknown", () => {
     expect(classifyOilIntervalKind(29_500, 18, [15_000, 16_000, 29_500])).toBe("gap");
   });
 });
@@ -95,18 +106,19 @@ describe("buildOilChangeIntervalSeries", () => {
     });
     expect(series.points[3]).toMatchObject({
       intervalKm: 39100,
-      kind: "gap",
-      tone: "gap",
+      kind: "observed",
+      tone: "neutral",
     });
     expect(series.points[4]).toMatchObject({
       intervalKm: 13720,
       kind: "observed",
       tone: "neutral",
     });
-    expect(series.ringStepCount).toBe(3);
-    expect(series.gapStepCount).toBe(1);
-    expect(series.ringIntervalKm).toBe(Math.round((29800 + 28200 + 13720) / 3));
-    expect(series.ringNote).toContain("datu iztrūkums");
+    expect(series.ringStepCount).toBe(4);
+    expect(series.gapStepCount).toBe(0);
+    expect(series.ringIntervalKm).toBe(Math.round((29800 + 28200 + 39100 + 13720) / 4));
+    expect(series.ringNote).toContain("visiem 4 soļiem");
+    expect(series.ringNote).not.toContain("datu iztrūkums");
     expect(series.ringNote).not.toContain("\u2014");
   });
 
@@ -123,6 +135,7 @@ describe("buildOilChangeIntervalSeries", () => {
     );
     expect(longLife.points[1]).toMatchObject({ kind: "observed", tone: "ok", periodTone: "ok" });
     expect(longLife.points[2]).toMatchObject({ kind: "gap", tone: "gap", periodTone: "gap" });
+    expect(longLife.points[2]?.intervalKm).toBe(67_300);
     expect(longLife.ringTone).toBe("ok");
 
     const shortBook = buildOilChangeIntervalSeries(
@@ -136,16 +149,68 @@ describe("buildOilChangeIntervalSeries", () => {
     expect(shortBook.ringTone).toBe("stretch");
   });
 
-  it("does not let a 30 month stall with few km inflate the ring", () => {
-    const series = buildOilChangeIntervalSeries([
-      row("01.01.2018", "50000", "Eļļas maiņa"),
-      row("01.07.2020", "58000", "Eļļas maiņa"),
-      row("01.07.2021", "73000", "Eļļas maiņa"),
-    ]);
-    expect(series.points[1]?.kind).toBe("gap");
+  it("treats a 30 month stall under 2x OEM as over-interval, not missing data", () => {
+    const series = buildOilChangeIntervalSeries(
+      [
+        row("01.01.2018", "50000", "Eļļas maiņa"),
+        row("01.07.2020", "58000", "Eļļas maiņa"),
+        row("01.07.2021", "73000", "Eļļas maiņa"),
+      ],
+      { km: 30_000, kmMin: null, months: 24 },
+    );
+    expect(series.points[1]).toMatchObject({
+      kind: "observed",
+      tone: "ok",
+      periodTone: "stretch",
+      intervalKm: 8_000,
+      intervalMonths: 30,
+    });
     expect(series.points[2]?.kind).toBe("observed");
-    expect(series.ringIntervalKm).toBe(15000);
-    expect(series.ringIntervalMonths).toBe(12);
+    expect(series.ringIntervalKm).toBe(Math.round((8_000 + 15_000) / 2));
+    expect(series.ringIntervalMonths).toBe(Math.round((30 + 12) / 2));
+    expect(series.gapStepCount).toBe(0);
+  });
+
+  it("WAUZZZF47MA055473: 34k km steps over 30 000/24 OEM are virs intervāla, not datu iztrūkums", () => {
+    const audiOem = { km: 30_000, kmMin: null, months: 24 };
+    const series = buildOilChangeIntervalSeries(
+      [
+        row("13.12.2021", "28449", "Eļļas maiņa"),
+        row("29.09.2022", "63235", "Eļļas maiņa"),
+        row("22.01.2024", "96968", "Eļļas maiņa"),
+      ],
+      audiOem,
+    );
+    expect(series.changeCount).toBe(3);
+    expect(series.points[1]).toMatchObject({
+      intervalKm: 34_786,
+      intervalMonths: 10,
+      kind: "observed",
+      tone: "stretch",
+      periodTone: "ok",
+    });
+    expect(series.points[2]).toMatchObject({
+      intervalKm: 33_733,
+      intervalMonths: 16,
+      kind: "observed",
+      tone: "stretch",
+      periodTone: "ok",
+    });
+    expect(series.gapStepCount).toBe(0);
+    expect(series.ringStepCount).toBe(2);
+    expect(series.ringIntervalKm).toBe(34_260);
+    expect(series.ringIntervalMonths).toBe(13);
+    expect(series.coverGapKm).toBe(0);
+    expect(series.coverOverKm).toBe(34_786 + 33_733);
+    expect(series.coverOkKm).toBe(0);
+
+    const html = buildOilChangeIntervalPdfHtml(series);
+    expect(html).not.toContain("Datu iztrūkums");
+    expect(html).not.toContain(">Nav<");
+    expect(html).toContain("34 260 km");
+    expect(html).toContain("13 mēn.");
+    expect(html).toContain("dīlera datos virs intervāla");
+    expect(html).toContain("Dīlera dati apliecina 100%");
   });
 
   it("omits the ring when every step is a data gap", () => {

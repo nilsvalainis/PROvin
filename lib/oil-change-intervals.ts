@@ -3,10 +3,12 @@
  * Tikai dzinēja eļļa; kārbas / Haldex / tilta eļļa netiek skaitīta kā šīs sērijas punkts.
  *
  * 1. Starp divām fiksētām dzinēja eļļas maiņām rēķinām Δ km un Δ mēnešus atsevišķi.
- * 2. Solis ir datu iztrūkums, ja Δ km > 30 000 vai Δ mēneši > 24
- *    (kanons: apkope varēja būt ārpus dīlera), vai ja tas ir statistisks izlecējs
+ * 2. Solis starp divām fiksētām maiņām, kas pārsniedz OEM, ir „virs intervāla”
+ *    (neitrāls pelēks), ne datu iztrūkums. Datu iztrūkums tikai tad, ja starp
+ *    ierakstiem acīmredzami iztrūkst vismaz viena maiņa: Δ km vai Δ mēneši > 2×
+ *    OEM (bez OEM: 2× 30 000 km / 24 mēn.), vai bez OEM statistisks izlecējs
  *    pret pārējiem dīlera soļiem (≥ 1,8 × mediāna un > 20 000 km).
- * 3. Vidējais rāda tikai nepārtrauktos dīlera soļus.
+ * 3. Vidējais rāda visus soļus, kas nav datu iztrūkums, arī „virs intervāla”.
  * 4. Zaļš: dīlera solis iekļaujas OEM. Neitrāls pelēks: dīlera datos solis ir
  *    garāks par OEM km VAI mēnešiem. Tas nav apgalvojums, ka eļļa nav mainīta.
  * 5. Pelēks svītrojums: datu iztrūkums. Bez OEM nav zaļa/sarkana.
@@ -98,11 +100,16 @@ const ENGINE_OIL_NAME_RE =
 const ENGINE_OIL_FILTER_RE =
   /(?:motor)?ellas?\s+filtr|oil\s+filter|olfilter|motorolfilter/;
 
-/** Virs šī km soļa dīlera datos pieņemam iztrūkumu, ne reālu intervālu. */
+/** Noklusētais OEM, ja ražotāja intervāls nav zināms. */
 export const OIL_DEALER_GAP_KM = 30_000;
-/** Virs šī mēnešu soļa dīlera datos pieņemam iztrūkumu. */
+/** Noklusētais OEM laiks, ja ražotāja intervāls nav zināms. */
 export const OIL_DEALER_GAP_MONTHS = 24;
-/** Izlecējs pret dīlera soļu mediānu. */
+/**
+ * Datu iztrūkums starp divām fiksētām maiņām: solis lielāks par šo reizinātāju
+ * pret OEM (km vai mēneši). 1× līdz 2× ir „virs intervāla”, ne iztrūkums.
+ */
+export const OIL_MISSING_CHANGE_FACTOR = 2;
+/** Bez OEM: izlecējs pret dīlera soļu mediānu. */
 export const OIL_OUTLIER_RATIO = 1.8;
 export const OIL_OUTLIER_MIN_KM = 20_000;
 
@@ -259,9 +266,24 @@ export function collectEngineOilChangeRows(
   return out;
 }
 
-function isHardDataGap(km: number | null, months: number | null): boolean {
-  if (km != null && km > OIL_DEALER_GAP_KM) return true;
-  if (months != null && months > OIL_DEALER_GAP_MONTHS) return true;
+function oemLimitKm(oem: OemOilInterval | null): number {
+  return oem?.km && oem.km > 0 ? oem.km : OIL_DEALER_GAP_KM;
+}
+
+function oemLimitMonths(oem: OemOilInterval | null): number {
+  return oem?.months && oem.months > 0 ? oem.months : OIL_DEALER_GAP_MONTHS;
+}
+
+/** Acīmredzami iztrūkstoša maiņa: solis > 2× OEM km vai > 2× OEM mēneši. */
+export function isHardDataGap(
+  km: number | null,
+  months: number | null,
+  oem: OemOilInterval | null = null,
+): boolean {
+  const kmLimit = oemLimitKm(oem) * OIL_MISSING_CHANGE_FACTOR;
+  const monthLimit = oemLimitMonths(oem) * OIL_MISSING_CHANGE_FACTOR;
+  if (km != null && km > kmLimit) return true;
+  if (months != null && months > monthLimit) return true;
   return false;
 }
 
@@ -273,8 +295,10 @@ export function classifyOilIntervalKind(
   km: number | null,
   months: number | null,
   poolKm: readonly number[],
+  oem: OemOilInterval | null = null,
 ): OilIntervalKind {
-  if (isHardDataGap(km, months)) return "gap";
+  if (isHardDataGap(km, months, oem)) return "gap";
+  if (oem) return "observed";
   if (km == null) return "observed";
   if (poolKm.length < 2) return "observed";
   const med = median([...poolKm]);
@@ -335,14 +359,14 @@ export function buildOilChangeIntervalSeries(
   }
 
   const poolKm = raw
-    .filter((p) => p.intervalKm != null && !isHardDataGap(p.intervalKm, p.intervalMonths))
+    .filter((p) => p.intervalKm != null && !isHardDataGap(p.intervalKm, p.intervalMonths, oem))
     .map((p) => p.intervalKm!);
 
   const points: OilChangeIntervalPoint[] = raw.map((p, i) => {
     if (i === 0) {
       return { ...p, kind: "start", tone: "start", periodTone: "start" };
     }
-    const kind = classifyOilIntervalKind(p.intervalKm, p.intervalMonths, poolKm);
+    const kind = classifyOilIntervalKind(p.intervalKm, p.intervalMonths, poolKm, oem);
     if (kind === "gap") {
       return { ...p, kind, tone: "gap", periodTone: "gap" };
     }

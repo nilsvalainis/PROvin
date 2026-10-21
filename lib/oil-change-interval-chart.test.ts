@@ -45,6 +45,47 @@ describe("oil-change-interval-chart", () => {
     expect(oilRowsFromServiceWorks(block).length).toBe(0);
   });
 
+  it("WAUZZZF47MA055473 admin+PDF: over-OEM steps are virs intervāla, not datu iztrūkums", () => {
+    const block = emptyAutoRecordsBlock();
+    block.oilIntervalChart = {
+      useSavedRows: true,
+      highlightOverOem: true,
+      oemKm: 30_000,
+      oemMonths: 24,
+      rows: [
+        { id: "a", date: "13.12.2021", odometer: "28449", works: "Eļļas maiņa" },
+        { id: "b", date: "29.09.2022", odometer: "63235", works: "Eļļas maiņa" },
+        { id: "c", date: "22.01.2024", odometer: "96968", works: "Eļļas maiņa" },
+      ],
+    };
+    const series = buildOilIntervalSeriesForBlock(block);
+    expect(series.points[1]).toMatchObject({
+      intervalKm: 34_786,
+      intervalMonths: 10,
+      kind: "observed",
+      tone: "stretch",
+    });
+    expect(series.points[2]).toMatchObject({
+      intervalKm: 33_733,
+      intervalMonths: 16,
+      kind: "observed",
+      tone: "stretch",
+    });
+    expect(series.gapStepCount).toBe(0);
+    expect(series.ringIntervalKm).toBe(34_260);
+    expect(series.ringIntervalMonths).toBe(13);
+    expect(series.coverGapKm).toBe(0);
+
+    const html = buildOilChangeIntervalPdfHtml(series);
+    expect(html).not.toContain("Datu iztrūkums");
+    expect(html).toContain("34 260 km");
+    expect(html).toContain("13 mēn.");
+    expect(html).toContain("dīlera datos virs intervāla");
+    expect(html).toContain("Dīlera dati apliecina 100%");
+    expect(html).toContain("pdf-oil-int__seg--over");
+    expect(html).not.toContain("pdf-oil-int__seg--hatch");
+  });
+
   it("PDF html has no auto footnote paragraph after caution", () => {
     const block = emptyAutoRecordsBlock();
     block.serviceWorks = [
