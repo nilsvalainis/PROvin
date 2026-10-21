@@ -21,3 +21,8 @@ jobs:
         # Non-blocking: tsc may already fail on main. Failures are still visible in the log.
         run: npx tsc --noEmit
         continue-on-error: true
+      - name: Build
+        # Vercel būvē arī CSS un webpack. Šī solī kļūdas parādās jau PR, nevis tikai Vercel.
+        run: npx next build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"

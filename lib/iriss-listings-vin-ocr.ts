@@ -5,6 +5,8 @@
  */
 import "server-only";
 
+import { tesseractLocalWorkerOptions } from "@/lib/tesseract-local-lang";
+
 import { isAllowedListingPhotoUrl } from "@/lib/iriss-listings-photos-zip";
 import {
   LISTING_VIN_OCR_MAX_PHOTOS,
@@ -69,7 +71,7 @@ async function ocrWorker(): Promise<TessWorker> {
   if (!workerPromise) {
     workerPromise = (async () => {
       const { createWorker } = await import("tesseract.js");
-      const worker = await createWorker("eng", undefined, { logger: () => undefined });
+      const worker = await createWorker("eng", undefined, tesseractLocalWorkerOptions());
       return worker as unknown as TessWorker;
     })();
   }

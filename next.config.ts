@@ -62,11 +62,13 @@ const nextConfig: NextConfig = {
       "./node_modules/tesseract.js/dist/**",
       "./node_modules/tesseract.js/src/worker-script/**",
       "./node_modules/tesseract.js-core/**",
+      "./node_modules/@tesseract.js-data/eng/4.0.0_best_int/**",
     ],
     "/api/admin/vin-scan/camera-ocr": [
       "./node_modules/tesseract.js/dist/**",
       "./node_modules/tesseract.js/src/worker-script/**",
       "./node_modules/tesseract.js-core/**",
+      "./node_modules/@tesseract.js-data/eng/4.0.0_best_int/**",
     ],
   },
   reactStrictMode: true,

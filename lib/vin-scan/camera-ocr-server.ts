@@ -3,6 +3,7 @@
  */
 import "server-only";
 
+import { tesseractLocalWorkerOptions } from "@/lib/tesseract-local-lang";
 import { pickCameraVin, type CameraVinPick } from "@/lib/vin-scan/camera-vin";
 
 const VIN_ALPHABET = "ABCDEFGHJKLMNPRSTUVWXYZ0123456789";
@@ -20,7 +21,7 @@ async function cameraWorker(): Promise<TessWorker> {
   if (!workerPromise) {
     workerPromise = (async () => {
       const { createWorker } = await import("tesseract.js");
-      const worker = (await createWorker("eng", undefined, { logger: () => undefined })) as unknown as TessWorker;
+      const worker = (await createWorker("eng", undefined, tesseractLocalWorkerOptions())) as unknown as TessWorker;
       await worker.setParameters({ tessedit_char_whitelist: VIN_ALPHABET, tessedit_pageseg_mode: "6" });
       return worker;
     })();
