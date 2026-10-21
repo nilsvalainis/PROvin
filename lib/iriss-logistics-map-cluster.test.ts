@@ -38,3 +38,25 @@ describe("clusterIsSameSpot", () => {
     expect(clusterIsSameSpot([{ lat: 51.1, lng: 7.1 }, { lat: 51.3, lng: 7.4 }])).toBe(false);
   });
 });
+
+describe("maršruts mūsu kartē", () => {
+  it("keeps start, cars in cargo order and end; key changes when order changes", async () => {
+    const { cargoRoutePoints, cargoRoutePointsKey, emptyCargoPlan, moveCargoCar, normalizeCargoPlan } = await import("@/lib/iriss-logistics-cargo-plan");
+    let plan = emptyCargoPlan("");
+    plan = moveCargoCar(plan, "a", "next");
+    plan = moveCargoCar(plan, "b", "next");
+    plan = { ...plan, routes: { ...plan.routes, next: { ...plan.routes.next, start: { label: "S", address: "", lat: 1, lng: 1, type: "port", templateId: "" } } } };
+    const orders = [
+      { id: "a", pickupLat: 2, pickupLng: 2 },
+      { id: "b", pickupLat: 3, pickupLng: 3 },
+    ];
+    const pts = cargoRoutePoints(plan, "next", orders);
+    expect(pts).toEqual([{ lat: 1, lng: 1 }, { lat: 2, lng: 2 }, { lat: 3, lng: 3 }]);
+    const swapped = cargoRoutePoints(moveCargoCar(plan, "b", "next", 0), "next", orders);
+    expect(cargoRoutePointsKey(swapped)).not.toBe(cargoRoutePointsKey(pts));
+    // Līnija saglabājas plānā un pārdzīvo normalizāciju.
+    const saved = normalizeCargoPlan({ ...plan, routes: { ...plan.routes, next: { ...plan.routes.next, path: [{ lat: 1.123456, lng: 2 }, { lat: "x" }], pathKey: "k" } } });
+    expect(saved.routes.next.path).toEqual([{ lat: 1.12346, lng: 2 }]);
+    expect(saved.routes.next.pathKey).toBe("k");
+  });
+});

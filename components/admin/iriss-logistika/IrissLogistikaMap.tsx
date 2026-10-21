@@ -14,7 +14,7 @@ import {
   waitForGoogleMapTilesIdle,
   type LogisticsMapCamera,
 } from "@/lib/iriss-logistics-map-print";
-import { cargoCssColor, type CargoBucket } from "@/lib/iriss-logistics-cargo-plan";
+import { cargoCssColor, formatLogisticsPostal, type CargoBucket } from "@/lib/iriss-logistics-cargo-plan";
 import { clusterIsSameSpot, clusterPixelPoints, clusterRingGradient } from "@/lib/iriss-logistics-map-cluster";
 import type { LogisticsOrder, LogisticsPoint, LogisticsPreviousPointRow } from "@/lib/iriss-logistics-types";
 
@@ -35,6 +35,8 @@ type MapPoint = {
   routeNumber?: number;
   carMake?: string;
   carModel?: string;
+  postal?: string;
+  centerName?: string;
 };
 
 function toMapPoints(
@@ -77,6 +79,8 @@ function toMapPoints(
       routeNumber: extra?.routeNumbers?.get(o.id),
       carMake: o.make.trim() || (o.title.trim().split(/\s+/)[0] ?? ""),
       carModel: o.model.trim() || o.title.trim().split(/\s+/).slice(1).join(" "),
+      postal: formatLogisticsPostal(o.pickupSnapshot),
+      centerName: o.pickupSnapshot?.name?.trim() ?? "",
     }));
 }
 
@@ -102,8 +106,10 @@ type Props = {
   hoverCarId?: string | null;
   statusByCarId?: ReadonlyMap<string, string>;
   routeNumbers?: ReadonlyMap<string, number>;
-  routePath?: ReadonlyArray<{ lat: number; lng: number }>;
-  routeColor?: string;
+  /** Maršruti, kas zīmēti tieši mūsu kartē (katrai kravai sava krāsa). */
+  routePaths?: ReadonlyArray<{ path: ReadonlyArray<{ lat: number; lng: number }>; color: string }>;
+  /** "Rādīt nosaukumus": katram punktam pastāvīga etiķete (marka, modelis, indekss, centrs). */
+  showLabels?: boolean;
   routeEnds?: ReadonlyArray<{ lat: number; lng: number; kind: "start" | "end"; type?: string }>;
   pinVariant?: "default" | "cargo";
   onHoverCar?: (id: string | null) => void;
@@ -137,8 +143,8 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
     hoverCarId,
     statusByCarId,
     routeNumbers,
-    routePath,
-    routeColor,
+    routePaths,
+    showLabels = false,
     routeEnds,
     pinVariant = "default",
     onHoverCar,
@@ -149,7 +155,7 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
   const mapRef = useRef<google.maps.Map | null>(null);
   const overlaysRef = useRef<google.maps.OverlayView[]>([]);
   const markersRef = useRef<google.maps.Marker[]>([]);
-  const lineRef = useRef<{ setMap: (map: google.maps.Map | null) => void } | null>(null);
+  const linesRef = useRef<Array<{ setMap: (map: google.maps.Map | null) => void }>>([]);
   const lastPtsRef = useRef<MapPoint[]>([]);
   /** Kamera (fitBounds) tikai pirmajā ielādē vai kad mainās punktu kopa. Hover un izcēlums skatu neaiztiek. */
   const lastFitKeyRef = useRef<string | null>(null);
@@ -251,10 +257,10 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
     if (!map || !ready) return;
     for (const m of markersRef.current) m.setMap(null);
     for (const o of overlaysRef.current) o.setMap(null);
-    lineRef.current?.setMap(null);
+    for (const l of linesRef.current) l.setMap(null);
     markersRef.current = [];
     overlaysRef.current = [];
-    lineRef.current = null;
+    linesRef.current = [];
     const pts = toMapPoints(mode, orders, previous, selectedIds, {
       cargoByCarId,
       showOnMapIds,
@@ -279,6 +285,7 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
         onSelect,
         onHover: onHoverCar,
         openKey: openClusterRef,
+        showLabels,
       });
       layer.setMap(map);
       overlaysRef.current.push(layer);
@@ -288,15 +295,12 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
         overlaysRef.current.push(overlay);
         bounds.extend({ lat: end.lat, lng: end.lng });
       }
-      if (routePath && routePath.length > 1) {
-        const PolylineCtor = (google.maps as unknown as { Polyline: new (opts: Record<string, unknown>) => { setMap: (map: google.maps.Map | null) => void } }).Polyline;
-        lineRef.current = new PolylineCtor({
-          map,
-          path: routePath,
-          strokeColor: routeColor || cargoCssColor(hostRef.current, "next"),
-          strokeOpacity: 0.95,
-          strokeWeight: 3,
-        });
+      const PolylineCtor = (google.maps as unknown as { Polyline: new (opts: Record<string, unknown>) => { setMap: (map: google.maps.Map | null) => void } }).Polyline;
+      for (const r of routePaths ?? []) {
+        if (r.path.length < 2) continue;
+        // Balta apmale zem krāsainās līnijas, lai maršruts izceļas uz kartes.
+        linesRef.current.push(new PolylineCtor({ map, path: r.path, strokeColor: "#ffffff", strokeOpacity: 0.9, strokeWeight: 7, zIndex: 1 }));
+        linesRef.current.push(new PolylineCtor({ map, path: r.path, strokeColor: r.color, strokeOpacity: 0.95, strokeWeight: 4, zIndex: 2 }));
       }
     } else {
     for (const p of pts) {
@@ -368,8 +372,8 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
     hoverCarId,
     statusByCarId,
     routeNumbers,
-    routePath,
-    routeColor,
+    routePaths,
+    showLabels,
     routeEnds,
     pinVariant,
     onHoverCar,
@@ -399,6 +403,23 @@ function pinTitle(p: MapPoint): string {
   return `${p.carMake ?? ""} ${p.carModel ?? ""}`.trim() || p.label;
 }
 
+/** Etiķetes otrā rinda: pasta indekss un loģistikas centrs. */
+function pinPlace(p: MapPoint): string {
+  return [p.postal, p.centerName].filter(Boolean).join(" · ");
+}
+
+function pinLabelHtml(members: MapPoint[]): string {
+  const shown = members.slice(0, 3);
+  const rows = shown
+    .map((m) => {
+      const place = pinPlace(m);
+      return `<span class="t1">${escapeHtml(pinTitle(m))}</span>${place ? `<span class="t2">${escapeHtml(place)}</span>` : ""}`;
+    })
+    .join("");
+  const more = members.length > shown.length ? `<span class="t2">+${members.length - shown.length} auto</span>` : "";
+  return `<span class="iriss-log-pin-label">${rows}${more}</span>`;
+}
+
 /**
  * Viens slānis visiem auto punktiem. Pie katras tālummaiņas punkti, kas ekrānā ir tuvāk par 30 px,
  * saplūst grupā ar skaitu. Nosaukums parādās tikai, kad pele ir virs punkta vai auto ir izcelts.
@@ -411,6 +432,7 @@ function makeCargoLayerOverlay(input: {
   onSelect: (id: string) => void;
   onHover?: (id: string | null) => void;
   openKey: { current: string | null };
+  showLabels: boolean;
 }): google.maps.OverlayView {
   const open = input.openKey;
   class Layer extends google.maps.OverlayView {
@@ -435,7 +457,8 @@ function makeCargoLayerOverlay(input: {
         const px = proj.fromLatLngToDivPixel(new google.maps.LatLng(p.lat, p.lng));
         return px ? [{ id: p.id, x: px.x, y: px.y, p }] : [];
       });
-      for (const group of clusterPixelPoints(placed, 30)) {
+      // Ar nosaukumiem grupējam tikai gandrīz vienā vietā esošos, lai katram auto ir sava etiķete.
+      for (const group of clusterPixelPoints(placed, input.showLabels ? 14 : 30)) {
         const members = group.members.map((m) => m.p);
         const key = members.map((m) => m.id).sort().join("|");
         const active = members.some((m) => input.activeIds.has(m.id));
@@ -447,7 +470,11 @@ function makeCargoLayerOverlay(input: {
           const p = members[0]!;
           const color = input.colorOf(p);
           el.className = `iriss-log-pin${active ? " active" : ""}${selected ? " selected" : ""}`;
-          el.innerHTML = `<span class="iriss-log-pin-dot" style="background:${color}">${p.routeNumber ?? ""}</span><span class="iriss-log-pin-tip"><b>${escapeHtml(pinTitle(p))}</b>${p.statusLv ? `<i>${escapeHtml(p.statusLv)}</i>` : ""}</span>`;
+          el.innerHTML = `<span class="iriss-log-pin-dot" style="background:${color}">${p.routeNumber ?? ""}</span>${
+            input.showLabels
+              ? pinLabelHtml([p])
+              : `<span class="iriss-log-pin-tip"><b>${escapeHtml(pinTitle(p))}</b>${p.statusLv ? `<i>${escapeHtml(p.statusLv)}</i>` : ""}</span>`
+          }`;
           el.addEventListener("click", (e) => {
             e.stopPropagation();
             input.onSelect(p.id);
@@ -459,7 +486,9 @@ function makeCargoLayerOverlay(input: {
           el.className = `iriss-log-pin-cluster${active ? " active" : ""}${selected ? " selected" : ""}`;
           const names = members.slice(0, 4).map((m) => `<b>${escapeHtml(pinTitle(m))}</b>`).join("");
           const more = members.length > 4 ? `<i>+${members.length - 4}</i>` : "";
-          el.innerHTML = `<span class="iriss-log-pin-ring" style="background:${ring}"><span>${members.length}</span></span><span class="iriss-log-pin-tip">${names}${more}</span>`;
+          el.innerHTML = `<span class="iriss-log-pin-ring" style="background:${ring}"><span>${members.length}</span></span>${
+            input.showLabels ? pinLabelHtml(members) : `<span class="iriss-log-pin-tip">${names}${more}</span>`
+          }`;
           el.addEventListener("click", (e) => {
             e.stopPropagation();
             if (clusterIsSameSpot(members)) {

@@ -22,6 +22,8 @@ import {
   CARGO_BUCKET_ADD_LV,
   CARGO_BUCKET_LV,
   CARGO_BUCKETS,
+  cargoRoutePoints,
+  cargoRoutePointsKey,
   carsInCargoBucket,
   endpointFromTemplate,
   formatCargoDuration,
@@ -51,7 +53,8 @@ type Props = {
   onPlanChange: (plan: CargoPlanState) => void;
   onRowClick: (id: string) => void;
   onRowHover: (id: string | null) => void;
-  onRefreshDirections: (bucket: "next" | "after") => void;
+  /** `base`: tikko mainītais plāns, ko aprēķins izmanto (nevis veco stāvokli). */
+  onRefreshDirections: (bucket: "next" | "after", base?: CargoPlanState) => void;
   /** Citu klientu auto ar roku: marka, modelis, adrese no ģeokodētāja. */
   onAddManual?: (bucket: CargoBucket, input: ManualCarInput) => Promise<boolean>;
 };
@@ -235,8 +238,13 @@ export function IrissLogistikaCargoPlan({
                       style={route.enabled ? { background: colorVar } : undefined}
                       onClick={() => {
                         if (!cargoBucket) return;
-                        onPlanChange(setCargoRouteEnabled(plan, cargoBucket, !route.enabled));
-                        if (!route.enabled) onRefreshDirections(cargoBucket);
+                        const next = setCargoRouteEnabled(plan, cargoBucket, !route.enabled);
+                        onPlanChange(next);
+                        // Līniju rēķinām uzreiz tikai, ja jau ir ko savienot un tā nav aktuāla.
+                        const pts = cargoRoutePoints(next, cargoBucket, orders);
+                        if (!route.enabled && pts.length >= 2 && route.pathKey !== cargoRoutePointsKey(pts)) {
+                          onRefreshDirections(cargoBucket, next);
+                        }
                       }}
                     />
                   </label>
@@ -252,7 +260,7 @@ export function IrissLogistikaCargoPlan({
                   addressFor={addressFor}
                   setAddressFor={setAddressFor}
                   onPlanChange={onPlanChange}
-                  onRefreshDirections={() => onRefreshDirections(cargoBucket)}
+                  onRefreshDirections={(base) => onRefreshDirections(cargoBucket, base)}
                 >
                   {rows}
                 </RouteBlock>
@@ -554,7 +562,7 @@ function RouteBlock({
   addressFor: { bucket: "next" | "after"; end: "start" | "end" } | null;
   setAddressFor: (v: { bucket: "next" | "after"; end: "start" | "end" } | null) => void;
   onPlanChange: (plan: CargoPlanState) => void;
-  onRefreshDirections: () => void;
+  onRefreshDirections: (base?: CargoPlanState) => void;
   children: ReactNode;
 }) {
   const route = plan.routes[bucket];
@@ -567,6 +575,8 @@ function RouteBlock({
     route.end ? { lat: route.end.lat, lng: route.end.lng } : null,
   ].filter((p): p is { lat: number; lng: number } => Boolean(p));
   const mapsUrl = logisticsGoogleMapsDirUrl(points);
+  const hasLine = route.path.length > 1;
+  const stale = hasLine && route.pathKey !== cargoRoutePointsKey(points);
   const copyText = formatCargoRouteCopy({
     start: route.start,
     stops: rows.flatMap((r) => {
@@ -587,9 +597,10 @@ function RouteBlock({
         onOpen={() => setAddressFor({ bucket, end: "start" })}
         onClose={() => setAddressFor(null)}
         onPick={(v) => {
-          onPlanChange(setCargoRouteEndpoint(plan, bucket, "start", v));
+          const next = setCargoRouteEndpoint(plan, bucket, "start", v);
+          onPlanChange(next);
           setAddressFor(null);
-          onRefreshDirections();
+          if (cargoRoutePoints(next, bucket, [...byId.values()]).length >= 2) onRefreshDirections(next);
         }}
       />
       <div className="-mx-3.5">{children}</div>
@@ -602,9 +613,10 @@ function RouteBlock({
         onOpen={() => setAddressFor({ bucket, end: "end" })}
         onClose={() => setAddressFor(null)}
         onPick={(v) => {
-          onPlanChange(setCargoRouteEndpoint(plan, bucket, "end", v));
+          const next = setCargoRouteEndpoint(plan, bucket, "end", v);
+          onPlanChange(next);
           setAddressFor(null);
-          onRefreshDirections();
+          if (cargoRoutePoints(next, bucket, [...byId.values()]).length >= 2) onRefreshDirections(next);
         }}
       />
       <div className="mt-3 flex items-end justify-between gap-2">
@@ -612,14 +624,29 @@ function RouteBlock({
           <p className="text-[22px] font-semibold tracking-tight">{formatCargoKm(route.distanceKm) || "- km"}</p>
           <p className="text-[12px] text-[#6e6e73]">{formatCargoDuration(route.durationMin) || "laiks pēc aprēķina"}</p>
         </div>
+        {hasLine && !stale ? <p className="text-[12px] font-medium text-[#15803d]">Maršruts ir kartē</p> : null}
       </div>
+      {stale ? (
+        <p className="mt-2 rounded-[10px] bg-[#fffbeb] px-2.5 py-2 text-[12.5px] text-[#92400e]">
+          Kravā mainījās auto vai secība. Pārrēķini, lai līnija kartē atbilst.
+        </p>
+      ) : null}
       <div className="mt-2 flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="iriss-log-btn-dark"
+          disabled={points.length < 2}
+          title={points.length < 2 ? "Vajag vismaz 2 punktus ar adresi" : undefined}
+          onClick={() => onRefreshDirections()}
+        >
+          {!hasLine ? "Sastādīt maršrutu kartē" : stale ? "Pārrēķināt maršrutu" : "Pārrēķināt"}
+        </button>
         {mapsUrl ? (
-          <a href={mapsUrl} target="_blank" rel="noreferrer" className="iriss-log-btn-dark">
+          <a href={mapsUrl} target="_blank" rel="noreferrer" className="iriss-log-btn-sec">
             Atvērt Google Maps
           </a>
         ) : (
-          <span className="iriss-log-btn-dark opacity-40">Atvērt Google Maps</span>
+          <span className="iriss-log-btn-sec opacity-40">Atvērt Google Maps</span>
         )}
         <button
           type="button"
