@@ -5,6 +5,7 @@ const files = {
   logistika: "components/admin/iriss-logistika/IrissLogistikaClient.tsx",
   strip: "components/admin/IrissPavadzimesPlateStrip.tsx",
   mobileCss: "app/admin/admin-mobile.css",
+  staffUsers: "components/admin/IrissStaffUsersClient.tsx",
 } as const;
 
 const src = Object.fromEntries(
@@ -27,5 +28,9 @@ describe("Loģistika iPhone platums", () => {
   it("visas 3 pavadzīmju zīmes ietilpst rindā - statuss zem numurzīmes", () => {
     expect(src.strip).toMatch(/iriss-plate-strip-item inline-flex min-h-11 shrink-0 flex-col/);
     expect(src.mobileCss).toMatch(/\.iriss-plate-strip-item \.iriss-plate-status \{/);
+  });
+
+  it("Iestatījumi - Lietotāji saraksts nepaplašina lapu ar gariem e-pastiem", () => {
+    expect(src.staffUsers).toContain("grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-[minmax(0,1fr)_320px]");
   });
 });

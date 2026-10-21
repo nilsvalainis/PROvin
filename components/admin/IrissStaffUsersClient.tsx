@@ -197,7 +197,7 @@ export function IrissStaffUsersClient() {
         </button>
       </div>
 
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-3">
           <section className="overflow-hidden rounded-[22px] border border-[#E5E7EB] bg-white shadow-sm">
             <div className="hidden grid-cols-[1fr_minmax(0,220px)_88px_140px] gap-2 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9aa3b2] sm:grid">
