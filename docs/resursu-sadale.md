@@ -7,8 +7,8 @@ Mērķis: ekonomija. Katram darbam - lētākais izpildītājs, kas to izdarīs k
 
 | Resurss | Kas zināms | Kur lasīt | Nezināms |
 |---|---|---|---|
-| Claude Pro (Opus 5.5 Nila Mac, Claude Code + claude.ai + Cowork) | 5h sesijas limits + nedēļas limits, kopīgs visām Claude virsmām. Opus tērē ātrāk nekā Sonnet. 22.10 sesijas limits sasniegts 17:14, atjaunojās 17:50 (Rīga). Anthropic nepublicē precīzus Pro apjomus. | claude.ai Settings > Usage; Claude Code `/status` | Nedēļas reset diena/laiks; vai ieslēgti "usage credits" (jābūt IZSLĒGTIEM, lai nav papildu maksas) |
-| Cursor (Grok Bot, CloudAgent, Cursor Agent) | Nedēļas kopējais lietojuma pūls Cursor+Grok, atjaunojas reizi nedēļā; pēc tam top-offs (maksas). Grok modeļi iekļauti pūlā; trešo pušu modeļi (Sonnet u.c.) - pēc API cenas, maksā atsevišķi. Grok Bot lietojums atjaunots šonedēļ. | Cursor settings > Usage/Billing | Nila plāna līmenis (Premium/Super/Ultra); nedēļas reset laiks; pēdējā mēneša faktiskais tēriņš EUR; vai ir spending cap |
+| Claude Max 5x (no 22.10, 90 EUR/mēn., šodien proporcionāli 75,66 EUR) | 5x Pro lietojuma. 5h sesijas limits + nedēļas limits (visiem modeļiem), kopīgs claude.ai, Desktop, Cowork un Claude Code. Opus tērē ātrāk nekā Sonnet. Max plānā "wrap-up" pie katra 5h limita. Precīzus apjomus Anthropic nepublicē. 22.10 Pro sesijas limits: 17:14, reset 17:50 (Rīga). | claude.ai Settings > Usage; Claude Code `/status` | Nedēļas reset diena/laiks; vai Max sākas uzreiz; usage credits jābūt IZSLĒGTIEM |
+| Cursor Pro+ (legacy, 60 USD/mēn.) | Divi MĒNEŠA pūli, reset ar norēķinu ciklu: "Cursor Models" (Grok 4.7, Grok 4.6, Grok 4.5, Composer 2.5) un "Other Models" (Sonnet/Opus/GPT u.c. pēc API cenas). Pēc tam on-demand, rēķins pēc fakta. Downgrade stājas spēkā perioda beigās. Cursor oficiāli nepublicē pūlu apjomu USD. | cursor.com/dashboard/billing; editor Settings > Usage | Pūlu apjoms; cikla datums; on-demand spend limit (ieteikums: 0 vai zems); vai Pro+ vispār pieejams pārejai (legacy plāns, jaunajiem nav pārdošanā); vai Grok Bot paliek pieejams uz legacy plāna (X Subscription to iekļauj, legacy tabulā Grok Bot nav minēts) |
 | CloudAgent | Noteikums: grok-4.6 līdz 15.11.2026 | - | Kas mainās pēc 15.11 (cena/modelis) |
 | Grok API | Netiek tērēts no pūla, maksā atsevišķi | - | Vai vispār tiek lietots |
 
@@ -24,7 +24,7 @@ Pēdējo dienu darbu tipi: PR labojumi (budžeta loģika #469, Kārlis #468), au
 | D - operatīvais | E-pasti, kopsavilkumi, aģentu koordinācija, pārbaudes pārlūkā, scraping, atskaišu sagatavošana | Grok Bot aģenti (Andris, IRISS, u.c.) | - |
 | E - pārbaude | Prod pārbaude, CI statuss, ekrānuzņēmumi | Grok Bot (lēti) | - |
 
-Sonnet Cursorā (API cena, maksā atsevišķi) - lietot tikai, ja Nils apstiprina konkrēto darbu. Claude Pro iekšā Sonnet ir "bez maksas" līdz limitam - tas ir priekšroka.
+Sonnet/Opus Cursorā tērē "Other Models" pūlu pēc API cenas - lietot tikai, ja Nils apstiprina konkrēto darbu. Claude Max iekšā Sonnet/Opus jau ir apmaksāts - tas ir priekšroka. Grok 4.6/4.7 Cursorā tērē "Cursor Models" pūlu.
 
 Kad grok-4.6 drīkst aizstāt Claude (visiem jābūt "jā"):
 1. Uzdevums ir B vai C klase, nevis A.
@@ -35,7 +35,8 @@ Kad grok-4.6 drīkst aizstāt Claude (visiem jābūt "jā"):
 
 ## 3. Limitu uzskaite
 
-- Andris uztur `limiti` ierakstu atmiņā: Claude sesijas %, nedēļas %, nākamais reset; Cursor nedēļas pūla % un reset; mēneša tēriņš.
+- Andris uztur `limiti` ierakstu atmiņā: Claude sesijas %, nedēļas %, nākamais reset; Cursor abu mēneša pūlu % un cikla datums; on-demand tēriņš.
+- Cursor mēneša pūls: ideāli ap ~25% nedēļā. Ja tēriņš apsteidz kalendāru (piem. 50% pirmajā nedēļā) - C klasi atlikt vai grupēt.
 - Pārbaudes biežums: no rīta (pirms brīfa), pirms katra A/B darba, pēc katra Claude darba (`/status`).
 - Ja Claude Code atgriež limita kļūdu - pierakstīt reset laiku un ieplānot turpinājumu +5 min pēc reset.
 
@@ -45,7 +46,7 @@ Kad grok-4.6 drīkst aizstāt Claude (visiem jābūt "jā"):
 |---|---|---|
 | Claude nedēļas limits | >= 60% izlietots | >= 85% - tikai A klase |
 | Claude 5h sesija | >= 70% - jaunu lielu darbu nesākt | limits - gaidīt reset |
-| Cursor nedēļas pūls | >= 60% | >= 85% - tikai D/E, nekādu top-off bez Nila "jā" |
+| Cursor pūls (mēneša) | izlietots ātrāk nekā kalendārs | >= 85% - tikai D/E; on-demand tikai ar Nila "jā" |
 | Viens darbs | > ~30 min aģenta darba vai > 10 faili | > 1 h vai > 25 faili - obligāta iepriekšēja saskaņošana |
 
 ## 5. Iepriekšējas saskaņošanas formāts (lieliem darbiem)
@@ -65,7 +66,8 @@ Nils: jā / cits modelis / gaidīt
 - Lielos Claude darbus sākt sesijas sākumā, nevis 30 min pirms limita.
 - Svarīgos, bet nesteidzamos darbus krāt rindā un palaist pēc nedēļas reset.
 - Vienā Claude sesijā grupēt saistītus uzdevumus (mazāk konteksta ielādes).
-- Nekad neieslēgt Claude usage credits un Cursor top-off bez Nila "jā".
+- Nekad neieslēgt Claude usage credits un Cursor on-demand bez Nila "jā".
+- Ar Max 5x Claude kļūst par galveno kodētāju (A un B klase); Cursor paliek C/D/E un rezervei.
 
 ## 7. Ziņošana rīta brīfā (07:30)
 
