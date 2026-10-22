@@ -6,7 +6,7 @@ Neaiztiek: `provin-csdd-vpn`, `provin-csdd-relay`, `provin-listings*`, `provin-m
 ## Esošais (serverī, ne repo)
 
 - `iriss-vpn` (systemd, openconnect, `tun-iriss`, disabled). VPN konts ir kopīgs ar Nilu.
-- Playwright serveris `/root/iriss-ttr/srv.js` (127.0.0.1:9333), skripti `refill.js`, `save.js`, `run.sh`, `x.sh`.
+- Playwright serveris `/root/iriss-ttr/srv.js` (127.0.0.1:9333), `main.js`, `jx.js`, `probe.js` (22.10 pārbaude: `refill.js`/`save.js` serverī NAV, tie ir šajā mapē).
 
 ## VPN lease (`iriss-vpn-ctl`)
 
@@ -53,6 +53,42 @@ Pēdējā stdout rinda - JSON:
 - `refill.js`: `{ok:true, fields:{plate, validHours, ...}}` (aizpilda, NESPIEŽ Saglabāt). Ja VIN pieņemts tirdzniecībā: akts -> "Noformēt pavadzīmi"; citādi jauna pavadzīme.
 - `save.js`: `{ok:true, waybillNo, pdfPath}` (pdfPath relatīvs `/root/iriss-ttr`), kļūdā `{ok:false, error}`.
 Ja esošie skripti pieņem citus argumentus, tos pielāgo (vai ieliek plānus apvalkus ar tiem pašiem nosaukumiem) - bez pārtraukšanas/anulēšanas soļiem.
+
+### refill.js / save.js (šajā mapē)
+
+Serverī bija tikai `srv.js`, `main.js`, `jx.js`, `probe.js`, tāpēc `refill.js` un `save.js` ir repo un tiek uzstādīti ar
+`bash install-waybill-scripts.sh` (backup, kods uz `/root/iriss-ttr/ctl/`, `refill.js`/`save.js` uz `/root/iriss-ttr/`).
+
+| Fails | Kas |
+| --- | --- |
+| `refill.js`, `save.js` | Plāni apvalki (strādā gan CommonJS, gan ESM mapē) -> `ctl/waybill-run.mjs` |
+| `waybill-scripts-core.mjs` | Loģika bez pārlūka: ievades pārbaude, idempotences žurnāls, klikšķu/tīkla/dialogu sargi |
+| `waybill-driver.mjs` | Playwright: pieslēgšanās, firma (ctx), akts pēc VIN vai "Jauna pavadzīme", lauki, Saglabāt, numurs, PDF |
+| `waybill-ui.example.json` | Adreses un selektori -> `/root/iriss-ttr/waybill-ui.json` (aizpilda pēc `main.js`/`probe.js`) |
+| `waybill-adapter.example.cjs` | Neobligāts: soļi no `main.js` -> `/root/iriss-ttr/waybill-adapter.cjs` |
+
+- Bez `waybill-ui.json` abi skripti uzreiz atgriež `{ok:false}` un CSDD neaiztiek (darbs atpakaļ Aivaram).
+- `main.js` netiek importēts automātiski: tā augšējā līmeņa kods var palaist citu plūsmu. Ja tas eksportē funkcijas, tās pieslēdz
+  caur `waybill-adapter.cjs`; sargi paliek spēkā.
+- `browserUrl` tukšs: katrs skripts palaiž savu pārlūku, `save.js` formu aizpilda vēlreiz un pārbauda. `browserUrl`
+  `http://127.0.0.1:9333` (ja `srv.js` dod CDP) vai `ws://...`: `refill.js` atstāj cilni (`window.name = iriss-job-<id>`), `save.js` to turpina.
+- Pieslēgšanās: `CSDD_USER`/`CSDD_PASS` (nosaukumus maina `userVar`/`passVar`) no `/root/iriss-ttr/.env`. Vērtības netiek izdrukātas.
+
+Aizsardzība (testi `lib/iriss-waybill-scripts.test.ts`):
+- Pogas/saites/dialogi ar "pārtraukt, anulēt, beigt, dzēst, atcelt, cancel..." netiek spiesti nekad (arī `save` selektors, ja kļūdaini
+  norāda uz tādu pogu); tīklā pieprasījumi ar "pārtraukt/anulēt/terminate" adresē vai saturā tiek pārtraukti; lapā ir klikšķu sargs.
+- "Saglabāt" spiež tikai `save.js`, tikai pēc lauku pārbaudes (numurs, derīgums, VIN, maršruts) un tikai vienreiz uz darbu.
+- Ja draiveris (adapteris) atrod numuram aktīvu pavadzīmi - `{ok:false}`, nekas netiek pārtraukts.
+
+Idempotence (`/root/iriss-ttr/state/waybill-jobs/<jobId>.json` + `<jobId>.save.lock`):
+- Atkārtots `save.js` pēc veiksmes atgriež to pašu `waybillNo`, Saglabāt nespiež.
+- Lock tiek veidots atomiski (`open wx`): divi vienlaicīgi `save.js` nevar saglabāt divreiz.
+- Ja Saglabāt nospiests, bet numurs nav nolasīts: lock paliek, katrs nākamais mēģinājums atsakās ("pārbaudi CSDD").
+  Cilvēks pārbauda CSDD un tikai tad dzēš `state/waybill-jobs/<jobId>.save.lock`.
+- Kļūda pirms klikšķa: lock tiek noņemts (drīkst mēģināt vēlreiz).
+- Cits darbs ar to pašu numuru saglabāts pēdējās 30 min: atsakās.
+
+Pārbaude pirms LIVE (root, bez Saglabāt): `IRISS_JOB_JSON='<darbs>' node /root/iriss-ttr/refill.js` - redzams `{ok:true, fields}` ar pareizu numuru un 48 h, nekas nav saglabāts (CDP režīmā cilne ar aizpildītu formu paliek atvērta, to aizver ar roku).
 
 ### Ieslēgšana
 
