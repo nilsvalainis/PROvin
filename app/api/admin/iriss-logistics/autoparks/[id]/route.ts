@@ -2,7 +2,14 @@ import { NextResponse } from "next/server";
 import { isAutoparksStage } from "@/lib/iriss-autoparks";
 import { autoparksActor, autoparksHidesSums, autoparksRoomForActor } from "@/lib/iriss-autoparks-access";
 import { parseAutoparksCarInput } from "@/lib/iriss-autoparks-input";
-import { addAutoparksNote, getAutoparksRoom, patchAutoparksCar, replaceAutoparksWork } from "@/lib/iriss-autoparks-store";
+import {
+  addAutoparksNote,
+  deleteAutoparksCar,
+  getAutoparksRoom,
+  patchAutoparksCar,
+  replaceAutoparksWork,
+  setAutoparksArchived,
+} from "@/lib/iriss-autoparks-store";
 import { evaluateCabinetAccess } from "@/lib/iriss-logistics-cabinet-access";
 import { listCabinetAccessRules, listLiveCabinetDocuments } from "@/lib/iriss-logistics-cabinet-store";
 import { irissLogisticsScopeHeader, logisticsCabinetAccessQuery, logisticsCabinetWriteForbidden, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
@@ -67,6 +74,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
     const patch = parseAutoparksCarInput(body.car as Record<string, unknown>, hide);
     if (Object.keys(patch).length > 0) await patchAutoparksCar(id, patch, actor);
   }
+  if (typeof body.archived === "boolean") await setAutoparksArchived(id, body.archived, actor);
   if (body.note && typeof body.note === "object") {
     const note = body.note as Record<string, unknown>;
     const text = typeof note.text === "string" ? note.text : "";
@@ -93,4 +101,16 @@ export async function PATCH(req: Request, ctx: Ctx) {
     await replaceAutoparksWork(id, rows);
   }
   return roomResponse(gate, id);
+}
+
+/** Dzēst auto ar visu istabu (piem. demo auto). Tikai ar rakstīšanas tiesībām. */
+export async function DELETE(_req: Request, ctx: Ctx) {
+  const gate = await requireIrissLogisticsApi();
+  if (!gate.ok) return gate.response;
+  const denied = logisticsCabinetWriteForbidden(gate.actor);
+  if (denied) return denied;
+  const { id } = await ctx.params;
+  const ok = await deleteAutoparksCar(id);
+  if (!ok) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
+  return NextResponse.json({ ok: true }, { headers: irissLogisticsScopeHeader() });
 }

@@ -64,6 +64,7 @@ export async function createAutoparksCar(input: AutoparksCarInput & { orderId?: 
     purchasePriceEur: input.purchasePriceEur ?? null,
     salePriceEur: input.salePriceEur ?? null,
     arrivedAt: input.arrivedAt || now.slice(0, 10),
+    archivedAt: "",
     createdAt: now,
     updatedAt: now,
   };
@@ -120,6 +121,39 @@ export async function patchAutoparksCar(id: string, patch: AutoparksCarInput, ac
   state.cars[idx] = next;
   await writeAutoparksState(state);
   return next;
+}
+
+/** Pēc "Pārdots": uz arhīvu (vai atpakaļ). Dati paliek, sarakstā redzams cilnē "Arhīvs". */
+export async function setAutoparksArchived(id: string, archived: boolean, actor: AutoparksActor): Promise<AutoparksCar | null> {
+  const state = await readAutoparksState();
+  const idx = state.cars.findIndex((c) => c.id === id);
+  if (idx < 0) return null;
+  const prev = state.cars[idx]!;
+  if (Boolean(prev.archivedAt) === archived) return prev;
+  const now = new Date().toISOString();
+  const next: AutoparksCar = { ...prev, archivedAt: archived ? now : "", updatedAt: now };
+  state.cars[idx] = next;
+  state.events.push(event(id, actor, archived ? "Pārvietots uz arhīvu" : "Atjaunots no arhīva"));
+  await writeAutoparksState(state);
+  return next;
+}
+
+/**
+ * Dzēš auto ar visu istabu (faili, piezīmes, tāme, notikumi). Neatgriezeniski, tāpēc tikai pēc apstiprinājuma UI.
+ * Failu saturs krātuvē paliek (nav saites), bet sarakstā un istabā vairs neparādās.
+ */
+export async function deleteAutoparksCar(id: string): Promise<boolean> {
+  const state = await readAutoparksState();
+  if (!state.cars.some((c) => c.id === id)) return false;
+  await writeAutoparksState({
+    ...state,
+    cars: state.cars.filter((c) => c.id !== id),
+    files: state.files.filter((f) => f.carId !== id),
+    notes: state.notes.filter((n) => n.carId !== id),
+    work: state.work.filter((w) => w.carId !== id),
+    events: state.events.filter((e) => e.carId !== id),
+  });
+  return true;
 }
 
 export async function getAutoparksRoom(id: string): Promise<AutoparksRoom | null> {
