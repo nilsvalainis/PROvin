@@ -1,5 +1,5 @@
 import { after, NextResponse } from "next/server";
-import { autoparksListRows } from "@/lib/iriss-autoparks";
+import { autoparksListRows, filterAutoparksByOwner } from "@/lib/iriss-autoparks";
 import { autoparksActor, autoparksHidesSums, autoparksRowsForActor } from "@/lib/iriss-autoparks-access";
 import { linkAutoparksCarToDropbox } from "@/lib/iriss-autoparks-dropbox-sync";
 import { createAutoparksCar, ensureAutoparksCarFromOrder, readAutoparksState } from "@/lib/iriss-autoparks-store";
@@ -11,10 +11,11 @@ import { getLogisticsOrder, setLogisticsOrderArchiveState } from "@/lib/iriss-lo
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+/** `?owner=IRISS|DZA` - tikai viena īpašnieka auto (citādi visi). Katrai rindai `owner` vienmēr aizpildīts. */
+export async function GET(req: Request) {
   const gate = await requireIrissLogisticsApi();
   if (!gate.ok) return gate.response;
-  const rows = autoparksListRows(await readAutoparksState());
+  const rows = filterAutoparksByOwner(autoparksListRows(await readAutoparksState()), new URL(req.url).searchParams.get("owner")?.toUpperCase());
   return NextResponse.json(
     { ok: true, cars: autoparksRowsForActor(rows, autoparksHidesSums(gate.actor)) },
     { headers: irissLogisticsScopeHeader() },
