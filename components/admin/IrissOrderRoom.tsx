@@ -154,7 +154,7 @@ const roomBtn =
   "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#e5e7eb] bg-white px-3 text-[12.5px] font-semibold text-[#111827] shadow-[0_1px_2px_#0000000d] transition hover:bg-[#f9fafb] disabled:opacity-40";
 
 const roomBtnWa =
-  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--hair)] bg-[var(--s1)] px-3 text-[12.5px] font-semibold text-[var(--ink)] shadow-[var(--sh)] transition hover:bg-[var(--s2)] disabled:opacity-40";
+  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#25D366] bg-[#25D366] px-3 text-[12.5px] font-semibold text-white shadow-sm transition hover:bg-[#20BD5A] hover:brightness-105 disabled:opacity-40";
 
 const roomBtnPrimary =
   "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#2563eb] bg-[#2563eb] px-3 text-[12.5px] font-semibold text-white shadow-[0_1px_2px_#0000000d] transition hover:brightness-105 disabled:opacity-40";

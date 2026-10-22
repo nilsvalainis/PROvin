@@ -20,6 +20,11 @@ import type { LogisticsOrder, LogisticsPoint, LogisticsPreviousPointRow } from "
 
 type Gmaps = typeof google.maps;
 
+/** Tipu definīcijās nav ControlPosition; izpildlaikā tas eksistē. */
+function zoomTopRight(): number {
+  return (window.google.maps as unknown as { ControlPosition: { RIGHT_TOP: number } }).ControlPosition.RIGHT_TOP;
+}
+
 type MapPoint = {
   id: string;
   lat: number;
@@ -228,6 +233,9 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
         fullscreenControl: false,
         clickableIcons: false,
         gestureHandling: "greedy",
+        // + / − augšā labajā stūrī: pirkstu sasniedzams bez ritināšanas uz leju.
+        zoomControl: true,
+        zoomControlOptions: { position: zoomTopRight() },
       });
       setReady(true);
     }
@@ -355,7 +363,12 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
         map.fitBounds(bounds, 36);
       }
     }
-    map.setOptions({ disableDefaultUI: lockView, zoomControl: !lockView, gestureHandling: lockView ? "none" : "greedy" });
+    map.setOptions({
+      disableDefaultUI: lockView,
+      zoomControl: !lockView,
+      zoomControlOptions: { position: zoomTopRight() },
+      gestureHandling: lockView ? "none" : "greedy",
+    });
   }, [
     mode,
     orders,
