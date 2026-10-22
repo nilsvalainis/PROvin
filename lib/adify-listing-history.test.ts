@@ -172,7 +172,23 @@ describe("fetchAdifyListingHistory", () => {
     vi.unstubAllEnvs();
   });
 
-  it("reads the SSR page through the relay when the datacenter IP gets HTTP 403", async () => {
+  it("reads the SSR page through an own HTTP relay when the datacenter IP gets HTTP 403", async () => {
+    const fetchMock = vi.fn(async (input: unknown) =>
+      String(input).startsWith("https://relay.own.test/")
+        ? { ok: true, status: 200, text: async () => SSR_HTML }
+        : blocked(),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("LISTING_HISTORY_RELAY_URLS", "https://relay.own.test/?u={encoded}");
+
+    const snap = await fetchAdifyListingHistory(Q7_URL, NOW);
+
+    expect(snap.found).toBe(true);
+    expect(snap.source).toBe("adify");
+    expect(snap.priceChangeEur).toBe(-550);
+  });
+
+  it("does not spend time on Jina for Adify (Jina never passes the Adify challenge)", async () => {
     const fetchMock = vi.fn(async (input: unknown) =>
       String(input).startsWith("https://r.jina.ai/")
         ? { ok: true, status: 200, text: async () => SSR_HTML }
@@ -180,11 +196,14 @@ describe("fetchAdifyListingHistory", () => {
     );
     vi.stubGlobal("fetch", fetchMock);
 
-    const snap = await fetchAdifyListingHistory(Q7_URL, NOW);
+    const snap = await fetchAdifyListingHistory(Q7_URL, NOW, {
+      bypass: async () => ({ html: null, error: "Adify: CapSolver: custom proxy connect failed. (HTTP 400)" }),
+    });
 
-    expect(snap.found).toBe(true);
-    expect(snap.source).toBe("adify");
-    expect(snap.priceChangeEur).toBe(-550);
+    expect(snap.found).toBe(false);
+    expect(snap.blocked).toBe(true);
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).startsWith("https://r.jina.ai/"))).toBe(false);
+    expect(snap.message).not.toMatch(/Jina/);
   });
 
   it("keeps the HTTP 403 message when the relay is blocked too", async () => {
@@ -195,7 +214,7 @@ describe("fetchAdifyListingHistory", () => {
     expect(snap.found).toBe(false);
     expect(snap.blocked).toBe(true);
     expect(snap.message).toMatch(/Cloudflare bloķēja/i);
-    expect(snap.message).toMatch(/Jina|Chrome relejs|HTTP/i);
+    expect(snap.message).toMatch(/CapSolver|HTTP/i);
   });
 
   it("reads SSR HTML from CapSolver + Fixie and does not queue Chrome", async () => {

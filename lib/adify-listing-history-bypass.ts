@@ -7,9 +7,16 @@ import "server-only";
  *
  * api.adify.lv/api/v1/history/... atgriež application/problem+json 403
  * (nginx, nav CF) - to nemēģinām.
+ *
+ * Fixie ir datacentra proxy ar 2 izejas IP, ko tas maina nejauši; `cf_clearance`
+ * ir piesaistīts IP, un CapSolver ar Fixie (22.10.2026) atbild
+ * "custom proxy connect failed" visiem formātiem. No LV rezidentu IP Adify
+ * atdod vēsturi bez izaicinājuma, tāpēc `ADIFY_PROXY_URL` (sticky rezidentu proxy,
+ * tikai Adify) ir pirmais ceļš; CapSolver vajag tikai, ja arī tur ir izaicinājums.
  */
 
 import {
+  capsolverProxyFromUrl,
   getCaptchaSolverProxy,
   hasCaptchaSolverKey,
   httpProxyUrlFromCapsolver,
@@ -51,8 +58,15 @@ const ADIFY_HEADERS: Record<string, string> = {
   "sec-fetch-user": "?1",
 };
 
+/** Tikai Adify vēsturei: sticky rezidentu proxy (`http://user:pass@host:port`). Neietekmē mnt.ee / car.info. */
+export function adifyHistoryProxyUrl(env: Record<string, string | undefined> = process.env): string {
+  return capsolverProxyFromUrl(env.ADIFY_PROXY_URL ?? "") ?? "";
+}
+
 export type AdifyBypassDeps = {
   hasKey?: () => boolean;
+  /** `ADIFY_PROXY_URL`; ja ir, to lieto gan lapas ielasei, gan CapSolver. */
+  adifyProxy?: () => string;
   getProxy?: () => string;
   stickyProxyUrl?: () => string | undefined;
   solve?: typeof solveCaptcha;
@@ -100,25 +114,30 @@ async function bypassCloudflare(
   };
 }
 
-/** Adify vēstures HTML caur Fixie + CapSolver AntiCloudflareTask (`cf_clearance`). */
+/** Adify vēstures HTML caur `ADIFY_PROXY_URL` vai Fixie + CapSolver AntiCloudflareTask (`cf_clearance`). */
 export async function fetchAdifyHistoryHtmlViaCapsolver(
   pageUrl: string,
   deps: AdifyBypassDeps = {},
 ): Promise<AdifyBypassFetch> {
   const hasKey = deps.hasKey ?? hasCaptchaSolverKey;
-  const getProxy = deps.getProxy ?? getCaptchaSolverProxy;
-  const stickyProxyUrl = deps.stickyProxyUrl ?? vinStickyHttpProxyUrl;
+  const adifyProxy = (deps.adifyProxy ?? adifyHistoryProxyUrl)();
+  const getProxy = adifyProxy ? () => adifyProxy : (deps.getProxy ?? getCaptchaSolverProxy);
+  const stickyProxyUrl = adifyProxy
+    ? () => httpProxyUrlFromCapsolver(adifyProxy) ?? undefined
+    : (deps.stickyProxyUrl ?? vinStickyHttpProxyUrl);
   const solve = deps.solve ?? solveCaptcha;
   const fetchPage = deps.fetchPage ?? vinHttpFetch;
   const timeoutMs = deps.timeoutMs ?? ADIFY_CAPSOLVER_TIMEOUT_MS;
 
-  if (!hasKey()) {
+  const keyed = hasKey();
+  if (!keyed && !adifyProxy) {
     return { html: null, error: "Adify CapSolver: nav CAPSOLVER_API_KEY" };
   }
   const proxy = getProxy();
   if (!proxy) {
-    return { html: null, error: "Adify Cloudflare Challenge vajag CAPSOLVER_PROXY vai FIXIE_URL" };
+    return { html: null, error: "Adify Cloudflare Challenge vajag ADIFY_PROXY_URL, CAPSOLVER_PROXY vai FIXIE_URL" };
   }
+  const via = adifyProxy ? "Adify proxy" : "Adify Fixie";
 
   const session: Session = {
     cookie: "",
@@ -136,7 +155,7 @@ export async function fetchAdifyHistoryHtmlViaCapsolver(
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    return { html: null, error: `Adify Fixie: ${msg.slice(0, 160)}` };
+    return { html: null, error: `${via}: ${msg.slice(0, 160)}` };
   }
   session.cookie = mergeCookieHeader(session.cookie, page.cookie);
 
@@ -146,8 +165,11 @@ export async function fetchAdifyHistoryHtmlViaCapsolver(
   if (!isCloudflareChallengeHtml(page.text, page.status)) {
     return {
       html: null,
-      error: `Adify Fixie: HTTP ${page.status}${page.text.trim() ? "" : ", tukša atbilde"}`,
+      error: `${via}: HTTP ${page.status}${page.text.trim() ? "" : ", tukša atbilde"}`,
     };
+  }
+  if (!keyed) {
+    return { html: null, error: `${via}: Cloudflare izaicinājums, nav CAPSOLVER_API_KEY` };
   }
 
   const next = await bypassCloudflare(pageUrl, page.text, page.status, session, {

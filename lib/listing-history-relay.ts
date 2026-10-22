@@ -57,11 +57,15 @@ export function isListingHistoryChromeRelayUrl(raw: string): boolean {
  * Releju secība: vispirms pašu uzstādītie (`LISTING_HISTORY_RELAY_URLS`,
  * piem. paša Cloudflare Worker), tad iebūvētais Jina, tad Hetzner Chrome.
  */
-export function listingHistoryRelayTemplates(env: RelayEnv = process.env): string[] {
+export function listingHistoryRelayTemplates(
+  env: RelayEnv = process.env,
+  opts: { jina?: boolean } = {},
+): string[] {
   const custom = (env.LISTING_HISTORY_RELAY_URLS ?? "")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+  if (opts.jina === false) return [...new Set(custom.filter((t) => !isJinaRelay(t)))];
   return [...new Set([...custom, JINA_RELAY_TEMPLATE])];
 }
 
@@ -194,6 +198,12 @@ export type ListingHistoryRelayOpts = {
    * Adify.lv live paliek CF pēc 18 s; rinda ir viena, tāpēc Adify izlaiž Chrome.
    */
   chrome?: boolean;
+  /**
+   * Jina Reader. Noklusējums: jā. Adify.lv Jina nekad neiziet (CF managed challenge:
+   * HTML režīmā HTTP 422 "Timeout was reached", Markdown režīmā "Just a moment"),
+   * tāpēc Adify to izlaiž un nezaudē ~10 s pirms Tampermonkey rezerves.
+   */
+  jina?: boolean;
 };
 
 /** Atgriež vēstures lapas HTML un kļūdas iemeslu, ja neizdevās. */
@@ -208,7 +218,7 @@ export async function loadListingHistoryHtmlViaRelays(
   const useChrome = opts.chrome !== false;
   const errors: string[] = [];
 
-  for (const template of listingHistoryRelayTemplates(env)) {
+  for (const template of listingHistoryRelayTemplates(env, { jina: opts.jina })) {
     const relayUrl = buildListingHistoryRelayUrl(template, targetUrl);
     const headers = listingHistoryRelayHeaders(template, env);
     const label = relayLabel(template);
