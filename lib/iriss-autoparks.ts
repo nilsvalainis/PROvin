@@ -1,6 +1,6 @@
 /** IRISS Autoparks: mūsu auto pēc atvešanas. Pozīcija = auto istaba ar posmiem, failiem, piezīmēm un tāmi. */
 
-export const AUTOPARKS_STATUSES = ["prep_waiting", "in_service", "for_sale", "reserved", "sold"] as const;
+export const AUTOPARKS_STATUSES = ["prep_waiting", "in_service", "for_sale", "reserved", "ordered", "sold"] as const;
 export type AutoparksStatus = (typeof AUTOPARKS_STATUSES)[number];
 
 export const AUTOPARKS_STATUS_LV: Record<AutoparksStatus, string> = {
@@ -8,6 +8,7 @@ export const AUTOPARKS_STATUS_LV: Record<AutoparksStatus, string> = {
   in_service: "Servisā",
   for_sale: "Pārdošanā",
   reserved: "Rezervēts",
+  ordered: "Pasūtījums",
   sold: "Pārdots",
 };
 
@@ -17,6 +18,7 @@ export const AUTOPARKS_STATUS_SHORT_LV: Record<AutoparksStatus, string> = {
   in_service: "Servisā",
   for_sale: "Pārdošanā",
   reserved: "Rezervēts",
+  ordered: "Pasūtījums",
   sold: "Pārdots",
 };
 
@@ -334,7 +336,7 @@ export function autoparksDaysInPark(car: Pick<AutoparksCar, "arrivedAt" | "creat
 
 /** Skaiti pa statusiem (arhīvā esošie netiek skaitīti). */
 export function autoparksStatusCounts(cars: ReadonlyArray<Pick<AutoparksCar, "status"> & { archivedAt?: string }>): Record<AutoparksStatus, number> {
-  const out = { prep_waiting: 0, in_service: 0, for_sale: 0, reserved: 0, sold: 0 } as Record<AutoparksStatus, number>;
+  const out = { prep_waiting: 0, in_service: 0, for_sale: 0, reserved: 0, ordered: 0, sold: 0 } as Record<AutoparksStatus, number>;
   for (const c of cars) if (!c.archivedAt) out[c.status] += 1;
   return out;
 }
@@ -435,6 +437,6 @@ export function autoparksBundleName(car: Pick<AutoparksCar, "make" | "model" | "
 /** Ieteicamais posms jaunam failam pēc auto statusa. */
 export function autoparksDefaultStage(status: AutoparksStatus): AutoparksStage {
   if (status === "prep_waiting" || status === "in_service") return "service";
-  if (status === "for_sale" || status === "reserved" || status === "sold") return "sale";
+  if (status === "for_sale" || status === "reserved" || status === "ordered" || status === "sold") return "sale";
   return "purchase";
 }

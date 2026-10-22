@@ -8,6 +8,7 @@ import {
   autoparksListRows,
   autoparksRoom,
   autoparksStatusCounts,
+  AUTOPARKS_STATUS_LV,
   autoparksWorkTotal,
   formatAutoparksEur,
   normalizeAutoparksCar,
@@ -62,6 +63,7 @@ describe("Autoparks dati", () => {
       in_service: 2,
       for_sale: 0,
       reserved: 0,
+      ordered: 0,
       sold: 1,
     });
     expect(autoparksDaysInPark({ arrivedAt: "2026-10-11", createdAt: "" }, new Date("2026-10-21T12:00:00Z"))).toBe(10);
@@ -80,6 +82,13 @@ describe("Autoparks dati", () => {
   it("opens the stage that matches the car status", () => {
     expect(autoparksDefaultStage("prep_waiting")).toBe("service");
     expect(autoparksDefaultStage("reserved")).toBe("sale");
+    expect(autoparksDefaultStage("ordered")).toBe("sale");
+  });
+
+  it("keeps a saved ordered status and labels it apart from for-sale", () => {
+    expect(normalizeAutoparksCar({ id: "x", status: "ordered" })?.status).toBe("ordered");
+    expect(AUTOPARKS_STATUS_LV.ordered).toBe("Pasūtījums");
+    expect(AUTOPARKS_STATUS_LV.ordered).not.toBe(AUTOPARKS_STATUS_LV.for_sale);
   });
 
   it("ignores prices from users who cannot see sums", () => {
