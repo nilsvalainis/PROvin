@@ -71,6 +71,10 @@ export type AutoparksCar = {
   arrivedAt: string;
   /** Pēc "Pārdots": pārvietots uz arhīvu (sarakstā vairs nav, var atjaunot). Tukšs = aktīvs. */
   archivedAt: string;
+  /** Dropbox /STOCK mapes id (`id:...`); nav/tukšs = vēl nav sasaistīts. Vecos ierakstos lauka nav. */
+  dropboxFolderId?: string;
+  /** Pēdējais zināmais mapes ceļš (tikai informācijai; avots ir id). */
+  dropboxFolderPath?: string;
   createdAt: string;
   updatedAt: string;
   /** Cenu lapai: nosaukums, ko Nils ieraksta (tukšs = marka + modelis). Vecos ierakstos lauka nav. */
@@ -92,7 +96,13 @@ export type AutoparksFile = {
   fileName: string;
   contentType: string;
   size: number;
+  /** Vecie faili: Vercel Blob ceļš. Jaunie faili glabājas Dropbox (`dropboxId`), tad tukšs. */
   blobPath: string;
+  /** Dropbox faila id (`id:...`) un ceļš augšupielādes brīdī. Vecos ierakstos lauku nav. */
+  dropboxId?: string;
+  dropboxPath?: string;
+  /** Mazs JPEG sīktēls (~30 KB) Blob krātuvē bildēm; nav = nav sīktēla. */
+  thumbBlobPath?: string;
   sha256: string;
   /** Telefonā nobildēts un pārvērsts PDF. */
   scanned: boolean;
@@ -211,6 +221,8 @@ export function normalizeAutoparksCar(raw: unknown): AutoparksCar | null {
     archivedAt: str(raw.archivedAt, 40),
     createdAt: str(raw.createdAt, 40),
     updatedAt: str(raw.updatedAt, 40),
+    ...(typeof raw.dropboxFolderId === "string" && raw.dropboxFolderId ? { dropboxFolderId: str(raw.dropboxFolderId, 120) } : {}),
+    ...(typeof raw.dropboxFolderPath === "string" && raw.dropboxFolderPath ? { dropboxFolderPath: str(raw.dropboxFolderPath, 400) } : {}),
     // Jaunie lauki tikai, ja ierakstā tie jau ir - vecie ieraksti paliek tādi paši.
     ...(typeof raw.displayName === "string" ? { displayName: str(raw.displayName, 160) } : {}),
     ...(typeof raw.equipmentLine === "string" ? { equipmentLine: str(raw.equipmentLine, 300) } : {}),
@@ -241,6 +253,9 @@ export function normalizeAutoparksFile(raw: unknown): AutoparksFile | null {
     uploadedByName: str(raw.uploadedByName, 80),
     createdAt: str(raw.createdAt, 40),
     deletedAt: str(raw.deletedAt, 40),
+    ...(typeof raw.dropboxId === "string" && raw.dropboxId ? { dropboxId: str(raw.dropboxId, 120) } : {}),
+    ...(typeof raw.dropboxPath === "string" && raw.dropboxPath ? { dropboxPath: str(raw.dropboxPath, 600) } : {}),
+    ...(typeof raw.thumbBlobPath === "string" && raw.thumbBlobPath ? { thumbBlobPath: str(raw.thumbBlobPath, 400) } : {}),
   };
 }
 
