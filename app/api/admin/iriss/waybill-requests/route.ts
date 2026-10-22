@@ -13,7 +13,7 @@ import {
 } from "@/lib/iriss-waybill-plates";
 import { listWaybillVehicleChips } from "@/lib/iriss-waybill-vehicles";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
-import { waybillTradeCars, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
+import { waybillTradeCarsWithSource, type WaybillCarsSource, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
 
 export const runtime = "nodejs";
@@ -31,12 +31,12 @@ async function loadVehiclesSafe() {
 }
 
 /** Telefona formas auto saraksts: tikai drošie lauki (bez cenām), arī lietotājam bez Autoparka tiesībām. */
-async function loadTradeCarsSafe(): Promise<WaybillTradeCar[]> {
+async function loadTradeCarsSafe(): Promise<{ cars: WaybillTradeCar[]; source: WaybillCarsSource }> {
   try {
-    return waybillTradeCars((await readAutoparksState()).cars);
+    return waybillTradeCarsWithSource((await readAutoparksState()).cars);
   } catch (err) {
     console.error("[iriss-waybill] trade_cars_failed", err instanceof Error ? err.message : err);
-    return [];
+    return { cars: [], source: "registry" };
   }
 }
 
@@ -66,7 +66,7 @@ export async function GET(req: Request) {
       withCars ? loadTradeCarsSafe() : Promise.resolve(null),
     ]);
     return NextResponse.json(
-      { ok: true, ...waybillChatPayload(doc), vehicles, plates, ...(tradeCars ? { tradeCars } : {}) },
+      { ok: true, ...waybillChatPayload(doc), vehicles, plates, ...(tradeCars ? { tradeCars: tradeCars.cars, tradeCarsSource: tradeCars.source } : {}) },
       NO_STORE,
     );
   } catch (err) {

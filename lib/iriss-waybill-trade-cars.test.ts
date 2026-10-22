@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AutoparksCar } from "@/lib/iriss-autoparks";
 import { emptyRegistryValues, type AutoparksRegistry } from "@/lib/iriss-autoparks-registry";
-import { filterWaybillTradeCars, waybillTradeCars } from "@/lib/iriss-waybill-trade-cars";
+import { filterWaybillTradeCars, waybillTradeCars, waybillTradeCarsWithSource } from "@/lib/iriss-waybill-trade-cars";
 
 function registry(tradeActNo: string, makeModel = "", extra: Partial<AutoparksRegistry> = {}): AutoparksRegistry {
   return { ...emptyRegistryValues(), tradeActNo, makeModel, importedAt: "", importFile: "", registryDate: "", manual: [], removedAt: "", ...extra };
@@ -60,5 +60,34 @@ describe("waybill trade cars", () => {
     expect(filterWaybillTradeCars(out, "xc60 2021").map((c) => c.id)).toEqual(["a"]);
     expect(filterWaybillTradeCars(out, "876543").map((c) => c.id)).toEqual(["reg"]);
     expect(filterWaybillTradeCars(out, "  ")).toHaveLength(3);
+  });
+
+  it("registry data present -> strict trade-accepted list, source registry", () => {
+    expect(waybillTradeCarsWithSource(cars).source).toBe("registry");
+  });
+});
+
+describe("waybill trade cars before the first CSDD registry read", () => {
+  // Prod 22.10: reģistrs vēl nav nolasīts, nevienam auto nav akta nr. - izvēlne bija tukša.
+  const cars = [
+    car({ id: "kodiaq", make: "Škoda", model: "Kodiaq", vin: "TMBJJ7NS1L8012345", status: "prep_waiting" }),
+    car({ id: "golf", make: "VW", model: "Golf", status: "for_sale", registry: registry("") }),
+    car({ id: "sold", make: "BMW", model: "320d", status: "sold" }),
+    car({ id: "arch", make: "BMW", model: "520d", archivedAt: "2026-10-01" }),
+  ];
+
+  it("shows unsold, unarchived Autoparks cars and says the source is Autoparks", () => {
+    const out = waybillTradeCarsWithSource(cars);
+    expect(out.source).toBe("autoparks");
+    expect(out.cars.map((c) => c.id)).toEqual(["kodiaq", "golf"]);
+    expect(out.cars[0]?.statusLabel).toBe("Gaida");
+    expect(JSON.stringify(out)).not.toMatch(/12000|15000|Price/);
+  });
+
+  it("switches to the strict list as soon as one registry record exists", () => {
+    const withImport = [...cars, car({ id: "imp", make: "Kia", model: "Ceed", registry: registry("", "", { importedAt: "2026-10-23T03:30:00.000Z" }) })];
+    const out = waybillTradeCarsWithSource(withImport);
+    expect(out.source).toBe("registry");
+    expect(out.cars).toEqual([]);
   });
 });

@@ -355,3 +355,23 @@ export function isTradeAcceptedCar(car: TradeAcceptedCarInput): boolean {
 export function listTradeAcceptedCars<T extends TradeAcceptedCarInput>(cars: ReadonlyArray<T>): T[] {
   return cars.filter(isTradeAcceptedCar);
 }
+
+/**
+ * Vai Autoparkā ir vismaz viens CSDD tirdzniecības reģistra ieraksts (akta nr., imports vai izņemšanas atzīme).
+ * Ja nav - reģistrs vēl ne reizi nav nolasīts, un "pieņemto" saraksts būtu tukšs nevis tāpēc, ka auto nav, bet datu trūkuma dēļ.
+ */
+export function tradeRegistryKnown(cars: ReadonlyArray<Pick<AutoparksCar, "registry">>): boolean {
+  return cars.some((c) => Boolean(c.registry?.tradeActNo?.trim() || c.registry?.importedAt || c.registry?.removedAt));
+}
+
+export type WaybillCarsSource = "registry" | "autoparks";
+
+/**
+ * Pavadzīmju auto izvēle: tirdzniecībā pieņemtie (`listTradeAcceptedCars`). Kamēr reģistrs vēl nav nolasīts
+ * (`tradeRegistryKnown` = false), rāda Autoparka auto, kas nav pārdoti un nav arhīvā, lai izvēlne nebūtu tukša.
+ * Tiklīdz pirmais reģistra imports ir noticis, automātiski strādā tikai stingrais filtrs. Datus nemaina.
+ */
+export function listWaybillCandidateCars<T extends TradeAcceptedCarInput>(cars: ReadonlyArray<T>): { cars: T[]; source: WaybillCarsSource } {
+  if (tradeRegistryKnown(cars)) return { cars: listTradeAcceptedCars(cars), source: "registry" };
+  return { cars: cars.filter((c) => !c.archivedAt && c.status !== "sold"), source: "autoparks" };
+}
