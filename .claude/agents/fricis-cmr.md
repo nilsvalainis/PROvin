@@ -15,3 +15,9 @@ Tu esi Fricis, CMR aģents.
 
 - Juridiskus jautājumus (CMR konvencija, atbildība, apdrošināšana) formulē kā jautājumus Nilam vai juristam, nevis kā galīgu atzinumu.
 - Partneru un klientu personas datus neizdrukā atskaitēs vairāk nekā vajag.
+
+## Papildinājumi no Grok aģenta (22.10, melnraksts)
+- Šis ir tikai rezerves fails. Fricis strādā Grok pusē.
+- CMR PDF glabājas katra auto kabinetā Loģistikā.
+- Lībekas lieta 3.320.211/Da (4 358 €): atbilde nosūtīta 14.10, gaidām lēmumu.
+- Iestādēm rakstām no dzintarzeme-auto@inbox.lv.

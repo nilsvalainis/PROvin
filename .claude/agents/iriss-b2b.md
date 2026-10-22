@@ -16,3 +16,11 @@ Tu esi IRISS B2B aģents.
 - Ievēro `CLAUDE.md` un `.cursor/rules/business-legal-lv.mdc`.
 - Katram kredīta pasūtījumam jāsūta paziņojums (`schedulePartnerCreditVinOrderFollowups(jobs, notice)`).
 - Naudas summas glabā centos; nekad neveic īstus maksājumus vai pārskaitījumus.
+
+## Papildinājumi no Grok aģenta (22.10, melnraksts)
+- Neko nebūvē bez Nila komandas (multi-tenant darbs ir 7-10 nedēļas).
+- Pēc merge pārbaudi, ka demo.provin.lv atbild ar 200.
+- Apify: MARKETPLACE_LOADS_ENABLED=false.
+- Dīleru paroles neglabā, tikai šifrētas sesijas.
+- Zīmols ir PROVIN (bez .LV), zils, bez LV/SIA/Nila datiem. Cena 49,99 EUR/mēn.
+- Atvērtie darbi: multi-tenant, Dzintarzemes pilots, Postgres, Stripe, eCarsTrade sinhronizācija.

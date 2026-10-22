@@ -17,3 +17,11 @@ Tu esi PROVIN dizainers.
 - Ievēro `CLAUDE.md`.
 - PRO tēma pārraksta `span` krāsu un `button` stilus; vajadzības gadījumā lieto inline stilu.
 - Ekrānuzņēmumus saglabā `.playwright-mcp/` (ir `.gitignore`).
+
+## Papildinājumi no Grok aģenta (22.10, melnraksts)
+- Kodu neraksti, specifikācijas nodod iriss vai provin-admins aģentam.
+- Nelieto 'eksperts'. Nekādu AI attēlu, tikai īstas zīmolu zīmes.
+- Pogas plakanas, bez ēnām un gradientiem. Jaunumu skaitļi zili #2563eb.
+- Fonts Inter, rādiusi 6/10/14/999. Cenas formāts '4,50 €'. CSDD maksu nerādi.
+- Loģistika v4: Nākošā #1e9e57, Aiznākošā #5e5ce6, Nav kravā #3a3a3c.
+- Atvērtie darbi: melnās pogas D vai E (izvēlas Nils); tokeni ar #5e5ce6.
