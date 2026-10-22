@@ -79,4 +79,15 @@ Resursi: Claude sesija X%, nedēļa Y% (reset <diena laiks>) | Cursor Z% (reset 
 
 ## 8. Claude Opus ieteikumi
 
-Nav vēl saņemti: 22.10 ~17:25 Claude Code atbildēja "session limit - resets 17:50 (Europe/Riga)". Review jāpalaiž pēc reset (B klase, tikai lasīšana) un šī sadaļa jāpapildina ar atsevišķu PR.
+22.10.2026, Claude Opus 5.5 pārskats (tikai lasīšana). Papildina 2.-6. sadaļu, to nemaina. Pieņēmums: Max 5x, nedēļas reset otrdienās ~23:00 (Rīga), 5h sesiju logi.
+
+1. **Opus plāno, Sonnet raksta.** B klasē lieto `/model opusplan` (Opus plāna režīmā, Sonnet izpildē) vai Opus uzraksta plānu ar failiem un testiem, tad `/model sonnet` to izpilda; tīrs Opus visam darbam - tikai A klasē.
+2. **Meklēšanu dod apakšaģentam.** Plašu koda meklēšanu dod Explore apakšaģentam, lai galvenās Opus sesijas konteksts nepiepildās ar failu saturu; aģentiem, kas tikai lasa (klientu-atbalsts, laba-roka, ekii-specis), `.claude/agents/*.md` iestatīt `model: sonnet`.
+3. **Viens darbs = viena tīra sesija.** Pēc PR merge `/clear`; garā darbā `/compact` ar norādi, ko paturēt (piem. "plāns, zars, PR nr."), nevis turpināt ar garu vēsturi, kas katrā atbildē tiek apstrādāta no jauna.
+4. **Prompts ar precīzu specifikāciju.** Norādi failus, gaidāmo uzvedību un testa komandu (`npx vitest run <fails>`); "salabo budžetu" tipa prompts liek aģentam izlasīt pusi repo, kas maksā vairāk nekā pats labojums.
+5. **Kešošana - strādā blokos.** Saistītus uzdevumus dari pēc kārtas vienā sesijā, kamēr kešs ir silts; pēc vairāku stundu pauzes sāc jaunu sesiju ar īsu kopsavilkumu. CLAUDE.md un `.cursor/rules` turi īsus - tie ielādējas katrā sesijā.
+6. **5h logs.** Lielu A darbu sāc tikai, ja sesijā izlietots < 40%; loga pēdējā stundā dari review, `tsc`/testus un mazus labojumus. Pirms limita aģents ieraksta stāvokli (zars, nākamais solis) `docs/komandu-zinojumi.md`, lai pēc reset nav jāpārlasa viss.
+7. **Nedēļas reset (otrdiena ~23:00).** Ja otrdienas rītā nedēļas limits ir < 70% izlietots, atlikumu izmanto rindā gaidošiem A darbiem un auditiem (neizlietotais pazūd); ja > 85% - otrdien tikai sagatavo specifikācijas un palaiž trešdien no rīta.
+8. **Review lētāks par implementāciju.** Grok 4.6 izmaiņu pārbaudei pietiek ar `koda-parbauditajs` uz Sonnet, kas lasa tikai `git diff origin/main...HEAD` un skartos testus; Opus review tikai A klases PR (maksājumi, drošība, migrācijas).
+9. **Neatkārtot neveiksmes cilpā.** Ja pēc 2 mēģinājumiem tests joprojām krīt, aģents apstājas un ziņo cēloņa hipotēzi; Andris lemj par modeli vai pārplānošanu.
+10. **Īsa komandu izvade.** Testus palaid tikai skartajiem failiem un garu izvadi saīsini (`| tail -n 40`), nevis ielādē kontekstā pilnu `vitest`/`next build` izdruku.
