@@ -77,6 +77,7 @@ beforeEach(() => {
   blobs.set("admin-order-drafts/_meta/invoice-year-sequence.json", JSON.stringify({ year: 2026, seq: 42 }));
   blobs.set("admin-order-drafts/order_upsell/cs_test_a1B2c3.json", JSON.stringify({ parentSessionId: ORDER.sessionId }));
   blobs.set("admin-order-drafts/invoices/cs_test_a1B2c3.pdf", "%PDF-binary");
+  blobs.set("admin-order-drafts/admin-stripe-paid-index.json", JSON.stringify({ rows: [{ id: ORDER.sessionId }] }));
   blobs.set("b2b-partner-credits/partner_1.json", JSON.stringify({ balanceCents: 5000 }));
 });
 
@@ -101,6 +102,7 @@ describe("daily backup on Vercel (read-only FS)", () => {
     const orders = stored.snapshotPayload["order-drafts-blob"]!;
     expect(Object.keys(orders).sort()).toEqual([
       "_meta/invoice-year-sequence.json",
+      "admin-stripe-paid-index.json",
       "cs_test_a1B2c3.json",
       "manual_order_1700000000000_ab12.json",
       "order_upsell/cs_test_a1B2c3.json",
@@ -117,9 +119,36 @@ describe("daily backup on Vercel (read-only FS)", () => {
     expect(res.persisted).toBe(false);
     expect(puts).toEqual([]);
     expect(res.warnings.join("\n")).toContain("No durable backup was written");
-    expect(res.warnings.join("\n")).toContain("Order drafts in Blob are NOT in this snapshot");
     expect(errSpy).toHaveBeenCalled();
     errSpy.mockRestore();
+  });
+});
+
+describe("PRO pasūtījumi dienas backupā", () => {
+  it("pēc noklusējuma iekļauj PRO pasūtījumus (bez INCLUDE_ORDER_BLOB env)", async () => {
+    process.env.ADMIN_DRAFT_DAILY_BACKUP_TO_BLOB = "1";
+    delete process.env.ADMIN_DRAFT_DAILY_BACKUP_INCLUDE_ORDER_BLOB;
+    const res = await runDailyAdminDraftBackup();
+    const stored = JSON.parse(blobs.get(res.backupBlobPath!)!) as {
+      snapshotPayload: Record<string, Record<string, string>>;
+    };
+    const orders = stored.snapshotPayload["order-drafts-blob"]!;
+    expect(JSON.parse(orders[`${ORDER.sessionId}.json`]!)).toEqual(ORDER);
+    expect(orders["admin-stripe-paid-index.json"]).toBeDefined();
+    expect(orders["manual_order_1700000000000_ab12.json"]).toBeDefined();
+    expect(res.reports.find((r) => r.source === "order-drafts-blob")?.files).toBe(5);
+    expect(res.warnings.join("\n")).not.toContain("Order drafts in Blob are NOT in this snapshot");
+  });
+
+  it("izslēdz PRO pasūtījumus tikai ar INCLUDE_ORDER_BLOB=0 un brīdina", async () => {
+    process.env.ADMIN_DRAFT_DAILY_BACKUP_TO_BLOB = "1";
+    process.env.ADMIN_DRAFT_DAILY_BACKUP_INCLUDE_ORDER_BLOB = "0";
+    const res = await runDailyAdminDraftBackup();
+    const stored = JSON.parse(blobs.get(res.backupBlobPath!)!) as {
+      snapshotPayload: Record<string, Record<string, string>>;
+    };
+    expect(stored.snapshotPayload["order-drafts-blob"]).toBeUndefined();
+    expect(res.warnings.join("\n")).toContain("Order drafts in Blob are NOT in this snapshot");
   });
 });
 
