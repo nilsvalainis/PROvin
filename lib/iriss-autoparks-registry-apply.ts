@@ -11,6 +11,7 @@ import { randomUUID } from "node:crypto";
 import { autoparksOwner, type AutoparksCar, type AutoparksEvent, type AutoparksState } from "@/lib/iriss-autoparks";
 import {
   emptyAutoparksRegistry,
+  listTradeAcceptedCars,
   mergeRegistryValues,
   registryStatusInTrade,
   type RegistryFile,
@@ -118,9 +119,7 @@ export function applyRegistryFileToState(
   const guarded = new Set<string>();
   if (snapshot) {
     for (const owner of snapshotOwners) {
-      const accepted = state.cars.filter(
-        (c) => c.vin && !c.archivedAt && autoparksOwner(c) === owner && c.registry?.tradeActNo && !c.registry.removedAt,
-      );
+      const accepted = listTradeAcceptedCars(state.cars).filter((c) => c.vin && autoparksOwner(c) === owner);
       const listed = file.vehicles.some((v) => v.owner === owner || (!v.owner && owner === "IRISS"));
       // Skaita tikai pazudušos; tieši "pārdots" statuss reģistrā ir uzticams un slieksnī neietilpst.
       const missing = accepted.filter((c) => !byVin.has(c.vin)).length;

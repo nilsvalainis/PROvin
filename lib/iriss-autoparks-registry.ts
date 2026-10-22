@@ -171,12 +171,9 @@ export function normalizeRegistryVin(v: unknown): string {
   return typeof v === "string" ? v.replace(/[\s-]/g, "").toUpperCase().slice(0, 32) : "";
 }
 
-/** Reģistra statuss, kas nozīmē "vairs nav tirdzniecībā" (pārdots, izņemts, anulēts u.tml.). */
-const NOT_IN_TRADE_RE = /pārdot|pardot|izņem|iznem|anulē|anule|noņem|nonem|dzēst|dzest|atsauk|sold|removed/i;
-
-/** Vai reģistra statuss nozīmē, ka auto PAŠLAIK ir pieņemts tirdzniecībā. Tukšs statuss = jā (nav pretēja ziņa). */
+/** Vai reģistra statuss nozīmē, ka auto PAŠLAIK ir pieņemts tirdzniecībā (sk. `TRADE_REMOVED_STATUS`). Tukšs = jā. */
 export function registryStatusInTrade(status: string | undefined | null): boolean {
-  return !NOT_IN_TRADE_RE.test(status ?? "");
+  return !TRADE_REMOVED_STATUS.test(status ?? "");
 }
 
 /** Firmas, kuru auto ir reģistrā (tās pašas kā Autoparka `owner`). */
@@ -335,13 +332,14 @@ export function registryFieldSource(reg: AutoparksRegistry | undefined, key: Reg
  * Reģistra statuss, kas nozīmē, ka auto vairs nav tirdzniecībā (noņemts, izslēgts, pārdots, anulēts).
  * Tukšs statuss (vecs imports) vai "Tirdzniecībā" = pieņemts.
  */
-const TRADE_REMOVED_STATUS = /no[nņ]em|izsl[eē]g|p[aā]rdot|anul|dz[eē]st/i;
+const TRADE_REMOVED_STATUS = /no[nņ]em|izsl[eē]g|p[aā]rdot|anul|dz[eē]st|iz[nņ]em|atsauk|sold|removed/i;
 
 export type TradeAcceptedCarInput = Pick<AutoparksCar, "status" | "archivedAt" | "registry">;
 
 /**
  * VIENĪGAIS avots: vai auto pašlaik ir CSDD tirdzniecības reģistrā pieņemts tirdzniecībā.
- * Nosacījumi: ir tirdzniecības akta nr., Autoparkā nav "Pārdots", nav arhīvā, reģistra statuss nav noņemts/pārdots.
+ * Nosacījumi: ir tirdzniecības akta nr., Autoparkā nav "Pārdots", nav arhīvā, reģistra statuss nav noņemts/pārdots,
+ * un pēdējā pilnajā reģistra nolasījumā (Hetzner cron) auto nav atzīmēts kā izņemts (`registry.removedAt`).
  * Lieto pavadzīmju auto saraksts un ikdienas reģistra sinhronizācija - citur šo filtru nedublēt.
  */
 export function isTradeAcceptedCar(car: TradeAcceptedCarInput): boolean {
@@ -349,7 +347,8 @@ export function isTradeAcceptedCar(car: TradeAcceptedCarInput): boolean {
   if (car.status === "sold") return false;
   const reg = car.registry;
   if (!reg?.tradeActNo?.trim()) return false;
-  return !TRADE_REMOVED_STATUS.test(reg.status ?? "");
+  if (reg.removedAt) return false;
+  return registryStatusInTrade(reg.status);
 }
 
 /** Autoparka auto, kas pašlaik pieņemti tirdzniecībā (secība kā krātuvē). Sk. `isTradeAcceptedCar`. */

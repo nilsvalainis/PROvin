@@ -2,7 +2,7 @@
 /**
  * CSDD tirdzniecības reģistrs (ows.csdd.gov.lv:7775) -> PROVIN Autoparks. Bez AI. TIKAI LASĪŠANA.
  *
- * Palaiž run.sh (systemd taimeris 03:30 Europe/Riga, atkārto ik 20 min līdz 06:00), kad VPN lease ir iegūts.
+ * Palaiž run.sh (systemd taimeris 03:30 Europe/Riga, atkārto ik 20 min līdz 06:00). VPN lease caur vpn-ctl (9334).
  * 1) pieslēdzas ar to pašu CSDD loginu, ko /root/iriss-ttr (env), 2) atver pieņemto auto sarakstu katrai firmai (GET),
  * 3) nolasa tabulas, 4) uzbūvē JSON `iriss-csdd-tirdzn-registrs/v1` + snapshot, 5) POST uz PROVIN importētāju.
  *
@@ -13,7 +13,6 @@
  * Izejas kodi: 0 ok, 2 nolasīšanas kļūda, 3 PROVIN kļūda, 75 VPN nav pieejams / lease zaudēts (mēģināt vēlāk).
  */
 
-import { spawn } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { createRequire } from "node:module";
 import net from "node:net";
@@ -81,16 +80,30 @@ function tcpReachable(urlStr, timeoutMs = 5000) {
   });
 }
 
-/** VPN keep-alive caur kopīgo lease komandu. Ja lease zaudēts ("Man vajag VPN"), darbs tiek pārtraukts. */
+/**
+ * VPN: tas pats lease, ko lieto pavadzīmes (scripts/iriss-ttr/vpn-ctl.mjs, 127.0.0.1:9334). VPN loģiku nedublē.
+ * `POST /lease` ieslēdz VPN (ja nav) un pagarina lease; 409 `vpn_blocked_manual` = Nils lieto VPN ("Man vajag VPN")
+ * -> izlaižam un mēģinām pēc 20 min. Atbrīvošana = vpn-ctl idle autostop (atsevišķa release nav).
+ */
+const VPN_CTL_URL = (env.VPN_CTL_URL || "http://127.0.0.1:9334").replace(/\/$/, "");
+
+async function vpnLease() {
+  try {
+    const res = await fetch(`${VPN_CTL_URL}/lease`, { method: "POST", signal: AbortSignal.timeout(90000) });
+    const body = await res.json().catch(() => ({}));
+    if (res.status === 409) return { ok: false, reason: "vpn_blocked_manual" };
+    if (!res.ok) return { ok: false, reason: `vpn_ctl_${res.status}` };
+    return { ok: body.vpn === "up", reason: body.vpn === "up" ? "" : "vpn_down" };
+  } catch {
+    return { ok: false, reason: "vpn_ctl_unreachable" };
+  }
+}
+
+/** Keep-alive: ik 60 s pagarina lease; ja lease atteikts vai VPN atslēgts ("Man vajag VPN") - darbs tiek pārtraukts. */
 function startKeepAlive(onLost) {
-  const cmd = env.VPN_LEASE_CMD;
-  if (!cmd) return () => {};
-  const holder = env.VPN_LEASE_HOLDER || "csdd-registrs";
-  const t = setInterval(() => {
-    const p = spawn("/bin/sh", ["-c", `${cmd} keepalive ${holder}`], { stdio: "ignore" });
-    p.on("exit", (code) => {
-      if (code !== 0) onLost(code);
-    });
+  const t = setInterval(async () => {
+    const r = await vpnLease();
+    if (!r.ok) onLost(r.reason);
   }, Number(env.VPN_KEEPALIVE_MS || 60000));
   return () => clearInterval(t);
 }
@@ -168,14 +181,20 @@ async function postToProvin(file) {
 
 async function main() {
   mkdirSync(STATE_DIR, { recursive: true });
+  const lease = await vpnLease();
+  if (!lease.ok) {
+    log(`VPN nav pieejams (${lease.reason}) - mēģināsim vēlāk`);
+    writeLast({ ok: false, error: lease.reason, retry: true });
+    return EX_TEMPFAIL;
+  }
   if (!(await tcpReachable(BASE_URL))) {
     log("reģistrs nav sasniedzams (VPN?) - mēģināsim vēlāk");
     return EX_TEMPFAIL;
   }
   let lost = false;
-  const stopKeepAlive = startKeepAlive((code) => {
+  const stopKeepAlive = startKeepAlive((reason) => {
     lost = true;
-    log(`VPN lease zaudēts (kods ${code}) - pārtraucu`);
+    log(`VPN lease zaudēts (${reason}) - pārtraucu, nekas netiek sūtīts`);
   });
   const { chromium } = await loadPlaywright();
   const browser = await chromium.launch({ headless: true });

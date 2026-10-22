@@ -28,11 +28,13 @@ Testi: `npx vitest run lib/csdd-registrs-relay.test.ts` (repo saknē).
 
 ## VPN
 
-Nedublē VPN loģiku. `run.sh` lieto kopīgo lease komandu `VPN_LEASE_CMD` (pavadzīmju ātruma darbs):
-`acquire <holder> <ttl>` (0 = iegūts; cits = aizņemts, piem. "Man vajag VPN" -> izlaižam, nākamais mēģinājums pēc 20 min),
-`keepalive <holder>` ik 60 s (nav 0 = lease zaudēts -> darbs pārtraukts, nekas netiek sūtīts), `release <holder>` beigās.
-Ja `VPN_LEASE_CMD` vēl nav: neaizņemta kopīgā slēdzene `flock -n /run/lock/iriss-vpn.lock`.
-Pirms pieslēgšanās pārbauda, vai `ows.csdd.gov.lv:7775` ir sasniedzams; ja nē - kods 75, mēģina vēlāk.
+Nedublē VPN loģiku: lieto to pašu lease kā pavadzīmes - `iriss-vpn-ctl` (`scripts/iriss-ttr/vpn-ctl.mjs`, 127.0.0.1:9334,
+jāuzstāda ar `scripts/iriss-ttr/install-vpn-ctl.sh`, ja vēl nav).
+- Sākumā `POST /lease` (ieslēdz VPN, ja nav). 409 `vpn_blocked_manual` (Nils nospieda "Man vajag VPN" / lieto VPN) vai
+  vpn-ctl nav sasniedzams -> kods 75, nākamais mēģinājums pēc 20 min (līdz 05:50).
+- Keep-alive: ik 60 s `POST /lease`. Ja atteikts vai VPN atslēgts - darbs pārtraukts, uz PROVIN nekas netiek sūtīts.
+- Atbrīvošana: vpn-ctl idle autostop (`IRISS_VPN_IDLE_MIN`, nokl. 20 min). Pavadzīmju worker var lietot to pašu VPN vienlaikus.
+- Pirms pieslēgšanās pārbauda, vai `ows.csdd.gov.lv:7775` ir sasniedzams.
 
 ## Uzstādīšana (root, SSH uz 37.27.149.106)
 

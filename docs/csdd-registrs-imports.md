@@ -82,8 +82,9 @@ Tā pati shēma ar diviem neobligātiem laukiem (vecie faili bez tiem strādā k
 
 ## Pieņemtie tirdzniecībā - vienīgais avots
 
-`listAcceptedForTradeVehicles()` (`lib/iriss-autoparks-accepted.ts`): ir akta nr., nav `removedAt`, reģistra statuss nav "pārdots/izņemts", Autoparkā nav "Pārdots" un nav arhīvā.
-Endpoint: `GET /api/admin/iriss/autoparks/accepted-for-trade[?owner=IRISS|DZA]` (Pavadzīmes vai Loģistika; bez cenām). To pašu sarakstu lieto pavadzīmju auto izvēle.
+Filtrs: `listTradeAcceptedCars` / `isTradeAcceptedCar` (`lib/iriss-autoparks-registry.ts`, PR #493): ir akta nr., nav `removedAt`, reģistra statuss nav "pārdots/izņemts/noņemts", Autoparkā nav "Pārdots" un nav arhīvā. To lieto pavadzīmju auto saraksts (`waybillTradeCars`), imports (slieksnis) un endpoints.
+Endpoint: `GET /api/admin/iriss/autoparks/accepted-for-trade[?owner=IRISS|DZA]` (`listAcceptedForTradeVehicles`, Pavadzīmes vai Loģistika; drošie lauki bez cenām).
+Hetzner env: `IRISS_CSDD_REGISTRS_TOKEN` (Vercel) - nav `.env.example`, lai nebūtu kopīga faila ar atvērtu PR; sk. zemāk "Iestatījumi".
 
 ## Personas dati
 

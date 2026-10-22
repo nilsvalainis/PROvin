@@ -2,10 +2,8 @@
 # CSDD tirdzniecības reģistra ikdienas nolasījums (bez AI, tikai lasīšana). Palaiž systemd taimeris
 # 03:30 Europe/Riga un ik 20 min līdz 05:50; pēc veiksmīga gājiena tajā dienā vairs nedarbojas.
 #
-# VPN: nedublē VPN loģiku. Ja ir VPN_LEASE_CMD (kopīgā lease komanda no pavadzīmju ātruma darba),
-#   `$VPN_LEASE_CMD acquire <holder> <ttl_sek>` -> 0 = iegūts, cits = aizņemts (piem. "Man vajag VPN") -> izlaižam;
-#   `$VPN_LEASE_CMD keepalive <holder>` (read-registry.mjs ik 60 s), `$VPN_LEASE_CMD release <holder>` beigās.
-# Ja VPN_LEASE_CMD nav: tikai neaizņemta kopīgā slēdzene `flock -n $IRISS_VPN_LOCK` (citi VPN lietotāji to pašu).
+# VPN: read-registry.mjs lieto to pašu lease kā pavadzīmes (scripts/iriss-ttr/vpn-ctl.mjs, POST 127.0.0.1:9334/lease).
+# Nils lieto VPN ("Man vajag VPN", 409) vai VPN nav -> kods 75, nākamais mēģinājums pēc 20 min.
 set -uo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -14,8 +12,6 @@ ENV_FILE="${ENV_FILE:-/etc/csdd-registrs.env}"
 [[ -f "$ENV_FILE" ]] && set -a && . "$ENV_FILE" && set +a
 
 STATE_DIR="${REGISTRS_STATE_DIR:-/var/lib/csdd-registrs}"
-HOLDER="${VPN_LEASE_HOLDER:-csdd-registrs}"
-LEASE_TTL="${VPN_LEASE_TTL_SEC:-1200}"
 DEADLINE="${REGISTRS_DEADLINE_HHMM:-0600}"
 mkdir -p "$STATE_DIR"
 chmod 700 "$STATE_DIR"
@@ -35,33 +31,7 @@ if [[ "${1:-}" != "--force" && "$now_hhmm" > "$DEADLINE" ]]; then
   exit 0
 fi
 
-released=0
-release() {
-  [[ $released -eq 1 ]] && return
-  released=1
-  if [[ -n "${VPN_LEASE_CMD:-}" ]]; then
-    /bin/sh -c "$VPN_LEASE_CMD release $HOLDER" >/dev/null 2>&1 || true
-  fi
-}
-trap release EXIT
-
-if [[ -n "${VPN_LEASE_CMD:-}" ]]; then
-  if ! /bin/sh -c "$VPN_LEASE_CMD acquire $HOLDER $LEASE_TTL"; then
-    log "VPN aizņemts - mēģināsim pēc 20 min"
-    released=1
-    exit 0
-  fi
-  export VPN_LEASE_CMD VPN_LEASE_HOLDER="$HOLDER"
-  RUN=(node "$APP_DIR/read-registry.mjs")
-else
-  LOCK="${IRISS_VPN_LOCK:-/run/lock/iriss-vpn.lock}"
-  exec 9>"$LOCK"
-  if ! flock -n 9; then
-    log "VPN slēdzene aizņemta - mēģināsim pēc 20 min"
-    exit 0
-  fi
-  RUN=(node "$APP_DIR/read-registry.mjs")
-fi
+RUN=(node "$APP_DIR/read-registry.mjs")
 
 ARGS=()
 [[ "${1:-}" == "--dry-run" || "${2:-}" == "--dry-run" ]] && ARGS+=(--dry-run)
