@@ -15,7 +15,9 @@ describe("IRISS desktop home and sidebar", () => {
   it("keeps the menu list for phones only", () => {
     const menu = read("components/admin/IrissMobileMenuHome.tsx");
     expect(menu).toContain("router.replace(href)");
-    expect(menu).toContain('className="px-4 md:hidden"');
+    // Režģis (MenuGrid) tikai telefonā.
+    expect(menu).toContain('className="md:hidden"');
+    expect(menu).toContain("<MenuGrid");
     expect(menu).not.toContain("Izvēlies sadaļu sānjoslā vai zemāk.");
   });
 

@@ -55,3 +55,6 @@ social-banner/iriss-thumbs/out/
 next-env.d.ts
 *.tsbuildinfo
 .env*
+
+# Playwright MCP ekrānuzņēmumi un žurnāli (Tailwind tos citādi skenē un dev serveris pārlādējas bez gala)
+.playwright-mcp/

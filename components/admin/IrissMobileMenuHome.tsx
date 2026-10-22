@@ -1,18 +1,19 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { AdminMobileCountBadge, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
-import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
+import { useEffect, useMemo, useState } from "react";
+import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
+import { MenuGrid } from "@/components/admin/mobile/MenuGrid";
+import { renderIrissWidget } from "@/components/admin/mobile/MenuWidgetContent";
+import { IRISS_DEFAULT_LAYOUT_IDS, irissMenuCatalog } from "@/lib/admin-menu-catalog";
 import { IrissWaybillGauges } from "@/components/admin/IrissWaybillGauges";
 import { useIrissWaybillPlateStrip } from "@/components/admin/useIrissWaybillPlateStrip";
 import {
   cheapIrissMenuCount,
   IRISS_DESKTOP_MEDIA,
   irissDesktopHomeHref,
-  irissMobileMenuGroups,
   irissMobileMenuItemsFor,
+  type IrissMobileMenuItem,
 } from "@/lib/iriss-mobile-menu";
 import type { IrissSection } from "@/lib/staff-roles";
 
@@ -64,7 +65,7 @@ export function IrissMobileMenuHome({
   isAdmin: boolean;
 }) {
   const items = irissMobileMenuItemsFor(sections, isAdmin);
-  const groups = irissMobileMenuGroups(items);
+  const catalog = useMemo(() => irissMenuCatalog(sections, isAdmin), [sections, isAdmin]);
   useDesktopRedirect(irissDesktopHomeHref(items));
   const canReadWaybills = isAdmin || sections.includes("pavadzimes");
   const badges = useCheapIrissBadgeCounts(isAdmin);
@@ -77,30 +78,29 @@ export function IrissMobileMenuHome({
 
   return (
     <div className="iriss-mobile-menu-home pb-4">
-      <AdminMobileTopBar title="IRISS" subtitle="Izvēlies sadaļu. Dati ielādējas tikai pēc pieskāriena." />
-      <div className="px-4 md:hidden">
-        {canReadWaybills ? <IrissWaybillGauges /> : null}
-        <div className="flex flex-col gap-3 pt-3">
-          {groups.map((group) => (
-            <div key={group[0]!.id} className="overflow-hidden rounded-[14px] bg-[var(--surface,#fff)] shadow-[var(--am-card-shadow)]">
-              {group.map((item) => {
-                const n = cheapIrissMenuCount(item, counts);
-                return (
-                  <Link
-                    key={item.id}
-                    href={item.href}
-                    className="admin-nav-link flex min-h-11 items-center gap-3 border-b border-[var(--line,#e5e5ea)] px-4 last:border-b-0"
-                  >
-                    <AdminMobileIcon name={item.icon} className="h-5 w-5 text-[var(--label-secondary)]" />
-                    <span className="min-w-0 flex-1 truncate text-[16px] font-semibold text-[var(--label)]">{item.label}</span>
-                    {n > 0 ? <AdminMobileCountBadge n={n} /> : null}
-                    <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--am-ink3)]" />
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+      <AdminMobileTopBar title="IRISS" />
+      <div className="md:hidden">
+        {canReadWaybills ? (
+          <div className="px-4">
+            <IrissWaybillGauges />
+          </div>
+        ) : null}
+        <MenuGrid
+          workspace="iriss"
+          catalog={catalog}
+          defaultIds={IRISS_DEFAULT_LAYOUT_IDS}
+          badgeOf={(item) => (item.badge ? cheapIrissMenuCount({ badge: item.badge } as IrissMobileMenuItem, counts) : 0)}
+          renderWidget={(item, size) =>
+            renderIrissWidget(item, size, {
+              irissLogistics: badges.irissLogistics,
+              irissMatches: badges.irissMatches,
+              waybills: plates.items,
+              waybillsLoaded: plates.loaded,
+              pro: null,
+              openCount: 0,
+            })
+          }
+        />
       </div>
       {items.length === 0 ? (
         <p className="hidden px-6 py-8 text-[14px] text-[var(--label-secondary,#5e636e)] md:block">Nav pieejamu sadaļu.</p>
