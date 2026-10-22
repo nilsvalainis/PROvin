@@ -26,6 +26,7 @@ import {
 import { isIrissListingsAutomaticSlot, isIrissListingsContinuationWindow } from "@/lib/iriss-listings-schedule";
 import { cleanHttpUrl, detectIrissListingPlatform, normalizeAllowedListingSourceUrl } from "@/lib/iriss-listings-platform";
 import { enrichListingSearchUrl } from "@/lib/iriss-listings-search-filter";
+import { primeListingSearchCostsFromStore } from "@/lib/iriss-listings-search-costs-store";
 import {
   buildIrissListingSources,
   groupIrissListingSources,
@@ -439,6 +440,8 @@ export async function runIrissListingsDailySync(
   /** SCAN ieraksti = papildu avoti ar `scan:` id; LIST tos rāda atsevišķā „SCAN” skatā. */
   const rows = [...orderRows, ...irissScanSourceRows(scanRows)];
   const activeOrderIds = new Set(rows.filter((r) => isIrissPasutijumsWorkingStatus(r.listStatus ?? "active")).map((r) => r.id));
+  /** Saišu cenas robežas no LIST izmaksu iestatījumiem (servera kopija), ne noklusējumiem. */
+  await primeListingSearchCostsFromStore();
   const allSources = buildIrissListingSources(rows);
   const maxSources = envInt("IRISS_LISTINGS_MAX_SOURCES_PER_RUN", 200, 1, 2000);
   const sources = allSources.slice(0, maxSources);
