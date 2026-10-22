@@ -29,8 +29,11 @@ export function evaluateVinScanCanary(runs: readonly VinScanCanaryRun[], sourceI
     }
     for (const id of sourceIds) {
       const status = run.statuses[id] ?? "missing";
-      const mustFind = id === "vin_decode" || (id === "stat_vin" && run.statVinRecord);
-      if (BROKEN.has(status) || (mustFind && status !== "found")) out.push({ vin: run.vin, sourceId: id, status });
+      /** WMI dekodēšana vienmēr ir lokāla - tai jāatrod. */
+      const decodeMissed = id === "vin_decode" && status !== "found";
+      /** Zināmais stat.vin ieraksts pazudis. `browser_only` nav kļūme: serveris stat.vin nelasa (403), dati nāk no pārlūka. */
+      const recordLost = id === "stat_vin" && run.statVinRecord && status === "none";
+      if (BROKEN.has(status) || decodeMissed || recordLost) out.push({ vin: run.vin, sourceId: id, status });
     }
   }
   return out;

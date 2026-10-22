@@ -21,6 +21,11 @@ describe("VIN SCAN kanārijputna novērtējums", () => {
     expect(evaluateVinScanCanary(healthy, IDS)).toEqual([]);
   });
 
+  it("stat.vin browser_only serverī nav kļūme (dati nāk no pārlūka)", () => {
+    const runs = healthy.map((r) => ({ ...r, statuses: { vin_decode: "found", stat_vin: "browser_only" } }));
+    expect(evaluateVinScanCanary(runs, IDS)).toEqual([]);
+  });
+
   it("krīt, ja stat.vin vairs neatrod zināmo ierakstu vai avots atgriež kļūdu", () => {
     const runs: VinScanCanaryRun[] = [
       { ...healthy[0]!, statuses: { vin_decode: "found", stat_vin: "none" } },
