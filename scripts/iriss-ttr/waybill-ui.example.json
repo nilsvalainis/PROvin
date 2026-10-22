@@ -1,0 +1,32 @@
+{
+  "_piezime": "Kopē uz /root/iriss-ttr/waybill-ui.json un aizpildi pēc main.js/probe.js (selektori, adreses). Paroles šeit NELIEC: tās nāk no /root/iriss-ttr/.env (userVar/passVar ir tikai mainīgo nosaukumi).",
+  "startUrl": "https://TTR-ADRESE-NO-MAIN-JS/",
+  "browserUrl": "",
+  "ignoreTls": false,
+  "timeoutMs": 30000,
+  "userVar": "CSDD_USER",
+  "passVar": "CSDD_PASS",
+  "waybillNoRe": "",
+  "selectors": {
+    "user": "input[type=text]",
+    "pass": "input[type=password]",
+    "loginButton": "button[type=submit], input[type=submit]",
+    "company": { "1": "text:ĪRISS", "2": "text:DZINTARZEME" },
+    "newWaybill": "text:^\\s*Jauna pavadzīme\\s*$",
+    "tradeActList": "",
+    "tradeActRow": "tr:has-text('{vin}')",
+    "tradeActIssue": "text:Noformēt pavadzīmi",
+    "fields": {
+      "plate": "label:tranzīta numurs|numura zīme",
+      "brandModel": "label:marka",
+      "vin": "label:VIN|identifikācijas",
+      "routeFrom": "label:no kurienes|sākuma",
+      "routeTo": "label:uz kurieni|galamērķ",
+      "validFrom": "label:derīga no|sākuma datums",
+      "validUntil": "label:derīga līdz|beigu datums"
+    },
+    "save": "button:has-text('Saglabāt'), input[value='Saglabāt']",
+    "waybillNo": "",
+    "pdf": "text:Drukāt|PDF"
+  }
+}
