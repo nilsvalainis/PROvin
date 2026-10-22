@@ -25,7 +25,7 @@ ADMIN_DRAFT_DAILY_BACKUP_TO_BLOB=1
 ADMIN_DRAFT_DAILY_BACKUP_INCLUDE_ORDER_BLOB=1
 ```
 
-Bez tiem cron atbild `persisted: false` un raksta `[cron/admin-drafts-daily-backup] not_persisted` runtime logā. Noklusējumi ir `0` (mazāk Blob operāciju bezmaksas plānā).
+Bez `ADMIN_DRAFT_DAILY_BACKUP_TO_BLOB=1` cron atbild `persisted: false` un raksta `[cron/admin-drafts-daily-backup] not_persisted` runtime logā. PRO pasūtījumi (`ADMIN_DRAFT_DAILY_BACKUP_INCLUDE_ORDER_BLOB`) kopš 22.10.2026 pēc noklusējuma ir iekļauti; izslēgt tikai ar `=0`. Cron pieņem `CRON_SECRET` (Vercel Cron) vai `ADMIN_DRAFT_BACKUP_CRON_SECRET`.
 
 Snapshot satur **tikai JSON** (pasūtījumi, indeksi, rēķinu skaitītājs, upsell, partneru kredīti, IRISS). Nav: rēķinu PDF, foto, avotu PDF.
 
