@@ -5,7 +5,7 @@
 
 import { isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
 import type { WaybillRequest } from "@/lib/iriss-waybill-requests";
-import { isAllowlistedWaybillPlate } from "@/lib/iriss-waybill-plates";
+import { IRISS_DEALER_PLATES, isAllowlistedWaybillPlate } from "@/lib/iriss-waybill-plates";
 
 export const AIVARS_ACTION_CREATE_WAYBILL = "create_waybill" as const;
 export type AivarsActionType = typeof AIVARS_ACTION_CREATE_WAYBILL;
@@ -21,6 +21,7 @@ export const DEFAULT_WAYBILL_ROUTE_TO = "Tukuma CSDD";
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const BRAND_RE = /^[\p{L}\p{N} ./\-+]+$/u;
+const ROUTE_RE = /^[\p{L}\p{N} .,/\-()]+$/u;
 
 export type CreateWaybillInput = {
   vin: string;
@@ -153,6 +154,60 @@ function field(body: Record<string, unknown>, ...keys: string[]): unknown {
   return undefined;
 }
 
+export type WaybillCommentHints = {
+  /** Allowlistes numurs (piem. "B193-7"), ja komentārā minēts. */
+  plate: string;
+  /** Marka, modelis no komentāra (tikai drošās zīmes). */
+  brandModel: string;
+};
+
+/**
+ * Komentārs "193 uz BMW 330" -> numurs B193-7 un auto "BMW 330".
+ * Tikai datu nolasīšana (numurs no allowlistes, marka caur BRAND_RE); komentārs paliek neuzticams teksts.
+ */
+export function waybillHintsFromComment(raw: unknown): WaybillCommentHints {
+  const text = sanitizeNoteUntrusted(raw);
+  if (!text) return { plate: "", brandModel: "" };
+  let plate = "";
+  let rest = text;
+  for (const allowed of IRISS_DEALER_PLATES) {
+    const digits = allowed.replace(/\D/g, "").slice(0, 3);
+    const re = new RegExp(`(^|[^\\p{L}\\p{N}])B?\\s?${digits}(?:\\s?-\\s?7)?(?![\\p{L}\\p{N}])`, "iu");
+    const m = re.exec(rest);
+    if (m) {
+      plate = allowed;
+      rest = `${rest.slice(0, m.index)}${m[1]} ${rest.slice(m.index + m[0].length)}`;
+      break;
+    }
+  }
+  const segment = (rest.split(/[,;:(\n]/)[0] ?? "")
+    .replace(/(?<![\p{L}\p{N}])\d{1,4}\s?(?:stundām|stundas|st|h)(?![\p{L}\p{N}])/giu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^(?:uz|ar|priekš|for|pavadzīme|pavadzīmi)\s+/iu, "")
+    .replace(/\s+(?:uz|ar)$/iu, "")
+    .trim();
+  // Marku ņem tikai formā "<numurs> uz <auto>"; citādi komentārs paliek tikai Aivaram kā dati.
+  const brandModel =
+    plate && segment && segment.length <= 60 && /\p{L}/u.test(segment) && BRAND_RE.test(segment) && !/^(?:uz|ar)$/iu.test(segment)
+      ? segment
+      : "";
+  return { plate, brandModel };
+}
+
+export type WaybillRouteAddressResult = { ok: true; value: string } | { ok: false; error: string };
+
+/** "Cits" maršruta punkts: adrese kā dati (burti, cipari, . , - / ()). Tukšs = noklusējums. */
+export function parseWaybillRouteAddress(raw: unknown, fallback: string): WaybillRouteAddressResult {
+  if (raw == null) return { ok: true, value: fallback };
+  if (typeof raw !== "string") return { ok: false, error: "Adrese nav derīga." };
+  const s = stripControls(raw).replace(/\s+/g, " ").trim();
+  if (!s) return { ok: true, value: fallback };
+  if (s.length > WAYBILL_ROUTE_MAX) return { ok: false, error: `Adrese: līdz ${WAYBILL_ROUTE_MAX} zīmēm.` };
+  if (!ROUTE_RE.test(s) || !/\p{L}/u.test(s)) return { ok: false, error: "Adresē tikai burti, cipari un . , - /" };
+  return { ok: true, value: s };
+}
+
 export function parseCreateWaybillInput(raw: unknown, now = new Date()): CreateWaybillParseResult {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return { ok: false, error: "Nederīgs pieprasījums." };
@@ -161,13 +216,27 @@ export function parseCreateWaybillInput(raw: unknown, now = new Date()): CreateW
   const vinRaw = typeof body.vin === "string" ? normalizeVin(body.vin) : "";
   const plateRaw = typeof body.plate === "string" ? normalizePlateNumber(body.plate) : "";
   const vin = vinRaw && isValidVin(vinRaw) ? vinRaw : "";
-  const plate = plateRaw && isWaybillPlate(plateRaw) ? plateRaw : "";
+  const noteUntrusted = sanitizeNoteUntrusted(field(body, "comment_untrusted", "note_untrusted"));
+  const hints = waybillHintsFromComment(noteUntrusted);
+  const plateIn = plateRaw && isWaybillPlate(plateRaw) ? plateRaw : "";
   if (vinRaw && !vin) return { ok: false, error: "VIN nav derīgs (17 zīmes)." };
-  if (plateRaw && !plate) return { ok: false, error: "Izvēlies tirdzniecības numuru." };
+  if (plateRaw && !plateIn) return { ok: false, error: "Izvēlies tirdzniecības numuru." };
+  const plate = plateIn || (hints.plate ? normalizePlateNumber(hints.plate) : "");
   if (!plate) return { ok: false, error: "Izvēlies tirdzniecības numuru." };
 
-  const brandModel = parseBrandModel(body.brandModel);
-  if (!brandModel) return { ok: false, error: "Norādi marku un modeli." };
+  // Tikai komentārs ("193 uz BMW 330") arī der: numuru un auto nolasa no komentāra kā datus.
+  const brandModel = parseBrandModel(body.brandModel) || hints.brandModel;
+  if (!brandModel) {
+    return {
+      ok: false,
+      error: noteUntrusted ? 'Komentārā neatradu auto. Raksti, piem., "193 uz BMW 330".' : "Izvēlies auto vai uzraksti komentāru.",
+    };
+  }
+
+  const routeFrom = parseWaybillRouteAddress(body.routeFromAddress, DEFAULT_WAYBILL_ROUTE_FROM);
+  if (!routeFrom.ok) return routeFrom;
+  const routeTo = parseWaybillRouteAddress(body.routeToAddress, DEFAULT_WAYBILL_ROUTE_TO);
+  if (!routeTo.ok) return routeTo;
 
   const validHours = parseValidHours(body.validHours);
   if (validHours == null || validHours < 1 || validHours > WAYBILL_VALID_MAX_HOURS) {
@@ -176,7 +245,6 @@ export function parseCreateWaybillInput(raw: unknown, now = new Date()): CreateW
 
   const { validFrom, validUntil } = waybillValidityWindow(validHours, now);
   const validDays = Math.max(1, Math.min(WAYBILL_VALID_MAX_DAYS, Math.ceil(validHours / 24)));
-  const noteUntrusted = sanitizeNoteUntrusted(field(body, "comment_untrusted", "note_untrusted"));
 
   return {
     ok: true,
@@ -185,8 +253,8 @@ export function parseCreateWaybillInput(raw: unknown, now = new Date()): CreateW
       plate,
       brandModel,
       orderId: parseOrderId(body.orderId),
-      routeFrom: DEFAULT_WAYBILL_ROUTE_FROM,
-      routeTo: DEFAULT_WAYBILL_ROUTE_TO,
+      routeFrom: routeFrom.value,
+      routeTo: routeTo.value,
       validFrom,
       validUntil,
       validDays,
