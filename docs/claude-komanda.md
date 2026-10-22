@@ -25,6 +25,7 @@
 | `dizaineris` | Dizaineris | UI/UX, maketi |
 | `google` | Google | Analytics, Search Console, SEO |
 | `socialie-tikli` | Sociālie tīkli | Ieraksti, baneri |
+| `marketinga-specialists` | (Claude puse) Mārketinga speciālists | Dīlera mārketings, cenu lapas, reklāmas, CTA |
 | `ekii-specis` | EKII specis | EKII (uzdevums jāpapildina) |
 | `laba-roka` | Labā Roka | Personīgais asistents |
 | `koda-parbauditajs` | Cursor palīgs | Koda pārbaude pirms PR |
