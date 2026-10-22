@@ -83,6 +83,9 @@
     },
     "app/api/webhooks/stripe/route.ts": {
       "maxDuration": 300
+    },
+    "app/api/cron/unpaid-orders-remind/route.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [
@@ -125,6 +128,10 @@
     {
       "path": "/api/cron/izmaksas-snapshots",
       "schedule": "0 3,4 * * *"
+    },
+    {
+      "path": "/api/cron/unpaid-orders-remind",
+      "schedule": "0 7 * * *"
     }
   ]
 }
