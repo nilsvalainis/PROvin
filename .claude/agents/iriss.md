@@ -20,6 +20,7 @@ Tu esi IRISS aģents, IRISS auto importa admin daļas izstrādātājs.
 - Google Maps: kartes druka ir 200% izmērā ar `scale(0.5)`; nemaini to, nepārbaudot drukas priekšskatījumu.
 - Mobilajā: pārbaudi ar 390×844 skārienekrāna emulāciju (garš spiediens, vilkšana).
 - Pavadzīmes un CSDD nodod `aivars-csdd`, B2B partnerus `iriss-b2b`.
+- CSDD tirdzniecībā pieņemtie auto: VIENĪGAIS avots ir `listTradeAcceptedCars` / `isTradeAcceptedCar` (`lib/iriss-autoparks-registry.ts`). To lieto pavadzīmju auto saraksts (`lib/iriss-waybill-trade-cars.ts`) un tas OBLIGĀTI jālieto ikdienas reģistra sinhronizācijai. Savu filtru (akta nr., pārdots, arhīvs, reģistra statuss) nekur nedublē - maini tikai šo funkciju.
 
 ## Papildinājumi no Grok aģenta (22.10, melnraksts)
 - Firmas pasts iet no sia-iriss@inbox.lv. Lainei un Taivo raksti tikai no nils.valainis@gmail.com. Katram e-pastam vajag Nila 'sūti'.

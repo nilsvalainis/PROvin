@@ -1,10 +1,12 @@
 /**
  * Pavadzīmes forma (telefons): auto saraksts.
- * Tikai CSDD tirdzniecības reģistrā pieņemtie auto (ir akta nr.), kas nav pārdoti un nav arhīvā.
+ * Tikai CSDD tirdzniecības reģistrā pieņemtie auto - avots ir `listTradeAcceptedCars`
+ * (lib/iriss-autoparks-registry.ts), to pašu lieto ikdienas reģistra sinhronizācija.
  * Atdod tikai drošus laukus - bez cenām un failiem.
  */
 
 import { AUTOPARKS_STATUS_SHORT_LV, type AutoparksCar } from "@/lib/iriss-autoparks";
+import { listTradeAcceptedCars } from "@/lib/iriss-autoparks-registry";
 
 export type WaybillTradeCar = {
   id: string;
@@ -22,16 +24,9 @@ function carBrandModel(car: Pick<AutoparksCar, "make" | "model" | "registry">): 
   return (car.registry?.makeModel ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
 }
 
-export function isWaybillTradeCar(car: Pick<AutoparksCar, "status" | "archivedAt" | "registry">): boolean {
-  if (car.archivedAt) return false;
-  if (car.status === "sold") return false;
-  return Boolean(car.registry?.tradeActNo?.trim());
-}
-
 export function waybillTradeCars(cars: ReadonlyArray<AutoparksCar>): WaybillTradeCar[] {
   const out: WaybillTradeCar[] = [];
-  for (const car of cars) {
-    if (!isWaybillTradeCar(car)) continue;
+  for (const car of listTradeAcceptedCars(cars)) {
     const brandModel = carBrandModel(car);
     const vin = (car.vin ?? "").trim().toUpperCase();
     if (!brandModel && !vin) continue;
