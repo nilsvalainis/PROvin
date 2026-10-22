@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowLeft, FileDown, Loader2, Paperclip, Phone, Plus, Save, Trash2, X } from "lucide-react";
+import { AdminSaveButton, useSaveMessageState } from "@/components/admin/AdminSaveButton";
+import { ArrowLeft, FileDown, Loader2, Paperclip, Phone, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -533,6 +534,7 @@ export function IrissPasutijumsEditor({
   const router = useRouter();
   const [rec, setRec] = useState<IrissPasutijumsRecord>(() => withAutoEcarstradeLinks(initialRecord));
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const saveFailed = Boolean(saveMsg && /neizdev|kļūd/i.test(saveMsg));
   const [busy, setBusy] = useState(false);
   const [offerOpen, setOfferOpen] = useState(false);
   const [offerAutoFields, setOfferAutoFields] = useState<ReadonlySet<string>>(() => new Set());
@@ -1490,6 +1492,9 @@ export function IrissPasutijumsEditor({
     [forceNoClientPdf, generateOfferPdfBlob],
   );
 
+  // Vienotā poga: pēc veiksmīga saglabājuma ~2 s zaļš ķeksis, kļūdai sarkans.
+  const pageSaveState = useSaveMessageState(saveMsg, busy || orderPdfBusy);
+  const offerSaveState = useSaveMessageState(saveMsg, offerBusy);
   const persistedOfferRecord = useMemo(() => rec.offers.find((o) => o.id === offerDraft.id) ?? null, [rec.offers, offerDraft.id]);
   const offerPersistedInRecord = Boolean(persistedOfferRecord);
   const offerShareWhatsAppEnabled = Boolean(normalizedPhone);
@@ -1715,17 +1720,11 @@ export function IrissPasutijumsEditor({
               </button>
             </div>
             <div className="hidden shrink-0 flex-nowrap items-center justify-end gap-1 sm:flex-wrap sm:gap-2 md:flex">
-              <button
-                type="button"
-                disabled={busy || orderPdfBusy}
-                title="Saglabāt"
-                aria-label={busy || orderPdfBusy ? "Saglabā" : "Saglabāt"}
-                onClick={saveCurrentPage}
-                className={`${toolbarBtnBase} border border-[var(--color-provin-accent)] bg-transparent text-[var(--color-provin-accent)] shadow-sm hover:bg-[var(--color-provin-accent)]/10 sm:hover:bg-[var(--color-provin-accent)]/10`}
-              >
-                <Save className="h-6 w-6 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
-                <span className="hidden text-[13px] font-semibold sm:inline">{busy || orderPdfBusy ? "Saglabā…" : "Saglabāt"}</span>
-              </button>
+              <AdminSaveButton
+                onSave={saveCurrentPage}
+                state={pageSaveState}
+                shortcut
+              />
               <button
                 type="button"
                 disabled={orderPdfBusy}
@@ -1740,8 +1739,8 @@ export function IrissPasutijumsEditor({
             </div>
           </div>
         </div>
-        {saveMsg ? (
-          <p className="mt-2 text-[12px] font-medium text-[var(--color-provin-muted)]" role="status">
+        {saveMsg && saveMsg !== "Saglabāts." ? (
+          <p className={`mt-2 text-[12px] font-medium ${saveFailed ? "text-[#c81e1e]" : "text-[var(--color-provin-muted)]"}`} role="status">
             {saveMsg}
           </p>
         ) : null}
@@ -2114,14 +2113,11 @@ export function IrissPasutijumsEditor({
               <Plus className="h-4 w-4" aria-hidden />
               Izveidot piedāvājumu
             </button>
-            <button
-              type="button"
-              disabled={busy || orderPdfBusy}
-              onClick={saveCurrentPage}
-              className="inline-flex min-h-[44px] w-full shrink-0 items-center justify-center rounded-full border border-[var(--color-provin-accent)] bg-transparent px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent)]/8 disabled:opacity-50 sm:w-auto"
-            >
-              {busy || orderPdfBusy ? "Saglabā…" : "Saglabāt"}
-            </button>
+            <AdminSaveButton
+              onSave={saveCurrentPage}
+              state={pageSaveState}
+              className="min-h-[44px] w-full sm:w-auto"
+            />
             <button
               type="button"
               disabled={busy || deleteBusy}
@@ -2154,14 +2150,11 @@ export function IrissPasutijumsEditor({
         >
           Piedāvājums
         </button>
-        <button
-          type="button"
-          disabled={busy || orderPdfBusy}
-          onClick={saveCurrentPage}
-          className="flex h-[50px] flex-1 items-center justify-center rounded-full bg-[var(--color-provin-accent)] text-[15px] font-semibold text-white"
-        >
-          {busy || orderPdfBusy ? "Saglabā…" : "Saglabāt"}
-        </button>
+        <AdminSaveButton
+          onSave={saveCurrentPage}
+          state={pageSaveState}
+          className="!h-[50px] flex-1 text-[15px]"
+        />
       </div>
       </>
       ) : (
@@ -2646,14 +2639,11 @@ export function IrissPasutijumsEditor({
                       ) : null}
                     </div>
                   ) : null}
-                  <button
-                    type="button"
-                    disabled={offerBusy || !!offerFilePrepare || offerPdfBusy || offerWhatsappBusy}
-                    onClick={() => void persistOffer("save")}
-                    className={offerDialogMainBtnClass}
-                  >
-                    {offerBusy ? "Saglabā..." : "Saglabāt"}
-                  </button>
+                  <AdminSaveButton
+                    onSave={() => void persistOffer("save")}
+                    state={offerSaveState}
+                    disabled={!!offerFilePrepare || offerPdfBusy || offerWhatsappBusy}
+                  />
                 </div>
               </div>
               {offerPdfNotice ? (

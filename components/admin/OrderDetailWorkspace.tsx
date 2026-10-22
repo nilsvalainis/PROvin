@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminSaveButton } from "@/components/admin/AdminSaveButton";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { openGeneratedHtmlDocument } from "@/lib/admin-open-window";
@@ -4982,43 +4983,26 @@ export function OrderDetailWorkspace({
           >
             <MessageSquare className="h-3.5 w-3.5" aria-hidden />
           </button>
-          <button
-            type="button"
-            disabled={!workspaceHydrated || workspaceSaveBusy}
-            className={`inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-[10px] font-semibold shadow-sm transition disabled:opacity-50 max-md:hidden ${
+          <AdminSaveButton
+            size="sm"
+            shortcut
+            className="max-md:hidden"
+            disabled={!workspaceHydrated}
+            state={
               workspaceSaveBusy
-                ? "border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-provin-muted)]"
-                : workspaceAutosaveStatus === "error"
-                  ? "border-amber-400/80 bg-amber-50 text-amber-950 hover:bg-amber-100 dark:border-amber-600/50 dark:bg-amber-950/40 dark:text-amber-100"
-                  : workspaceSaveFlash || workspaceAutosaveStatus === "saved"
-                    ? orderDraftPersistenceEnabled && !workspaceSaveServerOk
-                      ? "border-amber-400/80 bg-amber-50 text-amber-950 hover:bg-amber-100 dark:border-amber-600/50 dark:bg-amber-950/40 dark:text-amber-100"
-                      : "provin-save-saved border-[#1d1d1f] bg-[var(--admin-surface-elevated)] text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:border-zinc-300 dark:hover:bg-white/[0.06]"
-                    : "border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
-            }`}
-            title="Saglabāt avotu datus (papildus automātiskajam saglabājumam) - lokāli un serverī"
-            aria-label={
-              workspaceSaveBusy
-                ? "Saglabā"
-                : workspaceAutosaveStatus === "error"
-                  ? WORKSPACE_SAVE_FAILED_LABEL
-                  : workspaceSaveFlash || workspaceAutosaveStatus === "saved"
-                    ? orderDraftPersistenceEnabled && !workspaceSaveServerOk
-                      ? WORKSPACE_SAVE_FAILED_LABEL
-                      : "Saglabāt. Saglabāts"
-                    : "Saglabāt avotu datus"
+                ? "saving"
+                : workspaceAutosaveStatus === "error" ||
+                    (workspaceSaveFlash && orderDraftPersistenceEnabled && !workspaceSaveServerOk)
+                  ? "error"
+                  : workspaceSaveFlash
+                    ? "saved"
+                    : "idle"
             }
-            onClick={() => {
+            onSave={() => {
               setWorkspaceSaveBusy(true);
               void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
             }}
-          >
-            {workspaceSaveBusy
-              ? "Saglabā…"
-              : workspaceAutosaveStatus === "error"
-                ? WORKSPACE_SAVE_FAILED_LABEL
-                : "Saglabāt"}
-          </button>
+          />
           {workspaceAutosaveStatus === "error" ? (
             <span className="max-w-[14rem] text-[11px] font-bold leading-tight text-red-800 dark:text-red-200" role="alert">
               {WORKSPACE_SAVE_FAILED_LABEL}

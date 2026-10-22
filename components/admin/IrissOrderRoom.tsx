@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminSaveButton, useSaveMessageState } from "@/components/admin/AdminSaveButton";
 import { ChevronRight, FileDown, FileText, Mail, Pencil, Phone, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode, type TouchEvent } from "react";
@@ -416,6 +417,8 @@ export function IrissOrderRoom({
   onMarketplaceLoaded?: () => void | Promise<void>;
 }) {
   const [tab, setTab] = useState<IrissOrderRoomTab>(coerceIrissOrderRoomTab(initialTab));
+  // Vienotā saglabāšanas poga: saglabā / zaļš ķeksis / kļūda no tās pašas ziņas.
+  const roomSaveState = useSaveMessageState(saveMsg, busy || orderPdfBusy);
   const tabSwipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const [bucket, setBucket] = useState<IrissOrderRoomHitBucket>("new");
   const [commFilter, setCommFilter] = useState<IrissCommFilter>("all");
@@ -1083,9 +1086,7 @@ export function IrissOrderRoom({
                   <Plus className="h-4 w-4" aria-hidden />
                   Izveidot piedāvājumu
                 </button>
-                <button type="button" disabled={busy || orderPdfBusy} onClick={() => void onSave()} className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-[var(--color-provin-accent)] px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] disabled:opacity-50">
-                  {busy || orderPdfBusy ? "Saglabā…" : "Saglabāt"}
-                </button>
+                <AdminSaveButton onSave={() => void onSave()} state={roomSaveState} className="min-h-[44px]" />
                 <button type="button" disabled={busy} onClick={onDeleteOrder} className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-red-300/90 bg-white px-4 text-[13px] font-semibold text-red-800 disabled:opacity-50">
                   <Trash2 className="h-4 w-4" aria-hidden />
                   Dzēst pasūtījumu
@@ -1801,9 +1802,7 @@ export function IrissOrderRoom({
         <button type="button" onClick={onCreateOffer} className="flex h-[50px] min-w-0 flex-1 items-center justify-center rounded-full bg-[#111827] text-[15px] font-semibold text-white">
           Piedāvājums
         </button>
-        <button type="button" disabled={busy || orderPdfBusy} onClick={() => void onSave()} className="flex h-[50px] min-w-0 flex-1 items-center justify-center rounded-full bg-[var(--acc,#2563eb)] text-[15px] font-semibold text-white disabled:opacity-50">
-          {busy || orderPdfBusy ? "Saglabā…" : "Saglabāt"}
-        </button>
+        <AdminSaveButton onSave={() => void onSave()} state={roomSaveState} className="!h-[50px] min-w-0 flex-1 text-[15px]" />
       </div>
       <AdminMobileSheet open={moreOpen} title="Darbības" onClose={() => setMoreOpen(false)}>
         <div className="flex flex-col gap-2">

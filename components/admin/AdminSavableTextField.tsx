@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { AdminRichCommentReadonly } from "@/components/admin/AdminInternalRichCommentEditor";
+import { AdminSaveButton, useAdminSaveState } from "@/components/admin/AdminSaveButton";
 
 const toolbarBtn =
   "rounded-md border border-slate-200/90 bg-white px-2 py-1 text-[11px] font-semibold tracking-tight text-[var(--color-apple-text)] shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-40";
@@ -63,7 +64,7 @@ export function AdminSavableTextField({
 }: AdminSavableTextFieldProps) {
   const safeValue = typeof value === "string" ? value : "";
   const [viewMode, setViewMode] = useState(false);
-  const [flash, setFlash] = useState(false);
+  const saveState = useAdminSaveState();
   const snapshotRef = useRef(safeValue);
 
   useEffect(() => {
@@ -73,12 +74,13 @@ export function AdminSavableTextField({
 
   const save = () => {
     if (disabled) return;
-    snapshotRef.current = safeValue;
-    onAfterSave?.();
-    setViewMode(true);
-    setFlash(true);
-    window.setTimeout(() => setFlash(false), 2000);
+    void saveState.run(() => {
+      snapshotRef.current = safeValue;
+      onAfterSave?.();
+      setViewMode(true);
+    });
   };
+  const dirty = !viewMode && safeValue !== snapshotRef.current;
 
   const labot = () => {
     if (disabled) return;
@@ -144,17 +146,7 @@ export function AdminSavableTextField({
             </label>
           ) : null}
           <div className={`flex flex-wrap items-center justify-end ${compact ? "gap-0.5" : "gap-1"}`}>
-            {flash ? (
-              <span
-                className={`font-semibold text-emerald-700 ${compact ? "text-[10px]" : "text-[11px]"}`}
-                role="status"
-              >
-                Saglabāts
-              </span>
-            ) : null}
-            <button type="button" className={btnClass} onClick={save} disabled={disabled}>
-              Saglabāt
-            </button>
+            <AdminSaveButton onSave={save} state={saveState.state} dirty={dirty} disabled={disabled} size="sm" />
             <button type="button" className={btnClass} onClick={labot} disabled={disabled}>
               Labot
             </button>

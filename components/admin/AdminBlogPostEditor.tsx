@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminSaveButton } from "@/components/admin/AdminSaveButton";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
@@ -413,14 +414,7 @@ export function AdminBlogPostEditor({ initialPost, initialComments }: Props) {
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={save}
-          disabled={pending}
-          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--color-provin-accent)] px-5 text-sm font-semibold text-white disabled:opacity-50"
-        >
-          {pending ? "Saglabā..." : "Saglabāt"}
-        </button>
+        <AdminSaveButton onSave={save} state={pending ? "saving" : "idle"} dirty shortcut className="min-h-11" />
         <button
           type="button"
           onClick={removePost}
