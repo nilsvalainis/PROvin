@@ -68,3 +68,13 @@ All require `Authorization: Bearer <IRISS_AIVARS_API_TOKEN>`.
 | POST | `/api/iriss/aivars/waybill-requests/:id/result` | Finish: `{ ok, waybillNo, pdfBase64?, errorReason? }` |
 
 Staff IRISS users never call this API. Pavadzīmes users submit a structured form to `/api/admin/iriss/waybill-requests`; that queues `create_waybill` immediately (no admin approval). A busy trading number without `confirmBusy: true` returns 409.
+
+## Wake (push instead of polling)
+
+When a request is queued (new or retried), the server immediately POSTs to `IRISS_AIVARS_WAKE_URL` (https only):
+
+```json
+{ "jobId": "wbr_…" }
+```
+
+Optional header `Authorization: Bearer <IRISS_AIVARS_WAKE_TOKEN>`. The payload carries only the job id, never the comment. The call runs after the response (`after()`), times out after 3 s and never blocks or fails the queue. On wake, Aivars runs the usual `GET` -> `claim` flow. Polling stays as a fallback.
