@@ -5,6 +5,8 @@ import {
   gearboxesMatchGroups,
 } from "@/lib/iriss-criteria-listing-match";
 import { migrateIrissCriteria } from "@/lib/iriss-criteria-migrate";
+import { listingSearchPriceBounds } from "@/lib/iriss-listings-cost";
+import { parseIrissOrderBoundRange } from "@/lib/iriss-listings-orders";
 import type { IrissCriteriaFilter, IrissCriteriaV1 } from "@/lib/iriss-criteria-types";
 import {
   emptyMarketplaceQuery,
@@ -81,8 +83,13 @@ export function marketplaceQueryFromOrder(order: MarketplaceOrderCriteria): Mark
   q.yearTo = filter.yearTo.value;
   q.mileageFrom = filter.mileageFrom.value;
   q.mileageTo = filter.mileageTo.value ?? digits(order.maxMileage);
-  q.priceFrom = filter.budgetFrom.value;
-  q.priceTo = filter.budgetTo.value ?? digits(order.totalBudget, 7);
+  const budget =
+    filter.budgetFrom.value != null || filter.budgetTo.value != null
+      ? { from: filter.budgetFrom.value, to: filter.budgetTo.value }
+      : parseIrissOrderBoundRange(order.totalBudget ?? "");
+  const price = listingSearchPriceBounds(budget);
+  q.priceFrom = price.from;
+  q.priceTo = price.to;
   q.fuel = fuelLabel(filter, order.engineType ?? "");
   q.gearbox = gearboxLabel(filter, order.transmission ?? "");
   q.powerFromKw = filter.kwFrom.value;

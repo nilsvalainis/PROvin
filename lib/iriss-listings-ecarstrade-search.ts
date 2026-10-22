@@ -39,6 +39,7 @@ import {
   type UnmappedCriterion,
 } from "@/lib/iriss-listings-ecarstrade-criteria";
 import { ECARSTRADE_ORIGIN, ECARSTRADE_SEARCH_PATH } from "@/lib/iriss-listings-ecarstrade";
+import { listingSearchPriceBounds } from "@/lib/iriss-listings-cost";
 import { parseIrissOrderBoundRange } from "@/lib/iriss-listings-orders";
 import { splitModelExtensions } from "@/lib/iriss-model-extension";
 
@@ -1003,9 +1004,9 @@ export function filterFromOrderFields(fields: OrderSearchFields): EcarstradeSear
   const km = parseIrissOrderBoundRange(fields.maxMileage ?? "");
   if (km.from != null) filter.mileageFrom = km.from;
   if (km.to != null) filter.mileageTo = km.to;
-  const budget = parseIrissOrderBoundRange(fields.totalBudget ?? "");
-  if (budget.from != null) filter.priceFrom = budget.from;
-  if (budget.to != null) filter.priceTo = budget.to;
+  const price = listingSearchPriceBounds(parseIrissOrderBoundRange(fields.totalBudget ?? ""));
+  if (price.from != null) filter.priceFrom = price.from;
+  if (price.to != null) filter.priceTo = price.to;
   const fuel = mapFuel(fields.engineType ?? "");
   if (fuel) filter.fuels = [fuel];
   const cc = mapEngineCc(fields.engineType ?? "");

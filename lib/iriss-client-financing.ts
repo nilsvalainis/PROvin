@@ -1,4 +1,4 @@
-import { parsePriceLike } from "@/lib/iriss-price-format";
+import { parseIrissOrderBudget } from "@/lib/iriss-listings-orders";
 
 export const IRISS_CLIENT_FINANCING_PRESETS = [20, 50, 100] as const;
 
@@ -10,8 +10,8 @@ export function parseIrissClientFinancingPercent(raw: unknown): number {
 
 export function irissClientFinancingEuroFromBudget(totalBudget: string, percent: number): number {
   if (percent <= 0) return 0;
-  const base = parsePriceLike(totalBudget);
-  if (!Number.isFinite(base) || base <= 0) return 0;
+  const base = parseIrissOrderBudget(totalBudget);
+  if (base == null || base <= 0) return 0;
   return Math.round(base * (percent / 100));
 }
 

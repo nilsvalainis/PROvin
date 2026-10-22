@@ -20,6 +20,7 @@ import {
   irissListRowPowerKwLabel,
   irissPasutijumsToListRow,
 } from "@/lib/iriss-pasutijumi-list-row";
+import { parseIrissOrderBudget } from "@/lib/iriss-listings-orders";
 import { IRISS_LIST_SORT_LABEL } from "@/lib/iriss-pasutijumi-list-view";
 import { IRISS_ORDERS_LIST_PAGE, irissNextWindowLimit, irissWindowSlice } from "@/lib/iriss-list-window";
 import {
@@ -78,11 +79,9 @@ function useNarrowIrissSwipeViewport(): boolean {
   );
 }
 
+/** Kārtošanai budžeta augšējā robeža (`12000-15000` → 15000). */
 function budgetToNumber(v: string): number {
-  const m = v.replace(",", ".").match(/-?\d+(?:\.\d+)?/g);
-  if (!m || m.length === 0) return Number.NaN;
-  const parsed = Number.parseFloat(m.join(""));
-  return Number.isFinite(parsed) ? parsed : Number.NaN;
+  return parseIrissOrderBudget(v) ?? Number.NaN;
 }
 
 function sortCore(rows: IrissPasutijumsListRow[], mode: SortMode): IrissPasutijumsListRow[] {

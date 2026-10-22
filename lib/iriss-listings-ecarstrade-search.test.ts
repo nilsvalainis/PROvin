@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { listingExtrasI } from "@/lib/iriss-listings-cost";
 import {
   AUTOBID_BRAND_ID_TO_NAME,
   resolveEcarstradeMake,
@@ -264,7 +265,7 @@ describe("eCarsTrade search mapper", () => {
     expect(filled.yearFrom).toBe(2018);
     expect(filled.yearTo).toBe(2022);
     expect(filled.mileageTo).toBe(150000);
-    expect(filled.priceTo).toBe(28000);
+    expect(filled.priceTo).toBe(28000 - listingExtrasI());
     expect(filled.drives).toEqual(["awd"]);
     expect(filled.colors).toEqual(["Black", "Grey"]);
     expect(filled.excludeColors).toEqual(["Yellow"]);
@@ -272,7 +273,7 @@ describe("eCarsTrade search mapper", () => {
     const url = ecarstradeSearchUrl(filled)!;
     expect(url).not.toContain("year_from=");
     expect(url).not.toContain("mileage_to=");
-    expect(url).toContain("price_to=28000");
+    expect(url).toContain(`price_to=${28000 - listingExtrasI()}`);
     expect(url).toContain("iriss_drive=awd");
     expect(url).toContain("iriss_exclude_color=Yellow");
     expect(url).toContain("vat[]=reclaimable");
@@ -297,7 +298,7 @@ describe("eCarsTrade search mapper", () => {
     expect(params.get("year_from")).toBeNull();
     expect(params.get("year_to")).toBeNull();
     expect(params.get("mileage_to")).toBeNull();
-    expect(params.get("price_to")).toBe("26000");
+    expect(params.get("price_to")).toBe(String(26000 - listingExtrasI()));
     expect(params.get("fuel[]")).toBe("Petrol");
     expect(params.get("gearbox[]")).toBe("Manual");
     const dieselAuction = parseListingSearchUrl(

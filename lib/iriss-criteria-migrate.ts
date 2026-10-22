@@ -7,7 +7,7 @@
 import { mapEngineCc } from "@/lib/iriss-listings-ecarstrade-criteria";
 import { resolveMakeModelPairsFromBrand } from "@/lib/iriss-listings-ecarstrade-catalog";
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
-import { parseIrissOrderBudget } from "@/lib/iriss-listings-orders";
+import { parseIrissOrderRange } from "@/lib/iriss-listings-orders";
 import {
   acceptedNormalization,
   foldCriterion,
@@ -95,26 +95,9 @@ function parseYears(raw: string): { from: number | null; to: number | null; pars
   return { from: Math.min(...years), to: Math.max(...years), parsed: true };
 }
 
+/** Budžets un km: viens kopīgs lasītājs ar `k` / `tūkst` atbalstu. */
 function parseBoundRange(raw: string): { from: number | null; to: number | null; parsed: boolean } {
-  const t = raw.replace(/[\u2012\u2013\u2014\u2015\u2212]/g, "-").trim();
-  if (!t) return { from: null, to: null, parsed: false };
-  const range = t.match(/(\d[\d\s.\u00a0]*)\s*(?:-|lidz|līdz|to|bis)\s*(\d[\d\s.\u00a0]*)/i);
-  if (range) {
-    const nums = [parseIrissOrderBudget(range[1] ?? ""), parseIrissOrderBudget(range[2] ?? "")]
-      .filter((n): n is number => n != null)
-      .sort((a, b) => a - b);
-    if (nums.length === 0) return { from: null, to: null, parsed: false };
-    return { from: nums[0] ?? null, to: nums[nums.length - 1] ?? null, parsed: true };
-  }
-  const fromOnly = t.match(/\b(?:no|from|min|ab)\b\s*(\d[\d\s.\u00a0]*)/i);
-  if (fromOnly && !/\b(?:lidz|līdz|max|bis|until)\b/i.test(t)) {
-    const n = parseIrissOrderBudget(fromOnly[1] ?? "");
-    if (n == null) return { from: null, to: null, parsed: false };
-    return { from: n, to: null, parsed: true };
-  }
-  const one = parseIrissOrderBudget(t);
-  if (one == null) return { from: null, to: null, parsed: false };
-  return { from: null, to: one, parsed: true };
+  return parseIrissOrderRange(raw);
 }
 
 function priceBasisOf(raw: string): IrissPriceBasis | null {

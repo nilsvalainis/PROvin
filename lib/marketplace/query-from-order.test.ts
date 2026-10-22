@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { listingExtrasI } from "@/lib/iriss-listings-cost";
 import { emptyIrissCriteria, emptyIrissCriteriaFilter, irissCriteriaValue } from "@/lib/iriss-criteria-types";
 import {
   MARKETPLACE_EXTRA_RANGE_MESSAGE,
@@ -28,7 +29,7 @@ describe("marketplaceQueryFromOrder", () => {
     expect(q.yearFrom).toBe(2018);
     expect(q.yearTo).toBe(2020);
     expect(q.mileageTo).toBe(140000);
-    expect(q.priceTo).toBe(22000);
+    expect(q.priceTo).toBe(22000 - listingExtrasI());
     expect(q.fuel).toMatch(/dīzel|diesel/i);
     expect(q.gearbox).toMatch(/autom|automatic/i);
     expect(q.vehicleCategory).toBe("car");
@@ -74,7 +75,7 @@ describe("marketplaceQueryFromOrder", () => {
       yearFrom: 2017,
       yearTo: 2019,
       mileageTo: 160000,
-      priceTo: 25000,
+      priceTo: 25000 - listingExtrasI(),
       fuel: "diesel",
       gearbox: "automatic",
     });

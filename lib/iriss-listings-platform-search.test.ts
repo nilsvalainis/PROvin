@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { listingExtrasI } from "@/lib/iriss-listings-cost";
 import {
   applyGeneratedPlatformSearchLink,
   auto1SearchUrl,
@@ -32,7 +33,7 @@ describe("platform search URL builders", () => {
     expect(parsed.yearFrom).toBe(2018);
     expect(parsed.yearTo).toBe(2022);
     expect(parsed.mileageTo).toBe(150000);
-    expect(parsed.priceTo).toBe(28000);
+    expect(parsed.priceTo).toBe(28000 - listingExtrasI());
     expect(parsed.fuels).toEqual(["Diesel"]);
     expect(parsed.gearboxes).toEqual(["Automatic"]);
     expect(parsed.bodies).toEqual(["SUV/Off-road Vehicle/Pickup Truck"]);

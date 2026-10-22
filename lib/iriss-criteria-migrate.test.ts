@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { listingExtrasI } from "@/lib/iriss-listings-cost";
 import { ECARSTRADE_BODY, ECARSTRADE_FUEL, ECARSTRADE_GEARBOX } from "@/lib/iriss-listings-ecarstrade-search";
 import { emptyIrissCriteriaFilter, irissCriteriaMandatoryGaps, parseIrissCriteriaV1 } from "@/lib/iriss-criteria-types";
 import { attachIrissCriteria, migrateIrissCriteria, readIrissCriteria, retainStoredIrissCriteria } from "@/lib/iriss-criteria-migrate";
@@ -258,7 +259,7 @@ describe("shared adapter", () => {
     expect(search.bodies).toEqual([ECARSTRADE_BODY.suv]);
     expect(search.drives).toEqual(["awd"]);
     expect(search.yearFrom).toBe(2018);
-    expect(search.priceTo).toBe(20000);
+    expect(search.priceTo).toBe(20000 - listingExtrasI());
     expect(search.vat).toEqual(["reclaimable"]);
     expect(search.modelName).toBe("");
     expect(search.colors).toEqual([]);
