@@ -91,6 +91,18 @@ export function renderProWidget(item: MenuCatalogItem, size: MenuSize, data: Men
         </>
       );
     }
+    case "w-pro-ienemumi": {
+      const t = pro?.today;
+      const eur = t ? Math.round(t.revenueCents / 100).toLocaleString("lv-LV") : null;
+      return (
+        <>
+          <span className="mw-big">
+            <span className="mw-num">{eur == null ? "…" : `${eur} €`}</span>
+          </span>
+          <span className="mw-label">{t ? `${t.count} ${t.count === 1 ? "maksājums" : "maksājumi"} šodien` : "šodien"}</span>
+        </>
+      );
+    }
     case "w-pro-atrie":
       return <Big n={pro ? data.openCount : null} label={data.openCount > 0 ? "neatbildēti" : "viss atbildēts"} tone={data.openCount > 0 ? "warn" : "ok"} />;
     case "w-pro-rits":

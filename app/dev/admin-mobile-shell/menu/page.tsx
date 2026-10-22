@@ -22,6 +22,7 @@ export default function MenuGridTestPage() {
     pro: {
       orders: { count: 7, overdue: 2, nextDeadlineFromUnix: Math.floor(Date.now() / 1000) - 40 * 3600 },
       dealers: { count: 3, overdue: 0, nextDeadlineFromUnix: null },
+      today: { revenueCents: 41700, count: 5 },
     },
     openCount: 4,
   };
@@ -49,7 +50,8 @@ export default function MenuGridTestPage() {
           workspace="pro"
           catalog={pro}
           defaultIds={PRO_DEFAULT_LAYOUT_IDS}
-          badgeOf={(item) => (item.badge === "orders" ? 7 : item.badge === "fast" ? 4 : 0)}
+          badgeOf={(item) => (item.id === "w-pro-mini" || item.badge === "orders" ? 7 : item.badge === "fast" ? 4 : item.id === "w-pro-ienemumi" ? 5 : 0)}
+          alertOf={(item) => item.id === "w-pro-mini"}
           renderWidget={(item, size) => renderProWidget(item, size, data)}
         />
       )}

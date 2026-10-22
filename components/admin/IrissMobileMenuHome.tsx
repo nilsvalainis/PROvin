@@ -17,7 +17,24 @@ import {
 } from "@/lib/iriss-mobile-menu";
 import type { IrissSection } from "@/lib/staff-roles";
 
-function useCheapIrissBadgeCounts(enabled: boolean): { irissMatches: number; irissLogistics: number } {
+/** Skaitītājs, kas pieaug, atgriežoties lietotnē un ik minūti: skaitļi atjaunojas paši. */
+function useRefreshTick(): number {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const bump = () => {
+      if (document.visibilityState === "visible") setTick((t) => t + 1);
+    };
+    document.addEventListener("visibilitychange", bump);
+    const timer = window.setInterval(bump, 60_000);
+    return () => {
+      document.removeEventListener("visibilitychange", bump);
+      window.clearInterval(timer);
+    };
+  }, []);
+  return tick;
+}
+
+function useCheapIrissBadgeCounts(enabled: boolean, refreshKey: number): { irissMatches: number; irissLogistics: number } {
   const [counts, setCounts] = useState({ irissMatches: 0, irissLogistics: 0 });
   useEffect(() => {
     if (!enabled) return;
@@ -38,7 +55,7 @@ function useCheapIrissBadgeCounts(enabled: boolean): { irissMatches: number; iri
     return () => {
       cancelled = true;
     };
-  }, [enabled]);
+  }, [enabled, refreshKey]);
   return counts;
 }
 
@@ -68,8 +85,9 @@ export function IrissMobileMenuHome({
   const catalog = useMemo(() => irissMenuCatalog(sections, isAdmin), [sections, isAdmin]);
   useDesktopRedirect(irissDesktopHomeHref(items));
   const canReadWaybills = isAdmin || sections.includes("pavadzimes");
-  const badges = useCheapIrissBadgeCounts(isAdmin);
-  const plates = useIrissWaybillPlateStrip(canReadWaybills);
+  const tick = useRefreshTick();
+  const badges = useCheapIrissBadgeCounts(isAdmin, tick);
+  const plates = useIrissWaybillPlateStrip(canReadWaybills, tick);
   const counts = {
     irissMatches: badges.irissMatches,
     irissLogistics: badges.irissLogistics,
@@ -89,7 +107,20 @@ export function IrissMobileMenuHome({
           workspace="iriss"
           catalog={catalog}
           defaultIds={IRISS_DEFAULT_LAYOUT_IDS}
-          badgeOf={(item) => (item.badge ? cheapIrissMenuCount({ badge: item.badge } as IrissMobileMenuItem, counts) : 0)}
+          badgeOf={(item) =>
+            item.id === "w-logistika"
+              ? badges.irissLogistics
+              : item.id === "w-pavadzimes"
+                ? plates.busyCount
+                : item.id === "w-sludinajumi"
+                  ? badges.irissMatches
+                  : item.badge
+                    ? cheapIrissMenuCount({ badge: item.badge } as IrissMobileMenuItem, counts)
+                    : 0
+          }
+          alertOf={(item) =>
+            item.id === "w-pavadzimes" && plates.items.some((w) => w.busy && w.hoursLeft != null && w.hoursLeft <= 12)
+          }
           renderWidget={(item, size) =>
             renderIrissWidget(item, size, {
               irissLogistics: badges.irissLogistics,
