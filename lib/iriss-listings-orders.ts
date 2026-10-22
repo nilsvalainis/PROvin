@@ -45,12 +45,34 @@ function dashOrEmpty(raw: string): string {
   return !t || t === "\u2014" || t === "-" ? "" : t;
 }
 
-function parseOneBudgetNumber(raw: string): number | null {
-  const t = raw.trim().replace(/\u00a0/g, " ");
-  if (!t || t === "\u2014" || t === "-" || /^nav\b/i.test(t)) return null;
-  const m = t.match(/(\d[\d.\s,'’]*)/);
-  if (!m) return null;
-  let s = m[1].replace(/[\s'’]/g, "");
+/** Tūkstošu reizinātājs aiz skaitļa: `15k`, `15 K`, `15 tūkst.`, `15 tukst`. `km` nav reizinātājs. */
+const BUDGET_MULT = String.raw`(k(?![a-zāčēģīķļņšūž])|t[uū]kst[a-zāčēģīķļņšūž]*\.?)`;
+const BUDGET_NUM = String.raw`(\d(?:[\d.,'’]|\s(?=\d))*)`;
+const BUDGET_RANGE_SEP = String.raw`(?:-|\blidz\b|\blīdz\b|\bto\b|\bbis\b)`;
+const BUDGET_CURRENCY = String.raw`(?:€|eur\b|euro\b)?`;
+const BUDGET_RANGE_RE = new RegExp(
+  `${BUDGET_NUM}\\s*${BUDGET_MULT}?\\s*${BUDGET_CURRENCY}\\s*${BUDGET_RANGE_SEP}\\s*${BUDGET_CURRENCY}\\s*${BUDGET_NUM}\\s*${BUDGET_MULT}?`,
+  "i",
+);
+const BUDGET_ONE_RE = new RegExp(`${BUDGET_NUM}\\s*${BUDGET_MULT}?`, "i");
+const BUDGET_FROM_ONLY_RE = new RegExp(`(?:^|[^a-zāčēģīķļņšūž])(?:no|from|min|ab)\\s*${BUDGET_CURRENCY}\\s*${BUDGET_NUM}\\s*${BUDGET_MULT}?`, "i");
+const BUDGET_UPPER_WORD_RE = /(?:^|[^a-zāčēģīķļņšūž])(?:lidz|līdz|max|bis|until)(?![a-zāčēģīķļņšūž])/i;
+
+function normalizeBudgetText(raw: string): string {
+  return raw
+    .replace(/\u00a0|\u202f/g, " ")
+    .replace(/[\u2012\u2013\u2014\u2015\u2212]/g, "-")
+    .trim();
+}
+
+function isEmptyBudgetText(t: string): boolean {
+  return !t || t === "-" || /^nav\b/i.test(t);
+}
+
+/** Cipari ar tūkstošu atdalītājiem (`12 000`, `12.000`, `12,000`, `12'000`) vai decimāldaļu (`12,5`). */
+function budgetDigitsToNumber(raw: string): number | null {
+  let s = raw.trim().replace(/[\s'’]/g, "").replace(/[.,]+$/, "");
+  if (!s) return null;
   if (s.includes(",") && s.includes(".")) {
     if (s.lastIndexOf(",") > s.lastIndexOf(".")) s = s.replace(/\./g, "").replace(",", ".");
     else s = s.replace(/,/g, "");
@@ -64,29 +86,67 @@ function parseOneBudgetNumber(raw: string): number | null {
     s = s.replace(",", ".");
   }
   const n = Number.parseFloat(s);
-  return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+  return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-export function parseIrissOrderBoundRange(raw: string): { from: number | null; to: number | null } {
-  const t = raw.trim().replace(/\u00a0/g, " ").replace(/[\u2012\u2013\u2014\u2015\u2212]/g, "-");
-  if (!t || t === "-" || /^nav\b/i.test(t)) return { from: null, to: null };
-  const range = t.match(/(\d[\d\s.\u00a0]*)\s*(?:-|lidz|līdz|to|bis)\s*(\d[\d\s.\u00a0]*)/i);
+function budgetValue(digits: string | undefined, mult: string | undefined): number | null {
+  const n = budgetDigitsToNumber(digits ?? "");
+  if (n == null) return null;
+  const v = Math.round(mult ? n * 1000 : n);
+  return v > 0 ? v : null;
+}
+
+export type IrissOrderBoundRange = { from: number | null; to: number | null; parsed: boolean };
+
+/**
+ * Vienīgais pasūtījuma budžeta / diapazona lasītājs (lasīšanas brīdī, saglabātos datus nemaina).
+ * `12000-15000`, `12 000 € - 15 000 €`, `12-15k`, `12k-15k`, `12-15 tūkst`, `no 12k`, `līdz 15k`, `15k`.
+ * Viena summa ir augšējā robeža (`to`). `no X` dod tikai `from`.
+ * `12-15k`: reizinātājs aiz otrā skaitļa attiecas arī uz pirmo, ja pirmais < 1000.
+ */
+export function parseIrissOrderRange(raw: string): IrissOrderBoundRange {
+  const t = normalizeBudgetText(raw ?? "");
+  if (isEmptyBudgetText(t)) return { from: null, to: null, parsed: false };
+
+  const range = t.match(BUDGET_RANGE_RE);
   if (range) {
-    const nums = [parseOneBudgetNumber(range[1] ?? ""), parseOneBudgetNumber(range[2] ?? "")]
-      .filter((n): n is number => n != null)
-      .sort((a, b) => a - b);
-    if (nums.length === 0) return { from: null, to: null };
-    return { from: nums[0] ?? null, to: nums[nums.length - 1] ?? null };
+    const multA = range[2];
+    const multB = range[4];
+    let a = budgetValue(range[1], multA);
+    const b = budgetValue(range[3], multB);
+    if (a != null && !multA && multB && a < 1000) a = budgetValue(range[1], multB);
+    const nums = [a, b].filter((n): n is number => n != null).sort((x, y) => x - y);
+    if (nums.length === 0) return { from: null, to: null, parsed: false };
+    if (nums.length === 1) return { from: null, to: nums[0]!, parsed: true };
+    return { from: nums[0]!, to: nums[1]!, parsed: true };
   }
-  return { from: null, to: parseOneBudgetNumber(t) };
+
+  const fromOnly = t.match(BUDGET_FROM_ONLY_RE);
+  if (fromOnly && !BUDGET_UPPER_WORD_RE.test(t)) {
+    const n = budgetValue(fromOnly[1], fromOnly[2]);
+    if (n == null) return { from: null, to: null, parsed: false };
+    return { from: n, to: null, parsed: true };
+  }
+
+  const one = t.match(BUDGET_ONE_RE);
+  const n = one ? budgetValue(one[1], one[2]) : null;
+  if (n == null) return { from: null, to: null, parsed: false };
+  return { from: null, to: n, parsed: true };
+}
+
+/** Diapazons bez `parsed` karoga (km, cena). Sk. `parseIrissOrderRange`. */
+export function parseIrissOrderBoundRange(raw: string): { from: number | null; to: number | null } {
+  const { from, to } = parseIrissOrderRange(raw);
+  return { from, to };
 }
 
 /**
- * Aprēķini ņem diapazona augšējo robežu (`25000-32000` → 32000).
- * Viena summa paliek kā līdz šim (`18 000 €` → 18000). Grāmatzīmes lieto `parseIrissOrderBoundRange`.
+ * Budžets aprēķiniem: vienmēr lielākais skaitlis (`12000-15000` → 15000, `12-15k` → 15000,
+ * `18 000 €` → 18000, `no 12k` → 12000). Nav skaitļa → null.
  */
 export function parseIrissOrderBudget(raw: string): number | null {
-  return parseIrissOrderBoundRange(raw).to;
+  const { from, to } = parseIrissOrderRange(raw);
+  return to ?? from;
 }
 
 export function irissListingOrderBrief(row: IrissPasutijumsListRow): IrissListingOrderBrief {

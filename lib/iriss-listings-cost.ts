@@ -26,6 +26,26 @@ export function listingExtrasI(parts: ListingCostParts = DEFAULT_LISTING_COSTS):
   return parts.fee + parts.transport + parts.commission + parts.unplanned;
 }
 
+/**
+ * Meklēšanas cenas robežas no klienta kopējā budžeta: sludinājuma cena = budžets mīnus izmaksas
+ * (transports, izsoles komisija, reģistrācija/neplānotās, IRISS komisija; `listingExtrasI`).
+ * Griesti vienmēr no lielākā skaitļa (`to`, ja nav, tad `from`). Grīda tikai diapazonam
+ * (mazākais skaitlis mīnus tās pašas izmaksas); ≤ 0 nozīmē bez grīdas. Nekad zem 0.
+ */
+export function listingSearchPriceBounds(
+  budget: { from: number | null; to: number | null },
+  extras: number = listingExtrasI(),
+): { from: number | null; to: number | null } {
+  const valid = (n: number | null | undefined): n is number => n != null && Number.isFinite(n) && n > 0;
+  const top = valid(budget.to) ? budget.to : valid(budget.from) ? budget.from : null;
+  if (top == null) return { from: null, to: null };
+  const cost = Number.isFinite(extras) && extras > 0 ? extras : 0;
+  const to = Math.max(0, Math.round(top - cost));
+  const low = valid(budget.from) && valid(budget.to) && budget.from < budget.to ? budget.from : null;
+  const floor = low == null ? 0 : Math.max(0, Math.round(low - cost));
+  return { from: floor > 0 ? floor : null, to };
+}
+
 export type ListingRealCost = {
   price: number;
   extras: number;

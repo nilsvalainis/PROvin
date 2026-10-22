@@ -5,6 +5,7 @@
  */
 
 import { resolveEcarstradeMake } from "@/lib/iriss-listings-ecarstrade-catalog";
+import { listingSearchPriceBounds } from "@/lib/iriss-listings-cost";
 import type { UnmappedCriterion } from "@/lib/iriss-listings-ecarstrade-criteria";
 import {
   ECARSTRADE_BODY,
@@ -75,6 +76,7 @@ function pushNote(unmapped: UnmappedCriterion[], key: string, value: string, rea
 
 /** Strukturētie formas lauki. Manuālais teksts un saites paliek ārpus šī filtra. */
 export function filterToSearchFilter(filter: IrissCriteriaFilter): EcarstradeSearchFilter {
+  const price = listingSearchPriceBounds({ from: filter.budgetFrom.value, to: filter.budgetTo.value });
   const unmapped: UnmappedCriterion[] = [];
   const makeNames = uniq(filter.make.value);
   const makeIds: number[] = [];
@@ -108,8 +110,8 @@ export function filterToSearchFilter(filter: IrissCriteriaFilter): EcarstradeSea
     yearTo: filter.yearTo.value,
     mileageFrom: filter.mileageFrom.value,
     mileageTo: filter.mileageTo.value,
-    priceFrom: filter.budgetFrom.value,
-    priceTo: filter.budgetTo.value,
+    priceFrom: price.from,
+    priceTo: price.to,
     powerFromKw: filter.kwFrom.value,
     powerToKw: filter.kwTo.value,
     fuels,
