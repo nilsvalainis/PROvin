@@ -27,7 +27,7 @@ Sīkāki projekta noteikumi ir `.cursor/rules/*.mdc` (tie ir saistoši arī Clau
 
 ## Komanda
 
-Galvenais aģents ir **Andris** (`.claude/agents/andris.md`), pārējie ir nozaru aģenti. Kā ar tiem strādāt: `docs/claude-komanda.md`.
+Claude puses vadītājs ir **Kārlis** (`.claude/agents/karlis.md`), kas atskaitās Grok Andrim, pārējie ir nozaru aģenti. Kā ar tiem strādāt: `docs/claude-komanda.md`.
 
 # Papildu noteikumi (Grok/Claude sadalījums, 22.10)
 
@@ -50,6 +50,7 @@ Galvenais aģents ir **Andris** (`.claude/agents/andris.md`), pārējie ir nozar
 - Taupīt tokenus; naktī ziņas tikai kritiskas.
 
 ## Komanda
+- Claude pusē vadītājs: Kārlis (piesprausta Code sesija "Kārlis").
 - Grok pusē: Andris (galvenais), Aivars, PVN atguvējs, EKII, Klientu atbalsts, Google, Sociālie tīkli, Labā Roka, Fricis, PROVIN ADMINS (atskaišu aizpilde), IRISS (pasts/izsoles).
 - Claude pusē: koda darbi (iriss, provin-admins kods, iriss-b2b, dizaineris, koda-parbauditajs).
 - Apmaiņa: docs/komandu-zinojumi.md (viena rinda par svarīgu darbu); lasīt sesijas sākumā.
