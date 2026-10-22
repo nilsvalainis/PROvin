@@ -1,3 +1,4 @@
+import { b2bServiceLabel } from "@/lib/b2b-order-notify-shared";
 import { NextResponse } from "next/server";
 import { resolveActiveB2bPartner } from "@/lib/b2b-partner-auth";
 import {
@@ -170,7 +171,12 @@ export async function POST(req: Request) {
       listingUrl: listingRaw,
       dealerQueued: created.dealerQueued,
     },
-  ]);
+  ], {
+    partnerId: partner.id,
+    companyName: partner.companyName,
+    contactName: partner.contactName,
+    serviceLabel: b2bServiceLabel(planRaw),
+  });
 
   const order = buildSubmittedPartnerArchiveRow({
     id: created.orderId,
