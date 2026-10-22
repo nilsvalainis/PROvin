@@ -74,6 +74,8 @@ type Props = {
 
 const LABELS_PREF_KEY = "iriss.logistics.mapLabels";
 /** Maršruta līnija kā Google Maps: zila; Aiznākošā gaišāk zila, lai abas var atšķirt. */
+const PRINT_DUPLEX_PREF_KEY = "iriss-log-print-duplex-v1";
+
 const ROUTE_LINE_COLOR = { next: "#1a73e8", after: "#7baaf7" } as const;
 /** Pauze pēc pēdējās kravas izmaiņas, pirms maršruts pārrēķinās pats. */
 const LIVE_ROUTE_DELAY_MS = 1500;
@@ -104,6 +106,15 @@ export function IrissLogistikaClient({
     initialOrders.find((o) => isLogisticsOrderActive(o))?.id ?? null,
   );
   const [showLabels, setShowLabels] = useState(false);
+  /** Abpusēja druka: 2. lapu apgriež par 180°, lai, apgriežot lapu pa garo malu, tā nav otrādi. */
+  const [printDuplex, setPrintDuplex] = useState(false);
+  useEffect(() => {
+    try {
+      setPrintDuplex(window.localStorage.getItem(PRINT_DUPLEX_PREF_KEY) === "1");
+    } catch {
+      // nav krātuves
+    }
+  }, []);
   /** Kartē tikai viens reiss: pārējo auto punkti netraucē skatīt maršrutu. */
   const [mapFocus, setMapFocus] = useState<MapFocus>("all");
   const [purchaseOpen, setPurchaseOpen] = useState(false);
@@ -132,6 +143,8 @@ export function IrissLogistikaClient({
   const mapFsCardRef = useRef<HTMLDivElement>(null);
   const printRootRef = useRef<HTMLDivElement>(null);
   const restorePrintRef = useRef<(() => void) | null>(null);
+  /** Kartes kadrs pirms drukas: drukai zoom +1 (augstāka izšķirtspēja), pēc drukas atjauno. */
+  const viewBeforePrintRef = useRef<ReturnType<NonNullable<typeof mapHandleRef.current>["snapshotView"]>>(null);
   const cabinetRef = useRef<HTMLDivElement>(null);
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const bounceTimer = useRef<number | null>(null);
@@ -342,6 +355,17 @@ export function IrissLogistikaClient({
     } catch {
       // nav krātuves
     }
+  }
+
+  function togglePrintDuplex() {
+    setPrintDuplex((v) => {
+      try {
+        window.localStorage.setItem(PRINT_DUPLEX_PREF_KEY, v ? "0" : "1");
+      } catch {
+        // nav krātuves
+      }
+      return !v;
+    });
   }
 
   function toggleLabels() {
@@ -566,6 +590,7 @@ export function IrissLogistikaClient({
     document.documentElement.classList.toggle(LOGISTICS_PRINT_HTML_CLASS, printing);
     let pageStyle: HTMLStyleElement | null = null;
     if (printing) {
+      document.documentElement.classList.toggle("iriss-log-print-duplex", printDuplex);
       pageStyle = document.createElement("style");
       pageStyle.setAttribute("data-iriss-log-print-page", "1");
       pageStyle.textContent = LOGISTICS_PRINT_PAGE_CSS;
@@ -573,15 +598,26 @@ export function IrissLogistikaClient({
     }
     return () => {
       document.documentElement.classList.remove(LOGISTICS_PRINT_HTML_CLASS);
+      document.documentElement.classList.remove("iriss-log-print-duplex");
       pageStyle?.remove();
     };
-  }, [printing]);
+  }, [printing, printDuplex]);
 
   useEffect(() => {
     function endPrint() {
       restorePrintRef.current?.();
       restorePrintRef.current = null;
       setPrinting(false);
+      const view = viewBeforePrintRef.current;
+      viewBeforePrintRef.current = null;
+      if (view) {
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            mapHandleRef.current?.notifyResize();
+            mapHandleRef.current?.applyView(view);
+          }),
+        );
+      }
     }
     window.addEventListener("afterprint", endPrint);
     return () => window.removeEventListener("afterprint", endPrint);
@@ -635,7 +671,9 @@ export function IrissLogistikaClient({
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });
     handle?.notifyResize();
-    if (view) handle?.applyView(view);
+    // Drukā karte ir divreiz lielāka un samazināta uz pusi: tas pats laukums, bet zoom +1 = divreiz asāka.
+    viewBeforePrintRef.current = view;
+    if (view) handle?.applyView({ ...view, zoom: view.zoom + 1 });
     await handle?.waitForTilesIdle();
     void fetch("/api/admin/iriss/logistika/print", {
       method: "POST",
@@ -933,6 +971,16 @@ export function IrissLogistikaClient({
                     />
                     Rādīt nosaukumus
                   </label>
+                  <label className="mr-1 inline-flex cursor-pointer items-center gap-2 text-[12px] font-semibold" title="Divpusējai drukai: 2. lapa tiek apgriezta, lai pēc lapas apgriešanas tā nav otrādi">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={printDuplex}
+                      className={`iriss-log-switch sm ${printDuplex ? "on" : ""}`}
+                      onClick={() => togglePrintDuplex()}
+                    />
+                    Abām pusēm
+                  </label>
                   <button
                     type="button"
                     onClick={() => void printCurrentMap()}
@@ -969,7 +1017,7 @@ export function IrissLogistikaClient({
                     lockView={printing}
                     printNumbers={printing ? printNumbers : undefined}
                     pinVariant="cargo"
-                    showLabels={printing ? false : showLabels}
+                    showLabels={showLabels}
                     cargoByCarId={cargoByCarId}
                     showOnMapIds={showOnMapIds}
                     bounceCarId={bounceId}

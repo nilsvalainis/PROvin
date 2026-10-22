@@ -711,13 +711,40 @@ html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero {
   border-radius: 0 !important;
   margin: 0 auto;
 }
+/*
+ * Augstāka izšķirtspēja: karte ir divreiz lielāka (zoom +1) un samazināta uz pusi, tāpēc drukā ir
+ * divreiz vairāk detaļu tajā pašā laukumā. Lāses un nosaukumi tiek palielināti atpakaļ, lai izmērs nemainās.
+ */
+html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero {
+  overflow: hidden;
+}
 html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero .iriss-log-map-shell {
   position: absolute;
-  inset: 0;
-  width: auto;
-  height: 100% !important;
+  inset: auto;
+  left: 0;
+  top: 0;
+  width: 200%;
+  height: 200% !important;
   max-width: none;
   border-radius: 0 !important;
+  transform: scale(0.5);
+  transform-origin: 0 0;
+}
+html.iriss-log-printing .iriss-log-tear,
+html.iriss-log-printing .iriss-log-pin-wrap {
+  transform: translate(-50%, -100%) scale(2);
+  transform-origin: 50% 100%;
+}
+html.iriss-log-printing .iriss-log-pin,
+html.iriss-log-printing .iriss-log-pin-cluster,
+html.iriss-log-printing .iriss-log-spread-dot {
+  transform: translate(-50%, -50%) scale(2);
+}
+
+/* Abpusēja druka (pa garo malu): 2. lapa otrādi, lai, apgriežot lapu, saraksts ir pareizi. */
+html.iriss-log-printing.iriss-log-print-duplex .iriss-log-print-list {
+  min-height: 186mm;
+  transform: rotate(180deg);
 }
 html.iriss-log-printing .iriss-log-print-list {
   display: block;
@@ -725,8 +752,8 @@ html.iriss-log-printing .iriss-log-print-list {
   page-break-before: always;
 }
 /* Nosaukumu kartītes un hover padomi drukā netiek rādīti (numuri + saraksts 2. lapā). */
-html.iriss-log-printing .iriss-log-pin-tip,
-html.iriss-log-printing .iriss-log-pin-label {
+/* Drukā hover padomus nerāda; nosaukumu kartītes rāda tikai, ja ieslēgts "Rādīt nosaukumus". */
+html.iriss-log-printing .iriss-log-pin-tip {
   display: none !important;
 }
 
