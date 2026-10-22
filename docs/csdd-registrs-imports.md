@@ -1,7 +1,8 @@
 # CSDD tirdzniecības reģistrs - JSON imports Autoparkam
 
 Avots: CSDD Transportlīdzekļu tirdzniecības reģistrs (NE tech-data API).
-Kas: Grok aģents Aivars 1x nedēļā (vai pēc Nila pieprasījuma) nolasa reģistru pārlūkā, sastāda JSON pēc šīs shēmas un augšupielādē Dropbox caur API.
+Galvenais ceļš (no 23.10.2026): Hetzner cron `relay/csdd-registrs` katru dienu 03:30 Europe/Riga (atkārto ik 20 min līdz 06:00, ja VPN aizņemts) TIKAI LASA reģistru un sūta pilnu nolasījumu uz `POST /api/iriss/csdd-registrs`. Bez AI. Sk. `relay/csdd-registrs/README.md`.
+Rezerves ceļš: Grok aģents Aivars pēc Nila pieprasījuma nolasa reģistru pārlūkā, sastāda JSON pēc šīs shēmas un augšupielādē Dropbox caur API (iknedēļas rokas rutīna vairs nav vajadzīga, kad cron strādā).
 Kur: Dropbox mape `/CSDD_registrs_IRISS` (maina ar env `DROPBOX_CSDD_REGISTRS_PATH`). Faila nosaukums: `registrs-YYYY-MM-DD.json`. Vecos failus nedzēš.
 Imports: cron `/api/cron/iriss-autoparks-registrs` katru dienu 04:40 UTC (07:40 Rīgā vasarā) nolasa jaunāko `.json` failu caur Dropbox API un aizpilda Autoparka kartītes pēc VIN. Bez AI. Ja faila saturs nav mainījies, imports neko nedara (`?force=1` importē vēlreiz).
 
@@ -57,6 +58,33 @@ Imports: cron `/api/cron/iriss-autoparks-registrs` katru dienu 04:40 UTC (07:40 
 Datumi: `YYYY-MM-DD` (pieņem arī `DD.MM.YYYY`). Skaitļi: skaitlis vai teksts (`"123 456"`, `"129,5"`).
 Trūkstošs vai tukšs lauks = "nav datu" - esošo vērtību kartītē nenodzēš.
 
+### Pilns nolasījums (Hetzner cron): `owner` un `snapshot`
+
+Tā pati shēma ar diviem neobligātiem laukiem (vecie faili bez tiem strādā kā līdz šim):
+
+```json
+{
+  "schema": "iriss-csdd-tirdzn-registrs/v1",
+  "generatedAt": "2026-10-23",
+  "snapshot": { "complete": true, "owners": ["IRISS", "DZA"] },
+  "vehicles": [{ "vin": "WAUZZZ8K0FA036715", "owner": "DZA", "tradeAct": { "number": "TA-2026-0042" }, "status": "Tirdzniecībā" }]
+}
+```
+
+- `vehicles[].owner`: `IRISS` (SIA ĪRISS) vai `DZA` (SIA DZINTARZEME AUTO).
+- `snapshot.complete: true` = fails ir PILNS šo firmu saraksts. Tikai tad imports:
+  - pievieno jaunus pieņemtos auto (jauna kartīte ar reģistra laukiem un īpašnieku, statuss "Gaida sagatavošanu", bez cenām);
+  - auto, kam bija akta nr., bet nolasījumā vairs nav, atzīmē `registry.removedAt` un reģistra statusu "Izņemts no tirdzniecības";
+  - drošības slieksnis: ja firmai pazūd > 50% (un vismaz 3) pieņemto auto vai firmai nav nevienas rindas, izņemšanu tai firmai neatzīmē (`removalGuarded`).
+- Statuss reģistrā "Pārdots/Izņemts/Anulēts" (jebkurā failā) = vairs nav tirdzniecībā (`removedAt`). Atkal "Tirdzniecībā" - atzīme noņemta.
+- Autoparka statuss, cenas, piezīmes, nosaukums, aprīkojuma rinda un Nila labotie reģistra lauki netiek mainīti nekad. Arhīva auto netiek aiztikti un netiek dublēti.
+- Vecāks rokas fails (mazāks `generatedAt`) pēc automātiskā nolasījuma Dropbox cron netiek importēts (`reason: "older"`).
+
+## Pieņemtie tirdzniecībā - vienīgais avots
+
+`listAcceptedForTradeVehicles()` (`lib/iriss-autoparks-accepted.ts`): ir akta nr., nav `removedAt`, reģistra statuss nav "pārdots/izņemts", Autoparkā nav "Pārdots" un nav arhīvā.
+Endpoint: `GET /api/admin/iriss/autoparks/accepted-for-trade[?owner=IRISS|DZA]` (Pavadzīmes vai Loģistika; bez cenām). To pašu sarakstu lieto pavadzīmju auto izvēle.
+
 ## Personas dati
 
 Failā NELIEK īpašnieka vārdu, personas kodu, adresi, tālruni vai citus personas datus. Ja tādi tomēr ir, imports tos ignorē - tiek paņemti tikai augstāk minētie lauki.
@@ -75,3 +103,4 @@ Failā NELIEK īpašnieka vārdu, personas kodu, adresi, tālruni vai citus pers
 - Dropbox: tie paši `DROPBOX_REFRESH_TOKEN` / `DROPBOX_APP_KEY` / `DROPBOX_APP_SECRET`, ko lieto pavadzīmes. Lietotnei jābūt piekļuvei mapei `/CSDD_registrs_IRISS`.
 - `DROPBOX_CSDD_REGISTRS_PATH` - nav obligāts, ja mape ir cita.
 - `CRON_SECRET` - jau ir (Vercel cron).
+- `IRISS_CSDD_REGISTRS_TOKEN` - jauns (>= 16 zīmes, `openssl rand -hex 32`); tā pati vērtība Hetzner `/etc/csdd-registrs.env` kā `PROVIN_REGISTRS_TOKEN`. Bez tā `POST /api/iriss/csdd-registrs` atbild 401.

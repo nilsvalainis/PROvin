@@ -39,6 +39,11 @@ export type AutoparksRegistry = RegistryValues & {
   registryDate: string;
   /** Lauki, ko Nils labojis ar roku. Imports tos nepārraksta. */
   manual: RegistryKey[];
+  /**
+   * Kad pilnā reģistra nolasījumā (snapshot) šī VIN vairs nebija vai statuss bija "pārdots/izņemts" (ISO).
+   * Tukšs = pēdējā nolasījumā pieņemts tirdzniecībā (vai nav zināms). Tikai reģistra lauks, ar roku nelabo.
+   */
+  removedAt: string;
 };
 
 export const REGISTRY_FIELD_LV: Record<RegistryKey, string> = {
@@ -142,7 +147,7 @@ export function emptyRegistryValues(): RegistryValues {
 }
 
 export function emptyAutoparksRegistry(): AutoparksRegistry {
-  return { ...emptyRegistryValues(), importedAt: "", importFile: "", registryDate: "", manual: [] };
+  return { ...emptyRegistryValues(), importedAt: "", importFile: "", registryDate: "", manual: [], removedAt: "" };
 }
 
 /** Krātuves ieraksts -> droša forma. Nezināmus laukus izmet. */
@@ -156,6 +161,7 @@ export function normalizeAutoparksRegistry(raw: unknown): AutoparksRegistry | un
   out.importFile = str(raw.importFile, 200);
   out.registryDate = str(raw.registryDate, 40);
   out.manual = Array.isArray(raw.manual) ? [...new Set(raw.manual.filter(isRegistryKey))] : [];
+  out.removedAt = str(raw.removedAt, 40);
   return out;
 }
 
@@ -163,10 +169,35 @@ export function normalizeRegistryVin(v: unknown): string {
   return typeof v === "string" ? v.replace(/[\s-]/g, "").toUpperCase().slice(0, 32) : "";
 }
 
-/** Viens auto no faila: tikai whitelist lauki. */
-export type RegistryFileVehicle = { vin: string; values: Partial<RegistryValues> };
+/** Reģistra statuss, kas nozīmē "vairs nav tirdzniecībā" (pārdots, izņemts, anulēts u.tml.). */
+const NOT_IN_TRADE_RE = /pārdot|pardot|izņem|iznem|anulē|anule|noņem|nonem|dzēst|dzest|atsauk|sold|removed/i;
 
-export type RegistryFile = { generatedAt: string; vehicles: RegistryFileVehicle[] };
+/** Vai reģistra statuss nozīmē, ka auto PAŠLAIK ir pieņemts tirdzniecībā. Tukšs statuss = jā (nav pretēja ziņa). */
+export function registryStatusInTrade(status: string | undefined | null): boolean {
+  return !NOT_IN_TRADE_RE.test(status ?? "");
+}
+
+/** Firmas, kuru auto ir reģistrā (tās pašas kā Autoparka `owner`). */
+export const REGISTRY_OWNERS = ["IRISS", "DZA"] as const;
+export type RegistryOwner = (typeof REGISTRY_OWNERS)[number];
+
+function registryOwner(v: unknown): RegistryOwner | undefined {
+  return typeof v === "string" && (REGISTRY_OWNERS as readonly string[]).includes(v.trim().toUpperCase())
+    ? (v.trim().toUpperCase() as RegistryOwner)
+    : undefined;
+}
+
+/** Viens auto no faila: tikai whitelist lauki. `owner` - neobligāts (Hetzner nolasījums to vienmēr ieliek). */
+export type RegistryFileVehicle = { vin: string; values: Partial<RegistryValues>; owner?: RegistryOwner };
+
+/**
+ * `snapshot` - fails ir PILNS šo firmu pieņemto auto saraksts (automātiskais nolasījums no reģistra).
+ * Tikai tad imports drīkst pievienot jaunus auto un atzīmēt trūkstošos kā izņemtus.
+ * Aivara rokas failos (bez `snapshot`) imports tikai papildina esošās kartītes, kā līdz šim.
+ */
+export type RegistrySnapshot = { complete: true; owners: RegistryOwner[] };
+
+export type RegistryFile = { generatedAt: string; vehicles: RegistryFileVehicle[]; snapshot?: RegistrySnapshot };
 
 export type RegistryParseResult = { ok: true; file: RegistryFile; skipped: number } | { ok: false; error: string };
 
@@ -200,7 +231,14 @@ function vehicleFromFile(raw: unknown): RegistryFileVehicle | null {
     const v = safetyFromFile(safety[k]);
     if (v) values[k] = v;
   }
-  return { vin, values };
+  const owner = registryOwner(raw.owner);
+  return owner ? { vin, values, owner } : { vin, values };
+}
+
+function snapshotFromFile(raw: unknown): RegistrySnapshot | undefined {
+  if (!isObj(raw) || raw.complete !== true || !Array.isArray(raw.owners)) return undefined;
+  const owners = [...new Set(raw.owners.map(registryOwner).filter((o): o is RegistryOwner => Boolean(o)))];
+  return owners.length ? { complete: true, owners } : undefined;
 }
 
 /** Nolasa Aivara JSON failu. Nezināmi lauki (piem. personas dati) tiek ignorēti un nekur neglabājas. */
@@ -215,7 +253,9 @@ export function parseRegistryFile(raw: unknown): RegistryParseResult {
     if (v) byVin.set(v.vin, v);
     else skipped += 1;
   }
-  return { ok: true, file: { generatedAt: str(raw.generatedAt, 40), vehicles: [...byVin.values()] }, skipped };
+  const snapshot = snapshotFromFile(raw.snapshot);
+  const file: RegistryFile = { generatedAt: str(raw.generatedAt, 40), vehicles: [...byVin.values()] };
+  return { ok: true, file: snapshot ? { ...file, snapshot } : file, skipped };
 }
 
 /**
