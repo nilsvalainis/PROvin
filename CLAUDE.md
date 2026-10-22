@@ -13,6 +13,7 @@ Katrs Claude aģents pirms jebkura uzdevuma izlasa un stingri ievēro `docs/resu
 - Sonnet un Opus Cursorā maksā papildus - tikai ar Nila "jā".
 - Darbs ilgāks par 1 h vai vairāk par 25 failiem: vispirms novērtējums Nilam (caur Grok Andri / `docs/komandu-zinojumi.md`) un gaidi lēmumu.
 - Dropbox: augšupielāde un lejupielāde VIENMĒR caur Dropbox API/konektoru, nekad caur pārlūku. Pēc augšupielādes failus pārbaudi, saskaitot tos caur API.
+- Valoda: visas atbildes Nilam TIKAI latviešu valodā.
 
 ## Valoda un teksts
 
