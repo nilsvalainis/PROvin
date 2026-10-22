@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode, type PointerEvent
 import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
 import { MenuIcon } from "@/components/admin/mobile/MenuIcons";
 import {
+  MENU_SIZE_LABEL,
   addMenuEntry,
   defaultMenuLayout,
   menuLayoutStorageKey,
@@ -30,7 +31,10 @@ type Props = {
   workspace: "iriss" | "pro";
   catalog: MenuCatalogItem[];
   defaultIds: readonly string[];
+  /** Skaits nozīmītē: ikonai un arī logrīkam, kas samazināts līdz ikonai. */
   badgeOf: (item: MenuCatalogItem) => number;
+  /** Logrīks sarkanā tonī (piem. ir kavētie). */
+  alertOf?: (item: MenuCatalogItem) => boolean;
   /** Ja saite atkarīga no datiem (piem. tikai kavētie). Noklusējums: item.href. */
   hrefOf?: (item: MenuCatalogItem) => string;
   renderWidget: (item: MenuCatalogItem, size: MenuSize) => ReactNode;
@@ -40,7 +44,7 @@ type Props = {
  * iOS stila sākuma režģis: nospied un tur, lai kārtotu, noņemtu vai mainītu izmēru;
  * "+ Pievienot" atver visu, ko vēl nav režģī.
  */
-export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, hrefOf, renderWidget }: Props) {
+export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, alertOf, hrefOf, renderWidget }: Props) {
   const fallback = useMemo(() => defaultMenuLayout(catalog, defaultIds), [catalog, defaultIds]);
   const byId = useMemo(() => new Map(catalog.map((c) => [c.id, c])), [catalog]);
   const [layout, setLayout] = useState<MenuLayout>(fallback);
@@ -52,6 +56,12 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, hrefOf, rend
   const pressRef = useRef<{ x: number; y: number; timer: number } | null>(null);
   const suppressClickRef = useRef(false);
   const dragIndexRef = useRef(-1);
+  const skipNextSyncRef = useRef(false);
+  const userChangedRef = useRef(false);
+  const edit = (fn: (prev: MenuLayout) => MenuLayout) => {
+    userChangedRef.current = true;
+    setLayout(fn);
+  };
   const storageKey = menuLayoutStorageKey(workspace);
 
   // Ielādē saglabāto izkārtojumu tikai pēc montāžas (serverī un pārlūkā tas pats HTML, nav hydration atšķirību).
@@ -64,6 +74,19 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, hrefOf, rend
     }
     setLayout(normalizeMenuLayout(raw, catalog, fallback));
     setReady(true);
+    // Servera izkārtojums (kopīgs iPhone un datoram) aizstāj vietējo, ja tāds ir.
+    let stop = false;
+    void fetch(`/api/admin/menu-layout?ws=${workspace}`, { credentials: "include", cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { layout?: unknown } | null) => {
+        if (stop || !data || !Array.isArray(data.layout) || data.layout.length === 0) return;
+        skipNextSyncRef.current = true;
+        setLayout(normalizeMenuLayout(data.layout, catalog, fallback));
+      })
+      .catch(() => undefined);
+    return () => {
+      stop = true;
+    };
     // Katalogs un noklusējums nemainās starp renderēšanām; izmaiņa ir apzināta.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
@@ -75,7 +98,21 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, hrefOf, rend
     } catch {
       // nav krātuves (privātais režīms): izkārtojums paliek tikai šajā sesijā
     }
-  }, [layout, ready, storageKey]);
+    // Uz serveri tikai lietotāja izmaiņas (ne pirmo ielādi un ne paša servera atbildi).
+    if (skipNextSyncRef.current || !userChangedRef.current) {
+      skipNextSyncRef.current = false;
+      return;
+    }
+    const t = window.setTimeout(() => {
+      void fetch("/api/admin/menu-layout", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ws: workspace, layout }),
+      }).catch(() => undefined);
+    }, 800);
+    return () => window.clearTimeout(t);
+  }, [layout, ready, storageKey, workspace]);
 
   function cancelPress() {
     if (pressRef.current) window.clearTimeout(pressRef.current.timer);
@@ -93,7 +130,7 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, hrefOf, rend
         if (!Number.isFinite(to) || to === dragIndexRef.current) return;
         const from = dragIndexRef.current;
         dragIndexRef.current = to;
-        setLayout((prev) => moveMenuEntry(prev, from, to));
+        edit((prev) => moveMenuEntry(prev, from, to));
       };
       const up = () => {
         window.removeEventListener("pointermove", move);
@@ -130,13 +167,13 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, hrefOf, rend
   }
 
   function removeItem(id: string) {
-    setLayout((prev) => removeMenuEntry(prev, id));
+    edit((prev) => removeMenuEntry(prev, id));
   }
 
   function cycleSize(id: string) {
     const item = byId.get(id);
     if (!item) return;
-    setLayout((prev) => {
+    edit((prev) => {
       const cur = prev.find((e) => e.id === id);
       if (!cur) return prev;
       return setMenuEntrySize(prev, catalog, id, nextMenuSize(item, cur.size));
@@ -164,13 +201,15 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, hrefOf, rend
           const item = byId.get(entry.id);
           if (!item) return null;
           const span = menuSpan(entry.size);
-          const isWidget = item.kind === "widget";
+          // Logrīks, kas samazināts līdz ikonai, izskatās un uzvedas kā ikona (skaits nozīmītē).
+          const isWidget = item.kind === "widget" && entry.size !== "app";
           const badge = isWidget ? 0 : badgeOf(item);
+          const alert = Boolean(alertOf?.(item));
           return (
             <div
               key={entry.id}
               data-menu-idx={index}
-              className={`menu-tile ${isWidget ? "menu-widget" : "menu-app"}${dragId === entry.id ? " is-dragging" : ""}`}
+              className={`menu-tile ${isWidget ? "menu-widget" : "menu-app"}${alert ? " menu-alert" : ""}${dragId === entry.id ? " is-dragging" : ""}`}
               style={{
                 gridColumn: `span ${span.cols}`,
                 gridRow: `span ${span.rows}`,
@@ -233,11 +272,11 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, hrefOf, rend
                 <button
                   type="button"
                   className="menu-size"
-                  aria-label={`Izmērs ${entry.size}, mainīt`}
+                  aria-label={`Izmērs ${MENU_SIZE_LABEL[entry.size]}, mainīt`}
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => cycleSize(entry.id)}
                 >
-                  {entry.size}
+                  {MENU_SIZE_LABEL[entry.size]}
                 </button>
               ) : null}
             </div>
@@ -266,11 +305,11 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, hrefOf, rend
                     type="button"
                     className="menu-gallery-size"
                     onClick={() => {
-                      setLayout((prev) => addMenuEntry(prev, item, s));
+                      edit((prev) => addMenuEntry(prev, item, s));
                       setAddOpen(false);
                     }}
                   >
-                    {s === "app" ? "Pievienot" : s}
+                    {s === "app" ? (item.kind === "widget" ? "Ikona" : "Pievienot") : s}
                   </button>
                 ))}
               </span>

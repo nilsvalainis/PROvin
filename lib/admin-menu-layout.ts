@@ -2,7 +2,8 @@
  * Telefona sākuma režģis (IRISS un PRO): ikonas un logrīki, ko lietotājs pats kārto un izmēro.
  * Tikai tīra loģika, bez React un bez glabāšanas.
  *
- * Izmēri: app = 1×1, S = 2×2, M = 4×2, L = 4×4 (4 kolonnas).
+ * Izmēri: app = 1×1, S = 2×2, M = 4×2, L = 4×4 (4 kolonnas). Logrīku var samazināt arī līdz ikonai (app):
+ * tad tas izskatās kā ikona ar skaitu nozīmītē.
  * Logrīka saturs skaita rindas pēc izmēra (S 2, M 4, L 6), jo pavadzīmju termiņi parasti ir 2–4 numuri.
  */
 
@@ -125,6 +126,8 @@ export function missingMenuItems(layout: MenuLayout, catalog: readonly MenuCatal
   const present = new Set(layout.map((e) => e.id));
   return catalog.filter((c) => !present.has(c.id));
 }
+
+export const MENU_SIZE_LABEL: Record<MenuSize, string> = { app: "Ikona", S: "S", M: "M", L: "L" };
 
 export function menuLayoutStorageKey(workspace: "iriss" | "pro"): string {
   return `provin-menu-v3-${workspace}`;

@@ -50,7 +50,7 @@ export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boo
       kind: "widget",
       title: "Kravas un karte",
       href: "/admin/iriss/logistika",
-      sizes: ["S", "M", "L"],
+      sizes: ["S", "M", "L", "app"],
       defaultSize: "M",
       section: "logistika",
       icon: "pin",
@@ -61,7 +61,7 @@ export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boo
       kind: "widget",
       title: "Pavadzīmju termiņi",
       href: "/admin/iriss/pavadzimes",
-      sizes: ["S", "M", "L"],
+      sizes: ["S", "M", "L", "app"],
       defaultSize: "M",
       rowsBySize: { S: 2, M: 4, L: 6 },
       section: "pavadzimes",
@@ -73,7 +73,7 @@ export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boo
       kind: "widget",
       title: "Jauni sludinājumi",
       href: "/admin/iriss/sludinajumi",
-      sizes: ["S", "M"],
+      sizes: ["S", "M", "app"],
       defaultSize: "S",
       section: "sludinajumi",
       icon: "list",
@@ -84,7 +84,7 @@ export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boo
       kind: "widget",
       title: "Radara atradumi",
       href: "/admin/iriss/scan",
-      sizes: ["S", "M"],
+      sizes: ["S", "M", "app"],
       defaultSize: "S",
       section: "radars",
       icon: "radar",
@@ -95,7 +95,7 @@ export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boo
       kind: "widget",
       title: "Autoparka laukums",
       href: "/admin/iriss/autoparks",
-      sizes: ["S", "M"],
+      sizes: ["S", "M", "app"],
       defaultSize: "S",
       section: "logistika",
       icon: "warehouse",
@@ -126,12 +126,13 @@ const PRO_APPS: Array<Omit<MenuCatalogItem, "kind" | "sizes" | "defaultSize">> =
 export function proMenuCatalog(): MenuCatalogItem[] {
   const apps: MenuCatalogItem[] = PRO_APPS.map((a) => ({ ...a, kind: "app", sizes: ["app"], defaultSize: "app" }));
   const widgets: MenuCatalogItem[] = [
-    { id: "w-pro-mini", kind: "widget", title: "MINI + auditi", href: "/admin/dashboard", sizes: ["S", "M", "L"], defaultSize: "M", icon: "car", tone: "#1a73e8" },
-    { id: "w-pro-dileri", kind: "widget", title: "Dīleru pasūtījumi", href: "/admin/dashboard", sizes: ["S", "M"], defaultSize: "S", icon: "dealers", tone: "#4f4ddb" },
-    { id: "w-pro-atrie", kind: "widget", title: "Ātrie vērtējumi", href: "/admin/atras-vertesanas", sizes: ["S", "M"], defaultSize: "S", icon: "bolt", tone: "#ff9f0a" },
-    { id: "w-pro-rits", kind: "widget", title: "Šodienas plāns", href: "/admin/kopsavilkums", sizes: ["S", "M"], defaultSize: "S", icon: "sun", tone: "#e0a800" },
+    { id: "w-pro-mini", kind: "widget", title: "MINI + auditi", href: "/admin/dashboard", sizes: ["S", "M", "L", "app"], defaultSize: "M", icon: "car", tone: "#1a73e8" },
+    { id: "w-pro-dileri", kind: "widget", title: "Dīleru dati gaidīšanā", href: "/admin/dashboard", sizes: ["S", "M", "app"], defaultSize: "S", icon: "dealers", tone: "#4f4ddb" },
+    { id: "w-pro-ienemumi", kind: "widget", title: "Šodienas ieņēmumi", href: "/admin/dashboard", sizes: ["S", "M", "app"], defaultSize: "S", icon: "euro", tone: "#1f8f3a" },
+    { id: "w-pro-atrie", kind: "widget", title: "Ātrie vērtējumi", href: "/admin/atras-vertesanas", sizes: ["S", "M", "app"], defaultSize: "S", icon: "bolt", tone: "#ff9f0a" },
+    { id: "w-pro-rits", kind: "widget", title: "Šodienas plāns", href: "/admin/kopsavilkums", sizes: ["S", "M", "app"], defaultSize: "S", icon: "sun", tone: "#e0a800" },
   ];
   return [...apps, ...widgets];
 }
 
-export const PRO_DEFAULT_LAYOUT_IDS = ["w-pro-mini", "w-pro-atrie", "pro-pasutijumi", "pro-atrie", "pro-vin", "pro-rits", "pro-partneri", "pro-dileri", "pro-izmaksas", "pro-rekini", "pro-blogs", "pro-agregati", "pro-statistika", "pro-teksti"];
+export const PRO_DEFAULT_LAYOUT_IDS = ["w-pro-mini", "w-pro-dileri", "w-pro-ienemumi", "pro-pasutijumi", "pro-atrie", "pro-vin", "pro-rits", "pro-partneri", "pro-dileri", "pro-izmaksas", "pro-rekini", "pro-blogs", "pro-agregati", "pro-statistika", "pro-teksti"];

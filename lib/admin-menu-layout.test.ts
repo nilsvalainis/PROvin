@@ -38,6 +38,10 @@ describe("menu izmēri", () => {
   it("cikls tikai pa atļautajiem izmēriem", () => {
     expect(nextMenuSize(byId("w-waybills"), "S")).toBe("M");
     expect(nextMenuSize(byId("w-waybills"), "L")).toBe("S");
+    // Logrīku var samazināt līdz ikonai, ja katalogā atļauts.
+    const withIcon = { ...byId("w-radar"), sizes: ["S", "M", "app"] as const };
+    expect(nextMenuSize(withIcon, "M")).toBe("app");
+    expect(nextMenuSize(withIcon, "app")).toBe("S");
     expect(nextMenuSize(byId("w-radar"), "M")).toBe("S");
     expect(nextMenuSize(byId("app-a"), "app")).toBe("app");
   });

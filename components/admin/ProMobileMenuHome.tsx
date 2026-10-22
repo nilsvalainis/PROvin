@@ -31,33 +31,59 @@ export function ProMobileMenuHome() {
     return () => mq.removeEventListener("change", go);
   }, [router]);
 
+  // Skaitļi atjaunojas paši: atgriežoties lietotnē un ik minūti, kamēr lapa atvērta.
   useEffect(() => {
     let off = false;
-    void fetch("/api/admin/badges", { credentials: "include", cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json: Partial<Counts> | null) => {
-        if (off || !json?.proHome) return;
-        setCounts({
-          proHome: json.proHome,
-          openCount: Number(json.openCount) || 0,
-          unseenCount: Number(json.unseenCount) || 0,
-          activeCount: Number(json.activeCount) || 0,
-        });
-      })
-      .catch(() => undefined);
+    const load = () =>
+      void fetch("/api/admin/badges", { credentials: "include", cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((json: Partial<Counts> | null) => {
+          if (off || !json?.proHome) return;
+          setCounts({
+            proHome: json.proHome,
+            openCount: Number(json.openCount) || 0,
+            unseenCount: Number(json.unseenCount) || 0,
+            activeCount: Number(json.activeCount) || 0,
+          });
+        })
+        .catch(() => undefined);
+    load();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") load();
+    }, 60_000);
     return () => {
       off = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.clearInterval(timer);
     };
   }, []);
 
-  const badgeOf = (item: MenuCatalogItem) =>
-    !counts || !item.badge
-      ? 0
-      : item.badge === "orders"
-        ? counts.activeCount
-        : item.badge === "fast"
-          ? counts.openCount
-          : counts.unseenCount;
+  const badgeOf = (item: MenuCatalogItem): number => {
+    if (!counts) return 0;
+    switch (item.id) {
+      case "w-pro-mini":
+        return counts.proHome.orders.count;
+      case "w-pro-dileri":
+        return counts.proHome.dealers.count;
+      case "w-pro-atrie":
+        return counts.openCount;
+      case "w-pro-ienemumi":
+        return counts.proHome.today?.count ?? 0;
+    }
+    return !item.badge ? 0 : item.badge === "orders" ? counts.activeCount : item.badge === "fast" ? counts.openCount : counts.unseenCount;
+  };
+
+  /** Sarkans, ja ir kavētie. */
+  const alertOf = (item: MenuCatalogItem): boolean =>
+    Boolean(
+      counts &&
+        ((item.id === "w-pro-mini" && counts.proHome.orders.overdue > 0) ||
+          (item.id === "w-pro-dileri" && counts.proHome.dealers.overdue > 0)),
+    );
 
   /** Ja ir kavētie, MINI logrīks atver tikai tos (augšā poga "Rādīt visus"). */
   const hrefOf = (item: MenuCatalogItem) =>
@@ -73,6 +99,7 @@ export function ProMobileMenuHome() {
         catalog={catalog}
         defaultIds={PRO_DEFAULT_LAYOUT_IDS}
         badgeOf={badgeOf}
+        alertOf={alertOf}
         hrefOf={hrefOf}
         renderWidget={(item, size) =>
           renderProWidget(item, size, {

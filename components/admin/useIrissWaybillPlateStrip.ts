@@ -8,7 +8,8 @@ import {
 } from "@/lib/iriss-mobile-plate-strip";
 import type { IrissPavadzimeListRow } from "@/lib/iriss-pavadzimes-types";
 
-export function useIrissWaybillPlateStrip(enabled: boolean): {
+/** `refreshKey`: mainot to, saraksts ielādējas no jauna (piem. atgriežoties lietotnē). */
+export function useIrissWaybillPlateStrip(enabled: boolean, refreshKey = 0): {
   items: IrissMobilePlateStripItem[];
   loaded: boolean;
   busyCount: number;
@@ -45,7 +46,7 @@ export function useIrissWaybillPlateStrip(enabled: boolean): {
     return () => {
       cancelled = true;
     };
-  }, [enabled]);
+  }, [enabled, refreshKey]);
 
   return { items, loaded, busyCount: irissMobilePlateBusyCount(items) };
 }

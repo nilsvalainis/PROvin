@@ -15,13 +15,15 @@ describe("IRISS katalogs pēc tiesībām", () => {
     const cat = irissMenuCatalog([], true);
     const layout = defaultMenuLayout(cat, IRISS_DEFAULT_LAYOUT_IDS);
     expect(layout.length).toBe(IRISS_DEFAULT_LAYOUT_IDS.length);
-    expect(cat.find((c) => c.id === "w-logistika")?.sizes).toEqual(["S", "M", "L"]);
+    expect(cat.find((c) => c.id === "w-logistika")?.sizes).toEqual(["S", "M", "L", "app"]);
   });
 });
 
 describe("PRO katalogs", () => {
   it("visas PRO sadaļas ir pieejamas kā ikonas, un noklusējums to atbilst", () => {
     const cat = proMenuCatalog();
+    expect(PRO_DEFAULT_LAYOUT_IDS.slice(0, 3)).toEqual(["w-pro-mini", "w-pro-dileri", "w-pro-ienemumi"]);
+    expect(cat.filter((c) => c.kind === "widget").every((c) => c.sizes.includes("app"))).toBe(true);
     expect(cat.filter((c) => c.kind === "app").length).toBe(12);
     expect(defaultMenuLayout(cat, PRO_DEFAULT_LAYOUT_IDS).length).toBe(PRO_DEFAULT_LAYOUT_IDS.length);
   });
