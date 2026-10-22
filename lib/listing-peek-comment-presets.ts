@@ -42,6 +42,31 @@ export const LISTING_PEEK_COMMENT_CLOSER =
 const LISTING_PEEK_COMMENT_CLOSER_LEGACY =
   "Šis ir virspusējs sākotnējais vērtējums. Pilnu auto analīzi ar nobraukuma hronoloģiju, negadījumu datiem, dīleru vēsturi un specifisko tehnisko risku analīzi nodrošina PROVIN AUDITS. Tas ir drošākais veids, kā pilnvērtīgi noskaidrot digitālo auto vēsturi, izvairīties no dārgiem remontiem un iegūt argumentus cenas apspriešanai.";
 
+/** Veco nosūtīto vēstuļu čipu teksti - tikai parsēšanai. Jaunie čipi rāda LISTING_PEEK_TOPICS. */
+const LISTING_PEEK_PHRASE_TEXT_ALIASES: Record<string, readonly string[]> = {
+  "odometer-japeta": [
+    "Odometra rādījuma atbilstību šobrīd nav iespējams pilnvērtīgi apstiprināt, tāpēc pilnīgai pārliecībai nobraukuma hronoloģija ir jāsalīdzina ar starptautiskajiem un dīleru reģistriem.",
+  ],
+  "incidents-pazimes": [
+    "Pieejamā informācija liecina par iespējamu dalību negadījumā, tāpēc būtiski noskaidrot fiksēto bojājumu raksturu un aprēķināto zaudējumu apmēru.",
+  ],
+  "technical-nianses": [
+    "Šim modelim ir zināmas nianses, kurām jāpievērš uzmanība gan apskatot auto klātienē, gan turpmākajā ekspluatācijā.",
+  ],
+  "seller-jautajumi": [
+    "Uzmanību pievērš arī pārdevēja darbības stils, kas rada papildu jautājumus.",
+  ],
+};
+
+function listingPeekPhraseMatchTexts(phraseId: string, currentText: string): readonly string[] {
+  const aliases = LISTING_PEEK_PHRASE_TEXT_ALIASES[phraseId];
+  return aliases?.length ? [currentText, ...aliases] : [currentText];
+}
+
+function listingPeekPhraseMatchesText(phraseId: string, currentText: string, haystack: string): string | null {
+  return listingPeekPhraseMatchTexts(phraseId, currentText).find((phrase) => haystack.includes(phrase)) ?? null;
+}
+
 function listingPeekCloserInText(text: string): { index: number; closer: string } | null {
   const current = text.indexOf(LISTING_PEEK_COMMENT_CLOSER);
   if (current >= 0) return { index: current, closer: LISTING_PEEK_COMMENT_CLOSER };
@@ -89,7 +114,7 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
         id: "odometer-japeta",
         tone: "caution",
         label: "Jāpēta",
-        text: "Odometra rādījuma atbilstību šobrīd nav iespējams pilnvērtīgi apstiprināt, tāpēc pilnīgai pārliecībai nobraukuma hronoloģija ir jāsalīdzina ar starptautiskajiem un dīleru reģistriem.",
+        text: "Latvijā fiksētie nobraukuma rādījumi ir secīgi un loģiski, taču auto uz Latviju ievests jau ar ievērojamu nobraukumu, un tā pirmo dzīves posmu ārvalstīs mūsu sākotnējā pārbaude neaptver. Odometra atbilstību šobrīd nav iespējams pilnvērtīgi apstiprināt, tāpēc pilnīgai pārliecībai nobraukuma hronoloģija jāsalīdzina ar starptautiskajiem un dīleru reģistriem.",
       },
       {
         id: "odometer-ncsdd",
@@ -143,7 +168,7 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
         id: "incidents-pazimes",
         tone: "concern",
         label: "Pazīmes",
-        text: "Pieejamā informācija liecina par iespējamu dalību negadījumā, tāpēc būtiski noskaidrot fiksēto bojājumu raksturu un aprēķināto zaudējumu apmēru.",
+        text: "Pieejamā informācija liecina par iespējamu dalību negadījumā, tāpēc būtiski noskaidrot fiksēto bojājumu raksturu un aprēķināto zaudējumu apmēru. Jāņem vērā arī, ka par auto laiku ārvalstīs negadījumu datus atklāj tikai padziļināta pārbaude.",
       },
       {
         id: "incidents-butiski",
@@ -173,7 +198,7 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
         id: "technical-nianses",
         tone: "caution",
         label: "Nianses",
-        text: "Šim modelim ir zināmas nianses, kurām jāpievērš uzmanība gan apskatot auto klātienē, gan turpmākajā ekspluatācijā.",
+        text: "Šim modeļim ir zināmas nianses, kurām jāpievērš uzmanība gan apskatot auto klātienē, gan turpmākajā ekspluatācijā. Tehniskās apskates vēsturē ir pazīmes, kas norāda uz vietām, kuras klātienē vērts apskatīt rūpīgāk.",
       },
       {
         id: "technical-problematisks",
@@ -203,7 +228,7 @@ export const LISTING_PEEK_TOPICS: readonly ListingPeekTopic[] = [
         id: "seller-jautajumi",
         tone: "concern",
         label: "Jautājumi",
-        text: "Uzmanību pievērš arī pārdevēja darbības stils, kas rada papildu jautājumus.",
+        text: "Auto pārdošanā ir jau ilgstoši, un cena ir būtiski samazināta. Uzmanību pievērš arī pārdevēja darbības stils, kas rada papildu jautājumus.",
       },
       {
         id: "seller-risks",
@@ -460,7 +485,9 @@ export function parseListingPeekCustomerComment(raw: string): {
   const unused = new Set(LISTING_PEEK_TOPIC_IDS);
   for (const text of numbered) {
     const hit = LISTING_PEEK_TOPICS.find(
-      (topic) => unused.has(topic.id) && topic.phrases.some((p) => p.text === text || text.includes(p.text)),
+      (topic) =>
+        unused.has(topic.id) &&
+        topic.phrases.some((p) => listingPeekPhraseMatchesText(p.id, p.text, text)),
     );
     if (hit) {
       lines[hit.id] = text;
@@ -479,7 +506,9 @@ export function parseListingPeekCustomerComment(raw: string): {
     const leftover = stripListingPeekCommentLeadingGreeting(withoutCloser);
     for (const topic of LISTING_PEEK_TOPICS) {
       if (!unused.has(topic.id)) continue;
-      const hits = topic.phrases.filter((p) => leftover.includes(p.text)).map((p) => p.text);
+      const hits = topic.phrases
+        .map((p) => listingPeekPhraseMatchesText(p.id, p.text, leftover))
+        .filter((phrase): phrase is string => Boolean(phrase));
       if (hits.length > 0) {
         lines[topic.id] = hits.join(" ");
         // Re-join properly with periods
