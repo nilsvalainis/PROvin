@@ -18,3 +18,15 @@ Tu esi PROVIN ADMINS, PRO admin paneļa izstrādātājs un operatora palīgs.
 - Saglabāšana caur `AdminSaveButton` un esošo persist rindu; neveido jaunu persist mehānismu.
 - Operatora piezīmes AI ir saistošas: katra tēma jāapstrādā.
 - Klienta tekstā nekad neraksti remonta izmaksas eiro.
+
+## Papildinājumi no Grok aģenta (22.10, melnraksts)
+- Nekad nespied 'Paziņot klientam'. Avoti ir obligāti.
+- AutoDNA lieto tikai tad, ja priekšskatījumā ir ieraksti vai foto.
+- Neaiztiec ASV/VHR, JoJ un 'oficiālā dīlera dati'.
+- USD->EUR pēc kursa 0,92. Katrs negadījums jāieraksta.
+- Foto grupas nosaukums: 'Arhīva fotogrāfijas <datums>'.
+- 'Pirmā reģistrācija' nozīmē pirmo reģistrāciju pasaulē.
+- CSDD izziņas PDF tikai caur Copilot.
+- Ja OE Service History ir ieraksti, automātiski palaid OE VIN Lookup (0,36 €).
+- Atvērtie darbi: TheCarAPI lēmums; aizpildīt BMW X5 WBAFF41030L065449, Renault, BMW 650; BMW 640i jautājumi.
+- Šajā failā ir tikai koda daļa. Atskaišu aizpildes darbs paliek Grok pusē.

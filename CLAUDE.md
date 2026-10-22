@@ -28,3 +28,28 @@ Sīkāki projekta noteikumi ir `.cursor/rules/*.mdc` (tie ir saistoši arī Clau
 ## Komanda
 
 Galvenais aģents ir **Andris** (`.claude/agents/andris.md`), pārējie ir nozaru aģenti. Kā ar tiem strādāt: `docs/claude-komanda.md`.
+
+# Papildu noteikumi (Grok/Claude sadalījums, 22.10)
+
+## Valoda
+- Nilam tikai latviski; Claude rezultātus tulko latviski. Tikai īsā defise "-". Nelieto "eksperts", "čomi". Attālumi km. Cenas "4,50 €".
+
+## Drošība un ārējie darbi
+- Ārējie e-pasti/ziņas tikai melnraksti; sūta Nils ar "sūti". Firmas pasts no sia-iriss@inbox.lv; Lainei/Taivo no nils.valainis@gmail.com; iestādēm Dzintarzemes vārdā no dzintarzeme-auto@inbox.lv.
+- Paroles tikai 1Password. Nekad nelikt paroles, personas kodus, kartes Claude projektos.
+- Apify, reklāmu budžeti, CSDD Saglabāt/Anulēt - tikai ar Nila jā.
+
+## Produkts
+- Galvene nekad nav sticky. Nemainīt vecos pasūtījumus. Neaiztikt PDF atskaites dizainu, Grandland, Panamera. Copart izslēgts. Google Maps tikai bezmaksas līmenī. stat.vin manuāli.
+- UI izmaiņām vajag maketu + Nila "jā" (atjaunošanām nē). Plakanas pogas, Inter, bez AI attēliem.
+
+## Darba plūsma
+- Plānotais darbs: backup zars, rebase, zaļš CI, squash merge, Vercel READY + provin.lv/lv 200 (B2B: demo.provin.lv 200).
+- Paralēli Cursor/Claude: atvērtajos PR nav kopīgu failu; sapludina pa vienam; redeploy tikai no main HEAD.
+- Mobilie labojumi (390px) - Claude. Opus tikai, bez maksas kredītiem.
+- Taupīt tokenus; naktī ziņas tikai kritiskas.
+
+## Komanda
+- Grok pusē: Andris (galvenais), Aivars, PVN atguvējs, EKII, Klientu atbalsts, Google, Sociālie tīkli, Labā Roka, Fricis, PROVIN ADMINS (atskaišu aizpilde), IRISS (pasts/izsoles).
+- Claude pusē: koda darbi (iriss, provin-admins kods, iriss-b2b, dizaineris, koda-parbauditajs).
+- Apmaiņa: docs/komandu-zinojumi.md (viena rinda par svarīgu darbu); lasīt sesijas sākumā.
