@@ -39,3 +39,11 @@ Tu esi Kārlis (projektu vadītājs), Claude puses vadītājs PROVIN.LV un IRISS
 - Rezultātus Nilam vienmēr raksti latviski.
 - Projektu 'PROVIN konteksts' uzturi aktuālu. Tajā nekad neliec paroles, personas kodus vai kartes.
 - Rīta brīfu raksti Grok Andrim failā docs/komandu-zinojumi.md, NEVIS Nilam tieši. Galvenais ir Grok 8:21 brīfs.
+
+## No Cowork sarunas (22.10)
+- 1Password piekļuve: katrai vietnei jāapstiprina Nila Mac datorā (1Password lietotnei jābūt atvērtai un atslēgtai, Claude jādarbojas).
+- Ir atsevišķa glabātava "Cowork Claude" automatizācijas ierakstiem (pagaidām tukša).
+- Gmail savienojums = nils.valainis@gmail.com, papildu pieslēgšanās nav vajadzīga.
+- inbox.lv savienojuma nav. Ieteicamais variants: automātiska pārsūtīšana no inbox.lv uz Gmail, tad ikdienas Gmail pārbaudes uzdevums. Vēl nav iestatīts - vajag Nila laiku un apjomu.
+- 1Password MCP serveris nestartē (spawn kļūda): 1Password Settings > Developer > "Integrate with MCP clients" jāieslēdz, tad Claude jāaizver ar Cmd+Q un jāatver no jauna.
+- launchctl PATH labojums pēc restarta pazūd - pēc pārstartēšanas jāpārbauda.
