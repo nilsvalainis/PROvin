@@ -64,15 +64,33 @@ Serverī bija tikai `srv.js`, `main.js`, `jx.js`, `probe.js`, tāpēc `refill.js
 | `refill.js`, `save.js` | Plāni apvalki (strādā gan CommonJS, gan ESM mapē) -> `ctl/waybill-run.mjs` |
 | `waybill-scripts-core.mjs` | Loģika bez pārlūka: ievades pārbaude, idempotences žurnāls, klikšķu/tīkla/dialogu sargi |
 | `waybill-driver.mjs` | Playwright: pieslēgšanās, firma (ctx), akts pēc VIN vai "Jauna pavadzīme", lauki, Saglabāt, numurs, PDF |
-| `waybill-ui.example.json` | Adreses un selektori -> `/root/iriss-ttr/waybill-ui.json` (aizpilda pēc `main.js`/`probe.js`) |
-| `waybill-adapter.example.cjs` | Neobligāts: soļi no `main.js` -> `/root/iriss-ttr/waybill-adapter.cjs` |
+| `waybill-ui.example.json` | CSDD adrese, laiks -> `/root/iriss-ttr/waybill-ui.json` (install, ja vēl nav) |
+| `waybill-adapter.cjs` | CSDD TTR soļi kā Aivara skriptos -> `/root/iriss-ttr/waybill-adapter.cjs` (testi `lib/iriss-waybill-adapter.test.ts`) |
 
 - Bez `waybill-ui.json` abi skripti uzreiz atgriež `{ok:false}` un CSDD neaiztiek (darbs atpakaļ Aivaram).
-- `main.js` netiek importēts automātiski: tā augšējā līmeņa kods var palaist citu plūsmu. Ja tas eksportē funkcijas, tās pieslēdz
-  caur `waybill-adapter.cjs`; sargi paliek spēkā.
+- `main.js` netiek importēts: adapteris atkārto Aivara JAUNAS standarta pavadzīmes soļus (`save-v50-b193-6h.js`,
+  `save-dza-e350-b192.js`) bez pārtraukšanas daļas.
+
+### Adapteris (`waybill-adapter.cjs`)
+
+| Solis | CSDD |
+| --- | --- |
+| Pieslēgšanās | `#vards`/`#parole` + `button[name=submit]`. ĪRISS (ctx1): `CSDD_TTR_ENV_FILE` vai `/root/iriss-ttr/.env`, `/root/iriss-ttr/creds`. DZA (ctx2): `CSDD_TTR_ENV_FILE_DZA` vai `/root/iriss-ttr/creds-autoapkope-dza` |
+| DZA firma | `select[name=kiest_id]` = 5092 + "Turpināt" (pieslēgšanās fāzē); ĪRISS sesijā izvēle = kļūda |
+| Brīvs numurs | `ex('lapv',0,'a=3')`, numurs `select[name=rn]` sarakstā; ja nav - `{ok:false}` (nekas netiek pārtraukts) |
+| Tirdzniecības akts | `ex('rep_lapt_tl')` tikai lasa: VIN (vai modelis, ja VIN nav) aktā -> `{ok:false}`, darbs Aivaram |
+| Forma | `der_stundas`, `lra_id` (ĪRISS 2776, DZA 2894 - citādi "nepareiza firma"), `rn`, pārstāvis (ĪRISS 1065584 NILS VALAINIS, DZA TAIVO BATINS) |
+| Marka/modelis | `#kmod_id` pēc teksta (MB = MERCEDES-BENZ, VW = VOLKSWAGEN) + `ex('lapv_kmod')` + `#kmod_id_mod` precīzi; neviennozīmīgi - `{ok:false}` |
+| Maršruts | adrešu koks (GET `v=kav`): Tukuma nov. > TUKUMS > RĪGAS IELA > 75 -> `setKavSel`; bez mājas mezgla iela + `mn_m1` 75; CSDD Tukums `ans_kiest_id` 24 |
+| Saglabāt | tikai `save.js`: `form[name=lapv_form] button:has-text('Saglabāt')`, numurs no `#p1` ("Pavadzīmes numurs: P0...") + `#lapv_id` |
+| PDF | GET `?main=1&pdf=lapv&id=<lapv_id>` -> `pdf/<jobId>-<numurs>.pdf` |
+
+Lapā adapteris drīkst izsaukt tikai `ex('lapv',0,'a=3')`, `ex('lapv_kmod')`, `ex('rep_lapt_tl')` (`ALLOWED_EX`); `lapv_par`
+(pārtraukt), `a=2` u.c. - kļūda. Serveris sūta `ctx` kā `"ctx1"`/`"ctx2"`, `parseJobInput` pieņem abus formātus.
 - `browserUrl` tukšs: katrs skripts palaiž savu pārlūku, `save.js` formu aizpilda vēlreiz un pārbauda. `browserUrl`
   `http://127.0.0.1:9333` (ja `srv.js` dod CDP) vai `ws://...`: `refill.js` atstāj cilni (`window.name = iriss-job-<id>`), `save.js` to turpina.
-- Pieslēgšanās: `CSDD_USER`/`CSDD_PASS` (nosaukumus maina `userVar`/`passVar`) no `/root/iriss-ttr/.env`. Vērtības netiek izdrukātas.
+- Pieslēgšanās: sk. tabulu "Adapteris" (faili KEY=VALUE `CSDD_USER`/`CSDD_PASS` vai Aivara divu rindu `creds`). Vērtības netiek izdrukātas.
+- `browserUrl` atstāj tukšu: ar CDP (`srv.js`) DZA firmas izvēle sajauktu Aivara sesiju.
 
 Aizsardzība (testi `lib/iriss-waybill-scripts.test.ts`):
 - Pogas/saites/dialogi ar "pārtraukt, anulēt, beigt, dzēst, atcelt, cancel..." netiek spiesti nekad (arī `save` selektors, ja kļūdaini

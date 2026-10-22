@@ -1,32 +1,14 @@
 {
-  "_piezime": "Kopē uz /root/iriss-ttr/waybill-ui.json un aizpildi pēc main.js/probe.js (selektori, adreses). Paroles šeit NELIEC: tās nāk no /root/iriss-ttr/.env (userVar/passVar ir tikai mainīgo nosaukumi).",
-  "startUrl": "https://TTR-ADRESE-NO-MAIN-JS/",
+  "_piezime": "CSDD TTR (ows.csdd.gov.lv:7775). Soļus dara waybill-adapter.cjs; šeit tikai adrese, laiks un pieslēgšanās mainīgo nosaukumi. Paroles šeit NELIEC: ĪRISS no CSDD_TTR_ENV_FILE (vai /root/iriss-ttr/.env, /root/iriss-ttr/creds), DZA no CSDD_TTR_ENV_FILE_DZA (vai /root/iriss-ttr/creds-autoapkope-dza). browserUrl atstāj tukšu: savs pārlūks, srv.js sesija netiek aiztikta.",
+  "startUrl": "https://ows.csdd.gov.lv:7775/",
   "browserUrl": "",
-  "ignoreTls": false,
-  "timeoutMs": 30000,
+  "ignoreTls": true,
+  "timeoutMs": 90000,
   "userVar": "CSDD_USER",
   "passVar": "CSDD_PASS",
-  "waybillNoRe": "",
   "selectors": {
-    "user": "input[type=text]",
-    "pass": "input[type=password]",
-    "loginButton": "button[type=submit], input[type=submit]",
-    "company": { "1": "text:ĪRISS", "2": "text:DZINTARZEME" },
-    "newWaybill": "text:^\\s*Jauna pavadzīme\\s*$",
-    "tradeActList": "",
-    "tradeActRow": "tr:has-text('{vin}')",
-    "tradeActIssue": "text:Noformēt pavadzīmi",
-    "fields": {
-      "plate": "label:tranzīta numurs|numura zīme",
-      "brandModel": "label:marka",
-      "vin": "label:VIN|identifikācijas",
-      "routeFrom": "label:no kurienes|sākuma",
-      "routeTo": "label:uz kurieni|galamērķ",
-      "validFrom": "label:derīga no|sākuma datums",
-      "validUntil": "label:derīga līdz|beigu datums"
-    },
-    "save": "button:has-text('Saglabāt'), input[value='Saglabāt']",
-    "waybillNo": "",
-    "pdf": "text:Drukāt|PDF"
+    "user": "#vards",
+    "pass": "#parole",
+    "loginButton": "button[name=submit]"
   }
 }

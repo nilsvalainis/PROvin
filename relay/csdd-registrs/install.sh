@@ -35,7 +35,7 @@ mkdir -p "$STATE_DIR"
 chmod 700 "$STATE_DIR"
 
 if [[ ! -f "$ENV_FILE" ]]; then
-  echo "== $ENV_FILE no parauga (aizpildi PROVIN_REGISTRS_TOKEN un REGISTRS_LIST_URL_*)"
+  echo "== $ENV_FILE no parauga (aizpildi PROVIN_REGISTRS_TOKEN, CSDD_TTR_ENV_FILE, CSDD_TTR_ENV_FILE_DZA)"
   install -m 600 "$APP_DIR/csdd-registrs.env.example" "$ENV_FILE"
 fi
 
