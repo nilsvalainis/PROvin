@@ -1,7 +1,7 @@
 // CSDD TTR Playwright draiveris refill.js / save.js vajadzībām (līgums: waybill-scripts-core.mjs, "Draivera līgums").
 // Selektori un adreses: <IRISS_TTR_DIR>/waybill-ui.json (paraugs waybill-ui.example.json). Bez tā - kļūda pirms jebkādas darbības.
-// Ja main.js jau prot konkrētus soļus: <IRISS_TTR_DIR>/waybill-adapter.cjs var pārrakstīt jebkuru soli (paraugs
-// waybill-adapter.example.cjs). main.js netiek importēts automātiski: tā augšējā līmeņa kods var palaist citu plūsmu.
+// CSDD soļi: <IRISS_TTR_DIR>/waybill-adapter.cjs (waybill-adapter.cjs, Aivara jaunas standarta pavadzīmes soļi) pārraksta
+// draivera soļus. main.js netiek importēts automātiski: tā augšējā līmeņa kods var palaist citu plūsmu.
 // Aizsardzība (vienmēr, arī adaptera soļiem): tīkla bloķētājs, DOM klikšķu sargs, dialogu sargs (waybill-scripts-core.mjs).
 
 import fs from "node:fs";
@@ -152,7 +152,7 @@ export async function createPlaywrightDriver(step, { ttrDir, env, log }) {
     if ((await loc(page, sel.pass || "input[type=password]").count()) > 0) throw new Error("CSDD pieslēgšanās neizdevās");
   }
 
-  const helpers = { loc: (s, v) => loc(page, s, v), safeClick, setPhase, log, cfg };
+  const helpers = { loc: (s, v) => loc(page, s, v), safeClick, setPhase, log, cfg, ttrDir };
 
   const driver = {
     async open(input) {

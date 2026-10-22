@@ -8,23 +8,42 @@ Katru dienu 03:30 Europe/Riga (atkārtojumi ik 20 min līdz 05:50) skripts **tik
 | Fails | Kas |
 | --- | --- |
 | `run.sh` | Dienas logs, VPN lease, timeout, `done-<datums>` atzīme |
-| `read-registry.mjs` | Playwright: pieslēgšanās, saraksta lapas (GET), tabulas -> JSON -> PROVIN |
-| `lib/readonly-guard.mjs` | Tikai lasīšana: tīklā tikai GET/HEAD, rakstošas pogas netiek spiestas, dialogi noraidīti |
+| `read-registry.mjs` | Playwright: katrai firmai savs konteksts, pieslēgšanās, atskaite, tabulas -> JSON -> PROVIN |
+| `lib/csdd-session.mjs` | CSDD soļi kā Aivara `export-pien.js`: pieslēgšanās, DZA firma, `ex('rep_lapt_tl')`, `#lapt_veids`, lapošana |
+| `lib/readonly-guard.mjs` | Tikai lasīšana: tīklā GET/HEAD + tikai meklēšanas POST, rakstošas pogas netiek spiestas, dialogi noraidīti |
 | `lib/parse-registry.mjs` | Tabulas virsraksti -> shēmas lauki; personas dati netiek paņemti |
 | `systemd/` | `csdd-registrs.service` + `.timer` |
 | `install.sh` | Backup + kods uz `/opt/csdd-registrs` + taimeris (nolasījumu nepalaiž) |
 
 Testi: `npx vitest run lib/csdd-registrs-relay.test.ts` (repo saknē).
 
+## Divas pieslēgšanās
+
+| Firma | Piekļuve | Firmas izvēle |
+| --- | --- | --- |
+| IRISS | `CSDD_TTR_ENV_FILE` (nokl. `/root/iriss-ttr/.env`) | nav (ja parādās - stop) |
+| DZA | `CSDD_TTR_ENV_FILE_DZA` (nokl. `/root/iriss-ttr/creds-autoapkope-dza`) | `select[name=kiest_id]` = 5092 + "Turpināt" (ja nav - stop) |
+
+Faila formāts: `CSDD_USER=`/`CSDD_PASS=` (nosaukumi `CSDD_USER_VAR`/`CSDD_PASS_VAR`) vai Aivara formāts (1. rinda lietotājs,
+2. rinda parole). Katrai firmai savs pārlūka konteksts (sīkdatnes nejaucas). Vērtības netiek logotas.
+
+## Saraksts (kā Aivara `export-pien.js`)
+
+`ex('rep_lapt_tl')` -> vieta/glabāšana "visas" -> ķeksis `#lapt_veids` (pieņemti tirdzniecībā) -> `#iskaits` 1000 ->
+meklēšanas poga -> lapošana `ex('rep_lapt_tl',1,'porcijas_numurs=N')` līdz nav jaunu rindu. Lapā drīkst izsaukt TIKAI
+`rep_lapt_tl` (`ALLOWED_EX`).
+
 ## Tikai lasīšana (obligāti)
 
-- Pieslēgšanās fāzē atļauts POST tikai uz `REGISTRS_LOGIN_POST_RE` adresi un tikai pieslēgšanās poga.
-- Lasīšanas fāzē: tikai GET/HEAD. Jebkurš cits pieprasījums tiek pārtraukts (`BLOĶĒTS` žurnālā).
+- Tīklā: GET/HEAD. POST tikai:
+  - pieslēgšanās fāzē - CSDD pieslēgšanās (`vards=`) vai firmas izvēles (`kiest_id=`) forma uz `REGISTRS_BASE_URL`;
+  - lasīšanas fāzē - TIKAI meklēšana `rep_lapt_tl` uz `REGISTRS_BASE_URL` (adresē vai saturā), un arī tad pieprasījums ar
+    rakstošas darbības vārdiem tiek bloķēts.
+  Viss cits (piem. `lapv`, `lapv_par`, cita adrese) tiek pārtraukts (`BLOĶĒTS` žurnālā, `blockedList` failā `last-run.json`).
 - Pogas/saites ar tekstu vai atribūtiem "saglabāt, atcelt, anulēt, dzēst, apstiprināt, iesniegt, noņemt, izņemt, reģistrēt,
-  parakstīt, save, delete, cancel, submit..." netiek spiestas nekad (skripts apstājas ar kļūdu).
-- Lasīšanas fāzē spiež tikai `<a href>` saites (lapošana); formu pogas nekad.
-- Ja saraksts atveras tikai ar meklēšanas POST, to drīkst atļaut ar `REGISTRS_READ_POST_RE` (tikai meklēšanas adrese), un arī
-  tad pieprasījums ar rakstošas darbības vārdiem tiek bloķēts.
+  parakstīt, save, delete, cancel..." netiek spiestas nekad (skripts apstājas ar kļūdu).
+- Pogas: pieslēgšanās fāzē tikai pieslēgšanās/firmas izvēles formas poga; meklēšanas fāzē tikai atskaites formas (ar
+  `#lapt_veids`) poga; lasīšanas fāzē tikai `<a href>` saites.
 
 ## VPN
 
@@ -45,12 +64,12 @@ tar -C relay/csdd-registrs -czf - . \
 # install.sh vispirms: backup /root/backups/registrs-cron-<datums>/ (crontab, vienības, kods, env). Crontab netiek mainīts.
 
 # tikai pirmajā reizē:
-nano /etc/csdd-registrs.env     # PROVIN_REGISTRS_TOKEN, REGISTRS_LIST_URL_IRISS / _DZA, CSDD_* mainīgo nosaukumi, VPN_LEASE_CMD
+nano /etc/csdd-registrs.env     # PROVIN_REGISTRS_TOKEN, CSDD_TTR_ENV_FILE, CSDD_TTR_ENV_FILE_DZA, REGISTRS_IGNORE_TLS=1
 # Vercel: IRISS_CSDD_REGISTRS_TOKEN = tā pati vērtība (pievieno Nils)
 
 # pirmais gājiens ar roku: vispirms bez sūtīšanas
 /opt/csdd-registrs/run.sh --force --dry-run
-cat /var/lib/csdd-registrs/last-run.json     # skaiti pa firmām, bloķēto pieprasījumu skaits
+cat /var/lib/csdd-registrs/last-run.json     # skaiti pa firmām, bloķētie pieprasījumi (blockedList)
 /opt/csdd-registrs/run.sh --force             # reāls gājiens -> PROVIN
 journalctl -u csdd-registrs --since today
 ```

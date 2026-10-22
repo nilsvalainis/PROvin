@@ -89,7 +89,8 @@ export function parseJobInput(raw) {
   const until = Date.parse(j.validUntil);
   if (!Number.isFinite(from) || !Number.isFinite(until) || until <= from) throw new Error("datumi nederīgi");
   if (Math.abs((until - from) / 3_600_000 - validHours) > 0.5) throw new Error("datumi nesakrīt ar derīgumu");
-  const ctx = Number(j.ctx);
+  // Serveris sūta "ctx1"/"ctx2" (lib/iriss-waybill-auto.ts), vecāka ievade - 1/2.
+  const ctx = Number(String(j.ctx ?? "").replace(/^ctx/i, ""));
   if (ctx !== 1 && ctx !== 2) throw new Error("ctx nederīgs");
   return {
     jobId: String(j.jobId),
