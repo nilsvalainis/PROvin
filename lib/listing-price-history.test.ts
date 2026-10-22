@@ -79,6 +79,21 @@ describe("snapshotFromVendorHistoryHtml", () => {
     expect(snap.priceChangeEur).toBe(-950);
   });
 
+  it("reads Adify HTML that carries the Cloudflare JSD script (Tampermonkey import)", () => {
+    const items = [
+      { price: 23950, created: "2026-09-08T18:34:00" },
+      { price: 24900, created: "2026-07-16T13:48:00" },
+    ];
+    const html = `<html><head><title>Sludinājuma vēsture | Adify</title></head><body>
+<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({ props: { pageProps: { items } } })}</script>
+<script>var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';</script>
+</body></html>`;
+    const snap = snapshotFromVendorHistoryHtml(html, now);
+    expect(snap.found).toBe(true);
+    expect(snap.source).toBe("adify");
+    expect(snap.rows).toHaveLength(2);
+  });
+
   it("rejects a Cloudflare interstitial", () => {
     const snap = snapshotFromVendorHistoryHtml("Performing security verification");
     expect(snap.found).toBe(false);

@@ -32,6 +32,15 @@ describe("listingHistoryRelayTemplates", () => {
     });
     expect(templates).toEqual(["https://relay.provin.workers.dev/?u={encoded}", "https://r.jina.ai/{url}"]);
   });
+
+  it("leaves Jina out when asked, even if an operator listed it", () => {
+    expect(listingHistoryRelayTemplates({}, { jina: false })).toEqual([]);
+    const templates = listingHistoryRelayTemplates(
+      { LISTING_HISTORY_RELAY_URLS: "https://relay.provin.workers.dev/?u={encoded},https://r.jina.ai/{url}" },
+      { jina: false },
+    );
+    expect(templates).toEqual(["https://relay.provin.workers.dev/?u={encoded}"]);
+  });
 });
 
 describe("buildListingHistoryRelayUrl", () => {

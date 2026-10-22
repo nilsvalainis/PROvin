@@ -3,9 +3,11 @@ import "server-only";
 /**
  * Adify vēstures ielase serverī.
  * Datacentra IP un Hetzner Chrome (18 s) paliek CF managed challenge.
- * Darba ceļš: tiešais GET, tad CapSolver + Fixie, tad Jina. Chrome Adify
- * nelaižam - tas neiziet izaicinājumu un aizņem vienīgo releja rindu
- * (tirgusdati.lv Chrome tad gaida 40 s).
+ * Darba ceļš: tiešais GET, tad `ADIFY_PROXY_URL` / CapSolver + Fixie, tad pašu
+ * HTTP releji (`LISTING_HISTORY_RELAY_URLS`). Jina un Chrome Adify nelaižam:
+ * neviens neiziet CF izaicinājumu (Jina HTTP 422), un Chrome aizņem vienīgo
+ * releja rindu (tirgusdati.lv Chrome tad gaida 40 s). Ja serveris neizdodas,
+ * admin klients lapu ielasa caur Tampermonkey no operatora IP.
  */
 
 import {
@@ -79,12 +81,12 @@ export async function fetchAdifyListingHistory(
     message = parsed.message;
   }
 
-  // Jina / pašu HTTP relejs. Chrome Adify izlaižam: live 18 s wait paliek
-  // Just a moment un bloķē tirgusdati.lv rindu.
+  // Tikai pašu HTTP relejs (ja uzstādīts). Jina un Chrome Adify neiziet CF.
   const relayed = await loadRelays(pageUrl, {
     timeoutMs: sawCloudflare ? 12_000 : undefined,
     retryDelayMs: 0,
     chrome: false,
+    jina: false,
   });
   if (relayed.html) {
     if (looksLikeListingHistoryCloudflareChallenge(relayed.html)) {

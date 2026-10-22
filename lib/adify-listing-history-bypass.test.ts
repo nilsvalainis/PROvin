@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchAdifyHistoryHtmlViaCapsolver } from "@/lib/adify-listing-history-bypass";
+import { adifyHistoryProxyUrl, fetchAdifyHistoryHtmlViaCapsolver } from "@/lib/adify-listing-history-bypass";
 
 const PAGE = "https://adify.lv/history?url=https%3A%2F%2Fwww.ss.lv%2Fmsg%2Flv%2Fx.html";
 const CF_HTML = `<!DOCTYPE html><html><head><title>Just a moment...</title></head><body>
@@ -10,6 +10,7 @@ const SSR_HTML = `<html><script id="__NEXT_DATA__" type="application/json">${JSO
   props: { pageProps: { items: [{ price: 100, created: "2026-08-01" }], retryAfter: null } },
 })}</script></html>`;
 const FIXIE = "http://fixie:secret@group.usefixie.com:80";
+const RESI = "http://resi-user:resi-pass@lv.resi.test:8000";
 
 describe("fetchAdifyHistoryHtmlViaCapsolver", () => {
   afterEach(() => {
@@ -159,5 +160,65 @@ describe("fetchAdifyHistoryHtmlViaCapsolver", () => {
     expect(out.html).toBeNull();
     expect(out.error).toMatch(/custom proxy connect failed/);
     expect(solve).toHaveBeenCalledTimes(1);
+  });
+
+  it("ADIFY_PROXY_URL: reads Adify through the residential proxy without CapSolver or Fixie", async () => {
+    const solve = vi.fn();
+    const fetchPage = vi.fn().mockResolvedValue({ status: 200, text: SSR_HTML, cookie: "", finalUrl: PAGE });
+    const out = await fetchAdifyHistoryHtmlViaCapsolver(PAGE, {
+      adifyProxy: () => RESI,
+      hasKey: () => false,
+      getProxy: () => FIXIE,
+      stickyProxyUrl: () => FIXIE,
+      solve,
+      fetchPage,
+    });
+    expect(out.error).toBeNull();
+    expect(out.html).toContain("__NEXT_DATA__");
+    expect(solve).not.toHaveBeenCalled();
+    expect(fetchPage.mock.calls[0]?.[1]).toMatchObject({ proxyUrl: RESI });
+  });
+
+  it("ADIFY_PROXY_URL: challenge without a CapSolver key reports it and does not call CapSolver", async () => {
+    const solve = vi.fn();
+    const fetchPage = vi.fn().mockResolvedValue({ status: 403, text: CF_HTML, cookie: "", finalUrl: PAGE });
+    const out = await fetchAdifyHistoryHtmlViaCapsolver(PAGE, {
+      adifyProxy: () => RESI,
+      hasKey: () => false,
+      solve,
+      fetchPage,
+    });
+    expect(out.html).toBeNull();
+    expect(out.error).toMatch(/Adify proxy: Cloudflare izaicinājums, nav CAPSOLVER_API_KEY/);
+    expect(solve).not.toHaveBeenCalled();
+  });
+
+  it("ADIFY_PROXY_URL: CapSolver gets the residential proxy, not Fixie", async () => {
+    const fetchPage = vi
+      .fn()
+      .mockResolvedValueOnce({ status: 403, text: CF_HTML, cookie: "", finalUrl: PAGE })
+      .mockResolvedValueOnce({ status: 200, text: SSR_HTML, cookie: "", finalUrl: PAGE });
+    const solve = vi.fn().mockResolvedValue({ ok: true, token: "t", cookies: { cf_clearance: "c" }, userAgent: "ua" });
+    const out = await fetchAdifyHistoryHtmlViaCapsolver(PAGE, {
+      adifyProxy: () => RESI,
+      hasKey: () => true,
+      getProxy: () => FIXIE,
+      stickyProxyUrl: () => FIXIE,
+      solve,
+      fetchPage,
+    });
+    expect(out.error).toBeNull();
+    expect((solve.mock.calls[0]?.[0] as { proxy?: string }).proxy).toBe(RESI);
+    expect(fetchPage.mock.calls[1]?.[1]).toMatchObject({ cookie: "cf_clearance=c", proxyUrl: RESI });
+  });
+});
+
+describe("adifyHistoryProxyUrl", () => {
+  it("is empty when ADIFY_PROXY_URL is not set", () => {
+    expect(adifyHistoryProxyUrl({})).toBe("");
+  });
+
+  it("normalizes colon form to an http URL", () => {
+    expect(adifyHistoryProxyUrl({ ADIFY_PROXY_URL: "lv.resi.test:8000:resi-user:resi-pass" })).toBe(RESI);
   });
 });
