@@ -18,7 +18,14 @@ const RING: Record<WaybillGauge["status"], string> = {
  * Pavadzīmes vienā skatā: 3 numurzīmes kā apļi (48 h skala) ar atlikušajām stundām un marku/modeli.
  * Pieskāriens aplim atver detaļas (beigu laiks, precīzs atlikums, PDF). Der telefonam un datora sānjoslai.
  */
-export function IrissWaybillGauges({ size = "mobile" }: { size?: "mobile" | "sidebar" }) {
+export function IrissWaybillGauges({
+  size = "mobile",
+  allHref = "/admin/iriss/pavadzimes",
+}: {
+  size?: "mobile" | "sidebar";
+  /** Saite "Visas ›"; null = nerādīt (pašā pavadzīmju lapā tā vestu uz to pašu lapu). */
+  allHref?: string | null;
+}) {
   const [rows, setRows] = useState<IrissPavadzimeListRow[] | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [open, setOpen] = useState<string | null>(null);
@@ -53,9 +60,11 @@ export function IrissWaybillGauges({ size = "mobile" }: { size?: "mobile" | "sid
     <section className={`${styles.wg} ${small ? styles.sm : ""}`} aria-label="Pavadzīmes">
       <div className={styles.head}>
         <span>Pavadzīmes</span>
-        <Link href="/admin/iriss/pavadzimes" className="admin-nav-link">
-          Visas ›
-        </Link>
+        {allHref ? (
+          <Link href={allHref} className="admin-nav-link">
+            Visas ›
+          </Link>
+        ) : null}
       </div>
       <div className={styles.row}>
         {gauges.map((g) => {

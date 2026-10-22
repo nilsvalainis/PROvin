@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Loader2, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Loader2, Plus } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
@@ -8,6 +8,7 @@ import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryB
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { IrissKomandaAivaramChat } from "@/components/admin/IrissKomandaAivaramChat";
 import { IrissWaybillCalendar } from "@/components/admin/IrissWaybillCalendar";
+import { IrissWaybillGauges } from "@/components/admin/IrissWaybillGauges";
 import { IrissWaybillPdfSheet } from "@/components/admin/IrissWaybillPdfSheet";
 import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
 import { waybillHistoryForVin } from "@/lib/iriss-waybill-calendar";
@@ -79,6 +80,11 @@ function WaybillStatusChip({ row }: { row: IrissPavadzimeListRow }) {
   );
 }
 
+/** Telefonā (< md) sākums ir apļi + forma; Kalendārs un Arhīvs ir sadaļā "Vēl". */
+function isPhoneViewport(): boolean {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+}
+
 function dash(v: string): string {
   return v.trim() || "-";
 }
@@ -104,6 +110,8 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
   const [extendVehicle, setExtendVehicle] = useState<WaybillVehicleChip | null>(null);
   const [pdfPreview, setPdfPreview] = useState<{ href: string; title: string } | null>(null);
   const [historyVin, setHistoryVin] = useState<string | null>(null);
+  const [pdfSheetOpen, setPdfSheetOpen] = useState(false);
+  const [mobileVin, setMobileVin] = useState("");
 
   /** Atkārtot ar vienu pieskārienu: Aivara pieprasījums aizpildīts ar to pašu numuru, auto un VIN. */
   const repeatWaybill = (row: IrissPavadzimeListRow) => {
@@ -114,12 +122,15 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
       plate: row.plate,
       orderId: row.order?.id ?? "",
     });
+    if (isPhoneViewport()) setView("current");
     window.setTimeout(() => document.getElementById("komanda-aivaram")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
   const openPdf = (row: IrissPavadzimeListRow) =>
     setPdfPreview({ href: `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`, title: `${row.number || "Pavadzīme"} · ${row.brandModel}`.trim() });
   const fileRef = useRef<HTMLInputElement>(null);
+  const mobileFileRef = useRef<HTMLInputElement>(null);
   const vinRef = useRef<HTMLInputElement>(null);
+  const onDraftConsumed = useCallback(() => setExtendVehicle(null), []);
 
   useEffect(() => {
     setData(initial);
@@ -170,13 +181,13 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
   }, [data.pendingParse, refresh]);
 
   const onUpload = useCallback(
-    async (file: File) => {
+    async (file: File, vinInput?: string): Promise<boolean> => {
       setUploading(true);
       setError(null);
       try {
         const fd = new FormData();
         fd.set("file", file);
-        const vin = vinRef.current?.value.trim() ?? "";
+        const vin = (vinInput ?? vinRef.current?.value ?? "").trim();
         if (vin) fd.set("vin", vin);
         const res = await fetch("/api/admin/iriss-pavadzimes/upload", {
           method: "POST",
@@ -189,8 +200,10 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
         }
         setData(json);
         if (vinRef.current) vinRef.current.value = "";
+        return true;
       } catch (e) {
         setError(e instanceof Error ? e.message : "Neizdevās augšupielādēt");
+        return false;
       } finally {
         setUploading(false);
       }
@@ -216,7 +229,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
       <Suspense fallback={null}>
         <PavadzimeSearchFocus rowCount={rows.length} />
       </Suspense>
-      <div className="mt-2 flex max-w-full flex-wrap items-center gap-2 max-md:px-4">
+      <div className="mt-2 flex max-w-full flex-wrap items-center gap-2 max-md:hidden">
         <div className="inline-flex min-w-0 items-stretch rounded-lg bg-[#e9e9ee] p-0.5 max-md:w-full" role="tablist" aria-label="Pavadzīmju filtrs">
           {(["current", "calendar", "archive", "all"] as const).map((v) => (
             <button
@@ -268,21 +281,40 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
           </button>
         </div>
       </div>
-      {error ? <p className="mt-1 text-right text-[11px] text-red-600">{error}</p> : null}
-      {data.dropboxError ? <p className="mt-1 text-right text-[11px] text-red-600">{data.dropboxError}</p> : null}
+      {error ? <p className="mt-1 text-right text-[11px] text-red-600 max-md:px-4">{error}</p> : null}
+      {data.dropboxError ? <p className="mt-1 text-right text-[11px] text-red-600 max-md:px-4">{data.dropboxError}</p> : null}
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
-        <div className="min-w-0">
+      {view !== "current" ? (
+        <div className="px-4 md:hidden">
+          <button
+            type="button"
+            onClick={() => setView("current")}
+            className="-ml-2 inline-flex min-h-11 items-center gap-1 px-2 text-[15px] font-semibold text-[var(--acc,#3d5bd9)]"
+          >
+            <ChevronLeft className="h-4 w-4" aria-hidden />
+            Pavadzīmes
+          </button>
+          <p className="pb-1 text-[20px] font-bold text-[var(--ink,#0b0c10)]">{VIEW_LABEL[view]}</p>
+        </div>
+      ) : null}
+
+      <div className="mt-4 grid gap-4 max-md:mt-2 max-md:gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+        <div className={`min-w-0 ${view === "current" ? "max-md:px-4" : ""}`}>
+      {view === "current" ? (
+        <div className="md:hidden">
+          <IrissWaybillGauges allHref={null} />
+        </div>
+      ) : null}
       {view === "calendar" ? (
         <IrissWaybillCalendar rows={data.rows} nowMs={nowMs} onOpen={openPdf} />
       ) : view === "current" ? (
         rows.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-12 text-center shadow-sm">
+          <div className="rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-12 text-center shadow-sm max-md:hidden">
             <p className="font-medium text-black">Nav aktīvu pavadzīmju</p>
             <p className="mt-1 text-[13px] text-[#6b7280]">Beigušās un pārtrauktās ir Arhīvā.</p>
           </div>
         ) : (
-          <div className="flex max-w-full flex-col gap-3 max-md:px-4 md:grid md:grid-cols-1 lg:grid-cols-1">
+          <div className="flex max-w-full flex-col gap-3 max-md:hidden md:grid md:grid-cols-1 lg:grid-cols-1">
             {rows.map((row) => {
               const pdfHref = `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`;
               const days = remainingWaybillDays(row.validUntil, now);
@@ -518,12 +550,82 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
         </>
       )}
         </div>
-        <div id="komanda-aivaram" className="scroll-mt-4">
+        <div id="komanda-aivaram" className={`scroll-mt-4 max-md:px-4 ${view === "current" ? "" : "max-md:hidden"}`}>
           <IrissKomandaAivaramChat
             draftVehicle={extendVehicle}
-            onDraftConsumed={() => setExtendVehicle(null)}
+            onDraftConsumed={onDraftConsumed}
           />
         </div>
+        {view === "current" ? (
+          <div className="px-4 pb-4 md:hidden">
+            <p className="px-1 pb-1.5 pt-1 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--ink2,#8e8e93)]">Vēl</p>
+            <div className="overflow-hidden rounded-[14px] bg-[var(--s1,#fff)]">
+              {(
+                [
+                  { key: "calendar", label: "Kalendārs", count: null, onClick: () => setView("calendar") },
+                  { key: "archive", label: "Arhīvs", count: viewCount("archive"), onClick: () => setView("archive") },
+                  { key: "pdf", label: "Pievienot PDF", count: null, onClick: () => setPdfSheetOpen(true) },
+                ] as const
+              ).map((item, i) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={item.onClick}
+                  className={`flex min-h-12 w-full items-center gap-2.5 px-3.5 text-left text-[15px] text-[var(--ink,#0b0c10)] ${
+                    i ? "border-t-[0.5px] border-[var(--hair,rgba(17,24,39,0.08))]" : ""
+                  }`}
+                >
+                  <span className="flex-1">{item.label}</span>
+                  {item.count != null ? (
+                    <span className="text-[14px] tabular-nums text-[var(--ink2,#5e636e)]">{item.count}</span>
+                  ) : null}
+                  <ChevronRight className="h-4 w-4 text-[var(--ink3,#9a9faa)]" aria-hidden />
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+        <AdminMobileSheet open={pdfSheetOpen} title="Pievienot PDF" subtitle="Izdota pavadzīme no CSDD" onClose={() => setPdfSheetOpen(false)}>
+          <div className="flex flex-col gap-2.5">
+            <input
+              type="text"
+              value={mobileVin}
+              onChange={(e) => setMobileVin(e.target.value)}
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="VIN (nav obligāts)"
+              aria-label="VIN"
+              className="h-11 w-full px-3 font-mono text-[16px]"
+            />
+            <button
+              type="button"
+              disabled={uploading}
+              onClick={() => mobileFileRef.current?.click()}
+              className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-[10px] bg-[var(--btn-dark-bg,#1d1d1f)] text-[15px] font-semibold text-[var(--btn-dark-fg,#fff)] disabled:opacity-60"
+            >
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />}
+              <span>Izvēlēties PDF</span>
+            </button>
+            <input
+              ref={mobileFileRef}
+              type="file"
+              accept="application/pdf,.pdf"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (!f) return;
+                void onUpload(f, mobileVin).then((ok) => {
+                  if (ok) {
+                    setMobileVin("");
+                    setPdfSheetOpen(false);
+                  }
+                });
+              }}
+            />
+            {error ? <p className="text-[13px] text-[var(--bad,#c2362b)]">{error}</p> : null}
+          </div>
+        </AdminMobileSheet>
         <IrissWaybillPdfSheet href={pdfPreview?.href ?? null} title={pdfPreview?.title ?? ""} onClose={() => setPdfPreview(null)} />
         <AdminMobileSheet open={Boolean(historyVin)} title="Pavadzīmes šim auto" subtitle={historyVin ?? ""} onClose={() => setHistoryVin(null)}>
           <ul className="flex flex-col gap-2">

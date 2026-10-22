@@ -28,6 +28,9 @@ import {
 } from "@/lib/iriss-waybill-plates";
 import { formatWaybillExpiryDdMmHm } from "@/lib/iriss-pavadzimes-countdown";
 import { LvDealerPlate } from "@/components/admin/LvDealerPlate";
+import { IrissWaybillMobileForm, type WaybillMobileDraft } from "@/components/admin/IrissWaybillMobileForm";
+import type { WaybillMobilePayload } from "@/lib/iriss-waybill-mobile-form";
+import type { WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 import type { WaybillVehicleChip } from "@/lib/iriss-waybill-vehicles";
 
 type TimelineItem =
@@ -117,6 +120,12 @@ async function readChatResponse(res: Response): Promise<ChatResponse> {
   return withReplies(data);
 }
 
+function tradeCarsFrom(data: unknown): WaybillTradeCar[] | null {
+  if (!data || typeof data !== "object") return null;
+  const list = (data as { tradeCars?: unknown }).tradeCars;
+  return Array.isArray(list) ? (list as WaybillTradeCar[]) : null;
+}
+
 function firstFreePlate(plates: WaybillPlateState[]): string {
   return plates.find((row) => !row.busy)?.plate || IRISS_DEALER_PLATES[0];
 }
@@ -142,8 +151,13 @@ export function IrissKomandaAivaramChat({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState<{ plate: string; current?: WaybillPlateCurrent } | null>(null);
+  const [tradeCars, setTradeCars] = useState<WaybillTradeCar[] | null>(null);
+  const [mobileDraft, setMobileDraft] = useState<WaybillMobileDraft | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const selectedInit = useRef(false);
+  const carsLoaded = useRef(false);
+  /** Telefona formas dati pēdējam sūtījumam (vajag "Tomēr izveidot" logam). */
+  const mobilePayload = useRef<WaybillMobilePayload | null>(null);
 
   useEffect(() => {
     if (!draftVehicle) return;
@@ -151,13 +165,23 @@ export function IrissKomandaAivaramChat({
     if (nextPlate) setPlate(nextPlate);
     setBrandModel(draftVehicle.brandModel);
     setVin(draftVehicle.vin);
+    setMobileDraft({ nonce: Date.now(), brandModel: draftVehicle.brandModel, vin: draftVehicle.vin, plate: nextPlate || "" });
     onDraftConsumed();
   }, [draftVehicle, onDraftConsumed]);
 
-  const load = async () => {
+  const load = async (withCars = false) => {
     try {
-      const res = await fetch("/api/admin/iriss/waybill-requests", { credentials: "include", cache: "no-store" });
+      const url = withCars ? "/api/admin/iriss/waybill-requests?cars=1" : "/api/admin/iriss/waybill-requests";
+      const res = await fetch(url, { credentials: "include", cache: "no-store" });
+      const raw = res.clone();
       const data = await readChatResponse(res);
+      if (withCars) {
+        const cars = tradeCarsFrom(await raw.json().catch(() => null));
+        if (cars) {
+          carsLoaded.current = true;
+          setTradeCars(cars);
+        }
+      }
       if (isChatBusy(data)) return;
       if (isChatError(data) || !isChatOk(data)) {
         const message = chatErrorMessage(data, "Neizdevās ielādēt rindu.");
@@ -180,7 +204,7 @@ export function IrissKomandaAivaramChat({
   };
 
   useEffect(() => {
-    void load();
+    void load(true);
     const t = window.setInterval(() => void load(), 5000);
     return () => window.clearInterval(t);
   }, []);
@@ -199,47 +223,67 @@ export function IrissKomandaAivaramChat({
   const untilHint = formatRigaDateTimeComma(new Date(Date.now() + hoursSafe * 3_600_000).toISOString());
   const selectedOcc = chat.plates.find((row) => row.plate === plate) ?? { plate, busy: false };
 
-  async function submit(confirmBusy = false) {
+  async function submit(confirmBusy = false): Promise<boolean> {
     setError(null);
     setBusy(true);
+    const mobile = mobilePayload.current;
     try {
       const res = await fetch("/api/admin/iriss/waybill-requests", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plate,
-          brandModel,
-          vin,
-          validHours: hoursSafe,
-          comment_untrusted: comment,
-          confirmBusy,
-        }),
+        body: JSON.stringify(
+          mobile
+            ? { ...mobile, confirmBusy }
+            : {
+                plate,
+                brandModel,
+                vin,
+                validHours: hoursSafe,
+                comment_untrusted: comment,
+                confirmBusy,
+              },
+        ),
       });
       const data = await readChatResponse(res);
       if (isChatBusy(data)) {
-        setConfirm({ plate: data.plate || plate, current: data.current });
-        return;
+        setConfirm({ plate: data.plate || mobile?.plate || plate, current: data.current });
+        return false;
       }
       if (isChatError(data) || !isChatOk(data)) {
         setError(chatErrorMessage(data, "Neizdevās nosūtīt."));
-        return;
+        return false;
       }
       setChat((prev) => ({
         ...withReplies(data),
         vehicles: data.vehicles.length ? data.vehicles : prev.vehicles,
         plates: data.plates.length ? data.plates : prev.plates,
       }));
-      setComment("");
+      if (!mobile) setComment("");
       setConfirm(null);
+      mobilePayload.current = null;
+      return true;
     } catch {
       setError("Neizdevās nosūtīt.");
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
+  /** Telefona forma: aizņemtam numuram vispirms tas pats apstiprinājuma logs. */
+  async function submitMobile(payload: WaybillMobilePayload): Promise<boolean> {
+    mobilePayload.current = payload;
+    const occ = chat.plates.find((row) => row.plate === displayDealerPlate(payload.plate));
+    if (occ?.busy) {
+      setConfirm({ plate: occ.plate, current: occ.current });
+      return false;
+    }
+    return submit(false);
+  }
+
   function onSubmitForm() {
+    mobilePayload.current = null;
     if (selectedOcc.busy && !confirm) {
       setConfirm({ plate: selectedOcc.plate, current: selectedOcc.current });
       return;
@@ -271,7 +315,24 @@ export function IrissKomandaAivaramChat({
   }
 
   return (
-    <section className="flex min-h-[28rem] flex-col overflow-hidden rounded-[22px] border border-[#E5E7EB] bg-white shadow-sm">
+    <>
+    <div className="md:hidden">
+      <IrissWaybillMobileForm
+        plates={chat.plates}
+        tradeCars={tradeCars}
+        requests={chat.requests}
+        replies={chat.replies}
+        busy={busy}
+        error={confirm ? null : error}
+        draft={mobileDraft}
+        onSubmit={submitMobile}
+        onRetry={(id) => void retry(id)}
+        onPickerOpen={() => {
+          if (!carsLoaded.current) void load(true);
+        }}
+      />
+    </div>
+    <section className="flex min-h-[28rem] flex-col overflow-hidden rounded-[22px] border border-[#E5E7EB] bg-white shadow-sm max-md:hidden">
       <header className="flex items-start justify-between gap-3 px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="grid h-8 w-8 place-items-center rounded-full bg-[#111827] text-[12px] font-semibold text-white">
@@ -436,7 +497,7 @@ export function IrissKomandaAivaramChat({
           šo lauku neredz.
         </p>
       </form>
-
+    </section>
       {confirm ? (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#0f172a66] p-4">
           <div className="w-full max-w-[360px] rounded-2xl border border-[#E5E7EB] bg-white p-4" role="dialog" aria-modal="true">
@@ -466,7 +527,10 @@ export function IrissKomandaAivaramChat({
               <button
                 type="button"
                 className="h-10 rounded-[10px] border border-[#E5E7EB] bg-white text-[12.5px] font-semibold text-[#111827]"
-                onClick={() => setConfirm(null)}
+                onClick={() => {
+                  setConfirm(null);
+                  mobilePayload.current = null;
+                }}
               >
                 Atcelt
               </button>
@@ -474,7 +538,7 @@ export function IrissKomandaAivaramChat({
           </div>
         </div>
       ) : null}
-    </section>
+    </>
   );
 }
 

@@ -10,6 +10,8 @@ import {
   type WaybillPlateState,
 } from "@/lib/iriss-waybill-plates";
 import { listWaybillVehicleChips } from "@/lib/iriss-waybill-vehicles";
+import { readAutoparksState } from "@/lib/iriss-autoparks-store";
+import { waybillTradeCars, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
 
 export const runtime = "nodejs";
@@ -22,6 +24,16 @@ async function loadVehiclesSafe() {
     return await listWaybillVehicleChips();
   } catch (err) {
     console.error("[iriss-waybill] vehicles_failed", err instanceof Error ? err.message : err);
+    return [];
+  }
+}
+
+/** Telefona formas auto saraksts: tikai drošie lauki (bez cenām), arī lietotājam bez Autoparka tiesībām. */
+async function loadTradeCarsSafe(): Promise<WaybillTradeCar[]> {
+  try {
+    return waybillTradeCars((await readAutoparksState()).cars);
+  } catch (err) {
+    console.error("[iriss-waybill] trade_cars_failed", err instanceof Error ? err.message : err);
     return [];
   }
 }
@@ -39,16 +51,22 @@ function confirmBusy(body: unknown): boolean {
   return Boolean(body && typeof body === "object" && !Array.isArray(body) && (body as { confirmBusy?: unknown }).confirmBusy === true);
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const gate = await requireIrissSectionApi("pavadzimes");
   if (!gate.ok) return gate.response;
+  // Auto sarakstu lasa tikai pēc pieprasījuma (?cars=1), nevis katrā 5 s atjaunošanā.
+  const withCars = new URL(req.url).searchParams.get("cars") === "1";
   try {
-    const [doc, vehicles, plates] = await Promise.all([
+    const [doc, vehicles, plates, tradeCars] = await Promise.all([
       readWaybillRequestsDoc(),
       loadVehiclesSafe(),
       loadPlatesSafe(),
+      withCars ? loadTradeCarsSafe() : Promise.resolve(null),
     ]);
-    return NextResponse.json({ ok: true, ...waybillChatPayload(doc), vehicles, plates }, NO_STORE);
+    return NextResponse.json(
+      { ok: true, ...waybillChatPayload(doc), vehicles, plates, ...(tradeCars ? { tradeCars } : {}) },
+      NO_STORE,
+    );
   } catch (err) {
     console.error("[iriss-waybill] list_failed", err instanceof Error ? err.message : err);
     return NextResponse.json(

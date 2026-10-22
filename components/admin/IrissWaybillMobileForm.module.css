@@ -1,0 +1,371 @@
+/*
+ * Pavadzīmes forma telefonā (makets mockups/pavadzimes-mob, Nils 22.10).
+ * Tikai IRISS tēmas tokeni (gaišais/tumšais). Selektori ar 2 klasēm, lai pārspētu admin-ios-theme.
+ */
+.mf {
+  color: var(--ink, #0b0c10);
+}
+.mf .card {
+  border-radius: 14px;
+  background: var(--s1, #fff);
+  padding: 14px;
+}
+.mf .group + .group {
+  margin-top: 14px;
+}
+.mf .label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ink, #0b0c10);
+  font-size: 13px;
+  font-weight: 600;
+}
+.mf .opt {
+  color: var(--ink2, #5e636e);
+  font-weight: 400;
+}
+.mf .seg3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.mf .seg2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.mf .hours {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) 1.3fr;
+  gap: 6px;
+}
+.mf .pick {
+  display: flex;
+  min-height: 44px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--fill, rgba(116, 120, 138, 0.11));
+  color: var(--ink, #0b0c10);
+  font-size: 14px;
+  font-weight: 600;
+  touch-action: manipulation;
+}
+.mf .plateBtn {
+  min-height: 52px;
+}
+/* Izvēlēts: tēmas aktīvās pogas tokeni (gaišajā tumša, tumšajā gaiša - labi redzams abos). */
+.mf .pick.on {
+  background: var(--chip-active-bg, #0b0c10);
+  color: var(--chip-active-fg, #fff);
+}
+.mf .pick small {
+  color: var(--ink2, #5e636e);
+  font-size: 11px;
+  font-weight: 500;
+}
+.mf .pick small.busy {
+  color: var(--warn, #a86400);
+}
+.mf .pick small.free {
+  color: #067647;
+}
+.mf .pick.on small {
+  color: var(--chip-active-fg, #fff);
+  opacity: 0.75;
+}
+.mf .select {
+  display: flex;
+  width: 100%;
+  min-height: 56px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--hair, rgba(17, 24, 39, 0.08));
+  border-radius: 10px;
+  background: var(--s1, #fff);
+  padding: 8px 12px;
+  color: var(--ink, #0b0c10);
+  text-align: left;
+}
+.mf .selectMain {
+  min-width: 0;
+  flex: 1;
+}
+.mf .selectTitle {
+  display: block;
+  overflow: hidden;
+  color: var(--ink, #0b0c10);
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mf .selectTitle.placeholder {
+  color: var(--ink3, #9a9faa);
+  font-weight: 500;
+}
+.mf .selectSub {
+  display: block;
+  margin-top: 1px;
+  overflow: hidden;
+  color: var(--ink2, #5e636e);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mf .mono {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.mf .chev {
+  flex: none;
+  color: var(--ink3, #9a9faa);
+}
+.mf .input {
+  width: 100%;
+  height: 48px;
+  padding: 0 12px;
+  font-size: 16px;
+}
+.mf .inputSm {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 0 10px;
+  font-size: 16px;
+}
+.mf .sub {
+  margin-top: 8px;
+}
+.mf .error {
+  margin-top: 10px;
+  color: var(--bad, #c2362b);
+  font-size: 13px;
+}
+.mf .primary {
+  width: 100%;
+  height: 50px;
+  margin-top: 16px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--btn-dark-bg, rgba(31, 36, 48, 0.89));
+  color: var(--btn-dark-fg, #fff);
+  font-size: 16px;
+  font-weight: 600;
+}
+.mf .primary:disabled {
+  opacity: 0.5;
+}
+.mf .secTitle {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 18px 4px 6px;
+  color: var(--ink2, #8e8e93);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.mf .secTitle .count {
+  color: var(--ink2, #8e8e93);
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+.mf .secNote {
+  margin-top: -2px;
+  padding: 0 4px 6px;
+  color: var(--ink2, #5e636e);
+  font-size: 12px;
+}
+.mf .list {
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--s1, #fff);
+}
+.mf .req {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+}
+.mf .req + .req {
+  border-top: 0.5px solid var(--hair, rgba(17, 24, 39, 0.08));
+}
+.mf .reqMain {
+  min-width: 0;
+  flex: 1;
+}
+.mf .reqTitle {
+  overflow: hidden;
+  color: var(--ink, #0b0c10);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mf .reqSub {
+  overflow: hidden;
+  color: var(--ink2, #5e636e);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mf .chip {
+  flex: none;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.mf .chip.ok {
+  background: var(--ok-bg, #ecfdf3);
+  color: #067647;
+}
+.mf .chip.wip {
+  background: var(--acc-soft, rgba(61, 91, 217, 0.12));
+  color: var(--acc, #3d5bd9);
+}
+.mf .chip.bad {
+  background: var(--bad-soft, rgba(192, 57, 43, 0.12));
+  color: var(--bad, #c2362b);
+}
+.mf .chip.wait {
+  background: var(--fill, rgba(116, 120, 138, 0.11));
+  color: var(--ink2, #5e636e);
+}
+.mf .link {
+  display: inline-flex;
+  min-height: 44px;
+  flex: none;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  padding: 0 2px;
+  color: var(--acc, #3d5bd9);
+  font-size: 13px;
+  font-weight: 600;
+}
+.mf .quiet {
+  border-radius: 10px;
+  background: var(--fill, rgba(116, 120, 138, 0.11));
+  padding: 10px 12px;
+  color: var(--ink2, #5e636e);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.mf .quiet + .quiet {
+  margin-top: 6px;
+}
+.mf .empty {
+  padding: 14px 12px;
+  color: var(--ink2, #5e636e);
+  font-size: 13px;
+}
+
+/* Izvēles logs (AdminMobileSheet saturs). */
+.picker {
+  color: var(--ink, #0b0c10);
+}
+.picker .search {
+  width: 100%;
+  height: 44px;
+  margin-bottom: 10px;
+  padding: 0 12px;
+  font-size: 16px;
+}
+.picker .list {
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--s1, #fff);
+}
+.picker .row {
+  display: flex;
+  width: 100%;
+  min-height: 60px;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  padding: 8px 14px;
+  color: var(--ink, #0b0c10);
+  text-align: left;
+}
+.picker .row + .row {
+  border-top: 0.5px solid var(--hair, rgba(17, 24, 39, 0.08));
+}
+.picker .rowMain {
+  min-width: 0;
+  flex: 1;
+}
+.picker .rowTitle {
+  display: block;
+  color: var(--ink, #0b0c10);
+  font-size: 15px;
+  font-weight: 600;
+}
+.picker .rowSub {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--ink2, #5e636e);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.picker .mono {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.picker .tag {
+  flex: none;
+  border-radius: 999px;
+  background: var(--fill, rgba(116, 120, 138, 0.11));
+  padding: 2px 8px;
+  color: var(--ink2, #5e636e);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.picker .check {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--ink3, #9a9faa);
+  font-size: 13px;
+}
+.picker .row.on .check {
+  background: var(--chip-active-bg, #0b0c10);
+  color: var(--chip-active-fg, #fff);
+}
+.picker .manual .rowTitle {
+  font-weight: 500;
+}
+.picker .empty {
+  padding: 14px;
+  color: var(--ink2, #5e636e);
+  font-size: 13px;
+}
+
+/*
+ * admin-mobile.css telefonā visām pogām liek 999px un border 0 !important.
+ * Makets (Nils 22.10): formas pogas 10 px, auto laukam plāns rāmis. Augstāka specifiskums tikai šeit.
+ */
+.mf .card .pick,
+.mf .card .select,
+.mf .card .primary {
+  border-radius: 10px;
+}
+.mf .card .select {
+  border: 1px solid var(--hair, rgba(17, 24, 39, 0.08)) !important;
+}
+.mf .list .link {
+  border-radius: 8px;
+}
