@@ -1,7 +1,10 @@
 import "server-only";
 
 import { get, put } from "@vercel/blob";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { putBlobBodyIfMatch } from "@/lib/blob-if-match-put";
+import { BlobReadFailedError, isNodeNotFoundError, readPrivateBlobText } from "@/lib/blob-read";
+import { compareAndSwap, ConditionalWriteConflict } from "@/lib/conditional-write";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -61,6 +64,7 @@ type ResolvedStorage =
 
 let resolvedMemo: ResolvedStorage | null = null;
 const quotaLocks = new Map<string, Promise<unknown>>();
+const fsWriteLocks = new Map<string, Promise<unknown>>();
 
 function isNonVercelServerlessRuntime(): boolean {
   return Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY);
@@ -764,6 +768,79 @@ export async function writeLogisticsJsonFile(filename: string, body: unknown): P
   const r = resolveStorage();
   if (r.kind === "disabled") throw new Error("store_disabled");
   await writeJson(r, filename, body);
+}
+
+/**
+ * Lasīt-pārbaudīt-rakstīt (compare-and-swap) vienam JSON failam: Blob ar `ifMatch`, mapē ar satura hash.
+ * Lasīšanas kļūda tiek izmesta (nevis uzskatīta par tukšu), lai paralēli ievadīti dati netiktu pārrakstīti.
+ * `mutate` atgriež `next: undefined`, ja nekas nav jāraksta.
+ */
+export async function mutateLogisticsJsonFile<R>(
+  filename: string,
+  mutate: (current: unknown | null) => { next?: unknown; result: R } | Promise<{ next?: unknown; result: R }>,
+  maxAttempts = 8,
+): Promise<R> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") throw new Error("store_disabled");
+  const hash = (t: string) => createHash("sha256").update(t).digest("hex");
+  const parse = (text: string): unknown => {
+    try {
+      return JSON.parse(text) as unknown;
+    } catch (err) {
+      throw new BlobReadFailedError(err instanceof Error ? err.message : "json_parse_failed");
+    }
+  };
+  const fp = r.kind === "fs" ? path.join(r.dir, filename) : "";
+  const readFsText = async (): Promise<string | null> => {
+    try {
+      return await fs.readFile(fp, "utf8");
+    } catch (err) {
+      if (isNodeNotFoundError(err)) return null;
+      throw err;
+    }
+  };
+  return compareAndSwap<unknown, R>({
+    read: async () => {
+      if (r.kind === "blob") {
+        const snap = await readPrivateBlobText({ pathname: `${r.prefix}${filename}`, token: r.token });
+        if (snap.state === "missing") return { value: null, etag: null };
+        return { value: parse(snap.text), etag: snap.etag };
+      }
+      const text = await readFsText();
+      return text == null ? { value: null, etag: null } : { value: parse(text), etag: hash(text) };
+    },
+    write: async (next, etag) => {
+      const text = JSON.stringify(next, null, 2);
+      if (r.kind === "blob") {
+        await putBlobBodyIfMatch({
+          pathname: `${r.prefix}${filename}`,
+          body: text,
+          token: r.token,
+          etag,
+          seen: etag != null,
+          contentType: "application/json; charset=utf-8",
+        });
+        return;
+      }
+      // Lokālā mape: pārbaude + pārsaukšana zem procesa slēdzenes (vairāku procesu gadījums nav vajadzīgs).
+      const prev = fsWriteLocks.get(fp) ?? Promise.resolve();
+      const run = prev.catch(() => undefined).then(async () => {
+        const current = await readFsText();
+        if ((current == null ? null : hash(current)) !== etag) throw new ConditionalWriteConflict();
+        await fs.mkdir(path.dirname(fp), { recursive: true });
+        const tmp = `${fp}.${process.pid}.${randomUUID()}.tmp`;
+        await fs.writeFile(tmp, text, "utf8");
+        await fs.rename(tmp, fp);
+      });
+      fsWriteLocks.set(fp, run);
+      await run;
+    },
+    update: async (current) => {
+      const d = await mutate(current);
+      return d.next === undefined ? { result: d.result } : { next: d.next, result: d.result };
+    },
+    maxAttempts,
+  });
 }
 
 export async function putLogisticsBinaryFile(
