@@ -120,10 +120,10 @@ async function readChatResponse(res: Response): Promise<ChatResponse> {
   return withReplies(data);
 }
 
-function tradeCarsFrom(data: unknown): WaybillTradeCar[] | null {
+function tradeCarsFrom(data: unknown): { cars: WaybillTradeCar[]; fromAutoparks: boolean } | null {
   if (!data || typeof data !== "object") return null;
-  const list = (data as { tradeCars?: unknown }).tradeCars;
-  return Array.isArray(list) ? (list as WaybillTradeCar[]) : null;
+  const { tradeCars: list, tradeCarsSource } = data as { tradeCars?: unknown; tradeCarsSource?: unknown };
+  return Array.isArray(list) ? { cars: list as WaybillTradeCar[], fromAutoparks: tradeCarsSource === "autoparks" } : null;
 }
 
 function firstFreePlate(plates: WaybillPlateState[]): string {
@@ -152,6 +152,7 @@ export function IrissKomandaAivaramChat({
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState<{ plate: string; current?: WaybillPlateCurrent } | null>(null);
   const [tradeCars, setTradeCars] = useState<WaybillTradeCar[] | null>(null);
+  const [tradeCarsFromAutoparks, setTradeCarsFromAutoparks] = useState(false);
   const [mobileDraft, setMobileDraft] = useState<WaybillMobileDraft | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const selectedInit = useRef(false);
@@ -179,7 +180,8 @@ export function IrissKomandaAivaramChat({
         const cars = tradeCarsFrom(await raw.json().catch(() => null));
         if (cars) {
           carsLoaded.current = true;
-          setTradeCars(cars);
+          setTradeCars(cars.cars);
+          setTradeCarsFromAutoparks(cars.fromAutoparks);
         }
       }
       if (isChatBusy(data)) return;
@@ -320,6 +322,7 @@ export function IrissKomandaAivaramChat({
       <IrissWaybillMobileForm
         plates={chat.plates}
         tradeCars={tradeCars}
+        tradeCarsFromAutoparks={tradeCarsFromAutoparks}
         requests={chat.requests}
         replies={chat.replies}
         busy={busy}

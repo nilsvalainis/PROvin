@@ -33,6 +33,7 @@ const TONE_CLASS = { wait: styles.wait, wip: styles.wip, ok: styles.ok, bad: sty
 export function IrissWaybillMobileForm({
   plates,
   tradeCars,
+  tradeCarsFromAutoparks = false,
   requests,
   replies,
   busy,
@@ -45,6 +46,8 @@ export function IrissWaybillMobileForm({
   plates: WaybillPlateState[];
   /** null = vēl ielādē. */
   tradeCars: WaybillTradeCar[] | null;
+  /** CSDD reģistrs vēl nav nolasīts - saraksts ir Autoparka aktīvie auto. */
+  tradeCarsFromAutoparks?: boolean;
   requests: WaybillRequest[];
   replies: WaybillAivarsReply[];
   busy: boolean;
@@ -322,7 +325,13 @@ export function IrissWaybillMobileForm({
       <AdminMobileSheet
         open={pickerOpen}
         title="Tirdzniecībā pieņemtie auto"
-        subtitle={tradeCars === null ? "Ielādē..." : `${tradeCars.length} auto`}
+        subtitle={
+          tradeCars === null
+            ? "Ielādē..."
+            : tradeCarsFromAutoparks
+              ? `${tradeCars.length} auto no Autoparka - CSDD reģistrs vēl nav nolasīts`
+              : `${tradeCars.length} auto`
+        }
         onClose={() => setPickerOpen(false)}
       >
         <IrissWaybillCarPicker
