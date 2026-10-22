@@ -4,11 +4,11 @@
  * vēsturiskā zīme U+2013 - to saglabājam, lai jaunās mapes sakristu ar esošajām).
  */
 
-import { AUTOPARKS_STAGE_LV, type AutoparksCar, type AutoparksStage } from "@/lib/iriss-autoparks";
+import { AUTOPARKS_STAGE_LV, type AutoparksCar, type AutoparksOwner, type AutoparksStage } from "@/lib/iriss-autoparks";
 
 export const STOCK_SEPARATOR = " – ";
 
-export type AutoparksOwner = "IRISS" | "DZA";
+export type { AutoparksOwner };
 
 /** Saknes mapes: IRISS = /STOCK, DZA = /SIA DZINTARZEME AUTO/STOCK. Env var pārrakstīt. */
 export function autoparksDropboxRoot(owner: AutoparksOwner = "IRISS", env: NodeJS.ProcessEnv = process.env): string {

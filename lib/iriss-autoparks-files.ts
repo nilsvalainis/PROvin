@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { AutoparksCar, AutoparksFile, AutoparksStage } from "@/lib/iriss-autoparks";
+import { autoparksOwner, type AutoparksCar, type AutoparksFile, type AutoparksStage } from "@/lib/iriss-autoparks";
 import {
   autoparksDropboxFileName,
   autoparksDropboxRoot,
@@ -33,14 +33,14 @@ export class AutoparksFolderError extends Error {
  */
 export async function resolveAutoparksCarFolder(
   client: DropboxClient,
-  car: Pick<AutoparksCar, "make" | "model" | "year" | "color" | "vin" | "orderId" | "dropboxFolderId"> & { owner?: "IRISS" | "DZA" },
+  car: Pick<AutoparksCar, "make" | "model" | "year" | "color" | "vin" | "orderId" | "dropboxFolderId" | "owner">,
   opts: { create?: boolean; auction?: string | null } = {},
 ): Promise<AutoparksFolderRef | null> {
   if (car.dropboxFolderId) {
     const meta = await client.getMetadata(car.dropboxFolderId);
     if (meta?.tag === "folder") return { id: meta.id, path: meta.pathDisplay };
   }
-  const root = autoparksDropboxRoot(car.owner ?? "IRISS");
+  const root = autoparksDropboxRoot(autoparksOwner(car));
   const rootMeta = await client.getMetadata(root);
   if (!rootMeta || rootMeta.tag !== "folder") throw new AutoparksFolderError("root_missing");
   const { entries } = await client.listAll(root, { recursive: false });
@@ -87,7 +87,7 @@ export type AutoparksStoredRef = {
  * Dropbox kļūda neaptur augšupielādi - fails paliek Blob, migrācija to pārcels vēlāk.
  */
 export async function storeAutoparksFileBytes(input: {
-  car: AutoparksCar & { owner?: "IRISS" | "DZA" };
+  car: AutoparksCar;
   stage: AutoparksStage;
   title: string;
   fileName: string;

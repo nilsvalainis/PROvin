@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import { DropboxApiError, getDropboxClient, type DropboxClient, type DropboxEntry } from "@/lib/dropbox-client";
-import type { AutoparksCar, AutoparksFile, AutoparksFileKind, AutoparksStage, AutoparksState } from "@/lib/iriss-autoparks";
+import { autoparksOwner, type AutoparksCar, type AutoparksFile, type AutoparksFileKind, type AutoparksStage, type AutoparksState } from "@/lib/iriss-autoparks";
 import { autoparksDropboxRoot, matchStockFolderByVin, vinTail, type AutoparksOwner } from "@/lib/iriss-autoparks-dropbox-path";
 import { autoparksDropboxEnabled, resolveAutoparksCarFolder } from "@/lib/iriss-autoparks-files";
 import { fillAutoparksFromStock, type AutoparksFillable } from "@/lib/iriss-autoparks-info-txt";
@@ -81,10 +81,8 @@ export function groupStockEntries(entries: readonly DropboxEntry[], root: string
   return groups;
 }
 
-type CarOwnerView = AutoparksCar & { owner?: AutoparksOwner };
-
 function ownerOf(car: AutoparksCar): AutoparksOwner {
-  return (car as CarOwnerView).owner === "DZA" ? "DZA" : "IRISS";
+  return autoparksOwner(car);
 }
 
 /** Atrod auto mapei: pēc saistītā id, citādi pēc VIN (tikai nesaistītiem un tikai, ja viennozīmīgi). */

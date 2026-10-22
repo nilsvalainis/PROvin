@@ -53,6 +53,24 @@ export const AUTOPARKS_FILE_KIND_LV: Record<AutoparksFileKind, string> = {
   other: "Dokuments",
 };
 
+/** Kuras firmas auto: SIA ĪRISS (noklusējums) vai SIA DZINTARZEME AUTO. */
+export const AUTOPARKS_OWNERS = ["IRISS", "DZA"] as const;
+export type AutoparksOwner = (typeof AUTOPARKS_OWNERS)[number];
+
+export const AUTOPARKS_OWNER_LV: Record<AutoparksOwner, string> = {
+  IRISS: "SIA ĪRISS",
+  DZA: "SIA DZINTARZEME AUTO",
+};
+
+export function isAutoparksOwner(v: unknown): v is AutoparksOwner {
+  return typeof v === "string" && (AUTOPARKS_OWNERS as readonly string[]).includes(v);
+}
+
+/** Efektīvais īpašnieks: vecajos ierakstos lauka nav -> IRISS (glabātie dati netiek pārrakstīti). */
+export function autoparksOwner(car: { owner?: unknown }): AutoparksOwner {
+  return isAutoparksOwner(car.owner) ? car.owner : "IRISS";
+}
+
 export type AutoparksCar = {
   id: string;
   orderId: string;
@@ -71,6 +89,8 @@ export type AutoparksCar = {
   arrivedAt: string;
   /** Pēc "Pārdots": pārvietots uz arhīvu (sarakstā vairs nav, var atjaunot). Tukšs = aktīvs. */
   archivedAt: string;
+  /** Īpašnieks. Vecajos ierakstos lauka nav (= IRISS, sk. `autoparksOwner`). */
+  owner?: AutoparksOwner;
   /** Dropbox /STOCK mapes id (`id:...`); nav/tukšs = vēl nav sasaistīts. Vecos ierakstos lauka nav. */
   dropboxFolderId?: string;
   /** Pēdējais zināmais mapes ceļš (tikai informācijai; avots ir id). */
@@ -159,6 +179,8 @@ export type AutoparksRoom = {
 
 /** Saraksta rinda: auto + skaiti, lai sarakstā nav jālādē visa istaba. */
 export type AutoparksListRow = AutoparksCar & {
+  /** Vienmēr aizpildīts (vecajiem ierakstiem IRISS). */
+  owner: AutoparksOwner;
   fileCount: number;
   stageFileCounts: Record<AutoparksStage, number>;
   noteCount: number;
@@ -221,6 +243,7 @@ export function normalizeAutoparksCar(raw: unknown): AutoparksCar | null {
     archivedAt: str(raw.archivedAt, 40),
     createdAt: str(raw.createdAt, 40),
     updatedAt: str(raw.updatedAt, 40),
+    ...(isAutoparksOwner(raw.owner) ? { owner: raw.owner } : {}),
     ...(typeof raw.dropboxFolderId === "string" && raw.dropboxFolderId ? { dropboxFolderId: str(raw.dropboxFolderId, 120) } : {}),
     ...(typeof raw.dropboxFolderPath === "string" && raw.dropboxFolderPath ? { dropboxFolderPath: str(raw.dropboxFolderPath, 400) } : {}),
     // Jaunie lauki tikai, ja ierakstā tie jau ir - vecie ieraksti paliek tādi paši.
@@ -336,6 +359,7 @@ export function autoparksListRows(state: AutoparksState): AutoparksListRow[] {
     for (const f of own) stageFileCounts[f.stage] += 1;
     return {
       ...car,
+      owner: autoparksOwner(car),
       fileCount: own.length,
       stageFileCounts,
       noteCount: state.notes.filter((n) => n.carId === car.id).length,
@@ -349,7 +373,7 @@ export function autoparksRoom(state: AutoparksState, carId: string): AutoparksRo
   if (!car) return null;
   const byNewest = (a: { createdAt: string }, b: { createdAt: string }) => b.createdAt.localeCompare(a.createdAt);
   return {
-    car,
+    car: { ...car, owner: autoparksOwner(car) },
     files: liveAutoparksFiles(state.files).filter((f) => f.carId === carId).sort(byNewest),
     notes: state.notes.filter((n) => n.carId === carId).sort(byNewest),
     work: state.work.filter((w) => w.carId === carId).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
@@ -362,6 +386,12 @@ export function autoparksDaysInPark(car: Pick<AutoparksCar, "arrivedAt" | "creat
   const from = Date.parse(car.arrivedAt || car.createdAt);
   if (!Number.isFinite(from)) return 0;
   return Math.max(0, Math.floor((now.getTime() - from) / 86_400_000));
+}
+
+/** Saraksta filtrs pēc īpašnieka (API `?owner=IRISS|DZA`); nederīga vērtība = visi. */
+export function filterAutoparksByOwner<T extends { owner?: unknown }>(rows: readonly T[], owner: unknown): T[] {
+  if (!isAutoparksOwner(owner)) return [...rows];
+  return rows.filter((r) => autoparksOwner(r) === owner);
 }
 
 /** Skaiti pa statusiem (arhīvā esošie netiek skaitīti). */

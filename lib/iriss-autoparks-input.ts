@@ -1,4 +1,4 @@
-import { isAutoparksStatus } from "@/lib/iriss-autoparks";
+import { isAutoparksOwner, isAutoparksStatus } from "@/lib/iriss-autoparks";
 import { parseRegistryPatch } from "@/lib/iriss-autoparks-registry";
 import type { AutoparksCarInput } from "@/lib/iriss-autoparks-store";
 
@@ -30,6 +30,7 @@ export function parseAutoparksCarInput(body: Record<string, unknown>, hideSums: 
     arrivedAt: text(body.arrivedAt),
     mileageKm: num(body.mileageKm),
     status: isAutoparksStatus(body.status) ? body.status : undefined,
+    owner: isAutoparksOwner(body.owner) ? body.owner : undefined,
     displayName: text(body.displayName),
     equipmentLine: text(body.equipmentLine),
   };

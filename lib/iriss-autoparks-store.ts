@@ -2,7 +2,10 @@ import "server-only";
 
 import { createHash, randomUUID } from "node:crypto";
 import {
+  AUTOPARKS_OWNER_LV,
   AUTOPARKS_STATUS_LV,
+  autoparksOwner,
+  isAutoparksOwner,
   AUTOPARKS_STAGE_LV,
   autoparksRoom,
   isAutoparksStatus,
@@ -53,7 +56,7 @@ function event(carId: string, actor: AutoparksActor, text: string) {
 export type AutoparksCarInput = Partial<
   Pick<
     AutoparksCar,
-    "vin" | "make" | "model" | "year" | "plate" | "color" | "mileageKm" | "location" | "purchasePriceEur" | "salePriceEur" | "status" | "arrivedAt" | "displayName" | "equipmentLine" | "listPriceEur"
+    "vin" | "make" | "model" | "year" | "plate" | "color" | "mileageKm" | "location" | "purchasePriceEur" | "salePriceEur" | "status" | "arrivedAt" | "displayName" | "equipmentLine" | "listPriceEur" | "owner"
   >
 > & {
   /** Ar roku labotie reģistra lauki (tiek atzīmēti kā "labots"). */
@@ -79,6 +82,8 @@ export async function createAutoparksCar(input: AutoparksCarInput & { orderId?: 
     salePriceEur: input.salePriceEur ?? null,
     arrivedAt: input.arrivedAt || now.slice(0, 10),
     archivedAt: "",
+    // Jauniem ierakstiem īpašnieks vienmēr saglabāts; vecie paliek bez lauka (= IRISS).
+    owner: isAutoparksOwner(input.owner) ? input.owner : "IRISS",
     createdAt: now,
     updatedAt: now,
   };
@@ -135,6 +140,10 @@ export async function patchAutoparksCar(id: string, patch: AutoparksCarInput, ac
   if (patch.equipmentLine !== undefined) next.equipmentLine = patch.equipmentLine.trim().slice(0, 300);
   if (patch.listPriceEur !== undefined) next.listPriceEur = patch.listPriceEur;
   if (patch.registry && Object.keys(patch.registry).length > 0) next.registry = applyManualRegistryPatch(prev.registry, patch.registry);
+  if (isAutoparksOwner(patch.owner) && patch.owner !== autoparksOwner(prev)) {
+    next.owner = patch.owner;
+    state.events.push(event(id, actor, `Īpašnieks: ${AUTOPARKS_OWNER_LV[autoparksOwner(prev)]} -> ${AUTOPARKS_OWNER_LV[patch.owner]}`));
+  }
   if (isAutoparksStatus(patch.status) && patch.status !== prev.status) {
     next.status = patch.status;
     next.statusChangedAt = now;
