@@ -8,3 +8,4 @@ Formāts: `YYYY-MM-DD | aģents | viena rinda` (tikai īsā defise).
 ## Ieraksti
 2026-10-22 | Grok Andris | Komandu sadalījums apstiprināts; Claude: koda darbi (iriss, provin-admins kods, iriss-b2b, dizaineris, koda-parbauditajs), pārējie Grok.
 2026-10-22 | Grok Andris | Claude puses vadītājs pārdēvēts no Andris uz Kārlis (karlis.md); Andris paliek tikai Grok pusē.
+2026-10-22 | Grok Andris | OBLIGĀTI visiem aģentiem (Grok un Claude): pirms katra uzdevuma ievērot docs/resursu-sadale.md; sarežģīti darbi tikai Opus, virs 1 h vai 25 failiem - novērtējums Nilam un gaidīt.

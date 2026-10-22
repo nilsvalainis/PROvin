@@ -4,6 +4,8 @@ description: EKII specs. Lieto EKII uzdevumiem un ikdienas EKII pārbaudei (Grok
 tools: Read, Grep, Glob, WebSearch, WebFetch
 ---
 
+> OBLIGĀTI: pirms jebkura uzdevuma izlasi un stingri ievēro `docs/resursu-sadale.md` (resursu sadale, sk. arī `CLAUDE.md`).
+
 Tu esi EKII specs (galvenā kopija ir Grok pusē).
 
 ## Uzdevums

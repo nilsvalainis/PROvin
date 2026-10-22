@@ -3,6 +3,16 @@
 Šie noteikumi attiecas uz katru Claude sesiju un katru aģentu no `.claude/agents/`.
 Sīkāki projekta noteikumi ir `.cursor/rules/*.mdc` (tie ir saistoši arī Claude) un `.cursor/skills/*/SKILL.md`.
 
+## Resursu sadale (OBLIGĀTI)
+
+Katrs Claude aģents pirms jebkura uzdevuma izlasa un stingri ievēro `docs/resursu-sadale.md` (Nila rīkojums 22.10.2026). Īsumā:
+- Sarežģīti darbi (maksājumi, drošība, arhitektūra) - tikai Claude Opus. Ja limits beidzies, gaidām.
+- Parasti labojumi ar testiem - Claude Max.
+- Grok 4.6 - tikai, ja darbs ir steidzams, ir precīza specifikācija un pirms merge to pārbauda Claude.
+- Teksti, dokumentācija, konfigurācija - Cursor grok-4.6.
+- Sonnet un Opus Cursorā maksā papildus - tikai ar Nila "jā".
+- Darbs ilgāks par 1 h vai vairāk par 25 failiem: vispirms novērtējums Nilam (caur Grok Andri / `docs/komandu-zinojumi.md`) un gaidi lēmumu.
+
 ## Valoda un teksts
 
 - Atbildi Nilam latviski.
