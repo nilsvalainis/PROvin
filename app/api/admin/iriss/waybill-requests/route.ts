@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { wakeAivars } from "@/lib/iriss-aivars-wake";
 import { parseCreateWaybillInput } from "@/lib/iriss-waybill-create";
 import { emptyWaybillRequestsDoc, waybillChatPayload } from "@/lib/iriss-waybill-requests";
 import { createWaybillRequest, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
@@ -100,6 +101,7 @@ export async function POST(req: Request) {
       createdByName,
       payload: parsed.value,
     });
+    after(() => wakeAivars(request.id));
     const doc = await readWaybillRequestsDoc();
     return NextResponse.json(
       { ok: true, request, ...waybillChatPayload(doc), plates },

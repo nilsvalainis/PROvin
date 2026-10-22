@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { wakeAivars } from "@/lib/iriss-aivars-wake";
 import { waybillAivarsReply, waybillChatPayload } from "@/lib/iriss-waybill-requests";
 import { readWaybillRequestsDoc, retryWaybillRequest } from "@/lib/iriss-waybill-requests-store";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
@@ -48,6 +49,7 @@ export async function POST(req: Request, ctx: Ctx) {
   try {
     const request = await retryWaybillRequest({ id, actorId, actorName });
     if (!request) return NextResponse.json({ error: "Nevar atkārtot šo pieprasījumu." }, { status: 409, ...NO_STORE });
+    after(() => wakeAivars(request.id));
     const doc = await readWaybillRequestsDoc();
     return NextResponse.json({
       ok: true,
