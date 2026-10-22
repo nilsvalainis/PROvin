@@ -1,4 +1,5 @@
 import { isAutoparksStatus } from "@/lib/iriss-autoparks";
+import { parseRegistryPatch } from "@/lib/iriss-autoparks-registry";
 import type { AutoparksCarInput } from "@/lib/iriss-autoparks-store";
 
 function num(v: unknown): number | null | undefined {
@@ -29,10 +30,17 @@ export function parseAutoparksCarInput(body: Record<string, unknown>, hideSums: 
     arrivedAt: text(body.arrivedAt),
     mileageKm: num(body.mileageKm),
     status: isAutoparksStatus(body.status) ? body.status : undefined,
+    displayName: text(body.displayName),
+    equipmentLine: text(body.equipmentLine),
   };
+  if (body.registry && typeof body.registry === "object") {
+    const registry = parseRegistryPatch(body.registry);
+    if (Object.keys(registry).length > 0) out.registry = registry;
+  }
   if (!hideSums) {
     out.purchasePriceEur = num(body.purchasePriceEur);
     out.salePriceEur = num(body.salePriceEur);
+    out.listPriceEur = num(body.listPriceEur);
   }
   for (const key of Object.keys(out) as (keyof AutoparksCarInput)[]) {
     if (out[key] === undefined) delete out[key];

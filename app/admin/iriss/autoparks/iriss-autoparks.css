@@ -468,6 +468,7 @@
   font-weight: 500;
 }
 .iriss-ap-field input,
+.iriss-ap-field select,
 .iriss-ap-input {
   min-width: 0;
   height: 38px;
@@ -484,10 +485,12 @@ textarea.iriss-ap-input {
   height: auto;
   padding: 8px 10px;
 }
-.iriss-ap-field input:hover:not(:disabled) {
+.iriss-ap-field input:hover:not(:disabled),
+.iriss-ap-field select:hover:not(:disabled) {
   background: #fff;
 }
-.iriss-ap-field input:disabled {
+.iriss-ap-field input:disabled,
+.iriss-ap-field select:disabled {
   background: transparent;
   border-color: transparent;
   padding-left: 0;

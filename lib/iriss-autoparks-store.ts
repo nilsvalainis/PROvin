@@ -16,6 +16,7 @@ import {
   type AutoparksState,
   type AutoparksWorkItem,
 } from "@/lib/iriss-autoparks";
+import { applyManualRegistryPatch, mergeRegistryValues, type RegistryFile, type RegistryValues } from "@/lib/iriss-autoparks-registry";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
 import {
   getLogisticsBinaryFile,
@@ -42,8 +43,14 @@ function event(carId: string, actor: AutoparksActor, text: string) {
 }
 
 export type AutoparksCarInput = Partial<
-  Pick<AutoparksCar, "vin" | "make" | "model" | "year" | "plate" | "color" | "mileageKm" | "location" | "purchasePriceEur" | "salePriceEur" | "status" | "arrivedAt">
->;
+  Pick<
+    AutoparksCar,
+    "vin" | "make" | "model" | "year" | "plate" | "color" | "mileageKm" | "location" | "purchasePriceEur" | "salePriceEur" | "status" | "arrivedAt" | "displayName" | "equipmentLine" | "listPriceEur"
+  >
+> & {
+  /** Ar roku labotie reģistra lauki (tiek atzīmēti kā "labots"). */
+  registry?: Partial<RegistryValues>;
+};
 
 export async function createAutoparksCar(input: AutoparksCarInput & { orderId?: string }, actor: AutoparksActor): Promise<AutoparksCar> {
   const state = await readAutoparksState();
@@ -113,6 +120,10 @@ export async function patchAutoparksCar(id: string, patch: AutoparksCarInput, ac
   if (patch.purchasePriceEur !== undefined) next.purchasePriceEur = patch.purchasePriceEur;
   if (patch.salePriceEur !== undefined) next.salePriceEur = patch.salePriceEur;
   if (patch.arrivedAt !== undefined) next.arrivedAt = patch.arrivedAt;
+  if (patch.displayName !== undefined) next.displayName = patch.displayName.trim().slice(0, 160);
+  if (patch.equipmentLine !== undefined) next.equipmentLine = patch.equipmentLine.trim().slice(0, 300);
+  if (patch.listPriceEur !== undefined) next.listPriceEur = patch.listPriceEur;
+  if (patch.registry && Object.keys(patch.registry).length > 0) next.registry = applyManualRegistryPatch(prev.registry, patch.registry);
   if (isAutoparksStatus(patch.status) && patch.status !== prev.status) {
     next.status = patch.status;
     next.statusChangedAt = now;
@@ -286,4 +297,50 @@ export async function readAutoparksFileBytes(id: string): Promise<{ file: Autopa
   const stored = await getLogisticsBinaryFile(file.blobPath);
   if (!stored) return null;
   return { file, car, bytes: stored.bytes, contentType: file.contentType || stored.contentType };
+}
+
+export type AutoparksRegistryImportResult = {
+  matched: number;
+  updated: number;
+  unmatched: string[];
+};
+
+/**
+ * CSDD reģistra imports pēc VIN. Aizpilda tikai `registry` (un tukšu marku/modeli/nobraukumu),
+ * Nila labotos laukus nepārraksta. Arhīvā esošos (pārdotos) auto neaiztiek.
+ */
+export async function applyAutoparksRegistryFile(file: RegistryFile, importFile: string): Promise<AutoparksRegistryImportResult> {
+  const state = await readAutoparksState();
+  const byVin = new Map(file.vehicles.map((v) => [v.vin, v]));
+  const now = new Date().toISOString();
+  const actor: AutoparksActor = { id: "csdd-import", name: "CSDD reģistrs" };
+  const seen = new Set<string>();
+  let matched = 0;
+  let updated = 0;
+  state.cars = state.cars.map((car) => {
+    const rec = car.vin && !car.archivedAt ? byVin.get(car.vin) : undefined;
+    if (!rec) return car;
+    seen.add(rec.vin);
+    matched += 1;
+    const { registry, changed } = mergeRegistryValues(car.registry, rec.values, { importedAt: now, importFile, registryDate: file.generatedAt });
+    const next: AutoparksCar = { ...car, registry };
+    const filled: string[] = [];
+    if (!next.mileageKm && registry.odometerKm != null) {
+      next.mileageKm = registry.odometerKm;
+      filled.push("nobraukums");
+    }
+    if (!next.make && !next.model && registry.makeModel) {
+      const [make, ...rest] = registry.makeModel.split(/\s+/);
+      next.make = (make ?? "").slice(0, 60);
+      next.model = rest.join(" ").slice(0, 80);
+      filled.push("marka");
+    }
+    if (changed.length === 0 && filled.length === 0) return car;
+    updated += 1;
+    next.updatedAt = now;
+    state.events.push(event(car.id, actor, `CSDD reģistrs: atjaunoti ${changed.length + filled.length} lauki`));
+    return next;
+  });
+  if (updated > 0) await writeAutoparksState(state);
+  return { matched, updated, unmatched: [...byVin.keys()].filter((v) => !seen.has(v)) };
 }
