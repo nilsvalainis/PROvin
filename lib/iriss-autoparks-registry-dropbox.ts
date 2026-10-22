@@ -2,6 +2,7 @@ import "server-only";
 
 import { applyAutoparksRegistryFile, type AutoparksRegistryImportResult } from "@/lib/iriss-autoparks-store";
 import { parseRegistryFile } from "@/lib/iriss-autoparks-registry";
+import { getDropboxClient } from "@/lib/dropbox-client";
 import { downloadDropboxFile, getDropboxAccessToken } from "@/lib/iriss-pavadzimes-dropbox";
 import { readLogisticsJsonFile, writeLogisticsJsonFile } from "@/lib/iriss-logistics-store";
 
@@ -54,7 +55,7 @@ async function listRegistryFolder(token: string): Promise<ListEntry[]> {
 }
 
 export type RegistryImportRun =
-  | { ok: true; skipped: true; reason: "no_file" | "unchanged"; file?: string }
+  | { ok: true; skipped: true; reason: "no_file" | "unchanged" | "older"; file?: string }
   | ({ ok: true; skipped: false; file: string; invalidRows: number } & AutoparksRegistryImportResult)
   | { ok: false; error: string };
 
@@ -69,7 +70,7 @@ export async function runAutoparksRegistryImport(opts: { force?: boolean } = {})
     return { ok: false, error: e instanceof Error ? e.message : "dropbox_list_failed" };
   }
   if (!latest) return { ok: true, skipped: true, reason: "no_file" };
-  const meta = ((await readLogisticsJsonFile(IMPORT_META_FILE)) ?? {}) as { contentHash?: string };
+  const meta = ((await readLogisticsJsonFile(IMPORT_META_FILE)) ?? {}) as ImportMeta;
   if (!opts.force && latest.contentHash && meta.contentHash === latest.contentHash) {
     return { ok: true, skipped: true, reason: "unchanged", file: latest.name };
   }
@@ -81,15 +82,71 @@ export async function runAutoparksRegistryImport(opts: { force?: boolean } = {})
   }
   const parsed = parseRegistryFile(raw);
   if (!parsed.ok) return { ok: false, error: parsed.error };
+  // Vecāks rokas fails pēc automātiskā nolasījuma nedrīkst atgriezt vecus akta nr./statusus.
+  if (!opts.force && isOlderRegistry(parsed.file.generatedAt, meta.registryDate)) {
+    return { ok: true, skipped: true, reason: "older", file: latest.name };
+  }
   const result = await applyAutoparksRegistryFile(parsed.file, latest.name);
+  await writeImportMeta({ file: latest.name, contentHash: latest.contentHash, registryDate: parsed.file.generatedAt, source: "dropbox" }, parsed.file.vehicles.length, result);
+  return { ok: true, skipped: false, file: latest.name, invalidRows: parsed.skipped, ...result };
+}
+
+type ImportMeta = { contentHash?: string; registryDate?: string };
+
+/** `generatedAt` salīdzinājums pēc datuma (YYYY-MM-DD...). Nezināms datums nekad nav "vecāks". */
+export function isOlderRegistry(generatedAt: string, lastRegistryDate: string | undefined): boolean {
+  const a = generatedAt.slice(0, 10);
+  const b = (lastRegistryDate ?? "").slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(a) && /^\d{4}-\d{2}-\d{2}$/.test(b) && a < b;
+}
+
+async function writeImportMeta(
+  base: { file: string; contentHash: string; registryDate: string; source: "dropbox" | "hetzner" },
+  vehicles: number,
+  result: AutoparksRegistryImportResult,
+) {
   await writeLogisticsJsonFile(IMPORT_META_FILE, {
-    file: latest.name,
-    contentHash: latest.contentHash,
+    ...base,
     importedAt: new Date().toISOString(),
-    vehicles: parsed.file.vehicles.length,
+    vehicles,
     matched: result.matched,
     updated: result.updated,
+    added: result.added,
+    removed: result.removed,
+    actUpdated: result.actUpdated,
+    statusChanged: result.statusChanged,
     unmatched: result.unmatched.length,
   });
-  return { ok: true, skipped: false, file: latest.name, invalidRows: parsed.skipped, ...result };
+}
+
+export type RegistryPushRun =
+  | ({ ok: true; file: string; archived: boolean; invalidRows: number; vehicles: number } & AutoparksRegistryImportResult)
+  | { ok: false; error: string; status: number };
+
+/**
+ * Hetzner cron (`POST /api/iriss/csdd-registrs`): pilns reģistra nolasījums tieši importētājam.
+ * Fails tiek arī saglabāts Dropbox mapē (vēsturei, tā pati shēma), un Dropbox cron to vairs neimportē otrreiz.
+ */
+export async function runAutoparksRegistryPush(raw: unknown, now: Date = new Date()): Promise<RegistryPushRun> {
+  const parsed = parseRegistryFile(raw);
+  if (!parsed.ok) return { ok: false, error: parsed.error, status: 400 };
+  if (!parsed.file.snapshot) return { ok: false, error: "snapshot_required", status: 400 };
+  const stamp = now.toISOString().slice(0, 16).replace(/[-:T]/g, "").replace(/^(\d{8})(\d{4})$/, "$1-$2");
+  let file = `registrs-auto-${stamp}.json`;
+  let contentHash = "";
+  let archived = false;
+  const dbx = getDropboxClient();
+  if (dbx) {
+    try {
+      const entry = await dbx.upload(`${dropboxRegistryPath()}/${file}`, new TextEncoder().encode(JSON.stringify(raw, null, 2)), "add");
+      file = entry.name;
+      contentHash = entry.contentHash;
+      archived = true;
+    } catch (e) {
+      console.warn("[autoparks-registry] archive_upload_failed", e instanceof Error ? e.message : "error");
+    }
+  }
+  const result = await applyAutoparksRegistryFile(parsed.file, file);
+  await writeImportMeta({ file, contentHash, registryDate: parsed.file.generatedAt, source: "hetzner" }, parsed.file.vehicles.length, result);
+  return { ok: true, file, archived, invalidRows: parsed.skipped, vehicles: parsed.file.vehicles.length, ...result };
 }

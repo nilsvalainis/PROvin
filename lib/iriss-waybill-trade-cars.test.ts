@@ -3,8 +3,8 @@ import type { AutoparksCar } from "@/lib/iriss-autoparks";
 import { emptyRegistryValues, type AutoparksRegistry } from "@/lib/iriss-autoparks-registry";
 import { filterWaybillTradeCars, waybillTradeCars } from "@/lib/iriss-waybill-trade-cars";
 
-function registry(tradeActNo: string, makeModel = ""): AutoparksRegistry {
-  return { ...emptyRegistryValues(), tradeActNo, makeModel, importedAt: "", importFile: "", registryDate: "", manual: [] };
+function registry(tradeActNo: string, makeModel = "", extra: Partial<AutoparksRegistry> = {}): AutoparksRegistry {
+  return { ...emptyRegistryValues(), tradeActNo, makeModel, importedAt: "", importFile: "", registryDate: "", manual: [], removedAt: "", ...extra };
 }
 
 function car(over: Partial<AutoparksCar>): AutoparksCar {
@@ -40,6 +40,9 @@ describe("waybill trade cars", () => {
     car({ id: "noact", make: "Škoda", model: "Superb", registry: registry("") }),
     car({ id: "noreg", make: "Opel", model: "Astra" }),
     car({ id: "reg", vin: "W1K2132041A876543", registry: registry("A-16", "MERCEDES-BENZ E 220 D") }),
+    // Reģistra nolasījumā vairs nav / statuss "Pārdots" - pavadzīmju sarakstā neparādās (tas pats avots kā Autoparkam).
+    car({ id: "removed", make: "Kia", model: "Ceed", registry: registry("A-17", "", { removedAt: "2026-10-23T00:30:00.000Z" }) }),
+    car({ id: "regsold", make: "Kia", model: "Sportage", registry: registry("A-18", "", { status: "Pārdots" }) }),
   ];
 
   it("lists only accepted-for-trade (act no.), unsold, unarchived cars, sorted, without prices", () => {
