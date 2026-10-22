@@ -17,7 +17,7 @@ export async function POST(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { id } = await ctx.params;
-  let body: { kind?: unknown; text?: unknown; waybillNo?: unknown; pdfUrl?: unknown; errorReason?: unknown };
+  let body: { kind?: unknown; text?: unknown; waybillNo?: unknown; pdfUrl?: unknown; errorReason?: unknown; by?: unknown };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -36,7 +36,7 @@ export async function POST(req: Request, ctx: Ctx) {
     waybillNo: typeof body.waybillNo === "string" ? body.waybillNo : "",
     pdfUrl: typeof body.pdfUrl === "string" ? body.pdfUrl : "",
     errorReason: typeof body.errorReason === "string" ? body.errorReason : "",
-    by: "aivars",
+    by: body.by === "auto" ? "auto" : "aivars",
   });
   if (!request) return NextResponse.json({ error: "not_found" }, { status: 404 });
   return NextResponse.json(
