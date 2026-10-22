@@ -7,6 +7,10 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { IrissKomandaAivaramChat } from "@/components/admin/IrissKomandaAivaramChat";
+import { IrissWaybillCalendar } from "@/components/admin/IrissWaybillCalendar";
+import { IrissWaybillPdfSheet } from "@/components/admin/IrissWaybillPdfSheet";
+import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
+import { waybillHistoryForVin } from "@/lib/iriss-waybill-calendar";
 import { formatIrissWaybillChip } from "@/lib/admin-mobile-ds";
 import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { waybillRemainingShare } from "@/lib/iriss-pavadzimes-countdown";
@@ -31,9 +35,9 @@ function validityClass(tone: IrissPavadzimeValidityTone): string {
   return "text-[#3a3a3c]";
 }
 
-type WaybillView = "all" | "current" | "archive";
+type WaybillView = "all" | "current" | "archive" | "calendar";
 
-const VIEW_LABEL: Record<WaybillView, string> = { all: "Visas", current: "Aktīvās", archive: "Arhīvs" };
+const VIEW_LABEL: Record<WaybillView, string> = { all: "Visas", current: "Aktīvās", archive: "Arhīvs", calendar: "Kalendārs" };
 
 function isActiveNow(row: IrissPavadzimeListRow): boolean {
   if (row.archived || row.lifecycle === "interrupted") return false;
@@ -41,6 +45,7 @@ function isActiveNow(row: IrissPavadzimeListRow): boolean {
 }
 
 function inView(row: IrissPavadzimeListRow, view: WaybillView): boolean {
+  if (view === "calendar") return true;
   if (view === "current") return isActiveNow(row);
   if (view === "archive") return !isActiveNow(row);
   return true;
@@ -97,6 +102,22 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<WaybillView>("current");
   const [extendVehicle, setExtendVehicle] = useState<WaybillVehicleChip | null>(null);
+  const [pdfPreview, setPdfPreview] = useState<{ href: string; title: string } | null>(null);
+  const [historyVin, setHistoryVin] = useState<string | null>(null);
+
+  /** Atkārtot ar vienu pieskārienu: Aivara pieprasījums aizpildīts ar to pašu numuru, auto un VIN. */
+  const repeatWaybill = (row: IrissPavadzimeListRow) => {
+    setExtendVehicle({
+      chip: row.brandModel.split(/\s+/).slice(0, 2).join(" ") || row.number,
+      brandModel: row.brandModel,
+      vin: row.vin,
+      plate: row.plate,
+      orderId: row.order?.id ?? "",
+    });
+    window.setTimeout(() => document.getElementById("komanda-aivaram")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  };
+  const openPdf = (row: IrissPavadzimeListRow) =>
+    setPdfPreview({ href: `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`, title: `${row.number || "Pavadzīme"} · ${row.brandModel}`.trim() });
   const fileRef = useRef<HTMLInputElement>(null);
   const vinRef = useRef<HTMLInputElement>(null);
 
@@ -197,7 +218,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
       </Suspense>
       <div className="mt-2 flex max-w-full flex-wrap items-center gap-2 max-md:px-4">
         <div className="inline-flex min-w-0 items-stretch rounded-lg bg-[#e9e9ee] p-0.5 max-md:w-full" role="tablist" aria-label="Pavadzīmju filtrs">
-          {(["current", "archive", "all"] as const).map((v) => (
+          {(["current", "calendar", "archive", "all"] as const).map((v) => (
             <button
               key={v}
               type="button"
@@ -209,7 +230,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
               } ${view === v ? "bg-white text-[#1d1d1f] shadow-sm" : "text-[#6e6e73] hover:text-[#1d1d1f]"}`}
             >
               <span>{VIEW_LABEL[v]}</span>
-              <span className="tabular-nums text-[#8e8e93]">{viewCount(v)}</span>
+              {v === "calendar" ? null : <span className="tabular-nums text-[#8e8e93]">{viewCount(v)}</span>}
             </button>
           ))}
         </div>
@@ -252,7 +273,9 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
         <div className="min-w-0">
-      {view === "current" ? (
+      {view === "calendar" ? (
+        <IrissWaybillCalendar rows={data.rows} nowMs={nowMs} onOpen={openPdf} />
+      ) : view === "current" ? (
         rows.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-12 text-center shadow-sm">
             <p className="font-medium text-black">Nav aktīvu pavadzīmju</p>
@@ -289,15 +312,14 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                     {days === null ? "" : days <= 0 ? "beigusies" : `vēl ${days} d.`}
                   </p>
                   <div className="mt-3 flex gap-2">
-                    <a
-                      href={pdfHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => openPdf(row)}
                       className="inline-flex min-h-11 items-center gap-1 rounded-full border border-[#E5E7EB] px-3 text-[13px] font-medium"
                     >
                       <FileText className="h-3.5 w-3.5" strokeWidth={1.75} />
                       PDF
-                    </a>
+                    </button>
                     <button
                       type="button"
                       onClick={() =>
@@ -313,6 +335,15 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                     >
                       Pagarināt
                     </button>
+                    {row.vin ? (
+                      <button
+                        type="button"
+                        onClick={() => setHistoryVin(row.vin)}
+                        className="inline-flex min-h-11 items-center rounded-full border border-[#E5E7EB] px-3 text-[13px] font-medium"
+                      >
+                        Vēsture
+                      </button>
+                    ) : null}
                     <AdminChangeHistoryButton
                       kind="iriss-waybill"
                       recordId={row.id}
@@ -361,15 +392,21 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                       {formatWaybillDateTime(row.issuedAt, now) || "-"}
                     </span>
                     <div className="flex shrink-0 items-center gap-1.5">
-                      <a
-                        href={pdfHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        type="button"
+                        onClick={() => openPdf(row)}
                         className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#ececee] text-[#8e8e93]"
                         aria-label="Atvērt PDF"
                       >
                         <FileText className="h-4 w-4" strokeWidth={1.75} aria-hidden />
-                      </a>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => repeatWaybill(row)}
+                        className="inline-flex h-11 items-center rounded-full bg-[#1d1d1f] px-3.5 text-[12.5px] font-semibold text-white"
+                      >
+                        Atkārtot
+                      </button>
                       <AdminChangeHistoryButton
                         kind="iriss-waybill"
                         recordId={row.id}
@@ -443,14 +480,17 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                         </td>
                         <td className={`${hug} py-1 pr-4`}>
                           <div className="flex items-center gap-2">
-                            <a
-                              href={pdfHref}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="admin-nav-link text-[13.5px] text-[#1d1d1f] hover:underline"
-                            >
+                            <button type="button" onClick={() => openPdf(row)} className="text-[13.5px] text-[#1d1d1f] hover:underline">
                               Atvērt PDF
-                            </a>
+                            </button>
+                            <button type="button" onClick={() => repeatWaybill(row)} className="text-[13.5px] font-semibold text-[#1a73e8] hover:underline">
+                              Atkārtot
+                            </button>
+                            {row.vin ? (
+                              <button type="button" onClick={() => setHistoryVin(row.vin)} className="text-[13.5px] text-[#6e6e73] hover:underline">
+                                Vēsture
+                              </button>
+                            ) : null}
                             <AdminChangeHistoryButton
                               kind="iriss-waybill"
                               recordId={row.id}
@@ -478,10 +518,30 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
         </>
       )}
         </div>
-        <IrissKomandaAivaramChat
-          draftVehicle={extendVehicle}
-          onDraftConsumed={() => setExtendVehicle(null)}
-        />
+        <div id="komanda-aivaram" className="scroll-mt-4">
+          <IrissKomandaAivaramChat
+            draftVehicle={extendVehicle}
+            onDraftConsumed={() => setExtendVehicle(null)}
+          />
+        </div>
+        <IrissWaybillPdfSheet href={pdfPreview?.href ?? null} title={pdfPreview?.title ?? ""} onClose={() => setPdfPreview(null)} />
+        <AdminMobileSheet open={Boolean(historyVin)} title="Pavadzīmes šim auto" subtitle={historyVin ?? ""} onClose={() => setHistoryVin(null)}>
+          <ul className="flex flex-col gap-2">
+            {(historyVin ? waybillHistoryForVin(data.rows, historyVin) : []).map((h) => (
+              <li key={h.id} className="flex items-center gap-3 rounded-[14px] bg-[#f2f2f7] px-3 py-2.5">
+                <span className="min-w-0 flex-1">
+                  <span className="block font-mono text-[12.5px] font-semibold">{dash(h.number)} · {dash(h.plate)}</span>
+                  <span className="block text-[12px] text-[#6e6e73]">
+                    {formatWaybillDateTime(h.issuedAt, now) || "-"} → {formatWaybillDateTime(h.validUntil, now) || "-"}
+                  </span>
+                </span>
+                <button type="button" className="min-h-9 rounded-full bg-white px-3 text-[12.5px] font-semibold" onClick={() => openPdf(h)}>
+                  PDF
+                </button>
+              </li>
+            ))}
+          </ul>
+        </AdminMobileSheet>
       </div>
     </>
   );

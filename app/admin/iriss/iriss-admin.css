@@ -811,3 +811,122 @@
     width: 100%;
   }
 }
+
+/* Pavadzīmju termiņu kalendārs (josla katram tranzīta numuram). */
+.iriss-wb-cal {
+  border-radius: 18px;
+  background: var(--s1, #fff);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  padding: 12px;
+}
+.iriss-wb-cal-head,
+.iriss-wb-cal-lane {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.iriss-wb-cal-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  color: #8e8e93;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.iriss-wb-cal-days .today {
+  color: #1a73e8;
+}
+.iriss-wb-cal-lane {
+  margin-top: 8px;
+}
+.iriss-wb-cal-plate {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+.iriss-wb-cal-track {
+  position: relative;
+  height: 34px;
+  border-radius: 10px;
+  background: #f5f5f7;
+}
+.iriss-wb-cal-grid {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0, 0, 0, 0.06);
+}
+.iriss-wb-cal-now {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  border-radius: 2px;
+  background: #ff3b30;
+  z-index: 2;
+}
+.iriss-wb-cal-seg {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 7px;
+  padding: 0 6px;
+  color: #fff !important;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.iriss-wb-cal-seg span {
+  color: inherit !important;
+}
+.iriss-wb-cal-seg.active {
+  background: #3d5bd9;
+}
+.iriss-wb-cal-seg.soon {
+  background: #f97316;
+}
+.iriss-wb-cal-seg.expired {
+  background: #aeaeb2;
+}
+.iriss-wb-cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  color: #6e6e73;
+  font-size: 11.5px;
+}
+.iriss-wb-cal-legend .dot {
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+.iriss-wb-cal-legend .dot.active {
+  background: #3d5bd9;
+}
+.iriss-wb-cal-legend .dot.soon {
+  background: #f97316;
+}
+.iriss-wb-cal-legend .dot.expired {
+  background: #aeaeb2;
+}
+.iriss-wb-pdf {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.iriss-wb-pdf-page {
+  max-width: 100%;
+  border-radius: 6px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+}
