@@ -65,6 +65,8 @@ export type AutoparksCar = {
   purchasePriceEur: number | null;
   salePriceEur: number | null;
   arrivedAt: string;
+  /** Pēc "Pārdots": pārvietots uz arhīvu (sarakstā vairs nav, var atjaunot). Tukšs = aktīvs. */
+  archivedAt: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -194,6 +196,7 @@ export function normalizeAutoparksCar(raw: unknown): AutoparksCar | null {
     purchasePriceEur: numOrNull(raw.purchasePriceEur),
     salePriceEur: numOrNull(raw.salePriceEur),
     arrivedAt: str(raw.arrivedAt, 40),
+    archivedAt: str(raw.archivedAt, 40),
     createdAt: str(raw.createdAt, 40),
     updatedAt: str(raw.updatedAt, 40),
   };
@@ -329,10 +332,57 @@ export function autoparksDaysInPark(car: Pick<AutoparksCar, "arrivedAt" | "creat
   return Math.max(0, Math.floor((now.getTime() - from) / 86_400_000));
 }
 
-export function autoparksStatusCounts(cars: ReadonlyArray<Pick<AutoparksCar, "status">>): Record<AutoparksStatus, number> {
+/** Skaiti pa statusiem (arhīvā esošie netiek skaitīti). */
+export function autoparksStatusCounts(cars: ReadonlyArray<Pick<AutoparksCar, "status"> & { archivedAt?: string }>): Record<AutoparksStatus, number> {
   const out = { prep_waiting: 0, in_service: 0, for_sale: 0, reserved: 0, sold: 0 } as Record<AutoparksStatus, number>;
-  for (const c of cars) out[c.status] += 1;
+  for (const c of cars) if (!c.archivedAt) out[c.status] += 1;
   return out;
+}
+
+export const AUTOPARKS_SORTS = ["status", "newest", "oldest", "alpha", "make"] as const;
+export type AutoparksSort = (typeof AUTOPARKS_SORTS)[number];
+export const AUTOPARKS_SORT_LV: Record<AutoparksSort, string> = {
+  status: "Pēc statusa",
+  newest: "Jaunākie",
+  oldest: "Vecākie",
+  alpha: "Pēc alfabēta",
+  make: "Pēc markas",
+};
+
+export function isAutoparksSort(v: unknown): v is AutoparksSort {
+  return typeof v === "string" && (AUTOPARKS_SORTS as readonly string[]).includes(v);
+}
+
+type SortableCar = Pick<AutoparksCar, "make" | "model" | "year" | "status" | "statusChangedAt" | "arrivedAt" | "createdAt">;
+
+/** Kad auto ienāca parkā (atvests vai pievienots). */
+function arrivedKey(c: SortableCar): string {
+  return c.arrivedAt || c.createdAt;
+}
+
+/**
+ * Saraksta kārtošana. "Pēc alfabēta" = pilns nosaukums (marka + modelis), "Pēc markas" = marka,
+ * markas iekšienē jaunākie augšā. Latviešu burti (Š, Ž) kārtojas pareizi.
+ */
+export function sortAutoparksRows<T extends SortableCar>(rows: readonly T[], mode: AutoparksSort): T[] {
+  const coll = new Intl.Collator("lv", { sensitivity: "base", numeric: true });
+  const title = (c: T) => `${c.make} ${c.model}`.trim();
+  const statusOrder = new Map(AUTOPARKS_STATUSES.map((s, i) => [s, i]));
+  const list = [...rows];
+  switch (mode) {
+    case "newest":
+      return list.sort((a, b) => arrivedKey(b).localeCompare(arrivedKey(a)));
+    case "oldest":
+      return list.sort((a, b) => arrivedKey(a).localeCompare(arrivedKey(b)));
+    case "alpha":
+      return list.sort((a, b) => coll.compare(title(a), title(b)) || coll.compare(a.year, b.year));
+    case "make":
+      return list.sort((a, b) => coll.compare(a.make, b.make) || arrivedKey(b).localeCompare(arrivedKey(a)));
+    default:
+      return list.sort(
+        (a, b) => statusOrder.get(a.status)! - statusOrder.get(b.status)! || b.statusChangedAt.localeCompare(a.statusChangedAt),
+      );
+  }
 }
 
 export function autoparksWorkTotal(work: ReadonlyArray<Pick<AutoparksWorkItem, "qty" | "priceEur">>): number {

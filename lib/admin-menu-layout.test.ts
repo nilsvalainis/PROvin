@@ -14,9 +14,9 @@ import {
 } from "@/lib/admin-menu-layout";
 
 const catalog: MenuCatalogItem[] = [
-  { id: "app-a", kind: "app", title: "A", href: "/a", sizes: ["app"], defaultSize: "app" },
-  { id: "w-waybills", kind: "widget", title: "Pavadzīmes", href: "/p", sizes: ["S", "M", "L"], defaultSize: "M", rowsBySize: { S: 2, M: 4, L: 6 } },
-  { id: "w-radar", kind: "widget", title: "Radars", href: "/r", sizes: ["S", "M"], defaultSize: "S" },
+  { id: "app-a", kind: "app", title: "A", href: "/a", sizes: ["app"], defaultSize: "app", icon: "list", tone: "#000" },
+  { id: "w-waybills", kind: "widget", title: "Pavadzīmes", href: "/p", sizes: ["S", "M", "L"], defaultSize: "M", rowsBySize: { S: 2, M: 4, L: 6 }, icon: "doc", tone: "#000" },
+  { id: "w-radar", kind: "widget", title: "Radars", href: "/r", sizes: ["S", "M"], defaultSize: "S", icon: "radar", tone: "#000" },
 ];
 const byId = (id: string) => catalog.find((c) => c.id === id)!;
 

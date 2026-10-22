@@ -33,6 +33,8 @@ type Props = {
   onClose: () => void;
   onCarChanged: (car: AutoparksCar) => void;
   onFilesChanged: () => void;
+  /** Pēc dzēšanas: izņem no saraksta un aizver istabu. */
+  onDeleted: (carId: string) => void;
 };
 
 const API = "/api/admin/iriss-logistics/autoparks";
@@ -66,7 +68,7 @@ async function compressImage(file: File): Promise<File> {
   }
 }
 
-export function IrissAutoparksRoom({ carId, hideSums, canWrite, onClose, onCarChanged, onFilesChanged }: Props) {
+export function IrissAutoparksRoom({ carId, hideSums, canWrite, onClose, onCarChanged, onFilesChanged, onDeleted }: Props) {
   const [room, setRoom] = useState<Room | null>(null);
   const [logDocs, setLogDocs] = useState<LogisticsDoc[]>([]);
   const [stage, setStage] = useState<AutoparksStage | null>(null);
@@ -157,6 +159,38 @@ export function IrissAutoparksRoom({ carId, hideSums, canWrite, onClose, onCarCh
         </div>
 
         <StatusSegment status={car.status} disabled={!canWrite} onChange={(s) => void patch({ car: { status: s } })} />
+
+        {canWrite ? (
+          <div className="iriss-ap-lifecycle">
+            {car.archivedAt ? (
+              <>
+                <span className="iriss-ap-archived-tag">Arhīvā kopš {fmtDate(car.archivedAt)}</span>
+                <button type="button" className="iriss-ap-btn-sec" onClick={() => void patch({ archived: false })}>
+                  Atjaunot no arhīva
+                </button>
+              </>
+            ) : car.status === "sold" ? (
+              <button type="button" className="iriss-ap-btn-dark" onClick={() => void patch({ archived: true })}>
+                Pārvietot uz arhīvu
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className="iriss-ap-btn-danger"
+              onClick={async () => {
+                if (!window.confirm(`Dzēst "${autoparksCarTitle(car)}" ar visiem failiem, piezīmēm un tāmi? To nevar atsaukt.`)) return;
+                const res = await fetch(`${API}/${encodeURIComponent(car.id)}`, { method: "DELETE", credentials: "include" }).catch(() => null);
+                if (!res?.ok) {
+                  setError(res?.status === 403 ? "Tev ir tikai skatīšanās tiesības." : "Neizdevās dzēst.");
+                  return;
+                }
+                onDeleted(car.id);
+              }}
+            >
+              Dzēst auto
+            </button>
+          </div>
+        ) : null}
 
         <CarFields car={car} hideSums={hideSums} canWrite={canWrite} onSave={(fields) => void patch({ car: fields })} />
 

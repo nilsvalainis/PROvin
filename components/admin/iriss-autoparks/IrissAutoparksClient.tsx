@@ -14,8 +14,13 @@ import {
   autoparksCarTitle,
   autoparksDaysInPark,
   autoparksStatusCounts,
+  AUTOPARKS_SORT_LV,
+  AUTOPARKS_SORTS,
+  isAutoparksSort,
+  sortAutoparksRows,
   type AutoparksCar,
   type AutoparksListRow,
+  type AutoparksSort,
   type AutoparksStatus,
 } from "@/lib/iriss-autoparks";
 
@@ -26,9 +31,10 @@ type Props = {
   canWrite: boolean;
 };
 
-type Filter = AutoparksStatus | "active" | "all";
+type Filter = AutoparksStatus | "active" | "all" | "archive";
 
-const STATUS_ORDER = new Map(AUTOPARKS_STATUSES.map((s, i) => [s, i]));
+const SORT_PREF_KEY = "iriss-autoparks-sort-v1";
+
 
 function readUrlCar(): string | null {
   if (typeof window === "undefined") return null;
@@ -46,6 +52,7 @@ export function IrissAutoparksClient({ initialCars, storeEnabled, hideSums, canW
   const [cars, setCars] = useState(initialCars);
   const [filter, setFilter] = useState<Filter>("active");
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<AutoparksSort>("status");
   const [openId, setOpenId] = useState<string | null>(null);
   const [addOpen, setAddOpen] = useState(false);
   const [notice, setNotice] = useState("");
@@ -53,7 +60,22 @@ export function IrissAutoparksClient({ initialCars, storeEnabled, hideSums, canW
   useEffect(() => {
     const id = readUrlCar();
     if (id) setOpenId(id);
+    try {
+      const saved = window.localStorage.getItem(SORT_PREF_KEY);
+      if (isAutoparksSort(saved)) setSort(saved);
+    } catch {
+      // nav krātuves
+    }
   }, []);
+
+  function changeSort(next: AutoparksSort) {
+    setSort(next);
+    try {
+      window.localStorage.setItem(SORT_PREF_KEY, next);
+    } catch {
+      // nav krātuves
+    }
+  }
 
   const open = useCallback((id: string | null) => {
     setOpenId(id);
@@ -69,15 +91,20 @@ export function IrissAutoparksClient({ initialCars, storeEnabled, hideSums, canW
   }, []);
 
   const counts = useMemo(() => autoparksStatusCounts(cars), [cars]);
-  const activeCount = cars.length - counts.sold;
+  const archivedCount = useMemo(() => cars.filter((c) => c.archivedAt).length, [cars]);
+  const activeCount = cars.length - archivedCount - counts.sold;
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return cars
-      .filter((c) => (filter === "all" ? true : filter === "active" ? c.status !== "sold" : c.status === filter))
-      .filter((c) => !q || `${c.make} ${c.model} ${c.year} ${c.vin} ${c.plate} ${c.location}`.toLowerCase().includes(q))
-      .sort((a, b) => STATUS_ORDER.get(a.status)! - STATUS_ORDER.get(b.status)! || b.statusChangedAt.localeCompare(a.statusChangedAt));
-  }, [cars, filter, query]);
+    const rows = cars
+      .filter((c) =>
+        filter === "archive"
+          ? Boolean(c.archivedAt)
+          : !c.archivedAt && (filter === "all" ? true : filter === "active" ? c.status !== "sold" : c.status === filter),
+      )
+      .filter((c) => !q || `${c.make} ${c.model} ${c.year} ${c.vin} ${c.plate} ${c.location}`.toLowerCase().includes(q));
+    return sortAutoparksRows(rows, sort);
+  }, [cars, filter, query, sort]);
 
   /** Statuss tieši no kartītes - viens izvēles klikšķis, bez istabas atvēršanas. */
   async function setStatus(id: string, status: AutoparksStatus) {
@@ -170,6 +197,30 @@ export function IrissAutoparksClient({ initialCars, storeEnabled, hideSums, canW
             <span className="l">{AUTOPARKS_STATUS_LV[s]}</span>
           </button>
         ))}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={filter === "archive"}
+          className={`iriss-ap-pipe archive ${filter === "archive" ? "on" : ""}`}
+          onClick={() => setFilter((cur) => (cur === "archive" ? "active" : "archive"))}
+        >
+          <span className="n">{archivedCount}</span>
+          <span className="l">Arhīvs</span>
+        </button>
+      </div>
+
+      <div className="iriss-ap-sortbar">
+        <label className="iriss-ap-sort">
+          <span>Kārtot</span>
+          <select value={sort} onChange={(e) => changeSort(e.target.value as AutoparksSort)} aria-label="Kārtot sarakstu">
+            {AUTOPARKS_SORTS.map((m) => (
+              <option key={m} value={m}>
+                {AUTOPARKS_SORT_LV[m]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <span className="iriss-ap-sort-count">{visible.length} auto</span>
       </div>
 
       <div className="iriss-ap-body">
@@ -209,6 +260,11 @@ export function IrissAutoparksClient({ initialCars, storeEnabled, hideSums, canW
             canWrite={canWrite}
             onClose={() => open(null)}
             onCarChanged={onCarChanged}
+            onDeleted={(id) => {
+              setCars((prev) => prev.filter((c) => c.id !== id));
+              open(null);
+              setNotice("Auto dzēsts.");
+            }}
             onFilesChanged={() => void refreshList()}
           />
         ) : null}
