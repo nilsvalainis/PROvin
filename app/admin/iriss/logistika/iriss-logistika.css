@@ -682,10 +682,15 @@ html.iriss-log-printing .iriss-log-map-fs-card {
   background: none;
   box-shadow: none;
 }
+/*
+ * Drukā karte jau ekrānā ir tieši A4 izmērā (277 × 165 mm), lai pārlūks drukājot to nepārzīmē no jauna.
+ * Iepriekš `max-width: 100%` to saspieda līdz kolonnas platumam, bet `.iriss-log-map-shell { height: auto !important }`
+ * augstumu līdz 0, tāpēc drukā karte bija tukša.
+ */
 html.iriss-log-printing .iriss-log-print-root {
   display: block;
   width: 277mm;
-  max-width: 100%;
+  max-width: none;
   margin: 0 auto;
   background: #fff;
 }
@@ -696,16 +701,23 @@ html.iriss-log-printing .iriss-log-print-chrome {
   font-size: 12px !important;
   color: #1d1d1f !important;
 }
-html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero,
-html.iriss-log-printing .iriss-log-print-root .iriss-log-map-shell {
+html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero {
   position: relative;
   width: 277mm;
   height: 165mm;
-  max-width: 100%;
+  max-width: none;
   min-height: 0;
   aspect-ratio: auto;
   border-radius: 0 !important;
   margin: 0 auto;
+}
+html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero .iriss-log-map-shell {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: 100% !important;
+  max-width: none;
+  border-radius: 0 !important;
 }
 html.iriss-log-printing .iriss-log-print-list {
   display: block;
@@ -1296,4 +1308,15 @@ html.iriss-log-printing .iriss-log-pin-label {
   border-radius: 999px;
   background: #1d1d1f;
   pointer-events: none;
+}
+
+/* Kartīte, kurai tuvumā nav brīvas vietas: paslēpta, līdz pele ir virs lāses vai auto ir izvēlēts. */
+.iriss-log-pin-label.crowded {
+  display: none;
+}
+.iriss-log-tear:hover .iriss-log-pin-label.crowded,
+.iriss-log-tear.active .iriss-log-pin-label.crowded,
+.iriss-log-tear.selected .iriss-log-pin-label.crowded {
+  z-index: 5;
+  display: block;
 }

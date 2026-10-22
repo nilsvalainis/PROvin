@@ -15,7 +15,7 @@ import {
   type LogisticsMapCamera,
 } from "@/lib/iriss-logistics-map-print";
 import { cargoCssColor, formatLogisticsPostal, type CargoBucket } from "@/lib/iriss-logistics-cargo-plan";
-import { clusterIsSameSpot, layoutMapPins, resolveLabelOverlaps } from "@/lib/iriss-logistics-map-cluster";
+import { clusterIsSameSpot, layoutMapPins, placeMapLabels } from "@/lib/iriss-logistics-map-cluster";
 import type { LogisticsOrder, LogisticsPoint, LogisticsPreviousPointRow } from "@/lib/iriss-logistics-types";
 
 type Gmaps = typeof google.maps;
@@ -440,20 +440,36 @@ function pinLabelHtml(members: MapPoint[]): string {
 /** Google Maps maršruta līnijas apmale (zem zilās līnijas). */
 const ROUTE_LINE_BORDER = "#1558b0";
 
-/** Nosaukumu kartītes vienu zem otras, ja tās citādi pārklātos (mēra pēc ievietošanas DOM). */
+/**
+ * Nosaukumu kartītes: nepārklāj citas kartītes un citu auto lāses (mēra pēc ievietošanas DOM).
+ * Kartīte pārbīdās uz tuvāko brīvo vietu; ja tuvumā tādas nav, tā paslēpjas un parādās, kad pele ir virs lāses.
+ */
 function spreadLabels(root: HTMLElement) {
   const labels = [...root.querySelectorAll<HTMLElement>(".iriss-log-pin-label")];
-  if (labels.length < 2) return;
+  if (labels.length === 0) return;
+  const pins = [...root.querySelectorAll<SVGElement>(".iriss-log-tear-svg")];
   const base = root.getBoundingClientRect();
+  const box = (r: DOMRect) => ({ x: r.left - base.left, y: r.top - base.top, w: r.width, h: r.height });
+  const obstacles = pins.map((pin) => box(pin.getBoundingClientRect()));
   const boxes = labels.map((l) => {
     l.style.transform = "";
-    const r = l.getBoundingClientRect();
-    return { x: r.left - base.left, y: r.top - base.top, w: r.width, h: r.height };
+    l.classList.remove("shifted", "crowded");
+    return box(l.getBoundingClientRect());
   });
-  const dy = resolveLabelOverlaps(boxes);
+  const own = labels.map((l) => {
+    const svg = l.parentElement?.querySelector<SVGElement>(".iriss-log-tear-svg");
+    const k = svg ? pins.indexOf(svg) : -1;
+    return k >= 0 ? k : null;
+  });
+  const dy = placeMapLabels(boxes, obstacles, own);
   labels.forEach((l, i) => {
-    if (!dy[i]) return;
-    l.style.transform = `translateY(calc(-50% + ${dy[i]}px))`;
+    const d = dy[i];
+    if (d === null || d === undefined) {
+      l.classList.add("crowded");
+      return;
+    }
+    if (!d) return;
+    l.style.transform = `translateY(calc(-50% + ${d}px))`;
     l.classList.add("shifted");
   });
 }
