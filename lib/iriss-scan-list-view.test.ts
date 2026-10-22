@@ -25,12 +25,15 @@ describe("iriss scan list view", () => {
     expect(countIrissScanLinks(rec)).toBe(5);
   });
 
-  it("formats last read as dd.mm hh:mm", () => {
+  it("formats last read as dd.mm hh:mm in Europe/Riga, not UTC", () => {
     // Rīgas laiks: vasarā UTC+3, ziemā UTC+2, arī pāri pusnaktij.
     expect(formatIrissScanLastRead("2026-10-19T17:58:11.000Z")).toBe("19.10 20:58");
+    expect(formatIrissScanLastRead("2026-10-19T00:14:00.000Z")).toBe("19.10 03:14");
+    expect(formatIrissScanLastRead("2026-01-15T17:58:11.000Z")).toBe("15.01 19:58");
     expect(formatIrissScanLastRead("2026-12-01T10:00:00.000Z")).toBe("01.12 12:00");
     expect(formatIrissScanLastRead("2026-10-19T22:30:00.000Z")).toBe("20.10 01:30");
     expect(formatIrissScanLastRead("")).toBe("");
+    expect(formatIrissScanLastRead("nav-datums")).toBe("");
   });
 
   it("counts jauns matches only for scan: ids", () => {

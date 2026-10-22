@@ -138,3 +138,21 @@ describe("IRISS chrome wiring", () => {
     expect(css).not.toMatch(/\.admin-m\[data-section="pro"\]/);
   });
 });
+
+describe("IRISS button contrast vs admin-ios-theme", () => {
+  it("scopes hardcoded black text to PRO and paints IRISS CTAs with --btn-dark-*", () => {
+    expect(ios).toMatch(
+      /\.admin-ios-theme:not\(:has\(\.admin-m\[data-section="iriss"\]\)\) a:not/,
+    );
+    expect(ios).toMatch(
+      /\.admin-ios-theme:not\(:has\(\.admin-m\[data-section="iriss"\]\)\) :is\(p, span/,
+    );
+    expect(ios).not.toMatch(/^\.admin-ios-theme a:not/m);
+    expect(ios).not.toMatch(/^\.admin-ios-theme :is\(p, span/m);
+    expect(ios).toMatch(/\[class\*="chip-active-bg"\][\s\S]*--btn-dark-bg/);
+    expect(ios).toMatch(/\[class\*="chip-active-bg"\][\s\S]*--btn-dark-fg/);
+    expect(ios).toMatch(/a\.admin-costs-tab\[data-on="true"\][\s\S]*--btn-dark-fg/);
+    expect(css).toMatch(/\.admin-ios-theme \.admin-m\[data-section="iriss"\] \{\s*color:\s*var\(--ink\);/);
+    expect(css).not.toMatch(/data-section="iriss"\] :is\(p, span[\s\S]*color:\s*inherit/);
+  });
+});
