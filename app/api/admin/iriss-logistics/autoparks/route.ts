@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { autoparksListRows } from "@/lib/iriss-autoparks";
 import { autoparksActor, autoparksHidesSums, autoparksRowsForActor } from "@/lib/iriss-autoparks-access";
+import { linkAutoparksCarToDropbox } from "@/lib/iriss-autoparks-dropbox-sync";
 import { createAutoparksCar, ensureAutoparksCarFromOrder, readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { parseAutoparksCarInput } from "@/lib/iriss-autoparks-input";
 import { irissLogisticsScopeHeader, logisticsCabinetActorId, logisticsCabinetWriteForbidden, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
@@ -40,6 +41,8 @@ export async function POST(req: Request) {
     const { car, created } = await ensureAutoparksCarFromOrder(order, actor);
     await upsertCabinetPickup({ carId: order.id, stage: "arrived", updatedBy: logisticsCabinetActorId(gate.actor) });
     const archived = await setLogisticsOrderArchiveState(order.id, "delivered");
+    // Jaunam auto /STOCK mape (atrod pēc VIN vai izveido) pēc atbildes - auto izveide no Dropbox neatkarīga.
+    if (created) after(() => linkAutoparksCarToDropbox(car.id));
     return NextResponse.json({ ok: true, car, created, order: archived ?? order }, { headers: irissLogisticsScopeHeader() });
   }
   const input = parseAutoparksCarInput(body, autoparksHidesSums(gate.actor));
@@ -47,5 +50,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "missing_car" }, { status: 400, headers: irissLogisticsScopeHeader() });
   }
   const car = await createAutoparksCar(input, actor);
+  after(() => linkAutoparksCarToDropbox(car.id));
   return NextResponse.json({ ok: true, car, created: true }, { headers: irissLogisticsScopeHeader() });
 }
