@@ -40,6 +40,7 @@ import {
 } from "@/lib/iriss-listings-ecarstrade-criteria";
 import { ECARSTRADE_ORIGIN, ECARSTRADE_SEARCH_PATH } from "@/lib/iriss-listings-ecarstrade";
 import { listingSearchPriceBounds } from "@/lib/iriss-listings-cost";
+import { currentListingSearchCosts } from "@/lib/iriss-listings-search-costs";
 import { parseIrissOrderBoundRange } from "@/lib/iriss-listings-orders";
 import { splitModelExtensions } from "@/lib/iriss-model-extension";
 
@@ -1004,7 +1005,7 @@ export function filterFromOrderFields(fields: OrderSearchFields): EcarstradeSear
   const km = parseIrissOrderBoundRange(fields.maxMileage ?? "");
   if (km.from != null) filter.mileageFrom = km.from;
   if (km.to != null) filter.mileageTo = km.to;
-  const price = listingSearchPriceBounds(parseIrissOrderBoundRange(fields.totalBudget ?? ""));
+  const price = listingSearchPriceBounds(parseIrissOrderBoundRange(fields.totalBudget ?? ""), currentListingSearchCosts());
   if (price.from != null) filter.priceFrom = price.from;
   if (price.to != null) filter.priceTo = price.to;
   const fuel = mapFuel(fields.engineType ?? "");
@@ -1048,7 +1049,8 @@ function intersectRange(
 
 /**
  * Pasūtījuma gadi, km, cena, degviela un kārba nonāk ET vaicājumā.
- * Izsoles URL sašaurina diapazonu; tukšu degvielu vai kārbu aizpilda no pasūtījuma.
+ * Izsoles URL sašaurina gadus un km; cenu ņem no pasūtījuma budžeta (svaigi), ja tas ir.
+ * Tukšu degvielu vai kārbu aizpilda no pasūtījuma.
  * future_api.php ņem year_from/mileage_to; publiskā /search lapa tos ignorē, tāpēc
  * ģenerētajā ET saitē tos neliekam. price_from/price_to, fuel[] un gearbox[] paliek.
  */
@@ -1058,7 +1060,12 @@ export function applyEcarstradeOrderCriteria(
 ): EcarstradeSearchFilter {
   const year = intersectRange(filter.yearFrom, filter.yearTo, order.yearFrom, order.yearTo);
   const km = intersectRange(filter.mileageFrom, filter.mileageTo, order.mileageFrom, order.mileageTo);
-  const price = intersectRange(filter.priceFrom, filter.priceTo, order.priceFrom, order.priceTo);
+  // Cena: ja pasūtījumam ir budžets, svaigās robežas (budžets mīnus izmaksas) aizstāj saites cenu.
+  // Saglabātā saite var nest vecu pilnā budžeta grīdu/griestus; krustojot tie paliktu.
+  const orderHasPrice = order.priceFrom != null || order.priceTo != null;
+  const price = orderHasPrice
+    ? { from: order.priceFrom, to: order.priceTo }
+    : { from: filter.priceFrom, to: filter.priceTo };
   return {
     ...filter,
     yearFrom: year.from,

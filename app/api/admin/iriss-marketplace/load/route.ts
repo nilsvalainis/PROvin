@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
+import { primeListingSearchCostsFromStore } from "@/lib/iriss-listings-search-costs-store";
 import { parseMarketplacePlatforms, resolveMarketplaceAdminTarget } from "@/lib/marketplace/admin-target";
 import { loadMarketplaceForOrder } from "@/lib/marketplace/load";
 
@@ -9,6 +10,7 @@ export const maxDuration = 300;
 export async function POST(req: Request) {
   const gate = await requireIrissSectionApi("radars");
   if (!gate.ok) return gate.response;
+  await primeListingSearchCostsFromStore();
   let body: { orderId?: unknown; scanId?: unknown; platforms?: unknown; explicit?: unknown } = {};
   try {
     body = (await req.json()) as typeof body;

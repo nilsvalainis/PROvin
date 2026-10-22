@@ -6,6 +6,7 @@
 
 import { resolveEcarstradeMake } from "@/lib/iriss-listings-ecarstrade-catalog";
 import { listingSearchPriceBounds } from "@/lib/iriss-listings-cost";
+import { currentListingSearchCosts } from "@/lib/iriss-listings-search-costs";
 import type { UnmappedCriterion } from "@/lib/iriss-listings-ecarstrade-criteria";
 import {
   ECARSTRADE_BODY,
@@ -76,7 +77,7 @@ function pushNote(unmapped: UnmappedCriterion[], key: string, value: string, rea
 
 /** Strukturētie formas lauki. Manuālais teksts un saites paliek ārpus šī filtra. */
 export function filterToSearchFilter(filter: IrissCriteriaFilter): EcarstradeSearchFilter {
-  const price = listingSearchPriceBounds({ from: filter.budgetFrom.value, to: filter.budgetTo.value });
+  const price = listingSearchPriceBounds({ from: filter.budgetFrom.value, to: filter.budgetTo.value }, currentListingSearchCosts());
   const unmapped: UnmappedCriterion[] = [];
   const makeNames = uniq(filter.make.value);
   const makeIds: number[] = [];

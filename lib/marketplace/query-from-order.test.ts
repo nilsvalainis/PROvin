@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { listingExtrasI } from "@/lib/iriss-listings-cost";
+import { listingExtrasI, LV_VAT_RATE } from "@/lib/iriss-listings-cost";
 import { emptyIrissCriteria, emptyIrissCriteriaFilter, irissCriteriaValue } from "@/lib/iriss-criteria-types";
 import {
   MARKETPLACE_EXTRA_RANGE_MESSAGE,
@@ -13,6 +13,9 @@ import {
   marketplaceTooBroadSkipReason,
   marketplaceVehicleMatchesOrder,
 } from "@/lib/marketplace/query-from-order";
+
+/** Noklusējuma izmaksas, Margin formula kā `listingMaxBid` (I × 1,21). */
+const searchBound = (budget: number) => Math.round(budget - listingExtrasI() * (1 + LV_VAT_RATE));
 
 describe("marketplaceQueryFromOrder", () => {
   it("reads make/model/years/km/price/fuel/gearbox from the order form", () => {
@@ -29,7 +32,7 @@ describe("marketplaceQueryFromOrder", () => {
     expect(q.yearFrom).toBe(2018);
     expect(q.yearTo).toBe(2020);
     expect(q.mileageTo).toBe(140000);
-    expect(q.priceTo).toBe(22000 - listingExtrasI());
+    expect(q.priceTo).toBe(searchBound(22000));
     expect(q.fuel).toMatch(/dīzel|diesel/i);
     expect(q.gearbox).toMatch(/autom|automatic/i);
     expect(q.vehicleCategory).toBe("car");
@@ -75,7 +78,7 @@ describe("marketplaceQueryFromOrder", () => {
       yearFrom: 2017,
       yearTo: 2019,
       mileageTo: 160000,
-      priceTo: 25000 - listingExtrasI(),
+      priceTo: searchBound(25000),
       fuel: "diesel",
       gearbox: "automatic",
     });

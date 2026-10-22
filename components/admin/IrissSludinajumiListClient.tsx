@@ -29,6 +29,7 @@ import {
 } from "@/components/admin/mobile/AdminMobileChrome";
 import { isRealListingPriceChange } from "@/lib/iriss-listings-auto1-cents";
 import { listingBidPrice, listingExtrasI, listingMaxBid, type ListingCostParts } from "@/lib/iriss-listings-cost";
+import { setListingSearchCosts } from "@/lib/iriss-listings-search-costs";
 import { listingExcludedForMissingPrice, listingIsOverBudgetHidden, parseOverBudgetThreshold } from "@/lib/iriss-listings-over-budget";
 import { listingHasHardTechDamage } from "@/lib/iriss-listings-damage";
 import {
@@ -378,6 +379,24 @@ export function IrissSludinajumiListClient({
     persistIrissListPrefs(storage, prefs);
   }, [prefs, prefsReady]);
 
+  // Meklēšanas cenas robežas (tirgus, eCarsTrade, radars) lieto tās pašas izmaksas: šajā cilnē uzreiz,
+  // serverim (cron, API) caur krātuvi tikai pēc operatora izmaiņas panelī.
+  const costsTouchedRef = useRef(false);
+  useEffect(() => {
+    if (!prefsReady) return;
+    setListingSearchCosts(prefs.costs);
+    if (!costsTouchedRef.current) return;
+    const t = window.setTimeout(() => {
+      void fetch("/api/admin/iriss-listings/search-costs", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ costs: prefs.costs }),
+      }).catch(() => {});
+    }, 800);
+    return () => window.clearTimeout(t);
+  }, [prefs.costs, prefsReady]);
+
   function applyPrefs(next: IrissListPrefs) {
     const prevHidden = prefs.hidden;
     const orderOvChanged = JSON.stringify(next.orderOv) !== JSON.stringify(prefs.orderOv);
@@ -699,6 +718,7 @@ export function IrissSludinajumiListClient({
 
   function setGlobalCost(part: keyof ListingCostParts, value: number) {
     setPrefs((p) => ({ ...p, costs: { ...p.costs, [part]: value } }));
+    costsTouchedRef.current = true;
   }
 
   function listingIsMatchNew(id: string, linked: readonly IrissListingOrderBrief[]): boolean {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { listingExtrasI } from "@/lib/iriss-listings-cost";
+import { listingExtrasI, LV_VAT_RATE } from "@/lib/iriss-listings-cost";
 import {
   applyGeneratedPlatformSearchLink,
   auto1SearchUrl,
@@ -9,6 +9,9 @@ import {
 } from "@/lib/iriss-listings-platform-search";
 import { filterFromOrderFields, parseListingSearchUrl } from "@/lib/iriss-listings-ecarstrade-search";
 import { emptyIrissPasutijums } from "@/lib/iriss-pasutijumi-types";
+
+/** Noklusējuma izmaksas, Margin formula kā `listingMaxBid` (I × 1,21). */
+const searchBound = (budget: number) => Math.round(budget - listingExtrasI() * (1 + LV_VAT_RATE));
 
 const volvoOrder = {
   brandModel: "Volvo XC60",
@@ -33,7 +36,7 @@ describe("platform search URL builders", () => {
     expect(parsed.yearFrom).toBe(2018);
     expect(parsed.yearTo).toBe(2022);
     expect(parsed.mileageTo).toBe(150000);
-    expect(parsed.priceTo).toBe(28000 - listingExtrasI());
+    expect(parsed.priceTo).toBe(searchBound(28000));
     expect(parsed.fuels).toEqual(["Diesel"]);
     expect(parsed.gearboxes).toEqual(["Automatic"]);
     expect(parsed.bodies).toEqual(["SUV/Off-road Vehicle/Pickup Truck"]);
