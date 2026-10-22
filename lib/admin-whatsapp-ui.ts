@@ -11,8 +11,9 @@ export const ADMIN_WHATSAPP_PILL_CLASS =
 export const ADMIN_WHATSAPP_PILL_DISABLED_CLASS =
   "inline-flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-md border border-[#25D366]/25 bg-[#25D366]/35 text-white/85";
 
+/** Kompaktā WhatsApp poga: pilnā zaļā, ne bāla. Visām WhatsApp pogām vienāds tonis. */
 export const ADMIN_WHATSAPP_COMPACT_BTN_CLASS =
-  "inline-flex items-center justify-center gap-1 rounded-md border border-[#25D366]/30 bg-[#25D366]/12 px-2 py-1 text-[10px] font-medium text-[#128C7E] hover:border-[#25D366]/45 hover:bg-[#25D366]/18 hover:text-[#0D7A6E]";
+  "inline-flex items-center justify-center gap-1 rounded-md border border-[#25D366] bg-[#25D366] px-2 py-1 text-[10px] font-semibold text-white shadow-sm transition hover:bg-[#20BD5A] hover:brightness-105";
 
 /** Pilna zaļa poga (sūtīšana, FAB u.c.). */
 export const ADMIN_WHATSAPP_FILLED_BTN_CLASS =

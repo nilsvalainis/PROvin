@@ -229,9 +229,10 @@ function AdminGlobalSearchPanel() {
             aria-modal="true"
             aria-label="Meklēt"
             onKeyDown={onKeyDown}
-            className="flex min-h-0 flex-1 flex-col bg-[var(--am-s1,#ffffff)] md:mx-auto md:mt-16 md:h-auto md:max-h-[min(32rem,70dvh)] md:w-full md:max-w-xl md:flex-none md:overflow-hidden md:rounded-2xl md:border md:border-[#e5e5ea] md:bg-white md:shadow-[0_12px_40px_rgba(15,23,42,0.12)]"
+            className="flex min-h-0 flex-1 flex-col bg-[var(--am-s1,#ffffff)] md:mx-auto md:mt-16 md:h-auto md:max-h-[min(32rem,70dvh)] md:w-full md:max-w-xl md:flex-none md:overflow-hidden md:rounded-[22px] md:bg-white md:shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
           >
-            <div className="flex items-center gap-2 border-b border-[#e5e5ea] px-3 pt-[max(10px,env(safe-area-inset-top))] md:pt-3">
+            <div className="flex items-center gap-2 px-3 pb-2 pt-[max(12px,env(safe-area-inset-top))] md:pt-4">
+              <label className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-[12px] bg-[#e9e9ee] px-3 focus-within:bg-[#e2e2e8] focus-within:ring-2 focus-within:ring-[#1a73e8]/35">
               <Search className="h-4 w-4 shrink-0 text-[#8e8e93]" strokeWidth={2} aria-hidden />
               <input
                 ref={inputRef}
@@ -248,9 +249,10 @@ function AdminGlobalSearchPanel() {
                 placeholder="Meklēt"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="h-11 min-w-0 flex-1 bg-transparent text-[16px] text-[#1d1d1f] outline-none placeholder:text-[#8e8e93] md:h-10 md:text-[14px]"
+                className="h-full min-w-0 flex-1 bg-transparent text-[16px] text-[#1d1d1f] outline-none placeholder:text-[#8e8e93] md:text-[14px]"
               />
-              <button type="button" onClick={close} className="inline-flex h-11 shrink-0 items-center px-2 text-[15px] font-medium text-[var(--color-provin-accent)] md:h-auto md:text-[13px]">
+              </label>
+              <button type="button" onClick={close} className="inline-flex h-10 shrink-0 items-center px-2 text-[16px] font-semibold text-[#1a73e8] md:text-[14px]">
                 Aizvērt
               </button>
             </div>
