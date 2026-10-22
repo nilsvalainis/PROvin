@@ -111,14 +111,29 @@ type Props = {
   hoverCarId?: string | null;
   statusByCarId?: ReadonlyMap<string, string>;
   routeNumbers?: ReadonlyMap<string, number>;
-  /** Maršruti, kas zīmēti tieši mūsu kartē (katrai kravai sava krāsa). */
-  routePaths?: ReadonlyArray<{ path: ReadonlyArray<{ lat: number; lng: number }>; color: string }>;
+  /** Maršruti, kas zīmēti tieši mūsu kartē (katrai kravai sava krāsa), ar starppunktiem (via). */
+  routePaths?: ReadonlyArray<{
+    path: ReadonlyArray<{ lat: number; lng: number }>;
+    color: string;
+    bucket?: "next" | "after";
+    via?: ReadonlyArray<{ lat: number; lng: number }>;
+  }>;
+  /**
+   * Maršruta maiņa kā Google Maps: pieskāriens līnijai pievieno caurbraucamo punktu,
+   * punktu var pavilkt uz citu ceļu, pieskāriens punktam to noņem.
+   */
+  onRouteVia?: (bucket: "next" | "after", action: RouteViaAction) => void;
   /** "Rādīt nosaukumus": katram punktam pastāvīga etiķete (marka, modelis, indekss, centrs). */
   showLabels?: boolean;
   routeEnds?: ReadonlyArray<{ lat: number; lng: number; kind: "start" | "end"; type?: string }>;
   pinVariant?: "default" | "cargo";
   onHoverCar?: (id: string | null) => void;
 };
+
+export type RouteViaAction =
+  | { type: "add"; p: { lat: number; lng: number } }
+  | { type: "move"; index: number; p: { lat: number; lng: number } }
+  | { type: "remove"; index: number };
 
 export type IrissLogistikaMapHandle = {
   snapshotView: () => LogisticsMapCamera | null;
@@ -149,6 +164,7 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
     statusByCarId,
     routeNumbers,
     routePaths,
+    onRouteVia,
     showLabels = false,
     routeEnds,
     pinVariant = "default",
@@ -161,6 +177,8 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
   const overlaysRef = useRef<google.maps.OverlayView[]>([]);
   const markersRef = useRef<google.maps.Marker[]>([]);
   const linesRef = useRef<Array<{ setMap: (map: google.maps.Map | null) => void }>>([]);
+  const onRouteViaRef = useRef(onRouteVia);
+  onRouteViaRef.current = onRouteVia;
   const lastPtsRef = useRef<MapPoint[]>([]);
   /** Kamera (fitBounds) tikai pirmajā ielādē vai kad mainās punktu kopa. Hover un izcēlums skatu neaiztiek. */
   const lastFitKeyRef = useRef<string | null>(null);
@@ -304,11 +322,53 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
         bounds.extend({ lat: end.lat, lng: end.lng });
       }
       const PolylineCtor = (google.maps as unknown as { Polyline: new (opts: Record<string, unknown>) => { setMap: (map: google.maps.Map | null) => void } }).Polyline;
+      const editable = !lockView && Boolean(onRouteViaRef.current);
+      type ClickEv = { latLng?: { lat: () => number; lng: () => number } | null };
+      type Listenable = { addListener: (ev: string, fn: (e: ClickEv) => void) => void };
+      const listen = (target: unknown, ev: string, fn: (e: ClickEv) => void) =>
+        (google.maps.event as unknown as { addListener: (o: unknown, ev: string, fn: (e: ClickEv) => void) => void }).addListener(target, ev, fn);
+      const latLngOf = (ll: ClickEv["latLng"]) => (ll ? { lat: ll.lat(), lng: ll.lng() } : null);
       for (const r of routePaths ?? []) {
         if (r.path.length < 2) continue;
-        // Kā Google Maps: zila līnija ar tumšāku apmali.
-        linesRef.current.push(new PolylineCtor({ map, path: r.path, strokeColor: ROUTE_LINE_BORDER, strokeOpacity: 1, strokeWeight: 5, zIndex: 1 }));
-        linesRef.current.push(new PolylineCtor({ map, path: r.path, strokeColor: r.color, strokeOpacity: 1, strokeWeight: 3, zIndex: 2 }));
+        const bucket = r.bucket;
+        const canEdit = editable && Boolean(bucket);
+        // Kā Google Maps: zila līnija ar tumšāku apmali. Pieskāriens līnijai pievieno caurbraucamo punktu.
+        const lines = [
+          new PolylineCtor({ map, path: r.path, strokeColor: ROUTE_LINE_BORDER, strokeOpacity: 1, strokeWeight: 5, zIndex: 1, clickable: canEdit }),
+          new PolylineCtor({ map, path: r.path, strokeColor: r.color, strokeOpacity: 1, strokeWeight: 3, zIndex: 2, clickable: canEdit }),
+        ];
+        for (const line of lines) {
+          linesRef.current.push(line);
+          if (!canEdit || !bucket) continue;
+          listen(line, "click", (e) => {
+            const p = latLngOf(e.latLng);
+            if (p) onRouteViaRef.current?.(bucket, { type: "add", p });
+          });
+        }
+        if (!canEdit || !bucket) continue;
+        (r.via ?? []).forEach((v, index) => {
+          const marker = new google.maps.Marker({
+            map,
+            position: { lat: v.lat, lng: v.lng },
+            draggable: true,
+            zIndex: 1000,
+            title: "Velc, lai maršruts iet pa citu ceļu. Pieskaries, lai noņemtu.",
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 7,
+              fillColor: "#ffffff",
+              fillOpacity: 1,
+              strokeColor: r.color,
+              strokeWeight: 3,
+            },
+          });
+          (marker as unknown as Listenable).addListener("dragend", (e) => {
+            const p = latLngOf(e.latLng);
+            if (p) onRouteViaRef.current?.(bucket, { type: "move", index, p });
+          });
+          marker.addListener("click", () => onRouteViaRef.current?.(bucket, { type: "remove", index }));
+          markersRef.current.push(marker);
+        });
       }
     } else {
     for (const p of pts) {
