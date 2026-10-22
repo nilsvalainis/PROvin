@@ -32,4 +32,5 @@ Kā sasniegt: Claude Code aģents no `.claude/agents/` (`--agent <nosaukums>`); 
 - laba-roka - Nila personīgais asistents.
 - pvn-atguvejs - PVN atgūšana auto importā.
 - socialie-tikli - sociālo tīklu ieraksti.
+- marketinga-specialists - dīlera mārketings, cenu lapas, reklāmas, CTA.
 - Latvietis (claude.ai projekts) - valoda, tulkojumi, termini.
