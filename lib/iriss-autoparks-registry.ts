@@ -5,6 +5,8 @@
  * imports paņem tikai zināmos laukus, visu pārējo izmet.
  */
 
+import type { AutoparksCar } from "@/lib/iriss-autoparks";
+
 export const REGISTRY_SCHEMA_ID = "iriss-csdd-tirdzn-registrs/v1";
 
 /** Drošības sistēmas stāvoklis: "" nezināms, "yes" ir, "yes_checked" ir un pārbaudīta, "no" nav. */
@@ -287,4 +289,30 @@ export function registryFieldSource(reg: AutoparksRegistry | undefined, key: Reg
   if (reg.manual.includes(key)) return "manual";
   const v = reg[key];
   return reg.importedAt && v !== "" && v !== null ? "csdd" : "";
+}
+
+/**
+ * Reģistra statuss, kas nozīmē, ka auto vairs nav tirdzniecībā (noņemts, izslēgts, pārdots, anulēts).
+ * Tukšs statuss (vecs imports) vai "Tirdzniecībā" = pieņemts.
+ */
+const TRADE_REMOVED_STATUS = /no[nņ]em|izsl[eē]g|p[aā]rdot|anul|dz[eē]st/i;
+
+export type TradeAcceptedCarInput = Pick<AutoparksCar, "status" | "archivedAt" | "registry">;
+
+/**
+ * VIENĪGAIS avots: vai auto pašlaik ir CSDD tirdzniecības reģistrā pieņemts tirdzniecībā.
+ * Nosacījumi: ir tirdzniecības akta nr., Autoparkā nav "Pārdots", nav arhīvā, reģistra statuss nav noņemts/pārdots.
+ * Lieto pavadzīmju auto saraksts un ikdienas reģistra sinhronizācija - citur šo filtru nedublēt.
+ */
+export function isTradeAcceptedCar(car: TradeAcceptedCarInput): boolean {
+  if (car.archivedAt) return false;
+  if (car.status === "sold") return false;
+  const reg = car.registry;
+  if (!reg?.tradeActNo?.trim()) return false;
+  return !TRADE_REMOVED_STATUS.test(reg.status ?? "");
+}
+
+/** Autoparka auto, kas pašlaik pieņemti tirdzniecībā (secība kā krātuvē). Sk. `isTradeAcceptedCar`. */
+export function listTradeAcceptedCars<T extends TradeAcceptedCarInput>(cars: ReadonlyArray<T>): T[] {
+  return cars.filter(isTradeAcceptedCar);
 }
