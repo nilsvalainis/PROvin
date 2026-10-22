@@ -19,7 +19,8 @@ import {
   type AutoparksState,
   type AutoparksWorkItem,
 } from "@/lib/iriss-autoparks";
-import { applyManualRegistryPatch, mergeRegistryValues, type RegistryFile, type RegistryValues } from "@/lib/iriss-autoparks-registry";
+import { applyManualRegistryPatch, type RegistryFile, type RegistryValues } from "@/lib/iriss-autoparks-registry";
+import { applyRegistryFileToState, type AutoparksRegistryImportResult } from "@/lib/iriss-autoparks-registry-apply";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
 import { readLogisticsJsonFile, mutateLogisticsJsonFile } from "@/lib/iriss-logistics-store";
 import { readAutoparksStoredBytes, storeAutoparksFileBytes } from "@/lib/iriss-autoparks-files";
@@ -342,48 +343,16 @@ export async function readAutoparksFileBytes(id: string): Promise<{ file: Autopa
   return { ...found, bytes: stored.bytes, contentType: found.file.contentType || stored.contentType };
 }
 
-export type AutoparksRegistryImportResult = {
-  matched: number;
-  updated: number;
-  unmatched: string[];
-};
+export type { AutoparksRegistryImportResult };
 
 /**
- * CSDD reģistra imports pēc VIN. Aizpilda tikai `registry` (un tukšu marku/modeli/nobraukumu),
- * Nila labotos laukus nepārraksta. Arhīvā esošos (pārdotos) auto neaiztiek.
+ * CSDD reģistra imports pēc VIN (sk. `applyRegistryFileToState`). Aizpilda tikai reģistra laukus
+ * (un tukšu marku/modeli/nobraukumu); pilnā nolasījumā pievieno jaunos un atzīmē izņemtos.
+ * Nila labotos laukus un arhīvu neaiztiek.
  */
 export async function applyAutoparksRegistryFile(file: RegistryFile, importFile: string): Promise<AutoparksRegistryImportResult> {
   return mutateAutoparksState((state) => {
-  const byVin = new Map(file.vehicles.map((v) => [v.vin, v]));
-  const now = new Date().toISOString();
-  const actor: AutoparksActor = { id: "csdd-import", name: "CSDD reģistrs" };
-  const seen = new Set<string>();
-  let matched = 0;
-  let updated = 0;
-  state.cars = state.cars.map((car) => {
-    const rec = car.vin && !car.archivedAt ? byVin.get(car.vin) : undefined;
-    if (!rec) return car;
-    seen.add(rec.vin);
-    matched += 1;
-    const { registry, changed } = mergeRegistryValues(car.registry, rec.values, { importedAt: now, importFile, registryDate: file.generatedAt });
-    const next: AutoparksCar = { ...car, registry };
-    const filled: string[] = [];
-    if (!next.mileageKm && registry.odometerKm != null) {
-      next.mileageKm = registry.odometerKm;
-      filled.push("nobraukums");
-    }
-    if (!next.make && !next.model && registry.makeModel) {
-      const [make, ...rest] = registry.makeModel.split(/\s+/);
-      next.make = (make ?? "").slice(0, 60);
-      next.model = rest.join(" ").slice(0, 80);
-      filled.push("marka");
-    }
-    if (changed.length === 0 && filled.length === 0) return car;
-    updated += 1;
-    next.updatedAt = now;
-    state.events.push(event(car.id, actor, `CSDD reģistrs: atjaunoti ${changed.length + filled.length} lauki`));
-    return next;
-  });
-  return { result: { matched, updated, unmatched: [...byVin.keys()].filter((v) => !seen.has(v)) }, write: updated > 0 };
+    const { result, changed } = applyRegistryFileToState(state, file, importFile);
+    return { result, write: changed };
   });
 }
