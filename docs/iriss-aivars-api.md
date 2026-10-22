@@ -78,3 +78,14 @@ When a request is queued (new or retried), the server immediately POSTs to `IRIS
 ```
 
 Optional header `Authorization: Bearer <IRISS_AIVARS_WAKE_TOKEN>`. The payload carries only the job id, never the comment. The call runs after the response (`after()`), times out after 3 s and never blocks or fails the queue. On wake, Aivars runs the usual `GET` -> `claim` flow. Polling stays as a fallback.
+
+## Automatic STANDARD waybills (Hetzner worker)
+
+With Vercel env `IRISS_WAYBILL_AUTO=1`, standard jobs (see `lib/iriss-waybill-auto.ts`: listed plate that is free, 48 h, default route, empty or template comment, first attempt) are taken by the Hetzner `iriss-waybill-worker` (`scripts/iriss-ttr/README.md`):
+
+- `GET ?scope=auto` returns only standard jobs plus `auto: { plate, company, ctx }`. The default `GET` hides those jobs from Aivars for the first 3 min; after that Aivars sees them as a fallback. Aivars is not woken for them.
+- `POST /:id/claim { "worker": "auto" }` claims only if the job is still standard (checked under the lock with fresh plate occupancy).
+- `POST /:id/release { reason }` (worker only, before Save) puts the job back in the queue as non-automatic and wakes Aivars.
+- `events` / `result` accept `by: "auto"`.
+
+A busy plate (`confirmBusy`) is never standard: ending an active waybill needs Nils's "jā" through Aivars. The worker never runs stop/cancel scripts.

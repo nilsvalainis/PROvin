@@ -59,6 +59,10 @@ export type WaybillRequest = {
   attempts: number;
   pickedBy: string;
   pickedAt: string;
+  /** Numurs bija aizņemts, kad pieprasījums ienāca (confirmBusy). Tad tas nekad nav automātikai. */
+  plateBusyAtCreate: boolean;
+  /** Automātika darbu nodeva Aivaram; to vairs automātiski neņem. */
+  autoDisabled: boolean;
 };
 
 export type WaybillRequestsDoc = {
@@ -131,6 +135,8 @@ export function parseWaybillRequest(raw: unknown): WaybillRequest | null {
     attempts: typeof o.attempts === "number" && o.attempts >= 1 ? Math.min(20, Math.round(o.attempts)) : 1,
     pickedBy: str(o.pickedBy, 80),
     pickedAt: str(o.pickedAt, 40),
+    plateBusyAtCreate: o.plateBusyAtCreate === true,
+    autoDisabled: o.autoDisabled === true,
   };
 }
 

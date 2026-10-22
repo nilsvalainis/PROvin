@@ -77,6 +77,7 @@ export async function createWaybillRequest(input: {
   createdBy: string;
   createdByName: string;
   payload: CreateWaybillInput;
+  plateBusyAtCreate?: boolean;
 }): Promise<WaybillRequest> {
   const now = new Date().toISOString();
   const payload = input.payload;
@@ -107,6 +108,8 @@ export async function createWaybillRequest(input: {
     attempts: 1,
     pickedBy: "",
     pickedAt: "",
+    plateBusyAtCreate: input.plateBusyAtCreate === true,
+    autoDisabled: false,
   };
   await mutateDoc((doc) => {
     let next: WaybillRequestsDoc = { ...doc, requests: [request, ...doc.requests].slice(0, 2000) };
@@ -186,7 +189,12 @@ export async function listPendingWaybillRequests(nowMs = Date.now()): Promise<Wa
   return doc.requests.filter((r) => r.status === "queued" || inProgressIsStale(r, nowMs));
 }
 
-export async function claimWaybillRequest(id: string, pickedBy = "aivars"): Promise<WaybillRequest | null> {
+export async function claimWaybillRequest(
+  id: string,
+  pickedBy = "aivars",
+  /** Papildu pārbaude zem slēdzenes (automātikai: tikai standarta darbi). */
+  guard?: (current: WaybillRequest) => boolean,
+): Promise<WaybillRequest | null> {
   const nowMs = Date.now();
   const now = new Date(nowMs).toISOString();
   const claimed = await mutateDoc((doc) => {
@@ -194,6 +202,7 @@ export async function claimWaybillRequest(id: string, pickedBy = "aivars"): Prom
     if (!current) return { value: null };
     const stale = inProgressIsStale(current, nowMs);
     if (current.status !== "queued" && !stale) return { value: null };
+    if (guard && !guard(current)) return { value: null };
     const nextReq: WaybillRequest = {
       ...current,
       status: "in_progress",
@@ -223,6 +232,42 @@ export async function claimWaybillRequest(id: string, pickedBy = "aivars"): Prom
     });
   }
   return claimed;
+}
+
+/**
+ * Automātika nodod darbu Aivaram (pirms Saglabāt): atpakaļ rindā, vairs neautomātisks.
+ * Tikai, ja darbu tur automātika.
+ */
+export async function releaseWaybillRequestToAivars(input: {
+  id: string;
+  by: string;
+  reason: string;
+}): Promise<WaybillRequest | null> {
+  const now = new Date().toISOString();
+  const text = `Automātika nodod Aivaram: ${input.reason}`.trim().slice(0, 500);
+  return mutateDoc((doc) => {
+    const current = doc.requests.find((r) => r.id === input.id);
+    if (!current || current.status !== "in_progress" || current.pickedBy !== input.by) return { value: null };
+    const nextReq: WaybillRequest = {
+      ...current,
+      status: "queued",
+      pickedBy: "",
+      pickedAt: "",
+      autoDisabled: true,
+      updatedAt: now,
+      lastReplyText: text,
+    };
+    let next = { ...doc, requests: doc.requests.map((r) => (r.id === input.id ? nextReq : r)) };
+    next = pushEvent(next, {
+      requestId: input.id,
+      kind: "message",
+      text,
+      waybillNo: "",
+      pdfUrl: "",
+      by: input.by,
+    });
+    return { value: nextReq, next };
+  });
 }
 
 export async function appendWaybillRequestEvent(input: {

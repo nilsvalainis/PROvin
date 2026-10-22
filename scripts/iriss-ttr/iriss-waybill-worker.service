@@ -1,0 +1,15 @@
+[Unit]
+Description=IRISS automatic STANDARD CSDD waybills (queue -> refill/save -> result)
+After=network-online.target iriss-vpn-ctl.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/iriss-ttr/env
+WorkingDirectory=/root/iriss-ttr
+ExecStart=/usr/bin/node /root/iriss-ttr/ctl/waybill-worker.mjs
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

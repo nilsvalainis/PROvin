@@ -182,6 +182,8 @@ describe("Aivars create_waybill action", () => {
       attempts: 1,
       pickedBy: "",
       pickedAt: "",
+      plateBusyAtCreate: false,
+      autoDisabled: false,
     };
     const action = toAivarsCreateWaybillAction(request);
     expect(action.action).toBe(AIVARS_ACTION_CREATE_WAYBILL);

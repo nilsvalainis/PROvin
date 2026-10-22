@@ -33,6 +33,8 @@ const sample = (over: Partial<WaybillRequest> = {}): WaybillRequest => ({
   attempts: 1,
   pickedBy: "",
   pickedAt: "",
+  plateBusyAtCreate: false,
+  autoDisabled: false,
   ...over,
 });
 

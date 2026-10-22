@@ -25,6 +25,7 @@ export async function POST(req: Request, ctx: Ctx) {
     pdfBase64?: unknown;
     fileName?: unknown;
     errorReason?: unknown;
+    by?: unknown;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -56,7 +57,7 @@ export async function POST(req: Request, ctx: Ctx) {
     waybillNo,
     pdfUrl,
     errorReason: typeof body.errorReason === "string" ? body.errorReason : "",
-    by: "aivars",
+    by: body.by === "auto" ? "auto" : "aivars",
   });
   if (!request) return NextResponse.json({ error: "not_found" }, { status: 404 });
   return NextResponse.json(

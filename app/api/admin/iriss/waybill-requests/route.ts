@@ -1,5 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { wakeAivars } from "@/lib/iriss-aivars-wake";
+import { autoWaybillEnabled, classifyWaybillForAuto } from "@/lib/iriss-waybill-auto";
 import { parseCreateWaybillInput } from "@/lib/iriss-waybill-create";
 import { emptyWaybillRequestsDoc, waybillChatPayload } from "@/lib/iriss-waybill-requests";
 import { createWaybillRequest, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
@@ -118,8 +119,11 @@ export async function POST(req: Request) {
       createdBy,
       createdByName,
       payload: parsed.value,
+      plateBusyAtCreate: Boolean(occupancy?.busy),
     });
-    after(() => wakeAivars(request.id));
+    // Standarta darbu ņem Hetzner automātika (poll ~10 s); pārējiem uzreiz pamodina Aivaru.
+    const auto = classifyWaybillForAuto(request, { plateBusyNow: Boolean(occupancy?.busy) });
+    if (!(autoWaybillEnabled() && auto.standard)) after(() => wakeAivars(request.id));
     const doc = await readWaybillRequestsDoc();
     return NextResponse.json(
       { ok: true, request, ...waybillChatPayload(doc), plates },
