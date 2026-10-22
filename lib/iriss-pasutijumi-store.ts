@@ -27,6 +27,7 @@ import { normalizeIrissOfferBlocks } from "@/lib/iriss-offer-blocks";
 import { irissOrderPhotoAlbumOfferId, normalizeIrissOrderPhotoAlbum } from "@/lib/iriss-order-photos";
 import { migrateIrissSpecSelectLabels } from "@/lib/iriss-order-spec-selects";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
+import { primeListingSearchCostsFromStore } from "@/lib/iriss-listings-search-costs-store";
 import {
   isIrissRecordDeleted,
   markIrissRecordDeleted,
@@ -1147,6 +1148,7 @@ export async function writeIrissPasutijums(
     if (!prepared.ok) {
       return { ok: false, error: IRISS_STALE_REVISION, stale: true, record: prepared.record };
     }
+    await primeListingSearchCostsFromStore();
     const sanitized = withAutoEcarstradeLinks(prepared.record);
     const createdAt = existing?.createdAt ?? sanitized.createdAt ?? updatedAt;
     const incomingDeletedAt = typeof record.deletedAt === "string" ? record.deletedAt : undefined;

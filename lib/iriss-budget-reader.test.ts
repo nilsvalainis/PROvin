@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 import { irissClientFinancingEuroFromBudget } from "@/lib/iriss-client-financing";
 import { migrateIrissCriteria } from "@/lib/iriss-criteria-migrate";
 import { filterToSearchFilter } from "@/lib/iriss-criteria-shared/to-search-filter";
-import { listingExtrasI, listingSearchPriceBounds } from "@/lib/iriss-listings-cost";
+import { listingExtrasI, listingSearchPriceBounds, LV_VAT_RATE } from "@/lib/iriss-listings-cost";
 import { filterFromOrderFields } from "@/lib/iriss-listings-ecarstrade-search";
 import { parseIrissOrderBoundRange, parseIrissOrderBudget, parseIrissOrderRange } from "@/lib/iriss-listings-orders";
 import { marketplaceQueryFromOrder } from "@/lib/marketplace/query-from-order";
 
 const I = listingExtrasI();
+/** Noklusējuma izmaksas: budžets - I × 1,21 (Margin formula kā `listingMaxBid`). */
+const B = (budget: number) => Math.round(budget - I * (1 + LV_VAT_RATE));
 
 describe("parseIrissOrderBudget: viena summa", () => {
   it.each([
@@ -89,22 +91,23 @@ describe("klienta finansējums lieto to pašu lasītāju", () => {
   });
 });
 
-describe("listingSearchPriceBounds: sludinājuma cena = budžets mīnus izmaksas", () => {
-  it("viena summa: griesti = budžets - I, grīdas nav", () => {
-    expect(listingSearchPriceBounds({ from: null, to: 15000 })).toEqual({ from: null, to: 15000 - I });
+describe("listingSearchPriceBounds: sludinājuma cena = budžets mīnus izmaksas (Margin formula kā listingMaxBid)", () => {
+  it("viena summa: griesti = budžets - I × 1,21, grīdas nav", () => {
+    expect(listingSearchPriceBounds({ from: null, to: 15000 })).toEqual({ from: null, to: B(15000) });
   });
 
-  it("diapazons: grīda = mazākais - I, griesti = lielākais - I", () => {
-    expect(listingSearchPriceBounds({ from: 12000, to: 15000 })).toEqual({ from: 12000 - I, to: 15000 - I });
+  it("diapazons: grīda no mazākā, griesti no lielākā ar to pašu formulu", () => {
+    expect(listingSearchPriceBounds({ from: 12000, to: 15000 })).toEqual({ from: B(12000), to: B(15000) });
   });
 
   it("nekad zem 0; grīda 0 nozīmē bez grīdas", () => {
-    expect(listingSearchPriceBounds({ from: 2000, to: 3000 }, 5000)).toEqual({ from: null, to: 0 });
-    expect(listingSearchPriceBounds({ from: 3000, to: 15000 }, 3590)).toEqual({ from: null, to: 11410 });
+    const big = { fee: 5000, transport: 0, commission: 0, unplanned: 0 };
+    expect(listingSearchPriceBounds({ from: 2000, to: 3000 }, big)).toEqual({ from: null, to: 0 });
+    expect(listingSearchPriceBounds({ from: 4000, to: 15000 })).toEqual({ from: null, to: B(15000) });
   });
 
   it("tikai 'no X': griesti no lielākā pieejamā skaitļa", () => {
-    expect(listingSearchPriceBounds({ from: 12000, to: null })).toEqual({ from: null, to: 12000 - I });
+    expect(listingSearchPriceBounds({ from: 12000, to: null })).toEqual({ from: null, to: B(12000) });
   });
 
   it("nav budžeta: nav robežu", () => {
@@ -116,10 +119,10 @@ describe("meklēšana no pasūtījuma lieto budžetu mīnus izmaksas", () => {
   it("tirgus vaicājums (mobile.de / autoscout24)", () => {
     const single = marketplaceQueryFromOrder({ brandModel: "Volvo XC60", totalBudget: "15k" });
     expect(single.priceFrom).toBeNull();
-    expect(single.priceTo).toBe(15000 - I);
+    expect(single.priceTo).toBe(B(15000));
     const range = marketplaceQueryFromOrder({ brandModel: "Volvo XC60", totalBudget: "12-15 tūkst" });
-    expect(range.priceFrom).toBe(12000 - I);
-    expect(range.priceTo).toBe(15000 - I);
+    expect(range.priceFrom).toBe(B(12000));
+    expect(range.priceTo).toBe(B(15000));
   });
 
   it("formas filtrs uz eCarsTrade filtru", () => {
@@ -127,16 +130,16 @@ describe("meklēšana no pasūtījuma lieto budžetu mīnus izmaksas", () => {
     expect(filter.budgetFrom.value).toBe(12000);
     expect(filter.budgetTo.value).toBe(15000);
     const search = filterToSearchFilter(filter);
-    expect(search.priceFrom).toBe(12000 - I);
-    expect(search.priceTo).toBe(15000 - I);
+    expect(search.priceFrom).toBe(B(12000));
+    expect(search.priceTo).toBe(B(15000));
   });
 
   it("pasūtījuma lauki uz eCarsTrade filtru", () => {
     const single = filterFromOrderFields({ brandModel: "Volvo XC60", totalBudget: "15 000 €" });
     expect(single.priceFrom).toBeNull();
-    expect(single.priceTo).toBe(15000 - I);
+    expect(single.priceTo).toBe(B(15000));
     const range = filterFromOrderFields({ brandModel: "Volvo XC60", totalBudget: "12k-15k" });
-    expect(range.priceFrom).toBe(12000 - I);
-    expect(range.priceTo).toBe(15000 - I);
+    expect(range.priceFrom).toBe(B(12000));
+    expect(range.priceTo).toBe(B(15000));
   });
 });

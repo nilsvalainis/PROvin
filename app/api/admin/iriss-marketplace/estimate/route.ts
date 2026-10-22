@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
+import { primeListingSearchCostsFromStore } from "@/lib/iriss-listings-search-costs-store";
 import {
   MARKETPLACE_LOADS_DISABLED_REASON,
   marketplaceAutoEnabled,
@@ -18,6 +19,7 @@ export const runtime = "nodejs";
 export async function GET(req: Request) {
   const gate = await requireIrissSectionApi("radars");
   if (!gate.ok) return gate.response;
+  await primeListingSearchCostsFromStore();
   const url = new URL(req.url);
   const platforms = [
     ...url.searchParams.getAll("platform").map((p) => p.trim()).filter(isMarketplacePlatform),

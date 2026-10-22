@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { runMarketplaceAutoLoadNow } from "@/lib/marketplace/auto-load";
+import { primeListingSearchCostsFromStore } from "@/lib/iriss-listings-search-costs-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ export async function GET(req: Request) {
   const gate = isAuthorized(req);
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   try {
+    await primeListingSearchCostsFromStore();
     const out = await runMarketplaceAutoLoadNow();
     return NextResponse.json(out);
   } catch (e) {

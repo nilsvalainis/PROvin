@@ -6,6 +6,7 @@ import {
 } from "@/lib/iriss-criteria-listing-match";
 import { migrateIrissCriteria } from "@/lib/iriss-criteria-migrate";
 import { listingSearchPriceBounds } from "@/lib/iriss-listings-cost";
+import { currentListingSearchCosts } from "@/lib/iriss-listings-search-costs";
 import { parseIrissOrderBoundRange } from "@/lib/iriss-listings-orders";
 import type { IrissCriteriaFilter, IrissCriteriaV1 } from "@/lib/iriss-criteria-types";
 import {
@@ -72,6 +73,25 @@ function splitBrandModel(brandModel: string): { make: string; model: string } {
   return { make: parts[0]!, model: parts.slice(1).join(" ") };
 }
 
+function orderSearchPriceBoundsFromFilter(
+  order: MarketplaceOrderCriteria,
+  filter: IrissCriteriaFilter,
+): { from: number | null; to: number | null } {
+  const budget =
+    filter.budgetFrom.value != null || filter.budgetTo.value != null
+      ? { from: filter.budgetFrom.value, to: filter.budgetTo.value }
+      : parseIrissOrderBoundRange(order.totalBudget ?? "");
+  return listingSearchPriceBounds(budget, currentListingSearchCosts());
+}
+
+/**
+ * Sludinājuma cenas robežas pasūtījumam (budžets mīnus LIST izmaksas), rēķinātas tagad.
+ * Tās pašas, ko tirgus vaicājums; saglabātajām saitēm tās uzliek nolasīšanas brīdī.
+ */
+export function orderSearchPriceBounds(order: MarketplaceOrderCriteria): { from: number | null; to: number | null } {
+  return orderSearchPriceBoundsFromFilter(order, effectiveFilter(order));
+}
+
 /** Pasūtījuma forma / IrissCriteriaV1 -> vienots tirgus vaicājums. */
 export function marketplaceQueryFromOrder(order: MarketplaceOrderCriteria): MarketplaceQuery {
   const filter = effectiveFilter(order);
@@ -83,11 +103,7 @@ export function marketplaceQueryFromOrder(order: MarketplaceOrderCriteria): Mark
   q.yearTo = filter.yearTo.value;
   q.mileageFrom = filter.mileageFrom.value;
   q.mileageTo = filter.mileageTo.value ?? digits(order.maxMileage);
-  const budget =
-    filter.budgetFrom.value != null || filter.budgetTo.value != null
-      ? { from: filter.budgetFrom.value, to: filter.budgetTo.value }
-      : parseIrissOrderBoundRange(order.totalBudget ?? "");
-  const price = listingSearchPriceBounds(budget);
+  const price = orderSearchPriceBoundsFromFilter(order, filter);
   q.priceFrom = price.from;
   q.priceTo = price.to;
   q.fuel = fuelLabel(filter, order.engineType ?? "");

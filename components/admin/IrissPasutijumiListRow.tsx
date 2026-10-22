@@ -86,6 +86,8 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
     listingLinkAuto1: row.listingLinkAuto1,
     listingLinkEcarstrade: row.listingLinkEcarstrade,
     listingLinksOther: row.listingLinksOther,
+    totalBudget: row.totalBudget,
+    brandModel: row.brandModel,
   });
   const specBrief = formatIrissListSpecBrief(row);
   const isPinned = Boolean(row.pinnedAt);

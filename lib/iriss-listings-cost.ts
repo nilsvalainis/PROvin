@@ -26,23 +26,51 @@ export function listingExtrasI(parts: ListingCostParts = DEFAULT_LISTING_COSTS):
   return parts.fee + parts.transport + parts.commission + parts.unplanned;
 }
 
+/** Daļēji iestatījumi -> pilnas izmaksas. Katrs neiestatīts vai nederīgs lauks ņem noklusējumu. */
+export function resolveListingCosts(partial?: Partial<ListingCostParts> | null): ListingCostParts {
+  const pick = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : d);
+  const p = partial ?? {};
+  return {
+    fee: pick(p.fee, DEFAULT_LISTING_COSTS.fee),
+    transport: pick(p.transport, DEFAULT_LISTING_COSTS.transport),
+    commission: pick(p.commission, DEFAULT_LISTING_COSTS.commission),
+    unplanned: pick(p.unplanned, DEFAULT_LISTING_COSTS.unplanned),
+  };
+}
+
+/**
+ * Viena budžeta skaitļa pārrēķins uz sludinājuma cenas robežu.
+ *
+ * PVN: meklēšanas brīdī nodokļa veids (NETO / Margin / AR PVN) nav zināms, tāpēc ņem
+ * lielāko no `listingMaxBid` NETO un Margin variantiem (Margin = budžets - I × 1,21; tas
+ * sakrīt arī ar AR PVN 21%). Tā ir tā pati formula kā LIST maks. solījumā, nevis atsevišķa,
+ * un tā neizslēdz Margin auto, kas iekļaujas budžetā. NETO auto, kas pārsniedz savu
+ * maks. solījumu, vēlāk paslēpj pārsniegtā budžeta filtrs.
+ */
+function searchBoundFromBudget(budget: number, extras: number): number {
+  const best = Math.max(listingMaxBid("net", 0, budget, extras), listingMaxBid("margin", 0, budget, extras));
+  return Math.max(0, Math.round(best));
+}
+
 /**
  * Meklēšanas cenas robežas no klienta kopējā budžeta: sludinājuma cena = budžets mīnus izmaksas
- * (transports, izsoles komisija, reģistrācija/neplānotās, IRISS komisija; `listingExtrasI`).
+ * (transports, izsoles komisija, reģistrācija/neplānotās, IRISS komisija) no LIST iestatījumiem
+ * (`costs`, sk. `currentListingSearchCosts`); neiestatītie lauki ņem `DEFAULT_LISTING_COSTS`.
  * Griesti vienmēr no lielākā skaitļa (`to`, ja nav, tad `from`). Grīda tikai diapazonam
- * (mazākais skaitlis mīnus tās pašas izmaksas); ≤ 0 nozīmē bez grīdas. Nekad zem 0.
+ * (mazākais skaitlis ar to pašu formulu); ≤ 0 nozīmē bez grīdas. Nekad zem 0.
+ * Formula: `searchBoundFromBudget` = max(NETO, Margin) no `listingMaxBid`.
  */
 export function listingSearchPriceBounds(
   budget: { from: number | null; to: number | null },
-  extras: number = listingExtrasI(),
+  costs?: Partial<ListingCostParts> | null,
 ): { from: number | null; to: number | null } {
   const valid = (n: number | null | undefined): n is number => n != null && Number.isFinite(n) && n > 0;
   const top = valid(budget.to) ? budget.to : valid(budget.from) ? budget.from : null;
   if (top == null) return { from: null, to: null };
-  const cost = Number.isFinite(extras) && extras > 0 ? extras : 0;
-  const to = Math.max(0, Math.round(top - cost));
+  const extras = listingExtrasI(resolveListingCosts(costs));
+  const to = searchBoundFromBudget(top, extras);
   const low = valid(budget.from) && valid(budget.to) && budget.from < budget.to ? budget.from : null;
-  const floor = low == null ? 0 : Math.max(0, Math.round(low - cost));
+  const floor = low == null ? 0 : searchBoundFromBudget(low, extras);
   return { from: floor > 0 ? floor : null, to };
 }
 
