@@ -3,7 +3,8 @@
 import { AlertTriangle, ChevronDown, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { AdminSaveButton } from "@/components/admin/AdminSaveButton";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
 import {
   adminCostsChrome,
@@ -125,8 +126,10 @@ function CostEditForm({ row, month, onSaved }: { row: CostSourceView; month: str
   const [limitUsd, setLimitUsd] = useState(row.limitUsd == null ? "" : String(row.limitUsd));
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
   return (
     <form
+      ref={formRef}
       className="admin-costs-edit mt-2 flex flex-wrap items-end gap-2 rounded-xl p-3"
       onSubmit={(e) => {
         e.preventDefault();
@@ -183,9 +186,7 @@ function CostEditForm({ row, month, onSaved }: { row: CostSourceView; month: str
           placeholder="bez"
         />
       </label>
-      <button type="submit" disabled={busy} className="admin-costs-save h-8 rounded-lg px-3 text-[12px] font-semibold disabled:opacity-50">
-        {busy ? "…" : "Saglabāt"}
-      </button>
+      <AdminSaveButton size="sm" dirty onSave={() => formRef.current?.requestSubmit()} state={busy ? "saving" : err ? "error" : "idle"} />
       {err ? <p className="w-full text-[12px] text-red-700">{err}</p> : null}
     </form>
   );
