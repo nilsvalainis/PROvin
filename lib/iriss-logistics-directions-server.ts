@@ -3,6 +3,8 @@ import "server-only";
 import { consumeLogisticsMapsQuota, googleMapsServerKey } from "@/lib/iriss-logistics-store";
 
 export type LogisticsDirLegPoint = { lat: number; lng: number };
+/** Pieprasījuma punkts: `via` = maršruts iet caur to, bet tā nav pietura (pavilkta līnija). */
+export type LogisticsDirRequestPoint = LogisticsDirLegPoint & { via?: boolean };
 
 export type LogisticsDirectionsResult =
   | { ok: true; cached?: boolean; distanceKm: number; durationMin: number; path: LogisticsDirLegPoint[] }
@@ -10,9 +12,14 @@ export type LogisticsDirectionsResult =
 
 /** Directions API: viens kvotas izsaukums. Kešotās koordinātes, bez atkārtotas ģeokodēšanas. */
 export async function logisticsDrivingDirections(
-  points: readonly LogisticsDirLegPoint[],
+  points: readonly LogisticsDirRequestPoint[],
 ): Promise<LogisticsDirectionsResult> {
   const usable = points.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+  // Sākums un beigas vienmēr ir pieturas, arī ja kāds tās atzīmējis kā via.
+  if (usable.length >= 2) {
+    usable[0] = { lat: usable[0]!.lat, lng: usable[0]!.lng };
+    usable[usable.length - 1] = { lat: usable[usable.length - 1]!.lat, lng: usable[usable.length - 1]!.lng };
+  }
   if (usable.length < 2) return { ok: false, notice: "Maršrutam vajag vismaz 2 punktus." };
   const apiKey = googleMapsServerKey();
   if (!apiKey) {
@@ -54,8 +61,11 @@ async function fetchJson(url: string, init: RequestInit): Promise<{ status: numb
   }
 }
 
-async function routesApiDirections(points: LogisticsDirLegPoint[], apiKey: string): Promise<LogisticsDirectionsResult> {
-  const wp = (p: LogisticsDirLegPoint) => ({ location: { latLng: { latitude: p.lat, longitude: p.lng } } });
+async function routesApiDirections(points: LogisticsDirRequestPoint[], apiKey: string): Promise<LogisticsDirectionsResult> {
+  const wp = (p: LogisticsDirRequestPoint) => ({
+    location: { latLng: { latitude: p.lat, longitude: p.lng } },
+    ...(p.via ? { via: true } : {}),
+  });
   const res = await fetchJson("https://routes.googleapis.com/directions/v2:computeRoutes", {
     method: "POST",
     headers: {
@@ -89,7 +99,7 @@ async function routesApiDirections(points: LogisticsDirLegPoint[], apiKey: strin
   };
 }
 
-async function legacyDirections(points: LogisticsDirLegPoint[], apiKey: string): Promise<LogisticsDirectionsResult> {
+async function legacyDirections(points: LogisticsDirRequestPoint[], apiKey: string): Promise<LogisticsDirectionsResult> {
   const origin = points[0]!;
   const destination = points[points.length - 1]!;
   const middle = points.slice(1, -1);
@@ -99,7 +109,7 @@ async function legacyDirections(points: LogisticsDirLegPoint[], apiKey: string):
   url.searchParams.set("mode", "driving");
   url.searchParams.set("language", "lv");
   url.searchParams.set("key", apiKey);
-  if (middle.length) url.searchParams.set("waypoints", middle.map((p) => `${p.lat},${p.lng}`).join("|"));
+  if (middle.length) url.searchParams.set("waypoints", middle.map((p) => `${p.via ? "via:" : ""}${p.lat},${p.lng}`).join("|"));
   const res = await fetchJson(url.toString(), {});
   if (!res) return { ok: false, notice: "Maršruta aprēķins neizdevās." };
   const body = res.body as {

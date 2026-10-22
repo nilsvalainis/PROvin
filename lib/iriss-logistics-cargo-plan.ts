@@ -66,7 +66,18 @@ export type CargoRouteState = {
   path: CargoLatLng[];
   /** Punktu atslēga, pēc kuras līnija aprēķināta. Ja kravā mainās auto vai secība, līnija ir novecojusi. */
   pathKey: string;
+  /**
+   * Starppunkti, caur kuriem maršruts iet bez apstāšanās (pavilkta zilā līnija, piem. uz automaģistrāli).
+   * Secību nosaka paši: katrs piesaistās tuvākajam maršruta posmam.
+   */
+  via: CargoLatLng[];
 };
+
+/** Maršruta punkts pieprasījumam: pietura vai starppunkts (`via`, bez apstāšanās). */
+export type CargoRoutePoint = CargoLatLng & { via?: true };
+
+/** Cik starppunktu vienā kravā (Google atļauj vairāk, bet karte paliek pārskatāma). */
+export const CARGO_VIA_MAX = 8;
 
 export type CargoLatLng = { lat: number; lng: number };
 
@@ -99,7 +110,7 @@ export function isRouteTemplateType(v: unknown): v is RouteTemplateType {
 }
 
 export function emptyCargoRoute(): CargoRouteState {
-  return { enabled: false, start: null, end: null, distanceKm: null, durationMin: null, path: [], pathKey: "" };
+  return { enabled: false, start: null, end: null, distanceKm: null, durationMin: null, path: [], pathKey: "", via: [] };
 }
 
 export function emptyCargoPlan(at = new Date().toISOString()): CargoPlanState {
@@ -146,6 +157,7 @@ export function normalizeCargoRoute(raw: unknown): CargoRouteState {
     durationMin: numOrNull(row.durationMin ?? row.duration_min),
     path: normalizeCargoPath(row.path),
     pathKey: str(row.pathKey, 2000),
+    via: normalizeCargoPath(row.via).slice(0, CARGO_VIA_MAX),
   };
 }
 
@@ -178,24 +190,99 @@ export function cargoRoutePoints(
   plan: CargoPlanState,
   bucket: Exclude<CargoBucket, "none">,
   orders: ReadonlyArray<Pick<LogisticsOrder, "id" | "pickupLat" | "pickupLng">>,
-): CargoLatLng[] {
+): CargoRoutePoint[] {
   const route = plan.routes[bucket];
   const byId = new Map(orders.map((o) => [o.id, o]));
   const stops = carsInCargoBucket(plan, bucket).flatMap((c) => {
     const o = byId.get(c.carId);
     return o && o.pickupLat != null && o.pickupLng != null ? [{ lat: o.pickupLat, lng: o.pickupLng }] : [];
   });
-  return [
+  const main = [
     ...(route.start ? [{ lat: route.start.lat, lng: route.start.lng }] : []),
     ...stops,
     ...(route.end ? [{ lat: route.end.lat, lng: route.end.lng }] : []),
   ];
+  return insertCargoViaPoints(main, route.via ?? []);
 }
 
-/** Maršruta punktu atslēga: sākums, pieturas secībā, beigas. */
-export function cargoRoutePointsKey(points: ReadonlyArray<CargoLatLng>): string {
+/** Attālums no punkta līdz posmam (vienkārša projekcija, pietiek posma izvēlei) un vieta posmā 0..1. */
+function segmentFit(p: CargoLatLng, a: CargoLatLng, b: CargoLatLng): { d: number; t: number } {
+  const k = Math.cos(((a.lat + b.lat) / 2) * (Math.PI / 180));
+  const ax = a.lng * k;
+  const bx = b.lng * k;
+  const px = p.lng * k;
+  const dx = bx - ax;
+  const dy = b.lat - a.lat;
+  const len2 = dx * dx + dy * dy;
+  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (p.lat - a.lat) * dy) / len2));
+  const cx = ax + t * dx;
+  const cy = a.lat + t * dy;
+  return { d: Math.hypot(px - cx, p.lat - cy), t };
+}
+
+/**
+ * Ievieto starppunktus maršrutā: katrs pie tuvākā posma, posma iekšienē pēc attāluma no sākuma.
+ * Tā starppunkts paliek pareizajā vietā arī pēc auto pārkārtošanas.
+ */
+export function insertCargoViaPoints(points: readonly CargoLatLng[], via: readonly CargoLatLng[]): CargoRoutePoint[] {
+  if (points.length < 2 || via.length === 0) return points.map((p) => ({ lat: p.lat, lng: p.lng }));
+  const bySeg = new Map<number, Array<{ p: CargoLatLng; t: number }>>();
+  for (const v of via) {
+    let best = 0;
+    let bestFit = segmentFit(v, points[0]!, points[1]!);
+    for (let i = 1; i < points.length - 1; i++) {
+      const fit = segmentFit(v, points[i]!, points[i + 1]!);
+      if (fit.d < bestFit.d) {
+        best = i;
+        bestFit = fit;
+      }
+    }
+    const list = bySeg.get(best) ?? [];
+    list.push({ p: v, t: bestFit.t });
+    bySeg.set(best, list);
+  }
+  const out: CargoRoutePoint[] = [];
+  points.forEach((p, i) => {
+    out.push({ lat: p.lat, lng: p.lng });
+    for (const v of (bySeg.get(i) ?? []).sort((a, b) => a.t - b.t)) out.push({ lat: v.p.lat, lng: v.p.lng, via: true });
+  });
+  return out;
+}
+
+export function addCargoVia(plan: CargoPlanState, bucket: Exclude<CargoBucket, "none">, p: CargoLatLng, at = new Date().toISOString()): CargoPlanState {
+  const route = plan.routes[bucket];
+  if ((route.via ?? []).length >= CARGO_VIA_MAX) return plan;
+  return { ...plan, routes: { ...plan.routes, [bucket]: { ...route, via: [...(route.via ?? []), { lat: p.lat, lng: p.lng }] } }, updatedAt: at };
+}
+
+export function moveCargoVia(
+  plan: CargoPlanState,
+  bucket: Exclude<CargoBucket, "none">,
+  index: number,
+  p: CargoLatLng,
+  at = new Date().toISOString(),
+): CargoPlanState {
+  const route = plan.routes[bucket];
+  const via = route.via ?? [];
+  if (index < 0 || index >= via.length) return plan;
+  return {
+    ...plan,
+    routes: { ...plan.routes, [bucket]: { ...route, via: via.map((v, i) => (i === index ? { lat: p.lat, lng: p.lng } : v)) } },
+    updatedAt: at,
+  };
+}
+
+export function removeCargoVia(plan: CargoPlanState, bucket: Exclude<CargoBucket, "none">, index: number, at = new Date().toISOString()): CargoPlanState {
+  const route = plan.routes[bucket];
+  const via = route.via ?? [];
+  if (index < 0 || index >= via.length) return plan;
+  return { ...plan, routes: { ...plan.routes, [bucket]: { ...route, via: via.filter((_, i) => i !== index) } }, updatedAt: at };
+}
+
+export function cargoRoutePointsKey(points: ReadonlyArray<CargoRoutePoint>): string {
   // "v2": līnijas, kas saglabātas pirms retināšanas labojuma (apgrieztas), pārrēķinās vienreiz pašas.
-  return `v2|${points.map((p) => `${p.lat.toFixed(4)},${p.lng.toFixed(4)}`).join("|")}`;
+  // Starppunkti ar "~", lai bez tiem aprēķinātās līnijas atslēga nesakrīt.
+  return `v2|${points.map((p) => `${p.via ? "~" : ""}${p.lat.toFixed(4)},${p.lng.toFixed(4)}`).join("|")}`;
 }
 
 export function normalizeCargoCar(raw: unknown): CargoCarState | null {

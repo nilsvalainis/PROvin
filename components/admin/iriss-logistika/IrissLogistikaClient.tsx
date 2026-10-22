@@ -20,6 +20,9 @@ import { CABINET_PICKUP_STAGE_LV, type CabinetPickup, type CabinetPickupStage } 
 import {
   CARGO_BUCKET_LV,
   CARGO_COLOR_FALLBACK,
+  addCargoVia,
+  moveCargoVia,
+  removeCargoVia,
   formatCargoDuration,
   formatCargoKm,
   cargoRoutePoints,
@@ -482,7 +485,7 @@ export function IrissLogistikaClient({
     () =>
       focusBuckets
         .filter((b) => cargoPlan.routes[b].enabled && cargoPlan.routes[b].path.length > 1)
-        .map((b) => ({ path: cargoPlan.routes[b].path, color: ROUTE_LINE_COLOR[b] })),
+        .map((b) => ({ path: cargoPlan.routes[b].path, color: ROUTE_LINE_COLOR[b], bucket: b, via: cargoPlan.routes[b].via })),
     [cargoPlan, focusBuckets],
   );
   const routeEnds = useMemo(() => {
@@ -975,6 +978,15 @@ export function IrissLogistikaClient({
                     routeNumbers={routeNumbers}
                     routeEnds={routeEnds}
                     routePaths={routePaths}
+                    onRouteVia={(bucket, a) => {
+                      const next =
+                        a.type === "add"
+                          ? addCargoVia(cargoPlan, bucket, a.p)
+                          : a.type === "move"
+                            ? moveCargoVia(cargoPlan, bucket, a.index, a.p)
+                            : removeCargoVia(cargoPlan, bucket, a.index);
+                      if (next !== cargoPlan) void persistCargoPlan(next);
+                    }}
                     onHoverCar={setHoverId}
                     onSelect={(id) => {
                       toggleSelect(id);

@@ -15,8 +15,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400, headers: irissLogisticsScopeHeader() });
   }
   const points = body && typeof body === "object" && Array.isArray((body as { points?: unknown }).points)
-    ? ((body as { points: Array<{ lat?: unknown; lng?: unknown }> }).points)
-        .map((p) => ({ lat: Number(p.lat), lng: Number(p.lng) }))
+    ? ((body as { points: Array<{ lat?: unknown; lng?: unknown; via?: unknown }> }).points)
+        .map((p) => ({ lat: Number(p.lat), lng: Number(p.lng), ...(p.via === true ? { via: true } : {}) }))
         .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
     : [];
   const result = await logisticsDrivingDirections(points);

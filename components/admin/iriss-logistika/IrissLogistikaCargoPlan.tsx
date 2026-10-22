@@ -23,6 +23,7 @@ import {
   CARGO_BUCKET_ADD_LV,
   CARGO_BUCKET_LV,
   CARGO_BUCKETS,
+  cargoRoutePoints,
   cargoRoutePointsKey,
   carsInCargoBucket,
   endpointFromTemplate,
@@ -528,14 +529,8 @@ function RouteBlock({
   children: ReactNode;
 }) {
   const route = plan.routes[bucket];
-  const points = [
-    route.start ? { lat: route.start.lat, lng: route.start.lng } : null,
-    ...rows.flatMap((r) => {
-      const o = byId.get(r.carId);
-      return o?.pickupLat != null && o.pickupLng != null ? [{ lat: o.pickupLat, lng: o.pickupLng }] : [];
-    }),
-    route.end ? { lat: route.end.lat, lng: route.end.lng } : null,
-  ].filter((p): p is { lat: number; lng: number } => Boolean(p));
+  // Tie paši punkti kā pieprasījumā (ar caurbraucamajiem punktiem), lai "novecojis" neiedegas bez iemesla.
+  const points = cargoRoutePoints(plan, bucket, [...byId.values()]);
   const mapsUrl = logisticsGoogleMapsDirUrl(points);
   const hasLine = route.path.length > 1;
   const stale = hasLine && route.pathKey !== cargoRoutePointsKey(points);
@@ -581,6 +576,12 @@ function RouteBlock({
       {error ? (
         <p className="mt-2 rounded-[10px] bg-[#fdecea] px-2.5 py-2 text-[12.5px] text-[#9b1c13]" role="alert">
           {error}
+        </p>
+      ) : null}
+      {hasLine ? (
+        <p className="mt-2 text-[12px] leading-snug text-[#6e6e73]">
+          Lai maršruts iet pa citu ceļu (piem. automaģistrāli), pieskaries zilajai līnijai kartē un pavelc punktu uz vajadzīgo ceļu. Pieskāriens punktam to noņem.
+          {route.via.length > 0 ? ` Caurbraucamie punkti: ${route.via.length}.` : ""}
         </p>
       ) : null}
       {stale ? (
