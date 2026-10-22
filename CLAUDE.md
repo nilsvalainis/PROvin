@@ -15,6 +15,7 @@ Katrs Claude aģents pirms jebkura uzdevuma izlasa un stingri ievēro `docs/resu
 - Dropbox: augšupielāde un lejupielāde VIENMĒR caur Dropbox API/konektoru, nekad caur pārlūku. Pēc augšupielādes failus pārbaudi, saskaitot tos caur API.
 - Valoda: visas atbildes Nilam TIKAI latviešu valodā.
 - Komanda: visi aģenti strādā kā viena komanda un drīkst sazināties tieši (sk. `docs/komanda.md`), bez Andra starpniecības, bet Andrim vienmēr jābūt lietas kursā - svarīgām ziņām pievieno "Ziņai: Andris".
+- Bez liekām ziņām: neraksti paziņojumus "izdarīšu / pateikšu vēlāk" - vienkārši izdari un ziņo tikai, kad gatavs vai kad vajadzīgs Nila lēmums.
 
 ## Valoda un teksts
 
