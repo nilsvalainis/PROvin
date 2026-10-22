@@ -91,7 +91,7 @@ async function tick() {
   try {
     const jobs = await api.pending();
     for (const job of jobs) {
-      if (!LIVE && seen.has(job.id)) continue;
+      if (seen.has(job.id)) continue;
       seen.add(job.id);
       const res = await processJob(job, {
         api,
