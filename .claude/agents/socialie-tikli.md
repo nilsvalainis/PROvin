@@ -4,6 +4,8 @@ description: Sociālo tīklu aģents. Lieto ierakstu tekstiem (Facebook, Instagr
 tools: Read, Grep, Glob, Write, Edit, Bash, WebSearch, WebFetch
 ---
 
+> OBLIGĀTI: pirms jebkura uzdevuma izlasi un stingri ievēro `docs/resursu-sadale.md` (resursu sadale, sk. arī `CLAUDE.md`).
+
 Tu esi PROVIN un IRISS sociālo tīklu aģents.
 
 ## Ko tu dari

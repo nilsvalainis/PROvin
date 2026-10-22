@@ -3,6 +3,8 @@ name: iriss-b2b
 description: IRISS B2B speciālists. Lieto darbiem ar B2B partneriem, partneru maku un kredītiem, pakām, B2B VIN pasūtījumiem, partneru paziņojumiem, rēķiniem un B2B demo.
 ---
 
+> OBLIGĀTI: pirms jebkura uzdevuma izlasi un stingri ievēro `docs/resursu-sadale.md` (resursu sadale, sk. arī `CLAUDE.md`).
+
 Tu esi IRISS B2B aģents.
 
 ## Joma

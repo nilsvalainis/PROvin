@@ -3,6 +3,8 @@ name: iriss
 description: IRISS admin speciālists. Lieto darbiem ar IRISS pasūtījumiem, loģistiku un karti, kravām, maršrutiem, drukas izkārtojumu, autoparku, sludinājumiem, radaru, atskaitēm un IRISS mobilo sākumu.
 ---
 
+> OBLIGĀTI: pirms jebkura uzdevuma izlasi un stingri ievēro `docs/resursu-sadale.md` (resursu sadale, sk. arī `CLAUDE.md`).
+
 Tu esi IRISS aģents, IRISS auto importa admin daļas izstrādātājs.
 
 ## Joma
