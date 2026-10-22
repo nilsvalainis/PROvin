@@ -1,5 +1,7 @@
 /** IRISS Autoparks: mūsu auto pēc atvešanas. Pozīcija = auto istaba ar posmiem, failiem, piezīmēm un tāmi. */
 
+import { normalizeAutoparksRegistry, type AutoparksRegistry } from "@/lib/iriss-autoparks-registry";
+
 export const AUTOPARKS_STATUSES = ["prep_waiting", "in_service", "for_sale", "reserved", "ordered", "sold"] as const;
 export type AutoparksStatus = (typeof AUTOPARKS_STATUSES)[number];
 
@@ -71,6 +73,14 @@ export type AutoparksCar = {
   archivedAt: string;
   createdAt: string;
   updatedAt: string;
+  /** Cenu lapai: nosaukums, ko Nils ieraksta (tukšs = marka + modelis). Vecos ierakstos lauka nav. */
+  displayName?: string;
+  /** Cenu lapai: aprīkojuma rinda, piem. "ACC DISTRONIC / LANE ASSIST". */
+  equipmentLine?: string;
+  /** Cenu lapai: cena, ko Nils ievada. Slēpj tāpat kā citas summas. */
+  listPriceEur?: number | null;
+  /** CSDD tirdzniecības reģistra dati (imports pēc VIN + Nila labojumi). */
+  registry?: AutoparksRegistry;
 };
 
 export type AutoparksFile = {
@@ -201,6 +211,11 @@ export function normalizeAutoparksCar(raw: unknown): AutoparksCar | null {
     archivedAt: str(raw.archivedAt, 40),
     createdAt: str(raw.createdAt, 40),
     updatedAt: str(raw.updatedAt, 40),
+    // Jaunie lauki tikai, ja ierakstā tie jau ir - vecie ieraksti paliek tādi paši.
+    ...(typeof raw.displayName === "string" ? { displayName: str(raw.displayName, 160) } : {}),
+    ...(typeof raw.equipmentLine === "string" ? { equipmentLine: str(raw.equipmentLine, 300) } : {}),
+    ...("listPriceEur" in raw ? { listPriceEur: numOrNull(raw.listPriceEur) } : {}),
+    ...(isObj(raw.registry) ? { registry: normalizeAutoparksRegistry(raw.registry) } : {}),
   };
 }
 

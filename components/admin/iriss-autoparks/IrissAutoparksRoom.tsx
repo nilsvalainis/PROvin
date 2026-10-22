@@ -23,6 +23,16 @@ import {
   type AutoparksStatus,
   type AutoparksWorkItem,
 } from "@/lib/iriss-autoparks";
+import {
+  REGISTRY_FIELD_LV,
+  REGISTRY_NUMBER_KEYS,
+  REGISTRY_SAFETY_KEYS,
+  REGISTRY_SAFETY_LV,
+  REGISTRY_SAFETY_STATES,
+  REGISTRY_TEXT_KEYS,
+  registryFieldSource,
+  type RegistryKey,
+} from "@/lib/iriss-autoparks-registry";
 
 type LogisticsDoc = { id: string; title: string; section: string; typeLabel: string; hasFile: boolean; sourceUrl: string; createdAt: string };
 
@@ -193,6 +203,8 @@ export function IrissAutoparksRoom({ carId, hideSums, canWrite, onClose, onCarCh
         ) : null}
 
         <CarFields car={car} hideSums={hideSums} canWrite={canWrite} onSave={(fields) => void patch({ car: fields })} />
+        <PriceSheetFields car={car} hideSums={hideSums} canWrite={canWrite} onSave={(fields) => void patch({ car: fields })} />
+        <RegistryFields car={car} canWrite={canWrite} onSave={(registry) => void patch({ car: { registry } })} />
 
         <nav className="iriss-ap-stages" aria-label="Posmi">
           {AUTOPARKS_STAGES.map((s, i) => {
@@ -344,6 +356,118 @@ function CarFields({
         </label>
       ))}
     </div>
+  );
+}
+
+type EditableField = { key: string; label: string; value: string; numeric?: boolean; date?: boolean; wide?: boolean };
+
+/** Viens labojams lauks esošajā kartītes stilā: saglabā pie blur/Enter, ja vērtība mainījusies. */
+function EditField({ f, canWrite, onSave }: { f: EditableField; canWrite: boolean; onSave: (key: string, value: string) => void }) {
+  return (
+    <label className="iriss-ap-field" style={f.wide ? { gridColumn: "1 / -1" } : undefined}>
+      <span>{f.label}</span>
+      <input
+        defaultValue={f.value}
+        disabled={!canWrite}
+        type={f.date ? "date" : "text"}
+        inputMode={f.numeric ? "decimal" : undefined}
+        placeholder="-"
+        onBlur={(e) => {
+          const next = e.target.value.trim();
+          if (next !== f.value) onSave(f.key, next);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+        }}
+      />
+    </label>
+  );
+}
+
+/** Cenu lapai: nosaukums, aprīkojuma rinda, cena (Nils ievada). */
+function PriceSheetFields({
+  car,
+  hideSums,
+  canWrite,
+  onSave,
+}: {
+  car: AutoparksCar;
+  hideSums: boolean;
+  canWrite: boolean;
+  onSave: (fields: Record<string, string>) => void;
+}) {
+  const fields: EditableField[] = [
+    { key: "displayName", label: "Nosaukums", value: car.displayName ?? "" },
+    { key: "equipmentLine", label: "Aprīkojuma rinda", value: car.equipmentLine ?? "", wide: true },
+  ];
+  if (!hideSums) fields.splice(1, 0, { key: "listPriceEur", label: "Cena, €", value: car.listPriceEur != null ? String(car.listPriceEur) : "", numeric: true });
+  return (
+    <div className="mt-4">
+      <p className="iriss-ap-sub">Cenu lapai</p>
+      <div className="iriss-ap-fields">
+        {fields.map((f) => (
+          <EditField key={`${f.key}:${f.value}`} f={f} canWrite={canWrite} onSave={(key, value) => onSave({ [key]: value })} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function sourceLabel(src: "manual" | "csdd" | ""): string {
+  if (src === "manual") return " · labots";
+  if (src === "csdd") return " · CSDD";
+  return "";
+}
+
+/** CSDD tirdzniecības reģistra lauki. Visi labojami; labotos imports vairs nepārraksta (tukšs = atkal no CSDD). */
+function RegistryFields({ car, canWrite, onSave }: { car: AutoparksCar; canWrite: boolean; onSave: (registry: Record<string, string>) => void }) {
+  const reg = car.registry;
+  const textKeys = REGISTRY_TEXT_KEYS.filter((k) => k !== "status");
+  const fields: EditableField[] = [
+    ...textKeys.map((k) => ({ key: k, label: REGISTRY_FIELD_LV[k], value: reg?.[k] ?? "", date: k === "firstRegDate" || k === "tradeActDate" })),
+    ...REGISTRY_NUMBER_KEYS.map((k) => ({ key: k, label: REGISTRY_FIELD_LV[k], value: reg?.[k] != null ? String(reg[k]) : "", numeric: true })),
+    { key: "status", label: REGISTRY_FIELD_LV.status, value: reg?.status ?? "" },
+  ];
+  const imported = reg?.importedAt ? `importēts ${fmtDate(reg.importedAt)}` : "nav importēts";
+  return (
+    <details className="iriss-ap-history">
+      <summary>CSDD reģistrs · {imported}</summary>
+      <div className="iriss-ap-fields">
+        {fields.map((f) => (
+          <EditField
+            key={`${f.key}:${f.value}`}
+            f={{ ...f, label: f.label + sourceLabel(registryFieldSource(reg, f.key as RegistryKey)) }}
+            canWrite={canWrite}
+            onSave={(key, value) => onSave({ [key]: value })}
+          />
+        ))}
+        {REGISTRY_SAFETY_KEYS.map((k) => (
+          <label key={`${k}:${reg?.[k] ?? ""}`} className="iriss-ap-field">
+            <span>
+              {REGISTRY_FIELD_LV[k]}
+              {sourceLabel(registryFieldSource(reg, k))}
+            </span>
+            <select
+              defaultValue={reg?.[k] ?? ""}
+              disabled={!canWrite}
+              onChange={(e) => onSave({ [k]: e.target.value })}
+            >
+              {REGISTRY_SAFETY_STATES.map((st) => (
+                <option key={st} value={st}>
+                  {REGISTRY_SAFETY_LV[st]}
+                </option>
+              ))}
+            </select>
+          </label>
+        ))}
+      </div>
+      {reg?.importFile ? (
+        <p className="mt-2 text-[12px] text-[#6e6e73]">
+          Avots: {reg.importFile}
+          {reg.registryDate ? ` · nolasīts ${fmtDate(reg.registryDate)}` : ""}
+        </p>
+      ) : null}
+    </details>
   );
 }
 
