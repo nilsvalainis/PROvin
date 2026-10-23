@@ -1,0 +1,71 @@
+{
+  "id": "bmw-540d-g31-2026-10",
+  "note": "Anonimizēts BMW 540d G31 gadījums (22.10.2026): izolēta ievades kļūda 195 431 → 179 862 km, CSDD rādījums bez datuma (nereģistrēts auto), salauzts eļļas virsraksts, USD, CC.VIN, pārfrāzēts foto teksts. VIN maskēts, bez klienta vārda. Km un datumi saīsināti līdz formai.",
+  "vin": "WBA51AJ0*********",
+  "csdd": { "prevInspectionOdometer": "211988", "mileageHistory": [] },
+  "listingCreated": "12.09.2026",
+  "sources": {
+    "autodna": [
+      { "date": "10.03.2018", "odometer": "42000", "country": "Vācija" },
+      { "date": "12.04.2019", "odometer": "98000", "country": "Vācija" },
+      { "date": "20.06.2021", "odometer": "195431", "country": "Vācija" }
+    ],
+    "carvertical": [
+      { "date": "15.05.2020", "odometer": "140500", "country": "Vācija" },
+      { "date": "18.07.2022", "odometer": "179862", "country": "Vācija" }
+    ]
+  },
+  "comments": [
+    {
+      "id": "csdd-foreign-drop",
+      "field": "source",
+      "focus": "CSDD",
+      "text": "Citās datubāzēs fiksēts nobraukuma kritums no 195 431 km līdz 179 862 km, iespējama odometra korekcija. CSDD datos auto Latvijā nav reģistrēts.",
+      "expectCodes": ["csdd_foreign_mileage", "entry_error_as_rollback"]
+    },
+    {
+      "id": "csdd-good",
+      "field": "source",
+      "focus": "CSDD",
+      "text": "CSDD datos auto Latvijā nav reģistrēts. Fiksēts odometra rādījums 211 988 km bez datuma.",
+      "expectNone": ["csdd_foreign_mileage", "entry_error_as_rollback", "canonical_rollback_omitted"]
+    },
+    {
+      "id": "mileage-entry-error-as-rollback",
+      "field": "mileage",
+      "text": "Nobraukums samazinājās no 195 431 km (20.06.2021) līdz 179 862 km (18.07.2022), tas ir kritums par 15 569 km.",
+      "expectCodes": ["entry_error_as_rollback"]
+    },
+    {
+      "id": "mileage-one-neutral-sentence",
+      "field": "mileage",
+      "text": "Nobraukums no 2018. līdz 2023. gadam pieaug vienmērīgi. Viens CarVertical rādījums (18.07.2022, 179 862 km) neatbilst pārējai secībai un, visticamāk, ir ievades kļūda.",
+      "expectNone": ["entry_error_as_rollback", "canonical_rollback_omitted"]
+    },
+    {
+      "id": "dealer-broken-heading",
+      "field": "source_dealer",
+      "text": "Eļļas maiņas intervāli\nun faktiskā vēsture\nRažotāja intervāls: 30 000 km / 24 mēn. Dīlera datos maiņas ik pēc 20 000 līdz 28 000 km.",
+      "expectCodes": ["heading_fragment"]
+    },
+    {
+      "id": "usd-and-cc-vin",
+      "field": "source",
+      "focus": "IZSOĻU PORTĀLU ARHĪVS",
+      "text": "CC.VIN datos fiksēta izsole ar summu 12 400 USD.",
+      "expectCodes": ["usd_currency", "vocabulary_cc_vin"]
+    },
+    {
+      "id": "photo-paraphrased",
+      "field": "generic",
+      "text": "Sludinājuma fotogrāfijās būtiski vizuālie defekti netika novēroti, stāvoklis atbilst vecumam.",
+      "expectCodes": ["photo_template_mismatch"]
+    },
+    {
+      "id": "photo-exact",
+      "field": "generic",
+      "text": "Virspusēji izvērtējot sludinājuma fotogrāfijas, būtiski vizuālie defekti netika novēroti. Redzamas tikai deklarētajam vecumam un nobraukumam pieļaujamas lietošanas pazīmes.",
+      "expectNone": ["photo_template_mismatch"]
+    }
+  ]
+}

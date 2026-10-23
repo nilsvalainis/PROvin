@@ -2,6 +2,7 @@
  * Deterministic quality checks for PROVIN expert AI comments (no API calls).
  * Used by golden fixtures and as a regression harness when prompts change.
  */
+import { LISTING_PHOTO_NO_DEFECTS_TEXT } from "@/lib/admin-listing-photo-comment-presets";
 import {
   findBannedVocabularyHits,
   findForbiddenPersonaNounHits,
@@ -182,6 +183,20 @@ export function evaluateExpertCommentQuality(
     issues.push({
       code: "vocabulary_automobilis",
       message: 'Nedrīkst lietot „automobīlis” — izmanto „automašīna”',
+    });
+  }
+
+  if (photoTemplateMismatch(t)) {
+    issues.push({
+      code: "photo_template_mismatch",
+      message: "Foto bez būtiskiem defektiem - lieto tieši apstiprināto tekstu (poga „Nav vizuālo defektu”)",
+    });
+  }
+
+  if (findHeadingFragments(t).length > 0) {
+    issues.push({
+      code: "heading_fragment",
+      message: "Virsraksta rinda sākas ar mazo burtu - virsraksts pārgriezts",
     });
   }
 
@@ -507,7 +522,13 @@ export function evaluateExpertCommentQuality(
         focusSourceLabel: focus.label,
         focusSourceText: focus.text,
       })) {
-        if (flag.level !== "E") continue;
+        if (flag.level !== "E") {
+          // Tikai karodziņš (bez maksas atkārtojuma): kods bez „canonical_” prefiksa.
+          if (EVAL_ONLY_FACT_FLAG_KINDS.has(flag.kind) && !issues.some((i) => i.code === flag.kind)) {
+            issues.push({ code: flag.kind, message: flag.message });
+          }
+          continue;
+        }
         issues.push({
           code: `canonical_${flag.kind}`,
           message: flag.message,
@@ -539,6 +560,36 @@ export function evaluateExpertCommentQuality(
   );
 
   return issues;
+}
+
+/** Faktu lapas W karodziņi, kurus eval rāda kā problēmu (nekad neiedarbina atkārtojumu). */
+const EVAL_ONLY_FACT_FLAG_KINDS = new Set(["entry_error_as_rollback", "csdd_foreign_mileage"]);
+
+const PHOTO_NO_DEFECTS_CLAIM_RE =
+  /(?:būtisk\p{L}*\s+)?vizuāl\p{L}*\s+defekt\p{L}*\s+netika\s+(?:novērot|fiksēt|konstatēt)|netika\s+(?:novērot|fiksēt|konstatēt)\p{L}*\s+būtisk\p{L}*\s+vizuāl/iu;
+
+/**
+ * Foto „bez būtiskiem defektiem” jābūt tieši Nila tekstam (poga / ✨ bez modeļa).
+ * Pārfrāzēta versija = `photo_template_mismatch` (tikai eval).
+ */
+export function photoTemplateMismatch(text: string): boolean {
+  const t = (text ?? "").replace(/\s+/g, " ").trim();
+  if (!PHOTO_NO_DEFECTS_CLAIM_RE.test(t)) return false;
+  return !t.includes(LISTING_PHOTO_NO_DEFECTS_TEXT);
+}
+
+/** Virsraksta rinda, kas sākas ar mazo burtu (pārgriezts garāks virsraksts). */
+export function findHeadingFragments(text: string): string[] {
+  const out: string[] = [];
+  for (const block of (text ?? "").split(/\n\s*\n/)) {
+    const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (lines.length < 2) continue;
+    for (const line of lines.slice(0, 2)) {
+      if (line.length > 90 || /[.!?:]$/.test(line)) continue;
+      if (/^\p{Ll}/u.test(line)) out.push(line);
+    }
+  }
+  return out;
 }
 
 /** Avota komentāra prompts: fokusa avota nosaukums un tā datu bloks. */
