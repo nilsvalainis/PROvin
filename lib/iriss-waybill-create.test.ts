@@ -187,6 +187,8 @@ describe("Aivars create_waybill action", () => {
       autoDisabled: false,
       tradeAct: false,
       representative: "",
+      stage: "",
+      stageAt: "",
     };
     const action = toAivarsCreateWaybillAction(request);
     expect(action.action).toBe(AIVARS_ACTION_CREATE_WAYBILL);

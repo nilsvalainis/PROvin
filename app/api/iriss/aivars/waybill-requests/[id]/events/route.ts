@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { irissAivarsApiTokenConfigured, verifyIrissAivarsApiToken } from "@/lib/iriss-aivars-api-token";
 import { toAivarsCreateWaybillAction } from "@/lib/iriss-waybill-create";
-import { isWaybillRequestEventKind } from "@/lib/iriss-waybill-requests";
+import { isWaybillRequestEventKind, isWaybillWorkerStage } from "@/lib/iriss-waybill-requests";
 import { appendWaybillRequestEvent } from "@/lib/iriss-waybill-requests-store";
 
 export const runtime = "nodejs";
@@ -17,7 +17,15 @@ export async function POST(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { id } = await ctx.params;
-  let body: { kind?: unknown; text?: unknown; waybillNo?: unknown; pdfUrl?: unknown; errorReason?: unknown; by?: unknown };
+  let body: {
+    kind?: unknown;
+    text?: unknown;
+    waybillNo?: unknown;
+    pdfUrl?: unknown;
+    errorReason?: unknown;
+    by?: unknown;
+    stage?: unknown;
+  };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -37,6 +45,8 @@ export async function POST(req: Request, ctx: Ctx) {
     pdfUrl: typeof body.pdfUrl === "string" ? body.pdfUrl : "",
     errorReason: typeof body.errorReason === "string" ? body.errorReason : "",
     by: body.by === "auto" ? "auto" : "aivars",
+    // Automātikas solis (VPN, forma, Saglabāt, PDF): UI rāda tikai šos reālos soļus.
+    stage: isWaybillWorkerStage(body.stage) ? body.stage : undefined,
   });
   if (!request) return NextResponse.json({ error: "not_found" }, { status: 404 });
   return NextResponse.json(

@@ -4,6 +4,7 @@ import {
   classifyWaybillForAuto,
   hiddenFromAivars,
   isStandardWaybillComment,
+  plateTakenByOtherRequest,
 } from "@/lib/iriss-waybill-auto";
 import { toAivarsCreateWaybillAction } from "@/lib/iriss-waybill-create";
 import type { WaybillRequest } from "@/lib/iriss-waybill-requests";
@@ -40,14 +41,30 @@ const req = (over: Partial<WaybillRequest> = {}): WaybillRequest => ({
   autoDisabled: false,
   tradeAct: false,
   representative: "",
+  stage: "",
+  stageAt: "",
   ...over,
 });
 
-const free = { plateBusyNow: false };
+const NOW = Date.parse("2026-10-22T18:00:30.000Z");
+const free = { plateBusyNow: false, nowMs: NOW };
+/** Nila reālā plūsma: pieņemts auto, 1 h, tikai laiks + pārstāvis, bez maršruta. */
+const tradeReq = (over: Partial<WaybillRequest> = {}) =>
+  req({
+    vehicle: { brandModel: "Peugeot 5008", vin: "VF30ARHHAAS201388", plate: "B1937", orderId: "" },
+    routeFrom: "",
+    routeTo: "",
+    validHours: 1,
+    validDays: 1,
+    validUntil: "2026-10-22T19:00:00.000Z",
+    tradeAct: true,
+    representative: "Nils Valainis",
+    ...over,
+  });
 
 describe("classifyWaybillForAuto", () => {
   it("accepts the standard request and maps the CSDD context", () => {
-    expect(classifyWaybillForAuto(req(), free)).toEqual({ standard: true, plate: "B193-7", company: "iriss", ctx: "ctx1" });
+    expect(classifyWaybillForAuto(req(), free)).toEqual({ standard: true, plate: "B193-7", company: "iriss", ctx: "ctx1", flow: "new" });
     expect(classifyWaybillForAuto(req({ vehicle: { brandModel: "Audi A4", vin: "", plate: "B1927", orderId: "" } }), free)).toMatchObject(
       { standard: true, company: "dzintarzeme", ctx: "ctx2" },
     );
@@ -55,19 +72,57 @@ describe("classifyWaybillForAuto", () => {
 
   it("a busy plate is never standard (confirmBusy at create or busy now)", () => {
     expect(classifyWaybillForAuto(req({ plateBusyAtCreate: true }), free)).toEqual({ standard: false, reason: "numurs aizņemts" });
-    expect(classifyWaybillForAuto(req(), { plateBusyNow: true })).toEqual({ standard: false, reason: "numurs aizņemts" });
+    expect(classifyWaybillForAuto(req(), { plateBusyNow: true, nowMs: NOW })).toEqual({ standard: false, reason: "numurs aizņemts" });
   });
 
-  it("leaves other hours, routes, retries and released jobs to Aivars", () => {
-    expect(classifyWaybillForAuto(req({ validHours: 24 }), free).standard).toBe(false);
+  it("accepts Nils's real flows: accepted car (1 h, time + representative, no route) and new waybill with any hours", () => {
+    expect(classifyWaybillForAuto(tradeReq(), free)).toEqual({ standard: true, plate: "B193-7", company: "iriss", ctx: "ctx1", flow: "tradeAct" });
+    expect(classifyWaybillForAuto(req({ validHours: 1, validUntil: "2026-10-22T19:00:00.000Z" }), free)).toMatchObject({ standard: true, flow: "new" });
+    expect(classifyWaybillForAuto(req({ validHours: 12 }), free)).toMatchObject({ standard: true, flow: "new" });
+    expect(
+      classifyWaybillForAuto(tradeReq({ vehicle: { brandModel: "Audi A4", vin: "WAUZZZ8K0BA000001", plate: "B1927", orderId: "" }, representative: "Taivo Batiņš" }), free),
+    ).toMatchObject({ standard: true, company: "dzintarzeme", ctx: "ctx2", flow: "tradeAct" });
+  });
+
+  it("accepted car stays with Aivars without VIN or with another representative ('Cits')", () => {
+    expect(classifyWaybillForAuto(tradeReq({ vehicle: { brandModel: "Peugeot 5008", vin: "", plate: "B1937", orderId: "" } }), free)).toEqual({
+      standard: false,
+      reason: "aktam vajag VIN",
+    });
+    expect(classifyWaybillForAuto(tradeReq({ representative: "Jānis Bērziņš" }), free)).toEqual({ standard: false, reason: "cits pārstāvis" });
+    // Dzintarzemes numuram ĪRISS pārstāvis neder.
+    expect(
+      classifyWaybillForAuto(tradeReq({ vehicle: { brandModel: "Audi A4", vin: "WAUZZZ8K0BA000001", plate: "B1927", orderId: "" } }), free).standard,
+    ).toBe(false);
+  });
+
+  it("an expired pending request or a plate already in another job is never auto", () => {
+    expect(classifyWaybillForAuto(tradeReq(), { ...free, nowMs: Date.parse("2026-10-22T19:00:01.000Z") })).toEqual({
+      standard: false,
+      reason: "termiņš beidzies",
+    });
+    expect(classifyWaybillForAuto(req(), { ...free, plateInOtherRequest: true })).toEqual({ standard: false, reason: "numurs jau citā darbā" });
+  });
+
+  it("plateTakenByOtherRequest: another job in progress or a fresh issued waybill on the same plate", () => {
+    const me = req({ id: "wbr_me" });
+    const working = req({ id: "wbr_w", status: "in_progress", pickedAt: "2026-10-22T18:00:10.000Z" });
+    const issued = req({ id: "wbr_i", status: "issued", validUntil: "2026-10-23T18:00:00.000Z" });
+    const oldIssued = req({ id: "wbr_o", status: "issued", validUntil: "2026-10-21T18:00:00.000Z" });
+    const otherPlate = req({ id: "wbr_p", status: "in_progress", pickedAt: "2026-10-22T18:00:10.000Z", vehicle: { brandModel: "X", vin: "", plate: "B7627", orderId: "" } });
+    expect(plateTakenByOtherRequest([me, working], me, NOW)).toBe(true);
+    expect(plateTakenByOtherRequest([me, issued], me, NOW)).toBe(true);
+    expect(plateTakenByOtherRequest([me, oldIssued, otherPlate, req({ id: "wbr_c", status: "cancelled" })], me, NOW)).toBe(false);
+  });
+
+  it("leaves own routes, invalid hours, retries, cancelled and released jobs to Aivars", () => {
+    expect(classifyWaybillForAuto(req({ validHours: 0 }), free).standard).toBe(false);
+    expect(classifyWaybillForAuto(req({ validHours: 3000 }), free).standard).toBe(false);
     expect(classifyWaybillForAuto(req({ routeTo: "Rīga, Brīvības 1" }), free).standard).toBe(false);
+    expect(classifyWaybillForAuto(req({ routeFrom: "Talsi, Lielā iela 5" }), free).standard).toBe(false);
     expect(classifyWaybillForAuto(req({ attempts: 2 }), free).standard).toBe(false);
     expect(classifyWaybillForAuto(req({ autoDisabled: true }), free).standard).toBe(false);
-    // Pavadzīme no tirdzniecības akta - vienmēr Aivaram, automātika to nedara.
-    expect(classifyWaybillForAuto(req({ tradeAct: true, representative: "Nils Valainis" }), free)).toEqual({
-      standard: false,
-      reason: "tirdzniecības akts",
-    });
+    expect(classifyWaybillForAuto(req({ status: "cancelled" }), free).standard).toBe(false);
     expect(classifyWaybillForAuto(req({ status: "in_progress" }), free).standard).toBe(false);
     expect(classifyWaybillForAuto(req({ vehicle: { brandModel: "BMW", vin: "", plate: "AB1234", orderId: "" } }), free).standard).toBe(
       false,
@@ -101,8 +156,13 @@ function autoJob(over: Partial<WaybillRequest> = {}) {
   return { ...toAivarsCreateWaybillAction(r), auto: classifyWaybillForAuto(r, free) };
 }
 
+function tradeJob(over: Partial<WaybillRequest> = {}) {
+  const r = tradeReq(over);
+  return { ...toAivarsCreateWaybillAction(r), auto: classifyWaybillForAuto(r, free) };
+}
+
 function deps(over: Record<string, unknown> = {}) {
-  let t = Date.parse("2026-10-22T18:00:05.000Z");
+  let t = Date.parse("2026-10-22T18:00:35.000Z");
   return {
     api: {
       claim: vi.fn(async () => true),
@@ -111,6 +171,7 @@ function deps(over: Record<string, unknown> = {}) {
       release: vi.fn(async () => {}),
     },
     vpnLease: vi.fn(async () => {}),
+    vpnRelease: vi.fn(async () => {}),
     runScript: vi.fn(async (step: string, _input?: unknown) =>
       step === "fill"
         ? { ok: true, fields: { plate: "B193-7", validHours: 48 } }
@@ -149,9 +210,47 @@ describe("waybill worker (scripts/iriss-ttr)", () => {
   });
 
   it("re-checks locally even if the server marked the job standard", () => {
-    expect(localStandardCheck({ ...autoJob(), validHours: 72 }).ok).toBe(false);
-    expect(localStandardCheck({ ...autoJob(), comment_untrusted: "anulē veco" }).ok).toBe(false);
-    expect(localStandardCheck(autoJob()).ok).toBe(true);
+    expect(localStandardCheck({ ...autoJob(), validHours: 3000 }, NOW).ok).toBe(false);
+    expect(localStandardCheck({ ...autoJob(), comment_untrusted: "anulē veco" }, NOW).ok).toBe(false);
+    expect(localStandardCheck({ ...autoJob(), routeTo: "Rīga" }, NOW).ok).toBe(false);
+    expect(localStandardCheck(autoJob(), NOW)).toEqual({ ok: true, company: "iriss", flow: "new" });
+    expect(localStandardCheck(autoJob({ validHours: 1, validUntil: "2026-10-22T19:00:00.000Z" }), NOW).ok).toBe(true);
+  });
+
+  it("worker core accepts the trade-act job (1 h, no route) and rejects a wrong representative, no VIN or expiry", () => {
+    expect(localStandardCheck(tradeJob(), NOW)).toEqual({ ok: true, company: "iriss", flow: "tradeAct" });
+    expect(localStandardCheck({ ...tradeJob(), representative: "Cits Cilvēks" }, NOW).ok).toBe(false);
+    expect(localStandardCheck({ ...tradeJob(), vehicle: { ...tradeJob().vehicle, vin: "" } }, NOW).ok).toBe(false);
+    expect(localStandardCheck({ ...tradeJob(), auto: { ...tradeJob().auto, flow: "new" } }, NOW).ok).toBe(false);
+    expect(localStandardCheck(tradeJob(), Date.parse("2026-10-22T19:00:01.000Z"))).toEqual({ ok: false, reason: "termiņš beidzies" });
+  });
+
+  it("trade-act job: reports real stages, passes flow + representative to the scripts and always releases the VPN lease", async () => {
+    const d = deps({
+      runScript: vi.fn(async (step: string, _input?: unknown) =>
+        step === "fill" ? { ok: true, fields: { plate: "B193-7", validHours: 1 } } : { ok: true, waybillNo: "P02811", pdfPath: "pdf/x.pdf" },
+      ),
+    });
+    const res = await processJob(tradeJob(), d);
+    expect(res.outcome).toBe("issued");
+    const input = (d.runScript.mock.calls[0] as unknown[])[1] as Record<string, unknown>;
+    expect(input).toMatchObject({ flow: "tradeAct", representative: "Nils Valainis", preferTradeAct: true, validHours: 1, vin: "VF30ARHHAAS201388" });
+    const stages = d.api.event.mock.calls.map((c) => (c as unknown[])[1] as { stage?: string }).filter((b) => b.stage).map((b) => b.stage);
+    expect(stages).toEqual(["vpn", "filling", "saving", "pdf"]);
+    expect(d.vpnRelease).toHaveBeenCalledTimes(1);
+  });
+
+  it("releases the VPN lease also when the job fails (before and after save)", async () => {
+    const before = deps({ vpnLease: vi.fn(async () => { throw new Error("vpn_lease_409"); }) });
+    expect((await processJob(autoJob(), before)).outcome).toBe("released");
+    expect(before.vpnRelease).toHaveBeenCalledTimes(1);
+    const after = deps({
+      runScript: vi.fn(async (step: string) =>
+        step === "fill" ? { ok: true, fields: { plate: "B1937", validHours: 48 } } : { ok: false, error: "timeout" },
+      ),
+    });
+    expect((await processJob(autoJob(), after)).outcome).toBe("error_after_save");
+    expect(after.vpnRelease).toHaveBeenCalledTimes(1);
   });
 
   it("issues a standard job: claim -> VPN -> fill -> save -> result, with timings", async () => {
@@ -186,9 +285,11 @@ describe("waybill worker (scripts/iriss-ttr)", () => {
     expect(d.api.result).toHaveBeenCalledWith("wbr_abc123", expect.objectContaining({ ok: false }));
   });
 
-  it("dry-run never claims", async () => {
+  it("dry-run never claims and never touches the VPN", async () => {
     const d = deps({ dryRun: true });
     expect((await processJob(autoJob(), d)).outcome).toBe("dry_run");
     expect(d.api.claim).not.toHaveBeenCalled();
+    expect(d.vpnLease).not.toHaveBeenCalled();
+    expect(d.vpnRelease).not.toHaveBeenCalled();
   });
 });

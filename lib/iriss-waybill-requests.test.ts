@@ -3,6 +3,8 @@ import {
   inProgressIsStale,
   isStaleWaybillRequest,
   parseWaybillRequest,
+  pendingWaybillRequests,
+  waybillRequestCancellable,
   remainingWaybillDays,
   waybillAivarsReply,
   waybillChatPayload,
@@ -38,6 +40,8 @@ const sample = (over: Partial<WaybillRequest> = {}): WaybillRequest => ({
   autoDisabled: false,
   tradeAct: false,
   representative: "",
+  stage: "",
+  stageAt: "",
   ...over,
 });
 
@@ -171,5 +175,55 @@ describe("novecojuši pieprasījumi (24 h bez virzības)", () => {
     const raw = { ...sample(), tradeAct: true, representative: "Taivo Batiņš" };
     expect(parseWaybillRequest(raw)).toMatchObject({ tradeAct: true, representative: "Taivo Batiņš" });
     expect(parseWaybillRequest({ ...sample(), representative: "X" })).toMatchObject({ tradeAct: false, representative: "" });
+  });
+});
+
+describe("honest status (cancel, test mode, expiry)", () => {
+  const nowMs = Date.parse("2026-10-23T12:30:00.000Z");
+  const q = (over: Partial<WaybillRequest> = {}) =>
+    sample({ createdAt: "2026-10-23T12:00:00.000Z", updatedAt: "2026-10-23T12:00:00.000Z", validUntil: "2026-10-23T13:00:00.000Z", ...over });
+
+  it("cancellable only while queued and unclaimed", () => {
+    expect(waybillRequestCancellable(q())).toBe(true);
+    expect(waybillRequestCancellable(q({ pickedBy: "aivars" }))).toBe(false);
+    for (const status of ["in_progress", "issued", "error", "cancelled"] as const) {
+      expect(waybillRequestCancellable(q({ status }))).toBe(false);
+    }
+  });
+
+  it("reply text: test mode, live automation, expired, cancelled and real worker stage", () => {
+    const test = { mode: "test" as const, isStandard: () => true };
+    const live = { mode: "live" as const, isStandard: () => true };
+    expect(waybillAivarsReply(q(), [], nowMs, test)).toMatchObject({
+      text: "Automātika testa režīmā - pavadzīmi izraksta Aivars ar roku",
+      autoMode: "test",
+      autoStandard: true,
+    });
+    expect(waybillAivarsReply(q(), [], nowMs, live).text).toBe("Rindā automātikai. Sāks pēc brīža.");
+    expect(waybillAivarsReply(q({ validUntil: "2026-10-23T12:10:00.000Z" }), [], nowMs, live)).toMatchObject({
+      text: "Termiņš beidzies - atcel un izveido jaunu",
+      expired: true,
+    });
+    expect(waybillAivarsReply(q({ status: "cancelled" }), [], nowMs)).toMatchObject({ statusLabel: "Atcelts", text: "Atcelts." });
+    expect(waybillAivarsReply(q({ status: "in_progress", pickedAt: "2026-10-23T12:29:00.000Z", stage: "saving" }), [], nowMs)).toMatchObject({
+      statusLabel: "Izveido",
+      text: "Saglabā CSDD...",
+      stage: "saving",
+    });
+  });
+
+  it("parses cancelled status and worker stage; unknown stage is dropped", () => {
+    expect(parseWaybillRequest({ ...sample(), status: "cancelled", stage: "vpn" })).toMatchObject({ status: "cancelled", stage: "vpn" });
+    expect(parseWaybillRequest({ ...sample(), stage: "partraukt" })?.stage).toBe("");
+  });
+
+  it("pending list skips cancelled, stale and expired requests", () => {
+    const rows = [
+      q({ id: "wbr_ok" }),
+      q({ id: "wbr_cx", status: "cancelled" }),
+      q({ id: "wbr_exp", validUntil: "2026-10-23T12:10:00.000Z" }),
+      q({ id: "wbr_old", createdAt: "2026-10-22T10:00:00.000Z", updatedAt: "2026-10-22T10:00:00.000Z" }),
+    ];
+    expect(pendingWaybillRequests(rows, nowMs).map((r) => r.id)).toEqual(["wbr_ok"]);
   });
 });

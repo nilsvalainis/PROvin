@@ -2,6 +2,10 @@ import "server-only";
 
 import { readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
 import { displayDealerPlate, waybillPlateOccupancy } from "@/lib/iriss-waybill-plates";
+import { autoWaybillEnabled, classifyWaybillForAuto, plateTakenByOtherRequest } from "@/lib/iriss-waybill-auto";
+import type { WaybillAutoContext, WaybillRequestsDoc } from "@/lib/iriss-waybill-requests";
+import { waybillWorkerLive } from "@/lib/iriss-ttr-control";
+import { readTtrControlDoc } from "@/lib/iriss-ttr-control-store";
 
 /**
  * Aizņemtie numuri tieši tagad. Ja nevar nolasīt, visi skaitās aizņemti:
@@ -19,4 +23,44 @@ export async function busyWaybillPlatesNow(): Promise<(plate: string) => boolean
     console.error("[iriss-waybill] auto_plates_failed", err instanceof Error ? err.message : err);
     return () => true;
   }
+}
+
+/** Admin poll ik 3 s: worker sirdspukstu lasa ne biežāk kā reizi 30 s (Blob lasījumu taupība). */
+const LIVE_CACHE_MS = 30_000;
+let liveCache: { at: number; live: boolean } | null = null;
+
+/** Automātika tiešām izraksta: Vercel IRISS_WAYBILL_AUTO=1 un worker ziņo live režīmu pēdējās 10 min. */
+export async function autoWaybillLiveNow(nowMs = Date.now()): Promise<boolean> {
+  if (!autoWaybillEnabled()) return false;
+  if (liveCache && Math.abs(nowMs - liveCache.at) < LIVE_CACHE_MS) return liveCache.live;
+  try {
+    const live = waybillWorkerLive(await readTtrControlDoc(), nowMs);
+    liveCache = { at: nowMs, live };
+    return live;
+  } catch (err) {
+    console.error("[iriss-waybill] auto_live_failed", err instanceof Error ? err.message : err);
+    return false;
+  }
+}
+
+/**
+ * Automātikas konteksts admin atbildēm: "live" tikai, ja Vercel IRISS_WAYBILL_AUTO=1 UN Hetzner worker ziņo
+ * īsto režīmu (IRISS_WAYBILL_WORKER_LIVE=1) pēdējās 10 min. Citādi "test": izraksta Aivars ar roku.
+ */
+export async function waybillAutoContext(
+  doc: WaybillRequestsDoc,
+  isBusy?: (plate: string) => boolean,
+  nowMs = Date.now(),
+): Promise<WaybillAutoContext> {
+  const mode = (await autoWaybillLiveNow(nowMs)) ? "live" : "test";
+  const busy = isBusy ?? (await busyWaybillPlatesNow());
+  return {
+    mode,
+    isStandard: (request) =>
+      classifyWaybillForAuto(request, {
+        plateBusyNow: busy(request.vehicle.plate),
+        plateInOtherRequest: plateTakenByOtherRequest(doc.requests, request, nowMs),
+        nowMs,
+      }).standard,
+  };
 }

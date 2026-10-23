@@ -28,9 +28,14 @@ const job = {
   validFrom: "2026-10-22T10:00:00.000Z",
   validUntil: "2026-10-24T10:00:00.000Z",
   validHours: 48,
+  // Pieņemts auto: akts -> "Noformēt pavadzīmi".
+  tradeAct: true,
+  representative: "Nils Valainis",
 };
 // Tā pati ievade, ko worker nodod caur IRISS_JOB_JSON.
 const workerInput = () => scriptInput(job);
+// Jauna pavadzīme (nav pieņemts tirdzniecībā).
+const newWaybillInput = () => scriptInput({ ...job, tradeAct: false, representative: "" });
 
 /** CSDD formas imitācija: atceras ievadītās vērtības, skaita Saglabāt klikšķus. */
 function mockDriver(over: Record<string, unknown> = {}) {
@@ -109,7 +114,12 @@ describe("aizsardzība: nekad nepārtrauc / neanulē", () => {
 describe("ievade un lauki", () => {
   it("accepts the worker's IRISS_JOB_JSON and rejects broken input", () => {
     const input = parseJobInput(JSON.stringify(workerInput()));
-    expect(input).toMatchObject({ jobId: "wbr_abc123", validHours: 48, ctx: 1, preferTradeAct: true });
+    expect(input).toMatchObject({ jobId: "wbr_abc123", validHours: 48, ctx: 1, preferTradeAct: true, flow: "tradeAct", representative: "Nils Valainis" });
+    expect(parseJobInput(newWaybillInput())).toMatchObject({ flow: "new", preferTradeAct: false, representative: "" });
+    // 1 h pieprasījums der (Nila reālā plūsma); akta darbam vajag VIN un pārstāvi.
+    expect(parseJobInput({ ...workerInput(), validHours: 1, validUntil: "2026-10-22T11:00:00.000Z" }).validHours).toBe(1);
+    expect(() => parseJobInput({ ...workerInput(), vin: "" })).toThrow("VIN");
+    expect(() => parseJobInput({ ...workerInput(), representative: "" })).toThrow("pārstāvi");
     expect(() => parseJobInput("{")).toThrow();
     expect(() => parseJobInput({ ...workerInput(), jobId: "../etc" })).toThrow("jobId");
     expect(() => parseJobInput({ ...workerInput(), validUntil: "2026-10-23T10:00:00.000Z" })).toThrow("derīgum");
@@ -141,12 +151,24 @@ describe("refill.js", () => {
     expect(driver.close).toHaveBeenCalledWith({ keepPage: true });
   });
 
-  it("opens a new waybill when there is no VIN or no act", async () => {
-    const driver = mockDriver({ openFromTradeAct: vi.fn(async () => false) });
-    const out = await runRefill({ input: parseJobInput(workerInput()), ledger: createLedger(dir), driver });
+  it("a new waybill (not accepted in trade) opens the new form directly", async () => {
+    const driver = mockDriver();
+    const out = await runRefill({ input: parseJobInput(newWaybillInput()), ledger: createLedger(dir), driver });
     expect(out.ok).toBe(true);
     expect(out.fields?.mode).toBe("new");
+    expect(driver.openFromTradeAct).not.toHaveBeenCalled();
     expect(driver.openNewWaybill).toHaveBeenCalledTimes(1);
+  });
+
+  it("accepted car without a trade act: error, never a new waybill instead", async () => {
+    const driver = mockDriver({ openFromTradeAct: vi.fn(async () => false) });
+    const out = await runRefill({ input: parseJobInput(workerInput()), ledger: createLedger(dir), driver }).catch((e: Error) => ({
+      ok: false as const,
+      error: e.message,
+    }));
+    expect(out).toMatchObject({ ok: false, error: expect.stringContaining("akts nav atrasts") });
+    expect(driver.openNewWaybill).not.toHaveBeenCalled();
+    expect(driver.clickSave).not.toHaveBeenCalled();
   });
 
   it("fails without saving when the form shows different values", async () => {

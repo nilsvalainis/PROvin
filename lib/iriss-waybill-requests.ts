@@ -1,4 +1,4 @@
-export const WAYBILL_REQUEST_STATUSES = ["queued", "in_progress", "issued", "error"] as const;
+export const WAYBILL_REQUEST_STATUSES = ["queued", "in_progress", "issued", "error", "cancelled"] as const;
 export type WaybillRequestStatus = (typeof WAYBILL_REQUEST_STATUSES)[number];
 
 export const WAYBILL_REQUEST_EVENT_KINDS = [
@@ -7,6 +7,7 @@ export const WAYBILL_REQUEST_EVENT_KINDS = [
   "issued",
   "error",
   "message",
+  "cancelled",
 ] as const;
 export type WaybillRequestEventKind = (typeof WAYBILL_REQUEST_EVENT_KINDS)[number];
 
@@ -15,7 +16,32 @@ export const WAYBILL_REQUEST_STATUS_LABEL: Record<WaybillRequestStatus, string> 
   in_progress: "Izveido",
   issued: "Izdota",
   error: "Kļūda",
+  cancelled: "Atcelts",
 };
+
+/**
+ * Automātikas (Hetzner worker) reālais solis darbā. Tukšs = nav zināms (piem. Aivars ar roku).
+ * Worker to ziņo ar `events {kind:"message", stage}`; UI rāda tikai šos soļus, bez izdomātiem procentiem.
+ */
+export const WAYBILL_WORKER_STAGES = ["claimed", "vpn", "filling", "saving", "pdf"] as const;
+export type WaybillWorkerStage = (typeof WAYBILL_WORKER_STAGES)[number];
+
+export const WAYBILL_WORKER_STAGE_TEXT: Record<WaybillWorkerStage, string> = {
+  claimed: "Automātika paņēma darbā.",
+  vpn: "Pieslēdzas CSDD (VPN)...",
+  filling: "Aizpilda CSDD formu...",
+  saving: "Saglabā CSDD...",
+  pdf: "Saglabāta CSDD, ielādē PDF...",
+};
+
+export function isWaybillWorkerStage(value: unknown): value is WaybillWorkerStage {
+  return typeof value === "string" && (WAYBILL_WORKER_STAGES as readonly string[]).includes(value);
+}
+
+export const WAYBILL_EXPIRED_PENDING_TEXT = "Termiņš beidzies - atcel un izveido jaunu";
+export const WAYBILL_AUTO_TEST_MODE_TEXT = "Automātika testa režīmā - pavadzīmi izraksta Aivars ar roku";
+export const WAYBILL_AUTO_QUEUED_TEXT = "Rindā automātikai. Sāks pēc brīža.";
+export const WAYBILL_CANCELLED_TEXT = "Atcelts.";
 
 export type WaybillRequestVehicle = {
   brandModel: string;
@@ -67,6 +93,9 @@ export type WaybillRequest = {
   tradeAct: boolean;
   /** Komersanta pārstāvis akta pavadzīmei. */
   representative: string;
+  /** Automātikas pēdējais solis (tikai kamēr darbā; sk. WAYBILL_WORKER_STAGES). */
+  stage: WaybillWorkerStage | "";
+  stageAt: string;
 };
 
 export type WaybillRequestsDoc = {
@@ -146,6 +175,8 @@ export function parseWaybillRequest(raw: unknown): WaybillRequest | null {
     autoDisabled: o.autoDisabled === true,
     tradeAct: o.tradeAct === true,
     representative: o.tradeAct === true ? str(o.representative, 60) : "",
+    stage: isWaybillWorkerStage(o.stage) ? o.stage : "",
+    stageAt: str(o.stageAt, 40),
   };
 }
 
@@ -212,6 +243,34 @@ export function inProgressIsStale(req: WaybillRequest, nowMs = Date.now()): bool
   return Number.isFinite(t) && nowMs - t > WAYBILL_IN_PROGRESS_STALE_MS;
 }
 
+/** "Atcelt" drīkst tikai pieprasījumam, ko neviens vēl nav paņēmis (Gaida, bez pickedBy). */
+export function waybillRequestCancellable(req: Pick<WaybillRequest, "status" | "pickedBy">): boolean {
+  return req.status === "queued" && !req.pickedBy;
+}
+
+/** Vēl gaida, bet pieprasītais derīguma beigu laiks jau pagājis: tādu vairs neizraksta (ne automātika, ne Aivars). */
+export function waybillPendingExpired(
+  req: Pick<WaybillRequest, "status" | "validUntil">,
+  nowMs = Date.now(),
+): boolean {
+  if (req.status !== "queued") return false;
+  const until = Date.parse(req.validUntil);
+  return Number.isFinite(until) && until <= nowMs;
+}
+
+/**
+ * Darbi Aivaram / automātikai. Novecojušos (24 h bez virzības) un tos, kam pieprasītais termiņš jau beidzies,
+ * vairs nerāda: vecs pieprasījums nedrīkst pēkšņi kļūt par pavadzīmi. Atceltie nekad nav rindā.
+ */
+export function pendingWaybillRequests(requests: readonly WaybillRequest[], nowMs = Date.now()): WaybillRequest[] {
+  return requests.filter(
+    (r) =>
+      (r.status === "queued" || inProgressIsStale(r, nowMs)) &&
+      !isStaleWaybillRequest(r, nowMs) &&
+      !waybillPendingExpired(r, nowMs),
+  );
+}
+
 /**
  * Gaida vai Izveido, bet bez jebkādas virzības (pēdējās izmaiņas) ilgāk par 24 h.
  * Šādu pieprasījumu vairs neņem darbā un nerāda kā tagadēju; ierakstu nemaina un nedzēš.
@@ -246,7 +305,35 @@ export type WaybillAivarsReply = {
   waybillNo: string;
   pdfUrl: string;
   at: string;
+  /** Automātikas solis (tikai Izveido). */
+  stage?: WaybillWorkerStage | "";
+  /** Gaida, bet termiņš jau beidzies. */
+  expired?: boolean;
+  /** "live" = automātika ieslēgta un worker strādā īstajā režīmā; "test" = izraksta Aivars ar roku. */
+  autoMode?: WaybillAutoMode;
+  /** Gaidošo šis darbs ir automātikai (standarta pēc lib/iriss-waybill-auto.ts). */
+  autoStandard?: boolean;
 };
+
+export type WaybillAutoMode = "live" | "test";
+
+/** Automātikas konteksts atbildēm (serveris: env + worker sirdspuksts + klasifikācija). */
+export type WaybillAutoContext = {
+  mode: WaybillAutoMode;
+  isStandard: (request: WaybillRequest) => boolean;
+};
+
+/** Godīgs teksts gaidošam pieprasījumam (bez procentiem). */
+export function waybillQueuedText(input: {
+  expired: boolean;
+  autoMode?: WaybillAutoMode;
+  autoStandard?: boolean;
+}): string {
+  if (input.expired) return WAYBILL_EXPIRED_PENDING_TEXT;
+  if (input.autoMode === "test") return WAYBILL_AUTO_TEST_MODE_TEXT;
+  if (input.autoMode === "live" && input.autoStandard) return WAYBILL_AUTO_QUEUED_TEXT;
+  return "";
+}
 
 const AIVARS_REPLY_KINDS = new Set<WaybillRequestEventKind>(["issued", "error", "message", "in_progress"]);
 
@@ -254,15 +341,23 @@ export function waybillAivarsReply(
   request: WaybillRequest,
   events: WaybillRequestEvent[],
   nowMs = Date.now(),
+  auto?: WaybillAutoContext,
 ): WaybillAivarsReply {
   const mine = events.filter((event) => event.requestId === request.id);
   const last =
     [...mine].reverse().find((event) => AIVARS_REPLY_KINDS.has(event.kind)) ?? mine[mine.length - 1] ?? null;
   const stale = isStaleWaybillRequest(request, nowMs);
   const queuedFallback = request.status === "queued" ? "Gaida Aivaru." : "";
+  const expired = waybillPendingExpired(request, nowMs);
+  const autoStandard = request.status === "queued" && auto ? auto.isStandard(request) : undefined;
+  const queuedHonest =
+    request.status === "queued" ? waybillQueuedText({ expired, autoMode: auto?.mode, autoStandard }) : "";
+  const stageText = request.status === "in_progress" && request.stage ? WAYBILL_WORKER_STAGE_TEXT[request.stage] : "";
   const text = stale
     ? "Novecojis: vairāk nekā 24 h bez virzības. Ja vajag, izveido no jauna."
-    : (request.lastReplyText || last?.text || request.errorReason || queuedFallback).trim();
+    : request.status === "cancelled"
+      ? WAYBILL_CANCELLED_TEXT
+      : (queuedHonest || stageText || request.lastReplyText || last?.text || request.errorReason || queuedFallback).trim();
   return {
     requestId: request.id,
     status: request.status,
@@ -271,10 +366,14 @@ export function waybillAivarsReply(
     waybillNo: request.waybillNo || last?.waybillNo || "",
     pdfUrl: request.pdfUrl || last?.pdfUrl || "",
     at: last?.createdAt || request.updatedAt,
+    stage: request.status === "in_progress" ? request.stage : "",
+    expired,
+    ...(auto ? { autoMode: auto.mode } : {}),
+    ...(autoStandard !== undefined ? { autoStandard } : {}),
   };
 }
 
-export function waybillChatPayload(doc: WaybillRequestsDoc, nowMs = Date.now()): {
+export function waybillChatPayload(doc: WaybillRequestsDoc, nowMs = Date.now(), auto?: WaybillAutoContext): {
   requests: WaybillRequest[];
   events: WaybillRequestEvent[];
   timeline: WaybillChatItem[];
@@ -284,6 +383,6 @@ export function waybillChatPayload(doc: WaybillRequestsDoc, nowMs = Date.now()):
     requests: doc.requests,
     events: doc.events,
     timeline: waybillChatTimeline(doc),
-    replies: doc.requests.map((request) => waybillAivarsReply(request, doc.events, nowMs)),
+    replies: doc.requests.map((request) => waybillAivarsReply(request, doc.events, nowMs, auto)),
   };
 }
