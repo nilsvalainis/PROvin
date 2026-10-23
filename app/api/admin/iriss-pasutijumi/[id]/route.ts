@@ -119,6 +119,7 @@ function parseOffersFromBody(o: Record<string, unknown>): IrissOfferRecord[] {
         commissionFee: typeof r.commissionFee === "string" ? r.commissionFee : "",
         offerValidDays: typeof r.offerValidDays === "string" ? r.offerValidDays : "",
         validUntil: typeof r.validUntil === "string" ? r.validUntil : "",
+        ...(typeof r.validUntilAt === "string" && r.validUntilAt.trim() ? { validUntilAt: r.validUntilAt } : {}),
         attachments: parseOfferAttachments(r.attachments),
         ...(typeof r.coverAttachmentId === "string" && r.coverAttachmentId.trim()
           ? { coverAttachmentId: r.coverAttachmentId }

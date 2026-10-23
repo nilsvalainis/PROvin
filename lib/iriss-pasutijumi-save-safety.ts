@@ -420,3 +420,24 @@ export function irissPasutijumsHasOperatorContent(rec: IrissPasutijumsRecord): b
   ].some((s) => s.trim());
   return links;
 }
+
+/**
+ * Precīzais termiņš (validUntilAt) netiek noņemts ar saglabāšanu, kas to nezina
+ * (piem., vecā pārlūka cilne). Termiņu var tikai mainīt, ne izdzēst.
+ */
+export function retainIrissOfferDeadlines(
+  existing: IrissPasutijumsRecord | null,
+  next: IrissPasutijumsRecord,
+): IrissPasutijumsRecord {
+  if (!existing) return next;
+  const before = new Map(existing.offers.filter((o) => o.validUntilAt).map((o) => [o.id, o.validUntilAt!]));
+  if (before.size === 0) return next;
+  let changed = false;
+  const offers = next.offers.map((o) => {
+    const kept = before.get(o.id);
+    if (!kept || o.validUntilAt) return o;
+    changed = true;
+    return { ...o, validUntilAt: kept };
+  });
+  return changed ? { ...next, offers } : next;
+}
