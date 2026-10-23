@@ -14,13 +14,16 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Star, Trash2, Undo2 } from "lucide-react";
+import { Search, Star, Trash2, Undo2 } from "lucide-react";
+
+import { AdminPhotoLightbox } from "@/components/admin/AdminPhotoLightbox";
 
 import type { IrissOfferAttachment } from "@/lib/iriss-pasutijumi-types";
 import {
   deleteOfferImages,
   moveOfferImage,
   offerImageDeleteToast,
+  offerImageFullSrc,
   offerImageGridSrc,
   resolveOfferCoverId,
   restoreOfferImageSession,
@@ -30,7 +33,9 @@ import {
 } from "@/lib/iriss-offer-image-sorter";
 
 const toolBtn =
-  "inline-flex h-9 items-center gap-1 rounded-full border border-slate-200 bg-white px-3 text-[12px] font-semibold text-[var(--color-apple-text)] disabled:opacity-40";
+  "inline-flex h-10 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 text-[13px] font-semibold text-[var(--color-apple-text)] disabled:opacity-40 sm:flex-none sm:px-3";
+const viewerBtn =
+  "inline-flex h-11 min-w-[120px] items-center justify-center gap-1.5 rounded-xl bg-white/10 px-4 text-[14px] font-semibold text-white transition hover:bg-white/20 disabled:opacity-40";
 
 type Frame = OfferImageFrame<IrissOfferAttachment>;
 
@@ -42,6 +47,7 @@ function SortableOfferThumb({
   disabled,
   onToggle,
   onCover,
+  onOpen,
 }: {
   attachment: IrissOfferAttachment;
   index: number;
@@ -50,6 +56,7 @@ function SortableOfferThumb({
   disabled: boolean;
   onToggle: (id: string) => void;
   onCover: (id: string) => void;
+  onOpen: (id: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: attachment.id,
@@ -74,6 +81,7 @@ function SortableOfferThumb({
       } ${disabled ? "" : "cursor-grab active:cursor-grabbing"}`}
       {...attributes}
       {...(disabled ? {} : listeners)}
+      onClick={() => onOpen(attachment.id)}
     >
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element -- data URL / Blob miniatūra
@@ -127,11 +135,14 @@ export function IrissOfferImageSorter({
   attachments,
   coverId,
   disabled = false,
+  fullSrc,
   onChange,
 }: {
   attachments: IrissOfferAttachment[];
   coverId: string;
   disabled?: boolean;
+  /** Pilnā attēla adrese saglabātām bildēm (ja pārlūkā ir tikai sīktēls). */
+  fullSrc?: (att: IrissOfferAttachment) => string;
   onChange: (next: { attachments: IrissOfferAttachment[]; coverId: string }) => void;
 }) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -139,6 +150,8 @@ export function IrissOfferImageSorter({
   const [undoCount, setUndoCount] = useState(0);
   const [toast, setToast] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [viewId, setViewId] = useState<string | null>(null);
+  const draggedAt = useRef(0);
   const toastTimer = useRef<number | null>(null);
   const cover = resolveOfferCoverId(attachments, coverId);
   const sensors = useSensors(
@@ -220,11 +233,13 @@ export function IrissOfferImageSorter({
   }, [apply, attachments, cover, pushUndo, selectedIds, showToast]);
 
   const onDragStart = useCallback((event: DragStartEvent) => {
+    draggedAt.current = Date.now();
     setActiveId(String(event.active.id));
   }, []);
 
   const onDragEnd = useCallback(
     (event: DragEndEvent) => {
+      draggedAt.current = Date.now();
       setActiveId(null);
       const overId = event.over ? String(event.over.id) : "";
       const active = String(event.active.id);
@@ -238,6 +253,27 @@ export function IrissOfferImageSorter({
   );
 
   const onDragCancel = useCallback(() => setActiveId(null), []);
+  // Pēc vilkšanas pārlūks var atsūtīt "click" - tad skatu neatveram.
+  const onOpen = useCallback((id: string) => {
+    if (Date.now() - draggedAt.current < 400) return;
+    setViewId(id);
+  }, []);
+  const viewIndex = viewId ? attachments.findIndex((att) => att.id === viewId) : -1;
+
+  const onDeleteOne = useCallback(
+    (id: string) => {
+      const next = deleteOfferImages(attachments, cover, [id]);
+      if (next.removed.length === 0) return;
+      pushUndo();
+      setSelectedIds((ids) => ids.filter((x) => x !== id));
+      const idx = attachments.findIndex((att) => att.id === id);
+      const neighbour = next.images[Math.min(idx, next.images.length - 1)];
+      setViewId(neighbour ? neighbour.id : null);
+      apply(next.images, next.coverId);
+      showToast(offerImageDeleteToast(1));
+    },
+    [apply, attachments, cover, pushUndo, showToast],
+  );
   const active = attachments.find((att) => att.id === activeId) ?? null;
   const activeSrc = active ? offerImageGridSrc(active) : "";
 
@@ -245,10 +281,10 @@ export function IrissOfferImageSorter({
 
   return (
     <div className="mt-3">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2">
         <button type="button" className={toolBtn} disabled={disabled || selectedIds.length !== 1} onClick={() => selectedIds[0] && onCover(selectedIds[0])}>
           <Star className="h-3.5 w-3.5" aria-hidden />
-          Vāka foto
+          Vāks
         </button>
         <button type="button" className={toolBtn} disabled={disabled || selectedIds.length === 0} onClick={onDeleteSelected}>
           <Trash2 className="h-3.5 w-3.5" aria-hidden />
@@ -258,9 +294,17 @@ export function IrissOfferImageSorter({
           <Undo2 className="h-3.5 w-3.5" aria-hidden />
           Atsaukt
         </button>
+        <button
+          type="button"
+          className={`${toolBtn.replace("inline-flex ", "")} hidden sm:inline-flex`}
+          onClick={() => setViewId(selectedIds[0] ?? attachments[0]?.id ?? null)}
+        >
+          <Search className="h-3.5 w-3.5" aria-hidden />
+          Skatīt
+        </button>
       </div>
       <p className="mt-2 text-[10px] font-medium text-slate-500">
-        Velc attēlu, lai mainītu secību. Ķeksītis atlasa vairākus. Pirmais ir vāks.
+        Velc attēlu, lai mainītu secību. Ķeksītis atlasa vairākus. Pieskāriens atver lielāku. Pirmais ir vāks.
       </p>
       <DndContext
         sensors={sensors}
@@ -281,6 +325,7 @@ export function IrissOfferImageSorter({
                 disabled={disabled}
                 onToggle={onToggle}
                 onCover={onCover}
+                onOpen={onOpen}
               />
             ))}
           </ul>
@@ -292,6 +337,33 @@ export function IrissOfferImageSorter({
           ) : null}
         </DragOverlay>
       </DndContext>
+      <AdminPhotoLightbox
+        photos={attachments.map((att) => ({
+          id: att.id,
+          src: (att.dataUrl ? "" : fullSrc?.(att)) || offerImageFullSrc(att),
+          thumbSrc: offerImageGridSrc(att),
+        }))}
+        index={viewIndex >= 0 ? viewIndex : null}
+        onIndexChange={(i) => setViewId(attachments[i]?.id ?? null)}
+        onClose={() => setViewId(null)}
+        thumbnails
+        actions={(i) => {
+          const att = attachments[i];
+          if (!att) return null;
+          return (
+            <>
+              <button type="button" className={viewerBtn} disabled={disabled || att.id === cover} onClick={() => onCover(att.id)}>
+                <Star className={`h-4 w-4 ${att.id === cover ? "fill-white" : ""}`} aria-hidden />
+                Vāks
+              </button>
+              <button type="button" className={viewerBtn} disabled={disabled} onClick={() => onDeleteOne(att.id)}>
+                <Trash2 className="h-4 w-4" aria-hidden />
+                Dzēst
+              </button>
+            </>
+          );
+        }}
+      />
       {toast ? (
         <div
           className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-slate-900 px-3 py-2 text-[12px] text-white"

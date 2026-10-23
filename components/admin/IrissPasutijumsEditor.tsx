@@ -850,6 +850,8 @@ export function IrissPasutijumsEditor({
     if (autoOpenOfferDone.current) return;
     if (autoOpenOfferId) {
       const existing = rec.offers.find((o) => o.id === autoOpenOfferId);
+      // Gaida sīktēlus, citādi režģis atveras ar tukšām bildēm.
+      if (existing && !imagesReady) return;
       if (existing) {
         autoOpenOfferDone.current = true;
         openEditOffer(existing);
@@ -859,7 +861,7 @@ export function IrissPasutijumsEditor({
     if (!autoOpenNewOffer) return;
     autoOpenOfferDone.current = true;
     openCreateOffer();
-  }, [autoOpenNewOffer, autoOpenOfferId, openCreateOffer, openEditOffer, rec.offers]);
+  }, [autoOpenNewOffer, autoOpenOfferId, imagesReady, openCreateOffer, openEditOffer, rec.offers]);
 
   const offerAttachmentCount = offerDraft.attachments.length;
   const onOfferFilesPick = useCallback(
@@ -1869,6 +1871,7 @@ export function IrissPasutijumsEditor({
 
       {offerOpen ? (
         <IrissOfferForm
+          orderId={persistedIdRef.current}
           draft={offerDraft}
           setDraft={setOfferDraft}
           autoFields={offerAutoFields}

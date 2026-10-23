@@ -128,6 +128,20 @@ export function offerImageGridSrc(att: {
   return "";
 }
 
+/** Pilnais attēls skatam (Lightbox): oriģināls, ja ir; citādi sīktēls. */
+export function offerImageFullSrc(att: {
+  thumbDataUrl?: string;
+  dataUrl?: string;
+  thumbUrl?: string;
+  blobUrl?: string;
+}): string {
+  const dataUrl = att.dataUrl ?? "";
+  if (dataUrl.startsWith("data:image")) return dataUrl;
+  const blobUrl = att.blobUrl ?? "";
+  if (/^https?:\/\//i.test(blobUrl)) return blobUrl;
+  return offerImageGridSrc(att);
+}
+
 export function offerImageDeleteToast(count: number): string {
   if (count <= 0) return "";
   if (count === 1) return "Attēls dzēsts";
