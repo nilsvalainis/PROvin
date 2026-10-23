@@ -124,6 +124,8 @@ async function readPdfBase64(p) {
 }
 
 const seen = new Set();
+/** Darbi, kuriem jau pateikts "VPN aizņemts" (vienreiz uz darbu). */
+const vpnBusyNotified = new Set();
 let busy = false;
 let nextSyncMs = nextPeriodicSyncAt(Date.now());
 
@@ -158,6 +160,7 @@ async function tick() {
         log,
         dryRun: !LIVE,
         annulEnabled: ANNUL_LIVE,
+        vpnBusyNotified,
       });
       log("job_done", { id: job.id, ...res });
       // VPN aizņemts (Nils): darbs nav aiztikts, nākamajā tick mēģinās vēlreiz.

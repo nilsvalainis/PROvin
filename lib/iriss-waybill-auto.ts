@@ -20,8 +20,11 @@ import { inProgressIsStale, waybillPendingExpired, type WaybillRequest } from "@
 
 export const AUTO_WAYBILL_WORKER = "auto";
 export const IRISS_WAYBILL_AUTO_ENV = "IRISS_WAYBILL_AUTO";
-/** Cik ilgi standarta darbu Aivars neredz (worker poll ir ~10 s); pēc tam tas ir Aivaram kā rezerve. */
-export const AUTO_WAYBILL_GRACE_MS = 3 * 60 * 1000;
+/**
+ * Cik ilgi standarta darbu Aivars neredz (worker poll ir ~10 s); pēc tam tas ir Aivaram kā rezerve.
+ * j16: 2 min - tas pats brīdis, kad UI saka "automātika darbu nesāka, nodots Aivaram" (WAYBILL_AUTO_CLAIM_TIMEOUT_MS).
+ */
+export const AUTO_WAYBILL_GRACE_MS = 2 * 60 * 1000;
 
 export type AutoWaybillCompany = "iriss" | "dzintarzeme";
 
@@ -58,6 +61,11 @@ function norm(s: string): string {
   return s.toLocaleLowerCase("lv").replace(/\s+/g, " ").trim();
 }
 
+/** Pārstāvja vārds bez diakritikas ("Taivo Batiņš" = "Taivo Batins" - CSDD sarakstā bez garumzīmēm). */
+function normName(s: string): string {
+  return norm(s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
+}
+
 /** Komentārs der automātikai: tukšs, "Tukums" vai "<numurs> uz <šī pieprasījuma auto>". */
 export function isStandardWaybillComment(comment: string, plate: string, brandModel: string): boolean {
   const c = norm(sanitizeNoteUntrusted(comment));
@@ -70,10 +78,10 @@ export function isStandardWaybillComment(comment: string, plate: string, brandMo
 
 const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/;
 
-/** Pārstāvis atbilst numura firmai (ĪRISS - Nils Valainis, Dzintarzeme - Taivo Batiņš). "Cits" -> Aivars. */
+/** Pārstāvis atbilst numura firmai (ĪRISS - Nils Valainis, Dzintarzeme - Taivo Batins). "Cits" -> Aivars. */
 export function isAllowedAutoRepresentative(plate: IrissDealerPlate, representative: string): boolean {
-  const want = norm(representative);
-  return Boolean(want) && WAYBILL_REPRESENTATIVES[plate].some((name) => norm(name) === want);
+  const want = normName(representative);
+  return Boolean(want) && WAYBILL_REPRESENTATIVES[plate].some((name) => normName(name) === want);
 }
 
 type ClassifyRequest = Pick<

@@ -122,7 +122,7 @@ describe("phone waybill form", () => {
         comment_untrusted: "",
         routeFromAddress: "",
         tradeAct: true,
-        representative: "Taivo Batiņš",
+        representative: "Taivo Batins",
       },
     });
     const iriss = buildWaybillMobilePayload({ ...base, plate: "B193-7", plateTouched: true, car });
@@ -131,30 +131,30 @@ describe("phone waybill form", () => {
     expect(picked.ok && picked.payload.representative).toBe("Cits Pārstāvis");
     if (!built.ok) return;
     const server = parseCreateWaybillInput(built.payload);
-    expect(server.ok && server.value).toMatchObject({ tradeAct: true, routeFrom: "", routeTo: "", representative: "Taivo Batiņš" });
+    expect(server.ok && server.value).toMatchObject({ tradeAct: true, routeFrom: "", routeTo: "", representative: "Taivo Batins" });
     // Ar roku ierakstīts auto nekad nav "pieņemts".
     const manual = buildWaybillMobilePayload({ ...base, car, manual: true, manualBrandModel: "Škoda Kodiaq" });
     expect(manual.ok && manual.payload.tradeAct).toBe(false);
   });
 
-  it("j13: noklusējuma pārstāvis pēc auto firmas - ĪRISS: Nils Valainis, Dzintarzeme Auto: Taivo Batiņš (var mainīt)", () => {
+  it("j13: noklusējuma pārstāvis pēc auto firmas - ĪRISS: Nils Valainis, Dzintarzeme Auto: Taivo Batins (var mainīt)", () => {
     const car = { id: "c9", brandModel: "Škoda Kodiaq", vin: "TMBJJ7NS1L8012345", accepted: true };
     const dza = buildWaybillMobilePayload({ ...base, plate: "B193-7", plateTouched: true, car: { ...car, owner: "DZA" } });
-    expect(dza.ok && dza.payload.representative).toBe("Taivo Batiņš");
+    expect(dza.ok && dza.payload.representative).toBe("Taivo Batins");
     const iriss = buildWaybillMobilePayload({ ...base, plate: "B192-7", plateTouched: true, car: { ...car, owner: "IRISS" } });
     expect(iriss.ok && iriss.payload.representative).toBe("Nils Valainis");
     const changed = buildWaybillMobilePayload({ ...base, car: { ...car, owner: "DZA" }, representative: "Nils Valainis" });
     expect(changed.ok && changed.payload.representative).toBe("Nils Valainis");
     // Pogas: auto firmas pārstāvis pirmais, tad numura firmas pārstāvis.
-    expect(waybillRepresentativeChoices({ owner: "DZA", plate: "B193-7" })).toEqual(["Taivo Batiņš", "Nils Valainis"]);
+    expect(waybillRepresentativeChoices({ owner: "DZA", plate: "B193-7" })).toEqual(["Taivo Batins", "Nils Valainis"]);
     expect(waybillRepresentativeChoices({ owner: "IRISS", plate: "B193-7" })).toEqual(["Nils Valainis"]);
-    expect(waybillRepresentativeChoices({ plate: "B192-7" })).toEqual(["Taivo Batiņš"]);
+    expect(waybillRepresentativeChoices({ plate: "B192-7" })).toEqual(["Taivo Batins"]);
   });
 
   it("j13: serveris - akta pieprasījums bez pārstāvja saņem numura firmas noklusējumu; nederīgs pārstāvis - kļūda", () => {
     const body = { plate: "B192-7", brandModel: "Škoda Kodiaq", vin: "TMBJJ7NS1L8012345", validHours: 12, tradeAct: true };
     const dza = parseCreateWaybillInput({ ...body, representative: "" });
-    expect(dza.ok && dza.value.representative).toBe("Taivo Batiņš");
+    expect(dza.ok && dza.value.representative).toBe("Taivo Batins");
     const iriss = parseCreateWaybillInput({ ...body, plate: "B762-7" });
     expect(iriss.ok && iriss.value.representative).toBe("Nils Valainis");
     expect(parseCreateWaybillInput({ ...body, representative: "<script>" }).ok).toBe(false);
@@ -306,6 +306,19 @@ describe("Izrakstīta, solis N no 3, Arhīvs", () => {
 describe("live progress", () => {
   const t0 = "2026-10-23T10:00:00.000Z";
   const at = (min: number) => Date.parse(t0) + min * 60_000;
+  it("j16: automātika - 2 min bez sākuma un 4 min bez jauna soļa saka skaidri, nevis klusi gaida", () => {
+    const live = { autoMode: "live" as const, autoStandard: true };
+    expect(waybillMobileProgress(req({ createdAt: t0, updatedAt: t0 }), at(1), live).text).toBe("Rindā automātikai. Sāks pēc brīža.");
+    expect(waybillMobileProgress(req({ createdAt: t0, updatedAt: t0 }), at(3), live).text).toContain("2 min laikā darbu nesāka");
+    const notAuto = { autoMode: "live" as const, autoStandard: false, autoReason: "cits pārstāvis" };
+    expect(waybillMobileProgress(req({ createdAt: t0, updatedAt: t0 }), at(1), notAuto).text).toBe(
+      "Automātikai neder (cits pārstāvis). Izraksta Aivars.",
+    );
+    const working = req({ status: "in_progress", pickedAt: t0, stage: "filling", stageAt: t0 });
+    expect(waybillMobileProgress(working, at(2)).text).toBe("Aizpilda CSDD formu...");
+    expect(waybillMobileProgress(working, at(6)).text).toContain("Automātika nav ziņojusi 6 min");
+  });
+
   it("moves through 3 steps by real events only: time alone never grows the bar", () => {
     const queued = waybillMobileProgress(req({ createdAt: t0, updatedAt: t0 }), at(1));
     expect(queued).toMatchObject({ step: 1, text: "Rindā. Aivars sāks pēc brīža." });

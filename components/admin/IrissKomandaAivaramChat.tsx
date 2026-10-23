@@ -46,6 +46,9 @@ type TimelineItem =
   | { type: "request"; request: WaybillRequest }
   | { type: "event"; event: WaybillRequestEvent; request: WaybillRequest };
 
+/** Statusa atjaunošana neizdevās (serveris neatbild): rādītais statuss var būt novecojis (j16). */
+export const WAYBILL_STATUS_STALE_TEXT = "Statusu nevar atjaunot - serveris neatbild. Rādītais statuss var būt novecojis, mēģinu vēlreiz.";
+
 export type WaybillChatState = {
   requests: WaybillRequest[];
   events: WaybillRequestEvent[];
@@ -201,20 +204,23 @@ export function IrissKomandaAivaramChat({
       if (isChatError(data) || !isChatOk(data)) {
         const message = chatErrorMessage(data, "Neizdevās ielādēt rindu.");
         setChat((prev) => {
-          if (!prev.requests.length && !prev.timeline.length) {
-            setError((current) => current ?? message);
-          }
+          // j16: ja rinda jau redzama, nekad klusi nerāda veco statusu kā aktuālu.
+          setError((current) => current ?? (prev.requests.length || prev.timeline.length ? WAYBILL_STATUS_STALE_TEXT : message));
           return prev;
         });
         return;
       }
+      setError((current) => (current === WAYBILL_STATUS_STALE_TEXT ? null : current));
       setChat(data);
       if (!selectedInit.current) {
         selectedInit.current = true;
         setPlate((current) => displayDealerPlate(current) || firstFreePlate(data.plates));
       }
     } catch {
-      setError((prev) => prev ?? "Neizdevās ielādēt rindu.");
+      setChat((prev) => {
+        setError((current) => current ?? (prev.requests.length || prev.timeline.length ? WAYBILL_STATUS_STALE_TEXT : "Neizdevās ielādēt rindu."));
+        return prev;
+      });
     }
   };
 
@@ -318,11 +324,13 @@ export function IrissKomandaAivaramChat({
       setError(`Ieraksti derīgumu: no 1 līdz ${WAYBILL_VALID_MAX_HOURS} h.`);
       return;
     }
-    if (selectedOcc.busy && !confirm) {
+    // j16: anulēšanu apstiprina TIKAI poga "Jā" logā (Enter formā, kamēr logs atvērts, neko nesūta).
+    if (confirm) return;
+    if (selectedOcc.busy) {
       setConfirm({ plate: selectedOcc.plate, current: selectedOcc.current });
       return;
     }
-    void submit(Boolean(confirm));
+    void submit(false);
   }
 
   async function cancel(id: string) {

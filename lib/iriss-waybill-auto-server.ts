@@ -5,7 +5,7 @@ import { displayDealerPlate, waybillPlateOccupancy, type WaybillPlateState } fro
 import { mergeCsddPlateStates } from "@/lib/iriss-waybill-csdd-plates";
 import { readCsddPlatesDocSafe } from "@/lib/iriss-waybill-csdd-plates-store";
 import { autoWaybillEnabled, autoWaybillReplaceEnabled, classifyWaybillForAuto, plateTakenByOtherRequest } from "@/lib/iriss-waybill-auto";
-import type { WaybillAutoContext, WaybillRequestsDoc } from "@/lib/iriss-waybill-requests";
+import type { WaybillAutoContext, WaybillRequest, WaybillRequestsDoc } from "@/lib/iriss-waybill-requests";
 import { waybillWorkerLive } from "@/lib/iriss-ttr-control";
 import { readTtrControlDoc } from "@/lib/iriss-ttr-control-store";
 
@@ -65,14 +65,19 @@ export async function waybillAutoContext(
 ): Promise<WaybillAutoContext> {
   const mode = (await autoWaybillLiveNow(nowMs)) ? "live" : "test";
   const busy = isBusy ?? (await busyWaybillPlatesNow());
+  const classify = (request: WaybillRequest) =>
+    classifyWaybillForAuto(request, {
+      plateBusyNow: busy(request.vehicle.plate),
+      plateInOtherRequest: plateTakenByOtherRequest(doc.requests, request, nowMs),
+      nowMs,
+      replaceEnabled: autoWaybillReplaceEnabled(),
+    });
   return {
     mode,
-    isStandard: (request) =>
-      classifyWaybillForAuto(request, {
-        plateBusyNow: busy(request.vehicle.plate),
-        plateInOtherRequest: plateTakenByOtherRequest(doc.requests, request, nowMs),
-        nowMs,
-        replaceEnabled: autoWaybillReplaceEnabled(),
-      }).standard,
+    isStandard: (request) => classify(request).standard,
+    reasonFor: (request) => {
+      const c = classify(request);
+      return c.standard ? "" : c.reason;
+    },
   };
 }

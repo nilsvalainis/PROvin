@@ -49,7 +49,7 @@ Atcelšana: `systemctl disable --now iriss-vpn-ctl; rm /etc/systemd/system/iriss
 
 Standarta (klasifikācija `lib/iriss-waybill-auto.ts`, serveris to pārbauda arī pie claim; tā pati pārbaude worker
 `localStandardCheck`). Divas plūsmas kā telefona formā (PR #504):
-- `tradeAct` - tirdzniecībā pieņemts auto: VIN (17 zīmes) + firmas pārstāvis (ĪRISS - Nils Valainis, DZA - Taivo Batiņš),
+- `tradeAct` - tirdzniecībā pieņemts auto: VIN (17 zīmes) + firmas pārstāvis (ĪRISS - Nils Valainis, DZA - Taivo Batins),
   bez maršruta/pilsētas -> CSDD akts pēc VIN -> "Noformēt pavadzīmi", formā ievada TIKAI laiku un pārstāvi (ja akta forma
   prasa tukšu adresi - kļūda pirms Saglabāt, darbs Aivaram; fiksēts maršruts netiek likts);
 - `new` - jauna pavadzīme ar noklusējuma maršrutu Tukums, Rīgas iela -> Tukuma CSDD (cits maršruts -> Aivars).

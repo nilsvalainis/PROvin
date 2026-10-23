@@ -55,9 +55,10 @@ const ROUTE_TO = "Tukuma CSDD";
 const MAX_HOURS = 48; // CSDD max
 const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/;
 /** Komersanta pārstāvis pēc firmas (kā lib/iriss-waybill-create.ts WAYBILL_REPRESENTATIVES). "Cits" -> Aivars. */
-const REPRESENTATIVES = { iriss: ["nils valainis"], dzintarzeme: ["taivo batiņš"] };
-/** Noklusējuma pārstāvis, ja darbā tas nav norādīts (Nils 23.10): ĪRISS - Nils Valainis, Dzintarzeme Auto - Taivo Batiņš. */
-export const DEFAULT_REPRESENTATIVE = Object.freeze({ iriss: "Nils Valainis", dzintarzeme: "Taivo Batiņš" });
+/** Salīdzina bez diakritikas (normName): "Taivo Batiņš" (vecie pieprasījumi) = "Taivo Batins" (CSDD saraksts). */
+const REPRESENTATIVES = { iriss: ["nils valainis"], dzintarzeme: ["taivo batins"] };
+/** Noklusējuma pārstāvis, ja darbā tas nav norādīts (Nils 23.10): ĪRISS - Nils Valainis, Dzintarzeme Auto - Taivo Batins. */
+export const DEFAULT_REPRESENTATIVE = Object.freeze({ iriss: "Nils Valainis", dzintarzeme: "Taivo Batins" });
 
 /** Darba pārstāvis vai firmas (pēc numura) noklusējums. */
 export function jobRepresentative(job) {
@@ -72,6 +73,10 @@ function compact(plate) {
 
 function norm(s) {
   return String(s || "").toLocaleLowerCase("lv").replace(/\s+/g, " ").trim();
+}
+
+function normName(s) {
+  return norm(String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, ""));
 }
 
 /**
@@ -105,7 +110,7 @@ export function localStandardCheck(job, nowMs = Date.now(), opts = {}) {
   if (job.tradeAct === true) {
     if (job.auto.flow !== "tradeAct") return { ok: false, reason: "plūsma nesakrīt" };
     if (!VIN_RE.test(String(job.vehicle?.vin || "").trim().toUpperCase())) return { ok: false, reason: "aktam vajag VIN" };
-    if (!REPRESENTATIVES[company].includes(norm(jobRepresentative(job)))) return { ok: false, reason: "cits pārstāvis" };
+    if (!REPRESENTATIVES[company].includes(normName(jobRepresentative(job)))) return { ok: false, reason: "cits pārstāvis" };
     return { ok: true, company, flow: "tradeAct" };
   }
   if (job.auto.flow !== "new") return { ok: false, reason: "plūsma nesakrīt" };
@@ -243,8 +248,11 @@ export async function periodicPlateSync(deps, known = {}) {
 export async function processJob(job, deps) {
   const marks = { created: Date.parse(job.createdAt) };
   const check = localStandardCheck(job, deps.now(), { annulEnabled: deps.annulEnabled === true });
+  // j16: nekad kluss "Gaida" - ja automātika darbu neņem, pieprasījumā paliek iemesls (darbs paliek rindā Aivaram).
+  const tellQueued = (text) => deps.api.event(job.id, { kind: "message", text, by: "auto" }).catch(() => {});
   if (!check.ok) {
     deps.log("skip_nonstandard", { id: job.id, reason: check.reason });
+    if (!deps.dryRun) await tellQueued(`Automātika darbu neņēma (${check.reason}). Izraksta Aivars.`);
     return { outcome: "skipped", reason: check.reason };
   }
   if (deps.dryRun) {
@@ -255,12 +263,20 @@ export async function processJob(job, deps) {
   if (deps.vpnStatus) {
     const vpn = await deps.vpnStatus().catch(() => null);
     if (vpnBusyForHuman(vpn)) {
-      deps.log("vpn_busy_skip", { id: job.id });
+      deps.log("vpn_busy_skip", { id: job.id, vpnCtl: vpn ? "ok" : "unreachable" });
+      // Tikai vienreiz uz darbu (worker atkārto ik 10 s); pēc 2 min UI saka "nodots Aivaram".
+      if (deps.vpnBusyNotified && !deps.vpnBusyNotified.has(job.id)) {
+        deps.vpnBusyNotified.add(job.id);
+        await tellQueued(vpn ? "Automātika gaida: CSDD VPN šobrīd lieto Nils." : "Automātika gaida: CSDD VPN vadība neatbild.");
+      }
       return { outcome: "vpn_busy" };
     }
   }
   const claimed = await deps.api.claim(job.id);
-  if (!claimed) return { outcome: "not_claimed" };
+  if (!claimed) {
+    deps.log("not_claimed", { id: job.id });
+    return { outcome: "not_claimed" };
+  }
   marks.claim = deps.now();
   const stage = (name) => deps.api.event(job.id, { kind: "message", stage: name, by: "auto" }).catch(() => {});
   const plate = String(job.vehicle.plate || "").toUpperCase();

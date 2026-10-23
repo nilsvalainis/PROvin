@@ -154,6 +154,8 @@ export async function createWaybillRequest(input: {
       routeFrom: request.routeFrom,
       routeTo: request.routeTo,
       tradeAct: request.tradeAct,
+      // Lietotāja apstiprinātā anulējamā pavadzīme ("Vai tiešām anulēt iepriekšējo..." -> Jā); tukšs = nekas.
+      replaceWaybillNo: request.replaceWaybillNo ?? "",
       noteUntrusted: request.noteUntrusted.slice(0, 200),
     },
   });

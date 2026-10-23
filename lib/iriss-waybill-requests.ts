@@ -43,6 +43,33 @@ export function isWaybillWorkerStage(value: unknown): value is WaybillWorkerStag
 export const WAYBILL_EXPIRED_PENDING_TEXT = "Termiņš beidzies - atcel un izveido jaunu";
 export const WAYBILL_AUTO_TEST_MODE_TEXT = "Automātika testa režīmā - pavadzīmi izraksta Aivars ar roku";
 export const WAYBILL_AUTO_QUEUED_TEXT = "Rindā automātikai. Sāks pēc brīža.";
+/**
+ * j16 (Nils 23.10: nekad kluss "Gaida"): ja automātika 2 min laikā darbu nav paņēmusi, UI to saka skaidri.
+ * Tajā pašā brīdī darbs kļūst redzams Aivaram (AUTO_WAYBILL_GRACE_MS lib/iriss-waybill-auto.ts).
+ */
+export const WAYBILL_AUTO_CLAIM_TIMEOUT_MS = 2 * 60 * 1000;
+export const WAYBILL_AUTO_NOT_CLAIMED_TEXT =
+  "Automātika 2 min laikā darbu nesāka (CSDD savienojums vai serveris nav pieejams). Nodots Aivaram.";
+/** Darbā, bet automātika nav ziņojusi jaunu soli tik ilgi (garākais solis CSDD ir ~3 min). */
+export const WAYBILL_AUTO_STUCK_MS = 4 * 60 * 1000;
+
+/** Nestandarta darbs (iemesls no klasifikācijas) - teksts, kāpēc to izraksta Aivars. */
+export function waybillNotAutoText(reason: string): string {
+  const r = reason.trim();
+  return r ? `Automātikai neder (${r}). Izraksta Aivars.` : "";
+}
+
+/** Automātika darbā, bet nav ziņojusi ilgāk par WAYBILL_AUTO_STUCK_MS: godīgs teksts (bez datu maiņas). */
+export function waybillStuckStageText(stage: WaybillWorkerStage, stageAt: string, nowMs = Date.now()): string {
+  const t = Date.parse(stageAt);
+  if (!Number.isFinite(t) || nowMs - t <= WAYBILL_AUTO_STUCK_MS) return "";
+  const min = Math.floor((nowMs - t) / 60_000);
+  const step = WAYBILL_WORKER_STAGE_TEXT[stage].replace(/\.+$/, "");
+  const afterSave = stage === "saving" || stage === "pdf";
+  return afterSave
+    ? `Automātika nav ziņojusi ${min} min (pēdējais solis: ${step}). Iespējams, pavadzīme CSDD jau ir - pārbaudi, pirms atkārto.`
+    : `Automātika nav ziņojusi ${min} min (pēdējais solis: ${step}). Pavadzīme vēl nav saglabāta; ja steidzami, raksti Aivaram.`;
+}
 export const WAYBILL_CANCELLED_TEXT = "Atcelts.";
 
 export type WaybillRequestVehicle = {
@@ -370,6 +397,8 @@ export type WaybillAivarsReply = {
   autoMode?: WaybillAutoMode;
   /** Gaidošo šis darbs ir automātikai (standarta pēc lib/iriss-waybill-auto.ts). */
   autoStandard?: boolean;
+  /** Gaidošais nav automātikai: iemesls (piem. "numurs aizņemts"). */
+  autoReason?: string;
   /** "Saglabāt PDF" redzams (izdota, ir PDF, skatītājam ir tiesības; sk. lib/iriss-waybill-pdf.ts). */
   canSavePdf?: boolean;
   dropboxPath?: string;
@@ -382,6 +411,8 @@ export type WaybillAutoMode = "live" | "test";
 export type WaybillAutoContext = {
   mode: WaybillAutoMode;
   isStandard: (request: WaybillRequest) => boolean;
+  /** Kāpēc darbs nav automātikai (tukšs = standarta vai nav zināms). */
+  reasonFor?: (request: WaybillRequest) => string;
 };
 
 /** Godīgs teksts gaidošam pieprasījumam (bez procentiem). */
@@ -389,11 +420,27 @@ export function waybillQueuedText(input: {
   expired: boolean;
   autoMode?: WaybillAutoMode;
   autoStandard?: boolean;
+  /** Cik ilgi gaida (kopš izveides / pēdējās izmaiņas). */
+  waitedMs?: number;
+  /** Nestandarta iemesls (tikai live režīmā). */
+  autoReason?: string;
 }): string {
   if (input.expired) return WAYBILL_EXPIRED_PENDING_TEXT;
   if (input.autoMode === "test") return WAYBILL_AUTO_TEST_MODE_TEXT;
-  if (input.autoMode === "live" && input.autoStandard) return WAYBILL_AUTO_QUEUED_TEXT;
+  if (input.autoMode === "live" && input.autoStandard) {
+    return (input.waitedMs ?? 0) > WAYBILL_AUTO_CLAIM_TIMEOUT_MS ? WAYBILL_AUTO_NOT_CLAIMED_TEXT : WAYBILL_AUTO_QUEUED_TEXT;
+  }
+  if (input.autoMode === "live" && input.autoStandard === false && input.autoReason) return waybillNotAutoText(input.autoReason);
   return "";
+}
+
+/**
+ * Gaidīšanas ilgums automātikai: no izveides (automātikas ziņas un citi notikumi maina updatedAt, bet taimeri neatliek;
+ * atkārtots pieprasījums automātikai vairs nav).
+ */
+export function waybillQueuedWaitedMs(request: Pick<WaybillRequest, "createdAt">, nowMs = Date.now()): number {
+  const t = Date.parse(request.createdAt);
+  return Number.isFinite(t) ? Math.max(0, nowMs - t) : 0;
 }
 
 const AIVARS_REPLY_KINDS = new Set<WaybillRequestEventKind>(["issued", "error", "message", "in_progress"]);
@@ -411,9 +458,15 @@ export function waybillAivarsReply(
   const queuedFallback = request.status === "queued" ? "Gaida Aivaru." : "";
   const expired = waybillPendingExpired(request, nowMs);
   const autoStandard = request.status === "queued" && auto ? auto.isStandard(request) : undefined;
+  const autoReason = request.status === "queued" && auto?.reasonFor && autoStandard === false ? auto.reasonFor(request) : "";
   const queuedHonest =
-    request.status === "queued" ? waybillQueuedText({ expired, autoMode: auto?.mode, autoStandard }) : "";
-  const stageText = request.status === "in_progress" && request.stage ? WAYBILL_WORKER_STAGE_TEXT[request.stage] : "";
+    request.status === "queued"
+      ? waybillQueuedText({ expired, autoMode: auto?.mode, autoStandard, autoReason, waitedMs: waybillQueuedWaitedMs(request, nowMs) })
+      : "";
+  const stageText =
+    request.status === "in_progress" && request.stage
+      ? waybillStuckStageText(request.stage, request.stageAt, nowMs) || WAYBILL_WORKER_STAGE_TEXT[request.stage]
+      : "";
   const text = stale
     ? "Novecojis: vairāk nekā 24 h bez virzības. Ja vajag, izveido no jauna."
     : request.status === "cancelled"
@@ -431,6 +484,7 @@ export function waybillAivarsReply(
     expired,
     ...(auto ? { autoMode: auto.mode } : {}),
     ...(autoStandard !== undefined ? { autoStandard } : {}),
+    ...(autoReason ? { autoReason } : {}),
   };
 }
 
