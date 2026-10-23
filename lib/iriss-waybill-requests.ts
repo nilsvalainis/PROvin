@@ -28,7 +28,7 @@ export type WaybillWorkerStage = (typeof WAYBILL_WORKER_STAGES)[number];
 
 export const WAYBILL_WORKER_STAGE_TEXT: Record<WaybillWorkerStage, string> = {
   claimed: "Automātika paņēma darbā.",
-  vpn: "Pieslēdzas CSDD (VPN)...",
+  vpn: "Gaida CSDD savienojumu (VPN).",
   filling: "Aizpilda CSDD formu...",
   saving: "Saglabā CSDD...",
   pdf: "Saglabāta CSDD, ielādē PDF...",
@@ -282,6 +282,30 @@ export function isStaleWaybillRequest(
   if (req.status !== "queued" && req.status !== "in_progress") return false;
   const t = Date.parse(req.updatedAt || req.createdAt);
   return Number.isFinite(t) && nowMs - t > WAYBILL_QUEUE_STALE_MS;
+}
+
+export type WaybillWrittenOffRequest = Pick<WaybillRequest, "id" | "status" | "vehicle" | "createdAt" | "updatedAt" | "validUntil">;
+
+const samePlate = (a: string, b: string) => a.trim().toUpperCase().replace(/[\s-]/g, "") === b.trim().toUpperCase().replace(/[\s-]/g, "");
+
+/**
+ * Kad izdotā pavadzīme kļuva nederīga ("Izrakstīta"): derīguma beigas vai brīdis, kad tam pašam numuram izdota
+ * jaunāka (jauna pavadzīme pārtrauc esošo). null = vēl derīga vai nav izdota. Dati netiek mainīti.
+ */
+export function waybillWrittenOffAtMs(
+  request: WaybillWrittenOffRequest,
+  requests: ReadonlyArray<WaybillWrittenOffRequest>,
+  nowMs = Date.now(),
+): number | null {
+  if (request.status !== "issued") return null;
+  let end = Date.parse(request.validUntil);
+  for (const other of requests) {
+    if (other.id === request.id || other.status !== "issued" || other.createdAt <= request.createdAt) continue;
+    if (!samePlate(other.vehicle.plate, request.vehicle.plate)) continue;
+    const at = Date.parse(other.updatedAt || other.createdAt);
+    if (Number.isFinite(at) && (!Number.isFinite(end) || at < end)) end = at;
+  }
+  return Number.isFinite(end) && end <= nowMs ? end : null;
 }
 
 export function remainingWaybillDays(validUntilIso: string, now = new Date()): number | null {

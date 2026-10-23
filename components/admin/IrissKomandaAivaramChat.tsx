@@ -14,7 +14,6 @@ import {
 import {
   DEFAULT_WAYBILL_ROUTE_FROM,
   DEFAULT_WAYBILL_ROUTE_TO,
-  DEFAULT_WAYBILL_VALID_HOURS,
   NOTE_UNTRUSTED_MAX,
   WAYBILL_VALID_MAX_HOURS,
   waybillHoursBetween,
@@ -31,7 +30,12 @@ import {
 import { formatWaybillExpiryDdMmHm } from "@/lib/iriss-pavadzimes-countdown";
 import { LvDealerPlate } from "@/components/admin/LvDealerPlate";
 import { IrissWaybillMobileForm, confirmWaybillCancel, type WaybillMobileDraft } from "@/components/admin/IrissWaybillMobileForm";
-import type { WaybillMobilePayload } from "@/lib/iriss-waybill-mobile-form";
+import {
+  WAYBILL_FORM_DEFAULT_HOURS,
+  WAYBILL_MOBILE_HOUR_PRESETS,
+  parseWaybillCustomHours,
+  type WaybillMobilePayload,
+} from "@/lib/iriss-waybill-mobile-form";
 import type { WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 import type { WaybillVehicleChip } from "@/lib/iriss-waybill-vehicles";
 
@@ -140,15 +144,20 @@ function requestHours(request: WaybillRequest): number {
 export function IrissKomandaAivaramChat({
   draftVehicle,
   onDraftConsumed,
+  onOpenArchive,
 }: {
   draftVehicle: WaybillVehicleChip | null;
   onDraftConsumed: () => void;
+  /** Telefonā: "Visas pavadzīmes Arhīvā ›". */
+  onOpenArchive?: () => void;
 }) {
   const [chat, setChat] = useState<WaybillChatState>(emptyChat);
   const [plate, setPlate] = useState<string>(IRISS_DEALER_PLATES[0]);
   const [brandModel, setBrandModel] = useState("");
   const [vin, setVin] = useState("");
-  const [validHours, setValidHours] = useState(String(DEFAULT_WAYBILL_VALID_HOURS));
+  /** null = "Cits" (brīvs stundu skaits). Izvēles tās pašas kā telefonā: 1, 12, 48 h, Cits. */
+  const [hoursPreset, setHoursPreset] = useState<number | null>(WAYBILL_FORM_DEFAULT_HOURS);
+  const [hoursOther, setHoursOther] = useState("");
   const [comment, setComment] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -236,9 +245,8 @@ export function IrissKomandaAivaramChat({
     [chat.requests],
   );
 
-  const hoursNum = Number.parseInt(validHours, 10);
-  const hoursSafe = Number.isInteger(hoursNum) && hoursNum >= 1 ? Math.min(WAYBILL_VALID_MAX_HOURS, hoursNum) : DEFAULT_WAYBILL_VALID_HOURS;
-  const untilHint = formatRigaDateTimeComma(new Date(Date.now() + hoursSafe * 3_600_000).toISOString());
+  const hoursChosen = hoursPreset ?? parseWaybillCustomHours(hoursOther);
+  const untilHint = hoursChosen ? formatRigaDateTimeComma(new Date(Date.now() + hoursChosen * 3_600_000).toISOString()) : "";
   const selectedOcc = chat.plates.find((row) => row.plate === plate) ?? { plate, busy: false };
 
   async function submit(confirmBusy = false): Promise<boolean> {
@@ -257,7 +265,7 @@ export function IrissKomandaAivaramChat({
                 plate,
                 brandModel,
                 vin,
-                validHours: hoursSafe,
+                validHours: hoursChosen,
                 comment_untrusted: comment,
                 confirmBusy,
               },
@@ -302,6 +310,10 @@ export function IrissKomandaAivaramChat({
 
   function onSubmitForm() {
     mobilePayload.current = null;
+    if (!hoursChosen) {
+      setError(`Ieraksti derīgumu: no 1 līdz ${WAYBILL_VALID_MAX_HOURS} h.`);
+      return;
+    }
     if (selectedOcc.busy && !confirm) {
       setConfirm({ plate: selectedOcc.plate, current: selectedOcc.current });
       return;
@@ -374,6 +386,7 @@ export function IrissKomandaAivaramChat({
         onPickerOpen={() => {
           if (!carsLoaded.current) void load(true);
         }}
+        onOpenArchive={onOpenArchive}
       />
     </div>
     <section className="flex min-h-[28rem] flex-col overflow-hidden rounded-[22px] border border-[#E5E7EB] bg-white shadow-sm max-md:hidden">
@@ -493,24 +506,43 @@ export function IrissKomandaAivaramChat({
             sākumpunktu; beigu punkts pēc noklusējuma ir Tukuma CSDD.
           </span>
         </label>
-        <label className="mb-2 block text-[11px] font-medium text-[#6b7280]">
+        <div className="mb-2 text-[11px] font-medium text-[#6b7280]">
           Derīgums
-          <span className="mt-1 grid grid-cols-[1fr_auto] items-end gap-2">
+          <div className="mt-1 grid grid-cols-4 gap-1.5" role="group" aria-label="Derīgums">
+            {[...WAYBILL_MOBILE_HOUR_PRESETS, null].map((h) => {
+              const on = hoursPreset === h;
+              return (
+                <button
+                  key={h ?? "cits"}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setHoursPreset(h)}
+                  className={`min-h-10 rounded-full px-2 text-[13px] font-semibold ${on ? "bg-[#111827] text-white" : "bg-[#F3F4F6] text-[#111827]"}`}
+                >
+                  {h == null ? "Cits" : `${h} h`}
+                </button>
+              );
+            })}
+          </div>
+          {hoursPreset == null ? (
             <input
-              type="number"
-              min={1}
-              max={WAYBILL_VALID_MAX_HOURS}
-              value={validHours}
-              onChange={(e) => setValidHours(e.target.value)}
-              required
-              className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={hoursOther}
+              onChange={(e) => setHoursOther(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              placeholder={`stundas, 1-${WAYBILL_VALID_MAX_HOURS}`}
+              aria-label="Cits derīguma ilgums stundās"
+              autoFocus
+              className="mt-1.5 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
             />
-            <span className="grid h-[38px] place-items-center text-[13px] font-semibold text-[#6b7280]">h</span>
-          </span>
+          ) : null}
           <span className="mt-1 block text-[11px] font-normal leading-snug text-[#9aa3b2]">
-            Sākums: tagad. Beigas: tagad + {hoursSafe} h{untilHint ? ` (${untilHint}).` : "."}
+            {hoursChosen
+              ? `Sākums: tagad. Beigas: tagad + ${hoursChosen} h${untilHint ? ` (${untilHint}).` : "."}`
+              : `Ieraksti stundas: no 1 līdz ${WAYBILL_VALID_MAX_HOURS}.`}
           </span>
-        </label>
+        </div>
         <label className="mb-2 block text-[11px] font-medium text-[#6b7280]">
           Komentārs
           <input
