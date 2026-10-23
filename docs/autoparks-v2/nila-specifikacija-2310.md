@@ -14,3 +14,10 @@ AUTO KABINETS - kategorijas:
 STATUSI: redzami visās sadaļās, katrs var mainīt. Vēsture (kurš ko darīja) redzama tikai Nilam.
 UI: mūsu dizainā, tik vienkārši, ka bērns var lietot. Izstrādā Claude Opus; obligāti prasīt Claude ieteikumus/uzlabojumus. Aptaujāt citus aģentus par IRISS ikdienas loģiku. Nepieciešams makets un Nila "jā" pirms ieviešanas.
 Spēkā esošie noteikumi: izsoles foto Autoparkā nelikt (tikai STOCK), CSDD reģistra lauki saglabājas, Car Invoice CSDD indikators, sarkanie obligātie lauki (izņemot Pasūtījums), manuālas vērtības importam nepārrakstīt, "Uz Autoparku" spiež tikai Nils.
+
+## Nila lēmumi par kolēģu ieteikumiem (23.10 18:01)
+- Aivars: pavadzīmes + numurzīmju aizņemtība pie auto + CSDD statuss (pieņemts/noņemts) - JĀ.
+- Labā Roka: PVN režīms + termiņu kalendārs (vinjete, OCTA, TA) - JĀ, ja var automatizēt; likt pie Iegādes, izdalīt smalkāk.
+- PROVIN ADMINS: pagaidām NĒ. Nobraukumu ņemt no CSDD tirdzniecības reģistra datiem pēc numuru salīdzināšanas; numuru salīdzināšanas aktu skenē kā PDF Servisa sadaļā.
+- Dizaineris: bezsaistes skenēšana + statusa maiņas atsaukšana 5 s - JĀ.
+- Visu izstrādi (dizains + kods) dara Claude.
