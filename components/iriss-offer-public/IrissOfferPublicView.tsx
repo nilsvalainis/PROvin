@@ -185,8 +185,17 @@ export function IrissOfferPublicView({ token, view }: { token: string; view: Iri
         </section>
       ) : null}
 
-      <section className="mt-4">
-        <IrissOfferPublicActions token={token} decision={view.decision} question={view.question} />
+      <section className="mt-5 border-t border-[#e4e4e7] pt-4">
+        <IrissOfferPublicActions
+          token={token}
+          decision={view.decision}
+          decidedAt={view.decidedAt}
+          question={view.question}
+          deadlineAt={view.deadlineAt}
+          serverNow={view.serverNow}
+          vehicle={title}
+          total={view.total}
+        />
       </section>
 
       <footer className="mt-6 text-center text-[10px] leading-relaxed text-[#a1a1aa]">
