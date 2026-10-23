@@ -1,4 +1,6 @@
+import { after } from "next/server";
 import { autoparksV2Json, requireAutoparksV2Api } from "@/lib/iriss-autoparks-v2-access";
+import { readServiceInvoiceAmountWithAi } from "@/lib/iriss-autoparks-v2-ai-invoice";
 import { isServissScanTarget } from "@/lib/iriss-autoparks-v2-serviss";
 import { getAutoparksV2Serviss, scanAutoparksV2Serviss } from "@/lib/iriss-autoparks-v2-serviss-store";
 
@@ -40,6 +42,9 @@ export async function POST(req: Request, ctx: Ctx) {
       actor: { id: gate.actorId, name: gate.actorName },
     });
     if (!res.ok) return autoparksV2Json({ error: res.reason }, res.reason === "duplicate" ? 409 : 404);
+    // F10: rēķina summu AI nolasa pēc atbildes (ieteikums; apstiprina cilvēks ar Summām).
+    const aiInvoice = target === "invoice" || target === "invoice_page" ? res.invoiceId : undefined;
+    if (aiInvoice) after(() => readServiceInvoiceAmountWithAi(id, aiInvoice).then(() => undefined).catch(() => undefined));
     return autoparksV2Json({ ok: true, invoiceId: res.invoiceId ?? null, serviss: await getAutoparksV2Serviss(id, gate.perms) });
   } catch {
     // Klients (bezsaistes rinda) saņem 503 un rāda "Vēlreiz"; lokālo kopiju dzēš tikai pēc 200.

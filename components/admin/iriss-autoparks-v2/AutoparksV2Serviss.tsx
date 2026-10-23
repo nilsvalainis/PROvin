@@ -1,8 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fmtCm3, fmtDateLv, fmtDayMonth, fmtEur, fmtKw, lapasLv, parseEurInput } from "@/lib/iriss-autoparks-v2-format";
-import { problemsDone, type V2ServissFile, type V2ServissInvoiceView, type V2ServissView } from "@/lib/iriss-autoparks-v2-serviss";
+import {
+  fmtCm3,
+  fmtDateLv,
+  fmtDayMonth,
+  fmtEur,
+  fmtKw,
+  lapasLv,
+  parseEurInput,
+} from "@/lib/iriss-autoparks-v2-format";
+import {
+  problemsDone,
+  type V2ServissFile,
+  type V2ServissInvoiceView,
+  type V2ServissView,
+} from "@/lib/iriss-autoparks-v2-serviss";
 import type { V2Problem } from "@/lib/iriss-autoparks-v2";
 import type { CabinetPaneProps } from "./AutoparksV2Cabinet";
 import { FileModal, PdfIcon } from "./FileModal";
@@ -18,14 +31,19 @@ export function AutoparksV2Serviss({ carId, basics, perms }: CabinetPaneProps) {
   const [view, setView] = useState<V2ServissView | null>(null);
   const [open, setOpen] = useState<Step | 0 | null>(null);
   const [scan, setScan] = useState<ScannerTarget | null>(null);
-  const [modal, setModal] = useState<{ files: V2ServissFile[]; index: number } | null>(null);
+  const [modal, setModal] = useState<{
+    files: V2ServissFile[];
+    index: number;
+  } | null>(null);
   const [invoice, setInvoice] = useState<string | null>(null);
   const [error, setError] = useState("");
   const api = `/api/admin/iriss-autoparks-v2/serviss/${encodeURIComponent(carId)}`;
 
   const load = useCallback(async () => {
     const r = await fetch(api).catch(() => null);
-    const d = (await r?.json().catch(() => null)) as { serviss?: V2ServissView } | null;
+    const d = (await r?.json().catch(() => null)) as {
+      serviss?: V2ServissView;
+    } | null;
     if (d?.serviss) setView(d.serviss);
     else setError("Neizdevās ielādēt");
   }, [api]);
@@ -37,13 +55,22 @@ export function AutoparksV2Serviss({ carId, basics, perms }: CabinetPaneProps) {
 
   async function patch(body: Record<string, unknown>) {
     setError("");
-    const r = await fetch(api, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).catch(() => null);
-    const d = (await r?.json().catch(() => null)) as { serviss?: V2ServissView } | null;
+    const r = await fetch(api, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).catch(() => null);
+    const d = (await r?.json().catch(() => null)) as {
+      serviss?: V2ServissView;
+    } | null;
     if (r?.ok && d?.serviss) setView(d.serviss);
     else setError("Neizdevās saglabāt");
   }
 
-  const urlFor = useCallback((f: { id: string }) => `${api}/faili/${encodeURIComponent(f.id)}`, [api]);
+  const urlFor = useCallback(
+    (f: { id: string }) => `${api}/faili/${encodeURIComponent(f.id)}`,
+    [api],
+  );
   if (!view) return error ? <p className="ap2-err">{error}</p> : null;
 
   const pd = problemsDone(view.problems);
@@ -66,24 +93,62 @@ export function AutoparksV2Serviss({ carId, basics, perms }: CabinetPaneProps) {
         inv={inv}
         onBack={() => setInvoice(null)}
         onOpenFiles={(i) => setModal({ files: inv.files, index: i })}
-        onAddPage={() => setScan({ target: "invoice_page", invoiceId: inv.id, title: "Servisa rēķins" })}
+        onAddPage={() =>
+          setScan({
+            target: "invoice_page",
+            invoiceId: inv.id,
+            title: "Servisa rēķins",
+          })
+        }
         onAmount={(v) => void patch({ invoice: { id: inv.id, amountEur: v } })}
+        onAccept={() => void patch({ invoice: { id: inv.id, acceptAi: true } })}
+        onReload={() => void load()}
         onPick={(id) => setInvoice(id)}
-        modal={modal ? <FileModal files={modal.files} index={modal.index} urlFor={urlFor} onIndex={(i) => setModal({ ...modal, index: i })} onClose={() => setModal(null)} /> : null}
-        scanner={scan ? <Scanner carId={carId} target={scan} onClose={() => setScan(null)} onDone={afterScan} /> : null}
+        modal={
+          modal ? (
+            <FileModal
+              files={modal.files}
+              index={modal.index}
+              urlFor={urlFor}
+              onIndex={(i) => setModal({ ...modal, index: i })}
+              onClose={() => setModal(null)}
+            />
+          ) : null
+        }
+        scanner={
+          scan ? (
+            <Scanner
+              carId={carId}
+              target={scan}
+              onClose={() => setScan(null)}
+              onDone={afterScan}
+            />
+          ) : null
+        }
       />
     );
   }
 
-  const stepCls = (s: Step) => `ap2-step ${done[s] ? "done" : shown === s ? "cur" : ""}`;
+  const stepCls = (s: Step) =>
+    `ap2-step ${done[s] ? "done" : shown === s ? "cur" : ""}`;
   const no = (s: Step) => <span className="no">{done[s] ? "✓" : s}</span>;
-  const fileStep = (s: 1 | 2, label: string, files: V2ServissFile[], date: string, target: "number_check" | "diag") => (
+  const fileStep = (
+    s: 1 | 2,
+    label: string,
+    files: V2ServissFile[],
+    date: string,
+    target: "number_check" | "diag",
+  ) => (
     <div className={stepCls(s)}>
       {no(s)}
       <button
         type="button"
         className="ap2-sbox ap2-sbtn"
-        onClick={() => (files.length ? setModal({ files, index: 0 }) : setScan({ target, title: label }))}
+        onClick={() =>
+          files.length
+            ? setModal({ files, index: 0 })
+            : setScan({ target, title: label })
+        }
       >
         <span className="t">
           {s}. {label}
@@ -95,20 +160,54 @@ export function AutoparksV2Serviss({ carId, basics, perms }: CabinetPaneProps) {
 
   return (
     <div className="ap2-pane">
-      <ScanQueue online={queue.online} items={queue.items} onRetry={() => void queue.drain()} />
+      <ScanQueue
+        online={queue.online}
+        items={queue.items}
+        onRetry={() => void queue.drain()}
+      />
       <div className="ap2-techbar">
         <div className="vinrow">
           <VinCopy vin={basics.vin} />
         </div>
-        <TechCell label="1. reģ." value={fmtDateLv(basics.firstRegDate.value)} csdd={basics.firstRegDate.csdd} />
-        <TechCell label="Tilpums" value={fmtCm3(basics.displacementCm3.value)} csdd={basics.displacementCm3.csdd} />
-        <TechCell label="Jauda" value={fmtKw(basics.powerKw.value)} csdd={basics.powerKw.csdd} />
-        <TechCell label="Riepas" value={basics.tyreSize.value} csdd={false} addable={perms.pamatdati} carId={carId} />
+        <TechCell
+          label="1. reģ."
+          value={fmtDateLv(basics.firstRegDate.value)}
+          csdd={basics.firstRegDate.csdd}
+        />
+        <TechCell
+          label="Tilpums"
+          value={fmtCm3(basics.displacementCm3.value)}
+          csdd={basics.displacementCm3.csdd}
+        />
+        <TechCell
+          label="Jauda"
+          value={fmtKw(basics.powerKw.value)}
+          csdd={basics.powerKw.csdd}
+        />
+        <TechCell
+          label="Riepas"
+          value={basics.tyreSize.value}
+          csdd={false}
+          addable={perms.pamatdati}
+          carId={carId}
+        />
       </div>
 
       <div className="ap2-tl">
-        {fileStep(1, "Numuru salīdzināšanas akts", view.numberCheck.files, view.numberCheck.date, "number_check")}
-        {fileStep(2, "CSDD diagnostika", view.diag.files, view.diag.date, "diag")}
+        {fileStep(
+          1,
+          "Numuru salīdzināšanas akts",
+          view.numberCheck.files,
+          view.numberCheck.date,
+          "number_check",
+        )}
+        {fileStep(
+          2,
+          "CSDD diagnostika",
+          view.diag.files,
+          view.diag.date,
+          "diag",
+        )}
 
         <div className={stepCls(3)}>
           {no(3)}
@@ -121,7 +220,11 @@ export function AutoparksV2Serviss({ carId, basics, perms }: CabinetPaneProps) {
               </small>
             </button>
             {shown === 3 ? (
-              <Problems problems={view.problems} canConfirm={view.canConfirm} onPatch={(p) => void patch({ problem: p })} />
+              <Problems
+                problems={view.problems}
+                canConfirm={view.canConfirm}
+                onPatch={(p) => void patch({ problem: p })}
+              />
             ) : null}
           </div>
         </div>
@@ -133,7 +236,12 @@ export function AutoparksV2Serviss({ carId, basics, perms }: CabinetPaneProps) {
               4. Servisa piezīmes
               <small>{shown === 4 ? "" : "›"}</small>
             </button>
-            {shown === 4 ? <Notes value={view.notes} onSave={(notes) => void patch({ notes })} /> : null}
+            {shown === 4 ? (
+              <Notes
+                value={view.notes}
+                onSave={(notes) => void patch({ notes })}
+              />
+            ) : null}
           </div>
         </div>
 
@@ -150,9 +258,20 @@ export function AutoparksV2Serviss({ carId, basics, perms }: CabinetPaneProps) {
             {shown === 5 ? (
               <>
                 {view.invoices.map((i) => (
-                  <InvoiceRow key={i.id} inv={i} canSums={view.canSums} onOpen={() => setInvoice(i.id)} />
+                  <InvoiceRow
+                    key={i.id}
+                    inv={i}
+                    canSums={view.canSums}
+                    onOpen={() => setInvoice(i.id)}
+                  />
                 ))}
-                <button type="button" className="ap2-scanbig" onClick={() => setScan({ target: "invoice", title: "Servisa rēķins" })}>
+                <button
+                  type="button"
+                  className="ap2-scanbig"
+                  onClick={() =>
+                    setScan({ target: "invoice", title: "Servisa rēķins" })
+                  }
+                >
                   ◉ Skenēt rēķinu
                 </button>
               </>
@@ -162,7 +281,15 @@ export function AutoparksV2Serviss({ carId, basics, perms }: CabinetPaneProps) {
       </div>
 
       {error ? <p className="ap2-err">{error}</p> : null}
-      {modal ? <FileModal files={modal.files} index={modal.index} urlFor={urlFor} onIndex={(i) => setModal({ ...modal, index: i })} onClose={() => setModal(null)} /> : null}
+      {modal ? (
+        <FileModal
+          files={modal.files}
+          index={modal.index}
+          urlFor={urlFor}
+          onIndex={(i) => setModal({ ...modal, index: i })}
+          onClose={() => setModal(null)}
+        />
+      ) : null}
       {scan ? (
         <Scanner
           carId={carId}
@@ -175,17 +302,32 @@ export function AutoparksV2Serviss({ carId, basics, perms }: CabinetPaneProps) {
   );
 }
 
-function TechCell({ label, value, csdd, addable, carId }: { label: string; value: string; csdd: boolean; addable?: boolean; carId?: string }) {
+function TechCell({
+  label,
+  value,
+  csdd,
+  addable,
+  carId,
+}: {
+  label: string;
+  value: string;
+  csdd: boolean;
+  addable?: boolean;
+  carId?: string;
+}) {
   const [v, setV] = useState(value);
   const [edit, setEdit] = useState(false);
   async function save(next: string) {
     setEdit(false);
     if (!carId || next.trim() === v) return;
-    const r = await fetch(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(carId)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tyreSize: next.trim() }),
-    }).catch(() => null);
+    const r = await fetch(
+      `/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(carId)}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tyreSize: next.trim() }),
+      },
+    ).catch(() => null);
     if (r?.ok) setV(next.trim());
   }
   return (
@@ -195,7 +337,14 @@ function TechCell({ label, value, csdd, addable, carId }: { label: string; value
         {label}
       </span>
       {edit ? (
-        <input autoFocus defaultValue={v} onBlur={(e) => void save(e.target.value)} onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()} />
+        <input
+          autoFocus
+          defaultValue={v}
+          onBlur={(e) => void save(e.target.value)}
+          onKeyDown={(e) =>
+            e.key === "Enter" && (e.target as HTMLInputElement).blur()
+          }
+        />
       ) : v ? (
         <b onClick={() => addable && setEdit(true)}>{v}</b>
       ) : addable ? (
@@ -210,22 +359,45 @@ function TechCell({ label, value, csdd, addable, carId }: { label: string; value
 }
 
 /** Problēmas (T3): teksts pa visu platumu (lauks aug), zem tā 2 vienāda platuma ķekši. */
-function Problems({ problems, canConfirm, onPatch }: { problems: V2Problem[]; canConfirm: boolean; onPatch: (p: Record<string, unknown>) => void }) {
+function Problems({
+  problems,
+  canConfirm,
+  onPatch,
+}: {
+  problems: V2Problem[];
+  canConfirm: boolean;
+  onPatch: (p: Record<string, unknown>) => void;
+}) {
   const [adding, setAdding] = useState(false);
   return (
     <>
       {problems.map((p) => (
         <div key={p.id} className="ap2-prob">
-          <GrowText value={p.text} onSave={(text) => onPatch(text.trim() ? { id: p.id, text } : { id: p.id, remove: true })} />
+          <GrowText
+            value={p.text}
+            onSave={(text) =>
+              onPatch(
+                text.trim() ? { id: p.id, text } : { id: p.id, remove: true },
+              )
+            }
+          />
           <div className="ap2-tg">
-            <button type="button" className={p.fixedByService ? "on" : ""} onClick={() => onPatch({ id: p.id, fixedByService: !p.fixedByService })}>
+            <button
+              type="button"
+              className={p.fixedByService ? "on" : ""}
+              onClick={() =>
+                onPatch({ id: p.id, fixedByService: !p.fixedByService })
+              }
+            >
               Serviss novērsa
             </button>
             <button
               type="button"
               className={p.confirmedByUs ? "on" : ""}
               disabled={!canConfirm}
-              onClick={() => onPatch({ id: p.id, confirmedByUs: !p.confirmedByUs })}
+              onClick={() =>
+                onPatch({ id: p.id, confirmedByUs: !p.confirmedByUs })
+              }
             >
               Mēs apstiprinām
             </button>
@@ -244,7 +416,11 @@ function Problems({ problems, canConfirm, onPatch }: { problems: V2Problem[]; ca
           />
         </div>
       ) : (
-        <button type="button" className="ap2-addline" onClick={() => setAdding(true)}>
+        <button
+          type="button"
+          className="ap2-addline"
+          onClick={() => setAdding(true)}
+        >
           + Problēma
         </button>
       )}
@@ -252,7 +428,15 @@ function Problems({ problems, canConfirm, onPatch }: { problems: V2Problem[]; ca
   );
 }
 
-function GrowText({ value, onSave, autoFocus }: { value: string; onSave: (v: string) => void; autoFocus?: boolean }) {
+function GrowText({
+  value,
+  onSave,
+  autoFocus,
+}: {
+  value: string;
+  onSave: (v: string) => void;
+  autoFocus?: boolean;
+}) {
   const [v, setV] = useState(value);
   const ref = useRef<HTMLTextAreaElement>(null);
   useEffect(() => setV(value), [value]);
@@ -277,11 +461,25 @@ function GrowText({ value, onSave, autoFocus }: { value: string; onSave: (v: str
   );
 }
 
-function Notes({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+function Notes({
+  value,
+  onSave,
+}: {
+  value: string;
+  onSave: (v: string) => void;
+}) {
   return <GrowText value={value} onSave={onSave} autoFocus={!value} />;
 }
 
-function InvoiceRow({ inv, canSums, onOpen }: { inv: V2ServissInvoiceView; canSums: boolean; onOpen: () => void }) {
+function InvoiceRow({
+  inv,
+  canSums,
+  onOpen,
+}: {
+  inv: V2ServissInvoiceView;
+  canSums: boolean;
+  onOpen: () => void;
+}) {
   return (
     <button type="button" className="ap2-irow" onClick={onOpen}>
       <PdfIcon small />
@@ -289,7 +487,17 @@ function InvoiceRow({ inv, canSums, onOpen }: { inv: V2ServissInvoiceView; canSu
         {fmtDateLv(inv.date)}
         <small>{lapasLv(inv.pages)}</small>
       </span>
-      {canSums ? <span className={`a ${inv.amountEur == null ? "add" : ""}`}>{inv.amountEur == null ? "+ Summa" : fmtEur(inv.amountEur)}</span> : <span />}
+      {canSums ? (
+        inv.amountEur != null ? (
+          <span className="a">{fmtEur(inv.amountEur)}</span>
+        ) : inv.ai?.amountEur != null ? (
+          <span className="a sug">{fmtEur(inv.ai.amountEur)}</span>
+        ) : (
+          <span className="a add">+ Summa</span>
+        )
+      ) : (
+        <span />
+      )}
     </button>
   );
 }
@@ -302,6 +510,8 @@ function InvoicePage({
   onOpenFiles,
   onAddPage,
   onAmount,
+  onAccept,
+  onReload,
   onPick,
   modal,
   scanner,
@@ -312,15 +522,34 @@ function InvoicePage({
   onOpenFiles: (i: number) => void;
   onAddPage: () => void;
   onAmount: (v: number | null) => void;
+  onAccept: () => void;
+  onReload: () => void;
   onPick: (id: string) => void;
   modal: React.ReactNode;
   scanner: React.ReactNode;
 }) {
   const pages = Array.from({ length: inv.pages }, (_, i) => i);
+  // F10: AI ieteikums nāk dažas sekundes pēc skenēšanas - kamēr nav summas un ieteikuma, pārlasa (līdz ~1 min).
+  const waiting = view.canSums && inv.amountEur == null && !inv.ai;
+  useEffect(() => {
+    if (!waiting) return;
+    let n = 0;
+    const t = setInterval(() => {
+      n += 1;
+      if (n > 15) clearInterval(t);
+      else onReload();
+    }, 4000);
+    return () => clearInterval(t);
+  }, [waiting, onReload]);
   return (
     <div className="ap2-pane ap2-invpage">
       <div className="ap2-invbar">
-        <button type="button" className="ap2-back" onClick={onBack} aria-label="Atpakaļ">
+        <button
+          type="button"
+          className="ap2-back"
+          onClick={onBack}
+          aria-label="Atpakaļ"
+        >
           ‹
         </button>
         <h2>Servisa rēķins</h2>
@@ -328,7 +557,12 @@ function InvoicePage({
       <div className="ap2-card">
         <div className="ap2-pages">
           {pages.map((i) => (
-            <button key={i} type="button" className="pg" onClick={() => onOpenFiles(0)}>
+            <button
+              key={i}
+              type="button"
+              className="pg"
+              onClick={() => onOpenFiles(0)}
+            >
               <i />
               <i />
               <i />
@@ -346,12 +580,19 @@ function InvoicePage({
           <span className="k">Datums</span>
           <span className="v">{fmtDateLv(inv.date)}</span>
         </div>
-        {view.canSums ? <AmountRow inv={inv} onAmount={onAmount} /> : null}
+        {view.canSums ? (
+          <AmountRow inv={inv} onAmount={onAmount} onAccept={onAccept} />
+        ) : null}
       </div>
       <div className="ap2-card">
         <h3>Rēķini</h3>
         {view.invoices.map((i) => (
-          <InvoiceRow key={i.id} inv={i} canSums={view.canSums} onOpen={() => onPick(i.id)} />
+          <InvoiceRow
+            key={i.id}
+            inv={i}
+            canSums={view.canSums}
+            onOpen={() => onPick(i.id)}
+          />
         ))}
         {view.canSums ? (
           <div className="ap2-irow tot">
@@ -366,8 +607,41 @@ function InvoicePage({
   );
 }
 
-function AmountRow({ inv, onAmount }: { inv: V2ServissInvoiceView; onAmount: (v: number | null) => void }) {
+function AmountRow({
+  inv,
+  onAmount,
+  onAccept,
+}: {
+  inv: V2ServissInvoiceView;
+  onAmount: (v: number | null) => void;
+  onAccept: () => void;
+}) {
   const [edit, setEdit] = useState(false);
+  const suggestion =
+    inv.amountEur == null && inv.ai?.amountEur != null
+      ? inv.ai.amountEur
+      : null;
+  if (suggestion != null && !edit) {
+    // F10: AI ieteikums - apstiprina ar 1 pieskārienu (vai labo). Pašizmaksā tikai pēc apstiprinājuma.
+    return (
+      <div className="ap2-f">
+        <i className="ap2-cd" />
+        <span className="k">Summa</span>
+        <span className="ap2-aisug">
+          <button
+            type="button"
+            className="v ap2-inp sug"
+            onClick={() => setEdit(true)}
+          >
+            {fmtEur(suggestion)}
+          </button>
+          <button type="button" className="ap2-btn dark sm" onClick={onAccept}>
+            Apstiprināt
+          </button>
+        </span>
+      </div>
+    );
+  }
   return (
     <div className="ap2-f">
       <i className="ap2-cd" />
@@ -377,17 +651,34 @@ function AmountRow({ inv, onAmount }: { inv: V2ServissInvoiceView; onAmount: (v:
           className="v ap2-inp"
           inputMode="decimal"
           autoFocus={edit}
-          defaultValue={inv.amountEur == null ? "" : String(inv.amountEur).replace(".", ",")}
+          defaultValue={
+            inv.amountEur == null
+              ? suggestion == null
+                ? ""
+                : String(suggestion).replace(".", ",")
+              : String(inv.amountEur).replace(".", ",")
+          }
           placeholder="0,00 €"
           onBlur={(e) => {
             setEdit(false);
             const n = parseEurInput(e.target.value);
-            if (e.target.value.trim() === "" ? inv.amountEur != null : n !== inv.amountEur) onAmount(e.target.value.trim() === "" ? null : n);
+            if (
+              e.target.value.trim() === ""
+                ? inv.amountEur != null
+                : n !== inv.amountEur
+            )
+              onAmount(e.target.value.trim() === "" ? null : n);
           }}
-          onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+          onKeyDown={(e) =>
+            e.key === "Enter" && (e.target as HTMLInputElement).blur()
+          }
         />
       ) : (
-        <button type="button" className="v ap2-inp" onClick={() => setEdit(true)}>
+        <button
+          type="button"
+          className="v ap2-inp"
+          onClick={() => setEdit(true)}
+        >
           {fmtEur(inv.amountEur)}
         </button>
       )}
@@ -396,7 +687,15 @@ function AmountRow({ inv, onAmount }: { inv: V2ServissInvoiceView; onAmount: (v:
 }
 
 /** T9: "Nav interneta" + "Gaida augšupielādi": skenējumi telefonā, progress, "Neizdevās" + VĒLREIZ. */
-function ScanQueue({ online, items, onRetry }: { online: boolean; items: QueuedScan[]; onRetry: () => void }) {
+function ScanQueue({
+  online,
+  items,
+  onRetry,
+}: {
+  online: boolean;
+  items: QueuedScan[];
+  onRetry: () => void;
+}) {
   if (online && items.length === 0) return null;
   return (
     <div className="ap2-queue">
@@ -418,17 +717,29 @@ function ScanQueue({ online, items, onRetry }: { online: boolean; items: QueuedS
                     {lapasLv(q.pages.length)} ·{" "}
                     {q.state === "uploading"
                       ? `${Math.round(q.progress * 100)}%`
-                      : new Date(q.createdAt).toLocaleTimeString("lv-LV", { hour: "2-digit", minute: "2-digit" })}
+                      : new Date(q.createdAt).toLocaleTimeString("lv-LV", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                   </small>
                 )}
                 {q.state === "uploading" ? (
                   <div className="ap2-qbar">
-                    <i style={{ width: `${Math.max(4, Math.round(q.progress * 100))}%` }} />
+                    <i
+                      style={{
+                        width: `${Math.max(4, Math.round(q.progress * 100))}%`,
+                      }}
+                    />
                   </div>
                 ) : null}
               </div>
               {q.state === "failed" ? (
-                <button type="button" className="ap2-btn sec sm ap2-retry" onClick={onRetry} disabled={!online}>
+                <button
+                  type="button"
+                  className="ap2-btn sec sm ap2-retry"
+                  onClick={onRetry}
+                  disabled={!online}
+                >
                   VĒLREIZ
                 </button>
               ) : (
