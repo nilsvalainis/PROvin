@@ -103,14 +103,18 @@ type ClassifyRequest = Pick<
  * pat ja pavadzīmju saraksts (Dropbox kešs) to vēl nerāda.
  */
 export function plateTakenByOtherRequest(
-  requests: ReadonlyArray<Pick<WaybillRequest, "id" | "status" | "vehicle" | "validUntil" | "pickedAt">>,
-  req: Pick<WaybillRequest, "id" | "vehicle">,
+  requests: ReadonlyArray<Pick<WaybillRequest, "id" | "status" | "vehicle" | "validUntil" | "pickedAt"> & Partial<Pick<WaybillRequest, "waybillNo">>>,
+  req: Pick<WaybillRequest, "id" | "vehicle"> & Partial<Pick<WaybillRequest, "replaceWaybillNo">>,
   nowMs = Date.now(),
 ): boolean {
   const plate = compactDealerPlate(req.vehicle.plate);
+  const replaceNo = (req.replaceWaybillNo ?? "").trim().toUpperCase();
   return requests.some((other) => {
     if (other.id === req.id || compactDealerPlate(other.vehicle.plate) !== plate) return false;
     if (other.status === "in_progress") return !inProgressIsStale(other as WaybillRequest, nowMs);
+    // j16 (Audi 23.10): lietotājs apstiprināja anulēt tieši šo izdoto pavadzīmi - tā nav "cits darbs" (citādi darbs
+    // gaida līdz tās derīguma beigām). Worker CSDD pārbauda vēlreiz, ka numuru aizņem tieši šī viena pavadzīme.
+    if (other.status === "issued" && replaceNo && (other.waybillNo ?? "").trim().toUpperCase() === replaceNo) return false;
     if (other.status === "issued") {
       const until = Date.parse(other.validUntil);
       return Number.isFinite(until) && until > nowMs;

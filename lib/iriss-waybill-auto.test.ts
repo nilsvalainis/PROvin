@@ -120,6 +120,22 @@ describe("classifyWaybillForAuto", () => {
     expect(plateTakenByOtherRequest([me, oldIssued, otherPlate, req({ id: "wbr_c", status: "cancelled" })], me, NOW)).toBe(false);
   });
 
+  it("j16 (Audi 23.10): apstiprināta anulēšana - aizstājamā izdotā pavadzīme nebloķē; cita derīga vai darbā esoša bloķē", () => {
+    const issued = req({ id: "wbr_i", status: "issued", waybillNo: "P02814", validUntil: "2026-10-23T18:00:00.000Z" });
+    const replacing = req({ id: "wbr_me", plateBusyAtCreate: true, replaceWaybillNo: "P02814" });
+    expect(plateTakenByOtherRequest([replacing, issued], replacing, NOW)).toBe(false);
+    expect(
+      classifyWaybillForAuto(replacing, { plateBusyNow: true, plateInOtherRequest: plateTakenByOtherRequest([replacing, issued], replacing, NOW), nowMs: NOW, replaceEnabled: true }),
+    ).toMatchObject({ standard: true, replace: { waybillNo: "P02814" } });
+    // Cita pavadzīme (ne apstiprinātā) vai darbs procesā - joprojām bloķē.
+    const otherIssued = req({ id: "wbr_x", status: "issued", waybillNo: "P02815", validUntil: "2026-10-23T18:00:00.000Z" });
+    expect(plateTakenByOtherRequest([replacing, otherIssued], replacing, NOW)).toBe(true);
+    const working = req({ id: "wbr_w", status: "in_progress", pickedAt: "2026-10-22T18:00:10.000Z" });
+    expect(plateTakenByOtherRequest([replacing, issued, working], replacing, NOW)).toBe(true);
+    // Bez apstiprinājuma - kā līdz šim.
+    expect(plateTakenByOtherRequest([req({ id: "wbr_me" }), issued], req({ id: "wbr_me" }), NOW)).toBe(true);
+  });
+
   it("leaves own routes, invalid hours, retries, cancelled and released jobs to Aivars", () => {
     expect(classifyWaybillForAuto(req({ validHours: 0 }), free).standard).toBe(false);
     expect(classifyWaybillForAuto(req({ validHours: 3000 }), free).standard).toBe(false);
