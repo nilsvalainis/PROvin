@@ -1,15 +1,18 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, FileText, Loader2, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileText, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
+import { AdminPushToggle } from "@/components/admin/AdminPushToggle";
 import { IrissKomandaAivaramChat } from "@/components/admin/IrissKomandaAivaramChat";
 import { IrissWaybillCalendar } from "@/components/admin/IrissWaybillCalendar";
 import { IrissWaybillGauges } from "@/components/admin/IrissWaybillGauges";
+import { IrissWaybillRequestArchive } from "@/components/admin/IrissWaybillMobileForm";
 import { IrissWaybillPdfSheet } from "@/components/admin/IrissWaybillPdfSheet";
+import { IrissVpnControl } from "@/components/admin/IrissVpnControl";
 import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
 import { waybillHistoryForVin } from "@/lib/iriss-waybill-calendar";
 import { formatIrissWaybillChip } from "@/lib/admin-mobile-ds";
@@ -104,14 +107,10 @@ function PavadzimeSearchFocus({ rowCount }: { rowCount: number }) {
 export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
   const [data, setData] = useState(initial);
   const [nowMs, setNowMs] = useState(() => Date.now());
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<WaybillView>("current");
   const [extendVehicle, setExtendVehicle] = useState<WaybillVehicleChip | null>(null);
   const [pdfPreview, setPdfPreview] = useState<{ href: string; title: string } | null>(null);
   const [historyVin, setHistoryVin] = useState<string | null>(null);
-  const [pdfSheetOpen, setPdfSheetOpen] = useState(false);
-  const [mobileVin, setMobileVin] = useState("");
 
   /** Atkārtot ar vienu pieskārienu: Aivara pieprasījums aizpildīts ar to pašu numuru, auto un VIN. */
   const repeatWaybill = (row: IrissPavadzimeListRow) => {
@@ -127,9 +126,6 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
   };
   const openPdf = (row: IrissPavadzimeListRow) =>
     setPdfPreview({ href: `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`, title: `${row.number || "Pavadzīme"} · ${row.brandModel}`.trim() });
-  const fileRef = useRef<HTMLInputElement>(null);
-  const mobileFileRef = useRef<HTMLInputElement>(null);
-  const vinRef = useRef<HTMLInputElement>(null);
   const onDraftConsumed = useCallback(() => setExtendVehicle(null), []);
 
   useEffect(() => {
@@ -180,37 +176,6 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
     return () => window.clearTimeout(t);
   }, [data.pendingParse, refresh]);
 
-  const onUpload = useCallback(
-    async (file: File, vinInput?: string): Promise<boolean> => {
-      setUploading(true);
-      setError(null);
-      try {
-        const fd = new FormData();
-        fd.set("file", file);
-        const vin = (vinInput ?? vinRef.current?.value ?? "").trim();
-        if (vin) fd.set("vin", vin);
-        const res = await fetch("/api/admin/iriss-pavadzimes/upload", {
-          method: "POST",
-          credentials: "include",
-          body: fd,
-        });
-        const json = (await res.json().catch(() => null)) as (PageData & { error?: string }) | null;
-        if (!res.ok || !json || !Array.isArray(json.rows)) {
-          throw new Error(typeof json?.error === "string" ? json.error : "Neizdevās augšupielādēt");
-        }
-        setData(json);
-        if (vinRef.current) vinRef.current.value = "";
-        return true;
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Neizdevās augšupielādēt");
-        return false;
-      } finally {
-        setUploading(false);
-      }
-    },
-    [],
-  );
-
   const now = new Date(nowMs);
   const rows = data.rows
     .filter((row) => inView(row, view))
@@ -248,40 +213,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
           ))}
         </div>
         {data.pendingParse > 0 ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#8e8e93]" aria-hidden /> : null}
-        <div className="flex min-w-0 flex-1 items-center gap-1.5 max-md:w-full max-md:flex-none md:ml-auto md:max-w-[20rem]">
-          <input
-            ref={vinRef}
-            type="text"
-            inputMode="text"
-            autoComplete="off"
-            spellCheck={false}
-            placeholder="VIN"
-            aria-label="VIN"
-            className="h-11 min-w-0 flex-1 rounded-lg border-0 bg-[#e9e9ee] px-3 text-[16px] text-[#1d1d1f] outline-none placeholder:text-[#8e8e93] focus:ring-2 focus:ring-[var(--color-provin-accent)]/35 md:h-8 md:w-[9.5rem] md:flex-none md:text-[12px]"
-          />
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/pdf,.pdf"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              e.target.value = "";
-              if (f) void onUpload(f);
-            }}
-          />
-          <button
-            type="button"
-            disabled={uploading}
-            onClick={() => fileRef.current?.click()}
-            className="inline-flex h-11 shrink-0 items-center gap-1 whitespace-nowrap rounded-lg bg-[#1d1d1f] px-3 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60 md:h-8 md:px-2.5 md:text-[12.5px]"
-          >
-            {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : <Plus className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden />}
-            <span>PDF</span>
-          </button>
-        </div>
       </div>
-      {error ? <p className="mt-1 text-right text-[11px] text-red-600 max-md:px-4">{error}</p> : null}
       {data.dropboxError ? <p className="mt-1 text-right text-[11px] text-red-600 max-md:px-4">{data.dropboxError}</p> : null}
 
       {view !== "current" ? (
@@ -549,6 +481,11 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
           </div>
         </>
       )}
+      {view === "archive" ? (
+        <div className="max-md:px-4">
+          <IrissWaybillRequestArchive />
+        </div>
+      ) : null}
         </div>
         <div id="komanda-aivaram" className={`scroll-mt-4 max-md:px-4 ${view === "current" ? "" : "max-md:hidden"}`}>
           <IrissKomandaAivaramChat
@@ -557,75 +494,35 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
           />
         </div>
         {view === "current" ? (
-          <div className="px-4 pb-4 md:hidden">
+          <div className="px-4 pb-6 md:hidden">
             <p className="px-1 pb-1.5 pt-1 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--ink2,#8e8e93)]">Vēl</p>
             <div className="overflow-hidden rounded-[14px] bg-[var(--s1,#fff)]">
-              {(
-                [
-                  { key: "calendar", label: "Kalendārs", count: null, onClick: () => setView("calendar") },
-                  { key: "archive", label: "Arhīvs", count: viewCount("archive"), onClick: () => setView("archive") },
-                  { key: "pdf", label: "Pievienot PDF", count: null, onClick: () => setPdfSheetOpen(true) },
-                ] as const
-              ).map((item, i) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={item.onClick}
-                  className={`flex min-h-12 w-full items-center gap-2.5 px-3.5 text-left text-[15px] text-[var(--ink,#0b0c10)] ${
-                    i ? "border-t-[0.5px] border-[var(--hair,rgba(17,24,39,0.08))]" : ""
-                  }`}
-                >
-                  <span className="flex-1">{item.label}</span>
-                  {item.count != null ? (
-                    <span className="text-[14px] tabular-nums text-[var(--ink2,#5e636e)]">{item.count}</span>
-                  ) : null}
-                  <ChevronRight className="h-4 w-4 text-[var(--ink3,#9a9faa)]" aria-hidden />
-                </button>
-              ))}
+              <button
+                type="button"
+                onClick={() => setView("calendar")}
+                className="flex min-h-12 w-full items-center gap-2.5 px-3.5 text-left text-[15px] text-[var(--ink,#0b0c10)]"
+              >
+                <span className="flex-1">Kalendārs</span>
+                <ChevronRight className="h-4 w-4 text-[var(--ink3,#9a9faa)]" aria-hidden />
+              </button>
             </div>
-          </div>
-        ) : null}
-        <AdminMobileSheet open={pdfSheetOpen} title="Pievienot PDF" subtitle="Izdota pavadzīme no CSDD" onClose={() => setPdfSheetOpen(false)}>
-          <div className="flex flex-col gap-2.5">
-            <input
-              type="text"
-              value={mobileVin}
-              onChange={(e) => setMobileVin(e.target.value)}
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="VIN (nav obligāts)"
-              aria-label="VIN"
-              className="h-11 w-full px-3 font-mono text-[16px]"
-            />
+            <div className="mt-3">
+              <AdminPushToggle hint="Paziņojums telefonā, kad pavadzīme izrakstīta vai neizdevās." />
+            </div>
+            {/* VPN un servera stāvoklis - pašā apakšā, liela poga (tikai telefonā; datorā augšā kā agrāk). */}
+            <div className="mt-6">
+              <IrissVpnControl variant="card" />
+            </div>
+            {/* Beigušās un vecās pavadzīmes nav pirmajā lapā - tikai maza saite pašā apakšā. */}
             <button
               type="button"
-              disabled={uploading}
-              onClick={() => mobileFileRef.current?.click()}
-              className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-[10px] bg-[var(--btn-dark-bg,#1d1d1f)] text-[15px] font-semibold text-[var(--btn-dark-fg,#fff)] disabled:opacity-60"
+              onClick={() => setView("archive")}
+              className="mx-auto mt-5 flex min-h-11 items-center px-3 text-[13px] font-medium text-[var(--ink2,#5e636e)]"
             >
-              {uploading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden />}
-              <span>Izvēlēties PDF</span>
+              Arhīvs ({viewCount("archive")}) ›
             </button>
-            <input
-              ref={mobileFileRef}
-              type="file"
-              accept="application/pdf,.pdf"
-              className="hidden"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                e.target.value = "";
-                if (!f) return;
-                void onUpload(f, mobileVin).then((ok) => {
-                  if (ok) {
-                    setMobileVin("");
-                    setPdfSheetOpen(false);
-                  }
-                });
-              }}
-            />
-            {error ? <p className="text-[13px] text-[var(--bad,#c2362b)]">{error}</p> : null}
           </div>
-        </AdminMobileSheet>
+        ) : null}
         <IrissWaybillPdfSheet href={pdfPreview?.href ?? null} title={pdfPreview?.title ?? ""} onClose={() => setPdfPreview(null)} />
         <AdminMobileSheet open={Boolean(historyVin)} title="Pavadzīmes šim auto" subtitle={historyVin ?? ""} onClose={() => setHistoryVin(null)}>
           <ul className="flex flex-col gap-2">

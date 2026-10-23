@@ -25,7 +25,9 @@ Pending jobs (GET) and the claim payload are this object:
   "validDays": 2,
   "validHours": 48,
   "comment_untrusted": "B762 uz 48h",
-  "note_untrusted": "B762 uz 48h"
+  "note_untrusted": "B762 uz 48h",
+  "tradeAct": false,
+  "representative": ""
 }
 ```
 
@@ -39,6 +41,9 @@ Required structured fields (validated by the server before the job is queued):
 - `validHours` integer 1-2160 (default 48). Server sets `validFrom = now` and `validUntil = now + N h` (Europe/Riga clock for operators, ISO UTC in the job).
 - `routeFrom` / `routeTo` default to `Tukums, Rīgas iela` -> `Tukuma CSDD`. On the phone form staff can pick "Cits" and type an address (max 80 chars: letters, digits, `. , - / ( )`); the server validates it and sends it in `routeFrom` / `routeTo`. Number check (numuru salīdzināšana) defaults to CSDD Tukuma; another place may be written in `comment_untrusted`.
 - Comment only: if the form has no car but `comment_untrusted` looks like `193 uz BMW 330`, the server takes the plate (allowlist only) and `brandModel` (safe chars only) from it as data. `brandModel` is always filled when a job is queued.
+
+- `tradeAct: true` (v2, 23.10.2026): the car is accepted for trade (CSDD tirdzniecības akts). Then `routeFrom` / `routeTo` are empty - CSDD does not need a route. Open the act and press "Noformēt pavadzīmi", fill only `validHours` and `representative` (komersanta pārstāvis, e.g. `Nils Valainis` for ĪRISS plates, `Taivo Batiņš` for B192-7). The automation never takes these jobs.
+- Jobs with no progress for 24 h (queued / in progress) are stale: they are no longer listed in GET and cannot be claimed. Staff see them in Arhīvs as "Novecojis"; data is not changed.
 
 Aivars on the CSDD side:
 

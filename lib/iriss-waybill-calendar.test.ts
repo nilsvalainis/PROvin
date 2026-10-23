@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildWaybillCalendar, waybillHistoryForVin } from "@/lib/iriss-waybill-calendar";
+import { buildWaybillCalendar, waybillExpiredByDay, waybillPlateCards, waybillHistoryForVin } from "@/lib/iriss-waybill-calendar";
 
 const H = 3_600_000;
 const now = new Date(2026, 9, 22, 12, 0, 0).getTime(); // vietējais 12:00
@@ -45,5 +45,52 @@ describe("pavadzīmju kalendārs", () => {
     ];
     expect(waybillHistoryForVin(rows, "WBA3A5C50CF256551").map((r) => r.id)).toEqual(["2", "1"]);
     expect(waybillHistoryForVin(rows, "")).toEqual([]);
+  });
+});
+
+describe("calendar v2 (phone cards)", () => {
+  // 23.10.2026 22:10 Rīgā (UTC+3).
+  const now = Date.parse("2026-10-23T19:10:00.000Z");
+  const row = (id: string, plate: string, until: string, extra: Record<string, unknown> = {}) => ({
+    id,
+    number: id,
+    brandModel: `Auto ${id}`,
+    vin: `VIN${id}`,
+    plate,
+    issuedAt: "2026-10-22T19:00:00.000Z",
+    validUntil: until,
+    ...extra,
+  });
+  it("one card per plate: active with ends/left, or free with the last one", () => {
+    const rows = [
+      row("a", "B762-7", "2026-10-24T03:42:00.000Z"),
+      row("b", "B1937", "2026-10-25T02:54:00.000Z"),
+      row("old", "B192-7", "2026-10-21T15:00:00.000Z"),
+      row("cut", "B192-7", "2026-10-24T15:00:00.000Z", { lifecycle: "interrupted" }),
+    ];
+    const cards = waybillPlateCards(rows, ["B193-7", "B762-7", "B192-7"], now);
+    expect(cards[0]?.active).toMatchObject({ id: "b", endsLabel: "25.10., 04:54", tone: "ok", hoursLeft: 31 });
+    expect(cards[1]?.active).toMatchObject({ id: "a", endsLabel: "rīt, 06:42", tone: "soon", hoursLeft: 8 });
+    expect(cards[2]).toMatchObject({ active: null, last: { brandModel: "Auto old", endedLabel: "21.10., 18:00" } });
+  });
+
+  it("expired in the last 7 days grouped by day, newest first", () => {
+    const rows = [
+      row("x", "B192-7", "2026-10-21T15:00:00.000Z"),
+      row("y", "B193-7", "2026-10-19T06:15:00.000Z"),
+      row("z", "B762-7", "2026-10-19T04:30:00.000Z"),
+      row("ancient", "B762-7", "2026-10-01T04:30:00.000Z"),
+      row("live", "B762-7", "2026-10-24T04:30:00.000Z"),
+    ];
+    expect(waybillExpiredByDay(rows, now)).toEqual([
+      { day: "21.10.2026", items: [{ id: "x", plate: "B192-7", brandModel: "Auto x", time: "18:00" }] },
+      {
+        day: "19.10.2026",
+        items: [
+          { id: "y", plate: "B193-7", brandModel: "Auto y", time: "09:15" },
+          { id: "z", plate: "B762-7", brandModel: "Auto z", time: "07:30" },
+        ],
+      },
+    ]);
   });
 });

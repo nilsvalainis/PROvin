@@ -18,7 +18,8 @@ export default async function IrissPavadzimesPage() {
 
   return (
     <div className="relative min-h-full w-full max-w-none pb-24 sm:pb-8">
-      <div className="mb-2 max-md:px-4 max-md:pt-3">
+      {/* Datorā VPN paliek augšā; telefonā tas ir lapas apakšā kā liela kartīte (IrissPavadzimesListClient). */}
+      <div className="mb-2 max-md:hidden">
         <IrissVpnControl />
       </div>
       <IrissPavadzimesListClient initial={data} />

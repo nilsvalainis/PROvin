@@ -10,15 +10,27 @@ import {
   WAYBILL_VALID_MAX_HOURS,
   waybillHintsFromComment,
   waybillHoursBetween,
+  waybillRepresentativesForPlate,
 } from "@/lib/iriss-waybill-create";
-import { displayDealerPlate, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
-import type { WaybillAivarsReply, WaybillRequest, WaybillRequestStatus } from "@/lib/iriss-waybill-requests";
+import { displayDealerPlate, formatRigaDateTimeComma, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
+import { waybillErrorNeedsCheck } from "@/lib/iriss-waybill-push";
+import {
+  WAYBILL_STALE_LABEL,
+  isStaleWaybillRequest,
+  type WaybillAivarsReply,
+  type WaybillRequest,
+  type WaybillRequestStatus,
+} from "@/lib/iriss-waybill-requests";
 
 export const WAYBILL_MOBILE_HOUR_PRESETS = [12, 24, 48] as const;
 
 export type WaybillRoutePlace = "tukums" | "other";
 
-export type WaybillMobileCar = { brandModel: string; vin: string; id: string };
+/** Sākuma adrese pēc noklusējuma (Tukums); serverī tā ir DEFAULT_WAYBILL_ROUTE_FROM. */
+export const WAYBILL_TUKUMS_STREET = "Rīgas iela 75";
+
+/** accepted: auto ir CSDD tirdzniecībā pieņemto sarakstā (pavadzīme no akta, bez maršruta). */
+export type WaybillMobileCar = { brandModel: string; vin: string; id: string; accepted?: boolean };
 
 export type WaybillMobileFormState = {
   plate: string;
@@ -33,10 +45,11 @@ export type WaybillMobileFormState = {
   hoursPreset: number | null;
   hoursOther: string;
   comment: string;
+  /** Sākuma adrese (tikai auto, kas nav tirdzniecībā pieņemts). Galamērķa lauka nav: CSDD Tukums. */
   from: WaybillRoutePlace;
   fromAddress: string;
-  to: WaybillRoutePlace;
-  toAddress: string;
+  /** Komersanta pārstāvis (tikai pieņemtam auto); tukšs = pirmais šī numura firmas pārstāvis. */
+  representative: string;
 };
 
 export type WaybillMobilePayload = {
@@ -46,7 +59,8 @@ export type WaybillMobilePayload = {
   validHours: number;
   comment_untrusted: string;
   routeFromAddress: string;
-  routeToAddress: string;
+  tradeAct: boolean;
+  representative: string;
 };
 
 export function initialWaybillMobileForm(plate: string): WaybillMobileFormState {
@@ -61,8 +75,7 @@ export function initialWaybillMobileForm(plate: string): WaybillMobileFormState 
     comment: "",
     from: "tukums",
     fromAddress: "",
-    to: "tukums",
-    toAddress: "",
+    representative: "",
   };
 }
 
@@ -97,10 +110,26 @@ export function buildWaybillMobilePayload(state: WaybillMobileFormState): Waybil
   }
   const validHours = waybillMobileHours(state);
   if (validHours == null) return { ok: false, error: `Ieraksti stundas: 1 līdz ${WAYBILL_VALID_MAX_HOURS}.` };
+  const tradeAct = waybillMobileTradeAct(state);
+  if (tradeAct) {
+    const representative = waybillMobileRepresentative({ ...state, plate });
+    if (!representative) return { ok: false, error: "Izvēlies komersanta pārstāvi." };
+    return {
+      ok: true,
+      payload: {
+        plate,
+        brandModel,
+        vin: state.car?.vin ?? "",
+        validHours,
+        comment_untrusted: comment,
+        routeFromAddress: "",
+        tradeAct: true,
+        representative,
+      },
+    };
+  }
   const fromAddress = state.from === "other" ? state.fromAddress.trim().slice(0, WAYBILL_ROUTE_MAX) : "";
-  const toAddress = state.to === "other" ? state.toAddress.trim().slice(0, WAYBILL_ROUTE_MAX) : "";
   if (state.from === "other" && !fromAddress) return { ok: false, error: "Ieraksti sākuma adresi." };
-  if (state.to === "other" && !toAddress) return { ok: false, error: "Ieraksti galamērķa adresi." };
   return {
     ok: true,
     payload: {
@@ -110,9 +139,22 @@ export function buildWaybillMobilePayload(state: WaybillMobileFormState): Waybil
       validHours,
       comment_untrusted: comment,
       routeFromAddress: fromAddress,
-      routeToAddress: toAddress,
+      tradeAct: false,
+      representative: "",
     },
   };
+}
+
+/** Pieņemts tirdzniecībā (no saraksta): tikai laiks + komersanta pārstāvis, maršruta nav. */
+export function waybillMobileTradeAct(state: Pick<WaybillMobileFormState, "manual" | "car">): boolean {
+  return !state.manual && state.car?.accepted === true;
+}
+
+/** Izvēlētais pārstāvis vai šī numura firmas pirmais. */
+export function waybillMobileRepresentative(state: Pick<WaybillMobileFormState, "representative" | "plate">): string {
+  const own = state.representative.trim();
+  if (own) return own;
+  return waybillRepresentativesForPlate(state.plate)[0] ?? "";
 }
 
 export type WaybillMobileChipTone = "wait" | "wip" | "ok" | "bad";
@@ -120,7 +162,7 @@ export type WaybillMobileChipTone = "wait" | "wip" | "ok" | "bad";
 export const WAYBILL_MOBILE_STATUS: Record<WaybillRequestStatus, { label: string; tone: WaybillMobileChipTone }> = {
   queued: { label: "Gaida", tone: "wait" },
   in_progress: { label: "Izveido", tone: "wip" },
-  issued: { label: "Izdota", tone: "ok" },
+  issued: { label: "Izrakstīta", tone: "ok" },
   error: { label: "Kļūda", tone: "bad" },
 };
 
@@ -133,7 +175,22 @@ export type WaybillMobileRequestRow = {
   pdfUrl: string;
   canRetry: boolean;
   errorText: string;
+  /** Novecojis: 24 h bez virzības - tikai Arhīvā. */
+  stale: boolean;
+  progress: WaybillMobileProgress;
 };
+
+/** Dzīvais progress: 3 soļi (Gaida - Izveido - Izrakstīta) un procenti joslai. */
+export type WaybillMobileProgress = {
+  step: 1 | 2 | 3;
+  pct: number;
+  text: string;
+};
+
+/** Pēc cik ilga gaidīšanas rāda "Gaida ilgāk nekā parasti" un ļauj atkārtot. */
+export const WAYBILL_MOBILE_LONG_WAIT_MS = 15 * 60 * 1000;
+/** Parasts darba ilgums pēc "Paņēmu darbā" (josla aug līdz 90 %, līdz pienāk rezultāts). */
+const TYPICAL_WORK_MS = 3 * 60 * 1000;
 
 function hm(iso: string): string {
   const d = new Date(iso);
@@ -141,18 +198,76 @@ function hm(iso: string): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-/** Kompakts Aivara pieprasījumu saraksts (jaunākie augšā). */
+function sinceMs(iso: string, nowMs: number): number {
+  const t = Date.parse(iso);
+  return Number.isFinite(t) ? Math.max(0, nowMs - t) : 0;
+}
+
+export function waybillMobileProgress(
+  request: Pick<WaybillRequest, "status" | "createdAt" | "updatedAt" | "pickedAt" | "errorReason" | "validUntil" | "waybillNo">,
+  nowMs = Date.now(),
+): WaybillMobileProgress {
+  if (request.status === "issued") {
+    const until = formatRigaDateTimeComma(request.validUntil);
+    const text = [request.waybillNo ? `Nr. ${request.waybillNo}` : "", until ? `derīga līdz ${until}` : ""].filter(Boolean).join(" · ");
+    return { step: 3, pct: 100, text: text || "Pavadzīme izrakstīta." };
+  }
+  if (request.status === "error") {
+    const reason = request.errorReason.trim();
+    const text = waybillErrorNeedsCheck(reason)
+      ? "Iespējams, pavadzīme CSDD jau ir izveidota. Pārbaudi, pirms atkārto."
+      : `Neizdevās${reason ? `: ${reason.replace(/[.\s]+$/, "")}` : ""}. Spied "Atkārtot".`;
+    return { step: request.pickedAt ? 2 : 1, pct: request.pickedAt ? 66 : 33, text };
+  }
+  if (request.status === "in_progress") {
+    const share = Math.min(1, sinceMs(request.pickedAt || request.updatedAt, nowMs) / TYPICAL_WORK_MS);
+    return { step: 2, pct: Math.round(40 + 50 * share), text: "Aivars raksta pavadzīmi CSDD..." };
+  }
+  const waited = sinceMs(request.updatedAt || request.createdAt, nowMs);
+  if (waited > WAYBILL_MOBILE_LONG_WAIT_MS) {
+    return { step: 1, pct: 20, text: 'Gaida ilgāk nekā parasti. Ja steidzami, spied "Atkārtot" vai raksti Aivaram.' };
+  }
+  return { step: 1, pct: Math.round(10 + 15 * (waited / WAYBILL_MOBILE_LONG_WAIT_MS)), text: "Rindā. Aivars sāks pēc brīža." };
+}
+
+/**
+ * Vai pieprasījums ir "tagadējs" (pirmajā lapā): darbā, nesena kļūda vai izrakstīta un vēl derīga.
+ * Beigušās, vecas kļūdas un novecojušie (24 h bez virzības) ir tikai Arhīvā.
+ */
+export function waybillMobileRequestIsCurrent(
+  request: Pick<WaybillRequest, "status" | "createdAt" | "updatedAt" | "validUntil">,
+  nowMs = Date.now(),
+): boolean {
+  if (isStaleWaybillRequest(request, nowMs)) return false;
+  if (request.status === "queued" || request.status === "in_progress") return true;
+  if (request.status === "issued") {
+    const until = Date.parse(request.validUntil);
+    return Number.isFinite(until) && until > nowMs;
+  }
+  return sinceMs(request.updatedAt || request.createdAt, nowMs) <= 24 * 60 * 60 * 1000;
+}
+
+/** Kompakts Aivara pieprasījumu saraksts (jaunākie augšā). which: tagadējie vai arhīvs. */
 export function waybillMobileRequestRows(
   requests: ReadonlyArray<WaybillRequest>,
   replies: ReadonlyArray<WaybillAivarsReply>,
   limit = 5,
+  opts: { nowMs?: number; which?: "current" | "archive" | "all" } = {},
 ): WaybillMobileRequestRow[] {
+  const nowMs = opts.nowMs ?? Date.now();
+  const which = opts.which ?? "current";
   return [...requests]
+    .filter((request) => {
+      if (which === "all") return true;
+      const current = waybillMobileRequestIsCurrent(request, nowMs);
+      return which === "current" ? current : !current;
+    })
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, limit)
     .map((request) => {
       const reply = replies.find((r) => r.requestId === request.id);
       const status = reply?.status ?? request.status;
+      const stale = isStaleWaybillRequest({ ...request, status }, nowMs);
       const hours =
         request.validHours && request.validHours >= 1
           ? request.validHours
@@ -166,15 +281,19 @@ export function waybillMobileRequestRows(
       ]
         .filter(Boolean)
         .join(" · ");
+      const progress = waybillMobileProgress({ ...request, status, waybillNo }, nowMs);
+      const longWait = status === "queued" && sinceMs(request.updatedAt || request.createdAt, nowMs) > WAYBILL_MOBILE_LONG_WAIT_MS;
       return {
         id: request.id,
         title: request.vehicle.brandModel || request.noteUntrusted || "Auto",
         sub,
-        label: WAYBILL_MOBILE_STATUS[status].label,
-        tone: WAYBILL_MOBILE_STATUS[status].tone,
+        label: stale ? WAYBILL_STALE_LABEL : WAYBILL_MOBILE_STATUS[status].label,
+        tone: stale ? "wait" : WAYBILL_MOBILE_STATUS[status].tone,
         pdfUrl: reply?.pdfUrl || request.pdfUrl,
-        canRetry: status === "error",
+        canRetry: status === "error" || (status === "queued" && (longWait || stale)),
         errorText: status === "error" ? request.errorReason || reply?.text || "" : "",
+        stale,
+        progress,
       };
     });
 }
