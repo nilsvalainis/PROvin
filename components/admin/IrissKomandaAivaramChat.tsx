@@ -31,6 +31,8 @@ import {
 import { formatWaybillExpiryDdMmHm } from "@/lib/iriss-pavadzimes-countdown";
 import { LvDealerPlate } from "@/components/admin/LvDealerPlate";
 import { IrissWaybillMobileForm, confirmWaybillCancel, type WaybillMobileDraft } from "@/components/admin/IrissWaybillMobileForm";
+import { IrissWaybillSavePdfButton } from "@/components/admin/IrissWaybillSavePdfButton";
+import { waybillDropboxFileName, waybillPdfDownloadHref } from "@/lib/iriss-waybill-pdf";
 import {
   WAYBILL_FORM_DEFAULT_HOURS,
   WAYBILL_MOBILE_HOUR_PRESETS,
@@ -370,6 +372,25 @@ export function IrissKomandaAivaramChat({
     }
   }
 
+  /** Admins: "Saglabāt Dropbox vēlreiz" pēc kļūdas (serveris kolēģim to aizliedz). */
+  async function retryDropbox(id: string) {
+    try {
+      const res = await fetch(`/api/admin/iriss/waybill-requests/${encodeURIComponent(id)}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "dropbox" }),
+      });
+      const json = (await res.json().catch(() => null)) as (Partial<WaybillChatState> & { error?: string }) | null;
+      if (json && Array.isArray(json.requests)) {
+        setChat((prev) => ({ ...withReplies(json), vehicles: prev.vehicles, plates: prev.plates }));
+      }
+      if (!res.ok) setError(json?.error ? `Dropbox: ${json.error}` : "Neizdevās saglabāt Dropbox.");
+    } catch {
+      setError("Neizdevās saglabāt Dropbox.");
+    }
+  }
+
   return (
     <>
     <div className="md:hidden">
@@ -418,6 +439,7 @@ export function IrissKomandaAivaramChat({
                 request={item.request}
                 reply={chat.replies.find((row) => row.requestId === item.request.id) ?? waybillAivarsReply(item.request, chat.events)}
                 onCancel={() => void cancel(item.request.id)}
+                onRetryDropbox={() => void retryDropbox(item.request.id)}
               />
             ) : (
               <EventBubble
@@ -633,10 +655,12 @@ function RequestBubble({
   request,
   reply,
   onCancel,
+  onRetryDropbox,
 }: {
   request: WaybillRequest;
   reply: WaybillAivarsReply;
   onCancel: () => void;
+  onRetryDropbox: () => void;
 }) {
   const hours = requestHours(request);
   const shownPlate = displayDealerPlate(request.vehicle.plate) || request.vehicle.plate;
@@ -674,6 +698,30 @@ function RequestBubble({
           >
             Atvērt pavadzīmi
           </a>
+        ) : null}
+        {reply.status === "issued" && reply.canSavePdf ? (
+          <IrissWaybillSavePdfButton
+            href={waybillPdfDownloadHref(request.id)}
+            fileName={
+              waybillDropboxFileName({
+                waybillNo: reply.waybillNo,
+                brandModel: request.vehicle.brandModel,
+                plate: request.vehicle.plate,
+              }) || `${reply.waybillNo || "pavadzime"}.pdf`
+            }
+            className="mt-2 flex min-h-9 w-full items-center justify-center rounded-[10px] bg-[#F3F4F6] px-3 text-[12.5px] font-semibold text-[#111827] disabled:opacity-60"
+          />
+        ) : null}
+        {reply.status === "issued" && reply.dropboxPath ? (
+          <p className="mt-1 text-[11px] text-[#067647]">Saglabāta Dropbox: {reply.dropboxPath}</p>
+        ) : null}
+        {reply.status === "issued" && !reply.dropboxPath && reply.dropboxError ? (
+          <div className="mt-1 text-[11px] text-[#B42318]">
+            <p>Dropbox nav saglabāts: {reply.dropboxError}</p>
+            <button type="button" onClick={onRetryDropbox} className="mt-0.5 font-medium text-[#3d5bd9]">
+              Saglabāt Dropbox vēlreiz
+            </button>
+          </div>
         ) : null}
         {waybillRequestCancellable(request) ? (
           <button

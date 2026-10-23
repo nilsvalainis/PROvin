@@ -15,7 +15,8 @@ import { listWaybillVehicleChips } from "@/lib/iriss-waybill-vehicles";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { waybillTradeCarsWithSource, type WaybillCarsSource, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 import { canSeeWaybillOrders } from "@/lib/iriss-pavadzimes-list";
-import { requireIrissSectionApi } from "@/lib/staff-auth";
+import { requireIrissSectionApi, waybillPdfViewer } from "@/lib/staff-auth";
+import { withWaybillPdfAccess } from "@/lib/iriss-waybill-pdf";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -83,7 +84,10 @@ export async function GET(req: Request) {
     return NextResponse.json(
       {
         ok: true,
-        ...waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc), Date.now(), auto),
+        ...withWaybillPdfAccess(
+          waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc), Date.now(), auto),
+          waybillPdfViewer(gate.actor),
+        ),
         autoMode: auto.mode,
         vehicles: withOrders ? vehicles : vehicles.map((v) => ({ ...v, orderId: "" })),
         plates,
@@ -162,7 +166,10 @@ export async function POST(req: Request) {
       {
         ok: true,
         request: withOrders ? request : waybillRequestWithoutOrder(request),
-        ...waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc), Date.now(), auto),
+        ...withWaybillPdfAccess(
+          waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc), Date.now(), auto),
+          waybillPdfViewer(actor),
+        ),
         autoMode: auto.mode,
         plates,
       },

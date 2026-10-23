@@ -9,7 +9,9 @@ import {
 import { cancelWaybillRequest, readWaybillRequestsDoc, retryWaybillRequest } from "@/lib/iriss-waybill-requests-store";
 import { waybillAutoContext } from "@/lib/iriss-waybill-auto-server";
 import { canSeeWaybillOrders } from "@/lib/iriss-pavadzimes-list";
-import { requireIrissSectionApi } from "@/lib/staff-auth";
+import { isWaybillOnlyActor, requireIrissSectionApi, waybillOnlyForbidden, waybillPdfViewer } from "@/lib/staff-auth";
+import { withWaybillPdfAccess } from "@/lib/iriss-waybill-pdf";
+import { ensureWaybillRequestInDropbox } from "@/lib/iriss-waybill-dropbox";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,7 +34,8 @@ export async function GET(_req: Request, ctx: Ctx) {
         ok: true,
         request: canSeeWaybillOrders(gate.actor) ? request : waybillRequestWithoutOrder(request),
         events,
-        reply: waybillAivarsReply(request, events),
+        reply: withWaybillPdfAccess({ requests: [request], replies: [waybillAivarsReply(request, events)] }, waybillPdfViewer(gate.actor))
+          .replies[0],
       },
       NO_STORE,
     );
@@ -52,10 +55,35 @@ export async function POST(req: Request, ctx: Ctx) {
   } catch {
     return NextResponse.json({ error: "Nederīgs pieprasījums." }, { status: 400, ...NO_STORE });
   }
-  if (body.action !== "retry" && body.action !== "cancel") {
+  if (body.action !== "retry" && body.action !== "cancel" && body.action !== "dropbox") {
     return NextResponse.json({ error: "Nederīga darbība." }, { status: 400, ...NO_STORE });
   }
   const actor = gate.actor;
+  const viewer = waybillPdfViewer(actor);
+  if (body.action === "dropbox") {
+    // "Saglabāt Dropbox vēlreiz": tikai admins / darbinieks ar pilnu pavadzīmju piekļuvi (ne kolēģis).
+    if (isWaybillOnlyActor(actor)) return waybillOnlyForbidden();
+    try {
+      const result = await ensureWaybillRequestInDropbox(id);
+      if (!result) return NextResponse.json({ error: "Tikai izdotai pavadzīmei." }, { status: 409, ...NO_STORE });
+      const doc = await readWaybillRequestsDoc();
+      const auto = await waybillAutoContext(doc);
+      const withOrders = canSeeWaybillOrders(actor);
+      return NextResponse.json(
+        {
+          ok: result.ok,
+          dropboxPath: result.ok ? result.path : "",
+          error: result.ok ? "" : result.error,
+          ...withWaybillPdfAccess(waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc), Date.now(), auto), viewer),
+          autoMode: auto.mode,
+        },
+        { status: result.ok ? 200 : 502, ...NO_STORE },
+      );
+    } catch (err) {
+      console.error("[iriss-waybill] dropbox_retry_failed", err instanceof Error ? err.message : err);
+      return NextResponse.json({ error: "Neizdevās saglabāt Dropbox." }, { status: 500, ...NO_STORE });
+    }
+  }
   const actorId = actor.kind === "admin" ? "env-admin" : actor.user.id;
   const actorName = actor.kind === "admin" ? actor.name : actor.user.name;
   if (body.action === "cancel") {
@@ -78,7 +106,7 @@ export async function POST(req: Request, ctx: Ctx) {
           ok: true,
           request: withOrders ? result.request : waybillRequestWithoutOrder(result.request),
           reply: waybillAivarsReply(result.request, doc.events),
-          ...waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc), Date.now(), auto),
+          ...withWaybillPdfAccess(waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc), Date.now(), auto), viewer),
           autoMode: auto.mode,
         },
         NO_STORE,
@@ -98,7 +126,7 @@ export async function POST(req: Request, ctx: Ctx) {
       ok: true,
       request: withOrders ? request : waybillRequestWithoutOrder(request),
       reply: waybillAivarsReply(request, doc.events),
-      ...waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc)),
+      ...withWaybillPdfAccess(waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc)), viewer),
     }, NO_STORE);
   } catch (err) {
     console.error("[iriss-waybill] retry_failed", err instanceof Error ? err.message : err);

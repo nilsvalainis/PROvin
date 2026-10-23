@@ -153,6 +153,11 @@ export function isWaybillOnlyActor(actor: AdminOrStaffActor): boolean {
   return actor.kind === "staff" && isWaybillOnlyStaff(actor.user.sections);
 }
 
+/** Pavadzīmes PDF tiesībām (lib/iriss-waybill-pdf.ts): kolēģis tikai savus pieprasījumus. */
+export function waybillPdfViewer(actor: AdminOrStaffActor): { actorId: string; waybillOnly: boolean } {
+  return { actorId: actor.kind === "admin" ? "env-admin" : actor.user.id, waybillOnly: isWaybillOnlyActor(actor) };
+}
+
 export function waybillOnlyForbidden(): NextResponse {
   return NextResponse.json({ error: "forbidden" }, { status: 403 });
 }

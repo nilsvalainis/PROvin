@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { irissAivarsApiTokenConfigured, verifyIrissAivarsApiToken } from "@/lib/iriss-aivars-api-token";
 import { toAivarsCreateWaybillAction } from "@/lib/iriss-waybill-create";
 import { isWaybillRequestEventKind, isWaybillWorkerStage } from "@/lib/iriss-waybill-requests";
 import { appendWaybillRequestEvent } from "@/lib/iriss-waybill-requests-store";
+import { ensureWaybillRequestInDropbox } from "@/lib/iriss-waybill-dropbox";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -49,6 +50,8 @@ export async function POST(req: Request, ctx: Ctx) {
     stage: isWaybillWorkerStage(body.stage) ? body.stage : undefined,
   });
   if (!request) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  // Izdota (arī Aivara ar roku): PDF -> Dropbox /Pavadzīmes_IRISS; kļūdu cron mēģina vēlreiz.
+  if (request.status === "issued" && !request.dropboxPath) after(() => ensureWaybillRequestInDropbox(request.id));
   return NextResponse.json(
     { ok: true, request: toAivarsCreateWaybillAction(request), status: request.status },
     { headers: { "Cache-Control": "private, no-store" } },
