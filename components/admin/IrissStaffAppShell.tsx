@@ -67,9 +67,11 @@ export function IrissStaffAppShell({
   }
 
   // Partneris (tikai Pavadzīmes): nekādas navigācijas - Arhīvs un Iziet ir pašā sākumskatā.
+  // min-h-dvh (nevis h-dvh): dokuments ritina (admin-ios-theme main overflow-y: visible), tāpēc fons aug līdz ar saturu
+  // un garā saraksta apakšā neparādās tumšais body fons (j22).
   if (isWaybillOnlyStaff(sections)) {
     return (
-      <div className="iriss-admin-scope flex h-dvh flex-col text-[#111827]">
+      <div className="iriss-admin-scope flex min-h-dvh flex-col text-[#111827]">
         <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</main>
       </div>
     );

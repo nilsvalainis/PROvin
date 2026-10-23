@@ -10,6 +10,7 @@ import {
   waybillRequestWithoutOrder,
 } from "@/lib/iriss-waybill-requests";
 import { createWaybillRequest, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
+import { readDismissedWaybillIds } from "@/lib/iriss-waybill-dismissed-store";
 import { displayDealerPlate, emptyWaybillPlateStates, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
 import { listWaybillVehicleChips } from "@/lib/iriss-waybill-vehicles";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
@@ -52,6 +53,16 @@ async function loadPlatesSafe(): Promise<WaybillPlateState[]> {
   }
 }
 
+/** "Dzēst" paslēptie (tikai šim lietotājam); kļūda nav fatāla - tad vienkārši nekas nav paslēpts. */
+async function loadDismissedSafe(actorId: string): Promise<string[]> {
+  try {
+    return await readDismissedWaybillIds(actorId);
+  } catch (err) {
+    console.error("[iriss-waybill] dismissed_failed", err instanceof Error ? err.message : err);
+    return [];
+  }
+}
+
 function busyFromPlates(plates: WaybillPlateState[]): (plate: string) => boolean {
   const busy = new Set(plates.filter((row) => row.busy).map((row) => row.plate as string));
   return (plate) => busy.has(displayDealerPlate(plate));
@@ -73,11 +84,12 @@ export async function GET(req: Request) {
   // Auto sarakstu lasa tikai pēc pieprasījuma (?cars=1), nevis katrā 5 s atjaunošanā.
   const withCars = new URL(req.url).searchParams.get("cars") === "1";
   try {
-    const [doc, vehicles, plates, tradeCars] = await Promise.all([
+    const [doc, vehicles, plates, tradeCars, dismissedIds] = await Promise.all([
       readWaybillRequestsDoc(),
       loadVehiclesSafe(),
       loadPlatesSafe(),
       withCars ? loadTradeCarsSafe() : Promise.resolve(null),
+      loadDismissedSafe(gate.actor.kind === "admin" ? "env-admin" : gate.actor.user.id),
     ]);
     const auto = await waybillAutoContext(doc, busyFromPlates(plates));
     const withOrders = canSeeWaybillOrders(gate.actor);
@@ -91,6 +103,7 @@ export async function GET(req: Request) {
         autoMode: auto.mode,
         vehicles: withOrders ? vehicles : vehicles.map((v) => ({ ...v, orderId: "" })),
         plates,
+        dismissedIds,
         ...(tradeCars ? { tradeCars: tradeCars.cars, tradeCarsSource: tradeCars.source } : {}),
       },
       NO_STORE,

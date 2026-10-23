@@ -56,6 +56,8 @@ export type WaybillChatState = {
   replies: WaybillAivarsReply[];
   vehicles: WaybillVehicleChip[];
   plates: WaybillPlateState[];
+  /** "Dzēst" paslēptie šim lietotājam (tikai GET; citas atbildes to nesūta). */
+  dismissedIds?: string[];
 };
 
 const emptyChat = (): WaybillChatState => ({
@@ -79,6 +81,7 @@ function withReplies(partial: Partial<WaybillChatState>): WaybillChatState {
       : requests.map((request) => waybillAivarsReply(request, events)),
     vehicles: Array.isArray(partial.vehicles) ? partial.vehicles : [],
     plates: Array.isArray(partial.plates) && partial.plates.length ? partial.plates : emptyWaybillPlateStates(),
+    ...(Array.isArray(partial.dismissedIds) ? { dismissedIds: partial.dismissedIds.filter((id) => typeof id === "string") } : {}),
   };
 }
 
@@ -171,6 +174,7 @@ export function IrissKomandaAivaramChat({
   const [tradeCars, setTradeCars] = useState<WaybillTradeCar[] | null>(null);
   const [tradeCarsFromAutoparks, setTradeCarsFromAutoparks] = useState(false);
   const [mobileDraft, setMobileDraft] = useState<WaybillMobileDraft | null>(null);
+  const [dismissedIds, setDismissedIds] = useState<string[]>([]);
   const selectedInit = useRef(false);
   const carsLoaded = useRef(false);
   /** Telefona formas dati pēdējam sūtījumam (vajag "Tomēr izveidot" logam). */
@@ -212,6 +216,7 @@ export function IrissKomandaAivaramChat({
       }
       setError((current) => (current === WAYBILL_STATUS_STALE_TEXT ? null : current));
       setChat(data);
+      if (data.dismissedIds) setDismissedIds(data.dismissedIds);
       if (!selectedInit.current) {
         selectedInit.current = true;
         setPlate((current) => displayDealerPlate(current) || firstFreePlate(data.plates));
@@ -357,6 +362,26 @@ export function IrissKomandaAivaramChat({
     }
   }
 
+  /** "Dzēst" (pēc "Jā"): serveris tikai paslēpj vecu ierakstu šim lietotājam; pavadzīmi neaiztiek. */
+  async function dismiss(id: string) {
+    try {
+      const res = await fetch(`/api/admin/iriss/waybill-requests/${encodeURIComponent(id)}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "dismiss" }),
+      });
+      const json = (await res.json().catch(() => null)) as { dismissedIds?: unknown; error?: string } | null;
+      if (!res.ok || !Array.isArray(json?.dismissedIds)) {
+        setError(json?.error || "Neizdevās noņemt ierakstu.");
+        return;
+      }
+      setDismissedIds(json.dismissedIds.filter((v): v is string => typeof v === "string"));
+    } catch {
+      setError("Neizdevās noņemt ierakstu.");
+    }
+  }
+
   async function retry(id: string) {
     try {
       const res = await fetch(`/api/admin/iriss/waybill-requests/${encodeURIComponent(id)}`, {
@@ -414,6 +439,8 @@ export function IrissKomandaAivaramChat({
         onSubmit={submitMobile}
         onRetry={(id) => void retry(id)}
         onCancel={(id) => void cancel(id)}
+        dismissedIds={dismissedIds}
+        onDismiss={(id) => void dismiss(id)}
         onPickerOpen={() => {
           if (!carsLoaded.current) void load(true);
         }}

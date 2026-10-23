@@ -234,7 +234,7 @@ export function IrissPavadzimesListClient({
         </div>
       ) : null}
 
-      <div className="mt-4 grid gap-4 max-md:mt-2 max-md:gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+      <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 max-md:mt-2 max-md:gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
         <div className={`min-w-0 ${view === "current" ? "max-md:px-4" : ""}`}>
       {view === "current" ? (
         <div className="md:hidden">
@@ -491,7 +491,7 @@ export function IrissPavadzimesListClient({
         </div>
       ) : null}
         </div>
-        <div id="komanda-aivaram" className={`scroll-mt-4 max-md:px-4 ${view === "current" ? "" : "max-md:hidden"}`}>
+        <div id="komanda-aivaram" className={`min-w-0 scroll-mt-4 max-md:px-4 ${view === "current" ? "" : "max-md:hidden"}`}>
           <IrissKomandaAivaramChat
             draftVehicle={extendVehicle}
             onDraftConsumed={onDraftConsumed}

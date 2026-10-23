@@ -4,8 +4,10 @@ import {
   waybillAivarsReply,
   waybillChatPayload,
   waybillDocWithoutOrders,
+  waybillRequestDismissable,
   waybillRequestWithoutOrder,
 } from "@/lib/iriss-waybill-requests";
+import { dismissWaybillRequestForActor } from "@/lib/iriss-waybill-dismissed-store";
 import { cancelWaybillRequest, readWaybillRequestsDoc, retryWaybillRequest } from "@/lib/iriss-waybill-requests-store";
 import { waybillAutoContext } from "@/lib/iriss-waybill-auto-server";
 import { canSeeWaybillOrders } from "@/lib/iriss-pavadzimes-list";
@@ -55,7 +57,7 @@ export async function POST(req: Request, ctx: Ctx) {
   } catch {
     return NextResponse.json({ error: "Nederīgs pieprasījums." }, { status: 400, ...NO_STORE });
   }
-  if (body.action !== "retry" && body.action !== "cancel" && body.action !== "dropbox") {
+  if (body.action !== "retry" && body.action !== "cancel" && body.action !== "dropbox" && body.action !== "dismiss") {
     return NextResponse.json({ error: "Nederīga darbība." }, { status: 400, ...NO_STORE });
   }
   const actor = gate.actor;
@@ -86,6 +88,26 @@ export async function POST(req: Request, ctx: Ctx) {
   }
   const actorId = actor.kind === "admin" ? "env-admin" : actor.user.id;
   const actorName = actor.kind === "admin" ? actor.name : actor.user.name;
+  if (body.action === "dismiss") {
+    // "Dzēst" (j22): tikai paslēpj vecu ierakstu šī lietotāja sarakstā. Rindu, PDF, Dropbox un Arhīvu neaiztiek;
+    // derīgu izdotu vai darbā esošu pavadzīmi nepaslēpj (un nekad neanulē).
+    try {
+      const doc = await readWaybillRequestsDoc();
+      const request = doc.requests.find((row) => row.id === id);
+      if (!request) return NextResponse.json({ error: "Pieprasījums nav atrasts." }, { status: 404, ...NO_STORE });
+      if (!waybillRequestDismissable(request, doc.requests)) {
+        return NextResponse.json(
+          { error: "Dzēst var tikai vecu ierakstu. Derīga vai darbā esoša pavadzīme paliek sarakstā." },
+          { status: 409, ...NO_STORE },
+        );
+      }
+      const dismissedIds = await dismissWaybillRequestForActor(actorId, id);
+      return NextResponse.json({ ok: true, dismissedIds }, NO_STORE);
+    } catch (err) {
+      console.error("[iriss-waybill] dismiss_failed", err instanceof Error ? err.message : err);
+      return NextResponse.json({ error: "Neizdevās noņemt ierakstu." }, { status: 500, ...NO_STORE });
+    }
+  }
   if (body.action === "cancel") {
     // Tikai Gaida un vēl nepaņemts; izdotas/aktīvas pavadzīmes un darbā esošus nekad neaiztiek (409).
     try {

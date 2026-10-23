@@ -13,6 +13,7 @@ import {
   waybillRepresentativeChoices,
 } from "@/lib/iriss-waybill-create";
 import {
+  WAYBILL_MOBILE_CURRENT_LIMIT,
   WAYBILL_MOBILE_HOUR_PRESETS,
   WAYBILL_TUKUMS_STREET,
   buildWaybillMobilePayload,
@@ -54,6 +55,8 @@ export function IrissWaybillMobileForm({
   onSubmit,
   onRetry,
   onCancel,
+  dismissedIds,
+  onDismiss,
   onPickerOpen,
   onOpenArchive,
 }: {
@@ -70,6 +73,10 @@ export function IrissWaybillMobileForm({
   onSubmit: (payload: WaybillMobilePayload) => Promise<boolean>;
   onRetry: (id: string) => void;
   onCancel?: (id: string) => void;
+  /** "Dzēst" paslēptie (tikai šajā sarakstā; Arhīvs nemainās). */
+  dismissedIds?: readonly string[];
+  /** Izsauc TIKAI pēc pogas "Jā" apstiprinājuma logā. */
+  onDismiss?: (id: string) => void;
   onPickerOpen?: () => void;
   /** "Visas pavadzīmes Arhīvā ›" (lapa pārslēdz skatu uz Arhīvu). */
   onOpenArchive?: () => void;
@@ -79,6 +86,7 @@ export function IrissWaybillMobileForm({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [otherRep, setOtherRep] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
+  const [askDismiss, setAskDismiss] = useState<WaybillMobileRequestRow | null>(null);
   const patch = (next: Partial<WaybillMobileFormState>) => setForm((prev) => ({ ...prev, ...next }));
 
   // Pirmais brīvais numurs, kamēr lietotājs nav izvēlējies pats.
@@ -115,7 +123,10 @@ export function IrissWaybillMobileForm({
   const tradeAct = waybillMobileTradeAct(form);
   const reps = waybillRepresentativeChoices({ owner: form.car?.owner, plate: shownPlate });
   const rep = waybillMobileRepresentative({ representative: form.representative, plate: shownPlate, car: form.car });
-  const rows = useMemo(() => waybillMobileRequestRows(requests, replies, 5, { nowMs }), [requests, replies, nowMs]);
+  const rows = useMemo(
+    () => waybillMobileRequestRows(requests, replies, WAYBILL_MOBILE_CURRENT_LIMIT, { nowMs, dismissed: dismissedIds }),
+    [requests, replies, nowMs, dismissedIds],
+  );
   const working = rows.filter((r) => r.progress.step < 3 && r.tone !== "bad").length;
   const shownError = localError ?? error;
 
@@ -405,7 +416,9 @@ export function IrissWaybillMobileForm({
         {rows.length === 0 ? (
           <p className={styles.empty}>Vēl nav pieprasījumu.</p>
         ) : (
-          rows.map((row) => <WaybillLiveRow key={row.id} row={row} onRetry={onRetry} onCancel={onCancel} />)
+          rows.map((row) => (
+            <WaybillLiveRow key={row.id} row={row} onRetry={onRetry} onCancel={onCancel} onDismiss={onDismiss ? setAskDismiss : undefined} />
+          ))
         )}
       </div>
       {onOpenArchive ? (
@@ -415,6 +428,18 @@ export function IrissWaybillMobileForm({
       ) : null}
 
       <IrissWaybillHowItWorks plates={plates.map((p) => p.plate)} />
+
+      {askDismiss && onDismiss ? (
+        <WaybillDismissDialog
+          title={askDismiss.title}
+          onYes={() => {
+            const id = askDismiss.id;
+            setAskDismiss(null);
+            onDismiss(id);
+          }}
+          onNo={() => setAskDismiss(null)}
+        />
+      ) : null}
 
       <AdminMobileSheet
         open={pickerOpen}
@@ -443,15 +468,62 @@ export function confirmWaybillCancel(title: string): boolean {
   return window.confirm(`Atcelt pavadzīmes pieprasījumu${title ? ` (${title})` : ""}? Aivars un automātika to vairs neizrakstīs.`);
 }
 
+/**
+ * "Dzēst" apstiprinājums: ierakstu noņem TIKAI poga "Jā" (fons, Escape un "Nē" - nekas nenotiek).
+ * Tikai paslēpj šajā sarakstā; pavadzīme, PDF, Dropbox un Arhīvs paliek nemainīti.
+ */
+export function WaybillDismissDialog({ title, onYes, onNo }: { title: string; onYes: () => void; onNo: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onNo();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onNo]);
+  return (
+    <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#0f172a66] p-4" onClick={onNo}>
+      <div
+        className="w-full max-w-[360px] rounded-2xl border border-[#E5E7EB] bg-white p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wb-dismiss-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 id="wb-dismiss-title" className="m-0 text-[15px] font-semibold text-[#111827] [overflow-wrap:anywhere]">
+          Noņemt no saraksta{title ? ` - ${title}` : ""}?
+        </h3>
+        <p className="mt-2 text-[13px] leading-snug text-[#5e636e]">
+          Ieraksts pazudīs tikai no šī saraksta. Pavadzīme, PDF un Arhīvs paliek nemainīti.
+        </p>
+        <div className="mt-3.5 flex flex-col gap-2">
+          <button type="button" className="h-10 rounded-[10px] bg-[#111827] text-[12.5px] font-semibold text-white" onClick={onYes}>
+            Jā
+          </button>
+          <button
+            type="button"
+            className="h-10 rounded-[10px] border border-[#E5E7EB] bg-white text-[12.5px] font-semibold text-[#111827]"
+            onClick={onNo}
+          >
+            Nē
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Viens pieprasījums ar dzīvo statusu: josla pēc reālā soļa, 3 soļi, skaidrs "Izdota". */
 export function WaybillLiveRow({
   row,
   onRetry,
   onCancel,
+  onDismiss,
 }: {
   row: WaybillMobileRequestRow;
   onRetry?: (id: string) => void;
   onCancel?: (id: string) => void;
+  /** Atver apstiprinājumu (pats neko nenoņem). */
+  onDismiss?: (row: WaybillMobileRequestRow) => void;
 }) {
   const { step, pct, text } = row.progress;
   const line = row.line || text;
@@ -487,6 +559,11 @@ export function WaybillLiveRow({
             }}
           >
             Atcelt
+          </button>
+        ) : null}
+        {row.canDismiss && onDismiss ? (
+          <button type="button" className={styles.link} onClick={() => onDismiss(row)}>
+            Dzēst
           </button>
         ) : null}
       </div>

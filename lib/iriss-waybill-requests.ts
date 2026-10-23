@@ -368,6 +368,34 @@ export function waybillWrittenOffAtMs(
   return Number.isFinite(end) && end <= nowMs ? end : null;
 }
 
+/**
+ * "Dzēst" pirmās lapas sarakstā (j22): drīkst paslēpt TIKAI vecu ierakstu - izrakstītu (beigusies vai aizstāta),
+ * kļūdu, atceltu vai novecojušu. Darbā esošu un derīgu izdotu pavadzīmi nekad. Paslēpšana ierakstu nemaina.
+ */
+export function waybillRequestDismissable(
+  request: WaybillWrittenOffRequest,
+  requests: ReadonlyArray<WaybillWrittenOffRequest>,
+  nowMs = Date.now(),
+): boolean {
+  if (request.status === "queued" || request.status === "in_progress") return isStaleWaybillRequest(request, nowMs);
+  if (request.status === "issued") return waybillWrittenOffAtMs(request, requests, nowMs) != null;
+  return true;
+}
+
+/** Cik paslēpto ID glabā vienam lietotājam (vecākie izkrīt; tie jau sen ir tikai Arhīvā). */
+export const WAYBILL_DISMISSED_MAX = 300;
+
+/** Paslēpto saraksts pēc "Dzēst": bez dublikātiem, jaunākais beigās, ne vairāk par WAYBILL_DISMISSED_MAX. */
+export function addDismissedWaybillId(ids: ReadonlyArray<string>, id: string): string[] {
+  return [...ids.filter((row) => row !== id), id].slice(-WAYBILL_DISMISSED_MAX);
+}
+
+export function parseDismissedWaybillDoc(raw: unknown): { version: 1; ids: string[] } {
+  const list = raw && typeof raw === "object" ? (raw as { ids?: unknown }).ids : null;
+  const ids = Array.isArray(list) ? list.filter((v): v is string => typeof v === "string" && /^wbr_[a-z0-9]+$/i.test(v)) : [];
+  return { version: 1, ids: ids.slice(-WAYBILL_DISMISSED_MAX) };
+}
+
 export function remainingWaybillDays(validUntilIso: string, now = new Date()): number | null {
   const end = Date.parse(validUntilIso);
   if (!Number.isFinite(end)) return null;
