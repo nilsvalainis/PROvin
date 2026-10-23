@@ -1,7 +1,7 @@
 import { V2_VAT_MODES, type V2VatMode } from "@/lib/iriss-autoparks-v2";
 import { autoparksV2Json, requireAutoparksV2Api } from "@/lib/iriss-autoparks-v2-access";
 import { parseEurInput } from "@/lib/iriss-autoparks-v2-format";
-import { autoparksV2IegadeView } from "@/lib/iriss-autoparks-v2-iegade";
+import { autoparksV2IegadeView, refreshAutoparksV2Vat } from "@/lib/iriss-autoparks-v2-iegade";
 import { readAutoparksV2Car, updateCarV2 } from "@/lib/iriss-autoparks-v2-store";
 
 export const runtime = "nodejs";
@@ -14,6 +14,7 @@ export async function GET(_req: Request, ctx: Ctx) {
   const gate = await requireAutoparksV2Api("iegade");
   if (!gate.ok) return gate.response;
   const { id } = await ctx.params;
+  await refreshAutoparksV2Vat(id, { id: gate.actorId, name: gate.actorName }).catch(() => null);
   const view = await autoparksV2IegadeView(id, gate.perms);
   if (!view) return autoparksV2Json({ error: "not_found" }, 404);
   return autoparksV2Json({ ok: true, iegade: view });

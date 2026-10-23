@@ -77,3 +77,43 @@ export async function readAutoparksV2IegadeFile(carId: string, fileId: string): 
   const got = await readAutoparksFileBytes(fileId.slice(2));
   return got ? { bytes: got.bytes, contentType: sniffContentType(got.bytes, got.contentType), name: f.title } : null;
 }
+
+const VAT_RECHECK_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * F5b: PVN režīms automātiski no izsoles rēķina PDF teksta (tikai, ja nav izvēlēts ar roku; ne biežāk kā 1x dienā).
+ * Skenētam PDF bez teksta slāņa režīms paliek tukšs.
+ */
+export async function refreshAutoparksV2Vat(carId: string, actor: { id: string; name: string }): Promise<void> {
+  const ctx = await context(carId);
+  if (!ctx) return;
+  const vat = ctx.v2.purchase.vat;
+  if (vat.mode) return;
+  const at = Date.parse(vat.at);
+  if (Number.isFinite(at) && Date.now() - at < VAT_RECHECK_MS) return;
+  const invoices = ctx.docs.filter((d) => !d.deletedAt && d.blobPath && (d.type === "auction_invoice" || d.type === "car_invoice" || d.type === "purchase_confirm"));
+  if (invoices.length === 0) return;
+  const [{ extractPdfTextOnServer }, { vatModeFromInvoiceText }, { updateCarV2 }] = await Promise.all([
+    import("@/lib/pdf-text-extract-server"),
+    import("@/lib/iriss-autoparks-v2-vat"),
+    import("@/lib/iriss-autoparks-v2-store"),
+  ]);
+  let mode: V2VatMode = "";
+  for (const d of invoices.slice(0, 3)) {
+    const got = await readCabinetDocumentBytes(d.id).catch(() => null);
+    if (!got || sniffContentType(got.bytes, got.contentType) !== "application/pdf") continue;
+    const text = await extractPdfTextOnServer(got.bytes.buffer.slice(got.bytes.byteOffset, got.bytes.byteOffset + got.bytes.byteLength) as ArrayBuffer).catch(() => "");
+    mode = vatModeFromInvoiceText(text);
+    if (mode) break;
+  }
+  await updateCarV2(
+    carId,
+    (c) => {
+      if (c.purchase.vat.mode) return { result: null };
+      c.purchase.vat = { mode, source: "invoice", at: new Date().toISOString() };
+      if (mode) c.sources["purchase.vat"] = "invoice";
+      return { result: null, history: mode ? [{ field: "purchase.vat", from: "", to: mode }] : [], write: true };
+    },
+    { id: actor.id, name: `${actor.name} (rēķins)` },
+  );
+}

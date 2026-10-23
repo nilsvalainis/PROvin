@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AUTOPARKS_STATUS_LV, isAutoparksStatus } from "@/lib/iriss-autoparks";
-import type { V2HistoryRow } from "@/lib/iriss-autoparks-v2";
+import { V2_VAT_MODE_LV, type V2HistoryRow, type V2VatMode } from "@/lib/iriss-autoparks-v2";
 import { v2HistoryText } from "@/lib/iriss-autoparks-v2-history-text";
 
 /** Vēsture (tikai Nilam): kurš, kad, lauks, no -> uz. */
@@ -25,7 +25,9 @@ export function AutoparksV2History({ carId }: { carId: string }) {
         {rows.length === 0 ? <p className="ap2-empty">Nav izmaiņu</p> : null}
         <ul className="ap2-hist">
           {rows.map((r) => {
-            const t = v2HistoryText(r, (s) => (isAutoparksStatus(s) ? AUTOPARKS_STATUS_LV[s] : s));
+            const t = v2HistoryText(r, (s, field) =>
+              field === "purchase.vat" ? V2_VAT_MODE_LV[s as V2VatMode] || s : isAutoparksStatus(s) ? AUTOPARKS_STATUS_LV[s] : s,
+            );
             return (
               <li key={r.id}>
                 <span>{t.field}</span>
