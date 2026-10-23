@@ -13,7 +13,7 @@ describe("pavadzīmes push paziņojums", () => {
   it("izrakstīta: virsraksts, auto, numurs, derīgums; tikai pieprasītāja ierīcēm", () => {
     const msg = waybillPushMessage({ status: "in_progress" }, after);
     expect(msg).toEqual({
-      title: "Pavadzīme izrakstīta",
+      title: "Pavadzīme izdota",
       body: "BMW 216d · B193-7 · derīga līdz 25.10.2026, 12:00. Atver PDF.",
       url: "/admin/iriss/pavadzimes",
       tag: "waybill-wbr_1",
@@ -25,7 +25,7 @@ describe("pavadzīmes push paziņojums", () => {
 
   it("kļūda un kļūda pēc saglabāšanas; bez statusa maiņas - nekā", () => {
     const err = waybillPushMessage({ status: "in_progress" }, { ...after, status: "error", errorReason: "CSDD nav pieejams" });
-    expect(err?.title).toBe("Pavadzīme nav izrakstīta");
+    expect(err?.title).toBe("Pavadzīme nav izdota");
     expect(err?.body).toBe('BMW 216d · B193-7: CSDD nav pieejams. Atver un spied "Atkārtot".');
     const check = waybillPushMessage(
       { status: "in_progress" },

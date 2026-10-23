@@ -86,7 +86,7 @@ export function IrissWaybillCalendarCards({
       })}
       {ended.length ? (
         <>
-          <p className="px-1 pb-1.5 pt-4 text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--ink2,#6b7080)]">Beigušās (7 dienas)</p>
+          <p className="px-1 pb-1.5 pt-4 text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--ink2,#6b7080)]">Beigušās (pēdējās 7 dienas)</p>
           <div className="overflow-hidden rounded-[14px] bg-[var(--s1,#fff)]">
             {ended.map((group) => (
               <div key={group.day}>

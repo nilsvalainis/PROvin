@@ -8,7 +8,7 @@ const POLL_MS = 15_000;
 function vpnCardSub(status: TtrVpnStatus | null): string {
   if (!status) return "";
   if (status.stopPending) return "Pagaidi brīdi - pēc tam vari pieslēgties pats.";
-  if (status.vpn === "up") return "Aivars šobrīd strādā CSDD. Ja tev pašam vajag VPN, spied pogu - serveris to atbrīvos.";
+  if (status.vpn === "up") return "Aivars šobrīd strādā CSDD sistēmā. Ja VPN vajag tev, spied pogu - serveris to atbrīvos.";
   if (status.vpn === "down") return "Serveris VPN nelieto - vari pieslēgties pats.";
   return "";
 }

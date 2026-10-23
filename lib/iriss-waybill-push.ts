@@ -1,5 +1,5 @@
 /**
- * Paziņojums telefonā, kad pavadzīme izrakstīta vai neizdevās (teksti: ~/pz-teksti.md 6. sadaļa).
+ * Paziņojums telefonā, kad pavadzīme izdota vai neizdevās (teksti: ~/pz-teksti.md 6. sadaļa).
  * Tīra loģika; sūta lib/iriss-waybill-requests-store.ts caur sendAdminPush tikai pieprasītāja ierīcēm.
  */
 import type { AdminPushMessage } from "@/lib/admin-push-shared";
@@ -18,7 +18,7 @@ export function waybillPushUserKey(createdBy: string): string {
   return createdBy === "env-admin" ? "admin" : `staff:${createdBy}`;
 }
 
-/** Ziņa tikai, kad statuss tikko kļuva par Izrakstīta vai Kļūda. */
+/** Ziņa tikai, kad statuss tikko kļuva par Izdota vai Kļūda. */
 export function waybillPushMessage(
   before: Pick<WaybillRequest, "status">,
   after: Pick<WaybillRequest, "id" | "status" | "vehicle" | "validUntil" | "errorReason">,
@@ -32,18 +32,18 @@ export function waybillPushMessage(
     const until = formatRigaDateTimeComma(after.validUntil);
     return {
       ...base,
-      title: "Pavadzīme izrakstīta",
+      title: "Pavadzīme izdota",
       body: `${head}${until ? ` · derīga līdz ${until}` : ""}. Atver PDF.`,
     };
   }
   if (changed("error")) {
     const reason = after.errorReason.trim().slice(0, 120);
     if (waybillErrorNeedsCheck(reason)) {
-      return { ...base, title: "Pārbaudi pavadzīmi", body: `${head}: iespējams, CSDD jau izveidota. Pārbaudi, pirms atkārto.` };
+      return { ...base, title: "Pārbaudi pavadzīmi", body: `${head}: iespējams, CSDD jau ir izveidota. Pārbaudi, pirms atkārto.` };
     }
     return {
       ...base,
-      title: "Pavadzīme nav izrakstīta",
+      title: "Pavadzīme nav izdota",
       body: `${head}${reason ? `: ${reason}` : ""}. Atver un spied "Atkārtot".`,
     };
   }

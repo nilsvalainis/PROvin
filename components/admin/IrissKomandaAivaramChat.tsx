@@ -510,8 +510,8 @@ export function IrissKomandaAivaramChat({
           Izveidot pavadzīmi
         </button>
         <p className="mt-3 rounded-[10px] bg-[#EEF2FF] px-3 py-2.5 text-[11px] leading-snug text-[#1e293b]">
-          <b>Aivara limits.</b> IRISS lietotājs var pieprasīt tikai CSDD pavadzīmi. Komentārs serverī iet kā{" "}
-          <code>comment_untrusted</code> (citēti dati, līdz {NOTE_UNTRUSTED_MAX} zīmēm), ne kā instrukcija. Citi aģenti
+          <b>Aivara ierobežojumi.</b> IRISS lietotājs var pieprasīt tikai CSDD pavadzīmi. Serverī komentārs tiek apstrādāts kā{" "}
+          <code>comment_untrusted</code> (citēti dati, līdz {NOTE_UNTRUSTED_MAX} zīmēm), nevis kā instrukcija. Citi aģenti
           šo lauku neredz.
         </p>
       </form>
@@ -521,7 +521,7 @@ export function IrissKomandaAivaramChat({
           <div className="w-full max-w-[360px] rounded-2xl border border-[#E5E7EB] bg-white p-4" role="dialog" aria-modal="true">
             <h3 className="m-0 text-[15px] font-semibold">Numurs ir aizņemts</h3>
             <p className="mt-2.5 rounded-[10px] bg-[#FEF3F2] px-3 py-2.5 text-[13px] leading-snug text-[#7a271a]">
-              {confirm.plate} jau ir uz aktīvas pavadzīmes
+              Numuram {confirm.plate} jau ir aktīva pavadzīme
               {confirm.current?.number ? ` ${confirm.current.number}` : ""}
               {confirm.current?.brandModel || confirm.current?.validUntil
                 ? ` (${[confirm.current.brandModel, confirm.current.validUntil ? `līdz ${formatRigaDateTimeComma(confirm.current.validUntil)}` : ""]
@@ -531,7 +531,7 @@ export function IrissKomandaAivaramChat({
               . Jauna pavadzīme pārtrauks esošo.
             </p>
             <p className="mt-2 text-[13px] leading-snug text-[#374151]">
-              Apstiprini tikai tad, ja tiešām vajag jaunu pavadzīmi šim numuram.
+              Apstiprini tikai tad, ja šim numuram tiešām vajag jaunu pavadzīmi.
             </p>
             <div className="mt-3.5 flex flex-col gap-2">
               <button

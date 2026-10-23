@@ -113,7 +113,7 @@ describe("phone waybill form", () => {
   });
 
   it("asks for a car or a comment, and for a car in a free comment", () => {
-    expect(buildWaybillMobilePayload(base)).toEqual({ ok: false, error: "Izvēlies auto vai uzraksti komentāru." });
+    expect(buildWaybillMobilePayload(base)).toEqual({ ok: false, error: "Izvēlies auto vai ieraksti komentārā." });
     const free = buildWaybillMobilePayload({ ...base, comment: "lūdzu ātri" });
     expect(free.ok).toBe(false);
     expect(buildWaybillMobilePayload({ ...base, comment: "193 uz BMW", hoursPreset: null, hoursOther: "" }).ok).toBe(false);
@@ -172,13 +172,13 @@ describe("phone list of Aivars requests", () => {
       req({ id: "wbr_new", createdAt: "2026-10-22T11:00:00.000Z", status: "error", errorReason: "CSDD nav pieejams", vehicle: { brandModel: "", vin: "", plate: "B7627", orderId: "" }, noteUntrusted: "762 uz Audi" }),
     ];
     const replies: WaybillAivarsReply[] = [
-      { requestId: "wbr_old", status: "issued", statusLabel: "Izveidota", text: "", waybillNo: "26A118204", pdfUrl: "/x.pdf", at: "" },
+      { requestId: "wbr_old", status: "issued", statusLabel: "Izdota", text: "", waybillNo: "26A118204", pdfUrl: "/x.pdf", at: "" },
     ];
     const rows = waybillMobileRequestRows(requests, replies, 5, { nowMs: Date.parse("2026-10-22T12:00:00.000Z"), which: "all" });
     expect(rows.map((r) => r.id)).toEqual(["wbr_new", "wbr_old"]);
     expect(rows[0]).toMatchObject({ title: "762 uz Audi", label: "Kļūda", tone: "bad", canRetry: true, errorText: "CSDD nav pieejams" });
     expect(rows[0]?.sub).toContain("B762-7 · 48 h");
-    expect(rows[1]).toMatchObject({ title: "BMW 216d", label: "Izrakstīta", tone: "ok", pdfUrl: "/x.pdf", canRetry: false });
+    expect(rows[1]).toMatchObject({ title: "BMW 216d", label: "Izdota", tone: "ok", pdfUrl: "/x.pdf", canRetry: false });
     expect(rows[1]?.sub.startsWith("26A118204 · B193-7 · 48 h")).toBe(true);
   });
 

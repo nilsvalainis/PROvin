@@ -104,12 +104,12 @@ export function buildWaybillMobilePayload(state: WaybillMobileFormState): Waybil
   if (!plate) return { ok: false, error: "Izvēlies numuru." };
   const comment = state.comment.trim().slice(0, NOTE_UNTRUSTED_MAX);
   const brandModel = state.manual ? state.manualBrandModel.trim() : (state.car?.brandModel ?? "").trim();
-  if (!brandModel && !comment) return { ok: false, error: "Izvēlies auto vai uzraksti komentāru." };
+  if (!brandModel && !comment) return { ok: false, error: "Izvēlies auto vai ieraksti komentārā." };
   if (!brandModel && !waybillHintsFromComment(comment).brandModel) {
-    return { ok: false, error: 'Komentārā neatradu auto. Raksti, piem., "193 uz BMW 330".' };
+    return { ok: false, error: 'Komentārā nav atrasts auto. Raksti, piem., "193 uz BMW 330".' };
   }
   const validHours = waybillMobileHours(state);
-  if (validHours == null) return { ok: false, error: `Ieraksti stundas: 1 līdz ${WAYBILL_VALID_MAX_HOURS}.` };
+  if (validHours == null) return { ok: false, error: `Ieraksti derīgumu: no 1 līdz ${WAYBILL_VALID_MAX_HOURS} h.` };
   const tradeAct = waybillMobileTradeAct(state);
   if (tradeAct) {
     const representative = waybillMobileRepresentative({ ...state, plate });
@@ -162,7 +162,7 @@ export type WaybillMobileChipTone = "wait" | "wip" | "ok" | "bad";
 export const WAYBILL_MOBILE_STATUS: Record<WaybillRequestStatus, { label: string; tone: WaybillMobileChipTone }> = {
   queued: { label: "Gaida", tone: "wait" },
   in_progress: { label: "Izveido", tone: "wip" },
-  issued: { label: "Izrakstīta", tone: "ok" },
+  issued: { label: "Izdota", tone: "ok" },
   error: { label: "Kļūda", tone: "bad" },
 };
 
@@ -180,7 +180,7 @@ export type WaybillMobileRequestRow = {
   progress: WaybillMobileProgress;
 };
 
-/** Dzīvais progress: 3 soļi (Gaida - Izveido - Izrakstīta) un procenti joslai. */
+/** Dzīvais progress: 3 soļi (Gaida - Izveido - Izdota) un procenti joslai. */
 export type WaybillMobileProgress = {
   step: 1 | 2 | 3;
   pct: number;
@@ -210,7 +210,7 @@ export function waybillMobileProgress(
   if (request.status === "issued") {
     const until = formatRigaDateTimeComma(request.validUntil);
     const text = [request.waybillNo ? `Nr. ${request.waybillNo}` : "", until ? `derīga līdz ${until}` : ""].filter(Boolean).join(" · ");
-    return { step: 3, pct: 100, text: text || "Pavadzīme izrakstīta." };
+    return { step: 3, pct: 100, text: text || "Pavadzīme izdota." };
   }
   if (request.status === "error") {
     const reason = request.errorReason.trim();
@@ -221,7 +221,7 @@ export function waybillMobileProgress(
   }
   if (request.status === "in_progress") {
     const share = Math.min(1, sinceMs(request.pickedAt || request.updatedAt, nowMs) / TYPICAL_WORK_MS);
-    return { step: 2, pct: Math.round(40 + 50 * share), text: "Aivars raksta pavadzīmi CSDD..." };
+    return { step: 2, pct: Math.round(40 + 50 * share), text: "Aivars veido pavadzīmi CSDD..." };
   }
   const waited = sinceMs(request.updatedAt || request.createdAt, nowMs);
   if (waited > WAYBILL_MOBILE_LONG_WAIT_MS) {

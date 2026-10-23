@@ -27,7 +27,7 @@ function form() {
 describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
   it("rāda numurus, auto, sākuma adresi (Tukums, Rīgas iela 75), laiku un komentāru; galamērķa un VIN nav", () => {
     const text = renderText(form());
-    for (const t of ["Numurs", "B193-7", "aizņemts", "brīvs", "Auto", "Izvēlies auto", "Sākuma adrese", "Tukums", "Cita adrese", "Rīgas iela 75", "Laiks", "12 h", "24 h", "48 h", "Derīga no šī brīža līdz", "Komentārs", "Izveidot pavadzīmi"]) {
+    for (const t of ["Numurs", "B193-7", "aizņemts", "brīvs", "Auto", "Izvēlies auto", "Sākuma adrese", "Tukums", "Cita adrese", "Rīgas iela 75", "Laiks", "12 h", "24 h", "48 h", "derīga līdz", "Komentārs", "Izveidot pavadzīmi"]) {
       expect(text).toContain(t);
     }
     expect(text).not.toContain("Galamērķis");
@@ -42,8 +42,8 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
 
   it("'Kā tas strādā' ir liela kartīte ar numurētiem soļiem un 'Jāzina'", () => {
     const text = renderText(form());
-    expect(text).toContain("Pavadzīme 4 soļos. Parasti gatava dažu minūšu laikā.");
-    expect(text).toContain("Aivars ir Dzintarzeme Auto jaunais pavadzīmju rakstīšanas asistents");
+    expect(text).toContain("Pavadzīme 5 soļos. Parasti gatava dažu minūšu laikā.");
+    expect(text).toContain("Aivars ir Dzintarzeme Auto jaunais pavadzīmju asistents");
     for (const t of ["Izvēlies numuru un auto", "Izvēlies laiku", 'Spied "Izveidot pavadzīmi"', "Ja numurs aizņemts", "Jāzina"]) {
       expect(text).toContain(t);
     }
@@ -53,10 +53,10 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     expect([...text].some((c) => c.charCodeAt(0) === 8211 || c.charCodeAt(0) === 8212)).toBe(false);
   });
 
-  it("dzīvais statuss: josla ar soļiem, procenti un skaidrs 'Izrakstīta' ar PDF", () => {
+  it("dzīvais statuss: josla ar soļiem, procenti un skaidrs 'Izdota' ar PDF", () => {
     const working = renderHtml(
       <WaybillLiveRow
-        row={{ id: "w1", title: "Audi A6 Avant", sub: "B762-7 · 48 h", label: "Izveido", tone: "wip", pdfUrl: "", canRetry: false, errorText: "", stale: false, progress: { step: 2, pct: 64, text: "Aivars raksta pavadzīmi CSDD..." } }}
+        row={{ id: "w1", title: "Audi A6 Avant", sub: "B762-7 · 48 h", label: "Izveido", tone: "wip", pdfUrl: "", canRetry: false, errorText: "", stale: false, progress: { step: 2, pct: 64, text: "Aivars veido pavadzīmi CSDD..." } }}
       />,
     );
     expect(working).toContain('role="progressbar"');
@@ -65,10 +65,10 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     expect(working).toContain("64 %");
     const doneText = renderText(
       <WaybillLiveRow
-        row={{ id: "w2", title: "BMW 216d", sub: "26A1 · B193-7", label: "Izrakstīta", tone: "ok", pdfUrl: "/x.pdf", canRetry: false, errorText: "", stale: false, progress: { step: 3, pct: 100, text: "Nr. 26A1 · derīga līdz 25.10.2026, 12:00" } }}
+        row={{ id: "w2", title: "BMW 216d", sub: "26A1 · B193-7", label: "Izdota", tone: "ok", pdfUrl: "/x.pdf", canRetry: false, errorText: "", stale: false, progress: { step: 3, pct: 100, text: "Nr. 26A1 · derīga līdz 25.10.2026, 12:00" } }}
       />,
     );
-    expect(doneText).toContain("Izrakstīta");
+    expect(doneText).toContain("Izdota");
     expect(doneText).toContain("PDF");
     expect(doneText).toContain("Nr. 26A1 · derīga līdz 25.10.2026, 12:00");
   });
@@ -90,7 +90,7 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     expect(text).toContain("Pieņemts");
     expect(text.trim().endsWith("Cits auto - ierakstīt ar roku Marka un modelis")).toBe(true);
     expect(renderText(<IrissWaybillCarPicker cars={[]} selected="" onChoose={() => undefined} />)).toContain(
-      "Nav auto ar tirdzniecības aktu.",
+      "Nav tirdzniecībā pieņemto auto.",
     );
   });
 });

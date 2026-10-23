@@ -131,7 +131,7 @@ export async function processJob(job, deps) {
     deps.log("job_failed", { id: job.id, reason, saveStarted, ...formatTimings(marks) });
     if (saveStarted) {
       await deps.api
-        .result(job.id, { ok: false, errorReason: `Automātika: ${reason}. Pārbaudi CSDD, vai pavadzīme izveidota.`, by: "auto" })
+        .result(job.id, { ok: false, errorReason: `Automātika: ${reason}. Pārbaudi CSDD, vai pavadzīme jau ir izveidota.`, by: "auto" })
         .catch(() => {});
       return { outcome: "error_after_save", reason };
     }

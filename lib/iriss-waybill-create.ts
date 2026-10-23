@@ -240,8 +240,8 @@ export function parseWaybillRouteAddress(raw: unknown, fallback: string): Waybil
   if (typeof raw !== "string") return { ok: false, error: "Adrese nav derīga." };
   const s = stripControls(raw).replace(/\s+/g, " ").trim();
   if (!s) return { ok: true, value: fallback };
-  if (s.length > WAYBILL_ROUTE_MAX) return { ok: false, error: `Adrese: līdz ${WAYBILL_ROUTE_MAX} zīmēm.` };
-  if (!ROUTE_RE.test(s) || !/\p{L}/u.test(s)) return { ok: false, error: "Adresē tikai burti, cipari un . , - /" };
+  if (s.length > WAYBILL_ROUTE_MAX) return { ok: false, error: `Adrese: ne vairāk kā ${WAYBILL_ROUTE_MAX} zīmes.` };
+  if (!ROUTE_RE.test(s) || !/\p{L}/u.test(s)) return { ok: false, error: "Adresē drīkst būt tikai burti, cipari un . , - /" };
   return { ok: true, value: s };
 }
 
@@ -256,17 +256,17 @@ export function parseCreateWaybillInput(raw: unknown, now = new Date()): CreateW
   const noteUntrusted = sanitizeNoteUntrusted(field(body, "comment_untrusted", "note_untrusted"));
   const hints = waybillHintsFromComment(noteUntrusted);
   const plateIn = plateRaw && isWaybillPlate(plateRaw) ? plateRaw : "";
-  if (vinRaw && !vin) return { ok: false, error: "VIN nav derīgs (17 zīmes)." };
-  if (plateRaw && !plateIn) return { ok: false, error: "Izvēlies tirdzniecības numuru." };
+  if (vinRaw && !vin) return { ok: false, error: "VIN nav derīgs (jābūt 17 zīmēm)." };
+  if (plateRaw && !plateIn) return { ok: false, error: "Izvēlies numuru." };
   const plate = plateIn || (hints.plate ? normalizePlateNumber(hints.plate) : "");
-  if (!plate) return { ok: false, error: "Izvēlies tirdzniecības numuru." };
+  if (!plate) return { ok: false, error: "Izvēlies numuru." };
 
   // Tikai komentārs ("193 uz BMW 330") arī der: numuru un auto nolasa no komentāra kā datus.
   const brandModel = parseBrandModel(body.brandModel) || hints.brandModel;
   if (!brandModel) {
     return {
       ok: false,
-      error: noteUntrusted ? 'Komentārā neatradu auto. Raksti, piem., "193 uz BMW 330".' : "Izvēlies auto vai uzraksti komentāru.",
+      error: noteUntrusted ? 'Komentārā nav atrasts auto. Raksti, piem., "193 uz BMW 330".' : "Izvēlies auto vai ieraksti komentārā.",
     };
   }
 
@@ -281,7 +281,7 @@ export function parseCreateWaybillInput(raw: unknown, now = new Date()): CreateW
 
   const validHours = parseValidHours(body.validHours);
   if (validHours == null || validHours < 1 || validHours > WAYBILL_VALID_MAX_HOURS) {
-    return { ok: false, error: `Derīgums stundās: 1 līdz ${WAYBILL_VALID_MAX_HOURS}.` };
+    return { ok: false, error: `Derīgums: no 1 līdz ${WAYBILL_VALID_MAX_HOURS} h.` };
   }
 
   const { validFrom, validUntil } = waybillValidityWindow(validHours, now);

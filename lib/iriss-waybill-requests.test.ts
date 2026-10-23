@@ -132,7 +132,7 @@ describe("waybill requests", () => {
         by: "aivars",
       },
     ]);
-    expect(reply.statusLabel).toBe("Izveidota");
+    expect(reply.statusLabel).toBe("Izdota");
     expect(reply.text).toBe("Izdota B861-6");
     expect(reply.waybillNo).toBe("B861-6");
     const payload = waybillChatPayload({
