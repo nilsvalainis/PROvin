@@ -12,7 +12,12 @@ import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSectio
 import { IrissGoogleContactStatusRow } from "@/components/admin/IrissGoogleContactStatusRow";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import { IrissOfferForm } from "@/components/admin/IrissOfferForm";
-import { pendingDropboxPhotoCount } from "@/lib/iriss-stock-photos";
+import {
+  OFFER_SOURCE_LABEL_LV,
+  offerSourceRefString,
+  parseOfferSourceRef,
+  pendingDropboxPhotoCount,
+} from "@/lib/iriss-stock-photos";
 import { IrissLabeledInput as LabeledInput, irissOfferFieldClass } from "@/components/admin/IrissOfferFormFields";
 import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
 import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChangesGuard";
@@ -265,6 +270,7 @@ export function IrissPasutijumsEditor({
   autoOpenNewOffer = false,
   autoOpenOfferId = "",
   forceNoClientPdf = false,
+  seedFrom = "",
   unsavedDraft = false,
   roomHits = EMPTY_ROOM_HITS,
   dismissedHitIds = EMPTY_IDS,
@@ -279,6 +285,8 @@ export function IrissPasutijumsEditor({
   autoOpenNewOffer?: boolean;
   autoOpenOfferId?: string;
   forceNoClientPdf?: boolean;
+  /** "autoparks:<id>" | "logistics:<id>": jaunais piedāvājums ar auto datiem un /STOCK bildēm. */
+  seedFrom?: string;
   unsavedDraft?: boolean;
   /** Jau nolasītie Meklētāja auto šim pasūtījumam. Tukšs jaunam melnrakstam. */
   roomHits?: IrissOrderRoomHit[];
@@ -297,6 +305,7 @@ export function IrissPasutijumsEditor({
   const [busy, setBusy] = useState(false);
   const [offerOpen, setOfferOpen] = useState(false);
   const [offerAutoFields, setOfferAutoFields] = useState<ReadonlySet<string>>(() => new Set());
+  const [offerSeedStatus, setOfferSeedStatus] = useState<{ loading: boolean; note: string; sourceLabel: string } | null>(null);
   const [offerBusy, setOfferBusy] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -780,6 +789,7 @@ export function IrissPasutijumsEditor({
 
   const openCreateOffer = useCallback(() => {
     setOfferAutoFields(new Set());
+    setOfferSeedStatus(null);
     setOfferDraft(newOfferDraft(rec.offers.length + 1));
     setOfferOpen(true);
   }, [rec.offers.length]);
@@ -826,6 +836,7 @@ export function IrissPasutijumsEditor({
         if (typeof v === "string" && v.trim()) auto.add(key);
       }
       setOfferAutoFields(auto);
+      setOfferSeedStatus(null);
       setOfferDraft({
         ...draft,
         ...seed,
@@ -841,9 +852,62 @@ export function IrissPasutijumsEditor({
     [rec.offers.length],
   );
 
+  /** Forma atveras uzreiz; auto lauki un /STOCK bildes ielādējas tajā (bez starplapas). */
+  const openCreateOfferFromSource = useCallback(
+    (from: string) => {
+      const ref = parseOfferSourceRef(from);
+      if (!ref) return;
+      const draft = { ...newOfferDraft(rec.offers.length + 1), sourceRef: offerSourceRefString(ref) };
+      const sourceLabel = OFFER_SOURCE_LABEL_LV[ref.kind];
+      setOfferAutoFields(new Set());
+      setOfferDraft(draft);
+      setOfferSeedStatus({ loading: true, note: "", sourceLabel });
+      setOfferOpen(true);
+      void (async () => {
+        try {
+          const res = await fetch(`/api/admin/iriss-offer-seed?from=${encodeURIComponent(from)}`, { credentials: "include" });
+          if (!res.ok) {
+            setOfferSeedStatus({ loading: false, note: "Auto dati nav atrasti - aizpildi ar roku.", sourceLabel });
+            return;
+          }
+          const seed = (await res.json()) as {
+            fields?: Partial<OfferDraft>;
+            autoFields?: string[];
+            attachments?: IrissOfferAttachment[];
+            photosNote?: string;
+          };
+          setOfferDraft((d) =>
+            d.id === draft.id
+              ? {
+                  ...d,
+                  ...(seed.fields ?? {}),
+                  attachments: [...(seed.attachments ?? []), ...d.attachments].slice(0, IRISS_MAX_OFFER_ATTACHMENTS),
+                }
+              : d,
+          );
+          setOfferAutoFields(new Set(seed.autoFields ?? []));
+          setOfferSeedStatus({ loading: false, note: seed.photosNote ?? "", sourceLabel });
+        } catch {
+          setOfferSeedStatus({ loading: false, note: "Neizdevās ielādēt auto datus - aizpildi ar roku.", sourceLabel });
+        }
+      })();
+    },
+    [rec.offers.length],
+  );
+
+  const onOfferAutoFieldEdited = useCallback((key: string) => {
+    setOfferAutoFields((prev) => {
+      if (!prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+  }, []);
+
   const openEditOffer = useCallback((offer: IrissOfferRecord) => {
     setOfferDraft(offerDraftFromRecord(offer));
     setOfferAutoFields(new Set());
+    setOfferSeedStatus(null);
     setOfferOpen(true);
   }, []);
 
@@ -861,8 +925,9 @@ export function IrissPasutijumsEditor({
     }
     if (!autoOpenNewOffer) return;
     autoOpenOfferDone.current = true;
-    openCreateOffer();
-  }, [autoOpenNewOffer, autoOpenOfferId, imagesReady, openCreateOffer, openEditOffer, rec.offers]);
+    if (seedFrom) openCreateOfferFromSource(seedFrom);
+    else openCreateOffer();
+  }, [autoOpenNewOffer, autoOpenOfferId, imagesReady, openCreateOffer, openCreateOfferFromSource, openEditOffer, rec.offers, seedFrom]);
 
   const offerAttachmentCount = offerDraft.attachments.length;
   const onOfferFilesPick = useCallback(
@@ -1893,6 +1958,8 @@ export function IrissPasutijumsEditor({
           onPdf={(allowWithoutImages) => void openOfferPdfInNewTab(allowWithoutImages)}
           onWhatsApp={openOfferShareWhatsApp}
           onFilesPick={(files) => void onOfferFilesPick(files)}
+          onAutoFieldEdited={onOfferAutoFieldEdited}
+          seedStatus={offerSeedStatus}
         />
       ) : null}
 

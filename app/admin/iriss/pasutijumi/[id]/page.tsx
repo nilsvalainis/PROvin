@@ -15,6 +15,7 @@ import { readIrissOfferClientLinksForOrder } from "@/lib/iriss-offer-client-link
 import { isIrissPasutijumiStoreEnabled, isSafeIrissPasutijumsId, readIrissListingOrderOv, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 import { stripIrissOfferImageDataUrls } from "@/lib/iriss-pasutijums-offer-images";
 import { requireIrissSectionPage } from "@/lib/staff-auth";
+import { parseOfferSourceRef } from "@/lib/iriss-stock-photos";
 import { readGoogleContactsConfig } from "@/lib/google-contacts";
 
 export const dynamic = "force-dynamic";
@@ -24,7 +25,7 @@ type Props = { params: Promise<{ id: string }> };
 export default async function IrissPasutijumsDetailPage({
   params,
   searchParams,
-}: Props & { searchParams?: Promise<{ newOffer?: string; noClientPdf?: string; offer?: string; room?: string }> }) {
+}: Props & { searchParams?: Promise<{ newOffer?: string; noClientPdf?: string; offer?: string; room?: string; from?: string }> }) {
   await requireIrissSectionPage("pasutijumi");
   if (!isIrissPasutijumiStoreEnabled()) {
     redirect("/admin/iriss/pasutijumi");
@@ -65,6 +66,7 @@ export default async function IrissPasutijumsDetailPage({
       autoOpenNewOffer={autoOpenNewOffer}
       autoOpenOfferId={autoOpenOfferId}
       forceNoClientPdf={forceNoClientPdf}
+      seedFrom={parseOfferSourceRef(sp.from) ? sp.from : ""}
       roomHits={roomHits}
       dismissedHitIds={dismissedHitIds}
       listingsCache={storage.enabled ? "on" : "off"}

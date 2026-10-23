@@ -97,6 +97,10 @@ export type IrissOfferFormProps = {
   onPdf: (allowWithoutImages?: boolean) => void;
   onWhatsApp: () => void;
   onFilesPick: (files: FileList | null) => void;
+  /** Importēts lauks labots ar roku - zaļais punkts pazūd. */
+  onAutoFieldEdited?: (key: string) => void;
+  /** Sākuma dati no Autoparka / Loģistikas: ielāde un piezīme (piem. "bilžu nav"). */
+  seedStatus?: { loading: boolean; note: string; sourceLabel: string } | null;
 };
 
 export function IrissOfferForm({
@@ -121,6 +125,8 @@ export function IrissOfferForm({
   onPdf,
   onWhatsApp,
   onFilesPick,
+  onAutoFieldEdited,
+  seedStatus = null,
 }: IrissOfferFormProps) {
   const vinWarning = useMemo(() => irissVinWarning(draft.vin), [draft.vin]);
   const carPriceWarning = useMemo(() => irissPriceFormatWarning(draft.carPrice), [draft.carPrice]);
@@ -155,7 +161,12 @@ export function IrissOfferForm({
             >
               {draft.title}
             </h2>
-            {autoFields.size > 0 ? (
+            {seedStatus ? (
+              <p className="mt-0.5 text-[11px] text-[var(--color-provin-muted)]" role="status">
+                {seedStatus.loading ? `Ielādē datus no: ${seedStatus.sourceLabel}...` : `Dati no: ${seedStatus.sourceLabel}`}
+                {seedStatus.note ? ` · ${seedStatus.note}` : ""}
+              </p>
+            ) : autoFields.size > 0 ? (
               <p className="mt-0.5 text-[11px] text-[var(--color-provin-muted)]">Sagatavots no izsoles ieraksta</p>
             ) : null}
             {isIrissOfferExpired(draft) ? (
@@ -216,13 +227,16 @@ export function IrissOfferForm({
               ).map(([key, label, patch]) => (
                 <label key={key} className="block min-w-0">
                   <span className="mb-1 flex items-center text-[11px] font-medium text-[var(--color-provin-muted)]">
-                    {label}
                     <IrissOfferFieldTag source={autoFields.has(key) ? "auto" : "manual"} />
+                    {label}
                   </span>
                   <input
                     className={fieldClass}
                     value={draft[key]}
-                    onChange={(e) => setDraft((d) => ({ ...d, ...patch(e.target.value) }))}
+                    onChange={(e) => {
+                      setDraft((d) => ({ ...d, ...patch(e.target.value) }));
+                      if (autoFields.has(key)) onAutoFieldEdited?.(key);
+                    }}
                     autoComplete="off"
                   />
                   {key === "vin" && vinWarning ? (
@@ -245,13 +259,16 @@ export function IrissOfferForm({
               ).map(([key, label, patch]) => (
                 <label key={key} className="block min-w-0">
                   <span className="mb-1 flex items-center text-[11px] font-medium text-[var(--color-provin-muted)]">
-                    {label}
                     <IrissOfferFieldTag source={autoFields.has(key) ? "auto" : "manual"} />
+                    {label}
                   </span>
                   <input
                     className={fieldClass}
                     value={draft[key]}
-                    onChange={(e) => setDraft((d) => ({ ...d, ...patch(e.target.value) }))}
+                    onChange={(e) => {
+                      setDraft((d) => ({ ...d, ...patch(e.target.value) }));
+                      if (autoFields.has(key)) onAutoFieldEdited?.(key);
+                    }}
                     autoComplete="off"
                   />
                 </label>

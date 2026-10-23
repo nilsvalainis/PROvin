@@ -1,12 +1,11 @@
+/** Zaļš punkts pirms lauka nosaukuma = importēts (kā CSDD lauki Autoparkā). Ar roku ievadītam - nekas. */
 export function IrissOfferFieldTag({ source }: { source: "auto" | "manual" }) {
-  if (source === "auto") {
-    return (
-      <span className="ml-1.5 inline-flex rounded-full bg-[#eef2ff] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.04em] text-[#3730a3]">
-        Auto
-      </span>
-    );
-  }
+  if (source !== "auto") return null;
   return (
-    <span className="ml-1.5 text-[9px] font-semibold uppercase tracking-[0.04em] text-[#6e6e73]">Manuāli</span>
+    <span
+      className="mr-1.5 inline-block h-2 w-2 shrink-0 rounded-full bg-[#16a34a]"
+      title="Importēts automātiski"
+      aria-label="Importēts automātiski"
+    />
   );
 }

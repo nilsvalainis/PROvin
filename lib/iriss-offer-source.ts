@@ -12,9 +12,12 @@ import { isStockPhoto } from "@/lib/iriss-autoparks-dropbox-sync";
 import { resolveAutoparksCarFolder } from "@/lib/iriss-autoparks-files";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { getLogisticsOrder } from "@/lib/iriss-logistics-store";
+import { offerSeedFromAutoparks, offerSeedFromLogistics, offerSeedTaggedKeys, type OfferSeedFields } from "@/lib/iriss-offer-seed";
+import type { IrissOfferAttachment } from "@/lib/iriss-pasutijumi-types";
 import {
   offerSourceRefString,
   orderStockPhotos,
+  stockPhotoAttachment,
   type OfferSourceRef,
   type StockPhoto,
 } from "@/lib/iriss-stock-photos";
@@ -154,6 +157,53 @@ export async function fetchOfferSourcePhotosForSave(
   };
   await Promise.all(Array.from({ length: Math.min(6, queue.length) }, worker));
   return out;
+}
+
+export type OfferSeed = {
+  sourceRef: string;
+  fields: OfferSeedFields;
+  autoFields: string[];
+  attachments: IrissOfferAttachment[];
+  /** Dropbox nav pieejams / mapes nav - forma atveras bez bildēm. */
+  photosNote: string;
+};
+
+/** Sākuma dati formai. null - auto nav atrasts. */
+export async function loadOfferSeed(ref: OfferSourceRef): Promise<OfferSeed | null> {
+  let fields: OfferSeedFields;
+  if (ref.kind === "autoparks") {
+    const { readAutoparksV2Car } = await import("@/lib/iriss-autoparks-v2-store");
+    const both = await readAutoparksV2Car(ref.id).catch(() => null);
+    const car = both?.car ?? (await readAutoparksState()).cars.find((c) => c.id === ref.id);
+    if (!car) return null;
+    const v2 = both?.v2;
+    fields = offerSeedFromAutoparks(car, {
+      tech: v2?.tech ?? null,
+      location: v2?.fields?.location ?? "",
+      displayName: v2?.priceSheet?.displayName ?? "",
+      equipmentLine: v2?.priceSheet?.equipmentLine ?? "",
+    });
+  } else {
+    const order = await getLogisticsOrder(ref.id);
+    if (!order) return null;
+    fields = offerSeedFromLogistics(order);
+  }
+  let photos: StockPhoto[] = [];
+  let photosNote = "";
+  try {
+    if (!getDropboxClient()) throw new Error("dropbox_not_configured");
+    photos = await listOfferSourcePhotos(ref, { fresh: true });
+    if (photos.length === 0) photosNote = "Auto /STOCK mapē bilžu nav - pievieno ar roku.";
+  } catch {
+    photosNote = "Dropbox nav pieejams - bildes pievieno ar roku.";
+  }
+  return {
+    sourceRef: offerSourceRefString(ref),
+    fields,
+    autoFields: offerSeedTaggedKeys(fields),
+    attachments: photos.map((p) => stockPhotoAttachment(ref, p)),
+    photosNote,
+  };
 }
 
 /** Testiem. */
