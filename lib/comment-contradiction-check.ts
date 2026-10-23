@@ -588,6 +588,7 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
     latestKm: latestKmRaw ? parseSpacedInt(latestKmRaw) : null,
     rollbacks,
     suspectedEntryErrors,
+    csddUndatedOdometer: null,
     odometerAnomaly: /Forenzikas karogs[^:\n]*:\s*JĀ/i.test(sheet),
     carverticalMileageWarning: /CarVertical nobraukuma brīdinājums:\s*JĀ/i.test(sheet),
     maxRollbackDropKm,
