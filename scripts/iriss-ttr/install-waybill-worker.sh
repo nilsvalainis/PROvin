@@ -11,7 +11,7 @@ cp -a /root/iriss-ttr/ctl "$bk/ctl" 2>/dev/null || true
 echo "backup: $bk"
 [ -f /etc/iriss-ttr/env ] || { echo "TRŪKST /etc/iriss-ttr/env" >&2; exit 2; }
 mkdir -p /root/iriss-ttr/ctl
-install -m 644 "$here/waybill-worker-core.mjs" "$here/waybill-worker.mjs" /root/iriss-ttr/ctl/
+install -m 644 "$here/csdd-sync-schedule.mjs" "$here/waybill-worker-core.mjs" "$here/waybill-worker.mjs" /root/iriss-ttr/ctl/
 install -m 644 "$here/iriss-waybill-worker.service" /etc/systemd/system/iriss-waybill-worker.service
 systemctl daemon-reload
 systemctl enable --now iriss-waybill-worker

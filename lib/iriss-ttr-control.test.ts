@@ -20,7 +20,13 @@ import {
   vpnHoldMode,
   vpnIdleMinutes,
 } from "@/scripts/iriss-ttr/vpn-lease.mjs";
-import { csddSyncMinutes, periodicPlateSync, vpnBusyForHuman } from "@/scripts/iriss-ttr/waybill-worker-core.mjs";
+import { csddPeriodicSyncEnabled, periodicPlateSync, vpnBusyForHuman } from "@/scripts/iriss-ttr/waybill-worker-core.mjs";
+import {
+  isCsddSyncWindow,
+  nextPeriodicSyncAt,
+  rigaLocalToUtc,
+  rigaParts,
+} from "@/scripts/iriss-ttr/csdd-sync-schedule.mjs";
 
 const NOW = Date.parse("2026-10-22T18:00:00.000Z");
 
@@ -192,7 +198,7 @@ describe("j10: VPN tur pastāvīgi (hold), atlaiž tikai Nils; izmests - nepiesl
         plates: Object.fromEntries(input.plates.map((p) => [p, p === "B193-7" ? [{ waybillNo: "P02812", validUntil: "", brandModel: "" }] : []])),
       })),
       api: { plates: vi.fn(async () => {}) },
-      now: () => NOW,
+      now: () => DAY,
       log: vi.fn(),
     });
     const down = mk("down");
@@ -210,11 +216,116 @@ describe("j10: VPN tur pastāvīgi (hold), atlaiž tikai Nils; izmests - nepiesl
     expect(snap.plates[0].active).toHaveLength(1);
   });
 
-  it("sinhronizācijas biežums: 2-15 min (nokl. 5), 0 = izslēgts", () => {
-    expect(csddSyncMinutes(undefined)).toBe(5);
-    expect(csddSyncMinutes("1")).toBe(2);
-    expect(csddSyncMinutes("3")).toBe(3);
-    expect(csddSyncMinutes("60")).toBe(15);
-    expect(csddSyncMinutes("0")).toBe(0);
+});
+
+/** 22.10.2026 12:00 Rīgā (EEST, UTC+3). */
+const DAY = Date.parse("2026-10-22T09:00:00.000Z");
+const riga = (y: number, mo: number, d: number, h: number, mi = 0) => rigaLocalToUtc(y, mo, d, h, mi, 0);
+const seq = (...vals: number[]) => {
+  let i = 0;
+  return () => vals[i++ % vals.length];
+};
+
+describe("j13: CSDD sync grafiks - tikai 08:00-19:00 Rīgā, ik ~60-75 min, ne uz apaļām minūtēm", () => {
+  it("Rīgas laiks: ziemas un vasaras laiks (DST 25.10.2026)", () => {
+    expect(rigaLocalToUtc(2026, 10, 22, 8, 0)).toBe(Date.parse("2026-10-22T05:00:00Z"));
+    expect(rigaLocalToUtc(2026, 10, 26, 8, 0)).toBe(Date.parse("2026-10-26T06:00:00Z"));
+    expect(rigaLocalToUtc(2027, 3, 29, 8, 0)).toBe(Date.parse("2027-03-29T05:00:00Z"));
+    expect(rigaParts(Date.parse("2026-10-25T05:30:00Z"))).toMatchObject({ d: 25, h: 7, mi: 30 });
+  });
+
+  it("logs: 08:00 iekšā, 19:00 jau ārā, nakts ārā", () => {
+    expect(isCsddSyncWindow(riga(2026, 10, 22, 7, 59))).toBe(false);
+    expect(isCsddSyncWindow(riga(2026, 10, 22, 8, 0))).toBe(true);
+    expect(isCsddSyncWindow(riga(2026, 10, 22, 18, 59))).toBe(true);
+    expect(isCsddSyncWindow(riga(2026, 10, 22, 19, 0))).toBe(false);
+    expect(isCsddSyncWindow(riga(2026, 10, 23, 2, 0))).toBe(false);
+  });
+
+  it("dienā: nākamais pēc 60-75 min, nekad uz minūtes, kas dalās ar 5", () => {
+    for (let i = 0; i < 400; i++) {
+      const now = riga(2026, 10, 22, 9, 0) + i * 61_000;
+      const next = nextPeriodicSyncAt(now);
+      const gapMin = (next - now) / 60_000;
+      expect(gapMin).toBeGreaterThanOrEqual(60);
+      expect(gapMin).toBeLessThan(78);
+      expect(rigaParts(next).mi % 5).not.toBe(0);
+      expect(isCsddSyncWindow(next)).toBe(true);
+    }
+  });
+
+  it("apaļa minūte tiek pabīdīta (rand=0 -> tieši +60 min = :00 -> :01)", () => {
+    const next = nextPeriodicSyncAt(riga(2026, 10, 22, 10, 0), () => 0);
+    expect(rigaParts(next)).toMatchObject({ h: 11, mi: 1 });
+  });
+
+  it("pēc 18:00 -> nākamais rīts 08:03-08:27; naktī nekā", () => {
+    for (const r of [0, 0.5, 0.99]) {
+      const next = nextPeriodicSyncAt(riga(2026, 10, 22, 18, 10), () => r);
+      const p = rigaParts(next);
+      expect(p).toMatchObject({ d: 23, h: 8 });
+      expect(p.mi).toBeGreaterThanOrEqual(3);
+      expect(p.mi).toBeLessThanOrEqual(27);
+      expect(p.mi % 5).not.toBe(0);
+    }
+    // 02:00 naktī -> šī paša datuma rīts.
+    expect(rigaParts(nextPeriodicSyncAt(riga(2026, 10, 23, 2, 0), () => 0.3))).toMatchObject({ d: 23, h: 8 });
+  });
+
+  it("DST: no sestdienas vakara uz svētdienas rītu (25.10.2026) - 08:xx pēc jaunā (ziemas) laika", () => {
+    const next = nextPeriodicSyncAt(riga(2026, 10, 24, 18, 30), seq(0.2, 0.2, 0.4, 0.1));
+    const p = rigaParts(next);
+    expect(p).toMatchObject({ d: 25, h: 8 });
+    expect(next).toBeGreaterThan(Date.parse("2026-10-25T06:00:00Z"));
+    expect(next).toBeLessThan(Date.parse("2026-10-25T06:30:00Z"));
+  });
+
+  it("periodiskā sync naktī neko nedara (arī, ja VPN ieslēgts)", async () => {
+    const deps = {
+      vpnStatus: vi.fn(async () => ({ vpn: "up" })),
+      runScript: vi.fn(),
+      api: { plates: vi.fn(async () => {}) },
+      now: () => riga(2026, 10, 22, 21, 7),
+      log: vi.fn(),
+    };
+    expect(await periodicPlateSync(deps)).toEqual({ outcome: "night" });
+    expect(deps.vpnStatus).not.toHaveBeenCalled();
+    expect(deps.runScript).not.toHaveBeenCalled();
+  });
+
+  it("IRISS_CSDD_SYNC_PERIODIC: ieslēgts pēc noklusējuma, 0 izslēdz", () => {
+    expect(csddPeriodicSyncEnabled(undefined)).toBe(true);
+    expect(csddPeriodicSyncEnabled("1")).toBe(true);
+    for (const v of ["0", "false", "no"]) expect(csddPeriodicSyncEnabled(v)).toBe(false);
+  });
+});
+
+describe("j13: VPN naktī netiek turēts", () => {
+  const base = { vpnUp: true, nowMs: NOW, stopRequestedAt: "", handledStopAt: "", hold: true };
+
+  it("19:00 vai vēlāk: mūsu turēto VPN bez aktīva darba atlaiž kā 'night' (bez 30 min bloķējuma)", () => {
+    expect(decideVpnAction({ ...base, leaseUntilMs: NOW - 60_000, night: true, holding: true })).toMatchObject({
+      action: "stop",
+      reason: "night",
+    });
+    // Pēc 'night' atslēgšanas pavadzīme un nakts reģistrs var pieslēgties uzreiz (nav manuāla stop).
+    expect(canStartVpn({ nowMs: NOW + 60_000, lastManualStopMs: NaN })).toBe(true);
+  });
+
+  it("naktī darba laikā (lease spēkā) netraucē; ārēji ieslēgtu (Aivara run.sh) neaiztiek; dienā tur", () => {
+    expect(decideVpnAction({ ...base, leaseUntilMs: NOW + 5 * 60_000, night: true, holding: true }).action).toBe("none");
+    expect(decideVpnAction({ ...base, leaseUntilMs: NaN, night: true, holding: false }).action).toBe("none");
+    expect(decideVpnAction({ ...base, leaseUntilMs: NaN, night: false, holding: true }).action).toBe("none");
+  });
+
+  it("naktī /release pēc darba saīsina lease (~1 min), dienā - nē", () => {
+    expect(releaseLease(NOW + 20 * 60_000, NOW, true, true)).toBe(NOW + 60_000);
+    expect(releaseLease(NOW + 20 * 60_000, NOW, true, false)).toBe(NOW + 20 * 60_000);
+  });
+
+  it("'Man vajag VPN' naktī joprojām atslēdz uzreiz", () => {
+    expect(
+      decideVpnAction({ ...base, leaseUntilMs: NOW + 60_000, night: true, holding: true, stopRequestedAt: new Date(NOW - 1000).toISOString() }),
+    ).toMatchObject({ action: "stop", reason: "manual" });
   });
 });

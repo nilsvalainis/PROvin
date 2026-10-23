@@ -128,8 +128,8 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     const text = renderText(
       <IrissWaybillCarPicker
         cars={[
-          { id: "a", brandModel: "Volvo XC60", vin: "YV1UZA8V1M1765432", year: "2021", statusLabel: "Pārdošanā", accepted: false },
-          { id: "b", brandModel: "Škoda Kodiaq", vin: "TMBJJ7NS1L8012345", year: "", statusLabel: "", accepted: true },
+          { id: "a", brandModel: "Volvo XC60", vin: "YV1UZA8V1M1765432", year: "2021", statusLabel: "Pārdošanā", accepted: false, owner: "IRISS" as const },
+          { id: "b", brandModel: "Škoda Kodiaq", vin: "TMBJJ7NS1L8012345", year: "", statusLabel: "", accepted: true, owner: "IRISS" as const },
         ]}
         selected="YV1UZA8V1M1765432"
         onChoose={() => undefined}

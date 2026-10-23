@@ -11,6 +11,7 @@ import type { WaybillRequest } from "@/lib/iriss-waybill-requests";
 import {
   ALLOWED_SCRIPTS,
   localStandardCheck,
+  jobRepresentative,
   processJob,
   resolveWorkerScript,
 } from "@/scripts/iriss-ttr/waybill-worker-core.mjs";
@@ -505,5 +506,49 @@ describe("j10: servera klasifikācija - anulēt un izveidot", () => {
   it("Aivars redz apstiprināto anulējamo numuru (tikai aizņemtam pieprasījumam)", () => {
     expect(toAivarsCreateWaybillAction(req({ plateBusyAtCreate: true, replaceWaybillNo: "P02812" })).replaceWaybillNo).toBe("P02812");
     expect(toAivarsCreateWaybillAction(req({ replaceWaybillNo: "P02812" })).replaceWaybillNo).toBe("");
+  });
+});
+
+describe("j13: CSDD sync pēc katra darba rezultāta (pirms VPN atlaišanas)", () => {
+  it("kļūda pēc Saglabāt un pirms Saglabāt: pēc rezultāta vēlreiz sync, tad VPN release", async () => {
+    const order: string[] = [];
+    const d = deps({
+      runScript: async (step: string) =>
+        step === "fill" ? { ok: true, fields: { plate: "B1937", validHours: 48 } } : { ok: false, error: "timeout" },
+      vpnRelease: vi.fn(async () => {
+        order.push("release");
+      }),
+    });
+    d.runScript.mockImplementation(async (step: string, input?: unknown) => {
+      order.push(step);
+      if (step === "sync") return freeSync(input);
+      return step === "fill" ? { ok: true, fields: { plate: "B1937", validHours: 48 } } : { ok: false, error: "timeout" };
+    });
+    expect((await processJob(autoJob(), d)).outcome).toBe("error_after_save");
+    expect(order).toEqual(["sync", "fill", "save", "sync", "release"]);
+    expect(d.api.plates).toHaveBeenCalledTimes(2);
+
+    const before = deps({ runScript: vi.fn(async () => ({ ok: false, error: "forma" })) });
+    expect((await processJob(autoJob(), before)).outcome).toBe("released");
+    expect(before.runScript.mock.calls.map((c) => c[0])).toEqual(["sync", "fill", "sync"]);
+  });
+
+  it("aizņemts numurs priekšpārbaudē: CSDD nekas nav darīts - otrs sync nav vajadzīgs; VPN nav -> sync nav", async () => {
+    const busy = deps({ sync: (input: unknown) => ({ ...freeSync(input), plates: { "B193-7": [{ waybillNo: "P02812", validUntil: "", brandModel: "" }], "B762-7": [] } }) });
+    expect((await processJob(autoJob(), busy)).outcome).toBe("plate_busy");
+    expect(busy.runScript.mock.calls.map((c) => c[0])).toEqual(["sync"]);
+    const noVpn = deps({ vpnLease: vi.fn(async () => { throw new Error("vpn_lease_409"); }) });
+    expect((await processJob(autoJob(), noVpn)).outcome).toBe("released");
+    expect(noVpn.runScript).not.toHaveBeenCalled();
+  });
+});
+
+describe("j13: noklusējuma komersanta pārstāvis pēc firmas (worker)", () => {
+  it("tukšs pārstāvis -> ĪRISS numurs: Nils Valainis, Dzintarzeme numurs: Taivo Batiņš; norādītais paliek", () => {
+    const base = tradeJob();
+    expect(jobRepresentative({ ...base, representative: "" })).toBe("Nils Valainis");
+    expect(jobRepresentative({ ...base, representative: "", vehicle: { ...base.vehicle, plate: "B192-7" } })).toBe("Taivo Batiņš");
+    expect(jobRepresentative({ ...base, representative: "Cits Cilvēks" })).toBe("Cits Cilvēks");
+    expect(localStandardCheck({ ...base, representative: "" }, NOW)).toEqual({ ok: true, company: "iriss", flow: "tradeAct" });
   });
 });

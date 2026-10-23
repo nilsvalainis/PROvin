@@ -6,7 +6,7 @@
  * Atdod tikai drošus laukus - bez cenām un failiem.
  */
 
-import { AUTOPARKS_STATUS_SHORT_LV, type AutoparksCar } from "@/lib/iriss-autoparks";
+import { AUTOPARKS_STATUS_SHORT_LV, autoparksOwner, type AutoparksCar, type AutoparksOwner } from "@/lib/iriss-autoparks";
 import { listWaybillCandidateCars, type WaybillCarsSource } from "@/lib/iriss-autoparks-registry";
 
 export type WaybillTradeCar = {
@@ -17,6 +17,8 @@ export type WaybillTradeCar = {
   statusLabel: string;
   /** CSDD tirdzniecībā pieņemts (reģistra saraksts). Autoparka rezerves sarakstā - false. */
   accepted: boolean;
+  /** Auto firma (Autoparks owner): no tās formā noklusējuma komersanta pārstāvis. */
+  owner: AutoparksOwner;
 };
 
 const MAX_TRADE_CARS = 200;
@@ -47,6 +49,7 @@ export function waybillTradeCarsWithSource(cars: ReadonlyArray<AutoparksCar>): {
       year: (car.year ?? "").trim(),
       statusLabel: AUTOPARKS_STATUS_SHORT_LV[car.status] ?? "",
       accepted: picked.source === "registry",
+      owner: autoparksOwner(car),
     });
   }
   const collator = new Intl.Collator("lv", { sensitivity: "base", numeric: true });

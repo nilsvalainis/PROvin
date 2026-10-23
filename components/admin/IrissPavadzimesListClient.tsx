@@ -23,6 +23,7 @@ import { formatWaybillDateTime } from "@/lib/iriss-pavadzimes-parse";
 import type { IrissPavadzimeListRow, IrissPavadzimeValidityTone } from "@/lib/iriss-pavadzimes-types";
 import { remainingWaybillDays, waybillSoonTone } from "@/lib/iriss-waybill-requests";
 import type { WaybillVehicleChip } from "@/lib/iriss-waybill-vehicles";
+import { useWaybillPageOpenAtTop } from "@/components/admin/useWaybillPageOpenAtTop";
 
 type PageData = {
   rows: IrissPavadzimeListRow[];
@@ -113,6 +114,7 @@ export function IrissPavadzimesListClient({
   isAdmin?: boolean;
 }) {
   const [data, setData] = useState(initial);
+  useWaybillPageOpenAtTop();
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [view, setView] = useState<WaybillView>("current");
   const [extendVehicle, setExtendVehicle] = useState<WaybillVehicleChip | null>(null);

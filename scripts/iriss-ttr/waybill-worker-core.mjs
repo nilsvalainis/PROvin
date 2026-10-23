@@ -4,6 +4,8 @@
 // numuram (serveris: auto.replace), (2) Hetzner IRISS_WAYBILL_ANNUL_LIVE=1 un (3) CSDD šim numuram ir tieši šī viena pavadzīme.
 // Citi skripti tiek atteikti pirms spawn.
 
+import { isCsddSyncWindow } from "./csdd-sync-schedule.mjs";
+
 export const ALLOWED_SCRIPTS = Object.freeze({ fill: "refill.js", save: "save.js", sync: "sync.js" });
 /** Atsevišķi: tikai ar opts.annulEnabled (IRISS_WAYBILL_ANNUL_LIVE=1). */
 export const ANNUL_SCRIPT = "annul.js";
@@ -54,6 +56,15 @@ const MAX_HOURS = 48; // CSDD max
 const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/;
 /** Komersanta pārstāvis pēc firmas (kā lib/iriss-waybill-create.ts WAYBILL_REPRESENTATIVES). "Cits" -> Aivars. */
 const REPRESENTATIVES = { iriss: ["nils valainis"], dzintarzeme: ["taivo batiņš"] };
+/** Noklusējuma pārstāvis, ja darbā tas nav norādīts (Nils 23.10): ĪRISS - Nils Valainis, Dzintarzeme Auto - Taivo Batiņš. */
+export const DEFAULT_REPRESENTATIVE = Object.freeze({ iriss: "Nils Valainis", dzintarzeme: "Taivo Batiņš" });
+
+/** Darba pārstāvis vai firmas (pēc numura) noklusējums. */
+export function jobRepresentative(job) {
+  const own = String(job?.representative || "").replace(/\s+/g, " ").trim();
+  if (own) return own;
+  return DEFAULT_REPRESENTATIVE[PLATES[compact(job?.vehicle?.plate)]] || "";
+}
 
 function compact(plate) {
   return String(plate || "").toUpperCase().replace(/[\s-]/g, "");
@@ -94,7 +105,7 @@ export function localStandardCheck(job, nowMs = Date.now(), opts = {}) {
   if (job.tradeAct === true) {
     if (job.auto.flow !== "tradeAct") return { ok: false, reason: "plūsma nesakrīt" };
     if (!VIN_RE.test(String(job.vehicle?.vin || "").trim().toUpperCase())) return { ok: false, reason: "aktam vajag VIN" };
-    if (!REPRESENTATIVES[company].includes(norm(job.representative))) return { ok: false, reason: "cits pārstāvis" };
+    if (!REPRESENTATIVES[company].includes(norm(jobRepresentative(job)))) return { ok: false, reason: "cits pārstāvis" };
     return { ok: true, company, flow: "tradeAct" };
   }
   if (job.auto.flow !== "new") return { ok: false, reason: "plūsma nesakrīt" };
@@ -120,7 +131,7 @@ export function scriptInput(job) {
     validUntil: job.validUntil,
     validHours: job.validHours,
     flow,
-    representative: flow === "tradeAct" ? String(job.representative || "") : "",
+    representative: flow === "tradeAct" ? jobRepresentative(job) : "",
     // "tradeAct": akts pēc VIN -> "Noformēt pavadzīmi" (ja akta nav - kļūda pirms Saglabāt, darbs Aivaram).
     // "new": jauna pavadzīme; ja VIN tomēr ir tirdzniecības aktā - kļūda (Aivaram).
     preferTradeAct: flow === "tradeAct",
@@ -188,20 +199,19 @@ export function vpnBusyForHuman(status) {
   return blocked || status.stopPending === true;
 }
 
-/** IRISS_CSDD_SYNC_MIN -> minūtes 2-15 (noklusējums 5); "0" - periodiskā sinhronizācija izslēgta. */
-export function csddSyncMinutes(raw) {
-  const v = String(raw ?? "").trim();
-  if (v === "0") return 0;
-  const n = Number.parseInt(v, 10);
-  if (!Number.isFinite(n)) return 5;
-  return Math.min(15, Math.max(2, n));
+/** IRISS_CSDD_SYNC_PERIODIC: periodiskā (dienas) sinhronizācija ieslēgta pēc noklusējuma; "0" - izslēgta. */
+export function csddPeriodicSyncEnabled(raw) {
+  const v = String(raw ?? "").trim().toLowerCase();
+  return !(v === "0" || v === "false" || v === "no");
 }
 
 /**
  * Periodiska CSDD numuru sinhronizācija (tikai lasa), kamēr VPN jau ir ieslēgts. Pati VPN NEKAD neieslēdz.
+ * Tikai dienā 08:00-19:00 Rīgas laikā (csdd-sync-schedule.mjs); naktī neko nedara.
  * deps: { vpnStatus, runScript, api, now, log }, known: {ctx1:[], ctx2:[]}. Atgriež {outcome, plates?}.
  */
 export async function periodicPlateSync(deps, known = {}) {
+  if (!isCsddSyncWindow(deps.now())) return { outcome: "night" };
   const vpn = await deps.vpnStatus().catch(() => null);
   if (!vpn || vpn.vpn !== "up") return { outcome: "vpn_down" };
   const results = [];
@@ -224,6 +234,8 @@ export async function periodicPlateSync(deps, known = {}) {
  * - checking: numura statuss no CSDD (sync.js, arī ar roku izrakstītās) tieši pirms darba; momentuzņēmums uz Vercel.
  *   Aizņemts un nav apstiprināta anulēšana -> result ok:false ar skaidru tekstu (jaunā nav izveidota).
  * - annulling: tikai auto.replace + annulEnabled + CSDD aizņem tieši apstiprinātā pavadzīme.
+ * - pēc rezultāta (izdota, kļūda, arī pēc anulēšanas): vēlreiz sync, ja darbs CSDD kaut ko darīja (annul/fill/save) -
+ *   UI uzreiz redz patieso numura stāvokli. Tas notiek pirms VPN release.
  * Kļūda pirms Saglabāt -> event + release Aivaram (serveris viņu pamodina).
  * Kļūda Saglabāt laikā vai pēc -> result ok:false; ja CSDD sarakstā pārbaudīts, ka pavadzīme nav izveidota - to arī saka.
  * VPN lease vienmēr tiek atbrīvots (finally).
@@ -256,6 +268,8 @@ export async function processJob(job, deps) {
   let saveStarted = false;
   let annulDone = false;
   let leased = false;
+  /** CSDD darbība (annul/fill/save) sākta: pēc rezultāta numuru sinhronizē vēlreiz. */
+  let touchedCsdd = false;
   /** CSDD numura statuss (tikai lasa) + momentuzņēmums Vercel. Kļūda -> null. */
   const syncPlate = async () => {
     const res = await deps.runScript("sync", syncInput(job.auto.ctx, job.knownWaybills || []));
@@ -283,6 +297,7 @@ export async function processJob(job, deps) {
         return { outcome: "plate_busy_other", active: active.map((a) => a.waybillNo) };
       }
       await stage("annulling");
+      touchedCsdd = true;
       const input = { ...scriptInput(job), replaceWaybillNo: replaceNo };
       const annulled = await deps.runScript("annul", input);
       if (!annulled?.ok) throw new Error(`${replaceNo} anulēt neizdevās: ${annulled?.error || "kļūda"}`);
@@ -294,6 +309,7 @@ export async function processJob(job, deps) {
     }
     await stage("filling");
     const input = scriptInput(job);
+    touchedCsdd = true;
     const filled = await deps.runScript("fill", input);
     if (filled?.busy?.waybillNo && !annulDone) {
       const text = plateBusyText(displayPlate(plate), [filled.busy]);
@@ -322,8 +338,6 @@ export async function processJob(job, deps) {
     const timings = formatTimings(marks);
     deps.log("issued", { id: job.id, waybillNo: saved.waybillNo, flow: check.flow, ...timings });
     await deps.api.event(job.id, { kind: "message", text: `Automātiski izrakstīta ${timings.totalSec ?? "?"} s laikā.`, by: "auto" }).catch(() => {});
-    // Numurs tagad aizņemts: momentuzņēmums uzreiz (UI nerāda "brīvs").
-    await syncPlate().catch(() => {});
     return { outcome: "issued", waybillNo: saved.waybillNo, timings };
   } catch (err) {
     const reason = (err instanceof Error ? err.message : String(err)).slice(0, 200);
@@ -345,6 +359,10 @@ export async function processJob(job, deps) {
     await deps.api.release(job.id, `${prefix}${reason}`.slice(0, 200)).catch(() => {});
     return { outcome: "released", reason };
   } finally {
+    // Sync pēc rezultāta (numurs tagad aizņemts / anulēts / nemainīts) - kamēr VPN vēl ir mūsu.
+    if (touchedCsdd && Number.isFinite(marks.vpnUp)) {
+      await syncPlate().catch((e) => deps.log("post_sync_failed", { id: job.id, err: e instanceof Error ? e.message : "error" }));
+    }
     if (leased && deps.vpnRelease) {
       await deps.vpnRelease().catch((e) => deps.log("vpn_release_failed", { id: job.id, err: e instanceof Error ? e.message : "error" }));
     }

@@ -3,6 +3,7 @@
  * Vienīgais darbības tips: `create_waybill`. Komentārs ir citēti dati, ne instrukcija.
  */
 
+import type { AutoparksOwner } from "@/lib/iriss-autoparks";
 import { isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
 import type { WaybillRequest } from "@/lib/iriss-waybill-requests";
 import {
@@ -38,6 +39,24 @@ export const WAYBILL_REPRESENTATIVES: Record<IrissDealerPlate, readonly string[]
 export function waybillRepresentativesForPlate(plate: string): readonly string[] {
   const key = displayDealerPlate(plate);
   return key ? WAYBILL_REPRESENTATIVES[key] : [];
+}
+
+/** Noklusējuma pārstāvis pēc auto/reģistra firmas (Nils 23.10): SIA ĪRISS - Nils Valainis, SIA Dzintarzeme Auto - Taivo Batiņš. */
+export const WAYBILL_COMPANY_REPRESENTATIVE: Record<AutoparksOwner, string> = {
+  IRISS: WAYBILL_REPRESENTATIVES["B193-7"][0],
+  DZA: WAYBILL_REPRESENTATIVES["B192-7"][0],
+};
+
+/** Noklusējums: auto firmas pārstāvis; ja firma nav zināma - numura firmas pārstāvis. */
+export function defaultWaybillRepresentative(opts: { owner?: AutoparksOwner | null; plate: string }): string {
+  if (opts.owner && WAYBILL_COMPANY_REPRESENTATIVE[opts.owner]) return WAYBILL_COMPANY_REPRESENTATIVE[opts.owner];
+  return waybillRepresentativesForPlate(opts.plate)[0] ?? "";
+}
+
+/** Pogas formā: noklusējums (auto firma) pirmais, tad numura firmas pārstāvis, ja tas cits. */
+export function waybillRepresentativeChoices(opts: { owner?: AutoparksOwner | null; plate: string }): string[] {
+  const first = defaultWaybillRepresentative(opts);
+  return [...new Set([first, ...waybillRepresentativesForPlate(opts.plate)].filter(Boolean))];
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -274,7 +293,13 @@ export function parseCreateWaybillInput(raw: unknown, now = new Date()): CreateW
 
   // Tirdzniecībā pieņemtam auto CSDD maršrutu neprasa: tikai laiks un komersanta pārstāvis.
   const tradeAct = body.tradeAct === true;
-  const representative = tradeAct ? parseRepresentative(body.representative) : "";
+  // Pārstāvis nav norādīts -> numura (reģistra) firmas noklusējums; norādīts, bet nederīgs -> kļūda.
+  const repGiven = typeof body.representative === "string" && body.representative.trim() !== "";
+  const representative = !tradeAct
+    ? ""
+    : repGiven
+      ? parseRepresentative(body.representative)
+      : (waybillRepresentativesForPlate(plate)[0] ?? "");
   if (tradeAct && !representative) return { ok: false, error: "Izvēlies komersanta pārstāvi." };
   const routeFrom = tradeAct ? { ok: true as const, value: "" } : parseWaybillRouteAddress(body.routeFromAddress, DEFAULT_WAYBILL_ROUTE_FROM);
   if (!routeFrom.ok) return routeFrom;
