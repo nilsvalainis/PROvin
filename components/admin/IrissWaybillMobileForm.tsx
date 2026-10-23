@@ -34,7 +34,7 @@ import { filterWaybillTradeCars, type WaybillTradeCar } from "@/lib/iriss-waybil
 export type WaybillMobileDraft = { nonce: number; brandModel: string; vin: string; plate: string };
 
 const TONE_CLASS = { wait: styles.wait, wip: styles.wip, ok: styles.ok, bad: styles.bad } as const;
-const STEP_LABELS = ["Gaida", "Izveido", "Izrakstīta"] as const;
+const STEP_LABELS = ["Gaida", "Izveido", "Izdota"] as const;
 
 /**
  * Pavadzīme telefonā v2 (makets ~/pz-mob-v2, Nils 23.10): numurs, auto, laiks.
@@ -232,7 +232,7 @@ export function IrissWaybillMobileForm({
             </div>
           )}
           {(form.manual && form.manualBrandModel.trim()) || (form.car && !form.car.accepted) ? (
-            <span className={styles.tag}>Nav tirdzniecībā pieņemto sarakstā</span>
+            <span className={styles.tag}>Nav tirdzniecībā pieņemto auto sarakstā</span>
           ) : null}
         </div>
 
@@ -340,7 +340,7 @@ export function IrissWaybillMobileForm({
               inputMode="numeric"
               pattern="[0-9]*"
               placeholder="cits, h"
-              aria-label="Cits ilgums stundās"
+              aria-label="Cits derīguma ilgums stundās"
               value={form.hoursOther}
               onFocus={() => patch({ hoursPreset: null })}
               onChange={(e) => patch({ hoursPreset: null, hoursOther: e.target.value.replace(/\D/g, "").slice(0, 4) })}
@@ -349,7 +349,7 @@ export function IrissWaybillMobileForm({
           </div>
           {hours && untilText ? (
             <p className={styles.until}>
-              Derīga no šī brīža līdz <b>{untilText}</b>
+              derīga līdz <b>{untilText}</b>
             </p>
           ) : null}
         </div>
@@ -385,7 +385,7 @@ export function IrissWaybillMobileForm({
       </div>
       <div className={styles.list} aria-live="polite">
         {rows.length === 0 ? (
-          <p className={styles.empty}>Nav pavadzīmju darbā.</p>
+          <p className={styles.empty}>Vēl nav pieprasījumu.</p>
         ) : (
           rows.map((row) => <WaybillLiveRow key={row.id} row={row} onRetry={onRetry} />)
         )}
@@ -415,7 +415,7 @@ export function IrissWaybillMobileForm({
   );
 }
 
-/** Viens pieprasījums ar dzīvo progresu: josla, 3 soļi, skaidrs "Izrakstīta". */
+/** Viens pieprasījums ar dzīvo progresu: josla, 3 soļi, skaidrs "Izdota". */
 export function WaybillLiveRow({ row, onRetry }: { row: WaybillMobileRequestRow; onRetry?: (id: string) => void }) {
   const { step, pct, text } = row.progress;
   const bad = row.tone === "bad";
@@ -471,18 +471,18 @@ export function WaybillLiveRow({ row, onRetry }: { row: WaybillMobileRequestRow;
   );
 }
 
-/** "Kā tas strādā" (v2): liela kartīte ar numurētiem soļiem, teksti no ~/pz-teksti.md 3a. */
+/** "Kā tas strādā" (v2): liela kartīte ar numurētiem soļiem, teksti no ~/pz-teksti-latvietis.md 3a. */
 export function IrissWaybillHowItWorks({ plates }: { plates: readonly string[] }) {
   return (
     <section className={styles.how} aria-labelledby="wb-how-title">
       <h3 id="wb-how-title">Kā tas strādā</h3>
-      <p className={styles.howLead}>Pavadzīme 4 soļos. Parasti gatava dažu minūšu laikā.</p>
+      <p className={styles.howLead}>Pavadzīme 5 soļos. Parasti gatava dažu minūšu laikā.</p>
       <ol className={styles.howSteps}>
         <li>
           <span className={`${styles.num} ${styles.numAi}`}>1</span>
           <div>
-            <h4>Aivars ir Dzintarzeme Auto jaunais pavadzīmju rakstīšanas asistents</h4>
-            <p>Tu aizpildi formu, Aivars pats izraksta CSDD pavadzīmi un atsūta PDF. Viņš raksta tikai pavadzīmes - neko citu.</p>
+            <h4>Aivars ir Dzintarzeme Auto jaunais pavadzīmju asistents</h4>
+            <p>Tu aizpildi formu, Aivars pats izveido CSDD pavadzīmi un atsūta PDF. Citus darbus viņš neveic.</p>
           </div>
         </li>
         <li>
@@ -490,8 +490,8 @@ export function IrissWaybillHowItWorks({ plates }: { plates: readonly string[] }
           <div>
             <h4>Izvēlies numuru un auto</h4>
             <p>
-              Numurs ar &quot;brīvs&quot; ir gatavs lietošanai. Auto ņem no tirdzniecībā pieņemto saraksta - tad jānorāda tikai laiks un
-              komersanta pārstāvis. Ja auto sarakstā nav, ieraksti marku, modeli un sākuma adresi.
+              Numurs ar atzīmi &quot;brīvs&quot; ir gatavs lietošanai. Izvēlies auto no tirdzniecībā pieņemto auto saraksta - tad jānorāda
+              tikai laiks. Ja auto sarakstā nav, ieraksti marku, modeli un sākuma adresi.
             </p>
             {plates.length ? (
               <div className={styles.mini}>
@@ -506,18 +506,18 @@ export function IrissWaybillHowItWorks({ plates }: { plates: readonly string[] }
           <span className={styles.num}>3</span>
           <div>
             <h4>Izvēlies laiku</h4>
-            <p>12, 24 vai 48 h, vai cits. Derīga no šī brīža. Lai pagarinātu, izvēlies to pašu numuru un auto vēlreiz.</p>
+            <p>Izvēlies 12, 24 vai 48 h, vai ieraksti citu. Derīga no šī brīža. Lai pagarinātu, izvēlies to pašu numuru un auto vēlreiz.</p>
           </div>
         </li>
         <li>
           <span className={styles.num}>4</span>
           <div>
             <h4>Spied &quot;Izveidot pavadzīmi&quot;</h4>
-            <p>Statuss sarakstā augšā mainās pats: Gaida, tad Izveido, tad Izrakstīta. Kad izrakstīta, parādās PDF un pienāk paziņojums telefonā.</p>
+            <p>Statuss redzams saraksta augšā: Gaida, Izveido, Izdota. Kad pavadzīme izdota, parādās PDF un telefonā pienāk paziņojums.</p>
             <div className={styles.mini}>
               <span className={`${styles.chip} ${styles.wait}`}>Gaida</span>
               <span className={`${styles.chip} ${styles.wip}`}>Izveido</span>
-              <span className={`${styles.chip} ${styles.ok}`}>Izrakstīta</span>
+              <span className={`${styles.chip} ${styles.ok}`}>Izdota</span>
             </div>
           </div>
         </li>
@@ -525,7 +525,7 @@ export function IrissWaybillHowItWorks({ plates }: { plates: readonly string[] }
           <span className={styles.num}>5</span>
           <div>
             <h4>Ja numurs aizņemts</h4>
-            <p>Jauna pavadzīme pārtrauc esošo uz šī numura. Lietotne vispirms pajautās, vai tiešām to vēlies.</p>
+            <p>Jauna pavadzīme pārtrauc šī numura esošo pavadzīmi. Lietotne vispirms pajautās, vai tiešām to vēlies.</p>
           </div>
         </li>
         <li>
@@ -534,9 +534,9 @@ export function IrissWaybillHowItWorks({ plates }: { plates: readonly string[] }
             <h4>Jāzina</h4>
             <p>Numuru salīdzināšana - CSDD Tukuma filiālē. Ja vajag citu vietu, raksti komentārā.</p>
             <p>
-              Komentārs ir tikai teksts pavadzīmei (līdz {NOTE_UNTRUSTED_MAX} zīmēm). Aivars to neizpilda kā komandu, citi to neredz.
+              Komentārs ir tikai teksts šai pavadzīmei (līdz {NOTE_UNTRUSTED_MAX} zīmēm). Aivars to neizpilda kā komandu, citi to neredz.
             </p>
-            <p>Visas izrakstītās un beigušās pavadzīmes ir Arhīvā.</p>
+            <p>Visas izdotās un beigušās pavadzīmes ir Arhīvā.</p>
           </div>
         </li>
       </ol>
@@ -621,7 +621,7 @@ export function IrissWaybillCarPicker({
       <div className={styles.list}>
         {cars === null ? <p className={styles.empty}>Ielādē...</p> : null}
         {cars !== null && shown.length === 0 ? (
-          <p className={styles.empty}>{cars.length ? "Nekas neatrasts." : "Nav auto ar tirdzniecības aktu."}</p>
+          <p className={styles.empty}>{cars.length ? "Nekas nav atrasts." : "Nav tirdzniecībā pieņemto auto."}</p>
         ) : null}
         {shown.map((car) => {
           const on = Boolean(selected) && (selected === car.vin || selected === car.brandModel);

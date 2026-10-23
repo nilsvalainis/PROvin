@@ -18,7 +18,7 @@ export async function GET(_req: Request, ctx: Ctx) {
   try {
     const doc = await readWaybillRequestsDoc();
     const request = doc.requests.find((row) => row.id === id);
-    if (!request) return NextResponse.json({ error: "Nav atrasts." }, { status: 404, ...NO_STORE });
+    if (!request) return NextResponse.json({ error: "Pieprasījums nav atrasts." }, { status: 404, ...NO_STORE });
     const events = doc.events.filter((event) => event.requestId === id);
     return NextResponse.json(
       { ok: true, request, events, reply: waybillAivarsReply(request, events) },
@@ -38,17 +38,17 @@ export async function POST(req: Request, ctx: Ctx) {
   try {
     body = (await req.json()) as { action?: string };
   } catch {
-    return NextResponse.json({ error: "Nederīgs pieprasījums" }, { status: 400, ...NO_STORE });
+    return NextResponse.json({ error: "Nederīgs pieprasījums." }, { status: 400, ...NO_STORE });
   }
   if (body.action !== "retry") {
-    return NextResponse.json({ error: "Nederīga darbība" }, { status: 400, ...NO_STORE });
+    return NextResponse.json({ error: "Nederīga darbība." }, { status: 400, ...NO_STORE });
   }
   const actor = gate.actor;
   const actorId = actor.kind === "admin" ? "env-admin" : actor.user.id;
   const actorName = actor.kind === "admin" ? actor.name : actor.user.name;
   try {
     const request = await retryWaybillRequest({ id, actorId, actorName });
-    if (!request) return NextResponse.json({ error: "Nevar atkārtot šo pieprasījumu." }, { status: 409, ...NO_STORE });
+    if (!request) return NextResponse.json({ error: "Šo pieprasījumu nevar atkārtot." }, { status: 409, ...NO_STORE });
     after(() => wakeAivars(request.id));
     const doc = await readWaybillRequestsDoc();
     return NextResponse.json({

@@ -262,7 +262,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <p className="font-mono text-[12px] text-[#6b7280]">{dash(row.number)}</p>
-                    <span className="rounded-full bg-[#ECFDF3] px-2 py-0.5 text-[11px] font-medium text-[#067647]">aktīva</span>
+                    <span className="rounded-full bg-[#ECFDF3] px-2 py-0.5 text-[11px] font-medium text-[#067647]">derīga</span>
                   </div>
                   <p className="mt-1 text-[16px] font-semibold">{dash(row.brandModel)}</p>
                   <p className="text-[12px] text-[#6b7280]">
@@ -507,7 +507,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
               </button>
             </div>
             <div className="mt-3">
-              <AdminPushToggle hint="Paziņojums telefonā, kad pavadzīme izrakstīta vai neizdevās." />
+              <AdminPushToggle hint="Paziņojums telefonā, kad pavadzīme izdota vai neizdevās." />
             </div>
             {/* VPN un servera stāvoklis - pašā apakšā, liela poga (tikai telefonā; datorā augšā kā agrāk). */}
             <div className="mt-6">

@@ -221,13 +221,13 @@ export async function claimWaybillRequest(
       pickedAt: now,
       updatedAt: now,
       errorReason: "",
-      lastReplyText: "Paņēmu darbā.",
+      lastReplyText: "Paņemts darbā.",
     };
     let next = { ...doc, requests: doc.requests.map((r) => (r.id === id ? nextReq : r)) };
     next = pushEvent(next, {
       requestId: id,
       kind: "in_progress",
-      text: "Paņēmu darbā.",
+      text: "Paņemts darbā.",
       waybillNo: "",
       pdfUrl: "",
       by: pickedBy,

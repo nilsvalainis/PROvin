@@ -12,8 +12,8 @@ export type WaybillRequestEventKind = (typeof WAYBILL_REQUEST_EVENT_KINDS)[numbe
 
 export const WAYBILL_REQUEST_STATUS_LABEL: Record<WaybillRequestStatus, string> = {
   queued: "Gaida",
-  in_progress: "Procesā",
-  issued: "Izveidota",
+  in_progress: "Izveido",
+  issued: "Izdota",
   error: "Kļūda",
 };
 
