@@ -21,9 +21,10 @@ const rowBase = {
   validityTone: "expired" as const,
 };
 
-function page() {
+function page(isAdmin = true) {
   return (
     <IrissPavadzimesListClient
+      isAdmin={isAdmin}
       initial={{
         rows: [
           { ...rowBase, id: "old1", validUntil: "2026-10-03T10:00:00.000Z" },
@@ -55,6 +56,13 @@ describe("Pavadzīmju lapa v2", () => {
     const more = text.slice(text.indexOf("Vēl"), vpn);
     expect(more).toContain("Kalendārs");
     expect(more).not.toContain("Arhīvs");
+  });
+
+  it("darbinieks neredz VPN / servera vadību un paziņojumu slēdzi, arhīva saite paliek", () => {
+    const text = renderText(page(false));
+    expect(text).not.toContain("Man vajag VPN");
+    expect(text).not.toContain("VPN");
+    expect(text).toContain("Arhīvs (2) ›");
   });
 });
 

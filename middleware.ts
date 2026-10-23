@@ -323,5 +323,7 @@ export default async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/((?!_next|_vercel|sitemap\\.xml|robots\\.txt|.*\\..*).*)",
+    // Admin API vienmēr caur sadaļu vārtiem - arī ceļi ar punktu (piem. `/api/admin/x/fails.pdf`), ko augšējais izlaiž.
+    "/api/admin/:path*",
   ],
 };

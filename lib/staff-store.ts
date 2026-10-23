@@ -315,13 +315,20 @@ export async function setStaffSections(input: {
       sections,
       role: sections.includes("logistika") ? "logistics" : user.role,
     };
+    // Sadaļu atņemšana stājas spēkā uzreiz: middleware lasa sadaļas no sīkdatnes, tāpēc vecās sesijas beidzam
+    // (jāpieslēdzas no jauna). Sadaļas piešķiršana sesiju nepārtrauc.
+    const narrowed = prev.some((id) => !sections.includes(id));
+    const nowIso = new Date().toISOString();
+    const sessions = narrowed
+      ? doc.sessions.map((s) => (s.userId === user.id && !s.revokedAt ? { ...s, revokedAt: nowIso } : s))
+      : doc.sessions;
     const next = appendAudit(
-      { ...doc, users: doc.users.map((u) => (u.id === user.id ? nextUser : u)) },
+      { ...doc, sessions, users: doc.users.map((u) => (u.id === user.id ? nextUser : u)) },
       {
         userId: input.actorId,
         action: "sections_updated",
         target: user.id,
-        meta: { email: user.email, from: prev, to: sections },
+        meta: { email: user.email, from: prev, to: sections, sessionsRevoked: narrowed },
         ip: input.ip ?? "unknown",
         userAgent: input.userAgent ?? "",
       },

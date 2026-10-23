@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireIrissSectionApi } from "@/lib/staff-auth";
-import { loadIrissPavadzimesPageData } from "@/lib/iriss-pavadzimes-list";
+import { isWaybillOnlyActor, requireIrissSectionApi, waybillOnlyForbidden } from "@/lib/staff-auth";
+import { canSeeWaybillOrders, loadIrissPavadzimesPageData } from "@/lib/iriss-pavadzimes-list";
 import { uploadIrissPavadzime } from "@/lib/iriss-pavadzimes-store";
 import { PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
 
@@ -11,6 +11,8 @@ export const maxDuration = 60;
 export async function POST(req: Request) {
   const gate = await requireIrissSectionApi("pavadzimes");
   if (!gate.ok) return gate.response;
+  // Partneris PDF neaugšupielādē (dzīvās sadaļas; middleware to aptur jau pēc sīkdatnes).
+  if (isWaybillOnlyActor(gate.actor)) return waybillOnlyForbidden();
 
   let form: FormData;
   try {
@@ -36,7 +38,7 @@ export async function POST(req: Request) {
 
   try {
     await uploadIrissPavadzime({ fileName, bytes, vin, brandModel, plate });
-    const data = await loadIrissPavadzimesPageData();
+    const data = await loadIrissPavadzimesPageData(new Date(), { withOrders: canSeeWaybillOrders(gate.actor) });
     return NextResponse.json(data);
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "upload_failed" }, { status: 500 });

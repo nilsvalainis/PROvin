@@ -373,6 +373,15 @@ export function waybillAivarsReply(
   };
 }
 
+/** Darbiniekam bez Pasūtījumiem: pieprasījumos nav IRISS pasūtījuma ID. */
+export function waybillRequestWithoutOrder(request: WaybillRequest): WaybillRequest {
+  return request.vehicle.orderId ? { ...request, vehicle: { ...request.vehicle, orderId: "" } } : request;
+}
+
+export function waybillDocWithoutOrders(doc: WaybillRequestsDoc): WaybillRequestsDoc {
+  return { ...doc, requests: doc.requests.map(waybillRequestWithoutOrder) };
+}
+
 export function waybillChatPayload(doc: WaybillRequestsDoc, nowMs = Date.now(), auto?: WaybillAutoContext): {
   requests: WaybillRequest[];
   events: WaybillRequestEvent[];

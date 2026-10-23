@@ -34,6 +34,10 @@ export type IrissSectionMeta = {
   apiPrefixes: readonly string[];
 };
 
+/**
+ * Centrālā karte lapa/API -> sadaļa. Darbiniekam atļauts TIKAI tas, kas šeit piekārtots viņa sadaļām;
+ * viss pārējais (arī jauns route, kas nav kartē) ir aizliegts (middleware + lapu/route vārti).
+ */
 export const IRISS_SECTION_CATALOG: readonly IrissSectionMeta[] = [
   {
     id: "pasutijumi",
@@ -84,7 +88,6 @@ export const IRISS_SECTION_CATALOG: readonly IrissSectionMeta[] = [
     apiPrefixes: [
       "/api/admin/vin-scan",
       "/api/admin/vin-sources",
-      "/api/admin/vin-history",
       "/api/admin/outvin",
       "/api/admin/csdd-tech-data",
     ],
@@ -169,6 +172,28 @@ export function irissSectionMeta(id: IrissSection): IrissSectionMeta {
   return IRISS_SECTION_CATALOG.find((row) => row.id === id)!;
 }
 
+/**
+ * Partnera skats: darbiniekam ir TIKAI sadaļa Pavadzīmes. Sākumā tikai pavadzīmju logrīks, poga
+ * "Izveidot pavadzīmi", Arhīvs un Iziet - bez navigācijas. Ja atzīmē vēl kādu sadaļu, atgriežas parastā navigācija.
+ */
+export function isWaybillOnlyStaff(sections: readonly IrissSection[] | null | undefined): boolean {
+  return Array.isArray(sections) && sections.length === 1 && sections[0] === "pavadzimes";
+}
+
+/**
+ * Partnerim (tikai Pavadzīmes) arī pavadzīmju API ir šaurāks: bez PDF augšupielādes un izmaiņu vēstures
+ * (atjaunošanas) - viņa sākumskatā tādu darbību nav. Pilno sarakstu (`GET /api/admin/iriss-pavadzimes` bez
+ * `?active=1`) aizliedz pats route (vaicājuma parametrs middleware nav redzams).
+ */
+export const WAYBILL_ONLY_STAFF_DENIED_API_PREFIXES: readonly string[] = [
+  "/api/admin/iriss-pavadzimes/upload",
+  "/api/admin/change-history",
+];
+
+export function isWaybillOnlyStaffDeniedApiPath(pathname: string): boolean {
+  return WAYBILL_ONLY_STAFF_DENIED_API_PREFIXES.some((prefix) => pathMatchesPrefix(pathname, prefix));
+}
+
 export function staffHomePath(sections: readonly IrissSection[]): string {
   if (sections.length > 0) return "/admin/iriss";
   return LOGISTICS_PAGE_PREFIX;
@@ -247,6 +272,8 @@ export function decideAdminPageAccess(pathname: string, actor: AccessActor): Pag
   if (actor.kind === "admin") return "allow";
   if (actor.kind !== "staff") return "forbidden";
   if (isStaffIrissHomePath(pathname)) return actor.sections.length > 0 ? "allow" : "forbidden";
+  // Partnerim (tikai Pavadzīmes) vienīgā lapa ir IRISS sākums; pavadzīmju API paliek atļauts.
+  if (isWaybillOnlyStaff(actor.sections)) return "forbidden";
   if (actor.sections.some((id) => irissSectionMeta(id).pagePrefixes.some((prefix) => pathMatchesPrefix(pathname, prefix)))) {
     return "allow";
   }
@@ -259,6 +286,7 @@ export function decideAdminApiAccess(pathname: string, actor: AccessActor): ApiA
   if (actor.kind === "admin") return "allow";
   if (actor.kind !== "staff") return "forbidden";
   if (isStaffSessionApiPath(pathname)) return "allow";
+  if (isWaybillOnlyStaff(actor.sections) && isWaybillOnlyStaffDeniedApiPath(pathname)) return "forbidden";
   if (isSharedStaffHistoryApiPath(pathname)) {
     return actor.sections.some((s) => s === "pavadzimes" || s === "pasutijumi" || s === "sludinajumi")
       ? "allow"

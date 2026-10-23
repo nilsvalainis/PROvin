@@ -3,7 +3,12 @@ import { wakeAivars } from "@/lib/iriss-aivars-wake";
 import { classifyWaybillForAuto, plateTakenByOtherRequest } from "@/lib/iriss-waybill-auto";
 import { waybillAutoContext } from "@/lib/iriss-waybill-auto-server";
 import { parseCreateWaybillInput } from "@/lib/iriss-waybill-create";
-import { emptyWaybillRequestsDoc, waybillChatPayload } from "@/lib/iriss-waybill-requests";
+import {
+  emptyWaybillRequestsDoc,
+  waybillChatPayload,
+  waybillDocWithoutOrders,
+  waybillRequestWithoutOrder,
+} from "@/lib/iriss-waybill-requests";
 import { createWaybillRequest, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
 import { readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
 import {
@@ -15,6 +20,7 @@ import {
 import { listWaybillVehicleChips } from "@/lib/iriss-waybill-vehicles";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { waybillTradeCarsWithSource, type WaybillCarsSource, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
+import { canSeeWaybillOrders } from "@/lib/iriss-pavadzimes-list";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
 
 export const runtime = "nodejs";
@@ -72,8 +78,16 @@ export async function GET(req: Request) {
       withCars ? loadTradeCarsSafe() : Promise.resolve(null),
     ]);
     const auto = await waybillAutoContext(doc, busyFromPlates(plates));
+    const withOrders = canSeeWaybillOrders(gate.actor);
     return NextResponse.json(
-      { ok: true, ...waybillChatPayload(doc, Date.now(), auto), autoMode: auto.mode, vehicles, plates, ...(tradeCars ? { tradeCars: tradeCars.cars, tradeCarsSource: tradeCars.source } : {}) },
+      {
+        ok: true,
+        ...waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc), Date.now(), auto),
+        autoMode: auto.mode,
+        vehicles: withOrders ? vehicles : vehicles.map((v) => ({ ...v, orderId: "" })),
+        plates,
+        ...(tradeCars ? { tradeCars: tradeCars.cars, tradeCarsSource: tradeCars.source } : {}),
+      },
       NO_STORE,
     );
   } catch (err) {
@@ -136,8 +150,15 @@ export async function POST(req: Request) {
     const auto = await waybillAutoContext(doc, busyFromPlates(plates));
     // Standarta darbu ņem automātika tikai īstajā režīmā; testa režīmā vai nestandarta - uzreiz pamodina Aivaru.
     if (!(auto.mode === "live" && classified.standard)) after(() => wakeAivars(request.id));
+    const withOrders = canSeeWaybillOrders(actor);
     return NextResponse.json(
-      { ok: true, request, ...waybillChatPayload(doc, Date.now(), auto), autoMode: auto.mode, plates },
+      {
+        ok: true,
+        request: withOrders ? request : waybillRequestWithoutOrder(request),
+        ...waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc), Date.now(), auto),
+        autoMode: auto.mode,
+        plates,
+      },
       NO_STORE,
     );
   } catch (err) {
