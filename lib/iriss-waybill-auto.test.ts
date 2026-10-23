@@ -161,36 +161,52 @@ function tradeJob(over: Partial<WaybillRequest> = {}) {
   return { ...toAivarsCreateWaybillAction(r), auto: classifyWaybillForAuto(r, free) };
 }
 
+/** CSDD sync.js (tikai lasa) noklusējumā: visi firmas numuri brīvi. */
+const freeSync = (input: unknown) => {
+  const plates = ((input as { plates?: string[] })?.plates ?? []) as string[];
+  return { ok: true, plates: Object.fromEntries(plates.map((p) => [p, []])), platesChecked: plates, maxNumber: "P02809" };
+};
+
 function deps(over: Record<string, unknown> = {}) {
   let t = Date.parse("2026-10-22T18:00:35.000Z");
+  const { runScript: scripts, sync, ...rest } = over as {
+    runScript?: (step: string, input?: unknown) => Promise<unknown>;
+    sync?: (input: unknown) => unknown;
+  };
+  const fallback = async (step: string, _input?: unknown) =>
+    step === "fill"
+      ? { ok: true, fields: { plate: "B193-7", validHours: 48 } }
+      : { ok: true, waybillNo: "TTR123", pdfPath: "out/TTR123.pdf" };
   return {
     api: {
       claim: vi.fn(async () => true),
       event: vi.fn(async () => {}),
       result: vi.fn(async () => {}),
       release: vi.fn(async () => {}),
+      plates: vi.fn(async () => {}),
     },
     vpnLease: vi.fn(async () => {}),
     vpnRelease: vi.fn(async () => {}),
-    runScript: vi.fn(async (step: string, _input?: unknown) =>
-      step === "fill"
-        ? { ok: true, fields: { plate: "B193-7", validHours: 48 } }
-        : { ok: true, waybillNo: "TTR123", pdfPath: "out/TTR123.pdf" },
-    ),
+    runScript: vi.fn(async (step: string, input?: unknown) => (step === "sync" ? (sync ?? freeSync)(input) : (scripts ?? fallback)(step, input))),
     readPdfBase64: vi.fn(async () => "JVBERi0="),
     now: () => (t += 1000),
     log: vi.fn(),
     dryRun: false,
-    ...over,
+    ...rest,
   };
 }
 
+/** Skriptu izsaukumi bez sync.js (tikai lasīšana). */
+const scriptCalls = (d: ReturnType<typeof deps>) => d.runScript.mock.calls.filter((c) => c[0] !== "sync") as unknown[][];
+
 describe("waybill worker (scripts/iriss-ttr)", () => {
-  it("script allowlist has only fill/save, never stop or cancel", () => {
-    expect(Object.values(ALLOWED_SCRIPTS).sort()).toEqual(["refill.js", "save.js"]);
-    for (const step of ["partraukt", "pārtraukt", "anulet", "cancel", "stop", "x", "run"]) {
+  it("script allowlist has only fill/save/sync; annul only with the explicit switch; never stop or cancel", () => {
+    expect(Object.values(ALLOWED_SCRIPTS).sort()).toEqual(["refill.js", "save.js", "sync.js"]);
+    for (const step of ["partraukt", "pārtraukt", "anulet", "cancel", "stop", "x", "run", "annul"]) {
       expect(() => resolveWorkerScript(step)).toThrow(/script_not_allowed/);
     }
+    expect(() => resolveWorkerScript("annul", { annulEnabled: "1" })).toThrow(/script_not_allowed/);
+    expect(resolveWorkerScript("annul", { annulEnabled: true })).toBe("annul.js");
     expect(resolveWorkerScript("fill")).toBe("refill.js");
   });
 
@@ -233,10 +249,10 @@ describe("waybill worker (scripts/iriss-ttr)", () => {
     });
     const res = await processJob(tradeJob(), d);
     expect(res.outcome).toBe("issued");
-    const input = (d.runScript.mock.calls[0] as unknown[])[1] as Record<string, unknown>;
+    const input = scriptCalls(d)[0][1] as Record<string, unknown>;
     expect(input).toMatchObject({ flow: "tradeAct", representative: "Nils Valainis", preferTradeAct: true, validHours: 1, vin: "VF30ARHHAAS201388" });
     const stages = d.api.event.mock.calls.map((c) => (c as unknown[])[1] as { stage?: string }).filter((b) => b.stage).map((b) => b.stage);
-    expect(stages).toEqual(["vpn", "filling", "saving", "pdf"]);
+    expect(stages).toEqual(["vpn", "checking", "filling", "saving", "pdf"]);
     expect(d.vpnRelease).toHaveBeenCalledTimes(1);
   });
 
@@ -257,8 +273,8 @@ describe("waybill worker (scripts/iriss-ttr)", () => {
     const d = deps();
     const res = await processJob(autoJob({ noteUntrusted: "193 uz BMW 330" }), d);
     expect(res.outcome).toBe("issued");
-    expect(d.runScript.mock.calls.map((c) => c[0])).toEqual(["fill", "save"]);
-    const input = (d.runScript.mock.calls[0] as unknown[])[1] as Record<string, unknown>;
+    expect(d.runScript.mock.calls.map((c) => c[0])).toEqual(["sync", "fill", "save", "sync"]);
+    const input = scriptCalls(d)[0][1] as Record<string, unknown>;
     expect(input).not.toHaveProperty("comment_untrusted");
     expect(d.api.result).toHaveBeenCalledWith("wbr_abc123", expect.objectContaining({ ok: true, waybillNo: "TTR123", by: "auto" }));
     expect(res.timings?.totalSec).toBeGreaterThan(0);
@@ -268,7 +284,7 @@ describe("waybill worker (scripts/iriss-ttr)", () => {
     const d = deps({ runScript: vi.fn(async () => ({ ok: true, fields: { plate: "B762-7", validHours: 48 } })) });
     const res = await processJob(autoJob(), d);
     expect(res.outcome).toBe("released");
-    expect(d.runScript).toHaveBeenCalledTimes(1);
+    expect(scriptCalls(d)).toHaveLength(1);
     expect(d.api.release).toHaveBeenCalled();
     expect(d.api.result).not.toHaveBeenCalled();
   });
@@ -324,7 +340,7 @@ describe("j8: laiks 1/12/48/brīvs abām plūsmām, akts bez maršruta, VPN cilv
       ),
     });
     await processJob({ ...tradeJob(), routeFrom: "Rīga", routeTo: "Rīga" }, d);
-    const input = (d.runScript.mock.calls[0] as unknown[])[1] as Record<string, unknown>;
+    const input = scriptCalls(d)[0][1] as Record<string, unknown>;
     expect(input).toMatchObject({ flow: "tradeAct", routeFrom: "", routeTo: "", representative: "Nils Valainis", validHours: 1 });
   });
 
@@ -358,5 +374,136 @@ describe("j8: laiks 1/12/48/brīvs abām plūsmām, akts bez maršruta, VPN cilv
     expect(dryStatus).not.toHaveBeenCalled();
     expect(dry.vpnLease).not.toHaveBeenCalled();
     expect(dry.api.claim).not.toHaveBeenCalled();
+  });
+});
+
+describe("j10: aizņemts numurs pēc CSDD reģistra, anulēt un izveidot jaunu", () => {
+  const busySync = (nos: string[]) => (input: unknown) => {
+    const r = freeSync(input);
+    r.plates["B193-7"] = nos.map((waybillNo) => ({ waybillNo, validUntil: "2026-10-25T05:35:00.000Z", brandModel: "MERCEDES-BENZ ML 350" })) as never[];
+    return r;
+  };
+  /** Lietotājs apstiprināja "anulēt iepriekšējo" (P02812); Vercel slēdzis ieslēgts. */
+  const replaceJob = (no = "P02812") => {
+    const r = req({ plateBusyAtCreate: true, replaceWaybillNo: no });
+    return { ...toAivarsCreateWaybillAction(r), auto: classifyWaybillForAuto(r, { ...free, plateBusyNow: true, replaceEnabled: true }) };
+  };
+
+  it("CSDD numurs aizņemts (ar roku izrakstīta P02812): nav formas, nav Saglabāt, skaidrs teksts, momentuzņēmums uz Vercel", async () => {
+    const d = deps({ sync: busySync(["P02812"]) });
+    const res = await processJob(autoJob(), d);
+    expect(res).toMatchObject({ outcome: "plate_busy", active: ["P02812"] });
+    expect(scriptCalls(d)).toEqual([]);
+    const body = (d.api.result.mock.calls[0] as unknown[])[1] as { ok: boolean; errorReason: string };
+    expect(body.ok).toBe(false);
+    expect(body.errorReason).toContain("Numurs B193-7 CSDD aizņemts (P02812 MERCEDES-BENZ ML 350, līdz 25.10.2026 07:35)");
+    expect(body.errorReason).toContain("Jaunā pavadzīme nav izveidota");
+    expect(body.errorReason).not.toMatch(/[–—]/);
+    const snap = (d.api.plates.mock.calls[0] as unknown[])[0] as { plates: { plate: string; ok: boolean; active: { waybillNo: string }[] }[] };
+    expect(snap.plates.map((p) => p.plate)).toEqual(["B193-7", "B762-7"]);
+    expect(snap.plates[0]).toMatchObject({ ok: true, active: [{ waybillNo: "P02812" }] });
+    expect(d.vpnRelease).toHaveBeenCalledTimes(1);
+  });
+
+  it("CSDD statusu nevar nolasīt -> darbs Aivaram pirms formas (nekas netiek saglabāts)", async () => {
+    const d = deps({ sync: () => ({ ok: false, error: "saraksts tukšs", platesChecked: ["B193-7", "B762-7"] }) });
+    const res = await processJob(autoJob(), d);
+    expect(res.outcome).toBe("released");
+    expect(scriptCalls(d)).toEqual([]);
+    expect(d.api.release).toHaveBeenCalledWith("wbr_abc123", expect.stringContaining("CSDD numura statusu nevarēja nolasīt"));
+    const snap = (d.api.plates.mock.calls[0] as unknown[])[0] as { plates: { ok: boolean }[] };
+    expect(snap.plates.every((p) => p.ok === false)).toBe(true);
+  });
+
+  it("anulēšanas darbs bez Hetzner slēdža (IRISS_WAYBILL_ANNUL_LIVE) netiek ņemts: bez claim, bez VPN", async () => {
+    const job = replaceJob();
+    expect(job.auto).toMatchObject({ standard: true, replace: { waybillNo: "P02812" } });
+    const d = deps();
+    expect(await processJob(job, d)).toEqual({ outcome: "skipped", reason: "anulēšana izslēgta" });
+    expect(d.api.claim).not.toHaveBeenCalled();
+    expect(d.vpnLease).not.toHaveBeenCalled();
+  });
+
+  it("ar slēdzi: anulē TIKAI apstiprināto P02812, pārbauda, ka numurs brīvs, tad izraksta jauno", async () => {
+    let annulled = false;
+    const d = deps({
+      annulEnabled: true,
+      sync: (input: unknown) => (annulled ? freeSync(input) : busySync(["P02812"])(input)),
+      runScript: async (step: string) => {
+        if (step === "annul") {
+          annulled = true;
+          return { ok: true, waybillNo: "P02812" };
+        }
+        return step === "fill" ? { ok: true, fields: { plate: "B193-7", validHours: 48 } } : { ok: true, waybillNo: "P02814", pdfPath: "pdf/x.pdf" };
+      },
+    });
+    const res = await processJob(replaceJob(), d);
+    expect(res).toMatchObject({ outcome: "issued", waybillNo: "P02814" });
+    expect(d.runScript.mock.calls.map((c) => c[0])).toEqual(["sync", "annul", "sync", "fill", "save", "sync"]);
+    expect((d.runScript.mock.calls[1] as unknown[])[1]).toMatchObject({ replaceWaybillNo: "P02812", plate: "B1937" });
+    const stages = d.api.event.mock.calls.map((c) => (c as unknown[])[1] as { stage?: string }).filter((b) => b.stage).map((b) => b.stage);
+    expect(stages).toEqual(["vpn", "checking", "annulling", "filling", "saving", "pdf"]);
+  });
+
+  it("ar slēdzi: CSDD numuru aizņem cita pavadzīme, nevis apstiprinātā -> neko neanulē, jaunā nav izveidota", async () => {
+    const d = deps({ annulEnabled: true, sync: busySync(["P02813"]) });
+    const res = await processJob(replaceJob("P02812"), d);
+    expect(res.outcome).toBe("plate_busy_other");
+    expect(scriptCalls(d)).toEqual([]);
+    expect(d.api.result).toHaveBeenCalledWith("wbr_abc123", expect.objectContaining({ ok: false, errorReason: expect.stringContaining("Neko neanulēju") }));
+  });
+
+  it("ar slēdzi: anulēšana neizdodas -> Aivaram, jaunā netiek pildīta", async () => {
+    const d = deps({
+      annulEnabled: true,
+      sync: busySync(["P02812"]),
+      runScript: async (step: string) => (step === "annul" ? { ok: false, error: "P02812 nav uz B193-7 - neko nepārtraucu" } : { ok: true }),
+    });
+    const res = await processJob(replaceJob(), d);
+    expect(res.outcome).toBe("released");
+    expect(scriptCalls(d).map((c) => c[0])).toEqual(["annul"]);
+  });
+
+  it("Saglabāt: CSDD pārbaudīts - pavadzīme nav izveidota -> skaidrs 'NAV izveidota', nevis 'Pārbaudi CSDD'", async () => {
+    const d = deps({
+      runScript: async (step: string) =>
+        step === "fill"
+          ? { ok: true, fields: { plate: "B1937", validHours: 48 } }
+          : { ok: false, notCreated: true, error: "CSDD pavadzīmi nesaglabāja: numura zīme B193-7 jau tiek izmantota" },
+    });
+    const res = await processJob(autoJob(), d);
+    expect(res.outcome).toBe("not_created");
+    const body = (d.api.result.mock.calls[0] as unknown[])[1] as { errorReason: string };
+    expect(body.errorReason).toContain("Pavadzīme NAV izveidota");
+    expect(body.errorReason).not.toContain("Pārbaudi CSDD");
+  });
+
+  it("refill pēkšņi atrod aktīvu pavadzīmi (sacensība) -> tas pats skaidrais 'aizņemts' teksts", async () => {
+    const d = deps({ runScript: async () => ({ ok: false, busy: { waybillNo: "P02815", validUntil: "" }, error: "numuram jau ir aktīva pavadzīme P02815" }) });
+    const res = await processJob(autoJob(), d);
+    expect(res).toMatchObject({ outcome: "plate_busy", active: ["P02815"] });
+    expect(scriptCalls(d).map((c) => c[0])).toEqual(["fill"]);
+  });
+});
+
+describe("j10: servera klasifikācija - anulēt un izveidot", () => {
+  it("aizņemts numurs ar apstiprinātu numuru ir automātikai tikai ar IRISS_WAYBILL_AUTO_REPLACE", () => {
+    const r = req({ plateBusyAtCreate: true, replaceWaybillNo: "P02812" });
+    expect(classifyWaybillForAuto(r, { ...free, plateBusyNow: true })).toEqual({ standard: false, reason: "numurs aizņemts" });
+    expect(classifyWaybillForAuto(r, { ...free, plateBusyNow: true, replaceEnabled: true })).toMatchObject({
+      standard: true,
+      replace: { waybillNo: "P02812" },
+    });
+    // Bez apstiprinātā numura - nekad.
+    expect(classifyWaybillForAuto(req({ plateBusyAtCreate: true }), { ...free, plateBusyNow: true, replaceEnabled: true }).standard).toBe(false);
+    // Numurs aizņemts tagad, bet pieprasījums nebija "anulēt" - nekad.
+    expect(classifyWaybillForAuto(req(), { ...free, plateBusyNow: true, replaceEnabled: true }).standard).toBe(false);
+    // Parasts darbs bez aizņemtības - bez replace.
+    expect(classifyWaybillForAuto(req(), free)).not.toHaveProperty("replace");
+  });
+
+  it("Aivars redz apstiprināto anulējamo numuru (tikai aizņemtam pieprasījumam)", () => {
+    expect(toAivarsCreateWaybillAction(req({ plateBusyAtCreate: true, replaceWaybillNo: "P02812" })).replaceWaybillNo).toBe("P02812");
+    expect(toAivarsCreateWaybillAction(req({ replaceWaybillNo: "P02812" })).replaceWaybillNo).toBe("");
   });
 });

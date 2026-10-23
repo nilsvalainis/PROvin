@@ -39,7 +39,16 @@ export type AutoWaybillTarget = {
   company: AutoWaybillCompany;
   ctx: "ctx1" | "ctx2";
   flow: AutoWaybillFlow;
+  /** "Anulēt iepriekšējo un izveidot jaunu" (lietotājs apstiprināja tieši šo pavadzīmi). */
+  replace?: { waybillNo: string };
 };
+
+/** Vercel slēdzis: aizņemta numura darbu ("anulēt un izveidot") dod automātikai. Noklusējumā izslēgts -> Aivars. */
+export const IRISS_WAYBILL_AUTO_REPLACE_ENV = "IRISS_WAYBILL_AUTO_REPLACE";
+
+export function autoWaybillReplaceEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return env[IRISS_WAYBILL_AUTO_REPLACE_ENV]?.trim() === "1";
+}
 
 export type AutoWaybillClassification =
   | ({ standard: true } & AutoWaybillTarget)
@@ -79,7 +88,7 @@ type ClassifyRequest = Pick<
   | "plateBusyAtCreate"
   | "autoDisabled"
 > &
-  Partial<Pick<WaybillRequest, "id" | "tradeAct" | "representative" | "validUntil">>;
+  Partial<Pick<WaybillRequest, "id" | "tradeAct" | "representative" | "validUntil" | "replaceWaybillNo">>;
 
 /**
  * Cits pieprasījums ar to pašu numuru jau ir darbā vai tikko izdots (vēl derīgs) - dublikāts / numurs faktiski aizņemts,
@@ -104,13 +113,16 @@ export function plateTakenByOtherRequest(
 
 export function classifyWaybillForAuto(
   req: ClassifyRequest,
-  opts: { plateBusyNow: boolean; plateInOtherRequest?: boolean; nowMs?: number },
+  opts: { plateBusyNow: boolean; plateInOtherRequest?: boolean; nowMs?: number; replaceEnabled?: boolean },
 ): AutoWaybillClassification {
   const nowMs = opts.nowMs ?? Date.now();
   if (req.status !== "queued") return { standard: false, reason: "nav rindā" };
   if (req.autoDisabled) return { standard: false, reason: "nodots Aivaram" };
-  // Aizņemts numurs nozīmē beigt aktīvu pavadzīmi - to drīkst tikai Aivars ar Nila "jā".
-  if (req.plateBusyAtCreate || opts.plateBusyNow) return { standard: false, reason: "numurs aizņemts" };
+  // Aizņemts numurs nozīmē beigt aktīvu pavadzīmi. Automātikai tikai, ja lietotājs apstiprināja tieši šo pavadzīmi
+  // ("Vai tiešām anulēt iepriekšējo un izveidot jaunu?" -> Jā) un ieslēgts IRISS_WAYBILL_AUTO_REPLACE; citādi Aivars.
+  const replaceNo = req.plateBusyAtCreate && /^P\d{5,6}$/.test(req.replaceWaybillNo ?? "") ? (req.replaceWaybillNo as string) : "";
+  const replace = Boolean(replaceNo && opts.replaceEnabled);
+  if (!replace && (req.plateBusyAtCreate || opts.plateBusyNow)) return { standard: false, reason: "numurs aizņemts" };
   if (opts.plateInOtherRequest) return { standard: false, reason: "numurs jau citā darbā" };
   const plate = displayDealerPlate(req.vehicle.plate);
   if (!plate) return { standard: false, reason: "numurs nav sarakstā" };
@@ -130,13 +142,13 @@ export function classifyWaybillForAuto(
     // Pieņemts auto: CSDD akts pēc VIN -> "Noformēt pavadzīmi". Maršrutu CSDD ņem no akta.
     if (!VIN_RE.test(req.vehicle.vin.trim().toUpperCase())) return { standard: false, reason: "aktam vajag VIN" };
     if (!isAllowedAutoRepresentative(plate, req.representative ?? "")) return { standard: false, reason: "cits pārstāvis" };
-    return { standard: true, plate, ...AUTO_WAYBILL_PLATES[plate], flow: "tradeAct" };
+    return { standard: true, plate, ...AUTO_WAYBILL_PLATES[plate], flow: "tradeAct", ...(replace ? { replace: { waybillNo: replaceNo } } : {}) };
   }
   // Jauna pavadzīme: automātika prot tikai noklusējuma maršrutu (CSDD adrešu koks Tukums, Rīgas iela 75 -> CSDD Tukums).
   if (req.routeFrom !== DEFAULT_WAYBILL_ROUTE_FROM || req.routeTo !== DEFAULT_WAYBILL_ROUTE_TO) {
     return { standard: false, reason: "cits maršruts" };
   }
-  return { standard: true, plate, ...AUTO_WAYBILL_PLATES[plate], flow: "new" };
+  return { standard: true, plate, ...AUTO_WAYBILL_PLATES[plate], flow: "new", ...(replace ? { replace: { waybillNo: replaceNo } } : {}) };
 }
 
 export function autoWaybillEnabled(env: Record<string, string | undefined> = process.env): boolean {

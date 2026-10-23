@@ -1,7 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { wakeAivars } from "@/lib/iriss-aivars-wake";
-import { classifyWaybillForAuto, plateTakenByOtherRequest } from "@/lib/iriss-waybill-auto";
-import { waybillAutoContext } from "@/lib/iriss-waybill-auto-server";
+import { autoWaybillReplaceEnabled, classifyWaybillForAuto, plateTakenByOtherRequest } from "@/lib/iriss-waybill-auto";
+import { loadWaybillPlateStates, waybillAutoContext } from "@/lib/iriss-waybill-auto-server";
 import { parseCreateWaybillInput } from "@/lib/iriss-waybill-create";
 import {
   emptyWaybillRequestsDoc,
@@ -10,13 +10,7 @@ import {
   waybillRequestWithoutOrder,
 } from "@/lib/iriss-waybill-requests";
 import { createWaybillRequest, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
-import { readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
-import {
-  displayDealerPlate,
-  emptyWaybillPlateStates,
-  waybillPlateOccupancy,
-  type WaybillPlateState,
-} from "@/lib/iriss-waybill-plates";
+import { displayDealerPlate, emptyWaybillPlateStates, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
 import { listWaybillVehicleChips } from "@/lib/iriss-waybill-vehicles";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { waybillTradeCarsWithSource, type WaybillCarsSource, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
@@ -47,9 +41,10 @@ async function loadTradeCarsSafe(): Promise<{ cars: WaybillTradeCar[]; source: W
   }
 }
 
+/** Numuru stāvoklis: indekss + CSDD reģistrs (arī ar roku izrakstītās pavadzīmes). */
 async function loadPlatesSafe(): Promise<WaybillPlateState[]> {
   try {
-    return waybillPlateOccupancy(await readIrissPavadzimesCached());
+    return await loadWaybillPlateStates();
   } catch (err) {
     console.error("[iriss-waybill] plates_failed", err instanceof Error ? err.message : err);
     return emptyWaybillPlateStates();
@@ -63,6 +58,12 @@ function busyFromPlates(plates: WaybillPlateState[]): (plate: string) => boolean
 
 function confirmBusy(body: unknown): boolean {
   return Boolean(body && typeof body === "object" && !Array.isArray(body) && (body as { confirmBusy?: unknown }).confirmBusy === true);
+}
+
+/** Pavadzīme, ko lietotājs apstiprināja anulēt (redzēja logā). Tukšs - vecs klients. */
+function confirmedWaybillNo(body: unknown): string {
+  const v = body && typeof body === "object" ? (body as { confirmWaybillNo?: unknown }).confirmWaybillNo : "";
+  return typeof v === "string" ? v.trim().toUpperCase().slice(0, 12) : "";
 }
 
 export async function GET(req: Request) {
@@ -122,7 +123,10 @@ export async function POST(req: Request) {
     const plates = await loadPlatesSafe();
     const plate = displayDealerPlate(parsed.value.plate);
     const occupancy = plates.find((row) => row.plate === plate);
-    if (occupancy?.busy && !confirmBusy(body)) {
+    const confirmedNo = confirmedWaybillNo(body);
+    // Apstiprināts cits numurs, nekā tagad aizņem (piem. Nils tikmēr izrakstīja ar roku) - jautā vēlreiz ar aktuālo.
+    const confirmedOther = Boolean(confirmedNo && occupancy?.current?.number && occupancy.current.number.toUpperCase() !== confirmedNo);
+    if (occupancy?.busy && (!confirmBusy(body) || confirmedOther)) {
       return NextResponse.json(
         {
           error: "Numurs ir aizņemts.",
@@ -141,11 +145,14 @@ export async function POST(req: Request) {
       createdByName,
       payload: parsed.value,
       plateBusyAtCreate: Boolean(occupancy?.busy),
+      // "Vai tiešām anulēt iepriekšējo un izveidot jaunu?" -> Jā: anulēt drīkst TIKAI šo (tobrīd redzamo) pavadzīmi.
+      replaceWaybillNo: occupancy?.busy ? (occupancy.current?.number ?? "") : "",
     });
     const doc = await readWaybillRequestsDoc();
     const classified = classifyWaybillForAuto(request, {
       plateBusyNow: Boolean(occupancy?.busy),
       plateInOtherRequest: plateTakenByOtherRequest(doc.requests, request),
+      replaceEnabled: autoWaybillReplaceEnabled(),
     });
     const auto = await waybillAutoContext(doc, busyFromPlates(plates));
     // Standarta darbu ņem automātika tikai īstajā režīmā; testa režīmā vai nestandarta - uzreiz pamodina Aivaru.

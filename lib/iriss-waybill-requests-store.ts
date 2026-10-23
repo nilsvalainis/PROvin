@@ -85,6 +85,8 @@ export async function createWaybillRequest(input: {
   createdByName: string;
   payload: CreateWaybillInput;
   plateBusyAtCreate?: boolean;
+  /** Apstiprinātā anulējamā pavadzīme (tikai, ja plateBusyAtCreate). */
+  replaceWaybillNo?: string;
 }): Promise<WaybillRequest> {
   const now = new Date().toISOString();
   const payload = input.payload;
@@ -116,6 +118,10 @@ export async function createWaybillRequest(input: {
     pickedBy: "",
     pickedAt: "",
     plateBusyAtCreate: input.plateBusyAtCreate === true,
+    replaceWaybillNo:
+      input.plateBusyAtCreate === true && /^P\d{5,6}$/.test(String(input.replaceWaybillNo || "").toUpperCase())
+        ? String(input.replaceWaybillNo).toUpperCase()
+        : "",
     autoDisabled: false,
     tradeAct: payload.tradeAct === true,
     representative: payload.tradeAct === true ? payload.representative.slice(0, 60) : "",

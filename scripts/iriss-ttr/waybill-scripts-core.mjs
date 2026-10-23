@@ -17,6 +17,11 @@ export const FORBIDDEN_REQUEST_RE = /p[aā]rtrauk|partrauk|anul|annul|termin[aā
 /** Saglabāšanas nozīmes vadīklas. refill.js tās nespiež nekad; save.js - tikai vienu reizi. */
 export const SAVE_ACTION_RE = /saglab|save|apstiprin|iesniegt|iesūt|iesut|submit|confirm/i;
 
+/** Vienīgā poga pārtraukšanas fāzē (CSDD pavadzīmes kartīte -> lapv_par -> "Pārtraukt!"). */
+export const ANNUL_BUTTON_RE = /^p[aā]rtraukt!?$/i;
+/** Arī pārtraukšanas fāzē nekad: dzēšana, akta anulēšana u.c. */
+export const ANNUL_NEVER_RE = /anul|annul|dz[eē]s|delete|remove|lapt_/i;
+
 /** PDF/drukas vadīklas (tikai pēc saglabāšanas). */
 export const PDF_ACTION_RE = /druk|pdf|lejupiel|izdruk|print|download/i;
 
@@ -36,10 +41,17 @@ function decodeSafe(s) {
 /**
  * Vai elementu drīkst spiest dotajā fāzē.
  * @param {{ text?: string, value?: string, id?: string, name?: string, title?: string, ariaLabel?: string, onclick?: string, href?: string }} el
- * @param {"login" | "fill" | "save" | "pdf"} phase
+ * @param {"login" | "fill" | "save" | "pdf" | "annul"} phase
  */
 export function isClickAllowed(el, phase) {
   const parts = [el.text, el.value, el.id, el.name, el.title, el.ariaLabel, el.onclick, el.href].filter(Boolean).join(" ");
+  // Pārtraukšanas fāze (tikai annul.js, sk. ANNUL_BUTTON_RE): drīkst TIKAI CSDD pogu "Pārtraukt!", nekas cits.
+  if (phase === "annul") {
+    const label = String(el.text || el.value || "").trim();
+    return ANNUL_BUTTON_RE.test(label) && !ANNUL_NEVER_RE.test(parts)
+      ? { allowed: true, reason: "annul" }
+      : { allowed: false, reason: "annul_phase_not_annul" };
+  }
   if (FORBIDDEN_ACTION_RE.test(parts)) return { allowed: false, reason: "forbidden_label" };
   // Pieslēgšanās poga var saukties arī "Apstiprināt"; šajā fāzē cita klikšķa nav.
   if (phase === "login") return { allowed: true, reason: "login" };
@@ -50,15 +62,22 @@ export function isClickAllowed(el, phase) {
   return { allowed: true, reason: phase };
 }
 
-/** Vai tīkla pieprasījums nedrīkst iziet (pārtraukšana/anulēšana adresē vai saturā). */
-export function isRequestForbidden(req) {
+/**
+ * Vai tīkla pieprasījums nedrīkst iziet (pārtraukšana/anulēšana adresē vai saturā).
+ * Izņēmums tikai pārtraukšanas fāzē (annul.js) un tikai uz CSDD adresi (`allowAnnulOrigin`).
+ */
+export function isRequestForbidden(req, phase = "", allowAnnulOrigin = "") {
   const url = decodeSafe(req.url || "");
   const body = decodeSafe(req.postData || "");
-  return FORBIDDEN_REQUEST_RE.test(url) || FORBIDDEN_REQUEST_RE.test(body);
+  const hit = FORBIDDEN_REQUEST_RE.test(url) || FORBIDDEN_REQUEST_RE.test(body);
+  if (!hit) return false;
+  if (phase === "annul" && allowAnnulOrigin && url.startsWith(allowAnnulOrigin) && !/dz[eē]s|delete/i.test(`${url} ${body}`)) return false;
+  return true;
 }
 
-/** Pārlūka dialogs: apstiprina tikai save fāzē un tikai, ja tekstā nav pārtraukšanas/anulēšanas. */
+/** Pārlūka dialogs: apstiprina tikai save fāzē un tikai, ja tekstā nav pārtraukšanas/anulēšanas; pārtraukšanas fāzē - CSDD apstiprinājumu. */
 export function dialogDecision(message, phase) {
+  if (phase === "annul") return /dz[eē]s|delete/i.test(String(message || "")) ? "dismiss" : "accept";
   if (FORBIDDEN_ACTION_RE.test(String(message || ""))) return "dismiss";
   return phase === "save" ? "accept" : "dismiss";
 }
@@ -114,7 +133,30 @@ export function parseJobInput(raw) {
     flow,
     representative: flow === "tradeAct" ? representative : "",
     preferTradeAct: flow === "tradeAct" || (Boolean(j.preferTradeAct) && Boolean(vin)),
+    // Lietotājs apstiprināja: "anulēt iepriekšējo un izveidot jaunu" - TIKAI šis numurs (annul.js).
+    replaceWaybillNo: /^P\d{5,6}$/.test(String(j.replaceWaybillNo || "").toUpperCase()) ? String(j.replaceWaybillNo).toUpperCase() : "",
+    // Iepriekš zināmie CSDD numuri (sinhronizācija), lai pārbaudītu arī tos.
+    knownWaybills: Array.isArray(j.knownWaybills) ? j.knownWaybills.map((x) => String(x).toUpperCase()).filter((x) => /^P\d{5,6}$/.test(x)).slice(0, 12) : [],
   };
+}
+
+/** sync.js ievade: {ctx, plates?, known?} -> šīs firmas numuri (tikai lasa CSDD). */
+export function parseSyncInput(raw, platesForCtx) {
+  let j;
+  try {
+    j = typeof raw === "string" ? JSON.parse(raw) : raw;
+  } catch {
+    throw new Error("IRISS_JOB_JSON nav derīgs JSON");
+  }
+  const ctx = Number(String(j?.ctx ?? "").replace(/^ctx/i, ""));
+  if (ctx !== 1 && ctx !== 2) throw new Error("ctx nederīgs");
+  const own = platesForCtx(ctx);
+  const want = Array.isArray(j.plates) && j.plates.length ? j.plates.map(compactPlate) : own.map(compactPlate);
+  const plates = own.filter((p) => want.includes(compactPlate(p)));
+  if (!plates.length) throw new Error("nav numuru sinhronizācijai");
+  const known = Array.isArray(j.known) ? j.known.map((x) => String(x).toUpperCase()).filter((x) => /^P\d{5,6}$/.test(x)).slice(0, 12) : [];
+  const jobId = JOB_ID_RE.test(String(j.jobId || "")) ? String(j.jobId) : `sync-${ctx}`;
+  return { jobId, ctx, plates, known, plate: plates[0], brandModel: "-", flow: "new", representative: "" };
 }
 
 /** Datums Rīgas laikā formā "dd.MM.yyyy HH:mm" (vai cits formāts ar tiem pašiem marķieriem). */
@@ -244,7 +286,7 @@ export function createLedger(dir, fsImpl = fs, now = () => Date.now()) {
     recentSameplate(id, plate) {
       const want = compactPlate(plate);
       for (const name of fsImpl.readdirSync(dir)) {
-        if (!name.endsWith(".json") || name === `${id}.json`) continue;
+        if (!name.endsWith(".json") || name.endsWith(".annul.json") || name === `${id}.json`) continue;
         const rec = read(name.slice(0, -5));
         if (!rec || compactPlate(rec.plate) !== want) continue;
         if (rec.state !== "saved" && !(rec.state === "saving" && rec.clicked)) continue;
@@ -270,6 +312,18 @@ export function createLedger(dir, fsImpl = fs, now = () => Date.now()) {
     },
     markSaved(id, data) {
       write(id, { ...read(id), ...data, state: "saved" });
+    },
+    readAnnul(id) {
+      try {
+        return JSON.parse(fsImpl.readFileSync(path.join(dir, `${id}.annul.json`), "utf8"));
+      } catch {
+        return null;
+      }
+    },
+    writeAnnul(id, rec) {
+      const f = path.join(dir, `${id}.annul.json`);
+      fsImpl.writeFileSync(`${f}.tmp`, JSON.stringify({ ...rec, jobId: id, at: new Date(now()).toISOString() }), { mode: 0o600 });
+      fsImpl.renameSync(`${f}.tmp`, f);
     },
     /** Kļūda pirms klikšķa: drīkst mēģināt vēlreiz (lock noņem). Pēc klikšķa lock paliek. */
     abortSave(id, error) {
@@ -321,7 +375,13 @@ export async function runRefill({ input, ledger, driver, dateFormat = undefined,
   try {
     await driver.open(input);
     const active = driver.findActiveWaybill ? await driver.findActiveWaybill(input) : null;
-    if (active) return { ok: false, error: `numuram jau ir aktīva pavadzīme ${active.waybillNo || ""}`.trim() };
+    if (active) {
+      return {
+        ok: false,
+        busy: { waybillNo: active.waybillNo || "", validUntil: active.validUntil || "" },
+        error: `numuram jau ir aktīva pavadzīme ${active.waybillNo || ""}`.trim(),
+      };
+    }
     const mode = await fillSteps(input, driver, dateFormat);
     const fields = normalizeFields(await driver.readForm(), mode);
     const bad = compareFields(input, fields);
@@ -349,6 +409,7 @@ export async function runSave({ input, ledger, driver, dateFormat = undefined, l
     return { ok: false, error: `${err.message} - pārbaudi CSDD, vai pavadzīme izveidota` };
   }
   let clicked = false;
+  let notCreated = false;
   try {
     await driver.open(input);
     const active = driver.findActiveWaybill ? await driver.findActiveWaybill(input) : null;
@@ -364,8 +425,17 @@ export async function runSave({ input, ledger, driver, dateFormat = undefined, l
     ledger.markClicking(input.jobId);
     clicked = true;
     await driver.clickSave();
-    const waybillNo = await driver.readWaybillNo();
-    if (!waybillNo) throw new Error("Saglabāt nospiests, bet pavadzīmes numurs nav nolasīts");
+    let waybillNo = await driver.readWaybillNo().catch(() => "");
+    if (!waybillNo) {
+      // Numurs lapā nav nolasīts (incidents 23.10): pārbauda CSDD pēc numuriem, vai jaunā pavadzīme tiešām ir.
+      const v = driver.verifySavedWaybill ? await driver.verifySavedWaybill(input).catch(() => null) : null;
+      log("save_verify", { jobId: input.jobId, found: Boolean(v?.found), checked: Boolean(v?.checked) });
+      if (v?.found) waybillNo = v.waybillNo;
+      else if (v?.checked) {
+        notCreated = true;
+        throw new Error(`CSDD pavadzīmi nesaglabāja${v.message ? `: ${v.message}` : ""}. CSDD sarakstā jaunas pavadzīmes nav`);
+      } else throw new Error("Saglabāt nospiests, bet pavadzīmes numurs nav nolasīts");
+    }
     let pdfPath = "";
     try {
       pdfPath = await driver.downloadPdf(`${input.jobId}-${waybillNo.replace(/[^A-Za-z0-9-]/g, "_")}`);
@@ -378,21 +448,75 @@ export async function runSave({ input, ledger, driver, dateFormat = undefined, l
   } catch (err) {
     const msg = (err instanceof Error ? err.message : String(err)).slice(0, 200);
     ledger.abortSave(input.jobId, msg);
+    // notCreated: CSDD sarakstā pārbaudīts - pavadzīme nav izveidota (skaidrs statuss, nevis "pārbaudi CSDD").
+    if (notCreated) return { ok: false, notCreated: true, error: msg };
     return { ok: false, error: clicked ? `${msg} - pārbaudi CSDD` : msg };
   } finally {
     await driver.close({ keepPage: false }).catch(() => {});
   }
 }
 
+/** sync.js: TIKAI LASA aktīvās pavadzīmes šīs firmas numuriem CSDD (arī ar roku izrakstītās). */
+export async function runSync({ input, driver, log = () => {} }) {
+  try {
+    await driver.open(input);
+    if (!driver.readActiveWaybills) return { ok: false, error: "draiverim nav readActiveWaybills", platesChecked: input.plates };
+    const res = await driver.readActiveWaybills({ plates: input.plates, known: input.known });
+    log("synced", { ctx: input.ctx, ok: res.ok, checked: res.checked, maxNumber: res.maxNumber });
+    return { ...res, platesChecked: input.plates };
+  } finally {
+    await driver.close({ keepPage: false }).catch(() => {});
+  }
+}
+
+/**
+ * annul.js: pārtrauc TIKAI lietotāja apstiprināto pavadzīmi (input.replaceWaybillNo) uz input.plate.
+ * Vienreiz uz darbu (ledger `<jobId>.annul.json`); atkārtojums atgriež iepriekšējo rezultātu. Saglabāt nespiež.
+ */
+export async function runAnnul({ input, ledger, driver, log = () => {} }) {
+  if (!input.replaceWaybillNo) return { ok: false, error: "nav apstiprināta anulējamā pavadzīme" };
+  const prev = ledger.readAnnul(input.jobId);
+  if (prev?.done) return { ok: true, repeated: true, waybillNo: prev.waybillNo };
+  if (prev?.started) return { ok: false, error: `${prev.waybillNo} pārtraukšana jau sākta - pārbaudi CSDD` };
+  if (!driver.annulWaybill) return { ok: false, error: "draiverim nav annulWaybill" };
+  try {
+    await driver.open(input);
+    ledger.writeAnnul(input.jobId, { waybillNo: input.replaceWaybillNo, plate: input.plate, started: true });
+    const res = await driver.annulWaybill({ waybillNo: input.replaceWaybillNo, plate: input.plate });
+    ledger.writeAnnul(input.jobId, { waybillNo: input.replaceWaybillNo, plate: input.plate, started: true, done: true, ...res });
+    log("annulled", { jobId: input.jobId, waybillNo: input.replaceWaybillNo, already: Boolean(res.already) });
+    return { ok: true, waybillNo: input.replaceWaybillNo, already: Boolean(res.already) };
+  } catch (err) {
+    const msg = (err instanceof Error ? err.message : String(err)).slice(0, 200);
+    const rec = ledger.readAnnul(input.jobId);
+    // Pirms klikšķa (nav atrasts / cits numurs) - drīkst mēģināt vēlreiz; citādi stāvoklis paliek "sākts".
+    if (rec && /neko nepārtraucu/.test(msg)) ledger.writeAnnul(input.jobId, { ...rec, started: false, error: msg });
+    return { ok: false, error: msg };
+  } finally {
+    await driver.close({ keepPage: false }).catch(() => {});
+  }
+}
+
 /** Kopīgs CLI ietvars: rezultāts vienmēr pēdējā stdout rindā kā JSON; žurnāls uz stderr. */
-export async function runCli(step, { env, makeDriver, ledgerDir, dateFormat = undefined, stdout, stderr }) {
+export async function runCli(step, { env, makeDriver, ledgerDir, dateFormat = undefined, stdout, stderr, platesForCtx = null }) {
   const log = (msg, extra = {}) => stderr.write(`${JSON.stringify({ t: new Date().toISOString(), step, msg, ...extra })}\n`);
   let out;
   try {
-    const input = parseJobInput(env.IRISS_JOB_JSON);
-    const ledger = createLedger(ledgerDir);
-    const driver = await makeDriver(step === "save" ? "save" : "fill");
-    out = step === "save" ? await runSave({ input, ledger, driver, dateFormat, log }) : await runRefill({ input, ledger, driver, dateFormat, log });
+    if (step === "sync") {
+      if (!platesForCtx) throw new Error("sync: nav numuru saraksta");
+      const input = parseSyncInput(env.IRISS_JOB_JSON, platesForCtx);
+      out = await runSync({ input, driver: await makeDriver("sync"), log });
+    } else if (step === "annul") {
+      // Divi slēdži: worker (IRISS_WAYBILL_ANNUL_LIVE=1) un šis process (tā pati env). Bez tiem CSDD netiek aiztikts.
+      if (env.IRISS_WAYBILL_ANNUL_LIVE !== "1") throw new Error("anulēšana izslēgta (IRISS_WAYBILL_ANNUL_LIVE)");
+      const input = parseJobInput(env.IRISS_JOB_JSON);
+      out = await runAnnul({ input, ledger: createLedger(ledgerDir), driver: await makeDriver("annul"), log });
+    } else {
+      const input = parseJobInput(env.IRISS_JOB_JSON);
+      const ledger = createLedger(ledgerDir);
+      const driver = await makeDriver(step === "save" ? "save" : "fill");
+      out = step === "save" ? await runSave({ input, ledger, driver, dateFormat, log }) : await runRefill({ input, ledger, driver, dateFormat, log });
+    }
   } catch (err) {
     out = { ok: false, error: (err instanceof Error ? err.message : String(err)).slice(0, 200) };
   }

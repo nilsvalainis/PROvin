@@ -7,7 +7,17 @@
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
-import { dialogDecision, extractWaybillNo, FORBIDDEN_ACTION_RE, isClickAllowed, isRequestForbidden, SAVE_ACTION_RE } from "./waybill-scripts-core.mjs";
+import * as csdd from "./csdd-waybills-core.mjs";
+import {
+  ANNUL_BUTTON_RE,
+  ANNUL_NEVER_RE,
+  dialogDecision,
+  extractWaybillNo,
+  FORBIDDEN_ACTION_RE,
+  isClickAllowed,
+  isRequestForbidden,
+  SAVE_ACTION_RE,
+} from "./waybill-scripts-core.mjs";
 
 const FIELD_KEYS = ["plate", "brandModel", "vin", "routeFrom", "routeTo", "validFrom", "validUntil", "validHours"];
 
@@ -45,10 +55,15 @@ function loc(page, sel, vars = {}) {
   return page.locator(s).first();
 }
 
-/** Lapā: klikšķu sargs (capture fāzē), kas bloķē pārtraukšanas/anulēšanas un - ārpus save fāzes - saglabāšanas vadīklas. */
-function domGuardScript({ forbidden, save, phase }) {
+/**
+ * Lapā: klikšķu sargs (capture fāzē), kas bloķē pārtraukšanas/anulēšanas un - ārpus save fāzes - saglabāšanas vadīklas.
+ * Pārtraukšanas fāzē (tikai annul.js) atļauta TIKAI poga "Pārtraukt!".
+ */
+function domGuardScript({ forbidden, save, phase, annulBtn, annulNever }) {
   const F = new RegExp(forbidden, "i");
   const S = new RegExp(save, "i");
+  const A = new RegExp(annulBtn, "i");
+  const N = new RegExp(annulNever, "i");
   window.__irissPhase = window.__irissPhase || phase;
   if (window.__irissGuard) return;
   window.__irissGuard = true;
@@ -65,6 +80,8 @@ function domGuardScript({ forbidden, save, phase }) {
           : null;
     const text = el ? label(el) : "";
     const p = window.__irissPhase;
+    const own = el ? String(el.innerText || el.value || "").trim() : "";
+    if (p === "annul" && A.test(own) && !N.test(text)) return;
     if (F.test(text) || (p !== "save" && p !== "login" && S.test(text))) {
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -76,7 +93,7 @@ function domGuardScript({ forbidden, save, phase }) {
 }
 
 /**
- * @param {"fill" | "save"} step
+ * @param {"fill" | "save" | "sync" | "annul"} step
  * @param {{ ttrDir: string, env: Record<string, string | undefined>, log: (m: string, e?: object) => void }} opts
  */
 export async function createPlaywrightDriver(step, { ttrDir, env, log }) {
@@ -92,7 +109,10 @@ export async function createPlaywrightDriver(step, { ttrDir, env, log }) {
   let phase = "fill";
   let own = false;
 
+  const annulOrigin = step === "annul" ? new URL(cfg.startUrl).origin : "";
+
   async function setPhase(p) {
+    if (p === "annul" && step !== "annul") throw new Error("pārtraukšana drīkst tikai annul.js");
     phase = p;
     await page.evaluate((v) => {
       window.__irissPhase = v;
@@ -120,13 +140,19 @@ export async function createPlaywrightDriver(step, { ttrDir, env, log }) {
   async function installGuards() {
     await context.route("**/*", (route) => {
       const req = route.request();
-      if (isRequestForbidden({ url: req.url(), postData: req.postData() })) {
+      if (isRequestForbidden({ url: req.url(), postData: req.postData() }, phase, annulOrigin)) {
         log("blocked_request", { method: req.method(), url: req.url().slice(0, 120) });
         return route.abort();
       }
       return route.fallback();
     });
-    const args = { forbidden: FORBIDDEN_ACTION_RE.source, save: SAVE_ACTION_RE.source, phase };
+    const args = {
+      forbidden: FORBIDDEN_ACTION_RE.source,
+      save: SAVE_ACTION_RE.source,
+      phase,
+      annulBtn: ANNUL_BUTTON_RE.source,
+      annulNever: ANNUL_NEVER_RE.source,
+    };
     await context.addInitScript(domGuardScript, args);
     await page.evaluate(domGuardScript, args).catch(() => {});
     page.on("dialog", (d) => {
@@ -152,7 +178,7 @@ export async function createPlaywrightDriver(step, { ttrDir, env, log }) {
     if ((await loc(page, sel.pass || "input[type=password]").count()) > 0) throw new Error("CSDD pieslēgšanās neizdevās");
   }
 
-  const helpers = { loc: (s, v) => loc(page, s, v), safeClick, setPhase, log, cfg, ttrDir };
+  const helpers = { loc: (s, v) => loc(page, s, v), safeClick, setPhase, log, cfg, ttrDir, csdd };
 
   const driver = {
     async open(input) {
@@ -187,6 +213,12 @@ export async function createPlaywrightDriver(step, { ttrDir, env, log }) {
       if (adapter.findActiveWaybill) return adapter.findActiveWaybill(page, input, helpers);
       return null;
     },
+    // Tikai adapteris (CSDD TTR) prot lasīt pavadzīmju kartītes un pārtraukt; bez tā - nav (worker tad neko nedara).
+    readActiveWaybills: adapter.readActiveWaybills ? (q) => adapter.readActiveWaybills(page, q, helpers) : undefined,
+    lookupWaybill: adapter.lookupWaybill ? (no) => adapter.lookupWaybill(page, no, helpers) : undefined,
+    verifySavedWaybill: adapter.verifySavedWaybill ? (input) => adapter.verifySavedWaybill(page, input, helpers) : undefined,
+    annulWaybill:
+      adapter.annulWaybill && step === "annul" ? (q) => adapter.annulWaybill(page, q, helpers) : undefined,
     async openFromTradeAct(input) {
       if (adapter.openFromTradeAct) return adapter.openFromTradeAct(page, input, helpers);
       if (!sel.tradeActList || !sel.tradeActRow || !sel.tradeActIssue) return false;
@@ -260,6 +292,14 @@ export async function createPlaywrightDriver(step, { ttrDir, env, log }) {
       const [download] = await Promise.all([page.waitForEvent("download", { timeout }), safeClick(loc(page, sel.pdf), "pdf")]);
       const rel = path.join("pdf", `${name}.pdf`);
       await download.saveAs(path.join(ttrDir, rel));
+      return rel;
+    },
+    /** Ekrānuzņēmums pārbaudei (csdd-check.mjs): <ttrDir>/shots/<name>.png. */
+    async screenshot(name) {
+      const safe = String(name).replace(/[^A-Za-z0-9_-]/g, "_").slice(0, 60);
+      fs.mkdirSync(path.join(ttrDir, "shots"), { recursive: true });
+      const rel = path.join("shots", `${safe}.png`);
+      await page.screenshot({ path: path.join(ttrDir, rel), fullPage: true });
       return rel;
     },
     async close({ keepPage }) {

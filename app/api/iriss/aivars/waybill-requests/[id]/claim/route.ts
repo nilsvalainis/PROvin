@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { irissAivarsApiTokenConfigured, verifyIrissAivarsApiToken } from "@/lib/iriss-aivars-api-token";
 import { toAivarsCreateWaybillAction } from "@/lib/iriss-waybill-create";
-import { AUTO_WAYBILL_WORKER, autoWaybillEnabled, classifyWaybillForAuto, plateTakenByOtherRequest } from "@/lib/iriss-waybill-auto";
+import {
+  AUTO_WAYBILL_WORKER,
+  autoWaybillEnabled,
+  autoWaybillReplaceEnabled,
+  classifyWaybillForAuto,
+  plateTakenByOtherRequest,
+} from "@/lib/iriss-waybill-auto";
 import { busyWaybillPlatesNow } from "@/lib/iriss-waybill-auto-server";
 import { claimWaybillRequest } from "@/lib/iriss-waybill-requests-store";
 
@@ -41,6 +47,7 @@ export async function POST(req: Request, ctx: Ctx) {
         classifyWaybillForAuto(current, {
           plateBusyNow: isBusy(current.vehicle.plate),
           plateInOtherRequest: plateTakenByOtherRequest(doc.requests, current),
+          replaceEnabled: autoWaybillReplaceEnabled(),
         }).standard,
     );
     if (!request) return NextResponse.json({ error: "not_standard_or_claimed" }, { status: 409 });

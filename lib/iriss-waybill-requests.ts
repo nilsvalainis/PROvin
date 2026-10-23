@@ -23,12 +23,14 @@ export const WAYBILL_REQUEST_STATUS_LABEL: Record<WaybillRequestStatus, string> 
  * Automātikas (Hetzner worker) reālais solis darbā. Tukšs = nav zināms (piem. Aivars ar roku).
  * Worker to ziņo ar `events {kind:"message", stage}`; UI rāda tikai šos soļus, bez izdomātiem procentiem.
  */
-export const WAYBILL_WORKER_STAGES = ["claimed", "vpn", "filling", "saving", "pdf"] as const;
+export const WAYBILL_WORKER_STAGES = ["claimed", "vpn", "checking", "annulling", "filling", "saving", "pdf"] as const;
 export type WaybillWorkerStage = (typeof WAYBILL_WORKER_STAGES)[number];
 
 export const WAYBILL_WORKER_STAGE_TEXT: Record<WaybillWorkerStage, string> = {
   claimed: "Automātika paņēma darbā.",
   vpn: "Gaida CSDD savienojumu (VPN).",
+  checking: "Pārbauda numuru CSDD...",
+  annulling: "Anulē iepriekšējo pavadzīmi CSDD...",
   filling: "Aizpilda CSDD formu...",
   saving: "Saglabā CSDD...",
   pdf: "Saglabāta CSDD, ielādē PDF...",
@@ -85,8 +87,13 @@ export type WaybillRequest = {
   attempts: number;
   pickedBy: string;
   pickedAt: string;
-  /** Numurs bija aizņemts, kad pieprasījums ienāca (confirmBusy). Tad tas nekad nav automātikai. */
+  /** Numurs bija aizņemts, kad pieprasījums ienāca (confirmBusy). Automātikai tikai kā "anulēt un izveidot" (replaceWaybillNo). */
   plateBusyAtCreate: boolean;
+  /**
+   * Lietotājs apstiprināja "Vai tiešām anulēt iepriekšējo un izveidot jaunu?" - TIKAI šī pavadzīme (P0xxxx) drīkst tikt
+   * anulēta. Tukšs = nekas netiek anulēts.
+   */
+  replaceWaybillNo?: string;
   /** Automātika darbu nodeva Aivaram; to vairs automātiski neņem. */
   autoDisabled: boolean;
   /** Auto ir tirdzniecībā pieņemts: pavadzīme no akta ("Noformēt pavadzīmi"), bez maršruta. */
@@ -172,6 +179,7 @@ export function parseWaybillRequest(raw: unknown): WaybillRequest | null {
     pickedBy: str(o.pickedBy, 80),
     pickedAt: str(o.pickedAt, 40),
     plateBusyAtCreate: o.plateBusyAtCreate === true,
+    replaceWaybillNo: /^P\d{5,6}$/.test(str(o.replaceWaybillNo, 12).toUpperCase()) ? str(o.replaceWaybillNo, 12).toUpperCase() : "",
     autoDisabled: o.autoDisabled === true,
     tradeAct: o.tradeAct === true,
     representative: o.tradeAct === true ? str(o.representative, 60) : "",
