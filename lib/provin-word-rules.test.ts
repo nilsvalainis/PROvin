@@ -69,6 +69,6 @@ describe("AI kontekstā CC.VIN ir „IZSOĻU PORTĀLU ARHĪVS”", () => {
   it("stila kanons prasa EUR un oriģinālos hibrīdu nosaukumus, bez garās domuzīmes", () => {
     expect(AI_STYLE_CANON_SHARED).toMatch(/USD/);
     expect(AI_STYLE_CANON_SHARED).toMatch(/plug-in hybrid/);
-    expect(AI_STYLE_CANON_SHARED).not.toMatch(/[–—]/);
+    expect(AI_STYLE_CANON_SHARED).not.toMatch(/[\u2013\u2014]/);
   });
 });
