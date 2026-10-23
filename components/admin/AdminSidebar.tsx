@@ -535,7 +535,6 @@ export function AdminSidebar({
           </div>
         ))}
         {ws === "iriss" && !collapsed ? <IrissPavadzimesSidebarCard limit={IRISS_SIDEBAR_WAYBILL_LIMIT} /> : null}
-        {ws === "iriss" && !collapsed ? <IrissLimitsSidebarCard /> : null}
       </nav>
       <div className={`shrink-0 border-t border-[#e5e5ea] p-2.5 ${collapsed ? "flex justify-center" : ""}`}>
         <button
