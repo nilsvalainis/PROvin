@@ -853,3 +853,401 @@
     display: none;
   }
 }
+
+/* ===== Iegādes dokumenti (D2, D3) ===== */
+.ap2.ap2.ap2 .ap2-kv {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.ap2.ap2.ap2 .ap2-kvc {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line2);
+  border-left: 1px solid var(--line2);
+  min-width: 0;
+  text-align: left;
+}
+.ap2.ap2.ap2 .ap2-kvc span {
+  font-size: 12px;
+  color: var(--ink2);
+}
+.ap2.ap2.ap2 .ap2-kvc button,
+.ap2.ap2.ap2 .ap2-kvc b {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: left;
+}
+.ap2.ap2.ap2 .ap2-kvc button.add {
+  color: var(--focus);
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-kvc input,
+.ap2.ap2.ap2 .ap2-kvc select {
+  width: 100%;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-kv .ap2-kvc:nth-child(-n + 2) {
+  border-top: 0;
+}
+.ap2.ap2.ap2 .ap2-kv .ap2-kvc:nth-child(odd) {
+  border-left: 0;
+}
+.ap2.ap2.ap2 .ap2-kvc.ap2-cost {
+  grid-column: 1 / -1;
+  border: 0;
+  border-radius: 0;
+  background: var(--btn);
+  color: #fff;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-kvc.ap2-cost span {
+  color: #cfd3dc;
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+}
+.ap2.ap2.ap2 .ap2-kvc.ap2-cost em {
+  font-style: normal;
+}
+.ap2.ap2.ap2 .ap2-kvc.ap2-cost b {
+  color: #fff;
+}
+.ap2.ap2.ap2 .ap2-popdim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.35);
+}
+.ap2.ap2.ap2 .ap2-pop {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 61;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  padding: 8px 16px max(30px, env(safe-area-inset-bottom));
+}
+.ap2.ap2.ap2 .ap2-pop .pr {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--line2);
+  font-size: 13.5px;
+}
+.ap2.ap2.ap2 .ap2-pop .ap2-grab + .pr {
+  border-top: 0;
+}
+.ap2.ap2.ap2 .ap2-pop .pr span small {
+  display: block;
+  color: var(--ink3);
+  font-size: 11.5px;
+  margin-top: 1px;
+}
+.ap2.ap2.ap2 .ap2-pop .pr b,
+.ap2.ap2.ap2 .ap2-pop .pr button {
+  font-weight: 600;
+  text-align: right;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.ap2.ap2.ap2 .ap2-pop .pr button.add {
+  color: var(--focus);
+}
+.ap2.ap2.ap2 .ap2-pop .pr input {
+  width: 130px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 16px;
+  text-align: right;
+}
+.ap2.ap2.ap2 .ap2-pop .pr.tot {
+  border-top: 1px solid var(--line);
+  font-weight: 700;
+  font-size: 15px;
+}
+.ap2.ap2.ap2 .ap2-pop .pr.tot b {
+  font-weight: 700;
+  font-size: 15px;
+}
+.ap2.ap2.ap2 .ap2-files {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.ap2.ap2.ap2 .ap2-fl {
+  display: block;
+  padding: 0;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  text-align: left;
+}
+.ap2.ap2.ap2 .ap2-fl .pv {
+  height: 130px;
+  background: #f5f5f7;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ap2.ap2.ap2 .ap2-fl .pv .ap2-pdf {
+  width: 78px;
+  height: 100px;
+}
+.ap2.ap2.ap2 .ap2-fl .m {
+  padding: 8px 10px;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+.ap2.ap2.ap2 .ap2-fl .m b {
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ap2.ap2.ap2 .ap2-fl .m span {
+  color: var(--ink3);
+  font-size: 11.5px;
+  flex: none;
+}
+.ap2.ap2.ap2 .ap2-pdf {
+  display: block;
+  width: 64px;
+  height: 84px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  position: relative;
+  overflow: hidden;
+  flex: none;
+}
+.ap2.ap2.ap2 .ap2-pdf.s {
+  width: 40px;
+  height: 52px;
+}
+.ap2.ap2.ap2 .ap2-pdf i {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 3px;
+  background: #e5e5ea;
+  border-radius: 2px;
+}
+.ap2.ap2.ap2 .ap2-pdf em {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+  background: #fdecea;
+  color: var(--bad);
+  padding: 2px 0;
+}
+.ap2.ap2.ap2 .ap2-tag {
+  z-index: 1;
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 5px;
+  padding: 2px 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+  color: #3a3a3c;
+}
+.ap2.ap2.ap2 .ap2-lnk {
+  z-index: 1;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  color: var(--ink3);
+}
+.ap2.ap2.ap2 .ap2-lnk svg {
+  width: 11px;
+  height: 11px;
+}
+.ap2.ap2.ap2 .ap2-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ap2.ap2.ap2 .ap2-mbox {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ap2.ap2.ap2 .ap2-mh {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-mh .t {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ap2.ap2.ap2 .ap2-mh .pgn {
+  color: var(--ink3);
+  font-weight: 500;
+  font-size: 13px;
+}
+.ap2.ap2.ap2 .ap2-mh .ap2-dlbtn {
+  letter-spacing: 0.06em;
+  text-decoration: none;
+}
+.ap2.ap2.ap2 .ap2-mh .ap2-x {
+  border: 0;
+  background: none;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--ink2);
+  padding: 0 2px;
+}
+.ap2.ap2.ap2 .ap2-doc {
+  flex: 1;
+  background: #f5f5f7;
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+.ap2.ap2.ap2 .ap2-doc iframe {
+  width: 100%;
+  border: 0;
+  background: #fff;
+}
+.ap2.ap2.ap2 .ap2-doc img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  align-self: center;
+}
+.ap2.ap2.ap2 .ap2-doc .ap2-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: rgba(255, 255, 255, 0.85);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 22px;
+  color: var(--ink2);
+  z-index: 1;
+}
+.ap2.ap2.ap2 .ap2-doc .ap2-nav.l {
+  left: 8px;
+}
+.ap2.ap2.ap2 .ap2-doc .ap2-nav.r {
+  right: 8px;
+}
+
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-kv {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .ap2.ap2.ap2 .ap2-kv.with-cost {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  .ap2.ap2.ap2 .ap2-kv .ap2-kvc {
+    border-top: 0;
+    border-left: 1px solid var(--line2);
+  }
+  .ap2.ap2.ap2 .ap2-kv .ap2-kvc:first-child {
+    border-left: 0;
+  }
+  .ap2.ap2.ap2 .ap2-kvc.ap2-cost {
+    grid-column: auto;
+    border-radius: 0 13px 13px 0;
+    justify-content: center;
+  }
+  .ap2.ap2.ap2 .ap2-popdim {
+    background: transparent;
+  }
+  .ap2.ap2.ap2 .ap2-pop {
+    position: absolute;
+    left: auto;
+    bottom: auto;
+    right: 0;
+    top: calc(100% + 8px);
+    width: 330px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.16);
+    padding: 6px 16px 10px;
+  }
+  .ap2.ap2.ap2 .ap2-pop .ap2-grab {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-kvwrap {
+    position: relative;
+  }
+  .ap2.ap2.ap2 .ap2-files {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .ap2.ap2.ap2 .ap2-mbox {
+    width: 760px;
+    height: min(860px, 92vh);
+    border-radius: 16px;
+  }
+}
+.ap2.ap2.ap2 .ap2-kvwrap {
+  margin-top: 12px;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-kvwrap {
+    margin-top: 0;
+  }
+}
