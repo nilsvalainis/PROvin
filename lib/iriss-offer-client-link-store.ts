@@ -2,7 +2,7 @@ import "server-only";
 
 import fs from "fs/promises";
 import path from "path";
-import { get, put } from "@vercel/blob";
+import { del, get, list, put } from "@vercel/blob";
 import {
   getIrissPasutijumiBlobConfig,
   getIrissPasutijumiStorageDir,
@@ -24,6 +24,7 @@ import {
   type IrissOfferClientLinkRecord,
   type IrissOfferLinkAction,
 } from "@/lib/iriss-offer-client-link";
+import { normalizeOfferValidUntilAt } from "@/lib/iriss-offer-valid-until";
 import {
   hashIrissOfferLinkToken,
   irissOfferLinkHashesEqual,
@@ -73,8 +74,39 @@ export async function readIrissOfferClaimedDecision(hash: string): Promise<Iriss
   return parseClaimedDecision(await readJson(decisionRel(h)));
 }
 
+/** Ieraksta failu tikai, ja tāda vēl nav (Blob allowOverwrite: false, lokāli "wx"). */
+async function createJsonOnce(rel: string, doc: unknown): Promise<"created" | "exists" | "failed"> {
+  if (!isIrissPasutijumiStoreEnabled()) return "failed";
+  const raw = JSON.stringify(doc);
+  const blob = getIrissPasutijumiBlobConfig();
+  if (blob) {
+    try {
+      await put(`${blob.prefix}${rel}`, raw, {
+        access: "private",
+        token: blob.token,
+        addRandomSuffix: false,
+        allowOverwrite: false,
+        contentType: "application/json",
+      });
+      return "created";
+    } catch {
+      return (await readJson(rel)) != null ? "exists" : "failed";
+    }
+  }
+  const dir = getIrissPasutijumiStorageDir();
+  if (!dir) return "failed";
+  const dest = path.join(dir, rel);
+  try {
+    await fs.mkdir(path.dirname(dest), { recursive: true });
+    await fs.writeFile(dest, raw, { encoding: "utf8", flag: "wx" });
+    return "created";
+  } catch {
+    return (await readJson(rel)) != null ? "exists" : "failed";
+  }
+}
+
 /**
- * Izveido lēmuma failu tikai, ja tāda vēl nav (Blob allowOverwrite: false, lokāli "wx").
+ * Izveido lēmuma failu tikai, ja tāda vēl nav.
  * Pirmais ieraksts uzvar visās instancēs; pārējie saņem jau esošo lēmumu.
  */
 export async function claimIrissOfferDecision(
@@ -83,36 +115,95 @@ export async function claimIrissOfferDecision(
   decidedAt: string,
 ): Promise<{ ok: true; won: boolean; claimed: IrissOfferClaimedDecision } | { ok: false }> {
   const h = hash.trim().toLowerCase();
-  if (!/^[a-f0-9]{64}$/.test(h) || !isIrissPasutijumiStoreEnabled()) return { ok: false };
+  if (!/^[a-f0-9]{64}$/.test(h)) return { ok: false };
   const doc: IrissOfferClaimedDecision = { decision, decidedAt };
-  const raw = JSON.stringify(doc);
+  const res = await createJsonOnce(decisionRel(h), doc);
+  if (res === "created") return { ok: true, won: true, claimed: doc };
+  const existing = await readIrissOfferClaimedDecision(h);
+  return existing ? { ok: true, won: false, claimed: existing } : { ok: false };
+}
+
+/* ---- Termiņu saraksts (cron: push Nilam, ja termiņš beidzies bez atbildes) ---- */
+
+const DEADLINES_DIR = "offer-links/deadlines/";
+
+function deadlineRel(hash: string): string {
+  return `${DEADLINES_DIR}${hash}.json`;
+}
+
+export type IrissOfferDeadlineEntry = { hash: string; orderId: string; offerId: string; deadlineAt: string };
+
+function parseDeadlineEntry(raw: unknown): IrissOfferDeadlineEntry | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const hash = typeof o.hash === "string" ? o.hash : "";
+  const orderId = typeof o.orderId === "string" ? o.orderId : "";
+  const offerId = typeof o.offerId === "string" ? o.offerId : "";
+  const deadlineAt = normalizeOfferValidUntilAt(o.deadlineAt);
+  if (!/^[a-f0-9]{64}$/.test(hash) || !isIrissOfferLinkEntityId(orderId) || !isIrissOfferLinkEntityId(offerId) || !deadlineAt) {
+    return null;
+  }
+  return { hash, orderId, offerId, deadlineAt };
+}
+
+export async function registerIrissOfferDeadline(entry: IrissOfferDeadlineEntry): Promise<boolean> {
+  const parsed = parseDeadlineEntry(entry);
+  if (!parsed) return false;
+  return writeJson(deadlineRel(parsed.hash), parsed);
+}
+
+export async function removeIrissOfferDeadline(hash: string): Promise<void> {
+  const h = hash.trim().toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(h)) return;
   const blob = getIrissPasutijumiBlobConfig();
   if (blob) {
-    try {
-      await put(`${blob.prefix}${decisionRel(h)}`, raw, {
-        access: "private",
-        token: blob.token,
-        addRandomSuffix: false,
-        allowOverwrite: false,
-        contentType: "application/json",
-      });
-      return { ok: true, won: true, claimed: doc };
-    } catch {
-      const existing = await readIrissOfferClaimedDecision(h);
-      return existing ? { ok: true, won: false, claimed: existing } : { ok: false };
-    }
+    await del(`${blob.prefix}${deadlineRel(h)}`, { token: blob.token }).catch(() => undefined);
+    return;
   }
   const dir = getIrissPasutijumiStorageDir();
-  if (!dir) return { ok: false };
-  const dest = path.join(dir, decisionRel(h));
-  try {
-    await fs.mkdir(path.dirname(dest), { recursive: true });
-    await fs.writeFile(dest, raw, { encoding: "utf8", flag: "wx" });
-    return { ok: true, won: true, claimed: doc };
-  } catch {
-    const existing = await readIrissOfferClaimedDecision(h);
-    return existing ? { ok: true, won: false, claimed: existing } : { ok: false };
+  if (!dir) return;
+  await fs.rm(path.join(dir, deadlineRel(h)), { force: true }).catch(() => undefined);
+}
+
+export async function listIrissOfferDeadlines(): Promise<IrissOfferDeadlineEntry[]> {
+  const hashes: string[] = [];
+  const blob = getIrissPasutijumiBlobConfig();
+  if (blob) {
+    let cursor: string | undefined;
+    for (let page = 0; page < 20; page += 1) {
+      const res = await list({ prefix: `${blob.prefix}${DEADLINES_DIR}`, token: blob.token, limit: 1000, cursor }).catch(() => null);
+      if (!res) break;
+      for (const b of res.blobs) {
+        const m = /([a-f0-9]{64})\.json$/.exec(b.pathname);
+        if (m) hashes.push(m[1]!);
+      }
+      if (!res.hasMore || !res.cursor) break;
+      cursor = res.cursor;
+    }
+  } else {
+    const dir = getIrissPasutijumiStorageDir();
+    if (!dir) return [];
+    const names = await fs.readdir(path.join(dir, DEADLINES_DIR)).catch(() => [] as string[]);
+    for (const name of names) {
+      const m = /^([a-f0-9]{64})\.json$/.exec(name);
+      if (m) hashes.push(m[1]!);
+    }
   }
+  const out: IrissOfferDeadlineEntry[] = [];
+  for (const h of hashes) {
+    const entry = parseDeadlineEntry(await readJson(deadlineRel(h)));
+    if (entry && entry.hash === h) out.push(entry);
+  }
+  return out;
+}
+
+/** Vienreiz par katru termiņu (pagarināts termiņš = jauns paziņojums). */
+export async function claimIrissOfferExpiryNotice(hash: string, deadlineAt: string): Promise<boolean> {
+  const h = hash.trim().toLowerCase();
+  const at = normalizeOfferValidUntilAt(deadlineAt);
+  if (!/^[a-f0-9]{64}$/.test(h) || !at) return false;
+  const res = await createJsonOnce(`offer-links/expiry-notified/${h}-${Date.parse(at)}.json`, { at: new Date().toISOString() });
+  return res === "created";
 }
 
 function withClaimedDecision(
@@ -287,6 +378,15 @@ export async function createIrissOfferClientLink(input: {
       await writeJson(tokenRel(tokenHash), applyIrissOfferLinkRevoke(record, createdAt));
       return { ok: false, error: "store_failed" };
     }
+    if (previousHash && previousHash !== tokenHash) await removeIrissOfferDeadline(previousHash);
+    if (input.deadlineAt) {
+      await registerIrissOfferDeadline({
+        hash: tokenHash,
+        orderId: input.orderId,
+        offerId: input.offerId,
+        deadlineAt: input.deadlineAt,
+      });
+    }
     return { ok: true, record };
   });
 }
@@ -310,6 +410,7 @@ export async function revokeIrissOfferClientLink(
     const next = applyIrissOfferLinkRevoke(existing, new Date(nowMs).toISOString());
     const saved = await writeJson(tokenRel(next.tokenHash), next);
     if (!saved) return { ok: false, error: "store_failed" };
+    await removeIrissOfferDeadline(next.tokenHash);
     return { ok: true, record: next };
   });
 }
