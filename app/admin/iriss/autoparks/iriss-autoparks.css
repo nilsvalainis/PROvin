@@ -8,6 +8,7 @@
   --ap-focus: #2563eb;
   --ap-bad: #c2362b;
   --ap-btn-dark-bg: rgba(31, 36, 48, 0.89);
+  --ap-st-in_transit: #0d9488;
   --ap-st-prep_waiting: #d97706;
   --ap-st-in_service: #5e5ce6;
   --ap-st-for_sale: #2563eb;
@@ -22,6 +23,7 @@
     padding: 12px 16px 32px;
   }
 }
+.iriss-ap .st-in_transit { --st: var(--ap-st-in_transit); }
 .iriss-ap .st-prep_waiting { --st: var(--ap-st-prep_waiting); }
 .iriss-ap .st-in_service { --st: var(--ap-st-in_service); }
 .iriss-ap .st-for_sale { --st: var(--ap-st-for_sale); }
