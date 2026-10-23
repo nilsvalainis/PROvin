@@ -6,6 +6,8 @@
 //   Atlaiž tikai: "Man vajag VPN" / POST /stop / vpnoff.sh, vai ja Nils izmet serveri (pieslēdzas pats). Tad serveris pats
 //   NEPIESLĒDZAS (nekādas cilpas); nākamais pavadzīmes pieprasījums (/lease purpose waybill) pieslēdz un tur atkal.
 //   Citi /lease (nakts reģistrs) pēc atslēgšanas/izmešanas gaida 30 min.
+// - j13: hold tikai 08:00-19:00 Rīgas laikā. Naktī mūsu turēto VPN pēc lease beigām atslēdz ("night", bez 30 min bloķējuma);
+//   pavadzīmes pieprasījums naktī strādā (pieslēdz, pēc darba /release ~1 min un atslēdz). Ārēji ieslēgtu VPN neaiztiek.
 // - IRISS_VPN_HOLD=0: vecais režīms - idle autostop pēc IRISS_VPN_IDLE_MIN (15-30, nokl. 20) min, /release saīsina lease.
 // - Aivara skripti (run.sh/run2.sh/vpnoff.sh, systemctl start/stop iriss-vpn) strādā kā līdz šim: ja tie VPN aptur,
 //   tas skaitās ārēja atslēgšana (serveris pats nepieslēdzas).
@@ -24,6 +26,10 @@ import {
   vpnHoldMode,
   vpnIdleMinutes,
 } from "./vpn-lease.mjs";
+import { isCsddSyncWindow } from "./csdd-sync-schedule.mjs";
+
+/** Nakts (19:00-08:00 Rīgas laikā): hold netiek turēts. */
+const isNight = (ms = Date.now()) => !isCsddSyncWindow(ms);
 
 const run = promisify(execFile);
 const PORT = 9334;
@@ -168,10 +174,13 @@ async function tick() {
       stopRequestedAt: remote.stopRequestedAt,
       handledStopAt: state.handledStopAt,
       hold: HOLD,
+      night: isNight(),
+      holding: state.holding,
     });
     if (decision.action === "stop") {
       state.handledStopAt = decision.handledStopAt;
       if (up || decision.reason === "manual") await stopVpn(decision.reason);
+      if (decision.reason === "night") log("vpn_night_release", {});
       up = await vpnUp();
       state.stoppingByUs = false;
     }
@@ -194,6 +203,7 @@ async function statusBody() {
     leaseUntil: Number.isFinite(state.leaseUntilMs) ? new Date(state.leaseUntilMs).toISOString() : "",
     idleMin: IDLE_MIN,
     hold: HOLD,
+    holdNow: HOLD && !isNight(nowMs),
     holding: state.holding,
     lastStopReason: state.lastStopReason,
     lastDropAt: state.lastDropAt,
@@ -230,7 +240,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "POST" && req.url === "/release") {
       // Worker darbs beidzies (finally). Hold režīmā VPN paliek; vecajā - lease ~1 min, tālāk tick atslēdz kā "idle".
-      state.leaseUntilMs = releaseLease(state.leaseUntilMs, Date.now(), HOLD);
+      state.leaseUntilMs = releaseLease(state.leaseUntilMs, Date.now(), HOLD, isNight());
       log("lease_released", { leaseUntil: Number.isFinite(state.leaseUntilMs) ? new Date(state.leaseUntilMs).toISOString() : "" });
       await report(await vpnUp(), true);
       return send(res, 200, await statusBody());
@@ -265,8 +275,9 @@ if (!TOKEN) {
 }
 server.listen(PORT, "127.0.0.1", () => log("listening", { port: PORT, idleMin: IDLE_MIN, hold: HOLD }));
 // Pēc restarta: ja VPN jau ieslēgts (piem. pirms restarta turēts), hold režīmā turpina to turēt.
+// Naktī ne: ārēji ieslēgtu VPN (Aivara run.sh) nedrīkst atslēgt kā "night".
 void vpnUp().then((up) => {
-  if (HOLD && up) state.holding = true;
+  if (HOLD && up && !isNight()) state.holding = true;
 });
 setInterval(() => void tick(), TICK_MS);
 void tick();

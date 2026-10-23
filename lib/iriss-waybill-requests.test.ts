@@ -9,6 +9,7 @@ import {
   waybillAivarsReply,
   waybillChatPayload,
   waybillChatTimeline,
+  waybillChatTimelineNewestFirst,
   waybillSoonTone,
   type WaybillRequest,
   type WaybillRequestsDoc,
@@ -225,5 +226,24 @@ describe("honest status (cancel, test mode, expiry)", () => {
       q({ id: "wbr_old", createdAt: "2026-10-22T10:00:00.000Z", updatedAt: "2026-10-22T10:00:00.000Z" }),
     ];
     expect(pendingWaybillRequests(rows, nowMs).map((r) => r.id)).toEqual(["wbr_ok"]);
+  });
+});
+
+describe("j13: Pavadzīmes atveras ar jaunāko augšā", () => {
+  it("čata laika josla: jaunākais pieprasījums augšā, tā notikumi tieši zem tā hronoloģiski", () => {
+    const old = sample({ id: "wbr_old00000", createdAt: "2026-10-20T08:00:00.000Z" });
+    const mid = sample({ id: "wbr_mid00000", createdAt: "2026-10-21T08:00:00.000Z" });
+    const neu = sample({ id: "wbr_new00000", createdAt: "2026-10-22T08:00:00.000Z" });
+    const ev = (id: string, requestId: string, createdAt: string) => ({
+      id, requestId, kind: "message" as const, text: id, waybillNo: "", pdfUrl: "", createdAt, by: "aivars",
+    });
+    const doc: WaybillRequestsDoc = {
+      version: 1,
+      updatedAt: "2026-10-22T09:00:00.000Z",
+      requests: [old, neu, mid],
+      events: [ev("e_old2", old.id, "2026-10-22T09:00:00.000Z"), ev("e_old1", old.id, "2026-10-20T08:01:00.000Z"), ev("e_new1", neu.id, "2026-10-22T08:01:00.000Z")],
+    };
+    const shown = waybillChatTimelineNewestFirst(waybillChatTimeline(doc)).map((i) => (i.type === "request" ? i.request.id : i.event.id));
+    expect(shown).toEqual(["wbr_new00000", "e_new1", "wbr_mid00000", "wbr_old00000", "e_old1", "e_old2"]);
   });
 });

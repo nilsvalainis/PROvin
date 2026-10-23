@@ -18,6 +18,7 @@ import {
   type IrissMobileMenuItem,
 } from "@/lib/iriss-mobile-menu";
 import { isWaybillOnlyStaff, type IrissSection } from "@/lib/staff-roles";
+import { useWaybillPageOpenAtTop } from "@/components/admin/useWaybillPageOpenAtTop";
 
 const noop = () => undefined;
 
@@ -89,6 +90,8 @@ export function IrissMobileMenuHome({
   const catalog = useMemo(() => irissMenuCatalog(sections, isAdmin), [sections, isAdmin]);
   /** Partneris (tikai Pavadzīmes): tas pats sākums, bet tikai pavadzīmju logrīks, forma, Arhīvs un Iziet. */
   const waybillOnly = !isAdmin && isWaybillOnlyStaff(sections);
+  // Kolēģa pavadzīmju logrīks: atveras augšā (jaunākās augšā), nevis pārlūka atjaunotajā apakšā.
+  useWaybillPageOpenAtTop();
   const router = useRouter();
   const [formOpen, setFormOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);

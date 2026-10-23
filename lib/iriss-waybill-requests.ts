@@ -245,6 +245,23 @@ export function waybillChatTimeline(doc: WaybillRequestsDoc): WaybillChatItem[] 
   return items;
 }
 
+/**
+ * Čata skats (dators, kolēģa logrīks): jaunākais pieprasījums augšā (Nils 23.10: lapa nedrīkst atvērties ar vecāko).
+ * Pieprasījuma notikumi paliek tieši zem tā hronoloģiskā secībā.
+ */
+export function waybillChatTimelineNewestFirst(items: readonly WaybillChatItem[]): WaybillChatItem[] {
+  const groups = new Map<string, { at: number; items: WaybillChatItem[] }>();
+  for (const item of items) {
+    const id = item.request.id;
+    const g = groups.get(id) ?? { at: Date.parse(item.request.createdAt) || 0, items: [] };
+    g.items.push(item);
+    groups.set(id, g);
+  }
+  return [...groups.values()]
+    .sort((a, b) => b.at - a.at)
+    .flatMap((g) => [...g.items.filter((i) => i.type === "request"), ...g.items.filter((i) => i.type !== "request")]);
+}
+
 export function inProgressIsStale(req: WaybillRequest, nowMs = Date.now()): boolean {
   if (req.status !== "in_progress" || !req.pickedAt) return false;
   const t = Date.parse(req.pickedAt);

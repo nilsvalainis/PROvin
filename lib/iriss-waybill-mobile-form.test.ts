@@ -13,7 +13,7 @@ import {
   waybillMobileRequestIsCurrent,
   waybillMobileRequestRows,
 } from "@/lib/iriss-waybill-mobile-form";
-import { parseCreateWaybillInput } from "@/lib/iriss-waybill-create";
+import { parseCreateWaybillInput, waybillRepresentativeChoices } from "@/lib/iriss-waybill-create";
 import type { WaybillAivarsReply, WaybillRequest } from "@/lib/iriss-waybill-requests";
 
 const base = initialWaybillMobileForm("B192-7");
@@ -135,6 +135,29 @@ describe("phone waybill form", () => {
     // Ar roku ierakstīts auto nekad nav "pieņemts".
     const manual = buildWaybillMobilePayload({ ...base, car, manual: true, manualBrandModel: "Škoda Kodiaq" });
     expect(manual.ok && manual.payload.tradeAct).toBe(false);
+  });
+
+  it("j13: noklusējuma pārstāvis pēc auto firmas - ĪRISS: Nils Valainis, Dzintarzeme Auto: Taivo Batiņš (var mainīt)", () => {
+    const car = { id: "c9", brandModel: "Škoda Kodiaq", vin: "TMBJJ7NS1L8012345", accepted: true };
+    const dza = buildWaybillMobilePayload({ ...base, plate: "B193-7", plateTouched: true, car: { ...car, owner: "DZA" } });
+    expect(dza.ok && dza.payload.representative).toBe("Taivo Batiņš");
+    const iriss = buildWaybillMobilePayload({ ...base, plate: "B192-7", plateTouched: true, car: { ...car, owner: "IRISS" } });
+    expect(iriss.ok && iriss.payload.representative).toBe("Nils Valainis");
+    const changed = buildWaybillMobilePayload({ ...base, car: { ...car, owner: "DZA" }, representative: "Nils Valainis" });
+    expect(changed.ok && changed.payload.representative).toBe("Nils Valainis");
+    // Pogas: auto firmas pārstāvis pirmais, tad numura firmas pārstāvis.
+    expect(waybillRepresentativeChoices({ owner: "DZA", plate: "B193-7" })).toEqual(["Taivo Batiņš", "Nils Valainis"]);
+    expect(waybillRepresentativeChoices({ owner: "IRISS", plate: "B193-7" })).toEqual(["Nils Valainis"]);
+    expect(waybillRepresentativeChoices({ plate: "B192-7" })).toEqual(["Taivo Batiņš"]);
+  });
+
+  it("j13: serveris - akta pieprasījums bez pārstāvja saņem numura firmas noklusējumu; nederīgs pārstāvis - kļūda", () => {
+    const body = { plate: "B192-7", brandModel: "Škoda Kodiaq", vin: "TMBJJ7NS1L8012345", validHours: 12, tradeAct: true };
+    const dza = parseCreateWaybillInput({ ...body, representative: "" });
+    expect(dza.ok && dza.value.representative).toBe("Taivo Batiņš");
+    const iriss = parseCreateWaybillInput({ ...body, plate: "B762-7" });
+    expect(iriss.ok && iriss.value.representative).toBe("Nils Valainis");
+    expect(parseCreateWaybillInput({ ...body, representative: "<script>" }).ok).toBe(false);
   });
 
   it("asks for a car or a comment, and for a car in a free comment", () => {

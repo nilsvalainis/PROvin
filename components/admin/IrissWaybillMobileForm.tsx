@@ -9,7 +9,7 @@ import {
   WAYBILL_REPRESENTATIVE_MAX,
   WAYBILL_ROUTE_MAX,
   WAYBILL_VALID_MAX_HOURS,
-  waybillRepresentativesForPlate,
+  waybillRepresentativeChoices,
 } from "@/lib/iriss-waybill-create";
 import {
   WAYBILL_MOBILE_HOUR_PRESETS,
@@ -94,7 +94,7 @@ export function IrissWaybillMobileForm({
       ...prev,
       plate: draft.plate || prev.plate,
       plateTouched: Boolean(draft.plate) || prev.plateTouched,
-      car: draft.brandModel ? { id: known?.id ?? "", brandModel: draft.brandModel, vin: draft.vin, accepted: known?.accepted === true } : prev.car,
+      car: draft.brandModel ? { id: known?.id ?? "", brandModel: draft.brandModel, vin: draft.vin, accepted: known?.accepted === true, owner: known?.owner } : prev.car,
       manual: false,
     }));
     // tradeCars apzināti nav atkarībās: melnrakstu piemēro vienreiz.
@@ -112,8 +112,8 @@ export function IrissWaybillMobileForm({
   const hours = waybillMobileHours(form);
   const untilText = hours ? formatRigaDateTimeComma(new Date(nowMs + hours * 3_600_000).toISOString()) : "";
   const tradeAct = waybillMobileTradeAct(form);
-  const reps = waybillRepresentativesForPlate(shownPlate);
-  const rep = waybillMobileRepresentative({ representative: form.representative, plate: shownPlate });
+  const reps = waybillRepresentativeChoices({ owner: form.car?.owner, plate: shownPlate });
+  const rep = waybillMobileRepresentative({ representative: form.representative, plate: shownPlate, car: form.car });
   const rows = useMemo(() => waybillMobileRequestRows(requests, replies, 5, { nowMs }), [requests, replies, nowMs]);
   const working = rows.filter((r) => r.progress.step < 3 && r.tone !== "bad").length;
   const shownError = localError ?? error;
@@ -135,7 +135,9 @@ export function IrissWaybillMobileForm({
 
   function chooseCar(car: WaybillMobileCar | "manual") {
     if (car === "manual") patch({ manual: true, car: null });
-    else patch({ manual: false, car, manualBrandModel: "" });
+    // Jauns auto: pārstāvis atkal pēc šī auto firmas (lietotājs var nomainīt).
+    else patch({ manual: false, car, manualBrandModel: "", representative: "" });
+    setOtherRep(false);
     setPickerOpen(false);
     setLocalError(null);
   }
@@ -682,7 +684,7 @@ export function IrissWaybillCarPicker({
               type="button"
               className={`${styles.row} ${on ? styles.on : ""}`}
               aria-pressed={on}
-              onClick={() => onChoose({ id: car.id, brandModel: car.brandModel, vin: car.vin, accepted: car.accepted === true })}
+              onClick={() => onChoose({ id: car.id, brandModel: car.brandModel, vin: car.vin, accepted: car.accepted === true, owner: car.owner })}
             >
               <span className={styles.rowMain}>
                 <span className={styles.rowTitle}>{car.brandModel || "Auto"}</span>

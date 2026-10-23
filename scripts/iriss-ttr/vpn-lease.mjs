@@ -2,6 +2,8 @@
 // Hold režīms (Nils 23.10, noklusējums): VPN tur pastāvīgi, lai sistēma vienmēr redz CSDD stāvokli. Atlaiž TIKAI, ja
 // Nils atslēdz ar roku ("Man vajag VPN", vpnoff.sh, /stop) vai izmet serveri (pieslēdzas pats). Tad serveris pats
 // NEPIESLĒDZAS (nekādas cilpas) - nākamais pavadzīmes pieprasījums pieslēdz un tur atkal.
+// j13 (Nils 23.10): hold tikai dienā 08:00-19:00 Rīgas laikā. Naktī serveris VPN netur sinhronizācijai: mūsu turētu VPN
+// pēc lease beigām atslēdz kā "night" (bez 30 min bloķējuma); pavadzīmes pieprasījums naktī pieslēdz, pēc darba atlaiž.
 // IRISS_VPN_HOLD=0: vecais režīms (lease = līdz kuram brīdim tur; katrs darbs pagarina; pēc tam idle autostop).
 
 export const VPN_IDLE_MIN_DEFAULT = 20;
@@ -30,15 +32,21 @@ export function extendLease(currentUntilMs, nowMs, idleMin) {
 /**
  * Ko darīt šajā tick:
  * - admin "Man vajag VPN" (jauns stopRequestedAt) -> stop uzreiz, lease nodzēsts;
- * - hold režīmā: nekas cits (VPN tur, kamēr Nils to neatslēdz/neizmet serveri);
+ * - hold režīmā dienā: nekas cits (VPN tur, kamēr Nils to neatslēdz/neizmet serveri);
+ * - hold režīmā naktī: mūsu turētu (holding) VPN pēc lease beigām atslēdz ("night"); ārēji ieslēgtu (Aivara run.sh) neaiztiek;
  * - vecajā režīmā: VPN ieslēgts, bet lease beidzies -> idle stop;
  * - citādi nekas.
  */
-export function decideVpnAction({ vpnUp, leaseUntilMs, nowMs, stopRequestedAt, handledStopAt, hold = false }) {
+export function decideVpnAction({ vpnUp, leaseUntilMs, nowMs, stopRequestedAt, handledStopAt, hold = false, night = false, holding = false }) {
   const req = Date.parse(stopRequestedAt || "");
   const handled = Date.parse(handledStopAt || "");
   if (Number.isFinite(req) && (!Number.isFinite(handled) || req > handled)) {
     return { action: "stop", reason: "manual", handledStopAt: new Date(req).toISOString() };
+  }
+  if (hold && night) {
+    const leaseOver = !Number.isFinite(leaseUntilMs) || nowMs >= leaseUntilMs;
+    if (vpnUp && holding && leaseOver) return { action: "stop", reason: "night", handledStopAt: handledStopAt || "" };
+    return { action: "none", reason: "", handledStopAt: handledStopAt || "" };
   }
   if (hold) return { action: "none", reason: "", handledStopAt: handledStopAt || "" };
   if (vpnUp && (!Number.isFinite(leaseUntilMs) || nowMs >= leaseUntilMs)) {
@@ -77,9 +85,9 @@ export const RELEASE_GRACE_MS = 60_000;
  * Darbs beidzies: lease saīsina līdz now + RELEASE_GRACE_MS (nekad nepagarina). Pēc tam tick to atslēdz kā "idle".
  * Ja lease nav (NaN), paliek NaN - ieslēgtu VPN bez lease tick atslēdz uzreiz.
  */
-export function releaseLease(currentUntilMs, nowMs, hold = false) {
-  // Hold režīmā darba beigas VPN neatlaiž (tur pastāvīgi).
-  if (hold) return currentUntilMs;
+export function releaseLease(currentUntilMs, nowMs, hold = false, night = false) {
+  // Hold režīmā dienā darba beigas VPN neatlaiž (tur pastāvīgi); naktī - kā vecajā režīmā (~1 min, tad "night" stop).
+  if (hold && !night) return currentUntilMs;
   if (!Number.isFinite(currentUntilMs)) return NaN;
   return Math.min(currentUntilMs, nowMs + RELEASE_GRACE_MS);
 }

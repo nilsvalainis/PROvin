@@ -5,6 +5,7 @@ import {
   WAYBILL_REQUEST_STATUS_LABEL,
   isStaleWaybillRequest,
   waybillAivarsReply,
+  waybillChatTimelineNewestFirst,
   waybillRequestCancellable,
   type WaybillAivarsReply,
   type WaybillRequest,
@@ -165,7 +166,6 @@ export function IrissKomandaAivaramChat({
   const [tradeCars, setTradeCars] = useState<WaybillTradeCar[] | null>(null);
   const [tradeCarsFromAutoparks, setTradeCarsFromAutoparks] = useState(false);
   const [mobileDraft, setMobileDraft] = useState<WaybillMobileDraft | null>(null);
-  const scroller = useRef<HTMLDivElement>(null);
   const selectedInit = useRef(false);
   const carsLoaded = useRef(false);
   /** Telefona formas dati pēdējam sūtījumam (vajag "Tomēr izveidot" logam). */
@@ -235,9 +235,8 @@ export function IrissKomandaAivaramChat({
     };
   }, [working]);
 
-  useEffect(() => {
-    scroller.current?.scrollTo({ top: scroller.current.scrollHeight });
-  }, [chat.timeline.length]);
+  // Jaunākais augšā: saraksts vienmēr sākas augšā (agrāk ritināja uz apakšu, kur bija vecākais).
+  const timeline = useMemo(() => waybillChatTimelineNewestFirst(chat.timeline), [chat.timeline]);
 
   // Novecojušie (24 h bez virzības) nav "darbā" - tie ir Arhīvā.
   const inFlight = useMemo(
@@ -406,13 +405,13 @@ export function IrissKomandaAivaramChat({
         <span className="text-[12px] text-[#9aa3b2]">{inFlight} darbā</span>
       </header>
 
-      <div ref={scroller} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-3">
-        {chat.timeline.length === 0 ? (
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-3">
+        {timeline.length === 0 ? (
           <p className="py-8 text-center text-[13px] text-[#9aa3b2]">
             Izvēlies numuru, marku un stundas. Aivars saņem tikai šīs pavadzīmes datus.
           </p>
         ) : (
-          chat.timeline.map((item) =>
+          timeline.map((item) =>
             item.type === "request" ? (
               <RequestBubble
                 key={`r-${item.request.id}`}

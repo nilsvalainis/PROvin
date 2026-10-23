@@ -9,8 +9,9 @@ import {
   WAYBILL_VALID_MAX_HOURS,
   waybillHintsFromComment,
   waybillHoursBetween,
-  waybillRepresentativesForPlate,
+  defaultWaybillRepresentative,
 } from "@/lib/iriss-waybill-create";
+import type { AutoparksOwner } from "@/lib/iriss-autoparks";
 import { compactDealerPlate, displayDealerPlate, formatRigaDateTimeComma, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
 import { waybillErrorNeedsCheck } from "@/lib/iriss-waybill-push";
 import {
@@ -51,7 +52,7 @@ export type WaybillRoutePlace = "tukums" | "other";
 export const WAYBILL_TUKUMS_STREET = "Rīgas iela 75";
 
 /** accepted: auto ir CSDD tirdzniecībā pieņemto sarakstā (pavadzīme no akta, bez maršruta). */
-export type WaybillMobileCar = { brandModel: string; vin: string; id: string; accepted?: boolean };
+export type WaybillMobileCar = { brandModel: string; vin: string; id: string; accepted?: boolean; owner?: AutoparksOwner };
 
 export type WaybillMobileFormState = {
   plate: string;
@@ -69,7 +70,7 @@ export type WaybillMobileFormState = {
   /** Sākuma adrese (tikai auto, kas nav tirdzniecībā pieņemts). Galamērķa lauka nav: CSDD Tukums. */
   from: WaybillRoutePlace;
   fromAddress: string;
-  /** Komersanta pārstāvis (tikai pieņemtam auto); tukšs = pirmais šī numura firmas pārstāvis. */
+  /** Komersanta pārstāvis (tikai pieņemtam auto); tukšs = auto firmas pārstāvis (ĪRISS - Nils Valainis, DZA - Taivo Batiņš). */
   representative: string;
 };
 
@@ -168,11 +169,13 @@ export function waybillMobileTradeAct(state: Pick<WaybillMobileFormState, "manua
   return !state.manual && state.car?.accepted === true;
 }
 
-/** Izvēlētais pārstāvis vai šī numura firmas pirmais. */
-export function waybillMobileRepresentative(state: Pick<WaybillMobileFormState, "representative" | "plate">): string {
+/** Izvēlētais pārstāvis vai noklusējums pēc auto firmas (ja nav zināma - pēc numura firmas). */
+export function waybillMobileRepresentative(
+  state: Pick<WaybillMobileFormState, "representative" | "plate"> & Partial<Pick<WaybillMobileFormState, "car">>,
+): string {
   const own = state.representative.trim();
   if (own) return own;
-  return waybillRepresentativesForPlate(state.plate)[0] ?? "";
+  return defaultWaybillRepresentative({ owner: state.car?.owner, plate: state.plate });
 }
 
 export type WaybillMobileChipTone = "wait" | "wip" | "ok" | "bad";

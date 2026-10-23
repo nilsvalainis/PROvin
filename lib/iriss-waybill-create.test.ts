@@ -226,7 +226,9 @@ describe("Aivars create_waybill action", () => {
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(parsed.value).toMatchObject({ tradeAct: true, representative: "Taivo Batiņš", routeFrom: "", routeTo: "", validHours: 24 });
-    expect(parseCreateWaybillInput({ plate: "B192-7", brandModel: "Škoda Kodiaq", tradeAct: true }).ok).toBe(false);
+    // j13: bez pārstāvja -> numura (reģistra) firmas noklusējums.
+    const noRep = parseCreateWaybillInput({ plate: "B192-7", brandModel: "Škoda Kodiaq", tradeAct: true });
+    expect(noRep.ok && noRep.value.representative).toBe("Taivo Batiņš");
     expect(parseCreateWaybillInput({ plate: "B192-7", brandModel: "Škoda Kodiaq", tradeAct: true, representative: "<b>x</b>" }).ok).toBe(false);
     const plain = parseCreateWaybillInput({ plate: "B192-7", brandModel: "VW Passat", representative: "Taivo Batiņš" });
     expect(plain.ok && plain.value).toMatchObject({ tradeAct: false, representative: "", routeFrom: DEFAULT_WAYBILL_ROUTE_FROM });

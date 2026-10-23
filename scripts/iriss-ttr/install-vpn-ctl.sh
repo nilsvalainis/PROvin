@@ -18,7 +18,7 @@ fi
 chmod 600 /etc/iriss-ttr/env
 
 mkdir -p /root/iriss-ttr/ctl /etc/systemd/system/iriss-vpn.service.d
-install -m 644 "$here/vpn-lease.mjs" "$here/vpn-ctl.mjs" /root/iriss-ttr/ctl/
+install -m 644 "$here/csdd-sync-schedule.mjs" "$here/vpn-lease.mjs" "$here/vpn-ctl.mjs" /root/iriss-ttr/ctl/
 install -m 644 "$here/iriss-vpn-no-restart.conf" /etc/systemd/system/iriss-vpn.service.d/10-no-restart.conf
 install -m 644 "$here/iriss-vpn-ctl.service" /etc/systemd/system/iriss-vpn-ctl.service
 systemctl daemon-reload
