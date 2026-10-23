@@ -2,7 +2,12 @@ import { NextResponse, after } from "next/server";
 import { wakeAivars } from "@/lib/iriss-aivars-wake";
 import { autoWaybillEnabled, classifyWaybillForAuto } from "@/lib/iriss-waybill-auto";
 import { parseCreateWaybillInput } from "@/lib/iriss-waybill-create";
-import { emptyWaybillRequestsDoc, waybillChatPayload } from "@/lib/iriss-waybill-requests";
+import {
+  emptyWaybillRequestsDoc,
+  waybillChatPayload,
+  waybillDocWithoutOrders,
+  waybillRequestWithoutOrder,
+} from "@/lib/iriss-waybill-requests";
 import { createWaybillRequest, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
 import { readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
 import {
@@ -14,6 +19,7 @@ import {
 import { listWaybillVehicleChips } from "@/lib/iriss-waybill-vehicles";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { waybillTradeCarsWithSource, type WaybillCarsSource, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
+import { canSeeWaybillOrders } from "@/lib/iriss-pavadzimes-list";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
 
 export const runtime = "nodejs";
@@ -65,8 +71,15 @@ export async function GET(req: Request) {
       loadPlatesSafe(),
       withCars ? loadTradeCarsSafe() : Promise.resolve(null),
     ]);
+    const withOrders = canSeeWaybillOrders(gate.actor);
     return NextResponse.json(
-      { ok: true, ...waybillChatPayload(doc), vehicles, plates, ...(tradeCars ? { tradeCars: tradeCars.cars, tradeCarsSource: tradeCars.source } : {}) },
+      {
+        ok: true,
+        ...waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc)),
+        vehicles: withOrders ? vehicles : vehicles.map((v) => ({ ...v, orderId: "" })),
+        plates,
+        ...(tradeCars ? { tradeCars: tradeCars.cars, tradeCarsSource: tradeCars.source } : {}),
+      },
       NO_STORE,
     );
   } catch (err) {
@@ -125,8 +138,11 @@ export async function POST(req: Request) {
     const auto = classifyWaybillForAuto(request, { plateBusyNow: Boolean(occupancy?.busy) });
     if (!(autoWaybillEnabled() && auto.standard)) after(() => wakeAivars(request.id));
     const doc = await readWaybillRequestsDoc();
+    const withOrders = canSeeWaybillOrders(actor);
     return NextResponse.json(
-      { ok: true, request, ...waybillChatPayload(doc), plates },
+      withOrders
+        ? { ok: true, request, ...waybillChatPayload(doc), plates }
+        : { ok: true, request: waybillRequestWithoutOrder(request), ...waybillChatPayload(waybillDocWithoutOrders(doc)), plates },
       NO_STORE,
     );
   } catch (err) {

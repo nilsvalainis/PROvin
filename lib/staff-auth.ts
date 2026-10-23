@@ -14,6 +14,7 @@ import {
 } from "@/lib/staff-session-token";
 import {
   actorHomePath,
+  isWaybillOnlyStaff,
   staffHasSection,
   staffHomePath,
   type IrissSection,
@@ -145,6 +146,15 @@ export async function requireAdminOnlyApi(): Promise<
   if (actor?.kind === "admin") return { ok: true, actor };
   if (!actor) return { ok: false, response: NextResponse.json({ error: "unauthorized" }, { status: 401 }) };
   return { ok: false, response: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
+}
+
+/** Partneris (darbinieks tikai ar Pavadzīmēm) pēc dzīvajām sadaļām, nevis sīkdatnes. */
+export function isWaybillOnlyActor(actor: AdminOrStaffActor): boolean {
+  return actor.kind === "staff" && isWaybillOnlyStaff(actor.user.sections);
+}
+
+export function waybillOnlyForbidden(): NextResponse {
+  return NextResponse.json({ error: "forbidden" }, { status: 403 });
 }
 
 export async function requireLogisticsApi(): Promise<

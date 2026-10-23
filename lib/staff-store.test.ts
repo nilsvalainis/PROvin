@@ -69,6 +69,24 @@ describe("staff store access lifecycle", () => {
     expect(await resolveLiveStaffSession(session.id, auth.user.id)).not.toBeNull();
   });
 
+  it("removing a section ends live sessions (cookie sections cannot outlive the change)", async () => {
+    const email = `narrow.${suffix()}@example.lv`;
+    const invited = await inviteStaffUser({
+      name: "Partneris Paraugs",
+      email,
+      sections: ["pavadzimes", "pasutijumi"],
+      createdBy: "env-admin",
+    });
+    if (!invited.ok) throw new Error("invite");
+    await acceptStaffInvite({ token: invited.token, password: "pietiekami12x" });
+    const auth = await authenticateStaffPassword(email, "pietiekami12x");
+    if (!auth.ok) throw new Error("auth");
+    const { session } = await createStaffSession({ user: auth.user, ip: "127.0.0.1", userAgent: "test" });
+    const updated = await setStaffSections({ userId: auth.user.id, sections: ["pavadzimes"], actorId: "env-admin" });
+    expect(updated?.sections).toEqual(["pavadzimes"]);
+    expect(await resolveLiveStaffSession(session.id, auth.user.id)).toBeNull();
+  });
+
   it("revoking access kills the session and blocks login", async () => {
     const email = `peteris.${suffix()}@example.lv`;
     const invited = await inviteStaffUser({

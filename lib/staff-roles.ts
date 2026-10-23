@@ -88,7 +88,6 @@ export const IRISS_SECTION_CATALOG: readonly IrissSectionMeta[] = [
     apiPrefixes: [
       "/api/admin/vin-scan",
       "/api/admin/vin-sources",
-      "/api/admin/vin-history",
       "/api/admin/outvin",
       "/api/admin/csdd-tech-data",
     ],
@@ -179,6 +178,20 @@ export function irissSectionMeta(id: IrissSection): IrissSectionMeta {
  */
 export function isWaybillOnlyStaff(sections: readonly IrissSection[] | null | undefined): boolean {
   return Array.isArray(sections) && sections.length === 1 && sections[0] === "pavadzimes";
+}
+
+/**
+ * Partnerim (tikai Pavadzīmes) arī pavadzīmju API ir šaurāks: bez PDF augšupielādes un izmaiņu vēstures
+ * (atjaunošanas) - viņa sākumskatā tādu darbību nav. Pilno sarakstu (`GET /api/admin/iriss-pavadzimes` bez
+ * `?active=1`) aizliedz pats route (vaicājuma parametrs middleware nav redzams).
+ */
+export const WAYBILL_ONLY_STAFF_DENIED_API_PREFIXES: readonly string[] = [
+  "/api/admin/iriss-pavadzimes/upload",
+  "/api/admin/change-history",
+];
+
+export function isWaybillOnlyStaffDeniedApiPath(pathname: string): boolean {
+  return WAYBILL_ONLY_STAFF_DENIED_API_PREFIXES.some((prefix) => pathMatchesPrefix(pathname, prefix));
 }
 
 export function staffHomePath(sections: readonly IrissSection[]): string {
@@ -273,6 +286,7 @@ export function decideAdminApiAccess(pathname: string, actor: AccessActor): ApiA
   if (actor.kind === "admin") return "allow";
   if (actor.kind !== "staff") return "forbidden";
   if (isStaffSessionApiPath(pathname)) return "allow";
+  if (isWaybillOnlyStaff(actor.sections) && isWaybillOnlyStaffDeniedApiPath(pathname)) return "forbidden";
   if (isSharedStaffHistoryApiPath(pathname)) {
     return actor.sections.some((s) => s === "pavadzimes" || s === "pasutijumi" || s === "sludinajumi")
       ? "allow"
