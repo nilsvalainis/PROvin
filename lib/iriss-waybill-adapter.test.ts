@@ -542,7 +542,7 @@ describe("waybill-adapter: pieņemts auto (akts -> Noformēt pavadzīmi), tikai 
     return fake;
   }
 
-  for (const validHours of [1, 12, 48, 36, 2160]) {
+  for (const validHours of [1, 12, 48, 36]) {
     it(`${validHours} h: aizpilda tikai laiku, numuru, vietu un pārstāvi; maršrutu neaiztiek; Saglabāt nespiež`, async () => {
       const fake = withActs(fakeCsdd());
       const job = {

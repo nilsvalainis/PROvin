@@ -317,14 +317,14 @@ describe("j8: laiks 1/12/48/brīvs abām plūsmām, akts bez maršruta, VPN cilv
   };
 
   for (const flow of ["tradeAct", "new"] as const) {
-    it(`${flow}: serveris pieņem 1, 12, 48, brīvu (36) h (CSDD max 48); noraida 0 un 2161`, () => {
+    it(`${flow}: serveris pieņem 1, 12, 48, brīvu (36) h (CSDD max 48); noraida 0, 49 un 2161 (arī worker pats)`, () => {
       for (const h of [1, 12, 48, 36]) {
         const r = hoursReq(flow, h);
         expect(classifyWaybillForAuto(r, free)).toMatchObject({ standard: true, flow });
         const job = { ...toAivarsCreateWaybillAction(r), auto: classifyWaybillForAuto(r, free) };
         expect(localStandardCheck(job, NOW)).toMatchObject({ ok: true, flow });
       }
-      for (const h of [0, 2161]) {
+      for (const h of [0, 49, 2161]) {
         expect(classifyWaybillForAuto(hoursReq(flow, h), free)).toEqual({ standard: false, reason: "nederīgs laiks" });
         const ok = hoursReq(flow, 12);
         const job = { ...toAivarsCreateWaybillAction(ok), auto: classifyWaybillForAuto(ok, free), validHours: h };
