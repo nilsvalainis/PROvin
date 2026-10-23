@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // iriss-waybill-worker: automātiski izraksta STANDARTA CSDD pavadzīmes no rindas (akts "Noformēt pavadzīmi" vai jauna).
 // Ik 10 s: GET /api/iriss/aivars/waybill-requests?scope=auto&live=0|1 (serveris dod tikai standarta darbus; live = sirdspuksts UI)
-// -> lokāla pārbaude -> claim (serveris pārbauda vēlreiz) -> VPN lease (iriss-vpn-ctl) -> refill.js -> save.js -> PDF -> result
+// -> lokāla pārbaude -> VPN /status (Nils lieto VPN -> neko nedara) -> claim (serveris pārbauda vēlreiz) -> VPN lease (iriss-vpn-ctl) -> refill.js -> save.js -> PDF -> result
 // -> VPN release (vienmēr, finally). Katrs solis tiek ziņots serverim (events stage), UI rāda tikai reālos soļus.
 // Nestandarta darbus neaiztiek (Aivars). Nekad nepārtrauc/neanulē aktīvu pavadzīmi (tikai ALLOWED_SCRIPTS).
 // Env (/etc/iriss-ttr/env): IRISS_API_BASE, IRISS_AIVARS_API_TOKEN, IRISS_WAYBILL_WORKER_LIVE=1 (citādi dry-run: tikai logo).
@@ -57,6 +57,13 @@ const api = {
   },
 };
 
+/** iriss-vpn-ctl stāvoklis (blocked = Nils lieto VPN). Kļūda -> null (worker tad darbu neņem). */
+async function vpnStatus() {
+  const res = await fetch("http://127.0.0.1:9334/status", { signal: AbortSignal.timeout(5_000) });
+  if (!res.ok) throw new Error(`vpn_status_${res.status}`);
+  return res.json();
+}
+
 async function vpnLease() {
   const res = await fetch("http://127.0.0.1:9334/lease", { method: "POST", signal: AbortSignal.timeout(45_000) });
   if (!res.ok) {
@@ -102,6 +109,7 @@ async function tick() {
       seen.add(job.id);
       const res = await processJob(job, {
         api,
+        vpnStatus,
         vpnLease,
         vpnRelease,
         runScript,
@@ -111,6 +119,8 @@ async function tick() {
         dryRun: !LIVE,
       });
       log("job_done", { id: job.id, ...res });
+      // VPN aizņemts (Nils): darbs nav aiztikts, nākamajā tick mēģinās vēlreiz.
+      if (res.outcome === "vpn_busy") seen.delete(job.id);
     }
   } catch (err) {
     log("tick_failed", { err: err instanceof Error ? err.message : "error" });

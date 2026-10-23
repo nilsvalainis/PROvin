@@ -486,6 +486,7 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
           <IrissKomandaAivaramChat
             draftVehicle={extendVehicle}
             onDraftConsumed={onDraftConsumed}
+            onOpenArchive={() => setView("archive")}
           />
         </div>
         {view === "current" ? (

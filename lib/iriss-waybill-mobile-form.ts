@@ -4,7 +4,6 @@
  */
 
 import {
-  DEFAULT_WAYBILL_VALID_HOURS,
   NOTE_UNTRUSTED_MAX,
   WAYBILL_ROUTE_MAX,
   WAYBILL_VALID_MAX_HOURS,
@@ -12,13 +11,15 @@ import {
   waybillHoursBetween,
   waybillRepresentativesForPlate,
 } from "@/lib/iriss-waybill-create";
-import { displayDealerPlate, formatRigaDateTimeComma, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
+import { compactDealerPlate, displayDealerPlate, formatRigaDateTimeComma, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
 import { waybillErrorNeedsCheck } from "@/lib/iriss-waybill-push";
 import {
   WAYBILL_STALE_LABEL,
   WAYBILL_WORKER_STAGE_TEXT,
   isStaleWaybillRequest,
   waybillPendingExpired,
+  waybillWrittenOffAtMs,
+  type WaybillWrittenOffRequest as WrittenOffRequest,
   waybillQueuedText,
   waybillRequestCancellable,
   type WaybillAivarsReply,
@@ -28,7 +29,21 @@ import {
   type WaybillWorkerStage,
 } from "@/lib/iriss-waybill-requests";
 
-export const WAYBILL_MOBILE_HOUR_PRESETS = [12, 24, 48] as const;
+/**
+ * Derīguma izvēles pavadzīmes formā (Nils 23.10): TIEŠI "1 h", "12 h", "48 h" un "Cits" (brīvs stundu skaits 1-2160).
+ * Tās pašas izvēles telefonā, datorā un kolēģa skatā. Serveris un worker pieņem jebkuru veselu 1..2160.
+ */
+export const WAYBILL_MOBILE_HOUR_PRESETS = [1, 12, 48] as const;
+/** Formas noklusējums. (Servera noklusējums bez laika, piem. tikai komentārs Aivaram, paliek DEFAULT_WAYBILL_VALID_HOURS.) */
+export const WAYBILL_FORM_DEFAULT_HOURS = 12;
+
+/** "Cits" lauks: vesels stundu skaits 1..2160, citādi null (0, 2161, 1.5, teksts). */
+export function parseWaybillCustomHours(raw: string): number | null {
+  const s = raw.trim();
+  if (!/^\d{1,4}$/.test(s)) return null;
+  const n = Number(s);
+  return n >= 1 && n <= WAYBILL_VALID_MAX_HOURS ? n : null;
+}
 
 export type WaybillRoutePlace = "tukums" | "other";
 
@@ -76,7 +91,7 @@ export function initialWaybillMobileForm(plate: string): WaybillMobileFormState 
     car: null,
     manual: false,
     manualBrandModel: "",
-    hoursPreset: DEFAULT_WAYBILL_VALID_HOURS,
+    hoursPreset: WAYBILL_FORM_DEFAULT_HOURS,
     hoursOther: "",
     comment: "",
     from: "tukums",
@@ -88,10 +103,7 @@ export function initialWaybillMobileForm(plate: string): WaybillMobileFormState 
 /** Derīgums stundās vai null, ja "cits" lauks nav derīgs. */
 export function waybillMobileHours(state: Pick<WaybillMobileFormState, "hoursPreset" | "hoursOther">): number | null {
   if (state.hoursPreset != null) return state.hoursPreset;
-  const s = state.hoursOther.trim();
-  if (!/^\d{1,4}$/.test(s)) return null;
-  const n = Number(s);
-  return n >= 1 && n <= WAYBILL_VALID_MAX_HOURS ? n : null;
+  return parseWaybillCustomHours(state.hoursOther);
 }
 
 /** Numurs, kas tiks sūtīts: izvēlētais vai (ja nav pieskarts) no komentāra. */
@@ -186,8 +198,46 @@ export type WaybillMobileRequestRow = {
   errorText: string;
   /** Novecojis: 24 h bez virzības - tikai Arhīvā. */
   stale: boolean;
+  /** Izrakstīta: izdota pavadzīme vairs nav derīga (beigusies vai aizstāta ar jaunāku tam pašam numuram). */
+  writtenOff: boolean;
   progress: WaybillMobileProgress;
+  /** Teksts zem joslas: progress + "solis N no 3" (vai Izrakstītas paskaidrojums). */
+  line: string;
+  /** Īsa piezīme (piem. "Saglabāta Arhīvā", kad PDF ir pavadzīmju sarakstā). */
+  note: string;
 };
+
+export { waybillWrittenOffAtMs };
+
+export const WAYBILL_WRITTEN_OFF_LABEL = "Izrakstīta";
+export const WAYBILL_WRITTEN_OFF_HINT = "Pavadzīme vairs nav derīga. Atrodama Arhīvā.";
+export const WAYBILL_SAVED_IN_ARCHIVE_TEXT = "Saglabāta Arhīvā";
+/** Cik ilgi izrakstīta pavadzīme vēl redzama pirmajā lapā (pēc tam tikai Arhīvā). */
+export const WAYBILL_WRITTEN_OFF_VISIBLE_MS = 24 * 60 * 60 * 1000;
+
+/** Numuram šobrīd nav citas derīgas izdotas pavadzīmes (no šīs rindas zināmajiem pieprasījumiem). */
+function plateFreeNow(request: WrittenOffRequest, requests: ReadonlyArray<WrittenOffRequest>, nowMs: number): boolean {
+  return !requests.some(
+    (o) =>
+      o.id !== request.id &&
+      o.status === "issued" &&
+      compactDealerPlate(o.vehicle.plate) === compactDealerPlate(request.vehicle.plate) &&
+      waybillWrittenOffAtMs(o, requests, nowMs) == null,
+  );
+}
+
+/** "solis N no 3" zem statusa (Gaida, Izveido, Izdota); kļūdai, atceltam un beigušam gaidošam - bez soļa. */
+export function waybillMobileProgressLine(
+  progress: WaybillMobileProgress,
+  request: Pick<WaybillRequest, "status" | "validUntil">,
+  nowMs = Date.now(),
+): string {
+  const withStep =
+    (request.status === "queued" && !waybillPendingExpired(request, nowMs)) ||
+    request.status === "in_progress" ||
+    request.status === "issued";
+  return withStep ? `${progress.text} · solis ${progress.step} no 3` : progress.text;
+}
 
 /**
  * Dzīvais progress: 3 soļi (Gaida - Izveido - Izdota). Joslas platums atbilst TIKAI reālam solim
@@ -279,7 +329,9 @@ export function waybillMobileRequestRows(
   return [...requests]
     .filter((request) => {
       if (which === "all") return true;
-      const current = waybillMobileRequestIsCurrent(request, nowMs);
+      const offAt = waybillWrittenOffAtMs(request, requests, nowMs);
+      // Izrakstīta vēl 24 h redzama pirmajā lapā (ar norādi uz Arhīvu), tad tikai Arhīvā.
+      const current = offAt != null ? nowMs - offAt <= WAYBILL_WRITTEN_OFF_VISIBLE_MS : waybillMobileRequestIsCurrent(request, nowMs);
       return which === "current" ? current : !current;
     })
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
@@ -306,18 +358,34 @@ export function waybillMobileRequestRows(
         autoStandard: reply?.autoStandard,
       });
       const longWait = status === "queued" && sinceMs(request.updatedAt || request.createdAt, nowMs) > WAYBILL_MOBILE_LONG_WAIT_MS;
+      const offAt = waybillWrittenOffAtMs({ ...request, status }, requests, nowMs);
+      const writtenOff = offAt != null;
+      const plate = displayDealerPlate(request.vehicle.plate) || request.vehicle.plate;
+      const pdfUrl = reply?.pdfUrl || request.pdfUrl;
+      const offSub = writtenOff
+        ? [
+            `Izrakstīta ${formatRigaDateTimeComma(new Date(offAt).toISOString())}`,
+            plateFreeNow(request, requests, nowMs) ? `numurs ${plate} atkal ir brīvs` : "",
+          ]
+            .filter(Boolean)
+            .join(" · ")
+        : "";
       return {
         id: request.id,
         title: request.vehicle.brandModel || request.noteUntrusted || "Auto",
-        sub,
-        label: stale ? WAYBILL_STALE_LABEL : WAYBILL_MOBILE_STATUS[status].label,
-        tone: stale ? "wait" : WAYBILL_MOBILE_STATUS[status].tone,
-        pdfUrl: reply?.pdfUrl || request.pdfUrl,
+        sub: writtenOff ? offSub : sub,
+        label: stale ? WAYBILL_STALE_LABEL : writtenOff ? WAYBILL_WRITTEN_OFF_LABEL : WAYBILL_MOBILE_STATUS[status].label,
+        tone: stale || writtenOff ? "wait" : WAYBILL_MOBILE_STATUS[status].tone,
+        pdfUrl,
         canRetry: status === "error" || (status === "queued" && (longWait || stale) && !waybillPendingExpired(request, nowMs)),
         canCancel: waybillRequestCancellable({ status, pickedBy: request.pickedBy }),
         errorText: status === "error" ? request.errorReason || reply?.text || "" : "",
         stale,
+        writtenOff,
         progress,
+        line: writtenOff ? WAYBILL_WRITTEN_OFF_HINT : waybillMobileProgressLine(progress, { status, validUntil: request.validUntil }, nowMs),
+        // PDF no Aivara/automātikas tiek ierakstīts pavadzīmju sarakstā (result -> uploadIrissPavadzime).
+        note: status === "issued" && !writtenOff && pdfUrl.startsWith("/api/admin/iriss-pavadzimes/") ? WAYBILL_SAVED_IN_ARCHIVE_TEXT : "",
       };
     });
 }

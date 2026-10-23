@@ -147,6 +147,10 @@
     {
       "path": "/api/cron/termini-atgadinajumi",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/iriss-waybill-reminders",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
