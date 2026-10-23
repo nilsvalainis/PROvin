@@ -1,11 +1,22 @@
 import "server-only";
 
 import { readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
-import { displayDealerPlate, waybillPlateOccupancy } from "@/lib/iriss-waybill-plates";
-import { autoWaybillEnabled, classifyWaybillForAuto, plateTakenByOtherRequest } from "@/lib/iriss-waybill-auto";
+import { displayDealerPlate, waybillPlateOccupancy, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
+import { mergeCsddPlateStates } from "@/lib/iriss-waybill-csdd-plates";
+import { readCsddPlatesDocSafe } from "@/lib/iriss-waybill-csdd-plates-store";
+import { autoWaybillEnabled, autoWaybillReplaceEnabled, classifyWaybillForAuto, plateTakenByOtherRequest } from "@/lib/iriss-waybill-auto";
 import type { WaybillAutoContext, WaybillRequestsDoc } from "@/lib/iriss-waybill-requests";
 import { waybillWorkerLive } from "@/lib/iriss-ttr-control";
 import { readTtrControlDoc } from "@/lib/iriss-ttr-control-store";
+
+/**
+ * Numuru stāvoklis: mūsu pavadzīmju indekss + CSDD reģistra momentuzņēmums (Hetzner sync.js, arī ar roku izrakstītās).
+ * Met kļūdu, ja indeksu nevar nolasīt (izsaucējs izlemj, ko darīt).
+ */
+export async function loadWaybillPlateStates(now = new Date()): Promise<WaybillPlateState[]> {
+  const [rows, csdd] = await Promise.all([readIrissPavadzimesCached(), readCsddPlatesDocSafe()]);
+  return mergeCsddPlateStates(waybillPlateOccupancy(rows, now), csdd, now.getTime());
+}
 
 /**
  * Aizņemtie numuri tieši tagad. Ja nevar nolasīt, visi skaitās aizņemti:
@@ -14,7 +25,7 @@ import { readTtrControlDoc } from "@/lib/iriss-ttr-control-store";
 export async function busyWaybillPlatesNow(): Promise<(plate: string) => boolean> {
   try {
     const busy = new Set(
-      waybillPlateOccupancy(await readIrissPavadzimesCached())
+      (await loadWaybillPlateStates())
         .filter((row) => row.busy)
         .map((row) => row.plate as string),
     );
@@ -61,6 +72,7 @@ export async function waybillAutoContext(
         plateBusyNow: busy(request.vehicle.plate),
         plateInOtherRequest: plateTakenByOtherRequest(doc.requests, request, nowMs),
         nowMs,
+        replaceEnabled: autoWaybillReplaceEnabled(),
       }).standard,
   };
 }

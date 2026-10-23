@@ -27,7 +27,8 @@ Pending jobs (GET) and the claim payload are this object:
   "comment_untrusted": "B762 uz 48h",
   "note_untrusted": "B762 uz 48h",
   "tradeAct": false,
-  "representative": ""
+  "representative": "",
+  "replaceWaybillNo": ""
 }
 ```
 
@@ -43,6 +44,8 @@ Required structured fields (validated by the server before the job is queued):
 - Comment only: if the form has no car but `comment_untrusted` looks like `193 uz BMW 330`, the server takes the plate (allowlist only) and `brandModel` (safe chars only) from it as data. `brandModel` is always filled when a job is queued.
 
 - `tradeAct: true` (v2, 23.10.2026): the car is accepted for trade (CSDD tirdzniecības akts). Then `routeFrom` / `routeTo` are empty - CSDD does not need a route. Open the act and press "Noformēt pavadzīmi", fill only `validHours` and `representative` (komersanta pārstāvis, e.g. `Nils Valainis` for ĪRISS plates, `Taivo Batiņš` for B192-7). The automation never takes these jobs.
+- `replaceWaybillNo` (j10, 23.10.2026): the plate was busy and the user answered "Jā" to "Vai tiešām anulēt iepriekšējo un izveidot jaunu?". Only this waybill (e.g. `P02812`) may be annulled (CSDD "Pārtraukt!"), and only if CSDD still shows exactly it as Derīgs on this plate. Empty = never annul anything.
+- Plate status comes from the CSDD register too (`sync.js` on Hetzner -> `POST /api/iriss/aivars/waybill-plates`), so waybills issued by hand in CSDD make the plate busy in the UI.
 - Jobs with no progress for 24 h (queued / in progress) are stale: they are no longer listed in GET and cannot be claimed. Staff see them in Arhīvs as "Novecojis"; data is not changed.
 
 Aivars on the CSDD side:
@@ -71,8 +74,9 @@ All require `Authorization: Bearer <IRISS_AIVARS_API_TOKEN>`.
 | POST | `/api/iriss/aivars/waybill-requests/:id/claim` | Claim a job |
 | POST | `/api/iriss/aivars/waybill-requests/:id/events` | Status only: `in_progress`, `issued`, `error`, `message` |
 | POST | `/api/iriss/aivars/waybill-requests/:id/result` | Finish: `{ ok, waybillNo, pdfBase64?, errorReason? }` |
+| GET / POST | `/api/iriss/aivars/waybill-plates` | CSDD plate snapshot (Hetzner worker): `{ plates: [{ plate, ok, checkedAt, active: [{ waybillNo, validUntil, brandModel }], error }] }` |
 
-Staff IRISS users never call this API. Pavadzīmes users submit a structured form to `/api/admin/iriss/waybill-requests`; that queues `create_waybill` immediately (no admin approval). A busy trading number without `confirmBusy: true` returns 409.
+Staff IRISS users never call this API. Pavadzīmes users submit a structured form to `/api/admin/iriss/waybill-requests`; that queues `create_waybill` immediately (no admin approval). A busy trading number (our index or the CSDD snapshot) without `confirmBusy: true` returns 409 with `current`; with `confirmBusy` the client also sends `confirmWaybillNo` (the number shown in the dialog) - if CSDD now shows another number, 409 again.
 
 ## Wake (push instead of polling)
 

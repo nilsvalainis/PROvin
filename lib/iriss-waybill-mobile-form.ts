@@ -250,7 +250,7 @@ export type WaybillMobileProgress = {
 };
 
 /** Joslas platums pēc reālā soļa. */
-const STAGE_PCT: Record<WaybillWorkerStage, number> = { claimed: 40, vpn: 50, filling: 62, saving: 78, pdf: 90 };
+const STAGE_PCT: Record<WaybillWorkerStage, number> = { claimed: 40, vpn: 50, checking: 54, annulling: 58, filling: 62, saving: 78, pdf: 90 };
 
 /** Pēc cik ilga gaidīšanas rāda "Gaida ilgāk nekā parasti" un ļauj atkārtot. */
 export const WAYBILL_MOBILE_LONG_WAIT_MS = 15 * 60 * 1000;

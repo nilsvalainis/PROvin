@@ -1,14 +1,36 @@
 import { NextResponse, after } from "next/server";
 import { IRISS_AIVARS_API_TOKEN_ENV, irissAivarsApiTokenConfigured, verifyIrissAivarsApiToken } from "@/lib/iriss-aivars-api-token";
 import { AIVARS_ACTION_CREATE_WAYBILL, toAivarsCreateWaybillAction } from "@/lib/iriss-waybill-create";
-import { autoWaybillEnabled, classifyWaybillForAuto, hiddenFromAivars, plateTakenByOtherRequest } from "@/lib/iriss-waybill-auto";
+import {
+  AUTO_WAYBILL_PLATES,
+  autoWaybillEnabled,
+  autoWaybillReplaceEnabled,
+  classifyWaybillForAuto,
+  hiddenFromAivars,
+  plateTakenByOtherRequest,
+} from "@/lib/iriss-waybill-auto";
 import { autoWaybillLiveNow, busyWaybillPlatesNow } from "@/lib/iriss-waybill-auto-server";
 import { pendingWaybillRequests } from "@/lib/iriss-waybill-requests";
 import { readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
 import { noteWaybillWorkerHeartbeat } from "@/lib/iriss-ttr-control-store";
+import { knownWaybillNumbers } from "@/lib/iriss-waybill-csdd-plates";
+import { readCsddPlatesDocSafe } from "@/lib/iriss-waybill-csdd-plates-store";
+import { readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
+import type { IrissDealerPlate } from "@/lib/iriss-waybill-plates";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/** ctx1 (ĪRISS) / ctx2 (DZA) -> zināmie pavadzīmju numuri. Kļūda -> tukšs (worker tad meklē tikai CSDD sarakstos). */
+async function knownByCtx(): Promise<Record<"ctx1" | "ctx2", string[]>> {
+  const [rows, csdd] = await Promise.all([readIrissPavadzimesCached().catch(() => []), readCsddPlatesDocSafe()]);
+  const plates = (ctx: "ctx1" | "ctx2") =>
+    (Object.keys(AUTO_WAYBILL_PLATES) as IrissDealerPlate[]).filter((p) => AUTO_WAYBILL_PLATES[p].ctx === ctx);
+  return {
+    ctx1: knownWaybillNumbers(rows, csdd, plates("ctx1")),
+    ctx2: knownWaybillNumbers(rows, csdd, plates("ctx2")),
+  };
+}
 
 function unauthorized() {
   return NextResponse.json({ error: "unauthorized" }, { status: 401, headers: { "Cache-Control": "private, no-store" } });
@@ -52,13 +74,20 @@ export async function GET(req: Request) {
       plateBusyNow: isBusy(request.vehicle.plate),
       plateInOtherRequest: plateTakenByOtherRequest(doc.requests, request, nowMs),
       nowMs,
+      replaceEnabled: autoWaybillReplaceEnabled(),
     }),
   }));
+  // Worker CSDD pārbaudei: zināmie numuri (CSDD + indekss) firmas numuriem, no kuriem sākt meklēt jaunākās pavadzīmes.
+  const known = scopeAuto && rows.some((row) => row.auto.standard) ? await knownByCtx() : null;
   const requests = scopeAuto
     ? enabled
       ? rows
           .filter((row) => row.auto.standard)
-          .map((row) => ({ ...toAivarsCreateWaybillAction(row.request), auto: row.auto }))
+          .map((row) => ({
+            ...toAivarsCreateWaybillAction(row.request),
+            auto: row.auto,
+            knownWaybills: row.auto.standard && known ? known[row.auto.ctx] : [],
+          }))
       : []
     : rows
         .filter((row) => !hiddenFromAivars(row.auto, row.request.createdAt, nowMs, live))

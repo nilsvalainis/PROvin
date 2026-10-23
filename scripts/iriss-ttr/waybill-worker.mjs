@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 // iriss-waybill-worker: automātiski izraksta STANDARTA CSDD pavadzīmes no rindas (akts "Noformēt pavadzīmi" vai jauna).
 // Ik 10 s: GET /api/iriss/aivars/waybill-requests?scope=auto&live=0|1 (serveris dod tikai standarta darbus; live = sirdspuksts UI)
-// -> lokāla pārbaude -> VPN /status (Nils lieto VPN -> neko nedara) -> claim (serveris pārbauda vēlreiz) -> VPN lease (iriss-vpn-ctl) -> refill.js -> save.js -> PDF -> result
+// -> lokāla pārbaude -> VPN /status (Nils lieto VPN -> neko nedara) -> claim (serveris pārbauda vēlreiz) -> VPN lease (iriss-vpn-ctl)
+// -> sync.js (numura statuss CSDD, momentuzņēmums -> POST /api/iriss/aivars/waybill-plates) -> [annul.js] -> refill.js -> save.js -> PDF -> result
 // -> VPN release (vienmēr, finally). Katrs solis tiek ziņots serverim (events stage), UI rāda tikai reālos soļus.
-// Nestandarta darbus neaiztiek (Aivars). Nekad nepārtrauc/neanulē aktīvu pavadzīmi (tikai ALLOWED_SCRIPTS).
-// Env (/etc/iriss-ttr/env): IRISS_API_BASE, IRISS_AIVARS_API_TOKEN, IRISS_WAYBILL_WORKER_LIVE=1 (citādi dry-run: tikai logo).
+// Nestandarta darbus neaiztiek (Aivars). Pats nekad nepārtrauc/neanulē; annul.js tikai lietotāja apstiprinātai pavadzīmei un
+// tikai ar IRISS_WAYBILL_ANNUL_LIVE=1 (noklusējumā izslēgts).
+// Env (/etc/iriss-ttr/env): IRISS_API_BASE, IRISS_AIVARS_API_TOKEN, IRISS_WAYBILL_WORKER_LIVE=1 (citādi dry-run: tikai logo),
+// IRISS_WAYBILL_ANNUL_LIVE=1 (anulēt iepriekšējo un izveidot jaunu; noklusējumā nē).
 
 import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
@@ -17,6 +20,7 @@ const TTR_DIR = process.env.IRISS_TTR_DIR || "/root/iriss-ttr";
 const API_BASE = (process.env.IRISS_API_BASE || "https://www.provin.lv").replace(/\/+$/, "");
 const TOKEN = process.env.IRISS_AIVARS_API_TOKEN || "";
 const LIVE = process.env.IRISS_WAYBILL_WORKER_LIVE === "1";
+const ANNUL_LIVE = process.env.IRISS_WAYBILL_ANNUL_LIVE === "1";
 const POLL_MS = 10_000;
 const SCRIPT_TIMEOUT_MS = 180_000;
 
@@ -24,8 +28,8 @@ function log(msg, extra = {}) {
   console.log(JSON.stringify({ t: new Date().toISOString(), msg, ...extra }));
 }
 
-async function call(method, p, body) {
-  const res = await fetch(`${API_BASE}/api/iriss/aivars/waybill-requests${p}`, {
+async function call(method, p, body, base = "waybill-requests") {
+  const res = await fetch(`${API_BASE}/api/iriss/aivars/${base}${p}`, {
     method,
     headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
@@ -55,6 +59,11 @@ const api = {
   async release(id, reason) {
     await call("POST", `/${encodeURIComponent(id)}/release`, { reason });
   },
+  /** CSDD numuru momentuzņēmums (aktīvās pavadzīmes, arī ar roku izrakstītās). */
+  async plates(snapshot) {
+    const r = await call("POST", "", snapshot, "waybill-plates");
+    if (r.status !== 200) throw new Error(`plates_http_${r.status}`);
+  },
 };
 
 /** iriss-vpn-ctl stāvoklis (blocked = Nils lieto VPN). Kļūda -> null (worker tad darbu neņem). */
@@ -80,7 +89,7 @@ async function vpnRelease() {
 
 /** Palaiž tikai allowlist skriptu; darbu nodod caur env IRISS_JOB_JSON, rezultāts = pēdējā stdout JSON rinda. */
 async function runScript(step, input) {
-  const file = resolveWorkerScript(step);
+  const file = resolveWorkerScript(step, { annulEnabled: ANNUL_LIVE });
   const { stdout } = await run("node", [path.join(TTR_DIR, file)], {
     cwd: TTR_DIR,
     env: { ...process.env, IRISS_JOB_JSON: JSON.stringify(input), IRISS_AUTO: "1" },
@@ -117,6 +126,7 @@ async function tick() {
         now: () => Date.now(),
         log,
         dryRun: !LIVE,
+        annulEnabled: ANNUL_LIVE,
       });
       log("job_done", { id: job.id, ...res });
       // VPN aizņemts (Nils): darbs nav aiztikts, nākamajā tick mēģinās vēlreiz.
@@ -133,6 +143,6 @@ if (!TOKEN) {
   log("missing_token_env");
   process.exit(2);
 }
-log("started", { live: LIVE });
+log("started", { live: LIVE, annul: ANNUL_LIVE });
 setInterval(() => void tick(), POLL_MS);
 void tick();

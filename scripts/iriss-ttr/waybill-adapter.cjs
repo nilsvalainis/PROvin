@@ -52,9 +52,23 @@ const ROUTE = {
 };
 
 /** Vienīgās CSDD lapas darbības, ko adapteris drīkst izsaukt (ex(...)). Viss cits (piem. lapv_par = pārtraukt) - kļūda. */
-const ALLOWED_EX = new Set(["lapv|0|a=3", "lapv_kmod", "rep_lapt_tl"]);
-/** Akta plūsma: saraksta lapas, akta atvēršana pēc id (tikai skats) un "Noformēt pavadzīmi" (lapv a=0). */
-const ALLOWED_EX_PATTERNS = [/^rep_lapt_tl\|1\|(porcijas_numurs=[2-8])?$/, /^lapt\|0\|a=11&lapt_id=\d{1,12}$/, /^lapv\|0\|a=0$/];
+const ALLOWED_EX = new Set(["lapv|0|a=3", "lapv_kmod", "rep_lapt_tl", "tl", "rep_lapv", "rep_lapv|1|"]);
+/**
+ * Akta plūsma: saraksta lapas, akta atvēršana pēc id (tikai skats) un "Noformēt pavadzīmi" (lapv a=0).
+ * Pavadzīmju lasīšana (kā Aivara lookup-p02779.js): meklēšana pēc numura lapv a=2 un kartīte lapv a=11&lapv_id (tikai skats).
+ */
+const ALLOWED_EX_PATTERNS = [
+  /^rep_lapt_tl\|1\|(porcijas_numurs=[2-8])?$/,
+  /^lapt\|0\|a=11&lapt_id=\d{1,12}$/,
+  /^lapv\|0\|a=0$/,
+  /^lapv\|0\|a=2$/,
+  /^lapv\|0\|a=11&lapv_id=\d{1,12}$/,
+];
+/**
+ * Pārtraukšana (Nila "anulēt"): TIKAI annulWaybill, tikai bruņotā stāvoklī (pārbaudīts numurs, numurzīme, Derīgs) un
+ * tikai, ja darbs to atļauj (IRISS_WAYBILL_ANNUL_LIVE=1 un lietotājs apstiprināja tieši šo numuru).
+ */
+const ANNUL_EX = "lapv_par";
 const TRADE_ACT_PAGES = 8;
 
 function exAllowed(key) {
@@ -143,7 +157,37 @@ function playwrightOps(page, h) {
       }),
     value: (sel) => page.evaluate((s) => (document.querySelector(s) || {}).value || "", sel),
     p1Text: () => page.evaluate(() => (document.getElementById("p1") || document.body).innerText),
+    /**
+     * Pavadzīmes kartīte: #p1 teksts KOPĀ ar lauku vērtībām (CSDD kartītē numurzīme un daļa datu ir <input>, nevis teksts -
+     * 23.10 pārbaude: "Tirdzniecības numurs" B193-7 bija input value). Pagaidu <span> tikai lasīšanai, uzreiz noņemti.
+     */
+    p1Card: () =>
+      page.evaluate(() => {
+        const root = document.getElementById("p1") || document.body;
+        const added = [];
+        for (const el of root.querySelectorAll("input, select, textarea")) {
+          const type = String(el.getAttribute("type") || "").toLowerCase();
+          if (["hidden", "button", "submit", "reset", "checkbox", "radio", "image"].includes(type)) continue;
+          const v = el.tagName === "SELECT" ? (el.options[el.selectedIndex] || {}).text || "" : el.value || "";
+          if (!String(v).trim()) continue;
+          const span = document.createElement("span");
+          span.textContent = ` ${String(v).trim()} `;
+          el.after(span);
+          added.push(span);
+        }
+        const text = root.innerText;
+        for (const span of added) span.remove();
+        return text;
+      }),
     p1Rows: () => page.evaluate(() => [...document.querySelectorAll("#p1 tr")].map((r) => r.innerText.replace(/\s+/g, " ").trim())),
+    /** #p1 saites ar onclick un rindas tekstu (pavadzīmes kartītes atvēršanai pēc lapv_id). */
+    p1Onclicks: () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll("#p1 [onclick]")].map((e) => ({
+          oc: e.getAttribute("onclick") || "",
+          t: ((e.closest("tr") || e).innerText || "").replace(/\s+/g, " ").trim(),
+        })),
+      ),
     /** Tirdzniecības aktu saraksta rindas ar lapt_id (tikai lasa). */
     actRows: () =>
       page.evaluate(() =>
@@ -177,7 +221,7 @@ function playwrightOps(page, h) {
 /** @param {(page: unknown, h: object) => ReturnType<typeof playwrightOps>} makeOps */
 function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
   /** Šī procesa darbs (open izsauc pirmo; refill.js un save.js ir atsevišķi procesi). */
-  const state = { input: null, company: null, lapvId: "", laptId: "" };
+  const state = { input: null, company: null, lapvId: "", laptId: "", maxNumber: "", annulArmed: "" };
 
   function ctxOf(page, h) {
     const ops = makeOps(page, h);
@@ -185,7 +229,8 @@ function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
     const ttrDir = h.ttrDir || env.IRISS_TTR_DIR || "/root/iriss-ttr";
     async function ex(action, arg, params) {
       const key = exKey(action, arg, params);
-      if (!exAllowed(key)) throw new Error(`CSDD darbība nav atļauta: ${key}`);
+      const annul = key === ANNUL_EX && Boolean(state.annulArmed);
+      if (!annul && !exAllowed(key)) throw new Error(`CSDD darbība nav atļauta: ${key}`);
       await ops.callEx(action, arg, params);
       await ops.waitJx();
     }
@@ -311,6 +356,60 @@ function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
     if (!ok) throw new Error(`pārstāvis nav ${company.name} pārstāvis`);
   }
 
+  function csddCore(h) {
+    if (!h.csdd) throw new Error("adapteris: nav csdd-waybills-core (draiveris)");
+    return h.csdd;
+  }
+
+  /** TIKAI LASA: pavadzīmes kartīte pēc numura (ex('tl') -> #lapv_num -> lapv a=2; rinda -> lapv a=11&lapv_id). */
+  async function lookupWaybill(c, h, no) {
+    const core = csddCore(h);
+    await c.ex("tl");
+    if (!(await c.ops.has("#lapv_num"))) throw new Error("CSDD: nav pavadzīmes meklēšanas lauka (#lapv_num)");
+    await c.ops.fill("#lapv_num", no);
+    await c.ex("lapv", 0, "a=2");
+    let d = core.parseWaybillDetail(await c.ops.p1Card(), no);
+    let lapvId = d ? String((await c.ops.value("#lapv_id")) || "") : "";
+    if (!d) {
+      const row = ((await c.ops.p1Onclicks()) || []).find((r) => r.t.toUpperCase().includes(no) && /lapv_id=\d{1,12}/.test(r.oc));
+      const id = row ? (/lapv_id=(\d{1,12})/.exec(row.oc) || [])[1] : "";
+      if (id) {
+        await c.ex("lapv", 0, `a=11&lapv_id=${id}`);
+        d = core.parseWaybillDetail(await c.ops.p1Card(), no);
+        lapvId = id;
+      }
+    }
+    return d ? { ...d, lapvId: /^\d+$/.test(lapvId) ? lapvId : "" } : null;
+  }
+
+  /** TIKAI LASA: saraksti (rep_lapv atskaite + tl), no kuriem ņem P-numurus. Kļūda sarakstā netraucē (paliek probe). */
+  async function listRows(c, h) {
+    const rows = [];
+    for (const step of [["rep_lapv"], ["rep_lapv", 1, ""], ["tl"]]) {
+      try {
+        await c.ex(...step);
+        rows.push(...(((await c.ops.p1Rows()) || []).filter(Boolean)));
+      } catch (err) {
+        if (h.log) h.log("csdd_list_failed", { step: step[0], err: err instanceof Error ? err.message.slice(0, 80) : "error" });
+      }
+    }
+    return rows;
+  }
+
+  /** TIKAI LASA: aktīvās pavadzīmes šīs firmas numuriem (arī ar roku izrakstītās). */
+  async function readActive(c, h, plates, known) {
+    const core = csddCore(h);
+    const res = await core.collectActiveWaybills({
+      plates,
+      listRows: await listRows(c, h),
+      known: known || [],
+      lookup: (no) => lookupWaybill(c, h, no),
+      nowMs: Date.now(),
+    });
+    if (res.ok) state.maxNumber = res.maxNumber;
+    return res;
+  }
+
   async function login(c, company, h) {
     if (await c.ops.has("#vards")) {
       const cred = credentialsFor(company, { env, ttrDir: c.ttrDir, cfg: h.cfg || {} });
@@ -358,13 +457,79 @@ function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
       await login(c, company, h);
     },
 
-    /** TIKAI LASA: numurs nav izvēlams jaunā pavadzīmē -> tam ir derīga pavadzīme. Nekas netiek pārtraukts. */
+    /**
+     * TIKAI LASA: vai numurs CSDD ir aizņemts. Divas pārbaudes: (1) CSDD pavadzīmju kartītes (arī ar roku izrakstītās,
+     * incidents 23.10: B193-7 bija izvēlams formā, lai gan P02812 bija derīga); (2) numurs nav izvēlams jaunā pavadzīmē.
+     * Nevar nolasīt -> kļūda (darbs Aivaram pirms Saglabāt). Nekas netiek pārtraukts.
+     */
     async findActiveWaybill(page, input, h) {
       const c = ctxOf(page, h);
+      const res = await readActive(c, h, [input.plate].map((p) => csddCore(h).dealerPlate(p) || p), input.knownWaybills);
+      if (!res.ok) throw new Error(`CSDD numura statusu nevarēja nolasīt: ${res.error}`);
+      const hit = (res.plates[csddCore(h).dealerPlate(input.plate)] || [])[0];
+      if (hit) return { waybillNo: hit.waybillNo, validUntil: hit.validUntil, brandModel: hit.brandModel };
       await c.ex("lapv", 0, "a=3");
       const rn = await c.ops.options("select[name=rn]");
       if (!rn.some((o) => compact(o.value) === compact(input.plate))) return { waybillNo: "(numurs CSDD nav brīvs)" };
       return null;
+    },
+
+    /** TIKAI LASA: sinhronizācija - aktīvās pavadzīmes visiem šīs firmas numuriem (sync.js). */
+    async readActiveWaybills(page, { plates, known }, h) {
+      const res = await readActive(ctxOf(page, h), h, plates, known);
+      return { ...res, platesChecked: plates };
+    },
+
+    /** TIKAI LASA: viena pavadzīme pēc numura (csdd-check.mjs, pārbaude pēc Saglabāt). */
+    async lookupWaybill(page, no, h) {
+      return lookupWaybill(ctxOf(page, h), h, String(no || "").toUpperCase());
+    },
+
+    /** Pēc Saglabāt numurs nav nolasīts: meklē jauno pavadzīmi CSDD pēc numuriem (lielākais pirms saglabāšanas + 1...). */
+    async verifySavedWaybill(page, input, h) {
+      const c = ctxOf(page, h);
+      const message = csddCore(h).csddMessageSnippet(await c.ops.p1Text().catch(() => ""));
+      const res = await csddCore(h).findNewWaybillAfterSave({
+        input,
+        beforeMax: state.maxNumber,
+        lookup: (no) => lookupWaybill(c, h, no),
+      });
+      if (res.found) {
+        const d = await lookupWaybill(c, h, res.waybillNo);
+        if (d && d.lapvId) state.lapvId = d.lapvId;
+      }
+      return { ...res, message };
+    },
+
+    /**
+     * Pārtrauc (CSDD "Pārtraukt!", Nila "anulēt") TIEŠI vienu pavadzīmi, ko lietotājs apstiprināja. Kā Aivara stop-p02806:
+     * kartīte pēc numura -> jābūt šim numuram, šai numurzīmei un "Derīgs" -> lapv_par -> forma ar šo numuru -> "Pārtraukt!"
+     * -> kartīte vēlreiz: vairs nav Derīgs. Izsauc tikai annul.js (worker: IRISS_WAYBILL_ANNUL_LIVE=1). Testi ar imitāciju.
+     */
+    async annulWaybill(page, { waybillNo, plate }, h) {
+      const c = ctxOf(page, h);
+      const no = String(waybillNo || "").toUpperCase();
+      if (!/^P\d{5,6}$/.test(no)) throw new Error("anulējamās pavadzīmes numurs nederīgs");
+      const before = await lookupWaybill(c, h, no);
+      if (!before) throw new Error(`${no} CSDD nav atrasta - neko nepārtraucu`);
+      if (compact(before.plate) !== compact(plate)) throw new Error(`${no} nav uz ${plate} - neko nepārtraucu`);
+      if (!before.active) return { ok: true, already: true, statusBefore: before.status };
+      state.annulArmed = no;
+      try {
+        await h.setPhase("annul");
+        await c.ex(ANNUL_EX);
+        const form = String(await c.ops.p1Text());
+        if (!form.toUpperCase().includes(no)) throw new Error(`pārtraukšanas forma nav ${no} - neko nepārtraucu`);
+        await c.ops.click("#p1 button:has-text('Pārtraukt!'), #p1 input[value='Pārtraukt!']", "annul");
+        await c.ops.waitJx();
+      } finally {
+        state.annulArmed = "";
+        await h.setPhase("fill");
+      }
+      const after = await lookupWaybill(c, h, no);
+      if (!after) throw new Error(`${no} pēc pārtraukšanas nav nolasāma - pārbaudi CSDD`);
+      if (after.active) throw new Error(`${no} joprojām Derīga - pārbaudi CSDD`);
+      return { ok: true, statusBefore: before.status, statusAfter: after.status };
     },
 
     /**
@@ -516,6 +681,7 @@ module.exports.createAdapter = createAdapter;
 module.exports.ALLOWED_EX = ALLOWED_EX;
 module.exports.ALLOWED_EX_PATTERNS = ALLOWED_EX_PATTERNS;
 module.exports.exAllowed = exAllowed;
+module.exports.ANNUL_EX = ANNUL_EX;
 module.exports.COMPANIES = COMPANIES;
 module.exports.readCredentialFile = readCredentialFile;
 module.exports.parseKavTree = parseKavTree;

@@ -86,6 +86,8 @@ export type AivarsCreateWaybillAction = {
   tradeAct: boolean;
   /** Komersanta pārstāvis akta pavadzīmei (citādi tukšs). */
   representative: string;
+  /** Lietotājs apstiprināja anulēt TIKAI šo pavadzīmi un izveidot jaunu (citādi tukšs - neko neanulēt). */
+  replaceWaybillNo: string;
 };
 
 export type CreateWaybillParseResult =
@@ -333,5 +335,6 @@ export function toAivarsCreateWaybillAction(request: WaybillRequest): AivarsCrea
     note_untrusted: comment,
     tradeAct: request.tradeAct,
     representative: request.tradeAct ? request.representative : "",
+    replaceWaybillNo: request.plateBusyAtCreate ? (request.replaceWaybillNo ?? "") : "",
   };
 }

@@ -6,6 +6,8 @@ import { waybillValidityTone } from "@/lib/iriss-pavadzimes-parse";
 import { listIrissPavadzimes, readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
 import type { IrissPavadzimeListRow, IrissPavadzimeRecord } from "@/lib/iriss-pavadzimes-types";
 import { isAllowlistedWaybillPlate } from "@/lib/iriss-waybill-plates";
+import { mergeCsddActiveRows } from "@/lib/iriss-waybill-csdd-plates";
+import { readCsddPlatesDocSafe } from "@/lib/iriss-waybill-csdd-plates-store";
 import type { IrissSection } from "@/lib/staff-roles";
 
 export type IrissPavadzimesPageData = {
@@ -74,7 +76,8 @@ export async function loadIrissPavadzimesActiveCardData(
 ): Promise<{
   rows: IrissPavadzimeListRow[];
 }> {
-  const cached = await readIrissPavadzimesCached();
-  const rows = selectActiveCardWaybills(cached, now);
+  const [cached, csdd] = await Promise.all([readIrissPavadzimesCached(), readCsddPlatesDocSafe()]);
+  // CSDD reģistrā aktīvas (arī ar roku izrakstītas) pavadzīmes, kuru nav indeksā - lai josla nerāda "brīvs".
+  const rows = mergeCsddActiveRows(selectActiveCardWaybills(cached, now), csdd, now);
   return { rows: opts.withOrders ?? true ? rows : rows.map(waybillRowWithoutOrder) };
 }

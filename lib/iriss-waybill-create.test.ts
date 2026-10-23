@@ -211,9 +211,11 @@ describe("Aivars create_waybill action", () => {
       "note_untrusted",
       "tradeAct",
       "representative",
+      "replaceWaybillNo",
     ]);
     expect(action.tradeAct).toBe(false);
     expect(action.representative).toBe("");
+    expect(action.replaceWaybillNo).toBe("");
   });
 
   it("trade-act request goes to Aivars without a route but with the representative", () => {

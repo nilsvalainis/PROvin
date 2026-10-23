@@ -253,6 +253,8 @@ export function IrissKomandaAivaramChat({
     setError(null);
     setBusy(true);
     const mobile = mobilePayload.current;
+    // Anulēt drīkst tikai to pavadzīmi, ko lietotājs redzēja logā (ja tā tikmēr mainījusies - serveris jautās vēlreiz).
+    const confirmWaybillNo = confirmBusy ? (confirm?.current?.number ?? "") : "";
     try {
       const res = await fetch("/api/admin/iriss/waybill-requests", {
         method: "POST",
@@ -260,7 +262,7 @@ export function IrissKomandaAivaramChat({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           mobile
-            ? { ...mobile, confirmBusy }
+            ? { ...mobile, confirmBusy, confirmWaybillNo }
             : {
                 plate,
                 brandModel,
@@ -268,6 +270,7 @@ export function IrissKomandaAivaramChat({
                 validHours: hoursChosen,
                 comment_untrusted: comment,
                 confirmBusy,
+                confirmWaybillNo,
               },
         ),
       });
@@ -587,10 +590,10 @@ export function IrissKomandaAivaramChat({
                     .filter(Boolean)
                     .join(", ")})`
                 : ""}
-              . Jauna pavadzīme pārtrauks esošo.
+              .
             </p>
-            <p className="mt-2 text-[13px] leading-snug text-[#374151]">
-              Apstiprini tikai tad, ja šim numuram tiešām vajag jaunu pavadzīmi.
+            <p className="mt-2 text-[13px] font-semibold leading-snug text-[#111827]">
+              Vai tiešām anulēt iepriekšējo un izveidot jaunu?
             </p>
             <div className="mt-3.5 flex flex-col gap-2">
               <button
@@ -599,7 +602,7 @@ export function IrissKomandaAivaramChat({
                 onClick={() => void submit(true)}
                 disabled={busy}
               >
-                Tomēr izveidot
+                Jā
               </button>
               <button
                 type="button"
@@ -609,7 +612,7 @@ export function IrissKomandaAivaramChat({
                   mobilePayload.current = null;
                 }}
               >
-                Atcelt
+                Nē
               </button>
             </div>
           </div>

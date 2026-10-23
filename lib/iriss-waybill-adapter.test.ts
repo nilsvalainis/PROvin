@@ -5,14 +5,45 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AUTO_WAYBILL_PLATES } from "@/lib/iriss-waybill-auto";
 import { scriptInput } from "@/scripts/iriss-ttr/waybill-worker-core.mjs";
-import { createLedger, isClickAllowed, parseJobInput, runRefill, runSave } from "@/scripts/iriss-ttr/waybill-scripts-core.mjs";
+import * as csddCore from "@/scripts/iriss-ttr/csdd-waybills-core.mjs";
+import {
+  createLedger,
+  formatRigaDate,
+  isClickAllowed,
+  parseJobInput,
+  runAnnul,
+  runRefill,
+  runSave,
+  runSync,
+} from "@/scripts/iriss-ttr/waybill-scripts-core.mjs";
 
 const require = createRequire(import.meta.url);
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const adapterMod: any = require("../scripts/iriss-ttr/waybill-adapter.cjs");
 
 type Opt = { value: string; text: string };
-type Phase = "login" | "fill" | "save" | "pdf";
+type Phase = "login" | "fill" | "save" | "pdf" | "annul";
+
+/** CSDD pavadzīme reģistrā (imitācija). until - ms. */
+type FakeWaybill = { no: string; plate: string; status: string; until: number; brand: string; vin?: string; id: string };
+const HOUR = 3_600_000;
+/** Noklusējumā: vēsture (beigusies) - CSDD sarakstā ir numuri, no kuriem sākt meklēt. */
+const historyWaybills = (): FakeWaybill[] => [
+  { no: "P02808", plate: "B193-7", status: "Beidzies", until: Date.now() - 50 * HOUR, brand: "TOYOTA COROLLA", id: "1557301" },
+  { no: "P02809", plate: "B762-7", status: "Pārtraukts", until: Date.now() - 2 * HOUR, brand: "VOLVO XC60", id: "1557302" },
+];
+const cardText = (w: FakeWaybill) =>
+  [
+    `Pavadzīmes numurs: ${w.no}`,
+    `Statuss: ${w.status}`,
+    `Numura zīme: ${w.plate}`,
+    `Marka, modelis: ${w.brand}`,
+    w.vin ? `VIN: ${w.vin}` : "",
+    `Izsniegta: ${formatRigaDate(new Date(w.until - 48 * HOUR).toISOString())}`,
+    `Derīga līdz: ${formatRigaDate(new Date(w.until).toISOString())}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
 
 const IRISS_REPS: Opt[] = [
   { value: "", text: "" },
@@ -71,14 +102,35 @@ const treeHtml = (id: string) =>
 type Company = "iriss" | "dza";
 
 /** CSDD TTR imitācija: atceras sesiju, formu, ex() izsaukumus un klikšķus (ar fāzi). */
-function fakeCsdd(opts: { company?: Company; freePlates?: string[]; acts?: string[]; kiestChoice?: boolean; lra?: string[]; saveText?: string } = {}) {
+function fakeCsdd(
+  opts: {
+    company?: Company;
+    freePlates?: string[];
+    acts?: string[];
+    kiestChoice?: boolean;
+    lra?: string[];
+    saveText?: string;
+    waybills?: FakeWaybill[];
+    /** Saraksts (rep_lapv) rāda šīs rindas; noklusējumā visas reģistra pavadzīmes. */
+    listRows?: string[];
+    /** CSDD atsakās saglabāt (numurs aizņemts): kļūdas teksts, nav #lapv_id, nekas netiek izveidots. */
+    saveRejects?: string;
+    /** Saglabā, bet lapā numura nav (incidents 23.10): pavadzīme izveidota, #p1 bez numura. */
+    saveHidesNumber?: boolean;
+    /** Pēc Saglabāt pavadzīmju meklēšana nestrādā (pārbaude nav iespējama). */
+    tlBrokenAfterSave?: boolean;
+  } = {},
+) {
   const company = opts.company || "iriss";
   const s = {
     loggedIn: false,
     loginUser: "",
     choosingCompany: false,
     kiest: "",
-    view: "login" as "login" | "main" | "lapv" | "acts" | "saved",
+    view: "login" as "login" | "main" | "lapv" | "acts" | "saved" | "tl" | "replist" | "card" | "notfound" | "parform" | "saveErr",
+    waybills: opts.waybills ?? historyWaybills(),
+    card: null as FakeWaybill | null,
+    annulled: [] as string[],
     form: {} as Record<string, string>,
     exCalls: [] as string[],
     clicks: [] as { sel: string; why: string; phase: Phase }[],
@@ -110,6 +162,11 @@ function fakeCsdd(opts: { company?: Company; freePlates?: string[]; acts?: strin
     },
     loc: (sel: string) => sel,
     safeClick: async () => {},
+    csdd: csddCore,
+  };
+  const nextNo = () => {
+    const max = Math.max(2809, ...s.waybills.map((w) => Number(w.no.slice(1))));
+    return `P${String(max + 1).padStart(5, "0")}`;
   };
   const ops = {
     goto: async () => {
@@ -123,11 +180,24 @@ function fakeCsdd(opts: { company?: Company; freePlates?: string[]; acts?: strin
         s.form = {};
       } else if (action === "lapv_kmod") s.form.__kmodLoaded = "1";
       else if (action === "rep_lapt_tl") s.view = "acts";
+      else if (action === "tl") s.view = "tl";
+      else if (action === "rep_lapv") s.view = "replist";
+      else if (action === "lapv" && params === "a=2") {
+        s.card = s.waybills.find((w) => w.no === s.form.lapv_num) ?? null;
+        s.view = s.card ? "card" : "notfound";
+      } else if (action === "lapv" && /^a=11&lapv_id=/.test(params || "")) {
+        s.card = s.waybills.find((w) => `a=11&lapv_id=${w.id}` === params) ?? null;
+        s.view = s.card ? "card" : "notfound";
+      } else if (action === "lapv_par") {
+        if (s.view !== "card" || !s.card) throw new Error("lapv_par bez kartītes");
+        s.view = "parform";
+      }
     },
     has: async (sel: string) => {
       if (sel === "#vards") return s.view === "login";
       if (sel === "select[name=kiest_id]") return s.choosingCompany;
       if (sel === "form[name=lapv_form]" || sel === "select[name=rn]") return s.view === "lapv";
+      if (sel === "#lapv_num") return s.view === "tl" && !(opts.tlBrokenAfterSave && s.saves > 0);
       return false;
     },
     fill: async (sel: string, v: string) => {
@@ -151,9 +221,27 @@ function fakeCsdd(opts: { company?: Company; freePlates?: string[]; acts?: strin
         __adr: f.i01_kav_id ? "TUKUMA NOV., TUKUMS, RĪGAS IELA" + (f.i01_kav_id === "345777" ? " 75" : "") : "",
       };
     },
-    value: async (sel: string) => (sel === "#lapv_id" && s.view === "saved" ? "991122" : ""),
-    p1Text: async () => (s.view === "saved" ? opts.saveText ?? "Pavadzīme saglabāta\nPavadzīmes numurs: P02810\nStatuss: Derīgs" : ""),
-    p1Rows: async () => (s.view === "acts" ? ["Nr. VIN Marka", ...(opts.acts || [])] : []),
+    value: async (sel: string) =>
+      sel === "#lapv_id" && s.view === "saved" && !opts.saveHidesNumber ? "991122" : sel === "#lapv_id" && s.view === "card" && s.card ? s.card.id : "",
+    p1Text: async () => {
+      if (s.view === "saved") {
+        if (opts.saveHidesNumber) return "Dati saglabāti";
+        return opts.saveText ?? "Pavadzīme saglabāta\nPavadzīmes numurs: P02810\nStatuss: Derīgs";
+      }
+      if (s.view === "saveErr") return opts.saveRejects ?? "";
+      if (s.view === "card" && s.card) return cardText(s.card);
+      if (s.view === "parform" && s.card) return `Pavadzīmes ${s.card.no} pārtraukšana\nIemesls:`;
+      if (s.view === "notfound") return "Nekas nav atrasts";
+      return "";
+    },
+    p1Rows: async () => {
+      if (s.view === "acts") return ["Nr. VIN Marka", ...(opts.acts || [])];
+      if (s.view === "replist") return ["Numurs Numura zīme Marka Statuss", ...(opts.listRows ?? s.waybills.map((w) => `${w.no} ${w.plate} ${w.brand} ${w.status}`))];
+      return [];
+    },
+    p1Onclicks: async () => [] as { oc: string; t: string }[],
+    // Kartīte ar lauku vērtībām (imitācijā teksts jau satur vērtības).
+    p1Card: async () => (s.view === "card" && s.card ? cardText(s.card) : s.view === "notfound" ? "Ar uzdotajiem parametriem pavadzīme nav atrasta" : ""),
     windowName: async () => s.windowName,
     setWindowName: async (n: string) => {
       s.windowName = n;
@@ -170,7 +258,12 @@ function fakeCsdd(opts: { company?: Company; freePlates?: string[]; acts?: strin
     click: async (sel: string, why: string) => {
       s.clicks.push({ sel, why, phase: s.phase });
       // Tas pats lēmums, ko driver safeClick pieņem pēc elementa nozīmes.
-      const el = why === "save" ? { text: "Saglabāt" } : { text: why === "company" ? "Turpināt" : "Ienākt", name: "submit" };
+      const el =
+        why === "save"
+          ? { text: "Saglabāt" }
+          : why === "annul"
+            ? { text: "Pārtraukt!" }
+            : { text: why === "company" ? "Turpināt" : "Ienākt", name: "submit" };
       if (!isClickAllowed(el, s.phase).allowed) throw new Error(`klikšķis aizliegts: ${why}`);
       if (why === "login") {
         s.loggedIn = true;
@@ -180,7 +273,24 @@ function fakeCsdd(opts: { company?: Company; freePlates?: string[]; acts?: strin
         s.choosingCompany = false;
       } else if (why === "save") {
         s.saves += 1;
+        if (opts.saveRejects) {
+          s.view = "saveErr";
+          return;
+        }
         s.view = "saved";
+        s.waybills.push({
+          no: opts.saveHidesNumber ? nextNo() : "P02810",
+          plate: s.form.rn,
+          status: "Derīgs",
+          until: Date.now() + Number(s.form.der_stundas || 1) * HOUR,
+          brand: "VOLKSWAGEN T-ROC",
+          id: "991122",
+        });
+      } else if (why === "annul") {
+        if (s.view !== "parform" || !s.card) throw new Error("Pārtraukt! bez formas");
+        s.card.status = "Pārtraukts";
+        s.annulled.push(s.card.no);
+        s.view = "card";
       }
     },
   };
@@ -231,6 +341,9 @@ function setup(fake: ReturnType<typeof fakeCsdd>, env: Record<string, string> = 
       await fake.h.setPhase("pdf");
     },
     readWaybillNo: () => a.readWaybillNo(page, fake.h),
+    verifySavedWaybill: (i: unknown) => a.verifySavedWaybill(page, i, fake.h),
+    readActiveWaybills: (q: unknown) => a.readActiveWaybills(page, q, fake.h),
+    annulWaybill: async (q: unknown) => a.annulWaybill(page, q, fake.h),
     downloadPdf: (n: string) => a.downloadPdf(page, n, fake.h),
     close: async () => {},
   };
@@ -242,7 +355,7 @@ const ledger = () => createLedger(path.join(dir, "state"));
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const refill = (args: any) =>
   runRefill(args).catch((e: Error) => ({ ok: false as const, error: e.message, fields: undefined }));
-const onlyAllowedEx = (calls: string[]) => calls.every((c) => adapterMod.ALLOWED_EX.has(c));
+const onlyAllowedEx = (calls: string[]) => calls.every((c) => adapterMod.exAllowed(c));
 
 describe("waybill-adapter: ĪRISS jauna standarta pavadzīme", () => {
   it("worker ievade ar ctx 'ctx1'/'ctx2' tiek pieņemta", () => {
@@ -351,7 +464,9 @@ describe("waybill-adapter: DZA (kiest_id 5092, lra 2894)", () => {
     expect(fake.s.clicks.map((c) => `${c.why}:${c.phase}`)).toEqual(["login:login", "company:login"]);
     expect(fake.s.form).toMatchObject({ lra_id: "2894", rn: "B192-7", gprs_id_kom_parstavis: "505410", kmod_id: "900", kmod_id_mod: "4955" });
     // Bez VIN akti tiek pārbaudīti pēc modeļa (tikai lasīšana).
-    expect(fake.s.exCalls[0]).toBe("lapv|0|a=3");
+    // Vispirms tikai lasa CSDD pavadzīmju sarakstu/kartītes (numura statuss), tad forma.
+    expect(fake.s.exCalls[0]).toBe("rep_lapv");
+    expect(fake.s.exCalls).toContain("lapv|0|a=3");
     expect(fake.s.exCalls).toContain("rep_lapt_tl");
   });
 
@@ -377,12 +492,15 @@ describe("waybill-adapter: DZA (kiest_id 5092, lra 2894)", () => {
 });
 
 describe("waybill-adapter: drošība", () => {
-  it("lapā atļautas tikai jaunas pavadzīmes darbības (nav lapv_par, a=2, tl)", () => {
-    expect([...adapterMod.ALLOWED_EX].sort()).toEqual(["lapv_kmod", "lapv|0|a=3", "rep_lapt_tl"]);
+  it("lapā atļautas tikai jaunas pavadzīmes un lasīšanas darbības; lapv_par (pārtraukt) - nekad ārpus annulWaybill", () => {
+    expect([...adapterMod.ALLOWED_EX].sort()).toEqual(["lapv_kmod", "lapv|0|a=3", "rep_lapt_tl", "rep_lapv", "rep_lapv|1|", "tl"]);
+    expect(adapterMod.exAllowed("lapv|0|a=2")).toBe(true);
+    expect(adapterMod.exAllowed("lapv|0|a=11&lapv_id=1557192")).toBe(true);
+    for (const k of ["lapv_par", "lapv|0|a=4", "lapv|0|a=11&lapv_id=1;x", "lapv_par|0|", "tl|1|"]) expect(adapterMod.exAllowed(k)).toBe(false);
   });
 
-  it("Saglabāt pēc klikšķa bez numura: lock paliek, otrreiz nespiež", async () => {
-    const fake = fakeCsdd({ saveText: "Kļūda" });
+  it("Saglabāt pēc klikšķa bez numura un CSDD nevar pārbaudīt: lock paliek, otrreiz nespiež", async () => {
+    const fake = fakeCsdd({ saveText: "Kļūda", tlBrokenAfterSave: true });
     const l = ledger();
     const driver = setup(fake);
     const first = await runSave({ input: input(iriss), ledger: l, driver });
@@ -461,5 +579,129 @@ describe("waybill-adapter: pieņemts auto (akts -> Noformēt pavadzīmi), tikai 
     expect(fake.s.form.rn).toBeUndefined();
     expect(fake.s.exCalls).not.toContain("lapv|0|a=0");
     expect(fake.s.saves).toBe(0);
+  });
+});
+
+describe("j10: numura statuss no CSDD reģistra (incidents 23.10, B193-7 + P02812)", () => {
+  const p02812 = (status = "Derīgs"): FakeWaybill => ({
+    no: "P02812",
+    plate: "B193-7",
+    status,
+    until: Date.now() + 40 * HOUR,
+    brand: "MERCEDES-BENZ ML 350",
+    id: "1557400",
+  });
+
+  it("ar roku izrakstīta P02812: B193-7 formā izvēlams, bet CSDD kartīte to atrod -> aizņemts, forma netiek pildīta", async () => {
+    const fake = fakeCsdd({ waybills: [...historyWaybills(), p02812()] });
+    const out = await refill({ input: input(iriss), ledger: ledger(), driver: setup(fake) });
+    expect(out).toMatchObject({ ok: false, busy: { waybillNo: "P02812" } });
+    expect(fake.s.form.rn).toBeUndefined();
+    expect(fake.s.saves).toBe(0);
+    expect(onlyAllowedEx(fake.s.exCalls)).toBe(true);
+  });
+
+  it("P02812 nav sarakstā (rep_lapv), bet ir nākamais numurs pēc zināmā -> to atrod pēc kārtas (probe)", async () => {
+    const fake = fakeCsdd({ waybills: [...historyWaybills(), p02812()], listRows: ["P02808 B193-7 TOYOTA COROLLA Beidzies"] });
+    const out = await refill({ input: input(iriss), ledger: ledger(), driver: setup(fake) });
+    expect(out).toMatchObject({ ok: false, busy: { waybillNo: "P02812" } });
+  });
+
+  it("CSDD sarakstos nav neviena numura un nav zināmo -> nevar nolasīt -> kļūda pirms formas (Aivaram)", async () => {
+    const fake = fakeCsdd({ waybills: [], listRows: [] });
+    const out = await refill({ input: input(iriss), ledger: ledger(), driver: setup(fake) });
+    expect(out).toMatchObject({ ok: false, error: expect.stringContaining("nevarēja nolasīt") });
+    expect(fake.s.form.rn).toBeUndefined();
+  });
+
+  it("beigusies vai pārtraukta pavadzīme numuru neaizņem", async () => {
+    const fake = fakeCsdd({ waybills: [...historyWaybills(), p02812("Pārtraukts")] });
+    const out = await refill({ input: input(iriss), ledger: ledger(), driver: setup(fake) });
+    expect(out.ok).toBe(true);
+  });
+
+  it("sync.js: visu firmas numuru aktīvās pavadzīmes (tikai lasa)", async () => {
+    const fake = fakeCsdd({ waybills: [...historyWaybills(), p02812()] });
+    const res = await runSync({
+      input: { jobId: "sync-1", ctx: 1, plates: ["B193-7", "B762-7"], known: [], plate: "B193-7", brandModel: "-", flow: "new", representative: "" },
+      driver: setup(fake),
+    });
+    expect(res).toMatchObject({ ok: true, platesChecked: ["B193-7", "B762-7"], maxNumber: "P02812" });
+    expect(res.plates["B193-7"]).toEqual([expect.objectContaining({ waybillNo: "P02812", brandModel: "MERCEDES-BENZ ML 350" })]);
+    expect(res.plates["B762-7"]).toEqual([]);
+    expect(fake.s.saves).toBe(0);
+    expect(fake.s.annulled).toEqual([]);
+    expect(onlyAllowedEx(fake.s.exCalls)).toBe(true);
+  });
+});
+
+describe("j10: droša numura nolasīšana pēc Saglabāt", () => {
+  it("lapā numura nav, bet CSDD pavadzīme izveidota -> numurs no CSDD kartītes (nav viltus 'kļūda pēc Saglabāt')", async () => {
+    const fake = fakeCsdd({ saveHidesNumber: true });
+    const l = ledger();
+    const saved = await runSave({ input: input(iriss), ledger: l, driver: setup(fake) });
+    expect(saved).toMatchObject({ ok: true, waybillNo: "P02810" });
+    expect(fake.s.saves).toBe(1);
+    expect(l.read(iriss.id)).toMatchObject({ state: "saved", waybillNo: "P02810" });
+  });
+
+  it("CSDD atsaka (numurs aizņemts): skaidrs 'nav izveidota' ar CSDD tekstu, otrreiz Saglabāt nespiež", async () => {
+    const fake = fakeCsdd({ saveRejects: "Kļūda: numura zīme B193-7 jau tiek izmantota pavadzīmē P02812" });
+    const l = ledger();
+    const driver = setup(fake);
+    const first = await runSave({ input: input(iriss), ledger: l, driver });
+    expect(first).toMatchObject({ ok: false, notCreated: true, error: expect.stringContaining("jau tiek izmantota") });
+    expect(first.error).not.toContain("pārbaudi CSDD");
+    const second = await runSave({ input: input(iriss), ledger: l, driver });
+    expect(second.ok).toBe(false);
+    expect(fake.s.saves).toBe(1);
+  });
+});
+
+describe("j10: anulēt iepriekšējo un izveidot jaunu (tikai imitācija, live netiek palaists)", () => {
+  const active = (no: string, plate = "B193-7"): FakeWaybill => ({ no, plate, status: "Derīgs", until: Date.now() + 30 * HOUR, brand: "MB ML350", id: `9${no.slice(1)}` });
+  const replaceInput = (no: string) => parseJobInput(JSON.stringify({ ...scriptInput(iriss), replaceWaybillNo: no }));
+
+  it("pārtrauc TIKAI apstiprināto pavadzīmi: kartīte -> lapv_par -> 'Pārtraukt!' (annul fāzē) -> vairs nav Derīga", async () => {
+    const fake = fakeCsdd({ waybills: [...historyWaybills(), active("P02812")] });
+    const l = ledger();
+    const res = await runAnnul({ input: replaceInput("P02812"), ledger: l, driver: setup(fake) });
+    expect(res).toMatchObject({ ok: true, waybillNo: "P02812" });
+    expect(fake.s.annulled).toEqual(["P02812"]);
+    expect(fake.s.clicks.filter((c) => c.why === "annul").map((c) => c.phase)).toEqual(["annul"]);
+    expect(fake.s.exCalls.filter((c) => c === "lapv_par")).toHaveLength(1);
+    expect(fake.s.phase).toBe("fill");
+    expect(fake.s.saves).toBe(0);
+    // Atkārtojums: neko vairs nespiež.
+    const again = await runAnnul({ input: replaceInput("P02812"), ledger: l, driver: setup(fake) });
+    expect(again).toMatchObject({ ok: true, repeated: true });
+    expect(fake.s.annulled).toEqual(["P02812"]);
+  });
+
+  it("pavadzīme uz cita numura vai nav atrasta -> neko nepārtrauc (nav lapv_par)", async () => {
+    for (const waybills of [[...historyWaybills(), active("P02812", "B762-7")], historyWaybills()]) {
+      const fake = fakeCsdd({ waybills });
+      const res = await runAnnul({ input: replaceInput("P02812"), ledger: ledger(), driver: setup(fake) });
+      expect(res).toMatchObject({ ok: false, error: expect.stringContaining("neko nepārtraucu") });
+      expect(fake.s.exCalls).not.toContain("lapv_par");
+      expect(fake.s.annulled).toEqual([]);
+    }
+  });
+
+  it("jau nav Derīga -> neko nespiež", async () => {
+    const fake = fakeCsdd({ waybills: [...historyWaybills(), { ...active("P02812"), status: "Beidzies" }] });
+    const res = await runAnnul({ input: replaceInput("P02812"), ledger: ledger(), driver: setup(fake) });
+    expect(res).toMatchObject({ ok: true, already: true });
+    expect(fake.s.exCalls).not.toContain("lapv_par");
+  });
+
+  it("bez apstiprinātā numura annul neko nedara; ārpus annul fāzes 'Pārtraukt!' nekad nav atļauts", async () => {
+    const fake = fakeCsdd({ waybills: [...historyWaybills(), active("P02812")] });
+    const res = await runAnnul({ input: input(iriss), ledger: ledger(), driver: setup(fake) });
+    expect(res.ok).toBe(false);
+    expect(fake.s.exCalls).toEqual([]);
+    for (const phase of ["login", "fill", "save", "pdf"] as const) expect(isClickAllowed({ text: "Pārtraukt!" }, phase).allowed).toBe(false);
+    expect(isClickAllowed({ text: "Pārtraukt!" }, "annul").allowed).toBe(true);
+    for (const text of ["Saglabāt", "Dzēst", "Anulēt aktu", "Turpināt"]) expect(isClickAllowed({ text }, "annul").allowed).toBe(false);
   });
 });
