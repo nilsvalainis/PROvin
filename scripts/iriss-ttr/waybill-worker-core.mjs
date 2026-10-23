@@ -183,7 +183,39 @@ export function formatTimings(marks) {
  */
 export function vpnBusyForHuman(status) {
   if (!status || typeof status !== "object") return true;
-  return status.blocked === true || status.stopPending === true;
+  // Hold režīmā (Nils 23.10) pavadzīmes pieprasījums pieslēdzas arī pēc atslēgšanas/izmešanas: vpn-ctl dod blockedForWaybill.
+  const blocked = typeof status.blockedForWaybill === "boolean" ? status.blockedForWaybill : status.blocked === true;
+  return blocked || status.stopPending === true;
+}
+
+/** IRISS_CSDD_SYNC_MIN -> minūtes 2-15 (noklusējums 5); "0" - periodiskā sinhronizācija izslēgta. */
+export function csddSyncMinutes(raw) {
+  const v = String(raw ?? "").trim();
+  if (v === "0") return 0;
+  const n = Number.parseInt(v, 10);
+  if (!Number.isFinite(n)) return 5;
+  return Math.min(15, Math.max(2, n));
+}
+
+/**
+ * Periodiska CSDD numuru sinhronizācija (tikai lasa), kamēr VPN jau ir ieslēgts. Pati VPN NEKAD neieslēdz.
+ * deps: { vpnStatus, runScript, api, now, log }, known: {ctx1:[], ctx2:[]}. Atgriež {outcome, plates?}.
+ */
+export async function periodicPlateSync(deps, known = {}) {
+  const vpn = await deps.vpnStatus().catch(() => null);
+  if (!vpn || vpn.vpn !== "up") return { outcome: "vpn_down" };
+  const results = [];
+  for (const ctx of [1, 2]) {
+    try {
+      results.push(await deps.runScript("sync", syncInput(ctx, known[`ctx${ctx}`] || [])));
+    } catch (err) {
+      results.push({ ok: false, error: err instanceof Error ? err.message.slice(0, 120) : "sync", platesChecked: platesOfCtx(ctx) });
+    }
+  }
+  const snapshot = plateSnapshot(results, new Date(deps.now()).toISOString());
+  await deps.api.plates(snapshot);
+  deps.log("plates_synced", { ok: results.map((r) => r?.ok === true), busy: snapshot.plates.filter((p) => p.active.length).map((p) => p.plate) });
+  return { outcome: "synced", plates: snapshot.plates };
 }
 
 /**

@@ -78,7 +78,9 @@ export async function GET(req: Request) {
     }),
   }));
   // Worker CSDD pārbaudei: zināmie numuri (CSDD + indekss) firmas numuriem, no kuriem sākt meklēt jaunākās pavadzīmes.
-  const known = scopeAuto && rows.some((row) => row.auto.standard) ? await knownByCtx() : null;
+  // Darbiem - tikai, ja ir standarta darbs; periodiskajai sinhronizācijai (ik ~5 min) - ar &known=1.
+  const wantKnown = scopeAuto && params.get("known") === "1";
+  const known = scopeAuto && (wantKnown || rows.some((row) => row.auto.standard)) ? await knownByCtx() : null;
   const requests = scopeAuto
     ? enabled
       ? rows
@@ -93,7 +95,7 @@ export async function GET(req: Request) {
         .filter((row) => !hiddenFromAivars(row.auto, row.request.createdAt, nowMs, live))
         .map((row) => toAivarsCreateWaybillAction(row.request));
   return NextResponse.json(
-    { ok: true, action: AIVARS_ACTION_CREATE_WAYBILL, enabled, requests },
+    { ok: true, action: AIVARS_ACTION_CREATE_WAYBILL, enabled, requests, ...(wantKnown && known ? { knownWaybills: known } : {}) },
     { headers: { "Cache-Control": "private, no-store" } },
   );
 }

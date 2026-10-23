@@ -1,16 +1,29 @@
 #!/usr/bin/env node
-// iriss-vpn-ctl: tur Hetzner CSDD VPN (systemd iriss-vpn) tikai tik ilgi, cik vajag darbiem.
-// - 127.0.0.1:9334 (tikai lokāli): GET /status, POST /lease (ieslēgt + pagarināt), POST /release (darbs beidzies), POST /stop.
+// iriss-vpn-ctl: Hetzner CSDD VPN (systemd iriss-vpn).
+// - 127.0.0.1:9334 (tikai lokāli): GET /status, POST /lease (ieslēgt; body {"purpose":"waybill"} no worker), POST /release, POST /stop.
 // - Ik 10 s: Vercel GET /api/iriss/aivars/ttr (Aivara Bearer) -> admin "Man vajag VPN" -> stop uzreiz.
-// - Idle autostop pēc IRISS_VPN_IDLE_MIN (15-30, nokl. 20) min kopš pēdējā darba.
-// - Ja VPN nokrīt ārēji (Nils pieslēdzās ar to pašu kontu), serveris to neatjauno 30 min.
-// Env (/etc/iriss-ttr/env, root 600): IRISS_API_BASE, IRISS_AIVARS_API_TOKEN, IRISS_VPN_IDLE_MIN.
+// - HOLD (noklusējums, Nils 23.10): VPN tur pastāvīgi (bez idle), lai worker periodiski redz CSDD numuru stāvokli.
+//   Atlaiž tikai: "Man vajag VPN" / POST /stop / vpnoff.sh, vai ja Nils izmet serveri (pieslēdzas pats). Tad serveris pats
+//   NEPIESLĒDZAS (nekādas cilpas); nākamais pavadzīmes pieprasījums (/lease purpose waybill) pieslēdz un tur atkal.
+//   Citi /lease (nakts reģistrs) pēc atslēgšanas/izmešanas gaida 30 min.
+// - IRISS_VPN_HOLD=0: vecais režīms - idle autostop pēc IRISS_VPN_IDLE_MIN (15-30, nokl. 20) min, /release saīsina lease.
+// - Aivara skripti (run.sh/run2.sh/vpnoff.sh, systemctl start/stop iriss-vpn) strādā kā līdz šim: ja tie VPN aptur,
+//   tas skaitās ārēja atslēgšana (serveris pats nepieslēdzas).
+// Env (/etc/iriss-ttr/env, root 600): IRISS_API_BASE, IRISS_AIVARS_API_TOKEN, IRISS_VPN_IDLE_MIN, IRISS_VPN_HOLD.
 // Nekad neizdrukā tokenu.
 
 import { execFile } from "node:child_process";
 import http from "node:http";
 import { promisify } from "node:util";
-import { canStartVpn, decideVpnAction, extendLease, releaseLease, vpnIdleMinutes } from "./vpn-lease.mjs";
+import {
+  canStartVpn,
+  decideVpnAction,
+  extendLease,
+  externalDropReason,
+  releaseLease,
+  vpnHoldMode,
+  vpnIdleMinutes,
+} from "./vpn-lease.mjs";
 
 const run = promisify(execFile);
 const PORT = 9334;
@@ -21,6 +34,7 @@ const TUN = "tun-iriss";
 const API_BASE = (process.env.IRISS_API_BASE || "https://www.provin.lv").replace(/\/+$/, "");
 const TOKEN = process.env.IRISS_AIVARS_API_TOKEN || "";
 const IDLE_MIN = vpnIdleMinutes(process.env.IRISS_VPN_IDLE_MIN);
+const HOLD = vpnHoldMode(process.env.IRISS_VPN_HOLD);
 
 const state = {
   leaseUntilMs: NaN,
@@ -29,6 +43,9 @@ const state = {
   lastManualStopMs: NaN,
   stoppingByUs: false,
   lastVpnUp: false,
+  /** Hold režīmā: serveris tur VPN (pēc /lease); false pēc atslēgšanas/izmešanas līdz nākamajam /lease. */
+  holding: false,
+  lastDropAt: "",
   lastReportKey: "",
   lastReportMs: 0,
 };
@@ -52,8 +69,19 @@ async function vpnUp() {
   }
 }
 
+/** systemd Result pēc VPN apstāšanās ("success" = kāds apturēja; cits = openconnect izgāja ar kļūdu). */
+async function vpnResult() {
+  try {
+    const { stdout } = await run("systemctl", ["show", VPN_UNIT, "-p", "Result", "--value"]);
+    return stdout.trim();
+  } catch {
+    return "";
+  }
+}
+
 async function stopVpn(reason) {
   state.stoppingByUs = true;
+  state.holding = false;
   try {
     await run("systemctl", ["stop", VPN_UNIT]);
   } catch (err) {
@@ -123,11 +151,14 @@ async function tick() {
     }
     let up = await vpnUp();
     if (state.lastVpnUp && !up && !state.stoppingByUs) {
-      // Ārēja atslēgšana (Restart=no): visticamāk Nils pieslēdzās ar to pašu kontu.
-      state.lastStopReason = "external";
+      // Ārēja atslēgšana (Restart=no): Nils pieslēdzās ar to pašu kontu (izmeta serveri) vai apturēja ar roku.
+      // Serveris pats NEPIESLĒDZAS; nākamais pavadzīmes pieprasījums pieslēgs (hold) vai pēc 30 min (vecais režīms).
+      state.lastStopReason = externalDropReason(await vpnResult());
       state.lastManualStopMs = Date.now();
+      state.lastDropAt = new Date().toISOString();
       state.leaseUntilMs = NaN;
-      log("vpn_dropped_external");
+      state.holding = false;
+      log("vpn_dropped_external", { reason: state.lastStopReason, hold: HOLD });
     }
     state.stoppingByUs = false;
     const decision = decideVpnAction({
@@ -136,6 +167,7 @@ async function tick() {
       nowMs: Date.now(),
       stopRequestedAt: remote.stopRequestedAt,
       handledStopAt: state.handledStopAt,
+      hold: HOLD,
     });
     if (decision.action === "stop") {
       state.handledStopAt = decision.handledStopAt;
@@ -156,13 +188,35 @@ function send(res, status, body) {
 }
 
 async function statusBody() {
+  const nowMs = Date.now();
   return {
     vpn: (await vpnUp()) ? "up" : "down",
     leaseUntil: Number.isFinite(state.leaseUntilMs) ? new Date(state.leaseUntilMs).toISOString() : "",
     idleMin: IDLE_MIN,
+    hold: HOLD,
+    holding: state.holding,
     lastStopReason: state.lastStopReason,
-    blocked: !canStartVpn({ nowMs: Date.now(), lastManualStopMs: state.lastManualStopMs }),
+    lastDropAt: state.lastDropAt,
+    // Vispārīgi /lease (nakts reģistrs): 30 min pēc atslēgšanas/izmešanas.
+    blocked: !canStartVpn({ nowMs, lastManualStopMs: state.lastManualStopMs }),
+    // Pavadzīmes pieprasījums: hold režīmā pieslēdz uzreiz (Nils 23.10).
+    blockedForWaybill: !canStartVpn({ nowMs, lastManualStopMs: state.lastManualStopMs, purpose: "waybill", hold: HOLD }),
   };
+}
+
+/** POST ķermenis (neobligāts JSON, piem. {"purpose":"waybill"}). */
+async function readBody(req) {
+  let raw = "";
+  for await (const chunk of req) {
+    raw += chunk;
+    if (raw.length > 2048) break;
+  }
+  try {
+    const o = JSON.parse(raw || "{}");
+    return o && typeof o === "object" ? o : {};
+  } catch {
+    return {};
+  }
 }
 
 const server = http.createServer(async (req, res) => {
@@ -175,19 +229,26 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, await statusBody());
     }
     if (req.method === "POST" && req.url === "/release") {
-      // Worker darbs beidzies (finally): lease saīsina līdz ~1 min; tālāk tick atslēdz VPN kā "idle".
-      state.leaseUntilMs = releaseLease(state.leaseUntilMs, Date.now());
+      // Worker darbs beidzies (finally). Hold režīmā VPN paliek; vecajā - lease ~1 min, tālāk tick atslēdz kā "idle".
+      state.leaseUntilMs = releaseLease(state.leaseUntilMs, Date.now(), HOLD);
       log("lease_released", { leaseUntil: Number.isFinite(state.leaseUntilMs) ? new Date(state.leaseUntilMs).toISOString() : "" });
       await report(await vpnUp(), true);
       return send(res, 200, await statusBody());
     }
     if (req.method === "POST" && req.url === "/lease") {
-      if (!canStartVpn({ nowMs: Date.now(), lastManualStopMs: state.lastManualStopMs })) {
+      const body = await readBody(req);
+      const purpose = body.purpose === "waybill" ? "waybill" : "";
+      if (!canStartVpn({ nowMs: Date.now(), lastManualStopMs: state.lastManualStopMs, purpose, hold: HOLD })) {
         return send(res, 409, { error: "vpn_blocked_manual", ...(await statusBody()) });
       }
       state.leaseUntilMs = extendLease(state.leaseUntilMs, Date.now(), IDLE_MIN);
       let upMs = 0;
-      if (!(await vpnUp())) upMs = await startVpn();
+      if (!(await vpnUp())) {
+        upMs = await startVpn();
+        // Pavadzīmes pieprasījums pēc atslēgšanas/izmešanas: pieslēdzas un tur atkal (bloķējums vairs nav spēkā).
+        if (purpose === "waybill") state.lastManualStopMs = NaN;
+      }
+      state.holding = HOLD;
       state.lastVpnUp = true;
       await report(true, true);
       return send(res, 200, { ...(await statusBody()), upMs });
@@ -202,6 +263,10 @@ if (!TOKEN) {
   log("missing_token_env");
   process.exit(2);
 }
-server.listen(PORT, "127.0.0.1", () => log("listening", { port: PORT, idleMin: IDLE_MIN }));
+server.listen(PORT, "127.0.0.1", () => log("listening", { port: PORT, idleMin: IDLE_MIN, hold: HOLD }));
+// Pēc restarta: ja VPN jau ieslēgts (piem. pirms restarta turēts), hold režīmā turpina to turēt.
+void vpnUp().then((up) => {
+  if (HOLD && up) state.holding = true;
+});
 setInterval(() => void tick(), TICK_MS);
 void tick();

@@ -16,7 +16,15 @@ Neaiztiek: `provin-csdd-vpn`, `provin-csdd-relay`, `provin-listings*`, `provin-m
   - `POST /release` - darbs beidzies (worker to sauc `finally` blokā pēc katra darba): lease saīsina līdz ~1 min, tad idle stop.
   - `POST /stop` - atslēdz uzreiz.
   - `GET /status`.
-- Idle autostop: `IRISS_VPN_IDLE_MIN` (15-30, noklusējums 20) min pēc pēdējā darba.
+- **Hold (noklusējums no j10, Nils 23.10)**: VPN tiek turēts pastāvīgi, lai sistēma vienmēr redz CSDD stāvokli
+  (worker kamēr VPN ieslēgts ik `IRISS_CSDD_SYNC_MIN` (2-15, nokl. 5) min palaiž `sync.js` abām firmām -> numuru momentuzņēmums).
+  Atlaiž TIKAI: admin "Man vajag VPN" / `POST /stop` / Aivara `vpnoff.sh` (vai `run.sh` autostop), vai ja Nils pieslēdzas
+  pats un izmet serveri (`lastStopReason` `kicked`; systemd Result nav "success"). Tad serveris pats NEPIESLĒDZAS (nav cilpas):
+  nākamais pavadzīmes pieprasījums (`POST /lease {"purpose":"waybill"}`) pieslēdz un tur atkal (numuru pārbauda pirms darba).
+  Citi `/lease` (nakts reģistrs) pēc atslēgšanas/izmešanas gaida 30 min (`blocked`); worker skatās `blockedForWaybill`.
+  `POST /release` hold režīmā VPN neatlaiž. Aivara `run.sh`/`run2.sh`/`vpnoff.sh` strādā kā līdz šim (ja tie VPN aptur -
+  serveris to neatjauno līdz nākamajam pavadzīmes pieprasījumam).
+- `IRISS_VPN_HOLD=0`: vecais režīms - idle autostop `IRISS_VPN_IDLE_MIN` (15-30, noklusējums 20) min pēc pēdējā darba.
 - Admin poga "Man vajag VPN" (`/admin/iriss/pavadzimes`) -> `POST /api/admin/iriss/vpn` -> serveris to nolasa ik 10 s (`GET /api/iriss/aivars/ttr`, Aivara Bearer) un atslēdz VPN. Statusu serveris ziņo `POST /api/iriss/aivars/ttr` (pie izmaiņām un ik 5 min).
 - Serveris nav publiski sasniedzams: jauns caddy maršruts nav vajadzīgs.
 
@@ -26,6 +34,7 @@ Neaiztiek: `provin-csdd-vpn`, `provin-csdd-relay`, `provin-listings*`, `provin-m
 IRISS_API_BASE=https://www.provin.lv
 IRISS_AIVARS_API_TOKEN=<tas pats, kas Vercel IRISS_AIVARS_API_TOKEN>
 IRISS_VPN_IDLE_MIN=20
+# j10: IRISS_VPN_HOLD=1 (noklusējums), IRISS_CSDD_SYNC_MIN=5, IRISS_WAYBILL_ANNUL_LIVE nav (anulēšana izslēgta)
 ```
 
 Uzstādīšana (root): `bash install-vpn-ctl.sh` (backup uz `/root/backup-pavadzimes-<datums>/`).
