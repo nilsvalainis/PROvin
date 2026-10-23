@@ -9,12 +9,18 @@ const FIELD_LV: Record<string, string> = {
   "tech.firstRegDate": "1. reģistrācija",
   "tech.displacementCm3": "Tilpums",
   "tech.powerKw": "Jauda",
+  "purchase.auction": "Izsole",
+  "purchase.auctionNo": "Izsoles nr.",
+  "purchase.purchaseDate": "Pirkuma datums",
+  "purchase.vat": "PVN režīms",
+  "purchase.purchasePriceEur": "Iepirkuma cena",
+  "purchase.transportEur": "Transports",
 };
 
 /** Vēstures rinda tekstā: lauks un "no -> uz" (tukšs = "-"). */
-export function v2HistoryText(row: V2HistoryRow, value: (v: string) => string = (v) => v): { field: string; change: string } {
+export function v2HistoryText(row: V2HistoryRow, value: (v: string, field: string) => string = (v) => v): { field: string; change: string } {
   const label = FIELD_LV[row.field] ?? row.field;
-  const show = (v: string) => (v ? value(v) : "-");
+  const show = (v: string) => (v ? value(v, row.field) : "-");
   return { field: row.undoOf ? `${label} (atsaukts)` : label, change: `${show(row.from)} -> ${show(row.to)}` };
 }
 
