@@ -22,6 +22,8 @@ export type IrissOfferAttachment = {
   thumbDataUrl?: string;
   thumbBlobPath?: string;
   thumbUrl?: string;
+  /** Dropbox faila id (/STOCK). Saglabājot serveris bildi ielādē Blob; Dropbox netiek mainīts. */
+  dropboxId?: string;
 };
 
 /** Maks. attēlu / pielikumu skaits vienā piedāvājumā (JSON PATCH ~12 MB ierobežojums). */
@@ -103,6 +105,8 @@ export type IrissOfferRecord = {
   validUntil: string;
   /** Precīzs termiņš UTC ISO (ievade Rīgas laikā). Vienīgais termiņa avots taimerim un lēmumam. Vecajos JSON nav. */
   validUntilAt?: string;
+  /** No kurienes veidots: "autoparks:<id>" | "logistics:<id>". Vecajos JSON nav. */
+  sourceRef?: string;
   attachments: IrissOfferAttachment[];
   /** Vāka foto id. Tukšs: pirmais attēls. */
   coverAttachmentId?: string;

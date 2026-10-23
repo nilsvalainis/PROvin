@@ -76,6 +76,8 @@ function tabClass(active: boolean): string {
 export type IrissOfferFormProps = {
   /** Saglabāta pasūtījuma id (pilnā izmēra bildēm skatā); tukšs, ja vēl nav saglabāts. */
   orderId?: string;
+  /** Saglabātajā piedāvājumā: /STOCK bildes, kuras Dropbox vēl neizdevās ielādēt (nākamā saglabāšana mēģina vēlreiz). */
+  savedPendingPhotos?: number;
   draft: OfferDraft;
   setDraft: React.Dispatch<React.SetStateAction<OfferDraft>>;
   autoFields: ReadonlySet<string>;
@@ -99,6 +101,7 @@ export type IrissOfferFormProps = {
 
 export function IrissOfferForm({
   orderId = "",
+  savedPendingPhotos = 0,
   draft,
   setDraft,
   autoFields,
@@ -128,6 +131,7 @@ export function IrissOfferForm({
   const [tab, setTab] = useState<IrissOfferFormTab>("bildes");
   const leftTab: IrissOfferFormTab = tab === "bildes" ? "pamatinfo" : tab;
   const photoCount = draft.attachments.length;
+  const pendingPhotos = savedPendingPhotos;
 
   return (
     <div
@@ -471,6 +475,11 @@ export function IrissOfferForm({
             <div className="flex items-center justify-between gap-2">
               <span className="text-[14px] font-semibold tabular-nums text-slate-500">
                 {photoCount} / {IRISS_MAX_OFFER_ATTACHMENTS}
+                {pendingPhotos > 0 ? (
+                  <span className="ml-2 text-[12px] font-medium text-amber-800">
+                    {pendingPhotos} {pendingPhotos === 1 ? "bilde vēl nav ielādēta" : "bildes vēl nav ielādētas"}
+                  </span>
+                ) : null}
               </span>
               <label
                 className={`inline-flex h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 ${filePrepare || photoCount >= IRISS_MAX_OFFER_ATTACHMENTS ? "pointer-events-none opacity-50" : "cursor-pointer"}`}

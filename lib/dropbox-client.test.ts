@@ -105,3 +105,36 @@ describe("dropboxApiArg", () => {
     expect(dropboxApiArg({ path: "/Ā – b" })).toBe('{"path":"/\\u0100 \\u2013 b"}');
   });
 });
+
+describe("dropbox thumbnails", () => {
+  const token = { get: async () => "tok", invalidate: () => undefined };
+
+  it("asks for a JPEG thumbnail of the given size and never writes", async () => {
+    const f = fakeFetch(() => new Response(Buffer.from("jpegbytes"), { status: 200 }));
+    const client = createDropboxClient({ token, fetchImpl: f.impl });
+    const bytes = await client.getThumbnail("id:abc", "w2048h1536");
+    expect(bytes.toString()).toBe("jpegbytes");
+    expect(f.calls[0]?.url).toBe("https://content.dropboxapi.com/2/files/get_thumbnail_v2");
+    const arg = JSON.parse(String((f.calls[0]?.init.headers as Record<string, string>)["Dropbox-API-Arg"]));
+    expect(arg).toEqual({ resource: { ".tag": "path", path: "id:abc" }, format: "jpeg", size: "w2048h1536", mode: "bestfit" });
+  });
+
+  it("batches up to 25 and skips failed entries", async () => {
+    const f = fakeFetch(() =>
+      json({
+        entries: [
+          { ".tag": "success", thumbnail: Buffer.from("a").toString("base64") },
+          { ".tag": "failure", failure: { ".tag": "unsupported_extension" } },
+        ],
+      }),
+    );
+    const client = createDropboxClient({ token, fetchImpl: f.impl });
+    const ids = Array.from({ length: 30 }, (_, i) => `id:${i}`);
+    const out = await client.getThumbnailBatch(ids);
+    const body = JSON.parse(String(f.calls[0]?.init.body)) as { entries: { path: string }[] };
+    expect(body.entries).toHaveLength(25);
+    expect(out.get("id:0")?.toString()).toBe("a");
+    expect(out.has("id:1")).toBe(false);
+    expect(await client.getThumbnailBatch([])).toEqual(new Map());
+  });
+});

@@ -41,6 +41,8 @@ export type DropboxEntry = {
   serverModified: string;
 };
 
+export type DropboxThumbnailSize = "w64h64" | "w256h256" | "w480h320" | "w1024h768" | "w2048h1536";
+
 export type DropboxListPage = { entries: DropboxEntry[]; cursor: string; hasMore: boolean };
 
 function str(v: unknown): string {
@@ -264,6 +266,42 @@ export function createDropboxClient(opts: { token: { get: () => Promise<string |
     async latestCursor(path: string, recursive: boolean): Promise<string> {
       const json = await rpc<{ cursor?: unknown }>("files/list_folder/get_latest_cursor", { path, recursive, include_deleted: true });
       return str(json.cursor);
+    },
+
+    /**
+     * JPEG sīktēls / samazināts attēls (arī HEIC -> JPEG). Dropbox izmēri: w256h256 režģim, w2048h1536 pilnam skatam.
+     * Fails Dropbox netiek mainīts.
+     */
+    async getThumbnail(pathOrId: string, size: DropboxThumbnailSize = "w256h256"): Promise<Buffer> {
+      const res = await call(`${DROPBOX_CONTENT}/files/get_thumbnail_v2`, (token) => ({
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Dropbox-API-Arg": dropboxApiArg({ resource: { ".tag": "path", path: pathOrId }, format: "jpeg", size, mode: "bestfit" }),
+        },
+      }));
+      return Buffer.from(await res.arrayBuffer());
+    },
+
+    /** Līdz 25 sīktēliem vienā pieprasījumā. Neizdevušies netiek atgriezti. */
+    async getThumbnailBatch(pathsOrIds: readonly string[], size: DropboxThumbnailSize = "w256h256"): Promise<Map<string, Buffer>> {
+      const out = new Map<string, Buffer>();
+      const list = [...new Set(pathsOrIds)].slice(0, 25);
+      if (list.length === 0) return out;
+      const res = await call(`${DROPBOX_CONTENT}/files/get_thumbnail_batch`, (token) => ({
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ entries: list.map((path) => ({ path, format: "jpeg", size, mode: "bestfit" })) }),
+      }));
+      const json = (await res.json()) as { entries?: unknown };
+      const entries = Array.isArray(json.entries) ? json.entries : [];
+      entries.forEach((raw, i) => {
+        const e = raw as { ".tag"?: unknown; thumbnail?: unknown };
+        const key = list[i];
+        if (!key || e[".tag"] !== "success" || typeof e.thumbnail !== "string") return;
+        out.set(key, Buffer.from(e.thumbnail, "base64"));
+      });
+      return out;
     },
 
     /** Visas lapas vienā sarakstā (ar drošības robežu). */
