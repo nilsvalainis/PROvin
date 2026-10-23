@@ -598,6 +598,8 @@ export function splitDealerCommentRoleHeadings(raw: string): string {
         else if (before === "\n") prefix = "\n";
         else prefix = "\n\n";
       }
+      // Mazais burts aiz virsraksta = garāka virsraksta turpinājums („… intervāli un faktiskā vēsture”).
+      if (/^\p{Ll}/u.test(after)) return `${prefix}${match}`;
       const suffix = after === "\n" || after === "" ? "" : "\n";
       return `${prefix}${heading}${suffix}`;
     });
@@ -656,8 +658,14 @@ function convertExpertBlockToHeadingBody(block: string): string {
   if (lines.length === 0) return "";
 
   if (lines.length >= 2 && looksLikeHeadingLine(lines[0]!)) {
-    const heading = lines[0]!.replace(/[.!?]\s*$/, "");
-    return `${heading}\n${lines.slice(1).join(" ")}`;
+    let headingLines = 1;
+    // Virsraksts pārnests divās rindās: 2. rinda bez punkta un sākas ar mazo burtu.
+    if (lines.length >= 3 && /^\p{Ll}/u.test(lines[1]!) && looksLikeHeadingLine(lines[1]!)) {
+      const joined = `${lines[0]} ${lines[1]}`;
+      if (joined.length <= 90 && !/[.!?]/.test(maskLatvianOrdinalDots(lines[1]!))) headingLines = 2;
+    }
+    const heading = lines.slice(0, headingLines).join(" ").replace(/[.!?]\s*$/, "");
+    return `${heading}\n${lines.slice(headingLines).join(" ")}`;
   }
 
   return lines.map(lineToHeadingBody).join("\n\n");

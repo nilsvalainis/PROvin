@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyProvinReportCopyVocabulary,
+  DEALER_COMMENT_ROLE_HEADINGS,
   dropTechnicalRisksSectionTitle,
   finalizeProvinExpertAiComment,
   normalizeExpertSourcePdfComment,
@@ -212,6 +213,44 @@ describe("splitDealerCommentRoleHeadings", () => {
     expect(out).toContain("eļļas maiņas intervāliem");
     expect(out).not.toMatch(/Eļļas maiņas intervāli\nem/i);
     expect(out).not.toMatch(/^Eļļas maiņas intervāli$/m);
+  });
+
+  it("keeps a longer model heading whole (BMW: Eļļas maiņas intervāli un faktiskā vēsture)", () => {
+    const raw =
+      "<strong>Eļļas maiņas intervāli un faktiskā vēsture</strong><br>Ražotāja intervāls: 30 000 km / 24 mēn. Dīlera datos maiņas notikušas ik pēc 20 000 līdz 28 000 km.";
+    const out = toExpertHeadingBodyPlain(raw);
+    expect(out).toBe(
+      "Eļļas maiņas intervāli un faktiskā vēsture\nRažotāja intervāls: 30 000 km / 24 mēn. Dīlera datos maiņas notikušas ik pēc 20 000 līdz 28 000 km.",
+    );
+    expect(out).not.toMatch(/^un faktiskā vēsture/m);
+  });
+
+  it("keeps every dealer role heading whole when the model extends it", () => {
+    for (const heading of DEALER_COMMENT_ROLE_HEADINGS) {
+      const longHeading = `${heading} pēc 2020. gada`;
+      const raw = `Ievada teikums par auto. ${longHeading}\nPirmais teikums par šo lomu.`;
+      const out = toExpertHeadingBodyPlain(raw);
+      expect(out).toContain(`${longHeading}\nPirmais teikums par šo lomu.`);
+      expect(out).not.toMatch(new RegExp(`^${heading}$`, "m"));
+    }
+  });
+
+  it("still splits a known heading glued before an uppercase sentence", () => {
+    const raw = "Dīlera dati ir pilni. Eļļas maiņas intervāli Ražotāja intervāls: 30 000 km / 24 mēn.";
+    expect(toExpertHeadingBodyPlain(raw)).toBe(
+      "Dīlera dati ir pilni.\n\nEļļas maiņas intervāli\nRažotāja intervāls: 30 000 km / 24 mēn.",
+    );
+  });
+
+  it("joins a heading wrapped onto two lines, but not a normal body line", () => {
+    const wrapped = "Eļļas maiņas intervāli\nun faktiskā vēsture\nRažotāja intervāls: 30 000 km / 24 mēn.";
+    expect(toExpertHeadingBodyPlain(wrapped, { splitDealerRoleHeadings: false })).toBe(
+      "Eļļas maiņas intervāli un faktiskā vēsture\nRažotāja intervāls: 30 000 km / 24 mēn.",
+    );
+    const body = "Pirmā reģistrācija\ndatos redzama 2016. gadā.\nOtrā rinda.";
+    expect(toExpertHeadingBodyPlain(body, { splitDealerRoleHeadings: false })).toBe(
+      "Pirmā reģistrācija\ndatos redzama 2016. gadā. Otrā rinda.",
+    );
   });
 
   it("skips dealer role headings for the technical-risks field", () => {
