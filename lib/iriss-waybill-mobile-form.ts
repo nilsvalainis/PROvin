@@ -30,14 +30,14 @@ import {
 } from "@/lib/iriss-waybill-requests";
 
 /**
- * Derīguma izvēles pavadzīmes formā (Nils 23.10): TIEŠI "1 h", "12 h", "48 h" un "Cits" (brīvs stundu skaits 1-2160).
- * Tās pašas izvēles telefonā, datorā un kolēģa skatā. Serveris un worker pieņem jebkuru veselu 1..2160.
+ * Derīguma izvēles pavadzīmes formā (Nils 23.10, CSDD max 48h): TIEŠI "1 h", "12 h", "48 h" un "Cits" (brīvs stundu skaits 1-48).
+ * Tās pašas izvēles telefonā, datorā un kolēģa skatā. Serveris pieņem jebkuru veselu 1..48 (CSDD maksimums).
  */
 export const WAYBILL_MOBILE_HOUR_PRESETS = [1, 12, 48] as const;
 /** Formas noklusējums. (Servera noklusējums bez laika, piem. tikai komentārs Aivaram, paliek DEFAULT_WAYBILL_VALID_HOURS.) */
 export const WAYBILL_FORM_DEFAULT_HOURS = 12;
 
-/** "Cits" lauks: vesels stundu skaits 1..2160, citādi null (0, 2161, 1.5, teksts). */
+/** "Cits" lauks: vesels stundu skaits 1..48, citādi null (0, 49, 1.5, teksts). */
 export function parseWaybillCustomHours(raw: string): number | null {
   const s = raw.trim();
   if (!/^\d{1,4}$/.test(s)) return null;

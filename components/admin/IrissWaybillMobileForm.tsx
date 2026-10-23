@@ -527,7 +527,7 @@ export function IrissWaybillHowItWorks({ plates }: { plates: readonly string[] }
       <p className={styles.howLead}>Pavadzīme 5 soļos. Parasti gatava dažu minūšu laikā.</p>
       <ol className={styles.howSteps}>
         <li>
-          <span className={`${styles.num} ${styles.numAi}`}>1</span>
+          <span className={styles.num}>1</span>
           <div>
             <h4>Aivars ir Dzintarzeme Auto jaunais pavadzīmju asistents</h4>
             <p>Tu aizpildi formu, Aivars pats izveido CSDD pavadzīmi un atsūta PDF. Citus darbus viņš neveic.</p>
@@ -580,7 +580,7 @@ export function IrissWaybillHowItWorks({ plates }: { plates: readonly string[] }
           </div>
         </li>
         <li>
-          <span className={`${styles.num} ${styles.numInfo}`}>i</span>
+          <span className={styles.num}>i</span>
           <div>
             <h4>Jāzina</h4>
             <p>Numuru salīdzināšana - CSDD Tukuma filiālē. Ja vajag citu vietu, raksti komentārā.</p>

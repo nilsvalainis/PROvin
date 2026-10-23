@@ -434,18 +434,10 @@
   flex: none;
   place-items: center;
   border-radius: 999px;
-  background: var(--btn-dark-bg, #1f2430);
-  color: var(--btn-dark-fg, #fff);
-  font-size: 15px;
-  font-weight: 700;
-}
-.mf .num.numAi {
   background: #3d5bd9;
   color: #fff;
-}
-.mf .num.numInfo {
-  background: var(--fill, rgba(116, 120, 138, 0.19));
-  color: var(--ink, #0b0c10);
+  font-size: 15px;
+  font-weight: 700;
 }
 .mf .mini {
   display: flex;

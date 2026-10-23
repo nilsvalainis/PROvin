@@ -19,34 +19,34 @@ import type { WaybillAivarsReply, WaybillRequest } from "@/lib/iriss-waybill-req
 const base = initialWaybillMobileForm("B192-7");
 
 describe("phone waybill form", () => {
-  it("hour choices are exactly 1 h, 12 h, 48 h + Cits (1-2160), default 12 h", () => {
+  it("hour choices are exactly 1 h, 12 h, 48 h + Cits (1-48, CSDD max), default 12 h", () => {
     expect([...WAYBILL_MOBILE_HOUR_PRESETS]).toEqual([1, 12, 48]);
     expect(WAYBILL_FORM_DEFAULT_HOURS).toBe(12);
     expect(base.hoursPreset).toBe(12);
     for (const h of WAYBILL_MOBILE_HOUR_PRESETS) expect(waybillMobileHours({ hoursPreset: h, hoursOther: "" })).toBe(h);
     expect(parseWaybillCustomHours("1")).toBe(1);
     expect(parseWaybillCustomHours("36")).toBe(36);
-    expect(parseWaybillCustomHours(" 2160 ")).toBe(2160);
-    for (const bad of ["0", "2161", "", "1.5", "-3", "12h", "99999"]) expect(parseWaybillCustomHours(bad)).toBeNull();
-    // Katru izvēli serveris pieņem; robežas 0 un 2161 forma neļauj nosūtīt.
+    expect(parseWaybillCustomHours(" 48 ")).toBe(48);
+    for (const bad of ["0", "49", "", "1.5", "-3", "12h", "99999"]) expect(parseWaybillCustomHours(bad)).toBeNull();
+    // Katru izvēli serveris pieņem; robežas 0 un 49 forma neļauj nosūtīt.
     const now = new Date("2026-10-23T10:00:00.000Z");
-    for (const [hoursPreset, hoursOther] of [[1, ""], [12, ""], [48, ""], [null, "36"], [null, "2160"]] as const) {
+    for (const [hoursPreset, hoursOther] of [[1, ""], [12, ""], [48, ""], [null, "36"], [null, "48"]] as const) {
       const built = buildWaybillMobilePayload({ ...base, hoursPreset, hoursOther, comment: "192 uz VW Golf" });
       expect(built.ok).toBe(true);
       if (built.ok) expect(parseCreateWaybillInput(built.payload, now).ok).toBe(true);
     }
-    for (const hoursOther of ["0", "2161"]) {
+    for (const hoursOther of ["0", "49"]) {
       const built = buildWaybillMobilePayload({ ...base, hoursPreset: null, hoursOther, comment: "192 uz VW Golf" });
-      expect(built).toEqual({ ok: false, error: "Ieraksti derīgumu: no 1 līdz 2160 h." });
+      expect(built).toEqual({ ok: false, error: "Ieraksti derīgumu: no 1 līdz 48 h." });
     }
   });
 
   it("start Tukums, preset and own hours work", () => {
     expect(base.from).toBe("tukums");
     expect(waybillMobileHours({ hoursPreset: 12, hoursOther: "" })).toBe(12);
-    expect(waybillMobileHours({ hoursPreset: null, hoursOther: "72" })).toBe(72);
+    expect(waybillMobileHours({ hoursPreset: null, hoursOther: "36" })).toBe(36);
     expect(waybillMobileHours({ hoursPreset: null, hoursOther: "0" })).toBeNull();
-    expect(waybillMobileHours({ hoursPreset: null, hoursOther: "2161" })).toBeNull();
+    expect(waybillMobileHours({ hoursPreset: null, hoursOther: "49" })).toBeNull();
     expect(waybillMobileHours({ hoursPreset: null, hoursOther: "" })).toBeNull();
   });
 

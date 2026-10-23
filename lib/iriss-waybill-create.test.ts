@@ -68,7 +68,7 @@ describe("create_waybill validation", () => {
       expect(ignoredRoute.value.routeTo).toBe(DEFAULT_WAYBILL_ROUTE_TO);
     }
     expect(parseCreateWaybillInput({ ...valid, validHours: 0 }, now).ok).toBe(false);
-    expect(parseCreateWaybillInput({ ...valid, validHours: 2161 }, now).ok).toBe(false);
+    expect(parseCreateWaybillInput({ ...valid, validHours: 49 }, now).ok).toBe(false);
     const defaults = parseCreateWaybillInput({ plate: "B762-7", brandModel: "VW Passat" }, now);
     expect(defaults.ok).toBe(true);
     if (defaults.ok) expect(defaults.value.validHours).toBe(48);
@@ -318,15 +318,15 @@ describe("Aivars contract and Pavadzīmes UI boundaries", () => {
   });
 });
 
-describe("servera API derīgums (Nils 23.10): 1, 12, 48 h vai brīvi 1-2160, abām plūsmām", () => {
+describe("servera API derīgums (Nils 23.10, CSDD max 48h): 1, 12, 48 h vai brīvi 1-48, abām plūsmām", () => {
   const at = new Date("2026-10-23T10:00:00.000Z");
   const flows = {
     tradeAct: { plate: "B193-7", brandModel: "Peugeot 5008", vin: "VF30ARHHAAS201388", tradeAct: true, representative: "Nils Valainis" },
     new: { plate: "B762-7", brandModel: "VW Passat" },
   };
   for (const [name, body] of Object.entries(flows)) {
-    it(`${name}: pieņem 1, 12, 48, 36, 2160 (arī kā tekstu) un noraida 0, 2161, 1.5`, () => {
-      for (const validHours of [1, 12, 48, 36, 2160, "12"]) {
+    it(`${name}: pieņem 1, 12, 48, 36 (arī kā tekstu) un noraida 0, 49, 1.5`, () => {
+      for (const validHours of [1, 12, 48, 36, "12"]) {
         const parsed = parseCreateWaybillInput({ ...body, validHours }, at);
         expect(parsed.ok).toBe(true);
         if (!parsed.ok) continue;
@@ -335,8 +335,8 @@ describe("servera API derīgums (Nils 23.10): 1, 12, 48 h vai brīvi 1-2160, ab�
         expect(Date.parse(parsed.value.validUntil) - Date.parse(parsed.value.validFrom)).toBe(h * 3_600_000);
         if (name === "tradeAct") expect(parsed.value).toMatchObject({ tradeAct: true, routeFrom: "", routeTo: "" });
       }
-      for (const validHours of [0, 2161, 1.5, "0", "2161", "-1"]) {
-        expect(parseCreateWaybillInput({ ...body, validHours }, at)).toEqual({ ok: false, error: "Derīgums: no 1 līdz 2160 h." });
+      for (const validHours of [0, 49, 1.5, "0", "49", "-1"]) {
+        expect(parseCreateWaybillInput({ ...body, validHours }, at)).toEqual({ ok: false, error: "Derīgums: no 1 līdz 48 h." });
       }
     });
   }
