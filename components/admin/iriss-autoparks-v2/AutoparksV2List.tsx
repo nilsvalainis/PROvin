@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { irissCreateOfferHref } from "@/components/admin/IrissCreateOfferButton";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { AUTOPARKS_STATUS_LV, AUTOPARKS_STATUS_SHORT_LV, type AutoparksOwner, type AutoparksStatus } from "@/lib/iriss-autoparks";
@@ -19,7 +20,7 @@ const BASE = "/admin/iriss/autoparks-v2";
 /** Datora statusu flīzes (D1): visi + statusi bez "Pārdots". */
 const PIPE: readonly AutoparksStatus[] = AUTOPARKS_V2_STATUS_ORDER.filter((s) => s !== "sold");
 
-export function AutoparksV2List({ initialCars }: { initialCars: AutoparksV2ListRow[] }) {
+export function AutoparksV2List({ initialCars, canCreateOffer = false }: { initialCars: AutoparksV2ListRow[]; canCreateOffer?: boolean }) {
   const [owner, setOwner] = useState<AutoparksV2OwnerFilter>("all");
   const [status, setStatus] = useState<AutoparksStatus | null>(null);
   const [query, setQuery] = useState("");
@@ -45,6 +46,11 @@ export function AutoparksV2List({ initialCars }: { initialCars: AutoparksV2ListR
           <span aria-hidden>⌕</span>
           <input data-bare value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Marka, modelis vai VIN" aria-label="Meklēt" />
         </div>
+        {canCreateOffer ? (
+          <Link href={irissCreateOfferHref()} className="ap2-btn dark sm">
+            + Piedāvājums
+          </Link>
+        ) : null}
         <button type="button" className="ap2-btn dark sm" onClick={() => setAdding(true)}>
           + Auto
         </button>
