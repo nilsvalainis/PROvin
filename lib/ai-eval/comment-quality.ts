@@ -492,10 +492,13 @@ export function evaluateExpertCommentQuality(
     const facts = extractCanonicalFactsFromPrompt(opts.sourcePrompt);
     if (facts) {
       const factField = field === "source_dealer" ? "source" : field;
+      const focus = extractSourceFocusFromPrompt(opts.sourcePrompt);
       for (const flag of checkCommentContradictions({
         text: t,
         field: factField,
         facts,
+        focusSourceLabel: focus.label,
+        focusSourceText: focus.text,
       })) {
         if (flag.level !== "E") continue;
         issues.push({
@@ -529,6 +532,14 @@ export function evaluateExpertCommentQuality(
   );
 
   return issues;
+}
+
+/** Avota komentāra prompts: fokusa avota nosaukums un tā datu bloks. */
+export function extractSourceFocusFromPrompt(prompt: string): { label: string | null; text: string | null } {
+  const label = prompt.match(/^Avota sadaļa \(fokuss\):\s*(.+)$/m)?.[1]?.trim() ?? null;
+  const text =
+    prompt.match(/=== Konkrētā avota „[^”\n]*” dati[^\n]*===\n([\s\S]*?)\n\nSagatavo komentāru/)?.[1] ?? null;
+  return { label, text };
 }
 
 export function assertExpertCommentQuality(

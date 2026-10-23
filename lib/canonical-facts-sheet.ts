@@ -4,8 +4,10 @@
  * atsaukumi, sludinājums, foto kopsavilkums. Nav EUR remonta tāmes.
  */
 import {
+  ODOMETER_REPLACEMENT_RE,
   analyzeOdometerRollbackBounds,
   formatForensicsInt,
+  isRealOdometerDrop,
   type OdometerRollbackBound,
 } from "@/lib/admin-ai-mileage-forensics";
 import {
@@ -69,6 +71,9 @@ export const CANONICAL_FACTS_INSTRUCTION =
 export const CANONICAL_FACTS_MAX_CHARS = 4000;
 export const CANONICAL_FACTS_TARGET_MIN_CHARS = 2000;
 
+export const SUSPECTED_ENTRY_ERROR_LINE_PREFIX =
+  "Atsevišķs neatbilstošs rādījums (iespējama ievades kļūda, NEPIEMINĒT kā korekciju)";
+
 /** Kritums, no kura „nelielas nobīdes” ir minimizācija. */
 export const LARGE_ODOMETER_DROP_KM = 5000;
 
@@ -107,6 +112,8 @@ export type CanonicalFirstReg = {
   countryIso: string;
 };
 
+export type SuspectedEntryError = { date: string; km: number; source: string };
+
 export type CanonicalFacts = {
   vin: string;
   makeModel: string;
@@ -114,7 +121,10 @@ export type CanonicalFacts = {
   owners: CanonicalOwnerFacts;
   firstReg: CanonicalFirstReg;
   latestKm: number | null;
+  /** Tikai reāli kritumi (iespējama korekcija). Izolētas ievades kļūdas - `suspectedEntryErrors`. */
   rollbacks: OdometerRollbackBound[];
+  /** Viens rādījums ārpus secības; AI to NEraksta kā korekciju (nobraukuma laukā max 1 neitrāls teikums). */
+  suspectedEntryErrors: SuspectedEntryError[];
   odometerAnomaly: boolean;
   carverticalMileageWarning: boolean;
   maxRollbackDropKm: number;
@@ -270,9 +280,17 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
   const csdd = blocks.csdd;
   const mileageRows = collectUnifiedMileageRows(unifiedMileagePayload(blocks));
-  const rollbacks = analyzeOdometerRollbackBounds(mileageRows);
+  const allDrops = analyzeOdometerRollbackBounds(mileageRows, {
+    odometerReplacementNoted: ODOMETER_REPLACEMENT_RE.test(sourceHaystackFrom(blocks, [])),
+  });
+  const rollbacks = allDrops.filter(isRealOdometerDrop);
+  const suspectedEntryErrors = allDrops
+    .filter((b) => !isRealOdometerDrop(b) && b.suspect)
+    .map((b) => b.suspect!);
   const anomalyMap = computeOdometerAnomalyBySourceOrder(mileageRows);
-  const odometerAnomaly = hasAnyOdometerAnomaly(anomalyMap);
+  // Tabulas karogs no tā paša izolētā punkta nav korekcijas pazīme.
+  const odometerAnomaly =
+    hasAnyOdometerAnomaly(anomalyMap) && !(allDrops.length > 0 && rollbacks.length === 0);
   const carverticalMileageWarning = collectCarverticalMileageWarning(blocks);
   const chrono = sortMileageChronological(mileageRows);
   const lastWithKm = [...chrono].reverse().find((r) => parseOdometerKm(r.odometer) != null);
@@ -340,6 +358,7 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     firstReg,
     latestKm,
     rollbacks,
+    suspectedEntryErrors,
     odometerAnomaly,
     carverticalMileageWarning,
     maxRollbackDropKm: rollbacks.reduce((m, r) => Math.max(m, r.minDropKm), 0),
@@ -429,7 +448,7 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
   } else {
     for (const b of facts.rollbacks) {
       lines.push(
-        `- Kritums: ${b.fromDate} ${formatForensicsInt(b.fromKm)} km → ${b.toDate} ${formatForensicsInt(b.toKm)} km; minimums ${formatForensicsInt(b.minDropKm)} km${b.maxDropKm != null ? `, robeža ~${formatForensicsInt(b.maxDropKm)} km` : ""}`,
+        `- Kritums: ${b.fromDate} ${formatForensicsInt(b.fromKm)} km${dropPointOrigin(b.fromSource, b.fromCountry)} → ${b.toDate} ${formatForensicsInt(b.toKm)} km${dropPointOrigin(b.toSource, b.toCountry)}; minimums ${formatForensicsInt(b.minDropKm)} km${b.maxDropKm != null ? `, robeža ~${formatForensicsInt(b.maxDropKm)} km` : ""}`,
       );
     }
     if (facts.maxRollbackDropKm >= LARGE_ODOMETER_DROP_KM) {
@@ -437,6 +456,12 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
         `- Liels kritums (${formatForensicsInt(facts.maxRollbackDropKm)} km): aizliegts mīkstināt ar „nelielas nobīdes”.`,
       );
     }
+  }
+
+  for (const e of facts.suspectedEntryErrors) {
+    lines.push(
+      `- ${SUSPECTED_ENTRY_ERROR_LINE_PREFIX}: ${e.date}, ${formatForensicsInt(e.km)} km, ${e.source}`,
+    );
   }
 
   lines.push(`Negadījumi / zaudējumi: ${facts.incidents.length} rindas`);
@@ -479,6 +504,11 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
   const body = lines.join("\n");
   const closed = `${clipSheet(body)}\n=== BEIGAS ${CANONICAL_FACTS_HEADER} ===`;
   return closed;
+}
+
+function dropPointOrigin(source?: string, country?: string): string {
+  const bits = [source?.trim(), country?.trim()].filter(Boolean);
+  return bits.length ? ` (${bits.join(", ")})` : "";
 }
 
 export function buildCanonicalFactsSheet(input: CanonicalFactsInput): string {
@@ -560,15 +590,65 @@ export function hasRollbackOrMileageWarning(facts: CanonicalFacts): boolean {
   return facts.rollbacks.length > 0 || facts.odometerAnomaly || facts.carverticalMileageWarning;
 }
 
+function labelKey(raw: string): string {
+  return raw.trim().toLowerCase();
+}
+
+/** Admin bloka nosaukums ↔ nobraukuma rindas avots (piem. CC.VIN rindas PDF nosaukums). */
+const SOURCE_LABEL_ALIASES: Record<string, string[]> = {
+  "cc.vin": ["izsoļu portālu arhīvs"],
+  "izsoļu portālu arhīvs": ["cc.vin"],
+  oneauto: ["oficiālā dīlera dati"],
+};
+
+export function sourceLabelsMatch(focusLabel: string, rowSources: string): boolean {
+  const focus = labelKey(focusLabel);
+  if (!focus) return false;
+  const keys = [focus, ...(SOURCE_LABEL_ALIASES[focus] ?? [])];
+  return rowSources
+    .split(",")
+    .map(labelKey)
+    .some((s) => keys.includes(s));
+}
+
+/**
+ * Vai šim laukam jāpiemin odometra kritums (`rollback_omitted`).
+ * Nobraukums un kopsavilkums - vienmēr. Avota lauks - tikai, ja kritums ir ŠAJĀ avotā
+ * (vai CarVertical brīdinājums CarVertical laukā). Pārējie lauki - nē.
+ */
+/** Lauki, kuros minimizējošs formulējums par lielu kritumu ir kļūda. */
 export function isMileageRelatedCommentField(field?: string | null): boolean {
   const f = (field ?? "").toLowerCase();
   return (
     f === "mileage" ||
-    f === "source" ||
-    f === "source_dealer" ||
     f === "summary" ||
     f === "sources_comparison" ||
     f.startsWith("source") ||
     /csdd|autodna|carvertical|cc_vin|auto_records|mileage/.test(f)
+  );
+}
+
+export function rollbackMentionRequired(
+  field: string | null | undefined,
+  facts: CanonicalFacts,
+  focusSourceLabel?: string | null,
+): boolean {
+  const f = (field ?? "").toLowerCase();
+  if (!hasRollbackOrMileageWarning(facts)) return false;
+  if (f === "mileage" || f === "summary") return true;
+  // Admin faktu pārbaude: lauks ir bloka atslēga („csdd”, „autodna”, „auto_records:oil…”).
+  const [blockKey, subField] = f.split(":");
+  const blockLabel = (SOURCE_BLOCK_LABELS as Record<string, string>)[blockKey ?? ""];
+  let focus = "";
+  if (blockLabel) {
+    if (subField) return false;
+    focus = blockKey === "oneauto" ? "OFICIĀLĀ DĪLERA DATI" : blockLabel;
+  } else if (f.startsWith("source") && f !== "sources_comparison") {
+    focus = focusSourceLabel?.trim() ?? "";
+  }
+  if (!focus) return false;
+  if (facts.carverticalMileageWarning && labelKey(focus) === "carvertical") return true;
+  return facts.rollbacks.some(
+    (b) => sourceLabelsMatch(focus, b.fromSource ?? "") || sourceLabelsMatch(focus, b.toSource ?? ""),
   );
 }
