@@ -129,6 +129,8 @@ export type AutoparksCarV2 = {
   photoCheckedAt: string;
   service: V2Service;
   expenses: V2Expense[];
+  /** Cenu lapas labojumi: null/"" = ņem v1 vērtību (v1 lauki netiek pārrakstīti). */
+  priceSheet: { displayName: string; equipmentLine: string; salePriceEur: number | null; listPriceEur: number | null };
 };
 
 export type V2HistoryRow = {
@@ -195,6 +197,7 @@ export function emptyCarV2(): AutoparksCarV2 {
     photoCheckedAt: "",
     service: { diagFileIds: [], problems: [], notes: "", invoices: [] },
     expenses: [],
+    priceSheet: { displayName: "", equipmentLine: "", salePriceEur: null, listPriceEur: null },
   };
 }
 
@@ -275,6 +278,7 @@ export function normalizeCarV2(raw: unknown): AutoparksCarV2 {
   const nc = isObj(raw.numberCheck) ? raw.numberCheck : {};
   const photo = isObj(raw.mainPhoto) ? raw.mainPhoto : null;
   const fields = isObj(raw.fields) ? raw.fields : {};
+  const ps = isObj(raw.priceSheet) ? raw.priceSheet : {};
   const mode = typeof vat.mode === "string" && (V2_VAT_MODES as readonly string[]).includes(vat.mode) ? (vat.mode as V2VatMode) : "";
   return {
     fields: { plate: str(fields.plate, 16).toUpperCase(), location: str(fields.location, 120), arrivedAt: str(fields.arrivedAt, 10) },
@@ -304,6 +308,12 @@ export function normalizeCarV2(raw: unknown): AutoparksCarV2 {
       invoices: list(service.invoices, normalizeInvoice, 100),
     },
     expenses: list(raw.expenses, normalizeExpense, 200),
+    priceSheet: {
+      displayName: str(ps.displayName, 160),
+      equipmentLine: str(ps.equipmentLine, 300),
+      salePriceEur: v2Num(ps.salePriceEur),
+      listPriceEur: v2Num(ps.listPriceEur),
+    },
   };
 }
 
