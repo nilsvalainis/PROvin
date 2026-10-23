@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { compressScanImage, uploadScanPages, type ScanTarget } from "./scan-upload";
+import { enqueueScan } from "./scan-queue";
+import { compressScanImage, type ScanTarget } from "./scan-upload";
 
 export type ScannerTarget = { target: ScanTarget; title: string; invoiceId?: string };
 
@@ -10,7 +11,7 @@ export type ScannerTarget = { target: ScanTarget; title: string; invoiceId?: str
  * Ja kamera nav pieejama (atļauja, vecs pārlūks) - poga atver telefona kameru (`capture="environment"`).
  * Malu noteikšana 1. kārtā netiek darīta.
  */
-export function Scanner({ carId, target, onClose, onDone }: { carId: string; target: ScannerTarget; onClose: () => void; onDone: (invoiceId?: string) => void }) {
+export function Scanner({ carId, target, onClose, onDone }: { carId: string; target: ScannerTarget; onClose: () => void; onDone: () => void }) {
   const video = useRef<HTMLVideoElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -71,24 +72,20 @@ export function Scanner({ carId, target, onClose, onDone }: { carId: string; tar
     if (blob) await addBlob(blob);
   }
 
+  /** Vispirms saglabā telefonā (bezsaistes rinda), tad aizver - augšupielāde notiek fonā pa vienam (F6b). */
   async function finish() {
     if (pages.length === 0) return;
     setBusy(0);
     setError("");
-    let createdInvoice: string | undefined;
-    const res = await uploadScanPages(carId, target.target, pages.map((p) => p.blob), {
-      invoiceId: target.invoiceId,
-      onProgress: (p) => setBusy(p),
-      onInvoice: (id) => {
-        createdInvoice = id;
-      },
-    });
-    setBusy(null);
-    if (!res.ok) {
+    try {
+      await enqueueScan({ carId, target: target.target, invoiceId: target.invoiceId, title: target.title, pages: pages.map((p) => p.blob) });
+    } catch {
+      setBusy(null);
       setError("Neizdevās");
       return;
     }
-    onDone(createdInvoice);
+    setBusy(null);
+    onDone();
     onClose();
   }
 

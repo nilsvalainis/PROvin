@@ -7,6 +7,8 @@ import type { V2Problem } from "@/lib/iriss-autoparks-v2";
 import type { CabinetPaneProps } from "./AutoparksV2Cabinet";
 import { FileModal, PdfIcon } from "./FileModal";
 import { Scanner, type ScannerTarget } from "./Scanner";
+import { useScanQueue } from "./useScanQueue";
+import type { QueuedScan } from "./scan-queue";
 import { VinCopy } from "./ui";
 
 type Step = 1 | 2 | 3 | 4 | 5;
@@ -30,6 +32,8 @@ export function AutoparksV2Serviss({ carId, basics, perms }: CabinetPaneProps) {
   useEffect(() => {
     void load();
   }, [load]);
+  const queue = useScanQueue(carId, () => void load());
+  const afterScan = () => void queue.refresh().then(queue.drain);
 
   async function patch(body: Record<string, unknown>) {
     setError("");
@@ -66,7 +70,7 @@ export function AutoparksV2Serviss({ carId, basics, perms }: CabinetPaneProps) {
         onAmount={(v) => void patch({ invoice: { id: inv.id, amountEur: v } })}
         onPick={(id) => setInvoice(id)}
         modal={modal ? <FileModal files={modal.files} index={modal.index} urlFor={urlFor} onIndex={(i) => setModal({ ...modal, index: i })} onClose={() => setModal(null)} /> : null}
-        scanner={scan ? <Scanner carId={carId} target={scan} onClose={() => setScan(null)} onDone={() => void load()} /> : null}
+        scanner={scan ? <Scanner carId={carId} target={scan} onClose={() => setScan(null)} onDone={afterScan} /> : null}
       />
     );
   }
@@ -91,6 +95,7 @@ export function AutoparksV2Serviss({ carId, basics, perms }: CabinetPaneProps) {
 
   return (
     <div className="ap2-pane">
+      <ScanQueue online={queue.online} items={queue.items} onRetry={() => void queue.drain()} />
       <div className="ap2-techbar">
         <div className="vinrow">
           <VinCopy vin={basics.vin} />
@@ -163,10 +168,7 @@ export function AutoparksV2Serviss({ carId, basics, perms }: CabinetPaneProps) {
           carId={carId}
           target={scan}
           onClose={() => setScan(null)}
-          onDone={(newInvoiceId) => {
-            void load();
-            if (newInvoiceId && view.canSums) setInvoice(newInvoiceId);
-          }}
+          onDone={afterScan}
         />
       ) : null}
     </div>
@@ -389,6 +391,53 @@ function AmountRow({ inv, onAmount }: { inv: V2ServissInvoiceView; onAmount: (v:
           {fmtEur(inv.amountEur)}
         </button>
       )}
+    </div>
+  );
+}
+
+/** T9: "Nav interneta" + "Gaida augšupielādi": skenējumi telefonā, progress, "Neizdevās" + VĒLREIZ. */
+function ScanQueue({ online, items, onRetry }: { online: boolean; items: QueuedScan[]; onRetry: () => void }) {
+  if (online && items.length === 0) return null;
+  return (
+    <div className="ap2-queue">
+      {!online ? <div className="ap2-offline">Nav interneta</div> : null}
+      {items.length > 0 ? (
+        <>
+          <div className="ap2-sec">
+            Gaida augšupielādi<span className="n">{items.length}</span>
+          </div>
+          {items.map((q) => (
+            <div key={q.id} className="ap2-q">
+              <PdfIcon small />
+              <div className="tx">
+                <b>{q.title}</b>
+                {q.state === "failed" ? (
+                  <small className="bad">Neizdevās</small>
+                ) : (
+                  <small>
+                    {lapasLv(q.pages.length)} ·{" "}
+                    {q.state === "uploading"
+                      ? `${Math.round(q.progress * 100)}%`
+                      : new Date(q.createdAt).toLocaleTimeString("lv-LV", { hour: "2-digit", minute: "2-digit" })}
+                  </small>
+                )}
+                {q.state === "uploading" ? (
+                  <div className="ap2-qbar">
+                    <i style={{ width: `${Math.max(4, Math.round(q.progress * 100))}%` }} />
+                  </div>
+                ) : null}
+              </div>
+              {q.state === "failed" ? (
+                <button type="button" className="ap2-btn sec sm ap2-retry" onClick={onRetry} disabled={!online}>
+                  VĒLREIZ
+                </button>
+              ) : (
+                <span />
+              )}
+            </div>
+          ))}
+        </>
+      ) : null}
     </div>
   );
 }
