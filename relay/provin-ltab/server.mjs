@@ -9,7 +9,7 @@
  * Vide (/etc/provin-ltab.env, root 600):
  *   LTAB_RELAY_TOKEN             obligāts (>= 16); tas pats, kas Vercel LTAB_RELAY_TOKEN
  *   SMARTID_PERSONAL_CODE        Nila personas kods (ieraksta Nils no 1Password). Nekad netiek logots.
- *   PROVIN_LTAB_CALLBACK_URL     noklusējums https://provin.lv/api/ltab/relay-callback
+ *   PROVIN_LTAB_CALLBACK_URL     noklusējums https://www.provin.lv/api/ltab/relay-callback
  *   LTAB_RELAY_HOST/PORT         noklusējums 127.0.0.1 / 8791
  *   LTAB_DATA_DIR                noklusējums /var/lib/provin-ltab
  *   LTAB_MAX_PER_HOUR            noklusējums 20
@@ -37,7 +37,7 @@ const HOST = process.env.LTAB_RELAY_HOST || "127.0.0.1";
 const PORT = Number(process.env.LTAB_RELAY_PORT || 8791);
 const TOKEN = (process.env.LTAB_RELAY_TOKEN ?? "").trim();
 const PERSONAL_CODE = (process.env.SMARTID_PERSONAL_CODE ?? "").trim();
-const CALLBACK_URL = (process.env.PROVIN_LTAB_CALLBACK_URL || "https://provin.lv/api/ltab/relay-callback").trim();
+const CALLBACK_URL = (process.env.PROVIN_LTAB_CALLBACK_URL || "https://www.provin.lv/api/ltab/relay-callback").trim();
 const DATA_DIR = process.env.LTAB_DATA_DIR || "/var/lib/provin-ltab";
 const PROFILE_DIR = path.join(DATA_DIR, "profile");
 const DEBUG_DIR = path.join(DATA_DIR, "debug");
@@ -89,8 +89,10 @@ async function readJson(req, limitBytes = 16_000) {
 }
 
 async function notify(body) {
+  // redirect: "error": pāradresācijā (provin.lv -> www) fetch atmestu Authorization un PROVIN atbildētu 401.
   const res = await fetch(CALLBACK_URL, {
     method: "POST",
+    redirect: "error",
     headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(60_000),
