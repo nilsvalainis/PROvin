@@ -1982,3 +1982,14 @@
     top: 0;
   }
 }
+/* F10: AI ieteikums (vēl nav apstiprināts) - zils, nav treknraksts */
+.ap2.ap2.ap2 .ap2-aisug {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: end;
+}
+.ap2.ap2.ap2 .sug {
+  color: var(--focus);
+  font-weight: 500;
+}
