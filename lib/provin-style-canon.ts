@@ -20,11 +20,13 @@ export const AI_THIN_DATA_NO_PADDING_RULES = `THIN DATA: Ja avotā ir 0-2 fakti:
 
 export const AI_FACTS_THREE_SOURCES_RULES = `FACT SOURCES (mandatory): Skaitļi, datumi, intervāli, ķēžu skaits, atsaukumu numuri, kodi un ražotāja dati tikai no: (1) šī pasūtījuma avotu datiem, (2) kanoniskās faktu lapas, (3) agregātu faktu bāzes ar statusu verified. Ja tur nav, neraksti. Atsaukuma numuru raksti tikai, ja tas ir dīlera datos vai faktu bāzē.`;
 
-export const AI_EUR_CANON_RULES = `EUR (mandatory, once): Eiro drīkst rakstīt tikai kā avotā fiksētu apdrošināšanas vai zaudējumu summu (AutoDNA, CarVertical, LTAB) negadījumu laukā un tā avota komentārā, kā arī cenu laukā (sludinājums vai tirgus). Remonta, detaļu, apkopes un darba EUR nekad. Kopsavilkumā un tehniskajos riskos EUR nav.`;
+export const AI_EUR_CANON_RULES = `EUR (mandatory, once): Eiro drīkst rakstīt tikai kā avotā fiksētu apdrošināšanas vai zaudējumu summu (AutoDNA, CarVertical, LTAB) negadījumu laukā un tā avota komentārā, kā arī cenu laukā (sludinājums vai tirgus). Remonta, detaļu, apkopes un darba EUR nekad. Kopsavilkumā un tehniskajos riskos EUR nav. Valūta tikai EUR: USD un $ nekad; ASV avota summu dolāros neraksti un nepārrēķini.`;
 
 export const AI_OWNER_COUNT_RULES = `OWNERS: N īpašnieki = N-1 maiņas. Skaitli ņem no kanoniskās faktu lapas, nepārrēķini.`;
 
 export const AI_MILES_KM_RULES = `MILES/KM: Jūdzes (mi, miles, mph) PROVIN tekstā nelieto. Ja avots dod jūdzes, pārrēķini uz km (1 mi = 1.609344 km, noapaļo līdz veseliem km) un raksti tikai km; ātrumam km/h. Nekad nelasi jūdzes kā km. ASV un ES intervālus salīdzini tikai pēc pārrēķina uz km.`;
+
+export const AI_PLAIN_WORDING_RULES = `PLAIN WORDING: Hibrīda veidu raksti oriģinālā (plug-in hybrid, mild hybrid), netulko. Vienkārši vārdi („divi turbokompresori”, „šoseja”). Prognozes piesardzīgi („var tuvoties”). Avotu sauc „Izsoļu portāla arhīvā” vai „Avotā”, nekad „CC.VIN”.`;
 
 export const AI_NO_CROSS_SECTION_REFS_RULES = `NO CROSS-SECTION REFS: Neraksti „kā minēts nobraukuma komentārā”, „skat. sadaļu…”, „detalizēti … KOMENTĀRĀ”.`;
 
@@ -52,6 +54,7 @@ export const AI_STYLE_CANON_SHARED = [
   AI_MILES_KM_RULES,
   AI_NO_CROSS_SECTION_REFS_RULES,
   AI_ODOMETER_DROP_RULES,
+  AI_PLAIN_WORDING_RULES,
   AI_INTERNAL_MARKERS_RULES,
   AI_NO_AUDIT_WORD_RULES,
   AI_HUMAN_DASH_RULES,

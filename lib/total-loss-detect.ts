@@ -8,7 +8,10 @@ import {
   isCcVinAuctionCheckComment,
 } from "@/lib/admin-cc-vin-comment-presets";
 import { LTAB_COMMENT_NO_OCTA_CLAIM } from "@/lib/admin-ltab-comment-presets";
-import { LISTING_PHOTO_NO_DEFECTS_TEXT } from "@/lib/admin-listing-photo-comment-presets";
+import {
+  LISTING_PHOTO_NO_DEFECTS_LEGACY_TEXT,
+  LISTING_PHOTO_NO_DEFECTS_TEXT,
+} from "@/lib/admin-listing-photo-comment-presets";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { SHARED_SOURCE_COMMENT_TEMPLATES } from "@/lib/admin-source-comment-presets";
 
@@ -20,6 +23,7 @@ const TEMPLATE_PLAIN_SNIPPETS = [
   LTAB_COMMENT_NO_OCTA_CLAIM,
   CSDD_COMMENT_EUCARIS_PLAIN,
   LISTING_PHOTO_NO_DEFECTS_TEXT,
+  LISTING_PHOTO_NO_DEFECTS_LEGACY_TEXT,
   ...SHARED_SOURCE_COMMENT_TEMPLATES.map((t) => t.text),
 ]
   .map((s) => s.replace(/\s+/g, " ").trim())

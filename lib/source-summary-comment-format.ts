@@ -175,7 +175,7 @@ PAINT THICKNESS / UNRECORDED BODY WORK (mandatory for every agent; STATIC BLOCK 
 - Digital records may omit painted panels if work was done in an independent workshop or to hide small defects. That is a reason to measure in person - not a claim that rust or a respray is already proven on THIS car.
 - Do NOT write a new paint-thickness lecture and do NOT invent other micron bands (50-100, 108-156, 150-170). A single static block is injected into „2. Ieteikumi” at render time with heading „Virsbūves stāvoklis un krāsas biezums” and ONE paragraph: Digitālie dati var neuzrādīt krāsotus elementus, ja darbi veikti neatkarīgā servisā vai mēģinot noslēpt sīkus defektus. Virsbūve jāpārbauda klātienē ar krāsas biezuma mērītāju. Ārējiem paneļiem rūpnīcas rādījums parasti ir ap 100 līdz 150 µm. Visiem paneļiem jābūt ar līdzīgiem mērījumiem. Starpība no 50 līdz 150 µm starp blakus esošajiem elementiem var norādīt uz kosmētisku pārkrāsošanu. Iekšējās ailes un konstrukcijas elementi parasti uzrāda aptuveni uz pusi mazāku mikronu skaitu, kas ir normāli un liecina par rūpnīcas krāsojumu, nevis remonta pēdām.
 - If you still write this section, use EXACTLY that heading and that paragraph (100 līdz 150 µm; 50 līdz 150 µm). No other numbers.
-- Other fields (especially AutoDNA, CarVertical, CSDD, LTAB, dealer, VIN registry, CC.VIN, ASV, mileage): do NOT write this paint-gauge essay, micron protocol, or the „records may omit painted panels / measure in person” caveat.
+- Other fields (especially AutoDNA, CarVertical, CSDD, LTAB, dealer, VIN registry, Izsoļu portālu arhīvs, ASV, mileage): do NOT write this paint-gauge essay, micron protocol, or the „records may omit painted panels / measure in person” caveat.
 - If THIS car is wrapped: the static block still applies; add that a gauge through film is limited (see WRAP / FILM).
 - OPERATORA KOMANDAS „tikai par…” still win if the operator excluded body work.
 - No repair EUR.
@@ -302,7 +302,7 @@ export const AI_CROSS_FIELD_PORTFOLIO_RULES = `CROSS-FIELD PORTFOLIO (mandatory 
  * Avotu lauki (CSDD, AutoDNA, CarVertical, LTAB, dīlera dati u.c.) konstatē faktus.
  * Interpretācija un ieteikumi pieder tikai norādītajiem laukiem.
  */
-export const AI_SOURCE_FIELDS_FACTS_ONLY_RULES = `SOURCE FIELDS = FACTS ONLY (mandatory — every per-source comment window: CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS / dealer, VIN registry / Dānijas reģistri, CC.VIN, ASV, seller portrait, photos, listing photo analysis):
+export const AI_SOURCE_FIELDS_FACTS_ONLY_RULES = `SOURCE FIELDS = FACTS ONLY (mandatory — every per-source comment window: CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS / dealer, VIN registry / Dānijas reģistri, Izsoļu portālu arhīvs, ASV, seller portrait, photos, listing photo analysis):
 - State ONLY what THIS source recorded (date, km, amount, zone, code, name, status). After the fact, STOP. Do not add a second sentence that explains, hedges, or expands the fact.
 - FORBIDDEN in source fields (these are sentence expansions, not facts): „ierakstu trūkums neizslēdz…”, „varētu būt novērsti bez apdrošinātāju starpniecības”, „notikuši pirms importa”, „Digitālie dati var neuzrādīt krāsotus elementus”, krāsas biezuma mērītājs / mikroni / „virsbūves stāvokļa pārbaude klātienē”, invented headings such as „Datu specifika”. That material belongs ONLY in summary fields.
 - EXPANSIONS AND ADDED SENTENCES are allowed ONLY in summary sections: „3. Kopsavilkums”, „NOBRAUKUMA VĒSTURES KOMENTĀRS”, „NEGADĪJUMU VĒSTURES KOPSAVILKUMS”. „1. Tehnisko risku analīze” analyses THIS car’s aggregates; „2. Ieteikumi” is the inspection checklist (including paint gauge). Neither of those jobs may be copied into a source comment.
@@ -982,7 +982,7 @@ Paraugs D — BEV, bez auto tūres ievada:
 Iekšdedzes ķēdes, turbīnas, DPF un eļļas noplūdes šim eksemplāram neeksistē. Galvenā uzmanība ir akumulatoram, jaudas elektronikai un balstiekārtai.
 
 Augstsprieguma akumulators (SOH)
-Pie 137 000 km būtiskākais risks ir akumulatora stāvoklis. Rūpnīcas garantija parasti ir 8 gadi vai 160 000 km, tāpēc šis auto tuvojas limitam. SOH diagnostika autorizētā servisā pirms pirkuma ir ieteicama."`;
+Pie 137 000 km būtiskākais risks ir akumulatora stāvoklis. Rūpnīcas garantija parasti ir 8 gadi vai 160 000 km, tāpēc šis auto var tuvoties limitam. SOH diagnostika autorizētā servisā pirms pirkuma ir ieteicama."`;
 
 /** Elektroauto (BEV) un plug-in hibrīdu (PHEV) pārbaude — obligāti, kad konteksts to norāda. */
 export const AI_EV_BEV_FORENSICS_RULES = `ELECTRIC & PLUG-IN FORENSICS (mandatory when context indicates full electric (BEV), „elektriskais”, „elektro”, PHEV / plug-in hybrid, or an unmistakably electric model/generation — skip for pure petrol/diesel ICE unless only mild hybrid with no plug):

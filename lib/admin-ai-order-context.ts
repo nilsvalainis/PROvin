@@ -14,6 +14,7 @@ import {
   NEGADIJUMU_VESTURE_TITLE,
   vinRegistryIncidentRowHasData,
   SOURCE_BLOCK_LABELS,
+  aiSourceBlockLabel,
   tirgusFormToPlainText,
   toPdfLtabManualBlock,
   toPdfManualVendorBlocks,
@@ -138,7 +139,7 @@ function allIncidentRowsPlainText(blocks: WorkspaceSourceBlocks): string {
   for (const key of ["autodna", "carvertical"] as const) {
     const inc = blocks[key].incidents.filter(ltabRowHasData);
     if (inc.length === 0) continue;
-    parts.push(`【${SOURCE_BLOCK_LABELS[key]} — ${NEGADIJUMU_VESTURE_TITLE}】`);
+    parts.push(`【${aiSourceBlockLabel(key)} — ${NEGADIJUMU_VESTURE_TITLE}】`);
     for (const r of inc) {
       parts.push([r.csngDate.trim(), r.lossAmount.trim(), r.incidentNo.trim()].filter(Boolean).join("\t"));
     }
@@ -163,7 +164,7 @@ function allIncidentRowsPlainText(blocks: WorkspaceSourceBlocks): string {
   for (const key of ["tjekbil", "finnik", "mnt_ee", "lkf_ee", "carinfo", "traficom_fi"] as const) {
     const inc = (blocks[key].incidents ?? []).filter(vinRegistryIncidentRowHasData);
     if (inc.length === 0) continue;
-    parts.push(`【${SOURCE_BLOCK_LABELS[key]} — ${NEGADIJUMU_VESTURE_TITLE}】`);
+    parts.push(`【${aiSourceBlockLabel(key)} — ${NEGADIJUMU_VESTURE_TITLE}】`);
     for (const r of inc) {
       parts.push([r.date.trim(), r.amount.trim(), r.country.trim(), r.note.trim()].filter(Boolean).join("\t"));
     }
@@ -176,7 +177,7 @@ function vendorRawLogsPlainText(blocks: WorkspaceSourceBlocks): string {
   for (const key of ["autodna", "carvertical"] as const) {
     const raw = blocks[key].mileagePasteRaw?.trim();
     if (!raw) continue;
-    parts.push(`【${SOURCE_BLOCK_LABELS[key]} raw logs】\n${raw.slice(0, 12_000)}`);
+    parts.push(`【${aiSourceBlockLabel(key)} raw logs】\n${raw.slice(0, 12_000)}`);
   }
   const citiTotal = blocks.citi_avoti.sections.length;
   for (const [i, section] of blocks.citi_avoti.sections.entries()) {
@@ -284,7 +285,7 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
       }
     }
     sectionText = appendAiContextRawSection(sectionText, blockAiContextRaw(blocks, key));
-    const section = block(label ?? SOURCE_BLOCK_LABELS[key], sectionText);
+    const section = block(label ?? aiSourceBlockLabel(key), sectionText);
     if (section) parts.push(section);
   }
 

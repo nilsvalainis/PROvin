@@ -19,6 +19,36 @@ export type BannedVocabularyEntry = {
 
 export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
   {
+    label: "maģistrāle",
+    pattern: /maģistrā[lļ]/i,
+    replacement: "šoseja / autobāns",
+    code: "vocabulary_magistrale",
+  },
+  {
+    label: "divpakāpju kaskāde",
+    pattern: /divpakāpju\s+kaskād|kaskād\p{L}*\s+(?:turb|kompresor)|turb\p{L}*\s+kaskād/iu,
+    replacement: "divi turbokompresori",
+    code: "vocabulary_kaskade",
+  },
+  {
+    label: "tuvojas (prognozē)",
+    pattern: /(?<!\p{L})tuvojas(?!\p{L})/iu,
+    replacement: "var tuvoties",
+    code: "vocabulary_tuvojas",
+  },
+  {
+    label: "hibrīda veida tulkojums (spraudņa / vieglais / maigais hibrīds)",
+    pattern: /(?:spraudņa|uzlādējam\p{L}*|pievienojam\p{L}*|viegl\p{L}{0,3}|maig\p{L}{0,3})\s+hibrīd/iu,
+    replacement: "oriģinālā: plug-in hybrid / mild hybrid",
+    code: "vocabulary_hybrid_translated",
+  },
+  {
+    label: "CC.VIN",
+    pattern: /\bCC\.?\s?VIN\b|checkcar/i,
+    replacement: "Izsoļu portāla arhīvā / Avotā",
+    code: "vocabulary_cc_vin",
+  },
+  {
     label: "saime",
     pattern: /\bsaime/i,
     replacement: "agregāts / konstrukcija / paaudze",
@@ -280,7 +310,27 @@ export const PROVIN_INTERNAL_CLIENT_TERMS: readonly BannedVocabularyEntry[] = [
 ];
 
 /** Droši aizstājami vārdi bez otra maksas izsaukuma (P13). */
-const SAFE_VOCAB_REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
+type SafeVocabReplacer = string | ((match: string, ...groups: string[]) => string);
+
+const SAFE_VOCAB_REPLACEMENTS: ReadonlyArray<readonly [RegExp, SafeVocabReplacer]> = [
+  // maģistrāle → šoseja: katram locījumam savs galotnes pāris (garākās galotnes pirmās).
+  [/(?<!\p{L})Maģistrāļu(?!\p{L})/gu, "Šoseju"],
+  [/(?<!\p{L})maģistrāļu(?!\p{L})/gu, "šoseju"],
+  [/(?<!\p{L})([Mm])aģistrāl(ēm|ēs|ei|es|ē|e|i)(?!\p{L})/gu, (_m: string, m: string, end: string) =>
+    `${m === "M" ? "Š" : "š"}osej${({ ēm: "ām", ēs: "ās", ei: "ai", es: "as", ē: "ā", e: "a", i: "u" } as Record<string, string>)[end]}`],
+  // Prognoze piesardzīgi.
+  [/(?<!\p{L})Tuvojas(?!\p{L})/gu, "Var tuvoties"],
+  [/(?<!\p{L})tuvojas(?!\p{L})/gu, "var tuvoties"],
+  // Hibrīda veidu netulko.
+  [/(?<!\p{L})(?:spraudņa|uzlādējam\p{L}*|pievienojam\p{L}*)\s+hibrīd\p{L}*/giu, (m: string) =>
+    /^\p{Lu}/u.test(m) ? "Plug-in hybrid" : "plug-in hybrid"],
+  [/(?<!\p{L})(?:viegl|maig)(?:ais|ā|ajam|o|ajā|ie|ajiem|ajos)?\s+hibrīd\p{L}*/giu, (m: string) =>
+    /^\p{Lu}/u.test(m) ? "Mild hybrid" : "mild hybrid"],
+  // CC.VIN nav klienta avota nosaukums.
+  [/\b(?:CC\.?\s?VIN|checkcar(?:\.vin)?)\s+(?:datos|avotā|ierakstos|arhīvā|pārskatā|atskaitē)/gi, "Izsoļu portāla arhīvā"],
+  [/\b(?:CC\.?\s?VIN|checkcar(?:\.vin)?)\s+(datiem|datu|dati|ierakstiem|ierakstu|ieraksti)(?!\p{L})/giu, "Izsoļu portāla arhīva $1"],
+  [/(?<!\p{L})(?:avotā|datos)\s+(?:CC\.?\s?VIN|checkcar(?:\.vin)?)\b/giu, "Izsoļu portāla arhīvā"],
+  [/\b(?:CC\.?\s?VIN|checkcar(?:\.vin)?)\b/gi, "Izsoļu portāla arhīvs"],
   [/\binjektor(?:i|iem|u|a)?\b/gi, "iesmidzinātāji"],
   [/\bswirl\s+flap\w*/gi, "ieplūdes kolektors"],
   [/\bvirpuļvārst\w*/gi, "ieplūdes kolektors"],
@@ -293,7 +343,9 @@ const SAFE_VOCAB_REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
 export function applyBannedVocabularyReplacements(text: string): string {
   if (!text) return text;
   let out = text;
-  for (const [re, rep] of SAFE_VOCAB_REPLACEMENTS) out = out.replace(re, rep);
+  for (const [re, rep] of SAFE_VOCAB_REPLACEMENTS) {
+    out = typeof rep === "string" ? out.replace(re, rep) : out.replace(re, rep as (m: string, ...a: string[]) => string);
+  }
   return out;
 }
 
