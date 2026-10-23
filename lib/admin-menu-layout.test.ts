@@ -110,3 +110,14 @@ describe("kārtošana un rediģēšana", () => {
     expect(missingMenuItems(withApp, catalog).map((c) => c.id)).toEqual(["w-waybills", "w-radar"]);
   });
 });
+
+describe("j23: pieskāriens ikonai, kamēr cita sadaļa vēl atveras", () => {
+  it("otrs pieskāriens citai ikonai tiek ignorēts līdz MENU_TAP_GUARD_MS; tai pašai ikonai - atļauts", async () => {
+    const { MENU_TAP_GUARD_MS, menuTapAllowed } = await import("@/lib/admin-menu-layout");
+    const pending = { id: "pavadzimes", at: 1_000 };
+    expect(menuTapAllowed(null, "pasutijumi", 1_000)).toBe(true);
+    expect(menuTapAllowed(pending, "pasutijumi", 1_300)).toBe(false);
+    expect(menuTapAllowed(pending, "pavadzimes", 1_300)).toBe(true);
+    expect(menuTapAllowed(pending, "pasutijumi", 1_000 + MENU_TAP_GUARD_MS)).toBe(true);
+  });
+});

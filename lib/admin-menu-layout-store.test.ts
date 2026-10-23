@@ -30,4 +30,13 @@ describe("sākuma izkārtojums serverī", () => {
     expect(await readMenuLayout("admin", "iriss")).toEqual([{ id: "vin", size: "app" }]);
     expect(await readMenuLayout("staff:1", "pro")).toBeNull();
   });
+
+  it("j23: lapai - saglabātais izkārtojums, null ja nav, undefined ja krātuve neatbild laikā", async () => {
+    const { readMenuLayoutForPage, writeMenuLayout } = await import("@/lib/admin-menu-layout-store");
+    const admin = { kind: "admin" as const, name: "Nils" };
+    await writeMenuLayout("admin", "iriss", [{ id: "pavadzimes", size: "app" }]);
+    expect(await readMenuLayoutForPage(admin, "iriss")).toEqual([{ id: "pavadzimes", size: "app" }]);
+    await writeMenuLayout("admin", "pro", []);
+    expect(await readMenuLayoutForPage(admin, "pro")).toBeNull();
+  });
 });

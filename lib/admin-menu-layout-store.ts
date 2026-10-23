@@ -52,3 +52,26 @@ export async function writeMenuLayout(userKey: string, ws: MenuWorkspace, layout
   all[userKey] = { ...(all[userKey] ?? {}), [ws]: layout };
   await writeLogisticsJsonFile(FILE, all);
 }
+
+/**
+ * Sākuma lapas renderēšanai (j23): saglabātais izkārtojums jau HTML, lai režģis pēc ielādes nepārkārtojas zem pirksta.
+ * null = lietotājam nav saglabāta izkārtojuma; undefined = krātuve nav pieejama vai neatbildēja laikā (pārlūks ielādē pats).
+ */
+export async function readMenuLayoutForPage(
+  actor: AdminOrStaffActor,
+  ws: MenuWorkspace,
+  timeoutMs = 1200,
+): Promise<MenuLayout | null | undefined> {
+  if (!isMenuLayoutStoreEnabled()) return undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<undefined>((resolve) => {
+    timer = setTimeout(() => resolve(undefined), timeoutMs);
+  });
+  try {
+    const layout = await Promise.race([readMenuLayout(menuLayoutUserKey(actor), ws).catch(() => undefined), timeout]);
+    if (layout === undefined) return undefined;
+    return layout && layout.length > 0 ? layout : null;
+  } finally {
+    clearTimeout(timer);
+  }
+}

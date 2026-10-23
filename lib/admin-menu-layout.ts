@@ -141,3 +141,16 @@ export function parseMenuLayout(text: string | null): unknown {
     return null;
   }
 }
+
+/** Cik ilgi pēc pieskāriena ikonai citu ikonu pieskārienus ignorē, kamēr sadaļa atveras (j23). */
+export const MENU_TAP_GUARD_MS = 8000;
+
+/**
+ * Vai pieskāriens ikonai drīkst sākt navigāciju. Kamēr iepriekš pieskartā sadaļa vēl atveras (serveris 0,6-6 s),
+ * otrs pieskāriens citai ikonai to nepārraksta: tieši tā "atvērās cita sadaļa" (Nils 23.10).
+ */
+export function menuTapAllowed(pending: { id: string; at: number } | null, id: string, nowMs: number): boolean {
+  if (!pending) return true;
+  if (pending.id === id) return true;
+  return nowMs - pending.at >= MENU_TAP_GUARD_MS;
+}

@@ -7,7 +7,7 @@ import { AdminPushToggle } from "@/components/admin/AdminPushToggle";
 import { MenuGrid } from "@/components/admin/mobile/MenuGrid";
 import { renderProWidget } from "@/components/admin/mobile/MenuWidgetContent";
 import { PRO_DEFAULT_LAYOUT_IDS, proMenuCatalog } from "@/lib/admin-menu-catalog";
-import type { MenuCatalogItem } from "@/lib/admin-menu-layout";
+import type { MenuCatalogItem, MenuLayout } from "@/lib/admin-menu-layout";
 import { ADMIN_ORDERS_DEADLINE_PARAM } from "@/lib/admin-orders-deadline-filter";
 import type { ProHomeSummary } from "@/lib/admin-pro-home";
 
@@ -16,7 +16,7 @@ type Counts = { proHome: ProHomeSummary; openCount: number; unseenCount: number;
 const DESKTOP_MQ = "(min-width: 768px)";
 
 /** PRO sākums (3.0): logrīki un ikonas, ko var kārtot un izmērot. Datorā uzreiz Pasūtījumi. */
-export function ProMobileMenuHome() {
+export function ProMobileMenuHome({ initialLayout }: { initialLayout?: MenuLayout | null } = {}) {
   const router = useRouter();
   const [counts, setCounts] = useState<Counts | null>(null);
   const catalog = useMemo(() => proMenuCatalog(), []);
@@ -98,6 +98,7 @@ export function ProMobileMenuHome() {
         workspace="pro"
         catalog={catalog}
         defaultIds={PRO_DEFAULT_LAYOUT_IDS}
+        initialLayout={initialLayout}
         badgeOf={badgeOf}
         alertOf={alertOf}
         hrefOf={hrefOf}
