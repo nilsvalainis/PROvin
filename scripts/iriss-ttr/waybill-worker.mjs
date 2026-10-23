@@ -7,13 +7,14 @@
 // Nestandarta darbus neaiztiek (Aivars). Pats nekad nepārtrauc/neanulē; annul.js tikai lietotāja apstiprinātai pavadzīmei un
 // tikai ar IRISS_WAYBILL_ANNUL_LIVE=1 (noklusējumā izslēgts).
 // Env (/etc/iriss-ttr/env): IRISS_API_BASE, IRISS_AIVARS_API_TOKEN, IRISS_WAYBILL_WORKER_LIVE=1 (citādi dry-run: tikai logo),
-// IRISS_WAYBILL_ANNUL_LIVE=1 (anulēt iepriekšējo un izveidot jaunu; noklusējumā nē).
+// IRISS_WAYBILL_ANNUL_LIVE=1 (anulēt iepriekšējo un izveidot jaunu; noklusējumā nē),
+// IRISS_CSDD_SYNC_MIN (2-15, nokl. 5; 0 = izslēgts): kamēr VPN ieslēgts (hold), ik N min sync.js abām firmām -> waybill-plates.
 
 import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
-import { processJob, resolveWorkerScript } from "./waybill-worker-core.mjs";
+import { csddSyncMinutes, periodicPlateSync, processJob, resolveWorkerScript } from "./waybill-worker-core.mjs";
 
 const run = promisify(execFile);
 const TTR_DIR = process.env.IRISS_TTR_DIR || "/root/iriss-ttr";
@@ -21,6 +22,7 @@ const API_BASE = (process.env.IRISS_API_BASE || "https://www.provin.lv").replace
 const TOKEN = process.env.IRISS_AIVARS_API_TOKEN || "";
 const LIVE = process.env.IRISS_WAYBILL_WORKER_LIVE === "1";
 const ANNUL_LIVE = process.env.IRISS_WAYBILL_ANNUL_LIVE === "1";
+const SYNC_MS = csddSyncMinutes(process.env.IRISS_CSDD_SYNC_MIN) * 60_000;
 const POLL_MS = 10_000;
 const SCRIPT_TIMEOUT_MS = 180_000;
 
@@ -44,6 +46,12 @@ const api = {
     const r = await call("GET", `?scope=auto&live=${LIVE ? "1" : "0"}`);
     if (r.status !== 200) throw new Error(`pending_http_${r.status}`);
     return Array.isArray(r.data.requests) ? r.data.requests : [];
+  },
+  /** Zināmie pavadzīmju numuri pa firmām (CSDD + indekss) periodiskajai sinhronizācijai. */
+  async known() {
+    const r = await call("GET", `?scope=auto&live=${LIVE ? "1" : "0"}&known=1`);
+    if (r.status !== 200) return {};
+    return r.data.knownWaybills && typeof r.data.knownWaybills === "object" ? r.data.knownWaybills : {};
   },
   async claim(id) {
     const r = await call("POST", `/${encodeURIComponent(id)}/claim`, { worker: "auto" });
@@ -74,7 +82,13 @@ async function vpnStatus() {
 }
 
 async function vpnLease() {
-  const res = await fetch("http://127.0.0.1:9334/lease", { method: "POST", signal: AbortSignal.timeout(45_000) });
+  // purpose waybill: hold režīmā pieslēdzas arī pēc atslēgšanas/izmešanas (Nils 23.10: nākamais pieprasījums pieslēdz).
+  const res = await fetch("http://127.0.0.1:9334/lease", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ purpose: "waybill" }),
+    signal: AbortSignal.timeout(45_000),
+  });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.error === "vpn_blocked_manual" ? "VPN lieto Nils" : `vpn_lease_${res.status}`);
@@ -108,6 +122,19 @@ async function readPdfBase64(p) {
 
 const seen = new Set();
 let busy = false;
+let lastSyncMs = 0;
+
+/** Kamēr VPN ieslēgts: ik SYNC_MS CSDD numuru stāvoklis (tikai lasa). Ne darba laikā (busy). */
+async function maybeSync() {
+  if (!SYNC_MS || Date.now() - lastSyncMs < SYNC_MS) return;
+  lastSyncMs = Date.now();
+  const res = await periodicPlateSync(
+    { vpnStatus, runScript, api, now: () => Date.now(), log },
+    await api.known().catch(() => ({})),
+  ).catch((err) => ({ outcome: "failed", err: err instanceof Error ? err.message : "error" }));
+  if (res.outcome === "failed") log("plates_sync_failed", { err: res.err });
+}
+
 async function tick() {
   if (busy) return;
   busy = true;
@@ -131,7 +158,10 @@ async function tick() {
       log("job_done", { id: job.id, ...res });
       // VPN aizņemts (Nils): darbs nav aiztikts, nākamajā tick mēģinās vēlreiz.
       if (res.outcome === "vpn_busy") seen.delete(job.id);
+      // Darbs pats sinhronizēja numuru: periodisko atliek.
+      if (res.outcome !== "skipped" && res.outcome !== "dry_run") lastSyncMs = Date.now();
     }
+    await maybeSync();
   } catch (err) {
     log("tick_failed", { err: err instanceof Error ? err.message : "error" });
   } finally {
@@ -143,6 +173,6 @@ if (!TOKEN) {
   log("missing_token_env");
   process.exit(2);
 }
-log("started", { live: LIVE, annul: ANNUL_LIVE });
+log("started", { live: LIVE, annul: ANNUL_LIVE, syncMin: SYNC_MS / 60_000 });
 setInterval(() => void tick(), POLL_MS);
 void tick();

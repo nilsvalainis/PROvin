@@ -34,7 +34,8 @@ export type TtrControlDoc = {
 /** Serveris ziņo vismaz reizi 5 min; pēc 10 min stāvoklis ir "nav zināms". */
 export const TTR_REPORT_STALE_MS = 10 * 60 * 1000;
 
-const STOP_REASONS = new Set(["", "manual", "idle", "external"]);
+/** external = kāds apturēja ar roku (vpnoff.sh u.c.); kicked = Nils pieslēdzās un izmeta serveri (hold režīms, j10). */
+const STOP_REASONS = new Set(["", "manual", "idle", "external", "kicked"]);
 
 export function emptyTtrServerReport(): TtrServerReport {
   return { vpn: "unknown", leaseUntil: "", handledStopAt: "", lastStopReason: "", reportedAt: "" };
