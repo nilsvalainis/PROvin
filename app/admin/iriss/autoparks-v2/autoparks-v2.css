@@ -1,0 +1,439 @@
+/* Autoparks v2 - tokeni un izmēri no j17 maketa (autoparks-v2-makets.html). Viss zem .ap2. Galvene nav sticky. */
+.ap2 {
+  --ink: #0b0c10;
+  --ink2: #6e6e73;
+  --ink3: #8e8e93;
+  --line: #e5e5ea;
+  --line2: #f0f0f3;
+  --focus: #2563eb;
+  --bad: #c2362b;
+  --ok: #16a34a;
+  --btn: rgba(31, 36, 48, 0.89);
+  --st-ordered: #0891b2;
+  --st-in_transit: #0d9488;
+  --st-prep_waiting: #d97706;
+  --st-in_service: #5e5ce6;
+  --st-for_sale: #2563eb;
+  --st-reserved: #16a34a;
+  --st-sold: #8e8e93;
+  min-height: 100%;
+  background: #f2f2f7;
+  color: var(--ink);
+  font-family: Inter, -apple-system, "SF Pro Text", system-ui, sans-serif;
+  font-size: 14px;
+  padding: 10px 16px 32px;
+}
+.ap2 *,
+.ap2 *::before,
+.ap2 *::after {
+  box-sizing: border-box;
+}
+:where(.ap2) button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.ap2 .st-ordered { --st: var(--st-ordered); }
+.ap2 .st-in_transit { --st: var(--st-in_transit); }
+.ap2 .st-prep_waiting { --st: var(--st-prep_waiting); }
+.ap2 .st-in_service { --st: var(--st-in_service); }
+.ap2 .st-for_sale { --st: var(--st-for_sale); }
+.ap2 .st-reserved { --st: var(--st-reserved); }
+.ap2 .st-sold { --st: var(--st-sold); }
+
+/* Galvene */
+.ap2-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 0 10px;
+}
+.ap2-top h1 {
+  margin: 0;
+  flex: 1;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.ap2 .ap2-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  border-radius: 12px;
+  border: 0;
+  font-weight: 600;
+  font-size: 15px;
+}
+.ap2 .ap2-btn.dark {
+  background: var(--btn);
+  color: #fff;
+}
+.ap2 .ap2-btn.sec {
+  background: #fff;
+  border: 1px solid #d2d2d7;
+  color: #1d1d1f;
+}
+.ap2 .ap2-btn.sm {
+  min-height: 38px;
+  font-size: 13px;
+  padding: 0 14px;
+  border-radius: 10px;
+}
+.ap2 .ap2-btn:disabled {
+  opacity: 0.5;
+}
+
+/* VIN ar kopēšanas ikonu */
+.ap2 .ap2-vin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: #3a3a3c;
+  text-align: left;
+}
+.ap2 .ap2-vin span {
+  overflow-wrap: anywhere;
+}
+.ap2 .ap2-vin svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--ink3);
+}
+.ap2 .ap2-vin.copied svg {
+  color: var(--ok);
+}
+
+/* Saraksts */
+.ap2-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0 12px;
+  color: var(--ink3);
+}
+.ap2 .ap2-search input {
+  flex: 1;
+  height: auto;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+}
+.ap2-chips {
+  display: flex;
+  gap: 6px;
+  margin: 10px 0 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ap2-chips::-webkit-scrollbar {
+  display: none;
+}
+.ap2 .ap2-chip {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 99px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #3a3a3c;
+  white-space: nowrap;
+}
+.ap2 .ap2-chip.on {
+  background: var(--btn);
+  color: #fff;
+  border-color: transparent;
+}
+.ap2-sec {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 2px 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+.ap2-sec .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--st);
+}
+.ap2-sec .n {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--ink3);
+  letter-spacing: 0;
+}
+.ap2-list {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.ap2-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+  min-height: 74px;
+  color: inherit;
+  text-decoration: none;
+}
+.ap2-row:first-child {
+  border-top: 0;
+}
+.ap2-img {
+  width: 72px;
+  height: 54px;
+  border-radius: 9px;
+  flex: none;
+  overflow: hidden;
+  background: #e8e8ed;
+  display: block;
+}
+.ap2-img img,
+.ap2-img svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.ap2-rt {
+  flex: 1;
+  min-width: 0;
+}
+.ap2-rt b {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ap2-rt .meta {
+  display: block;
+  font-size: 13px;
+  color: var(--ink2);
+  margin-top: 2px;
+}
+.ap2-rt .ap2-vin {
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--ink3);
+}
+.ap2-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 99px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--st) 12%, #fff);
+  color: color-mix(in srgb, var(--st) 85%, #000);
+  white-space: nowrap;
+}
+.ap2-pill::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--st);
+}
+.ap2-empty {
+  margin-top: 24px;
+  text-align: center;
+  color: var(--ink3);
+}
+.ap2-pipe,
+.ap2-thd,
+.ap2-row .cols,
+.ap2-search-d,
+.ap2 .ap2-d {
+  display: none;
+}
+.ap2-row-m {
+  display: contents;
+}
+
+/* Apakšējā lapa (statuss, + Auto) */
+.ap2-dim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.35);
+}
+.ap2-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 61;
+  max-height: 92dvh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  padding: 8px 16px max(30px, env(safe-area-inset-bottom));
+}
+.ap2-grab {
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: #d1d1d6;
+  margin: 0 auto 12px;
+}
+.ap2-sheet h4 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+.ap2-form label {
+  display: block;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ink2);
+}
+.ap2 .ap2-form input {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  border: 1px solid #d2d2d7;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  background: #fff;
+}
+.ap2-form .ap2-btn {
+  width: 100%;
+  margin-top: 16px;
+}
+.ap2-err {
+  margin-top: 8px;
+  color: var(--bad);
+  font-size: 13px;
+}
+
+@media (min-width: 900px) {
+  .ap2 {
+    background: #fafafb;
+    padding: 24px 28px 40px;
+  }
+  .ap2-top {
+    padding: 0;
+    margin-bottom: 14px;
+  }
+  .ap2-top .ap2-search {
+    width: 360px;
+  }
+  .ap2-pipe {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .ap2 .ap2-pp {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fff;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  .ap2 .ap2-pp .n {
+    display: block;
+    font-size: 22px;
+    font-weight: 600;
+  }
+  .ap2 .ap2-pp .l {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--ink2);
+    white-space: nowrap;
+  }
+  .ap2 .ap2-pp .l::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--st, var(--ink));
+  }
+  .ap2 .ap2-pp.on {
+    border-color: #1d1d1f;
+    box-shadow: inset 0 0 0 1px #1d1d1f;
+  }
+  .ap2-chips {
+    margin: 0 0 10px;
+  }
+  /* 20:17: kolonna "Īpašnieks" izņemta; VIN pilnā platumā. */
+  .ap2-thd,
+  .ap2 .ap2-row .cols {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 2fr) minmax(0, 1.6fr) 160px;
+    gap: 16px;
+    align-items: center;
+    width: 100%;
+  }
+  .ap2-thd {
+    padding: 0 12px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .ap2-row {
+    min-height: 68px;
+  }
+  .ap2-row-m,
+  .ap2-search-m,
+  .ap2 .ap2-m {
+    display: none;
+  }
+  .ap2 .ap2-d {
+    display: inline;
+  }
+  .ap2-search-d {
+    display: flex;
+  }
+  .ap2-sheet {
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    top: 50%;
+    width: 420px;
+    transform: translate(-50%, -50%);
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .ap2-sheet .ap2-grab {
+    display: none;
+  }
+}
