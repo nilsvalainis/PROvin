@@ -1,5 +1,5 @@
 import { waybillCountdownStatus, type WaybillCountdownStatus } from "@/lib/iriss-pavadzimes-countdown";
-import { displayDealerPlate, waybillPlateOccupancy, type IrissDealerPlate } from "@/lib/iriss-waybill-plates";
+import { displayDealerPlate, waybillPlateOccupancy, type IrissDealerPlate, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
 
 /** Viena pavadzīme nekad nav garāka par 48 h, tāpēc aplis vienmēr ir 48 h skalā. */
 export const WAYBILL_MAX_HOURS = 48;
@@ -18,7 +18,8 @@ export type WaybillGaugeRow = {
 export type WaybillGauge = {
   plate: IrissDealerPlate;
   busy: boolean;
-  status: WaybillCountdownStatus | "free";
+  /** "issuing" = numurs brīvs, bet CSDD šobrīd izdod pavadzīmi (aplis "izdod..."). */
+  status: WaybillCountdownStatus | "free" | "issuing";
   /** Atlikušās pilnās stundas (noapaļotas uz leju, lai "1 h" nozīmē vismaz 1 h). */
   hoursLeft: number;
   /** 0..1 no 48 h. */
@@ -35,21 +36,47 @@ export function irissWaybillGauges(rows: readonly WaybillGaugeRow[], now = new D
     rows.map((r) => ({ plate: r.plate, validUntil: r.validUntil, issuedAt: r.issuedAt, number: r.number ?? "", brandModel: r.brandModel })),
     now,
   );
-  return occupancy.map((state) => {
+  return waybillGaugesFromPlates(occupancy, rows, now);
+}
+
+/**
+ * Apļi no tā paša numuru stāvokļa, ko rāda numura pogas (j25: viens avots, lai aplis nekad nerāda "brīvs",
+ * kad poga rāda "aizņemts"). rows tikai PDF saitei (id pēc pavadzīmes numura vai beigu laika).
+ */
+export function waybillGaugesFromPlates(
+  plates: readonly WaybillPlateState[],
+  rows: readonly WaybillGaugeRow[] = [],
+  now = new Date(),
+): WaybillGauge[] {
+  return plates.map((state) => {
     if (!state.busy || !state.current) {
-      return { plate: state.plate, busy: false, status: "free", hoursLeft: 0, share: 0, brandModel: "", validUntil: "", id: "", number: "" };
+      const issuing = state.issuing;
+      return {
+        plate: state.plate,
+        busy: false,
+        status: issuing ? "issuing" : "free",
+        hoursLeft: 0,
+        share: 0,
+        brandModel: issuing?.brandModel ?? "",
+        validUntil: "",
+        id: "",
+        number: "",
+      };
     }
     const cur = state.current;
     const until = Date.parse(cur.validUntil);
     const leftMs = Number.isFinite(until) ? Math.max(0, until - now.getTime()) : 0;
-    const row = rows.find((r) => displayDealerPlate(r.plate) === state.plate && r.validUntil === cur.validUntil);
+    const no = cur.number.trim().toUpperCase();
+    const row =
+      (no ? rows.find((r) => (r.number ?? "").trim().toUpperCase() === no && r.id) : undefined) ??
+      rows.find((r) => r.id && displayDealerPlate(r.plate) === state.plate && r.validUntil === cur.validUntil);
     return {
       plate: state.plate,
       busy: true,
       status: waybillCountdownStatus(cur.validUntil, now),
       hoursLeft: Math.floor(leftMs / HOUR_MS),
       share: Math.min(1, leftMs / (WAYBILL_MAX_HOURS * HOUR_MS)),
-      brandModel: cur.brandModel,
+      brandModel: cur.brandModel || row?.brandModel || "",
       validUntil: cur.validUntil,
       id: row?.id ?? "",
       number: cur.number,

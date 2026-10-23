@@ -39,6 +39,7 @@ import {
   parseWaybillCustomHours,
   type WaybillMobilePayload,
 } from "@/lib/iriss-waybill-mobile-form";
+import { publishWaybillPlates } from "@/lib/iriss-waybill-live-plates";
 import type { WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 import type { WaybillVehicleChip } from "@/lib/iriss-waybill-vehicles";
 
@@ -177,6 +178,7 @@ export function IrissKomandaAivaramChat({
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
   const selectedInit = useRef(false);
   const carsLoaded = useRef(false);
+  const platesLoaded = useRef(false);
   /** Telefona formas dati pēdējam sūtījumam (vajag "Tomēr izveidot" logam). */
   const mobilePayload = useRef<WaybillMobilePayload | null>(null);
 
@@ -215,6 +217,7 @@ export function IrissKomandaAivaramChat({
         return;
       }
       setError((current) => (current === WAYBILL_STATUS_STALE_TEXT ? null : current));
+      platesLoaded.current = true;
       setChat(data);
       if (data.dismissedIds) setDismissedIds(data.dismissedIds);
       if (!selectedInit.current) {
@@ -247,6 +250,12 @@ export function IrissKomandaAivaramChat({
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [working]);
+
+  // j25: apļi (IrissWaybillGauges) rāda to pašu numuru stāvokli, ko pogas - uzreiz pēc katras ielādes.
+  // Noklusējuma "visi brīvi" pirms pirmās ielādes netiek sūtīts.
+  useEffect(() => {
+    if (platesLoaded.current) publishWaybillPlates(chat.plates);
+  }, [chat.plates]);
 
   // Jaunākais augšā: saraksts vienmēr sākas augšā (agrāk ritināja uz apakšu, kur bija vecākais).
   const timeline = useMemo(() => waybillChatTimelineNewestFirst(chat.timeline), [chat.timeline]);
