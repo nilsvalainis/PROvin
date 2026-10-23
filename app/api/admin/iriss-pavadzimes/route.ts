@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireIrissSectionApi } from "@/lib/staff-auth";
+import { isWaybillOnlyActor, requireIrissSectionApi, waybillOnlyForbidden } from "@/lib/staff-auth";
 import { canSeeWaybillOrders, loadIrissPavadzimesActiveCardData, loadIrissPavadzimesPageData } from "@/lib/iriss-pavadzimes-list";
 
 export const runtime = "nodejs";
@@ -11,6 +11,8 @@ export async function GET(req: Request) {
   if (!gate.ok) return gate.response;
   try {
     const active = new URL(req.url).searchParams.get("active") === "1";
+    // Partnerim tikai aktīvās pavadzīmes logrīkam - ne pilnais arhīvs, ne Dropbox sinhronizācija.
+    if (!active && isWaybillOnlyActor(gate.actor)) return waybillOnlyForbidden();
     const opts = { withOrders: canSeeWaybillOrders(gate.actor) };
     const data = active ? await loadIrissPavadzimesActiveCardData(new Date(), opts) : await loadIrissPavadzimesPageData(new Date(), opts);
     return NextResponse.json(data);

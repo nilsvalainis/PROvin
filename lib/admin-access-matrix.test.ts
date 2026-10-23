@@ -30,7 +30,7 @@ const API_ALLOW: Record<IrissSection, readonly string[]> = {
   gramatvede: ["/api/admin/iriss/logistika", "/api/admin/iriss-logistics"],
   serviss: ["/api/admin/iriss/logistika", "/api/admin/iriss-logistics"],
   pavadzimes: ["/api/admin/iriss-pavadzimes", "/api/admin/iriss/waybill-requests", "/api/admin/change-history"],
-  vin: ["/api/admin/vin-scan", "/api/admin/vin-sources", "/api/admin/vin-history", "/api/admin/outvin", "/api/admin/csdd-tech-data"],
+  vin: ["/api/admin/vin-scan", "/api/admin/vin-sources", "/api/admin/outvin", "/api/admin/csdd-tech-data"],
   atskaite: [],
 };
 
@@ -50,6 +50,8 @@ const PAGE_ALLOW: Record<IrissSection, readonly string[]> = {
 /** Bez sesijas (login, uzaicinājums) un jebkuram aktīvam darbiniekam (iziet, 2FA). */
 const API_PUBLIC = ["/api/admin/login", "/api/admin/staff/accept-invite"];
 const API_ANY_STAFF = ["/api/admin/logout", "/api/admin/iriss/logistika/totp"];
+/** Partnerim (tikai Pavadzīmes) papildus aizliegts arī Pavadzīmju sadaļā: augšupielāde un izmaiņu vēsture. */
+const API_WAYBILL_ONLY_DENY = ["/api/admin/iriss-pavadzimes/upload", "/api/admin/change-history"];
 const PAGE_PUBLIC = ["/admin/login", "/admin/uzaicinajums"];
 
 type Role = { name: string; kind: "admin" } | { name: string; kind: "staff"; sections: IrissSection[] };
@@ -118,6 +120,9 @@ function expectedApi(role: Role, pathname: string): "allow" | "deny" {
   if (API_PUBLIC.some((p) => under(pathname, p))) return "allow";
   if (role.kind === "admin") return "allow";
   if (API_ANY_STAFF.some((p) => under(pathname, p))) return "allow";
+  if (role.sections.length === 1 && role.sections[0] === "pavadzimes" && API_WAYBILL_ONLY_DENY.some((p) => under(pathname, p))) {
+    return "deny";
+  }
   return role.sections.some((s) => API_ALLOW[s].some((p) => under(pathname, p))) ? "allow" : "deny";
 }
 
@@ -195,10 +200,22 @@ describe("admin piekļuves matrica (deny-by-default)", () => {
       "/api/admin/push",
       "/api/admin/menu-layout",
       "/api/admin/limits",
+      "/api/admin/vin-history",
+      "/api/admin/change-history",
+      "/api/admin/iriss-pavadzimes/upload",
     ]) {
       expect([p, await hitApi(p, "GET", cookie)]).toEqual([p, 403]);
     }
     expect(await hitApi("/api/admin/iriss/waybill-requests", "POST", cookie)).toBe(200);
     expect(await hitApi("/api/admin/iriss-pavadzimes/x1/pdf", "GET", cookie)).toBe(200);
+    expect(await hitApi("/api/admin/iriss-pavadzimes", "GET", cookie)).toBe(200);
+  });
+
+  it("PRO paliek atdalīts: VIN vēsture (PRO klienti) ir tikai administratoram, arī visai IRISS", async () => {
+    const cookie = cookieFor(ROLES.find((r) => r.name === "visa IRISS bez PRO")!);
+    for (const method of ["GET", "POST"]) {
+      expect(await hitApi("/api/admin/vin-history", method, cookie)).toBe(403);
+    }
+    expect(await hitApi("/api/admin/vin-history", "GET", cookieFor({ name: "admin", kind: "admin" }))).toBe(200);
   });
 });

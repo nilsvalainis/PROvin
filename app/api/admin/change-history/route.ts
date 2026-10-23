@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { adminActorLabel } from "@/lib/admin-auth";
-import { getAdminOrStaffActor } from "@/lib/staff-auth";
+import { getAdminOrStaffActor, isWaybillOnlyActor } from "@/lib/staff-auth";
 import { staffHasSection, type IrissSection } from "@/lib/staff-roles";
 import {
   applyIrissOrderSnapshot,
@@ -37,6 +37,10 @@ async function requireHistoryAccess(kind: AdminChangeHistoryKind | null) {
   const actor = await getAdminOrStaffActor();
   if (actor?.kind === "admin") return { ok: true as const, actor };
   if (actor?.kind === "staff") {
+    // Partnerim (tikai Pavadzīmes) vēstures un atjaunošanas nav.
+    if (isWaybillOnlyActor(actor)) {
+      return { ok: false as const, response: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
+    }
     if (kind && staffHasSection(actor.user, sectionForHistoryKind(kind))) return { ok: true as const, actor };
     return { ok: false as const, response: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
   }

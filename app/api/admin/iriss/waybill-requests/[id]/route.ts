@@ -1,8 +1,14 @@
 import { NextResponse, after } from "next/server";
 import { wakeAivars } from "@/lib/iriss-aivars-wake";
-import { waybillAivarsReply, waybillChatPayload } from "@/lib/iriss-waybill-requests";
+import {
+  waybillAivarsReply,
+  waybillChatPayload,
+  waybillDocWithoutOrders,
+  waybillRequestWithoutOrder,
+} from "@/lib/iriss-waybill-requests";
 import { cancelWaybillRequest, readWaybillRequestsDoc, retryWaybillRequest } from "@/lib/iriss-waybill-requests-store";
 import { waybillAutoContext } from "@/lib/iriss-waybill-auto-server";
+import { canSeeWaybillOrders } from "@/lib/iriss-pavadzimes-list";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
 
 export const runtime = "nodejs";
@@ -22,7 +28,12 @@ export async function GET(_req: Request, ctx: Ctx) {
     if (!request) return NextResponse.json({ error: "Pieprasījums nav atrasts." }, { status: 404, ...NO_STORE });
     const events = doc.events.filter((event) => event.requestId === id);
     return NextResponse.json(
-      { ok: true, request, events, reply: waybillAivarsReply(request, events) },
+      {
+        ok: true,
+        request: canSeeWaybillOrders(gate.actor) ? request : waybillRequestWithoutOrder(request),
+        events,
+        reply: waybillAivarsReply(request, events),
+      },
       NO_STORE,
     );
   } catch (err) {
@@ -61,12 +72,13 @@ export async function POST(req: Request, ctx: Ctx) {
       }
       const doc = await readWaybillRequestsDoc();
       const auto = await waybillAutoContext(doc);
+      const withOrders = canSeeWaybillOrders(actor);
       return NextResponse.json(
         {
           ok: true,
-          request: result.request,
+          request: withOrders ? result.request : waybillRequestWithoutOrder(result.request),
           reply: waybillAivarsReply(result.request, doc.events),
-          ...waybillChatPayload(doc, Date.now(), auto),
+          ...waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc), Date.now(), auto),
           autoMode: auto.mode,
         },
         NO_STORE,
@@ -81,11 +93,12 @@ export async function POST(req: Request, ctx: Ctx) {
     if (!request) return NextResponse.json({ error: "Šo pieprasījumu nevar atkārtot." }, { status: 409, ...NO_STORE });
     after(() => wakeAivars(request.id));
     const doc = await readWaybillRequestsDoc();
+    const withOrders = canSeeWaybillOrders(actor);
     return NextResponse.json({
       ok: true,
-      request,
+      request: withOrders ? request : waybillRequestWithoutOrder(request),
       reply: waybillAivarsReply(request, doc.events),
-      ...waybillChatPayload(doc),
+      ...waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc)),
     }, NO_STORE);
   } catch (err) {
     console.error("[iriss-waybill] retry_failed", err instanceof Error ? err.message : err);
