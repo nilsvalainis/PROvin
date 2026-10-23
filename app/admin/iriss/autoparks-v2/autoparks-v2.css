@@ -1251,3 +1251,519 @@
     margin-top: 0;
   }
 }
+
+/* ===== Serviss (T3-T5, T7) ===== */
+.ap2.ap2.ap2 .ap2-techbar {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px 10px;
+  margin-top: 12px;
+}
+.ap2.ap2.ap2 .ap2-techbar > div {
+  font-size: 11px;
+  color: var(--ink3);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ap2.ap2.ap2 .ap2-techbar i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ok);
+  margin-right: 5px;
+  vertical-align: 1px;
+}
+.ap2.ap2.ap2 .ap2-techbar i.no {
+  background: transparent;
+}
+.ap2.ap2.ap2 .ap2-techbar b {
+  display: block;
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 600;
+  margin-top: 1px;
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-techbar button.empty {
+  border: 0;
+  background: none;
+  padding: 0;
+  margin-top: 1px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--focus);
+  text-align: left;
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-techbar input {
+  width: 100%;
+  border: 1px solid #d2d2d7;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 16px;
+}
+.ap2.ap2.ap2 .ap2-techbar .vinrow {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  border-bottom: 1px solid var(--line2);
+  padding-bottom: 8px;
+}
+.ap2.ap2.ap2 .ap2-tl {
+  position: relative;
+  margin-top: 14px;
+  padding-left: 30px;
+}
+.ap2.ap2.ap2 .ap2-tl::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: var(--line);
+}
+.ap2.ap2.ap2 .ap2-step {
+  position: relative;
+  margin-bottom: 10px;
+}
+.ap2.ap2.ap2 .ap2-step .no {
+  position: absolute;
+  left: -30px;
+  top: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #d1d5db;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink2);
+}
+.ap2.ap2.ap2 .ap2-step.done .no {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+}
+.ap2.ap2.ap2 .ap2-step.cur .no {
+  border-color: var(--focus);
+  color: var(--focus);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+.ap2.ap2.ap2 .ap2-sbox {
+  display: block;
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  text-align: left;
+}
+.ap2.ap2.ap2 .ap2-sbox .t {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--ink);
+  text-align: left;
+}
+.ap2.ap2.ap2 .ap2-sbox .t small {
+  font-weight: 500;
+  color: var(--ink3);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-prob {
+  border-top: 1px solid var(--line2);
+  padding: 12px 0 4px;
+}
+.ap2.ap2.ap2 .ap2-sbox .t + .ap2-prob {
+  border-top: 0;
+  padding-top: 8px;
+}
+.ap2.ap2.ap2 .ap2-grow {
+  display: block;
+  width: 100%;
+  resize: none;
+  overflow: hidden;
+  border: 1.5px solid transparent;
+  border-radius: 10px;
+  padding: 4px 0;
+  margin: 0;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: transparent;
+}
+.ap2.ap2.ap2 .ap2-grow:focus {
+  outline: 0;
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  background: #fff;
+}
+.ap2.ap2.ap2 .ap2-tg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ap2.ap2.ap2 .ap2-tg button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink2);
+  background: #fff;
+  padding: 0 6px;
+}
+.ap2.ap2.ap2 .ap2-tg button::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  border: 2px solid #d1d5db;
+  box-sizing: border-box;
+  flex: none;
+}
+.ap2.ap2.ap2 .ap2-tg button.on {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #166534;
+}
+.ap2.ap2.ap2 .ap2-tg button.on::before {
+  background: var(--ok) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' stroke='white' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/12px no-repeat;
+  border-color: var(--ok);
+}
+.ap2.ap2.ap2 .ap2-tg button:disabled {
+  opacity: 0.55;
+}
+.ap2.ap2.ap2 .ap2-addline {
+  border: 0;
+  background: none;
+  color: var(--focus);
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 10px 0 2px;
+}
+.ap2.ap2.ap2 .ap2-scanbig {
+  margin-top: 10px;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 12px;
+  border: 0;
+  background: var(--btn);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-irow {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 10px 0;
+  border: 0;
+  border-top: 1px solid var(--line2);
+  background: none;
+  font-size: 14px;
+  text-align: left;
+  color: var(--ink);
+}
+.ap2.ap2.ap2 .ap2-sbox .t + .ap2-irow,
+.ap2.ap2.ap2 .ap2-card h3 + .ap2-irow {
+  border-top: 0;
+}
+.ap2.ap2.ap2 .ap2-irow small {
+  display: block;
+  color: var(--ink3);
+  font-size: 12px;
+  margin-top: 1px;
+}
+.ap2.ap2.ap2 .ap2-irow .a {
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-irow .a.add {
+  color: var(--focus);
+}
+.ap2.ap2.ap2 .ap2-irow.tot {
+  grid-template-columns: 1fr auto;
+  font-weight: 700;
+  border-top: 1px solid var(--line);
+}
+.ap2.ap2.ap2 .ap2-invbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+}
+.ap2.ap2.ap2 .ap2-invbar h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-pages {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 10px 0;
+}
+.ap2.ap2.ap2 .ap2-pages .pg {
+  height: 120px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #fbfbf8;
+  position: relative;
+  padding: 12px;
+  text-align: left;
+}
+.ap2.ap2.ap2 .ap2-pages .pg i {
+  display: block;
+  height: 4px;
+  background: #e5e5ea;
+  border-radius: 2px;
+  margin: 7px 0;
+}
+.ap2.ap2.ap2 .ap2-pages .pg b {
+  position: absolute;
+  bottom: 6px;
+  right: 8px;
+  font-size: 11px;
+  color: var(--ink3);
+}
+.ap2.ap2.ap2 .ap2-pages .pg.add {
+  background: #fff;
+  border: 2px dashed #d1d5db;
+  display: grid;
+  place-items: center;
+  color: var(--focus);
+  font-weight: 600;
+  font-size: 13px;
+}
+.ap2.ap2.ap2 .ap2-inp {
+  border: 1px solid #d2d2d7 !important;
+  border-radius: 10px;
+  padding: 8px 12px !important;
+  min-width: 120px;
+  max-width: 160px;
+  text-align: right;
+  font-weight: 600;
+  font-size: 16px;
+  background: #fff;
+}
+/* Skenēšana (T4) */
+.ap2.ap2.ap2 .ap2-cam {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: #111;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+}
+.ap2.ap2.ap2 .ap2-camview {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ap2.ap2.ap2 .ap2-camview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ap2.ap2.ap2 .ap2-camtop {
+  position: absolute;
+  top: max(54px, env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+.ap2.ap2.ap2 .ap2-camtop small {
+  display: block;
+  font-weight: 500;
+  color: #aaa;
+  font-size: 12px;
+  margin-top: 2px;
+}
+.ap2.ap2.ap2 .ap2-tray {
+  background: #1c1c1e;
+  padding: 12px 16px max(30px, env(safe-area-inset-bottom));
+  flex: none;
+}
+.ap2.ap2.ap2 .ap2-tray .tp {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  min-height: 70px;
+  overflow-x: auto;
+}
+.ap2.ap2.ap2 .ap2-tray .tg2 {
+  width: 52px;
+  height: 70px;
+  flex: none;
+  background: #fbfbf8 center/cover no-repeat;
+  border-radius: 6px;
+  position: relative;
+}
+.ap2.ap2.ap2 .ap2-tray .tg2 b {
+  position: absolute;
+  bottom: 3px;
+  right: 5px;
+  font-size: 10px;
+  color: #555;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 4px;
+  padding: 0 3px;
+}
+.ap2.ap2.ap2 .ap2-tray .acts {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ap2.ap2.ap2 .ap2-tray .shutter {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.ap2.ap2.ap2 .ap2-tray .shutter::after {
+  content: "";
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #fff;
+}
+.ap2.ap2.ap2 .ap2-tray .txt {
+  border: 0;
+  background: none;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  width: 96px;
+  text-align: left;
+  padding: 0;
+}
+.ap2.ap2.ap2 .ap2-tray .txt.r {
+  text-align: right;
+  color: #34c759;
+}
+.ap2.ap2.ap2 .ap2-tray .txt:disabled {
+  opacity: 0.5;
+}
+.ap2.ap2.ap2 .ap2-camerr {
+  margin: 0 0 10px;
+  color: #ff6b5e;
+  font-size: 13px;
+}
+.ap2.ap2.ap2 .ap2-camerr button {
+  border: 1px solid #555;
+  background: none;
+  color: #fff;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.ap2.ap2.ap2 .ap2-prog {
+  height: 4px;
+  background: #3a3a3c;
+  border-radius: 2px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.ap2.ap2.ap2 .ap2-prog i {
+  display: block;
+  height: 100%;
+  background: var(--focus);
+}
+
+/* Admin mobilā tēma (admin-mobile.css) pogām uzliek "border: 0 !important" - maketa rāmis caur box-shadow. */
+.ap2.ap2.ap2 :is(.ap2-chip, .ap2-tab, .ap2-statusbtn, .ap2-tg button, .ap2-back, .ap2-fl, .ap2-pp, .ap2-btn.sec, .ap2-opt) {
+  box-shadow: inset 0 0 0 1px var(--bd, var(--line));
+}
+.ap2.ap2.ap2 .ap2-opt {
+  box-shadow: inset 0 1px 0 0 var(--line2);
+}
+.ap2.ap2.ap2 :is(.ap2-chip.on, .ap2-tab.on) {
+  --bd: transparent;
+}
+.ap2.ap2.ap2 .ap2-tg button.on {
+  --bd: #86efac;
+}
+.ap2.ap2.ap2 .ap2-btn.sec {
+  --bd: #d2d2d7;
+}
+.ap2.ap2.ap2 .ap2-pp.on {
+  box-shadow: inset 0 0 0 2px #1d1d1f;
+}
+.ap2.ap2.ap2 .ap2-grow:focus {
+  border: 1.5px solid var(--focus) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+  background: #fff !important;
+}
+
+/* Rēķina skats (T5) - savs ekrāns virs kabineta. */
+.ap2.ap2.ap2 .ap2-invpage {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  overflow-y: auto;
+  background: #f2f2f7;
+  padding: 10px 16px 120px;
+}
+.ap2.ap2.ap2 .ap2-pages .pg.add {
+  outline: 2px dashed #d1d5db;
+  outline-offset: -2px;
+  box-shadow: none;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-invpage {
+    left: 50%;
+    right: auto;
+    width: 560px;
+    transform: translateX(-50%);
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.35);
+  }
+}
+.ap2.ap2.ap2 .ap2-tray .shutter {
+  box-shadow: inset 0 0 0 4px #fff;
+}
+.ap2.ap2.ap2 .ap2-tray .shutter::after {
+  width: 52px;
+  height: 52px;
+}
