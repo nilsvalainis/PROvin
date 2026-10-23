@@ -1,4 +1,5 @@
 {
+  "ignoreCommand": "bash scripts/vercel-ignore-build.sh",
   "functions": {
     "app/api/admin/autodna/get-report/route.ts": {
       "maxDuration": 90
