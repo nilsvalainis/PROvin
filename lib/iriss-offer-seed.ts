@@ -98,11 +98,13 @@ export function offerSeedFromAutoparks(car: AutoparksCar, extras: AutoparksSeedE
   });
 }
 
-export function offerSeedFromLogistics(order: LogisticsOrder): OfferSeedFields {
+/** hideSums - darbinieks, kuram Loģistikā summas paslēptas (loma logistika/serviss): cena netiek dota. */
+export function offerSeedFromLogistics(order: LogisticsOrder, opts: { hideSums?: boolean } = {}): OfferSeedFields {
   const parsed = order.listingParsed;
   const makeModel = txt(`${order.make} ${order.model}`) || txt(order.title) || txt(`${parsed?.make ?? ""} ${parsed?.model ?? ""}`);
   const price = order.priceEur ?? parsed?.priceEur ?? null;
-  const priceText = typeof price === "number" && Number.isFinite(price) && price > 0 ? String(Math.round(price)) : "";
+  const priceText =
+    !opts.hideSums && typeof price === "number" && Number.isFinite(price) && price > 0 ? String(Math.round(price)) : "";
   const odometer = km(order.mileageKm ?? parsed?.mileageKm ?? null);
   return compact({
     brandModel: makeModel,

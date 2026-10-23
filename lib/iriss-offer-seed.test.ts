@@ -80,6 +80,25 @@ describe("offer seed", () => {
     });
   });
 
+  it("drops the logistics price when sums are hidden for the user", () => {
+    const order = {
+      id: "ord2",
+      make: "Audi",
+      model: "A6",
+      vin: "WAUZZZ4G0EN123456",
+      title: "",
+      auction: "Autobid",
+      stockNo: "",
+      priceEur: 15400,
+      mileageKm: null,
+      listingParsed: { make: "", model: "", vin: "", priceEur: 16000, mileageKm: null, address: "", source: "", parsedAt: "" },
+    } as unknown as LogisticsOrder;
+    const f = offerSeedFromLogistics(order, { hideSums: true });
+    expect(f.carPrice).toBeUndefined();
+    expect(f.priceGermany).toBeUndefined();
+    expect(offerSeedTaggedKeys(f)).not.toContain("carPrice");
+  });
+
   it("leaves empty fields out", () => {
     const empty = { ...car, vin: "", color: "", location: "", mileageKm: null, equipmentLine: "", registry: undefined } as unknown as AutoparksCar;
     const f = offerSeedFromAutoparks(empty);

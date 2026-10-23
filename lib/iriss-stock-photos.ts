@@ -76,8 +76,3 @@ export function stockPhotoAttachment(ref: OfferSourceRef, photo: StockPhoto): Ir
 export function pendingDropboxPhotoCount(attachments: ReadonlyArray<Pick<IrissOfferAttachment, "dropboxId" | "blobPath" | "dataUrl">>): number {
   return attachments.filter((a) => a.dropboxId && !a.blobPath && !a.dataUrl).length;
 }
-
-/** Papildu sadaļa, kas vajadzīga avota datu lasīšanai (bez tās seed/bildes netiek dotas). */
-export function offerSourceSection(ref: OfferSourceRef): "ap_pamatdati" | "logistika" {
-  return ref.kind === "autoparks" ? "ap_pamatdati" : "logistika";
-}

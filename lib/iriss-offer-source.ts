@@ -169,7 +169,7 @@ export type OfferSeed = {
 };
 
 /** Sākuma dati formai. null - auto nav atrasts. */
-export async function loadOfferSeed(ref: OfferSourceRef): Promise<OfferSeed | null> {
+export async function loadOfferSeed(ref: OfferSourceRef, opts: { hideSums?: boolean } = {}): Promise<OfferSeed | null> {
   let fields: OfferSeedFields;
   if (ref.kind === "autoparks") {
     const { readAutoparksV2Car } = await import("@/lib/iriss-autoparks-v2-store");
@@ -186,7 +186,7 @@ export async function loadOfferSeed(ref: OfferSourceRef): Promise<OfferSeed | nu
   } else {
     const order = await getLogisticsOrder(ref.id);
     if (!order) return null;
-    fields = offerSeedFromLogistics(order);
+    fields = offerSeedFromLogistics(order, { hideSums: opts.hideSums });
   }
   let photos: StockPhoto[] = [];
   let photosNote = "";
