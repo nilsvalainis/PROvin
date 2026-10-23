@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/admin/LoginForm";
+import { resolveLoginEmailPrefill } from "@/lib/admin-login-prefill";
 import {
   adminAuthConfigured,
   adminAuthMissingReason,
@@ -15,7 +16,7 @@ import { staffHomePath } from "@/lib/staff-roles";
 
 export const dynamic = "force-dynamic";
 
-type LoginPageProps = { searchParams: Promise<{ next?: string; google_error?: string }> };
+type LoginPageProps = { searchParams: Promise<{ next?: string; google_error?: string; email?: string }> };
 
 function resolvePostLoginPath(nextParam: string | undefined): string {
   const raw = typeof nextParam === "string" ? nextParam.trim() : "";
@@ -146,7 +147,11 @@ export default async function AdminLoginPage({ searchParams }: LoginPageProps) {
                 </p>
               </div>
             ) : null}
-            <LoginForm devPrefill={devPrefill} postLoginPath={postLoginPath} />
+            <LoginForm
+              devPrefill={devPrefill}
+              postLoginPath={postLoginPath}
+              emailPrefill={devPrefill ? null : resolveLoginEmailPrefill(sp.email)}
+            />
             {googleLoginHref ? (
               <div className="space-y-2">
                 {sp.google_error ? (

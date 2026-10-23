@@ -7,6 +7,7 @@ import {
   isStaffSessionLive,
   resolveLiveStaffSession,
   revokeAllStaffSessions,
+  restoreStaffAccess,
   revokeStaffAccess,
   setStaffSections,
 } from "@/lib/staff-store";
@@ -106,5 +107,32 @@ describe("staff store access lifecycle", () => {
     const again = await authenticateStaffPassword(email, "pietiekami12x");
     expect(again.ok).toBe(false);
     if (!again.ok) expect(again.error).toBe("revoked");
+  });
+
+  it("logs in with the non-revoked record when the same email was re-invited after revoke", async () => {
+    const email = `atkartoti.${suffix()}@example.lv`;
+    const first = await inviteStaffUser({ name: "Toms Pirmais", email, role: "logistics", createdBy: "env-admin" });
+    if (!first.ok) throw new Error("invite 1");
+    await acceptStaffInvite({ token: first.token, password: "vecaparole12x" });
+    await revokeStaffAccess({ userId: first.user.id, actorId: "env-admin" });
+
+    const second = await inviteStaffUser({ name: "Toms Otrais", email, role: "logistics", createdBy: "env-admin" });
+    if (!second.ok) throw new Error("invite 2");
+    await acceptStaffInvite({ token: second.token, password: "jaunaparole12x" });
+
+    const fresh = await authenticateStaffPassword(email, "jaunaparole12x");
+    expect(fresh.ok).toBe(true);
+    if (fresh.ok) expect(fresh.user.id).toBe(second.user.id);
+
+    // Apgrieztā secība: jaunākais ieraksts atsaukts, vecais atjaunots - jāatrod vecais, nevis "revoked".
+    await revokeStaffAccess({ userId: second.user.id, actorId: "env-admin" });
+    await restoreStaffAccess({ userId: first.user.id, actorId: "env-admin" });
+    const restored = await authenticateStaffPassword(email, "vecaparole12x");
+    expect(restored.ok).toBe(true);
+    if (restored.ok) expect(restored.user.id).toBe(first.user.id);
+
+    const wrong = await authenticateStaffPassword(email, "jaunaparole12x");
+    expect(wrong.ok).toBe(false);
+    if (!wrong.ok) expect(wrong.error).toBe("invalid");
   });
 });
