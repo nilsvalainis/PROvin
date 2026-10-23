@@ -1,7 +1,8 @@
 #!/usr/bin/env node
-// iriss-waybill-worker: automātiski izraksta STANDARTA CSDD pavadzīmes no rindas.
-// Ik 10 s: GET /api/iriss/aivars/waybill-requests?scope=auto (serveris dod tikai standarta darbus)
-// -> lokāla pārbaude -> claim (serveris pārbauda vēlreiz) -> VPN lease (iriss-vpn-ctl) -> refill.js -> save.js -> PDF -> result.
+// iriss-waybill-worker: automātiski izraksta STANDARTA CSDD pavadzīmes no rindas (akts "Noformēt pavadzīmi" vai jauna).
+// Ik 10 s: GET /api/iriss/aivars/waybill-requests?scope=auto&live=0|1 (serveris dod tikai standarta darbus; live = sirdspuksts UI)
+// -> lokāla pārbaude -> claim (serveris pārbauda vēlreiz) -> VPN lease (iriss-vpn-ctl) -> refill.js -> save.js -> PDF -> result
+// -> VPN release (vienmēr, finally). Katrs solis tiek ziņots serverim (events stage), UI rāda tikai reālos soļus.
 // Nestandarta darbus neaiztiek (Aivars). Nekad nepārtrauc/neanulē aktīvu pavadzīmi (tikai ALLOWED_SCRIPTS).
 // Env (/etc/iriss-ttr/env): IRISS_API_BASE, IRISS_AIVARS_API_TOKEN, IRISS_WAYBILL_WORKER_LIVE=1 (citādi dry-run: tikai logo).
 
@@ -36,7 +37,7 @@ async function call(method, p, body) {
 
 const api = {
   async pending() {
-    const r = await call("GET", "?scope=auto");
+    const r = await call("GET", `?scope=auto&live=${LIVE ? "1" : "0"}`);
     if (r.status !== 200) throw new Error(`pending_http_${r.status}`);
     return Array.isArray(r.data.requests) ? r.data.requests : [];
   },
@@ -62,6 +63,12 @@ async function vpnLease() {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.error === "vpn_blocked_manual" ? "VPN lieto Nils" : `vpn_lease_${res.status}`);
   }
+}
+
+/** Darbs beidzies: atbrīvo lease, lai iriss-vpn-ctl drīz atslēdz VPN (Nila konts ir kopīgs). */
+async function vpnRelease() {
+  const res = await fetch("http://127.0.0.1:9334/release", { method: "POST", signal: AbortSignal.timeout(15_000) });
+  if (!res.ok) throw new Error(`vpn_release_${res.status}`);
 }
 
 /** Palaiž tikai allowlist skriptu; darbu nodod caur env IRISS_JOB_JSON, rezultāts = pēdējā stdout JSON rinda. */
@@ -96,6 +103,7 @@ async function tick() {
       const res = await processJob(job, {
         api,
         vpnLease,
+        vpnRelease,
         runScript,
         readPdfBase64,
         now: () => Date.now(),

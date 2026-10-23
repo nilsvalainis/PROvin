@@ -16,12 +16,19 @@ export type TtrServerReport = {
   reportedAt: string;
 };
 
+/** Pavadzīmju worker (Hetzner) sirdspuksts: vai tas strādā īstajā režīmā (IRISS_WAYBILL_WORKER_LIVE=1) vai dry-run. */
+export type TtrWorkerHeartbeat = {
+  live: boolean;
+  seenAt: string;
+};
+
 export type TtrControlDoc = {
   version: 1;
   updatedAt: string;
   stopRequestedAt: string;
   stopRequestedBy: string;
   server: TtrServerReport;
+  worker: TtrWorkerHeartbeat;
 };
 
 /** Serveris ziņo vismaz reizi 5 min; pēc 10 min stāvoklis ir "nav zināms". */
@@ -40,6 +47,7 @@ export function emptyTtrControlDoc(): TtrControlDoc {
     stopRequestedAt: "",
     stopRequestedBy: "",
     server: emptyTtrServerReport(),
+    worker: { live: false, seenAt: "" },
   };
 }
 
@@ -72,7 +80,31 @@ export function parseTtrControlDoc(raw: unknown): TtrControlDoc {
     stopRequestedAt: isoOrEmpty(o.stopRequestedAt),
     stopRequestedBy: typeof o.stopRequestedBy === "string" ? o.stopRequestedBy.slice(0, 64) : "",
     server: parseTtrServerReport(o.server) ?? emptyTtrServerReport(),
+    worker: parseTtrWorkerHeartbeat(o.worker),
   };
+}
+
+function parseTtrWorkerHeartbeat(raw: unknown): TtrWorkerHeartbeat {
+  const o = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+  return { live: o.live === true, seenAt: isoOrEmpty(o.seenAt) };
+}
+
+/** Worker poll ik 10 s; dokumentu raksta tikai, ja režīms mainījās vai pēdējais ieraksts vecāks par 5 min. */
+export const TTR_WORKER_HEARTBEAT_WRITE_MS = 5 * 60 * 1000;
+
+export function workerHeartbeatNeedsWrite(doc: TtrControlDoc, live: boolean, nowMs = Date.now()): boolean {
+  const seen = Date.parse(doc.worker.seenAt);
+  return doc.worker.live !== live || !Number.isFinite(seen) || nowMs - seen >= TTR_WORKER_HEARTBEAT_WRITE_MS;
+}
+
+export function applyTtrWorkerHeartbeat(doc: TtrControlDoc, live: boolean, now = new Date()): TtrControlDoc {
+  return { ...doc, worker: { live, seenAt: now.toISOString() } };
+}
+
+/** Vai worker tiešām izraksta (live) un ir dzīvs (sirdspuksts nesenāks par 10 min). */
+export function waybillWorkerLive(doc: Pick<TtrControlDoc, "worker">, nowMs = Date.now()): boolean {
+  const seen = Date.parse(doc.worker.seenAt);
+  return doc.worker.live && Number.isFinite(seen) && nowMs - seen <= TTR_REPORT_STALE_MS;
 }
 
 export type TtrVpnStatus = {

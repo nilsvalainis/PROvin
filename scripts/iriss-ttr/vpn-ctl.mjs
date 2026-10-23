@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // iriss-vpn-ctl: tur Hetzner CSDD VPN (systemd iriss-vpn) tikai tik ilgi, cik vajag darbiem.
-// - 127.0.0.1:9334 (tikai lokāli): GET /status, POST /lease (ieslēgt + pagarināt), POST /stop.
+// - 127.0.0.1:9334 (tikai lokāli): GET /status, POST /lease (ieslēgt + pagarināt), POST /release (darbs beidzies), POST /stop.
 // - Ik 10 s: Vercel GET /api/iriss/aivars/ttr (Aivara Bearer) -> admin "Man vajag VPN" -> stop uzreiz.
 // - Idle autostop pēc IRISS_VPN_IDLE_MIN (15-30, nokl. 20) min kopš pēdējā darba.
 // - Ja VPN nokrīt ārēji (Nils pieslēdzās ar to pašu kontu), serveris to neatjauno 30 min.
@@ -10,7 +10,7 @@
 import { execFile } from "node:child_process";
 import http from "node:http";
 import { promisify } from "node:util";
-import { canStartVpn, decideVpnAction, extendLease, vpnIdleMinutes } from "./vpn-lease.mjs";
+import { canStartVpn, decideVpnAction, extendLease, releaseLease, vpnIdleMinutes } from "./vpn-lease.mjs";
 
 const run = promisify(execFile);
 const PORT = 9334;
@@ -172,6 +172,13 @@ const server = http.createServer(async (req, res) => {
       await stopVpn("manual");
       state.lastVpnUp = false;
       await report(false, true);
+      return send(res, 200, await statusBody());
+    }
+    if (req.method === "POST" && req.url === "/release") {
+      // Worker darbs beidzies (finally): lease saīsina līdz ~1 min; tālāk tick atslēdz VPN kā "idle".
+      state.leaseUntilMs = releaseLease(state.leaseUntilMs, Date.now());
+      log("lease_released", { leaseUntil: Number.isFinite(state.leaseUntilMs) ? new Date(state.leaseUntilMs).toISOString() : "" });
+      await report(await vpnUp(), true);
       return send(res, 200, await statusBody());
     }
     if (req.method === "POST" && req.url === "/lease") {

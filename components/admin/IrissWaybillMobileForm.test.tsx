@@ -53,24 +53,38 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     expect([...text].some((c) => c.charCodeAt(0) === 8211 || c.charCodeAt(0) === 8212)).toBe(false);
   });
 
-  it("dzīvais statuss: josla ar soļiem, procenti un skaidrs 'Izdota' ar PDF", () => {
+  it("dzīvais statuss: josla ar soļiem bez procentu teksta un skaidrs 'Izdota' ar PDF", () => {
     const working = renderHtml(
       <WaybillLiveRow
-        row={{ id: "w1", title: "Audi A6 Avant", sub: "B762-7 · 48 h", label: "Izveido", tone: "wip", pdfUrl: "", canRetry: false, errorText: "", stale: false, progress: { step: 2, pct: 64, text: "Aivars veido pavadzīmi CSDD..." } }}
+        row={{ id: "w1", title: "Audi A6 Avant", sub: "B762-7 · 48 h", label: "Izveido", tone: "wip", pdfUrl: "", canRetry: false, canCancel: false, errorText: "", stale: false, progress: { step: 2, pct: 62, text: "Aizpilda CSDD formu..." } }}
+        onCancel={() => undefined}
       />,
     );
     expect(working).toContain('role="progressbar"');
-    expect(working).toContain('aria-valuenow="64"');
     expect(working).toContain("Pavadzīmes statuss: Izveido, solis 2 no 3");
-    expect(working).toContain("64 %");
+    expect(working).toContain("Aizpilda CSDD formu...");
+    expect(working).not.toContain("62 %");
+    // Darbā esošu atcelt nevar.
+    expect(working).not.toContain("Atcelt");
     const doneText = renderText(
       <WaybillLiveRow
-        row={{ id: "w2", title: "BMW 216d", sub: "26A1 · B193-7", label: "Izdota", tone: "ok", pdfUrl: "/x.pdf", canRetry: false, errorText: "", stale: false, progress: { step: 3, pct: 100, text: "Nr. 26A1 · derīga līdz 25.10.2026, 12:00" } }}
+        row={{ id: "w2", title: "BMW 216d", sub: "26A1 · B193-7", label: "Izdota", tone: "ok", pdfUrl: "/x.pdf", canRetry: false, canCancel: false, errorText: "", stale: false, progress: { step: 3, pct: 100, text: "Nr. 26A1 · derīga līdz 25.10.2026, 12:00" } }}
       />,
     );
     expect(doneText).toContain("Izdota");
     expect(doneText).toContain("PDF");
     expect(doneText).toContain("Nr. 26A1 · derīga līdz 25.10.2026, 12:00");
+  });
+
+  it("gaidošam, vēl nepaņemtam pieprasījumam ir 'Atcelt'", () => {
+    const text = renderText(
+      <WaybillLiveRow
+        row={{ id: "w3", title: "Peugeot 5008", sub: "B193-7 · 1 h", label: "Gaida", tone: "wait", pdfUrl: "", canRetry: false, canCancel: true, errorText: "", stale: false, progress: { step: 1, pct: 10, text: "Termiņš beidzies - atcel un izveido jaunu" } }}
+        onCancel={() => undefined}
+      />,
+    );
+    expect(text).toContain("Atcelt");
+    expect(text).toContain("Termiņš beidzies - atcel un izveido jaunu");
   });
 
   it("auto saraksts: 'Pieņemts' birka, VIN un pēdējā rinda 'Cits auto - ierakstīt ar roku'", () => {

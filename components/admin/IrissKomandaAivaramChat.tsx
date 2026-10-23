@@ -5,6 +5,7 @@ import {
   WAYBILL_REQUEST_STATUS_LABEL,
   isStaleWaybillRequest,
   waybillAivarsReply,
+  waybillRequestCancellable,
   type WaybillAivarsReply,
   type WaybillRequest,
   type WaybillRequestEvent,
@@ -29,7 +30,7 @@ import {
 } from "@/lib/iriss-waybill-plates";
 import { formatWaybillExpiryDdMmHm } from "@/lib/iriss-pavadzimes-countdown";
 import { LvDealerPlate } from "@/components/admin/LvDealerPlate";
-import { IrissWaybillMobileForm, type WaybillMobileDraft } from "@/components/admin/IrissWaybillMobileForm";
+import { IrissWaybillMobileForm, confirmWaybillCancel, type WaybillMobileDraft } from "@/components/admin/IrissWaybillMobileForm";
 import type { WaybillMobilePayload } from "@/lib/iriss-waybill-mobile-form";
 import type { WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 import type { WaybillVehicleChip } from "@/lib/iriss-waybill-vehicles";
@@ -308,6 +309,30 @@ export function IrissKomandaAivaramChat({
     void submit(Boolean(confirm));
   }
 
+  async function cancel(id: string) {
+    try {
+      const res = await fetch(`/api/admin/iriss/waybill-requests/${encodeURIComponent(id)}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cancel" }),
+      });
+      const data = await readChatResponse(res);
+      if (isChatBusy(data) || isChatError(data) || !isChatOk(data)) {
+        setError(chatErrorMessage(data, "Neizdevās atcelt."));
+        void load();
+        return;
+      }
+      setChat((prev) => ({
+        ...withReplies(data),
+        vehicles: data.vehicles.length ? data.vehicles : prev.vehicles,
+        plates: data.plates.length ? data.plates : prev.plates,
+      }));
+    } catch {
+      setError("Neizdevās atcelt.");
+    }
+  }
+
   async function retry(id: string) {
     try {
       const res = await fetch(`/api/admin/iriss/waybill-requests/${encodeURIComponent(id)}`, {
@@ -345,6 +370,7 @@ export function IrissKomandaAivaramChat({
         draft={mobileDraft}
         onSubmit={submitMobile}
         onRetry={(id) => void retry(id)}
+        onCancel={(id) => void cancel(id)}
         onPickerOpen={() => {
           if (!carsLoaded.current) void load(true);
         }}
@@ -376,6 +402,7 @@ export function IrissKomandaAivaramChat({
                 key={`r-${item.request.id}`}
                 request={item.request}
                 reply={chat.replies.find((row) => row.requestId === item.request.id) ?? waybillAivarsReply(item.request, chat.events)}
+                onCancel={() => void cancel(item.request.id)}
               />
             ) : (
               <EventBubble
@@ -564,10 +591,19 @@ function statusTone(status: WaybillRequestStatus): string {
   if (status === "issued") return "bg-[#ECFDF3] text-[#067647]";
   if (status === "error") return "bg-[#FEF3F2] text-[#B42318]";
   if (status === "in_progress") return "bg-[#EEF2FF] text-[#3d5bd9]";
+  if (status === "cancelled") return "bg-[#F3F4F6] text-[#6b7280]";
   return "bg-[#F3F4F6] text-[#4b5563]";
 }
 
-function RequestBubble({ request, reply }: { request: WaybillRequest; reply: WaybillAivarsReply }) {
+function RequestBubble({
+  request,
+  reply,
+  onCancel,
+}: {
+  request: WaybillRequest;
+  reply: WaybillAivarsReply;
+  onCancel: () => void;
+}) {
   const hours = requestHours(request);
   const shownPlate = displayDealerPlate(request.vehicle.plate) || request.vehicle.plate;
   return (
@@ -604,6 +640,17 @@ function RequestBubble({ request, reply }: { request: WaybillRequest; reply: Way
           >
             Atvērt pavadzīmi
           </a>
+        ) : null}
+        {waybillRequestCancellable(request) ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (confirmWaybillCancel(request.vehicle.brandModel)) onCancel();
+            }}
+            className="mt-1 block text-[12px] font-medium text-[#3d5bd9]"
+          >
+            Atcelt
+          </button>
         ) : null}
       </div>
       <span className="text-[11px] text-[#9aa3b2]">{formatHm(request.createdAt)}</span>

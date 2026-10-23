@@ -32,4 +32,12 @@ describe("computeWaybillLifecycles", () => {
       "P02787",
     ]);
   });
+
+  it("saraksts (arī derīgās) atveras ar jaunāko, nevis ar to, kam termiņš beidzas pirmais vai vecāko", () => {
+    // Vecāka pavadzīme ar garāku termiņu (72 h) un jaunāka ar 1 h: augšā jaunākā izdotā.
+    const old72 = { number: "P02809", plate: "B762-7", issuedAt: iso(2026, 10, 22, 9, 0), validUntil: iso(2026, 10, 25, 9, 0) };
+    const new1 = { number: "P02811", plate: "B193-7", issuedAt: iso(2026, 10, 23, 14, 0), validUntil: iso(2026, 10, 23, 15, 0) };
+    const mid = { number: "P02810", plate: "B192-7", issuedAt: iso(2026, 10, 23, 8, 0), validUntil: iso(2026, 10, 24, 8, 0) };
+    expect(sortWaybillsNewestFirst([old72, mid, new1]).map((r) => r.number)).toEqual(["P02811", "P02810", "P02809"]);
+  });
 });
