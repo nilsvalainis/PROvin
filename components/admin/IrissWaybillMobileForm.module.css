@@ -36,7 +36,7 @@
 }
 .mf .hours {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) 1.3fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
 }
 .mf .pick {
@@ -127,13 +127,6 @@
   width: 100%;
   height: 48px;
   padding: 0 12px;
-  font-size: 16px;
-}
-.mf .inputSm {
-  width: 100%;
-  min-width: 0;
-  height: 44px;
-  padding: 0 10px;
   font-size: 16px;
 }
 .mf .sub {
@@ -376,6 +369,21 @@
 }
 .mf .progText.progTextBad {
   color: var(--bad, #c2362b);
+}
+.mf .progNote {
+  margin-top: 2px;
+  color: #067647;
+  font-size: 12px;
+}
+.mf .archiveLink {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  margin: 2px auto 0;
+  padding: 0 12px;
+  color: var(--ink2, #5e636e);
+  font-size: 13px;
+  font-weight: 500;
 }
 
 /* "Kā tas strādā" - liela kartīte ar numurētiem soļiem. */

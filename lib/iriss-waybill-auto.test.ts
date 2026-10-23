@@ -293,3 +293,70 @@ describe("waybill worker (scripts/iriss-ttr)", () => {
     expect(d.vpnRelease).not.toHaveBeenCalled();
   });
 });
+
+describe("j8: laiks 1/12/48/brīvs abām plūsmām, akts bez maršruta, VPN cilvēkam", () => {
+  const hoursReq = (flow: "tradeAct" | "new", validHours: number) => {
+    const until = new Date(Date.parse("2026-10-22T18:00:00.000Z") + validHours * 3_600_000).toISOString();
+    return flow === "tradeAct" ? tradeReq({ validHours, validUntil: until }) : req({ validHours, validUntil: until });
+  };
+
+  for (const flow of ["tradeAct", "new"] as const) {
+    it(`${flow}: serveris un worker pieņem 1, 12, 48, brīvu (36) un 2160 h; noraida 0 un 2161`, () => {
+      for (const h of [1, 12, 48, 36, 2160]) {
+        const r = hoursReq(flow, h);
+        expect(classifyWaybillForAuto(r, free)).toMatchObject({ standard: true, flow });
+        const job = { ...toAivarsCreateWaybillAction(r), auto: classifyWaybillForAuto(r, free) };
+        expect(localStandardCheck(job, NOW)).toMatchObject({ ok: true, flow });
+      }
+      for (const h of [0, 2161]) {
+        expect(classifyWaybillForAuto(hoursReq(flow, h), free)).toEqual({ standard: false, reason: "nederīgs laiks" });
+        const ok = hoursReq(flow, 12);
+        const job = { ...toAivarsCreateWaybillAction(ok), auto: classifyWaybillForAuto(ok, free), validHours: h };
+        expect(localStandardCheck(job, NOW)).toEqual({ ok: false, reason: "nederīgs laiks" });
+      }
+    });
+  }
+
+  it("akta darbam skripti nesaņem maršrutu (tikai laiks + pārstāvis), arī ja pieprasījumā tas būtu", async () => {
+    const d = deps({
+      runScript: vi.fn(async (step: string, _input?: unknown) =>
+        step === "fill" ? { ok: true, fields: { plate: "B193-7", validHours: 1 } } : { ok: true, waybillNo: "P1", pdfPath: "pdf/x.pdf" },
+      ),
+    });
+    await processJob({ ...tradeJob(), routeFrom: "Rīga", routeTo: "Rīga" }, d);
+    const input = (d.runScript.mock.calls[0] as unknown[])[1] as Record<string, unknown>;
+    expect(input).toMatchObject({ flow: "tradeAct", routeFrom: "", routeTo: "", representative: "Nils Valainis", validHours: 1 });
+  });
+
+  it("ja Nils lieto VPN (vpn-ctl blocked) vai stāvoklis nav zināms: neko nedara - bez claim, bez VPN, bez skriptiem", async () => {
+    for (const status of [{ vpn: "down", blocked: true }, null]) {
+      const d = deps({ vpnStatus: vi.fn(async () => status) });
+      expect(await processJob(tradeJob(), d)).toEqual({ outcome: "vpn_busy" });
+      expect(d.api.claim).not.toHaveBeenCalled();
+      expect(d.vpnLease).not.toHaveBeenCalled();
+      expect(d.vpnRelease).not.toHaveBeenCalled();
+      expect(d.runScript).not.toHaveBeenCalled();
+    }
+    const failing = deps({ vpnStatus: vi.fn(async () => { throw new Error("ECONNREFUSED"); }) });
+    expect((await processJob(tradeJob(), failing)).outcome).toBe("vpn_busy");
+    expect(failing.api.claim).not.toHaveBeenCalled();
+  });
+
+  it("VPN brīvs: darbs notiek un lease vienmēr tiek atbrīvots; dry-run VPN neaiztiek vispār", async () => {
+    const d = deps({
+      vpnStatus: vi.fn(async () => ({ vpn: "down", blocked: false })),
+      runScript: vi.fn(async (step: string, _input?: unknown) =>
+        step === "fill" ? { ok: true, fields: { plate: "B193-7", validHours: 1 } } : { ok: true, waybillNo: "P1", pdfPath: "pdf/x.pdf" },
+      ),
+    });
+    expect((await processJob(tradeJob(), d)).outcome).toBe("issued");
+    expect(d.vpnLease).toHaveBeenCalledTimes(1);
+    expect(d.vpnRelease).toHaveBeenCalledTimes(1);
+    const dryStatus = vi.fn(async () => ({ blocked: false }));
+    const dry = deps({ dryRun: true, vpnStatus: dryStatus });
+    expect((await processJob(tradeJob(), dry)).outcome).toBe("dry_run");
+    expect(dryStatus).not.toHaveBeenCalled();
+    expect(dry.vpnLease).not.toHaveBeenCalled();
+    expect(dry.api.claim).not.toHaveBeenCalled();
+  });
+});

@@ -54,6 +54,7 @@ export function IrissWaybillMobileForm({
   onRetry,
   onCancel,
   onPickerOpen,
+  onOpenArchive,
 }: {
   plates: WaybillPlateState[];
   /** null = vēl ielādē. */
@@ -69,6 +70,8 @@ export function IrissWaybillMobileForm({
   onRetry: (id: string) => void;
   onCancel?: (id: string) => void;
   onPickerOpen?: () => void;
+  /** "Visas pavadzīmes Arhīvā ›" (lapa pārslēdz skatu uz Arhīvu). */
+  onOpenArchive?: () => void;
 }) {
   const [form, setForm] = useState<WaybillMobileFormState>(() => initialWaybillMobileForm(IRISS_DEALER_PLATES[0]));
   const [localError, setLocalError] = useState<string | null>(null);
@@ -336,19 +339,28 @@ export function IrissWaybillMobileForm({
                 {h} h
               </button>
             ))}
+            <button
+              type="button"
+              aria-pressed={form.hoursPreset === null}
+              className={`${styles.pick} ${form.hoursPreset === null ? styles.on : ""}`}
+              onClick={() => patch({ hoursPreset: null })}
+            >
+              Cits
+            </button>
+          </div>
+          {form.hoursPreset === null ? (
             <input
-              className={styles.inputSm}
+              className={`${styles.input} ${styles.sub}`}
               type="text"
               inputMode="numeric"
               pattern="[0-9]*"
-              placeholder="cits, h"
+              placeholder={`stundas, 1-${WAYBILL_VALID_MAX_HOURS}`}
               aria-label="Cits derīguma ilgums stundās"
               value={form.hoursOther}
-              onFocus={() => patch({ hoursPreset: null })}
-              onChange={(e) => patch({ hoursPreset: null, hoursOther: e.target.value.replace(/\D/g, "").slice(0, 4) })}
-              max={WAYBILL_VALID_MAX_HOURS}
+              onChange={(e) => patch({ hoursOther: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+              autoFocus
             />
-          </div>
+          ) : null}
           {hours && untilText ? (
             <p className={styles.until}>
               derīga līdz <b>{untilText}</b>
@@ -385,6 +397,7 @@ export function IrissWaybillMobileForm({
         <span>CSDD pavadzīme</span>
         <span className={styles.count}>{working} darbā</span>
       </div>
+      <p className={styles.secNote}>Aivars izveido tikai pavadzīmes</p>
       <div className={styles.list} aria-live="polite">
         {rows.length === 0 ? (
           <p className={styles.empty}>Vēl nav pieprasījumu.</p>
@@ -392,6 +405,11 @@ export function IrissWaybillMobileForm({
           rows.map((row) => <WaybillLiveRow key={row.id} row={row} onRetry={onRetry} onCancel={onCancel} />)
         )}
       </div>
+      {onOpenArchive ? (
+        <button type="button" className={styles.archiveLink} onClick={onOpenArchive}>
+          Visas pavadzīmes Arhīvā ›
+        </button>
+      ) : null}
 
       <IrissWaybillHowItWorks plates={plates.map((p) => p.plate)} />
 
@@ -433,6 +451,7 @@ export function WaybillLiveRow({
   onCancel?: (id: string) => void;
 }) {
   const { step, pct, text } = row.progress;
+  const line = row.line || text;
   const bad = row.tone === "bad";
   const done = step === 3 && !bad;
   return (
@@ -470,6 +489,8 @@ export function WaybillLiveRow({
       </div>
       {row.stale ? (
         <p className={styles.progText}>Novecojis: vairāk nekā 24 h bez virzības. Ja vajag, izveido no jauna.</p>
+      ) : row.writtenOff ? (
+        <p className={styles.progText}>{line}</p>
       ) : (
         <>
           <div
@@ -490,7 +511,8 @@ export function WaybillLiveRow({
               </li>
             ))}
           </ol>
-          <p className={`${styles.progText} ${bad ? styles.progTextBad : ""}`}>{text}</p>
+          <p className={`${styles.progText} ${bad ? styles.progTextBad : ""}`}>{line}</p>
+          {row.note ? <p className={styles.progNote}>{row.note}</p> : null}
         </>
       )}
     </div>
@@ -517,7 +539,7 @@ export function IrissWaybillHowItWorks({ plates }: { plates: readonly string[] }
             <h4>Izvēlies numuru un auto</h4>
             <p>
               Numurs ar atzīmi &quot;brīvs&quot; ir gatavs lietošanai. Izvēlies auto no tirdzniecībā pieņemto auto saraksta - tad jānorāda
-              tikai laiks. Ja auto sarakstā nav, ieraksti marku, modeli un sākuma adresi.
+              tikai laiks un komersanta pārstāvis. Ja auto sarakstā nav, ieraksti marku, modeli un sākuma adresi.
             </p>
             {plates.length ? (
               <div className={styles.mini}>
@@ -532,7 +554,10 @@ export function IrissWaybillHowItWorks({ plates }: { plates: readonly string[] }
           <span className={styles.num}>3</span>
           <div>
             <h4>Izvēlies laiku</h4>
-            <p>Izvēlies 12, 24 vai 48 h, vai ieraksti citu. Derīga no šī brīža. Lai pagarinātu, izvēlies to pašu numuru un auto vēlreiz.</p>
+            <p>
+              Izvēlies 1, 12 vai 48 h, vai &quot;Cits&quot; un ieraksti stundas (1-{WAYBILL_VALID_MAX_HOURS}). Derīga no šī brīža. Lai
+              pagarinātu, izvēlies to pašu numuru un auto vēlreiz.
+            </p>
           </div>
         </li>
         <li>

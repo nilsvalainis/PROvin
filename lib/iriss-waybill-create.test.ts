@@ -317,3 +317,27 @@ describe("Aivars contract and Pavadzīmes UI boundaries", () => {
     expect(cardList).toMatch(/isAllowlistedWaybillPlate/);
   });
 });
+
+describe("servera API derīgums (Nils 23.10): 1, 12, 48 h vai brīvi 1-2160, abām plūsmām", () => {
+  const at = new Date("2026-10-23T10:00:00.000Z");
+  const flows = {
+    tradeAct: { plate: "B193-7", brandModel: "Peugeot 5008", vin: "VF30ARHHAAS201388", tradeAct: true, representative: "Nils Valainis" },
+    new: { plate: "B762-7", brandModel: "VW Passat" },
+  };
+  for (const [name, body] of Object.entries(flows)) {
+    it(`${name}: pieņem 1, 12, 48, 36, 2160 (arī kā tekstu) un noraida 0, 2161, 1.5`, () => {
+      for (const validHours of [1, 12, 48, 36, 2160, "12"]) {
+        const parsed = parseCreateWaybillInput({ ...body, validHours }, at);
+        expect(parsed.ok).toBe(true);
+        if (!parsed.ok) continue;
+        const h = Number(validHours);
+        expect(parsed.value.validHours).toBe(h);
+        expect(Date.parse(parsed.value.validUntil) - Date.parse(parsed.value.validFrom)).toBe(h * 3_600_000);
+        if (name === "tradeAct") expect(parsed.value).toMatchObject({ tradeAct: true, routeFrom: "", routeTo: "" });
+      }
+      for (const validHours of [0, 2161, 1.5, "0", "2161", "-1"]) {
+        expect(parseCreateWaybillInput({ ...body, validHours }, at)).toEqual({ ok: false, error: "Derīgums: no 1 līdz 2160 h." });
+      }
+    });
+  }
+});

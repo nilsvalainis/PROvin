@@ -73,9 +73,10 @@ export function scriptInput(job) {
     vin: job.vehicle.vin || "",
     company: job.auto.company,
     ctx: job.auto.ctx,
-    // Akta pavadzīmei maršrutu CSDD ņem no akta; ja forma tomēr prasa adresi, adapteris liek noklusējumu (kā Aivara skriptos).
-    routeFrom: flow === "tradeAct" ? ROUTE_FROM : job.routeFrom,
-    routeTo: flow === "tradeAct" ? ROUTE_TO : job.routeTo,
+    // Akta pavadzīmei maršruta/pilsētas nav (Nils 23.10): tikai laiks + pārstāvis. Ja akta forma tomēr prasa adresi,
+    // adapteris atsakās pirms Saglabāt (darbs Aivaram), nevis liek fiksētu maršrutu.
+    routeFrom: flow === "tradeAct" ? "" : job.routeFrom,
+    routeTo: flow === "tradeAct" ? "" : job.routeTo,
     validFrom: job.validFrom,
     validUntil: job.validUntil,
     validHours: job.validHours,
@@ -109,7 +110,16 @@ export function formatTimings(marks) {
 }
 
 /**
- * Viena darba apstrāde. deps: { api, vpnLease, vpnRelease, runScript, readPdfBase64, now, log, dryRun }.
+ * VPN aizņemts cilvēkam: Nils nospieda "Man vajag VPN" / pieslēdzās ar to pašu kontu (vpn-ctl /status blocked)
+ * vai stop pieprasījums vēl tiek apstrādāts. Tad worker darbu NEŅEM (bez claim) un VPN neaiztiek.
+ */
+export function vpnBusyForHuman(status) {
+  if (!status || typeof status !== "object") return true;
+  return status.blocked === true || status.stopPending === true;
+}
+
+/**
+ * Viena darba apstrāde. deps: { api, vpnStatus, vpnLease, vpnRelease, runScript, readPdfBase64, now, log, dryRun }.
  * UI redz reālos soļus: claim (serveris: "claimed") -> stage vpn -> filling -> saving -> pdf -> result.
  * Kļūda pirms Saglabāt -> event + release Aivaram (serveris viņu pamodina).
  * Kļūda Saglabāt laikā vai pēc -> result ok:false (CSDD jāpārbauda cilvēkam), nekāda atkārtošana.
@@ -125,6 +135,14 @@ export async function processJob(job, deps) {
   if (deps.dryRun) {
     deps.log("dry_run_would_process", { id: job.id, plate: job.vehicle.plate, flow: check.flow });
     return { outcome: "dry_run" };
+  }
+  // Ja Nils lieto VPN - neko nedara: neņem darbu un neieslēdz VPN (nākamajā reizē mēģinās vēlreiz).
+  if (deps.vpnStatus) {
+    const vpn = await deps.vpnStatus().catch(() => null);
+    if (vpnBusyForHuman(vpn)) {
+      deps.log("vpn_busy_skip", { id: job.id });
+      return { outcome: "vpn_busy" };
+    }
   }
   const claimed = await deps.api.claim(job.id);
   if (!claimed) return { outcome: "not_claimed" };

@@ -395,7 +395,12 @@ function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
       const plate = (await c.ops.options("select[name=rn]")).find((o) => compact(o.value) === compact(input.plate));
       if (!plate) throw new Error(`numurs ${input.plate} nav izvēlams (aizņemts?)`);
       if (state.laptId) {
-        // Akta pavadzīme: laiks, numurs, pārstāvis; adrese un CSDD tikai, ja forma tos prasa (kā Aivara skriptos).
+        // Akta pavadzīme (Nils 23.10): TIKAI laiks + komersanta pārstāvis (+ numurs, tirdzniecības vieta, ja forma prasa).
+        // Maršrutu/pilsētu neaiztiek; ja akta forma prasa tukšu adresi - kļūda pirms Saglabāt (Aivaram), nevis fiksēts maršruts.
+        const before = (await c.ops.formValues()) || {};
+        if ("i01_kav_id" in before && !String(before.i01_kav_id || "").trim()) {
+          throw new Error("akta formā prasa adresi - nododu Aivaram");
+        }
         const rep = pickRepresentative(await c.ops.options("select[name=gprs_id_kom_parstavis]"), company);
         await c.ops.fill("#der_stundas", String(values.validHours));
         if (await c.ops.has("select[name=lra_id]")) {
@@ -405,13 +410,10 @@ function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
         }
         await c.ops.select("select[name=rn]", plate.value);
         await c.ops.select("select[name=gprs_id_kom_parstavis]", rep.value);
-        if (await c.ops.has("#i01_kav_t")) {
-          const route = await resolveRoute(c, input);
-          await c.ops.setKavSel(route.target);
-          await c.ops.waitJx();
-          if (route.house) await c.ops.fill("input[name=mn_m1]", route.house);
+        // Numuru salīdzināšana - CSDD Tukuma filiālē (tikai, ja forma šo izvēli rāda un tā vēl nav izvēlēta).
+        if ((await c.ops.has("select[name=ans_kiest_id]")) && !String(before.ans_kiest_id || "").trim()) {
+          await c.ops.select("select[name=ans_kiest_id]", ROUTE.csddKiestId);
         }
-        if (await c.ops.has("select[name=ans_kiest_id]")) await c.ops.select("select[name=ans_kiest_id]", ROUTE.csddKiestId);
         return;
       }
       const lra = await c.ops.options("select[name=lra_id]");
@@ -445,13 +447,12 @@ function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
         // Akta forma: tai jābūt tieši šim aktam (state.laptId), ja tas ir zināms šajā procesā.
         const actOk = input.flow === "tradeAct" && (!state.laptId || v.lapt_id === state.laptId);
         const companyOk = !("lra_id" in v) || v.lra_id === company.lraId;
-        const routeOk = !("i01_kav_id" in v) || /R[ĪI]GAS/i.test(v.__adr || "");
-        const csddOk = !("ans_kiest_id" in v) || v.ans_kiest_id === ROUTE.csddKiestId;
         const repOk = v.gprs_id_kom_parstavis === pickRepresentative(await c.ops.options("select[name=gprs_id_kom_parstavis]"), company).value;
+        // Akta pavadzīmei maršruts nav darba daļa: salīdzina tikai aktu, firmu, pārstāvi, numuru un laiku.
         return {
           plate: actOk && companyOk && repOk ? v.rn : `${v.rn || ""}?akts`,
           validHours: v.der_stundas,
-          routeFrom: routeOk && csddOk ? "" : v.__adr || "?",
+          routeFrom: "",
           routeTo: "",
         };
       }

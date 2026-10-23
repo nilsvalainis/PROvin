@@ -37,15 +37,17 @@ Atcelšana: `systemctl disable --now iriss-vpn-ctl; rm /etc/systemd/system/iriss
 Standarta (klasifikācija `lib/iriss-waybill-auto.ts`, serveris to pārbauda arī pie claim; tā pati pārbaude worker
 `localStandardCheck`). Divas plūsmas kā telefona formā (PR #504):
 - `tradeAct` - tirdzniecībā pieņemts auto: VIN (17 zīmes) + firmas pārstāvis (ĪRISS - Nils Valainis, DZA - Taivo Batiņš),
-  bez maršruta -> CSDD akts pēc VIN -> "Noformēt pavadzīmi";
+  bez maršruta/pilsētas -> CSDD akts pēc VIN -> "Noformēt pavadzīmi", formā ievada TIKAI laiku un pārstāvi (ja akta forma
+  prasa tukšu adresi - kļūda pirms Saglabāt, darbs Aivaram; fiksēts maršruts netiek likts);
 - `new` - jauna pavadzīme ar noklusējuma maršrutu Tukums, Rīgas iela -> Tukuma CSDD (cits maršruts -> Aivars).
 Abām: numurs B193-7 / B762-7 (ĪRISS, ctx1) vai B192-7 (Dzintarzeme, ctx2) un BRĪVS, nav cita darba ar šo numuru,
-laiks 1-2160 h (arī 1 h), pieprasītais termiņš nav beidzies, komentārs tukšs, "Tukums" vai "<numurs> uz <šī auto>",
+laiks jebkurš vesels 1-2160 h (formā 1 / 12 / 48 h vai "Cits"), pieprasītais termiņš nav beidzies, komentārs tukšs, "Tukums" vai "<numurs> uz <šī auto>",
 pirmais mēģinājums. Pieprasījums = apstiprinājums. Viss pārējais (arī aizņemts numurs / confirmBusy, "Cits" pārstāvis) -> Aivars.
 
 STINGRI: worker NEKAD nepārtrauc un neanulē aktīvu pavadzīmi. Tas palaiž tikai `refill.js` un `save.js` (`ALLOWED_SCRIPTS`).
 
-Plūsma: poll ik 10 s `GET ?scope=auto&live=0|1` -> lokāla pārbaude -> `claim {worker:"auto"}` -> `POST 127.0.0.1:9334/lease` -> `refill.js` -> lauku pārbaude -> `save.js` -> PDF -> `result {by:"auto"}` -> `POST 127.0.0.1:9334/release` (vienmēr, `finally`).
+Plūsma: poll ik 10 s `GET ?scope=auto&live=0|1` -> lokāla pārbaude -> `GET 127.0.0.1:9334/status` (ja `blocked` - Nils lieto VPN -
+worker NEKO nedara: bez claim, bez VPN, mēģina nākamajā reizē) -> `claim {worker:"auto"}` -> `POST 127.0.0.1:9334/lease` -> `refill.js` -> lauku pārbaude -> `save.js` -> PDF -> `result {by:"auto"}` -> `POST 127.0.0.1:9334/release` (vienmēr, `finally`).
 - `live=0|1` ir sirdspuksts: admin UI raksta "Automātika testa režīmā - pavadzīmi izraksta Aivars ar roku", ja Vercel
   `IRISS_WAYBILL_AUTO` nav 1 vai worker ir dry-run / nav ziņojis 10 min.
 - Reālie soļi UI (bez procentiem): `claim` -> `events {kind:"message", stage}`: `vpn`, `filling`, `saving`, `pdf` -> Izdota ar PDF (push pieprasītājam).
@@ -115,7 +117,7 @@ Idempotence (`/root/iriss-ttr/state/waybill-jobs/<jobId>.json` + `<jobId>.save.l
 - Kļūda pirms klikšķa: lock tiek noņemts (drīkst mēģināt vēlreiz).
 - Cits darbs ar to pašu numuru saglabāts pēdējās 30 min: atsakās.
 
-Pārbaude pirms LIVE (root, bez Saglabāt): `IRISS_JOB_JSON='<darbs>' node /root/iriss-ttr/refill.js` - redzams `{ok:true, fields}` ar pareizu numuru un 48 h, nekas nav saglabāts (CDP režīmā cilne ar aizpildītu formu paliek atvērta, to aizver ar roku).
+Pārbaude pirms LIVE (root, bez Saglabāt): `IRISS_JOB_JSON='<darbs>' node /root/iriss-ttr/refill.js` - redzams `{ok:true, fields}` ar pareizu numuru un laiku, nekas nav saglabāts (CDP režīmā cilne ar aizpildītu formu paliek atvērta, to aizver ar roku).
 
 ### Ieslēgšana
 

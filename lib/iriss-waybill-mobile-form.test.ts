@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  WAYBILL_FORM_DEFAULT_HOURS,
+  WAYBILL_MOBILE_HOUR_PRESETS,
   buildWaybillMobilePayload,
+  parseWaybillCustomHours,
+  waybillWrittenOffAtMs,
   firstFreeWaybillPlate,
   initialWaybillMobileForm,
   waybillMobileHours,
@@ -15,8 +19,29 @@ import type { WaybillAivarsReply, WaybillRequest } from "@/lib/iriss-waybill-req
 const base = initialWaybillMobileForm("B192-7");
 
 describe("phone waybill form", () => {
-  it("defaults to 48 h and start Tukums, preset and own hours work", () => {
-    expect(base.hoursPreset).toBe(48);
+  it("hour choices are exactly 1 h, 12 h, 48 h + Cits (1-2160), default 12 h", () => {
+    expect([...WAYBILL_MOBILE_HOUR_PRESETS]).toEqual([1, 12, 48]);
+    expect(WAYBILL_FORM_DEFAULT_HOURS).toBe(12);
+    expect(base.hoursPreset).toBe(12);
+    for (const h of WAYBILL_MOBILE_HOUR_PRESETS) expect(waybillMobileHours({ hoursPreset: h, hoursOther: "" })).toBe(h);
+    expect(parseWaybillCustomHours("1")).toBe(1);
+    expect(parseWaybillCustomHours("36")).toBe(36);
+    expect(parseWaybillCustomHours(" 2160 ")).toBe(2160);
+    for (const bad of ["0", "2161", "", "1.5", "-3", "12h", "99999"]) expect(parseWaybillCustomHours(bad)).toBeNull();
+    // Katru izvēli serveris pieņem; robežas 0 un 2161 forma neļauj nosūtīt.
+    const now = new Date("2026-10-23T10:00:00.000Z");
+    for (const [hoursPreset, hoursOther] of [[1, ""], [12, ""], [48, ""], [null, "36"], [null, "2160"]] as const) {
+      const built = buildWaybillMobilePayload({ ...base, hoursPreset, hoursOther, comment: "192 uz VW Golf" });
+      expect(built.ok).toBe(true);
+      if (built.ok) expect(parseCreateWaybillInput(built.payload, now).ok).toBe(true);
+    }
+    for (const hoursOther of ["0", "2161"]) {
+      const built = buildWaybillMobilePayload({ ...base, hoursPreset: null, hoursOther, comment: "192 uz VW Golf" });
+      expect(built).toEqual({ ok: false, error: "Ieraksti derīgumu: no 1 līdz 2160 h." });
+    }
+  });
+
+  it("start Tukums, preset and own hours work", () => {
     expect(base.from).toBe("tukums");
     expect(waybillMobileHours({ hoursPreset: 12, hoursOther: "" })).toBe(12);
     expect(waybillMobileHours({ hoursPreset: null, hoursOther: "72" })).toBe(72);
@@ -25,7 +50,7 @@ describe("phone waybill form", () => {
     expect(waybillMobileHours({ hoursPreset: null, hoursOther: "" })).toBeNull();
   });
 
-  it("comment only '193 uz BMW 330' sends plate 193 for 48 h, and the server accepts it", () => {
+  it("comment only '193 uz BMW 330' sends plate 193 for the default 12 h, and the server accepts it", () => {
     const state = { ...base, comment: "193 uz BMW 330" };
     expect(waybillMobilePlate(state)).toBe("B193-7");
     const built = buildWaybillMobilePayload(state);
@@ -35,7 +60,7 @@ describe("phone waybill form", () => {
         plate: "B193-7",
         brandModel: "",
         vin: "",
-        validHours: 48,
+        validHours: 12,
         comment_untrusted: "193 uz BMW 330",
         routeFromAddress: "",
         tradeAct: false,
@@ -45,7 +70,7 @@ describe("phone waybill form", () => {
     if (!built.ok) return;
     const server = parseCreateWaybillInput(built.payload, new Date("2026-10-22T18:00:00.000Z"));
     expect(server.ok && server.value.brandModel).toBe("BMW 330");
-    expect(server.ok && server.value.validUntil).toBe("2026-10-24T18:00:00.000Z");
+    expect(server.ok && server.value.validUntil).toBe("2026-10-23T06:00:00.000Z");
   });
 
   it("a tapped plate wins over the comment; a car from the list sends make, model and VIN", () => {
@@ -207,6 +232,54 @@ describe("phone list of Aivars requests", () => {
   });
 });
 
+describe("Izrakstīta, solis N no 3, Arhīvs", () => {
+  const now = Date.parse("2026-10-23T12:00:00.000Z");
+  it("issued waybill whose time ended is 'Izrakstīta' for 24 h on the first page, then archive only", () => {
+    const ended = req({ id: "wbr_end", status: "issued", waybillNo: "P1", validUntil: "2026-10-23T11:00:00.000Z", pdfUrl: "/api/admin/iriss-pavadzimes/p1/pdf" });
+    const frozen = JSON.stringify(ended);
+    const [row] = waybillMobileRequestRows([ended], [], 5, { nowMs: now });
+    expect(row).toMatchObject({ id: "wbr_end", label: "Izrakstīta", tone: "wait", writtenOff: true, line: "Pavadzīme vairs nav derīga. Atrodama Arhīvā.", note: "" });
+    expect(row?.sub).toMatch(/^Izrakstīta 23\.10\.2026, \d\d:00 · numurs B193-7 atkal ir brīvs$/);
+    expect(waybillMobileRequestRows([ended], [], 5, { nowMs: now + 25 * 3_600_000 })).toEqual([]);
+    expect(waybillMobileRequestRows([ended], [], 5, { nowMs: now + 25 * 3_600_000, which: "archive" })[0]?.label).toBe("Izrakstīta");
+    expect(JSON.stringify(ended)).toBe(frozen);
+  });
+
+  it("a newer issued waybill on the same plate writes the old one off; the plate is then not free", () => {
+    const old = req({ id: "wbr_a", status: "issued", createdAt: "2026-10-23T08:00:00.000Z", validUntil: "2026-10-25T08:00:00.000Z" });
+    const newer = req({ id: "wbr_b", status: "issued", createdAt: "2026-10-23T10:00:00.000Z", updatedAt: "2026-10-23T10:05:00.000Z", validUntil: "2026-10-25T10:00:00.000Z" });
+    expect(waybillWrittenOffAtMs(old, [old, newer], now)).toBe(Date.parse("2026-10-23T10:05:00.000Z"));
+    expect(waybillWrittenOffAtMs(newer, [old, newer], now)).toBeNull();
+    const rows = waybillMobileRequestRows([old, newer], [], 5, { nowMs: now });
+    expect(rows.map((r) => [r.id, r.label])).toEqual([["wbr_b", "Izdota"], ["wbr_a", "Izrakstīta"]]);
+    expect(rows[1]?.sub).not.toContain("atkal ir brīvs");
+    // Cita numura pavadzīme neko neizraksta.
+    const otherPlate = { ...newer, vehicle: { ...newer.vehicle, plate: "B7627" } };
+    expect(waybillWrittenOffAtMs(old, [old, otherPlate], now)).toBeNull();
+  });
+
+  it("'solis N no 3' under queued, in progress and issued; not under errors or ended pending", () => {
+    const rows = waybillMobileRequestRows(
+      [
+        req({ id: "q", createdAt: "2026-10-23T11:59:00.000Z", updatedAt: "2026-10-23T11:59:00.000Z", validUntil: "2026-10-24T11:59:00.000Z" }),
+        req({ id: "w", status: "in_progress", createdAt: "2026-10-23T11:58:00.000Z", updatedAt: "2026-10-23T11:58:30.000Z", pickedAt: "2026-10-23T11:58:30.000Z", stage: "vpn" }),
+        req({ id: "i", status: "issued", createdAt: "2026-10-23T11:57:00.000Z", waybillNo: "P9", validUntil: "2026-10-24T10:00:00.000Z", pdfUrl: "/api/admin/iriss-pavadzimes/p9/pdf" }),
+        req({ id: "e", status: "error", createdAt: "2026-10-23T11:56:00.000Z", updatedAt: "2026-10-23T11:56:00.000Z", errorReason: "CSDD nav pieejams" }),
+      ],
+      [],
+      5,
+      { nowMs: now },
+    );
+    const by = Object.fromEntries(rows.map((r) => [r.id, r]));
+    expect(by.q?.line).toBe("Rindā. Aivars sāks pēc brīža. · solis 1 no 3");
+    // VPN solis: gaida CSDD savienojumu.
+    expect(by.w?.line).toBe("Gaida CSDD savienojumu (VPN). · solis 2 no 3");
+    expect(by.i?.line).toMatch(/^Nr\. P9 · derīga līdz 24\.10\.2026, \d\d:00 · solis 3 no 3$/);
+    expect(by.i?.note).toBe("Saglabāta Arhīvā");
+    expect(by.e?.line).toBe('Neizdevās: CSDD nav pieejams. Spied "Atkārtot".');
+  });
+});
+
 describe("live progress", () => {
   const t0 = "2026-10-23T10:00:00.000Z";
   const at = (min: number) => Date.parse(t0) + min * 60_000;
@@ -227,7 +300,7 @@ describe("live progress", () => {
     );
     expect(stages.map((p) => p.text)).toEqual([
       "Automātika paņēma darbā.",
-      "Pieslēdzas CSDD (VPN)...",
+      "Gaida CSDD savienojumu (VPN).",
       "Aizpilda CSDD formu...",
       "Saglabā CSDD...",
       "Saglabāta CSDD, ielādē PDF...",

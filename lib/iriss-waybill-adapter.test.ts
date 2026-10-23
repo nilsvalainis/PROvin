@@ -398,3 +398,68 @@ describe("waybill-adapter: drošība", () => {
     expect(adapterMod.readCredentialFile(path.join(dir, "nav"))).toBeNull();
   });
 });
+
+describe("waybill-adapter: pieņemts auto (akts -> Noformēt pavadzīmi), tikai laiks + pārstāvis", () => {
+  const VIN = "WVGZZZA1ZKV000001";
+  const act = { ...iriss, tradeAct: true, representative: "Nils Valainis", auto: { ...iriss.auto, flow: "tradeAct" } };
+
+  /** Imitācijai pievieno akta sarakstu, akta skatu un akta pavadzīmes formu (lapt_id + laukus, ko forma rāda). */
+  function withActs(fake: ReturnType<typeof fakeCsdd>, actForm: Record<string, string> = {}) {
+    let viewAct = "";
+    const callEx = fake.ops.callEx;
+    fake.ops.callEx = async (action: string, arg?: number | null, params?: string | null) => {
+      await callEx(action, arg, params);
+      const m = /^a=11&lapt_id=(\d+)$/.exec(params || "");
+      if (action === "lapt" && m) viewAct = m[1] ?? "";
+      if (action === "lapv" && params === "a=0") {
+        fake.s.view = "lapv";
+        fake.s.form = { lapt_id: viewAct, ...actForm };
+      }
+    };
+    const p1Text = fake.ops.p1Text;
+    Object.assign(fake.ops, {
+      actRows: async () => (fake.s.view === "acts" ? [{ oc: "ex('lapt',0,'a=11&lapt_id=555')", t: `GDZ00310 ${VIN} VOLKSWAGEN T-ROC` }] : []),
+      p1Text: async () => (viewAct && fake.s.view !== "saved" && fake.s.view !== "lapv" ? "Akta numurs: GDZ00310\nStatuss: Derīgs" : p1Text()),
+    });
+    return fake;
+  }
+
+  for (const validHours of [1, 12, 48, 36, 2160]) {
+    it(`${validHours} h: aizpilda tikai laiku, numuru, vietu un pārstāvi; maršrutu neaiztiek; Saglabāt nespiež`, async () => {
+      const fake = withActs(fakeCsdd());
+      const job = {
+        ...act,
+        validHours,
+        validUntil: new Date(Date.parse(act.validFrom) + validHours * 3_600_000).toISOString(),
+      };
+      const inp = input(job);
+      expect(inp).toMatchObject({ flow: "tradeAct", routeFrom: "", routeTo: "", validHours });
+      const out = await refill({ input: inp, ledger: ledger(), driver: setup(fake) });
+      expect(out).toMatchObject({ ok: true, fields: { plate: "B1937", validHours } });
+      expect(fake.s.form).toMatchObject({ lapt_id: "555", der_stundas: String(validHours), rn: "B193-7", gprs_id_kom_parstavis: "1065584" });
+      expect(fake.s.form.i01_kav_id).toBeUndefined();
+      expect(fake.s.form.kmod_id).toBeUndefined();
+      expect(fake.s.saves).toBe(0);
+      // lapv a=3 tikai lasa, vai numurs brīvs; pavadzīme tiek noformēta no akta (lapv a=0).
+      expect(fake.s.exCalls).toContain("lapv|0|a=0");
+    });
+  }
+
+  it("akta forma prasa tukšu adresi -> kļūda pirms Saglabāt (Aivaram), fiksēts maršruts netiek likts", async () => {
+    const fake = withActs(fakeCsdd(), { i01_kav_id: "" });
+    const out = await runSave({ input: input(act), ledger: ledger(), driver: setup(fake) });
+    expect(out).toMatchObject({ ok: false, error: expect.stringContaining("prasa adresi") });
+    expect(fake.s.form.i01_kav_id).toBe("");
+    expect(fake.s.saves).toBe(0);
+  });
+
+  it("akts nav atrasts -> kļūda, jauna pavadzīme akta vietā netiek veidota", async () => {
+    const fake = fakeCsdd();
+    Object.assign(fake.ops, { actRows: async () => [] });
+    const out = await refill({ input: input(act), ledger: ledger(), driver: setup(fake) });
+    expect(out).toMatchObject({ ok: false, error: expect.stringContaining("akts") });
+    expect(fake.s.form.rn).toBeUndefined();
+    expect(fake.s.exCalls).not.toContain("lapv|0|a=0");
+    expect(fake.s.saves).toBe(0);
+  });
+});
