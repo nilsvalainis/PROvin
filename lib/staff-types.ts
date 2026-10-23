@@ -67,6 +67,7 @@ export type StaffAuditAction =
   | "waybill_requested"
   | "waybill_retry"
   | "waybill_claimed"
+  | "waybill_cancelled"
   | "waybill_result"
   | "point_viewed"
   | "point_edited"
@@ -126,6 +127,7 @@ export function isStaffAuditAction(value: unknown): value is StaffAuditAction {
     value === "waybill_requested" ||
     value === "waybill_retry" ||
     value === "waybill_claimed" ||
+    value === "waybill_cancelled" ||
     value === "waybill_result" ||
     value === "point_viewed" ||
     value === "point_edited" ||

@@ -52,6 +52,7 @@ export function IrissWaybillMobileForm({
   draft,
   onSubmit,
   onRetry,
+  onCancel,
   onPickerOpen,
 }: {
   plates: WaybillPlateState[];
@@ -66,6 +67,7 @@ export function IrissWaybillMobileForm({
   draft: WaybillMobileDraft | null;
   onSubmit: (payload: WaybillMobilePayload) => Promise<boolean>;
   onRetry: (id: string) => void;
+  onCancel?: (id: string) => void;
   onPickerOpen?: () => void;
 }) {
   const [form, setForm] = useState<WaybillMobileFormState>(() => initialWaybillMobileForm(IRISS_DEALER_PLATES[0]));
@@ -387,7 +389,7 @@ export function IrissWaybillMobileForm({
         {rows.length === 0 ? (
           <p className={styles.empty}>Vēl nav pieprasījumu.</p>
         ) : (
-          rows.map((row) => <WaybillLiveRow key={row.id} row={row} onRetry={onRetry} />)
+          rows.map((row) => <WaybillLiveRow key={row.id} row={row} onRetry={onRetry} onCancel={onCancel} />)
         )}
       </div>
 
@@ -415,8 +417,21 @@ export function IrissWaybillMobileForm({
   );
 }
 
-/** Viens pieprasījums ar dzīvo progresu: josla, 3 soļi, skaidrs "Izdota". */
-export function WaybillLiveRow({ row, onRetry }: { row: WaybillMobileRequestRow; onRetry?: (id: string) => void }) {
+/** Apstiprinājums pirms "Atcelt" (tikai Gaida, vēl nepaņemts; serveris pārbauda vēlreiz). */
+export function confirmWaybillCancel(title: string): boolean {
+  return window.confirm(`Atcelt pavadzīmes pieprasījumu${title ? ` (${title})` : ""}? Aivars un automātika to vairs neizrakstīs.`);
+}
+
+/** Viens pieprasījums ar dzīvo statusu: josla pēc reālā soļa, 3 soļi, skaidrs "Izdota". */
+export function WaybillLiveRow({
+  row,
+  onRetry,
+  onCancel,
+}: {
+  row: WaybillMobileRequestRow;
+  onRetry?: (id: string) => void;
+  onCancel?: (id: string) => void;
+}) {
   const { step, pct, text } = row.progress;
   const bad = row.tone === "bad";
   const done = step === 3 && !bad;
@@ -441,6 +456,17 @@ export function WaybillLiveRow({ row, onRetry }: { row: WaybillMobileRequestRow;
             Atkārtot
           </button>
         ) : null}
+        {row.canCancel && onCancel ? (
+          <button
+            type="button"
+            className={styles.link}
+            onClick={() => {
+              if (confirmWaybillCancel(row.title)) onCancel(row.id);
+            }}
+          >
+            Atcelt
+          </button>
+        ) : null}
       </div>
       {row.stale ? (
         <p className={styles.progText}>Novecojis: vairāk nekā 24 h bez virzības. Ja vajag, izveido no jauna.</p>
@@ -452,6 +478,7 @@ export function WaybillLiveRow({ row, onRetry }: { row: WaybillMobileRequestRow;
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={pct}
+            aria-valuetext={text}
             aria-label={`Pavadzīmes statuss: ${row.label}, solis ${step} no 3`}
           >
             <span style={{ width: `${pct}%` }} />
@@ -462,7 +489,6 @@ export function WaybillLiveRow({ row, onRetry }: { row: WaybillMobileRequestRow;
                 {label}
               </li>
             ))}
-            <li className={styles.pct}>{bad ? "" : `${pct} %`}</li>
           </ol>
           <p className={`${styles.progText} ${bad ? styles.progTextBad : ""}`}>{text}</p>
         </>

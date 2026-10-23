@@ -13,6 +13,7 @@ Neaiztiek: `provin-csdd-vpn`, `provin-csdd-relay`, `provin-listings*`, `provin-m
 - `iriss-vpn` saņem `Restart=no` (drop-in `iriss-vpn-no-restart.conf`): ja Nils pieslēdzas, serveris tiek izmests un neatkārto.
 - `vpn-ctl.mjs` (127.0.0.1:9334, tikai lokāli):
   - `POST /lease` - ieslēdz VPN (ja nav) un pagarina lease līdz now + idle. 409 `vpn_blocked_manual`, ja pēdējās 30 min Nils paņēma VPN.
+  - `POST /release` - darbs beidzies (worker to sauc `finally` blokā pēc katra darba): lease saīsina līdz ~1 min, tad idle stop.
   - `POST /stop` - atslēdz uzreiz.
   - `GET /status`.
 - Idle autostop: `IRISS_VPN_IDLE_MIN` (15-30, noklusējums 20) min pēc pēdējā darba.
@@ -33,14 +34,21 @@ Atcelšana: `systemctl disable --now iriss-vpn-ctl; rm /etc/systemd/system/iriss
 
 ## Automātiska STANDARTA pavadzīme (`iriss-waybill-worker`)
 
-Standarta (klasifikācija `lib/iriss-waybill-auto.ts`, serveris to pārbauda arī pie claim):
-numurs B193-7 / B762-7 (ĪRISS, ctx1) vai B192-7 (Dzintarzeme, ctx2) un BRĪVS, 48 h, maršruts Tukums, Rīgas iela -> Tukuma CSDD,
-komentārs tukšs, "Tukums" vai "<numurs> uz <šī pieprasījuma auto>", pirmais mēģinājums. Pieprasījums = apstiprinājums.
-Viss pārējais (arī aizņemts numurs / confirmBusy) -> Aivars, kurš prasa Nila "jā".
+Standarta (klasifikācija `lib/iriss-waybill-auto.ts`, serveris to pārbauda arī pie claim; tā pati pārbaude worker
+`localStandardCheck`). Divas plūsmas kā telefona formā (PR #504):
+- `tradeAct` - tirdzniecībā pieņemts auto: VIN (17 zīmes) + firmas pārstāvis (ĪRISS - Nils Valainis, DZA - Taivo Batiņš),
+  bez maršruta -> CSDD akts pēc VIN -> "Noformēt pavadzīmi";
+- `new` - jauna pavadzīme ar noklusējuma maršrutu Tukums, Rīgas iela -> Tukuma CSDD (cits maršruts -> Aivars).
+Abām: numurs B193-7 / B762-7 (ĪRISS, ctx1) vai B192-7 (Dzintarzeme, ctx2) un BRĪVS, nav cita darba ar šo numuru,
+laiks 1-2160 h (arī 1 h), pieprasītais termiņš nav beidzies, komentārs tukšs, "Tukums" vai "<numurs> uz <šī auto>",
+pirmais mēģinājums. Pieprasījums = apstiprinājums. Viss pārējais (arī aizņemts numurs / confirmBusy, "Cits" pārstāvis) -> Aivars.
 
 STINGRI: worker NEKAD nepārtrauc un neanulē aktīvu pavadzīmi. Tas palaiž tikai `refill.js` un `save.js` (`ALLOWED_SCRIPTS`).
 
-Plūsma: poll ik 10 s `GET ?scope=auto` -> lokāla pārbaude -> `claim {worker:"auto"}` -> `POST 127.0.0.1:9334/lease` -> `refill.js` -> lauku pārbaude -> `save.js` -> PDF -> `result {by:"auto"}`.
+Plūsma: poll ik 10 s `GET ?scope=auto&live=0|1` -> lokāla pārbaude -> `claim {worker:"auto"}` -> `POST 127.0.0.1:9334/lease` -> `refill.js` -> lauku pārbaude -> `save.js` -> PDF -> `result {by:"auto"}` -> `POST 127.0.0.1:9334/release` (vienmēr, `finally`).
+- `live=0|1` ir sirdspuksts: admin UI raksta "Automātika testa režīmā - pavadzīmi izraksta Aivars ar roku", ja Vercel
+  `IRISS_WAYBILL_AUTO` nav 1 vai worker ir dry-run / nav ziņojis 10 min.
+- Reālie soļi UI (bez procentiem): `claim` -> `events {kind:"message", stage}`: `vpn`, `filling`, `saving`, `pdf` -> Izdota ar PDF (push pieprasītājam).
 - Kļūda pirms Saglabāt: `message` notikums + `release` -> darbs atpakaļ rindā Aivaram (vairs ne automātikai), serveris pamodina Aivaru.
 - Kļūda Saglabāt laikā/pēc: `result ok:false` "Pārbaudi CSDD" - bez atkārtošanas (nedrīkst izveidot dublikātu).
 - Logā (`journalctl -u iriss-waybill-worker`) laiki: created -> claim -> vpnUp -> filled -> saved -> pdf -> result.
@@ -48,7 +56,7 @@ Plūsma: poll ik 10 s `GET ?scope=auto` -> lokāla pārbaude -> `claim {worker:"
 ### Skriptu līgums (JĀPĀRBAUDA serverī pirms LIVE)
 
 Worker palaiž `node /root/iriss-ttr/<refill.js|save.js>` ar env `IRISS_AUTO=1` un `IRISS_JOB_JSON`:
-`{jobId, plate, brandModel, vin, company, ctx, routeFrom, routeTo, validFrom, validUntil, validHours, preferTradeAct}`.
+`{jobId, plate, brandModel, vin, company, ctx, routeFrom, routeTo, validFrom, validUntil, validHours, flow, representative, preferTradeAct}`.
 Pēdējā stdout rinda - JSON:
 - `refill.js`: `{ok:true, fields:{plate, validHours, ...}}` (aizpilda, NESPIEŽ Saglabāt). Ja VIN pieņemts tirdzniecībā: akts -> "Noformēt pavadzīmi"; citādi jauna pavadzīme.
 - `save.js`: `{ok:true, waybillNo, pdfPath}` (pdfPath relatīvs `/root/iriss-ttr`), kļūdā `{ok:false, error}`.
@@ -78,15 +86,16 @@ Serverī bija tikai `srv.js`, `main.js`, `jx.js`, `probe.js`, tāpēc `refill.js
 | Pieslēgšanās | `#vards`/`#parole` + `button[name=submit]`. ĪRISS (ctx1): `CSDD_TTR_ENV_FILE` vai `/root/iriss-ttr/.env`, `/root/iriss-ttr/creds`. DZA (ctx2): `CSDD_TTR_ENV_FILE_DZA` vai `/root/iriss-ttr/creds-autoapkope-dza` |
 | DZA firma | `select[name=kiest_id]` = 5092 + "Turpināt" (pieslēgšanās fāzē); ĪRISS sesijā izvēle = kļūda |
 | Brīvs numurs | `ex('lapv',0,'a=3')`, numurs `select[name=rn]` sarakstā; ja nav - `{ok:false}` (nekas netiek pārtraukts) |
-| Tirdzniecības akts | `ex('rep_lapt_tl')` tikai lasa: VIN (vai modelis, ja VIN nav) aktā -> `{ok:false}`, darbs Aivaram |
+| Tirdzniecības akts (`new`) | `ex('rep_lapt_tl')` tikai lasa: VIN (vai modelis, ja VIN nav) aktā -> `{ok:false}`, darbs Aivaram |
+| Akta pavadzīme (`tradeAct`) | `rep_lapt_tl` (+ lapas `porcijas_numurs=2..8`) -> rinda ar VIN (`lapt_id`) -> `ex('lapt',0,'a=11&lapt_id=<id>')`, jābūt tieši vienam "Statuss: Derīgs" -> `ex('lapv',0,'a=0')` "Noformēt pavadzīmi" -> `der_stundas`, `rn`, pārstāvis (+ `lra_id`, adrese, `ans_kiest_id` 24, ja forma tos prasa); akta nav -> `{ok:false}`, jauna pavadzīme netiek veidota |
 | Forma | `der_stundas`, `lra_id` (ĪRISS 2776, DZA 2894 - citādi "nepareiza firma"), `rn`, pārstāvis (ĪRISS 1065584 NILS VALAINIS, DZA TAIVO BATINS) |
 | Marka/modelis | `#kmod_id` pēc teksta (MB = MERCEDES-BENZ, VW = VOLKSWAGEN) + `ex('lapv_kmod')` + `#kmod_id_mod` precīzi; neviennozīmīgi - `{ok:false}` |
 | Maršruts | adrešu koks (GET `v=kav`): Tukuma nov. > TUKUMS > RĪGAS IELA > 75 -> `setKavSel`; bez mājas mezgla iela + `mn_m1` 75; CSDD Tukums `ans_kiest_id` 24 |
 | Saglabāt | tikai `save.js`: `form[name=lapv_form] button:has-text('Saglabāt')`, numurs no `#p1` ("Pavadzīmes numurs: P0...") + `#lapv_id` |
 | PDF | GET `?main=1&pdf=lapv&id=<lapv_id>` -> `pdf/<jobId>-<numurs>.pdf` |
 
-Lapā adapteris drīkst izsaukt tikai `ex('lapv',0,'a=3')`, `ex('lapv_kmod')`, `ex('rep_lapt_tl')` (`ALLOWED_EX`); `lapv_par`
-(pārtraukt), `a=2` u.c. - kļūda. Serveris sūta `ctx` kā `"ctx1"`/`"ctx2"`, `parseJobInput` pieņem abus formātus.
+Lapā adapteris drīkst izsaukt tikai `ex('lapv',0,'a=3')`, `ex('lapv_kmod')`, `ex('rep_lapt_tl')` (`ALLOWED_EX`) un akta plūsmai
+`rep_lapt_tl` lapas, `lapt a=11&lapt_id=<cipari>`, `lapv a=0` (`ALLOWED_EX_PATTERNS`); `lapv_par` (pārtraukt), `a=2` u.c. - kļūda. Serveris sūta `ctx` kā `"ctx1"`/`"ctx2"`, `parseJobInput` pieņem abus formātus.
 - `browserUrl` tukšs: katrs skripts palaiž savu pārlūku, `save.js` formu aizpilda vēlreiz un pārbauda. `browserUrl`
   `http://127.0.0.1:9333` (ja `srv.js` dod CDP) vai `ws://...`: `refill.js` atstāj cilni (`window.name = iriss-job-<id>`), `save.js` to turpina.
 - Pieslēgšanās: sk. tabulu "Adapteris" (faili KEY=VALUE `CSDD_USER`/`CSDD_PASS` vai Aivara divu rindu `creds`). Vērtības netiek izdrukātas.
@@ -115,3 +124,15 @@ Pārbaude pirms LIVE (root, bez Saglabāt): `IRISS_JOB_JSON='<darbs>' node /root
 3. `/etc/iriss-ttr/env`: `IRISS_WAYBILL_WORKER_LIVE=1`, `systemctl restart iriss-waybill-worker`.
 
 Izslēgt: Vercel `IRISS_WAYBILL_AUTO` noņemt (visi darbi atkal Aivaram) un/vai `systemctl disable --now iriss-waybill-worker`.
+
+## Rindas tīrīšana (`cleanup-waybill-requests.mjs`)
+
+Tikai admin (vajag Vercel Blob `BLOB_READ_WRITE_TOKEN`, piem. `.env.local` pēc `vercel env pull`). VIENMĒR vispirms pilns JSON
+backup (`.data/waybill-requests-backups/`), tad plāns; dzēš tikai ar `--apply` (ifMatch - ja tikmēr kāds rakstīja, atsakās).
+Dzēš: Gaida (arī ar beigušos termiņu), Atcelts, Kļūda, novecojis Izveido bez numura + to notikumus. NEKAD: izdotas (status
+issued vai ir waybillNo), šobrīd darbā esošus, kļūdas "Pārbaudi CSDD". Idempotents.
+
+```
+node scripts/iriss-ttr/cleanup-waybill-requests.mjs --load-env-local           # dry-run + backup
+node scripts/iriss-ttr/cleanup-waybill-requests.mjs --load-env-local --apply   # backup + dzēš
+```

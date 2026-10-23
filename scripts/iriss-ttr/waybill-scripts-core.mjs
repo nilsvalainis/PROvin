@@ -1,5 +1,5 @@
 // refill.js / save.js loģika (bez Playwright), testi: lib/iriss-waybill-scripts.test.ts.
-// STINGRI: tikai JAUNAS standarta pavadzīmes aizpilde un saglabāšana. Nekādas pārtraukšanas, anulēšanas vai beigšanas:
+// STINGRI: tikai pavadzīmes aizpilde un saglabāšana (jauna vai no tirdzniecības akta "Noformēt pavadzīmi"). Nekādas pārtraukšanas, anulēšanas vai beigšanas:
 // - pogas/saites ar tādu nozīmi netiek spiestas nekad (isClickAllowed), dialogi ar tādu tekstu tiek noraidīti;
 // - tīklā pieprasījumi ar tādiem vārdiem adresē/saturā tiek pārtraukti (isRequestForbidden);
 // - "Saglabāt" drīkst spiest tikai save.js, vienreiz uz darbu (atomisks ledger lock), nekad refill.js.
@@ -21,6 +21,8 @@ export const SAVE_ACTION_RE = /saglab|save|apstiprin|iesniegt|iesūt|iesut|submi
 export const PDF_ACTION_RE = /druk|pdf|lejupiel|izdruk|print|download/i;
 
 const JOB_ID_RE = /^[A-Za-z0-9_-]{1,80}$/;
+/** Tāpat kā serverī (WAYBILL_VALID_MAX_HOURS). */
+const MAX_VALID_HOURS = 2160;
 const SAME_PLATE_WINDOW_MS = 30 * 60 * 1000;
 
 function decodeSafe(s) {
@@ -84,7 +86,7 @@ export function parseJobInput(raw) {
   const brandModel = String(j.brandModel || "").trim();
   if (!brandModel) throw new Error("nav auto");
   const validHours = Number(j.validHours);
-  if (!Number.isFinite(validHours) || validHours <= 0 || validHours > 72) throw new Error("derīgums nederīgs");
+  if (!Number.isInteger(validHours) || validHours <= 0 || validHours > MAX_VALID_HOURS) throw new Error("derīgums nederīgs");
   const from = Date.parse(j.validFrom);
   const until = Date.parse(j.validUntil);
   if (!Number.isFinite(from) || !Number.isFinite(until) || until <= from) throw new Error("datumi nederīgi");
@@ -92,11 +94,16 @@ export function parseJobInput(raw) {
   // Serveris sūta "ctx1"/"ctx2" (lib/iriss-waybill-auto.ts), vecāka ievade - 1/2.
   const ctx = Number(String(j.ctx ?? "").replace(/^ctx/i, ""));
   if (ctx !== 1 && ctx !== 2) throw new Error("ctx nederīgs");
+  const flow = j.flow === "tradeAct" ? "tradeAct" : "new";
+  const vin = String(j.vin || "").trim().toUpperCase();
+  const representative = String(j.representative || "").replace(/\s+/g, " ").trim().slice(0, 60);
+  if (flow === "tradeAct" && !/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)) throw new Error("aktam vajag VIN");
+  if (flow === "tradeAct" && !representative) throw new Error("aktam vajag pārstāvi");
   return {
     jobId: String(j.jobId),
     plate: String(j.plate).trim(),
     brandModel,
-    vin: String(j.vin || "").trim().toUpperCase(),
+    vin,
     company: String(j.company || ""),
     ctx,
     routeFrom: String(j.routeFrom || "").trim(),
@@ -104,7 +111,9 @@ export function parseJobInput(raw) {
     validFrom: new Date(from).toISOString(),
     validUntil: new Date(until).toISOString(),
     validHours,
-    preferTradeAct: Boolean(j.preferTradeAct) && Boolean(j.vin),
+    flow,
+    representative: flow === "tradeAct" ? representative : "",
+    preferTradeAct: flow === "tradeAct" || (Boolean(j.preferTradeAct) && Boolean(vin)),
   };
 }
 
@@ -296,6 +305,8 @@ export function createLedger(dir, fsImpl = fs, now = () => Date.now()) {
 async function fillSteps(input, driver, dateFormat) {
   let mode = "new";
   if (input.preferTradeAct && (await driver.openFromTradeAct(input))) mode = "trade_act";
+  // Pieņemtam auto nekad neveido jaunu pavadzīmi akta vietā.
+  else if (input.flow === "tradeAct") throw new Error("tirdzniecības akts nav atrasts");
   else await driver.openNewWaybill(input);
   await driver.fillForm(formValues(input, dateFormat));
   return mode;

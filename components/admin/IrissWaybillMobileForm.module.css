@@ -368,11 +368,6 @@
 .mf .steps > li {
   color: var(--ink3, #9a9faa) !important;
 }
-.mf .steps .pct {
-  margin-left: auto;
-  color: var(--ink2, #5e636e) !important;
-  font-variant-numeric: tabular-nums;
-}
 .mf .progText {
   margin-top: 3px;
   color: var(--ink2, #5e636e);
@@ -469,8 +464,18 @@
   padding: 0 12px;
   font-size: 16px;
 }
+/*
+ * Garš saraksts ritinās pats sevī: lapa ir position:absolute bez augstuma, un ritināšanas bloķētājs
+ * html/body liek touch-action:none. Bez sava ritināšanas konteinera iOS Safari sarakstu nekustina.
+ */
 .picker .list {
-  overflow: hidden;
+  max-height: calc(100vh - 230px);
+  max-height: calc(100dvh - 230px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   border-radius: 14px;
   background: var(--s1, #fff);
 }

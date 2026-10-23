@@ -3,6 +3,8 @@ import "server-only";
 import { createJsonDocStore } from "@/lib/b2b-json-doc-store";
 import {
   applyTtrServerReport,
+  applyTtrWorkerHeartbeat,
+  workerHeartbeatNeedsWrite,
   emptyTtrControlDoc,
   parseTtrControlDoc,
   requestTtrVpnStop,
@@ -40,4 +42,18 @@ export async function saveTtrServerReport(report: TtrServerReport): Promise<TtrC
     const next = stamp(applyTtrServerReport(doc, report));
     return { value: next, next };
   });
+}
+
+/** Pavadzīmju worker sirdspuksts (no `GET waybill-requests?scope=auto&live=0|1`). Kļūda neaptur worker poll. */
+export async function noteWaybillWorkerHeartbeat(live: boolean): Promise<void> {
+  try {
+    const current = await store.read(DOC_KEY);
+    if (!workerHeartbeatNeedsWrite(current, live)) return;
+    await store.update(DOC_KEY, (doc) => {
+      const next = stamp(applyTtrWorkerHeartbeat(doc, live));
+      return { value: next, next };
+    });
+  } catch (err) {
+    console.error("[iriss-ttr] worker_heartbeat_failed", err instanceof Error ? err.message : err);
+  }
 }

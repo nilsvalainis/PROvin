@@ -1,7 +1,8 @@
 import { NextResponse, after } from "next/server";
 import { wakeAivars } from "@/lib/iriss-aivars-wake";
 import { waybillAivarsReply, waybillChatPayload } from "@/lib/iriss-waybill-requests";
-import { readWaybillRequestsDoc, retryWaybillRequest } from "@/lib/iriss-waybill-requests-store";
+import { cancelWaybillRequest, readWaybillRequestsDoc, retryWaybillRequest } from "@/lib/iriss-waybill-requests-store";
+import { waybillAutoContext } from "@/lib/iriss-waybill-auto-server";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
 
 export const runtime = "nodejs";
@@ -40,12 +41,41 @@ export async function POST(req: Request, ctx: Ctx) {
   } catch {
     return NextResponse.json({ error: "Nederīgs pieprasījums." }, { status: 400, ...NO_STORE });
   }
-  if (body.action !== "retry") {
+  if (body.action !== "retry" && body.action !== "cancel") {
     return NextResponse.json({ error: "Nederīga darbība." }, { status: 400, ...NO_STORE });
   }
   const actor = gate.actor;
   const actorId = actor.kind === "admin" ? "env-admin" : actor.user.id;
   const actorName = actor.kind === "admin" ? actor.name : actor.user.name;
+  if (body.action === "cancel") {
+    // Tikai Gaida un vēl nepaņemts; izdotas/aktīvas pavadzīmes un darbā esošus nekad neaiztiek (409).
+    try {
+      const result = await cancelWaybillRequest({ id, actorId, actorName });
+      if (!result.ok) {
+        return result.reason === "not_found"
+          ? NextResponse.json({ error: "Pieprasījums nav atrasts." }, { status: 404, ...NO_STORE })
+          : NextResponse.json(
+              { error: "Atcelt var tikai pieprasījumu, ko vēl neviens nav sācis." },
+              { status: 409, ...NO_STORE },
+            );
+      }
+      const doc = await readWaybillRequestsDoc();
+      const auto = await waybillAutoContext(doc);
+      return NextResponse.json(
+        {
+          ok: true,
+          request: result.request,
+          reply: waybillAivarsReply(result.request, doc.events),
+          ...waybillChatPayload(doc, Date.now(), auto),
+          autoMode: auto.mode,
+        },
+        NO_STORE,
+      );
+    } catch (err) {
+      console.error("[iriss-waybill] cancel_failed", err instanceof Error ? err.message : err);
+      return NextResponse.json({ error: "Neizdevās atcelt pieprasījumu." }, { status: 500, ...NO_STORE });
+    }
+  }
   try {
     const request = await retryWaybillRequest({ id, actorId, actorName });
     if (!request) return NextResponse.json({ error: "Šo pieprasījumu nevar atkārtot." }, { status: 409, ...NO_STORE });

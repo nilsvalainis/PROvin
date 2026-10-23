@@ -16,10 +16,16 @@ import { displayDealerPlate, formatRigaDateTimeComma, type WaybillPlateState } f
 import { waybillErrorNeedsCheck } from "@/lib/iriss-waybill-push";
 import {
   WAYBILL_STALE_LABEL,
+  WAYBILL_WORKER_STAGE_TEXT,
   isStaleWaybillRequest,
+  waybillPendingExpired,
+  waybillQueuedText,
+  waybillRequestCancellable,
   type WaybillAivarsReply,
+  type WaybillAutoMode,
   type WaybillRequest,
   type WaybillRequestStatus,
+  type WaybillWorkerStage,
 } from "@/lib/iriss-waybill-requests";
 
 export const WAYBILL_MOBILE_HOUR_PRESETS = [12, 24, 48] as const;
@@ -164,6 +170,7 @@ export const WAYBILL_MOBILE_STATUS: Record<WaybillRequestStatus, { label: string
   in_progress: { label: "Izveido", tone: "wip" },
   issued: { label: "Izdota", tone: "ok" },
   error: { label: "Kļūda", tone: "bad" },
+  cancelled: { label: "Atcelts", tone: "wait" },
 };
 
 export type WaybillMobileRequestRow = {
@@ -174,23 +181,29 @@ export type WaybillMobileRequestRow = {
   tone: WaybillMobileChipTone;
   pdfUrl: string;
   canRetry: boolean;
+  /** "Atcelt": tikai Gaida un vēl neviens nav paņēmis. */
+  canCancel: boolean;
   errorText: string;
   /** Novecojis: 24 h bez virzības - tikai Arhīvā. */
   stale: boolean;
   progress: WaybillMobileProgress;
 };
 
-/** Dzīvais progress: 3 soļi (Gaida - Izveido - Izdota) un procenti joslai. */
+/**
+ * Dzīvais progress: 3 soļi (Gaida - Izveido - Izdota). Joslas platums atbilst TIKAI reālam solim
+ * (worker notikumi: paņemts, VPN, forma, Saglabāt, PDF), nevis laikam - nekādu izdomātu procentu.
+ */
 export type WaybillMobileProgress = {
   step: 1 | 2 | 3;
   pct: number;
   text: string;
 };
 
+/** Joslas platums pēc reālā soļa. */
+const STAGE_PCT: Record<WaybillWorkerStage, number> = { claimed: 40, vpn: 50, filling: 62, saving: 78, pdf: 90 };
+
 /** Pēc cik ilga gaidīšanas rāda "Gaida ilgāk nekā parasti" un ļauj atkārtot. */
 export const WAYBILL_MOBILE_LONG_WAIT_MS = 15 * 60 * 1000;
-/** Parasts darba ilgums pēc "Paņēmu darbā" (josla aug līdz 90 %, līdz pienāk rezultāts). */
-const TYPICAL_WORK_MS = 3 * 60 * 1000;
 
 function hm(iso: string): string {
   const d = new Date(iso);
@@ -204,8 +217,10 @@ function sinceMs(iso: string, nowMs: number): number {
 }
 
 export function waybillMobileProgress(
-  request: Pick<WaybillRequest, "status" | "createdAt" | "updatedAt" | "pickedAt" | "errorReason" | "validUntil" | "waybillNo">,
+  request: Pick<WaybillRequest, "status" | "createdAt" | "updatedAt" | "pickedAt" | "errorReason" | "validUntil" | "waybillNo"> &
+    Partial<Pick<WaybillRequest, "stage">>,
   nowMs = Date.now(),
+  auto: { autoMode?: WaybillAutoMode; autoStandard?: boolean } = {},
 ): WaybillMobileProgress {
   if (request.status === "issued") {
     const until = formatRigaDateTimeComma(request.validUntil);
@@ -219,15 +234,18 @@ export function waybillMobileProgress(
       : `Neizdevās${reason ? `: ${reason.replace(/[.\s]+$/, "")}` : ""}. Spied "Atkārtot".`;
     return { step: request.pickedAt ? 2 : 1, pct: request.pickedAt ? 66 : 33, text };
   }
+  if (request.status === "cancelled") return { step: 1, pct: 0, text: "Atcelts." };
   if (request.status === "in_progress") {
-    const share = Math.min(1, sinceMs(request.pickedAt || request.updatedAt, nowMs) / TYPICAL_WORK_MS);
-    return { step: 2, pct: Math.round(40 + 50 * share), text: "Aivars veido pavadzīmi CSDD..." };
+    if (request.stage) return { step: 2, pct: STAGE_PCT[request.stage], text: WAYBILL_WORKER_STAGE_TEXT[request.stage] };
+    return { step: 2, pct: 40, text: "Aivars veido pavadzīmi CSDD..." };
   }
+  const honest = waybillQueuedText({ expired: waybillPendingExpired(request, nowMs), ...auto });
+  if (honest) return { step: 1, pct: 10, text: honest };
   const waited = sinceMs(request.updatedAt || request.createdAt, nowMs);
   if (waited > WAYBILL_MOBILE_LONG_WAIT_MS) {
-    return { step: 1, pct: 20, text: 'Gaida ilgāk nekā parasti. Ja steidzami, spied "Atkārtot" vai raksti Aivaram.' };
+    return { step: 1, pct: 10, text: 'Gaida ilgāk nekā parasti. Ja steidzami, spied "Atkārtot" vai raksti Aivaram.' };
   }
-  return { step: 1, pct: Math.round(10 + 15 * (waited / WAYBILL_MOBILE_LONG_WAIT_MS)), text: "Rindā. Aivars sāks pēc brīža." };
+  return { step: 1, pct: 10, text: "Rindā. Aivars sāks pēc brīža." };
 }
 
 /**
@@ -239,6 +257,8 @@ export function waybillMobileRequestIsCurrent(
   nowMs = Date.now(),
 ): boolean {
   if (isStaleWaybillRequest(request, nowMs)) return false;
+  // Atceltie pazūd no rindas (redzami tikai Arhīvā).
+  if (request.status === "cancelled") return false;
   if (request.status === "queued" || request.status === "in_progress") return true;
   if (request.status === "issued") {
     const until = Date.parse(request.validUntil);
@@ -281,7 +301,10 @@ export function waybillMobileRequestRows(
       ]
         .filter(Boolean)
         .join(" · ");
-      const progress = waybillMobileProgress({ ...request, status, waybillNo }, nowMs);
+      const progress = waybillMobileProgress({ ...request, status, waybillNo }, nowMs, {
+        autoMode: reply?.autoMode,
+        autoStandard: reply?.autoStandard,
+      });
       const longWait = status === "queued" && sinceMs(request.updatedAt || request.createdAt, nowMs) > WAYBILL_MOBILE_LONG_WAIT_MS;
       return {
         id: request.id,
@@ -290,7 +313,8 @@ export function waybillMobileRequestRows(
         label: stale ? WAYBILL_STALE_LABEL : WAYBILL_MOBILE_STATUS[status].label,
         tone: stale ? "wait" : WAYBILL_MOBILE_STATUS[status].tone,
         pdfUrl: reply?.pdfUrl || request.pdfUrl,
-        canRetry: status === "error" || (status === "queued" && (longWait || stale)),
+        canRetry: status === "error" || (status === "queued" && (longWait || stale) && !waybillPendingExpired(request, nowMs)),
+        canCancel: waybillRequestCancellable({ status, pickedBy: request.pickedBy }),
         errorText: status === "error" ? request.errorReason || reply?.text || "" : "",
         stale,
         progress,

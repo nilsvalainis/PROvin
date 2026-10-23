@@ -1,6 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { wakeAivars } from "@/lib/iriss-aivars-wake";
-import { autoWaybillEnabled, classifyWaybillForAuto } from "@/lib/iriss-waybill-auto";
+import { classifyWaybillForAuto, plateTakenByOtherRequest } from "@/lib/iriss-waybill-auto";
+import { waybillAutoContext } from "@/lib/iriss-waybill-auto-server";
 import { parseCreateWaybillInput } from "@/lib/iriss-waybill-create";
 import { emptyWaybillRequestsDoc, waybillChatPayload } from "@/lib/iriss-waybill-requests";
 import { createWaybillRequest, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
@@ -49,6 +50,11 @@ async function loadPlatesSafe(): Promise<WaybillPlateState[]> {
   }
 }
 
+function busyFromPlates(plates: WaybillPlateState[]): (plate: string) => boolean {
+  const busy = new Set(plates.filter((row) => row.busy).map((row) => row.plate as string));
+  return (plate) => busy.has(displayDealerPlate(plate));
+}
+
 function confirmBusy(body: unknown): boolean {
   return Boolean(body && typeof body === "object" && !Array.isArray(body) && (body as { confirmBusy?: unknown }).confirmBusy === true);
 }
@@ -65,8 +71,9 @@ export async function GET(req: Request) {
       loadPlatesSafe(),
       withCars ? loadTradeCarsSafe() : Promise.resolve(null),
     ]);
+    const auto = await waybillAutoContext(doc, busyFromPlates(plates));
     return NextResponse.json(
-      { ok: true, ...waybillChatPayload(doc), vehicles, plates, ...(tradeCars ? { tradeCars: tradeCars.cars, tradeCarsSource: tradeCars.source } : {}) },
+      { ok: true, ...waybillChatPayload(doc, Date.now(), auto), autoMode: auto.mode, vehicles, plates, ...(tradeCars ? { tradeCars: tradeCars.cars, tradeCarsSource: tradeCars.source } : {}) },
       NO_STORE,
     );
   } catch (err) {
@@ -121,12 +128,16 @@ export async function POST(req: Request) {
       payload: parsed.value,
       plateBusyAtCreate: Boolean(occupancy?.busy),
     });
-    // Standarta darbu ņem Hetzner automātika (poll ~10 s); pārējiem uzreiz pamodina Aivaru.
-    const auto = classifyWaybillForAuto(request, { plateBusyNow: Boolean(occupancy?.busy) });
-    if (!(autoWaybillEnabled() && auto.standard)) after(() => wakeAivars(request.id));
     const doc = await readWaybillRequestsDoc();
+    const classified = classifyWaybillForAuto(request, {
+      plateBusyNow: Boolean(occupancy?.busy),
+      plateInOtherRequest: plateTakenByOtherRequest(doc.requests, request),
+    });
+    const auto = await waybillAutoContext(doc, busyFromPlates(plates));
+    // Standarta darbu ņem automātika tikai īstajā režīmā; testa režīmā vai nestandarta - uzreiz pamodina Aivaru.
+    if (!(auto.mode === "live" && classified.standard)) after(() => wakeAivars(request.id));
     return NextResponse.json(
-      { ok: true, request, ...waybillChatPayload(doc), plates },
+      { ok: true, request, ...waybillChatPayload(doc, Date.now(), auto), autoMode: auto.mode, plates },
       NO_STORE,
     );
   } catch (err) {

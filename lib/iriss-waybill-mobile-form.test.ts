@@ -161,6 +161,8 @@ function req(over: Partial<WaybillRequest>): WaybillRequest {
     autoDisabled: false,
     tradeAct: false,
     representative: "",
+    stage: "",
+    stageAt: "",
     ...over,
   };
 }
@@ -208,19 +210,79 @@ describe("phone list of Aivars requests", () => {
 describe("live progress", () => {
   const t0 = "2026-10-23T10:00:00.000Z";
   const at = (min: number) => Date.parse(t0) + min * 60_000;
-  it("moves through 3 steps with a growing percentage", () => {
+  it("moves through 3 steps by real events only: time alone never grows the bar", () => {
     const queued = waybillMobileProgress(req({ createdAt: t0, updatedAt: t0 }), at(1));
     expect(queued).toMatchObject({ step: 1, text: "Rindā. Aivars sāks pēc brīža." });
     const slow = waybillMobileProgress(req({ createdAt: t0, updatedAt: t0 }), at(16));
     expect(slow.step).toBe(1);
     expect(slow.text).toContain("Gaida ilgāk nekā parasti");
+    expect(slow.pct).toBe(queued.pct);
     const startWork = waybillMobileProgress(req({ status: "in_progress", pickedAt: t0, updatedAt: t0 }), at(0));
-    const midWork = waybillMobileProgress(req({ status: "in_progress", pickedAt: t0, updatedAt: t0 }), at(2));
+    const later = waybillMobileProgress(req({ status: "in_progress", pickedAt: t0, updatedAt: t0 }), at(30));
     expect(startWork.step).toBe(2);
-    expect(midWork.pct).toBeGreaterThan(startWork.pct);
-    expect(waybillMobileProgress(req({ status: "in_progress", pickedAt: t0 }), at(60)).pct).toBeLessThan(100);
+    expect(later.pct).toBe(startWork.pct);
+    // Worker soļi: paņemts -> VPN -> forma -> Saglabāt -> PDF; josla aug tikai ar tiem.
+    const stages = (["claimed", "vpn", "filling", "saving", "pdf"] as const).map((stage) =>
+      waybillMobileProgress(req({ status: "in_progress", pickedAt: t0, stage }), at(1)),
+    );
+    expect(stages.map((p) => p.text)).toEqual([
+      "Automātika paņēma darbā.",
+      "Pieslēdzas CSDD (VPN)...",
+      "Aizpilda CSDD formu...",
+      "Saglabā CSDD...",
+      "Saglabāta CSDD, ielādē PDF...",
+    ]);
+    for (let i = 1; i < stages.length; i++) expect(stages[i]!.pct).toBeGreaterThan(stages[i - 1]!.pct);
     const done = waybillMobileProgress(req({ status: "issued", waybillNo: "26A1", validUntil: "2026-10-25T10:00:00.000Z" }), at(3));
     expect(done).toEqual({ step: 3, pct: 100, text: "Nr. 26A1 · derīga līdz 25.10.2026, 12:00" });
+  });
+
+  it("test mode says honestly that Aivars issues by hand; live mode says queued for automation", () => {
+    const q = req({ createdAt: t0, updatedAt: t0, validUntil: "2026-10-23T12:00:00.000Z" });
+    expect(waybillMobileProgress(q, at(1), { autoMode: "test", autoStandard: true }).text).toBe(
+      "Automātika testa režīmā - pavadzīmi izraksta Aivars ar roku",
+    );
+    expect(waybillMobileProgress(q, at(1), { autoMode: "live", autoStandard: true }).text).toBe("Rindā automātikai. Sāks pēc brīža.");
+    expect(waybillMobileProgress(q, at(1), { autoMode: "live", autoStandard: false }).text).toBe("Rindā. Aivars sāks pēc brīža.");
+  });
+
+  it("a pending request whose validity already ended: 'Termiņš beidzies - atcel un izveido jaunu', no retry, can cancel", () => {
+    // wbr_721441d096035496: Peugeot 5008, B193-7, 1 h, 14:14 - vēl Gaida pēc 15:14.
+    const peugeot = req({
+      id: "wbr_721441d096035496",
+      createdAt: "2026-10-23T11:14:00.000Z",
+      updatedAt: "2026-10-23T11:14:00.000Z",
+      validHours: 1,
+      validUntil: "2026-10-23T12:14:00.000Z",
+      vehicle: { brandModel: "PEUGEOT 5008", vin: "VF30ARHHAAS201388", plate: "B1937", orderId: "" },
+    });
+    const now = Date.parse("2026-10-23T12:30:00.000Z");
+    expect(waybillMobileProgress(peugeot, now, { autoMode: "test" }).text).toBe("Termiņš beidzies - atcel un izveido jaunu");
+    const [row] = waybillMobileRequestRows([peugeot], [], 5, { nowMs: now });
+    expect(row).toMatchObject({ label: "Gaida", canRetry: false, canCancel: true, progress: { text: "Termiņš beidzies - atcel un izveido jaunu" } });
+  });
+
+  it("'Atcelt' only while pending and unclaimed; cancelled requests leave the queue", () => {
+    const now = Date.parse("2026-10-23T10:05:00.000Z");
+    const base = { createdAt: t0, updatedAt: t0, validUntil: "2026-10-25T10:00:00.000Z" };
+    const rows = waybillMobileRequestRows(
+      [
+        req({ id: "wbr_q", ...base }),
+        req({ id: "wbr_w", ...base, status: "in_progress", pickedBy: "auto", pickedAt: t0 }),
+        req({ id: "wbr_i", ...base, status: "issued", waybillNo: "P1" }),
+        req({ id: "wbr_c", ...base, status: "cancelled" }),
+      ],
+      [],
+      5,
+      { nowMs: now },
+    );
+    expect(rows.map((r) => [r.id, r.canCancel])).toEqual([
+      ["wbr_q", true],
+      ["wbr_w", false],
+      ["wbr_i", false],
+    ]);
+    const [archived] = waybillMobileRequestRows([req({ id: "wbr_c", ...base, status: "cancelled" })], [], 5, { nowMs: now, which: "archive" });
+    expect(archived).toMatchObject({ id: "wbr_c", label: "Atcelts", canCancel: false });
   });
 
   it("error after save asks to check CSDD before retry", () => {

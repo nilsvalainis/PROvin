@@ -18,7 +18,7 @@ import { waybillHistoryForVin } from "@/lib/iriss-waybill-calendar";
 import { formatIrissWaybillChip } from "@/lib/admin-mobile-ds";
 import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { waybillRemainingShare } from "@/lib/iriss-pavadzimes-countdown";
-import { waybillLifecycleLabel } from "@/lib/iriss-pavadzimes-lifecycle";
+import { sortWaybillsNewestFirst, waybillLifecycleLabel } from "@/lib/iriss-pavadzimes-lifecycle";
 import { formatWaybillDateTime } from "@/lib/iriss-pavadzimes-parse";
 import type { IrissPavadzimeListRow, IrissPavadzimeValidityTone } from "@/lib/iriss-pavadzimes-types";
 import { remainingWaybillDays, waybillSoonTone } from "@/lib/iriss-waybill-requests";
@@ -177,13 +177,8 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
   }, [data.pendingParse, refresh]);
 
   const now = new Date(nowMs);
-  const rows = data.rows
-    .filter((row) => inView(row, view))
-    .slice()
-    .sort((a, b) => {
-      if (view !== "current") return 0;
-      return Date.parse(a.validUntil || "") - Date.parse(b.validUntil || "");
-    });
+  // Visos skatos jaunākās augšā (Nils 23.10: saraksts nedrīkst atvērties ar vecāko).
+  const rows = sortWaybillsNewestFirst(data.rows.filter((row) => inView(row, view)));
   const viewCount = (v: WaybillView) => data.rows.filter((row) => inView(row, v)).length;
 
   return (

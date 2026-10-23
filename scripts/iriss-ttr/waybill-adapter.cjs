@@ -4,8 +4,11 @@
 // forma ex('lapv',0,'a=3'), der_stundas, lra_id, rn, pārstāvis, marka ex('lapv_kmod') + modelis, adrešu koks setKavSel,
 // tuvākā CSDD (ans_kiest_id 24), Saglabāt, numurs no #p1, PDF ?main=1&pdf=lapv&id=<lapv_id>.
 //
-// STINGRI: nekādu pārtraukšanas/anulēšanas/beigšanas soļu. Lapā drīkst izsaukt TIKAI ALLOWED_EX darbības (jx whitelist);
-// aizņemts numurs vai auto tirdzniecības aktā -> kļūda (darbs Aivaram), nekas netiek pārtraukts.
+// Akta plūsma (input.flow "tradeAct", kā Aivara fill-gdz00303.js / save-e350-gdz00303-b762.js): rep_lapt_tl saraksts ->
+// rinda ar šo VIN -> ex('lapt',0,'a=11&lapt_id=<id>') (akts "Derīgs") -> ex('lapv',0,'a=0') "Noformēt pavadzīmi" ->
+// der_stundas, rn, pārstāvis (+ adrese/CSDD, ja forma prasa), Saglabāt. Marku/modeli CSDD ņem no akta.
+// STINGRI: nekādu pārtraukšanas/anulēšanas/beigšanas soļu. Lapā drīkst izsaukt TIKAI ALLOWED_EX / ALLOWED_EX_PATTERNS darbības;
+// aizņemts numurs, akts nav atrasts vai jaunai pavadzīmei auto ir aktā -> kļūda (darbs Aivaram), nekas netiek pārtraukts.
 // Sargi no waybill-driver.mjs (tīkls, DOM klikšķi, dialogi) paliek spēkā; "Saglabāt" spiež tikai clickSave (save fāze).
 // Uzstāda install-waybill-scripts.sh uz /root/iriss-ttr/waybill-adapter.cjs. Testi: lib/iriss-waybill-adapter.test.ts.
 
@@ -50,6 +53,13 @@ const ROUTE = {
 
 /** Vienīgās CSDD lapas darbības, ko adapteris drīkst izsaukt (ex(...)). Viss cits (piem. lapv_par = pārtraukt) - kļūda. */
 const ALLOWED_EX = new Set(["lapv|0|a=3", "lapv_kmod", "rep_lapt_tl"]);
+/** Akta plūsma: saraksta lapas, akta atvēršana pēc id (tikai skats) un "Noformēt pavadzīmi" (lapv a=0). */
+const ALLOWED_EX_PATTERNS = [/^rep_lapt_tl\|1\|(porcijas_numurs=[2-8])?$/, /^lapt\|0\|a=11&lapt_id=\d{1,12}$/, /^lapv\|0\|a=0$/];
+const TRADE_ACT_PAGES = 8;
+
+function exAllowed(key) {
+  return ALLOWED_EX.has(key) || ALLOWED_EX_PATTERNS.some((re) => re.test(key));
+}
 
 const MAKE_ALIASES = { MB: "MERCEDES-BENZ", MERCEDES: "MERCEDES-BENZ", VW: "VOLKSWAGEN" };
 
@@ -110,7 +120,8 @@ function playwrightOps(page, h) {
     waitJx: () => page.waitForFunction(() => window.activejxRequestCount === 0, null, { timeout }),
     callEx: (action, arg, params) =>
       page.evaluate(([a, b, c]) => {
-        return b == null ? ex(a) : ex(a, b, c);
+        // Kā Aivara skriptos: ex('rep_lapt_tl', 1) bez trešā argumenta.
+        return b == null ? ex(a) : c == null ? ex(a, b) : ex(a, b, c);
       }, [action, arg == null ? null : arg, params == null ? null : params]),
     has: async (sel) => (await page.$(sel)) !== null,
     fill: (sel, v) => page.fill(sel, v),
@@ -133,6 +144,16 @@ function playwrightOps(page, h) {
     value: (sel) => page.evaluate((s) => (document.querySelector(s) || {}).value || "", sel),
     p1Text: () => page.evaluate(() => (document.getElementById("p1") || document.body).innerText),
     p1Rows: () => page.evaluate(() => [...document.querySelectorAll("#p1 tr")].map((r) => r.innerText.replace(/\s+/g, " ").trim())),
+    /** Tirdzniecības aktu saraksta rindas ar lapt_id (tikai lasa). */
+    actRows: () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll("tr")]
+          .map((tr) => {
+            const a = tr.querySelector("[onclick*=lapt_id]");
+            return a ? { oc: a.getAttribute("onclick") || "", t: tr.innerText.replace(/\s+/g, " ").trim() } : null;
+          })
+          .filter(Boolean),
+      ),
     windowName: () => page.evaluate(() => window.name).catch(() => ""),
     setWindowName: (n) => page.evaluate((v) => {
       window.name = v;
@@ -156,7 +177,7 @@ function playwrightOps(page, h) {
 /** @param {(page: unknown, h: object) => ReturnType<typeof playwrightOps>} makeOps */
 function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
   /** Šī procesa darbs (open izsauc pirmo; refill.js un save.js ir atsevišķi procesi). */
-  const state = { input: null, company: null, lapvId: "" };
+  const state = { input: null, company: null, lapvId: "", laptId: "" };
 
   function ctxOf(page, h) {
     const ops = makeOps(page, h);
@@ -164,7 +185,7 @@ function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
     const ttrDir = h.ttrDir || env.IRISS_TTR_DIR || "/root/iriss-ttr";
     async function ex(action, arg, params) {
       const key = exKey(action, arg, params);
-      if (!ALLOWED_EX.has(key)) throw new Error(`CSDD darbība nav atļauta: ${key}`);
+      if (!exAllowed(key)) throw new Error(`CSDD darbība nav atļauta: ${key}`);
       await ops.callEx(action, arg, params);
       await ops.waitJx();
     }
@@ -238,6 +259,58 @@ function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
     return words.length > 0 && rows.some((r) => words.every((w) => compact(r).includes(compact(w))));
   }
 
+  /**
+   * Akta plūsma: atrod VIENU derīgu tirdzniecības aktu ar šo VIN un atver "Noformēt pavadzīmi".
+   * Tikai lasa sarakstu/aktu; ja aktu nav vai tie ir vairāki derīgi -> kļūda (Aivaram).
+   */
+  async function openTradeActWaybill(c, input) {
+    const vin = compact(input.vin);
+    if (vin.length !== 17) throw new Error("aktam vajag VIN");
+    await c.ex("rep_lapt_tl");
+    await c.ex("rep_lapt_tl", 1);
+    const seen = new Set();
+    const ids = [];
+    for (let pg = 1; pg <= TRADE_ACT_PAGES; pg++) {
+      if (pg > 1) await c.ex("rep_lapt_tl", 1, `porcijas_numurs=${pg}`);
+      const rows = (await c.ops.actRows()) || [];
+      const fresh = rows.filter((r) => !seen.has(r.oc));
+      if (!fresh.length) break;
+      for (const r of fresh) {
+        seen.add(r.oc);
+        const id = (/lapt_id=(\d{1,12})/.exec(r.oc) || [])[1];
+        if (id && compact(r.t).includes(vin) && !ids.includes(id)) ids.push(id);
+      }
+    }
+    if (!ids.length) throw new Error("tirdzniecības akts ar šo VIN nav atrasts (Aivaram)");
+    const valid = [];
+    for (const id of ids) {
+      await c.ex("rep_lapt_tl");
+      await c.ex("lapt", 0, `a=11&lapt_id=${id}`);
+      const t = String(await c.ops.p1Text());
+      if (/Statuss:\s*Derīgs/i.test(t)) valid.push({ id, act: (/Akta numurs:\s*(\S+)/.exec(t) || [])[1] || "" });
+    }
+    if (valid.length !== 1) {
+      throw new Error(valid.length ? "vairāki derīgi akti ar šo VIN (Aivaram)" : "derīgs tirdzniecības akts nav atrasts (Aivaram)");
+    }
+    if (valid[0].id !== ids[ids.length - 1]) {
+      await c.ex("rep_lapt_tl");
+      await c.ex("lapt", 0, `a=11&lapt_id=${valid[0].id}`);
+    }
+    await c.ex("lapv", 0, "a=0");
+    if (!(await c.ops.has("form[name=lapv_form]"))) throw new Error("akta pavadzīmes forma neatvērās");
+    const v = (await c.ops.formValues()) || {};
+    if (v.lapt_id && v.lapt_id !== valid[0].id) throw new Error("forma nav šim aktam");
+    state.laptId = valid[0].id;
+    return valid[0];
+  }
+
+  /** Akta pavadzīmes pārstāvis: tikai firmas pārstāvis (ĪRISS - Nils Valainis, DZA - Taivo Batiņš). */
+  function checkActRepresentative(input, company) {
+    const want = compact(input.representative);
+    const ok = company === COMPANIES[1] ? want === compact("NILS VALAINIS") : want === compact("TAIVO BATINS");
+    if (!ok) throw new Error(`pārstāvis nav ${company.name} pārstāvis`);
+  }
+
   async function login(c, company, h) {
     if (await c.ops.has("#vards")) {
       const cred = credentialsFor(company, { env, ttrDir: c.ttrDir, cfg: h.cfg || {} });
@@ -271,9 +344,11 @@ function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
       const company = COMPANIES[input.ctx];
       if (!company) throw new Error("ctx nederīgs");
       if (!company.plates.some((p) => compact(p) === compact(input.plate))) throw new Error(`numurs ${input.plate} nav ${company.name} numurs`);
+      if (input.flow === "tradeAct") checkActRepresentative(input, company);
       state.input = input;
       state.company = company;
       state.lapvId = "";
+      state.laptId = "";
       const c = ctxOf(page, h);
       const jobName = `iriss-job-${input.jobId}`;
       // CDP režīmā save.js turpina refill.js cilni (tā pati forma); citādi svaiga pieslēgšanās.
@@ -292,15 +367,24 @@ function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
       return null;
     },
 
-    /** Akta plūsmu automātika nedara: ja VIN ir tirdzniecības aktā -> kļūda (Aivaram). Citādi false -> jauna pavadzīme. */
+    /**
+     * flow "tradeAct": akts pēc VIN -> "Noformēt pavadzīmi" (true). Citādi (jauna pavadzīme): ja VIN ir aktā -> kļūda,
+     * jo pieņemtam auto pavadzīme jānoformē no akta; false -> jauna pavadzīme.
+     */
     async openFromTradeAct(page, input, h) {
-      if (await inTradeActs(ctxOf(page, h), input)) throw new Error("auto ir tirdzniecības aktā - pavadzīme no akta (Aivaram)");
+      const c = ctxOf(page, h);
+      if (input.flow === "tradeAct") {
+        await openTradeActWaybill(c, input);
+        return true;
+      }
+      if (await inTradeActs(c, input)) throw new Error("auto ir tirdzniecības aktā - pavadzīme no akta (Aivaram)");
       return false;
     },
 
     async openNewWaybill(page, input, h) {
       const c = ctxOf(page, h);
-      if (!input.vin && (await inTradeActs(c, input))) throw new Error("auto ir tirdzniecības aktā - pavadzīme no akta (Aivaram)");
+      if (input.flow === "tradeAct") throw new Error("akta pavadzīmi jaunā formā neveido");
+      if (await inTradeActs(c, input)) throw new Error("auto ir tirdzniecības aktā - pavadzīme no akta (Aivaram)");
       await c.ex("lapv", 0, "a=3");
       if (!(await c.ops.has("form[name=lapv_form]"))) throw new Error("jaunas pavadzīmes forma neatvērās");
     },
@@ -310,6 +394,26 @@ function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
       const c = ctxOf(page, h);
       const plate = (await c.ops.options("select[name=rn]")).find((o) => compact(o.value) === compact(input.plate));
       if (!plate) throw new Error(`numurs ${input.plate} nav izvēlams (aizņemts?)`);
+      if (state.laptId) {
+        // Akta pavadzīme: laiks, numurs, pārstāvis; adrese un CSDD tikai, ja forma tos prasa (kā Aivara skriptos).
+        const rep = pickRepresentative(await c.ops.options("select[name=gprs_id_kom_parstavis]"), company);
+        await c.ops.fill("#der_stundas", String(values.validHours));
+        if (await c.ops.has("select[name=lra_id]")) {
+          const lra = await c.ops.options("select[name=lra_id]");
+          if (!lra.some((o) => o.value === company.lraId)) throw new Error(`tirdzniecības vieta ${company.lraId} nav sarakstā - nepareiza firma?`);
+          await c.ops.select("select[name=lra_id]", company.lraId);
+        }
+        await c.ops.select("select[name=rn]", plate.value);
+        await c.ops.select("select[name=gprs_id_kom_parstavis]", rep.value);
+        if (await c.ops.has("#i01_kav_t")) {
+          const route = await resolveRoute(c, input);
+          await c.ops.setKavSel(route.target);
+          await c.ops.waitJx();
+          if (route.house) await c.ops.fill("input[name=mn_m1]", route.house);
+        }
+        if (await c.ops.has("select[name=ans_kiest_id]")) await c.ops.select("select[name=ans_kiest_id]", ROUTE.csddKiestId);
+        return;
+      }
       const lra = await c.ops.options("select[name=lra_id]");
       if (!lra.some((o) => o.value === company.lraId)) throw new Error(`tirdzniecības vieta ${company.lraId} nav sarakstā - nepareiza firma?`);
       const rep = pickRepresentative(await c.ops.options("select[name=gprs_id_kom_parstavis]"), company);
@@ -337,6 +441,21 @@ function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
       const c = ctxOf(page, h);
       const v = await c.ops.formValues();
       if (!v) return {};
+      if (v.lapt_id) {
+        // Akta forma: tai jābūt tieši šim aktam (state.laptId), ja tas ir zināms šajā procesā.
+        const actOk = input.flow === "tradeAct" && (!state.laptId || v.lapt_id === state.laptId);
+        const companyOk = !("lra_id" in v) || v.lra_id === company.lraId;
+        const routeOk = !("i01_kav_id" in v) || /R[ĪI]GAS/i.test(v.__adr || "");
+        const csddOk = !("ans_kiest_id" in v) || v.ans_kiest_id === ROUTE.csddKiestId;
+        const repOk = v.gprs_id_kom_parstavis === pickRepresentative(await c.ops.options("select[name=gprs_id_kom_parstavis]"), company).value;
+        return {
+          plate: actOk && companyOk && repOk ? v.rn : `${v.rn || ""}?akts`,
+          validHours: v.der_stundas,
+          routeFrom: routeOk && csddOk ? "" : v.__adr || "?",
+          routeTo: "",
+        };
+      }
+      if (input.flow === "tradeAct") return { plate: "?akts", validHours: v.der_stundas };
       const exp = await expected(c, input, company);
       const modelOpts = await c.ops.options("#kmod_id_mod");
       const modelOk = v.kmod_id === exp.make.make.value && modelOpts.some((o) => o.value === v.kmod_id_mod && compact(o.text) === compact(exp.make.model));
@@ -394,6 +513,8 @@ function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
 module.exports = createAdapter();
 module.exports.createAdapter = createAdapter;
 module.exports.ALLOWED_EX = ALLOWED_EX;
+module.exports.ALLOWED_EX_PATTERNS = ALLOWED_EX_PATTERNS;
+module.exports.exAllowed = exAllowed;
 module.exports.COMPANIES = COMPANIES;
 module.exports.readCredentialFile = readCredentialFile;
 module.exports.parseKavTree = parseKavTree;

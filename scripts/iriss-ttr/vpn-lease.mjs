@@ -46,3 +46,15 @@ export function canStartVpn({ nowMs, lastManualStopMs }) {
   if (!Number.isFinite(lastManualStopMs)) return true;
   return nowMs - lastManualStopMs >= BLOCK_AFTER_MANUAL_MIN * 60_000;
 }
+
+/** Pēc darba (POST /release) VPN tur vēl tik ilgi, lai nākamais darbs rindā to atkal neieslēgtu no nulles. */
+export const RELEASE_GRACE_MS = 60_000;
+
+/**
+ * Darbs beidzies: lease saīsina līdz now + RELEASE_GRACE_MS (nekad nepagarina). Pēc tam tick to atslēdz kā "idle".
+ * Ja lease nav (NaN), paliek NaN - ieslēgtu VPN bez lease tick atslēdz uzreiz.
+ */
+export function releaseLease(currentUntilMs, nowMs) {
+  if (!Number.isFinite(currentUntilMs)) return NaN;
+  return Math.min(currentUntilMs, nowMs + RELEASE_GRACE_MS);
+}

@@ -7,11 +7,15 @@ import {
   requestTtrVpnStop,
   ttrVpnStatus,
   ttrVpnStatusLabel,
+  applyTtrWorkerHeartbeat,
+  waybillWorkerLive,
+  workerHeartbeatNeedsWrite,
 } from "@/lib/iriss-ttr-control";
 import {
   canStartVpn,
   decideVpnAction,
   extendLease,
+  releaseLease,
   vpnIdleMinutes,
 } from "@/scripts/iriss-ttr/vpn-lease.mjs";
 
@@ -100,5 +104,35 @@ describe("server VPN lease (vpn-lease.mjs)", () => {
     expect(canStartVpn({ nowMs: NOW, lastManualStopMs: NaN })).toBe(true);
     expect(canStartVpn({ nowMs: NOW, lastManualStopMs: NOW - 5 * 60_000 })).toBe(false);
     expect(canStartVpn({ nowMs: NOW, lastManualStopMs: NOW - 31 * 60_000 })).toBe(true);
+  });
+});
+
+describe("VPN release after each job", () => {
+  it("shortens the lease to about a minute, never extends it, and keeps no lease as none", () => {
+    expect(releaseLease(NOW + 20 * 60_000, NOW)).toBe(NOW + 60_000);
+    expect(releaseLease(NOW + 10_000, NOW)).toBe(NOW + 10_000);
+    expect(Number.isNaN(releaseLease(NaN, NOW))).toBe(true);
+    // Pēc tam tick to atslēdz kā "idle".
+    expect(decideVpnAction({ vpnUp: true, leaseUntilMs: releaseLease(NOW + 20 * 60_000, NOW), nowMs: NOW + 61_000, stopRequestedAt: "", handledStopAt: "" }).reason).toBe("idle");
+  });
+});
+
+describe("waybill worker heartbeat (live vs dry-run)", () => {
+  it("is live only with a fresh live heartbeat; dry-run or silence means test mode", () => {
+    const empty = emptyTtrControlDoc();
+    expect(waybillWorkerLive(empty, NOW)).toBe(false);
+    const live = applyTtrWorkerHeartbeat(empty, true, new Date(NOW));
+    expect(waybillWorkerLive(live, NOW + 60_000)).toBe(true);
+    expect(waybillWorkerLive(live, NOW + 11 * 60_000)).toBe(false);
+    expect(waybillWorkerLive(applyTtrWorkerHeartbeat(empty, false, new Date(NOW)), NOW)).toBe(false);
+    // Parsē saglabāto dokumentu.
+    expect(parseTtrControlDoc(JSON.parse(JSON.stringify(live))).worker).toEqual({ live: true, seenAt: new Date(NOW).toISOString() });
+  });
+
+  it("writes the document only when the mode changes or every 5 min", () => {
+    const live = applyTtrWorkerHeartbeat(emptyTtrControlDoc(), true, new Date(NOW));
+    expect(workerHeartbeatNeedsWrite(live, true, NOW + 10_000)).toBe(false);
+    expect(workerHeartbeatNeedsWrite(live, false, NOW + 10_000)).toBe(true);
+    expect(workerHeartbeatNeedsWrite(live, true, NOW + 5 * 60_000)).toBe(true);
   });
 });
