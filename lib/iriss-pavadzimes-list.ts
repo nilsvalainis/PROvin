@@ -5,8 +5,10 @@ import { matchIrissPavadzimesToOrders } from "@/lib/iriss-pavadzimes-match";
 import { waybillValidityTone } from "@/lib/iriss-pavadzimes-parse";
 import { listIrissPavadzimes, readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
 import type { IrissPavadzimeListRow, IrissPavadzimeRecord } from "@/lib/iriss-pavadzimes-types";
-import { isAllowlistedWaybillPlate } from "@/lib/iriss-waybill-plates";
-import { mergeCsddActiveRows } from "@/lib/iriss-waybill-csdd-plates";
+import { isAllowlistedWaybillPlate, waybillPlateOccupancy, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
+import { mergeCsddActiveRows, mergeCsddPlateStates } from "@/lib/iriss-waybill-csdd-plates";
+import { withWaybillRequestStates } from "@/lib/iriss-waybill-live-plates";
+import { readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
 import { readCsddPlatesDocSafe } from "@/lib/iriss-waybill-csdd-plates-store";
 import type { IrissSection } from "@/lib/staff-roles";
 
@@ -75,9 +77,22 @@ export async function loadIrissPavadzimesActiveCardData(
   opts: { withOrders?: boolean } = {},
 ): Promise<{
   rows: IrissPavadzimeListRow[];
+  /** Numuru stāvoklis - tas pats, ko rāda numura pogas (j25). Apļi to ņem par pamatu, rows tikai PDF saitei. */
+  plates: WaybillPlateState[];
 }> {
-  const [cached, csdd] = await Promise.all([readIrissPavadzimesCached(), readCsddPlatesDocSafe()]);
+  const [cached, csdd, requests] = await Promise.all([readIrissPavadzimesCached(), readCsddPlatesDocSafe(), readWaybillRequestsSafe()]);
   // CSDD reģistrā aktīvas (arī ar roku izrakstītas) pavadzīmes, kuru nav indeksā - lai josla nerāda "brīvs".
   const rows = mergeCsddActiveRows(selectActiveCardWaybills(cached, now), csdd, now);
-  return { rows: opts.withOrders ?? true ? rows : rows.map(waybillRowWithoutOrder) };
+  const plates = withWaybillRequestStates(mergeCsddPlateStates(waybillPlateOccupancy(cached, now), csdd, now.getTime()), requests, now.getTime());
+  return { rows: opts.withOrders ?? true ? rows : rows.map(waybillRowWithoutOrder), plates };
+}
+
+/** Pieprasījumu rinda apļiem; kļūda nav fatāla (tad tikai indekss + CSDD). */
+async function readWaybillRequestsSafe() {
+  try {
+    return (await readWaybillRequestsDoc()).requests;
+  } catch (err) {
+    console.error("[iriss pavadzimes] requests_failed", err instanceof Error ? err.message : err);
+    return [];
+  }
 }

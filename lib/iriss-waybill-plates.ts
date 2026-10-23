@@ -35,6 +35,8 @@ export type WaybillPlateState = {
   plate: IrissDealerPlate;
   busy: boolean;
   current?: WaybillPlateCurrent;
+  /** Pieprasījums šim numuram ir rindā vai darbā (CSDD vēl izdod). Aizņemtību nemaina. */
+  issuing?: { brandModel: string };
 };
 
 type OccupancyRow = {

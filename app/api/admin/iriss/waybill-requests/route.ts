@@ -12,6 +12,7 @@ import {
 import { createWaybillRequest, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
 import { readDismissedWaybillIds } from "@/lib/iriss-waybill-dismissed-store";
 import { displayDealerPlate, emptyWaybillPlateStates, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
+import { withWaybillRequestStates } from "@/lib/iriss-waybill-live-plates";
 import { listWaybillVehicleChips } from "@/lib/iriss-waybill-vehicles";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { waybillTradeCarsWithSource, type WaybillCarsSource, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
@@ -84,13 +85,15 @@ export async function GET(req: Request) {
   // Auto sarakstu lasa tikai pēc pieprasījuma (?cars=1), nevis katrā 5 s atjaunošanā.
   const withCars = new URL(req.url).searchParams.get("cars") === "1";
   try {
-    const [doc, vehicles, plates, tradeCars, dismissedIds] = await Promise.all([
+    const [doc, vehicles, basePlates, tradeCars, dismissedIds] = await Promise.all([
       readWaybillRequestsDoc(),
       loadVehiclesSafe(),
       loadPlatesSafe(),
       withCars ? loadTradeCarsSafe() : Promise.resolve(null),
       loadDismissedSafe(gate.actor.kind === "admin" ? "env-admin" : gate.actor.user.id),
     ]);
+    // Tas pats stāvoklis, ko rāda apļi (j25): arī tikko izdotā pavadzīme, kuras vēl nav indeksā.
+    const plates = withWaybillRequestStates(basePlates, doc.requests);
     const auto = await waybillAutoContext(doc, busyFromPlates(plates));
     const withOrders = canSeeWaybillOrders(gate.actor);
     return NextResponse.json(
@@ -137,7 +140,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error }, { status: 400, ...NO_STORE });
   }
   try {
-    const plates = await loadPlatesSafe();
+    const [basePlates, docBefore] = await Promise.all([loadPlatesSafe(), readWaybillRequestsDoc()]);
+    const plates = withWaybillRequestStates(basePlates, docBefore.requests);
     const plate = displayDealerPlate(parsed.value.plate);
     const occupancy = plates.find((row) => row.plate === plate);
     const confirmedNo = confirmedWaybillNo(body);
@@ -184,7 +188,7 @@ export async function POST(req: Request) {
           waybillPdfViewer(actor),
         ),
         autoMode: auto.mode,
-        plates,
+        plates: withWaybillRequestStates(basePlates, doc.requests),
       },
       NO_STORE,
     );
