@@ -123,6 +123,8 @@ export type AutoparksCarV2 = {
   purchase: V2Purchase;
   numberCheck: { fileId: string; scannedAt: string };
   mainPhoto: { dropboxId: string; thumbBlobPath: string } | null;
+  /** Kad pēdējo reizi skatīta STOCK mape galvenajai bildei. */
+  photoCheckedAt: string;
   service: V2Service;
   expenses: V2Expense[];
 };
@@ -188,6 +190,7 @@ export function emptyCarV2(): AutoparksCarV2 {
     purchase: { auction: "", auctionNo: "", purchaseDate: "", purchasePriceEur: null, transportEur: null, vat: { mode: "", source: "", at: "" } },
     numberCheck: { fileId: "", scannedAt: "" },
     mainPhoto: null,
+    photoCheckedAt: "",
     service: { diagFileIds: [], problems: [], notes: "", invoices: [] },
     expenses: [],
   };
@@ -290,6 +293,7 @@ export function normalizeCarV2(raw: unknown): AutoparksCarV2 {
     },
     numberCheck: { fileId: str(nc.fileId, 80), scannedAt: str(nc.scannedAt, 40) },
     mainPhoto: photo && str(photo.dropboxId, 120) ? { dropboxId: str(photo.dropboxId, 120), thumbBlobPath: str(photo.thumbBlobPath, 400) } : null,
+    photoCheckedAt: str(raw.photoCheckedAt, 40),
     service: {
       diagFileIds: strList(service.diagFileIds, 50),
       problems: list(service.problems, normalizeProblem, 100),
