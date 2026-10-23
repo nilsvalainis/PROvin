@@ -25,6 +25,7 @@ import {
   waybillQueuedText,
   waybillQueuedWaitedMs,
   waybillRequestCancellable,
+  waybillRequestDismissable,
   waybillStuckStageText,
   type WaybillAivarsReply,
   type WaybillAutoMode,
@@ -201,6 +202,8 @@ export type WaybillMobileRequestRow = {
   canRetry: boolean;
   /** "Atcelt": tikai Gaida un vēl neviens nav paņēmis. */
   canCancel: boolean;
+  /** "Dzēst" (tikai paslēpj no saraksta): vecs ieraksts - izrakstīta, kļūda, atcelts, novecojis. */
+  canDismiss: boolean;
   errorText: string;
   /** Novecojis: 24 h bez virzības - tikai Arhīvā. */
   stale: boolean;
@@ -225,6 +228,8 @@ export const WAYBILL_WRITTEN_OFF_HINT = "Pavadzīme vairs nav derīga. Atrodama 
 export const WAYBILL_SAVED_IN_ARCHIVE_TEXT = "Saglabāta Arhīvā";
 /** Cik ilgi izrakstīta pavadzīme vēl redzama pirmajā lapā (pēc tam tikai Arhīvā). */
 export const WAYBILL_WRITTEN_OFF_VISIBLE_MS = 24 * 60 * 60 * 1000;
+/** Pirmajā lapā "CSDD pavadzīme" sarakstā ne vairāk par tik ierakstiem (Nils 23.10, j22). */
+export const WAYBILL_MOBILE_CURRENT_LIMIT = 3;
 
 /** Numuram šobrīd nav citas derīgas izdotas pavadzīmes (no šīs rindas zināmajiem pieprasījumiem). */
 function plateFreeNow(request: WrittenOffRequest, requests: ReadonlyArray<WrittenOffRequest>, nowMs: number): boolean {
@@ -340,19 +345,34 @@ export function waybillMobileRequestRows(
   requests: ReadonlyArray<WaybillRequest>,
   replies: ReadonlyArray<WaybillAivarsReply>,
   limit = 5,
-  opts: { nowMs?: number; which?: "current" | "archive" | "all" } = {},
+  opts: {
+    nowMs?: number;
+    which?: "current" | "archive" | "all";
+    /** "Dzēst" paslēptie ID - tikai pirmās lapas sarakstā (Arhīvā redzami vienmēr). */
+    dismissed?: ReadonlyArray<string>;
+  } = {},
 ): WaybillMobileRequestRow[] {
   const nowMs = opts.nowMs ?? Date.now();
   const which = opts.which ?? "current";
+  const dismissed = new Set(which === "current" ? (opts.dismissed ?? []) : []);
   return [...requests]
     .filter((request) => {
       if (which === "all") return true;
+      // Paslēpts paliek tikai, kamēr ieraksts ir vecs (ja to kāds atkārtoja - atkal redzams).
+      if (dismissed.has(request.id) && waybillRequestDismissable(request, requests, nowMs)) return false;
       const offAt = waybillWrittenOffAtMs(request, requests, nowMs);
       // Izrakstīta vēl 24 h redzama pirmajā lapā (ar norādi uz Arhīvu), tad tikai Arhīvā.
       const current = offAt != null ? nowMs - offAt <= WAYBILL_WRITTEN_OFF_VISIBLE_MS : waybillMobileRequestIsCurrent(request, nowMs);
       return which === "current" ? current : !current;
     })
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .sort((a, b) => {
+      // Pirmajā lapā aktīvie (darbā, derīgi) vienmēr pirms vecajiem - limits tos neizspiež.
+      if (which === "current") {
+        const old = Number(waybillRequestDismissable(a, requests, nowMs)) - Number(waybillRequestDismissable(b, requests, nowMs));
+        if (old) return old;
+      }
+      return b.createdAt.localeCompare(a.createdAt);
+    })
     .slice(0, limit)
     .map((request) => {
       const reply = replies.find((r) => r.requestId === request.id);
@@ -398,6 +418,7 @@ export function waybillMobileRequestRows(
         pdfUrl,
         canRetry: status === "error" || (status === "queued" && (longWait || stale) && !waybillPendingExpired(request, nowMs)),
         canCancel: waybillRequestCancellable({ status, pickedBy: request.pickedBy }),
+        canDismiss: waybillRequestDismissable({ ...request, status }, requests, nowMs),
         errorText: status === "error" ? request.errorReason || reply?.text || "" : "",
         stale,
         writtenOff,
