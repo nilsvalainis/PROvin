@@ -9,6 +9,7 @@ import {
   parseOdometerKm,
   prepareUnifiedMileageDisplayRows,
   sortMileageChronological,
+  type UnifiedMileageDisplayRow,
   type UnifiedMileageRow,
   type UnifiedMileageSourcePayload,
 } from "@/lib/unified-mileage";
@@ -68,22 +69,37 @@ function classifyRate(kmPerDay: number): MileageRateClass {
   return "normal";
 }
 
-function datedKm(rows: UnifiedMileageRow[]): Array<{
+type DatedKmPoint = {
   date: string;
   km: number;
   t: number;
   sourceLabel: string;
-}> {
-  const out: Array<{ date: string; km: number; t: number; sourceLabel: string }> = [];
+  /** Apvienotajā rindā visi avoti (viens nolasījums vairākos izrakstos). */
+  sourceLabels: string[];
+  /** Tikai reģistra/dīlera valsts; sludinājuma pieņēmums un „Nezināmā” ir "". */
+  verifiedCountry: string;
+  country: string;
+};
+
+const UNKNOWN_COUNTRY_RE = /^(?:nezinām\w*|-|\u2014)?$/i;
+
+function datedKm(rows: UnifiedMileageRow[]): DatedKmPoint[] {
+  const out: DatedKmPoint[] = [];
   for (const row of sortMileageChronological(rows)) {
     const km = parseOdometerKm(row.odometer);
     const t = row.sortableTime;
     if (km == null || !Number.isFinite(t) || t === Number.NEGATIVE_INFINITY) continue;
+    const sourceLabel = row.sourceLabel.trim() || "Nezināms avots";
+    const labels = (row as Partial<UnifiedMileageDisplayRow>).sourceLabels;
+    const country = row.country.trim();
     out.push({
       date: row.date,
       km,
       t,
-      sourceLabel: row.sourceLabel.trim() || "Nezināms avots",
+      sourceLabel,
+      sourceLabels: labels && labels.length > 0 ? labels.map((l) => l.trim()).filter(Boolean) : [sourceLabel],
+      verifiedCountry: row.countryUnverified || UNKNOWN_COUNTRY_RE.test(country) ? "" : country,
+      country: UNKNOWN_COUNTRY_RE.test(country) ? "" : country,
     });
   }
   return out;
@@ -257,6 +273,12 @@ export function buildSourceIndependenceBrief(rows: UnifiedMileageRow[]): string 
   return lines.join("\n");
 }
 
+/**
+ * „real” - kritums jāraksta kā iespējama odometra korekcija.
+ * „suspectedEntryError” - viens izolēts rādījums ārpus secības (visticamāk ievades kļūda).
+ */
+export type OdometerDropKind = "real" | "suspectedEntryError";
+
 export type OdometerRollbackBound = {
   fromDate: string;
   toDate: string;
@@ -268,11 +290,128 @@ export type OdometerRollbackBound = {
   previousRateClass: MileageRateClass | null;
   ceilingAdditionalKm: number | null;
   maxDropKm: number | null;
+  /** Avots(-i) un valsts abiem krituma punktiem (faktu lapai un validatoram). */
+  fromSource?: string;
+  toSource?: string;
+  fromCountry?: string;
+  toCountry?: string;
+  kind?: OdometerDropKind;
+  /** Tikai `suspectedEntryError`: kurš rādījums ir ārpus secības. */
+  suspect?: { date: string; km: number; source: string };
 };
 
-export function analyzeOdometerRollbackBounds(rows: UnifiedMileageRow[]): OdometerRollbackBound[] {
+/** Starp kaimiņiem bez aizdomīgā punkta: ticams temps (km/dienā). */
+export const ENTRY_ERROR_MAX_KM_PER_DAY = 150;
+/** Cits avots ar to pašu zemo/augsto vērtību ±km ±dienās = apstiprināts, nav ievades kļūda. */
+export const ENTRY_ERROR_CONFIRM_KM = 1_000;
+export const ENTRY_ERROR_CONFIRM_DAYS = 60;
+
+/** Servisa vēsturē mērinstrumentu paneļa / odometra nomaiņa = reālas korekcijas pazīme. */
+export const ODOMETER_REPLACEMENT_RE =
+  /instrument(?:en)?\s*cluster|kombiinstrument|tachometer\s*(?:replace|tausch)|tacho\w*\s*(?:getauscht|ersetzt|tausch)|speedometer\s*(?:replace|repair)|odomet\w*\s*(?:replace|repair|nomai|maiņ|remont)|(?:nomai\w*|maiņ\w*|remont\w*)\s+odometr|mērinstrumentu\s+panel\w*\s*(?:nomai|maiņ|remont)|spidometr\w*\s*(?:nomai|maiņ|remont)/i;
+
+export type OdometerDropAnalysisOptions = {
+  /** Servisa vēsturē ir mērinstrumentu paneļa / odometra nomaiņa. */
+  odometerReplacementNoted?: boolean;
+};
+
+function pointSources(p: DatedKmPoint): string {
+  return [...new Set(p.sourceLabels)].join(", ");
+}
+
+function withoutIndexIsAscending(points: DatedKmPoint[], skip: number): boolean {
+  let prev: DatedKmPoint | null = null;
+  for (let j = 0; j < points.length; j++) {
+    if (j === skip) continue;
+    const p = points[j]!;
+    if (prev && prev.km - p.km >= UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM) return false;
+    prev = p;
+  }
+  return true;
+}
+
+/** Cik citu (neatkarīgu) avotu rāda to pašu vērtību ±1 000 km ±60 dienās. */
+function confirmingSourceCount(p: DatedKmPoint, raw: DatedKmPoint[]): number {
+  const own = new Set(p.sourceLabels.map(sourceKey));
+  const others = new Set<string>();
+  for (const r of raw) {
+    if (own.has(sourceKey(r.sourceLabel))) continue;
+    if (Math.abs(r.km - p.km) > ENTRY_ERROR_CONFIRM_KM) continue;
+    if (Math.abs(r.t - p.t) > ENTRY_ERROR_CONFIRM_DAYS * MS_DAY) continue;
+    others.add(sourceKey(r.sourceLabel));
+  }
+  return own.size - 1 + others.size;
+}
+
+/**
+ * Vai punkts `c` ir izolēta ievades kļūda (visi 5 nosacījumi). Šaubu gadījumā - nē.
+ * Atgriež novirzi no kaimiņu līnijas (izšķiršanai, ja der abi krituma punkti) vai null.
+ */
+function isolatedEntryErrorScore(
+  points: DatedKmPoint[],
+  raw: DatedKmPoint[],
+  c: number,
+  dropPair: [DatedKmPoint, DatedKmPoint],
+  opts: OdometerDropAnalysisOptions,
+): { deviation: number; confirmations: number } | null {
+  if (opts.odometerReplacementNoted) return null;
+  const before = points[c - 1];
+  const after = points[c + 1];
+  // 2) vajag gan iepriekšējo, gan vēlāku rādījumu; pēdējais rādījums nekad nav izolēts.
+  if (!before || !after) return null;
+  if (after.km < before.km) return null;
+  // 1) bez šī punkta visa secība ir augoša.
+  if (!withoutIndexIsAscending(points, c)) return null;
+  // 3) ticams temps starp kaimiņiem.
+  const days = (after.t - before.t) / MS_DAY;
+  const delta = after.km - before.km;
+  if (days <= 0) {
+    if (delta > ENTRY_ERROR_CONFIRM_KM) return null;
+  } else if (delta / days > ENTRY_ERROR_MAX_KM_PER_DAY) {
+    return null;
+  }
+  // 4) neviens cits avots neapstiprina šo vērtību.
+  const confirmations = confirmingSourceCount(points[c]!, raw);
+  if (confirmations > 0) return null;
+  // 5) valsts maiņa tieši krituma brīdī = iespējama reāla korekcija importā.
+  const [a, b] = dropPair;
+  if (a.verifiedCountry && b.verifiedCountry && sourceKey(a.verifiedCountry) !== sourceKey(b.verifiedCountry)) {
+    return null;
+  }
+  const span = after.t - before.t;
+  const expected =
+    span > 0 ? before.km + ((points[c]!.t - before.t) / span) * delta : (before.km + after.km) / 2;
+  return { deviation: Math.abs(points[c]!.km - expected), confirmations };
+}
+
+function classifyDrop(
+  points: DatedKmPoint[],
+  raw: DatedKmPoint[],
+  i: number,
+  opts: OdometerDropAnalysisOptions,
+): Pick<OdometerRollbackBound, "kind" | "suspect"> {
+  const pair: [DatedKmPoint, DatedKmPoint] = [points[i - 1]!, points[i]!];
+  // Reāla korekcija: pēc krituma neviens rādījums neatgriežas līdz iepriekšējam līmenim
+  // (jauna, zemāka bāze vai kritums pēdējā rādījumā), vai zemo vērtību apstiprina cits avots.
+  const recovered = points.slice(i + 1).some((p) => p.km >= pair[0].km);
+  if (!recovered) return { kind: "real" };
+  if (confirmingSourceCount(pair[1], raw) > 0) return { kind: "real" };
+  const high = isolatedEntryErrorScore(points, raw, i - 1, pair, opts);
+  const low = isolatedEntryErrorScore(points, raw, i, pair, opts);
+  if (!high && !low) return { kind: "real" };
+  let pick = high ? i - 1 : i;
+  if (high && low) pick = high.deviation > low.deviation ? i - 1 : i;
+  const p = points[pick]!;
+  return { kind: "suspectedEntryError", suspect: { date: p.date, km: p.km, source: pointSources(p) } };
+}
+
+export function analyzeOdometerRollbackBounds(
+  rows: UnifiedMileageRow[],
+  opts: OdometerDropAnalysisOptions = {},
+): OdometerRollbackBound[] {
   const merged = prepareUnifiedMileageDisplayRows(rows);
   const points = datedKm(merged);
+  const raw = datedKm(rows);
   const intervals = positiveIntervals(points);
   const out: OdometerRollbackBound[] = [];
 
@@ -297,14 +436,38 @@ export function analyzeOdometerRollbackBounds(rows: UnifiedMileageRow[]): Odomet
       previousRateClass: previous?.rateClass ?? null,
       ceilingAdditionalKm,
       maxDropKm: ceilingAdditionalKm != null ? drop + ceilingAdditionalKm : null,
+      fromSource: pointSources(prev),
+      toSource: pointSources(next),
+      fromCountry: prev.country,
+      toCountry: next.country,
+      ...classifyDrop(points, raw, i, opts),
     });
   }
   return out;
 }
 
-export function buildOdometerRollbackBoundsBrief(rows: UnifiedMileageRow[]): string {
-  const bounds = analyzeOdometerRollbackBounds(rows);
-  if (bounds.length === 0) return "";
+export function isRealOdometerDrop(b: OdometerRollbackBound): boolean {
+  return b.kind !== "suspectedEntryError";
+}
+
+function suspectedEntryErrorLine(b: OdometerRollbackBound): string {
+  return `- ${b.suspect!.date}, ${formatForensicsInt(b.suspect!.km)} km (${b.suspect!.source}): viens rādījums ārpus secības, pārējie rādījumi turpina trendu. Visticamāk ievades kļūda. Nobraukuma laukā drīkst vienu neitrālu teikumu, citur nepiemin.`;
+}
+
+export function buildOdometerRollbackBoundsBrief(
+  rows: UnifiedMileageRow[],
+  opts: OdometerDropAnalysisOptions = {},
+): string {
+  const all = analyzeOdometerRollbackBounds(rows, opts);
+  const bounds = all.filter(isRealOdometerDrop);
+  const suspected = all.filter((b) => !isRealOdometerDrop(b) && b.suspect);
+  if (bounds.length === 0) {
+    if (suspected.length === 0) return "";
+    return [
+      "### Atsevišķs neatbilstošs rādījums (deterministisks - NAV odometra korekcija)",
+      ...suspected.map(suspectedEntryErrorLine),
+    ].join("\n");
+  }
   const lines = [
     "### Odometra krituma robežas (deterministisks - NEIZDOMĀ pretējo)",
     "- Minimums ir novērotais kritums. Maksimums ir aritmētiska robeža, JA iepriekšējais temps turpinājās tukšuma laikā. Neviens no tiem NAV pierādīta manipulācija.",
@@ -319,6 +482,10 @@ export function buildOdometerRollbackBoundsBrief(rows: UnifiedMileageRow[]): str
         `- Iepriekš novērotais temps: ${formatForensicsInt(b.previousKmPerDay)} km/dienā${b.previousRateClass === "extreme" ? " (EKSTRĒMS)" : b.previousRateClass === "commercial" ? " (komerciāls)" : ""}. Aritmētiskie griesti, ja tas turpinājās tukšumā: +${formatForensicsInt(b.ceilingAdditionalKm)} km; kopējā korekcijas robeža ~${formatForensicsInt(b.maxDropKm)} km. Tā ir APRĒĶINA robeža, ne apgalvojums, ka auto tik tālu brauca.`,
       );
     }
+  }
+  if (suspected.length > 0) {
+    lines.push("- Atsevišķs neatbilstošs rādījums (NAV odometra korekcija):");
+    lines.push(...suspected.map(suspectedEntryErrorLine));
   }
   return lines.join("\n");
 }
@@ -367,7 +534,18 @@ export function analyzeDealerOdometerConflicts(rows: UnifiedMileageRow[]): Deale
   return out;
 }
 
-export function buildDealerOdometerReliabilityBrief(rows: UnifiedMileageRow[]): string {
+function suspectKeys(rows: UnifiedMileageRow[], opts: OdometerDropAnalysisOptions): Set<string> {
+  return new Set(
+    analyzeOdometerRollbackBounds(rows, opts)
+      .filter((b) => !isRealOdometerDrop(b) && b.suspect)
+      .map((b) => `${b.suspect!.date}|${b.suspect!.km}`),
+  );
+}
+
+export function buildDealerOdometerReliabilityBrief(
+  rows: UnifiedMileageRow[],
+  opts: OdometerDropAnalysisOptions = {},
+): string {
   const dealerPoints = datedKm(rows).filter((p) => isOfficialDealerLabel(p.sourceLabel));
   if (dealerPoints.length === 0) return "";
   const lines = [
@@ -377,7 +555,10 @@ export function buildDealerOdometerReliabilityBrief(rows: UnifiedMileageRow[]): 
   ];
   const last = dealerPoints[dealerPoints.length - 1]!;
   lines.push(`- Pēdējais dīlera rādījums: ${last.date}, ${formatForensicsInt(last.km)} km.`);
+  const suspects = suspectKeys(rows, opts);
   for (const c of analyzeDealerOdometerConflicts(rows)) {
+    // Izolēta ievades kļūda nav pretruna ar dīleri.
+    if (suspects.has(`${c.otherDate}|${c.otherKm}`) || suspects.has(`${c.dealerDate}|${c.dealerKm}`)) continue;
     lines.push(
       `- Pretruna: ${c.otherSource} ${c.otherDate} rāda ${formatForensicsInt(c.otherKm)} km, bet dīleris jau ${c.dealerDate} fiksēja ${formatForensicsInt(c.dealerKm)} km (starpība ${formatForensicsInt(c.diffKm)} km). Fakts, ne pierādīta manipulācija.`,
     );
@@ -389,11 +570,14 @@ export function buildDealerOdometerReliabilityBrief(rows: UnifiedMileageRow[]): 
 export function buildMileageForensicsBrief(payload: UnifiedMileageSourcePayload): string {
   const raw = collectUnifiedMileageRows(payload);
   if (raw.length === 0) return "";
+  const opts: OdometerDropAnalysisOptions = {
+    odometerReplacementNoted: ODOMETER_REPLACEMENT_RE.test(JSON.stringify(payload)),
+  };
   return [
     buildMileageRateBrief(raw),
     buildSourceIndependenceBrief(raw),
-    buildOdometerRollbackBoundsBrief(raw),
-    buildDealerOdometerReliabilityBrief(raw),
+    buildOdometerRollbackBoundsBrief(raw, opts),
+    buildDealerOdometerReliabilityBrief(raw, opts),
   ]
     .filter(Boolean)
     .join("\n\n");

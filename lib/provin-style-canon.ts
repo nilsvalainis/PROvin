@@ -28,7 +28,7 @@ export const AI_MILES_KM_RULES = `MILES/KM: Jūdzes (mi, miles, mph) PROVIN teks
 
 export const AI_NO_CROSS_SECTION_REFS_RULES = `NO CROSS-SECTION REFS: Neraksti „kā minēts nobraukuma komentārā”, „skat. sadaļu…”, „detalizēti … KOMENTĀRĀ”.`;
 
-export const AI_ODOMETER_DROP_RULES = `ODOMETER DROP (mandatory when present): Ja kādā avotā vēlāks rādījums ir mazāks par agrāku vai avots dod nobraukuma samazinājuma brīdinājumu (CarVertical/AutoDNA), tas ir lauka pirmais teikums: abi rādījumi, datumi, avots, starpība km. Nekad „neliela nobīde”, „svārstības”, „nelielas nesakritības”. Nolūku neapgalvo: „iespējama odometra korekcija vai datu ievades kļūda; jāpārbauda.” Odometra rādījuma kritums nav neliela nobīde.`;
+export const AI_ODOMETER_DROP_RULES = `ODOMETER DROP (KANONISKIE FAKTI „Kritums” ar avotu): Nobraukuma laukā un kopsavilkumā kritums vai CarVertical/AutoDNA brīdinājums ir pirmais teikums: abi rādījumi, datumi, avots, starpība km. Avota laukā tikai ŠĪ avota kritums, viens teikums; cita avota kritumu nepiedēvē. Nekad „neliela nobīde”, „svārstības”. Nolūku neapgalvo: „iespējama odometra korekcija vai datu ievades kļūda; jāpārbauda.” „Atsevišķs neatbilstošs rādījums” nav korekcija: tikai nobraukuma laukā viens neitrāls teikums („Viens {avots} rādījums ({datums}) neatbilst pārējai secībai un, visticamāk, ir ievades kļūda.”), citur nepiemin.`;
 
 export const AI_HIDDEN_MAINTENANCE_MILEAGE_RULES = `HIDDEN MAINTENANCE (mileage and summary only): Ja starp pirmo reģistrāciju galamērķa valstī un pārdošanu ir vairāk par 3 nedēļām, nosauc abus datumus: „starp X un Y ir N nedēļas; iemesls datos nav redzams”. Spekulāciju par slēptu uzturēšanu avotu komentāros NERAKSTI.`;
 

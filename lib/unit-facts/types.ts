@@ -103,6 +103,8 @@ export type FactCheckFlag = {
     | "recall_denied"
     | "rollback_omitted"
     | "rollback_minimised"
+    | "entry_error_as_rollback"
+    | "csdd_foreign_mileage"
     | "owner_count"
     | "owner_changes"
     | "first_reg_country"

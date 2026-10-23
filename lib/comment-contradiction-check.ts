@@ -5,8 +5,9 @@
 import {
   CANONICAL_FACTS_HEADER,
   LARGE_ODOMETER_DROP_KM,
-  hasRollbackOrMileageWarning,
+  SUSPECTED_ENTRY_ERROR_LINE_PREFIX,
   isMileageRelatedCommentField,
+  rollbackMentionRequired,
   type CanonicalFacts,
 } from "@/lib/canonical-facts-sheet";
 import { formatForensicsInt } from "@/lib/admin-ai-mileage-forensics";
@@ -27,7 +28,32 @@ export type ContradictionCheckInput = {
   /** Ielādētie avoti: OE VIN Lookup / dīleris / CSDD degviela un dzinējs. */
   sourceBlocks?: import("@/lib/admin-source-blocks").WorkspaceSourceBlocks;
   vin?: string | null;
+  /** Avota komentāram: fokusa avota nosaukums (piem. „CSDD”, „AutoDNA”). */
+  focusSourceLabel?: string | null;
+  /** Fokusa avota datu teksts (km skaitļi `csdd_foreign_mileage` pārbaudei). */
+  focusSourceText?: string | null;
 };
+
+const ROLLBACK_CONTEXT_RE = /kritum|korekcij|samazin|atgriez|atpakaļgait|rollback|griezt/i;
+
+/** Visi km lieluma skaitļi tekstā („179 862”, „179862”, „179.862”). */
+export function extractKmLikeNumbers(text: string): number[] {
+  const out: number[] = [];
+  for (const m of (text ?? "").matchAll(/(?<![\d.,])(\d{1,3}(?:[ \u00a0\u202f.]\d{3})+|\d{4,7})(?![\d,]|\.\d)/g)) {
+    const n = Number(m[1]!.replace(/[^\d]/g, ""));
+    if (n >= 1_000) out.push(n);
+  }
+  return out;
+}
+
+function mentionsKm(text: string, km: number): boolean {
+  return extractKmLikeNumbers(text).includes(km);
+}
+
+function isCsddFocus(field: string, focus?: string | null): boolean {
+  if ((focus ?? "").trim().toLowerCase() === "csdd") return true;
+  return field.toLowerCase().split(":")[0] === "csdd";
+}
 
 const ROLLBACK_MENTION_RE =
   /odometr|kritum|atpakaļgait|rollback|neatbilstīb.{0,40}nobrauk|nobraukum.{0,40}neatbilst|korekcij|anomāl/i;
@@ -173,8 +199,8 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
     }
   }
 
-  // 1) Odometra kritums / CarVertical brīdinājums jāpiemin.
-  if (hasRollbackOrMileageWarning(facts) && isMileageRelatedCommentField(field)) {
+  // 1) Odometra kritums / CarVertical brīdinājums jāpiemin (tikai laukos, kur tas ir vietā).
+  if (rollbackMentionRequired(field, facts, input.focusSourceLabel)) {
     if (!ROLLBACK_MENTION_RE.test(text)) {
       const drop = facts.maxRollbackDropKm;
       push({
@@ -185,13 +211,57 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
         sentence: firstMatchingSentence(sentences, /nobrauk|odometr|km/i) || sentences[0]!,
       });
     }
-    if (facts.maxRollbackDropKm >= LARGE_ODOMETER_DROP_KM && MINIMISING_RE.test(text)) {
+  }
+  if (
+    isMileageRelatedCommentField(field) &&
+    facts.maxRollbackDropKm >= LARGE_ODOMETER_DROP_KM &&
+    MINIMISING_RE.test(text)
+  ) {
+    push({
+      id: "rollback_minimised",
+      kind: "rollback_minimised",
+      level: "E",
+      message: `Kritums ${formatForensicsInt(facts.maxRollbackDropKm)} km nav „nelielas nobīdes”.`,
+      sentence: firstMatchingSentence(sentences, MINIMISING_RE),
+    });
+  }
+
+  // 1b) Izolēta ievades kļūda nav korekcija un nav jāatkārto vairākos laukos (tikai karodziņš).
+  for (const e of facts.suspectedEntryErrors ?? []) {
+    const kmSentences = sentences.filter((s) => mentionsKm(s, e.km));
+    if (kmSentences.length === 0) continue;
+    const asRollback = kmSentences.find((s) => ROLLBACK_CONTEXT_RE.test(s));
+    const isMileageField = field.toLowerCase() === "mileage";
+    const repeatedElsewhere = (input.otherFieldTexts ?? []).some(
+      (o) => o.field !== field && mentionsKm(o.text, e.km),
+    );
+    if (asRollback || !isMileageField || repeatedElsewhere) {
       push({
-        id: "rollback_minimised",
-        kind: "rollback_minimised",
-        level: "E",
-        message: `Kritums ${formatForensicsInt(facts.maxRollbackDropKm)} km nav „nelielas nobīdes”.`,
-        sentence: firstMatchingSentence(sentences, MINIMISING_RE),
+        id: "entry_error_as_rollback",
+        kind: "entry_error_as_rollback",
+        level: "W",
+        message: asRollback
+          ? `${formatForensicsInt(e.km)} km (${e.date}, ${e.source}) ir izolēta ievades kļūda, ne odometra kritums vai korekcija.`
+          : `${formatForensicsInt(e.km)} km (${e.date}) ir izolēta ievades kļūda: drīkst vienu neitrālu teikumu tikai nobraukuma laukā.`,
+        sentence: asRollback ?? kmSentences[0]!,
+      });
+    }
+  }
+
+  // 1c) CSDD komentārā tikai CSDD km (cita avota rādījums nav CSDD fakts). Tikai karodziņš.
+  const focusText = input.focusSourceText ?? (input.sourceBlocks && isCsddFocus(field, input.focusSourceLabel)
+    ? csddKmHaystack(input.sourceBlocks)
+    : null);
+  if (focusText != null && isCsddFocus(field, input.focusSourceLabel)) {
+    const csddKms = new Set(extractKmLikeNumbers(focusText));
+    for (const km of kmNumbers(text)) {
+      if (csddKms.has(km)) continue;
+      push({
+        id: `csdd_foreign_mileage_${km}`,
+        kind: "csdd_foreign_mileage",
+        level: "W",
+        message: `${formatForensicsInt(km)} km nav CSDD datos - CSDD komentārā tikai CSDD rādījumi.`,
+        sentence: sentences.find((s) => mentionsKm(s, km)) ?? sentences[0]!,
       });
     }
   }
@@ -436,6 +506,15 @@ const EMPTY_TA = {
 /**
  * Izvelk kanonisko lapu no ✨ user prompta (P12). Bez maksas.
  */
+function csddKmHaystack(blocks: import("@/lib/admin-source-blocks").WorkspaceSourceBlocks): string {
+  const csdd = blocks.csdd;
+  if (!csdd) return "";
+  return [
+    ...(csdd.mileageHistory ?? []).map((r) => r.odometer),
+    JSON.stringify(csdd),
+  ].join("\n");
+}
+
 export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts | null {
   const t = prompt ?? "";
   const re = new RegExp(
@@ -454,14 +533,16 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
   const countryIso = firstRegLine.match(/\(([A-Z]{2})\)/)?.[1] ?? "";
   const latestKmRaw = sheet.match(/Jaunākais rādījums:\s*([\d\s]+)\s*km/)?.[1];
   const rollbacks = [...sheet.matchAll(
-    /- Kritums:\s+(\S+)\s+([\d\s]+?)\s+km\s+[→-]\s+(\S+)\s+([\d\s]+?)\s+km;\s+minimums\s+([\d\s]+?)\s+km/g,
+    /- Kritums:\s+(\S+)\s+([\d\s]+?)\s+km(?:\s+\(([^)\n]*)\))?\s+[→-]\s+(\S+)\s+([\d\s]+?)\s+km(?:\s+\(([^)\n]*)\))?;\s+minimums\s+([\d\s]+?)\s+km/g,
   )].map((row) => {
-    const minDropKm = parseSpacedInt(row[5] ?? "0");
+    const minDropKm = parseSpacedInt(row[7] ?? "0");
     return {
       fromDate: row[1] ?? "",
-      toDate: row[3] ?? "",
+      toDate: row[4] ?? "",
       fromKm: parseSpacedInt(row[2] ?? "0"),
-      toKm: parseSpacedInt(row[4] ?? "0"),
+      toKm: parseSpacedInt(row[5] ?? "0"),
+      fromSource: row[3] ?? "",
+      toSource: row[6] ?? "",
       gapDays: 0,
       minDropKm,
       previousKmPerDay: null,
@@ -470,6 +551,14 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
       maxDropKm: minDropKm,
     };
   });
+  const suspectedPrefix = SUSPECTED_ENTRY_ERROR_LINE_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const suspectedEntryErrors = [...sheet.matchAll(
+    new RegExp(`- ${suspectedPrefix}:\\s*([^,\\n]+),\\s*([\\d\\s]+?)\\s*km,\\s*([^\\n]+)`, "g"),
+  )].map((row) => ({
+    date: row[1]!.trim(),
+    km: parseSpacedInt(row[2] ?? "0"),
+    source: row[3]!.trim(),
+  }));
   const incidentCount = Number(sheet.match(/Negadījumi \/ zaudējumi:\s*(\d+)/)?.[1] ?? 0);
   const recallLine = sheet.match(/Atsaukumi \/ kampaņu kodi datos:\s*([^\n]+)/)?.[1] ?? "";
   const recallCodes = /nav fiksētu/i.test(recallLine)
@@ -498,6 +587,7 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
     },
     latestKm: latestKmRaw ? parseSpacedInt(latestKmRaw) : null,
     rollbacks,
+    suspectedEntryErrors,
     odometerAnomaly: /Forenzikas karogs[^:\n]*:\s*JĀ/i.test(sheet),
     carverticalMileageWarning: /CarVertical nobraukuma brīdinājums:\s*JĀ/i.test(sheet),
     maxRollbackDropKm,
