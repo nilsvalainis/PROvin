@@ -353,6 +353,7 @@ export function IrissOrderRoom({
   onEditOffer,
   onPrepareOffer,
   onOpenOfferPdf,
+  onOfferDeadlineExtended,
   onRestore,
   onOrderRestored,
   onDeleteOrder,
@@ -402,6 +403,8 @@ export function IrissOrderRoom({
   onEditOffer: (offer: IrissOfferRecord) => void;
   onPrepareOffer: (hit: IrissOrderRoomHit) => void;
   onOpenOfferPdf: (offerId: string, omitImages?: boolean) => void;
+  /** "Pagarināt": serveris saglabāja jauno termiņu (validUntilAt) un revīziju. */
+  onOfferDeadlineExtended?: (offerId: string, validUntilAt: string, workspaceRevision?: number | null) => void;
   onRestore: () => void;
   onOrderRestored: (record: IrissPasutijumsRecord) => void;
   onDeleteOrder: () => void;
@@ -478,7 +481,10 @@ export function IrissOrderRoom({
     };
   }, [rec.id, tab]);
 
-  async function mutateOfferLink(offerId: string, body: { action: "create"; expiresInDays: number | null } | { action: "revoke" }) {
+  async function mutateOfferLink(
+    offerId: string,
+    body: { action: "create"; expiresInDays: number | null } | { action: "revoke" } | { action: "extend"; validUntilAt: string },
+  ) {
     setLinkBusyId(offerId);
     setRoomMsg(null);
     try {
@@ -491,20 +497,33 @@ export function IrissOrderRoom({
           body: JSON.stringify(body),
         },
       );
-      const data = (await res.json().catch(() => ({}))) as { error?: string; link?: IrissOfferClientLinkAdminView };
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        message?: string;
+        link?: IrissOfferClientLinkAdminView;
+        validUntilAt?: string;
+        workspaceRevision?: number | null;
+      };
       if (!res.ok || !data.link) {
         setRoomMsg(
           data.error === "save_first"
             ? "Vispirms saglabājiet pasūtījumu un piedāvājumu."
-            : body.action === "revoke"
-              ? "Saiti neizdevās atsaukt."
-              : "Saiti neizdevās izveidot.",
+            : body.action === "extend"
+              ? data.error === "decided"
+                ? "Klients jau atbildējis - pagarināt nevar. Vajadzības gadījumā: Atsaukt un Jauna saite."
+                : data.message || "Termiņu neizdevās pagarināt."
+              : body.action === "revoke"
+                ? "Saiti neizdevās atsaukt."
+                : "Saiti neizdevās izveidot.",
         );
         return;
       }
       setOfferLinks((prev) => [...prev.filter((item) => item.offerId !== offerId), data.link!]);
+      if (body.action === "extend" && data.validUntilAt) onOfferDeadlineExtended?.(offerId, data.validUntilAt, data.workspaceRevision);
     } catch {
-      setRoomMsg(body.action === "revoke" ? "Saiti neizdevās atsaukt." : "Saiti neizdevās izveidot.");
+      setRoomMsg(
+        body.action === "extend" ? "Termiņu neizdevās pagarināt." : body.action === "revoke" ? "Saiti neizdevās atsaukt." : "Saiti neizdevās izveidot.",
+      );
     } finally {
       setLinkBusyId(null);
     }
@@ -1478,8 +1497,10 @@ export function IrissOrderRoom({
                         email={rec.email}
                         vehicle={offer.brandModel.trim() || offer.title}
                         busy={linkBusyId === offer.id}
+                        deadlineAt={offer.validUntilAt ?? ""}
                         onCreate={(expiresInDays) => void mutateOfferLink(offer.id, { action: "create", expiresInDays })}
                         onRevoke={() => void mutateOfferLink(offer.id, { action: "revoke" })}
+                        onExtend={(validUntilAt) => void mutateOfferLink(offer.id, { action: "extend", validUntilAt })}
                       />
                     </div>
                   </li>

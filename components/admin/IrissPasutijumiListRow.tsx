@@ -1,5 +1,6 @@
 "use client";
 
+import type { IrissOfferListBadge } from "@/lib/iriss-offer-deadline-ui";
 import { ChevronDown, GripVertical, MessageCircle, Phone, Pin, Trash2 } from "lucide-react";
 import { motion, Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
@@ -43,6 +44,13 @@ const MOVE_CANCEL_LONG_PRESS_PX = 10;
 const SWIPE_AXIS_MIN = 14;
 const SWIPE_AXIS_BIAS = 8;
 
+const OFFER_BADGE_CLASS: Record<IrissOfferListBadge["tone"], string> = {
+  approved: "bg-emerald-50 text-emerald-800",
+  declined: "bg-rose-50 text-rose-800",
+  expired: "bg-slate-200 text-slate-700",
+  time: "bg-sky-50 text-sky-900",
+};
+
 export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
   row,
   newHits,
@@ -56,8 +64,11 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
   closeOtherSwipes,
   narrowSwipeViewport,
   dragReorderEnabled,
+  offerBadge = null,
 }: {
   row: IrissPasutijumsListRow;
+  /** Jaunākā piedāvājuma saite: Apstiprināts / Noraidīts / Beidzies / atlicis (T4). */
+  offerBadge?: IrissOfferListBadge | null;
   newHits: number;
   onPin: (id: string) => void;
   onAskDelete: (id: string) => void;
@@ -320,7 +331,11 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
             {newHitsLabel}
             {nextStep ? <span className="min-w-0 text-[12px] leading-snug text-[var(--ink2)] max-md:line-clamp-2">{nextStep}</span> : null}
           </span>
-          {row.hasExpiredOffer ? (
+          {offerBadge ? (
+            <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums ${OFFER_BADGE_CLASS[offerBadge.tone]}`}>
+              {offerBadge.label}
+            </span>
+          ) : row.hasExpiredOffer ? (
             <span className="iriss-pas-expired mt-1 inline-flex rounded-full border border-[var(--hair)] px-2 py-0.5 text-[10px] font-semibold text-[var(--ink2)]">
               {formatIrissExpiredOfferLabel(row.latestOfferValidUntil)}
             </span>
