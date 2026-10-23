@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
-import { loadIrissPavadzimesPageData } from "@/lib/iriss-pavadzimes-list";
+import { canSeeWaybillOrders, loadIrissPavadzimesPageData } from "@/lib/iriss-pavadzimes-list";
 import { uploadIrissPavadzime } from "@/lib/iriss-pavadzimes-store";
 import { PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
 
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
   try {
     await uploadIrissPavadzime({ fileName, bytes, vin, brandModel, plate });
-    const data = await loadIrissPavadzimesPageData();
+    const data = await loadIrissPavadzimesPageData(new Date(), { withOrders: canSeeWaybillOrders(gate.actor) });
     return NextResponse.json(data);
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "upload_failed" }, { status: 500 });

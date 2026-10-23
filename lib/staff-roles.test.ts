@@ -57,6 +57,12 @@ describe("IRISS section path access (deny by default)", () => {
     expect(staffHomePath(both.sections)).toBe("/admin/iriss");
     expect(actorHomePath(both)).toBe("/admin/iriss");
     expect(staffHomePath(waybills.sections)).toBe("/admin/iriss");
+    expect(actorHomePath(waybills)).toBe("/admin/iriss");
+    // Partneris (tikai Pavadzīmes): vienīgā lapa ir IRISS sākums ar pavadzīmju logrīku.
+    expect(decideAdminPageAccess("/admin/iriss", waybills)).toBe("allow");
+    expect(decideAdminPageAccess("/admin/iriss/pavadzimes", waybills)).toBe("forbidden");
+    expect(decideAdminApiAccess("/api/admin/iriss/waybill-requests", waybills)).toBe("allow");
+    expect(decideAdminApiAccess("/api/admin/iriss/vpn", waybills)).toBe("forbidden");
     expect(actorHomePath({ kind: "admin" })).toBe("/admin/iriss");
   });
 
@@ -92,7 +98,8 @@ describe("IRISS section path access (deny by default)", () => {
   });
 
   it("gives Pavadzīmes-only staff zero access to other IRISS agents and sections", () => {
-    expect(decideAdminPageAccess("/admin/iriss/pavadzimes", waybills)).toBe("allow");
+    // Partnerim vienīgā lapa ir IRISS sākums (pavadzīmju logrīks + forma); pavadzīmju API atļauts.
+    expect(decideAdminPageAccess("/admin/iriss/pavadzimes", waybills)).toBe("forbidden");
     expect(decideAdminPageAccess("/admin/iriss", waybills)).toBe("allow");
     for (const row of IRISS_SECTION_CATALOG) {
       if (row.id === "pavadzimes") continue;

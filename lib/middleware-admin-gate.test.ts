@@ -183,7 +183,7 @@ describe("middleware admin gate", () => {
     expect(res.headers.get("location")).toBeNull();
   });
 
-  it("lets Pavadzīmes-only staff open waybills and blocks every other agent", async () => {
+  it("keeps Pavadzīmes-only staff on the IRISS home, allows waybill APIs and blocks every other agent", async () => {
     const payload = Buffer.from(
       JSON.stringify({
         typ: STAFF_SESSION_TOKEN_TYP,
@@ -197,7 +197,10 @@ describe("middleware admin gate", () => {
     ).toString("base64url");
     const sig = createHmac("sha256", SECRET).update(payload).digest("hex");
     const cookie = `provin_staff_session=${payload}.${sig}`;
-    expect((await middleware(req("https://www.provin.lv/admin/iriss/pavadzimes", cookie))).status).toBe(200);
+    expect((await middleware(req("https://www.provin.lv/admin/iriss", cookie))).status).toBe(200);
+    const list = await middleware(req("https://www.provin.lv/admin/iriss/pavadzimes", cookie));
+    expect(list.status).toBe(307);
+    expect(new URL(list.headers.get("location")!).pathname).toBe("/admin/iriss");
     expect((await middleware(req("https://www.provin.lv/api/admin/iriss/waybill-requests", cookie))).status).toBe(200);
     const vin = await middleware(req("https://www.provin.lv/admin/vin-scan", cookie));
     expect(vin.status).toBe(307);

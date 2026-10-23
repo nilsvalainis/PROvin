@@ -137,6 +137,16 @@ export async function requireIrissSectionApi(section: IrissSection): Promise<
   return { ok: false, response: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
 }
 
+/** Tikai administrators (Nils). Darbinieks saņem 403 neatkarīgi no sadaļām (piem. VPN / servera vadība). */
+export async function requireAdminOnlyApi(): Promise<
+  { ok: true; actor: Extract<AdminOrStaffActor, { kind: "admin" }> } | { ok: false; response: NextResponse }
+> {
+  const actor = await getAdminOrStaffActor();
+  if (actor?.kind === "admin") return { ok: true, actor };
+  if (!actor) return { ok: false, response: NextResponse.json({ error: "unauthorized" }, { status: 401 }) };
+  return { ok: false, response: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
+}
+
 export async function requireLogisticsApi(): Promise<
   { ok: true; actor: AdminOrStaffActor } | { ok: false; response: NextResponse }
 > {

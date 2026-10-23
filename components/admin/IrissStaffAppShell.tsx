@@ -16,7 +16,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { IRISS_SECTION_LABELS, irissSectionMeta, type IrissSection } from "@/lib/staff-roles";
+import { IRISS_SECTION_LABELS, irissSectionMeta, isWaybillOnlyStaff, type IrissSection } from "@/lib/staff-roles";
 
 const SECTION_ICON: Record<IrissSection, LucideIcon> = {
   pasutijumi: Car,
@@ -53,6 +53,15 @@ export function IrissStaffAppShell({
     await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
     router.replace("/admin/login");
     router.refresh();
+  }
+
+  // Partneris (tikai Pavadzīmes): nekādas navigācijas - Arhīvs un Iziet ir pašā sākumskatā.
+  if (isWaybillOnlyStaff(sections)) {
+    return (
+      <div className="iriss-admin-scope flex h-dvh flex-col text-[#111827]">
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</main>
+      </div>
+    );
   }
 
   return (

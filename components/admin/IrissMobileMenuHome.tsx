@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { IrissKomandaAivaramChat } from "@/components/admin/IrissKomandaAivaramChat";
+import { IrissWaybillRequestArchive } from "@/components/admin/IrissWaybillMobileForm";
 import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { MenuGrid } from "@/components/admin/mobile/MenuGrid";
 import { renderIrissWidget } from "@/components/admin/mobile/MenuWidgetContent";
@@ -15,7 +17,9 @@ import {
   irissMobileMenuItemsFor,
   type IrissMobileMenuItem,
 } from "@/lib/iriss-mobile-menu";
-import type { IrissSection } from "@/lib/staff-roles";
+import { isWaybillOnlyStaff, type IrissSection } from "@/lib/staff-roles";
+
+const noop = () => undefined;
 
 /** Skaitītājs, kas pieaug, atgriežoties lietotnē un ik minūti: skaitļi atjaunojas paši. */
 function useRefreshTick(): number {
@@ -83,7 +87,12 @@ export function IrissMobileMenuHome({
 }) {
   const items = irissMobileMenuItemsFor(sections, isAdmin);
   const catalog = useMemo(() => irissMenuCatalog(sections, isAdmin), [sections, isAdmin]);
-  useDesktopRedirect(irissDesktopHomeHref(items));
+  /** Partneris (tikai Pavadzīmes): tas pats sākums, bet tikai pavadzīmju logrīks, forma, Arhīvs un Iziet. */
+  const waybillOnly = !isAdmin && isWaybillOnlyStaff(sections);
+  const router = useRouter();
+  const [formOpen, setFormOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  useDesktopRedirect(waybillOnly ? null : irissDesktopHomeHref(items));
   const canReadWaybills = isAdmin || sections.includes("pavadzimes");
   const tick = useRefreshTick();
   const badges = useCheapIrissBadgeCounts(isAdmin, tick);
@@ -93,6 +102,58 @@ export function IrissMobileMenuHome({
     irissLogistics: badges.irissLogistics,
     waybills: plates.busyCount,
   };
+
+  if (waybillOnly) {
+    const logout = async () => {
+      await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
+      router.replace("/admin/login");
+      router.refresh();
+    };
+    return (
+      <div className="iriss-mobile-menu-home pb-[max(16px,env(safe-area-inset-bottom))] md:mx-auto md:max-w-md md:pt-6">
+        <AdminMobileTopBar title="IRISS" />
+        <div className="px-4">
+          <IrissWaybillGauges allHref={null} />
+        </div>
+        {formOpen ? (
+          <div className="mt-4 px-4">
+            <IrissKomandaAivaramChat draftVehicle={null} onDraftConsumed={noop} />
+          </div>
+        ) : (
+          <div className="mt-4 px-4">
+            <button
+              type="button"
+              onClick={() => setFormOpen(true)}
+              className="flex h-[52px] w-full items-center justify-center rounded-[14px] bg-[#111827] text-[15px] font-semibold text-white"
+            >
+              Izveidot pavadzīmi
+            </button>
+          </div>
+        )}
+        {archiveOpen ? (
+          <div className="mt-4 px-4">
+            <IrissWaybillRequestArchive />
+          </div>
+        ) : null}
+        <div className="mt-5 flex items-center justify-center gap-6">
+          <button
+            type="button"
+            onClick={() => setArchiveOpen((v) => !v)}
+            className="flex min-h-11 items-center px-3 text-[13px] font-medium text-[var(--label-secondary,#5e636e)]"
+          >
+            Arhīvs
+          </button>
+          <button
+            type="button"
+            onClick={() => void logout()}
+            className="flex min-h-11 items-center px-3 text-[13px] font-medium text-[var(--label-secondary,#5e636e)]"
+          >
+            Iziet
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="iriss-mobile-menu-home pb-4">

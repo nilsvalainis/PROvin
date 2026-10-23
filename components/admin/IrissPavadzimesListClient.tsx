@@ -104,7 +104,14 @@ function PavadzimeSearchFocus({ rowCount }: { rowCount: number }) {
   return null;
 }
 
-export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
+export function IrissPavadzimesListClient({
+  initial,
+  isAdmin = false,
+}: {
+  initial: PageData;
+  /** VPN / servera vadība un paziņojumi - tikai administratoram (darbiniekam API atbild 403). */
+  isAdmin?: boolean;
+}) {
   const [data, setData] = useState(initial);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [view, setView] = useState<WaybillView>("current");
@@ -506,13 +513,17 @@ export function IrissPavadzimesListClient({ initial }: { initial: PageData }) {
                 <ChevronRight className="h-4 w-4 text-[var(--ink3,#9a9faa)]" aria-hidden />
               </button>
             </div>
-            <div className="mt-3">
-              <AdminPushToggle hint="Paziņojums telefonā, kad pavadzīme izdota vai neizdevās." />
-            </div>
-            {/* VPN un servera stāvoklis - pašā apakšā, liela poga (tikai telefonā; datorā augšā kā agrāk). */}
-            <div className="mt-6">
-              <IrissVpnControl variant="card" />
-            </div>
+            {isAdmin ? (
+              <>
+                <div className="mt-3">
+                  <AdminPushToggle hint="Paziņojums telefonā, kad pavadzīme izdota vai neizdevās." />
+                </div>
+                {/* VPN un servera stāvoklis - pašā apakšā, liela poga (tikai telefonā; datorā augšā kā agrāk). */}
+                <div className="mt-6">
+                  <IrissVpnControl variant="card" />
+                </div>
+              </>
+            ) : null}
             {/* Beigušās un vecās pavadzīmes nav pirmajā lapā - tikai maza saite pašā apakšā. */}
             <button
               type="button"
