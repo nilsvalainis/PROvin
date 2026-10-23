@@ -12,6 +12,7 @@ import {
 } from "@/lib/iriss-offer-public-display";
 import { orderOfferAttachmentsForPdf } from "@/lib/iriss-offer-image-sorter";
 import { parsePriceLike, irissPriceLooksNumeric } from "@/lib/iriss-price-format";
+import { isOfferDeadlinePassed, normalizeOfferValidUntilAt } from "@/lib/iriss-offer-valid-until";
 import type { IrissOfferRecord } from "@/lib/iriss-pasutijumi-types";
 
 export const IRISS_OFFER_LINK_PATH_PREFIX = "/p";
@@ -19,6 +20,8 @@ export const IRISS_OFFER_PUBLIC_BRAND = "Dzintarzeme Auto";
 export const IRISS_OFFER_PUBLIC_LEGAL = "SIA ĪRISS";
 export const IRISS_OFFER_QUESTION_MAX = 400;
 export const IRISS_OFFER_LINK_EXPIRY_DAY_CHOICES = [7, 14, 30] as const;
+/** Saite ar termiņu paliek atverama vēl 30 dienas pēc termiņa (pogas atspējotas). */
+export const IRISS_OFFER_LINK_AFTER_DEADLINE_DAYS = 30;
 
 const TOKEN_RE = /^[A-Za-z0-9_-]{16,64}$/;
 const HASH_RE = /^[a-f0-9]{64}$/;
@@ -34,6 +37,7 @@ export const IRISS_OFFER_CLIENT_STATUS_LV = {
   answered: "Atbildēts",
   approved: "Apstiprināts",
   declined: "Noraidīts",
+  expired: "Beidzies",
   revoked: "Atsaukts",
 } as const;
 
@@ -78,10 +82,18 @@ export type IrissOfferPublicView = {
   photos: { id: string }[];
   decision: IrissOfferClientDecision;
   question: string;
+  /** Lēmuma laiks (ISO) vai "". */
+  decidedAt: string;
+  /** Precīzs termiņš UTC ISO vai "" (vecie piedāvājumi - bez taimera). */
+  deadlineAt: string;
+  /** Servera laiks lapas ielādē - taimeris skaita no nobīdes, nevis klienta pulksteņa. */
+  serverNow: string;
 };
 
 export type IrissOfferClientLinkAdminView = {
   offerId: string;
+  /** Piedāvājuma termiņš (validUntilAt) vai "". */
+  deadlineAt: string;
   path: string;
   status: IrissOfferClientStatus;
   statusLabel: string;
@@ -123,6 +135,7 @@ export const IRISS_OFFER_PUBLIC_LABELS = {
   yourQuestion: "Jūsu jautājums",
   questionRequired: "Ierakstiet īsu jautājumu.",
   sendFailed: "Neizdevās nosūtīt. Mēģiniet vēlreiz.",
+  expired: "Piedāvājuma termiņš beidzies",
   service: "Pilna servisa vēsture",
   paint: "Rūpnīcas krāsojums",
   rust: "Virsbūve bez rūsas",
@@ -190,26 +203,63 @@ export function isIrissOfferLinkUsable(
   return Number.isFinite(t) && t > nowMs;
 }
 
-export function irissOfferClientLinkStatus(rec: IrissOfferClientLinkRecord): IrissOfferClientStatus {
+/** Saites derīgums jaunai saitei ar piedāvājuma termiņu: termiņš + 30 dienas. */
+export function irissOfferLinkExpiresAtForDeadline(deadlineIso: string): string {
+  const n = normalizeOfferValidUntilAt(deadlineIso);
+  if (!n) return "";
+  return new Date(Date.parse(n) + IRISS_OFFER_LINK_AFTER_DEADLINE_DAYS * 24 * 60 * 60 * 1000).toISOString();
+}
+
+/** offerId -> validUntilAt (tikai piedāvājumiem ar precīzu termiņu). */
+export function irissOfferDeadlinesByOfferId(
+  offers: ReadonlyArray<Pick<IrissOfferRecord, "id" | "validUntilAt">>,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const offer of offers) {
+    const at = normalizeOfferValidUntilAt(offer.validUntilAt);
+    if (at) out[offer.id] = at;
+  }
+  return out;
+}
+
+export type IrissOfferLinkDeadlineOpts = { deadlineAt?: string | null; nowMs?: number };
+
+function deadlineMsOf(opts?: IrissOfferLinkDeadlineOpts): number | null {
+  const n = normalizeOfferValidUntilAt(opts?.deadlineAt ?? "");
+  return n ? Date.parse(n) : null;
+}
+
+export function irissOfferClientLinkStatus(
+  rec: IrissOfferClientLinkRecord,
+  opts?: IrissOfferLinkDeadlineOpts,
+): IrissOfferClientStatus {
   if (rec.revokedAt.trim()) return "revoked";
   if (rec.decision === "approve") return "approved";
   if (rec.decision === "decline") return "declined";
+  if (isOfferDeadlinePassed(deadlineMsOf(opts), opts?.nowMs ?? Date.now())) return "expired";
   if (rec.question.trim() && rec.questionAt.trim()) return "answered";
   if (rec.firstViewedAt.trim() || rec.viewCount > 0) return "viewed";
   return "sent";
 }
 
-export function irissOfferClientLinkStatusAt(rec: IrissOfferClientLinkRecord): string {
-  const status = irissOfferClientLinkStatus(rec);
+export function irissOfferClientLinkStatusAt(
+  rec: IrissOfferClientLinkRecord,
+  opts?: IrissOfferLinkDeadlineOpts,
+): string {
+  const status = irissOfferClientLinkStatus(rec, opts);
   if (status === "revoked") return rec.revokedAt;
+  if (status === "expired") return normalizeOfferValidUntilAt(opts?.deadlineAt ?? "");
   if (status === "approved" || status === "declined") return rec.decidedAt || rec.createdAt;
   if (status === "answered") return rec.questionAt;
   if (status === "viewed") return rec.firstViewedAt || rec.lastViewedAt;
   return rec.createdAt;
 }
 
-export function irissOfferClientLinkStatusLabel(rec: IrissOfferClientLinkRecord): string {
-  return IRISS_OFFER_CLIENT_STATUS_LV[irissOfferClientLinkStatus(rec)];
+export function irissOfferClientLinkStatusLabel(
+  rec: IrissOfferClientLinkRecord,
+  opts?: IrissOfferLinkDeadlineOpts,
+): string {
+  return IRISS_OFFER_CLIENT_STATUS_LV[irissOfferClientLinkStatus(rec, opts)];
 }
 
 const RIGA_STAMP = new Intl.DateTimeFormat("en-GB", {
@@ -274,9 +324,10 @@ export function applyIrissOfferLinkResponse(
   action: IrissOfferLinkAction,
   text: string,
   nowIso: string,
+  opts?: { deadlineAt?: string | null },
 ):
   | { ok: true; record: IrissOfferClientLinkRecord; unchanged: boolean }
-  | { ok: false; error: "unavailable" | "question" } {
+  | { ok: false; error: "unavailable" | "question" | "expired" } {
   if (!isIso(nowIso) || !isIrissOfferLinkUsable(rec, Date.parse(nowIso))) {
     return { ok: false, error: "unavailable" };
   }
@@ -291,6 +342,9 @@ export function applyIrissOfferLinkResponse(
   }
   if (rec.decision === "approve" || rec.decision === "decline") {
     return { ok: true, unchanged: true, record: rec };
+  }
+  if (isOfferDeadlinePassed(deadlineMsOf({ deadlineAt: opts?.deadlineAt }), Date.parse(nowIso))) {
+    return { ok: false, error: "expired" };
   }
   return {
     ok: true,
@@ -354,14 +408,18 @@ export function parseIrissOfferClientLinkRecord(raw: unknown): IrissOfferClientL
   };
 }
 
-export function toIrissOfferClientLinkAdminView(rec: IrissOfferClientLinkRecord): IrissOfferClientLinkAdminView {
-  const status = irissOfferClientLinkStatus(rec);
+export function toIrissOfferClientLinkAdminView(
+  rec: IrissOfferClientLinkRecord,
+  opts?: IrissOfferLinkDeadlineOpts,
+): IrissOfferClientLinkAdminView {
+  const status = irissOfferClientLinkStatus(rec, opts);
   return {
     offerId: rec.offerId,
+    deadlineAt: normalizeOfferValidUntilAt(opts?.deadlineAt ?? ""),
     path: irissOfferClientLinkPublicPath(rec.token),
     status,
     statusLabel: IRISS_OFFER_CLIENT_STATUS_LV[status],
-    statusAt: irissOfferClientLinkStatusAt(rec),
+    statusAt: irissOfferClientLinkStatusAt(rec, opts),
     createdAt: rec.createdAt,
     expiresAt: rec.expiresAt,
     revokedAt: rec.revokedAt,
@@ -408,7 +466,8 @@ function offerTotalLabel(offer: Pick<IrissOfferRecord, "carPrice" | "deliveryPri
 
 export function buildIrissOfferPublicView(
   offer: IrissOfferRecord,
-  client: { decision: IrissOfferClientDecision; question: string },
+  client: { decision: IrissOfferClientDecision; question: string; decidedAt?: string },
+  opts?: { nowMs?: number },
 ): IrissOfferPublicView {
   const checks = [
     offer.hasFullServiceHistory ? IRISS_OFFER_PUBLIC_LABELS.service : "",
@@ -458,6 +517,9 @@ export function buildIrissOfferPublicView(
     photos,
     decision: client.decision,
     question: sanitizeIrissOfferQuestion(client.question),
+    decidedAt: client.decision && client.decidedAt && isIso(client.decidedAt) ? client.decidedAt : "",
+    deadlineAt: normalizeOfferValidUntilAt(offer.validUntilAt),
+    serverNow: new Date(opts?.nowMs ?? Date.now()).toISOString(),
   };
 }
 
@@ -481,6 +543,9 @@ const PUBLIC_VIEW_KEYS = [
   "photos",
   "decision",
   "question",
+  "decidedAt",
+  "deadlineAt",
+  "serverNow",
 ] as const;
 
 export function irissOfferPublicViewKeys(): readonly string[] {

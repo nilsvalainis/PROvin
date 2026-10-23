@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
+import { irissOfferDeadlinesByOfferId } from "@/lib/iriss-offer-client-link";
 import { readIrissOfferClientLinksForOrder } from "@/lib/iriss-offer-client-link-store";
-import { isSafeIrissPasutijumsId } from "@/lib/iriss-pasutijumi-store";
+import { isSafeIrissPasutijumsId, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,6 +14,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (!gate.ok) return gate.response;
   const { id } = await ctx.params;
   if (!isSafeIrissPasutijumsId(id)) return NextResponse.json({ error: "invalid_id" }, { status: 400, headers: noStore });
-  const links = await readIrissOfferClientLinksForOrder(id);
+  const order = await readIrissPasutijums(id);
+  const links = await readIrissOfferClientLinksForOrder(id, {
+    deadlines: irissOfferDeadlinesByOfferId(order?.offers ?? []),
+  });
   return NextResponse.json({ links }, { headers: noStore });
 }

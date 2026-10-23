@@ -11,6 +11,7 @@ import {
   type IrissOfferPublicView,
 } from "@/lib/iriss-offer-client-link";
 import {
+  readIrissOfferClaimedDecision,
   readIrissOfferClientLinkByToken,
   recordIrissOfferLinkView,
 } from "@/lib/iriss-offer-client-link-store";
@@ -30,10 +31,16 @@ export async function loadIrissOfferPublicView(token: string, nowMs = Date.now()
   if (!opened) return null;
   const viewed = await recordIrissOfferLinkView(opened.link.tokenHash, nowMs);
   if (!viewed || !isIrissOfferLinkUsable(viewed, nowMs)) return null;
-  const view = buildIrissOfferPublicView(opened.offer, {
-    decision: viewed.decision,
-    question: viewed.question,
-  });
+  const claimed = viewed.decision ? null : await readIrissOfferClaimedDecision(viewed.tokenHash);
+  const view = buildIrissOfferPublicView(
+    opened.offer,
+    {
+      decision: viewed.decision || claimed?.decision || "",
+      question: viewed.question,
+      decidedAt: viewed.decision ? viewed.decidedAt : claimed?.decidedAt ?? "",
+    },
+    { nowMs },
+  );
   const secrets = [opened.order.id, opened.link.token, opened.link.tokenHash, opened.link.offerId];
   if (secrets.some((secret) => irissOfferPublicViewContainsSecret(view, secret))) return null;
   return view;

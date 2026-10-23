@@ -10,6 +10,7 @@ import { orderRoomMatchProps, prepareIrissListingMatchWorkspace } from "@/lib/ir
 import { coerceIrissDuplicatesByListing, coerceIrissHitStatusMap } from "@/lib/iriss-order-room-match-props";
 import { buildIrissOrderRoomHits } from "@/lib/iriss-order-room";
 import { isEcarstradeNoPriceNoBid } from "@/lib/iriss-listing-order-gate";
+import { irissOfferDeadlinesByOfferId } from "@/lib/iriss-offer-client-link";
 import { readIrissOfferClientLinksForOrder } from "@/lib/iriss-offer-client-link-store";
 import { isIrissPasutijumiStoreEnabled, isSafeIrissPasutijumsId, readIrissListingOrderOv, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 import { stripIrissOfferImageDataUrls } from "@/lib/iriss-pasutijums-offer-images";
@@ -49,7 +50,7 @@ export default async function IrissPasutijumsDetailPage({
     storage.enabled ? readIrissListingsLatestViewWithMarketplace() : Promise.resolve(null),
     storage.enabled ? readIrissListingsDismissed() : Promise.resolve(emptyIrissListingsDismissed()),
     readIrissListingOrderOv().catch(() => ({})),
-    readIrissOfferClientLinksForOrder(id).catch(() => []),
+    readIrissOfferClientLinksForOrder(id, { deadlines: irissOfferDeadlinesByOfferId(rec.offers) }).catch(() => []),
   ]);
   const listable = (latest?.vehicles ?? []).filter((v) => !isEcarstradeNoPriceNoBid(v));
   const match = storage.enabled

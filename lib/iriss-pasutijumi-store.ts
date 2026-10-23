@@ -24,6 +24,7 @@ import { normalizeIrissAdvanceDraft } from "@/lib/iriss-advance";
 import { parseIrissDealWorkflowStatus } from "@/lib/iriss-order-overview-view";
 import { normalizeIrissCommunicationEvents } from "@/lib/iriss-communication-timeline";
 import { normalizeIrissOfferBlocks } from "@/lib/iriss-offer-blocks";
+import { normalizeOfferValidUntilAt } from "@/lib/iriss-offer-valid-until";
 import { irissOrderPhotoAlbumOfferId, normalizeIrissOrderPhotoAlbum } from "@/lib/iriss-order-photos";
 import { migrateIrissSpecSelectLabels } from "@/lib/iriss-order-spec-selects";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
@@ -493,6 +494,8 @@ function normalizeOffers(raw: unknown): IrissOfferRecord[] {
         createdAt,
         updatedAt,
       };
+      const validUntilAt = normalizeOfferValidUntilAt(o.validUntilAt);
+      if (validUntilAt) offer.validUntilAt = validUntilAt;
       const blocks = normalizeIrissOfferBlocks(o.blocks);
       if (blocks) offer.blocks = blocks;
       return offer;

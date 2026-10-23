@@ -165,6 +165,98 @@ describe("IRISS offer client link store", () => {
     expect((await store.readIrissOfferClientLinksForOrder(ORDER_ID))[0]?.status).toBe("revoked");
   });
 
+  it("lets only the first decision win, refuses after the deadline, keeps the link 30 days", async () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "iriss-offer-link-"));
+    dirs.push(dir);
+    const { store, orders, loadPage } = await load(dir);
+    const now = "2026-10-20T08:00:00.000Z";
+    const order = emptyIrissPasutijums(ORDER_ID, now);
+    const offer = emptyIrissOfferRecord(OFFER_ID, now, "Piedāvājums 1");
+    offer.brandModel = "BMW X5";
+    offer.validUntilAt = "2026-10-26T16:00:00.000Z";
+    order.offers = [offer];
+    expect((await orders.writeIrissPasutijums(order)).ok).toBe(true);
+    const stored = await orders.readIrissPasutijums(ORDER_ID);
+    expect(stored?.offers[0]?.validUntilAt).toBe("2026-10-26T16:00:00.000Z");
+
+    const created = await store.createIrissOfferClientLink({
+      orderId: ORDER_ID,
+      offerId: OFFER_ID,
+      expiresInDays: 7,
+      deadlineAt: offer.validUntilAt,
+      nowMs: Date.parse(now),
+    });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+    expect(created.record.expiresAt).toBe("2026-11-25T16:00:00.000Z");
+    const hash = created.record.tokenHash;
+    const deadline = Date.parse(offer.validUntilAt);
+
+    const page = await loadPage.loadIrissOfferPublicView(created.record.token, Date.parse("2026-10-23T10:00:00.000Z"));
+    expect(page?.deadlineAt).toBe(offer.validUntilAt);
+    expect(page?.serverNow).toBe("2026-10-23T10:00:00.000Z");
+
+    const opts = { deadlineAt: offer.validUntilAt };
+    const [a, b] = await Promise.all([
+      store.respondIrissOfferClientLink(hash, "approve", "", deadline - 1000, opts),
+      store.respondIrissOfferClientLink(hash, "decline", "", deadline - 999, opts),
+    ]);
+    expect(a.ok && b.ok).toBe(true);
+    if (!a.ok || !b.ok) return;
+    expect([a.won, b.won].filter(Boolean)).toHaveLength(1);
+    expect(a.record.decision).toBe("approve");
+    expect(b.record.decision).toBe("approve");
+
+    // Otra instance (bez atmiņas slēdzenes): lēmuma fails jau ir - uzvar pirmais.
+    const second = await store.claimIrissOfferDecision(hash, "decline", new Date(deadline - 500).toISOString());
+    expect(second).toMatchObject({ ok: true, won: false, claimed: { decision: "approve" } });
+
+    const afterDeadline = await store.respondIrissOfferClientLink(hash, "approve", "", deadline + 5, opts);
+    expect(afterDeadline).toMatchObject({ ok: true, won: false, record: { decision: "approve" } });
+
+    const view = await loadPage.loadIrissOfferPublicView(created.record.token, deadline + 60_000);
+    expect(view?.decision).toBe("approve");
+    expect(view?.decidedAt).not.toBe("");
+  });
+
+  it("refuses a decision at the deadline and shows Beidzies to the admin", async () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "iriss-offer-link-"));
+    dirs.push(dir);
+    const { store, loadPage, orders } = await load(dir);
+    const order = emptyIrissPasutijums(ORDER_ID, "2026-10-20T08:00:00.000Z");
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-20T08:00:00.000Z", "Piedāvājums 1");
+    offer.validUntilAt = "2026-10-26T16:00:00.000Z";
+    order.offers = [offer];
+    expect((await orders.writeIrissPasutijums(order)).ok).toBe(true);
+    const created = await store.createIrissOfferClientLink({
+      orderId: ORDER_ID,
+      offerId: OFFER_ID,
+      expiresInDays: null,
+      deadlineAt: offer.validUntilAt,
+      nowMs: Date.parse("2026-10-20T08:00:00.000Z"),
+    });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+    const deadline = Date.parse(offer.validUntilAt);
+    const late = await store.respondIrissOfferClientLink(created.record.tokenHash, "approve", "", deadline, {
+      deadlineAt: offer.validUntilAt,
+    });
+    expect(late).toEqual({ ok: false, error: "expired" });
+    expect(await store.readIrissOfferClaimedDecision(created.record.tokenHash)).toBeNull();
+    const question = await store.respondIrissOfferClientLink(created.record.tokenHash, "question", "Vai var pagarināt?", deadline + 10, {
+      deadlineAt: offer.validUntilAt,
+    });
+    expect(question.ok).toBe(true);
+    const admin = await store.readIrissOfferClientLinksForOrder(ORDER_ID, {
+      deadlines: { [OFFER_ID]: offer.validUntilAt },
+      nowMs: deadline + 10,
+    });
+    expect(admin[0]?.status).toBe("expired");
+    expect(admin[0]?.statusLabel).toBe("Beidzies");
+    // Klients saiti vēl redz (30 dienas) - lapa atveras.
+    expect(await loadPage.loadIrissOfferPublicView(created.record.token, deadline + 86_400_000)).not.toBeNull();
+  });
+
   it("rejects a file whose token does not hash to the stored hash", async () => {
     const dir = mkdtempSync(path.join(os.tmpdir(), "iriss-offer-link-"));
     dirs.push(dir);

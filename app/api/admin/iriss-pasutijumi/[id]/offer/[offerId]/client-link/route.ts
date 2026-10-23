@@ -28,18 +28,25 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string; of
     return NextResponse.json({ error: "invalid" }, { status: 400, headers: noStore });
   }
   const order = await readIrissPasutijums(id);
-  if (!order || isIrissRecordDeleted(order) || !order.offers.some((offer) => offer.id === offerId)) {
+  const offer = order && !isIrissRecordDeleted(order) ? order.offers.find((item) => item.id === offerId) : undefined;
+  if (!order || !offer) {
     return NextResponse.json({ error: "save_first" }, { status: 409, headers: noStore });
   }
+  const linkOpts = { deadlineAt: offer.validUntilAt ?? "" };
   if (body.action === "revoke") {
     const revoked = await revokeIrissOfferClientLink(id, offerId);
     if (!revoked.ok) return NextResponse.json({ error: revoked.error }, { status: revoked.error === "not_found" ? 404 : 503, headers: noStore });
-    return NextResponse.json({ link: toIrissOfferClientLinkAdminView(revoked.record) }, { headers: noStore });
+    return NextResponse.json({ link: toIrissOfferClientLinkAdminView(revoked.record, linkOpts) }, { headers: noStore });
   }
   if (body.action !== "create") return NextResponse.json({ error: "invalid" }, { status: 400, headers: noStore });
   const days = parseIrissOfferLinkExpiryDays(body.expiresInDays);
   if (days === "invalid") return NextResponse.json({ error: "invalid" }, { status: 400, headers: noStore });
-  const created = await createIrissOfferClientLink({ orderId: id, offerId, expiresInDays: days });
+  const created = await createIrissOfferClientLink({
+    orderId: id,
+    offerId,
+    expiresInDays: days,
+    deadlineAt: offer.validUntilAt ?? "",
+  });
   if (!created.ok) return NextResponse.json({ error: created.error }, { status: created.error === "invalid" ? 400 : 503, headers: noStore });
-  return NextResponse.json({ link: toIrissOfferClientLinkAdminView(created.record) }, { headers: noStore });
+  return NextResponse.json({ link: toIrissOfferClientLinkAdminView(created.record, linkOpts) }, { headers: noStore });
 }

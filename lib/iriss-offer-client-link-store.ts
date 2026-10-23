@@ -13,10 +13,13 @@ import {
   applyIrissOfferLinkRevoke,
   applyIrissOfferLinkView,
   irissOfferLinkExpiresAt,
+  irissOfferLinkExpiresAtForDeadline,
   isIrissOfferLinkEntityId,
+  isIrissOfferLinkUsable,
   isSafeIrissOfferLinkToken,
   parseIrissOfferClientLinkRecord,
   toIrissOfferClientLinkAdminView,
+  type IrissOfferClientDecision,
   type IrissOfferClientLinkAdminView,
   type IrissOfferClientLinkRecord,
   type IrissOfferLinkAction,
@@ -46,6 +49,78 @@ function tokenRel(hash: string): string {
 
 function orderRel(orderId: string): string {
   return `offer-links/orders/${orderId}.json`;
+}
+
+function decisionRel(hash: string): string {
+  return `offer-links/decisions/${hash}.json`;
+}
+
+export type IrissOfferClaimedDecision = { decision: "approve" | "decline"; decidedAt: string };
+
+function parseClaimedDecision(raw: unknown): IrissOfferClaimedDecision | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const decision = o.decision === "approve" || o.decision === "decline" ? o.decision : null;
+  const decidedAt = typeof o.decidedAt === "string" && Number.isFinite(Date.parse(o.decidedAt)) ? o.decidedAt : "";
+  if (!decision || !decidedAt) return null;
+  return { decision, decidedAt };
+}
+
+/** Lēmuma fails pēc saites hash (vecajām saitēm nav - tad noteicošs ir saites ieraksts). */
+export async function readIrissOfferClaimedDecision(hash: string): Promise<IrissOfferClaimedDecision | null> {
+  const h = hash.trim().toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(h)) return null;
+  return parseClaimedDecision(await readJson(decisionRel(h)));
+}
+
+/**
+ * Izveido lēmuma failu tikai, ja tāda vēl nav (Blob allowOverwrite: false, lokāli "wx").
+ * Pirmais ieraksts uzvar visās instancēs; pārējie saņem jau esošo lēmumu.
+ */
+export async function claimIrissOfferDecision(
+  hash: string,
+  decision: "approve" | "decline",
+  decidedAt: string,
+): Promise<{ ok: true; won: boolean; claimed: IrissOfferClaimedDecision } | { ok: false }> {
+  const h = hash.trim().toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(h) || !isIrissPasutijumiStoreEnabled()) return { ok: false };
+  const doc: IrissOfferClaimedDecision = { decision, decidedAt };
+  const raw = JSON.stringify(doc);
+  const blob = getIrissPasutijumiBlobConfig();
+  if (blob) {
+    try {
+      await put(`${blob.prefix}${decisionRel(h)}`, raw, {
+        access: "private",
+        token: blob.token,
+        addRandomSuffix: false,
+        allowOverwrite: false,
+        contentType: "application/json",
+      });
+      return { ok: true, won: true, claimed: doc };
+    } catch {
+      const existing = await readIrissOfferClaimedDecision(h);
+      return existing ? { ok: true, won: false, claimed: existing } : { ok: false };
+    }
+  }
+  const dir = getIrissPasutijumiStorageDir();
+  if (!dir) return { ok: false };
+  const dest = path.join(dir, decisionRel(h));
+  try {
+    await fs.mkdir(path.dirname(dest), { recursive: true });
+    await fs.writeFile(dest, raw, { encoding: "utf8", flag: "wx" });
+    return { ok: true, won: true, claimed: doc };
+  } catch {
+    const existing = await readIrissOfferClaimedDecision(h);
+    return existing ? { ok: true, won: false, claimed: existing } : { ok: false };
+  }
+}
+
+function withClaimedDecision(
+  rec: IrissOfferClientLinkRecord,
+  claimed: IrissOfferClaimedDecision | null,
+): IrissOfferClientLinkRecord {
+  if (!claimed || rec.decision) return rec;
+  return { ...rec, decision: claimed.decision as IrissOfferClientDecision, decidedAt: claimed.decidedAt };
 }
 
 async function readJson(rel: string): Promise<unknown | null> {
@@ -141,14 +216,20 @@ export async function readIrissOfferClientLinkByToken(token: string): Promise<Ir
   return rec;
 }
 
-export async function readIrissOfferClientLinksForOrder(orderId: string): Promise<IrissOfferClientLinkAdminView[]> {
+export async function readIrissOfferClientLinksForOrder(
+  orderId: string,
+  opts?: { deadlines?: Record<string, string>; nowMs?: number },
+): Promise<IrissOfferClientLinkAdminView[]> {
   const index = await readOrderIndex(orderId);
   const views: IrissOfferClientLinkAdminView[] = [];
   for (const [offerId, hash] of Object.entries(index)) {
     const rec = await readIrissOfferClientLinkByHash(hash);
     if (!rec) continue;
     if (rec.orderId !== orderId || rec.offerId !== offerId) continue;
-    views.push(toIrissOfferClientLinkAdminView(rec));
+    const synced = rec.decision ? rec : withClaimedDecision(rec, await readIrissOfferClaimedDecision(hash));
+    views.push(
+      toIrissOfferClientLinkAdminView(synced, { deadlineAt: opts?.deadlines?.[offerId] ?? "", nowMs: opts?.nowMs }),
+    );
   }
   return views;
 }
@@ -157,6 +238,8 @@ export async function createIrissOfferClientLink(input: {
   orderId: string;
   offerId: string;
   expiresInDays: number | null;
+  /** Piedāvājuma termiņš (validUntilAt). Ja ir - saite derīga līdz termiņam + 30 dienām. */
+  deadlineAt?: string;
   nowMs?: number;
   token?: string;
 }): Promise<{ ok: true; record: IrissOfferClientLinkRecord } | { ok: false; error: "invalid" | "store_failed" }> {
@@ -185,7 +268,9 @@ export async function createIrissOfferClientLink(input: {
       orderId: input.orderId,
       offerId: input.offerId,
       createdAt,
-      expiresAt: irissOfferLinkExpiresAt(createdAt, input.expiresInDays),
+      expiresAt: input.deadlineAt
+        ? irissOfferLinkExpiresAtForDeadline(input.deadlineAt) || irissOfferLinkExpiresAt(createdAt, input.expiresInDays)
+        : irissOfferLinkExpiresAt(createdAt, input.expiresInDays),
       revokedAt: "",
       firstViewedAt: "",
       lastViewedAt: "",
@@ -250,20 +335,43 @@ export async function respondIrissOfferClientLink(
   action: IrissOfferLinkAction,
   text: string,
   nowMs = Date.now(),
+  opts?: { deadlineAt?: string | null },
 ): Promise<
-  | { ok: true; record: IrissOfferClientLinkRecord }
-  | { ok: false; error: "not_found" | "unavailable" | "question" | "store_failed" }
+  | { ok: true; record: IrissOfferClientLinkRecord; won: boolean }
+  | { ok: false; error: "not_found" | "unavailable" | "question" | "expired" | "store_failed" }
 > {
   const h = hash.trim().toLowerCase();
   if (!/^[a-f0-9]{64}$/.test(h)) return { ok: false, error: "not_found" };
   return withLock(`hash:${h}`, async () => {
     const existing = await readIrissOfferClientLinkByHash(h);
     if (!existing) return { ok: false, error: "not_found" };
-    const applied = applyIrissOfferLinkResponse(existing, action, text, new Date(nowMs).toISOString());
+    const nowIso = new Date(nowMs).toISOString();
+    if (action === "question") {
+      const applied = applyIrissOfferLinkResponse(existing, action, text, nowIso, opts);
+      if (!applied.ok) return applied;
+      const saved = await writeJson(tokenRel(h), applied.record);
+      if (!saved) return { ok: false, error: "store_failed" };
+      return { ok: true, record: applied.record, won: false };
+    }
+    if (existing.decision) {
+      const same = applyIrissOfferLinkResponse(existing, action, text, nowIso, opts);
+      if (!same.ok) return same;
+      return { ok: true, record: existing, won: false };
+    }
+    const already = await readIrissOfferClaimedDecision(h);
+    if (already) {
+      if (!isIrissOfferLinkUsable(existing, nowMs)) return { ok: false, error: "unavailable" };
+      const synced = withClaimedDecision(existing, already);
+      await writeJson(tokenRel(h), synced);
+      return { ok: true, record: synced, won: false };
+    }
+    const applied = applyIrissOfferLinkResponse(existing, action, text, nowIso, opts);
     if (!applied.ok) return applied;
-    if (applied.unchanged) return { ok: true, record: applied.record };
-    const saved = await writeJson(tokenRel(h), applied.record);
-    if (!saved) return { ok: false, error: "store_failed" };
-    return { ok: true, record: applied.record };
+    const claim = await claimIrissOfferDecision(h, action, applied.record.decidedAt);
+    if (!claim.ok) return { ok: false, error: "store_failed" };
+    const record = withClaimedDecision({ ...existing, decision: "", decidedAt: "" }, claim.claimed);
+    // Lēmuma fails jau ir noteicošs; saites ierakstu atjauno admin skatiem kā līdz šim.
+    await writeJson(tokenRel(h), record);
+    return { ok: true, record, won: claim.won };
   });
 }

@@ -7,6 +7,7 @@ import {
 import { hashIrissOfferLinkToken } from "@/lib/iriss-offer-client-link-token";
 import { openUsableIrissOfferLink } from "@/lib/iriss-offer-client-link-load";
 import { respondIrissOfferClientLink } from "@/lib/iriss-offer-client-link-store";
+import { runIrissOfferDecisionEffects } from "@/lib/iriss-offer-decision-effects";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 
@@ -42,7 +43,19 @@ export async function POST(req: Request) {
   if (!hashRl.ok) return hidden();
   const opened = await openUsableIrissOfferLink(token);
   if (!opened) return hidden();
-  const result = await respondIrissOfferClientLink(opened.link.tokenHash, action as IrissOfferLinkAction, typeof body.text === "string" ? body.text : "");
+  const result = await respondIrissOfferClientLink(
+    opened.link.tokenHash,
+    action as IrissOfferLinkAction,
+    typeof body.text === "string" ? body.text : "",
+    Date.now(),
+    { deadlineAt: opened.offer.validUntilAt ?? "" },
+  );
+  if (!result.ok && result.error === "expired") {
+    return NextResponse.json(
+      { ok: false, error: "expired" },
+      { status: 410, headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } },
+    );
+  }
   if (!result.ok && result.error === "question") {
     return NextResponse.json(
       { ok: false },
@@ -50,8 +63,16 @@ export async function POST(req: Request) {
     );
   }
   if (!result.ok) return hidden();
+  if (result.won && (result.record.decision === "approve" || result.record.decision === "decline")) {
+    await runIrissOfferDecisionEffects({
+      orderId: opened.link.orderId,
+      offerId: opened.link.offerId,
+      decision: result.record.decision,
+      decidedAt: result.record.decidedAt,
+    });
+  }
   return NextResponse.json(
-    { ok: true, decision: result.record.decision, question: result.record.question },
+    { ok: true, decision: result.record.decision, decidedAt: result.record.decidedAt, question: result.record.question },
     { headers: { "Cache-Control": "private, no-store", "X-Robots-Tag": "noindex, nofollow" } },
   );
 }
