@@ -93,6 +93,8 @@ export type V2InvoiceAi = {
 export type V2Invoice = {
   id: string;
   fileId: string;
+  /** "+ Lapa": papildu skenējumi tam pašam rēķinam (atsevišķi PDF, vecais fails netiek pārrakstīts). */
+  extraFileIds: string[];
   pages: number;
   /** Skenēšanas diena (YYYY-MM-DD). */
   date: string;
@@ -121,7 +123,7 @@ export type AutoparksCarV2 = {
   tech: V2Tech;
   sources: Record<string, V2Source>;
   purchase: V2Purchase;
-  numberCheck: { fileId: string; scannedAt: string };
+  numberCheck: { fileId: string; scannedAt: string; extraFileIds: string[] };
   mainPhoto: { dropboxId: string; thumbBlobPath: string } | null;
   /** Kad pēdējo reizi skatīta STOCK mape galvenajai bildei. */
   photoCheckedAt: string;
@@ -188,7 +190,7 @@ export function emptyCarV2(): AutoparksCarV2 {
     tech: { firstRegDate: "", displacementCm3: null, powerKw: null, tyreSize: "", csddCheckedAt: "" },
     sources: {},
     purchase: { auction: "", auctionNo: "", purchaseDate: "", purchasePriceEur: null, transportEur: null, vat: { mode: "", source: "", at: "" } },
-    numberCheck: { fileId: "", scannedAt: "" },
+    numberCheck: { fileId: "", scannedAt: "", extraFileIds: [] },
     mainPhoto: null,
     photoCheckedAt: "",
     service: { diagFileIds: [], problems: [], notes: "", invoices: [] },
@@ -237,6 +239,7 @@ function normalizeInvoice(raw: unknown): V2Invoice | null {
   return {
     id,
     fileId,
+    extraFileIds: strList(raw.extraFileIds, 20),
     pages: pages != null && pages > 0 ? Math.round(pages) : 1,
     date: str(raw.date, 10),
     amountEur: v2Num(raw.amountEur),
@@ -291,7 +294,7 @@ export function normalizeCarV2(raw: unknown): AutoparksCarV2 {
       transportEur: v2Num(purchase.transportEur),
       vat: { mode, source: str(vat.source, 40), at: str(vat.at, 40) },
     },
-    numberCheck: { fileId: str(nc.fileId, 80), scannedAt: str(nc.scannedAt, 40) },
+    numberCheck: { fileId: str(nc.fileId, 80), scannedAt: str(nc.scannedAt, 40), extraFileIds: strList(nc.extraFileIds, 20) },
     mainPhoto: photo && str(photo.dropboxId, 120) ? { dropboxId: str(photo.dropboxId, 120), thumbBlobPath: str(photo.thumbBlobPath, 400) } : null,
     photoCheckedAt: str(raw.photoCheckedAt, 40),
     service: {
