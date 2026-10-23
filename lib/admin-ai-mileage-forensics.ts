@@ -8,6 +8,7 @@ import {
   collectUnifiedMileageRows,
   parseOdometerKm,
   prepareUnifiedMileageDisplayRows,
+  resolveCsddUndatedOdometer,
   sortMileageChronological,
   type UnifiedMileageDisplayRow,
   type UnifiedMileageRow,
@@ -313,6 +314,11 @@ export const ODOMETER_REPLACEMENT_RE =
 export type OdometerDropAnalysisOptions = {
   /** Servisa vēsturē ir mērinstrumentu paneļa / odometra nomaiņa. */
   odometerReplacementNoted?: boolean;
+  /**
+   * Vēlāks rādījums ar aptuvenu datumu (CSDD bez datuma, sludinājuma mēnesis).
+   * Pats kritumu nerada; drīkst tikai apstiprināt, ka trends turpinās.
+   */
+  approxLaterReading?: { km: number; t: number; source: string } | null;
 };
 
 function pointSources(p: DatedKmPoint): string {
@@ -356,7 +362,7 @@ function isolatedEntryErrorScore(
 ): { deviation: number; confirmations: number } | null {
   if (opts.odometerReplacementNoted) return null;
   const before = points[c - 1];
-  const after = points[c + 1];
+  const after = points[c + 1] ?? approxAfter(points, c, opts);
   // 2) vajag gan iepriekšējo, gan vēlāku rādījumu; pēdējais rādījums nekad nav izolēts.
   if (!before || !after) return null;
   if (after.km < before.km) return null;
@@ -384,6 +390,26 @@ function isolatedEntryErrorScore(
   return { deviation: Math.abs(points[c]!.km - expected), confirmations };
 }
 
+/** Aptuvenais rādījums der tikai aiz pēdējā datētā punkta un skaidri vēlāk (>31 d.). */
+function approxAfter(
+  points: DatedKmPoint[],
+  c: number,
+  opts: OdometerDropAnalysisOptions,
+): DatedKmPoint | undefined {
+  const a = opts.approxLaterReading;
+  if (!a || c !== points.length - 1) return undefined;
+  if (a.t - points[c]!.t <= 31 * MS_DAY) return undefined;
+  return {
+    date: "",
+    km: a.km,
+    t: a.t,
+    sourceLabel: a.source,
+    sourceLabels: [a.source],
+    verifiedCountry: "",
+    country: "",
+  };
+}
+
 function classifyDrop(
   points: DatedKmPoint[],
   raw: DatedKmPoint[],
@@ -393,7 +419,10 @@ function classifyDrop(
   const pair: [DatedKmPoint, DatedKmPoint] = [points[i - 1]!, points[i]!];
   // Reāla korekcija: pēc krituma neviens rādījums neatgriežas līdz iepriekšējam līmenim
   // (jauna, zemāka bāze vai kritums pēdējā rādījumā), vai zemo vērtību apstiprina cits avots.
-  const recovered = points.slice(i + 1).some((p) => p.km >= pair[0].km);
+  const later = [...points.slice(i + 1)];
+  const approx = approxAfter(points, points.length - 1, opts);
+  if (approx) later.push(approx);
+  const recovered = later.some((p) => p.km >= pair[0].km);
   if (!recovered) return { kind: "real" };
   if (confirmingSourceCount(pair[1], raw) > 0) return { kind: "real" };
   const high = isolatedEntryErrorScore(points, raw, i - 1, pair, opts);
@@ -566,12 +595,21 @@ export function buildDealerOdometerReliabilityBrief(
   return lines.join("\n");
 }
 
+export function approxLaterReadingFromPayload(
+  payload: Pick<UnifiedMileageSourcePayload, "csddForm" | "tirgusForm">,
+): OdometerDropAnalysisOptions["approxLaterReading"] {
+  const u = resolveCsddUndatedOdometer(payload);
+  if (!u || u.approxTime == null) return null;
+  return { km: u.km, t: u.approxTime, source: "CSDD (aptuvens datums)" };
+}
+
 /** Visi trīs brīfi vienā blokā order-context. Tukšs, ja nav ko teikt. */
 export function buildMileageForensicsBrief(payload: UnifiedMileageSourcePayload): string {
   const raw = collectUnifiedMileageRows(payload);
   if (raw.length === 0) return "";
   const opts: OdometerDropAnalysisOptions = {
     odometerReplacementNoted: ODOMETER_REPLACEMENT_RE.test(JSON.stringify(payload)),
+    approxLaterReading: approxLaterReadingFromPayload(payload),
   };
   return [
     buildMileageRateBrief(raw),

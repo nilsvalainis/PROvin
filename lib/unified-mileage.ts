@@ -707,6 +707,56 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
 }
 
 /** @see analyzeUnifiedMileageAnomalies */
+/**
+ * CSDD „Odometra rādījums” bez datuma (nereģistrēts auto: LV nobraukuma tabulas nav).
+ * Datums ir aptuvens - sludinājuma pirmās publicēšanas mēnesis (`tirgus.listingCreated`).
+ * Šī rinda NAV vienotajā tabulā un krituma aprēķinā; tikai AI kontekstam un kā
+ * apstiprinājums, ka trends turpinās (forenzika). Saglabātie dati netiek mainīti.
+ */
+export type CsddUndatedOdometer = {
+  km: number;
+  /** `MM.YYYY` vai "" (datums nav zināms). */
+  approxMonth: string;
+  /** Mēneša 1. datums UTC ms vai null. */
+  approxTime: number | null;
+};
+
+export function resolveCsddUndatedOdometer(
+  payload: Pick<UnifiedMileageSourcePayload, "csddForm" | "tirgusForm">,
+): CsddUndatedOdometer | null {
+  const block = payload.csddForm?.prevInspectionBlock;
+  const digits = (block?.odometer ?? "").replace(/\D/g, "");
+  if (!digits) return null;
+  if ((block?.inspectionDateText ?? "").trim()) return null;
+  const km = Number(digits);
+  if (!Number.isFinite(km) || km < 100) return null;
+  const dated = (payload.csddForm?.mileageHistory ?? []).some(
+    (r) => r.date.trim() && r.odometer.replace(/\D/g, "") === digits,
+  );
+  if (dated) return null;
+  const created = (payload.tirgusForm?.listingCreated ?? "").trim();
+  const t = created ? parseMileageDateForSort(created) : Number.NEGATIVE_INFINITY;
+  if (!Number.isFinite(t) || t === Number.NEGATIVE_INFINITY) {
+    return { km, approxMonth: "", approxTime: null };
+  }
+  const d = new Date(t);
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  return {
+    km,
+    approxMonth: `${month}.${d.getUTCFullYear()}`,
+    approxTime: Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1),
+  };
+}
+
+/** Viena rinda AI kontekstam (faktu lapa / apvienotais nobraukums). */
+export function formatCsddUndatedOdometerLine(u: CsddUndatedOdometer): string {
+  const km = String(u.km).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  const when = u.approxMonth
+    ? `aptuveni ${u.approxMonth} (sludinājuma pirmās publicēšanas mēnesis, aptuvens datums)`
+    : "datums nav zināms";
+  return `CSDD odometra rādījums bez datuma: ${km} km, ${when}. Nav kritumu un tempa aprēķinā.`;
+}
+
 export function computeOdometerAnomalyBySourceOrder(rows: UnifiedMileageRow[]): Map<number, boolean> {
   return analyzeUnifiedMileageAnomalies(rows).anomalyBySourceOrder;
 }

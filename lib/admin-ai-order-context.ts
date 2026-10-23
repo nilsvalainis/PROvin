@@ -38,7 +38,11 @@ import {
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import type { AiTextStream } from "@/lib/ai-text-stream";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
-import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
+import {
+  collectUnifiedMileageRows,
+  formatCsddUndatedOdometerLine,
+  resolveCsddUndatedOdometer,
+} from "@/lib/unified-mileage";
 import {
   formatOwnerCountAiContext,
   synthesizeOwnerCountsFromBlocks,
@@ -116,9 +120,12 @@ function unifiedMileagePayload(blocks: WorkspaceSourceBlocks) {
 }
 
 function unifiedMileagePlainText(blocks: WorkspaceSourceBlocks): string {
-  const rows = collectUnifiedMileageRows(unifiedMileagePayload(blocks));
-  if (rows.length === 0) return "";
+  const payload = unifiedMileagePayload(blocks);
+  const rows = collectUnifiedMileageRows(payload);
+  const undated = resolveCsddUndatedOdometer(payload);
+  if (rows.length === 0 && !undated) return "";
   const lines = rows.map((r) => [r.date, r.odometer, r.country, r.sourceLabel].join("\t"));
+  if (undated) lines.push(formatCsddUndatedOdometerLine(undated));
   return [CSDD_MILEAGE_UNIFIED_TITLE, ...lines].join("\n");
 }
 

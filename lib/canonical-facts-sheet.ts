@@ -6,6 +6,7 @@
 import {
   ODOMETER_REPLACEMENT_RE,
   analyzeOdometerRollbackBounds,
+  approxLaterReadingFromPayload,
   formatForensicsInt,
   isRealOdometerDrop,
   type OdometerRollbackBound,
@@ -57,7 +58,10 @@ import {
 import {
   computeOdometerAnomalyBySourceOrder,
   collectUnifiedMileageRows,
+  formatCsddUndatedOdometerLine,
   hasAnyOdometerAnomaly,
+  resolveCsddUndatedOdometer,
+  type CsddUndatedOdometer,
   parseOdometerKm,
   sortMileageChronological,
   type UnifiedMileageSourcePayload,
@@ -125,6 +129,8 @@ export type CanonicalFacts = {
   rollbacks: OdometerRollbackBound[];
   /** Viens rādījums ārpus secības; AI to NEraksta kā korekciju (nobraukuma laukā max 1 neitrāls teikums). */
   suspectedEntryErrors: SuspectedEntryError[];
+  /** CSDD rādījums bez datuma (nereģistrēts auto); nav krituma aprēķinā. */
+  csddUndatedOdometer: CsddUndatedOdometer | null;
   odometerAnomaly: boolean;
   carverticalMileageWarning: boolean;
   maxRollbackDropKm: number;
@@ -280,8 +286,11 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
   const csdd = blocks.csdd;
   const mileageRows = collectUnifiedMileageRows(unifiedMileagePayload(blocks));
+  const mileagePayload = unifiedMileagePayload(blocks);
+  const csddUndated = resolveCsddUndatedOdometer(mileagePayload);
   const allDrops = analyzeOdometerRollbackBounds(mileageRows, {
     odometerReplacementNoted: ODOMETER_REPLACEMENT_RE.test(sourceHaystackFrom(blocks, [])),
+    approxLaterReading: approxLaterReadingFromPayload(mileagePayload),
   });
   const rollbacks = allDrops.filter(isRealOdometerDrop);
   const suspectedEntryErrors = allDrops
@@ -359,6 +368,7 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     latestKm,
     rollbacks,
     suspectedEntryErrors,
+    csddUndatedOdometer: csddUndated,
     odometerAnomaly,
     carverticalMileageWarning,
     maxRollbackDropKm: rollbacks.reduce((m, r) => Math.max(m, r.minDropKm), 0),
@@ -437,6 +447,9 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
   lines.push(
     `- Jaunākais rādījums: ${facts.latestKm != null ? `${formatForensicsInt(facts.latestKm)} km` : "nav"}`,
   );
+  if (facts.csddUndatedOdometer) {
+    lines.push(`- ${formatCsddUndatedOdometerLine(facts.csddUndatedOdometer)}`);
+  }
   lines.push(
     `- Forenzikas karogs (odometra anomālija tabulā): ${facts.odometerAnomaly ? "JĀ" : "nē"}`,
   );
