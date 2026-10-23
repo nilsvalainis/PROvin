@@ -42,6 +42,7 @@ import {
   nextIrissWorkspaceRevision,
   parseExpectedIrissRevision,
   prepareIrissPasutijumsConcurrentWrite,
+  retainIrissOfferDeadlines,
 } from "@/lib/iriss-pasutijumi-save-safety";
 import {
   emptyIrissPasutijums,
@@ -1173,6 +1174,7 @@ export async function writeIrissPasutijums(
     out = await persistOfferImages(r, out);
     out = retainStoredIrissCriteria(existing, out);
     out = retainGoogleContactFields(existing, out);
+    out = retainIrissOfferDeadlines(existing, out);
     out = {
       ...out,
       generatedDocuments: mergeGeneratedDocuments(out.generatedDocuments, existing?.generatedDocuments),
