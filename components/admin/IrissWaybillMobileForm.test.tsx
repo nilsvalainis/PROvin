@@ -54,7 +54,7 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     expect(text).toContain("Numuru salīdzināšana - CSDD Tukuma filiālē.");
     expect(text).toContain("Aivars to neizpilda kā komandu, citi to neredz.");
     expect(text).toContain("tad jānorāda tikai laiks un komersanta pārstāvis.");
-    expect(text).toContain('Izvēlies 1, 12 vai 48 h, vai "Cits" un ieraksti stundas (1-2160).');
+    expect(text).toContain('Izvēlies 1, 12 vai 48 h, vai "Cits" un ieraksti stundas (1-48).');
     // Tikai īsā defise: nav garās domuzīmes (kodi 8211, 8212).
     expect([...text].some((c) => c.charCodeAt(0) === 8211 || c.charCodeAt(0) === 8212)).toBe(false);
   });
