@@ -4,6 +4,8 @@
  * Vienam lietotājam var būt vairākas sadaļas (piem. Loģistika + Pavadzīmes).
  * Loģistika: `/admin/iriss/logistika` un API `/api/admin/iriss/logistika*` plus `/api/admin/iriss-logistics*`.
  * Autoparks (`/admin/iriss/autoparks`) ir tām pašām lomām (Loģistika, Grāmatvede, Serviss), API zem `/api/admin/iriss-logistics/autoparks`.
+ * Autoparks v2 (`/admin/iriss/autoparks-v2`): sava sadaļa ar 6 apakštiesībām `ap_*`, katrai kategorijai savs API ceļš.
+ * Vēsture (`/api/admin/iriss-autoparks-v2/vesture`) nav kartē - tikai administrators.
  */
 
 /** Legacy lauks saglabātajos JSON (pirms vairākām sadaļām). */
@@ -23,9 +25,63 @@ export const IRISS_SECTIONS = [
   "pavadzimes",
   "vin",
   "atskaite",
+  "ap_pamatdati",
+  "ap_iegade",
+  "ap_serviss",
+  "ap_izdevumi",
+  "ap_cenu_lapa",
+  "ap_summas",
 ] as const;
 
 export type IrissSection = (typeof IRISS_SECTIONS)[number];
+
+export const AUTOPARKS_V2_PAGE_PREFIX = "/admin/iriss/autoparks-v2";
+export const AUTOPARKS_V2_API_PREFIX = "/api/admin/iriss-autoparks-v2";
+
+/** Autoparka v2 apakštiesības (deny-by-default: katra jāatzīmē atsevišķi). */
+export const AUTOPARKS_V2_SECTIONS = [
+  "ap_pamatdati",
+  "ap_iegade",
+  "ap_serviss",
+  "ap_izdevumi",
+  "ap_cenu_lapa",
+  "ap_summas",
+] as const satisfies readonly IrissSection[];
+
+export type AutoparksV2Section = (typeof AUTOPARKS_V2_SECTIONS)[number];
+
+/** Īsie nosaukumi ķeksīšiem zem virsraksta "Autoparks". */
+export const AUTOPARKS_V2_SECTION_SHORT_LABELS: Record<AutoparksV2Section, string> = {
+  ap_pamatdati: "Pamatdati",
+  ap_iegade: "Iegādes dokumenti",
+  ap_serviss: "Serviss",
+  ap_izdevumi: "Citi izdevumi",
+  ap_cenu_lapa: "Cenu lapa",
+  ap_summas: "Summas",
+};
+
+export function isAutoparksV2Section(value: unknown): value is AutoparksV2Section {
+  return typeof value === "string" && (AUTOPARKS_V2_SECTIONS as readonly string[]).includes(value);
+}
+
+/**
+ * Darbinieka navigācijas sadaļas: Autoparka apakštiesības nav atsevišķi punkti. Kamēr v2 nav ieslēgts
+ * darbiniekiem, tās navigācijā neparādās vispār; pēc tam - viens punkts (pirmā `ap_*` ar lapu).
+ */
+export function staffNavSections(sections: readonly IrissSection[], autoparksV2Visible: boolean): IrissSection[] {
+  const out: IrissSection[] = [];
+  let apAdded = false;
+  for (const id of sections) {
+    if (!isAutoparksV2Section(id)) {
+      out.push(id);
+      continue;
+    }
+    if (!autoparksV2Visible || apAdded || id === "ap_summas") continue;
+    out.push(id);
+    apAdded = true;
+  }
+  return out;
+}
 
 export type IrissSectionMeta = {
   id: IrissSection;
@@ -98,6 +154,43 @@ export const IRISS_SECTION_CATALOG: readonly IrissSectionMeta[] = [
     pagePrefixes: ["/admin/iriss/atskaite"],
     apiPrefixes: [],
   },
+  {
+    id: "ap_pamatdati",
+    label: "Autoparks - Pamatdati",
+    pagePrefixes: [AUTOPARKS_V2_PAGE_PREFIX],
+    apiPrefixes: [`${AUTOPARKS_V2_API_PREFIX}/pamatdati`],
+  },
+  {
+    id: "ap_iegade",
+    label: "Autoparks - Iegādes dokumenti",
+    pagePrefixes: [AUTOPARKS_V2_PAGE_PREFIX],
+    apiPrefixes: [`${AUTOPARKS_V2_API_PREFIX}/iegade`],
+  },
+  {
+    id: "ap_serviss",
+    label: "Autoparks - Serviss",
+    pagePrefixes: [AUTOPARKS_V2_PAGE_PREFIX],
+    apiPrefixes: [`${AUTOPARKS_V2_API_PREFIX}/serviss`],
+  },
+  {
+    id: "ap_izdevumi",
+    label: "Autoparks - Citi izdevumi",
+    pagePrefixes: [AUTOPARKS_V2_PAGE_PREFIX],
+    apiPrefixes: [`${AUTOPARKS_V2_API_PREFIX}/izdevumi`],
+  },
+  {
+    id: "ap_cenu_lapa",
+    label: "Autoparks - Cenu lapa",
+    pagePrefixes: [AUTOPARKS_V2_PAGE_PREFIX],
+    apiPrefixes: [`${AUTOPARKS_V2_API_PREFIX}/cenu-lapa`],
+  },
+  {
+    // Tikai papildina citas Autoparka tiesības (summas JSON atbildēs); pati neatver ne lapu, ne API.
+    id: "ap_summas",
+    label: "Autoparks - Summas",
+    pagePrefixes: [],
+    apiPrefixes: [],
+  },
 ] as const;
 
 export const IRISS_SECTION_LABELS: Record<IrissSection, string> = {
@@ -110,6 +203,12 @@ export const IRISS_SECTION_LABELS: Record<IrissSection, string> = {
   pavadzimes: "Pavadzīmes",
   vin: "VIN pārbaude",
   atskaite: "Mēneša atskaite",
+  ap_pamatdati: "Autoparks",
+  ap_iegade: "Autoparks",
+  ap_serviss: "Autoparks",
+  ap_izdevumi: "Autoparks",
+  ap_cenu_lapa: "Autoparks",
+  ap_summas: "Autoparks",
 };
 
 export type AccessActor =

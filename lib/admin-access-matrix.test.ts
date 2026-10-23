@@ -32,6 +32,12 @@ const API_ALLOW: Record<IrissSection, readonly string[]> = {
   pavadzimes: ["/api/admin/iriss-pavadzimes", "/api/admin/iriss/waybill-requests", "/api/admin/change-history"],
   vin: ["/api/admin/vin-scan", "/api/admin/vin-sources", "/api/admin/outvin", "/api/admin/csdd-tech-data"],
   atskaite: [],
+  ap_pamatdati: ["/api/admin/iriss-autoparks-v2/pamatdati"],
+  ap_iegade: ["/api/admin/iriss-autoparks-v2/iegade"],
+  ap_serviss: ["/api/admin/iriss-autoparks-v2/serviss"],
+  ap_izdevumi: ["/api/admin/iriss-autoparks-v2/izdevumi"],
+  ap_cenu_lapa: ["/api/admin/iriss-autoparks-v2/cenu-lapa"],
+  ap_summas: [],
 };
 
 /** Sadaļa -> atļautās lapas. */
@@ -45,6 +51,12 @@ const PAGE_ALLOW: Record<IrissSection, readonly string[]> = {
   pavadzimes: ["/admin/iriss/pavadzimes"],
   vin: ["/admin/vin-scan"],
   atskaite: ["/admin/iriss/atskaite"],
+  ap_pamatdati: ["/admin/iriss/autoparks-v2"],
+  ap_iegade: ["/admin/iriss/autoparks-v2"],
+  ap_serviss: ["/admin/iriss/autoparks-v2"],
+  ap_izdevumi: ["/admin/iriss/autoparks-v2"],
+  ap_cenu_lapa: ["/admin/iriss/autoparks-v2"],
+  ap_summas: [],
 };
 
 /** Bez sesijas (login, uzaicinājums) un jebkuram aktīvam darbiniekam (iziet, 2FA). */
@@ -62,6 +74,12 @@ const ROLES: Role[] = [
   { name: "tikai Autoparks (Serviss)", kind: "staff", sections: ["serviss"] },
   { name: "tikai Loģistika", kind: "staff", sections: ["logistika"] },
   { name: "visa IRISS bez PRO", kind: "staff", sections: [...IRISS_SECTIONS] },
+  // Autoparks v2 (IETEIKUMI 6. sadaļa): B, C, D, E.
+  { name: "Autoparks B - tikai pamatdati", kind: "staff", sections: ["ap_pamatdati"] },
+  { name: "Autoparks C - pamatdati + serviss", kind: "staff", sections: ["ap_pamatdati", "ap_serviss"] },
+  { name: "Autoparks D - pamatdati + serviss + summas", kind: "staff", sections: ["ap_pamatdati", "ap_serviss", "ap_summas"] },
+  { name: "Autoparks E - grāmatvede", kind: "staff", sections: ["ap_pamatdati", "ap_iegade", "ap_izdevumi", "ap_summas"] },
+  { name: "tikai Summas (bez kategorijas)", kind: "staff", sections: ["ap_summas"] },
   { name: "admin", kind: "admin" },
 ];
 
@@ -209,6 +227,20 @@ describe("admin piekļuves matrica (deny-by-default)", () => {
     expect(await hitApi("/api/admin/iriss/waybill-requests", "POST", cookie)).toBe(200);
     expect(await hitApi("/api/admin/iriss-pavadzimes/x1/pdf", "GET", cookie)).toBe(200);
     expect(await hitApi("/api/admin/iriss-pavadzimes", "GET", cookie)).toBe(200);
+  });
+
+  it("Autoparks v2: vēsture un nekartēts v2 ceļš ir tikai administratoram; v2 kategorija nedod v1 Autoparku", async () => {
+    const all = cookieFor(ROLES.find((r) => r.name === "visa IRISS bez PRO")!);
+    for (const p of ["/api/admin/iriss-autoparks-v2/vesture/x1", "/api/admin/iriss-autoparks-v2/jauns", "/api/admin/iriss-autoparks-v2"]) {
+      expect([p, await hitApi(p, "GET", all)]).toEqual([p, 403]);
+    }
+    const e = cookieFor(ROLES.find((r) => r.name === "Autoparks E - grāmatvede")!);
+    expect(await hitApi("/api/admin/iriss-logistics/autoparks", "GET", e)).toBe(403);
+    expect(await hitApi("/api/admin/iriss-autoparks-v2/serviss/x1", "GET", e)).toBe(403);
+    expect(await hitApi("/api/admin/iriss-autoparks-v2/cenu-lapa/x1", "GET", e)).toBe(403);
+    expect(await hitApi("/api/admin/iriss-autoparks-v2/iegade/x1", "GET", e)).toBe(200);
+    const s = cookieFor(ROLES.find((r) => r.name === "tikai Summas (bez kategorijas)")!);
+    expect(await hitApi("/api/admin/iriss-autoparks-v2/pamatdati", "GET", s)).toBe(403);
   });
 
   it("PRO paliek atdalīts: VIN vēsture (PRO klienti) ir tikai administratoram, arī visai IRISS", async () => {

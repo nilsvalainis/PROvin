@@ -10,13 +10,14 @@ import {
   Radar,
   ScanLine,
   Wallet,
+  Warehouse,
   Wrench,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { IRISS_SECTION_LABELS, irissSectionMeta, isWaybillOnlyStaff, type IrissSection } from "@/lib/staff-roles";
+import { IRISS_SECTION_LABELS, irissSectionMeta, isWaybillOnlyStaff, staffNavSections, type IrissSection } from "@/lib/staff-roles";
 
 const SECTION_ICON: Record<IrissSection, LucideIcon> = {
   pasutijumi: Car,
@@ -28,6 +29,12 @@ const SECTION_ICON: Record<IrissSection, LucideIcon> = {
   pavadzimes: FileText,
   vin: ScanLine,
   atskaite: CalendarRange,
+  ap_pamatdati: Warehouse,
+  ap_iegade: Warehouse,
+  ap_serviss: Warehouse,
+  ap_izdevumi: Warehouse,
+  ap_cenu_lapa: Warehouse,
+  ap_summas: Warehouse,
 };
 
 function initials(name: string): string {
@@ -39,15 +46,19 @@ function initials(name: string): string {
 export function IrissStaffAppShell({
   name,
   sections,
+  autoparksV2Visible = false,
   children,
 }: {
   name: string;
   sections: IrissSection[];
+  /** Autoparks v2 darbiniekiem ieslēgts (karogs); citādi `ap_*` navigācijā nerāda. */
+  autoparksV2Visible?: boolean;
   children: ReactNode;
 }) {
   const pathname = usePathname() || "";
   const router = useRouter();
   const home = "/admin/iriss";
+  const navSections = staffNavSections(sections, autoparksV2Visible);
 
   async function logout() {
     await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
@@ -80,7 +91,7 @@ export function IrissStaffAppShell({
           <div className="min-w-0">
             <p className="truncate text-[13px] font-medium">{name}</p>
             <p className="text-[11px] text-[#9aa3b2]">
-              {sections.length} {sections.length === 1 ? "sadaļa" : "sadaļas"}
+              {navSections.length} {navSections.length === 1 ? "sadaļa" : "sadaļas"}
             </p>
           </div>
         </div>
@@ -93,7 +104,7 @@ export function IrissStaffAppShell({
           >
             Sākums
           </Link>
-          {sections.map((id) => {
+          {navSections.map((id) => {
             const href = irissSectionMeta(id).pagePrefixes[0] ?? home;
             const Icon = SECTION_ICON[id];
             const active = pathname === href || pathname.startsWith(`${href}/`);
@@ -133,7 +144,7 @@ export function IrissStaffAppShell({
             >
               <span className="truncate whitespace-nowrap">Sākums</span>
             </Link>
-            {sections.map((id) => {
+            {navSections.map((id) => {
               const href = irissSectionMeta(id).pagePrefixes[0] ?? home;
               const Icon = SECTION_ICON[id];
               const active = pathname === href || pathname.startsWith(`${href}/`);
