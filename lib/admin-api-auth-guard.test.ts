@@ -19,7 +19,7 @@ function routePathname(file: string): string {
 }
 
 const HANDLER_GUARD =
-  /getAdminSession\(|getAdminOrStaffActor\(|requireLogisticsApi\(|requireIrissLogisticsApi\(|requireIrissSectionApi\(|requireAdminOnlyApi\(|requireB2bDemoPlatformAdmin\(|requireAdminPage\(/;
+  /getAdminSession\(|getAdminOrStaffActor\(|requireLogisticsApi\(|requireIrissLogisticsApi\(|requireIrissSectionApi\(|requireAdminOnlyApi\(|requireB2bDemoPlatformAdmin\(|requireAdminPage\(|requireAutoparksV2Api\(/;
 
 describe("admin API handlers check a session", () => {
   const files = listRoutes(path.join(API_DIR, "admin"));

@@ -59,6 +59,7 @@ describe("Autoparks dati", () => {
 
   it("counts statuses, days in park and work totals", () => {
     expect(autoparksStatusCounts([{ status: "in_service" }, { status: "sold" }, { status: "in_service" }])).toEqual({
+      in_transit: 0,
       prep_waiting: 0,
       in_service: 2,
       for_sale: 0,
