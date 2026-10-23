@@ -1,9 +1,29 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { IrissCabinetAccessPanel } from "@/components/admin/IrissCabinetAccessPanel";
-import { IRISS_SECTION_CATALOG, IRISS_SECTION_LABELS, type IrissSection } from "@/lib/staff-roles";
+import {
+  AUTOPARKS_V2_SECTION_SHORT_LABELS,
+  IRISS_SECTION_CATALOG,
+  IRISS_SECTION_LABELS,
+  isAutoparksV2Section,
+  type IrissSection,
+} from "@/lib/staff-roles";
 import type { EnvAdminPublic, StaffAuditEntry, StaffUserPublic } from "@/lib/staff-types";
+
+/** Autoparka apakštiesības: ar atkāpi zem virsraksta "Autoparks" (virsraksts pirms pirmās). */
+function sectionRowLabel(id: IrissSection, label: string): string {
+  return isAutoparksV2Section(id) ? AUTOPARKS_V2_SECTION_SHORT_LABELS[id] : label;
+}
+
+function AutoparksGroupHeader({ id, className }: { id: IrissSection; className: string }) {
+  if (id !== "ap_pamatdati") return null;
+  return <li className={className}>Autoparks</li>;
+}
+
+function uniqueSectionLabels(ids: readonly IrissSection[]): string[] {
+  return [...new Set(ids.map((id) => IRISS_SECTION_LABELS[id]))];
+}
 
 type SessionRow = { id: string; createdAt: string; lastSeenAt: string; ip: string; device: string };
 type DirectoryUser = (StaffUserPublic & { envAdmin?: false }) | (EnvAdminPublic & { envAdmin: true });
@@ -236,12 +256,12 @@ export function IrissStaffUsersClient() {
                             Visas (administrators)
                           </span>
                         ) : (
-                          secs.map((id) => (
+                          uniqueSectionLabels(secs).map((label) => (
                             <span
-                              key={id}
+                              key={label}
                               className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[11px] font-medium text-[#3d5bd9]"
                             >
-                              {IRISS_SECTION_LABELS[id]}
+                              {label}
                             </span>
                           ))
                         )}
@@ -347,15 +367,18 @@ export function IrissStaffUsersClient() {
               {IRISS_SECTION_CATALOG.map((row) => {
                 const on = inviteSections.includes(row.id);
                 return (
-                  <li key={row.id} className="flex items-center justify-between px-3 py-2.5">
-                    <label className="flex flex-1 items-center gap-2 text-[14px]">
-                      <input type="checkbox" checked={on} onChange={() => toggleInvite(row.id)} />
-                      {row.label}
-                    </label>
-                    {on && inviteSections[0] === row.id ? (
-                      <span className="text-[12px] text-[#3d5bd9]">sākuma lapa</span>
-                    ) : null}
-                  </li>
+                  <Fragment key={row.id}>
+                    <AutoparksGroupHeader id={row.id} className="px-3 py-2.5 text-[14px] font-medium" />
+                    <li className={`flex items-center justify-between py-2.5 pr-3 ${isAutoparksV2Section(row.id) ? "pl-8" : "pl-3"}`}>
+                      <label className="flex flex-1 items-center gap-2 text-[14px]">
+                        <input type="checkbox" checked={on} onChange={() => toggleInvite(row.id)} />
+                        {sectionRowLabel(row.id, row.label)}
+                      </label>
+                      {on && inviteSections[0] === row.id ? (
+                        <span className="text-[12px] text-[#3d5bd9]">sākuma lapa</span>
+                      ) : null}
+                    </li>
+                  </Fragment>
                 );
               })}
             </ul>
@@ -444,17 +467,20 @@ function UserDetailCard({
               const pos = draftSections.indexOf(row.id);
               const home = pos === 0;
               return (
-                <li key={row.id} className="flex items-center justify-between py-2">
-                  <label className="flex flex-1 items-center gap-2 text-[14px]">
-                    <input type="checkbox" checked={on} onChange={() => onToggle(row.id)} />
-                    {row.label}
-                  </label>
-                  {home ? (
-                    <span className="text-[12px] text-[#3d5bd9]">sākuma lapa</span>
-                  ) : on ? (
-                    <span className="text-[12px] text-[#9aa3b2]">{pos + 1}.</span>
-                  ) : null}
-                </li>
+                <Fragment key={row.id}>
+                  <AutoparksGroupHeader id={row.id} className="py-2 text-[14px] font-medium" />
+                  <li className={`flex items-center justify-between py-2 ${isAutoparksV2Section(row.id) ? "pl-5" : ""}`}>
+                    <label className="flex flex-1 items-center gap-2 text-[14px]">
+                      <input type="checkbox" checked={on} onChange={() => onToggle(row.id)} />
+                      {sectionRowLabel(row.id, row.label)}
+                    </label>
+                    {home ? (
+                      <span className="text-[12px] text-[#3d5bd9]">sākuma lapa</span>
+                    ) : on ? (
+                      <span className="text-[12px] text-[#9aa3b2]">{pos + 1}.</span>
+                    ) : null}
+                  </li>
+                </Fragment>
               );
             })}
           </ul>
