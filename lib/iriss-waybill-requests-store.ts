@@ -127,6 +127,9 @@ export async function createWaybillRequest(input: {
     representative: payload.tradeAct === true ? payload.representative.slice(0, 60) : "",
     stage: "",
     stageAt: "",
+    dropboxPath: "",
+    dropboxError: "",
+    dropboxAt: "",
   };
   await mutateDoc((doc) => {
     let next: WaybillRequestsDoc = { ...doc, requests: [request, ...doc.requests].slice(0, 2000) };
@@ -457,4 +460,29 @@ async function recordWaybillAudit(entry: Parameters<typeof appendStaffAudit>[0])
   } catch (err) {
     console.error("[iriss-waybill] audit_failed", err instanceof Error ? err.message : err);
   }
+}
+
+/**
+ * Dropbox saglabāšanas rezultāts izdotajai pavadzīmei. Maina TIKAI dropbox* laukus (statusu, numuru, PDF neaiztiek).
+ * Jau saglabātu ceļu ar kļūdu nepārraksta.
+ */
+export async function setWaybillRequestDropbox(input: {
+  id: string;
+  dropboxPath?: string;
+  error?: string;
+}): Promise<WaybillRequest | null> {
+  const now = new Date().toISOString();
+  return mutateDoc<WaybillRequest | null>((doc) => {
+    const current = doc.requests.find((r) => r.id === input.id);
+    if (!current) return { value: null };
+    const path = (input.dropboxPath ?? "").trim().slice(0, 300);
+    if (!path && current.dropboxPath) return { value: current };
+    const nextReq: WaybillRequest = {
+      ...current,
+      dropboxPath: path || current.dropboxPath,
+      dropboxError: path ? "" : (input.error ?? "").trim().slice(0, 300),
+      dropboxAt: now,
+    };
+    return { value: nextReq, next: { ...doc, requests: doc.requests.map((r) => (r.id === input.id ? nextReq : r)) } };
+  });
 }

@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { isWaybillOnlyActor, requireIrissSectionApi, waybillOnlyForbidden } from "@/lib/staff-auth";
 import { canSeeWaybillOrders, loadIrissPavadzimesPageData } from "@/lib/iriss-pavadzimes-list";
 import { uploadIrissPavadzime } from "@/lib/iriss-pavadzimes-store";
 import { PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
+import { saveWaybillBytesToDropbox } from "@/lib/iriss-waybill-dropbox";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,7 +38,14 @@ export async function POST(req: Request) {
   const plate = typeof form.get("plate") === "string" ? String(form.get("plate")) : "";
 
   try {
-    await uploadIrissPavadzime({ fileName, bytes, vin, brandModel, plate });
+    const rec = await uploadIrissPavadzime({ fileName, bytes, vin, brandModel, plate });
+    // Ar roku augšupielādēta pavadzīme arī Dropbox /Pavadzīmes_IRISS (ja tur jau ir ar šo numuru - neko nedara).
+    if (rec.source !== "dropbox" && rec.number) {
+      after(async () => {
+        const saved = await saveWaybillBytesToDropbox({ waybillNo: rec.number, brandModel: rec.brandModel, plate: rec.plate, bytes });
+        if (!saved.ok) console.error("[iriss pavadzimes] dropbox_upload_failed", rec.number, saved.error);
+      });
+    }
     const data = await loadIrissPavadzimesPageData(new Date(), { withOrders: canSeeWaybillOrders(gate.actor) });
     return NextResponse.json(data);
   } catch (e) {

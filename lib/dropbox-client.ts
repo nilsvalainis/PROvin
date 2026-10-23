@@ -206,14 +206,23 @@ export function createDropboxClient(opts: { token: { get: () => Promise<string |
       return existing;
     },
 
-    /** Augšupielāde līdz 150 MB. Noklusējums: nekad nepārraksta (`add` + autorename). */
-    async upload(path: string, bytes: Uint8Array, mode: "add" | "overwrite" = "add"): Promise<DropboxEntry> {
+    /**
+     * Augšupielāde līdz 150 MB. Noklusējums: nekad nepārraksta (`add` + autorename).
+     * `autorename: false` + `add`: ja fails jau ir, Dropbox atgriež 409 conflict (nekas netiek mainīts).
+     */
+    async upload(
+      path: string,
+      bytes: Uint8Array,
+      mode: "add" | "overwrite" = "add",
+      opts2: { autorename?: boolean } = {},
+    ): Promise<DropboxEntry> {
+      const autorename = mode === "add" && opts2.autorename !== false;
       const res = await call(`${DROPBOX_CONTENT}/files/upload`, (token) => ({
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/octet-stream",
-          "Dropbox-API-Arg": dropboxApiArg({ path, mode, autorename: mode === "add", mute: true, strict_conflict: false }),
+          "Dropbox-API-Arg": dropboxApiArg({ path, mode, autorename, mute: true, strict_conflict: false }),
         },
         body: bytes as BodyInit,
       }));

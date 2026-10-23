@@ -103,6 +103,11 @@ export type WaybillRequest = {
   /** Automātikas pēdējais solis (tikai kamēr darbā; sk. WAYBILL_WORKER_STAGES). */
   stage: WaybillWorkerStage | "";
   stageAt: string;
+  /** Izdotās pavadzīmes PDF Dropbox (`/Pavadzīmes_IRISS/...`), pārbaudīts ar get_metadata. Tukšs = vēl nav. */
+  dropboxPath: string;
+  /** Pēdējā Dropbox saglabāšanas kļūda (rāda adminam; cron mēģina vēlreiz). */
+  dropboxError: string;
+  dropboxAt: string;
 };
 
 export type WaybillRequestsDoc = {
@@ -185,6 +190,9 @@ export function parseWaybillRequest(raw: unknown): WaybillRequest | null {
     representative: o.tradeAct === true ? str(o.representative, 60) : "",
     stage: isWaybillWorkerStage(o.stage) ? o.stage : "",
     stageAt: str(o.stageAt, 40),
+    dropboxPath: str(o.dropboxPath, 300),
+    dropboxError: str(o.dropboxError, 300),
+    dropboxAt: str(o.dropboxAt, 40),
   };
 }
 
@@ -362,6 +370,10 @@ export type WaybillAivarsReply = {
   autoMode?: WaybillAutoMode;
   /** Gaidošo šis darbs ir automātikai (standarta pēc lib/iriss-waybill-auto.ts). */
   autoStandard?: boolean;
+  /** "Saglabāt PDF" redzams (izdota, ir PDF, skatītājam ir tiesības; sk. lib/iriss-waybill-pdf.ts). */
+  canSavePdf?: boolean;
+  dropboxPath?: string;
+  dropboxError?: string;
 };
 
 export type WaybillAutoMode = "live" | "test";

@@ -14,6 +14,7 @@ import {
 import type { AutoparksOwner } from "@/lib/iriss-autoparks";
 import { compactDealerPlate, displayDealerPlate, formatRigaDateTimeComma, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
 import { waybillErrorNeedsCheck } from "@/lib/iriss-waybill-push";
+import { waybillDropboxFileName, waybillPdfDownloadHref } from "@/lib/iriss-waybill-pdf";
 import {
   WAYBILL_STALE_LABEL,
   WAYBILL_WORKER_STAGE_TEXT,
@@ -208,6 +209,11 @@ export type WaybillMobileRequestRow = {
   line: string;
   /** Īsa piezīme (piem. "Saglabāta Arhīvā", kad PDF ir pavadzīmju sarakstā). */
   note: string;
+  /** "Saglabāt PDF" (tikai Izdota + serveris atļāva `canSavePdf`); tukšs = pogu nerāda. */
+  savePdfHref: string;
+  pdfFileName: string;
+  /** Dropbox saglabāšanas kļūda (tikai adminam; kolēģim serveris to nesūta). */
+  dropboxError: string;
 };
 
 export { waybillWrittenOffAtMs };
@@ -389,6 +395,11 @@ export function waybillMobileRequestRows(
         line: writtenOff ? WAYBILL_WRITTEN_OFF_HINT : waybillMobileProgressLine(progress, { status, validUntil: request.validUntil }, nowMs),
         // PDF no Aivara/automātikas tiek ierakstīts pavadzīmju sarakstā (result -> uploadIrissPavadzime).
         note: status === "issued" && !writtenOff && pdfUrl.startsWith("/api/admin/iriss-pavadzimes/") ? WAYBILL_SAVED_IN_ARCHIVE_TEXT : "",
+        savePdfHref: status === "issued" && reply?.canSavePdf ? waybillPdfDownloadHref(request.id) : "",
+        pdfFileName:
+          waybillDropboxFileName({ waybillNo, brandModel: request.vehicle.brandModel, plate: request.vehicle.plate }) ||
+          `${waybillNo || "pavadzime"}.pdf`,
+        dropboxError: status === "issued" ? (reply?.dropboxError ?? "") : "",
       };
     });
 }

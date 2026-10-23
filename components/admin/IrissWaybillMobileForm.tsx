@@ -3,6 +3,7 @@
 import { Check, ChevronDown, ChevronRight, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import styles from "@/components/admin/IrissWaybillMobileForm.module.css";
+import { IrissWaybillSavePdfButton } from "@/components/admin/IrissWaybillSavePdfButton";
 import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
 import {
   NOTE_UNTRUSTED_MAX,
@@ -517,7 +518,20 @@ export function WaybillLiveRow({
           {row.note ? <p className={styles.progNote}>{row.note}</p> : null}
         </>
       )}
+      <WaybillRowSavePdf row={row} />
     </div>
+  );
+}
+
+/** "Saglabāt PDF" + Dropbox kļūda adminam (tikai Izdota; kolēģim tikai paša pieprasītās). */
+function WaybillRowSavePdf({ row }: { row: WaybillMobileRequestRow }) {
+  return (
+    <>
+      {row.savePdfHref ? (
+        <IrissWaybillSavePdfButton href={row.savePdfHref} fileName={row.pdfFileName} className={styles.savePdf} />
+      ) : null}
+      {row.dropboxError ? <p className={styles.dropboxErr}>Dropbox nav saglabāts: {row.dropboxError}</p> : null}
+    </>
   );
 }
 
@@ -640,6 +654,7 @@ export function IrissWaybillRequestArchive() {
                 </a>
               ) : null}
             </div>
+            <WaybillRowSavePdf row={row} />
           </div>
         ))}
       </div>
