@@ -101,6 +101,8 @@ export type IrissOfferRecord = {
   offerValidDays: string;
   /** Derīgs līdz (YYYY-MM-DD, Europe/Riga dienas beigas). Tukšs vecajos JSON. */
   validUntil: string;
+  /** Precīzs termiņš UTC ISO (ievade Rīgas laikā). Vienīgais termiņa avots taimerim un lēmumam. Vecajos JSON nav. */
+  validUntilAt?: string;
   attachments: IrissOfferAttachment[];
   /** Vāka foto id. Tukšs: pirmais attēls. */
   coverAttachmentId?: string;

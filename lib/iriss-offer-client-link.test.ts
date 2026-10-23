@@ -22,6 +22,8 @@ import {
   irissOfferClientLinkStatus,
   irissOfferClientLinkStatusLabel,
   irissOfferLinkExpiresAt,
+  irissOfferLinkExpiresAtForDeadline,
+  irissOfferDeadlinesByOfferId,
   irissOfferPublicViewContainsSecret,
   irissOfferPublicViewKeys,
   isIrissOfferLinkPath,
@@ -173,6 +175,49 @@ describe("IRISS offer client link status", () => {
     expect(isIrissOfferLinkUsable(sampleRecord(token), Date.parse("2030-01-01T00:00:00.000Z"))).toBe(true);
   });
 
+  it("shows Beidzies after the deadline without a decision and refuses a late decision", () => {
+    const deadlineAt = "2026-10-26T16:00:00.000Z";
+    const deadline = Date.parse(deadlineAt);
+    const viewed = sampleRecord(token, { firstViewedAt: "2026-10-20T09:00:00.000Z", viewCount: 1 });
+    expect(irissOfferClientLinkStatus(viewed, { deadlineAt, nowMs: deadline - 1 })).toBe("viewed");
+    expect(irissOfferClientLinkStatus(viewed, { deadlineAt, nowMs: deadline })).toBe("expired");
+    expect(irissOfferClientLinkStatusLabel(viewed, { deadlineAt, nowMs: deadline })).toBe("Beidzies");
+    expect(toIrissOfferClientLinkAdminView(viewed, { deadlineAt, nowMs: deadline })).toMatchObject({
+      status: "expired",
+      statusAt: deadlineAt,
+      deadlineAt,
+    });
+
+    const justInTime = applyIrissOfferLinkResponse(viewed, "approve", "", new Date(deadline - 1).toISOString(), { deadlineAt });
+    expect(justInTime.ok).toBe(true);
+    const late = applyIrissOfferLinkResponse(viewed, "approve", "", new Date(deadline).toISOString(), { deadlineAt });
+    expect(late).toEqual({ ok: false, error: "expired" });
+    const lateQuestion = applyIrissOfferLinkResponse(viewed, "question", "Vai var pagarināt?", new Date(deadline + 1).toISOString(), { deadlineAt });
+    expect(lateQuestion.ok).toBe(true);
+
+    if (!justInTime.ok) return;
+    expect(irissOfferClientLinkStatus(justInTime.record, { deadlineAt, nowMs: deadline + 1 })).toBe("approved");
+    const repeat = applyIrissOfferLinkResponse(justInTime.record, "approve", "", new Date(deadline + 1).toISOString(), { deadlineAt });
+    expect(repeat).toMatchObject({ ok: true, unchanged: true });
+  });
+
+  it("keeps old links without a deadline exactly as before", () => {
+    const viewed = sampleRecord(token, { firstViewedAt: "2026-10-20T09:00:00.000Z", viewCount: 1 });
+    expect(irissOfferClientLinkStatus(viewed, { deadlineAt: "", nowMs: Date.parse("2030-01-01T00:00:00.000Z") })).toBe("viewed");
+    const approved = applyIrissOfferLinkResponse(viewed, "approve", "", "2030-01-01T00:00:00.000Z");
+    expect(approved.ok).toBe(true);
+    expect(toIrissOfferClientLinkAdminView(viewed).deadlineAt).toBe("");
+  });
+
+  it("keeps a deadline link open 30 days after the deadline", () => {
+    expect(irissOfferLinkExpiresAtForDeadline("2026-10-26T16:00:00.000Z")).toBe("2026-11-25T16:00:00.000Z");
+    expect(irissOfferLinkExpiresAtForDeadline("")).toBe("");
+    const a = emptyIrissOfferRecord(OFFER_ID, "2026-10-15T08:00:00.000Z", "A");
+    a.validUntilAt = "2026-10-26T16:00:00.000Z";
+    const b = emptyIrissOfferRecord("33333333-3333-4333-8333-333333333333", "2026-10-15T08:00:00.000Z", "B");
+    expect(irissOfferDeadlinesByOfferId([a, b])).toEqual({ [OFFER_ID]: "2026-10-26T16:00:00.000Z" });
+  });
+
   it("caps the question and drops tags", () => {
     expect(sanitizeIrissOfferQuestion("<b>Sveiki</b>")).toBe("Sveiki");
     expect(sanitizeIrissOfferQuestion("a".repeat(500)).length).toBe(400);
@@ -231,6 +276,9 @@ describe("IRISS offer public view", () => {
     expect(view.notes).not.toContain("<script>");
     expect(view.photos).toEqual([{ id: "33333333-3333-4333-8333-333333333333" }]);
     expect(view.validDays).toBe("7 dienas");
+    expect(view.deadlineAt).toBe("");
+    expect(view.decidedAt).toBe("");
+    expect(Number.isFinite(Date.parse(view.serverNow))).toBe(true);
     expect(Object.keys(view)).toEqual([...irissOfferPublicViewKeys()]);
     expect(blob).not.toContain(order.id);
     expect(blob).not.toContain(order.phone);
@@ -249,6 +297,20 @@ describe("IRISS offer public view", () => {
     expect(isIrissOfferPublicImageMime("image/jpeg")).toBe(true);
     expect(isSafeIrissOfferAttachmentId("../etc/passwd")).toBe(false);
     expect(isSafeIrissOfferAttachmentId("33333333-3333-4333-8333-333333333333")).toBe(true);
+  });
+
+  it("passes the exact deadline and server time to the client page", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-15T08:00:00.000Z", "Piedāvājums 1");
+    offer.validUntilAt = "2026-10-26T16:00:00.000Z";
+    const now = Date.parse("2026-10-23T10:00:00.000Z");
+    const view = buildIrissOfferPublicView(
+      offer,
+      { decision: "approve", question: "", decidedAt: "2026-10-24T08:00:00.000Z" },
+      { nowMs: now },
+    );
+    expect(view.deadlineAt).toBe("2026-10-26T16:00:00.000Z");
+    expect(view.serverNow).toBe("2026-10-23T10:00:00.000Z");
+    expect(view.decidedAt).toBe("2026-10-24T08:00:00.000Z");
   });
 
   it("puts the cover photo first in the public gallery", () => {
