@@ -22,6 +22,14 @@ export function parseOfferSourceRef(raw: unknown): OfferSourceRef | null {
   return { kind: m[1] as OfferSourceKind, id: m[2]! };
 }
 
+/** Papildu sadaļa, kas vajadzīga avota datu lasīšanai (bez tās seed/bildes netiek dotas). */
+export function offerSourceSection(ref: OfferSourceRef): "ap_pamatdati" | "logistika" {
+  return ref.kind === "autoparks" ? "ap_pamatdati" : "logistika";
+}
+
+/** Formas virsrakstam: "Autoparks" / "Loģistika". */
+export const OFFER_SOURCE_LABEL_LV: Record<OfferSourceKind, string> = { autoparks: "Autoparks", logistics: "Loģistika" };
+
 export function offerSourceRefString(ref: OfferSourceRef): string {
   return `${ref.kind}:${ref.id}`;
 }
@@ -67,9 +75,4 @@ export function stockPhotoAttachment(ref: OfferSourceRef, photo: StockPhoto): Ir
 /** Cik bilžu vēl nav ielādētas Blob (rāda formā "N bildes vēl nav ielādētas"). */
 export function pendingDropboxPhotoCount(attachments: ReadonlyArray<Pick<IrissOfferAttachment, "dropboxId" | "blobPath" | "dataUrl">>): number {
   return attachments.filter((a) => a.dropboxId && !a.blobPath && !a.dataUrl).length;
-}
-
-/** Papildu sadaļa, kas vajadzīga avota datu lasīšanai (bez tās seed/bildes netiek dotas). */
-export function offerSourceSection(ref: OfferSourceRef): "ap_pamatdati" | "logistika" {
-  return ref.kind === "autoparks" ? "ap_pamatdati" : "logistika";
 }

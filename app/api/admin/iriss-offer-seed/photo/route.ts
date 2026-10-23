@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { readOfferSourcePhoto } from "@/lib/iriss-offer-source";
+import { offerSourceAccess } from "@/lib/iriss-offer-source-access";
 import { isSafeDropboxFileId, offerSourceSection, parseOfferSourceRef } from "@/lib/iriss-stock-photos";
 
 export const runtime = "nodejs";
@@ -20,6 +21,7 @@ export async function GET(req: Request) {
   if (!ref || !isSafeDropboxFileId(id)) return NextResponse.json({ error: "invalid" }, { status: 400 });
   const source = await requireIrissSectionApi(offerSourceSection(ref));
   if (!source.ok) return source.response;
+  if (!(await offerSourceAccess(gate.actor, ref)).visible) return NextResponse.json({ error: "not_found" }, { status: 404 });
   const bytes = await readOfferSourcePhoto(ref, id, size).catch(() => null);
   if (!bytes) return NextResponse.json({ error: "not_found" }, { status: 404 });
   return new NextResponse(new Uint8Array(bytes), {
