@@ -2,6 +2,7 @@ import { AdminPushToggle } from "@/components/admin/AdminPushToggle";
 import { IrissPasutijumiListClient } from "@/components/admin/IrissPasutijumiListClient";
 import { AdminIrissOrdersExportButton } from "@/components/admin/AdminIrissOrdersExportButton";
 import { loadIrissListingMatchState } from "@/lib/iriss-listing-match-store";
+import { readIrissOfferLinkSummary } from "@/lib/iriss-offer-client-link-store";
 import { countIrissNewHitsByOrder } from "@/lib/iriss-pasutijumi-list-view";
 import {
   getIrissPasutijumiStorageState,
@@ -21,13 +22,16 @@ export default async function IrissPasutijumiListPage() {
   let initialListOrder = null as Awaited<ReturnType<typeof readIrissListOrder>>;
   let loadError: string | null = null;
   let newHitsByOrder: Record<string, number> = {};
+  let offerSummary: Awaited<ReturnType<typeof readIrissOfferLinkSummary>> = {};
   if (storeEnabled) {
     try {
-      const [listed, order, match] = await Promise.all([
+      const [listed, order, match, summary] = await Promise.all([
         listIrissPasutijumi({ includeDeleted: true }),
         readIrissListOrder(),
         loadIrissListingMatchState().catch(() => null),
+        readIrissOfferLinkSummary().catch(() => ({})),
       ]);
+      offerSummary = summary;
       rows = listed;
       initialListOrder = order;
       if (match) newHitsByOrder = countIrissNewHitsByOrder(match.entries);
@@ -69,7 +73,7 @@ export default async function IrissPasutijumiListPage() {
       ) : null}
 
       {storeEnabled && !loadError ? (
-        <IrissPasutijumiListClient rows={rows} initialListOrder={initialListOrder} newHitsByOrder={newHitsByOrder} />
+        <IrissPasutijumiListClient rows={rows} initialListOrder={initialListOrder} newHitsByOrder={newHitsByOrder} offerSummary={offerSummary} />
       ) : null}
 
       {isAdmin ? (

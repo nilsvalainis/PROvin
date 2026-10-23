@@ -6,7 +6,7 @@ import {
 } from "@/lib/iriss-offer-client-link";
 import { hashIrissOfferLinkToken } from "@/lib/iriss-offer-client-link-token";
 import { openUsableIrissOfferLink } from "@/lib/iriss-offer-client-link-load";
-import { respondIrissOfferClientLink } from "@/lib/iriss-offer-client-link-store";
+import { recordIrissOfferDecisionSummary, respondIrissOfferClientLink } from "@/lib/iriss-offer-client-link-store";
 import { runIrissOfferDecisionEffects } from "@/lib/iriss-offer-decision-effects";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIpFromRequest } from "@/lib/client-ip";
@@ -64,6 +64,7 @@ export async function POST(req: Request) {
   }
   if (!result.ok) return hidden();
   if (result.won && (result.record.decision === "approve" || result.record.decision === "decline")) {
+    await recordIrissOfferDecisionSummary(result.record, opened.offer.validUntilAt ?? "");
     await runIrissOfferDecisionEffects({
       orderId: opened.link.orderId,
       offerId: opened.link.offerId,

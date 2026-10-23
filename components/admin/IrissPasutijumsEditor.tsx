@@ -120,6 +120,7 @@ import {
   deriveOfferValidUntil,
   formatOfferValidUntilLv,
   isIrissOfferExpired,
+  offerValidUntilYmdFromAt,
 } from "@/lib/iriss-offer-valid-until";
 import { patchJsonWithUploadProgress, type JsonPatchResult } from "@/lib/iriss-json-patch-upload";
 import {
@@ -719,6 +720,26 @@ export function IrissPasutijumsEditor({
           generatedDocuments,
           ...(typeof workspaceRevision === "number" ? { workspaceRevision } : {}),
         });
+      } catch {
+        lastSavedSnapshot.current = JSON.stringify(next);
+      }
+      return next;
+    });
+  }, []);
+
+  /** "Pagarināt" saites joslā: serveris jau saglabāja jauno termiņu - pārņem to bez konflikta. */
+  const ingestOfferDeadline = useCallback((offerId: string, validUntilAt: string, workspaceRevision?: number | null) => {
+    const apply = (r: IrissPasutijumsRecord): IrissPasutijumsRecord => ({
+      ...r,
+      offers: r.offers.map((o) =>
+        o.id === offerId ? { ...o, validUntilAt, validUntil: offerValidUntilYmdFromAt(validUntilAt) } : o,
+      ),
+      ...(typeof workspaceRevision === "number" ? { workspaceRevision } : {}),
+    });
+    setRec((r) => {
+      const next = apply(r);
+      try {
+        lastSavedSnapshot.current = JSON.stringify(apply(JSON.parse(lastSavedSnapshot.current) as IrissPasutijumsRecord));
       } catch {
         lastSavedSnapshot.current = JSON.stringify(next);
       }
@@ -1962,6 +1983,7 @@ export function IrissPasutijumsEditor({
           googleContactBusy={googleContactBusy}
           onRetryGoogleContact={() => void retryGoogleContact()}
           onGeneratedDocument={ingestGeneratedDocument}
+          onOfferDeadlineExtended={ingestOfferDeadline}
           onOpenOfferPdf={(offerId, omitImages) => void openOfferPdfForId(offerId, omitImages)}
           onAlbumFiles={(album, files) => void onAlbumFiles(album, files)}
           albumBusy={albumFileBusy}

@@ -9,6 +9,7 @@ import { Loader2, Plus, X } from "lucide-react";
 import type React from "react";
 import { useMemo, useState } from "react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
+import { IrissOfferDeadlineField } from "@/components/admin/IrissOfferDeadlineField";
 import { AdminSaveButton } from "@/components/admin/AdminSaveButton";
 import { IrissOfferBlocksEditor } from "@/components/admin/IrissOfferBlocksEditor";
 import { IrissOfferFieldTag } from "@/components/admin/IrissOfferFieldTag";
@@ -16,7 +17,7 @@ import { IrissLabeledInput as LabeledInput, irissOfferFieldClass as fieldClass }
 import { IrissOfferImageSorter } from "@/components/admin/IrissOfferImageSorter";
 import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import { offerDraftTotalPrice, type OfferDraft } from "@/lib/iriss-offer-draft";
-import { isIrissOfferExpired, normalizeOfferValidUntil } from "@/lib/iriss-offer-valid-until";
+import { isIrissOfferExpired, normalizeOfferValidUntil, offerValidUntilYmdFromAt } from "@/lib/iriss-offer-valid-until";
 import { IRISS_MAX_OFFER_ATTACHMENTS } from "@/lib/iriss-pasutijumi-types";
 import { irissPriceFormatWarning } from "@/lib/iriss-price-format";
 import { irissVinWarning } from "@/lib/iriss-vin-check";
@@ -400,16 +401,18 @@ export function IrissOfferForm({
               </label>
               <LabeledInput label="Kopā" value={totalPrice} readOnly />
               <div className="sm:col-span-2">
-                <LabeledInput
-                  label="Piedāvājums spēkā līdz"
-                  type="date"
-                  value={draft.validUntil}
-                  onChange={(e) =>
-                    setDraft((d) => ({
-                      ...d,
-                      validUntil: normalizeOfferValidUntil(e.target.value),
-                      offerValidDays: d.offerValidDays,
-                    }))
+                <IrissOfferDeadlineField
+                  key={draft.id}
+                  idPrefix={`iriss-offer-deadline-${draft.id}`}
+                  label="Piedāvājuma termiņš"
+                  initial={{ validUntilAt: draft.validUntilAt, validUntil: draft.validUntil }}
+                  onChange={({ iso, ymd }) =>
+                    setDraft((d) =>
+                      iso
+                        ? { ...d, validUntilAt: iso, validUntil: offerValidUntilYmdFromAt(iso) }
+                        : // Nepilnīgs termiņš: datums kā līdz šim (vecā uzvedība), precīzais termiņš nemainās.
+                          { ...d, validUntil: normalizeOfferValidUntil(ymd) },
+                    )
                   }
                 />
                 {isIrissOfferExpired(draft) ? (

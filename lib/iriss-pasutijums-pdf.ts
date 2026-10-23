@@ -32,7 +32,7 @@ import {
   irissContractSignerName,
 } from "@/lib/iriss-contract-party";
 import { irissOfferCustomPdfBlocks, irissOfferPdfShows } from "@/lib/iriss-offer-blocks";
-import { formatOfferValidUntilLv, normalizeOfferValidUntil } from "@/lib/iriss-offer-valid-until";
+import { formatOfferDeadlineLv, formatOfferValidUntilLv, normalizeOfferValidUntil } from "@/lib/iriss-offer-valid-until";
 import { irissOfferImagesOmittedNotice } from "@/lib/iriss-offer-share";
 import { parsePriceLike } from "@/lib/iriss-price-format";
 import { applyProvinHumanDashes } from "@/lib/source-summary-comment-format";
@@ -1630,6 +1630,8 @@ export async function buildIrissOfferPdfBytes(
   const totalPrice = parseMoney(carPrice ?? "") + parseMoney(deliveryPrice ?? "") + parseMoney(commissionFee ?? "");
   const offerValidDays = val(offer.offerValidDays);
   const offerValidUntil = normalizeOfferValidUntil(offer.validUntil);
+  // Precīzs termiņš (T4): "dd.mm.gggg hh:mm" Rīgas laikā; vecie piedāvājumi - tikai datums, kā līdz šim.
+  const offerDeadlineLabel = formatOfferDeadlineLv(offer.validUntilAt ?? "");
   const pricingPlainLines: string[] = [];
   if (carPrice) pricingPlainLines.push(`Automašīnas cena: ${carPrice}`);
   if (deliveryPrice) pricingPlainLines.push(`Piegādes cena: ${deliveryPrice}`);
@@ -1792,9 +1794,11 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (offerValidUntil || offerValidDays) {
+  if (offerDeadlineLabel || offerValidUntil || offerValidDays) {
     ensureSpace(ctx, lineHeight(11) + 20);
-    const validity = offerValidUntil
+    const validity = offerDeadlineLabel
+      ? `Piedāvājums spēkā līdz: ${offerDeadlineLabel}`
+      : offerValidUntil
       ? `Piedāvājums spēkā līdz: ${formatOfferValidUntilLv(offerValidUntil)}`
       : `Piedāvājums spēkā (dienas): ${offerValidDays}`;
     drawParagraph(ctx, validity, 10, INK, ctx.fontBold, {

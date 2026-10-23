@@ -1,5 +1,6 @@
 "use client";
 
+import { irissOfferListBadge, type IrissOfferLinkSummaryEntry } from "@/lib/iriss-offer-deadline-ui";
 import { ChevronDown, Search } from "lucide-react";
 import { Reorder } from "framer-motion";
 import Link from "next/link";
@@ -183,11 +184,19 @@ export function IrissPasutijumiListClient({
   rows,
   initialListOrder,
   newHitsByOrder = {},
+  offerSummary = {},
 }: {
   rows: IrissPasutijumsListRow[];
   initialListOrder: IrissPasutijumiListOrder | null;
   newHitsByOrder?: Record<string, number>;
+  /** orderId -> jaunākā piedāvājuma saites stāvoklis (offer-links/summary.json). */
+  offerSummary?: Record<string, IrissOfferLinkSummaryEntry>;
 }) {
+  const [badgeNow, setBadgeNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = window.setInterval(() => setBadgeNow(Date.now()), 60_000);
+    return () => window.clearInterval(t);
+  }, []);
   const [localRows, setLocalRows] = useState<IrissPasutijumsListRow[]>(rows);
   const [sortMode, setSortMode] = useState<SortMode>("created_desc");
   const [searchQuery, setSearchQuery] = useState("");
@@ -612,6 +621,7 @@ export function IrissPasutijumiListClient({
       closeOtherSwipes={closeOtherSwipes}
       narrowSwipeViewport={narrowSwipeViewport}
       dragReorderEnabled={dragReorderEnabled}
+      offerBadge={irissOfferListBadge(offerSummary[row.id], badgeNow)}
     />
   );
 

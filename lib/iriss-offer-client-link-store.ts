@@ -24,6 +24,7 @@ import {
   type IrissOfferClientLinkRecord,
   type IrissOfferLinkAction,
 } from "@/lib/iriss-offer-client-link";
+import type { IrissOfferLinkSummaryEntry } from "@/lib/iriss-offer-deadline-ui";
 import { normalizeOfferValidUntilAt } from "@/lib/iriss-offer-valid-until";
 import {
   hashIrissOfferLinkToken,
@@ -55,6 +56,8 @@ function orderRel(orderId: string): string {
 function decisionRel(hash: string): string {
   return `offer-links/decisions/${hash}.json`;
 }
+
+const SUMMARY_REL = "offer-links/summary.json";
 
 export type IrissOfferClaimedDecision = { decision: "approve" | "decline"; decidedAt: string };
 
@@ -290,6 +293,48 @@ async function writeOrderIndex(orderId: string, offers: Record<string, string>):
   return writeJson(orderRel(orderId), { offers });
 }
 
+function parseSummaryEntry(raw: unknown): IrissOfferLinkSummaryEntry | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const offerId = typeof o.offerId === "string" && isIrissOfferLinkEntityId(o.offerId) ? o.offerId : "";
+  const status = o.status === "sent" || o.status === "approved" || o.status === "declined" || o.status === "revoked" ? o.status : null;
+  const at = typeof o.at === "string" ? o.at : "";
+  if (!offerId || !status) return null;
+  return { offerId, status, at, validUntilAt: normalizeOfferValidUntilAt(o.validUntilAt) };
+}
+
+/**
+ * Pasūtījumu saraksta zīmei: orderId -> jaunākā piedāvājuma saites stāvoklis (bez N lasījumiem).
+ * Vecām saitēm ieraksta nav - zīme netiek rādīta (dati netiek migrēti).
+ */
+export async function readIrissOfferLinkSummary(): Promise<Record<string, IrissOfferLinkSummaryEntry>> {
+  const raw = await readJson(SUMMARY_REL);
+  const out: Record<string, IrissOfferLinkSummaryEntry> = {};
+  const bag = raw && typeof raw === "object" ? (raw as { orders?: unknown }).orders : null;
+  if (!bag || typeof bag !== "object") return out;
+  for (const [orderId, entry] of Object.entries(bag as Record<string, unknown>)) {
+    if (!isIrissOfferLinkEntityId(orderId)) continue;
+    const parsed = parseSummaryEntry(entry);
+    if (parsed) out[orderId] = parsed;
+  }
+  return out;
+}
+
+/** Kļūda kopsavilkumā nekad neaptur saites darbību (tikai zīme sarakstā). */
+async function updateIrissOfferLinkSummary(orderId: string, entry: IrissOfferLinkSummaryEntry): Promise<void> {
+  try {
+    await withLock("summary", async () => {
+      const all = await readIrissOfferLinkSummary();
+      const prev = all[orderId];
+      // Atsaukta vecāka piedāvājuma saite nenotīra jaunāka piedāvājuma zīmi.
+      if (entry.status === "revoked" && prev && prev.offerId !== entry.offerId) return;
+      await writeJson(SUMMARY_REL, { orders: { ...all, [orderId]: entry } });
+    });
+  } catch (e) {
+    console.error("[iriss-offer-link] summary", e instanceof Error ? e.message : e);
+  }
+}
+
 export async function readIrissOfferClientLinkByHash(hash: string): Promise<IrissOfferClientLinkRecord | null> {
   const h = hash.trim().toLowerCase();
   if (!/^[a-f0-9]{64}$/.test(h)) return null;
@@ -387,6 +432,12 @@ export async function createIrissOfferClientLink(input: {
         deadlineAt: input.deadlineAt,
       });
     }
+    await updateIrissOfferLinkSummary(input.orderId, {
+      offerId: input.offerId,
+      status: "sent",
+      at: createdAt,
+      validUntilAt: normalizeOfferValidUntilAt(input.deadlineAt ?? ""),
+    });
     return { ok: true, record };
   });
 }
@@ -411,7 +462,51 @@ export async function revokeIrissOfferClientLink(
     const saved = await writeJson(tokenRel(next.tokenHash), next);
     if (!saved) return { ok: false, error: "store_failed" };
     await removeIrissOfferDeadline(next.tokenHash);
+    await updateIrissOfferLinkSummary(orderId, { offerId, status: "revoked", at: next.revokedAt, validUntilAt: "" });
     return { ok: true, record: next };
+  });
+}
+
+/**
+ * "Pagarināt" (tikai, ja nav lēmuma): tā pati saite, jauns termiņš, saite derīga vēl 30 dienas pēc tā.
+ * Piedāvājuma validUntilAt pasūtījumā maina izsaucējs.
+ */
+export async function extendIrissOfferClientLink(
+  orderId: string,
+  offerId: string,
+  deadlineAt: string,
+): Promise<{ ok: true; record: IrissOfferClientLinkRecord } | { ok: false; error: "not_found" | "decided" | "invalid" | "store_failed" }> {
+  const iso = normalizeOfferValidUntilAt(deadlineAt);
+  if (!iso || !isIrissOfferLinkEntityId(orderId) || !isIrissOfferLinkEntityId(offerId)) return { ok: false, error: "invalid" };
+  return withLock(`order:${orderId}`, async () => {
+    const index = await readOrderIndex(orderId);
+    const hash = index[offerId];
+    if (!hash) return { ok: false, error: "not_found" };
+    const existing = await readIrissOfferClientLinkByHash(hash);
+    if (!existing || existing.orderId !== orderId || existing.offerId !== offerId || existing.revokedAt) {
+      return { ok: false, error: "not_found" };
+    }
+    if (existing.decision || (await readIrissOfferClaimedDecision(hash))) return { ok: false, error: "decided" };
+    const next: IrissOfferClientLinkRecord = { ...existing, expiresAt: irissOfferLinkExpiresAtForDeadline(iso) };
+    const saved = await writeJson(tokenRel(hash), next);
+    if (!saved) return { ok: false, error: "store_failed" };
+    await registerIrissOfferDeadline({ hash, orderId, offerId, deadlineAt: iso });
+    await updateIrissOfferLinkSummary(orderId, { offerId, status: "sent", at: new Date().toISOString(), validUntilAt: iso });
+    return { ok: true, record: next };
+  });
+}
+
+/** Lēmuma zīme sarakstā (tikai uzvarējušajam lēmumam). */
+export async function recordIrissOfferDecisionSummary(
+  record: Pick<IrissOfferClientLinkRecord, "orderId" | "offerId" | "decision" | "decidedAt">,
+  deadlineAt: string,
+): Promise<void> {
+  if (record.decision !== "approve" && record.decision !== "decline") return;
+  await updateIrissOfferLinkSummary(record.orderId, {
+    offerId: record.offerId,
+    status: record.decision === "approve" ? "approved" : "declined",
+    at: record.decidedAt,
+    validUntilAt: normalizeOfferValidUntilAt(deadlineAt),
   });
 }
 
