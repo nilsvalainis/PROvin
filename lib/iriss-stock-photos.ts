@@ -30,6 +30,12 @@ export function offerSourceSection(ref: OfferSourceRef): "ap_pamatdati" | "logis
 /** Formas virsrakstam: "Autoparks" / "Loģistika". */
 export const OFFER_SOURCE_LABEL_LV: Record<OfferSourceKind, string> = { autoparks: "Autoparks", logistics: "Loģistika" };
 
+/** Piedāvājuma kartītei klienta kabinetā: "Autoparks" / "Loģistika"; vecajiem piedāvājumiem - tukšs. */
+export function offerSourceLabel(sourceRef: string | undefined): string {
+  const ref = parseOfferSourceRef(sourceRef);
+  return ref ? OFFER_SOURCE_LABEL_LV[ref.kind] : "";
+}
+
 export function offerSourceRefString(ref: OfferSourceRef): string {
   return `${ref.kind}:${ref.id}`;
 }

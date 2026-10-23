@@ -11,6 +11,7 @@ import { IrissLogistikaCarsTable } from "@/components/admin/iriss-logistika/Iris
 import { IrissLogistikaCargoPlan, type ManualCarInput } from "@/components/admin/iriss-logistika/IrissLogistikaCargoPlan";
 import { IrissLogistikaMap, type IrissLogistikaMapHandle } from "@/components/admin/iriss-logistika/IrissLogistikaMap";
 import { IrissLogistikaNewPurchase } from "@/components/admin/iriss-logistika/IrissLogistikaNewPurchase";
+import { IrissCreateOfferButton, irissCreateOfferHref } from "@/components/admin/IrissCreateOfferButton";
 import { IrissLogistikaPrintList } from "@/components/admin/iriss-logistika/IrissLogistikaPrintList";
 import { AdminMobileChips, AdminMobileRoundBtn, AdminMobileSearchField, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { IrissLogistikaRouteTemplatesPanel } from "@/components/admin/iriss-logistika/IrissLogistikaRouteTemplatesPanel";
@@ -70,6 +71,7 @@ type Props = {
   storeEnabled: boolean;
   viewerName?: string;
   canEnableTotp?: boolean;
+  canCreateOffer?: boolean;
 };
 
 const LABELS_PREF_KEY = "iriss.logistics.mapLabels";
@@ -94,6 +96,7 @@ export function IrissLogistikaClient({
   storeEnabled,
   viewerName,
   canEnableTotp,
+  canCreateOffer = false,
 }: Props) {
   const [orders, setOrders] = useState(initialOrders);
   const [points] = useState(initialPoints);
@@ -698,7 +701,10 @@ export function IrissLogistikaClient({
         <AdminMobileTopBar
           title="Loģistika"
           trailing={
-            <AdminMobileRoundBtn name="pievienot" primary label="Nopirkts" onClick={() => setPurchaseOpen(true)} />
+            <>
+              {canCreateOffer ? <AdminMobileRoundBtn name="pdf" label="Jauns piedāvājums" href={irissCreateOfferHref()} /> : null}
+              <AdminMobileRoundBtn name="pievienot" primary label="Nopirkts" onClick={() => setPurchaseOpen(true)} />
+            </>
           }
         >
           <AdminMobileSearchField
@@ -776,6 +782,7 @@ export function IrissLogistikaClient({
               placeholder={pageTab === "points" ? "Meklēt punktu, pilsētu, izsoli" : "VIN, nosaukums, pickup nr."}
               className="hidden h-9 w-56 rounded-full border-0 bg-white px-3 text-[13px] shadow-sm md:block"
             />
+            {canCreateOffer ? <IrissCreateOfferButton /> : null}
             <button type="button" onClick={() => setPurchaseOpen(true)} className="inline-flex h-9 items-center rounded-full bg-[var(--ink)] px-3 text-[12.5px] font-semibold text-white">
               + Nopirkts
             </button>
@@ -1059,6 +1066,7 @@ export function IrissLogistikaClient({
                 onAssignPoint={(orderId, pickupPointId) => void assignPoint(orderId, pickupPointId)}
                 onPatchOrder={(id, action) => void patchOrder(id, action)}
                 onOrderUpdated={(next) => setOrders((prev) => prev.map((o) => (o.id === next.id ? next : o)))}
+                canCreateOffer={canCreateOffer}
               />
             </div>
           ) : (

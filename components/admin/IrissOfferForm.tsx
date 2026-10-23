@@ -101,6 +101,8 @@ export type IrissOfferFormProps = {
   onAutoFieldEdited?: (key: string) => void;
   /** Sākuma dati no Autoparka / Loģistikas: ielāde un piezīme (piem. "bilžu nav"). */
   seedStatus?: { loading: boolean; note: string; sourceLabel: string } | null;
+  /** Galvenē pa labi (piem. "Klients ▾"). */
+  headerSlot?: React.ReactNode;
 };
 
 export function IrissOfferForm({
@@ -127,6 +129,7 @@ export function IrissOfferForm({
   onFilesPick,
   onAutoFieldEdited,
   seedStatus = null,
+  headerSlot = null,
 }: IrissOfferFormProps) {
   const vinWarning = useMemo(() => irissVinWarning(draft.vin), [draft.vin]);
   const carPriceWarning = useMemo(() => irissPriceFormatWarning(draft.carPrice), [draft.carPrice]);
@@ -173,6 +176,7 @@ export function IrissOfferForm({
               <p className="mt-0.5 text-[12px] font-semibold text-red-700">Piedāvājums beidzies</p>
             ) : null}
           </div>
+          {headerSlot}
           <button
             type="button"
             disabled={busy || !!filePrepare}

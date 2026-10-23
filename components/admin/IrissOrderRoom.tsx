@@ -1,5 +1,6 @@
 "use client";
 
+import { offerSourceLabel } from "@/lib/iriss-stock-photos";
 import { AdminSaveButton, useSaveMessageState } from "@/components/admin/AdminSaveButton";
 import { ChevronRight, FileDown, FileText, Mail, Pencil, Phone, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
@@ -1399,7 +1400,7 @@ export function IrissOrderRoom({
             <div className="flex flex-wrap items-center gap-2">
               <button type="button" onClick={onCreateOffer} className={roomBtnDark}>
                 <Plus className="h-4 w-4" aria-hidden />
-                Jauns piedāvājums
+                Izveidot piedāvājumu
               </button>
               <IrissOverflowMenu label="Vairāk">
                 <IrissOverflowItem href="/admin/iriss/pasutijumi/new?newOffer=1&noClientPdf=1">
@@ -1420,7 +1421,7 @@ export function IrissOrderRoom({
                 const sent = link ? formatIrissOfferLinkStamp(link.createdAt) : "";
                 const opened = link && link.viewCount > 0 ? formatIrissOfferLinkStamp(link.statusAt) : "";
                 const primary = irissOfferCardPrimary(offer, link);
-                const source = offer.auctionPlatform.trim();
+                const source = [offerSourceLabel(offer.sourceRef), offer.auctionPlatform.trim()].filter(Boolean).join(" · ");
                 return (
                   <li key={offer.id} className="min-w-0 overflow-hidden rounded-[22px] bg-[var(--s1)] shadow-[var(--sh)]">
                     <div className="flex items-center gap-3 p-3">

@@ -19,6 +19,8 @@ import {
   pendingDropboxPhotoCount,
 } from "@/lib/iriss-stock-photos";
 import { IrissLabeledInput as LabeledInput, irissOfferFieldClass } from "@/components/admin/IrissOfferFormFields";
+import { IrissOfferClientPicker, type IrissOfferClientChoice } from "@/components/admin/IrissOfferClientPicker";
+import { IrissOfferSourceSheet } from "@/components/admin/IrissOfferSourceSheet";
 import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
 import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChangesGuard";
 import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
@@ -304,6 +306,10 @@ export function IrissPasutijumsEditor({
   const saveFailed = Boolean(saveMsg && /neizdev|kļūd/i.test(saveMsg));
   const [busy, setBusy] = useState(false);
   const [offerOpen, setOfferOpen] = useState(false);
+  /** "Klients ▾" jaunam piedāvājumam (tikai jaunā, vēl nesaglabātā pasūtījumā). */
+  const [offerClient, setOfferClient] = useState<IrissOfferClientChoice>(null);
+  /** Klienta kabinetā: auto izvēle Autoparks | Loģistika | Tukšs pirms formas. */
+  const [offerSourceSheetOpen, setOfferSourceSheetOpen] = useState(false);
   const [offerAutoFields, setOfferAutoFields] = useState<ReadonlySet<string>>(() => new Set());
   const [offerSeedStatus, setOfferSeedStatus] = useState<{ loading: boolean; note: string; sourceLabel: string } | null>(null);
   const [offerBusy, setOfferBusy] = useState(false);
@@ -1224,7 +1230,41 @@ export function IrissPasutijumsEditor({
     () => isOfferDraftSyncedWithRecord(offerDraft, persistedOfferRecord),
     [offerDraft, persistedOfferRecord],
   );
+  /** Ar izvēlētu klientu: piedāvājums tiek pievienots klienta pasūtījumam, šis tukšais netiek veidots. */
+  const addOfferToClientOrder = useCallback(async (client: NonNullable<IrissOfferClientChoice>): Promise<null> => {
+    setOfferBusy(true);
+    try {
+      const offerOut = offerRecordFromDraft(offerDraft, { title: offerDraft.title, nowIso: new Date().toISOString() });
+      const wire = irissSaveWirePayload({ ...rec, offers: [offerOut] }).offers[0] ?? offerOut;
+      const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(client.orderId)}/offers`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offer: wire }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { offerId?: string; error?: string };
+      if (!res.ok || !data.offerId) {
+        setSaveMsg(res.status === 404 ? "Klienta pasūtījums nav atrasts." : "Saglabāšana neizdevās.");
+        return null;
+      }
+      setDirty(false);
+      setSaveMsg(`Saglabāts klienta pasūtījumā: ${client.name}`);
+      router.replace(
+        `/admin/iriss/pasutijumi/${encodeURIComponent(client.orderId)}?offer=${encodeURIComponent(data.offerId)}`,
+      );
+      return null;
+    } catch {
+      setSaveMsg("Tīkla kļūda.");
+      return null;
+    } finally {
+      setOfferBusy(false);
+    }
+  }, [offerDraft, rec, router]);
+
+  const offerClientPickable = unsavedDraft && !persistedIdRef.current && !persistedOfferRecord;
+
   const persistOffer = useCallback(async (reason: "save" | "pdf" | "whatsapp"): Promise<IrissOfferRecord | null> => {
+    if (offerClient && offerClientPickable) return addOfferToClientOrder(offerClient);
     if (offerReadyForPdfActions && persistedOfferRecord) {
       if (reason === "save") setSaveMsg("Saglabāts.");
       return persistedOfferRecord;
@@ -1247,7 +1287,7 @@ export function IrissPasutijumsEditor({
     } finally {
       setOfferBusy(false);
     }
-  }, [commitOfferDraftToRecord, offerReadyForPdfActions, persistedOfferRecord]);
+  }, [addOfferToClientOrder, commitOfferDraftToRecord, offerClient, offerClientPickable, offerReadyForPdfActions, persistedOfferRecord]);
 
   const openOfferPdfInNewTab = useCallback(async (omitImages = false) => {
     setOfferPdfBusy(true);
@@ -1915,7 +1955,7 @@ export function IrissPasutijumsEditor({
           onCall={triggerCall}
           onWhatsappText={openWhatsappText}
           onAppendNote={appendRoomNote}
-          onCreateOffer={openCreateOffer}
+          onCreateOffer={() => setOfferSourceSheetOpen(true)}
           onEditOffer={openEditOffer}
           onPrepareOffer={openCreateOfferFromHit}
           googleContactsConfigured={googleContactsConfigured}
@@ -1960,6 +2000,28 @@ export function IrissPasutijumsEditor({
           onFilesPick={(files) => void onOfferFilesPick(files)}
           onAutoFieldEdited={onOfferAutoFieldEdited}
           seedStatus={offerSeedStatus}
+          headerSlot={
+            offerClientPickable ? (
+              <IrissOfferClientPicker value={offerClient} onChange={setOfferClient} disabled={offerBusy} />
+            ) : (
+              <IrissOfferClientPicker
+                value={null}
+                onChange={() => {}}
+                lockedName={`${rec.clientFirstName} ${rec.clientLastName}`.replace(/\s+/g, " ").trim()}
+              />
+            )
+          }
+        />
+      ) : null}
+
+      {offerSourceSheetOpen ? (
+        <IrissOfferSourceSheet
+          onClose={() => setOfferSourceSheetOpen(false)}
+          onOpen={(from) => {
+            setOfferSourceSheetOpen(false);
+            if (from) openCreateOfferFromSource(from);
+            else openCreateOffer();
+          }}
         />
       ) : null}
 

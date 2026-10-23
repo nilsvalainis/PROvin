@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
+import { IrissCreateOfferButton } from "@/components/admin/IrissCreateOfferButton";
 import {
   CABINET_DOC_TYPE_LABEL,
   CABINET_LOCAL_PREFS_KEY,
@@ -62,12 +63,14 @@ type Props = {
   onAssignPoint: (orderId: string, pickupPointId: string) => void;
   onPatchOrder: (id: string, action: "wake" | "picked_up" | "delivered") => void;
   onOrderUpdated: (order: LogisticsOrder) => void;
+  /** Ar Pasūtījumu tiesību - "Izveidot piedāvājumu" (forma ar auto datiem un /STOCK bildēm). */
+  canCreateOffer?: boolean;
 };
 
 const A_UPLOAD_TYPES: CabinetDocType[] = ["purchase_confirm", "car_invoice", "auction_invoice", "service_invoice"];
 const C_UPLOAD_TYPES: CabinetDocType[] = ["service_invoice", "csdd_status", "note"];
 
-export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onPatchOrder, onOrderUpdated }: Props) {
+export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onPatchOrder, onOrderUpdated, canCreateOffer = false }: Props) {
   // Nelasām localStorage renderēšanas laikā: serveris renderē bez tā, tāpēc hidratācija nesakrīt.
   const [prefs, setPrefs] = useState<Record<string, string>>({});
   const [documents, setDocuments] = useState<CabinetDocument[]>([]);
@@ -257,6 +260,12 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
         {!access.hideSums && order.priceEur != null ? ` · apmaksāts ${formatLogisticsEur(order.priceEur)}` : ""}
         {order.pickupDate ? ` · pickup ${formatLogisticsDate(order.pickupDate)}` : ""}
       </p>
+
+      {canCreateOffer ? (
+        <div className="mt-3">
+          <IrissCreateOfferButton from="logistics" id={order.id} />
+        </div>
+      ) : null}
 
       {access.admin ? (
         <p className="mt-2 text-[12px]">
