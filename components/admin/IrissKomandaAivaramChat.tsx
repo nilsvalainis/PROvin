@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   WAYBILL_REQUEST_STATUS_LABEL,
+  isStaleWaybillRequest,
   waybillAivarsReply,
   type WaybillAivarsReply,
   type WaybillRequest,
@@ -205,18 +206,32 @@ export function IrissKomandaAivaramChat({
     }
   };
 
+  // Dzīvais statuss bez atjaunošanas: kamēr kaut kas ir darbā - ik 3 s, citādi ik 10 s (paslēptā cilnē nelādē).
+  const working = chat.requests.some((r) => (r.status === "queued" || r.status === "in_progress") && !isStaleWaybillRequest(r));
   useEffect(() => {
     void load(true);
-    const t = window.setInterval(() => void load(), 5000);
-    return () => window.clearInterval(t);
   }, []);
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, working ? 3000 : 10_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(t);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [working]);
 
   useEffect(() => {
     scroller.current?.scrollTo({ top: scroller.current.scrollHeight });
   }, [chat.timeline.length]);
 
+  // Novecojušie (24 h bez virzības) nav "darbā" - tie ir Arhīvā.
   const inFlight = useMemo(
-    () => chat.requests.filter((r) => r.status === "queued" || r.status === "in_progress").length,
+    () => chat.requests.filter((r) => (r.status === "queued" || r.status === "in_progress") && !isStaleWaybillRequest(r)).length,
     [chat.requests],
   );
 
@@ -565,9 +580,13 @@ function RequestBubble({ request, reply }: { request: WaybillRequest; reply: Way
           {shownPlate}
           {hours ? ` · ${hours} h` : ""}
         </p>
-        <p>
-          {request.routeFrom || DEFAULT_WAYBILL_ROUTE_FROM} {"->"} {request.routeTo || DEFAULT_WAYBILL_ROUTE_TO}
-        </p>
+        {request.tradeAct ? (
+          <p>No tirdzniecības akta · {request.representative}</p>
+        ) : (
+          <p>
+            {request.routeFrom || DEFAULT_WAYBILL_ROUTE_FROM} {"->"} {request.routeTo || DEFAULT_WAYBILL_ROUTE_TO}
+          </p>
+        )}
         {request.noteUntrusted ? <p className="mt-1 text-white/80">Komentārs: {request.noteUntrusted}</p> : null}
       </div>
       <div className="max-w-[85%] rounded-2xl border border-[#E5E7EB] bg-white px-3 py-2 text-left">

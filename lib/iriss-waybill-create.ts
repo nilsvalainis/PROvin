@@ -5,7 +5,12 @@
 
 import { isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
 import type { WaybillRequest } from "@/lib/iriss-waybill-requests";
-import { IRISS_DEALER_PLATES, isAllowlistedWaybillPlate } from "@/lib/iriss-waybill-plates";
+import {
+  IRISS_DEALER_PLATES,
+  displayDealerPlate,
+  isAllowlistedWaybillPlate,
+  type IrissDealerPlate,
+} from "@/lib/iriss-waybill-plates";
 
 export const AIVARS_ACTION_CREATE_WAYBILL = "create_waybill" as const;
 export type AivarsActionType = typeof AIVARS_ACTION_CREATE_WAYBILL;
@@ -18,10 +23,27 @@ export const DEFAULT_WAYBILL_VALID_HOURS = 48;
 export const WAYBILL_PLATE_MAX = 12;
 export const DEFAULT_WAYBILL_ROUTE_FROM = "Tukums, Rīgas iela";
 export const DEFAULT_WAYBILL_ROUTE_TO = "Tukuma CSDD";
+export const WAYBILL_REPRESENTATIVE_MAX = 60;
+
+/**
+ * Komersanta pārstāvis CSDD formā (gprs_id_kom_parstavis) pēc numura firmas.
+ * ĪRISS (B193-7, B762-7) un Dzintarzeme Auto (B192-7), kā scripts/iriss-ttr/waybill-adapter.cjs.
+ */
+export const WAYBILL_REPRESENTATIVES: Record<IrissDealerPlate, readonly string[]> = {
+  "B193-7": ["Nils Valainis"],
+  "B762-7": ["Nils Valainis"],
+  "B192-7": ["Taivo Batiņš"],
+};
+
+export function waybillRepresentativesForPlate(plate: string): readonly string[] {
+  const key = displayDealerPlate(plate);
+  return key ? WAYBILL_REPRESENTATIVES[key] : [];
+}
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const BRAND_RE = /^[\p{L}\p{N} ./\-+]+$/u;
 const ROUTE_RE = /^[\p{L}\p{N} .,/\-()]+$/u;
+const PERSON_RE = /^[\p{L} .'\-]+$/u;
 
 export type CreateWaybillInput = {
   vin: string;
@@ -35,6 +57,10 @@ export type CreateWaybillInput = {
   validDays: number;
   validHours: number;
   noteUntrusted: string;
+  /** Auto ir tirdzniecībā pieņemts: CSDD "Noformēt pavadzīmi" no akta, maršruts nav vajadzīgs. */
+  tradeAct: boolean;
+  /** Komersanta pārstāvis (tikai tradeAct). */
+  representative: string;
 };
 
 export type AivarsCreateWaybillAction = {
@@ -56,6 +82,10 @@ export type AivarsCreateWaybillAction = {
   comment_untrusted: string;
   /** Same string as comment_untrusted, for older Aivars clients. */
   note_untrusted: string;
+  /** true: pavadzīme no tirdzniecības akta ("Noformēt pavadzīmi"); routeFrom/routeTo tad ir tukši. */
+  tradeAct: boolean;
+  /** Komersanta pārstāvis akta pavadzīmei (citādi tukšs). */
+  representative: string;
 };
 
 export type CreateWaybillParseResult =
@@ -122,6 +152,13 @@ function parseBrandModel(raw: unknown): string {
   const s = stripControls(raw).replace(/\s+/g, " ").slice(0, 120);
   if (!s) return "";
   return BRAND_RE.test(s) ? s : "";
+}
+
+function parseRepresentative(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  const s = stripControls(raw).replace(/\s+/g, " ").trim();
+  if (!s || s.length > WAYBILL_REPRESENTATIVE_MAX) return "";
+  return PERSON_RE.test(s) && /\p{L}/u.test(s) ? s : "";
 }
 
 function parseOrderId(raw: unknown): string {
@@ -233,9 +270,13 @@ export function parseCreateWaybillInput(raw: unknown, now = new Date()): CreateW
     };
   }
 
-  const routeFrom = parseWaybillRouteAddress(body.routeFromAddress, DEFAULT_WAYBILL_ROUTE_FROM);
+  // Tirdzniecībā pieņemtam auto CSDD maršrutu neprasa: tikai laiks un komersanta pārstāvis.
+  const tradeAct = body.tradeAct === true;
+  const representative = tradeAct ? parseRepresentative(body.representative) : "";
+  if (tradeAct && !representative) return { ok: false, error: "Izvēlies komersanta pārstāvi." };
+  const routeFrom = tradeAct ? { ok: true as const, value: "" } : parseWaybillRouteAddress(body.routeFromAddress, DEFAULT_WAYBILL_ROUTE_FROM);
   if (!routeFrom.ok) return routeFrom;
-  const routeTo = parseWaybillRouteAddress(body.routeToAddress, DEFAULT_WAYBILL_ROUTE_TO);
+  const routeTo = tradeAct ? { ok: true as const, value: "" } : parseWaybillRouteAddress(body.routeToAddress, DEFAULT_WAYBILL_ROUTE_TO);
   if (!routeTo.ok) return routeTo;
 
   const validHours = parseValidHours(body.validHours);
@@ -260,6 +301,8 @@ export function parseCreateWaybillInput(raw: unknown, now = new Date()): CreateW
       validDays,
       validHours,
       noteUntrusted,
+      tradeAct,
+      representative,
     },
   };
 }
@@ -280,13 +323,15 @@ export function toAivarsCreateWaybillAction(request: WaybillRequest): AivarsCrea
       plate: request.vehicle.plate,
       brandModel: request.vehicle.brandModel,
     },
-    routeFrom: request.routeFrom || DEFAULT_WAYBILL_ROUTE_FROM,
-    routeTo: request.routeTo || DEFAULT_WAYBILL_ROUTE_TO,
+    routeFrom: request.tradeAct ? "" : request.routeFrom || DEFAULT_WAYBILL_ROUTE_FROM,
+    routeTo: request.tradeAct ? "" : request.routeTo || DEFAULT_WAYBILL_ROUTE_TO,
     validFrom: request.validFrom,
     validUntil: request.validUntil,
     validDays: request.validDays ?? calendarDaysInclusive(request.validFrom, request.validUntil) ?? Math.ceil(validHours / 24),
     validHours,
     comment_untrusted: comment,
     note_untrusted: comment,
+    tradeAct: request.tradeAct,
+    representative: request.tradeAct ? request.representative : "",
   };
 }

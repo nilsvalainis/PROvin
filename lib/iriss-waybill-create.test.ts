@@ -11,6 +11,7 @@ import {
   waybillHintsFromComment,
   sanitizeNoteUntrusted,
   toAivarsCreateWaybillAction,
+  waybillRepresentativesForPlate,
 } from "@/lib/iriss-waybill-create";
 import type { WaybillRequest } from "@/lib/iriss-waybill-requests";
 
@@ -184,6 +185,8 @@ describe("Aivars create_waybill action", () => {
       pickedAt: "",
       plateBusyAtCreate: false,
       autoDisabled: false,
+      tradeAct: false,
+      representative: "",
     };
     const action = toAivarsCreateWaybillAction(request);
     expect(action.action).toBe(AIVARS_ACTION_CREATE_WAYBILL);
@@ -204,7 +207,28 @@ describe("Aivars create_waybill action", () => {
       "validHours",
       "comment_untrusted",
       "note_untrusted",
+      "tradeAct",
+      "representative",
     ]);
+    expect(action.tradeAct).toBe(false);
+    expect(action.representative).toBe("");
+  });
+
+  it("trade-act request goes to Aivars without a route but with the representative", () => {
+    const parsed = parseCreateWaybillInput(
+      { plate: "B192-7", brandModel: "Škoda Kodiaq", validHours: 24, tradeAct: true, representative: "Taivo Batiņš", routeFromAddress: "Rīga" },
+      new Date("2026-10-23T10:00:00.000Z"),
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.value).toMatchObject({ tradeAct: true, representative: "Taivo Batiņš", routeFrom: "", routeTo: "", validHours: 24 });
+    expect(parseCreateWaybillInput({ plate: "B192-7", brandModel: "Škoda Kodiaq", tradeAct: true }).ok).toBe(false);
+    expect(parseCreateWaybillInput({ plate: "B192-7", brandModel: "Škoda Kodiaq", tradeAct: true, representative: "<b>x</b>" }).ok).toBe(false);
+    const plain = parseCreateWaybillInput({ plate: "B192-7", brandModel: "VW Passat", representative: "Taivo Batiņš" });
+    expect(plain.ok && plain.value).toMatchObject({ tradeAct: false, representative: "", routeFrom: DEFAULT_WAYBILL_ROUTE_FROM });
+    expect(waybillRepresentativesForPlate("B 192-7")).toEqual(["Taivo Batiņš"]);
+    expect(waybillRepresentativesForPlate("B1937")).toEqual(["Nils Valainis"]);
+    expect(waybillRepresentativesForPlate("X1")).toEqual([]);
   });
 });
 

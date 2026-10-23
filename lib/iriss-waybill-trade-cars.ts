@@ -15,6 +15,8 @@ export type WaybillTradeCar = {
   vin: string;
   year: string;
   statusLabel: string;
+  /** CSDD tirdzniecībā pieņemts (reģistra saraksts). Autoparka rezerves sarakstā - false. */
+  accepted: boolean;
 };
 
 const MAX_TRADE_CARS = 200;
@@ -44,6 +46,7 @@ export function waybillTradeCarsWithSource(cars: ReadonlyArray<AutoparksCar>): {
       vin,
       year: (car.year ?? "").trim(),
       statusLabel: AUTOPARKS_STATUS_SHORT_LV[car.status] ?? "",
+      accepted: picked.source === "registry",
     });
   }
   const collator = new Intl.Collator("lv", { sensitivity: "base", numeric: true });

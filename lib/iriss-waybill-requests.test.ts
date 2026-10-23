@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   inProgressIsStale,
+  isStaleWaybillRequest,
   parseWaybillRequest,
   remainingWaybillDays,
   waybillAivarsReply,
@@ -35,6 +36,8 @@ const sample = (over: Partial<WaybillRequest> = {}): WaybillRequest => ({
   pickedAt: "",
   plateBusyAtCreate: false,
   autoDisabled: false,
+  tradeAct: false,
+  representative: "",
   ...over,
 });
 
@@ -141,5 +144,32 @@ describe("waybill requests", () => {
     expect(payload.replies[0]?.status).toBe("issued");
     expect(payload.replies[0]?.text).toBe("Izdota B861-6");
     expect(payload.replies[0]?.waybillNo).toBe("B861-6");
+  });
+});
+
+describe("novecojuši pieprasījumi (24 h bez virzības)", () => {
+  it("Gaida/Izveido ilgāk par 24 h kopš pēdējām izmaiņām ir novecojis; izrakstīta un kļūda nav", () => {
+    const t = Date.parse("2026-10-21T10:00:00.000Z");
+    const q = sample({ status: "queued", createdAt: "2026-10-20T09:00:00.000Z", updatedAt: "2026-10-20T09:00:00.000Z" });
+    expect(isStaleWaybillRequest(q, t)).toBe(true);
+    expect(isStaleWaybillRequest({ ...q, updatedAt: "2026-10-20T11:00:00.000Z" }, t)).toBe(false);
+    expect(isStaleWaybillRequest({ ...q, status: "in_progress" }, t)).toBe(true);
+    expect(isStaleWaybillRequest({ ...q, status: "issued" }, t)).toBe(false);
+    expect(isStaleWaybillRequest({ ...q, status: "error" }, t)).toBe(false);
+  });
+
+  it("atbildē statuss 'Novecojis', ieraksts nemainās", () => {
+    const q = sample({ status: "queued", createdAt: "2026-10-20T09:00:00.000Z", updatedAt: "2026-10-20T09:00:00.000Z" });
+    const before = JSON.stringify(q);
+    const reply = waybillAivarsReply(q, [], Date.parse("2026-10-22T09:00:00.000Z"));
+    expect(reply.statusLabel).toBe("Novecojis");
+    expect(reply.status).toBe("queued");
+    expect(JSON.stringify(q)).toBe(before);
+  });
+
+  it("tirdzniecības akta lauki tiek nolasīti; bez tradeAct pārstāvis netiek glabāts", () => {
+    const raw = { ...sample(), tradeAct: true, representative: "Taivo Batiņš" };
+    expect(parseWaybillRequest(raw)).toMatchObject({ tradeAct: true, representative: "Taivo Batiņš" });
+    expect(parseWaybillRequest({ ...sample(), representative: "X" })).toMatchObject({ tradeAct: false, representative: "" });
   });
 });

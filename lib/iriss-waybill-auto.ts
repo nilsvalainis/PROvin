@@ -64,11 +64,14 @@ export function classifyWaybillForAuto(
     | "attempts"
     | "plateBusyAtCreate"
     | "autoDisabled"
-  >,
+  > &
+    Partial<Pick<WaybillRequest, "tradeAct">>,
   opts: { plateBusyNow: boolean },
 ): AutoWaybillClassification {
   if (req.status !== "queued") return { standard: false, reason: "nav rindā" };
   if (req.autoDisabled) return { standard: false, reason: "nodots Aivaram" };
+  // Pavadzīme no tirdzniecības akta ("Noformēt pavadzīmi") - automātika to nedara (adapteris atsaka), uzreiz Aivaram.
+  if (req.tradeAct) return { standard: false, reason: "tirdzniecības akts" };
   // Aizņemts numurs nozīmē beigt aktīvu pavadzīmi - to drīkst tikai Aivars ar Nila "jā".
   if (req.plateBusyAtCreate || opts.plateBusyNow) return { standard: false, reason: "numurs aizņemts" };
   const plate = displayDealerPlate(req.vehicle.plate);

@@ -5,8 +5,19 @@ import { ttrVpnStatusLabel, type TtrVpnStatus } from "@/lib/iriss-ttr-control";
 
 const POLL_MS = 15_000;
 
-/** "Man vajag VPN": serveris (CSDD automātika) atslēdz savu VPN, lai Nils var pieslēgties ar to pašu kontu. */
-export function IrissVpnControl() {
+function vpnCardSub(status: TtrVpnStatus | null): string {
+  if (!status) return "";
+  if (status.stopPending) return "Pagaidi brīdi - pēc tam vari pieslēgties pats.";
+  if (status.vpn === "up") return "Aivars šobrīd strādā CSDD. Ja tev pašam vajag VPN, spied pogu - serveris to atbrīvos.";
+  if (status.vpn === "down") return "Serveris VPN nelieto - vari pieslēgties pats.";
+  return "";
+}
+
+/**
+ * "Man vajag VPN": serveris (CSDD automātika) atslēdz savu VPN, lai Nils var pieslēgties ar to pašu kontu.
+ * variant="card": telefonā lapas apakšā liela kartīte ar pogu (makets ~/pz-mob-v2); datorā paliek "inline".
+ */
+export function IrissVpnControl({ variant = "inline" }: { variant?: "inline" | "card" } = {}) {
   const [status, setStatus] = useState<TtrVpnStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -50,6 +61,28 @@ export function IrissVpnControl() {
 
   const tone =
     status?.vpn === "up" || status?.stopPending ? "bg-[#FF9500]" : status?.vpn === "down" ? "bg-[#34C759]" : "bg-[#C7C7CC]";
+
+  if (variant === "card") {
+    const sub = vpnCardSub(status);
+    return (
+      <section aria-label="VPN un serveris" className="rounded-2xl bg-[var(--s1,#fff)] p-3.5">
+        <p className="flex items-center gap-2.5 text-[15px] font-semibold text-[var(--ink,#0b0c10)]">
+          <span aria-hidden className={`h-3 w-3 shrink-0 rounded-full ${tone}`} />
+          {status ? ttrVpnStatusLabel(status) : "Pārbauda servera stāvokli..."}
+        </p>
+        {sub ? <p className="mb-3 ml-[22px] mt-1 text-[13px] leading-snug text-[var(--ink2,#5e636e)]">{sub}</p> : <div className="h-3" />}
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void requestStop()}
+          className="flex h-[60px] w-full items-center justify-center !rounded-[14px] bg-[var(--btn-dark-bg,#1f2430)] text-[18px] font-bold text-[var(--btn-dark-fg,#fff)] disabled:opacity-50"
+        >
+          Man vajag VPN
+        </button>
+        {error ? <p className="mt-2 text-[13px] text-[var(--bad,#c2362b)]">{error}</p> : null}
+      </section>
+    );
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-[13px]">

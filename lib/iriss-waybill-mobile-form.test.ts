@@ -5,6 +5,8 @@ import {
   initialWaybillMobileForm,
   waybillMobileHours,
   waybillMobilePlate,
+  waybillMobileProgress,
+  waybillMobileRequestIsCurrent,
   waybillMobileRequestRows,
 } from "@/lib/iriss-waybill-mobile-form";
 import { parseCreateWaybillInput } from "@/lib/iriss-waybill-create";
@@ -13,10 +15,9 @@ import type { WaybillAivarsReply, WaybillRequest } from "@/lib/iriss-waybill-req
 const base = initialWaybillMobileForm("B192-7");
 
 describe("phone waybill form", () => {
-  it("defaults to 48 h and Tukums -> Tukums, preset and own hours work", () => {
+  it("defaults to 48 h and start Tukums, preset and own hours work", () => {
     expect(base.hoursPreset).toBe(48);
     expect(base.from).toBe("tukums");
-    expect(base.to).toBe("tukums");
     expect(waybillMobileHours({ hoursPreset: 12, hoursOther: "" })).toBe(12);
     expect(waybillMobileHours({ hoursPreset: null, hoursOther: "72" })).toBe(72);
     expect(waybillMobileHours({ hoursPreset: null, hoursOther: "0" })).toBeNull();
@@ -37,7 +38,8 @@ describe("phone waybill form", () => {
         validHours: 48,
         comment_untrusted: "193 uz BMW 330",
         routeFromAddress: "",
-        routeToAddress: "",
+        tradeAct: false,
+        representative: "",
       },
     });
     if (!built.ok) return;
@@ -66,22 +68,48 @@ describe("phone waybill form", () => {
     expect(built.ok && built.payload.vin).toBe("");
   });
 
-  it("'Cits' route needs an address; Tukums sends defaults", () => {
-    const car = { id: "c1", brandModel: "BMW 330", vin: "" };
+  it("other car: only a start address (Tukums by default or own); no destination", () => {
+    const car = { id: "c1", brandModel: "VW Passat B8", vin: "" };
     expect(buildWaybillMobilePayload({ ...base, car, from: "other", fromAddress: " " })).toEqual({
       ok: false,
       error: "Ieraksti sākuma adresi.",
     });
-    expect(buildWaybillMobilePayload({ ...base, car, to: "other", toAddress: "" })).toEqual({
-      ok: false,
-      error: "Ieraksti galamērķa adresi.",
+    const own = buildWaybillMobilePayload({ ...base, car, from: "other", fromAddress: "Rīga, Brīvības 275" });
+    expect(own.ok && own.payload).toMatchObject({ routeFromAddress: "Rīga, Brīvības 275", tradeAct: false });
+    // "Cita adrese" paliek ievadītajā laukā, bet netiek sūtīta, ja izvēlēts Tukums.
+    const back = buildWaybillMobilePayload({ ...base, car, from: "tukums", fromAddress: "Rīga" });
+    expect(back.ok && back.payload.routeFromAddress).toBe("");
+    if (!back.ok) return;
+    const server = parseCreateWaybillInput(back.payload);
+    expect(server.ok && [server.value.routeFrom, server.value.routeTo]).toEqual(["Tukums, Rīgas iela", "Tukuma CSDD"]);
+  });
+
+  it("accepted car: only time + komersanta pārstāvis, no route; server keeps route empty", () => {
+    const car = { id: "c9", brandModel: "Škoda Kodiaq", vin: "TMBJJ7NS1L8012345", accepted: true };
+    const built = buildWaybillMobilePayload({ ...base, car, from: "other", fromAddress: "Rīga", hoursPreset: 24 });
+    expect(built).toEqual({
+      ok: true,
+      payload: {
+        plate: "B192-7",
+        brandModel: "Škoda Kodiaq",
+        vin: "TMBJJ7NS1L8012345",
+        validHours: 24,
+        comment_untrusted: "",
+        routeFromAddress: "",
+        tradeAct: true,
+        representative: "Taivo Batiņš",
+      },
     });
-    const built = buildWaybillMobilePayload({ ...base, car, to: "other", toAddress: "Rīga, Brīvības 275" });
-    expect(built.ok && built.payload.routeToAddress).toBe("Rīga, Brīvības 275");
-    expect(built.ok && built.payload.routeFromAddress).toBe("");
-    // "Cits" adrese paliek ievadītajā laukā, bet netiek sūtīta, ja izvēlēts Tukums.
-    const back = buildWaybillMobilePayload({ ...base, car, to: "tukums", toAddress: "Rīga" });
-    expect(back.ok && back.payload.routeToAddress).toBe("");
+    const iriss = buildWaybillMobilePayload({ ...base, plate: "B193-7", plateTouched: true, car });
+    expect(iriss.ok && iriss.payload.representative).toBe("Nils Valainis");
+    const picked = buildWaybillMobilePayload({ ...base, car, representative: "Cits Pārstāvis" });
+    expect(picked.ok && picked.payload.representative).toBe("Cits Pārstāvis");
+    if (!built.ok) return;
+    const server = parseCreateWaybillInput(built.payload);
+    expect(server.ok && server.value).toMatchObject({ tradeAct: true, routeFrom: "", routeTo: "", representative: "Taivo Batiņš" });
+    // Ar roku ierakstīts auto nekad nav "pieņemts".
+    const manual = buildWaybillMobilePayload({ ...base, car, manual: true, manualBrandModel: "Škoda Kodiaq" });
+    expect(manual.ok && manual.payload.tradeAct).toBe(false);
   });
 
   it("asks for a car or a comment, and for a car in a free comment", () => {
@@ -131,6 +159,8 @@ function req(over: Partial<WaybillRequest>): WaybillRequest {
     pickedAt: "",
     plateBusyAtCreate: false,
     autoDisabled: false,
+    tradeAct: false,
+    representative: "",
     ...over,
   };
 }
@@ -144,11 +174,58 @@ describe("phone list of Aivars requests", () => {
     const replies: WaybillAivarsReply[] = [
       { requestId: "wbr_old", status: "issued", statusLabel: "Izveidota", text: "", waybillNo: "26A118204", pdfUrl: "/x.pdf", at: "" },
     ];
-    const rows = waybillMobileRequestRows(requests, replies);
+    const rows = waybillMobileRequestRows(requests, replies, 5, { nowMs: Date.parse("2026-10-22T12:00:00.000Z"), which: "all" });
     expect(rows.map((r) => r.id)).toEqual(["wbr_new", "wbr_old"]);
     expect(rows[0]).toMatchObject({ title: "762 uz Audi", label: "Kļūda", tone: "bad", canRetry: true, errorText: "CSDD nav pieejams" });
     expect(rows[0]?.sub).toContain("B762-7 · 48 h");
-    expect(rows[1]).toMatchObject({ title: "BMW 216d", label: "Izdota", tone: "ok", pdfUrl: "/x.pdf", canRetry: false });
+    expect(rows[1]).toMatchObject({ title: "BMW 216d", label: "Izrakstīta", tone: "ok", pdfUrl: "/x.pdf", canRetry: false });
     expect(rows[1]?.sub.startsWith("26A118204 · B193-7 · 48 h")).toBe(true);
+  });
+
+  it("queue item older than 24 h without progress is stale: archive only, marked Novecojis, data untouched", () => {
+    const old = req({ id: "wbr_kodiaq", vehicle: { brandModel: "Škoda Kodiaq", vin: "", plate: "B1927", orderId: "" } });
+    const frozen = JSON.stringify(old);
+    const later = Date.parse("2026-10-23T10:00:01.000Z");
+    expect(waybillMobileRequestIsCurrent(old, later)).toBe(false);
+    expect(waybillMobileRequestRows([old], [], 5, { nowMs: later })).toEqual([]);
+    const [row] = waybillMobileRequestRows([old], [], 5, { nowMs: later, which: "archive" });
+    expect(row).toMatchObject({ id: "wbr_kodiaq", label: "Novecojis", stale: true, canRetry: true });
+    expect(JSON.stringify(old)).toBe(frozen);
+    // 23 h vēl ir tagadējs.
+    expect(waybillMobileRequestIsCurrent(old, Date.parse("2026-10-23T09:00:00.000Z"))).toBe(true);
+  });
+
+  it("expired issued waybill and old errors leave the first page", () => {
+    const now = Date.parse("2026-10-23T12:00:00.000Z");
+    const valid = req({ status: "issued", validUntil: "2026-10-24T10:00:00.000Z" });
+    const expired = req({ status: "issued", validUntil: "2026-10-23T11:00:00.000Z" });
+    const oldError = req({ status: "error", updatedAt: "2026-10-22T10:00:00.000Z" });
+    const freshError = req({ status: "error", updatedAt: "2026-10-23T11:00:00.000Z" });
+    expect([valid, expired, oldError, freshError].map((r) => waybillMobileRequestIsCurrent(r, now))).toEqual([true, false, false, true]);
+  });
+});
+
+describe("live progress", () => {
+  const t0 = "2026-10-23T10:00:00.000Z";
+  const at = (min: number) => Date.parse(t0) + min * 60_000;
+  it("moves through 3 steps with a growing percentage", () => {
+    const queued = waybillMobileProgress(req({ createdAt: t0, updatedAt: t0 }), at(1));
+    expect(queued).toMatchObject({ step: 1, text: "Rindā. Aivars sāks pēc brīža." });
+    const slow = waybillMobileProgress(req({ createdAt: t0, updatedAt: t0 }), at(16));
+    expect(slow.step).toBe(1);
+    expect(slow.text).toContain("Gaida ilgāk nekā parasti");
+    const startWork = waybillMobileProgress(req({ status: "in_progress", pickedAt: t0, updatedAt: t0 }), at(0));
+    const midWork = waybillMobileProgress(req({ status: "in_progress", pickedAt: t0, updatedAt: t0 }), at(2));
+    expect(startWork.step).toBe(2);
+    expect(midWork.pct).toBeGreaterThan(startWork.pct);
+    expect(waybillMobileProgress(req({ status: "in_progress", pickedAt: t0 }), at(60)).pct).toBeLessThan(100);
+    const done = waybillMobileProgress(req({ status: "issued", waybillNo: "26A1", validUntil: "2026-10-25T10:00:00.000Z" }), at(3));
+    expect(done).toEqual({ step: 3, pct: 100, text: "Nr. 26A1 · derīga līdz 25.10.2026, 12:00" });
+  });
+
+  it("error after save asks to check CSDD before retry", () => {
+    const err = waybillMobileProgress(req({ status: "error", pickedAt: t0, errorReason: "Automātika: x. Pārbaudi CSDD, vai pavadzīme izveidota." }));
+    expect(err.text).toBe("Iespējams, pavadzīme CSDD jau ir izveidota. Pārbaudi, pirms atkārto.");
+    expect(waybillMobileProgress(req({ status: "error", errorReason: "CSDD nav pieejams." })).text).toBe('Neizdevās: CSDD nav pieejams. Spied "Atkārtot".');
   });
 });

@@ -48,7 +48,7 @@ describe("waybill trade cars", () => {
   it("lists only accepted-for-trade (act no.), unsold, unarchived cars, sorted, without prices", () => {
     const out = waybillTradeCars(cars);
     expect(out.map((c) => c.id)).toEqual(["b", "reg", "a"]);
-    expect(out[0]).toEqual({ id: "b", brandModel: "Audi A6 Avant", vin: "WAUZZZF27LN004512", year: "", statusLabel: "Servisā" });
+    expect(out[0]).toEqual({ id: "b", brandModel: "Audi A6 Avant", vin: "WAUZZZF27LN004512", year: "", statusLabel: "Servisā", accepted: true });
     expect(out[1]?.brandModel).toBe("MERCEDES-BENZ E 220 D");
     expect(out[2]?.vin).toBe("YV1UZA8V1M1765432");
     expect(JSON.stringify(out)).not.toMatch(/12000|15000|Price/);
@@ -81,6 +81,8 @@ describe("waybill trade cars before the first CSDD registry read", () => {
     expect(out.source).toBe("autoparks");
     expect(out.cars.map((c) => c.id)).toEqual(["kodiaq", "golf"]);
     expect(out.cars[0]?.statusLabel).toBe("Gaida");
+    // Rezerves sarakstā auto nav apstiprināti kā pieņemti: forma prasa sākuma adresi, ne tikai laiku.
+    expect(out.cars.every((c) => c.accepted === false)).toBe(true);
     expect(JSON.stringify(out)).not.toMatch(/12000|15000|Price/);
   });
 

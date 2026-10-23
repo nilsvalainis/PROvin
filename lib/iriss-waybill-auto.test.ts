@@ -38,6 +38,8 @@ const req = (over: Partial<WaybillRequest> = {}): WaybillRequest => ({
   pickedAt: "",
   plateBusyAtCreate: false,
   autoDisabled: false,
+  tradeAct: false,
+  representative: "",
   ...over,
 });
 
@@ -61,6 +63,11 @@ describe("classifyWaybillForAuto", () => {
     expect(classifyWaybillForAuto(req({ routeTo: "Rīga, Brīvības 1" }), free).standard).toBe(false);
     expect(classifyWaybillForAuto(req({ attempts: 2 }), free).standard).toBe(false);
     expect(classifyWaybillForAuto(req({ autoDisabled: true }), free).standard).toBe(false);
+    // Pavadzīme no tirdzniecības akta - vienmēr Aivaram, automātika to nedara.
+    expect(classifyWaybillForAuto(req({ tradeAct: true, representative: "Nils Valainis" }), free)).toEqual({
+      standard: false,
+      reason: "tirdzniecības akts",
+    });
     expect(classifyWaybillForAuto(req({ status: "in_progress" }), free).standard).toBe(false);
     expect(classifyWaybillForAuto(req({ vehicle: { brandModel: "BMW", vin: "", plate: "AB1234", orderId: "" } }), free).standard).toBe(
       false,

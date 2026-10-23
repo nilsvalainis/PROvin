@@ -63,6 +63,10 @@ export type WaybillRequest = {
   plateBusyAtCreate: boolean;
   /** Automātika darbu nodeva Aivaram; to vairs automātiski neņem. */
   autoDisabled: boolean;
+  /** Auto ir tirdzniecībā pieņemts: pavadzīme no akta ("Noformēt pavadzīmi"), bez maršruta. */
+  tradeAct: boolean;
+  /** Komersanta pārstāvis akta pavadzīmei. */
+  representative: string;
 };
 
 export type WaybillRequestsDoc = {
@@ -73,6 +77,9 @@ export type WaybillRequestsDoc = {
 };
 
 export const WAYBILL_IN_PROGRESS_STALE_MS = 30 * 60 * 1000;
+/** Pieprasījums bez virzības ilgāk par 24 h vairs nav "tagadējs": to rāda Arhīvā kā novecojušu (dati paliek). */
+export const WAYBILL_QUEUE_STALE_MS = 24 * 60 * 60 * 1000;
+export const WAYBILL_STALE_LABEL = "Novecojis";
 
 export function emptyWaybillRequestsDoc(): WaybillRequestsDoc {
   return { version: 1, updatedAt: new Date().toISOString(), requests: [], events: [] };
@@ -137,6 +144,8 @@ export function parseWaybillRequest(raw: unknown): WaybillRequest | null {
     pickedAt: str(o.pickedAt, 40),
     plateBusyAtCreate: o.plateBusyAtCreate === true,
     autoDisabled: o.autoDisabled === true,
+    tradeAct: o.tradeAct === true,
+    representative: o.tradeAct === true ? str(o.representative, 60) : "",
   };
 }
 
@@ -203,6 +212,19 @@ export function inProgressIsStale(req: WaybillRequest, nowMs = Date.now()): bool
   return Number.isFinite(t) && nowMs - t > WAYBILL_IN_PROGRESS_STALE_MS;
 }
 
+/**
+ * Gaida vai Izveido, bet bez jebkādas virzības (pēdējās izmaiņas) ilgāk par 24 h.
+ * Šādu pieprasījumu vairs neņem darbā un nerāda kā tagadēju; ierakstu nemaina un nedzēš.
+ */
+export function isStaleWaybillRequest(
+  req: Pick<WaybillRequest, "status" | "createdAt" | "updatedAt">,
+  nowMs = Date.now(),
+): boolean {
+  if (req.status !== "queued" && req.status !== "in_progress") return false;
+  const t = Date.parse(req.updatedAt || req.createdAt);
+  return Number.isFinite(t) && nowMs - t > WAYBILL_QUEUE_STALE_MS;
+}
+
 export function remainingWaybillDays(validUntilIso: string, now = new Date()): number | null {
   const end = Date.parse(validUntilIso);
   if (!Number.isFinite(end)) return null;
@@ -228,16 +250,23 @@ export type WaybillAivarsReply = {
 
 const AIVARS_REPLY_KINDS = new Set<WaybillRequestEventKind>(["issued", "error", "message", "in_progress"]);
 
-export function waybillAivarsReply(request: WaybillRequest, events: WaybillRequestEvent[]): WaybillAivarsReply {
+export function waybillAivarsReply(
+  request: WaybillRequest,
+  events: WaybillRequestEvent[],
+  nowMs = Date.now(),
+): WaybillAivarsReply {
   const mine = events.filter((event) => event.requestId === request.id);
   const last =
     [...mine].reverse().find((event) => AIVARS_REPLY_KINDS.has(event.kind)) ?? mine[mine.length - 1] ?? null;
+  const stale = isStaleWaybillRequest(request, nowMs);
   const queuedFallback = request.status === "queued" ? "Gaida Aivaru." : "";
-  const text = (request.lastReplyText || last?.text || request.errorReason || queuedFallback).trim();
+  const text = stale
+    ? "Novecojis: vairāk nekā 24 h bez virzības. Ja vajag, izveido no jauna."
+    : (request.lastReplyText || last?.text || request.errorReason || queuedFallback).trim();
   return {
     requestId: request.id,
     status: request.status,
-    statusLabel: WAYBILL_REQUEST_STATUS_LABEL[request.status],
+    statusLabel: stale ? WAYBILL_STALE_LABEL : WAYBILL_REQUEST_STATUS_LABEL[request.status],
     text,
     waybillNo: request.waybillNo || last?.waybillNo || "",
     pdfUrl: request.pdfUrl || last?.pdfUrl || "",
@@ -245,7 +274,7 @@ export function waybillAivarsReply(request: WaybillRequest, events: WaybillReque
   };
 }
 
-export function waybillChatPayload(doc: WaybillRequestsDoc): {
+export function waybillChatPayload(doc: WaybillRequestsDoc, nowMs = Date.now()): {
   requests: WaybillRequest[];
   events: WaybillRequestEvent[];
   timeline: WaybillChatItem[];
@@ -255,6 +284,6 @@ export function waybillChatPayload(doc: WaybillRequestsDoc): {
     requests: doc.requests,
     events: doc.events,
     timeline: waybillChatTimeline(doc),
-    replies: doc.requests.map((request) => waybillAivarsReply(request, doc.events)),
+    replies: doc.requests.map((request) => waybillAivarsReply(request, doc.events, nowMs)),
   };
 }

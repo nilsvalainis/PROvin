@@ -3,10 +3,13 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { createJsonDocStore } from "@/lib/b2b-json-doc-store";
 import { appendStaffAudit } from "@/lib/staff-store";
+import { sendAdminPush } from "@/lib/admin-push";
+import { waybillPushMessage, waybillPushUserKey } from "@/lib/iriss-waybill-push";
 import { sanitizeNoteUntrusted, type CreateWaybillInput } from "@/lib/iriss-waybill-create";
 import {
   emptyWaybillRequestsDoc,
   inProgressIsStale,
+  isStaleWaybillRequest,
   parseWaybillRequestsDoc,
   type WaybillRequest,
   type WaybillRequestEvent,
@@ -110,6 +113,8 @@ export async function createWaybillRequest(input: {
     pickedAt: "",
     plateBusyAtCreate: input.plateBusyAtCreate === true,
     autoDisabled: false,
+    tradeAct: payload.tradeAct === true,
+    representative: payload.tradeAct === true ? payload.representative.slice(0, 60) : "",
   };
   await mutateDoc((doc) => {
     let next: WaybillRequestsDoc = { ...doc, requests: [request, ...doc.requests].slice(0, 2000) };
@@ -133,6 +138,7 @@ export async function createWaybillRequest(input: {
       brandModel: request.vehicle.brandModel,
       routeFrom: request.routeFrom,
       routeTo: request.routeTo,
+      tradeAct: request.tradeAct,
       noteUntrusted: request.noteUntrusted.slice(0, 200),
     },
   });
@@ -147,7 +153,8 @@ export async function retryWaybillRequest(input: {
   const updated = await mutateDoc((doc) => {
     const current = doc.requests.find((r) => r.id === input.id);
     if (!current) return { value: null };
-    if (current.status !== "error" && current.status !== "queued") return { value: null };
+    // Novecojis "Izveido" (24 h bez virzības) arī drīkst atkārtot; tad tas atkal ir tagadējs.
+    if (current.status !== "error" && current.status !== "queued" && !isStaleWaybillRequest(current)) return { value: null };
     const now = new Date().toISOString();
     const nextReq: WaybillRequest = {
       ...current,
@@ -186,7 +193,10 @@ export async function retryWaybillRequest(input: {
 
 export async function listPendingWaybillRequests(nowMs = Date.now()): Promise<WaybillRequest[]> {
   const doc = await readWaybillRequestsDoc();
-  return doc.requests.filter((r) => r.status === "queued" || inProgressIsStale(r, nowMs));
+  // Novecojušos (24 h bez virzības) vairs nerāda Aivaram un automātikai: vecs pieprasījums nedrīkst pēkšņi kļūt par pavadzīmi.
+  return doc.requests.filter(
+    (r) => (r.status === "queued" || inProgressIsStale(r, nowMs)) && !isStaleWaybillRequest(r, nowMs),
+  );
 }
 
 export async function claimWaybillRequest(
@@ -202,6 +212,7 @@ export async function claimWaybillRequest(
     if (!current) return { value: null };
     const stale = inProgressIsStale(current, nowMs);
     if (current.status !== "queued" && !stale) return { value: null };
+    if (isStaleWaybillRequest(current, nowMs)) return { value: null };
     if (guard && !guard(current)) return { value: null };
     const nextReq: WaybillRequest = {
       ...current,
@@ -287,7 +298,7 @@ export async function appendWaybillRequestEvent(input: {
     issued: "issued",
     error: "error",
   };
-  return mutateDoc((doc) => {
+  const changed = await mutateDoc<{ before: WaybillRequest; after: WaybillRequest } | null>((doc) => {
     const current = doc.requests.find((r) => r.id === input.id);
     if (!current) return { value: null };
     const status = statusMap[input.kind] ?? current.status;
@@ -312,8 +323,22 @@ export async function appendWaybillRequestEvent(input: {
       pdfUrl: nextReq.pdfUrl,
       by,
     });
-    return { value: nextReq, next };
+    return { value: { before: current, after: nextReq }, next };
   });
+  if (!changed) return null;
+  await notifyWaybillRequester(changed.before, changed.after);
+  return changed.after;
+}
+
+/** Push pieprasītāja telefonam: izrakstīta vai kļūda. Kļūda nekad neaptur Aivara atbildi. */
+async function notifyWaybillRequester(before: WaybillRequest, after: WaybillRequest): Promise<void> {
+  const msg = waybillPushMessage(before, after);
+  if (!msg) return;
+  try {
+    await sendAdminPush(msg, waybillPushUserKey(after.createdBy));
+  } catch (err) {
+    console.error("[iriss-waybill] push_failed", err instanceof Error ? err.message : err);
+  }
 }
 
 export async function completeWaybillRequest(input: {
