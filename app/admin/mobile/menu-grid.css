@@ -28,6 +28,11 @@
   color: var(--label, #1d1d1f) !important;
 }
 
+/* Pieskārta sadaļa atveras: uzreiz redzams, ka pieskāriens pieņemts (j23). */
+.admin-ios-theme .menu-tile.is-pending .menu-tile-link {
+  opacity: 0.55;
+}
+
 /* Ikona */
 .admin-ios-theme .menu-app .menu-tile-link {
   flex-direction: column;

@@ -8,6 +8,7 @@ import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { MenuGrid } from "@/components/admin/mobile/MenuGrid";
 import { renderIrissWidget } from "@/components/admin/mobile/MenuWidgetContent";
 import { IRISS_DEFAULT_LAYOUT_IDS, irissMenuCatalog } from "@/lib/admin-menu-catalog";
+import type { MenuLayout } from "@/lib/admin-menu-layout";
 import { IrissWaybillGauges } from "@/components/admin/IrissWaybillGauges";
 import { useIrissWaybillPlateStrip } from "@/components/admin/useIrissWaybillPlateStrip";
 import {
@@ -82,9 +83,12 @@ function useDesktopRedirect(href: string | null) {
 export function IrissMobileMenuHome({
   sections,
   isAdmin,
+  initialLayout,
 }: {
   sections: readonly IrissSection[];
   isAdmin: boolean;
+  /** Servera saglabātais režģa izkārtojums (sk. MenuGrid). */
+  initialLayout?: MenuLayout | null;
 }) {
   const items = irissMobileMenuItemsFor(sections, isAdmin);
   const catalog = useMemo(() => irissMenuCatalog(sections, isAdmin), [sections, isAdmin]);
@@ -171,6 +175,7 @@ export function IrissMobileMenuHome({
           workspace="iriss"
           catalog={catalog}
           defaultIds={IRISS_DEFAULT_LAYOUT_IDS}
+          initialLayout={initialLayout}
           badgeOf={(item) =>
             item.id === "w-logistika"
               ? badges.irissLogistics

@@ -1,15 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
 import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
 import { MenuIcon } from "@/components/admin/mobile/MenuIcons";
 import {
   MENU_SIZE_LABEL,
+  MENU_TAP_GUARD_MS,
   addMenuEntry,
   defaultMenuLayout,
   menuLayoutStorageKey,
   menuSpan,
+  menuTapAllowed,
   missingMenuItems,
   moveMenuEntry,
   nextMenuSize,
@@ -27,6 +29,9 @@ const LONG_PRESS_MS = 420;
 /** Ja pirksts pārvietojas vairāk, tā ir ritināšana, nevis nospiešana. */
 const MOVE_CANCEL_PX = 10;
 
+/** Pārlūkā pirms pirmās zīmēšanas (izkārtojums nemainās acu priekšā), serverī parasts efekts. */
+const useBeforePaintEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
 type Props = {
   workspace: "iriss" | "pro";
   catalog: MenuCatalogItem[];
@@ -38,16 +43,24 @@ type Props = {
   /** Ja saite atkarīga no datiem (piem. tikai kavētie). Noklusējums: item.href. */
   hrefOf?: (item: MenuCatalogItem) => string;
   renderWidget: (item: MenuCatalogItem, size: MenuSize) => ReactNode;
+  /**
+   * Servera saglabātais izkārtojums no lapas renderēšanas: masīvs = rāda uzreiz, null = nav saglabāts,
+   * undefined = nav zināms (pārlūks to ielādē pats, bet nepārkārto režģi, ja tam jau pieskārās).
+   */
+  initialLayout?: MenuLayout | null;
 };
 
 /**
  * iOS stila sākuma režģis: nospied un tur, lai kārtotu, noņemtu vai mainītu izmēru;
  * "+ Pievienot" atver visu, ko vēl nav režģī.
  */
-export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, alertOf, hrefOf, renderWidget }: Props) {
+export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, alertOf, hrefOf, renderWidget, initialLayout }: Props) {
   const fallback = useMemo(() => defaultMenuLayout(catalog, defaultIds), [catalog, defaultIds]);
   const byId = useMemo(() => new Map(catalog.map((c) => [c.id, c])), [catalog]);
-  const [layout, setLayout] = useState<MenuLayout>(fallback);
+  const fromServer = Boolean(initialLayout && initialLayout.length > 0);
+  const [layout, setLayout] = useState<MenuLayout>(() =>
+    fromServer ? normalizeMenuLayout(initialLayout, catalog, fallback) : fallback,
+  );
   const [ready, setReady] = useState(false);
   const [editing, setEditing] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -58,6 +71,20 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, alertOf, hre
   const dragIndexRef = useRef(-1);
   const skipNextSyncRef = useRef(false);
   const userChangedRef = useRef(false);
+  /** Lietotājs jau pieskārās režģim: vēlu atnākušais izkārtojums vairs neko nepārbīda zem pirksta (j23). */
+  const touchedRef = useRef(false);
+  /** Ikona, kuras sadaļa pašlaik atveras: citi pieskārieni to nepārraksta (j23). */
+  const pendingTapRef = useRef<{ id: string; at: number } | null>(null);
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!pendingId) return;
+    // Ja navigācija neizdevās (nav tīkla), pēc brīža ikonas atkal strādā kā parasti.
+    const t = window.setTimeout(() => {
+      pendingTapRef.current = null;
+      setPendingId(null);
+    }, MENU_TAP_GUARD_MS);
+    return () => window.clearTimeout(t);
+  }, [pendingId]);
   const edit = (fn: (prev: MenuLayout) => MenuLayout) => {
     userChangedRef.current = true;
     setLayout(fn);
@@ -65,21 +92,28 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, alertOf, hre
   const storageKey = menuLayoutStorageKey(workspace);
 
   // Ielādē saglabāto izkārtojumu tikai pēc montāžas (serverī un pārlūkā tas pats HTML, nav hydration atšķirību).
-  useEffect(() => {
+  // Ja serveris to jau iedeva lapā, nekas netiek pārkārtots: tieši šī pārkārtošana zem pirksta atvēra citu sadaļu (j23).
+  useBeforePaintEffect(() => {
+    if (fromServer) {
+      setReady(true);
+      return;
+    }
     let raw: unknown = null;
     try {
       raw = parseMenuLayout(localStorage.getItem(storageKey));
     } catch {
       raw = null;
     }
-    setLayout(normalizeMenuLayout(raw, catalog, fallback));
+    if (!touchedRef.current) setLayout(normalizeMenuLayout(raw, catalog, fallback));
     setReady(true);
+    // null: serveris jau pateica, ka saglabāta izkārtojuma nav.
+    if (initialLayout === null) return;
     // Servera izkārtojums (kopīgs iPhone un datoram) aizstāj vietējo, ja tāds ir.
     let stop = false;
     void fetch(`/api/admin/menu-layout?ws=${workspace}`, { credentials: "include", cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { layout?: unknown } | null) => {
-        if (stop || !data || !Array.isArray(data.layout) || data.layout.length === 0) return;
+        if (stop || touchedRef.current || !data || !Array.isArray(data.layout) || data.layout.length === 0) return;
         skipNextSyncRef.current = true;
         setLayout(normalizeMenuLayout(data.layout, catalog, fallback));
       })
@@ -196,7 +230,12 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, alertOf, hre
         </div>
       ) : null}
 
-      <div className={`menu-grid${editing ? " is-editing" : ""}`}>
+      <div
+        className={`menu-grid${editing ? " is-editing" : ""}`}
+        onPointerDownCapture={() => {
+          touchedRef.current = true;
+        }}
+      >
         {layout.map((entry, index) => {
           const item = byId.get(entry.id);
           if (!item) return null;
@@ -209,7 +248,7 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, alertOf, hre
             <div
               key={entry.id}
               data-menu-idx={index}
-              className={`menu-tile ${isWidget ? "menu-widget" : "menu-app"}${alert ? " menu-alert" : ""}${dragId === entry.id ? " is-dragging" : ""}`}
+              className={`menu-tile ${isWidget ? "menu-widget" : "menu-app"}${alert ? " menu-alert" : ""}${dragId === entry.id ? " is-dragging" : ""}${pendingId === entry.id ? " is-pending" : ""}`}
               style={{
                 gridColumn: `span ${span.cols}`,
                 gridRow: `span ${span.rows}`,
@@ -233,7 +272,15 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, alertOf, hre
                   if (editing || suppressClickRef.current) {
                     e.preventDefault();
                     suppressClickRef.current = false;
+                    return;
                   }
+                  const now = Date.now();
+                  if (!menuTapAllowed(pendingTapRef.current, entry.id, now)) {
+                    e.preventDefault();
+                    return;
+                  }
+                  pendingTapRef.current = { id: entry.id, at: now };
+                  setPendingId(entry.id);
                 }}
               >
                 {isWidget ? (
