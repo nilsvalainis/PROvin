@@ -8,6 +8,7 @@ import {
   listPreviousLogisticsPoints,
 } from "@/lib/iriss-logistics-store";
 import { requireLogisticsPage } from "@/lib/staff-auth";
+import { staffHasSection } from "@/lib/staff-roles";
 
 export const metadata = {
   title: "Loģistika | IRISS",
@@ -29,6 +30,8 @@ export default async function IrissLogistikaPage() {
     : [[], [], [], []];
   const viewerName = actor.kind === "admin" ? actor.name : actor.user.name;
   const canEnableTotp = actor.kind === "staff" && !actor.user.totpEnabled;
+  // Piedāvājumu veido tikai ar Pasūtījumu tiesību (Nila atbilde 5).
+  const canCreateOffer = actor.kind === "admin" || staffHasSection(actor.user, "pasutijumi");
 
   return (
     <IrissLogistikaClient
@@ -39,6 +42,7 @@ export default async function IrissLogistikaPage() {
       storeEnabled={storeEnabled}
       viewerName={viewerName}
       canEnableTotp={canEnableTotp}
+      canCreateOffer={canCreateOffer}
     />
   );
 }
