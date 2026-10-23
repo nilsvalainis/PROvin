@@ -9,6 +9,7 @@ import {
   adminAuditSlaWarningHtml,
   adminNewOrderHtml,
   adminNewPartnerHtml,
+  irissOfferDecisionHtml,
   b2bWalletRefundEmailHtml,
   auditCompletedEmailHtml,
   b2bProvinEmailHtml,
@@ -233,6 +234,20 @@ export async function sendAdminAuditSlaWarningEmail(
     console.error("[email] sendAdminAuditSlaWarningEmail SMTP:", e);
     throw e instanceof Error ? e : new Error(String(e));
   }
+}
+
+/** Nilam par klienta lēmumu IRISS piedāvājumā. Klientam netiek sūtīts nekas. */
+export async function sendAdminIrissOfferDecisionEmail(
+  email: { subject: string; title: string; approved: boolean; lines: { label: string; value: string }[]; text: string; url: string },
+  adminTo: string,
+): Promise<boolean> {
+  if (!getSmtpTransport()) {
+    console.warn("[email] IRISS piedāvājuma lēmums: SMTP nav iestatīts, e-pasts netika nosūtīts.");
+    return false;
+  }
+  const html = irissOfferDecisionHtml({ title: email.title, approved: email.approved, lines: email.lines, adminUrl: email.url });
+  await sendSmtpMail({ to: adminTo, subject: email.subject, text: email.text, html });
+  return true;
 }
 
 export type AdminNewPartnerEmailPayload = {

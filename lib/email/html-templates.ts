@@ -143,6 +143,28 @@ ${cta}
   return shell(inner);
 }
 
+/** Nilam: klienta lēmums par IRISS piedāvājumu (tikai admin adrese). */
+export function irissOfferDecisionHtml(opts: {
+  title: string;
+  approved: boolean;
+  lines: { label: string; value: string }[];
+  adminUrl: string;
+}): string {
+  const rows = opts.lines
+    .map((l, i) => {
+      const color = i === 0 ? (opts.approved ? "#047857" : "#b91c1c") : "inherit";
+      const weight = i === 0 ? "600" : "400";
+      return `<tr><td style="padding:8px 0;border-bottom:1px solid #ececec;font-size:14px;color:${MUTED};width:38%;">${esc(l.label)}</td><td style="padding:8px 0;border-bottom:1px solid #ececec;font-size:14px;color:${color};font-weight:${weight};">${esc(l.value)}</td></tr>`;
+    })
+    .join("");
+  const inner = `
+<p style="margin:0 0 20px;font-size:20px;font-weight:600;">${esc(opts.title)}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${rows}</table>
+${ctaButton(opts.adminUrl, "Atvērt pasūtījumu")}
+`;
+  return shell(inner);
+}
+
 /** Bezmaksas īss sludinājuma komentārs + CTA uz PROVIN AUDITS (e-pasta klientiem drošs HTML). */
 export function listingPeekCustomerCommentHtml(opts: {
   comment: string;

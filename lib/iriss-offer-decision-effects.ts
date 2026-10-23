@@ -3,10 +3,12 @@ import "server-only";
 /**
  * Klienta lēmuma sekas (tikai uzvarējušajam lēmumam - pirmajam ierakstam).
  * Pēc "Apstiprināt" pasūtījuma statuss automātiski -> "Rezervēts" (Nila lēmums 23.10 21:01).
+ * Nilam e-pasts + push (tikai uzvarētājam - nav dubultu e-pastu).
  * Kļūdas nekad neaptur atbildi klientam.
  */
 
 import { appendIrissStatusHistory, isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
+import { irissOfferNotifyFacts, notifyIrissOfferDecision } from "@/lib/iriss-offer-notify";
 import { irissWorkspaceRevision } from "@/lib/iriss-pasutijumi-save-safety";
 import { readIrissPasutijums, writeIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 import type { IrissPasutijumsListStatus, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
@@ -47,6 +49,16 @@ export async function runIrissOfferDecisionEffects(input: {
   decision: "approve" | "decline";
   decidedAt: string;
 }): Promise<void> {
+  let order: IrissPasutijumsRecord | null = null;
+  try {
+    order = await readIrissPasutijums(input.orderId);
+  } catch (e) {
+    console.error("[iriss-offer-decision] read", e instanceof Error ? e.message : e);
+  }
+  const offer = order?.offers.find((item) => item.id === input.offerId);
+  if (order && offer) {
+    await notifyIrissOfferDecision(irissOfferNotifyFacts(order, offer), input.decision, input.decidedAt);
+  }
   if (input.decision === "approve") {
     try {
       await reserveIrissOrderAfterApproval(input.orderId, input.decidedAt);

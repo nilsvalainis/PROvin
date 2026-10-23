@@ -467,7 +467,7 @@ function moneyLabel(raw: string): string {
   return t.slice(0, 80);
 }
 
-function offerTotalLabel(offer: Pick<IrissOfferRecord, "carPrice" | "deliveryPrice" | "commissionFee" | "priceGermany">): string {
+export function irissOfferTotalLabel(offer: Pick<IrissOfferRecord, "carPrice" | "deliveryPrice" | "commissionFee" | "priceGermany">): string {
   const parts = [offer.carPrice, offer.deliveryPrice, offer.commissionFee].map((v) => (irissPriceLooksNumeric(v) ? parsePriceLike(v) : 0));
   const sum = parts.reduce((a, b) => a + b, 0);
   if (sum > 0) return `${new Intl.NumberFormat("lv-LV", { maximumFractionDigits: 0 }).format(Math.round(sum))} €`;
@@ -522,7 +522,7 @@ export function buildIrissOfferPublicView(
     checks,
     notes,
     prices,
-    total: offerTotalLabel(offer),
+    total: irissOfferTotalLabel(offer),
     validDays,
     photos,
     decision: client.decision,

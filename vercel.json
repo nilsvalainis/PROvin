@@ -151,6 +151,10 @@
     {
       "path": "/api/cron/iriss-waybill-reminders",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/iriss-offer-deadlines",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
