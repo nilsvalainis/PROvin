@@ -13,6 +13,7 @@ import {
   persistBodyToOrderDraftWorkspace,
 } from "@/lib/admin-order-draft-workspace-merge";
 import { createDefaultSourceBlocks, mergeSourceBlocksWithDefaults, type CsddFormFields } from "@/lib/admin-source-blocks";
+import { startEcsddLookup } from "@/lib/ecsdd-auto";
 import { startLtabLookup } from "@/lib/ltab-auto";
 
 function emptyWorkspaceBody(): OrderDraftWorkspaceBody {
@@ -38,6 +39,19 @@ async function startLtabAfterSeed(
     await startLtabLookup(sessionId, { trigger: "auto", orderVin: vin ?? "", csdd });
   } catch (e) {
     console.error("[paid-order-seed] ltab start failed", e instanceof Error ? e.message : "unknown");
+  }
+}
+
+/** e.csdd solis pēc CSDD API (tikai `ECSDD_AUTO_ENABLED=1`, API auto atrada, RAW tukšs). Kļūda neaptur pasūtījumu. */
+async function startEcsddAfterSeed(
+  sessionId: string,
+  vin: string | null | undefined,
+  csdd: CsddFormFields,
+): Promise<void> {
+  try {
+    await startEcsddLookup(sessionId, { trigger: "auto", orderVin: vin ?? "", csdd });
+  } catch (e) {
+    console.error("[paid-order-seed] ecsdd start failed", e instanceof Error ? e.message : "unknown");
   }
 }
 
@@ -70,6 +84,7 @@ export async function seedPaidOrderAutoSources(
   if (!seeded.changed) {
     await upsertOrderDraftAutoIngest(sessionId, ingest).catch(() => null);
     await startLtabAfterSeed(sessionId, seeded.resolvedVin || opts.vin, blocks.csdd);
+    await startEcsddAfterSeed(sessionId, seeded.resolvedVin || opts.vin, blocks.csdd);
     return { ok: true, patched: false, ...parts };
   }
 
@@ -91,5 +106,6 @@ export async function seedPaidOrderAutoSources(
   await upsertOrderDraftAutoIngest(sessionId, ingest).catch(() => null);
   if (!patched.ok) return { ok: false, patched: false, ...parts };
   await startLtabAfterSeed(sessionId, seeded.resolvedVin || opts.vin, blocks.csdd);
+  await startEcsddAfterSeed(sessionId, seeded.resolvedVin || opts.vin, blocks.csdd);
   return { ok: true, patched: true, ...parts };
 }
