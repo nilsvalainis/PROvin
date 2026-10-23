@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { IrissCreateOfferButton } from "@/components/admin/IrissCreateOfferButton";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { AUTOPARKS_STATUS_LV, type AutoparksStatus } from "@/lib/iriss-autoparks";
@@ -39,7 +40,15 @@ export function allowedTabs(perms: AutoparksV2Perms, panes: CabinetPanes): Array
   return out;
 }
 
-export function AutoparksV2Cabinet({ initialBasics, perms }: { initialBasics: AutoparksV2Basics; perms: AutoparksV2Perms }) {
+export function AutoparksV2Cabinet({
+  initialBasics,
+  perms,
+  canCreateOffer = false,
+}: {
+  initialBasics: AutoparksV2Basics;
+  perms: AutoparksV2Perms;
+  canCreateOffer?: boolean;
+}) {
   const panes = CABINET_PANES;
   const router = useRouter();
   const pathname = usePathname();
@@ -147,6 +156,11 @@ export function AutoparksV2Cabinet({ initialBasics, perms }: { initialBasics: Au
       </div>
       {!compact ? statusBtn("ap2-mstatus") : null}
       {statusErr ? <p className="ap2-err">{statusErr}</p> : null}
+      {canCreateOffer ? (
+        <div style={{ margin: "10px 0", display: "grid" }}>
+          <IrissCreateOfferButton from="autoparks" id={basics.id} className="ap2-btn dark" />
+        </div>
+      ) : null}
 
       <nav className="ap2-tabs" style={{ ["--tabs" as string]: tabs.length }} aria-label="Sadaļas">
         {tabs.length > 1 || perms.vesture
