@@ -25,6 +25,7 @@ import { parseIrissDealWorkflowStatus } from "@/lib/iriss-order-overview-view";
 import { normalizeIrissCommunicationEvents } from "@/lib/iriss-communication-timeline";
 import { normalizeIrissOfferBlocks } from "@/lib/iriss-offer-blocks";
 import { normalizeOfferValidUntilAt } from "@/lib/iriss-offer-valid-until";
+import { isSafeDropboxFileId, offerSourceRefString, parseOfferSourceRef } from "@/lib/iriss-stock-photos";
 import { irissOrderPhotoAlbumOfferId, normalizeIrissOrderPhotoAlbum } from "@/lib/iriss-order-photos";
 import { migrateIrissSpecSelectLabels } from "@/lib/iriss-order-spec-selects";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
@@ -413,14 +414,16 @@ function normalizeOfferAttachments(raw: unknown): IrissOfferAttachment[] {
       const thumbUrl = sanitizeDraftTextForStorage(typeof o.thumbUrl === "string" ? o.thumbUrl : "", 800);
       const sizeRaw = typeof o.size === "number" ? o.size : Number.parseInt(String(o.size ?? "0"), 10);
       const size = Number.isFinite(sizeRaw) ? Math.max(0, Math.min(sizeRaw, 10_000_000)) : 0;
+      const dropboxId = isSafeDropboxFileId(o.dropboxId) ? o.dropboxId : "";
       if (!id || !name) return null;
-      if (!dataUrl && !blobPath && !blobUrl) return null;
+      if (!dataUrl && !blobPath && !blobUrl && !dropboxId) return null;
       return {
         id,
         name,
         mimeType,
         size,
         dataUrl,
+        ...(dropboxId ? { dropboxId } : {}),
         ...(blobPath ? { blobPath } : {}),
         ...(blobUrl ? { blobUrl } : {}),
         ...(thumbDataUrl ? { thumbDataUrl } : {}),
@@ -497,6 +500,8 @@ function normalizeOffers(raw: unknown): IrissOfferRecord[] {
       };
       const validUntilAt = normalizeOfferValidUntilAt(o.validUntilAt);
       if (validUntilAt) offer.validUntilAt = validUntilAt;
+      const sourceRef = parseOfferSourceRef(o.sourceRef);
+      if (sourceRef) offer.sourceRef = offerSourceRefString(sourceRef);
       const blocks = normalizeIrissOfferBlocks(o.blocks);
       if (blocks) offer.blocks = blocks;
       return offer;
@@ -900,6 +905,7 @@ async function persistOneOfferImage(
   orderId: string,
   offerId: string,
   att: IrissOfferAttachment,
+  dropboxBytes?: Map<string, Buffer>,
 ): Promise<IrissOfferAttachment> {
   const fullReady = Boolean(att.blobPath) && !att.dataUrl;
   if (fullReady && !att.mimeType.startsWith("image/")) return att;
@@ -908,6 +914,17 @@ async function persistOneOfferImage(
   }
 
   let next = att;
+  // /STOCK bilde: Dropbox -> Blob tikai saglabājot. Formas starpniekadrese (thumbUrl) vairs nav vajadzīga.
+  const fromDropbox = att.dropboxId && !att.dataUrl && !att.blobPath ? dropboxBytes?.get(att.dropboxId) : undefined;
+  if (fromDropbox) {
+    const pathname = fullOfferImagePath(r, orderId, offerId, att.id);
+    const stored = await putOfferBytes(r, pathname, fromDropbox, "image/jpeg");
+    if (stored) {
+      next = { ...att, mimeType: "image/jpeg", size: fromDropbox.length, dataUrl: "", blobPath: stored.path };
+      delete next.thumbUrl;
+      if (stored.url) next.blobUrl = stored.url;
+    }
+  }
   if (!att.dataUrl && !att.blobPath && att.blobUrl && /^https?:\/\//i.test(att.blobUrl)) {
     const remote = await fetchRemoteOfferImage(att.blobUrl);
     if (remote) {
@@ -942,11 +959,13 @@ async function persistOneOfferImage(
     thumbBytes = parsedThumb?.bytes ?? null;
   }
   if (!thumbBytes) {
-    const full = await readIrissOfferAttachmentBytes({
-      dataUrl: next.dataUrl || att.dataUrl,
-      blobPath: next.blobPath,
-      mimeType: next.mimeType,
-    });
+    const full = fromDropbox
+      ? { bytes: fromDropbox }
+      : await readIrissOfferAttachmentBytes({
+          dataUrl: next.dataUrl || att.dataUrl,
+          blobPath: next.blobPath,
+          mimeType: next.mimeType,
+        });
     if (full) thumbBytes = await renderIrissOfferThumbJpeg(full.bytes);
   }
   if (!thumbBytes) return next;
@@ -979,6 +998,20 @@ async function persistPhotoAlbum(
   return { album: { ...album, attachments }, changed };
 }
 
+/** Neielādētās /STOCK bildes (tikai no piedāvājuma avota mapes). */
+async function prefetchDropboxOfferImages(offer: IrissOfferRecord): Promise<Map<string, Buffer> | undefined> {
+  const pending = offer.attachments.filter((a) => a.dropboxId && !a.dataUrl && !a.blobPath).map((a) => a.dropboxId!);
+  const ref = parseOfferSourceRef(offer.sourceRef);
+  if (pending.length === 0 || !ref) return undefined;
+  try {
+    const { fetchOfferSourcePhotosForSave } = await import("@/lib/iriss-offer-source");
+    return await fetchOfferSourcePhotosForSave(ref, pending);
+  } catch (e) {
+    console.error("[iriss-offer] dropbox photos", e instanceof Error ? e.message : e);
+    return undefined;
+  }
+}
+
 async function persistOfferImages(
   r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
   record: IrissPasutijumsRecord,
@@ -988,8 +1021,9 @@ async function persistOfferImages(
   for (const offer of record.offers) {
     const attachments = [];
     let offerChanged = false;
+    const dropboxBytes = await prefetchDropboxOfferImages(offer);
     for (const att of offer.attachments) {
-      const next = await persistOneOfferImage(r, record.id, offer.id, att);
+      const next = await persistOneOfferImage(r, record.id, offer.id, att, dropboxBytes);
       if (next !== att) offerChanged = true;
       attachments.push(next);
     }

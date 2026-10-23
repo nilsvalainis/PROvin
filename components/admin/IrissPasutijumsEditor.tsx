@@ -12,6 +12,7 @@ import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSectio
 import { IrissGoogleContactStatusRow } from "@/components/admin/IrissGoogleContactStatusRow";
 import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
 import { IrissOfferForm } from "@/components/admin/IrissOfferForm";
+import { pendingDropboxPhotoCount } from "@/lib/iriss-stock-photos";
 import { IrissLabeledInput as LabeledInput, irissOfferFieldClass } from "@/components/admin/IrissOfferFormFields";
 import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
 import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChangesGuard";
@@ -1872,6 +1873,7 @@ export function IrissPasutijumsEditor({
       {offerOpen ? (
         <IrissOfferForm
           orderId={persistedIdRef.current}
+          savedPendingPhotos={persistedOfferRecord ? pendingDropboxPhotoCount(persistedOfferRecord.attachments) : 0}
           draft={offerDraft}
           setDraft={setOfferDraft}
           autoFields={offerAutoFields}

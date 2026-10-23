@@ -62,6 +62,8 @@ export type OfferDraft = {
   blocks?: IrissOfferBlock[];
   /** Precīzs termiņš (UTC ISO). Tukšs vecajiem piedāvājumiem. */
   validUntilAt?: string;
+  /** Avots ("autoparks:<id>" | "logistics:<id>"), no kura ņemtas /STOCK bildes. */
+  sourceRef?: string;
 };
 
 export const OFFER_AUTO_FIELD_KEYS = [
@@ -223,6 +225,7 @@ export function offerDraftFromRecord(offer: IrissOfferRecord, nowIso = new Date(
     keyCount: offer.keyCount ?? "",
     ...(offer.blocks?.length ? { blocks: offer.blocks } : {}),
     ...(normalizeOfferValidUntilAt(offer.validUntilAt) ? { validUntilAt: normalizeOfferValidUntilAt(offer.validUntilAt) } : {}),
+    ...(offer.sourceRef ? { sourceRef: offer.sourceRef } : {}),
   };
 }
 
@@ -284,6 +287,7 @@ export function offerRecordFromDraft(
     ...(offerDraft.coverAttachmentId ? { coverAttachmentId: offerDraft.coverAttachmentId } : {}),
     ...(offerDraft.blocks?.length ? { blocks: offerDraft.blocks } : {}),
     ...(normalizeOfferValidUntilAt(offerDraft.validUntilAt) ? { validUntilAt: normalizeOfferValidUntilAt(offerDraft.validUntilAt) } : {}),
+    ...(offerDraft.sourceRef ? { sourceRef: offerDraft.sourceRef } : {}),
     createdAt: offerDraft.createdAt || now,
     updatedAt: now,
   };

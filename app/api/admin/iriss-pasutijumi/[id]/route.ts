@@ -1,3 +1,4 @@
+import { isSafeDropboxFileId } from "@/lib/iriss-stock-photos";
 import { NextResponse } from "next/server";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { readGoogleContactsConfig } from "@/lib/google-contacts";
@@ -48,14 +49,16 @@ function parseOfferAttachments(raw: unknown): IrissOfferAttachment[] {
       const thumbUrl = typeof o.thumbUrl === "string" ? o.thumbUrl : "";
       const sizeRaw = typeof o.size === "number" ? o.size : Number.parseInt(String(o.size ?? "0"), 10);
       const size = Number.isFinite(sizeRaw) ? sizeRaw : 0;
+      const dropboxId = isSafeDropboxFileId(o.dropboxId) ? o.dropboxId : "";
       if (!id || !name) return null;
-      if (!dataUrl && !blobPath && !blobUrl) return null;
+      if (!dataUrl && !blobPath && !blobUrl && !dropboxId) return null;
       return {
         id,
         name,
         mimeType,
         dataUrl,
         size,
+        ...(dropboxId ? { dropboxId } : {}),
         ...(blobPath ? { blobPath } : {}),
         ...(blobUrl ? { blobUrl } : {}),
         ...(thumbDataUrl ? { thumbDataUrl } : {}),
@@ -120,6 +123,7 @@ function parseOffersFromBody(o: Record<string, unknown>): IrissOfferRecord[] {
         offerValidDays: typeof r.offerValidDays === "string" ? r.offerValidDays : "",
         validUntil: typeof r.validUntil === "string" ? r.validUntil : "",
         ...(typeof r.validUntilAt === "string" && r.validUntilAt.trim() ? { validUntilAt: r.validUntilAt } : {}),
+        ...(typeof r.sourceRef === "string" && r.sourceRef.trim() ? { sourceRef: r.sourceRef } : {}),
         attachments: parseOfferAttachments(r.attachments),
         ...(typeof r.coverAttachmentId === "string" && r.coverAttachmentId.trim()
           ? { coverAttachmentId: r.coverAttachmentId }
