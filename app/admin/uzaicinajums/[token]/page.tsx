@@ -21,7 +21,7 @@ export default async function StaffInvitePage({ params }: { params: Promise<{ to
               {peek.name} ({peek.email}), loma: {peek.role === "logistics" ? "Loģistika" : peek.role}.
             </p>
             <div className="mt-6">
-              <StaffInviteAcceptForm token={token} />
+              <StaffInviteAcceptForm token={token} email={peek.email} />
             </div>
           </>
         ) : (

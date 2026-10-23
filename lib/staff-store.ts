@@ -346,7 +346,11 @@ export type StaffAuthResult =
 
 export async function authenticateStaffPassword(email: string, password: string): Promise<StaffAuthResult> {
   const doc = await readStaffAccessDoc();
-  const user = doc.users.find((u) => u.email === normalizeStaffEmail(email));
+  const normalized = normalizeStaffEmail(email);
+  // Pēc atsaukšanas un atkārtota uzaicinājuma ar to pašu e-pastu ir divi ieraksti - priekšroka neatsauktajam.
+  const matches = doc.users.filter((u) => u.email === normalized);
+  const user =
+    matches.find((u) => u.status === "active") ?? matches.find((u) => u.status !== "revoked") ?? matches[0];
   if (!user) return { ok: false, error: "invalid" };
   if (user.status === "revoked") return { ok: false, error: "revoked" };
   if (user.status === "invited" || !user.passwordHash) return { ok: false, error: "invited" };
