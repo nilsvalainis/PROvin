@@ -1,0 +1,31 @@
+[Unit]
+Description=PROVIN LTAB relay (services.ltab.lv + latvija.lv Smart-ID), 127.0.0.1:8791
+After=network.target provin-ltab-xvfb.service
+Requires=provin-ltab-xvfb.service
+
+[Service]
+Type=simple
+User=provin-ltab
+Group=provin-ltab
+WorkingDirectory=/opt/provin-ltab
+EnvironmentFile=/etc/provin-ltab.env
+Environment=DISPLAY=:97
+Environment=HOME=/var/lib/provin-ltab
+Environment=PLAYWRIGHT_BROWSERS_PATH=/var/lib/provin-ltab/ms-playwright
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /opt/provin-ltab/server.mjs
+Restart=always
+RestartSec=5
+# Personas kods nedrīkst nonākt žurnālā: serviss to nekad nedrukā, log() to papildus aizvieto ar ***.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=provin-ltab
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/provin-ltab
+MemoryMax=900M
+TasksMax=256
+
+[Install]
+WantedBy=multi-user.target

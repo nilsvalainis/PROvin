@@ -13,6 +13,7 @@ import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeade
 import { AdminSourceBlockPhotos } from "@/components/admin/AdminSourceBlockPhotos";
 import type { SourceBlockPhotoGroup } from "@/lib/source-block-photo-types";
 import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
+import { AdminLtabAutoPanel } from "@/components/admin/AdminLtabAutoPanel";
 import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import type { LtabBlockState, LtabIncidentRow, WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
@@ -61,6 +62,9 @@ type Props = {
   onChange: (next: LtabBlockState) => void;
   trafficFillLevel?: TrafficFillLevel;
   sessionId: string;
+  /** LTAB automātika (tikai pasūtījumiem, ne konsultācijām) un pasūtījuma VIN salīdzināšanai ar CSDD. */
+  ltabAuto?: boolean;
+  orderVin?: string;
   pdfInclude: boolean;
   onPdfIncludeChange: (next: boolean) => void;
   aiComment?: AdminAiSourceCommentSlot;
@@ -80,6 +84,8 @@ export function AdminLtabSourceBlock({
   onChange,
   trafficFillLevel,
   sessionId,
+  ltabAuto = false,
+  orderVin = "",
   pdfInclude,
   onPdfIncludeChange,
   aiComment,
@@ -160,6 +166,16 @@ export function AdminLtabSourceBlock({
     >
       <div className={`flex h-full min-h-0 flex-col overflow-hidden ${trafficFillLevel ? "p-0" : "p-2"}`}>
           <div className={`min-h-0 flex-1 overflow-y-auto ${trafficFillLevel ? "px-2 pt-2" : ""}`}>
+            {ltabAuto ? (
+              <AdminLtabAutoPanel
+                sessionId={sessionId}
+                orderVin={orderVin}
+                value={value}
+                disabled={disabled}
+                readOnly={readOnly}
+                onApply={onChange}
+              />
+            ) : null}
             {getSourceBlocks && applyPatchedBlocks ? (
               <AdminHistoryVendorPdfUpload
                 target="ltab"

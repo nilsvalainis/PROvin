@@ -5386,6 +5386,8 @@ export function OrderDetailWorkspace({
                 onChange={(next) => updateSourceBlock("ltab", next)}
                 trafficFillLevel={traffic.ltab}
                 sessionId={payload.sessionId}
+                ltabAuto
+                orderVin={payload.vin ?? ""}
                 pdfInclude={pdfVisibility.ltab}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
                 aiComment={aiCommentSlot("ltab")}

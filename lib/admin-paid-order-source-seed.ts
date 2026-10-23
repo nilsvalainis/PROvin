@@ -12,7 +12,8 @@ import {
   orderDraftWorkspaceToPersistBody,
   persistBodyToOrderDraftWorkspace,
 } from "@/lib/admin-order-draft-workspace-merge";
-import { createDefaultSourceBlocks, mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
+import { createDefaultSourceBlocks, mergeSourceBlocksWithDefaults, type CsddFormFields } from "@/lib/admin-source-blocks";
+import { startLtabLookup } from "@/lib/ltab-auto";
 
 function emptyWorkspaceBody(): OrderDraftWorkspaceBody {
   return {
@@ -26,6 +27,19 @@ function emptyWorkspaceBody(): OrderDraftWorkspaceBody {
 }
 
 export type PaidOrderAutoSeedParts = FreeSourceSeedParts;
+
+/** LTAB solis pēc CSDD (tikai `LTAB_AUTO_ENABLED=1` un LV numurzīme). Kļūda neaptur pasūtījumu. */
+async function startLtabAfterSeed(
+  sessionId: string,
+  vin: string | null | undefined,
+  csdd: CsddFormFields,
+): Promise<void> {
+  try {
+    await startLtabLookup(sessionId, { trigger: "auto", orderVin: vin ?? "", csdd });
+  } catch (e) {
+    console.error("[paid-order-seed] ltab start failed", e instanceof Error ? e.message : "unknown");
+  }
+}
 
 export type PaidOrderAutoSeedResult = {
   ok: boolean;
@@ -55,6 +69,7 @@ export async function seedPaidOrderAutoSources(
   const ingest = { at: new Date().toISOString(), parts };
   if (!seeded.changed) {
     await upsertOrderDraftAutoIngest(sessionId, ingest).catch(() => null);
+    await startLtabAfterSeed(sessionId, seeded.resolvedVin || opts.vin, blocks.csdd);
     return { ok: true, patched: false, ...parts };
   }
 
@@ -75,5 +90,6 @@ export async function seedPaidOrderAutoSources(
   );
   await upsertOrderDraftAutoIngest(sessionId, ingest).catch(() => null);
   if (!patched.ok) return { ok: false, patched: false, ...parts };
+  await startLtabAfterSeed(sessionId, seeded.resolvedVin || opts.vin, blocks.csdd);
   return { ok: true, patched: true, ...parts };
 }
