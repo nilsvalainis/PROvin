@@ -14,7 +14,7 @@ import {
   type AiSourceCommentBlockKey,
   type AiSourceCommentTargetField,
 } from "@/lib/admin-source-comment-blocks";
-import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import { aiSourceBlockLabel, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { keepSourceCommentAfterExpansionStrip } from "@/lib/source-summary-comment-format";
 import { extractVehicleReportFingerprint } from "@/lib/admin-vehicle-report-fingerprint";
 import {
@@ -78,7 +78,7 @@ function isOfficialDealerBlock(blockKey: AiSourceCommentBlockKey): boolean {
 
 export async function generateSourceCommentWithAi(input: AiSourceCommentInput): Promise<string> {
   const blockLabel =
-    input.blockKey === "oneauto" ? "OFICIĀLĀ DĪLERA DATI" : SOURCE_BLOCK_LABELS[input.blockKey];
+    input.blockKey === "oneauto" ? "OFICIĀLĀ DĪLERA DATI" : aiSourceBlockLabel(input.blockKey);
   const targetField = input.targetField ?? "comments";
   const focusDataText = sourceBlockPlainTextForAi(
     input.blockKey,

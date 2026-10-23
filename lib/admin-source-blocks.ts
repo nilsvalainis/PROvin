@@ -65,6 +65,7 @@ import type { AutoRecordsPhotoGroup, AutoRecordsPhotoMeta } from "@/lib/auto-rec
 import { incidentPhotosFromUnknown, type IncidentPhotoGroup, type IncidentPhotoMeta } from "@/lib/incident-photo-types";
 import {
   CC_VIN_ADMIN_LABEL,
+  CC_VIN_PDF_SOURCE_LABEL,
   ccVinBlockHasContent,
   ccVinBlockToPlainText,
   emptyCcVinBlock,
@@ -224,6 +225,14 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   citi_avoti: "CITI AVOTI",
   listing_analysis: "Sludinājuma analīze",
 };
+
+/**
+ * Avotu nosaukumi ✨ kontekstā: admin „CC.VIN” modelim ir „IZSOĻU PORTĀLU ARHĪVS” (kā PDF),
+ * lai klienta tekstā neparādītos iekšējais nosaukums. Admin UI paliek SOURCE_BLOCK_LABELS.
+ */
+export function aiSourceBlockLabel(key: SourceBlockKey): string {
+  return key === "cc_vin" ? CC_VIN_PDF_SOURCE_LABEL : SOURCE_BLOCK_LABELS[key];
+}
 
 /** Ātrās saites avotiem — tikai admin panelis (ne PDF). */
 /** Telefonā īsāki avotu nosaukumi, lai galvene ietilpst vienā rindā (Nils 21.10). PDF un dators nemainās. */

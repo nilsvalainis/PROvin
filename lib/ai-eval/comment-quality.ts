@@ -185,6 +185,13 @@ export function evaluateExpertCommentQuality(
     });
   }
 
+  if (/\bUSD\b|\$\s?\d/.test(t)) {
+    issues.push({
+      code: "usd_currency",
+      message: "Klienta tekstā tikai EUR - USD / $ summas neraksta",
+    });
+  }
+
   for (const hit of findBannedVocabularyHits(t)) {
     issues.push({
       code: hit.code,
