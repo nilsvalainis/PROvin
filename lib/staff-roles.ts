@@ -34,6 +34,10 @@ export type IrissSectionMeta = {
   apiPrefixes: readonly string[];
 };
 
+/**
+ * Centrālā karte lapa/API -> sadaļa. Darbiniekam atļauts TIKAI tas, kas šeit piekārtots viņa sadaļām;
+ * viss pārējais (arī jauns route, kas nav kartē) ir aizliegts (middleware + lapu/route vārti).
+ */
 export const IRISS_SECTION_CATALOG: readonly IrissSectionMeta[] = [
   {
     id: "pasutijumi",
@@ -169,6 +173,14 @@ export function irissSectionMeta(id: IrissSection): IrissSectionMeta {
   return IRISS_SECTION_CATALOG.find((row) => row.id === id)!;
 }
 
+/**
+ * Partnera skats: darbiniekam ir TIKAI sadaļa Pavadzīmes. Sākumā tikai pavadzīmju logrīks, poga
+ * "Izveidot pavadzīmi", Arhīvs un Iziet - bez navigācijas. Ja atzīmē vēl kādu sadaļu, atgriežas parastā navigācija.
+ */
+export function isWaybillOnlyStaff(sections: readonly IrissSection[] | null | undefined): boolean {
+  return Array.isArray(sections) && sections.length === 1 && sections[0] === "pavadzimes";
+}
+
 export function staffHomePath(sections: readonly IrissSection[]): string {
   if (sections.length > 0) return "/admin/iriss";
   return LOGISTICS_PAGE_PREFIX;
@@ -247,6 +259,8 @@ export function decideAdminPageAccess(pathname: string, actor: AccessActor): Pag
   if (actor.kind === "admin") return "allow";
   if (actor.kind !== "staff") return "forbidden";
   if (isStaffIrissHomePath(pathname)) return actor.sections.length > 0 ? "allow" : "forbidden";
+  // Partnerim (tikai Pavadzīmes) vienīgā lapa ir IRISS sākums; pavadzīmju API paliek atļauts.
+  if (isWaybillOnlyStaff(actor.sections)) return "forbidden";
   if (actor.sections.some((id) => irissSectionMeta(id).pagePrefixes.some((prefix) => pathMatchesPrefix(pathname, prefix)))) {
     return "allow";
   }

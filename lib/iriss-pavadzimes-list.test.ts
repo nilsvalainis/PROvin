@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectActiveCardWaybills } from "@/lib/iriss-pavadzimes-list";
+import { canSeeWaybillOrders, selectActiveCardWaybills, waybillRowWithoutOrder } from "@/lib/iriss-pavadzimes-list";
 import { rigaLocalToUtc } from "@/lib/iriss-pavadzimes-parse";
 import type { IrissPavadzimeRecord } from "@/lib/iriss-pavadzimes-types";
 
@@ -38,5 +38,31 @@ describe("selectActiveCardWaybills", () => {
     );
     expect(rows.map((row) => row.plate)).toEqual(["B192-7", "B193-7"]);
     expect(rows.some((row) => row.plate === "B861-6")).toBe(false);
+  });
+});
+
+describe("pavadzīmju dati darbiniekam bez Pasūtījumiem", () => {
+  it("pasūtījuma saiti (klienta vārdu) redz tikai administrators vai Pasūtījumu sadaļa", () => {
+    expect(canSeeWaybillOrders({ kind: "admin" })).toBe(true);
+    expect(canSeeWaybillOrders({ kind: "staff", user: { sections: ["pavadzimes", "pasutijumi"] } })).toBe(true);
+    expect(canSeeWaybillOrders({ kind: "staff", user: { sections: ["pavadzimes"] } })).toBe(false);
+    expect(canSeeWaybillOrders({ kind: "staff", user: { sections: ["pavadzimes", "logistika"] } })).toBe(false);
+  });
+
+  it("atstāj tikai pavadzīmes laukus: bez pasūtījuma un krātuves ceļiem", () => {
+    const row = {
+      ...rec({ number: "26A1", plate: "B192-7", validUntil: "2026-10-25T10:00:00.000Z" }),
+      dropboxId: "id:abc",
+      dropboxPath: "/Pavadzīmes_IRISS/26A1.pdf",
+      blobPath: "iriss/pavadzimes/26A1.pdf",
+      validityTone: "ok" as const,
+      order: { id: "ord_1", label: "Jānis Bērziņš" },
+    };
+    const out = waybillRowWithoutOrder(row);
+    expect(out.order).toBeNull();
+    expect(JSON.stringify(out)).not.toContain("Jānis");
+    expect(JSON.stringify(out)).not.toContain("ord_1");
+    expect([out.dropboxId, out.dropboxPath, out.blobPath]).toEqual(["", "", ""]);
+    expect([out.number, out.plate, out.brandModel, out.validUntil]).toEqual(["26A1", "B192-7", "VW Passat", "2026-10-25T10:00:00.000Z"]);
   });
 });
