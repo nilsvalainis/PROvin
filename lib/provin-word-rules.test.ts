@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { evaluateExpertCommentQuality } from "@/lib/ai-eval/comment-quality";
 import {
   applyBannedVocabularyReplacements,
+  buildBannedVocabularyPromptRules,
   findBannedVocabularyHits,
 } from "@/lib/provin-banned-vocabulary";
 import { aiSourceBlockLabel, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
@@ -66,9 +67,10 @@ describe("AI kontekstā CC.VIN ir „IZSOĻU PORTĀLU ARHĪVS”", () => {
     expect(aiSourceBlockLabel("csdd")).toBe("CSDD");
   });
 
-  it("stila kanons prasa EUR un oriģinālos hibrīdu nosaukumus, bez garās domuzīmes", () => {
+  it("stila kanons prasa EUR, banned saraksts - oriģinālos hibrīdu nosaukumus; bez garās domuzīmes", () => {
     expect(AI_STYLE_CANON_SHARED).toMatch(/USD/);
-    expect(AI_STYLE_CANON_SHARED).toMatch(/plug-in hybrid/);
+    expect(buildBannedVocabularyPromptRules()).toMatch(/plug-in hybrid/);
+    expect(buildBannedVocabularyPromptRules()).toMatch(/var tuvoties/);
     expect(AI_STYLE_CANON_SHARED).not.toMatch(/[\u2013\u2014]/);
   });
 });

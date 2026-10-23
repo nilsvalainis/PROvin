@@ -26,11 +26,9 @@ export const AI_OWNER_COUNT_RULES = `OWNERS: N īpašnieki = N-1 maiņas. Skaitl
 
 export const AI_MILES_KM_RULES = `MILES/KM: Jūdzes (mi, miles, mph) PROVIN tekstā nelieto. Ja avots dod jūdzes, pārrēķini uz km (1 mi = 1.609344 km, noapaļo līdz veseliem km) un raksti tikai km; ātrumam km/h. Nekad nelasi jūdzes kā km. ASV un ES intervālus salīdzini tikai pēc pārrēķina uz km.`;
 
-export const AI_PLAIN_WORDING_RULES = `PLAIN WORDING: Hibrīda veidu raksti oriģinālā (plug-in hybrid, mild hybrid), netulko. Vienkārši vārdi („divi turbokompresori”, „šoseja”). Prognozes piesardzīgi („var tuvoties”). Avotu sauc „Izsoļu portāla arhīvā” vai „Avotā”, nekad „CC.VIN”.`;
-
 export const AI_NO_CROSS_SECTION_REFS_RULES = `NO CROSS-SECTION REFS: Neraksti „kā minēts nobraukuma komentārā”, „skat. sadaļu…”, „detalizēti … KOMENTĀRĀ”.`;
 
-export const AI_ODOMETER_DROP_RULES = `ODOMETER DROP (KANONISKIE FAKTI „Kritums” ar avotu): Nobraukuma laukā un kopsavilkumā kritums vai CarVertical/AutoDNA brīdinājums ir pirmais teikums: abi rādījumi, datumi, avots, starpība km. Avota laukā tikai ŠĪ avota kritums, viens teikums; cita avota kritumu nepiedēvē. Nekad „neliela nobīde”, „svārstības”. Nolūku neapgalvo: „iespējama odometra korekcija vai datu ievades kļūda; jāpārbauda.” „Atsevišķs neatbilstošs rādījums” nav korekcija: tikai nobraukuma laukā viens neitrāls teikums („Viens {avots} rādījums ({datums}) neatbilst pārējai secībai un, visticamāk, ir ievades kļūda.”), citur nepiemin.`;
+export const AI_ODOMETER_DROP_RULES = `ODOMETER DROP (KANONISKIE FAKTI „Kritums” ar avotu): kritums vai CarVertical/AutoDNA brīdinājums ir nobraukuma lauka un kopsavilkuma pirmais teikums (abi rādījumi, datumi, avots, starpība km); avota laukā tikai ŠĪ avota kritums, viens teikums. Nekad „neliela nobīde”. Nolūku neapgalvo: „iespējama odometra korekcija vai datu ievades kļūda; jāpārbauda.” „Atsevišķs neatbilstošs rādījums” nav korekcija: tikai nobraukuma laukā viens neitrāls teikums („Viens {avots} rādījums ({datums}) neatbilst pārējai secībai, visticamāk ievades kļūda.”), citur nepiemin.`;
 
 export const AI_HIDDEN_MAINTENANCE_MILEAGE_RULES = `HIDDEN MAINTENANCE (mileage and summary only): Ja starp pirmo reģistrāciju galamērķa valstī un pārdošanu ir vairāk par 3 nedēļām, nosauc abus datumus: „starp X un Y ir N nedēļas; iemesls datos nav redzams”. Spekulāciju par slēptu uzturēšanu avotu komentāros NERAKSTI.`;
 
@@ -54,7 +52,6 @@ export const AI_STYLE_CANON_SHARED = [
   AI_MILES_KM_RULES,
   AI_NO_CROSS_SECTION_REFS_RULES,
   AI_ODOMETER_DROP_RULES,
-  AI_PLAIN_WORDING_RULES,
   AI_INTERNAL_MARKERS_RULES,
   AI_NO_AUDIT_WORD_RULES,
   AI_HUMAN_DASH_RULES,
