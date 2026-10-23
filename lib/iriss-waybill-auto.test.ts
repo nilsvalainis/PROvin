@@ -83,6 +83,10 @@ describe("classifyWaybillForAuto", () => {
     expect(
       classifyWaybillForAuto(tradeReq({ vehicle: { brandModel: "Audi A4", vin: "WAUZZZ8K0BA000001", plate: "B1927", orderId: "" }, representative: "Taivo Batiņš" }), free),
     ).toMatchObject({ standard: true, company: "dzintarzeme", ctx: "ctx2", flow: "tradeAct" });
+    // j16: jaunais noklusējums bez garumzīmēm (kā CSDD sarakstā) arī der.
+    expect(
+      classifyWaybillForAuto(tradeReq({ vehicle: { brandModel: "Audi A4", vin: "WAUZZZ8K0BA000001", plate: "B1927", orderId: "" }, representative: "Taivo Batins" }), free),
+    ).toMatchObject({ standard: true, company: "dzintarzeme" });
   });
 
   it("accepted car stays with Aivars without VIN or with another representative ('Cits')", () => {
@@ -543,11 +547,47 @@ describe("j13: CSDD sync pēc katra darba rezultāta (pirms VPN atlaišanas)", (
   });
 });
 
+describe("j16: nekad kluss Gaida (worker ziņo, kāpēc darbu neņem)", () => {
+  it("lokāli nestandarta darbs: paliek rindā, bet pieprasījumā ir iemesls; bez claim un VPN", async () => {
+    const d = deps();
+    const job = { ...tradeJob(), auto: { ...tradeJob().auto, replace: { waybillNo: "P02812" } } };
+    expect(await processJob(job, d)).toEqual({ outcome: "skipped", reason: "anulēšana izslēgta" });
+    expect(d.api.event).toHaveBeenCalledWith(job.id, expect.objectContaining({ kind: "message", text: expect.stringContaining("anulēšana izslēgta") }));
+    expect(d.api.claim).not.toHaveBeenCalled();
+    expect(d.vpnLease).not.toHaveBeenCalled();
+  });
+
+  it("VPN aizņemts / vadība neatbild: ziņo vienreiz uz darbu, ne katrā 10 s mēģinājumā", async () => {
+    const notified = new Set<string>();
+    const d = deps({ vpnStatus: vi.fn(async () => null), vpnBusyNotified: notified });
+    await processJob(tradeJob(), d);
+    await processJob(tradeJob(), d);
+    expect(d.api.event).toHaveBeenCalledTimes(1);
+    expect(d.api.event).toHaveBeenCalledWith(tradeJob().id, expect.objectContaining({ text: expect.stringContaining("VPN vadība neatbild") }));
+    expect(d.api.claim).not.toHaveBeenCalled();
+  });
+
+  it("dry-run neko neraksta serverim", async () => {
+    const d = deps({ dryRun: true });
+    const job = { ...tradeJob(), auto: { ...tradeJob().auto, standard: false } };
+    expect((await processJob(job, d)).outcome).toBe("skipped");
+    expect(d.api.event).not.toHaveBeenCalled();
+  });
+});
+
 describe("j13: noklusējuma komersanta pārstāvis pēc firmas (worker)", () => {
-  it("tukšs pārstāvis -> ĪRISS numurs: Nils Valainis, Dzintarzeme numurs: Taivo Batiņš; norādītais paliek", () => {
+  it("j16: Dzintarzemes akts der ar 'Taivo Batins' (jaunais noklusējums) un 'Taivo Batiņš' (vecie pieprasījumi)", () => {
+    const dza = { ...tradeJob(), vehicle: { ...tradeJob().vehicle, plate: "B192-7" }, auto: { ...tradeJob().auto, plate: "B192-7" } };
+    for (const representative of ["Taivo Batins", "Taivo Batiņš", ""]) {
+      expect(localStandardCheck({ ...dza, representative }, NOW)).toEqual({ ok: true, company: "dzintarzeme", flow: "tradeAct" });
+    }
+    expect(localStandardCheck({ ...dza, representative: "Nils Valainis" }, NOW)).toEqual({ ok: false, reason: "cits pārstāvis" });
+  });
+
+  it("tukšs pārstāvis -> ĪRISS numurs: Nils Valainis, Dzintarzeme numurs: Taivo Batins; norādītais paliek", () => {
     const base = tradeJob();
     expect(jobRepresentative({ ...base, representative: "" })).toBe("Nils Valainis");
-    expect(jobRepresentative({ ...base, representative: "", vehicle: { ...base.vehicle, plate: "B192-7" } })).toBe("Taivo Batiņš");
+    expect(jobRepresentative({ ...base, representative: "", vehicle: { ...base.vehicle, plate: "B192-7" } })).toBe("Taivo Batins");
     expect(jobRepresentative({ ...base, representative: "Cits Cilvēks" })).toBe("Cits Cilvēks");
     expect(localStandardCheck({ ...base, representative: "" }, NOW)).toEqual({ ok: true, company: "iriss", flow: "tradeAct" });
   });

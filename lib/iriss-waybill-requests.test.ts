@@ -200,7 +200,21 @@ describe("honest status (cancel, test mode, expiry)", () => {
       autoMode: "test",
       autoStandard: true,
     });
-    expect(waybillAivarsReply(q(), [], nowMs, live).text).toBe("Rindā automātikai. Sāks pēc brīža.");
+    // j16: pirmās 2 min - "Rindā automātikai"; pēc tam skaidri "nesāka, nodots Aivaram" (nekad kluss Gaida).
+    const fresh = q({ createdAt: "2026-10-23T12:29:00.000Z", updatedAt: "2026-10-23T12:29:00.000Z" });
+    expect(waybillAivarsReply(fresh, [], nowMs, live).text).toBe("Rindā automātikai. Sāks pēc brīža.");
+    expect(waybillAivarsReply(q(), [], nowMs, live).text).toBe(
+      "Automātika 2 min laikā darbu nesāka (CSDD savienojums vai serveris nav pieejams). Nodots Aivaram.",
+    );
+    // Automātikas ziņa (updatedAt) taimeri neatliek.
+    expect(waybillAivarsReply(q({ updatedAt: "2026-10-23T12:29:50.000Z" }), [], nowMs, live).text).toContain("nesāka");
+    // Nestandarta: iemesls redzams.
+    const notAuto = { mode: "live" as const, isStandard: () => false, reasonFor: () => "numurs aizņemts" };
+    expect(waybillAivarsReply(fresh, [], nowMs, notAuto)).toMatchObject({
+      text: "Automātikai neder (numurs aizņemts). Izraksta Aivars.",
+      autoStandard: false,
+      autoReason: "numurs aizņemts",
+    });
     expect(waybillAivarsReply(q({ validUntil: "2026-10-23T12:10:00.000Z" }), [], nowMs, live)).toMatchObject({
       text: "Termiņš beidzies - atcel un izveido jaunu",
       expired: true,
@@ -211,6 +225,13 @@ describe("honest status (cancel, test mode, expiry)", () => {
       text: "Saglabā CSDD...",
       stage: "saving",
     });
+    // j16: solis nav mainījies > 4 min - godīgs teksts (pēc Saglabāt: pārbaudi CSDD).
+    expect(
+      waybillAivarsReply(q({ status: "in_progress", pickedAt: "2026-10-23T12:20:00.000Z", stage: "saving", stageAt: "2026-10-23T12:21:00.000Z" }), [], nowMs).text,
+    ).toBe("Automātika nav ziņojusi 9 min (pēdējais solis: Saglabā CSDD). Iespējams, pavadzīme CSDD jau ir - pārbaudi, pirms atkārto.");
+    expect(
+      waybillAivarsReply(q({ status: "in_progress", pickedAt: "2026-10-23T12:20:00.000Z", stage: "vpn", stageAt: "2026-10-23T12:25:00.000Z" }), [], nowMs).text,
+    ).toBe("Automātika nav ziņojusi 5 min (pēdējais solis: Gaida CSDD savienojumu (VPN)). Pavadzīme vēl nav saglabāta; ja steidzami, raksti Aivaram.");
   });
 
   it("parses cancelled status and worker stage; unknown stage is dropped", () => {

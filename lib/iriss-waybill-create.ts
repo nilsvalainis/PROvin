@@ -33,7 +33,8 @@ export const WAYBILL_REPRESENTATIVE_MAX = 60;
 export const WAYBILL_REPRESENTATIVES: Record<IrissDealerPlate, readonly string[]> = {
   "B193-7": ["Nils Valainis"],
   "B762-7": ["Nils Valainis"],
-  "B192-7": ["Taivo Batiņš"],
+  // CSDD pārstāvju sarakstā bez garumzīmēm ("TAIVO BATINS"); vecie pieprasījumi ar "Batiņš" joprojām der (salīdzina bez diakritikas).
+  "B192-7": ["Taivo Batins"],
 };
 
 export function waybillRepresentativesForPlate(plate: string): readonly string[] {
@@ -41,7 +42,7 @@ export function waybillRepresentativesForPlate(plate: string): readonly string[]
   return key ? WAYBILL_REPRESENTATIVES[key] : [];
 }
 
-/** Noklusējuma pārstāvis pēc auto/reģistra firmas (Nils 23.10): SIA ĪRISS - Nils Valainis, SIA Dzintarzeme Auto - Taivo Batiņš. */
+/** Noklusējuma pārstāvis pēc auto/reģistra firmas (Nils 23.10): SIA ĪRISS - Nils Valainis, SIA Dzintarzeme Auto - Taivo Batins. */
 export const WAYBILL_COMPANY_REPRESENTATIVE: Record<AutoparksOwner, string> = {
   IRISS: WAYBILL_REPRESENTATIVES["B193-7"][0],
   DZA: WAYBILL_REPRESENTATIVES["B192-7"][0],

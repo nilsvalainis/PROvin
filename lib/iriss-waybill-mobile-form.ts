@@ -23,7 +23,9 @@ import {
   waybillWrittenOffAtMs,
   type WaybillWrittenOffRequest as WrittenOffRequest,
   waybillQueuedText,
+  waybillQueuedWaitedMs,
   waybillRequestCancellable,
+  waybillStuckStageText,
   type WaybillAivarsReply,
   type WaybillAutoMode,
   type WaybillRequest,
@@ -71,7 +73,7 @@ export type WaybillMobileFormState = {
   /** Sākuma adrese (tikai auto, kas nav tirdzniecībā pieņemts). Galamērķa lauka nav: CSDD Tukums. */
   from: WaybillRoutePlace;
   fromAddress: string;
-  /** Komersanta pārstāvis (tikai pieņemtam auto); tukšs = auto firmas pārstāvis (ĪRISS - Nils Valainis, DZA - Taivo Batiņš). */
+  /** Komersanta pārstāvis (tikai pieņemtam auto); tukšs = auto firmas pārstāvis (ĪRISS - Nils Valainis, DZA - Taivo Batins). */
   representative: string;
 };
 
@@ -277,9 +279,9 @@ function sinceMs(iso: string, nowMs: number): number {
 
 export function waybillMobileProgress(
   request: Pick<WaybillRequest, "status" | "createdAt" | "updatedAt" | "pickedAt" | "errorReason" | "validUntil" | "waybillNo"> &
-    Partial<Pick<WaybillRequest, "stage">>,
+    Partial<Pick<WaybillRequest, "stage" | "stageAt">>,
   nowMs = Date.now(),
-  auto: { autoMode?: WaybillAutoMode; autoStandard?: boolean } = {},
+  auto: { autoMode?: WaybillAutoMode; autoStandard?: boolean; autoReason?: string } = {},
 ): WaybillMobileProgress {
   if (request.status === "issued") {
     const until = formatRigaDateTimeComma(request.validUntil);
@@ -295,10 +297,17 @@ export function waybillMobileProgress(
   }
   if (request.status === "cancelled") return { step: 1, pct: 0, text: "Atcelts." };
   if (request.status === "in_progress") {
-    if (request.stage) return { step: 2, pct: STAGE_PCT[request.stage], text: WAYBILL_WORKER_STAGE_TEXT[request.stage] };
+    if (request.stage) {
+      const stuck = waybillStuckStageText(request.stage, request.stageAt ?? "", nowMs);
+      return { step: 2, pct: STAGE_PCT[request.stage], text: stuck || WAYBILL_WORKER_STAGE_TEXT[request.stage] };
+    }
     return { step: 2, pct: 40, text: "Aivars veido pavadzīmi CSDD..." };
   }
-  const honest = waybillQueuedText({ expired: waybillPendingExpired(request, nowMs), ...auto });
+  const honest = waybillQueuedText({
+    expired: waybillPendingExpired(request, nowMs),
+    ...auto,
+    waitedMs: waybillQueuedWaitedMs(request, nowMs),
+  });
   if (honest) return { step: 1, pct: 10, text: honest };
   const waited = sinceMs(request.updatedAt || request.createdAt, nowMs);
   if (waited > WAYBILL_MOBILE_LONG_WAIT_MS) {
@@ -365,6 +374,7 @@ export function waybillMobileRequestRows(
       const progress = waybillMobileProgress({ ...request, status, waybillNo }, nowMs, {
         autoMode: reply?.autoMode,
         autoStandard: reply?.autoStandard,
+        autoReason: reply?.autoReason,
       });
       const longWait = status === "queued" && sinceMs(request.updatedAt || request.createdAt, nowMs) > WAYBILL_MOBILE_LONG_WAIT_MS;
       const offAt = waybillWrittenOffAtMs({ ...request, status }, requests, nowMs);
