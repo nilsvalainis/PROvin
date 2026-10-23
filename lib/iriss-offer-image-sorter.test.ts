@@ -114,3 +114,13 @@ describe("IRISS offer image sorter", () => {
     expect(posA).toBeLessThan(posC);
   });
 });
+
+describe("offerImageFullSrc", () => {
+  it("prefers the original image over the thumbnail", async () => {
+    const { offerImageFullSrc } = await import("@/lib/iriss-offer-image-sorter");
+    expect(offerImageFullSrc({ dataUrl: "data:image/jpeg;base64,AAA", thumbDataUrl: "data:image/jpeg;base64,BBB" })).toBe("data:image/jpeg;base64,AAA");
+    expect(offerImageFullSrc({ blobUrl: "https://blob.example/a.jpg", thumbDataUrl: "data:image/jpeg;base64,BBB" })).toBe("https://blob.example/a.jpg");
+    expect(offerImageFullSrc({ thumbDataUrl: "data:image/jpeg;base64,BBB" })).toBe("data:image/jpeg;base64,BBB");
+    expect(offerImageFullSrc({})).toBe("");
+  });
+});

@@ -5,9 +5,9 @@
  * Stāvokli (melnrakstu, saglabāšanu, PDF) tur izsaucējs; forma tikai rāda un ziņo izmaiņas.
  */
 
-import { Loader2, Paperclip, X } from "lucide-react";
+import { Loader2, Plus, X } from "lucide-react";
 import type React from "react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminSaveButton } from "@/components/admin/AdminSaveButton";
 import { IrissOfferBlocksEditor } from "@/components/admin/IrissOfferBlocksEditor";
@@ -58,7 +58,24 @@ function LabeledOfferRichCommentField({
   );
 }
 
+export type IrissOfferFormTab = "bildes" | "pamatinfo" | "apraksti" | "cenas";
+
+const TAB_LABELS: Record<IrissOfferFormTab, string> = {
+  bildes: "Bildes",
+  pamatinfo: "Pamatinfo",
+  apraksti: "Apraksti",
+  cenas: "Cenas",
+};
+
+function tabClass(active: boolean): string {
+  return `inline-flex h-10 min-w-0 items-center justify-center truncate rounded-xl px-2 text-[14px] font-semibold transition ${
+    active ? "bg-[#3a3f4b] text-white" : "border border-slate-200 bg-white text-[var(--color-apple-text)] hover:bg-slate-50"
+  }`;
+}
+
 export type IrissOfferFormProps = {
+  /** Saglabāta pasūtījuma id (pilnā izmēra bildēm skatā); tukšs, ja vēl nav saglabāts. */
+  orderId?: string;
   draft: OfferDraft;
   setDraft: React.Dispatch<React.SetStateAction<OfferDraft>>;
   autoFields: ReadonlySet<string>;
@@ -81,6 +98,7 @@ export type IrissOfferFormProps = {
 };
 
 export function IrissOfferForm({
+  orderId = "",
   draft,
   setDraft,
   autoFields,
@@ -106,10 +124,14 @@ export function IrissOfferForm({
   const deliveryPriceWarning = useMemo(() => irissPriceFormatWarning(draft.deliveryPrice), [draft.deliveryPrice]);
   const commissionWarning = useMemo(() => irissPriceFormatWarning(draft.commissionFee), [draft.commissionFee]);
   const totalPrice = useMemo(() => offerDraftTotalPrice(draft), [draft]);
+  // Telefonā cilnes (Bildes pirmā); datorā bildes vienmēr labajā kolonnā, pa kreisi 3 cilnes.
+  const [tab, setTab] = useState<IrissOfferFormTab>("bildes");
+  const leftTab: IrissOfferFormTab = tab === "bildes" ? "pamatinfo" : tab;
+  const photoCount = draft.attachments.length;
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-end justify-center overscroll-y-contain bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
+      className="fixed inset-0 z-[120] flex items-end justify-center overscroll-y-contain bg-black/45 p-0 sm:items-center sm:p-6"
       onClick={() => !busy && !filePrepare && onClose()}
       role="presentation"
     >
@@ -118,14 +140,14 @@ export function IrissOfferForm({
         aria-modal="true"
         aria-labelledby="iriss-offer-dialog-title"
         data-iriss-order-room="1"
-        className="flex max-h-[min(92dvh,920px)] w-full max-w-6xl flex-col overflow-hidden rounded-[22px] border border-[#e5e7eb] bg-white shadow-xl"
+        className="flex h-[100dvh] w-full max-w-6xl flex-col overflow-hidden bg-white shadow-xl sm:h-auto sm:max-h-[min(92dvh,920px)] sm:rounded-[22px] sm:border sm:border-[#e5e7eb]"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/80 px-4 py-3 sm:px-5">
+        <div className="flex shrink-0 items-center justify-between gap-2 px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] sm:border-b sm:border-slate-200/80 sm:px-5 sm:py-3">
           <div className="min-w-0 flex-1 pr-2">
             <h2
               id="iriss-offer-dialog-title"
-              className="truncate text-base font-semibold text-[var(--color-apple-text)]"
+              className="truncate text-[18px] font-semibold text-[var(--color-apple-text)] sm:text-base"
             >
               {draft.title}
             </h2>
@@ -142,14 +164,30 @@ export function IrissOfferForm({
             aria-label="Aizvērt"
             title="Aizvērt"
             onClick={() => onClose()}
-            className="inline-flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+            className="order-first inline-flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50 sm:order-none sm:rounded-full"
           >
             <X className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
           </button>
         </div>
+        <div className="grid shrink-0 grid-cols-4 gap-2 px-4 pb-1 pt-1 sm:px-5 lg:hidden" aria-label="Piedāvājuma daļas">
+          {(["bildes", "pamatinfo", "apraksti", "cenas"] as const).map((t) => (
+            <button key={t} type="button" aria-pressed={tab === t} onClick={() => setTab(t)} className={tabClass(tab === t)}>
+              {TAB_LABELS[t]}
+              {t === "bildes" && photoCount > 0 && tab === t ? ` ${photoCount}` : ""}
+            </button>
+          ))}
+        </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 [-webkit-overflow-scrolling:touch] pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
           <div className="grid min-w-0 grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,1fr)]">
-          <div className="min-w-0 space-y-3">
+          <div className={`min-w-0 space-y-3 ${tab === "bildes" ? "hidden lg:block" : ""}`}>
+          <div className="hidden grid-cols-3 gap-2 lg:grid" aria-label="Piedāvājuma daļas">
+            {(["pamatinfo", "apraksti", "cenas"] as const).map((t) => (
+              <button key={t} type="button" aria-pressed={leftTab === t} onClick={() => setTab(t)} className={tabClass(leftTab === t)}>
+                {TAB_LABELS[t]}
+              </button>
+            ))}
+          </div>
+          <div className={leftTab === "pamatinfo" ? "" : "hidden"}>
           <div className="rounded-xl border border-slate-200/90 bg-white p-3">
             <IrissSectionHeading>Transportlīdzeklis</IrissSectionHeading>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -217,7 +255,8 @@ export function IrissOfferForm({
             </div>
           </div>
 
-          <div className="mt-3 rounded-xl border border-slate-200/90 bg-white p-3">
+          </div>
+          <div className={`rounded-xl border border-slate-200/90 bg-white p-3 ${leftTab === "apraksti" ? "" : "hidden"}`}>
             <IrissSectionHeading>Novērtējums klientam</IrissSectionHeading>
             <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
               <LabeledInput
@@ -300,7 +339,8 @@ export function IrissOfferForm({
             </div>
           </div>
 
-          <div className="mt-3 rounded-xl border border-slate-200/90 bg-white p-3">
+          <div className={leftTab === "cenas" ? "" : "hidden"}>
+          <div className="rounded-xl border border-slate-200/90 bg-white p-3">
             <IrissSectionHeading>Cenas</IrissSectionHeading>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="block min-w-0">
@@ -425,27 +465,30 @@ export function IrissOfferForm({
             />
           </div>
           </div>
-          <div className="min-w-0 rounded-xl border border-[#e5e7eb] bg-white p-3">
-            <IrissSectionHeading>
-              Bildes · {draft.attachments.length}/{IRISS_MAX_OFFER_ATTACHMENTS}
-            </IrissSectionHeading>
-          <div className="rounded-xl border border-dashed border-[#cbd5e1] bg-slate-50/50 p-3 select-none">
-            <label
-              className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 ${filePrepare || draft.attachments.length >= IRISS_MAX_OFFER_ATTACHMENTS ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
-            >
-              <Paperclip className="h-4 w-4" aria-hidden />
-              Pievienot failus
-              <input
-                type="file"
-                multiple
-                disabled={!!filePrepare || draft.attachments.length >= IRISS_MAX_OFFER_ATTACHMENTS}
-                className="hidden"
-                onChange={(e) => {
-                  onFilesPick(e.target.files);
-                  e.currentTarget.value = "";
-                }}
-              />
-            </label>
+          </div>
+          <div className={`min-w-0 lg:rounded-xl lg:border lg:border-[#e5e7eb] lg:bg-white lg:p-3 ${tab === "bildes" ? "" : "hidden lg:block"}`}>
+          <div className="select-none">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[14px] font-semibold tabular-nums text-slate-500">
+                {photoCount} / {IRISS_MAX_OFFER_ATTACHMENTS}
+              </span>
+              <label
+                className={`inline-flex h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 ${filePrepare || photoCount >= IRISS_MAX_OFFER_ATTACHMENTS ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
+              >
+                <Plus className="h-4 w-4" aria-hidden />
+                Pievienot
+                <input
+                  type="file"
+                  multiple
+                  disabled={!!filePrepare || photoCount >= IRISS_MAX_OFFER_ATTACHMENTS}
+                  className="hidden"
+                  onChange={(e) => {
+                    onFilesPick(e.target.files);
+                    e.currentTarget.value = "";
+                  }}
+                />
+              </label>
+            </div>
             {filePrepare ? (
               <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3" role="status" aria-live="polite">
                 <div className="flex items-center gap-2">
@@ -461,13 +504,20 @@ export function IrissOfferForm({
                 <p className="mt-1 text-[11px] tabular-nums text-slate-500">{filePrepare.pct}%</p>
               </div>
             ) : null}
-            <p className="mt-2 text-[10px] font-medium text-slate-500">
-              Līdz {IRISS_MAX_OFFER_ATTACHMENTS} attēliem ({draft.attachments.length}/{IRISS_MAX_OFFER_ATTACHMENTS}).
-            </p>
+            {photoCount === 0 && !filePrepare ? (
+              <p className="mt-3 rounded-xl border border-dashed border-[#cbd5e1] px-3 py-6 text-center text-[12px] text-slate-500">
+                Bilžu vēl nav. Pievieno ar &quot;Pievienot&quot;.
+              </p>
+            ) : null}
             <IrissOfferImageSorter
               attachments={draft.attachments}
               coverId={draft.coverAttachmentId}
               disabled={!!filePrepare}
+              fullSrc={(att) =>
+                orderId && att.blobPath
+                  ? `/api/admin/iriss-pasutijumi/${encodeURIComponent(orderId)}/offer/${encodeURIComponent(draft.id)}/photo/${encodeURIComponent(att.id)}`
+                  : ""
+              }
               onChange={(next) =>
                 setDraft((d) => ({
                   ...d,
@@ -480,32 +530,32 @@ export function IrissOfferForm({
           </div>
           </div>
         </div>
-        <div className="shrink-0 border-t border-slate-200/80 bg-white px-4 py-3 sm:px-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="shrink-0 border-t border-slate-200/80 bg-white px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-5 sm:py-3">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               disabled={busy || !!filePrepare || deleteBusy}
               onClick={() => onDelete()}
-              className={`${offerDialogMainBtnClass} sm:self-start`}
+              className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-full px-2 text-[13px] font-semibold text-slate-500 transition hover:text-[var(--color-apple-text)] disabled:opacity-50 sm:border sm:border-slate-200 sm:bg-white sm:px-4 sm:text-[var(--color-apple-text)] sm:shadow-sm"
             >
               Dzēst
             </button>
-            <div className="flex flex-wrap items-center justify-end gap-2 sm:min-w-0 sm:flex-1">
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
               <button
                 type="button"
                 disabled={busy || !!filePrepare}
                 onClick={() => onClose()}
-                className={offerDialogMainBtnClass}
+                className={`${offerDialogMainBtnClass.replace("inline-flex ", "")} hidden sm:inline-flex`}
               >
                 Atcelt
               </button>
               {readyForPdfActions ? (
-                <div className="flex flex-wrap items-center gap-2">
+                <>
                   <button
                     type="button"
                     disabled={busy || !!filePrepare || pdfBusy || whatsappBusy}
                     onClick={() => onPdf()}
-                    className={offerDialogMainBtnClass}
+                    className={`${offerDialogMainBtnClass} min-w-0 flex-1 sm:flex-none sm:min-w-[116px]`}
                   >
                     {pdfBusy ? "PDF..." : "PDF"}
                   </button>
@@ -521,12 +571,13 @@ export function IrissOfferForm({
                       <WhatsAppGlyphIcon className="h-5 w-5" />
                     </button>
                   ) : null}
-                </div>
+                </>
               ) : null}
               <AdminSaveButton
                 onSave={onSave}
                 state={saveState}
                 disabled={!!filePrepare || pdfBusy || whatsappBusy}
+                className="h-11 min-w-0 flex-1 sm:flex-none"
               />
             </div>
           </div>
