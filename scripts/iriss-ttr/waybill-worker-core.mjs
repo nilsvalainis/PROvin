@@ -50,7 +50,7 @@ export function plateBusyText(plate, active) {
 const PLATES = { B1937: "iriss", B7627: "iriss", B1927: "dzintarzeme" };
 const ROUTE_FROM = "Tukums, Rīgas iela";
 const ROUTE_TO = "Tukuma CSDD";
-const MAX_HOURS = 2160;
+const MAX_HOURS = 48; // CSDD max
 const VIN_RE = /^[A-HJ-NPR-Z0-9]{17}$/;
 /** Komersanta pārstāvis pēc firmas (kā lib/iriss-waybill-create.ts WAYBILL_REPRESENTATIVES). "Cits" -> Aivars. */
 const REPRESENTATIVES = { iriss: ["nils valainis"], dzintarzeme: ["taivo batiņš"] };
@@ -65,7 +65,7 @@ function norm(s) {
 
 /**
  * Lokāla (otrā) pārbaude pēc servera klasifikācijas (lib/iriss-waybill-auto.ts): ja kaut kas neatbilst, darbu neaiztiek.
- * Plūsmas: "tradeAct" (pieņemts auto, VIN + pārstāvis, bez maršruta) vai "new" (noklusējuma maršruts). Laiks 1..2160 h.
+ * Plūsmas: "tradeAct" (pieņemts auto, VIN + pārstāvis, bez maršruta) vai "new" (noklusējuma maršruts). Laiks 1..48 h (CSDD max).
  */
 export function localStandardCheck(job, nowMs = Date.now(), opts = {}) {
   if (!job || job.action !== "create_waybill") return { ok: false, reason: "nav create_waybill" };

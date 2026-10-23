@@ -26,8 +26,8 @@ export const ANNUL_NEVER_RE = /anul|annul|dz[eē]s|delete|remove|lapt_/i;
 export const PDF_ACTION_RE = /druk|pdf|lejupiel|izdruk|print|download/i;
 
 const JOB_ID_RE = /^[A-Za-z0-9_-]{1,80}$/;
-/** Tāpat kā serverī (WAYBILL_VALID_MAX_HOURS). */
-const MAX_VALID_HOURS = 2160;
+/** Tāpat kā serverī (WAYBILL_VALID_MAX_HOURS, CSDD max). */
+const MAX_VALID_HOURS = 48;
 const SAME_PLATE_WINDOW_MS = 30 * 60 * 1000;
 
 function decodeSafe(s) {

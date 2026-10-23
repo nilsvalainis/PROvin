@@ -50,7 +50,7 @@ Standarta (klasifikācija `lib/iriss-waybill-auto.ts`, serveris to pārbauda ar�
   prasa tukšu adresi - kļūda pirms Saglabāt, darbs Aivaram; fiksēts maršruts netiek likts);
 - `new` - jauna pavadzīme ar noklusējuma maršrutu Tukums, Rīgas iela -> Tukuma CSDD (cits maršruts -> Aivars).
 Abām: numurs B193-7 / B762-7 (ĪRISS, ctx1) vai B192-7 (Dzintarzeme, ctx2) un BRĪVS, nav cita darba ar šo numuru,
-laiks jebkurš vesels 1-2160 h (formā 1 / 12 / 48 h vai "Cits"), pieprasītais termiņš nav beidzies, komentārs tukšs, "Tukums" vai "<numurs> uz <šī auto>",
+laiks jebkurš vesels 1-48 h (CSDD max, formā 1 / 12 / 48 h vai "Cits"), pieprasītais termiņš nav beidzies, komentārs tukšs, "Tukums" vai "<numurs> uz <šī auto>",
 pirmais mēģinājums. Pieprasījums = apstiprinājums. Viss pārējais (arī aizņemts numurs / confirmBusy, "Cits" pārstāvis) -> Aivars.
 
 STINGRI: worker pats NEKAD nepārtrauc un neanulē aktīvu pavadzīmi. Tas palaiž `refill.js`, `save.js` un `sync.js` (tikai lasa)
