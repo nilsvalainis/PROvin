@@ -21,11 +21,11 @@
   color: var(--ink);
   font-family: Inter, -apple-system, "SF Pro Text", system-ui, sans-serif;
   font-size: 14px;
-  padding: 10px 16px 32px;
+  padding: 10px 16px 120px;
 }
-.ap2 *,
-.ap2 *::before,
-.ap2 *::after {
+.ap2.ap2.ap2 *,
+.ap2.ap2.ap2 *::before,
+.ap2.ap2.ap2 *::after {
   box-sizing: border-box;
 }
 :where(.ap2) button {
@@ -42,21 +42,21 @@
 .ap2 .st-sold { --st: var(--st-sold); }
 
 /* Galvene */
-.ap2-top {
+.ap2.ap2.ap2 .ap2-top {
   display: flex;
   align-items: center;
   gap: 10px;
   min-height: 52px;
   padding: 6px 0 10px;
 }
-.ap2-top h1 {
+.ap2.ap2.ap2 .ap2-top h1 {
   margin: 0;
   flex: 1;
   font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.01em;
 }
-.ap2 .ap2-btn {
+.ap2.ap2.ap2 .ap2-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -67,27 +67,27 @@
   font-weight: 600;
   font-size: 15px;
 }
-.ap2 .ap2-btn.dark {
+.ap2.ap2.ap2 .ap2-btn.dark {
   background: var(--btn);
   color: #fff;
 }
-.ap2 .ap2-btn.sec {
+.ap2.ap2.ap2 .ap2-btn.sec {
   background: #fff;
   border: 1px solid #d2d2d7;
   color: #1d1d1f;
 }
-.ap2 .ap2-btn.sm {
+.ap2.ap2.ap2 .ap2-btn.sm {
   min-height: 38px;
   font-size: 13px;
   padding: 0 14px;
   border-radius: 10px;
 }
-.ap2 .ap2-btn:disabled {
+.ap2.ap2.ap2 .ap2-btn:disabled {
   opacity: 0.5;
 }
 
 /* VIN ar kopēšanas ikonu */
-.ap2 .ap2-vin {
+.ap2.ap2.ap2 .ap2-vin {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -101,21 +101,21 @@
   color: #3a3a3c;
   text-align: left;
 }
-.ap2 .ap2-vin span {
+.ap2.ap2.ap2 .ap2-vin span {
   overflow-wrap: anywhere;
 }
-.ap2 .ap2-vin svg {
+.ap2.ap2.ap2 .ap2-vin svg {
   width: 14px;
   height: 14px;
   flex: none;
   color: var(--ink3);
 }
-.ap2 .ap2-vin.copied svg {
+.ap2.ap2.ap2 .ap2-vin.copied svg {
   color: var(--ok);
 }
 
 /* Saraksts */
-.ap2-search {
+.ap2.ap2.ap2 .ap2-search {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -126,7 +126,7 @@
   padding: 0 12px;
   color: var(--ink3);
 }
-.ap2 .ap2-search input {
+.ap2.ap2.ap2 .ap2-search input {
   flex: 1;
   height: auto;
   padding: 0;
@@ -140,17 +140,17 @@
   font-size: 16px;
   color: var(--ink);
 }
-.ap2-chips {
+.ap2.ap2.ap2 .ap2-chips {
   display: flex;
   gap: 6px;
   margin: 10px 0 4px;
   overflow-x: auto;
   scrollbar-width: none;
 }
-.ap2-chips::-webkit-scrollbar {
+.ap2.ap2.ap2 .ap2-chips::-webkit-scrollbar {
   display: none;
 }
-.ap2 .ap2-chip {
+.ap2.ap2.ap2 .ap2-chip {
   border: 1px solid var(--line);
   background: #fff;
   border-radius: 99px;
@@ -160,12 +160,12 @@
   color: #3a3a3c;
   white-space: nowrap;
 }
-.ap2 .ap2-chip.on {
+.ap2.ap2.ap2 .ap2-chip.on {
   background: var(--btn);
   color: #fff;
   border-color: transparent;
 }
-.ap2-sec {
+.ap2.ap2.ap2 .ap2-sec {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -176,25 +176,25 @@
   text-transform: uppercase;
   color: var(--ink2);
 }
-.ap2-sec .dot {
+.ap2.ap2.ap2 .ap2-sec .dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--st);
 }
-.ap2-sec .n {
+.ap2.ap2.ap2 .ap2-sec .n {
   margin-left: auto;
   font-weight: 600;
   color: var(--ink3);
   letter-spacing: 0;
 }
-.ap2-list {
+.ap2.ap2.ap2 .ap2-list {
   background: #fff;
   border: 1px solid var(--line);
   border-radius: 14px;
   overflow: hidden;
 }
-.ap2-row {
+.ap2.ap2.ap2 .ap2-row {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -204,10 +204,10 @@
   color: inherit;
   text-decoration: none;
 }
-.ap2-row:first-child {
+.ap2.ap2.ap2 .ap2-row:first-child {
   border-top: 0;
 }
-.ap2-img {
+.ap2.ap2.ap2 .ap2-img {
   width: 72px;
   height: 54px;
   border-radius: 9px;
@@ -216,18 +216,18 @@
   background: #e8e8ed;
   display: block;
 }
-.ap2-img img,
-.ap2-img svg {
+.ap2.ap2.ap2 .ap2-img img,
+.ap2.ap2.ap2 .ap2-img svg {
   width: 100%;
   height: 100%;
   display: block;
   object-fit: cover;
 }
-.ap2-rt {
+.ap2.ap2.ap2 .ap2-rt {
   flex: 1;
   min-width: 0;
 }
-.ap2-rt b {
+.ap2.ap2.ap2 .ap2-rt b {
   display: block;
   font-size: 15px;
   font-weight: 600;
@@ -235,18 +235,18 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.ap2-rt .meta {
+.ap2.ap2.ap2 .ap2-rt .meta {
   display: block;
   font-size: 13px;
   color: var(--ink2);
   margin-top: 2px;
 }
-.ap2-rt .ap2-vin {
+.ap2.ap2.ap2 .ap2-rt .ap2-vin {
   margin-top: 3px;
   font-size: 11.5px;
   color: var(--ink3);
 }
-.ap2-pill {
+.ap2.ap2.ap2 .ap2-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -258,37 +258,37 @@
   color: color-mix(in srgb, var(--st) 85%, #000);
   white-space: nowrap;
 }
-.ap2-pill::before {
+.ap2.ap2.ap2 .ap2-pill::before {
   content: "";
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: var(--st);
 }
-.ap2-empty {
+.ap2.ap2.ap2 .ap2-empty {
   margin-top: 24px;
   text-align: center;
   color: var(--ink3);
 }
-.ap2-pipe,
-.ap2-thd,
-.ap2-row .cols,
-.ap2-search-d,
-.ap2 .ap2-d {
+.ap2.ap2.ap2 .ap2-pipe,
+.ap2.ap2.ap2 .ap2-thd,
+.ap2.ap2.ap2 .ap2-row .cols,
+.ap2.ap2.ap2 .ap2-search-d,
+.ap2.ap2.ap2 .ap2-d {
   display: none;
 }
-.ap2-row-m {
+.ap2.ap2.ap2 .ap2-row-m {
   display: contents;
 }
 
 /* Apakšējā lapa (statuss, + Auto) */
-.ap2-dim {
+.ap2.ap2.ap2 .ap2-dim {
   position: fixed;
   inset: 0;
   z-index: 60;
   background: rgba(0, 0, 0, 0.35);
 }
-.ap2-sheet {
+.ap2.ap2.ap2 .ap2-sheet {
   position: fixed;
   left: 0;
   right: 0;
@@ -300,24 +300,25 @@
   border-radius: 20px 20px 0 0;
   padding: 8px 16px max(30px, env(safe-area-inset-bottom));
 }
-.ap2-grab {
+.ap2.ap2.ap2 .ap2-grab {
   width: 40px;
   height: 5px;
   border-radius: 3px;
   background: #d1d1d6;
   margin: 0 auto 12px;
 }
-.ap2-sheet h4 {
+.ap2.ap2.ap2 .ap2-sheet h4 {
   margin: 0 0 8px;
   font-size: 16px;
+  font-weight: 700;
 }
-.ap2-form label {
+.ap2.ap2.ap2 .ap2-form label {
   display: block;
   margin-top: 10px;
   font-size: 13px;
   color: var(--ink2);
 }
-.ap2 .ap2-form input {
+.ap2.ap2.ap2 .ap2-form input {
   display: block;
   width: 100%;
   margin-top: 4px;
@@ -329,11 +330,11 @@
   color: var(--ink);
   background: #fff;
 }
-.ap2-form .ap2-btn {
+.ap2.ap2.ap2 .ap2-form .ap2-btn {
   width: 100%;
   margin-top: 16px;
 }
-.ap2-err {
+.ap2.ap2.ap2 .ap2-err {
   margin-top: 8px;
   color: var(--bad);
   font-size: 13px;
@@ -344,32 +345,32 @@
     background: #fafafb;
     padding: 24px 28px 40px;
   }
-  .ap2-top {
+  .ap2.ap2.ap2 .ap2-top {
     padding: 0;
     margin-bottom: 14px;
   }
-  .ap2-top .ap2-search {
+  .ap2.ap2.ap2 .ap2-top .ap2-search {
     width: 360px;
   }
-  .ap2-pipe {
+  .ap2.ap2.ap2 .ap2-pipe {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
     gap: 8px;
     margin-bottom: 14px;
   }
-  .ap2 .ap2-pp {
+  .ap2.ap2.ap2 .ap2-pp {
     border: 1px solid var(--line);
     border-radius: 14px;
     background: #fff;
     padding: 10px 14px;
     text-align: left;
   }
-  .ap2 .ap2-pp .n {
+  .ap2.ap2.ap2 .ap2-pp .n {
     display: block;
     font-size: 22px;
     font-weight: 600;
   }
-  .ap2 .ap2-pp .l {
+  .ap2.ap2.ap2 .ap2-pp .l {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -378,30 +379,30 @@
     color: var(--ink2);
     white-space: nowrap;
   }
-  .ap2 .ap2-pp .l::before {
+  .ap2.ap2.ap2 .ap2-pp .l::before {
     content: "";
     width: 7px;
     height: 7px;
     border-radius: 50%;
     background: var(--st, var(--ink));
   }
-  .ap2 .ap2-pp.on {
+  .ap2.ap2.ap2 .ap2-pp.on {
     border-color: #1d1d1f;
     box-shadow: inset 0 0 0 1px #1d1d1f;
   }
-  .ap2-chips {
+  .ap2.ap2.ap2 .ap2-chips {
     margin: 0 0 10px;
   }
   /* 20:17: kolonna "Īpašnieks" izņemta; VIN pilnā platumā. */
-  .ap2-thd,
-  .ap2 .ap2-row .cols {
+  .ap2.ap2.ap2 .ap2-thd,
+  .ap2.ap2.ap2 .ap2-row .cols {
     display: grid;
     grid-template-columns: 72px minmax(0, 2fr) minmax(0, 1.6fr) 160px;
     gap: 16px;
     align-items: center;
     width: 100%;
   }
-  .ap2-thd {
+  .ap2.ap2.ap2 .ap2-thd {
     padding: 0 12px 6px;
     font-size: 11px;
     font-weight: 700;
@@ -409,21 +410,21 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
   }
-  .ap2-row {
+  .ap2.ap2.ap2 .ap2-row {
     min-height: 68px;
   }
-  .ap2-row-m,
-  .ap2-search-m,
-  .ap2 .ap2-m {
+  .ap2.ap2.ap2 .ap2-row-m,
+  .ap2.ap2.ap2 .ap2-search-m,
+  .ap2.ap2.ap2 .ap2-m {
     display: none;
   }
-  .ap2 .ap2-d {
+  .ap2.ap2.ap2 .ap2-d {
     display: inline;
   }
-  .ap2-search-d {
+  .ap2.ap2.ap2 .ap2-search-d {
     display: flex;
   }
-  .ap2-sheet {
+  .ap2.ap2.ap2 .ap2-sheet {
     left: 50%;
     right: auto;
     bottom: auto;
@@ -433,7 +434,422 @@
     border-radius: 16px;
     padding: 16px;
   }
-  .ap2-sheet .ap2-grab {
+  .ap2.ap2.ap2 .ap2-sheet .ap2-grab {
+    display: none;
+  }
+}
+
+/* ===== Kabinets (T2-T10, D2-D4) ===== */
+.ap2.ap2.ap2 .ap2-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 0 10px;
+}
+.ap2.ap2.ap2 .ap2-bar h2 {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 17px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ap2.ap2.ap2 .ap2-back {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  color: #3a3a3c;
+  flex: none;
+  text-decoration: none;
+}
+.ap2.ap2.ap2 .ap2-crumb {
+  display: none;
+}
+.ap2.ap2.ap2 .ap2-carhead {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.ap2.ap2.ap2 .ap2-carhead .ap2-img {
+  width: 96px;
+  height: 72px;
+}
+.ap2.ap2.ap2 .ap2-carhead .nm {
+  flex: 1;
+  min-width: 0;
+}
+.ap2.ap2.ap2 .ap2-carhead .nm b {
+  display: block;
+  font-size: 16px;
+}
+.ap2.ap2.ap2 .ap2-carhead .meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  font-size: 12.5px;
+  color: var(--ink2);
+  margin-top: 2px;
+}
+.ap2.ap2.ap2 .ap2-carhead .ap2-vin {
+  margin-top: 5px;
+}
+.ap2.ap2.ap2 .ap2-owner {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #3d5bd9;
+  background: #eef2ff;
+  border-radius: 6px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-owner.dza {
+  color: #92400e;
+  background: #fffbeb;
+}
+.ap2.ap2.ap2 .ap2-statusbtn {
+  margin-top: 10px;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-statusbtn .l {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ap2.ap2.ap2 .ap2-statusbtn .l::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--st);
+}
+.ap2.ap2.ap2 .ap2-statusbtn small {
+  font-weight: 500;
+  color: var(--ink3);
+  font-size: 18px;
+}
+.ap2.ap2.ap2 .ap2-dhead-status {
+  flex: none;
+}
+.ap2.ap2.ap2 .ap2-tabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  margin-top: 12px;
+}
+.ap2.ap2.ap2 .ap2-tab {
+  padding: 9px 0;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #3a3a3c;
+  background: #fff;
+  border: 1px solid var(--line);
+  white-space: nowrap;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ap2.ap2.ap2 .ap2-tab.on {
+  background: var(--btn);
+  color: #fff;
+  border-color: transparent;
+}
+.ap2.ap2.ap2 .ap2-tab .ap2-d {
+  display: none;
+}
+.ap2.ap2.ap2 .ap2-tab-hist {
+  display: none;
+}
+.ap2.ap2.ap2 .ap2-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 4px 14px;
+  margin-top: 12px;
+}
+.ap2.ap2.ap2 .ap2-card h3 {
+  margin: 12px 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+/* Lauka rinda: [CSDD punkts] [nosaukums] [vērtība] - punkta vieta vienmēr */
+.ap2.ap2.ap2 .ap2-f {
+  display: grid;
+  grid-template-columns: 8px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 46px;
+  border-top: 1px solid var(--line2);
+  font-size: 14px;
+}
+.ap2.ap2.ap2 .ap2-card h3 + .ap2-f,
+.ap2.ap2.ap2 .ap2-card .ap2-f:first-child {
+  border-top: 0;
+}
+.ap2.ap2.ap2 .ap2-f .k {
+  color: var(--ink2);
+  font-size: 13px;
+}
+.ap2.ap2.ap2 .ap2-f .v {
+  font-weight: 600;
+  text-align: right;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ap2.ap2.ap2 .ap2-f button.v {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-weight: 600;
+  font-size: 14px;
+}
+.ap2.ap2.ap2 .ap2-f .v.add,
+.ap2.ap2.ap2 .ap2-f button.v.add {
+  color: var(--focus);
+}
+.ap2.ap2.ap2 .ap2-f .v.mut {
+  color: var(--ink2);
+  font-weight: 500;
+}
+.ap2.ap2.ap2 .ap2-f input.v {
+  width: 100%;
+  max-width: 220px;
+  justify-self: end;
+  border: 1px solid #d2d2d7;
+  border-radius: 10px;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: right;
+  background: #fff;
+  color: var(--ink);
+}
+.ap2.ap2.ap2 .ap2-cd {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.ap2.ap2.ap2 .ap2-cd.on {
+  background: var(--ok);
+}
+.ap2.ap2.ap2 .ap2-opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-top: 1px solid var(--line2);
+  background: none;
+  font-size: 15.5px;
+  font-weight: 500;
+  text-align: left;
+  padding: 0;
+}
+.ap2.ap2.ap2 .ap2-opt {
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-top: 1px solid var(--line2);
+}
+.ap2.ap2.ap2 .ap2-opt::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--st);
+}
+.ap2.ap2.ap2 .ap2-opt.cur {
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-opt.cur::after {
+  content: "✓";
+  margin-left: auto;
+  color: var(--focus);
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-toast {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  z-index: 70;
+  background: #1d1d1f;
+  color: #fff;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+.ap2.ap2.ap2 .ap2-toast button {
+  border: 0;
+  background: none;
+  color: #7cb6ff;
+  font-weight: 700;
+  padding: 0;
+}
+.ap2.ap2.ap2 .ap2-toast .cdn {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #7cb6ff;
+  font-size: 11px;
+  margin-right: 8px;
+  color: #7cb6ff;
+}
+.ap2.ap2.ap2 .ap2-hist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ap2.ap2.ap2 .ap2-hist li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line2);
+  font-size: 13.5px;
+}
+.ap2.ap2.ap2 .ap2-hist li:first-child {
+  border-top: 0;
+}
+.ap2.ap2.ap2 .ap2-hist small {
+  color: var(--ink3);
+  font-size: 12px;
+}
+.ap2.ap2.ap2 .ap2-hist .chg {
+  grid-column: 1 / -1;
+  color: var(--ink2);
+}
+
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-bar {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-crumb {
+    display: inline-block;
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--focus);
+    text-decoration: none;
+  }
+  .ap2.ap2.ap2 .ap2-carhead {
+    padding: 12px 16px;
+    gap: 16px;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .ap2-img {
+    width: 108px;
+    height: 72px;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .nm b {
+    font-size: 19px;
+    letter-spacing: -0.01em;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .meta {
+    font-size: 13px;
+    margin-top: 3px;
+    gap: 10px;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .meta .ap2-vin {
+    margin-top: 0;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .ap2-statusbtn {
+    margin: 0;
+    width: 230px;
+    flex: none;
+  }
+  .ap2.ap2.ap2 .ap2-mstatus {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-tabs {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(var(--tabs, 5), 170px) 1fr 110px;
+    gap: 6px;
+    margin: 12px 0 14px;
+  }
+  .ap2.ap2.ap2 .ap2-tab {
+    padding: 10px 0;
+    font-size: 13.5px;
+  }
+  .ap2.ap2.ap2 .ap2-tab .ap2-m {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-tab .ap2-d {
+    display: inline;
+  }
+  .ap2.ap2.ap2 .ap2-tab-hist {
+    display: block;
+    grid-column: -2;
+    color: var(--ink2);
+  }
+  .ap2.ap2.ap2 .ap2-tab-hist.on {
+    color: #fff;
+  }
+  .ap2.ap2.ap2 .ap2-pane {
+    max-width: 760px;
+  }
+  .ap2.ap2.ap2 .ap2-pane.wide {
+    max-width: none;
+  }
+  .ap2.ap2.ap2 .ap2-toast {
+    left: auto;
+    right: 28px;
+    width: 360px;
+  }
+}
+.ap2.ap2.ap2 .ap2-carhead .ap2-dvin,
+.ap2.ap2.ap2 .ap2-carhead .ap2-dstatus,
+.ap2.ap2.ap2 .ap2-carhead.compact {
+  display: none;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-carhead.compact {
+    display: flex;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .ap2-dvin {
+    display: inline-flex;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .ap2-dstatus {
+    display: flex;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .ap2-mvin {
     display: none;
   }
 }
