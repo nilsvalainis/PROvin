@@ -1,0 +1,17 @@
+{
+  "name": "provin-ecsdd-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PROVIN e.csdd relejs: e.csdd.lv tadati uzziņa ar Vienoto pieteikšanos (Smart-ID), sesija uzturēta serverī (Hetzner, Xvfb).",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check server.mjs && node --check lib/jobs.mjs && node --check lib/ecsdd-flow.mjs && node --check lib/ecsdd-page.mjs && node --check lib/session.mjs && node --check lib/relay-core.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}

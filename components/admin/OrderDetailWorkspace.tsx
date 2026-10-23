@@ -5371,6 +5371,7 @@ export function OrderDetailWorkspace({
                 onPdfIncludeMileageTableChange={(next) => onPdfVisibilityChange({ csddMileageTable: next })}
                 sessionId={payload.sessionId}
                 orderVin={payload.vin ?? ""}
+                ecsddAuto
                 aiComment={aiCommentSlot("csdd")}
                 photosPersistenceEnabled={orderDraftPersistenceEnabled}
                 onPhotoGroupsStructuralCommit={(next) =>

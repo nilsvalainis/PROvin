@@ -1,0 +1,31 @@
+[Unit]
+Description=PROVIN e.csdd relay (e.csdd.lv + Vienotā pieteikšanās Smart-ID), 127.0.0.1:8790
+After=network.target provin-ecsdd-xvfb.service
+Requires=provin-ecsdd-xvfb.service
+
+[Service]
+Type=simple
+User=provin-ecsdd
+Group=provin-ecsdd
+WorkingDirectory=/opt/provin-ecsdd
+EnvironmentFile=/etc/provin-ecsdd.env
+Environment=DISPLAY=:96
+Environment=HOME=/var/lib/provin-ecsdd
+Environment=PLAYWRIGHT_BROWSERS_PATH=/var/lib/provin-ecsdd/ms-playwright
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node /opt/provin-ecsdd/server.mjs
+Restart=always
+RestartSec=5
+# Personas kods nedrīkst nonākt žurnālā: serviss to nekad nedrukā, log() to papildus aizvieto ar ***.
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=provin-ecsdd
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/provin-ecsdd
+MemoryMax=900M
+TasksMax=256
+
+[Install]
+WantedBy=multi-user.target
