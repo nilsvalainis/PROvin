@@ -22,18 +22,21 @@ export type AutoparksV2ListRow = {
 };
 
 export function autoparksV2ListRows(cars: readonly AutoparksCar[], v2: AutoparksV2State): AutoparksV2ListRow[] {
-  return cars.map((car) => ({
-    id: car.id,
-    title: autoparksV2Title(car),
-    year: car.year,
-    color: car.color,
-    vin: car.vin,
-    status: car.status,
-    owner: autoparksOwner(car),
-    archived: Boolean(car.archivedAt),
-    hasPhoto: Boolean(carV2Of(v2, car.id).mainPhoto?.thumbBlobPath),
-    statusChangedAt: car.statusChangedAt || car.updatedAt || car.createdAt,
-  }));
+  return cars.map((car) => {
+    const carV2 = carV2Of(v2, car.id);
+    return {
+      id: car.id,
+      title: autoparksV2Title(car, carV2),
+      year: car.year,
+      color: car.color,
+      vin: carV2.fields.vin || car.vin,
+      status: car.status,
+      owner: autoparksOwner(car),
+      archived: Boolean(car.archivedAt),
+      hasPhoto: Boolean(carV2.mainPhoto?.thumbBlobPath),
+      statusChangedAt: car.statusChangedAt || car.updatedAt || car.createdAt,
+    };
+  });
 }
 
 export type AutoparksV2OwnerFilter = "all" | AutoparksOwner | "archive";

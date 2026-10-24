@@ -115,7 +115,7 @@ export type V2Service = {
 };
 
 /** v2 labotie v1 lauki: v1 vērtība netiek pārrakstīta, v2 rāda šo, ja aizpildīts. */
-export const V2_FIELD_KEYS = ["plate", "location", "arrivedAt"] as const;
+export const V2_FIELD_KEYS = ["plate", "location", "arrivedAt", "make", "model", "vin"] as const;
 export type V2FieldKey = (typeof V2_FIELD_KEYS)[number];
 
 export type AutoparksCarV2 = {
@@ -188,7 +188,7 @@ function list<T>(raw: unknown, parse: (row: unknown) => T | null, max = 500): T[
 
 export function emptyCarV2(): AutoparksCarV2 {
   return {
-    fields: { plate: "", location: "", arrivedAt: "" },
+    fields: { plate: "", location: "", arrivedAt: "", make: "", model: "", vin: "" },
     tech: { firstRegDate: "", displacementCm3: null, powerKw: null, tyreSize: "", csddCheckedAt: "" },
     sources: {},
     purchase: { auction: "", auctionNo: "", purchaseDate: "", purchasePriceEur: null, transportEur: null, vat: { mode: "", source: "", at: "" } },
@@ -281,7 +281,14 @@ export function normalizeCarV2(raw: unknown): AutoparksCarV2 {
   const ps = isObj(raw.priceSheet) ? raw.priceSheet : {};
   const mode = typeof vat.mode === "string" && (V2_VAT_MODES as readonly string[]).includes(vat.mode) ? (vat.mode as V2VatMode) : "";
   return {
-    fields: { plate: str(fields.plate, 16).toUpperCase(), location: str(fields.location, 120), arrivedAt: str(fields.arrivedAt, 10) },
+    fields: {
+      plate: str(fields.plate, 16).toUpperCase(),
+      location: str(fields.location, 120),
+      arrivedAt: str(fields.arrivedAt, 10),
+      make: str(fields.make, 60),
+      model: str(fields.model, 80),
+      vin: str(fields.vin, 32).toUpperCase(),
+    },
     tech: {
       firstRegDate: str(tech.firstRegDate, 10),
       displacementCm3: v2Num(tech.displacementCm3),
@@ -387,6 +394,9 @@ export type V2Value<T> = { value: T; csdd: boolean };
 export type AutoparksV2Basics = {
   id: string;
   title: string;
+  /** Marka/modelis ar roku labošanai (J29 C): v2 labotā vērtība, ja ir, citādi v1. */
+  make: string;
+  model: string;
   year: string;
   color: string;
   vin: string;
@@ -408,8 +418,14 @@ export type AutoparksV2Basics = {
   hasPhoto: boolean;
 };
 
-export function autoparksV2Title(car: Pick<AutoparksCar, "make" | "model" | "registry">): string {
-  const own = `${car.make} ${car.model}`.replace(/\s+/g, " ").trim();
+/** `v2` - ar roku labotā marka/modelis (J29 C) aizstāj v1 vērtību attēlošanā; v1 pats netiek mainīts. */
+export function autoparksV2Title(
+  car: Pick<AutoparksCar, "make" | "model" | "registry">,
+  v2?: Pick<AutoparksCarV2, "fields">,
+): string {
+  const make = v2?.fields.make || car.make;
+  const model = v2?.fields.model || car.model;
+  const own = `${make} ${model}`.replace(/\s+/g, " ").trim();
   return own || (car.registry?.makeModel ?? "").trim() || "Auto";
 }
 
@@ -421,10 +437,12 @@ export function autoparksV2Basics(car: AutoparksCar, v2: AutoparksCarV2): Autopa
   const csdd = (key: string) => v2.sources[key] === "csdd" || v2.sources[key] === "csdd_reg" || v2.sources[key] === "vin";
   return {
     id: car.id,
-    title: autoparksV2Title(car),
+    title: autoparksV2Title(car, v2),
+    make: v2.fields.make || car.make,
+    model: v2.fields.model || car.model,
     year: car.year,
     color: car.color,
-    vin: car.vin,
+    vin: v2.fields.vin || car.vin,
     plate: v2.fields.plate || car.plate,
     status: car.status,
     statusLabel: AUTOPARKS_STATUS_LV[car.status],

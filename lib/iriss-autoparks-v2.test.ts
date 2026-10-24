@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeAutoparksCar, type AutoparksCar } from "@/lib/iriss-autoparks";
 import {
   autoparksV2Basics,
+  autoparksV2Title,
   capHistory,
   decideStatusUndo,
   emptyCarV2,
@@ -74,6 +75,22 @@ describe("Pamatdati skats", () => {
     const car = v1Car({ plate: "" });
     expect(autoparksV2Basics(car, v2).plate).toBe("AB1234");
     expect(car.plate).toBe("");
+  });
+
+  it("J29 C: ar roku labota marka/modelis/VIN rādās v2, v1 paliek nemainīts", () => {
+    const v2 = emptyCarV2();
+    v2.fields.make = "BMW";
+    v2.fields.model = "220d Gran Tourer";
+    v2.fields.vin = "WBA2A1234A1234567";
+    const car = v1Car({ make: "BMW", model: "218D", vin: "WBA2A9999A9999999" });
+    const b = autoparksV2Basics(car, v2);
+    expect(b.title).toBe("BMW 220d Gran Tourer");
+    expect(b.make).toBe("BMW");
+    expect(b.model).toBe("220d Gran Tourer");
+    expect(b.vin).toBe("WBA2A1234A1234567");
+    expect(car.model).toBe("218D");
+    expect(car.vin).toBe("WBA2A9999A9999999");
+    expect(autoparksV2Title(car)).toBe("BMW 218D");
   });
 
   it("CSDD reģistra statuss: nav / pieņemts / noņemts", () => {
