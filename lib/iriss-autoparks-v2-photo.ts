@@ -2,7 +2,7 @@ import "server-only";
 
 import { getDropboxClient, type DropboxClient } from "@/lib/dropbox-client";
 import type { AutoparksCar } from "@/lib/iriss-autoparks";
-import { AUTOPARKS_STOCK_PHOTO_SUBFOLDERS, isStockPhoto, listAutoparksStockPhotoGroups, listAutoparksStockSubfolderPhotos } from "@/lib/iriss-autoparks-dropbox-sync";
+import { listAutoparksStockPhotoGroups } from "@/lib/iriss-autoparks-dropbox-sync";
 import { makeAutoparksThumbnail } from "@/lib/iriss-autoparks-files";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import type { AutoparksCarV2 } from "@/lib/iriss-autoparks-v2";
@@ -14,12 +14,10 @@ const RECHECK_MS = 24 * 60 * 60 * 1000;
 
 export type StockPhotoCandidate = { id: string; name: string };
 
-/** Pirmā (priekšas) foto nosaukums jaunajā struktūrā - `bildes-izsole/1.jpg` vai `bildes-canon/1.jpg` (J36). */
-const FRONT_PHOTO_RE = /^1\.(jpe?g|png|heic|heif|webp|gif)$/i;
-
 /**
- * Auto /STOCK mapes bilžu kandidāti: jaunajā struktūrā (J36) `bildes-izsole/` + `bildes-canon/`
- * apakšmapes, ar vecās struktūras (saknes bildes) fallback, ja neviena apakšmape neeksistē/tukša.
+ * Auto /STOCK mapes bilžu kandidāti: jaunajā struktūrā (J36/J39) `bildes-izsole/` (ar `LR`
+ * apakšmapi) + "iPhone" apakšmapes, ar vecās struktūras (saknes bildes) fallback, ja nekur nekā
+ * nav. `bildes-canon` netiek lietota (J39 labojums).
  */
 export async function autoparksV2StockPhotoCandidates(car: Pick<AutoparksCar, "dropboxFolderId">): Promise<StockPhotoCandidate[]> {
   const client = getDropboxClient();
@@ -36,21 +34,21 @@ export async function autoparksV2StockPhotoCandidates(car: Pick<AutoparksCar, "d
 }
 
 /**
- * Galvenās bildes automātiska izvēle (J36): `bildes-izsole/1.jpg` -> `bildes-canon/1.jpg` (priekšas
- * skats pēc IRISS nosaukuma konvencijas) -> vecā loģika (saknes bildes, heuristika pēc nosaukuma).
+ * Galvenās bildes automātiska izvēle (J39 LABOJUMS): pirmā nav-tukšā avota grupa prioritārā secībā
+ * (`bildes-izsole` -> `bildes-izsole/LR` -> "iPhone" mapes -> saknes bildes, skat.
+ * `listAutoparksStockPhotoGroups`), no tās - zemākais numurētais/pirmais pēc nosaukuma, izfiltrējot
+ * acīmredzami ne-priekšas kadrus (`pickStockMainPhoto`). `bildes-canon` netiek lietota.
  */
 async function pickAutoparksV2MainPhotoCandidate(client: DropboxClient, car: Pick<AutoparksCar, "dropboxFolderId">): Promise<StockPhotoCandidate | null> {
   if (!car.dropboxFolderId) return null;
   const folder = await client.getMetadata(car.dropboxFolderId);
   if (folder?.tag !== "folder") return null;
-  for (const subfolder of AUTOPARKS_STOCK_PHOTO_SUBFOLDERS) {
-    const files = await listAutoparksStockSubfolderPhotos(client, folder.pathDisplay, subfolder);
-    const front = files.find((f) => FRONT_PHOTO_RE.test(f.name));
-    if (front) return { id: front.id, name: front.name };
+  const groups = await listAutoparksStockPhotoGroups(client, folder.pathDisplay);
+  for (const group of groups) {
+    const picked = pickStockMainPhoto(group.map((e) => ({ id: e.id, name: e.name })));
+    if (picked) return picked;
   }
-  const { entries } = await client.listAll(folder.pathDisplay, { recursive: false });
-  const root = entries.filter((e) => e.tag === "file" && e.id && isStockPhoto(e.name)).map((e) => ({ id: e.id, name: e.name }));
-  return pickStockMainPhoto(root);
+  return null;
 }
 
 /**

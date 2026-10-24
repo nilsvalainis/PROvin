@@ -354,10 +354,7 @@ export async function linkAutoparksCarToDropbox(carId: string, opts: { create?: 
   }
 }
 
-/** J36: jaunās /STOCK struktūras bilžu apakšmapes (izsoles foto pirms pašu bildēm). */
-export const AUTOPARKS_STOCK_PHOTO_SUBFOLDERS = ["bildes-izsole", "bildes-canon"] as const;
-
-/** Vienas bilžu apakšmapes (`bildes-izsole`/`bildes-canon`) saturs; [], ja mapes nav vai tā ir tukša. */
+/** Vienas bilžu apakšmapes (`bildes-izsole`/`LR`/iPhone) saturs; [], ja mapes nav vai tā ir tukša. */
 export async function listAutoparksStockSubfolderPhotos(client: DropboxClient, carFolderPath: string, subfolder: string): Promise<DropboxEntry[]> {
   try {
     const sub = await client.getMetadata(`${carFolderPath.replace(/\/+$/, "")}/${subfolder}`);
@@ -369,15 +366,35 @@ export async function listAutoparksStockSubfolderPhotos(client: DropboxClient, c
   }
 }
 
+/** Apakšmapes, kuru nosaukums satur "iphone" (telefona kadri, bez fiksēta nosaukuma) - viena grupa katrai. */
+async function listIphoneLikeStockPhotoGroups(client: DropboxClient, carFolderPath: string): Promise<DropboxEntry[][]> {
+  try {
+    const { entries } = await client.listAll(carFolderPath, { recursive: false });
+    const folders = entries.filter((e) => e.tag === "folder" && e.name.toLowerCase().includes("iphone"));
+    const groups: DropboxEntry[][] = [];
+    for (const f of folders) {
+      const sub = await client.listAll(f.pathDisplay, { recursive: false }).catch(() => ({ entries: [] as DropboxEntry[] }));
+      groups.push(sub.entries.filter((e) => e.tag === "file" && e.id && isStockPhoto(e.name)));
+    }
+    return groups;
+  } catch {
+    return [];
+  }
+}
+
 /**
- * Auto bildes grupās jaunajai struktūrai (J36): [bildes-izsole, bildes-canon] saraksti; ar vecās
- * struktūras (saknes bildes) fallback vienā grupā, ja neviena apakšmape neeksistē / ir tukša.
+ * Auto bildes grupās (J36 struktūra, J39 LABOJUMS): prioritārā secībā `bildes-izsole` (virslīmenis),
+ * `bildes-izsole/LR`, "iPhone" apakšmapes; `bildes-canon` NETIEK lietota. Ja nekur nekā nav, fallback
+ * uz vecās struktūras (saknes bildes) vienu grupu.
  */
 export async function listAutoparksStockPhotoGroups(client: DropboxClient, carFolderPath: string): Promise<DropboxEntry[][]> {
-  const izsole = await listAutoparksStockSubfolderPhotos(client, carFolderPath, "bildes-izsole");
-  const canon = await listAutoparksStockSubfolderPhotos(client, carFolderPath, "bildes-canon");
-  if (izsole.length || canon.length) return [izsole, canon];
-  const { entries } = await client.listAll(carFolderPath, { recursive: false });
+  const path = carFolderPath.replace(/\/+$/, "");
+  const izsole = await listAutoparksStockSubfolderPhotos(client, path, "bildes-izsole");
+  const izsoleLR = await listAutoparksStockSubfolderPhotos(client, `${path}/bildes-izsole`, "LR");
+  const iphone = await listIphoneLikeStockPhotoGroups(client, path);
+  const groups = [izsole, izsoleLR, ...iphone].filter((g) => g.length > 0);
+  if (groups.length) return groups;
+  const { entries } = await client.listAll(path, { recursive: false });
   return [entries.filter((e) => e.tag === "file" && e.id && isStockPhoto(e.name))];
 }
 
@@ -391,17 +408,20 @@ export const AUTOPARKS_V2_KNOWN_RELINKS: ReadonlyArray<{ vin: string; newFolderP
   { vin: "WDF63981313785181", newFolderPath: "/STOCK/Mercedes Viano brūns A1 6 vietas" },
   { vin: "WDF63981313881744", newFolderPath: "/STOCK/Mercedes Viano melns 2014 8 seats" },
   { vin: "W1V44781313698400", newFolderPath: "/STOCK/Mercedes V-Class V300d Kapteinis" },
+  // J39: BMW 220d (ap-4c72861d-c27b-437a-ae9d-44c98fbc4b16) nebija saistīts vispār; mērķa mape jau
+  // satur bildes+dokumentus (VIN apstiprināts no doc/OFICIALA_DILERA_DATI_WBA6X310305V99966.pdf).
+  { vin: "WBA6X310305V99966", newFolderPath: "/STOCK/BMW 220d Gran Tourer 2022 balts – V99966 – A1" },
 ];
 
 export type AutoparksV2RelinkResult = { vin: string; carId: string; from: string; to: string; applied: boolean; reason?: string };
 
 /**
- * J36: VIENREIZĒJS pārpiesaistes trigeris zināmajiem auto (Viano/V300d), kas pēc IRISS 24.10
- * pārkārtošanas varēja tikt sasaistīti tukšām jaundzimušām mapēm. Droši palaist atkārtoti - maina
- * tikai tad, ja auto šobrīd piesaistīts TUKŠAI (0 failu) mapei vai nav saistīts vispār; citādi ziņo
- * iemeslu un neko nemaina.
+ * J36/J39: VIENREIZĒJS pārpiesaistes trigeris zināmajiem auto (Viano/V300d/BMW 220d), kas pēc IRISS
+ * 24.10 pārkārtošanas varēja tikt sasaistīti tukšām jaundzimušām mapēm (vai nebija saistīti vispār).
+ * Droši palaist atkārtoti - maina tikai tad, ja auto šobrīd piesaistīts TUKŠAI (0 failu) mapei vai nav
+ * saistīts vispār; citādi ziņo iemeslu un neko nemaina. `opts.dryRun` - tikai atgriež plānu, neko nerakstot.
  */
-export async function relinkKnownAutoparksV2Folders(actorName: string): Promise<AutoparksV2RelinkResult[]> {
+export async function relinkKnownAutoparksV2Folders(actorName: string, opts: { dryRun?: boolean } = {}): Promise<AutoparksV2RelinkResult[]> {
   const client = autoparksDropboxEnabled() ? getDropboxClient() : null;
   if (!client) return [];
   const out: AutoparksV2RelinkResult[] = [];
@@ -432,6 +452,10 @@ export async function relinkKnownAutoparksV2Folders(actorName: string): Promise<
       }
     }
     const from = car.dropboxFolderPath ?? "";
+    if (opts.dryRun) {
+      out.push({ vin: plan.vin, carId: car.id, from, to: target.pathDisplay, applied: false, reason: "dry_run" });
+      continue;
+    }
     await mutateAutoparksState((s) => {
       const idx = s.cars.findIndex((c) => c.id === car.id);
       if (idx < 0) return { result: null };
