@@ -24,6 +24,8 @@ export type OfferSeedFields = Partial<
     | "powerKw"
     | "engineDisplacement"
     | "color"
+    | "bodyTypeOffer"
+    | "doorCount"
     | "location"
     | "originCountry"
     | "equipmentHighlights"
@@ -55,6 +57,8 @@ export const OFFER_SEED_TAG_KEYS = [
   "powerKw",
   "engineDisplacement",
   "color",
+  "bodyTypeOffer",
+  "doorCount",
   "location",
   "originCountry",
   "equipmentHighlights",
@@ -65,7 +69,8 @@ export const OFFER_SEED_TAG_KEYS = [
 ] as const;
 
 export type AutoparksSeedExtras = {
-  tech?: { firstRegDate?: string; displacementCm3?: number | null; powerKw?: number | null } | null;
+  /** `gearbox` - ar roku ievadītā (J30 `V2Tech.gearbox`), ja ir; citādi CSDD tirdzniecības reģistra `registry.gearbox`. */
+  tech?: { firstRegDate?: string; displacementCm3?: number | null; powerKw?: number | null; gearbox?: string } | null;
   /** Iepirkuma dati (izsole, Lot/stock nr., PVN režīms) - Autoparka v2 `purchase`. */
   purchase?: { auction?: string; auctionNo?: string; vat?: { mode?: V2VatMode } } | null;
   location?: string;
@@ -119,10 +124,12 @@ export function offerSeedFromAutoparks(car: AutoparksCar, extras: AutoparksSeedE
       odometerReading: odometer,
       mileage: odometer,
       fuel: txt(reg?.fuel, 60),
-      transmission: txt(reg?.gearbox, 60),
+      transmission: txt(extras.tech?.gearbox) || txt(reg?.gearbox, 60),
       powerKw: num(extras.tech?.powerKw, "kW"),
       engineDisplacement: num(extras.tech?.displacementCm3, "cm³"),
       color: txt(car.color, 60),
+      bodyTypeOffer: txt(reg?.vehicleType, 80),
+      doorCount: num(reg?.seats ?? null, "vietas"),
       location: txt(extras.location) || txt(car.location),
       equipmentHighlights: equipmentLine,
       auctionPlatform: txt(extras.purchase?.auction, 80),
