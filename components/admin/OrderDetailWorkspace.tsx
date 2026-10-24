@@ -236,6 +236,7 @@ import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import {
   commentsNeedPowertrainRegenerate,
   POWERTRAIN_REGENERATE_PROMPT_LV,
+  stampDealerCommentBlock,
   stampGeneratedAgainstOnBlocks,
 } from "@/lib/comment-powertrain-guard";
 import {
@@ -807,10 +808,10 @@ export function OrderDetailWorkspace({
     () =>
       commentsNeedPowertrainRegenerate({
         sourceBlocks: ws.sourceBlocks,
-        commentTexts: [
-          ws.tehniskoRiskuAnalize,
-          ws.iriss,
-          (ws.sourceBlocks.auto_records?.comments as string | undefined) ?? "",
+        comments: [
+          { field: "technical_risks", text: ws.tehniskoRiskuAnalize },
+          { field: "summary", text: ws.iriss },
+          { field: "dealer_comment", text: (ws.sourceBlocks.auto_records?.comments as string | undefined) ?? "" },
         ],
         vin: payload.vin,
       }),
@@ -1491,7 +1492,7 @@ export function OrderDetailWorkspace({
         (text) =>
           updateWs({
             tehniskoRiskuAnalize: aiExpertSourceCommentToRichHtml(text),
-            sourceBlocks: stampGeneratedAgainstOnBlocks(cur.sourceBlocks, payload.vin),
+            sourceBlocks: stampGeneratedAgainstOnBlocks(wsStateRef.current.sourceBlocks, payload.vin, "technical_risks"),
             ...technicalRiskMapSnapshotField(
               generated.technicalRiskMap
                 ? {
@@ -1564,7 +1565,11 @@ export function OrderDetailWorkspace({
       );
       const applied = applyGeneratedAdminAiText(
         generated,
-        (text) => setIrissSummary(aiExpertSourceCommentToRichHtml(text)),
+        (text) =>
+          updateWs({
+            iriss: aiExpertSourceCommentToRichHtml(text),
+            sourceBlocks: stampGeneratedAgainstOnBlocks(wsStateRef.current.sourceBlocks, payload.vin, "summary"),
+          }),
         setAiSummaryErr,
       );
       if (applied && generated.text) void runFactCheck("summary", generated.text);
@@ -1573,7 +1578,7 @@ export function OrderDetailWorkspace({
     } finally {
       setAiSummaryBusy(false);
     }
-  }, [buildAiOrderPayload, aiSummaryBusy, payload.aiAllowed, runFactCheck, setIrissSummary]);
+  }, [buildAiOrderPayload, aiSummaryBusy, payload.aiAllowed, payload.vin, runFactCheck, updateWs]);
 
   const runAiIncidentsSummary = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.incidents) => {
     if (!payload.aiAllowed || aiIncidentsSummaryBusy) return;
@@ -2131,10 +2136,16 @@ export function OrderDetailWorkspace({
             (text) => {
               const html = aiExpertSourceCommentToRichHtml(text);
               const prevBlock = wsStateRef.current.sourceBlocks[blockKey];
-              const nextBlock = applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
-                citiAvotiSectionIndex,
+              const nextBlock = stampDealerCommentBlock(
+                blockKey,
                 targetField,
-              });
+                applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
+                  citiAvotiSectionIndex,
+                  targetField,
+                }),
+                wsStateRef.current.sourceBlocks,
+                payload.vin,
+              );
               updateSourceBlock(blockKey, nextBlock);
             },
             (error) => setAiSourceCommentErr((prev) => ({ ...prev, [busyKey]: error })),
@@ -2156,7 +2167,7 @@ export function OrderDetailWorkspace({
         setAiSourceCommentBusy(cleared);
       }
     },
-    [buildAiOrderPayload, orderDraftPersistenceEnabled, payload.aiAllowed, persistFullWorkspaceRef, runFactCheck, updateSourceBlock],
+    [buildAiOrderPayload, orderDraftPersistenceEnabled, payload.aiAllowed, payload.vin, persistFullWorkspaceRef, runFactCheck, updateSourceBlock],
   );
 
   const runFlashMax = useCallback(async (selection: FlashMaxSelection) => {
@@ -2264,14 +2275,20 @@ export function OrderDetailWorkspace({
               (text) => {
                 const html = aiExpertSourceCommentToRichHtml(text);
                 if (job.kind === "source") {
-                  const nextBlock = applySourceBlockGeneratedComment(
+                  const nextBlock = stampDealerCommentBlock(
                     job.blockKey,
-                    wsStateRef.current.sourceBlocks[job.blockKey],
-                    html,
-                    {
-                      targetField: job.targetField,
-                      citiAvotiSectionIndex: job.citiAvotiSectionIndex,
-                    },
+                    job.targetField,
+                    applySourceBlockGeneratedComment(
+                      job.blockKey,
+                      wsStateRef.current.sourceBlocks[job.blockKey],
+                      html,
+                      {
+                        targetField: job.targetField,
+                        citiAvotiSectionIndex: job.citiAvotiSectionIndex,
+                      },
+                    ),
+                    wsStateRef.current.sourceBlocks,
+                    payload.vin,
                   );
                   updateSourceBlock(job.blockKey, nextBlock);
                   return;
@@ -2316,6 +2333,11 @@ export function OrderDetailWorkspace({
                 if (job.id === "technical_risks") {
                   updateWs({
                     tehniskoRiskuAnalize: html,
+                    sourceBlocks: stampGeneratedAgainstOnBlocks(
+                      wsStateRef.current.sourceBlocks,
+                      payload.vin,
+                      "technical_risks",
+                    ),
                     ...technicalRiskMapSnapshotField(
                       generated.technicalRiskMap
                         ? {
@@ -2335,7 +2357,10 @@ export function OrderDetailWorkspace({
                   updateWs({ apskatesPlāns: html });
                   return;
                 }
-                updateWs({ iriss: html });
+                updateWs({
+                  iriss: html,
+                  sourceBlocks: stampGeneratedAgainstOnBlocks(wsStateRef.current.sourceBlocks, payload.vin, "summary"),
+                });
               },
               (error) => setFlashMaxErr(`${job.runLabel}: ${error}`),
             );
@@ -2383,6 +2408,7 @@ export function OrderDetailWorkspace({
   }, [
     buildAiOrderPayload,
     flashMaxBusy,
+    payload.vin,
     onInternalCommentChange,
     onMileageCommentChange,
     onSourcesComparisonCommentChange,

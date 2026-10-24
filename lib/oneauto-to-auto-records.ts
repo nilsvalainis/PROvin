@@ -63,7 +63,30 @@ export type AutoRecordsOneautoIngest = {
   serviceTimelineOriginal?: OneautoServiceEvent[];
   /** Dzinējs / degviela, pret kuriem pēdējoreiz ģenerēts komentārs. */
   generatedAgainst?: { engineCode: string; fuelKind: string };
+  /** j26: tas pats katram laukam atsevišķi (tehniskie riski, kopsavilkums, dīlera komentārs). */
+  generatedAgainstByField?: Record<string, { engineCode: string; fuelKind: string }>;
 };
+
+function parseGeneratedAgainstRaw(raw: unknown): { engineCode: string; fuelKind: string } | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as { engineCode?: unknown; fuelKind?: unknown };
+  return {
+    engineCode: typeof o.engineCode === "string" ? o.engineCode.trim().toUpperCase().slice(0, 24) : "",
+    fuelKind: typeof o.fuelKind === "string" ? o.fuelKind.trim().toLowerCase().slice(0, 24) : "",
+  };
+}
+
+const GENERATED_AGAINST_FIELDS = ["technical_risks", "summary", "dealer_comment"] as const;
+
+function parseGeneratedAgainstByField(raw: unknown): Record<string, { engineCode: string; fuelKind: string }> | null {
+  if (!raw || typeof raw !== "object") return null;
+  const out: Record<string, { engineCode: string; fuelKind: string }> = {};
+  for (const key of GENERATED_AGAINST_FIELDS) {
+    const v = parseGeneratedAgainstRaw((raw as Record<string, unknown>)[key]);
+    if (v) out[key] = v;
+  }
+  return Object.keys(out).length > 0 ? out : null;
+}
 
 export function emptyOneautoIngest(): AutoRecordsOneautoIngest {
   return {
@@ -107,6 +130,10 @@ export function parseOneautoIngestRaw(raw: unknown): AutoRecordsOneautoIngest {
           },
         }
       : {}),
+    ...(() => {
+      const byField = parseGeneratedAgainstByField(o.generatedAgainstByField);
+      return byField ? { generatedAgainstByField: byField } : {};
+    })(),
   };
 }
 
@@ -215,6 +242,9 @@ export function mergeOneautoIngest(
     results: mergeOneautoProductResults(prev.results, incoming.results),
     serviceTimelineOriginal: nextOriginal.length > 0 ? nextOriginal : prevOriginal,
     generatedAgainst: incoming.generatedAgainst ?? prev.generatedAgainst,
+    ...(incoming.generatedAgainstByField || prev.generatedAgainstByField
+      ? { generatedAgainstByField: { ...prev.generatedAgainstByField, ...incoming.generatedAgainstByField } }
+      : {}),
   };
 }
 

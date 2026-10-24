@@ -110,13 +110,24 @@ export function extractLoadedPowertrainIdentity(
   };
 }
 
+/**
+ * j26: kārbu un platformu kodi nav dzinēja kodi (VW DQ400E / DQ200 / DL501 kārbas,
+ * EA211 / EA888 / EA189 dzinēju saimes, MQB / PQ35 / MLB platformas, ZF 8HP u.c.).
+ */
+const NON_ENGINE_CODE_RE = /^(?:DQ\d{3}\w*|DL\d{3}\w*|DSG\w*|EA\d{3}\w*|MQB\w*|PQ\d{2}\w*|MLB\w*|MEB\w*|HP\d{2}\w*|AL\d{3}\w*|AW\d{2}\w*|NAG\d\w*|TF\d{2}\w*)$/;
+/** Dzinēja kodu salīdzina tikai teikumos, kas runā par dzinēju / motoru. */
+const ENGINE_SENTENCE_RE = /dzinēj|motor|engine/i;
+
 function mentionedEngineCodes(text: string): string[] {
   const out = new Set<string>();
-  const matches = text.toUpperCase().match(ENGINE_CODE_RE) ?? [];
-  for (const raw of matches) {
-    const t = raw.replace(/[.,;:]+$/, "");
-    if (t.length < 4 || ENGINE_CODE_FALSE_POSITIVE.has(t) || /^\d+$/.test(t)) continue;
-    out.add(t);
+  for (const sentence of splitSentences(text)) {
+    if (!ENGINE_SENTENCE_RE.test(sentence)) continue;
+    const matches = sentence.toUpperCase().match(ENGINE_CODE_RE) ?? [];
+    for (const raw of matches) {
+      const t = raw.replace(/[.,;:]+$/, "");
+      if (t.length < 4 || ENGINE_CODE_FALSE_POSITIVE.has(t) || NON_ENGINE_CODE_RE.test(t) || /^\d+$/.test(t)) continue;
+      out.add(t);
+    }
   }
   return [...out];
 }
@@ -214,19 +225,32 @@ export function generatedAgainstIsStale(
   return false;
 }
 
+/** Lauki, kuru paziņojumu „Dzinēja vai degvielas dati ir mainīti” pārbauda. */
+export type PowertrainCommentField = "technical_risks" | "summary" | "dealer_comment";
+
 export function commentsNeedPowertrainRegenerate(args: {
   sourceBlocks: WorkspaceSourceBlocks;
-  commentTexts: readonly string[];
+  /** Vecais ceļš: teksti bez lauka (zīmogs - kopīgais). */
+  commentTexts?: readonly string[];
+  /** j26: teksti ar lauku - katram laukam savs zīmogs. */
+  comments?: ReadonlyArray<{ field: PowertrainCommentField; text: string }>;
   vin?: string | null;
 }): boolean {
   const identity = extractLoadedPowertrainIdentity(args.sourceBlocks, { vin: args.vin });
-  const filled = args.commentTexts.map((t) => adminRichHtmlToPlainText(t).trim()).filter(Boolean);
-  if (filled.length === 0) return false;
-  if (filled.some((t) => commentContradictsPowertrain(t, identity))) return true;
-  const generated = parseGeneratedAgainstPowertrain(
-    mergeSourceBlocksWithDefaults(args.sourceBlocks).auto_records.oneautoIngest?.generatedAgainst,
-  );
-  return generatedAgainstIsStale(generated, identity);
+  const ingest = mergeSourceBlocksWithDefaults(args.sourceBlocks).auto_records.oneautoIngest;
+  const globalStamp = parseGeneratedAgainstPowertrain(ingest?.generatedAgainst);
+  const items: Array<{ field: PowertrainCommentField | null; text: string }> = [
+    ...(args.commentTexts ?? []).map((text) => ({ field: null, text })),
+    ...(args.comments ?? []),
+  ]
+    .map((c) => ({ field: c.field, text: adminRichHtmlToPlainText(c.text).trim() }))
+    .filter((c) => c.text);
+  if (items.length === 0) return false;
+  if (items.some((c) => commentContradictsPowertrain(c.text, identity))) return true;
+  return items.some((c) => {
+    const own = c.field ? parseGeneratedAgainstPowertrain(ingest?.generatedAgainstByField?.[c.field]) : undefined;
+    return generatedAgainstIsStale(own ?? globalStamp, identity);
+  });
 }
 
 export const POWERTRAIN_REGENERATE_PROMPT_LV =
@@ -261,21 +285,43 @@ export function toGeneratedAgainst(identity: LoadedPowertrainIdentity): Generate
   return { engineCode: identity.engineCode, fuelKind: identity.fuelKind };
 }
 
+/**
+ * Zīmogs pēc ✨: ar `field` - tikai šim laukam (j26), bez - kopīgais (vecais ceļš, tehniskie riski).
+ * Paziņojums pazūd, kad visi aizpildītie lauki ir ģenerēti pret pašreizējo identitāti.
+ */
 export function stampGeneratedAgainstOnBlocks(
   sourceBlocks: WorkspaceSourceBlocks,
   vin?: string | null,
+  field?: PowertrainCommentField,
 ): WorkspaceSourceBlocks {
   const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
   const identity = extractLoadedPowertrainIdentity(blocks, { vin });
-  const prev = blocks.auto_records.oneautoIngest;
+  const prev = blocks.auto_records.oneautoIngest ?? emptyOneautoIngest();
+  const stamp = toGeneratedAgainst(identity);
   return {
     ...blocks,
     auto_records: {
       ...blocks.auto_records,
-      oneautoIngest: {
-        ...(prev ?? emptyOneautoIngest()),
-        generatedAgainst: toGeneratedAgainst(identity),
-      },
+      oneautoIngest: field
+        ? { ...prev, generatedAgainstByField: { ...prev.generatedAgainstByField, [field]: stamp } }
+        : { ...prev, generatedAgainst: stamp },
     },
   };
+}
+
+/** j26: dīlera komentāra ✨ - zīmogs tikai `auto_records` / `comments` laukam. */
+export function stampDealerCommentBlock<T>(
+  blockKey: string,
+  targetField: string | undefined,
+  nextBlock: T,
+  sourceBlocks: WorkspaceSourceBlocks,
+  vin?: string | null,
+): T {
+  if (blockKey !== "auto_records" || (targetField ?? "comments") !== "comments") return nextBlock;
+  const stamped = stampGeneratedAgainstOnBlocks(
+    { ...sourceBlocks, auto_records: nextBlock } as WorkspaceSourceBlocks,
+    vin,
+    "dealer_comment",
+  );
+  return stamped.auto_records as T;
 }
