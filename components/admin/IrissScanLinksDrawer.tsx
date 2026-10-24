@@ -2,6 +2,7 @@
 
 import { ExternalLink, Plus, X } from "lucide-react";
 import { useRef } from "react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import {
   addIrissListingLinkRow,
   coerceIrissListingLinkList,
@@ -105,9 +106,10 @@ export function IrissScanLinksDrawer({
   onClose: () => void;
   onChangeLinks: (key: IrissScanLinkKey, next: string[]) => void;
 }) {
+  const backdropClose = useModalBackdropClose(onClose);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-[140] flex items-end justify-center bg-black/40 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6" onClick={onClose} role="presentation">
+    <div className="fixed inset-0 z-[140] flex items-end justify-center bg-black/40 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6" {...backdropClose} role="presentation">
       <div
         role="dialog"
         aria-modal="true"

@@ -10,6 +10,7 @@ import { AdminIrissOrdersExportButton } from "@/components/admin/AdminIrissOrder
 import { IrissGoogleContactsBackfillButton } from "@/components/admin/IrissGoogleContactsBackfillButton";
 import { IrissOverflowItem, IrissOverflowLabel, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
 import { IrissPasutijumiListRow } from "@/components/admin/IrissPasutijumiListRow";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import {
   IRISS_ORDER_SORT_EVENT,
   IRISS_ORDER_SORT_KEY,
@@ -691,6 +692,8 @@ export function IrissPasutijumiListClient({
     </IrissOverflowMenu>
   );
 
+  const deleteConfirmBackdropClose = useModalBackdropClose(() => setDeleteTargetId(null), !actionBusy);
+
   return (
     <div className="iriss-pasutijumi-view">
       <div className="md:hidden">
@@ -867,7 +870,7 @@ export function IrissPasutijumiListClient({
       {deleteTargetId ? (
         <div
           className="fixed inset-0 z-[110] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
-          onClick={() => !actionBusy && setDeleteTargetId(null)}
+          {...deleteConfirmBackdropClose}
           role="presentation"
         >
           <div

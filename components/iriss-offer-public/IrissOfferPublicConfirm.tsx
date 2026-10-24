@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { IRISS_OFFER_PUBLIC_LABELS } from "@/lib/iriss-offer-client-link";
 
 const btn =
@@ -34,9 +35,10 @@ export function IrissOfferPublicConfirm({
 
   const approve = action === "approve";
   const title = approve ? IRISS_OFFER_PUBLIC_LABELS.confirmApproveTitle : IRISS_OFFER_PUBLIC_LABELS.confirmDeclineTitle;
+  const backdropClose = useModalBackdropClose(onCancel, !busy);
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-6">
-      <button type="button" aria-label={IRISS_OFFER_PUBLIC_LABELS.cancel} className="absolute inset-0 cursor-default" onClick={busy ? undefined : onCancel} tabIndex={-1} />
+      <button type="button" aria-label={IRISS_OFFER_PUBLIC_LABELS.cancel} className="absolute inset-0 cursor-default" {...backdropClose} tabIndex={-1} />
       <div
         role="dialog"
         aria-modal="true"

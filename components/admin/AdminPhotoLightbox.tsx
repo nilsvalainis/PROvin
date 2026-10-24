@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { ChevronLeft, ChevronRight, Minus, Plus, X } from "lucide-react";
 import {
@@ -113,6 +114,8 @@ export function AdminPhotoLightbox({ photos, index, onIndexChange, onClose, thum
 
   useAdminScrollLock(open);
 
+  const backdropClose = useModalBackdropClose(onClose);
+
   if (!open || !mounted) return null;
   const photo = photos[index]!;
 
@@ -179,7 +182,7 @@ export function AdminPhotoLightbox({ photos, index, onIndexChange, onClose, thum
       aria-modal="true"
       aria-label="Fotogrāfijas priekšskatījums"
       className="fixed inset-0 z-[160] flex flex-col bg-black/90 backdrop-blur-sm"
-      onClick={onClose}
+      {...backdropClose}
     >
       <div className="flex shrink-0 items-center justify-between gap-3 p-3" onClick={(e) => e.stopPropagation()}>
         <div className="min-w-0">

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { adminProBtn } from "@/lib/admin-pro-tones";
 import {
   factCheckDismissKey,
@@ -189,11 +190,12 @@ export function AdminFactCheckPublishConfirm({
   onContinue: () => void;
   onBack: () => void;
 }) {
+  const backdropClose = useModalBackdropClose(onBack);
   return (
     <div
       className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 p-3 sm:items-center"
       role="presentation"
-      onClick={onBack}
+      {...backdropClose}
     >
       <div
         role="dialog"

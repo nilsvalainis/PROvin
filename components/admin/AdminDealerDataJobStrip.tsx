@@ -2,6 +2,7 @@
 
 import { ADMIN_PRO_TONE } from "@/lib/admin-pro-tones";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 
 import {
   whatsappPrefillDealerNoDataRefunded,
@@ -374,6 +375,8 @@ export function AdminDealerDataJobStrip({
     return "Nosūtīt e-pastu (nav datu)";
   }, [sheet]);
 
+  const sheetBackdropClose = useModalBackdropClose(() => setSheet(null), busy === null);
+
   if (!loaded) return null;
 
   const refunded = Boolean(job?.refund);
@@ -510,9 +513,7 @@ export function AdminDealerDataJobStrip({
           role="dialog"
           aria-modal="true"
           aria-label={sheetTitle}
-          onClick={() => {
-            if (busy === null) setSheet(null);
-          }}
+          {...sheetBackdropClose}
         >
           <div
             className="max-h-[min(92vh,640px)] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 shadow-xl"

@@ -3,6 +3,7 @@
 import { Check, ChevronDown, ChevronRight, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import styles from "@/components/admin/IrissWaybillMobileForm.module.css";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { IrissWaybillSavePdfButton } from "@/components/admin/IrissWaybillSavePdfButton";
 import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
 import {
@@ -480,8 +481,9 @@ export function WaybillDismissDialog({ title, onYes, onNo }: { title: string; on
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onNo]);
+  const backdropClose = useModalBackdropClose(onNo);
   return (
-    <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#0f172a66] p-4" onClick={onNo}>
+    <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#0f172a66] p-4" {...backdropClose}>
       <div
         className="w-full max-w-[360px] rounded-2xl border border-[#E5E7EB] bg-white p-4"
         role="dialog"

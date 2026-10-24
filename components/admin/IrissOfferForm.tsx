@@ -16,6 +16,7 @@ import { IrissOfferFieldTag } from "@/components/admin/IrissOfferFieldTag";
 import { IrissLabeledInput as LabeledInput, irissOfferFieldClass as fieldClass } from "@/components/admin/IrissOfferFormFields";
 import { IrissOfferImageSorter } from "@/components/admin/IrissOfferImageSorter";
 import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { offerDraftTotalPrice, type OfferDraft } from "@/lib/iriss-offer-draft";
 import { isIrissOfferExpired, normalizeOfferValidUntil, offerValidUntilYmdFromAt } from "@/lib/iriss-offer-valid-until";
 import { IRISS_MAX_OFFER_ATTACHMENTS } from "@/lib/iriss-pasutijumi-types";
@@ -142,11 +143,12 @@ export function IrissOfferForm({
   const leftTab: IrissOfferFormTab = tab === "bildes" ? "pamatinfo" : tab;
   const photoCount = draft.attachments.length;
   const pendingPhotos = savedPendingPhotos;
+  const backdropClose = useModalBackdropClose(onClose, !busy && !filePrepare);
 
   return (
     <div
       className="fixed inset-0 z-[120] flex items-end justify-center overscroll-y-contain bg-black/45 p-0 sm:items-center sm:p-6"
-      onClick={() => !busy && !filePrepare && onClose()}
+      {...backdropClose}
       role="presentation"
     >
       <div

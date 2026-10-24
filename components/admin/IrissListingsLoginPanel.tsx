@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import type { IrissListingPlatform } from "@/lib/iriss-listings-types";
@@ -145,12 +146,12 @@ function IrissListingsLoginDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [platform]);
 
+  const backdropClose = useModalBackdropClose(() => void cancel(), !busy);
+
   return (
     <div
       className="fixed inset-0 z-[140] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
-      onClick={() => {
-        if (!busy) void cancel();
-      }}
+      {...backdropClose}
       role="presentation"
     >
       <div
