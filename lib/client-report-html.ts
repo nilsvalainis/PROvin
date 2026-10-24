@@ -195,6 +195,7 @@ import {
 import {
   collectUnifiedMileageRows,
   analyzeUnifiedMileageAnomalies,
+  collectImplausibleMileageReadings,
   prepareUnifiedMileageDisplayRows,
   resolveCsddUndatedOdometer,
   type CollectUnifiedMileageOptions,
@@ -1200,20 +1201,18 @@ export function buildUnifiedMileageTableHtml(
   p: UnifiedMileageSourcePayload & { mileageComment?: string | null },
   mileageOpts?: CollectUnifiedMileageOptions,
 ): string {
-  const collected = collectUnifiedMileageRows(
-    {
-      csddForm: p.csddForm,
-      autoRecordsBlock: p.autoRecordsBlock,
-      oneautoBlock: p.oneautoBlock ?? null,
-      ccVinBlock: p.ccVinBlock ?? null,
-      asvBlock: p.asvBlock ?? null,
-      manualVendorBlocks: p.manualVendorBlocks,
-      citiAvotiBlock: "citiAvoti" in p ? (p as ClientReportPayload).citiAvoti ?? null : p.citiAvotiBlock ?? null,
-      tirgusForm: p.tirgusForm ?? ("tirgusForm" in p ? (p as ClientReportPayload).tirgusForm ?? null : null),
-      listingUrl: "listingUrl" in p ? (p as ClientReportPayload).listingUrl ?? null : p.listingUrl ?? null,
-    },
-    mileageOpts,
-  );
+  const collectPayload: UnifiedMileageSourcePayload = {
+    csddForm: p.csddForm,
+    autoRecordsBlock: p.autoRecordsBlock,
+    oneautoBlock: p.oneautoBlock ?? null,
+    ccVinBlock: p.ccVinBlock ?? null,
+    asvBlock: p.asvBlock ?? null,
+    manualVendorBlocks: p.manualVendorBlocks,
+    citiAvotiBlock: "citiAvoti" in p ? (p as ClientReportPayload).citiAvoti ?? null : p.citiAvotiBlock ?? null,
+    tirgusForm: p.tirgusForm ?? ("tirgusForm" in p ? (p as ClientReportPayload).tirgusForm ?? null : null),
+    listingUrl: "listingUrl" in p ? (p as ClientReportPayload).listingUrl ?? null : p.listingUrl ?? null,
+  };
+  const collected = collectUnifiedMileageRows(collectPayload, mileageOpts);
   if (collected.length === 0) {
     const commentBlock = pdfReportCommentBox(p.mileageComment ?? "", PDF_MILEAGE_HISTORY_COMMENT_LABEL);
     if (!commentBlock) return "";
@@ -1276,7 +1275,15 @@ export function buildUnifiedMileageTableHtml(
       )}</p>`
     : "";
 
-  const body = `${chartHtml}${dualTables}${approxNoteHtml}${sourceCountHtml}${staleNoteHtml}${commentHtml}`;
+  const implausible = mileageOpts?.showImplausibleNote ? collectImplausibleMileageReadings(collectPayload, mileageOpts) : [];
+  const implausibleNoteHtml =
+    implausible.length > 0
+      ? `<p class="pdf-mileage-smart-note"><span class="pdf-mileage-smart-note__ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("yellow")}</span>${escapeHtml(
+          `Izlaists neticams rādījums: ${implausible.map((r) => `${formatPdfOdometerDisplay(r.odometer)} km, ${r.date}, ${r.sourceLabel}`).join("; ")}. Ievades kļūda - PDF un AI to neņem vērā.`,
+        )}</p>`
+      : "";
+
+  const body = `${chartHtml}${dualTables}${approxNoteHtml}${implausibleNoteHtml}${sourceCountHtml}${staleNoteHtml}${commentHtml}`;
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-hub-tint--mileage" role="region">${head}<div class="pdf-unified-mileage-zone__body">${body}</div></div>`;
 }
 

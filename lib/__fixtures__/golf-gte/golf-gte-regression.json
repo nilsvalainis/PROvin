@@ -1,6 +1,6 @@
 {
   "id": "vw-golf-gte-2026-10",
-  "note": "Sintētiska, anonimizēta VW Golf GTE fikstūra pēc j26 plāna (prod pasūtījuma dati nav pieejami: nav admin sesijas). VIN maskēts, bez klienta vārda. Zviedrija 07.2017 - 01.2020, eksports uz Somiju 10.01.2020, 100 km car.info inspekcijas ieraksts pēc eksporta, Copart FI izsole ar bojājumiem bez summas, Traficom izņemšana bojājuma dēļ, 9 dzinēja eļļas maiņas + 2 DSG eļļas maiņas dīlera datos (kopā > 12 rindas).",
+  "note": "Sintētiska, anonimizēta VW Golf GTE fikstūra pēc j26 plāna (prod pasūtījuma dati nav pieejami: nav admin sesijas). VIN maskēts, bez klienta vārda. Zviedrija 07.2017 - 01.2020, eksports uz Somiju 10.01.2020, 100 km Traficom reģistrācijas apskates ieraksts pēc eksporta (valsts maiņa krituma brīdī), Copart FI izsole ar bojājumiem bez summas, Traficom izņemšana bojājuma dēļ, 9 dzinēja eļļas maiņas + 2 DSG eļļas maiņas dīlera datos (kopā > 12 rindas).",
   "vin": "WVWZZZAUZJW******",
   "makeModel": "VOLKSWAGEN GOLF GTE",
   "carinfo": {
@@ -16,12 +16,6 @@
         "odometer": "41200",
         "country": "Zviedrija",
         "origin": "Apskate"
-      },
-      {
-        "date": "14.02.2020",
-        "odometer": "100",
-        "country": "Zviedrija",
-        "origin": "inspection"
       }
     ],
     "timeline": [
@@ -40,6 +34,12 @@
     ]
   },
   "traficomMileage": [
+    {
+      "date": "14.02.2020",
+      "odometer": "100",
+      "country": "Somija",
+      "origin": "Apskate"
+    },
     {
       "date": "12.01.2021",
       "odometer": "68900",

@@ -2,6 +2,7 @@
  * Deterministiska pretrunu pārbaude pret KANONISKAJIEM FAKTIEM un starp laukiem.
  * Tekstu nemaina; tikai karodziņi adminam (E/W). Nav maksas modeļa.
  */
+import type { RegistryCountryPeriod } from "@/lib/registry-country-periods";
 import {
   CANONICAL_FACTS_HEADER,
   LARGE_ODOMETER_DROP_KM,
@@ -94,6 +95,15 @@ function negatesDealerComponent(sentence: string, mention: string): boolean {
   const after = new RegExp(`(?:${mention})(?:\\s+\\S+){0,3}?\\s+(?:nav|netika)\\b`, "iu");
   return before.test(sentence) || after.test(sentence);
 }
+
+const COUNTRY_STAY_RE = /posm|ekspluatācij|ekspluatēt|lietot|atradās|reģistrēt|izmantot/i;
+const COUNTRY_STEMS: Array<[string, string]> = [
+  ["zviedrij", "Zviedrija"],
+  ["somij", "Somija"],
+  ["dānij", "Dānija"],
+  ["igaunij", "Igaunija"],
+  ["nīderland", "Nīderlande"],
+];
 
 const NO_RECALL_RE =
   /\bnav\s+(fiksēt|reģistrēt|konstatēt|atrast|zinām)\w*.{0,40}(?:atsaukum|kampaņ)|(?:atsaukum|kampaņ)\w*.{0,30}\bnav\b/i;
@@ -279,6 +289,54 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
           : `${formatForensicsInt(e.km)} km (${e.date}) ir izolēta ievades kļūda: drīkst vienu neitrālu teikumu tikai nobraukuma laukā.`,
         sentence: asRollback ?? kmSentences[0]!,
       });
+    }
+  }
+
+  // 1d) j26: neticams rādījums (piem. 100 km) nav korekcija / kritums. Tikai karodziņš.
+  for (const r of facts.implausibleReadings ?? []) {
+    const km = r.odometer.replace(/\D/g, "");
+    if (!km) continue;
+    const kmRe = new RegExp(`(?<!\\d)(?<!\\d[\\s.,])${km}\\s*km\\b`, "i");
+    const bad = sentences.find((s) => kmRe.test(s) && ROLLBACK_CONTEXT_RE.test(s));
+    if (!bad) continue;
+    push({
+      id: "entry_error_as_rollback",
+      kind: "entry_error_as_rollback",
+      level: "W",
+      message: `${km} km (${r.date}, ${r.sourceLabel}) ir neticams ievades ieraksts, ne odometra korekcija vai kritums.`,
+      sentence: bad,
+    });
+  }
+
+  // 1e) j26: „posms {valsts}” gadā, kas neietilpst šīs valsts posmā (no reģistru laika līnijas).
+  const periods = facts.countryPeriods ?? [];
+  if (periods.length > 0) {
+    for (const sentence of sentences) {
+      if (!COUNTRY_STAY_RE.test(sentence)) continue;
+      const years = [...sentence.matchAll(/\b((?:19|20)\d{2})\b/g)].map((m) => Number(m[1]));
+      if (years.length === 0) continue;
+      for (const [stem, country] of COUNTRY_STEMS) {
+        if (!new RegExp(stem, "iu").test(sentence)) continue;
+        const own = periods.filter((p) => p.country === country);
+        if (own.length === 0) continue;
+        const covered = (y: number) =>
+          own.some((p) => {
+            const fromY = new Date(p.from).getUTCFullYear();
+            const toY = p.to == null ? 9999 : new Date(p.to).getUTCFullYear();
+            return y >= fromY && y <= toY;
+          });
+        const outside = years.filter((y) => !covered(y));
+        if (outside.length === 0) continue;
+        push({
+          id: "country_period_mismatch",
+          kind: "country_period_mismatch",
+          level: "W",
+          message: `${country}: ${outside.join(", ")}. gads neietilpst valsts posmā pēc reģistru laika līnijas (${own
+            .map((p) => `${p.fromLabel} - ${p.toLabel}`)
+            .join("; ")}).`,
+          sentence,
+        });
+      }
     }
   }
 
@@ -681,6 +739,17 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
     },
     alertBannerTexts: [],
     dealerComponentCounts: parseDealerComponentCountsFromSheet(sheet),
+    implausibleReadings: [...sheet.matchAll(/- Izlaists neticams rādījums[^:\n]*:\s*([^,\n]+),\s*(\d+)\s*km,\s*([^\n]+)/g)].map(
+      (m, i) => ({
+        date: m[1]!.trim(),
+        odometer: m[2]!,
+        country: "",
+        sourceLabel: m[3]!.trim(),
+        sourceOrder: i,
+        sortableTime: 0,
+      }),
+    ),
+    countryPeriods: parseCountryPeriodsFromSheet(sheet),
     registryStatusLines: [],
     ta: EMPTY_TA,
     dealerRowsLv: "",
@@ -704,6 +773,25 @@ export function parseDealerComponentCountsFromSheet(sheet: string): Array<{ labe
     const m = line.match(/^- ([^:]+):\s*(\d+)\s*\(([^)]*)\)/);
     if (!m) break;
     out.push({ label: m[1]!.trim(), dates: m[3]!.split(",").map((d) => d.trim()).filter(Boolean) });
+  }
+  return out;
+}
+
+/** „Valstu posmi” rindas no faktu lapas teksta. */
+export function parseCountryPeriodsFromSheet(sheet: string): RegistryCountryPeriod[] {
+  const head = sheet.indexOf("Valstu posmi");
+  if (head < 0) return [];
+  const toMs = (label: string): number | null => {
+    const m = label.match(/^(\d{2})\.(\d{4})$/);
+    return m ? Date.UTC(Number(m[2]), Number(m[1]) - 1, 1) : null;
+  };
+  const out: RegistryCountryPeriod[] = [];
+  for (const line of sheet.slice(head).split("\n").slice(1)) {
+    const m = line.match(/^- (\d{2}\.\d{4}) - (\d{2}\.\d{4}|\.\.\.) (\S+) \(([^)]*)\)/);
+    if (!m) break;
+    const from = toMs(m[1]!);
+    if (from == null) continue;
+    out.push({ country: m[3]!, from, to: toMs(m[2]!), fromLabel: m[1]!, toLabel: m[2]!, basis: m[4]! });
   }
   return out;
 }

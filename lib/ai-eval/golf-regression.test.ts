@@ -3,7 +3,14 @@ import { describe, expect, it } from "vitest";
 import { golfBlocks, golfFixture, golfIncidentsTile, golfTraficomText } from "@/lib/ai-eval/golf-gte-fixture";
 import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
 import { buildCanonicalFacts } from "@/lib/canonical-facts-sheet";
-import { checkCommentContradictions, parseDealerComponentCountsFromSheet } from "@/lib/comment-contradiction-check";
+import {
+  checkCommentContradictions,
+  parseCountryPeriodsFromSheet,
+  parseDealerComponentCountsFromSheet,
+} from "@/lib/comment-contradiction-check";
+import { toPdfManualVendorBlocks } from "@/lib/admin-source-blocks";
+import { buildUnifiedMileageTableHtml } from "@/lib/client-report-html";
+import { collectUnifiedMileageRows, findImplausibleMileageReadings } from "@/lib/unified-mileage";
 import { buildEngineOilChangeListForPrompt } from "@/lib/engine-oil-prompt-list";
 import { mergeAutoRecordsServiceWorksByOdometer } from "@/lib/auto-records-service-works";
 import { orderHasIncidentDataForAi } from "@/lib/admin-ai-data-availability";
@@ -139,6 +146,56 @@ describe("Golf GTE - PR2 strukturētie fakti (3, daļēji 7)", () => {
     expect(merged).toHaveLength(1);
     expect(merged[0]!.works).toMatch(/Dzinēja eļļas maiņa/);
     expect(merged[0]!.works).toMatch(/DSG kārbas eļļas maiņa/);
+  });
+});
+
+describe("Golf GTE - PR3 nobraukums un valstis (2, 11)", () => {
+  const b = golfBlocks();
+  const facts = buildCanonicalFacts({ vin: golfFixture.vin, sourceBlocks: b });
+
+  it("100 km pēc eksporta = neticams rādījums, nav „Kritums”, nav odometra brīdinājuma", () => {
+    expect(facts.rollbacks).toHaveLength(0);
+    expect(facts.sheet).not.toMatch(/- Kritums:/);
+    expect(facts.sheet).toMatch(/Izlaists neticams rādījums[^:]*: 14\.02\.2020, 100 km, SOMIJAS REĢISTRI/);
+    expect(facts.alertBannerTexts.some((t) => /odometra/i.test(t))).toBe(false);
+  });
+
+  it("valstu posmi no laika līnijas: Zviedrija līdz 01.2020, Somija no 01.2020", () => {
+    expect(facts.sheet).toMatch(/- 07\.2017 - 01\.2020 Zviedrija/);
+    expect(facts.sheet).toMatch(/- 01\.2020 - \.\.\. Somija/);
+  });
+
+  it("validators: „100 km - iespējama odometra korekcija” -> entry_error_as_rollback (W)", () => {
+    const flags = checkCommentContradictions({ text: golfComment("mileage-correction").text, field: "mileage", facts });
+    expect(flags.some((f) => f.kind === "entry_error_as_rollback" && f.level === "W")).toBe(true);
+  });
+
+  it("validators: „posms Zviedrijā 2021” -> country_period_mismatch, arī caur lapas tekstu", () => {
+    const text = golfComment("sweden-after-2020").text;
+    expect(checkCommentContradictions({ text, field: "summary", facts }).some((f) => f.kind === "country_period_mismatch")).toBe(true);
+    expect(parseCountryPeriodsFromSheet(facts.sheet).map((p) => p.country)).toEqual(["Zviedrija", "Somija"]);
+    const ok = checkCommentContradictions({ text: "Ekspluatācijas posms Zviedrijā 2018. gadā.", field: "summary", facts });
+    expect(ok.some((f) => f.kind === "country_period_mismatch")).toBe(false);
+  });
+
+  it("PDF: 100 km rinda nav tabulā; admin priekšskatījumā brīdinājums paliek", () => {
+    const payload = {
+      csddForm: b.csdd,
+      autoRecordsBlock: b.auto_records,
+      ccVinBlock: b.cc_vin,
+      manualVendorBlocks: toPdfManualVendorBlocks(b),
+    };
+    const pdf = buildUnifiedMileageTableHtml(payload);
+    expect(pdf).not.toMatch(/14\.02\.2020/);
+    expect(pdf).not.toMatch(/Izlaists neticams rādījums/);
+    const admin = buildUnifiedMileageTableHtml(payload, { showImplausibleNote: true });
+    expect(admin).toMatch(/Izlaists neticams rādījums: 100 km, 14\.02\.2020, SOMIJAS REĢISTRI/);
+  });
+
+  it("odometra nomaiņa servisā -> klase netiek piemērota", () => {
+    const rows = collectUnifiedMileageRows({ manualVendorBlocks: toPdfManualVendorBlocks(b) }, { includeImplausible: true });
+    expect(findImplausibleMileageReadings(rows)).toHaveLength(1);
+    expect(findImplausibleMileageReadings(rows, { odometerReplacementNoted: true })).toHaveLength(0);
   });
 });
 
