@@ -215,7 +215,7 @@ export function AdminOrderMobileDock({
               id: "pdf",
               label: pdfProgressKey ? `${pdfProgressPct ?? 0}%` : "PDF",
               icon: "pdf",
-              onClick: onGeneratePdf,
+              onClick: () => setSheet("pdf"),
               disabled: pdfProgressKey !== null,
             },
             {
