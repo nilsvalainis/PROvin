@@ -17,7 +17,28 @@ export type V2IegadeFile = {
   editable: boolean;
   /** CSDD nozīmīte - CSDD darbībām vajadzīgais oriģinālais dokuments (Car Invoice, J30 F4). */
   csddBadge: boolean;
+  /** Kabineta dokumenta tips (pildspalvas tipa izvēlei, J61); v1/akts ierakstiem tukšs - nav maināms. */
+  type: CabinetDocType | "";
 };
+
+/** Tipi, ko drīkst izvēlēties ar roku Iegādes dokumenta pildspalvā (sadaļas A apakškopa, bez Servisa rēķina). */
+export const IEGADE_DOC_TYPE_OPTIONS: readonly CabinetDocType[] = ["other", "purchase_confirm", "car_invoice", "auction_invoice"];
+
+/**
+ * Auto1 dokumentu nosaukumi bieži nes valsts+veida kodu (piem. "NLPR.../DEPR..." - pasūtījuma
+ * apstiprinājums, "DETRPHL..." vai tīri cipari "9xxxxxxxx" - Car Invoice), papildus parastiem
+ * vārdiem ("invoice"/"rēķins", "order confirmation"/"apstiprinājums"). Labākā piepūle augšupielādes
+ * brīdī - lietotājs jebkurā brīdī var pārlabot ar pildspalvu, ja uzminēts nepareizi.
+ */
+export function classifyIegadeDocType(fileName: string): CabinetDocType {
+  // Faila nosaukumos atstarpes parasti ir "_"/"-"/"." - normalizē uz atstarpēm, lai \b robežas
+  // strādātu arī "Car_Invoice_900123456.pdf" stilā, ne tikai "Car Invoice.pdf".
+  const n = fileName.toLowerCase().replace(/[^a-z0-9āčēģīķļņōŗšūž]+/g, " ");
+  if (/purchase ?confirm|order ?confirm|apstiprin[āa]jum|nlpr|depr/.test(n)) return "purchase_confirm";
+  if (/auction ?invoice|izsoles ?r[ēe][ķk]ins/.test(n)) return "auction_invoice";
+  if (/\bcar ?invoice\b|\binvoice\b|r[ēe][ķk]ins|detrphl|\b9\d{8}\b/.test(n)) return "car_invoice";
+  return "other";
+}
 
 const CABINET_TYPES: readonly CabinetDocType[] = ["car_invoice", "auction_invoice", "purchase_confirm", "pickup_pdf", "cmr", "other"];
 
@@ -54,6 +75,7 @@ export function iegadeFileList(input: {
       link: false,
       editable: true,
       csddBadge: d.type === "car_invoice",
+      type: d.type,
     });
   }
   for (const f of input.v1Files) {
@@ -67,6 +89,7 @@ export function iegadeFileList(input: {
       link: false,
       editable: false,
       csddBadge: false,
+      type: "",
     });
   }
   out.sort((a, b) => a.date.localeCompare(b.date));
@@ -81,6 +104,7 @@ export function iegadeFileList(input: {
       link: true,
       editable: false,
       csddBadge: false,
+      type: "",
     });
   }
   return out;

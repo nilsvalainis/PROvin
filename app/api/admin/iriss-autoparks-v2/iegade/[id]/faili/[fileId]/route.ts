@@ -2,8 +2,10 @@ import { NextResponse } from "next/server";
 import { autoparksV2Json, requireAutoparksV2Api } from "@/lib/iriss-autoparks-v2-access";
 import { autoparksV2IegadeView, readAutoparksV2IegadeFile } from "@/lib/iriss-autoparks-v2-iegade";
 import { deleteIegadeDocumentFromStock, iegadeDocDropboxFileName, renameIegadeDocumentInStock } from "@/lib/iriss-autoparks-v2-iegade-dropbox";
+import { IEGADE_DOC_TYPE_OPTIONS } from "@/lib/iriss-autoparks-v2-iegade-files";
 import { readAutoparksV2Car } from "@/lib/iriss-autoparks-v2-store";
-import { getCabinetDocument, renameCabinetDocument, setCabinetDocumentDropboxPath, softDeleteCabinetDocument } from "@/lib/iriss-logistics-cabinet-store";
+import type { CabinetDocType } from "@/lib/iriss-logistics-cabinet";
+import { getCabinetDocument, renameCabinetDocument, setCabinetDocumentDropboxPath, setCabinetDocumentType, softDeleteCabinetDocument } from "@/lib/iriss-logistics-cabinet-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,7 +43,11 @@ export async function GET(req: Request, ctx: Ctx) {
   });
 }
 
-/** Pārdēvē ar roku pievienotu Iegādes dokumentu + labākā piepūle sinhronizēt Dropbox /STOCK (J30 F1). */
+/**
+ * Pārdēvē un/vai maina tipu ar roku pievienotam Iegādes dokumentam (J30 F1 + J61 pildspalvas tipa
+ * izvēle, lai Auto1 "Trūkst dokumenta" brīdinājums tīrītos pēc pārklasificēšanas) + labākā piepūle
+ * sinhronizēt Dropbox /STOCK.
+ */
 export async function PATCH(req: Request, ctx: Ctx) {
   const gate = await requireAutoparksV2Api("iegade");
   if (!gate.ok) return gate.response;
@@ -54,12 +60,23 @@ export async function PATCH(req: Request, ctx: Ctx) {
     return autoparksV2Json({ error: "invalid_json" }, 400);
   }
   const title = typeof body.title === "string" ? body.title.trim().slice(0, 200) : "";
-  if (!title) return autoparksV2Json({ error: "invalid_title" }, 400);
+  const type = typeof body.type === "string" ? body.type : "";
+  if (!title && !type) return autoparksV2Json({ error: "invalid_title" }, 400);
+  if (type && !IEGADE_DOC_TYPE_OPTIONS.includes(type as CabinetDocType)) return autoparksV2Json({ error: "invalid_type" }, 400);
   const doc = await editableCabinetDoc(id, fileId);
   if (!doc) return autoparksV2Json({ error: "not_found" }, 404);
-  const updated = await renameCabinetDocument(doc.id, title);
-  if (!updated) return autoparksV2Json({ error: "not_found" }, 404);
-  if (updated.dropboxPath) {
+  let updated = doc;
+  if (title) {
+    const renamed = await renameCabinetDocument(doc.id, title);
+    if (!renamed) return autoparksV2Json({ error: "not_found" }, 404);
+    updated = renamed;
+  }
+  if (type && type !== updated.type) {
+    const retyped = await setCabinetDocumentType(doc.id, type as CabinetDocType);
+    if (!retyped) return autoparksV2Json({ error: "not_found" }, 404);
+    updated = retyped;
+  }
+  if (updated.dropboxPath && title) {
     const newName = iegadeDocDropboxFileName(title, updated.dropboxPath, "application/pdf");
     const newPath = await renameIegadeDocumentInStock(updated.dropboxPath, newName);
     if (newPath) await setCabinetDocumentDropboxPath(doc.id, newPath);

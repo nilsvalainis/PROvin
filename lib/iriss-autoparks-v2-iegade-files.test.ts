@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AutoparksFile } from "@/lib/iriss-autoparks";
-import { auto1MissingDocLabels, iegadeFileList, isAuto1Car, purchaseDateFromDocs } from "@/lib/iriss-autoparks-v2-iegade-files";
+import { auto1MissingDocLabels, classifyIegadeDocType, iegadeFileList, isAuto1Car, purchaseDateFromDocs } from "@/lib/iriss-autoparks-v2-iegade-files";
 import { sniffContentType } from "@/lib/iriss-autoparks-v2-sniff";
 import type { CabinetDocument } from "@/lib/iriss-logistics-cabinet";
 
@@ -60,5 +60,44 @@ describe("Iegādes faili", () => {
   it("satura tips pēc baitiem", () => {
     expect(sniffContentType(new TextEncoder().encode("%PDF-1.7"), "application/octet-stream")).toBe("application/pdf");
     expect(sniffContentType(new Uint8Array([0xff, 0xd8, 0xff, 0]), "")).toBe("image/jpeg");
+  });
+  it("kabineta dokumentam aiznes savu tipu, v1/aktam - tukšs (J61 pildspalvas izvēlei)", () => {
+    const list = iegadeFileList({
+      cabinetDocs: [doc("d1", "car_invoice", "2026-10-09"), doc("d2", "other", "2026-10-08")],
+      v1Files: [file("f1", "purchase"), file("akts", "service")],
+      numberCheckFileId: "akts",
+    });
+    expect(list.map((f) => [f.id, f.type])).toEqual([
+      ["c:d2", "other"],
+      ["c:d1", "car_invoice"],
+      ["f:f1", ""],
+      ["f:akts", ""],
+    ]);
+  });
+});
+
+describe("classifyIegadeDocType (J61 - Auto1 faila nosaukuma auto-klasifikācija augšupielādei)", () => {
+  it("Auto1 pasūtījuma apstiprinājums - 'order confirmation' un valsts+PR kods", () => {
+    expect(classifyIegadeDocType("Auto1_Order_Confirmation.pdf")).toBe("purchase_confirm");
+    expect(classifyIegadeDocType("Pirkuma_apstiprinajums.pdf")).toBe("purchase_confirm");
+    expect(classifyIegadeDocType("NLPR20261024.pdf")).toBe("purchase_confirm");
+    expect(classifyIegadeDocType("DEPR20261024.pdf")).toBe("purchase_confirm");
+  });
+  it("Car Invoice - 'invoice'/'rēķins', valsts+kods un tīri Auto1 rēķina cipari", () => {
+    expect(classifyIegadeDocType("Car_Invoice.pdf")).toBe("car_invoice");
+    expect(classifyIegadeDocType("Rekins.pdf")).toBe("car_invoice");
+    expect(classifyIegadeDocType("DETRPHL20261024.pdf")).toBe("car_invoice");
+    expect(classifyIegadeDocType("900123456.pdf")).toBe("car_invoice");
+  });
+  it("pasvītrojumi/defises kā atdalītāji nenobloķē \\b robežu (reāls Auto1 faila nosaukums)", () => {
+    expect(classifyIegadeDocType("Car_Invoice_900123456.pdf")).toBe("car_invoice");
+    expect(classifyIegadeDocType("Auto1-Order-Confirmation-2026.pdf")).toBe("purchase_confirm");
+  });
+  it("izsoles rēķins atšķiras no Car Invoice", () => {
+    expect(classifyIegadeDocType("Auction_Invoice_12345.pdf")).toBe("auction_invoice");
+  });
+  it("neatpazīts nosaukums - 'other', pildspalva paliek vienīgais ceļš labot", () => {
+    expect(classifyIegadeDocType("skenets.pdf")).toBe("other");
+    expect(classifyIegadeDocType("IMG_0001.pdf")).toBe("other");
   });
 });

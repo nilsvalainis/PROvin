@@ -9,7 +9,8 @@ import {
   rekiniLv,
 } from "@/lib/iriss-autoparks-v2-format";
 import type { V2IegadeView } from "@/lib/iriss-autoparks-v2-iegade";
-import type { V2IegadeFile } from "@/lib/iriss-autoparks-v2-iegade-files";
+import { IEGADE_DOC_TYPE_OPTIONS, type V2IegadeFile } from "@/lib/iriss-autoparks-v2-iegade-files";
+import { CABINET_DOC_TYPE_LABEL, type CabinetDocType } from "@/lib/iriss-logistics-cabinet";
 import type { CabinetPaneProps } from "./AutoparksV2Cabinet";
 import { FileModal, LinkIcon, PdfIcon } from "./FileModal";
 
@@ -63,6 +64,9 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<V2IegadeFile | null>(null);
+  const [editTarget, setEditTarget] = useState<V2IegadeFile | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editType, setEditType] = useState<CabinetDocType>("other");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const api = `/api/admin/iriss-autoparks-v2/iegade/${encodeURIComponent(carId)}`;
 
@@ -100,14 +104,24 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
     setBusy(false);
   }
 
-  async function renameFile(f: V2IegadeFile) {
-    const title = window.prompt("Jaunais nosaukums:", f.title)?.trim();
-    if (!title || title === f.title) return;
+  function openEdit(f: V2IegadeFile) {
+    setEditTitle(f.title);
+    setEditType(f.type || "other");
+    setEditTarget(f);
+  }
+
+  async function confirmEdit() {
+    const f = editTarget;
+    if (!f) return;
+    const title = editTitle.trim();
+    const type = f.type && editType !== f.type ? editType : "";
+    if (!title) return;
+    setEditTarget(null);
     setBusy(true);
     const res = await fetch(`${api}/faili/${encodeURIComponent(f.id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title }),
+      body: JSON.stringify({ title, ...(type ? { type } : {}) }),
     }).catch(() => null);
     await applyResult(res);
     setBusy(false);
@@ -375,11 +389,11 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
               <span className="ap2-fl-actions">
                 <button
                   type="button"
-                  title="Pārdēvēt"
+                  title="Pārdēvēt / mainīt tipu"
                   disabled={busy}
                   onClick={(e) => {
                     e.stopPropagation();
-                    void renameFile(f);
+                    openEdit(f);
                   }}
                 >
                   <PencilIcon />
@@ -422,6 +436,42 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
               </button>
               <button type="button" className="confirm" onClick={() => void confirmDelete()}>
                 Dzēst
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {editTarget ? (
+        <div className="ap2-modal" role="presentation" onClick={() => setEditTarget(null)}>
+          <div className="ap2-edit" role="dialog" aria-label="Pārdēvēt dokumentu" onClick={(e) => e.stopPropagation()}>
+            <b>Dokuments</b>
+            <label>
+              Nosaukums
+              <input
+                type="text"
+                value={editTitle}
+                autoFocus
+                onChange={(e) => setEditTitle(e.target.value)}
+              />
+            </label>
+            {editTarget.type ? (
+              <label>
+                Tips
+                <select value={editType} onChange={(e) => setEditType(e.target.value as CabinetDocType)}>
+                  {IEGADE_DOC_TYPE_OPTIONS.map((t) => (
+                    <option key={t} value={t}>
+                      {CABINET_DOC_TYPE_LABEL[t]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            <div className="row">
+              <button type="button" className="cancel" onClick={() => setEditTarget(null)}>
+                Atcelt
+              </button>
+              <button type="button" className="confirm" disabled={!editTitle.trim()} onClick={() => void confirmEdit()}>
+                Saglabāt
               </button>
             </div>
           </div>

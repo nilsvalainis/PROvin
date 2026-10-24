@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const state = vi.hoisted(() => ({
   gate: { ok: true as const, actor: { kind: "admin" as const, name: "Nils" }, perms: {}, actorId: "admin1", actorName: "Nils" },
   car: { id: "car1", orderId: "order1", dropboxFolderPath: "" } as Record<string, unknown>,
-  upsertCalls: [] as { carId: string; contentType: string; fileName: string }[],
+  upsertCalls: [] as { carId: string; contentType: string; fileName: string; type: string }[],
   upsertError: null as Error | null,
 }));
 
@@ -20,9 +20,9 @@ vi.mock("@/lib/iriss-autoparks-v2-store", () => ({
   readAutoparksV2Car: async (id: string) => (id === state.car.id ? { car: state.car, v2: {} } : null),
 }));
 vi.mock("@/lib/iriss-logistics-cabinet-store", () => ({
-  upsertCabinetDocument: async (input: { carId: string; contentType: string; fileName: string }) => {
+  upsertCabinetDocument: async (input: { carId: string; contentType: string; fileName: string; type: string }) => {
     if (state.upsertError) throw state.upsertError;
-    state.upsertCalls.push({ carId: input.carId, contentType: input.contentType, fileName: input.fileName });
+    state.upsertCalls.push({ carId: input.carId, contentType: input.contentType, fileName: input.fileName, type: input.type });
     return { document: { id: "doc1", title: "Dokuments" }, duplicate: false };
   },
   setCabinetDocumentDropboxPath: async () => null,
@@ -60,7 +60,7 @@ describe("Iegādes PDF augšupielāde: faila tips pēc baitiem, ne pārlūka MIM
     expect(res.status).toBe(201);
     const body = (await res.json()) as { ok?: boolean };
     expect(body.ok).toBe(true);
-    expect(state.upsertCalls).toEqual([{ carId: "order1", contentType: "application/pdf", fileName: "Auto1_Order_Confirmation.pdf" }]);
+    expect(state.upsertCalls).toEqual([{ carId: "order1", contentType: "application/pdf", fileName: "Auto1_Order_Confirmation.pdf", type: "purchase_confirm" }]);
   });
 
   it("pārlūks ziņo nepareizu/neparastu type - paraksts no baitiem joprojām nosaka PDF", async () => {
@@ -87,6 +87,15 @@ describe("J52b: ar roku '+ Auto' pievienotam auto (orderId tukšs) augšupielād
     expect(res.status).toBe(201);
     const body = (await res.json()) as { ok?: boolean };
     expect(body.ok).toBe(true);
-    expect(state.upsertCalls).toEqual([{ carId: "car1", contentType: "application/pdf", fileName: "proforma.pdf" }]);
+    expect(state.upsertCalls).toEqual([{ carId: "car1", contentType: "application/pdf", fileName: "proforma.pdf", type: "other" }]);
+  });
+});
+
+describe("J61: Auto1 faila nosaukums klasificēts augšupielādes brīdī, lai 'Trūkst dokumenta' tīrītos", () => {
+  it("'Car_Invoice.pdf' tiek saglabāts ar tipu car_invoice, ne 'other'", async () => {
+    const file = new File([PDF_BYTES], "Car_Invoice.pdf", { type: "application/pdf" });
+    const res = await postFile(file);
+    expect(res.status).toBe(201);
+    expect(state.upsertCalls).toEqual([{ carId: "order1", contentType: "application/pdf", fileName: "Car_Invoice.pdf", type: "car_invoice" }]);
   });
 });
