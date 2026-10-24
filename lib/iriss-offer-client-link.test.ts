@@ -338,6 +338,51 @@ describe("IRISS offer public view", () => {
       "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
     ]);
   });
+
+  it("j41 F6: hides a section on the public page when its PDF block is toggled off", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-15T08:00:00.000Z", "Piedāvājums 1");
+    offer.hasFullServiceHistory = true;
+    offer.visualAssessment = "Labs stāvoklis";
+    offer.specialNotes = "Garantija 3 mēneši";
+    offer.carPrice = "15000";
+    offer.blocks = [
+      { id: "vehicle", kind: "vehicle", title: "Transportlīdzeklis", visible: true },
+      { id: "assessment", kind: "assessment", title: "Novērtējums klientam", visible: false },
+      { id: "warranty", kind: "warranty", title: "Garantija un piegāde", visible: true },
+      { id: "pricing", kind: "pricing", title: "Cenas", visible: false },
+    ];
+    const view = buildIrissOfferPublicView(offer, { decision: "", question: "" });
+    expect(view.checks).toEqual([]);
+    expect(view.notes).toBe("Garantija 3 mēneši");
+    expect(view.prices).toEqual([]);
+    expect(view.total).toBe("");
+  });
+
+  it("j41 F6: shows a custom text/table PDF block (added via +Teksts/+Tabula) on the public page when visible", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-15T08:00:00.000Z", "Piedāvājums 1");
+    offer.blocks = [
+      { id: "text-1", kind: "text", title: "Piezīme", visible: true, html: "Rezervēts līdz piektdienai" },
+      { id: "text-2", kind: "text", title: "Slēpts", visible: false, html: "Nerādīt" },
+      {
+        id: "table-1",
+        kind: "table",
+        title: "Papildu aprīkojums",
+        visible: true,
+        rows: [{ id: "r1", label: "Riepas", value: "Ziemas + vasaras" }],
+      },
+    ];
+    const view = buildIrissOfferPublicView(offer, { decision: "", question: "" });
+    expect(view.customBlocks).toEqual([
+      { id: "text-1", title: "Piezīme", kind: "text", html: "Rezervēts līdz piektdienai", rows: [] },
+      {
+        id: "table-1",
+        title: "Papildu aprīkojums",
+        kind: "table",
+        html: "",
+        rows: [{ label: "Riepas", value: "Ziemas + vasaras" }],
+      },
+    ]);
+  });
 });
 
 describe("IRISS offer client link share copy", () => {

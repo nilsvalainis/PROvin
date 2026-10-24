@@ -7,13 +7,15 @@ import "server-only";
 
 import { sendAdminPush } from "@/lib/admin-push";
 import { getSiteOrigin } from "@/lib/email/mail-config";
-import { sendAdminIrissOfferDecisionEmail } from "@/lib/email/send-transactional";
+import { sendAdminIrissOfferDecisionEmail, sendAdminIrissOfferQuestionEmail } from "@/lib/email/send-transactional";
 import { irissOfferTotalLabel } from "@/lib/iriss-offer-client-link";
 import {
   IRISS_OFFER_PUSH_USER_KEY,
   buildIrissOfferDecisionEmail,
+  buildIrissOfferQuestionEmail,
   irissOfferDecisionPushMessage,
   irissOfferExpiredPushMessage,
+  irissOfferQuestionPushMessage,
   type IrissOfferNotifyFacts,
 } from "@/lib/iriss-offer-notify-shared";
 import type { IrissOfferRecord, IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
@@ -51,6 +53,29 @@ export async function notifyIrissOfferDecision(
     push = (await sendAdminPush(irissOfferDecisionPushMessage(facts, decision), IRISS_OFFER_PUSH_USER_KEY)).sent;
   } catch (e) {
     console.error("[iriss-offer-notify] push", e instanceof Error ? e.message : e);
+  }
+  return { email, push };
+}
+
+/** Nilam par klienta jautājumu publiskajā piedāvājuma saitē (e-pasts + push). */
+export async function notifyIrissOfferQuestion(
+  facts: IrissOfferNotifyFacts,
+  question: string,
+): Promise<{ email: boolean; push: number }> {
+  let email = false;
+  let push = 0;
+  try {
+    const to = getAdminOrderNotifyEmail();
+    if (to) {
+      email = await sendAdminIrissOfferQuestionEmail(buildIrissOfferQuestionEmail(facts, question, getSiteOrigin()), to);
+    }
+  } catch (e) {
+    console.error("[iriss-offer-notify] question email", e instanceof Error ? e.message : e);
+  }
+  try {
+    push = (await sendAdminPush(irissOfferQuestionPushMessage(facts), IRISS_OFFER_PUSH_USER_KEY)).sent;
+  } catch (e) {
+    console.error("[iriss-offer-notify] question push", e instanceof Error ? e.message : e);
   }
   return { email, push };
 }

@@ -8,6 +8,8 @@ import { hashIrissOfferLinkToken } from "@/lib/iriss-offer-client-link-token";
 import { openUsableIrissOfferLink } from "@/lib/iriss-offer-client-link-load";
 import { recordIrissOfferDecisionSummary, respondIrissOfferClientLink } from "@/lib/iriss-offer-client-link-store";
 import { runIrissOfferDecisionEffects } from "@/lib/iriss-offer-decision-effects";
+import { irissOfferNotifyFacts, notifyIrissOfferQuestion } from "@/lib/iriss-offer-notify";
+import { readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 
@@ -63,6 +65,17 @@ export async function POST(req: Request) {
     );
   }
   if (!result.ok) return hidden();
+  if (action === "question" && result.record.question) {
+    try {
+      const order = await readIrissPasutijums(opened.link.orderId);
+      const offer = order?.offers.find((item) => item.id === opened.link.offerId);
+      if (order && offer) {
+        await notifyIrissOfferQuestion(irissOfferNotifyFacts(order, offer), result.record.question);
+      }
+    } catch (e) {
+      console.error("[iriss-offer-link] question notify", e instanceof Error ? e.message : e);
+    }
+  }
   if (result.won && (result.record.decision === "approve" || result.record.decision === "decline")) {
     await recordIrissOfferDecisionSummary(result.record, opened.offer.validUntilAt ?? "");
     await runIrissOfferDecisionEffects({

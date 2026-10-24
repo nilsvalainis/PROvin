@@ -165,6 +165,28 @@ ${ctaButton(opts.adminUrl, "Atvērt pasūtījumu")}
   return shell(inner);
 }
 
+/** Nilam: klients uzdevis jautājumu publiskajā piedāvājuma saitē (tikai admin adrese). */
+export function irissOfferQuestionHtml(opts: {
+  title: string;
+  question: string;
+  lines: { label: string; value: string }[];
+  adminUrl: string;
+}): string {
+  const rows = opts.lines
+    .map(
+      (l) =>
+        `<tr><td style="padding:8px 0;border-bottom:1px solid #ececec;font-size:14px;color:${MUTED};width:38%;">${esc(l.label)}</td><td style="padding:8px 0;border-bottom:1px solid #ececec;font-size:14px;color:inherit;">${esc(l.value)}</td></tr>`,
+    )
+    .join("");
+  const inner = `
+<p style="margin:0 0 20px;font-size:20px;font-weight:600;">${esc(opts.title)}</p>
+<p style="margin:0 0 16px;padding:12px 14px;border-radius:8px;background:#f4f4f5;font-size:15px;line-height:1.5;white-space:pre-wrap;">${esc(opts.question)}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${rows}</table>
+${ctaButton(opts.adminUrl, "Atvērt pasūtījumu")}
+`;
+  return shell(inner);
+}
+
 /** Bezmaksas īss sludinājuma komentārs + CTA uz PROVIN AUDITS (e-pasta klientiem drošs HTML). */
 export function listingPeekCustomerCommentHtml(opts: {
   comment: string;

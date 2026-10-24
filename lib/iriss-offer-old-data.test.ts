@@ -41,6 +41,21 @@ describe("vecie piedāvājumi", () => {
     expect(parsed.validUntil).toBe("2026-02-01");
   });
 
+  it("j41 F6: 'Rādīt' pārslēgs Piedāvājuma blokiem PDF tiek saglabāts (nav zūdīgs admin PATCH ķermenī)", () => {
+    const withBlocks = {
+      ...emptyIrissOfferRecord(OFFER_ID, "2026-01-01T00:00:00.000Z", "Piedāvājums 1"),
+      blocks: [
+        { id: "assessment", kind: "assessment", title: "Novērtējums klientam", visible: true },
+        { id: "text-1", kind: "text", title: "Piezīme", visible: true, html: "Rezervēts" },
+      ],
+    };
+    const parsed = parseIrissOfferFromBody(JSON.parse(JSON.stringify(withBlocks)), 0)!;
+    expect(parsed.blocks).toEqual([
+      { id: "assessment", kind: "assessment", title: "Novērtējums klientam", visible: true },
+      { id: "text-1", kind: "text", title: "Piezīme", visible: true, html: "Rezervēts" },
+    ]);
+  });
+
   it("saglabājot vecu pasūtījumu, piedāvājumam nerodas sourceRef / validUntilAt / dropboxId, statuss nemainās", async () => {
     const dir = mkdtempSync(path.join(os.tmpdir(), "j24-f6-"));
     dirs.push(dir);
