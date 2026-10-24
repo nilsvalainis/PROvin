@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { V2_VAT_MODE_LV, type V2VatMode } from "@/lib/iriss-autoparks-v2";
 import {
   fmtDateLv,
@@ -9,8 +9,42 @@ import {
   rekiniLv,
 } from "@/lib/iriss-autoparks-v2-format";
 import type { V2IegadeView } from "@/lib/iriss-autoparks-v2-iegade";
+import type { V2IegadeFile } from "@/lib/iriss-autoparks-v2-iegade-files";
 import type { CabinetPaneProps } from "./AutoparksV2Cabinet";
 import { FileModal, LinkIcon, PdfIcon } from "./FileModal";
+
+function PlusIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+      <path d="M8 3v10M3 8h10" />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M11 2l3 3-8 8-3.5.5.5-3.5z" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M3 4h10M6 4V3a1 1 0 011-1h2a1 1 0 011 1v1M4.5 4l.6 9a1 1 0 001 .9h3.8a1 1 0 001-.9l.6-9" />
+    </svg>
+  );
+}
+
+function WarnIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M8 1.5l7 12.2H1z" />
+      <path d="M8 6v3.2M8 11.3h.01" />
+    </svg>
+  );
+}
 
 type Key =
   | "auction"
@@ -20,13 +54,16 @@ type Key =
   | "purchasePriceEur"
   | "transportEur";
 
-/** Iegādes dokumenti (D2, D3). Faili netiek ievadīti ar roku - tos dod Loģistika un /STOCK. */
+/** Iegādes dokumenti (D2, D3). Ar roku pievienotiem dokumentiem - augšupielāde/pārdēvēšana/dzēšana ar Dropbox /STOCK sinhronizāciju (J30 F1). */
 export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
   const [view, setView] = useState<V2IegadeView | null>(null);
   const [editing, setEditing] = useState<Key | null>(null);
   const [costOpen, setCostOpen] = useState(false);
   const [open, setOpen] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<V2IegadeFile | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const api = `/api/admin/iriss-autoparks-v2/iegade/${encodeURIComponent(carId)}`;
 
   useEffect(() => {
@@ -41,6 +78,48 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
       live = false;
     };
   }, [api]);
+
+  async function applyResult(res: Response | null) {
+    const d = (await res?.json().catch(() => null)) as { iegade?: V2IegadeView } | null;
+    if (res?.ok && d?.iegade) {
+      setView(d.iegade);
+      setError("");
+    } else {
+      setError("Neizdevās saglabāt");
+    }
+  }
+
+  async function uploadFile(file: File) {
+    setBusy(true);
+    const form = new FormData();
+    form.append("file", file);
+    const res = await fetch(`${api}/faili`, { method: "POST", body: form }).catch(() => null);
+    await applyResult(res);
+    setBusy(false);
+  }
+
+  async function renameFile(f: V2IegadeFile) {
+    const title = window.prompt("Jaunais nosaukums:", f.title)?.trim();
+    if (!title || title === f.title) return;
+    setBusy(true);
+    const res = await fetch(`${api}/faili/${encodeURIComponent(f.id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title }),
+    }).catch(() => null);
+    await applyResult(res);
+    setBusy(false);
+  }
+
+  async function confirmDelete() {
+    const f = deleteTarget;
+    if (!f) return;
+    setDeleteTarget(null);
+    setBusy(true);
+    const res = await fetch(`${api}/faili/${encodeURIComponent(f.id)}`, { method: "DELETE" }).catch(() => null);
+    await applyResult(res);
+    setBusy(false);
+  }
 
   async function save(key: Key, value: string) {
     setEditing(null);
@@ -236,28 +315,88 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
         ) : null}
       </div>
 
+      <div className="ap2-files-head">
+        <h3>Dokumenti</h3>
+        <button
+          type="button"
+          className="ap2-add-doc"
+          disabled={busy}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <PlusIcon />
+          Pievienot dokumentu
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf"
+          hidden
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (file) void uploadFile(file);
+          }}
+        />
+      </div>
+      {view.missingAuto1Docs.length > 0 ? (
+        <div className="ap2-warn">
+          <WarnIcon />
+          Trūkst dokumenta: {view.missingAuto1Docs.join(", ")} (Auto1 auto - nepieciešamas 2 PDF)
+        </div>
+      ) : null}
+
       <div className="ap2-files">
         {view.files.map((f, i) => (
-          <button
-            key={f.id}
-            type="button"
-            className="ap2-fl"
-            onClick={() => setOpen(i)}
-          >
-            <span className="pv">
-              <span className="ap2-tag">{f.tag}</span>
-              {f.link ? (
-                <span className="ap2-lnk">
-                  <LinkIcon />
-                </span>
-              ) : null}
-              <PdfIcon />
-            </span>
-            <span className="m">
-              <b>{f.title}</b>
-              <span>{fmtDayMonth(f.date)}</span>
-            </span>
-          </button>
+          <div key={f.id} className="ap2-fl">
+            <button type="button" className="ap2-fl-open" onClick={() => setOpen(i)}>
+              <span className="pv">
+                <span className="ap2-tag">{f.tag}</span>
+                {f.link ? (
+                  <span className="ap2-lnk">
+                    <LinkIcon />
+                  </span>
+                ) : null}
+                {f.csddBadge ? (
+                  <span className="ap2-csdd-badge" title="CSDD oriģinālais dokuments">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/brand/csdd-logo.png" alt="CSDD" />
+                  </span>
+                ) : null}
+                <PdfIcon />
+              </span>
+              <span className="m">
+                <b>{f.title}</b>
+                <span>{fmtDayMonth(f.date)}</span>
+              </span>
+            </button>
+            {f.editable ? (
+              <span className="ap2-fl-actions">
+                <button
+                  type="button"
+                  title="Pārdēvēt"
+                  disabled={busy}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    void renameFile(f);
+                  }}
+                >
+                  <PencilIcon />
+                </button>
+                <button
+                  type="button"
+                  className="danger"
+                  title="Dzēst"
+                  disabled={busy}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteTarget(f);
+                  }}
+                >
+                  <TrashIcon />
+                </button>
+              </span>
+            ) : null}
+          </div>
         ))}
       </div>
       {error ? <p className="ap2-err">{error}</p> : null}
@@ -269,6 +408,22 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
           onIndex={setOpen}
           onClose={() => setOpen(null)}
         />
+      ) : null}
+      {deleteTarget ? (
+        <div className="ap2-modal" role="presentation" onClick={() => setDeleteTarget(null)}>
+          <div className="ap2-del" role="dialog" aria-label="Dzēst dokumentu" onClick={(e) => e.stopPropagation()}>
+            <b>Dzēst &quot;{deleteTarget.title}&quot;?</b>
+            Dokuments tiks izdzēsts arī no Dropbox STOCK mapes. Šo darbību nevar atsaukt.
+            <div className="row">
+              <button type="button" className="cancel" onClick={() => setDeleteTarget(null)}>
+                Atcelt
+              </button>
+              <button type="button" className="confirm" onClick={() => void confirmDelete()}>
+                Dzēst
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );

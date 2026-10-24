@@ -255,6 +255,23 @@ export function createDropboxClient(opts: { token: { get: () => Promise<string |
       return link;
     },
 
+    /** Dzēš uz Dropbox "Deleted files" (atgūstams, nav neatgriezeniski). */
+    async deleteFile(path: string): Promise<void> {
+      await rpc("files/delete_v2", { path });
+    },
+
+    /** Pārvieto/pārdēvē; `autorename` noklusēts `true`, lai nekonfliktētu ar esošu failu. */
+    async move(fromPath: string, toPath: string, opts2: { autorename?: boolean } = {}): Promise<DropboxEntry> {
+      const json = await rpc<{ metadata?: unknown }>("files/move_v2", {
+        from_path: fromPath,
+        to_path: toPath,
+        autorename: opts2.autorename !== false,
+      });
+      const entry = parseDropboxEntry(json.metadata, "file");
+      if (!entry) throw new DropboxApiError(500, "move_bad_response");
+      return entry;
+    },
+
     async listFolder(path: string, opts2: { recursive?: boolean } = {}): Promise<DropboxListPage> {
       return page(await rpc("files/list_folder", { path, recursive: opts2.recursive === true, limit: 2000, include_deleted: false }));
     },

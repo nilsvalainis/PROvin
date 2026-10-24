@@ -80,6 +80,22 @@ describe("dropbox client", () => {
     expect(JSON.parse(arg)).toMatchObject({ path: "/STOCK/A/Serviss - Rēķins.pdf", mode: "add", autorename: true });
   });
 
+  it("deleteFile sūta files/delete_v2 ar ceļu", async () => {
+    const f = fakeFetch(() => json({ metadata: { ".tag": "file", name: "x.pdf" } }));
+    const c = createDropboxClient({ token: token(), fetchImpl: f.impl });
+    await c.deleteFile("/STOCK/A/doc/x.pdf");
+    expect(f.calls[0]?.url).toBe("https://api.dropboxapi.com/2/files/delete_v2");
+    expect(JSON.parse(String(f.calls[0]?.init.body))).toEqual({ path: "/STOCK/A/doc/x.pdf" });
+  });
+
+  it("move: noklusēts autorename=true, atgriež jauno metadatu", async () => {
+    const f = fakeFetch(() => json({ metadata: { ".tag": "file", id: "id:M", name: "y.pdf", path_display: "/STOCK/A/doc/y.pdf" } }));
+    const c = createDropboxClient({ token: token(), fetchImpl: f.impl });
+    const moved = await c.move("/STOCK/A/doc/x.pdf", "/STOCK/A/doc/y.pdf");
+    expect(moved).toMatchObject({ id: "id:M", pathDisplay: "/STOCK/A/doc/y.pdf" });
+    expect(JSON.parse(String(f.calls[0]?.init.body))).toEqual({ from_path: "/STOCK/A/doc/x.pdf", to_path: "/STOCK/A/doc/y.pdf", autorename: true });
+  });
+
   it("listAll iet cauri visām lapām", async () => {
     const f = fakeFetch((url) =>
       url.endsWith("/continue")

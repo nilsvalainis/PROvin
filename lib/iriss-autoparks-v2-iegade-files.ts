@@ -3,7 +3,7 @@
  * Autoparka v1 faili posmā Iegāde/Transports (`f:`) un numuru salīdzināšanas akts kā saite uz Servisa failu.
  */
 import type { AutoparksFile } from "@/lib/iriss-autoparks";
-import type { CabinetDocType, CabinetDocument } from "@/lib/iriss-logistics-cabinet";
+import { CABINET_DOC_TYPE_LABEL, type CabinetDocType, type CabinetDocument } from "@/lib/iriss-logistics-cabinet";
 
 export type V2IegadeFile = {
   id: string;
@@ -13,6 +13,10 @@ export type V2IegadeFile = {
   contentType: string;
   /** Saite uz citas sadaļas failu (numuru akts no Servisa). */
   link: boolean;
+  /** Ar roku pievienots/pārdēvējams/dzēšams dokuments (kabineta dokumenti; v1 faili - nē, J30 F1). */
+  editable: boolean;
+  /** CSDD nozīmīte - CSDD darbībām vajadzīgais oriģinālais dokuments (Car Invoice, J30 F4). */
+  csddBadge: boolean;
 };
 
 const CABINET_TYPES: readonly CabinetDocType[] = ["car_invoice", "auction_invoice", "purchase_confirm", "pickup_pdf", "cmr", "other"];
@@ -48,6 +52,8 @@ export function iegadeFileList(input: {
       date: d.createdAt.slice(0, 10),
       contentType: "application/pdf",
       link: false,
+      editable: true,
+      csddBadge: d.type === "car_invoice",
     });
   }
   for (const f of input.v1Files) {
@@ -59,11 +65,24 @@ export function iegadeFileList(input: {
       date: f.createdAt.slice(0, 10),
       contentType: f.contentType,
       link: false,
+      editable: false,
+      csddBadge: false,
     });
   }
   out.sort((a, b) => a.date.localeCompare(b.date));
   const act = input.numberCheckFileId ? input.v1Files.find((f) => f.id === input.numberCheckFileId && !f.deletedAt) : undefined;
-  if (act) out.push({ id: `f:${act.id}`, tag: "Akts", title: "Numuru akts", date: act.createdAt.slice(0, 10), contentType: act.contentType, link: true });
+  if (act) {
+    out.push({
+      id: `f:${act.id}`,
+      tag: "Akts",
+      title: "Numuru akts",
+      date: act.createdAt.slice(0, 10),
+      contentType: act.contentType,
+      link: true,
+      editable: false,
+      csddBadge: false,
+    });
+  }
   return out;
 }
 
@@ -75,4 +94,19 @@ export function purchaseDateFromDocs(docs: readonly CabinetDocument[]): string {
     .filter(Boolean)
     .sort();
   return inv[0] ?? "";
+}
+
+const AUTO1_REQUIRED_DOCS: readonly CabinetDocType[] = ["purchase_confirm", "car_invoice"];
+
+/** Vai auto ir Auto1 izcelsmes - no izsoles lauka vai jau zināma dokumenta avota (J30 F4). */
+export function isAuto1Car(input: { auction: string; cabinetDocs: readonly CabinetDocument[] }): boolean {
+  if (input.auction.trim().toLowerCase() === "auto1") return true;
+  return input.cabinetDocs.some((d) => !d.deletedAt && d.source.trim().toLowerCase() === "auto1");
+}
+
+/** Auto1 autiem jābūt tieši 2 obligātām PDF (Pirkuma apstiprinājums + Car Invoice) - trūkstošo etiķetes (J30 F4). */
+export function auto1MissingDocLabels(input: { isAuto1: boolean; cabinetDocs: readonly CabinetDocument[] }): string[] {
+  if (!input.isAuto1) return [];
+  const live = input.cabinetDocs.filter((d) => !d.deletedAt);
+  return AUTO1_REQUIRED_DOCS.filter((t) => !live.some((d) => d.type === t)).map((t) => CABINET_DOC_TYPE_LABEL[t]);
 }

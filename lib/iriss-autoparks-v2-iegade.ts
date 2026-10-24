@@ -4,7 +4,7 @@ import type { AutoparksCar } from "@/lib/iriss-autoparks";
 import { readAutoparksFileBytes, readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { carV2Of, V2_VAT_MODE_LV, type AutoparksCarV2, type V2VatMode } from "@/lib/iriss-autoparks-v2";
 import { autoparksV2Cost, type AutoparksV2Cost } from "@/lib/iriss-autoparks-v2-cost";
-import { iegadeFileList, purchaseDateFromDocs, type V2IegadeFile } from "@/lib/iriss-autoparks-v2-iegade-files";
+import { auto1MissingDocLabels, iegadeFileList, isAuto1Car, purchaseDateFromDocs, type V2IegadeFile } from "@/lib/iriss-autoparks-v2-iegade-files";
 import type { AutoparksV2Perms } from "@/lib/iriss-autoparks-v2-perms";
 import { sniffContentType } from "@/lib/iriss-autoparks-v2-sniff";
 import { readAutoparksV2State } from "@/lib/iriss-autoparks-v2-store";
@@ -24,6 +24,8 @@ export type V2IegadeView = {
   /** Tikai ar Iegāde + Summas. */
   cost: AutoparksV2Cost | null;
   canSums: boolean;
+  /** Auto1 autiem trūkstošo obligāto dokumentu etiķetes (J30 F4); tukšs = nav brīdinājuma. */
+  missingAuto1Docs: string[];
 };
 
 async function context(carId: string) {
@@ -48,8 +50,9 @@ export async function autoparksV2IegadeView(carId: string, perms: AutoparksV2Per
   const { car, v2, order, docs, files } = ctx;
   const p = v2.purchase;
   const purchase = v2PurchasePrice(car, v2, order?.priceEur ?? null);
+  const auction = p.auction || (order?.auction && order.auction !== "cits" ? order.auction : "");
   return {
-    auction: p.auction || (order?.auction && order.auction !== "cits" ? order.auction : ""),
+    auction,
     auctionNo: p.auctionNo || order?.stockNo || "",
     purchaseDate: p.purchaseDate || purchaseDateFromDocs(docs),
     vatMode: p.vat.mode,
@@ -61,6 +64,7 @@ export async function autoparksV2IegadeView(carId: string, perms: AutoparksV2Per
       ? autoparksV2Cost({ purchaseEur: purchase, transportEur: p.transportEur, invoices: v2.service.invoices, expenses: v2.expenses })
       : null,
     canSums: perms.summas,
+    missingAuto1Docs: auto1MissingDocLabels({ isAuto1: isAuto1Car({ auction, cabinetDocs: docs }), cabinetDocs: docs }),
   };
 }
 
