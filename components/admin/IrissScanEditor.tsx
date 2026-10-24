@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWorkspaceRevisionConflictBanner";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { IrissMarketplaceLoadPanel } from "@/components/admin/IrissMarketplaceLoadPanel";
 import { IrissOverflowItem, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
@@ -214,6 +215,8 @@ export function IrissScanEditor({
     const next = rec.pinnedAt ? "" : new Date().toISOString();
     patchRecord({ pinnedAt: next });
   }
+
+  const deleteConfirmBackdropClose = useModalBackdropClose(() => setDeleteOpen(false));
 
   return (
     <div className="iriss-scan-editor w-full min-w-0">
@@ -532,7 +535,7 @@ export function IrissScanEditor({
       />
 
       {deleteOpen ? (
-        <div className="fixed inset-0 z-[130] flex items-end justify-center bg-black/40 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6" onClick={() => setDeleteOpen(false)} role="presentation">
+        <div className="fixed inset-0 z-[130] flex items-end justify-center bg-black/40 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6" {...deleteConfirmBackdropClose} role="presentation">
           <div role="dialog" aria-modal="true" className="w-full max-w-sm rounded-2xl bg-[var(--s1)] p-5 text-center shadow-[var(--gsh)]" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-[15px] font-semibold text-[var(--ink)]">Dzēst šo radara ierakstu?</h2>
             <p className="mt-1 text-[13px] text-[var(--ink3)]">Darbību nevar atsaukt.</p>

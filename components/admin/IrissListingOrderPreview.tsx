@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import type { IrissAuctionLogoKey } from "@/lib/iriss-auction-logos";
@@ -132,11 +133,13 @@ export function IrissListingOrderPreview({
     };
   }, [onClose]);
 
+  const backdropClose = useModalBackdropClose(onClose);
+
   if (orders.length === 0) return null;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="iriss-order-preview-title">
-      <button type="button" className="absolute inset-0 bg-slate-900/40" aria-label="Aizvērt" onClick={onClose} />
+      <button type="button" className="absolute inset-0 bg-slate-900/40" aria-label="Aizvērt" {...backdropClose} />
       <div className="relative z-[61] max-h-[88vh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border border-[#E5E7EB] bg-[#F8F8F9] p-3 pb-[max(16px,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl sm:p-4">
         <div className="mb-3 flex items-center gap-2">
           <h2 id="iriss-order-preview-title" className="text-[14px] font-semibold text-[var(--color-apple-text)]">

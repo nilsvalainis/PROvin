@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
 import { IrissOverflowItem, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
 import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { formatYearMonthKey, shiftYearMonth } from "@/lib/admin-riga-calendar";
 import { formatIrissMonthlyReportCsv, type IrissMonthlyReport } from "@/lib/iriss-monthly-report";
 import {
@@ -54,6 +55,8 @@ export function IrissMonthlyReportView({
       (lastAboutFrom.current === "mobile" ? mobileAboutTriggerRef : desktopAboutTriggerRef).current?.focus();
     });
   }
+
+  const aboutBackdropClose = useModalBackdropClose(closeAbout);
 
   useEffect(() => {
     if (!aboutOpen) return;
@@ -210,7 +213,7 @@ export function IrissMonthlyReportView({
       {aboutOpen ? (
         <div
           className="fixed inset-0 z-[140] flex items-end justify-center bg-black/40 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
-          onClick={closeAbout}
+          {...aboutBackdropClose}
           role="presentation"
         >
           <div

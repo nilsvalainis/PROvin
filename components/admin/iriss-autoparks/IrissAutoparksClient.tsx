@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent } from "react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { IrissProjectIndicator } from "@/components/admin/IrissProjectIndicator";
 import { IrissAutoparksRoom } from "@/components/admin/iriss-autoparks/IrissAutoparksRoom";
 import { irissLvDealerPlateFont } from "@/components/admin/iriss-lv-dealer-plate-font";
@@ -405,8 +406,10 @@ function AddCarDialog({ onClose, onCreated }: { onClose: () => void; onCreated: 
     </label>
   );
 
+  const backdropClose = useModalBackdropClose(onClose, !busy);
+
   return (
-    <div className="iriss-ap-dialog-bg" onClick={onClose} role="presentation">
+    <div className="iriss-ap-dialog-bg" {...backdropClose} role="presentation">
       <div className="iriss-ap-dialog" role="dialog" aria-modal="true" aria-label="Pievienot auto" onClick={(e) => e.stopPropagation()}>
         <p className="text-[17px] font-semibold">Pievienot auto</p>
         <p className="mt-0.5 text-[12.5px] text-[#6e6e73]">Auto no Loģistikas nonāk šeit pats ar &quot;Uz Autoparku&quot;.</p>

@@ -2,6 +2,7 @@
 
 import { Car, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { filterOfferSourceCars, type OfferSourceCarRow } from "@/lib/iriss-offer-source-cars";
 import { offerSourceRefString, type OfferSourceKind } from "@/lib/iriss-stock-photos";
 
@@ -47,9 +48,10 @@ export function IrissOfferSourceSheet({ onClose, onOpen }: Props) {
   const list = tab === "empty" ? [] : rows[tab];
   const visible = useMemo(() => filterOfferSourceCars(list ?? [], query).slice(0, 100), [list, query]);
   const canOpen = tab === "empty" || Boolean(picked && visible.some((r) => r.id === picked));
+  const backdropClose = useModalBackdropClose(onClose);
 
   return (
-    <div className="fixed inset-0 z-[130] flex items-end justify-center bg-black/40 sm:items-center sm:p-6" role="presentation" onClick={onClose}>
+    <div className="fixed inset-0 z-[130] flex items-end justify-center bg-black/40 sm:items-center sm:p-6" role="presentation" {...backdropClose}>
       <div
         role="dialog"
         aria-modal="true"

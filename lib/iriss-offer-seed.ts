@@ -6,6 +6,7 @@
 
 import type { AutoparksCar } from "@/lib/iriss-autoparks";
 import { V2_VAT_MODE_LV, type V2VatMode } from "@/lib/iriss-autoparks-v2";
+import { offerAprakstiSeedFromAuto1, type OfferAprakstiSeedProblem } from "@/lib/iriss-offer-apraksti-seed";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
 import type { OfferDraft } from "@/lib/iriss-offer-draft";
 
@@ -30,6 +31,15 @@ export type OfferSeedFields = Partial<
     | "vatStatus"
     | "carPrice"
     | "priceGermany"
+    | "damageGrade"
+    | "keyCount"
+    | "visualAssessment"
+    | "technicalAssessment"
+    | "summary"
+    | "hasFullServiceHistory"
+    | "hasFactoryPaint"
+    | "hasNoRustBody"
+    | "hasSecondWheelSet"
   >
 >;
 
@@ -59,6 +69,8 @@ export type AutoparksSeedExtras = {
   location?: string;
   displayName?: string;
   equipmentLine?: string;
+  /** Autoparka v2 `service` (problēmas, piezīmes, rēķini) - Apraksti cilnes priekšaizpildei. */
+  service?: { problems?: readonly OfferAprakstiSeedProblem[]; notes?: string; invoiceCount?: number } | null;
 };
 
 const KM = new Intl.NumberFormat("lv-LV", { maximumFractionDigits: 0, useGrouping: true });
@@ -87,24 +99,36 @@ export function offerSeedFromAutoparks(car: AutoparksCar, extras: AutoparksSeedE
   const firstReg = txt(extras.tech?.firstRegDate) || txt(reg?.firstRegDate) || txt(car.year, 40);
   const odometer = km(reg?.odometerKm ?? null) || km(car.mileageKm);
   const vatMode = extras.purchase?.vat?.mode;
-  return compact({
-    brandModel: makeModel,
-    vin: txt(car.vin, 32).toUpperCase(),
-    firstRegistration: firstReg,
-    year: firstReg,
-    odometerReading: odometer,
-    mileage: odometer,
-    fuel: txt(reg?.fuel, 60),
-    transmission: txt(reg?.gearbox, 60),
-    powerKw: num(extras.tech?.powerKw, "kW"),
-    engineDisplacement: num(extras.tech?.displacementCm3, "cm³"),
-    color: txt(car.color, 60),
-    location: txt(extras.location) || txt(car.location),
-    equipmentHighlights: txt(extras.equipmentLine, 600) || txt(car.equipmentLine, 600),
-    auctionPlatform: txt(extras.purchase?.auction, 80),
-    auctionStockNumber: txt(extras.purchase?.auctionNo, 80),
-    vatStatus: vatMode ? txt(V2_VAT_MODE_LV[vatMode], 40) : "",
-  });
+  const equipmentLine = txt(extras.equipmentLine, 600) || txt(car.equipmentLine, 600);
+  const aprakstiSeed = extras.service
+    ? offerAprakstiSeedFromAuto1({
+        problems: extras.service.problems,
+        notes: extras.service.notes,
+        invoiceCount: extras.service.invoiceCount,
+        equipmentLine,
+      })
+    : {};
+  return {
+    ...compact({
+      brandModel: makeModel,
+      vin: txt(car.vin, 32).toUpperCase(),
+      firstRegistration: firstReg,
+      year: firstReg,
+      odometerReading: odometer,
+      mileage: odometer,
+      fuel: txt(reg?.fuel, 60),
+      transmission: txt(reg?.gearbox, 60),
+      powerKw: num(extras.tech?.powerKw, "kW"),
+      engineDisplacement: num(extras.tech?.displacementCm3, "cm³"),
+      color: txt(car.color, 60),
+      location: txt(extras.location) || txt(car.location),
+      equipmentHighlights: equipmentLine,
+      auctionPlatform: txt(extras.purchase?.auction, 80),
+      auctionStockNumber: txt(extras.purchase?.auctionNo, 80),
+      vatStatus: vatMode ? txt(V2_VAT_MODE_LV[vatMode], 40) : "",
+    }),
+    ...aprakstiSeed,
+  };
 }
 
 /** hideSums - darbinieks, kuram Loģistikā summas paslēptas (loma logistika/serviss): cena netiek dota. */

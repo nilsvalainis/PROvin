@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 
 type Props = {
@@ -48,13 +49,15 @@ export function SampleReportLightbox({
     };
   }, [open, onClose]);
 
+  const backdropClose = useModalBackdropClose(onClose);
+
   if (!mounted || !open) return null;
 
   return createPortal(
     <div
       className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-3 sm:p-6"
       role="presentation"
-      onClick={onClose}
+      {...backdropClose}
     >
       <div
         role="dialog"

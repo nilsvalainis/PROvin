@@ -5,6 +5,7 @@ import { ArrowLeft, FileDown, Phone, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWorkspaceRevisionConflictBanner";
@@ -318,6 +319,8 @@ export function IrissPasutijumsEditor({
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [offerDeleteConfirmOpen, setOfferDeleteConfirmOpen] = useState(false);
   const [offerDeleteBusy, setOfferDeleteBusy] = useState(false);
+  const offerDeleteBackdropClose = useModalBackdropClose(() => setOfferDeleteConfirmOpen(false), !offerDeleteBusy);
+  const deleteBackdropClose = useModalBackdropClose(() => setDeleteConfirmOpen(false), !deleteBusy);
   const [orderPdfBusy, setOrderPdfBusy] = useState(false);
   const [offerPdfBusy, setOfferPdfBusy] = useState(false);
   const [offerPdfNotice, setOfferPdfNotice] = useState<string | null>(null);
@@ -2073,7 +2076,7 @@ export function IrissPasutijumsEditor({
       {offerDeleteConfirmOpen ? (
         <div
           className="fixed inset-0 z-[138] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
-          onClick={() => !offerDeleteBusy && setOfferDeleteConfirmOpen(false)}
+          {...offerDeleteBackdropClose}
           role="presentation"
         >
           <div
@@ -2112,7 +2115,7 @@ export function IrissPasutijumsEditor({
       {deleteConfirmOpen ? (
         <div
           className="fixed inset-0 z-[130] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
-          onClick={() => !deleteBusy && setDeleteConfirmOpen(false)}
+          {...deleteBackdropClose}
           role="presentation"
         >
           <div
