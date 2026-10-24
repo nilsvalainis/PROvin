@@ -9,6 +9,7 @@ import { Loader2, Plus, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
+import { AdminOfferAprakstiTranslateButton } from "@/components/admin/AdminOfferAprakstiTranslateButton";
 import { IrissOfferDeadlineField } from "@/components/admin/IrissOfferDeadlineField";
 import { AdminSaveButton } from "@/components/admin/AdminSaveButton";
 import { IrissOfferBlocksEditor } from "@/components/admin/IrissOfferBlocksEditor";
@@ -58,6 +59,7 @@ function LabeledOfferRichCommentField({
         onChange={onHtmlChange}
         aria-label={label}
         resizable
+        actions={<AdminOfferAprakstiTranslateButton value={value} onChange={onHtmlChange} />}
       />
     </div>
   );
