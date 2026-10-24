@@ -2063,6 +2063,7 @@
     border-radius: 0;
     overflow: visible;
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: 10px;
   }
   .ap2.ap2.ap2 .ap2-row {
@@ -2078,18 +2079,6 @@
     display: flex;
     width: 100%;
     justify-content: space-between;
-  }
-  .ap2.ap2.ap2 .ap2-rt-top {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .ap2.ap2.ap2 .ap2-rt-top b {
-    flex: 1;
-    min-width: 0;
-  }
-  .ap2.ap2.ap2 .ap2-pill-m {
-    flex: none;
   }
 
   /* Iegāde: "Pašizmaksa" kā viena rinda ar bultiņu (maketa stils), nevis tumša 2-rindu flīze. */
