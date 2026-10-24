@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeAutoparksCar } from "@/lib/iriss-autoparks";
-import { emptyAutoparksV2State } from "@/lib/iriss-autoparks-v2";
+import { emptyAutoparksV2State, normalizeAutoparksV2State } from "@/lib/iriss-autoparks-v2";
 import { autoparksV2ListRows, autoparksV2OwnerCounts, filterAutoparksV2Rows, groupAutoparksV2Rows } from "@/lib/iriss-autoparks-v2-list";
 
 const cars = [
@@ -32,5 +32,12 @@ describe("Autoparks v2 saraksts", () => {
     expect(filterAutoparksV2Rows(rows, { owner: "all", query: "passat ke012" }).map((r) => r.id)).toEqual(["a"]);
     expect(filterAutoparksV2Rows(rows, { owner: "all", query: "škoda" }).map((r) => r.id)).toEqual(["b"]);
     expect(autoparksV2OwnerCounts(rows)).toEqual({ all: 3, IRISS: 2, DZA: 1 });
+  });
+
+  it("J29 C: sarakstā redzama v2 labotā marka/modelis/VIN", () => {
+    const v2 = normalizeAutoparksV2State({ cars: { c: { fields: { make: "BMW", model: "220d Gran Tourer", vin: "WBA2A1234A1234567" } } } });
+    const r = autoparksV2ListRows(cars, v2).find((x) => x.id === "c")!;
+    expect(r.title).toBe("BMW 220d Gran Tourer");
+    expect(r.vin).toBe("WBA2A1234A1234567");
   });
 });
