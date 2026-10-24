@@ -57,6 +57,7 @@ function LabeledOfferRichCommentField({
         value={value}
         onChange={onHtmlChange}
         aria-label={label}
+        resizable
       />
     </div>
   );
