@@ -260,8 +260,8 @@
   font-size: 12px;
 }
 
-/* Pievienošanas lapa */
-.admin-ios-theme .menu-gallery {
+/* Pievienošanas lapa (render notiek portālā uz document.body, bez .admin-ios-theme priekšteča - sk. AdminMobileSheet/AdminBodyPortal, tāpēc šīs kārtulas ir pašpietiekamas, ne ligzdotas). */
+.menu-gallery {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -269,7 +269,7 @@
   padding: 0;
   list-style: none;
 }
-.admin-ios-theme .menu-gallery-row {
+.menu-gallery-row {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -277,7 +277,7 @@
   background: var(--fill-secondary, #f2f2f7);
   padding: 8px 10px;
 }
-.admin-ios-theme .menu-gallery-icon {
+.menu-gallery-icon {
   display: flex;
   height: 36px;
   width: 36px;
@@ -288,25 +288,26 @@
   color: #ffffff !important;
   background: linear-gradient(180deg, color-mix(in srgb, var(--menu-tone) 78%, #ffffff), var(--menu-tone));
 }
-.admin-ios-theme .menu-gallery-text {
+.menu-gallery-text {
   display: flex;
   min-width: 0;
   flex: 1;
   flex-direction: column;
 }
-.admin-ios-theme .menu-gallery-title {
+.menu-gallery-title {
   font-size: 15px;
   font-weight: 600;
+  color: var(--label, #1d1d1f);
 }
-.admin-ios-theme .menu-gallery-kind {
+.menu-gallery-kind {
   color: var(--label-secondary, #6e6e73) !important;
   font-size: 12px;
 }
-.admin-ios-theme .menu-gallery-sizes {
+.menu-gallery-sizes {
   display: flex;
   gap: 4px;
 }
-.admin-ios-theme .menu-gallery-size {
+.menu-gallery-size {
   min-height: 34px;
   min-width: 34px;
   border: 0;
@@ -317,7 +318,7 @@
   font-size: 13px;
   font-weight: 700;
 }
-.admin-ios-theme .menu-gallery-empty {
+.menu-gallery-empty {
   padding: 12px;
   text-align: center;
   color: var(--label-secondary, #6e6e73) !important;
