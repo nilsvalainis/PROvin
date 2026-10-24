@@ -66,6 +66,18 @@ describe("autoparks-v2.json normalizators", () => {
     expect(s.cars["ap-2"]!.fields.owner).toBe("");
   });
 
+  it("J30: normalizē jaunos tech laukus (pārnesumkārba, dzinējs); vecs fails bez šiem laukiem -> tukšs, bez regresijas", () => {
+    const s = normalizeAutoparksV2State({
+      cars: {
+        "ap-1": { tech: { gearbox: "Automātiskā", engine: "2.0 TDI" } },
+        "ap-2": { tech: { powerKw: 110 } },
+      },
+    });
+    expect(s.cars["ap-1"]!.tech.gearbox).toBe("Automātiskā");
+    expect(s.cars["ap-1"]!.tech.engine).toBe("2.0 TDI");
+    expect(s.cars["ap-2"]!.tech).toMatchObject({ gearbox: "", engine: "", powerKw: 110 });
+  });
+
   it("vēsture: ne vairāk kā 500 rindas uz auto, citu auto rindas paliek", () => {
     const rows: V2HistoryRow[] = [];
     for (let i = 0; i < 520; i++) rows.push({ id: `a${i}`, carId: "A", at: `t${i}`, actorId: "u", actorName: "u", field: "f", from: "", to: String(i) });
@@ -138,6 +150,21 @@ describe("Pamatdati skats", () => {
     const v2 = emptyCarV2();
     v2.fields.owner = "nav-derigs";
     expect(autoparksV2Basics(v1Car({ owner: "DZA" }), v2).owner).toBe("DZA");
+  });
+
+  it("J30: pārnesumkārba - ar roku ievadīta vērtība pārsvarā; tukša -> CSDD tirdzniecības reģistra registry.gearbox", () => {
+    const car = v1Car({ registry: { gearbox: "Manuālā" } });
+    expect(autoparksV2Basics(car, emptyCarV2()).gearbox).toEqual({ value: "Manuālā", csdd: true });
+    const v2 = emptyCarV2();
+    v2.tech.gearbox = "Automātiskā";
+    expect(autoparksV2Basics(car, v2).gearbox).toEqual({ value: "Automātiskā", csdd: false });
+  });
+
+  it("J30: dzinējs - ar roku ievadīts teksts rādās Pamatdatos; tukšs, ja nav ievadīts", () => {
+    expect(autoparksV2Basics(v1Car(), emptyCarV2()).engine).toEqual({ value: "", csdd: false });
+    const v2 = emptyCarV2();
+    v2.tech.engine = "2.0 TDI";
+    expect(autoparksV2Basics(v1Car(), v2).engine).toEqual({ value: "2.0 TDI", csdd: false });
   });
 
   it("CSDD reģistra statuss: nav / pieņemts / noņemts", () => {
