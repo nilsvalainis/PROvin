@@ -6,10 +6,53 @@ import {
   ADMIN_MOBILE_SECONDARY_DELAY_MS,
   ADMIN_MOBILE_TABBAR_DOCK_NAV,
   ADMIN_MOBILE_TABBAR_DOCK_WRAPPER,
+  PTR_INTERACTIVE_SELECTOR,
   adminMobilePtrLabel,
   adminMobilePullToRefreshEnabled,
   scheduleAdminIdleWork,
+  shouldArmPullToRefresh,
 } from "@/lib/admin-mobile-shell";
+
+/** Minimāls DOM dubultnieks: jsdom šajā repo nav, bet closest() ir vienīgā vajadzīgā forma. */
+function fakeTarget(matchesInteractive: boolean): { closest(selector: string): unknown } {
+  return { closest: () => (matchesInteractive ? {} : null) };
+}
+
+describe("shouldArmPullToRefresh", () => {
+  it("atļauj vilkšanu, ja pieskāriens nav uz pogas/saites/lauka", () => {
+    expect(shouldArmPullToRefresh(fakeTarget(false))).toBe(true);
+    expect(shouldArmPullToRefresh(null)).toBe(true);
+  });
+
+  it("j37: nekad neļauj PTR sākties uz pogas/saites/lauka (numura slēdzis, pavadzīmes ikona, atvērt lauku)", () => {
+    expect(shouldArmPullToRefresh(fakeTarget(true))).toBe(false);
+  });
+
+  it("j37: selektors sedz pogas, saites, laukus un izvēlnes ikonas", () => {
+    expect(PTR_INTERACTIVE_SELECTOR).toMatch(/\bbutton\b/);
+    expect(PTR_INTERACTIVE_SELECTOR).toMatch(/a\[href\]/);
+    expect(PTR_INTERACTIVE_SELECTOR).toMatch(/\binput\b/);
+    expect(PTR_INTERACTIVE_SELECTOR).toMatch(/role="button"/);
+  });
+});
+
+describe("j37: AdminShellMainWithMobilePull touchstart drošā vārti", () => {
+  it("onTouchStart pārbauda shouldArmPullToRefresh PIRMS pullActiveRef iestatīšanas", () => {
+    const src = readFileSync(
+      new URL("../components/admin/AdminShellMainWithMobilePull.tsx", import.meta.url),
+      "utf8",
+    );
+    const start = src.indexOf("const onTouchStart");
+    const end = src.indexOf("const onTouchMove");
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const body = src.slice(start, end);
+    const guardIdx = body.indexOf("shouldArmPullToRefresh");
+    const armIdx = body.indexOf("pullActiveRef.current = true");
+    expect(guardIdx).toBeGreaterThan(-1);
+    expect(armIdx).toBeGreaterThan(guardIdx);
+  });
+});
 
 describe("adminMobilePtrLabel", () => {
   it("rāda atjaunošanu, slieksni un vilkšanu", () => {

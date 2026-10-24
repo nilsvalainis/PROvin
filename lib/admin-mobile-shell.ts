@@ -103,3 +103,19 @@ export function proMobileNeedsBack(pathname: string): boolean {
   const p = pathname.replace(/\/+$/, "") || "/";
   return (PRO_MOBILE_BACK_PATHS as readonly string[]).includes(p);
 }
+
+/** Pogas, saites un lauki - pieskāriens tiem nekad nedrīkst sākt PTR vilkšanu (j37). */
+export const PTR_INTERACTIVE_SELECTOR = 'button, a[href], input, textarea, select, [role="button"], [contenteditable="true"]';
+
+type ClosestCapable = { closest(selector: string): unknown };
+
+/**
+ * j37: tuvu lapas augšai (kur PTR drīkst sākties) pieskāriens pogai/saitei/laukam gandrīz vienmēr
+ * nes nelielu pirksta svārstību - tas tika tulkots par vilkšanu, bīdīja saturu zem pirksta
+ * (pieskāriens netrāpīja) un, ja svārstība bija lielāka, izsauca router.refresh() ("lapa pārlādējas").
+ * PTR drīkst sākties tikai uz tukša/satura apgabala, nekad uz interaktīva elementa.
+ */
+export function shouldArmPullToRefresh(target: ClosestCapable | null): boolean {
+  if (!target) return true;
+  return target.closest(PTR_INTERACTIVE_SELECTOR) == null;
+}
