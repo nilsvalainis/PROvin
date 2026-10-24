@@ -2,7 +2,7 @@ import "server-only";
 
 import { getDropboxClient, type DropboxClient } from "@/lib/dropbox-client";
 import type { AutoparksCar } from "@/lib/iriss-autoparks";
-import { listAutoparksStockPhotoGroups } from "@/lib/iriss-autoparks-dropbox-sync";
+import { linkAutoparksCarToDropbox, listAutoparksStockPhotoGroups } from "@/lib/iriss-autoparks-dropbox-sync";
 import { makeAutoparksThumbnail } from "@/lib/iriss-autoparks-files";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import type { AutoparksCarV2 } from "@/lib/iriss-autoparks-v2";
@@ -18,14 +18,24 @@ export type StockPhotoCandidate = { id: string; name: string };
  * Auto /STOCK mapes bilžu kandidāti: jaunajā struktūrā (J36/J39) `bildes-izsole/` (ar `LR`
  * apakšmapi) + "iPhone" apakšmapes, ar vecās struktūras (saknes bildes) fallback, ja nekur nekā
  * nav. `bildes-canon` netiek lietota (J39 labojums).
+ *
+ * J52 LABOJUMS: ja `dropboxFolderId` trūkst vai ir kļūdīgs (sasaiste nekad nav notikusi vai mape
+ * dzēsta), izvēles logs iepriekš uz visiem laikiem rādīja "Nav STOCK bilžu" - mēģina pārsasaistīt
+ * pēc VIN (bez jaunas mapes veidošanas, sk. `linkAutoparksCarToDropbox`), tāpat kā to jau dara
+ * zināmo VIN pārpiesaiste (j36/j39/j48), bet automātiski, nevis ar roku rakstītam sarakstam.
  */
-export async function autoparksV2StockPhotoCandidates(car: Pick<AutoparksCar, "dropboxFolderId">): Promise<StockPhotoCandidate[]> {
+export async function autoparksV2StockPhotoCandidates(car: Pick<AutoparksCar, "id" | "dropboxFolderId">): Promise<StockPhotoCandidate[]> {
   const client = getDropboxClient();
-  if (!client || !car.dropboxFolderId) return [];
+  if (!client) return [];
   try {
-    const folder = await client.getMetadata(car.dropboxFolderId);
-    if (folder?.tag !== "folder") return [];
-    const groups = await listAutoparksStockPhotoGroups(client, folder.pathDisplay);
+    const folder = car.dropboxFolderId ? await client.getMetadata(car.dropboxFolderId) : null;
+    if (folder?.tag === "folder") {
+      const groups = await listAutoparksStockPhotoGroups(client, folder.pathDisplay);
+      return groups.flat().map((e) => ({ id: e.id, name: e.name }));
+    }
+    const relinked = await linkAutoparksCarToDropbox(car.id, { create: false });
+    if (!relinked.linked || !relinked.path) return [];
+    const groups = await listAutoparksStockPhotoGroups(client, relinked.path);
     return groups.flat().map((e) => ({ id: e.id, name: e.name }));
   } catch (err) {
     console.warn("[autoparks v2 foto kandidāti]", err instanceof Error ? err.message : err);

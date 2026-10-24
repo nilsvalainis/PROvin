@@ -227,3 +227,54 @@ describe("J36/J39: /STOCK struktūra - bildes-canon NETIEK lietota (J39 labojums
     expect(cands.map((c) => c.id)).toEqual(["id:iz1", "id:iz2", "id:lr1"]);
   });
 });
+
+describe("J52: izvēles logs trūkstošas/salauztas dropboxFolderId gadījumā (iepriekš mūžīgi 'Nav STOCK bilžu')", () => {
+  const RELINK_PATH = "/STOCK/Relinked Car";
+
+  async function loadWithLinkMock(impl: (carId: string, opts?: { create?: boolean }) => Promise<{ linked: boolean; path?: string }>) {
+    vi.resetModules();
+    vi.doMock("@/lib/iriss-autoparks-dropbox-sync", async (orig) => ({
+      ...(await orig<typeof import("@/lib/iriss-autoparks-dropbox-sync")>()),
+      linkAutoparksCarToDropbox: vi.fn(impl),
+    }));
+    return {
+      v1: await import("@/lib/iriss-autoparks-store"),
+      photo: await import("@/lib/iriss-autoparks-v2-photo"),
+    };
+  }
+
+  it("dropboxFolderId tukšs: pārsasaista pēc VIN (create:false) un atgriež atrastās mapes kandidātus", async () => {
+    subfolders[`${RELINK_PATH}/bildes-izsole`] = [{ tag: "file", id: "id:r1", name: "1.jpg" }];
+    const linkSpy = vi.fn(async (_carId: string, opts?: { create?: boolean }) => {
+      expect(opts).toEqual({ create: false });
+      return { linked: true, path: RELINK_PATH };
+    });
+    const { v1, photo } = await loadWithLinkMock(linkSpy);
+    const car = await v1.createAutoparksCar({ make: "Audi", model: "A6", vin: "WAUZZZ4G5EN012345" }, actor);
+    expect(car.dropboxFolderId).toBeFalsy();
+    const cands = await photo.autoparksV2StockPhotoCandidates(car);
+    expect(cands.map((c) => c.id)).toEqual(["id:r1"]);
+    expect(linkSpy).toHaveBeenCalledWith(car.id, { create: false });
+  });
+
+  it("dropboxFolderId norāda uz nolaistu/neesošu mapi: arī tad pārsasaista pēc VIN", async () => {
+    subfolders[`${RELINK_PATH}/bildes-izsole`] = [{ tag: "file", id: "id:r2", name: "1.jpg" }];
+    const { v1, photo } = await loadWithLinkMock(async () => ({ linked: true, path: RELINK_PATH }));
+    const car = await v1.createAutoparksCar({ make: "Audi", model: "A6", vin: "WAUZZZ4G5EN098765" }, actor);
+    await v1.mutateAutoparksState((state) => {
+      const idx = state.cars.findIndex((c) => c.id === car.id);
+      state.cars[idx] = { ...state.cars[idx]!, dropboxFolderId: "id:nav-mape" };
+      return { result: null };
+    });
+    const stale = (await v1.readAutoparksState()).cars.find((c) => c.id === car.id)!;
+    const cands = await photo.autoparksV2StockPhotoCandidates(stale);
+    expect(cands.map((c) => c.id)).toEqual(["id:r2"]);
+  });
+
+  it("pārsasaiste neatrod VIN sakritību: atgriež tukšu sarakstu (ne kļūdu)", async () => {
+    const { v1, photo } = await loadWithLinkMock(async () => ({ linked: false }));
+    const car = await v1.createAutoparksCar({ make: "Audi", model: "A6", vin: "WAUZZZ4G5EN011111" }, actor);
+    const cands = await photo.autoparksV2StockPhotoCandidates(car);
+    expect(cands).toEqual([]);
+  });
+});

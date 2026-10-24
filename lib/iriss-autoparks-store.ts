@@ -81,7 +81,9 @@ export async function createAutoparksCar(input: AutoparksCarInput & { orderId?: 
     location: (input.location ?? "").trim().slice(0, 120),
     purchasePriceEur: input.purchasePriceEur ?? null,
     salePriceEur: input.salePriceEur ?? null,
-    arrivedAt: input.arrivedAt || now.slice(0, 10),
+    // J52 LABOJUMS: tukšs, kamēr auto nav tiešām atvests - vecāk tika uzspiests šodienas datums,
+    // un tas pats aizsegtu "Atvests" vērtību, ja Pamatdati UI mēģina to notīrīt (sk. autoparksV2Basics).
+    arrivedAt: (input.arrivedAt ?? "").trim().slice(0, 10),
     archivedAt: "",
     // Jauniem ierakstiem īpašnieks vienmēr saglabāts; vecie paliek bez lauka (= IRISS).
     owner: isAutoparksOwner(input.owner) ? input.owner : "IRISS",
