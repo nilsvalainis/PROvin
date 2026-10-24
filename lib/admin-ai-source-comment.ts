@@ -186,8 +186,8 @@ Uzdevums: ĪSI un PRECĪZI izrēķini un izanalizē ŠĪ auto eļļas maiņas in
             : "no VISIEM iegūtajiem datiem (dīlera servisa tabula, AutoDNA/CarVertical/RAW servisa teksti, nobraukuma līkne, motorstundu / pilsētas-šosejas profils, ražotāja intervāls no konteksta vai agregātu pakas)."
         }
 PIRMĀ teikuma formāts (obligāti, lai PDF krāsotu pret OEM):
-Ražotāja intervāls: [km] km / [mēneši] mēn. ([motora kods], fiksēts vai Longlife/CBS maksimums)
-Piemēram N47 Longlife: 30 000 km / 24 mēn. Mainīgs CBS: 10 000 līdz 25 000 km / 12 mēn. Ja kods/intervāls nav drošs: „Ražotāja intervāls: nav droši zināms”. NEIZDOMĀ 15 000 km pēc noklusējuma.
+Ražotāja intervāls: [km] km / [mēneši] mēn. ([motora kods])
+„fiksēts” / „Longlife” / „CBS” drīkst rakstīt TIKAI, ja tas ir dīlera datos vai agregātu pakā ŠIM motora kodam. Ja kods/intervāls nav drošs: „Ražotāja intervāls: nav droši zināms”. NEIZDOMĀ 15 000 km pēc noklusējuma.
 Jāatbild tālāk:
 - cik bieži eļļa ir mainīta (datumi un/vai km starp secīgām eļļas maiņām);
 - kā dīlera soļi izskatās pret ražotāja intervālu (īsāks, atbilst, dīlera datos garāks);

@@ -535,6 +535,7 @@ export function evaluateExpertCommentQuality(
         });
       }
     }
+    issues.push(...unsourcedClaimIssues(t, opts.sourcePrompt));
     if (mentionsVehicleWrap(t) && !mentionsVehicleWrapInOrderFacts(opts.sourcePrompt)) {
       issues.push({
         code: "wrap_film_invented",
@@ -563,7 +564,29 @@ export function evaluateExpertCommentQuality(
 }
 
 /** Faktu lapas W karodziņi, kurus eval rāda kā problēmu (nekad neiedarbina atkārtojumu). */
-const EVAL_ONLY_FACT_FLAG_KINDS = new Set(["entry_error_as_rollback", "csdd_foreign_mileage"]);
+const EVAL_ONLY_FACT_FLAG_KINDS = new Set([
+  "entry_error_as_rollback",
+  "csdd_foreign_mileage",
+  "country_period_mismatch",
+  "negated_fact",
+]);
+
+/** j26: tikai karodziņi (bez maksas atkārtojuma) - apgalvojumi bez avota un salīmēti vārdi. */
+const WARRANTY_CLAIM_RE = /garantij\p{L}*.{0,60}(?:\d+\s*(?:gad|mēn|km|tūkst)|\d{1,2}\.\d{1,2}\.\d{4}|līdz\s+\d{4})/iu;
+const WARRANTY_SOURCE_RE = /garantij|warranty|garantie|gwarancj/i;
+const OIL_POLICY_CLAIM_RE = /longlife|long\s*life|\bcbs\b|fiksēt\p{L}*\s+(?:intervāl|apkop)/iu;
+const OIL_POLICY_SOURCE_RE = /longlife|long\s*life|\bcbs\b|fixed\s+service|flexible\s+service|fiksēt\p{L}*\s+intervāl/iu;
+
+export function unsourcedClaimIssues(text: string, sourcePrompt: string): CommentQualityIssue[] {
+  const out: CommentQualityIssue[] = [];
+  if (WARRANTY_CLAIM_RE.test(text) && !WARRANTY_SOURCE_RE.test(sourcePrompt)) {
+    out.push({ code: "unsourced_warranty", message: "Garantijas termiņš/km nav avotos - jāraksta „garantijas statuss jāpārbauda pie dīlera”." });
+  }
+  if (OIL_POLICY_CLAIM_RE.test(text) && !OIL_POLICY_SOURCE_RE.test(sourcePrompt)) {
+    out.push({ code: "unsourced_oil_policy", message: "Longlife / fiksēts / CBS nav dīlera datos vai agregātu pakā." });
+  }
+  return out;
+}
 
 const PHOTO_NO_DEFECTS_CLAIM_RE =
   /(?:būtisk\p{L}*\s+)?vizuāl\p{L}*\s+defekt\p{L}*\s+netika\s+(?:novērot|fiksēt|konstatēt)|netika\s+(?:novērot|fiksēt|konstatēt)\p{L}*\s+būtisk\p{L}*\s+vizuāl/iu;

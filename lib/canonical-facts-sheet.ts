@@ -676,6 +676,14 @@ function plainField(html: string | undefined): string {
 }
 
 /** Viena rinda par jau uzrakstītiem laukiem (avotu komentāriem — bez eseju dublikātiem). */
+/**
+ * j26: „nav X” teikumi no citiem laukiem nav fakti (tie var būt kļūdaini) - tos nedod
+ * tālāk, lai kļūda neizplatās („pretrunā ar citu reģistru negadījumu sadaļām”).
+ */
+export function isNegativeVerdict(sentence: string): boolean {
+  return /(?<!\p{L})(?:nav|nevien\p{L}*|netika|neatrad\p{L}*)(?!\p{L})/iu.test(sentence);
+}
+
 export function buildOtherFieldVerdicts(
   input: CanonicalFactsInput,
   excludeLabel?: string,
@@ -686,7 +694,9 @@ export function buildOtherFieldVerdicts(
     if (excludeLabel && label === excludeLabel) return;
     const plain = plainField(html);
     if (!plain) return;
-    rows.push(`- ${label}: ${firstSentence(plain)}`);
+    const sentence = firstSentence(plain);
+    if (isNegativeVerdict(sentence)) return;
+    rows.push(`- ${label}: ${sentence}`);
   };
 
   const sourceComments = buildPreviouslyGeneratedSourceCommentsContext(null, blocks);
@@ -697,7 +707,7 @@ export function buildOtherFieldVerdicts(
       const label = m[1]!.trim();
       if (excludeLabel && label === excludeLabel) continue;
       const sentence = firstSentence(m[2] ?? "");
-      if (sentence) rows.push(`- ${label}: ${sentence}`);
+      if (sentence && !isNegativeVerdict(sentence)) rows.push(`- ${label}: ${sentence}`);
     }
   }
 

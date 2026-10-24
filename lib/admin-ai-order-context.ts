@@ -407,6 +407,9 @@ export function invalidateAiOrderContextCache(): void {
   orderContextCache.clear();
 }
 
+export const AI_GENERAL_KNOWLEDGE_HEADER =
+  "=== VISPĀRĪGAS ZINĀŠANAS (nav šī auto fakts - neraksti kā faktu par šo auto; skaitļus/termiņus ņem tikai no faktu lapas vai avotiem) ===";
+
 async function buildKnowledgePacks(input: AiOrderContextInput): Promise<string> {
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
   const historical = await buildHistoricalReportsAiContext({
@@ -420,7 +423,10 @@ async function buildKnowledgePacks(input: AiOrderContextInput): Promise<string> 
     sessionId: input.sessionId,
   });
   const styleCorpus = buildStyleCorpusAiContext();
-  return [styleCorpus, historical, aggregateKnowledge].filter((s) => s.trim()).join("\n\n");
+  const general = [historical, aggregateKnowledge].filter((s) => s.trim()).join("\n\n");
+  // j26: zināšanu pakas nav šī auto fakti.
+  const labeled = general ? `${AI_GENERAL_KNOWLEDGE_HEADER}\n${general}` : "";
+  return [styleCorpus, labeled].filter((s) => s.trim()).join("\n\n");
 }
 
 function instructionBriefs(input: AiOrderContextInput): string {
