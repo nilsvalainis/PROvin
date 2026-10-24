@@ -11,6 +11,7 @@ import {
   waybillChatTimeline,
   waybillChatTimelineNewestFirst,
   waybillSoonTone,
+  withWaybillLegacyTimeFixes,
   type WaybillRequest,
   type WaybillRequestsDoc,
 } from "@/lib/iriss-waybill-requests";
@@ -266,5 +267,32 @@ describe("j13: Pavadzīmes atveras ar jaunāko augšā", () => {
     };
     const shown = waybillChatTimelineNewestFirst(waybillChatTimeline(doc)).map((i) => (i.type === "request" ? i.request.id : i.event.id));
     expect(shown).toEqual(["wbr_new00000", "e_new1", "wbr_mid00000", "wbr_old00000", "e_old1", "e_old2"]);
+  });
+});
+
+describe("withWaybillLegacyTimeFixes (j57: P00746 - CSDD laiki pārrakstīti tikai šim ierakstam)", () => {
+  it("izdotai P00746 pārrakstā laikus uz CSDD piešķirtajiem", () => {
+    const req = sample({ id: "wbr_p746", status: "issued", waybillNo: "P00746", validFrom: "2026-10-24T09:00:00.000Z", validUntil: "2026-10-26T16:10:00.000Z" });
+    const [fixed] = withWaybillLegacyTimeFixes([req]);
+    expect(fixed).toMatchObject({ validFrom: "2026-10-24T17:49:00.000Z", validUntil: "2026-10-26T18:49:00.000Z" });
+  });
+
+  it("neaiztiek citu pavadzīmju numurus, pat ja tie nejauši sakrīt virknes formā", () => {
+    const req = sample({ id: "wbr_other", status: "issued", waybillNo: "P00747" });
+    const [untouched] = withWaybillLegacyTimeFixes([req]);
+    expect(untouched).toBe(req);
+  });
+
+  it("neaiztiek P00746, kamēr tā nav izdota (gaida/kļūda/atcelts)", () => {
+    const queued = sample({ id: "wbr_q", status: "queued", waybillNo: "P00746" });
+    const [untouched] = withWaybillLegacyTimeFixes([queued]);
+    expect(untouched).toBe(queued);
+  });
+
+  it("ir idempotents - otrreiz piemērojot nekas vairāk nemainās", () => {
+    const req = sample({ id: "wbr_p746", status: "issued", waybillNo: "P00746", validFrom: "2026-10-24T09:00:00.000Z", validUntil: "2026-10-26T16:10:00.000Z" });
+    const once = withWaybillLegacyTimeFixes([req]);
+    const twice = withWaybillLegacyTimeFixes(once);
+    expect(twice).toBe(once);
   });
 });

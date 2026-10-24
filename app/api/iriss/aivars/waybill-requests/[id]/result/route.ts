@@ -29,6 +29,9 @@ export async function POST(req: Request, ctx: Ctx) {
     fileName?: unknown;
     errorReason?: unknown;
     by?: unknown;
+    validFrom?: unknown;
+    validUntil?: unknown;
+    validTo?: unknown;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -56,6 +59,10 @@ export async function POST(req: Request, ctx: Ctx) {
   }
   const by = body.by === "auto" ? "auto" : "aivars";
   const errorReason = typeof body.errorReason === "string" ? body.errorReason : "";
+  // j57: CSDD piešķirtais derīguma laiks (ja rezultāts to sūta) - uzvar pāri pieprasījuma brīdī aprēķinātajam.
+  const validFrom = typeof body.validFrom === "string" ? body.validFrom : undefined;
+  const validUntilRaw = body.validUntil ?? body.validTo;
+  const validUntil = typeof validUntilRaw === "string" ? validUntilRaw : undefined;
   // j47: automātikas neveiksme nedrīkst palikt klusa "Kļūda" - pavadzīme nav izrakstīta, Aivars par to nezina.
   // Nododam Aivaram (atpakaļ rindā, neautomātisks) un pamodinām. Izņēmums: "numurs CSDD aizņemts" - lemj lietotājs.
   if (!ok && by === "auto") {
@@ -78,6 +85,8 @@ export async function POST(req: Request, ctx: Ctx) {
     pdfUrl,
     errorReason,
     by,
+    validFrom,
+    validUntil,
   });
   if (!request) return NextResponse.json({ error: "not_found" }, { status: 404 });
   // Izdotās pavadzīmes PDF -> Dropbox /Pavadzīmes_IRISS (idempotenti, pārbaudīts); kļūdu cron mēģina vēlreiz.

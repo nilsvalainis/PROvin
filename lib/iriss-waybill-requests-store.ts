@@ -14,6 +14,7 @@ import {
   pendingWaybillRequests,
   waybillPendingExpired,
   waybillRequestCancellable,
+  withWaybillLegacyTimeFixes,
   WAYBILL_HANDOFF_TEXT,
   type WaybillWorkerStage,
   type WaybillRequest,
@@ -22,6 +23,8 @@ import {
   type WaybillRequestStatus,
   type WaybillRequestsDoc,
 } from "@/lib/iriss-waybill-requests";
+import { displayDealerPlate } from "@/lib/iriss-waybill-plates";
+import { saveCsddPlatesReport } from "@/lib/iriss-waybill-csdd-plates-store";
 
 const DOC_KEY = "queue";
 
@@ -78,7 +81,9 @@ function pushEvent(
 }
 
 export async function readWaybillRequestsDoc(): Promise<WaybillRequestsDoc> {
-  return store.read(DOC_KEY);
+  const doc = await store.read(DOC_KEY);
+  const requests = withWaybillLegacyTimeFixes(doc.requests);
+  return requests === doc.requests ? doc : { ...doc, requests };
 }
 
 export async function createWaybillRequest(input: {
@@ -424,6 +429,13 @@ export async function handAutoFailureToAivars(input: {
 
 const AUTO_PICKED_BY = "auto";
 
+/** ISO datums, ja derīgs; citādi tukšs (nederīgu vai tukšu vērtību nekad nerakstām pāri). */
+function validIso(v: string | undefined): string {
+  if (typeof v !== "string" || !v.trim()) return "";
+  const t = Date.parse(v);
+  return Number.isFinite(t) ? new Date(t).toISOString() : "";
+}
+
 export async function appendWaybillRequestEvent(input: {
   id: string;
   kind: WaybillRequestEventKind;
@@ -434,6 +446,12 @@ export async function appendWaybillRequestEvent(input: {
   by?: string;
   /** Automātikas solis (tikai kamēr darbā). */
   stage?: WaybillWorkerStage;
+  /**
+   * j57: CSDD rezultātā piešķirtais derīguma laiks (ja zināms) - uzvar pāri portāla pieprasījuma brīdī
+   * aprēķinātajam (sk. createWaybillRequest). Piemēro tikai, kad šis notikums izdod pavadzīmi.
+   */
+  validFrom?: string;
+  validUntil?: string;
 }): Promise<WaybillRequest | null> {
   const by = (input.by ?? "aivars").slice(0, 80);
   const now = new Date().toISOString();
@@ -463,6 +481,9 @@ export async function appendWaybillRequestEvent(input: {
       pickedAt: input.kind === "in_progress" && working ? now : current.pickedAt,
       stage: working ? (input.stage ?? current.stage) : "",
       stageAt: working ? (input.stage ? now : current.stageAt) : "",
+      // j57: izdodot, CSDD īstie laiki (ja zināmi) pārraksta pieprasījuma brīdī aprēķinātos.
+      validFrom: status === "issued" ? validIso(input.validFrom) || current.validFrom : current.validFrom,
+      validUntil: status === "issued" ? validIso(input.validUntil) || current.validUntil : current.validUntil,
     };
     let next = { ...doc, requests: doc.requests.map((r) => (r.id === input.id ? nextReq : r)) };
     next = pushEvent(next, {
@@ -498,6 +519,9 @@ export async function completeWaybillRequest(input: {
   pdfUrl?: string;
   errorReason?: string;
   by?: string;
+  /** CSDD piešķirtais derīguma laiks (ja zināms); uzvar pāri pieprasījuma brīdī aprēķinātajam. */
+  validFrom?: string;
+  validUntil?: string;
 }): Promise<WaybillRequest | null> {
   const result = await appendWaybillRequestEvent({
     id: input.id,
@@ -509,6 +533,8 @@ export async function completeWaybillRequest(input: {
     pdfUrl: input.pdfUrl,
     errorReason: input.errorReason,
     by: input.by,
+    validFrom: input.validFrom,
+    validUntil: input.validUntil,
   });
   if (result) {
     await recordWaybillAudit({
@@ -521,8 +547,32 @@ export async function completeWaybillRequest(input: {
         errorReason: result.errorReason.slice(0, 200),
       },
     });
+    if (input.ok) await refreshCsddPlateSnapshot(result);
   }
   return result;
+}
+
+/**
+ * j57: numura momentuzņēmumu (CSDD, sk. lib/iriss-waybill-csdd-plates.ts) sync.js atjaunina tikai nākamajā
+ * cikla, bet aplim "aizņemts" jārāda uzreiz pēc izdošanas - tāpēc paši ieliekam svaigu ierakstu, nevis gaidām.
+ * Kļūda nav fatāla (momentuzņēmums tad vienkārši paliek vecs līdz nākamajam sync.js ciklam).
+ */
+async function refreshCsddPlateSnapshot(request: WaybillRequest): Promise<void> {
+  const plate = displayDealerPlate(request.vehicle.plate);
+  if (!plate || !request.waybillNo) return;
+  try {
+    await saveCsddPlatesReport([
+      {
+        plate,
+        ok: true,
+        checkedAt: new Date().toISOString(),
+        active: [{ waybillNo: request.waybillNo, validUntil: request.validUntil, brandModel: request.vehicle.brandModel }],
+        error: "",
+      },
+    ]);
+  } catch (err) {
+    console.error("[iriss-waybill] csdd_snapshot_refresh_failed", err instanceof Error ? err.message : err);
+  }
 }
 
 async function recordWaybillAudit(entry: Parameters<typeof appendStaffAudit>[0]): Promise<void> {
