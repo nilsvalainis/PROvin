@@ -55,26 +55,53 @@ export function CarPlaceholder() {
 
 /**
  * Galvenā bilde no /STOCK (API to atrod pirmajā pieprasījumā) virs vietturā; ja bildes nav - paliek vietturis.
+ * `onEditPhoto` (J29 B): ja dots, rāda kameras pogu stūrī "Mainīt galveno bildi" izvēlei. `version` - atjaunina
+ * `<img>` src pēc izvēles, lai pārlūks neizmanto vecā attēla kešu.
  */
-export function CarImg({ carId, className = "ap2-img" }: { carId: string; className?: string }) {
+export function CarImg({
+  carId,
+  className = "ap2-img",
+  onEditPhoto,
+  version = 0,
+}: {
+  carId: string;
+  className?: string;
+  onEditPhoto?: () => void;
+  version?: number;
+}) {
   const [failed, setFailed] = useState(false);
   // Tikai pēc hidratācijas: citādi 404 notiek pirms React un onError nenostrādā (salauztas bildes ikona).
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+  useEffect(() => setFailed(false), [version]);
   return (
     <span className={className} style={{ position: "relative" }}>
       <CarPlaceholder />
       {mounted && !failed ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(carId)}/foto`}
+          src={`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(carId)}/foto${version ? `?v=${version}` : ""}`}
           alt=""
           loading="lazy"
           style={{ position: "absolute", inset: 0 }}
           onError={() => setFailed(true)}
         />
       ) : null}
+      {onEditPhoto ? (
+        <button type="button" className="ap2-cambtn" onClick={onEditPhoto} aria-label="Mainīt galveno bildi">
+          <CameraIcon />
+        </button>
+      ) : null}
     </span>
+  );
+}
+
+export function CameraIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 7h3l1.5-2h7L17 7h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z" />
+      <circle cx="12" cy="13" r="3.5" />
+    </svg>
   );
 }
 

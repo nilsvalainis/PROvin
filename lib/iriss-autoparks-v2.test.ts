@@ -49,6 +49,23 @@ describe("autoparks-v2.json normalizators", () => {
     expect("secret" in car).toBe(false);
   });
 
+  it("J29 B papildus: normalizē jaunos v2 laukus (gads, krāsa, īpašnieks, nobraukums)", () => {
+    const s = normalizeAutoparksV2State({
+      cars: {
+        "ap-1": {
+          fields: { year: "2020", color: "sarkans", owner: "dza" },
+          tech: { mileageKm: "150 500" },
+        },
+        "ap-2": { fields: { owner: "hack" } },
+      },
+    });
+    expect(s.cars["ap-1"]!.fields.year).toBe("2020");
+    expect(s.cars["ap-1"]!.fields.color).toBe("sarkans");
+    expect(s.cars["ap-1"]!.fields.owner).toBe("");
+    expect(s.cars["ap-1"]!.tech.mileageKm).toBe(150500);
+    expect(s.cars["ap-2"]!.fields.owner).toBe("");
+  });
+
   it("vēsture: ne vairāk kā 500 rindas uz auto, citu auto rindas paliek", () => {
     const rows: V2HistoryRow[] = [];
     for (let i = 0; i < 520; i++) rows.push({ id: `a${i}`, carId: "A", at: `t${i}`, actorId: "u", actorName: "u", field: "f", from: "", to: String(i) });
@@ -91,6 +108,36 @@ describe("Pamatdati skats", () => {
     expect(car.model).toBe("218D");
     expect(car.vin).toBe("WBA2A9999A9999999");
     expect(autoparksV2Title(car)).toBe("BMW 218D");
+  });
+
+  it("J29 B papildus: ar roku labots gads/krāsa/īpašnieks rādās v2, v1 paliek nemainīts", () => {
+    const v2 = emptyCarV2();
+    v2.fields.year = "2020";
+    v2.fields.color = "sarkans";
+    v2.fields.owner = "DZA";
+    const car = v1Car({ year: "2019", color: "pelēks", owner: "IRISS" });
+    const b = autoparksV2Basics(car, v2);
+    expect(b.year).toBe("2020");
+    expect(b.color).toBe("sarkans");
+    expect(b.owner).toBe("DZA");
+    expect(b.ownerLabel).toBe("SIA DZINTARZEME AUTO");
+    expect(car.year).toBe("2019");
+    expect(car.color).toBe("pelēks");
+  });
+
+  it("J29 B papildus: ar roku labots nobraukums ir galvenais pat ja ir CSDD odometrs; v1 nemainās", () => {
+    const v2 = emptyCarV2();
+    v2.tech.mileageKm = 150500;
+    const car = v1Car({ registry: { odometerKm: 148950, importedAt: "2026-10-20" } });
+    const b = autoparksV2Basics(car, v2);
+    expect(b.mileageKm).toEqual({ value: 150500, csdd: false });
+    expect(car.mileageKm).toBe(140000);
+  });
+
+  it("nederīga v2.fields.owner vērtība ignorēta - krīt atpakaļ uz v1 īpašnieku", () => {
+    const v2 = emptyCarV2();
+    v2.fields.owner = "nav-derigs";
+    expect(autoparksV2Basics(v1Car({ owner: "DZA" }), v2).owner).toBe("DZA");
   });
 
   it("CSDD reģistra statuss: nav / pieņemts / noņemts", () => {

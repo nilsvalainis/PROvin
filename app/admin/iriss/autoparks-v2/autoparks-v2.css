@@ -223,6 +223,25 @@
   display: block;
   object-fit: cover;
 }
+/* J29 B: kameras poga pār galveno bildi "Mainīt galveno bildi". */
+.ap2.ap2.ap2 .ap2-cambtn {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--btn);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  z-index: 1;
+}
+.ap2.ap2.ap2 .ap2-cambtn svg {
+  width: 12px;
+  height: 12px;
+}
 .ap2.ap2.ap2 .ap2-rt {
   flex: 1;
   min-width: 0;
@@ -639,7 +658,8 @@
   color: var(--ink2);
   font-weight: 500;
 }
-.ap2.ap2.ap2 .ap2-f input.v {
+.ap2.ap2.ap2 .ap2-f input.v,
+.ap2.ap2.ap2 .ap2-f select.v {
   width: 100%;
   max-width: 220px;
   justify-self: end;
@@ -1192,6 +1212,60 @@
 }
 .ap2.ap2.ap2 .ap2-doc .ap2-nav.r {
   right: 8px;
+}
+/* J29 B: "Izvēlēties galveno bildi" režģis. */
+.ap2.ap2.ap2 .ap2-picwrap {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+  background: #f5f5f7;
+}
+.ap2.ap2.ap2 .ap2-picgrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.ap2.ap2.ap2 .ap2-pic {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  border: 2px solid var(--line);
+  background: #e5e5ea;
+  overflow: hidden;
+  padding: 0;
+}
+.ap2.ap2.ap2 .ap2-pic img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.ap2.ap2.ap2 .ap2-pic.sel {
+  border-color: var(--focus);
+}
+.ap2.ap2.ap2 .ap2-pic:disabled {
+  opacity: 0.6;
+}
+.ap2.ap2.ap2 .ap2-picchk {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--focus);
+  color: #fff;
+  display: grid;
+  place-items: center;
+}
+.ap2.ap2.ap2 .ap2-picchk svg {
+  width: 12px;
+  height: 12px;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-picgrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 @media (min-width: 900px) {

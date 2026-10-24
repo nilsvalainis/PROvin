@@ -9,6 +9,7 @@ import { AUTOPARKS_V2_STATUS_ORDER, V2_STATUS_UNDO_CLIENT_MS, type AutoparksV2Ba
 import type { AutoparksV2Perms } from "@/lib/iriss-autoparks-v2-perms";
 import { AutoparksV2History } from "./AutoparksV2History";
 import { AutoparksV2Pamatdati } from "./AutoparksV2Pamatdati";
+import { AutoparksV2PhotoPicker } from "./AutoparksV2PhotoPicker";
 import { CABINET_PANES } from "./panes";
 import { CarImg, VinCopy, yearColor } from "./ui";
 
@@ -55,6 +56,8 @@ export function AutoparksV2Cabinet({
   const params = useSearchParams();
   const [basics, setBasics] = useState(initialBasics);
   const [sheet, setSheet] = useState(false);
+  const [photoPicker, setPhotoPicker] = useState(false);
+  const [photoVersion, setPhotoVersion] = useState(0);
   const [toast, setToast] = useState<{ historyId: string; status: AutoparksStatus; left: number } | null>(null);
   const [statusErr, setStatusErr] = useState("");
   const tabs = allowedTabs(perms, panes);
@@ -145,7 +148,7 @@ export function AutoparksV2Cabinet({
       </Link>
 
       <div className={`ap2-carhead ${compact ? "compact" : ""}`}>
-        <CarImg carId={basics.id} />
+        <CarImg carId={basics.id} version={photoVersion} onEditPhoto={!compact && perms.pamatdati ? () => setPhotoPicker(true) : undefined} />
         <div className="nm">
           <b>{basics.title}</b>
           <div className="meta">
@@ -186,6 +189,16 @@ export function AutoparksV2Cabinet({
       {pane ? pane({ carId: basics.id, perms, basics, onBasics }) : null}
 
       {sheet ? <StatusSheet current={basics.status} onPick={setStatus} onClose={() => setSheet(false)} /> : null}
+      {photoPicker ? (
+        <AutoparksV2PhotoPicker
+          carId={basics.id}
+          onClose={() => setPhotoPicker(false)}
+          onPicked={(b) => {
+            onBasics(b);
+            setPhotoVersion((v) => v + 1);
+          }}
+        />
+      ) : null}
       {toast ? (
         <div className="ap2-toast" role="status">
           <span>

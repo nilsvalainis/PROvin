@@ -8,7 +8,9 @@ import {
   AUTOPARKS_OWNER_LV,
   AUTOPARKS_STATUS_LV,
   autoparksOwner,
+  isAutoparksOwner,
   type AutoparksCar,
+  type AutoparksOwner,
   type AutoparksStatus,
 } from "@/lib/iriss-autoparks";
 import { registryStatusInTrade } from "@/lib/iriss-autoparks-registry";
@@ -55,6 +57,8 @@ export type V2Tech = {
   displacementCm3: number | null;
   powerKw: number | null;
   tyreSize: string;
+  /** Ar roku labots nobraukums (J29 B papildus): null = ņem CSDD reģistra odometru, tad v1 `mileageKm`. */
+  mileageKm: number | null;
   /** Kad pēdējo reizi jautāts CSDD tehniskajiem datiem (lai nejautātu katrā atvēršanā). */
   csddCheckedAt: string;
 };
@@ -114,8 +118,8 @@ export type V2Service = {
   invoices: V2Invoice[];
 };
 
-/** v2 labotie v1 lauki: v1 vērtība netiek pārrakstīta, v2 rāda šo, ja aizpildīts. */
-export const V2_FIELD_KEYS = ["plate", "location", "arrivedAt", "make", "model", "vin"] as const;
+/** v2 labotie v1 lauki: v1 vērtība netiek pārrakstīta, v2 rāda šo, ja aizpildīts (J29 B papildus: + gads, krāsa, īpašnieks). */
+export const V2_FIELD_KEYS = ["plate", "location", "arrivedAt", "make", "model", "vin", "year", "color", "owner"] as const;
 export type V2FieldKey = (typeof V2_FIELD_KEYS)[number];
 
 export type AutoparksCarV2 = {
@@ -188,8 +192,8 @@ function list<T>(raw: unknown, parse: (row: unknown) => T | null, max = 500): T[
 
 export function emptyCarV2(): AutoparksCarV2 {
   return {
-    fields: { plate: "", location: "", arrivedAt: "", make: "", model: "", vin: "" },
-    tech: { firstRegDate: "", displacementCm3: null, powerKw: null, tyreSize: "", csddCheckedAt: "" },
+    fields: { plate: "", location: "", arrivedAt: "", make: "", model: "", vin: "", year: "", color: "", owner: "" },
+    tech: { firstRegDate: "", displacementCm3: null, powerKw: null, tyreSize: "", mileageKm: null, csddCheckedAt: "" },
     sources: {},
     purchase: { auction: "", auctionNo: "", purchaseDate: "", purchasePriceEur: null, transportEur: null, vat: { mode: "", source: "", at: "" } },
     numberCheck: { fileId: "", scannedAt: "", extraFileIds: [] },
@@ -288,12 +292,16 @@ export function normalizeCarV2(raw: unknown): AutoparksCarV2 {
       make: str(fields.make, 60),
       model: str(fields.model, 80),
       vin: str(fields.vin, 32).toUpperCase(),
+      year: str(fields.year, 4),
+      color: str(fields.color, 40),
+      owner: isAutoparksOwner(fields.owner) ? fields.owner : "",
     },
     tech: {
       firstRegDate: str(tech.firstRegDate, 10),
       displacementCm3: v2Num(tech.displacementCm3),
       powerKw: v2Num(tech.powerKw),
       tyreSize: str(tech.tyreSize, 40),
+      mileageKm: v2Num(tech.mileageKm),
       csddCheckedAt: str(tech.csddCheckedAt, 40),
     },
     sources: normalizeSources(raw.sources),
@@ -408,7 +416,7 @@ export type AutoparksV2Basics = {
   location: string;
   arrivedAt: string;
   archived: boolean;
-  /** 19:31-13: CSDD reģistra odometrs galvenais; v1 `mileageKm` netiek mainīts. */
+  /** 19:31-13: CSDD reģistra odometrs galvenais, ja nav ar roku labots (J29 B papildus); v1 `mileageKm` netiek mainīts. */
   mileageKm: V2Value<number | null>;
   firstRegDate: V2Value<string>;
   displacementCm3: V2Value<number | null>;
@@ -433,15 +441,15 @@ export function autoparksV2Basics(car: AutoparksCar, v2: AutoparksCarV2): Autopa
   const reg = car.registry;
   const regOdo = reg?.odometerKm ?? null;
   const regFirst = reg?.firstRegDate ?? "";
-  const owner = autoparksOwner(car);
+  const owner: AutoparksOwner = isAutoparksOwner(v2.fields.owner) ? v2.fields.owner : autoparksOwner(car);
   const csdd = (key: string) => v2.sources[key] === "csdd" || v2.sources[key] === "csdd_reg" || v2.sources[key] === "vin";
   return {
     id: car.id,
     title: autoparksV2Title(car, v2),
     make: v2.fields.make || car.make,
     model: v2.fields.model || car.model,
-    year: car.year,
-    color: car.color,
+    year: v2.fields.year || car.year,
+    color: v2.fields.color || car.color,
     vin: v2.fields.vin || car.vin,
     plate: v2.fields.plate || car.plate,
     status: car.status,
@@ -451,7 +459,12 @@ export function autoparksV2Basics(car: AutoparksCar, v2: AutoparksCarV2): Autopa
     location: v2.fields.location || car.location,
     arrivedAt: v2.fields.arrivedAt || car.arrivedAt,
     archived: Boolean(car.archivedAt),
-    mileageKm: regOdo != null ? { value: regOdo, csdd: true } : { value: car.mileageKm, csdd: false },
+    mileageKm:
+      v2.tech.mileageKm != null
+        ? { value: v2.tech.mileageKm, csdd: csdd("tech.mileageKm") }
+        : regOdo != null
+          ? { value: regOdo, csdd: true }
+          : { value: car.mileageKm, csdd: false },
     firstRegDate: v2.tech.firstRegDate
       ? { value: v2.tech.firstRegDate, csdd: csdd("tech.firstRegDate") }
       : { value: regFirst, csdd: Boolean(regFirst) },
