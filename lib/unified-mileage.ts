@@ -764,6 +764,8 @@ export function computeOdometerAnomalyBySourceOrder(rows: UnifiedMileageRow[]): 
 export type CollectUnifiedMileageOptions = {
   /** Neiekļaut CSDD `mileageHistory` rindas (CSDD bloks var būt PDF, bet ne šī tabula). */
   omitCsddMileage?: boolean;
+  /** Tikai PDF tabulai: nerādīt CSDD rādījumu bez datuma („aptuveni MM.YYYY” rinda). */
+  omitCsddUndatedRow?: boolean;
   /** Neiekļaut AUTO RECORDS servisa vēsturi. */
   omitAutoRecords?: boolean;
   /** Neiekļaut starptautiskās vēstures odometra ierakstus. */
