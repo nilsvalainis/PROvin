@@ -229,6 +229,13 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        /** Bilžu baiti (ne lapas HTML) - ļauj pārlūka privātu kešu, lai swipe/prefetch nav katru
+         * reizi jauns pieprasījums; maršruts pats uzstāda to pašu Cache-Control, šis tikai pārklāj
+         * plašāko `/p/:path*` noteikumu (j49, Nils 2026-10-24). */
+        source: "/p/:token/photo/:attachmentId",
+        headers: [{ key: "Cache-Control", value: "private, max-age=86400, immutable" }],
+      },
+      {
         source: "/b2b-demo",
         headers: [
           { key: "X-Robots-Tag", value: "noindex, nofollow" },
