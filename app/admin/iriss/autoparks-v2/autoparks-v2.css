@@ -1020,6 +1020,7 @@
   margin-top: 14px;
 }
 .ap2.ap2.ap2 .ap2-fl {
+  position: relative;
   display: block;
   padding: 0;
   background: #fff;
@@ -1027,6 +1028,18 @@
   border-radius: 12px;
   overflow: hidden;
   text-align: left;
+}
+.ap2.ap2.ap2 .ap2-fl-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  text-align: inherit;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
 }
 .ap2.ap2.ap2 .ap2-fl .pv {
   height: 130px;
@@ -1125,6 +1138,131 @@
 .ap2.ap2.ap2 .ap2-lnk svg {
   width: 11px;
   height: 11px;
+}
+.ap2.ap2.ap2 .ap2-files-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+.ap2.ap2.ap2 .ap2-files-head h3 {
+  font: 700 13px/1 Inter, sans-serif;
+  margin: 0;
+  color: var(--ink);
+}
+.ap2.ap2.ap2 .ap2-add-doc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--focus);
+  color: var(--focus);
+  background: #fff;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font: 700 12.5px Inter, sans-serif;
+}
+.ap2.ap2.ap2 .ap2-add-doc:disabled {
+  opacity: 0.5;
+}
+.ap2.ap2.ap2 .ap2-add-doc svg {
+  width: 13px;
+  height: 13px;
+}
+.ap2.ap2.ap2 .ap2-warn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #fff4e5;
+  border: 1px solid #f3c988;
+  border-radius: 10px;
+  font: 600 12.5px/1.3 Inter, sans-serif;
+  color: #8a5a00;
+}
+.ap2.ap2.ap2 .ap2-warn svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+.ap2.ap2.ap2 .ap2-fl-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+  z-index: 2;
+}
+.ap2.ap2.ap2 .ap2-fl-actions button {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  color: var(--ink3);
+}
+.ap2.ap2.ap2 .ap2-fl-actions button.danger {
+  color: var(--bad);
+}
+.ap2.ap2.ap2 .ap2-fl-actions svg {
+  width: 11px;
+  height: 11px;
+}
+.ap2.ap2.ap2 .ap2-csdd-badge {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  z-index: 1;
+}
+.ap2.ap2.ap2 .ap2-csdd-badge img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  border-radius: 3px;
+}
+.ap2.ap2.ap2 .ap2-del {
+  max-width: 320px;
+  margin: 16px;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  padding: 16px;
+  font: 400 13px/1.4 Inter, sans-serif;
+  color: var(--ink);
+}
+.ap2.ap2.ap2 .ap2-del b {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+.ap2.ap2.ap2 .ap2-del .row {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+.ap2.ap2.ap2 .ap2-del button {
+  flex: 1;
+  padding: 9px 0;
+  border-radius: 9px;
+  font: 700 13px Inter, sans-serif;
+  border: none;
+}
+.ap2.ap2.ap2 .ap2-del .cancel {
+  background: var(--line2);
+  color: var(--ink);
+}
+.ap2.ap2.ap2 .ap2-del .confirm {
+  background: var(--bad);
+  color: #fff;
 }
 .ap2.ap2.ap2 .ap2-modal {
   position: fixed;

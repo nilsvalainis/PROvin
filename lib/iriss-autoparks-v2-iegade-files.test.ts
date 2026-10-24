@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { AutoparksFile } from "@/lib/iriss-autoparks";
-import { iegadeFileList, purchaseDateFromDocs } from "@/lib/iriss-autoparks-v2-iegade-files";
+import { auto1MissingDocLabels, iegadeFileList, isAuto1Car, purchaseDateFromDocs } from "@/lib/iriss-autoparks-v2-iegade-files";
 import { sniffContentType } from "@/lib/iriss-autoparks-v2-sniff";
 import type { CabinetDocument } from "@/lib/iriss-logistics-cabinet";
 
 const doc = (id: string, type: CabinetDocument["type"], createdAt: string, extra: Partial<CabinetDocument> = {}) =>
-  ({ id, carId: "o1", section: "A", type, typeLabel: "", title: "", docNumber: "", source: "", sourceUrl: "", blobPath: `x/${id}.pdf`, sha256: "", uploadedBy: "", createdAt, deletedAt: "", deletedBy: "", ...extra }) as CabinetDocument;
+  ({ id, carId: "o1", section: "A", type, typeLabel: "", title: "", docNumber: "", source: "", sourceUrl: "", blobPath: `x/${id}.pdf`, dropboxPath: "", sha256: "", uploadedBy: "", createdAt, deletedAt: "", deletedBy: "", ...extra }) as CabinetDocument;
 const file = (id: string, stage: AutoparksFile["stage"], extra: Partial<AutoparksFile> = {}) =>
   ({ id, carId: "c1", stage, kind: "other", title: id, fileName: "", contentType: "application/pdf", size: 1, blobPath: "", sha256: "", scanned: false, uploadedBy: "", uploadedByName: "", createdAt: "2026-10-20", deletedAt: "", ...extra }) as AutoparksFile;
 
@@ -22,6 +22,37 @@ describe("Iegādes faili", () => {
       ["f:f1", "Dokuments", false],
       ["f:akts", "Akts", true],
     ]);
+  });
+  it("kabineta dokumenti - editable + CSDD nozīmīte Car Invoice; v1/akts - nē (J30 F1/F4)", () => {
+    const list = iegadeFileList({
+      cabinetDocs: [doc("d1", "car_invoice", "2026-10-09"), doc("d2", "purchase_confirm", "2026-10-08")],
+      v1Files: [file("f1", "purchase"), file("akts", "service")],
+      numberCheckFileId: "akts",
+    });
+    expect(list.map((f) => [f.id, f.editable, f.csddBadge])).toEqual([
+      ["c:d2", true, false],
+      ["c:d1", true, true],
+      ["f:f1", false, false],
+      ["f:akts", false, false],
+    ]);
+  });
+  it("isAuto1Car - no izsoles lauka vai dokumenta avota", () => {
+    expect(isAuto1Car({ auction: "Auto1", cabinetDocs: [] })).toBe(true);
+    expect(isAuto1Car({ auction: "", cabinetDocs: [doc("d1", "car_invoice", "2026-10-09", { source: "auto1" })] })).toBe(true);
+    expect(isAuto1Car({ auction: "openlane", cabinetDocs: [doc("d1", "car_invoice", "2026-10-09", { source: "email" })] })).toBe(false);
+  });
+  it("auto1MissingDocLabels - trūkstošās obligātās PDF etiķetes", () => {
+    const docs = [doc("d1", "car_invoice", "2026-10-09")];
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: docs })).toEqual(["Pirkuma apstiprinājums"]);
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [] })).toEqual(["Pirkuma apstiprinājums", "Car Invoice"]);
+    expect(auto1MissingDocLabels({ isAuto1: false, cabinetDocs: [] })).toEqual([]);
+    expect(
+      auto1MissingDocLabels({
+        isAuto1: true,
+        cabinetDocs: [doc("d1", "car_invoice", "2026-10-09"), doc("d2", "purchase_confirm", "2026-10-08")],
+      }),
+    ).toEqual([]);
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [doc("d1", "car_invoice", "2026-10-09", { deletedAt: "x" })] })).toEqual(["Pirkuma apstiprinājums", "Car Invoice"]);
   });
   it("pirkuma datums - pirmais rēķins", () => {
     expect(purchaseDateFromDocs([doc("a", "cmr", "2026-10-01"), doc("b", "auction_invoice", "2026-10-09T10:00Z"), doc("c", "car_invoice", "2026-10-10")])).toBe("2026-10-09");

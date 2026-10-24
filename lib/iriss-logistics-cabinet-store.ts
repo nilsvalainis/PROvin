@@ -60,6 +60,7 @@ function normalizeDocument(raw: unknown): CabinetDocument | null {
     source: str(raw.source, 40) || "upload",
     sourceUrl,
     blobPath: str(raw.blobPath ?? raw.blob_path, 400),
+    dropboxPath: str(raw.dropboxPath ?? raw.dropbox_path, 600),
     sha256: str(raw.sha256, 80),
     uploadedBy: str(raw.uploadedBy ?? raw.uploaded_by, 80),
     createdAt: str(raw.createdAt ?? raw.created_at, 40),
@@ -327,6 +328,7 @@ export async function upsertCabinetDocument(input: {
     source: (input.source ?? "upload").trim() || "upload",
     sourceUrl: (input.sourceUrl ?? "").trim(),
     blobPath,
+    dropboxPath: "",
     sha256,
     uploadedBy: input.uploadedBy,
     createdAt: now,
@@ -342,6 +344,26 @@ export async function softDeleteCabinetDocument(id: string, deletedBy: string): 
   const prev = items.find((d) => d.id === id);
   if (!prev || prev.deletedAt) return prev ?? null;
   const next = { ...prev, deletedAt: new Date().toISOString(), deletedBy };
+  await writeLogisticsJsonFile(DOCUMENTS_FILE, { version: 1, items: items.map((d) => (d.id === id ? next : d)) });
+  return next;
+}
+
+/** Pārdēvē dokumenta nosaukumu (J30 F1: ar roku pievienotiem Iegādes failiem). */
+export async function renameCabinetDocument(id: string, title: string): Promise<CabinetDocument | null> {
+  const items = await listCabinetDocuments();
+  const prev = items.find((d) => d.id === id);
+  if (!prev || prev.deletedAt) return prev ?? null;
+  const next = { ...prev, title: title.trim().slice(0, 200) || prev.title };
+  await writeLogisticsJsonFile(DOCUMENTS_FILE, { version: 1, items: items.map((d) => (d.id === id ? next : d)) });
+  return next;
+}
+
+/** Iestata/atjaunina Dropbox /STOCK ceļu pēc veiksmīgas sinhronizācijas (J30 F1). */
+export async function setCabinetDocumentDropboxPath(id: string, dropboxPath: string): Promise<CabinetDocument | null> {
+  const items = await listCabinetDocuments();
+  const prev = items.find((d) => d.id === id);
+  if (!prev) return null;
+  const next = { ...prev, dropboxPath };
   await writeLogisticsJsonFile(DOCUMENTS_FILE, { version: 1, items: items.map((d) => (d.id === id ? next : d)) });
   return next;
 }

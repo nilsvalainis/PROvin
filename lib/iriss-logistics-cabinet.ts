@@ -65,6 +65,8 @@ export type CabinetDocument = {
   source: string;
   sourceUrl: string;
   blobPath: string;
+  /** Dropbox /STOCK `doc/` ceļš, ja dokuments tur sinhronizēts (J30 F1). Tukšs = nav/nebija iespējams. */
+  dropboxPath: string;
   sha256: string;
   uploadedBy: string;
   createdAt: string;

@@ -25,6 +25,7 @@ function doc(partial: Partial<CabinetDocument> = {}): CabinetDocument {
     source: "auto1",
     sourceUrl: "",
     blobPath: "",
+    dropboxPath: "",
     sha256: "abc",
     uploadedBy: "env-admin",
     createdAt: "2026-10-20T00:00:00.000Z",
