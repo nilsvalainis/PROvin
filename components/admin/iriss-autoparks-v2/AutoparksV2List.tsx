@@ -104,10 +104,7 @@ export function AutoparksV2List({ initialCars, canCreateOffer = false }: { initi
                 <div className="ap2-row-m">
                   <CarImg carId={r.id} />
                   <span className="ap2-rt">
-                    <span className="ap2-rt-top">
-                      <b>{r.title}</b>
-                      <span className={`ap2-pill ap2-pill-m st-${r.status}`}>{AUTOPARKS_STATUS_SHORT_LV[r.status]}</span>
-                    </span>
+                    <b>{r.title}</b>
                     <span className="meta">{yearColor(r.year, r.color)}</span>
                     <VinCopy vin={r.vin} />
                   </span>
