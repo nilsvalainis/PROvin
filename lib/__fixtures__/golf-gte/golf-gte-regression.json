@@ -1,0 +1,214 @@
+{
+  "id": "vw-golf-gte-2026-10",
+  "note": "Sintētiska, anonimizēta VW Golf GTE fikstūra pēc j26 plāna (prod pasūtījuma dati nav pieejami: nav admin sesijas). VIN maskēts, bez klienta vārda. Zviedrija 07.2017 - 01.2020, eksports uz Somiju 10.01.2020, 100 km car.info inspekcijas ieraksts pēc eksporta, Copart FI izsole ar bojājumiem bez summas, Traficom izņemšana bojājuma dēļ, 9 dzinēja eļļas maiņas + 2 DSG eļļas maiņas dīlera datos (kopā > 12 rindas).",
+  "vin": "WVWZZZAUZJW******",
+  "makeModel": "VOLKSWAGEN GOLF GTE",
+  "carinfo": {
+    "mileage": [
+      {
+        "date": "20.07.2018",
+        "odometer": "18400",
+        "country": "Zviedrija",
+        "origin": "Apskate"
+      },
+      {
+        "date": "15.07.2019",
+        "odometer": "41200",
+        "country": "Zviedrija",
+        "origin": "Apskate"
+      },
+      {
+        "date": "14.02.2020",
+        "odometer": "100",
+        "country": "Zviedrija",
+        "origin": "inspection"
+      }
+    ],
+    "timeline": [
+      {
+        "date": "14.07.2017",
+        "odometer": "",
+        "country": "Zviedrija",
+        "event": "Pirmā reģistrācija Zviedrijā"
+      },
+      {
+        "date": "10.01.2020",
+        "odometer": "",
+        "country": "Zviedrija",
+        "event": "Eksportēts (izņemts no uzskaites Zviedrijā)"
+      }
+    ]
+  },
+  "traficomMileage": [
+    {
+      "date": "12.01.2021",
+      "odometer": "68900",
+      "country": "Somija",
+      "origin": "Apskate"
+    },
+    {
+      "date": "11.01.2023",
+      "odometer": "102300",
+      "country": "Somija",
+      "origin": "Apskate"
+    }
+  ],
+  "ccVinDamages": [
+    {
+      "date": "02.04.2024",
+      "region": "Somija",
+      "amount": "",
+      "description": "Front End + Side"
+    }
+  ],
+  "dealerWorks": [
+    {
+      "date": "10.07.2018",
+      "odometer": "17500",
+      "location": "VW Bilia Stockholm",
+      "works": "Regulārā apkope: dzinēja eļļas maiņa, eļļas filtrs"
+    },
+    {
+      "date": "10.07.2019",
+      "odometer": "40100",
+      "location": "VW Bilia Stockholm",
+      "works": "Regulārā apkope: dzinēja eļļas maiņa, eļļas filtrs, salona filtrs"
+    },
+    {
+      "date": "10.07.2019",
+      "odometer": "40100",
+      "location": "VW Bilia Stockholm",
+      "works": "DSG-olja byte (DQ400E)"
+    },
+    {
+      "date": "05.01.2021",
+      "odometer": "68500",
+      "location": "VW Helsinki",
+      "works": "Regulārā apkope: dzinēja eļļas maiņa"
+    },
+    {
+      "date": "05.01.2021",
+      "odometer": "68500",
+      "location": "VW Helsinki",
+      "works": "Bremžu šķidruma maiņa"
+    },
+    {
+      "date": "20.06.2021",
+      "odometer": "79000",
+      "location": "VW Helsinki",
+      "works": "Regulārā apkope: dzinēja eļļas maiņa"
+    },
+    {
+      "date": "15.12.2021",
+      "odometer": "86000",
+      "location": "VW Helsinki",
+      "works": "Regulārā apkope: dzinēja eļļas maiņa"
+    },
+    {
+      "date": "10.06.2022",
+      "odometer": "93500",
+      "location": "VW Helsinki",
+      "works": "Regulārā apkope: dzinēja eļļas maiņa"
+    },
+    {
+      "date": "10.06.2022",
+      "odometer": "93500",
+      "location": "VW Helsinki",
+      "works": "DSG kārbas eļļas maiņa"
+    },
+    {
+      "date": "09.01.2023",
+      "odometer": "102000",
+      "location": "VW Helsinki",
+      "works": "Regulārā apkope: dzinēja eļļas maiņa"
+    },
+    {
+      "date": "09.01.2023",
+      "odometer": "102000",
+      "location": "VW Helsinki",
+      "works": "Aizdedzes sveču maiņa"
+    },
+    {
+      "date": "05.07.2023",
+      "odometer": "110400",
+      "location": "VW Helsinki",
+      "works": "Regulārā apkope: dzinēja eļļas maiņa"
+    },
+    {
+      "date": "05.07.2023",
+      "odometer": "110400",
+      "location": "VW Helsinki",
+      "works": "Salona filtra maiņa"
+    },
+    {
+      "date": "08.01.2024",
+      "odometer": "118900",
+      "location": "VW Helsinki",
+      "works": "Regulārā apkope: dzinēja eļļas maiņa"
+    },
+    {
+      "date": "08.01.2024",
+      "odometer": "118900",
+      "location": "VW Helsinki",
+      "works": "12V akumulatora maiņa"
+    },
+    {
+      "date": "15.01.2018",
+      "odometer": "9800",
+      "location": "VW Bilia Stockholm",
+      "works": "Riepu maiņa (ziemas)"
+    },
+    {
+      "date": "12.01.2019",
+      "odometer": "29800",
+      "location": "VW Bilia Stockholm",
+      "works": "Riepu maiņa (ziemas)"
+    },
+    {
+      "date": "20.10.2020",
+      "odometer": "64000",
+      "location": "VW Helsinki",
+      "works": "Logu tīrītāju slotiņu maiņa"
+    },
+    {
+      "date": "14.10.2021",
+      "odometer": "83000",
+      "location": "VW Helsinki",
+      "works": "Gaisa kondicioniera apkope"
+    },
+    {
+      "date": "12.10.2022",
+      "odometer": "98000",
+      "location": "VW Helsinki",
+      "works": "Riepu maiņa (ziemas)"
+    },
+    {
+      "date": "11.10.2023",
+      "odometer": "114000",
+      "location": "VW Helsinki",
+      "works": "Priekšējo bremžu kluču maiņa"
+    }
+  ],
+  "comments": [
+    {
+      "id": "incidents-no-damage",
+      "field": "incidents",
+      "text": "Avotos nav fiksētu bojājumu vai apdrošināšanas atlīdzību. Tas neizslēdz, ka auto varēja būt remontēts."
+    },
+    {
+      "id": "summary-no-gearbox",
+      "field": "summary",
+      "text": "Dīlera datos nav nevienas kārbas apkopes, un digitālajā reģistrā šo apkopju nav."
+    },
+    {
+      "id": "mileage-correction",
+      "field": "mileage",
+      "text": "14.02.2020 fiksēts 100 km ieraksts - iespējama odometra korekcija."
+    },
+    {
+      "id": "sweden-after-2020",
+      "field": "summary",
+      "text": "Ekspluatācijas posms Zviedrijā 2021. gadā ar regulārām apkopēm."
+    }
+  ]
+}
