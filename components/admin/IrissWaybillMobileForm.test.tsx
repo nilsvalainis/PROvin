@@ -44,6 +44,16 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     expect(text).toContain("Aivars izveido tikai pavadzīmes");
   });
 
+  it("Komentārs: paskaidrojums tieši zem lauka vienmēr redzams; CSDD teikums tikai, kad auto ir pieņemts tirdzniecībā (bez maršruta)", () => {
+    const text = renderText(form());
+    expect(text).toContain("Tikai piezīme Aivaram šai pavadzīmei - viņš to neizpilda kā komandu un citi lietotāji to neredz.");
+    // Noklusējumā nav izvēlēts pieņemts auto (sākuma adreses plūsma) - CSDD teikuma nav.
+    expect(text).not.toContain("Der, lai pateiktu, kur CSDD salīdzina numuru");
+    // Noklusējuma numurs nav B192-7 - auto lauka paskaidrojuma šeit nav (tas pats "Dzintarzeme Auto" vārds
+    // gan parādās "Kā tas strādā" sadaļā, tāpēc pārbauda tieši paskaidrojuma teikumu, ne tikai vārdu).
+    expect(text).not.toContain("SIA ĪRISS auto šim numuram netiek rādīti");
+  });
+
   it("'Kā tas strādā' ir liela kartīte ar numurētiem soļiem un 'Jāzina'", () => {
     const text = renderText(form());
     expect(text).toContain("Pavadzīme 5 soļos. Parasti gatava dažu minūšu laikā.");
@@ -122,6 +132,26 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
       />,
     );
     expect(withArchive).toContain("Visas pavadzīmes Arhīvā ›");
+  });
+
+  it("B192-7 (Dzintarzeme Auto) saraksts: ownerBadge pārraksta 'Pieņemts' ar 'DZA' visām rindām", () => {
+    const text = renderText(
+      <IrissWaybillCarPicker
+        cars={[
+          { id: "a", brandModel: "VW Touran", vin: "WV1ZZZ7NZ7H123456", year: "2019", statusLabel: "", accepted: true, owner: "DZA" as const },
+          { id: "b", brandModel: "Audi A4 Avant", vin: "WAUZZZ8K9BA000112", year: "2020", statusLabel: "Pārdošanā", accepted: false, owner: "DZA" as const },
+        ]}
+        selected=""
+        onChoose={() => undefined}
+        ownerBadge="DZA"
+      />,
+    );
+    expect(text).toContain("VW Touran");
+    expect(text).toContain("DZA");
+    // ownerBadge pārraksta pat neuzņemta auto statusa birku ("Pārdošanā" neparādās).
+    expect(text).not.toContain("Pārdošanā");
+    expect(text).not.toContain("Pieņemts");
+    expect(text.trim().endsWith("Cits auto - ierakstīt ar roku Marka un modelis")).toBe(true);
   });
 
   it("auto saraksts: 'Pieņemts' birka, VIN un pēdējā rinda 'Cits auto - ierakstīt ar roku'", () => {
