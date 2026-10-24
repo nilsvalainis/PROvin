@@ -10,6 +10,7 @@ import {
   adminNewOrderHtml,
   adminNewPartnerHtml,
   irissOfferDecisionHtml,
+  irissOfferQuestionHtml,
   b2bWalletRefundEmailHtml,
   auditCompletedEmailHtml,
   b2bProvinEmailHtml,
@@ -246,6 +247,20 @@ export async function sendAdminIrissOfferDecisionEmail(
     return false;
   }
   const html = irissOfferDecisionHtml({ title: email.title, approved: email.approved, lines: email.lines, adminUrl: email.url });
+  await sendSmtpMail({ to: adminTo, subject: email.subject, text: email.text, html });
+  return true;
+}
+
+/** Nilam par klienta jautājumu IRISS piedāvājuma publiskajā saitē. Klientam netiek sūtīts nekas. */
+export async function sendAdminIrissOfferQuestionEmail(
+  email: { subject: string; title: string; question: string; lines: { label: string; value: string }[]; text: string; url: string },
+  adminTo: string,
+): Promise<boolean> {
+  if (!getSmtpTransport()) {
+    console.warn("[email] IRISS piedāvājuma jautājums: SMTP nav iestatīts, e-pasts netika nosūtīts.");
+    return false;
+  }
+  const html = irissOfferQuestionHtml({ title: email.title, question: email.question, lines: email.lines, adminUrl: email.url });
   await sendSmtpMail({ to: adminTo, subject: email.subject, text: email.text, html });
   return true;
 }
