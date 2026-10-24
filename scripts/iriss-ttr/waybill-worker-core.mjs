@@ -93,6 +93,8 @@ export function localStandardCheck(job, nowMs = Date.now(), opts = {}) {
     if (!/^P\d{5,6}$/.test(String(replace.waybillNo || ""))) return { ok: false, reason: "nav anulējamās pavadzīmes numura" };
   } else if (job.plateBusy === true || job.confirmBusy === true) return { ok: false, reason: "numurs aizņemts" };
   const plate = compact(job.vehicle?.plate);
+  // j31: B192-7 (SIA Dzintarzeme Auto, ne ĪRISS) nekad automātiski - otrā pārbaude, pat ja serveris kļūdaini atzīmētu standarta.
+  if (plate === "B1927") return { ok: false, reason: "B192 - tikai ar roku" };
   if (!PLATES[plate]) return { ok: false, reason: "numurs nav sarakstā" };
   if (compact(job.auto.plate) !== plate) return { ok: false, reason: "numurs nesakrīt" };
   const hours = job.validHours;

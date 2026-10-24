@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { dueWaybillReminders } from "@/lib/iriss-waybill-push";
+import { AUTO_WAYBILL_GRACE_MS } from "@/lib/iriss-waybill-auto";
+import { dueWaybillReminders, dueWaybillStuckHandoffs } from "@/lib/iriss-waybill-push";
 import type { WaybillRequest } from "@/lib/iriss-waybill-requests";
 
 function req(over: Partial<WaybillRequest>): WaybillRequest {
@@ -90,5 +91,39 @@ describe("pavadzīmju push atgādinājumi (PN-SOON, PN-EXPIRED, PN-LONGWAIT)", (
     const frozen = JSON.stringify(r);
     dueWaybillReminders([r], {}, at("2026-10-23T10:30:00.000Z"));
     expect(JSON.stringify(r)).toBe(frozen);
+  });
+});
+
+describe("j31: iestrēgušu darbu rezerve - pamodina Aivaru ar roku", () => {
+  const createdAt = "2026-10-23T10:00:00.000Z";
+  const graceOver = at(createdAt) + AUTO_WAYBILL_GRACE_MS + 1000;
+
+  it("queued, nav paņemts, ilgāk par grace periodu - pamodina vienreiz, atkārtots mēģinājums - vēlreiz", () => {
+    const q = req({ status: "queued", waybillNo: "", createdAt, updatedAt: createdAt, validUntil: "2026-10-23T22:00:00.000Z" });
+    expect(dueWaybillStuckHandoffs([q], {}, at(createdAt) + AUTO_WAYBILL_GRACE_MS - 1000)).toEqual([]);
+    expect(dueWaybillStuckHandoffs([q], {}, graceOver)).toEqual([{ key: "handoff:wbr_a:1", requestId: "wbr_a" }]);
+    expect(dueWaybillStuckHandoffs([q], { "handoff:wbr_a:1": "x" }, graceOver)).toEqual([]);
+    expect(dueWaybillStuckHandoffs([{ ...q, attempts: 2 }], { "handoff:wbr_a:1": "x" }, graceOver)).toEqual([
+      { key: "handoff:wbr_a:2", requestId: "wbr_a" },
+    ]);
+  });
+
+  it("jau paņemts (pickedAt), beidzies termiņš, atcelts vai novecojis (24 h) - nē", () => {
+    const picked = req({ status: "queued", pickedAt: "x", createdAt, updatedAt: createdAt, validUntil: "2026-10-23T22:00:00.000Z" });
+    expect(dueWaybillStuckHandoffs([picked], {}, graceOver)).toEqual([]);
+    const expired = req({ status: "queued", createdAt, updatedAt: createdAt, validUntil: "2026-10-23T10:01:00.000Z" });
+    expect(dueWaybillStuckHandoffs([expired], {}, graceOver)).toEqual([]);
+    const cancelled = req({ status: "cancelled", createdAt, updatedAt: createdAt });
+    expect(dueWaybillStuckHandoffs([cancelled], {}, graceOver)).toEqual([]);
+    const stale = req({ status: "queued", createdAt, updatedAt: createdAt, validUntil: "2026-10-25T10:00:00.000Z" });
+    expect(dueWaybillStuckHandoffs([stale], {}, at(createdAt) + 25 * 3_600_000)).toEqual([]);
+  });
+
+  it("worker paņēmis darbā (in_progress), bet nokritis vidū (novecojis) - pamodina pēc pickedAt", () => {
+    const stuck = req({ status: "in_progress", pickedBy: "auto", pickedAt: "2026-10-23T10:00:30.000Z", createdAt, updatedAt: "2026-10-23T10:00:30.000Z" });
+    expect(dueWaybillStuckHandoffs([stuck], {}, at("2026-10-23T10:20:00.000Z"))).toEqual([]);
+    const [handoff] = dueWaybillStuckHandoffs([stuck], {}, at("2026-10-23T10:35:00.000Z"));
+    expect(handoff).toEqual({ key: "handoff:wbr_a:2026-10-23T10:00:30.000Z", requestId: "wbr_a" });
+    expect(dueWaybillStuckHandoffs([stuck], { [handoff.key]: "x" }, at("2026-10-23T10:35:00.000Z"))).toEqual([]);
   });
 });

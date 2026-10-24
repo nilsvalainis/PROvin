@@ -141,6 +141,28 @@ describe("j25 numuru stāvoklis apļiem un pogām", () => {
     expect(out[1].current).toEqual({ number: "P02816", brandModel: "PEUGEOT 5008", validUntil: UNTIL });
   });
 
+  it("j31: tiklīdz pieprasīta jauna (manuāla) pavadzīme aizņemtam numuram, aplis rāda 'izdod...', nevis vecās atlikumu", () => {
+    const replacement = req({
+      id: "wbr_new",
+      status: "queued",
+      createdAt: "2026-10-23T20:08:00.000Z",
+      updatedAt: "2026-10-23T20:08:00.000Z",
+      vehicle: { brandModel: "VW Touran", plate: "B192-7" },
+      plateBusyAtCreate: true,
+      replaceWaybillNo: "P02811",
+      validUntil: UNTIL,
+      waybillNo: "",
+    });
+    const plates = withWaybillRequestStates(indexPlates(), [replacement], NOW);
+    const b192 = plates.find((p) => p.plate === "B192-7")!;
+    // Vecā (indeksa) pavadzīme joprojām tehniski derīga - "aizņemts" nemainās, kamēr jaunā nav izdota.
+    expect(b192.busy).toBe(true);
+    expect(b192.issuing).toEqual({ brandModel: "VW Touran" });
+    const g = waybillGaugesFromPlates(plates, [], new Date(NOW)).find((x) => x.plate === "B192-7");
+    // Bet aplis vairs nerāda veco P02811 atlikumu - rāda, ka tiek izdota jauna.
+    expect(g).toMatchObject({ busy: false, status: "issuing", brandModel: "VW Touran" });
+  });
+
   it("PDF saite apļa detaļām pēc pavadzīmes numura", () => {
     const plates = withWaybillRequestStates(indexPlates(), [p02816], NOW);
     const g = waybillGaugesFromPlates(plates, [{ id: "pv_1", plate: "B 193-7", number: "P02816", validUntil: UNTIL }], new Date(NOW));

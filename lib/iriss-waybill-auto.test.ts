@@ -66,9 +66,13 @@ const tradeReq = (over: Partial<WaybillRequest> = {}) =>
 describe("classifyWaybillForAuto", () => {
   it("accepts the standard request and maps the CSDD context", () => {
     expect(classifyWaybillForAuto(req(), free)).toEqual({ standard: true, plate: "B193-7", company: "iriss", ctx: "ctx1", flow: "new" });
-    expect(classifyWaybillForAuto(req({ vehicle: { brandModel: "Audi A4", vin: "", plate: "B1927", orderId: "" } }), free)).toMatchObject(
-      { standard: true, company: "dzintarzeme", ctx: "ctx2" },
-    );
+  });
+
+  it("j31: B192-7 (Dzintarzeme Auto) is never standard - always Aivars by hand, even if otherwise a clean request", () => {
+    expect(classifyWaybillForAuto(req({ vehicle: { brandModel: "Audi A4", vin: "", plate: "B1927", orderId: "" } }), free)).toEqual({
+      standard: false,
+      reason: "B192 - tikai ar roku",
+    });
   });
 
   it("a busy plate is never standard (confirmBusy at create or busy now)", () => {
@@ -80,13 +84,13 @@ describe("classifyWaybillForAuto", () => {
     expect(classifyWaybillForAuto(tradeReq(), free)).toEqual({ standard: true, plate: "B193-7", company: "iriss", ctx: "ctx1", flow: "tradeAct" });
     expect(classifyWaybillForAuto(req({ validHours: 1, validUntil: "2026-10-22T19:00:00.000Z" }), free)).toMatchObject({ standard: true, flow: "new" });
     expect(classifyWaybillForAuto(req({ validHours: 12 }), free)).toMatchObject({ standard: true, flow: "new" });
+    // j31: B192-7 (Dzintarzeme Auto) nekad nav standarta, pat ar pareizu pārstāvi (jauno vai veco diakritiku variantu).
     expect(
       classifyWaybillForAuto(tradeReq({ vehicle: { brandModel: "Audi A4", vin: "WAUZZZ8K0BA000001", plate: "B1927", orderId: "" }, representative: "Taivo Batiņš" }), free),
-    ).toMatchObject({ standard: true, company: "dzintarzeme", ctx: "ctx2", flow: "tradeAct" });
-    // j16: jaunais noklusējums bez garumzīmēm (kā CSDD sarakstā) arī der.
+    ).toEqual({ standard: false, reason: "B192 - tikai ar roku" });
     expect(
       classifyWaybillForAuto(tradeReq({ vehicle: { brandModel: "Audi A4", vin: "WAUZZZ8K0BA000001", plate: "B1927", orderId: "" }, representative: "Taivo Batins" }), free),
-    ).toMatchObject({ standard: true, company: "dzintarzeme" });
+    ).toEqual({ standard: false, reason: "B192 - tikai ar roku" });
   });
 
   it("accepted car stays with Aivars without VIN or with another representative ('Cits')", () => {
@@ -592,12 +596,11 @@ describe("j16: nekad kluss Gaida (worker ziņo, kāpēc darbu neņem)", () => {
 });
 
 describe("j13: noklusējuma komersanta pārstāvis pēc firmas (worker)", () => {
-  it("j16: Dzintarzemes akts der ar 'Taivo Batins' (jaunais noklusējums) un 'Taivo Batiņš' (vecie pieprasījumi)", () => {
+  it("j31: B192-7 (Dzintarzeme) nekad lokāli nav standarta - pat ja serveris (kļūdaini) atzīmētu standarta un pārstāvis būtu pareizs", () => {
     const dza = { ...tradeJob(), vehicle: { ...tradeJob().vehicle, plate: "B192-7" }, auto: { ...tradeJob().auto, plate: "B192-7" } };
-    for (const representative of ["Taivo Batins", "Taivo Batiņš", ""]) {
-      expect(localStandardCheck({ ...dza, representative }, NOW)).toEqual({ ok: true, company: "dzintarzeme", flow: "tradeAct" });
+    for (const representative of ["Taivo Batins", "Taivo Batiņš", "", "Nils Valainis"]) {
+      expect(localStandardCheck({ ...dza, representative }, NOW)).toEqual({ ok: false, reason: "B192 - tikai ar roku" });
     }
-    expect(localStandardCheck({ ...dza, representative: "Nils Valainis" }, NOW)).toEqual({ ok: false, reason: "cits pārstāvis" });
   });
 
   it("tukšs pārstāvis -> ĪRISS numurs: Nils Valainis, Dzintarzeme numurs: Taivo Batins; norādītais paliek", () => {
