@@ -53,7 +53,11 @@ let dir = "";
 
 async function load() {
   vi.resetModules();
-  return { store: await import("@/lib/iriss-autoparks-store"), sync: await import("@/lib/iriss-autoparks-dropbox-sync") };
+  return {
+    store: await import("@/lib/iriss-autoparks-store"),
+    v2: await import("@/lib/iriss-autoparks-v2-store"),
+    sync: await import("@/lib/iriss-autoparks-dropbox-sync"),
+  };
 }
 
 beforeEach(async () => {
@@ -283,6 +287,29 @@ describe("J36: Autoparka ierakstu pārpiesaiste zināmajām /STOCK mapēm", () =
     expect(after?.car.dropboxFolderId).toBe(oldFolder.id);
   });
 
+  it("pārpiesaista, ja vecajā mapē ir tikai tukšas apakšmapes (piem. doc/) - tās nav faili, mape ir tukša", async () => {
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    const oldFolder = db.add("folder", OLD_FOLDER);
+    db.add("folder", `${OLD_FOLDER}/doc`); // tukša apakšmape, nav failu
+    const newFolder = db.add("folder", NEW_FOLDER);
+    db.add("folder", `${NEW_FOLDER}/doc`);
+    db.add("file", `${NEW_FOLDER}/doc/invoice.pdf`, "pdf");
+    holder.client = db.client;
+    const { store, sync } = await load();
+    const car = await store.createAutoparksCar({ make: "Mercedes-Benz", model: "Viano", vin: VIN }, actor);
+    await store.mutateAutoparksState((state) => {
+      const idx = state.cars.findIndex((c) => c.id === car.id);
+      state.cars[idx] = { ...state.cars[idx]!, dropboxFolderId: oldFolder.id, dropboxFolderPath: OLD_FOLDER };
+      return { result: null };
+    });
+
+    const results = await sync.relinkKnownAutoparksV2Folders("Tests");
+    expect(results.find((r) => r.vin === VIN)).toMatchObject({ carId: car.id, applied: true, to: NEW_FOLDER });
+    const after = await store.getAutoparksRoom(car.id);
+    expect(after?.car.dropboxFolderId).toBe(newFolder.id);
+  });
+
   it("ziņo car_not_found, ja neviens auto ieraksts neatbilst zināmajam VIN", async () => {
     const db = memoryDropbox();
     db.add("folder", "/STOCK");
@@ -326,5 +353,30 @@ describe("J39: BMW 220d (V99966) zināmā piesaiste + dryRun režīms", () => {
     expect(results.find((r) => r.vin === BMW_VIN)).toMatchObject({ carId: car.id, applied: false, reason: "dry_run", to: BMW_FOLDER });
     const after = await store.getAutoparksRoom(car.id);
     expect(after?.car.dropboxFolderId ?? "").toBe("");
+  });
+
+  it("VIN pievienots vēlāk Pamatdati UI (v2.fields.vin), v1 car.vin paliek tukšs - tomēr atrod auto", async () => {
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    const bmwFolder = db.add("folder", BMW_FOLDER);
+    db.add("folder", `${BMW_FOLDER}/doc`);
+    db.add("file", `${BMW_FOLDER}/doc/invoice.pdf`, "pdf");
+    holder.client = db.client;
+    const { store, v2, sync } = await load();
+    const car = await store.createAutoparksCar({ make: "BMW", model: "220d Gran Tourer" }, actor);
+    expect(car.vin).toBe("");
+    await v2.updateCarV2(
+      car.id,
+      (c) => {
+        c.fields.vin = BMW_VIN;
+        return { result: null, history: [{ field: "vin", from: "", to: BMW_VIN }] };
+      },
+      actor,
+    );
+
+    const results = await sync.relinkKnownAutoparksV2Folders("Tests");
+    expect(results.find((r) => r.vin === BMW_VIN)).toMatchObject({ carId: car.id, applied: true, to: BMW_FOLDER });
+    const after = await store.getAutoparksRoom(car.id);
+    expect(after?.car.dropboxFolderId).toBe(bmwFolder.id);
   });
 });

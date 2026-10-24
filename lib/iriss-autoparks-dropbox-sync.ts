@@ -7,6 +7,8 @@ import { autoparksDropboxRoot, matchStockFolderByVin, vinTail, type AutoparksOwn
 import { autoparksDropboxEnabled, resolveAutoparksCarFolder } from "@/lib/iriss-autoparks-files";
 import { fillAutoparksFromStock, type AutoparksFillable } from "@/lib/iriss-autoparks-info-txt";
 import { mutateAutoparksState, readAutoparksState } from "@/lib/iriss-autoparks-store";
+import { carV2Of } from "@/lib/iriss-autoparks-v2";
+import { readAutoparksV2State } from "@/lib/iriss-autoparks-v2-store";
 import { mutateLogisticsJsonFile, readLogisticsJsonFile } from "@/lib/iriss-logistics-store";
 
 const SYNC_FILE = "autoparks-dropbox-sync.json";
@@ -427,7 +429,9 @@ export async function relinkKnownAutoparksV2Folders(actorName: string, opts: { d
   const out: AutoparksV2RelinkResult[] = [];
   for (const plan of AUTOPARKS_V2_KNOWN_RELINKS) {
     const state = await readAutoparksState();
-    const car = state.cars.find((c) => c.vin.toUpperCase() === plan.vin);
+    const v2State = await readAutoparksV2State();
+    // VIN var būt labots vēlāk Pamatdati UI (v2.fields.vin), v1 car.vin paliekot tukšs - skat. j30.
+    const car = state.cars.find((c) => (carV2Of(v2State, c.id).fields.vin || c.vin).toUpperCase() === plan.vin);
     if (!car) {
       out.push({ vin: plan.vin, carId: "", from: "", to: plan.newFolderPath, applied: false, reason: "car_not_found" });
       continue;
@@ -444,8 +448,11 @@ export async function relinkKnownAutoparksV2Folders(actorName: string, opts: { d
     if (car.dropboxFolderId) {
       const old = await client.getMetadata(car.dropboxFolderId).catch(() => null);
       if (old?.tag === "folder") {
+        // recursive listAll ietver arī tukšas apakšmapes (piem. `doc/`) kā "folder" ierakstus - tās
+        // nav faili, tāpēc skaitām tikai failus; tukšas apakšmapes = mape ir tukša.
         const { entries } = await client.listAll(old.pathDisplay, { recursive: true }).catch(() => ({ entries: [] as DropboxEntry[] }));
-        if (entries.length > 0) {
+        const fileEntries = entries.filter((e) => e.tag === "file");
+        if (fileEntries.length > 0) {
           out.push({ vin: plan.vin, carId: car.id, from: car.dropboxFolderPath ?? "", to: plan.newFolderPath, applied: false, reason: "old_folder_not_empty" });
           continue;
         }
