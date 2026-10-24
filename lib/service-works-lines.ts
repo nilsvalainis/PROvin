@@ -172,7 +172,11 @@ const WORK_FAMILY_RULES: { family: string; re: RegExp }[] = [
   { family: "cabin_filter", re: /salona|pollen|cabin\s*filter|innenraumfilter|mikrofiltr/i },
   { family: "air_filter", re: /gaisa\s*filtr|air\s*filter|luftfilter/i },
   { family: "oil_filter", re: /e[ļl]{1,2}as\s*filtr|oil\s*filter|[öo]lfilter/i },
-  { family: "transmission_oil", re: /ātrumkārb|p[aā]rnesumkārb|transmission|gearbox|getriebe/i },
+  {
+    family: "transmission_oil",
+    // j26: arī „kārbas eļļa”, DSG / DQ400E / S tronic / DCT / CVT / ATF, zviedriski „växellåda”.
+    re: /ātrumkārb|p[aā]rnesumkārb|\bkārb|transmission|gearbox|getriebe|\bdsg|\bdq\d{3}|s[\s-]?tronic|\bdct\b|\bcvt\b|\batf\b|växellåd/i,
+  },
   { family: "spark_plugs", re: /sve[cč]|spark\s*plug|z[üu]ndkerze/i },
   { family: "brake_fluid", re: /brem[žz].{0,12}šķidrum|brake\s*fluid|bremsfl/i },
   { family: "coolant", re: /dzesēšan|coolant|k[üu]hlmittel/i },

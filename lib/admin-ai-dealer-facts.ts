@@ -83,7 +83,12 @@ export const DEALER_COMPONENTS: readonly ComponentDef[] = [
   { id: "water_pump", lv: "ūdens sūknis", re: /ūdens\s+sūk[nņ]|dzesēšanas\s+sūk[nņ]|water\s*pump|coolant\s+pump|wasserpumpe|kühlmittelpumpe|waterpomp|vattenpump/i },
   { id: "dual_mass_flywheel", lv: "divmasu spararats", re: /divmasu|spararat|dual[\s-]?mass|flywheel|zweimassen|schwungrad|vliegwiel|svänghjul/i },
   { id: "clutch", lv: "sajūgs", re: /sajūg|clutch|kupplung|koppeling|koppling/i },
-  { id: "gearbox_oil", lv: "kārbas eļļa", re: /kārbas\s+eļļ|transmission\s+(oil|fluid)|gearbox\s+oil|atf\b|getriebeöl|versnellingsbakolie|växellådsolja/i },
+  {
+    id: "gearbox_oil",
+    lv: "kārbas eļļa",
+    // j26: DSG / DQ400E / S tronic / DCT eļļa (arī zviedriski „DSG-olja”), tikai kopā ar eļļas vārdu.
+    re: /kārbas\s+eļļ|transmission\s+(oil|fluid)|gearbox\s+oil|atf\b|getriebeöl|versnellingsbakolie|växellådsolja|(?:\bdsg|\bdq\d{3}\w?|s[\s-]?tronic|\bdct)\b.{0,20}(?:eļļ|oil|öl|olja|olie|fluid|šķidr)|(?:eļļ|oil|öl|olja|olie)\w*.{0,20}(?:\bdsg|\bdq\d{3}\w?|s[\s-]?tronic|\bdct)\b/i,
+  },
   { id: "injectors", lv: "iesmidzinātāji", re: /iesmidzin|sprausl|injector|injektor|einspritzdüse|verstuiver|insprutning/i },
   { id: "egr", lv: "EGR", re: /\begr\b|agr[-\s]?(ventil|kühler)|izplūdes\s+gāzu\s+recirk/i },
   { id: "dpf", lv: "sodrēju filtrs", re: /sodrēju\s+filtr|\bdpf\b|\bfap\b|particulate|partikelfilter|roetfilter|partikelfilter/i },

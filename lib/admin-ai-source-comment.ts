@@ -15,6 +15,7 @@ import {
   type AiSourceCommentTargetField,
 } from "@/lib/admin-source-comment-blocks";
 import { aiSourceBlockLabel, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import { buildEngineOilChangeListForPrompt } from "@/lib/engine-oil-prompt-list";
 import { keepSourceCommentAfterExpansionStrip } from "@/lib/source-summary-comment-format";
 import { extractVehicleReportFingerprint } from "@/lib/admin-vehicle-report-fingerprint";
 import {
@@ -176,6 +177,8 @@ ${focusDataText || "(dīlera tabulā nav atsevišķu rindu - rēķini no pārēj
 === Identifikācija šim motoram (OEM intervālam) ===
 ${oilIdentityBlock || "(dzinēja kods / marka šajos datos nav fiksēti)"}
 
+${buildEngineOilChangeListForPrompt(input.sourceBlocks)}
+
 Sagatavo lauku „Eļļas maiņas intervāli” klienta PDF.
 Uzdevums: ĪSI un PRECĪZI izrēķini un izanalizē ŠĪ auto eļļas maiņas intervālus ${
           isolateDealer
@@ -316,3 +319,4 @@ ${
 }
 
 export { isAiSourceCommentBlockKey } from "@/lib/admin-source-comment-blocks";
+

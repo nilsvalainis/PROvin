@@ -110,6 +110,7 @@ export type FactCheckFlag = {
     | "first_reg_country"
     | "no_accidents_claim"
     | "no_damage_claim"
+    | "negated_fact"
     | "no_recalls_claim"
     | "leak_phrase"
     | "atsavinasanai"

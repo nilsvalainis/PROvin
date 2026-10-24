@@ -3,6 +3,7 @@
  * Bez LLM: īpašnieki, nobraukums + forenzika, negadījumi, TA, dīleris (LV),
  * atsaukumi, sludinājums, foto kopsavilkums. Nav EUR remonta tāmes.
  */
+import { collectEngineOilChangeRows } from "@/lib/oil-change-intervals";
 import { collectDamageEvidence, type DamageEvidence } from "@/lib/damage-evidence";
 import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banners";
 import {
@@ -19,6 +20,8 @@ import {
 } from "@/lib/admin-ai-ta-coverage";
 import {
   buildDealerFactsLvSourceLines,
+  DEALER_COMPONENTS,
+  dealerServiceWorksFromSources,
   extractDealerFacts,
   type DealerFact,
 } from "@/lib/admin-ai-dealer-facts";
@@ -31,6 +34,7 @@ import {
   ltabBlockToPlainText,
   mergeSourceBlocksWithDefaults,
   oneautoBlockToPlainText,
+  REGISTRY_STYLE_BLOCK_KEYS,
   SOURCE_BLOCK_LABELS,
   tirgusFormToPlainText,
   toPdfLtabManualBlock,
@@ -118,6 +122,12 @@ export type CanonicalFirstReg = {
   countryIso: string;
 };
 
+export type DealerComponentCount = { label: string; dates: string[] };
+
+/** Dīlera sadaļas zīmju budžets faktu lapā (rindas + skaiti). */
+export const CANONICAL_DEALER_ROWS_BUDGET_CHARS = 1600;
+const DEALER_ROW_MAX_CHARS = 140;
+
 export type SuspectedEntryError = { date: string; km: number; source: string };
 
 export type CanonicalFacts = {
@@ -143,6 +153,10 @@ export type CanonicalFacts = {
   alertBannerTexts: string[];
   ta: TechnicalInspectionCoverage;
   dealerRowsLv: string;
+  /** j26: komponentu skaiti no VISĀM dīlera rindām (kods, ne modelis). */
+  dealerComponentCounts: DealerComponentCount[];
+  /** j26: reģistru statusi (FIN ierobežojumi, izņemšana no uzskaites u.c.). */
+  registryStatusLines: string[];
   dealerCampaigns: DealerFact[];
   recallCodes: string[];
   listingSummary: string;
@@ -336,6 +350,12 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     })
     .join("\n");
 
+  const dealerComponentCounts = buildDealerComponentCounts(
+    dealer.rows,
+    collectEngineOilChangeRows(dealerServiceWorksFromSources({ oneauto: blocks.oneauto, autoRecords: blocks.auto_records })),
+  );
+  const registryStatusLines = collectRegistryStatusLines(blocks);
+
   const haystack = sourceHaystackFrom(blocks, [
     input.vin ?? "",
     input.notes ?? "",
@@ -383,6 +403,8 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     alertBannerTexts: computeProvinAlertBannersFromWorkspace(blocks).map((b) => b.text.trim()).filter(Boolean),
     ta,
     dealerRowsLv,
+    dealerComponentCounts,
+    registryStatusLines,
     dealerCampaigns,
     recallCodes,
     listingSummary,
@@ -513,10 +535,13 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
   if (facts.ta.ratingLabel) lines.push(`- Novērtējums: ${facts.ta.ratingLabel}`);
 
   if (facts.dealerRowsLv.trim()) {
-    lines.push("Dīlera fakti (latviski):");
-    for (const row of facts.dealerRowsLv.split("\n").slice(0, 12)) lines.push(`- ${row}`);
+    lines.push(...formatDealerSection(facts.dealerRowsLv, facts.dealerComponentCounts));
   } else {
     lines.push("Dīlera fakti: nav");
+  }
+  if (facts.registryStatusLines.length > 0) {
+    lines.push("Reģistru statusi (ierobežojumi, izņemšana no uzskaites):");
+    for (const row of facts.registryStatusLines.slice(0, 10)) lines.push(`- ${row}`);
   }
 
   lines.push(
@@ -539,6 +564,75 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
   const closed = `${clipSheet(body)}\n=== BEIGAS ${CANONICAL_FACTS_HEADER} ===`;
   return closed;
 }
+
+const ENGINE_OIL_COUNT_LABEL = "Dzinēja eļļas maiņas";
+
+function buildDealerComponentCounts(
+  rows: readonly DealerFact[],
+  engineOilRows: readonly { date: string }[],
+): DealerComponentCount[] {
+  const out: DealerComponentCount[] = [];
+  const oilDates = [...new Set(engineOilRows.map((r) => r.date.trim()).filter(Boolean))];
+  if (oilDates.length > 0) out.push({ label: ENGINE_OIL_COUNT_LABEL, dates: oilDates });
+  for (const c of DEALER_COMPONENTS) {
+    const dates = [
+      ...new Set(rows.filter((r) => r.components.includes(c.id)).map((r) => r.date.trim() || "datums nav")),
+    ];
+    if (dates.length === 0) continue;
+    const label = c.id === "gearbox_oil" ? "Kārbas eļļas maiņas" : c.lv.charAt(0).toUpperCase() + c.lv.slice(1);
+    out.push({ label, dates });
+  }
+  return out;
+}
+
+/** Visas dīlera rindas (bez 12 griestiem) zīmju budžetā; ja nepietiek - izlaiž VECĀKĀS, skaiti paliek pilni. */
+function formatDealerSection(dealerRowsLv: string, counts: readonly DealerComponentCount[]): string[] {
+  const rows = dealerRowsLv
+    .split("\n")
+    .map((r) => r.trim())
+    .filter(Boolean)
+    .map((r) => (r.length > DEALER_ROW_MAX_CHARS ? `${r.slice(0, DEALER_ROW_MAX_CHARS - 1)}…` : r));
+  const countLines = counts.map((c) => `- ${c.label}: ${c.dates.length} (${c.dates.join(", ")})`);
+  let budget = CANONICAL_DEALER_ROWS_BUDGET_CHARS - countLines.reduce((n, l) => n + l.length + 1, 0);
+  const kept: string[] = [];
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const line = `- ${rows[i]}`;
+    if (budget - line.length - 1 < 0 && kept.length > 0) break;
+    kept.unshift(line);
+    budget -= line.length + 1;
+  }
+  const omitted = rows.length - kept.length;
+  const out = [`Dīlera fakti (latviski): ${rows.length} rindas`];
+  if (omitted > 0) out.push(`- … ${omitted} agrākas rindas izlaistas (skaiti zemāk ir no VISĀM rindām)`);
+  out.push(...kept);
+  if (countLines.length > 0) {
+    out.push("Dīlera darbu skaiti (no visām rindām; cits skaits aizliegts, „nav” aizliegts, ja skaits > 0):");
+    out.push(...countLines);
+  }
+  return out;
+}
+
+/** FIN/registru statusi un piezīmes (ierobežojumi, izņemšana bojājuma dēļ) ar avotu. */
+function collectRegistryStatusLines(blocks: WorkspaceSourceBlocks): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const key of REGISTRY_STYLE_BLOCK_KEYS) {
+    const b = blocks[key];
+    const label = SOURCE_BLOCK_LABELS[key];
+    for (const raw of [b.statusRecords ?? "", b.autoNotes ?? ""].join("\n").split("\n")) {
+      const line = raw.trim();
+      if (!line || !REGISTRY_STATUS_RE.test(line)) continue;
+      const k = `${label}|${line}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(`${line} (${label})`);
+    }
+  }
+  return out;
+}
+
+const REGISTRY_STATUS_RE =
+  /ierobežojum|aizliegum|noņemts no reģistra|izņemt\w* no uzskaites|apskate nav|decommission|restriction|prohibition/i;
 
 function dropPointOrigin(source?: string, country?: string): string {
   const bits = [source?.trim(), country?.trim()].filter(Boolean);
