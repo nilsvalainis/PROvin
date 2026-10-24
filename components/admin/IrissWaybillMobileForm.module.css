@@ -282,6 +282,79 @@
   background: var(--ok-bg, #ecfdf3);
   color: #067647;
 }
+.mf .tag.tagAcc,
+.picker .tag.tagAcc {
+  background: var(--acc-soft, rgba(61, 91, 217, 0.12));
+  color: var(--acc, #3d5bd9);
+}
+
+/* B192-7 (Dzintarzeme Auto): birka pie "Auto" etiķetes, paskaidrojums zem lauka, tukšais stāvoklis. */
+.mf .labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.mf .labelRow .label {
+  margin-bottom: 0;
+}
+.mf .ownerTag {
+  color: var(--acc, #3d5bd9);
+  font-size: 12px;
+  font-weight: 600;
+}
+.mf .help {
+  margin-top: 6px;
+  color: var(--ink2, #5e636e);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.mf .carEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 10px;
+  background: var(--fill, rgba(116, 120, 138, 0.11));
+  padding: 20px 16px;
+  text-align: center;
+}
+.mf .carEmptyIcon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  margin-bottom: 8px;
+  border-radius: 999px;
+  background: var(--s1, #fff);
+  color: var(--ink2, #5e636e);
+}
+.mf .carEmpty h4 {
+  color: var(--ink, #0b0c10);
+  font-size: 15px;
+  font-weight: 700;
+}
+.mf .carEmpty p {
+  margin-top: 4px;
+  color: var(--ink2, #5e636e);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.mf .manualBtn {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 12px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: var(--s1, #fff);
+  color: var(--ink, #0b0c10);
+  font-size: 14px;
+  font-weight: 600;
+  touch-action: manipulation;
+}
 .mf .addr {
   display: flex;
   align-items: center;

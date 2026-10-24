@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AutoparksCar } from "@/lib/iriss-autoparks";
 import { emptyRegistryValues, type AutoparksRegistry } from "@/lib/iriss-autoparks-registry";
-import { filterWaybillTradeCars, waybillTradeCars, waybillTradeCarsWithSource } from "@/lib/iriss-waybill-trade-cars";
+import { dzintarzemeAcceptedCars, filterWaybillTradeCars, waybillTradeCars, waybillTradeCarsWithSource, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 
 function registry(tradeActNo: string, makeModel = "", extra: Partial<AutoparksRegistry> = {}): AutoparksRegistry {
   return { ...emptyRegistryValues(), tradeActNo, makeModel, importedAt: "", importFile: "", registryDate: "", manual: [], removedAt: "", ...extra };
@@ -64,6 +64,27 @@ describe("waybill trade cars", () => {
 
   it("registry data present -> strict trade-accepted list, source registry", () => {
     expect(waybillTradeCarsWithSource(cars).source).toBe("registry");
+  });
+});
+
+describe("B192-7 (Dzintarzeme Auto) auto izvēle: tikai šīs firmas tirdzniecībā pieņemtie auto", () => {
+  function tradeCar(over: Partial<WaybillTradeCar>): WaybillTradeCar {
+    return { id: "x", brandModel: "", vin: "", year: "", statusLabel: "", accepted: false, owner: "IRISS", ...over };
+  }
+
+  it("keeps only DZA-owned, trade-accepted cars - never ĪRISS, never un-accepted", () => {
+    const cars = [
+      tradeCar({ id: "dza-ok", brandModel: "VW Touran", owner: "DZA", accepted: true }),
+      tradeCar({ id: "dza-not-accepted", brandModel: "Audi A4", owner: "DZA", accepted: false }),
+      tradeCar({ id: "iriss-accepted", brandModel: "Škoda Octavia", owner: "IRISS", accepted: true }),
+      tradeCar({ id: "dza-ok-2", brandModel: "Škoda Octavia", owner: "DZA", accepted: true }),
+    ];
+    expect(dzintarzemeAcceptedCars(cars).map((c) => c.id)).toEqual(["dza-ok", "dza-ok-2"]);
+  });
+
+  it("empty input or no DZA-accepted cars -> empty list (triggers the manual-entry empty state)", () => {
+    expect(dzintarzemeAcceptedCars([])).toEqual([]);
+    expect(dzintarzemeAcceptedCars([tradeCar({ owner: "IRISS", accepted: true }), tradeCar({ owner: "DZA", accepted: false })])).toEqual([]);
   });
 });
 

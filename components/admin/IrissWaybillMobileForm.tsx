@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown, ChevronRight, X } from "lucide-react";
+import { Car, Check, ChevronDown, ChevronRight, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import styles from "@/components/admin/IrissWaybillMobileForm.module.css";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
@@ -30,9 +30,9 @@ import {
   type WaybillMobilePayload,
   type WaybillMobileRequestRow,
 } from "@/lib/iriss-waybill-mobile-form";
-import { IRISS_DEALER_PLATES, formatRigaDateTimeComma, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
+import { IRISS_DEALER_PLATES, displayDealerPlate, formatRigaDateTimeComma, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
 import { isStaleWaybillRequest, type WaybillAivarsReply, type WaybillRequest } from "@/lib/iriss-waybill-requests";
-import { filterWaybillTradeCars, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
+import { dzintarzemeAcceptedCars, filterWaybillTradeCars, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 
 export type WaybillMobileDraft = { nonce: number; brandModel: string; vin: string; plate: string };
 
@@ -122,6 +122,12 @@ export function IrissWaybillMobileForm({
   const hours = waybillMobileHours(form);
   const untilText = hours ? formatRigaDateTimeComma(new Date(nowMs + hours * 3_600_000).toISOString()) : "";
   const tradeAct = waybillMobileTradeAct(form);
+  // B192-7 (Dzintarzeme Auto): auto izvēle rāda TIKAI šīs firmas tirdzniecībā pieņemtos auto, nekad ĪRISS auto.
+  const isB192 = displayDealerPlate(shownPlate) === "B192-7";
+  const dzaCars = useMemo(() => (tradeCars ? dzintarzemeAcceptedCars(tradeCars) : null), [tradeCars]);
+  const pickerCars = isB192 ? dzaCars : tradeCars;
+  // Tukšs stāvoklis: nav neviena Dzintarzemes auto sarakstā - uzreiz rāda paskaidrojumu + pogu, nevis tukšu izvēlni.
+  const b192Empty = isB192 && !form.manual && !form.car && dzaCars !== null && dzaCars.length === 0;
   const reps = waybillRepresentativeChoices({ owner: form.car?.owner, plate: shownPlate });
   const rep = waybillMobileRepresentative({ representative: form.representative, plate: shownPlate, car: form.car });
   const rows = useMemo(
@@ -189,7 +195,10 @@ export function IrissWaybillMobileForm({
         </div>
 
         <div className={styles.group}>
-          <span className={styles.label}>Auto</span>
+          <div className={styles.labelRow}>
+            <span className={styles.label}>Auto</span>
+            {isB192 ? <span className={styles.ownerTag}>Dzintarzeme Auto</span> : null}
+          </div>
           {form.manual ? (
             <div className="flex items-center gap-2">
               <input
@@ -211,6 +220,20 @@ export function IrissWaybillMobileForm({
                 }}
               >
                 <ChevronDown className="h-4 w-4" aria-hidden />
+              </button>
+            </div>
+          ) : b192Empty ? (
+            <div className={styles.carEmpty}>
+              <span className={styles.carEmptyIcon} aria-hidden>
+                <Car className="h-5 w-5" aria-hidden />
+              </span>
+              <h4>Nav Dzintarzemes auto sarakstā</h4>
+              <p>
+                Šobrīd nav tirdzniecībā pieņemts neviens auto SIA Dzintarzeme Auto vārdā. Tiklīdz Aivars pieņem - tas parādīsies šeit
+                automātiski.
+              </p>
+              <button type="button" className={styles.manualBtn} onClick={() => chooseCar("manual")}>
+                Rakstīt auto ar roku
               </button>
             </div>
           ) : (
@@ -251,6 +274,11 @@ export function IrissWaybillMobileForm({
               ) : null}
             </div>
           )}
+          {isB192 && !form.manual && !b192Empty ? (
+            <p className={styles.help}>
+              Rādīti tikai auto, kas <b>pieņemti</b> tirdzniecībā SIA Dzintarzeme Auto vārdā. SIA ĪRISS auto šim numuram netiek rādīti.
+            </p>
+          ) : null}
           {(form.manual && form.manualBrandModel.trim()) || (form.car && !form.car.accepted) ? (
             <span className={styles.tag}>Nav tirdzniecībā pieņemto auto sarakstā</span>
           ) : null}
@@ -396,6 +424,12 @@ export function IrissWaybillMobileForm({
             placeholder="193 uz BMW 330"
             autoComplete="off"
           />
+          <p className={styles.help}>
+            Tikai <b>piezīme Aivaram šai pavadzīmei</b> - viņš to neizpilda kā komandu un citi lietotāji to neredz.
+            {tradeAct
+              ? " Der, lai pateiktu, kur CSDD salīdzina numuru vai kādu auto rādīt, ja marka/modelis sarakstā nav skaidrs."
+              : ""}
+          </p>
         </div>
 
         {shownError ? (
@@ -444,20 +478,23 @@ export function IrissWaybillMobileForm({
 
       <AdminMobileSheet
         open={pickerOpen}
-        title="Tirdzniecībā pieņemtie auto"
+        title={isB192 ? "Dzintarzeme Auto - pieņemtie" : "Tirdzniecībā pieņemtie auto"}
         subtitle={
-          tradeCars === null
+          pickerCars === null
             ? "Ielādē..."
-            : tradeCarsFromAutoparks
-              ? `${tradeCars.length} auto no Autoparka - CSDD reģistrs vēl nav nolasīts`
-              : `${tradeCars.length} auto`
+            : isB192
+              ? `${pickerCars.length} auto - tikai šī numura (B192-7) firma`
+              : tradeCarsFromAutoparks
+                ? `${pickerCars.length} auto no Autoparka - CSDD reģistrs vēl nav nolasīts`
+                : `${pickerCars.length} auto`
         }
         onClose={() => setPickerOpen(false)}
       >
         <IrissWaybillCarPicker
-          cars={tradeCars}
+          cars={pickerCars}
           selected={form.manual ? "manual" : (form.car?.vin || form.car?.brandModel || "")}
           onChoose={chooseCar}
+          ownerBadge={isB192 ? "DZA" : undefined}
         />
       </AdminMobileSheet>
     </div>
@@ -745,11 +782,14 @@ export function IrissWaybillCarPicker({
   cars,
   selected,
   onChoose,
+  ownerBadge,
 }: {
   cars: WaybillTradeCar[] | null;
   /** VIN vai marka izvēlētajam auto; "manual" = ar roku. */
   selected: string;
   onChoose: (car: WaybillMobileCar | "manual") => void;
+  /** Pārraksta rindas birku (piem. "DZA" B192-7 sarakstam, kur visi auto jau ir pieņemti); citādi "Pieņemts"/statusa birka kā parasti. */
+  ownerBadge?: string;
 }) {
   const [query, setQuery] = useState("");
   const shown = useMemo(() => filterWaybillTradeCars(cars ?? [], query), [cars, query]);
@@ -788,7 +828,9 @@ export function IrissWaybillCarPicker({
                   {car.year}
                 </span>
               </span>
-              {car.accepted ? (
+              {ownerBadge ? (
+                <span className={`${styles.tag} ${styles.tagAcc}`}>{ownerBadge}</span>
+              ) : car.accepted ? (
                 <span className={`${styles.tag} ${styles.tagOk}`}>Pieņemts</span>
               ) : car.statusLabel ? (
                 <span className={styles.tag}>{car.statusLabel}</span>
