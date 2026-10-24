@@ -56,6 +56,29 @@ const SOURCES_FILE = LOGISTICS_AUCTION_SOURCES_FILE;
 const GEOCODE_FILE = "geocode-cache.json";
 const USAGE_FILE_PREFIX = "maps-usage-";
 const SEED_META_FILE = "seed-meta.json";
+const PICKUP_DATE_FIX_META_FILE = "pickup-date-fix-v1.json";
+
+/**
+ * Seed importam (skat. seedLogisticsFromPunkti) regex izvilka pirmo DD.MM.YYYY datumu no brīvā teksta
+ * "termins" lauka neatkarīgi no konteksta - dažiem auto tas sagrābj pirkuma datumu ("Nopirkts ..."),
+ * dokumenta nosūtīšanas datumu ("PuA izsūtīts ...") vai citu nesaistītu datumu, nevis reālu pickup datumu.
+ * Katrs ieraksts pārbaudīts pret "termins" tekstu - datumam nav nekādas saistības ar reālu/apstiprinātu
+ * savākšanu. Vienreizējs, VIN+vērtību-precīzi norobežots labojums - nekas cits netiek skarts.
+ */
+const KNOWN_BAD_PICKUP_DATES: ReadonlyArray<{ vin: string; wrongDate: string }> = [
+  // "Nopirkts 17.10.2026, 5 990 € apmaksāts 19.10; savākšanas datumu var izvēlēties, kad auto atvests uz punktu"
+  { vin: "YV1DZ8256D2439274", wrongDate: "2026-10-17" },
+  // "Nopirkts 17.10.2026, 11 970,81 €; ...; saņemšanas apliecība būs pēc apmaksas"
+  { vin: "WDB9061331N534460", wrongDate: "2026-10-17" },
+  // "Nopirkts 14.10.2026, 10 449,23 €; apmaksāts, saņemšanas dokuments Autobid pastkastē kopš 16.10"
+  { vin: "WAUZZZ8K0FA036715", wrongDate: "2026-10-14" },
+  // "Nopirkts 12.10.2026, rēķins P.RE.2483632; savākšanas diena vēl nav saskaņota"
+  { vin: "HEBEUEHNE20261001", wrongDate: "2026-10-12" },
+  // "PuA izsūtīts 08.10.2026; pēc 14 dienām (no 22.10) papildu maksa" - PuA = pilnvara, nav pickup datums
+  { vin: "WBY11CF060CM04850", wrongDate: "2026-10-08" },
+  // "PuA izsūtīts 01.10.2026; 14 dienas beidzās 15.10, papildu maksa jau var rēķināties"
+  { vin: "YV1RS694062550360", wrongDate: "2026-10-01" },
+];
 
 type ResolvedStorage =
   | { kind: "disabled"; reason: "explicit_off" | "vercel_without_blob_token" }
@@ -353,6 +376,26 @@ async function ensureSeeded(r: Exclude<ResolvedStorage, { kind: "disabled" }>): 
   });
 }
 
+async function ensurePickupDateFix(r: Exclude<ResolvedStorage, { kind: "disabled" }>): Promise<void> {
+  const meta = await readJson(r, PICKUP_DATE_FIX_META_FILE);
+  if (isObj(meta) && meta.done === true) return;
+  const raw = await readJson(r, ORDERS_FILE);
+  const items = isObj(raw) && Array.isArray(raw.items) ? raw.items : [];
+  let changed = 0;
+  const next = items.map((item) => {
+    if (!isObj(item)) return item;
+    const vin = typeof item.vin === "string" ? item.vin.toUpperCase() : "";
+    const bad = KNOWN_BAD_PICKUP_DATES.find((b) => b.vin === vin && item.pickupDate === b.wrongDate);
+    if (!bad) return item;
+    changed += 1;
+    return { ...item, pickupDate: "" };
+  });
+  if (changed > 0) {
+    await writeJson(r, ORDERS_FILE, { version: 1, items: next });
+  }
+  await writeJson(r, PICKUP_DATE_FIX_META_FILE, { done: true, at: new Date().toISOString(), changed });
+}
+
 export async function listLogisticsPoints(): Promise<LogisticsPoint[]> {
   const r = resolveStorage();
   if (r.kind === "disabled") return [];
@@ -372,6 +415,7 @@ export async function listLogisticsOrders(): Promise<LogisticsOrder[]> {
   const r = resolveStorage();
   if (r.kind === "disabled") return [];
   await ensureSeeded(r);
+  await ensurePickupDateFix(r);
   const raw = await readJson(r, ORDERS_FILE);
   const items = isObj(raw) && Array.isArray(raw.items) ? raw.items : [];
   return items.map(normalizeOrder).filter((p): p is LogisticsOrder => p !== null);
