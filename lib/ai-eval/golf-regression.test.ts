@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { golfBlocks, golfFixture, golfIncidentsTile, golfTraficomText } from "@/lib/ai-eval/golf-gte-fixture";
 import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
+import { buildVehicleLifecycleEvents } from "@/lib/vehicle-lifecycle-timeline";
 import { buildCanonicalFacts } from "@/lib/canonical-facts-sheet";
 import {
   checkCommentContradictions,
@@ -199,20 +200,41 @@ describe("Golf GTE - PR3 nobraukums un valstis (2, 11)", () => {
   });
 });
 
-/**
- * „Pirms” stāvoklis (main @ j26 sākums). Katrs PR, kas labo kļūdu, pārvērš atbilstošo
- * pārbaudi par „pēc” pārbaudi augstāk.
- */
-describe("Golf GTE - pirms stāvoklis (j26 kļūdas)", () => {
+describe("Golf GTE - PR4 importētāji (4, 7, 9, 12)", () => {
   const b = golfBlocks();
-  const facts = buildCanonicalFacts({ vin: golfFixture.vin, sourceBlocks: b });
 
-  it("7/12: Traficom ierobežojumi zem „Nodokļu statuss”, sadalīta rinda (labo PR4)", () => {
-    expect(b.traficom_fi.statusRecords).toMatch(/Nodokļu statuss: RestrictionsPeriodic/);
-    expect(b.traficom_fi.statusRecords).toMatch(/Nodokļu statuss: damage\)/);
+  it("Traficom: atsevišķi lauki latviski, nav „Nodokļu statuss: Restrictions…”, nav sadalītu rindu", () => {
+    const st = b.traficom_fi.statusRecords;
+    expect(st).toMatch(/^Nodokļu statuss: nav nesamaksāta transportlīdzekļa nodokļa\.$/m);
+    expect(st).toMatch(/^Ierobežojumi: Tehniskā apskate nav nokārtota \/ apstiprināta\.$/m);
+    expect(st).toMatch(/^Ierobežojumi: Auto noņemts no reģistra bojājuma dēļ\.$/m);
+    expect(st).toMatch(/^Izņemšana no uzskaites \(no 18\.03\.2024\): bojājuma dēļ\.$/m);
+    expect(st).not.toMatch(/Restrictions|Deregistrated|damage\)/);
+    expect(st).toMatch(/Dzinēja veids: Benzīns \/ elektrība/);
   });
 
-  it("9: „Nodošana ekspluatācijā” ar Somiju (labo PR4)", () => {
-    expect(b.traficom_fi.timeline.find((r) => r.event === "Nodošana ekspluatācijā")?.country).toBe("Somija");
+  it("nezināms Traficom teksts paliek angliski ar „(oriģināls)”", () => {
+    const parsed = parseTraficomReport(golfTraficomText.replace("No unpaid vehicle tax", "Strange new tax line"));
+    expect(parsed!.statusRecords).toMatch(/Nodokļu statuss: Strange new tax line \(oriģināls\)/);
+  });
+
+  it("„Nodošana ekspluatācijā” bez valsts (2017 auto bija Zviedrijā)", () => {
+    expect(b.traficom_fi.timeline.find((r) => r.event === "Nodošana ekspluatācijā")?.country).toBe("");
+  });
+
+  it("laika līnijā viena pāreja Zviedrija -> Somija, bez FI -> SE -> FI lēcieniem", () => {
+    const events = buildVehicleLifecycleEvents({
+      csddForm: b.csdd,
+      manualVendorBlocks: toPdfManualVendorBlocks(b),
+      ccVinBlock: b.cc_vin,
+      autoRecordsBlock: b.auto_records,
+    });
+    const imports = events.filter((e) => e.kind === "import").map((e) => e.title);
+    expect(imports).toEqual(["Zviedrija → Somija"]);
+  });
+
+  it("izsoles bojājums AI faktu lapā latviski (arī vecajiem datiem)", () => {
+    const facts = buildCanonicalFacts({ vin: golfFixture.vin, sourceBlocks: b });
+    expect(facts.sheet).toMatch(/02\.04\.2024 \| priekšpuse, sāns \| summa nav \| CC\.VIN/);
   });
 });

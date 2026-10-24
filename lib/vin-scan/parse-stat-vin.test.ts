@@ -139,7 +139,7 @@ describe("parseStatVinPage", () => {
       venue: "Copart",
       lot: "11111111",
       date: "2024-01-02",
-      damage: "Front End",
+      damage: "priekšpuse",
     });
     expect(r.auctions?.[0]?.price).toMatch(/1[,.]?100/);
     expect(r.auctions?.[0]?.odometer).toMatch(/km/);
@@ -148,7 +148,7 @@ describe("parseStatVinPage", () => {
       venue: "IAAI",
       lot: "22222222",
       date: "2023-05-09",
-      damage: "Rear",
+      damage: "aizmugure",
     });
     expect(r.auctions?.[1]?.price).toMatch(/2[,.]?200/);
     expect(r.auctions?.[1]?.photoUrls?.every((url) => url.includes("22222222"))).toBe(true);
@@ -222,8 +222,10 @@ describe("parseStatVinPage", () => {
     expect(r.summary).not.toMatch(/nav izsoles/i);
     expect(r.auctions?.[0]?.lot).toBe("50558298");
     expect(r.auctions?.[0]?.venue).toBe("Copart FI");
-    expect(r.auctions?.[0]?.odometer).toBe(formatStatVinOdometerKm("185389 mi"));
-    expect((r.auctions?.[0]?.odometer || "").replace(/[^\d]/g, "")).toBe(String(milesToKmRounded(185389)));
+    // j26: Copart FI - „Odometer, mi” / „miles” etiķete nav jūdzes; km nepārrēķina.
+    expect(r.auctions?.[0]?.odometer).toBe(formatStatVinOdometerKm("185389"));
+    expect((r.auctions?.[0]?.odometer || "").replace(/[^\d]/g, "")).toBe("185389");
+    expect(r.auctions?.[0]?.odometer).not.toBe(formatStatVinOdometerKm("185389 mi"));
     expect(r.auctions?.[0]?.odometer).toMatch(/km/);
     expect(r.mileage?.[0]?.odometer).toMatch(/km/);
     expect(r.media?.photoUrl).toContain("g-static.copart.com");
