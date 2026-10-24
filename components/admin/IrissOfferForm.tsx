@@ -7,7 +7,7 @@
 
 import { Loader2, Plus, X } from "lucide-react";
 import type React from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { IrissOfferDeadlineField } from "@/components/admin/IrissOfferDeadlineField";
 import { AdminSaveButton } from "@/components/admin/AdminSaveButton";
@@ -16,8 +16,10 @@ import { IrissOfferFieldTag } from "@/components/admin/IrissOfferFieldTag";
 import { IrissLabeledInput as LabeledInput, irissOfferFieldClass as fieldClass } from "@/components/admin/IrissOfferFormFields";
 import { IrissOfferImageSorter } from "@/components/admin/IrissOfferImageSorter";
 import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
+import { useFormDraftAutosave, clearFormDraftNow, readFormDraftOnce } from "@/hooks/useFormDraftAutosave";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { offerDraftTotalPrice, type OfferDraft } from "@/lib/iriss-offer-draft";
+import { offerDraftAutosavePayload, offerDraftAutosaveWorthRestoring, type OfferDraftAutosavePayload } from "@/lib/iriss-offer-draft-autosave";
 import { isIrissOfferExpired, normalizeOfferValidUntil, offerValidUntilYmdFromAt } from "@/lib/iriss-offer-valid-until";
 import { IRISS_MAX_OFFER_ATTACHMENTS } from "@/lib/iriss-pasutijumi-types";
 import { irissPriceFormatWarning } from "@/lib/iriss-price-format";
@@ -145,6 +147,24 @@ export function IrissOfferForm({
   const pendingPhotos = savedPendingPhotos;
   const backdropClose = useModalBackdropClose(onClose, !busy && !filePrepare);
 
+  // Melnraksta autosave (localStorage): drošības tīkls, ja logs aizveras pirms "Saglabāt".
+  const draftStorageKey = `iriss-offer-draft:${orderId || "new"}`;
+  const [restoreCandidate, setRestoreCandidate] = useState<OfferDraftAutosavePayload | null>(null);
+  const restoreCheckedRef = useRef(false);
+  useFormDraftAutosave(draftStorageKey, offerDraftAutosavePayload(draft), true);
+  useEffect(() => {
+    if (restoreCheckedRef.current || seedStatus?.loading) return;
+    restoreCheckedRef.current = true;
+    const saved = readFormDraftOnce<OfferDraftAutosavePayload>(draftStorageKey);
+    if (saved && offerDraftAutosaveWorthRestoring(saved.data, offerDraftAutosavePayload(draft))) {
+      setRestoreCandidate(saved.data);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftStorageKey, seedStatus?.loading]);
+  useEffect(() => {
+    if (saveState === "saved") clearFormDraftNow(draftStorageKey);
+  }, [saveState, draftStorageKey]);
+
   return (
     <div
       className="fixed inset-0 z-[120] flex items-end justify-center overscroll-y-contain bg-black/45 p-0 sm:items-center sm:p-6"
@@ -191,6 +211,36 @@ export function IrissOfferForm({
             <X className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
           </button>
         </div>
+        {restoreCandidate ? (
+          <div
+            className="mx-4 mb-2 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-200 bg-amber-50/90 px-3 py-2 text-[12px] leading-snug text-amber-950 sm:mx-5"
+            role="status"
+          >
+            <span>Atrasts nesaglabāts melnraksts no iepriekšējās reizes.</span>
+            <span className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setDraft((d) => ({ ...d, ...restoreCandidate }));
+                  setRestoreCandidate(null);
+                }}
+                className="inline-flex h-8 items-center rounded-full border border-amber-300/90 bg-white px-3 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-amber-50"
+              >
+                Atjaunot
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setRestoreCandidate(null);
+                  clearFormDraftNow(draftStorageKey);
+                }}
+                className="inline-flex h-8 items-center rounded-full px-3 text-[12px] font-medium text-amber-900 underline"
+              >
+                Nerādīt
+              </button>
+            </span>
+          </div>
+        ) : null}
         <div className="grid shrink-0 grid-cols-4 gap-2 px-4 pb-1 pt-1 sm:px-5 lg:hidden" aria-label="Piedāvājuma daļas">
           {(["bildes", "pamatinfo", "apraksti", "cenas"] as const).map((t) => (
             <button key={t} type="button" aria-pressed={tab === t} onClick={() => setTab(t)} className={tabClass(tab === t)}>
