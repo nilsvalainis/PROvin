@@ -312,6 +312,14 @@ export const PROVIN_INTERNAL_CLIENT_TERMS: readonly BannedVocabularyEntry[] = [
 /** Droši aizstājami vārdi bez otra maksas izsaukuma (P13). */
 type SafeVocabReplacer = string | ((match: string, ...groups: string[]) => string);
 
+/**
+ * Mazais burts + Lielais burts vārda vidū, kur abas daļas izskatās pēc latviešu vārdiem
+ * (pirmajā ir garumzīme/mīkstinājums vai LV galotne, otrā beidzas ar LV galotni).
+ * TwinPower, BlueMotion, carVertical, xDrive u.c. neatbilst.
+ */
+export const GLUED_LV_WORDS_RE =
+  /(?<!\p{L})(\p{Ll}*[āčēģīķļņšūž]\p{Ll}*|\p{Ll}{2,}[uāēīs])(\p{Lu}\p{Ll}*(?:as|ijas|ija|ijā|iju|ai|am|ām|os|us|ēs|is|ē|ā|u|i|e|s))(?!\p{L})/gu;
+
 const SAFE_VOCAB_REPLACEMENTS: ReadonlyArray<readonly [RegExp, SafeVocabReplacer]> = [
   // maģistrāle → šoseja: katram locījumam savs galotnes pāris (garākās galotnes pirmās).
   [/(?<!\p{L})Maģistrāļu(?!\p{L})/gu, "Šoseju"],
@@ -338,6 +346,11 @@ const SAFE_VOCAB_REPLACEMENTS: ReadonlyArray<readonly [RegExp, SafeVocabReplacer
   [/šim automašīn/gi, "šai automašīn"],
   [/tipiski šim agregātam ir/gi, "šim dzinējam raksturīga"],
   [/tipiski šim agregātam/gi, "šim dzinējam raksturīga"],
+  // j26: zināmas drukas kļūdas (visi locījumi saglabājas, maina tikai saknes daļu).
+  [/(?<!\p{L})([Oo])fic(?!i)āl/gu, "$1ficiāl"],
+  [/(?<!\p{L})([Pp])rotāl/gu, "$1ortāl"],
+  // j26: salīmēti latviski vārdi („protāluZviedrijas”) - atstarpe; zīmolu nosaukumi netiek skarti.
+  [GLUED_LV_WORDS_RE, "$1 $2"],
 ];
 
 export function applyBannedVocabularyReplacements(text: string): string {
