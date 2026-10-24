@@ -79,6 +79,9 @@ export async function PATCH(req: Request, ctx: Ctx) {
         const from = c.fields[k] || found.car[k];
         hist.push({ field: k, from, to: v });
         c.fields[k] = v;
+        // "Atvests" J52b LABOJUMS: ar roku notīrīts v2 pārraksts (tukšs) nedrīkst atgriezties pie
+        // v1 `car.arrivedAt` - `sources` atzīme liek `autoparksV2Basics` ticēt v2 vērtībai pat tukšai.
+        if (k === "arrivedAt") c.sources[k] = "manual";
         // Labots VIN/numurzīme var padarīt CSDD meklēšanu veiksmīgu - neļaut iepriekšējam
         // neveiksmīgam mēģinājumam (ar vecu/tukšu identifikatoru) bloķēt atkārtotu mēģinājumu nedēļu.
         if ((k === "vin" || k === "plate") && v !== from) c.tech.csddCheckedAt = "";
