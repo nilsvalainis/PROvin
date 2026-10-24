@@ -3,6 +3,7 @@
  * Laukumi no OpenAPI (https://carstat-copart-iaai.jojapi.net). Bez tīkla.
  */
 
+import { auctionDamageLv } from "@/lib/vin-scan/damage-labels-lv";
 import {
   EMPTY_JOJ_NAME_DICT,
   JOJ_LV,
@@ -107,8 +108,17 @@ function kmLv(km: unknown, mi: unknown): string {
   return "";
 }
 
-function odometerLine(odometer: unknown): { km: string; mi: string; status: string; line: string } {
+function odometerLine(
+  odometer: unknown,
+  euLot = false,
+): { km: string; mi: string; status: string; line: string } {
   const odo = asRecord(odometer);
+  // j26: Copart FI / ES - „mi” lauks nav jūdzes; rādām tikai km, nepārrēķinām.
+  if (euLot) {
+    const km = kmLv(odo.km, undefined) || kmLv(odo.mi, undefined);
+    const status = jojValueLv(named(odo.status));
+    return { km, mi: "", status, line: [km, status].filter(Boolean).join(" · ") };
+  }
   const km = kmLv(odo.km, undefined);
   const mi =
     typeof odo.mi === "number" && odo.mi > 0 ? `${Math.round(odo.mi).toLocaleString("lv-LV")} mi` : "";
@@ -346,9 +356,9 @@ export function parseJojSearchVinFull(input: {
     const venue = venueFromDomain(lot.domain, lot.location);
     const lotNo = str(lot.lot);
     const date = saleDate(lot.sale_date);
-    const odo = odometerLine(lot.odometer);
-    const damageMain = lookupNamed(asRecord(lot.damage).main, dict.damages);
-    const damageSecond = lookupNamed(asRecord(lot.damage).second, dict.damages);
+    const odo = odometerLine(lot.odometer, venue === "Copart FI");
+    const damageMain = auctionDamageLv(lookupNamed(asRecord(lot.damage).main, dict.damages));
+    const damageSecond = auctionDamageLv(lookupNamed(asRecord(lot.damage).second, dict.damages));
     const damage = [damageMain, damageSecond].filter(Boolean).join(" / ");
     const currency = venue === "Copart FI" ? "EUR" : "USD";
     const price = formatMoney(lot.final_bid, currency) || formatMoney(lot.bid, currency);

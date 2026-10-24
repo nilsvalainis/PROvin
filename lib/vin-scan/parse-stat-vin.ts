@@ -4,6 +4,7 @@
  * Cloudflare / 429 / 403 - skaidrs statuss, nevis „Lapa nav atpazīta”.
  */
 
+import { auctionDamageLv } from "@/lib/vin-scan/damage-labels-lv";
 import { milesToKmRounded } from "@/lib/miles-to-km";
 import type { VinScanAuction, VinScanParse, VinScanVehicle } from "@/lib/vin-scan/types";
 
@@ -78,6 +79,14 @@ export function formatStatVinOdometerKm(raw: string): string {
   const miles = /\b(mi|mile|miles)\b/i.test(text);
   const km = miles ? milesToKmRounded(n) : Math.round(n);
   return `${km.toLocaleString("lv-LV")} km`;
+}
+
+/** Copart FI vai ES atrašanās vieta: odometrs vienmēr km (arī ar „mi” etiķeti). */
+export function isEuAuctionLot(venue: string, location?: string): boolean {
+  if (venue === "Copart FI") return true;
+  return /\b(?:finland|suomi|sweden|germany|deutschland|estonia|latvia|lithuania|poland|denmark|netherlands|belgium|france|spain|italy|austria)\b/i.test(
+    location ?? "",
+  );
 }
 
 function kmLv(raw: string): string {
@@ -160,14 +169,15 @@ function auctionFromSchemaVehicle(rec: Record<string, unknown>, vin: string): Vi
   const desc = str(rec.description);
   const lotHit = LOT_CAPTURE_RE.exec(desc);
   const lot = str(rec.lot || rec.lotNumber) || lotHit?.[1] || lotHit?.[2] || "";
-  const miles = /mileage of\s+([\d\s,]+)\s*miles/i.exec(desc)?.[1] ?? "";
-  const odoRaw = miles || str(rec.mileageFromOdometer || rec.odometer || rec.mileage);
-  const odometer = odoRaw ? kmLv(miles ? `${odoRaw} mi` : odoRaw) : "";
-  const damage = str(rec.knownVehicleDamages || rec.damage || rec.primaryDamage);
-  const date = str(rec.purchaseDate || rec.date || rec.saleDate).slice(0, 32);
   const venue = venueName(
     str(asRecord(rec.seller).name) || /copart\s*finland|copart\s*fi|\biaai\b|\bcopart\b/i.exec(desc)?.[0] || "",
   );
+  const miles = /mileage of\s+([\d\s,]+)\s*miles/i.exec(desc)?.[1] ?? "";
+  const odoRaw = miles || str(rec.mileageFromOdometer || rec.odometer || rec.mileage);
+  // j26: Copart FI apraksts arī saka „miles”, bet vērtība ir km.
+  const odometer = odoRaw ? kmLv(miles && !isEuAuctionLot(venue) ? `${odoRaw} mi` : odoRaw) : "";
+  const damage = auctionDamageLv(str(rec.knownVehicleDamages || rec.damage || rec.primaryDamage));
+  const date = str(rec.purchaseDate || rec.date || rec.saleDate).slice(0, 32);
   const photoList = asArray(rec.image)
     .map((item) => normalizePhotoUrl(typeof item === "string" ? item : str(asRecord(item).url || asRecord(item).src)))
     .filter(Boolean);
@@ -211,8 +221,13 @@ function walkAuctionRecords(node: unknown, vin: string, out: VinScanAuction[], d
   const price = str(rec.price || rec.finalBid || rec.final_bid || rec.soldPrice || rec.highBid);
   const unit = str(rec.odometerUnit || rec.mileageUnit || rec.unit);
   const odometerRaw = str(rec.odometer || rec.mileage || rec.odometerValue || rec.mileageFromOdometer);
-  const odometer = odometerRaw ? kmLv([odometerRaw, unit].filter(Boolean).join(" ")) : "";
-  const damage = str(rec.damage || rec.primaryDamage || rec.primary_damage || rec.knownVehicleDamages || rec.secondaryDamage);
+  // j26: Copart FI / ES loti - „mi” etiķete nav jūdzes, km nepārrēķina.
+  const odometer = odometerRaw
+    ? kmLv([odometerRaw, isEuAuctionLot(venue, place) ? "" : unit].filter(Boolean).join(" "))
+    : "";
+  const damage = auctionDamageLv(
+    str(rec.damage || rec.primaryDamage || rec.primary_damage || rec.knownVehicleDamages || rec.secondaryDamage),
+  );
   const photoList = asArray(rec.photos || rec.images)
     .map((item) => normalizePhotoUrl(typeof item === "string" ? item : str(asRecord(item).url || asRecord(item).src || asRecord(item).href)))
     .filter(Boolean);
@@ -380,11 +395,13 @@ function auctionFromChunk(chunkHtml: string, lot: string, allPhotos: readonly st
             : "",
   );
   if (!venue && !lot && !AUCTION_RE.test(text)) return null;
-  const damage = cutLabeled(text, "primary damage|bojājums|(?<![A-Za-z])damage").replace(/[.,;]+$/, "");
+  const damage = auctionDamageLv(cutLabeled(text, "primary damage|bojājums|(?<![A-Za-z])damage").replace(/[.,;]+$/, ""));
   const odoLabeled = cutLabeled(text, "odometer(?:,?\\s*mi)?|mileage|odometrs");
   const odoRaw = odoLabeled.replace(/[^\d\s,.]/g, "").trim();
-  const odometer = odoRaw ? kmLv(/\bmi\b/i.test(odoLabeled) ? `${odoRaw} mi` : odoRaw) : "";
   const location = cutLabeled(text, "location|sale location|branch|yard");
+  // j26: stat.vin raksta „Odometer, mi” arī ES lotiem - Copart FI / ES vienmēr km.
+  const euLot = isEuAuctionLot(venue, location);
+  const odometer = odoRaw ? kmLv(!euLot && /\bmi\b/i.test(odoLabeled) ? `${odoRaw} mi` : odoRaw) : "";
   const date = saleDateOf(text);
   const price = priceOf(text);
   const byLot = lot ? allPhotos.filter((url) => url.includes(lot)) : [];

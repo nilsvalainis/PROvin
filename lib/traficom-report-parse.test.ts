@@ -142,7 +142,7 @@ Accident history
   it("flags decommissioning-due-to-damage and driving prohibition as notes", () => {
     const parsed = parseTraficomReport(SAMPLE);
     expect(parsed).not.toBeNull();
-    expect(parsed!.autoNotes).toContain("Auto noņemts no reģistra.");
+    expect(parsed!.autoNotes).toContain("Auto noņemts no reģistra bojājuma dēļ.");
     expect(parsed!.autoNotes).toContain("braukšanas / lietošanas aizliegums");
     expect(parsed!.autoNotes).toContain("bojājuma dēļ");
     expect(parsed!.incidents.some((r) => r.date === "12.12.2024" && /bojāj/i.test(r.note))).toBe(true);

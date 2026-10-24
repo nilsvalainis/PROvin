@@ -425,9 +425,14 @@ function vendorTimelineTitleAndDetail(
   return { title: vendorKindShortTitle(kind), detail: "", body: raw };
 }
 
+const LIFECYCLE_EXPORT_EVENT_RE = /eksport|\bexport/i;
+
 /** Stipra rezidence: atpazīstama valsts, ne sludinājums un ne laikposma tabula. */
 export function lifecycleEventProvidesCountryResidence(e: LifecycleEvent): boolean {
   if (lifecycleCountryIsSoft(e)) return false;
+  // j26: eksports / izņemšana no uzskaites eksportam ir izbraukšana, ne rezidence (citādi
+  // tās pašas dienas jaunās valsts reģistrācija rada viltus lēcienus FI -> SE -> FI).
+  if (LIFECYCLE_EXPORT_EVENT_RE.test(`${e.title} ${e.detail} ${e.body ?? ""}`)) return false;
   return lifecycleEventKnownCountryIso(e) != null;
 }
 

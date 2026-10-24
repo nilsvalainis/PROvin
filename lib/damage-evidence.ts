@@ -19,6 +19,7 @@ import {
 import { ccVinDamageRowHasData, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { asvDamageRowHasData, type AsvBlockState } from "@/lib/asv-report";
 import { orderHasDealerBodyOrGlassWork } from "@/lib/admin-ai-dealer-incident-link";
+import { auctionDamageLv } from "@/lib/vin-scan/damage-labels-lv";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
 
 export type DamageEvidenceRow = {
@@ -94,7 +95,7 @@ export function collectDamageEvidence(sourceBlocks: WorkspaceSourceBlocks): Dama
     if (!ccVinDamageRowHasData(d)) continue;
     rows.push({
       date: d.date.trim() || "datums nav",
-      descriptionLv: d.description.trim() || "Bojājuma ieraksts",
+      descriptionLv: auctionDamageLv(d.description) || "Bojājuma ieraksts",
       amount: displayAmount(d.amount),
       sourceLabel: "CC.VIN",
     });
@@ -103,7 +104,7 @@ export function collectDamageEvidence(sourceBlocks: WorkspaceSourceBlocks): Dama
     if (!asvDamageRowHasData(d)) continue;
     rows.push({
       date: d.date.trim() || "datums nav",
-      descriptionLv: d.description.trim() || "Bojājuma ieraksts",
+      descriptionLv: auctionDamageLv(d.description) || "Bojājuma ieraksts",
       amount: displayAmount(d.amount),
       sourceLabel: "ASV",
     });
