@@ -5,6 +5,7 @@
  */
 
 import type { AutoparksCar } from "@/lib/iriss-autoparks";
+import { V2_VAT_MODE_LV, type V2VatMode } from "@/lib/iriss-autoparks-v2";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
 import type { OfferDraft } from "@/lib/iriss-offer-draft";
 
@@ -26,6 +27,7 @@ export type OfferSeedFields = Partial<
     | "equipmentHighlights"
     | "auctionPlatform"
     | "auctionStockNumber"
+    | "vatStatus"
     | "carPrice"
     | "priceGermany"
   >
@@ -46,11 +48,14 @@ export const OFFER_SEED_TAG_KEYS = [
   "equipmentHighlights",
   "auctionPlatform",
   "auctionStockNumber",
+  "vatStatus",
   "carPrice",
 ] as const;
 
 export type AutoparksSeedExtras = {
   tech?: { firstRegDate?: string; displacementCm3?: number | null; powerKw?: number | null } | null;
+  /** Iepirkuma dati (izsole, Lot/stock nr., PVN režīms) - Autoparka v2 `purchase`. */
+  purchase?: { auction?: string; auctionNo?: string; vat?: { mode?: V2VatMode } } | null;
   location?: string;
   displayName?: string;
   equipmentLine?: string;
@@ -81,6 +86,7 @@ export function offerSeedFromAutoparks(car: AutoparksCar, extras: AutoparksSeedE
   const makeModel = txt(extras.displayName) || txt(car.displayName) || txt(`${car.make} ${car.model}`) || txt(reg?.makeModel);
   const firstReg = txt(extras.tech?.firstRegDate) || txt(reg?.firstRegDate) || txt(car.year, 40);
   const odometer = km(reg?.odometerKm ?? null) || km(car.mileageKm);
+  const vatMode = extras.purchase?.vat?.mode;
   return compact({
     brandModel: makeModel,
     vin: txt(car.vin, 32).toUpperCase(),
@@ -95,6 +101,9 @@ export function offerSeedFromAutoparks(car: AutoparksCar, extras: AutoparksSeedE
     color: txt(car.color, 60),
     location: txt(extras.location) || txt(car.location),
     equipmentHighlights: txt(extras.equipmentLine, 600) || txt(car.equipmentLine, 600),
+    auctionPlatform: txt(extras.purchase?.auction, 80),
+    auctionStockNumber: txt(extras.purchase?.auctionNo, 80),
+    vatStatus: vatMode ? txt(V2_VAT_MODE_LV[vatMode], 40) : "",
   });
 }
 

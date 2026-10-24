@@ -30,6 +30,16 @@ describe("autoparks /STOCK mapes", () => {
     expect(matchStockFolderByVin(stock, "")).toEqual({ kind: "none" });
   });
 
+  it("atrod mapi pēc Nila ziņotā parauga (j35: domuzīme, atstarpes, pēdējie 6 VIN cipari)", () => {
+    const realStock = [`Volvo XC90 2010 balts${SEP}568808${SEP}A1`, ...stock];
+    expect(matchStockFolderByVin(realStock, "YV1CZ7146B1568808")).toMatchObject({ kind: "found", index: 0 });
+    // Dubultā atstarpe un parasts "-" (nevis "–") arī jāsakrīt.
+    expect(matchStockFolderByVin(["Volvo XC90 2010 balts -  568808 - A1"], "YV1CZ7146B1568808")).toMatchObject({
+      kind: "found",
+      index: 0,
+    });
+  });
+
   it("vairāki trāpījumi = neskaidrs, arhīva mapes ignorē", () => {
     const dup = [...stock, `Volvo XC60 balts${SEP}439274${SEP}A1`, `_ Arhīvs vecais${SEP}005716`];
     expect(matchStockFolderByVin(dup, "YV1DZ8256D2439274").kind).toBe("ambiguous");

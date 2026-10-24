@@ -47,6 +47,23 @@ describe("offer seed", () => {
     expect(offerSeedTaggedKeys(f)).not.toContain("carPrice");
   });
 
+  it("fills the Lot/stock nr. and PVN status from Autoparka v2 purchase data", () => {
+    const f = offerSeedFromAutoparks(car, {
+      purchase: { auction: "Auto1", auctionNo: "568808", vat: { mode: "margin" } },
+    });
+    expect(f.auctionPlatform).toBe("Auto1");
+    expect(f.auctionStockNumber).toBe("568808");
+    expect(f.vatStatus).toBe("Margin");
+    expect(offerSeedTaggedKeys(f)).toEqual(expect.arrayContaining(["auctionStockNumber", "vatStatus"]));
+  });
+
+  it("leaves the Lot/stock nr. and PVN status empty when there is no purchase vat mode", () => {
+    const f = offerSeedFromAutoparks(car, { purchase: { auction: "", auctionNo: "", vat: { mode: "" } } });
+    expect(f.auctionPlatform).toBeUndefined();
+    expect(f.auctionStockNumber).toBeUndefined();
+    expect(f.vatStatus).toBeUndefined();
+  });
+
   it("prefers the v2 name, place and CSDD first registration", () => {
     const f = offerSeedFromAutoparks(car, { displayName: "BMW 320d xDrive", location: "Rīga", tech: { firstRegDate: "15.06.2020" } });
     expect(f.brandModel).toBe("BMW 320d xDrive");

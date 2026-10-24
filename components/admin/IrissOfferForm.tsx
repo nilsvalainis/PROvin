@@ -609,6 +609,7 @@ export function IrissOfferForm({
               <AdminSaveButton
                 onSave={onSave}
                 state={saveState}
+                label="Saglabāt melnrakstu"
                 disabled={!!filePrepare || pdfBusy || whatsappBusy}
                 className="h-11 min-w-0 flex-1 sm:flex-none"
               />
