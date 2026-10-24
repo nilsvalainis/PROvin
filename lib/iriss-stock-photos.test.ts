@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { offerImageFullSrc, offerImageGridSrc } from "@/lib/iriss-offer-image-sorter";
 import {
   isSafeDropboxFileId,
+  orderStockPhotoGroups,
   orderStockPhotos,
   parseOfferSourceRef,
   pendingDropboxPhotoCount,
@@ -26,6 +27,20 @@ describe("stock photos", () => {
     const out = orderStockPhotos(many);
     expect(out).toHaveLength(60);
     expect(out.at(-1)?.name).toBe("IMG_60.jpg");
+  });
+
+  it("J36: orders groups separately so izsole/canon never interleave by name", () => {
+    const izsole = [f(1, "10.jpg"), f(2, "2.jpg"), f(3, "1.jpg")];
+    const canon = [f(4, "2.jpg"), f(5, "1.jpg")];
+    const out = orderStockPhotoGroups([izsole, canon]);
+    expect(out.map((p) => p.dropboxId)).toEqual(["id:file3", "id:file2", "id:file1", "id:file5", "id:file4"]);
+  });
+
+  it("J36: group order still honors the Autoparks main photo first", () => {
+    const izsole = [f(1, "1.jpg"), f(2, "2.jpg")];
+    const canon = [f(3, "1.jpg")];
+    const out = orderStockPhotoGroups([izsole, canon], { mainPhotoId: "id:file3" });
+    expect(out.map((p) => p.dropboxId)).toEqual(["id:file3", "id:file1", "id:file2"]);
   });
 
   it("parses only autoparks/logistics refs and Dropbox ids", () => {

@@ -128,4 +128,112 @@ describe("Autoparks <-> /STOCK sinhronizācija", () => {
     const { sync } = await load();
     expect(await sync.runAutoparksDropboxSync()).toMatchObject({ ok: false, error: "dropbox_not_configured" });
   });
+
+  it("J36: jaunā struktūra - dokumenti tikai no doc/ + saknes; bildes apakšmapēs netiek pievienotas kā dokumenti", async () => {
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    db.add("folder", FOLDER);
+    db.add("file", `${FOLDER}/info.txt`, "VIN: YV1DZ8256D2439274\nBuild year: 2013\nOdometer: 355,756 km\nColour: Silver");
+    db.add("folder", `${FOLDER}/doc`);
+    db.add("file", `${FOLDER}/doc/proforma_DEPR02396489.pdf`, "pdf");
+    db.add("folder", `${FOLDER}/bildes-izsole`);
+    db.add("file", `${FOLDER}/bildes-izsole/1.jpg`, "img");
+    db.add("file", `${FOLDER}/bildes-izsole/note.txt`, "piezīme par bildēm - nav dokuments");
+    db.add("file", `${FOLDER}/legacy_CMR.pdf`, "cmr");
+    holder.client = db.client;
+    const { store, sync } = await load();
+    const car = await store.createAutoparksCar({ make: "Volvo", vin: "YV1DZ8256D2439274", color: "Sudraba" }, actor);
+    const r = await sync.runAutoparksDropboxSync();
+    expect(r).toMatchObject({ ok: true, linked: 1 });
+    const room = await store.getAutoparksRoom(car.id);
+    expect(room?.files.map((f) => f.fileName).sort()).toEqual(["legacy_CMR.pdf", "proforma_DEPR02396489.pdf"]);
+  });
+});
+
+describe("J36: /STOCK bilžu apakšmapes (bildes-izsole/bildes-canon)", () => {
+  it("izsole + canon apvienotas grupās, saknes fallback, ja neviena apakšmape neeksistē", async () => {
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    db.add("folder", FOLDER);
+    db.add("file", `${FOLDER}/02.jpg`, "img");
+    db.add("file", `${FOLDER}/01.jpg`, "img");
+    holder.client = db.client;
+    const { sync } = await load();
+    const client = db.client as unknown as Parameters<typeof sync.listAutoparksStockPhotoGroups>[0];
+    const rootGroups = await sync.listAutoparksStockPhotoGroups(client, FOLDER);
+    expect(rootGroups.flat().map((e) => e.name).sort()).toEqual(["01.jpg", "02.jpg"]);
+
+    db.add("folder", `${FOLDER}/bildes-izsole`);
+    db.add("file", `${FOLDER}/bildes-izsole/1.jpg`, "img");
+    db.add("folder", `${FOLDER}/bildes-canon`);
+    db.add("file", `${FOLDER}/bildes-canon/1.jpg`, "img");
+    const groups = await sync.listAutoparksStockPhotoGroups(client, FOLDER);
+    expect(groups).toHaveLength(2);
+    expect(groups[0]!.map((e) => e.pathDisplay)).toEqual([`${FOLDER}/bildes-izsole/1.jpg`]);
+    expect(groups[1]!.map((e) => e.pathDisplay)).toEqual([`${FOLDER}/bildes-canon/1.jpg`]);
+  });
+});
+
+describe("J36: Autoparka ierakstu pārpiesaiste zināmajām /STOCK mapēm", () => {
+  const NEW_FOLDER = "/STOCK/Mercedes Viano 2012 brūns – N1 – A1";
+  const OLD_FOLDER = "/STOCK/Mercedes-Benz Viano 2012 brūns – 773018";
+  const VIN = "WDF63981313773018";
+
+  it("pārpiesaista, ja auto piesaistīts tukšai vecajai mapei; otrā palaišana ir no-op (already_linked)", async () => {
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    const oldFolder = db.add("folder", OLD_FOLDER);
+    const newFolder = db.add("folder", NEW_FOLDER);
+    db.add("folder", `${NEW_FOLDER}/doc`);
+    db.add("file", `${NEW_FOLDER}/doc/invoice.pdf`, "pdf");
+    holder.client = db.client;
+    const { store, sync } = await load();
+    const car = await store.createAutoparksCar({ make: "Mercedes-Benz", model: "Viano", vin: VIN }, actor);
+    await store.mutateAutoparksState((state) => {
+      const idx = state.cars.findIndex((c) => c.id === car.id);
+      state.cars[idx] = { ...state.cars[idx]!, dropboxFolderId: oldFolder.id, dropboxFolderPath: OLD_FOLDER };
+      return { result: null };
+    });
+
+    const results = await sync.relinkKnownAutoparksV2Folders("Tests");
+    const own = results.find((r) => r.vin === VIN)!;
+    expect(own).toMatchObject({ carId: car.id, applied: true, to: NEW_FOLDER });
+    const after = await store.getAutoparksRoom(car.id);
+    expect(after?.car.dropboxFolderId).toBe(newFolder.id);
+    expect(after?.car.dropboxFolderPath).toBe(NEW_FOLDER);
+
+    const again = await sync.relinkKnownAutoparksV2Folders("Tests");
+    expect(again.find((r) => r.vin === VIN)).toMatchObject({ applied: false, reason: "already_linked" });
+  });
+
+  it("neko nemaina, ja vecā mape nav tukša (nenoteiktība - ziņo, nemaina)", async () => {
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    const oldFolder = db.add("folder", OLD_FOLDER);
+    db.add("file", `${OLD_FOLDER}/kaut-kas.jpg`, "img");
+    db.add("folder", NEW_FOLDER);
+    holder.client = db.client;
+    const { store, sync } = await load();
+    const car = await store.createAutoparksCar({ make: "Mercedes-Benz", model: "Viano", vin: VIN }, actor);
+    await store.mutateAutoparksState((state) => {
+      const idx = state.cars.findIndex((c) => c.id === car.id);
+      state.cars[idx] = { ...state.cars[idx]!, dropboxFolderId: oldFolder.id, dropboxFolderPath: OLD_FOLDER };
+      return { result: null };
+    });
+
+    const results = await sync.relinkKnownAutoparksV2Folders("Tests");
+    expect(results.find((r) => r.vin === VIN)).toMatchObject({ applied: false, reason: "old_folder_not_empty" });
+    const after = await store.getAutoparksRoom(car.id);
+    expect(after?.car.dropboxFolderId).toBe(oldFolder.id);
+  });
+
+  it("ziņo car_not_found, ja neviens auto ieraksts neatbilst zināmajam VIN", async () => {
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    holder.client = db.client;
+    const { sync } = await load();
+    const results = await sync.relinkKnownAutoparksV2Folders("Tests");
+    expect(results).toHaveLength(5);
+    expect(results.every((r) => r.reason === "car_not_found")).toBe(true);
+  });
 });

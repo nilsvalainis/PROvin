@@ -8,7 +8,7 @@ import "server-only";
 
 import { getDropboxClient, type DropboxClient } from "@/lib/dropbox-client";
 import type { AutoparksCar } from "@/lib/iriss-autoparks";
-import { isStockPhoto } from "@/lib/iriss-autoparks-dropbox-sync";
+import { listAutoparksStockPhotoGroups } from "@/lib/iriss-autoparks-dropbox-sync";
 import { resolveAutoparksCarFolder } from "@/lib/iriss-autoparks-files";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { getLogisticsOrder } from "@/lib/iriss-logistics-store";
@@ -16,7 +16,7 @@ import { offerSeedFromAutoparks, offerSeedFromLogistics, offerSeedTaggedKeys, ty
 import type { IrissOfferAttachment } from "@/lib/iriss-pasutijumi-types";
 import {
   offerSourceRefString,
-  orderStockPhotos,
+  orderStockPhotoGroups,
   stockPhotoAttachment,
   type OfferSourceRef,
   type StockPhoto,
@@ -88,11 +88,8 @@ export async function listOfferSourcePhotos(ref: OfferSourceRef, opts: { fresh?:
     listings.set(key, { at: Date.now(), photos: [], folderId: "" });
     return [];
   }
-  const { entries } = await client.listAll(folder.path, { recursive: false });
-  const photos = orderStockPhotos(
-    entries.filter((e) => e.tag === "file" && isStockPhoto(e.name)),
-    { mainPhotoId: folder.mainPhotoId },
-  );
+  const groups = await listAutoparksStockPhotoGroups(client, folder.path);
+  const photos = orderStockPhotoGroups(groups, { mainPhotoId: folder.mainPhotoId });
   listings.set(key, { at: Date.now(), photos, folderId: folder.id });
   return photos;
 }

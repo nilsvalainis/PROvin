@@ -1,8 +1,8 @@
 import "server-only";
 
-import { getDropboxClient } from "@/lib/dropbox-client";
+import { getDropboxClient, type DropboxClient } from "@/lib/dropbox-client";
 import type { AutoparksCar } from "@/lib/iriss-autoparks";
-import { isStockPhoto } from "@/lib/iriss-autoparks-dropbox-sync";
+import { AUTOPARKS_STOCK_PHOTO_SUBFOLDERS, isStockPhoto, listAutoparksStockPhotoGroups, listAutoparksStockSubfolderPhotos } from "@/lib/iriss-autoparks-dropbox-sync";
 import { makeAutoparksThumbnail } from "@/lib/iriss-autoparks-files";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import type { AutoparksCarV2 } from "@/lib/iriss-autoparks-v2";
@@ -14,15 +14,21 @@ const RECHECK_MS = 24 * 60 * 60 * 1000;
 
 export type StockPhotoCandidate = { id: string; name: string };
 
-/** Auto /STOCK mapes pirmā līmeņa bildes (izsoles foto apakšmapēs un Loģistikā netiek ņemti). */
+/** Pirmā (priekšas) foto nosaukums jaunajā struktūrā - `bildes-izsole/1.jpg` vai `bildes-canon/1.jpg` (J36). */
+const FRONT_PHOTO_RE = /^1\.(jpe?g|png|heic|heif|webp|gif)$/i;
+
+/**
+ * Auto /STOCK mapes bilžu kandidāti: jaunajā struktūrā (J36) `bildes-izsole/` + `bildes-canon/`
+ * apakšmapes, ar vecās struktūras (saknes bildes) fallback, ja neviena apakšmape neeksistē/tukša.
+ */
 export async function autoparksV2StockPhotoCandidates(car: Pick<AutoparksCar, "dropboxFolderId">): Promise<StockPhotoCandidate[]> {
   const client = getDropboxClient();
   if (!client || !car.dropboxFolderId) return [];
   try {
     const folder = await client.getMetadata(car.dropboxFolderId);
     if (folder?.tag !== "folder") return [];
-    const { entries } = await client.listAll(folder.pathDisplay, { recursive: false });
-    return entries.filter((e) => e.tag === "file" && e.id && isStockPhoto(e.name)).map((e) => ({ id: e.id, name: e.name }));
+    const groups = await listAutoparksStockPhotoGroups(client, folder.pathDisplay);
+    return groups.flat().map((e) => ({ id: e.id, name: e.name }));
   } catch (err) {
     console.warn("[autoparks v2 foto kandidāti]", err instanceof Error ? err.message : err);
     return [];
@@ -30,9 +36,25 @@ export async function autoparksV2StockPhotoCandidates(car: Pick<AutoparksCar, "d
 }
 
 /**
- * Galvenā bilde: TIKAI no auto /STOCK mapes pirmā līmeņa (izsoles foto apakšmapēs un Loģistikā netiek ņemti).
- * Izvēle pēc heuristikas (`pickStockMainPhoto`, J29 A - priekšas 3/4 leņķa ārskata foto, ja atšķirams pēc
- * nosaukuma; citādi pirmā pēc nosaukuma). Sīktēls Blob; skatās ne biežāk kā 1x dienā.
+ * Galvenās bildes automātiska izvēle (J36): `bildes-izsole/1.jpg` -> `bildes-canon/1.jpg` (priekšas
+ * skats pēc IRISS nosaukuma konvencijas) -> vecā loģika (saknes bildes, heuristika pēc nosaukuma).
+ */
+async function pickAutoparksV2MainPhotoCandidate(client: DropboxClient, car: Pick<AutoparksCar, "dropboxFolderId">): Promise<StockPhotoCandidate | null> {
+  if (!car.dropboxFolderId) return null;
+  const folder = await client.getMetadata(car.dropboxFolderId);
+  if (folder?.tag !== "folder") return null;
+  for (const subfolder of AUTOPARKS_STOCK_PHOTO_SUBFOLDERS) {
+    const files = await listAutoparksStockSubfolderPhotos(client, folder.pathDisplay, subfolder);
+    const front = files.find((f) => FRONT_PHOTO_RE.test(f.name));
+    if (front) return { id: front.id, name: front.name };
+  }
+  const { entries } = await client.listAll(folder.pathDisplay, { recursive: false });
+  const root = entries.filter((e) => e.tag === "file" && e.id && isStockPhoto(e.name)).map((e) => ({ id: e.id, name: e.name }));
+  return pickStockMainPhoto(root);
+}
+
+/**
+ * Galvenā bilde: sīktēls Blob; skatās ne biežāk kā 1x dienā. Izvēle - skat. `pickAutoparksV2MainPhotoCandidate`.
  */
 export async function autoparksV2MainPhoto(car: AutoparksCar, v2: AutoparksCarV2): Promise<Buffer | null> {
   if (v2.mainPhoto?.thumbBlobPath) {
@@ -43,7 +65,7 @@ export async function autoparksV2MainPhoto(car: AutoparksCar, v2: AutoparksCarV2
   if (Number.isFinite(checked) && Date.now() - checked < RECHECK_MS) return null;
   const client = getDropboxClient();
   if (!client || !car.dropboxFolderId) return null;
-  const picked = pickStockMainPhoto(await autoparksV2StockPhotoCandidates(car));
+  const picked = await pickAutoparksV2MainPhotoCandidate(client, car);
   let thumb: Buffer | null = null;
   if (picked) {
     try {
