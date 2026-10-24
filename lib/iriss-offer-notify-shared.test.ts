@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   buildIrissOfferDecisionEmail,
+  buildIrissOfferQuestionEmail,
   irissOfferClientShortName,
   irissOfferDecisionPushMessage,
   irissOfferExpiredPushMessage,
+  irissOfferQuestionPushMessage,
 } from "@/lib/iriss-offer-notify-shared";
 
 const facts = {
@@ -58,5 +60,30 @@ describe("IRISS offer notifications", () => {
     expect(irissOfferClientShortName("Jānis", "Bērziņš")).toBe("Jānis B.");
     expect(irissOfferClientShortName("", "Ēvalds")).toBe("Ē.");
     expect(irissOfferClientShortName(" Anna ", "")).toBe("Anna");
+  });
+
+  it("j41 F5: builds the e-mail for Nils with the question text, client, car and sum", () => {
+    const mail = buildIrissOfferQuestionEmail(facts, "Vai iespējams piegādāt uz Liepāju?", "https://www.provin.lv/");
+    expect(mail.subject).toBe("Jautājums par piedāvājumu: BMW X5 xDrive30d");
+    expect(mail.question).toBe("Vai iespējams piegādāt uz Liepāju?");
+    expect(mail.lines).toEqual([
+      { label: "Klients", value: "Jānis B." },
+      { label: "Auto", value: "BMW X5 xDrive30d · VIN …A12345" },
+      { label: "Summa", value: "38 900 €" },
+    ]);
+    expect(mail.url).toBe("https://www.provin.lv/admin/iriss/pasutijumi/11111111-1111-4111-8111-111111111111");
+    expect(mail.text).toContain("Vai iespējams piegādāt uz Liepāju?");
+    expect(mail.text).toContain("Atvērt pasūtījumu: https://www.provin.lv/admin/iriss/pasutijumi/");
+  });
+
+  it("j41 F5: question push keeps the client name and question text off the lock screen", () => {
+    const push = irissOfferQuestionPushMessage(facts);
+    expect(push).toEqual({
+      title: "Jautājums par piedāvājumu",
+      body: "BMW X5 xDrive30d · …A12345",
+      url: "/admin/iriss/pasutijumi/11111111-1111-4111-8111-111111111111",
+      tag: "offer-22222222-2222-4222-8222-222222222222",
+      audience: "iriss",
+    });
   });
 });
