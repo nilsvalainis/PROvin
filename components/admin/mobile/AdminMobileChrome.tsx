@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
 import { useAdminShellLayout } from "@/components/admin/AdminShellLayoutContext";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminMobileColorScheme } from "@/components/admin/useAdminMobileViewport";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { adminChromeDataset } from "@/lib/admin-chrome-attrs";
@@ -356,6 +357,7 @@ export function AdminMobileSheet({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+  const scrimClose = useModalBackdropClose(onClose);
   if (!shown) return null;
   const panel = (
     <div className="admin-m admin-sheet-root md:hidden" role="dialog" aria-modal="true" aria-label={title} data-open={open ? "true" : "false"} {...adminChromeDataset(layoutWorkspace, theme)}>
@@ -363,7 +365,7 @@ export function AdminMobileSheet({
         type="button"
         aria-label="Aizvērt"
         className="admin-sheet-scrim"
-        onClick={onClose}
+        {...scrimClose}
         onTransitionEnd={() => {
           if (!open) setShown(false);
         }}

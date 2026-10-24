@@ -3,6 +3,7 @@
 import { AdminSaveButton } from "@/components/admin/AdminSaveButton";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { openGeneratedHtmlDocument } from "@/lib/admin-open-window";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { flushSync } from "react-dom";
@@ -4504,12 +4505,13 @@ export function OrderDetailWorkspace({
     </section>
   );
 
+  const portfolioAllFilesModalBackdropClose = useModalBackdropClose(() => setPortfolioAllFilesModalOpen(false));
   const portfolioAllFilesModal =
     portfolioAllFilesModalOpen && portfolio.length > 0 ? (
       <div
         className={`admin-order-page fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-3 ${adminDark ? "dark" : ""}`}
         role="presentation"
-        onClick={() => setPortfolioAllFilesModalOpen(false)}
+        {...portfolioAllFilesModalBackdropClose}
       >
         <div
           role="dialog"

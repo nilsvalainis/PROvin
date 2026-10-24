@@ -2,6 +2,7 @@
 
 import { ChevronDown, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import {
   filterIrissOfferClientOptions,
   irissOfferClientOptions,
@@ -54,6 +55,10 @@ export function IrissOfferClientPicker({ value, onChange, lockedName, disabled =
   }, [open, options]);
 
   const visible = useMemo(() => filterIrissOfferClientOptions(options ?? [], query).slice(0, 80), [options, query]);
+  const backdropClose = useModalBackdropClose(() => {
+    setOpen(false);
+    setQuery("");
+  });
 
   if (lockedName !== undefined) {
     return (
@@ -90,10 +95,7 @@ export function IrissOfferClientPicker({ value, onChange, lockedName, disabled =
         <div
           className="fixed inset-0 z-[130] flex items-end justify-center bg-black/40 sm:items-center sm:p-6"
           role="presentation"
-          onClick={(e) => {
-            e.stopPropagation();
-            close();
-          }}
+          {...backdropClose}
         >
           <div
             role="dialog"

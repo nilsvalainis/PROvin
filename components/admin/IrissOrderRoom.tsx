@@ -5,6 +5,7 @@ import { AdminSaveButton, useSaveMessageState } from "@/components/admin/AdminSa
 import { ChevronRight, FileDown, FileText, Mail, Pencil, Phone, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode, type TouchEvent } from "react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { IrissLazyImage } from "@/components/admin/IrissLazyImage";
 import { IrissOrderRoomHitCard } from "@/components/admin/IrissOrderRoomHitCard";
@@ -430,6 +431,7 @@ export function IrissOrderRoom({
   const [priceFilter, setPriceFilter] = useState<IrissPriceChipFilter>("all");
   const [priceFilterOpen, setPriceFilterOpen] = useState(false);
   const [criteriaOpen, setCriteriaOpen] = useState(false);
+  const criteriaBackdropClose = useModalBackdropClose(() => setCriteriaOpen(false));
   const [criteriaOn, setCriteriaOn] = useState(false);
   const [criteriaDraft, setCriteriaDraft] = useState<CriteriaDraft>(() => criteriaFrom(rec));
   const [excludeDraft, setExcludeDraft] = useState("");
@@ -1853,7 +1855,7 @@ export function IrissOrderRoom({
       </AdminMobileSheet>
 
       {criteriaOpen ? (
-        <div className="fixed inset-0 z-[80] flex items-end justify-end bg-[#0f172a66] md:items-stretch" role="presentation" onClick={() => setCriteriaOpen(false)}>
+        <div className="fixed inset-0 z-[80] flex items-end justify-end bg-[#0f172a66] md:items-stretch" role="presentation" {...criteriaBackdropClose}>
           <div
             role="dialog"
             aria-modal="true"

@@ -4,6 +4,7 @@ import { Check, Copy, Link2, Loader2, Mail, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import {
   buildClientLinkWhatsAppText,
@@ -252,6 +253,12 @@ export function AdminClientLinkButton({ variant = "toolbar" }: { variant?: "tool
     setRequire((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const closeDialog = useCallback(() => {
+    void persist();
+    setOpen(false);
+  }, [persist]);
+  const backdropClose = useModalBackdropClose(closeDialog);
+
   return (
     <>
       {variant === "sheet" ? (
@@ -272,10 +279,7 @@ export function AdminClientLinkButton({ variant = "toolbar" }: { variant?: "tool
         <div
           className="fixed inset-0 z-[50] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
           role="presentation"
-          onClick={() => {
-            void persist();
-            setOpen(false);
-          }}
+          {...backdropClose}
         >
           <div
             role="dialog"

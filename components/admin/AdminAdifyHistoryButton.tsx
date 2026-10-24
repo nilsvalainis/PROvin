@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { adminActionPillBase } from "@/components/admin/adminActionPill";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { loadListingPriceHistorySnapshot } from "@/lib/admin-listing-history-client";
 import {
   adifyChronologicalPriceRows,
@@ -33,6 +34,7 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const close = useCallback(() => setOpen(false), []);
+  const backdropClose = useModalBackdropClose(close);
 
   const load = useCallback(async () => {
     if (!url) return;
@@ -79,7 +81,7 @@ export function AdminAdifyHistoryButton({ listingUrl }: Props) {
     open && typeof document !== "undefined" ? (
       <div
         className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-900/40 p-3 sm:items-center"
-        onClick={close}
+        {...backdropClose}
       >
         <div
           role="dialog"
