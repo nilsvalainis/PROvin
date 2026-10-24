@@ -97,6 +97,23 @@ describe("offer seed", () => {
     });
   });
 
+  it("j41 F1: fills the origin country (valsts) from the Logistics pickup point", () => {
+    const order = {
+      id: "ord3",
+      make: "Audi",
+      model: "A6",
+      vin: "WAUZZZ4G0EN123456",
+      title: "",
+      auction: "",
+      stockNo: "",
+      priceEur: null,
+      mileageKm: null,
+      listingParsed: null,
+      pickupSnapshot: { country: "DE" },
+    } as unknown as LogisticsOrder;
+    expect(offerSeedFromLogistics(order).originCountry).toBe("DE");
+  });
+
   it("drops the logistics price when sums are hidden for the user", () => {
     const order = {
       id: "ord2",

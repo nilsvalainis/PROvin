@@ -25,6 +25,7 @@ export type OfferSeedFields = Partial<
     | "engineDisplacement"
     | "color"
     | "location"
+    | "originCountry"
     | "equipmentHighlights"
     | "auctionPlatform"
     | "auctionStockNumber"
@@ -55,6 +56,7 @@ export const OFFER_SEED_TAG_KEYS = [
   "engineDisplacement",
   "color",
   "location",
+  "originCountry",
   "equipmentHighlights",
   "auctionPlatform",
   "auctionStockNumber",
@@ -149,6 +151,7 @@ export function offerSeedFromLogistics(order: LogisticsOrder, opts: { hideSums?:
     carPrice: priceText,
     priceGermany: priceText,
     location: txt(parsed?.address),
+    originCountry: txt(order.pickupSnapshot?.country, 80),
   });
 }
 
