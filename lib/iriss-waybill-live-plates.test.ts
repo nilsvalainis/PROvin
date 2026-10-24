@@ -157,7 +157,8 @@ describe("j25 numuru stāvoklis apļiem un pogām", () => {
     const b192 = plates.find((p) => p.plate === "B192-7")!;
     // Vecā (indeksa) pavadzīme joprojām tehniski derīga - "aizņemts" nemainās, kamēr jaunā nav izdota.
     expect(b192.busy).toBe(true);
-    expect(b192.issuing).toEqual({ brandModel: "VW Touran" });
+    // j47: B192 vienmēr ar roku - aplis rāda "Aivars".
+    expect(b192.issuing).toEqual({ brandModel: "VW Touran", manual: true });
     const g = waybillGaugesFromPlates(plates, [], new Date(NOW)).find((x) => x.plate === "B192-7");
     // Bet aplis vairs nerāda veco P02811 atlikumu - rāda, ka tiek izdota jauna.
     expect(g).toMatchObject({ busy: false, status: "issuing", brandModel: "VW Touran" });

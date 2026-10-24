@@ -16,7 +16,24 @@ import {
 export type WaybillLiveRequest = Pick<
   WaybillRequest,
   "id" | "status" | "createdAt" | "updatedAt" | "validUntil" | "waybillNo" | "vehicle"
->;
+> &
+  Partial<Pick<WaybillRequest, "pickedBy" | "autoDisabled" | "attempts" | "plateBusyAtCreate" | "handoffAt">>;
+
+/**
+ * j47: pieprasījumu izraksta Aivars ar roku (ne automātika). Bez servera konteksta (testa režīms, numura aizņemtība)
+ * - tikai pazīmes pašā pieprasījumā; pārējie paliek "izdod...".
+ */
+export function waybillRequestIsManual(r: WaybillLiveRequest): boolean {
+  if (r.status === "in_progress") return Boolean(r.pickedBy) && r.pickedBy !== "auto";
+  if (r.status !== "queued") return false;
+  return (
+    r.autoDisabled === true ||
+    Boolean(r.handoffAt) ||
+    (r.attempts ?? 1) > 1 ||
+    r.plateBusyAtCreate === true ||
+    compactDealerPlate(r.vehicle.plate) === "B1927"
+  );
+}
 
 function ms(iso: string | undefined): number {
   const t = Date.parse(iso ?? "");
@@ -77,7 +94,12 @@ export function withWaybillRequestStates(
       }
     }
     const issuing = issuingFor(state.plate, requests, nowMs);
-    if (issuing) next.issuing = { brandModel: issuing.vehicle.brandModel.trim() };
+    if (issuing) {
+      next.issuing = {
+        brandModel: issuing.vehicle.brandModel.trim(),
+        ...(waybillRequestIsManual(issuing) ? { manual: true } : {}),
+      };
+    }
     return next;
   });
 }

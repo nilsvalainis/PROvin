@@ -135,6 +135,13 @@ export type WaybillRequest = {
   /** Pēdējā Dropbox saglabāšanas kļūda (rāda adminam; cron mēģina vēlreiz). */
   dropboxError: string;
   dropboxAt: string;
+  /**
+   * j47: automātika darbu neizrakstīja un nodeva Aivaram (release vai neveiksmīgs rezultāts). Teksts Aivaram,
+   * vai pirms izrakstīšanas jāpārbauda CSDD (kļūda Saglabāt laikā/pēc), un kad nodots. Tukšs = nav nodots.
+   */
+  handoffReason?: string;
+  handoffCheckCsdd?: boolean;
+  handoffAt?: string;
 };
 
 export type WaybillRequestsDoc = {
@@ -220,8 +227,25 @@ export function parseWaybillRequest(raw: unknown): WaybillRequest | null {
     dropboxPath: str(o.dropboxPath, 300),
     dropboxError: str(o.dropboxError, 300),
     dropboxAt: str(o.dropboxAt, 40),
+    handoffReason: str(o.handoffReason, 300),
+    handoffCheckCsdd: o.handoffCheckCsdd === true,
+    handoffAt: str(o.handoffAt, 40),
   };
 }
+
+/**
+ * j47: automātikas neveiksmīgs rezultāts (`result ok:false, by:"auto"`) nedrīkst klusi palikt "Kļūda" - pavadzīme
+ * nav izrakstīta un Aivars par to neuzzina. Visu nododam Aivaram, IZŅEMOT "numurs CSDD aizņemts" (tur jāizlemj
+ * lietotājam: nosūtīt vēlreiz un apstiprināt anulēšanu). checkCsddFirst: ja nav droši zināms, ka CSDD pavadzīme
+ * NAV izveidota (kļūda Saglabāt laikā/pēc), Aivars vispirms pārbauda CSDD, lai neizrakstītu dublikātu.
+ */
+export function autoFailureHandoff(errorReason: string): { handoff: boolean; checkCsddFirst: boolean } {
+  const text = errorReason.trim();
+  if (/CSDD aizņem/i.test(text)) return { handoff: false, checkCsddFirst: false };
+  return { handoff: true, checkCsddFirst: !/NAV izveidota/.test(text) };
+}
+
+export const WAYBILL_HANDOFF_TEXT = "Nodots Aivaram - izraksta ar roku.";
 
 export function parseWaybillRequestEvent(raw: unknown): WaybillRequestEvent | null {
   if (!raw || typeof raw !== "object") return null;
@@ -487,8 +511,11 @@ export function waybillAivarsReply(
   const expired = waybillPendingExpired(request, nowMs);
   const autoStandard = request.status === "queued" && auto ? auto.isStandard(request) : undefined;
   const autoReason = request.status === "queued" && auto?.reasonFor && autoStandard === false ? auto.reasonFor(request) : "";
-  const queuedHonest =
-    request.status === "queued"
+  // j47: automātikas nodots darbs - rāda, kāpēc nodots un ka izraksta Aivars (nevis vispārīgu "neder").
+  const handedText = request.status === "queued" && request.handoffAt && !expired ? request.lastReplyText : "";
+  const queuedHonest = handedText
+    ? handedText
+    : request.status === "queued"
       ? waybillQueuedText({ expired, autoMode: auto?.mode, autoStandard, autoReason, waitedMs: waybillQueuedWaitedMs(request, nowMs) })
       : "";
   const stageText =

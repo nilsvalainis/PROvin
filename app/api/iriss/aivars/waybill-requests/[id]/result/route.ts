@@ -1,7 +1,9 @@
 import { NextResponse, after } from "next/server";
 import { irissAivarsApiTokenConfigured, verifyIrissAivarsApiToken } from "@/lib/iriss-aivars-api-token";
 import { toAivarsCreateWaybillAction } from "@/lib/iriss-waybill-create";
-import { completeWaybillRequest } from "@/lib/iriss-waybill-requests-store";
+import { completeWaybillRequest, handAutoFailureToAivars } from "@/lib/iriss-waybill-requests-store";
+import { autoFailureHandoff } from "@/lib/iriss-waybill-requests";
+import { wakeAivars } from "@/lib/iriss-aivars-wake";
 import { uploadIrissPavadzime } from "@/lib/iriss-pavadzimes-store";
 import { ensureWaybillRequestInDropbox } from "@/lib/iriss-waybill-dropbox";
 
@@ -52,13 +54,30 @@ export async function POST(req: Request, ctx: Ctx) {
       );
     }
   }
+  const by = body.by === "auto" ? "auto" : "aivars";
+  const errorReason = typeof body.errorReason === "string" ? body.errorReason : "";
+  // j47: automātikas neveiksme nedrīkst palikt klusa "Kļūda" - pavadzīme nav izrakstīta, Aivars par to nezina.
+  // Nododam Aivaram (atpakaļ rindā, neautomātisks) un pamodinām. Izņēmums: "numurs CSDD aizņemts" - lemj lietotājs.
+  if (!ok && by === "auto") {
+    const decision = autoFailureHandoff(errorReason);
+    if (decision.handoff) {
+      const handed = await handAutoFailureToAivars({ id, reason: errorReason, checkCsddFirst: decision.checkCsddFirst });
+      if (handed) {
+        after(() => wakeAivars(handed.id));
+        return NextResponse.json(
+          { ok: true, request: toAivarsCreateWaybillAction(handed), status: handed.status, handedToAivars: true },
+          { headers: { "Cache-Control": "private, no-store" } },
+        );
+      }
+    }
+  }
   const request = await completeWaybillRequest({
     id,
     ok,
     waybillNo,
     pdfUrl,
-    errorReason: typeof body.errorReason === "string" ? body.errorReason : "",
-    by: body.by === "auto" ? "auto" : "aivars",
+    errorReason,
+    by,
   });
   if (!request) return NextResponse.json({ error: "not_found" }, { status: 404 });
   // Izdotās pavadzīmes PDF -> Dropbox /Pavadzīmes_IRISS (idempotenti, pārbaudīts); kļūdu cron mēģina vēlreiz.

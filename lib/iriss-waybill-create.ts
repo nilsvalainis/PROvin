@@ -108,6 +108,12 @@ export type AivarsCreateWaybillAction = {
   representative: string;
   /** Lietotājs apstiprināja anulēt TIKAI šo pavadzīmi un izveidot jaunu (citādi tukšs - neko neanulēt). */
   replaceWaybillNo: string;
+  /**
+   * j47: automātika šo darbu neizrakstīja un nodeva Aivaram (vai to turēja un apklusa). checkCsddFirst = true:
+   * pirms izrakstīšanas pārbaudi CSDD, vai pavadzīme šim numuram/auto jau nav izveidota (nedrīkst dublikātu).
+   * Nav laukā = parasts darbs.
+   */
+  handoff?: { from: "auto"; reason: string; checkCsddFirst: boolean };
 };
 
 export type CreateWaybillParseResult =
@@ -362,5 +368,18 @@ export function toAivarsCreateWaybillAction(request: WaybillRequest): AivarsCrea
     tradeAct: request.tradeAct,
     representative: request.tradeAct ? request.representative : "",
     replaceWaybillNo: request.plateBusyAtCreate ? (request.replaceWaybillNo ?? "") : "",
+    ...aivarsHandoff(request),
   };
+}
+
+/** Automātikas nodots darbs vai automātikas apklusis darbs (Aivars to redz tikai pēc 30 min bez virzības). */
+function aivarsHandoff(request: WaybillRequest): Pick<AivarsCreateWaybillAction, "handoff"> {
+  if (request.status === "queued" && request.handoffAt) {
+    return { handoff: { from: "auto", reason: request.handoffReason ?? "", checkCsddFirst: request.handoffCheckCsdd === true } };
+  }
+  if (request.status === "in_progress" && request.pickedBy === "auto") {
+    const afterSave = request.stage === "saving" || request.stage === "pdf";
+    return { handoff: { from: "auto", reason: "automātika apklusa darba vidū", checkCsddFirst: afterSave || !request.stage } };
+  }
+  return {};
 }

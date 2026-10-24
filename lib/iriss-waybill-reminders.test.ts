@@ -127,3 +127,15 @@ describe("j31: iestrēgušu darbu rezerve - pamodina Aivaru ar roku", () => {
     expect(dueWaybillStuckHandoffs([stuck], { [handoff.key]: "x" }, at("2026-10-23T10:35:00.000Z"))).toEqual([]);
   });
 });
+
+describe("j47: nodots Aivaram - cron pamodina vēlreiz", () => {
+  it("automātikas nodots darbs (handoffAt) saņem jaunu pamodināšanas atslēgu, pat ja šis mēģinājums jau bija modināts", () => {
+    const base = req({ status: "queued", waybillNo: "", validUntil: "2026-10-26T10:00:00.000Z", createdAt: "2026-10-24T10:00:00.000Z", updatedAt: "2026-10-24T10:20:00.000Z" });
+    const nowMs = at("2026-10-24T10:30:00.000Z");
+    expect(dueWaybillStuckHandoffs([base], {}, nowMs)).toEqual([{ key: "handoff:wbr_a:1", requestId: "wbr_a" }]);
+    const handed = { ...base, autoDisabled: true, handoffAt: "2026-10-24T10:20:00.000Z" };
+    expect(dueWaybillStuckHandoffs([handed], { "handoff:wbr_a:1": "x" }, nowMs)).toEqual([
+      { key: "handoff:wbr_a:1:2026-10-24T10:20:00.000Z", requestId: "wbr_a" },
+    ]);
+  });
+});

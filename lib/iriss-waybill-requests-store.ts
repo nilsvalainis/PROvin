@@ -14,6 +14,7 @@ import {
   pendingWaybillRequests,
   waybillPendingExpired,
   waybillRequestCancellable,
+  WAYBILL_HANDOFF_TEXT,
   type WaybillWorkerStage,
   type WaybillRequest,
   type WaybillRequestEvent,
@@ -328,7 +329,7 @@ export async function releaseWaybillRequestToAivars(input: {
 }): Promise<WaybillRequest | null> {
   const now = new Date().toISOString();
   const text = `Automātika nodod Aivaram: ${input.reason}`.trim().slice(0, 500);
-  return mutateDoc((doc) => {
+  const released = await mutateDoc<WaybillRequest | null>((doc) => {
     const current = doc.requests.find((r) => r.id === input.id);
     if (!current || current.status !== "in_progress" || current.pickedBy !== input.by) return { value: null };
     const nextReq: WaybillRequest = {
@@ -341,6 +342,9 @@ export async function releaseWaybillRequestToAivars(input: {
       lastReplyText: text,
       stage: "",
       stageAt: "",
+      handoffReason: input.reason.slice(0, 300),
+      handoffCheckCsdd: false,
+      handoffAt: now,
     };
     let next = { ...doc, requests: doc.requests.map((r) => (r.id === input.id ? nextReq : r)) };
     next = pushEvent(next, {
@@ -353,7 +357,72 @@ export async function releaseWaybillRequestToAivars(input: {
     });
     return { value: nextReq, next };
   });
+  if (released) {
+    await recordWaybillAudit({
+      userId: released.createdBy,
+      action: "waybill_handoff_aivars",
+      target: released.id,
+      meta: { reason: released.handoffReason ?? "", checkCsddFirst: false },
+    });
+  }
+  return released;
 }
+
+/**
+ * j47: automātika atsūtīja neveiksmīgu rezultātu (`result ok:false, by:"auto"`). Iepriekš darbs palika "Kļūda" un
+ * Aivars to nekad nesaņēma (nav rindā, netiek pamodināts, cron to neredz). Tagad - atpakaļ rindā Aivaram
+ * (vairs neautomātisks), ar iemeslu un CSDD pārbaudes pazīmi. Tikai, ja darbu joprojām tur automātika;
+ * citādi null (izsaucējs ieraksta parastu rezultātu).
+ */
+export async function handAutoFailureToAivars(input: {
+  id: string;
+  reason: string;
+  checkCsddFirst: boolean;
+}): Promise<WaybillRequest | null> {
+  const now = new Date().toISOString();
+  const reason = input.reason.replace(/[\u0000-\u001F\u007F]/g, " ").trim().slice(0, 300) || "kļūda";
+  const text = `Automātika neizrakstīja: ${reason} ${WAYBILL_HANDOFF_TEXT}`.slice(0, 500);
+  const handed = await mutateDoc<WaybillRequest | null>((doc) => {
+    const current = doc.requests.find((r) => r.id === input.id);
+    if (!current || current.status !== "in_progress" || current.pickedBy !== AUTO_PICKED_BY) return { value: null };
+    const nextReq: WaybillRequest = {
+      ...current,
+      status: "queued",
+      pickedBy: "",
+      pickedAt: "",
+      autoDisabled: true,
+      errorReason: "",
+      updatedAt: now,
+      lastReplyText: text,
+      stage: "",
+      stageAt: "",
+      handoffReason: reason,
+      handoffCheckCsdd: input.checkCsddFirst,
+      handoffAt: now,
+    };
+    let next = { ...doc, requests: doc.requests.map((r) => (r.id === input.id ? nextReq : r)) };
+    next = pushEvent(next, {
+      requestId: input.id,
+      kind: "message",
+      text,
+      waybillNo: "",
+      pdfUrl: "",
+      by: AUTO_PICKED_BY,
+    });
+    return { value: nextReq, next };
+  });
+  if (handed) {
+    await recordWaybillAudit({
+      userId: handed.createdBy,
+      action: "waybill_handoff_aivars",
+      target: handed.id,
+      meta: { reason, checkCsddFirst: input.checkCsddFirst },
+    });
+  }
+  return handed;
+}
+
+const AUTO_PICKED_BY = "auto";
 
 export async function appendWaybillRequestEvent(input: {
   id: string;

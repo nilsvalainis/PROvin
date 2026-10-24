@@ -18,7 +18,8 @@ const RING: Record<WaybillGauge["status"], string> = {
 };
 
 /** Bez formas lapā (piem. sānjosla) apļi paši atjaunojas; formas lapā tos uzreiz atjauno forma (WAYBILL_PLATES_EVENT). */
-const REFRESH_MS = 60_000;
+/** j47: 20 s - pieprasījuma stāvoklis (arī "Aivars" ar roku) apļos parādās uzreiz, ne pēc minūtes. */
+const REFRESH_MS = 20_000;
 
 /**
  * Pavadzīmes vienā skatā: 3 numurzīmes kā apļi (48 h skala) ar atlikušajām stundām un marku/modeli.
@@ -120,7 +121,7 @@ export function IrissWaybillGauges({
                 g.busy
                   ? `${g.plate}, ${g.brandModel || "auto"}, atlikušas ${g.hoursLeft} h`
                   : g.status === "issuing"
-                    ? `${g.plate}, izdod pavadzīmi${g.brandModel ? `, ${g.brandModel}` : ""}`
+                    ? `${g.plate}, ${g.manual ? "izraksta Aivars ar roku" : "izdod pavadzīmi"}${g.brandModel ? `, ${g.brandModel}` : ""}`
                     : `${g.plate}, brīvs`
               }
               onClick={() => (g.busy ? setOpen((cur) => (cur === g.plate ? null : g.plate)) : undefined)}
@@ -150,7 +151,7 @@ export function IrissWaybillGauges({
                       <small>h</small>
                     </>
                   ) : g.status === "issuing" ? (
-                    "izdod..."
+                    g.manual ? "Aivars" : "izdod..."
                   ) : (
                     "brīvs"
                   )}

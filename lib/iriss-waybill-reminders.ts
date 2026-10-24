@@ -40,10 +40,17 @@ export async function runWaybillReminders(nowMs = Date.now()) {
   const handoffs = dueWaybillStuckHandoffs(doc.requests, handoffSentMap, nowMs);
   const nextHandoff = pruneCronNotifyEntries(handoffSentMap, nowMs, KEEP_MS);
   let woken = 0;
+  let wakeFailed = 0;
   for (const h of handoffs) {
     const res = await wakeAivars(h.requestId);
-    nextHandoff[h.key] = new Date(nowMs).toISOString();
-    woken += res.ok ? 1 : 0;
+    // j47: neizdevusies pamodināšana (HTTP/tīkls) netiek atzīmēta kā nosūtīta - nākamais cron mēģina vēlreiz.
+    // Nekonfigurēts / nederīgs URL ir pastāvīgs - atzīmē (citādi katru reizi tas pats), bet skaļi žurnālā.
+    if (res.ok || !wakeRetryable(res.reason)) nextHandoff[h.key] = new Date(nowMs).toISOString();
+    if (res.ok) woken += 1;
+    else {
+      wakeFailed += 1;
+      console.error("[iriss-waybill-reminders] aivars_wake_failed", h.requestId, res.reason, res.status ?? "");
+    }
   }
   if (handoffs.length || Object.keys(nextHandoff).length !== Object.keys(handoffSentMap).length) {
     await writeCronNotifyEntries(HANDOFF_SCOPE, nextHandoff);
@@ -56,5 +63,10 @@ export async function runWaybillReminders(nowMs = Date.now()) {
     items: due.map((r) => ({ id: r.requestId, kind: r.kind })),
     stuckHandoffs: handoffs.length,
     stuckWoken: woken,
+    stuckWakeFailed: wakeFailed,
   };
+}
+
+function wakeRetryable(reason: "not_configured" | "invalid_url" | "invalid_job_id" | "http_error" | "network_error"): boolean {
+  return reason === "http_error" || reason === "network_error";
 }

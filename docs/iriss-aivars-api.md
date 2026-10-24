@@ -97,4 +97,7 @@ With Vercel env `IRISS_WAYBILL_AUTO=1`, standard jobs (see `lib/iriss-waybill-au
 - `POST /:id/release { reason }` (worker only, before Save) puts the job back in the queue as non-automatic and wakes Aivars.
 - `events` / `result` accept `by: "auto"`.
 
+- j47: an automation `result { ok: false, by: "auto" }` is no longer a dead end. Unless the reason is "plate busy in CSDD" (`CSDD aizņem...`, the user must decide on annulment), the job goes back to the queue for Aivars (`autoDisabled`), Aivars is woken, and the job carries `handoff: { from: "auto", reason, checkCsddFirst }`. With `checkCsddFirst: true` (error during/after Save) Aivars must first check in CSDD that the waybill was not already created. Release (`/release`) sets the same `handoff` with `checkCsddFirst: false`. A stale `in_progress` job held by the automation also carries `handoff` when it reappears in GET.
+- The 15 min cron retries a failed wake (HTTP/network) on the next run; a missing/invalid `IRISS_AIVARS_WAKE_URL` is logged as an error (`aivars_wake_not_configured`).
+
 A busy plate (`confirmBusy`) is never standard: ending an active waybill needs Nils's "jā" through Aivars. The worker never runs stop/cancel scripts.
