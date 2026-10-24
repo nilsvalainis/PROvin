@@ -3,6 +3,8 @@
  * Bez LLM: īpašnieki, nobraukums + forenzika, negadījumi, TA, dīleris (LV),
  * atsaukumi, sludinājums, foto kopsavilkums. Nav EUR remonta tāmes.
  */
+import { collectDamageEvidence, type DamageEvidence } from "@/lib/damage-evidence";
+import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banners";
 import {
   ODOMETER_REPLACEMENT_RE,
   analyzeOdometerRollbackBounds,
@@ -135,6 +137,10 @@ export type CanonicalFacts = {
   carverticalMileageWarning: boolean;
   maxRollbackDropKm: number;
   incidents: UnifiedIncidentRow[];
+  /** Visi bojājumu pierādījumi, arī bez summas (izsoles, reģistru izņemšana bojājuma dēļ). */
+  damageEvidence: DamageEvidence;
+  /** Automātisko brīdinājumu (sarkano/dzelteno baneru) teksti, kas nonāk atskaitē. */
+  alertBannerTexts: string[];
   ta: TechnicalInspectionCoverage;
   dealerRowsLv: string;
   dealerCampaigns: DealerFact[];
@@ -373,6 +379,8 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     carverticalMileageWarning,
     maxRollbackDropKm: rollbacks.reduce((m, r) => Math.max(m, r.minDropKm), 0),
     incidents,
+    damageEvidence: collectDamageEvidence(blocks),
+    alertBannerTexts: computeProvinAlertBannersFromWorkspace(blocks).map((b) => b.text.trim()).filter(Boolean),
     ta,
     dealerRowsLv,
     dealerCampaigns,
@@ -484,6 +492,19 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
     );
   }
   if (facts.incidents.length > 8) lines.push(`- … vēl ${facts.incidents.length - 8}`);
+  if (facts.damageEvidence.total > 0) {
+    lines.push(
+      `Bojājumi (visi avoti, arī bez summas): ${facts.damageEvidence.total} - bojājumi IR fiksēti; aizliegts rakstīt, ka bojājumu nav`,
+    );
+    for (const r of facts.damageEvidence.rows.slice(0, 8)) {
+      lines.push(`- ${r.date} | ${r.descriptionLv} | ${r.amount || "summa nav"} | ${r.sourceLabel}`);
+    }
+    if (facts.damageEvidence.total > 8) lines.push(`- … vēl ${facts.damageEvidence.total - 8}`);
+  }
+  if (facts.alertBannerTexts.length > 0) {
+    lines.push("Brīdinājumi atskaitē:");
+    for (const t of facts.alertBannerTexts.slice(0, 6)) lines.push(`- ${t}`);
+  }
 
   lines.push("TA nosegums:");
   lines.push(

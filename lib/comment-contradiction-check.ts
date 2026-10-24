@@ -61,6 +61,16 @@ const MINIMISING_RE =
   /nelielas?\s+nobīd|niecīg\w*\s+(?:nobīd|atšķir|kritum)|minimāl\w*\s+(?:nobīd|atšķir)|sīkas?\s+atšķir|neliels\s+kritums/i;
 const NO_ACCIDENT_RE =
   /\bnav\s+(fiksēt|reģistrēt|konstatēt|zinām)\w*.{0,40}(?:negadījum|csng|avārij)|(?:negadījum|avārij|csng)\w*.{0,30}\bnav\b/i;
+/** „Nav bojājumu / atlīdzību / zaudējumu” - j26: plašāks par `NO_ACCIDENT_RE`. */
+const NO_DAMAGE_RE =
+  /\bnav\b.{0,50}(?:negadījum|csng|avārij|bojāj|atlīdz|zaudējum)|\bnav\s+(?:fiksēt|reģistrēt|konstatēt|zinām)\w*.{0,40}(?:negadījum|csng|avārij|bojāj|atlīdz|zaudējum)|(?:negadījum|avārij|csng|bojāj|atlīdz|zaudējum)\w*.{0,30}\bnav\b|bez\s+(?:negadījum|bojāj|avārij)\w*/i;
+/** Teikums par to, ka nav SUMMAS (ne bojājuma) - nav pretruna bojājumiem bez summas. */
+const AMOUNT_ONLY_RE = /summ|\beur\b|€|apmēr|izmaks/i;
+/** Neskaidrība („nav zināms, vai…”) - nav apgalvojums, ka bojājumu nav. */
+const DAMAGE_UNCERTAIN_RE = /nav\s+(?:zināms|skaidrs|informācij\w*)\W{0,3}(?:\s+\S+){0,3}\s+vai\b/i;
+/** Teikums pats apgalvo bojājumu (piem. „izsolē fiksēti bojājumi…, LTAB atlīdzības nav”). */
+const DAMAGE_POSITIVE_RE =
+  /bojājum\w*\s+(?:ir\s+)?(?:fiksēt|reģistrēt|konstatēt|norādīt)|(?<!nav\s)(?<!nav\s\S{1,12}\s)(?:fiksēt|reģistrēt|konstatēt|norādīt)\w*\s+(?:\S+\s+)?bojāj|bojājuma\s+dēļ/i;
 const NO_RECALL_RE =
   /\bnav\s+(fiksēt|reģistrēt|konstatēt|atrast|zinām)\w*.{0,40}(?:atsaukum|kampaņ)|(?:atsaukum|kampaņ)\w*.{0,30}\bnav\b/i;
 const OWNER_COUNT_RE = /(\d{1,2})\s+īpašniek/gi;
@@ -340,6 +350,26 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
       sentence: firstMatchingSentence(sentences, NO_ACCIDENT_RE),
     });
   }
+  // 3b) j26: bojājumi IR (arī bez summas) - „nav bojājumu/atlīdzību” ir kļūda; „neizslēdz” neattaisno.
+  const damageTotal = facts.damageEvidence?.total ?? 0;
+  if (damageTotal > 0) {
+    const bad = sentences.find(
+      (s) =>
+        NO_DAMAGE_RE.test(s) &&
+        !AMOUNT_ONLY_RE.test(s) &&
+        !DAMAGE_UNCERTAIN_RE.test(s) &&
+        !DAMAGE_POSITIVE_RE.test(s),
+    );
+    if (bad) {
+      push({
+        id: "no_damage_claim",
+        kind: "no_damage_claim",
+        level: "E",
+        message: `Teksts saka, ka bojājumu / negadījumu nav, bet lapā ir ${damageTotal} bojājuma ieraksts(-i) (arī bez summas). Min tos ar avotu un datumu.`,
+        sentence: bad,
+      });
+    }
+  }
   if (facts.recallCodes.length > 0 && NO_RECALL_RE.test(text) && !/jāpārbauda|izpild/i.test(text)) {
     push({
       id: "no_recalls_claim",
@@ -560,6 +590,7 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
     source: row[3]!.trim(),
   }));
   const incidentCount = Number(sheet.match(/Negadījumi \/ zaudējumi:\s*(\d+)/)?.[1] ?? 0);
+  const damageTotal = Number(sheet.match(/Bojājumi \(visi avoti[^)]*\):\s*(\d+)/)?.[1] ?? 0);
   const recallLine = sheet.match(/Atsaukumi \/ kampaņu kodi datos:\s*([^\n]+)/)?.[1] ?? "";
   const recallCodes = /nav fiksētu/i.test(recallLine)
     ? []
@@ -600,6 +631,13 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
       sourceOrder: i,
       sourceLabel: `rinda ${i + 1}`,
     })),
+    damageEvidence: {
+      rows: [],
+      total: damageTotal,
+      withoutAmountCount: 0,
+      hasDealerBodyOrGlassWork: false,
+    },
+    alertBannerTexts: [],
     ta: EMPTY_TA,
     dealerRowsLv: "",
     dealerCampaigns: [],

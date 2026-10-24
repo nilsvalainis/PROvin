@@ -109,6 +109,7 @@ export type FactCheckFlag = {
     | "owner_changes"
     | "first_reg_country"
     | "no_accidents_claim"
+    | "no_damage_claim"
     | "no_recalls_claim"
     | "leak_phrase"
     | "atsavinasanai"

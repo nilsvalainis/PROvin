@@ -29,6 +29,10 @@ vi.mock("@/lib/admin-gemini", () => ({
 import { aiGenerateExpertText, aiGenerateTextWithVocabulary } from "@/lib/admin-ai";
 import { geminiGenerateExpertText, getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
 import { adminGenerateExpertText, adminGenerateTextWithVocabulary } from "@/lib/admin-ai-dispatch";
+import { golfBlocks } from "@/lib/ai-eval/golf-gte-fixture";
+import { buildCanonicalFactsSheet } from "@/lib/canonical-facts-sheet";
+
+const GOLF_PROMPT = `Lauks: summary\n${buildCanonicalFactsSheet({ sourceBlocks: golfBlocks() })}`;
 
 describe("admin-ai-dispatch self-correction retry", () => {
   it("does not pay for a second generation when only banned vocabulary appears (P13)", async () => {
@@ -135,6 +139,40 @@ describe("admin-ai-dispatch self-correction retry", () => {
       qualityField: "generic",
     });
     expect(text).toBe(long);
+    expect(aiGenerateExpertText).toHaveBeenCalledTimes(1);
+    expect(geminiGenerateExpertText).not.toHaveBeenCalled();
+  });
+
+  it("j26: „nav bojājumu” ar bojājumiem lapā - viens labojums TIKAI ar Gemini, ne Claude", async () => {
+    vi.clearAllMocks();
+    vi.mocked(getGeminiApiKeyFromEnv).mockReturnValue("gemini-key");
+    vi.mocked(aiGenerateExpertText).mockResolvedValueOnce("Avotos nav fiksētu bojājumu vai atlīdzību.");
+    vi.mocked(geminiGenerateExpertText).mockResolvedValueOnce(
+      "Izsolē 02.04.2024 fiksēti bojājumi (priekšpuse, sāns), summa nav norādīta.",
+    );
+    const text = await adminGenerateExpertText({
+      systemInstruction: "sys",
+      userPrompt: GOLF_PROMPT,
+      qualityField: "summary",
+      modelTier: "pro",
+    });
+    expect(text).toMatch(/Izsolē 02\.04\.2024/);
+    expect(aiGenerateExpertText).toHaveBeenCalledTimes(1);
+    expect(geminiGenerateExpertText).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(geminiGenerateExpertText).mock.calls[0]?.[0].userPrompt).toContain(CORRECTION_MARKER);
+  });
+
+  it("j26: bez Gemini atslēgas Claude atkārtojuma nav (paliek karodziņš)", async () => {
+    vi.clearAllMocks();
+    vi.mocked(getGeminiApiKeyFromEnv).mockReturnValue(null);
+    vi.mocked(aiGenerateExpertText).mockResolvedValueOnce("Avotos nav fiksētu bojājumu vai atlīdzību.");
+    const text = await adminGenerateExpertText({
+      systemInstruction: "sys",
+      userPrompt: GOLF_PROMPT,
+      qualityField: "summary",
+      modelTier: "pro",
+    });
+    expect(text).toBe("Avotos nav fiksētu bojājumu vai atlīdzību.");
     expect(aiGenerateExpertText).toHaveBeenCalledTimes(1);
     expect(geminiGenerateExpertText).not.toHaveBeenCalled();
   });
