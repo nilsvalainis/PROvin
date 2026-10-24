@@ -171,6 +171,8 @@ export function factCheckActionLine(flag: FactCheckFlag): string {
       return "Pievieno, ka lapā ir negadījumu rindas.";
     case "no_damage_claim":
       return "Min bojājumus no lapas (avots, datums), arī bez summas.";
+    case "negated_fact":
+      return "Labo pēc dīlera darbu skaitiem lapā.";
     case "no_recalls_claim":
     case "recall_denied":
       return "Pievieno atsaukuma kodus no datiem.";

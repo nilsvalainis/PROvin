@@ -71,6 +71,30 @@ const DAMAGE_UNCERTAIN_RE = /nav\s+(?:zināms|skaidrs|informācij\w*)\W{0,3}(?:\
 /** Teikums pats apgalvo bojājumu (piem. „izsolē fiksēti bojājumi…, LTAB atlīdzības nav”). */
 const DAMAGE_POSITIVE_RE =
   /bojājum\w*\s+(?:ir\s+)?(?:fiksēt|reģistrēt|konstatēt|norādīt)|(?<!nav\s)(?<!nav\s\S{1,12}\s)(?:fiksēt|reģistrēt|konstatēt|norādīt)\w*\s+(?:\S+\s+)?bojāj|bojājuma\s+dēļ/i;
+/** j26: dīlera skaitu etiķete -> teksta atpazīšana (LV). */
+const DEALER_COUNT_TEXT_RE: Array<{ label: RegExp; re: string }> = [
+  { label: /^dzinēja eļļas maiņas$/i, re: "(?:dzinēja|motor)\\p{L}*\\s+eļļ\\p{L}*|eļļas\\s+maiņ\\p{L}*" },
+  { label: /^kārbas eļļas maiņas$/i, re: "(?:kārb|dsg|pārnesumkārb)\\p{L}*\\s+(?:eļļ|apkop|šķidr)\\p{L}*" },
+];
+
+function dealerCountMentionSource(label: string): string {
+  const known = DEALER_COUNT_TEXT_RE.find((d) => d.label.test(label.trim()));
+  if (known) return known.re;
+  return label
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => `${w.slice(0, Math.max(4, w.length - 2)).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\p{L}*`)
+    .join("\\s+");
+}
+
+/** „nav (nevienas) X” / „X nav” / „bez X” tuvu komponentam. */
+function negatesDealerComponent(sentence: string, mention: string): boolean {
+  const before = new RegExp(`(?:\\bnav\\b|nevien\\p{L}*|netika|\\bbez\\b)(?:\\s+\\S+){0,4}?\\s+(?:${mention})`, "iu");
+  const after = new RegExp(`(?:${mention})(?:\\s+\\S+){0,3}?\\s+(?:nav|netika)\\b`, "iu");
+  return before.test(sentence) || after.test(sentence);
+}
+
 const NO_RECALL_RE =
   /\bnav\s+(fiksēt|reģistrēt|konstatēt|atrast|zinām)\w*.{0,40}(?:atsaukum|kampaņ)|(?:atsaukum|kampaņ)\w*.{0,30}\bnav\b/i;
 const OWNER_COUNT_RE = /(\d{1,2})\s+īpašniek/gi;
@@ -370,6 +394,24 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
       });
     }
   }
+  // 3c) j26: „nav nevienas kārbas apkopes”, bet dīlera skaitos ir > 0.
+  for (const c of facts.dealerComponentCounts ?? []) {
+    if (c.dates.length === 0) continue;
+    const mention = dealerCountMentionSource(c.label);
+    const bad = sentences.find(
+      (s) => negatesDealerComponent(s, mention) && !DAMAGE_UNCERTAIN_RE.test(s),
+    );
+    if (!bad) continue;
+    // Teikums ar periodu („pēc 2021”) var būt patiess - tikai karodziņš.
+    const periodScoped = /\b(?:pēc|kopš|līdz|no)\s+(?:\d{1,2}\.\d{1,2}\.)?(?:19|20)\d{2}/i.test(bad);
+    push({
+      id: "negated_fact",
+      kind: "negated_fact",
+      level: periodScoped ? "W" : "E",
+      message: `Teksts saka, ka „${c.label.toLowerCase()}” nav, bet dīlera datos ir ${c.dates.length} (${c.dates.join(", ")}).`,
+      sentence: bad,
+    });
+  }
   if (facts.recallCodes.length > 0 && NO_RECALL_RE.test(text) && !/jāpārbauda|izpild/i.test(text)) {
     push({
       id: "no_recalls_claim",
@@ -638,6 +680,8 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
       hasDealerBodyOrGlassWork: false,
     },
     alertBannerTexts: [],
+    dealerComponentCounts: parseDealerComponentCountsFromSheet(sheet),
+    registryStatusLines: [],
     ta: EMPTY_TA,
     dealerRowsLv: "",
     dealerCampaigns: [],
@@ -649,4 +693,17 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
     sheet,
   };
   return facts;
+}
+
+/** „Dīlera darbu skaiti” rindas no faktu lapas teksta. */
+export function parseDealerComponentCountsFromSheet(sheet: string): Array<{ label: string; dates: string[] }> {
+  const head = sheet.indexOf("Dīlera darbu skaiti");
+  if (head < 0) return [];
+  const out: Array<{ label: string; dates: string[] }> = [];
+  for (const line of sheet.slice(head).split("\n").slice(1)) {
+    const m = line.match(/^- ([^:]+):\s*(\d+)\s*\(([^)]*)\)/);
+    if (!m) break;
+    out.push({ label: m[1]!.trim(), dates: m[3]!.split(",").map((d) => d.trim()).filter(Boolean) });
+  }
+  return out;
 }
