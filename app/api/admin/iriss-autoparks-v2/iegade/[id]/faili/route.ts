@@ -1,6 +1,7 @@
 import { PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
 import { autoparksV2Json, requireAutoparksV2Api } from "@/lib/iriss-autoparks-v2-access";
 import { iegadeDocDropboxFileName, iegadeStockDocFolder, uploadIegadeDocumentToStock } from "@/lib/iriss-autoparks-v2-iegade-dropbox";
+import { classifyIegadeDocType } from "@/lib/iriss-autoparks-v2-iegade-files";
 import { autoparksV2IegadeView } from "@/lib/iriss-autoparks-v2-iegade";
 import { sniffContentType } from "@/lib/iriss-autoparks-v2-sniff";
 import { readAutoparksV2Car } from "@/lib/iriss-autoparks-v2-store";
@@ -42,12 +43,16 @@ export async function POST(req: Request, ctx: Ctx) {
   if (!bytes || sniffContentType(bytes, "") !== "application/pdf") return autoparksV2Json({ error: "invalid_file" }, 400);
 
   const title = (fileName.replace(/\.[a-z0-9]{2,5}$/i, "").trim() || "Dokuments").slice(0, 150);
+  // J61: Auto1 Car Invoice/Order Confirmation augšupielādēti ar roku iepriekš vienmēr krita uz
+  // "other" - Auto1 pārbaudes "Trūkst dokumenta" brīdinājums nekad netīrījās. Mēģina uzminēt tipu
+  // no faila nosaukuma; lietotājs to jebkurā brīdī var pārlabot ar pildspalvu.
+  const type = classifyIegadeDocType(fileName);
   let result: Awaited<ReturnType<typeof upsertCabinetDocument>>;
   try {
     result = await upsertCabinetDocument({
       carId: cabinetCarId,
       section: "A",
-      type: "other",
+      type,
       typeLabel: title,
       source: "upload",
       bytes,

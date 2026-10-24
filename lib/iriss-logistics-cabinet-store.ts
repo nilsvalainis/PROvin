@@ -361,6 +361,17 @@ export async function renameCabinetDocument(id: string, title: string): Promise<
   return next;
 }
 
+/** Maina dokumenta tipu ar roku (J61: pildspalva Iegādes dokumentam, ja auto-klasifikācija pēc faila nosaukuma nepareiza/trūkst). */
+export async function setCabinetDocumentType(id: string, type: CabinetDocType): Promise<CabinetDocument | null> {
+  const items = await listCabinetDocuments();
+  const prev = items.find((d) => d.id === id);
+  if (!prev || prev.deletedAt) return prev ?? null;
+  if (!cabinetDocTypeForSection(prev.section, type)) return null;
+  const next = { ...prev, type };
+  await writeLogisticsJsonFile(DOCUMENTS_FILE, { version: 1, items: items.map((d) => (d.id === id ? next : d)) });
+  return next;
+}
+
 /** Iestata/atjaunina Dropbox /STOCK ceļu pēc veiksmīgas sinhronizācijas (J30 F1). */
 export async function setCabinetDocumentDropboxPath(id: string, dropboxPath: string): Promise<CabinetDocument | null> {
   const items = await listCabinetDocuments();

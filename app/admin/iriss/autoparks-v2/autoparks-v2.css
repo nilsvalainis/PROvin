@@ -1264,6 +1264,63 @@
   background: var(--bad);
   color: #fff;
 }
+.ap2.ap2.ap2 .ap2-edit {
+  max-width: 320px;
+  width: 100%;
+  margin: 16px;
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  padding: 16px;
+  font: 400 13px/1.4 Inter, sans-serif;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ap2.ap2.ap2 .ap2-edit b {
+  font-size: 14px;
+}
+.ap2.ap2.ap2 .ap2-edit label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--ink2);
+}
+.ap2.ap2.ap2 .ap2-edit input,
+.ap2.ap2.ap2 .ap2-edit select {
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  padding: 7px 8px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.ap2.ap2.ap2 .ap2-edit .row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.ap2.ap2.ap2 .ap2-edit button {
+  flex: 1;
+  padding: 9px 0;
+  border-radius: 9px;
+  font: 700 13px Inter, sans-serif;
+  border: none;
+}
+.ap2.ap2.ap2 .ap2-edit .cancel {
+  background: var(--line2);
+  color: var(--ink);
+}
+.ap2.ap2.ap2 .ap2-edit .confirm {
+  background: var(--focus);
+  color: #fff;
+}
+.ap2.ap2.ap2 .ap2-edit .confirm:disabled {
+  opacity: 0.5;
+}
 .ap2.ap2.ap2 .ap2-modal {
   position: fixed;
   inset: 0;
