@@ -36,6 +36,8 @@ function order(partial: Partial<LogisticsOrder>): LogisticsOrder {
     pickupDate: "2026-10-21",
     stockNo: "11630702",
     freeParkingUntil: "",
+    transportCostEur: null,
+    transportCostAuto: false,
     status: "ready",
     archived: false,
     archivedAt: "",

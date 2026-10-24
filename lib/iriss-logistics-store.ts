@@ -28,6 +28,8 @@ import {
 } from "@/lib/iriss-logistics-auction-sources";
 import { previousLogisticsPoints } from "@/lib/iriss-logistics-previous-points";
 import { seedLogisticsFromPunkti, type LogisticsPunktiJson } from "@/lib/iriss-logistics-seed";
+import { shouldAutofillTransportCost } from "@/lib/iriss-logistics-transport-invoice-amount";
+import { parseTransportInvoicePdf } from "@/lib/iriss-logistics-transport-invoice-pdf";
 import {
   IRISS_LOGISTICS_WORKSPACE,
   isLogisticsAuction,
@@ -314,6 +316,8 @@ function normalizeOrder(raw: unknown): LogisticsOrder | null {
     pickupDate: str(raw.pickupDate, 40),
     stockNo: str(raw.stockNo ?? raw.stock_no ?? raw.lotNo ?? raw.lot_no, 80),
     freeParkingUntil: parseLogisticsIsoDate(raw.freeParkingUntil ?? raw.free_parking_until) || str(raw.freeParkingUntil, 40),
+    transportCostEur: numOrNull(raw.transportCostEur ?? raw.transport_cost_eur),
+    transportCostAuto: (raw.transportCostAuto ?? raw.transport_cost_auto) === true,
     status,
     archived,
     archivedAt: str(raw.archivedAt, 40),
@@ -546,6 +550,8 @@ export async function upsertLogisticsOrder(patch: Partial<LogisticsOrder> & { id
     pickupDate: "",
     stockNo: "",
     freeParkingUntil: "",
+    transportCostEur: null,
+    transportCostAuto: false,
     status: "organize_pickup",
     archived: false,
     archivedAt: "",
@@ -623,6 +629,20 @@ export async function setLogisticsOrderArchiveState(
 export async function countActiveLogisticsOrders(): Promise<number> {
   const orders = await listLogisticsOrders();
   return orders.filter(isLogisticsOrderActive).length;
+}
+
+/**
+ * Pēc Auto1 Transport Invoice PDF augšupielādes mēģina nolasīt kopsummu un ielikt
+ * "Pašizmaksas transports" laukā - tikai, ja lauks vēl tukšs vai iepriekš bija auto-aizpildīts
+ * (lietotāja ar roku ievadītu vērtību nekad nepārraksta).
+ */
+export async function applyTransportInvoiceAutofill(orderId: string, bytes: Buffer, fileName: string): Promise<LogisticsOrder | null> {
+  const order = await getLogisticsOrder(orderId);
+  if (!order || !shouldAutofillTransportCost(order)) return null;
+  const arrayBuffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+  const result = await parseTransportInvoicePdf(arrayBuffer, fileName);
+  if (!result.ok) return null;
+  return upsertLogisticsOrder({ id: orderId, transportCostEur: result.amountEur, transportCostAuto: true });
 }
 
 export async function listPreviousLogisticsPoints(nowMs = Date.now()): Promise<LogisticsPreviousPointRow[]> {

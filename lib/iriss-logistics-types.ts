@@ -158,6 +158,10 @@ export type LogisticsOrder = {
   pickupDate: string;
   stockNo: string;
   freeParkingUntil: string;
+  /** Pašizmaksas transports - manuāli vai auto-aizpildīts no Auto1 Transport Invoice PDF. */
+  transportCostEur: number | null;
+  /** true, kamēr vērtību nav pārrakstījis lietotājs ar roku - nākamais PDF drīkst to pārrakstīt. */
+  transportCostAuto: boolean;
   status: LogisticsOrderStatus;
   archived: boolean;
   archivedAt: string;
