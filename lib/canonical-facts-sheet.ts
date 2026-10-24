@@ -3,6 +3,12 @@
  * Bez LLM: īpašnieki, nobraukums + forenzika, negadījumi, TA, dīleris (LV),
  * atsaukumi, sludinājums, foto kopsavilkums. Nav EUR remonta tāmes.
  */
+import {
+  collectRegistryCountryPeriods,
+  countryAtFromPeriods,
+  formatRegistryCountryPeriodLine,
+  type RegistryCountryPeriod,
+} from "@/lib/registry-country-periods";
 import { collectEngineOilChangeRows } from "@/lib/oil-change-intervals";
 import { collectDamageEvidence, type DamageEvidence } from "@/lib/damage-evidence";
 import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banners";
@@ -63,8 +69,11 @@ import {
 } from "@/lib/owner-count-synthesis";
 import {
   computeOdometerAnomalyBySourceOrder,
+  collectImplausibleMileageReadings,
   collectUnifiedMileageRows,
   formatCsddUndatedOdometerLine,
+  formatImplausibleReadingLine,
+  type UnifiedMileageRow,
   hasAnyOdometerAnomaly,
   resolveCsddUndatedOdometer,
   type CsddUndatedOdometer,
@@ -85,6 +94,8 @@ export const SUSPECTED_ENTRY_ERROR_LINE_PREFIX =
   "Atsevišķs neatbilstošs rādījums (iespējama ievades kļūda, NEPIEMINĒT kā korekciju)";
 
 /** Kritums, no kura „nelielas nobīdes” ir minimizācija. */
+export const IMPLAUSIBLE_READING_LINE_PREFIX =
+  "Izlaists neticams rādījums (ievades kļūda; NEPIEMINĒT kā korekciju vai kritumu)";
 export const LARGE_ODOMETER_DROP_KM = 5000;
 
 const CARVERTICAL_MILEAGE_WARN_RE =
@@ -141,6 +152,10 @@ export type CanonicalFacts = {
   rollbacks: OdometerRollbackBound[];
   /** Viens rādījums ārpus secības; AI to NEraksta kā korekciju (nobraukuma laukā max 1 neitrāls teikums). */
   suspectedEntryErrors: SuspectedEntryError[];
+  /** j26: neticami rādījumi (< 1 000 km pēc > 1 gada), izslēgti no aprēķina un PDF. */
+  implausibleReadings: UnifiedMileageRow[];
+  /** j26: valstu posmi no reģistru laika līnijas. */
+  countryPeriods: RegistryCountryPeriod[];
   /** CSDD rādījums bez datuma (nereģistrēts auto); nav krituma aprēķinā. */
   csddUndatedOdometer: CsddUndatedOdometer | null;
   odometerAnomaly: boolean;
@@ -308,9 +323,13 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
   const mileageRows = collectUnifiedMileageRows(unifiedMileagePayload(blocks));
   const mileagePayload = unifiedMileagePayload(blocks);
   const csddUndated = resolveCsddUndatedOdometer(mileagePayload);
+  const countryPeriods = collectRegistryCountryPeriods(blocks);
+  const implausibleReadings = collectImplausibleMileageReadings(mileagePayload);
   const allDrops = analyzeOdometerRollbackBounds(mileageRows, {
     odometerReplacementNoted: ODOMETER_REPLACEMENT_RE.test(sourceHaystackFrom(blocks, [])),
     approxLaterReading: approxLaterReadingFromPayload(mileagePayload),
+    // j26: valsts maiņa krituma brīdī tikai no reģistru laika līnijas, ne no avota cilnes.
+    countryAt: (t) => countryAtFromPeriods(countryPeriods, t),
   });
   const rollbacks = allDrops.filter(isRealOdometerDrop);
   const suspectedEntryErrors = allDrops
@@ -395,6 +414,8 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     rollbacks,
     suspectedEntryErrors,
     csddUndatedOdometer: csddUndated,
+    implausibleReadings,
+    countryPeriods,
     odometerAnomaly,
     carverticalMileageWarning,
     maxRollbackDropKm: rollbacks.reduce((m, r) => Math.max(m, r.minDropKm), 0),
@@ -505,6 +526,13 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
     lines.push(
       `- ${SUSPECTED_ENTRY_ERROR_LINE_PREFIX}: ${e.date}, ${formatForensicsInt(e.km)} km, ${e.source}`,
     );
+  }
+  for (const r of facts.implausibleReadings) {
+    lines.push(`- ${IMPLAUSIBLE_READING_LINE_PREFIX}: ${formatImplausibleReadingLine(r)}`);
+  }
+  if (facts.countryPeriods.length > 0) {
+    lines.push("Valstu posmi (no reģistru laika līnijas; avota nosaukums NAV valsts posms):");
+    for (const p of facts.countryPeriods) lines.push(`- ${formatRegistryCountryPeriodLine(p)}`);
   }
 
   lines.push(`Negadījumi / zaudējumi: ${facts.incidents.length} rindas`);

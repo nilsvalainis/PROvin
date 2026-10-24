@@ -4,6 +4,7 @@
  * lai modelim nebūtu jādala km ar dienām un jāizvēlas viena versija.
  */
 import {
+  ODOMETER_REPLACEMENT_RE,
   UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM,
   collectUnifiedMileageRows,
   parseOdometerKm,
@@ -308,8 +309,7 @@ export const ENTRY_ERROR_CONFIRM_KM = 1_000;
 export const ENTRY_ERROR_CONFIRM_DAYS = 60;
 
 /** Servisa vēsturē mērinstrumentu paneļa / odometra nomaiņa = reālas korekcijas pazīme. */
-export const ODOMETER_REPLACEMENT_RE =
-  /instrument(?:en)?\s*cluster|kombiinstrument|tachometer\s*(?:replace|tausch)|tacho\w*\s*(?:getauscht|ersetzt|tausch)|speedometer\s*(?:replace|repair)|odomet\w*\s*(?:replace|repair|nomai|maiņ|remont)|(?:nomai\w*|maiņ\w*|remont\w*)\s+odometr|mērinstrumentu\s+panel\w*\s*(?:nomai|maiņ|remont)|spidometr\w*\s*(?:nomai|maiņ|remont)/i;
+export { ODOMETER_REPLACEMENT_RE };
 
 export type OdometerDropAnalysisOptions = {
   /** Servisa vēsturē ir mērinstrumentu paneļa / odometra nomaiņa. */
@@ -319,6 +319,11 @@ export type OdometerDropAnalysisOptions = {
    * Pats kritumu nerada; drīkst tikai apstiprināt, ka trends turpinās.
    */
   approxLaterReading?: { km: number; t: number; source: string } | null;
+  /**
+   * j26: valsts datumam TIKAI no reģistru laika līnijas (valstu posmi). Ja dots, 5. nosacījums
+   * neņem valsti no avota cilnes; "" = nezināms (nosacījums neattiecas).
+   */
+  countryAt?: (t: number) => string;
 };
 
 function pointSources(p: DatedKmPoint): string {
@@ -381,7 +386,9 @@ function isolatedEntryErrorScore(
   if (confirmations > 0) return null;
   // 5) valsts maiņa tieši krituma brīdī = iespējama reāla korekcija importā.
   const [a, b] = dropPair;
-  if (a.verifiedCountry && b.verifiedCountry && sourceKey(a.verifiedCountry) !== sourceKey(b.verifiedCountry)) {
+  const countryA = opts.countryAt ? opts.countryAt(a.t) : a.verifiedCountry;
+  const countryB = opts.countryAt ? opts.countryAt(b.t) : b.verifiedCountry;
+  if (countryA && countryB && sourceKey(countryA) !== sourceKey(countryB)) {
     return null;
   }
   const span = after.t - before.t;

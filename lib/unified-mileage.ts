@@ -761,7 +761,52 @@ export function computeOdometerAnomalyBySourceOrder(rows: UnifiedMileageRow[]): 
   return analyzeUnifiedMileageAnomalies(rows).anomalyBySourceOrder;
 }
 
+/** Servisa vēsturē mērinstrumentu paneļa / odometra nomaiņa = reālas korekcijas pazīme. */
+export const ODOMETER_REPLACEMENT_RE =
+  /instrument(?:en)?\s*cluster|kombiinstrument|tachometer\s*(?:replace|tausch)|tacho\w*\s*(?:getauscht|ersetzt|tausch)|speedometer\s*(?:replace|repair)|odomet\w*\s*(?:replace|repair|nomai|maiņ|remont)|(?:nomai\w*|maiņ\w*|remont\w*)\s+odometr|mērinstrumentu\s+panel\w*\s*(?:nomai|maiņ|remont)|spidometr\w*\s*(?:nomai|maiņ|remont)/i;
+
+/** j26: neticams rādījums - zem šī km pēc > 1 gada, ja agrāk bija ≥ 10× lielāks. */
+export const IMPLAUSIBLE_READING_MAX_KM = 1_000;
+export const IMPLAUSIBLE_READING_MIN_AGE_DAYS = 365;
+export const IMPLAUSIBLE_READING_RATIO = 10;
+
+/**
+ * Neticami rādījumi (piem. 100 km reģistrācijas apskatē pēc eksporta): vienmēr ievades kļūda,
+ * valsts maiņa to neietekmē. Ja servisā fiksēta odometra / paneļa nomaiņa - netiek piemērots.
+ * Saglabātos datus nemaina: rindas izslēdz tikai aprēķinā un PDF/AI.
+ */
+export function findImplausibleMileageReadings(
+  rows: readonly UnifiedMileageRow[],
+  opts?: { odometerReplacementNoted?: boolean },
+): UnifiedMileageRow[] {
+  if (opts?.odometerReplacementNoted) return [];
+  const dated = rows
+    .map((r) => ({ r, km: Number(r.odometer.replace(/\D/g, "")), t: r.sortableTime }))
+    .filter((x) => x.r.odometer.replace(/\D/g, "") !== "" && Number.isFinite(x.km) && Number.isFinite(x.t));
+  if (dated.length < 2) return [];
+  const earliest = Math.min(...dated.map((x) => x.t));
+  return dated
+    .filter(
+      (x) =>
+        x.km < IMPLAUSIBLE_READING_MAX_KM &&
+        x.t - earliest >= IMPLAUSIBLE_READING_MIN_AGE_DAYS * 86_400_000 &&
+        dated.some(
+          (y) => y.t < x.t && y.km >= IMPLAUSIBLE_READING_MAX_KM && y.km >= x.km * IMPLAUSIBLE_READING_RATIO,
+        ),
+    )
+    .map((x) => x.r);
+}
+
+export function formatImplausibleReadingLine(r: UnifiedMileageRow): string {
+  const km = r.odometer.replace(/\D/g, "");
+  return `${r.date}, ${km} km, ${r.sourceLabel}`;
+}
+
 export type CollectUnifiedMileageOptions = {
+  /** Iekļaut neticamos rādījumus (tikai admin brīdinājumam). Noklusējumā izslēgti. */
+  includeImplausible?: boolean;
+  /** Tikai admin priekšskatījumam: piezīme par izlaistajiem neticamajiem rādījumiem. */
+  showImplausibleNote?: boolean;
   /** Neiekļaut CSDD `mileageHistory` rindas (CSDD bloks var būt PDF, bet ne šī tabula). */
   omitCsddMileage?: boolean;
   /** Tikai PDF tabulai: nerādīt CSDD rādījumu bez datuma („aptuveni MM.YYYY” rinda). */
@@ -958,7 +1003,25 @@ export function collectUnifiedMileageRows(
     dedup.add(k);
     out.push(r);
   }
-  return out;
+  if (options?.includeImplausible) return out;
+  const implausible = new Set(
+    findImplausibleMileageReadings(out, { odometerReplacementNoted: odometerReplacementNotedIn(p) }),
+  );
+  return implausible.size > 0 ? out.filter((r) => !implausible.has(r)) : out;
+}
+
+function odometerReplacementNotedIn(p: UnifiedMileageSourcePayload): boolean {
+  const works = (p.autoRecordsBlock?.serviceWorks ?? []).map((w) => w.works).join("\n");
+  return ODOMETER_REPLACEMENT_RE.test(works);
+}
+
+/** Admin brīdinājumam: rādījumi, ko PDF un AI izlaiž kā neticamus. */
+export function collectImplausibleMileageReadings(
+  p: UnifiedMileageSourcePayload,
+  options?: CollectUnifiedMileageOptions,
+): UnifiedMileageRow[] {
+  const all = collectUnifiedMileageRows(p, { ...options, includeImplausible: true });
+  return findImplausibleMileageReadings(all, { odometerReplacementNoted: odometerReplacementNotedIn(p) });
 }
 
 function parseCitiAvotiMileageFromComments(raw: string): { date: string; odometer: string; country: string }[] {
