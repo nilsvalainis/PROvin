@@ -79,6 +79,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
   const [pickupCode, setPickupCode] = useState(order.pickupRef);
   const [note, setNote] = useState(order.notes);
   const [parkingUntil, setParkingUntil] = useState(order.freeParkingUntil);
+  const [pickupDate, setPickupDate] = useState(order.pickupDate);
   const [access, setAccess] = useState<CabinetAccessView>({
     write: false,
     hideSums: true,
@@ -92,7 +93,8 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
     setPickupCode(order.pickupRef);
     setNote(order.notes);
     setParkingUntil(order.freeParkingUntil);
-  }, [order.id, order.pickupRef, order.notes, order.freeParkingUntil]);
+    setPickupDate(order.pickupDate);
+  }, [order.id, order.pickupRef, order.notes, order.freeParkingUntil, order.pickupDate]);
 
   useEffect(() => {
     const id = window.setInterval(() => setNowMs(Date.now()), 30_000);
@@ -180,13 +182,19 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
     return body.order;
   }
 
+  /** Pickup datumu drīkst mainīt tikai ar roku kabinetā - nekas to vairs automātiski neaizpilda. */
+  async function savePickupDate(next: string) {
+    setPickupDate(next);
+    await saveOrderFields({ pickupDate: next });
+  }
+
   async function savePickupCode(nextCode: string) {
     const saved = await saveOrderFields({ pickupRef: nextCode });
     const res = await fetch(`/api/admin/iriss-logistics/orders/${encodeURIComponent(order.id)}/pickup`, {
       method: "PATCH",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pickupCode: nextCode, pickupDate: order.pickupDate }),
+      body: JSON.stringify({ pickupCode: nextCode, pickupDate }),
     });
     const body = (await res.json()) as { pickup?: CabinetPickup };
     if (body.pickup) setPickup(body.pickup);
@@ -198,7 +206,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
       method: "PATCH",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stage: next, pickupCode: pickupCode || order.pickupRef, pickupDate: order.pickupDate }),
+      body: JSON.stringify({ stage: next, pickupCode: pickupCode || order.pickupRef, pickupDate }),
     });
     const body = (await res.json()) as { pickup?: CabinetPickup };
     if (body.pickup) setPickup(body.pickup);
@@ -486,7 +494,36 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
                 <dt className="text-[var(--ink2)]">Pickup kods</dt>
                 <dd className="font-semibold">{pickup?.pickupCode || order.pickupRef || "-"}</dd>
                 <dt className="text-[var(--ink2)]">Pickup datums</dt>
-                <dd>{order.pickupDate ? formatLogisticsDate(order.pickupDate) : "-"}</dd>
+                <dd>
+                  {access.write ? (
+                    <span className="flex items-center gap-1.5">
+                      <input
+                        type="date"
+                        value={pickupDate.slice(0, 10)}
+                        onChange={(e) => {
+                          const next = e.target.value;
+                          if (next === (order.pickupDate || "").slice(0, 10)) {
+                            setPickupDate(next);
+                            return;
+                          }
+                          void savePickupDate(next);
+                        }}
+                        className="h-8 rounded-lg border border-[#e5e7eb] px-1.5 text-[13px]"
+                      />
+                      {pickupDate ? (
+                        <button
+                          type="button"
+                          onClick={() => void savePickupDate("")}
+                          className="text-[11px] font-semibold text-[var(--ink3)] underline"
+                        >
+                          Notīrīt
+                        </button>
+                      ) : null}
+                    </span>
+                  ) : (
+                    <span>{order.pickupDate ? formatLogisticsDate(order.pickupDate) : "-"}</span>
+                  )}
+                </dd>
                 <dt className="text-[var(--ink2)]">Vieta</dt>
                 <dd>{order.pickupAddress || formatLogisticsAddress(order.pickupSnapshot ?? {}) || "-"}</dd>
                 <dt className="text-[var(--ink2)]">Darba laiks</dt>

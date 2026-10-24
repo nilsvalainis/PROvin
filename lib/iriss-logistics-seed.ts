@@ -227,7 +227,9 @@ export function seedLogisticsFromPunkti(
           pickupLat: point.lat,
           pickupLng: point.lng,
           geocodeStatus: coords.lat == null ? "pending" : coords.precise ? "ok" : "neprecizs",
-          pickupDate: pickupDateFromTerm(car.termins ?? ""),
+          // Pickup datumu drīkst aizpildīt tikai no e-pasta vai Auto1 profila (vai ar roku kabinetā) -
+          // "termins" ir brīvs statusa teksts (pirkuma datums, dokumentu notikumi u.tml.), ne pickup apstiprinājums.
+          pickupDate: "",
           stockNo: (car.ref ?? "").trim(),
           freeParkingUntil: pickupDateFromTerm(car.termins ?? ""),
           status,
