@@ -369,22 +369,24 @@ export function AdminMobileSheet({
         }}
       />
       <div
-        className={`${opaque ? "admin-sheet-opaque" : "am-glass"} admin-sheet-panel rounded-t-[36px] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 ${
+        className={`${opaque ? "admin-sheet-opaque" : "am-glass"} admin-sheet-panel flex max-h-[85vh] flex-col rounded-t-[36px] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 ${
           open ? "" : "admin-sheet-out"
         }`}
       >
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--am-fill2)]" aria-hidden />
-        <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-[var(--am-fill2)]" aria-hidden />
+        <div className="mb-3 flex shrink-0 items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-[19px] font-bold text-[var(--am-ink)]">{title}</h2>
             {subtitle ? <p className="mt-0.5 text-[13px] text-[var(--am-ink2)]">{subtitle}</p> : null}
           </div>
-          <button type="button" aria-label="Aizvērt" onClick={onClose} className="am-press grid h-11 w-11 place-items-center rounded-full bg-[var(--am-fill)]">
+          <button type="button" aria-label="Aizvērt" onClick={onClose} className="am-press grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--am-fill)]">
             <AdminMobileIcon name="aizvert" className="h-4 w-4" />
           </button>
         </div>
-        {children}
-        {action}
+        <div className="min-h-0 overflow-y-auto overscroll-contain">
+          {children}
+          {action}
+        </div>
       </div>
     </div>
   );
