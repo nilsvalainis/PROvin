@@ -185,6 +185,24 @@ export function IrissOfferPublicView({ token, view }: { token: string; view: Iri
         </section>
       ) : null}
 
+      {view.customBlocks.map((block) => (
+        <section key={block.id} className={cardClassName()}>
+          {sectionTitle(block.title || (block.kind === "table" ? "Tabula" : "Teksts"))}
+          {block.kind === "table" ? (
+            <div className="space-y-2">
+              {block.rows.map((row, i) => (
+                <div key={i} className="flex items-baseline justify-between gap-3 border-b border-[#e4e4e7] py-1.5 text-[13px] last:border-0">
+                  <span className="text-[#52525b]">{row.label}</span>
+                  <span className="text-right font-semibold text-[#111827]">{row.value}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#52525b]">{block.html}</p>
+          )}
+        </section>
+      ))}
+
       <section className="mt-5 border-t border-[#e4e4e7] pt-4">
         <IrissOfferPublicActions
           token={token}

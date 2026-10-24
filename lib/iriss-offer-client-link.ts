@@ -4,6 +4,7 @@
  * Zīmols: Dzintarzeme Auto, juridiski SIA ĪRISS.
  */
 
+import { irissOfferCustomPdfBlocks, irissOfferPdfShows } from "@/lib/iriss-offer-blocks";
 import {
   formatIrissOfferPublicBodyType,
   formatIrissOfferPublicFuel,
@@ -80,6 +81,8 @@ export type IrissOfferPublicView = {
   total: string;
   validDays: string;
   photos: { id: string }[];
+  /** Operatora pievienotie papildu bloki (Piedāvājuma bloki PDF -> "+Teksts"/"+Tabula"), kas atzīmēti "Rādīt". */
+  customBlocks: { id: string; title: string; kind: "text" | "table"; html: string; rows: { label: string; value: string }[] }[];
   decision: IrissOfferClientDecision;
   question: string;
   /** Lēmuma laiks (ISO) vai "". */
@@ -479,30 +482,57 @@ export function buildIrissOfferPublicView(
   client: { decision: IrissOfferClientDecision; question: string; decidedAt?: string },
   opts?: { nowMs?: number },
 ): IrissOfferPublicView {
-  const checks = [
-    offer.hasFullServiceHistory ? IRISS_OFFER_PUBLIC_LABELS.service : "",
-    offer.hasFactoryPaint ? IRISS_OFFER_PUBLIC_LABELS.paint : "",
-    offer.hasNoRustBody ? IRISS_OFFER_PUBLIC_LABELS.rust : "",
-    offer.hasSecondWheelSet ? IRISS_OFFER_PUBLIC_LABELS.wheels : "",
-  ].filter(Boolean);
+  // Piedāvājuma bloku "Rādīt/Slēpt" pārslēgs (components/admin/IrissOfferBlocksEditor.tsx) nosaka tieši to pašu
+  // sadaļu redzamību šeit, kas PDF (lib/iriss-pasutijums-pdf.ts) - lai publiskā saite un PDF nekad nesaskrāpējas.
+  const assessmentOk = irissOfferPdfShows(offer, "assessment");
+  const warrantyOk = irissOfferPdfShows(offer, "warranty");
+  const pricingOk = irissOfferPdfShows(offer, "pricing");
+  const photosOk = irissOfferPdfShows(offer, "photos");
+
+  const checks = assessmentOk
+    ? [
+        offer.hasFullServiceHistory ? IRISS_OFFER_PUBLIC_LABELS.service : "",
+        offer.hasFactoryPaint ? IRISS_OFFER_PUBLIC_LABELS.paint : "",
+        offer.hasNoRustBody ? IRISS_OFFER_PUBLIC_LABELS.rust : "",
+        offer.hasSecondWheelSet ? IRISS_OFFER_PUBLIC_LABELS.wheels : "",
+      ].filter(Boolean)
+    : [];
 
   const structured = [
-    plainClientText(offer.specialNotes),
-    plainClientText(offer.visualAssessment),
-    plainClientText(offer.technicalAssessment),
-    plainClientText(offer.summary),
+    warrantyOk ? plainClientText(offer.specialNotes) : "",
+    assessmentOk ? plainClientText(offer.visualAssessment) : "",
+    assessmentOk ? plainClientText(offer.technicalAssessment) : "",
+    assessmentOk ? plainClientText(offer.summary) : "",
   ].filter(Boolean);
   const notes = structured.length > 0 ? structured.join("\n\n") : plainClientText(offer.comment);
 
-  const prices = [
-    { label: IRISS_OFFER_PUBLIC_LABELS.car, value: moneyLabel(offer.carPrice || offer.priceGermany) },
-    { label: IRISS_OFFER_PUBLIC_LABELS.delivery, value: moneyLabel(offer.deliveryPrice) },
-    { label: IRISS_OFFER_PUBLIC_LABELS.commission, value: moneyLabel(offer.commissionFee) },
-  ].filter((row) => row.value);
+  const prices = pricingOk
+    ? [
+        { label: IRISS_OFFER_PUBLIC_LABELS.car, value: moneyLabel(offer.carPrice || offer.priceGermany) },
+        { label: IRISS_OFFER_PUBLIC_LABELS.delivery, value: moneyLabel(offer.deliveryPrice) },
+        { label: IRISS_OFFER_PUBLIC_LABELS.commission, value: moneyLabel(offer.commissionFee) },
+      ].filter((row) => row.value)
+    : [];
 
-  const photos = orderOfferAttachmentsForPdf(offer)
-    .filter((a) => isIrissOfferPublicImageMime(a.mimeType) && isSafeIrissOfferAttachmentId(a.id))
-    .map((a) => ({ id: a.id }));
+  const photos = photosOk
+    ? orderOfferAttachmentsForPdf(offer)
+        .filter((a) => isIrissOfferPublicImageMime(a.mimeType) && isSafeIrissOfferAttachmentId(a.id))
+        .map((a) => ({ id: a.id }))
+    : [];
+
+  const customBlocks: IrissOfferPublicView["customBlocks"] = [];
+  for (const block of irissOfferCustomPdfBlocks(offer)) {
+    const title = plainClientText(block.title).slice(0, 80);
+    if (block.kind === "table") {
+      const rows = (block.rows ?? [])
+        .map((row) => ({ label: plainClientText(row.label), value: plainClientText(row.value) }))
+        .filter((row) => row.label || row.value);
+      if (rows.length) customBlocks.push({ id: block.id, title, kind: "table", html: "", rows });
+      continue;
+    }
+    const html = plainClientText(block.html ?? "");
+    if (html) customBlocks.push({ id: block.id, title, kind: "text", html, rows: [] });
+  }
 
   const validRaw = offer.offerValidDays.trim();
   const validDays = /^\d{1,3}$/.test(validRaw) ? `${validRaw} dienas` : validRaw.slice(0, 40);
@@ -522,9 +552,10 @@ export function buildIrissOfferPublicView(
     checks,
     notes,
     prices,
-    total: irissOfferTotalLabel(offer),
+    total: pricingOk ? irissOfferTotalLabel(offer) : "",
     validDays,
     photos,
+    customBlocks,
     decision: client.decision,
     question: sanitizeIrissOfferQuestion(client.question),
     decidedAt: client.decision && client.decidedAt && isIso(client.decidedAt) ? client.decidedAt : "",
@@ -551,6 +582,7 @@ const PUBLIC_VIEW_KEYS = [
   "total",
   "validDays",
   "photos",
+  "customBlocks",
   "decision",
   "question",
   "decidedAt",
