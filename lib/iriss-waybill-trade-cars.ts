@@ -57,6 +57,14 @@ export function waybillTradeCarsWithSource(cars: ReadonlyArray<AutoparksCar>): {
   return { cars: out.slice(0, MAX_TRADE_CARS), source: picked.source };
 }
 
+/**
+ * B192-7 (Dzintarzeme Auto) auto izvēle: rāda TIKAI šīs firmas tirdzniecībā pieņemtos auto,
+ * nekad SIA ĪRISS auto (sk. j43, Nils 24.10).
+ */
+export function dzintarzemeAcceptedCars(cars: ReadonlyArray<WaybillTradeCar>): WaybillTradeCar[] {
+  return cars.filter((car) => car.owner === "DZA" && car.accepted);
+}
+
 /** Meklēšana izvēles logā: marka, modelis vai VIN (daļa). */
 export function filterWaybillTradeCars(cars: ReadonlyArray<WaybillTradeCar>, query: string): WaybillTradeCar[] {
   const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
