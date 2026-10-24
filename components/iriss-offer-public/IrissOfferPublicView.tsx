@@ -129,10 +129,24 @@ export function IrissOfferPublicView({ token, view }: { token: string; view: Iri
         </section>
       ) : null}
 
-      {view.apraksti ? (
+      {view.specialNotes ? (
         <section className={cardClassName()}>
-          {sectionTitle("Apraksti")}
-          <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#52525b]">{view.apraksti}</p>
+          {sectionTitle("Īpašas atzīmes")}
+          <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#52525b]">{view.specialNotes}</p>
+        </section>
+      ) : null}
+
+      {view.visualAssessment ? (
+        <section className={cardClassName()}>
+          {sectionTitle("Vizuālais novērtējums")}
+          <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#52525b]">{view.visualAssessment}</p>
+        </section>
+      ) : null}
+
+      {view.technicalAssessment ? (
+        <section className={cardClassName()}>
+          {sectionTitle("Tehniskais novērtējums")}
+          <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#52525b]">{view.technicalAssessment}</p>
         </section>
       ) : null}
 

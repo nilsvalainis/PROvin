@@ -64,16 +64,16 @@ describe("iriss-offer-blocks", () => {
     expect(irissOfferCustomPdfBlocks(offer).map((b) => b.html)).toEqual(["Papildu teksts"]);
   });
 
-  it("j50: includes an Apraksti block by default, right after Transportlīdzeklis", () => {
+  it("j50 correction: Īpašas atzīmes/Vizuālais/Tehniskais novērtējums each get their own block, enabled by default, right after Transportlīdzeklis", () => {
     const offer = emptyIrissOfferRecord("o1", "2026-10-17T10:00:00.000Z");
     offer.specialNotes = "Garantija";
     const blocks = resolveIrissOfferBlocks(offer);
-    expect(blocks[1]?.kind).toBe("apraksti");
-    expect(blocks[1]?.title).toBe("Apraksti");
-    expect(blocks[1]?.visible).toBe(true);
+    expect(blocks.slice(1, 4).map((b) => b.kind)).toEqual(["specialNotes", "visualAssessment", "technicalAssessment"]);
+    expect(blocks.slice(1, 4).map((b) => b.title)).toEqual(["Īpašas atzīmes", "Vizuālais novērtējums", "Tehniskais novērtējums"]);
+    expect(blocks.slice(1, 4).every((b) => b.visible)).toBe(true);
   });
 
-  it("j50: backfills a missing Apraksti block for offers saved before it existed, without touching stored blocks", () => {
+  it("j50 correction: backfills the three missing per-section blocks for offers saved before they existed, without touching stored blocks, defaulting to visible", () => {
     const offer = emptyIrissOfferRecord("o1", "2026-10-17T10:00:00.000Z");
     offer.visualAssessment = "Labs stāvoklis";
     offer.blocks = [
@@ -81,8 +81,14 @@ describe("iriss-offer-blocks", () => {
       { id: "pricing", kind: "pricing", title: "Cenas", visible: true },
     ];
     const blocks = resolveIrissOfferBlocks(offer);
-    expect(blocks.map((b) => b.kind)).toEqual(["vehicle", "apraksti", "pricing"]);
-    expect(blocks.find((b) => b.kind === "apraksti")?.visible).toBe(true);
+    expect(blocks.map((b) => b.kind)).toEqual([
+      "vehicle",
+      "specialNotes",
+      "visualAssessment",
+      "technicalAssessment",
+      "pricing",
+    ]);
+    expect(blocks.filter((b) => b.kind !== "vehicle" && b.kind !== "pricing").every((b) => b.visible)).toBe(true);
     // Pats piedāvājuma ieraksts netiek mainīts - tikai rādīšanas brīža izvads.
     expect(offer.blocks).toEqual([
       { id: "vehicle", kind: "vehicle", title: "Transportlīdzeklis", visible: true },
@@ -90,11 +96,28 @@ describe("iriss-offer-blocks", () => {
     ]);
   });
 
-  it("j50: respects an already-saved Apraksti toggle instead of recomputing it", () => {
+  it("j50 correction: respects an already-saved per-section toggle instead of recomputing it", () => {
     const offer = emptyIrissOfferRecord("o1", "2026-10-17T10:00:00.000Z");
     offer.specialNotes = "Teksts, kas tomēr paliek slēpts";
-    offer.blocks = [{ id: "apraksti", kind: "apraksti", title: "Apraksti", visible: false }];
+    offer.blocks = [
+      { id: "specialNotes", kind: "specialNotes", title: "Īpašas atzīmes", visible: false },
+      { id: "visualAssessment", kind: "visualAssessment", title: "Vizuālais novērtējums", visible: true },
+    ];
     const blocks = resolveIrissOfferBlocks(offer);
-    expect(blocks.find((b) => b.kind === "apraksti")?.visible).toBe(false);
+    expect(blocks.find((b) => b.kind === "specialNotes")?.visible).toBe(false);
+    expect(blocks.find((b) => b.kind === "visualAssessment")?.visible).toBe(true);
+    // Trūkstošais tehniskā novērtējuma slēdzis tiek pievienots kā redzams pēc noklusējuma.
+    expect(blocks.find((b) => b.kind === "technicalAssessment")?.visible).toBe(true);
+  });
+
+  it("j50 correction: migrates a legacy combined 'apraksti' toggle into the three per-section toggles without mutating stored blocks", () => {
+    const offer = emptyIrissOfferRecord("o1", "2026-10-17T10:00:00.000Z");
+    offer.specialNotes = "Teksts, kas tomēr paliek slēpts";
+    offer.blocks = [{ id: "apraksti", kind: "apraksti" as never, title: "Apraksti", visible: false }];
+    const blocks = resolveIrissOfferBlocks(offer);
+    expect(blocks.some((b) => (b.kind as string) === "apraksti")).toBe(false);
+    expect(blocks.map((b) => b.kind)).toEqual(["specialNotes", "visualAssessment", "technicalAssessment"]);
+    expect(blocks.every((b) => b.visible === false)).toBe(true);
+    expect(offer.blocks).toEqual([{ id: "apraksti", kind: "apraksti", title: "Apraksti", visible: false }]);
   });
 });

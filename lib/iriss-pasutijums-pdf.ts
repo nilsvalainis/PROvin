@@ -1575,7 +1575,7 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (irissOfferPdfShows(offer, "apraksti") && specialNotes) {
+  if (irissOfferPdfShows(offer, "specialNotes") && specialNotes) {
     drawIosCard(
       ctx,
       "Īpašas atzīmes",
@@ -1584,7 +1584,7 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (irissOfferPdfShows(offer, "apraksti") && visual && parseScoreOutOf10(visual) !== null) {
+  if (irissOfferPdfShows(offer, "visualAssessment") && visual && parseScoreOutOf10(visual) !== null) {
     drawIosCard(
       ctx,
       "Vizuālais novērtējums",
@@ -1593,7 +1593,7 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (irissOfferPdfShows(offer, "apraksti") && visual) {
+  if (irissOfferPdfShows(offer, "visualAssessment") && visual) {
     drawIosCard(
       ctx,
       "Detalizēts apraksts (vizuālais)",
@@ -1602,7 +1602,7 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (irissOfferPdfShows(offer, "apraksti") && technical && parseScoreOutOf10(technical) !== null) {
+  if (irissOfferPdfShows(offer, "technicalAssessment") && technical && parseScoreOutOf10(technical) !== null) {
     drawIosCard(
       ctx,
       "Tehniskais novērtējums",
@@ -1611,7 +1611,7 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (irissOfferPdfShows(offer, "apraksti") && technical) {
+  if (irissOfferPdfShows(offer, "technicalAssessment") && technical) {
     drawIosCard(
       ctx,
       "Detalizēts apraksts (tehniskais)",
