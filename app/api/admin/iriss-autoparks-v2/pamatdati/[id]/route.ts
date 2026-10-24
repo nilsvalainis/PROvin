@@ -25,6 +25,8 @@ const TEXT_MAX: Record<string, number> = {
   location: 120,
   arrivedAt: 10,
   tyreSize: 40,
+  gearbox: 40,
+  engine: 60,
   make: 60,
   model: 80,
   vin: 32,
@@ -74,14 +76,30 @@ export async function PATCH(req: Request, ctx: Ctx) {
         if (v === undefined) continue;
         if (k === "plate" || k === "owner") v = v.toUpperCase();
         if (k === "vin") v = normalizeVin(v);
-        hist.push({ field: k, from: c.fields[k] || found.car[k], to: v });
+        const from = c.fields[k] || found.car[k];
+        hist.push({ field: k, from, to: v });
         c.fields[k] = v;
+        // Labots VIN/numurzīme var padarīt CSDD meklēšanu veiksmīgu - neļaut iepriekšējam
+        // neveiksmīgam mēģinājumam (ar vecu/tukšu identifikatoru) bloķēt atkārtotu mēģinājumu nedēļu.
+        if ((k === "vin" || k === "plate") && v !== from) c.tech.csddCheckedAt = "";
       }
       const tyre = text("tyreSize");
       if (tyre !== undefined) {
         hist.push({ field: "tech.tyreSize", from: c.tech.tyreSize, to: tyre });
         c.tech.tyreSize = tyre;
         c.sources["tech.tyreSize"] = "manual";
+      }
+      const gearbox = text("gearbox");
+      if (gearbox !== undefined) {
+        hist.push({ field: "tech.gearbox", from: c.tech.gearbox, to: gearbox });
+        c.tech.gearbox = gearbox;
+        c.sources["tech.gearbox"] = "manual";
+      }
+      const engine = text("engine");
+      if (engine !== undefined) {
+        hist.push({ field: "tech.engine", from: c.tech.engine, to: engine });
+        c.tech.engine = engine;
+        c.sources["tech.engine"] = "manual";
       }
       if (firstRegDate !== undefined) {
         hist.push({ field: "tech.firstRegDate", from: c.tech.firstRegDate, to: firstRegDate });
