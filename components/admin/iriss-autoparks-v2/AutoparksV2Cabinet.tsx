@@ -162,7 +162,7 @@ export function AutoparksV2Cabinet({
       </div>
       {statusBtn("ap2-mstatus")}
       {statusErr ? <p className="ap2-err">{statusErr}</p> : null}
-      {canCreateOffer ? (
+      {canCreateOffer && tab === "cenu_lapa" ? (
         <div style={{ margin: "10px 0", display: "grid" }}>
           <IrissCreateOfferButton from="autoparks" id={basics.id} className="ap2-btn dark" />
         </div>

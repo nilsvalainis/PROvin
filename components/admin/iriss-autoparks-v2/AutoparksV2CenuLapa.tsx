@@ -18,8 +18,12 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
   useEffect(() => {
     let live = true;
     fetch(api)
-      .then((r) => r.json())
-      .then((d: { cenuLapa?: V2PriceSheet }) => live && d.cenuLapa && setS(d.cenuLapa))
+      .then(async (r) => {
+        const d = (await r.json().catch(() => null)) as { cenuLapa?: V2PriceSheet } | null;
+        if (!live) return;
+        if (r.ok && d?.cenuLapa) setS(d.cenuLapa);
+        else setError("Neizdevās ielādēt");
+      })
       .catch(() => live && setError("Neizdevās ielādēt"));
     return () => {
       live = false;
