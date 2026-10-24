@@ -4,6 +4,7 @@ import nodemailer from "nodemailer";
 import type { SendMailOptions, Transporter } from "nodemailer";
 
 type Attachment = NonNullable<SendMailOptions["attachments"]>[number];
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { getB2bMailFromAddress, getMailFromAddress, getMailReplyTo, getSiteOrigin } from "@/lib/email/mail-config";
 import {
   adminAuditSlaWarningHtml,
@@ -492,6 +493,8 @@ export async function sendReportReadyEmail(opts: {
   productKind?: ReportReadyProductKind;
   includeGoogleReview?: boolean;
   b2bClient?: boolean;
+  /** Klienta/partnera izvēlētā atskaites valoda - noklusējums "lv". */
+  lang?: ClientReportLang;
 }): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
@@ -512,9 +515,12 @@ export async function sendReportReadyEmail(opts: {
   const carVin = hasRealVin ? normalizeVin(rawVin) : "";
   const productKind = opts.productKind ?? "audits";
   const b2bClient = opts.b2bClient === true;
+  const lang = opts.lang ?? "lv";
   const includeGoogleReview = opts.includeGoogleReview === true && !b2bClient;
+  /** Editējamie šabloni ir latviski; cita valoda vienmēr iet pāri tiem, tāpat kā B2B zīmols. */
+  const useEditableTemplates = !b2bClient && lang === "lv";
   await warmMessageTemplatesCache();
-  const doc = b2bClient ? null : getCachedMessageTemplatesDoc();
+  const doc = useEditableTemplates ? getCachedMessageTemplatesDoc() : null;
   const attachmentLines = deduped.map((a) => a.filename);
   const vars = buildReportReadyEmailVars({
     kind: productKind,
@@ -523,12 +529,12 @@ export async function sendReportReadyEmail(opts: {
     includeGoogleReview,
   });
   const templateId = reportReadyTemplateId(productKind);
-  const rendered = b2bClient
-    ? null
-    : resolveMessageSync(templateId, vars, {
+  const rendered = useEditableTemplates
+    ? resolveMessageSync(templateId, vars, {
         doc,
         htmlContext: { attachmentLines },
-      });
+      })
+    : null;
   const html =
     rendered?.html ??
     auditCompletedEmailHtml({
@@ -537,6 +543,7 @@ export async function sendReportReadyEmail(opts: {
       productKind,
       includeGoogleReview,
       b2bClient,
+      lang,
     });
   const text =
     rendered?.text ??
@@ -547,10 +554,11 @@ export async function sendReportReadyEmail(opts: {
         attachmentLines,
         includeGoogleReview,
         b2bClient,
+        lang,
       },
       doc,
     );
-  const subject = rendered?.subject ?? buildReportReadySubject(productKind, carVin);
+  const subject = rendered?.subject ?? buildReportReadySubject(productKind, carVin, lang);
 
   try {
     await sendSmtpMail({
@@ -964,6 +972,7 @@ export async function sendDealerDataOperatorEmail(opts: {
   text: string;
   attachments?: ReportReadyMailAttachment[];
   b2bClient?: boolean;
+  lang?: ClientReportLang;
 }): Promise<void> {
   const subject = opts.subject.trim().slice(0, 180);
   const text = opts.text.trim();
@@ -972,11 +981,12 @@ export async function sendDealerDataOperatorEmail(opts: {
   }
   const attachments = dedupeAttachmentFilenames(opts.attachments ?? []);
   const b2bClient = opts.b2bClient === true;
+  const lang = opts.lang ?? "lv";
   await sendSmtpMail({
     to: opts.to,
     subject,
     text,
-    html: dealerDataOperatorMessageEmailHtml({ text, b2bClient }),
+    html: dealerDataOperatorMessageEmailHtml({ text, b2bClient, lang }),
     ...(b2bClient ? { from: getB2bMailFromAddress() } : {}),
     ...(attachments.length > 0
       ? {
@@ -996,6 +1006,7 @@ export async function trySendDealerDataOperatorEmail(opts: {
   text: string;
   attachments?: ReportReadyMailAttachment[];
   b2bClient?: boolean;
+  lang?: ClientReportLang;
 }): Promise<boolean> {
   if (!isSmtpConfigured()) {
     console.warn("[dealer-data] SMTP nav iestatīts, operatora e-pasts nav nosūtīts");

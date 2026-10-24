@@ -3,6 +3,8 @@
 import { ADMIN_PRO_TONE } from "@/lib/admin-pro-tones";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
+import { buildProvinDilerisPdfFilename } from "@/lib/audit-report-pdf-filename";
+import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
 
 import {
   whatsappPrefillDealerNoDataRefunded,
@@ -118,6 +120,7 @@ export function AdminDealerDataJobStrip({
   const [mailTo, setMailTo] = useState("");
   const [mailSubject, setMailSubject] = useState("");
   const [mailText, setMailText] = useState("");
+  const [mailLang, setMailLang] = useState<ClientReportLang>("lv");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
 
@@ -162,12 +165,19 @@ export function AdminDealerDataJobStrip({
 
   const vin = job?.vin || orderVin;
 
+  const resolvedInitialLang: ClientReportLang = (CLIENT_REPORT_LANGS as readonly string[]).includes(
+    (reportLang ?? "").trim().toLowerCase(),
+  )
+    ? ((reportLang ?? "").trim().toLowerCase() as ClientReportLang)
+    : "lv";
+
   const openMail = (mode: MailSheet["mode"], kind: DealerClientEmailKind) => {
+    const lang = kind === "ready" ? resolvedInitialLang : "lv";
     const draft =
       kind === "cancelled"
         ? buildDealerCancelledEmailDraft({ vin, amountEur: refundAmountEur(job) })
         : kind === "ready"
-          ? buildDealerReadyEmailDraft({ vin, b2bClient, lang: reportLang, walletProduct })
+          ? buildDealerReadyEmailDraft({ vin, b2bClient, lang, walletProduct })
           : buildDealerNoDataEmailDraft({
               vin,
               amountEur: refundAmountEur(job),
@@ -176,9 +186,19 @@ export function AdminDealerDataJobStrip({
     setMailTo((customerEmail ?? "").trim());
     setMailSubject(draft.subject);
     setMailText(draft.text);
+    setMailLang(lang);
     setPdfFile(null);
     setSheet({ mode, kind });
     setNotice(null);
+  };
+
+  const changeMailLang = (lang: ClientReportLang) => {
+    setMailLang(lang);
+    if (sheet?.kind === "ready") {
+      const draft = buildDealerReadyEmailDraft({ vin, b2bClient, lang, walletProduct });
+      setMailSubject(draft.subject);
+      setMailText(draft.text);
+    }
   };
 
   const rerun = async (force: boolean) => {
@@ -309,6 +329,7 @@ export function AdminDealerDataJobStrip({
         fd.append("customerEmail", to);
         fd.append("subject", mailSubject.trim());
         fd.append("text", mailText.trim());
+        fd.append("lang", mailLang);
         fd.append("reportPdf", pdfFile, pdfFile.name || "dealer.pdf");
         const res = await fetch("/api/admin/dealer-data/send-pdf", {
           method: "POST",
@@ -543,6 +564,23 @@ export function AdminDealerDataJobStrip({
               disabled={busy !== null}
             />
 
+            {sheet.kind === "ready" ? (
+              <>
+                <label className="mt-2 block text-[10px] font-medium text-slate-500">E-pasta valoda</label>
+                <select
+                  className="mt-0.5 w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12px]"
+                  value={mailLang}
+                  onChange={(e) => changeMailLang(e.target.value as ClientReportLang)}
+                  disabled={busy !== null}
+                >
+                  <option value="lv">Latviešu (LV)</option>
+                  <option value="en">English (EN)</option>
+                  <option value="ru">Русский (RU)</option>
+                  <option value="de">Deutsch (DE)</option>
+                </select>
+              </>
+            ) : null}
+
             <label className="mt-2 block text-[10px] font-medium text-slate-500">Temats</label>
             <input
               type="text"
@@ -571,7 +609,8 @@ export function AdminDealerDataJobStrip({
                   onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
                 />
                 <p className="mt-1 text-[10px] text-[var(--color-provin-muted)]">
-                  1) „Ģenerēt dīlera PDF” - Drukāt - Saglabāt kā PDF. 2) Izvēlies failu šeit. 3) Nosūti.
+                  1) „Ģenerēt dīlera PDF” - Drukāt - Saglabāt kā PDF. 2) Izvēlies failu šeit. 3) Nosūti. Nosūtīts kā{" "}
+                  <span className="font-mono">{buildProvinDilerisPdfFilename(vin, mailLang)}</span>.
                 </p>
                 {pdfPreviewUrl ? (
                   <div className="mt-2">

@@ -133,4 +133,49 @@ describe("report-ready product emails", () => {
     expect(on).toContain("Nils");
     expect(on.indexOf("g.page")).toBeLessThan(on.indexOf("Nils"));
   });
+
+  it("sends the dealer ready subject and body in the client's chosen language", () => {
+    expect(buildReportReadySubject("dealer", "WAUZZZF44LA062962", "en")).toBe(
+      "PROVIN: your official dealer data is ready",
+    );
+    expect(buildReportReadySubject("dealer", "WAUZZZF44LA062962", "ru")).toBe(
+      "PROVIN: официальные данные дилера готовы",
+    );
+    expect(buildReportReadySubject("dealer", "WAUZZZF44LA062962", "de")).toBe(
+      "PROVIN: Ihre offiziellen Händlerdaten sind fertig",
+    );
+
+    const textEn = buildReportReadyPlainText({
+      kind: "dealer",
+      vin: "WAUZZZF44LA062962",
+      attachmentLines: ["OFICIALA_DILERA_DATI_EN.pdf"],
+      lang: "en",
+    });
+    expect(textEn).toContain("Hello!");
+    expect(textEn).toContain("The official dealer data you ordered is ready.");
+    expect(textEn).toContain("You will find attached:");
+    expect(textEn).toContain("OFICIALA_DILERA_DATI_EN.pdf");
+    expect(textEn).toContain("Best regards,");
+    expect(textEn).toContain("Nils");
+    expect(textEn).not.toContain("Labdien!");
+    expect(textEn).not.toMatch(/[–—]/);
+
+    const htmlDe = auditCompletedEmailHtml({
+      carVin: "WAUZZZF44LA062962",
+      attachmentLines: ["OFICIALA_DILERA_DATI_DE.pdf"],
+      productKind: "dealer",
+      lang: "de",
+    });
+    expect(htmlDe).toContain('<html lang="de">');
+    expect(htmlDe).toContain("Guten Tag!");
+    expect(htmlDe).toContain("Diese E-Mail wurde automatisch gesendet.");
+    expect(htmlDe).not.toContain("Šis e-pasts nosūtīts automātiski.");
+
+    const textRuMini = buildReportReadyPlainText({ kind: "mini", vin: "ABC", attachmentLines: [], lang: "ru" });
+    expect(textRuMini).toContain("Здравствуйте!");
+    expect(textRuMini).toContain("Ваш отчёт PROVIN MINI готов");
+
+    const textDeAudits = buildReportReadyPlainText({ kind: "audits", vin: "ABC", attachmentLines: [], lang: "de" });
+    expect(textDeAudits).toContain("Zusammenfassenden PDF-Bericht");
+  });
 });

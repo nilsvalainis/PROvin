@@ -147,6 +147,45 @@ const B2B_DEALER_READY_BODY: Record<B2bWalletReportLang, readonly string[]> = {
   ],
 };
 
+/** Mazumtirdzniecības klientam (.LV zīmols) - lietots, kad klients izvēlējies EN/RU/DE. */
+export const DEALER_READY_SUBJECT: Record<B2bWalletReportLang, string> = {
+  lv: "PROVIN.LV: oficiālā dīlera dati pielikumā",
+  en: "PROVIN.LV: official dealer data attached",
+  de: "PROVIN.LV: offizielle Händlerdaten im Anhang",
+  ru: "PROVIN.LV: данные официального дилера во вложении",
+};
+
+const DEALER_READY_BODY: Record<B2bWalletReportLang, readonly string[]> = {
+  lv: [
+    "Labdien!",
+    "",
+    "Pielikumā nosūtām Jūsu pasūtītos oficiālā dīlera datus (PDF).",
+    "",
+    "Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).",
+  ],
+  en: [
+    "Hello!",
+    "",
+    "Please find attached the official dealer data you ordered (PDF).",
+    "",
+    "If you have any questions, please reply to this email (info@provin.lv).",
+  ],
+  de: [
+    "Guten Tag!",
+    "",
+    "Im Anhang finden Sie die von Ihnen bestellten offiziellen Händlerdaten (PDF).",
+    "",
+    "Bei Fragen antworten Sie bitte auf diese E-Mail (info@provin.lv).",
+  ],
+  ru: [
+    "Здравствуйте!",
+    "",
+    "Во вложении направляем заказанные вами официальные данные дилера (PDF).",
+    "",
+    "Если возникнут вопросы, ответьте на это письмо (info@provin.lv).",
+  ],
+};
+
 /**
  * B2B dīlera PDF e-pasta valoda: tā pati maka loģika kā #323, pēc tam LV.
  * dealer_raw / tukša dealer_pro izvēle → lv.
@@ -173,11 +212,21 @@ export function isB2bDealerReadyEmailOrder(args: {
   return isB2bInternationalClientReport(args);
 }
 
-function buildB2bDealerReadyEmailDraft(lang: B2bWalletReportLang): DealerClientEmailDraft {
+function buildDealerReadyEmailDraftForLang(
+  lang: B2bWalletReportLang,
+  b2bClient: boolean,
+): DealerClientEmailDraft {
+  if (b2bClient) {
+    return {
+      kind: "ready",
+      subject: B2B_DEALER_READY_SUBJECT[lang],
+      text: [...B2B_DEALER_READY_BODY[lang], "", b2bClientMessageSignOff(lang)].join("\n"),
+    };
+  }
   return {
     kind: "ready",
-    subject: B2B_DEALER_READY_SUBJECT[lang],
-    text: [...B2B_DEALER_READY_BODY[lang], "", b2bClientMessageSignOff()].join("\n"),
+    subject: DEALER_READY_SUBJECT[lang],
+    text: [...DEALER_READY_BODY[lang], "", clientMessageSignOff(lang)].join("\n"),
   };
 }
 
@@ -186,12 +235,14 @@ export function buildDealerReadyEmailDraft(
   opts: { vin?: string | null; b2bClient?: boolean; lang?: string | null; walletProduct?: string | null },
   templatesDoc?: MessageTemplatesDoc | null,
 ): DealerClientEmailDraft {
-  if (opts.b2bClient === true) {
-    const lang = resolveB2bDealerReadyEmailLang({
-      reportLang: opts.lang,
-      walletProduct: opts.walletProduct,
-    });
-    return buildB2bDealerReadyEmailDraft(lang);
+  const b2bClient = opts.b2bClient === true;
+  const lang = resolveB2bDealerReadyEmailLang({
+    reportLang: opts.lang,
+    walletProduct: opts.walletProduct,
+  });
+  /** Editējamais LV šablons der tikai, kad nav nedz B2B zīmola, nedz cita valoda. */
+  if (b2bClient || lang !== B2B_WALLET_DEFAULT_REPORT_LANG) {
+    return buildDealerReadyEmailDraftForLang(lang, b2bClient);
   }
   const id = "email.dealer.ready_pdf";
   const rendered = resolveMessageSync(id, {}, { doc: templatesDoc });

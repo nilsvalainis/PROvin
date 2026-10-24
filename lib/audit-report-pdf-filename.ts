@@ -1,3 +1,4 @@
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 import type { CheckoutLineKind } from "@/lib/stripe-session";
 
 /**
@@ -6,6 +7,19 @@ import type { CheckoutLineKind } from "@/lib/stripe-session";
  * vai OFICIALA_DILERA_DATI_<VIN>.pdf
  * (atkarībā no pasūtītā produkta vai dīlera-only ģenerēšanas; VIN - tikai burti un cipari, lielie burti).
  */
+
+/** "" latviski, citādi "_EN" / "_RU" / "_DE" pirms ".pdf" (tā pati konvencija, kas drukas PDF nosaukumam). */
+export function reportLangFilenameSuffix(lang?: ClientReportLang | null): string {
+  if (lang === "en") return "_EN";
+  if (lang === "ru") return "_RU";
+  if (lang === "de") return "_DE";
+  return "";
+}
+
+function withReportLangSuffix(filename: string, lang?: ClientReportLang | null): string {
+  const suffix = reportLangFilenameSuffix(lang);
+  return suffix ? filename.replace(/\.pdf$/i, `${suffix}.pdf`) : filename;
+}
 
 export type ProvinAuditPdfProductBrand =
   | "PROVIN_AUDITS"
@@ -34,6 +48,7 @@ export function buildProvinAuditPdfFilename(
     checkoutLine?: CheckoutLineKind | string | null;
     amountTotalCents?: number | null;
     brand?: ProvinAuditPdfProductBrand | null;
+    lang?: ClientReportLang | null;
   },
 ): string {
   const brand =
@@ -44,7 +59,7 @@ export function buildProvinAuditPdfFilename(
     });
   const v = (vin ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   const slug = v.length > 0 ? v : "NAV_VIN";
-  return `${brand}_${slug}.pdf`;
+  return withReportLangSuffix(`${brand}_${slug}.pdf`, product?.lang);
 }
 
 /** PROVIN SELECT konsultācijas PDF nosaukums e-pasta pielikumam (bez VIN). */
@@ -54,10 +69,13 @@ export function buildProvinSelectConsultationPdfFilename(sessionId: string): str
 }
 
 /** Tikai OFICIĀLĀ DĪLERA DATI, bez citiem avotiem. */
-export function buildProvinDilerisPdfFilename(vin: string | null | undefined): string {
+export function buildProvinDilerisPdfFilename(
+  vin: string | null | undefined,
+  lang?: ClientReportLang | null,
+): string {
   const v = (vin ?? "").trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   const slug = v.length > 0 ? v : "NAV_VIN";
-  return `OFICIALA_DILERA_DATI_${slug}.pdf`;
+  return withReportLangSuffix(`OFICIALA_DILERA_DATI_${slug}.pdf`, lang);
 }
 
 /** OEM-stila dīlera API izdruka (atsevišķs fails). */
