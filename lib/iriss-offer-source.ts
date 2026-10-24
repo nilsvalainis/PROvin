@@ -179,6 +179,7 @@ export async function loadOfferSeed(ref: OfferSourceRef, opts: { hideSums?: bool
     const v2 = both?.v2;
     fields = offerSeedFromAutoparks(car, {
       tech: v2?.tech ?? null,
+      purchase: v2?.purchase ?? null,
       location: v2?.fields?.location ?? "",
       displayName: v2?.priceSheet?.displayName ?? "",
       equipmentLine: v2?.priceSheet?.equipmentLine ?? "",
