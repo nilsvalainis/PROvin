@@ -47,6 +47,27 @@ describe("offer seed", () => {
     expect(offerSeedTaggedKeys(f)).not.toContain("carPrice");
   });
 
+  it("j40: fills Virsbūve and Durvis/vietas from the CSDD trade registry", () => {
+    const withBody = {
+      ...car,
+      registry: { ...car.registry, vehicleType: "Universāls", seats: 5 },
+    } as unknown as AutoparksCar;
+    const f = offerSeedFromAutoparks(withBody);
+    expect(f.bodyTypeOffer).toBe("Universāls");
+    expect(f.doorCount).toBe("5 vietas");
+    expect(offerSeedTaggedKeys(f)).toEqual(expect.arrayContaining(["bodyTypeOffer", "doorCount"]));
+  });
+
+  it("j40: transmission prefers the manually entered v2 gearbox over the CSDD registry value", () => {
+    const f = offerSeedFromAutoparks(car, { tech: { gearbox: "Manuālā" } });
+    expect(f.transmission).toBe("Manuālā");
+  });
+
+  it("j40: transmission falls back to the CSDD registry gearbox when no manual value is entered", () => {
+    const f = offerSeedFromAutoparks(car, { tech: { gearbox: "" } });
+    expect(f.transmission).toBe("Automātiskā");
+  });
+
   it("fills the Lot/stock nr. and PVN status from Autoparka v2 purchase data", () => {
     const f = offerSeedFromAutoparks(car, {
       purchase: { auction: "Auto1", auctionNo: "568808", vat: { mode: "margin" } },
