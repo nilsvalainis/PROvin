@@ -1,6 +1,15 @@
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { isValidHttpUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { getClientReportLegalFooterBlocks } from "@/lib/report-pdf-standards";
 import { GOOGLE_REVIEW_URL, type ReportReadyProductKind } from "@/lib/email/report-ready-copy";
+
+/** "Šis e-pasts nosūtīts automātiski." tulkojumi (šabloņa pēdenē). */
+const AUTO_SENT_FOOTER: Record<ClientReportLang, string> = {
+  lv: "Šis e-pasts nosūtīts automātiski.",
+  en: "This email was sent automatically.",
+  ru: "Это письмо отправлено автоматически.",
+  de: "Diese E-Mail wurde automatisch gesendet.",
+};
 
 /** Minimālistisks HTML: balts, daudz tukšuma, PROVIN zils CTA (kā vietne). */
 const BRAND = "#0061D2";
@@ -16,14 +25,18 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function shell(inner: string, opts?: { omitBrandRibbon?: boolean; b2bClient?: boolean }): string {
+function shell(
+  inner: string,
+  opts?: { omitBrandRibbon?: boolean; b2bClient?: boolean; lang?: ClientReportLang },
+): string {
+  const lang = opts?.lang ?? "lv";
   const brandRibbon = opts?.b2bClient
     ? `<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${BRAND};font-weight:700;">PROVIN</p>`
     : opts?.omitBrandRibbon
       ? ""
       : `<p style="margin:0 0 28px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:${MUTED};font-weight:600;">PROVIN.LV</p>`;
   return `<!DOCTYPE html>
-<html lang="lv">
+<html lang="${lang}">
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -36,7 +49,7 @@ function shell(inner: string, opts?: { omitBrandRibbon?: boolean; b2bClient?: bo
 <tr><td>
 ${brandRibbon}${inner}
 </td></tr></table>
-<p style="margin:28px 0 0;font-size:12px;color:${MUTED};text-align:center;">Šis e-pasts nosūtīts automātiski.</p>
+<p style="margin:28px 0 0;font-size:12px;color:${MUTED};text-align:center;">${AUTO_SENT_FOOTER[lang]}</p>
 </td></tr></table>
 </body>
 </html>`;
@@ -254,34 +267,120 @@ ${cta}
   return shell(inner, { omitBrandRibbon: true });
 }
 
-function reportReadyVinHtml(vinRaw: string): string {
+const REPORT_READY_VIN_CLAUSE: Record<ClientReportLang, (vin: string) => string> = {
+  lv: (vin) => ` transportlīdzeklim ar VIN <strong>${vin}</strong>`,
+  en: (vin) => ` for the vehicle with VIN <strong>${vin}</strong>`,
+  ru: (vin) => ` для автомобиля с VIN <strong>${vin}</strong>`,
+  de: (vin) => ` für das Fahrzeug mit der VIN <strong>${vin}</strong>`,
+};
+
+function reportReadyVinHtml(vinRaw: string, lang: ClientReportLang = "lv"): string {
   const hasVin = isValidVin(vinRaw);
   if (!hasVin) return "";
-  return ` transportlīdzeklim ar VIN <strong>${esc(normalizeVin(vinRaw))}</strong>`;
+  return REPORT_READY_VIN_CLAUSE[lang](esc(normalizeVin(vinRaw)));
 }
 
-function clientSignOffHtml(b2bClient?: boolean): string {
+const REPORT_READY_HTML_GREETING: Record<ClientReportLang, string> = {
+  lv: "Labdien!",
+  en: "Hello!",
+  ru: "Здравствуйте!",
+  de: "Guten Tag!",
+};
+
+const REPORT_READY_HTML_QUESTION: Record<ReportReadyProductKind, Record<ClientReportLang, string>> = {
+  dealer: {
+    lv: "Ja rodas jautājumi, rakstiet uz {mailLink}. Labprāt palīdzēsim.",
+    en: "If you have any questions, please write to {mailLink}. We're happy to help.",
+    ru: "Если у вас есть вопросы, напишите на {mailLink}. Будем рады помочь.",
+    de: "Bei Fragen schreiben Sie bitte an {mailLink}. Wir helfen gerne weiter.",
+  },
+  mini: {
+    lv: "Ja rodas jautājumi, rakstiet uz {mailLink}. Labprāt palīdzēsim.",
+    en: "If you have any questions, please write to {mailLink}. We're happy to help.",
+    ru: "Если у вас есть вопросы, напишите на {mailLink}. Будем рады помочь.",
+    de: "Bei Fragen schreiben Sie bitte an {mailLink}. Wir helfen gerne weiter.",
+  },
+  audits: {
+    lv: "Ja rodas jautājumi vai vajadzīga papildu konsultācija, rakstiet uz {mailLink}. Labprāt palīdzēsim.",
+    en: "If you have any questions or need additional consultation, please write to {mailLink}. We're happy to help.",
+    ru: "Если у вас есть вопросы или нужна дополнительная консультация, напишите на {mailLink}. Будем рады помочь.",
+    de: "Bei Fragen oder wenn Sie eine weitere Beratung benötigen, schreiben Sie bitte an {mailLink}. Wir helfen gerne weiter.",
+  },
+};
+
+const REPORT_READY_HTML_ATTACHMENTS_INTRO: Record<ClientReportLang, string> = {
+  lv: "Pielikumā atradīsiet:",
+  en: "You will find attached:",
+  ru: "Во вложении вы найдёте:",
+  de: "Im Anhang finden Sie:",
+};
+
+const REPORT_READY_HTML_MAIN_LINE: Record<ReportReadyProductKind, Record<ClientReportLang, string>> = {
+  dealer: {
+    lv: "Jūsu pasūtītie oficiālā dīlera dati{vin} ir gatavi.",
+    en: "The official dealer data you ordered{vin} is ready.",
+    ru: "Заказанные вами официальные данные дилера{vin} готовы.",
+    de: "Die von Ihnen bestellten offiziellen Händlerdaten{vin} sind fertig.",
+  },
+  mini: {
+    lv: "Jūsu PROVIN MINI atskaite{vin} ir gatava. Tā pievienota šī e-pasta pielikumā.",
+    en: "Your PROVIN MINI report{vin} is ready. It is attached to this email.",
+    ru: "Ваш отчёт PROVIN MINI{vin} готов. Он приложен к этому письму.",
+    de: "Ihr PROVIN MINI Bericht{vin} ist fertig. Er ist diesem E-Mail beigefügt.",
+  },
+  audits: {
+    lv: "Jūsu PROVIN AUDITS atskaite{vin} ir gatava.",
+    en: "Your PROVIN AUDITS report{vin} is ready.",
+    ru: "Ваш отчёт PROVIN AUDITS{vin} готов.",
+    de: "Ihr PROVIN AUDITS Bericht{vin} ist fertig.",
+  },
+};
+
+const REPORT_READY_HTML_AUDITS_BULLETS: Record<ClientReportLang, readonly [string, string]> = {
+  lv: ["Kopsavilkuma PDF atskaiti", "Papildu materiālus un pielikumus"],
+  en: ["Summary PDF report", "Additional materials and attachments"],
+  ru: ["Сводный PDF-отчёт", "Дополнительные материалы и приложения"],
+  de: ["Zusammenfassenden PDF-Bericht", "Zusätzliche Materialien und Anhänge"],
+};
+
+function clientSignOffHtml(b2bClient?: boolean, lang: ClientReportLang = "lv"): string {
+  const greeting = esc(SIGN_OFF_GREETING_HTML[lang]);
   if (b2bClient) {
-    return `<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/><span style="color:${BRAND};font-weight:600;">PROVIN</span></p>`;
+    return `<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">${greeting}<br/><span style="color:${BRAND};font-weight:600;">PROVIN</span></p>`;
   }
-  return `<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p>`;
+  return `<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">${greeting}<br/>Nils<br/>PROVIN.LV</p>`;
 }
 
-function googleReviewHtml(): string {
+const SIGN_OFF_GREETING_HTML: Record<ClientReportLang, string> = {
+  lv: "Ar cieņu,",
+  en: "Best regards,",
+  ru: "С уважением,",
+  de: "Mit freundlichen Grüßen,",
+};
+
+const GOOGLE_REVIEW_INTRO_HTML: Record<ClientReportLang, string> = {
+  lv: "Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google:",
+  en: "If our work was useful to you, I would be grateful for a short Google review:",
+  ru: "Если наша работа была вам полезна, буду благодарен за короткий отзыв в Google:",
+  de: "Wenn Ihnen unsere Arbeit geholfen hat, würde ich mich über eine kurze Google-Bewertung freuen:",
+};
+
+function googleReviewHtml(lang: ClientReportLang = "lv"): string {
   const href = esc(GOOGLE_REVIEW_URL);
-  return `<p style="margin:0 0 20px;font-size:15px;color:${INK};line-height:1.6;">Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: <a href="${href}" style="color:${BRAND};text-decoration:none;font-weight:500;word-break:break-all;">${href}</a></p>`;
+  return `<p style="margin:0 0 20px;font-size:15px;color:${INK};line-height:1.6;">${esc(GOOGLE_REVIEW_INTRO_HTML[lang])} <a href="${href}" style="color:${BRAND};text-decoration:none;font-weight:500;word-break:break-all;">${href}</a></p>`;
 }
 
 function reportReadyCloseHtml(
   questionsInner: string,
   includeGoogleReview?: boolean,
   b2bClient?: boolean,
+  lang: ClientReportLang = "lv",
 ): string {
   const showReview = includeGoogleReview && !b2bClient;
   const qMargin = showReview ? "12px" : "20px";
   return `<p style="margin:0 0 ${qMargin};font-size:15px;color:${MUTED};line-height:1.55;">${questionsInner}</p>
-${showReview ? googleReviewHtml() : ""}
-${clientSignOffHtml(b2bClient)}`;
+${showReview ? googleReviewHtml(lang) : ""}
+${clientSignOffHtml(b2bClient, lang)}`;
 }
 
 /** Klienta „atskaite gatava” e-pasts pēc produkta (dīleris / MINI / AUDITS). */
@@ -292,10 +391,12 @@ export function auditCompletedEmailHtml(opts: {
   productKind?: ReportReadyProductKind;
   includeGoogleReview?: boolean;
   b2bClient?: boolean;
+  lang?: ClientReportLang;
 }): string {
   const kind = opts.productKind ?? "audits";
   const b2bClient = opts.b2bClient === true;
-  const vinHtml = reportReadyVinHtml(opts.carVin);
+  const lang = opts.lang ?? "lv";
+  const vinHtml = reportReadyVinHtml(opts.carVin, lang);
   const files = opts.attachmentLines.map((l) => l.trim()).filter(Boolean);
   const fileList =
     files.length > 0
@@ -304,33 +405,37 @@ export function auditCompletedEmailHtml(opts: {
           .join("")}</ul>`
       : "";
   const mailLink = `<a href="mailto:info@provin.lv" style="color:${BRAND};text-decoration:none;font-weight:500;">info@provin.lv</a>`;
+  const greeting = esc(REPORT_READY_HTML_GREETING[lang]);
+  const questionHtml = REPORT_READY_HTML_QUESTION[kind][lang].replace("{mailLink}", mailLink);
+  const mainLineHtml = REPORT_READY_HTML_MAIN_LINE[kind][lang].replace("{vin}", vinHtml);
 
   let body = "";
   if (kind === "dealer") {
     body = `
-<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu pasūtītie oficiālā dīlera dati${vinHtml} ir gatavi.</p>
-<p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.6;">Pielikumā atradīsiet:</p>
+<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">${greeting}</p>
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${mainLineHtml}</p>
+<p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.6;">${esc(REPORT_READY_HTML_ATTACHMENTS_INTRO[lang])}</p>
 ${fileList}
-${reportReadyCloseHtml(`Ja rodas jautājumi, rakstiet uz ${mailLink}. Labprāt palīdzēsim.`, opts.includeGoogleReview, b2bClient)}`;
+${reportReadyCloseHtml(questionHtml, opts.includeGoogleReview, b2bClient, lang)}`;
   } else if (kind === "mini") {
     body = `
-<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu PROVIN MINI atskaite${vinHtml} ir gatava. Tā pievienota šī e-pasta pielikumā.</p>
-${reportReadyCloseHtml(`Ja rodas jautājumi, rakstiet uz ${mailLink}. Labprāt palīdzēsim.`, opts.includeGoogleReview, b2bClient)}`;
+<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">${greeting}</p>
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${mainLineHtml}</p>
+${reportReadyCloseHtml(questionHtml, opts.includeGoogleReview, b2bClient, lang)}`;
   } else {
+    const bullets = REPORT_READY_HTML_AUDITS_BULLETS[lang];
     body = `
-<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">Jūsu PROVIN AUDITS atskaite${vinHtml} ir gatava.</p>
-<p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.6;">Pielikumā atradīsiet:</p>
+<p style="margin:0 0 14px;font-size:15px;color:${INK};line-height:1.6;">${greeting}</p>
+<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${mainLineHtml}</p>
+<p style="margin:0 0 4px;font-size:15px;color:${INK};line-height:1.6;">${esc(REPORT_READY_HTML_ATTACHMENTS_INTRO[lang])}</p>
 <ul style="margin:4px 0 16px;padding-left:22px;color:${INK};font-size:15px;line-height:1.45;">
-<li style="margin:4px 0;">Kopsavilkuma PDF atskaiti</li>
-<li style="margin:4px 0;">Papildu materiālus un pielikumus</li>
+<li style="margin:4px 0;">${esc(bullets[0])}</li>
+<li style="margin:4px 0;">${esc(bullets[1])}</li>
 </ul>
-${reportReadyCloseHtml(`Ja rodas jautājumi vai vajadzīga papildu konsultācija, rakstiet uz ${mailLink}. Labprāt palīdzēsim.`, opts.includeGoogleReview, b2bClient)}`;
+${reportReadyCloseHtml(questionHtml, opts.includeGoogleReview, b2bClient, lang)}`;
   }
 
-  return shell(body, { omitBrandRibbon: !b2bClient, b2bClient });
+  return shell(body, { omitBrandRibbon: !b2bClient, b2bClient, lang });
 }
 
 type PartnerMailLocale = "lv" | "en" | "de" | "ru";
@@ -454,9 +559,11 @@ export function dealerDataOperatorMessageEmailHtml(opts: {
   title?: string | null;
   text: string;
   b2bClient?: boolean;
+  lang?: ClientReportLang;
 }): string {
   const title = (opts.title ?? "").trim();
   const b2bClient = opts.b2bClient === true;
+  const lang = opts.lang ?? "lv";
   const orderCta = /^(Pasūtīt|Apmaksāt):\s*(https?:\/\/\S+)\s*$/i;
   const paragraphs = opts.text
     .replace(/\r\n/g, "\n")
@@ -492,7 +599,10 @@ ${ctaButton(last, "Apmaksāt")}`;
   const titleBlock = title
     ? `<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(title)}</p>`
     : "";
-  return shell(`${titleBlock}${body}`, b2bClient ? { b2bClient: true } : { omitBrandRibbon: true });
+  return shell(
+    `${titleBlock}${body}`,
+    b2bClient ? { b2bClient: true, lang } : { omitBrandRibbon: true, lang },
+  );
 }
 
 /**

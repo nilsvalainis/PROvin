@@ -855,6 +855,7 @@ export function OrderDetailWorkspace({
   const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
   const [pdfLangUnlocked, setPdfLangUnlocked] = useState(false);
   const [notifyIncludeGoogleReview, setNotifyIncludeGoogleReview] = useState(false);
+  const [notifyLang, setNotifyLang] = useState<ClientReportLang>("lv");
   const [notifyPhase, setNotifyPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [notifyErr, setNotifyErr] = useState<string | null>(null);
   const [notifyLastSentTo, setNotifyLastSentTo] = useState<string | null>(null);
@@ -3148,6 +3149,7 @@ export function OrderDetailWorkspace({
     setNotifyExtraPdfSaveMsg(null);
     setNotifyExtraPdfSaveOk(false);
     setNotifyIncludeGoogleReview(false);
+    setNotifyLang("lv");
     if (notifyReportPdfExtraRef.current) notifyReportPdfExtraRef.current.value = "";
     setNotifyDialogOpen(true);
   }, []);
@@ -3209,6 +3211,7 @@ export function OrderDetailWorkspace({
       const auditName = buildProvinAuditPdfFilename(payload.vin, {
         checkoutLine: payload.checkoutLine,
         amountTotalCents: payload.amountTotal,
+        lang: notifyLang,
       });
       const extraReport =
         extraRaw && extraRaw.size > 0
@@ -3246,12 +3249,14 @@ export function OrderDetailWorkspace({
             uploads,
             extraAuditPdf: extraReport,
             includeGoogleReview: notifyIncludeGoogleReview,
+            lang: notifyLang,
           })
         : await (async () => {
             const fd = new FormData();
             fd.append("sessionId", payload.sessionId);
             fd.append("customerEmail", email);
             if (notifyIncludeGoogleReview) fd.append("includeGoogleReview", "1");
+            if (notifyLang !== "lv") fd.append("lang", notifyLang);
             if (extraReport) {
               fd.append("reportPdf", extraReport);
             }
@@ -3296,6 +3301,7 @@ export function OrderDetailWorkspace({
     portfolio,
     portfolioBytes,
     notifyIncludeGoogleReview,
+    notifyLang,
   ]);
 
   const onPickFiles = async (files: FileList | File[] | null) => {
@@ -4779,11 +4785,26 @@ export function OrderDetailWorkspace({
 
                   <div className="mt-3 border-t border-[var(--admin-border-subtle)] pt-3">
                     <label className="mb-1 block text-[10px] font-medium text-[var(--color-provin-muted)]">
+                      E-pasta valoda
+                    </label>
+                    <select
+                      className="mb-3 w-full rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] px-2 py-1.5 text-[12px] text-[var(--color-apple-text)]"
+                      value={notifyLang}
+                      disabled={notifyPhase === "loading"}
+                      onChange={(e) => setNotifyLang(e.target.value as ClientReportLang)}
+                    >
+                      <option value="lv">Latviešu (LV)</option>
+                      <option value="en">English (EN)</option>
+                      <option value="ru">Русский (RU)</option>
+                      <option value="de">Deutsch (DE)</option>
+                    </select>
+                    <label className="mb-1 block text-[10px] font-medium text-[var(--color-provin-muted)]">
                       Papildu audita PDF (ja nav portfelī) - nosūtīts kā{" "}
                       <span className="font-mono">
                         {buildProvinAuditPdfFilename(payload.vin, {
                           checkoutLine: payload.checkoutLine,
                           amountTotalCents: payload.amountTotal,
+                          lang: notifyLang,
                         })}
                       </span>
                     </label>
@@ -4804,6 +4825,7 @@ export function OrderDetailWorkspace({
                         const name = buildProvinAuditPdfFilename(payload.vin, {
                           checkoutLine: payload.checkoutLine,
                           amountTotalCents: payload.amountTotal,
+                          lang: notifyLang,
                         });
                         setNotifyExtraPdfMeta({
                           name,

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
+import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
 import {
   collectAttachmentsFromFormData,
   collectAttachmentsFromJsonBase64,
@@ -32,6 +33,11 @@ export const maxDuration = 60;
 
 function totalAttachmentBytes(list: ReportReadyMailAttachment[]): number {
   return list.reduce((s, a) => s + a.content.length, 0);
+}
+
+function parseReportLang(raw: unknown): ClientReportLang {
+  const v = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+  return (CLIENT_REPORT_LANGS as readonly string[]).includes(v) ? (v as ClientReportLang) : "lv";
 }
 
 function mapParseError(e: unknown): NextResponse | null {
@@ -89,6 +95,7 @@ export async function POST(req: Request) {
   let sessionId = "";
   let bodyCustomerEmail = "";
   let includeGoogleReview = false;
+  let reportLang: ClientReportLang = "lv";
   let multipartForm: FormData | null = null;
   let jsonAttachmentsBase64: unknown = undefined;
   let jsonBlobAttachments: { url: string; filename?: string }[] | undefined;
@@ -101,6 +108,7 @@ export async function POST(req: Request) {
       includeGoogleReview =
         String(multipartForm.get("includeGoogleReview") ?? "").trim() === "1" ||
         String(multipartForm.get("includeGoogleReview") ?? "").trim() === "true";
+      reportLang = parseReportLang(multipartForm.get("lang"));
     } else {
       let body: unknown;
       try {
@@ -115,6 +123,7 @@ export async function POST(req: Request) {
       sessionId = typeof b.sessionId === "string" ? b.sessionId.trim() : "";
       bodyCustomerEmail = typeof b.customerEmail === "string" ? b.customerEmail.trim() : "";
       includeGoogleReview = b.includeGoogleReview === true || b.includeGoogleReview === "1";
+      reportLang = parseReportLang(b.lang);
       jsonAttachmentsBase64 = b.attachmentsBase64;
       if (Array.isArray(b.blobAttachments) && b.blobAttachments.length > 0) {
         if (b.blobAttachments.length > MAX_NOTIFY_FILES) {
@@ -275,6 +284,7 @@ export async function POST(req: Request) {
         partnerId: order.partnerId,
         partnerCompanyName: order.companyName,
       }),
+      lang: reportLang,
     });
     try {
       const stored = await persistClientReportFromNotify(sessionId, manualAttachments);
@@ -298,6 +308,7 @@ export async function POST(req: Request) {
     sessionId,
     sentTo: to,
     sentToSource,
+    reportLang,
   });
 
   return NextResponse.json({ ok: true, sentTo: to, sentToSource });

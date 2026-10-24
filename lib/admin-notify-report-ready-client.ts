@@ -1,6 +1,7 @@
 "use client";
 
 import { uploadNotifyPortfolioBlobs } from "@/lib/admin-notify-upload-portfolio-client";
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 
 export async function isNotifyBlobUploadEnabled(): Promise<boolean> {
   const res = await fetch("/api/admin/notify-blob-upload", { credentials: "include" });
@@ -52,6 +53,7 @@ export async function postNotifyReportReadyViaBlob(input: {
   uploads: NotifyPortfolioUploadItem[];
   extraAuditPdf?: File | null;
   includeGoogleReview?: boolean;
+  lang?: ClientReportLang;
 }): Promise<{ res: Response; rawText: string; data: Record<string, unknown> }> {
   const files: { blob: Blob; filename: string; mime: string }[] = [];
   for (const u of input.uploads) {
@@ -81,6 +83,7 @@ export async function postNotifyReportReadyViaBlob(input: {
       sessionId: input.sessionId,
       ...(input.customerEmail?.trim() ? { customerEmail: input.customerEmail.trim() } : {}),
       ...(input.includeGoogleReview ? { includeGoogleReview: true } : {}),
+      ...(input.lang && input.lang !== "lv" ? { lang: input.lang } : {}),
       blobAttachments,
     }),
   });
