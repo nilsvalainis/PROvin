@@ -352,8 +352,11 @@ describe("IRISS offer public view", () => {
       { id: "pricing", kind: "pricing", title: "Cenas", visible: false },
     ];
     const view = buildIrissOfferPublicView(offer, { decision: "", question: "" });
+    // j50: "Novērtējums klientam" tagad kontrolē tikai atzīmes/kopsavilkumu, nevis Īpašas atzīmes/Vizuālo novērtējumu -
+    // tos pārņēma jaunais, vienmēr-pārrēķinātais "apraksti" bloks (vecam piedāvājumam blocks saraksts to nesatur).
     expect(view.checks).toEqual([]);
-    expect(view.notes).toBe("Garantija 3 mēneši");
+    expect(view.notes).toBe("");
+    expect(view.apraksti).toBe("Garantija 3 mēneši\n\nLabs stāvoklis");
     expect(view.prices).toEqual([]);
     expect(view.total).toBe("");
   });
@@ -382,6 +385,23 @@ describe("IRISS offer public view", () => {
         rows: [{ label: "Riepas", value: "Ziemas + vasaras" }],
       },
     ]);
+  });
+
+  it("j50: shows an 'Apraksti' section built from specialNotes/visualAssessment/technicalAssessment", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-15T08:00:00.000Z", "Piedāvājums 1");
+    offer.specialNotes = "Īpašas atzīmes teksts";
+    offer.visualAssessment = "Vizuālais teksts";
+    offer.technicalAssessment = "Tehniskais teksts";
+    const view = buildIrissOfferPublicView(offer, { decision: "", question: "" });
+    expect(view.apraksti).toBe("Īpašas atzīmes teksts\n\nVizuālais teksts\n\nTehniskais teksts");
+  });
+
+  it("j50: hides 'Apraksti' content when the apraksti block is toggled off", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-15T08:00:00.000Z", "Piedāvājums 1");
+    offer.specialNotes = "Slēpts teksts";
+    offer.blocks = [{ id: "apraksti", kind: "apraksti", title: "Apraksti", visible: false }];
+    const view = buildIrissOfferPublicView(offer, { decision: "", question: "" });
+    expect(view.apraksti).toBe("");
   });
 });
 
