@@ -69,10 +69,12 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
   useEffect(() => {
     let live = true;
     fetch(api)
-      .then((r) => r.json())
-      .then(
-        (d: { iegade?: V2IegadeView }) => live && d.iegade && setView(d.iegade),
-      )
+      .then(async (r) => {
+        const d = (await r.json().catch(() => null)) as { iegade?: V2IegadeView } | null;
+        if (!live) return;
+        if (r.ok && d?.iegade) setView(d.iegade);
+        else setError("Neizdevās ielādēt");
+      })
       .catch(() => live && setError("Neizdevās ielādēt"));
     return () => {
       live = false;
