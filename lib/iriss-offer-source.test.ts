@@ -15,7 +15,6 @@ const client = {
   getThumbnailBatch: vi.fn(async (ids: string[]) => new Map(ids.map((id) => [id, Buffer.from(`thumb:${id}`)]))),
 };
 vi.mock("@/lib/dropbox-client", () => ({ getDropboxClient: () => client }));
-vi.mock("@/lib/iriss-autoparks-dropbox-sync", () => ({ isStockPhoto: (n: string) => /\.(jpe?g|png|heic)$/i.test(n) }));
 vi.mock("@/lib/iriss-autoparks-store", () => ({
   readAutoparksState: async () => ({ cars: [{ id: "car1", vin: "WBA00000000A12345", orderId: "ord1", dropboxFolderId: "id:folder1" }] }),
 }));

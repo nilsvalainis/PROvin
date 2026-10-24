@@ -6,19 +6,35 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 
 const FOLDER = "/STOCK/Test Car";
+const IZSOLE = `${FOLDER}/bildes-izsole`;
+const CANON = `${FOLDER}/bildes-canon`;
 let entries: Array<{ tag: "file" | "folder"; id: string; name: string }> = [];
+let izsoleEntries: Array<{ tag: "file" | "folder"; id: string; name: string }> = [];
+let canonEntries: Array<{ tag: "file" | "folder"; id: string; name: string }> = [];
+let hasIzsole = false;
+let hasCanon = false;
 let downloadOk = true;
 
 vi.mock("@/lib/dropbox-client", async (orig) => ({
   ...(await orig<typeof import("@/lib/dropbox-client")>()),
   getDropboxClient: () => ({
-    getMetadata: async (ref: string) => (ref === "folder1" ? { tag: "folder", pathDisplay: FOLDER } : null),
-    listAll: async () => ({ entries, cursor: "c1" }),
+    getMetadata: async (ref: string) => {
+      if (ref === "folder1") return { tag: "folder", pathDisplay: FOLDER };
+      if (ref === IZSOLE && hasIzsole) return { tag: "folder", pathDisplay: IZSOLE };
+      if (ref === CANON && hasCanon) return { tag: "folder", pathDisplay: CANON };
+      return null;
+    },
+    listAll: async (path: string) => {
+      if (path === IZSOLE) return { entries: izsoleEntries, cursor: "c1" };
+      if (path === CANON) return { entries: canonEntries, cursor: "c1" };
+      return { entries, cursor: "c1" };
+    },
     download: async (id: string) => {
       if (!downloadOk) throw new Error("dropbox_down");
       const sharp = (await import("sharp")).default;
       const bytes = await sharp({ create: { width: 40, height: 30, channels: 3, background: "#336699" } }).jpeg().toBuffer();
-      return { bytes, entry: entries.find((e) => e.id === id) ?? null };
+      const all = [...entries, ...izsoleEntries, ...canonEntries];
+      return { bytes, entry: all.find((e) => e.id === id) ?? null };
     },
   }),
 }));
@@ -54,6 +70,10 @@ beforeEach(async () => {
     { tag: "file", id: "id:a2", name: "02.jpg" },
     { tag: "file", id: "id:a3", name: "info.txt" },
   ];
+  izsoleEntries = [];
+  canonEntries = [];
+  hasIzsole = false;
+  hasCanon = false;
   downloadOk = true;
 });
 
@@ -119,5 +139,56 @@ describe("Autoparks v2 galvenā bilde (J29 A/B)", () => {
     const summary = await photo.resetAllAutoparksV2MainPhotos(actor);
     expect(summary).toEqual({ totalCars: 2, hadPhoto: 1, backedUp: 1, failed: 0 });
     expect((await v2.readAutoparksV2Car(withoutPhotoId))!.v2.mainPhoto).toBeNull();
+  });
+});
+
+describe("J36: jaunā /STOCK struktūra (bildes-izsole/bildes-canon)", () => {
+  it("galvenā bilde: bildes-izsole/1.jpg prioritāri pār saknes bildēm", async () => {
+    hasIzsole = true;
+    izsoleEntries = [
+      { tag: "file", id: "id:iz2", name: "2.jpg" },
+      { tag: "file", id: "id:iz1", name: "1.jpg" },
+    ];
+    const { v1, v2, photo } = await load();
+    const carId = await carWithFolder(v1);
+    const found = (await v2.readAutoparksV2Car(carId))!;
+    await photo.autoparksV2MainPhoto(found.car, found.v2);
+    const after = (await v2.readAutoparksV2Car(carId))!;
+    expect(after.v2.mainPhoto?.dropboxId).toBe("id:iz1");
+  });
+
+  it("galvenā bilde: fallback uz bildes-canon/1.jpg, ja bildes-izsole mapes nav", async () => {
+    hasCanon = true;
+    canonEntries = [{ tag: "file", id: "id:cn1", name: "1.jpg" }];
+    const { v1, v2, photo } = await load();
+    const carId = await carWithFolder(v1);
+    const found = (await v2.readAutoparksV2Car(carId))!;
+    await photo.autoparksV2MainPhoto(found.car, found.v2);
+    const after = (await v2.readAutoparksV2Car(carId))!;
+    expect(after.v2.mainPhoto?.dropboxId).toBe("id:cn1");
+  });
+
+  it("galvenā bilde: fallback uz veco loģiku (saknes bildes), ja neviena apakšmape neeksistē", async () => {
+    const { v1, v2, photo } = await load();
+    const carId = await carWithFolder(v1);
+    const found = (await v2.readAutoparksV2Car(carId))!;
+    await photo.autoparksV2MainPhoto(found.car, found.v2);
+    const after = (await v2.readAutoparksV2Car(carId))!;
+    expect(after.v2.mainPhoto?.dropboxId).toBe("id:a1");
+  });
+
+  it("kandidāti: bildes-izsole + bildes-canon apvienoti, saknes bildes (vecā loģika) tad netiek rādītas", async () => {
+    hasIzsole = true;
+    hasCanon = true;
+    izsoleEntries = [
+      { tag: "file", id: "id:iz1", name: "1.jpg" },
+      { tag: "file", id: "id:iz2", name: "2.jpg" },
+    ];
+    canonEntries = [{ tag: "file", id: "id:cn1", name: "1.jpg" }];
+    const { v1, photo } = await load();
+    const carId = await carWithFolder(v1);
+    const found = (await (await import("@/lib/iriss-autoparks-v2-store")).readAutoparksV2Car(carId))!;
+    const cands = await photo.autoparksV2StockPhotoCandidates(found.car);
+    expect(cands.map((c) => c.id)).toEqual(["id:iz1", "id:iz2", "id:cn1"]);
   });
 });

@@ -46,16 +46,37 @@ export function isSafeDropboxFileId(id: unknown): id is string {
 
 const COLLATOR = new Intl.Collator("lv", { numeric: true, sensitivity: "base" });
 
-export function orderStockPhotos(
-  files: ReadonlyArray<{ id: string; name: string; serverModified?: string }>,
-  opts: { mainPhotoId?: string | null; limit?: number } = {},
-): StockPhoto[] {
-  const sorted = files
+type StockFileLike = { id: string; name: string; serverModified?: string };
+
+function sortedByName<T extends StockFileLike>(files: ReadonlyArray<T>): T[] {
+  return [...files]
     .filter((f) => isSafeDropboxFileId(f.id) && f.name)
     .sort((a, b) => COLLATOR.compare(a.name, b.name) || (a.serverModified ?? "").localeCompare(b.serverModified ?? ""));
+}
+
+function finalizeStockPhotoOrder(sorted: StockFileLike[], opts: { mainPhotoId?: string | null; limit?: number }): StockPhoto[] {
   const main = opts.mainPhotoId ? sorted.findIndex((f) => f.id === opts.mainPhotoId) : -1;
   if (main > 0) sorted.unshift(...sorted.splice(main, 1));
   return sorted.slice(0, opts.limit ?? IRISS_STOCK_PHOTO_LIMIT).map((f) => ({ dropboxId: f.id, name: f.name }));
+}
+
+export function orderStockPhotos(
+  files: ReadonlyArray<StockFileLike>,
+  opts: { mainPhotoId?: string | null; limit?: number } = {},
+): StockPhoto[] {
+  return finalizeStockPhotoOrder(sortedByName(files), opts);
+}
+
+/**
+ * Katra grupa (bildes-izsole/bildes-canon, J36) savā "kā PRO" secībā, bet grupas netiek sajauktas -
+ * izsoles foto vienmēr pirms pašu foto, lai nenotiek nejauša savstarpēja interleavēšana pēc nosaukuma.
+ */
+export function orderStockPhotoGroups(
+  groups: ReadonlyArray<ReadonlyArray<StockFileLike>>,
+  opts: { mainPhotoId?: string | null; limit?: number } = {},
+): StockPhoto[] {
+  const sorted = groups.flatMap((g) => sortedByName(g));
+  return finalizeStockPhotoOrder(sorted, opts);
 }
 
 export function offerSeedPhotoPath(ref: OfferSourceRef, dropboxId: string, size: "thumb" | "full"): string {
