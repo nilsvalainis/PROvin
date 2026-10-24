@@ -116,6 +116,21 @@ describe("offer seed", () => {
     expect(offerSeedTaggedKeys(f)).not.toContain("carPrice");
   });
 
+  it("prefills Apraksti fields (damage grade, key count, service summary) from v2 service data", () => {
+    const f = offerSeedFromAutoparks(car, {
+      service: {
+        problems: [{ text: "Motora kontrollampa deg", fixedByService: false }],
+        notes: "Nodotas 2 atslēgas.",
+        invoiceCount: 1,
+      },
+    });
+    expect(f.damageGrade).toContain("Zināmas problēmas (1)");
+    expect(f.technicalAssessment).toContain("Motora kontrollampa deg");
+    expect(f.keyCount).toBe("2");
+    expect(f.hasFullServiceHistory).toBe(true);
+    expect(f.summary).toContain("1 rēķins");
+  });
+
   it("leaves empty fields out", () => {
     const empty = { ...car, vin: "", color: "", location: "", mileageKm: null, equipmentLine: "", registry: undefined } as unknown as AutoparksCar;
     const f = offerSeedFromAutoparks(empty);

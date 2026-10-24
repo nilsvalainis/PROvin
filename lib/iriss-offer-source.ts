@@ -183,6 +183,13 @@ export async function loadOfferSeed(ref: OfferSourceRef, opts: { hideSums?: bool
       location: v2?.fields?.location ?? "",
       displayName: v2?.priceSheet?.displayName ?? "",
       equipmentLine: v2?.priceSheet?.equipmentLine ?? "",
+      service: v2?.service
+        ? {
+            problems: v2.service.problems.map((p) => ({ text: p.text, fixedByService: p.fixedByService })),
+            notes: v2.service.notes,
+            invoiceCount: v2.service.invoices.length,
+          }
+        : null,
     });
   } else {
     const order = await getLogisticsOrder(ref.id);
