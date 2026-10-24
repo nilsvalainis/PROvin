@@ -36,7 +36,11 @@ export type WaybillPlateState = {
   busy: boolean;
   current?: WaybillPlateCurrent;
   /** Pieprasījums šim numuram ir rindā vai darbā (CSDD vēl izdod). Aizņemtību nemaina. */
-  issuing?: { brandModel: string };
+  issuing?: {
+    brandModel: string;
+    /** j47: izraksta Aivars ar roku (nodots no automātikas, nestandarta, B192, atkārtots vai Aivars jau darbā). */
+    manual?: boolean;
+  };
 };
 
 type OccupancyRow = {

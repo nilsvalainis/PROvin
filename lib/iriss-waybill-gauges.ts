@@ -20,6 +20,8 @@ export type WaybillGauge = {
   busy: boolean;
   /** "issuing" = numurs brīvs, bet CSDD šobrīd izdod pavadzīmi (aplis "izdod..."). */
   status: WaybillCountdownStatus | "free" | "issuing";
+  /** j47: "izdod..." ar roku - Aivars (aplis rāda "Aivars", nevis "izdod..."). */
+  manual?: boolean;
   /** Atlikušās pilnās stundas (noapaļotas uz leju, lai "1 h" nozīmē vismaz 1 h). */
   hoursLeft: number;
   /** 0..1 no 48 h. */
@@ -59,6 +61,7 @@ export function waybillGaugesFromPlates(
         plate: state.plate,
         busy: false,
         status: issuing ? "issuing" : "free",
+        ...(issuing?.manual ? { manual: true } : {}),
         hoursLeft: 0,
         share: 0,
         brandModel: issuing?.brandModel ?? "",

@@ -145,7 +145,7 @@ export function dueWaybillStuckHandoffs(
     if (r.status === "queued" && !r.pickedAt && !waybillPendingExpired(r, nowMs)) {
       const since = Date.parse(r.createdAt);
       if (!Number.isFinite(since) || nowMs - since <= AUTO_WAYBILL_GRACE_MS) continue;
-      const key = `handoff:${r.id}:${r.attempts}`;
+      const key = `handoff:${r.id}:${r.attempts}${r.handoffAt ? `:${r.handoffAt}` : ""}`;
       if (!sent[key]) out.push({ key, requestId: r.id });
       continue;
     }

@@ -31,9 +31,16 @@ export async function wakeAivars(
   opts: { env?: WakeEnv; fetchImpl?: typeof fetch; timeoutMs?: number } = {},
 ): Promise<AivarsWakeResult> {
   const env = opts.env ?? process.env;
-  if (!env[IRISS_AIVARS_WAKE_URL_ENV]?.trim()) return { ok: false, reason: "not_configured" };
+  // j47: agrāk klusi - Aivars netika pamodināts, un žurnālā nebija nekā. Tagad skaļi (bez URL vērtības).
+  if (!env[IRISS_AIVARS_WAKE_URL_ENV]?.trim()) {
+    console.error("[iriss-waybill] aivars_wake_not_configured", IRISS_AIVARS_WAKE_URL_ENV);
+    return { ok: false, reason: "not_configured" };
+  }
   const url = aivarsWakeUrl(env);
-  if (!url) return { ok: false, reason: "invalid_url" };
+  if (!url) {
+    console.error("[iriss-waybill] aivars_wake_invalid_url", IRISS_AIVARS_WAKE_URL_ENV);
+    return { ok: false, reason: "invalid_url" };
+  }
   if (!/^wbr_[a-z0-9]+$/i.test(jobId)) return { ok: false, reason: "invalid_job_id" };
   const token = env[IRISS_AIVARS_WAKE_TOKEN_ENV]?.trim();
   const headers: Record<string, string> = { "Content-Type": "application/json" };
