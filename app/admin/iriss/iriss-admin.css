@@ -77,7 +77,7 @@
   background: #fff;
 }
 
-.admin-ios-theme [data-iriss-order-room="1"] :is(input, textarea, select):not(.iriss-status-pill) {
+.admin-ios-theme [data-iriss-order-room="1"] :is(input, textarea, select):not(.iriss-status-pill):not(.iriss-offer-block-toggle) {
   border-radius: 10px !important;
   border: 1px solid #e5e7eb !important;
   background: #fff !important;
@@ -85,7 +85,7 @@
   box-shadow: none !important;
 }
 
-.admin-ios-theme [data-iriss-order-room="1"] :is(input, textarea, select):not(.iriss-status-pill):focus-visible {
+.admin-ios-theme [data-iriss-order-room="1"] :is(input, textarea, select):not(.iriss-status-pill):not(.iriss-offer-block-toggle):focus-visible {
   border-color: #6366f1 !important;
   box-shadow: 0 0 0 3px rgb(99 102 241 / 0.2) !important;
 }
