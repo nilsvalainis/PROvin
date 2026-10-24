@@ -181,7 +181,7 @@ describe("IRISS Loģistika UI contracts", () => {
     const cabinet = readFileSync("components/admin/iriss-logistika/IrissLogistikaCabinet.tsx", "utf8");
     const domain = readFileSync("lib/iriss-logistics-cabinet.ts", "utf8");
     const timer = readFileSync("lib/iriss-logistics-parking-timer.ts", "utf8");
-    expect(cabinet).toContain("CABINET_SECTION_LABEL");
+    expect(cabinet).toContain("CABINET_DOC_GROUP_LABEL");
     expect(cabinet).toContain("CABINET_PICKUP_STAGE_LV");
     expect(cabinet).toContain("Atzīmēt kā Atvests");
     expect(domain).toContain('A: "Iegādes dokumenti"');
@@ -193,7 +193,7 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(domain).toContain('arrived: "Atvests"');
     expect(cabinet).toContain("CABINET_LOCAL_PREFS_KEY");
     expect(cabinet).toContain("/api/admin/iriss-logistics/cabinet-prefs");
-    expect(cabinet).toContain("Bezmaksas stāvvieta līdz");
+    expect(cabinet).toContain("Bezmaksas stāvv. līdz");
     expect(cabinet).toContain("Pickup kods");
     expect(cabinet).toContain("Piezīme");
     expect(cabinet).toContain("LOGISTICS_PIPELINE_STATUSES");

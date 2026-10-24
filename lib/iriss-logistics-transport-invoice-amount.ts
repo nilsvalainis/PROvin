@@ -59,6 +59,14 @@ function bareDecimalAmounts(text: string): number[] {
   return out;
 }
 
+/**
+ * Auto-aizpilde drīkst pārrakstīt tikai tukšu vai iepriekš auto-aizpildītu vērtību -
+ * lietotāja ar roku ievadītu summu PDF parsētājs nekad nepārraksta.
+ */
+export function shouldAutofillTransportCost(order: { transportCostEur: number | null; transportCostAuto: boolean }): boolean {
+  return order.transportCostEur == null || order.transportCostAuto === true;
+}
+
 export function parseTransportInvoiceAmount(text: string): TransportInvoiceParseResult {
   const clean = text.replace(/ /g, " ").trim();
   if (!clean) return { ok: false, reason: "empty_text" };

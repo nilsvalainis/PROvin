@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   auto1InvoiceNumberFromUrl,
+  cabinetDocTypeForSection,
+  cabinetDocumentsSummary,
   cabinetDocumentSourceChip,
   cabinetPhaseForStage,
   cabinetPrefKey,
@@ -10,6 +12,7 @@ import {
   liveCabinetDocuments,
   readCabinetPrefsFromStorage,
   resolveCabinetSectionOpen,
+  serviceInvoiceUploadSection,
   type CabinetDocument,
 } from "@/lib/iriss-logistics-cabinet";
 
@@ -93,6 +96,27 @@ describe("Loģistika cabinet helpers", () => {
     expect(cabinetDocumentSourceChip("email")).toBe("No e-pasta");
     expect(cabinetDocumentSourceChip("upload")).toBe("");
     expect(logisticsDocumentTitle({ type: "cmr" })).toBe("CMR");
+  });
+
+  it("routes Auto1 transport docs to section B and counts them in the unified Dokumenti summary", () => {
+    expect(cabinetDocTypeForSection("B", "transport_request_confirm")).toBe(true);
+    expect(cabinetDocTypeForSection("B", "transport_invoice")).toBe(true);
+    expect(cabinetDocTypeForSection("A", "transport_invoice")).toBe(false);
+    expect(cabinetDocTypeForSection("C", "transport_invoice")).toBe(false);
+    expect(logisticsDocumentTitle({ type: "transport_invoice" })).toBe("Auto1 Transport Invoice");
+
+    const rows = [
+      doc({ id: "1", type: "purchase_confirm" }),
+      doc({ id: "2", type: "car_invoice" }),
+      doc({ id: "3", section: "B", type: "pickup_pdf" }),
+      doc({ id: "4", section: "B", type: "transport_invoice", deletedAt: "2026-10-20T12:00:00.000Z" }),
+    ];
+    expect(cabinetDocumentsSummary(rows)).toBe("3 no 8 augšupielādēti");
+  });
+
+  it("routes new service invoices to A before arrival, C after (visible to logistika)", () => {
+    expect(serviceInvoiceUploadSection(false)).toBe("A");
+    expect(serviceInvoiceUploadSection(true)).toBe("C");
   });
 
   it("parses localStorage prefs without throwing", () => {

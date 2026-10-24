@@ -16,6 +16,8 @@ export const CABINET_DOC_TYPES = [
   "service_invoice",
   "pickup_pdf",
   "cmr",
+  "transport_request_confirm",
+  "transport_invoice",
   "csdd_status",
   "note",
   "other",
@@ -29,15 +31,48 @@ export const CABINET_DOC_TYPE_LABEL: Record<CabinetDocType, string> = {
   service_invoice: "Servisa rēķins",
   pickup_pdf: "Pickup dokuments",
   cmr: "CMR",
+  transport_request_confirm: "Auto1 Transport Request Confirmation",
+  transport_invoice: "Auto1 Transport Invoice",
   csdd_status: "CSDD pārbaude",
   note: "Piezīmes",
   other: "Dokuments",
 };
 
+/** Dokumentu veidi, kam vienotajā "Dokumenti" sadaļā vienmēr ir sava rinda (arī tad, ja vēl nav augšupielādēts). */
+export const CABINET_SLOT_DOC_TYPES = [
+  "purchase_confirm",
+  "car_invoice",
+  "pickup_pdf",
+  "cmr",
+  "transport_request_confirm",
+  "transport_invoice",
+  "service_invoice",
+  "csdd_status",
+] as const;
+
+export function cabinetDocumentsSummary(docs: readonly CabinetDocument[]): string {
+  const live = liveCabinetDocuments(docs as CabinetDocument[]);
+  const present = new Set(live.map((d) => d.type));
+  const count = CABINET_SLOT_DOC_TYPES.filter((t) => present.has(t)).length;
+  return `${count} no ${CABINET_SLOT_DOC_TYPES.length} augšupielādēti`;
+}
+
+/** Servisa rēķinu pirms atvešanas drīkst pievienot brīvi (A), pēc atvešanas - C sadaļā, kur to redz arī loģistika. */
+export function serviceInvoiceUploadSection(arrived: boolean): CabinetSectionId {
+  return arrived ? "C" : "A";
+}
+
 export const CABINET_SECTION_LABEL: Record<CabinetSectionId, string> = {
   A: "Iegādes dokumenti",
   B: "Pick up līdz atvešanai",
   C: "Pēc atvešanas",
+};
+
+/** Mazie grupu virsraksti vienotajā "Dokumenti" sadaļā (kompaktais maketis j34). */
+export const CABINET_DOC_GROUP_LABEL: Record<CabinetSectionId, string> = {
+  A: "Iegāde",
+  B: "Pickup / transports",
+  C: "Rēķini",
 };
 
 export const CABINET_PICKUP_STAGE_LV: Record<CabinetPickupStage, string> = {
@@ -173,7 +208,8 @@ export function logisticsDocumentTitle(input: {
 
 export function cabinetDocTypeForSection(section: CabinetSectionId, type: CabinetDocType): boolean {
   if (section === "A") return type === "purchase_confirm" || type === "car_invoice" || type === "auction_invoice" || type === "service_invoice" || type === "other";
-  if (section === "B") return type === "pickup_pdf" || type === "cmr" || type === "other";
+  if (section === "B")
+    return type === "pickup_pdf" || type === "cmr" || type === "transport_request_confirm" || type === "transport_invoice" || type === "other";
   return type === "service_invoice" || type === "csdd_status" || type === "note" || type === "other";
 }
 

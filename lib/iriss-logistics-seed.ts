@@ -232,6 +232,8 @@ export function seedLogisticsFromPunkti(
           pickupDate: "",
           stockNo: (car.ref ?? "").trim(),
           freeParkingUntil: pickupDateFromTerm(car.termins ?? ""),
+          transportCostEur: null,
+          transportCostAuto: false,
           status,
           archived,
           archivedAt: archived ? now : "",
