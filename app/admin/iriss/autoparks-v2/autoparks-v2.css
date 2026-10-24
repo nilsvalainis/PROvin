@@ -1993,3 +1993,144 @@
   color: var(--focus);
   font-weight: 500;
 }
+
+/* ===== j28: mobilā dizaina korekcijas pēc 9 apstiprinātiem maketiem (24.10, Nils "jā" 11:03) =====
+   Tikai mobilais skats (.ap2-bar jau ir mobilā-tikai; pārējais zem max-width:899px). Desktop nemainās. */
+
+/* Mobilā akcentkrāsa saskaņota ar admin-ios-theme (#007aff); desktop patur esošo --focus. */
+@media (max-width: 899px) {
+  .ap2 {
+    --focus: #007aff;
+  }
+}
+
+/* Atpakaļ: bultiņa + "Autoparks" teksts (maketa stils), bez apaļās pogas rāmja. */
+.ap2.ap2.ap2 .ap2-back {
+  width: auto;
+  height: 44px;
+  min-width: 44px;
+  padding: 0 8px 0 2px;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--focus);
+}
+.ap2.ap2.ap2 .ap2-back svg {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+/* Joslā paliek tikai Atpakaļ - auto nosaukumu un statusu rāda pastāvīgā "hero" kartīte zemāk. */
+.ap2.ap2.ap2 .ap2-bar h2,
+.ap2.ap2.ap2 .ap2-bar > .ap2-pill {
+  display: none;
+}
+
+/* Auto kartīte (nosaukums + VIN) paliek redzama visās cilnēs mobilajā skatā, ne tikai "Pamatdati". */
+.ap2.ap2.ap2 .ap2-carhead.compact {
+  display: flex;
+}
+
+@media (max-width: 899px) {
+  /* Cilnes: horizontāli ritināma "pill" josla (maketa stils) - novērš arī 5-6 ciļņu saspiešanos 375px platumā. */
+  .ap2.ap2.ap2 .ap2-tabs {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 6px;
+  }
+  .ap2.ap2.ap2 .ap2-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-tab {
+    flex: none;
+    min-height: 44px;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Saraksts (m01): katra rinda - sava noapaļota kartīte, nevis kopīgs rāmis ar atdalītājiem. */
+  .ap2.ap2.ap2 .ap2-list {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+    display: grid;
+    gap: 10px;
+  }
+  .ap2.ap2.ap2 .ap2-row {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    border-top: 1px solid var(--line);
+  }
+  .ap2.ap2.ap2 .ap2-row:first-child {
+    border-top: 1px solid var(--line);
+  }
+  .ap2.ap2.ap2 .ap2-rt .ap2-vin {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .ap2.ap2.ap2 .ap2-rt-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .ap2.ap2.ap2 .ap2-rt-top b {
+    flex: 1;
+    min-width: 0;
+  }
+  .ap2.ap2.ap2 .ap2-pill-m {
+    flex: none;
+  }
+
+  /* Iegāde: "Pašizmaksa" kā viena rinda ar bultiņu (maketa stils), nevis tumša 2-rindu flīze. */
+  .ap2.ap2.ap2 .ap2-kvc.ap2-cost {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: #fff;
+    padding: 14px 16px;
+  }
+  .ap2.ap2.ap2 .ap2-kvc.ap2-cost span {
+    display: block;
+    width: auto;
+    color: var(--ink2);
+  }
+  .ap2.ap2.ap2 .ap2-kvc.ap2-cost em {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-kvc.ap2-cost b {
+    color: var(--ink);
+    font-size: 19px;
+  }
+  .ap2.ap2.ap2 .ap2-kvc.ap2-cost::after {
+    content: "›";
+    color: var(--ink3);
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  /* Pieskāriena mērķi >=44px (problēmu pārslēgi, mazās pogas, filtru "pill" un VIN rinda bija mazāki). */
+  .ap2.ap2.ap2 .ap2-tg button {
+    min-height: 44px;
+  }
+  .ap2.ap2.ap2 .ap2-btn.sm {
+    min-height: 44px;
+  }
+  .ap2.ap2.ap2 .ap2-chip {
+    min-height: 44px;
+  }
+  .ap2.ap2.ap2 .ap2-vin {
+    min-height: 44px;
+  }
+}

@@ -127,8 +127,11 @@ export function AutoparksV2Cabinet({
   return (
     <div className="ap2">
       <div className="ap2-bar">
-        <Link href={BASE} className="ap2-back" aria-label="Atpakaļ">
-          ‹
+        <Link href={BASE} className="ap2-back" aria-label="Atpakaļ uz Autoparks">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M15 5l-7 7 7 7" />
+          </svg>
+          <span>Autoparks</span>
         </Link>
         <h2>{compact ? basics.title : "Auto kabinets"}</h2>
         {compact ? (
@@ -154,7 +157,7 @@ export function AutoparksV2Cabinet({
         </div>
         {statusBtn("ap2-dstatus")}
       </div>
-      {!compact ? statusBtn("ap2-mstatus") : null}
+      {statusBtn("ap2-mstatus")}
       {statusErr ? <p className="ap2-err">{statusErr}</p> : null}
       {canCreateOffer ? (
         <div style={{ margin: "10px 0", display: "grid" }}>
