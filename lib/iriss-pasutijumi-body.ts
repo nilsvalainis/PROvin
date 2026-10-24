@@ -3,6 +3,7 @@
  * lai to pašu izmanto arī POST /api/admin/iriss-pasutijumi/[id]/offers.
  */
 
+import { normalizeIrissOfferBlocks } from "@/lib/iriss-offer-blocks";
 import { isSafeDropboxFileId } from "@/lib/iriss-stock-photos";
 import { IRISS_MAX_OFFER_ATTACHMENTS, type IrissOfferAttachment, type IrissOfferRecord } from "@/lib/iriss-pasutijumi-types";
 
@@ -99,6 +100,10 @@ export function parseIrissOfferFromBody(item: unknown, idx: number): IrissOfferR
     ...(typeof r.coverAttachmentId === "string" && r.coverAttachmentId.trim()
       ? { coverAttachmentId: r.coverAttachmentId }
       : {}),
+    ...(() => {
+      const blocks = normalizeIrissOfferBlocks(r.blocks);
+      return blocks ? { blocks } : {};
+    })(),
     createdAt: typeof r.createdAt === "string" ? r.createdAt : "",
     updatedAt: typeof r.updatedAt === "string" ? r.updatedAt : "",
   };
