@@ -140,10 +140,33 @@ describe("IRISS offer client link store", () => {
     expect(blob).not.toContain("secret-listing.example");
     expect(blob).not.toContain("+37120000000");
 
-    const photo = await loadPage.readIrissOfferPublicPhoto(created.record.token, PHOTO_ID, Date.parse("2026-10-15T12:30:00.000Z"));
+    const photo = await loadPage.readIrissOfferPublicPhoto(
+      created.record.token,
+      PHOTO_ID,
+      { kind: "full" },
+      Date.parse("2026-10-15T12:30:00.000Z"),
+    );
     expect(photo?.mimeType).toBe("image/png");
     expect(photo?.bytes.length).toBeGreaterThan(8);
     expect(await loadPage.readIrissOfferPublicPhoto(created.record.token, "../etc/passwd")).toBeNull();
+
+    const thumb = await loadPage.readIrissOfferPublicPhoto(
+      created.record.token,
+      PHOTO_ID,
+      { kind: "thumb" },
+      Date.parse("2026-10-15T12:30:00.000Z"),
+    );
+    expect(thumb?.mimeType).toBe("image/jpeg");
+    expect(thumb?.bytes.length).toBeGreaterThan(8);
+
+    const display = await loadPage.readIrissOfferPublicPhoto(
+      created.record.token,
+      PHOTO_ID,
+      { kind: "display", width: 480, format: "webp" },
+      Date.parse("2026-10-15T12:30:00.000Z"),
+    );
+    expect(display?.mimeType).toBe("image/webp");
+    expect(display?.bytes.length).toBeGreaterThan(8);
 
     const replaced = await store.createIrissOfferClientLink({
       orderId: ORDER_ID,
