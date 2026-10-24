@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { parseTransportInvoiceAmount } from "@/lib/iriss-logistics-transport-invoice-amount";
+import { parseTransportInvoiceAmount, shouldAutofillTransportCost } from "@/lib/iriss-logistics-transport-invoice-amount";
+
+describe("shouldAutofillTransportCost", () => {
+  it("allows autofill when the field is still empty", () => {
+    expect(shouldAutofillTransportCost({ transportCostEur: null, transportCostAuto: false })).toBe(true);
+  });
+
+  it("allows a newer PDF to overwrite a previous auto-filled value", () => {
+    expect(shouldAutofillTransportCost({ transportCostEur: 240, transportCostAuto: true })).toBe(true);
+  });
+
+  it("never overwrites a value the user entered by hand", () => {
+    expect(shouldAutofillTransportCost({ transportCostEur: 240, transportCostAuto: false })).toBe(false);
+  });
+});
 
 describe("parseTransportInvoiceAmount", () => {
   it("parses EN-style amount (comma thousands, dot decimal) next to a Total label", () => {

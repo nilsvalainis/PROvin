@@ -37,7 +37,7 @@ export type CabinetAccessView = {
 
 const SECTION_SAMPLE_TYPES: Record<CabinetSectionId, readonly CabinetDocType[]> = {
   A: ["purchase_confirm", "car_invoice", "auction_invoice", "service_invoice"],
-  B: ["pickup_pdf", "cmr"],
+  B: ["pickup_pdf", "cmr", "transport_request_confirm", "transport_invoice"],
   C: ["service_invoice", "csdd_status", "note"],
 };
 
