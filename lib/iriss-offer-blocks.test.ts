@@ -63,4 +63,38 @@ describe("iriss-offer-blocks", () => {
     expect(irissOfferPdfShows(offer, "photos")).toBe(false);
     expect(irissOfferCustomPdfBlocks(offer).map((b) => b.html)).toEqual(["Papildu teksts"]);
   });
+
+  it("j50: includes an Apraksti block by default, right after Transportlīdzeklis", () => {
+    const offer = emptyIrissOfferRecord("o1", "2026-10-17T10:00:00.000Z");
+    offer.specialNotes = "Garantija";
+    const blocks = resolveIrissOfferBlocks(offer);
+    expect(blocks[1]?.kind).toBe("apraksti");
+    expect(blocks[1]?.title).toBe("Apraksti");
+    expect(blocks[1]?.visible).toBe(true);
+  });
+
+  it("j50: backfills a missing Apraksti block for offers saved before it existed, without touching stored blocks", () => {
+    const offer = emptyIrissOfferRecord("o1", "2026-10-17T10:00:00.000Z");
+    offer.visualAssessment = "Labs stāvoklis";
+    offer.blocks = [
+      { id: "vehicle", kind: "vehicle", title: "Transportlīdzeklis", visible: true },
+      { id: "pricing", kind: "pricing", title: "Cenas", visible: true },
+    ];
+    const blocks = resolveIrissOfferBlocks(offer);
+    expect(blocks.map((b) => b.kind)).toEqual(["vehicle", "apraksti", "pricing"]);
+    expect(blocks.find((b) => b.kind === "apraksti")?.visible).toBe(true);
+    // Pats piedāvājuma ieraksts netiek mainīts - tikai rādīšanas brīža izvads.
+    expect(offer.blocks).toEqual([
+      { id: "vehicle", kind: "vehicle", title: "Transportlīdzeklis", visible: true },
+      { id: "pricing", kind: "pricing", title: "Cenas", visible: true },
+    ]);
+  });
+
+  it("j50: respects an already-saved Apraksti toggle instead of recomputing it", () => {
+    const offer = emptyIrissOfferRecord("o1", "2026-10-17T10:00:00.000Z");
+    offer.specialNotes = "Teksts, kas tomēr paliek slēpts";
+    offer.blocks = [{ id: "apraksti", kind: "apraksti", title: "Apraksti", visible: false }];
+    const blocks = resolveIrissOfferBlocks(offer);
+    expect(blocks.find((b) => b.kind === "apraksti")?.visible).toBe(false);
+  });
 });

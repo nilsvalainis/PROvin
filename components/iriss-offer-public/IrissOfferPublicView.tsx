@@ -129,6 +129,13 @@ export function IrissOfferPublicView({ token, view }: { token: string; view: Iri
         </section>
       ) : null}
 
+      {view.apraksti ? (
+        <section className={cardClassName()}>
+          {sectionTitle("Apraksti")}
+          <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#52525b]">{view.apraksti}</p>
+        </section>
+      ) : null}
+
       {view.checks.length > 0 || view.notes ? (
         <section className={cardClassName()}>
           {sectionTitle("Stāvoklis")}

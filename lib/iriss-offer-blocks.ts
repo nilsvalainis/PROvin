@@ -9,6 +9,7 @@ import type { IrissOfferRecord } from "@/lib/iriss-pasutijumi-types";
 
 export const IRISS_OFFER_BLOCK_KINDS = [
   "vehicle",
+  "apraksti",
   "assessment",
   "warranty",
   "pricing",
@@ -61,6 +62,16 @@ function str(offer: IrissOfferRecord, key: keyof IrissOfferRecord): string {
   return typeof v === "string" ? v : "";
 }
 
+/** Apraksti bloka redzamība - vienmēr pārrēķināta no dzīvajiem laukiem, kamēr operators to nav pats pārslēdzis. */
+export function defaultIrissOfferAprakstiBlock(offer: IrissOfferRecord): IrissOfferBlock {
+  return {
+    id: "apraksti",
+    kind: "apraksti",
+    title: "Apraksti",
+    visible: Boolean(offer.specialNotes.trim() || offer.visualAssessment.trim() || offer.technicalAssessment.trim()),
+  };
+}
+
 export function defaultIrissOfferBlocks(offer: IrissOfferRecord): IrissOfferBlock[] {
   const extraVehicle = extraVehicleRows(offer);
   return [
@@ -78,24 +89,17 @@ export function defaultIrissOfferBlocks(offer: IrissOfferRecord): IrissOfferBloc
         ...extraVehicle,
       ],
     },
+    defaultIrissOfferAprakstiBlock(offer),
     {
       id: "assessment",
       kind: "assessment",
       title: "Novērtējums klientam",
+      // j50: Īpašas atzīmes/Vizuālais/Tehniskais novērtējums pārcelti uz Apraksti bloku -
+      // šis bloks tagad sedz tikai atzīmes (Pilna servisa vēsture u.c.) un Kopsavilkumu.
       visible: Boolean(
-        offer.visualAssessment.trim() || offer.technicalAssessment.trim() || offer.summary.trim() || offer.specialNotes.trim(),
+        offer.hasFullServiceHistory || offer.hasFactoryPaint || offer.hasNoRustBody || offer.hasSecondWheelSet || offer.summary.trim(),
       ),
-      html: [offer.visualAssessment, offer.technicalAssessment, offer.summary, offer.specialNotes]
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .join("\n\n"),
-    },
-    {
-      id: "warranty",
-      kind: "warranty",
-      title: "Garantija un piegāde",
-      visible: Boolean(offer.specialNotes.trim()),
-      html: offer.specialNotes.trim(),
+      html: offer.summary.trim(),
     },
     {
       id: "pricing",
@@ -126,7 +130,7 @@ function extraVehicleRows(offer: IrissOfferRecord): IrissOfferBlockRow[] {
 
 export function resolveIrissOfferBlocks(offer: IrissOfferRecord): IrissOfferBlock[] {
   if (!offer.blocks?.length) return defaultIrissOfferBlocks(offer);
-  return offer.blocks.map((block) => ({
+  const stored = offer.blocks.map((block) => ({
     ...block,
     title: applyProvinHumanDashes(block.title),
     html: block.html ? applyProvinHumanDashes(block.html) : block.html,
@@ -136,6 +140,13 @@ export function resolveIrissOfferBlocks(offer: IrissOfferRecord): IrissOfferBloc
       value: applyProvinHumanDashes(row.value),
     })),
   }));
+  // Piedāvājumi, kas saglabāti pirms Apraksti bloka ievešanas (j50), šo bloku nesatur -
+  // ievieto to tagad, pārrēķinātu no dzīvajiem laukiem, lai teksts nepaliek bez slēdža.
+  if (stored.some((b) => b.kind === "apraksti")) return stored;
+  const apraksti = defaultIrissOfferAprakstiBlock(offer);
+  const vehicleIdx = stored.findIndex((b) => b.kind === "vehicle");
+  const insertAt = vehicleIdx >= 0 ? vehicleIdx + 1 : 0;
+  return [...stored.slice(0, insertAt), apraksti, ...stored.slice(insertAt)];
 }
 
 export function visibleIrissOfferBlocks(offer: IrissOfferRecord): IrissOfferBlock[] {
