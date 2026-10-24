@@ -9,7 +9,9 @@ import type { IrissOfferRecord } from "@/lib/iriss-pasutijumi-types";
 
 export const IRISS_OFFER_BLOCK_KINDS = [
   "vehicle",
-  "apraksti",
+  "specialNotes",
+  "visualAssessment",
+  "technicalAssessment",
   "assessment",
   "warranty",
   "pricing",
@@ -18,6 +20,14 @@ export const IRISS_OFFER_BLOCK_KINDS = [
   "text",
   "table",
 ] as const;
+
+/** j50 correction: katrai no šīm sadaļām savs atsevišķs slēdzis, nevis kopīgs "Apraksti" bloks. */
+const APRAKSTI_SECTION_KINDS = ["specialNotes", "visualAssessment", "technicalAssessment"] as const;
+const APRAKSTI_SECTION_TITLES: Record<(typeof APRAKSTI_SECTION_KINDS)[number], string> = {
+  specialNotes: "Īpašas atzīmes",
+  visualAssessment: "Vizuālais novērtējums",
+  technicalAssessment: "Tehniskais novērtējums",
+};
 
 export type IrissOfferBlockKind = (typeof IRISS_OFFER_BLOCK_KINDS)[number];
 
@@ -62,16 +72,6 @@ function str(offer: IrissOfferRecord, key: keyof IrissOfferRecord): string {
   return typeof v === "string" ? v : "";
 }
 
-/** Apraksti bloka redzamība - vienmēr pārrēķināta no dzīvajiem laukiem, kamēr operators to nav pats pārslēdzis. */
-export function defaultIrissOfferAprakstiBlock(offer: IrissOfferRecord): IrissOfferBlock {
-  return {
-    id: "apraksti",
-    kind: "apraksti",
-    title: "Apraksti",
-    visible: Boolean(offer.specialNotes.trim() || offer.visualAssessment.trim() || offer.technicalAssessment.trim()),
-  };
-}
-
 export function defaultIrissOfferBlocks(offer: IrissOfferRecord): IrissOfferBlock[] {
   const extraVehicle = extraVehicleRows(offer);
   return [
@@ -89,7 +89,12 @@ export function defaultIrissOfferBlocks(offer: IrissOfferRecord): IrissOfferBloc
         ...extraVehicle,
       ],
     },
-    defaultIrissOfferAprakstiBlock(offer),
+    ...APRAKSTI_SECTION_KINDS.map((kind) => ({
+      id: kind,
+      kind,
+      title: APRAKSTI_SECTION_TITLES[kind],
+      visible: true,
+    })),
     {
       id: "assessment",
       kind: "assessment",
@@ -140,13 +145,22 @@ export function resolveIrissOfferBlocks(offer: IrissOfferRecord): IrissOfferBloc
       value: applyProvinHumanDashes(row.value),
     })),
   }));
-  // Piedāvājumi, kas saglabāti pirms Apraksti bloka ievešanas (j50), šo bloku nesatur -
-  // ievieto to tagad, pārrēķinātu no dzīvajiem laukiem, lai teksts nepaliek bez slēdža.
-  if (stored.some((b) => b.kind === "apraksti")) return stored;
-  const apraksti = defaultIrissOfferAprakstiBlock(offer);
-  const vehicleIdx = stored.findIndex((b) => b.kind === "vehicle");
+  // j50 korekcija: tagad brīvi saglabāts vecais, kopīgais "apraksti" bloks (ja tāds jau
+  // paspēts saglabāt) tiek izlasīts kā sākumstāvoklis trim atsevišķajiem slēdžiem un pats
+  // izkrīt no saraksta - offer.blocks šeit netiek mainīts, tikai rādīšanas izvads.
+  const legacyApraksti = stored.find((b) => (b.kind as string) === "apraksti");
+  const withoutLegacy = stored.filter((b) => (b.kind as string) !== "apraksti");
+  const missingKinds = APRAKSTI_SECTION_KINDS.filter((kind) => !withoutLegacy.some((b) => b.kind === kind));
+  if (!missingKinds.length) return withoutLegacy;
+  const inserted: IrissOfferBlock[] = missingKinds.map((kind) => ({
+    id: kind,
+    kind,
+    title: APRAKSTI_SECTION_TITLES[kind],
+    visible: legacyApraksti ? legacyApraksti.visible : true,
+  }));
+  const vehicleIdx = withoutLegacy.findIndex((b) => b.kind === "vehicle");
   const insertAt = vehicleIdx >= 0 ? vehicleIdx + 1 : 0;
-  return [...stored.slice(0, insertAt), apraksti, ...stored.slice(insertAt)];
+  return [...withoutLegacy.slice(0, insertAt), ...inserted, ...withoutLegacy.slice(insertAt)];
 }
 
 export function visibleIrissOfferBlocks(offer: IrissOfferRecord): IrissOfferBlock[] {

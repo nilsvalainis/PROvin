@@ -352,11 +352,13 @@ describe("IRISS offer public view", () => {
       { id: "pricing", kind: "pricing", title: "Cenas", visible: false },
     ];
     const view = buildIrissOfferPublicView(offer, { decision: "", question: "" });
-    // j50: "Novērtējums klientam" tagad kontrolē tikai atzīmes/kopsavilkumu, nevis Īpašas atzīmes/Vizuālo novērtējumu -
-    // tos pārņēma jaunais, vienmēr-pārrēķinātais "apraksti" bloks (vecam piedāvājumam blocks saraksts to nesatur).
+    // j50 korekcija: "Novērtējums klientam" kontrolē tikai atzīmes/kopsavilkumu, nevis Īpašas atzīmes/Vizuālo novērtējumu -
+    // šiem ir savi, atsevišķi slēdži, kas vecam piedāvājumam (blocks saraksts tos nesatur) tiek atjaunoti kā redzami.
     expect(view.checks).toEqual([]);
     expect(view.notes).toBe("");
-    expect(view.apraksti).toBe("Garantija 3 mēneši\n\nLabs stāvoklis");
+    expect(view.specialNotes).toBe("Garantija 3 mēneši");
+    expect(view.visualAssessment).toBe("Labs stāvoklis");
+    expect(view.technicalAssessment).toBe("");
     expect(view.prices).toEqual([]);
     expect(view.total).toBe("");
   });
@@ -387,21 +389,31 @@ describe("IRISS offer public view", () => {
     ]);
   });
 
-  it("j50: shows an 'Apraksti' section built from specialNotes/visualAssessment/technicalAssessment", () => {
+  it("j50 correction: shows Īpašas atzīmes/Vizuālais/Tehniskais novērtējums as independent fields, each visible by default", () => {
     const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-15T08:00:00.000Z", "Piedāvājums 1");
     offer.specialNotes = "Īpašas atzīmes teksts";
     offer.visualAssessment = "Vizuālais teksts";
     offer.technicalAssessment = "Tehniskais teksts";
     const view = buildIrissOfferPublicView(offer, { decision: "", question: "" });
-    expect(view.apraksti).toBe("Īpašas atzīmes teksts\n\nVizuālais teksts\n\nTehniskais teksts");
+    expect(view.specialNotes).toBe("Īpašas atzīmes teksts");
+    expect(view.visualAssessment).toBe("Vizuālais teksts");
+    expect(view.technicalAssessment).toBe("Tehniskais teksts");
   });
 
-  it("j50: hides 'Apraksti' content when the apraksti block is toggled off", () => {
+  it("j50 correction: hides only the one section whose own toggle is off, keeping the other two visible", () => {
     const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-15T08:00:00.000Z", "Piedāvājums 1");
     offer.specialNotes = "Slēpts teksts";
-    offer.blocks = [{ id: "apraksti", kind: "apraksti", title: "Apraksti", visible: false }];
+    offer.visualAssessment = "Redzams teksts";
+    offer.technicalAssessment = "Arī redzams teksts";
+    offer.blocks = [
+      { id: "specialNotes", kind: "specialNotes", title: "Īpašas atzīmes", visible: false },
+      { id: "visualAssessment", kind: "visualAssessment", title: "Vizuālais novērtējums", visible: true },
+    ];
     const view = buildIrissOfferPublicView(offer, { decision: "", question: "" });
-    expect(view.apraksti).toBe("");
+    expect(view.specialNotes).toBe("");
+    expect(view.visualAssessment).toBe("Redzams teksts");
+    // Tehniskā novērtējuma slēdzis blocks sarakstā nav - noklusējums ir redzams.
+    expect(view.technicalAssessment).toBe("Arī redzams teksts");
   });
 });
 

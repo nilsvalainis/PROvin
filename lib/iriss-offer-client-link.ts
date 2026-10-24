@@ -81,8 +81,12 @@ export type IrissOfferPublicView = {
   total: string;
   validDays: string;
   photos: { id: string }[];
-  /** Apraksti bloka teksts (Īpašas atzīmes, Vizuālais novērtējums, Tehniskais novērtējums) - "" ja bloks slēpts. */
-  apraksti: string;
+  /** Īpašas atzīmes teksts - "" ja operators šo sadaļu slēpis. */
+  specialNotes: string;
+  /** Vizuālā novērtējuma teksts - "" ja operators šo sadaļu slēpis. */
+  visualAssessment: string;
+  /** Tehniskā novērtējuma teksts - "" ja operators šo sadaļu slēpis. */
+  technicalAssessment: string;
   /** Operatora pievienotie papildu bloki (Piedāvājuma bloki PDF -> "+Teksts"/"+Tabula"), kas atzīmēti "Rādīt". */
   customBlocks: { id: string; title: string; kind: "text" | "table"; html: string; rows: { label: string; value: string }[] }[];
   decision: IrissOfferClientDecision;
@@ -487,7 +491,9 @@ export function buildIrissOfferPublicView(
   // Piedāvājuma bloku "Rādīt/Slēpt" pārslēgs (components/admin/IrissOfferBlocksEditor.tsx) nosaka tieši to pašu
   // sadaļu redzamību šeit, kas PDF (lib/iriss-pasutijums-pdf.ts) - lai publiskā saite un PDF nekad nesaskrāpējas.
   const assessmentOk = irissOfferPdfShows(offer, "assessment");
-  const aprakstiOk = irissOfferPdfShows(offer, "apraksti");
+  const specialNotesOk = irissOfferPdfShows(offer, "specialNotes");
+  const visualAssessmentOk = irissOfferPdfShows(offer, "visualAssessment");
+  const technicalAssessmentOk = irissOfferPdfShows(offer, "technicalAssessment");
   const pricingOk = irissOfferPdfShows(offer, "pricing");
   const photosOk = irissOfferPdfShows(offer, "photos");
 
@@ -503,11 +509,9 @@ export function buildIrissOfferPublicView(
   const structured = [assessmentOk ? plainClientText(offer.summary) : ""].filter(Boolean);
   const notes = structured.length > 0 ? structured.join("\n\n") : plainClientText(offer.comment);
 
-  const apraksti = aprakstiOk
-    ? [plainClientText(offer.specialNotes), plainClientText(offer.visualAssessment), plainClientText(offer.technicalAssessment)]
-        .filter(Boolean)
-        .join("\n\n")
-    : "";
+  const specialNotes = specialNotesOk ? plainClientText(offer.specialNotes) : "";
+  const visualAssessment = visualAssessmentOk ? plainClientText(offer.visualAssessment) : "";
+  const technicalAssessment = technicalAssessmentOk ? plainClientText(offer.technicalAssessment) : "";
 
   const prices = pricingOk
     ? [
@@ -558,7 +562,9 @@ export function buildIrissOfferPublicView(
     total: pricingOk ? irissOfferTotalLabel(offer) : "",
     validDays,
     photos,
-    apraksti,
+    specialNotes,
+    visualAssessment,
+    technicalAssessment,
     customBlocks,
     decision: client.decision,
     question: sanitizeIrissOfferQuestion(client.question),
@@ -586,7 +592,9 @@ const PUBLIC_VIEW_KEYS = [
   "total",
   "validDays",
   "photos",
-  "apraksti",
+  "specialNotes",
+  "visualAssessment",
+  "technicalAssessment",
   "customBlocks",
   "decision",
   "question",
