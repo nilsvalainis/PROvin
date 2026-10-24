@@ -50,6 +50,12 @@ export type IrissOrderRoomHit = {
   powerKw: string;
   color: string;
   bodyType: string;
+  /** Jau sludinājumā nolasīts, bet iepriekš šeit nepārnests (j41b). Piemēram "5" vai "5/5". */
+  doorCount?: string;
+  /** Avota (Auto1/Openlane/Autobid) raw bojājumu/stāvokļa teksts - nepārtulkots, sk. iriss-auction-listing-field-map.ts. */
+  damageRaw?: string;
+  /** Auto1 pārdevēja valsts; ne vienmēr tas pats, kas countryCode. */
+  sourceCountry?: string;
   imageUrl: string;
   imageUrls: string[];
   thumbUrl?: string;
@@ -98,6 +104,9 @@ export type IrissOrderRoomHitSource = {
   powerKw?: string;
   color?: string;
   bodyType?: string;
+  doorCount?: string;
+  damageRaw?: string;
+  sourceCountry?: string;
   imageUrl?: string;
   imageUrls?: string[];
   vin?: string;
@@ -236,6 +245,9 @@ export function buildIrissOrderRoomHits(
       powerKw: (v.powerKw ?? "").trim(),
       color: (v.color ?? "").trim(),
       bodyType: (v.bodyType ?? "").trim(),
+      ...(typeof row.doorCount === "string" && row.doorCount.trim() ? { doorCount: row.doorCount.trim() } : {}),
+      ...(typeof row.damageRaw === "string" && row.damageRaw.trim() ? { damageRaw: row.damageRaw.trim() } : {}),
+      ...(typeof row.sourceCountry === "string" && row.sourceCountry.trim() ? { sourceCountry: row.sourceCountry.trim() } : {}),
       imageUrl: uniquePhotos[0] ?? "",
       imageUrls: uniquePhotos,
       thumbUrl: typeof row.thumbUrl === "string" ? row.thumbUrl.trim() : undefined,

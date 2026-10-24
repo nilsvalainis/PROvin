@@ -50,6 +50,8 @@ import {
 } from "@/lib/iriss-generated-documents";
 import { irissOfferSeedFromHit } from "@/lib/iriss-order-offer-from-hit";
 import { appendIrissOrderRoomNote, type IrissOrderRoomHit, type IrissOrderRoomTab } from "@/lib/iriss-order-room";
+import { irissAuctionListingFieldMap, type IrissAuctionListingRaw } from "@/lib/iriss-auction-listing-field-map";
+import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import { mergeServerOwnedIrissFields } from "@/lib/iriss-server-owned-fields";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
@@ -865,9 +867,10 @@ export function IrissPasutijumsEditor({
         const v = seed[key as keyof typeof seed];
         if (typeof v === "string" && v.trim()) auto.add(key);
       }
+      if (seed.doorCount.trim()) auto.add("doorCount");
       setOfferAutoFields(auto);
       setOfferSeedStatus(null);
-      setOfferDraft({
+      const nextDraft = {
         ...draft,
         ...seed,
         year: seed.year,
@@ -876,8 +879,45 @@ export function IrissPasutijumsEditor({
         odometerReading: seed.odometerReading || seed.mileage,
         comment: "",
         attachments: attachmentsFromAuctionPhotoUrls(auctionPhotoUrlsFromHit(hit)),
-      });
+      };
+      setOfferDraft(nextDraft);
       setOfferOpen(true);
+
+      // Sinhronie lauki jau augstāk; bojājumu teksts (AUTO1/OPENLANE) nāk no sludinājuma,
+      // bet vienmēr jātulko latviski (Gemini) - tas notiek fonā, nekavējot loga atvēršanu.
+      const visualDamageText = irissAuctionListingFieldMap(hit.platform)?.freeText(hit as unknown as IrissAuctionListingRaw)
+        .visualDamageText;
+      if (visualDamageText?.trim()) {
+        const sourceLabel = IRISS_LISTING_PLATFORM_LABEL[hit.platform] ?? hit.platform;
+        setOfferSeedStatus({ loading: true, note: "tulko bojājumu aprakstu", sourceLabel });
+        void (async () => {
+          try {
+            const res = await fetch("/api/admin/iriss-offer-seed/translate-damage", {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: visualDamageText }),
+            });
+            const data = res.ok ? ((await res.json().catch(() => ({}))) as { lv?: string }) : null;
+            const lv = data?.lv?.trim() ?? "";
+            if (lv) {
+              setOfferDraft((d) => {
+                if (d.id !== nextDraft.id) return d;
+                const patch: { damageGrade?: string; visualAssessment?: string } = {};
+                // Manuāli rakstītu tekstu nepārrakstam - lietotājs varēja sākt rakstīt tulkošanas brīdī.
+                if (!d.damageGrade.trim()) patch.damageGrade = lv;
+                if (!d.visualAssessment.trim()) patch.visualAssessment = lv;
+                return Object.keys(patch).length > 0 ? { ...d, ...patch } : d;
+              });
+              setOfferSeedStatus({ loading: false, note: "", sourceLabel });
+            } else {
+              setOfferSeedStatus(null);
+            }
+          } catch {
+            setOfferSeedStatus(null);
+          }
+        })();
+      }
     },
     [rec.offers.length],
   );

@@ -106,6 +106,19 @@ describe("buildIrissOrderRoomHits", () => {
     expect(withPhoto[0]?.imageCount).toBe(2);
     expect(withPhoto[0]?.imageUrls).toEqual(["https://img/a.jpg", "https://img/b.jpg"]);
     expect(withPhoto[0]?.price).toBeNull();
+    // j41b: šie lauki jau nāk no sludinājumu sinhronizācijas, bet iepriekš netika pārnesti uz Hit.
+    const withListingFields = buildIrissOrderRoomHits(
+      [source({ id: "listed", doorCount: "5/5", damageRaw: "Rear bumper scratched", sourceCountry: "DE" })],
+      "order-1",
+      {},
+    );
+    expect(withListingFields[0]?.doorCount).toBe("5/5");
+    expect(withListingFields[0]?.damageRaw).toBe("Rear bumper scratched");
+    expect(withListingFields[0]?.sourceCountry).toBe("DE");
+    const withoutListingFields = buildIrissOrderRoomHits([source({ id: "bare" })], "order-1", {});
+    expect(withoutListingFields[0]?.doorCount).toBeUndefined();
+    expect(withoutListingFields[0]?.damageRaw).toBeUndefined();
+    expect(withoutListingFields[0]?.sourceCountry).toBeUndefined();
     const withSources = buildIrissOrderRoomHits(
       [
         source({
