@@ -2158,4 +2158,11 @@
   .ap2.ap2.ap2 .ap2-a4wrap {
     display: none;
   }
+
+  /* Meklēšanas lauks (m01): pelēks pildījums bez apmales (maketa stils), 44px augsts. */
+  .ap2.ap2.ap2 .ap2-search {
+    height: 44px;
+    border: 0;
+    background: #e3e3e8;
+  }
 }
