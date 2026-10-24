@@ -33,9 +33,13 @@ async function context(carId: string) {
   const car = v1.cars.find((c) => c.id === carId);
   if (!car) return null;
   const v2 = carV2Of(v2state, carId);
-  const [order, docs] = car.orderId
-    ? await Promise.all([getLogisticsOrder(car.orderId).catch(() => null), listLiveCabinetDocuments(car.orderId).catch(() => [])])
-    : [null, []];
+  // Ar roku "+ Auto" pievienotiem ierakstiem (nav orderId) kabineta dokumenti ir glabāti zem
+  // auto id - sk. iegades faili maršrutu. `getLogisticsOrder` tam vienkārši atgriež null.
+  const cabinetCarId = car.orderId || car.id;
+  const [order, docs] = await Promise.all([
+    car.orderId ? getLogisticsOrder(car.orderId).catch(() => null) : Promise.resolve(null),
+    listLiveCabinetDocuments(cabinetCarId).catch(() => []),
+  ]);
   const files = iegadeFileList({ cabinetDocs: docs, v1Files: v1.files.filter((f) => f.carId === carId), numberCheckFileId: v2.numberCheck.fileId });
   return { car, v2, order, docs, files };
 }

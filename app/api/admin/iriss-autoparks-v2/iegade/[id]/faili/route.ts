@@ -20,7 +20,9 @@ export async function POST(req: Request, ctx: Ctx) {
   const got = await readAutoparksV2Car(id);
   if (!got) return autoparksV2Json({ error: "not_found" }, 404);
   const { car } = got;
-  if (!car.orderId) return autoparksV2Json({ error: "no_order" }, 400);
+  // Ar roku "+ Auto" pievienotiem ierakstiem (nekad nav bijis Loģistikas pasūtījuma) kabineta
+  // dokumenti tiek glabāti tieši zem auto id - sk. `upsertCabinetDocument` paplašināto pārbaudi.
+  const cabinetCarId = car.orderId || car.id;
 
   let bytes: Buffer | undefined;
   let fileName = "";
@@ -43,7 +45,7 @@ export async function POST(req: Request, ctx: Ctx) {
   let result: Awaited<ReturnType<typeof upsertCabinetDocument>>;
   try {
     result = await upsertCabinetDocument({
-      carId: car.orderId,
+      carId: cabinetCarId,
       section: "A",
       type: "other",
       typeLabel: title,

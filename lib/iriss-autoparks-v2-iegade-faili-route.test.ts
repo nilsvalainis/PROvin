@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const state = vi.hoisted(() => ({
   gate: { ok: true as const, actor: { kind: "admin" as const, name: "Nils" }, perms: {}, actorId: "admin1", actorName: "Nils" },
   car: { id: "car1", orderId: "order1", dropboxFolderPath: "" } as Record<string, unknown>,
-  upsertCalls: [] as { contentType: string; fileName: string }[],
+  upsertCalls: [] as { carId: string; contentType: string; fileName: string }[],
   upsertError: null as Error | null,
 }));
 
@@ -20,9 +20,9 @@ vi.mock("@/lib/iriss-autoparks-v2-store", () => ({
   readAutoparksV2Car: async (id: string) => (id === state.car.id ? { car: state.car, v2: {} } : null),
 }));
 vi.mock("@/lib/iriss-logistics-cabinet-store", () => ({
-  upsertCabinetDocument: async (input: { contentType: string; fileName: string }) => {
+  upsertCabinetDocument: async (input: { carId: string; contentType: string; fileName: string }) => {
     if (state.upsertError) throw state.upsertError;
-    state.upsertCalls.push({ contentType: input.contentType, fileName: input.fileName });
+    state.upsertCalls.push({ carId: input.carId, contentType: input.contentType, fileName: input.fileName });
     return { document: { id: "doc1", title: "Dokuments" }, duplicate: false };
   },
   setCabinetDocumentDropboxPath: async () => null,
@@ -50,6 +50,7 @@ function postFile(file: File) {
 beforeEach(() => {
   state.upsertCalls = [];
   state.upsertError = null;
+  state.car.orderId = "order1";
 });
 
 describe("Iegādes PDF augšupielāde: faila tips pēc baitiem, ne pārlūka MIME", () => {
@@ -59,7 +60,7 @@ describe("Iegādes PDF augšupielāde: faila tips pēc baitiem, ne pārlūka MIM
     expect(res.status).toBe(201);
     const body = (await res.json()) as { ok?: boolean };
     expect(body.ok).toBe(true);
-    expect(state.upsertCalls).toEqual([{ contentType: "application/pdf", fileName: "Auto1_Order_Confirmation.pdf" }]);
+    expect(state.upsertCalls).toEqual([{ carId: "order1", contentType: "application/pdf", fileName: "Auto1_Order_Confirmation.pdf" }]);
   });
 
   it("pārlūks ziņo nepareizu/neparastu type - paraksts no baitiem joprojām nosaka PDF", async () => {
@@ -75,5 +76,17 @@ describe("Iegādes PDF augšupielāde: faila tips pēc baitiem, ne pārlūka MIM
     const body = (await res.json()) as { error?: string };
     expect(body.error).toBe("invalid_file");
     expect(state.upsertCalls).toEqual([]);
+  });
+});
+
+describe("J52b: ar roku '+ Auto' pievienotam auto (orderId tukšs) augšupielāde strādā zem auto id", () => {
+  it("orderId tukšs - vairs netiek atmests ar 'no_order', carId kabinetam = car.id", async () => {
+    state.car.orderId = "";
+    const file = new File([PDF_BYTES], "proforma.pdf", { type: "application/pdf" });
+    const res = await postFile(file);
+    expect(res.status).toBe(201);
+    const body = (await res.json()) as { ok?: boolean };
+    expect(body.ok).toBe(true);
+    expect(state.upsertCalls).toEqual([{ carId: "car1", contentType: "application/pdf", fileName: "proforma.pdf" }]);
   });
 });

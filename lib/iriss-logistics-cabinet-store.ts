@@ -25,6 +25,7 @@ import {
   readLogisticsJsonFile,
   writeLogisticsJsonFile,
 } from "@/lib/iriss-logistics-store";
+import { readAutoparksV2Car } from "@/lib/iriss-autoparks-v2-store";
 
 const DOCUMENTS_FILE = "documents.json";
 const PICKUPS_FILE = "pickups.json";
@@ -295,8 +296,10 @@ export async function upsertCabinetDocument(input: {
   fileName?: string;
   uploadedBy: string;
 }): Promise<{ document: CabinetDocument; duplicate: boolean }> {
+  // `carId` ir vai nu Loģistikas pasūtījuma id, vai (ar roku "+ Auto" pievienotam Autoparka
+  // ierakstam, kam nekad nav bijis pasūtījuma) tieši AutoparksCar.id - skat. iegades maršrutu.
   const order = await getLogisticsOrder(input.carId);
-  if (!order) throw new Error("order_not_found");
+  if (!order && !(await readAutoparksV2Car(input.carId))) throw new Error("order_not_found");
   if (!cabinetDocTypeForSection(input.section, input.type)) throw new Error("type_section_mismatch");
   const items = await listCabinetDocuments();
   const sha256 = input.bytes ? createHash("sha256").update(input.bytes).digest("hex") : "";

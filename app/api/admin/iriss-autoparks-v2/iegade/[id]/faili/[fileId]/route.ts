@@ -15,9 +15,10 @@ type Ctx = { params: Promise<{ id: string; fileId: string }> };
 async function editableCabinetDoc(id: string, fileId: string) {
   if (!fileId.startsWith("c:")) return null;
   const got = await readAutoparksV2Car(id);
-  if (!got?.car.orderId) return null;
+  if (!got) return null;
+  const cabinetCarId = got.car.orderId || got.car.id;
   const doc = await getCabinetDocument(fileId.slice(2));
-  if (!doc || doc.deletedAt || doc.carId !== got.car.orderId) return null;
+  if (!doc || doc.deletedAt || doc.carId !== cabinetCarId) return null;
   return doc;
 }
 

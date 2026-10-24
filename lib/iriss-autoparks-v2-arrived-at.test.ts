@@ -8,6 +8,19 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/dropbox-client", async (orig) => ({ ...(await orig<typeof import("@/lib/dropbox-client")>()), getDropboxClient: () => null }));
+vi.mock("@/lib/iriss-autoparks-v2-access", async (orig) => {
+  const real = await orig<typeof import("@/lib/iriss-autoparks-v2-access")>();
+  return {
+    ...real,
+    requireAutoparksV2Api: async () => ({
+      ok: true as const,
+      actor: { kind: "admin" as const, name: "Tests" },
+      perms: { admin: true, pamatdati: true, iegade: true, serviss: true, izdevumi: true, cenuLapa: true, summas: true, pasizmaksa: true, vesture: true },
+      actorId: "u1",
+      actorName: "Tests",
+    }),
+  };
+});
 
 const actor = { id: "u1", name: "Tests" };
 let dir = "";
@@ -28,7 +41,12 @@ async function load() {
     v1: await import("@/lib/iriss-autoparks-store"),
     v2: await import("@/lib/iriss-autoparks-v2-store"),
     basics: await import("@/lib/iriss-autoparks-v2"),
+    route: await import("@/app/api/admin/iriss-autoparks-v2/pamatdati/[id]/route"),
   };
+}
+
+function patchCtx(id: string) {
+  return { params: Promise.resolve({ id }) };
 }
 
 describe("Jauna ieraksta 'Atvests' lauks", () => {
@@ -86,5 +104,30 @@ describe("Jauna ieraksta 'Atvests' lauks", () => {
     const car = await v1.createAutoparksCar({ make: "Audi", model: "A6" }, actor);
     const patched = await v1.patchAutoparksCar(car.id, { arrivedAt: "2020-01-01" }, actor);
     expect(patched?.arrivedAt).toBe("2020-01-01");
+  });
+
+  it("J52b: vecam ierakstam ar piesārņotu v1 arrivedAt - notīrīšana caur PATCH maršrutu paliek tukša pēc 'pārlādes' (nekrīt atpakaļ uz v1)", async () => {
+    const { v1, v2, basics, route } = await load();
+    // Simulē "veco" ierakstu (pirms J52), kam v1 arrivedAt ir automātiski uzstādīts - piem. ap-424e72c5.
+    const car = await v1.createAutoparksCar({ make: "Volvo", model: "XC60", vin: "YV1DZ8756C2308230" }, actor);
+    await v1.patchAutoparksCar(car.id, { arrivedAt: "2026-10-24" }, actor);
+    const beforeClear = (await v2.readAutoparksV2Car(car.id))!;
+    expect(basics.autoparksV2Basics(beforeClear.car, beforeClear.v2).arrivedAt).toBe("2026-10-24");
+
+    const res = await route.PATCH(
+      new Request(`http://x/api/admin/iriss-autoparks-v2/pamatdati/${car.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ arrivedAt: "" }),
+      }),
+      patchCtx(car.id),
+    );
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { basics?: { arrivedAt?: string } };
+    expect(body.basics?.arrivedAt).toBe("");
+
+    // "Pārlāde": no jauna nolasa no krātuves (ne tikai PATCH atbildes) - agrāk šeit atkal parādījās v1 datums.
+    const afterReload = (await v2.readAutoparksV2Car(car.id))!;
+    expect(basics.autoparksV2Basics(afterReload.car, afterReload.v2).arrivedAt).toBe("");
   });
 });
