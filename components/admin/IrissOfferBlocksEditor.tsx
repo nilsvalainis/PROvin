@@ -156,6 +156,26 @@ function BlockBody({
       </div>
     );
   }
+  if (block.kind === "apraksti") {
+    const preview = [offer.specialNotes, offer.visualAssessment, offer.technicalAssessment]
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join("\n\n");
+    return (
+      <div className="mt-2">
+        <p className="text-[11px] text-[#6b7280]">
+          Teksts no Apraksti cilnes laukiem (Īpašas atzīmes, Vizuālais novērtējums, Tehniskais novērtējums).
+        </p>
+        {preview ? (
+          <p className="mt-2 whitespace-pre-wrap rounded-[10px] border border-[#e5e7eb] bg-[#fafafa] p-2.5 text-[13px] text-[#111827]">
+            {preview}
+          </p>
+        ) : (
+          <p className="mt-2 text-[12px] text-[#9ca3af]">Apraksti cilnes lauki vēl tukši.</p>
+        )}
+      </div>
+    );
+  }
   if (block.kind === "pricing") {
     return (
       <div className="mt-2">
