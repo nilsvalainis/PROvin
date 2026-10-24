@@ -1,6 +1,7 @@
 import { DzintarzemeOfferBrandLogo } from "@/components/iriss-offer-public/DzintarzemeOfferBrandLogo";
 import { IrissOfferProvinBusinessTile } from "@/components/iriss-offer-public/IrissOfferProvinBusinessTile";
 import { IrissOfferPublicActions } from "@/components/iriss-offer-public/IrissOfferPublicActions";
+import { IrissOfferPublicGallery } from "@/components/iriss-offer-public/IrissOfferPublicGallery";
 import {
   IRISS_OFFER_PUBLIC_BRAND,
   IRISS_OFFER_PUBLIC_LABELS,
@@ -79,8 +80,6 @@ export function IrissOfferPublicView({ token, view }: { token: string; view: Iri
   const hasParametri = vin.length > 0 || specs.some(([, v]) => v.trim());
 
   const hasPhotos = view.photos.length > 0;
-  const heroId = view.photos[0]?.id;
-  const thumbIds = view.photos.slice(1, 7);
 
   return (
     <main className="mx-auto min-h-dvh w-full max-w-[720px] px-4 pb-10 pt-7 text-[#111827] sm:px-7">
@@ -96,29 +95,7 @@ export function IrissOfferPublicView({ token, view }: { token: string; view: Iri
       <h1 className="mt-4 text-[28px] font-semibold leading-[1.15] tracking-[-0.02em]">{title}</h1>
       {subtitle ? <p className="mt-1.5 text-[13px] text-[#52525b]">{subtitle}</p> : null}
 
-      {hasPhotos && heroId ? (
-        <div className="mt-4 overflow-hidden rounded-2xl border border-[#e4e4e7]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={`/p/${encodeURIComponent(token)}/photo/${encodeURIComponent(heroId)}`}
-            alt={title}
-            className="aspect-[16/10] w-full bg-[#e4e4e7] object-cover"
-          />
-          {thumbIds.length > 0 ? (
-            <div className="grid grid-cols-3 gap-1.5 bg-white p-2 sm:grid-cols-6">
-              {thumbIds.map((photo) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={photo.id}
-                  src={`/p/${encodeURIComponent(token)}/photo/${encodeURIComponent(photo.id)}`}
-                  alt=""
-                  className="aspect-[4/3] w-full rounded-lg border border-[#e4e4e7] bg-[#f4f4f5] object-cover"
-                />
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      {hasPhotos ? <IrissOfferPublicGallery token={token} title={title} photos={view.photos} /> : null}
 
       {view.total ? (
         <section className={cardClassName(hasPhotos ? "" : "mt-4")}>
