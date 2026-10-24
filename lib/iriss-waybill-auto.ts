@@ -6,6 +6,8 @@
  * termiņš nav beidzies, pirmais mēģinājums, komentārs tukšs vai pēc šablona. Viss pārējais -> Aivars.
  * Serveris nekad nepārtrauc un neanulē aktīvu pavadzīmi: aizņemts numurs vienmēr ir nestandarta.
  * Tā pati pārbaude ir worker pusē (scripts/iriss-ttr/waybill-worker-core.mjs localStandardCheck).
+ * j31: B192-7 nekad nav standarta (sk. classifyWaybillForAuto) - tā ir SIA Dzintarzeme Auto (ne ĪRISS) numurzīme;
+ * worker nekad nesaņem šo darbu `?scope=auto` sarakstā, vienmēr Aivaram ar roku (komentāra lauks formā).
  */
 
 import {
@@ -138,6 +140,8 @@ export function classifyWaybillForAuto(
   if (opts.plateInOtherRequest) return { standard: false, reason: "numurs jau citā darbā" };
   const plate = displayDealerPlate(req.vehicle.plate);
   if (!plate) return { standard: false, reason: "numurs nav sarakstā" };
+  // j31: B192-7 (SIA Dzintarzeme Auto, nevis ĪRISS) nekad automātiski - vienmēr Aivaram ar roku, pat ja citādi standarta.
+  if (plate === "B192-7") return { standard: false, reason: "B192 - tikai ar roku" };
   if (!req.vehicle.brandModel.trim()) return { standard: false, reason: "nav auto" };
   const hours = req.validHours;
   if (hours == null || !Number.isInteger(hours) || hours < 1 || hours > WAYBILL_VALID_MAX_HOURS) {

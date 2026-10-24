@@ -42,6 +42,10 @@ export function irissWaybillGauges(rows: readonly WaybillGaugeRow[], now = new D
 /**
  * Apļi no tā paša numuru stāvokļa, ko rāda numura pogas (j25: viens avots, lai aplis nekad nerāda "brīvs",
  * kad poga rāda "aizņemts"). rows tikai PDF saitei (id pēc pavadzīmes numura vai beigu laika).
+ *
+ * j31: ja numuram jau ir aktīva pavadzīme, bet lietotājs tikko pieprasīja jaunu (nomaina veco - "Vai tiešām
+ * anulēt iepriekšējo?" -> Jā), `state.issuing` rāda TO jauno darbu. Līdz tas tiek izdots, `state.current`
+ * joprojām ir VECĀ pavadzīme - aplis nedrīkst rādīt veco atlikumu, kā it kā nekas nebūtu mainījies.
  */
 export function waybillGaugesFromPlates(
   plates: readonly WaybillPlateState[],
@@ -49,7 +53,7 @@ export function waybillGaugesFromPlates(
   now = new Date(),
 ): WaybillGauge[] {
   return plates.map((state) => {
-    if (!state.busy || !state.current) {
+    if (!state.busy || !state.current || state.issuing) {
       const issuing = state.issuing;
       return {
         plate: state.plate,

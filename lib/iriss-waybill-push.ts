@@ -3,9 +3,11 @@
  * Tīra loģika; sūta lib/iriss-waybill-requests-store.ts caur sendAdminPush tikai pieprasītāja ierīcēm.
  */
 import type { AdminPushMessage } from "@/lib/admin-push-shared";
+import { AUTO_WAYBILL_GRACE_MS } from "@/lib/iriss-waybill-auto";
 import { waybillEndsLabel } from "@/lib/iriss-waybill-calendar";
 import { compactDealerPlate, displayDealerPlate, formatRigaDateTimeComma } from "@/lib/iriss-waybill-plates";
 import {
+  inProgressIsStale,
   isStaleWaybillRequest,
   waybillPendingExpired,
   type WaybillRequest,
@@ -118,6 +120,38 @@ export function dueWaybillReminders(
         // Atkārtots pieprasījums (jauns mēģinājums) var ziņot vēlreiz.
         push("longwait", `longwait:${r.id}:${r.attempts}`, "Pavadzīme vēl gaida", `${car} · ${plate}: Aivars vēl nav sācis. Atver, lai atkārtotu.`);
       }
+    }
+  }
+  return out;
+}
+
+/**
+ * j31: droša rezerve ("iestrēga gaidīšanā"). Pie izveides automātikas standarta darbus Aivars neredz uzreiz -
+ * sagaida, ka worker tos paņems ~2 min laikā (AUTO_WAYBILL_GRACE_MS). Ja worker to nedara (piem. nestrādā konkrētam
+ * kontekstam) vai nokrīt darba vidū (pieprasījums paliek "Izveido" bez virzības), neviens Aivaru vairs nepamodina -
+ * pavadzīme var palikt neizrakstīta. Cron (ik 15 min) tāpēc meklē šādus gadījumus un pamodina Aivaru ar roku.
+ * Sūta vienreiz uz gadījumu (jauns mēģinājums vai jauns "paņemts darbā" laiks drīkst ziņot atkal).
+ */
+export type WaybillStuckHandoff = { key: string; requestId: string };
+
+export function dueWaybillStuckHandoffs(
+  requests: ReadonlyArray<WaybillRequest>,
+  sent: Readonly<Record<string, string>>,
+  nowMs = Date.now(),
+): WaybillStuckHandoff[] {
+  const out: WaybillStuckHandoff[] = [];
+  for (const r of requests) {
+    if (isStaleWaybillRequest(r, nowMs)) continue;
+    if (r.status === "queued" && !r.pickedAt && !waybillPendingExpired(r, nowMs)) {
+      const since = Date.parse(r.createdAt);
+      if (!Number.isFinite(since) || nowMs - since <= AUTO_WAYBILL_GRACE_MS) continue;
+      const key = `handoff:${r.id}:${r.attempts}`;
+      if (!sent[key]) out.push({ key, requestId: r.id });
+      continue;
+    }
+    if (r.status === "in_progress" && inProgressIsStale(r, nowMs)) {
+      const key = `handoff:${r.id}:${r.pickedAt}`;
+      if (!sent[key]) out.push({ key, requestId: r.id });
     }
   }
   return out;
