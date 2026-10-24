@@ -2133,4 +2133,29 @@
   .ap2.ap2.ap2 .ap2-vin {
     min-height: 44px;
   }
+  .ap2.ap2.ap2 .ap2-f button.v {
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .ap2.ap2.ap2 .ap2-sbox .t {
+    min-height: 44px;
+  }
+  .ap2.ap2.ap2 .ap2-techbar button.empty {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  .ap2.ap2.ap2 .ap2-addline {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Cenu lapa: mobilajā paliek tikai "Priekšskatīt A4" poga (atveras jaunā cilnē) - A4 priekšskats
+     saspiests 390px platumā nebija lasāms un maketā to nerāda. */
+  .ap2.ap2.ap2 .ap2-a4wrap {
+    display: none;
+  }
 }
