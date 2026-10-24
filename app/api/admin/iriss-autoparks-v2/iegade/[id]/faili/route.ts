@@ -2,6 +2,7 @@ import { PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
 import { autoparksV2Json, requireAutoparksV2Api } from "@/lib/iriss-autoparks-v2-access";
 import { iegadeDocDropboxFileName, iegadeStockDocFolder, uploadIegadeDocumentToStock } from "@/lib/iriss-autoparks-v2-iegade-dropbox";
 import { autoparksV2IegadeView } from "@/lib/iriss-autoparks-v2-iegade";
+import { sniffContentType } from "@/lib/iriss-autoparks-v2-sniff";
 import { readAutoparksV2Car } from "@/lib/iriss-autoparks-v2-store";
 import { setCabinetDocumentDropboxPath, upsertCabinetDocument } from "@/lib/iriss-logistics-cabinet-store";
 
@@ -23,20 +24,20 @@ export async function POST(req: Request, ctx: Ctx) {
 
   let bytes: Buffer | undefined;
   let fileName = "";
-  let contentType = "";
   try {
     const form = await req.formData();
     const file = form.get("file");
     if (file instanceof File) {
       if (file.size > PDF_MAX_FILE_BYTES) return autoparksV2Json({ error: "too_large" }, 413);
       bytes = Buffer.from(await file.arrayBuffer());
-      contentType = file.type || "application/octet-stream";
       fileName = file.name;
     }
   } catch {
     return autoparksV2Json({ error: "invalid_body" }, 400);
   }
-  if (!bytes || !contentType.includes("pdf")) return autoparksV2Json({ error: "invalid_file" }, 400);
+  // Pārlūka `file.type` bieži ir tukšs vai neprecīzs (atkarīgs no OS MIME reģistra) - PDF pazīme
+  // tiek pārbaudīta pēc faila baitiem ("%PDF"), ne pēc pārlūka ziņotā tipa (sk. `sniffContentType`).
+  if (!bytes || sniffContentType(bytes, "") !== "application/pdf") return autoparksV2Json({ error: "invalid_file" }, 400);
 
   const title = (fileName.replace(/\.[a-z0-9]{2,5}$/i, "").trim() || "Dokuments").slice(0, 150);
   let result: Awaited<ReturnType<typeof upsertCabinetDocument>>;
