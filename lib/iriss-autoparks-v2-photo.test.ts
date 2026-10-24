@@ -7,33 +7,31 @@ vi.mock("server-only", () => ({}));
 
 const FOLDER = "/STOCK/Test Car";
 const IZSOLE = `${FOLDER}/bildes-izsole`;
-const CANON = `${FOLDER}/bildes-canon`;
-let entries: Array<{ tag: "file" | "folder"; id: string; name: string }> = [];
-let izsoleEntries: Array<{ tag: "file" | "folder"; id: string; name: string }> = [];
-let canonEntries: Array<{ tag: "file" | "folder"; id: string; name: string }> = [];
-let hasIzsole = false;
-let hasCanon = false;
+const IZSOLE_LR = `${IZSOLE}/LR`;
+
+type Entry = { tag: "file" | "folder"; id: string; name: string };
+
+let rootEntries: Entry[] = [];
+/** Ceļš -> apakšmapes saturs (bildes-izsole, bildes-izsole/LR, iPhone mapes, u.tml.). */
+let subfolders: Record<string, Entry[]> = {};
 let downloadOk = true;
+
+function folderMeta(folderPath: string) {
+  if (folderPath === "folder1") return { tag: "folder" as const, pathDisplay: FOLDER };
+  if (folderPath in subfolders) return { tag: "folder" as const, pathDisplay: folderPath };
+  return null;
+}
 
 vi.mock("@/lib/dropbox-client", async (orig) => ({
   ...(await orig<typeof import("@/lib/dropbox-client")>()),
   getDropboxClient: () => ({
-    getMetadata: async (ref: string) => {
-      if (ref === "folder1") return { tag: "folder", pathDisplay: FOLDER };
-      if (ref === IZSOLE && hasIzsole) return { tag: "folder", pathDisplay: IZSOLE };
-      if (ref === CANON && hasCanon) return { tag: "folder", pathDisplay: CANON };
-      return null;
-    },
-    listAll: async (path: string) => {
-      if (path === IZSOLE) return { entries: izsoleEntries, cursor: "c1" };
-      if (path === CANON) return { entries: canonEntries, cursor: "c1" };
-      return { entries, cursor: "c1" };
-    },
+    getMetadata: async (ref: string) => folderMeta(ref),
+    listAll: async (p: string) => ({ entries: p === FOLDER ? rootEntries : subfolders[p] ?? [], cursor: "c1" }),
     download: async (id: string) => {
       if (!downloadOk) throw new Error("dropbox_down");
       const sharp = (await import("sharp")).default;
       const bytes = await sharp({ create: { width: 40, height: 30, channels: 3, background: "#336699" } }).jpeg().toBuffer();
-      const all = [...entries, ...izsoleEntries, ...canonEntries];
+      const all = [...rootEntries, ...Object.values(subfolders).flat()];
       return { bytes, entry: all.find((e) => e.id === id) ?? null };
     },
   }),
@@ -65,15 +63,12 @@ beforeEach(async () => {
   dir = await fs.mkdtemp(path.join(os.tmpdir(), "autoparks-v2-photo-test-"));
   vi.stubEnv("ADMIN_IRISS_LOGISTICS_DIR", dir);
   vi.stubEnv("VERCEL", "");
-  entries = [
+  rootEntries = [
     { tag: "file", id: "id:a1", name: "01.jpg" },
     { tag: "file", id: "id:a2", name: "02.jpg" },
     { tag: "file", id: "id:a3", name: "info.txt" },
   ];
-  izsoleEntries = [];
-  canonEntries = [];
-  hasIzsole = false;
-  hasCanon = false;
+  subfolders = {};
   downloadOk = true;
 });
 
@@ -142,10 +137,9 @@ describe("Autoparks v2 galvenā bilde (J29 A/B)", () => {
   });
 });
 
-describe("J36: jaunā /STOCK struktūra (bildes-izsole/bildes-canon)", () => {
+describe("J36/J39: /STOCK struktūra - bildes-canon NETIEK lietota (J39 labojums)", () => {
   it("galvenā bilde: bildes-izsole/1.jpg prioritāri pār saknes bildēm", async () => {
-    hasIzsole = true;
-    izsoleEntries = [
+    subfolders[IZSOLE] = [
       { tag: "file", id: "id:iz2", name: "2.jpg" },
       { tag: "file", id: "id:iz1", name: "1.jpg" },
     ];
@@ -157,15 +151,58 @@ describe("J36: jaunā /STOCK struktūra (bildes-izsole/bildes-canon)", () => {
     expect(after.v2.mainPhoto?.dropboxId).toBe("id:iz1");
   });
 
-  it("galvenā bilde: fallback uz bildes-canon/1.jpg, ja bildes-izsole mapes nav", async () => {
-    hasCanon = true;
-    canonEntries = [{ tag: "file", id: "id:cn1", name: "1.jpg" }];
+  it("galvenā bilde: zemākais numurs bildes-izsole, ja numerācija nesākas no 1 (piem. Volvo S80 162162 'bildes no 2')", async () => {
+    subfolders[IZSOLE] = [
+      { tag: "file", id: "id:iz3", name: "4.jpg" },
+      { tag: "file", id: "id:iz2", name: "2.jpg" },
+      { tag: "file", id: "id:iz4", name: "10.jpg" },
+    ];
     const { v1, v2, photo } = await load();
     const carId = await carWithFolder(v1);
     const found = (await v2.readAutoparksV2Car(carId))!;
     await photo.autoparksV2MainPhoto(found.car, found.v2);
     const after = (await v2.readAutoparksV2Car(carId))!;
-    expect(after.v2.mainPhoto?.dropboxId).toBe("id:cn1");
+    expect(after.v2.mainPhoto?.dropboxId).toBe("id:iz2");
+  });
+
+  it("galvenā bilde: bildes-canon NEIETEKMĒ izvēli, ja tāda eksistē blakus (fallback uz saknes bildēm)", async () => {
+    // bildes-canon apzināti netiek pievienota `subfolders` kartei - kods to vairs nemeklē, bet
+    // pārbaudām, ka pat ja tā "būtu", fallback uz saknes bildēm notiek pareizi, jo izsole/iPhone tukši.
+    const { v1, v2, photo } = await load();
+    const carId = await carWithFolder(v1);
+    const found = (await v2.readAutoparksV2Car(carId))!;
+    await photo.autoparksV2MainPhoto(found.car, found.v2);
+    const after = (await v2.readAutoparksV2Car(carId))!;
+    expect(after.v2.mainPhoto?.dropboxId).toBe("id:a1");
+  });
+
+  it("galvenā bilde: fallback uz 'iPhone' apakšmapi, ja bildes-izsole tukša/nav", async () => {
+    const iphoneFolderPath = `${FOLDER}/iPhone foto`;
+    rootEntries = [
+      ...rootEntries,
+      { tag: "folder", id: "id:iphonefolder", name: "iPhone foto", pathDisplay: iphoneFolderPath } as Entry & { pathDisplay: string },
+    ];
+    subfolders[iphoneFolderPath] = [{ tag: "file", id: "id:ip1", name: "IMG_0001.jpg" }];
+    const { v1, v2, photo } = await load();
+    const carId = await carWithFolder(v1);
+    const found = (await v2.readAutoparksV2Car(carId))!;
+    await photo.autoparksV2MainPhoto(found.car, found.v2);
+    const after = (await v2.readAutoparksV2Car(carId))!;
+    expect(after.v2.mainPhoto?.dropboxId).toBe("id:ip1");
+  });
+
+  it("galvenā bilde: paliek bez bildes, ja STOCK mapē ir TIKAI bildes-canon (piem. MERCEDES E250 CDI 797716)", async () => {
+    rootEntries = rootEntries.filter((e) => e.name !== "01.jpg" && e.name !== "02.jpg"); // bez saknes bildēm
+    subfolders[`${FOLDER}/bildes-canon`] = [
+      { tag: "file", id: "id:cn1", name: "1.jpg" },
+      { tag: "file", id: "id:cn2", name: "IMG_7120.jpg" },
+    ];
+    const { v1, v2, photo } = await load();
+    const carId = await carWithFolder(v1);
+    const found = (await v2.readAutoparksV2Car(carId))!;
+    await photo.autoparksV2MainPhoto(found.car, found.v2);
+    const after = (await v2.readAutoparksV2Car(carId))!;
+    expect(after.v2.mainPhoto).toBeNull();
   });
 
   it("galvenā bilde: fallback uz veco loģiku (saknes bildes), ja neviena apakšmape neeksistē", async () => {
@@ -177,18 +214,16 @@ describe("J36: jaunā /STOCK struktūra (bildes-izsole/bildes-canon)", () => {
     expect(after.v2.mainPhoto?.dropboxId).toBe("id:a1");
   });
 
-  it("kandidāti: bildes-izsole + bildes-canon apvienoti, saknes bildes (vecā loģika) tad netiek rādītas", async () => {
-    hasIzsole = true;
-    hasCanon = true;
-    izsoleEntries = [
+  it("kandidāti: bildes-izsole + LR apakšmape apvienoti, bildes-canon vairs netiek pievienota", async () => {
+    subfolders[IZSOLE] = [
       { tag: "file", id: "id:iz1", name: "1.jpg" },
       { tag: "file", id: "id:iz2", name: "2.jpg" },
     ];
-    canonEntries = [{ tag: "file", id: "id:cn1", name: "1.jpg" }];
+    subfolders[IZSOLE_LR] = [{ tag: "file", id: "id:lr1", name: "max-abc.jpg" }];
     const { v1, photo } = await load();
     const carId = await carWithFolder(v1);
     const found = (await (await import("@/lib/iriss-autoparks-v2-store")).readAutoparksV2Car(carId))!;
     const cands = await photo.autoparksV2StockPhotoCandidates(found.car);
-    expect(cands.map((c) => c.id)).toEqual(["id:iz1", "id:iz2", "id:cn1"]);
+    expect(cands.map((c) => c.id)).toEqual(["id:iz1", "id:iz2", "id:lr1"]);
   });
 });

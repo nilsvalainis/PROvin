@@ -150,8 +150,8 @@ describe("Autoparks <-> /STOCK sinhronizācija", () => {
   });
 });
 
-describe("J36: /STOCK bilžu apakšmapes (bildes-izsole/bildes-canon)", () => {
-  it("izsole + canon apvienotas grupās, saknes fallback, ja neviena apakšmape neeksistē", async () => {
+describe("J39 LABOJUMS: /STOCK bilžu avoti - bildes-izsole(+LR)/iPhone, bildes-canon NETIEK lietota", () => {
+  it("saknes fallback, ja neviena apakšmape neeksistē", async () => {
     const db = memoryDropbox();
     db.add("folder", "/STOCK");
     db.add("folder", FOLDER);
@@ -162,15 +162,71 @@ describe("J36: /STOCK bilžu apakšmapes (bildes-izsole/bildes-canon)", () => {
     const client = db.client as unknown as Parameters<typeof sync.listAutoparksStockPhotoGroups>[0];
     const rootGroups = await sync.listAutoparksStockPhotoGroups(client, FOLDER);
     expect(rootGroups.flat().map((e) => e.name).sort()).toEqual(["01.jpg", "02.jpg"]);
+  });
 
+  it("bildes-izsole prioritāri; bildes-canon blakus eksistējot tiek IGNORĒTA pilnībā", async () => {
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    db.add("folder", FOLDER);
+    db.add("file", `${FOLDER}/99.jpg`, "img"); // saknes bilde - nedrīkst parādīties, kad izsole nav tukša
     db.add("folder", `${FOLDER}/bildes-izsole`);
     db.add("file", `${FOLDER}/bildes-izsole/1.jpg`, "img");
     db.add("folder", `${FOLDER}/bildes-canon`);
     db.add("file", `${FOLDER}/bildes-canon/1.jpg`, "img");
+    holder.client = db.client;
+    const { sync } = await load();
+    const client = db.client as unknown as Parameters<typeof sync.listAutoparksStockPhotoGroups>[0];
     const groups = await sync.listAutoparksStockPhotoGroups(client, FOLDER);
-    expect(groups).toHaveLength(2);
-    expect(groups[0]!.map((e) => e.pathDisplay)).toEqual([`${FOLDER}/bildes-izsole/1.jpg`]);
-    expect(groups[1]!.map((e) => e.pathDisplay)).toEqual([`${FOLDER}/bildes-canon/1.jpg`]);
+    expect(groups.flat().map((e) => e.pathDisplay)).toEqual([`${FOLDER}/bildes-izsole/1.jpg`]);
+  });
+
+  it("bildes-izsole/LR apakšmape pievienota kā papildu grupa pēc virslīmeņa bildēm", async () => {
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    db.add("folder", FOLDER);
+    db.add("folder", `${FOLDER}/bildes-izsole`);
+    db.add("file", `${FOLDER}/bildes-izsole/1.jpg`, "img");
+    db.add("folder", `${FOLDER}/bildes-izsole/LR`);
+    db.add("file", `${FOLDER}/bildes-izsole/LR/max-abc.jpg`, "img");
+    holder.client = db.client;
+    const { sync } = await load();
+    const client = db.client as unknown as Parameters<typeof sync.listAutoparksStockPhotoGroups>[0];
+    const groups = await sync.listAutoparksStockPhotoGroups(client, FOLDER);
+    expect(groups.map((g) => g.map((e) => e.pathDisplay))).toEqual([[`${FOLDER}/bildes-izsole/1.jpg`], [`${FOLDER}/bildes-izsole/LR/max-abc.jpg`]]);
+  });
+
+  it("'iPhone' apakšmape lietota, ja bildes-izsole tukša/nav; bildes-canon tāpat tiek ignorēta", async () => {
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    db.add("folder", FOLDER);
+    db.add("folder", `${FOLDER}/bildes-canon`);
+    db.add("file", `${FOLDER}/bildes-canon/1.jpg`, "img");
+    db.add("folder", `${FOLDER}/iPhone foto`);
+    db.add("file", `${FOLDER}/iPhone foto/IMG_0001.jpg`, "img");
+    holder.client = db.client;
+    const { sync } = await load();
+    const client = db.client as unknown as Parameters<typeof sync.listAutoparksStockPhotoGroups>[0];
+    const groups = await sync.listAutoparksStockPhotoGroups(client, FOLDER);
+    expect(groups.flat().map((e) => e.pathDisplay)).toEqual([`${FOLDER}/iPhone foto/IMG_0001.jpg`]);
+  });
+
+  it("Volvo XC90 568808 (reālais gadījums, J39 4.): 40 bildes-izsole bildes dabiskā secībā, 1.jpg vāks", async () => {
+    const XC90_FOLDER = "/STOCK/Volvo XC90 2010 balts – 568808 – A1";
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    db.add("folder", XC90_FOLDER);
+    db.add("folder", `${XC90_FOLDER}/doc`);
+    db.add("file", `${XC90_FOLDER}/doc/Auto1_Order_Confirmation_DEPR02402859.pdf`, "pdf");
+    db.add("folder", `${XC90_FOLDER}/bildes-izsole`);
+    for (let n = 40; n >= 1; n--) db.add("file", `${XC90_FOLDER}/bildes-izsole/${n}.jpg`, "img");
+    holder.client = db.client;
+    const { sync } = await load();
+    const client = db.client as unknown as Parameters<typeof sync.listAutoparksStockPhotoGroups>[0];
+    const groups = await sync.listAutoparksStockPhotoGroups(client, XC90_FOLDER);
+    expect(groups).toHaveLength(1);
+    const collator = new Intl.Collator("lv", { numeric: true, sensitivity: "base" });
+    const ordered = [...groups[0]!].sort((a, b) => collator.compare(a.name, b.name));
+    expect(ordered.map((e) => e.name)).toEqual(Array.from({ length: 40 }, (_, i) => `${i + 1}.jpg`));
   });
 });
 
@@ -233,7 +289,42 @@ describe("J36: Autoparka ierakstu pārpiesaiste zināmajām /STOCK mapēm", () =
     holder.client = db.client;
     const { sync } = await load();
     const results = await sync.relinkKnownAutoparksV2Folders("Tests");
-    expect(results).toHaveLength(5);
+    expect(results).toHaveLength(6);
     expect(results.every((r) => r.reason === "car_not_found")).toBe(true);
+  });
+});
+
+describe("J39: BMW 220d (V99966) zināmā piesaiste + dryRun režīms", () => {
+  const BMW_FOLDER = "/STOCK/BMW 220d Gran Tourer 2022 balts – V99966 – A1";
+  const BMW_VIN = "WBA6X310305V99966";
+
+  it("auto nebija saistīts vispār -> piesaista bez roku darba", async () => {
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    const bmwFolder = db.add("folder", BMW_FOLDER);
+    db.add("folder", `${BMW_FOLDER}/doc`);
+    db.add("file", `${BMW_FOLDER}/doc/invoice.pdf`, "pdf");
+    holder.client = db.client;
+    const { store, sync } = await load();
+    const car = await store.createAutoparksCar({ make: "BMW", model: "220d Gran Tourer", vin: BMW_VIN }, actor);
+
+    const results = await sync.relinkKnownAutoparksV2Folders("Tests");
+    expect(results.find((r) => r.vin === BMW_VIN)).toMatchObject({ carId: car.id, applied: true, to: BMW_FOLDER });
+    const after = await store.getAutoparksRoom(car.id);
+    expect(after?.car.dropboxFolderId).toBe(bmwFolder.id);
+  });
+
+  it("dryRun: atgriež plānu, bet neko neraksta", async () => {
+    const db = memoryDropbox();
+    db.add("folder", "/STOCK");
+    db.add("folder", BMW_FOLDER);
+    holder.client = db.client;
+    const { store, sync } = await load();
+    const car = await store.createAutoparksCar({ make: "BMW", model: "220d Gran Tourer", vin: BMW_VIN }, actor);
+
+    const results = await sync.relinkKnownAutoparksV2Folders("Tests", { dryRun: true });
+    expect(results.find((r) => r.vin === BMW_VIN)).toMatchObject({ carId: car.id, applied: false, reason: "dry_run", to: BMW_FOLDER });
+    const after = await store.getAutoparksRoom(car.id);
+    expect(after?.car.dropboxFolderId ?? "").toBe("");
   });
 });
