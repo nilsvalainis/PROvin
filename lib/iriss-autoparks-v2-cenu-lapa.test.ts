@@ -36,4 +36,30 @@ describe("Cenu lapa", () => {
     expect(engineLabel(1968, 150)).toBe("2.0 · 150 kW");
     expect(engineLabel(null, 110)).toBe("110 kW");
   });
+
+  it("J30: īpašnieks rādās cenu lapā", () => {
+    const v2 = emptyCarV2();
+    const s = autoparksV2PriceSheet(car, v2, autoparksV2Basics(car, v2));
+    expect(s.owner).toBe("IRISS");
+    expect(s.ownerLabel).toBeTruthy();
+  });
+
+  it("J30: ar roku ievadīts dzinējs cenu lapā uzvar pār aprēķināto no tilpuma+jaudas", () => {
+    const v2 = emptyCarV2();
+    v2.tech.displacementCm3 = 1968;
+    v2.tech.powerKw = 150;
+    const noManual = autoparksV2PriceSheet(car, v2, autoparksV2Basics(car, v2));
+    expect(noManual.engine).toEqual({ value: "2.0 · 150 kW", csdd: false });
+
+    v2.tech.engine = "2.0 TDI hibrīds";
+    const withManual = autoparksV2PriceSheet(car, v2, autoparksV2Basics(car, v2));
+    expect(withManual.engine).toEqual({ value: "2.0 TDI hibrīds", csdd: false });
+  });
+
+  it("J30: pārnesumkārba ar roku ievadīta cenu lapā uzvar pār registry.gearbox", () => {
+    const v2 = emptyCarV2();
+    v2.tech.gearbox = "Manuālā";
+    const s = autoparksV2PriceSheet(car, v2, autoparksV2Basics(car, v2));
+    expect(s.gearbox).toBe("Manuālā");
+  });
 });

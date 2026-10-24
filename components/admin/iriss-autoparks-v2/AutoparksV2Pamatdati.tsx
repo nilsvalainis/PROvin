@@ -19,10 +19,14 @@ type EditKey =
   | "firstRegDate"
   | "displacementCm3"
   | "powerKw"
-  | "mileageKm";
+  | "mileageKm"
+  | "gearbox"
+  | "engine";
 
 const CSDD_VALUE: Partial<Record<EditKey, (b: AutoparksV2Basics) => { value: string; csdd: boolean }>> = {
   tyreSize: (b) => b.tyreSize,
+  gearbox: (b) => b.gearbox,
+  engine: (b) => b.engine,
   firstRegDate: (b) => b.firstRegDate,
   displacementCm3: (b) => ({ value: b.displacementCm3.value == null ? "" : String(b.displacementCm3.value), csdd: b.displacementCm3.csdd }),
   powerKw: (b) => ({ value: b.powerKw.value == null ? "" : String(b.powerKw.value), csdd: b.powerKw.csdd }),
@@ -126,6 +130,8 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
         {editable("firstRegDate", "1. reģistrācija", basics.firstRegDate.value, fmtDateLv(basics.firstRegDate.value), "date")}
         {editable("displacementCm3", "Tilpums", basics.displacementCm3.value == null ? "" : String(basics.displacementCm3.value), fmtCm3(basics.displacementCm3.value), "number")}
         {editable("powerKw", "Jauda", basics.powerKw.value == null ? "" : String(basics.powerKw.value), fmtKw(basics.powerKw.value), "number")}
+        {editable("gearbox", "Pārnesumkārba", basics.gearbox.value, basics.gearbox.value)}
+        {editable("engine", "Dzinējs", basics.engine.value, basics.engine.value)}
         {editable("tyreSize", "Riepas", basics.tyreSize.value, basics.tyreSize.value)}
       </div>
       <div className="ap2-card">

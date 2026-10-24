@@ -57,6 +57,10 @@ export type V2Tech = {
   displacementCm3: number | null;
   powerKw: number | null;
   tyreSize: string;
+  /** Ar roku ievadīta ātrumkārba (J30): "" = ņem CSDD tirdzniecības reģistra `registry.gearbox`. */
+  gearbox: string;
+  /** Ar roku ievadīts dzinēja apraksts (J30), piem. "2.0 TDI": "" = cenu lapā ņem aprēķināto no tilpuma+jaudas. */
+  engine: string;
   /** Ar roku labots nobraukums (J29 B papildus): null = ņem CSDD reģistra odometru, tad v1 `mileageKm`. */
   mileageKm: number | null;
   /** Kad pēdējo reizi jautāts CSDD tehniskajiem datiem (lai nejautātu katrā atvēršanā). */
@@ -193,7 +197,7 @@ function list<T>(raw: unknown, parse: (row: unknown) => T | null, max = 500): T[
 export function emptyCarV2(): AutoparksCarV2 {
   return {
     fields: { plate: "", location: "", arrivedAt: "", make: "", model: "", vin: "", year: "", color: "", owner: "" },
-    tech: { firstRegDate: "", displacementCm3: null, powerKw: null, tyreSize: "", mileageKm: null, csddCheckedAt: "" },
+    tech: { firstRegDate: "", displacementCm3: null, powerKw: null, tyreSize: "", gearbox: "", engine: "", mileageKm: null, csddCheckedAt: "" },
     sources: {},
     purchase: { auction: "", auctionNo: "", purchaseDate: "", purchasePriceEur: null, transportEur: null, vat: { mode: "", source: "", at: "" } },
     numberCheck: { fileId: "", scannedAt: "", extraFileIds: [] },
@@ -301,6 +305,8 @@ export function normalizeCarV2(raw: unknown): AutoparksCarV2 {
       displacementCm3: v2Num(tech.displacementCm3),
       powerKw: v2Num(tech.powerKw),
       tyreSize: str(tech.tyreSize, 40),
+      gearbox: str(tech.gearbox, 40),
+      engine: str(tech.engine, 60),
       mileageKm: v2Num(tech.mileageKm),
       csddCheckedAt: str(tech.csddCheckedAt, 40),
     },
@@ -422,6 +428,10 @@ export type AutoparksV2Basics = {
   displacementCm3: V2Value<number | null>;
   powerKw: V2Value<number | null>;
   tyreSize: V2Value<string>;
+  /** J30: ar roku ievadīta, citādi CSDD tirdzniecības reģistra `registry.gearbox`. */
+  gearbox: V2Value<string>;
+  /** J30: ar roku ievadīts dzinēja apraksts; tukšs = cenu lapā rēķina no tilpuma+jaudas. */
+  engine: V2Value<string>;
   registry: { status: V2RegistryStatus; actNo: string; actDate: string; known: boolean };
   hasPhoto: boolean;
 };
@@ -471,6 +481,8 @@ export function autoparksV2Basics(car: AutoparksCar, v2: AutoparksCarV2): Autopa
     displacementCm3: { value: v2.tech.displacementCm3, csdd: v2.tech.displacementCm3 != null && csdd("tech.displacementCm3") },
     powerKw: { value: v2.tech.powerKw, csdd: v2.tech.powerKw != null && csdd("tech.powerKw") },
     tyreSize: { value: v2.tech.tyreSize, csdd: false },
+    gearbox: v2.tech.gearbox ? { value: v2.tech.gearbox, csdd: false } : { value: reg?.gearbox ?? "", csdd: Boolean(reg?.gearbox) },
+    engine: { value: v2.tech.engine, csdd: false },
     registry: {
       status: v2RegistryStatus(car),
       actNo: reg?.tradeActNo ?? "",

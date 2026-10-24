@@ -17,6 +17,8 @@ export type V2PriceSheet = {
   engine: { value: string; csdd: boolean };
   gearbox: string;
   safety: string;
+  owner: "IRISS" | "DZA";
+  ownerLabel: string;
 };
 
 function safetyLabel(car: AutoparksCar): string {
@@ -46,11 +48,15 @@ export function autoparksV2PriceSheet(car: AutoparksCar, v2: AutoparksCarV2, bas
     year: car.year,
     firstRegDate: { value: fmtDateLv(basics.firstRegDate.value), csdd: basics.firstRegDate.csdd },
     mileage: { value: fmtKm(basics.mileageKm.value), csdd: basics.mileageKm.csdd },
-    engine: {
-      value: engineLabel(basics.displacementCm3.value, basics.powerKw.value),
-      csdd: basics.displacementCm3.csdd || basics.powerKw.csdd,
-    },
-    gearbox: car.registry?.gearbox ?? "",
+    engine: basics.engine.value
+      ? { value: basics.engine.value, csdd: false }
+      : {
+          value: engineLabel(basics.displacementCm3.value, basics.powerKw.value, car.registry?.fuel ?? ""),
+          csdd: basics.displacementCm3.csdd || basics.powerKw.csdd,
+        },
+    gearbox: basics.gearbox.value,
     safety: safetyLabel(car),
+    owner: basics.owner,
+    ownerLabel: basics.ownerLabel,
   };
 }

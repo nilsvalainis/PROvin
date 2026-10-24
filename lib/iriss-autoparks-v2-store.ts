@@ -178,7 +178,11 @@ export async function refreshAutoparksV2Tech(car: AutoparksCar, v2: AutoparksCar
   const missing = !t.firstRegDate || t.displacementCm3 == null || t.powerKw == null;
   const checked = Date.parse(t.csddCheckedAt);
   if (!missing || (Number.isFinite(checked) && Date.now() - checked < TECH_RECHECK_MS)) return v2;
-  const nr = car.vin.trim().length >= 11 ? car.vin : car.plate;
+  // Ar roku labots VIN/numurzīme (Pamatdati) glabājas tikai v2.fields - v1 `car.vin`/`car.plate` paliek
+  // nemainīts pēc J29 C dizaina, tāpēc jāņem šī pati "efektīvā" vērtība, ko lieto `autoparksV2Basics`.
+  const vin = v2.fields.vin || car.vin;
+  const plate = v2.fields.plate || car.plate;
+  const nr = vin.trim().length >= 11 ? vin : plate;
   if (!nr.trim()) return v2;
   const { fetchCsddTechData } = await import("@/lib/csdd-tech-data");
   const res = await fetchCsddTechData(nr).catch(() => null);

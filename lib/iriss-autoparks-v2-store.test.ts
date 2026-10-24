@@ -104,4 +104,28 @@ describe("autoparks-v2.json krātuve", () => {
     expect(out.tech).toMatchObject({ firstRegDate: "2019-03-14", displacementCm3: 1968, powerKw: 120 });
     expect(out.sources).toMatchObject({ "tech.firstRegDate": "csdd", "tech.displacementCm3": "csdd", "tech.powerKw": "manual" });
   });
+
+  it("J30 bugfix: VIN ievadīts tikai v2.fields (v1 tukšs, piem. auto pirkts bez VIN) - CSDD meklē pēc efektīvā VIN", async () => {
+    const { v1, v2 } = await load();
+    const csdd = await import("@/lib/csdd-tech-data");
+    const car = await v1.createAutoparksCar({ make: "Audi", model: "A6" }, actor);
+    expect(car.vin).toBe("");
+    await v2.updateCarV2(car.id, (c) => {
+      c.fields.vin = "WAUZZZ4G5KN012345";
+      return { result: null, history: [{ field: "vin", from: "", to: "WAUZZZ4G5KN012345" }] };
+    }, actor);
+    const found = (await v2.readAutoparksV2Car(car.id))!;
+    expect(found.car.vin).toBe("");
+    const out = await v2.refreshAutoparksV2Tech(found.car, found.v2, actor);
+    expect(out.tech).toMatchObject({ displacementCm3: 1968, powerKw: 110 });
+    expect(vi.mocked(csdd.fetchCsddTechData).mock.calls.at(-1)?.[0]).toBe("WAUZZZ4G5KN012345");
+  });
+
+  it("J30 bugfix: pirms VIN labojuma tukšs VIN/numurzīme nenobloķē csddCheckedAt uz nedēļu", async () => {
+    const { v1, v2 } = await load();
+    const car = await v1.createAutoparksCar({ make: "Audi", model: "A6" }, actor);
+    const found1 = (await v2.readAutoparksV2Car(car.id))!;
+    const after1 = await v2.refreshAutoparksV2Tech(found1.car, found1.v2, actor);
+    expect(after1.tech.csddCheckedAt).toBe("");
+  });
 });
