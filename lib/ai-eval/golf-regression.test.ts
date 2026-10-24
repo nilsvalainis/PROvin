@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { golfBlocks, golfFixture, golfIncidentsTile, golfTraficomText } from "@/lib/ai-eval/golf-gte-fixture";
+import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
 import { buildCanonicalFacts } from "@/lib/canonical-facts-sheet";
+import { checkCommentContradictions } from "@/lib/comment-contradiction-check";
+import { orderHasIncidentDataForAi } from "@/lib/admin-ai-data-availability";
+import { golfComment } from "@/lib/ai-eval/golf-gte-fixture";
 import { parseTraficomReport } from "@/lib/traficom-report-parse";
 
 /**
@@ -28,6 +32,52 @@ describe("VW Golf GTE regresija (j26)", () => {
   });
 });
 
+describe("Golf GTE - PR1 bojājumu pierādījumi (1, 10)", () => {
+  const b = golfBlocks();
+  const facts = buildCanonicalFacts({ vin: golfFixture.vin, sourceBlocks: b });
+
+  it("faktu lapā sadaļa „Bojājumi (visi avoti)” ar izsoli un FIN izņemšanu; PDF tabula nemainās", () => {
+    expect(facts.incidents).toHaveLength(0);
+    expect(facts.damageEvidence.total).toBeGreaterThanOrEqual(2);
+    expect(facts.sheet).toMatch(/Bojājumi \(visi avoti, arī bez summas\): \d+/);
+    expect(facts.sheet).toMatch(/02\.04\.2024 \| .+ \| summa nav \| CC\.VIN/);
+    expect(facts.sheet).toMatch(/18\.03\.2024 \| Noņemts no reģistra bojājuma dēļ \| summa nav/);
+  });
+
+  it("AI datu pieejamība: ir negadījumu dati (traficom_fi + izsole)", () => {
+    expect(orderHasIncidentDataForAi(b)).toBe(true);
+  });
+
+  it("kartīte: „Bojājumi: N”, dzeltena, nevis „Nav ierakstu”", () => {
+    const tile = golfIncidentsTile(b);
+    expect(tile?.value).toMatch(/^Bojājumi: \d+$/);
+    expect(tile?.note).toBe("Izsoļu / reģistru bojājumi bez summas");
+    expect(tile?.tone).toBe("warn");
+  });
+
+  it("validators: „nav bojājumu/atlīdzību” -> no_damage_claim, arī ar „neizslēdz”", () => {
+    const flags = checkCommentContradictions({ text: golfComment("incidents-no-damage").text, field: "incidents", facts });
+    expect(flags.some((f) => f.kind === "no_damage_claim" && f.level === "E")).toBe(true);
+  });
+
+  it("validators: pareizi teikumi netiek atzīmēti", () => {
+    for (const text of [
+      "Izsolē 02.04.2024 fiksēti bojājumi (priekšpuse, sāns), zaudējumu summa nav norādīta.",
+      "Somijas reģistrā auto noņemts no reģistra bojājuma dēļ 18.03.2024; LTAB atlīdzības ieraksta nav.",
+      "Nav zināms, vai bojājumi ir kvalitatīvi novērsti.",
+    ]) {
+      const flags = checkCommentContradictions({ text, field: "incidents", facts });
+      expect(flags.filter((f) => f.kind === "no_damage_claim"), text).toEqual([]);
+    }
+  });
+
+  it("bez bojājumiem validators klusē", () => {
+    const empty = buildCanonicalFacts({ sourceBlocks: createDefaultSourceBlocks() });
+    const flags = checkCommentContradictions({ text: "Avotos nav fiksētu bojājumu.", field: "incidents", facts: empty });
+    expect(flags.some((f) => f.kind === "no_damage_claim")).toBe(false);
+  });
+});
+
 /**
  * „Pirms” stāvoklis (main @ j26 sākums). Katrs PR, kas labo kļūdu, pārvērš atbilstošo
  * pārbaudi par „pēc” pārbaudi augstāk.
@@ -35,11 +85,6 @@ describe("VW Golf GTE regresija (j26)", () => {
 describe("Golf GTE - pirms stāvoklis (j26 kļūdas)", () => {
   const b = golfBlocks();
   const facts = buildCanonicalFacts({ vin: golfFixture.vin, sourceBlocks: b });
-
-  it("1/10: faktu lapā 0 negadījumu, kartīte „Nav ierakstu” (labo PR1)", () => {
-    expect(facts.sheet).toMatch(/Negadījumi \/ zaudējumi: 0 rindas/);
-    expect(golfIncidentsTile(b)?.value).toBe("Nav ierakstu");
-  });
 
   it("3: dīlera rindas nogrieztas līdz 12 - jaunākās eļļas maiņas nav redzamas (labo PR2)", () => {
     expect(facts.sheet).not.toMatch(/08\.01\.2024/);

@@ -3,6 +3,7 @@
  * Tikai jau savākto datu interpretācija: negadījumi, nobraukums, īpašnieku skaits, servisa dziļums.
  */
 
+import { countPdfDamageEvidence } from "@/lib/damage-evidence";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 import type { AsvBlockState } from "@/lib/asv-report";
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
@@ -117,6 +118,17 @@ function buildIncidentsTile(input: PdfSummaryInput): PdfSummaryTile {
         value: "Pilnīgs zaudējums",
         note: "Avotos fiksēts pilnīgs zaudējums",
         tone: "alert",
+      };
+    }
+    // j26: izsoļu / reģistru bojājumi bez summas - nekad „nav negadījumu”.
+    const damageCount = countPdfDamageEvidence(input);
+    if (damageCount > 0) {
+      return {
+        id: "incidents",
+        label: "Negadījumi un bojājumi",
+        value: `Bojājumi: ${damageCount}`,
+        note: "Izsoļu / reģistru bojājumi bez summas",
+        tone: "warn",
       };
     }
     return {

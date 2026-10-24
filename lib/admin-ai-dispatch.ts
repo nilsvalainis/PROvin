@@ -159,6 +159,16 @@ ${priorText}
 Uzraksti PILNU īsāku versiju. Saglabā visus faktus, datumus, km un secinājumus. Izmet atkārtošanos un vispārīgus teikumus. NEPIEVIENO jaunus faktus. Ja sākotnējā promptā ir OPERATORA KOMANDAS, to tēmas NEDRĪKST izmest.`;
 }
 
+/**
+ * j26 kritiskās pārbaudes: drīkst izraisīt VIENU papildu izsaukumu, bet TIKAI ar Gemini
+ * (Nils 24.10). Ja izvēlēts Claude līmenis, labojums iet uz `gemini-flash`; bez Gemini
+ * atslēgas atkārtojuma nav (paliek karodziņš).
+ */
+export const GEMINI_ONLY_RETRY_CODES: ReadonlySet<string> = new Set([
+  "canonical_no_damage_claim",
+  "canonical_negated_fact",
+]);
+
 function canCheapCorrect(opts: GenerateOpts): boolean {
   if (isGeminiAdminTier(opts.modelTier)) return true;
   return Boolean(getGeminiApiKeyFromEnv());
@@ -211,6 +221,27 @@ async function withSelfCorrection(
       codes: [...critical, ...cheap].map((i) => i.code),
     });
     return raw;
+  }
+
+  const geminiOnly = critical.length > 0 && critical.every((i) => GEMINI_ONLY_RETRY_CODES.has(i.code));
+  if (geminiOnly && !isGeminiAdminTier(withBudget.modelTier)) {
+    if (!canCheapCorrect(withBudget)) {
+      console.warn("[admin-ai-dispatch] gemini_only_retry_skipped_no_gemini", {
+        field,
+        codes: critical.map((i) => i.code),
+      });
+      return raw;
+    }
+    console.warn("[admin-ai-dispatch] gemini_only_retry", { field, codes: critical.map((i) => i.code) });
+    try {
+      return await generateOnce({
+        ...withBudget,
+        modelTier: "gemini-flash",
+        userPrompt: buildSelfCorrectionPrompt(opts.userPrompt, raw, [...critical, ...cheap]),
+      });
+    } catch {
+      return raw;
+    }
   }
 
   if (critical.length > 0) {

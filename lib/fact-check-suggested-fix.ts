@@ -169,6 +169,8 @@ export function factCheckActionLine(flag: FactCheckFlag): string {
       return "Labo pirmās reģistrācijas valsti pēc lapas.";
     case "no_accidents_claim":
       return "Pievieno, ka lapā ir negadījumu rindas.";
+    case "no_damage_claim":
+      return "Min bojājumus no lapas (avots, datums), arī bez summas.";
     case "no_recalls_claim":
     case "recall_denied":
       return "Pievieno atsaukuma kodus no datiem.";
