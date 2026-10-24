@@ -426,6 +426,27 @@ export function remainingWaybillDays(validUntilIso: string, now = new Date()): n
   return Math.ceil((end - now.getTime()) / (24 * 60 * 60 * 1000));
 }
 
+/**
+ * j57 (24.10): P00746 (SIA Dzintarzeme Auto, B192-7) izdota, kad rezultāts CSDD derīguma laikus vēl nesūtīja
+ * (tagad sūta - sk. completeWaybillRequest), tāpēc ierakstā paliek portāla pieprasījuma brīdī aprēķinātais
+ * laiks, ne CSDD piešķirtais: CSDD 24.10.2026 20:49 - 26.10.2026 20:49 (Rīgas laiks). Tikai šī viena ieraksta
+ * laiki, tikai lasīšanas brīdī - uzglabātie dati netiek mainīti.
+ */
+const WAYBILL_LEGACY_TIME_FIX: Readonly<Record<string, { validFrom: string; validUntil: string }>> = {
+  P00746: { validFrom: "2026-10-24T17:49:00.000Z", validUntil: "2026-10-26T18:49:00.000Z" },
+};
+
+export function withWaybillLegacyTimeFixes(requests: WaybillRequest[]): WaybillRequest[] {
+  let changed = false;
+  const next = requests.map((r) => {
+    const fix = r.status === "issued" ? WAYBILL_LEGACY_TIME_FIX[r.waybillNo] : undefined;
+    if (!fix || (r.validFrom === fix.validFrom && r.validUntil === fix.validUntil)) return r;
+    changed = true;
+    return { ...r, validFrom: fix.validFrom, validUntil: fix.validUntil };
+  });
+  return changed ? next : requests;
+}
+
 export function waybillSoonTone(days: number | null): "ok" | "soon" | "expired" {
   if (days === null) return "ok";
   if (days <= 0) return "expired";

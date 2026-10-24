@@ -20,9 +20,17 @@ vi.mock("@/lib/staff-store", () => ({
   },
 }));
 vi.mock("@/lib/admin-push", () => ({ sendAdminPush: vi.fn(async () => ({ sent: 0, removed: 0 })) }));
+const saveCsddPlatesReport = vi.fn(async () => ({ version: 1 as const, updatedAt: "", plates: [] }));
+vi.mock("@/lib/iriss-waybill-csdd-plates-store", () => ({ saveCsddPlatesReport }));
 
-const { cancelWaybillRequest, claimWaybillRequest, appendWaybillRequestEvent, readWaybillRequestsDoc, listPendingWaybillRequests } =
-  await import("@/lib/iriss-waybill-requests-store");
+const {
+  cancelWaybillRequest,
+  claimWaybillRequest,
+  appendWaybillRequestEvent,
+  completeWaybillRequest,
+  readWaybillRequestsDoc,
+  listPendingWaybillRequests,
+} = await import("@/lib/iriss-waybill-requests-store");
 
 const future = new Date(Date.now() + 3_600_000).toISOString();
 const now = new Date().toISOString();
@@ -135,5 +143,99 @@ describe("worker stages and expiry", () => {
     seed([sample({ id: "wbr_old", validUntil: new Date(Date.now() - 60_000).toISOString() }), sample({ id: "wbr_ok" })]);
     expect((await listPendingWaybillRequests()).map((r) => r.id)).toEqual(["wbr_ok"]);
     expect(await claimWaybillRequest("wbr_old", "auto")).toBeNull();
+  });
+});
+
+describe("completeWaybillRequest (j57: CSDD laiki un momentuzņēmums uzreiz)", () => {
+  beforeEach(() => {
+    seed([]);
+    saveCsddPlatesReport.mockClear();
+  });
+
+  it("ar CSDD validFrom/validUntil pārraksta pieprasījuma brīdī aprēķinātos laikus", async () => {
+    seed([sample({ id: "wbr_csdd", vehicle: { brandModel: "MB VIANO", vin: "V1", plate: "B192-7", orderId: "" } })]);
+    const csddFrom = "2026-10-24T17:49:00.000Z";
+    const csddUntil = "2026-10-26T18:49:00.000Z";
+    const result = await completeWaybillRequest({
+      id: "wbr_csdd",
+      ok: true,
+      waybillNo: "P00746",
+      validFrom: csddFrom,
+      validUntil: csddUntil,
+    });
+    expect(result).toMatchObject({ status: "issued", validFrom: csddFrom, validUntil: csddUntil });
+  });
+
+  it("bez CSDD laikiem (nav zināmi) patur pieprasījuma brīdī aprēķinātos", async () => {
+    seed([sample({ id: "wbr_keep" })]);
+    const before = (await readWaybillRequestsDoc()).requests[0];
+    const result = await completeWaybillRequest({ id: "wbr_keep", ok: true, waybillNo: "P9" });
+    expect(result).toMatchObject({ validFrom: before?.validFrom, validUntil: before?.validUntil });
+  });
+
+  it("neveiksmes gadījumā CSDD laikus nepiemēro un momentuzņēmumu neatjauno", async () => {
+    seed([sample({ id: "wbr_err" })]);
+    await completeWaybillRequest({ id: "wbr_err", ok: false, errorReason: "kļūda", validFrom: "2026-10-24T17:49:00.000Z" });
+    const after = (await readWaybillRequestsDoc()).requests[0];
+    expect(after?.status).toBe("error");
+    expect(after?.validFrom).toBe(now);
+    expect(saveCsddPlatesReport).not.toHaveBeenCalled();
+  });
+
+  it("izdodot uzreiz atjauno CSDD numura momentuzņēmumu (nevis gaida sync.js)", async () => {
+    seed([sample({ id: "wbr_snap", vehicle: { brandModel: "MB VIANO", vin: "V1", plate: "B192-7", orderId: "" } })]);
+    await completeWaybillRequest({
+      id: "wbr_snap",
+      ok: true,
+      waybillNo: "P00746",
+      validFrom: "2026-10-24T17:49:00.000Z",
+      validUntil: "2026-10-26T18:49:00.000Z",
+    });
+    expect(saveCsddPlatesReport).toHaveBeenCalledTimes(1);
+    expect(saveCsddPlatesReport).toHaveBeenCalledWith([
+      expect.objectContaining({
+        plate: "B192-7",
+        ok: true,
+        active: [{ waybillNo: "P00746", validUntil: "2026-10-26T18:49:00.000Z", brandModel: "MB VIANO" }],
+      }),
+    ]);
+  });
+});
+
+describe("readWaybillRequestsDoc legacy time fix (j57: P00746)", () => {
+  beforeEach(() => seed([]));
+
+  it("labo TIKAI P00746 izdotās pavadzīmes laikus uz CSDD piešķirtajiem", async () => {
+    seed([
+      sample({
+        id: "wbr_p746",
+        status: "issued",
+        waybillNo: "P00746",
+        vehicle: { brandModel: "MB VIANO", vin: "V1", plate: "B192-7", orderId: "" },
+        validFrom: now,
+        validUntil: "2026-10-26T16:10:00.000Z",
+      }),
+      sample({ id: "wbr_other", status: "issued", waybillNo: "P00747", validFrom: now, validUntil: future }),
+    ]);
+    const doc = await readWaybillRequestsDoc();
+    const fixed = doc.requests.find((r) => r.id === "wbr_p746");
+    expect(fixed).toMatchObject({ validFrom: "2026-10-24T17:49:00.000Z", validUntil: "2026-10-26T18:49:00.000Z" });
+    const other = doc.requests.find((r) => r.id === "wbr_other");
+    expect(other).toMatchObject({ validFrom: now, validUntil: future });
+  });
+
+  it("neko nemaina uzglabātajos datos - tas ir tikai lasīšanas brīža labojums", async () => {
+    seed([
+      sample({
+        id: "wbr_p746",
+        status: "issued",
+        waybillNo: "P00746",
+        validFrom: now,
+        validUntil: "2026-10-26T16:10:00.000Z",
+      }),
+    ]);
+    const before = JSON.stringify(mem.doc);
+    await readWaybillRequestsDoc();
+    expect(JSON.stringify(mem.doc)).toBe(before);
   });
 });
