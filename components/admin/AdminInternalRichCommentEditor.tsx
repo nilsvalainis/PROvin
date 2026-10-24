@@ -108,6 +108,8 @@ type AdminInternalRichCommentEditorProps = {
   toolbarEnd?: ReactNode;
   /** AI ģenerēšanas pogas virsraksta rindas labajā pusē. */
   headerEnd?: ReactNode;
+  /** Lietotājs var vilkt stūri un palielināt lauka augstumu (noklusējuma augstums nemainās). */
+  resizable?: boolean;
 };
 
 type ActiveMarks = {
@@ -129,10 +131,13 @@ export function AdminInternalRichCommentEditor({
   label,
   toolbarEnd,
   headerEnd,
+  resizable = false,
 }: AdminInternalRichCommentEditorProps) {
   const ref = useRef<HTMLDivElement>(null);
   const syncingFromParent = useRef(false);
-  const shellClass = variant === "compact" ? editorShellCompactClass : editorShellDefaultClass;
+  const shellClass = `${variant === "compact" ? editorShellCompactClass : editorShellDefaultClass}${
+    resizable ? " resize-y overflow-auto" : ""
+  }`;
   const [marks, setMarks] = useState<ActiveMarks>(NO_MARKS);
   const [palette, setPalette] = useState<"text" | "highlight" | null>(null);
 
