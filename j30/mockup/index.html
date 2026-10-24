@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8" />
+<title>J30 maketi - Iegādes dokumenti</title>
+<link rel="stylesheet" href="autoparks-v2.css" />
+<style>
+  /* J30 papildinājumi virs esošā autoparks-v2.css (makets, netiek ieviests, kamēr Nils nav devis "jā") */
+  body { margin: 0; }
+  .j30-sec { padding: 18px 16px 10px; }
+  .j30-sec h2 { font: 700 15px/1.3 Inter, sans-serif; margin: 0 0 2px; color: #0b0c10; }
+  .j30-sec p.note { font: 400 12px/1.4 Inter, sans-serif; color: #6e6e73; margin: 0 0 12px; }
+  .j30-hr { height: 1px; background: #e5e5ea; margin: 6px 0 0; }
+
+  .ap2-files-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 14px;
+  }
+  .ap2-files-head h3 { font: 700 13px/1 Inter, sans-serif; margin: 0; color: #0b0c10; }
+  .ap2-add-doc {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #2563eb;
+    color: #2563eb;
+    background: #fff;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font: 700 12.5px Inter, sans-serif;
+  }
+  .ap2-add-doc svg { width: 13px; height: 13px; }
+
+  .ap2-warn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: #fff4e5;
+    border: 1px solid #f3c988;
+    border-radius: 10px;
+    font: 600 12.5px/1.3 Inter, sans-serif;
+    color: #8a5a00;
+  }
+  .ap2-warn svg { width: 16px; height: 16px; flex: none; }
+
+  /* Rename/delete ikonas - parādās uz kartītes, ar roku pievienotiem dokumentiem (J30 F1) */
+  .ap2-fl { position: relative; }
+  .ap2-fl-actions {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: flex;
+    gap: 4px;
+    z-index: 2;
+  }
+  .ap2-fl-actions button {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid #e5e5ea;
+    display: grid;
+    place-items: center;
+    color: #6e6e73;
+  }
+  .ap2-fl-actions button.danger { color: #c2362b; }
+  .ap2-fl-actions svg { width: 11px; height: 11px; }
+
+  /* CSDD nozīmīte Car Invoice kartītei (J30 F4) */
+  .ap2-csdd-badge {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid #e5e5ea;
+    display: grid;
+    place-items: center;
+    z-index: 1;
+  }
+  .ap2-csdd-badge img { width: 18px; height: 18px; object-fit: contain; border-radius: 3px; }
+
+  .ap2-fl.upload {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 172px;
+    border: 1.5px dashed #c7c7cc;
+    background: #fafafa;
+    color: #6e6e73;
+    font: 600 12.5px Inter, sans-serif;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .ap2-fl.upload svg { width: 22px; height: 22px; color: #9a9aa0; }
+
+  /* Dzēšanas apstiprinājuma dialogs (J30 F1) */
+  .ap2-del-mock {
+    max-width: 320px;
+    margin: 16px auto 0;
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #e5e5ea;
+    padding: 16px;
+    font: 400 13px/1.4 Inter, sans-serif;
+    color: #0b0c10;
+    box-shadow: 0 8px 28px rgba(0,0,0,.18);
+  }
+  .ap2-del-mock b { display: block; font-size: 14px; margin-bottom: 6px; }
+  .ap2-del-mock .row { display: flex; gap: 8px; margin-top: 14px; }
+  .ap2-del-mock button { flex: 1; padding: 9px 0; border-radius: 9px; font: 700 13px Inter, sans-serif; border: none; }
+  .ap2-del-mock .cancel { background: #f0f0f3; color: #0b0c10; }
+  .ap2-del-mock .confirm { background: #c2362b; color: #fff; }
+
+  .j30-caption { text-align: center; font: 600 11.5px Inter, sans-serif; color: #8e8e93; margin: 10px 0 24px; }
+</style>
+</head>
+<body>
+
+<div class="ap2">
+
+  <div class="j30-sec">
+    <h2>1. Scenārijs: Auto1 auto, dokumenti pilnīgi</h2>
+    <p class="note">Jauns "+ Pievienot dokumentu" poga; katrai kartītei (hover) - pārdēvēt / dzēst. "Car Invoice" kartītei CSDD nozīmīte (dokuments vajadzīgs CSDD darbībām).</p>
+  </div>
+  <div class="ap2-pane wide" style="padding: 0 16px;">
+    <div class="ap2-files-head">
+      <h3>Dokumenti</h3>
+      <button type="button" class="ap2-add-doc">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+        Pievienot dokumentu
+      </button>
+    </div>
+    <div class="ap2-files">
+      <div class="ap2-fl">
+        <span class="pv">
+          <span class="ap2-tag">Apstiprinājums</span>
+          <span class="ap2-pdf"><i style="top:12px"></i><i style="top:22px;right:24px"></i><i style="top:32px"></i><em>PDF</em></span>
+          <span class="ap2-csdd-badge" title="CSDD oriģinālais dokuments"><img src="csdd-logo.png" alt="CSDD" /></span>
+        </span>
+        <span class="m"><b>Car Order Confirmation</b><span>12.10</span></span>
+        <span class="ap2-fl-actions">
+          <button type="button" title="Pārdēvēt"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3-8 8-3.5.5.5-3.5z"/></svg></button>
+          <button type="button" class="danger" title="Dzēst"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h10M6 4V3a1 1 0 011-1h2a1 1 0 011 1v1M4.5 4l.6 9a1 1 0 001 .9h3.8a1 1 0 001-.9l.6-9"/></svg></button>
+        </span>
+      </div>
+      <div class="ap2-fl">
+        <span class="pv">
+          <span class="ap2-tag">Rēķins</span>
+          <span class="ap2-pdf"><i style="top:12px"></i><i style="top:22px;right:24px"></i><i style="top:32px"></i><em>PDF</em></span>
+          <span class="ap2-csdd-badge" title="CSDD oriģinālais dokuments"><img src="csdd-logo.png" alt="CSDD" /></span>
+        </span>
+        <span class="m"><b>Car Invoice</b><span>14.10</span></span>
+        <span class="ap2-fl-actions">
+          <button type="button" title="Pārdēvēt"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3-8 8-3.5.5.5-3.5z"/></svg></button>
+          <button type="button" class="danger" title="Dzēst"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h10M6 4V3a1 1 0 011-1h2a1 1 0 011 1v1M4.5 4l.6 9a1 1 0 001 .9h3.8a1 1 0 001-.9l.6-9"/></svg></button>
+        </span>
+      </div>
+      <div class="ap2-fl upload" role="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>
+        + Pievienot dokumentu
+      </div>
+    </div>
+  </div>
+
+  <div class="j30-hr" style="margin:24px 16px 0"></div>
+
+  <div class="j30-sec">
+    <h2>2. Scenārijs: Auto1 auto, trūkst viena no 2 obligātajām PDF</h2>
+    <p class="note">Auto1 autiem jābūt tieši 2 dokumentiem (Car Order Confirmation + Car Invoice). Trūkstot - brīdinājums, nav bloķējošs.</p>
+  </div>
+  <div class="ap2-pane wide" style="padding: 0 16px;">
+    <div class="ap2-files-head">
+      <h3>Dokumenti</h3>
+      <button type="button" class="ap2-add-doc">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+        Pievienot dokumentu
+      </button>
+    </div>
+    <div class="ap2-warn">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5l7 12.2H1z"/><path d="M8 6v3.2M8 11.3h.01"/></svg>
+      Trūkst dokumenta: Car Order Confirmation (Auto1 auto - nepieciešamas 2 PDF)
+    </div>
+    <div class="ap2-files">
+      <div class="ap2-fl">
+        <span class="pv">
+          <span class="ap2-tag">Rēķins</span>
+          <span class="ap2-pdf"><i style="top:12px"></i><i style="top:22px;right:24px"></i><i style="top:32px"></i><em>PDF</em></span>
+          <span class="ap2-csdd-badge" title="CSDD oriģinālais dokuments"><img src="csdd-logo.png" alt="CSDD" /></span>
+        </span>
+        <span class="m"><b>Car Invoice</b><span>14.10</span></span>
+        <span class="ap2-fl-actions">
+          <button type="button" title="Pārdēvēt"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2l3 3-8 8-3.5.5.5-3.5z"/></svg></button>
+          <button type="button" class="danger" title="Dzēst"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h10M6 4V3a1 1 0 011-1h2a1 1 0 011 1v1M4.5 4l.6 9a1 1 0 001 .9h3.8a1 1 0 001-.9l.6-9"/></svg></button>
+        </span>
+      </div>
+      <div class="ap2-fl upload" role="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>
+        + Pievienot dokumentu
+      </div>
+    </div>
+  </div>
+
+  <div class="j30-hr" style="margin:24px 16px 0"></div>
+
+  <div class="j30-sec">
+    <h2>3. Scenārijs: dzēšanas apstiprinājums (dialogs)</h2>
+    <p class="note">Dzēšot - apstiprinājuma dialogs; dzēšana sinhronizējas ar Dropbox /STOCK. Vecie dati citos laukos netiek mainīti.</p>
+  </div>
+  <div class="ap2-del-mock">
+    <b>Dzēst "Car Invoice"?</b>
+    Dokuments tiks izdzēsts arī no Dropbox STOCK mapes. Šo darbību nevar atsaukt.
+    <div class="row">
+      <button type="button" class="cancel">Atcelt</button>
+      <button type="button" class="confirm">Dzēst</button>
+    </div>
+  </div>
+
+  <p class="j30-caption">J30 makets - nav ieviests. UI daļa tiek ieviesta tikai pēc Nila "jā".</p>
+</div>
+
+</body>
+</html>

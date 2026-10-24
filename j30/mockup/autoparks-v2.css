@@ -1,0 +1,2231 @@
+/* Autoparks v2 - tokeni un izmēri no j17 maketa (autoparks-v2-makets.html). Viss zem .ap2. Galvene nav sticky. */
+.ap2 {
+  --ink: #0b0c10;
+  --ink2: #6e6e73;
+  --ink3: #8e8e93;
+  --line: #e5e5ea;
+  --line2: #f0f0f3;
+  --focus: #2563eb;
+  --bad: #c2362b;
+  --ok: #16a34a;
+  --btn: rgba(31, 36, 48, 0.89);
+  --st-ordered: #0891b2;
+  --st-in_transit: #0d9488;
+  --st-prep_waiting: #d97706;
+  --st-in_service: #5e5ce6;
+  --st-for_sale: #2563eb;
+  --st-reserved: #16a34a;
+  --st-sold: #8e8e93;
+  min-height: 100%;
+  background: #f2f2f7;
+  color: var(--ink);
+  font-family: Inter, -apple-system, "SF Pro Text", system-ui, sans-serif;
+  font-size: 14px;
+  padding: 10px 16px 120px;
+}
+.ap2.ap2.ap2 *,
+.ap2.ap2.ap2 *::before,
+.ap2.ap2.ap2 *::after {
+  box-sizing: border-box;
+}
+:where(.ap2) button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.ap2 .st-ordered { --st: var(--st-ordered); }
+.ap2 .st-in_transit { --st: var(--st-in_transit); }
+.ap2 .st-prep_waiting { --st: var(--st-prep_waiting); }
+.ap2 .st-in_service { --st: var(--st-in_service); }
+.ap2 .st-for_sale { --st: var(--st-for_sale); }
+.ap2 .st-reserved { --st: var(--st-reserved); }
+.ap2 .st-sold { --st: var(--st-sold); }
+
+/* Galvene */
+.ap2.ap2.ap2 .ap2-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 0 10px;
+}
+.ap2.ap2.ap2 .ap2-top h1 {
+  margin: 0;
+  flex: 1;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.ap2.ap2.ap2 .ap2-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  border-radius: 12px;
+  border: 0;
+  font-weight: 600;
+  font-size: 15px;
+}
+.ap2.ap2.ap2 .ap2-btn.dark {
+  background: var(--btn);
+  color: #fff;
+}
+.ap2.ap2.ap2 .ap2-btn.sec {
+  background: #fff;
+  border: 1px solid #d2d2d7;
+  color: #1d1d1f;
+}
+.ap2.ap2.ap2 .ap2-btn.sm {
+  min-height: 38px;
+  font-size: 13px;
+  padding: 0 14px;
+  border-radius: 10px;
+}
+.ap2.ap2.ap2 .ap2-btn:disabled {
+  opacity: 0.5;
+}
+
+/* VIN ar kopēšanas ikonu */
+.ap2.ap2.ap2 .ap2-vin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: #3a3a3c;
+  text-align: left;
+}
+.ap2.ap2.ap2 .ap2-vin span {
+  overflow-wrap: anywhere;
+}
+.ap2.ap2.ap2 .ap2-vin svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--ink3);
+}
+.ap2.ap2.ap2 .ap2-vin.copied svg {
+  color: var(--ok);
+}
+
+/* Saraksts */
+.ap2.ap2.ap2 .ap2-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0 12px;
+  color: var(--ink3);
+}
+.ap2.ap2.ap2 .ap2-search input {
+  flex: 1;
+  height: auto;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+}
+.ap2.ap2.ap2 .ap2-chips {
+  display: flex;
+  gap: 6px;
+  margin: 10px 0 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.ap2.ap2.ap2 .ap2-chips::-webkit-scrollbar {
+  display: none;
+}
+.ap2.ap2.ap2 .ap2-chip {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 99px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #3a3a3c;
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-chip.on {
+  background: var(--btn);
+  color: #fff;
+  border-color: transparent;
+}
+.ap2.ap2.ap2 .ap2-sec {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 2px 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+.ap2.ap2.ap2 .ap2-sec .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--st);
+}
+.ap2.ap2.ap2 .ap2-sec .n {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--ink3);
+  letter-spacing: 0;
+}
+.ap2.ap2.ap2 .ap2-list {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.ap2.ap2.ap2 .ap2-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+  min-height: 74px;
+  color: inherit;
+  text-decoration: none;
+}
+.ap2.ap2.ap2 .ap2-row:first-child {
+  border-top: 0;
+}
+.ap2.ap2.ap2 .ap2-img {
+  width: 72px;
+  height: 54px;
+  border-radius: 9px;
+  flex: none;
+  overflow: hidden;
+  background: #e8e8ed;
+  display: block;
+}
+.ap2.ap2.ap2 .ap2-img img,
+.ap2.ap2.ap2 .ap2-img svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+/* J29 B: kameras poga pār galveno bildi "Mainīt galveno bildi". */
+.ap2.ap2.ap2 .ap2-cambtn {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--btn);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  z-index: 1;
+}
+.ap2.ap2.ap2 .ap2-cambtn svg {
+  width: 12px;
+  height: 12px;
+}
+.ap2.ap2.ap2 .ap2-rt {
+  flex: 1;
+  min-width: 0;
+}
+.ap2.ap2.ap2 .ap2-rt b {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ap2.ap2.ap2 .ap2-rt .meta {
+  display: block;
+  font-size: 13px;
+  color: var(--ink2);
+  margin-top: 2px;
+}
+.ap2.ap2.ap2 .ap2-rt .ap2-vin {
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--ink3);
+}
+.ap2.ap2.ap2 .ap2-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 99px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--st) 12%, #fff);
+  color: color-mix(in srgb, var(--st) 85%, #000);
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-pill::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--st);
+}
+.ap2.ap2.ap2 .ap2-empty {
+  margin-top: 24px;
+  text-align: center;
+  color: var(--ink3);
+}
+.ap2.ap2.ap2 .ap2-pipe,
+.ap2.ap2.ap2 .ap2-thd,
+.ap2.ap2.ap2 .ap2-row .cols,
+.ap2.ap2.ap2 .ap2-search-d,
+.ap2.ap2.ap2 .ap2-d {
+  display: none;
+}
+.ap2.ap2.ap2 .ap2-row-m {
+  display: contents;
+}
+
+/* Apakšējā lapa (statuss, + Auto) */
+.ap2.ap2.ap2 .ap2-dim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.35);
+}
+.ap2.ap2.ap2 .ap2-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 61;
+  max-height: 92dvh;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  padding: 8px 16px max(30px, env(safe-area-inset-bottom));
+}
+.ap2.ap2.ap2 .ap2-grab {
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: #d1d1d6;
+  margin: 0 auto 12px;
+}
+.ap2.ap2.ap2 .ap2-sheet h4 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-form label {
+  display: block;
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ink2);
+}
+.ap2.ap2.ap2 .ap2-form input {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  border: 1px solid #d2d2d7;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  background: #fff;
+}
+.ap2.ap2.ap2 .ap2-form .ap2-btn {
+  width: 100%;
+  margin-top: 16px;
+}
+.ap2.ap2.ap2 .ap2-err {
+  margin-top: 8px;
+  color: var(--bad);
+  font-size: 13px;
+}
+
+@media (min-width: 900px) {
+  .ap2 {
+    background: #fafafb;
+    padding: 24px 28px 40px;
+  }
+  .ap2.ap2.ap2 .ap2-top {
+    padding: 0;
+    margin-bottom: 14px;
+  }
+  .ap2.ap2.ap2 .ap2-top .ap2-search {
+    width: 360px;
+  }
+  .ap2.ap2.ap2 .ap2-pipe {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .ap2.ap2.ap2 .ap2-pp {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fff;
+    padding: 10px 14px;
+    text-align: left;
+  }
+  .ap2.ap2.ap2 .ap2-pp .n {
+    display: block;
+    font-size: 22px;
+    font-weight: 600;
+  }
+  .ap2.ap2.ap2 .ap2-pp .l {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--ink2);
+    white-space: nowrap;
+  }
+  .ap2.ap2.ap2 .ap2-pp .l::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--st, var(--ink));
+  }
+  .ap2.ap2.ap2 .ap2-pp.on {
+    border-color: #1d1d1f;
+    box-shadow: inset 0 0 0 1px #1d1d1f;
+  }
+  .ap2.ap2.ap2 .ap2-chips {
+    margin: 0 0 10px;
+  }
+  /* 20:17: kolonna "Īpašnieks" izņemta; VIN pilnā platumā. */
+  .ap2.ap2.ap2 .ap2-thd,
+  .ap2.ap2.ap2 .ap2-row .cols {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 2fr) minmax(0, 1.6fr) 160px;
+    gap: 16px;
+    align-items: center;
+    width: 100%;
+  }
+  .ap2.ap2.ap2 .ap2-thd {
+    padding: 0 12px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .ap2.ap2.ap2 .ap2-row {
+    min-height: 68px;
+  }
+  .ap2.ap2.ap2 .ap2-row-m,
+  .ap2.ap2.ap2 .ap2-search-m,
+  .ap2.ap2.ap2 .ap2-m {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-d {
+    display: inline;
+  }
+  .ap2.ap2.ap2 .ap2-search-d {
+    display: flex;
+  }
+  .ap2.ap2.ap2 .ap2-sheet {
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    top: 50%;
+    width: 420px;
+    transform: translate(-50%, -50%);
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .ap2.ap2.ap2 .ap2-sheet .ap2-grab {
+    display: none;
+  }
+}
+
+/* ===== Kabinets (T2-T10, D2-D4) ===== */
+.ap2.ap2.ap2 .ap2-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 0 10px;
+}
+.ap2.ap2.ap2 .ap2-bar h2 {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  font-size: 17px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ap2.ap2.ap2 .ap2-back {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  color: #3a3a3c;
+  flex: none;
+  text-decoration: none;
+}
+.ap2.ap2.ap2 .ap2-crumb {
+  display: none;
+}
+.ap2.ap2.ap2 .ap2-carhead {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.ap2.ap2.ap2 .ap2-carhead .ap2-img {
+  width: 96px;
+  height: 72px;
+}
+.ap2.ap2.ap2 .ap2-carhead .nm {
+  flex: 1;
+  min-width: 0;
+}
+.ap2.ap2.ap2 .ap2-carhead .nm b {
+  display: block;
+  font-size: 16px;
+}
+.ap2.ap2.ap2 .ap2-carhead .meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+  font-size: 12.5px;
+  color: var(--ink2);
+  margin-top: 2px;
+}
+.ap2.ap2.ap2 .ap2-carhead .ap2-vin {
+  margin-top: 5px;
+}
+.ap2.ap2.ap2 .ap2-owner {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #3d5bd9;
+  background: #eef2ff;
+  border-radius: 6px;
+  padding: 2px 6px;
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-owner.dza {
+  color: #92400e;
+  background: #fffbeb;
+}
+.ap2.ap2.ap2 .ap2-statusbtn {
+  margin-top: 10px;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-statusbtn .l {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ap2.ap2.ap2 .ap2-statusbtn .l::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--st);
+}
+.ap2.ap2.ap2 .ap2-statusbtn small {
+  font-weight: 500;
+  color: var(--ink3);
+  font-size: 18px;
+}
+.ap2.ap2.ap2 .ap2-dhead-status {
+  flex: none;
+}
+.ap2.ap2.ap2 .ap2-tabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 4px;
+  margin-top: 12px;
+}
+.ap2.ap2.ap2 .ap2-tab {
+  padding: 9px 0;
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #3a3a3c;
+  background: #fff;
+  border: 1px solid var(--line);
+  white-space: nowrap;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ap2.ap2.ap2 .ap2-tab.on {
+  background: var(--btn);
+  color: #fff;
+  border-color: transparent;
+}
+.ap2.ap2.ap2 .ap2-tab .ap2-d {
+  display: none;
+}
+.ap2.ap2.ap2 .ap2-tab-hist {
+  display: none;
+}
+.ap2.ap2.ap2 .ap2-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 4px 14px;
+  margin-top: 12px;
+}
+.ap2.ap2.ap2 .ap2-card h3 {
+  margin: 12px 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+/* Lauka rinda: [CSDD punkts] [nosaukums] [vērtība] - punkta vieta vienmēr */
+.ap2.ap2.ap2 .ap2-f {
+  display: grid;
+  grid-template-columns: 8px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  min-height: 46px;
+  border-top: 1px solid var(--line2);
+  font-size: 14px;
+}
+.ap2.ap2.ap2 .ap2-card h3 + .ap2-f,
+.ap2.ap2.ap2 .ap2-card .ap2-f:first-child {
+  border-top: 0;
+}
+.ap2.ap2.ap2 .ap2-f .k {
+  color: var(--ink2);
+  font-size: 13px;
+}
+.ap2.ap2.ap2 .ap2-f .v {
+  font-weight: 600;
+  text-align: right;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ap2.ap2.ap2 .ap2-f button.v {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-weight: 600;
+  font-size: 14px;
+}
+.ap2.ap2.ap2 .ap2-f .v.add,
+.ap2.ap2.ap2 .ap2-f button.v.add {
+  color: var(--focus);
+}
+.ap2.ap2.ap2 .ap2-f .v.mut {
+  color: var(--ink2);
+  font-weight: 500;
+}
+.ap2.ap2.ap2 .ap2-f input.v,
+.ap2.ap2.ap2 .ap2-f select.v {
+  width: 100%;
+  max-width: 220px;
+  justify-self: end;
+  border: 1px solid #d2d2d7;
+  border-radius: 10px;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: right;
+  background: #fff;
+  color: var(--ink);
+}
+.ap2.ap2.ap2 .ap2-cd {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.ap2.ap2.ap2 .ap2-cd.on {
+  background: var(--ok);
+}
+.ap2.ap2.ap2 .ap2-opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-top: 1px solid var(--line2);
+  background: none;
+  font-size: 15.5px;
+  font-weight: 500;
+  text-align: left;
+  padding: 0;
+}
+.ap2.ap2.ap2 .ap2-opt {
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-top: 1px solid var(--line2);
+}
+.ap2.ap2.ap2 .ap2-opt::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--st);
+}
+.ap2.ap2.ap2 .ap2-opt.cur {
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-opt.cur::after {
+  content: "✓";
+  margin-left: auto;
+  color: var(--focus);
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-toast {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  z-index: 70;
+  background: #1d1d1f;
+  color: #fff;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+.ap2.ap2.ap2 .ap2-toast button {
+  border: 0;
+  background: none;
+  color: #7cb6ff;
+  font-weight: 700;
+  padding: 0;
+}
+.ap2.ap2.ap2 .ap2-toast .cdn {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #7cb6ff;
+  font-size: 11px;
+  margin-right: 8px;
+  color: #7cb6ff;
+}
+.ap2.ap2.ap2 .ap2-hist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ap2.ap2.ap2 .ap2-hist li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line2);
+  font-size: 13.5px;
+}
+.ap2.ap2.ap2 .ap2-hist li:first-child {
+  border-top: 0;
+}
+.ap2.ap2.ap2 .ap2-hist small {
+  color: var(--ink3);
+  font-size: 12px;
+}
+.ap2.ap2.ap2 .ap2-hist .chg {
+  grid-column: 1 / -1;
+  color: var(--ink2);
+}
+
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-bar {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-crumb {
+    display: inline-block;
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--focus);
+    text-decoration: none;
+  }
+  .ap2.ap2.ap2 .ap2-carhead {
+    padding: 12px 16px;
+    gap: 16px;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .ap2-img {
+    width: 108px;
+    height: 72px;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .nm b {
+    font-size: 19px;
+    letter-spacing: -0.01em;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .meta {
+    font-size: 13px;
+    margin-top: 3px;
+    gap: 10px;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .meta .ap2-vin {
+    margin-top: 0;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .ap2-statusbtn {
+    margin: 0;
+    width: 230px;
+    flex: none;
+  }
+  .ap2.ap2.ap2 .ap2-mstatus {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-tabs {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(var(--tabs, 5), minmax(0, 170px)) minmax(0, 1fr) 110px;
+    gap: 6px;
+    margin: 12px 0 14px;
+  }
+  .ap2.ap2.ap2 .ap2-tab {
+    padding: 10px 0;
+    font-size: 13.5px;
+  }
+  .ap2.ap2.ap2 .ap2-tab .ap2-m {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-tab .ap2-d {
+    display: inline;
+  }
+  .ap2.ap2.ap2 .ap2-tab-hist {
+    display: block;
+    grid-column: -2;
+    color: var(--ink2);
+  }
+  .ap2.ap2.ap2 .ap2-tab-hist.on {
+    color: #fff;
+  }
+  .ap2.ap2.ap2 .ap2-pane {
+    max-width: 760px;
+  }
+  .ap2.ap2.ap2 .ap2-pane.wide {
+    max-width: none;
+  }
+  .ap2.ap2.ap2 .ap2-toast {
+    left: auto;
+    right: 28px;
+    width: 360px;
+  }
+}
+.ap2.ap2.ap2 .ap2-carhead .ap2-dvin,
+.ap2.ap2.ap2 .ap2-carhead .ap2-dstatus,
+.ap2.ap2.ap2 .ap2-carhead.compact {
+  display: none;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-carhead.compact {
+    display: flex;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .ap2-dvin {
+    display: inline-flex;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .ap2-dstatus {
+    display: flex;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .ap2-mvin {
+    display: none;
+  }
+}
+
+/* ===== Iegādes dokumenti (D2, D3) ===== */
+.ap2.ap2.ap2 .ap2-kv {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.ap2.ap2.ap2 .ap2-kvc {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line2);
+  border-left: 1px solid var(--line2);
+  min-width: 0;
+  text-align: left;
+}
+.ap2.ap2.ap2 .ap2-kvc span {
+  font-size: 12px;
+  color: var(--ink2);
+}
+.ap2.ap2.ap2 .ap2-kvc button,
+.ap2.ap2.ap2 .ap2-kvc b {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: left;
+}
+.ap2.ap2.ap2 .ap2-kvc button.add {
+  color: var(--focus);
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-kvc input,
+.ap2.ap2.ap2 .ap2-kvc select {
+  width: 100%;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-kv .ap2-kvc:nth-child(-n + 2) {
+  border-top: 0;
+}
+.ap2.ap2.ap2 .ap2-kv .ap2-kvc:nth-child(odd) {
+  border-left: 0;
+}
+.ap2.ap2.ap2 .ap2-kvc.ap2-cost {
+  grid-column: 1 / -1;
+  border: 0;
+  border-radius: 0;
+  background: var(--btn);
+  color: #fff;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-kvc.ap2-cost span {
+  color: #cfd3dc;
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+}
+.ap2.ap2.ap2 .ap2-kvc.ap2-cost em {
+  font-style: normal;
+}
+.ap2.ap2.ap2 .ap2-kvc.ap2-cost b {
+  color: #fff;
+}
+.ap2.ap2.ap2 .ap2-popdim {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.35);
+}
+.ap2.ap2.ap2 .ap2-pop {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 61;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  padding: 8px 16px max(30px, env(safe-area-inset-bottom));
+}
+.ap2.ap2.ap2 .ap2-pop .pr {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 0;
+  border-top: 1px solid var(--line2);
+  font-size: 13.5px;
+}
+.ap2.ap2.ap2 .ap2-pop .ap2-grab + .pr {
+  border-top: 0;
+}
+.ap2.ap2.ap2 .ap2-pop .pr span small {
+  display: block;
+  color: var(--ink3);
+  font-size: 11.5px;
+  margin-top: 1px;
+}
+.ap2.ap2.ap2 .ap2-pop .pr b,
+.ap2.ap2.ap2 .ap2-pop .pr button {
+  font-weight: 600;
+  text-align: right;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.ap2.ap2.ap2 .ap2-pop .pr button.add {
+  color: var(--focus);
+}
+.ap2.ap2.ap2 .ap2-pop .pr input {
+  width: 130px;
+  border: 1px solid #d2d2d7;
+  border-radius: 8px;
+  padding: 5px 8px;
+  font: inherit;
+  font-size: 16px;
+  text-align: right;
+}
+.ap2.ap2.ap2 .ap2-pop .pr.tot {
+  border-top: 1px solid var(--line);
+  font-weight: 700;
+  font-size: 15px;
+}
+.ap2.ap2.ap2 .ap2-pop .pr.tot b {
+  font-weight: 700;
+  font-size: 15px;
+}
+.ap2.ap2.ap2 .ap2-files {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.ap2.ap2.ap2 .ap2-fl {
+  display: block;
+  padding: 0;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  text-align: left;
+}
+.ap2.ap2.ap2 .ap2-fl .pv {
+  height: 130px;
+  background: #f5f5f7;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ap2.ap2.ap2 .ap2-fl .pv .ap2-pdf {
+  width: 78px;
+  height: 100px;
+}
+.ap2.ap2.ap2 .ap2-fl .m {
+  padding: 8px 10px;
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+.ap2.ap2.ap2 .ap2-fl .m b {
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ap2.ap2.ap2 .ap2-fl .m span {
+  color: var(--ink3);
+  font-size: 11.5px;
+  flex: none;
+}
+.ap2.ap2.ap2 .ap2-pdf {
+  display: block;
+  width: 64px;
+  height: 84px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  position: relative;
+  overflow: hidden;
+  flex: none;
+}
+.ap2.ap2.ap2 .ap2-pdf.s {
+  width: 40px;
+  height: 52px;
+}
+.ap2.ap2.ap2 .ap2-pdf i {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 3px;
+  background: #e5e5ea;
+  border-radius: 2px;
+}
+.ap2.ap2.ap2 .ap2-pdf em {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 700;
+  text-align: center;
+  background: #fdecea;
+  color: var(--bad);
+  padding: 2px 0;
+}
+.ap2.ap2.ap2 .ap2-tag {
+  z-index: 1;
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 5px;
+  padding: 2px 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+  color: #3a3a3c;
+}
+.ap2.ap2.ap2 .ap2-lnk {
+  z-index: 1;
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  color: var(--ink3);
+}
+.ap2.ap2.ap2 .ap2-lnk svg {
+  width: 11px;
+  height: 11px;
+}
+.ap2.ap2.ap2 .ap2-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ap2.ap2.ap2 .ap2-mbox {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.ap2.ap2.ap2 .ap2-mh {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-mh .t {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ap2.ap2.ap2 .ap2-mh .pgn {
+  color: var(--ink3);
+  font-weight: 500;
+  font-size: 13px;
+}
+.ap2.ap2.ap2 .ap2-mh .ap2-dlbtn {
+  letter-spacing: 0.06em;
+  text-decoration: none;
+}
+.ap2.ap2.ap2 .ap2-mh .ap2-x {
+  border: 0;
+  background: none;
+  font-size: 26px;
+  line-height: 1;
+  color: var(--ink2);
+  padding: 0 2px;
+}
+.ap2.ap2.ap2 .ap2-doc {
+  flex: 1;
+  background: #f5f5f7;
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+.ap2.ap2.ap2 .ap2-doc iframe {
+  width: 100%;
+  border: 0;
+  background: #fff;
+}
+.ap2.ap2.ap2 .ap2-doc img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  align-self: center;
+}
+.ap2.ap2.ap2 .ap2-doc .ap2-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: rgba(255, 255, 255, 0.85);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 22px;
+  color: var(--ink2);
+  z-index: 1;
+}
+.ap2.ap2.ap2 .ap2-doc .ap2-nav.l {
+  left: 8px;
+}
+.ap2.ap2.ap2 .ap2-doc .ap2-nav.r {
+  right: 8px;
+}
+/* J29 B: "Izvēlēties galveno bildi" režģis. */
+.ap2.ap2.ap2 .ap2-picwrap {
+  flex: 1;
+  overflow: auto;
+  padding: 16px;
+  background: #f5f5f7;
+}
+.ap2.ap2.ap2 .ap2-picgrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.ap2.ap2.ap2 .ap2-pic {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: 10px;
+  border: 2px solid var(--line);
+  background: #e5e5ea;
+  overflow: hidden;
+  padding: 0;
+}
+.ap2.ap2.ap2 .ap2-pic img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+.ap2.ap2.ap2 .ap2-pic.sel {
+  border-color: var(--focus);
+}
+.ap2.ap2.ap2 .ap2-pic:disabled {
+  opacity: 0.6;
+}
+.ap2.ap2.ap2 .ap2-picchk {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--focus);
+  color: #fff;
+  display: grid;
+  place-items: center;
+}
+.ap2.ap2.ap2 .ap2-picchk svg {
+  width: 12px;
+  height: 12px;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-picgrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-kv {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .ap2.ap2.ap2 .ap2-kv.with-cost {
+    grid-template-columns: repeat(5, 1fr);
+  }
+  .ap2.ap2.ap2 .ap2-kv .ap2-kvc {
+    border-top: 0;
+    border-left: 1px solid var(--line2);
+  }
+  .ap2.ap2.ap2 .ap2-kv .ap2-kvc:first-child {
+    border-left: 0;
+  }
+  .ap2.ap2.ap2 .ap2-kvc.ap2-cost {
+    grid-column: auto;
+    border-radius: 0 13px 13px 0;
+    justify-content: center;
+  }
+  .ap2.ap2.ap2 .ap2-popdim {
+    background: transparent;
+  }
+  .ap2.ap2.ap2 .ap2-pop {
+    position: absolute;
+    left: auto;
+    bottom: auto;
+    right: 0;
+    top: calc(100% + 8px);
+    width: 330px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.16);
+    padding: 6px 16px 10px;
+  }
+  .ap2.ap2.ap2 .ap2-pop .ap2-grab {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-kvwrap {
+    position: relative;
+  }
+  .ap2.ap2.ap2 .ap2-files {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .ap2.ap2.ap2 .ap2-mbox {
+    width: 760px;
+    height: min(860px, 92vh);
+    border-radius: 16px;
+  }
+}
+.ap2.ap2.ap2 .ap2-kvwrap {
+  margin-top: 12px;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-kvwrap {
+    margin-top: 0;
+  }
+}
+
+/* ===== Serviss (T3-T5, T7) ===== */
+.ap2.ap2.ap2 .ap2-techbar {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px 10px;
+  margin-top: 12px;
+}
+.ap2.ap2.ap2 .ap2-techbar > div {
+  font-size: 11px;
+  color: var(--ink3);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ap2.ap2.ap2 .ap2-techbar i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ok);
+  margin-right: 5px;
+  vertical-align: 1px;
+}
+.ap2.ap2.ap2 .ap2-techbar i.no {
+  background: transparent;
+}
+.ap2.ap2.ap2 .ap2-techbar b {
+  display: block;
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 600;
+  margin-top: 1px;
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-techbar button.empty {
+  border: 0;
+  background: none;
+  padding: 0;
+  margin-top: 1px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--focus);
+  text-align: left;
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-techbar input {
+  width: 100%;
+  border: 1px solid #d2d2d7;
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 16px;
+}
+.ap2.ap2.ap2 .ap2-techbar .vinrow {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  border-bottom: 1px solid var(--line2);
+  padding-bottom: 8px;
+}
+.ap2.ap2.ap2 .ap2-tl {
+  position: relative;
+  margin-top: 14px;
+  padding-left: 30px;
+}
+.ap2.ap2.ap2 .ap2-tl::before {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: var(--line);
+}
+.ap2.ap2.ap2 .ap2-step {
+  position: relative;
+  margin-bottom: 10px;
+}
+.ap2.ap2.ap2 .ap2-step .no {
+  position: absolute;
+  left: -30px;
+  top: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #d1d5db;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink2);
+}
+.ap2.ap2.ap2 .ap2-step.done .no {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+}
+.ap2.ap2.ap2 .ap2-step.cur .no {
+  border-color: var(--focus);
+  color: var(--focus);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+.ap2.ap2.ap2 .ap2-sbox {
+  display: block;
+  width: 100%;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  text-align: left;
+}
+.ap2.ap2.ap2 .ap2-sbox .t {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--ink);
+  text-align: left;
+}
+.ap2.ap2.ap2 .ap2-sbox .t small {
+  font-weight: 500;
+  color: var(--ink3);
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-prob {
+  border-top: 1px solid var(--line2);
+  padding: 12px 0 4px;
+}
+.ap2.ap2.ap2 .ap2-sbox .t + .ap2-prob {
+  border-top: 0;
+  padding-top: 8px;
+}
+.ap2.ap2.ap2 .ap2-grow {
+  display: block;
+  width: 100%;
+  resize: none;
+  overflow: hidden;
+  border: 1.5px solid transparent;
+  border-radius: 10px;
+  padding: 4px 0;
+  margin: 0;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: transparent;
+}
+.ap2.ap2.ap2 .ap2-grow:focus {
+  outline: 0;
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  background: #fff;
+}
+.ap2.ap2.ap2 .ap2-tg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ap2.ap2.ap2 .ap2-tg button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink2);
+  background: #fff;
+  padding: 0 6px;
+}
+.ap2.ap2.ap2 .ap2-tg button::before {
+  content: "";
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  border: 2px solid #d1d5db;
+  box-sizing: border-box;
+  flex: none;
+}
+.ap2.ap2.ap2 .ap2-tg button.on {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #166534;
+}
+.ap2.ap2.ap2 .ap2-tg button.on::before {
+  background: var(--ok) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' stroke='white' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/12px no-repeat;
+  border-color: var(--ok);
+}
+.ap2.ap2.ap2 .ap2-tg button:disabled {
+  opacity: 0.55;
+}
+.ap2.ap2.ap2 .ap2-addline {
+  border: 0;
+  background: none;
+  color: var(--focus);
+  font-weight: 600;
+  font-size: 13.5px;
+  padding: 10px 0 2px;
+}
+.ap2.ap2.ap2 .ap2-scanbig {
+  margin-top: 10px;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 12px;
+  border: 0;
+  background: var(--btn);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-irow {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 10px 0;
+  border: 0;
+  border-top: 1px solid var(--line2);
+  background: none;
+  font-size: 14px;
+  text-align: left;
+  color: var(--ink);
+}
+.ap2.ap2.ap2 .ap2-sbox .t + .ap2-irow,
+.ap2.ap2.ap2 .ap2-card h3 + .ap2-irow {
+  border-top: 0;
+}
+.ap2.ap2.ap2 .ap2-irow small {
+  display: block;
+  color: var(--ink3);
+  font-size: 12px;
+  margin-top: 1px;
+}
+.ap2.ap2.ap2 .ap2-irow .a {
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-irow .a.add {
+  color: var(--focus);
+}
+.ap2.ap2.ap2 .ap2-irow.tot {
+  grid-template-columns: 1fr auto;
+  font-weight: 700;
+  border-top: 1px solid var(--line);
+}
+.ap2.ap2.ap2 .ap2-invbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+}
+.ap2.ap2.ap2 .ap2-invbar h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-pages {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 10px 0;
+}
+.ap2.ap2.ap2 .ap2-pages .pg {
+  height: 120px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #fbfbf8;
+  position: relative;
+  padding: 12px;
+  text-align: left;
+}
+.ap2.ap2.ap2 .ap2-pages .pg i {
+  display: block;
+  height: 4px;
+  background: #e5e5ea;
+  border-radius: 2px;
+  margin: 7px 0;
+}
+.ap2.ap2.ap2 .ap2-pages .pg b {
+  position: absolute;
+  bottom: 6px;
+  right: 8px;
+  font-size: 11px;
+  color: var(--ink3);
+}
+.ap2.ap2.ap2 .ap2-pages .pg.add {
+  background: #fff;
+  border: 2px dashed #d1d5db;
+  display: grid;
+  place-items: center;
+  color: var(--focus);
+  font-weight: 600;
+  font-size: 13px;
+}
+.ap2.ap2.ap2 .ap2-inp {
+  border: 1px solid #d2d2d7 !important;
+  border-radius: 10px;
+  padding: 8px 12px !important;
+  min-width: 120px;
+  max-width: 160px;
+  text-align: right;
+  font-weight: 600;
+  font-size: 16px;
+  background: #fff;
+}
+/* Skenēšana (T4) */
+.ap2.ap2.ap2 .ap2-cam {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: #111;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+}
+.ap2.ap2.ap2 .ap2-camview {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ap2.ap2.ap2 .ap2-camview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ap2.ap2.ap2 .ap2-camtop {
+  position: absolute;
+  top: max(54px, env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+.ap2.ap2.ap2 .ap2-camtop small {
+  display: block;
+  font-weight: 500;
+  color: #aaa;
+  font-size: 12px;
+  margin-top: 2px;
+}
+.ap2.ap2.ap2 .ap2-tray {
+  background: #1c1c1e;
+  padding: 12px 16px max(30px, env(safe-area-inset-bottom));
+  flex: none;
+}
+.ap2.ap2.ap2 .ap2-tray .tp {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  min-height: 70px;
+  overflow-x: auto;
+}
+.ap2.ap2.ap2 .ap2-tray .tg2 {
+  width: 52px;
+  height: 70px;
+  flex: none;
+  background: #fbfbf8 center/cover no-repeat;
+  border-radius: 6px;
+  position: relative;
+}
+.ap2.ap2.ap2 .ap2-tray .tg2 b {
+  position: absolute;
+  bottom: 3px;
+  right: 5px;
+  font-size: 10px;
+  color: #555;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 4px;
+  padding: 0 3px;
+}
+.ap2.ap2.ap2 .ap2-tray .acts {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ap2.ap2.ap2 .ap2-tray .shutter {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+.ap2.ap2.ap2 .ap2-tray .shutter::after {
+  content: "";
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #fff;
+}
+.ap2.ap2.ap2 .ap2-tray .txt {
+  border: 0;
+  background: none;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  width: 96px;
+  text-align: left;
+  padding: 0;
+}
+.ap2.ap2.ap2 .ap2-tray .txt.r {
+  text-align: right;
+  color: #34c759;
+}
+.ap2.ap2.ap2 .ap2-tray .txt:disabled {
+  opacity: 0.5;
+}
+.ap2.ap2.ap2 .ap2-camerr {
+  margin: 0 0 10px;
+  color: #ff6b5e;
+  font-size: 13px;
+}
+.ap2.ap2.ap2 .ap2-camerr button {
+  border: 1px solid #555;
+  background: none;
+  color: #fff;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.ap2.ap2.ap2 .ap2-prog {
+  height: 4px;
+  background: #3a3a3c;
+  border-radius: 2px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.ap2.ap2.ap2 .ap2-prog i {
+  display: block;
+  height: 100%;
+  background: var(--focus);
+}
+
+/* Admin mobilā tēma (admin-mobile.css) pogām uzliek "border: 0 !important" - maketa rāmis caur box-shadow. */
+.ap2.ap2.ap2 :is(.ap2-chip, .ap2-tab, .ap2-statusbtn, .ap2-tg button, .ap2-back, .ap2-fl, .ap2-pp, .ap2-btn.sec, .ap2-opt) {
+  box-shadow: inset 0 0 0 1px var(--bd, var(--line));
+}
+.ap2.ap2.ap2 .ap2-opt {
+  box-shadow: inset 0 1px 0 0 var(--line2);
+}
+.ap2.ap2.ap2 :is(.ap2-chip.on, .ap2-tab.on) {
+  --bd: transparent;
+}
+.ap2.ap2.ap2 .ap2-tg button.on {
+  --bd: #86efac;
+}
+.ap2.ap2.ap2 .ap2-btn.sec {
+  --bd: #d2d2d7;
+}
+.ap2.ap2.ap2 .ap2-pp.on {
+  box-shadow: inset 0 0 0 2px #1d1d1f;
+}
+.ap2.ap2.ap2 .ap2-grow:focus {
+  border: 1.5px solid var(--focus) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+  background: #fff !important;
+}
+
+/* Rēķina skats (T5) - savs ekrāns virs kabineta. */
+.ap2.ap2.ap2 .ap2-invpage {
+  position: fixed;
+  inset: 0;
+  z-index: 55;
+  overflow-y: auto;
+  background: #f2f2f7;
+  padding: 10px 16px 120px;
+}
+.ap2.ap2.ap2 .ap2-pages .pg.add {
+  outline: 2px dashed #d1d5db;
+  outline-offset: -2px;
+  box-shadow: none;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-invpage {
+    left: 50%;
+    right: auto;
+    width: 560px;
+    transform: translateX(-50%);
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.35);
+  }
+}
+.ap2.ap2.ap2 .ap2-tray .shutter {
+  box-shadow: inset 0 0 0 4px #fff;
+}
+.ap2.ap2.ap2 .ap2-tray .shutter::after {
+  width: 52px;
+  height: 52px;
+}
+/* Bezsaiste (T9) */
+.ap2.ap2.ap2 .ap2-queue {
+  margin-top: 12px;
+}
+.ap2.ap2.ap2 .ap2-offline {
+  background: #fff;
+  border: 1px solid var(--line);
+  color: var(--ink2);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13.5px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-offline::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #f59e0b;
+  flex: none;
+}
+.ap2.ap2.ap2 .ap2-q {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  margin-top: 8px;
+}
+.ap2.ap2.ap2 .ap2-q .tx b {
+  display: block;
+  font-size: 14px;
+}
+.ap2.ap2.ap2 .ap2-q .tx small {
+  display: block;
+  color: var(--ink3);
+  font-size: 12px;
+  margin-top: 2px;
+}
+.ap2.ap2.ap2 .ap2-q .tx small.bad {
+  color: var(--bad);
+}
+.ap2.ap2.ap2 .ap2-qbar {
+  height: 4px;
+  background: #e5e5ea;
+  border-radius: 2px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.ap2.ap2.ap2 .ap2-qbar i {
+  display: block;
+  height: 100%;
+  background: var(--focus);
+}
+.ap2.ap2.ap2 .ap2-retry {
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+
+/* ===== Citi izdevumi, Cenu lapa (D4) ===== */
+.ap2.ap2.ap2 .ap2-xrow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid var(--line2);
+}
+.ap2.ap2.ap2 .ap2-card h3 + .ap2-xrow {
+  border-top: 0;
+}
+.ap2.ap2.ap2 .ap2-xrow input {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 16px;
+  padding: 2px 0;
+  min-width: 0;
+  color: var(--ink);
+}
+.ap2.ap2.ap2 .ap2-xrow input.t {
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-xrow input.a {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  width: 120px;
+  text-align: right;
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-xrow input.a::placeholder {
+  color: var(--focus);
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-xrow small {
+  color: var(--ink3);
+  font-size: 12px;
+}
+.ap2.ap2.ap2 .ap2-twocol {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+.ap2.ap2.ap2 .ap2-a4btn {
+  margin-top: 12px;
+  width: 100%;
+  text-decoration: none;
+}
+.ap2.ap2.ap2 .ap2-a4wrap {
+  min-width: 0;
+}
+.ap2.ap2.ap2 .ap2-a4 {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 26px;
+  min-height: 520px;
+}
+.ap2.ap2.ap2 .ap2-a4 .h {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+.ap2.ap2.ap2 .ap2-a4 .eq {
+  font-size: 13px;
+  color: #3a3a3c;
+  margin-top: 6px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.ap2.ap2.ap2 .ap2-a4 .prc {
+  font-size: 40px;
+  font-weight: 700;
+  margin-top: 18px;
+}
+.ap2.ap2.ap2 .ap2-a4 .tab {
+  margin-top: 18px;
+  font-size: 13px;
+}
+.ap2.ap2.ap2 .ap2-a4 .tab div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--line2);
+  padding: 8px 0;
+}
+.ap2.ap2.ap2.ap2-print {
+  background: #e9ebf0;
+  min-height: 100vh;
+  padding: 24px;
+}
+.ap2.ap2.ap2.ap2-print .ap2-a4 {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 12px auto 0;
+  padding: 18mm;
+  border-radius: 0;
+}
+.ap2.ap2.ap2.ap2-print .ap2-a4 .h {
+  font-size: 32px;
+}
+.ap2.ap2.ap2.ap2-print .ap2-a4 .prc {
+  font-size: 56px;
+}
+.ap2.ap2.ap2.ap2-print .ap2-a4 .tab {
+  font-size: 16px;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-twocol {
+    grid-template-columns: 1fr 1fr;
+  }
+  .ap2.ap2.ap2 .ap2-a4btn {
+    width: auto;
+    padding: 0 40px;
+  }
+}
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  .ap2.ap2.ap2 .ap2-noprint {
+    display: none !important;
+  }
+  .ap2.ap2.ap2.ap2-print {
+    padding: 0;
+    background: #fff;
+  }
+  .ap2.ap2.ap2.ap2-print .ap2-a4 {
+    margin: 0;
+    border: 0;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .ap2.ap2.ap2.ap2-print,
+  .ap2.ap2.ap2.ap2-print * {
+    visibility: visible !important;
+  }
+  .ap2.ap2.ap2.ap2-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+  }
+}
+/* F10: AI ieteikums (vēl nav apstiprināts) - zils, nav treknraksts */
+.ap2.ap2.ap2 .ap2-aisug {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: end;
+}
+.ap2.ap2.ap2 .sug {
+  color: var(--focus);
+  font-weight: 500;
+}
+
+/* ===== j28: mobilā dizaina korekcijas pēc 9 apstiprinātiem maketiem (24.10, Nils "jā" 11:03) =====
+   Tikai mobilais skats (.ap2-bar jau ir mobilā-tikai; pārējais zem max-width:899px). Desktop nemainās. */
+
+/* Mobilā akcentkrāsa saskaņota ar admin-ios-theme (#007aff); desktop patur esošo --focus. */
+@media (max-width: 899px) {
+  .ap2 {
+    --focus: #007aff;
+  }
+}
+
+/* Atpakaļ: bultiņa + "Autoparks" teksts (maketa stils), bez apaļās pogas rāmja. */
+.ap2.ap2.ap2 .ap2-back {
+  width: auto;
+  height: 44px;
+  min-width: 44px;
+  padding: 0 8px 0 2px;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  border-radius: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 17px;
+  font-weight: 400;
+  color: var(--focus);
+}
+.ap2.ap2.ap2 .ap2-back svg {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+/* Joslā paliek tikai Atpakaļ - auto nosaukumu un statusu rāda pastāvīgā "hero" kartīte zemāk. */
+.ap2.ap2.ap2 .ap2-bar h2,
+.ap2.ap2.ap2 .ap2-bar > .ap2-pill {
+  display: none;
+}
+
+/* Auto kartīte (nosaukums + VIN) paliek redzama visās cilnēs mobilajā skatā, ne tikai "Pamatdati". */
+.ap2.ap2.ap2 .ap2-carhead.compact {
+  display: flex;
+}
+
+@media (max-width: 899px) {
+  /* Cilnes: horizontāli ritināma "pill" josla (maketa stils) - novērš arī 5-6 ciļņu saspiešanos 375px platumā. */
+  .ap2.ap2.ap2 .ap2-tabs {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 6px;
+  }
+  .ap2.ap2.ap2 .ap2-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-tab {
+    flex: none;
+    min-height: 44px;
+    padding: 0 16px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* Saraksts (m01): katra rinda - sava noapaļota kartīte, nevis kopīgs rāmis ar atdalītājiem. */
+  .ap2.ap2.ap2 .ap2-list {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+  }
+  .ap2.ap2.ap2 .ap2-row {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    border-top: 1px solid var(--line);
+  }
+  .ap2.ap2.ap2 .ap2-row:first-child {
+    border-top: 1px solid var(--line);
+  }
+  .ap2.ap2.ap2 .ap2-rt .ap2-vin {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Iegāde: "Pašizmaksa" kā viena rinda ar bultiņu (maketa stils), nevis tumša 2-rindu flīze. */
+  .ap2.ap2.ap2 .ap2-kvc.ap2-cost {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: #fff;
+    padding: 14px 16px;
+  }
+  .ap2.ap2.ap2 .ap2-kvc.ap2-cost span {
+    display: block;
+    width: auto;
+    color: var(--ink2);
+  }
+  .ap2.ap2.ap2 .ap2-kvc.ap2-cost em {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-kvc.ap2-cost b {
+    color: var(--ink);
+    font-size: 19px;
+  }
+  .ap2.ap2.ap2 .ap2-kvc.ap2-cost::after {
+    content: "›";
+    color: var(--ink3);
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  /* Pieskāriena mērķi >=44px (problēmu pārslēgi, mazās pogas, filtru "pill" un VIN rinda bija mazāki). */
+  .ap2.ap2.ap2 .ap2-tg button {
+    min-height: 44px;
+  }
+  .ap2.ap2.ap2 .ap2-btn.sm {
+    min-height: 44px;
+  }
+  .ap2.ap2.ap2 .ap2-chip {
+    min-height: 44px;
+  }
+  .ap2.ap2.ap2 .ap2-vin {
+    min-height: 44px;
+  }
+  .ap2.ap2.ap2 .ap2-f button.v {
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .ap2.ap2.ap2 .ap2-sbox .t {
+    min-height: 44px;
+  }
+  .ap2.ap2.ap2 .ap2-techbar button.empty {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  .ap2.ap2.ap2 .ap2-addline {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Cenu lapa: mobilajā paliek tikai "Priekšskatīt A4" poga (atveras jaunā cilnē) - A4 priekšskats
+     saspiests 390px platumā nebija lasāms un maketā to nerāda. */
+  .ap2.ap2.ap2 .ap2-a4wrap {
+    display: none;
+  }
+
+  /* Meklēšanas lauks (m01): pelēks pildījums bez apmales (maketa stils), 44px augsts. */
+  .ap2.ap2.ap2 .ap2-search {
+    height: 44px;
+    border: 0;
+    background: #e3e3e8;
+  }
+}
