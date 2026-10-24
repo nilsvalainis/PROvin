@@ -118,10 +118,6 @@ export type V2Service = {
 export const V2_FIELD_KEYS = ["plate", "location", "arrivedAt", "make", "model", "vin"] as const;
 export type V2FieldKey = (typeof V2_FIELD_KEYS)[number];
 
-/** CSDD tehniskie lauki, kas kļūst ar roku labojami (J29 C): avots top "manual", imports tos vairs nepārraksta. */
-export const V2_TECH_FIELD_KEYS = ["firstRegDate", "displacementCm3", "powerKw"] as const;
-export type V2TechFieldKey = (typeof V2_TECH_FIELD_KEYS)[number];
-
 export type AutoparksCarV2 = {
   fields: Record<V2FieldKey, string>;
   tech: V2Tech;
