@@ -110,7 +110,11 @@ function buildConsultationSlotCsddPdfBlocks(csdd: CsddFormFields, vis: PdfVisibi
   if (vis.unifiedMileage && vis.csddMileageTable) {
     const mileage = buildUnifiedMileageTableHtml(
       { csddForm: csdd },
-      { omitAutoRecords: true, omitVendorBlockTitles: CONSULTATION_MILEAGE_OMIT_VENDOR_TITLES },
+      {
+        omitAutoRecords: true,
+        omitVendorBlockTitles: CONSULTATION_MILEAGE_OMIT_VENDOR_TITLES,
+        omitCsddUndatedRow: true,
+      },
     );
     if (mileage) parts.push(mileage);
   }

@@ -196,7 +196,9 @@ import {
   collectUnifiedMileageRows,
   analyzeUnifiedMileageAnomalies,
   prepareUnifiedMileageDisplayRows,
+  resolveCsddUndatedOdometer,
   type CollectUnifiedMileageOptions,
+  type CsddUndatedOdometer,
   type UnifiedMileageDisplayRow,
   type UnifiedMileageRow,
   type UnifiedMileageSourcePayload,
@@ -1155,8 +1157,29 @@ function buildUnifiedMileageTableRowHtml(
   return `<tr class="${rowClass}"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td>${odoTd}${srcTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
 }
 
+/** Zemsvītras piezīme CSDD rādījumam bez datuma (BMW makets, Nils apstiprināja 24.10). */
+export const PDF_MILEAGE_APPROX_DATE_NOTE =
+  "* Datums aptuvens - CSDD rādījums bez datuma, pielīdzināts sludinājuma pirmās publicēšanas mēnesim. Grafikā šis punkts netiek attēlots un kritumu aprēķinā netiek izmantots.";
+export const PDF_MILEAGE_UNKNOWN_DATE_NOTE =
+  "* CSDD rādījums bez datuma, datums nav zināms. Grafikā šis punkts netiek attēlots un kritumu aprēķinā netiek izmantots.";
+
+/** Tabulas rinda CSDD rādījumam bez datuma - tikai PDF tabulā, nekad grafikā vai anomāliju aprēķinā. */
+type PdfApproxMileageRow = { kind: "approx"; u: CsddUndatedOdometer };
+type PdfMileageTableRow = UnifiedMileageDisplayRow | PdfApproxMileageRow;
+
+function isPdfApproxMileageRow(r: PdfMileageTableRow): r is PdfApproxMileageRow {
+  return (r as PdfApproxMileageRow).kind === "approx";
+}
+
+function buildApproxMileageTableRowHtml(u: CsddUndatedOdometer): string {
+  const dateLabel = u.approxMonth ? `aptuveni ${u.approxMonth}*` : "datums nav zināms*";
+  const odoEscaped = escapeHtml(formatPdfOdometerDisplay(String(u.km)));
+  const srcTd = `<td class="pdf-mileage-cell-src"><span class="pdf-mileage-cell-src-inner">${buildPdfMileageSourceDotsHtml([PDF_SUB_CSDD])}</span></td>`;
+  return `<tr class="pdf-mileage-history-row pdf-mileage-history-row--approx"><td class="pdf-mileage-cell-date">${escapeHtml(dateLabel)}</td><td class="tabular pdf-mileage-cell-odo"><span class="pdf-mileage-odo-value">${odoEscaped}</span></td>${srcTd}<td class="pdf-mileage-cell-flag">${buildPdfCountryFlagCellHtml("Latvija")}</td></tr>`;
+}
+
 function buildMileageHistoryTableHtml(
-  rows: UnifiedMileageDisplayRow[],
+  rows: PdfMileageTableRow[],
   anomalyBySourceOrder: Map<number, boolean>,
   staleDocumentSourceOrders: Set<number>,
 ): string {
@@ -1164,7 +1187,11 @@ function buildMileageHistoryTableHtml(
   const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-src" /><col class="pdf-mileage-col-flag" /></colgroup>`;
   const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Odometrs (km)</th><th class="pdf-mileage-th-src" scope="col">Avots</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
   const body = rows
-    .map((r) => buildUnifiedMileageTableRowHtml(r, anomalyBySourceOrder, staleDocumentSourceOrders))
+    .map((r) =>
+      isPdfApproxMileageRow(r)
+        ? buildApproxMileageTableRowHtml(r.u)
+        : buildUnifiedMileageTableRowHtml(r, anomalyBySourceOrder, staleDocumentSourceOrders),
+    )
     .join("\n");
   return `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table pdf-mileage-history-table--mileage-rows" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
@@ -1206,7 +1233,17 @@ export function buildUnifiedMileageTableHtml(
     return a.sourceOrder - b.sourceOrder;
   });
 
-  const display = rows;
+  const csddUndated = mileageOpts?.omitCsddMileage || mileageOpts?.omitCsddUndatedRow
+    ? null
+    : resolveCsddUndatedOdometer({ csddForm: p.csddForm, tirgusForm: p.tirgusForm ?? null });
+  const display: PdfMileageTableRow[] = [...rows];
+  if (csddUndated) {
+    const approxRow: PdfApproxMileageRow = { kind: "approx", u: csddUndated };
+    // Jaunākie augšā; bez mēneša - pašā augšā (pašreizējais sludinājuma rādījums).
+    const t = csddUndated.approxTime;
+    const idx = t == null ? 0 : display.findIndex((r) => !isPdfApproxMileageRow(r) && r.sortableTime < t);
+    display.splice(idx < 0 ? display.length : idx, 0, approxRow);
+  }
   const chartHtml = buildUnifiedMileageChartWrapHtml(mileageRows, anomalyBySourceOrder, {
     compact: true,
     chartExcludeSourceOrders,
@@ -1233,7 +1270,13 @@ export function buildUnifiedMileageTableHtml(
   const head = sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE");
   const commentHtml = pdfReportCommentBox(p.mileageComment ?? "", PDF_MILEAGE_HISTORY_COMMENT_LABEL);
 
-  const body = `${chartHtml}${dualTables}${sourceCountHtml}${staleNoteHtml}${commentHtml}`;
+  const approxNoteHtml = csddUndated
+    ? `<p class="pdf-mileage-smart-note pdf-mileage-approx-note">${escapeHtml(
+        csddUndated.approxMonth ? PDF_MILEAGE_APPROX_DATE_NOTE : PDF_MILEAGE_UNKNOWN_DATE_NOTE,
+      )}</p>`
+    : "";
+
+  const body = `${chartHtml}${dualTables}${approxNoteHtml}${sourceCountHtml}${staleNoteHtml}${commentHtml}`;
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-hub-tint--mileage" role="region">${head}<div class="pdf-unified-mileage-zone__body">${body}</div></div>`;
 }
 
@@ -2864,6 +2907,12 @@ ${clientReportPageChromeCss(running)}
         background:#f9fafb!important;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
+      .pdf-mileage-history-table tbody tr.pdf-mileage-history-row--approx td{
+        background:#f0faf2!important;color:#3a3a3c;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-mileage-history-row--approx td.pdf-mileage-cell-date{font-style:italic;}
+      .pdf-mileage-approx-note{font-style:normal;}
       .pdf-mileage-history-row--anomaly td{
         background:#FFF1F2!important;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;

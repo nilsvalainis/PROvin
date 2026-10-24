@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import { analyzeOdometerRollbackBounds } from "@/lib/admin-ai-mileage-forensics";
-import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
+import { createDefaultSourceBlocks, toPdfManualVendorBlocks } from "@/lib/admin-source-blocks";
+import {
+  buildUnifiedMileageTableHtml,
+  PDF_MILEAGE_APPROX_DATE_NOTE,
+  PDF_MILEAGE_UNKNOWN_DATE_NOTE,
+} from "@/lib/client-report-html";
 import { buildCanonicalFacts } from "@/lib/canonical-facts-sheet";
 import {
   collectUnifiedMileageRows,
@@ -92,5 +97,55 @@ describe("CSDD odometrs bez datuma (nereģistrēts auto)", () => {
     expect(analyzeOdometerRollbackBounds(drop, { approxLaterReading: tooClose })[0]!.kind).toBe("real");
     const later = { km: 160000, t: Date.UTC(2022, 0, 1), source: "CSDD" };
     expect(analyzeOdometerRollbackBounds(drop, { approxLaterReading: later })[0]!.kind).toBe("suspectedEntryError");
+  });
+});
+
+describe("PDF nobraukuma tabula: CSDD rinda „aptuveni MM.YYYY”", () => {
+  function pdfHtml(listingCreated: string, opts?: Parameters<typeof buildUnifiedMileageTableHtml>[1]) {
+    const blocks = bmwBlocks(listingCreated);
+    return buildUnifiedMileageTableHtml(
+      {
+        csddForm: blocks.csdd,
+        tirgusForm: blocks.tirgus,
+        manualVendorBlocks: toPdfManualVendorBlocks(blocks),
+      },
+      opts,
+    );
+  }
+
+  it("rinda ar aptuvenu mēnesi, CSDD avotu, Latviju un piezīmi; grafikā punkta nav", () => {
+    const html = pdfHtml("12.09.2026");
+    expect(html).toContain("pdf-mileage-history-row--approx");
+    expect(html).toMatch(/pdf-mileage-cell-date">aptuveni 09\.2026\*</);
+    expect(html).toContain("211 988");
+    expect(html).toContain(PDF_MILEAGE_APPROX_DATE_NOTE);
+    const approxRow = html.match(/<tr class="pdf-mileage-history-row pdf-mileage-history-row--approx">.*?<\/tr>/)?.[0] ?? "";
+    expect(approxRow).toContain("pdf-src-dot--csdd");
+    expect(approxRow).toContain('aria-label="Latvija"');
+    // Rinda ir pirmā (jaunākā), pārējās paliek kā bija.
+    const table = html.slice(html.indexOf("pdf-mileage-history-table-wrap"));
+    expect(table.indexOf("aptuveni 09.2026")).toBeLessThan(table.indexOf("18.07.2022"));
+    // Grafikā (pirms tabulas) aptuvenā punkta nav.
+    expect(html.slice(0, html.indexOf("pdf-mileage-history-table-wrap"))).not.toContain("211 988");
+    expect((html.match(/pdf-mileage-history-row/g) ?? []).length).toBeGreaterThan(5);
+  });
+
+  it("bez sludinājuma datuma - „datums nav zināms”, rinda paliek", () => {
+    const html = pdfHtml("");
+    expect(html).toMatch(/pdf-mileage-cell-date">datums nav zināms\*</);
+    expect(html).toContain(PDF_MILEAGE_UNKNOWN_DATE_NOTE);
+  });
+
+  it("nav rindas, ja CSDD tabula PDF paslēpta vai rādījums ir datēts", () => {
+    expect(pdfHtml("12.09.2026", { omitCsddMileage: true })).not.toContain("pdf-mileage-history-row--approx");
+    expect(pdfHtml("12.09.2026", { omitCsddUndatedRow: true })).not.toContain("aptuveni 09.2026");
+    const blocks = bmwBlocks("12.09.2026");
+    blocks.csdd = {
+      ...blocks.csdd,
+      mileageHistory: [{ date: "01.08.2026", odometer: "211988", country: "Latvija" }],
+    };
+    const html = buildUnifiedMileageTableHtml({ csddForm: blocks.csdd, tirgusForm: blocks.tirgus });
+    expect(html).not.toContain("pdf-mileage-history-row--approx");
+    expect(html).not.toContain(PDF_MILEAGE_APPROX_DATE_NOTE);
   });
 });
