@@ -35,6 +35,7 @@ import {
   isLogisticsPipelineStatus,
   LOGISTICS_ORDER_STATUS_LV,
   LOGISTICS_PIPELINE_STATUSES,
+  type LogisticsGeocodeStatus,
   type LogisticsOrder,
   type LogisticsPoint,
 } from "@/lib/iriss-logistics-types";
@@ -88,6 +89,20 @@ function formatTransportCostInput(n: number | null): string {
   return n == null ? "" : formatLogisticsEur(n);
 }
 
+/** Čips pie "Atrašanās vieta" - tikai tad, kad adrese ir ievadīta. "pending"/"failed" bez adreses paliek tukši (vēl nekas nav ierakstīts). */
+function locationChip(status: LogisticsGeocodeStatus): { label: string; tone: "ok" | "warn" } | null {
+  switch (status) {
+    case "ok":
+      return { label: "Precizēts", tone: "ok" };
+    case "manuali":
+      return { label: "Manuāli · gaida precizējumu", tone: "warn" };
+    case "neprecizs":
+      return { label: "Aptuvens · pilsētas līmenis", tone: "warn" };
+    default:
+      return null;
+  }
+}
+
 export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onPatchOrder, onOrderUpdated, canCreateOffer = false }: Props) {
   // Nelasām localStorage renderēšanas laikā: serveris renderē bez tā, tāpēc hidratācija nesakrīt.
   const [prefs, setPrefs] = useState<Record<string, string>>({});
@@ -99,6 +114,9 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
   const [parkingUntil, setParkingUntil] = useState(order.freeParkingUntil);
   const [pickupDate, setPickupDate] = useState(order.pickupDate);
   const [transportCost, setTransportCost] = useState(formatTransportCostInput(order.transportCostEur));
+  const [pickupAddress, setPickupAddress] = useState(order.pickupAddress || formatLogisticsAddress(order.pickupSnapshot ?? {}));
+  const [geoNotice, setGeoNotice] = useState("");
+  const [geocodeBusy, setGeocodeBusy] = useState(false);
   const [access, setAccess] = useState<CabinetAccessView>({
     write: false,
     hideSums: true,
@@ -114,7 +132,22 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
     setParkingUntil(order.freeParkingUntil);
     setPickupDate(order.pickupDate);
     setTransportCost(formatTransportCostInput(order.transportCostEur));
-  }, [order.id, order.pickupRef, order.notes, order.freeParkingUntil, order.pickupDate, order.transportCostEur]);
+    setPickupAddress(order.pickupAddress || formatLogisticsAddress(order.pickupSnapshot ?? {}));
+  }, [
+    order.id,
+    order.pickupRef,
+    order.notes,
+    order.freeParkingUntil,
+    order.pickupDate,
+    order.transportCostEur,
+    order.pickupAddress,
+    order.pickupSnapshot,
+  ]);
+
+  // Atsevišķi no citu lauku sinhronizācijas: citādi saglabāšana (kas pati maina order.pickupAddress) uzreiz nodzēstu tikko uzrādīto ģeokodēšanas kļūdu.
+  useEffect(() => {
+    setGeoNotice("");
+  }, [order.id]);
 
   useEffect(() => {
     const id = window.setInterval(() => setNowMs(Date.now()), 30_000);
@@ -197,6 +230,44 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
   async function savePickupDate(next: string) {
     setPickupDate(next);
     await saveOrderFields({ pickupDate: next });
+  }
+
+  /** Adrese ar roku kabinetā - vienmēr "manuali" (precīzu "ok" status uzliek tikai turpmākā vakara precizēšana, ārpus šī uzdevuma). */
+  async function saveLocation(nextAddress: string) {
+    const trimmed = nextAddress.trim();
+    const current = (order.pickupAddress || formatLogisticsAddress(order.pickupSnapshot ?? {})).trim();
+    if (trimmed === current) return;
+    setGeoNotice("");
+    if (!trimmed) {
+      await saveOrderFields({ pickupAddress: "", pickupLat: null, pickupLng: null, geocodeStatus: "pending" });
+      return;
+    }
+    setGeocodeBusy(true);
+    try {
+      const res = await fetch("/api/admin/iriss-logistics/geocode", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: trimmed }),
+      });
+      const body = (await res.json()) as { ok?: boolean; lat?: number; lng?: number; notice?: string };
+      if (!body.ok) {
+        setGeoNotice(body.notice || "Adresi neizdevās ģeokodēt - saglabāts tikai teksts.");
+        await saveOrderFields({ pickupAddress: trimmed, pickupLat: null, pickupLng: null, geocodeStatus: "manuali" });
+        return;
+      }
+      await saveOrderFields({
+        pickupAddress: trimmed,
+        pickupLat: body.lat ?? null,
+        pickupLng: body.lng ?? null,
+        geocodeStatus: "manuali",
+      });
+    } catch {
+      setGeoNotice("Ģeokodēšana neizdevās - saglabāts tikai teksts.");
+      await saveOrderFields({ pickupAddress: trimmed, pickupLat: null, pickupLng: null, geocodeStatus: "manuali" });
+    } finally {
+      setGeocodeBusy(false);
+    }
   }
 
   async function savePickupCode(nextCode: string) {
@@ -388,6 +459,44 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
           })()}
         </label>
       </div>
+
+      {/* Atrašanās vieta: adrese ar roku pēc pirkuma, uzreiz redzama kartē "Punkti" pēc ģeokodēšanas. Vakarā precizēs izsoles adrese. */}
+      <div className="mt-2.5 rounded-[14px] border border-[#eef1f4] bg-white px-[11px] pb-[11px] pt-2.5">
+        <div className="flex items-center justify-between gap-1.5">
+          <p className="text-[13px] font-semibold">Atrašanās vieta</p>
+          {(() => {
+            const chip = pickupAddress.trim() ? locationChip(order.geocodeStatus) : null;
+            if (!chip) return null;
+            const bg = chip.tone === "ok" ? "bg-[var(--iriss-log-ok-bg)]" : "bg-[var(--iriss-log-warn-bg)]";
+            const fg = chip.tone === "ok" ? "text-[var(--iriss-log-ok-dot)]" : "text-[var(--iriss-log-warn-dot)]";
+            const dot = chip.tone === "ok" ? "bg-[var(--iriss-log-ok-dot)]" : "bg-[var(--iriss-log-warn-dot)]";
+            return (
+              <span className={`inline-flex h-[22px] shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[10.5px] font-bold ${bg} ${fg}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+                {chip.label}
+              </span>
+            );
+          })()}
+        </div>
+        <div className="mt-1.5 flex h-9 items-center gap-1.5 rounded-xl border border-[#e5e7eb] px-2.5">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" className="shrink-0 text-[#9a9faa]">
+            <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" />
+            <circle cx="12" cy="9.5" r="2.5" />
+          </svg>
+          <input
+            value={pickupAddress}
+            disabled={!access.write || geocodeBusy}
+            onChange={(e) => setPickupAddress(e.target.value)}
+            onBlur={() => void saveLocation(pickupAddress)}
+            placeholder="Pilsēta, valsts (piem. Venlo, Nīderlande)"
+            className="min-w-0 flex-1 border-none bg-transparent text-[12.5px] outline-none disabled:text-[var(--ink3)]"
+          />
+        </div>
+        <p className="mt-1 text-[10.5px] text-[var(--ink3)]">
+          {geoNotice || 'Ievadīta pēc pirkuma - tūlīt redzama kartē "Punkti". Vakarā precizēsim ar izsoles adresi.'}
+        </p>
+      </div>
+
       <label className="mt-2 block text-[12px] text-[var(--ink2)]">
         Piezīme
         <textarea
@@ -454,8 +563,6 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
                       </button>
                     ) : null}
                     <dl className="mt-2 grid grid-cols-[6rem_1fr] gap-y-1 text-[12.5px]">
-                      <dt className="text-[var(--ink2)]">Vieta</dt>
-                      <dd>{order.pickupAddress || formatLogisticsAddress(order.pickupSnapshot ?? {}) || "-"}</dd>
                       <dt className="text-[var(--ink2)]">Darba laiks</dt>
                       <dd>{order.pickupSnapshot?.hoursText || "-"}</dd>
                     </dl>
