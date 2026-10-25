@@ -3,6 +3,7 @@
  * Kopīgs ZIP/JSON eksportam un saraksta PDF (bez piedāvājumu attēliem).
  */
 
+import { formatYmdLv } from "@/lib/date-ymd-lv";
 import { isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
 import {
   IRISS_DEAL_DETAIL_OPTIONS,
@@ -105,7 +106,7 @@ export function collectIrissPasutijumsOverview(record: IrissPasutijumsRecord): I
   const heading = val(record.brandModel) || clientName || "Pasūtījums";
 
   const subParts: string[] = [];
-  const orderDate = val(record.orderDate);
+  const orderDate = val(formatYmdLv(record.orderDate));
   if (orderDate) subParts.push(orderDate);
   if (clientName && val(record.brandModel)) subParts.push(clientName);
   const status = record.listStatus ? LIST_STATUS_LV[record.listStatus] : null;
