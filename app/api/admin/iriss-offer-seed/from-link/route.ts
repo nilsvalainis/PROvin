@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { irissAuctionLinkSupported, parseIrissAuctionLink, type IrissAuctionLinkPlatform } from "@/lib/iriss-auction-link";
 import { findIrissOrderRoomHitForAuctionLink } from "@/lib/iriss-auction-link-read";
+import { irissAuctionDetailToSeed, mergeListedIntoDetailHit } from "@/lib/iriss-auction-detail";
+import { fetchIrissAuctionDetailViaRelay } from "@/lib/iriss-auction-detail-relay";
 import { fetchIrissRelayHealth, readIrissRelayConfig, relayPlatformFor } from "@/lib/iriss-listings-relay";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+// Releja detaļu lapa (B): pārlūks + cilnes var aizņemt līdz ~2 min.
+export const maxDuration = 180;
 
 const noStore = { "Cache-Control": "private, no-store" };
 
@@ -29,14 +32,18 @@ export async function GET(req: Request) {
 /**
  * POST { url } - ielīmēta Auto1/Openlane detaļu saite -> piedāvājuma sākuma dati.
  * A: auto jau ir IRISS sarakstos -> tas pats hit, ko lieto "Sagatavot piedāvājumu" (lauki, foto izsoles secībā).
+ * B: `mode: "detail"` - relejs nolasa pašu detaļu lapu -> hit + papildlauki (atslēgas, TA, emisija u.c.).
+ * Klients vispirms prasa "listing" (ātri), tad "detail"; ja detaļu lapa neizdodas, paliek A dati.
  */
 export async function POST(req: Request) {
   const gate = await requireIrissSectionApi("pasutijumi");
   if (!gate.ok) return gate.response;
   let raw = "";
+  let mode: "listing" | "detail" = "listing";
   try {
-    const body = (await req.json()) as { url?: unknown };
+    const body = (await req.json()) as { url?: unknown; mode?: unknown };
     raw = typeof body.url === "string" ? body.url : "";
+    if (body.mode === "detail") mode = "detail";
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400, headers: noStore });
   }
@@ -45,7 +52,14 @@ export async function POST(req: Request) {
   if (!irissAuctionLinkSupported(link.platform)) {
     return NextResponse.json({ error: "platform_unsupported", platform: link.platform satisfies IrissAuctionLinkPlatform }, { status: 422, headers: noStore });
   }
-  const hit = await findIrissOrderRoomHitForAuctionLink(link).catch(() => null);
-  if (hit) return NextResponse.json({ ok: true, source: "listing", hit }, { headers: noStore });
-  return NextResponse.json({ ok: false, error: "not_in_listings", platform: link.platform }, { status: 404, headers: noStore });
+  const listed = await findIrissOrderRoomHitForAuctionLink(link).catch(() => null);
+  if (mode === "listing") {
+    if (listed) return NextResponse.json({ ok: true, source: "listing", hit: listed }, { headers: noStore });
+    return NextResponse.json({ ok: false, error: "not_in_listings", platform: link.platform }, { status: 404, headers: noStore });
+  }
+  const relay = await fetchIrissAuctionDetailViaRelay(link);
+  if (!relay.ok) return NextResponse.json({ ok: false, error: relay.error, note: relay.note, platform: link.platform }, { status: 502, headers: noStore });
+  const { hit, extras } = irissAuctionDetailToSeed(relay.detail, link);
+  // Saraksta dati aizpilda to, ko detaļu lapa nedeva (piem. cenas, izsoles beigas).
+  return NextResponse.json({ ok: true, source: "detail", hit: listed ? mergeListedIntoDetailHit(hit, listed) : hit, extras }, { headers: noStore });
 }
