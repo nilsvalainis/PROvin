@@ -54,6 +54,7 @@ import { appendIrissOrderRoomNote, type IrissOrderRoomHit, type IrissOrderRoomTa
 import { irissAuctionListingFieldMap, type IrissAuctionListingRaw } from "@/lib/iriss-auction-listing-field-map";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import { IRISS_AUCTION_LINK_LABEL, offerLinkErrorNote, parseIrissAuctionLink } from "@/lib/iriss-auction-link";
+import type { IrissAuctionDetailExtras } from "@/lib/iriss-auction-detail";
 import { mergeServerOwnedIrissFields } from "@/lib/iriss-server-owned-fields";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
@@ -232,6 +233,22 @@ async function downloadPdfBlobFromResponse(
   }, revokeMs);
 }
 
+/** Esošais Gemini tulkojuma ceļš (translate-damage); kļūdas gadījumā tukšs. */
+async function translateDamageLv(text: string): Promise<string> {
+  try {
+    const res = await fetch("/api/admin/iriss-offer-seed/translate-damage", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    const data = res.ok ? ((await res.json().catch(() => ({}))) as { lv?: string }) : null;
+    return data?.lv?.trim() ?? "";
+  } catch {
+    return "";
+  }
+}
+
 type OfferSeedStatus = { loading: boolean; note: string; sourceLabel: string; linkUrl?: string };
 
 /** Piedāvājuma lauki + foto (izsoles secībā) no izsoles hit; kopīgs "Sagatavot piedāvājumu" un "No saites" ceļam. */
@@ -255,14 +272,20 @@ function offerSeedPatchFromHit(hit: IrissOrderRoomHit): { fields: Partial<OfferD
 }
 
 /** Lauki, kurus lietotājs jau sāka rakstīt (nav tukši), netiek pārrakstīti. Izsoles foto nāk pirms paša pievienotajiem. */
-function mergeOfferSeedIntoDraft(d: OfferDraft, fields: Partial<OfferDraft>, auto: ReadonlySet<string>): { draft: OfferDraft; auto: Set<string> } {
+function mergeOfferSeedIntoDraft(
+  d: OfferDraft,
+  fields: Partial<OfferDraft>,
+  auto: ReadonlySet<string>,
+  /** Iepriekš auto-aizpildīti un vēl neaiztikti lauki: precīzāki dati (detaļu lapa) tos var aizstāt. */
+  overwrite: ReadonlySet<string> = new Set(),
+): { draft: OfferDraft; auto: Set<string> } {
   const next: OfferDraft = { ...d };
   const filled = new Set<string>();
   for (const [key, value] of Object.entries(fields) as Array<[keyof OfferDraft, OfferDraft[keyof OfferDraft]]>) {
     if (key === "attachments") continue;
     const cur = d[key];
     if (typeof value !== "string" || typeof cur !== "string") continue;
-    if (cur.trim() || !value.trim()) continue;
+    if (!value.trim() || (cur.trim() && !overwrite.has(key))) continue;
     (next as Record<string, unknown>)[key] = value;
     if (auto.has(key)) filled.add(key);
   }
@@ -369,6 +392,8 @@ export function IrissPasutijumsEditor({
   const [offerPdfAllowWithoutImages, setOfferPdfAllowWithoutImages] = useState(false);
   const [offerWhatsappBusy, setOfferWhatsappBusy] = useState(false);
   const [offerDraft, setOfferDraft] = useState<OfferDraft>(() => newOfferDraft(1));
+  const offerAutoFieldsRef = useRef(offerAutoFields);
+  offerAutoFieldsRef.current = offerAutoFields;
   const offerDraftRef = useRef(offerDraft);
   offerDraftRef.current = offerDraft;
   const autoOpenOfferDone = useRef(false);
@@ -948,7 +973,10 @@ export function IrissPasutijumsEditor({
     [rec.offers.length, translateOfferDamage],
   );
 
-  /** j56 "No saites": logs atveras uzreiz tukšs, lauki un izsoles foto ielidinās, kad atnāk dati. */
+  /**
+   * j56 "No saites": logs atveras uzreiz tukšs. 1) IRISS sarakstu hit (ātri, A), 2) releja detaļu lapa (B):
+   * papildlauki + pilns foto komplekts izsoles secībā. Lietotāja ierakstītais netiek pārrakstīts.
+   */
   const openCreateOfferFromLink = useCallback(
     (url: string) => {
       const link = parseIrissAuctionLink(url);
@@ -959,27 +987,91 @@ export function IrissPasutijumsEditor({
       setOfferDraft(draft);
       setOfferSeedStatus(status);
       setOfferOpen(true);
+      const stillOpen = () => offerDraftRef.current.id === draft.id;
+      const post = async (mode: "listing" | "detail") => {
+        const res = await fetch("/api/admin/iriss-offer-seed/from-link", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: link.url, mode }),
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          hit?: IrissOrderRoomHit;
+          extras?: IrissAuctionDetailExtras;
+          error?: string;
+          note?: string;
+        };
+        return res.ok && data.hit ? data : { ...data, hit: undefined };
+      };
+      const applyHit = (hit: IrissOrderRoomHit, replacePhotoIds: readonly string[] | null) => {
+        const { fields, auto, damageText } = offerSeedPatchFromHit(hit);
+        const cur = offerDraftRef.current;
+        // Foto: ja lietotājs saraksta foto nav aiztikis, detaļu lapas pilnais komplekts tos aizstāj.
+        const untouched = replacePhotoIds != null && cur.attachments.map((a) => a.id).join("|") === replacePhotoIds.join("|");
+        const base = untouched ? { ...cur, attachments: [] } : cur;
+        const photosForMerge = replacePhotoIds && !untouched ? { ...fields, attachments: [] } : fields;
+        const overwrite = replacePhotoIds ? offerAutoFieldsRef.current : new Set<string>();
+        const merged = mergeOfferSeedIntoDraft(base, photosForMerge, auto, overwrite);
+        setOfferDraft((d) =>
+          d.id === draft.id ? mergeOfferSeedIntoDraft(untouched ? { ...d, attachments: [] } : d, photosForMerge, auto, overwrite).draft : d,
+        );
+        setOfferAutoFields((prev) => new Set([...prev, ...merged.auto]));
+        return { damageText, photoIds: merged.draft.attachments.map((a) => a.id) };
+      };
       void (async () => {
+        let listingPhotoIds: string[] | null = null;
+        let damageText = "";
         try {
-          const res = await fetch("/api/admin/iriss-offer-seed/from-link", {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url: link.url }),
-          });
-          const data = (await res.json().catch(() => ({}))) as { hit?: IrissOrderRoomHit; error?: string; note?: string };
-          if (!res.ok || !data.hit) {
-            setOfferSeedStatus({ ...status, loading: false, note: offerLinkErrorNote(data.error, data.note) });
+          const listed = await post("listing");
+          if (!stillOpen()) return;
+          if (listed.hit) {
+            const r = applyHit(listed.hit, null);
+            listingPhotoIds = r.photoIds;
+            damageText = r.damageText;
+          }
+          setOfferSeedStatus({ ...status, note: "lasa izsoles lapu" });
+          const detail = await post("detail");
+          if (!stillOpen()) return;
+          if (detail.hit) {
+            const r = applyHit(detail.hit, listingPhotoIds);
+            damageText = r.damageText || damageText;
+            const ex = detail.extras;
+            if (ex) {
+              const extraFields: Partial<OfferDraft> = {
+                keyCount: ex.keyCount,
+                emissionClass: ex.emissionClass,
+                engineDisplacement: ex.engineDisplacement,
+                equipmentHighlights: ex.equipmentHighlights,
+                technicalAssessment: ex.technicalFacts,
+              };
+              const extraAuto = new Set(["keyCount", "emissionClass", "engineDisplacement"]);
+              const merged = mergeOfferSeedIntoDraft(offerDraftRef.current, extraFields, extraAuto);
+              setOfferDraft((d) =>
+                d.id === draft.id
+                  ? {
+                      ...mergeOfferSeedIntoDraft(d, extraFields, extraAuto).draft,
+                      hasFullServiceHistory: d.hasFullServiceHistory || ex.hasFullServiceHistory,
+                    }
+                  : d,
+              );
+              setOfferAutoFields((prev) => new Set([...prev, ...merged.auto]));
+              if (ex.technicalIssueText.trim()) {
+                void translateDamageLv(ex.technicalIssueText).then((lv) => {
+                  if (!lv) return;
+                  setOfferDraft((d) => {
+                    if (d.id !== draft.id || d.technicalAssessment.includes(lv)) return d;
+                    const prev = d.technicalAssessment.trim();
+                    return { ...d, technicalAssessment: prev ? `${prev}. ${lv}` : lv };
+                  });
+                });
+              }
+            }
+          } else if (!listed.hit) {
+            setOfferSeedStatus({ ...status, loading: false, note: offerLinkErrorNote(detail.error, detail.note) });
             return;
           }
-          const { fields, auto, damageText } = offerSeedPatchFromHit(data.hit);
-          // Logs aizvērts vai atvērts cits piedāvājums - neko nemainām.
-          if (offerDraftRef.current.id !== draft.id) return;
-          const filled = mergeOfferSeedIntoDraft(offerDraftRef.current, fields, auto).auto;
-          setOfferDraft((d) => (d.id === draft.id ? mergeOfferSeedIntoDraft(d, fields, auto).draft : d));
-          setOfferAutoFields((prev) => new Set([...prev, ...filled]));
           if (damageText) translateOfferDamage(draft.id, damageText, status);
-          else setOfferSeedStatus({ ...status, loading: false });
+          else setOfferSeedStatus({ ...status, loading: false, note: "" });
         } catch {
           setOfferSeedStatus({ ...status, loading: false, note: "Neizdevās ielādēt auto datus - aizpildi ar roku." });
         }
