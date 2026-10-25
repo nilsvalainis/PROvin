@@ -10,7 +10,7 @@ vi.mock("next/navigation", () => ({
 import { IrissMobileMenuHome } from "@/components/admin/IrissMobileMenuHome";
 import { IrissStaffAppShell } from "@/components/admin/IrissStaffAppShell";
 import { IRISS_SECTIONS, type IrissSection } from "@/lib/staff-roles";
-import { renderText } from "@/lib/test-render";
+import { renderHtml, renderText } from "@/lib/test-render";
 
 const home = (sections: IrissSection[], isAdmin = false) => renderText(<IrissMobileMenuHome sections={sections} isAdmin={isAdmin} />);
 const shell = (sections: IrissSection[]) =>
@@ -24,10 +24,11 @@ const OTHER_APPS = ["Pasūtījumi", "Sludinājumi", "Radars", "Loģistika", "VIN
 
 describe("IRISS sākums pēc piešķirtajām sadaļām", () => {
   it("partneris (tikai Pavadzīmes): pavadzīmju logrīks, poga 'Izveidot pavadzīmi', Arhīvs un Iziet - nekā cita", () => {
+    const html = renderHtml(<IrissMobileMenuHome sections={["pavadzimes"]} isAdmin={false} />);
     const text = home(["pavadzimes"]);
-    expect(text).toContain("Pavadzīmes");
+    expect(html).toContain('aria-label="Pavadzīmes"');
+    expect(html).not.toContain("Visas ›");
     expect(text).toContain("Izveidot pavadzīmi");
-    expect(text.indexOf("Izveidot pavadzīmi")).toBeGreaterThan(text.indexOf("Pavadzīmes"));
     expect(text.indexOf("Arhīvs")).toBeGreaterThan(text.indexOf("Izveidot pavadzīmi"));
     expect(text.indexOf("Iziet")).toBeGreaterThan(text.indexOf("Arhīvs"));
     for (const app of OTHER_APPS) expect(text).not.toContain(app);

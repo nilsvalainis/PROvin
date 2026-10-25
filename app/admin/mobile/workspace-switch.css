@@ -1,26 +1,27 @@
-/* "IRISS | PRO" pārslēgs telefona galvenē: viens pieskāriens = otra zona. */
+/* "IRISS | PRO" pārslēgs: neitrāls (balts segments uz pelēka). Sarkans tikai steidzamajam. */
 .admin-ios-theme .am-ws-switch {
   display: inline-flex;
-  height: 28px;
-  align-items: stretch;
+  min-height: 44px;
+  min-width: 44px;
+  align-items: center;
   gap: 2px;
   border-radius: 999px;
   background: var(--fill-secondary, rgba(118, 118, 128, 0.12));
-  padding: 2px;
+  padding: 4px;
 }
 .admin-ios-theme .am-ws-switch span {
   display: inline-flex;
+  min-height: 28px;
   align-items: center;
   border-radius: 999px;
-  padding: 0 9px;
+  padding: 0 10px;
   color: var(--label-secondary, #6e6e73) !important;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
 }
-/* Aktīvā puse zaļa: uzreiz redzams, kurā zonā esi. */
 .admin-ios-theme .am-ws-switch span.on {
-  background: #34c759;
-  box-shadow: 0 2px 6px rgba(52, 199, 89, 0.35);
-  color: #ffffff !important;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 18, 24, 0.12);
+  color: #1d1d1f !important;
 }

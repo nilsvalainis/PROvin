@@ -9,9 +9,13 @@ import { MenuGrid } from "@/components/admin/mobile/MenuGrid";
 import { renderIrissWidget } from "@/components/admin/mobile/MenuWidgetContent";
 import { IRISS_DEFAULT_LAYOUT_IDS, irissMenuCatalog } from "@/lib/admin-menu-catalog";
 import type { MenuLayout } from "@/lib/admin-menu-layout";
+import { IrissHomeLogisticsPins } from "@/components/admin/IrissHomeLogisticsPins";
 import { IrissWaybillGauges } from "@/components/admin/IrissWaybillGauges";
 import { useIrissWaybillPlateStrip } from "@/components/admin/useIrissWaybillPlateStrip";
+import { emptyCargoPlan, normalizeCargoPlan } from "@/lib/iriss-logistics-cargo-plan";
+import { irissHomeLogisticsPins, type IrissHomeLogisticsPin } from "@/lib/iriss-home-logistics-pins";
 import {
+  canSeeIrissMobileMenuItem,
   cheapIrissMenuCount,
   IRISS_DESKTOP_MEDIA,
   irissDesktopHomeHref,
@@ -38,6 +42,26 @@ function useRefreshTick(): number {
     };
   }, []);
   return tick;
+}
+
+function useHomeLogisticsPins(enabled: boolean, refreshKey: number): IrissHomeLogisticsPin[] {
+  const [pins, setPins] = useState(() => irissHomeLogisticsPins(emptyCargoPlan(), []));
+  useEffect(() => {
+    if (!enabled) return;
+    let cancelled = false;
+    void fetch("/api/admin/iriss-logistics/cargo-plan", { credentials: "include", cache: "no-store" })
+      .then(async (res) => {
+        const json = (await res.json().catch(() => null)) as { plan?: unknown; orders?: unknown } | null;
+        if (cancelled || !res.ok || !json) return;
+        const orders = Array.isArray(json.orders) ? json.orders : [];
+        setPins(irissHomeLogisticsPins(normalizeCargoPlan(json.plan), orders as { id: string }[]));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, refreshKey]);
+  return pins;
 }
 
 function useCheapIrissBadgeCounts(enabled: boolean, refreshKey: number): { irissMatches: number; irissLogistics: number } {
@@ -101,9 +125,15 @@ export function IrissMobileMenuHome({
   const [archiveOpen, setArchiveOpen] = useState(false);
   useDesktopRedirect(waybillOnly ? null : irissDesktopHomeHref(items));
   const canReadWaybills = isAdmin || sections.includes("pavadzimes");
+  const canReadLogistics = canSeeIrissMobileMenuItem(
+    { id: "logistika", href: "", label: "", icon: "logistika", group: 2, section: "logistika" },
+    sections,
+    isAdmin,
+  );
   const tick = useRefreshTick();
   const badges = useCheapIrissBadgeCounts(isAdmin, tick);
   const plates = useIrissWaybillPlateStrip(canReadWaybills, tick);
+  const pins = useHomeLogisticsPins(canReadLogistics, tick);
   const counts = {
     irissMatches: badges.irissMatches,
     irissLogistics: badges.irissLogistics,
@@ -120,7 +150,7 @@ export function IrissMobileMenuHome({
       <div className="iriss-mobile-menu-home pb-[max(16px,env(safe-area-inset-bottom))] md:mx-auto md:max-w-md md:pt-6">
         <AdminMobileTopBar title="IRISS" />
         <div className="px-4">
-          <IrissWaybillGauges allHref={null} />
+          <IrissWaybillGauges chrome="float" allHref={null} />
         </div>
         {formOpen ? (
           <div className="mt-4 px-4">
@@ -166,11 +196,8 @@ export function IrissMobileMenuHome({
     <div className="iriss-mobile-menu-home pb-4">
       <AdminMobileTopBar title="IRISS" />
       <div className="md:hidden">
-        {canReadWaybills ? (
-          <div className="px-4">
-            <IrissWaybillGauges />
-          </div>
-        ) : null}
+        {canReadWaybills ? <IrissWaybillGauges chrome="float" allHref={null} href="/admin/iriss/pavadzimes" /> : null}
+        {canReadLogistics ? <IrissHomeLogisticsPins href="/admin/iriss/logistika" pins={pins} /> : null}
         <MenuGrid
           workspace="iriss"
           catalog={catalog}

@@ -51,4 +51,10 @@ describe("IRISS mobile menu home and workspace switch", () => {
     expect(src.strip).not.toContain("formatIrissWaybillChip");
     expect(src.strip).not.toMatch(/item\.number/);
   });
+
+  it("sākuma hero ir bez Visas / Karte saitēm un ar float apļiem", () => {
+    expect(src.menu).toContain('chrome="float"');
+    expect(src.menu).toContain("IrissHomeLogisticsPins");
+    expect(src.menu).not.toMatch(/<IrissWaybillGauges \/>/);
+  });
 });

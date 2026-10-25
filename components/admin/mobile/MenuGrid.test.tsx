@@ -39,8 +39,10 @@ describe("j23: IRISS izvēlnes režģis nepārkārtojas zem pirksta", () => {
 
   it("nav saglabāta (null) vai nav zināms (undefined): noklusējuma secība", () => {
     const def = tileOrder(undefined);
-    expect(def[0]).toBe("Kravas un karte");
+    expect(def[0]).toBe("Autoparks");
     expect(def).toContain("Pavadzīmes");
+    expect(def).toContain("Loģistika");
+    expect(def).not.toContain("Kravas un karte");
     expect(tileOrder(null)).toEqual(def);
     expect(tileOrder([])).toEqual(def);
   });

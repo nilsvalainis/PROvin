@@ -53,7 +53,7 @@ export function renderIrissWidget(item: MenuCatalogItem, size: MenuSize, data: M
       return (
         <>
           <Big n={data.irissLogistics} label="auto loģistikā" />
-          {size !== "S" ? <span className="mw-sub">Nākošā un aiznākošā krava, maršruts</span> : null}
+          {size !== "S" ? <span className="mw-sub">Nākošā un aiznākošā krava</span> : null}
         </>
       );
     case "w-pavadzimes":
