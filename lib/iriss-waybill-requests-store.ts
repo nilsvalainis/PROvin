@@ -11,8 +11,10 @@ import {
   inProgressIsStale,
   isStaleWaybillRequest,
   parseWaybillRequestsDoc,
+  pendingWaybillRequestForPlate,
   pendingWaybillRequests,
   waybillPendingExpired,
+  WaybillPendingSamePlateError,
   waybillRequestCancellable,
   withWaybillLegacyTimeFixes,
   WAYBILL_HANDOFF_TEXT,
@@ -138,6 +140,9 @@ export async function createWaybillRequest(input: {
     dropboxAt: "",
   };
   await mutateDoc((doc) => {
+    // Zem tās pašas slēdzenes: divi vienlaicīgi pieprasījumi vienam numuram nevar abi nonākt rindā.
+    const pending = pendingWaybillRequestForPlate(doc.requests, request.vehicle.plate);
+    if (pending) throw new WaybillPendingSamePlateError(pending);
     let next: WaybillRequestsDoc = { ...doc, requests: [request, ...doc.requests].slice(0, 2000) };
     next = pushEvent(next, {
       requestId: request.id,
