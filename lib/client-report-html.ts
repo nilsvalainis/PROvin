@@ -293,6 +293,32 @@ function vendorTitlesOmittedForPdf(vis: PdfVisibilitySettings): Set<string> {
   return s;
 }
 
+/**
+ * FABLE 25.10: PDF kopsavilkums, vēstures laikjosla un negadījumu tabula agrāk lasīja visu payload - MINI / ASV PDF
+ * rādīja paslēpto (cenā neiekļauto) avotu datus. Šeit paslēptie avoti tiek izņemti, pirms tos lasa šīs zonas.
+ */
+export function payloadForPdfVisibility(
+  p: ClientReportPayload,
+  vis: PdfVisibilitySettings,
+  opts: { keepCsdd?: boolean } = {},
+): ClientReportPayload {
+  const omit = vendorTitlesOmittedForPdf(vis);
+  const dealer = dealerPdfVisible(p, vis);
+  return {
+    ...p,
+    csddForm: vis.csdd || opts.keepCsdd ? p.csddForm : null,
+    autoRecordsBlock: dealer ? p.autoRecordsBlock : null,
+    oneautoBlock: dealer ? p.oneautoBlock : null,
+    ccVinBlock: vis.cc_vin ? p.ccVinBlock : null,
+    asvBlock: vis.asv ? p.asvBlock : null,
+    manualVendorBlocks: p.manualVendorBlocks ? p.manualVendorBlocks.filter((b) => !omit.has(b.title)) : p.manualVendorBlocks,
+    manualLtabBlock: vis.ltab ? p.manualLtabBlock : null,
+    citiAvoti: vis.citi_avoti ? p.citiAvoti : null,
+    tirgusForm: vis.sludinajums ? p.tirgusForm : null,
+    listingUrl: vis.sludinajums ? p.listingUrl : null,
+  };
+}
+
 function collectPdfMileageSparkContext(
   p: ClientReportPayload,
   vis: PdfVisibilitySettings,
@@ -3565,41 +3591,45 @@ export function buildClientReportDocumentHtml(args: {
     }
   }
 
+  // Kopsavilkums, laikjosla, negadījumi: tikai PDF iekļautie avoti (CSDD identitātei kopsavilkumā paliek).
+  const pVis = dealerOnly ? p : payloadForPdfVisibility(p, vis, { keepCsdd: true });
+  const pVisTimeline = dealerOnly ? p : payloadForPdfVisibility(p, vis);
+
   // Viena kartīšu valoda kopsavilkumā: manuālās (admin) → automātiskie brīdinājumi → informatīvās.
   const summaryBannerTiles = vis.alerts
     ? buildPdfSummaryBannerTiles({
-        manualBanners: mergeProvinManualBanners(p.manualBanners),
+        manualBanners: mergeProvinManualBanners(pVis.manualBanners),
         alertBanners: filterAlertBannersForPdf(
           computeProvinAlertBannersFromPayloadSlice({
-            csddForm: p.csddForm,
-            autoRecordsBlock: p.autoRecordsBlock ?? null,
-            oneautoBlock: p.oneautoBlock ?? null,
-            ccVinBlock: p.ccVinBlock ?? null,
-            asvBlock: p.asvBlock ?? null,
-            manualVendorBlocks: p.manualVendorBlocks ?? null,
-            citiAvotiBlock: p.citiAvoti ?? null,
-            manualLtabBlock: p.manualLtabBlock ?? null,
-            tirgusForm: p.tirgusForm ?? null,
-            listingUrl: p.listingUrl ?? null,
+            csddForm: pVis.csddForm,
+            autoRecordsBlock: pVis.autoRecordsBlock ?? null,
+            oneautoBlock: pVis.oneautoBlock ?? null,
+            ccVinBlock: pVis.ccVinBlock ?? null,
+            asvBlock: pVis.asvBlock ?? null,
+            manualVendorBlocks: pVis.manualVendorBlocks ?? null,
+            citiAvotiBlock: pVis.citiAvoti ?? null,
+            manualLtabBlock: pVis.manualLtabBlock ?? null,
+            tirgusForm: pVis.tirgusForm ?? null,
+            listingUrl: pVis.listingUrl ?? null,
           }),
-          p.pdfBannerInclude,
+          pVis.pdfBannerInclude,
         ),
         infoBanners: filterInfoBannersForPdf(
           computeProvinInfoBannersFromPayloadSlice({
-            csddForm: p.csddForm,
-            autoRecordsBlock: p.autoRecordsBlock ?? null,
-            oneautoBlock: p.oneautoBlock ?? null,
-            ccVinBlock: p.ccVinBlock ?? null,
-            asvBlock: p.asvBlock ?? null,
-            manualVendorBlocks: p.manualVendorBlocks ?? null,
-            manualLtabBlock: p.manualLtabBlock ?? null,
-            citiAvotiBlock: p.citiAvoti ?? null,
+            csddForm: pVis.csddForm,
+            autoRecordsBlock: pVis.autoRecordsBlock ?? null,
+            oneautoBlock: pVis.oneautoBlock ?? null,
+            ccVinBlock: pVis.ccVinBlock ?? null,
+            asvBlock: pVis.asvBlock ?? null,
+            manualVendorBlocks: pVis.manualVendorBlocks ?? null,
+            manualLtabBlock: pVis.manualLtabBlock ?? null,
+            citiAvotiBlock: pVis.citiAvoti ?? null,
           }),
-          p.pdfBannerInclude,
+          pVis.pdfBannerInclude,
         ),
       })
     : [];
-  if (!dealerOnly) lines.push(buildPdfReportSummaryHtml(p, summaryBannerTiles));
+  if (!dealerOnly) lines.push(buildPdfReportSummaryHtml(pVis, summaryBannerTiles));
   const coverPhotoHtml = buildPdfCoverPhotoHtml(p, listingAnalysisPhotoDataUrls);
   if (coverPhotoHtml) lines.push(coverPhotoHtml);
 
@@ -3617,7 +3647,7 @@ export function buildClientReportDocumentHtml(args: {
   if (provinSourcesStrip) lines.push(provinSourcesStrip);
 
   if (!dealerOnly) {
-    const lifecycleHtml = buildPdfLifecycleTimelineHtml(p);
+    const lifecycleHtml = buildPdfLifecycleTimelineHtml(pVisTimeline);
     if (lifecycleHtml) lines.push(lifecycleHtml);
 
     const mileageOpts: CollectUnifiedMileageOptions = {
@@ -3636,7 +3666,7 @@ export function buildClientReportDocumentHtml(args: {
 
     const unifiedIncidentsHtml = buildUnifiedIncidentsTableHtml(
       {
-        ...p,
+        ...pVis,
         internalComment: vis.incidentsSummary ? p.internalComment : "",
         incidentPhotoGroups: vis.incidentPhotos ? p.incidentPhotoGroups : [],
         incidentPhotos: vis.incidentPhotos ? p.incidentPhotos : [],
