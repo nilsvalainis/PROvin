@@ -27,6 +27,8 @@ export type MenuCatalogItem = {
   icon: string;
   /** Krāsa (CSS), no kuras veido ikonas fonu. */
   tone: string;
+  /** Pavadzīmes / Loģistika: bez virsraksta, viss vidžets ir pieskāriens. */
+  hideHead?: boolean;
   /** Skaits, ko rāda nozīmītē uz ikonas. */
   badge?: string;
 };

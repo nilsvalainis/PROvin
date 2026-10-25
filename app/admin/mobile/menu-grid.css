@@ -6,9 +6,9 @@
 .admin-ios-theme .menu-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-auto-rows: 84px;
+  grid-auto-rows: 96px;
   grid-auto-flow: row dense;
-  gap: 12px;
+  gap: 14px 10px;
   padding: 4px 16px 0;
 }
 
@@ -42,16 +42,31 @@
 }
 .admin-ios-theme .menu-app-icon {
   display: flex;
-  height: 58px;
-  width: 58px;
+  height: 64px;
+  width: 64px;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   border-radius: 16px;
-  color: #ffffff !important;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--menu-tone) 78%, #ffffff), var(--menu-tone));
+  color: #1d1d1f !important;
+  background: #ffffff;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 6px 14px color-mix(in srgb, var(--menu-tone) 32%, transparent);
+    0 1px 0 rgba(255, 255, 255, 0.9),
+    0 8px 18px rgba(40, 50, 90, 0.08);
+}
+.admin-ios-theme .menu-app-icon.is-bleed {
+  padding: 0;
+  background: #006b3f;
+}
+.admin-ios-theme .menu-app-icon.is-bleed img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+.admin-ios-theme .menu-app-icon.is-pad img {
+  height: 47px;
+  width: 47px;
+  object-fit: contain;
 }
 .admin-ios-theme .menu-app-label {
   max-width: 100%;
@@ -65,7 +80,7 @@
 .admin-ios-theme .menu-badge {
   position: absolute;
   top: 0;
-  right: calc(50% - 38px);
+  right: calc(50% - 40px);
   min-width: 22px;
   height: 22px;
   padding: 0 6px;
@@ -209,7 +224,7 @@
   padding: 0;
 }
 .admin-ios-theme .menu-app .menu-remove {
-  left: calc(50% - 38px);
+  left: calc(50% - 40px);
 }
 .admin-ios-theme .menu-size {
   position: absolute;
@@ -233,7 +248,7 @@
   padding: 6px 16px 12px;
 }
 .admin-ios-theme .menu-edit-btn {
-  min-height: 36px;
+  min-height: 44px;
   border: 0;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.8);
@@ -279,14 +294,30 @@
 }
 .menu-gallery-icon {
   display: flex;
-  height: 36px;
-  width: 36px;
+  height: 44px;
+  width: 44px;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  color: #ffffff !important;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--menu-tone) 78%, #ffffff), var(--menu-tone));
+  overflow: hidden;
+  border-radius: 11px;
+  color: #1d1d1f !important;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px #e3e3e6;
+}
+.menu-gallery-icon.is-bleed {
+  background: #006b3f;
+  box-shadow: none;
+}
+.menu-gallery-icon.is-bleed img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+.menu-gallery-icon.is-pad img {
+  height: 32px;
+  width: 32px;
+  object-fit: contain;
 }
 .menu-gallery-text {
   display: flex;
@@ -308,8 +339,8 @@
   gap: 4px;
 }
 .menu-gallery-size {
-  min-height: 34px;
-  min-width: 34px;
+  min-height: 44px;
+  min-width: 44px;
   border: 0;
   border-radius: 999px;
   background: #1a73e8;
@@ -324,14 +355,17 @@
   color: var(--label-secondary, #6e6e73) !important;
 }
 
-/* PRO sākumam tas pats gradienta fons kā IRISS (web versijas). */
-.admin-ios-theme .menu-gradient-bg {
+/* v11c-float: desaturēta karte augšā, pāreja uz #e4e4ea pie ikonām. */
+.admin-ios-theme .iriss-mobile-menu-home,
+.admin-ios-theme .pro-mobile-menu-home.menu-gradient-bg {
   min-height: 100dvh;
-  background-color: #e9ecf1;
+  background-color: #e4e4ea;
   background-image:
-    radial-gradient(420px 300px at 10% 0%, rgba(150, 170, 220, 0.55), transparent 70%),
-    radial-gradient(460px 360px at 95% 22%, rgba(200, 180, 230, 0.42), transparent 70%),
-    radial-gradient(560px 380px at 50% 105%, rgba(160, 175, 200, 0.5), transparent 70%);
+    linear-gradient(180deg, rgba(228, 228, 234, 0.15) 0%, rgba(228, 228, 234, 0.55) 38%, #e4e4ea 62%),
+    url("/admin/menu/map-bg.svg");
+  background-repeat: no-repeat, no-repeat;
+  background-size: 100% 100%, 170% 70%;
+  background-position: center top, 42% 0;
 }
 
 /* Brīdinājums: logrīks sarkanā tonī, ja ir kavētie; ikonai sarkans gredzens. */
@@ -351,8 +385,8 @@
 
 /* Logrīks, kas samazināts līdz ikonai: izmēra poga ikonas apakšējā stūrī, nevis virs nosaukuma. */
 .admin-ios-theme .menu-app .menu-size {
-  top: 46px;
-  right: calc(50% - 46px);
+  top: 50px;
+  right: calc(50% - 48px);
   bottom: auto;
   min-width: 0;
   height: 22px;

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
 import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
-import { MenuIcon } from "@/components/admin/mobile/MenuIcons";
+import { MenuIcon, menuIconBleed, menuIconPadded } from "@/components/admin/mobile/MenuIcons";
 import {
   MENU_SIZE_LABEL,
   MENU_TAP_GUARD_MS,
@@ -285,16 +285,20 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, alertOf, hre
               >
                 {isWidget ? (
                   <>
-                    <span className="menu-widget-head">
-                      <MenuIcon name={item.icon} size={14} />
-                      {item.title}
-                    </span>
+                    {item.hideHead ? null : (
+                      <span className="menu-widget-head">
+                        <MenuIcon name={item.icon} size={14} />
+                        {item.title}
+                      </span>
+                    )}
                     <span className="menu-widget-body">{renderWidget(item, entry.size)}</span>
                   </>
                 ) : (
                   <>
-                    <span className="menu-app-icon">
-                      <MenuIcon name={item.icon} size={28} />
+                    <span
+                      className={`menu-app-icon${menuIconBleed(item.icon) ? " is-bleed" : ""}${menuIconPadded(item.icon) ? " is-pad" : ""}`}
+                    >
+                      <MenuIcon name={item.icon} size={menuIconBleed(item.icon) ? 64 : 40} />
                     </span>
                     <span className="menu-app-label">{item.title}</span>
                     {badge > 0 ? <span className="menu-badge">{badge > 99 ? "99+" : badge}</span> : null}
@@ -338,8 +342,11 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, alertOf, hre
           {missing.length === 0 ? <li className="menu-gallery-empty">Viss jau ir sākumā.</li> : null}
           {missing.map((item) => (
             <li key={item.id} className="menu-gallery-row">
-              <span className="menu-gallery-icon" style={{ ["--menu-tone" as string]: item.tone }}>
-                <MenuIcon name={item.icon} size={20} />
+              <span
+                className={`menu-gallery-icon${menuIconBleed(item.icon) ? " is-bleed" : ""}${menuIconPadded(item.icon) ? " is-pad" : ""}`}
+                style={{ ["--menu-tone" as string]: item.tone }}
+              >
+                <MenuIcon name={item.icon} size={menuIconBleed(item.icon) ? 44 : 28} />
               </span>
               <span className="menu-gallery-text">
                 <span className="menu-gallery-title">{item.title}</span>

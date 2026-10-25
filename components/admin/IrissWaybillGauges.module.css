@@ -9,6 +9,15 @@
   padding: 0;
   background: transparent;
 }
+.wg.float {
+  display: block;
+  margin: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 4px 8px 0;
+  text-decoration: none !important;
+  color: inherit !important;
+}
 .wg .head {
   display: flex;
   align-items: baseline;
@@ -102,6 +111,21 @@
   font-weight: 700;
   line-height: 17px;
   white-space: nowrap;
+}
+.wg.float .plate {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #3a3a3c;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.wg.float .dash {
+  color: #8e8e93;
+  font-weight: 600;
+}
+.wg.float .car {
+  color: #8e8e93;
 }
 .wg.sm .plate {
   padding: 0 3px;

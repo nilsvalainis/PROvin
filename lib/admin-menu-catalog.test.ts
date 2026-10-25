@@ -16,6 +16,9 @@ describe("IRISS katalogs pēc tiesībām", () => {
     const layout = defaultMenuLayout(cat, IRISS_DEFAULT_LAYOUT_IDS);
     expect(layout.length).toBe(IRISS_DEFAULT_LAYOUT_IDS.length);
     expect(cat.find((c) => c.id === "w-logistika")?.sizes).toEqual(["S", "M", "L", "app"]);
+    expect(cat.find((c) => c.id === "w-logistika")?.hideHead).toBe(true);
+    expect(cat.find((c) => c.id === "w-pavadzimes")?.hideHead).toBe(true);
+    expect(IRISS_DEFAULT_LAYOUT_IDS).toEqual(["autoparks", "pavadzimes", "logistika", "vin", "pasutijumi", "sludinajumi", "radars"]);
   });
 });
 

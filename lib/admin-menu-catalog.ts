@@ -9,15 +9,15 @@ import type { IrissSection } from "@/lib/staff-roles";
 const LOGISTIKA_TONE = "#1a73e8";
 
 const IRISS_APP_META: Record<string, { icon: string; tone: string; title?: string }> = {
-  pasutijumi: { icon: "car", tone: "#3a3f4b" },
-  sludinajumi: { icon: "list", tone: "#1a6fe0" },
-  radars: { icon: "radar", tone: "#4f4ddb" },
+  pasutijumi: { icon: "ord", tone: "#1d1d1f" },
+  sludinajumi: { icon: "lst", tone: "#1d1d1f" },
+  radars: { icon: "rad", tone: "#1d1d1f" },
   logistika: { icon: "pin", tone: LOGISTIKA_TONE },
-  autoparks: { icon: "warehouse", tone: "#0f8fa8" },
-  pavadzimes: { icon: "doc", tone: "#e8590c" },
-  vin: { icon: "scan", tone: "#2b2f3a" },
-  atskaite: { icon: "chart", tone: "#d6284f" },
-  iestatijumi: { icon: "sliders", tone: "#6b7180" },
+  autoparks: { icon: "dz", tone: "#ffffff" },
+  pavadzimes: { icon: "csdd", tone: "#006b3f" },
+  vin: { icon: "scan", tone: "#1d1d1f" },
+  atskaite: { icon: "rep", tone: "#1d1d1f" },
+  iestatijumi: { icon: "set", tone: "#1d1d1f" },
 };
 
 export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boolean): MenuCatalogItem[] {
@@ -55,6 +55,7 @@ export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boo
       section: "logistika",
       icon: "pin",
       tone: LOGISTIKA_TONE,
+      hideHead: true,
     },
     {
       id: "w-pavadzimes",
@@ -65,8 +66,9 @@ export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boo
       defaultSize: "M",
       rowsBySize: { S: 2, M: 4, L: 6 },
       section: "pavadzimes",
-      icon: "doc",
-      tone: "#e8590c",
+      icon: "csdd",
+      tone: "#006b3f",
+      hideHead: true,
     },
     {
       id: "w-sludinajumi",
@@ -98,15 +100,15 @@ export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boo
       sizes: ["S", "M", "app"],
       defaultSize: "S",
       section: "logistika",
-      icon: "warehouse",
-      tone: "#0f8fa8",
+      icon: "dz",
+      tone: "#ffffff",
     },
   ];
 
   return [...apps, ...widgets.filter((w) => allowed(w.section ?? ""))];
 }
 
-export const IRISS_DEFAULT_LAYOUT_IDS = ["w-logistika", "w-pavadzimes", "pasutijumi", "sludinajumi", "radars", "logistika", "pavadzimes", "vin"];
+export const IRISS_DEFAULT_LAYOUT_IDS = ["autoparks", "pavadzimes", "logistika", "vin", "pasutijumi", "sludinajumi", "radars"];
 
 const PRO_APPS: Array<Omit<MenuCatalogItem, "kind" | "sizes" | "defaultSize">> = [
   { id: "pro-pasutijumi", title: "Pasūtījumi", href: "/admin/dashboard", icon: "car", tone: "#1a73e8", badge: "orders" },
