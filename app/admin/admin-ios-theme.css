@@ -76,7 +76,8 @@ body:has(.admin-ios-theme) {
   color: #000000;
 }
 
-.admin-ios-theme:not(:has(.admin-m[data-section="iriss"])) :is(p, span, h1, h2, h3, h4, h5, h6, label, small, li, dt, dd) {
+/* Žetons (.am-badge) - sava krāsa uz tumša fona (agrāk melns uz #1c1c1e). */
+.admin-ios-theme:not(:has(.admin-m[data-section="iriss"])) :is(p, span, h1, h2, h3, h4, h5, h6, label, small, li, dt, dd):not(:where(.am-badge)) {
   color: #000000;
 }
 
