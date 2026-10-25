@@ -4,7 +4,8 @@ import { rigaLocalToUtc } from "@/lib/iriss-pavadzimes-parse";
 import { irissMobilePlateStripItems } from "@/lib/iriss-mobile-plate-strip";
 import type { CsddPlatesDoc } from "@/lib/iriss-waybill-csdd-plates";
 import { mergeCsddPlateStates } from "@/lib/iriss-waybill-csdd-plates";
-import { csddRefutesWaybill, waybillPlateOccupancy } from "@/lib/iriss-waybill-plates";
+import { composeWaybillPlateStates, type WaybillLiveRequest } from "@/lib/iriss-waybill-live-plates";
+import { csddRefutesWaybill, waybillPlateOccupancy, withdrawnWaybillNos } from "@/lib/iriss-waybill-plates";
 
 const iso = (y: number, m: number, d: number, h: number, mi: number) => rigaLocalToUtc(y, m, d, h, mi)!.toISOString();
 
@@ -66,9 +67,57 @@ describe("j66 pārtrauktā pavadzīme neaizņem numuru", () => {
     expect(csddRefutesWaybill(null, p02818)).toBe(false);
   });
 
-  it("CSDD aktīvā pavadzīme joprojām aizņem numuru, pat ja indeksa PDF ir Arhīvā", () => {
-    const doc = csdd({ "B193-7": ["P02818"] });
-    const states = mergeCsddPlateStates(waybillPlateOccupancy([{ ...p02818, archived: true }], now, doc), doc, now.getTime());
-    expect(busyOf(states)["B193-7"]).toBe(true);
+  it("CSDD īsta aktīvā, kuras nav indeksā kā atsauktas, joprojām aizņem numuru", () => {
+    const doc = csdd({ "B193-7": ["P02900"] });
+    const rows = [{ ...p02818, archived: true }];
+    const withdrawn = withdrawnWaybillNos(rows, doc);
+    const states = mergeCsddPlateStates(waybillPlateOccupancy(rows, now, doc), doc, now.getTime(), withdrawn);
+    expect(states.find((s) => s.plate === "B193-7")).toMatchObject({ busy: true, current: { number: "P02900" } });
+  });
+});
+
+/** j66b: pēc #617 overlay slāņi (izdots pieprasījums, vecs CSDD active) atkal padarīja B193-7 aizņemtu. */
+describe("j66b atsauktā pavadzīme overlay slāņos neaizņem numuru", () => {
+  const now = new Date(iso(2026, 10, 25, 13, 30));
+  const p02818 = { number: "P02818", plate: "B193-7", issuedAt: iso(2026, 10, 25, 9, 0), validUntil: iso(2026, 10, 27, 9, 0) };
+  const csdd = (active: Record<string, string[]>, checkedAt = iso(2026, 10, 25, 13, 20)): CsddPlatesDoc => ({
+    version: 1,
+    updatedAt: checkedAt,
+    plates: Object.entries(active).map(([plate, nums]) => ({
+      plate: plate as "B193-7",
+      ok: true,
+      checkedAt,
+      error: "",
+      active: nums.map((waybillNo) => ({ waybillNo, validUntil: iso(2026, 10, 27, 9, 0), brandModel: "" })),
+    })),
+  });
+  const issued: WaybillLiveRequest = {
+    id: "wbr_p02818",
+    status: "issued",
+    createdAt: iso(2026, 10, 25, 9, 0),
+    updatedAt: iso(2026, 10, 25, 9, 1),
+    validUntil: "2026-10-26T14:51:30.131Z",
+    waybillNo: "P02818",
+    vehicle: { brandModel: "VW Tiguan", vin: "", plate: "B193-7", orderId: "" },
+  };
+
+  it("Arhīvs Dropbox + palicis izdots pieprasījums (request.validUntil): numurs brīvs", () => {
+    const plates = composeWaybillPlateStates([{ ...p02818, archived: true }], csdd({ "B193-7": [] }), [issued], now);
+    expect(plates.find((s) => s.plate === "B193-7")).toEqual({ plate: "B193-7", busy: false });
+  });
+
+  it("Arhīvs + vecs CSDD active ar to pašu nr.: numurs brīvs", () => {
+    const plates = composeWaybillPlateStates([{ ...p02818, archived: true }], csdd({ "B193-7": ["P02818"] }), [], now);
+    expect(plates.find((s) => s.plate === "B193-7")).toEqual({ plate: "B193-7", busy: false });
+  });
+
+  it("parasta dzīva pavadzīme joprojām aizņem numuru", () => {
+    const plates = composeWaybillPlateStates([p02818], csdd({ "B193-7": ["P02818"] }), [issued], now);
+    expect(plates.find((s) => s.plate === "B193-7")).toMatchObject({ busy: true, current: { number: "P02818" } });
+  });
+
+  it("CSDD īsta aktīvā bez Arhīva indeksā joprojām aizņem numuru", () => {
+    const plates = composeWaybillPlateStates([], csdd({ "B193-7": ["P02812"] }), [], now);
+    expect(plates.find((s) => s.plate === "B193-7")).toMatchObject({ busy: true, current: { number: "P02812" } });
   });
 });

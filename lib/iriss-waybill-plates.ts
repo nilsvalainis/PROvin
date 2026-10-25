@@ -44,13 +44,16 @@ export type WaybillPlateState = {
   };
 };
 
-type OccupancyRow = {
+export type WaybillWithdrawnRow = {
   plate: string;
-  validUntil: string;
-  issuedAt?: string;
   number: string;
-  brandModel?: string;
+  issuedAt?: string;
   archived?: boolean;
+};
+
+export type OccupancyRow = WaybillWithdrawnRow & {
+  validUntil: string;
+  brandModel?: string;
 };
 
 export function compactDealerPlate(raw: string): string {
@@ -94,10 +97,26 @@ export function csddRefutesWaybill(
 
 /** Pavadzīme vairs neaizņem numuru: PDF Arhīvā vai CSDD to vairs nerāda kā aktīvu. */
 export function waybillWithdrawn(
-  row: { plate: string; number: string; issuedAt?: string; archived?: boolean },
+  row: WaybillWithdrawnRow,
   csdd?: CsddPlatesDoc | null,
 ): boolean {
   return row.archived === true || csddRefutesWaybill(csdd, row);
+}
+
+/**
+ * Indeksa pavadzīmju numuri, kas vairs neaizņem numurzīmi (Arhīvs vai CSDD atsaucis ar jaunāku ok nolasījumu).
+ * Overlay slāņi (CSDD momentuzņēmums, izdotais pieprasījums) tos nedrīkst atkal padarīt aizņemtus.
+ */
+export function withdrawnWaybillNos(
+  rows: readonly WaybillWithdrawnRow[],
+  csdd?: CsddPlatesDoc | null,
+): ReadonlySet<string> {
+  const out = new Set<string>();
+  for (const row of rows) {
+    const no = row.number.trim().toUpperCase();
+    if (no && waybillWithdrawn(row, csdd)) out.add(no);
+  }
+  return out;
 }
 
 export function waybillPlateOccupancy(rows: OccupancyRow[], now = new Date(), csdd?: CsddPlatesDoc | null): WaybillPlateState[] {
