@@ -119,6 +119,7 @@ import {
 } from "@/lib/iriss-pasutijumi-types";
 import {
   LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS,
+  buildListingPlatformChips,
   LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
 } from "@/lib/iriss-listing-links";
 import { fileToCompressedOfferAttachment } from "@/lib/iriss-offer-image-compress";
@@ -145,7 +146,8 @@ const fieldClass = irissOfferFieldClass;
 
 const textareaClass = `${fieldClass} min-h-[100px] resize-y py-2.5 leading-snug`;
 
-const offerPChipButtonClass = `${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} cursor-pointer select-none`;
+/** P1/P2/+ telefonā: pieskāriena mērķis vismaz 44x44 (bāzes čips ir logo platumā - "+" bija 11 px). */
+const offerPChipButtonClass = `${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} min-h-11 min-w-11 cursor-pointer select-none rounded-full px-3`;
 
 
 
@@ -1858,9 +1860,12 @@ export function IrissPasutijumsEditor({
       ) : null}
 
       <div className="mt-3 space-y-4 sm:mt-4 sm:space-y-5">
-        <section className={shellCard}>
-          <IrissListingPlatformChipsRow rec={rec} />
-        </section>
+        {/* Bez saitēm rinda neko nerāda - bez tukšas kartītes (FABLE 25.10). */}
+        {buildListingPlatformChips(rec).length > 0 ? (
+          <section className={shellCard}>
+            <IrissListingPlatformChipsRow rec={rec} />
+          </section>
+        ) : null}
 
         <section className={shellCard}>
           <BlockTitle>Transportlīdzekļa specifikācija</BlockTitle>
