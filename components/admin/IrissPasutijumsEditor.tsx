@@ -53,6 +53,7 @@ import { irissOfferSeedFromHit } from "@/lib/iriss-order-offer-from-hit";
 import { appendIrissOrderRoomNote, type IrissOrderRoomHit, type IrissOrderRoomTab } from "@/lib/iriss-order-room";
 import { irissAuctionListingFieldMap, type IrissAuctionListingRaw } from "@/lib/iriss-auction-listing-field-map";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
+import { IRISS_AUCTION_LINK_LABEL, offerLinkErrorNote, parseIrissAuctionLink } from "@/lib/iriss-auction-link";
 import { mergeServerOwnedIrissFields } from "@/lib/iriss-server-owned-fields";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
@@ -231,6 +232,44 @@ async function downloadPdfBlobFromResponse(
   }, revokeMs);
 }
 
+type OfferSeedStatus = { loading: boolean; note: string; sourceLabel: string; linkUrl?: string };
+
+/** Piedāvājuma lauki + foto (izsoles secībā) no izsoles hit; kopīgs "Sagatavot piedāvājumu" un "No saites" ceļam. */
+function offerSeedPatchFromHit(hit: IrissOrderRoomHit): { fields: Partial<OfferDraft>; auto: Set<string>; damageText: string } {
+  const seed = irissOfferSeedFromHit(hit);
+  const auto = new Set<string>();
+  for (const key of OFFER_AUTO_FIELD_KEYS) {
+    const v = seed[key as keyof typeof seed];
+    if (typeof v === "string" && v.trim()) auto.add(key);
+  }
+  if (seed.doorCount.trim()) auto.add("doorCount");
+  const fields: Partial<OfferDraft> = {
+    ...seed,
+    odometerReading: seed.odometerReading || seed.mileage,
+    comment: "",
+    attachments: attachmentsFromAuctionPhotoUrls(auctionPhotoUrlsFromHit(hit)),
+  };
+  const damageText =
+    irissAuctionListingFieldMap(hit.platform)?.freeText(hit as unknown as IrissAuctionListingRaw).visualDamageText?.trim() ?? "";
+  return { fields, auto, damageText };
+}
+
+/** Lauki, kurus lietotājs jau sāka rakstīt (nav tukši), netiek pārrakstīti. Izsoles foto nāk pirms paša pievienotajiem. */
+function mergeOfferSeedIntoDraft(d: OfferDraft, fields: Partial<OfferDraft>, auto: ReadonlySet<string>): { draft: OfferDraft; auto: Set<string> } {
+  const next: OfferDraft = { ...d };
+  const filled = new Set<string>();
+  for (const [key, value] of Object.entries(fields) as Array<[keyof OfferDraft, OfferDraft[keyof OfferDraft]]>) {
+    if (key === "attachments") continue;
+    const cur = d[key];
+    if (typeof value !== "string" || typeof cur !== "string") continue;
+    if (cur.trim() || !value.trim()) continue;
+    (next as Record<string, unknown>)[key] = value;
+    if (auto.has(key)) filled.add(key);
+  }
+  if (fields.attachments?.length) next.attachments = [...fields.attachments, ...d.attachments].slice(0, IRISS_MAX_OFFER_ATTACHMENTS);
+  return { draft: next, auto: filled };
+}
+
 function attachmentNameSizeKey(name: string, size: number): string {
   return `${name.trim().toLowerCase()}|${Math.max(0, Math.trunc(size))}`;
 }
@@ -316,7 +355,7 @@ export function IrissPasutijumsEditor({
   /** Klienta kabinetā: auto izvēle Autoparks | Loģistika | Tukšs pirms formas. */
   const [offerSourceSheetOpen, setOfferSourceSheetOpen] = useState(false);
   const [offerAutoFields, setOfferAutoFields] = useState<ReadonlySet<string>>(() => new Set());
-  const [offerSeedStatus, setOfferSeedStatus] = useState<{ loading: boolean; note: string; sourceLabel: string } | null>(null);
+  const [offerSeedStatus, setOfferSeedStatus] = useState<OfferSeedStatus | null>(null);
   const [offerBusy, setOfferBusy] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -330,6 +369,8 @@ export function IrissPasutijumsEditor({
   const [offerPdfAllowWithoutImages, setOfferPdfAllowWithoutImages] = useState(false);
   const [offerWhatsappBusy, setOfferWhatsappBusy] = useState(false);
   const [offerDraft, setOfferDraft] = useState<OfferDraft>(() => newOfferDraft(1));
+  const offerDraftRef = useRef(offerDraft);
+  offerDraftRef.current = offerDraft;
   const autoOpenOfferDone = useRef(false);
   const lastSavedSnapshot = useRef(JSON.stringify(withAutoEcarstradeLinks(initialRecord)));
   const recRef = useRef(rec);
@@ -859,68 +900,92 @@ export function IrissPasutijumsEditor({
     }
   }, [rec.id]);
 
+  /** Bojājumu teksts (AUTO1/OPENLANE) vienmēr jātulko latviski (Gemini) - fonā, nekavējot loga atvēršanu. */
+  const translateOfferDamage = useCallback((draftId: string, text: string, status: OfferSeedStatus) => {
+    setOfferSeedStatus({ ...status, loading: true, note: "tulko bojājumu aprakstu" });
+    void (async () => {
+      try {
+        const res = await fetch("/api/admin/iriss-offer-seed/translate-damage", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        const data = res.ok ? ((await res.json().catch(() => ({}))) as { lv?: string }) : null;
+        const lv = data?.lv?.trim() ?? "";
+        if (lv) {
+          setOfferDraft((d) => {
+            if (d.id !== draftId) return d;
+            const patch: { damageGrade?: string; visualAssessment?: string } = {};
+            // Manuāli rakstītu tekstu nepārrakstam - lietotājs varēja sākt rakstīt tulkošanas brīdī.
+            if (!d.damageGrade.trim()) patch.damageGrade = lv;
+            if (!d.visualAssessment.trim()) patch.visualAssessment = lv;
+            return Object.keys(patch).length > 0 ? { ...d, ...patch } : d;
+          });
+          setOfferSeedStatus({ ...status, loading: false, note: "" });
+        } else {
+          setOfferSeedStatus(status.linkUrl ? { ...status, loading: false, note: "" } : null);
+        }
+      } catch {
+        setOfferSeedStatus(status.linkUrl ? { ...status, loading: false, note: "" } : null);
+      }
+    })();
+  }, []);
+
   const openCreateOfferFromHit = useCallback(
     (hit: IrissOrderRoomHit) => {
-      const seed = irissOfferSeedFromHit(hit);
-      const draft = newOfferDraft(rec.offers.length + 1);
-      const auto = new Set<string>();
-      for (const key of OFFER_AUTO_FIELD_KEYS) {
-        const v = seed[key as keyof typeof seed];
-        if (typeof v === "string" && v.trim()) auto.add(key);
-      }
-      if (seed.doorCount.trim()) auto.add("doorCount");
+      const { fields, auto, damageText } = offerSeedPatchFromHit(hit);
+      const nextDraft: OfferDraft = { ...newOfferDraft(rec.offers.length + 1), ...fields };
       setOfferAutoFields(auto);
       setOfferSeedStatus(null);
-      const nextDraft = {
-        ...draft,
-        ...seed,
-        year: seed.year,
-        mileage: seed.mileage,
-        priceGermany: seed.priceGermany,
-        odometerReading: seed.odometerReading || seed.mileage,
-        comment: "",
-        attachments: attachmentsFromAuctionPhotoUrls(auctionPhotoUrlsFromHit(hit)),
-      };
       setOfferDraft(nextDraft);
       setOfferOpen(true);
-
-      // Sinhronie lauki jau augstāk; bojājumu teksts (AUTO1/OPENLANE) nāk no sludinājuma,
-      // bet vienmēr jātulko latviski (Gemini) - tas notiek fonā, nekavējot loga atvēršanu.
-      const visualDamageText = irissAuctionListingFieldMap(hit.platform)?.freeText(hit as unknown as IrissAuctionListingRaw)
-        .visualDamageText;
-      if (visualDamageText?.trim()) {
+      if (damageText) {
         const sourceLabel = IRISS_LISTING_PLATFORM_LABEL[hit.platform] ?? hit.platform;
-        setOfferSeedStatus({ loading: true, note: "tulko bojājumu aprakstu", sourceLabel });
-        void (async () => {
-          try {
-            const res = await fetch("/api/admin/iriss-offer-seed/translate-damage", {
-              method: "POST",
-              credentials: "include",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ text: visualDamageText }),
-            });
-            const data = res.ok ? ((await res.json().catch(() => ({}))) as { lv?: string }) : null;
-            const lv = data?.lv?.trim() ?? "";
-            if (lv) {
-              setOfferDraft((d) => {
-                if (d.id !== nextDraft.id) return d;
-                const patch: { damageGrade?: string; visualAssessment?: string } = {};
-                // Manuāli rakstītu tekstu nepārrakstam - lietotājs varēja sākt rakstīt tulkošanas brīdī.
-                if (!d.damageGrade.trim()) patch.damageGrade = lv;
-                if (!d.visualAssessment.trim()) patch.visualAssessment = lv;
-                return Object.keys(patch).length > 0 ? { ...d, ...patch } : d;
-              });
-              setOfferSeedStatus({ loading: false, note: "", sourceLabel });
-            } else {
-              setOfferSeedStatus(null);
-            }
-          } catch {
-            setOfferSeedStatus(null);
-          }
-        })();
+        translateOfferDamage(nextDraft.id, damageText, { loading: true, note: "", sourceLabel });
       }
     },
-    [rec.offers.length],
+    [rec.offers.length, translateOfferDamage],
+  );
+
+  /** j56 "No saites": logs atveras uzreiz tukšs, lauki un izsoles foto ielidinās, kad atnāk dati. */
+  const openCreateOfferFromLink = useCallback(
+    (url: string) => {
+      const link = parseIrissAuctionLink(url);
+      if (!link) return;
+      const draft = newOfferDraft(rec.offers.length + 1);
+      const status: OfferSeedStatus = { loading: true, note: "", sourceLabel: IRISS_AUCTION_LINK_LABEL[link.platform], linkUrl: link.url };
+      setOfferAutoFields(new Set());
+      setOfferDraft(draft);
+      setOfferSeedStatus(status);
+      setOfferOpen(true);
+      void (async () => {
+        try {
+          const res = await fetch("/api/admin/iriss-offer-seed/from-link", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url: link.url }),
+          });
+          const data = (await res.json().catch(() => ({}))) as { hit?: IrissOrderRoomHit; error?: string; note?: string };
+          if (!res.ok || !data.hit) {
+            setOfferSeedStatus({ ...status, loading: false, note: offerLinkErrorNote(data.error, data.note) });
+            return;
+          }
+          const { fields, auto, damageText } = offerSeedPatchFromHit(data.hit);
+          // Logs aizvērts vai atvērts cits piedāvājums - neko nemainām.
+          if (offerDraftRef.current.id !== draft.id) return;
+          const filled = mergeOfferSeedIntoDraft(offerDraftRef.current, fields, auto).auto;
+          setOfferDraft((d) => (d.id === draft.id ? mergeOfferSeedIntoDraft(d, fields, auto).draft : d));
+          setOfferAutoFields((prev) => new Set([...prev, ...filled]));
+          if (damageText) translateOfferDamage(draft.id, damageText, status);
+          else setOfferSeedStatus({ ...status, loading: false });
+        } catch {
+          setOfferSeedStatus({ ...status, loading: false, note: "Neizdevās ielādēt auto datus - aizpildi ar roku." });
+        }
+      })();
+    },
+    [rec.offers.length, translateOfferDamage],
   );
 
   /** Forma atveras uzreiz; auto lauki un /STOCK bildes ielādējas tajā (bez starplapas). */
@@ -2145,6 +2210,10 @@ export function IrissPasutijumsEditor({
       {offerSourceSheetOpen ? (
         <IrissOfferSourceSheet
           onClose={() => setOfferSourceSheetOpen(false)}
+          onOpenLink={(url) => {
+            setOfferSourceSheetOpen(false);
+            openCreateOfferFromLink(url);
+          }}
           onOpen={(from) => {
             setOfferSourceSheetOpen(false);
             if (from) openCreateOfferFromSource(from);
