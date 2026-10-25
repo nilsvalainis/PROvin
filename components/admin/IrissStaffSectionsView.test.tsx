@@ -20,7 +20,7 @@ const shell = (sections: IrissSection[]) =>
     </IrissStaffAppShell>,
   );
 
-const OTHER_APPS = ["Pasūtījumi", "Sludinājumi", "Radars", "Loģistika", "VIN pārbaude", "Autoparks", "Kravas un karte", "Iestatījumi"];
+const OTHER_APPS = ["Pasūtījumi", "Sludinājumi", "Radars", "Loģistika", "VIN pārbaude", "Autoparks", "Kravas", "Kravas un karte", "Iestatījumi"];
 
 describe("IRISS sākums pēc piešķirtajām sadaļām", () => {
   it("partneris (tikai Pavadzīmes): pavadzīmju logrīks, poga 'Izveidot pavadzīmi', Arhīvs un Iziet - nekā cita", () => {
@@ -62,7 +62,7 @@ describe("IRISS sākums pēc piešķirtajām sadaļām", () => {
 
   it("visa IRISS bez PRO: visas IRISS flīzes, bez Iestatījumiem un bez PRO pārslēga", () => {
     const text = home([...IRISS_SECTIONS]);
-    for (const app of ["Pasūtījumi", "Sludinājumi", "Radars", "Loģistika", "Pavadzīmes", "VIN pārbaude"]) expect(text).toContain(app);
+    for (const app of ["Pasūtījumi", "Sludinājumi", "Radars", "Loģistika", "Kravas", "Pavadzīmes", "VIN pārbaude"]) expect(text).toContain(app);
     expect(text).not.toContain("Iestatījumi");
     expect(text).not.toContain("PRO");
     expect(text).not.toContain("Izveidot pavadzīmi");

@@ -18,7 +18,22 @@ describe("IRISS katalogs pēc tiesībām", () => {
     expect(cat.find((c) => c.id === "w-logistika")?.sizes).toEqual(["S", "M", "L", "app"]);
     expect(cat.find((c) => c.id === "w-logistika")?.hideHead).toBe(true);
     expect(cat.find((c) => c.id === "w-pavadzimes")?.hideHead).toBe(true);
-    expect(IRISS_DEFAULT_LAYOUT_IDS).toEqual(["autoparks", "pavadzimes", "logistika", "vin", "pasutijumi", "sludinajumi", "radars"]);
+    expect(IRISS_DEFAULT_LAYOUT_IDS).toEqual([
+      "autoparks",
+      "pavadzimes",
+      "logistika",
+      "kravas",
+      "vin",
+      "pasutijumi",
+      "sludinajumi",
+      "radars",
+    ]);
+    expect(cat.find((c) => c.id === "kravas")?.title).toBe("Kravas");
+    expect(cat.find((c) => c.id === "sludinajumi")?.tone).toContain("#4a95f5");
+    expect(cat.find((c) => c.id === "radars")?.tone).toContain("#8a6cf0");
+    expect(cat.find((c) => c.id === "pasutijumi")?.tone).toContain("#5d616b");
+    expect(cat.find((c) => c.id === "vin")?.tone).toContain("#48484c");
+    expect(cat.find((c) => c.id === "pavadzimes")?.tone).toBe("#0b6232");
   });
 });
 

@@ -42,6 +42,7 @@ describe("j23: IRISS izvēlnes režģis nepārkārtojas zem pirksta", () => {
     expect(def[0]).toBe("Autoparks");
     expect(def).toContain("Pavadzīmes");
     expect(def).toContain("Loģistika");
+    expect(def).toContain("Kravas");
     expect(def).not.toContain("Kravas un karte");
     expect(tileOrder(null)).toEqual(def);
     expect(tileOrder([])).toEqual(def);

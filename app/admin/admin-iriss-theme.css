@@ -243,6 +243,7 @@ body:has(.admin-m[data-section="iriss"][data-admin-theme="dark"]) {
 }
 
 .admin-m[data-section="iriss"] .am-glass,
+.admin-m[data-section="iriss"] .am-capsule,
 .admin-m[data-section="iriss"] .am-topbar-sticky[data-stuck="true"],
 .admin-m[data-section="iriss"] .admin-sheet-panel.am-glass {
   background: var(--glass);

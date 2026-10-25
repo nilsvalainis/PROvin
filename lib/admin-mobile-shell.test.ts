@@ -108,11 +108,11 @@ describe("admin mobile css selectors", () => {
 });
 
 describe("admin mobile tab dock", () => {
-  it("keeps 12pt only between the glass capsule and search", () => {
-    expect(ADMIN_MOBILE_TABBAR_DOCK_WRAPPER).toMatch(/gap-\[12pt\]/);
+  it("keeps a centered 200px C-capsule without a separate search circle", () => {
     expect(ADMIN_MOBILE_TABBAR_DOCK_WRAPPER).toMatch(/admin-m-tabbar-dock/);
-    expect(ADMIN_MOBILE_TABBAR_DOCK_NAV).toMatch(/gap-0/);
-    expect(ADMIN_MOBILE_TABBAR_DOCK_NAV).not.toMatch(/gap-\[12pt\]/);
+    expect(ADMIN_MOBILE_TABBAR_DOCK_WRAPPER).not.toMatch(/gap-\[12pt\]/);
+    expect(ADMIN_MOBILE_TABBAR_DOCK_NAV).toMatch(/am-capsule/);
+    expect(ADMIN_MOBILE_TABBAR_DOCK_NAV).toMatch(/w-\[200px\]/);
   });
 });
 

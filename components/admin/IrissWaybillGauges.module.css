@@ -11,12 +11,19 @@
 }
 .wg.float {
   display: block;
-  margin: 0;
-  border-radius: 0;
-  background: transparent;
-  padding: 4px 8px 0;
+  margin: 0 14px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.86);
+  padding: 18px 10px;
   text-decoration: none !important;
   color: inherit !important;
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  backdrop-filter: blur(22px) saturate(170%);
+  box-shadow:
+    0 0 0 0.5px rgba(255, 255, 255, 0.9) inset,
+    0 0 0 0.5px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.05),
+    0 12px 30px rgba(0, 0, 0, 0.16);
 }
 .wg .head {
   display: flex;
@@ -113,19 +120,53 @@
   white-space: nowrap;
 }
 .wg.float .plate {
+  overflow: visible;
   border: 0;
   background: transparent;
   padding: 0;
-  color: #3a3a3c;
+  color: #111111;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 14px;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .wg.float .dash {
-  color: #8e8e93;
+  color: #aeaeb2;
   font-weight: 600;
 }
 .wg.float .car {
+  max-width: none;
+  overflow: visible;
+  color: #48484a;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-overflow: unset;
+  white-space: nowrap;
+}
+.wg.float .ring {
+  width: 82px;
+  height: 82px;
+}
+.wg.float .ring svg {
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.08));
+}
+.wg.float .val {
+  color: #111111;
+  font-size: 25px;
+  font-weight: 700;
+}
+.wg.float .val small {
   color: #8e8e93;
+  font-size: 13px;
+  font-weight: 500;
+}
+.wg.float .item {
+  gap: 10px;
+  overflow: visible;
+}
+.wg.float .row {
+  overflow: visible;
 }
 .wg.sm .plate {
   padding: 0 3px;

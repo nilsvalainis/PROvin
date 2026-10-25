@@ -149,7 +149,7 @@ export function IrissWaybillGauges({
                   />
                 ) : null}
               </svg>
-              <span className={styles.val} style={{ color: g.busy ? ring : "#8e8e93" }}>
+              <span className={styles.val} style={floating ? undefined : { color: g.busy ? ring : "#8e8e93" }}>
                 {loading ? "…" : g.busy ? (
                   <>
                     {g.hoursLeft}

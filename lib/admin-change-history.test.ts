@@ -198,7 +198,8 @@ describe("izmaiņu vēstures klienta robeža", () => {
     expect(read("app/admin/admin-ios-theme.css")).not.toContain("admin-search-gutter");
     expect(read("components/admin/AdminGlobalSearch.tsx")).not.toContain("fixed left-2");
     expect(read("components/admin/AdminGlobalSearch.tsx")).toContain("AdminMobileSearchButton");
-    expect(read("components/admin/AdminShell.tsx")).toContain("<AdminMobileSearchButton />");
+    expect(read("components/admin/AdminShell.tsx")).not.toContain("<AdminMobileSearchButton />");
+    expect(read("components/admin/AdminSidebar.tsx")).toContain('aria-label="Meklēt"');
     expect(read("components/admin/AdminShell.tsx")).not.toMatch(/AdminMobileWorkspaceSwitch/);
   });
 });
