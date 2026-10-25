@@ -120,6 +120,41 @@ function AutoFieldBadge() {
   );
 }
 
+type OfferLinkSeedStatus = { loading: boolean; note: string; sourceLabel: string; linkUrl: string };
+
+/** j56 T2/D1: "Importē no AUTO1 - ..." josla, kamēr lauki un foto ielidinās no izsoles saites. */
+function OfferLinkImportBanner({ status }: { status: OfferLinkSeedStatus }) {
+  const failed = !status.loading && Boolean(status.note);
+  const tone = status.loading ? "bg-[#e8f2fc] text-[#0b4faa]" : failed ? "bg-[#fff7d6] text-[#5a4a00]" : "bg-[#ecfdf3] text-[#067647]";
+  const text = status.loading
+    ? `Importē no ${status.sourceLabel}${status.note ? ` - ${status.note}` : ""}...`
+    : failed
+      ? status.note
+      : `Importēts no ${status.sourceLabel}`;
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-x-2.5 gap-y-1.5" role="status" aria-live="polite">
+      <div className={`flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-3 py-2.5 text-[13px] font-medium ${tone}`}>
+        {status.loading ? (
+          <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-[2.5px] border-[#bcd6fb] border-t-[#0066ff]" aria-hidden />
+        ) : null}
+        <span className="min-w-0">{text}</span>
+      </div>
+      <a
+        href={status.linkUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="hidden max-w-[360px] items-center gap-[5px] truncate rounded-full bg-[#f5f5f7] px-2.5 py-[5px] text-[11.5px] font-semibold text-[#6e6e73] hover:underline lg:inline-flex"
+        title={status.linkUrl}
+      >
+        <span className="h-[7px] w-[7px] shrink-0 rounded-full bg-[#0066ff]" aria-hidden />
+        <span className="truncate">
+          {status.sourceLabel} · {status.linkUrl.replace(/^https?:\/\/(www\.)?/, "")}
+        </span>
+      </a>
+    </div>
+  );
+}
+
 type FieldKey = keyof OfferDraft & string;
 type FieldDef = readonly [key: FieldKey, label: string, patch: (v: string) => Partial<OfferDraft>, wide?: boolean];
 
@@ -206,7 +241,7 @@ export type IrissOfferFormProps = {
   /** Importēts lauks labots ar roku - zaļais punkts pazūd. */
   onAutoFieldEdited?: (key: string) => void;
   /** Sākuma dati no Autoparka / Loģistikas: ielāde un piezīme (piem. "bilžu nav"). */
-  seedStatus?: { loading: boolean; note: string; sourceLabel: string } | null;
+  seedStatus?: { loading: boolean; note: string; sourceLabel: string; linkUrl?: string } | null;
   /** Galvenē pa labi (piem. "Klients ▾"). */
   headerSlot?: React.ReactNode;
   /** j61 kājene "Links": saglabā un nokopē klienta saiti (esošo vai jaunu). */
@@ -343,7 +378,7 @@ export function IrissOfferForm({
             >
               {draft.title}
             </h2>
-            {seedStatus ? (
+            {seedStatus?.linkUrl ? null : seedStatus ? (
               <p className="mt-0.5 text-[11px] text-[var(--color-provin-muted)]" role="status">
                 {seedStatus.loading ? `Ielādē datus no: ${seedStatus.sourceLabel}...` : `Dati no: ${seedStatus.sourceLabel}`}
                 {seedStatus.note ? ` · ${seedStatus.note}` : ""}
@@ -429,6 +464,7 @@ export function IrissOfferForm({
           ))}
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 [-webkit-overflow-scrolling:touch] pb-24 pt-3 max-sm:bg-[#f6f6f7] sm:px-5 sm:pb-5 sm:pt-4">
+          {seedStatus?.linkUrl ? <OfferLinkImportBanner status={seedStatus as OfferLinkSeedStatus} /> : null}
           <div className="grid min-w-0 grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,1fr)]">
           <div className={`min-w-0 space-y-3 ${tab === "bildes" ? "hidden lg:block" : ""}`}>
           <div className="hidden grid-cols-3 gap-2 lg:grid" aria-label="Piedāvājuma daļas">
