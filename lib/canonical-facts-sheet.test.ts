@@ -58,6 +58,40 @@ describe("KANONISKIE FAKTI sheet", () => {
     expect(hasRollbackOrMileageWarning(facts)).toBe(true);
   });
 
+  it("CarVertical šablona teksts ar 'odometr' nav nobraukuma brīdinājums (VW ID.4, CV: Nav fiksētu problēmu)", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.carvertical = {
+      ...blocks.carvertical,
+      comments:
+        "Atskaitē reģistrēti divi odometra rādījumi Somijā - 5 km 2021. gada novembrī un 49 403 km 2023. gada oktobrī. Zādzību vai odometra neatbilstību ieraksti šajā avotā nav reģistrēti.",
+      aiContextRaw: [
+        "Nobraukums",
+        "Nav fiksētu problēmu",
+        "Mēs pārbaudījām, vai nobraukums izskatās patiess, vai arī tas būtu iepriekš viltots.",
+        "Odometra rādījumu ieraksti",
+        "11.2021. 5 km 10.2023. 49 403 km",
+        'Piemēram, ievērojamiem bojājumiem, nobraukuma "attīšanu" vai citām problēmām.',
+        "Pārliecinies, ka šajā atskaitē norādītais nobraukums sakrīt ar automašīnas odometrā fiksēto rādījumu.",
+        "Pārbaudi odometra rādījumu, salīdzinot to ar atskaitē fiksēto nobraukumu.",
+        "Nav odometra neatbilstības",
+      ].join("\n"),
+    };
+    const facts = buildCanonicalFacts({ sourceBlocks: blocks });
+    expect(facts.carverticalMileageWarning).toBe(false);
+    expect(facts.sheet).toMatch(/CarVertical nobraukuma brīdinājums: nē/);
+  });
+
+  it("īsts CarVertical brīdinājums joprojām ir JĀ (Škoda Superb CV LV)", () => {
+    for (const warning of [
+      "Uzmanību Konstatēts potenciāla nobraukuma samazināšana. Transportlīdzeklim atrasto bojājumu skaits: 3",
+      "Uzmanību Šim transportlīdzeklim varētu būt viltots nobraukums! Kopsavilkums",
+    ]) {
+      const blocks = createDefaultSourceBlocks();
+      blocks.carvertical = { ...blocks.carvertical, aiContextRaw: warning };
+      expect(buildCanonicalFacts({ sourceBlocks: blocks }).carverticalMileageWarning).toBe(true);
+    }
+  });
+
   it("treats empty previous-registration country as Latvija when a first-reg date exists", () => {
     const blocks = createDefaultSourceBlocks();
     blocks.csdd = {

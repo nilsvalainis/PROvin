@@ -98,8 +98,27 @@ export const IMPLAUSIBLE_READING_LINE_PREFIX =
   "Izlaists neticams rādījums (ievades kļūda; NEPIEMINĒT kā korekciju vai kritumu)";
 export const LARGE_ODOMETER_DROP_KM = 5000;
 
+/**
+ * Tikai reāli CarVertical nobraukuma brīdinājumi ("Konstatēts potenciāla nobraukuma samazināšana",
+ * "varētu būt viltots nobraukums", "odometer rollback"). NE vārds "odometr" pats par sevi: CV PDF
+ * šablonā vienmēr ir "Odometra rādījumu ieraksti" / "...sakrīt ar automašīnas odometrā fiksēto rādījumu".
+ */
 const CARVERTICAL_MILEAGE_WARN_RE =
-  /odometr|nobraukum.{0,50}neatbilst|neatbilst.{0,50}nobrauk|mileage.{0,30}(discrep|mismatch|rollback|anomal)|odometer.{0,30}(discrep|rollback|anomal)|korekcij.{0,30}odometr/i;
+  /(?:konstatēt|fiksēt|atrast)\p{L}*\s+(?:potenciāl\p{L}*\s+|iespējam\p{L}*\s+)?nobraukuma\s+(?:samazinā|attīš|manipulācij|neatbilstīb|korekcij)|viltots\s+nobraukums|odometr\p{L}*\s+(?:rādījum\p{L}*\s+)?(?:neatbilstīb|korekcij|attīš|manipulācij|kritum)|nobraukuma\s+(?:neatbilstīb|attīš|manipulācij)|odometer.{0,30}(?:discrep|rollback|anomal)|mileage.{0,30}(?:discrep|mismatch|rollback|anomal)|korekcij.{0,30}odometr/giu;
+/** "Nav odometra neatbilstības", "odometra neatbilstību ieraksti nav reģistrēti" - nav brīdinājums. */
+const MILEAGE_WARN_NEGATION_BEFORE_RE = /(?:^|[^\p{L}])(?:nav|bez|nekād\p{L}*|netika|no|not|without|none)[^\p{L}][^.!?\n]{0,25}$/iu;
+const MILEAGE_WARN_NEGATION_AFTER_RE = /^[^.!?\n]{0,60}(?:[^\p{L}])(?:nav|netika|nekonstatē\p{L}*|not found|none)(?:[^\p{L}]|$)/iu;
+
+function hasCarverticalMileageWarningPhrase(blob: string): boolean {
+  for (const m of blob.matchAll(CARVERTICAL_MILEAGE_WARN_RE)) {
+    const at = m.index ?? 0;
+    const before = blob.slice(Math.max(0, at - 40), at);
+    const after = blob.slice(at + m[0].length, at + m[0].length + 80);
+    if (MILEAGE_WARN_NEGATION_BEFORE_RE.test(before) || MILEAGE_WARN_NEGATION_AFTER_RE.test(after)) continue;
+    return true;
+  }
+  return false;
+}
 
 export type CanonicalFactsInput = {
   vin?: string | null;
@@ -241,7 +260,7 @@ function collectCarverticalMileageWarning(blocks: WorkspaceSourceBlocks): boolea
     cv.aiContextRaw,
     (cv.vehicleHistoryTimeline ?? []).map((r) => `${r.description} ${r.country}`).join("\n"),
   ].join("\n");
-  return CARVERTICAL_MILEAGE_WARN_RE.test(blob);
+  return hasCarverticalMileageWarningPhrase(blob);
 }
 
 function collectDates(...parts: string[]): string {
