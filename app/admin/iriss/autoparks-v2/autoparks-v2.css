@@ -501,6 +501,9 @@
   gap: 12px;
   align-items: center;
 }
+.ap2.ap2.ap2 .ap2-carhead-main {
+  display: contents;
+}
 .ap2.ap2.ap2 .ap2-carhead .ap2-img {
   width: 96px;
   height: 72px;
@@ -573,25 +576,35 @@
 .ap2.ap2.ap2 .ap2-dhead-status {
   flex: none;
 }
+/* Mobilais (m03/m09): horizontāli ritināmas pills. Dators zemāk pārslēdz uz grid. */
 .ap2.ap2.ap2 .ap2-tabs {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 4px;
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: 6px;
   margin-top: 12px;
+  min-width: 0;
+  max-width: 100%;
+}
+.ap2.ap2.ap2 .ap2-tabs::-webkit-scrollbar {
+  display: none;
 }
 .ap2.ap2.ap2 .ap2-tab {
-  padding: 9px 0;
-  border-radius: 10px;
-  font-size: 12.5px;
-  font-weight: 600;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  min-height: 44px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
   color: #3a3a3c;
-  background: #fff;
-  border: 1px solid var(--line);
+  background: #e3e3e8;
+  border: 0;
   white-space: nowrap;
   text-align: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  overflow: visible;
 }
 .ap2.ap2.ap2 .ap2-tab.on {
   background: var(--btn);
@@ -819,14 +832,25 @@
     display: none;
   }
   .ap2.ap2.ap2 .ap2-tabs {
+    display: grid;
+    overflow: visible;
     grid-auto-flow: row;
     grid-template-columns: repeat(var(--tabs, 5), minmax(0, 170px)) minmax(0, 1fr) 110px;
     gap: 6px;
     margin: 12px 0 14px;
   }
   .ap2.ap2.ap2 .ap2-tab {
+    flex: unset;
+    display: block;
     padding: 10px 0;
+    min-height: 0;
+    border-radius: 10px;
     font-size: 13.5px;
+    font-weight: 600;
+    background: #fff;
+    border: 1px solid var(--line);
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .ap2.ap2.ap2 .ap2-tab .ap2-m {
     display: none;
@@ -908,9 +932,29 @@
   color: var(--ink);
   text-align: left;
 }
+.ap2.ap2.ap2 .ap2-kvc button {
+  min-height: 44px;
+  min-width: 44px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
 .ap2.ap2.ap2 .ap2-kvc button.add {
   color: var(--focus);
   font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-offer-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0 0;
+  max-width: 760px;
+}
+.ap2.ap2.ap2 .ap2-offer-btns .ap2-btn {
+  width: 100%;
+  min-height: 50px;
+  padding: 8px 10px;
+  white-space: normal;
 }
 .ap2.ap2.ap2 .ap2-kvc input,
 .ap2.ap2.ap2 .ap2-kvc select {
@@ -2307,22 +2351,28 @@
 }
 
 @media (max-width: 899px) {
-  /* Cilnes: horizontāli ritināma "pill" josla (maketa stils) - novērš arī 5-6 ciļņu saspiešanos 375px platumā. */
+  /* Cilnes: pills, nesaspiežas 375/390/414; «CSDD reģistrs» ritina joslu, ne lapu. */
   .ap2.ap2.ap2 .ap2-tabs {
     display: flex;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     gap: 6px;
+    min-width: 0;
+    max-width: 100%;
   }
   .ap2.ap2.ap2 .ap2-tabs::-webkit-scrollbar {
     display: none;
   }
   .ap2.ap2.ap2 .ap2-tab {
-    flex: none;
+    flex: 0 0 auto;
+    flex-shrink: 0;
     min-height: 44px;
-    padding: 0 16px;
+    padding: 0 14px;
     display: inline-flex;
     align-items: center;
+    overflow: visible;
+    text-overflow: unset;
   }
 
   /* Saraksts (m01): katra rinda - sava noapaļota kartīte, nevis kopīgs rāmis ar atdalītājiem. */
@@ -2415,6 +2465,35 @@
      saspiests 390px platumā nebija lasāms un maketā to nerāda. */
   .ap2.ap2.ap2 .ap2-a4wrap {
     display: none;
+  }
+
+  /* VIN pilnā platumā zem bildes ar atdalītāju (j63 / m02). Datorā .ap2-carhead-main paliek contents. */
+  .ap2.ap2.ap2 .ap2-carhead {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 12px 12px 0;
+  }
+  .ap2.ap2.ap2 .ap2-carhead-main {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    width: 100%;
+    min-width: 0;
+  }
+  .ap2.ap2.ap2 .ap2-carhead .ap2-mvin {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 44px;
+    margin: 0;
+    padding: 0;
+    border-top: 0.5px solid #e5e5ea;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: #1d1d1f;
   }
 
   /* Meklēšanas lauks (m01): pelēks pildījums bez apmales (maketa stils), 44px augsts. */

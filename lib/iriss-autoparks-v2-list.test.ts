@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { normalizeAutoparksCar } from "@/lib/iriss-autoparks";
 import { emptyAutoparksV2State, normalizeAutoparksV2State } from "@/lib/iriss-autoparks-v2";
-import { autoparksV2ListRows, autoparksV2OwnerCounts, filterAutoparksV2Rows, groupAutoparksV2Rows } from "@/lib/iriss-autoparks-v2-list";
+import { autoparksV2ListRows, autoparksV2OwnerCounts, filterAutoparksV2Rows, flattenAutoparksV2Rows, groupAutoparksV2Rows } from "@/lib/iriss-autoparks-v2-list";
 
 const cars = [
   { id: "a", make: "Volkswagen", model: "Passat Variant", vin: "WVWZZZ3CZKE012345", status: "in_service", statusChangedAt: "2026-10-20", purchasePriceEur: 9850 },
@@ -24,6 +24,10 @@ describe("Autoparks v2 saraksts", () => {
       ["in_transit", ["c"]],
       ["in_service", ["b", "a"]],
     ]);
+  });
+
+  it("plakans saraksts (m01): tā pati secība, bez sadaļām", () => {
+    expect(flattenAutoparksV2Rows(filterAutoparksV2Rows(rows, { owner: "all" })).map((r) => r.id)).toEqual(["c", "b", "a"]);
   });
 
   it("īpašnieka filtrs, arhīvs, meklēšana pēc markas/modeļa/VIN daļas", () => {

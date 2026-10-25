@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AUTOPARKS_OWNER_LV, AUTOPARKS_OWNERS, type AutoparksOwner } from "@/lib/iriss-autoparks";
-import { V2_REGISTRY_STATUS_LV, type AutoparksV2Basics } from "@/lib/iriss-autoparks-v2";
+import type { AutoparksV2Basics } from "@/lib/iriss-autoparks-v2";
 import { fmtCm3, fmtDateLv, fmtKm, fmtKw } from "@/lib/iriss-autoparks-v2-format";
 
 type EditKey =
@@ -35,7 +35,7 @@ const CSDD_VALUE: Partial<Record<EditKey, (b: AutoparksV2Basics) => { value: str
 
 const NUM_KEYS: ReadonlySet<EditKey> = new Set(["displacementCm3", "powerKw", "mileageKm"]);
 
-/** Pamatdati (T2, T8): Auto, Tehniskie dati, CSDD reģistrs. Zaļš punkts = no CSDD. Tukšs = "+ Pievienot" (autosave). */
+/** Pamatdati (T2): Auto, Tehniskie dati. CSDD reģistrs ir sava cilne (j63 / m03). Zaļš punkts = no CSDD. Tukšs = "+ Pievienot" (autosave). */
 export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2Basics; onBasics: (b: AutoparksV2Basics) => void }) {
   const [editing, setEditing] = useState<EditKey | null>(null);
   const [error, setError] = useState("");
@@ -103,15 +103,6 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
     </div>
   );
 
-  const ro = (label: string, shown: string, csdd: boolean) => (
-    <div className="ap2-f">
-      <i className={`ap2-cd ${csdd ? "on" : ""}`} />
-      <span className="k">{label}</span>
-      <span className={`v ${shown ? "" : "mut"}`}>{shown || "-"}</span>
-    </div>
-  );
-
-  const reg = basics.registry;
   return (
     <div className="ap2-pane">
       <div className="ap2-card">
@@ -133,12 +124,6 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
         {editable("gearbox", "Pārnesumkārba", basics.gearbox.value, basics.gearbox.value)}
         {editable("engine", "Dzinējs", basics.engine.value, basics.engine.value)}
         {editable("tyreSize", "Riepas", basics.tyreSize.value, basics.tyreSize.value)}
-      </div>
-      <div className="ap2-card">
-        <h3>CSDD reģistrs</h3>
-        {ro("Statuss", V2_REGISTRY_STATUS_LV[reg.status], reg.known)}
-        {ro("Akts", reg.actNo, Boolean(reg.actNo))}
-        {ro("Akta datums", fmtDateLv(reg.actDate), Boolean(reg.actDate))}
       </div>
       {error ? <p className="ap2-err">{error}</p> : null}
     </div>

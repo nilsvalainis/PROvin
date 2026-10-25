@@ -68,6 +68,11 @@ export function groupAutoparksV2Rows(rows: readonly AutoparksV2ListRow[]): Autop
   })).filter((s) => s.rows.length > 0);
 }
 
+/** Plakans saraksts (j63 / m01): tā pati procesa secība, bez sadaļu virsrakstiem. */
+export function flattenAutoparksV2Rows(rows: readonly AutoparksV2ListRow[]): AutoparksV2ListRow[] {
+  return groupAutoparksV2Rows(rows).flatMap((s) => s.rows);
+}
+
 export function autoparksV2OwnerCounts(rows: readonly AutoparksV2ListRow[]): Record<"all" | AutoparksOwner, number> {
   const live = rows.filter((r) => !r.archived);
   return { all: live.length, IRISS: live.filter((r) => r.owner === "IRISS").length, DZA: live.filter((r) => r.owner === "DZA").length };
