@@ -108,6 +108,7 @@ export function IrissWaybillGauges({
     issuedAt: r.issuedAt,
     number: r.number ?? "",
     brandModel: r.brandModel,
+    archived: r.archived,
   }));
   // Viens avots ar numura pogām: serveris/forma dod numuru stāvokli; vecs serveris bez plates - kā agrāk no rindām.
   const gauges = plates ? waybillGaugesFromPlates(plates, gaugeRows, now) : irissWaybillGauges(gaugeRows, now);

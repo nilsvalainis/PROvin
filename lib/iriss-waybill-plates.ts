@@ -1,9 +1,10 @@
 /**
  * IRISS CSDD tirdzniecības nr. allowlist un aizņemtība.
- * Aizņemts = indeksā ir aktīva (vēl nederīga) pavadzīme šim nr.
+ * Aizņemts = indeksā ir aktīva (vēl nederīga) pavadzīme šim nr., kas nav Arhīvā un ko CSDD nav atsaucis.
  */
 
 import { selectActiveIrissPavadzimes } from "@/lib/iriss-pavadzimes-active";
+import type { CsddPlatesDoc } from "@/lib/iriss-waybill-csdd-plates";
 
 export const IRISS_DEALER_PLATES = ["B193-7", "B762-7", "B192-7"] as const;
 export type IrissDealerPlate = (typeof IRISS_DEALER_PLATES)[number];
@@ -49,6 +50,7 @@ type OccupancyRow = {
   issuedAt?: string;
   number: string;
   brandModel?: string;
+  archived?: boolean;
 };
 
 export function compactDealerPlate(raw: string): string {
@@ -69,7 +71,36 @@ export function emptyWaybillPlateStates(): WaybillPlateState[] {
   return IRISS_DEALER_PLATES.map((plate) => ({ plate, busy: false }));
 }
 
-export function waybillPlateOccupancy(rows: OccupancyRow[], now = new Date()): WaybillPlateState[] {
+/**
+ * j66: CSDD apstiprina, ka pavadzīme vairs nav aktīva (piem. pēc «Pārtraukt»): izdevies nolasījums šim numuram,
+ * veikts pēc pavadzīmes izdošanas, un šī numura nav CSDD aktīvo sarakstā. Ja izdošanas laiks nav zināms vai
+ * nolasījums ir vecāks par izdošanu - nevar zināt, tāpēc false.
+ */
+export function csddRefutesWaybill(
+  doc: CsddPlatesDoc | null | undefined,
+  row: { plate: string; number: string; issuedAt?: string },
+): boolean {
+  if (!doc) return false;
+  const want = compactDealerPlate(row.plate);
+  if (!want) return false;
+  const entry = doc.plates.find((e) => compactDealerPlate(e.plate) === want);
+  if (!entry?.ok) return false;
+  const issued = Date.parse(row.issuedAt ?? "");
+  const checked = Date.parse(entry.checkedAt);
+  if (!Number.isFinite(issued) || !Number.isFinite(checked) || checked <= issued) return false;
+  const number = row.number.trim().toUpperCase();
+  return Boolean(number) && !entry.active.some((w) => w.waybillNo === number);
+}
+
+/** Pavadzīme vairs neaizņem numuru: PDF Arhīvā vai CSDD to vairs nerāda kā aktīvu. */
+export function waybillWithdrawn(
+  row: { plate: string; number: string; issuedAt?: string; archived?: boolean },
+  csdd?: CsddPlatesDoc | null,
+): boolean {
+  return row.archived === true || csddRefutesWaybill(csdd, row);
+}
+
+export function waybillPlateOccupancy(rows: OccupancyRow[], now = new Date(), csdd?: CsddPlatesDoc | null): WaybillPlateState[] {
   const normalized = rows.map((row) => ({
     ...row,
     plate: displayDealerPlate(row.plate) || row.plate.trim().toUpperCase(),
@@ -85,7 +116,7 @@ export function waybillPlateOccupancy(rows: OccupancyRow[], now = new Date()): W
   return IRISS_DEALER_PLATES.map((plate) => {
     const row = byPlate.get(plate);
     const until = row ? Date.parse(row.validUntil) : Number.NaN;
-    const busy = Boolean(row && Number.isFinite(until) && until >= nowMs);
+    const busy = Boolean(row && Number.isFinite(until) && until >= nowMs && !waybillWithdrawn(row, csdd));
     return {
       plate,
       busy,

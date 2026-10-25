@@ -34,7 +34,7 @@ export async function loadIrissPavadzimesPageData(
   opts: { withOrders?: boolean } = {},
 ): Promise<IrissPavadzimesPageData> {
   const withOrders = opts.withOrders ?? true;
-  const listed = await listIrissPavadzimes();
+  const [listed, csdd] = await Promise.all([listIrissPavadzimes(), readCsddPlatesDocSafe()]);
   let orders: Awaited<ReturnType<typeof listIrissPasutijumi>> = [];
   if (withOrders) {
     try {
@@ -43,7 +43,7 @@ export async function loadIrissPavadzimesPageData(
       orders = [];
     }
   }
-  const lifecycles = computeWaybillLifecycles(listed.rows, now);
+  const lifecycles = computeWaybillLifecycles(listed.rows, now, csdd);
   const matched = matchIrissPavadzimesToOrders(listed.rows, orders).map((row, i) => {
     const src = listed.rows[i];
     const info = src ? lifecycles.get(src) : undefined;
@@ -83,7 +83,7 @@ export async function loadIrissPavadzimesActiveCardData(
   const [cached, csdd, requests] = await Promise.all([readIrissPavadzimesCached(), readCsddPlatesDocSafe(), readWaybillRequestsSafe()]);
   // CSDD reģistrā aktīvas (arī ar roku izrakstītas) pavadzīmes, kuru nav indeksā - lai josla nerāda "brīvs".
   const rows = mergeCsddActiveRows(selectActiveCardWaybills(cached, now), csdd, now);
-  const plates = withWaybillRequestStates(mergeCsddPlateStates(waybillPlateOccupancy(cached, now), csdd, now.getTime()), requests, now.getTime());
+  const plates = withWaybillRequestStates(mergeCsddPlateStates(waybillPlateOccupancy(cached, now, csdd), csdd, now.getTime()), requests, now.getTime());
   return { rows: opts.withOrders ?? true ? rows : rows.map(waybillRowWithoutOrder), plates };
 }
 

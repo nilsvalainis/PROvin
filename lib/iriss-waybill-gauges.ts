@@ -13,6 +13,7 @@ export type WaybillGaugeRow = {
   issuedAt?: string;
   number?: string;
   brandModel?: string;
+  archived?: boolean;
 };
 
 export type WaybillGauge = {
@@ -35,7 +36,7 @@ export type WaybillGauge = {
 /** Visas 3 tirdzniecības zīmes vienā skatā: aizņemtās ar atlikušo laiku, pārējās "brīvs". */
 export function irissWaybillGauges(rows: readonly WaybillGaugeRow[], now = new Date()): WaybillGauge[] {
   const occupancy = waybillPlateOccupancy(
-    rows.map((r) => ({ plate: r.plate, validUntil: r.validUntil, issuedAt: r.issuedAt, number: r.number ?? "", brandModel: r.brandModel })),
+    rows.map((r) => ({ plate: r.plate, validUntil: r.validUntil, issuedAt: r.issuedAt, number: r.number ?? "", brandModel: r.brandModel, archived: r.archived })),
     now,
   );
   return waybillGaugesFromPlates(occupancy, rows, now);
