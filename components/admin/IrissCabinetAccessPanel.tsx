@@ -1,5 +1,6 @@
 "use client";
 
+import { formatRigaIsoShort } from "@/lib/riga-datetime";
 import { useCallback, useEffect, useState } from "react";
 import {
   CABINET_ACCESS_ROLES,
@@ -162,7 +163,7 @@ export function IrissCabinetAccessPanel({ users }: { users: StaffUserPublic[] })
           <ul className="mt-1 space-y-1 text-[12px] text-[#6b7280]">
             {audit.slice(0, 8).map((row) => (
               <li key={row.id}>
-                {row.at.slice(0, 16).replace("T", " ")} · {row.action} · {row.docType || row.detail}
+                {formatRigaIsoShort(row.at)} · {row.action} · {row.docType || row.detail}
               </li>
             ))}
           </ul>

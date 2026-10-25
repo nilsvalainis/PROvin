@@ -1,5 +1,6 @@
 "use client";
 
+import { formatRigaIsoShort } from "@/lib/riga-datetime";
 import { AdminSaveButton, useSaveMessageState } from "@/components/admin/AdminSaveButton";
 import { ArrowLeft, FileDown, Phone, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -1892,7 +1893,7 @@ export function IrissPasutijumsEditor({
                   <ol className="mt-1.5 space-y-0.5">
                     {[...(rec.statusHistory ?? [])].slice(-6).reverse().map((h) => (
                       <li key={`${h.at}-${h.from}-${h.to}`} className="text-[11px] text-[var(--color-provin-muted)]">
-                        {h.at.slice(0, 16).replace("T", " ")}: {displayIrissPasutijumsListStatusLabel(h.from)} →{" "}
+                        {formatRigaIsoShort(h.at)}: {displayIrissPasutijumsListStatusLabel(h.from)} →{" "}
                         {displayIrissPasutijumsListStatusLabel(h.to)}
                         {h.reason ? ` (${h.reason})` : ""}
                       </li>

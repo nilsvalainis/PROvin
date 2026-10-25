@@ -1,5 +1,6 @@
 "use client";
 
+import { formatRigaIsoShort } from "@/lib/riga-datetime";
 import { useMemo, useState } from "react";
 import { normalizeVin } from "@/lib/order-field-validation";
 import {
@@ -359,14 +360,14 @@ export function AdminOneautoIngestBar({
       {cachedForVin && selectedHaveProblem ? (
         <p className="mt-2 rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-[11px] text-rose-800">
           VIN {value.lastFetchedVin}
-          {value.fetchedAt ? ` · ${value.fetchedAt.slice(0, 16).replace("T", " ")}` : ""}
+          {value.fetchedAt ? ` · ${formatRigaIsoShort(value.fetchedAt)}` : ""}
           {` · ${chargedCost}`}. Daļai produktu nav datu vai ir kļūda. Atkārtota ielāde ir
           iespējama.
         </p>
       ) : cachedForVin && hasMappedData ? (
         <p className="mt-2 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] text-emerald-900">
           Saglabāti dati VIN {value.lastFetchedVin}
-          {value.fetchedAt ? ` · ${value.fetchedAt.slice(0, 16).replace("T", " ")}` : ""}
+          {value.fetchedAt ? ` · ${formatRigaIsoShort(value.fetchedAt)}` : ""}
           {` · ${chargedCost}`}. Atkārtota ielāde nav nepieciešama.
         </p>
       ) : null}
