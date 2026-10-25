@@ -6,6 +6,7 @@ Formāts: `YYYY-MM-DD | aģents | viena rinda` (tikai īsā defise).
 - Taupīgi: tikai svarīgais. Nekādu atslēgu, paroļu, personas kodu.
 
 ## Ieraksti
+2026-10-25 | Cursor Grok | Ziņai: Andris. PR #620 (cursor/iriss-v11d-fix-c22f): v11d-fix IRISS/PRO mobilais sākums pēc Nila maketa - C kapsula 3 ikonas, stikla kartītes, krāsainās ikonas (ne ikonas-v2). NESAPLUDINĀT, Andris review.
 2026-10-25 | Cursor Grok | Ziņai: Andris. PR #614 (5bd9e41d, Vercel prod READY, www.provin.lv/lv 200): IRISS/PRO mobilā sākuma izvēlne pēc v11c-float - brīvi gredzeni+pin-i, ikonas-v2, neitrāls slēdzis.
 2026-10-22 | Grok Andris | Komandu sadalījums apstiprināts; Claude: koda darbi (iriss, provin-admins kods, iriss-b2b, dizaineris, koda-parbauditajs), pārējie Grok.
 2026-10-22 | Grok Andris | Claude puses vadītājs pārdēvēts no Andris uz Kārlis (karlis.md); Andris paliek tikai Grok pusē.
