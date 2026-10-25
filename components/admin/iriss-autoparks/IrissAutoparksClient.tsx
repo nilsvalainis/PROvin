@@ -296,7 +296,7 @@ function Plate({ car }: { car: Pick<AutoparksCar, "plate" | "vin"> }) {
   return <span className="iriss-ap-vin-tail">{car.vin ? `…${car.vin.slice(-6)}` : "bez VIN"}</span>;
 }
 
-function CarCard({
+export function CarCard({
   car,
   active,
   compact,
@@ -344,7 +344,7 @@ function CarCard({
       </div>
       <p className="mt-2 truncate text-[15px] font-semibold leading-tight">{autoparksCarTitle(car)}</p>
       <p className="mt-0.5 truncate text-[12px] text-[#6e6e73]">
-        {[car.mileageKm != null ? `${car.mileageKm.toLocaleString("lv-LV")} km` : "", car.color, car.location].filter(Boolean).join(" · ") || car.vin || "-"}
+        {[car.mileageKm != null ? `${car.mileageKm.toLocaleString("lv-LV")} km` : "", car.color].filter(Boolean).join(" · ") || car.vin || "-"}
       </p>
       {compact ? null : (
         <div className="iriss-ap-meter" aria-label="Dokumenti pa posmiem">
