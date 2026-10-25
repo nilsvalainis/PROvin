@@ -3,6 +3,7 @@
  * Nobraukuma sadaļā: divi līknes grafiki (maksas vs bezmaksas/publiski avoti) un tabula.
  */
 
+import { applyClientReportDynamicTranslations } from "@/lib/client-report-dynamic-i18n";
 import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
 import {
   applyClientReportStaticTranslations,
@@ -3722,6 +3723,6 @@ export function buildClientReportDocumentHtml(args: {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <title>${escapeHtml(docTitle)}</title><style>${runningCss}${inkCss}</style></head><body class="provin-report-doc">${chrome.join("\n")}${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
-  const translated = applyClientReportStaticTranslations(html, lang);
+  const translated = applyClientReportDynamicTranslations(applyClientReportStaticTranslations(html, lang), lang);
   return b2bInternational ? applyB2bInternationalReportChrome(translated) : translated;
 }

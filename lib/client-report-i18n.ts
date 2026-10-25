@@ -272,6 +272,20 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   Kardāns: { en: "Propshaft", ru: "Кардан" },
   Turbokompresors: { en: "Turbocharger", ru: "Турбокомпрессор" },
   "Virsbūve / stikls": { en: "Body / glass", ru: "Кузов / стекло" },
+  // Statiskais krāsas biezuma bloks (lib/paint-gauge-static-block.ts) - agrāk palika LV vai deva "Bodys stāvoklis".
+  // PASŪTĪJUMA DATI bloks (client-report-pdf-layout-draft.ts) un CSDD statuss.
+  "PASŪTĪJUMA DATI": { en: "ORDER DETAILS", ru: "ДАННЫЕ ЗАКАЗА" },
+  Maksājums: { en: "Payment", ru: "Оплата" },
+  Pasūtījums: { en: "Order", ru: "Заказ" },
+  "Vārds, uzvārds": { en: "Name", ru: "Имя, фамилия" },
+  "Klienta komentārs": { en: "Client comment", ru: "Комментарий клиента" },
+  Reģistrēts: { en: "Registered", ru: "Зарегистрирован" },
+  "Virsbūves stāvoklis un krāsas biezums": { en: "Body condition and paint thickness", ru: "Состояние кузова и толщина ЛКП" },
+  "Digitālie dati var neuzrādīt krāsotus elementus, ja darbi veikti neatkarīgā servisā vai mēģinot noslēpt sīkus defektus. Virsbūve jāpārbauda klātienē ar krāsas biezuma mērītāju. Ārējiem paneļiem rūpnīcas rādījums parasti ir ap 100 līdz 150 µm. Visiem paneļiem jābūt ar līdzīgiem mērījumiem. Starpība no 50 līdz 150 µm starp blakus esošajiem elementiem var norādīt uz kosmētisku pārkrāsošanu. Iekšējās ailes un konstrukcijas elementi parasti uzrāda aptuveni uz pusi mazāku mikronu skaitu, kas ir normāli un liecina par rūpnīcas krāsojumu, nevis remonta pēdām.":
+    {
+      en: "Digital records may not show repainted panels if the work was done at an independent garage or to hide minor defects. The body must be checked in person with a paint thickness gauge. On exterior panels the factory reading is usually around 100 to 150 µm. All panels should show similar readings. A difference of 50 to 150 µm between adjacent panels may indicate cosmetic repainting. Inner sills and structural parts usually show roughly half the micron value, which is normal and indicates factory paint, not repair traces.",
+      ru: "Цифровые данные могут не показывать перекрашенные элементы, если работы выполнялись в независимом сервисе или чтобы скрыть мелкие дефекты. Кузов нужно проверить на месте толщиномером ЛКП. На наружных панелях заводское значение обычно от 100 до 150 µm. Все панели должны показывать схожие значения. Разница от 50 до 150 µm между соседними элементами может указывать на косметическую перекраску. Внутренние пороги и силовые элементы обычно показывают примерно вдвое меньшее значение, что нормально и говорит о заводской окраске, а не о следах ремонта.",
+    },
   "Sagatavots klientam:": { en: "Prepared for: ", ru: "Подготовлено для: " },
   "mēn.": { en: "mo.", ru: "мес." },
 
@@ -353,6 +367,23 @@ const SORTED_STATIC_KEYS: string[] = Object.keys(STATIC_TRANSLATIONS).sort((a, b
 
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Atslēga tikai kā vesels vārds / frāze: ne vārda daļa ("Virsbūve" iekš "Virsbūves" deva "Bodys", RU "Кузовs").
+ * Ja atslēga sākas vai beidzas ar burtu/ciparu, blakus nedrīkst būt cits burts/cipars.
+ */
+const STATIC_KEY_PATTERNS = new Map<string, RegExp>();
+function staticKeyPattern(lv: string): RegExp {
+  let re = STATIC_KEY_PATTERNS.get(lv);
+  if (!re) {
+    const head = /^[\p{L}\p{N}]/u.test(lv) ? "(?<![\\p{L}\\p{N}])" : "";
+    const tail = /[\p{L}\p{N}]$/u.test(lv) ? "(?![\\p{L}\\p{N}])" : "";
+    re = new RegExp(`${head}${escapeRegExp(lv)}${tail}`, "gu");
+    STATIC_KEY_PATTERNS.set(lv, re);
+  }
+  re.lastIndex = 0;
+  return re;
 }
 
 /** Vācu statiskais apvalks. Katram STATIC_TRANSLATIONS atslēgas vārdam jābūt ierakstam. */
@@ -542,6 +573,15 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   Kardāns: "Gelenkwelle",
   Turbokompresors: "Turbolader",
   "Virsbūve / stikls": "Karosserie / Glas",
+  "PASŪTĪJUMA DATI": "BESTELLDATEN",
+  Maksājums: "Zahlung",
+  Pasūtījums: "Bestellung",
+  "Vārds, uzvārds": "Name",
+  "Klienta komentārs": "Kundenkommentar",
+  Reģistrēts: "Zugelassen",
+  "Virsbūves stāvoklis un krāsas biezums": "Karosseriezustand und Lackschichtdicke",
+  "Digitālie dati var neuzrādīt krāsotus elementus, ja darbi veikti neatkarīgā servisā vai mēģinot noslēpt sīkus defektus. Virsbūve jāpārbauda klātienē ar krāsas biezuma mērītāju. Ārējiem paneļiem rūpnīcas rādījums parasti ir ap 100 līdz 150 µm. Visiem paneļiem jābūt ar līdzīgiem mērījumiem. Starpība no 50 līdz 150 µm starp blakus esošajiem elementiem var norādīt uz kosmētisku pārkrāsošanu. Iekšējās ailes un konstrukcijas elementi parasti uzrāda aptuveni uz pusi mazāku mikronu skaitu, kas ir normāli un liecina par rūpnīcas krāsojumu, nevis remonta pēdām.":
+    "Digitale Daten zeigen lackierte Teile möglicherweise nicht, wenn die Arbeiten in einer freien Werkstatt oder zum Verbergen kleiner Mängel durchgeführt wurden. Die Karosserie muss vor Ort mit einem Lackschichtdickenmessgerät geprüft werden. An Außenteilen liegt der Werkswert meist bei etwa 100 bis 150 µm. Alle Teile sollten ähnliche Werte zeigen. Ein Unterschied von 50 bis 150 µm zwischen benachbarten Teilen kann auf eine kosmetische Nachlackierung hindeuten. Innere Schweller und Strukturteile zeigen meist etwa die Hälfte der Mikronwerte, was normal ist und auf Werkslack statt auf Reparaturspuren hinweist.",
   "Sagatavots klientam:": "Erstellt für: ",
   "mēn.": "Mon.",
   "fiksētas maiņas": "erfasste Wechsel",
@@ -685,7 +725,7 @@ export function applyClientReportStaticTranslations(html: string, lang: ClientRe
   for (const lv of SORTED_STATIC_KEYS) {
     const translated = translateClientReportStatic(lv, lang);
     if (!translated || translated === lv) continue;
-    out = out.replace(new RegExp(escapeRegExp(lv), "g"), translated);
+    out = out.replace(staticKeyPattern(lv), translated);
   }
   const more = translateClientReportLifeMore(lang);
   if (more !== "Vēl") {
