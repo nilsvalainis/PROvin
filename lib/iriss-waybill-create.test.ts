@@ -297,7 +297,8 @@ describe("Aivars contract and Pavadzīmes UI boundaries", () => {
     expect(list).toMatch(/requireIrissSectionApi\("pavadzimes"\)/);
     expect(list).toMatch(/waybillChatPayload/);
     expect(list).toMatch(/loadVehiclesSafe/);
-    expect(list).toMatch(/loadPlatesSafe/);
+    expect(list).toMatch(/loadPlateOccupancySafe/);
+    expect(list).toMatch(/livePlates/);
     expect(list).toMatch(/confirmBusy/);
     expect(list).toMatch(/status: 409/);
     expect(list).toMatch(/create_failed/);

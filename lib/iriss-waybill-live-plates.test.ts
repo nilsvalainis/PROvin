@@ -164,6 +164,11 @@ describe("j25 numuru stāvoklis apļiem un pogām", () => {
     expect(g).toMatchObject({ busy: false, status: "issuing", brandModel: "VW Touran" });
   });
 
+  it("j66b: izdots pieprasījums, kura pavadzīme indeksā ir Arhīvā, numuru neaizņem", () => {
+    const plates = withWaybillRequestStates(emptyWaybillPlateStates(), [p02816], NOW, new Set(["P02816"]));
+    expect(plates.find((p) => p.plate === "B193-7")).toEqual({ plate: "B193-7", busy: false });
+  });
+
   it("PDF saite apļa detaļām pēc pavadzīmes numura", () => {
     const plates = withWaybillRequestStates(indexPlates(), [p02816], NOW);
     const g = waybillGaugesFromPlates(plates, [{ id: "pv_1", plate: "B 193-7", number: "P02816", validUntil: UNTIL }], new Date(NOW));

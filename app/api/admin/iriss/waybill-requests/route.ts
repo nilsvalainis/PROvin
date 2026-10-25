@@ -1,7 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { wakeAivars } from "@/lib/iriss-aivars-wake";
 import { autoWaybillReplaceEnabled, classifyWaybillForAuto, plateTakenByOtherRequest } from "@/lib/iriss-waybill-auto";
-import { loadWaybillPlateStates, waybillAutoContext } from "@/lib/iriss-waybill-auto-server";
+import { loadWaybillPlateOccupancy, waybillAutoContext } from "@/lib/iriss-waybill-auto-server";
 import { parseCreateWaybillInput } from "@/lib/iriss-waybill-create";
 import {
   emptyWaybillRequestsDoc,
@@ -45,13 +45,21 @@ async function loadTradeCarsSafe(): Promise<{ cars: WaybillTradeCar[]; source: W
 }
 
 /** Numuru stāvoklis: indekss + CSDD reģistrs (arī ar roku izrakstītās pavadzīmes). */
-async function loadPlatesSafe(): Promise<WaybillPlateState[]> {
+async function loadPlateOccupancySafe(): Promise<{ plates: WaybillPlateState[]; withdrawnNos: ReadonlySet<string> }> {
   try {
-    return await loadWaybillPlateStates();
+    return await loadWaybillPlateOccupancy();
   } catch (err) {
     console.error("[iriss-waybill] plates_failed", err instanceof Error ? err.message : err);
-    return emptyWaybillPlateStates();
+    return { plates: emptyWaybillPlateStates(), withdrawnNos: new Set() };
   }
+}
+
+function livePlates(
+  occupancy: { plates: WaybillPlateState[]; withdrawnNos: ReadonlySet<string> },
+  requests: Parameters<typeof withWaybillRequestStates>[1],
+  nowMs = Date.now(),
+): WaybillPlateState[] {
+  return withWaybillRequestStates(occupancy.plates, requests, nowMs, occupancy.withdrawnNos);
 }
 
 /** "Dzēst" paslēptie (tikai šim lietotājam); kļūda nav fatāla - tad vienkārši nekas nav paslēpts. */
@@ -85,15 +93,15 @@ export async function GET(req: Request) {
   // Auto sarakstu lasa tikai pēc pieprasījuma (?cars=1), nevis katrā 5 s atjaunošanā.
   const withCars = new URL(req.url).searchParams.get("cars") === "1";
   try {
-    const [doc, vehicles, basePlates, tradeCars, dismissedIds] = await Promise.all([
+    const [doc, vehicles, occupancy, tradeCars, dismissedIds] = await Promise.all([
       readWaybillRequestsDoc(),
       loadVehiclesSafe(),
-      loadPlatesSafe(),
+      loadPlateOccupancySafe(),
       withCars ? loadTradeCarsSafe() : Promise.resolve(null),
       loadDismissedSafe(gate.actor.kind === "admin" ? "env-admin" : gate.actor.user.id),
     ]);
     // Tas pats stāvoklis, ko rāda apļi (j25): arī tikko izdotā pavadzīme, kuras vēl nav indeksā.
-    const plates = withWaybillRequestStates(basePlates, doc.requests);
+    const plates = livePlates(occupancy, doc.requests);
     const auto = await waybillAutoContext(doc, busyFromPlates(plates));
     const withOrders = canSeeWaybillOrders(gate.actor);
     return NextResponse.json(
@@ -140,8 +148,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error }, { status: 400, ...NO_STORE });
   }
   try {
-    const [basePlates, docBefore] = await Promise.all([loadPlatesSafe(), readWaybillRequestsDoc()]);
-    const plates = withWaybillRequestStates(basePlates, docBefore.requests);
+    const [base, docBefore] = await Promise.all([loadPlateOccupancySafe(), readWaybillRequestsDoc()]);
+    const plates = livePlates(base, docBefore.requests);
     const plate = displayDealerPlate(parsed.value.plate);
     const occupancy = plates.find((row) => row.plate === plate);
     const confirmedNo = confirmedWaybillNo(body);
@@ -188,7 +196,7 @@ export async function POST(req: Request) {
           waybillPdfViewer(actor),
         ),
         autoMode: auto.mode,
-        plates: withWaybillRequestStates(basePlates, doc.requests),
+        plates: livePlates(base, doc.requests),
       },
       NO_STORE,
     );
