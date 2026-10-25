@@ -332,6 +332,7 @@ export function AdminMobileSheet({
   children,
   action,
   opaque = false,
+  zIndex,
 }: {
   open: boolean;
   title: string;
@@ -341,6 +342,8 @@ export function AdminMobileSheet({
   action?: ReactNode;
   /** Solid card (LIMITI). Default glass stays for other sheets. */
   opaque?: boolean;
+  /** Virs cita fiksēta dialoga (piem. piedāvājuma redaktors z-120). Noklusējums - no CSS (50). */
+  zIndex?: number;
 }) {
   const [shown, setShown] = useState(open);
   const theme = useAdminMobileColorScheme();
@@ -360,7 +363,7 @@ export function AdminMobileSheet({
   const scrimClose = useModalBackdropClose(onClose);
   if (!shown) return null;
   const panel = (
-    <div className="admin-m admin-sheet-root md:hidden" role="dialog" aria-modal="true" aria-label={title} data-open={open ? "true" : "false"} {...adminChromeDataset(layoutWorkspace, theme)}>
+    <div className="admin-m admin-sheet-root md:hidden" role="dialog" aria-modal="true" aria-label={title} data-open={open ? "true" : "false"} style={zIndex != null ? { zIndex } : undefined} {...adminChromeDataset(layoutWorkspace, theme)}>
       <button
         type="button"
         aria-label="Aizvērt"

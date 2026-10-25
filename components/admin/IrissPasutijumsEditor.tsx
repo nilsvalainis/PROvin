@@ -31,6 +31,7 @@ import { IrissSpecChoiceSelect } from "@/components/admin/IrissSpecChoiceSelect"
 import { IrissSpecDiapazoniBlock } from "@/components/admin/IrissSpecDiapazoniBlock";
 import { SharedOrderCriteriaForm } from "@/components/shared/SharedOrderCriteriaForm";
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
+import { IRISS_OFFER_LINK_NEEDS_DEADLINE, offerClientLinkDeadlineReady, pickReusableOfferClientLink } from "@/lib/iriss-offer-form-link";
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
 import { coerceIrissDuplicatesByListing, coerceIrissHitStatusMap, coerceIrissOrderRoomTab } from "@/lib/iriss-order-room-match-props";
 import {
@@ -1327,7 +1328,7 @@ export function IrissPasutijumsEditor({
 
   const offerClientPickable = unsavedDraft && !persistedIdRef.current && !persistedOfferRecord;
 
-  const persistOffer = useCallback(async (reason: "save" | "pdf" | "whatsapp"): Promise<IrissOfferRecord | null> => {
+  const persistOffer = useCallback(async (reason: "save" | "pdf" | "whatsapp" | "link"): Promise<IrissOfferRecord | null> => {
     if (offerClient && offerClientPickable) return addOfferToClientOrder(offerClient);
     if (offerReadyForPdfActions && persistedOfferRecord) {
       if (reason === "save") setSaveMsg("Saglabāts.");
@@ -1384,6 +1385,61 @@ export function IrissPasutijumsEditor({
       setOfferPdfBusy(false);
     }
   }, [forceNoClientPdf, generateOfferPdfBlob, persistOffer]);
+
+  // j61 kājene "Links": saglabā, tad nokopē esošo aktīvo klienta saiti vai izveido jaunu (termiņš obligāts).
+  const [offerLinkBusy, setOfferLinkBusy] = useState(false);
+  const [offerLinkNotice, setOfferLinkNotice] = useState<{ text: string; url: string } | null>(null);
+  const openOfferClientLink = useCallback(async () => {
+    setOfferLinkBusy(true);
+    setOfferLinkNotice(null);
+    try {
+      const offerOut = await persistOffer("link");
+      const orderId = persistedIdRef.current;
+      if (!offerOut || !orderId) return;
+      const base = `/api/admin/iriss-pasutijumi/${encodeURIComponent(orderId)}`;
+      let path = "";
+      const listRes = await fetch(`${base}/client-links`, { credentials: "include", cache: "no-store" });
+      if (listRes.ok) {
+        const data = (await listRes.json().catch(() => ({}))) as { links?: IrissOfferClientLinkAdminView[] };
+        path = pickReusableOfferClientLink(Array.isArray(data.links) ? data.links : [], offerOut.id)?.path ?? "";
+      }
+      if (!path) {
+        if (!offerClientLinkDeadlineReady(offerOut.validUntilAt, Date.now())) {
+          setOfferLinkNotice({ text: IRISS_OFFER_LINK_NEEDS_DEADLINE, url: "" });
+          return;
+        }
+        const res = await fetch(`${base}/offer/${encodeURIComponent(offerOut.id)}/client-link`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "create", expiresInDays: null }),
+        });
+        const data = (await res.json().catch(() => ({}))) as { error?: string; link?: IrissOfferClientLinkAdminView };
+        if (!res.ok || !data.link?.path) {
+          setOfferLinkNotice({
+            text: data.error === "save_first" ? "Vispirms saglabājiet pasūtījumu un piedāvājumu." : "Saiti neizdevās izveidot.",
+            url: "",
+          });
+          return;
+        }
+        path = data.link.path;
+      }
+      const url = `${window.location.origin}${path}`;
+      // Pēc await pārlūks (īpaši iOS) var kopēšanu noraidīt vai atstāt karājamies - tad paliek poga "Kopēt".
+      const copied = await Promise.race([
+        navigator.clipboard?.writeText(url).then(
+          () => true,
+          () => false,
+        ) ?? Promise.resolve(false),
+        new Promise<boolean>((resolve) => window.setTimeout(() => resolve(false), 1500)),
+      ]);
+      setOfferLinkNotice({ text: copied ? "Klienta saite nokopēta" : "Klienta saite gatava", url });
+    } catch {
+      setOfferLinkNotice({ text: "Tīkla kļūda - saiti neizdevās iegūt.", url: "" });
+    } finally {
+      setOfferLinkBusy(false);
+    }
+  }, [persistOffer]);
 
   const openOfferShareWhatsApp = useCallback(async () => {
     if (!normalizedPhone) return;
@@ -2057,7 +2113,10 @@ export function IrissPasutijumsEditor({
           saveState={offerSaveState}
           pdfNotice={offerPdfNotice}
           pdfAllowWithoutImages={offerPdfAllowWithoutImages}
-          onClose={() => setOfferOpen(false)}
+          onClose={() => {
+            setOfferOpen(false);
+            setOfferLinkNotice(null);
+          }}
           onDelete={() => setOfferDeleteConfirmOpen(true)}
           onSave={() => void persistOffer("save")}
           onPdf={(allowWithoutImages) => void openOfferPdfInNewTab(allowWithoutImages)}
@@ -2065,6 +2124,10 @@ export function IrissPasutijumsEditor({
           onFilesPick={(files) => void onOfferFilesPick(files)}
           onAutoFieldEdited={onOfferAutoFieldEdited}
           seedStatus={offerSeedStatus}
+          onLink={() => void openOfferClientLink()}
+          linkBusy={offerLinkBusy}
+          linkNotice={offerLinkNotice}
+          onLinkNoticeClose={() => setOfferLinkNotice(null)}
           headerSlot={
             offerClientPickable ? (
               <IrissOfferClientPicker value={offerClient} onChange={setOfferClient} disabled={offerBusy} />
