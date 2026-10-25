@@ -278,3 +278,65 @@ describe("J52: izvēles logs trūkstošas/salauztas dropboxFolderId gadījumā (
     expect(cands).toEqual([]);
   });
 });
+
+describe("J62: negatīvā keša TTL un force pārlāde (bilde parādās STOCK mapē pēc pirmās tukšās pārbaudes)", () => {
+  async function noRootPhotos() {
+    rootEntries = rootEntries.filter((e) => e.name !== "01.jpg" && e.name !== "02.jpg");
+  }
+
+  it("tukšs -> cache no_photo -> bilde parādās, bet 1h negatīvā TTL vēl nav beigusies -> paliek no_photo bez force", async () => {
+    await noRootPhotos();
+    const { v1, v2, photo } = await load();
+    const carId = await carWithFolder(v1);
+    let found = (await v2.readAutoparksV2Car(carId))!;
+    const first = await photo.autoparksV2MainPhoto(found.car, found.v2);
+    expect(first).toBeNull();
+    found = (await v2.readAutoparksV2Car(carId))!;
+    expect(found.v2.mainPhoto).toBeNull();
+    expect(found.v2.photoCheckedAt).toBeTruthy();
+
+    rootEntries = [...rootEntries, { tag: "file", id: "id:new1", name: "01.jpg" }];
+    const second = await photo.autoparksV2MainPhoto(found.car, found.v2);
+    expect(second).toBeNull();
+    expect((await v2.readAutoparksV2Car(carId))!.v2.mainPhoto).toBeNull();
+  });
+
+  it("negatīvā TTL (1h) beigusies, bilde STOCK mapē jau ir -> automātiski pārlasa Dropbox BEZ force", async () => {
+    await noRootPhotos();
+    const { v1, v2, photo } = await load();
+    const carId = await carWithFolder(v1);
+    let found = (await v2.readAutoparksV2Car(carId))!;
+    await photo.autoparksV2MainPhoto(found.car, found.v2);
+
+    await v2.updateCarV2(
+      carId,
+      (c) => {
+        c.photoCheckedAt = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+        return { result: null, write: true };
+      },
+      actor,
+    );
+    rootEntries = [...rootEntries, { tag: "file", id: "id:new2", name: "01.jpg" }];
+    found = (await v2.readAutoparksV2Car(carId))!;
+    const bytes = await photo.autoparksV2MainPhoto(found.car, found.v2);
+    expect(bytes).not.toBeNull();
+    expect((await v2.readAutoparksV2Car(carId))!.v2.mainPhoto?.dropboxId).toBe("id:new2");
+  });
+
+  it("force=true apiet gan saglabāto bildi, gan TTL - vienmēr pārlasa Dropbox no jauna", async () => {
+    await noRootPhotos();
+    const { v1, v2, photo } = await load();
+    const carId = await carWithFolder(v1);
+    let found = (await v2.readAutoparksV2Car(carId))!;
+    await photo.autoparksV2MainPhoto(found.car, found.v2); // cache: no_photo, photoCheckedAt = tagad
+
+    rootEntries = [...rootEntries, { tag: "file", id: "id:force1", name: "01.jpg" }];
+    found = (await v2.readAutoparksV2Car(carId))!;
+    const withoutForce = await photo.autoparksV2MainPhoto(found.car, found.v2);
+    expect(withoutForce).toBeNull();
+
+    const withForce = await photo.autoparksV2MainPhoto(found.car, found.v2, { force: true });
+    expect(withForce).not.toBeNull();
+    expect((await v2.readAutoparksV2Car(carId))!.v2.mainPhoto?.dropboxId).toBe("id:force1");
+  });
+});

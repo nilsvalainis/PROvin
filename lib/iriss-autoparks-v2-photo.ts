@@ -11,6 +11,13 @@ import { readAutoparksV2Car, updateCarV2, type AutoparksV2Actor } from "@/lib/ir
 import { getLogisticsBinaryFile, putLogisticsBinaryFile } from "@/lib/iriss-logistics-store";
 
 const RECHECK_MS = 24 * 60 * 60 * 1000;
+/**
+ * J62 LABOJUMS: ja pēdējā pārbaude neko neatrada (`mainPhoto` nav), gaidīt pilnu diennakti pirms
+ * nākamās pārbaudes nozīmēja, ka svaigi iekopētas STOCK bildes (piem. IRISS sinhronizācija) paliek
+ * neredzamas līdz 24h pagājušas. Negatīvam rezultātam - īsāks TTL, lai jaunās bildes parādās ātrāk
+ * arī bez `force`.
+ */
+const NEGATIVE_RECHECK_MS = 60 * 60 * 1000;
 
 export type StockPhotoCandidate = { id: string; name: string };
 
@@ -62,15 +69,22 @@ async function pickAutoparksV2MainPhotoCandidate(client: DropboxClient, car: Pic
 }
 
 /**
- * Galvenā bilde: sīktēls Blob; skatās ne biežāk kā 1x dienā. Izvēle - skat. `pickAutoparksV2MainPhotoCandidate`.
+ * Galvenā bilde: sīktēls Blob; skatās ne biežāk kā 1x dienā (ja iepriekš nekas netika atrasts -
+ * 1x stundā, sk. `NEGATIVE_RECHECK_MS`). `opts.force` (J62): ignorē abus - jau saglabāto bildi un
+ * `photoCheckedAt` TTL - un vienmēr pārlasa Dropbox no jauna (admin pogai "Pārbaudīt vēlreiz").
+ * Izvēle - skat. `pickAutoparksV2MainPhotoCandidate`.
  */
-export async function autoparksV2MainPhoto(car: AutoparksCar, v2: AutoparksCarV2): Promise<Buffer | null> {
-  if (v2.mainPhoto?.thumbBlobPath) {
+export async function autoparksV2MainPhoto(car: AutoparksCar, v2: AutoparksCarV2, opts?: { force?: boolean }): Promise<Buffer | null> {
+  const force = opts?.force ?? false;
+  if (!force && v2.mainPhoto?.thumbBlobPath) {
     const got = await getLogisticsBinaryFile(v2.mainPhoto.thumbBlobPath).catch(() => null);
     if (got) return got.bytes;
   }
-  const checked = Date.parse(v2.photoCheckedAt);
-  if (Number.isFinite(checked) && Date.now() - checked < RECHECK_MS) return null;
+  if (!force) {
+    const checked = Date.parse(v2.photoCheckedAt);
+    const ttl = v2.mainPhoto ? RECHECK_MS : NEGATIVE_RECHECK_MS;
+    if (Number.isFinite(checked) && Date.now() - checked < ttl) return null;
+  }
   const client = getDropboxClient();
   if (!client || !car.dropboxFolderId) return null;
   const picked = await pickAutoparksV2MainPhotoCandidate(client, car);

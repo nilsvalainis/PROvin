@@ -10,17 +10,23 @@ export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** Galvenās bildes sīktēls (tikai no /STOCK mapes). Nav bildes - 404 (UI rāda vietturi). */
-export async function GET(_req: Request, ctx: Ctx) {
+/**
+ * Galvenās bildes sīktēls (tikai no /STOCK mapes). Nav bildes - 404 (UI rāda vietturi).
+ * J62: `?force=1` (tikai administratoram) apiet saglabāto bildi un `photoCheckedAt` TTL un
+ * uzspiež Dropbox mapes pārlasīšanu - lietderīgi, ja bildes STOCK mapē iekopētas pēc pēdējās
+ * (tukšas) pārbaudes un gaidīt līdz 24h/1h TTL beigām nav vēlams.
+ */
+export async function GET(req: Request, ctx: Ctx) {
   const gate = await requireAutoparksV2Api("pamatdati");
   if (!gate.ok) return gate.response;
   const { id } = await ctx.params;
   const found = await readAutoparksV2Car(id);
   if (!found) return autoparksV2Json({ error: "not_found" }, 404);
-  const bytes = await autoparksV2MainPhoto(found.car, found.v2);
+  const force = gate.actor.kind === "admin" && new URL(req.url).searchParams.get("force") === "1";
+  const bytes = await autoparksV2MainPhoto(found.car, found.v2, { force });
   if (!bytes) return autoparksV2Json({ error: "no_photo" }, 404);
   return new NextResponse(new Uint8Array(bytes), {
-    headers: { "Content-Type": "image/jpeg", "Cache-Control": "private, max-age=3600" },
+    headers: { "Content-Type": "image/jpeg", "Cache-Control": force ? "private, no-store" : "private, max-age=3600" },
   });
 }
 
