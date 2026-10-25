@@ -12,7 +12,7 @@ import {
 import { createWaybillRequest, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
 import { readDismissedWaybillIds } from "@/lib/iriss-waybill-dismissed-store";
 import { displayDealerPlate, emptyWaybillPlateStates, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
-import { withWaybillRequestStates } from "@/lib/iriss-waybill-live-plates";
+import { csddWithdrawnRequestNos, unionWithdrawnNos, withWaybillRequestStates } from "@/lib/iriss-waybill-live-plates";
 import { listWaybillVehicleChips } from "@/lib/iriss-waybill-vehicles";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { waybillTradeCarsWithSource, type WaybillCarsSource, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
@@ -45,21 +45,25 @@ async function loadTradeCarsSafe(): Promise<{ cars: WaybillTradeCar[]; source: W
 }
 
 /** Numuru stāvoklis: indekss + CSDD reģistrs (arī ar roku izrakstītās pavadzīmes). */
-async function loadPlateOccupancySafe(): Promise<{ plates: WaybillPlateState[]; withdrawnNos: ReadonlySet<string> }> {
+type PlateOccupancy = Awaited<ReturnType<typeof loadWaybillPlateOccupancy>>;
+
+async function loadPlateOccupancySafe(): Promise<PlateOccupancy> {
   try {
     return await loadWaybillPlateOccupancy();
   } catch (err) {
     console.error("[iriss-waybill] plates_failed", err instanceof Error ? err.message : err);
-    return { plates: emptyWaybillPlateStates(), withdrawnNos: new Set() };
+    return { plates: emptyWaybillPlateStates(), withdrawnNos: new Set(), csdd: null };
   }
 }
 
 function livePlates(
-  occupancy: { plates: WaybillPlateState[]; withdrawnNos: ReadonlySet<string> },
+  occupancy: PlateOccupancy,
   requests: Parameters<typeof withWaybillRequestStates>[1],
   nowMs = Date.now(),
 ): WaybillPlateState[] {
-  return withWaybillRequestStates(occupancy.plates, requests, nowMs, occupancy.withdrawnNos);
+  // Izdots pieprasījums, ko CSDD jau atsaucis (Pārtraukt), bet PDF vēl nav indeksā - arī neaizņem numuru.
+  const withdrawn = unionWithdrawnNos(occupancy.withdrawnNos, csddWithdrawnRequestNos(requests, occupancy.csdd));
+  return withWaybillRequestStates(occupancy.plates, requests, nowMs, withdrawn);
 }
 
 /** "Dzēst" paslēptie (tikai šim lietotājam); kļūda nav fatāla - tad vienkārši nekas nav paslēpts. */
