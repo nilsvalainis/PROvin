@@ -1,6 +1,7 @@
 import { NextResponse, after } from "next/server";
 import { IRISS_AIVARS_API_TOKEN_ENV, irissAivarsApiTokenConfigured, verifyIrissAivarsApiToken } from "@/lib/iriss-aivars-api-token";
 import { AIVARS_ACTION_CREATE_WAYBILL, toAivarsCreateWaybillAction } from "@/lib/iriss-waybill-create";
+import { isWaybillStopRequest, toAivarsStopWaybillAction } from "@/lib/iriss-waybill-stop";
 import {
   AUTO_WAYBILL_PLATES,
   autoWaybillEnabled,
@@ -58,17 +59,24 @@ export async function GET(req: Request) {
   const nowMs = Date.now();
   const doc = await readWaybillRequestsDoc();
   const pending = pendingWaybillRequests(doc.requests, nowMs);
+  const creates = pending.filter((row) => !isWaybillStopRequest(row));
+  const stops = pending.filter((row) => isWaybillStopRequest(row));
   const enabled = autoWaybillEnabled();
   if (!scopeAuto && !enabled) {
     return NextResponse.json(
-      { ok: true, action: AIVARS_ACTION_CREATE_WAYBILL, requests: pending.map(toAivarsCreateWaybillAction) },
+      {
+        ok: true,
+        action: AIVARS_ACTION_CREATE_WAYBILL,
+        requests: creates.map(toAivarsCreateWaybillAction),
+        stopRequests: stops.map(toAivarsStopWaybillAction),
+      },
       { headers: { "Cache-Control": "private, no-store" } },
     );
   }
   const isBusy = await busyWaybillPlatesNow();
   // Aivaram standarta darbus uz 3 min slēpj tikai, ja worker tiešām izraksta (nav dry-run), citādi tie gaidītu velti.
   const live = scopeAuto ? enabled : await autoWaybillLiveNow(nowMs);
-  const rows = pending.map((request) => ({
+  const rows = creates.map((request) => ({
     request,
     auto: classifyWaybillForAuto(request, {
       plateBusyNow: isBusy(request.vehicle.plate),
@@ -95,7 +103,14 @@ export async function GET(req: Request) {
         .filter((row) => !hiddenFromAivars(row.auto, row.request.createdAt, nowMs, live))
         .map((row) => toAivarsCreateWaybillAction(row.request));
   return NextResponse.json(
-    { ok: true, action: AIVARS_ACTION_CREATE_WAYBILL, enabled, requests, ...(wantKnown && known ? { knownWaybills: known } : {}) },
+    {
+      ok: true,
+      action: AIVARS_ACTION_CREATE_WAYBILL,
+      enabled,
+      requests,
+      stopRequests: scopeAuto ? [] : stops.map(toAivarsStopWaybillAction),
+      ...(wantKnown && known ? { knownWaybills: known } : {}),
+    },
     { headers: { "Cache-Control": "private, no-store" } },
   );
 }

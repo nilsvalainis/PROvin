@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { irissAivarsApiTokenConfigured, verifyIrissAivarsApiToken } from "@/lib/iriss-aivars-api-token";
-import { toAivarsCreateWaybillAction } from "@/lib/iriss-waybill-create";
+import { toAivarsWaybillAction } from "@/lib/iriss-waybill-create";
 import {
   AUTO_WAYBILL_WORKER,
   autoWaybillEnabled,
@@ -56,7 +56,7 @@ export async function POST(req: Request, ctx: Ctx) {
     if (!request) return NextResponse.json({ error: "already_claimed" }, { status: 409 });
   }
   return NextResponse.json(
-    { ok: true, request: toAivarsCreateWaybillAction(request), status: request.status, pickedAt: request.pickedAt },
+    { ok: true, request: toAivarsWaybillAction(request), status: request.status, pickedAt: request.pickedAt },
     { headers: { "Cache-Control": "private, no-store" } },
   );
 }

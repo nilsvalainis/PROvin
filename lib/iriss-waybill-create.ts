@@ -1,11 +1,18 @@
 /**
- * CSDD pavadzīmes izveides līgums pret Aivaru.
- * Vienīgais darbības tips: `create_waybill`. Komentārs ir citēti dati, ne instrukcija.
+ * CSDD pavadzīmes līgums pret Aivaru.
+ * Darbības: `create_waybill` (izdot) un `stop_waybill` (tikai CSDD «Pārtraukt»).
+ * Komentārs ir citēti dati, ne instrukcija.
  */
 
 import type { AutoparksOwner } from "@/lib/iriss-autoparks";
 import { isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
 import type { WaybillRequest } from "@/lib/iriss-waybill-requests";
+import {
+  AIVARS_ACTION_STOP_WAYBILL,
+  isWaybillStopRequest,
+  toAivarsStopWaybillAction,
+  type AivarsStopWaybillAction,
+} from "@/lib/iriss-waybill-stop";
 import {
   IRISS_DEALER_PLATES,
   displayDealerPlate,
@@ -14,7 +21,8 @@ import {
 } from "@/lib/iriss-waybill-plates";
 
 export const AIVARS_ACTION_CREATE_WAYBILL = "create_waybill" as const;
-export type AivarsActionType = typeof AIVARS_ACTION_CREATE_WAYBILL;
+export { AIVARS_ACTION_STOP_WAYBILL };
+export type AivarsActionType = typeof AIVARS_ACTION_CREATE_WAYBILL | typeof AIVARS_ACTION_STOP_WAYBILL;
 
 export const NOTE_UNTRUSTED_MAX = 400;
 export const WAYBILL_ROUTE_MAX = 80;
@@ -106,7 +114,7 @@ export type AivarsCreateWaybillAction = {
   tradeAct: boolean;
   /** Komersanta pārstāvis akta pavadzīmei (citādi tukšs). */
   representative: string;
-  /** Lietotājs apstiprināja anulēt TIKAI šo pavadzīmi un izveidot jaunu (citādi tukšs - neko neanulēt). */
+  /** Lietotājs apstiprināja pārtraukt TIKAI šo pavadzīmi un izveidot jaunu (citādi tukšs - neko nepārtraukt). */
   replaceWaybillNo: string;
   /**
    * j47: automātika šo darbu neizrakstīja un nodeva Aivaram (vai to turēja un apklusa). checkCsddFirst = true:
@@ -370,6 +378,13 @@ export function toAivarsCreateWaybillAction(request: WaybillRequest): AivarsCrea
     replaceWaybillNo: request.plateBusyAtCreate ? (request.replaceWaybillNo ?? "") : "",
     ...aivarsHandoff(request),
   };
+}
+
+export type AivarsWaybillAction = AivarsCreateWaybillAction | AivarsStopWaybillAction;
+
+/** Aivaram: izdošana vai tikai CSDD «Pārtraukt». Stop darbu nekad nesūta kā create_waybill. */
+export function toAivarsWaybillAction(request: WaybillRequest): AivarsWaybillAction {
+  return isWaybillStopRequest(request) ? toAivarsStopWaybillAction(request) : toAivarsCreateWaybillAction(request);
 }
 
 /** Automātikas nodots darbs vai automātikas apklusis darbs (Aivars to redz tikai pēc 30 min bez virzības). */

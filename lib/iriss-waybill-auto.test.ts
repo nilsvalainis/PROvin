@@ -44,6 +44,9 @@ const req = (over: Partial<WaybillRequest> = {}): WaybillRequest => ({
   representative: "",
   stage: "",
   stageAt: "",
+  dropboxPath: "",
+  dropboxError: "",
+  dropboxAt: "",
   ...over,
 });
 
@@ -72,6 +75,13 @@ describe("classifyWaybillForAuto", () => {
     expect(classifyWaybillForAuto(req({ vehicle: { brandModel: "Audi A4", vin: "", plate: "B1927", orderId: "" } }), free)).toEqual({
       standard: false,
       reason: "B192 - tikai ar roku",
+    });
+  });
+
+  it("a stop-only job is never standard (Aivars CSDD Pārtraukt, worker does not claim)", () => {
+    expect(classifyWaybillForAuto(req({ kind: "stop", stopWaybillNo: "P02819", autoDisabled: true }), free)).toEqual({
+      standard: false,
+      reason: "pārtraukt",
     });
   });
 

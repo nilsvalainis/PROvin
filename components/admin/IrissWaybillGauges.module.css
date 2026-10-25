@@ -200,10 +200,27 @@
 .wg .detail p + p {
   color: #6e6e73;
 }
-.wg .detail .pdf {
-  display: inline-block;
+.wg .detail .pdf,
+.wg .detail .btn {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
   margin-top: 4px;
-  color: #2563eb;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  padding: 0 12px;
+  color: #1d1d1f;
   font-size: 12.5px;
   font-weight: 600;
+}
+.wg .detail .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.wg .detail .btnStop {
+  border-color: #dc2626;
+  color: #dc2626;
 }

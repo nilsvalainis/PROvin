@@ -66,6 +66,41 @@ describe("Pavadzīmju lapa v2", () => {
   });
 });
 
+describe("Aktīvā karte: Pārtraukt", () => {
+  it("shows PDF, Pagarināt, Pārtraukt and Vēsture on a live card", () => {
+    const page = (
+      <IrissPavadzimesListClient
+        isAdmin
+        initial={{
+          rows: [
+            {
+              ...rowBase,
+              id: "wb_p02819",
+              number: "P02819",
+              vin: "WVWZZZ3CZWE123456",
+              validUntil: "2026-11-01T10:00:00.000Z",
+              validityTone: "ok",
+              lifecycle: "active",
+            },
+          ] as never,
+          pendingParse: 0,
+          dropboxConfigured: true,
+          dropboxError: null,
+        }}
+      />
+    );
+    const text = renderText(page);
+    expect(text).toContain("PDF");
+    expect(text).toContain("Pagarināt");
+    expect(text).toContain("Pārtraukt");
+    expect(text).toContain("Vēsture");
+    expect(text).not.toMatch(/anul/i);
+    const html = renderHtml(page);
+    expect(html).toContain("border-[#DC2626]");
+    expect(html).toContain("min-h-11");
+  });
+});
+
 describe("VPN kontrole", () => {
   it("telefona kartīte: liela poga 'Man vajag VPN'; datora variants paliek kompakts", () => {
     const card = renderHtml(<IrissVpnControl variant="card" />);

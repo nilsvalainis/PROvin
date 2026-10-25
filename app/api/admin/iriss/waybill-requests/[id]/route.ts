@@ -90,7 +90,7 @@ export async function POST(req: Request, ctx: Ctx) {
   const actorName = actor.kind === "admin" ? actor.name : actor.user.name;
   if (body.action === "dismiss") {
     // "Dzēst" (j22): tikai paslēpj vecu ierakstu šī lietotāja sarakstā. Rindu, PDF, Dropbox un Arhīvu neaiztiek;
-    // derīgu izdotu vai darbā esošu pavadzīmi nepaslēpj (un nekad neanulē).
+        // derīgu izdotu vai darbā esošu pavadzīmi nepaslēpj (un nekad nepārtrauc CSDD).
     try {
       const doc = await readWaybillRequestsDoc();
       const request = doc.requests.find((row) => row.id === id);

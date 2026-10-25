@@ -4,7 +4,7 @@ External agent **Aivars** issues CSDD transport waybills for IRISS. Auth is a Be
 
 Base: `/api/iriss/aivars/waybill-requests`
 
-This API exposes **exactly one action type**: `create_waybill`. There is no free-text command, no other agent, and no other job kind.
+This API exposes two action types: `create_waybill` (issue) and `stop_waybill` (CSDD «Pārtraukt» only). There is no free-text command and no other agent. Stop jobs are listed in `stopRequests`, never inside `requests`, so an older client that only reads `requests` will not treat a stop as a new waybill. Never click OWS «Anulēt» or «Paziņot klientam».
 
 IRISS staff with section `pavadzimes` queue jobs through `/api/admin/iriss/waybill-requests`. Only those users can create a waybill request. The comment field never reaches another agent HTTP, chat, or queue.
 
@@ -44,7 +44,7 @@ Required structured fields (validated by the server before the job is queued):
 - Comment only: if the form has no car but `comment_untrusted` looks like `193 uz BMW 330`, the server takes the plate (allowlist only) and `brandModel` (safe chars only) from it as data. `brandModel` is always filled when a job is queued.
 
 - `tradeAct: true` (v2, 23.10.2026): the car is accepted for trade (CSDD tirdzniecības akts). Then `routeFrom` / `routeTo` are empty - CSDD does not need a route. Open the act and press "Noformēt pavadzīmi", fill only `validHours` and `representative` (komersanta pārstāvis, e.g. `Nils Valainis` for ĪRISS plates, `Taivo Batiņš` for B192-7). The automation never takes these jobs.
-- `replaceWaybillNo` (j10, 23.10.2026): the plate was busy and the user answered "Jā" to "Vai tiešām anulēt iepriekšējo un izveidot jaunu?". Only this waybill (e.g. `P02812`) may be annulled (CSDD "Pārtraukt!"), and only if CSDD still shows exactly it as Derīgs on this plate. Empty = never annul anything.
+- `replaceWaybillNo` (j10, 23.10.2026): the plate was busy and the user answered "Jā" to "Vai tiešām pārtraukt iepriekšējo un izveidot jaunu?". Only this waybill (e.g. `P02812`) may be stopped (CSDD "Pārtraukt!"), and only if CSDD still shows exactly it as Derīgs on this plate. Empty = never stop anything.
 - Plate status comes from the CSDD register too (`sync.js` on Hetzner -> `POST /api/iriss/aivars/waybill-plates`), so waybills issued by hand in CSDD make the plate busy in the UI.
 - Jobs with no progress for 24 h (queued / in progress) are stale: they are no longer listed in GET and cannot be claimed. Staff see them in Arhīvs as "Novecojis"; data is not changed.
 
@@ -64,13 +64,29 @@ Never copy this field to another agent HTTP, chat, or queue. Staff UI and this A
 
 `toAivarsCreateWaybillAction` never returns `createdByName`, `freeText`, or `instruction`.
 
+## Action: `stop_waybill`
+
+Admin «Pārtraukt» on an active waybill queues this job. It is **only** CSDD «Pārtraukt!» for `waybillNo` on that plate. Do not issue a new waybill. Do not click «Anulēt». Do not click «Paziņot klientam».
+
+GET lists these in `stopRequests` (not `requests`). Claim and result use the same paths. Result `{ ok: true, waybillNo }` means CSDD already shows Pārtraukts (or was already stopped). The worker `?scope=auto` never receives stop jobs.
+
+```json
+{
+  "action": "stop_waybill",
+  "id": "wbr_…",
+  "createdAt": "2026-10-25T20:00:00.000Z",
+  "waybillNo": "P02819",
+  "vehicle": { "vin": "", "plate": "B1937", "brandModel": "VW Golf" }
+}
+```
+
 ## Endpoints
 
 All require `Authorization: Bearer <IRISS_AIVARS_API_TOKEN>`.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| GET | `/api/iriss/aivars/waybill-requests` | Pending `create_waybill` jobs (`queued`, or `in_progress` stale after 30 min) |
+| GET | `/api/iriss/aivars/waybill-requests` | Pending `create_waybill` jobs in `requests`; pending `stop_waybill` jobs in `stopRequests` |
 | POST | `/api/iriss/aivars/waybill-requests/:id/claim` | Claim a job |
 | POST | `/api/iriss/aivars/waybill-requests/:id/events` | Status only: `in_progress`, `issued`, `error`, `message` |
 | POST | `/api/iriss/aivars/waybill-requests/:id/result` | Finish: `{ ok, waybillNo, pdfBase64?, errorReason? }` |
@@ -97,7 +113,7 @@ With Vercel env `IRISS_WAYBILL_AUTO=1`, standard jobs (see `lib/iriss-waybill-au
 - `POST /:id/release { reason }` (worker only, before Save) puts the job back in the queue as non-automatic and wakes Aivars.
 - `events` / `result` accept `by: "auto"`.
 
-- j47: an automation `result { ok: false, by: "auto" }` is no longer a dead end. Unless the reason is "plate busy in CSDD" (`CSDD aizņem...`, the user must decide on annulment), the job goes back to the queue for Aivars (`autoDisabled`), Aivars is woken, and the job carries `handoff: { from: "auto", reason, checkCsddFirst }`. With `checkCsddFirst: true` (error during/after Save) Aivars must first check in CSDD that the waybill was not already created. Release (`/release`) sets the same `handoff` with `checkCsddFirst: false`. A stale `in_progress` job held by the automation also carries `handoff` when it reappears in GET.
+- j47: an automation `result { ok: false, by: "auto" }` is no longer a dead end. Unless the reason is "plate busy in CSDD" (`CSDD aizņem...`, the user must decide on replace), the job goes back to the queue for Aivars (`autoDisabled`), Aivars is woken, and the job carries `handoff: { from: "auto", reason, checkCsddFirst }`. With `checkCsddFirst: true` (error during/after Save) Aivars must first check in CSDD that the waybill was not already created. Release (`/release`) sets the same `handoff` with `checkCsddFirst: false`. A stale `in_progress` job held by the automation also carries `handoff` when it reappears in GET.
 - The 15 min cron retries a failed wake (HTTP/network) on the next run; a missing/invalid `IRISS_AIVARS_WAKE_URL` is logged as an error (`aivars_wake_not_configured`).
 
 A busy plate (`confirmBusy`) is never standard: ending an active waybill needs Nils's "jā" through Aivars. The worker never runs stop/cancel scripts.

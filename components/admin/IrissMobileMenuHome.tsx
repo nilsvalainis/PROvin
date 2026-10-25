@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { IrissKomandaAivaramChat } from "@/components/admin/IrissKomandaAivaramChat";
 import { IrissWaybillRequestArchive } from "@/components/admin/IrissWaybillMobileForm";
 import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
@@ -24,8 +24,8 @@ import {
 } from "@/lib/iriss-mobile-menu";
 import { isWaybillOnlyStaff, type IrissSection } from "@/lib/staff-roles";
 import { useWaybillPageOpenAtTop } from "@/components/admin/useWaybillPageOpenAtTop";
-
-const noop = () => undefined;
+import type { WaybillVehicleChip } from "@/lib/iriss-waybill-vehicles";
+import type { WaybillGauge } from "@/lib/iriss-waybill-gauges";
 
 /** Skaitītājs, kas pieaug, atgriežoties lietotnē un ik minūti: skaitļi atjaunojas paši. */
 function useRefreshTick(): number {
@@ -123,6 +123,18 @@ export function IrissMobileMenuHome({
   const router = useRouter();
   const [formOpen, setFormOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [draftVehicle, setDraftVehicle] = useState<WaybillVehicleChip | null>(null);
+  const onDraftConsumed = useCallback(() => setDraftVehicle(null), []);
+  const extendFromGauge = useCallback((g: WaybillGauge) => {
+    setFormOpen(true);
+    setDraftVehicle({
+      chip: g.brandModel.split(/\s+/).slice(0, 2).join(" ") || g.number || g.plate,
+      brandModel: g.brandModel,
+      vin: "",
+      plate: g.plate,
+      orderId: "",
+    });
+  }, []);
   useDesktopRedirect(waybillOnly ? null : irissDesktopHomeHref(items));
   const canReadWaybills = isAdmin || sections.includes("pavadzimes");
   const canReadLogistics = canSeeIrissMobileMenuItem(
@@ -150,11 +162,11 @@ export function IrissMobileMenuHome({
       <div className="iriss-mobile-menu-home pb-[max(16px,env(safe-area-inset-bottom))] md:mx-auto md:max-w-md md:pt-6">
         <AdminMobileTopBar title="IRISS" />
         <div className="px-4">
-          <IrissWaybillGauges chrome="float" allHref={null} />
+          <IrissWaybillGauges chrome="float" allHref={null} onExtend={extendFromGauge} />
         </div>
         {formOpen ? (
           <div className="mt-4 px-4">
-            <IrissKomandaAivaramChat draftVehicle={null} onDraftConsumed={noop} />
+            <IrissKomandaAivaramChat draftVehicle={draftVehicle} onDraftConsumed={onDraftConsumed} />
           </div>
         ) : (
           <div className="mt-4 px-4">

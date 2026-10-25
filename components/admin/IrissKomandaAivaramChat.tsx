@@ -274,7 +274,7 @@ export function IrissKomandaAivaramChat({
     setError(null);
     setBusy(true);
     const mobile = mobilePayload.current;
-    // Anulēt drīkst tikai to pavadzīmi, ko lietotājs redzēja logā (ja tā tikmēr mainījusies - serveris jautās vēlreiz).
+    // Pārtraukt drīkst tikai to pavadzīmi, ko lietotājs redzēja logā (ja tā tikmēr mainījusies - serveris jautās vēlreiz).
     const confirmWaybillNo = confirmBusy ? (confirm?.current?.number ?? "") : "";
     try {
       const res = await fetch("/api/admin/iriss/waybill-requests", {
@@ -338,7 +338,7 @@ export function IrissKomandaAivaramChat({
       setError(`Ieraksti derīgumu: no 1 līdz ${WAYBILL_VALID_MAX_HOURS} h.`);
       return;
     }
-    // j16: anulēšanu apstiprina TIKAI poga "Jā" logā (Enter formā, kamēr logs atvērts, neko nesūta).
+    // j16: pārtraukšanu apstiprina TIKAI poga "Jā" logā (Enter formā, kamēr logs atvērts, neko nesūta).
     if (confirm) return;
     if (selectedOcc.busy) {
       setConfirm({ plate: selectedOcc.plate, current: selectedOcc.current });
@@ -658,7 +658,7 @@ export function IrissKomandaAivaramChat({
               .
             </p>
             <p className="mt-2 text-[13px] font-semibold leading-snug text-[#111827]">
-              Vai tiešām anulēt iepriekšējo un izveidot jaunu?
+              Vai tiešām pārtraukt iepriekšējo un izveidot jaunu?
             </p>
             <div className="mt-3.5 flex flex-col gap-2">
               <button
@@ -711,8 +711,13 @@ function RequestBubble({
   return (
     <div className="ml-8 flex flex-col items-end gap-1">
       <div className="max-w-[85%] rounded-2xl rounded-br-md bg-[#111827] px-3 py-2 text-[12px] text-white">
-        <p className="text-[10px] uppercase tracking-[0.12em] text-white/70">Pavadzīme</p>
+        <p className="text-[10px] uppercase tracking-[0.12em] text-white/70">
+          {request.kind === "stop" ? "Pārtraukt" : "Pavadzīme"}
+        </p>
         <p className="font-semibold">{request.vehicle.brandModel || "Auto"}</p>
+        {request.kind === "stop" && request.stopWaybillNo ? (
+          <p className="font-mono text-[11px] text-white/80">Nr. {request.stopWaybillNo}</p>
+        ) : null}
         {request.vehicle.vin ? <p className="font-mono text-[11px] text-white/80">{request.vehicle.vin}</p> : null}
         <p>
           {shownPlate}
