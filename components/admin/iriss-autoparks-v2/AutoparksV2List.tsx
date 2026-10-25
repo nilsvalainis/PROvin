@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { irissCreateOfferHref } from "@/components/admin/IrissCreateOfferButton";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { AUTOPARKS_STATUS_LV, AUTOPARKS_STATUS_SHORT_LV, type AutoparksOwner, type AutoparksStatus } from "@/lib/iriss-autoparks";
+import { AUTOPARKS_STATUS_SHORT_LV, type AutoparksOwner, type AutoparksStatus } from "@/lib/iriss-autoparks";
 import { AUTOPARKS_V2_STATUS_ORDER } from "@/lib/iriss-autoparks-v2";
 import {
   autoparksV2OwnerCounts,
   autoparksV2StatusCounts,
   filterAutoparksV2Rows,
-  groupAutoparksV2Rows,
+  flattenAutoparksV2Rows,
   type AutoparksV2ListRow,
   type AutoparksV2OwnerFilter,
 } from "@/lib/iriss-autoparks-v2-list";
@@ -20,7 +19,7 @@ const BASE = "/admin/iriss/autoparks-v2";
 /** Datora statusu flīzes (D1): visi + statusi bez "Pārdots". */
 const PIPE: readonly AutoparksStatus[] = AUTOPARKS_V2_STATUS_ORDER.filter((s) => s !== "sold");
 
-export function AutoparksV2List({ initialCars, canCreateOffer = false }: { initialCars: AutoparksV2ListRow[]; canCreateOffer?: boolean }) {
+export function AutoparksV2List({ initialCars }: { initialCars: AutoparksV2ListRow[] }) {
   const [owner, setOwner] = useState<AutoparksV2OwnerFilter>("all");
   const [status, setStatus] = useState<AutoparksStatus | null>(null);
   const [query, setQuery] = useState("");
@@ -29,7 +28,7 @@ export function AutoparksV2List({ initialCars, canCreateOffer = false }: { initi
   const ownerCounts = useMemo(() => autoparksV2OwnerCounts(initialCars), [initialCars]);
   const base = useMemo(() => filterAutoparksV2Rows(initialCars, { owner, query }), [initialCars, owner, query]);
   const statusCounts = useMemo(() => autoparksV2StatusCounts(base), [base]);
-  const sections = useMemo(() => groupAutoparksV2Rows(status ? base.filter((r) => r.status === status) : base), [base, status]);
+  const rows = useMemo(() => flattenAutoparksV2Rows(status ? base.filter((r) => r.status === status) : base), [base, status]);
 
   const chips: Array<{ id: AutoparksV2OwnerFilter; m: string; d: string }> = [
     { id: "all", m: `Visi ${ownerCounts.all}`, d: "Visi īpašnieki" },
@@ -46,11 +45,6 @@ export function AutoparksV2List({ initialCars, canCreateOffer = false }: { initi
           <span aria-hidden>⌕</span>
           <input data-bare value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Marka, modelis vai VIN" aria-label="Meklēt" />
         </div>
-        {canCreateOffer ? (
-          <Link href={irissCreateOfferHref()} className="ap2-btn dark sm">
-            + Piedāvājums
-          </Link>
-        ) : null}
         <button type="button" className="ap2-btn dark sm" onClick={() => setAdding(true)}>
           + Auto
         </button>
@@ -90,45 +84,43 @@ export function AutoparksV2List({ initialCars, canCreateOffer = false }: { initi
         <span>Statuss</span>
       </div>
 
-      {sections.length === 0 ? <p className="ap2-empty">Nav auto</p> : null}
-      {sections.map((sec) => (
-        <section key={sec.status}>
-          <div className={`ap2-sec st-${sec.status}`}>
-            <span className="dot" />
-            {AUTOPARKS_STATUS_LV[sec.status]}
-            <span className="n">{sec.rows.length}</span>
-          </div>
-          <div className="ap2-list">
-            {sec.rows.map((r) => (
-              <Link key={r.id} href={`${BASE}/${encodeURIComponent(r.id)}`} className="ap2-row">
-                <div className="ap2-row-m">
-                  <CarImg carId={r.id} />
-                  <span className="ap2-rt">
-                    <b>{r.title}</b>
-                    <span className="meta">{yearColor(r.year, r.color)}</span>
-                    <VinCopy vin={r.vin} />
-                  </span>
-                </div>
-                <div className="cols">
-                  <CarImg carId={r.id} />
-                  <span className="ap2-rt">
-                    <b>{r.title}</b>
-                    <span className="meta">{yearColor(r.year, r.color)}</span>
-                  </span>
-                  <span>
-                    <VinCopy vin={r.vin} />
-                  </span>
-                  <span>
-                    <span className={`ap2-pill st-${r.status}`}>{AUTOPARKS_STATUS_SHORT_LV[r.status]}</span>
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
-      ))}
+      <AutoparksV2ListBody rows={rows} />
 
       {adding ? <AddCarSheet onClose={() => setAdding(false)} /> : null}
+    </div>
+  );
+}
+
+/** Plakans saraksts (m01): statuss ir tikai filtra virsraksts, ne sadaļa un ne atkārtots uz kartītes. */
+export function AutoparksV2ListBody({ rows }: { rows: readonly AutoparksV2ListRow[] }) {
+  if (rows.length === 0) return <p className="ap2-empty">Nav auto</p>;
+  return (
+    <div className="ap2-list">
+      {rows.map((r) => (
+        <Link key={r.id} href={`${BASE}/${encodeURIComponent(r.id)}`} className="ap2-row">
+          <div className="ap2-row-m">
+            <CarImg carId={r.id} />
+            <span className="ap2-rt">
+              <b>{r.title}</b>
+              <span className="meta">{yearColor(r.year, r.color)}</span>
+              <VinCopy vin={r.vin} />
+            </span>
+          </div>
+          <div className="cols">
+            <CarImg carId={r.id} />
+            <span className="ap2-rt">
+              <b>{r.title}</b>
+              <span className="meta">{yearColor(r.year, r.color)}</span>
+            </span>
+            <span>
+              <VinCopy vin={r.vin} />
+            </span>
+            <span>
+              <span className={`ap2-pill st-${r.status}`}>{AUTOPARKS_STATUS_SHORT_LV[r.status]}</span>
+            </span>
+          </div>
+        </Link>
+      ))}
     </div>
   );
 }

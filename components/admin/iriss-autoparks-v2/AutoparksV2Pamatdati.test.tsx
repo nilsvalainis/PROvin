@@ -38,4 +38,11 @@ describe("Autoparks v2 Pamatdati - Atrašanās vieta j62", () => {
     expect(text).toContain("Krāsa");
     expect(text).toContain("Melns");
   });
+
+  it("CSDD reģistrs vairs nav Pamatdatu karte (j63 - sava cilne)", () => {
+    const text = renderText(<AutoparksV2Pamatdati basics={basics} onBasics={() => undefined} />);
+    expect(text).not.toContain("CSDD reģistrs");
+    expect(text).not.toContain("Akta datums");
+    expect(text).toContain("Tehniskie dati");
+  });
 });
