@@ -16,7 +16,7 @@ export function generatedDocumentKindLabel(kind: IrissGeneratedDocumentKind): st
 export function formatGeneratedDocumentWhen(iso: string): string {
   const t = Date.parse(iso);
   if (!Number.isFinite(t)) return "";
-  return new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short" }).format(new Date(t));
+  return new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Riga" }).format(new Date(t));
 }
 
 export function formatGeneratedDocumentSize(bytes: number): string {

@@ -153,6 +153,7 @@ export function buildB2bTopupInvoiceHtml(order: InvoiceOrderPayload): string {
   const invoiceDate = new Intl.DateTimeFormat("lv-LV", {
     dateStyle: "long",
     timeStyle: "short",
+    timeZone: "Europe/Riga",
   }).format(new Date(order.created * 1000));
   const pvnNote = getB2bTopupInvoicePvnNote();
 

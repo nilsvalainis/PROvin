@@ -922,7 +922,7 @@ function drawKopaHighlightBand(ctx: Ctx, boxX: number, boxW: number, totalPrice:
 async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void> {
   const rawTitle = val(offer.brandModel) ?? val(offer.title) ?? "Piedāvājums";
   const heroTitle = rawTitle.toLocaleUpperCase("lv-LV");
-  const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date());
+  const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long", timeZone: "Europe/Riga" }).format(new Date());
   const sublines = ["Piedāvājums", dateStr];
   ensureSpace(ctx, 120);
   const hctx = {
@@ -954,11 +954,12 @@ const PAGE1_TITLE_H = 22;
 
 function formatPasutijumsDocDate(record: IrissPasutijumsRecord): string {
   const raw = (record.orderDate || record.createdAt || "").trim();
-  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+  // Tikai datums (YYYY-MM-DD) - kā ievadīts; pilns ISO laiks (createdAt, UTC) - Rīgas datums (ap pusnakti citāds).
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
   if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
   const d = raw ? new Date(raw) : new Date();
   if (!Number.isNaN(d.getTime())) {
-    return new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(d);
+    return new Intl.DateTimeFormat("lv-LV", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Riga" }).format(d);
   }
   return raw;
 }
@@ -1437,7 +1438,7 @@ export async function buildIrissPasutijumiListPdfBytes(records: IrissPasutijumsR
   const ctx = await createPdfCtx();
   ctx.offerLogo = await dzLoadOfferLogoPack(ctx.pdfDoc);
 
-  const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date());
+  const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long", timeZone: "Europe/Riga" }).format(new Date());
   const countLabel =
     active.length === 1 ? "1 aktīvs pasūtījums" : `${active.length} aktīvie pasūtījumi`;
   const hctx = {
