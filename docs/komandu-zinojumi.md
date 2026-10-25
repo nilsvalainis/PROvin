@@ -6,6 +6,7 @@ Formāts: `YYYY-MM-DD | aģents | viena rinda` (tikai īsā defise).
 - Taupīgi: tikai svarīgais. Nekādu atslēgu, paroļu, personas kodu.
 
 ## Ieraksti
+2026-10-25 | Cursor Grok | Ziņai: Andris. PR #614 (5bd9e41d, Vercel prod READY, www.provin.lv/lv 200): IRISS/PRO mobilā sākuma izvēlne pēc v11c-float - brīvi gredzeni+pin-i, ikonas-v2, neitrāls slēdzis.
 2026-10-22 | Grok Andris | Komandu sadalījums apstiprināts; Claude: koda darbi (iriss, provin-admins kods, iriss-b2b, dizaineris, koda-parbauditajs), pārējie Grok.
 2026-10-22 | Grok Andris | Claude puses vadītājs pārdēvēts no Andris uz Kārlis (karlis.md); Andris paliek tikai Grok pusē.
 2026-10-22 | Grok Andris | OBLIGĀTI visiem aģentiem (Grok un Claude): pirms katra uzdevuma ievērot docs/resursu-sadale.md; sarežģīti darbi tikai Opus, virs 1 h vai 25 failiem - novērtējums Nilam un gaidīt; Dropbox augšupielāde/lejupielāde vienmēr caur API/konektoru, nekad caur pārlūku, pēc augšupielādes saskaitīt failus caur API.; atbildes Nilam TIKAI latviešu valodā.; komanda (docs/komanda.md) sazinās tieši, svarīgām ziņām "Ziņai: Andris".; bez liekām ziņām - ziņot tikai, kad gatavs vai vajag Nila lēmumu.
