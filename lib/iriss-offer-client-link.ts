@@ -488,7 +488,7 @@ export function buildIrissOfferPublicView(
   client: { decision: IrissOfferClientDecision; question: string; decidedAt?: string },
   opts?: { nowMs?: number },
 ): IrissOfferPublicView {
-  // Piedāvājuma bloku "Rādīt/Slēpt" pārslēgs (components/admin/IrissOfferBlocksEditor.tsx) nosaka tieši to pašu
+  // Piedāvājuma sadaļu zaļās sviras (components/admin/IrissOfferForm.tsx, j61) nosaka tieši to pašu
   // sadaļu redzamību šeit, kas PDF (lib/iriss-pasutijums-pdf.ts) - lai publiskā saite un PDF nekad nesaskrāpējas.
   const assessmentOk = irissOfferPdfShows(offer, "assessment");
   const specialNotesOk = irissOfferPdfShows(offer, "specialNotes");

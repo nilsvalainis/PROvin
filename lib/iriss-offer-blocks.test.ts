@@ -13,6 +13,12 @@ import {
   irissOfferCustomPdfBlocks,
   irissOfferPdfShows,
   visibleIrissOfferBlocks,
+  irissOfferBlockPlaceLabel,
+  irissOfferSectionVisible,
+  isIrissOfferExtraBlock,
+  moveIrissOfferBlockTo,
+  removeIrissOfferExtraBlock,
+  setIrissOfferSectionVisible,
 } from "@/lib/iriss-offer-blocks";
 
 describe("iriss-offer-blocks", () => {
@@ -119,5 +125,51 @@ describe("iriss-offer-blocks", () => {
     expect(blocks.map((b) => b.kind)).toEqual(["specialNotes", "visualAssessment", "technicalAssessment"]);
     expect(blocks.every((b) => b.visible === false)).toBe(true);
     expect(offer.blocks).toEqual([{ id: "apraksti", kind: "apraksti", title: "Apraksti", visible: false }]);
+  });
+
+  it("j61: old offers without blocks read every section switch as ON (same as PDF/link)", () => {
+    const offer = emptyIrissOfferRecord("o1", "2026-10-17T10:00:00.000Z");
+    expect(offer.blocks).toBeUndefined();
+    for (const kind of ["vehicle", "auction", "pricing", "photos", "assessment", "specialNotes"] as const) {
+      expect(irissOfferSectionVisible(offer.blocks, kind)).toBe(true);
+      expect(irissOfferPdfShows(offer, kind)).toBe(true);
+    }
+    // Noklusējuma bloki (tukšs piedāvājums, bez bildēm un izsoles) arī visi ieslēgti.
+    expect(defaultIrissOfferBlocks(offer).every((b) => b.visible)).toBe(true);
+  });
+
+  it("j61: toggling one section switch keeps the other sections ON and never rewrites field values", () => {
+    const offer = emptyIrissOfferRecord("o1", "2026-10-17T10:00:00.000Z");
+    offer.brandModel = "Volvo XC90";
+    const blocks = setIrissOfferSectionVisible(offer, "auction", false);
+    const next = { ...offer, blocks };
+    expect(irissOfferPdfShows(next, "auction")).toBe(false);
+    for (const kind of ["vehicle", "pricing", "photos", "assessment", "specialNotes", "visualAssessment", "technicalAssessment"] as const) {
+      expect(irissOfferPdfShows(next, kind)).toBe(true);
+    }
+    expect(next.brandModel).toBe("Volvo XC90");
+    const back = setIrissOfferSectionVisible(next, "auction", true);
+    expect(irissOfferSectionVisible(back, "auction")).toBe(true);
+  });
+
+  it("j61: adds a missing section block when stored blocks predate it", () => {
+    const offer = emptyIrissOfferRecord("o1", "2026-10-17T10:00:00.000Z");
+    offer.blocks = [{ id: "vehicle", kind: "vehicle", title: "Transportlīdzeklis", visible: true }];
+    const blocks = setIrissOfferSectionVisible(offer, "photos", false);
+    expect(blocks.find((b) => b.kind === "photos")?.visible).toBe(false);
+    expect(blocks.find((b) => b.kind === "vehicle")?.visible).toBe(true);
+  });
+
+  it("j61: only extra text/table blocks can be removed; drag reorder moves to target slot", () => {
+    const offer = emptyIrissOfferRecord("o1", "2026-10-17T10:00:00.000Z");
+    let blocks = addIrissOfferBlock(resolveIrissOfferBlocks(offer), "text");
+    const extra = blocks[blocks.length - 1]!;
+    expect(isIrissOfferExtraBlock(extra)).toBe(true);
+    expect(removeIrissOfferExtraBlock(blocks, "vehicle").length).toBe(blocks.length);
+    expect(removeIrissOfferExtraBlock(blocks, extra.id).some((b) => b.id === extra.id)).toBe(false);
+    blocks = moveIrissOfferBlockTo(blocks, extra.id, "vehicle");
+    expect(blocks[0]?.id).toBe(extra.id);
+    expect(irissOfferBlockPlaceLabel({ kind: "photos" }, 32)).toBe("32 bildes");
+    expect(irissOfferBlockPlaceLabel({ kind: "auction" }, 0)).toBe("Pamatinfo");
   });
 });
