@@ -5,9 +5,9 @@ import { matchIrissPavadzimesToOrders } from "@/lib/iriss-pavadzimes-match";
 import { waybillValidityTone } from "@/lib/iriss-pavadzimes-parse";
 import { listIrissPavadzimes, readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
 import type { IrissPavadzimeListRow, IrissPavadzimeRecord } from "@/lib/iriss-pavadzimes-types";
-import { isAllowlistedWaybillPlate, waybillPlateOccupancy, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
-import { mergeCsddActiveRows, mergeCsddPlateStates } from "@/lib/iriss-waybill-csdd-plates";
-import { withWaybillRequestStates } from "@/lib/iriss-waybill-live-plates";
+import { isAllowlistedWaybillPlate, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
+import { mergeCsddActiveRows } from "@/lib/iriss-waybill-csdd-plates";
+import { composeWaybillPlateStates } from "@/lib/iriss-waybill-live-plates";
 import { readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
 import { readCsddPlatesDocSafe } from "@/lib/iriss-waybill-csdd-plates-store";
 import type { IrissSection } from "@/lib/staff-roles";
@@ -83,7 +83,7 @@ export async function loadIrissPavadzimesActiveCardData(
   const [cached, csdd, requests] = await Promise.all([readIrissPavadzimesCached(), readCsddPlatesDocSafe(), readWaybillRequestsSafe()]);
   // CSDD reģistrā aktīvas (arī ar roku izrakstītas) pavadzīmes, kuru nav indeksā - lai josla nerāda "brīvs".
   const rows = mergeCsddActiveRows(selectActiveCardWaybills(cached, now), csdd, now);
-  const plates = withWaybillRequestStates(mergeCsddPlateStates(waybillPlateOccupancy(cached, now, csdd), csdd, now.getTime()), requests, now.getTime());
+  const plates = composeWaybillPlateStates(cached, csdd, requests, now);
   return { rows: opts.withOrders ?? true ? rows : rows.map(waybillRowWithoutOrder), plates };
 }
 

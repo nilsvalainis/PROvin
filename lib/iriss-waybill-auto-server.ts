@@ -1,7 +1,7 @@
 import "server-only";
 
 import { readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
-import { displayDealerPlate, waybillPlateOccupancy, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
+import { displayDealerPlate, waybillPlateOccupancy, withdrawnWaybillNos, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
 import { mergeCsddPlateStates } from "@/lib/iriss-waybill-csdd-plates";
 import { readCsddPlatesDocSafe } from "@/lib/iriss-waybill-csdd-plates-store";
 import { autoWaybillEnabled, autoWaybillReplaceEnabled, classifyWaybillForAuto, plateTakenByOtherRequest } from "@/lib/iriss-waybill-auto";
@@ -13,9 +13,20 @@ import { readTtrControlDoc } from "@/lib/iriss-ttr-control-store";
  * Numuru stāvoklis: mūsu pavadzīmju indekss + CSDD reģistra momentuzņēmums (Hetzner sync.js, arī ar roku izrakstītās).
  * Met kļūdu, ja indeksu nevar nolasīt (izsaucējs izlemj, ko darīt).
  */
-export async function loadWaybillPlateStates(now = new Date()): Promise<WaybillPlateState[]> {
+export async function loadWaybillPlateOccupancy(now = new Date()): Promise<{
+  plates: WaybillPlateState[];
+  withdrawnNos: ReadonlySet<string>;
+}> {
   const [rows, csdd] = await Promise.all([readIrissPavadzimesCached(), readCsddPlatesDocSafe()]);
-  return mergeCsddPlateStates(waybillPlateOccupancy(rows, now, csdd), csdd, now.getTime());
+  const withdrawnNos = withdrawnWaybillNos(rows, csdd);
+  return {
+    plates: mergeCsddPlateStates(waybillPlateOccupancy(rows, now, csdd), csdd, now.getTime(), withdrawnNos),
+    withdrawnNos,
+  };
+}
+
+export async function loadWaybillPlateStates(now = new Date()): Promise<WaybillPlateState[]> {
+  return (await loadWaybillPlateOccupancy(now)).plates;
 }
 
 /**

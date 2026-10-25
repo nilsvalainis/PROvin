@@ -127,11 +127,20 @@ export function csddActiveForPlate(doc: CsddPlatesDoc | null, plate: string, now
   return list.length ? list[list.length - 1] : null;
 }
 
-/** Numuru stāvoklis: mūsu indekss + CSDD. CSDD aktīvā pavadzīme vienmēr padara numuru aizņemtu. */
-export function mergeCsddPlateStates(states: WaybillPlateState[], doc: CsddPlatesDoc | null, nowMs = Date.now()): WaybillPlateState[] {
+/**
+ * Numuru stāvoklis: mūsu indekss + CSDD. CSDD aktīvā pavadzīme padara numuru aizņemtu, ja tā nav atsauktā
+ * indeksa rinda (Arhīvs / CSDD atsaucis) - tad active ir vecs momentuzņēmums, ne īsta OWS.
+ */
+export function mergeCsddPlateStates(
+  states: WaybillPlateState[],
+  doc: CsddPlatesDoc | null,
+  nowMs = Date.now(),
+  withdrawnNos?: ReadonlySet<string>,
+): WaybillPlateState[] {
   return states.map((state) => {
     const csdd = csddActiveForPlate(doc, state.plate, nowMs);
     if (!csdd) return state;
+    if (withdrawnNos?.has(csdd.waybillNo.toUpperCase())) return state;
     const same = state.current?.number && state.current.number.toUpperCase() === csdd.waybillNo;
     if (state.busy && (same || !csdd.validUntil || Date.parse(state.current?.validUntil ?? "") >= Date.parse(csdd.validUntil))) return state;
     return {

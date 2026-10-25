@@ -5,7 +5,14 @@
  * Tāpēc: indekss + CSDD (mergeCsddPlateStates) + pieprasījumu rinda (izdotās vēl derīgās un "izdod...").
  */
 
-import { compactDealerPlate, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
+import { mergeCsddPlateStates, type CsddPlatesDoc } from "@/lib/iriss-waybill-csdd-plates";
+import {
+  compactDealerPlate,
+  waybillPlateOccupancy,
+  withdrawnWaybillNos,
+  type OccupancyRow,
+  type WaybillPlateState,
+} from "@/lib/iriss-waybill-plates";
 import {
   isStaleWaybillRequest,
   waybillPendingExpired,
@@ -40,12 +47,19 @@ function ms(iso: string | undefined): number {
   return Number.isFinite(t) ? t : Number.NaN;
 }
 
-/** Izdota, vēl derīga (nav beigusies, nav aizstāta ar jaunāku izdoto tam pašam numuram) pieprasījuma pavadzīme. */
-function liveIssuedFor(plate: string, requests: readonly WaybillLiveRequest[], nowMs: number): WaybillLiveRequest | null {
+/** Izdota, vēl derīga (nav beigusies, nav aizstāta, nav atsauktā indeksā) pieprasījuma pavadzīme. */
+function liveIssuedFor(
+  plate: string,
+  requests: readonly WaybillLiveRequest[],
+  nowMs: number,
+  withdrawnNos?: ReadonlySet<string>,
+): WaybillLiveRequest | null {
   const want = compactDealerPlate(plate);
   let best: WaybillLiveRequest | null = null;
   for (const r of requests) {
     if (r.status !== "issued" || compactDealerPlate(r.vehicle.plate) !== want) continue;
+    const no = r.waybillNo.trim().toUpperCase();
+    if (no && withdrawnNos?.has(no)) continue;
     const until = ms(r.validUntil);
     if (!Number.isFinite(until) || until <= nowMs) continue;
     if (waybillWrittenOffAtMs(r, requests, nowMs) != null) continue;
@@ -68,17 +82,19 @@ function issuingFor(plate: string, requests: readonly WaybillLiveRequest[], nowM
 }
 
 /**
- * Pieprasījumu rinda papildina numuru stāvokli: izdota derīga pavadzīme vienmēr padara numuru aizņemtu
- * (arī, ja Dropbox indekss / CSDD momentuzņēmums to vēl neredz). "Brīvs" nekad nepārraksta "aizņemts".
+ * Pieprasījumu rinda papildina numuru stāvokli: izdota derīga pavadzīme padara numuru aizņemtu
+ * (arī, ja Dropbox indekss / CSDD momentuzņēmums to vēl neredz), izņemot ja tas pats nr. indeksā ir atsaukts.
+ * "Brīvs" nekad nepārraksta "aizņemts".
  */
 export function withWaybillRequestStates(
   states: readonly WaybillPlateState[],
   requests: readonly WaybillLiveRequest[],
   nowMs = Date.now(),
+  withdrawnNos?: ReadonlySet<string>,
 ): WaybillPlateState[] {
   return states.map((state) => {
     let next: WaybillPlateState = { plate: state.plate, busy: state.busy, ...(state.current ? { current: state.current } : {}) };
-    const issued = liveIssuedFor(state.plate, requests, nowMs);
+    const issued = liveIssuedFor(state.plate, requests, nowMs, withdrawnNos);
     if (issued) {
       const no = issued.waybillNo.trim().toUpperCase();
       const cur = state.current;
@@ -102,6 +118,26 @@ export function withWaybillRequestStates(
     }
     return next;
   });
+}
+
+/**
+ * Pilna ķēde, ko rāda apļi un numura pogas: indekss + CSDD + pieprasījumi.
+ * Atsauktā indeksa pavadzīme (Arhīvs / CSDD atsaucis) overlay slāņos paliek brīva.
+ */
+export function composeWaybillPlateStates(
+  rows: readonly OccupancyRow[],
+  csdd: CsddPlatesDoc | null = null,
+  requests: readonly WaybillLiveRequest[] = [],
+  now = new Date(),
+): WaybillPlateState[] {
+  const withdrawn = withdrawnWaybillNos(rows, csdd);
+  const nowMs = now.getTime();
+  return withWaybillRequestStates(
+    mergeCsddPlateStates(waybillPlateOccupancy([...rows], now, csdd), csdd, nowMs, withdrawn),
+    requests,
+    nowMs,
+    withdrawn,
+  );
 }
 
 /** Pārlūkā: pavadzīmju forma (ik 3-10 s) paziņo jaunāko numuru stāvokli, apļi to uzreiz parāda. */
