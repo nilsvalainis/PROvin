@@ -68,13 +68,15 @@ describe("admin mobile spec files", () => {
     expect(src).not.toMatch(/rounded-\[18px\] bg-\[var\(--am-s1\)\] shadow-\[var\(--am-card-shadow\)\] md:hidden/);
   });
 
-  it("tab bar: VIN īsā etiķete, badge klase, Vairāk z-0", () => {
+  it("tab bar: 3 ikonu C-kapsula, badge klase, Vairāk z-0", () => {
     const side = readFileSync(new URL("../components/admin/AdminSidebar.tsx", import.meta.url), "utf8");
-    expect(side).toMatch(/\{\s*\.\.\.VIN,\s*label:\s*"VIN"\s*\}/);
+    expect(side).toContain('aria-label="Sākums"');
+    expect(side).toContain('aria-label="Vairāk"');
+    expect(side).toContain('aria-label="Meklēt"');
+    expect(side).not.toMatch(/\{\s*\.\.\.VIN,\s*label:\s*"VIN"\s*\}/);
     expect(side).toMatch(/floating/);
     expect(side).toMatch(/fixed inset-0 z-\[20\]/);
     expect(side).not.toMatch(/z-\[40\]/);
-    expect(side).toMatch(/whitespace-nowrap leading-none/);
     expect(side).toMatch(/Pārvaldība/);
     expect(side).toMatch(/\/admin\/izmaksas/);
     expect(side).toMatch(/\/admin\/iriss\/izmaksas/);
@@ -99,13 +101,15 @@ describe("admin mobile spec files", () => {
     expect(orders).not.toMatch(/belowTitle \? <div className="mb-3">/);
   });
 
-  it("meklēšanas poga ir 52 px un theme-color tiek sinhronizēts", () => {
-    const search = readFileSync(new URL("../components/admin/AdminGlobalSearch.tsx", import.meta.url), "utf8");
-    expect(search).toMatch(/h-\[52px\] w-\[52px\]/);
+  it("meklēšana ir kapsulā (44 px) un theme-color tiek sinhronizēts", () => {
+    const side = readFileSync(new URL("../components/admin/AdminSidebar.tsx", import.meta.url), "utf8");
+    expect(side).toMatch(/min-h-11 min-w-11/);
+    expect(side).toContain('aria-label="Meklēt"');
     const vp = readFileSync(new URL("../components/admin/useAdminMobileViewport.ts", import.meta.url), "utf8");
     expect(vp).toMatch(/useSyncAdminMobileThemeColor/);
     const shell = readFileSync(new URL("../components/admin/AdminShell.tsx", import.meta.url), "utf8");
     expect(shell).toMatch(/useSyncAdminMobileThemeColor/);
+    expect(shell).not.toContain("<AdminMobileSearchButton />");
   });
 
   it("sludinājumu rīkjosla un logo rinda telefonā ir slēpta", () => {

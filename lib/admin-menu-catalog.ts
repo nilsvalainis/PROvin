@@ -6,18 +6,26 @@ import type { MenuCatalogItem } from "@/lib/admin-menu-layout";
 import { canSeeIrissMobileMenuItem, IRISS_MOBILE_MENU_ITEMS } from "@/lib/iriss-mobile-menu";
 import type { IrissSection } from "@/lib/staff-roles";
 
-const LOGISTIKA_TONE = "#1a73e8";
+/** v11d-fix: iepriekšējais krāsu komplekts (b01), ne ikonas-v2 pelēkais. */
+export const MENU_TONE = {
+  blue: "linear-gradient(180deg,#4a95f5,#2f7fe6)",
+  violet: "linear-gradient(180deg,#8a6cf0,#6a4ddf)",
+  vin: "linear-gradient(180deg,#48484c,#2c2c2e)",
+  order: "linear-gradient(180deg,#5d616b,#45484f)",
+  csdd: "#0b6232",
+  white: "#ffffff",
+} as const;
 
 const IRISS_APP_META: Record<string, { icon: string; tone: string; title?: string }> = {
-  pasutijumi: { icon: "ord", tone: "#1d1d1f" },
-  sludinajumi: { icon: "lst", tone: "#1d1d1f" },
-  radars: { icon: "rad", tone: "#1d1d1f" },
-  logistika: { icon: "pin", tone: LOGISTIKA_TONE },
-  autoparks: { icon: "dz", tone: "#ffffff" },
-  pavadzimes: { icon: "csdd", tone: "#006b3f" },
-  vin: { icon: "scan", tone: "#1d1d1f" },
-  atskaite: { icon: "rep", tone: "#1d1d1f" },
-  iestatijumi: { icon: "set", tone: "#1d1d1f" },
+  pasutijumi: { icon: "ord", tone: MENU_TONE.order },
+  sludinajumi: { icon: "lst", tone: MENU_TONE.blue },
+  radars: { icon: "rad", tone: MENU_TONE.violet },
+  logistika: { icon: "pin", tone: MENU_TONE.white },
+  autoparks: { icon: "dz", tone: MENU_TONE.white },
+  pavadzimes: { icon: "csdd", tone: MENU_TONE.csdd },
+  vin: { icon: "scan", tone: MENU_TONE.vin },
+  atskaite: { icon: "rep", tone: MENU_TONE.order },
+  iestatijumi: { icon: "set", tone: MENU_TONE.vin },
 };
 
 export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boolean): MenuCatalogItem[] {
@@ -54,7 +62,7 @@ export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boo
       defaultSize: "M",
       section: "logistika",
       icon: "pin",
-      tone: LOGISTIKA_TONE,
+      tone: MENU_TONE.white,
       hideHead: true,
     },
     {
@@ -67,7 +75,7 @@ export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boo
       rowsBySize: { S: 2, M: 4, L: 6 },
       section: "pavadzimes",
       icon: "csdd",
-      tone: "#006b3f",
+      tone: MENU_TONE.csdd,
       hideHead: true,
     },
     {
@@ -78,8 +86,8 @@ export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boo
       sizes: ["S", "M", "app"],
       defaultSize: "S",
       section: "sludinajumi",
-      icon: "list",
-      tone: "#1a6fe0",
+      icon: "lst",
+      tone: MENU_TONE.blue,
     },
     {
       id: "w-radars",
@@ -89,8 +97,8 @@ export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boo
       sizes: ["S", "M", "app"],
       defaultSize: "S",
       section: "radars",
-      icon: "radar",
-      tone: "#4f4ddb",
+      icon: "rad",
+      tone: MENU_TONE.violet,
     },
     {
       id: "w-autoparks",
@@ -101,14 +109,35 @@ export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boo
       defaultSize: "S",
       section: "logistika",
       icon: "dz",
-      tone: "#ffffff",
+      tone: MENU_TONE.white,
     },
   ];
 
-  return [...apps, ...widgets.filter((w) => allowed(w.section ?? ""))];
+  const kravas: MenuCatalogItem = {
+    id: "kravas",
+    kind: "app",
+    title: "Kravas",
+    href: "/admin/iriss/logistika",
+    sizes: ["app"],
+    defaultSize: "app",
+    section: "logistika",
+    icon: "box",
+    tone: MENU_TONE.blue,
+  };
+
+  return [...apps, ...(allowed("logistika") ? [kravas] : []), ...widgets.filter((w) => allowed(w.section ?? ""))];
 }
 
-export const IRISS_DEFAULT_LAYOUT_IDS = ["autoparks", "pavadzimes", "logistika", "vin", "pasutijumi", "sludinajumi", "radars"];
+export const IRISS_DEFAULT_LAYOUT_IDS = [
+  "autoparks",
+  "pavadzimes",
+  "logistika",
+  "kravas",
+  "vin",
+  "pasutijumi",
+  "sludinajumi",
+  "radars",
+];
 
 const PRO_APPS: Array<Omit<MenuCatalogItem, "kind" | "sizes" | "defaultSize">> = [
   { id: "pro-pasutijumi", title: "Pasūtījumi", href: "/admin/dashboard", icon: "car", tone: "#1a73e8", badge: "orders" },

@@ -15,11 +15,13 @@ describe("PRO mobile shell", () => {
     expect(PRO_MOBILE_BACK_PATHS).toContain("/admin/kopsavilkums");
   });
 
-  it("renders the back row in the PRO shell and search in the dock", () => {
+  it("renders the back row in the PRO shell and Meklēt in the capsule", () => {
     const shell = read("components/admin/AdminShell.tsx");
     expect(shell).toContain("const showProBack = isProWorkspace && proMobileNeedsBack(pathname);");
     expect(shell).toContain("{showProBack ? <AdminMobileBackRow /> : null}");
-    expect(shell).toContain("<AdminMobileSearchButton />");
+    expect(shell).not.toContain("<AdminMobileSearchButton />");
+    const sidebar = read("components/admin/AdminSidebar.tsx");
+    expect(sidebar).toContain('aria-label="Meklēt"');
     const chrome = read("components/admin/mobile/AdminMobileChrome.tsx");
     expect(chrome).toContain("export function AdminMobileBackRow");
     expect(chrome).toContain("router.back()");

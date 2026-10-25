@@ -30,6 +30,11 @@ export function menuIconPadded(name: string): boolean {
   return name === "dz";
 }
 
+/** Balts fons: Dzintarzeme un Google Maps pin. Pārējās ir krāsainas. */
+export function menuIconLight(name: string): boolean {
+  return name === "dz" || name === "pin";
+}
+
 function StrokeIcon({
   size,
   className,
@@ -46,25 +51,23 @@ function StrokeIcon({
   );
 }
 
-/** Google Maps #pin no ikonas-v2/defs.txt. */
+/** Google Maps pin no v11d maketa (ne ikonas-v2). */
 function MapsPin({ size, className }: { size: number; className?: string }): ReactElement {
-  const h = Math.round(size * (34 / 24));
   return (
-    <svg viewBox="0 0 24 34" width={size} height={h} className={className} aria-hidden>
-      <path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 22 12 22s12-13 12-22C24 5.4 18.6 0 12 0z" fill="#ea4335" />
-      <path d="M12 0C8 0 4.5 2 2.4 5L12 12z" fill="#4285f4" />
-      <path d="M2.4 5C.9 7 0 9.4 0 12c0 3 1.4 6.4 3.3 9.5L12 12z" fill="#fbbc04" />
-      <path d="M12 12l-8.7 9.5C6.6 27 12 34 12 34s1.9-2 4.2-5.2z" fill="#34a853" />
-      <circle cx="12" cy="12" r="4.3" fill="#a50e0e" />
+    <svg viewBox="0 0 24 24" width={size} height={size} className={className} aria-hidden>
+      <path d="M12 22s-7-6.6-7-12.2A7 7 0 0 1 19 9.8C19 15.4 12 22 12 22z" fill="#ea4335" />
+      <path d="M12 22s-7-6.6-7-12.2A7 7 0 0 1 12 2.8z" fill="#4285f4" opacity=".9" />
+      <path d="M5.2 8.3A7 7 0 0 1 12 2.8v4.5z" fill="#fbbc04" />
+      <circle cx="12" cy="9.6" r="2.6" fill="#fff" />
     </svg>
   );
 }
 
-/** Vecā tipa Scan (#vin): stūri + vidus līnija. */
+/** VIN: stūri + vidus līnija (v11, ne ikonas-v2). */
 function VinScan({ size, className }: { size: number; className?: string }): ReactElement {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
-      <path d="M4 8V5h3M17 5h3v3M20 16v3h-3M7 19H4v-3M7 12h10" />
+    <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" aria-hidden>
+      <path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 12h8" />
     </svg>
   );
 }
@@ -72,10 +75,8 @@ function VinScan({ size, className }: { size: number; className?: string }): Rea
 function OrdIcon({ size, className }: { size: number; className?: string }): ReactElement {
   return (
     <StrokeIcon size={size} className={className}>
-      <rect x="3" y="3" width="11" height="14" rx="2" />
-      <path d="M6 7l1 1 2-2M6 12l1 1 2-2M16 15l1.5-3h3L22 15v3h-6z" />
-      <circle cx="17.5" cy="19" r="1" />
-      <circle cx="20.5" cy="19" r="1" />
+      <rect x="5" y="4" width="14" height="17" rx="2" />
+      <path d="M9 9h6M9 13h6M9 17h3" />
     </StrokeIcon>
   );
 }
@@ -83,18 +84,18 @@ function OrdIcon({ size, className }: { size: number; className?: string }): Rea
 function LstIcon({ size, className }: { size: number; className?: string }): ReactElement {
   return (
     <StrokeIcon size={size} className={className}>
-      <rect x="3" y="4" width="18" height="16" rx="3" />
-      <path d="M3 14l5-4 4 3 3-2 6 4M14 4v-1.5h5" />
-      <circle cx="16" cy="8.5" r="1.5" />
+      <path d="M3 12V4h8l10 10-8 8z" />
+      <circle cx="8" cy="8" r="1.5" />
     </StrokeIcon>
   );
 }
 
 function RadIcon({ size, className }: { size: number; className?: string }): ReactElement {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" aria-hidden>
-      <circle cx="12" cy="12" r="1.8" fill="currentColor" />
-      <path d="M12 12l6-6M7.8 16.2a6 6 0 0 1 0-8.4M16.2 7.8a6 6 0 0 1 0 8.4M4.9 19.1a10 10 0 0 1 0-14.2M19.1 4.9a10 10 0 0 1 0 14.2" />
+    <svg viewBox="0 0 24 24" width={size} height={size} className={className} fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
+      <circle cx="12" cy="12" r="8" />
+      <circle cx="12" cy="12" r="4" />
+      <circle cx="12" cy="12" r="1" fill="currentColor" />
     </svg>
   );
 }
@@ -102,7 +103,8 @@ function RadIcon({ size, className }: { size: number; className?: string }): Rea
 function BoxIcon({ size, className }: { size: number; className?: string }): ReactElement {
   return (
     <StrokeIcon size={size} className={className}>
-      <path d="M12 2l9 5v10l-9 5-9-5V7zM3 7l9 5 9-5M12 12v10M7.5 4.5l9 5" />
+      <path d="M3 7l9-4 9 4v10l-9 4-9-4z" />
+      <path d="M3 7l9 4 9-4M12 11v10" />
     </StrokeIcon>
   );
 }

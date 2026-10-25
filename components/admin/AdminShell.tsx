@@ -4,7 +4,7 @@ import { AdminOfflineBanner } from "@/components/admin/AdminOfflineBanner";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { AdminGlobalSearch, AdminMobileSearchButton } from "./AdminGlobalSearch";
+import { AdminGlobalSearch } from "./AdminGlobalSearch";
 import { AdminMobileBackRow } from "@/components/admin/mobile/AdminMobileChrome";
 import { AdminMobileTabBar, AdminSidebar, useAdminSidebarCollapsed } from "./AdminSidebar";
 import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
@@ -93,8 +93,6 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
       {hideTabBar ? null : (
         <div className={ADMIN_MOBILE_TABBAR_DOCK_WRAPPER}>
           <AdminMobileTabBar workspace={workspace} />
-          {/* Zonu maiņa (PRO / IRISS) ir "Vairāk" lapas augšā; šeit meklēšana kā iOS. */}
-          <AdminMobileSearchButton />
         </div>
       )}
       <AdminGlobalSearch />

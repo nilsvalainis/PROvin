@@ -4,7 +4,7 @@ export type WaybillHomeRingTone = "ok" | "soon" | "urgent" | "free";
 
 export const WAYBILL_HOME_RING: Record<Exclude<WaybillHomeRingTone, "free">, string> = {
   ok: "#34c759",
-  soon: "#ff9f0a",
+  soon: "#ff9500",
   urgent: "#ff3b30",
 };
 

@@ -7,7 +7,7 @@ describe("telefona apakšējā josla un ielāde", () => {
   it("navigates tabs as plain links without a view transition that blocks taps", () => {
     expect(sidebar).not.toMatch(/startAdminViewTransition/);
     expect(sidebar).not.toMatch(/router\.push\(href\)/);
-    expect(sidebar).toContain("setPendingHref(t.href)");
+    expect(sidebar).toContain("setPendingHref(home.href)");
     expect(sidebar).toContain("const shownPath = pendingHref ?? pathname;");
   });
 

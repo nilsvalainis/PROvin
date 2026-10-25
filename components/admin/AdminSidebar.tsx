@@ -47,7 +47,7 @@ import {
 import { ADMIN_MOBILE_TABBAR_DOCK_NAV } from "@/lib/admin-mobile-shell";
 import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
-import { AdminMobileCountBadge, AdminMobileSheet, AdminMobileTabPill } from "@/components/admin/mobile/AdminMobileChrome";
+import { AdminMobileCountBadge, AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
 import type { AdminMobileIconName } from "@/lib/admin-mobile-ds";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { useAdminMobileColorScheme } from "@/components/admin/useAdminMobileViewport";
@@ -551,17 +551,31 @@ export function AdminSidebar({
   );
 }
 
-const MOBILE_TAB_ICON: Record<string, AdminMobileIconName> = {
-  "/admin/pro": "atzime",
-  "/admin/dashboard": "pasutijumi",
-  "/admin/vin-scan": "vinParbaude",
-  "/admin/atras-vertesanas": "atrie",
-  "/admin/iriss": "atzime",
-  "/admin/iriss/pasutijumi": "pasutijumi",
-  "/admin/iriss/sludinajumi": "sludinajums",
-  "/admin/iriss/scan": "radars",
-  "/admin/iriss/logistika": "logistika",
-};
+function CapsuleGlyph({ name }: { name: "sakums" | "vairak" | "meklet" }) {
+  if (name === "sakums") {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden>
+        <path d="M4 10.5 12 4l8 6.5V20h-5v-6H9v6H4z" />
+      </svg>
+    );
+  }
+  if (name === "vairak") {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden>
+        <rect x="4" y="4" width="6.5" height="6.5" rx="2" />
+        <rect x="13.5" y="4" width="6.5" height="6.5" rx="2" />
+        <rect x="4" y="13.5" width="6.5" height="6.5" rx="2" />
+        <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="2" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16 16 4 4" />
+    </svg>
+  );
+}
 
 const MORE_ROW_ICON: Record<string, AdminMobileIconName> = {
   "/admin/kopsavilkums": "rits",
@@ -588,7 +602,7 @@ const MORE_ROW_ICON: Record<string, AdminMobileIconName> = {
   "/admin/iriss/izmaksas": "rekini",
 };
 
-/** Mobilā apakšējā cilņu josla: 4 iPhone cilnes + atsevišķa meklēšana. PRO/IRISS centrs ir „Vairāk”. */
+/** Mobilā apakšējā josla: peldoša C kapsula ar 3 ikonām (Sākums, Vairāk, Meklēt). */
 export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: AdminWorkspace } = {}) {
   const pathname = usePathname() || "";
   const workspaceFromPath = useAdminWorkspace();
@@ -601,7 +615,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
   useAdminScrollLock(more || limitsOpen);
 
   /**
-   * Cilne, uz kuru lietotājs tikko pieskārās. Pille un atzīme pārvietojas uzreiz, kamēr serveris gatavo lapu.
+   * Cilne, uz kuru lietotājs tikko pieskārās. Atzīme pārvietojas uzreiz, kamēr serveris gatavo lapu.
    * Agrāk te bija view transition ap router.push: animācija sākās pirms navigācijas, tās laikā lapa
    * nereaģēja uz pieskārieniem, un saturs nomainījās vēlāk zem pirksta (Nils 21.10: "atveras cita sadaļa").
    */
@@ -617,61 +631,45 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
     return () => window.removeEventListener("keydown", onKey);
   }, [more]);
 
-  const irissTabs: Item[] = [I_MENU, I_HOME, { ...I_LIST, label: "Sludinājumi" }];
-  const proTabs: Item[] = [PRO_MENU, { ...SAKUMS, label: "Pasūtījumi" }, { ...VIN, label: "VIN" }];
-  const tabs: Item[] = workspace === "iriss" ? irissTabs : proTabs;
-  const tabHrefs = new Set(tabs.map((t) => t.href));
+  const home = workspace === "iriss" ? I_MENU : PRO_MENU;
+  const tabHrefs = new Set([home.href]);
   const shownPath = pendingHref ?? pathname;
-  const inTabs = tabs.some((t) => t.match(shownPath));
   const moreGroups = WS_GROUPS[workspace].map((g) => ({
     ...g,
     items: g.items.filter((it) => !tabHrefs.has(it.href)),
   })).filter((g) => g.items.length > 0);
   const moreBadge = moreGroups.reduce((sum, g) => sum + g.items.reduce((s, it) => s + (it.badge ? badges[it.badge] : 0), 0), 0);
+  const onHome = home.match(shownPath) && !more;
 
   const tabClass = (on: boolean) =>
-    `admin-nav-link relative z-[1] flex min-w-0 flex-1 flex-col items-center justify-center gap-[2px] px-1 py-0.5 text-[10px] font-medium ${
-      on ? "font-semibold text-[var(--am-ink)]" : "text-[var(--am-ink2)]"
+    `admin-nav-link relative z-[1] flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-full ${
+      on ? "bg-black/[0.06] text-[#1c1c1e]" : "text-[#8e8e93]"
     }`;
-
-  const selectedTabIndex = tabs.findIndex((t) => t.match(shownPath));
-  const pillIndex = more || selectedTabIndex < 0 ? tabs.length : selectedTabIndex;
-  const tabCount = tabs.length + 1;
 
   return (
     <>
       <nav className={ADMIN_MOBILE_TABBAR_DOCK_NAV} aria-label="Galvenā izvēlne">
-          <AdminMobileTabPill index={pillIndex} count={tabCount} />
-          {tabs.map((t) => {
-            const on = t.match(shownPath) && !more;
-            const n = t.badge ? badges[t.badge] : 0;
-            const icon = MOBILE_TAB_ICON[t.href] ?? "pasutijumi";
-            return (
-              <Link
-                key={t.href}
-                href={t.href}
-                aria-current={on ? "page" : undefined}
-                className={tabClass(on)}
-                onClick={(e) => {
-                  if (isModifiedClick(e)) return;
-                  setMore(false);
-                  setPendingHref(t.href);
-                }}
-              >
-                <span className="relative">
-                  <AdminMobileIcon name={icon} className="h-5 w-5" />
-                  {n > 0 ? <AdminMobileCountBadge n={n} floating /> : null}
-                </span>
-                <span className="max-w-full whitespace-nowrap leading-none">{t.label}</span>
-              </Link>
-            );
-          })}
-          <button type="button" onClick={() => setMore((v) => !v)} className={tabClass(!inTabs || more)} aria-expanded={more} aria-label="Vairāk">
+          <Link
+            href={home.href}
+            aria-label="Sākums"
+            aria-current={onHome ? "page" : undefined}
+            className={tabClass(onHome)}
+            onClick={(e) => {
+              if (isModifiedClick(e)) return;
+              setMore(false);
+              setPendingHref(home.href);
+            }}
+          >
+            <CapsuleGlyph name="sakums" />
+          </Link>
+          <button type="button" onClick={() => setMore((v) => !v)} className={tabClass(more)} aria-expanded={more} aria-label="Vairāk">
             <span className="relative">
-              <AdminMobileIcon name="vairak" className="h-5 w-5" />
+              <CapsuleGlyph name="vairak" />
               {moreBadge > 0 ? <AdminMobileCountBadge n={moreBadge} floating /> : null}
             </span>
-            <span className="whitespace-nowrap leading-none">Vairāk</span>
+          </button>
+          <button type="button" onClick={() => requestAdminGlobalSearch()} className={tabClass(false)} aria-label="Meklēt">
+            <CapsuleGlyph name="meklet" />
           </button>
       </nav>
       {more ? (

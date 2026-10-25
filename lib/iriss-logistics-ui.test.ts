@@ -59,8 +59,10 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(archiveFixture).toContain("item archived");
   });
 
-  it("keeps Loģistika under Vairāk, not as a fifth mobile tab", () => {
-    expect(sidebar).toContain('const irissTabs: Item[] = [I_MENU, I_HOME, { ...I_LIST, label: "Sludinājumi" }];');
+  it("keeps Loģistika under Vairāk, not as a capsule icon", () => {
+    expect(sidebar).toContain('aria-label="Sākums"');
+    expect(sidebar).toContain('aria-label="Vairāk"');
+    expect(sidebar).toContain('aria-label="Meklēt"');
     expect(sidebar).not.toMatch(/irissTabs: Item\[\] = \[[^\]]*I_LOGISTICS/);
     expect(sidebar).toContain('"/admin/iriss/logistika": "logistika"');
   });

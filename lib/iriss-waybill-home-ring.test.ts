@@ -16,7 +16,7 @@ describe("waybillHomeRingTone", () => {
 
   it("dod luksofora krāsas, ne zaļo slēdža toni brīvajam", () => {
     expect(waybillHomeRingColor(36)).toBe("#34c759");
-    expect(waybillHomeRingColor(8)).toBe("#ff9f0a");
+    expect(waybillHomeRingColor(8)).toBe("#ff9500");
     expect(waybillHomeRingColor(2)).toBe("#ff3b30");
     expect(waybillHomeRingColor(0, false)).toBe("#c7c7cc");
   });

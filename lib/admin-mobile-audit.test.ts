@@ -28,9 +28,10 @@ describe("IRISS / PRO mobile audit guards", () => {
     expect(src.shell).not.toMatch(/am-topbar-sticky/);
   });
 
-  it("ships the approved menu home, back arrow and dock search (zone switch in Vairāk)", () => {
-    expect(src.shell).toMatch(/AdminMobileSearchButton/);
+  it("ships the approved menu home, back arrow and capsule search (zone switch in Vairāk)", () => {
+    expect(src.shell).not.toMatch(/AdminMobileSearchButton/);
     expect(src.shell).not.toMatch(/AdminMobileWorkspaceSwitch/);
+    expect(src.sidebar).toMatch(/aria-label="Meklēt"/);
     expect(src.chrome).toMatch(/defaultBackHref/);
     expect(src.chrome).toMatch(/\/admin\/iriss/);
     expect(src.bar).toMatch(/return null;/);
