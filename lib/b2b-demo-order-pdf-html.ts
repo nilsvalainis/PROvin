@@ -1,3 +1,4 @@
+import { formatYmdLv } from "@/lib/date-ymd-lv";
 import { B2B_DEMO_DEAL_DETAIL_OPTIONS, type B2bDemoOffer, type B2bDemoOrder, type B2bDemoSettings } from "@/lib/b2b-demo-types";
 import { b2bDemoClientDisplayName } from "@/lib/b2b-demo-orders";
 import {
@@ -94,7 +95,7 @@ export function buildB2bDemoOrderPdfModel(
       kv("Klients", b2bDemoClientDisplayName(order)),
       kv("Tālrunis", order.phone),
       kv("E-pasts", order.email),
-      kv("Pasūtījuma datums", order.orderDate),
+      kv("Pasūtījuma datums", formatYmdLv(order.orderDate)),
     ]),
     vehicle: collect([
       kv("Marka / modelis", order.brandModel),
