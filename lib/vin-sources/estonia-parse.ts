@@ -15,6 +15,7 @@ export const MNT_NOT_FOUND = /Sisestatud andmetega sõidukit registris ei ole/i;
 export const MNT_CAPTCHA_ERROR = /reCAPTCHA valideerimise viga/i;
 /** Admin UI ziņa, kad mnt.ee serveris noraida reCAPTCHA v3 žetonu. estonia.ts to meklē pārlūka rezervei. */
 export const MNT_CAPTCHA_REJECTED_MESSAGE = "reCAPTCHA neizdevās";
+export const MNT_FORM_ONLY_MESSAGE = "mnt.ee rezultāts netika ielādēts (tikai meklēšanas forma)";
 
 /** Piem. `reCAPTCHA neizdevās (mnt.ee noraidīja ReCaptchaV3TaskProxyLess, ReCaptchaV3M1TaskProxyLess žetonu)`. */
 export function mntCaptchaRejectedMessage(taskTypes: string[]): string {
@@ -90,7 +91,12 @@ function mileageNotes(mileage: VinSourceMileageRow[]): string[] {
   return notes;
 }
 
-export function parseMntExtract(vin: string, data: ExtractedPage): VinSourceFetchResult {
+/** `resultConfirmed`: relejs jau pārbaudīja, ka šī ir rezultātu lapa (nobraukums nāk atsevišķi). */
+export function parseMntExtract(
+  vin: string,
+  data: ExtractedPage,
+  opts: { resultConfirmed?: boolean } = {},
+): VinSourceFetchResult {
   if (MNT_CAPTCHA_ERROR.test(data.text)) {
     return emptyVinSourceResult("mnt_ee", vin, MNT_CAPTCHA_REJECTED_MESSAGE);
   }
@@ -105,6 +111,10 @@ export function parseMntExtract(vin: string, data: ExtractedPage): VinSourceFetc
   }
 
   const mileage = mileageRowsFromTables(data.tables);
+  /** Rezultātā VIN vienmēr redzams. Tikai forma (ievadteksts + "Registreerimismärk / VIN-kood / OTSIN") nav atradums. */
+  if (!opts.resultConfirmed && mileage.length === 0 && !data.text.toUpperCase().includes(vin.toUpperCase())) {
+    return emptyVinSourceResult("mnt_ee", vin, MNT_FORM_ONLY_MESSAGE);
+  }
   const notes = mileageNotes(mileage);
 
   const ownerLines: string[] = [];
