@@ -576,25 +576,35 @@
 .ap2.ap2.ap2 .ap2-dhead-status {
   flex: none;
 }
+/* Mobilais (m03/m09): horizontāli ritināmas pills. Dators zemāk pārslēdz uz grid. */
 .ap2.ap2.ap2 .ap2-tabs {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 1fr;
-  gap: 4px;
+  display: flex;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  gap: 6px;
   margin-top: 12px;
+  min-width: 0;
+  max-width: 100%;
+}
+.ap2.ap2.ap2 .ap2-tabs::-webkit-scrollbar {
+  display: none;
 }
 .ap2.ap2.ap2 .ap2-tab {
-  padding: 9px 0;
-  border-radius: 10px;
-  font-size: 12.5px;
-  font-weight: 600;
+  flex: 0 0 auto;
+  padding: 0 14px;
+  min-height: 44px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
   color: #3a3a3c;
-  background: #fff;
-  border: 1px solid var(--line);
+  background: #e3e3e8;
+  border: 0;
   white-space: nowrap;
   text-align: center;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  overflow: visible;
 }
 .ap2.ap2.ap2 .ap2-tab.on {
   background: var(--btn);
@@ -822,14 +832,25 @@
     display: none;
   }
   .ap2.ap2.ap2 .ap2-tabs {
+    display: grid;
+    overflow: visible;
     grid-auto-flow: row;
     grid-template-columns: repeat(var(--tabs, 5), minmax(0, 170px)) minmax(0, 1fr) 110px;
     gap: 6px;
     margin: 12px 0 14px;
   }
   .ap2.ap2.ap2 .ap2-tab {
+    flex: unset;
+    display: block;
     padding: 10px 0;
+    min-height: 0;
+    border-radius: 10px;
     font-size: 13.5px;
+    font-weight: 600;
+    background: #fff;
+    border: 1px solid var(--line);
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .ap2.ap2.ap2 .ap2-tab .ap2-m {
     display: none;
@@ -2330,22 +2351,28 @@
 }
 
 @media (max-width: 899px) {
-  /* Cilnes: horizontāli ritināma "pill" josla (maketa stils) - novērš arī 5-6 ciļņu saspiešanos 375px platumā. */
+  /* Cilnes: pills, nesaspiežas 375/390/414; «CSDD reģistrs» ritina joslu, ne lapu. */
   .ap2.ap2.ap2 .ap2-tabs {
     display: flex;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
     gap: 6px;
+    min-width: 0;
+    max-width: 100%;
   }
   .ap2.ap2.ap2 .ap2-tabs::-webkit-scrollbar {
     display: none;
   }
   .ap2.ap2.ap2 .ap2-tab {
-    flex: none;
+    flex: 0 0 auto;
+    flex-shrink: 0;
     min-height: 44px;
-    padding: 0 16px;
+    padding: 0 14px;
     display: inline-flex;
     align-items: center;
+    overflow: visible;
+    text-overflow: unset;
   }
 
   /* Saraksts (m01): katra rinda - sava noapaļota kartīte, nevis kopīgs rāmis ar atdalītājiem. */

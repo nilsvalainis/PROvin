@@ -21,9 +21,8 @@ export function AutoparksV2Csdd({ basics }: { basics: AutoparksV2Basics }) {
         {row("Reģ. numurs", basics.plate, Boolean(basics.plate && reg.known))}
         {row("Nobraukums", fmtKm(basics.mileageKm.value), basics.mileageKm.csdd)}
         {row("Statuss", V2_REGISTRY_STATUS_LV[reg.status], reg.known)}
-        {row("Īpašnieks", AUTOPARKS_OWNER_LV[basics.owner], false)}
-        {row("Akts", reg.actNo, Boolean(reg.actNo))}
-        {row("Akta datums", fmtDateLv(reg.actDate), Boolean(reg.actDate))}
+        {row("Īpašnieks", AUTOPARKS_OWNER_LV[basics.owner], reg.known)}
+        {row("Akts", [reg.actNo, fmtDateLv(reg.actDate)].filter(Boolean).join(" · "), Boolean(reg.actNo || reg.actDate))}
       </div>
     </div>
   );

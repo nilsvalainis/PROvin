@@ -12,4 +12,11 @@ describe("Autoparks v2 mobile CSS (j63)", () => {
     expect(css).toMatch(/\.ap2-carhead-main \{\s*display:\s*contents;/);
     expect(css).toMatch(/\.ap2-carhead \.ap2-mvin \{[\s\S]*?border-top:\s*0\.5px solid/);
   });
+
+  it("mobilās cilnes ir ritināmas pills, nesaspiež CSDD reģistrs", () => {
+    expect(css).toMatch(/\.ap2-tabs \{\s*display:\s*flex;/);
+    expect(css).toMatch(/\.ap2-tabs \{[\s\S]*?overflow-x:\s*auto;/);
+    expect(css).toMatch(/\.ap2-tab \{\s*flex:\s*0 0 auto;/);
+    expect(css).toMatch(/@media \(min-width: 900px\)[\s\S]*?\.ap2-tabs \{\s*display:\s*grid;/);
+  });
 });

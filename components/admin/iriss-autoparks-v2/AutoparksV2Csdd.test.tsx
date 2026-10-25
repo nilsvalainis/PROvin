@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AutoparksV2Csdd } from "@/components/admin/iriss-autoparks-v2/AutoparksV2Csdd";
 import type { AutoparksV2Basics } from "@/lib/iriss-autoparks-v2";
-import { renderText } from "@/lib/test-render";
+import { renderHtml, renderText } from "@/lib/test-render";
 
 const basics: AutoparksV2Basics = {
   id: "ap-1",
@@ -42,9 +42,17 @@ describe("Autoparks v2 CSDD reģistrs (m03)", () => {
     expect(text).toContain("Īpašnieks");
     expect(text).toContain("SIA ĪRISS");
     expect(text).toContain("Akts");
-    expect(text).toContain("A-100");
-    expect(text).toContain("22.10.2026");
+    expect(text).toContain("A-100 · 22.10.2026");
+    expect(text).not.toContain("Akta datums");
     expect(text).not.toContain("Pamatdati");
     expect(text).not.toContain("Peļņa");
+  });
+
+  it("Īpašniekam zaļais punkts, kad CSDD reģistrs atbilst", () => {
+    const ownerChunk = (html: string) => html.split("ap2-f").find((c) => c.includes("Īpašnieks")) ?? "";
+    expect(ownerChunk(renderHtml(<AutoparksV2Csdd basics={basics} />))).toContain("ap2-cd on");
+    const empty = renderHtml(<AutoparksV2Csdd basics={{ ...basics, registry: { status: "none", actNo: "", actDate: "", known: false } }} />);
+    expect(ownerChunk(empty)).toContain("ap2-cd");
+    expect(ownerChunk(empty)).not.toContain("ap2-cd on");
   });
 });
