@@ -8,6 +8,7 @@
 
 import { JsonType, type AiJsonSchema } from "@/lib/ai-json-schema";
 
+import { ADMIN_INCIDENT_DATA_UNAVAILABLE } from "@/lib/admin-incident-field-presets";
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
 import {
   formatAutoRecordsDateForOutput,
@@ -65,6 +66,7 @@ ABSOLUTE RULES
 - AutoDNA: „Transportlīdzekļa zaudējumu apjoms” → „Summa 510 000 - 520 000 CZK”.
 - CarVertical: „Bojājumu ieraksti” → „Aptuvenā iepriekš gūto bojājumu vērtība” → „8501 € - 9000 €”.
 - amountRaw: copy the amount EXACTLY as printed, including range and currency ("510 000 - 520 000 CZK", "8501 € - 9000 €"). currency: ISO code you see (CZK, EUR, PLN, SEK …). Do NOT convert - PROVIN converts to EUR in code.
+- A damage record whose value is „Nezināms” / unknown / not given is STILL an incident: output it with its date and country and amountRaw "".
 - NOT incidents (never output them): „Cena”, „Pēdējā zināmā pārdošanas cena”, „Tirgus vērtība”, „Vērtība”, dealer listing prices, market value tables, „Remonta izmaksu reitings” percentages, service cost estimates.
 
 6) SERVICE / REPAIR HISTORY (serviceHistory) - maintenance and repairs WITH the work items
@@ -224,13 +226,18 @@ export function parseVendorPdfAgentPayload(
     if (!o) continue;
     const date = formatSourceDatePreservingMonth(asString(o.date, 32));
     const amount = amountWithCurrency(asString(o.amountRaw ?? o.amount, 80), asString(o.currency, 10));
-    if (!date || !amount) continue;
-    const conversion = convertAmountTextToEur(amount);
-    if (!conversion) continue;
+    if (!date) continue;
+    const country = normalizeCountry(asString(o.country, 80));
+    const conversion = amount ? convertAmountTextToEur(amount) : null;
+    if (!conversion) {
+      // CarVertical "Aptuvenā vērtība: Nezināms" - bojājums ir, summas nav. Ar valsti, lai nav troksnis.
+      if (country) incidents.push({ csngDate: date, lossAmount: ADMIN_INCIDENT_DATA_UNAVAILABLE, incidentNo: country });
+      continue;
+    }
     incidents.push({
       csngDate: date,
       lossAmount: conversion.display,
-      incidentNo: normalizeCountry(asString(o.country, 80)),
+      incidentNo: country,
     });
     const note = describeEurConversion(amount, conversion);
     if (note) out.notes.push(`${date}: ${note}`);
