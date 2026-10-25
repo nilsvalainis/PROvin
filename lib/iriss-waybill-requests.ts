@@ -359,6 +359,32 @@ export function pendingWaybillRequests(requests: readonly WaybillRequest[], nowM
  * Gaida vai Izveido, bet bez jebkādas virzības (pēdējās izmaiņas) ilgāk par 24 h.
  * Šādu pieprasījumu vairs neņem darbā un nerāda kā tagadēju; ierakstu nemaina un nedzēš.
  */
+/**
+ * FABLE 25.10: šim numuram jau ir pieprasījums, ko vēl izraksta (Gaida / Izveido, ne novecojis, termiņš nav beidzies).
+ * Otrs pieprasījums tajā pašā numurā (dubults klikšķis, divas ierīces) radītu divas pavadzīmes vienam numuram.
+ */
+export function pendingWaybillRequestForPlate<T extends Pick<WaybillRequest, "status" | "createdAt" | "updatedAt" | "validUntil" | "vehicle">>(
+  requests: readonly T[],
+  plate: string,
+  nowMs = Date.now(),
+): T | null {
+  const want = plate.trim().toUpperCase().replace(/[\s-]/g, "");
+  if (!want) return null;
+  for (const r of requests) {
+    if (r.status !== "queued" && r.status !== "in_progress") continue;
+    if (r.vehicle.plate.trim().toUpperCase().replace(/[\s-]/g, "") !== want) continue;
+    if (isStaleWaybillRequest(r, nowMs) || waybillPendingExpired(r, nowMs)) continue;
+    return r;
+  }
+  return null;
+}
+
+export class WaybillPendingSamePlateError extends Error {
+  constructor(readonly pending: Pick<WaybillRequest, "id" | "vehicle" | "status">) {
+    super("waybill_pending_same_plate");
+  }
+}
+
 export function isStaleWaybillRequest(
   req: Pick<WaybillRequest, "status" | "createdAt" | "updatedAt">,
   nowMs = Date.now(),
