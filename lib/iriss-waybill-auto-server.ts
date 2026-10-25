@@ -15,7 +15,7 @@ import { readTtrControlDoc } from "@/lib/iriss-ttr-control-store";
  */
 export async function loadWaybillPlateStates(now = new Date()): Promise<WaybillPlateState[]> {
   const [rows, csdd] = await Promise.all([readIrissPavadzimesCached(), readCsddPlatesDocSafe()]);
-  return mergeCsddPlateStates(waybillPlateOccupancy(rows, now), csdd, now.getTime());
+  return mergeCsddPlateStates(waybillPlateOccupancy(rows, now, csdd), csdd, now.getTime());
 }
 
 /**

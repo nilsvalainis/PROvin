@@ -1,4 +1,4 @@
-import { waybillPlateOccupancy, type IrissDealerPlate } from "@/lib/iriss-waybill-plates";
+import { waybillPlateOccupancy, type IrissDealerPlate, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
 
 const HOUR_MS = 60 * 60 * 1000;
 
@@ -15,20 +15,30 @@ type StripRow = {
   issuedAt?: string;
   number: string;
   brandModel?: string;
+  archived?: boolean;
 };
 
 /** Visas 3 tirdzniecības zīmes. Telefons: numurzīme + statuss / atlikušās stundas, bez pavadzīmes numura. */
 export function irissMobilePlateStripItems(rows: readonly StripRow[], now = new Date()): IrissMobilePlateStripItem[] {
-  return waybillPlateOccupancy(
-    rows.map((row) => ({
-      plate: row.plate,
-      validUntil: row.validUntil,
-      issuedAt: row.issuedAt,
-      number: row.number,
-      brandModel: row.brandModel,
-    })),
+  return irissMobilePlateStripItemsFromPlates(
+    waybillPlateOccupancy(
+      rows.map((row) => ({
+        plate: row.plate,
+        validUntil: row.validUntil,
+        issuedAt: row.issuedAt,
+        number: row.number,
+        brandModel: row.brandModel,
+        archived: row.archived,
+      })),
+      now,
+    ),
     now,
-  ).map((state) => {
+  );
+}
+
+/** No servera numuru stāvokļa (indekss + Arhīvs + CSDD) - tas pats avots, ko rāda numura pogas un apļi. */
+export function irissMobilePlateStripItemsFromPlates(plates: readonly WaybillPlateState[], now = new Date()): IrissMobilePlateStripItem[] {
+  return plates.map((state) => {
     if (!state.busy || !state.current) {
       return { plate: state.plate, busy: false, hoursLeft: null, statusLabel: "Brīvs" };
     }
