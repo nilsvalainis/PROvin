@@ -26,6 +26,7 @@
  *   POST /listings/fetch                  {platform, sourceUrl, orderId, maxPages?}
  *   POST /listings/page                   {url}  VIN SCAN izsoļu HTML (stat.vin, bid.cars, …)
  *   POST /listings/http                   {url}  car.info super-search JSON (plain HTTP, ne Chrome)
+ *   POST /listings/detail                 {platform, url}  j56: viena Auto1/Openlane auto detaļu lapa
  *   POST /listings/session/check          {platform}
  *   POST /listings/login/:platform        atver redzamu Chrome + īslaicīgs noVNC tokens adminam
  *   POST /listings/login/:platform/close  aizver manuālo login un pārbauda sesiju
@@ -52,6 +53,7 @@ import { openlane } from "./lib/platforms/openlane.mjs";
 import { sanitizeAutobidRelayRaw } from "./lib/sanitize-autobid.mjs";
 import { PLATFORMS, RelayState } from "./lib/state.mjs";
 import { listingsFetchKey, listingsUrlLog } from "./lib/urls.mjs";
+import { fetchAuctionDetail, validDetailUrl } from "./lib/detail-page.mjs";
 import { createVinScanLanes, vinScanPageHost, vinScanProfileName } from "./lib/vinscan-lanes.mjs";
 import { fetchCarinfoSuperSearchHttp, validCarinfoSuperSearchUrl } from "./lib/vinscan-http.mjs";
 import { fetchVinScanPageHtml, validVinScanPageUrl } from "./lib/vinscan-page.mjs";
@@ -68,6 +70,7 @@ const VINSCAN_MAX_FETCHES_PER_DAY = Math.max(
   Number(process.env.LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY || 400),
 );
 const MAX_QUEUE = Math.max(1, Number(process.env.LISTINGS_MAX_QUEUE || 40));
+const DETAIL_MAX_FETCHES_PER_DAY = Math.max(1, Number(process.env.LISTINGS_DETAIL_MAX_FETCHES_PER_DAY || 60));
 const VINSCAN_CONCURRENCY = Math.max(1, Math.min(3, Number(process.env.LISTINGS_VINSCAN_CONCURRENCY || 2)));
 const vinScanLanes = createVinScanLanes({ limit: VINSCAN_CONCURRENCY });
 const MANUAL_LOGIN_MINUTES = Math.max(1, Number(process.env.LISTINGS_MANUAL_LOGIN_MINUTES || 15));
@@ -417,6 +420,38 @@ const server = createServer(async (req, res) => {
       }
     });
     return sendJson(res, 200, { ok: out.status === "ok", ...out });
+  }
+
+  if (path === "/detail") {
+    const detailUrl = validDetailUrl(platform, body.url);
+    if (!detailUrl) return sendJson(res, 400, { ok: false, status: "error", error: "url nav Auto1/Openlane auto detaļu lapa" });
+    if (browserQueue.queueLength >= MAX_QUEUE) return sendJson(res, 503, { ok: false, status: "error", error: "rinda pilna" });
+    if (state.countFetch("detail", DETAIL_MAX_FETCHES_PER_DAY)) {
+      return sendJson(res, 429, { ok: false, status: "error", error: `dienas limits ${DETAIL_MAX_FETCHES_PER_DAY} detaļu lapas` });
+    }
+    log(`${platform} detail ${listingsUrlLog(detailUrl)} (rinda ${browserQueue.queueLength})`);
+    try {
+      const out = await browserQueue.run(`detail:${platform}`, async () => {
+        const started = Date.now();
+        const p = platforms[platform];
+        const { page, close } = await openProfile(platform);
+        try {
+          const session = await ensureSession(platform, page);
+          if (session.status !== "ok") return { ok: false, status: session.status, note: session.note, detail: null, elapsedMs: Date.now() - started };
+          const r = await fetchAuctionDetail(page, platform, detailUrl, { log, hasChallenge: hasCaptchaOrChallenge });
+          return { ok: r.status === "ok", status: r.status, note: r.note, detail: r.detail, apis: r.apis, elapsedMs: Date.now() - started };
+        } finally {
+          if (typeof p.persistSession === "function") await p.persistSession(page).catch(() => undefined);
+          await close();
+        }
+      });
+      log(`${platform} detail ${out.status} ${out.elapsedMs} ms ${out.note ?? ""}`);
+      return sendJson(res, 200, out);
+    } catch (e) {
+      const note = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "nezināma kļūda";
+      log(`${platform} detail kļūda: ${note}`);
+      return sendJson(res, 500, { ok: false, status: "error", note, detail: null });
+    }
   }
 
   if (path === "/fetch") {
