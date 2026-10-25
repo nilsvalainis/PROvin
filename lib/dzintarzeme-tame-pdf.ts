@@ -121,7 +121,7 @@ export async function generateDzintarzemeTamePdfBytes(
   const footerLogo: LogoPack | null = await loadOfferLogoPack(ctx.pdfDoc);
 
   const docTitle = "PASŪTĪJUMA IZMAKSU APRĒĶINS";
-  const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date());
+  const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long", timeZone: "Europe/Riga" }).format(new Date());
   const bSub = c.input.brandModel.trim();
   const sublines = [bSub || undefined, dateStr].filter(Boolean) as string[];
 
