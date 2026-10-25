@@ -8,6 +8,7 @@
 import { mergeCsddPlateStates, type CsddPlatesDoc } from "@/lib/iriss-waybill-csdd-plates";
 import {
   compactDealerPlate,
+  csddRefutesWaybill,
   waybillPlateOccupancy,
   withdrawnWaybillNos,
   type OccupancyRow,
@@ -24,6 +25,7 @@ export type WaybillLiveRequest = Pick<
   WaybillRequest,
   "id" | "status" | "createdAt" | "updatedAt" | "validUntil" | "waybillNo" | "vehicle"
 > &
+  Partial<Pick<WaybillRequest, "validFrom">> &
   Partial<Pick<WaybillRequest, "pickedBy" | "autoDisabled" | "attempts" | "plateBusyAtCreate" | "handoffAt">>;
 
 /**
@@ -82,6 +84,33 @@ function issuingFor(plate: string, requests: readonly WaybillLiveRequest[], nowM
 }
 
 /**
+ * Izdotie pieprasījumi, kurus CSDD jau atsaucis (piem. «Pārtraukt»), arī ja PDF vēl nav indeksā (Dropbox kavējas).
+ * Izdošanas laiks = CSDD validFrom (rezultātā), citādi updatedAt (vēlāks - drošāk: vajag jaunāku CSDD nolasījumu).
+ */
+export function csddWithdrawnRequestNos(
+  requests: readonly WaybillLiveRequest[],
+  csdd: CsddPlatesDoc | null | undefined,
+): ReadonlySet<string> {
+  const out = new Set<string>();
+  if (!csdd) return out;
+  for (const r of requests) {
+    if (r.status !== "issued") continue;
+    const no = r.waybillNo.trim().toUpperCase();
+    if (!no) continue;
+    const issuedAt = r.validFrom?.trim() || r.updatedAt;
+    if (csddRefutesWaybill(csdd, { plate: r.vehicle.plate, number: no, issuedAt })) out.add(no);
+  }
+  return out;
+}
+
+/** Indeksa + rindas atsauktie numuri kopā. */
+export function unionWithdrawnNos(...sets: ReadonlyArray<ReadonlySet<string> | undefined>): ReadonlySet<string> {
+  const out = new Set<string>();
+  for (const set of sets) for (const no of set ?? []) out.add(no);
+  return out;
+}
+
+/**
  * Pieprasījumu rinda papildina numuru stāvokli: izdota derīga pavadzīme padara numuru aizņemtu
  * (arī, ja Dropbox indekss / CSDD momentuzņēmums to vēl neredz), izņemot ja tas pats nr. indeksā ir atsaukts.
  * "Brīvs" nekad nepārraksta "aizņemts".
@@ -130,7 +159,7 @@ export function composeWaybillPlateStates(
   requests: readonly WaybillLiveRequest[] = [],
   now = new Date(),
 ): WaybillPlateState[] {
-  const withdrawn = withdrawnWaybillNos(rows, csdd);
+  const withdrawn = unionWithdrawnNos(withdrawnWaybillNos(rows, csdd), csddWithdrawnRequestNos(requests, csdd));
   const nowMs = now.getTime();
   return withWaybillRequestStates(
     mergeCsddPlateStates(waybillPlateOccupancy([...rows], now, csdd), csdd, nowMs, withdrawn),
