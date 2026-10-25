@@ -5,6 +5,7 @@
  * OFICIĀLĀ DĪLERA DATI lauki.
  */
 
+import { ADMIN_INCIDENT_DATA_UNAVAILABLE } from "@/lib/admin-incident-field-presets";
 import type { LtabIncidentRow } from "@/lib/admin-source-blocks";
 import {
   formatAutoRecordsDateForOutput,
@@ -31,7 +32,10 @@ import {
 } from "@/lib/vendor-report-extract";
 import { mergeVendorServiceEntries, type VendorServiceEntry } from "@/lib/vendor-service-history";
 
-const DAMAGE_VALUE_LABEL_RE = /^Aptuven[āa]\s+iepriek[šs]\s+g[ūu]to\s+boj[āa]jumu\s+v[ēe]rt[īi]ba/i;
+/** pdf-parse salīmē „iepriekšgūto” bez atstarpes. */
+const DAMAGE_VALUE_LABEL_RE = /^Aptuven[āa]\s+iepriek[šs]\s*g[ūu]to\s+boj[āa]jumu\s+v[ēe]rt[īi]ba/i;
+const DAMAGE_VALUE_UNKNOWN_RE = /^(nezin[āa]m[sa]|unknown|nav\s+zin[āa]m[sa])\.?$/i;
+const DAMAGE_AMOUNT_RE = /\d.*([€$£]|EUR|CZK|PLN|SEK|NOK|DKK|CHF|GBP|USD|HUF|RON)|([€$£]|EUR|CZK|PLN|SEK|NOK|DKK|CHF|GBP|USD|HUF|RON).*\d/i;
 const DAMAGE_HEADER_LOOKBACK = 40;
 
 type DatedCountryLine = { index: number; date: string; incidentDate: string; country: string };
@@ -169,18 +173,27 @@ function parseDamageRows(
 
   for (let i = 0; i < lines.length; i++) {
     if (!DAMAGE_VALUE_LABEL_RE.test(lines[i]!.trim())) continue;
-    const amountRaw = [lines[i + 1] ?? "", lines[i + 2] ?? ""]
-      .map((l) => l.trim())
-      .find((l) => /\d/.test(l) && /[€$£]|EUR|CZK|PLN|SEK|NOK|DKK|CHF|GBP|USD|HUF|RON/i.test(l));
-    if (!amountRaw) continue;
+    // Vērtība ir TIKAI nākamā netukšā rinda: pēc „Nezināms” seko „Augstākā cena28500 €” (tirgus cena, ne bojājums).
+    const valueLine = lines.slice(i + 1, i + 3).map((l) => l.trim()).find(Boolean) ?? "";
+    const unknownValue = DAMAGE_VALUE_UNKNOWN_RE.test(valueLine);
+    const amountRaw = !unknownValue && DAMAGE_AMOUNT_RE.test(valueLine) ? valueLine : "";
+    if (!amountRaw && !unknownValue) continue;
 
     const header = [...datedCountries]
       .filter((d) => d.index < i && i - d.index <= DAMAGE_HEADER_LOOKBACK)
       .pop();
     if (!header) continue;
 
-    const conversion = convertAmountTextToEur(amountRaw);
-    if (!conversion) continue;
+    const conversion = amountRaw ? convertAmountTextToEur(amountRaw) : null;
+    if (!conversion) {
+      // „Aptuvenā ... vērtība: Nezināms” - bojājums ir, summas nav. Nekad neizmest.
+      incidents.push({
+        csngDate: header.incidentDate || header.date,
+        lossAmount: ADMIN_INCIDENT_DATA_UNAVAILABLE,
+        incidentNo: header.country,
+      });
+      continue;
+    }
     incidents.push({
       csngDate: header.incidentDate || header.date,
       lossAmount: conversion.display,
