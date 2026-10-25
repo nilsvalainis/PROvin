@@ -34,6 +34,7 @@ import {
 import { irissOfferCustomPdfBlocks, irissOfferPdfShows } from "@/lib/iriss-offer-blocks";
 import { formatOfferDeadlineLv, formatOfferValidUntilLv, normalizeOfferValidUntil } from "@/lib/iriss-offer-valid-until";
 import { irissOfferImagesOmittedNotice } from "@/lib/iriss-offer-share";
+import { formatIrissOfferPublicFuel, formatIrissOfferPublicTransmission } from "@/lib/iriss-offer-public-display";
 import { parsePriceLike } from "@/lib/iriss-price-format";
 import { applyProvinHumanDashes } from "@/lib/source-summary-comment-format";
 import {
@@ -377,11 +378,16 @@ function drawOfferColonLineWithIcon(ctx: Ctx, line: string, size: number, x: num
   let dx = 0;
   let mw = maxW;
   if (p.kind === "kv") {
+    // Visas rindas vienā kolonnā - arī tās, kurām nav ikonas (Jauda, Krāsa).
+    dx = 18;
+    mw = maxW - dx;
     const kind = matchOfferLineIcon(p.label);
     if (kind) {
-      dx = 18;
-      mw = maxW - dx;
-      drawOfferMiniIcon(ctx.page, kind, x + 1, ctx.y - size * 0.32, 14, PREMIUM_ORANGE);
+      // Ikonas augša = drawOfferMiniIcon(baselineY) - 0.88 * izmērs; centrē pret šīs rindas lielo burtu vidu
+      // (agrāk ikona bija par vienu rindu zemāk: 1. rindai nav, pēdējā paliek viena).
+      const iconSize = 14;
+      const iconTop = ctx.y - size * 0.64 + iconSize / 2;
+      drawOfferMiniIcon(ctx.page, kind, x + 1, iconTop + iconSize * 0.88, iconSize, PREMIUM_ORANGE);
     }
   }
   drawColonLabeledLine(ctx, line, size, x + dx, mw);
@@ -1530,10 +1536,21 @@ export async function buildIrissOfferPdfBytes(
   if (val(offer.brandModel)) offerLines.push(`Marka, modelis: ${val(offer.brandModel)}`);
   if (firstRegistration) offerLines.push(`Pirmā reģistrācija: ${firstRegistration}`);
   if (odometer) offerLines.push(`Odometra rādījums: ${odometer}`);
-  if (val(offer.transmission)) offerLines.push(`Transmisija: ${val(offer.transmission)}`);
+  const vehicleBlock = offer.blocks?.find((b) => b.kind === "vehicle");
+  // Redaktora bloka vērtība (ja ir) - tā pati, ko rāda redaktors un publiskā saite; citādi piedāvājuma lauks.
+  const vehicleValue = (id: "transmission" | "fuel" | "powerKw" | "color"): string | null =>
+    val(vehicleBlock?.rows?.find((r) => r.id === id)?.value ?? "") ?? val(offer[id]);
+  const transmission = vehicleValue("transmission");
+  const fuel = vehicleValue("fuel");
+  const powerKw = vehicleValue("powerKw");
+  const color = vehicleValue("color");
+  if (transmission) offerLines.push(`Transmisija: ${formatIrissOfferPublicTransmission(transmission)}`);
+  if (fuel) offerLines.push(`Degviela: ${formatIrissOfferPublicFuel(fuel)}`);
+  if (powerKw) offerLines.push(`Jauda: ${/^\d+([.,]\d+)?$/.test(powerKw) ? `${powerKw} kW` : powerKw}`);
+  if (color) offerLines.push(`Krāsa: ${color}`);
   if (val(offer.location)) offerLines.push(`Atrašanās vieta: ${val(offer.location)}`);
   if (offer.blocks?.length) {
-    const vehicle = offer.blocks.find((b) => b.kind === "vehicle");
+    const vehicle = vehicleBlock;
     for (const row of vehicle?.rows ?? []) {
       const known = ["brandModel", "firstRegistration", "odometerReading", "fuel", "transmission", "powerKw", "color"];
       if (!known.includes(row.id) && row.label.trim() && row.value.trim()) {
@@ -1633,9 +1650,11 @@ export async function buildIrissOfferPdfBytes(
   // Precīzs termiņš (T4): "dd.mm.gggg hh:mm" Rīgas laikā; vecie piedāvājumi - tikai datums, kā līdz šim.
   const offerDeadlineLabel = formatOfferDeadlineLv(offer.validUntilAt ?? "");
   const pricingPlainLines: string[] = [];
-  if (carPrice) pricingPlainLines.push(`Automašīnas cena: ${carPrice}`);
-  if (deliveryPrice) pricingPlainLines.push(`Piegādes cena: ${deliveryPrice}`);
-  if (commissionFee) pricingPlainLines.push(`Komisijas maksa: ${commissionFee}`);
+  // Tikai skaitlis ("21500") - tāpat kā "Kopā" (21 500 €); brīvs teksts paliek kā ievadīts.
+  const priceText = (v: string) => (/^\d+([.,]\d+)?$/.test(v.replace(/\s/g, "")) ? fmtMoneyEurLv(parseMoney(v)) : v);
+  if (carPrice) pricingPlainLines.push(`Automašīnas cena: ${priceText(carPrice)}`);
+  if (deliveryPrice) pricingPlainLines.push(`Piegādes cena: ${priceText(deliveryPrice)}`);
+  if (commissionFee) pricingPlainLines.push(`Komisijas maksa: ${priceText(commissionFee)}`);
   const hasPricing = pricingPlainLines.length > 0 || totalPrice > 0;
 
   if (irissOfferPdfShows(offer, "pricing") && hasPricing) {
