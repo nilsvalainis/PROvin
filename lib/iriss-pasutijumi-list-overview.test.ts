@@ -59,7 +59,7 @@ describe("iriss pasūtījumu saraksta pārskats", () => {
       "Uzvārds: Kalniņš",
       "Tālrunis: 27222272",
       "E-pasts: edgars@example.com",
-      "Pasūtījuma datums: 2026-04-22",
+      "Pasūtījuma datums: 22.04.2026",
     ]);
     expect(o.specLines).toContain("Marka / modelis: BMW iX40");
     expect(o.specLines).toContain("VIN: WBAZZZ8V0K1237731");
