@@ -8,6 +8,7 @@ import {
   waybillChatPayload,
   waybillDocWithoutOrders,
   waybillRequestWithoutOrder,
+  WaybillPendingSamePlateError,
 } from "@/lib/iriss-waybill-requests";
 import { createWaybillRequest, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
 import { readDismissedWaybillIds } from "@/lib/iriss-waybill-dismissed-store";
@@ -205,6 +206,17 @@ export async function POST(req: Request) {
       NO_STORE,
     );
   } catch (err) {
+    if (err instanceof WaybillPendingSamePlateError) {
+      const car = err.pending.vehicle.brandModel.trim();
+      return NextResponse.json(
+        {
+          error: `Šim numuram jau ir pieprasījums, kas vēl tiek izrakstīts${car ? ` (${car})` : ""}. Pagaidi, kamēr tas pabeigts, vai atcel to un mēģini vēlreiz.`,
+          pending: true,
+          pendingId: err.pending.id,
+        },
+        { status: 409, ...NO_STORE },
+      );
+    }
     console.error("[iriss-waybill] create_failed", err instanceof Error ? err.message : err);
     return NextResponse.json(
       { error: "Neizdevās nosūtīt pavadzīmes pieprasījumu." },
