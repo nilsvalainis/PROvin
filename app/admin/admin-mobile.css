@@ -172,7 +172,8 @@
     --color-provin-surface: var(--am-bg);
   }
 
-  .admin-ios-theme .admin-m :is(p, span, h1, h2, h3, h4, h5, h6, label, small, li, dt, dd, a) {
+  /* :not(:where(.am-badge)) - žetonam sava krāsa (agrāk mantoja pelēko cilnes tekstu); 0 specifiskuma. */
+  .admin-ios-theme .admin-m :is(p, span, h1, h2, h3, h4, h5, h6, label, small, li, dt, dd, a):not(:where(.am-badge)) {
     color: inherit;
   }
 

@@ -134,6 +134,8 @@
   --hair: rgba(255, 255, 255, 0.08);
   --badge: #3a3b42;
   --onink: #0b0c10;
+  /* Žetons ir tumšs (#3a3b42) - teksts gaišs, ne --onink (#0b0c10, kontrasts ~1,7:1). */
+  --badge-fg: var(--ink);
   --acc: #8ea6ff;
   --acc-soft: rgba(142, 166, 255, 0.16);
   --warn: #e3a54a;
