@@ -306,7 +306,7 @@ function StatusSegment({ status, disabled, onChange }: { status: AutoparksStatus
 
 type FieldKey = "plate" | "mileageKm" | "color" | "location" | "arrivedAt" | "purchasePriceEur" | "salePriceEur" | "make" | "model" | "year" | "vin";
 
-function CarFields({
+export function CarFields({
   car,
   hideSums,
   canWrite,
@@ -325,7 +325,7 @@ function CarFields({
     { key: "vin", label: "VIN", value: car.vin },
     { key: "mileageKm", label: "Nobraukums, km", value: car.mileageKm != null ? String(car.mileageKm) : "", numeric: true },
     { key: "color", label: "Krāsa", value: car.color },
-    { key: "location", label: "Atrašanās vieta", value: car.location },
+    // "Atrašanās vieta" nerāda šeit kopš j62: lauks dzīvo tikai IRISS Loģistikas kabinetā (kartes punkts); dati paliek, tikai nav rediģējami no Autoparka.
     { key: "arrivedAt", label: "Atvests", value: car.arrivedAt.slice(0, 10), date: true },
   ];
   if (!hideSums) {
