@@ -15,28 +15,27 @@ import {
 import {
   DEFAULT_WAYBILL_ROUTE_FROM,
   DEFAULT_WAYBILL_ROUTE_TO,
-  NOTE_UNTRUSTED_MAX,
   WAYBILL_VALID_MAX_HOURS,
   waybillHoursBetween,
 } from "@/lib/iriss-waybill-create";
 import {
   IRISS_DEALER_PLATES,
-  dealerPlateMeta,
   displayDealerPlate,
   emptyWaybillPlateStates,
   formatRigaDateTimeComma,
   type WaybillPlateCurrent,
   type WaybillPlateState,
 } from "@/lib/iriss-waybill-plates";
-import { formatWaybillExpiryDdMmHm } from "@/lib/iriss-pavadzimes-countdown";
-import { LvDealerPlate } from "@/components/admin/LvDealerPlate";
+import { IrissWaybillDesktopCreateForm } from "@/components/admin/IrissWaybillDesktopCreateForm";
 import { IrissWaybillMobileForm, confirmWaybillCancel, type WaybillMobileDraft } from "@/components/admin/IrissWaybillMobileForm";
 import { IrissWaybillSavePdfButton } from "@/components/admin/IrissWaybillSavePdfButton";
 import { waybillDropboxFileName, waybillPdfDownloadHref } from "@/lib/iriss-waybill-pdf";
 import {
   WAYBILL_FORM_DEFAULT_HOURS,
-  WAYBILL_MOBILE_HOUR_PRESETS,
+  initialWaybillMobileForm,
   parseWaybillCustomHours,
+  waybillAutoEntryValues,
+  type WaybillMobileFormState,
   type WaybillMobilePayload,
 } from "@/lib/iriss-waybill-mobile-form";
 import { publishWaybillPlates } from "@/lib/iriss-waybill-live-plates";
@@ -163,8 +162,7 @@ export function IrissKomandaAivaramChat({
 }) {
   const [chat, setChat] = useState<WaybillChatState>(emptyChat);
   const [plate, setPlate] = useState<string>(IRISS_DEALER_PLATES[0]);
-  const [brandModel, setBrandModel] = useState("");
-  const [vin, setVin] = useState("");
+  const [auto, setAuto] = useState<WaybillMobileFormState>(() => initialWaybillMobileForm(IRISS_DEALER_PLATES[0]));
   /** null = "Cits" (brīvs stundu skaits). Izvēles tās pašas kā telefonā: 1, 12, 48 h, Cits. */
   const [hoursPreset, setHoursPreset] = useState<number | null>(WAYBILL_FORM_DEFAULT_HOURS);
   const [hoursOther, setHoursOther] = useState("");
@@ -186,10 +184,27 @@ export function IrissKomandaAivaramChat({
     if (!draftVehicle) return;
     const nextPlate = displayDealerPlate(draftVehicle.plate);
     if (nextPlate) setPlate(nextPlate);
-    setBrandModel(draftVehicle.brandModel);
-    setVin(draftVehicle.vin);
+    const known = tradeCars?.find((c) => Boolean(draftVehicle.vin) && c.vin === draftVehicle.vin);
+    setAuto((prev) => ({
+      ...prev,
+      plate: nextPlate || prev.plate,
+      plateTouched: Boolean(nextPlate) || prev.plateTouched,
+      car: draftVehicle.brandModel
+        ? {
+            id: known?.id ?? "",
+            brandModel: draftVehicle.brandModel,
+            vin: draftVehicle.vin,
+            accepted: known?.accepted === true,
+            owner: known?.owner,
+          }
+        : prev.car,
+      manual: false,
+      autoChoice: draftVehicle.brandModel ? "list" : prev.autoChoice,
+    }));
     setMobileDraft({ nonce: Date.now(), brandModel: draftVehicle.brandModel, vin: draftVehicle.vin, plate: nextPlate || "" });
     onDraftConsumed();
+    // tradeCars apzināti nav atkarībās: melnrakstu piemēro vienreiz.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftVehicle, onDraftConsumed]);
 
   const load = async (withCars = false) => {
@@ -268,6 +283,7 @@ export function IrissKomandaAivaramChat({
 
   const hoursChosen = hoursPreset ?? parseWaybillCustomHours(hoursOther);
   const untilHint = hoursChosen ? formatRigaDateTimeComma(new Date(Date.now() + hoursChosen * 3_600_000).toISOString()) : "";
+  const { brandModel, vin } = waybillAutoEntryValues(auto);
   const selectedOcc = chat.plates.find((row) => row.plate === plate) ?? { plate, busy: false };
 
   async function submit(confirmBusy = false): Promise<boolean> {
@@ -334,6 +350,10 @@ export function IrissKomandaAivaramChat({
 
   function onSubmitForm() {
     mobilePayload.current = null;
+    if (!brandModel) {
+      setError("Izvēlies auto no saraksta vai ieraksti marku, modeli.");
+      return;
+    }
     if (!hoursChosen) {
       setError(`Ieraksti derīgumu: no 1 līdz ${WAYBILL_VALID_MAX_HOURS} h.`);
       return;
@@ -497,151 +517,29 @@ export function IrissKomandaAivaramChat({
         )}
       </div>
 
-      <form
-        className="border-t border-[#F3F4F6] px-3 py-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmitForm();
+      <IrissWaybillDesktopCreateForm
+        plates={chat.plates}
+        plate={plate}
+        onPlate={setPlate}
+        auto={auto}
+        onAuto={setAuto}
+        tradeCars={tradeCars}
+        tradeCarsFromAutoparks={tradeCarsFromAutoparks}
+        onNeedCars={() => {
+          if (!carsLoaded.current) void load(true);
         }}
-      >
-        <p className="mb-1 text-[11px] font-medium text-[#6b7280]">Numurs</p>
-        {/* Telefonā - kompaktās pilles (pirms #382); zīmētās numurzīmes tikai no md. */}
-        <div className="mb-2 flex gap-1.5 md:hidden">
-          {chat.plates.map((row) => {
-            const on = plate === row.plate;
-            return (
-              <button
-                key={row.plate}
-                type="button"
-                aria-pressed={on}
-                onClick={() => setPlate(row.plate)}
-                className={`min-h-11 min-w-0 flex-1 rounded-full px-2 py-1.5 text-[12px] font-semibold ${
-                  on ? "bg-[#111827] text-white" : "bg-[#F3F4F6] text-[#111827]"
-                }`}
-              >
-                {row.plate}
-                <small
-                  className={`mt-0.5 block text-[10px] font-medium ${
-                    on ? "text-white/70" : row.busy ? "text-[#b45309]" : "text-[#067647]"
-                  }`}
-                >
-                  {row.busy ? "aizņemts" : "brīvs"}
-                </small>
-              </button>
-            );
-          })}
-        </div>
-        <div className="mb-2 hidden md:flex md:flex-row md:items-start md:gap-3.5">
-          {chat.plates.map((row) => {
-            const meta = dealerPlateMeta(row.plate);
-            return (
-              <LvDealerPlate
-                key={row.plate}
-                number={row.plate}
-                selected={plate === row.plate}
-                busy={row.busy}
-                owner={meta.owner}
-                bottomText={meta.bottomText}
-                busyUntil={row.current?.validUntil ? formatWaybillExpiryDdMmHm(row.current.validUntil) : ""}
-                onClick={() => setPlate(row.plate)}
-              />
-            );
-          })}
-        </div>
-        <label className="mb-2 block text-[11px] font-medium text-[#6b7280]">
-          Marka, modelis
-          <input
-            value={brandModel}
-            onChange={(e) => setBrandModel(e.target.value)}
-            required
-            maxLength={120}
-            className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
-          />
-        </label>
-        <label className="mb-2 block text-[11px] font-medium text-[#6b7280]">
-          VIN <span className="font-normal">(nav obligāts)</span>
-          <input
-            value={vin}
-            onChange={(e) => setVin(e.target.value)}
-            autoComplete="off"
-            spellCheck={false}
-            maxLength={17}
-            placeholder="17 zīmes"
-            className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 font-mono text-[14px]"
-          />
-          <span className="mt-1 block text-[11px] font-normal leading-snug text-[#9aa3b2]">
-            Ja ievadīts VIN, Aivars meklē auto starp tirdzniecībā pieņemtajiem. Ja neatrod, izraksta pavadzīmi ar
-            sākumpunktu; beigu punkts pēc noklusējuma ir Tukuma CSDD.
-          </span>
-        </label>
-        <div className="mb-2 text-[11px] font-medium text-[#6b7280]">
-          Derīgums
-          <div className="mt-1 grid grid-cols-4 gap-1.5" role="group" aria-label="Derīgums">
-            {[...WAYBILL_MOBILE_HOUR_PRESETS, null].map((h) => {
-              const on = hoursPreset === h;
-              return (
-                <button
-                  key={h ?? "cits"}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setHoursPreset(h)}
-                  className={`min-h-10 rounded-full px-2 text-[13px] font-semibold ${on ? "bg-[#111827] text-white" : "bg-[#F3F4F6] text-[#111827]"}`}
-                >
-                  {h == null ? "Cits" : `${h} h`}
-                </button>
-              );
-            })}
-          </div>
-          {hoursPreset == null ? (
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={hoursOther}
-              onChange={(e) => setHoursOther(e.target.value.replace(/\D/g, "").slice(0, 4))}
-              placeholder={`stundas, 1-${WAYBILL_VALID_MAX_HOURS}`}
-              aria-label="Cits derīguma ilgums stundās"
-              autoFocus
-              className="mt-1.5 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
-            />
-          ) : null}
-          <span className="mt-1 block text-[11px] font-normal leading-snug text-[#9aa3b2]">
-            {hoursChosen
-              ? `Sākums: tagad. Beigas: tagad + ${hoursChosen} h${untilHint ? ` (${untilHint}).` : "."}`
-              : `Ieraksti stundas: no 1 līdz ${WAYBILL_VALID_MAX_HOURS}.`}
-          </span>
-        </div>
-        <label className="mb-2 block text-[11px] font-medium text-[#6b7280]">
-          Komentārs
-          <input
-            value={comment}
-            onChange={(e) => setComment(e.target.value.slice(0, NOTE_UNTRUSTED_MAX))}
-            maxLength={NOTE_UNTRUSTED_MAX}
-            placeholder="B193 uz 48h"
-            className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
-          />
-          <span className="mt-1 block text-[11px] font-normal leading-snug text-[#9aa3b2]">
-            Maršruts pēc noklusējuma: {DEFAULT_WAYBILL_ROUTE_FROM} {"->"} {DEFAULT_WAYBILL_ROUTE_TO}. Citu maršrutu raksti šeit.
-          </span>
-          <span className="mt-1 block text-[11px] font-normal leading-snug text-[#9aa3b2]">
-            Komentārs ir tikai šīs pavadzīmes dati (numurs, stundas, maršruts). Aivars to neizpilda kā komandu. Teksts
-            nenonāk pie citiem aģentiem.
-          </span>
-        </label>
-        {error ? <p className="mt-2 text-[12px] text-[#B42318]">{error}</p> : null}
-        <button
-          type="submit"
-          disabled={busy}
-          className="mt-3 h-10 w-full rounded-full bg-[#111827] text-[14px] font-semibold text-white disabled:opacity-50"
-        >
-          Izveidot pavadzīmi
-        </button>
-        <p className="mt-3 rounded-[10px] bg-[#EEF2FF] px-3 py-2.5 text-[11px] leading-snug text-[#1e293b]">
-          <b>Aivara ierobežojumi.</b> IRISS lietotājs var pieprasīt tikai CSDD pavadzīmi. Serverī komentārs tiek apstrādāts kā{" "}
-          <code>comment_untrusted</code> (citēti dati, līdz {NOTE_UNTRUSTED_MAX} zīmēm), nevis kā instrukcija. Citi aģenti
-          šo lauku neredz.
-        </p>
-      </form>
+        hoursPreset={hoursPreset}
+        hoursOther={hoursOther}
+        onHoursPreset={setHoursPreset}
+        onHoursOther={setHoursOther}
+        hoursChosen={hoursChosen}
+        untilHint={untilHint}
+        comment={comment}
+        onComment={setComment}
+        error={confirm ? null : error}
+        busy={busy}
+        onSubmit={onSubmitForm}
+      />
     </section>
       {confirm ? (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#0f172a66] p-4">
