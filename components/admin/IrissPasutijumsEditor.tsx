@@ -5,7 +5,7 @@ import { AdminSaveButton, useSaveMessageState } from "@/components/admin/AdminSa
 import { ArrowLeft, FileDown, Phone, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
@@ -57,6 +57,12 @@ import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import { IRISS_AUCTION_LINK_LABEL, offerLinkErrorNote, parseIrissAuctionLink } from "@/lib/iriss-auction-link";
 import type { IrissAuctionDetailExtras } from "@/lib/iriss-auction-detail";
 import { mergeServerOwnedIrissFields } from "@/lib/iriss-server-owned-fields";
+import { irissClientNameInputValue, splitIrissClientNameInput } from "@/lib/iriss-client-name-input";
+import {
+  irissDraftFieldLabel,
+  takeIrissDraftHandoff,
+  writeIrissDraftHandoff,
+} from "@/lib/iriss-pasutijumi-draft-handoff";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
@@ -407,6 +413,7 @@ export function IrissPasutijumsEditor({
   const autosaveInFlight = useRef(false);
   const autosaveQueued = useRef(false);
   const persistedIdRef = useRef(unsavedDraft ? "" : initialRecord.id);
+  const draftHandoffPending = useRef(false);
   const imagesHydrating = useRef(irissRecordNeedsOfferImageHydration(initialRecord));
   const [imagesReady, setImagesReady] = useState(!imagesHydrating.current);
 
@@ -572,6 +579,7 @@ export function IrissPasutijumsEditor({
           return { ok: false, error: err };
         }
         const record = parseRecordFromPatchResponse(data);
+        if (isCreate && (record?.id || payload.id)) draftHandoffPending.current = true;
         if (isCreate && record?.id && record.id !== payload.id) {
           router.replace(`/admin/iriss/pasutijumi/${encodeURIComponent(record.id)}`);
         } else if (isCreate && persistId === "" && payload.id) {
@@ -729,6 +737,72 @@ export function IrissPasutijumsEditor({
       if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
     };
   }, [rec, save, imagesReady]);
+
+  // Jauns pasūtījums → /pasutijumi/{id} ir cita lapa: redaktors tiek uzstādīts no jauna.
+  // Nesaglabātais teksts un fokuss tiek nodots jaunajam redaktoram, citādi «Toyota» paliek «To».
+  useLayoutEffect(() => {
+    if (!unsavedDraft) return;
+    return () => {
+      const id = persistedIdRef.current;
+      if (!draftHandoffPending.current || !id) return;
+      const active = document.activeElement;
+      const field =
+        active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement ? active : null;
+      let selectionStart: number | null = null;
+      let selectionEnd: number | null = null;
+      try {
+        selectionStart = field?.selectionStart ?? null;
+        selectionEnd = field?.selectionEnd ?? null;
+      } catch {
+        /* type=date u.c. bez selection */
+      }
+      const label = irissDraftFieldLabel(field);
+      writeIrissDraftHandoff(
+        window.sessionStorage,
+        id,
+        recRef.current,
+        label ? { label, selectionStart, selectionEnd } : null,
+        Date.now(),
+      );
+    };
+  }, [unsavedDraft]);
+
+  useLayoutEffect(() => {
+    if (unsavedDraft) return;
+    const handoff = takeIrissDraftHandoff<IrissPasutijumsRecord>(window.sessionStorage, initialRecord.id, Date.now());
+    if (!handoff) return;
+    const server = recRef.current;
+    const merged = withAutoEcarstradeLinks(
+      mergeServerAttachmentStorage(mergeServerOwnedIrissFields(handoff.rec, server), server),
+    );
+    merged.workspaceRevision = Math.max(
+      irissWorkspaceRevision(server),
+      irissWorkspaceRevision(handoff.rec),
+    );
+    if (JSON.stringify(merged) !== JSON.stringify(server)) {
+      setRec(merged);
+      recRef.current = merged;
+    }
+    const focus = handoff.focus;
+    if (!focus) return;
+    const raf = window.requestAnimationFrame(() => {
+      const target = Array.from(document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("input, textarea")).find(
+        (el) => !el.disabled && irissDraftFieldLabel(el) === focus.label,
+      );
+      if (!target || document.activeElement !== document.body) return;
+      target.focus({ preventScroll: false });
+      try {
+        if (focus.selectionStart !== null && focus.selectionEnd !== null) {
+          target.setSelectionRange(focus.selectionStart, focus.selectionEnd);
+        }
+      } catch {
+        /* lauks bez selection */
+      }
+    });
+    return () => window.cancelAnimationFrame(raf);
+    // Tikai uzstādīšanas brīdī.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const readListingLink = useCallback(
     async (sourceUrl: string) => {
@@ -2045,16 +2119,8 @@ export function IrissPasutijumsEditor({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <LabeledInput
               label="Vārds, uzvārds"
-              value={[rec.clientFirstName, rec.clientLastName].filter(Boolean).join(" ").trim()}
-              onChange={(e) => {
-                const normalized = e.target.value.replace(/\s+/g, " ").trim();
-                if (!normalized) {
-                  patchRecord({ clientFirstName: "", clientLastName: "" });
-                  return;
-                }
-                const [first, ...rest] = normalized.split(" ");
-                patchRecord({ clientFirstName: first ?? "", clientLastName: rest.join(" ") });
-              }}
+              value={irissClientNameInputValue(rec)}
+              onChange={(e) => patchRecord(splitIrissClientNameInput(e.target.value))}
               autoComplete="name"
             />
             <label className="block min-w-0">

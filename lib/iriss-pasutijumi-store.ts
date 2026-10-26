@@ -702,7 +702,7 @@ async function rebuildListRowsFromRecords(r: Extract<ResolvedStorage, { kind: "b
   if (r.kind === "blob") {
     const ids = await listBlobIds(r.prefix, r.token);
     for (const id of ids) {
-      const rec = await readIrissPasutijums(id);
+      const rec = await readIrissPasutijums(id, { allowCache: true });
       if (rec) rows.push(rowFromRecord(rec));
     }
   } else {
@@ -810,12 +810,21 @@ export async function listIrissPasutijumi(opts?: { includeDeleted?: boolean }): 
   return opts?.includeDeleted ? cloned : cloned.filter((row) => !isIrissRecordDeleted(row));
 }
 
-export async function readIrissPasutijums(id: string): Promise<IrissPasutijumsRecord | null> {
+/**
+ * Viena pasūtījuma lasīšana. Noklusēti svaigi no Blob: atmiņas kešs ir katrai serverless instancei
+ * savs, un lapa /pasutijumi/{id} un PATCH API strādā dažādās instancēs - ar kešu redaktors līdz
+ * 5 min pēc labojuma ielādēja veco versiju, un rakstīšana salīdzināja ar novecojušu `existing`.
+ * `allowCache` tikai masveida lasītājiem (saraksta pārbūve, atskaites, rezerves kopija).
+ */
+export async function readIrissPasutijums(
+  id: string,
+  opts?: { allowCache?: boolean },
+): Promise<IrissPasutijumsRecord | null> {
   const r = resolveStorage();
   if (r.kind === "disabled" || !isSafeIrissPasutijumsId(id)) return null;
 
   if (r.kind === "blob") {
-    if (BLOB_RECORD_CACHE_TTL_MS > 0) {
+    if (opts?.allowCache === true && BLOB_RECORD_CACHE_TTL_MS > 0) {
       const cached = blobRecordCache.get(id);
       if (cached && cached.expiresAt > Date.now()) {
         return cached.record ? cloneRecord(cached.record) : null;
