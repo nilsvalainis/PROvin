@@ -5,6 +5,7 @@
  */
 
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { hasIso3779CheckDigit } from "@/lib/vin-iso3779";
 
 type Rec = Record<string, unknown>;
 
@@ -38,9 +39,22 @@ function labeledValue(v: unknown): string {
   return "";
 }
 
+/**
+ * Auto1 sarakstā ir 17 zīmju heksadecimāli identifikatori (piem. «7B7A4C2C89AE96965»,
+ * «BFF496D701AD5C23E»), kas izskatās pēc VIN, bet nav (Auto1 VIN neatklāj līdz pirkumam).
+ * Tikai 0-9/A-F virkni pieņem tikai Ziemeļamerikas WMI (1-5, kur kontrolcipars obligāts) ar derīgu
+ * ISO 3779 kontrolciparu - kontrolcipars viens pats nejaušam hash sakrīt ~1/11 (7B7A... sakrīt).
+ */
+export function isPlausibleListingVin(raw: string): boolean {
+  const n = normalizeVin(raw);
+  if (!isValidVin(n)) return false;
+  if (/^[0-9A-F]{17}$/.test(n)) return /^[1-5]/.test(n) && hasIso3779CheckDigit(n);
+  return true;
+}
+
 function lookLikeVin(raw: string): string {
   const n = normalizeVin(raw);
-  return isValidVin(n) ? n : "";
+  return isPlausibleListingVin(n) ? n : "";
 }
 
 function walkVin(value: unknown, depth: number, seen: Set<unknown>): string {

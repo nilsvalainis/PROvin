@@ -6,6 +6,7 @@
  */
 
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
+import { isPlausibleListingVin } from "@/lib/iriss-listings-extract";
 import type { IrissOrderRoomHit } from "@/lib/iriss-order-room";
 import type { IrissAuctionLink } from "@/lib/iriss-auction-link";
 
@@ -108,6 +109,7 @@ const LV_WORDS: Array<[RegExp, string]> = [
   [/^(electric|electro|ev)$/i, "Elektriskais"],
   [/^(lpg|cng)$/i, "Gāze"],
   [/^automatic\b(.*)$/i, "Automātiskā$1"],
+  [/^(duplex|dual[- ]clutch|dsg|dct)$/i, "Automātiskā (divsajūgu)"],
   [/^manual\b(.*)$/i, "Manuālā$1"],
   [/^(station wagon|estate|touring|kombi|wagon)$/i, "Universālis"],
   [/^(sedan|saloon|limousine)$/i, "Sedans"],
@@ -130,10 +132,46 @@ const LV_WORDS: Array<[RegExp, string]> = [
 ];
 
 /** Bieži vienvārda tehniskie termini -> LV; nezināms paliek kā avotā. */
+const PAINT_SUFFIX_LV: Array<[RegExp, string]> = [
+  [/^original$/i, ""],
+  [/^(metallic|metallic paint)$/i, "metāliks"],
+  [/^(pearl|pearlescent|mother of pearl)$/i, "perlamutra"],
+  [/^matt?e?$/i, "matēta"],
+];
+
 export function lvTerm(raw: string): string {
   const t = clean(raw);
   for (const [re, lv] of LV_WORDS) if (re.test(t)) return t.replace(re, lv).trim();
+  // Auto1: «Brown (Original)», «Grey (Metallic)».
+  const paint = t.match(/^(.+?)\s*\(([^)]+)\)$/);
+  if (paint) {
+    const base = lvTerm(paint[1]);
+    const suffix = PAINT_SUFFIX_LV.find(([re]) => re.test(paint[2].trim()));
+    if (base !== clean(paint[1]) && suffix) return suffix[1] ? `${base} (${suffix[1]})` : base;
+  }
   return t;
+}
+
+/** «1,968 ccm» / «1.968 ccm» / «1968 cc» → «1968 cm³». Citādi bez izmaiņām. */
+export function lvEngineDisplacement(raw: string): string {
+  const t = clean(raw);
+  const m = t.match(/^(\d{1,2})[.,\s]?(\d{3})\s*(ccm|cc|cm3|cm³)$/i) ?? t.match(/^(\d{3,4})()\s*(ccm|cc|cm3|cm³)$/i);
+  return m ? `${m[1]}${m[2]} cm³` : t;
+}
+
+/**
+ * Releja `mileageKm` no Auto1 detaļu lapas «319.377 km» nāk kā 319.377 (tūkstošu punkts nolasīts
+ * kā decimāldaļa) - klienta piedāvājumā bija «319 km». Nobraukums vienmēr ir vesels km skaits.
+ */
+export function irissDetailMileageKm(itemValue: number | null, labelValue: string): number | null {
+  if (itemValue != null && Number.isFinite(itemValue) && itemValue > 0) {
+    if (Number.isInteger(itemValue)) return itemValue;
+    const thousands = Math.round(itemValue * 1000);
+    if (Math.abs(thousands - itemValue * 1000) < 1e-6) return thousands;
+  }
+  const fromLabel = labelValue ? digits(labelValue) : null;
+  if (fromLabel != null && fromLabel > 0) return fromLabel;
+  return itemValue != null && itemValue > 0 ? Math.round(itemValue) : null;
 }
 
 function digits(raw: string): number | null {
@@ -191,6 +229,20 @@ function equipmentHighlights(detail: IrissRelayAuctionDetail): string {
   return out.join(", ");
 }
 
+/**
+ * Auto1 vienu testa brauciena tekstu atkārto 3-4 reizes ar citiem burtiem/atstarpēm vai kā daļu
+ * no garāka teksta. Atstāj pirmo garāko; rindas, kas ir citas rindas daļa, izmet.
+ */
+export function dedupeDamageLines(lines: string[]): string[] {
+  const keyOf = (t: string) => t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
+  const keys = lines.map(keyOf);
+  return lines.filter((_, i) => {
+    const k = keys[i];
+    if (!k) return false;
+    return !keys.some((other, j) => j !== i && (other === k ? j < i : other.length > k.length && other.includes(k)));
+  });
+}
+
 const TECH_ISSUE_RE = /control light|warning light|engine light|check engine|error|fault|test drive|kontrollampe|kontrollampa/i;
 
 /** Bojājumu tabula / saraksts -> īss teksts tulkošanai ("Front door right: Scratch (Minor)"). */
@@ -225,7 +277,7 @@ function damageTexts(detail: IrissRelayAuctionDetail): { visual: string; technic
   }
   if (visual.length === 0) for (const vals of rows.values()) add(vals.join(", "));
   for (const [l, v] of detail.fields ?? []) if (TECH_ISSUE_RE.test(l) && !/^(no|none|nē|0)$/i.test(v)) add(`${l}: ${v}`);
-  return { visual: visual.slice(0, 40).join("; "), technical: technical.slice(0, 20).join("; ") };
+  return { visual: dedupeDamageLines(visual).slice(0, 40).join("; "), technical: dedupeDamageLines(technical).slice(0, 20).join("; ") };
 }
 
 const yes = (v: string) => /^(yes|ja|jā|available|present|complete|full|ir|vorhanden)\b/i.test(v.trim());
@@ -240,8 +292,9 @@ export function irissAuctionDetailToSeed(
   const itemNum = (k: string) => (typeof item[k] === "number" && Number.isFinite(item[k] as number) ? (item[k] as number) : null);
 
   const vinRaw = itemStr("vin") || get("vin");
-  const vin = (vinRaw.toUpperCase().match(VIN_RE)?.[0] ?? "").trim();
-  const mileage = itemNum("mileageKm") ?? (get("mileage") ? digits(get("mileage")) : null);
+  const vinMatch = (vinRaw.toUpperCase().match(VIN_RE)?.[0] ?? "").trim();
+  const vin = isPlausibleListingVin(vinMatch) ? vinMatch : "";
+  const mileage = irissDetailMileageKm(itemNum("mileageKm"), get("mileage"));
   const firstRegRaw = get("firstRegistration") || itemStr("firstRegistration");
   const firstRegistration = lvRegistrationDate(firstRegRaw);
   const year = get("year").match(/(?:19|20)\d{2}/)?.[0] || itemStr("year") || (firstRegRaw.match(/(?:19|20)\d{2}/)?.[0] ?? "");
@@ -305,7 +358,7 @@ export function irissAuctionDetailToSeed(
   const extras: IrissAuctionDetailExtras = {
     keyCount: get("keys").match(/\d+/)?.[0] ?? "",
     emissionClass: get("emission"),
-    engineDisplacement: get("engine"),
+    engineDisplacement: lvEngineDisplacement(get("engine")),
     equipmentHighlights: equipmentHighlights(detail),
     technicalFacts: facts.join(". "),
     technicalIssueText: technical,
@@ -366,6 +419,11 @@ export function mergeListedIntoDetailHit(detail: IrissOrderRoomHit, listed: Iris
     const empty = cur == null || cur === "" || (Array.isArray(cur) && cur.length === 0);
     if (empty && v != null && v !== "" && !(Array.isArray(v) && v.length === 0)) (out as Record<string, unknown>)[k] = v;
   }
+  // Detaļu lapas virsraksts bez markas («Sharan 2.0 TDI ...»), saraksts ar («Volkswagen Sharan ...»).
+  const dt = (detail.title ?? "").trim();
+  const lt = (listed.title ?? "").trim();
+  if (dt && lt.length > dt.length && lt.toLowerCase().endsWith(dt.toLowerCase())) out.title = lt;
+  if (out.vin && !isPlausibleListingVin(out.vin)) out.vin = "";
   out.id = listed.id;
   return out;
 }
