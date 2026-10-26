@@ -4,7 +4,7 @@
  */
 import type { MenuCatalogItem } from "@/lib/admin-menu-layout";
 import { canSeeIrissMobileMenuItem, IRISS_MOBILE_MENU_ITEMS } from "@/lib/iriss-mobile-menu";
-import type { IrissSection } from "@/lib/staff-roles";
+import { AUTOPARKS_V2_PAGE_PREFIX, type IrissSection } from "@/lib/staff-roles";
 
 /** v11d-fix: iepriekšējais krāsu komplekts (b01), ne ikonas-v2 pelēkais. */
 export const MENU_TONE = {
@@ -28,7 +28,15 @@ const IRISS_APP_META: Record<string, { icon: string; tone: string; title?: strin
   iestatijumi: { icon: "set", tone: MENU_TONE.vin },
 };
 
-export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boolean): MenuCatalogItem[] {
+/**
+ * `autoparksV2Visible`: Autoparks v2 darbiniekiem ieslēgts (karogs `IRISS_AUTOPARKS_V2_STAFF`); adminam vienmēr.
+ * Bez tā `ap_*` logrīki (Serviss) katalogā nav, jo lapa darbiniekam tik un tā neatvērtos.
+ */
+export function irissMenuCatalog(
+  sections: readonly IrissSection[],
+  isAdmin: boolean,
+  opts: { autoparksV2Visible?: boolean } = {},
+): MenuCatalogItem[] {
   const allowed = (section: string) =>
     canSeeIrissMobileMenuItem(
       { id: "", href: "", label: "", icon: "pasutijumi", group: 1, section: section as IrissSection },
@@ -111,7 +119,23 @@ export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boo
       icon: "dz",
       tone: MENU_TONE.white,
     },
+    {
+      // j69: darbiniekam ar Autoparks "Serviss" (ap_serviss) savs sākuma logrīks uz Autoparks v2.
+      id: "w-serviss",
+      kind: "widget",
+      title: "Serviss",
+      href: AUTOPARKS_V2_PAGE_PREFIX,
+      sizes: ["S", "M", "app"],
+      defaultSize: "S",
+      section: "ap_serviss",
+      icon: "wrench",
+      tone: MENU_TONE.order,
+    },
   ];
+
+  const autoparksV2Visible = isAdmin || opts.autoparksV2Visible === true;
+  const widgetAllowed = (w: MenuCatalogItem) =>
+    allowed(w.section ?? "") && (w.section?.startsWith("ap_") ? autoparksV2Visible : true);
 
   const kravas: MenuCatalogItem = {
     id: "kravas",
@@ -125,7 +149,7 @@ export function irissMenuCatalog(sections: readonly IrissSection[], isAdmin: boo
     tone: MENU_TONE.blue,
   };
 
-  return [...apps, ...(allowed("logistika") ? [kravas] : []), ...widgets.filter((w) => allowed(w.section ?? ""))];
+  return [...apps, ...(allowed("logistika") ? [kravas] : []), ...widgets.filter(widgetAllowed)];
 }
 
 export const IRISS_DEFAULT_LAYOUT_IDS = [
@@ -138,6 +162,14 @@ export const IRISS_DEFAULT_LAYOUT_IDS = [
   "sludinajumi",
   "radars",
 ];
+
+/**
+ * Noklusējuma režģis darbiniekam: Serviss logrīks pirmais (j69), pārējais kā adminam.
+ * Adminam noklusējums nemainās. Saglabātu izkārtojumu tas neaiztiek - tur logrīku pievieno ar "+".
+ */
+export function irissDefaultLayoutIds(isAdmin: boolean): readonly string[] {
+  return isAdmin ? IRISS_DEFAULT_LAYOUT_IDS : ["w-serviss", ...IRISS_DEFAULT_LAYOUT_IDS];
+}
 
 const PRO_APPS: Array<Omit<MenuCatalogItem, "kind" | "sizes" | "defaultSize">> = [
   { id: "pro-pasutijumi", title: "Pasūtījumi", href: "/admin/dashboard", icon: "car", tone: "#1a73e8", badge: "orders" },

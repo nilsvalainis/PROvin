@@ -11,6 +11,7 @@ import {
   sectionForAdminApiPath,
   sectionForAdminPagePath,
   staffHomePath,
+  staffTabbarItems,
   type AccessActor,
 } from "@/lib/staff-roles";
 
@@ -148,5 +149,30 @@ describe("IRISS section path access (deny by default)", () => {
     expect(decideAdminApiAccess("/api/admin/iriss-logistics/documents/x", shop)).toBe("allow");
     expect(decideAdminPageAccess("/admin/iriss/pasutijumi", book)).toBe("forbidden");
     expect(decideAdminPageAccess("/admin/iriss/pavadzimes", shop)).toBe("forbidden");
+  });
+});
+
+describe("staffTabbarItems (D: josla tikai pēc tiesībām)", () => {
+  it("partnerim (tikai Pavadzīmes) joslas nav", () => {
+    expect(staffTabbarItems(["pavadzimes"], true)).toEqual([]);
+  });
+
+  it("tikai Loģistika: Sākums, Loģistika, Iziet - bez Autoparks un Pavadzīmēm", () => {
+    expect(staffTabbarItems(["logistika"], true).map((i) => i.label)).toEqual(["Sākums", "Loģistika", "Iziet"]);
+  });
+
+  it("Pavadzīmes + Serviss: Autoparks ir, Loģistikas nav", () => {
+    const labels = staffTabbarItems(["pavadzimes", "ap_serviss", "ap_summas"], true).map((i) => i.label);
+    expect(labels).toEqual(["Sākums", "Pavadzīmes", "Autoparks", "Iziet"]);
+    expect(labels).not.toContain("Loģistika");
+    expect(labels).not.toContain("Pasūtījumi");
+  });
+
+  it("bez v2 karoga Autoparks cilnes nav, arī ja ir ap_*", () => {
+    expect(staffTabbarItems(["pavadzimes", "ap_serviss"], false).map((i) => i.label)).toEqual([
+      "Sākums",
+      "Pavadzīmes",
+      "Iziet",
+    ]);
   });
 });

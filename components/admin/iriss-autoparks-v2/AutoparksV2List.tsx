@@ -19,7 +19,14 @@ const BASE = "/admin/iriss/autoparks-v2";
 /** Datora statusu flīzes (D1): visi + statusi bez "Pārdots". */
 const PIPE: readonly AutoparksStatus[] = AUTOPARKS_V2_STATUS_ORDER.filter((s) => s !== "sold");
 
-export function AutoparksV2List({ initialCars }: { initialCars: AutoparksV2ListRow[] }) {
+export function AutoparksV2List({
+  initialCars,
+  canAddCar = true,
+}: {
+  initialCars: AutoparksV2ListRow[];
+  /** "+ Auto" tikai ar Pamatdatu tiesību (API to pārbauda arī pats). */
+  canAddCar?: boolean;
+}) {
   const [owner, setOwner] = useState<AutoparksV2OwnerFilter>("all");
   const [status, setStatus] = useState<AutoparksStatus | null>(null);
   const [query, setQuery] = useState("");
@@ -45,9 +52,11 @@ export function AutoparksV2List({ initialCars }: { initialCars: AutoparksV2ListR
           <span aria-hidden>⌕</span>
           <input data-bare value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Marka, modelis vai VIN" aria-label="Meklēt" />
         </div>
-        <button type="button" className="ap2-btn dark sm" onClick={() => setAdding(true)}>
-          + Auto
-        </button>
+        {canAddCar ? (
+          <button type="button" className="ap2-btn dark sm" onClick={() => setAdding(true)}>
+            + Auto
+          </button>
+        ) : null}
       </div>
 
       <div className="ap2-search ap2-search-m">
@@ -86,7 +95,7 @@ export function AutoparksV2List({ initialCars }: { initialCars: AutoparksV2ListR
 
       <AutoparksV2ListBody rows={rows} />
 
-      {adding ? <AddCarSheet onClose={() => setAdding(false)} /> : null}
+      {adding && canAddCar ? <AddCarSheet onClose={() => setAdding(false)} /> : null}
     </div>
   );
 }

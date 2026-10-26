@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AutoparksV2ListBody } from "@/components/admin/iriss-autoparks-v2/AutoparksV2List";
+import { AutoparksV2List, AutoparksV2ListBody } from "@/components/admin/iriss-autoparks-v2/AutoparksV2List";
 import type { AutoparksV2ListRow } from "@/lib/iriss-autoparks-v2-list";
 import { renderHtml, renderText } from "@/lib/test-render";
 
@@ -45,5 +45,17 @@ describe("Autoparks v2 saraksts (m01 plakans)", () => {
     const html = renderHtml(<AutoparksV2ListBody rows={rows} />);
     expect(html).toContain("ap2-row");
     expect(html.match(/ap2-sec/g)).toBeNull();
+  });
+});
+
+describe("Autoparks v2 saraksts bez Pamatdatu tiesības (j69)", () => {
+  it("darbinieks tikai ar Servisu redz auto, bet ne pogu + Auto", () => {
+    const text = renderText(<AutoparksV2List initialCars={rows} canAddCar={false} />);
+    expect(text).toContain("Volkswagen Passat Variant");
+    expect(text).not.toContain("+ Auto");
+  });
+
+  it("ar Pamatdatiem poga + Auto paliek", () => {
+    expect(renderText(<AutoparksV2List initialCars={rows} canAddCar />)).toContain("+ Auto");
   });
 });

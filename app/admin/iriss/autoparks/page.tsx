@@ -8,6 +8,7 @@ import { getIrissLogisticsStorageState } from "@/lib/iriss-logistics-store";
 import { redirect } from "next/navigation";
 import { autoparksV2Perms } from "@/lib/iriss-autoparks-v2-access";
 import { autoparksV2StaffEnabled, shouldRedirectToAutoparksV2 } from "@/lib/iriss-autoparks-v2-flag";
+import { autoparksV2CanOpen } from "@/lib/iriss-autoparks-v2-perms";
 import { requireLogisticsPage } from "@/lib/staff-auth";
 
 export const metadata = {
@@ -20,7 +21,7 @@ export default async function IrissAutoparksPage({ searchParams }: { searchParam
   const actor = await requireLogisticsPage();
   // F9: pēc pārslēgšanas (karogs) šī saite ved uz Autoparks v2; v1 rezerve - `?v1=1`.
   const { v1 } = await searchParams;
-  if (shouldRedirectToAutoparksV2({ staffEnabled: autoparksV2StaffEnabled(), canOpenV2List: autoparksV2Perms(actor).pamatdati, v1Param: v1 })) {
+  if (shouldRedirectToAutoparksV2({ staffEnabled: autoparksV2StaffEnabled(), canOpenV2List: autoparksV2CanOpen(autoparksV2Perms(actor)), v1Param: v1 })) {
     redirect("/admin/iriss/autoparks-v2");
   }
   const storeEnabled = getIrissLogisticsStorageState().enabled;

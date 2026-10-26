@@ -1,7 +1,7 @@
 /**
  * Autoparks v2 saraksts (T1, D1): tikai foto, auto, gads · krāsa, pilns VIN, statuss.
  * 20:17: īpašnieka apzīmējumu (ĪR/DZA) sarakstā nerāda - īpašnieks ir tikai filtrs un kabinetā.
- * Nekādu summu, failu vai piezīmju - sarakstu redz ikviens ar Pamatdatu tiesību.
+ * Nekādu summu, failu vai piezīmju - sarakstu redz ikviens ar kādu Autoparka kabineta tiesību (j69).
  */
 
 import { autoparksOwner, type AutoparksCar, type AutoparksOwner, type AutoparksStatus } from "@/lib/iriss-autoparks";

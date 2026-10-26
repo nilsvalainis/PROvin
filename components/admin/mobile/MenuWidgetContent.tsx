@@ -64,6 +64,8 @@ export function renderIrissWidget(item: MenuCatalogItem, size: MenuSize, data: M
       return <span className="mw-sub">Atvērt radaru</span>;
     case "w-autoparks":
       return <span className="mw-sub">Auto laukumā</span>;
+    case "w-serviss":
+      return <span className="mw-sub">Autoparka serviss</span>;
     default:
       return null;
   }

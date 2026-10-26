@@ -250,3 +250,55 @@ html.admin-scroll-locked:has(.admin-ios-theme) body {
   overscroll-behavior: none !important;
   touch-action: none !important;
 }
+
+/*
+ * IRISS darbinieka čaula (j69, vecāks iOS Safari).
+ * Augstums: 100vh rezerve pirms 100dvh (iOS < 15.4 dvh nesaprot). Fons: pati čaula un dokuments ir gaiši,
+ * lai starp kartītēm un pārvelkot neparādās globālais tumšais body fons (#121418).
+ */
+.admin-ios-theme .iriss-staff-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: var(--admin-ios-bg);
+}
+
+html:has(.iriss-staff-shell),
+html:has(.iriss-staff-shell) body {
+  background-color: var(--admin-ios-bg, #ffffff);
+  background-image: none;
+}
+
+/* Apakšējās joslas un sānu joslas poga Iziet kā blakus saites: bez vispārējā pogu rāmja, 12px stūra un stikla. */
+.admin-ios-theme .iriss-staff-tabbar button,
+.admin-ios-theme .iriss-staff-shell [data-iriss-nav] button {
+  border: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/*
+ * D) josla virs home indicator (ne iekšā tajā). 44 px mērķi Loģistika/Autoparks.
+ * Kapsula ar overflow:hidden apgrieza labās ikonas; tagad platums + safe-area zem cilnēm.
+ */
+.admin-ios-theme .iriss-staff-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  padding-top: 4px;
+  padding-bottom: max(20px, calc(8px + env(safe-area-inset-bottom, 0px)));
+  transform: none;
+  -webkit-transform: none;
+}
+
+.admin-ios-theme .iriss-staff-tabbar .iriss-staff-tab,
+.admin-ios-theme .iriss-staff-tabbar a,
+.admin-ios-theme .iriss-staff-tabbar button {
+  min-height: 44px;
+  min-width: 44px;
+  border: 0;
+  border-radius: 12px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
