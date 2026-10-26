@@ -546,7 +546,7 @@ export function IrissPavadzimesListClient({
                 className="flex min-h-12 w-full items-center gap-2.5 px-3.5 text-left text-[15px] text-[var(--ink,#0b0c10)]"
               >
                 <span className="flex-1">Kalendārs</span>
-                <ChevronRight className="h-4 w-4 text-[var(--ink3,#9a9faa)]" aria-hidden />
+                <ChevronRight className="h-4 w-4 text-[var(--ink3, #63686f)]" aria-hidden />
               </button>
             </div>
             {isAdmin ? (

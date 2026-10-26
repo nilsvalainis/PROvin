@@ -100,7 +100,7 @@ export function IrissLogistikaAuctionSourcesPanel({ initialSources, compact }: P
             maksas API. Copart.de pēc noklusējuma ir izslēgts.
           </p>
         </div>
-        <p className="text-[12px] tabular-nums text-[var(--ink3,#9a9faa)]">
+        <p className="text-[12px] tabular-nums text-[var(--ink3, #63686f)]">
           {enabledCount} ieslēgti · {sources.length}
         </p>
       </div>
@@ -140,13 +140,13 @@ export function IrissLogistikaAuctionSourcesPanel({ initialSources, compact }: P
               {!source.builtin ? (
                 <button
                   type="button"
-                  className="ml-auto text-[12px] text-[#9a9faa]"
+                  className="ml-auto text-[12px] text-[#6e6e73]"
                   onClick={() => void removeSource(source.id)}
                 >
                   Dzēst
                 </button>
               ) : (
-                <span className="ml-auto text-[11px] text-[#9a9faa]">{source.enabled ? "aktīvs" : "izslēgts"}</span>
+                <span className="ml-auto text-[11px] text-[#6e6e73]">{source.enabled ? "aktīvs" : "izslēgts"}</span>
               )}
             </div>
             <label className="mt-2 block text-[11px] font-medium text-[#6b7280]">

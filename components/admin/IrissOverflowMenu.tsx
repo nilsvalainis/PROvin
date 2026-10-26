@@ -28,7 +28,7 @@ function copyThemeVars(from: HTMLElement): CSSProperties {
   return {
     ["--s1" as string]: pick("--s1", "#fff"),
     ["--ink" as string]: pick("--ink", "#0b0c10"),
-    ["--ink3" as string]: pick("--ink3", "#9a9faa"),
+    ["--ink3" as string]: pick("--ink3", "#63686f"),
     ["--fill" as string]: pick("--fill", "rgba(116, 120, 138, 0.11)"),
     ["--gsh" as string]: pick("--gsh", "0 8px 22px rgba(16, 24, 40, 0.12)"),
     ["--gb" as string]: pick("--gb", "rgba(17, 24, 39, 0.08)"),

@@ -273,6 +273,8 @@
   }
 
   .am-search input {
+    /* j68: ievades lauks aizņem visu 44 px meklēšanas joslas augstumu. */
+    align-self: stretch;
     background: transparent !important;
     border: 0 !important;
     box-shadow: none !important;
@@ -610,5 +612,20 @@
     animation-delay: 0ms !important;
     transition-duration: 1ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* j68: neredzams 44x44 px pieskāriena laukums mazām pogām (piem. «Saglabāts» pille), vizuāli nemainot izmēru. */
+@media (max-width: 767px) {
+  .am-hit {
+    position: relative;
+  }
+  .am-hit::before {
+    content: "";
+    position: absolute;
+    top: min(0px, calc((100% - 44px) / 2));
+    right: min(0px, calc((100% - 44px) / 2));
+    bottom: min(0px, calc((100% - 44px) / 2));
+    left: min(0px, calc((100% - 44px) / 2));
   }
 }
