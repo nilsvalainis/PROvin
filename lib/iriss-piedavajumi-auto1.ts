@@ -433,3 +433,44 @@ export function normalizeIrissPdAuto1Blocks(raw: unknown): IrissPdAuto1Blocks | 
     vinData: Array.isArray(o.vinData) ? o.vinData.map((x) => str(x, 200)).filter(Boolean).slice(0, 200) : [],
   };
 }
+
+/* ---- j75: kompakts kopsavilkums redaktorā (pilnā atskaite zemāk) ---- */
+
+function kvValue(rows: readonly IrissPdKv[], label: string): string {
+  return rows.find((r) => r.label === label)?.value ?? "";
+}
+
+function damageTotal(rows: readonly IrissPdDamageRow[], area: IrissPdDamageRow["area"]): number | null {
+  const own = rows.filter((r) => r.area === area);
+  if (!own.length) return null;
+  return own.reduce((n, r) => {
+    const q = Number.parseInt(r.quantity, 10);
+    return n + (Number.isFinite(q) && q > 0 ? q : 1);
+  }, 0);
+}
+
+const WARNING_RE = /warning|kontroll|control lamp|error|fehler|kļūd/i;
+
+/**
+ * Maketa «Auto1 dati» kartīte: 2 kolonnas (auto / bojājumi). Tikai rindas ar datiem.
+ */
+export function irissPdAuto1Brief(b: IrissPdAuto1Blocks | null): { car: IrissPdKv[]; damage: IrissPdKv[] } {
+  if (!b) return { car: [], damage: [] };
+  const service = [kvValue(b.service, "Servisa grāmata"), kvValue(b.service, "Pēdējais serviss")].filter(Boolean).join(" · ");
+  const car: IrissPdKv[] = [
+    { label: "Jauda", value: kvValue(b.tech, "Jauda") },
+    { label: "Pēdējā TA", value: kvValue(b.inspection, "Pēdējās TA datums") || kvValue(b.tech, "TA līdz") },
+    { label: "Serviss", value: service },
+  ].filter((r) => r.value);
+  const ext = damageTotal(b.damage, "exterior");
+  const int = damageTotal(b.damage, "interior");
+  const warnings = b.damage.filter((r) => WARNING_RE.test(`${r.damage} ${r.description}`)).length;
+  const repainted = b.paint ? b.paint.zones.filter((z) => z.warning).length : 0;
+  const damage: IrissPdKv[] = [
+    ...(ext != null ? [{ label: "Bojājumi ārpusē", value: String(ext) }] : []),
+    ...(int != null ? [{ label: "Salonā", value: String(int) }] : []),
+    ...(warnings ? [{ label: "Kļūdas paziņojumi", value: String(warnings) }] : []),
+    ...(repainted ? [{ label: "Pārkrāsotas zonas", value: String(repainted) }] : []),
+  ];
+  return { car, damage };
+}

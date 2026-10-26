@@ -9,6 +9,7 @@ import {
   irissOfferPublicCardClass,
 } from "@/components/iriss-offer-public/IrissOfferPublicChrome";
 import { IrissOfferPublicGallery } from "@/components/iriss-offer-public/IrissOfferPublicGallery";
+import { PdClientContent } from "@/components/iriss-piedavajumi/PdClientContent";
 import { PdOfferExtraSections } from "@/components/iriss-piedavajumi/PdOfferExtraSections";
 import { IRISS_OFFER_PUBLIC_LABELS } from "@/lib/iriss-offer-client-link";
 import { irissPdFactValue, irissPdSubtitle, type IrissPdPublicView, type IrissPdViewMode } from "@/lib/iriss-piedavajumi";
@@ -16,6 +17,7 @@ import { irissPdFactValue, irissPdSubtitle, type IrissPdPublicView, type IrissPd
 /**
  * Klienta skats (`/p/d/<token>` un admina preview). Tā pati vizuālā bāze kā `/p/` IrissOfferPublic.
  * Auto1 ir datu avots: papildu kartītes tikai tad, kad ir ko rādīt.
+ * j75: starp Parametriem un Auto1 - Aprīkojums / Stāvoklis / Kopsavilkums (`PdClientContent`).
  */
 export function PdClientView({
   view,
@@ -105,6 +107,8 @@ export function PdClientView({
           </div>
         </section>
       ) : null}
+
+      <PdClientContent content={view.content} />
 
       {view.auto1 ? <PdOfferExtraSections blocks={view.auto1} show={view.blocks} expandAll={mode === "pdf"} /> : null}
 

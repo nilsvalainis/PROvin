@@ -2,18 +2,16 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import { PdAuto1Blocks, PdToggles, type PdToggleTarget } from "@/components/iriss-piedavajumi/PdAuto1Blocks";
-import { PdClientView } from "@/components/iriss-piedavajumi/PdClientView";
 import { PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
 import { copyText, deleteIrissPdRequest, irissPdAbsoluteLink, usePdRebase } from "@/components/admin/iriss-piedavajumi/pd-actions";
 import { PdImportPanel } from "@/components/admin/iriss-piedavajumi/PdImportPanel";
 import {
-  buildIrissPdPublicView,
   canRebaseIrissPd,
   irissPdDeleteConfirm,
-  irissPdHiddenBlockLabels,
   filterIrissPdClientOptions,
+  formatIrissPdPrice,
   irissPdAvailableActions,
   irissPdMargin,
   irissPdSendBlockers,
@@ -21,16 +19,22 @@ import {
   photoKey,
   type IrissPdAction,
   type IrissPdClientOption,
-  type IrissPdViewMode,
 } from "@/lib/iriss-piedavajumi";
-import { irissPdAuto1BlockCount } from "@/lib/iriss-piedavajumi-auto1";
+import { irissPdAuto1Brief } from "@/lib/iriss-piedavajumi-auto1";
 import { IRISS_PD_ADAPTERS } from "@/lib/iriss-piedavajumi-sources";
 import {
-  IRISS_PD_BLOCK_IDS,
+  IRISS_PD_EXCLUDED_TEMPLATE,
+  IRISS_PD_FACTS_TEMPLATE,
+  IRISS_PD_INCLUDED_TEMPLATE,
+  IRISS_PD_MAX_CHECK_ITEMS,
+  IRISS_PD_MAX_HIGHLIGHTS,
   IRISS_PD_SOURCE_LV,
   IRISS_PD_STATUS_LV,
   irissPdNumberLabel,
+  irissPdPublicPath,
+  type IrissPdCheckItem,
   type IrissPdClient,
+  type IrissPdContent,
   type IrissPdPhoto,
   type IrissPdVehicle,
   type IrissPdVisibility,
@@ -38,16 +42,27 @@ import {
 } from "@/lib/iriss-piedavajumi-types";
 import { formatOfferValidUntilLv } from "@/lib/iriss-offer-valid-until";
 
-type Tab = "internal" | "auto1" | "client" | "history";
+/**
+ * j75: Piedāvājuma redaktors pēc maketa 01-redaktors (26.10). Viena kolonna, bez cilnēm, modāļiem un akordeoniem:
+ * Header -> Foto -> Pamatdati -> Aprīkojuma izcēlumi -> Kopsavilkums -> Novērtējums klientam -> Auto1 dati -> Cenas.
+ * Teksti ir vienkārši (bez formatēšanas rīkjoslas). Galvene nav sticky.
+ */
+
+const PRIMARY_FIELDS: Array<[keyof IrissPdVehicle, string, string?]> = [
+  ["vin", "VIN"],
+  ["year", "Gads"],
+  ["mileageKm", "Nobraukums", "km"],
+  ["fuel", "Degviela"],
+  ["transmission", "Ātrumkārba"],
+  ["body", "Virsbūve"],
+  ["location", "Atrašanās vieta"],
+];
 
 const MORE_FIELDS: Array<[keyof IrissPdVehicle, string]> = [
   ["firstRegistration", "Pirmā reģistrācija"],
-  ["fuel", "Degviela"],
-  ["transmission", "Ātrumkārba"],
   ["powerKw", "Jauda (kW)"],
   ["engine", "Tilpums"],
   ["color", "Krāsa"],
-  ["body", "Virsbūve"],
 ];
 
 function stamp(iso: string): string {
@@ -64,9 +79,12 @@ type Draft = {
   validUntil: string;
   client: IrissPdClient;
   purchasePrice: string;
+  logisticsCost: string;
+  prepCost: string;
   internalNotes: string;
   photos: IrissPdPhoto[];
   visibility: IrissPdVisibility;
+  content: IrissPdContent;
 };
 
 function draftOf(r: IrissPiedavajums): Draft {
@@ -76,9 +94,12 @@ function draftOf(r: IrissPiedavajums): Draft {
     validUntil: r.validUntil,
     client: { ...r.client },
     purchasePrice: r.purchasePrice,
+    logisticsCost: r.logisticsCost,
+    prepCost: r.prepCost,
     internalNotes: r.internalNotes,
     photos: [...r.photos],
     visibility: JSON.parse(JSON.stringify(r.visibility)) as IrissPdVisibility,
+    content: JSON.parse(JSON.stringify(r.content)) as IrissPdContent,
   };
 }
 
@@ -95,14 +116,15 @@ function ClientPicker({
 }) {
   const [open, setOpen] = useState(false);
   const matches = useMemo(() => filterIrissPdClientOptions(options, value.name), [options, value.name]);
+  // Ieteikumi ir saraksts zem lauka lapas plūsmā (nevis pārklājums).
   return (
-    <div style={{ position: "relative" }}>
+    <div>
       <div style={{ display: "flex", gap: 6 }}>
         <input
           id="pd-client"
           value={value.name}
           disabled={disabled}
-          placeholder="Izvēlies klientu vai ieraksti vārdu"
+          placeholder="Izvēlies vai ieraksti"
           autoComplete="off"
           onFocus={() => setOpen(true)}
           onBlur={() => window.setTimeout(() => setOpen(false), 150)}
@@ -114,15 +136,12 @@ function ClientPicker({
           </button>
         ) : null}
       </div>
-      {value.orderId ? <p className="pd-hint">Piesaistīts IRISS pasūtījumam - piedāvājums redzams arī tur.</p> : null}
       {open && !disabled && matches.length > 0 ? (
-        <div className="pd-card" style={{ position: "absolute", zIndex: 20, left: 0, right: 0, top: 38, padding: 4, maxHeight: 260, overflowY: "auto" }} role="listbox">
+        <div className="pde-sugg" role="listbox">
           {matches.map((o) => (
             <button
               type="button"
               key={o.orderId}
-              className="pd-carrow"
-              style={{ padding: "6px 8px" }}
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 onChange({ name: o.name, phone: o.phone, email: o.email, orderId: o.orderId });
@@ -130,7 +149,7 @@ function ClientPicker({
               }}
             >
               <span className="pd-el">{o.name}</span>
-              <span className="pd-mu pd-el" style={{ fontSize: 11.5 }}>{o.sub}</span>
+              <span className="pd-mu pd-el">{o.sub}</span>
             </button>
           ))}
         </div>
@@ -139,14 +158,93 @@ function ClientPicker({
   );
 }
 
+function Card({ title, sub, on, onToggle, disabled, id, children }: { title: string; sub: string; on?: boolean; onToggle?: () => void; disabled?: boolean; id?: string; children: ReactNode }) {
+  return (
+    <section className="pde-card" id={id} aria-label={title}>
+      <div className="pde-ch">
+        <h3>
+          {title}
+          <small>{sub}</small>
+        </h3>
+        {typeof on === "boolean" ? (
+          <button type="button" role="switch" aria-checked={on} aria-label={`${title}: rāda klientam`} className="pde-sw" disabled={disabled} onClick={onToggle} />
+        ) : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Check({ item, disabled, removable, onToggle, onRemove }: { item: IrissPdCheckItem; disabled: boolean; removable: boolean; onToggle: () => void; onRemove: () => void }) {
+  return (
+    <div className="pde-cb">
+      <label>
+        <input type="checkbox" checked={item.on} disabled={disabled} onChange={onToggle} />
+        <span>{item.text}</span>
+      </label>
+      {removable && !disabled ? (
+        <button type="button" className="x" aria-label={`Noņemt «${item.text}»`} onClick={onRemove}>
+          ×
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/** «+ pievienot ...»: saite, kas lapā pārvēršas par ievades lauku (Enter - pievieno, Esc - atceļ). */
+function AddInline({ label, chip = false, disabled, onAdd }: { label: string; chip?: boolean; disabled: boolean; onAdd: (text: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState("");
+  if (disabled) return null;
+  if (!editing) {
+    return (
+      <button type="button" className={chip ? "pde-add" : "pde-lnk"} onClick={() => setEditing(true)}>
+        + {label}
+      </button>
+    );
+  }
+  const commit = () => {
+    const t = val.replace(/\s+/g, " ").trim();
+    if (t) onAdd(t);
+    setVal("");
+    setEditing(false);
+  };
+  return (
+    <input
+      className="pde-addin"
+      autoFocus
+      value={val}
+      maxLength={120}
+      placeholder={label}
+      aria-label={label}
+      onChange={(e) => setVal(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          commit();
+        } else if (e.key === "Escape") {
+          setVal("");
+          setEditing(false);
+        }
+      }}
+    />
+  );
+}
+
+function addItem(list: IrissPdCheckItem[], text: string): IrissPdCheckItem[] {
+  if (list.length >= IRISS_PD_MAX_CHECK_ITEMS || list.some((x) => x.text.toLowerCase() === text.toLowerCase())) return list;
+  return [...list, { text, on: true }];
+}
+
+const isTemplate = (tpl: readonly IrissPdCheckItem[], text: string) => tpl.some((x) => x.text === text);
+
 export function PiedavajumsDetail({
   initial,
-  nowMs,
   clientOptions,
   note,
 }: {
   initial: IrissPiedavajums;
-  nowMs: number;
   clientOptions: IrissPdClientOption[];
   note: string;
 }) {
@@ -156,22 +254,22 @@ export function PiedavajumsDetail({
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
   const [info, setInfo] = useState(note);
-  const [tab, setTab] = useState<Tab>("internal");
-  const [previewMode, setPreviewMode] = useState<IrissPdViewMode>("link");
-  const [moreOpen, setMoreOpen] = useState(false);
+  const dragFrom = useRef<number | null>(null);
   const { rebase, rebaseBusy, rebaseError } = usePdRebase();
 
   const editable = isIrissPdEditable(rec.status);
   const dirty = JSON.stringify(d) !== JSON.stringify(draftOf(rec));
   const merged: IrissPiedavajums = { ...rec, ...d };
-  const view = buildIrissPdPublicView({ ...merged, status: merged.status === "approved" ? "approved" : "sent" }, previewMode, nowMs);
   const actions = irissPdAvailableActions(rec.status);
   const blockers = irissPdSendBlockers(merged, Date.now());
   const label = irissPdNumberLabel(rec.number);
-  const margin = irissPdMargin(d.price, d.purchasePrice);
+  const margin = irissPdMargin(d.price, d.purchasePrice, d.logisticsCost, d.prepCost);
+  const brief = useMemo(() => irissPdAuto1Brief(rec.auto1), [rec.auto1]);
+  const c = d.content;
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((p) => ({ ...p, [k]: v }));
   const setV = (k: keyof IrissPdVehicle, v: string) => setD((p) => ({ ...p, vehicle: { ...p.vehicle, [k]: v } }));
+  const setC = (patch: Partial<IrissPdContent>) => setD((p) => ({ ...p, content: { ...p.content, ...patch } }));
 
   function applyRecord(next: IrissPiedavajums) {
     setRec(next);
@@ -222,7 +320,7 @@ export function PiedavajumsDetail({
       applyRecord(data.record);
       if (action === "send" && data.record.linkToken) {
         const ok = await copyText(irissPdAbsoluteLink(data.record.linkToken));
-        setInfo(ok ? "Nosūtīts - klienta saite nokopēta. Ielīmē to e-pastā vai WhatsApp." : "Nosūtīts - klienta saite gatava (Kopēt klienta saiti).");
+        setInfo(ok ? "Nosūtīts - klienta saite nokopēta. Ielīmē to e-pastā vai WhatsApp." : "Nosūtīts - klienta saite gatava (Kopēt saiti).");
       }
       router.refresh();
     } catch (e) {
@@ -261,76 +359,35 @@ export function PiedavajumsDetail({
     });
   }
 
-  function movePhoto(i: number, dir: -1 | 1) {
-    const j = i + dir;
-    if (j < 0 || j >= d.photos.length) return;
+  function movePhoto(from: number, to: number) {
+    if (from === to || from < 0 || to < 0 || from >= d.photos.length || to >= d.photos.length) return;
     const next = [...d.photos];
-    [next[i], next[j]] = [next[j]!, next[i]!];
+    const [it] = next.splice(from, 1);
+    next.splice(to, 0, it!);
     set("photos", next);
   }
 
-  const photoUrl = (p: IrissPdPhoto, size: "thumb" | "full") => {
-    const i = rec.photos.findIndex((x) => photoKey(x) === photoKey(p));
-    return `/api/admin/iriss-piedavajumi/${rec.id}/foto/${i}${size === "full" ? "?s=full" : ""}`;
-  };
-  const previewPhoto = (n: number, size: "thumb" | "full") => (d.photos[n] ? photoUrl(d.photos[n]!, size) : "");
-
-  const sendBtn = actions.includes("send") ? (
-    <button type="button" className="pd-btn" disabled={busy !== "" || blockers.length > 0} title={blockers.join(" ")} onClick={() => void act("send")}>
-      Nosūtīt klientam
-    </button>
-  ) : null;
-
-  const headerActions = (
-    <div className="pd-acts">
-      {rec.status === "sent" && rec.linkToken ? (
-        <button type="button" className="pd-btn" onClick={() => void copyLink()}>
-          Kopēt klienta saiti
-        </button>
-      ) : null}
-      {sendBtn}
-      {actions.includes("revert") ? (
-        <button type="button" className="pd-btn" disabled={busy !== ""} onClick={() => void act("revert")}>
-          Atsaukt uz melnrakstu
-        </button>
-      ) : null}
-      {actions.includes("approve") ? (
-        <button type="button" className="pd-btn" disabled={busy !== ""} onClick={() => void act("approve")}>
-          Atzīmēt apstiprinātu
-        </button>
-      ) : null}
-      {actions.includes("decline") ? (
-        <button type="button" className="pd-btn bad" disabled={busy !== ""} onClick={() => void act("decline")}>
-          Atzīmēt noraidītu
-        </button>
-      ) : null}
-      {rec.status === "approved" && !rec.approvedOrderId ? (
-        <button type="button" className="pd-btn" disabled={busy !== ""} onClick={() => void act("create-order")}>
-          Izveidot pasūtījumu
-        </button>
-      ) : null}
-      {canRebaseIrissPd(rec.status) ? (
-        <button type="button" className="pd-btn p" disabled={rebaseBusy} onClick={() => void rebase(rec.id, router)}>
-          Izveidot jaunu uz šī bāzes
-        </button>
-      ) : null}
-      <Link className="pd-btn" href={`/admin/iriss/piedavajumi/${rec.id}/pdf`}>
-        PDF
-      </Link>
-      <button type="button" className="pd-btn p" disabled={!dirty || busy !== ""} onClick={() => void save()}>
-        {busy === "save" ? "Saglabā..." : "Saglabāt"}
-      </button>
-      <button type="button" className="pd-btn bad" disabled={busy !== ""} onClick={() => void remove()}>
-        {busy === "delete" ? "Dzēš..." : "Dzēst"}
-      </button>
-    </div>
-  );
+  const photoUrl = (p: IrissPdPhoto) => `/api/admin/iriss-piedavajumi/${rec.id}/foto/${rec.photos.findIndex((x) => photoKey(x) === photoKey(p))}`;
 
   const showImport = editable && (rec.status === "requested" || (!rec.vehicle.title && rec.source === "manual"));
   const adapter = rec.source !== "autoparks" && rec.source !== "manual" ? IRISS_PD_ADAPTERS[rec.source] : null;
+  const shownPrice = formatIrissPdPrice(d.price);
+  const saveLabel = busy === "save" ? "Saglabā..." : "Saglabāt";
+
+  const checkList = (key: "included" | "excluded" | "facts", tpl: readonly IrissPdCheckItem[]) =>
+    c[key].map((it, i) => (
+      <Check
+        key={it.text}
+        item={it}
+        disabled={!editable}
+        removable={!isTemplate(tpl, it.text)}
+        onToggle={() => setC({ [key]: c[key].map((x, j) => (j === i ? { ...x, on: !x.on } : x)) })}
+        onRemove={() => setC({ [key]: c[key].filter((_, j) => j !== i) })}
+      />
+    ));
 
   return (
-    <div className="pdv">
+    <div className="pdv pde">
       <header className="pd-hdr">
         <div className="pd-bc">
           <Link href="/admin/iriss">IRISS</Link> › <Link href="/admin/iriss/piedavajumi">Piedāvājumi</Link> › {label}
@@ -339,339 +396,406 @@ export function PiedavajumsDetail({
           <div style={{ minWidth: 0 }}>
             <h1 className="pd-el">{d.vehicle.title || "Piedāvājums"}</h1>
             <div className="pd-sub">
-              Piedāvājums {label} · 1 auto = 1 piedāvājums · <PdStatusChip status={rec.status} />
+              {d.client.name ? <span className="pd-chip pde-cl">{d.client.name}</span> : null}
+              <PdStatusChip status={rec.status} />
+              {d.validUntil ? <span>Termiņš {formatOfferValidUntilLv(d.validUntil)}</span> : null}
+              {shownPrice ? <b>{shownPrice}</b> : null}
             </div>
           </div>
-          {headerActions}
+          <div className="pd-acts">
+            {rec.linkToken && (rec.status === "sent" || rec.status === "approved") ? (
+              <button type="button" className="pd-btn" onClick={() => void copyLink()}>
+                Kopēt saiti
+              </button>
+            ) : actions.includes("send") ? (
+              <button type="button" className="pd-btn" disabled={busy !== "" || blockers.length > 0} title={blockers.join(" ")} onClick={() => void act("send")}>
+                Nosūtīt un kopēt saiti
+              </button>
+            ) : null}
+            <button type="button" className="pd-btn bad" disabled={busy !== ""} onClick={() => void remove()}>
+              {busy === "delete" ? "Dzēš..." : "Dzēst"}
+            </button>
+            <button type="button" className="pd-btn p" disabled={!dirty || busy !== ""} onClick={() => void save()}>
+              {saveLabel}
+            </button>
+          </div>
         </div>
       </header>
 
-      <div className="pd-seg pd-tabs" role="tablist">
-        {(
-          [
-            ["internal", "Iekšējais"],
-            ["auto1", "Auto1 dati"],
-            ["client", "Klients"],
-            ["history", "Vēsture"],
-          ] as Array<[Tab, string]>
-        )
-          .filter(([t]) => t !== "auto1" || rec.auto1)
-          .map(([t, l]) => (
-            <button key={t} type="button" role="tab" aria-selected={tab === t} className={tab === t ? "on" : ""} onClick={() => setTab(t)}>
-              {l}
-            </button>
-          ))}
-      </div>
+      <div className="pde-body">
+        {err || rebaseError ? <p className="pd-err" role="alert">{err || rebaseError}</p> : null}
+        {info ? <p className="pd-note" role="status">{info}</p> : null}
+        {!editable ? (
+          <p className="pd-note">
+            Statuss «{IRISS_PD_STATUS_LV[rec.status]}» - lauki vairs nav labojami (izņemot iekšējās piezīmes).
+            {canRebaseIrissPd(rec.status) ? " Izveido jaunu piedāvājumu uz šī bāzes." : ""}
+          </p>
+        ) : null}
+        {editable && blockers.length && actions.includes("send") ? <p className="pd-hint">Lai nosūtītu: {blockers.join(" ")}</p> : null}
 
-      {err || rebaseError ? <p className="pd-err" role="alert">{err || rebaseError}</p> : null}
-      {info ? <p className="pd-note" role="status">{info}</p> : null}
-      {!editable ? (
-        <p className="pd-note">
-          Statuss «{IRISS_PD_STATUS_LV[rec.status]}» - lauki vairs nav labojami (izņemot iekšējās piezīmes).
-          {canRebaseIrissPd(rec.status) ? " Izveido jaunu piedāvājumu uz šī bāzes." : ""}
-        </p>
-      ) : null}
+        {showImport ? <PdImportPanel id={rec.id} onDone={applyRecord} /> : null}
 
-      <div className="pd-detail">
-        <div className="pd-col">
-          {showImport ? (
-            <div data-tab="internal" data-on={tab === "internal" ? "1" : "0"}>
-              <PdImportPanel id={rec.id} onDone={applyRecord} />
-            </div>
-          ) : null}
-
-          <section className="pd-card" data-tab="internal" data-on={tab === "internal" ? "1" : "0"}>
-            <h3>Auto dati · auto-aizpildīti, rediģējami</h3>
-            {d.photos.length > 0 ? (
-              <div className="pd-gal">
-                {d.photos.slice(0, 4).map((p, i) => (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img key={photoKey(p)} src={photoUrl(p, i === 0 ? "full" : "thumb")} alt={`Foto ${i + 1}`} />
-                ))}
-                {d.photos.length > 4 ? <div className="more">+{d.photos.length - 4} foto</div> : null}
-              </div>
-            ) : (
-              <p className="pd-mu" style={{ fontSize: 12.5 }}>Foto nav (nav obligāti).</p>
-            )}
-            {editable && d.photos.length > 1 ? (
-              <details style={{ marginBottom: 12 }}>
-                <summary className="pd-lnk" style={{ cursor: "pointer" }}>Kārtot / noņemt foto ({d.photos.length})</summary>
-                <div className="pd-photo-strip" style={{ marginTop: 8 }}>
-                  {d.photos.map((p, i) => (
-                    <div className="it" key={photoKey(p)}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={photoUrl(p, "thumb")} alt={`Foto ${i + 1}`} loading="lazy" />
-                      {i > 0 ? (
-                        <button type="button" className="l" aria-label="Pārvietot pa kreisi" onClick={() => movePhoto(i, -1)}>
-                          ‹
-                        </button>
-                      ) : null}
-                      <button type="button" aria-label="Noņemt foto" onClick={() => set("photos", d.photos.filter((_, j) => j !== i))}>
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <p className="pd-hint">Pirmā bilde ir vāks.</p>
-              </details>
-            ) : null}
-            <div className="pd-grid2">
-              <div className="pd-fld">
-                <label htmlFor="pd-title">Modelis</label>
-                <input id="pd-title" value={d.vehicle.title} disabled={!editable} onChange={(e) => setV("title", e.target.value)} />
-              </div>
-              <div className="pd-fld">
-                <label htmlFor="pd-vin">VIN</label>
-                <input id="pd-vin" className="pd-mono" value={d.vehicle.vin} disabled={!editable} onChange={(e) => setV("vin", e.target.value.toUpperCase())} />
-              </div>
-              <div className="pd-fld">
-                <label htmlFor="pd-year">Gads</label>
-                <input id="pd-year" value={d.vehicle.year} disabled={!editable} onChange={(e) => setV("year", e.target.value)} />
-              </div>
-              <div className="pd-fld">
-                <label htmlFor="pd-km">Nobraukums (km)</label>
-                <input id="pd-km" value={d.vehicle.mileageKm} disabled={!editable} inputMode="numeric" onChange={(e) => setV("mileageKm", e.target.value)} />
-              </div>
-              <div className="pd-fld">
-                <label htmlFor="pd-price">Gala cena klientam (€)</label>
-                <input id="pd-price" value={d.price} disabled={!editable} inputMode="decimal" style={{ fontWeight: 600 }} onChange={(e) => set("price", e.target.value)} />
-              </div>
-              <div className="pd-fld">
-                <label htmlFor="pd-valid">
-                  Derīgs līdz <span className="pd-req">*</span>
-                </label>
-                <input
-                  id="pd-valid"
-                  type="date"
-                  className="req-on"
-                  value={d.validUntil}
-                  disabled={!editable}
-                  required
-                  aria-required="true"
-                  onChange={(e) => set("validUntil", e.target.value)}
-                />
-              </div>
-              <div className="pd-fld">
-                <label htmlFor="pd-client">
-                  Klients <span className="pd-mu">(neobligāts)</span>
-                </label>
-                <ClientPicker value={d.client} options={clientOptions} disabled={!editable} onChange={(c) => set("client", c)} />
-              </div>
-              <div className="pd-fld">
-                <span className="lbl">Statuss</span>
-                <div className="ro">
-                  <PdStatusChip status={rec.status} />
-                </div>
-              </div>
-            </div>
-            {d.client.name && !d.client.orderId ? (
-              <div className="pd-grid2">
-                <div className="pd-fld">
-                  <label htmlFor="pd-cphone">Klienta tālrunis</label>
-                  <input id="pd-cphone" value={d.client.phone} disabled={!editable} onChange={(e) => set("client", { ...d.client, phone: e.target.value })} />
-                </div>
-                <div className="pd-fld">
-                  <label htmlFor="pd-cemail">Klienta e-pasts</label>
-                  <input id="pd-cemail" value={d.client.email} disabled={!editable} onChange={(e) => set("client", { ...d.client, email: e.target.value })} />
-                </div>
-              </div>
-            ) : null}
-            <button type="button" className="pd-lnk" style={{ border: 0, background: "none", padding: 0, marginBottom: 8 }} onClick={() => setMoreOpen((v) => !v)} aria-expanded={moreOpen}>
-              {moreOpen ? "Mazāk lauku" : "Vairāk lauku (reģistrācija, degviela, jauda...)"}
-            </button>
-            {moreOpen ? (
-              <div className="pd-grid2">
-                {MORE_FIELDS.map(([k, l]) => (
-                  <div className="pd-fld" key={k}>
-                    <label htmlFor={`pd-${k}`}>{l}</label>
-                    <input id={`pd-${k}`} value={d.vehicle[k]} disabled={!editable} onChange={(e) => setV(k, e.target.value)} />
-                  </div>
-                ))}
-              </div>
-            ) : null}
-            <p className="pd-hint">* Termiņš obligāts nosūtīšanai, bez noklusējuma - ievada manuāli.</p>
-            {editable && blockers.length && actions.includes("send") ? <p className="pd-hint">Lai nosūtītu: {blockers.join(" ")}</p> : null}
-          </section>
-
-          <section className="pd-zone zi" data-tab="internal" data-on={tab === "internal" ? "1" : "0"} aria-label="Iekšējais - klients neredz">
-            <div className="pd-zt">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                <rect x="5" y="11" width="14" height="10" rx="2" />
-                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
-              </svg>
-              Iekšējais - klients neredz
-            </div>
-            <div className="pd-grid2">
-              <div className="pd-fld">
-                <span className="lbl">Avots</span>
-                <div className="ro">
-                  <span className="pd-src">{IRISS_PD_SOURCE_LV[rec.source]}</span>
-                  {rec.sourceUrl ? (
-                    <a className="pd-el pd-lnk" href={rec.sourceUrl} target="_blank" rel="noreferrer noopener">
-                      {rec.sourceUrl.replace(/^https:\/\/(www\.)?/, "")}
-                    </a>
-                  ) : rec.sourceRef ? (
-                    <Link className="pd-lnk" href={`/admin/iriss/autoparks`}>
-                      Autoparka auto
-                    </Link>
-                  ) : null}
-                </div>
-              </div>
-              <div className="pd-fld">
-                <label htmlFor="pd-purchase">Iepirkuma cena (€)</label>
-                <input id="pd-purchase" value={d.purchasePrice} disabled={!editable} inputMode="decimal" onChange={(e) => set("purchasePrice", e.target.value)} />
-              </div>
-              <div className="pd-fld">
-                <span className="lbl">Atpazīts</span>
-                <div className="ro">
-                  {rec.importedFieldCount > 0
-                    ? `✓ ${IRISS_PD_SOURCE_LV[rec.source]} · ${rec.importedFieldCount} lauki aizpildīti`
-                    : adapter?.mode === "stub"
-                      ? adapter.stubNote
-                      : "Aizpildīts ar roku"}
-                </div>
-              </div>
-              <div className="pd-fld">
-                <span className="lbl">Marža</span>
-                <div className="ro">{margin || "-"}</div>
-              </div>
-            </div>
-            <div className="pd-fld">
-              <label htmlFor="pd-notes">Iekšējās piezīmes</label>
-              <textarea id="pd-notes" value={d.internalNotes} onChange={(e) => set("internalNotes", e.target.value)} />
-            </div>
-          </section>
-
-          {rec.auto1 ? (
-            <section className="pd-card" style={{ padding: 14 }} data-tab="auto1" data-on={tab === "auto1" ? "1" : "0"}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
-                <h3 className="pd-h3" style={{ margin: 0 }}>
-                  Auto1 ielasītie dati <span className="pd-src">Auto1</span>
-                  <span className="pd-mu" style={{ fontWeight: 400 }}>
-                    · {IRISS_PD_BLOCK_IDS.filter((id) => irissPdAuto1BlockCount(rec.auto1, id) > 0).length} bloki · ielasīts {stamp(rec.auto1ImportedAt)}
-                  </span>
-                </h3>
-                <span style={{ fontSize: 11.5 }}>
-                  Visi: <PdToggles value={d.visibility.group} disabled={!editable} onToggle={editable ? (m) => toggle("group", m) : undefined} />
-                </span>
-              </div>
-              <PdAuto1Blocks blocks={rec.auto1} visibility={d.visibility} onToggle={editable ? toggle : undefined} disabled={!editable} />
-              <p className="pd-hint" style={{ marginTop: 8 }}>
-                Noklusējums: visi bloki ieslēgti, «Bojājumu kopsavilkums» izslēgts. Grupas OFF izslēdz visus; bloka slēdzis darbojas tikai, ja grupa ON.
-              </p>
-            </section>
-          ) : null}
-        </div>
-
-        <div className="pd-col">
-          <section className="pd-zone zc" data-tab="client" data-on={tab === "client" ? "1" : "0"}>
-            <div className="pd-zt" style={{ justifyContent: "space-between" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                  <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-                Klients redz - {previewMode === "pdf" ? "PDF" : "publiskā saite"}
-              </span>
-              <span className="pd-seg" style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0 }}>
-                <button type="button" className={previewMode === "link" ? "on" : ""} onClick={() => setPreviewMode("link")}>
-                  Saite
-                </button>
-                <button type="button" className={previewMode === "pdf" ? "on" : ""} onClick={() => setPreviewMode("pdf")}>
-                  PDF
-                </button>
-              </span>
-            </div>
-            <PdClientView
-              view={view}
-              mode={previewMode}
-              photoSrc={previewPhoto}
-              token={rec.linkToken}
-              embedded
-              hiddenLabels={irissPdHiddenBlockLabels(merged, previewMode)}
-              showHiddenNote
-            >
-              {previewMode === "link" ? (
-                <button
-                  type="button"
-                  className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#F26522] text-[15px] font-semibold text-white disabled:opacity-50"
-                  disabled
+        <Card title="Foto" sub={d.photos.length ? `${d.photos.length} foto · velc, lai mainītu secību · pirmā ir vāks` : "Foto nav (nav obligāti)"}>
+          {d.photos.length ? (
+            <div className="pde-ph">
+              {d.photos.map((p, i) => (
+                <div
+                  key={photoKey(p)}
+                  className="it"
+                  draggable={editable}
+                  onDragStart={() => {
+                    dragFrom.current = i;
+                  }}
+                  onDragOver={(e) => {
+                    if (dragFrom.current != null) e.preventDefault();
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (dragFrom.current != null) movePhoto(dragFrom.current, i);
+                    dragFrom.current = null;
+                  }}
                 >
-                  Apstiprināt
-                </button>
-              ) : null}
-            </PdClientView>
-          </section>
-
-          {rec.client.orderId || rec.approvedOrderId || rec.basedOnId ? (
-            <section className="pd-card" data-tab="history" data-on={tab === "history" ? "1" : "0"}>
-              <h3>Saistītie ieraksti</h3>
-              {rec.approvedOrderId ? (
-                <div className="pd-kv">
-                  <span>Pasūtījums</span>
-                  <Link className="pd-lnk" href={`/admin/iriss/pasutijumi/${rec.approvedOrderId}`}>
-                    Rezervēts →
-                  </Link>
-                </div>
-              ) : null}
-              {rec.client.orderId && rec.client.orderId !== rec.approvedOrderId ? (
-                <div className="pd-kv">
-                  <span>Klienta pasūtījums</span>
-                  <Link className="pd-lnk" href={`/admin/iriss/pasutijumi/${rec.client.orderId}`}>
-                    Atvērt →
-                  </Link>
-                </div>
-              ) : null}
-              {rec.basedOnId ? (
-                <div className="pd-kv">
-                  <span>Veidots uz bāzes</span>
-                  <Link className="pd-lnk" href={`/admin/iriss/piedavajumi/${rec.basedOnId}`}>
-                    Iepriekšējais →
-                  </Link>
-                </div>
-              ) : null}
-            </section>
-          ) : null}
-
-          <section className="pd-card" data-tab="history" data-on={tab === "history" ? "1" : "0"}>
-            <h3>Vēsture</h3>
-            {rec.validUntil ? (
-              <p className="pd-mu" style={{ fontSize: 12, margin: "0 0 10px" }}>Derīgs līdz {formatOfferValidUntilLv(rec.validUntil)}</p>
-            ) : null}
-            <div className="pd-tl">
-              {[...rec.history].reverse().map((h, i) => (
-                <div key={`${h.at}-${i}`}>
-                  {h.text}
-                  <small>
-                    {h.by} · {stamp(h.at)}
-                  </small>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={photoUrl(p)} alt={`Foto ${i + 1}`} loading="lazy" draggable={false} />
+                  {editable && i > 0 ? (
+                    <button type="button" className="l" aria-label={`Foto ${i + 1}: pārvietot pa kreisi`} onClick={() => movePhoto(i, i - 1)}>
+                      ‹
+                    </button>
+                  ) : null}
+                  {editable ? (
+                    <button type="button" className="r" aria-label={`Foto ${i + 1}: noņemt`} onClick={() => set("photos", d.photos.filter((_, j) => j !== i))}>
+                      ×
+                    </button>
+                  ) : null}
                 </div>
               ))}
             </div>
-          </section>
-        </div>
-      </div>
+          ) : null}
+        </Card>
 
-      <div className="pd-bottom">
-        {rec.status === "sent" && rec.linkToken ? (
-          <button type="button" className="pd-btn" onClick={() => void copyLink()}>
-            Kopēt saiti
-          </button>
-        ) : actions.includes("send") ? (
-          <button type="button" className="pd-btn" disabled={busy !== "" || blockers.length > 0} onClick={() => void act("send")}>
-            Nosūtīt
-          </button>
-        ) : canRebaseIrissPd(rec.status) ? (
-          <button type="button" className="pd-btn" disabled={rebaseBusy} onClick={() => void rebase(rec.id, router)}>
-            Jauns uz bāzes
-          </button>
+        <Card title="Pamatdati" sub={rec.auto1 ? "Ielasīts no Auto1 · labojams" : "Labojams"}>
+          <div className="pde-grid">
+            {PRIMARY_FIELDS.map(([k, l, ph]) => (
+              <div className="pd-fld" key={k}>
+                <label htmlFor={`pd-${k}`}>{l}</label>
+                <input
+                  id={`pd-${k}`}
+                  className={k === "vin" ? "pd-mono" : undefined}
+                  value={d.vehicle[k]}
+                  placeholder={ph}
+                  inputMode={k === "mileageKm" || k === "year" ? "numeric" : undefined}
+                  disabled={!editable}
+                  onChange={(e) => setV(k, k === "vin" ? e.target.value.toUpperCase() : e.target.value)}
+                />
+              </div>
+            ))}
+            <div className="pd-fld">
+              <label htmlFor="pd-price">Cena klientam</label>
+              <input id="pd-price" value={d.price} placeholder="€" disabled={!editable} inputMode="decimal" onChange={(e) => set("price", e.target.value)} />
+            </div>
+            <div className="pd-fld w2">
+              <label htmlFor="pd-title">Modelis</label>
+              <input id="pd-title" value={d.vehicle.title} disabled={!editable} onChange={(e) => setV("title", e.target.value)} />
+            </div>
+            <div className="pd-fld">
+              <label htmlFor="pd-client">Klients</label>
+              <ClientPicker value={d.client} options={clientOptions} disabled={!editable} onChange={(cl) => set("client", cl)} />
+            </div>
+            <div className="pd-fld">
+              <label htmlFor="pd-valid">
+                Termiņš <span className="pd-req">*</span>
+              </label>
+              <input
+                id="pd-valid"
+                type="date"
+                className="req-on"
+                value={d.validUntil}
+                disabled={!editable}
+                required
+                aria-required="true"
+                onChange={(e) => set("validUntil", e.target.value)}
+              />
+            </div>
+            {d.client.name && !d.client.orderId ? (
+              <>
+                <div className="pd-fld w2">
+                  <label htmlFor="pd-cphone">Klienta tālrunis</label>
+                  <input id="pd-cphone" value={d.client.phone} disabled={!editable} onChange={(e) => set("client", { ...d.client, phone: e.target.value })} />
+                </div>
+                <div className="pd-fld w2">
+                  <label htmlFor="pd-cemail">Klienta e-pasts</label>
+                  <input id="pd-cemail" value={d.client.email} disabled={!editable} onChange={(e) => set("client", { ...d.client, email: e.target.value })} />
+                </div>
+              </>
+            ) : null}
+            {MORE_FIELDS.map(([k, l]) => (
+              <div className="pd-fld" key={k}>
+                <label htmlFor={`pd-${k}`}>{l}</label>
+                <input id={`pd-${k}`} value={d.vehicle[k]} disabled={!editable} onChange={(e) => setV(k, e.target.value)} />
+              </div>
+            ))}
+          </div>
+          {d.client.orderId ? <p className="pd-hint">Klients piesaistīts IRISS pasūtījumam - piedāvājums redzams arī tur.</p> : null}
+        </Card>
+
+        <Card
+          title="Aprīkojuma izcēlumi"
+          sub={c.highlightsOn ? "Rāda klientam · max ~8" : "Paslēpts klientam"}
+          on={c.highlightsOn}
+          disabled={!editable}
+          onToggle={() => setC({ highlightsOn: !c.highlightsOn })}
+        >
+          <div className="pde-tags">
+            {c.highlights.map((h, i) => (
+              <span className="tag" key={h}>
+                {h}
+                {editable ? (
+                  <button type="button" aria-label={`Noņemt «${h}»`} onClick={() => setC({ highlights: c.highlights.filter((_, j) => j !== i) })}>
+                    ×
+                  </button>
+                ) : null}
+              </span>
+            ))}
+            <AddInline
+              label="pievienot"
+              chip
+              disabled={!editable || c.highlights.length >= IRISS_PD_MAX_HIGHLIGHTS}
+              onAdd={(t) => {
+                if (!c.highlights.some((x) => x.toLowerCase() === t.toLowerCase())) setC({ highlights: [...c.highlights, t.slice(0, 80)] });
+              }}
+            />
+          </div>
+        </Card>
+
+        <Card
+          title="Kopsavilkums"
+          sub={c.summaryOn ? "Rāda klientam · gatavi šabloni, ķeksē vajadzīgo" : "Paslēpts klientam"}
+          on={c.summaryOn}
+          disabled={!editable}
+          onToggle={() => setC({ summaryOn: !c.summaryOn })}
+        >
+          <div className="pde-2c">
+            <div className="pde-col">
+              <h4 className="ok">✓ Cenā iekļauts</h4>
+              {checkList("included", IRISS_PD_INCLUDED_TEMPLATE)}
+              <AddInline label="pievienot rindu" disabled={!editable} onAdd={(t) => setC({ included: addItem(c.included, t) })} />
+            </div>
+            <div className="pde-col">
+              <h4 className="no">✕ Cenā nav iekļauts</h4>
+              {checkList("excluded", IRISS_PD_EXCLUDED_TEMPLATE)}
+              <AddInline label="pievienot rindu" disabled={!editable} onAdd={(t) => setC({ excluded: addItem(c.excluded, t) })} />
+            </div>
+          </div>
+        </Card>
+
+        <Card
+          title="Novērtējums klientam"
+          sub={c.assessmentOn ? "Rāda klientam · viss vienā kartītē" : "Paslēpts klientam"}
+          on={c.assessmentOn}
+          disabled={!editable}
+          onToggle={() => setC({ assessmentOn: !c.assessmentOn })}
+        >
+          <div className="pde-facts">{checkList("facts", IRISS_PD_FACTS_TEMPLATE)}</div>
+          <AddInline label="pievienot faktu" disabled={!editable} onAdd={(t) => setC({ facts: addItem(c.facts, t) })} />
+          <div className="pde-2c" style={{ marginTop: 12 }}>
+            <div className="pd-fld">
+              <label htmlFor="pd-visual">Vizuālais</label>
+              <textarea
+                id="pd-visual"
+                value={c.visual}
+                disabled={!editable}
+                placeholder="Buktes, skrāpējumi, pārkrāsotās detaļas..."
+                onChange={(e) => setC({ visual: e.target.value })}
+              />
+            </div>
+            <div className="pd-fld">
+              <label htmlFor="pd-technical">Tehniskais</label>
+              <textarea
+                id="pd-technical"
+                value={c.technical}
+                disabled={!editable}
+                placeholder="Kļūdas, servisa vajadzības..."
+                onChange={(e) => setC({ technical: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="pd-fld">
+            <label htmlFor="pd-note">Papildu piezīme</label>
+            <textarea
+              id="pd-note"
+              value={c.note}
+              disabled={!editable}
+              placeholder="Ko nav ielasījis Auto1 u.c. avoti - piem., klienta jautājumi, papildu pārbaudes..."
+              onChange={(e) => setC({ note: e.target.value })}
+            />
+          </div>
+          <p className="pd-hint">Vienkāršs teksts - bez formatēšanas rīkjoslas.</p>
+        </Card>
+
+        {rec.auto1 ? (
+          <Card title="Auto1 dati" sub={`Ielasīts ${stamp(rec.auto1ImportedAt).slice(0, 5) || "-"} · īsi`}>
+            {brief.car.length || brief.damage.length ? (
+              <div className="pde-2c pde-kvs">
+                <div>
+                  {brief.car.map((r) => (
+                    <div className="pde-kv" key={r.label}>
+                      <span>{r.label}</span>
+                      <b>{r.value}</b>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  {brief.damage.map((r) => (
+                    <div className="pde-kv" key={r.label}>
+                      <span>{r.label}</span>
+                      <b>{r.value}</b>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className="pd-hint">Īsajā skatā nav ko rādīt.</p>
+            )}
+            <a className="pde-lnk" href="#pd-auto1-full">
+              Rādīt pilnu Auto1 atskaiti ↓
+            </a>
+          </Card>
         ) : null}
-        <button type="button" className="pd-btn p" disabled={!dirty || busy !== ""} onClick={() => void save()}>
-          {busy === "save" ? "Saglabā..." : "Saglabāt"}
-        </button>
-        <button type="button" className="pd-btn bad" disabled={busy !== ""} onClick={() => void remove()}>
-          {busy === "delete" ? "Dzēš..." : "Dzēst"}
-        </button>
+
+        <Card title="Cenas" sub="Iekšēji · nerāda klientam">
+          <div className="pde-grid">
+            <div className="pd-fld">
+              <label htmlFor="pd-purchase">Iepirkuma cena</label>
+              <input id="pd-purchase" value={d.purchasePrice} placeholder="€" disabled={!editable} inputMode="decimal" onChange={(e) => set("purchasePrice", e.target.value)} />
+            </div>
+            <div className="pd-fld">
+              <label htmlFor="pd-logistics">Loģistika</label>
+              <input id="pd-logistics" value={d.logisticsCost} placeholder="€" disabled={!editable} inputMode="decimal" onChange={(e) => set("logisticsCost", e.target.value)} />
+            </div>
+            <div className="pd-fld">
+              <label htmlFor="pd-prep">Sagatavošana</label>
+              <input id="pd-prep" value={d.prepCost} placeholder="€" disabled={!editable} inputMode="decimal" onChange={(e) => set("prepCost", e.target.value)} />
+            </div>
+            <div className="pd-fld">
+              <label htmlFor="pd-price2">Cena klientam</label>
+              <input id="pd-price2" value={d.price} placeholder="€" disabled={!editable} inputMode="decimal" onChange={(e) => set("price", e.target.value)} />
+            </div>
+            <div className="pd-fld">
+              <span className="lbl">Marža</span>
+              <div className="ro">{margin || "-"}</div>
+            </div>
+            <div className="pd-fld w3">
+              <span className="lbl">Avots</span>
+              <div className="ro">
+                <span className="pd-src">{IRISS_PD_SOURCE_LV[rec.source]}</span>
+                {rec.sourceUrl ? (
+                  <a className="pd-el pd-lnk" href={rec.sourceUrl} target="_blank" rel="noreferrer noopener">
+                    {rec.sourceUrl.replace(/^https:\/\/(www\.)?/, "")}
+                  </a>
+                ) : rec.sourceRef ? (
+                  <Link className="pd-lnk" href="/admin/iriss/autoparks">
+                    Autoparka auto
+                  </Link>
+                ) : null}
+                <span className="pd-mu pd-el">
+                  {rec.importedFieldCount > 0
+                    ? `· ${rec.importedFieldCount} lauki aizpildīti`
+                    : adapter?.mode === "stub"
+                      ? `· ${adapter.stubNote}`
+                      : "· aizpildīts ar roku"}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="pd-fld">
+            <label htmlFor="pd-notes">Iekšējās piezīmes</label>
+            <textarea id="pd-notes" value={d.internalNotes} onChange={(e) => set("internalNotes", e.target.value)} />
+          </div>
+        </Card>
+
+        {rec.auto1 ? (
+          <Card id="pd-auto1-full" title="Auto1 pilnā atskaite" sub={`Ielasīts ${stamp(rec.auto1ImportedAt)} · klientam rāda ieslēgtos blokus`}>
+            <div className="pde-vis">
+              Visi bloki: <PdToggles value={d.visibility.group} disabled={!editable} onToggle={editable ? (m) => toggle("group", m) : undefined} />
+            </div>
+            <PdAuto1Blocks blocks={rec.auto1} visibility={d.visibility} onToggle={editable ? toggle : undefined} disabled={!editable} />
+            <p className="pd-hint" style={{ marginTop: 8 }}>
+              Noklusējums: visi bloki ieslēgti, «Bojājumu kopsavilkums» izslēgts. Grupas OFF izslēdz visus; bloka slēdzis darbojas tikai, ja grupa ON.
+            </p>
+          </Card>
+        ) : null}
+
+        <Card title="Statuss un vēsture" sub="Klienta lēmums, PDF un saistītie ieraksti">
+          <div className="pd-acts" style={{ marginBottom: 12 }}>
+            {actions.includes("revert") ? (
+              <button type="button" className="pd-btn" disabled={busy !== ""} onClick={() => void act("revert")}>
+                Atsaukt uz melnrakstu
+              </button>
+            ) : null}
+            {actions.includes("approve") ? (
+              <button type="button" className="pd-btn" disabled={busy !== ""} onClick={() => void act("approve")}>
+                Atzīmēt apstiprinātu
+              </button>
+            ) : null}
+            {actions.includes("decline") ? (
+              <button type="button" className="pd-btn bad" disabled={busy !== ""} onClick={() => void act("decline")}>
+                Atzīmēt noraidītu
+              </button>
+            ) : null}
+            {rec.status === "approved" && !rec.approvedOrderId ? (
+              <button type="button" className="pd-btn" disabled={busy !== ""} onClick={() => void act("create-order")}>
+                Izveidot pasūtījumu
+              </button>
+            ) : null}
+            {canRebaseIrissPd(rec.status) ? (
+              <button type="button" className="pd-btn p" disabled={rebaseBusy} onClick={() => void rebase(rec.id, router)}>
+                Izveidot jaunu uz šī bāzes
+              </button>
+            ) : null}
+            <Link className="pd-btn" href={`/admin/iriss/piedavajumi/${rec.id}/pdf`}>
+              PDF
+            </Link>
+            {rec.linkToken && (rec.status === "sent" || rec.status === "approved") ? (
+              <a className="pd-btn" href={irissPdPublicPath(rec.linkToken)} target="_blank" rel="noreferrer">
+                Klienta skats
+              </a>
+            ) : null}
+          </div>
+          {rec.approvedOrderId ? (
+            <div className="pd-kv">
+              <span>Pasūtījums</span>
+              <Link className="pd-lnk" href={`/admin/iriss/pasutijumi/${rec.approvedOrderId}`}>
+                Rezervēts →
+              </Link>
+            </div>
+          ) : null}
+          {rec.client.orderId && rec.client.orderId !== rec.approvedOrderId ? (
+            <div className="pd-kv">
+              <span>Klienta pasūtījums</span>
+              <Link className="pd-lnk" href={`/admin/iriss/pasutijumi/${rec.client.orderId}`}>
+                Atvērt →
+              </Link>
+            </div>
+          ) : null}
+          {rec.basedOnId ? (
+            <div className="pd-kv">
+              <span>Veidots uz bāzes</span>
+              <Link className="pd-lnk" href={`/admin/iriss/piedavajumi/${rec.basedOnId}`}>
+                Iepriekšējais →
+              </Link>
+            </div>
+          ) : null}
+          <div className="pd-tl" style={{ marginTop: 10 }}>
+            {[...rec.history].reverse().map((h, i) => (
+              <div key={`${h.at}-${i}`}>
+                {h.text}
+                <small>
+                  {h.by} · {stamp(h.at)}
+                </small>
+              </div>
+            ))}
+          </div>
+        </Card>
       </div>
     </div>
   );
