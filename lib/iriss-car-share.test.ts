@@ -63,9 +63,9 @@ describe("IRISS auto saite bez cenas", () => {
       status: "sent",
       origin: "https://iriss.lv",
       clientName: "Evita",
-      sentAt: "2026-10-26T08:42:00.000Z",
+      sentAt: "2026-10-26T09:42:00.000Z",
       channel: "whatsapp",
-      nowMs: Date.parse("2026-10-26T08:50:00.000Z"),
+      nowMs: Date.parse("2026-10-26T09:50:00.000Z"),
     });
     expect(sent.statusLabel).toBe("Nosūtīts");
     expect(sent.badge).toBe("Bez cenas");
@@ -78,9 +78,9 @@ describe("IRISS auto saite bez cenas", () => {
     expect(
       formatIrissCarShareSentNote({
         clientName: "Evita",
-        sentAt: "2026-10-25T08:42:00.000Z",
+        sentAt: "2026-10-25T09:42:00.000Z",
         channel: "whatsapp",
-        nowMs: Date.parse("2026-10-26T08:50:00.000Z"),
+        nowMs: Date.parse("2026-10-26T09:50:00.000Z"),
       }),
     ).toBe("Evita · 25.10 11:42 · WhatsApp");
   });

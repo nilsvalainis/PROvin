@@ -6,6 +6,7 @@ Formāts: `YYYY-MM-DD | aģents | viena rinda` (tikai īsā defise).
 - Taupīgi: tikai svarīgais. Nekādu atslēgu, paroļu, personas kodu.
 
 ## Ieraksti
+2026-10-26 | Cursor Grok | Ziņai: Andris. PR #652 (cursor/iriss-saites-makets-a-a7e1): IRISS Saites makets A - šķērssaites Autoparks/Loģistika/Pasūtījums + frosted «Publiskā saite» bez cenas (/a/[token]). B sheet nav. NESAPLUDINĀT, Andris review.
 2026-10-26 | Cursor Grok | Ziņai: Andris. PR #644 (cursor/iriss-staff-reset-delete-f64e): IRISS Darbinieki - paroles atiestatīšana un hard-delete, lai Toma e-pastu var uzaicināt no jauna. NESAPLUDINĀT, Andris review.
 2026-10-25 | Cursor Grok | Ziņai: Andris. PR #639 (cursor/iriss-partraukt-p0-badb): P0 IRISS «Pārtraukt» kartē un aplī + POST stop -> Aivars stop_waybill (CSDD Pārtraukt, nekad OWS Anulēt/Paziņot klientam). Worker auto-stop un live OWS NAV. NESAPLUDINĀT, Andris review.
 2026-10-25 | Claude Fable (live) | Ziņai: Andris. F2 3x demo AUDITS prodā (manuāli "FABLE DEMO", FlashMax 1x/VIN iztērēts) atklāja 4 klienta PDF H kļūdas, sapludināts PR #634-#638 (testi, Vercel prod): CV bojājums ar "Nezināms" summu tika izmests -> PDF "Nav ierakstu" zaļš (#637); FlashMax rakstīja nepatiesu "CarVertical nobraukuma brīdinājums" no vārda "odometr" CV šablonā (#636); nobraukuma attīšana SE->LV rādīta "bez pretrunām" (#638); CV komplektācija 10 garbage rindas (#635); mnt.ee forma = viltus "Atrasts" (#634). Pavadzīmes NAV aiztiktas. Atskaite ~/opus-q2310/FABLE-REPORT-live.md.
