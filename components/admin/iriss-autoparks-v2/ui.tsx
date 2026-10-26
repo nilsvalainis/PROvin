@@ -18,7 +18,7 @@ export function VinCopy({ vin, className = "" }: { vin: string; className?: stri
     }
   }
   return (
-    <button type="button" className={`ap2-vin ${copied ? "copied" : ""} ${className}`} onClick={copy} aria-label="Kopēt VIN">
+    <button type="button" className={`ap2-vin ${copied ? "copied" : ""} ${className}`} onClick={copy} aria-label={`${vin} - kopēt VIN`}>
       <span>{vin}</span>
       <CopyIcon />
     </button>
