@@ -1,11 +1,10 @@
+import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => undefined, refresh: () => undefined }) }));
 vi.mock("next/image", () => ({
-  default: (props: { alt?: string; src?: string }) => {
-    const { createElement } = require("react") as typeof import("react");
-    return createElement("img", { alt: props.alt ?? "", src: typeof props.src === "string" ? props.src : "" });
-  },
+  default: (props: { alt?: string; src?: unknown }) =>
+    createElement("img", { alt: props.alt ?? "", src: typeof props.src === "string" ? props.src : "" }),
 }));
 
 import { PiedavajumiList } from "@/components/admin/iriss-piedavajumi/PiedavajumiList";
