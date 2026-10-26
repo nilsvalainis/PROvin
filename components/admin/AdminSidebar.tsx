@@ -203,10 +203,10 @@ export function useAdminWorkspace(): AdminWorkspace {
 function WorkspaceSwitch({ ws }: { ws: AdminWorkspace }) {
   const seg = (on: boolean) =>
     `admin-nav-link flex h-7 flex-1 items-center justify-center rounded-md text-[12px] font-semibold tracking-wide transition ${
-      on ? "bg-white text-[var(--color-apple-text)] shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-[#8e8e93] hover:text-[var(--color-apple-text)]"
+      on ? "bg-white text-[var(--color-apple-text)] shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-[#636366] hover:text-[var(--color-apple-text)]"
     }`;
   return (
-    <div className="flex gap-0.5 rounded-lg bg-[#f2f2f7] p-0.5" role="tablist" aria-label="Darba zona">
+    <div className="flex gap-0.5 rounded-lg bg-[#f2f2f7] p-0.5" role="group" aria-label="Darba zona">
       <Link href="/admin/dashboard" onClick={() => writeWsCookie("pro")} className={seg(ws === "pro")} aria-current={ws === "pro" ? "page" : undefined}>
         PRO
       </Link>
@@ -684,7 +684,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
             <div className="am-overlay relative z-[20] flex min-h-0 flex-1 flex-col bg-[var(--bg)] pb-[calc(64px+16px+env(safe-area-inset-bottom,0px))]">
               <header className="am-topbar px-4 pb-3 pt-[max(10px,env(safe-area-inset-top))]">
                 <h1 className="text-[34px] font-bold leading-none tracking-tight text-[var(--label)]">Vairāk</h1>
-                <div className="relative mt-3 flex h-11 rounded-full bg-[var(--am-fill)] p-0.5" role="tablist" aria-label="Darba zona">
+                <div className="relative mt-3 flex h-11 rounded-full bg-[var(--am-fill)] p-0.5" role="group" aria-label="Darba zona">
                   <span
                     aria-hidden
                     className="pointer-events-none absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-full bg-[var(--am-s1)] shadow-sm"
