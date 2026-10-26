@@ -101,13 +101,15 @@ type ClassifyRequest = Pick<
   Partial<Pick<WaybillRequest, "id" | "tradeAct" | "representative" | "validUntil" | "replaceWaybillNo" | "kind">>;
 
 /**
- * Cits pieprasījums ar to pašu numuru jau ir darbā vai tikko izdots (vēl derīgs) - dublikāts / numurs faktiski aizņemts,
- * pat ja pavadzīmju saraksts (Dropbox kešs) to vēl nerāda.
+ * Cits pieprasījums ar to pašu numuru jau ir darbā vai (ja CSDD/indekss to apstiprina) tikko izdots.
+ * `plateBusyNow === false` (Numurs panelis Brīvs): izdotie spoki (FABLE testi, CSDD jau pārtraucis) nebloķē;
+ * in_progress joprojām bloķē. Bez 4. arg vai `true` - kā līdz šim (drošais noklusējums).
  */
 export function plateTakenByOtherRequest(
   requests: ReadonlyArray<Pick<WaybillRequest, "id" | "status" | "vehicle" | "validUntil" | "pickedAt"> & Partial<Pick<WaybillRequest, "waybillNo">>>,
   req: Pick<WaybillRequest, "id" | "vehicle"> & Partial<Pick<WaybillRequest, "replaceWaybillNo">>,
   nowMs = Date.now(),
+  plateBusyNow?: boolean,
 ): boolean {
   const plate = compactDealerPlate(req.vehicle.plate);
   const replaceNo = (req.replaceWaybillNo ?? "").trim().toUpperCase();
@@ -119,7 +121,10 @@ export function plateTakenByOtherRequest(
     if (other.status === "issued" && replaceNo && (other.waybillNo ?? "").trim().toUpperCase() === replaceNo) return false;
     if (other.status === "issued") {
       const until = Date.parse(other.validUntil);
-      return Number.isFinite(until) && until > nowMs;
+      if (!(Number.isFinite(until) && until > nowMs)) return false;
+      // B762-7 26.10: CSDD/index Brīvs - issued rinda ir spoks, ne reāla aizņemtība.
+      if (plateBusyNow === false) return false;
+      return true;
     }
     return false;
   });
