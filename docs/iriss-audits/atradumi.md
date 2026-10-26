@@ -126,3 +126,7 @@ Formāts: [sadaļa] [ierīce] smagums (K kritisks / A augsts / V vidējs / Z zem
 - [VIN pārbaude] [dators, IRISS darbinieks] Z - Virsraksts "VIN pārbaude" pielīp pie sānjoslas (nav kreisās atkāpes, citām lapām ir); 32 avotu flīzes vienā blīvā režģī, "Avotu stāvoklis 20/32 OK · 7 kļūda" - tehniski.
 - [Iestatījumi] [dators] V - Vienā lapā: tāmes komisija, Google Contacts, sludinājumu limiti, "Pārvaldība · Google Maps" (tehniski API nosaukumi: Maps JS, GeocodePlace v4, SearchDestinations v4), izsoļu avoti (8 bez nosaukumiem teksta skatā), un "Lietotāji un pieeja" pašā apakšā. Nila lūgums: Lietotāji atsevišķi/augstāk; tehniskais - aizvērtā blokā.
 - [Iestatījumi/Lietotāji, Izmaksas] - NAV PĀRBAUDĪTS vizuāli (iebūvētajā pārlūkā admin lapas nehidratējās; API /api/admin/staff/users 200, 0,6 s).
+
+## Lomas (dzīvi, claude.demo = tikai Pavadzīmes, 27.10 00:10)
+- [Lomas] + Labi: "tikai Pavadzīmes" - sākumā tikai numuru apļi, "Izveidot pavadzīmi", "Arhīvs", "Iziet"; citas sadaļas novirza prom; /api pilnais pavadzīmju saraksts un pasūtījumi 403, aktīvās un pieprasījumi 200. Lomas maiņa izraksta sesiju.
+- [Lomas/Pavadzīmes] A - JAUTĀJUMS Nilam: "tikai Pavadzīmes" lietotājs redz VISUS pavadzīmju pieprasījumus (32: admin 31, Toms 1) ar komentāriem. Ja loma ir ārējam partnerim - rādīt tikai savus.

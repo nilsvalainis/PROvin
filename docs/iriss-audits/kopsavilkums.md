@@ -11,6 +11,10 @@ Pilnais audits (Nilam): Claude Artifact "IRISS audits 26.10". Atradumi: `docs/ir
 - **Izvēlnē skaitļu nav** (nekādu "99+"). Mēneša atskaite izvēlnē paslēpta. Nosaukums "Iestatījumi" (ne "Pārvaldība"); Lietotāji - atsevišķa apakšsadaļa.
 - **Telefona josla:** variants A - paslēpjas ritinot uz leju, parādās uz augšu; lapām apakšā atstarpe, lai nekas nav aizsegts.
 - **Garie žurnāli** (statusi, lietotāju darbības) - aizveramos blokos.
+- **Pavadzīmes maks. derīgums 48 h** (Nils 27.10; docs/komentāri ar 2160 h ir novecojuši).
+- **Tehnika** (piekabe, pacēlājs) paliek esošajos Autoparka sarakstos.
+- **Publiskā auto saite /a/** - tikai ar pogu "Izveidot saiti klientam", ne automātiski.
+- **Darbu secība:** Sludinājumi (ātrums+dizains) -> dizaina pamats kodā -> viena piedāvājuma forma -> viens auto ceļš.
 - **Ierīces:** iPhone X un jaunāki (iOS 16+), Android, Windows/Mac Chrome un Safari.
 
 ## Jau salabots (prod)
