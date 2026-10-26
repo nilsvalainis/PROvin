@@ -138,6 +138,32 @@ function MoveToAutopark({
   );
 }
 
+/** Auto kabineta beigu darbība: "Uz Autoparku" (ar apstiprinājumu) vai cita klienta auto "Dzēst". */
+export function LogisticsCarEndAction({
+  order,
+  stage,
+  onMoveToAutopark,
+  onDeleteManual,
+}: {
+  order: LogisticsOrder;
+  stage: CabinetPickupStage;
+  onMoveToAutopark: (id: string) => void;
+  onDeleteManual: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  if (order.source === "manual") return <DeleteManual order={order} onDelete={onDeleteManual} />;
+  return (
+    <MoveToAutopark
+      order={order}
+      arrived={stage === "arrived"}
+      open={open}
+      onOpen={() => setOpen(true)}
+      onClose={() => setOpen(false)}
+      onConfirm={() => onMoveToAutopark(order.id)}
+    />
+  );
+}
+
 export function IrissLogistikaCarsTable({
   orders,
   plan,

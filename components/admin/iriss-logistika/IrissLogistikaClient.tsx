@@ -8,7 +8,7 @@ import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctio
 import { IrissLogistikaAuctionSourcesPanel } from "@/components/admin/iriss-logistika/IrissLogistikaAuctionSourcesPanel";
 import { IrissLogistikaCabinet } from "@/components/admin/iriss-logistika/IrissLogistikaCabinet";
 import { IrissLogistikaCarPopup } from "@/components/admin/iriss-logistika/IrissLogistikaCarPopup";
-import { IrissLogistikaCarsTable } from "@/components/admin/iriss-logistika/IrissLogistikaCarsTable";
+import { LogisticsCarEndAction } from "@/components/admin/iriss-logistika/IrissLogistikaCarsTable";
 import { IrissLogistikaCargoPlan, type ManualCarInput } from "@/components/admin/iriss-logistika/IrissLogistikaCargoPlan";
 import { IrissLogistikaMap, type IrissLogistikaMapHandle } from "@/components/admin/iriss-logistika/IrissLogistikaMap";
 import { IrissLogistikaNewPurchase } from "@/components/admin/iriss-logistika/IrissLogistikaNewPurchase";
@@ -136,7 +136,7 @@ export function IrissLogistikaClient({
   const [cargoPlan, setCargoPlan] = useState<CargoPlanState>(emptyCargoPlan());
   const [cargoTemplates, setCargoTemplates] = useState<CargoRouteTemplate[]>([]);
   const [cargoPickups, setCargoPickups] = useState<CabinetPickup[]>([]);
-  const [cargoDocs, setCargoDocs] = useState<Record<string, { have: number; expected: number }>>({});
+  const [, setCargoDocs] = useState<Record<string, { have: number; expected: number }>>({});
   const [pickupDocCarIds, setPickupDocCarIds] = useState<string[]>([]);
   const [bounceId, setBounceId] = useState<string | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
@@ -421,30 +421,6 @@ export function IrissLogistikaClient({
   }
 
   /** Statuss ar vienu klikšķi: uzreiz redzams, ja serveris atsaka - atgriežas. */
-  async function setPickupStage(carId: string, stage: CabinetPickupStage) {
-    const before = cargoPickups;
-    setCargoPickups((prev) => {
-      const at = new Date().toISOString();
-      const has = prev.some((p) => p.carId === carId);
-      return has
-        ? prev.map((p) => (p.carId === carId ? { ...p, stage, updatedAt: at } : p))
-        : [...prev, { carId, stage, pickupCode: "", pickupDate: "", arrivedAt: "", notes: "", updatedAt: at, updatedBy: "" }];
-    });
-    const res = await fetch(`/api/admin/iriss-logistics/orders/${encodeURIComponent(carId)}/pickup`, {
-      method: "PATCH",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stage }),
-    }).catch(() => null);
-    if (!res?.ok) {
-      setCargoPickups(before);
-      setNotice(res?.status === 403 ? "Tev nav tiesību mainīt statusu." : "Statusu neizdevās saglabāt.");
-      return;
-    }
-    const body = (await res.json()) as { pickup?: CabinetPickup };
-    if (body.pickup) setCargoPickups((prev) => prev.map((p) => (p.carId === carId ? body.pickup! : p)));
-  }
-
   async function moveToAutopark(orderId: string) {
     const res = await fetch("/api/admin/iriss-logistics/autoparks", {
       method: "POST",
@@ -532,6 +508,11 @@ export function IrissLogistikaClient({
     for (const p of cargoPickups) m.set(p.carId, CABINET_PICKUP_STAGE_LV[p.stage]);
     return m;
   }, [cargoPickups]);
+  /** Rindas posma žetons visiem auto (bez pickup ieraksta - "Gaida", kā agrāk tabulā "Visi auto"). */
+  const stageLabelByCarId = useMemo(() => {
+    const stages = new Map(cargoPickups.map((p) => [p.carId, p.stage]));
+    return Object.fromEntries(orders.map((o) => [o.id, CABINET_PICKUP_STAGE_LV[stages.get(o.id) ?? "waiting"]]));
+  }, [orders, cargoPickups]);
   /** Gatavība tikai Nākošās kravas auto; pārējiem paliek viļņa krāsa. */
   const readinessByCarId = useMemo(() => {
     const m = new Map<string, ReadinessKind>();
@@ -1123,6 +1104,17 @@ export function IrissLogistikaClient({
                 onPatchOrder={(id, action) => void patchOrder(id, action)}
                 onOrderUpdated={(next) => setOrders((prev) => prev.map((o) => (o.id === next.id ? next : o)))}
                 canCreateOffer={canCreateOffer}
+                onPickupChanged={(next) =>
+                  setCargoPickups((prev) => (prev.some((p) => p.carId === next.carId) ? prev.map((p) => (p.carId === next.carId ? next : p)) : [...prev, next]))
+                }
+                endAction={
+                  <LogisticsCarEndAction
+                    order={active}
+                    stage={(cargoPickups.find((p) => p.carId === active.id)?.stage ?? "waiting") as CabinetPickupStage}
+                    onMoveToAutopark={(id) => void moveToAutopark(id)}
+                    onDeleteManual={(id) => void deleteManualCar(id)}
+                  />
+                }
               />
             </div>
           ) : (
@@ -1144,6 +1136,11 @@ export function IrissLogistikaClient({
                 onToggleReadiness={toggleReadiness}
                 readinessByCarId={readinessByCarId}
                 cardHrefByCarId={autoparksByOrder}
+                stageLabelByCarId={stageLabelByCarId}
+                onOpenCabinet={(id) => {
+                  setActiveId(id);
+                  setCabinetOpen(true);
+                }}
               />
               {popupOrder ? (
                 <IrissLogistikaCarPopup
@@ -1158,20 +1155,7 @@ export function IrissLogistikaClient({
           )}
           {/* Datorā tabula aizņem abu kolonnu platumu zem kartes un kravu plāna. Telefonā: karte, kravas, auto. */}
           <div className="min-w-0 lg:col-span-2 lg:row-start-2">
-            <IrissLogistikaCarsTable
-              orders={visibleOrders}
-              plan={cargoPlan}
-              pickups={cargoPickups}
-              docCounts={cargoDocs}
-              onOpenCabinet={(id) => {
-                setActiveId(id);
-                setCabinetOpen(true);
-              }}
-              onMoveToAutopark={(id) => void moveToAutopark(id)}
-              onSetStage={(id, stage) => void setPickupStage(id, stage)}
-              onSetBucket={(id, bucket) => void persistCargoPlan(moveCargoCar(cargoPlan, id, bucket))}
-              onDeleteManual={(id) => void deleteManualCar(id)}
-            />
+            {/* "Visi auto" tabula noņemta (makets 26.10): posms rindā, statuss/dokumenti/Uz Autoparku - auto kabinetā. */}
             <ul className="iriss-log-legacy-orders hidden iriss-log-no-print mt-3 overflow-hidden rounded-2xl bg-white shadow-sm">
               {visibleOrders.map((o) => {
                 const archived = isLogisticsOrderArchived(o);

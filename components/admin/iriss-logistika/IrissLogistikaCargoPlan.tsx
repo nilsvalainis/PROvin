@@ -60,6 +60,9 @@ type Props = {
   onRowHover: (id: string | null) => void;
   /** Loģistikas ieraksts -> Autoparka auto id (saite "Kartīte"). */
   cardHrefByCarId?: Readonly<Record<string, string>>;
+  /** Pickup posms rindā (Gaida / Ceļā / ...); klikšķis atver auto kabinetu (statuss, dokumenti, Uz Autoparku). */
+  stageLabelByCarId?: Readonly<Record<string, string>>;
+  onOpenCabinet?: (id: string) => void;
   /** `base`: tikko mainītais plāns, ko aprēķins izmanto (nevis veco stāvokli). */
   onRefreshDirections: (bucket: "next" | "after", base?: CargoPlanState) => void;
   routeUi?: Record<"next" | "after", { busy: boolean; notice: string }>;
@@ -111,6 +114,8 @@ export function IrissLogistikaCargoPlan({
   onRowClick,
   onRowHover,
   cardHrefByCarId,
+  stageLabelByCarId,
+  onOpenCabinet,
   onRefreshDirections,
   routeUi,
   onTemplatesChanged,
@@ -232,6 +237,8 @@ export function IrissLogistikaCargoPlan({
                     onClick={() => onRowClick(id)}
                     onHover={onRowHover}
                     cardHref={cardHrefByCarId?.[id] ? autoparksSaitesHref(cardHrefByCarId[id]) : undefined}
+                    stageLabel={stageLabelByCarId?.[id]}
+                    onOpenCabinet={onOpenCabinet ? () => onOpenCabinet(id) : undefined}
                     onToggleMap={() => onPlanChange(setCargoShowOnMap(plan, id, !(car?.showOnMap ?? true)))}
                     onToggleColor={() => setColorFor((cur) => (cur === id ? null : id))}
                     onPickColor={(next) => {
@@ -385,6 +392,8 @@ function SortableCargoRow({
   onToggleColor,
   onPickColor,
   cardHref,
+  stageLabel,
+  onOpenCabinet,
 }: {
   id: string;
   order: LogisticsOrder;
@@ -401,6 +410,8 @@ function SortableCargoRow({
   onPickColor: (bucket: CargoBucket) => void;
   /** Autoparka auto kartīte (posms "Ceļā" -> galvenā auto kartīte). */
   cardHref?: string;
+  stageLabel?: string;
+  onOpenCabinet?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   return (
@@ -436,6 +447,20 @@ function SortableCargoRow({
           <span className={`iriss-log-ready-chip ${readiness}`} data-readiness={readiness}>
             {READINESS_LV[readiness]}
           </span>
+        ) : null}
+        {stageLabel && onOpenCabinet ? (
+          <button
+            type="button"
+            className="iriss-log-stage-chip"
+            title="Atvērt auto kabinetu: statuss, dokumenti, Uz Autoparku"
+            {...stopDragStart}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenCabinet();
+            }}
+          >
+            {stageLabel}
+          </button>
         ) : null}
         {cardHref ? (
           <a href={cardHref} className="iriss-log-card-link" {...stopDragStart} onClick={(e) => e.stopPropagation()}>

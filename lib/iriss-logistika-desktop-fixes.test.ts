@@ -77,10 +77,9 @@ describe("Kravu plāns", () => {
 describe("Loģistika layout", () => {
   const client = read("components/admin/iriss-logistika/IrissLogistikaClient.tsx");
 
-  it("spreads the Visi auto table across both columns on desktop", () => {
-    expect(client).toContain('<div className="min-w-0 lg:col-span-2 lg:row-start-2">');
-    // Telefonā kravu plāns ir pirms auto saraksta.
-    expect(client.indexOf("<IrissLogistikaCargoPlan")).toBeLessThan(client.indexOf("<IrissLogistikaCarsTable"));
+  it("has one car list: the cargo plan (Visi auto table removed, makets 26.10)", () => {
+    expect(client).not.toContain("<IrissLogistikaCarsTable");
+    expect(client).toContain("stageLabelByCarId={stageLabelByCarId}");
     expect(client).toContain('className="iriss-log-cargo-col space-y-3 lg:col-start-2 lg:row-start-1"');
   });
 

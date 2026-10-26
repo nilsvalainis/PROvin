@@ -141,3 +141,31 @@ describe("Kravu rinda -> Autoparka auto kartīte", () => {
     expect(html.match(/>Kartīte</g)?.length).toBe(1);
   });
 });
+
+describe("Kravu rinda - posma žetons (aizstāj tabulu «Visi auto»)", () => {
+  const base = {
+    orders,
+    plan,
+    templates: [],
+    bounceId: null,
+    hoverId: null,
+    onPlanChange: () => undefined,
+    onRowClick: () => undefined,
+    onRowHover: () => undefined,
+    onRefreshDirections: () => undefined,
+    readinessOn: false,
+    onToggleReadiness: () => undefined,
+  };
+
+  it("katrai rindai rāda posmu, ja ir kabineta atvēršana", () => {
+    const labels = { a: "Gaida", b: "Ceļā", c: "Gaida", d: "Gaida", e: "Atvests" };
+    const html = renderHtml(<IrissLogistikaCargoPlan {...base} stageLabelByCarId={labels} onOpenCabinet={() => undefined} />);
+    expect(html.match(/class="iriss-log-stage-chip"/g)?.length).toBe(5);
+    expect(renderText(<IrissLogistikaCargoPlan {...base} stageLabelByCarId={labels} onOpenCabinet={() => undefined} />)).toMatch(/Volvo V90.*Atvests/);
+  });
+
+  it("bez kabineta atvēršanas (piem., drukai) žetonu nav", () => {
+    const html = renderHtml(<IrissLogistikaCargoPlan {...base} stageLabelByCarId={{ a: "Gaida" }} />);
+    expect(html).not.toContain("iriss-log-stage-chip");
+  });
+});
