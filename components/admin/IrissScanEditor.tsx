@@ -39,6 +39,7 @@ export function IrissScanEditor({
   showBack = true,
   newHits = 0,
   finds = EMPTY_FINDS,
+  lastReadAt = "",
   onRecordChange,
   onDeleted,
 }: {
@@ -47,6 +48,7 @@ export function IrissScanEditor({
   showBack?: boolean;
   newHits?: number;
   finds?: IrissScanFindCard[];
+  lastReadAt?: string;
   onRecordChange?: (rec: IrissScanRecord) => void;
   onDeleted?: (id: string) => void;
 }) {
@@ -255,7 +257,7 @@ export function IrissScanEditor({
           />
           <p className="mt-1 text-[12px] text-[var(--ink3)]">
             {rec.vin.trim() ? rec.vin.trim() : "VIN nav"}
-            {persistId && formatIrissScanLastRead(rec.updatedAt) ? ` · pēdējā nolasīšana ${formatIrissScanLastRead(rec.updatedAt)}` : ""}
+            {persistId && formatIrissScanLastRead(lastReadAt) ? ` · pēdējā nolasīšana ${formatIrissScanLastRead(lastReadAt)}` : ""}
             {formatIrissScanNewHitsLabel(newHits) ? ` · ${formatIrissScanNewHitsLabel(newHits)}` : ""}
           </p>
         </div>

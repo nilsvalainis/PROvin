@@ -82,21 +82,44 @@ export function buildIrissScanFindCards(input: {
     priceCurrent?: number | null;
     priceTotal?: number | null;
     orderIds?: readonly string[];
+    firstSeenAt?: string;
+    change?: string;
   }[];
   entries: readonly { orderId: string; listingId: string; status: string; matchedAt: string }[];
   budgetsByScanId?: Record<string, number | null>;
+  /**
+   * Ja dots: arī auto, ko Radaram piesaistīja meklēšanas saites (`scan:` orderIds), bet atbilstību
+   * dzinējs vēl nav ierakstījis - tos rāda kā jaunus, ja pirmoreiz redzēti `recentHours` laikā
+   * (tas pats logs kā Sludinājumi -> Monitorings «Jauni»; audits 26.10: Radarā «Jauni 0», Sludinājumos 38).
+   */
+  nowMs?: number;
+  recentHours?: number;
 }): IrissScanFindCard[] {
   const byId = new Map(input.vehicles.map((v) => [v.id, v]));
   const out: IrissScanFindCard[] = [];
   const seen = new Set<string>();
   const sorted = [...input.entries].sort((a, b) => (a.matchedAt < b.matchedAt ? 1 : a.matchedAt > b.matchedAt ? -1 : 0));
-  for (const e of sorted) {
+  const linked: { orderId: string; listingId: string; status: string; matchedAt: string }[] = [];
+  if (input.nowMs != null) {
+    const windowMs = (input.recentHours ?? 36) * 36e5;
+    for (const v of input.vehicles) {
+      if (v.change === "gone") continue;
+      const seenAt = Date.parse(v.firstSeenAt ?? "");
+      if (!Number.isFinite(seenAt) || input.nowMs - seenAt > windowMs) continue;
+      for (const orderId of v.orderIds ?? []) {
+        if (isIrissScanOrderId(orderId)) linked.push({ orderId, listingId: v.id, status: "jauns", matchedAt: v.firstSeenAt! });
+      }
+    }
+    linked.sort((a, b) => (a.matchedAt < b.matchedAt ? 1 : a.matchedAt > b.matchedAt ? -1 : 0));
+  }
+  // Atbilstību ieraksti (ar operatora statusu) vispirms, tad saišu auto bez ieraksta.
+  for (const e of [...sorted, ...linked]) {
     if (!isIrissScanOrderId(e.orderId)) continue;
     const key = `${e.orderId}|${e.listingId}`;
     if (seen.has(key)) continue;
-    seen.add(key);
     const v = byId.get(e.listingId);
     if (!v) continue;
+    seen.add(key);
     const scanId = irissScanIdFromOrderId(e.orderId);
     const price = v.priceCurrent ?? v.price ?? null;
     const cost = v.priceTotal ?? null;
