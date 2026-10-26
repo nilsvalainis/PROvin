@@ -227,8 +227,8 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
 };
 
 /**
- * Avotu nosaukumi ✨ kontekstā: admin „CC.VIN” modelim ir „IZSOĻU PORTĀLU ARHĪVS” (kā PDF),
- * lai klienta tekstā neparādītos iekšējais nosaukums. Admin UI paliek SOURCE_BLOCK_LABELS.
+ * Avotu nosaukumi ✨ kontekstā: admin „Izsoļu portālu arhīvs” (internal id: cc_vin) modelim ir
+ * „IZSOĻU PORTĀLU ARHĪVS” (kā PDF). Admin UI paliek SOURCE_BLOCK_LABELS.
  */
 export function aiSourceBlockLabel(key: SourceBlockKey): string {
   return key === "cc_vin" ? CC_VIN_PDF_SOURCE_LABEL : SOURCE_BLOCK_LABELS[key];

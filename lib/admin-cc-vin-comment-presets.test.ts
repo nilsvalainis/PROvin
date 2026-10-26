@@ -12,7 +12,7 @@ import { emptyCcVinBlock } from "@/lib/cc-vin-report";
 import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
 import { ccVinTrafficLevel } from "@/lib/admin-block-traffic-status";
 
-describe("CC.VIN izsoļu sagatave", () => {
+describe("Izsoļu portālu arhīva izsoļu sagatave", () => {
   it("jaunā pasūtījumā komentārā ir treknraksta virsraksts", () => {
     const html = createDefaultSourceBlocks().cc_vin.comments;
     expect(isCcVinAuctionCheckComment(html)).toBe(true);

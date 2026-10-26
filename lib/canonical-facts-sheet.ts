@@ -779,7 +779,7 @@ function labelKey(raw: string): string {
   return raw.trim().toLowerCase();
 }
 
-/** Admin bloka nosaukums ↔ nobraukuma rindas avots (piem. CC.VIN rindas PDF nosaukums). */
+/** Admin bloka nosaukums ↔ nobraukuma rindas avots (piem. Izsoļu portālu arhīva rindas PDF nosaukums). */
 const SOURCE_LABEL_ALIASES: Record<string, string[]> = {
   "cc.vin": ["izsoļu portālu arhīvs"],
   "izsoļu portālu arhīvs": ["cc.vin"],

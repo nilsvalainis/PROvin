@@ -1,6 +1,6 @@
 {
   "id": "bmw-540d-g31-2026-10",
-  "note": "Anonimizēts BMW 540d G31 gadījums (22.10.2026): izolēta ievades kļūda 195 431 → 179 862 km, CSDD rādījums bez datuma (nereģistrēts auto), salauzts eļļas virsraksts, USD, CC.VIN, pārfrāzēts foto teksts. VIN maskēts, bez klienta vārda. Km un datumi saīsināti līdz formai.",
+  "note": "Anonimizēts BMW 540d G31 gadījums (22.10.2026): izolēta ievades kļūda 195 431 → 179 862 km, CSDD rādījums bez datuma (nereģistrēts auto), salauzts eļļas virsraksts, USD, ārējā izsoļu zīmola nosaukums, pārfrāzēts foto teksts. VIN maskēts, bez klienta vārda. Km un datumi saīsināti līdz formai.",
   "vin": "WBA51AJ0*********",
   "csdd": { "prevInspectionOdometer": "211988", "mileageHistory": [] },
   "listingCreated": "12.09.2026",
@@ -52,7 +52,7 @@
       "id": "usd-and-cc-vin",
       "field": "source",
       "focus": "IZSOĻU PORTĀLU ARHĪVS",
-      "text": "CC.VIN datos fiksēta izsole ar summu 12 400 USD.",
+      "text": "checkcar datos fiksēta izsole ar summu 12 400 USD.",
       "expectCodes": ["usd_currency", "vocabulary_cc_vin"]
     },
     {

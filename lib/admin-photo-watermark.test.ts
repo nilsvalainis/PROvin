@@ -28,14 +28,14 @@ describe("admin photo watermark toggle", () => {
     expect(formRequestsWatermarkCover(new FormData())).toBe(false);
   });
 
-  it("CC.VIN noklusējumā neslēpj ūdenszīmi", () => {
+  it("Izsoļu portālu arhīvs noklusējumā neslēpj ūdenszīmi", () => {
     expect(parseCcVinHidePhotoWatermarks(undefined)).toBe(false);
     expect(parseCcVinHidePhotoWatermarks({})).toBe(false);
     expect(parseCcVinHidePhotoWatermarks({ hidePhotoWatermarks: false })).toBe(false);
     expect(parseCcVinHidePhotoWatermarks({ hidePhotoWatermarks: true })).toBe(true);
   });
 
-  it("CC.VIN slēdzi lasa no darba zonas bloka un saglabāto vērtību nemaina", () => {
+  it("Izsoļu portālu arhīva slēdzi lasa no darba zonas bloka un saglabāto vērtību nemaina", () => {
     expect(hidePhotoWatermarksFromCcVinWorkspace(null)).toBe(false);
     expect(hidePhotoWatermarksFromCcVinWorkspace({ sourceBlocks: {} })).toBe(false);
     expect(
@@ -50,7 +50,7 @@ describe("admin photo watermark toggle", () => {
     ).toBe(true);
   });
 
-  it("CC.VIN normalizācija trūkstošu slēdzi uzskata par izslēgtu, saglabāto true atstāj", () => {
+  it("Izsoļu portālu arhīva normalizācija trūkstošu slēdzi uzskata par izslēgtu, saglabāto true atstāj", () => {
     expect(emptyCcVinBlock().hidePhotoWatermarks).toBeUndefined();
     expect(normalizeCcVinBlock({}).hidePhotoWatermarks).toBe(false);
     expect(normalizeCcVinBlock({ hidePhotoWatermarks: false }).hidePhotoWatermarks).toBe(false);

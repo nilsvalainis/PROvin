@@ -538,7 +538,7 @@ export async function POST(req: Request) {
         } catch (ccVinErr) {
           const detail = ccVinErr instanceof Error ? ccVinErr.message : "unknown";
           console.warn(`${LOG_PREFIX} cc_vin_pdf_failed`, { fileName: pdf.fileName, detail });
-          vendorAgentNotes.push(`„${pdf.fileName}” — CC.VIN parseris neizdevās (${detail}).`);
+          vendorAgentNotes.push(`„${pdf.fileName}” - Izsoļu portālu arhīvs parseris neizdevās (${detail}).`);
         }
       }
     }
