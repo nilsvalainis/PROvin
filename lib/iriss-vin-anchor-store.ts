@@ -89,7 +89,7 @@ async function rebuildAnchors(): Promise<IrissVinAnchor[]> {
   const rows = await listIrissPasutijumi({ includeDeleted: true }).catch(() => []);
   const anchors: IrissVinAnchor[] = [];
   for (const row of rows) {
-    const rec = await readIrissPasutijums(row.id).catch(() => null);
+    const rec = await readIrissPasutijums(row.id, { allowCache: true }).catch(() => null);
     if (!rec) continue;
     anchors.push(...vinAnchorsFromRecord(rec));
     if (anchors.length >= MAX_ANCHORS) break;

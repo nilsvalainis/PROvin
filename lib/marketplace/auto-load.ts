@@ -444,7 +444,7 @@ export async function runMarketplaceAutoLoadNow(now = new Date()): Promise<Marke
       }));
     },
     async readOrder(id) {
-      return readIrissPasutijums(id);
+      return readIrissPasutijums(id, { allowCache: true });
     },
     async readListingsRuns() {
       const state = await readMarketplaceListingsState();

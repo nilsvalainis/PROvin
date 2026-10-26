@@ -3,6 +3,7 @@
 import { Phone } from "lucide-react";
 import { IrissGoogleContactStatusRow } from "@/components/admin/IrissGoogleContactStatusRow";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
+import { irissClientNameInputValue, splitIrissClientNameInput } from "@/lib/iriss-client-name-input";
 import { irissOverviewEmailDisplay } from "@/lib/iriss-order-overview-view";
 import type { IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
@@ -13,13 +14,6 @@ function WhatsAppGlyph({ className }: { className?: string }) {
       <path d="M12.04 2C6.55 2 2.1 6.45 2.1 11.94c0 1.93.55 3.81 1.59 5.43L2 22l4.8-1.61a9.9 9.9 0 0 0 5.24 1.5h.01c5.49 0 9.95-4.45 9.95-9.95A9.96 9.96 0 0 0 12.04 2Zm0 18.1h-.01a8.1 8.1 0 0 1-4.13-1.13l-.3-.18-2.85.95.95-2.78-.19-.29a8.1 8.1 0 0 1-1.25-4.33c0-4.49 3.65-8.14 8.14-8.14a8.1 8.1 0 0 1 5.76 2.38 8.08 8.08 0 0 1 2.38 5.76c0 4.48-3.65 8.13-8.14 8.13Zm4.46-6.06c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.95-1.22a7.34 7.34 0 0 1-1.35-1.67c-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.58.18 1.11.15 1.53.09.47-.07 1.43-.58 1.63-1.13.2-.56.2-1.04.14-1.13-.06-.1-.22-.16-.46-.28Z" />
     </svg>
   );
-}
-
-function splitClientName(value: string): { clientFirstName: string; clientLastName: string } {
-  const normalized = value.replace(/\s+/g, " ").trim();
-  if (!normalized) return { clientFirstName: "", clientLastName: "" };
-  const [first, ...rest] = normalized.split(" ");
-  return { clientFirstName: first ?? "", clientLastName: rest.join(" ") };
 }
 
 export function IrissOrderClientDataCard({
@@ -68,9 +62,9 @@ export function IrissOrderClientDataCard({
           <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Vārds, uzvārds</span>
           <input
             className={fieldClass}
-            value={[rec.clientFirstName, rec.clientLastName].filter(Boolean).join(" ")}
+            value={irissClientNameInputValue(rec)}
             autoComplete="name"
-            onChange={(e) => onPatchRecord(splitClientName(e.target.value))}
+            onChange={(e) => onPatchRecord(splitIrissClientNameInput(e.target.value))}
           />
         </label>
         <label className="block min-w-0">
