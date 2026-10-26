@@ -49,6 +49,8 @@ export type IrissCriteriaMigrationInput = {
   bodyType?: string;
   driveType?: string;
   seatCount?: string;
+  /** Jaudas diapazons kā teksts (`100-150`, `no 100`, `150`), ko raksta DIAPAZONI Jauda. */
+  powerKw?: string;
   equipmentRequired?: string;
   equipmentDesired?: string;
   /** Brīvā piezīme. Netiek pārcelta uz kritērijiem. */
@@ -207,7 +209,22 @@ function makesFromBrand(brandModel: string): { makes: string[]; models: string[]
   return { makes, models, manual: "" };
 }
 
-function powerFrom(engineType: string, brandModel: string): PowerKwRange {
+/** `formatIrissRangePair` forma (`100-150`, `no 100`, `150`), citādi brīvs teksts ar kW/PS. */
+function storedPowerKwRange(raw: string): PowerKwRange | null {
+  const t = raw.replace(/[\u2012\u2013\u2014\u2015\u2212]/g, "-").trim();
+  if (!t) return null;
+  const pair = t.match(/^(\d{1,4})\s*-\s*(\d{1,4})$/);
+  if (pair) return { from: Number(pair[1]), to: Number(pair[2]) };
+  const from = t.match(/^no\s+(\d{1,4})$/i);
+  if (from) return { from: Number(from[1]), to: null };
+  if (/^\d{1,4}$/.test(t)) return { from: null, to: Number(t) };
+  const loose = normalizePowerKw(t);
+  return loose.from != null || loose.to != null ? loose : null;
+}
+
+function powerFrom(powerKw: string, engineType: string, brandModel: string): PowerKwRange {
+  const stored = storedPowerKwRange(powerKw);
+  if (stored) return stored;
   const fromEngine = normalizePowerKw(engineType);
   if (fromEngine.from != null || fromEngine.to != null) return fromEngine;
   return normalizePowerKw(brandModel);
@@ -289,7 +306,7 @@ export function migrateIrissCriteria(input: IrissCriteriaMigrationInput): IrissC
   const seats = seatsFrom(input.seatCount ?? "");
   const required = equipmentOf(input.equipmentRequired ?? "");
   const desired = equipmentOf(input.equipmentDesired ?? "");
-  const power = powerFrom(input.engineType ?? "", input.brandModel ?? "");
+  const power = powerFrom(input.powerKw ?? "", input.engineType ?? "", input.brandModel ?? "");
   const cc = mapEngineCc(input.engineType ?? "");
   const emission = normalizeEmission(input.engineType ?? "");
   const emissionOk = acceptedNormalization(emission.confidence, emission.group) && emission.group ? emission.group : null;
