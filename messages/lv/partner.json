@@ -361,6 +361,10 @@
     "ledgerRefund": "Atmaksa",
     "ledgerAdjust": "Korekcija",
     "ledgerInvoice": "Rēķins",
-    "ledgerDownloadInvoice": "Lejupielādēt rēķinu"
+    "ledgerDownloadInvoice": "Lejupielādēt rēķinu",
+    "metaRegisterTitle": "PROVIN partneru reģistrācija",
+    "metaPasswordTitle": "PROVIN partneru parole",
+    "metaConfirmTitle": "PROVIN partneru e-pasta apstiprinājums",
+    "metaAccountTitle": "PROVIN partneriem"
   }
 }

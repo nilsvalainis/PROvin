@@ -8,7 +8,9 @@
     "checkoutConsultationProductName": "PROVIN: strategische Beratung",
     "checkoutConsultationProductDesc": "Individuelle Beratung und Markteinordnung: VIN- und Inseratskontext, Risikobewertung und nächste Schritte.",
     "checkoutProvinSelectProductName": "PROVIN SELECT\nStrategische Beratung",
-    "checkoutProvinSelectProductDesc": "Individuelle Beratung für die Kaufentscheidung"
+    "checkoutProvinSelectProductDesc": "Individuelle Beratung für die Kaufentscheidung",
+    "notFoundTitle": "Seite nicht gefunden",
+    "notFoundHome": "PROVIN Startseite"
   },
   "Blogs": {
     "comingSoon": "DEMNÄCHST",

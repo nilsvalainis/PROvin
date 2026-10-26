@@ -361,6 +361,10 @@
     "ledgerRefund": "Refund",
     "ledgerAdjust": "Adjustment",
     "ledgerInvoice": "Invoice",
-    "ledgerDownloadInvoice": "Download invoice"
+    "ledgerDownloadInvoice": "Download invoice",
+    "metaRegisterTitle": "PROVIN partner registration",
+    "metaPasswordTitle": "PROVIN partner password",
+    "metaConfirmTitle": "PROVIN partner email confirmation",
+    "metaAccountTitle": "PROVIN for partners"
   }
 }

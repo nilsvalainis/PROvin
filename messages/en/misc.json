@@ -8,7 +8,9 @@
     "checkoutConsultationProductName": "PROVIN: strategic consultation",
     "checkoutConsultationProductDesc": "Individual consultation and market orientation: VIN/listing context, risk view and next steps.",
     "checkoutProvinSelectProductName": "PROVIN SELECT\nStrategic consultation",
-    "checkoutProvinSelectProductDesc": "Individual consultation for car purchase decisions"
+    "checkoutProvinSelectProductDesc": "Individual consultation for car purchase decisions",
+    "notFoundTitle": "Page not found",
+    "notFoundHome": "PROVIN home"
   },
   "Blogs": {
     "comingSoon": "COMING SOON",
