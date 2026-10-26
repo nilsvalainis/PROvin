@@ -5,14 +5,11 @@ import { emptyCargoPlan, moveCargoCar } from "@/lib/iriss-logistics-cargo-plan";
 import { renderHtml, renderText } from "@/lib/test-render";
 
 describe("Loģistikas sākuma pin-i (v11d-fix stikls)", () => {
-  it("rāda Nākošā / Aiznākošā / Gaida ar maketa pin krāsām", () => {
+  it("rāda Nākošā / Aiznākošā / Gaida ar maketa pin krāsām, bez sekundārās rindas", () => {
     let plan = emptyCargoPlan();
     plan = moveCargoCar(plan, "n1", "next");
     plan = moveCargoCar(plan, "a1", "after");
-    const pins = irissHomeLogisticsPins(plan, [
-      { id: "n1", pickupDate: "2026-10-25T14:30:00.000Z", pickupSnapshot: { city: "Rīga" } },
-      { id: "a1", pickupDate: "2026-10-25T16:10:00.000Z", pickupSnapshot: { city: "Jelgava" } },
-    ]);
+    const pins = irissHomeLogisticsPins(plan);
     const html = renderHtml(<IrissHomeLogisticsPins href="/admin/iriss/logistika" pins={pins} />);
     const text = renderText(<IrissHomeLogisticsPins href="/admin/iriss/logistika" pins={pins} />);
     expect(html).toContain('href="/admin/iriss/logistika"');
@@ -25,15 +22,20 @@ describe("Loģistikas sākuma pin-i (v11d-fix stikls)", () => {
     expect(text).toContain("Nākošā");
     expect(text).toContain("Aiznākošā");
     expect(text).toContain("Gaida");
-    expect(text).toContain("14:30 · Rīga");
+    expect(text).not.toContain("bez laika");
+    expect(text).not.toContain("Bebra");
+    expect(text).not.toMatch(/\bDE\b/);
+    expect(text).not.toMatch(/\d{1,2}:\d{2}/);
   });
 
-  it("tukšam plānam paliek bez laika, bez virsraksta un bez Karte", () => {
-    const pins = irissHomeLogisticsPins(emptyCargoPlan(), []);
+  it("tukšam plānam paliek bez virsraksta, bez Karte un bez vietas/laika rindas", () => {
+    const pins = irissHomeLogisticsPins(emptyCargoPlan());
     const html = renderHtml(<IrissHomeLogisticsPins href="/admin/iriss/logistika" pins={pins} />);
     const text = renderText(<IrissHomeLogisticsPins href="/admin/iriss/logistika" pins={pins} />);
     expect(html).toContain('aria-label="Loģistika"');
     expect(html).not.toContain("Karte");
-    expect(text).toContain("bez laika");
+    expect(text).not.toContain("bez laika");
+    expect(text).not.toContain("Bebra");
+    expect(text).not.toMatch(/\bDE\b/);
   });
 });
