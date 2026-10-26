@@ -133,7 +133,7 @@ export function IrissListingVirtualList<T>({ items, getKey, renderItem, layout =
 
   return (
     <div>
-      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#6e6e73]">
+      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[var(--iriss-ink-2)]">
         <span>
           {from}-{to} no {items.length} auto
         </span>
@@ -143,7 +143,7 @@ export function IrissListingVirtualList<T>({ items, getKey, renderItem, layout =
               type="button"
               disabled={safePage === 0}
               onClick={() => setPage((p) => Math.max(0, p - 1))}
-              className="inline-flex h-[30px] items-center whitespace-nowrap rounded-md bg-[#e9e9ee] px-3 font-semibold text-[#3a3a3c] disabled:opacity-35"
+              className="inline-flex h-[30px] items-center whitespace-nowrap rounded-md bg-[#e9e9ee] px-3 font-semibold text-[var(--iriss-ink-2)] disabled:opacity-35"
             >
               Iepriekšējā
             </button>
@@ -154,7 +154,7 @@ export function IrissListingVirtualList<T>({ items, getKey, renderItem, layout =
               type="button"
               disabled={safePage >= pageCount - 1}
               onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
-              className="inline-flex h-[30px] items-center whitespace-nowrap rounded-md bg-[#e9e9ee] px-3 font-semibold text-[#3a3a3c] disabled:opacity-35"
+              className="inline-flex h-[30px] items-center whitespace-nowrap rounded-md bg-[#e9e9ee] px-3 font-semibold text-[var(--iriss-ink-2)] disabled:opacity-35"
             >
               Nākamā
             </button>

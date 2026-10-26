@@ -20,7 +20,7 @@ export function IrissSpecChoiceSelect({
 }) {
   return (
     <label className="block min-w-0">
-      <span className={labelClassName ?? "mb-1 block text-[11.5px] font-semibold text-[#374151]"}>
+      <span className={labelClassName ?? "mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]"}>
         {label}
         {filterMark ? (
           <span className="iriss-range-req" aria-hidden>

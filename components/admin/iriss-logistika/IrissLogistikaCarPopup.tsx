@@ -29,7 +29,7 @@ export function IrissLogistikaCarPopup({ order, plan, stage, onClose, onPlanChan
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-[16px] font-semibold">{logisticsCarTitle(order)}</p>
-          <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[12px] text-[#6e6e73]">
+          <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[12px] text-[var(--iriss-ink-2)]">
             {order.auction ? <IrissAuctionLogo name={order.auction} /> : null}
             <span className="iriss-log-status-chip">
               <i />
@@ -37,7 +37,7 @@ export function IrissLogistikaCarPopup({ order, plan, stage, onClose, onPlanChan
             </span>
           </p>
         </div>
-        <button type="button" className="text-[13px] text-[#6e6e73]" onClick={onClose} aria-label="Aizvērt">
+        <button type="button" className="text-[13px] text-[var(--iriss-ink-2)]" onClick={onClose} aria-label="Aizvērt">
           ✕
         </button>
       </div>
@@ -54,19 +54,19 @@ export function IrissLogistikaCarPopup({ order, plan, stage, onClose, onPlanChan
         </button>
       </p>
       <dl className="mt-2 grid grid-cols-[7rem_1fr] gap-y-1 text-[13px]">
-        <dt className="text-[#6e6e73]">Adrese</dt>
+        <dt className="text-[var(--iriss-ink-2)]">Adrese</dt>
         <dd>{order.pickupAddress || formatLogisticsAddress(order.pickupSnapshot ?? {}) || "-"}</dd>
-        <dt className="text-[#6e6e73]">Vieta</dt>
+        <dt className="text-[var(--iriss-ink-2)]">Vieta</dt>
         <dd>{order.pickupSnapshot?.name || "-"}</dd>
-        <dt className="text-[#6e6e73]">Laiks</dt>
+        <dt className="text-[var(--iriss-ink-2)]">Laiks</dt>
         <dd>{order.pickupSnapshot?.hoursText || "-"}</dd>
-        <dt className="text-[#6e6e73]">Pickup</dt>
+        <dt className="text-[var(--iriss-ink-2)]">Pickup</dt>
         <dd>{order.pickupRef || "-"}</dd>
-        <dt className="text-[#6e6e73]">Datums</dt>
+        <dt className="text-[var(--iriss-ink-2)]">Datums</dt>
         <dd>{formatLogisticsDate(order.pickupDate) || "-"}</dd>
         {order.priceEur != null ? (
           <>
-            <dt className="text-[#6e6e73]">Transports</dt>
+            <dt className="text-[var(--iriss-ink-2)]">Transports</dt>
             <dd>{formatLogisticsEur(order.priceEur)}</dd>
           </>
         ) : null}
@@ -92,7 +92,7 @@ export function IrissLogistikaCarPopup({ order, plan, stage, onClose, onPlanChan
           <AdminWhatsAppOpenButton phone={phone} variant="pill" prefillMessage={driver} />
         </span>
       </div>
-      <p className="mt-2 text-[11px] text-[#6e6e73]">Sūtīt šoferim atver wa.me. Nils sūta pats. Pases dati nav iekļauti.</p>
+      <p className="mt-2 text-[11px] text-[var(--iriss-ink-2)]">Sūtīt šoferim atver wa.me. Nils sūta pats. Pases dati nav iekļauti.</p>
     </div>
   );
 }

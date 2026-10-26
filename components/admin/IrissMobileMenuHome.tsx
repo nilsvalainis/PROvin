@@ -178,7 +178,7 @@ export function IrissMobileMenuHome({
             <button
               type="button"
               onClick={() => setFormOpen(true)}
-              className="flex h-[52px] w-full items-center justify-center rounded-[14px] bg-[#111827] text-[15px] font-semibold text-white"
+              className="flex h-[52px] w-full items-center justify-center rounded-[14px] bg-[var(--iriss-graphite)] text-[15px] font-semibold text-white"
             >
               Izveidot pavadzīmi
             </button>

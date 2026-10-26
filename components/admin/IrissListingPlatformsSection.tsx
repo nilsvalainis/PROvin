@@ -28,7 +28,7 @@ import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 import { nextStableRowKeys } from "@/lib/iriss-stable-row-keys";
 
 const actionBtn =
-  "inline-flex h-[34px] min-h-[34px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] border border-[#e5e7eb] bg-white px-4 text-[13px] font-semibold text-[#111827] shadow-[0_1px_2px_#0000000d] transition hover:bg-[#f9fafb] disabled:opacity-40";
+  "inline-flex h-[34px] min-h-[34px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] border border-[var(--iriss-line)] bg-white px-4 text-[13px] font-semibold text-[var(--iriss-ink)] shadow-[0_1px_2px_#0000000d] transition hover:bg-[var(--iriss-surface-2)] disabled:opacity-40";
 
 const inp =
   "h-11 min-h-11 w-full rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-[13px] text-[var(--color-apple-text)] shadow-sm outline-none focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25 sm:text-[15px]";
@@ -109,7 +109,7 @@ function SourceLinkList({
   const rowKeysRef = useRef<string[]>(nextStableRowKeys([], rows.length));
   rowKeysRef.current = nextStableRowKeys(rowKeysRef.current, rows.length);
   return (
-    <div className="min-w-0 space-y-1.5 rounded-xl border border-[#e5e7eb] bg-white p-3">
+    <div className="min-w-0 space-y-1.5 rounded-xl border border-[var(--iriss-line)] bg-white p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         {logoKey ? (
           <span className="inline-flex items-center" title={label}>
@@ -179,7 +179,7 @@ function SourceLinkList({
                   onChange(removeIrissListingLinkRow(rows, idx));
                 }}
                 disabled={rows.length <= 1 && !line.trim()}
-                className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-[#e5e7eb] bg-white text-[16px] leading-none text-slate-500 shadow-[0_1px_2px_#0000000d] transition hover:bg-red-50 hover:text-red-700 disabled:pointer-events-none disabled:opacity-35"
+                className="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-[var(--iriss-line)] bg-white text-[16px] leading-none text-slate-500 shadow-[0_1px_2px_#0000000d] transition hover:bg-red-50 hover:text-red-700 disabled:pointer-events-none disabled:opacity-35"
                 title="Noņemt saiti"
                 aria-label="Noņemt saiti"
               >
@@ -188,7 +188,7 @@ function SourceLinkList({
             </div>
             {err ? <p className="px-0.5 text-[11px] text-red-600">{err}</p> : null}
             {href && readCountByUrl?.[href] ? (
-              <p className="px-0.5 text-[11px] text-[#6b7280]">{readCountByUrl[href]}</p>
+              <p className="px-0.5 text-[11px] text-[var(--iriss-ink-2)]">{readCountByUrl[href]}</p>
             ) : null}
           </div>
         );

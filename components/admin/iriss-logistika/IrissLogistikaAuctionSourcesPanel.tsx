@@ -109,7 +109,7 @@ export function IrissLogistikaAuctionSourcesPanel({ initialSources, compact }: P
         {sources.map((source) => (
           <li
             key={source.id}
-            className={`rounded-xl border border-[#e5e7eb] p-3 ${source.enabled ? "bg-white" : "bg-[#f8fafc] opacity-70"}`}
+            className={`rounded-xl border border-[var(--iriss-line)] p-3 ${source.enabled ? "bg-white" : "bg-[var(--iriss-surface-2)] opacity-70"}`}
           >
             <div className="flex flex-wrap items-center gap-2">
               <label className="inline-flex items-center gap-2 text-[13px] font-semibold">
@@ -140,16 +140,16 @@ export function IrissLogistikaAuctionSourcesPanel({ initialSources, compact }: P
               {!source.builtin ? (
                 <button
                   type="button"
-                  className="ml-auto text-[12px] text-[#6e6e73]"
+                  className="ml-auto text-[12px] text-[var(--iriss-ink-2)]"
                   onClick={() => void removeSource(source.id)}
                 >
                   Dzēst
                 </button>
               ) : (
-                <span className="ml-auto text-[11px] text-[#6e6e73]">{source.enabled ? "aktīvs" : "izslēgts"}</span>
+                <span className="ml-auto text-[11px] text-[var(--iriss-ink-2)]">{source.enabled ? "aktīvs" : "izslēgts"}</span>
               )}
             </div>
-            <label className="mt-2 block text-[11px] font-medium text-[#6b7280]">
+            <label className="mt-2 block text-[11px] font-medium text-[var(--iriss-ink-2)]">
               Saite (pirkumi / pasūtījumi)
               <input
                 value={source.url}
@@ -158,11 +158,11 @@ export function IrissLogistikaAuctionSourcesPanel({ initialSources, compact }: P
                 }
                 onBlur={(e) => void patchSource(source.id, { url: e.target.value })}
                 placeholder="https://..."
-                className="mt-1 h-9 w-full rounded-lg border border-[#e5e7eb] px-2.5 text-[13px]"
+                className="mt-1 h-9 w-full rounded-lg border border-[var(--iriss-line)] px-2.5 text-[13px]"
               />
             </label>
             <div className="mt-2 grid gap-2 md:grid-cols-3">
-              <label className="block text-[11px] font-medium text-[#6b7280]">
+              <label className="block text-[11px] font-medium text-[var(--iriss-ink-2)]">
                 Konts
                 <input
                   value={source.filters.account}
@@ -175,10 +175,10 @@ export function IrissLogistikaAuctionSourcesPanel({ initialSources, compact }: P
                   }
                   onBlur={() => void patchSource(source.id, { filters: source.filters })}
                   placeholder="konts / dīleris"
-                  className="mt-1 h-9 w-full rounded-lg border border-[#e5e7eb] px-2.5 text-[13px]"
+                  className="mt-1 h-9 w-full rounded-lg border border-[var(--iriss-line)] px-2.5 text-[13px]"
                 />
               </label>
-              <label className="block text-[11px] font-medium text-[#6b7280]">
+              <label className="block text-[11px] font-medium text-[var(--iriss-ink-2)]">
                 Statuss
                 <input
                   value={source.filters.status}
@@ -191,10 +191,10 @@ export function IrissLogistikaAuctionSourcesPanel({ initialSources, compact }: P
                   }
                   onBlur={() => void patchSource(source.id, { filters: source.filters })}
                   placeholder="won, my orders"
-                  className="mt-1 h-9 w-full rounded-lg border border-[#e5e7eb] px-2.5 text-[13px]"
+                  className="mt-1 h-9 w-full rounded-lg border border-[var(--iriss-line)] px-2.5 text-[13px]"
                 />
               </label>
-              <label className="block text-[11px] font-medium text-[#6b7280]">
+              <label className="block text-[11px] font-medium text-[var(--iriss-ink-2)]">
                 Atslēgvārdi
                 <input
                   value={source.filters.keywords}
@@ -207,7 +207,7 @@ export function IrissLogistikaAuctionSourcesPanel({ initialSources, compact }: P
                   }
                   onBlur={() => void patchSource(source.id, { filters: source.filters })}
                   placeholder="transporter, VIN"
-                  className="mt-1 h-9 w-full rounded-lg border border-[#e5e7eb] px-2.5 text-[13px]"
+                  className="mt-1 h-9 w-full rounded-lg border border-[var(--iriss-line)] px-2.5 text-[13px]"
                 />
               </label>
             </div>
@@ -215,20 +215,20 @@ export function IrissLogistikaAuctionSourcesPanel({ initialSources, compact }: P
         ))}
       </ul>
 
-      <div className="mt-3 rounded-xl border border-dashed border-[#d1d5db] p-3">
+      <div className="mt-3 rounded-xl border border-dashed border-[var(--iriss-line-strong)] p-3">
         <p className="text-[12px] font-semibold">+ Jauns avots</p>
         <div className="mt-2 grid gap-2 md:grid-cols-[minmax(0,12rem)_1fr_auto]">
           <input
             value={draftName}
             onChange={(e) => setDraftName(e.target.value)}
             placeholder="Nosaukums (piem. BCA)"
-            className="h-9 rounded-lg border border-[#e5e7eb] px-2.5 text-[13px]"
+            className="h-9 rounded-lg border border-[var(--iriss-line)] px-2.5 text-[13px]"
           />
           <input
             value={draftUrl}
             onChange={(e) => setDraftUrl(e.target.value)}
             placeholder="Pirkumu / pasūtījumu saite"
-            className="h-9 rounded-lg border border-[#e5e7eb] px-2.5 text-[13px]"
+            className="h-9 rounded-lg border border-[var(--iriss-line)] px-2.5 text-[13px]"
           />
           <button
             type="button"

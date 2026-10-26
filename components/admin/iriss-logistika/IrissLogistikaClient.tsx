@@ -802,7 +802,7 @@ export function IrissLogistikaClient({
               Atvērt Autoparkā
             </a>
           ) : null}
-          <button type="button" aria-label="Aizvērt" className="px-1 text-[#6e6e73]" onClick={() => { setNotice(""); setAutoparkLink(null); }}>
+          <button type="button" aria-label="Aizvērt" className="px-1 text-[var(--iriss-ink-2)]" onClick={() => { setNotice(""); setAutoparkLink(null); }}>
             ✕
           </button>
         </div>
@@ -838,7 +838,7 @@ export function IrissLogistikaClient({
               className="hidden h-9 w-56 rounded-full border-0 bg-white px-3 text-[13px] shadow-sm md:block"
             />
             {/* Viena galvenā poga (dizains v0.3): piedāvājumu veido no auto kartītes, ne no galvenes. */}
-            <button type="button" onClick={() => setPurchaseOpen(true)} className="inline-flex h-9 items-center rounded-full bg-[#f26522] px-3.5 text-[13px] font-bold text-white hover:bg-[#d9541a]">
+            <button type="button" onClick={() => setPurchaseOpen(true)} className="inline-flex h-9 items-center rounded-full bg-[var(--iriss-brand)] px-3.5 text-[13px] font-bold text-white hover:bg-[#d9541a]">
               + Nopirkts
             </button>
           </div>
@@ -907,7 +907,7 @@ export function IrissLogistikaClient({
                 </div>
                 {selectedPoint.lat != null && selectedPoint.lng != null ? (
                   <a
-                    className="inline-flex h-8 items-center rounded-full border border-[#e5e7eb] px-3 text-[12px] font-semibold"
+                    className="inline-flex h-8 items-center rounded-full border border-[var(--iriss-line)] px-3 text-[12px] font-semibold"
                     href={logisticsGoogleMapsPlaceUrl(selectedPoint.lat, selectedPoint.lng)}
                     target="_blank"
                     rel="noreferrer"
@@ -967,7 +967,7 @@ export function IrissLogistikaClient({
                 <button type="button" className="text-[var(--ink2)]" onClick={() => setSelectedIds([])}>
                   Notīrīt
                 </button>
-                <button type="button" className="ml-auto rounded-full border border-[#e5e7eb] px-3 py-1 font-semibold" onClick={() => void printCurrentMap()}>
+                <button type="button" className="ml-auto rounded-full border border-[var(--iriss-line)] px-3 py-1 font-semibold" onClick={() => void printCurrentMap()}>
                   Drukāt karti
                 </button>
                 {dirUrl ? (
@@ -1046,16 +1046,16 @@ export function IrissLogistikaClient({
                   <button
                     type="button"
                     onClick={() => void printCurrentMap()}
-                    className="rounded-full border border-[#e5e7eb] px-2.5 py-1 text-[12px] font-semibold"
+                    className="rounded-full border border-[var(--iriss-line)] px-2.5 py-1 text-[12px] font-semibold"
                   >
                     Drukāt
                   </button>
                   {mapFullscreen ? (
-                    <button type="button" aria-label="Aizvērt" onClick={() => closeMapFullscreen()} className="rounded-full border border-[#e5e7eb] px-2 py-1 text-[12px] font-semibold">
+                    <button type="button" aria-label="Aizvērt" onClick={() => closeMapFullscreen()} className="rounded-full border border-[var(--iriss-line)] px-2 py-1 text-[12px] font-semibold">
                       X
                     </button>
                   ) : (
-                    <button type="button" onClick={() => openMapFullscreen()} className="rounded-full border border-[#e5e7eb] px-2.5 py-1 text-[12px] font-semibold">
+                    <button type="button" onClick={() => openMapFullscreen()} className="rounded-full border border-[var(--iriss-line)] px-2.5 py-1 text-[12px] font-semibold">
                       Pilnekrāns
                     </button>
                   )}
@@ -1205,7 +1205,7 @@ export function IrissLogistikaClient({
                     {archived ? (
                       <button
                         type="button"
-                        className="shrink-0 rounded-full border border-[#e5e7eb] px-2.5 py-1 text-[12px] font-semibold"
+                        className="shrink-0 rounded-full border border-[var(--iriss-line)] px-2.5 py-1 text-[12px] font-semibold"
                         onClick={() => void patchOrder(o.id, "wake")}
                       >
                         Pamodināt
@@ -1284,7 +1284,7 @@ function IrissLogistikaStaffTotp({ viewerName }: { viewerName: string }) {
           <input
             value={totpCode}
             onChange={(e) => setTotpCode(e.target.value)}
-            className="h-10 w-full rounded-xl border border-[#e5e7eb] px-3 text-[16px]"
+            className="h-10 w-full rounded-xl border border-[var(--iriss-line)] px-3 text-[16px]"
             placeholder="6 ciparu kods"
             inputMode="numeric"
           />
@@ -1302,7 +1302,7 @@ function IrissLogistikaStaffTotp({ viewerName }: { viewerName: string }) {
       ) : (
         <button
           type="button"
-          className="mt-3 h-9 rounded-full border border-[#e5e7eb] px-3 text-[12.5px] font-semibold"
+          className="mt-3 h-9 rounded-full border border-[var(--iriss-line)] px-3 text-[12.5px] font-semibold"
           onClick={async () => {
             const res = await post({ action: "start" });
             const data = (await res.json()) as { secret?: string };

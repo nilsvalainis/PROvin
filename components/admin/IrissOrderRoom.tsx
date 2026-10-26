@@ -144,7 +144,7 @@ import {
 } from "@/lib/iriss-order-spec-selects";
 
 const fieldClass =
-  "min-h-[44px] w-full min-w-0 rounded-[10px] border border-[#e5e7eb] bg-white px-2.5 py-2 text-[16px] text-[#111827] outline-none transition focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 sm:min-h-[38px] sm:text-[13px]";
+  "min-h-[44px] w-full min-w-0 rounded-[10px] border border-[var(--iriss-line)] bg-white px-2.5 py-2 text-[16px] text-[var(--iriss-ink)] outline-none transition focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 sm:min-h-[38px] sm:text-[13px]";
 
 const areaClass = `${fieldClass} min-h-[60px] resize-y py-2 leading-snug sm:min-h-[60px]`;
 
@@ -154,16 +154,16 @@ const cardClass = "min-w-0 rounded-[22px] bg-[var(--s1)] p-4 shadow-[var(--sh)]"
 const IRISS_ORDER_ROOM_SHOW_CHANGE_HISTORY = false;
 
 const roomBtn =
-  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#e5e7eb] bg-white px-3 text-[12.5px] font-semibold text-[#111827] shadow-[0_1px_2px_#0000000d] transition hover:bg-[#f9fafb] disabled:opacity-40";
+  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--iriss-line)] bg-white px-3 text-[12.5px] font-semibold text-[var(--iriss-ink)] shadow-[0_1px_2px_#0000000d] transition hover:bg-[var(--iriss-surface-2)] disabled:opacity-40";
 
 const roomBtnWa =
   "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#25D366] bg-[#25D366] px-3 text-[12.5px] font-semibold text-white shadow-sm transition hover:bg-[#20BD5A] hover:brightness-105 disabled:opacity-40";
 
 const roomBtnPrimary =
-  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#2563eb] bg-[#2563eb] px-3 text-[12.5px] font-semibold text-white shadow-[0_1px_2px_#0000000d] transition hover:brightness-105 disabled:opacity-40";
+  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--iriss-info)] bg-[var(--iriss-info)] px-3 text-[12.5px] font-semibold text-white shadow-[0_1px_2px_#0000000d] transition hover:brightness-105 disabled:opacity-40";
 
 const roomBtnDark =
-  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#111827] bg-[#111827] px-3 text-[12.5px] font-semibold text-white shadow-[0_1px_2px_#0000000d] transition hover:brightness-110 disabled:opacity-40";
+  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--iriss-ink)] bg-[var(--iriss-graphite)] px-3 text-[12.5px] font-semibold text-white shadow-[0_1px_2px_#0000000d] transition hover:brightness-110 disabled:opacity-40";
 
 type CriteriaDraft = Pick<
   IrissPasutijumsRecord,
@@ -242,7 +242,7 @@ function Field({
 }) {
   return (
     <label className={`block min-w-0${className ? ` ${className}` : ""}`}>
-      <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">
+      <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">
         {label}
         {filterMark ? (
           <span className="iriss-range-req" aria-hidden>
@@ -277,13 +277,13 @@ function offerPortfolioBadge(
   link: IrissOfferClientLinkAdminView | null,
 ): { label: string; className: string } {
   if (link?.status === "declined") {
-    return { label: "Noraidīts", className: "border border-[#fca5a5] bg-[#fee2e2] text-[#991b1b]" };
+    return { label: "Noraidīts", className: "border border-[#fca5a5] bg-[#fee2e2] text-[var(--iriss-bad)]" };
   }
   if (link && link.status !== "revoked" && link.viewCount > 0) {
     return { label: `Atvērts ${link.viewCount}×`, className: "border border-[#93c5fd] bg-[#dbeafe] text-[#1e40af]" };
   }
   if (irissOrderRoomOfferStatus(offer) !== "ready") {
-    return { label: "Melnraksts", className: "border border-[#e5e7eb] bg-[#f3f4f6] text-[#374151]" };
+    return { label: "Melnraksts", className: "border border-[var(--iriss-line)] bg-[var(--iriss-surface-2)] text-[var(--iriss-ink-2)]" };
   }
   if (link && link.status !== "revoked") {
     return { label: link.statusLabel, className: "border border-[#93c5fd] bg-[#dbeafe] text-[#1e40af]" };
@@ -811,23 +811,23 @@ export function IrissOrderRoom({
           <Link
             href="/admin/iriss/pasutijumi"
             title={rec.id}
-            className="mb-2 inline-flex min-h-10 items-center gap-1 text-[13px] font-medium text-[#6b7280]"
+            className="mb-2 inline-flex min-h-10 items-center gap-1 text-[13px] font-medium text-[var(--iriss-ink-2)]"
           >
             <span aria-hidden>←</span>
             <span className="hidden md:inline">IRISS · Pasūtījumi / {refLabel}</span>
           </Link>
-          <div className="rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 sm:px-[18px] sm:py-3.5">
+          <div className="rounded-2xl border border-[var(--iriss-line)] bg-white px-3 py-3 sm:px-[18px] sm:py-3.5">
             <div className="flex min-w-0 flex-wrap items-center gap-3.5">
               <div className="hidden md:block">
                 <IrissBrandLogoSlot
                   brandModel={rec.brandModel}
-                  fallbackClassName="text-[#111827] font-extrabold"
+                  fallbackClassName="text-[var(--iriss-ink)] font-extrabold"
                   imgLoading="eager"
                 />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-[16px] font-bold leading-tight text-[#111827] md:text-[22px] md:font-semibold">{title}</h1>
+                  <h1 className="text-[16px] font-bold leading-tight text-[var(--iriss-ink)] md:text-[22px] md:font-semibold">{title}</h1>
                   <label className="hidden items-center md:inline-flex">
                     <span className="sr-only">Statuss</span>
                     <select
@@ -865,13 +865,13 @@ export function IrissOrderRoom({
                     />
                   ) : null}
                 </div>
-                <p className="mt-1 text-[12px] leading-snug text-[#6b7280] md:text-[13px]">
+                <p className="mt-1 text-[12px] leading-snug text-[var(--iriss-ink-2)] md:text-[13px]">
                   <span className="md:hidden">
                     {[clientName, budgetLabel].filter(Boolean).join(" · ")}
                     {dealPill ? (
                       <>
                         {clientName || budgetLabel ? " · " : null}
-                        <span className="font-semibold text-[#15803d]">{dealPill} ✓</span>
+                        <span className="font-semibold text-[var(--iriss-ok)]">{dealPill} ✓</span>
                       </>
                     ) : null}
                   </span>
@@ -991,7 +991,7 @@ export function IrissOrderRoom({
               <div className="iriss-mobile-kv iriss-spec-fields">
                 <div className="iriss-spec-top">
                   <label className="block min-w-0">
-                    <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Statuss</span>
+                    <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Statuss</span>
                     <select
                       className={fieldClass}
                       value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
@@ -1070,7 +1070,7 @@ export function IrissOrderRoom({
               <CardTitle>Aprīkojums</CardTitle>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label className="block">
-                  <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Obligātās prasības</span>
+                  <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Obligātās prasības</span>
                   <textarea className={areaClass} value={rec.equipmentRequired} onChange={(e) => onPatch("equipmentRequired", e.target.value)} />
                 </label>
                 <IrissInternalNoteField
@@ -1080,7 +1080,7 @@ export function IrissOrderRoom({
                   className={areaClass}
                 />
                 <label className="block sm:col-span-2">
-                  <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Vēlamās prasības</span>
+                  <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Vēlamās prasības</span>
                   <textarea className={areaClass} value={rec.equipmentDesired} onChange={(e) => onPatch("equipmentDesired", e.target.value)} />
                 </label>
               </div>
@@ -1091,7 +1091,7 @@ export function IrissOrderRoom({
               <CardTitle>Piezīmes</CardTitle>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label className="block">
-                  <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Piezīmes</span>
+                  <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Piezīmes</span>
                   <textarea className={areaClass} aria-label="Piezīmes" value={rec.notes} onChange={(e) => onPatch("notes", e.target.value)} />
                 </label>
                 <IrissInternalNoteField
@@ -1838,7 +1838,7 @@ export function IrissOrderRoom({
         <button type="button" disabled={orderPdfBusy} onClick={onPdf} className="iriss-ink-link flex h-[50px] min-w-0 flex-1 items-center justify-center rounded-full bg-[var(--s1,#fff)] text-[15px] font-semibold text-[var(--ink)] shadow-[inset_0_0_0_1px_var(--hair,#e5e7eb)]">
           {orderPdfBusy ? "PDF…" : "Līgums"}
         </button>
-        <button type="button" onClick={onCreateOffer} className="flex h-[50px] min-w-0 flex-1 items-center justify-center rounded-full bg-[#111827] text-[15px] font-semibold text-white">
+        <button type="button" onClick={onCreateOffer} className="flex h-[50px] min-w-0 flex-1 items-center justify-center rounded-full bg-[var(--iriss-graphite)] text-[15px] font-semibold text-white">
           Piedāvājums
         </button>
         <AdminSaveButton onSave={() => void onSave()} state={roomSaveState} className="!h-[50px] min-w-0 flex-1 text-[15px]" />
@@ -1878,7 +1878,7 @@ export function IrissOrderRoom({
             className="flex max-h-[88dvh] w-full max-w-[440px] flex-col rounded-t-[22px] bg-white shadow-xl md:h-full md:max-h-none md:rounded-l-[22px] md:rounded-tr-none"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between gap-2 border-b border-[#e5e5ea] px-4 py-3">
+            <div className="flex items-center justify-between gap-2 border-b border-[var(--iriss-line)] px-4 py-3">
               <div>
                 <h2 id="iriss-room-criteria-title" className="text-[16px] font-semibold">
                   Klienta kritēriji
@@ -1939,7 +1939,7 @@ export function IrissOrderRoom({
                 }
               />
               <label className="block sm:col-span-2">
-                <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Obligātās prasības</span>
+                <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Obligātās prasības</span>
                 <textarea className={areaClass} value={criteriaDraft.equipmentRequired} onChange={(e) => setCriteriaDraft((prev) => ({ ...prev, equipmentRequired: e.target.value }))} />
               </label>
               <div className="sm:col-span-2">
@@ -1951,11 +1951,11 @@ export function IrissOrderRoom({
                 />
               </div>
               <label className="block sm:col-span-2">
-                <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Vēlamās prasības</span>
+                <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Vēlamās prasības</span>
                 <textarea className={areaClass} value={criteriaDraft.equipmentDesired} onChange={(e) => setCriteriaDraft((prev) => ({ ...prev, equipmentDesired: e.target.value }))} />
               </label>
               <div className="sm:col-span-2">
-                <p className="mb-1 text-[11.5px] font-semibold text-[#374151]">Izslēgt</p>
+                <p className="mb-1 text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Izslēgt</p>
                 <div className="flex flex-wrap gap-1.5">
                   {irissOrderRoomExcludeTokens(criteriaDraft.nonPreferredColors).map((token) => (
                     <button
@@ -1993,7 +1993,7 @@ export function IrissOrderRoom({
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2 border-t border-[#e5e5ea] px-4 py-3">
+            <div className="flex justify-end gap-2 border-t border-[var(--iriss-line)] px-4 py-3">
               <button type="button" className={actionBtn} onClick={() => setCriteriaOpen(false)}>
                 Atcelt
               </button>
@@ -2094,7 +2094,7 @@ function IrissOrderHitMatchChrome({
               aria-pressed={on}
               onClick={() => onStatus(item)}
               className={`min-h-11 rounded-full px-3 py-2 text-[13px] font-semibold ${
-                on ? "bg-[#111827] text-white" : "bg-white text-[#111827] ring-1 ring-[#e5e7eb]"
+                on ? "bg-[var(--iriss-graphite)] text-white" : "bg-white text-[var(--iriss-ink)] ring-1 ring-[var(--iriss-line)]"
               }`}
             >
               {IRISS_LISTING_HIT_STATUS_LV[item]}
