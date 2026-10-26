@@ -30,7 +30,12 @@
 ## Žurnāls
 - 26.10 21:30 - darba vieta izveidota (worktree /Users/nv/code/PROvin-worktrees/iriss-audits, zars claude/iriss-audits). Admin sesija: Claude iebūvētais pārlūks. Demo konts (claude.demo@provin.lv): Chrome, 1Password.
 
-## Nākamais solis
+## Nākamais solis (atjaunots 27.10 00:20)
+- 1) Sludinājumi ātrums: 7,7 MB HTML -> lapošana / "Pazuduši" tikai pēc pieprasījuma; tad kartīte pēc dizaina v0.3.
+- 2) Dizaina pamats kodā (tokeni + komponentes). 3) Viena piedāvājuma forma. 4) Viens auto ceļš. Loģistikas makets 2. daļa.
+- Beigās: dzēst TESTS (sk. augstāk), demo jau 15 sadaļas.
+
+## Iepriekšējie nākamie soļi
 - 1. posms: lomu testi ar demo kontu (Chrome, demo; admin = iebūvētais pārlūks). Sākt ar pilnām 15 sadaļām, tad "tikai pavadzimes", "tikai gramatvede", "tikai serviss", "logistika bez ap_*"; beigās atjaunot visas 15.
 - 26.10 21:45-21:55 Pavadzīmes (admin, dators+telefons): T1 B193 Ar roku "TESTS VW Golf" 1h -> automātika krīt (marka nav CSDD sarakstā) -> Aivars -> P02832 (3 min). T2 Pagarināt P02832 1h -> apstiprinājuma logs -> P02833, P02832 pārtraukta (~2 min). T3 telefons B192 Ar roku "Volkswagen Passat" 1h -> "Automātikai neder (B192 tikai ar roku)" -> Aivars -> P00747 (~2,5 min), PDF: pārstāvis Taivo Batins, maršruts Tukums -> Hermaņi-1. T4 Pārtraukt P02833 - gaida Aivaru.
 - 26.10 21:55-22:02 T4 Pārtraukt P02833 -> Aivars -> pārtraukta (~3 min). T5 telefons B192 aizņemts -> logs -> Jā, Cita adrese Jelgava, Cits 2h -> P00748 (PDF sākums Jelgava, pārstāvis Taivo). T6 dators No saraksta AUDI A6 -> KĻŪDA tradeAct=false -> automātika parasta P02834 42 s. T7 telefons No saraksta AUDI A6 AVANT, pārstāvis Nils, aizvieto P02834 -> tradeAct=true, pie Aivara. Kalendārs/Arhīvs apskatīti.
@@ -44,4 +49,6 @@
 - 26.10 23:25 PR #670 (3a12fc70) prod READY: 7 labojumi (sk. PR). Pārbaudīts dzīvi: Pavadzīmes 0,8-1,7 s, izvēlnē nav atskaites un 99+.
 - Nila lūgums 23:15: Loģistika - ātra pāreja karte/kravas <-> Autoparka auto (var palikt tikai Autoparks), proporcijas un kartes izmērs, kārtošana labajā pusē. -> makets pēc dizaina v0.3, Nila "jā".
 - 26.10 23:55 Nils apstiprināja Loģistikas maketu. PR #671 (8be92a3d) - makets 1. daļa prod READY. PR #672 (760887ac) - 2. labojumi prod READY, /p/d pārbaudīts (08.2017).
-- Nākamais: Loģistikas makets 2. daļa (posmu cilnes Autoparkā, Visi auto saraksta izņemšana), lomu testi (gaidu Andra sadaļu maiņu), audita dokuments (Artifact), TESTS tīrīšana.
+- 27.10 ~00:10: konteksts ~93% (Messages) — CONTINUE handoff: docs/iriss-audits/CONTINUE.md + Desktop/IRISS-AUDITS-PASTE.txt. Demo visas 15 atjaunotas (Andris). Audita dokuments publicēts. Secība (Nils): Sludinājumi ātrums+dizains → dizaina pamats → viena piedāvājuma forma → viens auto ceļš.
+- Nākamais: Sludinājumi (ātrums + dizains); pēc tam Loģistikas makets 2. daļa; lomu testi (1Password demo autofill rītā); TESTS tīrīšana beigās.
+- 27.10 00:20 PR #675 (a3f4e473) prod READY: partneris (tikai Pavadzīmes) redz tikai savus pieprasījumus (dzīvi nepārbaudīts - demo atjaunots uz 15 sadaļām; tests); /a/ saite tikai ar pogu "Izveidot saiti klientam". Audita dokuments Artifact (AYrFG4oykqp9nuu2Rg77Jx). Docs #673 #674.
