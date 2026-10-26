@@ -45,6 +45,7 @@ import {
   type RouteTemplateType,
 } from "@/lib/iriss-logistics-cargo-plan";
 import { logisticsGoogleMapsDirUrl } from "@/lib/iriss-logistics-maps-dir";
+import { READINESS_COLOR, READINESS_LV, type ReadinessKind } from "@/lib/iriss-logistics-readiness";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
 
 type Props = {
@@ -63,6 +64,10 @@ type Props = {
   onTemplatesChanged?: () => void;
   /** Citu klientu auto ar roku: marka, modelis, adrese no ģeokodētāja. */
   onAddManual?: (bucket: CargoBucket, input: ManualCarInput) => Promise<boolean>;
+  /** Slēdzis «Gatavība» Nākošās kravas galvenē: ON = gatavības krāsas un čipi Nākošajā kravā. */
+  readinessOn?: boolean;
+  onToggleReadiness?: () => void;
+  readinessByCarId?: ReadonlyMap<string, ReadinessKind>;
 };
 
 export type ManualCarInput = {
@@ -106,6 +111,9 @@ export function IrissLogistikaCargoPlan({
   routeUi,
   onTemplatesChanged,
   onAddManual,
+  readinessOn = false,
+  onToggleReadiness,
+  readinessByCarId,
 }: Props) {
   const byId = useMemo(() => new Map(orders.map((o) => [o.id, o])), [orders]);
   const planLists = useMemo(() => bucketListsFromPlan(plan, byId), [plan, byId]);
@@ -205,13 +213,15 @@ export function IrissLogistikaCargoPlan({
                 const order = byId.get(id);
                 if (!order) return null;
                 const car = carState.get(id);
+                const readiness = readinessOn && bucket === "next" ? readinessByCarId?.get(id) : undefined;
                 return (
                   <SortableCargoRow
                     key={id}
                     id={id}
                     order={order}
                     number={route?.enabled ? i + 1 : undefined}
-                    colorVar={colorVar}
+                    colorVar={readiness ? READINESS_COLOR[readiness] : colorVar}
+                    readiness={readiness}
                     showOnMap={car?.showOnMap ?? true}
                     active={bounceId === id || hoverId === id}
                     colorOpen={colorFor === id}
@@ -237,7 +247,8 @@ export function IrissLogistikaCargoPlan({
                 <span className="text-[13px] font-semibold">{CARGO_BUCKET_LV[bucket]}</span>
                 <span className="text-[12px] text-[#6e6e73]">{ids.length}</span>
                 {route ? (
-                  <label className="ml-auto flex items-center gap-2 text-[12px] font-medium">
+                  <span className="ml-auto flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-[12px] font-medium">
                     Maršruts
                     <button
                       type="button"
@@ -251,6 +262,21 @@ export function IrissLogistikaCargoPlan({
                       }}
                     />
                   </label>
+                  {bucket === "next" && onToggleReadiness ? (
+                    <label className="flex items-center gap-2 text-[12px] font-medium">
+                      Gatavība
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={readinessOn}
+                        data-testid="toggle-readiness-colors"
+                        className={`iriss-log-switch ${readinessOn ? "on" : ""}`}
+                        style={readinessOn ? { background: READINESS_COLOR.paid } : undefined}
+                        onClick={onToggleReadiness}
+                      />
+                    </label>
+                  ) : null}
+                  </span>
                 ) : null}
               </div>
               {route?.enabled && cargoBucket ? (
@@ -344,6 +370,7 @@ function SortableCargoRow({
   order,
   number,
   colorVar,
+  readiness,
   showOnMap,
   active,
   colorOpen,
@@ -357,6 +384,7 @@ function SortableCargoRow({
   order: LogisticsOrder;
   number?: number;
   colorVar: string;
+  readiness?: ReadinessKind;
   showOnMap: boolean;
   active: boolean;
   colorOpen: boolean;
@@ -396,6 +424,11 @@ function SortableCargoRow({
           <span className="iriss-log-cargo-dot" style={{ background: colorVar }} />
         </button>
         <CargoRowText order={order} />
+        {readiness ? (
+          <span className={`iriss-log-ready-chip ${readiness}`} data-readiness={readiness}>
+            {READINESS_LV[readiness]}
+          </span>
+        ) : null}
         <button
           type="button"
           role="switch"

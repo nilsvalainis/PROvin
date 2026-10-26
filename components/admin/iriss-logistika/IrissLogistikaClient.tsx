@@ -39,6 +39,7 @@ import {
 } from "@/lib/iriss-logistics-cargo-plan";
 import { logisticsGoogleMapsDirUrl, logisticsGoogleMapsPlaceUrl } from "@/lib/iriss-logistics-maps-dir";
 import { logisticsOrderMapLabel } from "@/lib/iriss-logistics-labels";
+import { logisticsReadiness, READINESS_PREF_KEY, readinessPinColors, type ReadinessKind } from "@/lib/iriss-logistics-readiness";
 import {
   LOGISTICS_PRINT_HTML_CLASS,
   LOGISTICS_PRINT_PAGE_CSS,
@@ -110,6 +111,8 @@ export function IrissLogistikaClient({
     initialOrders.find((o) => isLogisticsOrderActive(o))?.id ?? null,
   );
   const [showLabels, setShowLabels] = useState(false);
+  /** «Gatavība» Nākošās kravas galvenē: noklusēti ieslēgts (makets 01), izvēli atceras pārlūks. */
+  const [readinessOn, setReadinessOn] = useState(true);
   /** Abpusēja druka: 2. lapu apgriež par 180°, lai, apgriežot lapu pa garo malu, tā nav otrādi. */
   const [printDuplex, setPrintDuplex] = useState(false);
   useEffect(() => {
@@ -131,6 +134,7 @@ export function IrissLogistikaClient({
   const [cargoTemplates, setCargoTemplates] = useState<CargoRouteTemplate[]>([]);
   const [cargoPickups, setCargoPickups] = useState<CabinetPickup[]>([]);
   const [cargoDocs, setCargoDocs] = useState<Record<string, { have: number; expected: number }>>({});
+  const [pickupDocCarIds, setPickupDocCarIds] = useState<string[]>([]);
   const [bounceId, setBounceId] = useState<string | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [popupId, setPopupId] = useState<string | null>(null);
@@ -226,11 +230,13 @@ export function IrissLogistikaClient({
         templates?: CargoRouteTemplate[];
         pickups?: CabinetPickup[];
         docCounts?: Record<string, { have: number; expected: number }>;
+        pickupDocCarIds?: string[];
       }) => {
         if (body.plan) setCargoPlan(body.plan);
         setCargoTemplates(body.templates ?? []);
         setCargoPickups(body.pickups ?? []);
         setCargoDocs(body.docCounts ?? {});
+        setPickupDocCarIds(body.pickupDocCarIds ?? []);
       })
       .catch(() => undefined);
   }, []);
@@ -254,10 +260,12 @@ export function IrissLogistikaClient({
       pickups?: CabinetPickup[];
       docCounts?: Record<string, { have: number; expected: number }>;
       templates?: CargoRouteTemplate[];
+      pickupDocCarIds?: string[];
     };
     if (body.plan) setCargoPlan(body.plan);
     if (body.pickups) setCargoPickups(body.pickups);
     if (body.docCounts) setCargoDocs(body.docCounts);
+    if (body.pickupDocCarIds) setPickupDocCarIds(body.pickupDocCarIds);
     if (body.templates) setCargoTemplates(body.templates);
   }
 
@@ -346,8 +354,9 @@ export function IrissLogistikaClient({
   useEffect(() => {
     try {
       setShowLabels(window.localStorage.getItem(LABELS_PREF_KEY) === "1");
+      setReadinessOn(window.localStorage.getItem(READINESS_PREF_KEY) !== "0");
     } catch {
-      // privāts režīms: paliek izslēgts
+      // privāts režīms: paliek noklusējums
     }
   }, []);
 
@@ -373,6 +382,17 @@ export function IrissLogistikaClient({
     setPrintDuplex((v) => {
       try {
         window.localStorage.setItem(PRINT_DUPLEX_PREF_KEY, v ? "0" : "1");
+      } catch {
+        // nav krātuves
+      }
+      return !v;
+    });
+  }
+
+  function toggleReadiness() {
+    setReadinessOn((v) => {
+      try {
+        window.localStorage.setItem(READINESS_PREF_KEY, v ? "0" : "1");
       } catch {
         // nav krātuves
       }
@@ -503,6 +523,23 @@ export function IrissLogistikaClient({
     for (const p of cargoPickups) m.set(p.carId, CABINET_PICKUP_STAGE_LV[p.stage]);
     return m;
   }, [cargoPickups]);
+  /** Gatavība tikai Nākošās kravas auto; pārējiem paliek viļņa krāsa. */
+  const readinessByCarId = useMemo(() => {
+    const m = new Map<string, ReadinessKind>();
+    const docs = new Set(pickupDocCarIds);
+    const codes = new Map(cargoPickups.map((p) => [p.carId, p.pickupCode]));
+    const byId = new Map(orders.map((o) => [o.id, o]));
+    for (const c of carsInCargoBucket(cargoPlan, "next")) {
+      const order = byId.get(c.carId);
+      if (!order) continue;
+      m.set(c.carId, logisticsReadiness({ order, hasPickupDoc: docs.has(c.carId), pickupCode: codes.get(c.carId) }));
+    }
+    return m;
+  }, [cargoPlan, orders, cargoPickups, pickupDocCarIds]);
+  const pinColorByCarId = useMemo(
+    () => readinessPinColors(readinessOn, readinessByCarId, cargoByCarId),
+    [readinessByCarId, readinessOn, cargoByCarId],
+  );
   const routeNumbers = useMemo(() => {
     const m = new Map<string, number>();
     for (const bucket of ["next", "after"] as const) {
@@ -1040,6 +1077,7 @@ export function IrissLogistikaClient({
                     hoverCarId={hoverId}
                     statusByCarId={statusByCarId}
                     routeNumbers={routeNumbers}
+                    pinColorByCarId={pinColorByCarId}
                     routeEnds={routeEnds}
                     routePaths={routePaths}
                     onRouteVia={(bucket, a) => {
@@ -1093,6 +1131,9 @@ export function IrissLogistikaClient({
                 routeUi={routeUi}
                 onTemplatesChanged={() => void reloadTemplates()}
                 onAddManual={addManualCar}
+                readinessOn={readinessOn}
+                onToggleReadiness={toggleReadiness}
+                readinessByCarId={readinessByCarId}
               />
               {popupOrder ? (
                 <IrissLogistikaCarPopup
