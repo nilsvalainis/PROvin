@@ -8,7 +8,8 @@ vi.mock("next/image", () => ({
 }));
 
 import { PiedavajumiList } from "@/components/admin/iriss-piedavajumi/PiedavajumiList";
-import { PdClientView } from "@/components/iriss-piedavajumi/PdClientView";
+import { IrissOfferPublicGallery } from "@/components/iriss-offer-public/IrissOfferPublicGallery";
+import { PdClientView, pdGalleryUrlMap } from "@/components/iriss-piedavajumi/PdClientView";
 import { PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
 import { buildIrissPdPublicView, irissPdHiddenBlockLabels, irissPdToListRow } from "@/lib/iriss-piedavajumi";
 import type { IrissPdAuto1Blocks } from "@/lib/iriss-piedavajumi-auto1";
@@ -142,5 +143,45 @@ describe("Statusu čipi un saraksts", () => {
 
   it("tukšs saraksts", () => {
     expect(renderText(<PiedavajumiList rows={[]} nowMs={NOW} storeEnabled loadError="" />)).toContain("Vēl nav neviena piedāvājuma.");
+  });
+});
+
+describe("Klienta skats: servera/klienta robeža", () => {
+  /** Atrod elementu pēc komponentes un atgriež tā props (PdClientView ir servera komponente - izsaucam kā funkciju). */
+  function findProps(node: unknown, type: unknown): Record<string, unknown> | null {
+    if (!node || typeof node !== "object") return null;
+    if (Array.isArray(node)) {
+      for (const child of node) {
+        const hit = findProps(child, type);
+        if (hit) return hit;
+      }
+      return null;
+    }
+    const el = node as { type?: unknown; props?: Record<string, unknown> };
+    if (el.type === type && el.props) return el.props;
+    return el.props ? findProps(el.props.children, type) : null;
+  }
+
+  function hasFunction(value: unknown): boolean {
+    if (typeof value === "function") return true;
+    if (!value || typeof value !== "object") return false;
+    return Object.values(value).some(hasFunction);
+  }
+
+  it("galerijai nodod tikai virknes (produkcijā funkcijas lauza /p/d ar 500)", () => {
+    const view = buildIrissPdPublicView(rec({ photos: [{ kind: "url", url: "https://a/1.jpg" }, { kind: "url", url: "https://a/2.jpg" }] }), "link", NOW);
+    const tree = PdClientView({ view, mode: "link", token: "tokentokentokentoken12", photoSrc: src });
+    const props = findProps(tree, IrissOfferPublicGallery);
+    expect(props).not.toBeNull();
+    expect(hasFunction(props)).toBe(false);
+    expect(props?.urlMap).toEqual({
+      thumb: { "0": "/p/d/TOKEN/foto/0", "1": "/p/d/TOKEN/foto/1" },
+      full: { "0": "/p/d/TOKEN/foto/0?s=full", "1": "/p/d/TOKEN/foto/1?s=full" },
+    });
+  });
+
+  it("pdGalleryUrlMap: viens URL katram foto", () => {
+    expect(pdGalleryUrlMap(0, src)).toEqual({ thumb: {}, full: {} });
+    expect(pdGalleryUrlMap(1, src).full["0"]).toBe("/p/d/TOKEN/foto/0?s=full");
   });
 });

@@ -8,11 +8,25 @@ import {
   IrissOfferPublicSpecCell,
   irissOfferPublicCardClass,
 } from "@/components/iriss-offer-public/IrissOfferPublicChrome";
-import { IrissOfferPublicGallery } from "@/components/iriss-offer-public/IrissOfferPublicGallery";
+import { IrissOfferPublicGallery, type IrissOfferPublicGalleryUrlMap } from "@/components/iriss-offer-public/IrissOfferPublicGallery";
 import { PdClientContent } from "@/components/iriss-piedavajumi/PdClientContent";
 import { PdOfferExtraSections } from "@/components/iriss-piedavajumi/PdOfferExtraSections";
 import { IRISS_OFFER_PUBLIC_LABELS } from "@/lib/iriss-offer-client-link";
 import { irissPdFactValue, irissPdSubtitle, type IrissPdPublicView, type IrissPdViewMode } from "@/lib/iriss-piedavajumi";
+
+/** Galerijas URL kā vienkāršas virknes (galerija ir klienta komponente - funkcijas tai nodot nedrīkst). */
+export function pdGalleryUrlMap(
+  photoCount: number,
+  photoSrc: (index: number, size: "thumb" | "full") => string,
+): IrissOfferPublicGalleryUrlMap {
+  const thumb: Record<string, string> = {};
+  const full: Record<string, string> = {};
+  for (let i = 0; i < photoCount; i += 1) {
+    thumb[String(i)] = photoSrc(i, "thumb");
+    full[String(i)] = photoSrc(i, "full");
+  }
+  return { thumb, full };
+}
 
 /**
  * Klienta skats (`/p/d/<token>` un admina preview). Tā pati vizuālā bāze kā `/p/` IrissOfferPublic.
@@ -69,10 +83,7 @@ export function PdClientView({
           token={token || "preview"}
           title={title}
           photos={photos}
-          urls={{
-            thumb: (id) => photoSrc(Number(id), "thumb"),
-            full: (id) => photoSrc(Number(id), "full"),
-          }}
+          urlMap={pdGalleryUrlMap(view.photoCount, photoSrc)}
         />
       ) : null}
 
