@@ -3,13 +3,20 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { IrissCabinetAccessPanel } from "@/components/admin/IrissCabinetAccessPanel";
 import {
+  staffDeleteUserConfirm,
+  staffResetPasswordConfirm,
+  staffResetPasswordLabel,
+  staffUserAdminActions,
+  type StaffAdminActionId,
+} from "@/lib/staff-admin-actions";
+import {
   AUTOPARKS_V2_SECTION_SHORT_LABELS,
   IRISS_SECTION_CATALOG,
   IRISS_SECTION_LABELS,
   isAutoparksV2Section,
   type IrissSection,
 } from "@/lib/staff-roles";
-import type { EnvAdminPublic, StaffAuditEntry, StaffUserPublic } from "@/lib/staff-types";
+import type { EnvAdminPublic, StaffAuditEntry, StaffStatus, StaffUserPublic } from "@/lib/staff-types";
 
 /** Autoparka apakštiesības: ar atkāpi zem virsraksta "Autoparks" (virsraksts pirms pirmās). */
 function sectionRowLabel(id: IrissSection, label: string): string {
@@ -36,6 +43,8 @@ const AUDIT_LABEL: Record<StaffAuditEntry["action"], string> = {
   invite_accepted: "pieņēma uzaicinājumu",
   access_revoked: "atsauca pieeju",
   access_restored: "atjaunoja pieeju",
+  password_reset: "atiestatīja paroli",
+  user_deleted: "izdzēsa lietotāju",
   sessions_revoked: "beidza sesijas",
   totp_enabled: "ieslēdza 2FA",
   totp_disabled: "izslēdza 2FA",
@@ -99,6 +108,7 @@ export function IrissStaffUsersClient() {
   const [busy, setBusy] = useState(false);
   const [totp, setTotp] = useState<{ secret: string; otpauth: string } | null>(null);
   const [totpCode, setTotpCode] = useState("");
+  const [resetLink, setResetLink] = useState<{ email: string; url: string; emailed: boolean } | null>(null);
 
   const directory = useMemo<DirectoryUser[]>(() => {
     const rows: DirectoryUser[] = [];
@@ -120,6 +130,11 @@ export function IrissStaffUsersClient() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    setResetLink(null);
+    setError(null);
+  }, [selectedId]);
 
   useEffect(() => {
     if (!selected || selected.envAdmin) {
@@ -169,7 +184,14 @@ export function IrissStaffUsersClient() {
 
   async function act(action: string, extra?: Record<string, unknown>) {
     if (!selected || selected.envAdmin) return;
+    if (action === "reset_password") {
+      if (!window.confirm(staffResetPasswordConfirm(selected.name, selected.email, selected.status))) return;
+    }
+    if (action === "delete") {
+      if (!window.confirm(staffDeleteUserConfirm(selected.name, selected.email))) return;
+    }
     setBusy(true);
+    setError(null);
     try {
       const res = await fetch(`/api/admin/staff/users/${encodeURIComponent(selected.id)}`, {
         method: "POST",
@@ -177,9 +199,26 @@ export function IrissStaffUsersClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, ...extra }),
       });
-      const data = (await res.json()) as { secret?: string; otpauth?: string; error?: string };
+      const data = (await res.json()) as {
+        secret?: string;
+        otpauth?: string;
+        error?: string;
+        inviteUrl?: string;
+        emailed?: boolean;
+      };
+      if (!res.ok) {
+        setError(data.error ?? "Neizdevās izpildīt darbību.");
+        return;
+      }
       if (action === "totp_start" && data.secret) {
         setTotp({ secret: data.secret, otpauth: data.otpauth ?? "" });
+      }
+      if (action === "reset_password" && data.inviteUrl) {
+        setResetLink({ email: selected.email, url: data.inviteUrl, emailed: Boolean(data.emailed) });
+      }
+      if (action === "delete") {
+        setSelectedId(null);
+        setResetLink(null);
       }
       await load();
     } finally {
@@ -288,6 +327,8 @@ export function IrissStaffUsersClient() {
               setTotpCode={setTotpCode}
               busy={busy}
               dirty={Boolean(dirty)}
+              error={error}
+              resetLink={resetLink}
               onToggle={toggleDraft}
               onSave={() => void act("set_sections", { sections: draftSections })}
               onAct={act}
@@ -328,6 +369,8 @@ export function IrissStaffUsersClient() {
               setTotpCode={setTotpCode}
               busy={busy}
               dirty={Boolean(dirty)}
+              error={error}
+              resetLink={resetLink}
               onToggle={toggleDraft}
               onSave={() => void act("set_sections", { sections: draftSections })}
               onAct={act}
@@ -408,6 +451,72 @@ export function IrissStaffUsersClient() {
   );
 }
 
+export function StaffUserAdminActions({
+  status,
+  busy,
+  onAct,
+}: {
+  status: StaffStatus;
+  busy: boolean;
+  onAct: (action: StaffAdminActionId) => void;
+}) {
+  const actions = staffUserAdminActions(status);
+  return (
+    <div className="mt-4 flex flex-wrap gap-2">
+      {actions.includes("revoke_sessions") ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onAct("revoke_sessions")}
+          className="rounded-full border border-[#E5E7EB] px-3 py-1.5 text-[12px]"
+        >
+          Beigt sesijas
+        </button>
+      ) : null}
+      {actions.includes("reset_password") ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onAct("reset_password")}
+          className="rounded-full border border-[#E5E7EB] px-3 py-1.5 text-[12px]"
+        >
+          {staffResetPasswordLabel(status)}
+        </button>
+      ) : null}
+      {actions.includes("restore") ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onAct("restore")}
+          className="rounded-full bg-[#111827] px-3 py-1.5 text-[12px] text-white"
+        >
+          Atjaunot pieeju
+        </button>
+      ) : null}
+      {actions.includes("revoke") ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onAct("revoke")}
+          className="rounded-full px-3 py-1.5 text-[12px] text-[#B42318]"
+        >
+          Atsaukt pieeju
+        </button>
+      ) : null}
+      {actions.includes("delete") ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onAct("delete")}
+          className="rounded-full px-3 py-1.5 text-[12px] text-[#B42318]"
+        >
+          Dzēst lietotāju
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 function UserDetailCard({
   selected,
   draftSections,
@@ -417,6 +526,8 @@ function UserDetailCard({
   setTotpCode,
   busy,
   dirty,
+  error,
+  resetLink,
   onToggle,
   onSave,
   onAct,
@@ -429,6 +540,8 @@ function UserDetailCard({
   setTotpCode: (v: string) => void;
   busy: boolean;
   dirty: boolean;
+  error: string | null;
+  resetLink: { email: string; url: string; emailed: boolean } | null;
   onToggle: (id: IrissSection) => void;
   onSave: () => void;
   onAct: (action: string, extra?: Record<string, unknown>) => void;
@@ -494,34 +607,17 @@ function UserDetailCard({
       )}
 
       {!selected.envAdmin ? (
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void onAct("revoke_sessions")}
-            className="rounded-full border border-[#E5E7EB] px-3 py-1.5 text-[12px]"
-          >
-            Beigt sesijas
-          </button>
-          {selected.status === "revoked" ? (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void onAct("restore")}
-              className="rounded-full bg-[#111827] px-3 py-1.5 text-[12px] text-white"
-            >
-              Atjaunot pieeju
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void onAct("revoke")}
-              className="rounded-full px-3 py-1.5 text-[12px] text-[#B42318]"
-            >
-              Atsaukt pieeju
-            </button>
-          )}
+        <StaffUserAdminActions status={selected.status} busy={busy} onAct={(action) => void onAct(action)} />
+      ) : null}
+      {!selected.envAdmin && error ? <p className="mt-2 text-[13px] text-[#B42318]">{error}</p> : null}
+      {!selected.envAdmin && resetLink ? (
+        <div className="mt-3 space-y-2 rounded-xl bg-[#F8FAFC] p-3">
+          <p className="text-[13px] text-[#111827]">
+            {resetLink.emailed
+              ? `Saite nosūtīta uz ${resetLink.email}. Derīga 24 h, vienu reizi.`
+              : `E-pasts nav nosūtīts. Nokopē saiti un nosūti ${resetLink.email}.`}
+          </p>
+          <p className="break-all font-mono text-[11px] text-[#374151]">{resetLink.url}</p>
         </div>
       ) : null}
       {sessions[0] ? <p className="mt-3 text-[12px] text-[#6b7280]">Ierīce: {sessions[0].device}</p> : null}
