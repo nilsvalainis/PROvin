@@ -43,3 +43,5 @@
 - Demo konts Chrome pieteikts (Nils 23:00). Lomu testi: pilnas 15 sadaļas - sākti.
 - 26.10 23:25 PR #670 (3a12fc70) prod READY: 7 labojumi (sk. PR). Pārbaudīts dzīvi: Pavadzīmes 0,8-1,7 s, izvēlnē nav atskaites un 99+.
 - Nila lūgums 23:15: Loģistika - ātra pāreja karte/kravas <-> Autoparka auto (var palikt tikai Autoparks), proporcijas un kartes izmērs, kārtošana labajā pusē. -> makets pēc dizaina v0.3, Nila "jā".
+- 26.10 23:55 Nils apstiprināja Loģistikas maketu. PR #671 (8be92a3d) - makets 1. daļa prod READY. PR #672 (760887ac) - 2. labojumi prod READY, /p/d pārbaudīts (08.2017).
+- Nākamais: Loģistikas makets 2. daļa (posmu cilnes Autoparkā, Visi auto saraksta izņemšana), lomu testi (gaidu Andra sadaļu maiņu), audita dokuments (Artifact), TESTS tīrīšana.
