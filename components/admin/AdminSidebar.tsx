@@ -22,6 +22,7 @@ import {
   Search,
   Settings,
   Sun,
+  Tag,
   Truck,
   Wallet,
   Warehouse,
@@ -77,6 +78,7 @@ export const ADMIN_NAV_LABELS = {
   irissMenu: "Sākums",
   irissHome: "Pasūtījumi",
   irissNew: "Jauns pasūtījums",
+  irissOffers: "Piedāvājumi",
   irissScan: "Radars",
   irissLogistics: "Loģistika",
   irissAutoparks: "Autoparks",
@@ -119,6 +121,8 @@ const I_MENU: Item = {
   match: (p) => p === "/admin/iriss" || p === "/admin/iriss/",
 };
 const I_HOME: Item = { href: "/admin/iriss/pasutijumi", label: L.irissHome, icon: Car, plus: true, match: starts("/admin/iriss/pasutijumi") };
+/** j70: tikai Admin (AdminSidebar darbiniekiem netiek rādīts). Q13 badge vēl atvērts - nav pievienots. */
+const I_PIEDAVAJUMI: Item = { href: "/admin/iriss/piedavajumi", label: L.irissOffers, icon: Tag, match: starts("/admin/iriss/piedavajumi") };
 const I_SCAN: Item = { href: "/admin/iriss/scan", label: L.irissScan, icon: Radar, match: starts("/admin/iriss/scan") };
 const I_LOGISTICS: Item = {
   href: "/admin/iriss/logistika",
@@ -138,7 +142,7 @@ const I_VIN: Item = { ...VIN, label: L.vinScan };
 
 export const ADMIN_NAV_GROUPS: Group[] = [
   { title: L.groupPro, items: [MORNING, SAKUMS, VIN, FAST] },
-  { title: L.groupIriss, items: [I_MENU, I_HOME, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_REPORT, I_WAYBILLS, I_SETTINGS] },
+  { title: L.groupIriss, items: [I_MENU, I_HOME, I_PIEDAVAJUMI, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_REPORT, I_WAYBILLS, I_SETTINGS] },
   {
     title: L.groupWeb,
     items: [
@@ -170,7 +174,7 @@ const WS_GROUPS: Record<AdminWorkspace, Group[]> = {
   pro: ADMIN_NAV_GROUPS.filter((g) => g.title !== L.groupIriss),
   /** IRISS: Pārvaldība starp Iestatījumi un Pavadzīmes (sānjoslas kartītes). */
   iriss: [
-    { title: L.groupIriss, items: [I_MENU, I_HOME, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_REPORT, I_WAYBILLS, I_SETTINGS] },
+    { title: L.groupIriss, items: [I_MENU, I_HOME, I_PIEDAVAJUMI, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_REPORT, I_WAYBILLS, I_SETTINGS] },
     { title: L.groupOps, items: [I_IZMAKSAS] },
   ],
 };
@@ -591,6 +595,7 @@ const MORE_ROW_ICON: Record<string, AdminMobileIconName> = {
   "/admin/teksti": "komentars",
   "/admin/iriss": "atzime",
   "/admin/iriss/pasutijumi": "pasutijumi",
+  "/admin/iriss/piedavajumi": "pdf",
   "/admin/iriss/sludinajumi": "sludinajums",
   "/admin/iriss/scan": "radars",
   "/admin/iriss/logistika": "logistika",

@@ -1,5 +1,8 @@
 import { notFound, redirect } from "next/navigation";
+import "@/components/iriss-piedavajumi/piedavajumi.css";
 import { IrissPasutijumsEditor } from "@/components/admin/IrissPasutijumsEditor";
+import { PdOrderStrip } from "@/components/admin/iriss-piedavajumi/PdOrderStrip";
+import { listIrissPdRowsForOrder } from "@/lib/iriss-piedavajumi-store";
 import {
   getIrissListingsStorageState,
   readIrissListingsDismissed,
@@ -26,7 +29,7 @@ export default async function IrissPasutijumsDetailPage({
   params,
   searchParams,
 }: Props & { searchParams?: Promise<{ newOffer?: string; noClientPdf?: string; offer?: string; room?: string; from?: string }> }) {
-  await requireIrissSectionPage("pasutijumi");
+  const actor = await requireIrissSectionPage("pasutijumi");
   if (!isIrissPasutijumiStoreEnabled()) {
     redirect("/admin/iriss/pasutijumi");
   }
@@ -47,11 +50,13 @@ export default async function IrissPasutijumsDetailPage({
   // latest, dismissed un match darbavieta ir 45 s atmiņas kešs (IRISS_LISTINGS_READ_CACHE_TTL_MS).
   // Šis lasījums neraksta latest.json: ne pilnā atvēršanā, ne prefetch.
   const storage = getIrissListingsStorageState();
-  const [latest, dismissedView, orderOv, offerLinks] = await Promise.all([
+  const [latest, dismissedView, orderOv, offerLinks, pdRows] = await Promise.all([
     storage.enabled ? readIrissListingsLatestViewWithMarketplace() : Promise.resolve(null),
     storage.enabled ? readIrissListingsDismissed() : Promise.resolve(emptyIrissListingsDismissed()),
     readIrissListingOrderOv().catch(() => ({})),
     readIrissOfferClientLinksForOrder(id, { deadlines: irissOfferDeadlinesByOfferId(rec.offers) }).catch(() => []),
+    // j70: šī klienta piedāvājumi no sadaļas «Piedāvājumi» (tikai adminam).
+    actor.kind === "admin" ? listIrissPdRowsForOrder(id).catch(() => []) : Promise.resolve([]),
   ]);
   const listable = (latest?.vehicles ?? []).filter((v) => !isEcarstradeNoPriceNoBid(v));
   const match = storage.enabled
@@ -61,20 +66,23 @@ export default async function IrissPasutijumsDetailPage({
   const roomHits = buildIrissOrderRoomHits(listable, id, orderOv, roomMatch ? new Set(roomMatch.extraListingIds) : undefined, rec.brandModel ?? "");
   const dismissedHitIds = roomHits.filter((hit) => listingIsDismissed(hit, dismissedView.entries)).map((hit) => hit.id);
   return (
-    <IrissPasutijumsEditor
-      initialRecord={stripIrissOfferImageDataUrls(rec)}
-      autoOpenNewOffer={autoOpenNewOffer}
-      autoOpenOfferId={autoOpenOfferId}
-      forceNoClientPdf={forceNoClientPdf}
-      seedFrom={parseOfferSourceRef(sp.from) ? sp.from : ""}
-      roomHits={roomHits}
-      dismissedHitIds={dismissedHitIds}
-      listingsCache={storage.enabled ? "on" : "off"}
-      initialOfferLinks={offerLinks}
-      initialHitStatus={coerceIrissHitStatusMap(roomMatch?.hitStatus)}
-      duplicatesByListing={coerceIrissDuplicatesByListing(roomMatch?.duplicates)}
-      initialRoomTab={initialRoomTab}
-      googleContactsConfigured={Boolean(readGoogleContactsConfig())}
-    />
+    <>
+      {pdRows.length ? <PdOrderStrip rows={pdRows} nowMs={Date.now()} /> : null}
+      <IrissPasutijumsEditor
+        initialRecord={stripIrissOfferImageDataUrls(rec)}
+        autoOpenNewOffer={autoOpenNewOffer}
+        autoOpenOfferId={autoOpenOfferId}
+        forceNoClientPdf={forceNoClientPdf}
+        seedFrom={parseOfferSourceRef(sp.from) ? sp.from : ""}
+        roomHits={roomHits}
+        dismissedHitIds={dismissedHitIds}
+        listingsCache={storage.enabled ? "on" : "off"}
+        initialOfferLinks={offerLinks}
+        initialHitStatus={coerceIrissHitStatusMap(roomMatch?.hitStatus)}
+        duplicatesByListing={coerceIrissDuplicatesByListing(roomMatch?.duplicates)}
+        initialRoomTab={initialRoomTab}
+        googleContactsConfigured={Boolean(readGoogleContactsConfig())}
+      />
+    </>
   );
 }
