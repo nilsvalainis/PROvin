@@ -53,6 +53,18 @@ describe("listingCriteriaMarks", () => {
     expect(marks).toEqual([{ id: "km", label: "110 527 km", pass: false }]);
   });
 
+  it("pasūtījuma «AT» atbilst izsoles «Automaat»; ✕ kārbai rāda auto kārbu latviski", () => {
+    expect(listingCriteriaMarks(volvo, order({ transmission: "AT" }))).toEqual([{ id: "gear", label: "Kārba", pass: true }]);
+    expect(listingCriteriaMarks(volvo, order({ transmission: "MT" }))).toEqual([
+      { id: "gear", label: "Kārba: automātiskā", pass: false },
+    ]);
+  });
+
+  it("igauņu degviela «Bensiin» atbilst benzīnam", () => {
+    const marks = listingCriteriaMarks({ ...volvo, fuel: "Bensiin" }, order({ engineType: "Benzīns" }));
+    expect(marks).toEqual([{ id: "engine", label: "Dzinējs", pass: true }]);
+  });
+
   it("bez prasībām (SCAN) - nekā", () => {
     expect(listingCriteriaMarks(volvo, order(null))).toEqual([]);
   });

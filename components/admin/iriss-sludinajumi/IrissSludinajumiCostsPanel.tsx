@@ -26,7 +26,7 @@ export function IrissSludinajumiCostsPanel({
   const total = listingExtrasI(costs);
   return (
     <div>
-      <p className="text-[13px] leading-5 text-[var(--slud-ink2,#5e636e)]">
+      <p className="text-[13px] leading-5 text-[var(--slud-ink2,var(--iriss-ink-2))]">
         Papildu izmaksas vienam auto. Pieskaita cenai, lai rēķinātu &quot;Var solīt vēl&quot; un filtru &quot;Slēpt virs
         budžeta&quot;. Budžets nāk no piesaistītā pasūtījuma. Katram auto var pārrakstīt kartītē.
       </p>
@@ -41,7 +41,7 @@ export function IrissSludinajumiCostsPanel({
                 aria-label={f.label}
                 value={costs[f.key]}
                 onChange={(e) => onChange(f.key, Number(e.target.value) || 0)}
-                className="h-9 w-24 rounded-lg bg-[var(--slud-s2,#f4f5f8)] px-2 text-right text-[15px] tabular-nums outline-none"
+                className="h-9 w-24 rounded-lg bg-[var(--slud-s2,var(--iriss-surface-2))] px-2 text-right text-[15px] tabular-nums outline-none"
               />
               <span className="text-[var(--slud-ink2)]">€</span>
             </span>
@@ -52,7 +52,7 @@ export function IrissSludinajumiCostsPanel({
           <span className="tabular-nums">{fmt(total)}</span>
         </div>
       </div>
-      <p className="mt-1 text-[12px] text-[var(--slud-ink3,#9a9faa)]">Saglabājas šajā pārlūkā.</p>
+      <p className="mt-1 text-[12px] text-[var(--slud-ink3,var(--iriss-ink-3))]">Saglabājas šajā pārlūkā.</p>
     </div>
   );
 }

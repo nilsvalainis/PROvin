@@ -37,7 +37,7 @@ export function IrissNewMatchNotice({
       <button
         type="button"
         disabled={empty}
-        className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[13px] font-medium text-[var(--slud-ink,#0b0c10)] hover:bg-[var(--slud-fill,rgba(116,120,138,.11))] disabled:cursor-default disabled:opacity-45 disabled:hover:bg-transparent"
+        className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[13px] font-medium text-[var(--slud-ink,var(--iriss-ink))] hover:bg-[var(--slud-fill,rgba(116,120,138,.11))] disabled:cursor-default disabled:opacity-45 disabled:hover:bg-transparent"
         aria-expanded={open}
         aria-label={open ? `Aizvērt, ${label} ${n}` : `${label} ${n}`}
         title={empty ? `${label} 0` : label}
@@ -67,7 +67,7 @@ export function IrissNewMatchNotice({
                 <span className="min-w-0 truncate">
                   {notice.clientName} · {notice.title}
                 </span>
-                <span className="shrink-0 text-[11px] font-medium text-[var(--slud-ink2,#5e636e)]">
+                <span className="shrink-0 text-[11px] font-medium text-[var(--slud-ink2,var(--iriss-ink-2))]">
                   {LISTING_PLATFORM_LABEL[notice.platform as IrissListingPlatform] ?? notice.platform}
                 </span>
               </a>

@@ -55,7 +55,7 @@ export function IrissSludinajumiFiltersForm({
     <div className="flex flex-col gap-4">
       {extra}
       <div>
-        <p className="text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--slud-ink3,#9a9faa)]">Avoti</p>
+        <p className="text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--slud-ink3,var(--iriss-ink-3))]">Avoti</p>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {LISTING_SOURCE_CHIPS.map((src) => {
             const on = sources.length === 0 || sources.includes(src.id);
@@ -65,7 +65,7 @@ export function IrissSludinajumiFiltersForm({
                 type="button"
                 aria-pressed={on}
                 onClick={() => onToggleSource(src.id)}
-                className="slud-chip inline-flex h-8 items-center rounded-full bg-[var(--slud-fill,rgba(116,120,138,.11))] px-3 text-[13px] font-medium text-[var(--slud-ink,#0b0c10)]"
+                className="slud-chip inline-flex h-8 items-center rounded-full bg-[var(--slud-fill,rgba(116,120,138,.11))] px-3 text-[13px] font-medium text-[var(--slud-ink,var(--iriss-ink))]"
                 data-on={on ? "true" : "false"}
               >
                 {src.label}
@@ -75,7 +75,7 @@ export function IrissSludinajumiFiltersForm({
         </div>
       </div>
       <div>
-        <p className="text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--slud-ink3,#9a9faa)]">Cena, €</p>
+        <p className="text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--slud-ink3,var(--iriss-ink-3))]">Cena, €</p>
         <div className="mt-2 flex items-center gap-2">
           <input
             type="number"
@@ -86,9 +86,9 @@ export function IrissSludinajumiFiltersForm({
             defaultValue={minDefault}
             key={`min-${minKey}`}
             onBlur={(e) => onMin(e.target.value.trim())}
-            className="h-10 w-full rounded-xl bg-[var(--slud-s2,#f4f5f8)] px-3 text-[15px] outline-none"
+            className="h-10 w-full rounded-xl bg-[var(--slud-s2,var(--iriss-surface-2))] px-3 text-[15px] outline-none"
           />
-          <span className="text-[var(--slud-ink3,#9a9faa)]">-</span>
+          <span className="text-[var(--slud-ink3,var(--iriss-ink-3))]">-</span>
           <input
             type="number"
             min={0}
@@ -98,7 +98,7 @@ export function IrissSludinajumiFiltersForm({
             defaultValue={maxDefault}
             key={`max-${maxKey}`}
             onBlur={(e) => onMax(e.target.value.trim())}
-            className="h-10 w-full rounded-xl bg-[var(--slud-s2,#f4f5f8)] px-3 text-[15px] outline-none"
+            className="h-10 w-full rounded-xl bg-[var(--slud-s2,var(--iriss-surface-2))] px-3 text-[15px] outline-none"
           />
         </div>
       </div>
@@ -111,7 +111,7 @@ export function IrissSludinajumiFiltersForm({
         />
         <span className="flex min-w-0 flex-1 items-center justify-between gap-3">
           <span>Slēpt ar motora vai kārbas bojājumiem</span>
-          <span className="tabular-nums text-[var(--slud-ink3,#9a9faa)]">{techCount}</span>
+          <span className="tabular-nums text-[var(--slud-ink3,var(--iriss-ink-3))]">{techCount}</span>
         </span>
       </label>
       <label className="flex items-start gap-2.5 text-[15px]">
@@ -137,11 +137,11 @@ export function IrissSludinajumiFiltersForm({
                 const n = Number(raw);
                 if (Number.isFinite(n) && n >= 0) onThreshold(n);
               }}
-              className="h-8 w-[4.5rem] rounded-lg bg-[var(--slud-s2,#f4f5f8)] px-2 text-center text-[13px] outline-none"
+              className="h-8 w-[4.5rem] rounded-lg bg-[var(--slud-s2,var(--iriss-surface-2))] px-2 text-center text-[13px] outline-none"
             />
             €
           </span>
-          <span className="tabular-nums text-[var(--slud-ink3,#9a9faa)]">{overBudgetCount}</span>
+          <span className="tabular-nums text-[var(--slud-ink3,var(--iriss-ink-3))]">{overBudgetCount}</span>
         </span>
       </label>
       <label className="flex items-start gap-2.5 text-[15px]">
@@ -153,7 +153,7 @@ export function IrissSludinajumiFiltersForm({
         />
         <span className="flex min-w-0 flex-1 items-center justify-between gap-3">
           <span>Rādīt tikai paslēptos</span>
-          <span className="tabular-nums text-[var(--slud-ink3,#9a9faa)]">{hiddenCount}</span>
+          <span className="tabular-nums text-[var(--slud-ink3,var(--iriss-ink-3))]">{hiddenCount}</span>
         </span>
       </label>
       <button type="button" onClick={onApply} className="slud-primary mt-1 h-11 w-full rounded-full text-[15px] font-semibold">

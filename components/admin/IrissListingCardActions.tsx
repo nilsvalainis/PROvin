@@ -100,7 +100,7 @@ export function IrissListingCardActions({
             align="end"
             minWidth={208}
             estimatedHeight={52}
-            className="iriss-ov-menu iriss-ov-menu-portal fixed z-[200] w-52 overflow-hidden rounded-xl bg-white/95 py-0 text-[14px] text-[var(--ink,#0b0c10)] shadow-[0_8px_30px_rgba(0,0,0,0.16),0_0_0_0.5px_rgba(0,0,0,0.1)]"
+            className="iriss-ov-menu iriss-ov-menu-portal fixed z-[200] w-52 overflow-hidden rounded-xl bg-white/95 py-0 text-[14px] text-[var(--iriss-ink)] shadow-[0_8px_30px_rgba(0,0,0,0.16),0_0_0_0.5px_rgba(0,0,0,0.1)]"
           >
             <button
               type="button"

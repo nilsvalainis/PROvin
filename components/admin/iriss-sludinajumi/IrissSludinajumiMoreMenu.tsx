@@ -33,14 +33,14 @@ export function IrissSludinajumiMoreMenu({
     <div className="flex flex-col">
       {includeSort && onSort ? (
         <>
-          <p className="mb-1.5 text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--slud-ink3,#9a9faa)]">Kārtot</p>
+          <p className="mb-1.5 text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--slud-ink3,var(--iriss-ink-3))]">Kārtot</p>
           <button type="button" onClick={onSort} className="mb-3 flex min-h-11 w-full items-center justify-between rounded-xl px-1 text-left text-[15px] hover:bg-[var(--slud-fill)]">
             <span>Kārtot</span>
             <span className="text-[13px] text-[var(--slud-ink2)]">{sortLabel}</span>
           </button>
         </>
       ) : null}
-      <p className="text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--slud-ink3,#9a9faa)]">Nolasīšana</p>
+      <p className="text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--slud-ink3,var(--iriss-ink-3))]">Nolasīšana</p>
       <button
         type="button"
         onClick={onSync}
@@ -63,7 +63,7 @@ export function IrissSludinajumiMoreMenu({
           </span>
         ) : null}
       </button>
-      <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--slud-ink3,#9a9faa)]">Aprēķins</p>
+      <p className="mt-3 text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--slud-ink3,var(--iriss-ink-3))]">Aprēķins</p>
       <button type="button" onClick={onCosts} className="mt-1 flex min-h-11 w-full items-center gap-3 rounded-xl px-1 text-left">
         <Calculator className="h-4 w-4 shrink-0" strokeWidth={STROKE} />
         <span className="min-w-0 flex-1 text-[15px] font-medium">Izmaksu pieņēmumi</span>

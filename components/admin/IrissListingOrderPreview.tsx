@@ -140,7 +140,7 @@ export function IrissListingOrderPreview({
   return (
     <div className="fixed inset-0 z-[60] flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="iriss-order-preview-title">
       <button type="button" className="absolute inset-0 bg-slate-900/40" aria-label="Aizvērt" {...backdropClose} />
-      <div className="relative z-[61] max-h-[88vh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border border-[var(--iriss-line)] bg-[#F8F8F9] p-3 pb-[max(16px,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl sm:p-4">
+      <div className="relative z-[61] max-h-[88vh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border border-[var(--iriss-line)] bg-[var(--iriss-surface-2)] p-3 pb-[max(16px,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl sm:p-4">
         <div className="mb-3 flex items-center gap-2">
           <h2 id="iriss-order-preview-title" className="text-[14px] font-semibold text-[var(--color-apple-text)]">
             {IRISS_LISTING_CARD_ACTION_ORDER}{orders.length > 1 ? ` (${orders.length})` : ""}

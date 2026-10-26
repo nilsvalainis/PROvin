@@ -1,5 +1,6 @@
 "use client";
 
+import { Check, X } from "lucide-react";
 import { IRISS_LISTING_CARD_ACTION_ORDER } from "@/lib/iriss-listing-card-actions";
 import { listingCriteriaMarks } from "@/lib/iriss-listing-criteria-checks";
 import { listingOrderChipSubtitle, type IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
@@ -36,9 +37,12 @@ export function IrissListingOrderChips({
                       className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-[var(--color-apple-text)]"
                       title={m.pass ? "Atbilst prasībām" : "Neatbilst prasībām"}
                     >
-                      <span aria-hidden className={m.pass ? "text-emerald-700" : "text-red-600"}>
-                        {m.pass ? "✓" : "✕"}
-                      </span>
+                      {/* Ikona, ne ✓/✕ simbols: iOS tos zīmē kā krāsainas emoji. */}
+                      {m.pass ? (
+                        <Check aria-hidden className="h-3 w-3 text-emerald-700" strokeWidth={3} />
+                      ) : (
+                        <X aria-hidden className="h-3 w-3 text-red-600" strokeWidth={3} />
+                      )}
                       <span className="sr-only">{m.pass ? "Atbilst:" : "Neatbilst:"}</span>
                       {m.label}
                     </span>
