@@ -98,7 +98,7 @@ type ClassifyRequest = Pick<
   | "plateBusyAtCreate"
   | "autoDisabled"
 > &
-  Partial<Pick<WaybillRequest, "id" | "tradeAct" | "representative" | "validUntil" | "replaceWaybillNo">>;
+  Partial<Pick<WaybillRequest, "id" | "tradeAct" | "representative" | "validUntil" | "replaceWaybillNo" | "kind">>;
 
 /**
  * Cits pieprasījums ar to pašu numuru jau ir darbā vai tikko izdots (vēl derīgs) - dublikāts / numurs faktiski aizņemts,
@@ -130,6 +130,7 @@ export function classifyWaybillForAuto(
   opts: { plateBusyNow: boolean; plateInOtherRequest?: boolean; nowMs?: number; replaceEnabled?: boolean },
 ): AutoWaybillClassification {
   const nowMs = opts.nowMs ?? Date.now();
+  if (req.kind === "stop") return { standard: false, reason: "pārtraukt" };
   if (req.status !== "queued") return { standard: false, reason: "nav rindā" };
   if (req.autoDisabled) return { standard: false, reason: "nodots Aivaram" };
   // Aizņemts numurs nozīmē beigt aktīvu pavadzīmi. Automātikai tikai, ja lietotājs apstiprināja tieši šo pavadzīmi

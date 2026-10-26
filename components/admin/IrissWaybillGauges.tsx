@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { IrissWaybillGaugeDetail } from "@/components/admin/IrissWaybillGaugeDetail";
+import { IrissWaybillStopConfirm } from "@/components/admin/IrissWaybillStopConfirm";
+import { useWaybillStop } from "@/components/admin/useWaybillStop";
 import styles from "@/components/admin/IrissWaybillGauges.module.css";
-import { formatWaybillExpiryDdMmHm } from "@/lib/iriss-pavadzimes-countdown";
 import type { IrissPavadzimeListRow } from "@/lib/iriss-pavadzimes-types";
-import { formatWaybillLeft, irissWaybillGauges, waybillGaugesFromPlates, type WaybillGauge } from "@/lib/iriss-waybill-gauges";
+import { irissWaybillGauges, waybillGaugesFromPlates, type WaybillGauge } from "@/lib/iriss-waybill-gauges";
 import { waybillHomeRingColor } from "@/lib/iriss-waybill-home-ring";
 import { WAYBILL_PLATES_EVENT } from "@/lib/iriss-waybill-live-plates";
 import type { WaybillPlateState } from "@/lib/iriss-waybill-plates";
@@ -43,6 +45,9 @@ export function IrissWaybillGauges({
   allHref = "/admin/iriss/pavadzimes",
   chrome = "card",
   href,
+  onExtend,
+  onStop,
+  onOpenPdf,
 }: {
   size?: "mobile" | "sidebar";
   /** Saite "Visas ›"; null = nerādīt (pašā pavadzīmju lapā tā vestu uz to pašu lapu). */
@@ -51,11 +56,15 @@ export function IrissWaybillGauges({
   chrome?: "card" | "float";
   /** Ja ir, viss vidžets ir viena saite (bez atsevišķiem apļu klikšķiem). */
   href?: string | null;
+  onExtend?: (gauge: WaybillGauge) => void;
+  onStop?: (gauge: WaybillGauge) => void;
+  onOpenPdf?: (gauge: WaybillGauge) => void;
 }) {
   const [rows, setRows] = useState<IrissPavadzimeListRow[] | null>(null);
   const [plates, setPlates] = useState<WaybillPlateState[] | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [open, setOpen] = useState<string | null>(null);
+  const stop = useWaybillStop();
 
   useEffect(() => {
     let cancelled = false;
@@ -213,22 +222,33 @@ export function IrissWaybillGauges({
       )}
       {row}
       {active ? (
-        <div className={styles.detail}>
-          <p className="truncate text-[13px] font-semibold">{active.brandModel || active.plate}</p>
-          <p className="text-[12px]">
-            Līdz {formatWaybillExpiryDdMmHm(active.validUntil)} · atlikušas {formatWaybillLeft(active.validUntil, now)}
-          </p>
-          {active.id ? (
-            <a
-              className={styles.pdf}
-              href={`/api/admin/iriss-pavadzimes/${encodeURIComponent(active.id)}/pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Atvērt PDF{active.number ? ` · Nr. ${active.number}` : ""}
-            </a>
-          ) : null}
-        </div>
+        <IrissWaybillGaugeDetail
+          active={active}
+          now={now}
+          onOpenPdf={onOpenPdf}
+          onExtend={
+            onExtend ??
+            ((g) => {
+              window.location.assign(`/admin/iriss/pavadzimes?extend=${encodeURIComponent(g.id)}`);
+            })
+          }
+          onStop={
+            onStop ??
+            ((g) => {
+              if (!g.id || !g.number) return;
+              stop.ask({ id: g.id, number: g.number, plate: g.plate });
+            })
+          }
+        />
+      ) : null}
+      {stop.target ? (
+        <IrissWaybillStopConfirm
+          target={stop.target}
+          busy={stop.busy}
+          error={stop.error}
+          onYes={() => void stop.confirm()}
+          onNo={stop.cancel}
+        />
       ) : null}
     </section>
   );

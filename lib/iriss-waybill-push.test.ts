@@ -33,6 +33,9 @@ describe("pavadzīmes push paziņojums", () => {
     );
     expect(check?.title).toBe("Pārbaudi pavadzīmi");
     expect(waybillPushMessage({ status: "issued" }, after)).toBeNull();
+    const stopped = waybillPushMessage({ status: "in_progress" }, { ...after, kind: "stop" });
+    expect(stopped?.title).toBe("Pavadzīme pārtraukta");
+    expect(stopped?.body).toContain("Numurs atbrīvots");
     expect(waybillPushMessage({ status: "queued" }, { ...after, status: "in_progress" })).toBeNull();
   });
 });

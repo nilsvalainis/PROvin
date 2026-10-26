@@ -30,7 +30,7 @@ export const WAYBILL_WORKER_STAGE_TEXT: Record<WaybillWorkerStage, string> = {
   claimed: "Automātika paņēma darbā.",
   vpn: "Gaida CSDD savienojumu (VPN).",
   checking: "Pārbauda numuru CSDD...",
-  annulling: "Anulē iepriekšējo pavadzīmi CSDD...",
+  annulling: "Pārtrauc iepriekšējo pavadzīmi CSDD...",
   filling: "Aizpilda CSDD formu...",
   saving: "Saglabā CSDD...",
   pdf: "Saglabāta CSDD, ielādē PDF...",
@@ -117,10 +117,14 @@ export type WaybillRequest = {
   /** Numurs bija aizņemts, kad pieprasījums ienāca (confirmBusy). Automātikai tikai kā "anulēt un izveidot" (replaceWaybillNo). */
   plateBusyAtCreate: boolean;
   /**
-   * Lietotājs apstiprināja "Vai tiešām anulēt iepriekšējo un izveidot jaunu?" - TIKAI šī pavadzīme (P0xxxx) drīkst tikt
-   * anulēta. Tukšs = nekas netiek anulēts.
+   * Lietotājs apstiprināja "Vai tiešām pārtraukt iepriekšējo un izveidot jaunu?" - TIKAI šī pavadzīme (P0xxxx) drīkst tikt
+   * pārtraukta (CSDD «Pārtraukt»). Tukšs = nekas netiek pārtraukts.
    */
   replaceWaybillNo?: string;
+  /** create = jauna pavadzīme; stop = tikai CSDD «Pārtraukt» šim numuram, bez jaunas izdošanas. */
+  kind?: "create" | "stop";
+  /** Pārtraucamā pavadzīme (kind=stop). CSDD P0xxxx. */
+  stopWaybillNo?: string;
   /** Automātika darbu nodeva Aivaram; to vairs automātiski neņem. */
   autoDisabled: boolean;
   /** Auto ir tirdzniecībā pieņemts: pavadzīme no akta ("Noformēt pavadzīmi"), bez maršruta. */
@@ -219,6 +223,8 @@ export function parseWaybillRequest(raw: unknown): WaybillRequest | null {
     pickedAt: str(o.pickedAt, 40),
     plateBusyAtCreate: o.plateBusyAtCreate === true,
     replaceWaybillNo: /^P\d{5,6}$/.test(str(o.replaceWaybillNo, 12).toUpperCase()) ? str(o.replaceWaybillNo, 12).toUpperCase() : "",
+    kind: o.kind === "stop" ? "stop" : "create",
+    stopWaybillNo: /^P\d{5,6}$/.test(str(o.stopWaybillNo, 12).toUpperCase()) ? str(o.stopWaybillNo, 12).toUpperCase() : "",
     autoDisabled: o.autoDisabled === true,
     tradeAct: o.tradeAct === true,
     representative: o.tradeAct === true ? str(o.representative, 60) : "",
@@ -577,7 +583,15 @@ export function waybillAivarsReply(
   return {
     requestId: request.id,
     status: request.status,
-    statusLabel: stale ? WAYBILL_STALE_LABEL : WAYBILL_REQUEST_STATUS_LABEL[request.status],
+    statusLabel: stale
+      ? WAYBILL_STALE_LABEL
+      : request.kind === "stop"
+        ? request.status === "issued"
+          ? "Pārtraukta"
+          : request.status === "in_progress"
+            ? "Pārtrauc"
+            : WAYBILL_REQUEST_STATUS_LABEL[request.status]
+        : WAYBILL_REQUEST_STATUS_LABEL[request.status],
     text,
     waybillNo: request.waybillNo || last?.waybillNo || "",
     pdfUrl: request.pdfUrl || last?.pdfUrl || "",

@@ -87,6 +87,10 @@ describe("aizsardzība: nekad nepārtrauc / neanulē", () => {
       }
     }
     expect(isClickAllowed({ text: "Saglabāt", onclick: "doAnul()" }, "save").allowed).toBe(false);
+    expect(isClickAllowed({ text: "Paziņot klientam" }, "save").allowed).toBe(false);
+    expect(isClickAllowed({ text: "Anulēt" }, "annul").allowed).toBe(false);
+    expect(isClickAllowed({ text: "Paziņot klientam" }, "annul").allowed).toBe(false);
+    expect(isClickAllowed({ text: "Pārtraukt!" }, "annul").allowed).toBe(true);
   });
 
   it("allows Saglabāt only in the save phase", () => {

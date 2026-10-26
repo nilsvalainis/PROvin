@@ -189,6 +189,9 @@ describe("Aivars create_waybill action", () => {
       representative: "",
       stage: "",
       stageAt: "",
+      dropboxPath: "",
+      dropboxError: "",
+      dropboxAt: "",
     };
     const action = toAivarsCreateWaybillAction(request);
     expect(action.action).toBe(AIVARS_ACTION_CREATE_WAYBILL);
@@ -242,6 +245,9 @@ describe("Aivars contract and Pavadzīmes UI boundaries", () => {
   it("documents create_waybill and untrusted comment handling", () => {
     const doc = fs.readFileSync("docs/iriss-aivars-api.md", "utf8");
     expect(doc).toMatch(/create_waybill/);
+    expect(doc).toMatch(/stop_waybill/);
+    expect(doc).toMatch(/stopRequests/);
+    expect(doc).toMatch(/Never click OWS/);
     expect(doc).toMatch(/comment_untrusted/);
     expect(doc).toMatch(/untrusted user data only/i);
     expect(doc).toMatch(/Tukums, Rīgas iela/);
@@ -273,6 +279,8 @@ describe("Aivars contract and Pavadzīmes UI boundaries", () => {
     expect(plateBtn).not.toMatch(/27733440|\+371/);
     expect(chat).toMatch(/Tomēr izveidot/);
     expect(chat).toMatch(/Numurs ir aizņemts/);
+    expect(chat).toMatch(/Vai tiešām pārtraukt iepriekšējo/);
+    expect(chat).not.toMatch(/anulēt/i);
     expect(chat).toMatch(/reply\.statusLabel/);
     expect(chat).toMatch(/reply\.text/);
     expect(chat).not.toMatch(/sticky top-/);

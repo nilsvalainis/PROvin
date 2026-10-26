@@ -27,6 +27,14 @@ import {
 } from "@/lib/iriss-waybill-requests";
 import { displayDealerPlate } from "@/lib/iriss-waybill-plates";
 import { saveCsddPlatesReport } from "@/lib/iriss-waybill-csdd-plates-store";
+import {
+  isWaybillCsddNo,
+  isWaybillStopRequest,
+  normalizeWaybillCsddNo,
+  pendingStopForWaybill,
+  WAYBILL_STOP_DONE_TEXT,
+  WAYBILL_STOP_QUEUED_TEXT,
+} from "@/lib/iriss-waybill-stop";
 
 const DOC_KEY = "queue";
 
@@ -126,6 +134,8 @@ export async function createWaybillRequest(input: {
     pickedBy: "",
     pickedAt: "",
     plateBusyAtCreate: input.plateBusyAtCreate === true,
+    kind: "create",
+    stopWaybillNo: "",
     replaceWaybillNo:
       input.plateBusyAtCreate === true && /^P\d{5,6}$/.test(String(input.replaceWaybillNo || "").toUpperCase())
         ? String(input.replaceWaybillNo).toUpperCase()
@@ -165,12 +175,106 @@ export async function createWaybillRequest(input: {
       routeFrom: request.routeFrom,
       routeTo: request.routeTo,
       tradeAct: request.tradeAct,
-      // Lietotāja apstiprinātā anulējamā pavadzīme ("Vai tiešām anulēt iepriekšējo..." -> Jā); tukšs = nekas.
+      // Lietotāja apstiprinātā pārtraucamā pavadzīme ("Vai tiešām pārtraukt iepriekšējo..." -> Jā); tukšs = nekas.
       replaceWaybillNo: request.replaceWaybillNo ?? "",
       noteUntrusted: request.noteUntrusted.slice(0, 200),
     },
   });
   return request;
+}
+
+export type QueueWaybillStopInput = {
+  createdBy: string;
+  createdByName: string;
+  waybillNo: string;
+  plate: string;
+  brandModel: string;
+  vin?: string;
+  orderId?: string;
+  validFrom?: string;
+  validUntil?: string;
+};
+
+export type QueueWaybillStopResult =
+  | { ok: true; request: WaybillRequest; alreadyQueued: boolean }
+  | { ok: false; reason: "pending"; pending: WaybillRequest }
+  | { ok: false; reason: "invalid_number" };
+
+/**
+ * Rinda Aivaram: CSDD «Pārtraukt» šo pavadzīmi, bez jaunas izdošanas.
+ * Automātika šo darbu neņem. Dubults POST atgriež to pašu pieprasījumu.
+ */
+export async function queueWaybillStop(input: QueueWaybillStopInput): Promise<QueueWaybillStopResult> {
+  const waybillNo = normalizeWaybillCsddNo(input.waybillNo);
+  if (!isWaybillCsddNo(waybillNo)) return { ok: false, reason: "invalid_number" };
+  const plate = displayDealerPlate(input.plate) || input.plate.trim().toUpperCase();
+  const now = new Date().toISOString();
+  const validUntil = input.validUntil?.trim() || now;
+  const result = await mutateDoc<QueueWaybillStopResult>((doc) => {
+    const existing = pendingStopForWaybill(doc.requests, waybillNo);
+    if (existing) return { value: { ok: true, request: existing, alreadyQueued: true } };
+    const pending = pendingWaybillRequestForPlate(doc.requests, plate);
+    if (pending) return { value: { ok: false, reason: "pending", pending } };
+    const request: WaybillRequest = {
+      id: newId("wbr"),
+      createdBy: input.createdBy,
+      createdByName: input.createdByName.slice(0, 120),
+      createdAt: now,
+      updatedAt: now,
+      vehicle: {
+        brandModel: input.brandModel.slice(0, 120),
+        vin: (input.vin ?? "").trim().toUpperCase().slice(0, 17),
+        plate,
+        orderId: (input.orderId ?? "").slice(0, 80),
+      },
+      routeFrom: "",
+      routeTo: "",
+      validDays: 1,
+      validHours: 1,
+      validFrom: input.validFrom?.trim() || now,
+      validUntil,
+      noteUntrusted: "",
+      status: "queued",
+      waybillNo: "",
+      pdfUrl: "",
+      errorReason: "",
+      lastReplyText: WAYBILL_STOP_QUEUED_TEXT,
+      attempts: 1,
+      pickedBy: "",
+      pickedAt: "",
+      plateBusyAtCreate: true,
+      replaceWaybillNo: "",
+      kind: "stop",
+      stopWaybillNo: waybillNo,
+      autoDisabled: true,
+      tradeAct: false,
+      representative: "",
+      stage: "",
+      stageAt: "",
+      dropboxPath: "",
+      dropboxError: "",
+      dropboxAt: "",
+    };
+    let next: WaybillRequestsDoc = { ...doc, requests: [request, ...doc.requests].slice(0, 2000) };
+    next = pushEvent(next, {
+      requestId: request.id,
+      kind: "received",
+      text: WAYBILL_STOP_QUEUED_TEXT,
+      waybillNo,
+      pdfUrl: "",
+      by: input.createdBy,
+    });
+    return { value: { ok: true, request, alreadyQueued: false }, next };
+  });
+  if (result.ok && !result.alreadyQueued) {
+    await recordWaybillAudit({
+      userId: input.createdBy,
+      action: "waybill_requested",
+      target: result.request.id,
+      meta: { kind: "stop", waybillNo, plate, brandModel: input.brandModel.slice(0, 120) },
+    });
+  }
+  return result;
 }
 
 export async function retryWaybillRequest(input: {
@@ -528,11 +632,15 @@ export async function completeWaybillRequest(input: {
   validFrom?: string;
   validUntil?: string;
 }): Promise<WaybillRequest | null> {
+  const current = (await readWaybillRequestsDoc()).requests.find((row) => row.id === input.id);
+  const stop = current ? isWaybillStopRequest(current) : false;
   const result = await appendWaybillRequestEvent({
     id: input.id,
     kind: input.ok ? "issued" : "error",
     text: input.ok
-      ? `Izdota ${input.waybillNo ?? ""}`.trim()
+      ? stop
+        ? `${WAYBILL_STOP_DONE_TEXT}${input.waybillNo ? ` ${input.waybillNo}` : ""}`.trim()
+        : `Izdota ${input.waybillNo ?? ""}`.trim()
       : input.errorReason || "Kļūda",
     waybillNo: input.waybillNo,
     pdfUrl: input.pdfUrl,
@@ -550,9 +658,13 @@ export async function completeWaybillRequest(input: {
         ok: input.ok,
         waybillNo: result.waybillNo,
         errorReason: result.errorReason.slice(0, 200),
+        kind: result.kind ?? "create",
       },
     });
-    if (input.ok) await refreshCsddPlateSnapshot(result);
+    if (input.ok) {
+      if (isWaybillStopRequest(result)) await refreshCsddPlateSnapshotCleared(result);
+      else await refreshCsddPlateSnapshot(result);
+    }
   }
   return result;
 }
@@ -562,6 +674,25 @@ export async function completeWaybillRequest(input: {
  * cikla, bet aplim "aizņemts" jārāda uzreiz pēc izdošanas - tāpēc paši ieliekam svaigu ierakstu, nevis gaidām.
  * Kļūda nav fatāla (momentuzņēmums tad vienkārši paliek vecs līdz nākamajam sync.js ciklam).
  */
+/** Pēc CSDD «Pārtraukt»: numurs vairs nav aizņemts (aplis atbrīvojas pirms nākamā sync.js). */
+async function refreshCsddPlateSnapshotCleared(request: WaybillRequest): Promise<void> {
+  const plate = displayDealerPlate(request.vehicle.plate);
+  if (!plate) return;
+  try {
+    await saveCsddPlatesReport([
+      {
+        plate,
+        ok: true,
+        checkedAt: new Date().toISOString(),
+        active: [],
+        error: "",
+      },
+    ]);
+  } catch (err) {
+    console.error("[iriss-waybill] csdd_snapshot_clear_failed", err instanceof Error ? err.message : err);
+  }
+}
+
 async function refreshCsddPlateSnapshot(request: WaybillRequest): Promise<void> {
   const plate = displayDealerPlate(request.vehicle.plate);
   if (!plate || !request.waybillNo) return;

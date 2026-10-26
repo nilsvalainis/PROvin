@@ -3,13 +3,15 @@
 import { ChevronLeft, ChevronRight, FileText, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { AdminPushToggle } from "@/components/admin/AdminPushToggle";
 import { IrissKomandaAivaramChat } from "@/components/admin/IrissKomandaAivaramChat";
 import { IrissWaybillCalendar } from "@/components/admin/IrissWaybillCalendar";
 import { IrissWaybillGauges } from "@/components/admin/IrissWaybillGauges";
+import { IrissWaybillStopConfirm } from "@/components/admin/IrissWaybillStopConfirm";
+import { useWaybillStop } from "@/components/admin/useWaybillStop";
 import { IrissWaybillRequestArchive } from "@/components/admin/IrissWaybillMobileForm";
 import { IrissWaybillPdfSheet } from "@/components/admin/IrissWaybillPdfSheet";
 import { IrissVpnControl } from "@/components/admin/IrissVpnControl";
@@ -93,15 +95,30 @@ function dash(v: string): string {
   return v.trim() || "-";
 }
 
-function PavadzimeSearchFocus({ rowCount }: { rowCount: number }) {
+function PavadzimeSearchFocus({
+  rows,
+  onExtend,
+}: {
+  rows: IrissPavadzimeListRow[];
+  onExtend: (row: IrissPavadzimeListRow) => void;
+}) {
   const sp = useSearchParams();
+  const appliedExtend = useRef("");
   useEffect(() => {
     const id = sp.get("wb")?.trim() ?? "";
     if (!/^[A-Za-z0-9._-]{1,80}$/.test(id)) return;
     const nodes = document.querySelectorAll<HTMLElement>(`[data-pavadzime="${id}"]`);
     const visible = [...nodes].find((n) => n.getClientRects().length > 0);
     visible?.scrollIntoView({ block: "center" });
-  }, [sp, rowCount]);
+  }, [sp, rows.length]);
+  useEffect(() => {
+    const id = sp.get("extend")?.trim() ?? "";
+    if (!/^[A-Za-z0-9._-]{1,80}$/.test(id) || appliedExtend.current === id) return;
+    const row = rows.find((r) => r.id === id);
+    if (!row) return;
+    appliedExtend.current = id;
+    onExtend(row);
+  }, [sp, rows, onExtend]);
   return null;
 }
 
@@ -120,22 +137,32 @@ export function IrissPavadzimesListClient({
   const [extendVehicle, setExtendVehicle] = useState<WaybillVehicleChip | null>(null);
   const [pdfPreview, setPdfPreview] = useState<{ href: string; title: string } | null>(null);
   const [historyVin, setHistoryVin] = useState<string | null>(null);
+  const refreshRef = useRef<() => Promise<unknown>>(async () => undefined);
+  const stop = useWaybillStop(() => {
+    void refreshRef.current().catch(() => undefined);
+  });
+
+  const chipFromRow = (row: IrissPavadzimeListRow): WaybillVehicleChip => ({
+    chip: row.brandModel.split(/\s+/).slice(0, 2).join(" ") || row.number,
+    brandModel: row.brandModel,
+    vin: row.vin,
+    plate: row.plate,
+    orderId: row.order?.id ?? "",
+  });
 
   /** Atkārtot ar vienu pieskārienu: Aivara pieprasījums aizpildīts ar to pašu numuru, auto un VIN. */
   const repeatWaybill = (row: IrissPavadzimeListRow) => {
-    setExtendVehicle({
-      chip: row.brandModel.split(/\s+/).slice(0, 2).join(" ") || row.number,
-      brandModel: row.brandModel,
-      vin: row.vin,
-      plate: row.plate,
-      orderId: row.order?.id ?? "",
-    });
+    setExtendVehicle(chipFromRow(row));
     if (isPhoneViewport()) setView("current");
     window.setTimeout(() => document.getElementById("komanda-aivaram")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
   const openPdf = (row: IrissPavadzimeListRow) =>
     setPdfPreview({ href: `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`, title: `${row.number || "Pavadzīme"} · ${row.brandModel}`.trim() });
   const onDraftConsumed = useCallback(() => setExtendVehicle(null), []);
+  const askStop = (row: Pick<IrissPavadzimeListRow, "id" | "number" | "plate">) => {
+    if (!row.id || !row.number) return;
+    stop.ask({ id: row.id, number: row.number, plate: row.plate });
+  };
 
   useEffect(() => {
     setData(initial);
@@ -176,6 +203,7 @@ export function IrissPavadzimesListClient({
     setData(json);
     return json;
   }, []);
+  refreshRef.current = refresh;
 
   useEffect(() => {
     if (data.pendingParse <= 0) return;
@@ -196,7 +224,7 @@ export function IrissPavadzimesListClient({
         <AdminMobileTopBar title="Pavadzīmes" />
       </div>
       <Suspense fallback={null}>
-        <PavadzimeSearchFocus rowCount={rows.length} />
+        <PavadzimeSearchFocus rows={data.rows} onExtend={(row) => setExtendVehicle(chipFromRow(row))} />
       </Suspense>
       <div className="mt-2 flex max-w-full flex-wrap items-center gap-2 max-md:hidden">
         <div className="inline-flex min-w-0 items-stretch rounded-lg bg-[#e9e9ee] p-0.5 max-md:w-full" role="tablist" aria-label="Pavadzīmju filtrs">
@@ -238,7 +266,18 @@ export function IrissPavadzimesListClient({
         <div className={`min-w-0 ${view === "current" ? "max-md:px-4" : ""}`}>
       {view === "current" ? (
         <div className="md:hidden">
-          <IrissWaybillGauges allHref={null} />
+          <IrissWaybillGauges
+            allHref={null}
+            onExtend={(g) => {
+              const row = data.rows.find((r) => r.id === g.id);
+              if (row) setExtendVehicle(chipFromRow(row));
+            }}
+            onStop={(g) => askStop({ id: g.id, number: g.number, plate: g.plate })}
+            onOpenPdf={(g) => {
+              const row = data.rows.find((r) => r.id === g.id);
+              if (row) openPdf(row);
+            }}
+          />
         </div>
       ) : null}
       {view === "calendar" ? (
@@ -279,7 +318,7 @@ export function IrissPavadzimesListClient({
                   <p className={`mt-1 text-right text-[12px] font-medium ${dayClass}`}>
                     {days === null ? "" : days <= 0 ? "beigusies" : `vēl ${days} d.`}
                   </p>
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       type="button"
                       onClick={() => openPdf(row)}
@@ -290,18 +329,17 @@ export function IrissPavadzimesListClient({
                     </button>
                     <button
                       type="button"
-                      onClick={() =>
-                        setExtendVehicle({
-                          chip: row.brandModel.split(/\s+/).slice(0, 2).join(" ") || row.number,
-                          brandModel: row.brandModel,
-                          vin: row.vin,
-                          plate: row.plate,
-                          orderId: row.order?.id ?? "",
-                        })
-                      }
+                      onClick={() => setExtendVehicle(chipFromRow(row))}
                       className="inline-flex min-h-11 items-center rounded-full border border-[#E5E7EB] px-3 text-[13px] font-medium"
                     >
                       Pagarināt
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => askStop(row)}
+                      className="inline-flex min-h-11 items-center rounded-full border border-[#DC2626] px-3 text-[13px] font-medium text-[#DC2626]"
+                    >
+                      Pārtraukt
                     </button>
                     {row.vin ? (
                       <button
@@ -531,6 +569,15 @@ export function IrissPavadzimesListClient({
               Arhīvs ({viewCount("archive")}) ›
             </button>
           </div>
+        ) : null}
+        {stop.target ? (
+          <IrissWaybillStopConfirm
+            target={stop.target}
+            busy={stop.busy}
+            error={stop.error}
+            onYes={() => void stop.confirm()}
+            onNo={stop.cancel}
+          />
         ) : null}
         <IrissWaybillPdfSheet href={pdfPreview?.href ?? null} title={pdfPreview?.title ?? ""} onClose={() => setPdfPreview(null)} />
         <AdminMobileSheet open={Boolean(historyVin)} title="Pavadzīmes šim auto" subtitle={historyVin ?? ""} onClose={() => setHistoryVin(null)}>

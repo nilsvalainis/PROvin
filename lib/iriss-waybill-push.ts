@@ -29,13 +29,17 @@ export function waybillPushUserKey(createdBy: string): string {
 /** Ziņa tikai, kad statuss tikko kļuva par Izdota vai Kļūda. */
 export function waybillPushMessage(
   before: Pick<WaybillRequest, "status">,
-  after: Pick<WaybillRequest, "id" | "status" | "vehicle" | "validUntil" | "errorReason">,
+  after: Pick<WaybillRequest, "id" | "status" | "vehicle" | "validUntil" | "errorReason"> &
+    Partial<Pick<WaybillRequest, "kind">>,
 ): AdminPushMessage | null {
   const changed = (s: WaybillRequestStatus) => after.status === s && before.status !== s;
   const car = after.vehicle.brandModel.trim() || "Auto";
   const plate = displayDealerPlate(after.vehicle.plate) || after.vehicle.plate;
   const head = [car, plate].filter(Boolean).join(" · ");
   const base = { url: WAYBILL_PUSH_URL, tag: `waybill-${after.id}`, audience: "iriss" as const };
+  if (changed("issued") && after.kind === "stop") {
+    return { ...base, title: "Pavadzīme pārtraukta", body: `${head}. Numurs atbrīvots.` };
+  }
   if (changed("issued")) {
     const until = formatRigaDateTimeComma(after.validUntil);
     return {

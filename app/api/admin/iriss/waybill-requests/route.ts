@@ -86,7 +86,7 @@ function confirmBusy(body: unknown): boolean {
   return Boolean(body && typeof body === "object" && !Array.isArray(body) && (body as { confirmBusy?: unknown }).confirmBusy === true);
 }
 
-/** Pavadzīme, ko lietotājs apstiprināja anulēt (redzēja logā). Tukšs - vecs klients. */
+/** Pavadzīme, ko lietotājs apstiprināja pārtraukt (redzēja logā). Tukšs - vecs klients. */
 function confirmedWaybillNo(body: unknown): string {
   const v = body && typeof body === "object" ? (body as { confirmWaybillNo?: unknown }).confirmWaybillNo : "";
   return typeof v === "string" ? v.trim().toUpperCase().slice(0, 12) : "";
@@ -179,7 +179,7 @@ export async function POST(req: Request) {
       createdByName,
       payload: parsed.value,
       plateBusyAtCreate: Boolean(occupancy?.busy),
-      // "Vai tiešām anulēt iepriekšējo un izveidot jaunu?" -> Jā: anulēt drīkst TIKAI šo (tobrīd redzamo) pavadzīmi.
+      // "Vai tiešām pārtraukt iepriekšējo un izveidot jaunu?" -> Jā: pārtraukt drīkst TIKAI šo (tobrīd redzamo) pavadzīmi.
       replaceWaybillNo: occupancy?.busy ? (occupancy.current?.number ?? "") : "",
     });
     const doc = await readWaybillRequestsDoc();

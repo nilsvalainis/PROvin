@@ -28,6 +28,7 @@ const {
   claimWaybillRequest,
   appendWaybillRequestEvent,
   completeWaybillRequest,
+  queueWaybillStop,
   readWaybillRequestsDoc,
   listPendingWaybillRequests,
 } = await import("@/lib/iriss-waybill-requests-store");
@@ -63,6 +64,9 @@ const sample = (over: Partial<WaybillRequest>): WaybillRequest => ({
   representative: "Nils Valainis",
   stage: "",
   stageAt: "",
+  dropboxPath: "",
+  dropboxError: "",
+  dropboxAt: "",
   ...over,
 });
 
@@ -237,5 +241,66 @@ describe("readWaybillRequestsDoc legacy time fix (j57: P00746)", () => {
     const before = JSON.stringify(mem.doc);
     await readWaybillRequestsDoc();
     expect(JSON.stringify(mem.doc)).toBe(before);
+  });
+});
+
+describe("queueWaybillStop (Pārtraukt)", () => {
+  beforeEach(() => seed([]));
+
+  it("queues one Aivars stop job and reuses it on a second POST", async () => {
+    const first = await queueWaybillStop({
+      createdBy: "usr_1",
+      createdByName: "Nils",
+      waybillNo: "P02819",
+      plate: "B193-7",
+      brandModel: "VW Golf",
+      validUntil: future,
+    });
+    expect(first).toMatchObject({ ok: true, alreadyQueued: false, request: { kind: "stop", stopWaybillNo: "P02819", autoDisabled: true } });
+    const second = await queueWaybillStop({
+      createdBy: "usr_1",
+      createdByName: "Nils",
+      waybillNo: "P02819",
+      plate: "B193-7",
+      brandModel: "VW Golf",
+      validUntil: future,
+    });
+    expect(second.ok).toBe(true);
+    if (!first.ok || !second.ok) return;
+    expect(second.alreadyQueued).toBe(true);
+    expect(second.request.id).toBe(first.request.id);
+    expect((await readWaybillRequestsDoc()).requests.filter((r) => r.kind === "stop")).toHaveLength(1);
+    expect(mem.audits).toEqual([{ action: "waybill_requested", target: first.request.id }]);
+  });
+
+  it("does not queue a stop while another request holds the plate", async () => {
+    seed([sample({ id: "wbr_create", status: "queued" })]);
+    const res = await queueWaybillStop({
+      createdBy: "usr_1",
+      createdByName: "Nils",
+      waybillNo: "P02819",
+      plate: "B193-7",
+      brandModel: "VW Golf",
+      validUntil: future,
+    });
+    expect(res).toMatchObject({ ok: false, reason: "pending", pending: { id: "wbr_create" } });
+  });
+
+  it("on success clears the CSDD snapshot instead of keeping the stopped waybill active", async () => {
+    seed([
+      sample({
+        id: "wbr_stop",
+        kind: "stop",
+        stopWaybillNo: "P02819",
+        status: "in_progress",
+        pickedBy: "aivars",
+        pickedAt: now,
+      }),
+    ]);
+    const done = await completeWaybillRequest({ id: "wbr_stop", ok: true, waybillNo: "P02819", by: "aivars" });
+    expect(done).toMatchObject({ status: "issued", lastReplyText: "Pārtraukta CSDD. P02819" });
+    expect(saveCsddPlatesReport).toHaveBeenCalledWith([
+      expect.objectContaining({ plate: "B193-7", ok: true, active: [] }),
+    ]);
   });
 });

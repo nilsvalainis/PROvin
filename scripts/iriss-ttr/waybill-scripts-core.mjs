@@ -9,7 +9,7 @@ import path from "node:path";
 
 /** Pārtraukt / anulēt / beigt / dzēst / atcelt. Elementu ar tādu tekstu, value, id, name, title vai onclick nespiež nekad. */
 export const FORBIDDEN_ACTION_RE =
-  /p[aā]rtrauk|partrauk|anul|annul|beigt|beidz|termin[aā]t|terminat|dz[eē]s|delete|remove|cancel|atcel|nonem|noņem|izbeig|stop/i;
+  /p[aā]rtrauk|partrauk|anul|annul|beigt|beidz|termin[aā]t|terminat|dz[eē]s|delete|remove|cancel|atcel|nonem|noņem|izbeig|stop|pazi[nņ]ot|notify/i;
 
 /** Tīklā: pieprasījums ar šiem vārdiem adresē vai saturā nekad netiek sūtīts. */
 export const FORBIDDEN_REQUEST_RE = /p[aā]rtrauk|partrauk|anul|annul|termin[aā]t|terminat|izbeig|beigt/i;
@@ -20,7 +20,7 @@ export const SAVE_ACTION_RE = /saglab|save|apstiprin|iesniegt|iesūt|iesut|submi
 /** Vienīgā poga pārtraukšanas fāzē (CSDD pavadzīmes kartīte -> lapv_par -> "Pārtraukt!"). */
 export const ANNUL_BUTTON_RE = /^p[aā]rtraukt!?$/i;
 /** Arī pārtraukšanas fāzē nekad: dzēšana, akta anulēšana u.c. */
-export const ANNUL_NEVER_RE = /anul|annul|dz[eē]s|delete|remove|lapt_/i;
+export const ANNUL_NEVER_RE = /anul|annul|dz[eē]s|delete|remove|lapt_|pazi[nņ]ot|notify/i;
 
 /** PDF/drukas vadīklas (tikai pēc saglabāšanas). */
 export const PDF_ACTION_RE = /druk|pdf|lejupiel|izdruk|print|download/i;

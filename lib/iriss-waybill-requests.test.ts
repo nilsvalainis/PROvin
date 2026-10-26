@@ -11,6 +11,7 @@ import {
   waybillChatTimeline,
   waybillChatTimelineNewestFirst,
   waybillSoonTone,
+  WAYBILL_WORKER_STAGE_TEXT,
   withWaybillLegacyTimeFixes,
   type WaybillRequest,
   type WaybillRequestsDoc,
@@ -221,6 +222,11 @@ describe("honest status (cancel, test mode, expiry)", () => {
       expired: true,
     });
     expect(waybillAivarsReply(q({ status: "cancelled" }), [], nowMs)).toMatchObject({ statusLabel: "Atcelts", text: "Atcelts." });
+    expect(waybillAivarsReply(q({ kind: "stop", stopWaybillNo: "P02819", status: "queued", lastReplyText: "Saņemts. Pārtrauc CSDD (Aivars)." }), [], nowMs)).toMatchObject({
+      statusLabel: "Gaida",
+      text: "Saņemts. Pārtrauc CSDD (Aivars).",
+    });
+    expect(waybillAivarsReply(q({ kind: "stop", status: "issued", lastReplyText: "Pārtraukta CSDD." }), [], nowMs).statusLabel).toBe("Pārtraukta");
     expect(waybillAivarsReply(q({ status: "in_progress", pickedAt: "2026-10-23T12:29:00.000Z", stage: "saving" }), [], nowMs)).toMatchObject({
       statusLabel: "Izveido",
       text: "Saglabā CSDD...",
@@ -237,6 +243,13 @@ describe("honest status (cancel, test mode, expiry)", () => {
 
   it("parses cancelled status and worker stage; unknown stage is dropped", () => {
     expect(parseWaybillRequest({ ...sample(), status: "cancelled", stage: "vpn" })).toMatchObject({ status: "cancelled", stage: "vpn" });
+    expect(parseWaybillRequest({ ...sample(), kind: "stop", stopWaybillNo: "P02819" })).toMatchObject({
+      kind: "stop",
+      stopWaybillNo: "P02819",
+    });
+    expect(parseWaybillRequest(sample())?.kind).toBe("create");
+    expect(WAYBILL_WORKER_STAGE_TEXT.annulling).toBe("Pārtrauc iepriekšējo pavadzīmi CSDD...");
+    expect(WAYBILL_WORKER_STAGE_TEXT.annulling).not.toMatch(/anul/i);
     expect(parseWaybillRequest({ ...sample(), stage: "partraukt" })?.stage).toBe("");
   });
 
