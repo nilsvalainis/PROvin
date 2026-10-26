@@ -185,7 +185,7 @@ export async function POST(req: Request) {
     const doc = await readWaybillRequestsDoc();
     const classified = classifyWaybillForAuto(request, {
       plateBusyNow: Boolean(occupancy?.busy),
-      plateInOtherRequest: plateTakenByOtherRequest(doc.requests, request),
+      plateInOtherRequest: plateTakenByOtherRequest(doc.requests, request, Date.now(), Boolean(occupancy?.busy)),
       replaceEnabled: autoWaybillReplaceEnabled(),
     });
     const auto = await waybillAutoContext(doc, busyFromPlates(plates));

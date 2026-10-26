@@ -7,7 +7,7 @@ import { IrissWaybillStopConfirm } from "@/components/admin/IrissWaybillStopConf
 import { useWaybillStop } from "@/components/admin/useWaybillStop";
 import styles from "@/components/admin/IrissWaybillGauges.module.css";
 import type { IrissPavadzimeListRow } from "@/lib/iriss-pavadzimes-types";
-import { irissWaybillGauges, waybillGaugesFromPlates, type WaybillGauge } from "@/lib/iriss-waybill-gauges";
+import { irissWaybillGauges, waybillGaugesFromPlates, waybillHomeCarText, waybillHomeCarTitle, type WaybillGauge } from "@/lib/iriss-waybill-gauges";
 import { waybillHomeRingColor } from "@/lib/iriss-waybill-home-ring";
 import { WAYBILL_PLATES_EVENT } from "@/lib/iriss-waybill-live-plates";
 import type { WaybillPlateState } from "@/lib/iriss-waybill-plates";
@@ -36,6 +36,15 @@ function MonoPlate({ plate }: { plate: string }) {
       {plate.slice(0, i)}
       <span className={styles.dash}>-</span>
       {plate.slice(i + 1)}
+    </span>
+  );
+}
+
+/** Modeļa rinda: pilns teksts + title, ja CSS saīsina. */
+export function WaybillHomeCar(g: Pick<WaybillGauge, "busy" | "status" | "brandModel">) {
+  return (
+    <span className={styles.car} title={waybillHomeCarTitle(g)}>
+      {waybillHomeCarText(g)}
     </span>
   );
 }
@@ -172,7 +181,7 @@ export function IrissWaybillGauges({
               </span>
             </span>
             {floating ? <MonoPlate plate={g.plate} /> : <span className={styles.plate}>{g.plate.replace(/^([A-Z])/, "$1 ")}</span>}
-            <span className={styles.car}>{g.busy ? g.brandModel || "auto" : g.status === "issuing" ? g.brandModel || "-" : "-"}</span>
+            <WaybillHomeCar busy={g.busy} status={g.status} brandModel={g.brandModel} />
           </>
         );
         if (linked) {

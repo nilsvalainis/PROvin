@@ -80,7 +80,7 @@ export async function GET(req: Request) {
     request,
     auto: classifyWaybillForAuto(request, {
       plateBusyNow: isBusy(request.vehicle.plate),
-      plateInOtherRequest: plateTakenByOtherRequest(doc.requests, request, nowMs),
+      plateInOtherRequest: plateTakenByOtherRequest(doc.requests, request, nowMs, isBusy(request.vehicle.plate)),
       nowMs,
       replaceEnabled: autoWaybillReplaceEnabled(),
     }),

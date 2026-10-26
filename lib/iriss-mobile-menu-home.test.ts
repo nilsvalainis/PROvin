@@ -71,7 +71,12 @@ describe("v11d-fix pret #614", () => {
     expect(src.sidebar).not.toContain("const irissTabs");
     expect(gaugesCss).toContain("rgba(255, 255, 255, 0.86)");
     expect(gaugesCss).toContain("blur(22px)");
+    const floatCar = gaugesCss.match(/\.wg\.float \.car\s*\{[^}]+\}/)?.[0] ?? "";
+    expect(floatCar).toContain("line-clamp: 2");
+    expect(floatCar).toContain("overflow: hidden");
+    expect(floatCar).not.toContain("overflow: visible");
     expect(pinsCss).toContain("rgba(255, 255, 255, 0.86)");
+    expect(pinsCss).not.toMatch(/\.detail\s*\{/);
     expect(menuCss).toContain("#cfcfd6");
     expect(menuCss).toContain("var(--menu-tone");
     expect(shellCss).toContain(".am-capsule");
