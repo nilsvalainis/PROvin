@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AdminClientOrdersChip } from "@/components/admin/AdminClientOrdersChip";
+import { AdminBusinessLinkButton } from "@/components/admin/AdminBusinessLinkButton";
 import { AdminClientLinkButton } from "@/components/admin/AdminClientLinkButton";
 import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useTransition, type MouseEvent, type ReactNode } from "react";
@@ -553,6 +554,7 @@ function AdminOrdersMobileChrome({
           <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--label-secondary)]" />
         </Link>
         <AdminClientLinkButton variant="sheet" />
+        <AdminBusinessLinkButton variant="sheet" />
         <button
           type="button"
           onClick={() => {

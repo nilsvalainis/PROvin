@@ -20,6 +20,7 @@ export default function robots(): MetadataRoute.Robots {
           "/p/",
           "/a/",
           "/s/",
+          "/b/",
           "/pasutit",
           "/paldies",
           "/partneriem/konts",

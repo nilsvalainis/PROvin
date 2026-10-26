@@ -25,6 +25,7 @@ import {
 } from "./lib/seo-redirects";
 import { SEO_LOCALE_HEADER } from "./lib/seo-public-paths";
 import { SITE_THEME_COOKIE_KEY } from "./lib/site-theme";
+import { isBusinessLinkPath } from "./lib/business-link";
 import { isClientLinkPath } from "./lib/client-link";
 import { isUnpaidPaymentPath } from "./lib/admin-unpaid-payment-link";
 import { isIrissCarSharePath } from "./lib/iriss-car-share";
@@ -170,6 +171,7 @@ export default async function middleware(request: NextRequest) {
         dest.pathname.startsWith("/dev") ||
         dest.pathname.startsWith("/api") ||
         isClientLinkPath(dest.pathname) ||
+        isBusinessLinkPath(dest.pathname) ||
         isUnpaidPaymentPath(dest.pathname) ||
         isIrissOfferLinkPath(dest.pathname) ||
         isIrissCarSharePath(dest.pathname) ||
@@ -269,7 +271,7 @@ export default async function middleware(request: NextRequest) {
     return res;
   }
 
-  if (isClientLinkPath(pathname) || isUnpaidPaymentPath(pathname)) {
+  if (isClientLinkPath(pathname) || isBusinessLinkPath(pathname) || isUnpaidPaymentPath(pathname)) {
     const res = NextResponse.next();
     res.headers.set("X-Robots-Tag", "noindex, nofollow");
     res.headers.set("Cache-Control", "private, no-store");
@@ -281,6 +283,8 @@ export default async function middleware(request: NextRequest) {
     prefixed.locale &&
     (prefixed.rest === "/s" ||
       prefixed.rest.startsWith("/s/") ||
+      prefixed.rest === "/b" ||
+      prefixed.rest.startsWith("/b/") ||
       prefixed.rest === "/p" ||
       prefixed.rest.startsWith("/p/") ||
       prefixed.rest === "/a" ||

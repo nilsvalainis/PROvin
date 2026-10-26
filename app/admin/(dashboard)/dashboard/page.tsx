@@ -11,6 +11,7 @@ import { listListingPeeks } from "@/lib/listing-peek-store";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
 import { getOrderFlags } from "@/lib/admin-orders-flags";
 import { upsellListOverlay } from "@/lib/order-upsell";
+import { AdminBusinessLinkButton } from "@/components/admin/AdminBusinessLinkButton";
 import { AdminClientLinkButton } from "@/components/admin/AdminClientLinkButton";
 import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
@@ -290,6 +291,7 @@ export default async function AdminOrdersPage({
             toolbarEnd={
               <>
                 <AdminClientLinkButton />
+                <AdminBusinessLinkButton />
                 <AdminOrdersSearchBar />
                 {toolbarEnd}
               </>
@@ -319,6 +321,7 @@ export default async function AdminOrdersPage({
           <AdminOrdersViewSwitch />
           <div className="flex items-center gap-1.5">
             <AdminClientLinkButton />
+            <AdminBusinessLinkButton />
             {toolbarEnd}
           </div>
         </div>

@@ -35,7 +35,9 @@ import { autoImportQuickEvalForPaidOrder } from "@/lib/quick-eval-service";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 import { fulfillOrderUpsellPayment } from "@/lib/order-upsell-fulfill";
+import { businessLinkHashFromStripeMetadata } from "@/lib/business-link";
 import { clientLinkHashFromStripeMetadata } from "@/lib/client-link";
+import { consumeBusinessLinkByHash } from "@/lib/business-link-store";
 import { consumeClientLinkByHash } from "@/lib/client-link-store";
 import { notifyMetaPurchaseFromStripeSession } from "@/lib/meta-capi";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
@@ -98,6 +100,15 @@ async function fulfillPaidCheckoutSession(
         await consumeClientLinkByHash(clientLinkHash, session.id);
       } catch (err) {
         console.warn("[stripe webhook] client link consume failed:", err);
+      }
+    }
+
+    const businessLinkHash = businessLinkHashFromStripeMetadata(session.metadata);
+    if (businessLinkHash) {
+      try {
+        await consumeBusinessLinkByHash(businessLinkHash, session.id);
+      } catch (err) {
+        console.warn("[stripe webhook] business link consume failed:", err);
       }
     }
 
