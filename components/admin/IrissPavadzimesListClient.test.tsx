@@ -101,6 +101,46 @@ describe("Aktīvā karte: Pārtraukt", () => {
   });
 });
 
+describe("Saruna C: ikona, badge, nav pastāvīgās slejas", () => {
+  it("header has Saruna icon, no overlay until opened, no right column grid", () => {
+    const html = renderHtml(page());
+    expect(html).toContain('aria-label="Saruna"');
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).not.toContain('data-saruna-overlay="open"');
+    expect(html).not.toContain("xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]");
+    expect(html).toContain("grid grid-cols-[minmax(0,1fr)]");
+  });
+
+  it("shows red unread badge for a fresh waybill", () => {
+    const issuedAt = new Date().toISOString();
+    const html = renderHtml(
+      <IrissPavadzimesListClient
+        isAdmin
+        initial={{
+          rows: [
+            {
+              ...rowBase,
+              id: "wb_now",
+              number: "P02819",
+              issuedAt,
+              validUntil: "2026-11-01T10:00:00.000Z",
+              validityTone: "ok",
+              lifecycle: "active",
+              fileName: "PV-1042.pdf",
+            },
+          ] as never,
+          pendingParse: 0,
+          dropboxConfigured: true,
+          dropboxError: null,
+        }}
+      />,
+    );
+    expect(html).toContain('data-saruna-badge="2"');
+    expect(html).toContain("#FF3B30");
+    expect(html).not.toContain('data-saruna-overlay="open"');
+  });
+});
+
 describe("VPN kontrole", () => {
   it("telefona kartīte: liela poga 'Man vajag VPN'; datora variants paliek kompakts", () => {
     const card = renderHtml(<IrissVpnControl variant="card" />);
