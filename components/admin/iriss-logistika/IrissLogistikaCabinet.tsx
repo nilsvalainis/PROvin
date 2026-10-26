@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
 import { IrissCreateOfferButton } from "@/components/admin/IrissCreateOfferButton";
@@ -68,6 +68,10 @@ type Props = {
   onOrderUpdated: (order: LogisticsOrder) => void;
   /** Ar Pasūtījumu tiesību - "Izveidot piedāvājumu" (forma ar auto datiem un /STOCK bildēm). */
   canCreateOffer?: boolean;
+  /** "Uz Autoparku" / "Dzēst" (agrāk tikai tabulā "Visi auto"). */
+  endAction?: ReactNode;
+  /** Posma/pickup izmaiņa kabinetā - lai kravu rindas žetons atjaunojas bez pārlādes. */
+  onPickupChanged?: (pickup: CabinetPickup) => void;
 };
 
 const A_SLOT_TYPES: CabinetDocType[] = ["purchase_confirm", "car_invoice"];
@@ -104,7 +108,7 @@ function locationChip(status: LogisticsGeocodeStatus): { label: string; tone: "o
   }
 }
 
-export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onPatchOrder, onOrderUpdated, canCreateOffer = false }: Props) {
+export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onPatchOrder, onOrderUpdated, canCreateOffer = false, endAction, onPickupChanged }: Props) {
   // Nelasām localStorage renderēšanas laikā: serveris renderē bez tā, tāpēc hidratācija nesakrīt.
   const [prefs, setPrefs] = useState<Record<string, string>>({});
   const [documents, setDocuments] = useState<CabinetDocument[]>([]);
@@ -280,7 +284,10 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
       body: JSON.stringify({ pickupCode: nextCode, pickupDate }),
     });
     const body = (await res.json()) as { pickup?: CabinetPickup };
-    if (body.pickup) setPickup(body.pickup);
+    if (body.pickup) {
+      setPickup(body.pickup);
+      onPickupChanged?.(body.pickup);
+    }
     return saved;
   }
 
@@ -292,7 +299,10 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
       body: JSON.stringify({ stage: next, pickupCode: pickupCode || order.pickupRef, pickupDate }),
     });
     const body = (await res.json()) as { pickup?: CabinetPickup };
-    if (body.pickup) setPickup(body.pickup);
+    if (body.pickup) {
+      setPickup(body.pickup);
+      onPickupChanged?.(body.pickup);
+    }
   }
 
   async function uploadFile(section: CabinetSectionId, type: CabinetDocType, file: File) {
@@ -367,9 +377,10 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
         {order.pickupDate ? ` · pickup ${formatLogisticsDate(order.pickupDate)}` : ""}
       </p>
 
-      {canCreateOffer ? (
-        <div className="mt-3">
-          <IrissCreateOfferButton from="logistics" id={order.id} />
+      {canCreateOffer || endAction ? (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {canCreateOffer ? <IrissCreateOfferButton from="logistics" id={order.id} /> : null}
+          {endAction}
         </div>
       ) : null}
 

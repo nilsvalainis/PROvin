@@ -1439,3 +1439,38 @@ html.iriss-log-printing .iriss-log-pin-tip {
 .iriss-log-card-link:hover {
   background: #f2f2f7;
 }
+
+/* Pickup posms rindā (agrāk tikai tabulā "Visi auto"): neitrāls žetons, klikšķis atver auto kabinetu. */
+.iriss-log-stage-chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--iriss-line-strong);
+  background: var(--iriss-surface);
+  color: var(--iriss-ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.iriss-log-stage-chip::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--iriss-info);
+}
+.iriss-log-stage-chip:hover {
+  background: var(--iriss-surface-2);
+}
+@media (max-width: 420px) {
+  .iriss-log-stage-chip {
+    padding: 0 8px 0 6px;
+    font-size: 11.5px;
+  }
+}
