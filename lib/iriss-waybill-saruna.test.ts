@@ -6,7 +6,10 @@ import {
   formatSarunaDayLabel,
   formatSarunaUnreadBadge,
   isSarunaEscapeKey,
+  isWithinSarunaWindow,
+  prepareSarunaFeed,
   readSarunaSeenAt,
+  SARUNA_VISIBLE_WINDOW_MS,
   sarunaOverlayTitle,
   shouldCloseSarunaOverlay,
   writeSarunaSeenAt,
@@ -53,7 +56,7 @@ describe("Saruna overlay close", () => {
 });
 
 describe("Saruna feed no pavadzīmēm", () => {
-  it("builds day chip, status and PDF card in chronological order", () => {
+  it("builds day chip, status and PDF card with newest first", () => {
     const items = buildWaybillSarunaFeed(
       [
         {
@@ -76,18 +79,93 @@ describe("Saruna feed no pavadzīmēm", () => {
       NOW,
     );
     expect(items.map((i) => i.kind)).toEqual(["day", "system", "message", "day", "system", "message"]);
-    expect(items[0]).toMatchObject({ kind: "day", label: "Vakar" });
-    expect(items[1]).toMatchObject({ kind: "system", text: "Statuss → Beigusies" });
+    expect(items[0]).toMatchObject({ kind: "day", label: "Šodien" });
+    expect(items[1]).toMatchObject({ kind: "system", text: "Statuss → Derīga" });
     expect(items[2]).toMatchObject({
+      kind: "message",
+      from: "P02820 · VW Trader",
+      attachments: [{ name: "PV-1042.pdf", href: "/api/admin/iriss-pavadzimes/wb_new/pdf" }],
+    });
+    expect(items[3]).toMatchObject({ kind: "day", label: "Vakar" });
+    expect(items[5]).toMatchObject({
       kind: "message",
       from: "P02819 · VW Golf",
       attachments: [{ name: "P02819.pdf", href: "/api/admin/iriss-pavadzimes/wb_old/pdf" }],
     });
-    expect(items[3]).toMatchObject({ kind: "day", label: "Šodien" });
-    expect(items[5]).toMatchObject({
-      kind: "message",
-      attachments: [{ name: "PV-1042.pdf", href: "/api/admin/iriss-pavadzimes/wb_new/pdf" }],
-    });
+  });
+
+  it("keeps only the last 48h and drops older messages", () => {
+    const inside = new Date(NOW - SARUNA_VISIBLE_WINDOW_MS + 60_000).toISOString();
+    const edge = new Date(NOW - SARUNA_VISIBLE_WINDOW_MS).toISOString();
+    const older = new Date(NOW - SARUNA_VISIBLE_WINDOW_MS - 60_000).toISOString();
+    expect(isWithinSarunaWindow(inside, NOW)).toBe(true);
+    expect(isWithinSarunaWindow(edge, NOW)).toBe(true);
+    expect(isWithinSarunaWindow(older, NOW)).toBe(false);
+    const items = buildWaybillSarunaFeed(
+      [
+        {
+          id: "wb_old",
+          number: "P01000",
+          brandModel: "Old",
+          fileName: "old.pdf",
+          issuedAt: older,
+          lifecycle: "expired",
+        },
+        {
+          id: "wb_keep",
+          number: "P02820",
+          brandModel: "Fresh",
+          fileName: "fresh.pdf",
+          issuedAt: inside,
+          lifecycle: "active",
+        },
+      ],
+      NOW,
+    );
+    expect(items.some((i) => i.kind === "message" && i.id === "msg-wb_keep")).toBe(true);
+    expect(items.some((i) => i.id === "msg-wb_old" || i.id === "st-wb_old")).toBe(false);
+    expect(items.some((i) => i.kind === "message" && i.text.includes("P01000"))).toBe(false);
+  });
+
+  it("prepareSarunaFeed puts newest notes first and rebuilds day chips", () => {
+    const prepared = prepareSarunaFeed(
+      [
+        {
+          kind: "message",
+          id: "older-note",
+          from: "Tu",
+          mine: true,
+          text: "vecāka piezīme",
+          at: "2026-10-25T10:00:00.000Z",
+          attachments: [],
+        },
+        {
+          kind: "message",
+          id: "newer-note",
+          from: "Tu",
+          mine: true,
+          text: "jaunākā piezīme",
+          at: "2026-10-26T11:00:00.000Z",
+          attachments: [],
+        },
+        {
+          kind: "message",
+          id: "too-old",
+          from: "Tu",
+          mine: true,
+          text: "aiz 48h",
+          at: "2026-10-23T11:00:00.000Z",
+          attachments: [],
+        },
+      ],
+      NOW,
+    );
+    expect(prepared.map((i) => (i.kind === "message" ? i.id : i.kind))).toEqual([
+      "day",
+      "newer-note",
+      "day",
+      "older-note",
+    ]);
   });
 
   it("counts unread after last seen, or last 7 days on first visit", () => {
