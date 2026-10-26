@@ -38,6 +38,19 @@ export type DamageEvidence = {
   hasDealerBodyOrGlassWork: boolean;
 };
 
+/**
+ * Reģistra ierobežojums «noņemts no reģistra bojājuma dēļ» (Traficom «Deregistrated due to a damage»).
+ * Datētā izņemšanas vēsture Traficom ir maksas sadaļa - bieži ir tikai ierobežojuma teksts piezīmēs.
+ */
+const DEREGISTERED_DUE_TO_DAMAGE_RE = /noņemts no reģistra bojājuma dēļ|deregistrated due to a damage|deregistered due to (?:a )?damage/i;
+
+function registryNotesSayDeregisteredDueToDamage(b: {
+  autoNotes?: string | null;
+  statusRecords?: string | null;
+}): boolean {
+  return DEREGISTERED_DUE_TO_DAMAGE_RE.test(`${b.autoNotes ?? ""}\n${b.statusRecords ?? ""}`);
+}
+
 function displayAmount(raw: string): string {
   const t = raw.trim();
   if (!t) return "";
@@ -70,12 +83,21 @@ export function collectDamageEvidence(sourceBlocks: WorkspaceSourceBlocks): Dama
   }
 
   for (const key of REGISTRY_STYLE_BLOCK_KEYS) {
-    for (const r of blocks[key].incidents ?? []) {
-      if (!vinRegistryIncidentRowHasData(r)) continue;
+    const b = blocks[key];
+    const incidents = (b.incidents ?? []).filter(vinRegistryIncidentRowHasData);
+    for (const r of incidents) {
       rows.push({
         date: r.date.trim() || "datums nav",
         descriptionLv: r.note.trim() || "Bojājuma / negadījuma ieraksts",
         amount: displayAmount(r.amount),
+        sourceLabel: SOURCE_BLOCK_LABELS[key],
+      });
+    }
+    if (incidents.length === 0 && registryNotesSayDeregisteredDueToDamage(b)) {
+      rows.push({
+        date: "datums nav",
+        descriptionLv: "Noņemts no reģistra bojājuma dēļ",
+        amount: "",
         sourceLabel: SOURCE_BLOCK_LABELS[key],
       });
     }
@@ -129,7 +151,10 @@ export function countPdfDamageEvidence(input: {
   asvBlock?: AsvBlockState | null;
 }): number {
   let n = 0;
-  for (const b of input.manualVendorBlocks ?? []) n += b.incidentRows.filter(ltabRowHasData).length;
+  for (const b of input.manualVendorBlocks ?? []) {
+    const k = b.incidentRows.filter(ltabRowHasData).length;
+    n += k > 0 ? k : registryNotesSayDeregisteredDueToDamage(b) ? 1 : 0;
+  }
   n += (input.manualLtabBlock?.rows ?? []).filter(ltabRowHasData).length;
   n += (input.ccVinBlock?.damages ?? []).filter(ccVinDamageRowHasData).length;
   n += (input.asvBlock?.damages ?? []).filter(asvDamageRowHasData).length;

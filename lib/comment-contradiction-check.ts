@@ -216,6 +216,30 @@ function flagKey(f: FactCheckFlag): string {
   return `${f.id}|${f.sentence}`;
 }
 
+/** Teikums runā tikai par Latvijas reģistriem (CSDD / CSNg / LTAB / „vietēji”), ne par visiem avotiem. */
+const LOCAL_REGISTRY_SCOPE_RE = /\bcsdd\b|\bcsng\b|\bltab\b|vietēj|latvijas\s+(?:reģistr|apdrošin|policij)/i;
+const ALL_SOURCES_SCOPE_RE = /vis(?:os|i|ām)\s+(?:avot|reģistr|datu)|nevienā\s+avot|ārvalst|ārzem|starptautisk|neatkarīg/i;
+
+function isLocalRegistryScopedSentence(sentence: string): boolean {
+  return LOCAL_REGISTRY_SCOPE_RE.test(sentence) && !ALL_SOURCES_SCOPE_RE.test(sentence);
+}
+
+function isLocalIncidentSource(sourceLabel: string, country: string): boolean {
+  return /\b(?:ltab|csdd|csng)\b/i.test(sourceLabel) || /^(?:lv|latvija)$/i.test(country.trim());
+}
+
+/** „N īpašnieki ārvalstīs / pirms ievešanas”, kur N = kopā - LV. */
+function isForeignOwnerShareMention(
+  sentences: string[],
+  n: number,
+  total: number,
+  latviaOwners: number | null | undefined,
+): boolean {
+  if (latviaOwners == null || total - latviaOwners !== n) return false;
+  const re = new RegExp(`\\b${n}\\s+īpašniek`, "i");
+  return sentences.some((s) => re.test(s) && /ārvalst|ārzem|pirms\s+(?:ievešan|import)|ārpus\s+latvij/i.test(s));
+}
+
 function firstMatchingSentence(sentences: string[], re: RegExp): string {
   return sentences.find((s) => re.test(s)) ?? sentences[0] ?? "";
 }
@@ -364,6 +388,8 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
   if (facts.owners.totalCount > 0) {
     for (const n of ownerMentions) {
       if (n !== facts.owners.totalCount && (facts.owners.latviaOwners == null || n !== facts.owners.latviaOwners)) {
+        // FABLE v3: „7 īpašnieki ārvalstu posmā” = kopā 11 - LV 4 - patiess, ne kļūda.
+        if (isForeignOwnerShareMention(sentences, n, facts.owners.totalCount, facts.owners.latviaOwners)) continue;
         push({
           id: "owner_count",
           kind: "owner_count",
@@ -423,13 +449,19 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
   }
 
   // 3) Nav negadījumu / nav atsaukumu pret lapu.
-  if (facts.incidents.length > 0 && NO_ACCIDENT_RE.test(text) && !/neizslēdz|bez\s+fizisk/i.test(text)) {
+  // FABLE v3: „CSDD / vietēju CSNg ierakstu nav” ir patiess, ja visi ieraksti ir no ārvalstu avotiem.
+  const localIncidentRows =
+    facts.incidents.filter((r) => isLocalIncidentSource(r.sourceLabel, r.country)).length +
+    (facts.damageEvidence?.rows ?? []).filter((r) => isLocalIncidentSource(r.sourceLabel, "")).length;
+  const trueLocalClaim = (s: string) => localIncidentRows === 0 && isLocalRegistryScopedSentence(s);
+  const noAccidentSentence = sentences.find((s) => NO_ACCIDENT_RE.test(s) && !trueLocalClaim(s));
+  if (facts.incidents.length > 0 && noAccidentSentence && !/neizslēdz|bez\s+fizisk/i.test(text)) {
     push({
       id: "no_accidents_claim",
       kind: "no_accidents_claim",
       level: "E",
       message: `Teksts saka, ka negadījumu nav, bet lapā ir ${facts.incidents.length} rinda(-s).`,
-      sentence: firstMatchingSentence(sentences, NO_ACCIDENT_RE),
+      sentence: noAccidentSentence,
     });
   }
   // 3b) j26: bojājumi IR (arī bez summas) - „nav bojājumu/atlīdzību” ir kļūda; „neizslēdz” neattaisno.
@@ -438,6 +470,7 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
     const bad = sentences.find(
       (s) =>
         NO_DAMAGE_RE.test(s) &&
+        !trueLocalClaim(s) &&
         !AMOUNT_ONLY_RE.test(s) &&
         !DAMAGE_UNCERTAIN_RE.test(s) &&
         !DAMAGE_POSITIVE_RE.test(s),

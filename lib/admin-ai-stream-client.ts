@@ -113,3 +113,29 @@ export async function generateAdminAiText(
     ? { ok: false, error: "AI: savienojums pārtrūka — teksts nav pabeigts", text: preview.trim() }
     : { ok: false, error: httpFallback };
 }
+
+/** Tīkla kļūda (fetch neatgrieza atbildi) - ne HTTP kļūda un ne lietotāja atcelšana. */
+export function isTransientNetworkError(err: unknown): boolean {
+  if (err instanceof DOMException && err.name === "AbortError") return false;
+  return err instanceof TypeError;
+}
+
+/**
+ * FLASH MAX: tīkla kļūdai (piem. izvietošanas brīdī) 1x atkārto to pašu pieprasījumu.
+ * HTTP kļūdas un atcelšanu neatkārto.
+ */
+export async function generateAdminAiTextWithNetworkRetry(
+  url: string,
+  body: unknown,
+  httpFallback: string,
+  opts?: Partial<AdminAiStreamOptions> & { retryDelayMs?: number; generate?: typeof generateAdminAiText },
+): Promise<GeneratedAdminAiText> {
+  const generate = opts?.generate ?? generateAdminAiText;
+  try {
+    return await generate(url, body, httpFallback, opts);
+  } catch (err) {
+    if (!isTransientNetworkError(err) || opts?.signal?.aborted) throw err;
+    await new Promise((r) => setTimeout(r, opts?.retryDelayMs ?? 1500));
+    return generate(url, body, httpFallback, opts);
+  }
+}
