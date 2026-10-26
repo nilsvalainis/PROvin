@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   WAYBILL_FORM_DEFAULT_HOURS,
   WAYBILL_MOBILE_HOUR_PRESETS,
+  applyWaybillAutoChoice,
   buildWaybillMobilePayload,
   parseWaybillCustomHours,
   waybillWrittenOffAtMs,
@@ -12,6 +13,8 @@ import {
   waybillMobileProgress,
   waybillMobileRequestIsCurrent,
   waybillMobileRequestRows,
+  waybillShowsManualFields,
+  waybillShowsTradeList,
 } from "@/lib/iriss-waybill-mobile-form";
 import { parseCreateWaybillInput, waybillRepresentativeChoices } from "@/lib/iriss-waybill-create";
 import type { WaybillAivarsReply, WaybillRequest } from "@/lib/iriss-waybill-requests";
@@ -87,10 +90,36 @@ describe("phone waybill form", () => {
     expect(built.ok && built.payload.vin).toBe("WAUZZZF27LN004512");
   });
 
-  it("manual car sends only make and model (no VIN field)", () => {
-    const built = buildWaybillMobilePayload({ ...base, manual: true, manualBrandModel: " Opel Astra ", car: null });
-    expect(built.ok && built.payload.brandModel).toBe("Opel Astra");
-    expect(built.ok && built.payload.vin).toBe("");
+  it("Ar roku / No saraksta: noklusējums nepiespiež sarakstu; pārslēgšana rāda attiecīgos laukus", () => {
+    expect(base.autoChoice).toBe("none");
+    expect(waybillShowsManualFields(base)).toBe(false);
+    expect(waybillShowsTradeList(base)).toBe(false);
+    const manual = applyWaybillAutoChoice(base, "manual");
+    expect(manual).toMatchObject({ autoChoice: "manual", manual: true, car: null });
+    expect(waybillShowsManualFields(manual)).toBe(true);
+    expect(waybillShowsTradeList(manual)).toBe(false);
+    const withCar = { ...base, car: { id: "c1", brandModel: "Audi A6", vin: "WAUZZZF27LN004512", accepted: true } };
+    const fromList = applyWaybillAutoChoice(withCar, "list");
+    expect(fromList.autoChoice).toBe("list");
+    expect(fromList.manual).toBe(false);
+    expect(fromList.car?.brandModel).toBe("Audi A6");
+    expect(waybillShowsTradeList(fromList)).toBe(true);
+    expect(waybillShowsManualFields(fromList)).toBe(false);
+    const switched = applyWaybillAutoChoice(fromList, "manual");
+    expect(switched.car).toBeNull();
+    expect(waybillShowsManualFields(switched)).toBe(true);
+    expect(waybillShowsTradeList(switched)).toBe(false);
+  });
+
+  it("Ar roku: marka/modelis un VIN iet payloadā; bez VIN paliek tukšs", () => {
+    const built = buildWaybillMobilePayload({
+      ...applyWaybillAutoChoice(base, "manual"),
+      manualBrandModel: " Opel Astra ",
+      manualVin: " W0L0AHL48B2081234 ",
+    });
+    expect(built.ok && built.payload).toMatchObject({ brandModel: "Opel Astra", vin: "W0L0AHL48B2081234", tradeAct: false });
+    const noVin = buildWaybillMobilePayload({ ...applyWaybillAutoChoice(base, "manual"), manualBrandModel: "Opel Astra" });
+    expect(noVin.ok && noVin.payload.vin).toBe("");
   });
 
   it("other car: only a start address (Tukums by default or own); no destination", () => {
