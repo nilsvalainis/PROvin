@@ -58,4 +58,14 @@ describe("Autoparks v2 saraksts bez Pamatdatu tiesības (j69)", () => {
   it("ar Pamatdatiem poga + Auto paliek", () => {
     expect(renderText(<AutoparksV2List initialCars={rows} canAddCar />)).toContain("+ Auto");
   });
+
+  it("ar Loģistikas tiesību rāda pāreju uz Loģistiku ar aktīvo auto skaitu", () => {
+    const html = renderHtml(<AutoparksV2List initialCars={rows} logisticsCount={6} />);
+    expect(html).toContain('href="/admin/iriss/logistika?view=map"');
+    expect(renderText(<AutoparksV2List initialCars={rows} logisticsCount={6} />)).toMatch(/6\s*Loģistika →/);
+  });
+
+  it("bez Loģistikas tiesības pārejas nav", () => {
+    expect(renderHtml(<AutoparksV2List initialCars={rows} />)).not.toContain("/admin/iriss/logistika");
+  });
 });

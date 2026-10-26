@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -73,6 +74,8 @@ type Props = {
   storeEnabled: boolean;
   viewerName?: string;
   canEnableTotp?: boolean;
+  /** Saite "Autoparks →" galvenē (tikai, ja Autoparks lomai atveras). */
+  showAutoparksLink?: boolean;
   canCreateOffer?: boolean;
   /** Loģistikas ieraksts -> Autoparka auto (saite "Kartīte" kravu plānā). Tukšs, ja nav tiesību. */
   autoparksByOrder?: Record<string, string>;
@@ -101,6 +104,7 @@ export function IrissLogistikaClient({
   viewerName,
   canEnableTotp,
   canCreateOffer = false,
+  showAutoparksLink = false,
   autoparksByOrder = {},
 }: Props) {
   const [orders, setOrders] = useState(initialOrders);
@@ -808,6 +812,11 @@ export function IrissLogistikaClient({
               <button type="button" onClick={() => setPageTab("settings")} className={`rounded-full px-2.5 py-1 ${pageTab === "settings" ? "bg-white font-semibold shadow-sm" : "text-[var(--ink2)]"}`}>
                 Iestatījumi
               </button>
+              {showAutoparksLink ? (
+                <Link href="/admin/iriss/autoparks-v2" className="rounded-full px-2.5 py-1 font-semibold text-[var(--iriss-ink)] hover:bg-white">
+                  Autoparks →
+                </Link>
+              ) : null}
             </div>
           </div>
           <div className="flex items-center gap-2">

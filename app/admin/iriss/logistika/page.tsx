@@ -55,6 +55,7 @@ export default async function IrissLogistikaPage() {
       canEnableTotp={canEnableTotp}
       canCreateOffer={canCreateOffer}
       autoparksByOrder={autoparksByOrder}
+      showAutoparksLink={autoparksV2CanOpen(autoparksV2Perms(actor))}
     />
     </Suspense>
   );
