@@ -139,8 +139,8 @@ export function IrissWaybillMobileForm({
   const reps = waybillRepresentativeChoices({ owner: form.car?.owner, plate: shownPlate });
   const rep = waybillMobileRepresentative({ representative: form.representative, plate: shownPlate, car: form.car });
   const rows = useMemo(
-    () => waybillMobileRequestRows(requests, replies, WAYBILL_MOBILE_CURRENT_LIMIT, { nowMs, dismissed: dismissedIds }),
-    [requests, replies, nowMs, dismissedIds],
+    () => waybillMobileRequestRows(requests, replies, WAYBILL_MOBILE_CURRENT_LIMIT, { nowMs, dismissed: dismissedIds, plates }),
+    [requests, replies, nowMs, dismissedIds, plates],
   );
   const working = rows.filter((r) => r.progress.step < 3 && r.tone !== "bad").length;
   const shownError = localError ?? error;
