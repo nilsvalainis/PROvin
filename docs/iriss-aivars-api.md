@@ -39,7 +39,7 @@ Required structured fields (validated by the server before the job is queued):
 - plate: one of `B193-7`, `B762-7`, `B192-7` (stored compact, e.g. `B7627`)
 - `brandModel`
 - VIN optional. If present it must be a 17-char ISO VIN.
-- `validHours` integer 1-2160 (default 48). Server sets `validFrom = now` and `validUntil = now + N h` (Europe/Riga clock for operators, ISO UTC in the job).
+- `validHours` integer 1-48 (default 48; Nils 27.10: max 48 h). Server sets `validFrom = now` and `validUntil = now + N h` (Europe/Riga clock for operators, ISO UTC in the job).
 - `routeFrom` / `routeTo` default to `Tukums, Rīgas iela` -> `Tukuma CSDD`. On the phone form staff can pick "Cits" and type an address (max 80 chars: letters, digits, `. , - / ( )`); the server validates it and sends it in `routeFrom` / `routeTo`. Number check (numuru salīdzināšana) defaults to CSDD Tukuma; another place may be written in `comment_untrusted`.
 - Comment only: if the form has no car but `comment_untrusted` looks like `193 uz BMW 330`, the server takes the plate (allowlist only) and `brandModel` (safe chars only) from it as data. `brandModel` is always filled when a job is queued.
 

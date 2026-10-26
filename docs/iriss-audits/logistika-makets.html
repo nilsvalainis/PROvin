@@ -1,0 +1,281 @@
+<title>IRISS Loģistika makets</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap">
+<style>
+/* Izkārtojums: Autoparks ar posmu cilnēm; posms "Ceļā" = karte (kreisi, ietilpst ekrānā) + kravu kārtošana (labajā). Zem tā telefona skats. */
+:root{
+  --bg:#f2f2f7; --surface:#ffffff; --surface-2:#f2f2f7; --surface-3:#e5e5ea; --line:#e5e5ea; --line-strong:#d1d1d6;
+  --ink:#1c1c1e; --ink-2:#4a4a4f; --ink-3:#8e8e93;
+  --graphite:#1b1c20; --graphite-2:#26282d; --graphite-3:#34363c; --on-graphite:#f3f2ef; --on-graphite-2:#a9aab0;
+  --brand:#f26522; --brand-deep:#d9541a;
+  --ok:#17804a; --warn:#a75c00; --bad:#c42b2b; --info:#2c4fb8; --mute:#8e8e93;
+  --map-land:#e8eee6; --map-water:#cfe0ee; --map-road:#ffffff; --map-border:#c9cfc7;
+  --shadow-1:0 1px 1px rgba(22,23,26,.04),0 2px 6px rgba(22,23,26,.05);
+  --shadow-2:0 1px 2px rgba(22,23,26,.06),0 10px 30px rgba(22,23,26,.10);
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  --r-sm:10px; --r-md:14px; --r-lg:20px; --tap:44px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111214; --surface:#18191c; --surface-2:#1f2024; --surface-3:#2a2b30; --line:#2b2c31; --line-strong:#3a3c42;
+  --ink:#f1f0ed; --ink-2:#b7b8bd; --ink-3:#8c8e94; --graphite:#0b0c0e; --graphite-2:#16171a; --graphite-3:#24262b;
+  --ok:#5cd396; --warn:#f2b35e; --bad:#ff8080; --info:#93a9ff; --mute:#9a9ba1;
+  --map-land:#1d2420; --map-water:#16222d; --map-road:#2a312c; --map-border:#36403a;
+  --shadow-1:0 1px 2px rgba(0,0,0,.4); --shadow-2:0 12px 32px rgba(0,0,0,.5); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111214; --surface:#18191c; --surface-2:#1f2024; --surface-3:#2a2b30; --line:#2b2c31; --line-strong:#3a3c42;
+  --ink:#f1f0ed; --ink-2:#b7b8bd; --ink-3:#8c8e94; --graphite:#0b0c0e; --graphite-2:#16171a; --graphite-3:#24262b;
+  --ok:#5cd396; --warn:#f2b35e; --bad:#ff8080; --info:#93a9ff; --mute:#9a9ba1;
+  --map-land:#1d2420; --map-water:#16222d; --map-road:#2a312c; --map-border:#36403a;
+  --shadow-1:0 1px 2px rgba(0,0,0,.4); --shadow-2:0 12px 32px rgba(0,0,0,.5); color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1320px;margin:0 auto;padding-block:28px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{margin:0;text-wrap:balance} p{margin:0}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.muted{color:var(--ink-2)} .small{font-size:13px} .num{font-variant-numeric:tabular-nums}
+.intro{display:flex;flex-direction:column;gap:10px;max-width:72ch}
+.intro h1{font-size:34px;font-weight:800;letter-spacing:-.035em}
+.points{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.points div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.points b{font-size:14px} .points span{font-size:13px;color:var(--ink-2)}
+/* Ekrāns */
+.screen{display:grid;grid-template-columns:200px minmax(0,1fr);border-radius:22px;overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow-2);background:var(--bg);height:700px}
+@media (max-width:980px){.screen{grid-template-columns:1fr;height:auto}.side{display:none}}
+.side{background:var(--graphite);color:var(--on-graphite);padding:16px 10px;display:flex;flex-direction:column;gap:2px}
+.side .logo{font-weight:800;letter-spacing:.14em;font-size:13px;padding:2px 10px 14px}
+.side .logo b{color:var(--brand)}
+.side a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;color:var(--on-graphite-2);text-decoration:none;font-size:13.5px;position:relative}
+.side a.on{background:var(--graphite-3);color:var(--on-graphite)}
+.side a.on::before{content:"";position:absolute;left:-10px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--brand)}
+.side .sub{padding-left:30px;font-size:12.5px}
+.main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:16px 18px 12px}
+.head h2{font-size:24px;font-weight:800;letter-spacing:-.03em;margin-right:6px}
+.stages{display:inline-grid;grid-auto-flow:column;gap:3px;padding:3px;background:var(--surface-3);border-radius:12px}
+.stages button{font:inherit;font-size:13px;font-weight:650;min-height:34px;padding:0 12px;border:0;border-radius:9px;background:transparent;color:var(--ink-2);cursor:pointer;display:flex;gap:6px;align-items:center}
+.stages button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-1)}
+.stages .n{font-size:11px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.search{flex:1 1 180px;min-width:0;display:flex;align-items:center;gap:8px;min-height:38px;padding:0 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink-3);font-size:13px}
+.btn{font:inherit;font-size:13.5px;font-weight:700;min-height:38px;padding:0 14px;border-radius:12px;border:1px solid transparent;display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+.btn-primary{background:var(--brand);color:#fff}
+.btn-secondary{background:var(--surface);border-color:var(--line-strong);color:var(--ink)}
+.body{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(320px,1fr);gap:14px;padding:0 18px 18px}
+@media (max-width:980px){.body{grid-template-columns:1fr}}
+/* Karte */
+.map{position:relative;border-radius:var(--r-lg);overflow:hidden;background:var(--map-water);border:1px solid var(--line);min-height:420px}
+.map svg{position:absolute;inset:0;width:100%;height:100%}
+.maptools{position:absolute;left:10px;top:10px;display:flex;gap:6px;flex-wrap:wrap}
+.maptools span{font-size:12px;font-weight:650;padding:6px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--ink-2);box-shadow:var(--shadow-1)}
+.maptools span.on{background:var(--graphite);color:var(--on-graphite);border-color:var(--graphite)}
+.pin{cursor:pointer;transition:transform .15s ease}
+.pin.focus{transform-box:fill-box;transform-origin:center bottom;transform:scale(1.35)}
+.popup{position:absolute;min-width:220px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-2);padding:12px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.popup b{font-size:14px}
+.popup .acts{display:flex;gap:6px}
+.legend{position:absolute;left:10px;bottom:10px;display:flex;gap:10px;font-size:11.5px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px;color:var(--ink-2)}
+.legend i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:1px}
+/* Kravas */
+.cargo{display:flex;flex-direction:column;gap:10px;min-height:0;overflow:auto;padding-right:2px}
+.lane{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:10px;display:flex;flex-direction:column;gap:6px}
+.lane-h{display:flex;align-items:center;gap:8px;padding:2px 4px 4px}
+.lane-h b{font-size:13.5px}
+.lane-h .c{font-size:12px;color:var(--ink-3)}
+.lane-h .route{margin-left:auto;font-size:12px;font-weight:650;color:var(--ink-2);border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--surface)}
+.dot{width:9px;height:9px;border-radius:50%}
+.car{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px;border-radius:12px;border:1px solid transparent;cursor:pointer}
+.car:hover{background:var(--surface-2)}
+.car.focus{border-color:var(--brand);background:color-mix(in srgb,var(--brand) 6%,var(--surface))}
+.grip{color:var(--ink-3);cursor:grab;font-size:14px;line-height:1}
+.car .t{font-weight:650;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.car .s{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chips{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.chip{font-size:11px;font-weight:650;padding:2px 7px;border-radius:7px;background:var(--surface-2);color:var(--ink);display:inline-flex;align-items:center;gap:4px}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--d,var(--mute))}
+.c-ok{--d:var(--ok)} .c-warn{--d:var(--warn)} .c-bad{--d:var(--bad)} .c-info{--d:var(--info)}
+.go{display:flex;gap:4px}
+.go button{font:inherit;font-size:12px;font-weight:650;height:32px;padding:0 10px;border-radius:9px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);cursor:pointer;white-space:nowrap}
+.drop{border:1.5px dashed var(--line-strong);border-radius:12px;padding:12px;text-align:center;font-size:12.5px;color:var(--ink-3)}
+.add{font-size:12.5px;color:var(--ink-2);padding:4px 6px}
+/* Kabinets (atvērts no rindas) */
+.cab{display:none;position:absolute;inset:0;background:var(--scrim,rgba(18,19,22,.35));align-items:stretch;justify-content:flex-end}
+.cab.open{display:flex}
+.cab .panel{width:min(420px,100%);background:var(--surface);height:100%;padding:18px;display:flex;flex-direction:column;gap:12px;overflow:auto;box-shadow:var(--shadow-2)}
+.cab .top{display:flex;align-items:center;gap:8px}
+.cab h3{font-size:18px;font-weight:800;letter-spacing:-.02em}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.steps span{font-size:11.5px;font-weight:650;text-align:center;padding:7px 0;border-radius:9px;background:var(--surface-2);color:var(--ink-3)}
+.steps span.done{color:var(--ink)} .steps span.cur{background:var(--graphite);color:var(--on-graphite)}
+.kv{display:grid;grid-template-columns:120px 1fr;gap:6px 10px;font-size:13px}
+.kv dt{color:var(--ink-3)} .kv dd{margin:0}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs span{font-size:12px;font-weight:650;padding:6px 10px;border-radius:9px;background:var(--surface-2)}
+.tabs span.on{background:var(--graphite);color:var(--on-graphite)}
+/* Telefons */
+.phones{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.phone{width:300px;max-width:100%;height:600px;border-radius:44px;border:9px solid #0d0e10;background:var(--bg);position:relative;overflow:hidden;box-shadow:var(--shadow-2)}
+.phone .pmap{position:absolute;inset:0 0 auto 0;height:52%;background:var(--map-water)}
+.phone .pmap svg{width:100%;height:100%}
+.sheet{position:absolute;left:0;right:0;bottom:0;height:56%;background:var(--surface);border-radius:22px 22px 0 0;box-shadow:0 -8px 24px rgba(0,0,0,.12);padding:8px 12px 80px;display:flex;flex-direction:column;gap:8px;overflow:auto}
+.sheet .handle{width:40px;height:5px;border-radius:3px;background:var(--line-strong);margin:2px auto 4px}
+.ptop{position:absolute;left:10px;right:10px;top:12px;display:flex;gap:6px}
+.ptop .stages{width:100%;grid-auto-columns:1fr}
+.ptop .stages button{justify-content:center;padding:0 6px}
+.tabbar{position:absolute;left:12px;right:12px;bottom:12px;height:58px;border-radius:22px;background:var(--graphite);display:grid;grid-template-columns:repeat(4,1fr);align-items:center}
+.tabbar a{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10px;color:var(--on-graphite-2);text-decoration:none;font-weight:600}
+.tabbar a.on{color:var(--on-graphite)}
+.cap{font-size:12px;color:var(--ink-3);max-width:300px}
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.notes div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:14px 16px;font-size:13px;color:var(--ink-2);display:flex;flex-direction:column;gap:4px}
+.notes b{color:var(--ink);font-size:14px}
+button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.pin{transition:none}}
+</style>
+
+<div class="wrap">
+  <header class="intro">
+    <span class="eyebrow">IRISS · Loģistika + Autoparks · makets v0.1 · gaida Nila "jā"</span>
+    <h1>Viens auto ceļš: Ceļā → Noliktavā → Pārdošanā</h1>
+    <p class="muted">Loģistika kļūst par Autoparka pirmo posmu "Ceļā". Karte atrodas kreisajā pusē un ietilpst ekrānā, kravu kārtošana paliek labajā pusē. Noklikšķini uz auto labajā pusē: tas iezīmējas kartē, un ar "Auto kartīte" atveras tā Autoparka kartīte. No kartītes poga "Kartē" ved atpakaļ uz punktu.</p>
+    <div class="points">
+      <div><b>Viens saraksts</b><span>Auto vairs nav vienlaikus divās vietās. Loģistikas "Visi auto" zem kartes vairs nav.</span></div>
+      <div><b>Proporcijas</b><span>Karte ~57%, kravas ~43%. Augstums atbilst ekrānam, ritinās tikai kravu kolonna.</span></div>
+      <div><b>Viena galvenā poga</b><span>"+ Nopirkts" ir oranžā. "Piedāvājums" atrodas auto kartītē, nevis galvenē.</span></div>
+      <div><b>Šoferim</b><span>Izvēlnes punkts "Loģistika" paliek un atver šo pašu skatu bez cenām.</span></div>
+    </div>
+  </header>
+
+  <div class="screen" id="screen">
+    <aside class="side" aria-label="IRISS izvēlne">
+      <span class="logo">IR<b>I</b>SS</span>
+      <a href="#">Pasūtījumi</a><a href="#">Piedāvājumi</a><a href="#">Sludinājumi</a><a href="#">Radars</a>
+      <a href="#" class="on">Autoparks</a><a href="#" class="sub">Ceļā (Loģistika)</a>
+      <a href="#">Pavadzīmes</a><a href="#">VIN pārbaude</a><a href="#">Iestatījumi</a>
+    </aside>
+    <div class="main" style="position:relative">
+      <div class="head">
+        <h2>Autoparks</h2>
+        <div class="stages" id="stages" role="group" aria-label="Posms">
+          <button type="button" aria-pressed="true">Ceļā <span class="n">6</span></button>
+          <button type="button" aria-pressed="false">Noliktavā <span class="n">18</span></button>
+          <button type="button" aria-pressed="false">Pārdošanā <span class="n">27</span></button>
+          <button type="button" aria-pressed="false">Pārdoti</button>
+        </div>
+        <div class="search">⌕ VIN, auto vai adrese</div>
+        <button class="btn btn-primary" type="button">+ Nopirkts</button>
+      </div>
+      <div class="body">
+        <div class="map" id="map">
+          <svg viewBox="0 0 600 460" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+            <path d="M0 0H600V460H0z" fill="var(--map-water)"/>
+            <path d="M40 20 L560 10 L590 200 L570 450 L60 455 L20 300 Z" fill="var(--map-land)" stroke="var(--map-border)" stroke-width="2"/>
+            <path d="M60 120 C200 160 300 90 560 140 M80 300 C220 250 380 330 560 290 M200 30 C230 180 180 300 230 450 M420 20 C400 160 460 300 420 450" stroke="var(--map-road)" stroke-width="5" fill="none"/>
+            <g font-size="12" fill="var(--ink-3)" font-family="Inter,sans-serif"><text x="90" y="250">Nīderlande</text><text x="300" y="230">Vācija</text><text x="470" y="120">Berlīne</text><text x="250" y="400">Frankfurte</text></g>
+          </svg>
+          <svg viewBox="0 0 600 460" preserveAspectRatio="xMidYMid slice" id="pins">
+            <g class="pin" data-id="a" transform="translate(150 255)"><path d="M0 0c-9-14-14-20-14-27a14 14 0 0 1 28 0c0 7-5 13-14 27z" fill="var(--warn)"/><circle cy="-27" r="5" fill="#fff"/></g>
+            <g class="pin" data-id="b" transform="translate(500 300)"><path d="M0 0c-9-14-14-20-14-27a14 14 0 0 1 28 0c0 7-5 13-14 27z" fill="var(--ok)"/><circle cy="-27" r="5" fill="#fff"/></g>
+            <g class="pin" data-id="c" transform="translate(410 250)"><path d="M0 0c-9-14-14-20-14-27a14 14 0 0 1 28 0c0 7-5 13-14 27z" fill="var(--bad)"/><circle cy="-27" r="5" fill="#fff"/></g>
+            <g class="pin" data-id="d" transform="translate(260 380)"><path d="M0 0c-9-14-14-20-14-27a14 14 0 0 1 28 0c0 7-5 13-14 27z" fill="var(--ok)"/><circle cy="-27" r="5" fill="#fff"/></g>
+            <g class="pin" data-id="e" transform="translate(330 300)"><path d="M0 0c-9-14-14-20-14-27a14 14 0 0 1 28 0c0 7-5 13-14 27z" fill="var(--graphite-3)"/><circle cy="-27" r="5" fill="#fff"/></g>
+            <g class="pin" data-id="f" transform="translate(95 240)"><path d="M0 0c-9-14-14-20-14-27a14 14 0 0 1 28 0c0 7-5 13-14 27z" fill="var(--graphite-3)"/><circle cy="-27" r="5" fill="#fff"/></g>
+          </svg>
+          <div class="maptools"><span class="on">Visas kravas</span><span>Nākošā · 4</span><span>Aiznākošā · 0</span><span>Nosaukumi</span></div>
+          <div class="legend"><span><i style="background:var(--ok)"></i>gatavs</span><span><i style="background:var(--warn)"></i>gaida pickup</span><span><i style="background:var(--bad)"></i>nav apmaksāts</span><span><i style="background:var(--graphite-3)"></i>nav kravā</span></div>
+          <div class="popup" id="popup" hidden></div>
+        </div>
+        <div class="cargo" id="cargo">
+          <section class="lane">
+            <div class="lane-h"><span class="dot" style="background:var(--brand)"></span><b>Nākošā krava</b><span class="c num">4 auto</span><span class="route">Maršruts</span></div>
+            <div class="car" data-id="a"><span class="grip" aria-hidden="true">⋮⋮</span><div style="min-width:0"><div class="t">Volvo XC60 2.4 D5 Summum AWD 2013</div><div class="s">Hattingen, DE · Auto1</div><div class="chips"><span class="chip c-warn">Nav pickup</span><span class="chip c-ok">Apmaksāts</span></div></div><div class="go"><button type="button" data-act="map">Kartē</button><button type="button" data-act="cab">Auto kartīte</button></div></div>
+            <div class="car" data-id="b"><span class="grip" aria-hidden="true">⋮⋮</span><div style="min-width:0"><div class="t">Audi A4 Avant 2.0 TDI S line</div><div class="s">Dresden, DE · Openlane</div><div class="chips"><span class="chip c-ok">Apmaksāts</span><span class="chip c-ok">Pickup apstiprināts</span></div></div><div class="go"><button type="button" data-act="map">Kartē</button><button type="button" data-act="cab">Auto kartīte</button></div></div>
+            <div class="car" data-id="c"><span class="grip" aria-hidden="true">⋮⋮</span><div style="min-width:0"><div class="t">Volvo XC90 2.4 D5 2010</div><div class="s">Zörbig, DE · Auto1</div><div class="chips"><span class="chip c-bad">Nav apmaksāts</span></div></div><div class="go"><button type="button" data-act="map">Kartē</button><button type="button" data-act="cab">Auto kartīte</button></div></div>
+            <div class="car" data-id="d"><span class="grip" aria-hidden="true">⋮⋮</span><div style="min-width:0"><div class="t">Mitsubishi Outlander</div><div class="s">Usingen, DE · cits uzņēmums</div><div class="chips"><span class="chip c-info">Citam SIA - Autoparkā nenonāk</span></div></div><div class="go"><button type="button" data-act="map">Kartē</button></div></div>
+            <div class="add">+ Auto ar roku</div>
+          </section>
+          <section class="lane">
+            <div class="lane-h"><span class="dot" style="background:var(--info)"></span><b>Aiznākošā krava</b><span class="c">0 auto</span></div>
+            <div class="drop">Ievelc auto šeit</div>
+          </section>
+          <section class="lane">
+            <div class="lane-h"><span class="dot" style="background:var(--mute)"></span><b>Nav kravā</b><span class="c">2 auto</span></div>
+            <div class="car" data-id="e"><span class="grip" aria-hidden="true">⋮⋮</span><div style="min-width:0"><div class="t">Mercedes-Benz Sprinter 316 CDI autotransportieris</div><div class="s">Bebra, DE · Autobid</div><div class="chips"><span class="chip c-warn">Gaida apmaksu</span></div></div><div class="go"><button type="button" data-act="map">Kartē</button><button type="button" data-act="cab">Auto kartīte</button></div></div>
+            <div class="car" data-id="f"><span class="grip" aria-hidden="true">⋮⋮</span><div style="min-width:0"><div class="t">Volvo XC60 2.4 D4 Summum AWD</div><div class="s">Venlo, NL · privāts</div><div class="chips"><span class="chip c-warn">Gaida apmaksu</span></div></div><div class="go"><button type="button" data-act="map">Kartē</button><button type="button" data-act="cab">Auto kartīte</button></div></div>
+          </section>
+        </div>
+      </div>
+      <div class="cab" id="cab" role="dialog" aria-label="Auto kartīte">
+        <div class="panel">
+          <div class="top"><span class="eyebrow">Autoparks · auto kartīte</span><button class="btn btn-secondary" type="button" id="cabClose" style="margin-left:auto">Aizvērt</button></div>
+          <h3 id="cabTitle">Auto</h3>
+          <div class="steps"><span class="done">Nopirkts</span><span class="cur">Ceļā</span><span>Noliktavā</span><span>Pārdošanā</span></div>
+          <dl class="kv"><dt>Saņemšana</dt><dd id="cabFrom">-</dd><dt>Krava</dt><dd>Nākošā · 4 auto</dd><dt>Dokumenti</dt><dd>1 no 4</dd><dt>Pavadzīme</dt><dd>vēl nav</dd></dl>
+          <div class="tabs"><span class="on">Pamatdati</span><span>Iegāde</span><span>Serviss</span><span>Izdevumi</span><span>Cenu lapa</span></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:auto"><button class="btn btn-secondary" type="button" id="cabMap">Kartē</button><button class="btn btn-secondary" type="button">Izveidot piedāvājumu</button><button class="btn btn-primary" type="button">Atvests → Noliktavā</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="small muted" style="margin-top:-26px">Shematiska karte. Īstajā lapā ir Google karte ar tiem pašiem punktiem. Auto un pilsētas ir no šīvakara saraksta.</p>
+
+  <section style="display:flex;flex-direction:column;gap:16px">
+    <span class="eyebrow">Telefons</span>
+    <h2 style="font-size:22px;font-weight:800;letter-spacing:-.02em">Karte augšā, kravas paneļa veidā apakšā</h2>
+    <div class="phones">
+      <div class="phone">
+        <div class="pmap"><svg viewBox="0 0 300 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><path d="M0 0H300V300H0z" fill="var(--map-water)"/><path d="M10 10L290 5L295 295L15 290Z" fill="var(--map-land)" stroke="var(--map-border)"/><path d="M20 100C100 130 180 70 290 110M30 210C120 180 200 240 290 200" stroke="var(--map-road)" stroke-width="4" fill="none"/><g><path transform="translate(70 170)" d="M0 0c-7-11-11-15-11-21a11 11 0 0 1 22 0c0 6-4 10-11 21z" fill="var(--warn)"/><path transform="translate(240 200)" d="M0 0c-7-11-11-15-11-21a11 11 0 0 1 22 0c0 6-4 10-11 21z" fill="var(--ok)"/><path transform="translate(200 160)" d="M0 0c-7-11-11-15-11-21a11 11 0 0 1 22 0c0 6-4 10-11 21z" fill="var(--bad)"/></g></svg></div>
+        <div class="ptop"><div class="stages"><button type="button" aria-pressed="true">Ceļā 6</button><button type="button" aria-pressed="false">Noliktavā</button><button type="button" aria-pressed="false">Pārdošanā</button></div></div>
+        <div class="sheet">
+          <div class="handle"></div>
+          <div class="lane-h"><span class="dot" style="background:var(--brand)"></span><b>Nākošā krava</b><span class="c">4</span></div>
+          <div class="car" style="grid-template-columns:minmax(0,1fr) auto"><div style="min-width:0"><div class="t">Volvo XC60 2.4 D5 2013</div><div class="s">Hattingen, DE</div><div class="chips"><span class="chip c-warn">Nav pickup</span></div></div><div class="go"><button type="button">Kartīte</button></div></div>
+          <div class="car" style="grid-template-columns:minmax(0,1fr) auto"><div style="min-width:0"><div class="t">Audi A4 Avant 2.0 TDI</div><div class="s">Dresden, DE</div><div class="chips"><span class="chip c-ok">Apmaksāts</span></div></div><div class="go"><button type="button">Kartīte</button></div></div>
+          <div class="car" style="grid-template-columns:minmax(0,1fr) auto"><div style="min-width:0"><div class="t">Volvo XC90 2.4 D5 2010</div><div class="s">Zörbig, DE</div><div class="chips"><span class="chip c-bad">Nav apmaksāts</span></div></div><div class="go"><button type="button">Kartīte</button></div></div>
+        </div>
+        <nav class="tabbar" aria-label="IRISS"><a href="#">Pasūtījumi</a><a href="#">Sludinājumi</a><a href="#" class="on">Autoparks</a><a href="#">Vairāk</a></nav>
+      </div>
+      <p class="cap">Panelis velkams uz augšu (vairāk saraksta) vai uz leju (vairāk kartes). Pieskaroties rindai, karte pārbīdās uz punktu.</p>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:14px">
+    <span class="eyebrow">Ko tas nozīmē ieviešanai</span>
+    <div class="notes">
+      <div><b>Dati</b>Loģistikas ieraksts kļūst par Autoparka auto posmu "Ceļā" (saite jau eksistē: "Uz Autoparku"). Citu SIA auto paliek tikai šeit un pēc atvešanas tiek dzēsti.</div>
+      <div><b>Pāreja</b>"Atvests → Noliktavā" aizstāj "Uz Autoparku": tas pats auto pāriet uz nākamo posmu, jauns ieraksts netiek veidots.</div>
+      <div><b>Tiesības</b>Šoferis redz posmu "Ceļā" bez cenām un iepirkuma datiem (tiesība "logistika" bez ap_*).</div>
+      <div><b>Secība</b>1) izkārtojums un pāreja karte ↔ kartīte; 2) posmu cilnes Autoparkā; 3) vecā "Visi auto" saraksta izņemšana.</div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var cars=document.querySelectorAll('#cargo .car'), pins=document.querySelectorAll('#pins .pin'), popup=document.getElementById('popup'), map=document.getElementById('map');
+  var cab=document.getElementById('cab');
+  function focus(id){
+    cars.forEach(function(c){c.classList.toggle('focus',c.dataset.id===id)});
+    pins.forEach(function(p){p.classList.toggle('focus',p.dataset.id===id)});
+    var row=document.querySelector('#cargo .car[data-id="'+id+'"]'), pin=document.querySelector('#pins .pin[data-id="'+id+'"]');
+    if(!row||!pin){popup.hidden=true;return}
+    var r=pin.getBoundingClientRect(), m=map.getBoundingClientRect();
+    popup.innerHTML='<b>'+row.querySelector('.t').textContent+'</b><span class="muted">'+row.querySelector('.s').textContent+'</span><div class="acts"><button class="btn btn-secondary" type="button" data-cab="'+id+'">Auto kartīte</button></div>';
+    popup.style.left=Math.max(8,Math.min(m.width-240,r.left-m.left-100))+'px';
+    popup.style.top=Math.max(8,r.top-m.top-120)+'px';
+    popup.hidden=false;
+  }
+  function openCab(id){
+    var row=document.querySelector('#cargo .car[data-id="'+id+'"]'); if(!row)return;
+    document.getElementById('cabTitle').textContent=row.querySelector('.t').textContent;
+    document.getElementById('cabFrom').textContent=row.querySelector('.s').textContent;
+    cab.dataset.id=id; cab.classList.add('open');
+  }
+  cars.forEach(function(c){c.addEventListener('click',function(e){var b=e.target.closest('button');if(b&&b.dataset.act==='cab'){openCab(c.dataset.id);return}focus(c.dataset.id)})});
+  pins.forEach(function(p){p.addEventListener('click',function(){focus(p.dataset.id);var row=document.querySelector('#cargo .car[data-id="'+p.dataset.id+'"]');if(row)row.scrollIntoView({block:'nearest',behavior:'smooth'})})});
+  popup.addEventListener('click',function(e){var b=e.target.closest('[data-cab]');if(b)openCab(b.dataset.cab)});
+  document.getElementById('cabClose').addEventListener('click',function(){cab.classList.remove('open')});
+  document.getElementById('cabMap').addEventListener('click',function(){var id=cab.dataset.id;cab.classList.remove('open');focus(id)});
+  document.querySelectorAll('.stages').forEach(function(g){g.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;g.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')})})});
+  focus('a');
+})();
+</script>
