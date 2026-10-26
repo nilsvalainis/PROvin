@@ -1434,7 +1434,7 @@ export function IrissPasutijumsEditor({
   }, [offerDraft.id, rec, save]);
 
   const shellCard = useMemo(
-    () => "rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5",
+    () => "rounded-xl border border-[var(--iriss-line)] bg-white p-4 shadow-sm sm:p-5",
     [],
   );
 
@@ -2262,7 +2262,7 @@ export function IrissPasutijumsEditor({
         <button
           type="button"
           onClick={openCreateOffer}
-          className="flex h-[50px] flex-1 items-center justify-center rounded-full bg-[#111827] text-[15px] font-semibold text-white"
+          className="flex h-[50px] flex-1 items-center justify-center rounded-full bg-[var(--iriss-graphite)] text-[15px] font-semibold text-white"
         >
           Piedāvājums
         </button>

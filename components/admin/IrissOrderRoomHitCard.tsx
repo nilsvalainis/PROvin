@@ -128,7 +128,7 @@ export function IrissOrderRoomHitCard({
           e.stopPropagation();
           onToggleFav();
         }}
-        className={`grid h-11 w-11 place-items-center rounded-lg border sm:h-9 sm:w-9 ${isFav ? "border-amber-300 bg-amber-50 text-amber-500" : "border-[#E5E7EB] bg-white"}`}
+        className={`grid h-11 w-11 place-items-center rounded-lg border sm:h-9 sm:w-9 ${isFav ? "border-amber-300 bg-amber-50 text-amber-500" : "border-[var(--iriss-line)] bg-white"}`}
       >
         <Star className={`h-4 w-4 ${isFav ? "fill-amber-400 text-amber-500" : "text-slate-500"}`} aria-hidden />
       </button>
@@ -140,7 +140,7 @@ export function IrissOrderRoomHitCard({
           if (dismissed) onRestore();
           else onDismiss();
         }}
-        className="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] bg-white sm:h-9 sm:w-9"
+        className="grid h-11 w-11 place-items-center rounded-lg border border-[var(--iriss-line)] bg-white sm:h-9 sm:w-9"
       >
         <X className="h-4 w-4 text-slate-500" aria-hidden />
       </button>
@@ -165,7 +165,7 @@ export function IrissOrderRoomHitCard({
 
   return (
     <article
-      className={`flex min-w-0 flex-col overflow-hidden rounded-xl border border-[#E5E7EB] bg-white sm:flex-row sm:items-stretch sm:gap-4 sm:rounded-2xl sm:p-3.5${auctionUrl ? " cursor-pointer" : ""}`}
+      className={`flex min-w-0 flex-col overflow-hidden rounded-xl border border-[var(--iriss-line)] bg-white sm:flex-row sm:items-stretch sm:gap-4 sm:rounded-2xl sm:p-3.5${auctionUrl ? " cursor-pointer" : ""}`}
       data-iriss-hit-card
       role={auctionUrl ? "link" : undefined}
       tabIndex={auctionUrl ? 0 : undefined}
@@ -213,7 +213,7 @@ export function IrissOrderRoomHitCard({
             <CountryFlag code={hit.countryCode} />
           </span>
           {days ? (
-            <span className="inline-flex rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+            <span className="inline-flex rounded-full border border-[var(--iriss-line)] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
               {days}
             </span>
           ) : null}

@@ -20,7 +20,7 @@ export function IrissGoogleContactStatusRow({
   const showRetry = Boolean(onRetry && configured && (badge || rec.phone.trim() || rec.email.trim() || rec.clientFirstName.trim()));
   if (!badge && !showRetry) return null;
   const tone =
-    badge?.tone === "ok" ? "text-emerald-800" : badge?.tone === "err" ? "text-red-800" : "text-[#6b7280]";
+    badge?.tone === "ok" ? "text-emerald-800" : badge?.tone === "err" ? "text-red-800" : "text-[var(--iriss-ink-2)]";
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2">
       {badge ? <span className={`text-[11.5px] font-medium ${tone}`}>{badge.text}</span> : null}

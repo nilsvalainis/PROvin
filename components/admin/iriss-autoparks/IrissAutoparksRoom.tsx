@@ -158,9 +158,9 @@ export function IrissAutoparksRoom({ carId, hideSums, canWrite, onClose, onCarCh
       </RoomTop>
 
       <div className="iriss-ap-room-scroll">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-[#6e6e73]">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-[var(--iriss-ink-2)]">
           {car.vin ? (
-            <button type="button" className="font-mono text-[12.5px] text-[#1d1d1f]" title="Kopēt VIN" onClick={() => void navigator.clipboard.writeText(car.vin)}>
+            <button type="button" className="font-mono text-[12.5px] text-[var(--iriss-ink)]" title="Kopēt VIN" onClick={() => void navigator.clipboard.writeText(car.vin)}>
               {car.vin}
             </button>
           ) : null}
@@ -257,9 +257,9 @@ export function IrissAutoparksRoom({ carId, hideSums, canWrite, onClose, onCarCh
             <ul>
               {room.events.map((e) => (
                 <li key={e.id}>
-                  <span className="tabular-nums text-[#6e6e73]">{fmtDateTime(e.at)}</span>
+                  <span className="tabular-nums text-[var(--iriss-ink-2)]">{fmtDateTime(e.at)}</span>
                   <span className="min-w-0 flex-1">{e.text}</span>
-                  <span className="text-[#6e6e73]">{e.actorName}</span>
+                  <span className="text-[var(--iriss-ink-2)]">{e.actorName}</span>
                 </li>
               ))}
             </ul>
@@ -462,7 +462,7 @@ function RegistryFields({ car, canWrite, onSave }: { car: AutoparksCar; canWrite
         ))}
       </div>
       {reg?.importFile ? (
-        <p className="mt-2 text-[12px] text-[#6e6e73]">
+        <p className="mt-2 text-[12px] text-[var(--iriss-ink-2)]">
           Avots: {reg.importFile}
           {reg.registryDate ? ` · nolasīts ${fmtDate(reg.registryDate)}` : ""}
         </p>
@@ -540,7 +540,7 @@ function StagePanel({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <p className="text-[16px] font-semibold">{AUTOPARKS_STAGE_LV[stage]}</p>
-          <p className="text-[12.5px] text-[#6e6e73]">{AUTOPARKS_STAGE_HINT_LV[stage]}</p>
+          <p className="text-[12.5px] text-[var(--iriss-ink-2)]">{AUTOPARKS_STAGE_HINT_LV[stage]}</p>
         </div>
         {files.some((f) => f.contentType.includes("pdf")) ? (
           <a className="iriss-ap-link" href={`${API}/${encodeURIComponent(car.id)}/bundle?stage=${stage}`}>
@@ -627,7 +627,7 @@ function StagePanel({
           ))}
         </ul>
       ) : (
-        <p className="mt-3 text-[13px] text-[#8e8e93]">Šajā posmā vēl nav failu.</p>
+        <p className="mt-3 text-[13px] text-[var(--iriss-ink-3)]">Šajā posmā vēl nav failu.</p>
       )}
 
       {children}
@@ -675,7 +675,7 @@ function FileCard({
         <a href={href} target="_blank" rel="noreferrer" className="block truncate text-[13.5px] font-semibold leading-tight hover:underline">
           {file.title}
         </a>
-        <p className="mt-0.5 truncate text-[11.5px] text-[#6e6e73]">
+        <p className="mt-0.5 truncate text-[11.5px] text-[var(--iriss-ink-2)]">
           {AUTOPARKS_FILE_KIND_LV[file.kind]}
           {file.scanned ? " · skenēts" : ""} · {fmtDateTime(file.createdAt)} · {formatAutoparksBytes(file.size)}
           {file.uploadedByName ? ` · ${file.uploadedByName}` : ""}
@@ -703,7 +703,7 @@ function FileCard({
               >
                 Pārdēvēt
               </button>
-              <p className="px-2.5 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#8e8e93]">Pārvietot uz</p>
+              <p className="px-2.5 pt-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--iriss-ink-3)]">Pārvietot uz</p>
               {AUTOPARKS_STAGES.filter((s) => s !== file.stage).map((s) => (
                 <button
                   key={s}
@@ -746,7 +746,7 @@ function LogisticsDocs({ docs }: { docs: LogisticsDoc[] }) {
                 ) : (
                   <span className="block truncate text-[13.5px] font-semibold">{d.title}</span>
                 )}
-                <p className="mt-0.5 truncate text-[11.5px] text-[#6e6e73]">
+                <p className="mt-0.5 truncate text-[11.5px] text-[var(--iriss-ink-2)]">
                   {d.typeLabel} · {fmtDateTime(d.createdAt)}
                 </p>
               </div>
@@ -786,7 +786,7 @@ function WorkEstimate({
     <div className="mt-4">
       <div className="flex items-baseline justify-between gap-2">
         <p className="iriss-ap-sub">Tāme un veiktie darbi</p>
-        <p className="text-[12.5px] text-[#6e6e73]">
+        <p className="text-[12.5px] text-[var(--iriss-ink-2)]">
           {done}/{rows.length} izdarīti{!hideSums && total > 0 ? ` · ${formatAutoparksEur(total)}` : ""}
         </p>
       </div>
@@ -847,7 +847,7 @@ function WorkEstimate({
           </button>
         </form>
       ) : null}
-      <p className="mt-1.5 text-[11.5px] text-[#8e8e93]">Nākotnē: nobildē servisa tāmi un darbi ielasīsies paši.</p>
+      <p className="mt-1.5 text-[11.5px] text-[var(--iriss-ink-3)]">Nākotnē: nobildē servisa tāmi un darbi ielasīsies paši.</p>
     </div>
   );
 }
@@ -893,7 +893,7 @@ function Notes({
           {notes.map((n) => (
             <li key={n.id}>
               <p className="whitespace-pre-wrap text-[13.5px] leading-snug">{n.text}</p>
-              <p className="mt-1 text-[11.5px] text-[#6e6e73]">
+              <p className="mt-1 text-[11.5px] text-[var(--iriss-ink-2)]">
                 {n.authorName || "-"} · {fmtDateTime(n.createdAt)}
               </p>
             </li>

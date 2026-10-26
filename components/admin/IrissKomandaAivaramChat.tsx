@@ -474,23 +474,23 @@ export function IrissKomandaAivaramChat({
         onOpenArchive={onOpenArchive}
       />
     </div>
-    <section className="flex min-h-[28rem] flex-col overflow-hidden rounded-[22px] border border-[#E5E7EB] bg-white shadow-sm max-md:hidden">
+    <section className="flex min-h-[28rem] flex-col overflow-hidden rounded-[22px] border border-[var(--iriss-line)] bg-white shadow-sm max-md:hidden">
       <header className="flex items-start justify-between gap-3 px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-[#111827] text-[12px] font-semibold text-white">
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--iriss-graphite)] text-[12px] font-semibold text-white">
             A
           </span>
           <div>
             <p className="text-[15px] font-semibold">CSDD pavadzīme</p>
-            <p className="text-[12px] text-[#067647]">Aivars izveido tikai pavadzīmes</p>
+            <p className="text-[12px] text-[var(--iriss-ok)]">Aivars izveido tikai pavadzīmes</p>
           </div>
         </div>
-        <span className="text-[12px] text-[#9aa3b2]">{inFlight} darbā</span>
+        <span className="text-[12px] text-[var(--iriss-ink-3)]">{inFlight} darbā</span>
       </header>
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-3">
         {timeline.length === 0 ? (
-          <p className="py-8 text-center text-[13px] text-[#9aa3b2]">
+          <p className="py-8 text-center text-[13px] text-[var(--iriss-ink-3)]">
             Izvēlies numuru, marku un stundas. Aivars saņem tikai šīs pavadzīmes datus.
           </p>
         ) : (
@@ -541,7 +541,7 @@ export function IrissKomandaAivaramChat({
     </section>
       {confirm ? (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#0f172a66] p-4">
-          <div className="w-full max-w-[360px] rounded-2xl border border-[#E5E7EB] bg-white p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-[360px] rounded-2xl border border-[var(--iriss-line)] bg-white p-4" role="dialog" aria-modal="true">
             <h3 className="m-0 text-[15px] font-semibold">Numurs ir aizņemts</h3>
             <p className="mt-2.5 rounded-[10px] bg-[#FEF3F2] px-3 py-2.5 text-[13px] leading-snug text-[#7a271a]">
               Numuram {confirm.plate} jau ir aktīva pavadzīme
@@ -553,13 +553,13 @@ export function IrissKomandaAivaramChat({
                 : ""}
               .
             </p>
-            <p className="mt-2 text-[13px] font-semibold leading-snug text-[#111827]">
+            <p className="mt-2 text-[13px] font-semibold leading-snug text-[var(--iriss-ink)]">
               Vai tiešām pārtraukt iepriekšējo un izveidot jaunu?
             </p>
             <div className="mt-3.5 flex flex-col gap-2">
               <button
                 type="button"
-                className="h-10 rounded-[10px] bg-[#111827] text-[12.5px] font-semibold text-white"
+                className="h-10 rounded-[10px] bg-[var(--iriss-graphite)] text-[12.5px] font-semibold text-white"
                 onClick={() => void submit(true)}
                 disabled={busy}
               >
@@ -567,7 +567,7 @@ export function IrissKomandaAivaramChat({
               </button>
               <button
                 type="button"
-                className="h-10 rounded-[10px] border border-[#E5E7EB] bg-white text-[12.5px] font-semibold text-[#111827]"
+                className="h-10 rounded-[10px] border border-[var(--iriss-line)] bg-white text-[12.5px] font-semibold text-[var(--iriss-ink)]"
                 onClick={() => {
                   setConfirm(null);
                   mobilePayload.current = null;
@@ -584,11 +584,11 @@ export function IrissKomandaAivaramChat({
 }
 
 function statusTone(status: WaybillRequestStatus): string {
-  if (status === "issued") return "bg-[#ECFDF3] text-[#067647]";
+  if (status === "issued") return "bg-[#ECFDF3] text-[var(--iriss-ok)]";
   if (status === "error") return "bg-[#FEF3F2] text-[#B42318]";
-  if (status === "in_progress") return "bg-[#EEF2FF] text-[#3d5bd9]";
-  if (status === "cancelled") return "bg-[#F3F4F6] text-[#6b7280]";
-  return "bg-[#F3F4F6] text-[#4b5563]";
+  if (status === "in_progress") return "bg-[#EEF2FF] text-[var(--iriss-info)]";
+  if (status === "cancelled") return "bg-[var(--iriss-surface-2)] text-[var(--iriss-ink-2)]";
+  return "bg-[var(--iriss-surface-2)] text-[var(--iriss-ink-2)]";
 }
 
 function RequestBubble({
@@ -606,7 +606,7 @@ function RequestBubble({
   const shownPlate = displayDealerPlate(request.vehicle.plate) || request.vehicle.plate;
   return (
     <div className="ml-8 flex flex-col items-end gap-1">
-      <div className="max-w-[85%] rounded-2xl rounded-br-md bg-[#111827] px-3 py-2 text-[12px] text-white">
+      <div className="max-w-[85%] rounded-2xl rounded-br-md bg-[var(--iriss-graphite)] px-3 py-2 text-[12px] text-white">
         <p className="text-[10px] uppercase tracking-[0.12em] text-white/70">
           {request.kind === "stop" ? "Pārtraukt" : "Pavadzīme"}
         </p>
@@ -628,18 +628,18 @@ function RequestBubble({
         )}
         {request.noteUntrusted ? <p className="mt-1 text-white/80">Komentārs: {request.noteUntrusted}</p> : null}
       </div>
-      <div className="max-w-[85%] rounded-2xl border border-[#E5E7EB] bg-white px-3 py-2 text-left">
+      <div className="max-w-[85%] rounded-2xl border border-[var(--iriss-line)] bg-white px-3 py-2 text-left">
         <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusTone(reply.status)}`}>
           {reply.statusLabel}
         </span>
-        {reply.text ? <p className="mt-1 text-[13px] text-[#111827]">{reply.text}</p> : null}
-        {reply.waybillNo ? <p className="mt-1 font-mono text-[12px] text-[#067647]">{reply.waybillNo}</p> : null}
+        {reply.text ? <p className="mt-1 text-[13px] text-[var(--iriss-ink)]">{reply.text}</p> : null}
+        {reply.waybillNo ? <p className="mt-1 font-mono text-[12px] text-[var(--iriss-ok)]">{reply.waybillNo}</p> : null}
         {reply.pdfUrl ? (
           <a
             href={reply.pdfUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 inline-block text-[12px] font-medium text-[#3d5bd9]"
+            className="mt-1 inline-block text-[12px] font-medium text-[var(--iriss-info)]"
           >
             Atvērt pavadzīmi
           </a>
@@ -654,16 +654,16 @@ function RequestBubble({
                 plate: request.vehicle.plate,
               }) || `${reply.waybillNo || "pavadzime"}.pdf`
             }
-            className="mt-2 flex min-h-9 w-full items-center justify-center rounded-[10px] bg-[#F3F4F6] px-3 text-[12.5px] font-semibold text-[#111827] disabled:opacity-60"
+            className="mt-2 flex min-h-9 w-full items-center justify-center rounded-[10px] bg-[var(--iriss-surface-2)] px-3 text-[12.5px] font-semibold text-[var(--iriss-ink)] disabled:opacity-60"
           />
         ) : null}
         {reply.status === "issued" && reply.dropboxPath ? (
-          <p className="mt-1 text-[11px] text-[#067647]">Saglabāta Dropbox: {reply.dropboxPath}</p>
+          <p className="mt-1 text-[11px] text-[var(--iriss-ok)]">Saglabāta Dropbox: {reply.dropboxPath}</p>
         ) : null}
         {reply.status === "issued" && !reply.dropboxPath && reply.dropboxError ? (
           <div className="mt-1 text-[11px] text-[#B42318]">
             <p>Dropbox nav saglabāts: {reply.dropboxError}</p>
-            <button type="button" onClick={onRetryDropbox} className="mt-0.5 font-medium text-[#3d5bd9]">
+            <button type="button" onClick={onRetryDropbox} className="mt-0.5 font-medium text-[var(--iriss-info)]">
               Saglabāt Dropbox vēlreiz
             </button>
           </div>
@@ -674,13 +674,13 @@ function RequestBubble({
             onClick={() => {
               if (confirmWaybillCancel(request.vehicle.brandModel)) onCancel();
             }}
-            className="mt-1 block text-[12px] font-medium text-[#3d5bd9]"
+            className="mt-1 block text-[12px] font-medium text-[var(--iriss-info)]"
           >
             Atcelt
           </button>
         ) : null}
       </div>
-      <span className="text-[11px] text-[#9aa3b2]">{formatHm(request.createdAt)}</span>
+      <span className="text-[11px] text-[var(--iriss-ink-3)]">{formatHm(request.createdAt)}</span>
     </div>
   );
 }
@@ -697,38 +697,38 @@ function EventBubble({
   if (event.kind === "issued" && (event.waybillNo || event.pdfUrl)) {
     return (
       <div className="mr-8 space-y-1">
-        <div className="inline-flex items-center gap-2 rounded-2xl bg-[#F3F4F6] px-3 py-1.5 text-[12px]">
-          <span className="rounded-full bg-[#ECFDF3] px-2 py-0.5 font-medium text-[#067647]">
+        <div className="inline-flex items-center gap-2 rounded-2xl bg-[var(--iriss-surface-2)] px-3 py-1.5 text-[12px]">
+          <span className="rounded-full bg-[#ECFDF3] px-2 py-0.5 font-medium text-[var(--iriss-ok)]">
             Izdota {event.waybillNo || request.waybillNo}
           </span>
         </div>
         {event.pdfUrl ? (
-          <div className="flex max-w-[85%] items-center justify-between gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-3 py-2">
+          <div className="flex max-w-[85%] items-center justify-between gap-2 rounded-2xl border border-[var(--iriss-line)] bg-white px-3 py-2">
             <div>
               <p className="text-[13px] font-medium">{event.waybillNo || "Pavadzīme"}.pdf</p>
-              <p className="text-[11px] text-[#9aa3b2]">Atvērt izdoto pavadzīmi</p>
+              <p className="text-[11px] text-[var(--iriss-ink-3)]">Atvērt izdoto pavadzīmi</p>
             </div>
             <a
               href={event.pdfUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full bg-[#F3F4F6] px-3 py-1.5 text-[12px] font-medium"
+              className="rounded-full bg-[var(--iriss-surface-2)] px-3 py-1.5 text-[12px] font-medium"
             >
               Atvērt
             </a>
           </div>
         ) : null}
-        <p className="text-[11px] text-[#9aa3b2]">{formatHm(event.createdAt)}</p>
+        <p className="text-[11px] text-[var(--iriss-ink-3)]">{formatHm(event.createdAt)}</p>
       </div>
     );
   }
   if (event.kind === "error") {
     return (
-      <div className="mr-8 max-w-[85%] rounded-2xl border border-[#E5E7EB] bg-white px-3 py-2">
+      <div className="mr-8 max-w-[85%] rounded-2xl border border-[var(--iriss-line)] bg-white px-3 py-2">
         <span className="rounded-full bg-[#FEF3F2] px-2 py-0.5 text-[11px] font-medium text-[#B42318]">Kļūda</span>
         <p className="mt-1 text-[13px]">{event.text || request.errorReason || "Neizdevās izveidot."}</p>
         <div className="mt-2 flex gap-2">
-          <button type="button" onClick={onRetry} className="rounded-full bg-[#111827] px-3 py-1.5 text-[12px] text-white">
+          <button type="button" onClick={onRetry} className="rounded-full bg-[var(--iriss-graphite)] px-3 py-1.5 text-[12px] text-white">
             Atkārtot
           </button>
         </div>
@@ -743,11 +743,11 @@ function EventBubble({
         : WAYBILL_REQUEST_STATUS_LABEL[request.status];
   return (
     <div className="mr-8">
-      <div className="inline-flex items-center gap-2 rounded-2xl bg-[#F3F4F6] px-3 py-1.5 text-[12px]">
+      <div className="inline-flex items-center gap-2 rounded-2xl bg-[var(--iriss-surface-2)] px-3 py-1.5 text-[12px]">
         <span className="rounded-full bg-white px-2 py-0.5 font-medium">{label}</span>
-        <span className="text-[#6b7280]">{event.text}</span>
+        <span className="text-[var(--iriss-ink-2)]">{event.text}</span>
       </div>
-      <p className="mt-1 text-[11px] text-[#9aa3b2]">{formatHm(event.createdAt)}</p>
+      <p className="mt-1 text-[11px] text-[var(--iriss-ink-3)]">{formatHm(event.createdAt)}</p>
     </div>
   );
 }

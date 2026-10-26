@@ -480,25 +480,25 @@ export function WaybillDismissDialog({ title, onYes, onNo }: { title: string; on
   return (
     <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#0f172a66] p-4" {...backdropClose}>
       <div
-        className="w-full max-w-[360px] rounded-2xl border border-[#E5E7EB] bg-white p-4"
+        className="w-full max-w-[360px] rounded-2xl border border-[var(--iriss-line)] bg-white p-4"
         role="dialog"
         aria-modal="true"
         aria-labelledby="wb-dismiss-title"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 id="wb-dismiss-title" className="m-0 text-[15px] font-semibold text-[#111827] [overflow-wrap:anywhere]">
+        <h3 id="wb-dismiss-title" className="m-0 text-[15px] font-semibold text-[var(--iriss-ink)] [overflow-wrap:anywhere]">
           Noņemt no saraksta{title ? ` - ${title}` : ""}?
         </h3>
         <p className="mt-2 text-[13px] leading-snug text-[#5e636e]">
           Ieraksts pazudīs tikai no šī saraksta. Pavadzīme, PDF un Arhīvs paliek nemainīti.
         </p>
         <div className="mt-3.5 flex flex-col gap-2">
-          <button type="button" className="h-10 rounded-[10px] bg-[#111827] text-[12.5px] font-semibold text-white" onClick={onYes}>
+          <button type="button" className="h-10 rounded-[10px] bg-[var(--iriss-graphite)] text-[12.5px] font-semibold text-white" onClick={onYes}>
             Jā
           </button>
           <button
             type="button"
-            className="h-10 rounded-[10px] border border-[#E5E7EB] bg-white text-[12.5px] font-semibold text-[#111827]"
+            className="h-10 rounded-[10px] border border-[var(--iriss-line)] bg-white text-[12.5px] font-semibold text-[var(--iriss-ink)]"
             onClick={onNo}
           >
             Nē

@@ -18,7 +18,7 @@ export function IrissInternalNoteField({
   return (
     <label className="block min-w-0">
       <span className="mb-1 flex flex-wrap items-center gap-1.5">
-        <span className={labelClassName ?? "text-[11.5px] font-semibold text-[#374151]"}>{label}</span>
+        <span className={labelClassName ?? "text-[11.5px] font-semibold text-[var(--iriss-ink-2)]"}>{label}</span>
         <IrissInternalNoteBadge />
       </span>
       <textarea className={className} value={value} aria-label={label} onChange={(e) => onChange(e.target.value)} />

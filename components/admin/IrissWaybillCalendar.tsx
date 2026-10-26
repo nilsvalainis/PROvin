@@ -52,7 +52,7 @@ export function IrissWaybillCalendarCards({
               <SmallPlate plate={card.plate} />
               <span
                 className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${
-                  !a ? "bg-[var(--fill,rgba(116,120,138,0.11))] !text-[var(--ink2,#5e636e)]" : soon ? "bg-[#fff4e5] !text-[#b45309]" : "bg-[#ecfdf3] !text-[#067647]"
+                  !a ? "bg-[var(--fill,rgba(116,120,138,0.11))] !text-[var(--ink2,#5e636e)]" : soon ? "bg-[#fff4e5] !text-[#b45309]" : "bg-[#ecfdf3] !text-[var(--iriss-ok)]"
                 }`}
               >
                 {!a ? "Brīvs" : soon ? "Beidzas drīz" : "Derīga"}
@@ -69,7 +69,7 @@ export function IrissWaybillCalendarCards({
                 <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--fill,rgba(116,120,138,0.11))]">
                   <div className={`h-full rounded-full ${soon ? "bg-[#ff9500]" : "bg-[#34c759]"}`} style={{ width: `${Math.round(a.share * 100)}%` }} />
                 </div>
-                <p className={`mt-1.5 text-[13px] font-semibold ${soon ? "!text-[#c2410c]" : "!text-[#1f8a3b]"}`}>Atlikušas {a.hoursLeft} h</p>
+                <p className={`mt-1.5 text-[13px] font-semibold ${soon ? "!text-[var(--iriss-warn)]" : "!text-[#1f8a3b]"}`}>Atlikušas {a.hoursLeft} h</p>
               </>
             ) : (
               <>
@@ -149,7 +149,7 @@ function IrissWaybillCalendarLanes({
   const byId = useMemo(() => new Map(rows.map((r) => [r.id, r])), [rows]);
   if (cal.lanes.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-[#E5E7EB] bg-white px-6 py-10 text-center text-[13px] text-[#6b7280] max-md:mx-4">
+      <div className="rounded-2xl border border-dashed border-[var(--iriss-line)] bg-white px-6 py-10 text-center text-[13px] text-[var(--iriss-ink-2)] max-md:mx-4">
         Nākamajās 7 dienās nav pavadzīmju.
       </div>
     );

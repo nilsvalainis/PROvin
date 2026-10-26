@@ -32,8 +32,8 @@ export function IrissWaybillSarunaButton({
       aria-expanded={open}
       aria-haspopup="dialog"
       onClick={onClick}
-      className={`relative inline-flex h-8 w-8 items-center justify-center rounded-lg border text-[#1d1d1f] ${
-        open ? "border-[#1d1d1f] bg-[#1d1d1f] text-white" : "border-[#e0e0e5] bg-white"
+      className={`relative inline-flex h-8 w-8 items-center justify-center rounded-lg border text-[var(--iriss-ink)] ${
+        open ? "border-[var(--iriss-ink)] bg-[var(--iriss-graphite)] text-white" : "border-[#e0e0e5] bg-white"
       } ${className}`}
     >
       <MessageSquare className="h-[18px] w-[18px]" strokeWidth={STROKE} aria-hidden />
@@ -54,11 +54,11 @@ function AttachmentCard({ name, href, sizeLabel }: { name: string; href?: string
     <>
       <FileText className="h-4 w-4 shrink-0 text-[#FF3B30]" strokeWidth={STROKE} aria-hidden />
       <span className="min-w-0 flex-1 truncate">{name}</span>
-      {sizeLabel ? <span className="shrink-0 text-[#8e8e93]">{sizeLabel}</span> : null}
+      {sizeLabel ? <span className="shrink-0 text-[var(--iriss-ink-3)]">{sizeLabel}</span> : null}
     </>
   );
   const cls =
-    "mt-1.5 flex items-center gap-2 rounded-[10px] border border-[#e5e5ea] bg-white px-2.5 py-2 text-[12.5px] text-[#1d1d1f]";
+    "mt-1.5 flex items-center gap-2 rounded-[10px] border border-[var(--iriss-line)] bg-white px-2.5 py-2 text-[12.5px] text-[var(--iriss-ink)]";
   if (href) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" className={cls}>
@@ -71,21 +71,21 @@ function AttachmentCard({ name, href, sizeLabel }: { name: string; href?: string
 
 export function IrissWaybillSarunaFeed({ items }: { items: readonly SarunaFeedItem[] }) {
   if (items.length === 0) {
-    return <p className="py-10 text-center text-[13px] text-[#8e8e93]">Šai pavadzīmei vēl nav sarunas ierakstu.</p>;
+    return <p className="py-10 text-center text-[13px] text-[var(--iriss-ink-3)]">Šai pavadzīmei vēl nav sarunas ierakstu.</p>;
   }
   return (
     <div className="flex flex-col gap-3" data-saruna-feed>
       {items.map((item) => {
         if (item.kind === "day") {
           return (
-            <p key={item.id} className="self-center rounded-[10px] bg-[#f5f5f7] px-2.5 py-1 text-[11.5px] text-[#8e8e93]">
+            <p key={item.id} className="self-center rounded-[10px] bg-[#f5f5f7] px-2.5 py-1 text-[11.5px] text-[var(--iriss-ink-3)]">
               {item.label}
             </p>
           );
         }
         if (item.kind === "system") {
           return (
-            <p key={item.id} className="self-center rounded-[10px] bg-[#f5f5f7] px-2.5 py-1 text-[11.5px] text-[#8e8e93]">
+            <p key={item.id} className="self-center rounded-[10px] bg-[#f5f5f7] px-2.5 py-1 text-[11.5px] text-[var(--iriss-ink-3)]">
               {item.text}
             </p>
           );
@@ -93,13 +93,13 @@ export function IrissWaybillSarunaFeed({ items }: { items: readonly SarunaFeedIt
         const clock = formatSarunaClock(item.at);
         return (
           <div key={item.id} className={`max-w-[88%] ${item.mine ? "self-end" : "self-start"}`}>
-            <p className={`mb-0.5 text-[11.5px] text-[#8e8e93] ${item.mine ? "text-right" : ""}`}>
+            <p className={`mb-0.5 text-[11.5px] text-[var(--iriss-ink-3)] ${item.mine ? "text-right" : ""}`}>
               {item.from}
               {clock ? ` · ${clock}` : ""}
             </p>
             <div
               className={`rounded-xl px-3 py-2 text-[13px] leading-snug ${
-                item.mine ? "bg-[#1d1d1f] text-white" : "bg-[#f2f2f5] text-[#1d1d1f]"
+                item.mine ? "bg-[var(--iriss-graphite)] text-white" : "bg-[#f2f2f5] text-[var(--iriss-ink)]"
               }`}
             >
               {item.text ? <p>{item.text}</p> : null}
@@ -151,18 +151,18 @@ export function IrissWaybillSarunaOverlay({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="absolute top-16 right-4 flex h-[min(600px,calc(100dvh-6rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[#e5e5ea] bg-white shadow-[0_20px_60px_rgba(0,0,0,.18)] max-md:top-12 max-md:right-3 max-md:left-3 max-md:w-auto"
+        className="absolute top-16 right-4 flex h-[min(600px,calc(100dvh-6rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--iriss-line)] bg-white shadow-[0_20px_60px_rgba(0,0,0,.18)] max-md:top-12 max-md:right-3 max-md:left-3 max-md:w-auto"
       >
         <header className="flex items-start justify-between gap-3 border-b border-[#ececf0] px-4 py-3.5">
           <div className="min-w-0">
-            <p className="text-[15px] font-semibold text-[#1d1d1f]">{title}</p>
-            {subtitle ? <p className="mt-0.5 text-[12px] text-[#8e8e93]">{subtitle}</p> : null}
+            <p className="text-[15px] font-semibold text-[var(--iriss-ink)]">{title}</p>
+            {subtitle ? <p className="mt-0.5 text-[12px] text-[var(--iriss-ink-3)]">{subtitle}</p> : null}
           </div>
           <button
             type="button"
             aria-label="Aizvērt"
             onClick={onClose}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[#8e8e93]"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-[var(--iriss-ink-3)]"
           >
             <X className="h-[18px] w-[18px]" strokeWidth={STROKE} />
           </button>
@@ -185,13 +185,13 @@ export function IrissWaybillSarunaOverlay({
             onChange={(e) => setDraft(e.target.value)}
             placeholder="Raksti ziņu…"
             aria-label="Raksti ziņu"
-            className="min-w-0 flex-1 bg-transparent text-[13.5px] text-[#1d1d1f] outline-none placeholder:text-[#8e8e93]"
+            className="min-w-0 flex-1 bg-transparent text-[13.5px] text-[var(--iriss-ink)] outline-none placeholder:text-[var(--iriss-ink-3)]"
           />
           <button
             type="submit"
             aria-label="Sūtīt"
             disabled={!draft.trim()}
-            className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-lg bg-[#1d1d1f] text-white disabled:opacity-40"
+            className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-lg bg-[var(--iriss-graphite)] text-white disabled:opacity-40"
           >
             <Send className="h-[15px] w-[15px]" strokeWidth={STROKE} />
           </button>

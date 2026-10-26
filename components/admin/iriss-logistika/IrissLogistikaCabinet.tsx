@@ -350,7 +350,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
             href={order.auctionUrl || order.listingUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex h-8 items-center rounded-full border border-[#e5e7eb] px-3 text-[12px] font-semibold"
+            className="inline-flex h-8 items-center rounded-full border border-[var(--iriss-line)] px-3 text-[12px] font-semibold"
           >
             {order.source === "private" ? "Sludinājums" : "Atvērt izsolē"}
           </a>
@@ -361,7 +361,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
         <IrissSaitesPanel from="logistics" id={order.id} vehicle={order.title || `${order.make} ${order.model}`} />
       </div>
 
-      <p className="mt-3 rounded-xl bg-[#f8fafc] px-3 py-2 text-[13px]">
+      <p className="mt-3 rounded-xl bg-[var(--iriss-surface-2)] px-3 py-2 text-[13px]">
         {order.createdAt ? `Nopirkts ${formatLogisticsDate(order.createdAt.slice(0, 10))}` : LOGISTICS_ORDER_STATUS_LV[order.status]}
         {!access.hideSums && order.priceEur != null ? ` · apmaksāts ${formatLogisticsEur(order.priceEur)}` : ""}
         {order.pickupDate ? ` · pickup ${formatLogisticsDate(order.pickupDate)}` : ""}
@@ -392,7 +392,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
               const next = e.target.value;
               if (isLogisticsOrderStatus(next)) void saveOrderFields({ status: next });
             }}
-            className="mt-1 h-10 w-full rounded-xl border border-[#e5e7eb] px-2 text-[13px]"
+            className="mt-1 h-10 w-full rounded-xl border border-[var(--iriss-line)] px-2 text-[13px]"
           >
             {!isLogisticsPipelineStatus(order.status) ? (
               <option value={order.status}>{LOGISTICS_ORDER_STATUS_LV[order.status]}</option>
@@ -414,7 +414,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
               if (!access.write || pickupCode.trim() === (order.pickupRef || "").trim()) return;
               void savePickupCode(pickupCode.trim());
             }}
-            className="mt-1 h-10 w-full rounded-xl border border-[#e5e7eb] px-2 font-mono text-[13px]"
+            className="mt-1 h-10 w-full rounded-xl border border-[var(--iriss-line)] px-2 font-mono text-[13px]"
           />
         </label>
         <label className="block text-[11px] text-[var(--ink2)]">
@@ -432,7 +432,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
                 }
                 void savePickupDate(next);
               }}
-              className="h-10 w-full rounded-xl border border-[#e5e7eb] px-2 text-[13px]"
+              className="h-10 w-full rounded-xl border border-[var(--iriss-line)] px-2 text-[13px]"
             />
             {access.write && pickupDate ? (
               <button type="button" onClick={() => void savePickupDate("")} className="shrink-0 text-[11px] font-semibold text-[var(--ink3)] underline">
@@ -454,7 +454,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
               if (!access.write || next === (order.freeParkingUntil || "").slice(0, 10)) return;
               void saveOrderFields({ freeParkingUntil: next });
             }}
-            className="mt-1 h-10 w-full rounded-xl border border-[#e5e7eb] px-2 text-[13px]"
+            className="mt-1 h-10 w-full rounded-xl border border-[var(--iriss-line)] px-2 text-[13px]"
           />
           {(() => {
             const timer = logisticsParkingDeadlineTimer(parkingUntil, new Date(nowMs));
@@ -484,8 +484,8 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
             );
           })()}
         </div>
-        <div className="mt-1.5 flex h-9 items-center gap-1.5 rounded-xl border border-[#e5e7eb] px-2.5">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" className="shrink-0 text-[#6e6e73]">
+        <div className="mt-1.5 flex h-9 items-center gap-1.5 rounded-xl border border-[var(--iriss-line)] px-2.5">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" className="shrink-0 text-[var(--iriss-ink-2)]">
             <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" />
             <circle cx="12" cy="9.5" r="2.5" />
           </svg>
@@ -514,7 +514,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
             void saveOrderFields({ notes: note });
           }}
           rows={2}
-          className="mt-1 w-full rounded-xl border border-[#e5e7eb] px-2 py-2 text-[13px]"
+          className="mt-1 w-full rounded-xl border border-[var(--iriss-line)] px-2 py-2 text-[13px]"
         />
       </label>
 
@@ -550,7 +550,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
                     {CABINET_DOC_GROUP_LABEL.B}
                   </p>
                   <div className="mb-2 rounded-xl border border-[#eef1f4] bg-white px-3 py-2">
-                    <div className="grid grid-cols-3 gap-1 rounded-full bg-[#f3f4f6] p-1">
+                    <div className="grid grid-cols-3 gap-1 rounded-full bg-[var(--iriss-surface-2)] p-1">
                       {(["waiting", "planned", "in_transit"] as const).map((key) => (
                         <button
                           key={key}
@@ -564,7 +564,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
                       ))}
                     </div>
                     {!arrived && access.write ? (
-                      <button type="button" onClick={() => void setStage("arrived")} className="mt-2 h-8 rounded-full border border-[#e5e7eb] px-3 text-[12px] font-semibold">
+                      <button type="button" onClick={() => void setStage("arrived")} className="mt-2 h-8 rounded-full border border-[var(--iriss-line)] px-3 text-[12px] font-semibold">
                         Atzīmēt kā Atvests
                       </button>
                     ) : null}
@@ -578,7 +578,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
                         value={order.pickupPointId}
                         disabled={!access.write}
                         onChange={(e) => onAssignPoint(order.id, e.target.value)}
-                        className="mt-1 h-9 w-full rounded-lg border border-[#e5e7eb] px-2 text-[12.5px]"
+                        className="mt-1 h-9 w-full rounded-lg border border-[var(--iriss-line)] px-2 text-[12.5px]"
                       >
                         <option value="">Nav izvēlēts</option>
                         {groupedPoints.map((g) => (
@@ -662,7 +662,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
               void saveOrderFields({ transportCostEur: parsed, transportCostAuto: false });
             }}
             placeholder="-"
-            className="mt-1.5 h-9 w-full rounded-lg border border-[#e5e7eb] px-2 text-[13px] font-semibold"
+            className="mt-1.5 h-9 w-full rounded-lg border border-[var(--iriss-line)] px-2 text-[13px] font-semibold"
           />
         ) : (
           <p className="mt-1.5 text-[13px] font-semibold">{order.transportCostEur != null ? formatLogisticsEur(order.transportCostEur) : "-"}</p>
@@ -695,7 +695,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
             </button>
           ) : (
             <>
-              <button type="button" onClick={() => onPatchOrder(order.id, "picked_up")} className="h-9 rounded-full border border-[#e5e7eb] px-3 text-[12.5px] font-semibold">
+              <button type="button" onClick={() => onPatchOrder(order.id, "picked_up")} className="h-9 rounded-full border border-[var(--iriss-line)] px-3 text-[12.5px] font-semibold">
                 Izņemts
               </button>
               <button type="button" onClick={() => onPatchOrder(order.id, "delivered")} className="h-9 rounded-full bg-[var(--ink,#111827)] px-3 text-[12.5px] font-semibold text-white">
@@ -847,7 +847,7 @@ function UploadRow({
     >
       <p>Ievilc failu vai izvēlies. PDF, JPG, PNG līdz 20 MB.</p>
       <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
-        <select value={safeType} onChange={(e) => setType(e.target.value as CabinetDocType)} className="h-8 rounded-[10px] border border-[#e5e7eb] px-2 text-[12px]">
+        <select value={safeType} onChange={(e) => setType(e.target.value as CabinetDocType)} className="h-8 rounded-[10px] border border-[var(--iriss-line)] px-2 text-[12px]">
           {types.map((t) => (
             <option key={t} value={t}>
               {CABINET_DOC_TYPE_LABEL[t]}

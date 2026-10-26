@@ -6,7 +6,7 @@ import { IRISS_ORDER_PHOTO_ALBUM_LV, type IrissOrderPhotoAlbum, type IrissOrderP
 import { IRISS_MAX_OFFER_ATTACHMENTS, type IrissOfferAttachment } from "@/lib/iriss-pasutijumi-types";
 
 const roomBtn =
-  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#e5e7eb] bg-white px-3 text-[12.5px] font-semibold text-[#111827] shadow-[0_1px_2px_#0000000d]";
+  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--iriss-line)] bg-white px-3 text-[12.5px] font-semibold text-[var(--iriss-ink)] shadow-[0_1px_2px_#0000000d]";
 
 export function IrissOrderPhotoAlbumSection({
   albumId,

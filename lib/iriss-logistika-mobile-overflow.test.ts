@@ -32,7 +32,7 @@ describe("Loģistika iPhone platums", () => {
 
   it("Iestatījumi - Lietotāji saraksts nepaplašina lapu ar gariem e-pastiem", () => {
     expect(src.staffUsers).toContain("grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-[minmax(0,1fr)_320px]");
-    expect(src.staffUsers).toContain('<span className="min-w-0 text-[#111827] [overflow-wrap:anywhere]">');
+    expect(src.staffUsers).toContain('<span className="min-w-0 text-[var(--iriss-ink)] [overflow-wrap:anywhere]">');
   });
 
   it("telefonā Auto kabinets pēc pieskāriena rindai tiek aizritināts redzamā zonā", () => {

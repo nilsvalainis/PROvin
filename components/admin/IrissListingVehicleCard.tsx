@@ -136,14 +136,14 @@ export function IrissListingVehicleCard({
   const referrerPolicy: "no-referrer" | undefined =
     v.platform === "openline" || /images\.openlane\.eu/i.test(photos[0] ?? "") ? "no-referrer" : undefined;
   const border = gone
-    ? "border-[#E5E7EB] opacity-70"
+    ? "border-[var(--iriss-line)] opacity-70"
     : fav
       ? "border-amber-200"
       : fresh
         ? "border-emerald-200"
         : changes.length > 0
           ? "border-sky-200"
-          : "border-[#E5E7EB]";
+          : "border-[var(--iriss-line)]";
   const city = v.location.replace(/,\s*[A-Z]{2}$/i, "").trim();
 
   function toggle(list: "fav" | "hidden") {
@@ -193,7 +193,7 @@ export function IrissListingVehicleCard({
         type="button"
         title={fav ? "Noņemt no favorītiem" : "Favorīts"}
         onClick={() => toggle("fav")}
-        className={`grid h-11 w-11 place-items-center rounded-lg border sm:h-9 sm:w-9 ${fav ? "border-amber-300 bg-amber-50 text-amber-500" : "border-[#E5E7EB] bg-white"}`}
+        className={`grid h-11 w-11 place-items-center rounded-lg border sm:h-9 sm:w-9 ${fav ? "border-amber-300 bg-amber-50 text-amber-500" : "border-[var(--iriss-line)] bg-white"}`}
       >
         {fav ? "★" : "☆"}
       </button>
@@ -201,7 +201,7 @@ export function IrissListingVehicleCard({
         type="button"
         title={hidden ? "Rādīt atkal" : "Nav interesanti"}
         onClick={() => toggle("hidden")}
-        className="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] bg-white sm:h-9 sm:w-9"
+        className="grid h-11 w-11 place-items-center rounded-lg border border-[var(--iriss-line)] bg-white sm:h-9 sm:w-9"
       >
         {hidden ? "↺" : "✕"}
       </button>
@@ -295,7 +295,7 @@ export function IrissListingVehicleCard({
           )}
           <IrissListingSourceExtras v={v} mobile={mobile} />
           {days ? (
-            <span className="inline-flex rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+            <span className="inline-flex rounded-full border border-[var(--iriss-line)] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
               {days}
             </span>
           ) : null}

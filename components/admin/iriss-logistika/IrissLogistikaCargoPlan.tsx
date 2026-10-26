@@ -190,8 +190,8 @@ export function IrissLogistikaCargoPlan({
   return (
     <aside className="iriss-log-cargo-card">
       <div className="flex items-center justify-between px-3.5 pb-1 pt-3">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6e6e73]">Kravu plāns</p>
-        <p className="text-[12px] text-[#6e6e73]">{orders.length} auto · velc kartīti uz citu kravu</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--iriss-ink-2)]">Kravu plāns</p>
+        <p className="text-[12px] text-[var(--iriss-ink-2)]">{orders.length} auto · velc kartīti uz citu kravu</p>
       </div>
       <DndContext
         sensors={sensors}
@@ -250,7 +250,7 @@ export function IrissLogistikaCargoPlan({
               <div className="iriss-log-cargo-head">
                 <span className="iriss-log-cargo-dot" style={{ background: colorVar }} />
                 <span className="text-[13px] font-semibold">{CARGO_BUCKET_LV[bucket]}</span>
-                <span className="text-[12px] text-[#6e6e73]">{ids.length}</span>
+                <span className="text-[12px] text-[var(--iriss-ink-2)]">{ids.length}</span>
                 {route ? (
                   <span className="ml-auto flex items-center gap-3">
                   <label className="flex items-center gap-2 text-[12px] font-medium">
@@ -354,7 +354,7 @@ function CargoRowText({ order }: { order: LogisticsOrder }) {
     <>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[14px] font-semibold leading-tight">{logisticsCarTitle(order)}</span>
-        <span className="mt-0.5 block truncate text-[12px] leading-tight text-[#6e6e73]">{place || "Pickup vieta nav norādīta"}</span>
+        <span className="mt-0.5 block truncate text-[12px] leading-tight text-[var(--iriss-ink-2)]">{place || "Pickup vieta nav norādīta"}</span>
       </span>
       <span className="iriss-log-cargo-logo">
         {order.source === "manual" ? <span className="iriss-log-manual-chip">Cits klients</span> : order.auction ? <IrissAuctionLogo name={order.auction} /> : null}
@@ -512,9 +512,9 @@ function ManualCarAdd({ bucket, onAdd }: { bucket: CargoBucket; onAdd: (bucket: 
             setNotice("");
           }}
         />
-        {picked ? <p className="mt-1 truncate text-[12px] text-[#15803d]">Kartē: {picked.formatted}</p> : null}
+        {picked ? <p className="mt-1 truncate text-[12px] text-[var(--iriss-ok)]">Kartē: {picked.formatted}</p> : null}
       </div>
-      {notice ? <p className="mt-1.5 text-[12px] text-[#6e6e73]">{notice}</p> : null}
+      {notice ? <p className="mt-1.5 text-[12px] text-[var(--iriss-ink-2)]">{notice}</p> : null}
       <div className="mt-2.5 flex justify-end gap-2">
         <button type="button" className="iriss-log-btn-sec h-9 min-h-9 px-3 text-[12.5px]" onClick={reset}>
           Atcelt
@@ -615,9 +615,9 @@ function RouteBlock({
       <div className="mt-3 flex items-end justify-between gap-2">
         <div>
           <p className="text-[22px] font-semibold tracking-tight">{formatCargoKm(route.distanceKm) || "- km"}</p>
-          <p className="text-[12px] text-[#6e6e73]">{formatCargoDuration(route.durationMin) || "laiks pēc aprēķina"}</p>
+          <p className="text-[12px] text-[var(--iriss-ink-2)]">{formatCargoDuration(route.durationMin) || "laiks pēc aprēķina"}</p>
         </div>
-        {hasLine && !stale ? <p className="text-[12px] font-medium text-[#15803d]">Maršruts ir kartē</p> : null}
+        {hasLine && !stale ? <p className="text-[12px] font-medium text-[var(--iriss-ok)]">Maršruts ir kartē</p> : null}
       </div>
       {error ? (
         <p className="mt-2 rounded-[10px] bg-[#fdecea] px-2.5 py-2 text-[12.5px] text-[#9b1c13]" role="alert">
@@ -625,7 +625,7 @@ function RouteBlock({
         </p>
       ) : null}
       {hasLine ? (
-        <p className="mt-2 text-[12px] leading-snug text-[#6e6e73]">
+        <p className="mt-2 text-[12px] leading-snug text-[var(--iriss-ink-2)]">
           Lai maršruts iet pa citu ceļu (piem. automaģistrāli), pieskaries zilajai līnijai kartē un pavelc punktu uz vajadzīgo ceļu. Pieskāriens punktam to noņem.
           {route.via.length > 0 ? ` Caurbraucamie punkti: ${route.via.length}.` : ""}
         </p>
@@ -706,7 +706,7 @@ function DriverLinkButton({ bucket, disabled }: { bucket: "next" | "after"; disa
       </button>
       <button
         type="button"
-        className="text-[12px] font-medium text-[#6e6e73] underline decoration-dotted underline-offset-2"
+        className="text-[12px] font-medium text-[var(--iriss-ink-2)] underline decoration-dotted underline-offset-2"
         disabled={state === "busy"}
         onClick={() => void revoke()}
       >
@@ -800,7 +800,7 @@ function TemplateEditor({
       </div>
       <div className="mt-2">
         <IrissAddressAutocomplete defaultValue={tpl.address} placeholder="Adrese" onPick={setPicked} />
-        {picked ? <p className="mt-1 text-[12px] text-[#15803d]">Jaunā adrese: {picked.formatted}</p> : null}
+        {picked ? <p className="mt-1 text-[12px] text-[var(--iriss-ok)]">Jaunā adrese: {picked.formatted}</p> : null}
       </div>
       {error ? <p className="mt-1.5 text-[12px] text-[#c2362b]">{error}</p> : null}
       <div className="mt-2 flex items-center gap-2">
@@ -882,13 +882,13 @@ function EndpointRow({
           <TemplateIcon type={value.type} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[11px] font-semibold uppercase tracking-wide text-[#6e6e73]">{label}</span>
+          <span className="block text-[11px] font-semibold uppercase tracking-wide text-[var(--iriss-ink-2)]">{label}</span>
           <span className="block truncate text-[14px] font-semibold">{value.label || value.address}</span>
         </span>
         <button type="button" className="text-[12.5px] font-medium text-[var(--iriss-log-focus)]" onClick={onOpen}>
           Mainīt
         </button>
-        <button type="button" className="px-1 text-[13px] text-[#6e6e73]" onClick={() => onPick(null)} aria-label="Noņemt">
+        <button type="button" className="px-1 text-[13px] text-[var(--iriss-ink-2)]" onClick={() => onPick(null)} aria-label="Noņemt">
           ✕
         </button>
       </div>
@@ -897,8 +897,8 @@ function EndpointRow({
   return (
     <div className="iriss-log-endpoint-picker">
       <div className="flex items-center justify-between px-0.5">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6e6e73]">{label}: šabloni</p>
-        <button type="button" className="text-[12.5px] font-medium text-[#6e6e73]" onClick={onClose}>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--iriss-ink-2)]">{label}: šabloni</p>
+        <button type="button" className="text-[12.5px] font-medium text-[var(--iriss-ink-2)]" onClick={onClose}>
           Aizvērt
         </button>
       </div>
@@ -916,7 +916,7 @@ function EndpointRow({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[14px] font-semibold">{tpl.name}</span>
-                  <span className="block truncate text-[12px] text-[#6e6e73]">{tpl.address}</span>
+                  <span className="block truncate text-[12px] text-[var(--iriss-ink-2)]">{tpl.address}</span>
                 </span>
               </button>
               <button type="button" className="iriss-log-tpl-edit-btn" aria-label={`Labot ${tpl.name}`} title="Labot" onClick={() => setEditId(tpl.id)}>
@@ -928,12 +928,12 @@ function EndpointRow({
           ),
         )}
       </ul>
-      <p className="mt-3 px-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#6e6e73]">Cita adrese</p>
+      <p className="mt-3 px-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--iriss-ink-2)]">Cita adrese</p>
       <div className="mt-1.5">
         <IrissAddressAutocomplete placeholder="Sāc rakstīt adresi vai vietu" onPick={(a) => void pickAddress(a)} />
       </div>
       <label className="mt-2 flex items-center gap-2 px-0.5 text-[12.5px]">
-        <input type="checkbox" className="h-4 w-4 accent-[#1d1d1f]" checked={saveTpl} onChange={(e) => setSaveTpl(e.target.checked)} />
+        <input type="checkbox" className="h-4 w-4 accent-[var(--iriss-ink)]" checked={saveTpl} onChange={(e) => setSaveTpl(e.target.checked)} />
         Saglabāt kā šablonu
       </label>
       {saveTpl ? (

@@ -36,7 +36,7 @@ export function IrissListingBudgetBox({ budget, gala, real, maxBid, room, priceM
   const pill = budget != null ? listingBudgetFitPill(budget, total) : null;
 
   return (
-    <div className="mt-2 grid gap-0.5 rounded-xl border border-dashed border-[#E5E7EB] p-3 text-[11px] tabular-nums">
+    <div className="mt-2 grid gap-0.5 rounded-xl border border-dashed border-[var(--iriss-line)] p-3 text-[11px] tabular-nums">
       <Row label={priceLabel || LISTING_PRICE_LABEL} value={listingFmtEur(real.price)} />
       <Row label={LISTING_COSTS_LABEL} value={listingFmtEur(real.extras)} />
       <Row label={LISTING_VAT_LABEL} value={listingFmtEur(real.vat)} />

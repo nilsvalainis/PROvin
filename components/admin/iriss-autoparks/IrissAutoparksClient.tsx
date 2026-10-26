@@ -152,7 +152,7 @@ export function IrissAutoparksClient({ initialCars, storeEnabled, hideSums, canW
             <h1 className="text-[22px] font-semibold tracking-tight">Autoparks</h1>
             <IrissProjectIndicator />
           </div>
-          <p className="mt-0.5 text-[12.5px] text-[#6e6e73]">
+          <p className="mt-0.5 text-[12.5px] text-[var(--iriss-ink-2)]">
             {activeCount} auto parkā{counts.sold ? ` · ${counts.sold} pārdoti` : ""}
           </p>
         </div>
@@ -242,12 +242,12 @@ export function IrissAutoparksClient({ initialCars, storeEnabled, hideSums, canW
               {cars.length === 0 ? (
                 <>
                   <p className="text-[15px] font-semibold">Autoparks vēl ir tukšs</p>
-                  <p className="mt-1 text-[13px] text-[#6e6e73]">
+                  <p className="mt-1 text-[13px] text-[var(--iriss-ink-2)]">
                     Auto šeit nonāk no Loģistikas ar &quot;Uz Autoparku&quot; vai ar &quot;+ Pievienot auto&quot;.
                   </p>
                 </>
               ) : (
-                <p className="text-[13px] text-[#6e6e73]">Šajā skatā nav auto.</p>
+                <p className="text-[13px] text-[var(--iriss-ink-2)]">Šajā skatā nav auto.</p>
               )}
             </div>
           ) : null}
@@ -343,7 +343,7 @@ export function CarCard({
         </label>
       </div>
       <p className="mt-2 truncate text-[15px] font-semibold leading-tight">{autoparksCarTitle(car)}</p>
-      <p className="mt-0.5 truncate text-[12px] text-[#6e6e73]">
+      <p className="mt-0.5 truncate text-[12px] text-[var(--iriss-ink-2)]">
         {[car.mileageKm != null ? `${car.mileageKm.toLocaleString("lv-LV")} km` : "", car.color].filter(Boolean).join(" · ") || car.vin || "-"}
       </p>
       {compact ? null : (
@@ -356,7 +356,7 @@ export function CarCard({
           ))}
         </div>
       )}
-      <div className="mt-2 flex items-center gap-3 text-[12px] text-[#6e6e73]">
+      <div className="mt-2 flex items-center gap-3 text-[12px] text-[var(--iriss-ink-2)]">
         <span>{days === 0 ? "šodien" : `${days} d. parkā`}</span>
         <span className="ml-auto tabular-nums">{car.fileCount} faili</span>
         {car.workOpen > 0 ? <span className="iriss-ap-badge">{car.workOpen} darbi</span> : null}
@@ -412,7 +412,7 @@ function AddCarDialog({ onClose, onCreated }: { onClose: () => void; onCreated: 
     <div className="iriss-ap-dialog-bg" {...backdropClose} role="presentation">
       <div className="iriss-ap-dialog" role="dialog" aria-modal="true" aria-label="Pievienot auto" onClick={(e) => e.stopPropagation()}>
         <p className="text-[17px] font-semibold">Pievienot auto</p>
-        <p className="mt-0.5 text-[12.5px] text-[#6e6e73]">Auto no Loģistikas nonāk šeit pats ar &quot;Uz Autoparku&quot;.</p>
+        <p className="mt-0.5 text-[12.5px] text-[var(--iriss-ink-2)]">Auto no Loģistikas nonāk šeit pats ar &quot;Uz Autoparku&quot;.</p>
         <div className="mt-3 grid grid-cols-2 gap-2.5">
           {field("make", "Marka", { autoFocus: "true", placeholder: "Volvo" })}
           {field("model", "Modelis", { placeholder: "XC60" })}
