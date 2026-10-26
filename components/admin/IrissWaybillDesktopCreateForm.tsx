@@ -162,7 +162,6 @@ export function IrissWaybillDesktopCreateForm({
             choice={auto.autoChoice}
             car={auto.car}
             manualBrandModel={auto.manualBrandModel}
-            manualVin={auto.manualVin}
             isB192={isB192}
             b192Empty={b192Empty}
             showManual={showManual}
@@ -174,7 +173,6 @@ export function IrissWaybillDesktopCreateForm({
             }}
             onClearCar={() => onAuto({ ...auto, car: null })}
             onManualBrandModel={(value) => onAuto({ ...auto, manualBrandModel: value })}
-            onManualVin={(value) => onAuto({ ...auto, manualVin: value })}
           />
         </div>
         <div className="mb-2 text-[11px] font-medium text-[#6b7280]">

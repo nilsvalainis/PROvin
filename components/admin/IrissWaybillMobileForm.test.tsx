@@ -43,7 +43,6 @@ function autoEntry(choice: "none" | "list" | "manual") {
       choice={state.autoChoice}
       car={state.car}
       manualBrandModel={state.manualBrandModel}
-      manualVin={state.manualVin}
       isB192={false}
       b192Empty={false}
       showManual={waybillShowsManualFields(state)}
@@ -52,7 +51,6 @@ function autoEntry(choice: "none" | "list" | "manual") {
       onOpenList={() => undefined}
       onClearCar={() => undefined}
       onManualBrandModel={() => undefined}
-      onManualVin={() => undefined}
     />
   );
 }
@@ -171,7 +169,7 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     expect(withArchive).toContain("Visas pavadzīmes Arhīvā ›");
   });
 
-  it("Auto ievade: noklusējumā abi ceļi; 'Ar roku' uzreiz rāda marku, modeli un VIN", () => {
+  it("Auto ievade: noklusējumā abi ceļi; 'Ar roku' rāda tikai marku un modeli, bez VIN", () => {
     const none = renderText(autoEntry("none"));
     expect(none).toContain("No saraksta");
     expect(none).toContain("Ar roku");
@@ -182,10 +180,12 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     const manualHtml = renderHtml(autoEntry("manual"));
     const manualText = renderText(autoEntry("manual"));
     expect(manualText).toContain("Ar roku");
+    expect(manualText).toContain("marka, modelis");
+    expect(manualText).not.toContain("marka, modelis, VIN");
     expect(manualHtml).toContain('aria-label="Marka, modelis"');
     expect(manualHtml).toContain('placeholder="Marka, modelis"');
-    expect(manualHtml).toContain('aria-label="VIN"');
-    expect(manualHtml).toContain('placeholder="17 zīmes"');
+    expect(manualHtml).not.toContain('aria-label="VIN"');
+    expect(manualHtml).not.toContain('placeholder="17 zīmes"');
     expect(manualText).not.toContain("Izvēlies auto");
     expect(manualHtml).toMatch(/aria-pressed="true"[^>]*>Ar roku/);
 
