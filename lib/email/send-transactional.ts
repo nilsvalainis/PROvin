@@ -1119,13 +1119,17 @@ export async function sendStaffInviteEmail(opts: {
   to: string;
   name: string;
   inviteUrl: string;
+  kind?: "invite" | "reset";
 }): Promise<void> {
   const name = opts.name.trim() || "kolēģi";
-  const subject = "IRISS: uzaicinājums iestatīt pieeju";
+  const reset = opts.kind === "reset";
+  const subject = reset ? "IRISS: atiestati paroli" : "IRISS: uzaicinājums iestatīt pieeju";
   const text = [
     `Sveiki, ${name}.`,
     "",
-    "Nils uzaicināja tevi uz IRISS. Saite derīga 24 stundas un darbojas vienu reizi.",
+    reset
+      ? "Nils atiestatīja tavu IRISS paroli. Saite derīga 24 stundas un darbojas vienu reizi."
+      : "Nils uzaicināja tevi uz IRISS. Saite derīga 24 stundas un darbojas vienu reizi.",
     opts.inviteUrl,
     "",
     "Ja tu to neprasīji, ignorē šo vēstuli.",
@@ -1134,7 +1138,7 @@ export async function sendStaffInviteEmail(opts: {
     to: opts.to,
     subject,
     text,
-    html: staffInviteEmailHtml({ name, inviteUrl: opts.inviteUrl }),
+    html: staffInviteEmailHtml({ name, inviteUrl: opts.inviteUrl, kind: opts.kind }),
   });
 }
 

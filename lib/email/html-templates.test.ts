@@ -86,6 +86,20 @@ describe("staffInviteEmailHtml", () => {
     expect(html).not.toContain("\u2014");
     expect(html).not.toContain("\u2013");
   });
+
+  it("uses reset copy when kind is reset", () => {
+    const html = staffInviteEmailHtml({
+      name: "Toms Gudovskis",
+      inviteUrl: "https://www.provin.lv/admin/uzaicinajums/rst",
+      kind: "reset",
+    });
+    expect(html).toContain("IRISS parole");
+    expect(html).toContain("atiestatīja tavu IRISS paroli");
+    expect(html).toContain("https://www.provin.lv/admin/uzaicinajums/rst");
+    expect(html).not.toContain("uzaicināja tevi");
+    expect(html).not.toContain("\u2014");
+    expect(html).not.toContain("\u2013");
+  });
 });
 
 describe("adminAuditSlaWarningHtml", () => {

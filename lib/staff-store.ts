@@ -540,6 +540,92 @@ export async function revokeStaffAccess(input: {
   });
 }
 
+export type ResetStaffPasswordResult =
+  | { ok: true; user: StaffUserPublic; token: string }
+  | { ok: false; error: "not_found" | "revoked" };
+
+export async function resetStaffPassword(input: {
+  userId: string;
+  actorId: string;
+  ip?: string;
+  userAgent?: string;
+}): Promise<ResetStaffPasswordResult> {
+  return mutateDoc<ResetStaffPasswordResult>((doc) => {
+    const user = doc.users.find((u) => u.id === input.userId);
+    if (!user) return { value: { ok: false, error: "not_found" } };
+    if (user.status === "revoked") return { value: { ok: false, error: "revoked" } };
+    const now = new Date().toISOString();
+    const nextUser: StaffUser = {
+      ...user,
+      status: "invited",
+      passwordHash: null,
+      failedLoginCount: 0,
+      lockedUntil: null,
+    };
+    const token = newInviteToken();
+    const invite: StaffInvite = {
+      tokenHash: hashInviteToken(token),
+      userId: user.id,
+      expiresAt: new Date(Date.now() + STAFF_INVITE_TTL_MS).toISOString(),
+      usedAt: null,
+    };
+    const sessions = doc.sessions.map((s) =>
+      s.userId === user.id && !s.revokedAt ? { ...s, revokedAt: now } : s,
+    );
+    const invites = [invite, ...doc.invites.filter((i) => i.userId !== user.id || Boolean(i.usedAt))];
+    const next = appendAudit(
+      {
+        ...doc,
+        users: doc.users.map((u) => (u.id === user.id ? nextUser : u)),
+        sessions,
+        invites,
+      },
+      {
+        userId: input.actorId,
+        action: "password_reset",
+        target: user.id,
+        meta: { email: user.email },
+        ip: input.ip ?? "unknown",
+        userAgent: input.userAgent ?? "",
+      },
+    );
+    return { value: { ok: true, user: toPublicStaffUser(nextUser, 0), token }, next };
+  });
+}
+
+export type DeleteStaffUserResult =
+  | { ok: true; id: string; email: string }
+  | { ok: false; error: "not_found" };
+
+export async function deleteStaffUser(input: {
+  userId: string;
+  actorId: string;
+  ip?: string;
+  userAgent?: string;
+}): Promise<DeleteStaffUserResult> {
+  return mutateDoc<DeleteStaffUserResult>((doc) => {
+    const user = doc.users.find((u) => u.id === input.userId);
+    if (!user) return { value: { ok: false, error: "not_found" } };
+    const next = appendAudit(
+      {
+        ...doc,
+        users: doc.users.filter((u) => u.id !== user.id),
+        sessions: doc.sessions.filter((s) => s.userId !== user.id),
+        invites: doc.invites.filter((i) => i.userId !== user.id),
+      },
+      {
+        userId: input.actorId,
+        action: "user_deleted",
+        target: user.id,
+        meta: { email: user.email, name: user.name },
+        ip: input.ip ?? "unknown",
+        userAgent: input.userAgent ?? "",
+      },
+    );
+    return { value: { ok: true, id: user.id, email: user.email }, next };
+  });
+}
+
 export async function restoreStaffAccess(input: {
   userId: string;
   actorId: string;

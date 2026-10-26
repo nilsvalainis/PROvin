@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getClientIpFromRequest } from "@/lib/client-ip";
+import { getPublicSiteOrigin } from "@/lib/site-url";
+import { trySendStaffInviteEmail } from "@/lib/staff-invite-email";
 import { ENV_ADMIN_USER_ID, normalizeStaffSections } from "@/lib/staff-roles";
 import {
   confirmStaffTotp,
+  deleteStaffUser,
   findStaffUserById,
   listStaffSessionsPublic,
+  resetStaffPassword,
   restoreStaffAccess,
   revokeAllStaffSessions,
   revokeStaffAccess,
@@ -86,6 +90,29 @@ export async function POST(req: Request, ctx: Ctx) {
   if (action === "revoke_sessions") {
     const count = await revokeAllStaffSessions({ userId: id, actorId: ENV_ADMIN_USER_ID, ip, userAgent });
     return NextResponse.json({ ok: true, count });
+  }
+  if (action === "reset_password") {
+    const result = await resetStaffPassword({ userId: id, actorId: ENV_ADMIN_USER_ID, ip, userAgent });
+    if (!result.ok) {
+      const message =
+        result.error === "revoked"
+          ? "Atsauktam lietotājam paroli nevar atiestatīt. Vispirms atjauno pieeju vai izdzēs."
+          : "not_found";
+      return NextResponse.json({ error: message }, { status: result.error === "not_found" ? 404 : 400 });
+    }
+    const inviteUrl = `${getPublicSiteOrigin()}/admin/uzaicinajums/${result.token}`;
+    const emailed = await trySendStaffInviteEmail({
+      to: result.user.email,
+      name: result.user.name,
+      inviteUrl,
+      kind: "reset",
+    });
+    return NextResponse.json({ ok: true, user: result.user, emailed, inviteUrl });
+  }
+  if (action === "delete") {
+    const result = await deleteStaffUser({ userId: id, actorId: ENV_ADMIN_USER_ID, ip, userAgent });
+    if (!result.ok) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    return NextResponse.json({ ok: true, id: result.id, email: result.email });
   }
   if (action === "totp_start") {
     const user = await findStaffUserById(id);
