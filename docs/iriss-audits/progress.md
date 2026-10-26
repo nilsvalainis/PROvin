@@ -30,9 +30,10 @@
 ## Žurnāls
 - 26.10 21:30 - darba vieta izveidota (worktree /Users/nv/code/PROvin-worktrees/iriss-audits, zars claude/iriss-audits). Admin sesija: Claude iebūvētais pārlūks. Demo konts (claude.demo@provin.lv): Chrome, 1Password.
 
-## Nākamais solis (atjaunots 27.10 00:20)
-- 1) Sludinājumi ātrums: 7,7 MB HTML -> lapošana / "Pazuduši" tikai pēc pieprasījuma; tad kartīte pēc dizaina v0.3.
-- 2) Dizaina pamats kodā (tokeni + komponentes). 3) Viena piedāvājuma forma. 4) Viens auto ceļš. Loģistikas makets 2. daļa.
+## Nākamais solis (atjaunots 27.10 ~02:30)
+- 1) Sludinājumi - GATAVS (#677, #679; CONTINUE sesija). 2) Dizaina pamats - GATAVS (#676, #678; tokeni --iriss-*, griesti testā 122).
+- 3) Viena piedāvājuma forma - makets https://claude.ai/artifact/YJq5J8NjQCHnBw9UpN3Vv6, GAIDA Nila "jā" (~12 faili, 3-4 h).
+- 4) Viens auto ceļš: loģistikas makets 3. solis GATAVS (#684); atlicis 2. solis - posmu cilnes Autoparkā.
 - Beigās: dzēst TESTS (sk. augstāk), demo jau 15 sadaļas.
 
 ## Iepriekšējie nākamie soļi
@@ -52,3 +53,5 @@
 - 27.10 ~00:10: konteksts ~93% (Messages) — CONTINUE handoff: docs/iriss-audits/CONTINUE.md + Desktop/IRISS-AUDITS-PASTE.txt. Demo visas 15 atjaunotas (Andris). Audita dokuments publicēts. Secība (Nils): Sludinājumi ātrums+dizains → dizaina pamats → viena piedāvājuma forma → viens auto ceļš.
 - Nākamais: Sludinājumi (ātrums + dizains); pēc tam Loģistikas makets 2. daļa; lomu testi (1Password demo autofill rītā); TESTS tīrīšana beigās.
 - 27.10 00:20 PR #675 (a3f4e473) prod READY: partneris (tikai Pavadzīmes) redz tikai savus pieprasījumus (dzīvi nepārbaudīts - demo atjaunots uz 15 sadaļām; tests); /a/ saite tikai ar pogu "Izveidot saiti klientam". Audita dokuments Artifact (AYrFG4oykqp9nuu2Rg77Jx). Docs #673 #674.
+- 27.10 00:30-02:30 prod: #676 dizaina pamats + Pavadzīmes uz tokeniem; #678 44 komponentes uz tokeniem; #680 Iestatījumi (Lietotāji augšā, akordeoni); #681 Lietotāju žurnāls pa dienām; #682 Izmaksas Maps rāda reālos skaitītājus (181/10, bija 0) - pārbaudīts caur API; #684 Loģistikā viens saraksts (tabula Visi auto noņemta, posms rindā, Uz Autoparku/Dzēst kabinetā) - pārbaudīts dzīvi. CONTINUE: #677 #679 Sludinājumi (6,7->1,5 MB), #683 Radars.
+- Atradumi bez labojuma: Izmaksās Apify limits 5,00 $ (konta) pret Iestatījumu 4,50 $ (servera griesti) - abi pareizi, bet jāparaksta skaidrāk; Izmaksu ceļā vēl "Pārvaldība".
