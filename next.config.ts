@@ -229,6 +229,26 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: "/a",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "private, no-store" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
+      {
+        source: "/a/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "private, no-store" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
+      {
+        source: "/a/:token/foto",
+        headers: [{ key: "Cache-Control", value: "private, max-age=3600" }],
+      },
+      {
         /** Bilžu baiti (ne lapas HTML) - ļauj pārlūka privātu kešu, lai swipe/prefetch nav katru
          * reizi jauns pieprasījums; maršruts pats uzstāda to pašu Cache-Control, šis tikai pārklāj
          * plašāko `/p/:path*` noteikumu (j49, Nils 2026-10-24). */

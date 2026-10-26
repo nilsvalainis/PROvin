@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { IrissProjectIndicator } from "@/components/admin/IrissProjectIndicator";
@@ -133,8 +134,16 @@ export function IrissLogistikaClient({
   const [bounceId, setBounceId] = useState<string | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [popupId, setPopupId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
   const [cabinetOpen, setCabinetOpen] = useState(false);
   const [notice, setNotice] = useState("");
+  useEffect(() => {
+    const car = searchParams.get("car")?.trim() ?? "";
+    if (!car) return;
+    if (!orders.some((o) => o.id === car)) return;
+    setActiveId(car);
+    setCabinetOpen(true);
+  }, [orders, searchParams]);
   /** Maršruta poga: "Sastāda…" un kļūda tieši pie pogas, nevis lapas augšā. */
   const [routeUi, setRouteUi] = useState<Record<"next" | "after", { busy: boolean; notice: string }>>({
     next: { busy: false, notice: "" },

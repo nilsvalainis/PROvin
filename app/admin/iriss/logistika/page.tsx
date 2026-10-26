@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import "./iriss-logistika.css";
 import { IrissLogistikaClient } from "@/components/admin/iriss-logistika/IrissLogistikaClient";
 import {
@@ -34,6 +35,7 @@ export default async function IrissLogistikaPage() {
   const canCreateOffer = actor.kind === "admin" || staffHasSection(actor.user, "pasutijumi");
 
   return (
+    <Suspense>
     <IrissLogistikaClient
       initialOrders={orders}
       initialPoints={points}
@@ -44,5 +46,6 @@ export default async function IrissLogistikaPage() {
       canEnableTotp={canEnableTotp}
       canCreateOffer={canCreateOffer}
     />
+    </Suspense>
   );
 }

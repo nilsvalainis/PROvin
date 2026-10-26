@@ -13,6 +13,7 @@ import {
   type CabinetTab,
 } from "@/lib/iriss-autoparks-v2-cabinet-tabs";
 import type { AutoparksV2Perms } from "@/lib/iriss-autoparks-v2-perms";
+import { IrissSaitesPanel } from "@/components/admin/iriss-saites/IrissSaitesPanel";
 import { AutoparksV2Csdd } from "./AutoparksV2Csdd";
 import { AutoparksV2History } from "./AutoparksV2History";
 import { AutoparksV2OfferActions } from "./AutoparksV2OfferActions";
@@ -153,6 +154,8 @@ export function AutoparksV2Cabinet({
       </div>
       {statusBtn("ap2-mstatus")}
       {statusErr ? <p className="ap2-err">{statusErr}</p> : null}
+
+      <IrissSaitesPanel from="autoparks" id={basics.id} vehicle={basics.title} />
 
       <nav className="ap2-tabs" style={{ ["--tabs" as string]: tabs.length }} aria-label="Sadaļas">
         {tabs.length > 1 || perms.vesture

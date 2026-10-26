@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
 import { IrissCreateOfferButton } from "@/components/admin/IrissCreateOfferButton";
+import { IrissSaitesPanel } from "@/components/admin/iriss-saites/IrissSaitesPanel";
 import {
   CABINET_DOC_GROUP_LABEL,
   CABINET_DOC_TYPE_LABEL,
@@ -355,6 +356,11 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
           </a>
         ) : null}
       </div>
+
+      <div className="mt-3 min-w-0 overflow-x-hidden">
+        <IrissSaitesPanel from="logistics" id={order.id} vehicle={order.title || `${order.make} ${order.model}`} />
+      </div>
+
       <p className="mt-3 rounded-xl bg-[#f8fafc] px-3 py-2 text-[13px]">
         {order.createdAt ? `Nopirkts ${formatLogisticsDate(order.createdAt.slice(0, 10))}` : LOGISTICS_ORDER_STATUS_LV[order.status]}
         {!access.hideSums && order.priceEur != null ? ` · apmaksāts ${formatLogisticsEur(order.priceEur)}` : ""}

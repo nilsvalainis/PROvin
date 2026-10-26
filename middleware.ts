@@ -27,6 +27,7 @@ import { SEO_LOCALE_HEADER } from "./lib/seo-public-paths";
 import { SITE_THEME_COOKIE_KEY } from "./lib/site-theme";
 import { isClientLinkPath } from "./lib/client-link";
 import { isUnpaidPaymentPath } from "./lib/admin-unpaid-payment-link";
+import { isIrissCarSharePath } from "./lib/iriss-car-share";
 import { isIrissOfferLinkPath } from "./lib/iriss-offer-client-link";
 import { decideB2bDemoHostRequest } from "./lib/b2b-demo-host";
 import { decideAdminApiGate, decidePartnerApiCsrf } from "./lib/admin-api-gate";
@@ -171,6 +172,7 @@ export default async function middleware(request: NextRequest) {
         isClientLinkPath(dest.pathname) ||
         isUnpaidPaymentPath(dest.pathname) ||
         isIrissOfferLinkPath(dest.pathname) ||
+        isIrissCarSharePath(dest.pathname) ||
         isPartneriemPath(dest.pathname);
       if (!locale && !skipPrefix) {
         dest.pathname = dest.pathname === "/" ? `/${DEFAULT_LOCALE}` : `/${DEFAULT_LOCALE}${dest.pathname}`;
@@ -259,7 +261,7 @@ export default async function middleware(request: NextRequest) {
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  if (isIrissOfferLinkPath(pathname)) {
+  if (isIrissOfferLinkPath(pathname) || isIrissCarSharePath(pathname)) {
     const res = NextResponse.next();
     res.headers.set("X-Robots-Tag", "noindex, nofollow");
     res.headers.set("Cache-Control", "private, no-store");
@@ -281,6 +283,8 @@ export default async function middleware(request: NextRequest) {
       prefixed.rest.startsWith("/s/") ||
       prefixed.rest === "/p" ||
       prefixed.rest.startsWith("/p/") ||
+      prefixed.rest === "/a" ||
+      prefixed.rest.startsWith("/a/") ||
       prefixed.rest === "/apmaksa" ||
       prefixed.rest.startsWith("/apmaksa/"))
   ) {

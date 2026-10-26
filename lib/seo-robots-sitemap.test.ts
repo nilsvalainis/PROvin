@@ -18,7 +18,7 @@ describe("robots.txt", () => {
     expect(doc.sitemap).toMatch(/\/sitemap\.xml$/);
     const rules = Array.isArray(doc.rules) ? doc.rules : doc.rules ? [doc.rules] : [];
     const disallow = rules[0]?.disallow ?? [];
-    expect(disallow).toEqual(expect.arrayContaining(["/admin", "/p/", "/s/"]));
+    expect(disallow).toEqual(expect.arrayContaining(["/admin", "/p/", "/a/", "/s/"]));
     // Fonti un attēli renderēšanai: Google tos drīkst ielādēt.
     expect(disallow).not.toContain("/_next/static/media/");
     expect(disallow).not.toContain("/s");
