@@ -118,6 +118,28 @@ describe("admin cost dashboard", () => {
     expect(costLimitCaption(maps)).toContain("1 240 / 10 000");
     expect(costRemainingCaption(maps)).toContain("8 760");
     expect(maps.hard).toBe(true);
+    // Loģistikas skaitītāji (tie paši kā Iestatījumos) - lielāks par momentuzņēmumu uzvar; bez momentuzņēmuma nav 0.
+    const live = buildCostDashboard({
+      month: "2026-10",
+      nowMs: NOW,
+      events,
+      snapshots,
+      limits,
+      marketplace: null,
+      mapsUnits: { "maps-dynamic": 1500, "maps-geocoding": 10 },
+    }).groups.flatMap((g) => g.sources);
+    expect(costLimitCaption(live.find((s) => s.id === "maps-dynamic")!)).toContain("1 500 / 10 000");
+    expect(live.find((s) => s.id === "maps-geocoding")!.units).toBe(310);
+    const noSnap = buildCostDashboard({
+      month: "2026-10",
+      nowMs: NOW,
+      events,
+      snapshots: [],
+      limits,
+      marketplace: null,
+      mapsUnits: { "maps-dynamic": 181 },
+    }).groups.flatMap((g) => g.sources);
+    expect(noSnap.find((s) => s.id === "maps-dynamic")!.units).toBe(181);
     const alerts = collectCostAlerts(dashboard.groups.flatMap((g) => g.sources));
     expect(alerts).toHaveLength(0);
     const warnDash = buildCostDashboard({
