@@ -4,6 +4,7 @@ import {
   applyIrissPdExpiry,
   applyIrissPdPatch,
   buildIrissPdPublicView,
+  irissPdFactValue,
   countIrissPdByStatus,
   irissPdDeleteConfirm,
   irissPdHiddenBlockLabels,
@@ -336,5 +337,22 @@ describe("Piedāvājumi: palīgfunkcijas", () => {
     expect(r?.linkToken).toBe("");
     expect(r?.visibility.blocks.damage).toEqual({ pdf: false, link: false });
     expect(normalizeIrissPiedavajums({ id: "../../etc" })).toBeNull();
+  });
+});
+
+describe("klienta skats: Autoparka/CSDD vērtības cilvēkam", () => {
+  it("ISO datumi -> gads / MM.GGGG, CSDD kategorija netiek rādīta kā virsbūve", () => {
+    const r = emptyIrissPiedavajums("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "2026-10-26T10:00:00.000Z");
+    const rec = {
+      ...r,
+      status: "sent" as const,
+      validUntil: "2026-11-02",
+      price: "12900",
+      vehicle: { ...r.vehicle, title: "ŠKODA OCTAVIA", year: "2017-08-23", firstRegistration: "2017-08-23", body: "Vieglais plašlietojuma" },
+    };
+    const view = buildIrissPdPublicView(rec, "link", Date.parse("2026-10-26T12:00:00.000Z"));
+    expect(irissPdFactValue(view.facts, "Gads")).toBe("2017");
+    expect(irissPdFactValue(view.facts, "Pirmā reģistrācija")).toBe("08.2017");
+    expect(view.facts.some((f) => f.label === "Virsbūve")).toBe(false);
   });
 });

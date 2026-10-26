@@ -43,8 +43,11 @@ export function irissMobilePlateStripItemsFromPlates(plates: readonly WaybillPla
       return { plate: state.plate, busy: false, hoursLeft: null, statusLabel: "Brīvs" };
     }
     const until = Date.parse(state.current.validUntil);
-    const hoursLeft = Number.isFinite(until) ? Math.max(0, Math.round((until - now.getTime()) / HOUR_MS)) : 0;
-    return { plate: state.plate, busy: true, hoursLeft, statusLabel: `${hoursLeft} h` };
+    const leftMs = Number.isFinite(until) ? Math.max(0, until - now.getTime()) : 0;
+    const hoursLeft = Math.round(leftMs / HOUR_MS);
+    // < 1 h - minūtes (agrāk "0 h", lai gan pavadzīme vēl derīga).
+    const statusLabel = leftMs < HOUR_MS ? `${Math.ceil(leftMs / 60_000)} min` : `${hoursLeft} h`;
+    return { plate: state.plate, busy: true, hoursLeft, statusLabel };
   });
 }
 

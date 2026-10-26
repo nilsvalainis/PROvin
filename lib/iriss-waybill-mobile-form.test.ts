@@ -17,6 +17,8 @@ import {
   waybillMobileRequestRows,
   waybillShowsManualFields,
   waybillShowsTradeList,
+  waybillStopProgress,
+  WAYBILL_STOP_STATUS_LABEL,
 } from "@/lib/iriss-waybill-mobile-form";
 import { parseCreateWaybillInput, waybillRepresentativeChoices } from "@/lib/iriss-waybill-create";
 import type { WaybillAivarsReply, WaybillRequest } from "@/lib/iriss-waybill-requests";
@@ -495,5 +497,13 @@ describe("datora pavadzīmes forma", () => {
     const auto = { ...applyWaybillAutoChoice(initialWaybillMobileForm("B193-7"), "manual"), manualBrandModel: "VW Golf" };
     const badHours = buildWaybillDesktopPayload(auto, { plate: "B193-7", hoursPreset: null, hoursOther: "999", comment: "" });
     expect(badHours.ok).toBe(false);
+  });
+});
+
+describe("Pārtraukt darbs telefona sarakstā", () => {
+  it("nerāda «Izveido · Aivars veido pavadzīmi», bet «Pārtrauc» / «Pārtraukta»", () => {
+    expect(WAYBILL_STOP_STATUS_LABEL.in_progress).toBe("Pārtrauc");
+    expect(waybillStopProgress("in_progress", "P02833").text).toBe("Aivars pārtrauc pavadzīmi P02833 CSDD...");
+    expect(waybillStopProgress("issued", "P02833").text).toBe("Pārtraukta CSDD · P02833");
   });
 });

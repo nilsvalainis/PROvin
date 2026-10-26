@@ -26,7 +26,7 @@ export type WaybillLiveRequest = Pick<
   "id" | "status" | "createdAt" | "updatedAt" | "validUntil" | "waybillNo" | "vehicle"
 > &
   Partial<Pick<WaybillRequest, "validFrom">> &
-  Partial<Pick<WaybillRequest, "pickedBy" | "autoDisabled" | "attempts" | "plateBusyAtCreate" | "handoffAt">>;
+  Partial<Pick<WaybillRequest, "pickedBy" | "autoDisabled" | "attempts" | "plateBusyAtCreate" | "handoffAt" | "kind">>;
 
 /**
  * j47: pieprasījumu izraksta Aivars ar roku (ne automātika). Bez servera konteksta (testa režīms, numura aizņemtība)
@@ -76,6 +76,8 @@ function issuingFor(plate: string, requests: readonly WaybillLiveRequest[], nowM
   let best: WaybillLiveRequest | null = null;
   for (const r of requests) {
     if (r.status !== "queued" && r.status !== "in_progress") continue;
+    // «Pārtraukt» neizdod jaunu pavadzīmi - numurs paliek aizņemts ar esošo, aplis nerāda «Aivars izraksta».
+    if (r.kind === "stop") continue;
     if (compactDealerPlate(r.vehicle.plate) !== want) continue;
     if (isStaleWaybillRequest(r, nowMs) || waybillPendingExpired(r, nowMs)) continue;
     if (!best || r.createdAt > best.createdAt) best = r;

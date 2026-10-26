@@ -94,3 +94,21 @@ describe("calendar v2 (phone cards)", () => {
     ]);
   });
 });
+
+describe("kalendārs: pārtrauktā pavadzīme", () => {
+  it("josla beidzas, kad izdota nākamā, un ir pelēka", () => {
+    const now = Date.parse("2026-10-26T20:00:00.000Z");
+    const cal = buildWaybillCalendar(
+      [
+        { id: "1", number: "P02830", brandModel: "SKODA OCTAVIA", plate: "B193-7", issuedAt: "2026-10-26T11:48:00.000Z", validUntil: "2026-10-26T23:48:00.000Z", lifecycle: "interrupted", supersededBy: "P02831" },
+        { id: "2", number: "P02831", brandModel: "BMW 325", plate: "B193-7", issuedAt: "2026-10-26T13:18:00.000Z", validUntil: "2026-10-26T14:18:00.000Z" },
+      ],
+      now,
+      7,
+    );
+    const seg = cal.lanes.flatMap((l) => l.segments).find((s) => s.number === "P02830");
+    expect(seg?.tone).toBe("expired");
+    // Sākotnēji 12 h (7,1% no 7 dienām); pārtraukta pēc 1,5 h - tikai minimālais platums.
+    expect(seg?.widthPct ?? 100).toBeLessThan((12 / 168) * 100);
+  });
+});
