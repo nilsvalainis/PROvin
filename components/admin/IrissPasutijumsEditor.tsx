@@ -2465,7 +2465,7 @@ export function IrissPasutijumsEditor({
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-base font-semibold text-[var(--color-apple-text)]">
-              Vai tiešām vēlaties neatgriezeniski dzēst šo pasūtījumu?
+              Pārvietot pasūtījumu uz Miskasti? To var atjaunot sadaļā Miskaste.
             </h2>
             <div className="mt-5 flex flex-wrap justify-end gap-2">
               <button
