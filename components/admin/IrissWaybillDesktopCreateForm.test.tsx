@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("next/font/google", () => ({ Barlow_Condensed: () => ({ className: "font", style: {} }) }));
+
 import { IrissWaybillDesktopCreateForm } from "@/components/admin/IrissWaybillDesktopCreateForm";
 import {
   applyWaybillAutoChoice,
