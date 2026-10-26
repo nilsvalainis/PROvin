@@ -111,3 +111,5 @@ Formāts: [sadaļa] [ierīce] smagums (K kritisks / A augsts / V vidējs / Z zem
 - [Loģistika->Autoparks] [visas] V - Jaunais Autoparka ieraksts sarakstā vidū (ne augšā, ne "Jauns" zīme); auto bez gada/VIN ar tukšu otro rindu.
 - [Loģistika/Autoparks] [visas] V - Tie paši auto (Sprinter, Volvo XC60 D5, Audi A4) vienlaikus Loģistikā ("Gaida") un Autoparkā - nav redzams, kurā posmā tie ir; jābūt vienam ierakstam ar posmu "Ceļā".
 - [Loģistika] [visas] Z - Iekšējie statusi 12 (awaiting_payment, organize_pickup...), UI rāda 4; Audi A4 ar organize_pickup UI rāda "Ieplānots" - kartē "Gatavība: Apmaksāts". Divas statusu sistēmas vienā ekrānā (statuss + gatavības apļi).
+- [Autoparks v2] [visas] V - Pēc "Uz Autoparku" automātiski izveidota publiska auto saite provin.lv/a/... ("Saite izveidota, Bez cenas") - CETURTAIS dalīšanās veids (blakus /p/, /p/d/, teksta ziņai). Nav jautāts, vai saiti veidot.
+- [Autoparks v2] [visas] Z - Lauks "Atvests: + Pievienot" tukšs, lai gan Loģistikā tikko atzīmēts "Atvests" (datums netiek pārnests); marka "TESTS Škoda" no Loģistikas nonāk Marka laukā kā ir (bez normalizācijas).
