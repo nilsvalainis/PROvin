@@ -5,6 +5,7 @@ import {
   applyWaybillAutoChoice,
   buildWaybillMobilePayload,
   parseWaybillCustomHours,
+  waybillAutoEntryValues,
   waybillWrittenOffAtMs,
   firstFreeWaybillPlate,
   initialWaybillMobileForm,
@@ -109,6 +110,12 @@ describe("phone waybill form", () => {
     expect(switched.car).toBeNull();
     expect(waybillShowsManualFields(switched)).toBe(true);
     expect(waybillShowsTradeList(switched)).toBe(false);
+    expect(waybillAutoEntryValues(fromList)).toEqual({ brandModel: "Audi A6", vin: "WAUZZZF27LN004512" });
+    expect(waybillAutoEntryValues({ ...applyWaybillAutoChoice(base, "manual"), manualBrandModel: " Opel ", manualVin: " ABC " })).toEqual({
+      brandModel: "Opel",
+      vin: "ABC",
+    });
+    expect(waybillAutoEntryValues(base)).toEqual({ brandModel: "", vin: "" });
   });
 
   it("Ar roku: marka/modelis un VIN iet payloadā; bez VIN paliek tukšs", () => {

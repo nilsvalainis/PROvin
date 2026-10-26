@@ -271,7 +271,10 @@ describe("Aivars contract and Pavadzīmes UI boundaries", () => {
     expect(plates).toMatch(/B762-7/);
     expect(plates).toMatch(/B192-7/);
     expect(plates).not.toMatch(/B861-6/);
-    expect(chat).toMatch(/LvDealerPlate/);
+    expect(chat).toMatch(/IrissWaybillDesktopCreateForm/);
+    const desktop = fs.readFileSync("components/admin/IrissWaybillDesktopCreateForm.tsx", "utf8");
+    expect(desktop).toMatch(/LvDealerPlate/);
+    expect(desktop).toMatch(/IrissWaybillAutoEntry/);
     const plateBtn = fs.readFileSync("components/admin/LvDealerPlate.tsx", "utf8");
     expect(plateBtn).toMatch(/ring-\[#2563EB\]/);
     expect(plateBtn).toMatch(/Brīvs/);

@@ -143,6 +143,16 @@ export function waybillShowsTradeList(state: Pick<WaybillMobileFormState, "autoC
   return state.autoChoice === "list" && !state.manual;
 }
 
+/** Marka/VIN no izvēlētā ceļa (saraksts vai ar roku). Desktop forma sūta tos pašus laukus kā līdz šim. */
+export function waybillAutoEntryValues(
+  state: Pick<WaybillMobileFormState, "manual" | "manualBrandModel" | "manualVin" | "car">,
+): { brandModel: string; vin: string } {
+  if (state.manual) {
+    return { brandModel: state.manualBrandModel.trim(), vin: state.manualVin.trim() };
+  }
+  return { brandModel: (state.car?.brandModel ?? "").trim(), vin: (state.car?.vin ?? "").trim() };
+}
+
 /** Derīgums stundās vai null, ja "cits" lauks nav derīgs. */
 export function waybillMobileHours(state: Pick<WaybillMobileFormState, "hoursPreset" | "hoursOther">): number | null {
   if (state.hoursPreset != null) return state.hoursPreset;

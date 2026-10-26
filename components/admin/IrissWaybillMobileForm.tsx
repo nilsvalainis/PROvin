@@ -46,7 +46,7 @@ const STEP_LABELS = ["Gaida", "Izveido", "Izdota"] as const;
 /**
  * Pavadzīme telefonā v2 (makets ~/pz-mob-v2, Nils 23.10): numurs, auto, laiks.
  * Pieņemtam auto - tikai laiks un komersanta pārstāvis (bez maršruta); citam - tikai sākuma adrese.
- * Zemāk dzīvais statuss ar soļiem un "Kā tas strādā". Dators izmanto veco formu (IrissKomandaAivaramChat).
+ * Zemāk dzīvais statuss ar soļiem un "Kā tas strādā". Dators: tā pati Auto ievade IrissWaybillDesktopCreateForm.
  */
 export function IrissWaybillMobileForm({
   plates,
