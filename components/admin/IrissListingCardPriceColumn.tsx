@@ -37,7 +37,7 @@ export function IrissListingCardPriceColumn({
   className?: string;
 }) {
   const panel = (
-    <div className="rounded-xl bg-[#f2f2f5] p-3">
+    <div className="rounded-xl bg-[var(--iriss-surface-2)] p-3">
       <div className="flex flex-nowrap items-start justify-between gap-2">
         <div className="min-w-0 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
           {priceLabel}{bidCount != null ? ` · ${bidCount} solījumi` : ""}

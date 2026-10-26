@@ -73,8 +73,8 @@ export function IrissSludinajumiSourceStatusBody({
   const problemOkLabel = problemSources.length > 0 ? `${problemSources.length} saites nebija OK` : "0 saites nebija OK";
 
   return (
-    <div className="text-[14px] text-[var(--slud-ink,#0b0c10)]">
-      <p className="text-[12.5px] leading-5 text-[var(--slud-ink2,#5e636e)]">
+    <div className="text-[14px] text-[var(--slud-ink,var(--iriss-ink))]">
+      <p className="text-[12.5px] leading-5 text-[var(--slud-ink2,var(--iriss-ink-2))]">
         Diagnostika{finishedAtLabel ? ` · ${finishedAtLabel}` : ""} · auto 9:00, 13:00, 17:00
       </p>
       <div className="mt-3 flex justify-end">
