@@ -1,0 +1,1137 @@
+/* j70 IRISS «Piedāvājumi» - tokeni no maketiem 26.10 (iriss-piedavajumi-2610). Viss zem .pdv (admin) un .pdc (klienta skats).
+   Galvene nekad nav sticky. Plakanas pogas. */
+.pdv,
+.pdc {
+  --ink: #1d1d1f;
+  --ink2: #6e6e73;
+  --ink3: #8e8e93;
+  --line: #ececf0;
+  --line2: #f2f2f5;
+  --field: #e0e0e5;
+  --zebra: #f4f5f7;
+  --blue: #1f4f8a;
+  --link: #0060df;
+  --bad: #c4281c;
+  --ok: #1f7a37;
+  color: var(--ink);
+  font-family: Inter, -apple-system, "SF Pro Text", system-ui, Helvetica, Arial, sans-serif;
+  font-size: 13.5px;
+  -webkit-font-smoothing: antialiased;
+}
+.pdv *,
+.pdc * {
+  box-sizing: border-box;
+}
+.pdv {
+  min-height: 100%;
+  background: #f5f5f7;
+  padding: 16px 24px 120px;
+}
+.pdv button,
+.pdc button {
+  font: inherit;
+  cursor: pointer;
+}
+.pdv a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Galvene (nav sticky) */
+.pdv .pd-hdr {
+  border-bottom: 1px solid #e5e5ea;
+  padding: 0 0 14px;
+  margin: 0 -24px 18px;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+.pdv .pd-bc {
+  color: var(--ink3);
+  font-size: 12.5px;
+}
+.pdv .pd-bc a:hover {
+  color: var(--ink);
+}
+.pdv .pd-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.pdv h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+}
+.pdv .pd-sub {
+  color: var(--ink2);
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pdv .pd-acts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Pogas */
+.pd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: #fff;
+  border: 1px solid var(--field);
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.pd-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.pd-btn.p {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+.pd-btn.bad {
+  color: var(--bad);
+}
+.pd-btn.s {
+  height: 26px;
+  font-size: 12px;
+  padding: 0 9px;
+}
+.pd-btn.lg {
+  height: 42px;
+  font-size: 15px;
+}
+
+/* Statusa čips: krāsa + punkts, teksts vienmēr redzams */
+.pd-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pd-chip i {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: currentColor;
+}
+.pd-chip.st-requested { background: #e8f0fe; color: #1a56c4; }
+.pd-chip.st-draft { background: #efeff2; color: #55555c; }
+.pd-chip.st-sent { background: #fff3e0; color: #b25000; }
+.pd-chip.st-approved { background: #e3f6e8; color: #1f7a37; }
+.pd-chip.st-declined { background: #fdeaea; color: #c4281c; }
+.pd-chip.st-expired { background: #f3eefb; color: #6b3fb0; }
+
+.pd-src {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 5px;
+  border: 1px solid var(--field);
+  color: #3a3a3c;
+  background: #fafafa;
+}
+.pd-ok-hint {
+  color: var(--ok);
+  font-size: 11px;
+  display: block;
+  margin-top: 3px;
+}
+.pd-mono {
+  font: 12px "SF Mono", ui-monospace, Menlo, monospace;
+  color: #3a3a3c;
+}
+.pd-mu {
+  color: var(--ink3);
+}
+.pd-el {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pd-lnk {
+  color: var(--link);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.pd-err {
+  background: #fdeaea;
+  color: var(--bad);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+}
+.pd-note {
+  background: #fff8e6;
+  color: #8a5300;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+}
+
+/* Filtri */
+.pdv .pd-fl {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.pdv .pd-srch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  width: 300px;
+  max-width: 100%;
+  background: #fff;
+  border: 1px solid var(--field);
+  border-radius: 9px;
+  padding: 0 10px;
+  color: var(--ink3);
+}
+.pdv .pd-srch input {
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  height: auto;
+  outline: 0;
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  color: var(--ink);
+  background: transparent;
+}
+.pd-seg {
+  display: flex;
+  background: #e8e8ed;
+  border-radius: 9px;
+  padding: 2px;
+  overflow-x: auto;
+  max-width: 100%;
+}
+.pd-seg button {
+  padding: 5px 10px;
+  border-radius: 7px;
+  color: #3a3a3c;
+  font-size: 12.5px;
+  border: 0;
+  background: transparent;
+  white-space: nowrap;
+}
+.pd-seg button.on {
+  background: #fff;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+.pdv .pd-sel {
+  margin-left: auto;
+  height: 34px;
+  border: 1px solid var(--field);
+  border-radius: 9px;
+  background: #fff;
+  padding: 0 10px;
+  font: inherit;
+}
+
+/* Tabula */
+.pdv .pd-tbl {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.pdv .pd-tr {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1.6fr) minmax(0, 1.4fr) minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 0.8fr) minmax(0, 0.8fr) minmax(0, 1.1fr) minmax(0, 1.5fr);
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line2);
+}
+.pdv .pd-tr.th {
+  border-top: 0;
+  color: var(--ink3);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  background: #fbfbfd;
+}
+.pdv a.pd-tr:hover {
+  background: #fafafc;
+}
+.pd-thumb {
+  width: 52px;
+  height: 38px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: linear-gradient(135deg, #c9ccd2, #7d838c);
+  display: block;
+}
+.pdv .pd-cards {
+  display: none;
+}
+.pdv .pd-foot {
+  color: var(--ink3);
+  font-size: 12.5px;
+  margin-top: 12px;
+}
+.pdv .pd-empty {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 32px;
+  text-align: center;
+  color: var(--ink2);
+}
+
+/* Kartītes un lauki */
+.pd-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+}
+.pd-card > h3,
+.pd-h3 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--ink2);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pd-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+}
+.pd-fld {
+  margin-bottom: 10px;
+  min-width: 0;
+}
+.pd-fld label,
+.pd-fld .lbl {
+  display: block;
+  font-size: 11.5px;
+  color: var(--ink2);
+  margin-bottom: 4px;
+}
+.pd-fld input,
+.pd-fld select,
+.pd-fld textarea {
+  width: 100%;
+  height: 34px;
+  border: 1px solid var(--field);
+  border-radius: 8px;
+  padding: 0 10px;
+  background: #fff;
+  font: inherit;
+  color: var(--ink);
+}
+.pd-fld textarea {
+  height: auto;
+  min-height: 64px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+.pd-fld input:focus,
+.pd-fld textarea:focus,
+.pd-fld select:focus {
+  outline: 2px solid #2563eb33;
+  border-color: #2563eb;
+}
+.pd-fld input:disabled,
+.pd-fld textarea:disabled {
+  background: #f7f7f9;
+  color: var(--ink2);
+}
+.pd-fld .ro {
+  min-height: 34px;
+  border: 1px solid var(--field);
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+}
+.pd-fld input.req-on {
+  border-color: var(--ink);
+}
+.pd-req {
+  color: var(--bad);
+}
+.pd-hint {
+  font-size: 11.5px;
+  color: var(--ink3);
+  margin: 2px 0 0;
+}
+
+/* Zonas: Iekšējais vs Klients redz */
+.pd-zone {
+  border-radius: 16px;
+  padding: 16px;
+}
+.pd-zone.zi {
+  background: #f0f0f3;
+  border: 1px dashed #c7c7cc;
+}
+.pd-zone.zc {
+  background: #fff;
+  border: 1px solid #d9e8dd;
+  box-shadow: 0 0 0 3px #eef8f0;
+}
+.pd-zt {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.pd-zone.zi .pd-zt {
+  color: #55555c;
+}
+.pd-zone.zc .pd-zt {
+  color: var(--ok);
+}
+
+/* Detaļas izkārtojums */
+.pdv .pd-detail {
+  display: grid;
+  grid-template-columns: 1.45fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.pdv .pd-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.pdv .pd-tabs {
+  display: none;
+}
+.pdv .pd-bottom {
+  display: none;
+}
+.pd-gal {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-rows: 90px 90px;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.pd-gal img,
+.pd-gal .ph {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #a9b8c9, #3f5670);
+  display: block;
+}
+.pd-gal > :first-child {
+  grid-row: span 2;
+}
+.pd-gal .more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e8e8ed;
+  color: var(--ink2);
+  border-radius: 8px;
+  font-size: 12.5px;
+}
+.pd-photo-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.pd-photo-strip .it {
+  position: relative;
+  flex: none;
+}
+.pd-photo-strip img {
+  width: 84px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+  display: block;
+  background: #e5e5ea;
+}
+.pd-photo-strip button {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  border: 0;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 12px;
+  line-height: 20px;
+  padding: 0;
+}
+.pd-photo-strip button.l {
+  left: 2px;
+  right: auto;
+}
+.pd-tl {
+  position: relative;
+  padding-left: 16px;
+}
+.pd-tl > div {
+  position: relative;
+  padding: 0 0 12px;
+  font-size: 12.5px;
+}
+.pd-tl > div::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 4px;
+  background: #c7c7cc;
+}
+.pd-tl > div:first-child::before {
+  background: var(--ink);
+}
+.pd-tl small {
+  display: block;
+  color: var(--ink3);
+  font-size: 11.5px;
+}
+.pd-kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line2);
+}
+.pd-kv:first-child {
+  border-top: 0;
+}
+.pd-kv span {
+  color: var(--ink2);
+}
+.pd-kv b {
+  font-weight: 500;
+  text-align: right;
+}
+
+/* Jauns piedāvājums */
+.pdv .pd-paths {
+  display: flex;
+  gap: 18px;
+  max-width: 1080px;
+}
+.pdv .pd-path {
+  flex: 1;
+  padding: 28px;
+  min-width: 0;
+}
+.pdv .pd-path h2 {
+  margin: 14px 0 4px;
+  font-size: 19px;
+}
+.pdv .pd-ico {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #f0f0f3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pdv .pd-carrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line2);
+  width: 100%;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  background: transparent;
+  text-align: left;
+}
+.pdv .pd-carrow:disabled {
+  opacity: 0.45;
+}
+.pdv .pd-carrow:not(:disabled):hover {
+  background: #fafafc;
+}
+.pd-progress {
+  background: #f5f5f7;
+  border-radius: 10px;
+  padding: 12px;
+  font-size: 12.5px;
+}
+.pd-progress .bar {
+  height: 5px;
+  background: #e5e5ea;
+  border-radius: 3px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+.pd-progress .bar i {
+  display: block;
+  height: 100%;
+  width: 35%;
+  background: var(--ink);
+  border-radius: 3px;
+  animation: pd-load 1.4s ease-in-out infinite;
+}
+@keyframes pd-load {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(300%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pd-progress .bar i { animation: none; width: 60%; }
+}
+
+/* Slēdzis (PDF / Saitē) */
+.pd-tg {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #3a3a3c;
+  margin-left: 8px;
+  border: 0;
+  background: transparent;
+  padding: 2px 0;
+}
+.pd-tg .sw {
+  width: 26px;
+  height: 15px;
+  border-radius: 8px;
+  background: #d1d1d6;
+  position: relative;
+  display: inline-block;
+  flex: none;
+}
+.pd-tg .sw::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 11px;
+  height: 11px;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: left 0.15s;
+}
+.pd-tg[aria-checked="true"] .sw {
+  background: #34c759;
+}
+.pd-tg[aria-checked="true"] .sw::after {
+  left: 13px;
+}
+.pd-tg:disabled {
+  opacity: 0.45;
+}
+
+/* Auto1 bloki (05) */
+.pd-a1 {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  min-width: 0;
+}
+.pd-a1h {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.pd-a1h b {
+  font-size: 11.5px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.pd-a1-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.pd-zt2 > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 12px;
+  padding: 5px 8px;
+}
+.pd-zt2 > div:nth-child(odd) {
+  background: var(--zebra);
+}
+.pd-zt2 span {
+  font-weight: 600;
+  color: #3a3a3c;
+}
+.pd-eq {
+  display: grid;
+  grid-template-columns: 22px 130px 1fr;
+  gap: 6px;
+  font-size: 11.5px;
+  padding: 5px 6px;
+  border-top: 1px solid var(--line2);
+  align-items: start;
+}
+.pd-eq:nth-child(odd) {
+  background: #f7f8fa;
+}
+.pd-eq b {
+  color: var(--blue);
+  font-weight: 600;
+}
+.pd-ck {
+  width: 15px;
+  height: 15px;
+  border-radius: 8px;
+  border: 1.5px solid #3b82c4;
+  color: #3b82c4;
+  font-size: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex: none;
+}
+.pd-eqs {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 14px;
+}
+.pd-kvs > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11.5px;
+  padding: 5px 8px;
+}
+.pd-kvs > div:nth-child(odd) {
+  background: var(--zebra);
+}
+.pd-mini-h {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+}
+.pd-dm {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+.pd-dm th {
+  text-align: left;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  color: #3a3a3c;
+  padding: 6px;
+  border-bottom: 1px solid #d1d1d6;
+}
+.pd-dm td {
+  padding: 6px;
+  border-bottom: 1px solid var(--line2);
+  vertical-align: top;
+}
+.pd-dm tr.in td {
+  background: var(--zebra);
+}
+.pd-dm-wrap {
+  overflow-x: auto;
+}
+.pd-vin {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px 10px;
+  font-size: 11px;
+}
+.pd-vin > div {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  background: var(--zebra);
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+.pd-more {
+  text-align: center;
+  margin-top: 8px;
+}
+.pd-more button {
+  height: 26px;
+  font-size: 12px;
+  padding: 0 9px;
+  border-radius: 8px;
+  background: #3b82c4;
+  color: #fff;
+  border: 1px solid #3b82c4;
+}
+
+/* Krāsas karte */
+.pd-pm {
+  position: relative;
+  height: 230px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+.pd-pm svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.pd-pm .ttl {
+  position: absolute;
+  left: 8px;
+  top: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #55555c;
+}
+.pd-lv {
+  position: absolute;
+  background: #fff;
+  border: 1px solid #d1d1d6;
+  border-radius: 3px;
+  font-size: 10.5px;
+  padding: 1px 4px;
+  white-space: nowrap;
+  transform: translate(-50%, -50%);
+}
+button.pd-lv {
+  cursor: pointer;
+  color: var(--ink3);
+  font-weight: 600;
+}
+.pd-lv.sel {
+  color: #1f6fc4;
+  border-color: #1f6fc4;
+}
+.pd-wa {
+  color: #f5a623;
+}
+.pd-pm-cap {
+  font-size: 10.5px;
+  color: var(--ink3);
+  margin-top: 5px;
+}
+
+/* Klienta skats (priekšskatījums + publiskā saite) */
+.pdc .pdc-hero {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 260px;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+  background: linear-gradient(135deg, #a9b8c9, #3f5670);
+}
+.pdc .pdc-strip {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  margin-top: 6px;
+}
+.pdc .pdc-strip img {
+  width: 72px;
+  height: 52px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex: none;
+  background: #e5e5ea;
+}
+.pdc .pdc-title {
+  display: block;
+  margin-top: 10px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.pdc .pdc-price {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 6px 0 10px;
+}
+.pdc .pdc-price b {
+  font-size: 22px;
+}
+.pdc .pdc-sec {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin: 14px 0 6px;
+}
+.pdc .pdc-foot {
+  font-size: 11px;
+  color: var(--ink3);
+  margin-top: 10px;
+}
+.pdc-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 14px 48px;
+}
+.pdc-page .pdc-brand {
+  font-weight: 700;
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+.pdc-done {
+  background: #e3f6e8;
+  color: var(--ok);
+  border-radius: 10px;
+  padding: 12px;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 12px;
+}
+
+@media (max-width: 900px) {
+  .pdv {
+    padding: 10px 14px 190px;
+  }
+  .pdv .pd-hdr {
+    margin: 0 -14px 12px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+  .pdv h1 {
+    font-size: 24px;
+  }
+  .pdv .pd-tbl {
+    display: none;
+  }
+  .pdv .pd-cards {
+    display: block;
+  }
+  .pdv .pd-mc {
+    display: block;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .pdv .pd-mc .row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    margin-top: 8px;
+  }
+  .pdv .pd-mc .pd-thumb {
+    width: 64px;
+    height: 48px;
+    flex: none;
+  }
+  .pdv .pd-fab {
+    position: fixed;
+    right: 18px;
+    bottom: calc(96px + env(safe-area-inset-bottom));
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
+    background: var(--ink);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    z-index: 5;
+  }
+  .pdv .pd-new-top {
+    display: none;
+  }
+  .pdv .pd-sel {
+    margin-left: 0;
+  }
+  .pdv .pd-detail {
+    grid-template-columns: 1fr;
+  }
+  .pdv .pd-tabs {
+    display: flex;
+    margin-bottom: 10px;
+  }
+  .pdv .pd-tabs button {
+    flex: 1;
+    text-align: center;
+  }
+  .pdv [data-tab]:not([data-on="1"]) {
+    display: none;
+  }
+  .pdv .pd-hdr .pd-acts {
+    display: none;
+  }
+  .pdv .pd-bottom {
+    display: flex;
+    gap: 8px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    /* Virs IRISS peldošās apakšējās kapsulas (Sākums / Vairāk / Meklēt). */
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    padding: 8px 14px;
+    border-top: 1px solid #e5e5ea;
+    background: rgba(255, 255, 255, 0.96);
+    z-index: 30;
+  }
+  .pdv .pd-bottom .pd-btn {
+    flex: 1;
+    height: 42px;
+  }
+  .pdv .pd-paths {
+    flex-direction: column;
+  }
+  .pdv .pd-path {
+    padding: 18px;
+  }
+  .pd-a1-grid,
+  .pd-eqs,
+  .pd-vin {
+    grid-template-columns: 1fr;
+  }
+  .pd-grid2 {
+    grid-template-columns: 1fr;
+  }
+  .pd-eq {
+    grid-template-columns: 22px 110px 1fr;
+  }
+}
+
+@media print {
+  .pdc-noprint {
+    display: none !important;
+  }
+}
+
+.pdv .pd-fab {
+  display: none;
+}
+@media (max-width: 900px) {
+  .pdv .pd-fab {
+    display: flex;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .pdc-print,
+  .pdc-print * {
+    visibility: visible;
+  }
+  .pdc-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: none !important;
+    border: 0 !important;
+  }
+  .pdc-print .pd-a1,
+  .pdc-print .pd-zt2 > div {
+    break-inside: avoid;
+  }
+}
+
+.pdv .pd-tr .pd-btn {
+  white-space: normal;
+  height: auto;
+  min-height: 26px;
+  text-align: center;
+  line-height: 1.25;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.pdv button.pd-lv,
+.pdc button.pd-lv {
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  padding: 1px 4px;
+  min-height: 0;
+  height: auto;
+  background: #fff;
+  border: 1px solid #d1d1d6;
+  border-radius: 3px;
+  box-shadow: none;
+}
+.pdv button.pd-lv.sel,
+.pdc button.pd-lv.sel {
+  color: #1f6fc4;
+  border-color: #1f6fc4;
+}
+
+/* Mobilajā admin tēmā `.admin-ios-theme .admin-m :is(span, a, p, ...) { color: inherit }` (0,2,1) pārspēj
+   mūsu krāsas. Krāsainajiem elementiem specifiskums (0,3,0). */
+:is(.pdv, .pdc) .pd-chip.st-requested { color: #1a56c4; }
+:is(.pdv, .pdc) .pd-chip.st-draft { color: #55555c; }
+:is(.pdv, .pdc) .pd-chip.st-sent { color: #b25000; }
+:is(.pdv, .pdc) .pd-chip.st-approved { color: #1f7a37; }
+:is(.pdv, .pdc) .pd-chip.st-declined { color: #c4281c; }
+:is(.pdv, .pdc) .pd-chip.st-expired { color: #6b3fb0; }
+:is(.pdv, .pdc) .pd-btn.p,
+:is(.pdv, .pdc) a.pd-btn.p { color: #fff; }
+:is(.pdv, .pdc) .pd-btn.bad.bad { color: var(--bad); }
+:is(.pdv, .pdc) a.pd-btn:not(.p) { color: var(--ink); }
+.pdv a.pd-fab.pd-fab { color: #fff; }
+:is(.pdv, .pdc) .pd-lnk.pd-lnk { color: var(--link); }
+:is(.pdv, .pdc) .pd-mu.pd-mu,
+:is(.pdv, .pdc) .pd-hint.pd-hint { color: var(--ink3); }
+:is(.pdv, .pdc) .pd-ok-hint.pd-ok-hint { color: var(--ok); }
+:is(.pdv, .pdc) .pd-err.pd-err { color: var(--bad); }
+:is(.pdv, .pdc) .pd-note.pd-note { color: #8a5300; }
+:is(.pdv, .pdc) .pd-src.pd-src { color: #3a3a3c; }
+:is(.pdv, .pdc) .pd-mono.pd-mono { color: #3a3a3c; }
+:is(.pdv, .pdc) .pd-req.pd-req { color: var(--bad); }
+:is(.pdv, .pdc) .pd-wa.pd-wa { color: #f5a623; }
+:is(.pdv, .pdc) .pd-lv.sel.sel { color: #1f6fc4; }
+:is(.pdv, .pdc) .pd-zt2 span.pd-zt2-l,
+:is(.pdv, .pdc) .pd-zt2 > div > span { color: #3a3a3c; }
+:is(.pdv, .pdc) .pd-bc.pd-bc,
+:is(.pdv, .pdc) .pd-bc a { color: var(--ink3); }
+:is(.pdv, .pdc) .pd-sub.pd-sub { color: var(--ink2); }
+:is(.pdv, .pdc) .pd-fld label,
+:is(.pdv, .pdc) .pd-fld .lbl { color: var(--ink2); }

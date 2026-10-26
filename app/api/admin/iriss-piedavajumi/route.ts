@@ -1,0 +1,139 @@
+import { NextResponse } from "next/server";
+import { appendIrissPdHistory, canRebaseIrissPd, findIrissPdTakenConflict, irissPdConflictMessage, rebaseIrissPd } from "@/lib/iriss-piedavajumi";
+import { importIrissPdFromAutoparks, importIrissPdFromLink, type IrissPdImport } from "@/lib/iriss-piedavajumi-create";
+import { irissPdLinkErrorLv } from "@/lib/iriss-piedavajumi-sources";
+import { createIrissPd, isIrissPdStoreEnabled, listIrissPdRows, readIrissPd, refreshIrissPdExpiries } from "@/lib/iriss-piedavajumi-store";
+import { emptyIrissPiedavajums, isSafeIrissPdId, type IrissPiedavajums } from "@/lib/iriss-piedavajumi-types";
+import { requireAdminOnlyApi } from "@/lib/staff-auth";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+// Izsoles detaļu lapa caur releju var aizņemt līdz ~2,5 min.
+export const maxDuration = 180;
+
+const noStore = { "Cache-Control": "private, no-store" };
+
+function fail(status: number, error: string, extra: Record<string, unknown> = {}) {
+  return NextResponse.json({ ok: false, error, ...extra }, { status, headers: noStore });
+}
+
+/** GET - visi piedāvājumi (saraksta rindas). Termiņi pārbaudīti ielādē. */
+export async function GET() {
+  const gate = await requireAdminOnlyApi();
+  if (!gate.ok) return gate.response;
+  if (!isIrissPdStoreEnabled()) return fail(503, "store_disabled");
+  await refreshIrissPdExpiries(Date.now()).catch(() => 0);
+  return NextResponse.json({ ok: true, rows: await listIrissPdRows() }, { headers: noStore });
+}
+
+type Body = {
+  kind?: unknown;
+  carId?: unknown;
+  url?: unknown;
+  manual?: unknown;
+  baseId?: unknown;
+  status?: unknown;
+  client?: unknown;
+};
+
+function fromImport(imp: IrissPdImport, at: string, by: string) {
+  return (id: string) => (number: number): IrissPiedavajums => {
+    const rec: IrissPiedavajums = {
+      ...emptyIrissPiedavajums(id, at),
+      number,
+      source: imp.source,
+      sourceRef: imp.sourceRef,
+      sourceUrl: imp.sourceUrl,
+      sourceKey: imp.sourceKey,
+      importedFieldCount: imp.fieldCount,
+      vehicle: imp.vehicle,
+      photos: imp.photos,
+      price: imp.price,
+      purchasePrice: imp.purchasePrice,
+      auto1: imp.auto1,
+      auto1ImportedAt: imp.auto1 ? at : "",
+    };
+    return appendIrissPdHistory(rec, { at, by: imp.fieldCount ? "Sistēma" : by, text: imp.historyText });
+  };
+}
+
+/**
+ * POST - jauns piedāvājums:
+ *   { kind: "autoparks", carId }          no Autoparka (autofill + /STOCK bildes)
+ *   { kind: "link", url, manual? }        no izsoles saites (Auto1 pilnībā; manual - tikai saite, lauki ar roku)
+ *   { kind: "rebase", baseId }            «Izveidot jaunu uz šī bāzes» (beidzies/noraidīts)
+ *   { kind: "request", client? }          klienta pieprasījums bez auto (statuss «Pieprasīts»)
+ */
+export async function POST(req: Request) {
+  const gate = await requireAdminOnlyApi();
+  if (!gate.ok) return gate.response;
+  if (!isIrissPdStoreEnabled()) return fail(503, "store_disabled");
+  let body: Body;
+  try {
+    body = (await req.json()) as Body;
+  } catch {
+    return fail(400, "invalid_json");
+  }
+  const at = new Date().toISOString();
+  const by = gate.actor.name || "Admins";
+  const id = crypto.randomUUID();
+  const rows = await listIrissPdRows();
+
+  let build: ((number: number) => IrissPiedavajums) | null = null;
+  let note = "";
+  if (body.kind === "autoparks") {
+    const carId = typeof body.carId === "string" ? body.carId.trim() : "";
+    if (!/^[\w-]{1,80}$/.test(carId)) return fail(400, "invalid");
+    const conflict = findIrissPdTakenConflict(rows, { sourceRef: `autoparks:${carId}` });
+    if (conflict) return fail(409, "taken", { message: irissPdConflictMessage(conflict), id: conflict.id });
+    const imp = await importIrissPdFromAutoparks(carId);
+    if (!imp) return fail(404, "not_found", { message: "Auto Autoparkā nav atrasts." });
+    const vinConflict = findIrissPdTakenConflict(rows, { vin: imp.vehicle.vin });
+    if (vinConflict) return fail(409, "taken", { message: irissPdConflictMessage(vinConflict), id: vinConflict.id });
+    build = fromImport(imp, at, by)(id);
+    note = imp.note;
+  } else if (body.kind === "link") {
+    const url = typeof body.url === "string" ? body.url : "";
+    const res = await importIrissPdFromLink(url, { manual: body.manual === true });
+    if (!res.ok) {
+      const status = res.error === "not_auction_link" ? 400 : 502;
+      return fail(status, res.error, { message: irissPdLinkErrorLv(res.error, res.note), source: res.link?.source ?? null });
+    }
+    const conflict = findIrissPdTakenConflict(rows, { source: res.data.source, sourceKey: res.data.sourceKey, vin: res.data.vehicle.vin });
+    if (conflict) return fail(409, "taken", { message: irissPdConflictMessage(conflict), id: conflict.id });
+    build = fromImport(res.data, at, by)(id);
+    note = res.data.note;
+  } else if (body.kind === "rebase") {
+    const baseId = typeof body.baseId === "string" ? body.baseId : "";
+    if (!isSafeIrissPdId(baseId)) return fail(400, "invalid");
+    const base = await readIrissPd(baseId);
+    if (!base) return fail(404, "not_found");
+    if (!canRebaseIrissPd(base.status)) return fail(409, "not_rebasable", { message: "Jaunu uz bāzes var veidot tikai no beigušā vai noraidītā piedāvājuma." });
+    const conflict = findIrissPdTakenConflict(rows, { sourceRef: base.sourceRef, source: base.source, sourceKey: base.sourceKey, vin: base.vehicle.vin }, base.id);
+    if (conflict) return fail(409, "taken", { message: irissPdConflictMessage(conflict), id: conflict.id });
+    build = (number) => rebaseIrissPd(base, { id, number, at, by });
+  } else if (body.kind === "request") {
+    const c = body.client && typeof body.client === "object" ? (body.client as Record<string, unknown>) : {};
+    build = (number) =>
+      appendIrissPdHistory(
+        {
+          ...emptyIrissPiedavajums(id, at),
+          number,
+          status: "requested",
+          client: {
+            name: typeof c.name === "string" ? c.name.trim().slice(0, 120) : "",
+            phone: typeof c.phone === "string" ? c.phone.trim().slice(0, 40) : "",
+            email: typeof c.email === "string" ? c.email.trim().slice(0, 160) : "",
+            orderId: isSafeIrissPdId(c.orderId) ? c.orderId : "",
+          },
+        },
+        { at, by, text: "Reģistrēts klienta pieprasījums" },
+      );
+  } else {
+    return fail(400, "invalid_kind");
+  }
+
+  const created = await createIrissPd(build);
+  if (!created.ok) return fail(500, created.error);
+  return NextResponse.json({ ok: true, id: created.record.id, note }, { headers: noStore });
+}
