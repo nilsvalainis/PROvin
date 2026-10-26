@@ -98,3 +98,9 @@ Formāts: [sadaļa] [ierīce] smagums (K kritisks / A augsts / V vidējs / Z zem
 - [Sludinājumi] [planšete ~670 px, darbinieks] A - Parametru rindā teksti uzklājas: "110 527 km" pāri "Petrol", "Automatic" pāri "147 kW" (fiksētas kolonnas bez aplaušanas).
 - [Navigācija] [planšete/telefons, darbinieks] K - Darbinieka apakšējā joslā 11 punkti (Sākums, Pasū..., Slud..., Rad..., Loģi..., Grā..., Serv..., Pava..., VIN..., Mēn..., Auto..., Iziet) - nogriezti nosaukumi, sīki mērķi, "Iziet" blakus darba pogām. Vajag 4 punktus + "Vairāk" (kā adminam) un "Iziet" iekš "Vairāk".
 - [Sludinājumi] [planšete] V - Galvenes ikonu skaitļi ("20", "1") uzkāpj pāri ikonām; filtru čipi "Jauni 51 / Cenas 32 / Visi 212 / Pazuduši 1285 / Favorīti 0" - 5 skaitļi.
+
+## Radars
+- [Radars] [visas] A - Radara ierakstā "Jaunākie atradumi: Jauni 0", bet Sludinājumi -> Monitorings rāda 38 jaunus auto no tā paša Radara (piem. "Radars: LEXUS/TOYOTA"). Divas vietas, dažādi dati. Ierakstā "pēdējā nolasīšana 14.10 19:55", lai gan sinhronizācija ir 26.10 17:57.
+- [Radars] [visas] V - Radara auto kartītē darbības "Pasūtījuma detaļas" (2x) un "Nosūtīt klientam" - Radaram nav klienta. Vajag: "Pievienot salonam / Nopirkt" (-> Loģistika) un "Izveidot piedāvājumu".
+- [Radars] [visas] V - Kritēriji ierakstīti nosaukumā ("Audi 2.0D manuālis 2009-2015, 150-330k, 3000-12000 EUR"), nevis strukturētos laukos kā pasūtījumā; vienam Radaram 5 saites ar dažādiem kW diapazoniem - grūti uzturēt. Ieteikums: tā pati kritēriju forma kā pasūtījumam ("Meklējums salonam").
+- [Radars] [planšete] Z - Mājiens "pa kreisi X · pa labi ★" (vilkšanas žesti) nav saprotams un datorā nestrādā.
