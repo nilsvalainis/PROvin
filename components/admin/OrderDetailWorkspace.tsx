@@ -118,8 +118,10 @@ import {
   bumpWorkspaceSaveGeneration,
   fetchCanonicalWorkspace,
   isWorkspaceRevisionConflict,
+  noteKnownServerWorkspace,
   persistWorkspaceSafeMerge,
   persistWorkspaceState,
+  serverWorkspaceChecksumFromJson,
   WORKSPACE_SAVE_FAILED_LABEL,
   workspacePersistFromDraftWorkspace,
 } from "@/lib/admin-workspace-persist-client";
@@ -2572,6 +2574,7 @@ export function OrderDetailWorkspace({
 
       const chosen = resolved.hydrated;
       workspaceRevisionRef.current = resolved.workspaceRevision;
+      noteKnownServerWorkspace(payload.sessionId, serverWorkspaceChecksumFromJson(serverWorkspaceJson), resolved.workspaceRevision);
 
       const body: OrderWorkspacePersistBody = {
         sourceBlocks: chosen.sourceBlocks,

@@ -36,6 +36,8 @@ import type { OrderDraftState } from "@/lib/admin-order-draft-types";
 import { stripHeardAboutFromClientNotes } from "@/lib/stripe-session";
 import type { CustomerHistory } from "@/lib/admin-customer-history";
 import {
+  orderEditsNeedServerPatch,
+  orderEditsPersistKey,
   pickOrderEditsForHydration,
   serializeOrderEditsForLocalStorage,
 } from "@/lib/admin-order-edits-persist";
@@ -198,6 +200,8 @@ export function AdminOrderDetailView({
   const skipOrderEditsAutosaveFlash = useRef(true);
   const editsRef = useRef(edits);
   editsRef.current = edits;
+  /** Pēdējais servera orderEdits stāvoklis (atslēga) - nemainītu nesūta. */
+  const lastServerEditsKeyRef = useRef<string | null>(null);
   const [pdfVisibility, setPdfVisibility] = useState<PdfVisibilitySettings>(() =>
     defaultPdfVisibilityForOrder({
       checkoutLine: order.checkoutLine,
@@ -226,6 +230,8 @@ export function AdminOrderDetailView({
       /* ignore */
     }
     const picked = pickOrderEditsForHydration(serverOrderDraft, localRaw);
+    // Servera stāvoklis: ja lokālais = serveris, atverot neko nesūta; ja lokāli ir jaunāks - sūta.
+    lastServerEditsKeyRef.current = orderEditsPersistKey(serverOrderDraft?.orderEdits);
     setEdits({
       ...(typeof picked.vin === "string" ? { vin: picked.vin } : {}),
       ...(typeof picked.listingUrl === "string" ? { listingUrl: picked.listingUrl } : {}),
@@ -274,8 +280,11 @@ export function AdminOrderDetailView({
           /* quota */
         }
         let srvOk = !orderDraftPersistenceEnabled;
-        if (orderDraftPersistenceEnabled) {
+        if (orderDraftPersistenceEnabled && !orderEditsNeedServerPatch(edits, lastServerEditsKeyRef.current)) {
+          srvOk = true;
+        } else if (orderDraftPersistenceEnabled) {
           try {
+            const sentKey = orderEditsPersistKey(edits);
             const res = await fetch("/api/admin/order-draft", {
               method: "PATCH",
               credentials: "include",
@@ -284,6 +293,7 @@ export function AdminOrderDetailView({
               body: JSON.stringify({ sessionId: order.id, orderEdits: edits }),
             });
             srvOk = res.ok;
+            if (res.ok) lastServerEditsKeyRef.current = sentKey;
           } catch {
             srvOk = false;
           }
@@ -306,15 +316,7 @@ export function AdminOrderDetailView({
       } catch {
         /* quota */
       }
-      if (orderDraftPersistenceEnabled) {
-        void fetch("/api/admin/order-draft", {
-          method: "PATCH",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          keepalive: true,
-          body: JSON.stringify({ sessionId: order.id, orderEdits: editsRef.current }),
-        });
-      }
+      // Servera flush aizejot - atsevišķā efektā zemāk (tikai, ja ir nenosūtītas izmaiņas), ne pie katras izmaiņas.
     };
   }, [edits, hydrated, order.id, orderDraftPersistenceEnabled]);
 
@@ -360,7 +362,7 @@ export function AdminOrderDetailView({
       } catch {
         /* quota */
       }
-      if (orderDraftPersistenceEnabled) {
+      if (orderDraftPersistenceEnabled && orderEditsNeedServerPatch(editsRef.current, lastServerEditsKeyRef.current)) {
         void fetch("/api/admin/order-draft", {
           method: "PATCH",
           credentials: "include",
