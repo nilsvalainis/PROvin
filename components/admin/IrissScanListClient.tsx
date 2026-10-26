@@ -45,6 +45,7 @@ export function IrissScanListClient({
   initialListOrder,
   newHitsByScan = EMPTY_HITS_BY_SCAN,
   finds = EMPTY_FINDS,
+  lastReadAt = "",
   selectedRecord = null,
   unsavedDraft = false,
   mode = "list",
@@ -53,6 +54,8 @@ export function IrissScanListClient({
   initialListOrder: IrissScanListOrder | null;
   newHitsByScan?: Record<string, number>;
   finds?: IrissScanFindCard[];
+  /** Pēdējā sludinājumu nolasīšana (sinhronizācija). */
+  lastReadAt?: string;
   selectedRecord?: IrissScanRecord | null;
   unsavedDraft?: boolean;
   mode?: "list" | "edit";
@@ -314,6 +317,7 @@ export function IrissScanListClient({
               showBack={mode === "edit" && !desktop}
               newHits={irissScanNewHitsFor(editorRecord.id, hitsByScan)}
               finds={editorFinds}
+              lastReadAt={lastReadAt}
               onRecordChange={onEditorRecordChange}
               onDeleted={onEditorDeleted}
             />

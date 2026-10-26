@@ -34,14 +34,14 @@ export function IrissListingOrderChips({
                   {marks.map((m) => (
                     <span
                       key={m.id}
-                      className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-[var(--color-apple-text)]"
+                      className="inline-flex items-center gap-1 rounded-md bg-[var(--iriss-surface-2)] px-1.5 py-0.5 text-[11px] font-semibold text-[var(--iriss-ink)]"
                       title={m.pass ? "Atbilst prasībām" : "Neatbilst prasībām"}
                     >
-                      {/* Ikona, ne ✓/✕ simbols: iOS tos zīmē kā krāsainas emoji. */}
+                      {/* Ikona, ne ✓/✕ simbols (iOS emoji); krāsa tokenā - admin-ios-theme .text-red-600 pārvērš to sarkanā žetonā. */}
                       {m.pass ? (
-                        <Check aria-hidden className="h-3 w-3 text-emerald-700" strokeWidth={3} />
+                        <Check aria-hidden className="h-3 w-3 text-[var(--iriss-ok)]" strokeWidth={3} />
                       ) : (
-                        <X aria-hidden className="h-3 w-3 text-red-600" strokeWidth={3} />
+                        <X aria-hidden className="h-3 w-3 text-[var(--iriss-bad)]" strokeWidth={3} />
                       )}
                       <span className="sr-only">{m.pass ? "Atbilst:" : "Neatbilst:"}</span>
                       {m.label}
