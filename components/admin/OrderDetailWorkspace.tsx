@@ -326,7 +326,7 @@ import {
   parseAdminAiResponse,
   readGeneratedAdminAiText,
 } from "@/lib/admin-ai-client-errors";
-import { generateAdminAiText } from "@/lib/admin-ai-stream-client";
+import { generateAdminAiText, generateAdminAiTextWithNetworkRetry } from "@/lib/admin-ai-stream-client";
 import {
   technicalRiskMapSnapshotField,
   type TechnicalRiskMap,
@@ -2255,7 +2255,7 @@ export function OrderDetailWorkspace({
         };
 
         try {
-          const generated = await generateAdminAiText(
+          const generated = await generateAdminAiTextWithNetworkRetry(
             endpoint,
             body,
             `AI: neizdevās ģenerēt (${job.runLabel})`,
