@@ -99,6 +99,43 @@ describe("Aktīvā karte: Pārtraukt", () => {
     expect(html).toContain("border-[#DC2626]");
     expect(html).toContain("min-h-11");
   });
+
+  it("CSDD-only (tukšs id): rāda P02827, PDF paliek; nav Pārtraukt / Pagarināt / Vēsture", () => {
+    const page = (
+      <IrissPavadzimesListClient
+        isAdmin
+        initial={{
+          rows: [
+            {
+              ...rowBase,
+              id: "",
+              number: "P02827",
+              brandModel: "BMW 330",
+              plate: "B193-7",
+              vin: "",
+              validUntil: "2026-10-28T10:00:00.000Z",
+              validityTone: "ok",
+              lifecycle: "active",
+            },
+          ] as never,
+          pendingParse: 0,
+          dropboxConfigured: true,
+          dropboxError: null,
+        }}
+      />
+    );
+    const text = renderText(page);
+    expect(text).toContain("P02827");
+    expect(text).toContain("BMW 330");
+    expect(text).toContain("PDF");
+    expect(text).not.toContain("Pārtraukt");
+    expect(text).not.toContain("Pagarināt");
+    expect(text).not.toContain("Vēsture");
+    expect(text).not.toMatch(/anul/i);
+    const html = renderHtml(page);
+    expect(html).toContain('data-pavadzime="csdd-P02827"');
+    expect(html).not.toContain("border-[#DC2626]");
+  });
 });
 
 describe("Saruna C: ikona, badge, nav pastāvīgās slejas", () => {

@@ -103,6 +103,17 @@ function dash(v: string): string {
   return v.trim() || "-";
 }
 
+function waybillRowKey(row: Pick<IrissPavadzimeListRow, "id" | "number">): string {
+  const id = row.id.trim();
+  if (id) return id;
+  const nr = row.number.trim().toUpperCase();
+  return nr ? `csdd-${nr}` : "csdd-unknown";
+}
+
+function hasIndexedWaybill(row: Pick<IrissPavadzimeListRow, "id">): boolean {
+  return Boolean(row.id.trim());
+}
+
 function PavadzimeSearchFocus({
   rows,
   onExtend,
@@ -167,8 +178,10 @@ export function IrissPavadzimesListClient({
     if (isPhoneViewport()) setView("current");
     window.setTimeout(() => document.getElementById("komanda-aivaram")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
-  const openPdf = (row: IrissPavadzimeListRow) =>
+  const openPdf = (row: IrissPavadzimeListRow) => {
+    if (!hasIndexedWaybill(row)) return;
     setPdfPreview({ href: `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`, title: `${row.number || "Pavadzīme"} · ${row.brandModel}`.trim() });
+  };
   const onDraftConsumed = useCallback(() => setExtendVehicle(null), []);
   const askStop = (row: Pick<IrissPavadzimeListRow, "id" | "number" | "plate">) => {
     if (!row.id || !row.number) return;
@@ -321,16 +334,16 @@ export function IrissPavadzimesListClient({
         ) : (
           <div className="flex max-w-full flex-col gap-3 max-md:hidden md:grid md:grid-cols-1 lg:grid-cols-1">
             {rows.map((row) => {
-              const pdfHref = `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`;
               const days = remainingWaybillDays(row.validUntil, now);
               const tone = waybillSoonTone(days);
               const share = waybillRemainingShare(row.issuedAt, row.validUntil, now);
               const bar = tone === "soon" ? "bg-[#f97316]" : "bg-[#3d5bd9]";
               const dayClass = tone === "soon" ? "text-[#c2410c]" : "text-[#3d5bd9]";
+              const indexed = hasIndexedWaybill(row);
               return (
                 <article
-                  key={row.id}
-                  data-pavadzime={row.id}
+                  key={waybillRowKey(row)}
+                  data-pavadzime={waybillRowKey(row)}
                   className="w-full min-w-0 rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm"
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -357,35 +370,39 @@ export function IrissPavadzimesListClient({
                       <FileText className="h-3.5 w-3.5" strokeWidth={1.75} />
                       PDF
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setExtendVehicle(chipFromRow(row))}
-                      className="inline-flex min-h-11 items-center rounded-full border border-[#E5E7EB] px-3 text-[13px] font-medium"
-                    >
-                      Pagarināt
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => askStop(row)}
-                      className="inline-flex min-h-11 items-center rounded-full border border-[#DC2626] px-3 text-[13px] font-medium text-[#DC2626]"
-                    >
-                      Pārtraukt
-                    </button>
-                    {row.vin ? (
-                      <button
-                        type="button"
-                        onClick={() => setHistoryVin(row.vin)}
-                        className="inline-flex min-h-11 items-center rounded-full border border-[#E5E7EB] px-3 text-[13px] font-medium"
-                      >
-                        Vēsture
-                      </button>
+                    {indexed ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setExtendVehicle(chipFromRow(row))}
+                          className="inline-flex min-h-11 items-center rounded-full border border-[#E5E7EB] px-3 text-[13px] font-medium"
+                        >
+                          Pagarināt
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => askStop(row)}
+                          className="inline-flex min-h-11 items-center rounded-full border border-[#DC2626] px-3 text-[13px] font-medium text-[#DC2626]"
+                        >
+                          Pārtraukt
+                        </button>
+                        {row.vin ? (
+                          <button
+                            type="button"
+                            onClick={() => setHistoryVin(row.vin)}
+                            className="inline-flex min-h-11 items-center rounded-full border border-[#E5E7EB] px-3 text-[13px] font-medium"
+                          >
+                            Vēsture
+                          </button>
+                        ) : null}
+                        <AdminChangeHistoryButton
+                          kind="iriss-waybill"
+                          recordId={row.id}
+                          endpoint="/api/admin/change-history"
+                          onRestored={(body) => applyWaybillRestore(row.id, body.record)}
+                        />
+                      </>
                     ) : null}
-                    <AdminChangeHistoryButton
-                      kind="iriss-waybill"
-                      recordId={row.id}
-                      endpoint="/api/admin/change-history"
-                      onRestored={(body) => applyWaybillRestore(row.id, body.record)}
-                    />
                   </div>
                 </article>
               );
@@ -400,10 +417,9 @@ export function IrissPavadzimesListClient({
         <>
           <ul className="mt-0 space-y-2 px-4 md:hidden">
             {rows.map((row) => {
-              const pdfHref = `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`;
               const orderHref = row.order ? `/admin/iriss/pasutijumi/${encodeURIComponent(row.order.id)}` : null;
               return (
-                <li key={row.id} data-pavadzime={row.id} className="rounded-xl border border-[#ececee] bg-white p-3">
+                <li key={waybillRowKey(row)} data-pavadzime={waybillRowKey(row)} className="rounded-xl border border-[#ececee] bg-white p-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className={`truncate text-[14px] font-semibold ${row.brandModel.trim() || row.number.trim() ? "text-[var(--color-apple-text)]" : "text-[#aeaeb2]"}`}>
@@ -443,12 +459,14 @@ export function IrissPavadzimesListClient({
                       >
                         Atkārtot
                       </button>
-                      <AdminChangeHistoryButton
-                        kind="iriss-waybill"
-                        recordId={row.id}
-                        endpoint="/api/admin/change-history"
-                        onRestored={(body) => applyWaybillRestore(row.id, body.record)}
-                      />
+                      {hasIndexedWaybill(row) ? (
+                        <AdminChangeHistoryButton
+                          kind="iriss-waybill"
+                          recordId={row.id}
+                          endpoint="/api/admin/change-history"
+                          onRestored={(body) => applyWaybillRestore(row.id, body.record)}
+                        />
+                      ) : null}
                       {orderHref ? (
                         <Link href={orderHref} className="inline-flex rounded-full bg-[#f2f2f7] px-3.5 py-2 text-xs font-semibold text-[#3a3a3c]">
                           Pasūtījums
@@ -478,11 +496,11 @@ export function IrissPavadzimesListClient({
                 </thead>
                 <tbody>
                   {rows.map((row) => {
-                    const pdfHref = `/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}/pdf`;
                     const orderHref = row.order ? `/admin/iriss/pasutijumi/${encodeURIComponent(row.order.id)}` : null;
                     const vin = row.vin.trim();
+                    const indexed = hasIndexedWaybill(row);
                     return (
-                      <tr key={row.id} data-pavadzime={row.id} className="h-[46px] whitespace-nowrap border-t border-[#f0f0f2] transition-colors hover:bg-[#f7f7f8]">
+                      <tr key={waybillRowKey(row)} data-pavadzime={waybillRowKey(row)} className="h-[46px] whitespace-nowrap border-t border-[#f0f0f2] transition-colors hover:bg-[#f7f7f8]">
                         <td className={`${hug} py-1 pl-4 pr-4 font-mono text-[12px] tracking-wide text-[#3a3a3c]`}>
                           {dash(row.number)}
                           <WaybillStatusChip row={row} />
@@ -522,17 +540,19 @@ export function IrissPavadzimesListClient({
                             <button type="button" onClick={() => repeatWaybill(row)} className="text-[13.5px] font-semibold text-[#1a73e8] hover:underline">
                               Atkārtot
                             </button>
-                            {row.vin ? (
+                            {indexed && row.vin ? (
                               <button type="button" onClick={() => setHistoryVin(row.vin)} className="text-[13.5px] text-[#6e6e73] hover:underline">
                                 Vēsture
                               </button>
                             ) : null}
-                            <AdminChangeHistoryButton
-                              kind="iriss-waybill"
-                              recordId={row.id}
-                              endpoint="/api/admin/change-history"
-                              onRestored={(body) => applyWaybillRestore(row.id, body.record)}
-                            />
+                            {indexed ? (
+                              <AdminChangeHistoryButton
+                                kind="iriss-waybill"
+                                recordId={row.id}
+                                endpoint="/api/admin/change-history"
+                                onRestored={(body) => applyWaybillRestore(row.id, body.record)}
+                              />
+                            ) : null}
                           </div>
                         </td>
                         <td className={`${hug} py-1 pr-4`}>
