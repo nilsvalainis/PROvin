@@ -36,6 +36,22 @@ export type IrissListingOrderBrief = {
   listingLinkEcarstrade: string[];
   listingLinksOther: string[];
   listStatus: IrissPasutijumsListStatus;
+  /** Prasības ✓/✕ salīdzinājumam kartītē. SCAN ierakstiem nav. */
+  criteria?: IrissListingOrderCriteria;
+};
+
+/** Tie paši lauki kā `IrissOrderRoomMatchCriteria` (bez importa cikla). */
+export type IrissListingOrderCriteria = {
+  totalBudget: string;
+  productionYears: string;
+  maxMileage: string;
+  transmission: string;
+  bodyType: string;
+  driveType: string;
+  preferredColors: string;
+  nonPreferredColors: string;
+  engineType: string;
+  modelExtension: string;
 };
 
 export type ListingOrderFilter = { kind: "all" } | { kind: "order"; id: string } | { kind: "client"; name: string };
@@ -176,6 +192,18 @@ export function irissListingOrderBrief(row: IrissPasutijumsListRow): IrissListin
     listingLinkEcarstrade: filledIrissListingLinks(row.listingLinkEcarstrade),
     listingLinksOther: filledIrissListingLinks(row.listingLinksOther),
     listStatus: row.listStatus ?? "active",
+    criteria: {
+      totalBudget: row.totalBudget,
+      productionYears: row.productionYears,
+      maxMileage: row.maxMileage,
+      transmission: row.transmission,
+      bodyType: row.bodyType,
+      driveType: row.driveType,
+      preferredColors: row.preferredColors,
+      nonPreferredColors: row.nonPreferredColors,
+      engineType: row.engineType,
+      modelExtension: "",
+    },
   };
 }
 

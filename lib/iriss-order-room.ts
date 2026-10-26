@@ -329,7 +329,22 @@ function driveHit(orderDrive: string, hay: string): boolean | null {
   return drivesMatchGroups(hay, [raw]);
 }
 
-export function irissOrderRoomMatch(rec: IrissPasutijumsRecord, hit: IrissOrderRoomHit): IrissOrderRoomMatch {
+/** Pasūtījuma lauki, pēc kuriem auto salīdzina ar prasībām (pasūtījuma telpa un Sludinājumu kartīte). */
+export type IrissOrderRoomMatchCriteria = Pick<
+  IrissPasutijumsRecord,
+  | "totalBudget"
+  | "productionYears"
+  | "maxMileage"
+  | "transmission"
+  | "bodyType"
+  | "driveType"
+  | "preferredColors"
+  | "nonPreferredColors"
+  | "engineType"
+  | "modelExtension"
+>;
+
+export function irissOrderRoomCriteriaChecks(rec: IrissOrderRoomMatchCriteria, hit: IrissOrderRoomHit): IrissOrderRoomCheck[] {
   const checks: IrissOrderRoomCheck[] = [];
   const budget = parseLooseNumber(rec.totalBudget);
   if (budget != null) {
@@ -378,6 +393,11 @@ export function irissOrderRoomMatch(rec: IrissPasutijumsRecord, hit: IrissOrderR
     });
   }
 
+  return checks;
+}
+
+export function irissOrderRoomMatch(rec: IrissOrderRoomMatchCriteria, hit: IrissOrderRoomHit): IrissOrderRoomMatch {
+  const checks = irissOrderRoomCriteriaChecks(rec, hit);
   const equipmentBadges: IrissOrderRoomCheck[] = [];
   const trimHay = `${hit.title} ${hit.bodyType}`;
   if (rec.modelExtension.trim() && titleHasAnyModelExtension(trimHay, splitModelExtensions(rec.modelExtension))) {
