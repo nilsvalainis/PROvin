@@ -626,6 +626,16 @@ export function waybillRequestWithoutOrder(request: WaybillRequest): WaybillRequ
   return request.vehicle.orderId ? { ...request, vehicle: { ...request.vehicle, orderId: "" } } : request;
 }
 
+/**
+ * Partnerim (loma "tikai Pavadzīmes"): tikai viņa paša pieprasījumi un to notikumi (Nils 27.10).
+ * Numuru aizņemtību rēķina no pilnā dokumenta - partneris redz numuru statusu, ne citu darbus.
+ */
+export function waybillDocForCreator(doc: WaybillRequestsDoc, creatorId: string): WaybillRequestsDoc {
+  const requests = doc.requests.filter((r) => r.createdBy === creatorId);
+  const ids = new Set(requests.map((r) => r.id));
+  return { ...doc, requests, events: doc.events.filter((e) => ids.has(e.requestId)) };
+}
+
 export function waybillDocWithoutOrders(doc: WaybillRequestsDoc): WaybillRequestsDoc {
   return { ...doc, requests: doc.requests.map(waybillRequestWithoutOrder) };
 }

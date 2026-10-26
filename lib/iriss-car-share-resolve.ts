@@ -19,6 +19,7 @@ import {
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import {
   ensureIrissCarShare,
+  readIrissCarShareByKeys,
   irissCarShareStatusOf,
   markIrissCarShareSent,
   type IrissCarShareRecord,
@@ -178,20 +179,21 @@ function shareView(rec: IrissCarShareRecord, origin: string, nowMs: number) {
   });
 }
 
+/**
+ * Saišu bloks. Publisko auto saiti /a/ veido TIKAI ar pogu "Izveidot saiti klientam" (`create: true`,
+ * Nils 27.10); kartītes atvēršana saiti tikai nolasa. WhatsApp sūtīšana to izveido, ja vēl nav.
+ */
 export async function loadIrissSaitesView(
   from: IrissCarShareFrom,
   id: string,
+  opts: { create?: boolean } = {},
 ): Promise<{ view: IrissSaitesView; vehicle: string } | null> {
   const ctx = await resolveEntities(from, id);
   if (!ctx) return null;
   let rec = null as Awaited<ReturnType<typeof ensureIrissCarShare>> | null;
+  const keys = { autoparksCarId: ctx.autoparksCarId, logisticsOrderId: ctx.logisticsOrderId, vin: ctx.vin };
   try {
-    rec = await ensureIrissCarShare({
-      autoparksCarId: ctx.autoparksCarId,
-      logisticsOrderId: ctx.logisticsOrderId,
-      vin: ctx.vin,
-      clientName: ctx.clientName,
-    });
+    rec = opts.create ? await ensureIrissCarShare({ ...keys, clientName: ctx.clientName }) : await readIrissCarShareByKeys(keys);
   } catch {
     rec = null;
   }
@@ -210,7 +212,7 @@ export async function sendIrissSaitesWhatsApp(
   id: string,
   actorName: string,
 ): Promise<{ view: IrissSaitesView; vehicle: string } | null> {
-  const loaded = await loadIrissSaitesView(from, id);
+  const loaded = await loadIrissSaitesView(from, id, { create: true });
   if (!loaded?.view.share) return loaded;
   const rec = await markIrissCarShareSent({
     token: loaded.view.share.token,

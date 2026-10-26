@@ -72,6 +72,24 @@ export function IrissSaitesPanel({ from, id, vehicle = "" }: { from: From; id: s
       .finally(() => setBusy(false));
   }, [from, id, title, view]);
 
+  const createShare = useCallback(() => {
+    setBusy(true);
+    void fetch(apiPath(from, id), {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "create" }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((body: { view?: IrissSaitesView } | null) => {
+        if (body?.view) setView(body.view);
+      })
+      .catch(() => undefined)
+      .finally(() => setBusy(false));
+  }, [from, id]);
+
   if (!view) return null;
-  return <IrissSaitesSection view={view} copied={copied} busy={busy} onCopy={copyUrl} onWhatsApp={openWhatsApp} />;
+  return (
+    <IrissSaitesSection view={view} copied={copied} busy={busy} onCopy={copyUrl} onWhatsApp={openWhatsApp} onCreate={view.share ? undefined : createShare} />
+  );
 }

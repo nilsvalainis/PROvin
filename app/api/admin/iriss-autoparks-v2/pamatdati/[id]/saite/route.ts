@@ -26,6 +26,11 @@ export async function POST(req: Request, ctx: Ctx) {
   } catch {
     return autoparksV2Json({ error: "invalid_json" }, 400);
   }
+  if (action === "create") {
+    const created = await loadIrissSaitesView("autoparks", id, { create: true }).catch(() => null);
+    if (!created) return autoparksV2Json({ error: "not_found" }, 404);
+    return autoparksV2Json({ ok: true, ...created });
+  }
   if (action !== "sent") return autoparksV2Json({ error: "invalid_action" }, 400);
   const loaded = await sendIrissSaitesWhatsApp("autoparks", id, gate.actorName).catch(() => null);
   if (!loaded) return autoparksV2Json({ error: "not_found" }, 404);

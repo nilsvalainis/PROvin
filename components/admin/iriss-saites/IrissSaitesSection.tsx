@@ -68,15 +68,18 @@ export function IrissSaitesSection({
   busy = false,
   onCopy,
   onWhatsApp,
+  onCreate,
 }: {
   view: IrissSaitesView;
   copied?: boolean;
   busy?: boolean;
   onCopy?: () => void;
   onWhatsApp?: () => void;
+  /** Publiskās saites vēl nav - poga to izveido (Nils 27.10: tikai ar pogu). */
+  onCreate?: () => void;
 }) {
   const { crossLinks, share } = view;
-  if (crossLinks.length === 0 && !share) return null;
+  if (crossLinks.length === 0 && !share && !onCreate) return null;
   return (
     <section className="iriss-saite" aria-label="Saites">
       <h3 className="iriss-saite-sec">Saites</h3>
@@ -131,6 +134,18 @@ export function IrissSaitesSection({
                 <path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.4-2-1-1 .8a4 4 0 0 1-2-2l.8-1-1-2z" />
               </svg>
               WhatsApp
+            </button>
+          </div>
+        </div>
+      ) : onCreate ? (
+        <div className="iriss-saite-card fr">
+          <div className="iriss-saite-st">
+            <b>Publiskā saite</b>
+          </div>
+          <p className="iriss-saite-note">Klients redzēs auto, foto un pamatdatus bez cenas. Saite rodas tikai pēc šīs pogas.</p>
+          <div className="iriss-saite-acts">
+            <button type="button" className="iriss-saite-btn" disabled={busy} onClick={onCreate}>
+              Izveidot saiti klientam
             </button>
           </div>
         </div>
