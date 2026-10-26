@@ -95,3 +95,6 @@ Formāts: [sadaļa] [ierīce] smagums (K kritisks / A augsts / V vidējs / Z zem
 
 ## Lomas (claude.demo ar visām 15 sadaļām)
 - [Navigācija] [darbinieks] V - Izvēlnē "Loģistika", "Grāmatvede" un "Serviss" visas ved uz /admin/iriss/logistika (trīs punkti vienai lapai). Autoparks darbiniekam ir pašā apakšā (adminam pēc Loģistikas) - secība atšķiras. Galvenē "Claude Demo · 10 sadaļas", lai gan piešķirtas 15 (ap_* skaitās kā viena?).
+- [Sludinājumi] [planšete ~670 px, darbinieks] A - Parametru rindā teksti uzklājas: "110 527 km" pāri "Petrol", "Automatic" pāri "147 kW" (fiksētas kolonnas bez aplaušanas).
+- [Navigācija] [planšete/telefons, darbinieks] K - Darbinieka apakšējā joslā 11 punkti (Sākums, Pasū..., Slud..., Rad..., Loģi..., Grā..., Serv..., Pava..., VIN..., Mēn..., Auto..., Iziet) - nogriezti nosaukumi, sīki mērķi, "Iziet" blakus darba pogām. Vajag 4 punktus + "Vairāk" (kā adminam) un "Iziet" iekš "Vairāk".
+- [Sludinājumi] [planšete] V - Galvenes ikonu skaitļi ("20", "1") uzkāpj pāri ikonām; filtru čipi "Jauni 51 / Cenas 32 / Visi 212 / Pazuduši 1285 / Favorīti 0" - 5 skaitļi.
