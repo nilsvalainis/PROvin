@@ -104,3 +104,10 @@ Formāts: [sadaļa] [ierīce] smagums (K kritisks / A augsts / V vidējs / Z zem
 - [Radars] [visas] V - Radara auto kartītē darbības "Pasūtījuma detaļas" (2x) un "Nosūtīt klientam" - Radaram nav klienta. Vajag: "Pievienot salonam / Nopirkt" (-> Loģistika) un "Izveidot piedāvājumu".
 - [Radars] [visas] V - Kritēriji ierakstīti nosaukumā ("Audi 2.0D manuālis 2009-2015, 150-330k, 3000-12000 EUR"), nevis strukturētos laukos kā pasūtījumā; vienam Radaram 5 saites ar dažādiem kW diapazoniem - grūti uzturēt. Ieteikums: tā pati kritēriju forma kā pasūtījumam ("Meklējums salonam").
 - [Radars] [planšete] Z - Mājiens "pa kreisi X · pa labi ★" (vilkšanas žesti) nav saprotams un datorā nestrādā.
+
+## Loģistika -> Autoparks (darbinieks)
+- [Loģistika] [visas] A - "Nopirkts · jauns ieraksts" logā galvenā poga "Saglabāt ierakstu" neredzama: klase bg-[var(--ink)], bet logs portālā ārpus tēmas apvalka -> fons caurspīdīgs, balts teksts uz balta (tā pati kļūdu klase kā j27). Jāpārbauda visi AdminMobileSheet/portāla logi.
+- [Loģistika] [visas] + Labi: statusi vienkāršoti līdz 4 (Gaida/Ieplānots/Ceļā/Atvests); pēc "Atvests" poga "Uz Autoparku" kļūst galvenā; apstiprinājums pasaka sekas ("Loģistikā auto aiziet uz arhīvu"). TESTS auto parādījās Autoparkā.
+- [Loģistika->Autoparks] [visas] V - Jaunais Autoparka ieraksts sarakstā vidū (ne augšā, ne "Jauns" zīme); auto bez gada/VIN ar tukšu otro rindu.
+- [Loģistika/Autoparks] [visas] V - Tie paši auto (Sprinter, Volvo XC60 D5, Audi A4) vienlaikus Loģistikā ("Gaida") un Autoparkā - nav redzams, kurā posmā tie ir; jābūt vienam ierakstam ar posmu "Ceļā".
+- [Loģistika] [visas] Z - Iekšējie statusi 12 (awaiting_payment, organize_pickup...), UI rāda 4; Audi A4 ar organize_pickup UI rāda "Ieplānots" - kartē "Gatavība: Apmaksāts". Divas statusu sistēmas vienā ekrānā (statuss + gatavības apļi).

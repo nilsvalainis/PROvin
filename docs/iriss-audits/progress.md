@@ -39,3 +39,5 @@
 - 26.10 22:25 TESTS: piedāvājums PD-0003 ab6f07ba-257d-4168-ba04-2e69010a3385 no Autoparka ŠKODA OCTAVIA (121495) - DZĒST BEIGĀS (atbrīvo auto).
 - 26.10 22:50 NILS APSTIPRINĀJA DIZAINU v0.3 (Artifact dizaina-paraugs.html): IRISS oranža galvenā poga ar baltiem treknrakstā burtiem, neitrāli statusi ar krāsainu punktu, grafīta sānjosla. Fona variants: jautāts (1 iOS gaiši pelēks / 2 grafīts) - līdz atbildei 1. PRO panelim nākotnē zilgans.
 - 26.10 22:40 PR #669 (23b0215c) /p/d 500 salabots, prod READY. Klienta apstiprinājums PD-0003 -> TESTS pasūtījums Rezervēts.
+- 26.10 23:10 TESTS: loģistikas ieraksts "TESTS Škoda Octavia" (privāts, Jelgava) -> Atvests -> Uz Autoparku -> Autoparks ap-dc195d2d-1f4b-453f-bab3-480ab0729fc6. DZĒST BEIGĀS (Autoparks + loģistikas arhīvs).
+- Demo konts Chrome pieteikts (Nils 23:00). Lomu testi: pilnas 15 sadaļas - sākti.
