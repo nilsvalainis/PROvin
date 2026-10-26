@@ -1,4 +1,5 @@
 import { listingFmtEur } from "@/lib/iriss-listings-card";
+import { listingComparisonPrice } from "@/lib/iriss-listings-cost";
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
 import { irissScanIdFromOrderId, isIrissScanOrderId } from "@/lib/iriss-scan-listings";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
@@ -80,6 +81,11 @@ export function buildIrissScanFindCards(input: {
     detailUrl?: string;
     price?: number | null;
     priceCurrent?: number | null;
+    priceStart?: number | null;
+    priceMinimal?: number | null;
+    priceBuyNow?: number | null;
+    priceEstimate?: number | null;
+    auctionStage?: string;
     priceTotal?: number | null;
     orderIds?: readonly string[];
     firstSeenAt?: string;
@@ -121,7 +127,19 @@ export function buildIrissScanFindCards(input: {
     if (!v) continue;
     seen.add(key);
     const scanId = irissScanIdFromOrderId(e.orderId);
-    const price = v.priceCurrent ?? v.price ?? null;
+    // Tā pati salīdzināšanas cena kā Sludinājumu kartītē (eCarsTrade - aplēse, ne «Nav cenas»).
+    const price =
+      listingComparisonPrice({
+        platform: v.platform,
+        priceCurrent: v.priceCurrent ?? null,
+        priceStart: v.priceStart ?? null,
+        priceMinimal: v.priceMinimal ?? null,
+        priceBuyNow: v.priceBuyNow ?? null,
+        priceEstimate: v.priceEstimate ?? null,
+        auctionStage: v.auctionStage,
+      }) ??
+      v.price ??
+      null;
     const cost = v.priceTotal ?? null;
     const budget = input.budgetsByScanId?.[scanId] ?? null;
     const delta = formatIrissScanBudgetDelta(budget, price);
