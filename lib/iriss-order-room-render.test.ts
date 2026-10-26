@@ -244,7 +244,15 @@ describe("IrissOrderRoom render", () => {
     expect(html).toContain("DIAPAZONI");
     expect(html).toContain("Gadi");
     expect(html).not.toContain("Gadi no-līdz");
-    expect(html).toContain("* obligāti. + vismaz viens: nobraukums, tilpums vai jauda.");
+    expect(html).toContain("* filtrē Meklētāju. Cena un Gadi obligāti.");
+    expect(html).not.toContain("vismaz viens: nobraukums");
+    const starred = (label: string) => new RegExp(`${label}<span class="iriss-range-req" aria-hidden="true"> \\*</span>`).test(html);
+    for (const label of ["Marka / modelis", "Modeļa paplašinājums", "Cena", "Gadi", "Nobraukums", "Degviela", "Ātrumkārba", "Virsbūves tips", "Piedziņas tips", "Sēdvietu skaits"]) {
+      expect(starred(label), label).toBe(true);
+    }
+    for (const label of ["Tilpums", "Jauda", "Statuss", "Valstis", "Bojājumu tolerance", "Vēlamās krāsas", "Nevēlamās krāsas", "Salona apdare"]) {
+      expect(starred(label), label).toBe(false);
+    }
     expect(html).toContain("iriss-spec-full");
   });
 

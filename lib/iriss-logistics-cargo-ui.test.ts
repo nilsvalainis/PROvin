@@ -13,8 +13,8 @@ describe("IRISS Loģistika kravu plāns UI", () => {
   it("scopes cargo tokens to Loģistika and keeps statuses grey", () => {
     expect(css).toContain(".iriss-log-screen {");
     expect(css).toContain("--iriss-log-cargo-next: #ea4335");
-    expect(css).toContain("--krava-next2: #1d1d1f");
-    expect(css).toContain("--iriss-log-cargo-none: #9aa0a6");
+    expect(css).toContain("--krava-next2: #5f6368");
+    expect(css).toContain("--iriss-log-cargo-none: #1d1d1f");
     expect(css).not.toContain("#0a7cff");
     expect(css).toContain("--iriss-log-cargo-after: var(--krava-next2)");
     expect(css).toContain("--btn-dark-bg:");

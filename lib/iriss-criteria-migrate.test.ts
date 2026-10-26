@@ -115,6 +115,19 @@ describe("migrateIrissCriteria", () => {
     expect(filter.make.value.length).toBeGreaterThan(0);
   });
 
+  it("reads the Jauda range from the stored powerKw text before the engine line", () => {
+    const pair = migrateIrissCriteria({ powerKw: "110-140", engineType: "2.0 TDI 150 kW" }).filters[0]!;
+    expect([pair.kwFrom.value, pair.kwTo.value]).toEqual([110, 140]);
+    const from = migrateIrissCriteria({ powerKw: "no 100" }).filters[0]!;
+    expect([from.kwFrom.value, from.kwTo.value]).toEqual([100, null]);
+    const to = migrateIrissCriteria({ powerKw: "150" }).filters[0]!;
+    expect([to.kwFrom.value, to.kwTo.value]).toEqual([null, 150]);
+    const text = migrateIrissCriteria({ powerKw: "110 kW" }).filters[0]!;
+    expect(text.kwFrom.value).toBe(110);
+    const none = migrateIrissCriteria({ powerKw: "", engineType: "150 ZS" }).filters[0]!;
+    expect(none.kwFrom.value).toBe(110);
+  });
+
   it("does not replace a valid stored criteria document", () => {
     const stored = emptyIrissCriteriaFilter("flt-custom", "Pielāgots", "form");
     stored.useForm = true;

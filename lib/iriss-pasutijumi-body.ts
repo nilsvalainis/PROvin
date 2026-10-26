@@ -3,9 +3,22 @@
  * lai to pašu izmanto arī POST /api/admin/iriss-pasutijumi/[id]/offers.
  */
 
+import { parseIrissCriteriaV1 } from "@/lib/iriss-criteria-types";
+import { normalizeGeneratedDocuments } from "@/lib/iriss-generated-documents";
+import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import { normalizeIrissOfferBlocks } from "@/lib/iriss-offer-blocks";
+import { parseIrissDealWorkflowStatus } from "@/lib/iriss-order-overview-view";
+import { pickIrissPasutijumsAuditFields } from "@/lib/iriss-pasutijumi-audit-fields";
+import { parseExpectedIrissRevision } from "@/lib/iriss-pasutijumi-save-safety";
 import { isSafeDropboxFileId } from "@/lib/iriss-stock-photos";
-import { IRISS_MAX_OFFER_ATTACHMENTS, type IrissOfferAttachment, type IrissOfferRecord } from "@/lib/iriss-pasutijumi-types";
+import {
+  IRISS_MAX_OFFER_ATTACHMENTS,
+  normalizeIrissDzintarzemeTameDraft,
+  parseIrissPasutijumsListStatus,
+  type IrissOfferAttachment,
+  type IrissOfferRecord,
+  type IrissPasutijumsRecord,
+} from "@/lib/iriss-pasutijumi-types";
 
 export function parseIrissOfferAttachmentsFromBody(raw: unknown): IrissOfferAttachment[] {
   if (!Array.isArray(raw)) return [];
@@ -117,4 +130,76 @@ export function parseIrissOffersFromBody(o: Record<string, unknown>): IrissOffer
     .map((item, idx) => parseIrissOfferFromBody(item, idx))
     .filter((x): x is IrissOfferRecord => x !== null)
     .slice(0, 30);
+}
+
+function criteriaFromBody(raw: unknown): Pick<IrissPasutijumsRecord, "criteria"> {
+  const criteria = parseIrissCriteriaV1(raw);
+  return criteria ? { criteria } : {};
+}
+
+/**
+ * PATCH ķermenis -> ieraksts. Iznests no app/api/admin/iriss-pasutijumi/[id]/route.ts.
+ * `criteria` (strukturētie diapazoni, t.sk. Tilpums/Jauda) tiek pieņemts; bez tā tie pazuda pēc Saglabāt.
+ */
+export function parseIrissPasutijumsPatchBody(id: string, body: unknown): IrissPasutijumsRecord | null {
+  if (!body || typeof body !== "object") return null;
+  const o = body as Record<string, unknown>;
+  const str = (k: string) => (typeof o[k] === "string" ? o[k] : "");
+  const bool = (k: string) => Boolean(o[k]);
+  return {
+    id,
+    createdAt: str("createdAt"),
+    updatedAt: str("updatedAt"),
+    pinnedAt: str("pinnedAt"),
+    workspaceRevision: parseExpectedIrissRevision(o.workspaceRevision) ?? 0,
+    listStatus: parseIrissPasutijumsListStatus(o.listStatus),
+    clientFirstName: str("clientFirstName"),
+    clientLastName: str("clientLastName"),
+    phone: str("phone"),
+    email: str("email"),
+    orderDate: str("orderDate"),
+    brandModel: str("brandModel"),
+    modelExtension: str("modelExtension"),
+    vin: str("vin"),
+    productionYears: str("productionYears"),
+    totalBudget: str("totalBudget"),
+    engineType: str("engineType"),
+    transmission: str("transmission"),
+    bodyType: str("bodyType"),
+    driveType: str("driveType"),
+    seatCount: str("seatCount"),
+    maxMileage: str("maxMileage"),
+    preferredColors: str("preferredColors"),
+    nonPreferredColors: str("nonPreferredColors"),
+    interiorFinish: str("interiorFinish"),
+    powerKw: str("powerKw"),
+    damageTolerance: str("damageTolerance"),
+    preferredCountries: str("preferredCountries"),
+    clientFinancingPercent: (() => {
+      const raw = o.clientFinancingPercent;
+      const n = typeof raw === "number" ? raw : Number.parseInt(String(raw ?? ""), 10);
+      return Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n))) : 0;
+    })(),
+    dealLeasingOrCredit: bool("dealLeasingOrCredit"),
+    dealClientFinancing100: bool("dealClientFinancing100"),
+    dealClientFinancing20: bool("dealClientFinancing20"),
+    dealVat21Required: bool("dealVat21Required"),
+    dealServiceStartDeposit: bool("dealServiceStartDeposit"),
+    dealEkki: bool("dealEkki"),
+    ...(parseIrissDealWorkflowStatus(o.dealWorkflowStatus)
+      ? { dealWorkflowStatus: parseIrissDealWorkflowStatus(o.dealWorkflowStatus) }
+      : {}),
+    equipmentRequired: str("equipmentRequired"),
+    equipmentDesired: str("equipmentDesired"),
+    agentNotes: str("agentNotes"),
+    notes: str("notes"),
+    internalNotes: str("internalNotes"),
+    ...parseIrissPasutijumsListingLinks(o),
+    ...(o.ecarstradeLinksManual === true ? { ecarstradeLinksManual: true } : {}),
+    dzintarzemeTameDraft: normalizeIrissDzintarzemeTameDraft(o.dzintarzemeTameDraft),
+    offers: parseIrissOffersFromBody(o),
+    generatedDocuments: normalizeGeneratedDocuments(o.generatedDocuments),
+    ...pickIrissPasutijumsAuditFields(o),
+    ...criteriaFromBody(o.criteria),
+  };
 }

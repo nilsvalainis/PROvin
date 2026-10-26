@@ -9,6 +9,7 @@ import { copyText, deleteIrissPdRequest, irissPdAbsoluteLink, usePdRebase } from
 import { PdImportPanel } from "@/components/admin/iriss-piedavajumi/PdImportPanel";
 import {
   canRebaseIrissPd,
+  irissPdDeleteConfirm,
   filterIrissPdClientOptions,
   formatIrissPdPrice,
   irissPdAvailableActions,
@@ -336,7 +337,7 @@ export function PiedavajumsDetail({
   }
 
   async function remove() {
-    if (!window.confirm(`Vai tiešām dzēst piedāvājumu ${label}? Publiskā saite vairs nestrādās. Šo nevar atsaukt.`)) return;
+    if (!window.confirm(irissPdDeleteConfirm(label))) return;
     setBusy("delete");
     setErr("");
     try {

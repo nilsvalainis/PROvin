@@ -2,16 +2,7 @@ import { NextResponse } from "next/server";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { readGoogleContactsConfig } from "@/lib/google-contacts";
 import { maybeSyncGoogleContact } from "@/lib/iriss-google-contact-sync";
-import { normalizeGeneratedDocuments } from "@/lib/iriss-generated-documents";
-import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
-import { parseIrissDealWorkflowStatus } from "@/lib/iriss-order-overview-view";
-import { pickIrissPasutijumsAuditFields } from "@/lib/iriss-pasutijumi-audit-fields";
-import { parseIrissOffersFromBody } from "@/lib/iriss-pasutijumi-body";
-import {
-  normalizeIrissDzintarzemeTameDraft,
-  parseIrissPasutijumsListStatus,
-  type IrissPasutijumsRecord,
-} from "@/lib/iriss-pasutijumi-types";
+import { parseIrissPasutijumsPatchBody } from "@/lib/iriss-pasutijumi-body";
 import {
   IRISS_STALE_REVISION,
   parseExpectedIrissRevision,
@@ -28,72 +19,6 @@ import {
 export const runtime = "nodejs";
 /** Vercel: garš JSON + Blob/FS — pagarināts laiks, lai pēc 100% augšupielādes nepazustu ar 504. */
 export const maxDuration = 120;
-
-function parseListStatusBody(v: unknown) {
-  return parseIrissPasutijumsListStatus(v);
-}
-
-function parseBodyRecord(id: string, body: unknown): IrissPasutijumsRecord | null {
-  if (!body || typeof body !== "object") return null;
-  const o = body as Record<string, unknown>;
-  const str = (k: string) => (typeof o[k] === "string" ? o[k] : "");
-  const bool = (k: string) => Boolean(o[k]);
-  return {
-    id,
-    createdAt: str("createdAt"),
-    updatedAt: str("updatedAt"),
-    pinnedAt: str("pinnedAt"),
-    workspaceRevision: parseExpectedIrissRevision(o.workspaceRevision) ?? 0,
-    listStatus: parseListStatusBody(o.listStatus),
-    clientFirstName: str("clientFirstName"),
-    clientLastName: str("clientLastName"),
-    phone: str("phone"),
-    email: str("email"),
-    orderDate: str("orderDate"),
-    brandModel: str("brandModel"),
-    modelExtension: str("modelExtension"),
-    vin: str("vin"),
-    productionYears: str("productionYears"),
-    totalBudget: str("totalBudget"),
-    engineType: str("engineType"),
-    transmission: str("transmission"),
-    bodyType: str("bodyType"),
-    driveType: str("driveType"),
-    seatCount: str("seatCount"),
-    maxMileage: str("maxMileage"),
-    preferredColors: str("preferredColors"),
-    nonPreferredColors: str("nonPreferredColors"),
-    interiorFinish: str("interiorFinish"),
-    powerKw: str("powerKw"),
-    damageTolerance: str("damageTolerance"),
-    preferredCountries: str("preferredCountries"),
-    clientFinancingPercent: (() => {
-      const raw = o.clientFinancingPercent;
-      const n = typeof raw === "number" ? raw : Number.parseInt(String(raw ?? ""), 10);
-      return Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n))) : 0;
-    })(),
-    dealLeasingOrCredit: bool("dealLeasingOrCredit"),
-    dealClientFinancing100: bool("dealClientFinancing100"),
-    dealClientFinancing20: bool("dealClientFinancing20"),
-    dealVat21Required: bool("dealVat21Required"),
-    dealServiceStartDeposit: bool("dealServiceStartDeposit"),
-    dealEkki: bool("dealEkki"),
-    ...(parseIrissDealWorkflowStatus(o.dealWorkflowStatus)
-      ? { dealWorkflowStatus: parseIrissDealWorkflowStatus(o.dealWorkflowStatus) }
-      : {}),
-    equipmentRequired: str("equipmentRequired"),
-    equipmentDesired: str("equipmentDesired"),
-    agentNotes: str("agentNotes"),
-    notes: str("notes"),
-    internalNotes: str("internalNotes"),
-    ...parseIrissPasutijumsListingLinks(o),
-    ...(o.ecarstradeLinksManual === true ? { ecarstradeLinksManual: true } : {}),
-    dzintarzemeTameDraft: normalizeIrissDzintarzemeTameDraft(o.dzintarzemeTameDraft),
-    offers: parseIrissOffersFromBody(o),
-    generatedDocuments: normalizeGeneratedDocuments(o.generatedDocuments),
-    ...pickIrissPasutijumsAuditFields(o),
-  };
-}
 
 export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const gate = await requireIrissSectionApi("pasutijumi");
@@ -130,7 +55,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       );
     }
 
-    const rec = parseBodyRecord(id, body);
+    const rec = parseIrissPasutijumsPatchBody(id, body);
     if (!rec) {
       console.error("[iriss PATCH] invalid_body after parse", { id, ms: Date.now() - t0 });
       return NextResponse.json({ error: "invalid_body" }, { status: 400 });
