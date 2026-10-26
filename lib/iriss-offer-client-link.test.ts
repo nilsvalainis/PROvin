@@ -462,3 +462,31 @@ describe("IRISS offer client link record parse", () => {
     expect(JSON.stringify(admin)).not.toContain(ORDER_ID);
   });
 });
+
+describe("buildIrissOfferPublicView - «Stāvoklis» (FABLE F3: tehniskais teksts 2x)", () => {
+  const tech = "TA derīga līdz: 01.2021. Īpašnieku skaits: 4.";
+
+  it("tehniskais novērtējums netiek dublēts «Stāvoklis» no mantotā comment", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-26T06:00:00.000Z", "Piedāvājums 1");
+    offer.technicalAssessment = tech;
+    offer.comment = tech;
+    const view = buildIrissOfferPublicView(offer, { decision: "", question: "" });
+    expect(view.technicalAssessment).toBe(tech);
+    expect(view.notes).toBe("");
+  });
+
+  it("izslēgts tehniskais novērtējums neparādās caur comment", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-26T06:00:00.000Z", "Piedāvājums 1");
+    offer.technicalAssessment = tech;
+    offer.comment = tech;
+    offer.blocks = [{ id: "technicalAssessment", kind: "technicalAssessment", title: "Tehniskais novērtējums", visible: false }];
+    const blob = JSON.stringify(buildIrissOfferPublicView(offer, { decision: "", question: "" }));
+    expect(blob).not.toContain("Īpašnieku skaits");
+  });
+
+  it("vecs piedāvājums tikai ar comment - rāda kā līdz šim", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-26T06:00:00.000Z", "Piedāvājums 1");
+    offer.comment = "Vecs komentārs";
+    expect(buildIrissOfferPublicView(offer, { decision: "", question: "" }).notes).toBe("Vecs komentārs");
+  });
+});

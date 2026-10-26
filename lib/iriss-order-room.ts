@@ -484,12 +484,22 @@ export function irissOrderRoomOfferStatus(offer: Pick<IrissOfferRecord, "brandMo
   return "draft";
 }
 
+/** Privātā Vercel Blob saite pārlūkā neielādējas (vajag tokenu) - tikai caur admin starpnieku. */
+const PRIVATE_BLOB_URL_RE = /^https:\/\/[^/]+\.private\.blob\.vercel-storage\.com\//i;
+
 export function irissOrderRoomOfferThumb(
-  offer: Pick<IrissOfferRecord, "attachments" | "coverAttachmentId">,
+  offer: Pick<IrissOfferRecord, "id" | "attachments" | "coverAttachmentId">,
+  orderId?: string,
 ): string {
   for (const a of orderOfferAttachmentsForPdf(offer)) {
     const src = offerImageGridSrc(a);
-    if (src) return src;
+    if (!src) continue;
+    if (PRIVATE_BLOB_URL_RE.test(src)) {
+      // Pirms ?images=thumbs ielādes (un uzreiz pēc piedāvājuma saglabāšanas) bija salauzta bilde.
+      if (!orderId) continue;
+      return `/api/admin/iriss-pasutijumi/${encodeURIComponent(orderId)}/offer/${encodeURIComponent(offer.id)}/photo/${encodeURIComponent(a.id)}`;
+    }
+    return src;
   }
   return "";
 }

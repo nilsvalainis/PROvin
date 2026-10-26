@@ -41,3 +41,33 @@ describe("mergeServerOwnedIrissFields", () => {
     expect(merged.brand).toBe("x");
   });
 });
+
+describe("mergeServerOwnedIrissFields - statuss (FABLE F3: klients apstiprina, cilne rāda «Aktīvs»)", () => {
+  const approvedEntry = { from: "active", to: "reserved", at: "2026-10-26T06:38:36.452Z", by: "Klients (piedāvājuma saite)" };
+
+  it("pārņem jaunāku servera statusu", () => {
+    const local = { workspaceRevision: 3, listStatus: "active", statusHistory: [] as unknown[], note: "FABLE" };
+    const server = {
+      workspaceRevision: 5,
+      listStatus: "reserved",
+      statusChangedAt: approvedEntry.at,
+      statusHistory: [approvedEntry],
+      note: "servera",
+    };
+    const out = mergeServerOwnedIrissFields(local, server);
+    expect(out.listStatus).toBe("reserved");
+    expect(out.statusHistory).toEqual([approvedEntry]);
+    expect(out.note).toBe("FABLE");
+  });
+
+  it("vietējā jaunākā statusa maiņa paliek", () => {
+    const local = { listStatus: "completed", statusChangedAt: "2026-10-26T06:40:00.000Z", statusHistory: [] as unknown[] };
+    const server = { listStatus: "reserved", statusChangedAt: approvedEntry.at, statusHistory: [approvedEntry] };
+    expect(mergeServerOwnedIrissFields(local, server).listStatus).toBe("completed");
+  });
+
+  it("serveris bez statusChangedAt neko nemaina", () => {
+    const local: { listStatus: string; statusChangedAt?: string } = { listStatus: "inactive", statusChangedAt: "2026-10-01T00:00:00.000Z" };
+    expect(mergeServerOwnedIrissFields(local, { listStatus: "active" }).listStatus).toBe("inactive");
+  });
+});

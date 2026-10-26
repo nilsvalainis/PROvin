@@ -9,6 +9,7 @@ import {
   PHOTO_ZOOM_RESET,
   clampPhotoPan,
   photoZoomPercent,
+  photoSwipeStep,
   pinchPhotoZoom,
   stepPhotoZoom,
   togglePhotoZoom,
@@ -51,6 +52,7 @@ export function AdminPhotoLightbox({ photos, index, onIndexChange, onClose, thum
   const panLast = useRef<Pointer | null>(null);
   const lastTap = useRef<{ t: number; x: number; y: number } | null>(null);
   const moved = useRef(false);
+  const swipeStart = useRef<Pointer | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
@@ -129,6 +131,7 @@ export function AdminPhotoLightbox({ photos, index, onIndexChange, onClose, thum
     (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     moved.current = false;
+    swipeStart.current = pointers.current.size === 1 ? { x: e.clientX, y: e.clientY } : null;
     if (pointers.current.size === 2) {
       pinchStart.current = { distance: distance(), scale: zoom.scale };
       panLast.current = null;
@@ -164,6 +167,15 @@ export function AdminPhotoLightbox({ photos, index, onIndexChange, onClose, thum
       return;
     }
     panLast.current = null;
+    const start = swipeStart.current;
+    swipeStart.current = null;
+    if (start && e.pointerType !== "mouse") {
+      const delta = photoSwipeStep(start, { x: e.clientX, y: e.clientY }, zoom.scale);
+      if (delta !== 0) {
+        step(delta);
+        return;
+      }
+    }
     if (e.pointerType === "mouse" || moved.current) return;
     // Dubultpieskāriens (telefonā): 1x <-> 2x.
     const now = Date.now();

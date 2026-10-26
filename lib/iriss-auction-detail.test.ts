@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  dedupeDamageLines,
   irissAuctionDetailToSeed,
+  irissDetailMileageKm,
+  isTrackingPixelUrl,
+  lvEngineDisplacement,
   lvRegistrationDate,
   lvTerm,
   mapRelayDetailResponse,
@@ -8,6 +12,7 @@ import {
   type IrissRelayAuctionDetail,
 } from "@/lib/iriss-auction-detail";
 import { parseIrissAuctionLink } from "@/lib/iriss-auction-link";
+import { isPlausibleListingVin } from "@/lib/iriss-listings-extract";
 
 /** Tas pats izvilkums, ko releja extractDetailDom atdeva īstā Chrome (j56 pārbaude). */
 const auto1Detail: IrissRelayAuctionDetail = {
@@ -78,7 +83,7 @@ describe("irissAuctionDetailToSeed", () => {
   it("extras: keys, emission, engine, equipment, TA/owners facts", () => {
     expect(extras.keyCount).toBe("2");
     expect(extras.emissionClass).toBe("Euro 6");
-    expect(extras.engineDisplacement).toBe("1995 ccm");
+    expect(extras.engineDisplacement).toBe("1995 cm³");
     expect(extras.equipmentHighlights).toBe("āda, navigācija, sēdekļu apsilde, āķis");
     expect(extras.technicalFacts).toBe("TA derīga līdz: 05.2026. Īpašnieku skaits: 1");
     expect(extras.hasFullServiceHistory).toBe(false);
@@ -146,5 +151,77 @@ describe("helpers", () => {
     expect(m.fuel).toBe("Dīzelis");
     expect(m.auctionEndAt).toBe("2026-10-27T15:00:00Z");
     expect(m.priceCurrent).toBe(21500);
+  });
+});
+
+describe("FABLE F3 (26.10): Auto1 «No saites» PE68796", () => {
+  it("nobraukums 319.377 (tūkstošu punkts) → 319 377 km, ne 319", () => {
+    expect(irissDetailMileageKm(319.377, "")).toBe(319377);
+    expect(irissDetailMileageKm(64312, "64,312 km")).toBe(64312);
+    expect(irissDetailMileageKm(null, "319.377 km")).toBe(319377);
+    expect(irissDetailMileageKm(null, "")).toBeNull();
+  });
+
+  it("Auto1 heksadecimālais identifikators nav VIN; īsts VIN paliek", () => {
+    expect(isPlausibleListingVin("7B7A4C2C89AE96965")).toBe(false);
+    expect(isPlausibleListingVin("BFF496D701AD5C23E")).toBe(false);
+    expect(isPlausibleListingVin("WVGZZZE2ZNP009103")).toBe(true);
+    expect(isPlausibleListingVin("WBA5R1C0XLFH42873")).toBe(true);
+    const link = parseIrissAuctionLink("https://www.auto1.com/en/app/merchant/car/PE68796")!;
+    const { hit } = irissAuctionDetailToSeed(
+      { platform: "auto1", key: "PE68796", url: link.url, title: "Sharan", fields: [], tables: [], lists: [], photos: [], jsonFields: [], item: { vin: "7B7A4C2C89AE96965", mileageKm: 319.377 } },
+      link,
+    );
+    expect(hit.vin).toBe("");
+    expect(hit.mileageKm).toBe(319377);
+  });
+
+  it("apvienojot paliek marka no saraksta virsraksta un viltus VIN netiek pārņemts", () => {
+    const link = parseIrissAuctionLink("https://www.auto1.com/en/app/merchant/car/PE68796")!;
+    const { hit } = irissAuctionDetailToSeed(
+      { platform: "auto1", key: "PE68796", url: link.url, title: "", fields: [], tables: [], lists: [], photos: [], jsonFields: [], item: { title: "Sharan 2.0 TDI Karat BlueMotion Tech" } },
+      link,
+    );
+    const listed = { ...hit, id: "03f2", title: "Volkswagen Sharan 2.0 TDI Karat BlueMotion Tech", vin: "7B7A4C2C89AE96965", mileageKm: 319377 };
+    const merged = mergeListedIntoDetailHit(hit, listed);
+    expect(merged.title).toBe("Volkswagen Sharan 2.0 TDI Karat BlueMotion Tech");
+    expect(merged.vin).toBe("");
+    expect(merged.mileageKm).toBe(319377);
+  });
+
+  it("LV termini: krāsa ar (Original), Duplex, tilpums", () => {
+    expect(lvTerm("Brown (Original)")).toBe("Brūna");
+    expect(lvTerm("Grey (Metallic)")).toBe("Pelēka (metāliks)");
+    expect(lvTerm("Duplex")).toBe("Automātiskā (divsajūgu)");
+    expect(lvTerm("Something (Original)")).toBe("Something (Original)");
+    expect(lvEngineDisplacement("1,968 ccm")).toBe("1968 cm³");
+    expect(lvEngineDisplacement("1995 ccm")).toBe("1995 cm³");
+    expect(lvEngineDisplacement("2.0 l")).toBe("2.0 l");
+  });
+
+  it("Bing pikselis nav bilde (piedāvājumā 58. «bilde» bija bat.bing.com)", () => {
+    expect(isTrackingPixelUrl("https://bat.bing.com/action/0?ti=187007467&tm=gtm002&Ver=2")).toBe(true);
+    expect(isTrackingPixelUrl("https://img-pa.auto1.com/img3e/2a/3e2a2f/max/1.jpg")).toBe(false);
+    const link = parseIrissAuctionLink("https://www.auto1.com/en/app/merchant/car/PE68796")!;
+    const { hit } = irissAuctionDetailToSeed(
+      {
+        platform: "auto1", key: "PE68796", url: link.url, title: "", fields: [], tables: [], lists: [], jsonFields: [], item: null,
+        photos: ["https://img-pa.auto1.com/img/a.jpg", "https://bat.bing.com/action/0?ti=1", "https://www.facebook.com/tr?id=1"],
+      },
+      link,
+    );
+    expect(hit.imageUrls).toEqual(["https://img-pa.auto1.com/img/a.jpg"]);
+  });
+
+  it("testa brauciena teksts netiek atkārtots 4x", () => {
+    expect(
+      dedupeDamageLines([
+        "TEST DRIVE INFORMATION: TEST DRIVE LOCATION: ON PUBLIC STREET < 80KM/H (LOWER SPEED) NO SPECIFIC FINDINGS",
+        "Test drive informationTest Drive location: On public street < 80km/h (lower speed)No specific findings",
+        "Test Drive location: On public street < 80km/h (lower speed)No specific findings",
+        "Test Drive location: On public street < 80km/h (lower speed)",
+      ]),
+    ).toEqual(["TEST DRIVE INFORMATION: TEST DRIVE LOCATION: ON PUBLIC STREET < 80KM/H (LOWER SPEED) NO SPECIFIC FINDINGS"]);
+    expect(dedupeDamageLines(["Door: Scratch", "Bumper: Dent"])).toEqual(["Door: Scratch", "Bumper: Dent"]);
   });
 });

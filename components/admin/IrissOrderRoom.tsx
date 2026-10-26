@@ -1436,7 +1436,7 @@ export function IrissOrderRoom({
             <ul className="grid min-w-0 gap-3">
               {rec.offers.map((offer, index) => {
                 const total = irissOrderRoomOfferTotal(offer);
-                const thumb = irissOrderRoomOfferThumb(offer);
+                const thumb = irissOrderRoomOfferThumb(offer, rec.id);
                 const link = offerLinks.find((item) => item.offerId === offer.id) ?? null;
                 const badge = offerPortfolioBadge(offer, link);
                 const sent = link ? formatIrissOfferLinkStamp(link.createdAt) : "";
@@ -1500,6 +1500,7 @@ export function IrissOrderRoom({
                         vehicle={offer.brandModel.trim() || offer.title}
                         busy={linkBusyId === offer.id}
                         deadlineAt={offer.validUntilAt ?? ""}
+                        deadlineDate={offer.validUntil ?? ""}
                         onCreate={(expiresInDays) => void mutateOfferLink(offer.id, { action: "create", expiresInDays })}
                         onRevoke={() => void mutateOfferLink(offer.id, { action: "revoke" })}
                         onExtend={(validUntilAt) => void mutateOfferLink(offer.id, { action: "extend", validUntilAt })}
