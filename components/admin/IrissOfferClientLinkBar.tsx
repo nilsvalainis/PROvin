@@ -32,6 +32,7 @@ export function IrissOfferClientLinkBar({
   vehicle,
   busy,
   deadlineAt = "",
+  deadlineDate = "",
   onCreate,
   onRevoke,
   onExtend,
@@ -44,6 +45,8 @@ export function IrissOfferClientLinkBar({
   busy: boolean;
   /** Piedāvājuma termiņš (validUntilAt) - jaunai saitei obligāts. */
   deadlineAt?: string;
+  /** Termiņa datums bez laika (validUntil) - lai pateiktu, ka trūkst tikai laika. */
+  deadlineDate?: string;
   onCreate: (expiresInDays: number | null) => void;
   onRevoke: () => void;
   onExtend?: (validUntilAt: string) => void;
@@ -152,7 +155,12 @@ export function IrissOfferClientLinkBar({
           </button>
           {!deadlineReady ? (
             <p className="text-[12px] text-amber-800">
-              {deadlineMs != null ? "Termiņš beidzies - ievadi jaunu" : "Vispirms ievadi piedāvājuma termiņu"} (Labot - Cenas) un saglabā.
+              {deadlineMs != null
+                ? "Termiņš beidzies - ievadi jaunu"
+                : deadlineDate.trim()
+                  ? "Termiņa datums ir, bet trūkst laika - ievadi termiņa laiku"
+                  : "Vispirms ievadi piedāvājuma termiņu"}{" "}
+              (Labot - Cenas) un saglabā.
             </p>
           ) : null}
         </div>
