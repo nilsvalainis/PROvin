@@ -21,8 +21,8 @@
 - Saziņa naktī: Andris caur docs/komandu-zinojumi.md (rinda + push uz main).
 
 ## Posmi
-- [ ] Pavadzīmes (līdz 8:00)
-- [ ] 0. posms: dizaina paraugs (Artifact) - Nila "jā" no rīta
+- [x] Pavadzīmes admin (pabeigts 22:06; atlikts VPN + tikai-pavadzīmju loma)
+- [x] 0. posms: dizaina paraugs publicēts kā Artifact (saite Nilam sarunā 26.10 22:15) - gaida Nila "jā"
 - [ ] 1. posms: pilna simulācija (sadaļas, lomas, ierīces)
 - [ ] 2. posms: audita dokuments + grupēti labojumu PR
 - [ ] 3. posms: apstiprinātās pārbūves ieviešana
@@ -31,7 +31,7 @@
 - 26.10 21:30 - darba vieta izveidota (worktree /Users/nv/code/PROvin-worktrees/iriss-audits, zars claude/iriss-audits). Admin sesija: Claude iebūvētais pārlūks. Demo konts (claude.demo@provin.lv): Chrome, 1Password.
 
 ## Nākamais solis
-- 0. posms: dizaina paraugs (Artifact). Paralēli: lomu testi ar demo kontu (Chrome) - vispirms "tikai pavadzimes".
+- 1. posms: lomu testi ar demo kontu (Chrome, demo; admin = iebūvētais pārlūks). Sākt ar pilnām 15 sadaļām, tad "tikai pavadzimes", "tikai gramatvede", "tikai serviss", "logistika bez ap_*"; beigās atjaunot visas 15.
 - 26.10 21:45-21:55 Pavadzīmes (admin, dators+telefons): T1 B193 Ar roku "TESTS VW Golf" 1h -> automātika krīt (marka nav CSDD sarakstā) -> Aivars -> P02832 (3 min). T2 Pagarināt P02832 1h -> apstiprinājuma logs -> P02833, P02832 pārtraukta (~2 min). T3 telefons B192 Ar roku "Volkswagen Passat" 1h -> "Automātikai neder (B192 tikai ar roku)" -> Aivars -> P00747 (~2,5 min), PDF: pārstāvis Taivo Batins, maršruts Tukums -> Hermaņi-1. T4 Pārtraukt P02833 - gaida Aivaru.
 - 26.10 21:55-22:02 T4 Pārtraukt P02833 -> Aivars -> pārtraukta (~3 min). T5 telefons B192 aizņemts -> logs -> Jā, Cita adrese Jelgava, Cits 2h -> P00748 (PDF sākums Jelgava, pārstāvis Taivo). T6 dators No saraksta AUDI A6 -> KĻŪDA tradeAct=false -> automātika parasta P02834 42 s. T7 telefons No saraksta AUDI A6 AVANT, pārstāvis Nils, aizvieto P02834 -> tradeAct=true, pie Aivara. Kalendārs/Arhīvs apskatīti.
 - 26.10 22:03-22:06 T8 Atcelšanas tests (B193, aizvietošana) - window.confirm testa pārlūkā, Aivars paņēma pēc ~45 s -> P02836 (P02835 pārtraukta). Pavadzīmju admin daļa pabeigta (8 testi, 7 CSDD pavadzīmes: P02832-P02836, P00747-P00748). Atlikts: VPN poga (nakts beigās), darbinieks tikai ar "pavadzimes" (lomu testos).
