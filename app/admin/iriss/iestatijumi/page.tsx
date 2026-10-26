@@ -5,6 +5,7 @@ import { IrissLogistikaAuctionSourcesPanel } from "@/components/admin/iriss-logi
 import { IrissLogistikaMapsUsagePanel } from "@/components/admin/IrissLogistikaMapsUsagePanel";
 import { IrissMarketplaceLimitsCard } from "@/components/admin/IrissMarketplaceLimitsCard";
 import { IrissTameCommissionSettingsForm } from "@/components/admin/IrissTameCommissionSettingsForm";
+import { IrissDisclosure } from "@/components/admin/iriss-ui/IrissUi";
 import { requireAdminPage } from "@/lib/admin-auth";
 import { loadIrissSettingsLimits } from "@/lib/iriss-iestatijumi-load";
 import { getIrissLogisticsStorageState, listLogisticsAuctionSources } from "@/lib/iriss-logistics-store";
@@ -31,6 +32,19 @@ export default async function IrissSettingsPage() {
         </p>
       </AdminDashboardHeaderWithMenu>
 
+      <section className="mt-5 max-w-xl rounded-[22px] bg-[var(--s1)] p-4 shadow-[var(--sh)] sm:p-5">
+        <h2 className="text-[15px] font-semibold text-[var(--ink)]">Lietotāji un pieeja</h2>
+        <p className="mt-1 text-[13px] leading-snug text-[var(--ink2)]">
+          Nils uzaicina, piešķir un atsauc IRISS lomas. Katra pieteikšanās un pieeja paliek žurnālā.
+        </p>
+        <Link
+          href="/admin/iriss/iestatijumi/lietotaji"
+          className="mt-3 inline-flex rounded-full bg-[var(--chip-active-bg)] px-4 py-2 text-[13px] font-medium text-[var(--chip-active-fg)]"
+        >
+          Atvērt lietotājus
+        </Link>
+      </section>
+
       <IrissTameCommissionSettingsForm />
 
       <section className="mt-5 max-w-xl">
@@ -50,23 +64,15 @@ export default async function IrissSettingsPage() {
 
       <IrissMarketplaceLimitsCard limits={limits} />
 
-      <IrissLogistikaMapsUsagePanel />
-      <section className="mt-5 max-w-xl rounded-[22px] bg-[var(--s1)] p-4 shadow-[var(--sh)] sm:p-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--ink3)]">Loģistika</p>
-        <IrissLogistikaAuctionSourcesPanel initialSources={sources} compact />
-      </section>
-      <section className="mt-5 max-w-xl rounded-[22px] bg-[var(--s1)] p-4 shadow-[var(--sh)] sm:p-5">
-        <h2 className="text-[15px] font-semibold text-[var(--ink)]">Lietotāji un pieeja</h2>
-        <p className="mt-1 text-[13px] leading-snug text-[var(--ink2)]">
-          Nils uzaicina, piešķir un atsauc IRISS lomas. Katra pieteikšanās un pieeja paliek žurnālā.
-        </p>
-        <Link
-          href="/admin/iriss/iestatijumi/lietotaji"
-          className="mt-3 inline-flex rounded-full bg-[var(--chip-active-bg)] px-4 py-2 text-[13px] font-medium text-[var(--chip-active-fg)]"
-        >
-          Atvērt lietotājus
-        </Link>
-      </section>
+      {/* Retāk vajadzīgais - aizvērts (Nils 26.10: akordeoni). */}
+      <div className="mt-5 flex max-w-xl flex-col gap-3">
+        <IrissDisclosure title="Google Maps limiti" count="10 000 / mēn.">
+          <IrissLogistikaMapsUsagePanel embedded />
+        </IrissDisclosure>
+        <IrissDisclosure title="Izsoļu avoti" count={`${sources.filter((x) => x.enabled).length} ieslēgti`}>
+          <IrissLogistikaAuctionSourcesPanel initialSources={sources} compact />
+        </IrissDisclosure>
+      </div>
     </div>
   );
 }
