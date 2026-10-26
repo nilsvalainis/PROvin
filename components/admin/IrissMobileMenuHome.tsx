@@ -7,7 +7,7 @@ import { IrissWaybillRequestArchive } from "@/components/admin/IrissWaybillMobil
 import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { MenuGrid } from "@/components/admin/mobile/MenuGrid";
 import { renderIrissWidget } from "@/components/admin/mobile/MenuWidgetContent";
-import { IRISS_DEFAULT_LAYOUT_IDS, irissMenuCatalog } from "@/lib/admin-menu-catalog";
+import { irissDefaultLayoutIds, irissMenuCatalog } from "@/lib/admin-menu-catalog";
 import type { MenuLayout } from "@/lib/admin-menu-layout";
 import { IrissHomeLogisticsPins } from "@/components/admin/IrissHomeLogisticsPins";
 import { IrissWaybillGauges } from "@/components/admin/IrissWaybillGauges";
@@ -108,14 +108,20 @@ export function IrissMobileMenuHome({
   sections,
   isAdmin,
   initialLayout,
+  autoparksV2Visible = false,
 }: {
   sections: readonly IrissSection[];
   isAdmin: boolean;
+  /** Autoparks v2 darbiniekiem ieslēgts (karogs): tad darbiniekam ar `ap_serviss` ir logrīks "Serviss". */
+  autoparksV2Visible?: boolean;
   /** Servera saglabātais režģa izkārtojums (sk. MenuGrid). */
   initialLayout?: MenuLayout | null;
 }) {
   const items = irissMobileMenuItemsFor(sections, isAdmin);
-  const catalog = useMemo(() => irissMenuCatalog(sections, isAdmin), [sections, isAdmin]);
+  const catalog = useMemo(
+    () => irissMenuCatalog(sections, isAdmin, { autoparksV2Visible }),
+    [sections, isAdmin, autoparksV2Visible],
+  );
   /** Partneris (tikai Pavadzīmes): tas pats sākums, bet tikai pavadzīmju logrīks, forma, Arhīvs un Iziet. */
   const waybillOnly = !isAdmin && isWaybillOnlyStaff(sections);
   // Kolēģa pavadzīmju logrīks: atveras augšā (jaunākās augšā), nevis pārlūka atjaunotajā apakšā.
@@ -213,7 +219,7 @@ export function IrissMobileMenuHome({
         <MenuGrid
           workspace="iriss"
           catalog={catalog}
-          defaultIds={IRISS_DEFAULT_LAYOUT_IDS}
+          defaultIds={irissDefaultLayoutIds(isAdmin)}
           initialLayout={initialLayout}
           badgeOf={(item) =>
             item.id === "w-logistika"

@@ -9,7 +9,7 @@ const PAGE_ROOTS: ReadonlyArray<{ file: string; root: RegExp }> = [
   { file: "app/admin/iriss/pavadzimes/page.tsx", root: /className="relative min-h-full w-full max-w-none[^"]*"/ },
   { file: "components/admin/IrissOrderRoom.tsx", root: /className="iriss-parskats-view[^"]*"/ },
   { file: "components/admin/IrissLogisticsAppShell.tsx", root: /className="iriss-admin-scope min-h-dvh[^"]*"/ },
-  { file: "components/admin/IrissStaffAppShell.tsx", root: /className="iriss-admin-scope flex h-dvh[^"]*"/ },
+  { file: "components/admin/IrissStaffAppShell.tsx", root: /className="iriss-admin-scope iriss-staff-shell flex[^"]*"/ },
 ];
 
 describe("IRISS page roots stay transparent over the shell gradient", () => {

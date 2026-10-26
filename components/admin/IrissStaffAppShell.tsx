@@ -77,8 +77,11 @@ export function IrissStaffAppShell({
     );
   }
 
+  // Telefonā ritina dokuments (admin-ios-theme main overflow-y: visible), tāpēc čaula ir min-h (nevis h-dvh, kas
+  // vecākā iOS Safari atstāja joslu ekrāna vidū virs laukiem un zem tās tumšo body fonu); apakšējā josla ir fixed.
+  // Datorā (md+) paliek pilna augstuma rinda ar sānu joslu (j69).
   return (
-    <div className="iriss-admin-scope flex h-dvh flex-col text-[#111827] md:flex-row">
+    <div data-iriss-staff-shell="" className="iriss-admin-scope iriss-staff-shell flex flex-col text-[#111827] md:h-dvh md:flex-row">
       <aside data-iriss-nav="" className="relative hidden w-[220px] shrink-0 flex-col border-r border-[#ececf2] bg-[#F4F6F9] px-3 py-4 md:flex">
         <div className="mb-5 flex items-center gap-2 px-2">
           <span className="text-[15px] font-semibold tracking-tight">IRISS</span>
@@ -135,8 +138,11 @@ export function IrissStaffAppShell({
       </aside>
 
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</main>
-        <nav className="relative z-10 border-t border-[#ececf2] bg-[#F4F6F9] px-3 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 md:hidden">
+        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(88px+env(safe-area-inset-bottom))] md:pb-0">{children}</main>
+        <nav
+          data-iriss-staff-tabbar=""
+          className="iriss-staff-tabbar fixed inset-x-0 bottom-0 z-10 border-t border-[#ececf2] bg-[#F4F6F9] px-3 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 md:hidden"
+        >
           <div className="mx-auto flex max-w-md items-stretch gap-1 rounded-full bg-white p-1 shadow-sm">
             <Link
               href={home}
