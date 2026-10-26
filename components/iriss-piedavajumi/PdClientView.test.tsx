@@ -1,11 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => undefined, refresh: () => undefined }) }));
+vi.mock("next/image", () => ({
+  default: (props: { alt?: string; src?: string }) => {
+    const { createElement } = require("react") as typeof import("react");
+    return createElement("img", { alt: props.alt ?? "", src: typeof props.src === "string" ? props.src : "" });
+  },
+}));
 
 import { PiedavajumiList } from "@/components/admin/iriss-piedavajumi/PiedavajumiList";
 import { PdClientView } from "@/components/iriss-piedavajumi/PdClientView";
 import { PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
-import { buildIrissPdPublicView, irissPdToListRow } from "@/lib/iriss-piedavajumi";
+import { buildIrissPdPublicView, irissPdHiddenBlockLabels, irissPdToListRow } from "@/lib/iriss-piedavajumi";
 import type { IrissPdAuto1Blocks } from "@/lib/iriss-piedavajumi-auto1";
 import { emptyIrissPiedavajums, IRISS_PD_STATUSES, type IrissPiedavajums } from "@/lib/iriss-piedavajumi-types";
 import { renderHtml, renderText } from "@/lib/test-render";
@@ -47,10 +53,13 @@ const src = (n: number, s: string) => `/p/d/TOKEN/foto/${n}${s === "full" ? "?s=
 
 describe("Klienta skats (publiskā saite)", () => {
   it("rāda auto, cenu, termiņu un ieslēgtos Auto1 blokus; bojājumi pēc noklusējuma paslēpti", () => {
-    const text = renderText(<PdClientView view={buildIrissPdPublicView(rec(), "link", NOW)} mode="link" photoSrc={src} />).replace(/ /g, " ");
+    const view = buildIrissPdPublicView(rec(), "link", NOW);
+    const text = renderText(<PdClientView view={view} mode="link" token="tokentokentokentoken12" photoSrc={src} />).replace(/ /g, " ");
     expect(text).toContain("Ford Transit Custom 2.0 L2H1");
     expect(text).toContain("12 750 €");
     expect(text).toContain("līdz 02.11.2026");
+    expect(text).toContain("Parametri");
+    expect(text).not.toContain("Auto dati");
     expect(text).toContain("Ārpuses krāsas karte");
     expect(text).toContain("◐ 276 µm");
     expect(text).toContain("Izlaiduma gads");
@@ -76,9 +85,36 @@ describe("Klienta skats (publiskā saite)", () => {
   });
 
   it("admina priekšskatījums nosauc paslēptos blokus", () => {
-    const text = renderText(<PdClientView view={buildIrissPdPublicView(rec(), "link", NOW)} mode="link" photoSrc={src} compact showHiddenNote />);
+    const row = rec();
+    const text = renderText(
+      <PdClientView
+        view={buildIrissPdPublicView(row, "link", NOW)}
+        mode="link"
+        photoSrc={src}
+        embedded
+        showHiddenNote
+        hiddenLabels={irissPdHiddenBlockLabels(row, "link")}
+      />,
+    );
     expect(text).toContain("Paslēpts (saite=OFF): Bojājumu kopsavilkums.");
     expect(text).toContain("Nekad: avots, saite, iepirkuma cena");
+  });
+
+  it("tukšu krāsas karti un tukšus blokus nerāda", () => {
+    const empty: IrissPdAuto1Blocks = {
+      paint: { zones: [{ id: "front", readings: [], warning: false }, { id: "roof", readings: [], warning: false }, { id: "rear", readings: [], warning: false }, { id: "left", readings: [], warning: false }, { id: "right", readings: [], warning: false }], unassigned: [] },
+      tech: [],
+      equipment: [],
+      service: [],
+      inspection: [],
+      damage: [],
+      vinData: [],
+    };
+    const text = renderText(<PdClientView view={buildIrissPdPublicView(rec({ auto1: empty }), "link", NOW)} mode="link" photoSrc={src} />);
+    expect(text).not.toContain("Ārpuses krāsas karte");
+    expect(text).not.toContain("Tehniskie dati");
+    expect(text).not.toContain("Dati pēc VIN");
+    expect(text).toContain("Parametri");
   });
 });
 
@@ -98,6 +134,7 @@ describe("Statusu čipi un saraksts", () => {
     const text = renderText(<PiedavajumiList rows={rows} nowMs={NOW} storeEnabled loadError="" />);
     expect(text).toContain("3 piedāvājumi · 1 auto = 1 piedāvājums");
     expect(text).toContain("Aizpildīt");
+    expect(text).toContain("Dzēst");
     expect(text).toContain("Izveidot jaunu uz šī bāzes");
     expect(text).toContain("Beidzies termiņš");
     expect(html).toContain('href="/admin/iriss/pasutijumi/44444444-4444-4444-8444-444444444444"');

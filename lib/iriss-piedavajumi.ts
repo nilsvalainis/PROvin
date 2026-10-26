@@ -4,12 +4,13 @@
  * Termiņš ir obligāts nosūtīšanai, bez noklusējuma. Beidzies automātiski pēc Rīgas dienas beigām.
  */
 
-import { normalizeIrissPdAuto1Blocks, type IrissPdAuto1Blocks } from "@/lib/iriss-piedavajumi-auto1";
+import { irissPdAuto1BlockCount, normalizeIrissPdAuto1Blocks, type IrissPdAuto1Blocks } from "@/lib/iriss-piedavajumi-auto1";
 import {
   defaultIrissPdVisibility,
   emptyIrissPdClient,
   emptyIrissPdVehicle,
   IRISS_PD_BLOCK_IDS,
+  IRISS_PD_BLOCK_LV,
   IRISS_PD_MAX_HISTORY,
   IRISS_PD_MAX_PHOTOS,
   IRISS_PD_OPEN_STATUSES,
@@ -565,6 +566,30 @@ function factValue(k: keyof IrissPdVehicle, v: string): string {
   return v;
 }
 
+export function irissPdFactValue(facts: readonly IrissPdPublicFact[], label: string): string {
+  return facts.find((f) => f.label === label)?.value.trim() ?? "";
+}
+
+/** Kompakts apakšvirsraksts kā `/p/`: gads · nobraukums · ātrumkārba. */
+export function irissPdSubtitle(facts: readonly IrissPdPublicFact[]): string {
+  return [irissPdFactValue(facts, "Pirmā reģistrācija") || irissPdFactValue(facts, "Gads"), irissPdFactValue(facts, "Nobraukums"), irissPdFactValue(facts, "Ātrumkārba")]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+/** Admina slēpto, bet datos esošo bloku etiķetes (tukšos nerāda). */
+export function irissPdHiddenBlockLabels(rec: IrissPiedavajums, mode: IrissPdViewMode): string[] {
+  const a = rec.auto1;
+  if (!a) return [];
+  return IRISS_PD_BLOCK_IDS.filter((id) => irissPdAuto1BlockCount(a, id) > 0 && !irissPdBlockVisible(rec.visibility, id, mode)).map(
+    (id) => IRISS_PD_BLOCK_LV[id],
+  );
+}
+
+export function irissPdDeleteConfirm(label: string): string {
+  return `Vai tiešām dzēst piedāvājumu ${label}? Publiskā saite vairs nestrādās. Šo nevar atsaukt.`;
+}
+
 /**
  * Klienta skats: tikai baltais saraksts. Nekad: avots, izsoles saite/atslēga, iepirkuma cena,
  * iekšējās piezīmes, klienta kontakti, pasūtījumu id, tokens.
@@ -576,7 +601,9 @@ export function buildIrissPdPublicView(rec: IrissPiedavajums, mode: IrissPdViewM
   const blocks: IrissPdPublicView["blocks"] = {};
   const a = rec.auto1;
   if (a) {
-    for (const id of IRISS_PD_BLOCK_IDS) if (irissPdBlockVisible(rec.visibility, id, mode)) blocks[id] = true;
+    for (const id of IRISS_PD_BLOCK_IDS) {
+      if (irissPdBlockVisible(rec.visibility, id, mode) && irissPdAuto1BlockCount(a, id) > 0) blocks[id] = true;
+    }
   }
   const auto1: IrissPdAuto1Blocks | null = a
     ? {

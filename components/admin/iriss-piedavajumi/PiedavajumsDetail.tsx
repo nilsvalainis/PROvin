@@ -6,11 +6,13 @@ import { useMemo, useState } from "react";
 import { PdAuto1Blocks, PdToggles, type PdToggleTarget } from "@/components/iriss-piedavajumi/PdAuto1Blocks";
 import { PdClientView } from "@/components/iriss-piedavajumi/PdClientView";
 import { PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
-import { copyText, irissPdAbsoluteLink, usePdRebase } from "@/components/admin/iriss-piedavajumi/pd-actions";
+import { copyText, deleteIrissPdRequest, irissPdAbsoluteLink, usePdRebase } from "@/components/admin/iriss-piedavajumi/pd-actions";
 import { PdImportPanel } from "@/components/admin/iriss-piedavajumi/PdImportPanel";
 import {
   buildIrissPdPublicView,
   canRebaseIrissPd,
+  irissPdDeleteConfirm,
+  irissPdHiddenBlockLabels,
   filterIrissPdClientOptions,
   irissPdAvailableActions,
   irissPdMargin,
@@ -236,6 +238,20 @@ export function PiedavajumsDetail({
     setInfo(ok ? "Klienta saite nokopēta." : irissPdAbsoluteLink(rec.linkToken));
   }
 
+  async function remove() {
+    if (!window.confirm(irissPdDeleteConfirm(label))) return;
+    setBusy("delete");
+    setErr("");
+    try {
+      await deleteIrissPdRequest(rec.id);
+      router.push("/admin/iriss/piedavajumi");
+      router.refresh();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Neizdevās dzēst.");
+      setBusy("");
+    }
+  }
+
   function toggle(target: PdToggleTarget, mode: "pdf" | "link") {
     setD((p) => {
       const v: IrissPdVisibility = JSON.parse(JSON.stringify(p.visibility)) as IrissPdVisibility;
@@ -303,6 +319,9 @@ export function PiedavajumsDetail({
       </Link>
       <button type="button" className="pd-btn p" disabled={!dirty || busy !== ""} onClick={() => void save()}>
         {busy === "save" ? "Saglabā..." : "Saglabāt"}
+      </button>
+      <button type="button" className="pd-btn bad" disabled={busy !== ""} onClick={() => void remove()}>
+        {busy === "delete" ? "Dzēš..." : "Dzēst"}
       </button>
     </div>
   );
@@ -563,9 +582,21 @@ export function PiedavajumsDetail({
                 </button>
               </span>
             </div>
-            <PdClientView view={view} mode={previewMode} photoSrc={previewPhoto} compact showHiddenNote>
+            <PdClientView
+              view={view}
+              mode={previewMode}
+              photoSrc={previewPhoto}
+              token={rec.linkToken}
+              embedded
+              hiddenLabels={irissPdHiddenBlockLabels(merged, previewMode)}
+              showHiddenNote
+            >
               {previewMode === "link" ? (
-                <button type="button" className="pd-btn p" style={{ width: "100%", marginTop: 8, height: 34 }} disabled>
+                <button
+                  type="button"
+                  className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#F26522] text-[15px] font-semibold text-white disabled:opacity-50"
+                  disabled
+                >
                   Apstiprināt
                 </button>
               ) : null}
@@ -637,6 +668,9 @@ export function PiedavajumsDetail({
         ) : null}
         <button type="button" className="pd-btn p" disabled={!dirty || busy !== ""} onClick={() => void save()}>
           {busy === "save" ? "Saglabā..." : "Saglabāt"}
+        </button>
+        <button type="button" className="pd-btn bad" disabled={busy !== ""} onClick={() => void remove()}>
+          {busy === "delete" ? "Dzēš..." : "Dzēst"}
         </button>
       </div>
     </div>

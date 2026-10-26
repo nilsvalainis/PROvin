@@ -1,5 +1,6 @@
 "use client";
 
+import "@/components/iriss-piedavajumi/piedavajumi.css";
 import { useState } from "react";
 import {
   IRISS_PD_PAINT_ZONE_LV,

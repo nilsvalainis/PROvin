@@ -1,59 +1,20 @@
-import { DzintarzemeOfferBrandLogo } from "@/components/iriss-offer-public/DzintarzemeOfferBrandLogo";
 import { IrissOfferProvinBusinessTile } from "@/components/iriss-offer-public/IrissOfferProvinBusinessTile";
 import { IrissOfferPublicActions } from "@/components/iriss-offer-public/IrissOfferPublicActions";
+import {
+  IrissOfferPublicBrandHeader,
+  IrissOfferPublicFooter,
+  IrissOfferPublicKvRow,
+  IrissOfferPublicSectionTitle,
+  IrissOfferPublicShell,
+  IrissOfferPublicSpecCell,
+  irissOfferPublicCardClass,
+} from "@/components/iriss-offer-public/IrissOfferPublicChrome";
 import { IrissOfferPublicGallery } from "@/components/iriss-offer-public/IrissOfferPublicGallery";
 import {
   IRISS_OFFER_PUBLIC_BRAND,
   IRISS_OFFER_PUBLIC_LABELS,
-  IRISS_OFFER_PUBLIC_LEGAL,
   type IrissOfferPublicView as IrissOfferPublicViewModel,
 } from "@/lib/iriss-offer-client-link";
-
-function cardClassName(extra = "") {
-  return `mt-3.5 rounded-2xl border border-[#e4e4e7] bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${extra}`.trim();
-}
-
-function sectionTitle(children: string) {
-  return (
-    <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#52525b]">{children}</h2>
-  );
-}
-
-function SpecCell({
-  label,
-  value,
-  className = "",
-  valueClassName = "",
-}: {
-  label: string;
-  value: string;
-  className?: string;
-  valueClassName?: string;
-}) {
-  if (!value.trim()) return null;
-  return (
-    <div className={`rounded-xl border border-[#e4e4e7] bg-[#fafafa] p-2.5 ${className}`.trim()}>
-      <b className="block text-[10px] font-medium text-[#52525b]">{label}</b>
-      <span className={`mt-1 block text-[13px] font-semibold leading-snug text-[#111827] ${valueClassName}`.trim()}>
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function PriceRow({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
-  if (!value.trim()) return null;
-  return (
-    <div
-      className={`flex items-baseline justify-between gap-3 border-b border-[#e4e4e7] py-2.5 text-[14px] last:border-0 ${
-        strong ? "border-0 pt-1 text-[16px] font-bold" : ""
-      }`}
-    >
-      <span className={strong ? "text-[#111827]" : "text-[#52525b]"}>{label}</span>
-      <span className="text-right">{value}</span>
-    </div>
-  );
-}
 
 function subtitleParts(view: IrissOfferPublicViewModel): string {
   return [
@@ -82,15 +43,8 @@ export function IrissOfferPublicView({ token, view }: { token: string; view: Iri
   const hasPhotos = view.photos.length > 0;
 
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-[720px] px-4 pb-10 pt-7 text-[#111827] sm:px-7">
-      <div className="flex items-start justify-between gap-3">
-        <DzintarzemeOfferBrandLogo />
-        <p className="text-right text-[11px] leading-tight text-[#6e6e73]">
-          {IRISS_OFFER_PUBLIC_BRAND}
-          <br />
-          {IRISS_OFFER_PUBLIC_LEGAL}
-        </p>
-      </div>
+    <IrissOfferPublicShell>
+      <IrissOfferPublicBrandHeader />
 
       <h1 className="mt-4 text-[28px] font-semibold leading-[1.15] tracking-[-0.02em]">{title}</h1>
       {subtitle ? <p className="mt-1.5 text-[13px] text-[#52525b]">{subtitle}</p> : null}
@@ -98,7 +52,7 @@ export function IrissOfferPublicView({ token, view }: { token: string; view: Iri
       {hasPhotos ? <IrissOfferPublicGallery token={token} title={title} photos={view.photos} /> : null}
 
       {view.total ? (
-        <section className={cardClassName(hasPhotos ? "" : "mt-4")}>
+        <section className={irissOfferPublicCardClass(hasPhotos ? "" : "mt-4")}>
           <p className="text-[32px] font-bold tracking-[-0.02em]">{view.total}</p>
           <p className="mt-1.5 text-[12px] text-[#52525b]">
             {IRISS_OFFER_PUBLIC_LABELS.total} · piedāvājums sagatavots personīgi jums
@@ -108,12 +62,12 @@ export function IrissOfferPublicView({ token, view }: { token: string; view: Iri
       ) : null}
 
       {hasParametri ? (
-        <section className={cardClassName()}>
-          {sectionTitle("Parametri")}
+        <section className={irissOfferPublicCardClass()}>
+          <IrissOfferPublicSectionTitle>Parametri</IrissOfferPublicSectionTitle>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {vin ? (
               <>
-                <SpecCell
+                <IrissOfferPublicSpecCell
                   label={IRISS_OFFER_PUBLIC_LABELS.vin}
                   value={vin}
                   className="sm:col-span-2"
@@ -123,36 +77,36 @@ export function IrissOfferPublicView({ token, view }: { token: string; view: Iri
               </>
             ) : null}
             {specs.map(([label, value]) => (
-              <SpecCell key={label} label={label} value={value} />
+              <IrissOfferPublicSpecCell key={label} label={label} value={value} />
             ))}
           </div>
         </section>
       ) : null}
 
       {view.specialNotes ? (
-        <section className={cardClassName()}>
-          {sectionTitle("Īpašas atzīmes")}
+        <section className={irissOfferPublicCardClass()}>
+          <IrissOfferPublicSectionTitle>Īpašas atzīmes</IrissOfferPublicSectionTitle>
           <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#52525b]">{view.specialNotes}</p>
         </section>
       ) : null}
 
       {view.visualAssessment ? (
-        <section className={cardClassName()}>
-          {sectionTitle("Vizuālais novērtējums")}
+        <section className={irissOfferPublicCardClass()}>
+          <IrissOfferPublicSectionTitle>Vizuālais novērtējums</IrissOfferPublicSectionTitle>
           <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#52525b]">{view.visualAssessment}</p>
         </section>
       ) : null}
 
       {view.technicalAssessment ? (
-        <section className={cardClassName()}>
-          {sectionTitle("Tehniskais novērtējums")}
+        <section className={irissOfferPublicCardClass()}>
+          <IrissOfferPublicSectionTitle>Tehniskais novērtējums</IrissOfferPublicSectionTitle>
           <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-[#52525b]">{view.technicalAssessment}</p>
         </section>
       ) : null}
 
       {view.checks.length > 0 || view.notes ? (
-        <section className={cardClassName()}>
-          {sectionTitle("Stāvoklis")}
+        <section className={irissOfferPublicCardClass()}>
+          <IrissOfferPublicSectionTitle>Stāvoklis</IrissOfferPublicSectionTitle>
           {view.checks.length > 0 ? (
             <div className="flex flex-wrap gap-1.5">
               {view.checks.map((item) => (
@@ -174,18 +128,18 @@ export function IrissOfferPublicView({ token, view }: { token: string; view: Iri
       ) : null}
 
       {view.prices.length > 0 ? (
-        <section className={cardClassName()}>
-          {sectionTitle("Izmaksas")}
+        <section className={irissOfferPublicCardClass()}>
+          <IrissOfferPublicSectionTitle>Izmaksas</IrissOfferPublicSectionTitle>
           {view.prices.map((row) => (
-            <PriceRow key={row.label} label={row.label} value={row.value} />
+            <IrissOfferPublicKvRow key={row.label} label={row.label} value={row.value} />
           ))}
-          {view.total ? <PriceRow label={IRISS_OFFER_PUBLIC_LABELS.total} value={view.total} strong /> : null}
+          {view.total ? <IrissOfferPublicKvRow label={IRISS_OFFER_PUBLIC_LABELS.total} value={view.total} strong /> : null}
         </section>
       ) : null}
 
       {view.customBlocks.map((block) => (
-        <section key={block.id} className={cardClassName()}>
-          {sectionTitle(block.title || (block.kind === "table" ? "Tabula" : "Teksts"))}
+        <section key={block.id} className={irissOfferPublicCardClass()}>
+          <IrissOfferPublicSectionTitle>{block.title || (block.kind === "table" ? "Tabula" : "Teksts")}</IrissOfferPublicSectionTitle>
           {block.kind === "table" ? (
             <div className="space-y-2">
               {block.rows.map((row, i) => (
@@ -214,10 +168,7 @@ export function IrissOfferPublicView({ token, view }: { token: string; view: Iri
         />
       </section>
 
-      <footer className="mt-6 text-center text-[10px] leading-relaxed text-[#a1a1aa]">
-        <p>{IRISS_OFFER_PUBLIC_BRAND} · {IRISS_OFFER_PUBLIC_LEGAL}</p>
-        <p className="mt-0.5 truncate">provin.lv/p/{token.slice(0, 8)}…</p>
-      </footer>
-    </main>
+      <IrissOfferPublicFooter pathHint={`provin.lv/p/${token.slice(0, 8)}…`} />
+    </IrissOfferPublicShell>
   );
 }
