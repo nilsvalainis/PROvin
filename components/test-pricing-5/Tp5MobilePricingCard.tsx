@@ -1,6 +1,6 @@
 "use client";
 
-import { type SyntheticEvent, type TouchEvent } from "react";
+import { type SyntheticEvent, type TouchEvent, useId } from "react";
 import { useLocale } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import type { Tp5InlineFieldErrors } from "@/lib/test-pricing-5-inline-checkout";
@@ -152,7 +152,7 @@ function PackTitle({ title }: { title: string }) {
   return <>{title}</>;
 }
 
-function CheckoutFields({
+export function CheckoutFields({
   vin,
   listingUrl,
   errors,
@@ -171,6 +171,10 @@ function CheckoutFields({
   stopSwipePropagation?: (event: SyntheticEvent) => void;
   className?: string;
 }) {
+  // a11y (FABLE v3): kļūda piesaistīta laukam - ekrāna lasītājs to nolasa; vairākas kartītes lapā -> useId.
+  const errId = useId();
+  const vinErrId = `${errId}-vin`;
+  const listingErrId = `${errId}-listing`;
   return (
     <div
       className={className ?? styles.inlineFields}
@@ -191,11 +195,17 @@ function CheckoutFields({
         }}
         placeholder={uiCopy.vinPlaceholder}
         aria-label={uiCopy.vinAria}
+        aria-invalid={errors.vin ? true : undefined}
+        aria-describedby={errors.vin ? vinErrId : undefined}
         autoComplete="off"
         spellCheck={false}
         inputMode="text"
       />
-      {errors.vin ? <p className={styles.inlineFieldError}>{errors.vin}</p> : null}
+      {errors.vin ? (
+        <p id={vinErrId} className={styles.inlineFieldError}>
+          {errors.vin}
+        </p>
+      ) : null}
       <input
         type="url"
         name="listingUrl"
@@ -204,10 +214,16 @@ function CheckoutFields({
         onChange={(event) => onListingUrlChange(event.target.value)}
         placeholder={uiCopy.listingPlaceholder}
         aria-label={uiCopy.listingAria}
+        aria-invalid={errors.listingUrl ? true : undefined}
+        aria-describedby={errors.listingUrl ? listingErrId : undefined}
         autoComplete="url"
         inputMode="url"
       />
-      {errors.listingUrl ? <p className={styles.inlineFieldError}>{errors.listingUrl}</p> : null}
+      {errors.listingUrl ? (
+        <p id={listingErrId} className={styles.inlineFieldError}>
+          {errors.listingUrl}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -240,7 +256,11 @@ function TurnaroundAndCta({
       </p>
 
       <div className={styles.ctaWrap}>
-        {globalError ? <p className={styles.checkoutError}>{globalError}</p> : null}
+        {globalError ? (
+          <p className={styles.checkoutError} role="alert">
+            {globalError}
+          </p>
+        ) : null}
         <button type="button" className={styles.liquidCta} onClick={onSubmit} disabled={loading}>
           <span className={styles.liquidCtaShimmer} aria-hidden />
           <span className={styles.liquidCtaLabel}>{ctaLabel}</span>
