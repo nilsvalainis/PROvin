@@ -596,8 +596,17 @@ export function irissOrderRoomNextSteps(input: {
   offerCount: number;
   hasPhone: boolean;
   hasVin?: boolean;
+  /** Pasūtījuma saraksta statuss: pēc apstiprināta piedāvājuma («Rezervēts») piedāvājums vairs nav jāgatavo. */
+  listStatus?: string;
 }): IrissOrderRoomNextStep[] {
   const steps: IrissOrderRoomNextStep[] = [];
+  if (input.listStatus === "reserved") {
+    // Audits 27.10: pēc klienta apstiprinājuma rādīja «Sagatavot pirmo piedāvājumu».
+    steps.push({ id: "deposit", label: "Saņemt avansu", tab: "overview" });
+    if (input.hasPhone) steps.push({ id: "contact", label: "Sazināties ar klientu", tab: "communication" });
+    return steps;
+  }
+  if (input.listStatus === "completed" || input.listStatus === "inactive") return steps;
   if (input.newHits > 0) {
     steps.push({
       id: "hits",
