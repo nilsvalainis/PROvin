@@ -398,9 +398,26 @@ export function waybillMobileRequestRows(
     which?: "current" | "archive" | "all";
     /** "Dzēst" paslēptie ID - tikai pirmās lapas sarakstā (Arhīvā redzami vienmēr). */
     dismissed?: ReadonlyArray<string>;
+    /**
+     * Numuru stāvoklis (CSDD + indekss, tas pats, ko rāda apļi). FABLE v3: ja tā pati pavadzīme numuram vēl ir
+     * aktīva (CSDD derīgums garāks par pieprasīto), kartīte nav «Izrakstīta … atkal brīvs».
+     */
+    plates?: ReadonlyArray<WaybillPlateState>;
   } = {},
 ): WaybillMobileRequestRow[] {
   const nowMs = opts.nowMs ?? Date.now();
+  const plates = opts.plates ?? [];
+  const plateState = (request: WaybillRequest) =>
+    plates.find((p) => compactDealerPlate(p.plate) === compactDealerPlate(request.vehicle.plate));
+  /** Tā pati pavadzīme numuram vēl aktīva pēc CSDD / indeksa. */
+  const liveByPlates = (request: WaybillRequest, waybillNo: string): boolean => {
+    const cur = plateState(request)?.current;
+    const no = waybillNo.trim().toUpperCase();
+    return Boolean(no && cur && cur.number.trim().toUpperCase() === no && Date.parse(cur.validUntil) > nowMs);
+  };
+  /** Izrakstīšanas brīdis, ja numuru stāvoklis to neatspēko. */
+  const writtenOffAt = (request: WaybillRequest, waybillNo: string): number | null =>
+    liveByPlates(request, waybillNo) ? null : waybillWrittenOffAtMs(request, requests, nowMs);
   const which = opts.which ?? "current";
   const dismissed = new Set(which === "current" ? (opts.dismissed ?? []) : []);
   return [...requests]
@@ -408,9 +425,14 @@ export function waybillMobileRequestRows(
       if (which === "all") return true;
       // Paslēpts paliek tikai, kamēr ieraksts ir vecs (ja to kāds atkārtoja - atkal redzams).
       if (dismissed.has(request.id) && waybillRequestDismissable(request, requests, nowMs)) return false;
-      const offAt = waybillWrittenOffAtMs(request, requests, nowMs);
+      const offAt = writtenOffAt(request, request.waybillNo);
       // Izrakstīta vēl 24 h redzama pirmajā lapā (ar norādi uz Arhīvu), tad tikai Arhīvā.
-      const current = offAt != null ? nowMs - offAt <= WAYBILL_WRITTEN_OFF_VISIBLE_MS : waybillMobileRequestIsCurrent(request, nowMs);
+      const current =
+        request.status === "issued" && liveByPlates(request, request.waybillNo)
+          ? true
+          : offAt != null
+            ? nowMs - offAt <= WAYBILL_WRITTEN_OFF_VISIBLE_MS
+            : waybillMobileRequestIsCurrent(request, nowMs);
       return which === "current" ? current : !current;
     })
     .sort((a, b) => {
@@ -445,14 +467,15 @@ export function waybillMobileRequestRows(
         autoReason: reply?.autoReason,
       });
       const longWait = status === "queued" && sinceMs(request.updatedAt || request.createdAt, nowMs) > WAYBILL_MOBILE_LONG_WAIT_MS;
-      const offAt = waybillWrittenOffAtMs({ ...request, status }, requests, nowMs);
+      const offAt = writtenOffAt({ ...request, status }, waybillNo);
       const writtenOff = offAt != null;
       const plate = displayDealerPlate(request.vehicle.plate) || request.vehicle.plate;
+      const plateBusyNow = plateState(request)?.busy === true;
       const pdfUrl = reply?.pdfUrl || request.pdfUrl;
       const offSub = writtenOff
         ? [
             `Izrakstīta ${formatRigaDateTimeComma(new Date(offAt).toISOString())}`,
-            plateFreeNow(request, requests, nowMs) ? `numurs ${plate} atkal ir brīvs` : "",
+            plateFreeNow(request, requests, nowMs) && !plateBusyNow ? `numurs ${plate} atkal ir brīvs` : "",
           ]
             .filter(Boolean)
             .join(" · ")

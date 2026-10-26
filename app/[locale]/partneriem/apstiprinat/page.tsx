@@ -7,11 +7,14 @@ import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "PROVIN partneru e-pasta apstiprinājums",
-  robots: { index: false, follow: false },
-  appleWebApp: { capable: true, title: "PROVIN", statusBarStyle: "black-translucent" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Partner");
+  return {
+    title: t("metaConfirmTitle"),
+    robots: { index: false, follow: false },
+    appleWebApp: { capable: true, title: "PROVIN", statusBarStyle: "black-translucent" },
+  };
+}
 
 type Props = {
   searchParams: Promise<{ token?: string | string[] }>;

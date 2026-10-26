@@ -37,8 +37,10 @@ import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
 import { coerceIrissDuplicatesByListing, coerceIrissHitStatusMap, coerceIrissOrderRoomTab } from "@/lib/iriss-order-room-match-props";
 import {
   OFFER_AUTO_FIELD_KEYS,
+  OFFER_UNSAVED_CLOSE_CONFIRM,
   isOfferDraftSyncedWithRecord,
   newOfferDraft,
+  offerDraftHasOperatorInput,
   offerDraftFromRecord,
   offerRecordFromDraft,
   type OfferDraft,
@@ -95,6 +97,7 @@ import {
   setIrissInactiveReason,
 } from "@/lib/iriss-pasutijumi-audit-fields";
 import {
+  IRISS_EMPTY_NEW_ORDER_MSG,
   IRISS_STALE_REVISION,
   irissPasutijumsHasOperatorContent,
   irissWorkspaceRevision,
@@ -179,6 +182,9 @@ function formatPatchFailureMessage(
   }
   if (status === 504 || status === 502) {
     return `Kļūda ${status}: servera noildze vai starpniekservera kļūda.`;
+  }
+  if (status === 400 && data && typeof data === "object" && (data as { error?: unknown }).error === "empty_record") {
+    return IRISS_EMPTY_NEW_ORDER_MSG;
   }
   const parts: string[] = [`Kļūda ${status}`];
   if (data && typeof data === "object") {
@@ -481,6 +487,13 @@ export function IrissPasutijumsEditor({
         autosaveQueued.current = true;
         return { ok: false, error: "Ielādē attēlus." };
       }
+      const persistId = persistedIdRef.current;
+      const isCreate = !persistId;
+      // FABLE v3: tukšs jauns pasūtījums - serveris atbild 400 empty_record; neko nesūta un nerāda tehnisku kļūdu.
+      if (isCreate && !irissPasutijumsHasOperatorContent(payload)) {
+        if (!silent) setSaveMsg(IRISS_EMPTY_NEW_ORDER_MSG);
+        return { ok: false, error: "empty_record" };
+      }
       if (!silent) {
         setBusy(true);
         const required = irissRequiredFieldWarnings(payload);
@@ -488,8 +501,6 @@ export function IrissPasutijumsEditor({
       }
       if (silent) autosaveInFlight.current = true;
 
-      const persistId = persistedIdRef.current;
-      const isCreate = !persistId;
       const url = isCreate
         ? "/api/admin/iriss-pasutijumi"
         : `/api/admin/iriss-pasutijumi/${encodeURIComponent(payload.id)}`;
@@ -2347,6 +2358,9 @@ export function IrissPasutijumsEditor({
           pdfNotice={offerPdfNotice}
           pdfAllowWithoutImages={offerPdfAllowWithoutImages}
           onClose={() => {
+            // FABLE v3: «×» ar nesaglabātām izmaiņām klusi zaudēja ievadīto (cenas u.c.).
+            const unsaved = persistedOfferRecord ? !offerReadyForPdfActions : offerDraftHasOperatorInput(offerDraft);
+            if (unsaved && !offerBusy && !window.confirm(OFFER_UNSAVED_CLOSE_CONFIRM)) return;
             setOfferOpen(false);
             setOfferLinkNotice(null);
           }}

@@ -39,15 +39,12 @@ export async function loadIrissPavadzimesPageData(
   opts: { withOrders?: boolean } = {},
 ): Promise<IrissPavadzimesPageData> {
   const withOrders = opts.withOrders ?? true;
-  const [listed, csdd] = await Promise.all([listIrissPavadzimes(), readCsddPlatesDocSafe()]);
-  let orders: Awaited<ReturnType<typeof listIrissPasutijumi>> = [];
-  if (withOrders) {
-    try {
-      orders = await listIrissPasutijumi();
-    } catch {
-      orders = [];
-    }
-  }
+  // Pasūtījumus lasa paralēli Dropbox sinhronizācijai (agrāk - pēc tās, +1 secīgs Blob ceļš).
+  const [listed, csdd, orders] = await Promise.all([
+    listIrissPavadzimes(),
+    readCsddPlatesDocSafe(),
+    withOrders ? listIrissPasutijumi().catch(() => []) : Promise.resolve([]),
+  ]);
   const lifecycles = computeWaybillLifecycles(listed.rows, now, csdd);
   const matched = matchIrissPavadzimesToOrders(listed.rows, orders).map((row, i) => {
     const src = listed.rows[i];

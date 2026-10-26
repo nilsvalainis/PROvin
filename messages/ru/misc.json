@@ -8,7 +8,9 @@
     "checkoutConsultationProductName": "PROVIN: стратегическая консультация",
     "checkoutConsultationProductDesc": "Личная консультация и ориентир по рынку: контекст VIN и объявления, оценка рисков и следующие шаги.",
     "checkoutProvinSelectProductName": "PROVIN SELECT\nСтратегическая консультация",
-    "checkoutProvinSelectProductDesc": "Личная консультация для решения о покупке"
+    "checkoutProvinSelectProductDesc": "Личная консультация для решения о покупке",
+    "notFoundTitle": "Страница не найдена",
+    "notFoundHome": "Главная PROVIN"
   },
   "Blogs": {
     "comingSoon": "СКОРО",

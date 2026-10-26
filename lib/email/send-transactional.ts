@@ -778,7 +778,7 @@ export async function sendPartnerVerifyEmail(opts: {
   const purposeKey = change ? "change" : "signup";
   const templateId = `email.partner_verify.${purposeKey}`;
   const vars = { temats: subject, lead, verify_url: opts.verifyUrl, hint };
-  const rendered = resolveMessageSync(templateId, vars, { doc });
+  const rendered = resolveMessageSync(templateId, vars, { doc, htmlContext: { locale: loc } });
   const text = rendered?.text ?? [lead, "", opts.verifyUrl, "", hint].join("\n");
   const html =
     rendered?.html ??
@@ -843,7 +843,7 @@ export async function sendPartnerPasswordResetEmail(opts: {
   const doc = getCachedMessageTemplatesDoc();
   const templateId = "email.partner_password_reset";
   const vars = { temats: subject, lead, reset_url: opts.resetUrl, hint };
-  const rendered = resolveMessageSync(templateId, vars, { doc });
+  const rendered = resolveMessageSync(templateId, vars, { doc, htmlContext: { locale: loc } });
   const text = rendered?.text ?? [lead, "", opts.resetUrl, "", hint].join("\n");
   const html =
     rendered?.html ??

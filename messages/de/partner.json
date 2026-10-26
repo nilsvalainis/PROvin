@@ -361,6 +361,10 @@
     "ledgerRefund": "Erstattung",
     "ledgerAdjust": "Korrektur",
     "ledgerInvoice": "Rechnung",
-    "ledgerDownloadInvoice": "Rechnung herunterladen"
+    "ledgerDownloadInvoice": "Rechnung herunterladen",
+    "metaRegisterTitle": "PROVIN Partnerregistrierung",
+    "metaPasswordTitle": "PROVIN Partner-Passwort",
+    "metaConfirmTitle": "PROVIN Partner-E-Mail-Bestätigung",
+    "metaAccountTitle": "PROVIN für Partner"
   }
 }

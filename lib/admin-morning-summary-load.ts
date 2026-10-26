@@ -25,6 +25,13 @@ export type MorningSummaryLoad = {
 
 /** Viegls rīta skats: tie paši SLA avoti kā sarakstam, bez OrderDetailWorkspace. */
 export async function loadMorningSummary(nowMs = Date.now()): Promise<MorningSummaryLoad> {
+  // Avotu veselība un izmaksu brīdinājumi nav atkarīgi no pasūtījumiem - lasa paralēli (agrāk 3. secīgais posms).
+  const sideLoads = Promise.all([
+    readSourceHealth()
+      .then((doc) => sourcesFailingInARow(doc, 3))
+      .catch(() => []),
+    loadCostAlerts(resolveCostMonth(null, nowMs), nowMs).catch(() => []),
+  ]);
   const [{ rows, stripeError }, peeks] = await Promise.all([
     listAdminOrders(),
     listListingPeeks(200).catch(() => []),
@@ -53,12 +60,7 @@ export async function loadMorningSummary(nowMs = Date.now()): Promise<MorningSum
     };
   });
 
-  const [failingSources, costAlerts] = await Promise.all([
-    readSourceHealth()
-      .then((doc) => sourcesFailingInARow(doc, 3))
-      .catch(() => []),
-    loadCostAlerts(resolveCostMonth(null, nowMs), nowMs).catch(() => []),
-  ]);
+  const [failingSources, costAlerts] = await sideLoads;
 
   return {
     summary: { ...buildMorningSummary(inputs, peeks, nowMs), failingSources, costAlerts },

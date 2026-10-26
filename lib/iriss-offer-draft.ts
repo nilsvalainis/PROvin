@@ -339,3 +339,34 @@ export function isOfferDraftSyncedWithRecord(draft: OfferDraft, offer: IrissOffe
   return true;
 }
 
+
+/** Teksta lauki, kurus operators ievada pats (ne nosaukums / termiņš / id). */
+const OFFER_DRAFT_INPUT_KEYS = [
+  "brandModel",
+  "vin",
+  "year",
+  "mileage",
+  "priceGermany",
+  "comment",
+  "firstRegistration",
+  "odometerReading",
+  "transmission",
+  "location",
+  "specialNotes",
+  "visualAssessment",
+  "technicalAssessment",
+  "summary",
+  "carPrice",
+  "deliveryPrice",
+  "commissionFee",
+] as const satisfies ReadonlyArray<keyof OfferDraft>;
+
+/**
+ * FABLE v3: jauns (vēl nesaglabāts) piedāvājums ar ievadītiem datiem - aizverot jāpajautā, citādi ievadītais pazūd.
+ */
+export function offerDraftHasOperatorInput(d: OfferDraft): boolean {
+  if (d.attachments.length > 0) return true;
+  return OFFER_DRAFT_INPUT_KEYS.some((k) => String(d[k] ?? "").trim() !== "");
+}
+
+export const OFFER_UNSAVED_CLOSE_CONFIRM = "Piedāvājums vēl nav saglabāts. Aizvērt un zaudēt ievadīto?";

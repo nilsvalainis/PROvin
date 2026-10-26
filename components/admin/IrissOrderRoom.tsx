@@ -1735,7 +1735,7 @@ export function IrissOrderRoom({
               <FileText className="h-5 w-5 text-[var(--ink3)]" aria-hidden />
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-semibold text-[var(--ink)]">Pasūtījuma līgums</p>
-                <p className="text-[11.5px] text-[var(--ink2)]">Esošais pasūtījuma izdruka</p>
+                <p className="text-[11.5px] text-[var(--ink2)]">Esošā pasūtījuma izdruka</p>
               </div>
               <button type="button" className={roomBtn} onClick={onPdf} disabled={orderPdfBusy}>
                 Atvērt

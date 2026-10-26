@@ -55,14 +55,14 @@ export function messageHtmlFromTemplate(
   if (kind === "partner_verify") {
     return partnerVerifyEmailHtml({
       verifyUrl: vars.verify_url ?? "",
-      locale: def.meta?.locale,
+      locale: (htmlContext?.locale as string | undefined) ?? def.meta?.locale,
       purpose: def.meta?.purpose === "change" ? "email_change" : "signup",
     });
   }
   if (kind === "partner_password_reset") {
     return partnerPasswordResetEmailHtml({
       resetUrl: vars.reset_url ?? "",
-      locale: def.meta?.locale,
+      locale: (htmlContext?.locale as string | undefined) ?? def.meta?.locale,
     });
   }
   if (kind === "listing_peek") {

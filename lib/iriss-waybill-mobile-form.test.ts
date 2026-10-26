@@ -19,6 +19,7 @@ import {
 } from "@/lib/iriss-waybill-mobile-form";
 import { parseCreateWaybillInput, waybillRepresentativeChoices } from "@/lib/iriss-waybill-create";
 import type { WaybillAivarsReply, WaybillRequest } from "@/lib/iriss-waybill-requests";
+import type { WaybillPlateState } from "@/lib/iriss-waybill-plates";
 
 const base = initialWaybillMobileForm("B192-7");
 
@@ -315,6 +316,24 @@ describe("Izrakstīta, solis N no 3, Arhīvs", () => {
     // Cita numura pavadzīme neko neizraksta.
     const otherPlate = { ...newer, vehicle: { ...newer.vehicle, plate: "B7627" } };
     expect(waybillWrittenOffAtMs(old, [old, otherPlate], now)).toBeNull();
+  });
+
+  it("FABLE v3: CSDD vēl rāda to pašu pavadzīmi aktīvu - nav «Izrakstīta … atkal brīvs»", () => {
+    // P02827: pieprasīta 1 h, bet CSDD numuru stāvoklī derīga 48 h (B193-7 aizņemts, aplis 46 h).
+    const ended = req({ id: "wbr_csdd", status: "issued", waybillNo: "P02827", validUntil: "2026-10-23T11:00:00.000Z" });
+    const plates: WaybillPlateState[] = [
+      { plate: "B193-7", busy: true, current: { number: "P02827", brandModel: "MERCEDES BENZ", validUntil: "2026-10-25T09:37:00.000Z" } },
+    ];
+    const [row] = waybillMobileRequestRows([ended], [], 5, { nowMs: now, plates });
+    expect(row?.label).toBe("Izdota");
+    expect(row?.sub).not.toContain("atkal ir brīvs");
+    // Cita pavadzīme uz numura: vecā ir izrakstīta, bet numurs nav brīvs.
+    const otherBusy: WaybillPlateState[] = [{ ...plates[0]!, current: { ...plates[0]!.current!, number: "P02900" } }];
+    const [off] = waybillMobileRequestRows([ended], [], 5, { nowMs: now, plates: otherBusy });
+    expect(off?.label).toBe("Izrakstīta");
+    expect(off?.sub).not.toContain("atkal ir brīvs");
+    // Bez numuru stāvokļa - kā līdz šim.
+    expect(waybillMobileRequestRows([ended], [], 5, { nowMs: now })[0]?.sub).toContain("atkal ir brīvs");
   });
 
   it("'solis N no 3' under queued, in progress and issued; not under errors or ended pending", () => {

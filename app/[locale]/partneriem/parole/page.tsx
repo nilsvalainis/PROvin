@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { B2bPartnerHero } from "@/components/b2b/B2bPartnerHero";
 import { B2bPartnerResetPassword } from "@/components/b2b/B2bPartnerResetPassword";
@@ -6,11 +7,14 @@ import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "PROVIN partneru parole",
-  robots: { index: false, follow: false },
-  appleWebApp: { capable: true, title: "PROVIN", statusBarStyle: "black-translucent" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Partner");
+  return {
+    title: t("metaPasswordTitle"),
+    robots: { index: false, follow: false },
+    appleWebApp: { capable: true, title: "PROVIN", statusBarStyle: "black-translucent" },
+  };
+}
 
 type Props = {
   searchParams: Promise<{ token?: string | string[] }>;
