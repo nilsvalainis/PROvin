@@ -78,11 +78,27 @@ export type IrissOfferPublicGalleryUrls = {
   heroSrcSet?: (id: string) => string;
 };
 
+/**
+ * Gatavi foto URL pa foto id. Tikai virknes - to drīkst nodot no servera komponentes
+ * (funkcijas pāri servera/klienta robežai produkcijā met kļūdu un lapa krīt ar 500).
+ */
+export type IrissOfferPublicGalleryUrlMap = {
+  thumb: Record<string, string>;
+  full: Record<string, string>;
+};
+
 function defaultGalleryUrls(token: string): IrissOfferPublicGalleryUrls {
   return {
     thumb: (id) => irissOfferPublicPhotoUrl(token, id, "thumb"),
     full: (id) => irissOfferPublicPhotoUrl(token, id, "full"),
     heroSrcSet: (id) => irissOfferPublicHeroSrcSet(token, id),
+  };
+}
+
+function galleryUrlsFromMap(map: IrissOfferPublicGalleryUrlMap): IrissOfferPublicGalleryUrls {
+  return {
+    thumb: (id) => map.thumb[id] ?? "",
+    full: (id) => map.full[id] ?? map.thumb[id] ?? "",
   };
 }
 
@@ -92,15 +108,15 @@ export function IrissOfferPublicGallery({
   token,
   title,
   photos,
-  urls,
+  urlMap,
 }: {
   token: string;
   title: string;
   photos: IrissOfferPublicPhoto[];
   /** Cits foto ceļš (Piedāvājumi `/p/d/`). Bez tā - `/p/<token>/photo/<id>`. */
-  urls?: IrissOfferPublicGalleryUrls;
+  urlMap?: IrissOfferPublicGalleryUrlMap;
 }) {
-  const photoUrls = urls ?? defaultGalleryUrls(token);
+  const photoUrls = urlMap ? galleryUrlsFromMap(urlMap) : defaultGalleryUrls(token);
   const [index, setIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [loadedIds, setLoadedIds] = useState<Record<string, boolean>>({});
