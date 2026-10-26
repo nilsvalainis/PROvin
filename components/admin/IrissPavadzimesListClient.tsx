@@ -24,7 +24,7 @@ import { waybillRemainingShare } from "@/lib/iriss-pavadzimes-countdown";
 import { sortWaybillsNewestFirst, waybillLifecycleLabel } from "@/lib/iriss-pavadzimes-lifecycle";
 import { formatWaybillDateTime } from "@/lib/iriss-pavadzimes-parse";
 import type { IrissPavadzimeListRow, IrissPavadzimeValidityTone } from "@/lib/iriss-pavadzimes-types";
-import { remainingWaybillDays, waybillSoonTone } from "@/lib/iriss-waybill-requests";
+import { remainingWaybillDays, remainingWaybillLabel, waybillSoonTone } from "@/lib/iriss-waybill-requests";
 import type { WaybillVehicleChip } from "@/lib/iriss-waybill-vehicles";
 import { useWaybillPageOpenAtTop } from "@/components/admin/useWaybillPageOpenAtTop";
 import {
@@ -234,6 +234,11 @@ export function IrissPavadzimesListClient({
   }, []);
   refreshRef.current = refresh;
 
+  // Lapa atveras no keša; Dropbox sinhronizācija (jaunie PDF) - uzreiz pēc atvēršanas fonā.
+  useEffect(() => {
+    void refresh().catch(() => undefined);
+  }, [refresh]);
+
   useEffect(() => {
     if (data.pendingParse <= 0) return;
     const t = window.setTimeout(() => {
@@ -360,7 +365,7 @@ export function IrissPavadzimesListClient({
                     <div className={`h-full ${bar}`} style={{ width: `${Math.round(share * 100)}%` }} />
                   </div>
                   <p className={`mt-1 text-right text-[12px] font-medium ${dayClass}`}>
-                    {days === null ? "" : days <= 0 ? "beigusies" : `vēl ${days} d.`}
+                    {remainingWaybillLabel(row.validUntil, now)}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button

@@ -261,8 +261,10 @@ describe("Aivars contract and Pavadzīmes UI boundaries", () => {
   it("keeps the chat as a structured form with no fee and no command box", () => {
     const chat = fs.readFileSync("components/admin/IrissKomandaAivaramChat.tsx", "utf8");
     const plates = fs.readFileSync("lib/iriss-waybill-plates.ts", "utf8");
-    expect(chat).toMatch(/comment_untrusted/);
-    expect(chat).toMatch(/validHours/);
+    // Pieprasījumu (dators un telefons) būvē viena funkcija; komentārs aiziet tikai kā comment_untrusted.
+    const builder = fs.readFileSync("lib/iriss-waybill-mobile-form.ts", "utf8");
+    expect(builder).toMatch(/comment_untrusted/);
+    expect(builder).toMatch(/validHours/);
     expect(chat).toMatch(/IRISS_DEALER_PLATES/);
     expect(chat).toMatch(/function isChatOk/);
     expect(chat).toMatch(/function isChatError/);

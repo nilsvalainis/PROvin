@@ -282,7 +282,7 @@ export function IrissLogistikaNewPurchase({ open, points, onClose, onCreated, on
           <button type="button" onClick={onClose} className="h-10 rounded-full bg-[#f3f4f6] px-4 text-[13px] font-semibold">
             Atcelt
           </button>
-          <button type="button" onClick={() => void save()} disabled={busy || !make} className="h-10 rounded-full bg-[var(--ink)] px-4 text-[13px] font-semibold text-white disabled:opacity-40">
+          <button type="button" onClick={() => void save()} disabled={busy || !make} className="h-10 rounded-full bg-[var(--ink,#111827)] px-4 text-[13px] font-semibold text-white disabled:opacity-40">
             {busy ? "Saglabā…" : "Saglabāt ierakstu"}
           </button>
         </div>

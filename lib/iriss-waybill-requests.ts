@@ -459,6 +459,23 @@ export function remainingWaybillDays(validUntilIso: string, now = new Date()): n
 }
 
 /**
+ * Atlikušais laiks kartē: līdz 1 h - minūtes, līdz 24 h - stundas, tālāk dienas un stundas.
+ * (Agrāk tikai dienas uz augšu: 1 h pavadzīme rādīja "vēl 1 d.".)
+ */
+export function remainingWaybillLabel(validUntilIso: string, now = new Date()): string {
+  const end = Date.parse(validUntilIso);
+  if (!Number.isFinite(end)) return "";
+  const ms = end - now.getTime();
+  if (ms <= 0) return "beigusies";
+  const minutes = Math.ceil(ms / 60_000);
+  if (minutes < 60) return `vēl ${minutes} min`;
+  const hours = Math.floor(ms / 3_600_000);
+  if (hours < 24) return `vēl ${hours} h`;
+  const rest = hours % 24;
+  return rest ? `vēl ${Math.floor(hours / 24)} d. ${rest} h` : `vēl ${hours / 24} d.`;
+}
+
+/**
  * j57 (24.10): P00746 (SIA Dzintarzeme Auto, B192-7) izdota, kad rezultāts CSDD derīguma laikus vēl nesūtīja
  * (tagad sūta - sk. completeWaybillRequest), tāpēc ierakstā paliek portāla pieprasījuma brīdī aprēķinātais
  * laiks, ne CSDD piešķirtais: CSDD 24.10.2026 20:49 - 26.10.2026 20:49 (Rīgas laiks). Tikai šī viena ieraksta

@@ -11,6 +11,7 @@ import {
   sectionForAdminApiPath,
   sectionForAdminPagePath,
   staffHomePath,
+  staffNavSections,
   staffTabbarItems,
   type AccessActor,
 } from "@/lib/staff-roles";
@@ -174,5 +175,11 @@ describe("staffTabbarItems (D: josla tikai pēc tiesībām)", () => {
       "Pavadzīmes",
       "Iziet",
     ]);
+  });
+});
+
+describe("Mēneša atskaite izvēlnē paslēpta", () => {
+  it("darbinieka navigācijā nav, tiesība paliek", () => {
+    expect(staffNavSections(["pasutijumi", "atskaite", "pavadzimes"], true)).toEqual(["pasutijumi", "pavadzimes"]);
   });
 });

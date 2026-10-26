@@ -32,6 +32,7 @@ import { IrissWaybillSavePdfButton } from "@/components/admin/IrissWaybillSavePd
 import { waybillDropboxFileName, waybillPdfDownloadHref } from "@/lib/iriss-waybill-pdf";
 import {
   WAYBILL_FORM_DEFAULT_HOURS,
+  buildWaybillDesktopPayload,
   initialWaybillMobileForm,
   parseWaybillCustomHours,
   waybillAutoEntryValues,
@@ -283,7 +284,7 @@ export function IrissKomandaAivaramChat({
 
   const hoursChosen = hoursPreset ?? parseWaybillCustomHours(hoursOther);
   const untilHint = hoursChosen ? formatRigaDateTimeComma(new Date(Date.now() + hoursChosen * 3_600_000).toISOString()) : "";
-  const { brandModel, vin } = waybillAutoEntryValues(auto);
+  const { brandModel } = waybillAutoEntryValues(auto);
   const selectedOcc = chat.plates.find((row) => row.plate === plate) ?? { plate, busy: false };
 
   async function submit(confirmBusy = false): Promise<boolean> {
@@ -292,23 +293,20 @@ export function IrissKomandaAivaramChat({
     const mobile = mobilePayload.current;
     // Pārtraukt drīkst tikai to pavadzīmi, ko lietotājs redzēja logā (ja tā tikmēr mainījusies - serveris jautās vēlreiz).
     const confirmWaybillNo = confirmBusy ? (confirm?.current?.number ?? "") : "";
+    // Datorā tas pats pieprasījums kā telefonā: tirdzniecībā pieņemtam auto - akts + pārstāvis, bez maršruta.
+    const desktop = mobile ? null : buildWaybillDesktopPayload(auto, { plate, hoursPreset, hoursOther, comment });
+    if (desktop && !desktop.ok) {
+      setError(desktop.error);
+      setBusy(false);
+      return false;
+    }
     try {
       const res = await fetch("/api/admin/iriss/waybill-requests", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          mobile
-            ? { ...mobile, confirmBusy, confirmWaybillNo }
-            : {
-                plate,
-                brandModel,
-                vin,
-                validHours: hoursChosen,
-                comment_untrusted: comment,
-                confirmBusy,
-                confirmWaybillNo,
-              },
+          { ...(mobile ?? (desktop?.ok ? desktop.payload : {})), confirmBusy, confirmWaybillNo },
         ),
       });
       const data = await readChatResponse(res);
