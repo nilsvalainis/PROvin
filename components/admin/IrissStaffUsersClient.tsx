@@ -2,6 +2,8 @@
 
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { IrissCabinetAccessPanel } from "@/components/admin/IrissCabinetAccessPanel";
+import { IrissDisclosure } from "@/components/admin/iriss-ui/IrissUi";
+import { auditTime, groupAuditByDay } from "@/lib/iriss-staff-audit-days";
 import {
   staffDeleteUserConfirm,
   staffResetPasswordConfirm,
@@ -335,15 +337,15 @@ export function IrissStaffUsersClient() {
             /> : null}
           </section>
 
-          <section className="rounded-[22px] border border-[var(--iriss-line)] bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--iriss-ink-3)]">Darbību žurnāls</p>
-            <ul className="mt-3 space-y-2">
-              {audit.length === 0 ? (
-                <li className="text-[13px] text-[var(--iriss-ink-2)]">Vēl nav ierakstu.</li>
-              ) : (
-                audit.map((row) => (
+          <IrissDisclosure title="Darbību žurnāls" count={`${audit.length} ieraksti`}>
+            {audit.length === 0 ? <p className="text-[13px] text-[var(--iriss-ink-2)]">Vēl nav ierakstu.</p> : null}
+            {groupAuditByDay(audit).map((day) => (
+              <div key={day.key} className="mt-3 first:mt-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--iriss-ink-3)]">{day.label}</p>
+                <ul className="mt-1.5 space-y-2">
+                {day.rows.map((row) => (
                   <li key={row.id} className="flex gap-2 text-[13px]">
-                    <span className="w-16 shrink-0 text-[var(--iriss-ink-3)]">{formatWhen(row.createdAt).split(" · ")[0]?.replace("šodien ", "")}</span>
+                    <span className="w-12 shrink-0 tabular-nums text-[var(--iriss-ink-3)]">{auditTime(row.createdAt)}</span>
                     <span className="min-w-0 text-[var(--iriss-ink)] [overflow-wrap:anywhere]">
                       {row.userId === "env-admin"
                         ? admin?.name || "Administrators"
@@ -352,10 +354,11 @@ export function IrissStaffUsersClient() {
                       {typeof row.meta.email === "string" ? ` ${row.meta.email}` : ""}
                     </span>
                   </li>
-                ))
-              )}
-            </ul>
-          </section>
+                ))}
+                </ul>
+              </div>
+            ))}
+          </IrissDisclosure>
         </div>
 
         <aside className="hidden space-y-3 xl:block">
