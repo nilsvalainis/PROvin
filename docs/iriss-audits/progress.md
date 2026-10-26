@@ -41,3 +41,5 @@
 - 26.10 22:40 PR #669 (23b0215c) /p/d 500 salabots, prod READY. Klienta apstiprinājums PD-0003 -> TESTS pasūtījums Rezervēts.
 - 26.10 23:10 TESTS: loģistikas ieraksts "TESTS Škoda Octavia" (privāts, Jelgava) -> Atvests -> Uz Autoparku -> Autoparks ap-dc195d2d-1f4b-453f-bab3-480ab0729fc6. DZĒST BEIGĀS (Autoparks + loģistikas arhīvs).
 - Demo konts Chrome pieteikts (Nils 23:00). Lomu testi: pilnas 15 sadaļas - sākti.
+- 26.10 23:25 PR #670 (3a12fc70) prod READY: 7 labojumi (sk. PR). Pārbaudīts dzīvi: Pavadzīmes 0,8-1,7 s, izvēlnē nav atskaites un 99+.
+- Nila lūgums 23:15: Loģistika - ātra pāreja karte/kravas <-> Autoparka auto (var palikt tikai Autoparks), proporcijas un kartes izmērs, kārtošana labajā pusē. -> makets pēc dizaina v0.3, Nila "jā".
