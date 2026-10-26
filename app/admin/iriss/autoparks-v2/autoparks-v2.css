@@ -2289,10 +2289,17 @@
   .ap2.ap2.ap2.ap2-print * {
     visibility: visible !important;
   }
+  /* FABLE F4: absolute bija pret admin kolonnu (position: relative) - PDF lapa nobīdīta pa labi,
+     labā mala nogriezta, kreisajā pusē tumša josla. fixed = pret drukas lapu. */
+  html,
+  body {
+    background: #fff !important;
+  }
   .ap2.ap2.ap2.ap2-print {
-    position: absolute;
+    position: fixed;
     left: 0;
     top: 0;
+    z-index: 2147483647;
   }
 }
 /* F10: AI ieteikums (vēl nav apstiprināts) - zils, nav treknraksts */
