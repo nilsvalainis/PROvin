@@ -83,6 +83,32 @@ export function staffNavSections(sections: readonly IrissSection[], autoparksV2V
   return out;
 }
 
+export const STAFF_TABBAR_HOME_HREF = "/admin/iriss" as const;
+
+export type StaffTabbarItem =
+  | { kind: "home"; href: typeof STAFF_TABBAR_HOME_HREF; label: "Sākums" }
+  | { kind: "section"; id: IrissSection; href: string; label: string }
+  | { kind: "logout"; label: "Iziet" };
+
+/**
+ * Telefonā apakšējā josla: tikai piešķirtās sadaļas (ne visiem vienāds ikonu komplekts).
+ * Partnerim (tikai Pavadzīmes) joslas nav. Autoparks ir viens punkts, ja ir kāda `ap_*` ar lapu.
+ */
+export function staffTabbarItems(
+  sections: readonly IrissSection[],
+  autoparksV2Visible: boolean,
+): StaffTabbarItem[] {
+  if (isWaybillOnlyStaff(sections)) return [];
+  const items: StaffTabbarItem[] = [{ kind: "home", href: STAFF_TABBAR_HOME_HREF, label: "Sākums" }];
+  for (const id of staffNavSections(sections, autoparksV2Visible)) {
+    const href = irissSectionMeta(id).pagePrefixes[0];
+    if (!href) continue;
+    items.push({ kind: "section", id, href, label: IRISS_SECTION_LABELS[id] });
+  }
+  items.push({ kind: "logout", label: "Iziet" });
+  return items;
+}
+
 export type IrissSectionMeta = {
   id: IrissSection;
   label: string;

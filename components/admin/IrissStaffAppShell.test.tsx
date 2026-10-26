@@ -33,8 +33,31 @@ describe("IRISS darbinieka čaula telefonā (j69, vecāks iOS)", () => {
     expect(root).toContain("iriss-staff-shell");
     expect(root).not.toMatch(/class="[^"]*(?<![:\w-])h-dvh/);
     expect(root).toContain("md:h-dvh");
-    // Saturs nepaliek zem joslas.
-    expect(html).toMatch(/<main[^>]*pb-\[calc\(88px\+env\(safe-area-inset-bottom\)\)\]/);
+    // Saturs nepaliek zem joslas (josla + home indicator).
+    expect(html).toMatch(/<main[^>]*pb-\[calc\(64px\+env\(safe-area-inset-bottom\)\)\]/);
+  });
+
+  it("cilnes ir 44 px un Loģistika/Autoparks paliek virs home indicator", () => {
+    const nav = tabbar(shell(["pavadzimes", "logistika", "ap_serviss"]));
+    expect(nav).toMatch(/iriss-staff-tab/);
+    expect(nav).toMatch(/min-h-11/);
+    expect(nav).toMatch(/min-w-11/);
+    expect(nav).toContain('href="/admin/iriss/logistika"');
+    expect(nav).toContain('href="/admin/iriss/autoparks-v2"');
+    expect(nav).not.toMatch(/rounded-full bg-white/);
+  });
+
+  it("josla rāda tikai piešķirtās sadaļas, ne visiem vienādu komplektu", () => {
+    const onlyLog = tabbar(shell(["logistika"]));
+    expect(onlyLog).toContain(">Loģistika<");
+    expect(onlyLog).not.toContain("Pavadzīmes");
+    expect(onlyLog).not.toContain("Autoparks");
+    expect(onlyLog).not.toContain("Pasūtījumi");
+    const pzAp = tabbar(shell(["pavadzimes", "ap_serviss"]));
+    expect(pzAp).toContain(">Pavadzīmes<");
+    expect(pzAp).toContain(">Autoparks<");
+    expect(pzAp).not.toContain("Loģistika");
+    expect(pzAp).not.toContain("Pasūtījumi");
   });
 
   it("Pavadzīmes, Autoparks un Iziet ir vienā joslā; Autoparks ved uz v2 sarakstu", () => {
@@ -71,6 +94,16 @@ describe("IRISS darbinieka čaulas CSS (j69)", () => {
     const body = rule(/\.admin-ios-theme \.iriss-staff-tabbar button,\s*\.admin-ios-theme \.iriss-staff-shell \[data-iriss-nav\] button/);
     expect(body).toMatch(/border:\s*0/);
     expect(body).toMatch(/-webkit-backdrop-filter:\s*none/);
-    expect(rule(/\.admin-ios-theme \.iriss-staff-tabbar button/)).toMatch(/border-radius:\s*9999px/);
+  });
+
+  it("josla stāv virs home indicator un cilnēm ir 44 px mērķis", () => {
+    const bar = rule(/\.admin-ios-theme \.iriss-staff-tabbar/);
+    expect(bar).toMatch(/position:\s*fixed/);
+    expect(bar).toMatch(/bottom:\s*0/);
+    expect(bar).toContain("safe-area-inset-bottom");
+    expect(bar).toMatch(/z-index:\s*30/);
+    const tab = rule(/\.admin-ios-theme \.iriss-staff-tabbar \.iriss-staff-tab,\s*\.admin-ios-theme \.iriss-staff-tabbar a,\s*\.admin-ios-theme \.iriss-staff-tabbar button/);
+    expect(tab).toMatch(/min-height:\s*44px/);
+    expect(tab).toMatch(/min-width:\s*44px/);
   });
 });

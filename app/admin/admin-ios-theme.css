@@ -276,6 +276,29 @@ html:has(.iriss-staff-shell) body {
   -webkit-backdrop-filter: none;
 }
 
+/*
+ * D) josla virs home indicator (ne iekšā tajā). 44 px mērķi Loģistika/Autoparks.
+ * Kapsula ar overflow:hidden apgrieza labās ikonas; tagad platums + safe-area zem cilnēm.
+ */
+.admin-ios-theme .iriss-staff-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  padding-top: 4px;
+  padding-bottom: max(20px, calc(8px + env(safe-area-inset-bottom, 0px)));
+  transform: none;
+  -webkit-transform: none;
+}
+
+.admin-ios-theme .iriss-staff-tabbar .iriss-staff-tab,
+.admin-ios-theme .iriss-staff-tabbar a,
 .admin-ios-theme .iriss-staff-tabbar button {
-  border-radius: 9999px;
+  min-height: 44px;
+  min-width: 44px;
+  border: 0;
+  border-radius: 12px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
