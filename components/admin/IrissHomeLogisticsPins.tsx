@@ -33,7 +33,6 @@ export function IrissHomeLogisticsPins({ href, pins }: { href: string; pins: rea
         <span key={p.id} className={styles.col}>
           <TonePin tone={p.tone} count={p.count} />
           <span className={styles.label}>{p.label}</span>
-          <span className={styles.detail}>{p.detail}</span>
         </span>
       ))}
     </Link>

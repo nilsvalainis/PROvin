@@ -92,6 +92,19 @@ export function waybillGaugesFromPlates(
   });
 }
 
+/** Sākuma kartītes modeļa rinda: pilns nosaukums, bez vārdu nogriešanas. */
+export function waybillHomeCarText(g: Pick<WaybillGauge, "busy" | "status" | "brandModel">): string {
+  const model = g.brandModel.trim();
+  if (g.busy) return model || "auto";
+  if (g.status === "issuing") return model || "-";
+  return "-";
+}
+
+/** Tooltip, ja ir īsts modeļa nosaukums (CSS var eleganti saīsināt). */
+export function waybillHomeCarTitle(g: Pick<WaybillGauge, "brandModel">): string | undefined {
+  return g.brandModel.trim() || undefined;
+}
+
 /** Precīzs atlikums detaļās: "31 h 05 min" vai "45 min". */
 export function formatWaybillLeft(validUntil: string, now = new Date()): string {
   const until = Date.parse(validUntil);
