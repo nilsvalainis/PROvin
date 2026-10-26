@@ -72,7 +72,7 @@ export type WaybillMobileFormState = {
   /** "none" | "list" (No saraksta) | "manual" (Ar roku). */
   autoChoice: WaybillAutoChoice;
   manualBrandModel: string;
-  /** VIN ar roku (nav obligāts). */
+  /** Atstāts stāvoklī, bet «Ar roku» VIN vairs neievada un nesūta. */
   manualVin: string;
   /** null = "cits". */
   hoursPreset: number | null;
@@ -133,7 +133,7 @@ export function applyWaybillAutoChoice(state: WaybillMobileFormState, choice: Wa
   };
 }
 
-/** Manuālie lauki (marka, modelis, VIN) redzami tikai pēc "Ar roku". */
+/** Manuālie lauki (marka, modelis) redzami tikai pēc "Ar roku". */
 export function waybillShowsManualFields(state: Pick<WaybillMobileFormState, "autoChoice" | "manual">): boolean {
   return state.autoChoice === "manual" || state.manual;
 }
@@ -143,12 +143,12 @@ export function waybillShowsTradeList(state: Pick<WaybillMobileFormState, "autoC
   return state.autoChoice === "list" && !state.manual;
 }
 
-/** Marka/VIN no izvēlētā ceļa (saraksts vai ar roku). Desktop forma sūta tos pašus laukus kā līdz šim. */
+/** Marka no izvēlētā ceļa; VIN tikai no saraksta auto. «Ar roku» VIN vienmēr tukšs. */
 export function waybillAutoEntryValues(
-  state: Pick<WaybillMobileFormState, "manual" | "manualBrandModel" | "manualVin" | "car">,
+  state: Pick<WaybillMobileFormState, "manual" | "manualBrandModel" | "car">,
 ): { brandModel: string; vin: string } {
   if (state.manual) {
-    return { brandModel: state.manualBrandModel.trim(), vin: state.manualVin.trim() };
+    return { brandModel: state.manualBrandModel.trim(), vin: "" };
   }
   return { brandModel: (state.car?.brandModel ?? "").trim(), vin: (state.car?.vin ?? "").trim() };
 }
@@ -206,7 +206,7 @@ export function buildWaybillMobilePayload(state: WaybillMobileFormState): Waybil
     payload: {
       plate,
       brandModel,
-      vin: state.manual ? state.manualVin.trim() : (state.car?.vin ?? ""),
+      vin: state.manual ? "" : (state.car?.vin ?? ""),
       validHours,
       comment_untrusted: comment,
       routeFromAddress: fromAddress,
