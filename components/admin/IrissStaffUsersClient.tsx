@@ -83,8 +83,8 @@ function formatWhen(iso: string | null): string {
 }
 
 function statusLabel(status: DirectoryUser["status"]): { text: string; className: string } {
-  if (status === "active") return { text: "Aktīvs", className: "bg-[#ECFDF3] text-[#067647]" };
-  if (status === "invited") return { text: "Uzaicināts", className: "bg-[#EEF2FF] text-[#3d5bd9]" };
+  if (status === "active") return { text: "Aktīvs", className: "bg-[#ECFDF3] text-[var(--iriss-ok)]" };
+  if (status === "invited") return { text: "Uzaicināts", className: "bg-[#EEF2FF] text-[var(--iriss-info)]" };
   return { text: "Atsaukts", className: "bg-[#FEF3F2] text-[#B42318]" };
 }
 
@@ -237,14 +237,14 @@ export function IrissStaffUsersClient() {
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-[1.35rem] font-semibold tracking-tight text-[#111827] sm:text-[1.5rem]">
+            <h1 className="text-[1.35rem] font-semibold tracking-tight text-[var(--iriss-ink)] sm:text-[1.5rem]">
               Lietotāji un pieeja
             </h1>
-            <span className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#3d5bd9]">
+            <span className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--iriss-info)]">
               IRISS
             </span>
           </div>
-          <p className="mt-1.5 max-w-xl text-[13px] text-[#6b7280]">
+          <p className="mt-1.5 max-w-xl text-[13px] text-[var(--iriss-ink-2)]">
             Katrai personai var atzīmēt vairākas sadaļas. Navigācijā redzamas tikai atļautās, sākuma lapa - pirmā
             atzīmētā. Pārbaude notiek serverī.
           </p>
@@ -252,7 +252,7 @@ export function IrissStaffUsersClient() {
         <button
           type="button"
           onClick={() => setModal(true)}
-          className="rounded-full bg-[#111827] px-4 py-2 text-[13px] font-medium text-white"
+          className="rounded-full bg-[var(--iriss-graphite)] px-4 py-2 text-[13px] font-medium text-white"
         >
           + Pievienot personu
         </button>
@@ -260,8 +260,8 @@ export function IrissStaffUsersClient() {
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-3">
-          <section className="overflow-hidden rounded-[22px] border border-[#E5E7EB] bg-white shadow-sm">
-            <div className="hidden grid-cols-[1fr_minmax(0,220px)_88px_140px] gap-2 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9aa3b2] sm:grid">
+          <section className="overflow-hidden rounded-[22px] border border-[var(--iriss-line)] bg-white shadow-sm">
+            <div className="hidden grid-cols-[1fr_minmax(0,220px)_88px_140px] gap-2 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--iriss-ink-3)] sm:grid">
               <span>Persona</span>
               <span>Sadaļas</span>
               <span>Statuss</span>
@@ -278,28 +278,28 @@ export function IrissStaffUsersClient() {
                       type="button"
                       onClick={() => setSelectedId(user.id)}
                       className={`flex w-full items-center gap-3 border-l-2 px-4 py-3 text-left ${
-                        active ? "border-[#3d5bd9] bg-[#F8FAFF]" : "border-transparent"
+                        active ? "border-[var(--iriss-info)] bg-[#F8FAFF]" : "border-transparent"
                       }`}
                     >
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#EEF2FF] text-[12px] font-semibold text-[#3d5bd9]">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#EEF2FF] text-[12px] font-semibold text-[var(--iriss-info)]">
                         {initials(user.name)}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[14px] font-medium text-[#111827]">{user.name}</span>
-                        <span className="block truncate text-[12px] text-[#6b7280]">
+                        <span className="block truncate text-[14px] font-medium text-[var(--iriss-ink)]">{user.name}</span>
+                        <span className="block truncate text-[12px] text-[var(--iriss-ink-2)]">
                           {user.email || "env administrators"}
                         </span>
                       </span>
                       <span className="hidden min-w-0 flex-wrap justify-end gap-1 sm:flex">
                         {secs === "admin" ? (
-                          <span className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[11px] font-medium text-[#3d5bd9]">
+                          <span className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[11px] font-medium text-[var(--iriss-info)]">
                             Visas (administrators)
                           </span>
                         ) : (
                           uniqueSectionLabels(secs).map((label) => (
                             <span
                               key={label}
-                              className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[11px] font-medium text-[#3d5bd9]"
+                              className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[11px] font-medium text-[var(--iriss-info)]"
                             >
                               {label}
                             </span>
@@ -307,7 +307,7 @@ export function IrissStaffUsersClient() {
                         )}
                       </span>
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${st.className}`}>{st.text}</span>
-                      <span className="hidden w-[140px] shrink-0 text-right text-[11px] text-[#9aa3b2] lg:block">
+                      <span className="hidden w-[140px] shrink-0 text-right text-[11px] text-[var(--iriss-ink-3)] lg:block">
                         {formatWhen(user.lastLoginAt)}
                       </span>
                     </button>
@@ -317,7 +317,7 @@ export function IrissStaffUsersClient() {
             </ul>
           </section>
 
-          <section className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm xl:hidden">
+          <section className="rounded-[22px] border border-[var(--iriss-line)] bg-white p-4 shadow-sm xl:hidden">
             {selected ? <UserDetailCard
               selected={selected}
               draftSections={draftSections}
@@ -335,16 +335,16 @@ export function IrissStaffUsersClient() {
             /> : null}
           </section>
 
-          <section className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9aa3b2]">Darbību žurnāls</p>
+          <section className="rounded-[22px] border border-[var(--iriss-line)] bg-white p-4 shadow-sm">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--iriss-ink-3)]">Darbību žurnāls</p>
             <ul className="mt-3 space-y-2">
               {audit.length === 0 ? (
-                <li className="text-[13px] text-[#6b7280]">Vēl nav ierakstu.</li>
+                <li className="text-[13px] text-[var(--iriss-ink-2)]">Vēl nav ierakstu.</li>
               ) : (
                 audit.map((row) => (
                   <li key={row.id} className="flex gap-2 text-[13px]">
-                    <span className="w-16 shrink-0 text-[#9aa3b2]">{formatWhen(row.createdAt).split(" · ")[0]?.replace("šodien ", "")}</span>
-                    <span className="min-w-0 text-[#111827] [overflow-wrap:anywhere]">
+                    <span className="w-16 shrink-0 text-[var(--iriss-ink-3)]">{formatWhen(row.createdAt).split(" · ")[0]?.replace("šodien ", "")}</span>
+                    <span className="min-w-0 text-[var(--iriss-ink)] [overflow-wrap:anywhere]">
                       {row.userId === "env-admin"
                         ? admin?.name || "Administrators"
                         : users.find((u) => u.id === row.userId)?.name || row.userId}{" "}
@@ -385,7 +385,7 @@ export function IrissStaffUsersClient() {
           <div className="w-full max-w-md rounded-[24px] bg-white p-5 shadow-xl">
             <div className="mb-4 flex items-start justify-between">
               <h2 className="text-[18px] font-semibold">Pievienot personu</h2>
-              <button type="button" onClick={() => setModal(false)} className="text-[#6b7280]" aria-label="Aizvērt">
+              <button type="button" onClick={() => setModal(false)} className="text-[var(--iriss-ink-2)]" aria-label="Aizvērt">
                 ×
               </button>
             </div>
@@ -394,7 +394,7 @@ export function IrissStaffUsersClient() {
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2.5 text-[16px]"
+                className="mt-1 w-full rounded-xl border border-[var(--iriss-line)] px-3 py-2.5 text-[16px]"
               />
             </label>
             <label className="mb-3 block text-[13px]">
@@ -403,11 +403,11 @@ export function IrissStaffUsersClient() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2.5 text-[16px]"
+                className="mt-1 w-full rounded-xl border border-[var(--iriss-line)] px-3 py-2.5 text-[16px]"
               />
             </label>
             <p className="mb-2 text-[13px] font-medium">Sadaļas</p>
-            <ul className="mb-3 divide-y divide-[#F3F4F6] rounded-2xl border border-[#E5E7EB]">
+            <ul className="mb-3 divide-y divide-[#F3F4F6] rounded-2xl border border-[var(--iriss-line)]">
               {IRISS_SECTION_CATALOG.map((row) => {
                 const on = inviteSections.includes(row.id);
                 return (
@@ -419,14 +419,14 @@ export function IrissStaffUsersClient() {
                         {sectionRowLabel(row.id, row.label)}
                       </label>
                       {on && inviteSections[0] === row.id ? (
-                        <span className="text-[12px] text-[#3d5bd9]">sākuma lapa</span>
+                        <span className="text-[12px] text-[var(--iriss-info)]">sākuma lapa</span>
                       ) : null}
                     </li>
                   </Fragment>
                 );
               })}
             </ul>
-            <p className="text-[12px] leading-relaxed text-[#6b7280]">
+            <p className="text-[12px] leading-relaxed text-[var(--iriss-ink-2)]">
               Persona saņem vienreizēju uzaicinājuma saiti (derīga 24 h), pēc tam iestata paroli un 2FA. Uzaicinājums tiek
               nosūtīts tikai pēc šīs apstiprināšanas.
             </p>
@@ -439,7 +439,7 @@ export function IrissStaffUsersClient() {
                 type="button"
                 disabled={busy || inviteSections.length === 0}
                 onClick={() => void invite()}
-                className="rounded-full bg-[#111827] px-4 py-2 text-[13px] font-medium text-white"
+                className="rounded-full bg-[var(--iriss-graphite)] px-4 py-2 text-[13px] font-medium text-white"
               >
                 Izveidot uzaicinājumu
               </button>
@@ -468,7 +468,7 @@ export function StaffUserAdminActions({
           type="button"
           disabled={busy}
           onClick={() => onAct("revoke_sessions")}
-          className="rounded-full border border-[#E5E7EB] px-3 py-1.5 text-[12px]"
+          className="rounded-full border border-[var(--iriss-line)] px-3 py-1.5 text-[12px]"
         >
           Beigt sesijas
         </button>
@@ -478,7 +478,7 @@ export function StaffUserAdminActions({
           type="button"
           disabled={busy}
           onClick={() => onAct("reset_password")}
-          className="rounded-full border border-[#E5E7EB] px-3 py-1.5 text-[12px]"
+          className="rounded-full border border-[var(--iriss-line)] px-3 py-1.5 text-[12px]"
         >
           {staffResetPasswordLabel(status)}
         </button>
@@ -488,7 +488,7 @@ export function StaffUserAdminActions({
           type="button"
           disabled={busy}
           onClick={() => onAct("restore")}
-          className="rounded-full bg-[#111827] px-3 py-1.5 text-[12px] text-white"
+          className="rounded-full bg-[var(--iriss-graphite)] px-3 py-1.5 text-[12px] text-white"
         >
           Atjaunot pieeju
         </button>
@@ -547,15 +547,15 @@ function UserDetailCard({
   onAct: (action: string, extra?: Record<string, unknown>) => void;
 }) {
   return (
-    <section className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
+    <section className="rounded-[22px] border border-[var(--iriss-line)] bg-white p-4 shadow-sm">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-full bg-[#EEF2FF] text-[13px] font-semibold text-[#3d5bd9]">
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-[#EEF2FF] text-[13px] font-semibold text-[var(--iriss-info)]">
             {initials(selected.name)}
           </span>
           <div>
             <p className="text-[15px] font-semibold">{selected.name}</p>
-            <p className="text-[12px] text-[#6b7280]">{selected.email || "env administrators"}</p>
+            <p className="text-[12px] text-[var(--iriss-ink-2)]">{selected.email || "env administrators"}</p>
           </div>
         </div>
         {!selected.envAdmin ? (
@@ -563,7 +563,7 @@ function UserDetailCard({
             type="button"
             disabled={busy || !dirty || draftSections.length === 0}
             onClick={onSave}
-            className="rounded-full bg-[#EEF2FF] px-3 py-1.5 text-[12px] font-medium text-[#3d5bd9] disabled:opacity-40"
+            className="rounded-full bg-[#EEF2FF] px-3 py-1.5 text-[12px] font-medium text-[var(--iriss-info)] disabled:opacity-40"
           >
             Saglabāt
           </button>
@@ -571,10 +571,10 @@ function UserDetailCard({
       </div>
 
       {selected.envAdmin ? (
-        <p className="mt-4 text-[13px] text-[#6b7280]">Visas sadaļas (administrators). Nila env pieteikšanās paliek nemainīta.</p>
+        <p className="mt-4 text-[13px] text-[var(--iriss-ink-2)]">Visas sadaļas (administrators). Nila env pieteikšanās paliek nemainīta.</p>
       ) : (
         <>
-          <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9aa3b2]">Pieejamās sadaļas</p>
+          <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--iriss-ink-3)]">Pieejamās sadaļas</p>
           <ul className="mt-2 divide-y divide-[#F3F4F6]">
             {IRISS_SECTION_CATALOG.map((row) => {
               const on = draftSections.includes(row.id);
@@ -589,16 +589,16 @@ function UserDetailCard({
                       {sectionRowLabel(row.id, row.label)}
                     </label>
                     {home ? (
-                      <span className="text-[12px] text-[#3d5bd9]">sākuma lapa</span>
+                      <span className="text-[12px] text-[var(--iriss-info)]">sākuma lapa</span>
                     ) : on ? (
-                      <span className="text-[12px] text-[#9aa3b2]">{pos + 1}.</span>
+                      <span className="text-[12px] text-[var(--iriss-ink-3)]">{pos + 1}.</span>
                     ) : null}
                   </li>
                 </Fragment>
               );
             })}
           </ul>
-          <p className="mt-2 text-[12px] leading-relaxed text-[#6b7280]">
+          <p className="mt-2 text-[12px] leading-relaxed text-[var(--iriss-ink-2)]">
             Sākuma lapa - pirmā atzīmētā ({draftSections[0] ? IRISS_SECTION_LABELS[draftSections[0]] : "-"}). Cenas, klientu
             dati un šofera personas dati šīm sadaļām netiek rādīti, ja tas nav atļauts. Izmaiņas stājas spēkā nākamajā
             pieprasījumā; atvērtās sesijas redz jauno sarakstu.
@@ -612,28 +612,28 @@ function UserDetailCard({
       {!selected.envAdmin && error ? <p className="mt-2 text-[13px] text-[#B42318]">{error}</p> : null}
       {!selected.envAdmin && resetLink ? (
         <div className="mt-3 space-y-2 rounded-xl bg-[#F8FAFC] p-3">
-          <p className="text-[13px] text-[#111827]">
+          <p className="text-[13px] text-[var(--iriss-ink)]">
             {resetLink.emailed
               ? `Saite nosūtīta uz ${resetLink.email}. Derīga 24 h, vienu reizi.`
               : `E-pasts nav nosūtīts. Nokopē saiti un nosūti ${resetLink.email}.`}
           </p>
-          <p className="break-all font-mono text-[11px] text-[#374151]">{resetLink.url}</p>
+          <p className="break-all font-mono text-[11px] text-[var(--iriss-ink-2)]">{resetLink.url}</p>
         </div>
       ) : null}
-      {sessions[0] ? <p className="mt-3 text-[12px] text-[#6b7280]">Ierīce: {sessions[0].device}</p> : null}
+      {sessions[0] ? <p className="mt-3 text-[12px] text-[var(--iriss-ink-2)]">Ierīce: {sessions[0].device}</p> : null}
       {totp && !selected.envAdmin ? (
         <div className="mt-3 space-y-2 rounded-xl bg-[#F8FAFC] p-3">
           <p className="break-all font-mono text-[11px]">{totp.secret}</p>
           <input
             value={totpCode}
             onChange={(e) => setTotpCode(e.target.value)}
-            className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[16px]"
+            className="w-full rounded-xl border border-[var(--iriss-line)] px-3 py-2 text-[16px]"
             placeholder="6 ciparu kods"
             inputMode="numeric"
           />
           <button
             type="button"
-            className="rounded-full bg-[#111827] px-3 py-1.5 text-[12px] text-white"
+            className="rounded-full bg-[var(--iriss-graphite)] px-3 py-1.5 text-[12px] text-white"
             onClick={() => void onAct("totp_confirm", { code: totpCode })}
           >
             Apstiprināt 2FA

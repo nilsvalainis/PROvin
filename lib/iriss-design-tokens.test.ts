@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
  * drīkst tikai samazināties. Jaunām krāsām - tokeni --iriss-* (app/admin/iriss-tokens.css).
  * Pārejot sadaļu uz tokeniem, samazini IRISS_HEX_CEILING līdz jaunajam skaitam.
  */
-const IRISS_HEX_CEILING = 130;
+const IRISS_HEX_CEILING = 122;
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of fs.readdirSync(dir)) {

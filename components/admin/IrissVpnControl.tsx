@@ -90,7 +90,7 @@ export function IrissVpnControl({ variant = "inline" }: { variant?: "inline" | "
         type="button"
         disabled={busy}
         onClick={() => void requestStop()}
-        className="inline-flex min-h-11 items-center rounded-full border border-[#E5E7EB] px-3 text-[13px] font-medium disabled:opacity-50"
+        className="inline-flex min-h-11 items-center rounded-full border border-[var(--iriss-line)] px-3 text-[13px] font-medium disabled:opacity-50"
       >
         Man vajag VPN
       </button>

@@ -70,17 +70,17 @@ export function IrissCabinetAccessPanel({ users }: { users: StaffUserPublic[] })
   }
 
   return (
-    <section className="mt-4 rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
+    <section className="mt-4 rounded-[22px] border border-[var(--iriss-line)] bg-white p-4 shadow-sm">
       <h2 className="text-[15px] font-semibold">Kabineta pieeja (A/B/C × dokumenta tips)</h2>
-      <p className="mt-1 text-[12px] leading-relaxed text-[#6b7280]">
+      <p className="mt-1 text-[12px] leading-relaxed text-[var(--iriss-ink-2)]">
         Noklusējums: Loģistika neredz A un rēķinus, Grāmatvede tikai lasa A rēķinus un C piešķirtajiem auto, Serviss
         neredz rēķinus. Piešķirt auto: lietotājs + Grāmatvede + auto ID, sadaļa Visas, tips Visi, Atļaut. Pārbaude ir
         servera pusē; skatījumi paliek auditā.
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <label className="text-[12px] text-[#6b7280]">
+        <label className="text-[12px] text-[var(--iriss-ink-2)]">
           Lietotājs (tukšs = loma)
-          <select value={userId} onChange={(e) => setUserId(e.target.value)} className="mt-1 h-9 w-full rounded-xl border border-[#E5E7EB] px-2 text-[13px]">
+          <select value={userId} onChange={(e) => setUserId(e.target.value)} className="mt-1 h-9 w-full rounded-xl border border-[var(--iriss-line)] px-2 text-[13px]">
             <option value="">Visi šīs lomas</option>
             {users.map((u) => (
               <option key={u.id} value={u.id}>
@@ -89,9 +89,9 @@ export function IrissCabinetAccessPanel({ users }: { users: StaffUserPublic[] })
             ))}
           </select>
         </label>
-        <label className="text-[12px] text-[#6b7280]">
+        <label className="text-[12px] text-[var(--iriss-ink-2)]">
           Loma
-          <select value={role} onChange={(e) => setRole(e.target.value as CabinetAccessRole | "")} className="mt-1 h-9 w-full rounded-xl border border-[#E5E7EB] px-2 text-[13px]">
+          <select value={role} onChange={(e) => setRole(e.target.value as CabinetAccessRole | "")} className="mt-1 h-9 w-full rounded-xl border border-[var(--iriss-line)] px-2 text-[13px]">
             <option value="">-</option>
             {CABINET_ACCESS_ROLES.map((id) => (
               <option key={id} value={id}>
@@ -100,18 +100,18 @@ export function IrissCabinetAccessPanel({ users }: { users: StaffUserPublic[] })
             ))}
           </select>
         </label>
-        <label className="text-[12px] text-[#6b7280]">
+        <label className="text-[12px] text-[var(--iriss-ink-2)]">
           Auto ID (tukšs = visi)
           <input
             value={carId}
             onChange={(e) => setCarId(e.target.value)}
             placeholder="lo-"
-            className="mt-1 h-9 w-full rounded-xl border border-[#E5E7EB] px-2 text-[13px]"
+            className="mt-1 h-9 w-full rounded-xl border border-[var(--iriss-line)] px-2 text-[13px]"
           />
         </label>
-        <label className="text-[12px] text-[#6b7280]">
+        <label className="text-[12px] text-[var(--iriss-ink-2)]">
           Sadaļa
-          <select value={section} onChange={(e) => setSection(e.target.value as CabinetSectionId | "")} className="mt-1 h-9 w-full rounded-xl border border-[#E5E7EB] px-2 text-[13px]">
+          <select value={section} onChange={(e) => setSection(e.target.value as CabinetSectionId | "")} className="mt-1 h-9 w-full rounded-xl border border-[var(--iriss-line)] px-2 text-[13px]">
             <option value="">Visas</option>
             {CABINET_SECTIONS.map((id) => (
               <option key={id} value={id}>
@@ -120,9 +120,9 @@ export function IrissCabinetAccessPanel({ users }: { users: StaffUserPublic[] })
             ))}
           </select>
         </label>
-        <label className="text-[12px] text-[#6b7280]">
+        <label className="text-[12px] text-[var(--iriss-ink-2)]">
           Tips
-          <select value={docType} onChange={(e) => setDocType(e.target.value as "invoices" | "")} className="mt-1 h-9 w-full rounded-xl border border-[#E5E7EB] px-2 text-[13px]">
+          <select value={docType} onChange={(e) => setDocType(e.target.value as "invoices" | "")} className="mt-1 h-9 w-full rounded-xl border border-[var(--iriss-line)] px-2 text-[13px]">
             <option value="invoices">Rēķini</option>
             <option value="">Visi tipi</option>
           </select>
@@ -137,13 +137,13 @@ export function IrissCabinetAccessPanel({ users }: { users: StaffUserPublic[] })
           type="button"
           disabled={busy || (!userId && !role)}
           onClick={() => void save()}
-          className="rounded-full bg-[#111827] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40"
+          className="rounded-full bg-[var(--iriss-graphite)] px-3 py-1.5 text-[12px] font-semibold text-white disabled:opacity-40"
         >
           Saglabāt likumu
         </button>
       </div>
       <ul className="mt-3 divide-y divide-[#F3F4F6] text-[13px]">
-        {rules.length === 0 ? <li className="py-2 text-[#6b7280]">Nav pārrakstījumu. Strādā lomu noklusējumi.</li> : null}
+        {rules.length === 0 ? <li className="py-2 text-[var(--iriss-ink-2)]">Nav pārrakstījumu. Strādā lomu noklusējumi.</li> : null}
         {rules.map((row) => (
           <li key={row.id} className="flex items-center justify-between gap-2 py-2">
             <span>
@@ -159,8 +159,8 @@ export function IrissCabinetAccessPanel({ users }: { users: StaffUserPublic[] })
       </ul>
       {audit.length > 0 ? (
         <div className="mt-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9aa3b2]">Audits</p>
-          <ul className="mt-1 space-y-1 text-[12px] text-[#6b7280]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--iriss-ink-3)]">Audits</p>
+          <ul className="mt-1 space-y-1 text-[12px] text-[var(--iriss-ink-2)]">
             {audit.slice(0, 8).map((row) => (
               <li key={row.id}>
                 {formatRigaIsoShort(row.at)} · {row.action} · {row.docType || row.detail}

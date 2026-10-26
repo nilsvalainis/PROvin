@@ -44,7 +44,7 @@ describe("Saruna ikona un badge", () => {
   it("open icon is filled, still no badge after read", () => {
     const html = renderHtml(<IrissWaybillSarunaButton open unreadCount={0} onClick={() => undefined} />);
     expect(html).toContain('aria-expanded="true"');
-    expect(html).toContain("bg-[#1d1d1f]");
+    expect(html).toContain("bg-[var(--iriss-graphite)]");
     expect(html).not.toContain("data-saruna-badge");
   });
 });
@@ -98,7 +98,7 @@ describe("Saruna feed kartītes", () => {
     const html = renderHtml(<IrissWaybillSarunaFeed items={feed} />);
     expect(html).toContain("data-saruna-feed");
     expect(html).toContain("PV-1042.pdf");
-    expect(html).toContain("rounded-[10px] border border-[#e5e5ea]");
+    expect(html).toContain("rounded-[10px] border border-[var(--iriss-line)]");
     expect(html).toContain("text-[#FF3B30]");
   });
 

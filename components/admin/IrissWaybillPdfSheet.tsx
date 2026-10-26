@@ -54,11 +54,11 @@ export function IrissWaybillPdfSheet({ href, title, onClose }: { href: string | 
 
   return (
     <AdminMobileSheet open={Boolean(href)} title={title || "Pavadzīme"} onClose={onClose}>
-      {state === "loading" ? <p className="py-6 text-center text-[13px] text-[#6e6e73]">Ielādē PDF...</p> : null}
+      {state === "loading" ? <p className="py-6 text-center text-[13px] text-[var(--iriss-ink-2)]">Ielādē PDF...</p> : null}
       {state === "error" ? <p className="py-6 text-center text-[13px] text-[#b91c1c]">PDF neizdevās atvērt.</p> : null}
       <div ref={box} className="iriss-wb-pdf" />
       {href ? (
-        <a href={href} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#f2f2f7] text-[14px] font-semibold text-[#1d1d1f]">
+        <a href={href} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[var(--iriss-surface-2)] text-[14px] font-semibold text-[var(--iriss-ink)]">
           Atvērt pilnā izmērā
         </a>
       ) : null}

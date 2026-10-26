@@ -109,7 +109,7 @@ export function IrissRangeFromToField({
           </span>
         ) : null}
       </div>
-      {error ? <p className="iriss-range-error mt-1 text-[11px] text-[#991b1b]">{error}</p> : null}
+      {error ? <p className="iriss-range-error mt-1 text-[11px] text-[var(--iriss-bad)]">{error}</p> : null}
     </div>
   );
 }
