@@ -3,7 +3,7 @@
  * ielasīšanas datumu un saiti. Tīras funkcijas (testējamas), UI tikai attēlo.
  */
 import type { CsddFormFields, TirgusFormFields, VinRegistryBlockState, WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
-import { SOURCE_BLOCK_EXTERNAL_URL } from "@/lib/admin-source-blocks";
+import { SOURCE_BLOCK_EXTERNAL_URL, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 import type { ListingPeekTopicId } from "@/lib/listing-peek-comment-presets";
 import { vehicleKey } from "@/lib/quick-eval-match";
 
@@ -318,7 +318,7 @@ export function buildLetterFacts(input: QuickEvalCardInput): Partial<Record<List
   if (csdd.length) out.technical = csdd.map((f) => `${f.label}: ${f.value}`).join(" · ");
   const t = tirgusCardFacts(input.blocks.tirgus).filter((f) => f.label === "Pārdošanā" || f.label === "Izmaiņa");
   if (t.length) out.seller = t.map((f) => `${f.label}: ${f.value}`).join(" · ");
-  if (typeof input.ccVinCount === "number") out.photos = `CC-VIN: ${input.ccVinCount} foto`;
+  if (typeof input.ccVinCount === "number") out.photos = `${SOURCE_BLOCK_LABELS.cc_vin}: ${input.ccVinCount} foto`;
   return out;
 }
 

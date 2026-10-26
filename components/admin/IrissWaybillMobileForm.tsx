@@ -228,7 +228,6 @@ export function IrissWaybillMobileForm({
             choice={form.autoChoice}
             car={form.car}
             manualBrandModel={form.manualBrandModel}
-            manualVin={form.manualVin}
             isB192={isB192}
             b192Empty={b192Empty}
             showManual={showManual}
@@ -240,7 +239,6 @@ export function IrissWaybillMobileForm({
             }}
             onClearCar={() => patch({ car: null })}
             onManualBrandModel={(value) => patch({ manualBrandModel: value })}
-            onManualVin={(value) => patch({ manualVin: value })}
           />
         </div>
 
@@ -740,13 +738,12 @@ export function IrissWaybillRequestArchive() {
 
 /**
  * Auto ievade: uzreiz 2 izvēles. Noklusējumā neviens ceļš nav piespiests.
- * "Ar roku" rāda marku, modeli un VIN turpat formā (bez saraksta scroll).
+ * "Ar roku" rāda marku un modeli turpat formā (bez VIN, bez saraksta scroll).
  */
 export function IrissWaybillAutoEntry({
   choice,
   car,
   manualBrandModel,
-  manualVin,
   isB192,
   b192Empty,
   showManual,
@@ -755,12 +752,10 @@ export function IrissWaybillAutoEntry({
   onOpenList,
   onClearCar,
   onManualBrandModel,
-  onManualVin,
 }: {
   choice: WaybillAutoChoice;
   car: WaybillMobileCar | null;
   manualBrandModel: string;
-  manualVin: string;
   isB192: boolean;
   b192Empty: boolean;
   showManual: boolean;
@@ -769,7 +764,6 @@ export function IrissWaybillAutoEntry({
   onOpenList: () => void;
   onClearCar: () => void;
   onManualBrandModel: (value: string) => void;
-  onManualVin: (value: string) => void;
 }) {
   return (
     <>
@@ -790,7 +784,7 @@ export function IrissWaybillAutoEntry({
           onClick={() => onChoose("manual")}
         >
           Ar roku
-          <small>marka, modelis, VIN</small>
+          <small>marka, modelis</small>
         </button>
       </div>
       {showManual ? (
@@ -803,16 +797,6 @@ export function IrissWaybillAutoEntry({
             placeholder="Marka, modelis"
             aria-label="Marka, modelis"
             autoComplete="off"
-          />
-          <input
-            className={`${styles.input} ${styles.sub} ${styles.mono}`}
-            value={manualVin}
-            onChange={(e) => onManualVin(e.target.value)}
-            maxLength={17}
-            placeholder="17 zīmes"
-            aria-label="VIN"
-            autoComplete="off"
-            spellCheck={false}
           />
         </div>
       ) : null}

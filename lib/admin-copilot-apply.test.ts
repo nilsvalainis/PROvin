@@ -438,7 +438,7 @@ describe("parseCopilotAiPayload", () => {
   it("accepts cc_vin as a Copilot source", () => {
     const r = parseCopilotAiPayload(
       JSON.stringify({
-        reply: "CC.VIN ielasīts.",
+        reply: "Izsoļu portālu arhīvs ielasīts.",
         clarificationNeeded: "",
         actions: [
           {

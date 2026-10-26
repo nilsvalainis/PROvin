@@ -6,6 +6,7 @@ export function IrissRangeFromToField({
   unit,
   phoneUnit,
   required,
+  filterMark,
   from,
   to,
   onFrom,
@@ -21,6 +22,8 @@ export function IrissRangeFromToField({
   /** Tikai telefonā (desktop paliek `unit`). */
   phoneUnit?: string;
   required?: boolean;
+  /** `*` bez obligātuma: lauks filtrē Meklētāju. */
+  filterMark?: boolean;
   from: string;
   to: string;
   onFrom: (value: string) => void;
@@ -52,7 +55,7 @@ export function IrissRangeFromToField({
     <div className="iriss-range-field min-w-0">
       <span className="iriss-range-label">
         {label}
-        {required ? (
+        {required || filterMark ? (
           <span className="iriss-range-req" aria-hidden>
             {" *"}
           </span>

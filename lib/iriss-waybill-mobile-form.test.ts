@@ -114,18 +114,18 @@ describe("phone waybill form", () => {
     expect(waybillAutoEntryValues(fromList)).toEqual({ brandModel: "Audi A6", vin: "WAUZZZF27LN004512" });
     expect(waybillAutoEntryValues({ ...applyWaybillAutoChoice(base, "manual"), manualBrandModel: " Opel ", manualVin: " ABC " })).toEqual({
       brandModel: "Opel",
-      vin: "ABC",
+      vin: "",
     });
     expect(waybillAutoEntryValues(base)).toEqual({ brandModel: "", vin: "" });
   });
 
-  it("Ar roku: marka/modelis un VIN iet payloadā; bez VIN paliek tukšs", () => {
+  it("Ar roku: payloadā iet marka/modelis, VIN paliek tukšs arī ja stāvoklī vēl ir vecā vērtība", () => {
     const built = buildWaybillMobilePayload({
       ...applyWaybillAutoChoice(base, "manual"),
       manualBrandModel: " Opel Astra ",
       manualVin: " W0L0AHL48B2081234 ",
     });
-    expect(built.ok && built.payload).toMatchObject({ brandModel: "Opel Astra", vin: "W0L0AHL48B2081234", tradeAct: false });
+    expect(built.ok && built.payload).toMatchObject({ brandModel: "Opel Astra", vin: "", tradeAct: false });
     const noVin = buildWaybillMobilePayload({ ...applyWaybillAutoChoice(base, "manual"), manualBrandModel: "Opel Astra" });
     expect(noVin.ok && noVin.payload.vin).toBe("");
   });

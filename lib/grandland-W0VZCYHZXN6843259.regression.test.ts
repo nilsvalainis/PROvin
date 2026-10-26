@@ -1,6 +1,6 @@
 /**
  * Grandland W0VZCYHZXN6843259 - negadījuma summas un "Pilnīgs zaudējums" kļūda (18.10.2026).
- * Nav vidējo (3 950 / ~2 850), nav izdomātas 01. dienas, CC VIN šablons nav total loss.
+ * Nav vidējo (3 950 / ~2 850), nav izdomātas 01. dienas, Izsoļu portālu arhīva šablons nav total loss.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";

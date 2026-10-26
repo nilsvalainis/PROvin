@@ -491,7 +491,7 @@ export function normalizeAsvBlock(raw: unknown): AsvBlockState {
   };
 }
 
-/** PDF / unified tabulas: ASV kā CC.VIN formas skats (bez ķīlām / zādzībām). */
+/** PDF / unified tabulas: ASV kā Izsoļu portālu arhīva (internal id: cc_vin) formas skats (bez ķīlām / zādzībām). */
 export function asvBlockToCcVinView(b: AsvBlockState | null | undefined): CcVinBlockState | null {
   if (!b) return null;
   return {

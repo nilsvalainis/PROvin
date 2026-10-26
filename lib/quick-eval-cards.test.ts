@@ -53,6 +53,6 @@ describe("quick-eval-cards", () => {
     expect(f.incidents).toContain("1 negadījumi");
     expect(f.incidents).toContain("LTAB: nav zaudējumu");
     expect(f.odometer).toContain("150");
-    expect(f.photos).toBe("CC-VIN: 12 foto");
+    expect(f.photos).toBe("Izsoļu portālu arhīvs: 12 foto");
   });
 });

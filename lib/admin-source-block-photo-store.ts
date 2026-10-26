@@ -1,8 +1,8 @@
 import "server-only";
 
 /**
- * Avotu sadaļu fotogrāfijas (JPEG — Blob + lokālais disks).
- * Atsevišķa mape no sludinājuma / dīlera / cc.vin / negadījumu foto.
+ * Avotu sadaļu fotogrāfijas (JPEG - Blob + lokālais disks).
+ * Atsevišķa mape no sludinājuma / dīlera / Izsoļu portālu arhīvs (internal id: cc_vin) / negadījumu foto.
  */
 
 import crypto from "crypto";

@@ -50,7 +50,7 @@ describe("Golf GTE - PR1 bojājumu pierādījumi (1, 10)", () => {
     expect(facts.incidents).toHaveLength(0);
     expect(facts.damageEvidence.total).toBeGreaterThanOrEqual(2);
     expect(facts.sheet).toMatch(/Bojājumi \(visi avoti, arī bez summas\): \d+/);
-    expect(facts.sheet).toMatch(/02\.04\.2024 \| .+ \| summa nav \| CC\.VIN/);
+    expect(facts.sheet).toMatch(/02\.04\.2024 \| .+ \| summa nav \| Izsoļu portālu arhīvs/);
     expect(facts.sheet).toMatch(/18\.03\.2024 \| Noņemts no reģistra bojājuma dēļ \| summa nav/);
   });
 
@@ -235,6 +235,6 @@ describe("Golf GTE - PR4 importētāji (4, 7, 9, 12)", () => {
 
   it("izsoles bojājums AI faktu lapā latviski (arī vecajiem datiem)", () => {
     const facts = buildCanonicalFacts({ vin: golfFixture.vin, sourceBlocks: b });
-    expect(facts.sheet).toMatch(/02\.04\.2024 \| priekšpuse, sāns \| summa nav \| CC\.VIN/);
+    expect(facts.sheet).toMatch(/02\.04\.2024 \| priekšpuse, sāns \| summa nav \| Izsoļu portālu arhīvs/);
   });
 });

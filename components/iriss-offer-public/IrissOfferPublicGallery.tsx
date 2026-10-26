@@ -72,17 +72,35 @@ function freshZoomGesture(): ZoomGesture {
   };
 }
 
+export type IrissOfferPublicGalleryUrls = {
+  thumb: (id: string) => string;
+  full: (id: string) => string;
+  heroSrcSet?: (id: string) => string;
+};
+
+function defaultGalleryUrls(token: string): IrissOfferPublicGalleryUrls {
+  return {
+    thumb: (id) => irissOfferPublicPhotoUrl(token, id, "thumb"),
+    full: (id) => irissOfferPublicPhotoUrl(token, id, "full"),
+    heroSrcSet: (id) => irissOfferPublicHeroSrcSet(token, id),
+  };
+}
+
 /** Klikšķināmi sīktēli (horizontāla josla) + bultas + swipe + pilnekrāna galerija ar pinch-zoom
- * piedāvājuma publiskajā saitē (/p/[token]). */
+ * piedāvājuma publiskajā saitē (/p/[token] un /p/d/[token]). */
 export function IrissOfferPublicGallery({
   token,
   title,
   photos,
+  urls,
 }: {
   token: string;
   title: string;
   photos: IrissOfferPublicPhoto[];
+  /** Cits foto ceļš (Piedāvājumi `/p/d/`). Bez tā - `/p/<token>/photo/<id>`. */
+  urls?: IrissOfferPublicGalleryUrls;
 }) {
+  const photoUrls = urls ?? defaultGalleryUrls(token);
   const [index, setIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [loadedIds, setLoadedIds] = useState<Record<string, boolean>>({});
@@ -166,9 +184,9 @@ export function IrissOfferPublicGallery({
       const photo = photos[i];
       if (!photo) continue;
       const img = new window.Image();
-      img.src = irissOfferPublicPhotoUrl(token, photo.id, "full");
+      img.src = photoUrls.full(photo.id);
     }
-  }, [index, count, token, photos, loadedIds, hero?.id]);
+  }, [index, count, photos, loadedIds, hero?.id, photoUrls]);
 
   // Sīktēlu josla: aktīvais sīktēls vienmēr redzams, ritina sevi centrā.
   const thumbRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -389,16 +407,16 @@ export function IrissOfferPublicGallery({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={irissOfferPublicPhotoUrl(token, hero.id, "thumb")}
+          src={photoUrls.thumb(hero.id)}
           alt=""
           aria-hidden
           className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${heroLoaded ? "opacity-0" : "opacity-100"}`}
         />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={irissOfferPublicPhotoUrl(token, hero.id, "full")}
-          srcSet={irissOfferPublicHeroSrcSet(token, hero.id)}
-          sizes={IRISS_OFFER_HERO_SIZES}
+          src={photoUrls.full(hero.id)}
+          srcSet={photoUrls.heroSrcSet?.(hero.id)}
+          sizes={photoUrls.heroSrcSet ? IRISS_OFFER_HERO_SIZES : undefined}
           alt={title}
           fetchPriority="high"
           decoding="async"
@@ -455,7 +473,7 @@ export function IrissOfferPublicGallery({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={irissOfferPublicPhotoUrl(token, photo.id, "thumb")}
+                src={photoUrls.thumb(photo.id)}
                 alt=""
                 draggable={false}
                 loading={irissOfferThumbLoadingMode(i, index)}
@@ -510,7 +528,7 @@ export function IrissOfferPublicGallery({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     ref={zoomImgRef}
-                    src={irissOfferPublicPhotoUrl(token, hero.id, "full")}
+                    src={photoUrls.full(hero.id)}
                     alt={title}
                     draggable={false}
                     onDoubleClick={toggleZoom}

@@ -119,7 +119,7 @@ export function collectDamageEvidence(sourceBlocks: WorkspaceSourceBlocks): Dama
       date: d.date.trim() || "datums nav",
       descriptionLv: auctionDamageLv(d.description) || "Bojājuma ieraksts",
       amount: displayAmount(d.amount),
-      sourceLabel: "CC.VIN",
+      sourceLabel: SOURCE_BLOCK_LABELS.cc_vin,
     });
   }
   for (const d of blocks.asv.damages ?? []) {

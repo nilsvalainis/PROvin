@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * Starptautiskās vēstures avots (admin: „CC.VIN”).
+ * Starptautiskās vēstures avots (admin: „Izsoļu portālu arhīvs”, internal id: cc_vin).
  *
  * Struktūra un noformējums seko pārējiem avotu blokiem: PDF augšupielāde → tabulas → fotogrāfijas →
- * komentārs → AI konteksts. Specifikācijas šeit netiek dublētas — akcents ir uz sarkanajiem karogiem.
+ * komentārs → AI konteksts. Specifikācijas šeit netiek dublētas - akcents ir uz sarkanajiem karogiem.
  */
 
 import { AdminAutoGrowTextarea } from "@/components/admin/AdminAutoGrowTextarea";

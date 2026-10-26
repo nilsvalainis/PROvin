@@ -289,7 +289,7 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   "Sagatavots klientam:": { en: "Prepared for: ", ru: "Подготовлено для: " },
   "mēn.": { en: "mo.", ru: "мес." },
 
-  // Eļļas intervāli / ASV / CC.VIN / tabulu galviņas, kas paliek LV bez diakritikas
+  // Eļļas intervāli / ASV / Izsoļu portālu arhīvs / tabulu galviņas, kas paliek LV bez diakritikas
   "fiksētas maiņas": { en: "recorded changes", ru: "зафиксированные замены" },
   "vidējais intervāls": { en: "average interval", ru: "средний интервал" },
   "vidējais laiks": { en: "average time", ru: "среднее время" },

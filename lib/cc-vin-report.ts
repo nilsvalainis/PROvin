@@ -1,5 +1,6 @@
 /**
- * Starptautiskās vēstures avots (admin: „CC.VIN”) - strukturētie lauki, normalizācija un LV vārdnīcas.
+ * Starptautiskās vēstures avots (admin: „Izsoļu portālu arhīvs”, internal id: cc_vin) -
+ * strukturētie lauki, normalizācija un LV vārdnīcas.
  *
  * Klienta PDF šo avotu sauc tikai par „IZSOĻU PORTĀLU ARHĪVS”: ne sadaļā, ne tabulās, ne leģendā
  * nedrīkst parādīties ārējā pakalpojuma nosaukums. Specifikācijas šeit netiek dublētas - akcents ir
@@ -13,7 +14,7 @@ import { normalizeCcVinPhotoGroups, syncCcVinPhotoGroupsAndFlat } from "@/lib/cc
 import { convertAmountTextToEur, displayUsdAsEur } from "@/lib/currency-eur-convert";
 
 /** Admin bloka nosaukums (tikai admin panelis). */
-export const CC_VIN_ADMIN_LABEL = "CC.VIN";
+export const CC_VIN_ADMIN_LABEL = "Izsoļu portālu arhīvs";
 
 /** Klienta PDF sadaļas nosaukums - bez atsauces uz ārējo pakalpojumu. */
 export const CC_VIN_PDF_TITLE = "IZSOĻU PORTĀLU ARHĪVS";
@@ -177,7 +178,7 @@ export function ccVinSaleRowHasData(r: CcVinSaleRow | null | undefined): boolean
 }
 
 /**
- * Jau saglabāta CC.VIN summa → EUR attēlojums. Ja valūta jau ir eiro vai nav atpazīstama,
+ * Jau saglabāta Izsoļu portālu arhīva summa → EUR attēlojums. Ja valūta jau ir eiro vai nav atpazīstama,
  * atstāj tekstu kā ir. Vecākiem blokiem, kas vēl glabā „3 989 USD”, pārrēķins notiek šeit.
  */
 export function ccVinAmountToEurDisplay(raw: string): string {
@@ -212,7 +213,7 @@ export function ccVinBlockHasContent(b: CcVinBlockState | null | undefined): boo
   return Boolean(b.comments.trim() || b.reportDate.trim() || b.attentionMarks.trim());
 }
 
-/** Jebkurš aizpildīts CC.VIN lauks, izņemot komentāru (noklusējuma sagatave neskaitās). */
+/** Jebkurš aizpildīts Izsoļu portālu arhīva lauks (internal id: cc_vin), izņemot komentāru (noklusējuma sagatave neskaitās). */
 export function ccVinBlockHasOperatorData(b: CcVinBlockState | null | undefined): boolean {
   if (!b) return false;
   if (ccVinBlockHasContent({ ...b, comments: "" })) return true;

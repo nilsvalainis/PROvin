@@ -17,17 +17,19 @@ describe("admin system prompt sizes", () => {
 /**
  * Griesti (BMW plāns, 23.10.2026): izmērs pēc 1.-5. posma + ~150 zīmju rezerve.
  * Ja jauns noteikums tos pārsniedz, apzināti paceļ griestus un PR aprakstā norāda tokenu pieaugumu.
+ * 26.10.2026: technical_risks/inspection/summary/mileage/incidents/seller + vismaz 10-50,
+ * jo etiķete „Izsoļu portālu arhīvs” ir garāka par iepriekšējo īso zīmolu.
  */
 const PROMPT_CHAR_CEILINGS: Record<string, number> = {
   source_csdd: 31_950,
   source_dealer: 36_650,
-  technical_risks_v1: 89_250,
-  inspection: 81_750,
-  summary: 80_900,
-  mileage: 80_950,
-  incidents: 82_500,
+  technical_risks_v1: 89_270,
+  inspection: 81_770,
+  summary: 80_930,
+  mileage: 81_000,
+  incidents: 82_540,
   price: 29_450,
-  seller: 77_350,
+  seller: 77_360,
   oil_intervals: 34_850,
 };
 

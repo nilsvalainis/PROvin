@@ -5,6 +5,9 @@ import {
   applyIrissPdPatch,
   buildIrissPdPublicView,
   countIrissPdByStatus,
+  irissPdDeleteConfirm,
+  irissPdHiddenBlockLabels,
+  irissPdSubtitle,
   filterIrissPdRows,
   findIrissPdTakenConflict,
   formatIrissPdPrice,
@@ -255,6 +258,32 @@ describe("Piedāvājumi: klienta skats (nekad iekšējie dati)", () => {
     const facts = buildIrissPdPublicView(secretRec, "link", NOW).facts;
     expect(facts.map((f) => ({ ...f, value: sp(f.value) }))).toContainEqual({ label: "Nobraukums", value: "118 400 km" });
     expect(facts).toContainEqual({ label: "VIN", value: "WF0YXXTTGYKA34521" });
+    expect(irissPdSubtitle(facts.map((f) => ({ ...f, value: sp(f.value) })))).toBe("2019 · 118 400 km");
+  });
+
+  it("tukša krāsas karte un tukši Auto1 bloki nav klienta skatā", () => {
+    const emptyPaint: IrissPdAuto1Blocks = {
+      paint: { zones: [{ id: "front", readings: [], warning: false }, { id: "roof", readings: [], warning: false }, { id: "rear", readings: [], warning: false }, { id: "left", readings: [], warning: false }, { id: "right", readings: [], warning: false }], unassigned: [] },
+      tech: [],
+      equipment: [],
+      service: [],
+      inspection: [],
+      damage: [],
+      vinData: [],
+    };
+    const view = buildIrissPdPublicView(rec({ auto1: emptyPaint, status: "sent", validUntil: "2026-11-02" }), "link", NOW);
+    expect(view.blocks).toEqual({});
+    expect(view.auto1?.paint).toBeNull();
+  });
+
+  it("paslēpto bloku etiķetes tikai ja datos ir saturs", () => {
+    expect(irissPdHiddenBlockLabels(secretRec, "link")).toEqual(["Bojājumu kopsavilkums"]);
+    expect(irissPdHiddenBlockLabels(rec({ auto1: null }), "link")).toEqual([]);
+  });
+
+  it("dzēšanas apstiprinājums nosauc numuru", () => {
+    expect(irissPdDeleteConfirm("PD-0217")).toContain("PD-0217");
+    expect(irissPdDeleteConfirm("PD-0217")).toContain("nevar atsaukt");
   });
 });
 

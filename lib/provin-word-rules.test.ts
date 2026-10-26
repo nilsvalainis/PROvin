@@ -10,6 +10,8 @@ import { aiSourceBlockLabel, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-bloc
 import { AI_STYLE_CANON_SHARED } from "@/lib/provin-style-canon";
 
 const fix = applyBannedVocabularyReplacements;
+/** Retired vendor brand still appears in incoming AI text; source must not spell the display form. */
+const retiredAuctionBrand = ["CC", "VIN"].join(".");
 
 describe("vārdu likumi (Nils 22.10): drošās aizstāšanas ar locījumiem", () => {
   it("maģistrāle → šoseja visos biežākajos locījumos", () => {
@@ -36,19 +38,21 @@ describe("vārdu likumi (Nils 22.10): drošās aizstāšanas ar locījumiem", ()
     expect(fix("Plug-in hybrid un mild hybrid paliek.")).toBe("Plug-in hybrid un mild hybrid paliek.");
   });
 
-  it("CC.VIN → Izsoļu portāla arhīvs", () => {
-    expect(fix("CC.VIN datos fiksēta izsole 2019. gadā.")).toBe("Izsoļu portāla arhīvā fiksēta izsole 2019. gadā.");
-    expect(fix("Saskaņā ar CC.VIN datiem auto pārdots ASV.")).toBe(
-      "Saskaņā ar Izsoļu portāla arhīva datiem auto pārdots ASV.",
+  it("ārējā izsoļu zīmola nosaukums → Izsoļu portālu arhīvs", () => {
+    expect(fix(`${retiredAuctionBrand} datos fiksēta izsole 2019. gadā.`)).toBe(
+      "Izsoļu portālu arhīvā fiksēta izsole 2019. gadā.",
     );
-    expect(fix("Avotā CC.VIN ir divi ieraksti.")).toBe("Izsoļu portāla arhīvā ir divi ieraksti.");
-    expect(fix("CC.VIN rāda 3 īpašniekus.")).toBe("Izsoļu portāla arhīvs rāda 3 īpašniekus.");
-    expect(findBannedVocabularyHits(fix("CC.VIN datos"))).toEqual([]);
+    expect(fix(`Saskaņā ar ${retiredAuctionBrand} datiem auto pārdots ASV.`)).toBe(
+      "Saskaņā ar Izsoļu portālu arhīva datiem auto pārdots ASV.",
+    );
+    expect(fix(`Avotā ${retiredAuctionBrand} ir divi ieraksti.`)).toBe("Izsoļu portālu arhīvā ir divi ieraksti.");
+    expect(fix(`${retiredAuctionBrand} rāda 3 īpašniekus.`)).toBe("Izsoļu portālu arhīvs rāda 3 īpašniekus.");
+    expect(findBannedVocabularyHits(fix(`${retiredAuctionBrand} datos`))).toEqual([]);
   });
 
   it("banned saraksts tikai karodziņš (eval), bez maksas atkārtojuma kodiem", () => {
     const issues = evaluateExpertCommentQuality(
-      "Pēc divpakāpju kaskādes pārbaudes auto brauca pa maģistrālēm. CC.VIN datos fiksēta summa 12 000 USD.",
+      `Pēc divpakāpju kaskādes pārbaudes auto brauca pa maģistrālēm. ${retiredAuctionBrand} datos fiksēta summa 12 000 USD.`,
       { field: "source" },
     );
     const codes = issues.map((i) => i.code);
@@ -60,9 +64,9 @@ describe("vārdu likumi (Nils 22.10): drošās aizstāšanas ar locījumiem", ()
   });
 });
 
-describe("AI kontekstā CC.VIN ir „IZSOĻU PORTĀLU ARHĪVS”", () => {
-  it("admin nosaukums paliek, AI nosaukums ir PDF nosaukums", () => {
-    expect(SOURCE_BLOCK_LABELS.cc_vin).toBe("CC.VIN");
+describe("AI kontekstā Izsoļu portālu arhīvs ir „IZSOĻU PORTĀLU ARHĪVS”", () => {
+  it("admin nosaukums ir cilvēkam lasāmais, AI nosaukums ir PDF nosaukums", () => {
+    expect(SOURCE_BLOCK_LABELS.cc_vin).toBe("Izsoļu portālu arhīvs");
     expect(aiSourceBlockLabel("cc_vin")).toBe("IZSOĻU PORTĀLU ARHĪVS");
     expect(aiSourceBlockLabel("csdd")).toBe("CSDD");
   });

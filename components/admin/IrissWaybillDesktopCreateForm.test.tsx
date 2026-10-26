@@ -70,7 +70,8 @@ describe("pavadzīmes izveides forma datorā", () => {
     expect(manual).toContain("No saraksta");
     expect(manual).toContain("Ar roku");
     expect(manualHtml).toContain('aria-label="Marka, modelis"');
-    expect(manualHtml).toContain('aria-label="VIN"');
+    expect(manualHtml).not.toContain('aria-label="VIN"');
+    expect(manualHtml).not.toContain('placeholder="17 zīmes"');
     expect(manualHtml).toMatch(/aria-pressed="true"[^>]*>Ar roku/);
   });
 });

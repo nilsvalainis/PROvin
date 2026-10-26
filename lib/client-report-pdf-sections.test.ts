@@ -595,7 +595,7 @@ describe("Vēstures kopsavilkums", () => {
     expect(listed[1]?.priceDelta).toBe(-500);
   });
 
-  it("rāda CC.VIN pārdošanas summu kopsavilkuma joslā", () => {
+  it("rāda Izsoļu portālu arhīva pārdošanas summu kopsavilkuma joslā", () => {
     const ccVin = emptyCcVinBlock();
     ccVin.sales = [
       {
@@ -1563,7 +1563,7 @@ describe("Vēstures kopsavilkums", () => {
             comments: "",
           },
           {
-            title: "CC VIN",
+            title: SOURCE_BLOCK_LABELS.cc_vin,
             mileageRows: [{ date: "12.05.2026", odometer: "303616", country: "Vācija" }],
             incidentRows: [],
             comments: "",
