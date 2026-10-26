@@ -107,6 +107,12 @@ export function isWithinSarunaWindow(iso: string, nowMs: number): boolean {
   return Number.isFinite(at) && at >= nowMs - SARUNA_VISIBLE_WINDOW_MS;
 }
 
+type TimedSarunaItem = Exclude<SarunaFeedItem, { kind: "day" }>;
+
+function isVisibleTimedItem(item: SarunaFeedItem, nowMs: number): item is TimedSarunaItem {
+  return item.kind !== "day" && isWithinSarunaWindow(item.at, nowMs);
+}
+
 function sarunaKindRank(kind: SarunaFeedItem["kind"]): number {
   if (kind === "system") return 0;
   if (kind === "message") return 1;
@@ -120,7 +126,7 @@ export function prepareSarunaFeed(
   items: readonly SarunaFeedItem[],
   nowMs = Date.now(),
 ): SarunaFeedItem[] {
-  const timed = items.filter((item) => item.kind !== "day" && isWithinSarunaWindow(item.at, nowMs));
+  const timed = items.filter((item): item is TimedSarunaItem => isVisibleTimedItem(item, nowMs));
   timed.sort((a, b) => {
     const ta = Date.parse(sarunaItemTime(a)) || 0;
     const tb = Date.parse(sarunaItemTime(b)) || 0;
