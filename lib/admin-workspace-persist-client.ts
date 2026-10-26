@@ -70,6 +70,41 @@ const lastOkRevisionBySession = new Map<string, number>();
  */
 export const OWN_WRITE_REVISION_LAG = 3;
 
+/**
+ * Pēdējais zināmais servera workspace stāvoklis (kontrolsumma + revīzija) pa sessionId.
+ * FABLE v3: tikai atverot pasūtījumu, hidratācijas efekti 2-3x sūtīja PATCH ar NEMAINĪTU saturu - revīzija auga
+ * (25→27, tā pati kontrolsumma), citas cilnes saņēma «stale_revision». Nemainītu saturu vairs nesūta.
+ */
+const knownServerWorkspaceBySession = new Map<string, { checksum: string; revision: number }>();
+
+export function noteKnownServerWorkspace(sessionId: string, checksum: string | null | undefined, revision: number): void {
+  const c = (checksum ?? "").trim();
+  if (!c) return;
+  knownServerWorkspaceBySession.set(sessionId, { checksum: c, revision: Math.max(0, Math.floor(revision)) });
+}
+
+/** SSR `serverWorkspaceJson` → servera kontrolsumma (vai null). */
+export function serverWorkspaceChecksumFromJson(json: string | null | undefined): string | null {
+  if (!json) return null;
+  try {
+    const o = JSON.parse(json) as { workspaceChecksum?: unknown };
+    return typeof o.workspaceChecksum === "string" && o.workspaceChecksum.trim() ? o.workspaceChecksum : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearKnownServerWorkspace(sessionId?: string): void {
+  if (sessionId) knownServerWorkspaceBySession.delete(sessionId);
+  else knownServerWorkspaceBySession.clear();
+}
+
+/** Nemainīts saturs pret pēdējo zināmo servera stāvokli - PATCH nav vajadzīgs. */
+export function isUnchangedWorkspaceWrite(sessionId: string, checksum: string): boolean {
+  const known = knownServerWorkspaceBySession.get(sessionId);
+  return Boolean(known && checksum && known.checksum === checksum);
+}
+
 export function bumpWorkspaceSaveGeneration(): number {
   globalSaveGeneration += 1;
   return globalSaveGeneration;
@@ -149,6 +184,7 @@ export async function fetchCanonicalWorkspace(sessionId: string): Promise<Canoni
     durable?: boolean;
   };
   const body = data.workspace ? workspacePersistFromDraftWorkspace(data.workspace) : null;
+  noteKnownServerWorkspace(sessionId, data.workspaceChecksum, data.workspaceRevision ?? 0);
   workspaceDebugLog("server_response", {
     sessionId,
     source: "server_fetch",
@@ -183,6 +219,25 @@ async function patchWorkspaceOnce(opts: PersistWorkspaceStateOptions): Promise<P
   );
   const expectedChecksum = stableWorkspaceChecksum(draftBody);
   const expectedFill = workspaceHydrationFillScore(merged);
+  if (isUnchangedWorkspaceWrite(opts.sessionId, expectedChecksum)) {
+    const known = knownServerWorkspaceBySession.get(opts.sessionId)!;
+    workspaceDebugLog("persist_ok", {
+      sessionId: opts.sessionId,
+      source: "client_patch",
+      revision: known.revision,
+      checksum: expectedChecksum,
+      extra: { context: `${opts.logContext ?? "client"}:unchanged_skip`, generation: gen },
+    });
+    return {
+      ok: true,
+      workspaceSavedAt: new Date().toISOString(),
+      generation: gen,
+      durable: true,
+      storageBackend: "unchanged",
+      workspaceRevision: known.revision,
+      workspaceChecksum: expectedChecksum,
+    };
+  }
 
   workspaceDebugLog("persist_start", {
     sessionId: opts.sessionId,
@@ -253,13 +308,15 @@ async function patchWorkspaceOnce(opts: PersistWorkspaceStateOptions): Promise<P
     extra: { context: opts.logContext, generation: gen },
   });
 
+  const savedRevision = data.workspaceRevision ?? (opts.expectedWorkspaceRevision ?? 0) + 1;
+  noteKnownServerWorkspace(opts.sessionId, data.workspaceChecksum ?? expectedChecksum, savedRevision);
   return {
     ok: true,
     workspaceSavedAt: typeof data.updatedAt === "string" ? data.updatedAt : new Date().toISOString(),
     generation: gen,
     durable: data.durable ?? true,
     storageBackend: data.storageBackend ?? "unknown",
-    workspaceRevision: data.workspaceRevision ?? (opts.expectedWorkspaceRevision ?? 0) + 1,
+    workspaceRevision: savedRevision,
     workspaceChecksum: data.workspaceChecksum ?? expectedChecksum,
     writeLatencyMs: data.writeLatencyMs,
     verifyLatencyMs: data.verifyLatencyMs,

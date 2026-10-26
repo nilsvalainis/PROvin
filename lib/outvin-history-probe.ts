@@ -262,8 +262,8 @@ export async function executeOutvinB2bPurchase(
   if (!vehicleOrder.ok) {
     const is402 = vehicleOrder.httpStatus === 402 || vehicleOrder.error === "payment_required";
     const purchaseMessage = is402
-      ? "Outvin: neizdevās reģistrēt transportu (GET /vehicle) — HTTP 402. Pārbaudi kredītus."
-      : `Kļūda iegādē: transporta pasūtījums — ${vehicleOrder.error ?? `HTTP ${vehicleOrder.httpStatus}`}`;
+      ? "Outvin: neizdevās reģistrēt transportu (GET /vehicle) - HTTP 402. Pārbaudi kredītus."
+      : `Kļūda iegādē: transporta pasūtījums - ${vehicleOrder.error ?? `HTTP ${vehicleOrder.httpStatus}`}`;
     return {
       bundle: withVehicle,
       results: [],

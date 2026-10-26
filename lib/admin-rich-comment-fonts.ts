@@ -56,12 +56,12 @@ export type AdminRichCommentColorOption = {
 /** Teksta krāsas — visas hex, lai PDF sanitizers tās pieņem bez izņēmumiem. */
 export const ADMIN_RICH_COMMENT_TEXT_COLOR_OPTIONS: readonly AdminRichCommentColorOption[] = [
   { id: "default", label: "Pamata (melns)", css: "#111827" },
-  { id: "red", label: "Sarkans — risks", css: "#ef4444" },
-  { id: "green", label: "Zaļš — kārtībā", css: "#22c55e" },
-  { id: "amber", label: "Dzintara — brīdinājums", css: "#d97706" },
-  { id: "blue", label: "Zils — informācija", css: "#2563eb" },
-  { id: "violet", label: "Violets — piezīme", css: "#7c3aed" },
-  { id: "muted", label: "Pelēks — sekundāri", css: "#64748b" },
+  { id: "red", label: "Sarkans - risks", css: "#ef4444" },
+  { id: "green", label: "Zaļš - kārtībā", css: "#22c55e" },
+  { id: "amber", label: "Dzintara - brīdinājums", css: "#d97706" },
+  { id: "blue", label: "Zils - informācija", css: "#2563eb" },
+  { id: "violet", label: "Violets - piezīme", css: "#7c3aed" },
+  { id: "muted", label: "Pelēks - sekundāri", css: "#64748b" },
 ] as const;
 
 /** Izcēluma (marķiera) krāsas — gaišas, lai melns teksts paliek salasāms arī drukā. */
