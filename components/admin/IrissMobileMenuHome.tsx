@@ -45,16 +45,15 @@ function useRefreshTick(): number {
 }
 
 function useHomeLogisticsPins(enabled: boolean, refreshKey: number): IrissHomeLogisticsPin[] {
-  const [pins, setPins] = useState(() => irissHomeLogisticsPins(emptyCargoPlan(), []));
+  const [pins, setPins] = useState(() => irissHomeLogisticsPins(emptyCargoPlan()));
   useEffect(() => {
     if (!enabled) return;
     let cancelled = false;
     void fetch("/api/admin/iriss-logistics/cargo-plan", { credentials: "include", cache: "no-store" })
       .then(async (res) => {
-        const json = (await res.json().catch(() => null)) as { plan?: unknown; orders?: unknown } | null;
+        const json = (await res.json().catch(() => null)) as { plan?: unknown } | null;
         if (cancelled || !res.ok || !json) return;
-        const orders = Array.isArray(json.orders) ? json.orders : [];
-        setPins(irissHomeLogisticsPins(normalizeCargoPlan(json.plan), orders as { id: string }[]));
+        setPins(irissHomeLogisticsPins(normalizeCargoPlan(json.plan)));
       })
       .catch(() => undefined);
     return () => {

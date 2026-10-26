@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { IrissWaybillCarPicker, IrissWaybillMobileForm, WaybillDismissDialog, WaybillLiveRow } from "@/components/admin/IrissWaybillMobileForm";
+import {
+  IrissWaybillAutoEntry,
+  IrissWaybillCarPicker,
+  IrissWaybillMobileForm,
+  WaybillDismissDialog,
+  WaybillLiveRow,
+} from "@/components/admin/IrissWaybillMobileForm";
+import {
+  applyWaybillAutoChoice,
+  initialWaybillMobileForm,
+  waybillShowsManualFields,
+  waybillShowsTradeList,
+} from "@/lib/iriss-waybill-mobile-form";
 import { renderHtml, renderText } from "@/lib/test-render";
 
 const plates = [
@@ -24,17 +36,42 @@ function form() {
   );
 }
 
+function autoEntry(choice: "none" | "list" | "manual") {
+  const state = applyWaybillAutoChoice(initialWaybillMobileForm("B193-7"), choice);
+  return (
+    <IrissWaybillAutoEntry
+      choice={state.autoChoice}
+      car={state.car}
+      manualBrandModel={state.manualBrandModel}
+      manualVin={state.manualVin}
+      isB192={false}
+      b192Empty={false}
+      showManual={waybillShowsManualFields(state)}
+      showList={waybillShowsTradeList(state)}
+      onChoose={() => undefined}
+      onOpenList={() => undefined}
+      onClearCar={() => undefined}
+      onManualBrandModel={() => undefined}
+      onManualVin={() => undefined}
+    />
+  );
+}
+
 describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
-  it("rāda numurus, auto, sākuma adresi (Tukums, Rīgas iela 75), laiku un komentāru; galamērķa un VIN nav", () => {
+  it("rāda numurus, 2 auto izvēles (No saraksta / Ar roku), sākuma adresi, laiku un komentāru; galamērķa nav", () => {
     const text = renderText(form());
-    for (const t of ["Numurs", "B193-7", "aizņemts", "brīvs", "Auto", "Izvēlies auto", "Sākuma adrese", "Tukums", "Cita adrese", "Rīgas iela 75", "Laiks", "1 h", "12 h", "48 h", "Cits", "derīga līdz", "Komentārs", "Izveidot pavadzīmi"]) {
+    for (const t of ["Numurs", "B193-7", "aizņemts", "brīvs", "Auto", "No saraksta", "pieņemts tirdzniecībā", "Ar roku", "Sākuma adrese", "Tukums", "Cita adrese", "Rīgas iela 75", "Laiks", "1 h", "12 h", "48 h", "Cits", "derīga līdz", "Komentārs", "Izveidot pavadzīmi"]) {
       expect(text).toContain(t);
     }
     expect(text).not.toContain("Galamērķis");
     expect(text).not.toContain("Pievienot PDF");
+    // Noklusējums: nepiespiež sarakstu un nerāda manuālos laukus (teksts "Izvēlies auto" paliek "Kā tas strādā").
     const html = renderHtml(form());
+    expect(html).not.toContain('placeholder="Marka, modelis"');
     expect(html).toContain('placeholder="193 uz BMW 330"');
-    expect(html).not.toMatch(/placeholder="VIN|17 zīmes/);
+    expect(html).not.toContain('aria-label="VIN"');
+    expect(html).not.toContain('placeholder="17 zīmes"');
+    expect(html).not.toContain("tirdzniecībā pieņemtie");
     // Laika izvēles TIEŠI 1 h, 12 h, 48 h, Cits (24 h vairs nav); noklusējums 12 h; brīvais lauks tikai pēc "Cits".
     const hourButtons = [...html.matchAll(/aria-pressed="(true|false)"[^>]*>(\d+ h|Cits)</g)].map((m) => m[2]);
     expect(hourButtons).toEqual(["1 h", "12 h", "48 h", "Cits"]);
@@ -132,6 +169,31 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
       />,
     );
     expect(withArchive).toContain("Visas pavadzīmes Arhīvā ›");
+  });
+
+  it("Auto ievade: noklusējumā abi ceļi; 'Ar roku' uzreiz rāda marku, modeli un VIN", () => {
+    const none = renderText(autoEntry("none"));
+    expect(none).toContain("No saraksta");
+    expect(none).toContain("Ar roku");
+    expect(none).not.toContain("Marka, modelis");
+    expect(none).not.toContain("Izvēlies auto");
+    expect(renderHtml(autoEntry("none"))).not.toContain('aria-label="VIN"');
+
+    const manualHtml = renderHtml(autoEntry("manual"));
+    const manualText = renderText(autoEntry("manual"));
+    expect(manualText).toContain("Ar roku");
+    expect(manualHtml).toContain('aria-label="Marka, modelis"');
+    expect(manualHtml).toContain('placeholder="Marka, modelis"');
+    expect(manualHtml).toContain('aria-label="VIN"');
+    expect(manualHtml).toContain('placeholder="17 zīmes"');
+    expect(manualText).not.toContain("Izvēlies auto");
+    expect(manualHtml).toMatch(/aria-pressed="true"[^>]*>Ar roku/);
+
+    const list = renderText(autoEntry("list"));
+    expect(list).toContain("Izvēlies auto");
+    expect(list).toContain("tirdzniecībā pieņemtie");
+    expect(renderHtml(autoEntry("list"))).not.toContain('aria-label="VIN"');
+    expect(renderHtml(autoEntry("list"))).toMatch(/aria-pressed="true"[^>]*>No saraksta/);
   });
 
   it("B192-7 (Dzintarzeme Auto) saraksts: ownerBadge pārraksta 'Pieņemts' ar 'DZA' visām rindām", () => {

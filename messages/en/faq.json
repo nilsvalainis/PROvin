@@ -17,7 +17,17 @@
       {
         "id": "mini-vs-audits",
         "q": "Which audit should I choose: PROVIN MINI or PROVIN AUDITS?",
-        "a": "PROVIN MINI (€39.99) is intended for cars that have already been used in Latvia for a longer time. It is a consultation and a check of local registers: CSDD data, insurer data, technical inspection (TA) history, listing analysis and in-person viewing tips. MINI does not include paid databases, foreign registers, dealer or auction data.\n\nPROVIN AUDITS (€99.99) is a full investigation for cars imported from abroad. It includes the full MINI package plus paid international databases (carVertical, autoDNA, Cebia and others), origin-country registers, official dealer system data and European auction photo archives, so you can see the real condition and mileage before repairs and import."
+        "a": "PROVIN MINI (€39.99) is intended for cars that have already been used in Latvia for a longer time. It is a consultation and a check of local registers: CSDD data, insurer data, technical inspection (TA) history, listing analysis and in-person viewing tips. MINI does not include paid databases, foreign registers, dealer or auction data.\n\nPROVIN AUDITS (€99.99) is an in-depth investigation for cars imported from abroad. It includes the full MINI package plus at least 2, usually 3 paid history checks (for example carVertical, autoDNA or Cebia), origin-country registers and official dealer system data where available for the specific car, and European auction photo archives, so you can see the real condition and mileage before repairs and import."
+      },
+      {
+        "id": "audits-paid-reports",
+        "q": "How many paid history checks are included in PROVIN AUDITS?",
+        "a": "Every PROVIN AUDITS includes at least 2, usually 3 paid history checks. A typical set is carVertical, autoDNA and official dealer service data. Dealer data exists only for certain manufacturers, so it is often missing. If a source has no data on your car, we look for records elsewhere, for example Carfax or an origin-country register. We choose the sources based on the car's origin and make to get the most useful data."
+      },
+      {
+        "id": "extra-reports",
+        "q": "Can I order additional reports, for example for a car from Italy, the UK or Japan?",
+        "a": "Yes. In some countries (for example Italy, Austria, the UK, Japan, Korea or the UAE) the most useful data is only in specific paid registers. If that is your case, we will tell you which additional report we recommend and what it costs. It is optional and never ordered without your consent and payment; the audit is complete without it too."
       },
       {
         "id": "dealer-data",

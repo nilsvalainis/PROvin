@@ -17,7 +17,17 @@
       {
         "id": "mini-vs-audits",
         "q": "Kuru auditu izvēlēties: PROVIN MINI vai PROVIN AUDITS?",
-        "a": "PROVIN MINI (39,99 €) ir paredzēts automašīnām, kas jau ilgāku laiku tiek ekspluatētas Latvijā. Tā ir konsultācija un vietējo reģistru pārbaude: CSDD dati, apdrošinātāju dati, tehnisko apskašu (TA) vēsture, sludinājuma analīze un ieteikumi klātienes apskatei. MINI neietver maksas datubāzes, ārvalstu reģistrus, dīleru un izsoļu datus.\n\nPROVIN AUDITS (99,99 €) ir pilna izpēte no ārvalstīm ievestiem auto. Tajā ietilpst visa MINI pakete + maksas starptautiskās datubāzes (carVertical, autoDNA, Cebia u.c.), izcelsmes valsts reģistri, oficiālo dīleru sistēmas dati un Eiropas izsoļu foto arhīvi, ļaujot atklāt reālo auto stāvokli un nobraukumu pirms remonta un importa."
+        "a": "PROVIN MINI (39,99 €) ir paredzēts automašīnām, kas jau ilgāku laiku tiek ekspluatētas Latvijā. Tā ir konsultācija un vietējo reģistru pārbaude: CSDD dati, apdrošinātāju dati, tehnisko apskašu (TA) vēsture, sludinājuma analīze un ieteikumi klātienes apskatei. MINI neietver maksas datubāzes, ārvalstu reģistrus, dīleru un izsoļu datus.\n\nPROVIN AUDITS (99,99 €) ir padziļināta izpēte no ārvalstīm ievestiem auto. Tajā ietilpst visa MINI pakete + vismaz 2, parasti 3 maksas vēstures pārbaudes (piemēram, carVertical, autoDNA vai Cebia), izcelsmes valsts reģistri un oficiālo dīleru sistēmas dati, ja tie konkrētajam auto ir pieejami, kā arī Eiropas izsoļu foto arhīvi, ļaujot atklāt reālo auto stāvokli un nobraukumu pirms remonta un importa."
+      },
+      {
+        "id": "audits-paid-reports",
+        "q": "Cik maksas vēstures pārbaužu ir iekļautas PROVIN AUDITS?",
+        "a": "Katrā PROVIN AUDITS ir vismaz 2, parasti 3 maksas vēstures pārbaudes. Tipisks komplekts ir carVertical, autoDNA un oficiālā dīlera servisa dati. Dīlera dati pieejami tikai noteiktiem ražotājiem, tāpēc bieži to nav. Ja kādā avotā par tavu auto nav datu, meklējam ierakstus citur, piemēram, Carfax vai izcelsmes valsts reģistrā. Avotus izvēlamies paši pēc auto izcelsmes un markas, lai iegūtu noderīgākos datus."
+      },
+      {
+        "id": "extra-reports",
+        "q": "Vai var pasūtīt papildu atskaites, piemēram, auto no Itālijas, UK vai Japānas?",
+        "a": "Jā. Dažās valstīs (piemēram, Itālijā, Austrijā, Apvienotajā Karalistē, Japānā, Korejā vai AAE) noderīgākie dati ir tikai specifiskos maksas reģistros. Ja tas ir tavs gadījums, pateiksim, kuru papildu atskaiti iesakām un cik tā maksā. Tā nav obligāta un netiek pasūtīta bez tavas piekrišanas un apmaksas; audits būs pilnvērtīgs arī bez tās."
       },
       {
         "id": "dealer-data",

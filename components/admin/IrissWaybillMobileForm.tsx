@@ -17,6 +17,7 @@ import {
   WAYBILL_MOBILE_CURRENT_LIMIT,
   WAYBILL_MOBILE_HOUR_PRESETS,
   WAYBILL_TUKUMS_STREET,
+  applyWaybillAutoChoice,
   buildWaybillMobilePayload,
   firstFreeWaybillPlate,
   initialWaybillMobileForm,
@@ -25,6 +26,9 @@ import {
   waybillMobileRepresentative,
   waybillMobileRequestRows,
   waybillMobileTradeAct,
+  waybillShowsManualFields,
+  waybillShowsTradeList,
+  type WaybillAutoChoice,
   type WaybillMobileCar,
   type WaybillMobileFormState,
   type WaybillMobilePayload,
@@ -106,6 +110,7 @@ export function IrissWaybillMobileForm({
       plateTouched: Boolean(draft.plate) || prev.plateTouched,
       car: draft.brandModel ? { id: known?.id ?? "", brandModel: draft.brandModel, vin: draft.vin, accepted: known?.accepted === true, owner: known?.owner } : prev.car,
       manual: false,
+      autoChoice: draft.brandModel ? "list" : prev.autoChoice,
     }));
     // tradeCars apzināti nav atkarībās: melnrakstu piemēro vienreiz.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -127,7 +132,10 @@ export function IrissWaybillMobileForm({
   const dzaCars = useMemo(() => (tradeCars ? dzintarzemeAcceptedCars(tradeCars) : null), [tradeCars]);
   const pickerCars = isB192 ? dzaCars : tradeCars;
   // Tukšs stāvoklis: nav neviena Dzintarzemes auto sarakstā - uzreiz rāda paskaidrojumu + pogu, nevis tukšu izvēlni.
-  const b192Empty = isB192 && !form.manual && !form.car && dzaCars !== null && dzaCars.length === 0;
+  const showManual = waybillShowsManualFields(form);
+  const showList = waybillShowsTradeList(form);
+  // Tukšs stāvoklis tikai pēc "No saraksta": nav neviena Dzintarzemes auto.
+  const b192Empty = isB192 && showList && !form.car && dzaCars !== null && dzaCars.length === 0;
   const reps = waybillRepresentativeChoices({ owner: form.car?.owner, plate: shownPlate });
   const rep = waybillMobileRepresentative({ representative: form.representative, plate: shownPlate, car: form.car });
   const rows = useMemo(
@@ -152,10 +160,27 @@ export function IrissWaybillMobileForm({
     if (ok) setForm((prev) => ({ ...prev, comment: "" }));
   }
 
+  function choosePath(choice: Exclude<WaybillAutoChoice, "none">) {
+    setForm((prev) => applyWaybillAutoChoice(prev, choice));
+    setOtherRep(false);
+    setLocalError(null);
+    if (choice === "list") {
+      const empty = isB192 && dzaCars !== null && dzaCars.length === 0;
+      if (!empty) {
+        setPickerOpen(true);
+        onPickerOpen?.();
+      } else {
+        setPickerOpen(false);
+      }
+    } else {
+      setPickerOpen(false);
+    }
+  }
+
   function chooseCar(car: WaybillMobileCar | "manual") {
-    if (car === "manual") patch({ manual: true, car: null });
+    if (car === "manual") setForm((prev) => applyWaybillAutoChoice(prev, "manual"));
     // Jauns auto: pārstāvis atkal pēc šī auto firmas (lietotājs var nomainīt).
-    else patch({ manual: false, car, manualBrandModel: "", representative: "" });
+    else setForm((prev) => ({ ...applyWaybillAutoChoice(prev, "list"), car, representative: "" }));
     setOtherRep(false);
     setPickerOpen(false);
     setLocalError(null);
@@ -199,89 +224,24 @@ export function IrissWaybillMobileForm({
             <span className={styles.label}>Auto</span>
             {isB192 ? <span className={styles.ownerTag}>Dzintarzeme Auto</span> : null}
           </div>
-          {form.manual ? (
-            <div className="flex items-center gap-2">
-              <input
-                className={styles.input}
-                value={form.manualBrandModel}
-                onChange={(e) => patch({ manualBrandModel: e.target.value })}
-                maxLength={120}
-                placeholder="Marka, modelis"
-                aria-label="Marka, modelis"
-                autoComplete="off"
-              />
-              <button
-                type="button"
-                className={`${styles.pick} shrink-0 px-3`}
-                aria-label="Izvēlēties no saraksta"
-                onClick={() => {
-                  setPickerOpen(true);
-                  onPickerOpen?.();
-                }}
-              >
-                <ChevronDown className="h-4 w-4" aria-hidden />
-              </button>
-            </div>
-          ) : b192Empty ? (
-            <div className={styles.carEmpty}>
-              <span className={styles.carEmptyIcon} aria-hidden>
-                <Car className="h-5 w-5" aria-hidden />
-              </span>
-              <h4>Nav Dzintarzemes auto sarakstā</h4>
-              <p>
-                Šobrīd nav tirdzniecībā pieņemts neviens auto SIA Dzintarzeme Auto vārdā. Tiklīdz Aivars pieņem - tas parādīsies šeit
-                automātiski.
-              </p>
-              <button type="button" className={styles.manualBtn} onClick={() => chooseCar("manual")}>
-                Rakstīt auto ar roku
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className={styles.select}
-                onClick={() => {
-                  setPickerOpen(true);
-                  onPickerOpen?.();
-                }}
-              >
-                <span className={styles.selectMain}>
-                  {form.car ? (
-                    <>
-                      <span className={styles.selectTitle}>{form.car.brandModel || form.car.vin}</span>
-                      {form.car.vin ? <span className={`${styles.selectSub} ${styles.mono}`}>{form.car.vin}</span> : null}
-                      {form.car.accepted ? <span className={`${styles.tag} ${styles.tagOk}`}>Pieņemts tirdzniecībā</span> : null}
-                    </>
-                  ) : (
-                    <>
-                      <span className={`${styles.selectTitle} ${styles.placeholder}`}>Izvēlies auto</span>
-                      <span className={styles.selectSub}>vai raksti komentārā</span>
-                    </>
-                  )}
-                </span>
-                <ChevronDown className={`h-[18px] w-[18px] ${styles.chev}`} aria-hidden />
-              </button>
-              {form.car ? (
-                <button
-                  type="button"
-                  aria-label="Notīrīt auto"
-                  className={`${styles.pick} shrink-0 px-3`}
-                  onClick={() => patch({ car: null })}
-                >
-                  <X className="h-4 w-4" aria-hidden />
-                </button>
-              ) : null}
-            </div>
-          )}
-          {isB192 && !form.manual && !b192Empty ? (
-            <p className={styles.help}>
-              Rādīti tikai auto, kas <b>pieņemti</b> tirdzniecībā SIA Dzintarzeme Auto vārdā. SIA ĪRISS auto šim numuram netiek rādīti.
-            </p>
-          ) : null}
-          {(form.manual && form.manualBrandModel.trim()) || (form.car && !form.car.accepted) ? (
-            <span className={styles.tag}>Nav tirdzniecībā pieņemto auto sarakstā</span>
-          ) : null}
+          <IrissWaybillAutoEntry
+            choice={form.autoChoice}
+            car={form.car}
+            manualBrandModel={form.manualBrandModel}
+            manualVin={form.manualVin}
+            isB192={isB192}
+            b192Empty={b192Empty}
+            showManual={showManual}
+            showList={showList}
+            onChoose={choosePath}
+            onOpenList={() => {
+              setPickerOpen(true);
+              onPickerOpen?.();
+            }}
+            onClearCar={() => patch({ car: null })}
+            onManualBrandModel={(value) => patch({ manualBrandModel: value })}
+            onManualVin={(value) => patch({ manualVin: value })}
+          />
         </div>
 
         {tradeAct ? (
@@ -775,6 +735,137 @@ export function IrissWaybillRequestArchive() {
         ))}
       </div>
     </div>
+  );
+}
+
+/**
+ * Auto ievade: uzreiz 2 izvēles. Noklusējumā neviens ceļš nav piespiests.
+ * "Ar roku" rāda marku, modeli un VIN turpat formā (bez saraksta scroll).
+ */
+export function IrissWaybillAutoEntry({
+  choice,
+  car,
+  manualBrandModel,
+  manualVin,
+  isB192,
+  b192Empty,
+  showManual,
+  showList,
+  onChoose,
+  onOpenList,
+  onClearCar,
+  onManualBrandModel,
+  onManualVin,
+}: {
+  choice: WaybillAutoChoice;
+  car: WaybillMobileCar | null;
+  manualBrandModel: string;
+  manualVin: string;
+  isB192: boolean;
+  b192Empty: boolean;
+  showManual: boolean;
+  showList: boolean;
+  onChoose: (choice: Exclude<WaybillAutoChoice, "none">) => void;
+  onOpenList: () => void;
+  onClearCar: () => void;
+  onManualBrandModel: (value: string) => void;
+  onManualVin: (value: string) => void;
+}) {
+  return (
+    <>
+      <div className={styles.seg2} role="group" aria-label="Auto ievade">
+        <button
+          type="button"
+          aria-pressed={choice === "list"}
+          className={`${styles.pick} ${choice === "list" ? styles.on : ""}`}
+          onClick={() => onChoose("list")}
+        >
+          No saraksta
+          <small>pieņemts tirdzniecībā</small>
+        </button>
+        <button
+          type="button"
+          aria-pressed={choice === "manual"}
+          className={`${styles.pick} ${choice === "manual" ? styles.on : ""}`}
+          onClick={() => onChoose("manual")}
+        >
+          Ar roku
+          <small>marka, modelis, VIN</small>
+        </button>
+      </div>
+      {showManual ? (
+        <div className={styles.sub}>
+          <input
+            className={styles.input}
+            value={manualBrandModel}
+            onChange={(e) => onManualBrandModel(e.target.value)}
+            maxLength={120}
+            placeholder="Marka, modelis"
+            aria-label="Marka, modelis"
+            autoComplete="off"
+          />
+          <input
+            className={`${styles.input} ${styles.sub} ${styles.mono}`}
+            value={manualVin}
+            onChange={(e) => onManualVin(e.target.value)}
+            maxLength={17}
+            placeholder="17 zīmes"
+            aria-label="VIN"
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </div>
+      ) : null}
+      {showList && b192Empty ? (
+        <div className={`${styles.carEmpty} ${styles.sub}`}>
+          <span className={styles.carEmptyIcon} aria-hidden>
+            <Car className="h-5 w-5" aria-hidden />
+          </span>
+          <h4>Nav Dzintarzemes auto sarakstā</h4>
+          <p>
+            Šobrīd nav tirdzniecībā pieņemts neviens auto SIA Dzintarzeme Auto vārdā. Tiklīdz Aivars pieņem - tas parādīsies šeit
+            automātiski.
+          </p>
+          <button type="button" className={styles.manualBtn} onClick={() => onChoose("manual")}>
+            Rakstīt auto ar roku
+          </button>
+        </div>
+      ) : null}
+      {showList && !b192Empty ? (
+        <div className={`flex items-center gap-2 ${styles.sub}`}>
+          <button type="button" className={styles.select} onClick={onOpenList}>
+            <span className={styles.selectMain}>
+              {car ? (
+                <>
+                  <span className={styles.selectTitle}>{car.brandModel || car.vin}</span>
+                  {car.vin ? <span className={`${styles.selectSub} ${styles.mono}`}>{car.vin}</span> : null}
+                  {car.accepted ? <span className={`${styles.tag} ${styles.tagOk}`}>Pieņemts tirdzniecībā</span> : null}
+                </>
+              ) : (
+                <>
+                  <span className={`${styles.selectTitle} ${styles.placeholder}`}>Izvēlies auto</span>
+                  <span className={styles.selectSub}>tirdzniecībā pieņemtie</span>
+                </>
+              )}
+            </span>
+            <ChevronDown className={`h-[18px] w-[18px] ${styles.chev}`} aria-hidden />
+          </button>
+          {car ? (
+            <button type="button" aria-label="Notīrīt auto" className={`${styles.pick} shrink-0 px-3`} onClick={onClearCar}>
+              <X className="h-4 w-4" aria-hidden />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+      {isB192 && showList && !b192Empty ? (
+        <p className={styles.help}>
+          Rādīti tikai auto, kas <b>pieņemti</b> tirdzniecībā SIA Dzintarzeme Auto vārdā. SIA ĪRISS auto šim numuram netiek rādīti.
+        </p>
+      ) : null}
+      {(showManual && manualBrandModel.trim()) || (car && !car.accepted) ? (
+        <span className={styles.tag}>Nav tirdzniecībā pieņemto auto sarakstā</span>
+      ) : null}
+    </>
   );
 }
 
