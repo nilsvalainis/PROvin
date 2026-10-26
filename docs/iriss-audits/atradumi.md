@@ -79,3 +79,8 @@ Formāts: [sadaļa] [ierīce] smagums (K kritisks / A augsts / V vidējs / Z zem
 - [Piedāvājumi->Pasūtījums] [dators] A - Pēc apstiprinājuma pasūtījumā "Pašreizējais solis: Sagatavot pirmo piedāvājumu" (nepareizi) un "Darījuma statuss: Jauns", lai gan statuss "Rezervēts". Autoparka auto (ŠKODA OCTAVIA) statuss netiek mainīts uz "Rezervēts".
 - [Piedāvājumi/klients] [telefons] V - Klienta skatā jēlas vērtības: "2017-08-23" (gads/1. reģ.), "Vieglais plašlietojuma" (virsbūve), "Dīzeļdegviela". Virsrakstu stils jaukts ("PARAMETRI" lieliem burtiem, "Kopsavilkums" parasti). Nav "Noraidīt" vai "Uzdot jautājumu" (vecajā saitē ir). "Apstiprināt" bez apstiprinājuma soļa - var nospiest netīšām.
 - [Piedāvājumi/klients] [telefons] V - "Apstiprināt" atbilde 7,1 s (POST /api/iriss-piedavajums/respond) - klients redz "Sūta..." 7 s; paziņojumi (e-pasts+push) jāsūta pēc atbildes (after()).
+
+## Ātrums (serveris, admin, 26.10 22:55, fetch no pārlūka)
+- [Sludinājumi] [visas] K - Lapas HTML 7,7 MB (visi sludinājumi un atbilstības iekļauti lapā uzreiz), servera atbilde 2-4,5 s; iebūvētais pārlūks lapu neielādēja 300 s laikā. Telefonā tas ir galvenais "lēnuma" cēlonis. Labojums: lapā tikai 1. lappuse (40 auto) un kopsavilkums, pārējais pēc pieprasījuma (API ar lapošanu).
+- [Pavadzīmes] [visas] A - Servera atbilde 6-10 s (citām sadaļām 0,2-0,8 s): loadIrissPavadzimesPageData katrā atvēršanā palaiž runIrissPavadzimesDropboxSync. Labojums: lapa rāda kešu (kā sānjoslas karte), sinhronizācija fonā (after()/cron) + poga "Atjaunot".
+- [Pārējās] - Sākums 0,55 s, Pasūtījumi 0,6 s (353 KB), Piedāvājumi 0,6 s, Radars 0,7 s, Loģistika 0,8 s, Autoparks v2 0,5 s, Atskaite 0,8 s, Iestatījumi 0,6 s, Izmaksas 0,4 s, VIN 0,5 s.
