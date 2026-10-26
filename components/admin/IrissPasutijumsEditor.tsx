@@ -64,7 +64,7 @@ import {
   writeIrissDraftHandoff,
 } from "@/lib/iriss-pasutijumi-draft-handoff";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
-import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
+import { adoptServerMergedFields, pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import {
   applyIrissOrderRangeEdit,
@@ -506,7 +506,10 @@ export function IrissPasutijumsEditor({
         }
         if (!silent) {
           setRec((current) => {
-            const picked = pickRecordAfterOrderSave(current, payload, record);
+            const picked =
+              JSON.stringify(current) !== JSON.stringify(payload)
+                ? adoptServerMergedFields(current, payload, record, ["offers"])
+                : pickRecordAfterOrderSave(current, payload, record);
             const merged = mergeServerAttachmentStorage(mergeServerOwnedIrissFields(picked, record), record);
             lastSavedSnapshot.current = JSON.stringify(merged);
             return merged;
@@ -514,12 +517,13 @@ export function IrissPasutijumsEditor({
         } else {
           setRec((current) => {
             const concurrent = JSON.stringify(current) !== JSON.stringify(payload);
-            const merged = mergeServerAttachmentStorage(
-              mergeServerOwnedIrissFields(concurrent ? current : payload, record),
-              record,
-            );
+            const base = adoptServerMergedFields(concurrent ? current : payload, payload, record, ["offers"]);
+            const merged = mergeServerAttachmentStorage(mergeServerOwnedIrissFields(base, record), record);
             lastSavedSnapshot.current = JSON.stringify(
-              mergeServerAttachmentStorage(mergeServerOwnedIrissFields(payload, record), record),
+              mergeServerAttachmentStorage(
+                mergeServerOwnedIrissFields(adoptServerMergedFields(payload, payload, record, ["offers"]), record),
+                record,
+              ),
             );
             return merged;
           });
