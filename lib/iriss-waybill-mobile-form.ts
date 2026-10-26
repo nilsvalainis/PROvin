@@ -145,7 +145,7 @@ export function waybillShowsTradeList(state: Pick<WaybillMobileFormState, "autoC
 
 /** Marka no izvēlētā ceļa; VIN tikai no saraksta auto. «Ar roku» VIN vienmēr tukšs. */
 export function waybillAutoEntryValues(
-  state: Pick<WaybillMobileFormState, "manual" | "manualBrandModel" | "car">,
+  state: Pick<WaybillMobileFormState, "manual" | "manualBrandModel" | "manualVin" | "car">,
 ): { brandModel: string; vin: string } {
   if (state.manual) {
     return { brandModel: state.manualBrandModel.trim(), vin: "" };
