@@ -6,6 +6,7 @@ Formāts: `YYYY-MM-DD | aģents | viena rinda` (tikai īsā defise).
 - Taupīgi: tikai svarīgais. Nekādu atslēgu, paroļu, personas kodu.
 
 ## Ieraksti
+2026-10-26 | Cursor Grok | Ziņai: Andris. PR #654 (cursor/iriss-saruna-c-overlay-a6f5): IRISS Pavadzīmes Saruna C - ikona+badge+overlay, nav pastāvīgās labās slejas. Aivara forma/OWS/Anulēt/Stripe nav mainīti. NESAPLUDINĀT, Andris review.
 2026-10-26 | Cursor Grok | Ziņai: Andris. PR #652 (cursor/iriss-saites-makets-a-a7e1): IRISS Saites makets A - šķērssaites Autoparks/Loģistika/Pasūtījums + frosted «Publiskā saite» bez cenas (/a/[token]). B sheet nav. NESAPLUDINĀT, Andris review.
 2026-10-26 | Cursor Grok | Ziņai: Andris. PR #644 (cursor/iriss-staff-reset-delete-f64e): IRISS Darbinieki - paroles atiestatīšana un hard-delete, lai Toma e-pastu var uzaicināt no jauna. NESAPLUDINĀT, Andris review.
 2026-10-25 | Cursor Grok | Ziņai: Andris. PR #639 (cursor/iriss-partraukt-p0-badb): P0 IRISS «Pārtraukt» kartē un aplī + POST stop -> Aivars stop_waybill (CSDD Pārtraukt, nekad OWS Anulēt/Paziņot klientam). Worker auto-stop un live OWS NAV. NESAPLUDINĀT, Andris review.
