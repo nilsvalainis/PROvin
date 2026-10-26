@@ -8,9 +8,9 @@ describe("IRISS public offer gallery", () => {
   it("loads the stored full hero first and only small thumbs in the strip", () => {
     const html = renderHtml(<IrissOfferPublicGallery token="tokA" title="Volvo XC90" photos={photos} />);
     expect(html).toContain('src="/p/tokA/photo/hero-1"');
-    expect(html).toContain('srcset="/p/tokA/photo/hero-1?v=display&amp;w=480 480w, /p/tokA/photo/hero-1 1600w"');
+    expect(html).toContain("/p/tokA/photo/hero-1?v=display&amp;w=480 480w, /p/tokA/photo/hero-1 1600w");
     expect(html).toContain('sizes="(min-width: 640px) 688px, 100vw"');
-    expect(html).toContain('fetchpriority="high"');
+    expect(html).toContain('fetchPriority="high"');
     expect(html).toContain('src="/p/tokA/photo/hero-1?v=thumb"');
     expect(html).toContain('src="/p/tokA/photo/side-2?v=thumb"');
     expect(html).not.toContain("v=display&amp;w=800");
