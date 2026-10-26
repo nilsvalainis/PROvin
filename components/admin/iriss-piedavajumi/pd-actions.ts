@@ -38,6 +38,12 @@ export function usePdCopyLink() {
   return { copy, copiedId, copyError };
 }
 
+export async function deleteIrissPdRequest(id: string): Promise<void> {
+  const res = await fetch(`/api/admin/iriss-piedavajumi/${id}`, { method: "DELETE", credentials: "include" });
+  const data = (await res.json().catch(() => ({}))) as { ok?: boolean; message?: string };
+  if (!data.ok) throw new Error(data.message || "Neizdevās dzēst.");
+}
+
 /** «Izveidot jaunu uz šī bāzes». */
 export function usePdRebase() {
   const [rebaseBusy, setBusy] = useState(false);

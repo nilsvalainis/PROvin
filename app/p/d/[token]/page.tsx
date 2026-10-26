@@ -1,10 +1,10 @@
-import "@/components/iriss-piedavajumi/piedavajumi.css";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { IrissOfferPublicUnavailable } from "@/components/iriss-offer-public/IrissOfferPublicUnavailable";
 import { PdApproveForm } from "@/components/iriss-piedavajumi/PdApproveForm";
 import { PdClientView } from "@/components/iriss-piedavajumi/PdClientView";
 import { getClientIpFromHeaders } from "@/lib/client-ip";
-import { IRISS_OFFER_PUBLIC_BRAND } from "@/lib/iriss-offer-client-link";
+import { IRISS_OFFER_PUBLIC_BRAND, IRISS_OFFER_PUBLIC_LABELS } from "@/lib/iriss-offer-client-link";
 import { buildIrissPdPublicView } from "@/lib/iriss-piedavajumi";
 import { readIrissPdByToken, readIrissPdFresh } from "@/lib/iriss-piedavajumi-store";
 import { isSafeIrissPdToken } from "@/lib/iriss-piedavajumi-types";
@@ -19,42 +19,28 @@ export const metadata: Metadata = {
   referrer: "no-referrer",
 };
 
-function Unavailable({ text }: { text: string }) {
-  return (
-    <div className="pdc pdc-page">
-      <div className="pdc-brand">{IRISS_OFFER_PUBLIC_BRAND}</div>
-      <div className="pd-card">{text}</div>
-    </div>
-  );
-}
-
-/** j70: klienta piedāvājums (Piedāvājumi sadaļa). Avots, izsoles saite un iepirkuma cena netiek rādīti. */
+/** j70: klienta piedāvājums. Tā pati `/p/` bāze; Auto1 tikai kā dati. */
 export default async function IrissPiedavajumsPublicPage({ params }: { params: Promise<{ token: string }> }) {
   const { token: raw } = await params;
   const token = raw?.trim() ?? "";
   const rl = await checkRateLimit(`iriss-pd-get:${getClientIpFromHeaders(await headers())}`, 40, 10 * 60 * 1000);
-  if (!rl.ok || !isSafeIrissPdToken(token)) return <Unavailable text="Piedāvājums nav pieejams." />;
+  if (!rl.ok || !isSafeIrissPdToken(token)) return <IrissOfferPublicUnavailable />;
   const found = await readIrissPdByToken(token);
   const nowMs = Date.now();
   const rec = found ? await readIrissPdFresh(found.id, nowMs) : null;
-  if (!rec) return <Unavailable text="Piedāvājums nav pieejams." />;
+  if (!rec) return <IrissOfferPublicUnavailable />;
   const view = buildIrissPdPublicView(rec, "link", nowMs);
   if (view.state === "closed") {
-    return <Unavailable text={rec.status === "expired" ? "Piedāvājuma termiņš ir beidzies." : "Piedāvājums nav pieejams."} />;
+    return rec.status === "expired" ? (
+      <IrissOfferPublicUnavailable title={IRISS_OFFER_PUBLIC_LABELS.expired} />
+    ) : (
+      <IrissOfferPublicUnavailable />
+    );
   }
   const base = `/p/d/${token}/foto`;
   return (
-    <div className="pdc pdc-page">
-      <div className="pdc-brand">{IRISS_OFFER_PUBLIC_BRAND}</div>
-      <div className="pd-card">
-        <PdClientView view={view} mode="link" photoSrc={(n, s) => `${base}/${n}${s === "full" ? "?s=full" : ""}`}>
-          {view.state === "approved" ? (
-            <div className="pdc-done">Piedāvājums apstiprināts. Paldies!</div>
-          ) : (
-            <PdApproveForm token={token} needsContact={view.needsContact} />
-          )}
-        </PdClientView>
-      </div>
-    </div>
+    <PdClientView view={view} mode="link" token={token} photoSrc={(n, s) => `${base}/${n}${s === "full" ? "?s=full" : ""}`}>
+      {view.state === "approved" ? null : <PdApproveForm token={token} needsContact={view.needsContact} />}
+    </PdClientView>
   );
 }

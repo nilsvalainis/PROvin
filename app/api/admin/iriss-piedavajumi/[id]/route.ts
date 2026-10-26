@@ -13,7 +13,7 @@ import { importIrissPdFromAutoparks, importIrissPdFromLink } from "@/lib/iriss-p
 import { applyIrissPdImportData, type IrissPdImport } from "@/lib/iriss-piedavajumi-import";
 import { irissPdLinkErrorLv } from "@/lib/iriss-piedavajumi-sources";
 import { runIrissPdApprovalEffects } from "@/lib/iriss-piedavajumi-approve";
-import { claimIrissPdDecision, listIrissPdRows, newIrissPdToken, readIrissPdFresh, writeIrissPd } from "@/lib/iriss-piedavajumi-store";
+import { claimIrissPdDecision, deleteIrissPd, listIrissPdRows, newIrissPdToken, readIrissPd, readIrissPdFresh, writeIrissPd } from "@/lib/iriss-piedavajumi-store";
 import { isSafeIrissPdId } from "@/lib/iriss-piedavajumi-types";
 import { requireAdminOnlyApi } from "@/lib/staff-auth";
 
@@ -125,4 +125,16 @@ export async function POST(req: Request, { params }: Ctx) {
   }
   if (!(await writeIrissPd(next))) return fail(500, "write_failed", "Neizdevās saglabāt.");
   return NextResponse.json({ ok: true, record: next }, { headers: noStore });
+}
+
+/** Dzēš piedāvājumu no krātuves. Publiskā saite pēc tam nesatur saturu. */
+export async function DELETE(_req: Request, { params }: Ctx) {
+  const gate = await requireAdminOnlyApi();
+  if (!gate.ok) return gate.response;
+  const { id } = await params;
+  if (!isSafeIrissPdId(id)) return fail(400, "invalid");
+  const rec = await readIrissPd(id);
+  if (!rec) return fail(404, "not_found");
+  if (!(await deleteIrissPd(id))) return fail(500, "write_failed", "Neizdevās dzēst.");
+  return NextResponse.json({ ok: true }, { headers: noStore });
 }

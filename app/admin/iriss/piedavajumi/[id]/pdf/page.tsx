@@ -2,7 +2,6 @@ import "@/components/iriss-piedavajumi/piedavajumi.css";
 import { notFound } from "next/navigation";
 import { PdPrintTrigger } from "@/components/admin/iriss-piedavajumi/PdPrintTrigger";
 import { PdClientView } from "@/components/iriss-piedavajumi/PdClientView";
-import { IRISS_OFFER_PUBLIC_BRAND } from "@/lib/iriss-offer-client-link";
 import { buildIrissPdPublicView } from "@/lib/iriss-piedavajumi";
 import { requireAdminPage } from "@/lib/admin-auth";
 import { readIrissPd } from "@/lib/iriss-piedavajumi-store";
@@ -25,9 +24,13 @@ export default async function IrissPiedavajumsPdfPage({ params }: { params: Prom
   return (
     <div className="pdv">
       <PdPrintTrigger backHref={`/admin/iriss/piedavajumi/${id}`} />
-      <div className="pdc-print pd-card" style={{ maxWidth: 760 }}>
-        <div className="pdc pdc-brand" style={{ fontWeight: 700, marginBottom: 10 }}>{IRISS_OFFER_PUBLIC_BRAND}</div>
-        <PdClientView view={{ ...view, state: "open" }} mode="pdf" photoSrc={(n, s) => `/api/admin/iriss-piedavajumi/${id}/foto/${n}${s === "full" ? "?s=full" : ""}`} />
+      <div className="pdc-print" style={{ maxWidth: 760 }}>
+        <PdClientView
+          view={{ ...view, state: "open" }}
+          mode="pdf"
+          embedded
+          photoSrc={(n, s) => `/api/admin/iriss-piedavajumi/${id}/foto/${n}${s === "full" ? "?s=full" : ""}`}
+        />
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { rgb, type PDFFont, type PDFDocument, type PDFImage, type PDFPage } from "pdf-lib";
-import { dzintarzemeAutoLogoFsPath } from "@/lib/dzintarzeme-logo";
+import { dzintarzemeAutoLogoFsPath } from "@/lib/dzintarzeme-logo-fs";
 
 /** Kopīgs Dzintarzeme PDF (tāme, pasūtījums) - krāsas un kartīšu zīmēšana. */
 export const INK = rgb(17 / 255, 24 / 255, 39 / 255);
