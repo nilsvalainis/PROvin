@@ -58,15 +58,22 @@ export const WAYBILL_TUKUMS_STREET = "Rīgas iela 75";
 /** accepted: auto ir CSDD tirdzniecībā pieņemto sarakstā (pavadzīme no akta, bez maršruta). */
 export type WaybillMobileCar = { brandModel: string; vin: string; id: string; accepted?: boolean; owner?: AutoparksOwner };
 
+/** Auto ievades ceļš. Noklusējums "none": nepiespiež sarakstu; abi ceļi vienādi pieejami. */
+export type WaybillAutoChoice = "none" | "list" | "manual";
+
 export type WaybillMobileFormState = {
   plate: string;
   /** Lietotājs pats pieskārās numuram. Ja nē, numuru var ņemt no komentāra ("193 uz ..."). */
   plateTouched: boolean;
   /** Auto no saraksta (vai iepriekšējās pavadzīmes). */
   car: WaybillMobileCar | null;
-  /** "Cits auto - ierakstīt ar roku". */
+  /** "Ar roku" ceļš (vienmēr kopā ar autoChoice === "manual"). */
   manual: boolean;
+  /** "none" | "list" (No saraksta) | "manual" (Ar roku). */
+  autoChoice: WaybillAutoChoice;
   manualBrandModel: string;
+  /** VIN ar roku (nav obligāts). */
+  manualVin: string;
   /** null = "cits". */
   hoursPreset: number | null;
   hoursOther: string;
@@ -95,7 +102,9 @@ export function initialWaybillMobileForm(plate: string): WaybillMobileFormState 
     plateTouched: false,
     car: null,
     manual: false,
+    autoChoice: "none",
     manualBrandModel: "",
+    manualVin: "",
     hoursPreset: WAYBILL_FORM_DEFAULT_HOURS,
     hoursOther: "",
     comment: "",
@@ -103,6 +112,35 @@ export function initialWaybillMobileForm(plate: string): WaybillMobileFormState 
     fromAddress: "",
     representative: "",
   };
+}
+
+/** Pārslēdz "No saraksta" / "Ar roku" / nav izvēles. Notīra otra ceļa laukus. */
+export function applyWaybillAutoChoice(state: WaybillMobileFormState, choice: WaybillAutoChoice): WaybillMobileFormState {
+  if (choice === "manual") {
+    return { ...state, autoChoice: "manual", manual: true, car: null, representative: "" };
+  }
+  if (choice === "list") {
+    return { ...state, autoChoice: "list", manual: false, manualBrandModel: "", manualVin: "" };
+  }
+  return {
+    ...state,
+    autoChoice: "none",
+    manual: false,
+    car: null,
+    manualBrandModel: "",
+    manualVin: "",
+    representative: "",
+  };
+}
+
+/** Manuālie lauki (marka, modelis, VIN) redzami tikai pēc "Ar roku". */
+export function waybillShowsManualFields(state: Pick<WaybillMobileFormState, "autoChoice" | "manual">): boolean {
+  return state.autoChoice === "manual" || state.manual;
+}
+
+/** Tirdzniecības saraksts / "Izvēlies auto" redzams tikai pēc "No saraksta". */
+export function waybillShowsTradeList(state: Pick<WaybillMobileFormState, "autoChoice" | "manual">): boolean {
+  return state.autoChoice === "list" && !state.manual;
 }
 
 /** Derīgums stundās vai null, ja "cits" lauks nav derīgs. */
@@ -158,7 +196,7 @@ export function buildWaybillMobilePayload(state: WaybillMobileFormState): Waybil
     payload: {
       plate,
       brandModel,
-      vin: state.manual ? "" : (state.car?.vin ?? ""),
+      vin: state.manual ? state.manualVin.trim() : (state.car?.vin ?? ""),
       validHours,
       comment_untrusted: comment,
       routeFromAddress: fromAddress,
