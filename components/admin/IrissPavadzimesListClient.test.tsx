@@ -96,7 +96,7 @@ describe("Aktīvā karte: Pārtraukt", () => {
     expect(text).toContain("Vēsture");
     expect(text).not.toMatch(/anul/i);
     const html = renderHtml(page);
-    expect(html).toContain("border-[#DC2626]");
+    expect(html).toContain("border-[var(--iriss-bad)]");
     expect(html).toContain("min-h-11");
   });
 
@@ -134,7 +134,7 @@ describe("Aktīvā karte: Pārtraukt", () => {
     expect(text).not.toMatch(/anul/i);
     const html = renderHtml(page);
     expect(html).toContain('data-pavadzime="csdd-P02827"');
-    expect(html).not.toContain("border-[#DC2626]");
+    expect(html).not.toContain("border-[var(--iriss-bad)]");
   });
 });
 
