@@ -3,6 +3,8 @@ import { waybillLifecycleLabel } from "@/lib/iriss-pavadzimes-lifecycle";
 import type { IrissPavadzimeLifecycle } from "@/lib/iriss-pavadzimes-types";
 
 export const SARUNA_UNREAD_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+/** Overlay rāda tikai pēdējās 48h; vecākas ziņas neielādē UI. */
+export const SARUNA_VISIBLE_WINDOW_MS = 48 * 60 * 60 * 1000;
 export const SARUNA_SEEN_STORAGE_KEY = "iriss-waybill-saruna-seen";
 
 export type SarunaCloseReason = "escape" | "outside" | "button";
@@ -100,6 +102,46 @@ export function sarunaItemTime(item: SarunaFeedItem): string {
   return item.kind === "day" ? "" : item.at;
 }
 
+export function isWithinSarunaWindow(iso: string, nowMs: number): boolean {
+  const at = Date.parse(iso);
+  return Number.isFinite(at) && at >= nowMs - SARUNA_VISIBLE_WINDOW_MS;
+}
+
+function sarunaKindRank(kind: SarunaFeedItem["kind"]): number {
+  if (kind === "system") return 0;
+  if (kind === "message") return 1;
+  return 2;
+}
+
+/**
+ * Overlay feed: tikai pēdējās 48h, jaunākais saraksta sākumā, dienu čipi pārbūvēti.
+ */
+export function prepareSarunaFeed(
+  items: readonly SarunaFeedItem[],
+  nowMs = Date.now(),
+): SarunaFeedItem[] {
+  const timed = items.filter((item) => item.kind !== "day" && isWithinSarunaWindow(item.at, nowMs));
+  timed.sort((a, b) => {
+    const ta = Date.parse(sarunaItemTime(a)) || 0;
+    const tb = Date.parse(sarunaItemTime(b)) || 0;
+    if (ta !== tb) return tb - ta;
+    const kind = sarunaKindRank(a.kind) - sarunaKindRank(b.kind);
+    if (kind !== 0) return kind;
+    return a.id.localeCompare(b.id);
+  });
+  const out: SarunaFeedItem[] = [];
+  let lastDay = "";
+  for (const item of timed) {
+    const day = formatSarunaDayLabel(item.at, nowMs);
+    if (day && day !== lastDay) {
+      out.push({ kind: "day", id: `day-${item.id}`, label: day });
+      lastDay = day;
+    }
+    out.push(item);
+  }
+  return out;
+}
+
 /** Neizlasītie: pēc last-seen, vai pirmajā reizē pēdējās 7 dienas. */
 export function countSarunaUnread(
   items: readonly SarunaFeedItem[],
@@ -142,53 +184,43 @@ function attachmentName(fileName: string, number: string): string {
   return nr ? `${nr}.pdf` : "pavadzime.pdf";
 }
 
-/** Hronoloģisks feed no izdotajām pavadzīmēm: statuss + PDF kartītes. */
+function waybillRowToSarunaItems(row: SarunaFeedSourceRow): SarunaFeedItem[] {
+  const at = row.issuedAt.trim();
+  if (!at) return [];
+  const out: SarunaFeedItem[] = [];
+  const status = waybillLifecycleLabel(row.lifecycle);
+  if (status) {
+    out.push({
+      kind: "system",
+      id: `st-${row.id}`,
+      text: `Statuss → ${status}`,
+      at,
+    });
+  }
+  const title = [row.number.trim(), row.brandModel.trim()].filter(Boolean).join(" · ");
+  out.push({
+    kind: "message",
+    id: `msg-${row.id}`,
+    from: title || "Pavadzīme",
+    mine: false,
+    text: title ? `Pavadzīme ${title}` : "Pavadzīme",
+    at,
+    attachments: [
+      {
+        name: attachmentName(row.fileName, row.number),
+        href: pdfHref(row.id),
+      },
+    ],
+  });
+  return out;
+}
+
+/** Feed no izdotajām pavadzīmēm: pēdējās 48h, jaunākais augšā, statuss + PDF kartītes. */
 export function buildWaybillSarunaFeed(
   rows: readonly SarunaFeedSourceRow[],
   nowMs = Date.now(),
 ): SarunaFeedItem[] {
-  const sorted = [...rows].sort((a, b) => {
-    const ta = Date.parse(a.issuedAt) || 0;
-    const tb = Date.parse(b.issuedAt) || 0;
-    if (ta !== tb) return ta - tb;
-    return a.id.localeCompare(b.id);
-  });
-  const out: SarunaFeedItem[] = [];
-  let lastDay = "";
-  for (const row of sorted) {
-    const at = row.issuedAt.trim();
-    if (!at) continue;
-    const day = formatSarunaDayLabel(at, nowMs);
-    if (day && day !== lastDay) {
-      out.push({ kind: "day", id: `day-${row.id}`, label: day });
-      lastDay = day;
-    }
-    const status = waybillLifecycleLabel(row.lifecycle);
-    if (status) {
-      out.push({
-        kind: "system",
-        id: `st-${row.id}`,
-        text: `Statuss → ${status}`,
-        at,
-      });
-    }
-    const title = [row.number.trim(), row.brandModel.trim()].filter(Boolean).join(" · ");
-    out.push({
-      kind: "message",
-      id: `msg-${row.id}`,
-      from: title || "Pavadzīme",
-      mine: false,
-      text: title ? `Pavadzīme ${title}` : "Pavadzīme",
-      at,
-      attachments: [
-        {
-          name: attachmentName(row.fileName, row.number),
-          href: pdfHref(row.id),
-        },
-      ],
-    });
-  }
-  return out;
+  return prepareSarunaFeed(rows.flatMap(waybillRowToSarunaItems), nowMs);
 }
 
 export function sarunaOverlayTitle(waybillNo?: string): string {

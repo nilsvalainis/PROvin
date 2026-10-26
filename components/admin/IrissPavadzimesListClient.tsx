@@ -30,6 +30,7 @@ import { useWaybillPageOpenAtTop } from "@/components/admin/useWaybillPageOpenAt
 import {
   buildWaybillSarunaFeed,
   countSarunaUnread,
+  prepareSarunaFeed,
   readSarunaSeenAt,
   type SarunaFeedItem,
   writeSarunaSeenAt,
@@ -246,7 +247,7 @@ export function IrissPavadzimesListClient({
   const rows = sortWaybillsNewestFirst(data.rows.filter((row) => inView(row, view)));
   const viewCount = (v: WaybillView) => data.rows.filter((row) => inView(row, v)).length;
   const sarunaFeed = useMemo(
-    () => [...buildWaybillSarunaFeed(data.rows, nowMs), ...sarunaNotes],
+    () => prepareSarunaFeed([...buildWaybillSarunaFeed(data.rows, nowMs), ...sarunaNotes], nowMs),
     [data.rows, nowMs, sarunaNotes],
   );
   const sarunaUnread = sarunaOpen ? 0 : countSarunaUnread(sarunaFeed, sarunaSeenAt, nowMs);

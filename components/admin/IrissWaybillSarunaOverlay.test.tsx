@@ -101,4 +101,45 @@ describe("Saruna feed kartītes", () => {
     expect(html).toContain("rounded-[10px] border border-[#e5e5ea]");
     expect(html).toContain("text-[#FF3B30]");
   });
+
+  it("list starts with the newest message, older-than-48h stays out", () => {
+    const items = buildWaybillSarunaFeed(
+      [
+        {
+          id: "wb_old",
+          number: "P01000",
+          brandModel: "Old",
+          fileName: "old.pdf",
+          issuedAt: "2026-10-20T08:00:00.000Z",
+          lifecycle: "expired",
+        },
+        {
+          id: "wb_mid",
+          number: "P02818",
+          brandModel: "Mid",
+          fileName: "mid.pdf",
+          issuedAt: "2026-10-25T10:00:00.000Z",
+          lifecycle: "expired",
+        },
+        {
+          id: "wb_new",
+          number: "P02820",
+          brandModel: "New",
+          fileName: "new.pdf",
+          issuedAt: "2026-10-26T11:00:00.000Z",
+          lifecycle: "active",
+        },
+      ],
+      NOW,
+    );
+    const html = renderHtml(
+      <IrissWaybillSarunaOverlay open onClose={() => undefined} title="Saruna" items={items} />,
+    );
+    const newest = html.indexOf("P02820");
+    const mid = html.indexOf("P02818");
+    expect(newest).toBeGreaterThan(-1);
+    expect(mid).toBeGreaterThan(newest);
+    expect(html).not.toContain("P01000");
+    expect(html).not.toContain("old.pdf");
+  });
 });
