@@ -69,6 +69,7 @@ import { irissPasutijumsOfferSeedFromListing } from "@/lib/iriss-pasutijums-from
 import { irissScanSeedFromListing } from "@/lib/iriss-scan-from-listing";
 import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
 import { type IrissListingDataset, vehicleInListingDataset } from "@/lib/iriss-scan-listings";
+import type { IrissListingGoneCounts } from "@/lib/iriss-sludinajumi-page-data";
 import { irissListingPlatformIngestStats } from "@/lib/iriss-listings-ingest-stats";
 import { nextIrissListingsAutomaticReadLabel } from "@/lib/iriss-listings-schedule";
 import {
@@ -207,6 +208,8 @@ function useListingGridColumns(): number {
 
 type Props = {
   latest: IrissListingsLatestView | null;
+  /** Pazudušo skaits; paši auto nāk no `/api/admin/iriss-listings/gone` tikai cilnē „Pazuduši”. */
+  goneCounts?: IrissListingGoneCounts;
   orders: IrissListingOrderBrief[];
   /** SCAN ieraksti kā „pasūtījumi” ar `scan:` id. */
   scanOrders?: IrissListingOrderBrief[];
@@ -253,6 +256,7 @@ function dismissPatchesFromIds(
 
 export function IrissSludinajumiListClient({
   latest,
+  goneCounts,
   orders: clientOrders,
   scanOrders = [],
   dismissed = [],
@@ -274,6 +278,8 @@ export function IrissSludinajumiListClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [goneVehicles, setGoneVehicles] = useState<IrissListingVehicle[] | null>(null);
+  const [goneState, setGoneState] = useState<"idle" | "loading" | "error">("idle");
   const [hiddenImages, setHiddenImages] = useState<Record<string, true>>({});
   const [vinPatch, setVinPatch] = useState<Record<string, ListingVinOcrPatch>>({});
   const [syncBusy, setSyncBusy] = useState(false);
@@ -498,9 +504,34 @@ export function IrissSludinajumiListClient({
     setPrefs((p) => ({ ...p, hideTech: false, hideOverBudget: false, listScope: "all" }));
   }
 
+  // Pēc „Nolasīt tagad” (router.refresh) pazudušo kopa var būt mainījusies.
+  useEffect(() => {
+    setGoneVehicles(null);
+    setGoneState("idle");
+  }, [latest?.generatedAt]);
+
+  const needGone =
+    tab === "gone" ||
+    (drawerId != null && !(latest?.vehicles ?? []).some((v) => v.id === drawerId));
+  useEffect(() => {
+    if (!needGone || goneVehicles !== null || goneState !== "idle") return;
+    setGoneState("loading");
+    void fetch("/api/admin/iriss-listings/gone", { credentials: "include", cache: "no-store" })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(String(res.status));
+        const body = (await res.json()) as { vehicles?: IrissListingVehicle[] };
+        setGoneVehicles(Array.isArray(body.vehicles) ? body.vehicles : []);
+        setGoneState("idle");
+      })
+      .catch(() => setGoneState("error"));
+  }, [needGone, goneVehicles, goneState]);
+
   const allVehicles = useMemo(
-    () => (latest?.vehicles ?? []).map((v) => (vinPatch[v.id] ? { ...v, ...vinPatch[v.id] } : v)),
-    [latest?.vehicles, vinPatch],
+    () =>
+      [...(latest?.vehicles ?? []), ...(goneVehicles ?? [])].map((v) =>
+        vinPatch[v.id] ? { ...v, ...vinPatch[v.id] } : v,
+      ),
+    [latest?.vehicles, goneVehicles, vinPatch],
   );
   /** Divi datu kopumi: klientu pasūtījumu auto vai SCAN saraksta auto. Kartītes tās pašas. */
   const vehicles = useMemo(
@@ -517,8 +548,13 @@ export function IrissSludinajumiListClient({
       if (isNew(v, nowMs)) fresh += 1;
       if (recentPriceChanges(v, nowMs).length > 0) price += 1;
     }
-    return { fresh, price, gone, all: vehicles.length - gone };
-  }, [vehicles, nowMs]);
+    return {
+      fresh,
+      price,
+      gone: goneVehicles === null ? (goneCounts?.[dataset] ?? 0) : gone,
+      all: vehicles.length - gone,
+    };
+  }, [vehicles, nowMs, goneVehicles, goneCounts, dataset]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -1213,9 +1249,24 @@ export function IrissSludinajumiListClient({
       {visible.length === 0 ? (
         <section className="mx-4 rounded-2xl border border-dashed border-[var(--separator)] bg-[var(--surface)] px-6 py-10 text-center shadow-none max-md:mx-4">
           <p className="text-sm font-medium text-[var(--label)]">
-            {vehicles.length === 0 ? "Nav nolasītu auto" : "Šajā filtrā nav auto"}
+            {tab === "gone" && goneVehicles === null
+              ? goneState === "error"
+                ? "Pazudušos auto neizdevās ielādēt"
+                : "Ielādē pazudušos auto…"
+              : vehicles.length === 0
+                ? "Nav nolasītu auto"
+                : "Šajā filtrā nav auto"}
           </p>
-          <p className="mt-1.5 text-[12px] text-[var(--color-provin-muted)]">
+          {tab === "gone" && goneState === "error" ? (
+            <button
+              type="button"
+              className="mt-3 rounded-lg border border-[var(--separator)] px-3 py-1.5 text-[13px] font-medium text-[var(--label)]"
+              onClick={() => setGoneState("idle")}
+            >
+              Mēģināt vēlreiz
+            </button>
+          ) : null}
+          <p className={`mt-1.5 text-[12px] text-[var(--color-provin-muted)]${tab === "gone" && goneVehicles === null ? " hidden" : ""}`}>
             {vehicles.length === 0
               ? "Spied „Nolasīt tagad”, lai ievāktu datus uzreiz, vai sagaidi ikdienas nolasīšanu. Lasa tikai aktīvo pasūtījumu izsoļu saites."
               : "Izvēlies citu cilni, avotu vai notīri meklēšanu un cenas diapazonu."}
