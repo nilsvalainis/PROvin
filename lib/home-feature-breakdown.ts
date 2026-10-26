@@ -81,7 +81,7 @@ const AUDITS_LV: HomeFeatureBreakdownPackage = {
   badge: "Populārākā izvēle",
   buttonText: "PASŪTĪT PROVIN AUDITU 99,99 €",
   goal:
-    "Maksimāla drošība un pilnīga izpēte no ārvalstīm ievestiem auto. Apvieno PROVIN MINI un starptautisko maksas datubāzu pārskatus, oficiālo dīleru sistēmu informāciju un izsoļu foto arhīvus, sniedzot padziļinātu vēstures, nobraukuma un risku analīzi.",
+    "Padziļināta izpēte no ārvalstīm ievestiem auto. Apvieno PROVIN MINI ar vismaz 2, parasti 3 maksas vēstures pārbaudēm (piemēram, carVertical, autoDNA, oficiālā dīlera dati), izsoļu foto arhīviem un risku analīzi, sniedzot padziļinātu vēstures, nobraukuma un risku izvērtējumu.",
   items: [
     {
       title: "Starptautiska vēstures pārbaude",
@@ -91,19 +91,19 @@ const AUDITS_LV: HomeFeatureBreakdownPackage = {
     {
       title: "carVertical integrācija",
       description:
-        "Lai nodrošinātu konkrētajam reģionam atbilstošākos datus, atskaite var tikt aizstāta ar CARFAX vai citu specializētu datubāzi.",
+        "Viena no pamata maksas pārbaudēm. Ja konkrētajam reģionam tā nav piemērota, to aizstājam ar CARFAX vai citu specializētu datubāzi.",
       icon: "carvertical",
     },
     {
       title: "autoDNA integrācija",
       description:
-        "Lai nodrošinātu konkrētajam reģionam atbilstošākos datus, atskaite var tikt aizstāta ar CEBIA vai citu specializētu datubāzi.",
+        "Viena no pamata maksas pārbaudēm. Ja autoDNA datu nav, pārbaudām ierakstus citur (piem. CEBIA, CARFAX vai izcelsmes valsts reģistrā).",
       icon: "autodna",
     },
     {
       title: "Oficiālo dīleru un izsoļu portālu arhīvs*",
       description:
-        "Dati no autorizētajiem servisiem un vēsturisko izsoļu portālu arhīviem, ieskaitot sākotnējos bojājumu attēlus pirms auto remonta.",
+        "Dati no autorizētajiem servisiem un vēsturisko izsoļu portālu arhīviem, ieskaitot sākotnējos bojājumu attēlus pirms remonta. *Pieejami noteiktiem ražotājiem un modeļiem.",
       icon: "dealer-data",
     },
   ],
@@ -220,7 +220,7 @@ const AUDITS_EN: HomeFeatureBreakdownPackage = {
   badge: "Most popular choice",
   buttonText: "ORDER PROVIN AUDITS €99.99",
   goal:
-    "Maximum confidence and a complete investigation of cars imported from abroad. Combines PROVIN MINI with international paid database reports, official dealer system data and auction photo archives, delivering in-depth history, mileage and risk analysis.",
+    "An in-depth investigation of cars imported from abroad. Combines PROVIN MINI with at least 2, usually 3 paid history checks (for example carVertical, autoDNA, official dealer data), auction photo archives and risk analysis, delivering an in-depth history, mileage and risk assessment.",
   items: [
     {
       title: "International history check",
@@ -230,19 +230,19 @@ const AUDITS_EN: HomeFeatureBreakdownPackage = {
     {
       title: "carVertical integration",
       description:
-        "To ensure the most relevant data for the specific region, the report may be substituted with CARFAX or another specialised database.",
+        "One of the base paid checks. If it does not suit the specific region, we replace it with CARFAX or another specialised database.",
       icon: "carvertical",
     },
     {
       title: "autoDNA integration",
       description:
-        "To ensure the most relevant data for the specific region, the report may be substituted with CEBIA or another specialised database.",
+        "One of the base paid checks. If autoDNA has no data, we check for records elsewhere (e.g. CEBIA, CARFAX or an origin-country register).",
       icon: "autodna",
     },
     {
       title: "Official dealer & auction portal archive*",
       description:
-        "Data from authorised service centres and historical auction portal archives, including original damage photos before repairs.",
+        "Data from authorised service centres and historical auction portal archives, including original damage photos before repairs. *Available for certain manufacturers and models.",
       icon: "dealer-data",
     },
   ],
@@ -437,7 +437,7 @@ const AUDITS_DE: HomeFeatureBreakdownPackage = {
   badge: "Beliebteste Wahl",
   buttonText: "PROVIN AUDITS BESTELLEN 99,99 €",
   goal:
-    "Maximale Sicherheit und eine vollständige Prüfung für aus dem Ausland importierte Autos. Verbindet PROVIN MINI mit internationalen kostenpflichtigen Datenbanken, Daten offizieller Händlersysteme und Auktionsfotoarchiven und liefert eine vertiefte Analyse von Historie, Laufleistung und Risiken.",
+    "Eine vertiefte Prüfung für aus dem Ausland importierte Autos. Verbindet PROVIN MINI mit mindestens 2, in der Regel 3 kostenpflichtigen Historienprüfungen (zum Beispiel carVertical, autoDNA, offizielle Händlerdaten), Auktionsfotoarchiven und Risikoanalyse und liefert eine vertiefte Bewertung von Historie, Laufleistung und Risiken.",
   items: [
     {
       title: "Internationale Fahrzeughistorie",
@@ -447,19 +447,19 @@ const AUDITS_DE: HomeFeatureBreakdownPackage = {
     {
       title: "carVertical-Anbindung",
       description:
-        "Damit die Daten zur Region passen, kann der Bericht durch CARFAX oder eine andere spezialisierte Datenbank ersetzt werden.",
+        "Eine der kostenpflichtigen Basisprüfungen. Passt sie nicht zur Region, ersetzen wir sie durch CARFAX oder eine andere spezialisierte Datenbank.",
       icon: "carvertical",
     },
     {
       title: "autoDNA-Anbindung",
       description:
-        "Damit die Daten zur Region passen, kann der Bericht durch CEBIA oder eine andere spezialisierte Datenbank ersetzt werden.",
+        "Eine der kostenpflichtigen Basisprüfungen. Hat autoDNA keine Daten, suchen wir anderswo (z. B. CEBIA, CARFAX oder Register des Herkunftslandes).",
       icon: "autodna",
     },
     {
       title: "Archiv offizieller Händler und Auktionsportale*",
       description:
-        "Daten autorisierter Werkstätten und historischer Auktionsportale, einschließlich der ursprünglichen Schadensfotos vor der Reparatur.",
+        "Daten autorisierter Werkstätten und historischer Auktionsportale, einschließlich der ursprünglichen Schadensfotos vor der Reparatur. *Verfügbar für bestimmte Hersteller und Modelle.",
       icon: "dealer-data",
     },
   ],
@@ -599,7 +599,7 @@ const AUDITS_RU: HomeFeatureBreakdownPackage = {
   badge: "Самый популярный выбор",
   buttonText: "ЗАКАЗАТЬ PROVIN AUDITS 99,99 €",
   goal:
-    "Максимальная ясность и полная проверка для машин, ввезённых из-за рубежа. Соединяет PROVIN MINI с международными платными базами, данными официальных дилерских систем и фотоархивами аукционов и даёт глубокий разбор истории, пробега и рисков.",
+    "Углублённая проверка машин, ввезённых из-за рубежа. Соединяет PROVIN MINI с не менее чем 2, обычно 3 платными проверками истории (например, carVertical, autoDNA, данные официального дилера), фотоархивами аукционов и анализом рисков и даёт глубокую оценку истории, пробега и рисков.",
   items: [
     {
       title: "Международная проверка истории",
@@ -608,17 +608,17 @@ const AUDITS_RU: HomeFeatureBreakdownPackage = {
     },
     {
       title: "Интеграция carVertical",
-      description: "Чтобы данные соответствовали региону, отчёт может быть заменён на CARFAX или другую специализированную базу.",
+      description: "Одна из базовых платных проверок. Если она не подходит для региона, заменяем её на CARFAX или другую специализированную базу.",
       icon: "carvertical",
     },
     {
       title: "Интеграция autoDNA",
-      description: "Чтобы данные соответствовали региону, отчёт может быть заменён на CEBIA или другую специализированную базу.",
+      description: "Одна из базовых платных проверок. Если в autoDNA нет данных, ищем записи в другом месте (например, CEBIA, CARFAX или реестр страны происхождения).",
       icon: "autodna",
     },
     {
       title: "Архив официальных дилеров и аукционных порталов*",
-      description: "Данные авторизованных сервисов и исторических аукционов, включая исходные фото повреждений до ремонта.",
+      description: "Данные авторизованных сервисов и исторических аукционов, включая исходные фото повреждений до ремонта. *Доступны для некоторых производителей и моделей.",
       icon: "dealer-data",
     },
   ],
