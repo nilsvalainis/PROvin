@@ -3,6 +3,7 @@
  */
 
 import { formatListingPowerKwLabel } from "@/lib/engine-power-kw";
+import { lvTerm } from "@/lib/iriss-auction-detail";
 import { listingCopyId, type ListingDetailUrlInput } from "@/lib/iriss-listings-detail-url";
 import { listingVinSourceMark } from "@/lib/iriss-listings-vin-from-photos";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
@@ -176,10 +177,10 @@ export function listingSpecCells(v: {
   const cells: ListingSpecCell[] = [
     { label: "1. reģ.", value: listingFirstRegLabel(v.firstRegistration) },
     { label: "Nobraukums", value: km },
-    { label: "Degviela", value: (v.fuel ?? "").trim() },
-    { label: "Kārba", value: (v.transmission ?? "").trim() },
+    { label: "Degviela", value: lvTerm(v.fuel ?? "") },
+    { label: "Kārba", value: lvTerm(v.transmission ?? "") },
     { label: "Jauda", value: formatListingPowerKwLabel(v.powerKw) },
-    { label: "Krāsa", value: (v.color ?? "").trim() },
+    { label: "Krāsa", value: lvTerm(v.color ?? "") },
   ];
   return cells.filter((c) => c.value);
 }

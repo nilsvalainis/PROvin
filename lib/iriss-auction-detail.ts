@@ -102,15 +102,15 @@ function buildLookup(detail: IrissRelayAuctionDetail): (k: LabelKey) => string {
 }
 
 const LV_WORDS: Array<[RegExp, string]> = [
-  [/^diesel$/i, "Dīzelis"],
-  [/^(petrol|gasoline|benzin)$/i, "Benzīns"],
+  [/^(diesel|diisel)$/i, "Dīzelis"],
+  [/^(petrol|gasoline|benzin|benzine|bensiin)$/i, "Benzīns"],
   [/^(plug-?in hybrid|phev)\b.*$/i, "Uzlādējams hibrīds"],
   [/^hybrid\b.*$/i, "Hibrīds"],
-  [/^(electric|electro|ev)$/i, "Elektriskais"],
+  [/^(electric|electro|elektro|elekter|ev)$/i, "Elektriskais"],
   [/^(lpg|cng)$/i, "Gāze"],
-  [/^automatic\b(.*)$/i, "Automātiskā$1"],
+  [/^(automatic|automaat|automatik)\b(.*)$/i, "Automātiskā$2"],
   [/^(duplex|dual[- ]clutch|dsg|dct)$/i, "Automātiskā (divsajūgu)"],
-  [/^manual\b(.*)$/i, "Manuālā$1"],
+  [/^(manual|manuaal|schaltgetriebe)\b(.*)$/i, "Manuālā$2"],
   [/^(station wagon|estate|touring|kombi|wagon)$/i, "Universālis"],
   [/^(sedan|saloon|limousine)$/i, "Sedans"],
   [/^hatchback$/i, "Hečbeks"],
