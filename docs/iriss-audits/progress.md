@@ -37,3 +37,5 @@
 - 26.10 22:03-22:06 T8 Atcelšanas tests (B193, aizvietošana) - window.confirm testa pārlūkā, Aivars paņēma pēc ~45 s -> P02836 (P02835 pārtraukta). Pavadzīmju admin daļa pabeigta (8 testi, 7 CSDD pavadzīmes: P02832-P02836, P00747-P00748). Atlikts: VPN poga (nakts beigās), darbinieks tikai ar "pavadzimes" (lomu testos).
 - 26.10 22:20 TESTS ieraksti (DZĒST BEIGĀS): pasūtījums e9d3c751-708a-4267-9691-eb7afc09750c "TESTS Škoda Octavia" / klients "TESTS Gustavs Ansons" (+37120000000, gustavs.ansons@gmail.com). Pavadzīmes P02832-P02836, P00747-P00748 (CSDD - paliek, tikai beidzas).
 - 26.10 22:25 TESTS: piedāvājums PD-0003 ab6f07ba-257d-4168-ba04-2e69010a3385 no Autoparka ŠKODA OCTAVIA (121495) - DZĒST BEIGĀS (atbrīvo auto).
+- 26.10 22:50 NILS APSTIPRINĀJA DIZAINU v0.3 (Artifact dizaina-paraugs.html): IRISS oranža galvenā poga ar baltiem treknrakstā burtiem, neitrāli statusi ar krāsainu punktu, grafīta sānjosla. Fona variants: jautāts (1 iOS gaiši pelēks / 2 grafīts) - līdz atbildei 1. PRO panelim nākotnē zilgans.
+- 26.10 22:40 PR #669 (23b0215c) /p/d 500 salabots, prod READY. Klienta apstiprinājums PD-0003 -> TESTS pasūtījums Rezervēts.
