@@ -671,9 +671,17 @@ const FACT_LABELS: Array<[keyof IrissPdVehicle, string]> = [
   ["location", "Atrašanās vieta"],
 ];
 
+/** CSDD transportlīdzekļa kategorijas nav virsbūves tips - klientam tās nerāda. */
+const CSDD_CATEGORY_RE = /^(vieglais|kravas|autobuss|piekabe|puspiekabe|motocikls|mopēds|kvadricikls)\b/i;
+
 function factValue(k: keyof IrissPdVehicle, v: string): string {
   if (k === "mileageKm" && /^\d[\d\s.,]*$/.test(v)) return `${v.replace(/[\s.,]/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, " ")} km`;
   if (k === "powerKw" && /^\d{2,4}$/.test(v)) return `${v} kW`;
+  // Datumi no Autoparka/CSDD ir ISO (2017-08-23): gadam - "2017", 1. reģistrācijai - "08.2017".
+  const iso = /^(\d{4})-(\d{2})-\d{2}/.exec(v);
+  if (iso && k === "year") return iso[1]!;
+  if (iso && k === "firstRegistration") return `${iso[2]}.${iso[1]}`;
+  if (k === "body" && CSDD_CATEGORY_RE.test(v)) return "";
   return v;
 }
 
@@ -732,7 +740,10 @@ export function buildIrissPdPublicView(rec: IrissPiedavajums, mode: IrissPdViewM
     title: rec.vehicle.title,
     price: formatIrissPdPrice(rec.price),
     validUntilLabel: rec.validUntil ? formatOfferValidUntilLv(rec.validUntil) : "",
-    facts: FACT_LABELS.flatMap(([k, label]) => (rec.vehicle[k] ? [{ label, value: factValue(k, rec.vehicle[k]) }] : [])),
+    facts: FACT_LABELS.flatMap(([k, label]) => {
+      const value = rec.vehicle[k] ? factValue(k, rec.vehicle[k]) : "";
+      return value ? [{ label, value }] : [];
+    }),
     photoCount: rec.photos.length,
     blocks,
     auto1,

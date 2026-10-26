@@ -7,7 +7,7 @@ import { IrissWaybillStopConfirm } from "@/components/admin/IrissWaybillStopConf
 import { useWaybillStop } from "@/components/admin/useWaybillStop";
 import styles from "@/components/admin/IrissWaybillGauges.module.css";
 import type { IrissPavadzimeListRow } from "@/lib/iriss-pavadzimes-types";
-import { irissWaybillGauges, waybillGaugesFromPlates, waybillHomeCarText, waybillHomeCarTitle, type WaybillGauge } from "@/lib/iriss-waybill-gauges";
+import { irissWaybillGauges, waybillGaugeTimeLeft, waybillGaugesFromPlates, waybillHomeCarText, waybillHomeCarTitle, type WaybillGauge } from "@/lib/iriss-waybill-gauges";
 import { waybillHomeRingColor } from "@/lib/iriss-waybill-home-ring";
 import { WAYBILL_PLATES_EVENT } from "@/lib/iriss-waybill-live-plates";
 import type { WaybillPlateState } from "@/lib/iriss-waybill-plates";
@@ -143,8 +143,9 @@ export function IrissWaybillGauges({
         const c = 2 * Math.PI * r;
         const isOpen = !linked && open === g.plate && g.busy;
         const ring = floating && g.busy ? waybillHomeRingColor(g.hoursLeft, true) : g.busy ? RING[g.status] : "#8e8e93";
+        const left = waybillGaugeTimeLeft(g);
         const label = g.busy
-          ? `${g.plate}, ${g.brandModel || "auto"}, atlikušas ${g.hoursLeft} h`
+          ? `${g.plate}, ${g.brandModel || "auto"}, atlikušas ${left.value} ${left.unit}`
           : g.status === "issuing"
             ? `${g.plate}, ${g.manual ? "izraksta Aivars ar roku" : "izdod pavadzīmi"}${g.brandModel ? `, ${g.brandModel}` : ""}`
             : `${g.plate}, brīvs`;
@@ -170,8 +171,8 @@ export function IrissWaybillGauges({
               <span className={styles.val} style={floating ? undefined : { color: g.busy ? ring : "#8e8e93" }}>
                 {loading ? "…" : g.busy ? (
                   <>
-                    {g.hoursLeft}
-                    <small>h</small>
+                    {left.value}
+                    <small>{left.unit}</small>
                   </>
                 ) : g.status === "issuing" ? (
                   g.manual ? "Aivars" : "izdod..."

@@ -350,6 +350,24 @@ function sinceMs(iso: string, nowMs: number): number {
   return Number.isFinite(t) ? Math.max(0, nowMs - t) : 0;
 }
 
+/** «Pārtraukt» darba statusi telefona sarakstā (agrāk rādīja «Izveido · Aivars veido pavadzīmi»). */
+export const WAYBILL_STOP_STATUS_LABEL: Record<WaybillRequestStatus, string> = {
+  queued: "Gaida",
+  in_progress: "Pārtrauc",
+  issued: "Pārtraukta",
+  error: "Kļūda",
+  cancelled: "Atcelts",
+};
+
+export function waybillStopProgress(status: WaybillRequestStatus, waybillNo: string): WaybillMobileProgress {
+  const no = waybillNo.trim();
+  if (status === "issued") return { step: 3, pct: 100, text: `Pārtraukta CSDD${no ? ` · ${no}` : ""}` };
+  if (status === "in_progress") return { step: 2, pct: 50, text: `Aivars pārtrauc pavadzīmi${no ? ` ${no}` : ""} CSDD...` };
+  if (status === "error") return { step: 2, pct: 50, text: `Neizdevās pārtraukt${no ? ` ${no}` : ""}. Pārbaudi CSDD.` };
+  if (status === "cancelled") return { step: 1, pct: 0, text: "Atcelts." };
+  return { step: 1, pct: 10, text: `Rindā: pārtraukt${no ? ` ${no}` : ""}.` };
+}
+
 export function waybillMobileProgress(
   request: Pick<WaybillRequest, "status" | "createdAt" | "updatedAt" | "pickedAt" | "errorReason" | "validUntil" | "waybillNo"> &
     Partial<Pick<WaybillRequest, "stage" | "stageAt">>,
@@ -481,13 +499,17 @@ export function waybillMobileRequestRows(
       ]
         .filter(Boolean)
         .join(" · ");
-      const progress = waybillMobileProgress({ ...request, status, waybillNo }, nowMs, {
-        autoMode: reply?.autoMode,
-        autoStandard: reply?.autoStandard,
-        autoReason: reply?.autoReason,
-      });
+      // «Pārtraukt» darbs (kind=stop) nav jauna pavadzīme: savi vārdi, bez «Izrakstīta» un PDF.
+      const isStop = request.kind === "stop";
+      const progress = isStop
+        ? waybillStopProgress(status, request.stopWaybillNo || waybillNo)
+        : waybillMobileProgress({ ...request, status, waybillNo }, nowMs, {
+            autoMode: reply?.autoMode,
+            autoStandard: reply?.autoStandard,
+            autoReason: reply?.autoReason,
+          });
       const longWait = status === "queued" && sinceMs(request.updatedAt || request.createdAt, nowMs) > WAYBILL_MOBILE_LONG_WAIT_MS;
-      const offAt = writtenOffAt({ ...request, status }, waybillNo);
+      const offAt = isStop ? null : writtenOffAt({ ...request, status }, waybillNo);
       const writtenOff = offAt != null;
       const plate = displayDealerPlate(request.vehicle.plate) || request.vehicle.plate;
       const plateBusyNow = plateState(request)?.busy === true;
@@ -504,7 +526,13 @@ export function waybillMobileRequestRows(
         id: request.id,
         title: request.vehicle.brandModel || request.noteUntrusted || "Auto",
         sub: writtenOff ? offSub : sub,
-        label: stale ? WAYBILL_STALE_LABEL : writtenOff ? WAYBILL_WRITTEN_OFF_LABEL : WAYBILL_MOBILE_STATUS[status].label,
+        label: stale
+          ? WAYBILL_STALE_LABEL
+          : isStop
+            ? WAYBILL_STOP_STATUS_LABEL[status]
+            : writtenOff
+              ? WAYBILL_WRITTEN_OFF_LABEL
+              : WAYBILL_MOBILE_STATUS[status].label,
         tone: stale || writtenOff ? "wait" : WAYBILL_MOBILE_STATUS[status].tone,
         pdfUrl,
         canRetry: status === "error" || (status === "queued" && (longWait || stale) && !waybillPendingExpired(request, nowMs)),
