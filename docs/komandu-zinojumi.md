@@ -6,6 +6,7 @@ Formāts: `YYYY-MM-DD | aģents | viena rinda` (tikai īsā defise).
 - Taupīgi: tikai svarīgais. Nekādu atslēgu, paroļu, personas kodu.
 
 ## Ieraksti
+2026-10-26 | Cursor Grok | Ziņai: Andris. PR #666 (cursor/iriss-pd-public-base-6582): IRISS Piedāvājumi /p/d un admin preview uz IrissOfferPublic bāzes; tukša krāsas karte/bloki nav; Dzēst adminā. NESAPLUDINĀT.
 2026-10-26 | Cursor Grok | Ziņai: Andris. PR #662 (cursor/izsolu-portalu-arhivs-e093): cilvēkam redzamais izsoļu avota nosaukums visur ir Izsoļu portālu arhīvs (PDF: IZSOĻU PORTĀLU ARHĪVS). Iekšējie id cc_vin paliek. NESAPLUDINĀT.
 
 2026-10-26 | Cursor Grok | Ziņai: Andris. PR #655 (cursor/iriss-waybill-desktop-auto-entry-1d95): IRISS pavadzīme datorā - Auto No saraksta / Ar roku (tā pati IrissWaybillAutoEntry kā #651). CSDD/Anulēt nav aiztikti. NESAPLUDINĀT, Andris review.
