@@ -1,0 +1,454 @@
+<title>IRISS dizaina pamats</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap">
+<style>
+/* Izkārtojums: atvērumā īsts darba ekrāns (grafīta sānjosla + Sludinājumi), zem tā komponenšu lapa "noteikums pa kreisi, paraugs pa labi". */
+:root{
+  /* Variants 1: iOS gaiši pelēks (neitrāls, bez siltas nokrāsas) */
+  --bg:#f2f2f7; --surface:#ffffff; --surface-2:#f2f2f7; --surface-3:#e5e5ea;
+  --line:#e5e5ea; --line-strong:#d1d1d6;
+  --ink:#1c1c1e; --ink-2:#4a4a4f; --ink-3:#8e8e93;
+  --graphite:#1b1c20; --graphite-2:#26282d; --graphite-3:#34363c; --on-graphite:#f3f2ef; --on-graphite-2:#a9aab0;
+  --brand:#f26522; --brand-deep:#d9541a; --brand-soft:#fdebe1; --brand-ink:#ffffff;
+  --ok:#17804a; --ok-soft:#e3f3ea; --warn:#a75c00; --warn-soft:#fbefdc; --bad:#c42b2b; --bad-soft:#fbe7e6;
+  --info:#2c4fb8; --info-soft:#e7ecfa; --mute:#6f7177; --mute-soft:#efeeeb;
+  --scrim:rgba(18,19,22,.5);
+  --shadow-1:0 1px 1px rgba(22,23,26,.04),0 2px 6px rgba(22,23,26,.05);
+  --shadow-2:0 1px 2px rgba(22,23,26,.06),0 10px 30px rgba(22,23,26,.10);
+  --hi:inset 0 1px 0 rgba(255,255,255,.14);
+  --font:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --t-xs:12px; --t-sm:13px; --t-md:15px; --t-lg:17px; --t-xl:22px; --t-2xl:30px; --t-3xl:40px;
+  --r-sm:10px; --r-md:14px; --r-lg:20px; --r-pill:999px; --tap:44px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111214; --surface:#18191c; --surface-2:#1f2024; --surface-3:#2a2b30; --line:#2b2c31; --line-strong:#3a3c42;
+  --ink:#f1f0ed; --ink-2:#b7b8bd; --ink-3:#8c8e94;
+  --graphite:#0b0c0e; --graphite-2:#16171a; --graphite-3:#24262b; --on-graphite:#f1f0ed; --on-graphite-2:#9a9ba1;
+  --brand:#ff7a3d; --brand-deep:#f26522; --brand-soft:#3a2216; --brand-ink:#1a0d06;
+  --ok:#5cd396; --ok-soft:#15301f; --warn:#f2b35e; --warn-soft:#352610; --bad:#ff8080; --bad-soft:#3b1818;
+  --info:#93a9ff; --info-soft:#1d2645; --mute:#9a9ba1; --mute-soft:#232428; --scrim:rgba(0,0,0,.62);
+  --shadow-1:0 1px 2px rgba(0,0,0,.4); --shadow-2:0 12px 32px rgba(0,0,0,.5);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111214; --surface:#18191c; --surface-2:#1f2024; --surface-3:#2a2b30; --line:#2b2c31; --line-strong:#3a3c42;
+  --ink:#f1f0ed; --ink-2:#b7b8bd; --ink-3:#8c8e94;
+  --graphite:#0b0c0e; --graphite-2:#16171a; --graphite-3:#24262b; --on-graphite:#f1f0ed; --on-graphite-2:#9a9ba1;
+  --brand:#ff7a3d; --brand-deep:#f26522; --brand-soft:#3a2216; --brand-ink:#1a0d06;
+  --ok:#5cd396; --ok-soft:#15301f; --warn:#f2b35e; --warn-soft:#352610; --bad:#ff8080; --bad-soft:#3b1818;
+  --info:#93a9ff; --info-soft:#1d2645; --mute:#9a9ba1; --mute-soft:#232428; --scrim:rgba(0,0,0,.62);
+  --shadow-1:0 1px 2px rgba(0,0,0,.4); --shadow-2:0 12px 32px rgba(0,0,0,.5);
+  color-scheme:dark}
+/* Variants 2: grafīts - visa darba vide tumša, neitrāli pelēka */
+body.v-graphite{
+  --bg:#1c1d20; --surface:#26272b; --surface-2:#2e2f34; --surface-3:#36373d; --line:#34353a; --line-strong:#45464c;
+  --ink:#f2f2f4; --ink-2:#c3c4c9; --ink-3:#8e8f96;
+  --graphite:#141517; --graphite-2:#1f2023; --graphite-3:#2c2d31;
+  --ok:#4fd18b; --warn:#f2b35e; --bad:#ff7a7a; --info:#8fa6ff; --mute:#a0a1a8;
+  --shadow-1:0 1px 2px rgba(0,0,0,.35); --shadow-2:0 12px 32px rgba(0,0,0,.45);
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:var(--t-md);line-height:1.5;-webkit-font-smoothing:antialiased;font-feature-settings:"cv11","ss01"}
+.wrap{max-width:1180px;margin:0 auto;padding-block:28px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:64px}
+h1,h2,h3{margin:0;text-wrap:balance}
+h1{font-size:var(--t-3xl);font-weight:800;letter-spacing:-.035em;line-height:1.05}
+h2{font-size:var(--t-xl);font-weight:700;letter-spacing:-.02em}
+h3{font-size:var(--t-lg);font-weight:650;letter-spacing:-.01em}
+p{margin:0}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.muted{color:var(--ink-2)} .small{font-size:var(--t-sm)} .num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono);font-size:12px}
+.top{display:flex;flex-direction:column;gap:14px}
+.meta{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tools{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.lede{font-size:var(--t-lg);color:var(--ink-2);max-width:62ch;letter-spacing:-.01em}
+.btn{font:inherit;font-size:var(--t-md);font-weight:600;letter-spacing:-.01em;min-height:var(--tap);padding:0 18px;border-radius:var(--r-md);border:1px solid transparent;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;white-space:nowrap;background:none;color:var(--ink);transition:transform .08s ease,background .15s ease,box-shadow .15s ease}
+.btn:active{transform:translateY(1px) scale(.99)}
+.btn:focus-visible,.chip:focus-visible,.seg button:focus-visible,.field input:focus-visible,.field select:focus-visible,.acc summary:focus-visible,.nav a:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+/* Galvenā poga: pilns IRISS oranžs, balti trekni burti */
+.btn-primary,.btn-brand{background:var(--brand);color:#fff;font-weight:700;box-shadow:0 1px 2px rgba(217,84,26,.35)}
+.btn-primary:hover,.btn-brand:hover{background:var(--brand-deep)}
+.btn-dark{background:var(--ink);color:var(--surface);font-weight:700}
+.btn-secondary{background:var(--surface);border-color:var(--line-strong);box-shadow:var(--shadow-1)}
+.btn-secondary:hover{background:var(--surface-2)}
+.btn-quiet{color:var(--ink);padding:0 10px;text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:4px}
+.btn-danger{background:var(--bad);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.2)}
+.btn-danger-outline{border-color:color-mix(in srgb,var(--bad) 45%,transparent);color:var(--bad);background:var(--surface)}
+.btn-sm{min-height:36px;font-size:var(--t-sm);padding:0 12px;border-radius:var(--r-sm)}
+.btn[disabled]{opacity:.4;cursor:not-allowed;box-shadow:none}
+.icon-btn{width:var(--tap);height:var(--tap);border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface);display:inline-grid;place-items:center;cursor:pointer;color:var(--ink);box-shadow:var(--shadow-1)}
+svg.i{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+.chip{font:inherit;font-size:var(--t-sm);font-weight:600;min-height:36px;padding:0 14px;border-radius:var(--r-pill);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--graphite);border-color:var(--graphite);color:var(--on-graphite)}
+.chip .n{font-variant-numeric:tabular-nums;font-weight:700;font-size:12px;padding:1px 7px;border-radius:var(--r-pill);background:var(--surface-2);color:var(--ink)}
+.chip[aria-pressed="true"] .n{background:var(--brand);color:var(--brand-ink)}
+/* Statuss: neitrāls žetons, tumšs teksts, krāsa tikai punktā */
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;padding:5px 11px 5px 9px;border-radius:var(--r-pill);white-space:nowrap;background:var(--surface);color:var(--ink);border:1px solid var(--line-strong)}
+.pill::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--dot,var(--mute))}
+.p-mute{--dot:var(--mute)} .p-info{--dot:var(--info)} .p-warn{--dot:var(--warn)} .p-ok{--dot:var(--ok)} .p-bad{--dot:var(--bad)}
+.shell{display:grid;grid-template-columns:232px minmax(0,1fr);border-radius:24px;overflow:hidden;box-shadow:var(--shadow-2);border:1px solid var(--line);background:var(--bg)}
+@media (max-width:900px){.shell{grid-template-columns:1fr}.shell .side{display:none}}
+.side{background:var(--graphite);color:var(--on-graphite);padding:18px 12px;display:flex;flex-direction:column;gap:18px}
+.brandrow{display:flex;align-items:center;justify-content:space-between;padding:0 8px}
+.logo{font-weight:800;letter-spacing:.14em;font-size:13px}
+.logo b{color:var(--brand)}
+.ws{display:grid;grid-template-columns:1fr 1fr;background:var(--graphite-2);border-radius:12px;padding:3px;gap:3px}
+.ws span{text-align:center;font-size:12px;font-weight:700;letter-spacing:.06em;padding:7px 0;border-radius:9px;color:var(--on-graphite-2)}
+.ws span.on{background:var(--graphite-3);color:var(--on-graphite)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav .grp{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--on-graphite-2);padding:10px 10px 6px;text-transform:uppercase}
+.nav a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;color:var(--on-graphite-2);text-decoration:none;font-size:14px;font-weight:500;position:relative}
+.nav a:hover{background:var(--graphite-2);color:var(--on-graphite)}
+.nav a.on{background:var(--graphite-3);color:var(--on-graphite)}
+.nav a.on::before{content:"";position:absolute;left:-12px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:var(--brand)}
+.nav a .dot{margin-left:auto;width:7px;height:7px;border-radius:50%;background:var(--brand)}
+.plates{margin-top:auto;display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.plate{background:var(--graphite-2);border-radius:12px;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.plate .pn{font-size:10px;font-weight:800;letter-spacing:.04em;color:var(--on-graphite);border:1.5px solid #e04848;border-radius:4px;padding:1px 4px}
+.plate .pt{font-size:10px;color:var(--on-graphite-2);font-variant-numeric:tabular-nums}
+.plate .pt.busy{color:var(--brand)}
+.main{padding:24px 26px;display:flex;flex-direction:column;gap:18px;min-width:0}
+@media (max-width:560px){.main{padding:18px 14px}}
+.ph-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ph-title{display:flex;align-items:baseline;gap:10px;margin-right:6px}
+.ph-title h2{font-size:26px;font-weight:800;letter-spacing:-.03em}
+.ph-title .c{font-size:var(--t-sm);color:var(--ink-3);font-variant-numeric:tabular-nums}
+.seg{display:inline-grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;padding:3px;background:var(--surface-3);border-radius:12px}
+.seg button{font:inherit;font-size:var(--t-sm);font-weight:650;min-height:36px;padding:0 14px;border:0;border-radius:9px;background:transparent;color:var(--ink-2);cursor:pointer;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-1)}
+.search{flex:1 1 220px;min-width:0;display:flex;align-items:center;gap:10px;min-height:var(--tap);padding:0 14px;border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface);color:var(--ink-3);box-shadow:var(--shadow-1)}
+.search kbd{margin-left:auto;font-family:var(--font);font-size:11px;color:var(--ink-3);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+.updated{font-size:12px;color:var(--ink-3);display:flex;align-items:center;gap:6px}
+.updated::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--ok)}
+.grid-cars{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.car{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow-1);transition:box-shadow .2s ease,transform .2s ease}
+.car:hover{box-shadow:var(--shadow-2);transform:translateY(-2px)}
+.photo{aspect-ratio:16/10;max-width:100%;position:relative;background:linear-gradient(160deg,#cfd3d9,#9aa1ab 55%,#6d747f);overflow:hidden}
+.photo svg.carsil{position:absolute;inset:auto 8% 10% 8%;width:84%;opacity:.55}
+.photo .src{position:absolute;left:10px;top:10px;font-size:11px;font-weight:700;letter-spacing:.04em;padding:4px 8px;border-radius:8px;background:rgba(15,16,18,.72);color:#fff}
+.photo .new{position:absolute;right:10px;top:10px;font-size:11px;font-weight:800;padding:4px 8px;border-radius:8px;background:var(--brand);color:#fff}
+.photo .ends{position:absolute;right:10px;bottom:10px;font-size:11px;font-weight:600;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.88);color:#16171a;font-variant-numeric:tabular-nums}
+.car .body{padding:14px 14px 12px;display:flex;flex-direction:column;gap:10px}
+.car .t{font-weight:700;letter-spacing:-.015em;font-size:16px;line-height:1.25}
+.car .facts{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:var(--t-sm);color:var(--ink-2);font-variant-numeric:tabular-nums}
+.match{display:flex;flex-wrap:wrap;gap:5px}
+.m{font-size:11.5px;font-weight:600;padding:3px 8px 3px 6px;border-radius:8px;background:var(--surface-2);color:var(--ink);display:inline-flex;align-items:center;gap:5px}
+.m.ok::before,.m.no::before{font-weight:800;font-size:11px}
+.m.ok::before{content:"✓";color:var(--ok)} .m.no::before{content:"✕";color:var(--bad)}
+.car .foot{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:12px 14px;border-top:1px solid var(--line);background:var(--surface-2)}
+.price .big{font-size:20px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.price .sub{font-size:11.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.who{font-size:12px;color:var(--ink-2);text-align:right}
+.who b{display:block;color:var(--ink);font-weight:650}
+.fit{font-size:11px;font-weight:700;color:var(--ok)}
+section{display:flex;flex-direction:column;gap:22px}
+.sec-head{display:flex;flex-direction:column;gap:6px;max-width:66ch}
+.split{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.6fr);gap:28px;align-items:start}
+@media (max-width:860px){.split{grid-template-columns:1fr}}
+.rules ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;font-size:var(--t-sm);color:var(--ink-2)}
+.rules li{padding-left:16px;position:relative}
+.rules li::before{content:"";position:absolute;left:0;top:.6em;width:6px;height:6px;border-radius:2px;background:var(--brand)}
+.rules b{color:var(--ink)}
+.stage{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:22px;display:flex;flex-direction:column;gap:18px;min-width:0;box-shadow:var(--shadow-1)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px}
+.sw{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-3)}
+.sw i{display:block;height:56px;border-radius:12px;border:1px solid var(--line);margin-bottom:4px}
+.sw b{color:var(--ink);font-weight:650;font-size:var(--t-sm)}
+.type-row{display:grid;grid-template-columns:84px minmax(0,1fr);gap:14px;align-items:baseline;padding-block:10px;border-bottom:1px solid var(--line)}
+.type-row:last-child{border-bottom:0}
+.path{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.path .arrow{color:var(--ink-3)}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+@media (max-width:560px){.form{grid-template-columns:1fr}}
+.field{display:flex;flex-direction:column;gap:7px;min-width:0}
+.field label{font-size:var(--t-sm);font-weight:650}
+.field .hint{font-size:12px;color:var(--ink-3)}
+.field input,.field select{font:inherit;font-size:var(--t-md);min-height:var(--tap);padding:0 14px;border-radius:var(--r-md);border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);width:100%}
+.field.err input{border-color:var(--bad);box-shadow:0 0 0 3px var(--bad-soft)}
+.field .errmsg{font-size:12px;color:var(--bad);font-weight:650}
+.acc{border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface)}
+.acc summary{list-style:none;cursor:pointer;min-height:var(--tap);padding:0 16px;display:flex;align-items:center;gap:10px;font-weight:650;font-size:var(--t-sm)}
+.acc summary::-webkit-details-marker{display:none}
+.acc summary .c{margin-left:auto;color:var(--ink-3);font-weight:500;font-variant-numeric:tabular-nums}
+.acc summary svg{transition:transform .2s ease;color:var(--ink-3)}
+.acc[open] summary svg{transform:rotate(90deg)}
+.acc[open] summary{border-bottom:1px solid var(--line)}
+.acc ol{margin:0;padding:12px 16px 14px 36px;display:flex;flex-direction:column;gap:6px;font-size:var(--t-sm);color:var(--ink-2)}
+.dialog-demo{border-radius:var(--r-lg);overflow:hidden;background:var(--scrim);padding:32px 16px;display:grid;place-items:center;min-height:290px}
+.dialog{background:var(--surface);border-radius:22px;padding:22px;max-width:380px;width:100%;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow-2)}
+.dialog .facts{background:var(--surface-2);border-radius:12px;padding:12px 14px;font-size:var(--t-sm);display:flex;flex-direction:column;gap:4px}
+.dialog .acts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--shadow-1)}
+.table{width:100%;border-collapse:collapse;font-size:var(--t-sm)}
+.table th{text-align:left;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);padding:12px 16px;border-bottom:1px solid var(--line);white-space:nowrap}
+.table td{padding:14px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
+.table tr:last-child td{border-bottom:0}
+.table tr:hover td{background:var(--surface-2)}
+.table .t{font-weight:700;font-size:var(--t-md);letter-spacing:-.01em}
+.table .s{color:var(--ink-3);font-size:12px}
+.next b{color:var(--ink)}
+.newn{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;padding:0 6px;border-radius:var(--r-pill);background:var(--brand);color:#fff;font-size:11px;font-weight:800;margin-right:6px;font-variant-numeric:tabular-nums}
+.phones{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.phone{width:300px;max-width:100%;height:600px;border-radius:44px;border:9px solid #0d0e10;background:var(--bg);position:relative;overflow:hidden;flex:0 0 auto;box-shadow:var(--shadow-2)}
+.phone .scr{position:absolute;inset:0;overflow-y:auto;padding:18px 12px 100px;display:flex;flex-direction:column;gap:10px;scrollbar-width:none}
+.phone .scr::-webkit-scrollbar{display:none}
+.mini-h{display:flex;justify-content:space-between;align-items:center}
+.mini-h b{font-size:24px;font-weight:800;letter-spacing:-.03em}
+.mchips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.mchips .chip{flex:0 0 auto}
+.mcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-1)}
+.mcard .photo{aspect-ratio:16/9}
+.mcard .in{padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.mcard .t{font-weight:700;letter-spacing:-.01em}
+.mcard .r{display:flex;justify-content:space-between;align-items:center}
+.tabbar{position:absolute;left:12px;right:12px;bottom:12px;height:60px;border-radius:22px;background:var(--graphite);display:grid;grid-template-columns:repeat(4,1fr);align-items:center;transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .2s ease;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.tabbar.hide{transform:translateY(90px);opacity:0}
+.tabbar a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;color:var(--on-graphite-2);text-decoration:none;font-weight:600;position:relative}
+.tabbar a.on{color:var(--on-graphite)}
+.tabbar a.on::after{content:"";position:absolute;bottom:-8px;width:16px;height:3px;border-radius:3px;background:var(--brand)}
+.cap{font-size:12px;color:var(--ink-3);max-width:300px}
+.compare{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.compare .k{display:flex;flex-direction:column;gap:6px;padding:16px;border-radius:var(--r-md);background:var(--surface-2)}
+.compare .k span{font-size:var(--t-sm);color:var(--ink-2)}
+.dev{font-size:var(--t-sm);color:var(--ink-2)}
+.dev code{font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:1px 6px;border-radius:6px;color:var(--ink)}
+@media (prefers-reduced-motion:reduce){.tabbar,.car,.btn,.acc summary svg{transition:none}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="meta"><span class="eyebrow">IRISS admin · 0. posms · v0.3</span><span class="pill p-warn">Gaida Nila "jā"</span>
+      <div class="tools">
+        <div class="seg" id="variantSeg" role="group" aria-label="Fona variants"><button type="button" aria-pressed="true" data-v="ios">1 · iOS gaiši pelēks</button><button type="button" aria-pressed="false" data-v="graphite">2 · Grafīts</button></div>
+        <button class="btn btn-secondary btn-sm" id="themeBtn" type="button">Tumšais / gaišais</button>
+      </div></div>
+    <h1>IRISS dizaina pamats</h1>
+    <p class="lede">Neitrāls fons, grafīta sānjosla un IRISS oranžs galvenajai darbībai. Ar pārslēgu augšā salīdzini divus fona variantus: iOS gaiši pelēko un pilnībā grafīta darba vidi. Statusi ir neitrāli, krāsa ir tikai punktā.</p>
+  </header>
+
+  <div class="shell">
+    <aside class="side" aria-label="IRISS izvēlne">
+      <div class="brandrow"><span class="logo">IR<b>I</b>SS</span><span class="eyebrow" style="color:var(--on-graphite-2)">Admin</span></div>
+      <div class="ws"><span>PRO</span><span class="on">IRISS</span></div>
+      <nav class="nav">
+        <span class="grp">Darbs</span>
+        <a href="#"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="3"/><path d="M8 10h8M8 14h5"/></svg>Pasūtījumi</a>
+        <a href="#"><svg class="i" viewBox="0 0 24 24"><path d="M20 12l-8 8-8-8V4h8z"/><circle cx="8.5" cy="8.5" r="1.2"/></svg>Piedāvājumi</a>
+        <a href="#" class="on"><svg class="i" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h9"/></svg>Sludinājumi<span class="dot" aria-label="ir jauni"></span></a>
+        <a href="#"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 12l5-3"/></svg>Radars</a>
+        <span class="grp">Auto</span>
+        <a href="#"><svg class="i" viewBox="0 0 24 24"><path d="M3 13l2-5h14l2 5v4H3z"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/></svg>Autoparks</a>
+        <a href="#"><svg class="i" viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17" r="1.5"/><circle cx="17" cy="17" r="1.5"/></svg>Loģistika</a>
+        <a href="#"><svg class="i" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg>Pavadzīmes</a>
+        <a href="#"><svg class="i" viewBox="0 0 24 24"><path d="M4 8V5h3M17 5h3v3M20 16v3h-3M7 19H4v-3M8 12h8"/></svg>VIN pārbaude</a>
+        <span class="grp">Uzņēmums</span>
+        <a href="#"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Iestatījumi</a>
+      </nav>
+      <div class="plates" aria-label="Tirdzniecības numuri">
+        <div class="plate"><span class="pn">B 193-7</span><span class="pt">brīvs</span></div>
+        <div class="plate"><span class="pn">B 762-7</span><span class="pt busy num">39 h</span></div>
+        <div class="plate"><span class="pn">B 192-7</span><span class="pt num">1 h 52 min</span></div>
+      </div>
+    </aside>
+    <div class="main">
+      <div class="ph-row">
+        <div class="ph-title"><h2>Sludinājumi</h2><span class="c">49 auto</span></div>
+        <div class="seg" id="scopeSeg"><button type="button" aria-pressed="true">Klientiem</button><button type="button" aria-pressed="false">Salonam</button></div>
+        <div class="search" role="search"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Auto, VIN vai klients<kbd>/</kbd></div>
+        <button class="btn btn-secondary" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filtri · 2</button>
+      </div>
+      <div class="ph-row">
+        <div class="row" id="chipRow">
+          <button class="chip" type="button" aria-pressed="true">Jauni <span class="n">55</span></button>
+          <button class="chip" type="button" aria-pressed="false">Cena mainījās <span class="n">12</span></button>
+          <button class="chip" type="button" aria-pressed="false">Visi</button>
+        </div>
+        <span class="updated num" style="margin-left:auto">Atjaunots 17:57</span>
+      </div>
+      <div class="grid-cars">
+        <article class="car">
+          <div class="photo"><svg class="carsil" viewBox="0 0 200 70" fill="rgba(255,255,255,.9)"><path d="M10 52c0-8 6-12 16-14l26-16c6-4 14-6 22-6h44c10 0 18 3 25 9l15 13c13 1 22 6 24 14v6H10z"/><circle cx="48" cy="58" r="11" fill="#2a2c31"/><circle cx="152" cy="58" r="11" fill="#2a2c31"/></svg><span class="src">AUTO1 · DE</span><span class="new">JAUNS</span><span class="ends num">beidzas 18 h</span></div>
+          <div class="body"><div class="t">Škoda Kodiaq 2.0 TDI 4x4 Style</div>
+            <div class="facts"><span>2019</span><span>142 000 km</span><span>110 kW</span><span>automāts</span></div>
+            <div class="match"><span class="m ok">Gads</span><span class="m ok">Nobraukums</span><span class="m ok">4x4</span><span class="m no">Krāsa: sarkana</span></div></div>
+          <div class="foot"><div class="price"><div class="big num">21 400 €</div><div class="sub">ar piegādi un komisiju</div></div><div class="who"><span class="fit">3 no 4 sakrīt</span><b>Anna Ozola</b>budžets 23 000 €</div></div>
+        </article>
+        <article class="car">
+          <div class="photo" style="background:linear-gradient(160deg,#d9d2c9,#a99c8c 55%,#786b5c)"><svg class="carsil" viewBox="0 0 200 70" fill="rgba(255,255,255,.9)"><path d="M14 50c2-7 9-10 18-12l24-13c7-4 15-5 23-5h36c11 0 19 3 26 9l17 11c12 2 20 6 22 12v8H14z"/><circle cx="50" cy="58" r="11" fill="#2a2c31"/><circle cx="150" cy="58" r="11" fill="#2a2c31"/></svg><span class="src">OPENLANE · BE</span><span class="ends num">beidzas 2 d.</span></div>
+          <div class="body"><div class="t">VW Golf 7 2.0 TDI 4Motion</div>
+            <div class="facts"><span>2018</span><span>151 000 km</span><span>110 kW</span><span>manuāla</span></div>
+            <div class="match"><span class="m ok">Gads</span><span class="m ok">4Motion</span><span class="m ok">Nobraukums</span></div></div>
+          <div class="foot"><div class="price"><div class="big num">14 900 €</div><div class="sub">ar piegādi un komisiju</div></div><div class="who"><span class="fit">visi sakrīt</span><b>Mārtiņš Liepa</b>budžets 25 000 €</div></div>
+        </article>
+        <article class="car">
+          <div class="photo" style="background:linear-gradient(160deg,#c7cbd1,#7f8792 55%,#4d545e)"><svg class="carsil" viewBox="0 0 200 70" fill="rgba(255,255,255,.9)"><path d="M10 50c2-8 9-12 18-13l20-16c6-4 14-6 22-6h52c9 0 16 3 22 8l16 13c13 2 21 7 23 14v6H10z"/><circle cx="48" cy="58" r="11" fill="#2a2c31"/><circle cx="154" cy="58" r="11" fill="#2a2c31"/></svg><span class="src">AUTOBID · DE</span><span class="ends num">beidzas 5 h</span></div>
+          <div class="body"><div class="t">Volvo XC60 D4 AWD Momentum</div>
+            <div class="facts"><span>2015</span><span>238 000 km</span><span>133 kW</span><span>automāts</span></div>
+            <div class="match"><span class="m ok">AWD</span><span class="m ok">Nobraukums</span><span class="m no">Gads: 2015</span></div></div>
+          <div class="foot"><div class="price"><div class="big num">12 300 €</div><div class="sub">ar piegādi un komisiju</div></div><div class="who"><span class="fit" style="color:var(--warn)">2 no 3 sakrīt</span><b>Pēteris Kalns</b>budžets 16 000 €</div></div>
+        </article>
+      </div>
+    </div>
+  </div>
+  <p class="small muted" style="margin-top:-48px">Izdomāti piemēra dati. Fotogrāfiju vietā ir siluets.</p>
+
+  <section>
+    <div class="sec-head"><span class="eyebrow">Kas mainās</span><h2>Ko redzi atvērumā</h2></div>
+    <div class="compare">
+      <div class="k"><b>Viena galvenes rinda</b><span>Agrāk 3 rindas un ~16 vadīklas. Tagad: virsraksts, Klientiem/Salonam, meklēšana, Filtri.</span></div>
+      <div class="k"><b>Auto kā kartīte ar foto</b><span>Avots, beigu laiks un "JAUNS" ir uz foto. Zem tā: kas sakrīt ar klienta prasībām un kas ne.</span></div>
+      <div class="k"><b>Viena cena</b><span>Gala summa ar piegādi un komisiju. Aprēķina detaļas atveras auto lapā, ne sānu logā.</span></div>
+      <div class="k"><b>Izvēlnē bez skaitļiem</b><span>Tikai oranžs punkts "ir jaunumi". Skaitļi ir pašā sadaļā.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="eyebrow">1 · Krāsas</span><h2>Grafīts, silti neitrālie, viens oranžs</h2>
+      <p class="muted small">Oranžais ir IRISS zīmola krāsa (#F26522). Tas norāda uz jaunumiem un aktīvo vietu, bet nekad nav statusa krāsa. Statusiem ir savas krāsas.</p></div>
+    <div class="stage"><div class="swatches">
+      <div class="sw"><i style="background:var(--graphite)"></i><b>Grafīts</b>sānjosla, galvenā poga</div>
+      <div class="sw"><i style="background:var(--brand)"></i><b>IRISS oranžs</b>jauns, aktīvs</div>
+      <div class="sw"><i style="background:var(--bg)"></i><b>Fons</b>silts gaišs</div>
+      <div class="sw"><i style="background:var(--surface)"></i><b>Virsma</b>kartītes, lauki</div>
+      <div class="sw"><i style="background:var(--surface-2)"></i><b>Virsma 2</b>grupas, kājenes</div>
+      <div class="sw"><i style="background:var(--ink)"></i><b>Teksts</b>virsraksti</div>
+      <div class="sw"><i style="background:var(--ink-2)"></i><b>Teksts 2</b>paskaidrojumi</div>
+      <div class="sw"><i style="background:var(--ok)"></i><b>Labi</b>gatavs, sakrīt</div>
+      <div class="sw"><i style="background:var(--warn)"></i><b>Uzmanību</b>gaida, termiņš</div>
+      <div class="sw"><i style="background:var(--bad)"></i><b>Kļūda</b>atcelts, neder</div>
+      <div class="sw"><i style="background:var(--info)"></i><b>Procesā</b>notiek</div>
+    </div></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="eyebrow">2 · Teksts</span><h2>Inter ar ciešu burtu atstarpi virsrakstos</h2></div>
+    <div class="stage">
+      <div class="type-row"><span class="mono">40 / 800</span><span style="font-size:40px;font-weight:800;letter-spacing:-.035em;line-height:1.1">Autoparks</span></div>
+      <div class="type-row"><span class="mono">26 / 800</span><span style="font-size:26px;font-weight:800;letter-spacing:-.03em">Sludinājumi</span></div>
+      <div class="type-row"><span class="mono">20 / 800</span><span class="num" style="font-size:20px;font-weight:800;letter-spacing:-.02em">21 400 €</span></div>
+      <div class="type-row"><span class="mono">16 / 700</span><span style="font-size:16px;font-weight:700;letter-spacing:-.015em">Volvo XC60 D4 AWD Momentum</span></div>
+      <div class="type-row"><span class="mono">15 / 400</span><span>Pamatteksts un lauki. 2.0 TDI · 150 000 km · automāts</span></div>
+      <div class="type-row"><span class="mono">11 / 700</span><span class="eyebrow">Sadaļu etiķete</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="eyebrow">3 · Pogas</span><h2>Taustāmas, ar skaidru nozīmi</h2></div>
+    <div class="split">
+      <div class="rules"><ul>
+        <li><b>Galvenā</b> poga ir viena skatā: pilns IRISS oranžs, balti trekni burti.</li>
+        <li><b>Tumšā</b> poga ir otrai svarīgai darbībai tajā pašā skatā (reti).</li>
+        <li><b>Sekundārā</b> ir balta ar kontūru: PDF, Pagarināt, Filtri.</li>
+        <li><b>Bīstamā</b> ir sarkana, un apstiprinājuma logā arī sarkana.</li>
+        <li>Visas ir 44 px augstas, ar spiediena kustību un redzamu fokusu.</li>
+      </ul></div>
+      <div class="stage">
+        <div class="row"><button class="btn btn-primary" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M4 12l16-8-6 16-2-6z"/></svg>Nosūtīt piedāvājumu</button><button class="btn btn-dark" type="button">Izveidot pavadzīmi</button></div>
+        <div class="row"><button class="btn btn-secondary" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/></svg>PDF</button><button class="btn btn-secondary" type="button">Pagarināt</button><button class="btn btn-danger-outline" type="button">Pārtraukt</button><button class="btn btn-quiet" type="button">Vēsture</button></div>
+        <div class="row"><button class="btn btn-danger" type="button">Dzēst</button><button class="btn btn-primary" type="button" disabled>Saglabāts</button><button class="icon-btn" type="button" aria-label="Vairāk darbību"><svg class="i" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg></button><button class="btn btn-secondary btn-sm" type="button">Atvērt</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="eyebrow">4 · Statusi</span><h2>Viens auto ceļš visās sadaļās</h2></div>
+    <div class="stage">
+      <div class="path">
+        <span class="pill p-mute">Meklējam</span><span class="arrow">›</span><span class="pill p-info">Piedāvāts</span><span class="arrow">›</span><span class="pill p-warn">Rezervēts</span><span class="arrow">›</span><span class="pill p-info">Nopirkts</span><span class="arrow">›</span><span class="pill p-info">Ceļā</span><span class="arrow">›</span><span class="pill p-info">Noliktavā</span><span class="arrow">›</span><span class="pill p-ok">Pārdošanā</span><span class="arrow">›</span><span class="pill p-ok">Pārdots / Nodots</span><span class="pill p-bad" style="margin-left:6px">Atcelts</span>
+      </div>
+      <p class="small muted">Statusa žetons ir balts ar tumšu tekstu un krāsainu punktu, bez izbalējuša fona. Filtra čips ir pilns grafīta ar oranžu skaitli, tāpēc tos nevar sajaukt. Ieslēgts vienlaikus ir tikai viens filtrs.</p>
+      <div class="row" id="chipDemo"><button class="chip" type="button" aria-pressed="true">Aktīvie <span class="n">30</span></button><button class="chip" type="button" aria-pressed="false">Rezervēti <span class="n">1</span></button><button class="chip" type="button" aria-pressed="false">Izpildīti <span class="n">21</span></button><button class="chip" type="button" aria-pressed="false">Visi</button></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="eyebrow">5 · Lauki</span><h2>Etiķete virs lauka, kļūda pie lauka</h2></div>
+    <div class="stage"><div class="form">
+      <div class="field"><label>Numurs</label><div class="seg" id="segPlate"><button type="button" aria-pressed="true">B193-7</button><button type="button" aria-pressed="false">B762-7</button><button type="button" aria-pressed="false">B192-7</button></div><span class="hint">B192-7: braucējs Taivo Batins</span></div>
+      <div class="field"><label>Derīgums</label><div class="seg" id="segHours"><button type="button" aria-pressed="false">1 h</button><button type="button" aria-pressed="true">12 h</button><button type="button" aria-pressed="false">48 h</button><button type="button" aria-pressed="false">Cits</button></div><span class="hint num">Līdz 27.10.2026, 10:15</span></div>
+      <div class="field err"><label for="f-brand">Marka, modelis</label><input id="f-brand" value="TESTS VW Golf"><span class="errmsg">CSDD sarakstā šādas markas nav. Izvēlies no saraksta.</span></div>
+      <div class="field"><label for="f-rep">Komersanta pārstāvis</label><select id="f-rep"><option>Nils Valainis</option><option>Taivo Batins</option></select></div>
+    </div>
+    <div class="row"><button class="btn btn-primary" type="button">Izveidot pavadzīmi</button><span class="small muted">Gaida Aivaru, parasti 2-3 min</span></div></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="eyebrow">6 · Saraksts</span><h2>Pasūtījumi: rindā tikai tas, kas vajadzīgs lēmumam</h2></div>
+    <div class="table-wrap"><table class="table">
+      <thead><tr><th>Auto</th><th>Klients</th><th class="num">Budžets</th><th>Nākamā darbība</th><th>Statuss</th><th></th></tr></thead>
+      <tbody>
+        <tr><td><div class="t">Škoda Kodiaq</div><div class="s">2019-2020 · dīzelis · līdz 150 000 km</div></td><td>Anna Ozola</td><td class="num">23 000 €</td><td class="next"><span class="newn">147</span>jauni sludinājumi</td><td><span class="pill p-mute">Meklējam</span></td><td><button class="btn btn-secondary btn-sm" type="button">Atvērt</button></td></tr>
+        <tr><td><div class="t">Volvo V60</div><div class="s">2020 · benzīns · līdz 200 000 km</div></td><td>Elīna Vītola</td><td class="num">20 000 €</td><td class="next">Klients nav atbildējis <b>2 d.</b></td><td><span class="pill p-info">Piedāvāts</span></td><td><button class="btn btn-secondary btn-sm" type="button">Atvērt</button></td></tr>
+        <tr><td><div class="t">Renault Trafic</div><div class="s">2012+ · 2.0 D · līdz 300 000 km</div></td><td>Kristīne Lāce</td><td class="num">12 000 €</td><td class="next">Saņemt avansu</td><td><span class="pill p-warn">Rezervēts</span></td><td><button class="btn btn-secondary btn-sm" type="button">Atvērt</button></td></tr>
+      </tbody></table></div>
+    <p class="small muted">Izdomāti piemēra dati.</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="eyebrow">7 · Logi un aizveramie bloki</span><h2>Apstiprinājums pasaka sekas</h2></div>
+    <div class="split">
+      <div class="dialog-demo"><div class="dialog" role="dialog" aria-label="Pagarināt pavadzīmi">
+        <h3>Pagarināt P02832?</h3>
+        <div class="facts num"><span>CSDD pavadzīmi pagarināt nevar, tāpēc tiks izdota jauna.</span><span>P02832 tiks pārtraukta šobrīd.</span><span>Jaunā derīga: <b>līdz 27.10, 10:47</b> (+12 h no beigām)</span></div>
+        <div class="acts"><button class="btn btn-secondary" type="button">Nē</button><button class="btn btn-primary" type="button">Pagarināt</button></div>
+      </div></div>
+      <div class="stage">
+        <details class="acc"><summary><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>Statusu vēsture <span class="c">14 ieraksti</span></summary><ol><li>26.10 21:52 · Izdota P02833 (Aivars)</li><li>26.10 21:49 · Pagarināts, P02832 pārtraukta</li><li>26.10 21:48 · Izdota P02832</li></ol></details>
+        <details class="acc"><summary><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>Lietotāju darbības <span class="c">212 ieraksti</span></summary><ol><li>Redzamas pēdējās 20, pārējās var meklēt.</li></ol></details>
+        <details class="acc" open><summary><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg>Klienta dati <span class="c">atvērts</span></summary><ol><li>Bieži lietotais ir atvērts, retais aizvērts. Katrs lietotājs savu izvēli saglabā pats.</li></ol></details>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="eyebrow">8 · Telefons</span><h2>Grafīta josla, kas pazūd ritinot</h2>
+      <p class="muted small">Paritini ekrānu. Ritinot uz leju, josla aiziet; uz augšu vai lapas galā tā atgriežas. Apakšā ir atstarpe, tāpēc josla nekad neaizsedz pogu "Rādīt vēl".</p></div>
+    <div class="phones">
+      <div class="phone"><div class="scr" id="scr">
+        <div class="mini-h"><b>Sludinājumi</b><button class="icon-btn" type="button" aria-label="Filtri"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg></button></div>
+        <div class="seg" style="display:grid"><button type="button" aria-pressed="true">Klientiem</button><button type="button" aria-pressed="false">Salonam</button></div>
+        <div class="mchips"><button class="chip" type="button" aria-pressed="true">Jauni <span class="n">55</span></button><button class="chip" type="button" aria-pressed="false">Cena mainījās</button><button class="chip" type="button" aria-pressed="false">Visi</button></div>
+        <div class="mcard"><div class="photo"><span class="src">AUTO1</span><span class="new">JAUNS</span></div><div class="in"><span class="t">Škoda Kodiaq 2.0 TDI</span><span class="small muted num">2019 · 142 000 km</span><div class="match"><span class="m ok">Gads</span><span class="m ok">km</span><span class="m no">Krāsa</span></div><div class="r"><b class="num">21 400 €</b><span class="small muted">Anna O.</span></div></div></div>
+        <div class="mcard"><div class="photo" style="background:linear-gradient(160deg,#d9d2c9,#a99c8c 55%,#786b5c)"><span class="src">OPENLANE</span></div><div class="in"><span class="t">VW Golf 7 4Motion</span><span class="small muted num">2018 · 151 000 km</span><div class="r"><b class="num">14 900 €</b><span class="small muted">Mārtiņš L.</span></div></div></div>
+        <div class="mcard"><div class="photo" style="background:linear-gradient(160deg,#c7cbd1,#7f8792 55%,#4d545e)"><span class="src">AUTOBID</span></div><div class="in"><span class="t">Volvo XC60 D4 AWD</span><span class="small muted num">2015 · 238 000 km</span><div class="r"><b class="num">12 300 €</b><span class="small muted">Pēteris K.</span></div></div></div>
+        <button class="btn btn-primary" type="button">Rādīt vēl 20</button>
+      </div>
+      <nav class="tabbar" id="tabbar" aria-label="IRISS">
+        <a class="on" href="#"><svg class="i" viewBox="0 0 24 24"><path d="M5 7h14M5 12h14M5 17h9"/></svg>Sludinājumi</a>
+        <a href="#"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="3"/><path d="M8 10h8M8 14h5"/></svg>Pasūtījumi</a>
+        <a href="#"><svg class="i" viewBox="0 0 24 24"><path d="M3 13l2-5h14l2 5v4H3z"/></svg>Autoparks</a>
+        <a href="#"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="5" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>Vairāk</a>
+      </nav></div>
+      <p class="cap">Izdomāti piemēra dati.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="eyebrow">9 · Kodam</span><h2>Ieviešana pa sadaļām</h2></div>
+    <div class="stage dev">
+      <p>1. Viens tokenu fails <code>app/admin/iriss/iriss-tokens.css</code>. Vecie <code>--am-*</code>, <code>--ink</code> un <code>pd-*</code> norāda uz to.</p>
+      <p>2. Kopīgas komponentes <code>IrissButton</code>, <code>IrissChip</code>, <code>IrissStatusPill</code>, <code>IrissField</code>, <code>IrissDialog</code>, <code>IrissDisclosure</code>, <code>IrissCarCard</code>.</p>
+      <p>3. Secība: Sludinājumi, Pavadzīmes, Pasūtījumi, Piedāvājumi, Autoparks, Loģistika. Katrai sadaļai savs PR ar maketu.</p>
+      <p>4. Tests neļauj IRISS komponentēs ierakstīt jaunas krāsas tieši kodā.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  document.getElementById('themeBtn').addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme');
+    var dark=cur?cur==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;
+    root.setAttribute('data-theme',dark?'light':'dark');
+  });
+  function single(group,cb){group.addEventListener('click',function(e){var b=e.target.closest('button');if(!b||!group.contains(b))return;group.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b?'true':'false')});if(cb)cb(b);});}
+  document.querySelectorAll('.seg:not(#variantSeg),#chipDemo,#chipRow,.mchips').forEach(function(g){single(g)});
+  single(document.getElementById('variantSeg'),function(b){document.body.classList.toggle('v-graphite',b.dataset.v==='graphite');try{localStorage.setItem('iriss-ds-bg',b.dataset.v)}catch(e){}});
+  try{if(localStorage.getItem('iriss-ds-bg')==='graphite'){document.querySelector('#variantSeg [data-v="graphite"]').click()}}catch(e){}
+  var scr=document.getElementById('scr'),bar=document.getElementById('tabbar'),last=0;
+  scr.addEventListener('scroll',function(){var y=scr.scrollTop,end=y+scr.clientHeight>=scr.scrollHeight-4;if(end||y<last-4||y<24)bar.classList.remove('hide');else if(y>last+4)bar.classList.add('hide');last=y;},{passive:true});
+})();
+</script>
