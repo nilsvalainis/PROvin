@@ -386,6 +386,9 @@ export function planSilentAutosave(inFlight: boolean, imagesHydrating = false): 
   return { startNow: true, queue: false };
 }
 
+/** Tukšs jauns pasūtījums: bez «kļūd» - saglabāšanas poga nekļūst sarkana «Mēģināt vēlreiz» (FABLE v3). */
+export const IRISS_EMPTY_NEW_ORDER_MSG = "Nav ko saglabāt: ieraksti marku / modeli vai klienta vārdu.";
+
 export function irissPasutijumsHasOperatorContent(rec: IrissPasutijumsRecord): boolean {
   const text = [
     rec.clientFirstName,
