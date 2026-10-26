@@ -225,6 +225,7 @@ function Field({
   warning,
   type = "text",
   className,
+  filterMark,
 }: {
   label: string;
   value: string;
@@ -236,10 +237,19 @@ function Field({
   warning?: string | null;
   type?: string;
   className?: string;
+  /** `*`: lauks filtrē Meklētāju. */
+  filterMark?: boolean;
 }) {
   return (
     <label className={`block min-w-0${className ? ` ${className}` : ""}`}>
-      <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">{label}</span>
+      <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">
+        {label}
+        {filterMark ? (
+          <span className="iriss-range-req" aria-hidden>
+            {" *"}
+          </span>
+        ) : null}
+      </span>
       <input
         id={id}
         type={type}
@@ -1004,9 +1014,10 @@ export function IrissOrderRoom({
                       />
                     ) : null}
                   </label>
-                  <Field label="Marka / modelis" value={rec.brandModel} onChange={(value) => onPatch("brandModel", value)} />
+                  <Field label="Marka / modelis" filterMark value={rec.brandModel} onChange={(value) => onPatch("brandModel", value)} />
                   <Field
                     label="Modeļa paplašinājums"
+                    filterMark
                     value={rec.modelExtension}
                     placeholder="piem., S-line"
                     onChange={(value) => onPatch("modelExtension", value)}
@@ -1021,6 +1032,7 @@ export function IrissOrderRoom({
                 <div className="iriss-spec-rest">
                   <IrissSpecChoiceSelect
                     label="Degviela"
+                    filterMark
                     value={fuelSelectValue(rec.engineType)}
                     options={IRISS_FUEL_SELECT_OPTIONS}
                     selectClassName={fieldClass}
@@ -1028,6 +1040,7 @@ export function IrissOrderRoom({
                   />
                   <IrissSpecChoiceSelect
                     label="Ātrumkārba"
+                    filterMark
                     value={gearboxSelectValue(rec.transmission)}
                     options={IRISS_GEARBOX_SELECT_OPTIONS}
                     selectClassName={fieldClass}
@@ -1035,13 +1048,14 @@ export function IrissOrderRoom({
                   />
                   <IrissSpecChoiceSelect
                     label="Virsbūves tips"
+                    filterMark
                     value={bodySelectValue(rec.bodyType)}
                     options={IRISS_BODY_SELECT_OPTIONS}
                     selectClassName={fieldClass}
                     onChange={(value) => onPatch("bodyType", persistBodySelect(value, rec.bodyType))}
                   />
-                  <Field label="Piedziņas tips" value={rec.driveType} placeholder="piem., priekšējā, 4x4" onChange={(value) => onPatch("driveType", value)} />
-                  <Field label="Sēdvietu skaits" value={rec.seatCount} placeholder="piem., 5" onChange={(value) => onPatch("seatCount", value)} />
+                  <Field label="Piedziņas tips" filterMark value={rec.driveType} placeholder="piem., priekšējā, 4x4" onChange={(value) => onPatch("driveType", value)} />
+                  <Field label="Sēdvietu skaits" filterMark value={rec.seatCount} placeholder="piem., 5" onChange={(value) => onPatch("seatCount", value)} />
                   <Field label="Vēlamās krāsas" value={rec.preferredColors} onChange={(value) => onPatch("preferredColors", value)} />
                   <Field label="Nevēlamās krāsas" value={rec.nonPreferredColors} onChange={(value) => onPatch("nonPreferredColors", value)} />
                   <Field label="Bojājumu tolerance" value={rec.damageTolerance} placeholder="piem., tikai kosmētika" onChange={(value) => onPatch("damageTolerance", value)} />

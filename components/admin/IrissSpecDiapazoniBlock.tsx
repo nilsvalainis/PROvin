@@ -3,7 +3,7 @@
 import { IrissRangeFromToField } from "@/components/admin/IrissRangeFromToField";
 import type { IrissOrderRangeField, IrissOrderRangeView } from "@/lib/iriss-order-range-fields";
 
-export const IRISS_DIAPAZONI_HINT = "* obligāti. + vismaz viens: nobraukums, tilpums vai jauda.";
+export const IRISS_DIAPAZONI_HINT = "* filtrē Meklētāju. Cena un Gadi obligāti.";
 
 export const IRISS_DIAPAZONI_CALC_NOTE =
   "Aprēķinos ņemts augstākais skaitlis. Diapazons paliek tikai grāmatzīmēm.";
@@ -50,6 +50,7 @@ export function IrissSpecDiapazoniBlock({
         label="Nobraukums"
         unit="km"
         phoneUnit="km"
+        filterMark
         from={ranges.mileageFrom}
         to={ranges.mileageTo}
         onFrom={(value) => onPatchRange("mileageFrom", value)}
