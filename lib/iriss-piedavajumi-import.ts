@@ -24,6 +24,7 @@ export function irissPdVehicleFromSeed(f: OfferSeedFields): IrissPdVehicle {
     engine: s(f.engineDisplacement),
     color: s(f.color),
     body: s(f.bodyTypeOffer),
+    location: s(f.location),
   };
 }
 
@@ -41,6 +42,7 @@ export function irissPdVehicleFromHit(hit: IrissOrderRoomHit, extras: IrissAucti
     engine: s(extras?.engineDisplacement),
     color: s(hit.color),
     body: s(hit.bodyType),
+    location: s(hit.location),
   };
 }
 

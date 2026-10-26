@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { PdAuto1Blocks } from "@/components/iriss-piedavajumi/PdAuto1Blocks";
+import { PdClientContent } from "@/components/iriss-piedavajumi/PdClientContent";
 import type { IrissPdPublicView, IrissPdViewMode } from "@/lib/iriss-piedavajumi";
 import { IRISS_PD_BLOCK_IDS, IRISS_PD_BLOCK_LV } from "@/lib/iriss-piedavajumi-types";
 
@@ -61,6 +62,7 @@ export function PdClientView({
           </div>
         </>
       ) : null}
+      <PdClientContent content={view.content} />
       {view.auto1 ? (
         <div style={{ marginTop: 12 }}>
           <PdAuto1Blocks blocks={view.auto1} show={view.blocks} compact={compact} expandAll={mode === "pdf"} />

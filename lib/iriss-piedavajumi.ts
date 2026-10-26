@@ -6,10 +6,13 @@
 
 import { normalizeIrissPdAuto1Blocks, type IrissPdAuto1Blocks } from "@/lib/iriss-piedavajumi-auto1";
 import {
+  defaultIrissPdContent,
   defaultIrissPdVisibility,
   emptyIrissPdClient,
   emptyIrissPdVehicle,
   IRISS_PD_BLOCK_IDS,
+  IRISS_PD_MAX_CHECK_ITEMS,
+  IRISS_PD_MAX_HIGHLIGHTS,
   IRISS_PD_MAX_HISTORY,
   IRISS_PD_MAX_PHOTOS,
   IRISS_PD_OPEN_STATUSES,
@@ -22,7 +25,9 @@ import {
   isSafeIrissPdId,
   isSafeIrissPdToken,
   type IrissPdBlockId,
+  type IrissPdCheckItem,
   type IrissPdClient,
+  type IrissPdContent,
   type IrissPdHistoryEntry,
   type IrissPdListRow,
   type IrissPdPhoto,
@@ -99,6 +104,53 @@ function normalizeClient(raw: unknown): IrissPdClient {
   };
 }
 
+function normalizeCheckItems(raw: unknown, fallback: readonly IrissPdCheckItem[]): IrissPdCheckItem[] {
+  if (!Array.isArray(raw)) return fallback.map((x) => ({ ...x }));
+  const out: IrissPdCheckItem[] = [];
+  const seen = new Set<string>();
+  for (const it of raw) {
+    if (!it || typeof it !== "object") continue;
+    const o = it as Record<string, unknown>;
+    const t = clean(o.text, 120);
+    if (!t || seen.has(t.toLowerCase())) continue;
+    seen.add(t.toLowerCase());
+    out.push({ text: t, on: o.on === true });
+    if (out.length >= IRISS_PD_MAX_CHECK_ITEMS) break;
+  }
+  return out;
+}
+
+function normalizeHighlights(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const h of raw) {
+    const t = clean(h, 80);
+    if (t && !out.some((x) => x.toLowerCase() === t.toLowerCase())) out.push(t);
+    if (out.length >= IRISS_PD_MAX_HIGHLIGHTS) break;
+  }
+  return out;
+}
+
+/** j75: JSON bez `content` (pirms j75) -> šabloni, bet sadaļas klientam izslēgtas (sk. `defaultIrissPdContent`). */
+export function normalizeIrissPdContent(raw: unknown): IrissPdContent {
+  if (!raw || typeof raw !== "object") return defaultIrissPdContent(true);
+  const o = raw as Record<string, unknown>;
+  const d = defaultIrissPdContent();
+  const flag = (v: unknown, fb: boolean) => (typeof v === "boolean" ? v : fb);
+  return {
+    highlights: normalizeHighlights(o.highlights),
+    highlightsOn: flag(o.highlightsOn, d.highlightsOn),
+    included: normalizeCheckItems(o.included, d.included),
+    excluded: normalizeCheckItems(o.excluded, d.excluded),
+    summaryOn: flag(o.summaryOn, d.summaryOn),
+    facts: normalizeCheckItems(o.facts, d.facts),
+    visual: text(o.visual),
+    technical: text(o.technical),
+    note: text(o.note),
+    assessmentOn: flag(o.assessmentOn, d.assessmentOn),
+  };
+}
+
 function normalizeHistory(raw: unknown): IrissPdHistoryEntry[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -132,6 +184,8 @@ export function normalizeIrissPiedavajums(raw: unknown): IrissPiedavajums | null
     sourceKey: clean(o.sourceKey, 80),
     importedFieldCount: typeof o.importedFieldCount === "number" && Number.isFinite(o.importedFieldCount) ? Math.max(0, Math.floor(o.importedFieldCount)) : 0,
     purchasePrice: clean(o.purchasePrice, 80),
+    logisticsCost: clean(o.logisticsCost, 80),
+    prepCost: clean(o.prepCost, 80),
     internalNotes: text(o.internalNotes),
     vehicle: normalizeVehicle(o.vehicle),
     photos,
@@ -141,6 +195,7 @@ export function normalizeIrissPiedavajums(raw: unknown): IrissPiedavajums | null
     auto1: normalizeIrissPdAuto1Blocks(o.auto1),
     auto1ImportedAt: clean(o.auto1ImportedAt, 40),
     visibility: normalizeIrissPdVisibility(o.visibility),
+    content: normalizeIrissPdContent(o.content),
     linkToken: isSafeIrissPdToken(o.linkToken) ? o.linkToken : "",
     decidedAt: clean(o.decidedAt, 40),
     approvedOrderId: isSafeIrissPdId(approvedOrderId) ? approvedOrderId : "",
@@ -186,9 +241,12 @@ export type IrissPdPatch = Partial<{
   validUntil: string;
   client: Partial<IrissPdClient>;
   purchasePrice: string;
+  logisticsCost: string;
+  prepCost: string;
   internalNotes: string;
   photos: IrissPdPhoto[];
   visibility: IrissPdVisibility;
+  content: Partial<IrissPdContent>;
   status: IrissPdStatus;
 }>;
 
@@ -249,6 +307,25 @@ export function applyIrissPdPatch(
     if (p !== rec.purchasePrice) {
       next.purchasePrice = p;
       log.push("Iepirkuma cena mainīta");
+    }
+  }
+  for (const [k, l] of [
+    ["logisticsCost", "Loģistikas izmaksas"],
+    ["prepCost", "Sagatavošanas izmaksas"],
+  ] as const) {
+    const raw = patch[k];
+    if (typeof raw !== "string") continue;
+    const v = clean(raw, 80);
+    if (v !== rec[k]) {
+      next[k] = v;
+      log.push(`${l} mainītas`);
+    }
+  }
+  if (patch.content && typeof patch.content === "object") {
+    const c = normalizeIrissPdContent({ ...rec.content, ...patch.content });
+    if (JSON.stringify(c) !== JSON.stringify(rec.content)) {
+      next.content = c;
+      log.push("Klienta apraksts mainīts");
     }
   }
   if (typeof patch.internalNotes === "string") {
@@ -374,6 +451,7 @@ export function rebaseIrissPd(
     client: { ...base.client },
     photos: base.photos.map((p) => ({ ...p })),
     visibility: normalizeIrissPdVisibility(base.visibility),
+    content: normalizeIrissPdContent(base.content),
   };
   return appendIrissPdHistory(rec, { at: input.at, by: input.by, text: `Izveidots uz ${irissPdNumberLabel(base.number)} bāzes` });
 }
@@ -504,13 +582,17 @@ export function formatIrissPdPrice(raw: string): string {
   return n > 0 ? formatIrissEurWhole(n) : t;
 }
 
-/** Marža = gala cena - iepirkuma cena (tikai, ja abas ir skaitļi). */
-export function irissPdMargin(price: string, purchase: string): string {
+/** Marža = gala cena - iepirkuma cena - izmaksas (loģistika, sagatavošana; tukšās neskaita). Tikai, ja cena un iepirkums ir skaitļi. */
+export function irissPdMargin(price: string, purchase: string, ...costs: string[]): string {
   if (!/\d/.test(price) || !/\d/.test(purchase)) return "";
   const p = parsePriceLike(price);
   const c = parsePriceLike(purchase);
   if (!(p > 0) || !(c > 0)) return "";
-  return formatIrissEurWhole(p - c);
+  const extra = costs.reduce((sum, x) => {
+    const n = /\d/.test(x) ? parsePriceLike(x) : 0;
+    return sum + (n > 0 ? n : 0);
+  }, 0);
+  return formatIrissEurWhole(p - c - extra);
 }
 
 export function splitIrissPdClientName(name: string): { first: string; last: string } {
@@ -544,7 +626,35 @@ export type IrissPdPublicView = {
   auto1: IrissPdAuto1Blocks | null;
   /** Bez klienta - apstiprinot jāieraksta vārds un tālrunis. */
   needsContact: boolean;
+  /** j75: Aprīkojums, Kopsavilkums, Novērtējums (tikai ieslēgtās sadaļas un ieķeksētās rindas). */
+  content: IrissPdPublicContent | null;
 };
+
+export type IrissPdPublicContent = {
+  highlights: string[];
+  included: string[];
+  excluded: string[];
+  facts: string[];
+  visual: string;
+  technical: string;
+  note: string;
+};
+
+/** Klientam: tikai ieslēgtās sadaļas; null - nav ko rādīt. */
+export function buildIrissPdPublicContent(c: IrissPdContent): IrissPdPublicContent | null {
+  const on = (items: IrissPdCheckItem[]) => items.filter((x) => x.on).map((x) => x.text);
+  const out: IrissPdPublicContent = {
+    highlights: c.highlightsOn ? [...c.highlights] : [],
+    included: c.summaryOn ? on(c.included) : [],
+    excluded: c.summaryOn ? on(c.excluded) : [],
+    facts: c.assessmentOn ? on(c.facts) : [],
+    visual: c.assessmentOn ? c.visual : "",
+    technical: c.assessmentOn ? c.technical : "",
+    note: c.assessmentOn ? c.note : "",
+  };
+  const any = Object.values(out).some((v) => (Array.isArray(v) ? v.length > 0 : Boolean(v)));
+  return any ? out : null;
+}
 
 const FACT_LABELS: Array<[keyof IrissPdVehicle, string]> = [
   ["year", "Gads"],
@@ -557,6 +667,7 @@ const FACT_LABELS: Array<[keyof IrissPdVehicle, string]> = [
   ["color", "Krāsa"],
   ["body", "Virsbūve"],
   ["vin", "VIN"],
+  ["location", "Atrašanās vieta"],
 ];
 
 function factValue(k: keyof IrissPdVehicle, v: string): string {
@@ -599,6 +710,7 @@ export function buildIrissPdPublicView(rec: IrissPiedavajums, mode: IrissPdViewM
     blocks,
     auto1,
     needsContact: !rec.client.name.trim() && !rec.client.orderId,
+    content: buildIrissPdPublicContent(rec.content),
   };
 }
 

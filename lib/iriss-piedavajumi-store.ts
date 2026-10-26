@@ -12,7 +12,7 @@ import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import fs from "fs/promises";
 import path from "path";
-import { get, put } from "@vercel/blob";
+import { del, get, put } from "@vercel/blob";
 import {
   getIrissPasutijumiBlobConfig,
   getIrissPasutijumiStorageDir,
@@ -108,6 +108,17 @@ function recordRel(id: string): string {
   return `${DIR}${id}.json`;
 }
 
+async function deleteJson(rel: string): Promise<void> {
+  const blob = getIrissPasutijumiBlobConfig();
+  if (blob) {
+    await del(`${blob.prefix}${rel}`, { token: blob.token }).catch(() => undefined);
+    return;
+  }
+  const dir = getIrissPasutijumiStorageDir();
+  if (!dir) return;
+  await fs.unlink(path.join(dir, rel)).catch(() => undefined);
+}
+
 export function hashIrissPdToken(token: string): string {
   return createHash("sha256").update(token.trim(), "utf8").digest("hex");
 }
@@ -161,6 +172,21 @@ export async function createIrissPd(
   const rec = build(number);
   const ok = await writeIrissPd(rec);
   return ok ? { ok: true, record: rec } : { ok: false, error: "write_failed" };
+}
+
+/** Dzēš ierakstu, indeksu, tokena karti un lēmumu. Publiskā saite pēc tam nesatur saturu. */
+export async function deleteIrissPd(id: string): Promise<boolean> {
+  if (!isSafeIrissPdId(id) || !isIrissPdStoreEnabled()) return false;
+  return withLock("index", async () => {
+    const rec = await readIrissPd(id);
+    const rows = await readIndex();
+    const nextRows = rows.filter((r) => r.id !== id);
+    if (rec?.linkToken) await deleteJson(`${DIR}tokens/${hashIrissPdToken(rec.linkToken)}.json`);
+    await deleteJson(`${DIR}decisions/${id}.json`);
+    await deleteJson(recordRel(id));
+    if (nextRows.length === rows.length && !rec) return false;
+    return (await writeJson(INDEX_REL, { rows: nextRows })) === "ok";
+  });
 }
 
 export async function readIrissPdByToken(token: string): Promise<IrissPiedavajums | null> {

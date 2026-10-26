@@ -72,6 +72,18 @@ describe("Piedāvājumu krātuve un apstiprinājuma sekas", () => {
     expect(await store.readIrissPdByToken("ZZZZZZZZZZZZZZZZZZZZZZZZ")).toBeNull();
   });
 
+  it("dzēš ierakstu, indeksu un tokenu - publiskā saite vairs neatrod saturu", async () => {
+    const { store } = await load();
+    const created = await store.createIrissPd((n) => make(crypto.randomUUID(), n, { status: "sent", linkToken: TOKEN, validUntil: "2026-11-02" }));
+    if (!created.ok) throw new Error("create");
+    expect(await store.readIrissPdByToken(TOKEN)).not.toBeNull();
+    expect(await store.deleteIrissPd(created.record.id)).toBe(true);
+    expect(await store.readIrissPd(created.record.id)).toBeNull();
+    expect(await store.readIrissPdByToken(TOKEN)).toBeNull();
+    expect(await store.listIrissPdRows()).toEqual([]);
+    expect(await store.deleteIrissPd(created.record.id)).toBe(false);
+  });
+
   it("termiņš beidzas automātiski (ieraksts un indekss pārrakstīti)", async () => {
     const { store } = await load();
     const c = await store.createIrissPd((n) => make(crypto.randomUUID(), n, { status: "sent", validUntil: "2026-10-20" }));

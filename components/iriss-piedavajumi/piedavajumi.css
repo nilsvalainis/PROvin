@@ -1135,3 +1135,437 @@ button.pd-lv {
 :is(.pdv, .pdc) .pd-sub.pd-sub { color: var(--ink2); }
 :is(.pdv, .pdc) .pd-fld label,
 :is(.pdv, .pdc) .pd-fld .lbl { color: var(--ink2); }
+
+/* j75: redaktors pēc maketa 01-redaktors (26.10). Viena kolonna, galvene nav sticky, bez apakšējās joslas. */
+.pdv.pde {
+  padding: 16px 32px 60px;
+}
+.pdv.pde .pd-hdr {
+  margin: 0 -32px 20px;
+  padding-left: 32px;
+  padding-right: 32px;
+}
+.pdv.pde h1 {
+  font-size: 24px;
+}
+.pdv.pde .pd-sub {
+  gap: 8px;
+  margin-top: 5px;
+}
+.pdv.pde .pd-sub b {
+  color: var(--ink);
+}
+.pde .pde-cl {
+  background: #efeff2;
+  color: #3a3a3c;
+}
+.pde-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 1100px;
+}
+.pde-body > .pd-err,
+.pde-body > .pd-note,
+.pde-body > .pd-hint {
+  margin: 0;
+}
+.pde-card {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px;
+  scroll-margin-top: 12px;
+}
+.pde-ch {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.pde-ch h3 {
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink);
+}
+.pde-ch small {
+  display: block;
+  color: var(--ink3);
+  font-size: 11.5px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-top: 2px;
+}
+/* Zaļais slēdzis «rāda klientam» (42 x 25) */
+.pde-sw {
+  position: relative;
+  flex: none;
+  width: 42px;
+  height: 25px;
+  border-radius: 13px;
+  border: 0;
+  padding: 0;
+  background: #d1d1d6;
+  transition: background 0.15s;
+}
+.pde-sw::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 2px;
+  width: 21px;
+  height: 21px;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: left 0.15s;
+}
+.pde-sw[aria-checked="true"] {
+  background: #34c759;
+}
+.pde-sw[aria-checked="true"]::after {
+  left: 19px;
+}
+.pde-sw:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+/* Foto josla: 5 redzamas, pārējās ritinot */
+.pde-ph {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+.pde-ph .it {
+  position: relative;
+  flex: 0 0 calc((100% - 32px) / 5);
+  height: 74px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #e5e5ea;
+}
+.pde-ph .it[draggable="true"] {
+  cursor: grab;
+}
+.pde-ph img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.pde-ph button {
+  position: absolute;
+  top: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  border: 0;
+  padding: 0;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 13px;
+  line-height: 22px;
+}
+.pde-ph button.l {
+  left: 4px;
+}
+.pde-ph button.r {
+  right: 4px;
+}
+/* Lauku režģis: 4 kolonnas */
+.pde-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0 10px;
+}
+.pde-grid .w2 {
+  grid-column: span 2;
+}
+.pde-grid .w3 {
+  grid-column: span 3;
+}
+.pde .pd-fld input,
+.pde .pd-fld .ro {
+  min-height: 40px;
+}
+.pde .pd-fld textarea {
+  min-height: 76px;
+  line-height: 1.4;
+}
+.pde-sugg {
+  margin-top: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.pde-sugg button {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  padding: 6px 10px;
+  font-size: 12.5px;
+}
+.pde-sugg button:hover {
+  background: var(--zebra);
+}
+.pde-sugg .pd-mu {
+  font-size: 11.5px;
+}
+/* Čipi */
+.pde-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.pde-tags .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 6px 5px 10px;
+  border-radius: 16px;
+  background: #f2f2f5;
+  font-size: 12.5px;
+}
+.pde-tags .tag button {
+  border: 0;
+  background: none;
+  color: var(--ink3);
+  padding: 0 4px;
+  font-size: 12px;
+}
+.pde-add {
+  padding: 5px 10px;
+  border-radius: 16px;
+  border: 1px dashed #b8b8bf;
+  background: #fff;
+  color: var(--link);
+  font-size: 12.5px;
+}
+.pde-addin {
+  height: 30px;
+  min-width: 180px;
+  border: 1px solid var(--field);
+  border-radius: 8px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 12.5px;
+}
+.pde-lnk {
+  display: inline-block;
+  border: 0;
+  background: none;
+  padding: 6px 0 0;
+  color: var(--link);
+  font-size: 12.5px;
+  text-align: left;
+}
+.pdv .pde-lnk {
+  color: var(--link);
+}
+/* Kopsavilkums: 2 kolonnas */
+.pde-2c {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px;
+}
+.pde-col {
+  border: 1px solid #f0f0f3;
+  border-radius: 10px;
+  padding: 12px;
+  background: #fbfbfd;
+}
+.pde-col h4 {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+}
+.pde .ok {
+  color: var(--ok);
+}
+.pde .no {
+  color: var(--bad);
+}
+/* Ķeksīši (tumši, kā maketā) */
+.pde-cb {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.pde-cb label {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  padding: 6px 0;
+  line-height: 1.35;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+.pde-cb input {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 17px;
+  height: 17px;
+  margin: 1px 0 0;
+  border-radius: 5px;
+  border: 1.5px solid #c7c7cc;
+  background: #fff;
+  position: relative;
+  cursor: pointer;
+}
+.pde-cb input:checked {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.pde-cb input:checked::after {
+  content: "";
+  position: absolute;
+  left: 4.5px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.pde-cb input:focus-visible {
+  outline: 2px solid #2563eb55;
+  outline-offset: 1px;
+}
+.pde-cb input:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.pde-cb .x {
+  border: 0;
+  background: none;
+  color: var(--ink3);
+  padding: 6px 2px;
+  font-size: 13px;
+}
+.pde-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0 14px;
+}
+/* Auto1 īsi */
+.pde-kvs {
+  gap: 0 14px;
+}
+.pde-kv {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  border-top: 1px solid var(--line2);
+}
+.pde-kv:first-child {
+  border-top: 0;
+}
+.pde-kv span {
+  color: var(--ink2);
+}
+.pde-vis {
+  font-size: 11.5px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 900px) {
+  .pdv.pde {
+    padding: 10px 12px 120px;
+  }
+  .pdv.pde .pd-hdr {
+    margin: 0 -12px 12px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .pdv.pde h1 {
+    font-size: 20px;
+  }
+  /* Telefonā darbības paliek galvenē (maketā zem virsraksta), apakšējās joslas nav. */
+  .pdv.pde .pd-hdr .pd-acts {
+    display: flex;
+    gap: 6px;
+  }
+  .pde-body {
+    gap: 10px;
+  }
+  .pde-card {
+    padding: 14px;
+  }
+  .pde-ph .it {
+    flex-basis: calc((100% - 24px) / 4);
+    height: 56px;
+  }
+  .pde-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .pde-grid .w3 {
+    grid-column: span 2;
+  }
+  .pde-2c {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pde-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* j75: klienta skata saturs (Aprīkojums, Stāvoklis, Kopsavilkums) */
+.pdc .pdc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.pdc .pdc-chips span {
+  padding: 4px 10px;
+  border-radius: 16px;
+  background: #f2f2f5;
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.pdc .pdc-txt {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #3a3a3c;
+  white-space: pre-line;
+}
+.pdc .pdc-sum {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.pdc .pdc-sum b {
+  font-size: 12.5px;
+}
+.pdc .pdc-sum .ok {
+  color: var(--ok);
+}
+.pdc .pdc-sum .no {
+  color: var(--bad);
+}
+.pdc .pdc-sum ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+@media (max-width: 600px) {
+  .pdc .pdc-sum {
+    grid-template-columns: 1fr;
+  }
+}
