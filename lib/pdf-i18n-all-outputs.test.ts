@@ -287,7 +287,7 @@ describe("client report PDF language consistency", () => {
     }
   });
 
-  it("renders auction / CC.VIN section titles in the report language", () => {
+  it("renders auction / Izsoļu portālu arhīvs section titles in the report language", () => {
     for (const lang of CLIENT_REPORT_LANGS) {
       const html = buildClientReportDocumentHtml({
         payload: auctionPayload(),

@@ -43,9 +43,9 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
     code: "vocabulary_hybrid_translated",
   },
   {
-    label: "CC.VIN",
+    label: "ārējā izsoļu atskaites zīmola nosaukums",
     pattern: /\bCC\.?\s?VIN\b|checkcar/i,
-    replacement: "Izsoļu portāla arhīvā / Avotā",
+    replacement: "Izsoļu portālu arhīvā / Avotā",
     code: "vocabulary_cc_vin",
   },
   {
@@ -334,11 +334,11 @@ const SAFE_VOCAB_REPLACEMENTS: ReadonlyArray<readonly [RegExp, SafeVocabReplacer
     /^\p{Lu}/u.test(m) ? "Plug-in hybrid" : "plug-in hybrid"],
   [/(?<!\p{L})(?:viegl|maig)(?:ais|ā|ajam|o|ajā|ie|ajiem|ajos)?\s+hibrīd\p{L}*/giu, (m: string) =>
     /^\p{Lu}/u.test(m) ? "Mild hybrid" : "mild hybrid"],
-  // CC.VIN nav klienta avota nosaukums.
-  [/\b(?:CC\.?\s?VIN|checkcar(?:\.vin)?)\s+(?:datos|avotā|ierakstos|arhīvā|pārskatā|atskaitē)/gi, "Izsoļu portāla arhīvā"],
-  [/\b(?:CC\.?\s?VIN|checkcar(?:\.vin)?)\s+(datiem|datu|dati|ierakstiem|ierakstu|ieraksti)(?!\p{L})/giu, "Izsoļu portāla arhīva $1"],
-  [/(?<!\p{L})(?:avotā|datos)\s+(?:CC\.?\s?VIN|checkcar(?:\.vin)?)\b/giu, "Izsoļu portāla arhīvā"],
-  [/\b(?:CC\.?\s?VIN|checkcar(?:\.vin)?)\b/gi, "Izsoļu portāla arhīvs"],
+  // Ārējā izsoļu atskaites zīmola nosaukums nav klienta avota nosaukums.
+  [/\b(?:CC\.?\s?VIN|checkcar(?:\.vin)?)\s+(?:datos|avotā|ierakstos|arhīvā|pārskatā|atskaitē)/gi, "Izsoļu portālu arhīvā"],
+  [/\b(?:CC\.?\s?VIN|checkcar(?:\.vin)?)\s+(datiem|datu|dati|ierakstiem|ierakstu|ieraksti)(?!\p{L})/giu, "Izsoļu portālu arhīva $1"],
+  [/(?<!\p{L})(?:avotā|datos)\s+(?:CC\.?\s?VIN|checkcar(?:\.vin)?)\b/giu, "Izsoļu portālu arhīvā"],
+  [/\b(?:CC\.?\s?VIN|checkcar(?:\.vin)?)\b/gi, "Izsoļu portālu arhīvs"],
   [/\binjektor(?:i|iem|u|a)?\b/gi, "iesmidzinātāji"],
   [/\bswirl\s+flap\w*/gi, "ieplūdes kolektors"],
   [/\bvirpuļvārst\w*/gi, "ieplūdes kolektors"],

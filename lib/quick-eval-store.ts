@@ -48,7 +48,7 @@ export type QuickEvalDoc = {
   sourceAt?: Record<string, string>;
   /** VIN SCAN: tas pats avotu katalogs kā admin VIN SCAN lapā. */
   vinScan?: { at: string; indicators: import("@/lib/vin-scan/types").VinScanIndicator[] };
-  /** CC-VIN foto skaits (PROVIN skripts pārlūkā). */
+  /** Izsoļu portālu arhīva foto skaits (internal id: cc_vin; PROVIN skripts pārlūkā). */
   ccVin?: { at: string; count: number | null; error?: string };
   /** LTAB pārbaudi dara operators; atzīme saglabājas un aiziet vēstulē / eksportā. */
   ltab?: { at: string; mark: QuickEvalLtabMark };

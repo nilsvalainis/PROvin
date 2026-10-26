@@ -231,7 +231,7 @@ describe("aprēķināto brīdinājumu labošana", () => {
     ]);
   });
 
-  it("CC.VIN bojājumus apvieno ar vienoto negadījumu baneri, nevis dublē atsevišķi", () => {
+  it("Izsoļu portālu arhīva bojājumus apvieno ar vienoto negadījumu baneri, nevis dublē atsevišķi", () => {
     const banners = computeProvinAlertBanners({
       unifiedMileageRows: [],
       csddForm: emptyCsddFields(),

@@ -1,6 +1,6 @@
 /**
- * CheckCar.vin ūdenszīmes slēpšana pirms admin foto saglabāšanas.
- * Visas sadaļas (t.sk. CC.VIN): noklusējums izslēgts. Ieslēdz tikai operators, ja foto jau ir trešās puses ūdenszīme.
+ * Trešās puses ūdenszīmes slēpšana pirms admin foto saglabāšanas.
+ * Visas sadaļas (t.sk. Izsoļu portālu arhīvs, internal id: cc_vin): noklusējums izslēgts. Ieslēdz tikai operators, ja foto jau ir trešās puses ūdenszīme.
  */
 
 export const HIDE_PHOTO_WATERMARKS_DEFAULT = false;
@@ -29,7 +29,7 @@ export function formRequestsWatermarkCover(form: FormData): boolean {
   return HIDE_PHOTO_WATERMARKS_DEFAULT;
 }
 
-/** CC.VIN lasīšana (priekšskatījums / PDF) - slēdzis no saglabātā bloka; trūkstošs lauks = izslēgts. */
+/** Izsoļu portālu arhīva lasīšana (priekšskatījums / PDF, internal id: cc_vin) - slēdzis no saglabātā bloka; trūkstošs lauks = izslēgts. */
 export function hidePhotoWatermarksFromCcVinWorkspace(workspace: unknown): boolean {
   if (!workspace || typeof workspace !== "object") return HIDE_PHOTO_WATERMARKS_DEFAULT;
   const blocks = (workspace as { sourceBlocks?: unknown }).sourceBlocks;
