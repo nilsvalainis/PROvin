@@ -280,6 +280,18 @@ function damageTexts(detail: IrissRelayAuctionDetail): { visual: string; technic
   return { visual: dedupeDamageLines(visual).slice(0, 40).join("; "), technical: dedupeDamageLines(technical).slice(0, 20).join("; ") };
 }
 
+/** Analītikas pikseļi no detaļu lapas (Auto1: bat.bing.com/action/0?...) nav auto bildes. */
+const TRACKER_HOST_RE =
+  /(^|\.)(bing\.com|doubleclick\.net|google-analytics\.com|googletagmanager\.com|googleadservices\.com|facebook\.com|facebook\.net|hotjar\.com|clarity\.ms|linkedin\.com|tiktok\.com)$/i;
+
+export function isTrackingPixelUrl(url: string): boolean {
+  try {
+    return TRACKER_HOST_RE.test(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+}
+
 const yes = (v: string) => /^(yes|ja|jā|available|present|complete|full|ir|vorhanden)\b/i.test(v.trim());
 
 export function irissAuctionDetailToSeed(
@@ -300,7 +312,7 @@ export function irissAuctionDetailToSeed(
   const year = get("year").match(/(?:19|20)\d{2}/)?.[0] || itemStr("year") || (firstRegRaw.match(/(?:19|20)\d{2}/)?.[0] ?? "");
   const doors = get("doors").match(/\d+/)?.[0] ?? "";
   const seats = get("seats").match(/\d+/)?.[0] ?? "";
-  const photos = (detail.photos ?? []).filter((u) => /^https:\/\//i.test(u));
+  const photos = (detail.photos ?? []).filter((u) => /^https:\/\//i.test(u) && !isTrackingPixelUrl(u));
   const { visual, technical } = damageTexts(detail);
   const title = itemStr("title") || clean(detail.title).replace(/\s*[|-]\s*(auto1|openlane).*$/i, "");
   const priceOf = (k: string) => itemNum(k);

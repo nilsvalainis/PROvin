@@ -3,6 +3,7 @@ import {
   dedupeDamageLines,
   irissAuctionDetailToSeed,
   irissDetailMileageKm,
+  isTrackingPixelUrl,
   lvEngineDisplacement,
   lvRegistrationDate,
   lvTerm,
@@ -196,6 +197,20 @@ describe("FABLE F3 (26.10): Auto1 «No saites» PE68796", () => {
     expect(lvEngineDisplacement("1,968 ccm")).toBe("1968 cm³");
     expect(lvEngineDisplacement("1995 ccm")).toBe("1995 cm³");
     expect(lvEngineDisplacement("2.0 l")).toBe("2.0 l");
+  });
+
+  it("Bing pikselis nav bilde (piedāvājumā 58. «bilde» bija bat.bing.com)", () => {
+    expect(isTrackingPixelUrl("https://bat.bing.com/action/0?ti=187007467&tm=gtm002&Ver=2")).toBe(true);
+    expect(isTrackingPixelUrl("https://img-pa.auto1.com/img3e/2a/3e2a2f/max/1.jpg")).toBe(false);
+    const link = parseIrissAuctionLink("https://www.auto1.com/en/app/merchant/car/PE68796")!;
+    const { hit } = irissAuctionDetailToSeed(
+      {
+        platform: "auto1", key: "PE68796", url: link.url, title: "", fields: [], tables: [], lists: [], jsonFields: [], item: null,
+        photos: ["https://img-pa.auto1.com/img/a.jpg", "https://bat.bing.com/action/0?ti=1", "https://www.facebook.com/tr?id=1"],
+      },
+      link,
+    );
+    expect(hit.imageUrls).toEqual(["https://img-pa.auto1.com/img/a.jpg"]);
   });
 
   it("testa brauciena teksts netiek atkārtots 4x", () => {
