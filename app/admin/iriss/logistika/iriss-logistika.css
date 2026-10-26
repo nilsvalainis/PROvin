@@ -3,10 +3,10 @@
   /* Nils 21.10: Nākošā krava spilgti sarkana, Aiznākošā melna, pārējie pelēki (kā kartes lāses). */
   --iriss-log-cargo-next: #ea4335;
   --krava-next: var(--iriss-log-cargo-next);
-  --krava-next2: #1d1d1f;
+  --krava-next2: #5f6368;
   --iriss-log-cargo-after: var(--krava-next2);
   --krava-after: var(--krava-next2);
-  --iriss-log-cargo-none: #9aa0a6;
+  --iriss-log-cargo-none: #1d1d1f;
   --krava-none: var(--iriss-log-cargo-none);
   --iriss-log-news-bg: #2563eb;
   --iriss-log-news-fg: #fff;
@@ -173,8 +173,10 @@
 }
 .iriss-log-cargo-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  row-gap: 6px;
   padding: 12px 14px 8px;
 }
 /* Kravas kartīte: visa kartīte ir velkama (pele uzreiz, telefonā piespied un turi). */
@@ -983,6 +985,28 @@ html.iriss-log-printing .iriss-log-pin-tip {
 }
 .iriss-log-manual-choice.on {
   box-shadow: inset 0 0 0 2px var(--iriss-log-focus);
+}
+/* Gatavības čips (tikai Nākošā krava ar ieslēgtu «Gatavība»). */
+.iriss-log-ready-chip {
+  flex-shrink: 0;
+  border-radius: 20px;
+  padding: 3px 9px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.iriss-log-ready-chip.unpaid {
+  background: #fde8e6;
+  color: #c5221f;
+}
+.iriss-log-ready-chip.no_pickup {
+  background: #fef3d6;
+  color: #9a6200;
+}
+.iriss-log-ready-chip.paid,
+.iriss-log-ready-chip.client {
+  background: #e3f6e8;
+  color: #1f7a37;
 }
 .iriss-log-manual-chip {
   border-radius: 999px;

@@ -128,6 +128,8 @@ type Props = {
   routeEnds?: ReadonlyArray<{ lat: number; lng: number; kind: "start" | "end"; type?: string }>;
   pinVariant?: "default" | "cargo";
   onHoverCar?: (id: string | null) => void;
+  /** Gatavības krāsa (tikai Nākošā krava ar ieslēgtu «Gatavība») pārraksta viļņa krāsu. */
+  pinColorByCarId?: ReadonlyMap<string, string>;
 };
 
 export type RouteViaAction =
@@ -169,6 +171,7 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
     routeEnds,
     pinVariant = "default",
     onHoverCar,
+    pinColorByCarId,
   },
   ref,
 ) {
@@ -306,7 +309,7 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
       const layer = makeCargoLayerOverlay({
         map,
         pts,
-        colorOf: (p) => PIN_COLOR[p.cargo ?? "none"],
+        colorOf: (p) => pinColorByCarId?.get(p.id) ?? PIN_COLOR[p.cargo ?? "none"],
         activeIds: new Set([bounceCarId, hoverCarId].filter((x): x is string => Boolean(x))),
         onSelect,
         onHover: onHoverCar,
@@ -450,6 +453,7 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
     routeEnds,
     pinVariant,
     onHoverCar,
+    pinColorByCarId,
   ]);
 
   return (
@@ -534,12 +538,15 @@ function spreadLabels(root: HTMLElement) {
   });
 }
 
-/** Kartes lāšu krāsas: Nākošā krava sarkana, Aiznākošā melna, pārējie pelēki (sakrīt ar kravu plāna punktiem). */
+/** Kravu vilnis (Nils 24.10): Nākošā sarkana, Aiznākošā tumši pelēka (ne oranža), Gaida melna. Sakrīt ar kravu plāna punktiem. */
 export const PIN_COLOR: Record<CargoBucket, string> = {
   next: "#ea4335",
-  after: "#1d1d1f",
-  none: "#9aa0a6",
+  after: "#5f6368",
+  none: "#1d1d1f",
 };
+
+/** Grupas lāse ar dažādām krāsām: neitrāli pelēka, lai nesajauc ar Aiznākošo. */
+const MIXED_GROUP_COLOR = "#9aa0a6";
 
 /** Google stila lāse. `text` aplī (pieturas numurs) vai balts punkts. */
 function teardropSvg(color: string, text: string, small: boolean): string {
@@ -633,7 +640,7 @@ function makeCargoLayerOverlay(input: {
         const members = item.members.map((m) => m.p);
         const key = members.map((m) => m.id).sort().join("|");
         const colors = new Set(members.map((m) => input.colorOf(m)));
-        const color = colors.size === 1 ? [...colors][0]! : "#5f6368";
+        const color = colors.size === 1 ? [...colors][0]! : MIXED_GROUP_COLOR;
         const active = members.some((m) => input.activeIds.has(m.id));
         el.className = `iriss-log-tear group${active ? " active" : ""}`;
         const names = members.slice(0, 4).map((m) => `<b>${escapeHtml(pinTitle(m))}</b>`).join("");
