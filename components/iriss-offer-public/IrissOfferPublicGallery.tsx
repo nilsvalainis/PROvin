@@ -4,31 +4,26 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
+import {
+  IRISS_OFFER_HERO_SIZES,
+  beginIrissOfferStripDrag,
+  endIrissOfferStripDrag,
+  irissOfferPublicHeroSrcSet,
+  irissOfferPublicPhotoUrl,
+  irissOfferThumbLoadingMode,
+  isOfferHeroImageReady,
+  moveIrissOfferStripDrag,
+  type IrissOfferStripDrag,
+} from "@/lib/iriss-offer-public-photo";
 
 type IrissOfferPublicPhoto = { id: string };
 
 const SWIPE_THRESHOLD_PX = 40;
 const SWIPE_MOVE_THRESHOLD_PX = 10;
-const PREFETCH_NEIGHBOR_OFFSETS = [-2, -1, 1, 2];
+const PREFETCH_NEIGHBOR_OFFSETS = [-1, 1];
 const ZOOM_MIN = 1;
 const ZOOM_MAX = 4;
 const DOUBLE_TAP_MS = 300;
-
-/** Jāsaskan ar lib/iriss-offer-image-thumb.ts IRISS_OFFER_DISPLAY_WIDTHS - šis komponents ir "use client",
- * tāpēc tur nevar importēt (lib fails importē `sharp`, kas nedrīkst nokļūt klienta bundle). */
-const DISPLAY_WIDTHS = [480, 800, 1280] as const;
-const DISPLAY_DEFAULT_WIDTH = 800;
-
-function photoUrl(token: string, id: string, variant: "full" | "thumb" | "display" = "full", width?: number): string {
-  const base = `/p/${encodeURIComponent(token)}/photo/${encodeURIComponent(id)}`;
-  if (variant === "thumb") return `${base}?v=thumb`;
-  if (variant === "display") return `${base}?v=display&w=${width ?? DISPLAY_DEFAULT_WIDTH}`;
-  return base;
-}
-
-function displaySrcSet(token: string, id: string): string {
-  return DISPLAY_WIDTHS.map((w) => `${photoUrl(token, id, "display", w)} ${w}w`).join(", ");
-}
 
 function clamp(v: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, v));
@@ -152,10 +147,17 @@ export function IrissOfferPublicGallery({
   const backdropClose = useModalBackdropClose(() => setLightboxOpen(false));
 
   const hero = photos[index];
+  const heroImgRef = useRef<HTMLImageElement>(null);
 
-  // Prefetch nākamo/iepriekšējo 2-3 bildes (hero izmēra renditions), lai swipe/bultas jūtas tūlītējas.
   useEffect(() => {
-    if (count < 2 || typeof window === "undefined") return;
+    const el = heroImgRef.current;
+    if (!hero || !el || !isOfferHeroImageReady(el)) return;
+    setLoadedIds((m) => (m[hero.id] ? m : { ...m, [hero.id]: true }));
+  }, [hero]);
+
+  // Tikai kaimiņu pilnās bildes un tikai pēc hero ielādes - citādi 4× display AVIF apēd pirmo kadru.
+  useEffect(() => {
+    if (!loadedIds[hero?.id ?? ""] || count < 2 || typeof window === "undefined") return;
     const seen = new Set<number>([index]);
     for (const d of PREFETCH_NEIGHBOR_OFFSETS) {
       const i = ((index + d) % count + count) % count;
@@ -164,9 +166,9 @@ export function IrissOfferPublicGallery({
       const photo = photos[i];
       if (!photo) continue;
       const img = new window.Image();
-      img.src = photoUrl(token, photo.id, "display", DISPLAY_DEFAULT_WIDTH);
+      img.src = irissOfferPublicPhotoUrl(token, photo.id, "full");
     }
-  }, [index, count, token, photos]);
+  }, [index, count, token, photos, loadedIds, hero?.id]);
 
   // Sīktēlu josla: aktīvais sīktēls vienmēr redzams, ritina sevi centrā.
   const thumbRefs = useRef(new Map<string, HTMLButtonElement>());
@@ -189,42 +191,87 @@ export function IrissOfferPublicGallery({
     return () => el.removeEventListener("wheel", onWheel);
   }, []);
 
-  const stripDrag = useRef<{ startX: number; startScrollLeft: number; dragged: boolean; pointerId: number } | null>(
-    null,
-  );
-  const onStripPointerDown = useCallback((e: React.PointerEvent) => {
-    if (e.pointerType !== "mouse") return;
+  const stripDrag = useRef<IrissOfferStripDrag | null>(null);
+  const suppressStripClick = useRef(false);
+  const stripWinCleanup = useRef<(() => void) | null>(null);
+  useEffect(() => () => stripWinCleanup.current?.(), []);
+  const endStripDragSession = useCallback((pointerId?: number) => {
     const el = stripRef.current;
-    if (!el) return;
-    // Netver pointeri šeit - to drīkst tikai pēc faktiskas vilkšanas (sk. onStripPointerMove), citādi
-    // Chromium novirza sekojošo `click` uz šo konteineru, nevis sīktēla pogu, un klikšķis pazūd.
-    stripDrag.current = { startX: e.clientX, startScrollLeft: el.scrollLeft, dragged: false, pointerId: e.pointerId };
-  }, []);
-  const onStripPointerMove = useCallback((e: React.PointerEvent) => {
     const d = stripDrag.current;
-    const el = stripRef.current;
-    if (!d || !el) return;
-    const dx = e.clientX - d.startX;
-    if (!d.dragged && Math.abs(dx) > 3) {
-      d.dragged = true;
+    if (pointerId != null && d && d.pointerId !== pointerId) return;
+    const ended = endIrissOfferStripDrag(d);
+    suppressStripClick.current = ended.suppressClick;
+    stripDrag.current = null;
+    if (el && pointerId != null && el.hasPointerCapture(pointerId)) {
       try {
-        el.setPointerCapture(d.pointerId);
-      } catch {
-        /* ignore */
-      }
-    }
-    el.scrollLeft = d.startScrollLeft - dx;
-  }, []);
-  const onStripPointerUp = useCallback((e: React.PointerEvent) => {
-    const el = stripRef.current;
-    if (el && el.hasPointerCapture(e.pointerId)) {
-      try {
-        el.releasePointerCapture(e.pointerId);
+        el.releasePointerCapture(pointerId);
       } catch {
         /* ignore */
       }
     }
   }, []);
+  const onStripPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (e.pointerType !== "mouse") return;
+      const el = stripRef.current;
+      if (!el) return;
+      // Netver pointeri šeit - tikai pēc sliekšņa (sk. move), citādi Chromium noēd klikšķi uz sīktēla.
+      stripDrag.current = beginIrissOfferStripDrag({
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startScrollLeft: el.scrollLeft,
+      });
+      const pointerId = e.pointerId;
+      stripWinCleanup.current?.();
+      const onWinUp = (ev: PointerEvent) => {
+        if (ev.pointerId !== pointerId) return;
+        stripWinCleanup.current?.();
+        endStripDragSession(pointerId);
+      };
+      stripWinCleanup.current = () => {
+        window.removeEventListener("pointerup", onWinUp, true);
+        window.removeEventListener("pointercancel", onWinUp, true);
+        stripWinCleanup.current = null;
+      };
+      window.addEventListener("pointerup", onWinUp, true);
+      window.addEventListener("pointercancel", onWinUp, true);
+    },
+    [endStripDragSession],
+  );
+  const onStripPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      const d = stripDrag.current;
+      const el = stripRef.current;
+      if (!d || !el) return;
+      const next = moveIrissOfferStripDrag(d, {
+        pointerId: e.pointerId,
+        clientX: e.clientX,
+        buttons: e.buttons,
+        pointerType: e.pointerType,
+      });
+      if (next.action === "ignore" || next.action === "hold") return;
+      if (next.action === "end") {
+        endStripDragSession(e.pointerId);
+        return;
+      }
+      stripDrag.current = next.drag;
+      el.scrollLeft = next.scrollLeft;
+      if (next.capture) {
+        try {
+          el.setPointerCapture(next.drag.pointerId);
+        } catch {
+          /* ignore */
+        }
+      }
+    },
+    [endStripDragSession],
+  );
+  const onStripPointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      endStripDragSession(e.pointerId);
+    },
+    [endStripDragSession],
+  );
 
   // Pilnekrāna pinch-zoom + pan + dubultklikšķis/dubultskāriens.
   const zoomImgRef = useRef<HTMLImageElement>(null);
@@ -342,18 +389,21 @@ export function IrissOfferPublicGallery({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={photoUrl(token, hero.id, "thumb")}
+          src={irissOfferPublicPhotoUrl(token, hero.id, "thumb")}
           alt=""
           aria-hidden
-          className={`absolute inset-0 h-full w-full scale-110 object-cover blur-xl transition-opacity duration-300 ${heroLoaded ? "opacity-0" : "opacity-100"}`}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${heroLoaded ? "opacity-0" : "opacity-100"}`}
         />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={photoUrl(token, hero.id, "display", DISPLAY_DEFAULT_WIDTH)}
-          srcSet={displaySrcSet(token, hero.id)}
-          sizes="(min-width: 640px) 688px, 100vw"
+          src={irissOfferPublicPhotoUrl(token, hero.id, "full")}
+          srcSet={irissOfferPublicHeroSrcSet(token, hero.id)}
+          sizes={IRISS_OFFER_HERO_SIZES}
           alt={title}
-          className={`absolute inset-0 h-full w-full cursor-zoom-in object-cover transition-opacity duration-300 ${heroLoaded ? "opacity-100" : "opacity-0"}`}
+          fetchPriority="high"
+          decoding="async"
+          className={`absolute inset-0 h-full w-full cursor-zoom-in object-cover transition-opacity duration-200 ${heroLoaded ? "opacity-100" : "opacity-0"}`}
+          ref={heroImgRef}
           onLoad={() => setLoadedIds((m) => (m[hero.id] ? m : { ...m, [hero.id]: true }))}
           onClick={() => {
             if (swiped.current) return;
@@ -379,6 +429,7 @@ export function IrissOfferPublicGallery({
           onPointerMove={onStripPointerMove}
           onPointerUp={onStripPointerUp}
           onPointerCancel={onStripPointerUp}
+          onLostPointerCapture={onStripPointerUp}
           className="flex cursor-grab gap-1.5 overflow-x-auto bg-white p-2 [scrollbar-width:none] active:cursor-grabbing [&::-webkit-scrollbar]:hidden"
         >
           {photos.map((photo, i) => (
@@ -392,8 +443,8 @@ export function IrissOfferPublicGallery({
               aria-label="Rādīt šo bildi"
               aria-current={i === index}
               onClick={() => {
-                if (stripDrag.current?.dragged) {
-                  stripDrag.current.dragged = false;
+                if (suppressStripClick.current || stripDrag.current?.dragged) {
+                  suppressStripClick.current = false;
                   return;
                 }
                 setIndex(i);
@@ -404,9 +455,12 @@ export function IrissOfferPublicGallery({
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={photoUrl(token, photo.id, "thumb")}
+                src={irissOfferPublicPhotoUrl(token, photo.id, "thumb")}
                 alt=""
                 draggable={false}
+                loading={irissOfferThumbLoadingMode(i, index)}
+                decoding="async"
+                fetchPriority="low"
                 className="h-full w-full bg-[#f4f4f5] object-cover"
               />
             </button>
@@ -456,7 +510,7 @@ export function IrissOfferPublicGallery({
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     ref={zoomImgRef}
-                    src={photoUrl(token, hero.id, "full")}
+                    src={irissOfferPublicPhotoUrl(token, hero.id, "full")}
                     alt={title}
                     draggable={false}
                     onDoubleClick={toggleZoom}

@@ -165,7 +165,7 @@ describe("IRISS offer client link store", () => {
       { kind: "display", width: 480, format: "webp" },
       Date.parse("2026-10-15T12:30:00.000Z"),
     );
-    expect(display?.mimeType).toBe("image/webp");
+    expect(display?.mimeType).toBe("image/png");
     expect(display?.bytes.length).toBeGreaterThan(8);
 
     const replaced = await store.createIrissOfferClientLink({

@@ -8,6 +8,7 @@ import {
   irissOfferThumbBlobPath,
   pickIrissOfferDisplayWidth,
   pickIrissOfferImageFormat,
+  readIrissOfferImageWidth,
   renderIrissOfferDisplayImage,
   renderIrissOfferThumbJpeg,
 } from "@/lib/iriss-offer-image-thumb";
@@ -59,11 +60,21 @@ describe("IRISS offer image thumbnails", () => {
     expect(pickIrissOfferDisplayWidth(null)).toBe(IRISS_OFFER_DISPLAY_DEFAULT_WIDTH);
   });
 
-  it("picks the best image format the browser's Accept header advertises", () => {
-    expect(pickIrissOfferImageFormat("image/avif,image/webp,image/*,*/*;q=0.8")).toBe("avif");
+  it("picks WebP over AVIF so first paint does not wait for serverless AVIF encode", () => {
+    expect(pickIrissOfferImageFormat("image/avif,image/webp,image/*,*/*;q=0.8")).toBe("webp");
     expect(pickIrissOfferImageFormat("image/webp,image/*,*/*;q=0.8")).toBe("webp");
     expect(pickIrissOfferImageFormat("image/png,image/*;q=0.8")).toBe("jpeg");
     expect(pickIrissOfferImageFormat(null)).toBe("jpeg");
+  });
+
+  it("reads the stored pixel width so display can skip a useless re-encode", async () => {
+    const source = await sharp({
+      create: { width: 1200, height: 900, channels: 3, background: { r: 8, g: 40, b: 90 } },
+    })
+      .jpeg()
+      .toBuffer();
+    expect(await readIrissOfferImageWidth(source)).toBe(1200);
+    expect(await readIrissOfferImageWidth(Buffer.alloc(0))).toBe(0);
   });
 
   it("maps formats to their mime type", () => {

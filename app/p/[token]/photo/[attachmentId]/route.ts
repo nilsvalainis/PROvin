@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { isSafeIrissOfferAttachmentId, isSafeIrissOfferLinkToken } from "@/lib/iriss-offer-client-link";
 import { readIrissOfferPublicPhoto, type IrissOfferPublicPhotoVariant } from "@/lib/iriss-offer-client-link-load";
-import { pickIrissOfferDisplayWidth, pickIrissOfferImageFormat } from "@/lib/iriss-offer-image-thumb";
+import { pickIrissOfferImageFormat } from "@/lib/iriss-offer-image-thumb";
+import { IRISS_OFFER_PUBLIC_PHOTO_CACHE_CONTROL, pickIrissOfferDisplayWidth } from "@/lib/iriss-offer-public-photo";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 
@@ -44,9 +45,9 @@ export async function GET(req: Request, ctx: { params: Promise<{ token: string; 
     status: 200,
     headers: {
       "Content-Type": photo.mimeType,
-      /** Tikai privāts pārlūka kešs (ne CDN/starpniekserveris) - URL jau satur nepaminamu tokenu,
-       * tāpēc bilžu bitiem kešošana ļauj ātri atkārtoti rādīt bez jauna pieprasījuma (j49). */
-      "Cache-Control": "private, max-age=86400, immutable",
+      /** URL jau satur nepaminamu tokenu. `public` ļauj Vercel CDN kešot pēc pirmā Sharp/lasīšanas,
+       * citādi katrs viesis gaida on-the-fly kodēšanu (live /p/ "migla" 26.10). */
+      "Cache-Control": IRISS_OFFER_PUBLIC_PHOTO_CACHE_CONTROL,
       Vary: "Accept",
       "X-Robots-Tag": "noindex, nofollow",
       "X-Content-Type-Options": "nosniff",

@@ -1,11 +1,13 @@
 import sharp from "sharp";
 
+export {
+  IRISS_OFFER_DISPLAY_DEFAULT_WIDTH,
+  IRISS_OFFER_DISPLAY_WIDTHS,
+  pickIrissOfferDisplayWidth,
+} from "@/lib/iriss-offer-public-photo";
+
 /** Režģa miniatūra. Pilnais attēls paliek PDF un klienta saitei. */
 export const IRISS_OFFER_THUMB_MAX_EDGE = 240;
-
-/** Publiskās galerijas "hero" bildes platuma varianti (j49) - atbilst 1x/2x/3x DPR konteinera platumam ~688px. */
-export const IRISS_OFFER_DISPLAY_WIDTHS = [480, 800, 1280] as const;
-export const IRISS_OFFER_DISPLAY_DEFAULT_WIDTH = 800;
 
 export type IrissOfferImageFormat = "avif" | "webp" | "jpeg";
 
@@ -16,17 +18,12 @@ export function irissOfferThumbBlobPath(fullBlobPath: string): string {
   return `${trimmed}-thumb`;
 }
 
-/** Fiksēts platumu saraksts - nepieļauj patvaļīgu `?w=` vērtību (resursu izsmelšanas risks). */
-export function pickIrissOfferDisplayWidth(raw: string | null): number {
-  const n = Number(raw);
-  if (!Number.isFinite(n)) return IRISS_OFFER_DISPLAY_DEFAULT_WIDTH;
-  return (IRISS_OFFER_DISPLAY_WIDTHS as readonly number[]).includes(n) ? n : IRISS_OFFER_DISPLAY_DEFAULT_WIDTH;
-}
-
-/** Mūsdienu pārlūki `<img>` pieprasījumam sūta `Accept: image/avif,image/webp,...` - droši noteikt formātu no servera puses. */
+/**
+ * On-the-fly AVIF uz Vercel funkcijas aizņem sekundes (live /p/ hero "migla").
+ * WebP ir pietiekami ass un kodējas ātri; JPEG - rezerve.
+ */
 export function pickIrissOfferImageFormat(acceptHeader: string | null): IrissOfferImageFormat {
   const accept = (acceptHeader || "").toLowerCase();
-  if (accept.includes("image/avif")) return "avif";
   if (accept.includes("image/webp")) return "webp";
   return "jpeg";
 }
@@ -64,12 +61,22 @@ export async function renderIrissOfferThumbJpeg(bytes: Buffer): Promise<Buffer |
   return renderIrissOfferImageVariant(bytes, { maxEdge: IRISS_OFFER_THUMB_MAX_EDGE, quality: 62, format: "jpeg" });
 }
 
-/** Publiskās galerijas "hero" bilde - optimizēts platums + formāts (AVIF/WebP, kad pārlūks atbalsta). */
+/** Publiskās galerijas samazināta "display" rendition, kad avots ir lielāks par pieprasīto platumu. */
 export async function renderIrissOfferDisplayImage(
   bytes: Buffer,
   width: number,
   format: IrissOfferImageFormat,
 ): Promise<Buffer | null> {
-  const quality = format === "jpeg" ? 72 : 68;
+  const quality = format === "jpeg" ? 82 : format === "webp" ? 80 : 72;
   return renderIrissOfferImageVariant(bytes, { maxEdge: width, quality, format });
+}
+
+export async function readIrissOfferImageWidth(bytes: Buffer): Promise<number> {
+  if (!bytes.length) return 0;
+  try {
+    const meta = await sharp(bytes, { failOn: "none" }).metadata();
+    return meta.width ?? 0;
+  } catch {
+    return 0;
+  }
 }

@@ -4,10 +4,12 @@ import { isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
 import { readIrissOfferAttachmentBytes, readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 import {
   irissOfferImageMimeForFormat,
+  readIrissOfferImageWidth,
   renderIrissOfferDisplayImage,
   renderIrissOfferThumbJpeg,
   type IrissOfferImageFormat,
 } from "@/lib/iriss-offer-image-thumb";
+import { shouldServeOriginalOfferDisplay } from "@/lib/iriss-offer-public-photo";
 import {
   buildIrissOfferPublicView,
   irissOfferPublicViewContainsSecret,
@@ -90,6 +92,10 @@ export async function readIrissOfferPublicPhoto(
   const mimeType = file.mimeType.split(";")[0]?.trim() || "application/octet-stream";
 
   if (variant.kind === "display") {
+    const sourceWidth = await readIrissOfferImageWidth(file.bytes);
+    if (shouldServeOriginalOfferDisplay(sourceWidth, variant.width)) {
+      return { mimeType, bytes: file.bytes };
+    }
     const rendered = await renderIrissOfferDisplayImage(file.bytes, variant.width, variant.format);
     if (rendered) return { mimeType: irissOfferImageMimeForFormat(variant.format), bytes: rendered };
   }
