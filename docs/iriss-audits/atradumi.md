@@ -113,3 +113,8 @@ Formāts: [sadaļa] [ierīce] smagums (K kritisks / A augsts / V vidējs / Z zem
 - [Loģistika] [visas] Z - Iekšējie statusi 12 (awaiting_payment, organize_pickup...), UI rāda 4; Audi A4 ar organize_pickup UI rāda "Ieplānots" - kartē "Gatavība: Apmaksāts". Divas statusu sistēmas vienā ekrānā (statuss + gatavības apļi).
 - [Autoparks v2] [visas] V - Pēc "Uz Autoparku" automātiski izveidota publiska auto saite provin.lv/a/... ("Saite izveidota, Bez cenas") - CETURTAIS dalīšanās veids (blakus /p/, /p/d/, teksta ziņai). Nav jautāts, vai saiti veidot.
 - [Autoparks v2] [visas] Z - Lauks "Atvests: + Pievienot" tukšs, lai gan Loģistikā tikko atzīmēts "Atvests" (datums netiek pārnests); marka "TESTS Škoda" no Loģistikas nonāk Marka laukā kā ir (bez normalizācijas).
+
+## Autoparks v2 (saraksts)
+- [Autoparks] [visas] A - Autoparka posmi nesakrīt ar Loģistiku: Autoparkā "Ceļā 23", Loģistikā aktīvi 6 auto. Posms "Ceļā" Autoparkā tiek uzstādīts/atstāts neatkarīgi no Loģistikas. Ar vienoto ceļu (makets 23:35) - viena patiesība.
+- [Autoparks] [visas] V - Statuss "Pasūtījums" 4 ierakstiem, t.sk. piekabe "Unsinn ... Kipper" un pacēlājs "Nussbaum ..." - tehnika jauc auto sarakstus (piedāvājumu izvēle, pavadzīmes). Vajag tipu "Tehnika/aprīkojums" ārpus auto saraksta.
+- [Autoparks] [dators] Z - Statusu flīzes (7) aizņem visu platumu, "Servisā 0" un "Rezervēts 0" vienmēr redzami; filtri "Visi īpašnieki / IRISS / Dzintarzeme / Arhīvs" - divas filtru rindas.
