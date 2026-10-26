@@ -189,7 +189,7 @@ export function AdminMobileSaveStatus({
       type="button"
       onClick={saved ? undefined : onSave}
       disabled={busy || saved}
-      className="inline-flex h-[26px] items-center gap-1 rounded-full bg-[var(--am-fill)] px-2 text-[12px] font-medium text-[var(--am-ink2)]"
+      className="am-hit inline-flex h-[26px] items-center gap-1 rounded-full bg-[var(--am-fill)] px-2 text-[12px] font-medium text-[var(--am-ink2)]"
     >
       <AdminMobileIcon name={saved ? "saglabats" : "navSaglabats"} className={`h-3.5 w-3.5 ${busy ? "animate-spin" : ""}`} />
       {label}

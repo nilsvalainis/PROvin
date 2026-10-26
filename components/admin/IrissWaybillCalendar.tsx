@@ -73,7 +73,7 @@ export function IrissWaybillCalendarCards({
               </>
             ) : (
               <>
-                <p className="mt-2.5 text-[16px] font-bold text-[var(--ink3,#9a9faa)]">Nav aktīvas pavadzīmes</p>
+                <p className="mt-2.5 text-[16px] font-bold text-[var(--ink3, #63686f)]">Nav aktīvas pavadzīmes</p>
                 {card.last ? (
                   <p className="mt-0.5 text-[12px] text-[var(--ink2,#5e636e)]">
                     Pēdējā: {card.last.brandModel || "auto"}, beidzās {card.last.endedLabel}

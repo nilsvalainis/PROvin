@@ -836,7 +836,7 @@ function EndpointRow({
           <TemplateIcon type={value.type} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[11px] font-semibold uppercase tracking-wide text-[#8e8e93]">{label}</span>
+          <span className="block text-[11px] font-semibold uppercase tracking-wide text-[#6e6e73]">{label}</span>
           <span className="block truncate text-[14px] font-semibold">{value.label || value.address}</span>
         </span>
         <button type="button" className="text-[12.5px] font-medium text-[var(--iriss-log-focus)]" onClick={onOpen}>

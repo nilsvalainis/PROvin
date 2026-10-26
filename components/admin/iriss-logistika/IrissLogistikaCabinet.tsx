@@ -479,7 +479,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
           })()}
         </div>
         <div className="mt-1.5 flex h-9 items-center gap-1.5 rounded-xl border border-[#e5e7eb] px-2.5">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" className="shrink-0 text-[#9a9faa]">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" className="shrink-0 text-[#6e6e73]">
             <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" />
             <circle cx="12" cy="9.5" r="2.5" />
           </svg>

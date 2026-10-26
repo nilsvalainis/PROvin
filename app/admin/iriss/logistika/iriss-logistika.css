@@ -260,7 +260,7 @@
   border: 1px dashed #c7c7cc;
   border-radius: 12px;
   padding: 10px;
-  color: #8e8e93;
+  color: #6e6e73;
   font-size: 13px;
   font-weight: 500;
   text-align: center;
@@ -1254,7 +1254,7 @@ html.iriss-log-printing .iriss-log-pin-tip {
   border-radius: 999px;
 }
 .iriss-log-trip-seg b {
-  color: #8e8e93;
+  color: #6e6e73;
   font-weight: 600;
 }
 
@@ -1346,4 +1346,41 @@ html.iriss-log-printing .iriss-log-pin-tip {
 .iriss-log-tear.selected .iriss-log-pin-label.crowded {
   z-index: 5;
   display: block;
+}
+
+/*
+ * j68: telefonā pieskāriena mērķi >= 44x44 px (Fable F9: 84 mērķi <44 px).
+ * Mazām vadīklām (slēdži, krāsas punkts, kartes rīki) - neredzams ::before laukums,
+ * vizuālais izmērs nemainās. Pogām ar tekstu - min. augstums 44 px.
+ */
+@media (max-width: 767px) {
+  .iriss-log-screen :is(.iriss-log-switch, .iriss-log-cargo-dot-btn, .iriss-log-trip-seg button, .iriss-log-map-toolbar button) {
+    position: relative;
+  }
+  .iriss-log-screen :is(.iriss-log-switch, .iriss-log-cargo-dot-btn, .iriss-log-trip-seg button, .iriss-log-map-toolbar button)::before {
+    content: "";
+    position: absolute;
+    top: min(0px, calc((100% - 44px) / 2));
+    right: min(0px, calc((100% - 44px) / 2));
+    bottom: min(0px, calc((100% - 44px) / 2));
+    left: min(0px, calc((100% - 44px) / 2));
+  }
+  .iriss-log-screen .iriss-log-stage button,
+  .iriss-log-screen .iriss-log-stage.full button,
+  .iriss-log-screen .iriss-log-manual-add,
+  .iriss-log-screen .iriss-log-car-cards > li > button:first-child {
+    min-height: 44px;
+  }
+  .iriss-log-screen .iriss-log-car-cards :is(.iriss-log-btn-sec, .iriss-log-btn-dark),
+  .iriss-log-screen .iriss-log-confirm :is(.iriss-log-btn-sec, .iriss-log-btn-dark) {
+    height: 44px;
+    min-height: 44px;
+  }
+  .iriss-log-screen .iriss-log-bucket-dots {
+    gap: 0;
+  }
+  .iriss-log-screen .iriss-log-bucket-dots button {
+    width: 44px;
+    height: 44px;
+  }
 }
