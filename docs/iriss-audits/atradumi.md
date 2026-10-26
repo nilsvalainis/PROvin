@@ -84,3 +84,14 @@ Formāts: [sadaļa] [ierīce] smagums (K kritisks / A augsts / V vidējs / Z zem
 - [Sludinājumi] [visas] K - Lapas HTML 7,7 MB (visi sludinājumi un atbilstības iekļauti lapā uzreiz), servera atbilde 2-4,5 s; iebūvētais pārlūks lapu neielādēja 300 s laikā. Telefonā tas ir galvenais "lēnuma" cēlonis. Labojums: lapā tikai 1. lappuse (40 auto) un kopsavilkums, pārējais pēc pieprasījuma (API ar lapošanu).
 - [Pavadzīmes] [visas] A - Servera atbilde 6-10 s (citām sadaļām 0,2-0,8 s): loadIrissPavadzimesPageData katrā atvēršanā palaiž runIrissPavadzimesDropboxSync. Labojums: lapa rāda kešu (kā sānjoslas karte), sinhronizācija fonā (after()/cron) + poga "Atjaunot".
 - [Pārējās] - Sākums 0,55 s, Pasūtījumi 0,6 s (353 KB), Piedāvājumi 0,6 s, Radars 0,7 s, Loģistika 0,8 s, Autoparks v2 0,5 s, Atskaite 0,8 s, Iestatījumi 0,6 s, Izmaksas 0,4 s, VIN 0,5 s.
+
+## Sludinājumi (darbinieks claude.demo, dators)
+- [Sludinājumi] [visas] A - TREŠAIS piedāvājuma veids: sānu logā "Sagatavot piedāvājumu" atver teksta lauku ziņai ("Teksts tīrs: bez cenām, ID, platformas..."), nesaistītu ar pasūtījuma piedāvājumiem un sadaļu Piedāvājumi. Kartītē vēl "Nosūtīt klientam". Jāapvieno vienā "Izveidot piedāvājumu no šī auto" -> vienotā forma (izsoles saite jau ir).
+- [Sludinājumi] [dators] A - Kartītē "Pasūtījuma detaļas" divreiz (saite pie klienta un liela poga), "Piezīme..." lauks katrā kartītē; cenas bloks 9 rindas (Aplēse virsrakstā un vēlreiz rindā, Izmaksas, PVN, Kopējās, Budžets, Ietilpst, Maks. solījums, var solīt vēl) + nesaprotama zīme "Marža" bez vērtības.
+- [Sludinājumi] [dators] V - Izsoles dati netulkoti: nosaukums "Automaat", "Petrol", "Automatic" (UI latviski).
+- [Sludinājumi] [dators] V - Atbilstība neprecīza: pasūtījums "Volvo V60 · 2020 · līdz 200 000 km", piedāvāts 11/2022 auto bez norādes, ka gads neatbilst (nav ✓/✕ pa kritērijiem).
+- [Sludinājumi] [dators] Z - Sānu logs aizsedz 60% ekrāna ar izplūdinātu fonu; galvenais saturs (tehniskais stāvoklis "Nav datu") zemāk par cenu blokiem; "Piezīme (tikai adminam)" rāda arī darbiniekam.
+- [Sludinājumi] [dators] Z - Atvēršana darbiniekam: TTFB 3,9 s. Foto sīktēli ielādējas ar ~3 s aizturi (sākumā tukši rāmji).
+
+## Lomas (claude.demo ar visām 15 sadaļām)
+- [Navigācija] [darbinieks] V - Izvēlnē "Loģistika", "Grāmatvede" un "Serviss" visas ved uz /admin/iriss/logistika (trīs punkti vienai lapai). Autoparks darbiniekam ir pašā apakšā (adminam pēc Loģistikas) - secība atšķiras. Galvenē "Claude Demo · 10 sadaļas", lai gan piešķirtas 15 (ap_* skaitās kā viena?).
