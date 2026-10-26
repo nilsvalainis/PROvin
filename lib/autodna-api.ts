@@ -69,7 +69,7 @@ function autodnaNotConfiguredFailure(): AutodnaApiFailure {
     ok: false,
     status: 503,
     code: "autodna_not_configured",
-    message: "autoDNA API nav konfigurēts — trūkst AUTODNA_API_URL, AUTODNA_EMAIL vai AUTODNA_API_KEY.",
+    message: "autoDNA API nav konfigurēts - trūkst AUTODNA_API_URL, AUTODNA_EMAIL vai AUTODNA_API_KEY.",
   };
 }
 
@@ -169,7 +169,7 @@ function mapAutodnaFailure(status: number, body: unknown, rawBody: string): Auto
       ok: false,
       status,
       code: "autodna_ip_not_allowed",
-      message: "autoDNA noraidīja pieprasījumu — egress IP nav allowlistā (IP_NOT_ALLOWED).",
+      message: "autoDNA noraidīja pieprasījumu - egress IP nav allowlistā (IP_NOT_ALLOWED).",
       statusCode,
       rawBody: rawBody.slice(0, 500),
     };
@@ -179,7 +179,7 @@ function mapAutodnaFailure(status: number, body: unknown, rawBody: string): Auto
       ok: false,
       status,
       code: "autodna_ip_blacklisted",
-      message: "autoDNA noraidīja pieprasījumu — IP ir blacklistā (IP_BLACKLISTED).",
+      message: "autoDNA noraidīja pieprasījumu - IP ir blacklistā (IP_BLACKLISTED).",
       statusCode,
       rawBody: rawBody.slice(0, 500),
     };
@@ -192,7 +192,7 @@ function mapAutodnaFailure(status: number, body: unknown, rawBody: string): Auto
       ok: false,
       status,
       code: "autodna_not_enough_credits",
-      message: "autoDNA — nepietiek kredītu (NOT_ENOUGH_CREDITS).",
+      message: "autoDNA - nepietiek kredītu (NOT_ENOUGH_CREDITS).",
       statusCode,
       rawBody: rawBody.slice(0, 500),
     };
@@ -202,7 +202,7 @@ function mapAutodnaFailure(status: number, body: unknown, rawBody: string): Auto
       ok: false,
       status,
       code: "autodna_unauthorized",
-      message: "autoDNA autentifikācija neizdevās — pārbaudi AUTODNA_EMAIL un AUTODNA_API_KEY.",
+      message: "autoDNA autentifikācija neizdevās - pārbaudi AUTODNA_EMAIL un AUTODNA_API_KEY.",
       statusCode,
       rawBody: rawBody.slice(0, 500),
     };
