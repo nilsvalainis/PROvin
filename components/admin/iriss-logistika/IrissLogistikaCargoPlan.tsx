@@ -18,6 +18,7 @@ import {
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { IrissAddressAutocomplete, type PickedAddress } from "@/components/admin/iriss-logistika/IrissAddressAutocomplete";
+import { autoparksSaitesHref } from "@/lib/iriss-car-share";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
 import {
   CARGO_BUCKET_ADD_LV,
@@ -57,6 +58,8 @@ type Props = {
   onPlanChange: (plan: CargoPlanState) => void;
   onRowClick: (id: string) => void;
   onRowHover: (id: string | null) => void;
+  /** Loģistikas ieraksts -> Autoparka auto id (saite "Kartīte"). */
+  cardHrefByCarId?: Readonly<Record<string, string>>;
   /** `base`: tikko mainītais plāns, ko aprēķins izmanto (nevis veco stāvokli). */
   onRefreshDirections: (bucket: "next" | "after", base?: CargoPlanState) => void;
   routeUi?: Record<"next" | "after", { busy: boolean; notice: string }>;
@@ -107,6 +110,7 @@ export function IrissLogistikaCargoPlan({
   onPlanChange,
   onRowClick,
   onRowHover,
+  cardHrefByCarId,
   onRefreshDirections,
   routeUi,
   onTemplatesChanged,
@@ -227,6 +231,7 @@ export function IrissLogistikaCargoPlan({
                     colorOpen={colorFor === id}
                     onClick={() => onRowClick(id)}
                     onHover={onRowHover}
+                    cardHref={cardHrefByCarId?.[id] ? autoparksSaitesHref(cardHrefByCarId[id]) : undefined}
                     onToggleMap={() => onPlanChange(setCargoShowOnMap(plan, id, !(car?.showOnMap ?? true)))}
                     onToggleColor={() => setColorFor((cur) => (cur === id ? null : id))}
                     onPickColor={(next) => {
@@ -379,6 +384,7 @@ function SortableCargoRow({
   onToggleMap,
   onToggleColor,
   onPickColor,
+  cardHref,
 }: {
   id: string;
   order: LogisticsOrder;
@@ -393,6 +399,8 @@ function SortableCargoRow({
   onToggleMap: () => void;
   onToggleColor: () => void;
   onPickColor: (bucket: CargoBucket) => void;
+  /** Autoparka auto kartīte (posms "Ceļā" -> galvenā auto kartīte). */
+  cardHref?: string;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   return (
@@ -428,6 +436,11 @@ function SortableCargoRow({
           <span className={`iriss-log-ready-chip ${readiness}`} data-readiness={readiness}>
             {READINESS_LV[readiness]}
           </span>
+        ) : null}
+        {cardHref ? (
+          <a href={cardHref} className="iriss-log-card-link" {...stopDragStart} onClick={(e) => e.stopPropagation()}>
+            Kartīte
+          </a>
         ) : null}
         <button
           type="button"

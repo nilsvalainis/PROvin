@@ -216,8 +216,32 @@ export function autoparksSaitesHref(carId: string): string {
   return `/admin/iriss/autoparks-v2/${encodeURIComponent(carId)}`;
 }
 
+/** No Autoparka uz Loģistiku: atver karti ar iezīmētu auto (Loģistika = Autoparka posms "Ceļā"). */
 export function logistikaSaitesHref(orderId: string): string {
-  return `/admin/iriss/logistika?car=${encodeURIComponent(orderId)}`;
+  return `/admin/iriss/logistika?car=${encodeURIComponent(orderId)}&view=map`;
+}
+
+/**
+ * Loģistikas ieraksts -> Autoparka auto (tā pati sasaiste kā Saitēs: car.orderId vai VIN).
+ * Kravu plānā tā ir "Kartīte" saite; ieraksts bez Autoparka auto saiti nesaņem.
+ */
+export function autoparksCarIdsByLogisticsOrder(
+  orders: ReadonlyArray<{ id: string; vin: string }>,
+  cars: ReadonlyArray<{ id: string; orderId: string; vin: string }>,
+): Record<string, string> {
+  const byOrder = new Map<string, string>();
+  const byVin = new Map<string, string>();
+  for (const car of cars) {
+    if (car.orderId) byOrder.set(car.orderId, car.id);
+    const vin = car.vin.trim().toUpperCase();
+    if (vin) byVin.set(vin, car.id);
+  }
+  const out: Record<string, string> = {};
+  for (const order of orders) {
+    const carId = byOrder.get(order.id) ?? (order.vin.trim() ? byVin.get(order.vin.trim().toUpperCase()) : undefined);
+    if (carId) out[order.id] = carId;
+  }
+  return out;
 }
 
 export function pasutijumsSaitesHref(orderId: string): string {
