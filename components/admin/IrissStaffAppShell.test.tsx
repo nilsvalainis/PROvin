@@ -106,4 +106,10 @@ describe("IRISS darbinieka čaulas CSS (j69)", () => {
     expect(tab).toMatch(/min-height:\s*44px/);
     expect(tab).toMatch(/min-width:\s*44px/);
   });
+  it("daudz sadaļu: joslā 5 punkti ar «Vairāk», «Iziet» joslā nav", () => {
+    const nav = tabbar(shell(["pasutijumi", "sludinajumi", "radars", "logistika", "pavadzimes", "vin"]));
+    expect(nav).toContain("Vairāk");
+    expect(nav).not.toContain("Iziet");
+    expect(nav.match(/iriss-staff-tab\b/g)).toHaveLength(5);
+  });
 });

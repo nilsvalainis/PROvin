@@ -7,6 +7,7 @@ import {
   List,
   LogOut,
   Map,
+  MoreHorizontal,
   Radar,
   ScanLine,
   Wallet,
@@ -16,7 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   IRISS_SECTION_LABELS,
   irissSectionMeta,
@@ -67,6 +68,12 @@ export function IrissStaffAppShell({
   const home = "/admin/iriss";
   const navSections = staffNavSections(sections, autoparksV2Visible);
   const tabItems = staffTabbarItems(sections, autoparksV2Visible);
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  // Pāreja uz citu lapu aizver «Vairāk».
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [pathname]);
 
   async function logout() {
     await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
@@ -167,6 +174,24 @@ export function IrissStaffAppShell({
                   </Link>
                 );
               }
+              if (item.kind === "more") {
+                const active = item.sections.some((s) => pathname === s.href || pathname.startsWith(`${s.href}/`));
+                return (
+                  <button
+                    key="more"
+                    type="button"
+                    aria-expanded={moreOpen}
+                    aria-controls="iriss-staff-more"
+                    onClick={() => setMoreOpen((v) => !v)}
+                    className={`iriss-staff-tab flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-[11px] font-medium ${
+                      active || moreOpen ? "bg-[var(--iriss-surface-3)] text-[var(--iriss-ink)]" : "text-[var(--iriss-ink-2)]"
+                    }`}
+                  >
+                    <MoreHorizontal className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
+                    {item.label}
+                  </button>
+                );
+              }
               if (item.kind === "logout") {
                 return (
                   <button
@@ -197,6 +222,50 @@ export function IrissStaffAppShell({
             })}
           </div>
         </nav>
+        {moreOpen
+          ? tabItems.map((item) =>
+              item.kind === "more" ? (
+                <div key="more-sheet" className="md:hidden">
+                  <button
+                    type="button"
+                    aria-label="Aizvērt"
+                    className="fixed inset-0 z-[31] bg-black/30"
+                    onClick={() => setMoreOpen(false)}
+                  />
+                  <div
+                    id="iriss-staff-more"
+                    role="menu"
+                    className="fixed inset-x-2 bottom-[calc(64px+env(safe-area-inset-bottom))] z-[32] rounded-2xl border border-[var(--iriss-line)] bg-[var(--iriss-surface)] p-2 shadow-[var(--iriss-shadow-2)]"
+                  >
+                    {item.sections.map((sec) => {
+                      const Icon = SECTION_ICON[sec.id];
+                      const active = pathname === sec.href || pathname.startsWith(`${sec.href}/`);
+                      return (
+                        <Link
+                          key={sec.id}
+                          role="menuitem"
+                          href={sec.href}
+                          className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-[15px] font-medium text-[var(--iriss-ink)] ${active ? "bg-[var(--iriss-surface-2)]" : ""}`}
+                        >
+                          <Icon className="h-[18px] w-[18px] shrink-0 text-[var(--iriss-ink-2)]" strokeWidth={1.75} aria-hidden />
+                          {sec.label}
+                        </Link>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => void logout()}
+                      className="mt-1 flex min-h-11 w-full items-center gap-3 rounded-xl border-t border-[var(--iriss-line)] px-3 text-[15px] font-medium text-[var(--iriss-ink-2)]"
+                    >
+                      <LogOut className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} aria-hidden />
+                      Iziet
+                    </button>
+                  </div>
+                </div>
+              ) : null,
+            )
+          : null}
       </div>
     </div>
   );
