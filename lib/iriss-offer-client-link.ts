@@ -507,7 +507,14 @@ export function buildIrissOfferPublicView(
     : [];
 
   const structured = [assessmentOk ? plainClientText(offer.summary) : ""].filter(Boolean);
-  const notes = structured.length > 0 ? structured.join("\n\n") : plainClientText(offer.comment);
+  // `comment` ir mantots apkopojums (kopsavilkums || vizuālais || tehniskais || īpašās atzīmes).
+  // Tikai vecajiem piedāvājumiem bez šiem laukiem - citādi tehniskais teksts dublējās «Stāvoklis»
+  // un rādījās klientam pat ar izslēgtu «Rādīt klientam: Tehniskais novērtējums» (PDF to nerāda).
+  const legacyOnly = ![offer.summary, offer.specialNotes, offer.visualAssessment, offer.technicalAssessment].some(
+    (v) => plainClientText(v ?? ""),
+  );
+  const notes =
+    structured.length > 0 ? structured.join("\n\n") : assessmentOk && legacyOnly ? plainClientText(offer.comment) : "";
 
   const specialNotes = specialNotesOk ? plainClientText(offer.specialNotes) : "";
   const visualAssessment = visualAssessmentOk ? plainClientText(offer.visualAssessment) : "";
