@@ -117,3 +117,27 @@ describe("Kravu plāns - slēdzis «Gatavība» (renderēts)", () => {
     expect(html).not.toMatch(/type="checkbox"[^>]*(apmaks|pickup)/i);
   });
 });
+
+describe("Kravu rinda -> Autoparka auto kartīte", () => {
+  it("rāda saiti Kartīte tikai auto, kam ir Autoparka ieraksts", () => {
+    const el = (
+      <IrissLogistikaCargoPlan
+        orders={orders}
+        plan={plan}
+        templates={[]}
+        bounceId={null}
+        hoverId={null}
+        onPlanChange={() => undefined}
+        onRowClick={() => undefined}
+        onRowHover={() => undefined}
+        onRefreshDirections={() => undefined}
+        readinessOn={false}
+        onToggleReadiness={() => undefined}
+        cardHrefByCarId={{ a: "ap-1" }}
+      />
+    );
+    const html = renderHtml(el);
+    expect(html).toContain('href="/admin/iriss/autoparks-v2/ap-1"');
+    expect(html.match(/>Kartīte</g)?.length).toBe(1);
+  });
+});

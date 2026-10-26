@@ -12,7 +12,7 @@ import { IrissLogistikaCarsTable } from "@/components/admin/iriss-logistika/Iris
 import { IrissLogistikaCargoPlan, type ManualCarInput } from "@/components/admin/iriss-logistika/IrissLogistikaCargoPlan";
 import { IrissLogistikaMap, type IrissLogistikaMapHandle } from "@/components/admin/iriss-logistika/IrissLogistikaMap";
 import { IrissLogistikaNewPurchase } from "@/components/admin/iriss-logistika/IrissLogistikaNewPurchase";
-import { IrissCreateOfferButton, irissCreateOfferHref } from "@/components/admin/IrissCreateOfferButton";
+import { irissCreateOfferHref } from "@/components/admin/IrissCreateOfferButton";
 import { IrissLogistikaPrintList } from "@/components/admin/iriss-logistika/IrissLogistikaPrintList";
 import { AdminMobileChips, AdminMobileRoundBtn, AdminMobileSearchField, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { IrissLogistikaRouteTemplatesPanel } from "@/components/admin/iriss-logistika/IrissLogistikaRouteTemplatesPanel";
@@ -74,6 +74,8 @@ type Props = {
   viewerName?: string;
   canEnableTotp?: boolean;
   canCreateOffer?: boolean;
+  /** Loģistikas ieraksts -> Autoparka auto (saite "Kartīte" kravu plānā). Tukšs, ja nav tiesību. */
+  autoparksByOrder?: Record<string, string>;
 };
 
 const LABELS_PREF_KEY = "iriss.logistics.mapLabels";
@@ -99,6 +101,7 @@ export function IrissLogistikaClient({
   viewerName,
   canEnableTotp,
   canCreateOffer = false,
+  autoparksByOrder = {},
 }: Props) {
   const [orders, setOrders] = useState(initialOrders);
   const [points] = useState(initialPoints);
@@ -146,6 +149,12 @@ export function IrissLogistikaClient({
     if (!car) return;
     if (!orders.some((o) => o.id === car)) return;
     setActiveId(car);
+    // No Autoparka kartītes ("Kartē"): iezīmē auto kartē; vecā saite bez view atver kabinetu.
+    if (searchParams.get("view") === "map") {
+      setPopupId(car);
+      setBounceId(car);
+      return;
+    }
     setCabinetOpen(true);
   }, [orders, searchParams]);
   /** Maršruta poga: "Sastāda…" un kļūda tieši pie pogas, nevis lapas augšā. */
@@ -828,8 +837,8 @@ export function IrissLogistikaClient({
               placeholder={pageTab === "points" ? "Meklēt punktu, pilsētu, izsoli" : "VIN, nosaukums, pickup nr."}
               className="hidden h-9 w-56 rounded-full border-0 bg-white px-3 text-[13px] shadow-sm md:block"
             />
-            {canCreateOffer ? <IrissCreateOfferButton /> : null}
-            <button type="button" onClick={() => setPurchaseOpen(true)} className="inline-flex h-9 items-center rounded-full bg-[var(--ink,#111827)] px-3 text-[12.5px] font-semibold text-white">
+            {/* Viena galvenā poga (dizains v0.3): piedāvājumu veido no auto kartītes, ne no galvenes. */}
+            <button type="button" onClick={() => setPurchaseOpen(true)} className="inline-flex h-9 items-center rounded-full bg-[#f26522] px-3.5 text-[13px] font-bold text-white hover:bg-[#d9541a]">
               + Nopirkts
             </button>
           </div>
@@ -950,7 +959,7 @@ export function IrissLogistikaClient({
           ) : null}
         </div>
       ) : (
-        <div className="mt-3 grid grid-cols-[minmax(0,1fr)] items-start gap-3 max-md:px-4 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]">
+        <div className="mt-3 grid grid-cols-[minmax(0,1fr)] items-start gap-3 max-md:px-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(22rem,1fr)]">
           <div className="min-w-0">
             {selectedIds.length > 0 ? (
               <div className="iriss-log-no-print mb-2 hidden items-center gap-2 rounded-2xl bg-white px-3 py-2 text-[12.5px] shadow-sm md:flex">
@@ -1117,7 +1126,7 @@ export function IrissLogistikaClient({
               />
             </div>
           ) : (
-            <div className="space-y-3 lg:col-start-2 lg:row-start-1">
+            <div className="iriss-log-cargo-col space-y-3 lg:col-start-2 lg:row-start-1">
               <IrissLogistikaCargoPlan
                 orders={visibleOrders}
                 plan={cargoPlan}
@@ -1134,6 +1143,7 @@ export function IrissLogistikaClient({
                 readinessOn={readinessOn}
                 onToggleReadiness={toggleReadiness}
                 readinessByCarId={readinessByCarId}
+                cardHrefByCarId={autoparksByOrder}
               />
               {popupOrder ? (
                 <IrissLogistikaCarPopup

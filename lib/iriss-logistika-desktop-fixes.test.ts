@@ -81,7 +81,7 @@ describe("Loģistika layout", () => {
     expect(client).toContain('<div className="min-w-0 lg:col-span-2 lg:row-start-2">');
     // Telefonā kravu plāns ir pirms auto saraksta.
     expect(client.indexOf("<IrissLogistikaCargoPlan")).toBeLessThan(client.indexOf("<IrissLogistikaCarsTable"));
-    expect(client).toContain('className="space-y-3 lg:col-start-2 lg:row-start-1"');
+    expect(client).toContain('className="iriss-log-cargo-col space-y-3 lg:col-start-2 lg:row-start-1"');
   });
 
   it("row click bounces the pin briefly instead of keeping it pressed", () => {
