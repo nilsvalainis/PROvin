@@ -6,7 +6,9 @@ import { motion, Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { memo, useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
+import { IrissAnchoredPopover } from "@/components/admin/IrissAnchoredPopover";
 import { IrissOverflowItem, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
+import { IrissPasutijumiStatusMenuItems } from "@/components/admin/IrissPasutijumiStatusMenu";
 import { buildListingPlatformChips } from "@/lib/iriss-listing-links";
 import {
   formatIrissExpiredOfferLabel,
@@ -23,10 +25,7 @@ import {
 import { whatsAppChatUrl } from "@/lib/admin-whatsapp-phone";
 import { irissPhoneTelHref } from "@/lib/iriss-pasutijumi-list-row";
 import {
-  canonicalIrissPasutijumsListStatus,
   displayIrissPasutijumsListStatusLabel,
-  IRISS_PASUTIJUMS_PICKER_STATUSES,
-  IRISS_PASUTIJUMS_PICKER_STATUS_LV,
   type IrissPasutijumsListRow,
   type IrissPasutijumsListStatus,
 } from "@/lib/iriss-pasutijumi-types";
@@ -58,7 +57,6 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
   onAskDelete,
   onSetStatus,
   onRestore,
-  onAskStatus,
   actionBusy,
   registerSwipeCloser,
   closeOtherSwipes,
@@ -89,7 +87,6 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
   const [isOpen, setIsOpen] = useState(false);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const statusBtnRef = useRef<HTMLButtonElement>(null);
-  const statusMenuRef = useRef<HTMLDivElement>(null);
   const chips = buildListingPlatformChips({
     listingLinkMobile: row.listingLinkMobile,
     listingLinkAutobid: row.listingLinkAutobid,
@@ -185,39 +182,18 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
     return () => registerSwipeCloser(row.id, null);
   }, [closeSwipe, registerSwipeCloser, row.id]);
 
-  useEffect(() => {
-    if (!statusMenuOpen) return;
-    const onDoc = (e: Event) => {
-      const t = e.target;
-      if (!(t instanceof Node)) {
-        setStatusMenuOpen(false);
-        return;
-      }
-      if (statusBtnRef.current?.contains(t) || statusMenuRef.current?.contains(t)) return;
-      setStatusMenuOpen(false);
-    };
-    const timer = window.setTimeout(() => {
-      document.addEventListener("pointerdown", onDoc, true);
-    }, 0);
-    return () => {
-      window.clearTimeout(timer);
-      document.removeEventListener("pointerdown", onDoc, true);
-    };
-  }, [statusMenuOpen]);
-
-  const toggleStatusMenu = (e: MouseEvent) => {
+  const toggleStatusMenu = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (narrowSwipeViewport && onAskStatus) {
-      onAskStatus(row.id);
-      return;
-    }
+    statusBtnRef.current = e.currentTarget;
     setStatusMenuOpen((v) => !v);
   };
 
   const statusBtn = (
     <button
-      ref={statusBtnRef}
+      ref={(node) => {
+        if (node?.offsetParent) statusBtnRef.current = node;
+      }}
       type="button"
       disabled={statusBusy}
       onClick={toggleStatusMenu}
@@ -360,35 +336,25 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
     </div>
   );
 
-  const statusMenu = statusMenuOpen ? (
-    <div
-      ref={statusMenuRef}
-      role="menu"
-      className="iriss-ov-menu absolute right-3 top-[3.1rem] z-50 min-w-[8.5rem] overflow-hidden rounded-2xl bg-[var(--s1)] py-1 shadow-[var(--gsh)] md:right-16"
-      onPointerDown={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
+  const statusMenu = (
+    <IrissAnchoredPopover
+      open={statusMenuOpen}
+      onClose={() => setStatusMenuOpen(false)}
+      anchorRef={statusBtnRef}
+      align="end"
+      minWidth={136}
+      estimatedHeight={168}
     >
-      {IRISS_PASUTIJUMS_PICKER_STATUSES.map((s) => (
-        <button
-          key={s}
-          type="button"
-          role="menuitem"
-          disabled={statusBusy}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setStatusMenuOpen(false);
-            onSetStatus(row.id, s);
-          }}
-          className={`flex min-h-10 w-full px-3.5 text-left text-[14px] font-medium ${
-            canonicalIrissPasutijumsListStatus(curStatus) === s ? "bg-[var(--fill)] text-[var(--ink)]" : "text-[var(--ink)] hover:bg-[var(--fill)]"
-          }`}
-        >
-          {IRISS_PASUTIJUMS_PICKER_STATUS_LV[s]}
-        </button>
-      ))}
-    </div>
-  ) : null;
+      <IrissPasutijumiStatusMenuItems
+        currentStatus={curStatus}
+        busy={statusBusy}
+        onPick={(s) => {
+          setStatusMenuOpen(false);
+          onSetStatus(row.id, s);
+        }}
+      />
+    </IrissAnchoredPopover>
+  );
 
   const cardInner = (
     <div
