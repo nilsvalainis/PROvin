@@ -329,7 +329,8 @@ export function IrissListingVehicleCard({
           ) : null}
         </div>
         <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
-          <IrissListingOrderChips orders={linked} onPreview={onPreviewOrder} />
+          {/* «Pasūtījuma detaļas» ir darbību rindā; šeit tikai klients un ✓/✕ pa prasībām. */}
+          <IrissListingOrderChips orders={linked} vehicle={v} />
           <IrissListingCardActions
             v={v}
             previewDisabled={linked.length === 0}

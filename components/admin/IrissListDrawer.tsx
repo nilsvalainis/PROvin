@@ -314,7 +314,7 @@ export function IrissListDrawer({
 
       <label className="mt-3 block text-[10px] font-semibold uppercase tracking-wide text-slate-500">
         Piezīme
-        <textarea value={prefs.notes[v.id] ?? ""} onChange={(e) => setNote(e.target.value)} placeholder="Piezīme (tikai adminam)" className="mt-1 min-h-[64px] w-full rounded-lg border border-[#E5E7EB] p-2 text-base font-normal normal-case tracking-normal sm:text-[13px]" />
+        <textarea value={prefs.notes[v.id] ?? ""} onChange={(e) => setNote(e.target.value)} placeholder="Piezīme (saglabājas tikai šajā ierīcē)" className="mt-1 min-h-[64px] w-full rounded-lg border border-[#E5E7EB] p-2 text-base font-normal normal-case tracking-normal sm:text-[13px]" />
       </label>
 
       <h3 className="iriss-section-heading mt-4">Tehniskais stāvoklis</h3>
