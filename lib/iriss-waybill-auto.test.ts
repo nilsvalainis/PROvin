@@ -138,8 +138,9 @@ describe("classifyWaybillForAuto", () => {
     const issued = req({ id: "wbr_i", status: "issued", waybillNo: "P02814", validUntil: "2026-10-23T18:00:00.000Z" });
     const replacing = req({ id: "wbr_me", plateBusyAtCreate: true, replaceWaybillNo: "P02814" });
     expect(plateTakenByOtherRequest([replacing, issued], replacing, NOW)).toBe(false);
+    expect(plateTakenByOtherRequest([replacing, issued], replacing, NOW, true)).toBe(false);
     expect(
-      classifyWaybillForAuto(replacing, { plateBusyNow: true, plateInOtherRequest: plateTakenByOtherRequest([replacing, issued], replacing, NOW), nowMs: NOW, replaceEnabled: true }),
+      classifyWaybillForAuto(replacing, { plateBusyNow: true, plateInOtherRequest: plateTakenByOtherRequest([replacing, issued], replacing, NOW, true), nowMs: NOW, replaceEnabled: true }),
     ).toMatchObject({ standard: true, replace: { waybillNo: "P02814" } });
     // Cita pavadzīme (ne apstiprinātā) vai darbs procesā - joprojām bloķē.
     const otherIssued = req({ id: "wbr_x", status: "issued", waybillNo: "P02815", validUntil: "2026-10-23T18:00:00.000Z" });
@@ -148,6 +149,56 @@ describe("classifyWaybillForAuto", () => {
     expect(plateTakenByOtherRequest([replacing, issued, working], replacing, NOW)).toBe(true);
     // Bez apstiprinājuma - kā līdz šim.
     expect(plateTakenByOtherRequest([req({ id: "wbr_me" }), issued], req({ id: "wbr_me" }), NOW)).toBe(true);
+  });
+
+  it("B762-7 26.10: CSDD/index Brīvs - FABLE izdotais spoks nebloķē; in_progress joprojām bloķē", () => {
+    const now = Date.parse("2026-10-26T08:00:00.000Z");
+    const me = tradeReq({
+      id: "wbr_df9b09e1390e5494",
+      vehicle: { brandModel: "MB E250", vin: "WDD2120471A000001", plate: "B7627", orderId: "" },
+      validUntil: "2026-10-26T09:00:00.000Z",
+    });
+    const ghost = req({
+      id: "wbr_ghost_fable",
+      status: "issued",
+      waybillNo: "P02822",
+      validUntil: "2026-10-28T08:00:00.000Z",
+      vehicle: { brandModel: "FABLE", vin: "", plate: "B7627", orderId: "" },
+    });
+    const otherPlate = req({
+      id: "wbr_p00746",
+      status: "issued",
+      waybillNo: "P00746",
+      validUntil: "2026-10-27T08:00:00.000Z",
+      vehicle: { brandModel: "VW Touran", vin: "", plate: "B1927", orderId: "" },
+    });
+    const working = req({
+      id: "wbr_w",
+      status: "in_progress",
+      pickedAt: "2026-10-26T07:59:50.000Z",
+      vehicle: { brandModel: "X", vin: "", plate: "B7627", orderId: "" },
+    });
+    // Bez 4. arg / plateBusyNow=true: kā līdz šim - derīgs issued bloķē (drošais noklusējums).
+    expect(plateTakenByOtherRequest([me, ghost, otherPlate], me, now)).toBe(true);
+    expect(plateTakenByOtherRequest([me, ghost], me, now, true)).toBe(true);
+    // CSDD/index saka Brīvs: issued spoks un cita numura aktīvā (P00746 uz B192-7) nebloķē.
+    expect(plateTakenByOtherRequest([me, ghost, otherPlate], me, now, false)).toBe(false);
+    expect(
+      classifyWaybillForAuto(me, {
+        plateBusyNow: false,
+        plateInOtherRequest: plateTakenByOtherRequest([me, ghost, otherPlate], me, now, false),
+        nowMs: now,
+      }),
+    ).toEqual({ standard: true, plate: "B762-7", company: "iriss", ctx: "ctx1", flow: "tradeAct" });
+    // in_progress joprojām bloķē, arī ja CSDD saka Brīvs.
+    expect(plateTakenByOtherRequest([me, ghost, working], me, now, false)).toBe(true);
+    expect(
+      classifyWaybillForAuto(me, {
+        plateBusyNow: false,
+        plateInOtherRequest: plateTakenByOtherRequest([me, ghost, working], me, now, false),
+        nowMs: now,
+      }),
+    ).toEqual({ standard: false, reason: "numurs jau citā darbā" });
   });
 
   it("leaves own routes, invalid hours, retries, cancelled and released jobs to Aivars", () => {

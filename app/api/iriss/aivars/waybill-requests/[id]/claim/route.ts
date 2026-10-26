@@ -46,7 +46,7 @@ export async function POST(req: Request, ctx: Ctx) {
       (current, doc) =>
         classifyWaybillForAuto(current, {
           plateBusyNow: isBusy(current.vehicle.plate),
-          plateInOtherRequest: plateTakenByOtherRequest(doc.requests, current),
+          plateInOtherRequest: plateTakenByOtherRequest(doc.requests, current, Date.now(), isBusy(current.vehicle.plate)),
           replaceEnabled: autoWaybillReplaceEnabled(),
         }).standard,
     );

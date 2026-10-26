@@ -81,7 +81,7 @@ export async function waybillAutoContext(
   const classify = (request: WaybillRequest) =>
     classifyWaybillForAuto(request, {
       plateBusyNow: busy(request.vehicle.plate),
-      plateInOtherRequest: plateTakenByOtherRequest(doc.requests, request, nowMs),
+      plateInOtherRequest: plateTakenByOtherRequest(doc.requests, request, nowMs, busy(request.vehicle.plate)),
       nowMs,
       replaceEnabled: autoWaybillReplaceEnabled(),
     });
