@@ -607,6 +607,7 @@ export function IrissOrderRoom({
     offerCount: rec.offers.length,
     hasPhone: canCall,
     hasVin: Boolean(rec.vin.trim()),
+    listStatus: rec.listStatus,
   });
   const commTimeline = timelineFromPasutijums(rec, offerLinks);
   const commCount = commTimeline.length || irissOrderRoomCommunicationCount((rec.statusHistory ?? []).length, Boolean(rec.notes.trim()));

@@ -17,6 +17,15 @@ import { emptyIrissPasutijums } from "@/lib/iriss-pasutijumi-types";
 import { appendIrissPdHistory, formatIrissPdPrice, splitIrissPdClientName } from "@/lib/iriss-piedavajumi";
 import { irissPdNumberLabel, type IrissPiedavajums } from "@/lib/iriss-piedavajumi-types";
 
+/**
+ * Darījuma statuss pēc klienta apstiprinājuma: vismaz «Piedāvāts» (gaida avansu); tālāku posmu nepazemina.
+ * Audits 27.10: pasūtījums bija «Rezervēts», bet darījuma statuss palika «Jauns».
+ */
+export function irissDealStatusAfterApproval(current: string | undefined): string {
+  const cur = (current ?? "").trim();
+  return !cur || cur === "jauns" || cur === "meklejam" ? "piedavats" : cur;
+}
+
 export function irissPdAdminPath(id: string): string {
   return `/admin/iriss/piedavajumi/${encodeURIComponent(id)}`;
 }
@@ -31,6 +40,7 @@ async function reserveExistingOrder(orderId: string, rec: IrissPiedavajums, at: 
     if (!order || isIrissRecordDeleted(order)) return false;
     if (order.listStatus === "reserved" || order.listStatus === "completed") return true;
     const next = appendIrissStatusHistory(order, "reserved", { at, by });
+    next.dealWorkflowStatus = irissDealStatusAfterApproval(order.dealWorkflowStatus);
     const note = `Rezervēts pēc piedāvājuma ${irissPdNumberLabel(rec.number)} (${irissPdAdminPath(rec.id)}).`;
     next.internalNotes = [order.internalNotes.trim(), note].filter(Boolean).join("\n");
     const saved = await writeIrissPasutijums(next, { expectedWorkspaceRevision: irissWorkspaceRevision(order), historyBy: by });
@@ -60,6 +70,7 @@ async function createReservedOrder(
       vin: rec.vehicle.vin,
       totalBudget: formatIrissPdPrice(rec.price).replace(/\s*€$/, ""),
       internalNotes: orderNote(rec),
+      dealWorkflowStatus: irissDealStatusAfterApproval(base.dealWorkflowStatus),
     },
     "reserved",
     { at, by },

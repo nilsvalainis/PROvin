@@ -178,6 +178,22 @@ describe("staffTabbarItems (D: josla tikai pēc tiesībām)", () => {
   });
 });
 
+describe("staffTabbarItems: daudz sadaļu (audits 26.10: 11 punkti joslā)", () => {
+  it("Sākums + 3 sadaļas + Vairāk; Iziet nav joslā; Loģistika/Grāmatvede/Serviss vienreiz", () => {
+    const items = staffTabbarItems(
+      ["pasutijumi", "sludinajumi", "radars", "logistika", "gramatvede", "serviss", "pavadzimes", "vin", "ap_serviss"],
+      true,
+    );
+    expect(items.map((i) => i.label)).toEqual(["Sākums", "Pasūtījumi", "Sludinājumi", "Radars", "Vairāk"]);
+    const more = items.at(-1);
+    expect(more?.kind).toBe("more");
+    const rest = more?.kind === "more" ? more.sections.map((s) => s.href) : [];
+    expect(new Set(rest).size).toBe(rest.length);
+    expect(rest).toContain("/admin/iriss/pavadzimes");
+    expect(rest.filter((h) => h === "/admin/iriss/logistika")).toHaveLength(1);
+  });
+});
+
 describe("Mēneša atskaite izvēlnē paslēpta", () => {
   it("darbinieka navigācijā nav, tiesība paliek", () => {
     expect(staffNavSections(["pasutijumi", "atskaite", "pavadzimes"], true)).toEqual(["pasutijumi", "pavadzimes"]);

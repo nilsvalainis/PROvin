@@ -74,4 +74,11 @@ describe("iriss scan finds", () => {
     });
     expect(cards).toEqual([]);
   });
+  it("eCarsTrade bez solījuma rāda aplēsi, nevis «Nav cenas»", () => {
+    const cards = buildIrissScanFindCards({
+      vehicles: [{ id: "et", platform: "ecarstrade", orderIds: ["scan:s1"], priceCurrent: null, priceEstimate: 14300 }],
+      entries: [{ orderId: "scan:s1", listingId: "et", status: "jauns", matchedAt: "2026-10-26T18:00:00Z" }],
+    });
+    expect(cards[0]?.priceLabel).toBe("14 300 €");
+  });
 });
