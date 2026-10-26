@@ -16,7 +16,7 @@ export default async function IrissPavadzimesPage() {
   const isAdmin = actor.kind === "admin";
   let data: Awaited<ReturnType<typeof loadIrissPavadzimesPageData>>;
   try {
-    data = await loadIrissPavadzimesPageData(new Date(), { withOrders: canSeeWaybillOrders(actor) });
+    data = await loadIrissPavadzimesPageData(new Date(), { withOrders: canSeeWaybillOrders(actor), sync: false });
   } catch {
     data = { rows: [], pendingParse: 0, dropboxConfigured: false, dropboxError: "Neizdevās ielādēt" };
   }

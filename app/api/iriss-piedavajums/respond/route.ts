@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { irissOfferLinkRequestIsSameOrigin } from "@/lib/iriss-offer-client-link";
 import { appendIrissPdHistory, applyIrissPdAction, buildIrissPdPublicView, IRISS_PD_CLIENT_ACTOR } from "@/lib/iriss-piedavajumi";
@@ -62,6 +62,8 @@ export async function POST(req: Request) {
   }
   next = await runIrissPdApprovalEffects(next, { at, by: IRISS_PD_CLIENT_ACTOR, contactName: name, contactPhone: phone });
   await writeIrissPd(next);
-  await notifyIrissPdApproved(next, name);
+  // E-pasts un push Nilam pēc atbildes klientam (agrāk klients gaidīja ~7 s "Sūta...").
+  const notified = next;
+  after(() => notifyIrissPdApproved(notified, name));
   return NextResponse.json({ ok: true, state: "approved" }, { headers: headersNoStore });
 }

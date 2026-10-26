@@ -3,7 +3,6 @@
 import {
   BarChart3,
   Building2,
-  CalendarRange,
   Car,
   ChevronsLeft,
   ChevronsRight,
@@ -128,13 +127,12 @@ const I_LOGISTICS: Item = {
   href: "/admin/iriss/logistika",
   label: L.irissLogistics,
   icon: Truck,
-  badge: "irissLogistics",
   match: starts("/admin/iriss/logistika"),
 };
 const I_AUTOPARKS: Item = { href: "/admin/iriss/autoparks", label: L.irissAutoparks, icon: Warehouse, match: starts("/admin/iriss/autoparks") };
 const I_WAYBILLS: Item = { href: "/admin/iriss/pavadzimes", label: L.irissWaybills, icon: FileText, match: starts("/admin/iriss/pavadzimes") };
-const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: L.irissList, icon: List, badge: "irissMatches", match: starts("/admin/iriss/sludinajumi") };
-const I_REPORT: Item = { href: "/admin/iriss/atskaite", label: L.irissReport, icon: CalendarRange, match: starts("/admin/iriss/atskaite") };
+/** IRISS izvēlnē skaitļu nav (Nils 26.10: "99+" traucē) - jaunumi redzami pašā sadaļā. Mēneša atskaite izvēlnē paslēpta, lapa paliek. */
+const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: L.irissList, icon: List, match: starts("/admin/iriss/sludinajumi") };
 const I_SETTINGS: Item = { href: "/admin/iriss/iestatijumi", label: L.irissSettings, icon: Settings, match: starts("/admin/iriss/iestatijumi") };
 
 /** Tā pati VIN pārbaudes lapa arī IRISS izvēlnē (dublēts ieraksts). */
@@ -142,7 +140,7 @@ const I_VIN: Item = { ...VIN, label: L.vinScan };
 
 export const ADMIN_NAV_GROUPS: Group[] = [
   { title: L.groupPro, items: [MORNING, SAKUMS, VIN, FAST] },
-  { title: L.groupIriss, items: [I_MENU, I_HOME, I_PIEDAVAJUMI, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_REPORT, I_WAYBILLS, I_SETTINGS] },
+  { title: L.groupIriss, items: [I_MENU, I_HOME, I_PIEDAVAJUMI, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_WAYBILLS, I_SETTINGS] },
   {
     title: L.groupWeb,
     items: [
@@ -174,7 +172,7 @@ const WS_GROUPS: Record<AdminWorkspace, Group[]> = {
   pro: ADMIN_NAV_GROUPS.filter((g) => g.title !== L.groupIriss),
   /** IRISS: Pārvaldība starp Iestatījumi un Pavadzīmes (sānjoslas kartītes). */
   iriss: [
-    { title: L.groupIriss, items: [I_MENU, I_HOME, I_PIEDAVAJUMI, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_REPORT, I_WAYBILLS, I_SETTINGS] },
+    { title: L.groupIriss, items: [I_MENU, I_HOME, I_PIEDAVAJUMI, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_WAYBILLS, I_SETTINGS] },
     { title: L.groupOps, items: [I_IZMAKSAS] },
   ],
 };

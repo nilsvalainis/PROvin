@@ -429,6 +429,11 @@ export async function runIrissPavadzimesDropboxSync(): Promise<IrissPavadzimesSy
   return syncInFlight;
 }
 
+/** Tikai indekss (bez Dropbox sinhronizācijas) - ātrai lapas atvēršanai; sinhronizācija notiek pēc tam fonā. */
+export async function listIrissPavadzimesCached(): Promise<IrissPavadzimesListResult> {
+  return { rows: await readIrissPavadzimesCached(), pendingParse: 0, dropboxConfigured: isDropboxConfigured(), dropboxError: null };
+}
+
 export async function listIrissPavadzimes(): Promise<IrissPavadzimesListResult> {
   const r = await runIrissPavadzimesDropboxSync();
   return {

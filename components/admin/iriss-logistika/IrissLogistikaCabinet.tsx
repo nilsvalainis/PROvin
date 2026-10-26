@@ -690,7 +690,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
       {access.write ? (
         <div className="mt-4 flex flex-wrap gap-2">
           {isLogisticsOrderArchived(order) ? (
-            <button type="button" onClick={() => onPatchOrder(order.id, "wake")} className="h-9 rounded-full bg-[var(--ink)] px-3 text-[12.5px] font-semibold text-white">
+            <button type="button" onClick={() => onPatchOrder(order.id, "wake")} className="h-9 rounded-full bg-[var(--ink,#111827)] px-3 text-[12.5px] font-semibold text-white">
               Pamodināt
             </button>
           ) : (
@@ -698,7 +698,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
               <button type="button" onClick={() => onPatchOrder(order.id, "picked_up")} className="h-9 rounded-full border border-[#e5e7eb] px-3 text-[12.5px] font-semibold">
                 Izņemts
               </button>
-              <button type="button" onClick={() => onPatchOrder(order.id, "delivered")} className="h-9 rounded-full bg-[var(--ink)] px-3 text-[12.5px] font-semibold text-white">
+              <button type="button" onClick={() => onPatchOrder(order.id, "delivered")} className="h-9 rounded-full bg-[var(--ink,#111827)] px-3 text-[12.5px] font-semibold text-white">
                 Piegādāts
               </button>
             </>

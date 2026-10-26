@@ -68,10 +68,14 @@ export function isAutoparksV2Section(value: unknown): value is AutoparksV2Sectio
  * Darbinieka navigācijas sadaļas: Autoparka apakštiesības nav atsevišķi punkti. Kamēr v2 nav ieslēgts
  * darbiniekiem, tās navigācijā neparādās vispār; pēc tam - viens punkts (pirmā `ap_*` ar lapu).
  */
+/** Sadaļas ar tiesībām, bet bez punkta izvēlnē (Mēneša atskaite - Nils 26.10: pagaidām nelieto; lapa paliek). */
+export const IRISS_NAV_HIDDEN_SECTIONS: readonly IrissSection[] = ["atskaite"];
+
 export function staffNavSections(sections: readonly IrissSection[], autoparksV2Visible: boolean): IrissSection[] {
   const out: IrissSection[] = [];
   let apAdded = false;
   for (const id of sections) {
+    if (IRISS_NAV_HIDDEN_SECTIONS.includes(id)) continue;
     if (!isAutoparksV2Section(id)) {
       out.push(id);
       continue;

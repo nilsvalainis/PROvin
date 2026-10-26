@@ -216,6 +216,26 @@ export function buildWaybillMobilePayload(state: WaybillMobileFormState): Waybil
   };
 }
 
+/**
+ * Datora forma: tas pats pieprasījums kā telefonā (tirdzniecības akts, pārstāvis, numurs).
+ * Datorā nav sākuma adreses izvēles - maršruts pēc noklusējuma; numuru lietotājs izvēlas pats.
+ */
+export function buildWaybillDesktopPayload(
+  auto: WaybillMobileFormState,
+  form: { plate: string; hoursPreset: number | null; hoursOther: string; comment: string },
+): WaybillMobileBuildResult {
+  return buildWaybillMobilePayload({
+    ...auto,
+    plate: form.plate,
+    plateTouched: true,
+    hoursPreset: form.hoursPreset,
+    hoursOther: form.hoursOther,
+    comment: form.comment,
+    from: "tukums",
+    fromAddress: "",
+  });
+}
+
 /** Pieņemts tirdzniecībā (no saraksta): tikai laiks + komersanta pārstāvis, maršruta nav. */
 export function waybillMobileTradeAct(state: Pick<WaybillMobileFormState, "manual" | "car">): boolean {
   return !state.manual && state.car?.accepted === true;

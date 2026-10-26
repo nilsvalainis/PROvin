@@ -829,7 +829,7 @@ export function IrissLogistikaClient({
               className="hidden h-9 w-56 rounded-full border-0 bg-white px-3 text-[13px] shadow-sm md:block"
             />
             {canCreateOffer ? <IrissCreateOfferButton /> : null}
-            <button type="button" onClick={() => setPurchaseOpen(true)} className="inline-flex h-9 items-center rounded-full bg-[var(--ink)] px-3 text-[12.5px] font-semibold text-white">
+            <button type="button" onClick={() => setPurchaseOpen(true)} className="inline-flex h-9 items-center rounded-full bg-[var(--ink,#111827)] px-3 text-[12.5px] font-semibold text-white">
               + Nopirkts
             </button>
           </div>
@@ -962,7 +962,7 @@ export function IrissLogistikaClient({
                   Drukāt karti
                 </button>
                 {dirUrl ? (
-                  <a href={dirUrl} target="_blank" rel="noreferrer" className="rounded-full bg-[var(--ink)] px-3 py-1 font-semibold text-white">
+                  <a href={dirUrl} target="_blank" rel="noreferrer" className="rounded-full bg-[var(--ink,#111827)] px-3 py-1 font-semibold text-white">
                     Sastādīt maršrutu
                   </a>
                 ) : null}
@@ -1223,7 +1223,7 @@ export function IrissLogistikaClient({
             Drukāt
           </button>
           {dirUrl ? (
-            <a href={dirUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-full bg-[var(--ink)] px-3 text-[13px] font-semibold text-white">
+            <a href={dirUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-full bg-[var(--ink,#111827)] px-3 text-[13px] font-semibold text-white">
               Sastādīt maršrutu
             </a>
           ) : null}
@@ -1280,7 +1280,7 @@ function IrissLogistikaStaffTotp({ viewerName }: { viewerName: string }) {
           />
           <button
             type="button"
-            className="h-9 rounded-full bg-[var(--ink)] px-3 text-[12.5px] font-semibold text-white"
+            className="h-9 rounded-full bg-[var(--ink,#111827)] px-3 text-[12.5px] font-semibold text-white"
             onClick={async () => {
               const res = await post({ action: "confirm", code: totpCode });
               setNotice(res.ok ? "2FA ieslēgta." : "Kods nederīgs.");

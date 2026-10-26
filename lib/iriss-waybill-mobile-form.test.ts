@@ -3,6 +3,7 @@ import {
   WAYBILL_FORM_DEFAULT_HOURS,
   WAYBILL_MOBILE_HOUR_PRESETS,
   applyWaybillAutoChoice,
+  buildWaybillDesktopPayload,
   buildWaybillMobilePayload,
   parseWaybillCustomHours,
   waybillAutoEntryValues,
@@ -453,5 +454,46 @@ describe("live progress", () => {
     const err = waybillMobileProgress(req({ status: "error", pickedAt: t0, errorReason: "Automātika: x. Pārbaudi CSDD, vai pavadzīme izveidota." }));
     expect(err.text).toBe("Iespējams, pavadzīme CSDD jau ir izveidota. Pārbaudi, pirms atkārto.");
     expect(waybillMobileProgress(req({ status: "error", errorReason: "CSDD nav pieejams." })).text).toBe('Neizdevās: CSDD nav pieejams. Spied "Atkārtot".');
+  });
+});
+
+describe("datora pavadzīmes forma", () => {
+  const accepted = { id: "ap-1", brandModel: "AUDI A6", vin: "WAUZZZ4F4BN073536", accepted: true, owner: "IRISS" as const };
+
+  it("tirdzniecībā pieņemts auto no saraksta: akts + pārstāvis, bez maršruta (kā telefonā)", () => {
+    const auto = { ...applyWaybillAutoChoice(initialWaybillMobileForm("B193-7"), "list"), car: accepted };
+    const r = buildWaybillDesktopPayload(auto, { plate: "B193-7", hoursPreset: 1, hoursOther: "", comment: "" });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.payload.tradeAct).toBe(true);
+    expect(r.payload.representative).toBe("Nils Valainis");
+    expect(r.payload.routeFromAddress).toBe("");
+    expect(r.payload.vin).toBe("WAUZZZ4F4BN073536");
+    expect(r.payload.validHours).toBe(1);
+  });
+
+  it("B192-7 un DZA auto: pārstāvis pēc auto firmas", () => {
+    const auto = { ...applyWaybillAutoChoice(initialWaybillMobileForm("B192-7"), "list"), car: { ...accepted, owner: "DZA" as const } };
+    const r = buildWaybillDesktopPayload(auto, { plate: "B192-7", hoursPreset: 12, hoursOther: "", comment: "" });
+    expect(r.ok && r.payload.representative).toBe("Taivo Batins");
+  });
+
+  it("ar roku: parasta pavadzīme, numurs no formas (ne no komentāra)", () => {
+    const auto = { ...applyWaybillAutoChoice(initialWaybillMobileForm("B193-7"), "manual"), manualBrandModel: "Volkswagen Golf" };
+    const r = buildWaybillDesktopPayload(auto, { plate: "B762-7", hoursPreset: null, hoursOther: "3", comment: "193 uz BMW 330" });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.payload.tradeAct).toBe(false);
+    expect(r.payload.plate).toBe("B762-7");
+    expect(r.payload.validHours).toBe(3);
+    expect(r.payload.brandModel).toBe("Volkswagen Golf");
+  });
+
+  it("bez auto un bez derīga laika - kļūda", () => {
+    const none = buildWaybillDesktopPayload(initialWaybillMobileForm("B193-7"), { plate: "B193-7", hoursPreset: 1, hoursOther: "", comment: "" });
+    expect(none.ok).toBe(false);
+    const auto = { ...applyWaybillAutoChoice(initialWaybillMobileForm("B193-7"), "manual"), manualBrandModel: "VW Golf" };
+    const badHours = buildWaybillDesktopPayload(auto, { plate: "B193-7", hoursPreset: null, hoursOther: "999", comment: "" });
+    expect(badHours.ok).toBe(false);
   });
 });

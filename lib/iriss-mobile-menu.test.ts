@@ -6,7 +6,7 @@ import {
 } from "@/lib/iriss-mobile-menu";
 
 describe("IRISS mobile menu home", () => {
-  it("shows the full menu for admin, including Pārvaldība", () => {
+  it("admin redz visu izvēlni ar Iestatījumiem, bez Mēneša atskaites", () => {
     const items = irissMobileMenuItemsFor([], true);
     expect(items.map((row) => row.id)).toEqual([
       "pasutijumi",
@@ -16,9 +16,9 @@ describe("IRISS mobile menu home", () => {
       "autoparks",
       "pavadzimes",
       "vin",
-      "atskaite",
       "iestatijumi",
     ]);
+    expect(items.find((row) => row.id === "iestatijumi")?.label).toBe("Iestatījumi");
     expect(irissMobileMenuGroups(items)).toHaveLength(3);
   });
 
@@ -28,16 +28,12 @@ describe("IRISS mobile menu home", () => {
     expect(items.some((row) => row.id === "iestatijumi")).toBe(false);
   });
 
-  it("exposes only cheap badge keys", () => {
+  it("Sludinājumiem un Loģistikai skaitļa nav (Nils 26.10), Pavadzīmēm paliek", () => {
     const items = irissMobileMenuItemsFor([], true);
-    expect(items.filter((row) => row.badge).map((row) => row.badge)).toEqual([
-      "irissMatches",
-      "irissLogistics",
-      "waybills",
-    ]);
-    expect(cheapIrissMenuCount(items[0]!, { irissMatches: 12, irissLogistics: 3, waybills: 2 })).toBe(0);
-    expect(cheapIrissMenuCount(items[1]!, { irissMatches: 12, irissLogistics: 3, waybills: 2 })).toBe(12);
-    expect(cheapIrissMenuCount(items[3]!, { irissMatches: 12, irissLogistics: 3, waybills: 2 })).toBe(3);
-    expect(cheapIrissMenuCount(items[5]!, { irissMatches: 12, irissLogistics: 3, waybills: 2 })).toBe(2);
+    expect(items.filter((row) => row.badge).map((row) => row.badge)).toEqual(["waybills"]);
+    const counts = { irissMatches: 120, irissLogistics: 3, waybills: 2 };
+    expect(cheapIrissMenuCount(items.find((r) => r.id === "sludinajumi")!, counts)).toBe(0);
+    expect(cheapIrissMenuCount(items.find((r) => r.id === "logistika")!, counts)).toBe(0);
+    expect(cheapIrissMenuCount(items.find((r) => r.id === "pavadzimes")!, counts)).toBe(2);
   });
 });
