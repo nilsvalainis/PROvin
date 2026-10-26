@@ -3,7 +3,7 @@
 import { ChevronLeft, ChevronRight, FileText, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { AdminPushToggle } from "@/components/admin/AdminPushToggle";
@@ -15,6 +15,7 @@ import { useWaybillStop } from "@/components/admin/useWaybillStop";
 import { IrissWaybillRequestArchive } from "@/components/admin/IrissWaybillMobileForm";
 import { IrissWaybillPdfSheet } from "@/components/admin/IrissWaybillPdfSheet";
 import { IrissVpnControl } from "@/components/admin/IrissVpnControl";
+import { IrissWaybillSarunaButton, IrissWaybillSarunaOverlay } from "@/components/admin/IrissWaybillSarunaOverlay";
 import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
 import { waybillHistoryForVin } from "@/lib/iriss-waybill-calendar";
 import { formatIrissWaybillChip } from "@/lib/admin-mobile-ds";
@@ -26,6 +27,13 @@ import type { IrissPavadzimeListRow, IrissPavadzimeValidityTone } from "@/lib/ir
 import { remainingWaybillDays, waybillSoonTone } from "@/lib/iriss-waybill-requests";
 import type { WaybillVehicleChip } from "@/lib/iriss-waybill-vehicles";
 import { useWaybillPageOpenAtTop } from "@/components/admin/useWaybillPageOpenAtTop";
+import {
+  buildWaybillSarunaFeed,
+  countSarunaUnread,
+  readSarunaSeenAt,
+  type SarunaFeedItem,
+  writeSarunaSeenAt,
+} from "@/lib/iriss-waybill-saruna";
 
 type PageData = {
   rows: IrissPavadzimeListRow[];
@@ -137,6 +145,9 @@ export function IrissPavadzimesListClient({
   const [extendVehicle, setExtendVehicle] = useState<WaybillVehicleChip | null>(null);
   const [pdfPreview, setPdfPreview] = useState<{ href: string; title: string } | null>(null);
   const [historyVin, setHistoryVin] = useState<string | null>(null);
+  const [sarunaOpen, setSarunaOpen] = useState(false);
+  const [sarunaSeenAt, setSarunaSeenAt] = useState<string | null>(null);
+  const [sarunaNotes, setSarunaNotes] = useState<SarunaFeedItem[]>([]);
   const refreshRef = useRef<() => Promise<unknown>>(async () => undefined);
   const stop = useWaybillStop(() => {
     void refreshRef.current().catch(() => undefined);
@@ -167,6 +178,10 @@ export function IrissPavadzimesListClient({
   useEffect(() => {
     setData(initial);
   }, [initial]);
+
+  useEffect(() => {
+    setSarunaSeenAt(readSarunaSeenAt(typeof sessionStorage === "undefined" ? null : sessionStorage));
+  }, []);
 
   useEffect(() => {
     const t = window.setInterval(() => setNowMs(Date.now()), 30_000);
@@ -217,16 +232,29 @@ export function IrissPavadzimesListClient({
   // Visos skatos jaunākās augšā (Nils 23.10: saraksts nedrīkst atvērties ar vecāko).
   const rows = sortWaybillsNewestFirst(data.rows.filter((row) => inView(row, view)));
   const viewCount = (v: WaybillView) => data.rows.filter((row) => inView(row, v)).length;
+  const sarunaFeed = useMemo(
+    () => [...buildWaybillSarunaFeed(data.rows, nowMs), ...sarunaNotes],
+    [data.rows, nowMs, sarunaNotes],
+  );
+  const sarunaUnread = sarunaOpen ? 0 : countSarunaUnread(sarunaFeed, sarunaSeenAt, nowMs);
+  const openSaruna = () => {
+    setSarunaOpen(true);
+    const iso = new Date(nowMs).toISOString();
+    setSarunaSeenAt(iso);
+    writeSarunaSeenAt(iso, typeof sessionStorage === "undefined" ? null : sessionStorage);
+  };
+  const sarunaBtnProps = { open: sarunaOpen, unreadCount: sarunaUnread, onClick: openSaruna };
 
   return (
     <>
       <div className="md:hidden">
-        <AdminMobileTopBar title="Pavadzīmes" />
+        <AdminMobileTopBar title="Pavadzīmes" trailing={<IrissWaybillSarunaButton {...sarunaBtnProps} className="h-11 w-11" />} />
       </div>
       <Suspense fallback={null}>
         <PavadzimeSearchFocus rows={data.rows} onExtend={(row) => setExtendVehicle(chipFromRow(row))} />
       </Suspense>
-      <div className="mt-2 flex max-w-full flex-wrap items-center gap-2 max-md:hidden">
+      <div className="mt-2 flex max-w-full flex-wrap items-center justify-between gap-2 max-md:hidden">
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
         <div className="inline-flex min-w-0 items-stretch rounded-lg bg-[#e9e9ee] p-0.5 max-md:w-full" role="tablist" aria-label="Pavadzīmju filtrs">
           {(["current", "calendar", "archive", "all"] as const).map((v) => (
             <button
@@ -245,6 +273,8 @@ export function IrissPavadzimesListClient({
           ))}
         </div>
         {data.pendingParse > 0 ? <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-[#8e8e93]" aria-hidden /> : null}
+        </div>
+        <IrissWaybillSarunaButton {...sarunaBtnProps} />
       </div>
       {data.dropboxError ? <p className="mt-1 text-right text-[11px] text-red-600 max-md:px-4">{data.dropboxError}</p> : null}
 
@@ -262,7 +292,7 @@ export function IrissPavadzimesListClient({
         </div>
       ) : null}
 
-      <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 max-md:mt-2 max-md:gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+      <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 max-md:mt-2 max-md:gap-3">
         <div className={`min-w-0 ${view === "current" ? "max-md:px-4" : ""}`}>
       {view === "current" ? (
         <div className="md:hidden">
@@ -580,6 +610,27 @@ export function IrissPavadzimesListClient({
           />
         ) : null}
         <IrissWaybillPdfSheet href={pdfPreview?.href ?? null} title={pdfPreview?.title ?? ""} onClose={() => setPdfPreview(null)} />
+        <IrissWaybillSarunaOverlay
+          open={sarunaOpen}
+          onClose={() => setSarunaOpen(false)}
+          title="Saruna"
+          subtitle="Pavadzīmju vēsture"
+          items={sarunaFeed}
+          onSend={(text) => {
+            setSarunaNotes((prev) => [
+              ...prev,
+              {
+                kind: "message",
+                id: `note-${prev.length + 1}`,
+                from: "Tu",
+                mine: true,
+                text,
+                at: new Date(nowMs).toISOString(),
+                attachments: [],
+              },
+            ]);
+          }}
+        />
         <AdminMobileSheet open={Boolean(historyVin)} title="Pavadzīmes šim auto" subtitle={historyVin ?? ""} onClose={() => setHistoryVin(null)}>
           <ul className="flex flex-col gap-2">
             {(historyVin ? waybillHistoryForVin(data.rows, historyVin) : []).map((h) => (
