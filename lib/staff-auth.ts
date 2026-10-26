@@ -112,7 +112,7 @@ export async function requireIrissSectionPage(section: IrissSection): Promise<Ad
   redirect(`/admin/login?next=${encodeURIComponent(safe)}`);
 }
 
-function staffHasLogisticsCabinet(actor: AdminOrStaffActor): boolean {
+export function staffHasLogisticsCabinet(actor: AdminOrStaffActor): boolean {
   return actor.kind === "admin" || (actor.kind === "staff" && actor.user.sections.some((s) => s === "logistika" || s === "gramatvede" || s === "serviss"));
 }
 

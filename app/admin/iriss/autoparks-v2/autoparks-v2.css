@@ -2510,3 +2510,10 @@
     background: #e3e3e8;
   }
 }
+
+/* Ātrā pāreja uz Loģistiku (posms "Ceļā", makets 26.10). */
+.ap2 .ap2-pp-link {
+  text-decoration: none;
+  color: inherit;
+  --st: var(--iriss-brand);
+}

@@ -22,8 +22,11 @@ const PIPE: readonly AutoparksStatus[] = AUTOPARKS_V2_STATUS_ORDER.filter((s) =>
 export function AutoparksV2List({
   initialCars,
   canAddCar = true,
+  logisticsCount = null,
 }: {
   initialCars: AutoparksV2ListRow[];
+  /** Aktīvie Loģistikas auto (vēl nav Autoparkā); null - nav Loģistikas tiesību, flīzi nerāda. */
+  logisticsCount?: number | null;
   /** "+ Auto" tikai ar Pamatdatu tiesību (API to pārbauda arī pats). */
   canAddCar?: boolean;
 }) {
@@ -69,6 +72,12 @@ export function AutoparksV2List({
           <span className="n">{base.length}</span>
           <span className="l">Visi</span>
         </button>
+        {logisticsCount != null ? (
+          <Link href="/admin/iriss/logistika?view=map" className="ap2-pp ap2-pp-link" title="Auto ceļā: karte un kravas">
+            <span className="n">{logisticsCount}</span>
+            <span className="l">Loģistika →</span>
+          </Link>
+        ) : null}
         {PIPE.map((s) => (
           <button key={s} type="button" className={`ap2-pp st-${s} ${status === s ? "on" : ""}`} onClick={() => setStatus((cur) => (cur === s ? null : s))}>
             <span className="n">{statusCounts[s]}</span>
