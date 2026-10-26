@@ -118,3 +118,11 @@ Formāts: [sadaļa] [ierīce] smagums (K kritisks / A augsts / V vidējs / Z zem
 - [Autoparks] [visas] A - Autoparka posmi nesakrīt ar Loģistiku: Autoparkā "Ceļā 23", Loģistikā aktīvi 6 auto. Posms "Ceļā" Autoparkā tiek uzstādīts/atstāts neatkarīgi no Loģistikas. Ar vienoto ceļu (makets 23:35) - viena patiesība.
 - [Autoparks] [visas] V - Statuss "Pasūtījums" 4 ierakstiem, t.sk. piekabe "Unsinn ... Kipper" un pacēlājs "Nussbaum ..." - tehnika jauc auto sarakstus (piedāvājumu izvēle, pavadzīmes). Vajag tipu "Tehnika/aprīkojums" ārpus auto saraksta.
 - [Autoparks] [dators] Z - Statusu flīzes (7) aizņem visu platumu, "Servisā 0" un "Rezervēts 0" vienmēr redzami; filtri "Visi īpašnieki / IRISS / Dzintarzeme / Arhīvs" - divas filtru rindas.
+
+## Sākums (darbinieks, šaurs logs ~670 px)
+- [Sākums] [telefons/planšete] A - Ikonu stili jaukti: Autoparks = Dzintarzeme logo, Pavadzīmes = CSDD logo, Loģistika = Google Maps adata, Kravas/Sludinājumi/Radars = krāsainas iOS ikonas, VIN/Pasūtījumi = pelēkas. Vienam izvēlnes līmenim jābūt vienai ikonu ģimenei (dizains v0.3).
+- [Sākums] [telefons] V - Logrīks "Serviss" - liela tukša kartīte ar tekstu "Autoparka serviss" (nav satura, aizņem 1/4 ekrāna).
+- [Sākums] [telefons] V - Pavadzīmju aplī < 1 h rāda "0h" (B192-7, atlikušas ~17 min). Jārāda minūtes (tāpat kā labots kartē #670).
+- [VIN pārbaude] [dators, IRISS darbinieks] Z - Virsraksts "VIN pārbaude" pielīp pie sānjoslas (nav kreisās atkāpes, citām lapām ir); 32 avotu flīzes vienā blīvā režģī, "Avotu stāvoklis 20/32 OK · 7 kļūda" - tehniski.
+- [Iestatījumi] [dators] V - Vienā lapā: tāmes komisija, Google Contacts, sludinājumu limiti, "Pārvaldība · Google Maps" (tehniski API nosaukumi: Maps JS, GeocodePlace v4, SearchDestinations v4), izsoļu avoti (8 bez nosaukumiem teksta skatā), un "Lietotāji un pieeja" pašā apakšā. Nila lūgums: Lietotāji atsevišķi/augstāk; tehniskais - aizvērtā blokā.
+- [Iestatījumi/Lietotāji, Izmaksas] - NAV PĀRBAUDĪTS vizuāli (iebūvētajā pārlūkā admin lapas nehidratējās; API /api/admin/staff/users 200, 0,6 s).
