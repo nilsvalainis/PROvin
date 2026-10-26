@@ -67,6 +67,17 @@ describe("pakalpojumi catalog", () => {
       expect(locRegisters.description).not.toMatch(/Europ|Европ/i);
       expect(locRegisters.title.toLowerCase()).not.toContain("eksperts");
     }
+    const audits = pkgs.find((p) => p.id === "audits")!;
+    expect(audits.goal).toContain("vismaz 2, parasti 3 maksas vēstures pārbaudēm");
+    expect(audits.items.find((item) => item.icon === "carvertical")!.description).toContain(
+      "Viena no pamata maksas pārbaudēm",
+    );
+    expect(audits.items.find((item) => item.icon === "dealer-data")!.description).toContain(
+      "Pieejami noteiktiem ražotājiem",
+    );
+    expect(getHomeFeatureBreakdownPackages("en").find((pkg) => pkg.id === "audits")!.goal).toContain(
+      "at least 2, usually 3 paid history checks",
+    );
     expect(pkgs.find((p) => p.id === "koreaUsa")).toBeUndefined();
     const partner = pkgs.find((p) => p.id === "partner")!;
     expect(partner.title).toBe("PROVIN BUSINESS");
