@@ -421,7 +421,8 @@
     text-align: right;
     font-size: 13px !important;
     font-weight: 700;
-    min-height: 36px !important;
+    /* j68: pieskāriena mērķis >= 44 px (bija 36 px). */
+    min-height: 44px !important;
     padding-top: 4px !important;
     padding-bottom: 4px !important;
   }
@@ -494,8 +495,8 @@
     flex: none !important;
     width: 100%;
     max-width: none;
-    height: 36px;
-    min-height: 36px !important;
+    height: 44px;
+    min-height: 44px !important;
     padding-left: 8px !important;
     padding-right: 8px !important;
     border-radius: 10px !important;
@@ -511,7 +512,7 @@
   .iriss-range-unit {
     display: inline;
     font-size: 12px;
-    color: var(--ink3, #9a9faa) !important;
+    color: var(--ink3, #63686f) !important;
     font-weight: 400;
   }
 
@@ -829,7 +830,7 @@
 .iriss-wb-cal-days {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  color: #8e8e93;
+  color: #6e6e73;
   font-size: 10.5px;
   font-weight: 600;
   text-transform: capitalize;
@@ -943,4 +944,21 @@ input[data-offer-field="empty"],
   background: #fbfbfc !important;
   border-style: dashed !important;
   border-color: #d4d4d8 !important;
+}
+
+/*
+ * j68: pasūtījuma istaba telefonā - pieskāriena mērķi >= 44 px (Fable F9: 75 mērķi <44 px:
+ * cilnes, Zvanīt/WA, statusa pille, ET saites, avansa pogas). Slēdžiem (role=switch) izmērs nemainās.
+ */
+@media (max-width: 767px) {
+  [data-iriss-order-room="1"] :is(button, select, [role="tab"]):not([role="switch"]) {
+    min-height: 44px;
+  }
+  [data-iriss-order-room="1"] button.am-press,
+  [data-iriss-order-room="1"] button[aria-label="Noņemt saiti"] {
+    min-width: 44px;
+  }
+  [data-iriss-order-room="1"] label:has(> input:is([type="checkbox"], [type="radio"])) {
+    min-height: 44px;
+  }
 }

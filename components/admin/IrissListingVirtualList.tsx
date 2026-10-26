@@ -133,7 +133,7 @@ export function IrissListingVirtualList<T>({ items, getKey, renderItem, layout =
 
   return (
     <div>
-      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#8e8e93]">
+      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#6e6e73]">
         <span>
           {from}-{to} no {items.length} auto
         </span>
