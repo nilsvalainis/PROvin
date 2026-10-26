@@ -25,3 +25,19 @@ Formāts: [sadaļa] [ierīce] smagums (K kritisks / A augsts / V vidējs / Z zem
 - [Pavadzīmes] [dators] Z - Pagarināšanas formā noklusējums 12 h neatkarīgi no sākotnējās pavadzīmes ilguma.
 - [Pavadzīmes] [visas] Z - Viena pavadzīme dažādi nosaukta: pieprasījumā "TESTS VW Golf", CSDD/kartē "VW GOLF"; P02829 kartē "BMW IX", telefona sarakstā "BMW ix40".
 - [Pavadzīmes] [dators] Z - Kartē var būt divas pogas "Vēsture" (CSDD vēsture pēc VIN un izmaiņu vēsture) ar dažādu stilu.
+- [Pavadzīmes] [telefons] A - "Pārtraukt" darbs (stop) sarakstā rādās kā "Izveido · Aivars veido pavadzīmi CSDD... solis 2 no 3", sānjoslas pogā "izraksta Aivars ar roku" - lietotājs redz, ka tiek izrakstīta jauna, nevis pārtraukta.
+- [Pavadzīmes] [telefons] V - "Cits" stundas: telefons pieņem tikai 1-48 h ("Ieraksti derīgumu: no 1 līdz 48 h"), bet API un j8 lēmums atļauj 1-2160 h. Jāsaskaņo (un datorā jāpārbauda).
+- [Pavadzīmes] [visas] V - Vēsturē teksts "Iepriekšējā pavadzīme P0xxxx CSDD anulēta", lai gan sistēma drīkst tikai "Pārtraukt" (Anulēt aizliegts). Vārdu "anulēta" jāaizstāj ar "pārtraukta", ja tā tiešām ir pārtraukšana.
+- [Pavadzīmes] [telefons] Z - Apstiprinājuma logs nav centrēts; apakšējā josla paliek virs tumšā fona (nav aptumšota, var nospiest).
+- [Pavadzīmes] [visas] Z - Viena pavadzīme ar dažādiem laikiem: kartē "līdz 22:51" (pieprasījums), logā "līdz 22:52" (CSDD).
+- [Pavadzīmes] [visas] + Labi: telefona darba gaita ar soļiem (Gaida/Izveido/Izdota, "solis 2 no 3", iemesls "Automātikai neder (B192 tikai ar roku)") ir saprotama - šo modeli ņemt arī datoram.
+- [Pavadzīmes] [dators] K - Datora formā "No saraksta" (tirdzniecībā pieņemts auto) pieprasījums aiziet ar tradeAct=false, noklusējuma maršrutu un bez komersanta pārstāvja (wbr_c4d870ac31fcc7c9, AUDI A6). Telefona forma to pašu sūta pareizi (tradeAct=true, pārstāvis "Nils Valainis", maršruts tukšs - wbr_d66c696ccb10caf9). Datora formā nav "Komersanta pārstāvis" izvēles. Sekas: automātika izdod parastu pavadzīmi (P02834, 42 s), nevis no tirdzniecības akta. Kods: IrissWaybillDesktopCreateForm + IrissKomandaAivaramChat nelieto buildWaybillMobileRequest/tradeAct. LABOT 1. PR.
+- [Pavadzīmes] [dators] Z - Tirdzniecības auto izvēlē katrā rindā vienāda zīme "Pieņemts" (bezjēdzīga); trūkst numura zīmes un akta nr./datuma, pēc kā cilvēks atpazīst auto.
+- [Pavadzīmes] [visas] Z - Automātikas darba vēsturē 5 tukši "message" notikumi (bez teksta) pirms "Izdota".
+- [Pavadzīmes] [visas] Z - "Pārtraukt" darbs pēc izpildes saglabājas ar statusu "issued" (tāpat kā izdota pavadzīme) - jāatšķir "Pārtraukta".
+- [Pavadzīmes] [telefons] V - "Saruna" ikonas skaitlis aug ar katru notikumu (24 -> 26 -> 28 -> 34 pusstundā), nav skaidrs, kas jāizlasa; troksnis.
+- [Pavadzīmes/Kalendārs] [dators] A - Kalendārā pārtrauktas pavadzīmes (P02830 "SKODA OC..." pārtraukta, ar sākotnējo beigu laiku 27.10 01:48) rādītas oranžā kā "beidzas 24 h laikā" - izskatās, ka numurs vēl aizņemts. Pārtrauktajām jābeidzas pārtraukšanas brīdī vai jābūt pelēkām.
+- [Pavadzīmes/Kalendārs] [dators] V - Īsas pavadzīmes vienā dienā pārklājas: joslas un teksti uzklājas viens uz otra ("S", "B", "N", "SKODA OC" + "A."), nav nolasāmi.
+- [Pavadzīmes/Arhīvs] [dators] Z - Tabulā katrā rindā "Atkārtot" (zila saite) un 1-2 pogas "Vēsture"; kolonna "Pasūtījums" visur "-" (sasaiste ar pasūtījumu netiek aizpildīta). Pārtrauktām rindām "Derīga līdz" rāda sākotnējo, ne faktisko beigu laiku.
+- [Pavadzīmes] [kods/docs] V - Maks. derīgums: kods WAYBILL_VALID_MAX_HOURS=48 (UI "no 1 līdz 48 h"), bet docs/iriss-aivars-api.md un lib/iriss-waybill-auto.ts komentārs saka 1-2160 h, j8 lēmums "Cits (1-2160)". JAUTĀJUMS Nilam: kāds ir pareizais maksimums?
+- [Pavadzīmes] [visas] Z - B192 (DZA) pieprasījumā galamērķis "Tukuma CSDD", bet CSDD PDF galamērķis Hermaņi-1 (DZA tirdzniecības vieta). UI rāda vienu, dokuments citu.
