@@ -1,13 +1,5 @@
-import "./iriss-autoparks.css";
-import { IrissAutoparksClient } from "@/components/admin/iriss-autoparks/IrissAutoparksClient";
-import { autoparksListRows } from "@/lib/iriss-autoparks";
-import { autoparksHidesSums, autoparksRowsForActor } from "@/lib/iriss-autoparks-access";
-import { readAutoparksState } from "@/lib/iriss-autoparks-store";
-import { logisticsCabinetWriteForbidden } from "@/lib/iriss-logistics-access";
-import { getIrissLogisticsStorageState } from "@/lib/iriss-logistics-store";
 import { redirect } from "next/navigation";
 import { autoparksV2Perms } from "@/lib/iriss-autoparks-v2-access";
-import { autoparksV2StaffEnabled, shouldRedirectToAutoparksV2 } from "@/lib/iriss-autoparks-v2-flag";
 import { autoparksV2CanOpen } from "@/lib/iriss-autoparks-v2-perms";
 import { requireLogisticsPage } from "@/lib/staff-auth";
 
@@ -17,22 +9,19 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function IrissAutoparksPage({ searchParams }: { searchParams: Promise<{ v1?: string }> }) {
+/**
+ * Nils 27.10: vecā Autoparka versija (v1) dzēsta - saite "Autoparks" vienmēr ved uz Autoparks v2.
+ * Lietotājs bez nevienas `ap_*` tiesības redz paskaidrojumu, nevis veco versiju.
+ */
+export default async function IrissAutoparksPage() {
   const actor = await requireLogisticsPage();
-  // F9: pēc pārslēgšanas (karogs) šī saite ved uz Autoparks v2; v1 rezerve - `?v1=1`.
-  const { v1 } = await searchParams;
-  if (shouldRedirectToAutoparksV2({ staffEnabled: autoparksV2StaffEnabled(), canOpenV2List: autoparksV2CanOpen(autoparksV2Perms(actor)), v1Param: v1 })) {
-    redirect("/admin/iriss/autoparks-v2");
-  }
-  const storeEnabled = getIrissLogisticsStorageState().enabled;
-  const hideSums = autoparksHidesSums(actor);
-  const rows = storeEnabled ? autoparksListRows(await readAutoparksState()) : [];
+  if (autoparksV2CanOpen(autoparksV2Perms(actor))) redirect("/admin/iriss/autoparks-v2");
   return (
-    <IrissAutoparksClient
-      initialCars={autoparksRowsForActor(rows, hideSums)}
-      storeEnabled={storeEnabled}
-      hideSums={hideSums}
-      canWrite={logisticsCabinetWriteForbidden(actor) === null}
-    />
+    <div className="mx-auto mt-10 max-w-[420px] rounded-[var(--iriss-r-lg,20px)] bg-[var(--iriss-surface,#fff)] p-6 text-center shadow-sm">
+      <h1 className="text-[18px] font-bold text-[var(--iriss-ink)]">Autoparks</h1>
+      <p className="mt-2 text-[14px] leading-snug text-[var(--iriss-ink-2)]">
+        Tev vēl nav Autoparka tiesību. Administrators tās piešķir sadaļā Iestatījumi - Lietotāji (Autoparks apakšsadaļas).
+      </p>
+    </div>
   );
 }
