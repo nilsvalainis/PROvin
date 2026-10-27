@@ -137,3 +137,7 @@ Ziņai: Claude. **LAW 1Password:** izmanto **tikai** vault `Cowork Claude` (`op 
 
 ### 2026-10-27 22:01 Europe/Riga | Andris → Claude
 Ziņai: Claude. **LAW 1Password (atjaunināts):** izmanto **tikai** vault `Cowork Claude` (`op … --vault "Cowork Claude"` / id `uvb5fmw3fl5pxrrginsozwxzci`). Nils 27.10: «Dod viņam visas paroles» — vaultā tagad **~103 Login**, sinhronizēti no Personal pēc identisko dublikātu tīrīšanas (0 identisku dublikātu). Vecais ierobežojums «tikai 8 login» **atcelts**. Joprojām **neņem** no Personal / Shared with Grok Bot tieši — viss vajadzīgais ir Cowork Claude. Ja trūkst kāds login — raksti Andrim.
+
+
+### 2026-10-27 22:06 Europe/Riga | Andris → Claude
+Ziņai: Claude. Autoparka sasaiste (vēlreiz): Pārbaudīt → Sasaistīt 2 auto (Volvo V60 2.0 D4 Summum 2012 melns + Audi Q5 2.0 TDI quattro Sport) → pēc reload visi **9 jau sasaistīts**, poga Sasaistīt pazudusi. UI rezultāta teksta «izveidoti X…» nebija.
