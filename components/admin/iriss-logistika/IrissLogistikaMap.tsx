@@ -3,6 +3,8 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { isLogisticsOrderArchived } from "@/lib/iriss-logistics-archive";
 import {
+  logisticsDefaultBox,
+  logisticsDefaultPadding,
   logisticsMapFitKey,
   logisticsOrderMapLabel,
   logisticsPreviousPointLabel,
@@ -419,11 +421,13 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
       if (focus) {
         map.panTo(focus);
         if ((map.getZoom() ?? 7) < 9) map.setZoom(10);
-      } else if (pts.length === 1) {
-        map.setCenter({ lat: pts[0]!.lat, lng: pts[0]!.lng });
-        map.setZoom(9);
-      } else if (pts.length > 1) {
-        map.fitBounds(bounds, 36);
+      } else {
+        // Noklusējuma skats (Nils 27.10): visa Vācija + auto ārpus tās; paneļi neaizsedz.
+        const box = logisticsDefaultBox(pts);
+        const frame = new google.maps.LatLngBounds();
+        frame.extend({ lat: box.south, lng: box.west });
+        frame.extend({ lat: box.north, lng: box.east });
+        map.fitBounds(frame, logisticsDefaultPadding(hostRef.current?.clientWidth ?? 0));
       }
     }
     map.setOptions({
