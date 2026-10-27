@@ -213,7 +213,7 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
 
   const newHitsLabel =
     newHits > 0 ? (
-      <span className="iriss-pas-hits inline-flex h-6 items-center rounded-full border border-[var(--hair)] bg-[var(--s1)] px-2 text-[11px] font-semibold tabular-nums text-[var(--ink)]">
+      <span className="iriss-pas-hits inline-flex h-6 items-center rounded-full bg-[var(--news-bg,var(--ink))] px-2 text-[11px] font-semibold tabular-nums text-[var(--news-fg,var(--onink,#fff))]">
         {newHits} {newHits === 1 ? "jauns" : "jauni"}
       </span>
     ) : (
