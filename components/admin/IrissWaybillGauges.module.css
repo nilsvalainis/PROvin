@@ -60,24 +60,33 @@
   text-align: center;
   transition: background 0.12s ease;
 }
-/* Nils 27.10: bez iekrāsota fona pie pieskāriena; atvērts/izvēlēts = apmale ap apli un aizpildīta numurzīme. */
+/*
+ * Nils 27.10: bez iekrāsota fona un apmalēm. Izvēlēts/atvērts numurs = maza oranža svītriņa zem tā
+ * (kā aktīvā cilne dizainā v0.3); apļi paliek tieši kā Sākuma vidžetā.
+ */
 .wg .item {
+  position: relative;
   -webkit-tap-highlight-color: transparent;
 }
-.wg .item .ring::after {
+.wg .item::after {
   content: "";
   position: absolute;
-  inset: -5px;
-  border: 2px solid transparent;
-  border-radius: 999px;
-  transition: border-color 0.15s ease;
+  bottom: -4px;
+  left: 50%;
+  width: 22px;
+  height: 3px;
+  margin-left: -11px;
+  border-radius: 3px;
+  background: transparent;
+  transition: background-color 0.15s ease;
 }
-.wg .item.on .ring::after {
-  border-color: var(--iriss-graphite, #1b1c20);
+.wg .item.on::after {
+  background: var(--iriss-brand, #f26522);
 }
-.wg .item.on .plate {
-  background: #c8102e;
-  color: #ffffff;
+/* Pavadzīmju lapā vidžets stāv lapas atkāpē (nevis Sākuma 14 px malās). */
+.wg.float.page {
+  margin: 0;
+  padding-bottom: 22px;
 }
 .wg .item:focus-visible {
   outline: 2px solid var(--iriss-brand, #f26522);
@@ -254,4 +263,7 @@
 .wg .detail .btnStop {
   border-color: #dc2626;
   color: #dc2626;
+}
+.wg .item.pickable.free {
+  cursor: pointer;
 }

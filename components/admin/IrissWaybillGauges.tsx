@@ -253,7 +253,7 @@ export function IrissWaybillGauges({
     </div>
   );
 
-  const cls = `${styles.wg} ${small ? styles.sm : ""} ${floating ? styles.float : ""}`;
+  const cls = `${styles.wg} ${small ? styles.sm : ""} ${floating ? styles.float : ""} ${floating && selectable ? styles.page : ""}`;
   if (href) {
     return (
       <Link href={href} className={`admin-nav-link ${cls}`} aria-label="Pavadzīmes">
