@@ -197,3 +197,10 @@ Sūtīts caur `docs/komandu-zinojumi.md`. Atbildes ierakstīt tur vai šajā fai
 - /admin/statistika: ~81–87 € tēriņš; UI CPA/ROAS nav ticami kanālu novērtēšanai (attribution ~91% tukša; apmaksātajiem kanāliem piesaistīto pasūtījumu 0).
 
 **7.6 GSC — dati (sc-domain:provin.lv, 26.07–25.10.2026, Web).** ~2,81K klikšķi, ~7,6K rādījumi, CTR ~37%, vid. poz. 4,9. Top 20 gandrīz zīmols (provin / provin.lv). Ne-zīmols vājš: «vin pārbaude» poz. 15,3; «auto vēstures pārbaude» 9,5; «vin koda pārbaude» 12,5. CWV CrUX (25.10): mobile/desktop — nav datu. GA4 eksports joprojām nav (nav savienojuma).
+
+#### Papildinājums nakts (Andris, 2026-10-27 ~23:35 Europe/Riga)
+
+- **7.1 CSDD patēriņš.** Gmail info@provin.lv: līgums **LĪG-ieņ/375/26** abpusēji parakstīts 01.10.2026; reģistra pieslēgums (VPN, IP pievienota) 09.10. Vienīgais CSDD rēķins: **RFTR-2236-26** (09.10.2026, summa PDF pielikumā, nav nolasīta). 3 mēn. vēstures nav — lietošana sākta oktobrī, apjoms krietni < 10 000 ierakstu (bāzes 45 EUR + PVN). P10 kvotu plānot pret 10k/mēn.
+- **7.7 CSP.** Vercel prod žurnāli 24 h (26.10 23:23 – 27.10 23:23 Rīgas laiks): **22** `[csp-report]`. Top: `script-src-elem unpkg.com` 9; `form-action www.facebook.com` 7; `script-src wasm-eval` 5; `script-src-elem cdnjs.cloudflare.com` 1. 7 dienu MCP vaicājums noildzē — vajag Redis apkopojumu (P9). Ieteikums: unpkg/cdnjs pašhostēt vai apzināti atļaut; facebook form-action tikai ja apzināts; `'wasm-unsafe-eval'` tikai ja vajag (skeneris).
+- **7.4 Stripe e-pasti.** Nepārbaudīts (Stripe MCP nerāda Emails/custom domain iestatījumus). Pieņēmums: kvītis no Stripe domēna — provin.lv SPF/DMARC neietekmē.
+- **Autoparks v2 Dzēst:** PR #705 (a7d0a3b2) prodā — DONE.
