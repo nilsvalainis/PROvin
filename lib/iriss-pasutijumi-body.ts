@@ -174,6 +174,10 @@ export function parseIrissPasutijumsPatchBody(id: string, body: unknown): IrissP
     interiorFinish: str("interiorFinish"),
     powerKw: str("powerKw"),
     damageTolerance: str("damageTolerance"),
+    budgetIncludes: str("budgetIncludes"),
+    doors: str("doors"),
+    maxRepairCostEur: str("maxRepairCostEur"),
+    sellerType: str("sellerType"),
     preferredCountries: str("preferredCountries"),
     clientFinancingPercent: (() => {
       const raw = o.clientFinancingPercent;

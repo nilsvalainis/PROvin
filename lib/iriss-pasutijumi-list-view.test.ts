@@ -8,8 +8,10 @@ import {
   formatIrissListKm,
   formatIrissListLinksLabel,
   formatIrissListNextStep,
+  formatIrissListPhoneText,
   formatIrissListSpecBrief,
   irissListBudgetText,
+  irissListCriteriaRows,
   irissListMailtoHref,
   irissListShowCallAction,
   irissListShowEmailAction,
@@ -99,6 +101,10 @@ describe("IRISS 01 pasūtījumu saraksta skats", () => {
     expect(irissListBudgetText("")).toBe("-");
     expect(irissListBudgetText("\u2014")).toBe("-");
     expect(irissListBudgetText("līdz 12 000 €")).toBe("līdz 12 000 €");
+    // Nils 28.10: tīrs skaitlis -> "40 000 €".
+    expect(irissListBudgetText("40000")).toBe("40 000 €");
+    expect(irissListBudgetText("15 500")).toBe("15 500 €");
+    expect(irissListBudgetText("23000 EUR")).toBe("23 000 €");
     expect(formatIrissListLinksLabel(0)).toBe("Nav saišu");
     expect(formatIrissListLinksLabel(1)).toBe("1 saite");
     expect(formatIrissListLinksLabel(5)).toBe("5 saites");
@@ -122,14 +128,48 @@ describe("IRISS 01 list chrome", () => {
     expect(list).toMatch(/Aizstātas eCarsTrade saites/);
     expect(list).not.toMatch(/\u2014|\u2013/);
     expect(row).toMatch(/irissListShowCallAction/);
-    expect(row).toMatch(/aria-label="Zvanīt"/);
+    // Nils 28.10: telefonā redzama poga "Zvanīt" un "Kritēriji"; datorā zvana ikonas nav.
+    expect(row).toMatch(/Zvanīt/);
+    expect(row).toMatch(/Kritēriji/);
     expect(row).toMatch(/aria-label="Atvērt WhatsApp"/);
     expect(row).not.toMatch(/IrissBrandLogoSlot/);
     expect(row).not.toMatch(/IrissAuctionLogo/);
     expect(row).toMatch(/Atvērt visas saites/);
     expect(row).toMatch(/Piespraust/);
     expect(row).toContain("iriss-pas-hits");
-    expect(row).toContain("--news-fg");
     expect(row).not.toMatch(/sticky top-0/);
+  });
+});
+
+describe("Tālrunis sarakstā (Nils 28.10)", () => {
+  it("Latvijas numuri vienotā formā, ārzemju - kā ievadīti", () => {
+    expect(formatIrissListPhoneText("29796840")).toBe("+371 29 796 840");
+    expect(formatIrissListPhoneText("+37129172540")).toBe("+371 29 172 540");
+    expect(formatIrissListPhoneText("+371 26 357 321")).toBe("+371 26 357 321");
+    expect(formatIrissListPhoneText("+49 151 1234567")).toBe("+49 151 1234567");
+    expect(formatIrissListPhoneText("")).toBe("");
+  });
+});
+
+describe("Kritēriji telefonā (Nils 28.10)", () => {
+  it("rāda aizpildītos kritērijus, tukšos izlaiž", () => {
+    const rows = irissListCriteriaRows({
+      productionYears: "2019-2020",
+      maxMileage: "150000",
+      engineType: "Dīzelis",
+      transmission: "Automāts",
+      driveType: "",
+      bodyType: "-",
+      seatCount: "",
+      preferredColors: "melna",
+      nonPreferredColors: "sarkana",
+      interiorFinish: "",
+    });
+    expect(rows).toEqual([
+      { label: "Gadi", value: "2019-2020" },
+      { label: "Nobraukums", value: "150 000 km" },
+      { label: "Degviela · kārba", value: "Dīzelis · Automāts" },
+      { label: "Krāsas", value: "melna · ne sarkana" },
+    ]);
   });
 });
