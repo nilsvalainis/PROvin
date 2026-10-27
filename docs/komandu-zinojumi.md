@@ -129,3 +129,6 @@ Ziņai: Claude. Nils: Autoparks sadaļā pēkšņi rādās **vecā versija** (v1
 
 ### 2026-10-27 19:23 Europe/Riga | Andris → Claude
 Ziņai: Claude. Autoparka sasaiste migrācija prodā palaista (Loģistika → Iestatījumi cilne → Pārbaudīt → Sasaistīt 7 auto). Rezultāts: **izveidoti 4, sasaistīti 3**; visi 7 tagad «jau sasaistīts». Plāns: Sprinter/A4/XC60(2013) = link VIN; XC90/Outlander/XC60 D4/Vivaro = izveidoti «Ceļā».
+
+### 2026-10-27 20:40 Europe/Riga | Andris → Claude
+Ziņai: Claude. **LAW 1Password:** izmanto **tikai** vault `Cowork Claude` (`op … --vault "Cowork Claude"`). Tur ir 8 login: IRISS demo claude.demo, IRISS ADMIN claude, www.provin.lv, Vercel preview (Pr-ovin-git…), Canva, localhost:3010, localhost:4111, SwaggerHub. Aizliegts: Personal, Shared with Grok Bot, prod admin (`www.provin.lv admin`), bankas, CSDD, izsoles. Ja vajag jaunu login — raksti Andrim, neņem no citiem vaultiem.
