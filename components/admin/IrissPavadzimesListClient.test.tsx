@@ -190,3 +190,22 @@ describe("VPN kontrole", () => {
     expect(renderText(<IrissVpnControl />)).toContain("Man vajag VPN");
   });
 });
+
+describe("IRISS waybill tabs", () => {
+  const empty = (
+    <IrissPavadzimesListClient initial={{ rows: [], pendingParse: 0, dropboxConfigured: true, dropboxError: null }} />
+  );
+
+  it("skaitlis ir atsevišķā žetonā, nevis pielipis nosaukumam (no 'Visas253')", () => {
+    const html = renderHtml(empty);
+    expect(html).toMatch(/>Aktīvās<span class="iriss-chip__n">0<\/span>/);
+    expect(html).toMatch(/>Arhīvs<span class="iriss-chip__n">0<\/span>/);
+  });
+
+  it("datorā filtri ir Aktīvās, Kalendārs, Arhīvs; Aktīvās izvēlēts", () => {
+    const html = renderHtml(empty);
+    expect(html).toMatch(/aria-pressed="true">Aktīvās/);
+    expect(html).toContain(">Kalendārs</button>");
+    expect(html).not.toMatch(/>Visas</);
+  });
+});
