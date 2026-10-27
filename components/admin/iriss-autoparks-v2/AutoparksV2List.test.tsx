@@ -17,7 +17,7 @@ const rows: AutoparksV2ListRow[] = [
     statusChangedAt: "2026-10-20",
     make: "Volkswagen",
     purchaseDate: "",
-    purchasePriceEur: null,
+    purchasePriceEur: null, vatMode: "",
   },
   {
     id: "b",
@@ -32,7 +32,7 @@ const rows: AutoparksV2ListRow[] = [
     statusChangedAt: "2026-10-21",
     make: "Audi",
     purchaseDate: "",
-    purchasePriceEur: null,
+    purchasePriceEur: null, vatMode: "",
   },
 ];
 
@@ -73,5 +73,29 @@ describe("Autoparks v2 saraksts bez Pamatdatu tiesības (j69)", () => {
 
   it("bez Loģistikas tiesības pārejas nav", () => {
     expect(renderHtml(<AutoparksV2List initialCars={rows} />)).not.toContain("/admin/iriss/logistika");
+  });
+});
+
+describe("Autoparks saraksts (Nils 27.10 makets)", () => {
+  const withData = rows.map((r, i) => ({ ...r, vatMode: i === 0 ? ("margin" as const) : ("" as const), purchaseDate: i === 0 ? "2026-10-20" : "" }));
+
+  it("kolonnas PVN un Iegāde; nav zināms - «-»", () => {
+    const text = renderText(<AutoparksV2List initialCars={withData} showVat />);
+    expect(text).toContain("PVN");
+    expect(text).toContain("Margin");
+    expect(text).toContain("20.10.2026");
+  });
+
+  it("ar Pamatdatu tiesību statusu maina sarakstā (izvēle ar visiem statusiem), bez tās - tikai žetons", () => {
+    const html = renderHtml(<AutoparksV2List initialCars={withData} canChangeStatus />);
+    expect(html).toContain("Mainīt statusu");
+    expect(html).toContain("Gaida sagatavošanu");
+    expect(renderHtml(<AutoparksV2List initialCars={withData} />)).not.toContain("Mainīt statusu");
+  });
+
+  it("katrs auto - sava kartīte ar saiti uz kabinetu", () => {
+    const html = renderHtml(<AutoparksV2ListBody rows={withData} />);
+    expect(html.match(/class="ap2-row"/g)).toHaveLength(2);
+    expect(html).toContain('href="/admin/iriss/autoparks-v2/a"');
   });
 });
