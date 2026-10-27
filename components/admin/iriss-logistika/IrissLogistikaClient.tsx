@@ -9,7 +9,8 @@ import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctio
 import { IrissLogistikaAuctionSourcesPanel } from "@/components/admin/iriss-logistika/IrissLogistikaAuctionSourcesPanel";
 import { IrissLogistikaCabinet } from "@/components/admin/iriss-logistika/IrissLogistikaCabinet";
 import { IrissLogistikaCarPopup } from "@/components/admin/iriss-logistika/IrissLogistikaCarPopup";
-import { LogisticsCarEndAction } from "@/components/admin/iriss-logistika/IrissLogistikaCarsTable";
+import { CabinetPhoneMapAndCard, LogisticsCarEndAction } from "@/components/admin/iriss-logistika/IrissLogistikaCarsTable";
+import { autoparksSaitesHref } from "@/lib/iriss-car-share";
 import { IrissLogistikaCargoPlan, type ManualCarInput } from "@/components/admin/iriss-logistika/IrissLogistikaCargoPlan";
 import { IrissLogistikaMap, type IrissLogistikaMapHandle } from "@/components/admin/iriss-logistika/IrissLogistikaMap";
 import { IrissLogistikaNewPurchase } from "@/components/admin/iriss-logistika/IrissLogistikaNewPurchase";
@@ -34,6 +35,7 @@ import {
   emptyCargoPlan,
   normalizeCargoPath,
   moveCargoCar,
+  setCargoShowOnMap,
   type CargoBucket,
   type CargoPlanState,
   type CargoRouteTemplate,
@@ -1117,12 +1119,21 @@ export function IrissLogistikaClient({
                   setCargoPickups((prev) => (prev.some((p) => p.carId === next.carId) ? prev.map((p) => (p.carId === next.carId ? next : p)) : [...prev, next]))
                 }
                 endAction={
-                  <LogisticsCarEndAction
-                    order={active}
-                    stage={(cargoPickups.find((p) => p.carId === active.id)?.stage ?? "waiting") as CabinetPickupStage}
-                    onMoveToAutopark={(id) => void moveToAutopark(id)}
-                    onDeleteManual={(id) => void deleteManualCar(id)}
-                  />
+                  <>
+                    {/* Telefonā kravas rindā slēdža un «Kartīte» nav (makets C1) - tie ir šeit. */}
+                    <CabinetPhoneMapAndCard
+                      showOnMap={cargoPlan.cars.find((c) => c.carId === active.id)?.showOnMap ?? true}
+                      inPlan={cargoPlan.cars.some((c) => c.carId === active.id)}
+                      onToggleMap={(next) => void persistCargoPlan(setCargoShowOnMap(cargoPlan, active.id, next))}
+                      cardHref={autoparksByOrder[active.id] ? autoparksSaitesHref(autoparksByOrder[active.id]!) : undefined}
+                    />
+                    <LogisticsCarEndAction
+                      order={active}
+                      stage={(cargoPickups.find((p) => p.carId === active.id)?.stage ?? "waiting") as CabinetPickupStage}
+                      onMoveToAutopark={(id) => void moveToAutopark(id)}
+                      onDeleteManual={(id) => void deleteManualCar(id)}
+                    />
+                  </>
                 }
               />
             </div>

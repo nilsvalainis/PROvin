@@ -1474,3 +1474,32 @@ html.iriss-log-printing .iriss-log-pin-tip {
     font-size: 11.5px;
   }
 }
+
+/*
+ * Telefons (Nils 27.10, makets C1): kravas rindā marka/modelis un vieta pa visu platumu.
+ * Izsoles logo, «Cits klients», gatavības un posma teksti, «Kartīte» un slēdzis «kartē» paslēpti -
+ * apmaksu rāda kreisais punkts, posmu - ikona; pieskāriens rindai atver kabinetu (tur «Rādīt kartē» un kartīte).
+ */
+.iriss-log-stage-icon {
+  display: none;
+}
+@media (max-width: 767px) {
+  .iriss-log-cargo-row .iriss-log-cargo-logo,
+  .iriss-log-cargo-row .iriss-log-ready-chip,
+  .iriss-log-cargo-row .iriss-log-stage-chip,
+  .iriss-log-cargo-row .iriss-log-card-link,
+  .iriss-log-cargo-row .iriss-log-switch {
+    display: none !important;
+  }
+  .iriss-log-cargo-row .iriss-log-stage-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+  }
+  .iriss-log-cargo-row .text-\[14px\] {
+    font-size: 16px;
+  }
+}

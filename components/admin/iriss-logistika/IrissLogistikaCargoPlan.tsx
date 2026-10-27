@@ -370,6 +370,50 @@ function CargoRowText({ order }: { order: LogisticsOrder }) {
   );
 }
 
+/**
+ * Telefona posma ikona (Nils 27.10, makets C1): pulkstenis = Gaida, kalendārs = Ieplānots,
+ * kravas auto = Ceļā, māja ar ķeksi = Atvests. Bez teksta - posmus Nils zina no galvas.
+ */
+export function CargoStageIcon({ label }: { label: string }) {
+  const common = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", strokeWidth: 1.9, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  if (label === "Ieplānots") {
+    return (
+      <svg {...common} stroke="var(--iriss-info)" aria-hidden>
+        <rect x="4" y="5" width="16" height="15" rx="2" />
+        <path d="M4 10h16M8 3v4M16 3v4" />
+      </svg>
+    );
+  }
+  if (label === "Ceļā") {
+    return (
+      <svg {...common} stroke="var(--iriss-info)" aria-hidden>
+        <path d="M3 7h11v9H3zM14 10h4l3 3v3h-7" />
+        <circle cx="7" cy="17" r="1.6" />
+        <circle cx="17" cy="17" r="1.6" />
+      </svg>
+    );
+  }
+  if (label === "Atvests") {
+    return (
+      <svg {...common} stroke="var(--iriss-ok)" aria-hidden>
+        <path d="M4 11l8-6 8 6v9H4z" />
+        <path d="M9 15l2 2 4-4" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common} stroke="var(--iriss-ink-3)" aria-hidden>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+/** Telefonā (≤767 px) rindas pieskāriens atver auto kabinetu; datorā - kā līdz šim (iezīmē kartē). */
+function isPhoneViewport(): boolean {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+}
+
 /** Iekšējās pogas nesāk vilkšanu (pele, pieskāriens, tastatūra). */
 const stopDragStart = {
   onMouseDown: (e: { stopPropagation: () => void }) => e.stopPropagation(),
@@ -425,7 +469,10 @@ function SortableCargoRow({
         {...attributes}
         {...listeners}
         aria-roledescription="velkama kartīte"
-        onClick={onClick}
+        onClick={() => {
+          if (onOpenCabinet && isPhoneViewport()) onOpenCabinet();
+          else onClick();
+        }}
         onMouseEnter={() => onHover(id)}
         onMouseLeave={() => onHover(null)}
       >
@@ -462,6 +509,10 @@ function SortableCargoRow({
             {stageLabel}
           </button>
         ) : null}
+        {/* Telefonā posms ir ikona (teksta čipi, logo, Kartīte un slēdzis paslēpti CSS; tie ir kabinetā). */}
+        <span className="iriss-log-stage-icon" role="img" aria-label={stageLabel ? `Posms: ${stageLabel}` : "Posms: Gaida"}>
+          <CargoStageIcon label={stageLabel ?? "Gaida"} />
+        </span>
         {cardHref ? (
           <a href={cardHref} className="iriss-log-card-link" {...stopDragStart} onClick={(e) => e.stopPropagation()}>
             Kartīte
