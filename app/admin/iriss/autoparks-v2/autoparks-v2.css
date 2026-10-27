@@ -273,14 +273,16 @@
   padding: 4px 10px;
   font-size: 12px;
   font-weight: 600;
-  background: color-mix(in srgb, var(--st) 12%, #fff);
-  color: color-mix(in srgb, var(--st) 85%, #000);
+  /* Nils 27.10: statusa teksts melns, krāsa tikai punktā (dizains v0.3). */
+  border: 1px solid var(--iriss-line-strong, #d1d1d6);
+  background: var(--iriss-surface, #fff);
+  color: var(--iriss-ink, #1c1c1e);
   white-space: nowrap;
 }
 .ap2.ap2.ap2 .ap2-pill::before {
   content: "";
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--st);
 }

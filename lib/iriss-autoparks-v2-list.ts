@@ -28,9 +28,10 @@ export type AutoparksV2ListRow = {
   purchasePriceEur: number | null;
 };
 
-/** Kārtošana (Nils 27.10): process (noklusējums), marka, iegādes datums, iegādes summa. */
+/** Kārtošana (Nils 27.10): process, marka, iegādes datums (noklusējums - jaunākie), iegādes summa. */
 export const AUTOPARKS_V2_SORTS = ["process", "make", "date_desc", "date_asc", "sum_desc", "sum_asc"] as const;
 export type AutoparksV2Sort = (typeof AUTOPARKS_V2_SORTS)[number];
+export const AUTOPARKS_V2_DEFAULT_SORT: AutoparksV2Sort = "date_desc";
 export const AUTOPARKS_V2_SORT_LV: Record<AutoparksV2Sort, string> = {
   process: "Pēc statusa",
   make: "Marka A-Z",
