@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { normalizeAutoparksCar } from "@/lib/iriss-autoparks";
 import { emptyAutoparksV2State, normalizeAutoparksV2State } from "@/lib/iriss-autoparks-v2";
-import { autoparksV2ListRows, autoparksV2OwnerCounts, filterAutoparksV2Rows, flattenAutoparksV2Rows, groupAutoparksV2Rows } from "@/lib/iriss-autoparks-v2-list";
+import {
+  autoparksV2ListRows,
+  autoparksV2OwnerCounts,
+  filterAutoparksV2Rows,
+  flattenAutoparksV2Rows,
+  groupAutoparksV2Rows,
+  sortAutoparksV2Rows,
+} from "@/lib/iriss-autoparks-v2-list";
 
 const cars = [
   { id: "a", make: "Volkswagen", model: "Passat Variant", vin: "WVWZZZ3CZKE012345", status: "in_service", statusChangedAt: "2026-10-20", purchasePriceEur: 9850 },
@@ -13,9 +20,40 @@ const cars = [
 const rows = autoparksV2ListRows(cars, emptyAutoparksV2State());
 
 describe("Autoparks v2 saraksts", () => {
-  it("rindā nav summu, īpašnieks tikai filtram; VIN pilns", () => {
-    expect(Object.keys(rows[0]!).sort()).toEqual(["archived", "color", "hasPhoto", "id", "owner", "status", "statusChangedAt", "title", "vin", "year"]);
+  it("bez tiesības «summas» rindā nav summas; īpašnieks tikai filtram; VIN pilns", () => {
+    expect(Object.keys(rows[0]!).sort()).toEqual([
+      "archived",
+      "color",
+      "hasPhoto",
+      "id",
+      "make",
+      "owner",
+      "purchaseDate",
+      "purchasePriceEur",
+      "status",
+      "statusChangedAt",
+      "title",
+      "vin",
+      "year",
+    ]);
+    expect(rows.every((r) => r.purchasePriceEur === null)).toBe(true);
     expect(rows[0]!.vin).toBe("WVWZZZ3CZKE012345");
+  });
+
+  it("kārtošana (Nils 27.10): marka A-Z, iegādes datums, summa; bez vērtības - beigās", () => {
+    const v2 = normalizeAutoparksV2State({
+      cars: {
+        a: { purchase: { purchaseDate: "2026-09-01" } },
+        c: { purchase: { purchaseDate: "2026-10-15", purchasePriceEur: 21500 } },
+      },
+    });
+    const withSums = autoparksV2ListRows(cars, v2, { sums: true }).filter((r) => !r.archived);
+    expect(sortAutoparksV2Rows(withSums, "make").map((r) => r.id)).toEqual(["c", "b", "a"]);
+    expect(sortAutoparksV2Rows(withSums, "date_desc").map((r) => r.id)).toEqual(["c", "a", "b"]);
+    expect(sortAutoparksV2Rows(withSums, "date_asc").map((r) => r.id)).toEqual(["a", "c", "b"]);
+    expect(sortAutoparksV2Rows(withSums, "sum_desc").map((r) => r.id)).toEqual(["c", "a", "b"]);
+    expect(sortAutoparksV2Rows(withSums, "sum_asc").map((r) => r.id)).toEqual(["a", "c", "b"]);
+    expect(withSums.find((r) => r.id === "a")!.purchasePriceEur).toBe(9850);
   });
 
   it("sadaļas pēc statusa procesa secībā, jaunākā maiņa augšā", () => {

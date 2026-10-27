@@ -27,8 +27,9 @@ export default async function AutoparksV2Page() {
     storeEnabled && staffHasLogisticsCabinet(access.actor) ? (await listLogisticsOrders()).filter(isLogisticsOrderActive).length : null;
   return (
     <AutoparksV2List
-      initialCars={v1 && v2 ? autoparksV2ListRows(v1.cars, v2) : []}
+      initialCars={v1 && v2 ? autoparksV2ListRows(v1.cars, v2, { sums: access.perms.summas }) : []}
       canAddCar={access.perms.pamatdati}
+      canSortBySum={access.perms.summas}
       logisticsCount={logisticsCount}
     />
   );
