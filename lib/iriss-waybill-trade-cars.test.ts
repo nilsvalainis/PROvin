@@ -101,7 +101,7 @@ describe("waybill trade cars before the first CSDD registry read", () => {
     const out = waybillTradeCarsWithSource(cars);
     expect(out.source).toBe("autoparks");
     expect(out.cars.map((c) => c.id)).toEqual(["kodiaq", "golf"]);
-    expect(out.cars[0]?.statusLabel).toBe("Gaida");
+    expect(out.cars[0]?.statusLabel).toBe("Noliktavā");
     // Rezerves sarakstā auto nav apstiprināti kā pieņemti: forma prasa sākuma adresi, ne tikai laiku.
     expect(out.cars.every((c) => c.accepted === false)).toBe(true);
     expect(JSON.stringify(out)).not.toMatch(/12000|15000|Price/);

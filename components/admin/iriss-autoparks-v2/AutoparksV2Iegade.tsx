@@ -55,6 +55,9 @@ type Key =
   | "purchasePriceEur"
   | "transportEur";
 
+/** Izmaksu bloks (Pašizmaksa) - izslēgts līdz atsevišķai izmaksu sadaļai (Nils 27.10). */
+const SHOW_COSTS = false;
+
 export const CSDD_DOC_BADGE_SRC = "/brand/csdd-logo.png";
 export const CSDD_DOC_BADGE_TITLE = "Paredzēts CSDD darbībām";
 
@@ -299,7 +302,8 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
     </div>
   );
 
-  const c = view.cost;
+  // Nils 27.10: pašizmaksa, iepirkuma cena un transports pagaidām netiek rādīti (vēlāk atsevišķa izmaksu sadaļa).
+  const c = SHOW_COSTS ? view.cost : null;
   return (
     <div className="ap2-pane wide">
       <div className="ap2-kvwrap">

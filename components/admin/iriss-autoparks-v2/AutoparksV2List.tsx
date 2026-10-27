@@ -20,6 +20,8 @@ import {
 } from "@/lib/iriss-autoparks-v2-list";
 import { CarImg, VinCopy, yearColor } from "./ui";
 
+/** Kārtošana pēc iegādes summas - izslēgta līdz izmaksu sadaļai (Nils 27.10). */
+const SHOW_SUM_SORT = false;
 const BASE = "/admin/iriss/autoparks-v2";
 /** Datora statusu flīzes (D1): visi + statusi bez "Pārdots". */
 const PIPE: readonly AutoparksStatus[] = AUTOPARKS_V2_STATUS_ORDER.filter((s) => s !== "sold");
@@ -52,7 +54,8 @@ export function AutoparksV2List({
   const [adding, setAdding] = useState(false);
   // Nils 27.10: noklusējumā visiem profiliem «Iegāde: jaunākie».
   const [sort, setSort] = useState<AutoparksV2Sort>(AUTOPARKS_V2_DEFAULT_SORT);
-  const sortOptions = AUTOPARKS_V2_SORTS.filter((s) => canSortBySum || !s.startsWith("sum_"));
+  // Nils 27.10: cenas Autoparkā pagaidām nerāda - arī kārtošanas pēc summas nav (vēlāk izmaksu sadaļa).
+  const sortOptions = AUTOPARKS_V2_SORTS.filter((s) => !s.startsWith("sum_") || (canSortBySum && SHOW_SUM_SORT));
 
   const ownerCounts = useMemo(() => autoparksV2OwnerCounts(cars), [cars]);
   const base = useMemo(() => filterAutoparksV2Rows(cars, { owner, query }), [cars, owner, query]);
@@ -210,7 +213,10 @@ export function AutoparksV2ListBody({
           <div className="ap2-row-m">
             <CarImg carId={r.id} />
             <span className="ap2-rt">
-              <b>{r.title}</b>
+              <b>
+                {r.title}
+                {r.clientOrder ? <span className="ap2-client-badge">Klienta auto</span> : null}
+              </b>
               <span className="meta">{yearColor(r.year, r.color)}</span>
               {shown ? <span className="meta ap2-sortval">{sortValueLabel(r, shown)}</span> : null}
               <VinCopy vin={r.vin} />
@@ -219,7 +225,10 @@ export function AutoparksV2ListBody({
           <div className="cols">
             <CarImg carId={r.id} />
             <span className="ap2-rt">
-              <b>{r.title}</b>
+              <b>
+                {r.title}
+                {r.clientOrder ? <span className="ap2-client-badge">Klienta auto</span> : null}
+              </b>
               <span className="meta">{yearColor(r.year, r.color)}</span>
               {shown === "sum" ? <span className="meta ap2-sortval">{sortValueLabel(r, shown)}</span> : null}
             </span>

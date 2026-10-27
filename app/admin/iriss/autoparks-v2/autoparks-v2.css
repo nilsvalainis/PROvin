@@ -2949,3 +2949,64 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Nils 27.10: īpašnieks galvenē izcelts (Dzintarzeme oranžs, ĪRISS zaļš) un «Klienta auto» atzīme. */
+.ap2.ap2.ap2 .ap2-owner-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  border-radius: 999px;
+  padding: 0 12px;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.ap2.ap2.ap2 .ap2-owner-badge.iriss {
+  background: var(--iriss-ok, #17804a);
+}
+.ap2.ap2.ap2 .ap2-owner-badge.dza {
+  background: var(--iriss-brand, #f26522);
+}
+.ap2.ap2.ap2 .ap2-owner-badge select {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding-right: 14px;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-owner-badge:has(select)::after {
+  content: "▾";
+  margin-left: -10px;
+  font-size: 10px;
+  pointer-events: none;
+}
+.ap2.ap2.ap2 .ap2-owner-badge option {
+  color: #1c1c1e;
+}
+.ap2.ap2.ap2 .ap2-client-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  vertical-align: middle;
+  min-height: 22px;
+  border-radius: 999px;
+  padding: 0 9px;
+  background: var(--iriss-info, #2c4fb8);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-switch {
+  min-width: 56px;
+  border-radius: 999px;
+  text-align: center;
+}
+.ap2.ap2.ap2 .ap2-switch.on {
+  background: var(--iriss-graphite, #1b1c20);
+  color: var(--iriss-on-graphite, #f3f2ef);
+}

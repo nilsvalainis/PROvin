@@ -2,16 +2,19 @@
 
 import { normalizeAutoparksRegistry, type AutoparksRegistry } from "@/lib/iriss-autoparks-registry";
 
-export const AUTOPARKS_STATUSES = ["in_transit", "prep_waiting", "in_service", "for_sale", "reserved", "ordered", "sold"] as const;
+/**
+ * Nils 27.10: viens auto ceļš - Ceļā -> Noliktavā -> Servisā -> Pārdošanā -> Rezervēts -> Pārdots.
+ * «Pasūtījums» vairs nav statuss: tā ir atzīme «Klienta auto» (`clientOrder`) pie jebkura statusa.
+ */
+export const AUTOPARKS_STATUSES = ["in_transit", "prep_waiting", "in_service", "for_sale", "reserved", "sold"] as const;
 export type AutoparksStatus = (typeof AUTOPARKS_STATUSES)[number];
 
 export const AUTOPARKS_STATUS_LV: Record<AutoparksStatus, string> = {
   in_transit: "Ceļā",
-  prep_waiting: "Gaida sagatavošanu",
+  prep_waiting: "Noliktavā",
   in_service: "Servisā",
   for_sale: "Pārdošanā",
   reserved: "Rezervēts",
-  ordered: "Pasūtījums",
   sold: "Pārdots",
 };
 
@@ -23,11 +26,10 @@ export function autoparksStatusReservable(status: AutoparksStatus): boolean {
 /** Īsie nosaukumi segmentiem un čipiem telefonā. */
 export const AUTOPARKS_STATUS_SHORT_LV: Record<AutoparksStatus, string> = {
   in_transit: "Ceļā",
-  prep_waiting: "Gaida",
+  prep_waiting: "Noliktavā",
   in_service: "Servisā",
   for_sale: "Pārdošanā",
   reserved: "Rezervēts",
-  ordered: "Pasūtījums",
   sold: "Pārdots",
 };
 
@@ -98,6 +100,8 @@ export type AutoparksCar = {
   archivedAt: string;
   /** Īpašnieks. Vecajos ierakstos lauka nav (= IRISS, sk. `autoparksOwner`). */
   owner?: AutoparksOwner;
+  /** «Klienta auto» (agrāk statuss «Pasūtījums», Nils 27.10). Tikai, ja true. */
+  clientOrder?: true;
   /** Dropbox /STOCK mapes id (`id:...`); nav/tukšs = vēl nav sasaistīts. Vecos ierakstos lauka nav. */
   dropboxFolderId?: string;
   /** Pēdējais zināmais mapes ceļš (tikai informācijai; avots ir id). */
@@ -241,7 +245,8 @@ export function normalizeAutoparksCar(raw: unknown): AutoparksCar | null {
     plate: str(raw.plate, 16).toUpperCase(),
     color: str(raw.color, 40),
     mileageKm: numOrNull(raw.mileageKm),
-    status: isAutoparksStatus(raw.status) ? raw.status : "prep_waiting",
+    // Vecais statuss «Pasūtījums» -> atzīme «Klienta auto»; posms: ar Loģistikas ierakstu «Ceļā», citādi «Noliktavā».
+    status: isAutoparksStatus(raw.status) ? raw.status : raw.status === "ordered" ? (str(raw.orderId, 80) ? "in_transit" : "prep_waiting") : "prep_waiting",
     statusChangedAt: str(raw.statusChangedAt, 40),
     location: str(raw.location, 120),
     purchasePriceEur: numOrNull(raw.purchasePriceEur),
@@ -251,6 +256,7 @@ export function normalizeAutoparksCar(raw: unknown): AutoparksCar | null {
     createdAt: str(raw.createdAt, 40),
     updatedAt: str(raw.updatedAt, 40),
     ...(isAutoparksOwner(raw.owner) ? { owner: raw.owner } : {}),
+    ...(raw.clientOrder === true || raw.status === "ordered" ? { clientOrder: true as const } : {}),
     ...(typeof raw.dropboxFolderId === "string" && raw.dropboxFolderId ? { dropboxFolderId: str(raw.dropboxFolderId, 120) } : {}),
     ...(typeof raw.dropboxFolderPath === "string" && raw.dropboxFolderPath ? { dropboxFolderPath: str(raw.dropboxFolderPath, 400) } : {}),
     // Jaunie lauki tikai, ja ierakstā tie jau ir - vecie ieraksti paliek tādi paši.
@@ -403,7 +409,7 @@ export function filterAutoparksByOwner<T extends { owner?: unknown }>(rows: read
 
 /** Skaiti pa statusiem (arhīvā esošie netiek skaitīti). */
 export function autoparksStatusCounts(cars: ReadonlyArray<Pick<AutoparksCar, "status"> & { archivedAt?: string }>): Record<AutoparksStatus, number> {
-  const out = { in_transit: 0, prep_waiting: 0, in_service: 0, for_sale: 0, reserved: 0, ordered: 0, sold: 0 } as Record<AutoparksStatus, number>;
+  const out = { in_transit: 0, prep_waiting: 0, in_service: 0, for_sale: 0, reserved: 0, sold: 0 } as Record<AutoparksStatus, number>;
   for (const c of cars) if (!c.archivedAt) out[c.status] += 1;
   return out;
 }
@@ -505,6 +511,6 @@ export function autoparksBundleName(car: Pick<AutoparksCar, "make" | "model" | "
 export function autoparksDefaultStage(status: AutoparksStatus): AutoparksStage {
   if (status === "in_transit") return "transport";
   if (status === "prep_waiting" || status === "in_service") return "service";
-  if (status === "for_sale" || status === "reserved" || status === "ordered" || status === "sold") return "sale";
+  if (status === "for_sale" || status === "reserved" || status === "sold") return "sale";
   return "purchase";
 }

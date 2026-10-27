@@ -16,6 +16,7 @@ const basics: AutoparksV2Basics = {
   statusLabel: "Servisā",
   owner: "IRISS",
   ownerLabel: "SIA ĪRISS",
+  clientOrder: false,
   location: "",
   arrivedAt: "",
   archived: false,

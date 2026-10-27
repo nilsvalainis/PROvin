@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { AUTOPARKS_OWNER_LV, AUTOPARKS_OWNERS, type AutoparksOwner } from "@/lib/iriss-autoparks";
 import type { AutoparksV2Basics } from "@/lib/iriss-autoparks-v2";
 import { fmtCm3, fmtDateLv, fmtKm, fmtKw } from "@/lib/iriss-autoparks-v2-format";
 
@@ -83,31 +82,40 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
     );
   };
 
-  const editableOwner = (owner: AutoparksOwner) => (
+  /** «Klienta auto» (Nils 27.10): atzīme pie jebkura statusa; īpašnieks ir galvenes joslā. */
+  const clientOrderToggle = () => (
     <div className="ap2-f">
       <i className="ap2-cd" />
-      <span className="k">Īpašnieks</span>
-      {editing === "owner" ? (
-        <select className="v" autoFocus defaultValue={owner} onChange={(e) => void save("owner", e.target.value)} onBlur={() => setEditing(null)}>
-          {AUTOPARKS_OWNERS.map((o) => (
-            <option key={o} value={o}>
-              {AUTOPARKS_OWNER_LV[o]}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <button type="button" className="v" onClick={() => setEditing("owner")}>
-          {AUTOPARKS_OWNER_LV[owner]}
-        </button>
-      )}
+      <span className="k">Klienta auto</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={basics.clientOrder}
+        className={`v ap2-switch ${basics.clientOrder ? "on" : ""}`}
+        onClick={() => void saveClientOrder(!basics.clientOrder)}
+      >
+        {basics.clientOrder ? "Jā" : "Nē"}
+      </button>
     </div>
   );
+
+  async function saveClientOrder(next: boolean) {
+    setError("");
+    const res = await fetch(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clientOrder: next ? "1" : "0" }),
+    }).catch(() => null);
+    const data = (await res?.json().catch(() => null)) as { basics?: AutoparksV2Basics } | null;
+    if (res?.ok && data?.basics) onBasics(data.basics);
+    else setError("Neizdevās saglabāt");
+  }
 
   return (
     <div className="ap2-pane">
       <div className="ap2-card">
         <h3>Auto</h3>
-        {editableOwner(basics.owner)}
+        {clientOrderToggle()}
         {editable("make", "Marka", basics.make, basics.make)}
         {editable("model", "Modelis", basics.model, basics.model)}
         {editable("year", "Gads", basics.year, basics.year)}
