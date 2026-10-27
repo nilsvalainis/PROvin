@@ -16,16 +16,24 @@ export const MENU_TONE = {
   white: "#ffffff",
 } as const;
 
-const IRISS_APP_META: Record<string, { icon: string; tone: string; title?: string }> = {
-  pasutijumi: { icon: "ord", tone: MENU_TONE.order },
-  sludinajumi: { icon: "lst", tone: MENU_TONE.blue },
-  radars: { icon: "rad", tone: MENU_TONE.violet },
+/** IRISS sākums, variants A (Nils 27.10): īstie logo (Maps, Dzintarzeme, CSDD), pārējās baltas flīzes ar krāsainu līniju. */
+export const IRISS_MENU_INK = {
+  graphite: "#1b1c20",
+  brand: "#f26522",
+  blue: "#1a73e8",
+  violet: "#6a4ddf",
+} as const;
+
+const IRISS_APP_META: Record<string, { icon: string; tone: string; ink?: string; title?: string }> = {
+  pasutijumi: { icon: "ord", tone: MENU_TONE.white, ink: IRISS_MENU_INK.brand },
+  sludinajumi: { icon: "lst", tone: MENU_TONE.white, ink: IRISS_MENU_INK.blue },
+  radars: { icon: "rad", tone: MENU_TONE.white, ink: IRISS_MENU_INK.violet },
   logistika: { icon: "pin", tone: MENU_TONE.white },
   autoparks: { icon: "dz", tone: MENU_TONE.white },
   pavadzimes: { icon: "csdd", tone: MENU_TONE.csdd },
-  vin: { icon: "scan", tone: MENU_TONE.vin },
-  atskaite: { icon: "rep", tone: MENU_TONE.order },
-  iestatijumi: { icon: "set", tone: MENU_TONE.vin },
+  vin: { icon: "scan", tone: MENU_TONE.white, ink: IRISS_MENU_INK.graphite },
+  atskaite: { icon: "rep", tone: MENU_TONE.white, ink: IRISS_MENU_INK.graphite },
+  iestatijumi: { icon: "set", tone: MENU_TONE.white, ink: IRISS_MENU_INK.graphite },
 };
 
 /**
@@ -56,6 +64,7 @@ export function irissMenuCatalog(
       section: it.section,
       icon: meta.icon,
       tone: meta.tone,
+      ...(meta.ink ? { ink: meta.ink } : {}),
       badge: it.badge,
     };
   });

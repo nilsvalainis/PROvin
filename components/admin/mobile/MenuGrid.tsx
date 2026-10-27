@@ -253,6 +253,7 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, alertOf, hre
                 gridColumn: `span ${span.cols}`,
                 gridRow: `span ${span.rows}`,
                 ["--menu-tone" as string]: item.tone,
+                ...(item.ink ? { ["--menu-ink" as string]: item.ink } : {}),
                 animationDelay: `${-((index % 5) * 0.09)}s`,
               }}
               onPointerDown={(e) => onPointerDown(e, entry.id, index)}
@@ -296,9 +297,9 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, alertOf, hre
                 ) : (
                   <>
                     <span
-                      className={`menu-app-icon${menuIconBleed(item.icon) ? " is-bleed" : ""}${menuIconPadded(item.icon) ? " is-pad" : ""}${menuIconLight(item.icon) ? " is-light" : ""}`}
+                      className={`menu-app-icon${menuIconBleed(item.icon) ? " is-bleed" : ""}${menuIconPadded(item.icon) ? " is-pad" : ""}${item.ink || menuIconLight(item.icon) ? " is-light" : ""}`}
                     >
-                      <MenuIcon name={item.icon} size={menuIconBleed(item.icon) ? 58 : menuIconPadded(item.icon) ? 40 : item.icon === "pin" ? 34 : 26} />
+                      <MenuIcon name={item.icon} size={menuIconBleed(item.icon) ? 58 : menuIconPadded(item.icon) ? 40 : item.icon === "pin" ? 34 : 28} />
                     </span>
                     <span className="menu-app-label">{item.title}</span>
                     {badge > 0 ? <span className="menu-badge">{badge > 99 ? "99+" : badge}</span> : null}
@@ -343,8 +344,8 @@ export function MenuGrid({ workspace, catalog, defaultIds, badgeOf, alertOf, hre
           {missing.map((item) => (
             <li key={item.id} className="menu-gallery-row">
               <span
-                className={`menu-gallery-icon${menuIconBleed(item.icon) ? " is-bleed" : ""}${menuIconPadded(item.icon) ? " is-pad" : ""}${menuIconLight(item.icon) ? " is-light" : ""}`}
-                style={{ ["--menu-tone" as string]: item.tone }}
+                className={`menu-gallery-icon${menuIconBleed(item.icon) ? " is-bleed" : ""}${menuIconPadded(item.icon) ? " is-pad" : ""}${item.ink || menuIconLight(item.icon) ? " is-light" : ""}`}
+                style={{ ["--menu-tone" as string]: item.tone, ...(item.ink ? { ["--menu-ink" as string]: item.ink } : {}) }}
               >
                 <MenuIcon name={item.icon} size={menuIconBleed(item.icon) ? 44 : 28} />
               </span>
