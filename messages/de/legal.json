@@ -3,49 +3,57 @@
     "privacyMetaTitle": "Datenschutzerklärung | PROVIN",
     "privacyMetaDescription": "Wie PROVIN.LV personenbezogene Daten, Cookies und Analysen nach Einwilligung gemäß DSGVO verarbeitet. Klar und nachvollziehbar.",
     "privacyTitle": "Datenschutzerklärung",
-    "privacyLead": "Dieses Dokument beschreibt, wie der Diensteanbieter PROVIN.LV (nachfolgend „wir”, „der Dienst”) personenbezogene Daten verarbeitet, welche Cookies eingesetzt werden und wie Sie nicht erforderliche Analysen sowie die Speicherung von First- und Last-Touch-Daten (UTM und Anzeigen-Klick-IDs) annehmen oder ablehnen können. Die rechtliche Identität und die Angaben zum Verantwortlichen stehen in der Fußzeile der Website.",
+    "privacyLead": "Diese Erklärung beschreibt, welche personenbezogenen Daten PROVIN.LV („wir“) verarbeitet, warum, wie lange und an wen wir sie weitergeben, welche Cookies wir verwenden und wie Sie Ihre Rechte ausüben.",
     "sections": [
       {
         "title": "1. Verantwortlicher",
-        "body": "Verantwortlicher für die personenbezogenen Daten ist PROVIN.LV; die juristische Person und die vollständigen Angaben stehen in der Fußzeile der Website. Kontakt: die im Fußbereich der Website genannte E-Mail-Adresse und WhatsApp."
+        "body": "Verantwortlicher: Nils Valainis, Einzelunternehmer, Reg.-Nr. 09118711109, Jana iela 3, Tukums, LV-3101, Lettland. Kontakt in Datenschutzfragen: info@provin.lv, +371 29 502 039."
       },
       {
         "title": "2. Welche Daten wir verarbeiten",
-        "body": "Im Zusammenhang mit einer Bestellung: Name (falls angegeben), E-Mail, Telefon, VIN oder amtliches Kennzeichen, Inserat-URL (falls angegeben), Freitextnachricht und Zahlungsmetadaten (verarbeitet durch den Zahlungsdienstleister Stripe nach dessen eigener Politik). Bei Nutzung der Website: technische Serverprotokolle (zum Beispiel IP-Adresse und Uhrzeit der Anfrage) können der Sicherheit und Verfügbarkeit dienen. Die Startseite kann kuratierte, öffentlich zugängliche Google-Bewertungen zeigen (ohne zusätzliche Tracking-Skripte für diesen Block)."
+        "body": "Bei einer Bestellung: Vor- und/oder Nachname (falls angegeben), E-Mail, Telefon, VIN oder Kennzeichen, Inseratslink (falls angegeben), Freitextnachricht und Zahlungsinformationen (Karten verarbeitet Stripe; wir sehen keine Kartendaten).\n\nKostenlose Inseratsprüfung: Inseratslink und die von Ihnen angegebenen Kontaktdaten.\n\nPartner (Unternehmen): Firmendaten, Name der Kontaktperson, E-Mail, Telefon, Bestell- und Abrechnungshistorie.\n\nBei der Nutzung der Website: Serverprotokolle (IP-Adresse, Zeit, aufgerufene Seite) für Sicherheit und Fehlerbehebung sowie Cookies gemäß Abschnitt 4-5 und 9.\n\nBesondere Kategorien von Daten (Gesundheit, Überzeugungen u. ä.) erheben wir nicht."
       },
       {
         "title": "3. Zwecke und Rechtsgrundlage",
-        "body": "Vertragserfüllung und Bestellabwicklung (Art. 6 Abs. 1 lit. b DSGVO). Berechtigte Interessen: Sicherheit der Website und Fehlervermeidung (Art. 6 Abs. 1 lit. f DSGVO). Wenn eine Bestellung begonnen, aber nicht abgeschlossen wurde, können wir einmalig an die angegebene E-Mail-Adresse erinnern (berechtigte Interessen, Art. 6 Abs. 1 lit. f DSGVO). Analysen sowie First- und Last-Touch-Speicherung (UTM und Anzeigen-Klick-IDs wie gclid, fbclid, ttclid) nur nach Ihrer freiwilligen Einwilligung über das Cookie-Banner (Art. 6 Abs. 1 lit. a DSGVO)."
+        "body": "Ausführung der Bestellung, Erstellung des Berichts, Beratung und Kommunikation zur Bestellung: Vertragserfüllung (Art. 6 Abs. 1 lit. b DSGVO).\n\nRechnungen und Buchhaltung: rechtliche Verpflichtung (Art. 6 Abs. 1 lit. c).\n\nSicherheit der Website, Missbrauchsabwehr und eine Erinnerung an eine nicht abgeschlossene Bestellung: berechtigte Interessen (Art. 6 Abs. 1 lit. f).\n\nAnalyse und Werbemessung mit Cookies: Ihre Einwilligung (Art. 6 Abs. 1 lit. a), die Sie jederzeit widerrufen können."
       },
       {
-        "title": "4. Cookies und erforderliche Funktionen",
-        "body": "Erforderliche Funktionen (zum Beispiel Sprachwahl, Sitzung, Sicherheit) dürfen Cookies oder vergleichbare Technologien ohne gesonderte Einwilligung nutzen, soweit sie objektiv nötig sind, um den Dienst zu erbringen. Eine Liste solcher Cookies stellen wir auf Anfrage bereit."
+        "title": "4. Notwendige Cookies",
+        "body": "Ohne Einwilligung verwenden wir nur Cookies, die für den Betrieb der Website erforderlich sind: Ihre Cookie-Auswahl, Sprache, Design und die Anmeldesitzung im Partnerkonto. Die Liste finden Sie in Abschnitt 9."
       },
       {
-        "title": "5. Analysen und First-Touch-Daten (nach Einwilligung)",
-        "body": "Wenn Sie im Cookie-Banner „Analysen” annehmen, können wir begrenzte First- und Last-Touch-Marketingdaten speichern: den Pfad auf der Website, den HTTP-Referrer soweit vorhanden, Marketingparameter aus dem Link (UTM: source, medium, campaign, term) und Anzeigen-Klick-IDs (gclid, gbraid, wbraid, fbclid, ttclid), wenn sie in der Adresse stehen. Nach der Einwilligung können wir auch aggregierte Besuche nach Kanal und Kampagne zählen (ohne personenbezogene Daten). Wenn Sie später bestellen, können wir diese Herkunft der Zahlung zuordnen, um zu sehen, welche Anzeige zur Bestellung geführt hat. Ziel ist zu verstehen, woher Besucher kommen, nicht Personen über alle Drittplattformen hinweg zu verfolgen. Diese Daten werden nicht verkauft. Ohne Einwilligung speichern wir sie nicht."
+        "title": "5. Analyse, Werbung und Google Consent Mode",
+        "body": "Wir verwenden Google Consent Mode v2. Das Google-Tag (Google Analytics 4 und Google Ads) wird bei jedem Besuch geladen, arbeitet bis zu Ihrer Einwilligung jedoch im Modus „abgelehnt“: Es setzt und liest keine Cookies und sendet Google nur cookielose Signale ohne Kennungen (zum Beispiel Zeit, besuchte Seite, Browsertyp und Einwilligungsstatus). Google nutzt sie für aggregierte Besuchs- und Conversion-Modellierung.\n\nWenn Sie im Cookie-Banner „Analyse und Werbung akzeptieren“ wählen: Google Analytics und Google Ads dürfen Cookies setzen; Meta Pixel und TikTok Pixel werden zur Messung von Werbeergebnissen geladen; wir speichern die erste und letzte Marketingquelle (Seite, Referrer, UTM-Parameter, Klick-IDs gclid, gbraid, wbraid, fbclid, ttclid) und verknüpfen sie bei einer Bestellung mit der Zahlung. Nach einem Kauf kann die Meta Conversions API das Kaufereignis von unserem Server mit gehashter E-Mail und Telefonnummer senden.\n\nVercel Web Analytics zählt Besuche aggregiert und ohne Cookies.\n\nSie können Ihre Einwilligung jederzeit ändern oder widerrufen, indem Sie die Cookies dieser Website im Browser löschen oder uns schreiben; das Banner erscheint dann erneut."
       },
       {
-        "title": "6. Dritte",
-        "body": "Zahlungen: Stripe. Hosting der Website: Ihr gewählter Anbieter (zum Beispiel Vercel). Vercel Web Analytics erfasst aggregierte Besuchszahlen und Seitenaufrufe (First-Party-Statistik im Hosting). Google Analytics 4, TikTok Pixel und Meta Pixel laden nur, wenn Sie im Cookie-Banner „Analysen” zustimmen; fehlt die betreffende ID, werden die Skripte nicht geladen. Nach der Einwilligung kann die Meta Conversions API dasselbe Kaufereignis vom Server senden (E-Mail und Telefon werden gehasht). Kontakt: E-Mail (Fußbereich) und WhatsApp (Fußbereich und Schaltfläche auf der Website)."
+        "title": "6. Auftragsverarbeiter und Empfänger",
+        "body": "Wir geben Daten nur an Dienstleister weiter, die sie in unserem Auftrag verarbeiten:\n\nVercel Inc. (Hosting und Datenspeicherung); Stripe Payments Europe Ltd. (Zahlungen); Google Ireland Ltd. (E-Mail, Google Analytics, Google Ads); Meta Platforms Ireland Ltd. (WhatsApp-Kommunikation; Meta Pixel und Conversions API nach Einwilligung); TikTok Technology Ltd. (TikTok Pixel nach Einwilligung); Dropbox International Unlimited Co. (Dokumentenspeicherung); Google (Gemini API) und Anthropic PBC (Unterstützung bei der Berichtserstellung: wir senden nur die VIN und technische Fahrzeugdaten, nicht Ihren Namen, Ihre E-Mail oder Telefonnummer).\n\nFahrzeugdaten nach VIN oder Kennzeichen fragen wir bei der lettischen Straßenverkehrsbehörde (CSDD) und Anbietern von Fahrzeughistorien (zum Beispiel carVertical, autoDNA, offizielle Händlersysteme) ab; Ihre Kontaktdaten erhalten diese nicht.\n\nWir verkaufen keine Daten."
       },
       {
-        "title": "7. Speicherdauer",
-        "body": "Bestell- und Kundendaten werden so lange aufbewahrt, wie es für die Leistung und gesetzliche Pflichten nötig ist (Buchhaltung, Streitigkeiten). Die Laufzeit von Analyse- und Herkunfts-Cookies (erster und letzter Touch, UTM, Klick-IDs) ist begrenzt (in der Regel bis 180 Tage), soweit nichts anderes angegeben ist."
+        "title": "7. Übermittlung außerhalb der EU",
+        "body": "Einige Auftragsverarbeiter (zum Beispiel Vercel, Stripe, Google, Meta, Dropbox, Anthropic) können Daten in den USA verarbeiten. Grundlage ist das EU-US Data Privacy Framework, sofern der Anbieter zertifiziert ist, oder die Standardvertragsklauseln der Europäischen Kommission (Art. 46 DSGVO)."
       },
       {
-        "title": "8. Ihre Rechte",
-        "body": "Nach der DSGVO haben Sie das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Widerspruch und Datenübertragbarkeit, soweit anwendbar. Eine Beschwerde können Sie bei der Aufsichtsbehörde einreichen (in Lettland: DVI)."
+        "title": "8. Speicherdauer",
+        "body": "Bestellungen, Berichte und Rechnungen: 5 Jahre nach der Bestellung (Buchhaltungspflichten und mögliche Streitigkeiten).\n\nNicht abgeschlossene, unbezahlte Bestellungen: bis zu 90 Tage.\n\nKommunikation per E-Mail und WhatsApp: bis zu 2 Jahre nach der letzten Nachricht.\n\nAnfragen zur kostenlosen Inseratsprüfung: bis zu 12 Monate.\n\nPartnerkontodaten: während der Zusammenarbeit und 5 Jahre danach (Abrechnung).\n\nServerprotokolle: bis zu 30 Tage. Cookies: gemäß Abschnitt 9."
       },
       {
-        "title": "9. Änderungen der Erklärung",
-        "body": "Wir können diese Erklärung aktualisieren. Wesentliche Änderungen werden auf der Website oder im Cookie-Banner kenntlich gemacht, soweit erforderlich."
+        "title": "9. Cookie-Liste",
+        "body": "Notwendig: provin_consent und provin_cookie_consent (Ihre Auswahl, 180 Tage); provin-site-theme (Design, 12 Monate); provin-b2b-locale (Sprache der Partnerseite, 12 Monate); Partner-Anmeldesitzung (7 Tage).\n\nMit Einwilligung: provin_attr (Marketingquelle, 180 Tage); _ga und _ga_* (Google Analytics, bis zu 2 Jahre); _gcl_au (Google Ads, 90 Tage); _fbp (Meta Pixel, 90 Tage); _ttp, _tt_enable_cookie, ttcsid (TikTok Pixel, bis zu 13 Monate)."
+      },
+      {
+        "title": "10. Ihre Rechte",
+        "body": "Sie haben das Recht auf Auskunft, Berichtigung und Löschung Ihrer Daten, Einschränkung der Verarbeitung, Widerspruch gegen eine Verarbeitung auf Grundlage berechtigter Interessen und Datenübertragbarkeit. Eine Einwilligung können Sie jederzeit widerrufen; die Rechtmäßigkeit der bisherigen Verarbeitung bleibt unberührt. Wir treffen keine ausschließlich automatisierten Entscheidungen mit rechtlicher Wirkung für Sie.\n\nAnfragen an info@provin.lv; wir antworten innerhalb eines Monats.\n\nSie können sich bei der lettischen Datenschutzbehörde beschweren (Datu valsts inspekcija, www.dvi.gov.lv)."
+      },
+      {
+        "title": "11. Änderungen",
+        "body": "Wir können diese Erklärung aktualisieren. Wesentliche Änderungen zeigen wir auf der Website oder im Cookie-Banner an. Fassung: 28. Oktober 2026."
       }
     ],
     "termsMetaTitle": "Nutzungsbedingungen | PROVIN",
     "termsMetaDescription": "Nutzungsbedingungen von PROVIN.LV: Art der Leistung, Zahlung, Erstattung, Fernabsatzvertrag und Widerrufsrecht bei digitalen Inhalten.",
     "termsTitle": "Nutzungsbedingungen von PROVIN.LV",
-    "termsUpdated": "Gültig ab: 26. Oktober 2026",
+    "termsUpdated": "Gültig ab: 28. Oktober 2026",
     "termsLead": "Diese Bedingungen regeln das Rechtsverhältnis zwischen Ihnen (dem „Kunden”) und dem Diensteanbieter PROVIN.LV („wir”) zur Nutzung der Website provin.lv und zur Bestellung entgeltlicher Beratungsleistungen. Bitte lesen Sie sie zusammen mit der Datenschutzerklärung. Die wesentlichen Regeln zu Preis, Zahlung und Erstattung sowie zur Nichtanwendung des Widerrufsrechts auf digitale Inhalte stehen in den Ziffern 5 und <section11>11</section11> (dort: <note>der hervorgehobene Abschnitt zum Widerrufsrecht und zur Verordnung des Ministerkabinetts Nr. 255, Punkt 22.13</note>). Die Angaben zum rechtlichen Anbieter finden Sie unten.",
     "termsSections": [
       {
@@ -66,7 +74,7 @@
       },
       {
         "title": "5. Bestellung, Preis, Zahlung und Erstattungsgrundsätze",
-        "body": "5.1. Bestellungen erfolgen elektronisch mit den von PROVIN angeforderten Angaben. Erforderlich: VIN (17 Zeichen) oder Kennzeichen, E-Mail und Telefon. Eine Inserat-URL ist optional; wenn angegeben, muss sie ein gültiger Link zu einem konkreten Inserat sein. Weitere Felder folgen dem Formular der Website. Für „Offizielle Händler-Servicehistorie” genügen VIN (oder Kennzeichen) und Kontaktdaten im Stripe Checkout.\n\n5.2. Der Preis der Leistung ist zum Bestellzeitpunkt auf der Website (Bestellformular / Übersicht) klar ausgewiesen und enthält anfallende Steuern, soweit das Recht sie vorsieht. Aktuelle Produkte und Richtpreise: Offizielle Händler-Servicehistorie 24,99 €; PROVIN MINI 39,99 €; PROVIN AUDITS 99,99 € (maßgeblich ist der vor der Zahlung angezeigte Preis). Preise können sich für künftige Bestellungen ändern; für eine konkrete Bestellung gilt der vor der Zahlungsbestätigung angezeigte Preis.\n\n5.3. Die Zahlung erfolgt über einen Zahlungsdienstleister (zum Beispiel Stripe). Rechtsgrundlage und Datenverarbeitung der Zahlung sind in der Datenschutzerklärung und in den Unterlagen des Dienstleisters beschrieben.\n\n5.4. Die Zahlung für die Leistung ist endgültig. Wegen der Art der Leistung (sofortiger Beginn der Erstellung digitaler Inhalte) erfolgt nach Beginn der Berichtserstellung keine Erstattung, außer nach Ziffer 11 und der 100-%-Erstattung nach Ziffer 2.1.A, wenn offizielle Händlerdaten nicht verfügbar sind. Bei PROVIN AUDITS begründet die Nichtverfügbarkeit oder das Fehlen von Daten in einer einzelnen Quelle (einschließlich offizieller Händlerdaten) keine Erstattung, wenn die Basisprüfungen nach Ziffer 3.4 durchgeführt wurden."
+        "body": "5.1. Bestellungen erfolgen elektronisch mit den von PROVIN angeforderten Angaben. Erforderlich: VIN (17 Zeichen) oder Kennzeichen, E-Mail und Telefon. Eine Inserat-URL ist optional; wenn angegeben, muss sie ein gültiger Link zu einem konkreten Inserat sein. Weitere Felder folgen dem Formular der Website. Für „Offizielle Händler-Servicehistorie” genügen VIN (oder Kennzeichen) und Kontaktdaten im Stripe Checkout.\n\n5.2. Der Preis der Leistung ist zum Bestellzeitpunkt auf der Website (Bestellformular / Übersicht) klar ausgewiesen und enthält anfallende Steuern, soweit das Recht sie vorsieht. Aktuelle Produkte und Richtpreise: Offizielle Händler-Servicehistorie 24,99 €; PROVIN MINI 39,99 €; PROVIN AUDITS 99,99 € (maßgeblich ist der vor der Zahlung angezeigte Preis). Preise können sich für künftige Bestellungen ändern; für eine konkrete Bestellung gilt der vor der Zahlungsbestätigung angezeigte Preis.\n\n5.3. Die Zahlung erfolgt über einen Zahlungsdienstleister (zum Beispiel Stripe). Rechtsgrundlage und Datenverarbeitung der Zahlung sind in der Datenschutzerklärung und in den Unterlagen des Dienstleisters beschrieben.\n\n5.4. Die Zahlung für die Leistung ist endgültig. Wegen der Art der Leistung (sofortiger Beginn der Erstellung digitaler Inhalte) erfolgt nach Beginn der Berichtserstellung keine Erstattung, außer nach Ziffer 11 und der 100-%-Erstattung nach Ziffer 2.1.A, wenn offizielle Händlerdaten nicht verfügbar sind. Bei PROVIN AUDITS begründet die Nichtverfügbarkeit oder das Fehlen von Daten in einer einzelnen Quelle (einschließlich offizieller Händlerdaten) keine Erstattung, wenn die Basisprüfungen nach Ziffer 3.4 durchgeführt wurden.\n\n5.5. Die Preise sind Endpreise. Der Anbieter ist in Lettland für Inlandsumsätze nicht als umsatzsteuerpflichtig registriert, daher wird keine Umsatzsteuer berechnet. Die USt-IdNr. LV09118711109 wird nur für Geschäfte mit umsatzsteuerlich registrierten Unternehmen in anderen EU-Staaten verwendet."
       },
       {
         "title": "6. Erfüllung, Lieferung und zulässige Verzögerungen",
@@ -91,7 +99,6 @@
       {
         "title": "11. Preis, digitale Inhalte und Widerrufsrecht (Fernabsatzvertrag)",
         "withdrawalIntro": "**Widerrufsrecht und Erstattung.** Dieser Abschnitt legt klar fest, wie das **Widerrufsrecht** (das Recht, von einem Fernabsatzvertrag zurückzutreten) und **Erstattungen** gelten, insbesondere bei digitalen Inhalten und der Ausnahme nach Verordnung des Ministerkabinetts Nr. 255, Punkt 22.13.",
-        "searchKeywordsLine": "Damit Prüfer und Kunden diesen Abschnitt schnell finden (zum Beispiel durch Suche nach englischen Begriffen): **refund**, **withdrawal**, **right of withdrawal**.",
         "subsections": [
           {
             "heading": "11.1. Allgemeine Regel zum Widerrufsrecht",
@@ -109,7 +116,7 @@
       },
       {
         "title": "12. Streitbeilegung",
-        "body": "12.1. Streitigkeiten versuchen wir zuerst im Gespräch zu klären, über die Kontaktdaten auf der Website.\n\n12.2. Lässt sich eine Streitigkeit nicht gütlich beilegen, entscheiden die Gerichte der Republik Lettland nach den Zuständigkeitsregeln, soweit zwingendes Recht dem Verbraucher kein günstigeres Forum gibt.\n\n12.3. Verbraucher können sich auch an die Kommission zur Beilegung von Verbraucherstreitigkeiten wenden oder andere gesetzliche außergerichtliche Wege nutzen, soweit sie anwendbar sind."
+        "body": "12.1. Streitigkeiten versuchen wir zuerst im Gespräch zu klären, über die Kontaktdaten auf der Website.\n\n12.2. Lässt sich eine Streitigkeit nicht gütlich beilegen, entscheiden die Gerichte der Republik Lettland nach den Zuständigkeitsregeln, soweit zwingendes Recht dem Verbraucher kein günstigeres Forum gibt.\n\n12.3. Verbraucher können sich auch an die Kommission zur Beilegung von Verbraucherstreitigkeiten wenden oder andere gesetzliche außergerichtliche Wege nutzen, soweit sie anwendbar sind.\n\n12.4. Auf eine schriftliche Verbraucherbeschwerde antworten wir innerhalb von 15 Arbeitstagen (lettisches Verbraucherschutzgesetz, Art. 26.1)."
       },
       {
         "title": "13. Änderungen der Bedingungen",
@@ -121,15 +128,15 @@
       },
       {
         "title": "15. Kontakt",
-        "body": "Fragen zu diesen Bedingungen: wenden Sie sich an PROVIN.LV über die E-Mail-Adresse oder WhatsApp im Fußbereich der Website."
+        "body": "Fragen zu diesen Bedingungen: info@provin.lv, +371 29 502 039. Anbieter: Nils Valainis, Einzelunternehmer, Reg.-Nr. 09118711109, Jana iela 3, Tukums, LV-3101, Lettland."
       }
     ]
   },
   "Cookies": {
     "bannerTitle": "Cookies und Datenschutz",
-    "bannerText": "Wir verwenden erforderliche Cookies, damit die Website funktioniert. Stimmen Sie Analysen zu, können wir erste und letzte Marketingseiten, UTM-Parameter und Anzeigen-Klick-IDs (gclid, fbclid, ttclid) speichern, aggregierte Besuche zählen sowie Google Analytics, TikTok Pixel und/oder Meta Pixel laden (sofern konfiguriert), um zu verstehen, woher Besucher kommen.",
+    "bannerText": "Notwendige Cookies halten die Website funktionsfähig. Mit Ihrer Einwilligung nutzen wir außerdem Analyse (Google Analytics), um die Nutzung zu verstehen, und Werbemessung (Google Ads, Meta, TikTok) und speichern die Marketingquelle (UTM, gclid, fbclid, ttclid). Ohne Einwilligung erhält Google nur cookielose Signale.",
     "reject": "Nur erforderliche",
-    "acceptAnalytics": "Analysen und Speicherung zustimmen",
+    "acceptAnalytics": "Analyse und Werbung akzeptieren",
     "privacyLink": "Datenschutzerklärung"
   }
 }
