@@ -94,3 +94,27 @@ Ziņai: Claude. Autoparks v2 kabinetā trūkst «Dzēst» (LAW 26.10 create⇒de
 
 ### 2026-10-27 12:44 Europe/Riga | Andris → Claude
 Ziņai: Claude. Nils «apstiprinu» (Dizaineris t341u) — CSDD badge pie Auto1 Car Invoice produkcijā. Kanons: box /workspace/iriss-autoparks-csdd-badge-2610/ (01-iegade-desktop + 01-iegade-mobile + ref/csdd.png oriģināls). Badge TIKAI Car Invoice / Rēķins; 20px desktop / 17px mobile aiz nosaukuma; tooltip «Paredzēts CSDD darbībām». Leģenda/inset maketā tikai skaidrošanai — produkcijā NAV obligāti. Logo: oriģināls csdd.png (nav ģenerēt). PR + tests + īss smoke. git pull --ff-only first. Bez liela Opus līdz 22:00.
+
+### 2026-10-27 13:15 Europe/Riga | Andris → Claude (INFO ONLY — Andris neveic darbības)
+Ziņai: Claude. Nils: Autoparks sadaļā pēkšņi rādās **vecā versija** (v1). Claude pēc ~5 min atsūtīs ziņu — sakārtojiet versijas. Andris **tikai info**, nekādas izmaiņas kodā/env/deploy.
+
+**Fakti (pārbaudīts 27.10 ~13:15 Rīga):**
+1. Prod deploy READY: `dpl_8TFGQh5zv5kbozFdxPn467abdTh9` = main `1eb985b9` (#703 CSDD badge).
+2. Vercel env `IRISS_AUTOPARKS_V2_STAFF` = `"1"`, target **tikai production** (id `5WlmxkIFPcwBFl7q`, comment «Autoparks v2 enabled per Nils 24.10.2026»). **Preview nav** šī env.
+3. Redirect `lib/iriss-autoparks-v2-flag.ts`: `/admin/iriss/autoparks` → `/admin/iriss/autoparks-v2` tikai ja `staffEnabled && canOpenV2List && v1Param !== "1"`. Rezerve: `?v1=1`.
+4. Karogs ieslēdzas **tikai** ar precīzu `"1"` (ne `true`).
+5. Admin perms v2 ir vienmēr (ignorē karogu), bet **redirect joprojām prasa env=1** — komentārs «adminam v2 vienmēr» = menu visibility, ne redirect.
+6. Saites, kas **cieti** ved uz v1 path (`/admin/iriss/autoparks`):
+   - sākuma logrīks `w-autoparks` (`lib/admin-menu-catalog.ts`)
+   - mobilā izvēlne `lib/iriss-mobile-menu.ts`
+   - globālā meklēšana `lib/admin-global-search.ts`
+   - Loģistika/Grāmatvede/Serviss `pagePrefixes` v1 (`lib/staff-roles.ts`); `ap_*` → `/autoparks-v2`
+7. Šodien IRISS dzēsa SQ5+Golf caur **v1** «Dzēst auto» — v1 UI joprojām sasniedzams.
+8. Hipotēzes (Claude verificē):
+   - URL ar `?v1=1` / bookmark
+   - Preview / vecs Vercel URL (bez env → nav redirect)
+   - atvērts v1 path bez redirect (cache / soft nav)
+   - menu/search/logrīks → `/autoparks` un redirect neieslēdzas
+9. Faili: `app/admin/iriss/autoparks/page.tsx`, `autoparks-v2/page.tsx`, `lib/iriss-autoparks-v2-flag.ts`, `lib/iriss-autoparks-v2-perms.ts`, `lib/admin-menu-catalog.ts`, `lib/iriss-mobile-menu.ts`.
+
+**Lūgums Claude:** diagnosticēt + labot, lai prodā Autoparks stabili rāda v2. Andris/Vercel env nemaina, ja vien Claude neprasa. Ziņai: Andris + Nils.
