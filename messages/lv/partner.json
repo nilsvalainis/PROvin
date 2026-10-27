@@ -368,6 +368,90 @@
     "metaAccountTitle": "PROVIN partneriem",
     "registerTermsConsent": "Piekrītu <terms>Partneru sadarbības noteikumiem</terms> un datu apstrādes pielikumam.",
     "registerTermsRequired": "Lūdzu, apstipriniet Partneru sadarbības noteikumus.",
-    "partnerTermsLink": "Partneru noteikumi"
+    "partnerTermsLink": "Partneru noteikumi",
+    "landingPacksHeading": "Pakalpojumi un cenas",
+    "landingLegalOnly": "Pieejams tikai juridiskām personām un saimnieciskās darbības veicējiem.",
+    "landingPacks": [
+      {
+        "title": "PROVIN Business",
+        "price": "no 69,99 €",
+        "unit": "par atskaiti",
+        "items": [
+          "Vairāku avotu vēsture: carVertical, autoDNA, izcelsmes valsts reģistri",
+          "Nobraukuma pretrunu pārbaude un negadījumu vēsture",
+          "Sludinājuma un tehnisko risku analīze konkrētajam modelim",
+          "Konsultācija un skaidrs ieteikums: pirkt, kaulēties vai atteikties",
+          "Atskaite latviešu, angļu, vācu vai krievu valodā"
+        ]
+      },
+      {
+        "title": "Oficiālā dīlera dati",
+        "price": "no 14,99 €",
+        "unit": "par atskaiti",
+        "items": [
+          "Servisa ieraksti no ražotāja vai oficiālā dīlera sistēmas",
+          "Nobraukums servisa apmeklējumos",
+          "Ja ierakstu nav, kredīts atgriežas kontā automātiski",
+          "Pieejams noteiktām markām"
+        ]
+      }
+    ],
+    "landingPacksNote": "Cena par atskaiti atkarīga no apjoma. Precīzu cenrādi nosūtām 1 darba dienas laikā.",
+    "landingPacksCta": "Saņemt cenu piedāvājumu",
+    "landingStepsHeading": "Kā tas strādā",
+    "landingSteps": [
+      {
+        "title": "Piesakieties",
+        "body": "Aizpildiet formu, saņemiet piedāvājumu un ielūgumu partnera kontam."
+      },
+      {
+        "title": "Iegādājieties kredītus",
+        "body": "Rēķins uzņēmumam vai karte kontā; kredīti pieejami pēc apmaksas."
+      },
+      {
+        "title": "Pasūtiet atskaites",
+        "body": "Pa vienai vai sarakstā (Excel). Rezultāts e-pastā un kontā."
+      }
+    ],
+    "landingFaqHeading": "Biežāk uzdotie jautājumi",
+    "landingFaq": [
+      {
+        "q": "Kam paredzēts PROVIN Business?",
+        "a": "Auto tirdzniecības uzņēmumiem, līzinga un komisijas tirgotājiem, kas pērk lietotus auto Latvijā vai ES. Pakalpojums pieejams tikai juridiskām personām un saimnieciskās darbības veicējiem."
+      },
+      {
+        "q": "Kā notiek norēķini?",
+        "a": "Jūs iegādājaties kredītus pēc rēķina vai ar karti kontā. Vienas atskaites pasūtījums izmanto vienu kredītu. Rēķins ir uzņēmumam ar visiem rekvizītiem."
+      },
+      {
+        "q": "Cik ilgi derīgi kredīti?",
+        "a": "12 mēnešus no iegādes."
+      },
+      {
+        "q": "Kas notiek, ja dīlera dati nav pieejami?",
+        "a": "Ja oficiālajā sistēmā par šo VIN nav neviena ieraksta, kredīts automātiski atgriežas jūsu kontā."
+      },
+      {
+        "q": "Cik ātri saņemšu atskaiti?",
+        "a": "24-72 stundu laikā darba dienās. Steidzamiem pasūtījumiem termiņu un cenu saskaņojam atsevišķi."
+      },
+      {
+        "q": "Vai varu pasūtīt vairākus auto uzreiz?",
+        "a": "Jā, augšupielādējot sarakstu (Excel) ar VIN kodiem."
+      },
+      {
+        "q": "Vai drīkstu atskaiti parādīt savam klientam?",
+        "a": "Jā, konkrētā auto darījuma ietvaros. Atskaiti nedrīkst publicēt atklāti vai pārdot atsevišķi. Sīkāk: Partneru sadarbības noteikumi."
+      },
+      {
+        "q": "Kādās valodās ir atskaite?",
+        "a": "Latviešu, angļu, vācu vai krievu valodā; valodu izvēlaties pasūtot."
+      },
+      {
+        "q": "Vai rēķinā ir PVN?",
+        "a": "Latvijas uzņēmumiem PVN netiek piemērots. Citu ES valstu PVN maksātājiem rēķinu izrakstām ar reverso maksāšanu."
+      }
+    ],
+    "landingTermsLink": "Partneru sadarbības noteikumi"
   }
 }

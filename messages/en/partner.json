@@ -368,6 +368,90 @@
     "metaAccountTitle": "PROVIN for partners",
     "registerTermsConsent": "I accept the <terms>Partner Terms</terms> and the data processing addendum.",
     "registerTermsRequired": "Please accept the Partner Terms.",
-    "partnerTermsLink": "Partner terms"
+    "partnerTermsLink": "Partner terms",
+    "landingPacksHeading": "Services and prices",
+    "landingLegalOnly": "Available only to businesses and self-employed persons.",
+    "landingPacks": [
+      {
+        "title": "PROVIN Business",
+        "price": "from €69.99",
+        "unit": "per report",
+        "items": [
+          "Multi-source history: carVertical, autoDNA, country-of-origin registers",
+          "Mileage inconsistency check and accident history",
+          "Listing and technical risk analysis for the specific model",
+          "Consultation and a clear recommendation: buy, negotiate or walk away",
+          "Report in Latvian, English, German or Russian"
+        ]
+      },
+      {
+        "title": "Official dealer data",
+        "price": "from €14.99",
+        "unit": "per report",
+        "items": [
+          "Service records from the manufacturer or official dealer system",
+          "Mileage at service visits",
+          "No records: the credit returns to your account automatically",
+          "Available for selected makes"
+        ]
+      }
+    ],
+    "landingPacksNote": "The price per report depends on volume. We send the exact price list within 1 business day.",
+    "landingPacksCta": "Request a quote",
+    "landingStepsHeading": "How it works",
+    "landingSteps": [
+      {
+        "title": "Apply",
+        "body": "Fill in the form, receive an offer and an invitation to the partner account."
+      },
+      {
+        "title": "Buy credits",
+        "body": "Company invoice or card in the account; credits are available after payment."
+      },
+      {
+        "title": "Order reports",
+        "body": "One by one or as a list (Excel). Results by e-mail and in the account."
+      }
+    ],
+    "landingFaqHeading": "Frequently asked questions",
+    "landingFaq": [
+      {
+        "q": "Who is PROVIN Business for?",
+        "a": "Car dealers, leasing and consignment traders buying used cars in Latvia or the EU. The service is available only to businesses and self-employed persons."
+      },
+      {
+        "q": "How does billing work?",
+        "a": "You buy credits against an invoice or by card in the account. One report order uses one credit. Invoices are issued to your company with full details."
+      },
+      {
+        "q": "How long are credits valid?",
+        "a": "12 months from purchase."
+      },
+      {
+        "q": "What if dealer data is not available?",
+        "a": "If the official system holds no record for the VIN, the credit returns to your account automatically."
+      },
+      {
+        "q": "How fast will I get the report?",
+        "a": "Within 24-72 hours on working days. Urgent orders are agreed separately (time and price)."
+      },
+      {
+        "q": "Can I order several cars at once?",
+        "a": "Yes, by uploading a list (Excel) of VIN codes."
+      },
+      {
+        "q": "May I show the report to my customer?",
+        "a": "Yes, within the deal for that specific car. The report may not be published openly or sold separately. Details: Partner Terms."
+      },
+      {
+        "q": "In which languages is the report?",
+        "a": "Latvian, English, German or Russian; you choose when ordering."
+      },
+      {
+        "q": "Is VAT charged?",
+        "a": "No VAT is charged to Latvian companies. VAT-registered businesses in other EU countries are invoiced under the reverse charge."
+      }
+    ],
+    "landingTermsLink": "Partner Terms"
   }
 }
