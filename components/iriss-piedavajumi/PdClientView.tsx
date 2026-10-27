@@ -91,7 +91,8 @@ export function PdClientView({
         <section className={irissOfferPublicCardClass(hasPhotos ? "" : "mt-4")}>
           <p className="text-[32px] font-bold tracking-[-0.02em]">{view.price}</p>
           <p className="mt-1.5 text-[12px] text-[#52525b]">
-            {IRISS_OFFER_PUBLIC_LABELS.total} · piedāvājums sagatavots personīgi jums
+            {IRISS_OFFER_PUBLIC_LABELS.total}
+            {view.vatLabel ? ` · ${view.vatLabel}` : ""} · piedāvājums sagatavots personīgi jums
             {view.validUntilLabel ? ` · ${IRISS_OFFER_PUBLIC_LABELS.valid} līdz ${view.validUntilLabel}` : ""}
           </p>
         </section>

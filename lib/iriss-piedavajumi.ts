@@ -23,6 +23,9 @@ import {
   irissPdNumberLabel,
   isIrissPdSource,
   isIrissPdStatus,
+  isIrissPdVatMode,
+  IRISS_PD_VAT_LV,
+  type IrissPdVatMode,
   isSafeIrissPdId,
   isSafeIrissPdToken,
   type IrissPdBlockId,
@@ -187,6 +190,8 @@ export function normalizeIrissPiedavajums(raw: unknown): IrissPiedavajums | null
     purchasePrice: clean(o.purchasePrice, 80),
     logisticsCost: clean(o.logisticsCost, 80),
     prepCost: clean(o.prepCost, 80),
+    commission: clean(o.commission, 80),
+    vatMode: isIrissPdVatMode(o.vatMode) ? o.vatMode : "unknown",
     internalNotes: text(o.internalNotes),
     vehicle: normalizeVehicle(o.vehicle),
     photos,
@@ -244,6 +249,8 @@ export type IrissPdPatch = Partial<{
   purchasePrice: string;
   logisticsCost: string;
   prepCost: string;
+  commission: string;
+  vatMode: IrissPdVatMode;
   internalNotes: string;
   photos: IrissPdPhoto[];
   visibility: IrissPdVisibility;
@@ -313,6 +320,7 @@ export function applyIrissPdPatch(
   for (const [k, l] of [
     ["logisticsCost", "Loģistikas izmaksas"],
     ["prepCost", "Sagatavošanas izmaksas"],
+    ["commission", "IRISS komisija"],
   ] as const) {
     const raw = patch[k];
     if (typeof raw !== "string") continue;
@@ -321,6 +329,10 @@ export function applyIrissPdPatch(
       next[k] = v;
       log.push(`${l} mainītas`);
     }
+  }
+  if (isIrissPdVatMode(patch.vatMode) && patch.vatMode !== rec.vatMode) {
+    next.vatMode = patch.vatMode;
+    log.push(`PVN: ${IRISS_PD_VAT_LV[patch.vatMode]}`);
   }
   if (patch.content && typeof patch.content === "object") {
     const c = normalizeIrissPdContent({ ...rec.content, ...patch.content });
@@ -583,6 +595,19 @@ export function formatIrissPdPrice(raw: string): string {
   return n > 0 ? formatIrissEurWhole(n) : t;
 }
 
+/** Cenu bloka lauks: tikai cipari (burti un «ap 1000» neiziet cauri), bez nullēm sākumā. */
+export function irissPdEurDigits(raw: string): string {
+  return raw.replace(/\D/g, "").replace(/^0+(?=\d)/, "").slice(0, 9);
+}
+
+/** Klientam kopā = iepirkums + loģistika + sagatavošana + komisija (tukšie = 0). 0, ja neviens nav aizpildīts. */
+export function irissPdTotalFromParts(...parts: string[]): number {
+  return parts.reduce((sum, x) => {
+    const n = /\d/.test(x) ? parsePriceLike(x) : 0;
+    return sum + (Number.isFinite(n) && n > 0 ? n : 0);
+  }, 0);
+}
+
 /** Marža = gala cena - iepirkuma cena - izmaksas (loģistika, sagatavošana; tukšās neskaita). Tikai, ja cena un iepirkums ir skaitļi. */
 export function irissPdMargin(price: string, purchase: string, ...costs: string[]): string {
   if (!/\d/.test(price) || !/\d/.test(purchase)) return "";
@@ -619,6 +644,8 @@ export type IrissPdPublicView = {
   state: "open" | "approved" | "closed";
   title: string;
   price: string;
+  /** PVN režīms pie cenas («PVN atskaitāms» / «Ar PVN (marža)»); tukšs, ja nav zināms. */
+  vatLabel: string;
   validUntilLabel: string;
   facts: IrissPdPublicFact[];
   /** Bilžu skaits (bildes tikai caur `/p/d/<token>/foto/<n>`). */
@@ -739,6 +766,7 @@ export function buildIrissPdPublicView(rec: IrissPiedavajums, mode: IrissPdViewM
     state,
     title: rec.vehicle.title,
     price: formatIrissPdPrice(rec.price),
+    vatLabel: rec.vatMode === "unknown" ? "" : IRISS_PD_VAT_LV[rec.vatMode],
     validUntilLabel: rec.validUntil ? formatOfferValidUntilLv(rec.validUntil) : "",
     facts: FACT_LABELS.flatMap(([k, label]) => {
       const value = rec.vehicle[k] ? factValue(k, rec.vehicle[k]) : "";

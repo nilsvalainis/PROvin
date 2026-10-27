@@ -38,6 +38,19 @@ export const IRISS_PD_TAKEN_STATUSES: readonly IrissPdStatus[] = ["requested", "
 /** Statusi, kuros termiņš var beigties automātiski. */
 export const IRISS_PD_OPEN_STATUSES: readonly IrissPdStatus[] = ["requested", "draft", "sent"];
 
+export const IRISS_PD_VAT_MODES = ["deductible", "margin", "unknown"] as const;
+export type IrissPdVatMode = (typeof IRISS_PD_VAT_MODES)[number];
+
+export const IRISS_PD_VAT_LV: Record<IrissPdVatMode, string> = {
+  deductible: "PVN atskaitāms",
+  margin: "Ar PVN (marža)",
+  unknown: "Nav zināms",
+};
+
+export function isIrissPdVatMode(v: unknown): v is IrissPdVatMode {
+  return typeof v === "string" && (IRISS_PD_VAT_MODES as readonly string[]).includes(v);
+}
+
 export const IRISS_PD_SOURCES = ["autoparks", "logistics", "auto1", "autobid", "openlane", "mobilede", "manual"] as const;
 export type IrissPdSource = (typeof IRISS_PD_SOURCES)[number];
 
@@ -186,6 +199,10 @@ export type IrissPiedavajums = {
   /** j75: loģistikas un sagatavošanas izmaksas (iekšēji, maržai). */
   logisticsCost: string;
   prepCost: string;
+  /** Nils 27.10 cenu bloks: IRISS komisija (EUR, tikai cipari). Klientam kopā = iepirkums + loģistika + sagatavošana + komisija. */
+  commission: string;
+  /** PVN režīms: atskaitāms / ar PVN (marža) / nav zināms. Klients redz tikai režīma nosaukumu pie cenas. */
+  vatMode: IrissPdVatMode;
   internalNotes: string;
   /* ---- Klients redz ---- */
   vehicle: IrissPdVehicle;
@@ -295,6 +312,8 @@ export function emptyIrissPiedavajums(id: string, nowIso: string): IrissPiedavaj
     purchasePrice: "",
     logisticsCost: "",
     prepCost: "",
+    commission: "",
+    vatMode: "unknown",
     internalNotes: "",
     vehicle: emptyIrissPdVehicle(),
     photos: [],

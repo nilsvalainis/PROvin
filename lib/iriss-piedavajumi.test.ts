@@ -16,8 +16,11 @@ import {
   irissPdBadgeCount,
   irissPdCarPicks,
   irissPdClientOptions,
+  irissPdEurDigits,
   irissPdMargin,
   irissPdRowEffectiveStatus,
+  irissPdTotalFromParts,
+  buildIrissPdPublicView as buildPublicView,
   irissPdSendBlockers,
   irissPdToListRow,
   normalizeIrissPiedavajums,
@@ -138,6 +141,37 @@ describe("Piedāvājumi: dzīves cikls", () => {
     expect(n.client).toEqual(base.client);
     expect(n.auto1).toEqual(AUTO1);
     expect(n.history).toEqual([{ at: AT, by: "Nils", text: "Izveidots uz PD-0217 bāzes" }]);
+  });
+});
+
+describe("Cenu bloks ar PVN (Nils 27.10)", () => {
+  it("tikai cipari: burti un «ap 1000» neiziet cauri", () => {
+    expect(irissPdEurDigits("ap 1 000 €")).toBe("1000");
+    expect(irissPdEurDigits("18 400")).toBe("18400");
+    expect(irissPdEurDigits("abc")).toBe("");
+    expect(irissPdEurDigits("007")).toBe("7");
+  });
+
+  it("Klientam kopā = izsole + piegāde + sagatavošana + komisija", () => {
+    expect(irissPdTotalFromParts("18400", "1150", "", "900")).toBe(20450);
+    expect(irissPdTotalFromParts("", "", "", "")).toBe(0);
+  });
+
+  it("PVN režīms un komisija saglabājas, vēsturē ieraksts; klients redz tikai režīma nosaukumu", () => {
+    const r = applyIrissPdPatch(rec(), { vatMode: "margin", commission: "900" }, ctx);
+    expect(r.ok && r.record.vatMode).toBe("margin");
+    expect(r.ok && r.record.commission).toBe("900");
+    expect(r.ok && r.record.history.map((h) => h.text)).toEqual(expect.arrayContaining(["PVN: Ar PVN (marža)", "IRISS komisija mainītas"]));
+    const view = buildPublicView({ ...rec({ price: "20450" }), vatMode: "deductible" }, "link", NOW);
+    expect(view.vatLabel).toBe("PVN atskaitāms");
+    expect(buildPublicView(rec({ price: "20450" }), "link", NOW).vatLabel).toBe("");
+    expect(JSON.stringify(view)).not.toContain("900");
+  });
+
+  it("vecs ieraksts bez lauka - PVN «Nav zināms», komisija tukša", () => {
+    const r = normalizeIrissPiedavajums({ id: ID });
+    expect(r?.vatMode).toBe("unknown");
+    expect(r?.commission).toBe("");
   });
 });
 
