@@ -28,16 +28,17 @@ export type V2ServissView = {
   canConfirm: boolean;
 };
 
-export type ServissScanTarget = "number_check" | "diag" | "invoice" | "invoice_page";
+export type ServissScanTarget = "number_check" | "diag" | "invoice" | "invoice_page" | "problem_photo";
 
 export const SERVISS_SCAN_TITLE: Record<Exclude<ServissScanTarget, "invoice_page">, string> = {
+  problem_photo: "Problēmas foto",
   number_check: "Numuru salīdzināšanas akts",
   diag: "CSDD diagnostika",
   invoice: "Servisa rēķins",
 };
 
 export function isServissScanTarget(v: unknown): v is ServissScanTarget {
-  return v === "number_check" || v === "diag" || v === "invoice" || v === "invoice_page";
+  return v === "number_check" || v === "diag" || v === "invoice" || v === "invoice_page" || v === "problem_photo";
 }
 
 function fileView(files: ReadonlyMap<string, AutoparksFile>, id: string): V2ServissFile | null {
@@ -57,9 +58,10 @@ export function servissFileIds(v2: AutoparksCarV2): Set<string> {
   for (const id of v2.numberCheck.extraFileIds) ids.add(id);
   for (const id of v2.service.diagFileIds) ids.add(id);
   for (const inv of v2.service.invoices) {
-    ids.add(inv.fileId);
+    if (inv.fileId) ids.add(inv.fileId);
     for (const id of inv.extraFileIds) ids.add(id);
   }
+  for (const p of v2.service.problems) for (const id of p.photoIds) ids.add(id);
   return ids;
 }
 
@@ -116,7 +118,7 @@ export function applyProblemPatch(
   let idx = patch.id ? out.findIndex((p) => p.id === patch.id) : -1;
   if (idx < 0) {
     if (patch.remove || !patch.text?.trim()) return { problems: out, history: hist };
-    out.push({ id: ctx.newId(), text: "", fixedByService: false, confirmedByUs: false, confirmedBy: "", at: ctx.now });
+    out.push({ id: ctx.newId(), text: "", fixedByService: false, confirmedByUs: false, confirmedBy: "", at: ctx.now, photoIds: [] });
     idx = out.length - 1;
   }
   const p = out[idx]!;

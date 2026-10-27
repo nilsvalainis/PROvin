@@ -22,7 +22,7 @@ export async function readServiceInvoiceAmountWithAi(carId: string, invoiceId: s
     if (got && got.car.id === carId) parts.push({ inlineData: { mimeType: "application/pdf", data: got.bytes.toString("base64") } });
   }
   if (parts.length === 0) return "not_found";
-  parts.push({ text: "Nolasi šī servisa rēķina galīgo summu apmaksai ar PVN." });
+  parts.push({ text: "Nolasi šī servisa rēķina kopsummu bez PVN." });
   let ai;
   try {
     const raw = await aiGenerateJsonWithSchema({

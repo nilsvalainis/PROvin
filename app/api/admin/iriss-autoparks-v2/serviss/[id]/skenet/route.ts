@@ -1,6 +1,8 @@
 import { after } from "next/server";
 import { autoparksV2Json, requireAutoparksV2Api } from "@/lib/iriss-autoparks-v2-access";
+import { sendAdminPush } from "@/lib/admin-push";
 import { readServiceInvoiceAmountWithAi } from "@/lib/iriss-autoparks-v2-ai-invoice";
+import { servissPushMessage, servissScanAddition } from "@/lib/iriss-autoparks-v2-serviss-notify";
 import { isServissScanTarget } from "@/lib/iriss-autoparks-v2-serviss";
 import { getAutoparksV2Serviss, scanAutoparksV2Serviss } from "@/lib/iriss-autoparks-v2-serviss-store";
 
@@ -33,11 +35,13 @@ export async function POST(req: Request, ctx: Ctx) {
   if (files.reduce((s, f) => s + f.size, 0) > MAX_BYTES) return autoparksV2Json({ error: "too_large" }, 413);
   if (files.some((f) => !f.type.startsWith("image/"))) return autoparksV2Json({ error: "not_image" }, 415);
   const invoiceId = typeof form.get("invoiceId") === "string" ? String(form.get("invoiceId")) : undefined;
+  const problemId = typeof form.get("problemId") === "string" ? String(form.get("problemId")) : undefined;
   try {
     const res = await scanAutoparksV2Serviss({
       carId: id,
       target,
       invoiceId,
+      problemId,
       images: await Promise.all(files.map(async (f) => Buffer.from(await f.arrayBuffer()))),
       actor: { id: gate.actorId, name: gate.actorName },
     });
@@ -45,6 +49,9 @@ export async function POST(req: Request, ctx: Ctx) {
     // F10: rēķina summu AI nolasa pēc atbildes (ieteikums; apstiprina cilvēks ar Summām).
     const aiInvoice = target === "invoice" || target === "invoice_page" ? res.invoiceId : undefined;
     if (aiInvoice) after(() => readServiceInvoiceAmountWithAi(id, aiInvoice).then(() => undefined).catch(() => undefined));
+    // Nils 27.10: paziņojums tikai Nilam, ja pievienoja kāds cits.
+    const push = servissPushMessage({ actorKind: gate.actor.kind, actorName: gate.actorName, carId: id, what: servissScanAddition(target) });
+    if (push) after(() => sendAdminPush(push).then(() => undefined).catch(() => undefined));
     return autoparksV2Json({ ok: true, invoiceId: res.invoiceId ?? null, serviss: await getAutoparksV2Serviss(id, gate.perms) });
   } catch {
     // Klients (bezsaistes rinda) saņem 503 un rāda "Vēlreiz"; lokālo kopiju dzēš tikai pēc 200.

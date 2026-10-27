@@ -82,6 +82,8 @@ export type V2Problem = {
   confirmedByUs: boolean;
   confirmedBy: string;
   at: string;
+  /** Foto pie problēmas (Nils 27.10: «reizēm vajag foto»). Autoparka failu id. */
+  photoIds: string[];
 };
 
 /** AI ieteikums no rēķina PDF (F10). Pašizmaksā nonāk tikai pēc apstiprināšanas (`amountEur`). */
@@ -223,6 +225,7 @@ function normalizeProblem(raw: unknown): V2Problem | null {
     confirmedByUs: raw.confirmedByUs === true,
     confirmedBy: str(raw.confirmedBy, 80),
     at: str(raw.at, 40),
+    photoIds: Array.isArray(raw.photoIds) ? raw.photoIds.filter((x): x is string => typeof x === "string" && x.length > 0).slice(0, 12) : [],
   };
 }
 

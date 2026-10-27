@@ -58,8 +58,8 @@ describe("Problēmas", () => {
   it("tukšu jaunu neizveido; dzēšana; skaitītājs 1 / 2", () => {
     expect(applyProblemPatch([], { text: "  " }, ctx(true)).problems).toEqual([]);
     const two = [
-      { id: "a", text: "a", fixedByService: true, confirmedByUs: true, confirmedBy: "", at: "" },
-      { id: "b", text: "b", fixedByService: true, confirmedByUs: false, confirmedBy: "", at: "" },
+      { id: "a", text: "a", fixedByService: true, confirmedByUs: true, confirmedBy: "", at: "", photoIds: [] },
+      { id: "b", text: "b", fixedByService: true, confirmedByUs: false, confirmedBy: "", at: "", photoIds: [] },
     ];
     expect(problemsDone(two)).toEqual({ done: 1, total: 2 });
     expect(applyProblemPatch(two, { id: "a", remove: true }, ctx(true)).problems.map((p) => p.id)).toEqual(["b"]);
