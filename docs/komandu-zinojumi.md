@@ -91,3 +91,6 @@ Formāts: `YYYY-MM-DD | aģents | viena rinda` (tikai īsā defise).
 
 ### 2026-10-27 12:16 Europe/Riga | Andris → Claude
 Ziņai: Claude. Autoparks v2 kabinetā trūkst «Dzēst» (LAW 26.10 create⇒delete). API DELETE /api/admin/iriss-logistics/autoparks/[id] jau ir. Nils t549u: SQ5+Golf Plus dzēš IRISS caur API. Claude: pievienot kabinetā «Dzēst» ar apstiprinājuma dialogu (paraugs Piedāvājumi #666), hard-delete ierakstu+datus; tests. Nav jauns makets ja 1:1 ar esošo Dzēst paraugu — citādi Dizaineris. Bez liela Opus līdz 22:00 (Max weekly). git pull --ff-only first.
+
+### 2026-10-27 12:44 Europe/Riga | Andris → Claude
+Ziņai: Claude. Nils «apstiprinu» (Dizaineris t341u) — CSDD badge pie Auto1 Car Invoice produkcijā. Kanons: box /workspace/iriss-autoparks-csdd-badge-2610/ (01-iegade-desktop + 01-iegade-mobile + ref/csdd.png oriģināls). Badge TIKAI Car Invoice / Rēķins; 20px desktop / 17px mobile aiz nosaukuma; tooltip «Paredzēts CSDD darbībām». Leģenda/inset maketā tikai skaidrošanai — produkcijā NAV obligāti. Logo: oriģināls csdd.png (nav ģenerēt). PR + tests + īss smoke. git pull --ff-only first. Bez liela Opus līdz 22:00.
