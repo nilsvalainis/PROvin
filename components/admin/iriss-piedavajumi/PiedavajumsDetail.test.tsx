@@ -48,7 +48,7 @@ const render = (r: IrissPiedavajums) => <PiedavajumsDetail initial={r} clientOpt
 describe("j75 Piedāvājuma redaktors (makets 01-redaktors)", () => {
   it("sadaļas maketa secībā, galvenē Kopēt saiti / Dzēst / Saglabāt", () => {
     const text = renderText(render(rec()));
-    const order = ["Kopēt saiti", "Dzēst", "Saglabāt", "Foto", "Pamatdati", "Aprīkojuma izcēlumi", "Kopsavilkums", "Novērtējums klientam", "Auto1 dati", "Cenas"];
+    const order = ["Kopēt saiti", "Dzēst", "Saglabāt", "Foto", "Pamatdati", "Aprīkojuma izcēlumi", "Kopsavilkums", "Novērtējums klientam", "Auto1 dati", "Klientam kopā"];
     const at = order.map((s) => text.indexOf(s));
     expect(at.every((i) => i >= 0)).toBe(true);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
@@ -107,5 +107,16 @@ describe("j75 klienta skats: Stāvoklis un Kopsavilkums no jaunajiem datiem", ()
     expect(text).toContain("Cenā nav iekļauts CSDD reģistrācija");
     expect(text).not.toContain("2 atslēgas");
     expect(text).not.toContain("Garantija 3 mēn.");
+  });
+});
+
+describe("Cenu bloks (Nils 27.10)", () => {
+  it("PVN izvēle 3 čipos un Klientam kopā = daļu summa", () => {
+    const r = rec({ purchasePrice: "18400", logisticsCost: "1150", commission: "900", price: "20450", vatMode: "deductible" });
+    const html = renderHtml(render(r));
+    const text = renderText(render(r));
+    for (const t of ["PVN atskaitāms", "Ar PVN (marža)", "Nav zināms", "IRISS komisija", "Klientam kopā"]) expect(text).toContain(t);
+    expect(html).toMatch(/aria-pressed="true"[^>]*>PVN atskaitāms</);
+    expect(text).toMatch(/20.450 €/);
   });
 });

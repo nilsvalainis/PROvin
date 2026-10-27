@@ -1601,3 +1601,78 @@ button.pd-lv {
     grid-template-columns: 1fr;
   }
 }
+
+/* Cenu bloks (Nils 27.10): PVN izvēle, skaitliskas rindas, liels «Klientam kopā» */
+.pd-vat {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 12px;
+}
+.pd-vat-chip {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--iriss-line-strong, #d1d1d6);
+  background: var(--iriss-surface, #fff);
+  color: var(--iriss-ink-2, #4a4a4f);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pd-vat-chip[aria-pressed="true"] {
+  border-color: var(--iriss-graphite, #1b1c20);
+  background: var(--iriss-graphite, #1b1c20);
+  color: var(--iriss-on-graphite, #f3f2ef);
+}
+.pd-pr {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pd-pr-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.pd-pr-in {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pd-pr-in input {
+  width: 140px;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--iriss-line-strong, #d1d1d6);
+  border-radius: 12px;
+  font: inherit;
+  font-size: 15px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.pd-pr-in i {
+  font-style: normal;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.pd-pr-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line2);
+  font-size: 14px;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.pd-pr-total b {
+  color: var(--iriss-ink, #1c1c1e);
+  font-size: 28px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}

@@ -13,7 +13,9 @@ import {
   filterIrissPdClientOptions,
   formatIrissPdPrice,
   irissPdAvailableActions,
+  irissPdEurDigits,
   irissPdMargin,
+  irissPdTotalFromParts,
   irissPdSendBlockers,
   isIrissPdEditable,
   photoKey,
@@ -31,6 +33,9 @@ import {
   IRISS_PD_MAX_HIGHLIGHTS,
   IRISS_PD_SOURCE_LV,
   IRISS_PD_STATUS_LV,
+  IRISS_PD_VAT_LV,
+  IRISS_PD_VAT_MODES,
+  type IrissPdVatMode,
   irissPdNumberLabel,
   irissPdPublicPath,
   type IrissPdCheckItem,
@@ -82,6 +87,8 @@ type Draft = {
   purchasePrice: string;
   logisticsCost: string;
   prepCost: string;
+  commission: string;
+  vatMode: IrissPdVatMode;
   internalNotes: string;
   photos: IrissPdPhoto[];
   visibility: IrissPdVisibility;
@@ -97,6 +104,8 @@ function draftOf(r: IrissPiedavajums): Draft {
     purchasePrice: r.purchasePrice,
     logisticsCost: r.logisticsCost,
     prepCost: r.prepCost,
+    commission: r.commission,
+    vatMode: r.vatMode,
     internalNotes: r.internalNotes,
     photos: [...r.photos],
     visibility: JSON.parse(JSON.stringify(r.visibility)) as IrissPdVisibility,
@@ -157,6 +166,11 @@ function ClientPicker({
       ) : null}
     </div>
   );
+}
+
+/** Cenu lauka rādījums «18 400» (bez €, jo € ir aiz lauka). */
+function eurGrouped(v: string): string {
+  return v.trim() ? formatIrissPdPrice(v).replace(/\s*€$/, "") : "";
 }
 
 function Card({ title, sub, on, onToggle, disabled, id, children }: { title: string; sub: string; on?: boolean; onToggle?: () => void; disabled?: boolean; id?: string; children: ReactNode }) {
@@ -271,6 +285,15 @@ export function PiedavajumsDetail({
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) => setD((p) => ({ ...p, [k]: v }));
   const setV = (k: keyof IrissPdVehicle, v: string) => setD((p) => ({ ...p, vehicle: { ...p.vehicle, [k]: v } }));
   const setC = (patch: Partial<IrissPdContent>) => setD((p) => ({ ...p, content: { ...p.content, ...patch } }));
+  /** Cenu bloks (Nils 27.10): tikai cipari; Klientam kopā = daļu summa, ja kāda daļa ievadīta. */
+  type PricePart = "purchasePrice" | "logisticsCost" | "prepCost" | "commission";
+  const setPart = (k: PricePart, raw: string) =>
+    setD((p) => {
+      const next = { ...p, [k]: irissPdEurDigits(raw) };
+      const total = irissPdTotalFromParts(next.purchasePrice, next.logisticsCost, next.prepCost, next.commission);
+      return total > 0 ? { ...next, price: String(total) } : next;
+    });
+  const partsTotal = irissPdTotalFromParts(d.purchasePrice, d.logisticsCost, d.prepCost, d.commission);
 
   function applyRecord(next: IrissPiedavajums) {
     setRec(next);
@@ -492,7 +515,15 @@ export function PiedavajumsDetail({
             ))}
             <div className="pd-fld">
               <label htmlFor="pd-price">Cena klientam</label>
-              <input id="pd-price" value={d.price} placeholder="€" disabled={!editable} inputMode="decimal" onChange={(e) => set("price", e.target.value)} />
+              <input
+                id="pd-price"
+                value={partsTotal > 0 ? formatIrissPdPrice(d.price) : d.price}
+                placeholder="€"
+                disabled={!editable || partsTotal > 0}
+                title={partsTotal > 0 ? "Aprēķināta cenu blokā" : undefined}
+                inputMode="numeric"
+                onChange={(e) => set("price", irissPdEurDigits(e.target.value))}
+              />
             </div>
             <div className="pd-fld w2">
               <label htmlFor="pd-title">Modelis</label>
@@ -663,26 +694,47 @@ export function PiedavajumsDetail({
           </Card>
         ) : null}
 
-        <Card title="Cenas" sub="Iekšēji · nerāda klientam">
-          <div className="pde-grid">
+        <Card title="Cena klientam" sub="Klients redz tikai kopsummu un PVN režīmu">
+          <div className="pd-vat" role="group" aria-label="PVN">
+            {IRISS_PD_VAT_MODES.map((m) => (
+              <button key={m} type="button" className="pd-vat-chip" aria-pressed={d.vatMode === m} disabled={!editable} onClick={() => set("vatMode", m)}>
+                {IRISS_PD_VAT_LV[m]}
+              </button>
+            ))}
+          </div>
+          <div className="pd-pr">
+            {(
+              [
+                ["purchasePrice", "Auto cena (izsole)"],
+                ["logisticsCost", "Piegāde līdz Rīgai"],
+                ["prepCost", "Sagatavošana"],
+                ["commission", "IRISS komisija"],
+              ] as const
+            ).map(([k, label]) => (
+              <label key={k} className="pd-pr-row">
+                <span>{label}</span>
+                <span className="pd-pr-in">
+                  <input value={eurGrouped(d[k])} placeholder="0" disabled={!editable} inputMode="numeric" onChange={(e) => setPart(k, e.target.value)} />
+                  <i aria-hidden>€</i>
+                </span>
+              </label>
+            ))}
+          </div>
+          <div className="pd-pr-total">
+            <span>Klientam kopā</span>
+            {partsTotal > 0 ? (
+              <b>{formatIrissPdPrice(d.price)}</b>
+            ) : (
+              <span className="pd-pr-in">
+                <input aria-label="Klientam kopā" value={eurGrouped(d.price)} placeholder="0" disabled={!editable} inputMode="numeric" onChange={(e) => set("price", irissPdEurDigits(e.target.value))} />
+                <i aria-hidden>€</i>
+              </span>
+            )}
+          </div>
+          <p className="pd-hint">Tikai cipari. Kopsumma = visu rindu summa; ja rindas tukšas, kopsummu ievadi pats.</p>
+          <div className="pde-grid" style={{ marginTop: 12 }}>
             <div className="pd-fld">
-              <label htmlFor="pd-purchase">Iepirkuma cena</label>
-              <input id="pd-purchase" value={d.purchasePrice} placeholder="€" disabled={!editable} inputMode="decimal" onChange={(e) => set("purchasePrice", e.target.value)} />
-            </div>
-            <div className="pd-fld">
-              <label htmlFor="pd-logistics">Loģistika</label>
-              <input id="pd-logistics" value={d.logisticsCost} placeholder="€" disabled={!editable} inputMode="decimal" onChange={(e) => set("logisticsCost", e.target.value)} />
-            </div>
-            <div className="pd-fld">
-              <label htmlFor="pd-prep">Sagatavošana</label>
-              <input id="pd-prep" value={d.prepCost} placeholder="€" disabled={!editable} inputMode="decimal" onChange={(e) => set("prepCost", e.target.value)} />
-            </div>
-            <div className="pd-fld">
-              <label htmlFor="pd-price2">Cena klientam</label>
-              <input id="pd-price2" value={d.price} placeholder="€" disabled={!editable} inputMode="decimal" onChange={(e) => set("price", e.target.value)} />
-            </div>
-            <div className="pd-fld">
-              <span className="lbl">Marža</span>
+              <span className="lbl">Marža (iekšēji)</span>
               <div className="ro">{margin || "-"}</div>
             </div>
             <div className="pd-fld w3">
