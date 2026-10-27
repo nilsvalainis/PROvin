@@ -53,17 +53,6 @@ function StrokeIcon({
 }
 
 /** Google Maps pin no v11d maketa (ne ikonas-v2). */
-function MapsPin({ size, className }: { size: number; className?: string }): ReactElement {
-  return (
-    <svg viewBox="0 0 24 24" width={size} height={size} className={className} aria-hidden>
-      <path d="M12 22s-7-6.6-7-12.2A7 7 0 0 1 19 9.8C19 15.4 12 22 12 22z" fill="#ea4335" />
-      <path d="M12 22s-7-6.6-7-12.2A7 7 0 0 1 12 2.8z" fill="#4285f4" opacity=".9" />
-      <path d="M5.2 8.3A7 7 0 0 1 12 2.8v4.5z" fill="#fbbc04" />
-      <circle cx="12" cy="9.6" r="2.6" fill="#fff" />
-    </svg>
-  );
-}
-
 /** VIN: stūri + vidus līnija (v11, ne ikonas-v2). */
 function VinScan({ size, className }: { size: number; className?: string }): ReactElement {
   return (
@@ -132,7 +121,10 @@ function SetIcon({ size, className }: { size: number; className?: string }): Rea
 
 /** size: px (atribūts, ne Tailwind), lai izmērs ir drošs jebkurā lapā. */
 export function MenuIcon({ name, className, size = 40 }: { name: string; className?: string; size?: number }): ReactElement {
-  if (name === "pin") return <MapsPin size={size} className={className} />;
+  // Īstā Google Maps ikona (2020), nevis pašzīmēta adata (Nils 27.10).
+  if (name === "pin") {
+    return <img src="/admin/menu/google-maps.svg" alt="" className={className} width={size} height={size} draggable={false} />;
+  }
   if (name === "csdd") {
     return <img src="/admin/menu/csdd.png" alt="" className={className} width={size} height={size} draggable={false} />;
   }

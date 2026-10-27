@@ -31,6 +31,11 @@ export type MenuCatalogItem = {
   hideHead?: boolean;
   /** Skaits, ko rāda nozīmītē uz ikonas. */
   badge?: string;
+  /**
+   * Ja dots: balta flīze ar šīs krāsas līniju ikonu (IRISS sākums, variants A - Nils 27.10),
+   * lai blakus īstajiem logo (Google Maps, Dzintarzeme, CSDD) visas ikonas ir viena ģimene.
+   */
+  ink?: string;
 };
 
 export type MenuLayoutEntry = { id: string; size: MenuSize };

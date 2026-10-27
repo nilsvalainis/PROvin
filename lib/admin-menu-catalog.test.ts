@@ -29,11 +29,15 @@ describe("IRISS katalogs pēc tiesībām", () => {
       "radars",
     ]);
     expect(cat.find((c) => c.id === "kravas")?.title).toBe("Kravas");
-    expect(cat.find((c) => c.id === "sludinajumi")?.tone).toContain("#4a95f5");
-    expect(cat.find((c) => c.id === "radars")?.tone).toContain("#8a6cf0");
-    expect(cat.find((c) => c.id === "pasutijumi")?.tone).toContain("#5d616b");
-    expect(cat.find((c) => c.id === "vin")?.tone).toContain("#48484c");
+    // Variants A (Nils 27.10): īstie logo paliek, pārējās baltas flīzes ar krāsainu līniju.
+    for (const id of ["sludinajumi", "radars", "pasutijumi", "vin"]) {
+      expect(cat.find((c) => c.id === id)?.tone).toBe("#ffffff");
+    }
+    expect(cat.find((c) => c.id === "pasutijumi")?.ink).toBe("#f26522");
+    expect(cat.find((c) => c.id === "sludinajumi")?.ink).toBe("#1a73e8");
     expect(cat.find((c) => c.id === "pavadzimes")?.tone).toBe("#0b6232");
+    expect(cat.find((c) => c.id === "pavadzimes")?.ink).toBeUndefined();
+    expect(cat.find((c) => c.id === "logistika")?.ink).toBeUndefined();
   });
 });
 
