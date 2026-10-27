@@ -96,16 +96,19 @@ export function HomeGoogleReviewsFeatured({
         >
           ←
         </button>
+        {/* Punkti dublē ←/→: ekrānlasītājam un tastatūrai paslēpti (aria-hidden + tabIndex -1), pirkstam
+            neredzama 24 px zona (::before), punkts paliek 6 px un izkārtojums nemainās. */}
         <div className="flex h-1.5 gap-2" aria-hidden>
           {reviews.map((r, i) => (
             <button
               key={r.id}
               type="button"
+              tabIndex={-1}
               onClick={() => {
                 setPaused(true);
                 setIndex(i);
               }}
-              className={`h-1.5 w-1.5 rounded-full transition ${
+              className={`relative h-1.5 w-1.5 rounded-full transition before:absolute before:-inset-[9px] before:content-[''] ${
                 i === index ? "bg-provin-accent" : "bg-white/25 hover:bg-white/45"
               }`}
               aria-label={`Atsauksme ${i + 1}`}
@@ -136,7 +139,7 @@ export function HomeGoogleReviewsFeatured({
           </cite>
           <div className="flex min-h-[1rem] items-center justify-center gap-2 text-[11px] text-white/35 lg:justify-start">
             <StarRow count={current.rating} />
-            <span>{formatGoogleReviewRelativeDate(locale, current.relative)}</span>
+            <span suppressHydrationWarning>{formatGoogleReviewRelativeDate(locale, current.relative)}</span>
           </div>
           <a
             href={profileUrl}
