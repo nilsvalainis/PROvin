@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { B2bPartnerDialog } from "@/components/b2b/B2bPartnerDialog";
+import { B2bTurnstile, partnerLoginNeedsTurnstile } from "@/components/b2b/B2bTurnstile";
 import { Link } from "@/i18n/navigation";
 import {
   b2bPartnerLeadFieldError,
@@ -39,6 +40,10 @@ export function B2bPartnerQuoteDialog({ open, onClose }: { open: boolean; onClos
   const [formError, setFormError] = useState("");
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  /** Turnstile pret botiem (audits P9); bez NEXT_PUBLIC_TURNSTILE_SITE_KEY logrīks un pārbaude izslēgti. */
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileReset, setTurnstileReset] = useState(0);
+  const onTurnstileToken = useCallback((token: string | null) => setTurnstileToken(token), []);
 
   const close = () => {
     onClose();
@@ -73,13 +78,17 @@ export function B2bPartnerQuoteDialog({ open, onClose }: { open: boolean; onClos
       setFieldError(invalid);
       return;
     }
+    if (partnerLoginNeedsTurnstile() && !turnstileToken) {
+      setFormError(t("quoteErrNetwork"));
+      return;
+    }
     setBusy(true);
     setFormError("");
     try {
       const res = await fetch("/api/partner/lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...input, locale }),
+        body: JSON.stringify({ ...input, locale, ...(turnstileToken ? { turnstileToken } : {}) }),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; field?: B2bPartnerLeadField };
       if (res.status === 400 && data.field && data.field in FIELD_ERROR_KEY) {
@@ -88,6 +97,8 @@ export function B2bPartnerQuoteDialog({ open, onClose }: { open: boolean; onClos
       }
       if (!res.ok || !data.ok) {
         setFormError(t("quoteErrNetwork"));
+        setTurnstileToken(null);
+        setTurnstileReset((n) => n + 1);
         return;
       }
       setDone(true);
@@ -196,6 +207,7 @@ export function B2bPartnerQuoteDialog({ open, onClose }: { open: boolean; onClos
             </label>
             {errorFor("consent")}
           </div>
+          <B2bTurnstile onToken={onTurnstileToken} resetKey={turnstileReset} ariaLabel={t("loginCaptchaAria")} />
           {formError ? <p className={styles.inlineFieldError}>{formError}</p> : null}
           <button type="submit" className={styles.liquidCta} disabled={busy}>
             <span className={styles.liquidCtaShimmer} aria-hidden />

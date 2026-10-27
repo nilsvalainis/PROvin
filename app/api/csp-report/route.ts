@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { summarizeCspReport } from "@/lib/csp";
+import { recordCspReport } from "@/lib/csp-report-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,6 +26,7 @@ export async function POST(req: Request) {
   const summary = summarizeCspReport(body);
   if (summary) {
     console.info("[csp-report]", summary.violatedDirective, summary.blockedUri, summary.documentHost);
+    await recordCspReport(summary);
   }
   return new NextResponse(null, { status: 204 });
 }
