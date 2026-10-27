@@ -185,7 +185,7 @@ describe("admin cost workspace themes", () => {
     expect(adminCostsHref("pro")).toBe("/admin/izmaksas");
     expect(adminCostsHref("iriss")).toBe("/admin/iriss/izmaksas");
     expect(adminCostsChrome("pro").crumb).toBe("Vairāk · PRO admin · Pārvaldība");
-    expect(adminCostsChrome("iriss").crumb).toBe("Vairāk · IRISS admin · Pārvaldība");
+    expect(adminCostsChrome("iriss").crumb).toBe("Vairāk · IRISS admin · Iestatījumi");
     expect(adminCostsChrome("iriss").subtitle).toBe("IRISS · visi projekti");
     expect(costGroupDot("ai", "pro")).toBe("#1d1d1f");
     expect(costGroupDot("ai", "iriss")).toBe("#3d5bd9");
