@@ -317,6 +317,7 @@ export function IrissPavadzimesListClient({
         <div className="md:hidden">
           <IrissWaybillGauges
             allHref={null}
+            selectable
             onExtend={(g) => {
               const row = data.rows.find((r) => r.id === g.id);
               if (row) setExtendVehicle(chipFromRow(row));
@@ -590,6 +591,7 @@ export function IrissPavadzimesListClient({
             draftVehicle={extendVehicle}
             onDraftConsumed={onDraftConsumed}
             onOpenArchive={() => setView("archive")}
+            plateInGauges
           />
         </div>
         {view === "current" ? (

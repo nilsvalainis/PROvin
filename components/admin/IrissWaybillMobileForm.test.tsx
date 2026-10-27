@@ -89,17 +89,17 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     expect(text).not.toContain("SIA ĪRISS auto šim numuram netiek rādīti");
   });
 
-  it("'Kā tas strādā' ir liela kartīte ar numurētiem soļiem un 'Jāzina'", () => {
+  it("'Kā tas strādā' ir aizverams bloks ar 4 īsiem soļiem un 'Jāzina' punktiem (Nils 27.10)", () => {
+    const html = renderHtml(form());
     const text = renderText(form());
-    expect(text).toContain("Pavadzīme 5 soļos. Parasti gatava dažu minūšu laikā.");
-    expect(text).toContain("Aivars ir Dzintarzeme Auto jaunais pavadzīmju asistents");
-    for (const t of ["Izvēlies numuru un auto", "Izvēlies laiku", 'Spied "Izveidot pavadzīmi"', "Ja numurs aizņemts", "Jāzina"]) {
-      expect(text).toContain(t);
-    }
-    expect(text).toContain("Numuru salīdzināšana - CSDD Tukuma filiālē.");
-    expect(text).toContain("Aivars to neizpilda kā komandu, citi to neredz.");
-    expect(text).toContain("tad jānorāda tikai laiks un komersanta pārstāvis.");
-    expect(text).toContain('Izvēlies 1, 12 vai 48 h, vai "Cits" un ieraksti stundas (1-48).');
+    expect(html).toMatch(/<details[^>]*>[\s\S]*Kā tas strādā/);
+    expect(html).not.toMatch(/<details[^>]*\sopen/);
+    for (const t of ["Numurs.", "Auto.", "Laiks.", "Izveidot."]) expect(text).toContain(t);
+    expect(text).toContain("1, 12, 48 h vai Cits (līdz 48 h).");
+    expect(text).toContain("Numuru salīdzināšana - CSDD Tukumā.");
+    expect(text).toContain("Komentārs ir tikai piezīme Aivaram");
+    // Vecie garie teksti vairs nav.
+    expect(text).not.toContain("Aivars ir Dzintarzeme Auto jaunais pavadzīmju asistents");
     // Tikai īsā defise: nav garās domuzīmes (kodi 8211, 8212).
     expect([...text].some((c) => c.charCodeAt(0) === 8211 || c.charCodeAt(0) === 8212)).toBe(false);
   });

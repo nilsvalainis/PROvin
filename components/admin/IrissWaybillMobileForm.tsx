@@ -2,6 +2,7 @@
 
 import { Car, Check, ChevronDown, ChevronRight, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { publishWaybillFormPlate, WAYBILL_SELECT_PLATE_EVENT } from "@/lib/iriss-waybill-live-plates";
 import styles from "@/components/admin/IrissWaybillMobileForm.module.css";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { IrissWaybillSavePdfButton } from "@/components/admin/IrissWaybillSavePdfButton";
@@ -64,6 +65,7 @@ export function IrissWaybillMobileForm({
   onDismiss,
   onPickerOpen,
   onOpenArchive,
+  plateInGauges = false,
 }: {
   plates: WaybillPlateState[];
   /** null = vēl ielādē. */
@@ -85,6 +87,8 @@ export function IrissWaybillMobileForm({
   onPickerOpen?: () => void;
   /** "Visas pavadzīmes Arhīvā ›" (lapa pārslēdz skatu uz Arhīvu). */
   onOpenArchive?: () => void;
+  /** Numuru izvēlas apļos virs formas (IrissWaybillGauges selectable) - formai sava «Numurs» rinda nav. */
+  plateInGauges?: boolean;
 }) {
   const [form, setForm] = useState<WaybillMobileFormState>(() => initialWaybillMobileForm(IRISS_DEALER_PLATES[0]));
   const [localError, setLocalError] = useState<string | null>(null);
@@ -124,6 +128,21 @@ export function IrissWaybillMobileForm({
   }, [inFlight]);
 
   const shownPlate = waybillMobilePlate(form);
+
+  // Apļi <-> forma: aplis izvēlas numuru, forma paziņo, kurš ir izvēlēts.
+  useEffect(() => {
+    const onSelect = (e: Event) => {
+      const plate = (e as CustomEvent<string>).detail;
+      if (typeof plate !== "string" || !plate) return;
+      setForm((prev) => ({ ...prev, plate, plateTouched: true, representative: "" }));
+      setOtherRep(false);
+    };
+    window.addEventListener(WAYBILL_SELECT_PLATE_EVENT, onSelect);
+    return () => window.removeEventListener(WAYBILL_SELECT_PLATE_EVENT, onSelect);
+  }, []);
+  useEffect(() => {
+    publishWaybillFormPlate(shownPlate);
+  }, [shownPlate]);
   const hours = waybillMobileHours(form);
   const untilText = hours ? formatRigaDateTimeComma(new Date(nowMs + hours * 3_600_000).toISOString()) : "";
   const tradeAct = waybillMobileTradeAct(form);
@@ -195,7 +214,7 @@ export function IrissWaybillMobileForm({
           void send();
         }}
       >
-        <div className={styles.group}>
+        <div className={styles.group} style={plateInGauges ? { display: "none" } : undefined}>
           <span className={styles.label}>Numurs</span>
           <div className={styles.seg3}>
             {plates.map((row) => {
@@ -609,79 +628,56 @@ function WaybillRowSavePdf({ row }: { row: WaybillMobileRequestRow }) {
   );
 }
 
-/** "Kā tas strādā" (v2): liela kartīte ar numurētiem soļiem, teksti no ~/pz-teksti-latvietis.md 3a. */
+/**
+ * "Kā tas strādā" (v3, Nils 27.10): aizverams bloks, 4 īsi soļi un «Jāzina» punktos (agrāk 5 gari teksti).
+ * Dizains v0.3: grafīta numuri, bez zilā.
+ */
 export function IrissWaybillHowItWorks({ plates }: { plates: readonly string[] }) {
+  void plates;
   return (
-    <section className={styles.how} aria-labelledby="wb-how-title">
-      <h3 id="wb-how-title">Kā tas strādā</h3>
-      <p className={styles.howLead}>Pavadzīme 5 soļos. Parasti gatava dažu minūšu laikā.</p>
+    <details className={styles.how}>
+      <summary className={styles.howSummary}>
+        <span>
+          <span className={styles.howTitle}>Kā tas strādā</span>
+          <span className={styles.howLead}>Aivars izveido CSDD pavadzīmi un atsūta PDF. Parasti pāris minūtēs.</span>
+        </span>
+        <svg className={styles.howChevron} viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M9 6l6 6-6 6" />
+        </svg>
+      </summary>
       <ol className={styles.howSteps}>
         <li>
           <span className={styles.num}>1</span>
-          <div>
-            <h4>Aivars ir Dzintarzeme Auto jaunais pavadzīmju asistents</h4>
-            <p>Tu aizpildi formu, Aivars pats izveido CSDD pavadzīmi un atsūta PDF. Citus darbus viņš neveic.</p>
-          </div>
+          <p>
+            <b>Numurs.</b> Ja aizņemts, jaunā pavadzīme pārtrauks veco (vispirms pajautās).
+          </p>
         </li>
         <li>
           <span className={styles.num}>2</span>
-          <div>
-            <h4>Izvēlies numuru un auto</h4>
-            <p>
-              Numurs ar atzīmi &quot;brīvs&quot; ir gatavs lietošanai. Izvēlies auto no tirdzniecībā pieņemto auto saraksta - tad jānorāda
-              tikai laiks un komersanta pārstāvis. Ja auto sarakstā nav, ieraksti marku, modeli un sākuma adresi.
-            </p>
-            {plates.length ? (
-              <div className={styles.mini}>
-                {plates.map((p) => (
-                  <span key={p}>{p}</span>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          <p>
+            <b>Auto.</b> No saraksta - tikai laiks un pārstāvis. Ar roku - marka, modelis, adrese.
+          </p>
         </li>
         <li>
           <span className={styles.num}>3</span>
-          <div>
-            <h4>Izvēlies laiku</h4>
-            <p>
-              Izvēlies 1, 12 vai 48 h, vai &quot;Cits&quot; un ieraksti stundas (1-{WAYBILL_VALID_MAX_HOURS}). Derīga no šī brīža. Lai
-              pagarinātu, izvēlies to pašu numuru un auto vēlreiz.
-            </p>
-          </div>
+          <p>
+            <b>Laiks.</b> 1, 12, 48 h vai Cits (līdz {WAYBILL_VALID_MAX_HOURS} h). Derīga no šī brīža.
+          </p>
         </li>
         <li>
           <span className={styles.num}>4</span>
-          <div>
-            <h4>Spied &quot;Izveidot pavadzīmi&quot;</h4>
-            <p>Statuss redzams saraksta augšā: Gaida, Izveido, Izdota. Kad pavadzīme izdota, parādās PDF un telefonā pienāk paziņojums.</p>
-            <div className={styles.mini}>
-              <span className={`${styles.chip} ${styles.wait}`}>Gaida</span>
-              <span className={`${styles.chip} ${styles.wip}`}>Izveido</span>
-              <span className={`${styles.chip} ${styles.ok}`}>Izdota</span>
-            </div>
-          </div>
-        </li>
-        <li>
-          <span className={styles.num}>5</span>
-          <div>
-            <h4>Ja numurs aizņemts</h4>
-            <p>Jauna pavadzīme pārtrauc šī numura esošo pavadzīmi. Lietotne vispirms pajautās, vai tiešām to vēlies.</p>
-          </div>
-        </li>
-        <li>
-          <span className={styles.num}>i</span>
-          <div>
-            <h4>Jāzina</h4>
-            <p>Numuru salīdzināšana - CSDD Tukuma filiālē. Ja vajag citu vietu, raksti komentārā.</p>
-            <p>
-              Komentārs ir tikai teksts šai pavadzīmei (līdz {NOTE_UNTRUSTED_MAX} zīmēm). Aivars to neizpilda kā komandu, citi to neredz.
-            </p>
-            <p>Visas izdotās un beigušās pavadzīmes ir Arhīvā.</p>
-          </div>
+          <p>
+            <b>Izveidot.</b> Gaida - Izveido - Izdota, tad PDF un paziņojums telefonā.
+          </p>
         </li>
       </ol>
-    </section>
+      <p className={styles.howKnowTitle}>Jāzina</p>
+      <ul className={styles.howKnow}>
+        <li>Numuru salīdzināšana - CSDD Tukumā. Citu vietu raksti komentārā.</li>
+        <li>Komentārs ir tikai piezīme Aivaram (līdz {NOTE_UNTRUSTED_MAX} zīmēm), ne komanda.</li>
+        <li>Visas vecās pavadzīmes ir Arhīvā.</li>
+      </ul>
+    </details>
   );
 }
 

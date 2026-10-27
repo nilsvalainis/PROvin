@@ -462,71 +462,101 @@
   font-weight: 500;
 }
 
-/* "Kā tas strādā" - liela kartīte ar numurētiem soļiem. */
+/* "Kā tas strādā" (v3): aizverams bloks ar īsiem soļiem; dizains v0.3 (grafīts, bez zilā). */
 .mf .how {
   margin-top: 18px;
   border-radius: 16px;
-  background: var(--s1, #fff);
-  padding: 18px 16px 6px;
+  background: var(--iriss-surface, #fff);
+  padding: 0 16px;
 }
-.mf .how h3 {
-  font-size: 20px;
+.mf .howSummary {
+  display: flex;
+  min-height: 56px;
+  cursor: pointer;
+  list-style: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+}
+.mf .howSummary::-webkit-details-marker {
+  display: none;
+}
+.mf .howTitle {
+  display: block;
+  color: var(--iriss-ink, #1c1c1e);
+  font-size: 16px;
   font-weight: 700;
-  letter-spacing: -0.01em;
 }
 .mf .howLead {
-  margin-top: 4px;
-  color: var(--ink2, #5e636e);
-  font-size: 14px;
-  line-height: 1.45;
+  display: block;
+  margin-top: 2px;
+  color: var(--iriss-ink-2, #4a4a4f);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.mf .howChevron {
+  flex: none;
+  color: var(--iriss-ink-3, #8e8e93);
+  transition: transform 0.2s ease;
+}
+.mf .how[open] .howChevron {
+  transform: rotate(90deg);
 }
 .mf .howSteps {
-  margin-top: 4px;
   list-style: none;
+  border-top: 0.5px solid var(--iriss-line, #e5e5ea);
+  padding: 6px 0 4px;
 }
 .mf .howSteps > li {
   display: flex;
-  gap: 14px;
-  padding: 14px 0;
-}
-.mf .howSteps > li + li {
-  border-top: 0.5px solid var(--hair, rgba(17, 24, 39, 0.08));
-}
-.mf .howSteps h4 {
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.3;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
 }
 .mf .howSteps p {
-  margin-top: 3px;
-  color: var(--ink2, #3a3d45);
+  color: var(--iriss-ink-2, #4a4a4f);
   font-size: 14px;
   line-height: 1.45;
 }
+.mf .howSteps b {
+  color: var(--iriss-ink, #1c1c1e);
+  font-weight: 650;
+}
 .mf .num {
   display: grid;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   flex: none;
   place-items: center;
   border-radius: 999px;
-  background: #3d5bd9;
+  background: var(--iriss-graphite, #1b1c20);
   color: #fff;
-  font-size: 15px;
+  font-size: 12px;
   font-weight: 700;
 }
-.mf .mini {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
+.mf .howKnowTitle {
+  margin-top: 6px;
+  color: var(--iriss-ink-3, #8e8e93);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
-.mf .mini > span {
-  border-radius: 999px;
-  background: var(--fill, rgba(116, 120, 138, 0.11));
-  padding: 4px 10px;
-  font-size: 12px;
-  font-weight: 600;
+.mf .howKnow {
+  margin: 6px 0 0;
+  padding: 0 0 14px 18px;
+  color: var(--iriss-ink-2, #4a4a4f);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.mf .howKnow > li + li {
+  margin-top: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mf .howChevron {
+    transition: none;
+  }
 }
 
 /* Izvēles logs (AdminMobileSheet saturs). */

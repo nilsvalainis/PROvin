@@ -155,11 +155,14 @@ export function IrissKomandaAivaramChat({
   draftVehicle,
   onDraftConsumed,
   onOpenArchive,
+  plateInGauges = false,
 }: {
   draftVehicle: WaybillVehicleChip | null;
   onDraftConsumed: () => void;
   /** Telefonā: "Visas pavadzīmes Arhīvā ›". */
   onOpenArchive?: () => void;
+  /** Telefonā numuru izvēlas apļos virs formas (Nils 27.10). */
+  plateInGauges?: boolean;
 }) {
   const [chat, setChat] = useState<WaybillChatState>(emptyChat);
   const [plate, setPlate] = useState<string>(IRISS_DEALER_PLATES[0]);
@@ -472,6 +475,7 @@ export function IrissKomandaAivaramChat({
           if (!carsLoaded.current) void load(true);
         }}
         onOpenArchive={onOpenArchive}
+        plateInGauges={plateInGauges}
       />
     </div>
     <section className="flex min-h-[28rem] flex-col overflow-hidden rounded-[22px] border border-[var(--iriss-line)] bg-white shadow-sm max-md:hidden">
