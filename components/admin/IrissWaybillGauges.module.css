@@ -274,102 +274,92 @@
   cursor: pointer;
 }
 
-/* ---- Datora numuru josla (chrome="strip", makets v3) ---- */
-.strip {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.strip .stripHead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px 12px;
-}
-.strip .stripHead h2 {
-  margin: 0;
-  color: var(--iriss-ink-2);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-.strip .stripHead span {
-  color: var(--iriss-ink-2);
-  font-size: 13px;
-}
-.strip .stripRow {
+/* ---- Datora numuru kartītes (chrome="strip", makets A) ---- */
+.cards {
   display: grid;
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
 }
-/* 2 klases, lai pārspētu vispārīgo admin pogu stilu. */
-.strip .stripCard {
+.cards .pcard {
   display: flex;
   min-width: 0;
-  min-height: 118px;
   flex-direction: column;
-  gap: 8px;
-  border: 1px solid var(--iriss-line) !important;
-  border-radius: var(--iriss-r-md);
-  background: var(--iriss-surface) !important;
-  box-shadow: var(--iriss-shadow-1);
-  padding: 14px;
-  color: var(--iriss-ink);
-  font: inherit;
-  text-align: left;
+  gap: 14px;
+  border-radius: var(--iriss-r-lg);
+  background: var(--iriss-surface);
+  padding: 20px;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(22, 23, 26, 0.06);
 }
-.strip button.stripCard {
-  cursor: pointer;
-}
-.strip button.stripCard:hover {
-  border-color: var(--iriss-line-strong) !important;
-}
-.strip .stripCard.stripOn {
-  border-color: var(--iriss-graphite) !important;
-  box-shadow: 0 0 0 1px var(--iriss-graphite), var(--iriss-shadow-1);
-}
-.strip .stripCard:focus-visible {
-  outline: 2px solid var(--iriss-brand);
-  outline-offset: 2px;
-}
-.strip .stripTop {
+.cards .pcardTop {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
-.strip .stripPlate {
+.cards .pcardPlate {
+  border: 1.5px solid var(--iriss-ink);
+  border-radius: 6px;
+  padding: 2px 8px;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   letter-spacing: 0.02em;
 }
-.strip .car {
+.cards .pcardCar {
+  display: -webkit-box;
   overflow: hidden;
+  margin: 0;
   color: var(--iriss-ink);
-  font-size: 13.5px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
-.strip .stripBar {
+.cards .pcardMeta {
+  margin: 4px 0 0;
+  color: var(--iriss-ink-2);
+  font-size: 13.5px;
+}
+.cards .pcardLeftRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.cards .pcardLeftRow .pcardMeta {
+  margin: 0;
+}
+.cards .pcardLeft,
+.cards .pcardLeftSoon {
+  color: var(--iriss-info);
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.cards .pcardLeftSoon {
+  color: var(--iriss-warn);
+}
+.cards .pcardBar {
   display: block;
-  height: 6px;
+  height: 8px;
+  margin-top: 8px;
   overflow: hidden;
-  border-radius: 3px;
+  border-radius: 4px;
   background: var(--iriss-surface-2);
 }
-.strip .stripFill,
-.strip .stripFillSoon {
+.cards .stripFill,
+.cards .stripFillSoon {
   display: block;
   height: 100%;
   background: var(--iriss-info);
 }
-.strip .stripFillSoon {
+.cards .stripFillSoon {
   background: var(--iriss-brand);
 }
-.strip .stripNote {
-  color: var(--iriss-ink-2);
-  font-size: 12.5px;
+.cards .pcardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
 }

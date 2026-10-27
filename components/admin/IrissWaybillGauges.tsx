@@ -6,7 +6,8 @@ import { IrissWaybillGaugeDetail } from "@/components/admin/IrissWaybillGaugeDet
 import { IrissWaybillStopConfirm } from "@/components/admin/IrissWaybillStopConfirm";
 import { useWaybillStop } from "@/components/admin/useWaybillStop";
 import styles from "@/components/admin/IrissWaybillGauges.module.css";
-import { IrissStatusPill, type IrissStatusTone } from "@/components/admin/iriss-ui/IrissUi";
+import { IrissButton, IrissStatusPill, type IrissStatusTone } from "@/components/admin/iriss-ui/IrissUi";
+import { formatWaybillExpiryDdMmHm } from "@/lib/iriss-pavadzimes-countdown";
 import type { IrissPavadzimeListRow } from "@/lib/iriss-pavadzimes-types";
 import { irissWaybillGauges, waybillGaugeTimeLeft, waybillGaugesFromPlates, waybillHomeCarText, waybillHomeCarTitle, type WaybillGauge } from "@/lib/iriss-waybill-gauges";
 import { waybillHomeRingColor } from "@/lib/iriss-waybill-home-ring";
@@ -160,21 +161,7 @@ export function IrissWaybillGauges({
       ? gauges.find((g) => g.plate === picked && g.busy) ?? null
       : gauges.find((g) => g.plate === open && g.busy) ?? null;
   if (chrome === "strip") {
-    return (
-      <WaybillPlateStrip
-        gauges={gauges}
-        loading={loading}
-        picked={selectable ? picked : ""}
-        onPick={
-          selectable
-            ? (plate) => {
-                setPicked(plate);
-                selectWaybillPlate(plate);
-              }
-            : undefined
-        }
-      />
-    );
+    return <WaybillPlateCards gauges={gauges} loading={loading} onExtend={onExtend} onStop={onStop} onOpenPdf={onOpenPdf} />;
   }
 
   const small = size === "sidebar";
@@ -327,78 +314,100 @@ export function IrissWaybillGauges({
   );
 }
 
-function stripStatus(g: WaybillGauge): { tone: IrissStatusTone; text: string; note: string } {
-  if (g.busy) {
-    const left = waybillGaugeTimeLeft(g);
-    const tone: IrissStatusTone = g.status === "expired" ? "bad" : g.status === "soon" ? "warn" : "info";
-    return { tone, text: "aizņemts", note: `atlikušas ${left.value} ${left.unit}` };
-  }
-  if (g.status === "issuing") return { tone: "info", text: g.manual ? "Aivars" : "izdod...", note: "Pieprasījums pie Aivara" };
-  return { tone: "ok", text: "brīvs", note: "Gatavs jaunai pavadzīmei" };
+function cardStatus(g: WaybillGauge): { tone: IrissStatusTone; text: string } {
+  if (g.busy) return { tone: g.status === "expired" ? "bad" : g.status === "soon" ? "warn" : "info", text: "aizņemts" };
+  if (g.status === "issuing") return { tone: "info", text: g.manual ? "izraksta Aivars" : "izdod..." };
+  return { tone: "ok", text: "brīvs" };
 }
 
 /**
- * Datora Pavadzīmju lapa (Nils 27.10, makets v3): numuri kā kartītes vienā rindā visā platumā.
- * Kartīte izvēlas numuru formai (tas pats notikums, ko apļi); darbības ir tabulā, ne kartītē.
+ * Datora Pavadzīmju lapa (Nils 27.10, makets A): 3 numuri = 3 lielas kartītes. Katrā tā numura aktīvā
+ * pavadzīme ar atlikušo laiku un darbībām (PDF, Pagarināt, Pārtraukt) - atsevišķas tabulas vairs nav.
  */
-function WaybillPlateStrip({
+function WaybillPlateCards({
   gauges,
   loading,
-  picked,
-  onPick,
+  onExtend,
+  onStop,
+  onOpenPdf,
 }: {
   gauges: WaybillGauge[];
   loading: boolean;
-  picked: string;
-  onPick?: (plate: string) => void;
+  onExtend?: (gauge: WaybillGauge) => void;
+  onStop?: (gauge: WaybillGauge) => void;
+  onOpenPdf?: (gauge: WaybillGauge) => void;
 }) {
-  const free = gauges.filter((g) => !g.busy && g.status !== "issuing").length;
   return (
-    <section className={styles.strip} aria-labelledby="wb-strip-h">
-      <div className={styles.stripHead}>
-        <h2 id="wb-strip-h">Tranzīta numuri</h2>
-        <span>
-          {loading ? "Ielādē..." : `${free} brīvi no ${gauges.length}`}
-          {onPick ? " · izvēlies numuru, lai pieprasītu pavadzīmi" : ""}
-        </span>
-      </div>
-      <div className={styles.stripRow} style={{ gridTemplateColumns: `repeat(${Math.max(1, gauges.length)}, minmax(0, 1fr))` }}>
-        {gauges.map((g) => {
-          const st = stripStatus(g);
-          const on = picked === g.plate;
-          const soon = g.busy && (g.status === "soon" || g.status === "expired");
-          const body = (
-            <>
-              <span className={styles.stripTop}>
-                <span className={styles.stripPlate}>{g.plate}</span>
-                <IrissStatusPill tone={st.tone}>{loading ? "..." : st.text}</IrissStatusPill>
-              </span>
-              <WaybillHomeCar busy={g.busy} status={g.status} brandModel={g.brandModel} />
-              <span className={styles.stripBar} aria-hidden>
-                <span className={soon ? styles.stripFillSoon : styles.stripFill} style={{ width: `${Math.round((g.busy ? g.share : 0) * 100)}%` }} />
-              </span>
-              <span className={styles.stripNote}>{st.note}</span>
-            </>
-          );
-          return onPick ? (
-            <button
-              key={g.plate}
-              type="button"
-              className={`${styles.stripCard} ${on ? styles.stripOn : ""}`}
-              aria-pressed={on}
-              aria-label={`${g.plate}, ${st.text}${g.brandModel ? `, ${g.brandModel}` : ""}, ${st.note}${on ? ", izvēlēts" : ""}`}
-              onClick={() => onPick(g.plate)}
-              disabled={loading}
-            >
-              {body}
-            </button>
-          ) : (
-            <div key={g.plate} className={styles.stripCard}>
-              {body}
+    <section className={styles.cards} aria-label="Numuri un aktīvās pavadzīmes">
+      {gauges.map((g) => {
+        const st = cardStatus(g);
+        const left = waybillGaugeTimeLeft(g);
+        const soon = g.busy && (g.status === "soon" || g.status === "expired");
+        return (
+          <article key={g.plate} className={styles.pcard}>
+            <div className={styles.pcardTop}>
+              <span className={styles.pcardPlate}>{g.plate}</span>
+              <IrissStatusPill tone={st.tone}>{loading ? "..." : st.text}</IrissStatusPill>
             </div>
-          );
-        })}
-      </div>
+            {g.busy ? (
+              <>
+                <div>
+                  <p className={styles.pcardCar} title={g.brandModel || undefined}>
+                    {g.brandModel || "Auto"}
+                  </p>
+                  <p className={styles.pcardMeta}>
+                    {g.number ? `Nr. ${g.number} · ` : ""}līdz {formatWaybillExpiryDdMmHm(g.validUntil)}
+                  </p>
+                </div>
+                <div>
+                  <div className={styles.pcardLeftRow}>
+                    <span className={soon ? styles.pcardLeftSoon : styles.pcardLeft}>
+                      {left.value} {left.unit}
+                    </span>
+                    <span className={styles.pcardMeta}>no 48 h</span>
+                  </div>
+                  <span className={styles.pcardBar} aria-hidden>
+                    <span className={soon ? styles.stripFillSoon : styles.stripFill} style={{ width: `${Math.round(g.share * 100)}%` }} />
+                  </span>
+                </div>
+                {g.id ? (
+                  <div className={styles.pcardActions}>
+                    <IrissButton size="sm" onClick={() => onOpenPdf?.(g)}>
+                      PDF
+                    </IrissButton>
+                    <IrissButton size="sm" onClick={() => onExtend?.(g)}>
+                      Pagarināt
+                    </IrissButton>
+                    {g.number ? (
+                      <IrissButton size="sm" variant="danger-outline" onClick={() => onStop?.(g)}>
+                        Pārtraukt
+                      </IrissButton>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className={styles.pcardMeta}>Pavadzīme no CSDD - PDF vēl nav indeksā.</p>
+                )}
+              </>
+            ) : (
+              <>
+                <div>
+                  <p className={styles.pcardCar}>{g.status === "issuing" ? g.brandModel || "Pieprasījums" : "Nav pavadzīmes"}</p>
+                  <p className={styles.pcardMeta}>
+                    {g.status === "issuing" ? "Pieprasījums pie Aivara" : "Gatavs jaunai pavadzīmei"}
+                  </p>
+                </div>
+                {g.status === "issuing" ? null : (
+                  <div className={styles.pcardActions}>
+                    <IrissButton size="sm" onClick={() => selectWaybillPlate(g.plate)}>
+                      Izvēlēties formā
+                    </IrissButton>
+                  </div>
+                )}
+              </>
+            )}
+          </article>
+        );
+      })}
     </section>
   );
 }
