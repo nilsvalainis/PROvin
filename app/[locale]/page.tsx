@@ -50,9 +50,8 @@ export default async function HomePage({ params }: Props) {
     <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
       <JsonLd data={offers} />
       <div className="home-hero-pricing-unified demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">
-        <Suspense fallback={null}>
-          <HomePricingHero />
-        </Suspense>
+        {/* Bez ārējā Suspense: hero (H1 + cenu karte) jābūt servera HTML pirmajā kadrā, citādi CLS. useSearchParams ir savā Suspense iekšā. */}
+        <HomePricingHero />
 
         <div id="site-content" className="min-w-0 scroll-mt-14 bg-transparent pb-0 text-white home-body-ink">
           <HomeVinSeoSection />
