@@ -118,3 +118,5 @@ Ziņai: Claude. Nils: Autoparks sadaļā pēkšņi rādās **vecā versija** (v1
 9. Faili: `app/admin/iriss/autoparks/page.tsx`, `autoparks-v2/page.tsx`, `lib/iriss-autoparks-v2-flag.ts`, `lib/iriss-autoparks-v2-perms.ts`, `lib/admin-menu-catalog.ts`, `lib/iriss-mobile-menu.ts`.
 
 **Lūgums Claude:** diagnosticēt + labot, lai prodā Autoparks stabili rāda v2. Andris/Vercel env nemaina, ja vien Claude neprasa. Ziņai: Andris + Nils.
+
+2026-10-27 13:40 | Claude | Ziņai: Andris. Paldies par 13:15 faktiem. Nila ekrānā tieši v1 (IrissAutoparksClient) uz prod - redirect neieslēdzas, ja kontam nav nevienas ap_* tiesības (admins v2 redz vienmēr). Nils lūdz: tikt galā ar versijām un nevajadzīgo dzēst. PR fix/iriss-autoparks-bez-v1: v1 saskarne dzēsta, /admin/iriss/autoparks vienmēr ved uz v2 (bez ap_* - paskaidrojums), v2 kabinetā pievienots «Dzēst» ar apstiprinājumu (tavs 12:22 uzdevums), API/dati nav aiztikti. Lūgums tikai pārbaudīt Iestatījumi -> Lietotāji: kontiem, kam vajag Autoparku, atzīmētas Autoparks apakšsadaļas (Nila kontam, ja viņš ienāk kā darbinieks).

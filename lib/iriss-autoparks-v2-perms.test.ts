@@ -61,13 +61,11 @@ describe("Autoparks v2 tiesības", () => {
   });
 });
 
-describe("F9 pārslēgšana", () => {
-  it("v1 saite ved uz v2 tikai ar karogu un v2 tiesību; ?v1=1 paliek v1", async () => {
-    const { shouldRedirectToAutoparksV2 } = await import("@/lib/iriss-autoparks-v2-flag");
-    expect(shouldRedirectToAutoparksV2({ staffEnabled: false, canOpenV2List: true, v1Param: null })).toBe(false);
-    expect(shouldRedirectToAutoparksV2({ staffEnabled: true, canOpenV2List: true, v1Param: null })).toBe(true);
-    expect(shouldRedirectToAutoparksV2({ staffEnabled: true, canOpenV2List: true, v1Param: "1" })).toBe(false);
-    // Loģistikas kolēģis bez ap_* paliek v1 (nezaudē piekļuvi).
-    expect(shouldRedirectToAutoparksV2({ staffEnabled: true, canOpenV2List: false, v1Param: null })).toBe(false);
+describe("Autoparks saite (v1 dzēsta 27.10)", () => {
+  it("administrators un darbinieks ar ap_* atver v2; bez ap_* - nav ko atvērt", async () => {
+    const { autoparksV2CanOpen } = await import("@/lib/iriss-autoparks-v2-perms");
+    expect(autoparksV2CanOpen(autoparksV2PermsFor({ kind: "admin" }, false))).toBe(true);
+    expect(autoparksV2CanOpen(autoparksV2PermsFor({ kind: "staff", sections: ["logistika", "ap_serviss"] }, true))).toBe(true);
+    expect(autoparksV2CanOpen(autoparksV2PermsFor({ kind: "staff", sections: ["logistika"] }, true))).toBe(false);
   });
 });

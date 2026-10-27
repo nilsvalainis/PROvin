@@ -179,6 +179,7 @@ export function AutoparksV2Cabinet({
       </nav>
 
       {tab === "pamatdati" ? <AutoparksV2Pamatdati basics={basics} onBasics={onBasics} /> : null}
+      {tab === "pamatdati" && perms.admin ? <DeleteCarButton carId={basics.id} title={basics.title} /> : null}
       {tab === "csdd" ? <AutoparksV2Csdd basics={basics} /> : null}
       {tab === "vesture" ? <AutoparksV2History carId={basics.id} /> : null}
       {pane ? pane({ carId: basics.id, perms, basics, onBasics }) : null}
@@ -230,5 +231,39 @@ function StatusSheet({ current, onPick, onClose }: { current: AutoparksStatus; o
         ))}
       </div>
     </>
+  );
+}
+
+/**
+ * Create => delete (LAW 26.10): auto dzēšana ar visu istabu (faili, piezīmes, tāme). Tikai administrators;
+ * apstiprinājums pirms dzēšanas, jo to nevar atsaukt. API tā pati, ko lietoja vecais Autoparks (v1).
+ */
+export function DeleteCarButton({ carId, title }: { carId: string; title: string }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  async function remove() {
+    if (!window.confirm(`Dzēst "${title}" ar visiem failiem, piezīmēm un tāmi? To nevar atsaukt.`)) return;
+    setBusy(true);
+    setErr(null);
+    const res = await fetch(`/api/admin/iriss-logistics/autoparks/${encodeURIComponent(carId)}`, {
+      method: "DELETE",
+      credentials: "include",
+    }).catch(() => null);
+    setBusy(false);
+    if (!res?.ok) {
+      setErr("Neizdevās dzēst auto.");
+      return;
+    }
+    router.push(BASE);
+    router.refresh();
+  }
+  return (
+    <div className="ap2-delete">
+      <button type="button" className="iriss-btn iriss-btn--danger-outline iriss-btn--sm" disabled={busy} onClick={() => void remove()}>
+        {busy ? "Dzēš..." : "Dzēst auto"}
+      </button>
+      {err ? <p className="ap2-err">{err}</p> : null}
+    </div>
   );
 }
