@@ -17,6 +17,7 @@ import {
   type AutoparksRoom,
   type AutoparksStage,
   type AutoparksState,
+  type AutoparksStatus,
   type AutoparksWorkItem,
 } from "@/lib/iriss-autoparks";
 import { applyManualRegistryPatch, type RegistryFile, type RegistryValues } from "@/lib/iriss-autoparks-registry";
@@ -100,8 +101,15 @@ export async function createAutoparksCar(input: AutoparksCarInput & { orderId?: 
   });
 }
 
-/** Atkārtots "Uz Autoparku" tam pašam pasūtījumam neveido dublikātu. */
-export async function ensureAutoparksCarFromOrder(order: LogisticsOrder, actor: AutoparksActor): Promise<{ car: AutoparksCar; created: boolean }> {
+/**
+ * Atkārtots "Uz Autoparku" tam pašam pasūtījumam neveido dublikātu.
+ * Nils 27.10 (Loģistika = Autoparka posms «Ceļā»): «+ Nopirkts» izveido auto ar statusu `in_transit`.
+ */
+export async function ensureAutoparksCarFromOrder(
+  order: LogisticsOrder,
+  actor: AutoparksActor,
+  opts: { status?: AutoparksStatus } = {},
+): Promise<{ car: AutoparksCar; created: boolean }> {
   const state = await readAutoparksState();
   const existing = state.cars.find((c) => c.orderId === order.id || (order.vin && c.vin === order.vin.toUpperCase()));
   if (existing) return { car: existing, created: false };
@@ -114,10 +122,46 @@ export async function ensureAutoparksCarFromOrder(order: LogisticsOrder, actor: 
       model: (order.model || titleParts.slice(1).join(" ")).replace(/\s*\(?(19|20)\d{2}\)?\s*$/, ""),
       year: order.title.match(/\b(19|20)\d{2}\b/)?.[0] ?? "",
       mileageKm: order.mileageKm,
+      status: opts.status,
     },
     actor,
   );
   return { car, created: true };
+}
+
+/**
+ * «Atvests» (Loģistika -> Autoparks): auto, kas bija «Ceļā», pāriet uz «Gaida sagatavošanu» un saņem atvešanas datumu.
+ * Citos statusos (piem. jau Servisā) netiek aiztikts.
+ */
+export async function markAutoparksCarArrived(carId: string, actor: AutoparksActor, today = new Date()): Promise<AutoparksCar | null> {
+  return mutateAutoparksState((state) => {
+    const idx = state.cars.findIndex((c) => c.id === carId);
+    if (idx < 0) return { result: null, write: false };
+    const prev = state.cars[idx]!;
+    if (prev.status !== "in_transit") return { result: prev, write: false };
+    const now = new Date().toISOString();
+    const next: AutoparksCar = {
+      ...prev,
+      status: "prep_waiting",
+      statusChangedAt: now,
+      arrivedAt: prev.arrivedAt || today.toISOString().slice(0, 10),
+      updatedAt: now,
+    };
+    state.cars[idx] = next;
+    state.events.push(event(carId, actor, "Atvests: Ceļā -> Gaida sagatavošanu"));
+    return { result: next };
+  });
+}
+
+/** Migrācija: esošam Autoparka auto (pēc VIN) piesaista Loģistikas ierakstu, ja tam vēl nav cita. Statusu neaiztiek. */
+export async function linkAutoparksCarToOrder(carId: string, orderId: string, actor: AutoparksActor): Promise<boolean> {
+  return mutateAutoparksState((state) => {
+    const idx = state.cars.findIndex((c) => c.id === carId);
+    if (idx < 0 || state.cars[idx]!.orderId) return { result: false, write: false };
+    state.cars[idx] = { ...state.cars[idx]!, orderId, updatedAt: new Date().toISOString() };
+    state.events.push(event(carId, actor, "Sasaistīts ar Loģistikas ierakstu"));
+    return { result: true };
+  });
 }
 
 export async function patchAutoparksCar(id: string, patch: AutoparksCarInput, actor: AutoparksActor): Promise<AutoparksCar | null> {

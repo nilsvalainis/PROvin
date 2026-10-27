@@ -159,6 +159,8 @@ export function IrissLogistikaNewPurchase({ open, points, onClose, onCreated, on
             : null,
           status: "organize_pickup",
           archived: false,
+          // Nils 27.10: nopirktais auto uzreiz Autoparkā ar statusu «Ceļā».
+          toAutoparks: true,
         }),
       });
       const body = (await res.json()) as { ok?: boolean; order?: LogisticsOrder; error?: string };

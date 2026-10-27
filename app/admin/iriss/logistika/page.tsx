@@ -56,6 +56,7 @@ export default async function IrissLogistikaPage() {
       canCreateOffer={canCreateOffer}
       autoparksByOrder={autoparksByOrder}
       showAutoparksLink={autoparksV2CanOpen(autoparksV2Perms(actor))}
+      isAdmin={actor.kind === "admin"}
     />
     </Suspense>
   );

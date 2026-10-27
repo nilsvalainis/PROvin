@@ -14,6 +14,8 @@ import {
 } from "@/lib/iriss-autoparks-v2-cabinet-tabs";
 import type { AutoparksV2Perms } from "@/lib/iriss-autoparks-v2-perms";
 import { IrissSaitesPanel } from "@/components/admin/iriss-saites/IrissSaitesPanel";
+import type { AutoparksTransit } from "@/lib/iriss-autoparks-transit";
+import { AutoparksV2Cela } from "./AutoparksV2Cela";
 import { AutoparksV2Csdd } from "./AutoparksV2Csdd";
 import { AutoparksV2History } from "./AutoparksV2History";
 import { AutoparksV2OfferActions } from "./AutoparksV2OfferActions";
@@ -38,8 +40,13 @@ export function AutoparksV2Cabinet({
   perms,
   canCreateOffer = false,
   canWaybill = false,
+  transit = null,
+  transitCanWrite = false,
 }: {
   initialBasics: AutoparksV2Basics;
+  /** «Ceļā» posms (Nils 27.10): Loģistikas dati, ja auto ir aktīvs Loģistikas ieraksts un ir Loģistikas tiesība. */
+  transit?: AutoparksTransit | null;
+  transitCanWrite?: boolean;
   perms: AutoparksV2Perms;
   canCreateOffer?: boolean;
   /** Poga «Pavadzīme» (Nils 27.10): tikai ar Pavadzīmju sadaļas tiesību. */
@@ -55,7 +62,7 @@ export function AutoparksV2Cabinet({
   const [photoVersion, setPhotoVersion] = useState(0);
   const [toast, setToast] = useState<{ historyId: string; status: AutoparksStatus; left: number } | null>(null);
   const [statusErr, setStatusErr] = useState("");
-  const tabs = allowedTabs(perms, panes);
+  const tabs = allowedTabs(perms, panes, { transit: Boolean(transit) });
   const tab = resolveCabinetTab(params.get("t"), tabs, perms.vesture);
   const compact = tab !== "pamatdati";
 
@@ -119,7 +126,7 @@ export function AutoparksV2Cabinet({
       </div>
     );
 
-  const pane = tab === "vesture" || tab === "pamatdati" || tab === "csdd" ? null : panes[tab];
+  const pane = tab === "vesture" || tab === "pamatdati" || tab === "csdd" || tab === "cela" ? null : panes[tab];
 
   return (
     <div className="ap2">
@@ -179,6 +186,7 @@ export function AutoparksV2Cabinet({
       </nav>
 
       {tab === "pamatdati" ? <AutoparksV2Pamatdati basics={basics} onBasics={onBasics} /> : null}
+      {tab === "cela" && transit ? <AutoparksV2Cela transit={transit} canWrite={transitCanWrite} /> : null}
       {tab === "pamatdati" && perms.admin ? <DeleteCarButton carId={basics.id} title={basics.title} /> : null}
       {tab === "csdd" ? <AutoparksV2Csdd basics={basics} /> : null}
       {tab === "vesture" ? <AutoparksV2History carId={basics.id} /> : null}
