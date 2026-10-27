@@ -41,6 +41,26 @@ describe("Vēsture pa dienām (makets 27.10)", () => {
     expect(text).not.toContain("for_sale");
   });
 
+  it("cenas nerāda; vērtības formatētas; bildes id nerāda", () => {
+    const text = renderText(
+      <AutoparksV2HistoryList
+        now={now}
+        rows={[
+          row("p", "2026-10-27T10:00:00Z", "purchase.purchasePriceEur", "", "7664"),
+          row("m", "2026-10-27T10:01:00Z", "tech.mileageKm", "", "171048"),
+          row("d", "2026-10-27T10:02:00Z", "tech.firstRegDate", "", "2010-05-19"),
+          row("f", "2026-10-27T10:03:00Z", "mainPhoto", "id:A-secret", ""),
+        ]}
+      />,
+    );
+    expect(text).not.toContain("7664");
+    expect(text).not.toContain("Iepirkuma cena");
+    expect(text).toContain("171 048 km");
+    expect(text).toContain("19.05.2010");
+    expect(text).toContain("Galvenā bilde");
+    expect(text).not.toContain("id:A-secret");
+  });
+
   it("tukša vēsture", () => {
     expect(renderText(<AutoparksV2HistoryList rows={[]} />)).toContain("Nav izmaiņu");
   });
