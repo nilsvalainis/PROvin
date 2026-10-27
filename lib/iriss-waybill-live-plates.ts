@@ -178,3 +178,28 @@ export function publishWaybillPlates(plates: readonly WaybillPlateState[]): void
   if (typeof window === "undefined" || !plates.length) return;
   window.dispatchEvent(new CustomEvent<readonly WaybillPlateState[]>(WAYBILL_PLATES_EVENT, { detail: plates }));
 }
+
+/**
+ * Nils 27.10: numuru izvēlas apļos (viena rinda ar statusu), formai sava «Numurs» rinda vairs nav.
+ * Aplis -> forma: WAYBILL_SELECT_PLATE_EVENT; forma -> apļi: WAYBILL_FORM_PLATE_EVENT (izvēlētais numurs).
+ */
+export const WAYBILL_SELECT_PLATE_EVENT = "iriss:waybill-select-plate";
+export const WAYBILL_FORM_PLATE_EVENT = "iriss:waybill-form-plate";
+
+let lastFormPlate = "";
+
+/** Pēdējais formas numurs (apļiem, kas parādās pēc formas). */
+export function lastWaybillFormPlate(): string {
+  return lastFormPlate;
+}
+
+export function selectWaybillPlate(plate: string): void {
+  if (typeof window === "undefined" || !plate) return;
+  window.dispatchEvent(new CustomEvent<string>(WAYBILL_SELECT_PLATE_EVENT, { detail: plate }));
+}
+
+export function publishWaybillFormPlate(plate: string): void {
+  lastFormPlate = plate;
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<string>(WAYBILL_FORM_PLATE_EVENT, { detail: plate }));
+}

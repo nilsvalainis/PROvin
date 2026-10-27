@@ -175,3 +175,11 @@ describe("j25 numuru stāvoklis apļiem un pogām", () => {
     expect(g[0]).toMatchObject({ id: "pv_1", number: "P02816" });
   });
 });
+
+describe("apļi <-> forma (Nils 27.10)", () => {
+  it("formas numurs tiek atcerēts apļiem, kas parādās vēlāk", async () => {
+    const { lastWaybillFormPlate, publishWaybillFormPlate } = await import("@/lib/iriss-waybill-live-plates");
+    publishWaybillFormPlate("B762-7");
+    expect(lastWaybillFormPlate()).toBe("B762-7");
+  });
+});

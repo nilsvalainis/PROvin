@@ -9,7 +9,12 @@ import styles from "@/components/admin/IrissWaybillGauges.module.css";
 import type { IrissPavadzimeListRow } from "@/lib/iriss-pavadzimes-types";
 import { irissWaybillGauges, waybillGaugeTimeLeft, waybillGaugesFromPlates, waybillHomeCarText, waybillHomeCarTitle, type WaybillGauge } from "@/lib/iriss-waybill-gauges";
 import { waybillHomeRingColor } from "@/lib/iriss-waybill-home-ring";
-import { WAYBILL_PLATES_EVENT } from "@/lib/iriss-waybill-live-plates";
+import {
+  lastWaybillFormPlate,
+  selectWaybillPlate,
+  WAYBILL_FORM_PLATE_EVENT,
+  WAYBILL_PLATES_EVENT,
+} from "@/lib/iriss-waybill-live-plates";
 import type { WaybillPlateState } from "@/lib/iriss-waybill-plates";
 
 const RING: Record<WaybillGauge["status"], string> = {
@@ -57,6 +62,7 @@ export function IrissWaybillGauges({
   onExtend,
   onStop,
   onOpenPdf,
+  selectable = false,
 }: {
   size?: "mobile" | "sidebar";
   /** Saite "Visas ›"; null = nerādīt (pašā pavadzīmju lapā tā vestu uz to pašu lapu). */
@@ -68,12 +74,28 @@ export function IrissWaybillGauges({
   onExtend?: (gauge: WaybillGauge) => void;
   onStop?: (gauge: WaybillGauge) => void;
   onOpenPdf?: (gauge: WaybillGauge) => void;
+  /**
+   * Pavadzīmju lapa (Nils 27.10): apļi ir arī formas numura izvēle. Pieskāriens izvēlas numuru formai;
+   * aizņemtam vēl parāda darbības (Pagarināt, Pārtraukt, PDF). Izvēle - apmale ap apli, bez iekrāsota fona.
+   */
+  selectable?: boolean;
 }) {
   const [rows, setRows] = useState<IrissPavadzimeListRow[] | null>(null);
   const [plates, setPlates] = useState<WaybillPlateState[] | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [open, setOpen] = useState<string | null>(null);
+  const [picked, setPicked] = useState<string>(() => (selectable ? lastWaybillFormPlate() : ""));
   const stop = useWaybillStop();
+
+  useEffect(() => {
+    if (!selectable) return;
+    const onForm = (e: Event) => {
+      const plate = (e as CustomEvent<string>).detail;
+      if (typeof plate === "string") setPicked(plate);
+    };
+    window.addEventListener(WAYBILL_FORM_PLATE_EVENT, onForm);
+    return () => window.removeEventListener(WAYBILL_FORM_PLATE_EVENT, onForm);
+  }, [selectable]);
 
   useEffect(() => {
     let cancelled = false;
@@ -131,7 +153,11 @@ export function IrissWaybillGauges({
   // Viens avots ar numura pogām: serveris/forma dod numuru stāvokli; vecs serveris bez plates - kā agrāk no rindām.
   const gauges = plates ? waybillGaugesFromPlates(plates, gaugeRows, now) : irissWaybillGauges(gaugeRows, now);
   const loading = rows === null && plates === null;
-  const active = href ? null : gauges.find((g) => g.plate === open && g.busy) ?? null;
+  const active = href
+    ? null
+    : selectable
+      ? gauges.find((g) => g.plate === picked && g.busy) ?? null
+      : gauges.find((g) => g.plate === open && g.busy) ?? null;
   const small = size === "sidebar";
   const floating = chrome === "float";
   const linked = Boolean(href);
@@ -141,7 +167,7 @@ export function IrissWaybillGauges({
       {gauges.map((g) => {
         const r = 15.5;
         const c = 2 * Math.PI * r;
-        const isOpen = !linked && open === g.plate && g.busy;
+        const isOpen = !linked && (selectable ? picked === g.plate : open === g.plate && g.busy);
         const ring = floating && g.busy ? waybillHomeRingColor(g.hoursLeft, true) : g.busy ? RING[g.status] : "#8e8e93";
         const left = waybillGaugeTimeLeft(g);
         const label = g.busy
@@ -192,6 +218,24 @@ export function IrissWaybillGauges({
             </span>
           );
         }
+        if (selectable) {
+          return (
+            <button
+              key={g.plate}
+              type="button"
+              className={`${styles.item} ${styles.pickable} ${isOpen ? styles.on : ""} ${g.busy ? "" : styles.free}`}
+              aria-pressed={isOpen}
+              aria-label={`${label}${isOpen ? ", izvēlēts" : ""}`}
+              onClick={() => {
+                setPicked(g.plate);
+                selectWaybillPlate(g.plate);
+              }}
+              disabled={loading}
+            >
+              {inner}
+            </button>
+          );
+        }
         return (
           <button
             key={g.plate}
@@ -222,7 +266,7 @@ export function IrissWaybillGauges({
     <section className={cls} aria-label="Pavadzīmes">
       {floating ? null : (
         <div className={styles.head}>
-          <span>Pavadzīmes</span>
+          <span>{selectable ? "Numurs" : "Pavadzīmes"}</span>
           {allHref ? (
             <Link href={allHref} className="admin-nav-link">
               Visas ›

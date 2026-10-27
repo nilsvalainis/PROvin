@@ -39,4 +39,11 @@ describe("Pavadzīmju sākuma hero (v11d-fix stikls)", () => {
     expect(renderText(<WaybillHomeCar busy={false} status="free" brandModel="" />)).toBe("-");
     expect(html).not.toContain("title=");
   });
+
+  it("Pavadzīmju lapā apļi ir numura izvēle (Nils 27.10): virsraksts «Numurs», pogas ar aria-pressed", () => {
+    const html = renderHtml(<IrissWaybillGauges allHref={null} selectable />);
+    const text = renderText(<IrissWaybillGauges allHref={null} selectable />);
+    expect(text).toContain("Numurs");
+    expect(html.match(/aria-pressed=/g)?.length).toBe(3);
+  });
 });
