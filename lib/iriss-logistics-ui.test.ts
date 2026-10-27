@@ -160,7 +160,7 @@ describe("IRISS Loģistika UI contracts", () => {
 
   it("keeps an editable auction-sources list in Loģistika settings", () => {
     expect(client).toContain("IrissLogistikaAuctionSourcesPanel");
-    expect(client).toContain('setPageTab("settings")');
+    expect(client).toContain('["settings", "Iestatījumi"]');
     expect(client).toContain("Iestatījumi");
     expect(settings).toContain("IrissLogistikaAuctionSourcesPanel");
     expect(settings).toContain("Lietotāji un pieeja");

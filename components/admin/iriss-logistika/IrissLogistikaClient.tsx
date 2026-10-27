@@ -812,64 +812,69 @@ export function IrissLogistikaClient({
           </button>
         </div>
       ) : null}
+      {/* Nils 27.10 (makets B): divas zemas rindas; datorā stikla fons, čipi un meklēšana - necaurspīdīgi. */}
       <header className="iriss-log-no-print hidden md:static md:block iriss-log-head">
-        <div className="flex flex-wrap items-start gap-2">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-[22px] font-semibold tracking-tight md:text-[20px]">Loģistika</h1>
-              <IrissProjectIndicator />
-            </div>
-            <p className="mt-0.5 text-[12px] text-[var(--ink2)]">
-              {counts.active} aktīvi{counts.archive ? ` · ${counts.archive} arhīvā` : ""}
-            </p>
-            <div className="mt-2 flex flex-wrap gap-1.5 text-[12px]">
-              <button type="button" onClick={() => setPageTab("orders")} className={`rounded-full px-2.5 py-1 ${pageTab === "orders" ? "bg-white font-semibold shadow-sm" : "text-[var(--ink2)]"}`}>
-                Auto {counts.active}
-              </button>
-              <button type="button" onClick={() => setPageTab("points")} className={`rounded-full px-2.5 py-1 ${pageTab === "points" ? "bg-white font-semibold shadow-sm" : "text-[var(--ink2)]"}`}>
-                Savākšanas vietas {points.length}
-              </button>
-              <button type="button" onClick={() => setPageTab("settings")} className={`rounded-full px-2.5 py-1 ${pageTab === "settings" ? "bg-white font-semibold shadow-sm" : "text-[var(--ink2)]"}`}>
-                Iestatījumi
-              </button>
-              {showAutoparksLink ? (
-                <Link href="/admin/iriss/autoparks-v2" className="rounded-full px-2.5 py-1 font-semibold text-[var(--iriss-ink)] hover:bg-white">
-                  Autoparks →
-                </Link>
-              ) : null}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="search"
-              value={pageTab === "points" ? pointQuery : query}
-              onChange={(e) => (pageTab === "points" ? setPointQuery(e.target.value) : setQuery(e.target.value))}
-              placeholder={pageTab === "points" ? "Meklēt punktu, pilsētu, izsoli" : "VIN, nosaukums, pickup nr."}
-              className="hidden h-9 w-56 rounded-full border-0 bg-white px-3 text-[13px] shadow-sm md:block"
-            />
-            {/* Viena galvenā poga (dizains v0.3): piedāvājumu veido no auto kartītes, ne no galvenes. */}
-            <button type="button" onClick={() => setPurchaseOpen(true)} className="inline-flex h-9 items-center rounded-full bg-[var(--iriss-brand)] px-3.5 text-[13px] font-bold text-white hover:bg-[#d9541a]">
-              + Nopirkts
-            </button>
-          </div>
+        <div className="iriss-log-head-r1 flex items-center gap-2.5">
+          <h1 className="text-[20px] font-semibold tracking-tight">Loģistika</h1>
+          <IrissProjectIndicator />
+          <span className="whitespace-nowrap text-[12.5px] text-[var(--ink2)]">
+            {counts.active} aktīvi{counts.archive ? ` · ${counts.archive} arhīvā` : ""}
+          </span>
+          <input
+            type="search"
+            value={pageTab === "points" ? pointQuery : query}
+            onChange={(e) => (pageTab === "points" ? setPointQuery(e.target.value) : setQuery(e.target.value))}
+            placeholder={pageTab === "points" ? "Meklēt punktu, pilsētu, izsoli" : "VIN, nosaukums, pickup nr."}
+            aria-label="Meklēt"
+            className="ml-auto h-9 w-72 min-w-0 rounded-[11px] border border-[var(--iriss-line)] bg-white px-3 text-[13px]"
+          />
+          {/* Viena galvenā poga (dizains v0.3): piedāvājumu veido no auto kartītes, ne no galvenes. */}
+          <button type="button" onClick={() => setPurchaseOpen(true)} className="inline-flex h-9 shrink-0 items-center rounded-[12px] bg-[var(--iriss-brand)] px-4 text-[13.5px] font-bold text-white hover:bg-[#d9541a]">
+            + Nopirkts
+          </button>
         </div>
-        {pageTab === "orders" ? (
-          <div className="mt-3 max-md:px-4">
-            <StatusFilterChipRow layout="scroll" label="Loģistikas filtri">
-              {/* Nils 27.10: «Visi auto» un «Termiņš»; Arhīvs ikdienā nav vajadzīgs - tas ir Iestatījumos. */}
-              {(view === "archive" ? (["active", "due", "archive"] as const) : (["active", "due"] as const)).map((key) => (
-                <StatusFilterChip
-                  key={key}
-                  label={LOGISTICS_LIST_VIEW_LV[key]}
-                  count={counts[key]}
-                  pressed={view === key}
-                  tone={key === "archive" ? "inactive" : key === "due" ? "searching" : "active"}
-                  onClick={() => setView(key)}
-                />
-              ))}
-            </StatusFilterChipRow>
-          </div>
-        ) : null}
+        <div className="iriss-log-head-r2 mt-2 flex items-center gap-1.5">
+          {(
+            [
+              ["orders", `Auto ${counts.active}`],
+              ["points", `Savākšanas vietas ${points.length}`],
+              ["settings", "Iestatījumi"],
+            ] as const
+          ).map(([tab, label]) => (
+            <button
+              key={tab}
+              type="button"
+              aria-pressed={pageTab === tab}
+              onClick={() => setPageTab(tab)}
+              className={`iriss-log-head-chip rounded-full border px-3 min-h-8 text-[13px] font-semibold ${pageTab === tab ? "on" : ""}`}
+            >
+              {label}
+            </button>
+          ))}
+          {pageTab === "orders" ? (
+            <>
+              <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-black/15" />
+              <StatusFilterChipRow layout="scroll" label="Loģistikas filtri">
+                {/* Nils 27.10: «Visi auto» un «Termiņš»; Arhīvs ikdienā nav vajadzīgs - tas ir Iestatījumos. */}
+                {(view === "archive" ? (["active", "due", "archive"] as const) : (["active", "due"] as const)).map((key) => (
+                  <StatusFilterChip
+                    key={key}
+                    label={LOGISTICS_LIST_VIEW_LV[key]}
+                    count={counts[key]}
+                    pressed={view === key}
+                    tone={key === "archive" ? "inactive" : key === "due" ? "searching" : "active"}
+                    onClick={() => setView(key)}
+                  />
+                ))}
+              </StatusFilterChipRow>
+            </>
+          ) : null}
+          {showAutoparksLink ? (
+            <Link href="/admin/iriss/autoparks-v2" className="ml-auto shrink-0 whitespace-nowrap pl-2 text-[13.5px] font-semibold text-[var(--iriss-ink)]">
+              Autoparks →
+            </Link>
+          ) : null}
+        </div>
       </header>
 
       {pageTab === "settings" ? (
