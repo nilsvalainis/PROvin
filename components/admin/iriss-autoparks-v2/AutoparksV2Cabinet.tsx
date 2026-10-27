@@ -126,6 +126,7 @@ export function AutoparksV2Cabinet({
       </div>
     );
 
+  const onHome = tab === (tabs.includes("pamatdati") ? "pamatdati" : (tabs[0] ?? tab));
   const pane = tab === "vesture" || tab === "pamatdati" || tab === "csdd" || tab === "cela" ? null : panes[tab];
 
   return (
@@ -160,16 +161,10 @@ export function AutoparksV2Cabinet({
               <VinCopy vin={basics.vin} className="ap2-dvin" />
             </div>
           </div>
-          {statusBtn("ap2-dstatus")}
+          {onHome ? statusBtn("ap2-dstatus") : null}
         </div>
         <VinCopy vin={basics.vin} className="ap2-mvin" />
       </div>
-      {statusBtn("ap2-mstatus")}
-      {statusErr ? <p className="ap2-err">{statusErr}</p> : null}
-      {canWaybill ? <AutoparksV2Waybill car={{ title: basics.title, vin: basics.vin }} /> : null}
-
-      <IrissSaitesPanel from="autoparks" id={basics.id} vehicle={basics.title} />
-
       <nav className="ap2-tabs" style={{ ["--tabs" as string]: tabs.length }} aria-label="Sadaļas">
         {tabs.length > 1 || perms.vesture
           ? tabs.map((t) => (
@@ -186,6 +181,15 @@ export function AutoparksV2Cabinet({
         ) : null}
       </nav>
 
+      {/* Nils 27.10: statuss, pavadzīme un saites tikai Pamatdatos; pārējās cilnēs tikai pašas sadaļas saturs. */}
+      {onHome ? (
+        <>
+          {statusBtn("ap2-mstatus")}
+          {statusErr ? <p className="ap2-err">{statusErr}</p> : null}
+          {canWaybill ? <AutoparksV2Waybill car={{ title: basics.title, vin: basics.vin }} /> : null}
+          <IrissSaitesPanel from="autoparks" id={basics.id} vehicle={basics.title} />
+        </>
+      ) : null}
       {tab === "pamatdati" ? <AutoparksV2Pamatdati basics={basics} onBasics={onBasics} /> : null}
       {/* Nils 27.10: CSDD reģistrs apvienots ar Pamatdatiem (viena cilne). */}
       {tab === "pamatdati" ? <AutoparksV2Csdd basics={basics} /> : null}
