@@ -16,7 +16,7 @@ export const CABINET_TAB_LABEL: Record<CabinetMainTab, { m: string; d: string }>
   pamatdati: { m: "Pamatdati", d: "Pamatdati" },
   cela: { m: "Ceļā", d: "Ceļā" },
   csdd: { m: "CSDD reģistrs", d: "CSDD reģistrs" },
-  iegade: { m: "Iegāde", d: "Iegādes dokumenti" },
+  iegade: { m: "Dokumenti", d: "Dokumenti" },
   serviss: { m: "Serviss", d: "Serviss" },
   izdevumi: { m: "Izdevumi", d: "Citi izdevumi" },
   cenu_lapa: { m: "Cenu lapa", d: "Cenu lapa" },
@@ -30,10 +30,10 @@ export function allowedTabs(
   const out: CabinetMainTab[] = [];
   if (perms.pamatdati) out.push("pamatdati");
   if (opts.transit) out.push("cela");
-  if (perms.pamatdati) out.push("csdd");
+  // Nils 27.10: CSDD reģistrs ir Pamatdatos (viena cilne); `?t=csdd` atver Pamatdatus.
   if (perms.iegade && panes.iegade) out.push("iegade");
   if (perms.serviss && panes.serviss) out.push("serviss");
-  if (perms.izdevumi && panes.izdevumi) out.push("izdevumi");
+  // Nils 27.10: «Izdevumi» (cenas) pagaidām paslēpti - vēlāk atsevišķa izmaksu sadaļa.
   if (perms.cenuLapa && panes.cenu_lapa) out.push("cenu_lapa");
   return out;
 }
@@ -44,6 +44,7 @@ export function resolveCabinetTab(
   vesture: boolean,
 ): CabinetTab {
   if (want === "vesture" && vesture) return "vesture";
+  if (want === "csdd" && tabs.includes("pamatdati")) return "pamatdati";
   if (want && (tabs as readonly string[]).includes(want)) return want as CabinetTab;
   return tabs[0] ?? "pamatdati";
 }

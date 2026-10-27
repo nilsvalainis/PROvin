@@ -19,7 +19,6 @@ export const AUTOPARKS_V2_FILE = "autoparks-v2.json";
 
 /** Statusu secība v2 (saraksta sadaļas un statusa lapa, T6). */
 export const AUTOPARKS_V2_STATUS_ORDER: readonly AutoparksStatus[] = [
-  "ordered",
   "in_transit",
   "prep_waiting",
   "in_service",
@@ -29,7 +28,6 @@ export const AUTOPARKS_V2_STATUS_ORDER: readonly AutoparksStatus[] = [
 ];
 
 export const AUTOPARKS_V2_STATUS_COLOR: Record<AutoparksStatus, string> = {
-  ordered: "#0891b2",
   in_transit: "#0d9488",
   prep_waiting: "#d97706",
   in_service: "#6366f1",
@@ -123,7 +121,8 @@ export type V2Service = {
 };
 
 /** v2 labotie v1 lauki: v1 vērtība netiek pārrakstīta, v2 rāda šo, ja aizpildīts (J29 B papildus: + gads, krāsa, īpašnieks). */
-export const V2_FIELD_KEYS = ["plate", "location", "arrivedAt", "make", "model", "vin", "year", "color", "owner"] as const;
+/** `clientOrder`: "1" / "0" / "" (nav labots - ņem v1 `clientOrder`). */
+export const V2_FIELD_KEYS = ["plate", "location", "arrivedAt", "make", "model", "vin", "year", "color", "owner", "clientOrder"] as const;
 export type V2FieldKey = (typeof V2_FIELD_KEYS)[number];
 
 export type AutoparksCarV2 = {
@@ -196,7 +195,7 @@ function list<T>(raw: unknown, parse: (row: unknown) => T | null, max = 500): T[
 
 export function emptyCarV2(): AutoparksCarV2 {
   return {
-    fields: { plate: "", location: "", arrivedAt: "", make: "", model: "", vin: "", year: "", color: "", owner: "" },
+    fields: { plate: "", location: "", arrivedAt: "", make: "", model: "", vin: "", year: "", color: "", owner: "", clientOrder: "" },
     tech: { firstRegDate: "", displacementCm3: null, powerKw: null, tyreSize: "", gearbox: "", engine: "", mileageKm: null, csddCheckedAt: "" },
     sources: {},
     purchase: { auction: "", auctionNo: "", purchaseDate: "", purchasePriceEur: null, transportEur: null, vat: { mode: "", source: "", at: "" } },
@@ -299,6 +298,7 @@ export function normalizeCarV2(raw: unknown): AutoparksCarV2 {
       year: str(fields.year, 4),
       color: str(fields.color, 40),
       owner: isAutoparksOwner(fields.owner) ? fields.owner : "",
+      clientOrder: fields.clientOrder === "1" || fields.clientOrder === "0" ? fields.clientOrder : "",
     },
     tech: {
       firstRegDate: str(tech.firstRegDate, 10),
@@ -419,6 +419,8 @@ export type AutoparksV2Basics = {
   statusLabel: string;
   owner: "IRISS" | "DZA";
   ownerLabel: string;
+  /** «Klienta auto» (Nils 27.10, agrāk statuss «Pasūtījums»). */
+  clientOrder: boolean;
   location: string;
   arrivedAt: string;
   archived: boolean;
@@ -466,6 +468,7 @@ export function autoparksV2Basics(car: AutoparksCar, v2: AutoparksCarV2): Autopa
     statusLabel: AUTOPARKS_STATUS_LV[car.status],
     owner,
     ownerLabel: AUTOPARKS_OWNER_LV[owner],
+    clientOrder: v2.fields.clientOrder ? v2.fields.clientOrder === "1" : Boolean(car.clientOrder),
     location: v2.fields.location || car.location,
     // J52b LABOJUMS: kad "Atvests" ar roku notīrīts (v2 pārraksts = ""), tas vairs nedrīkst
     // atgriezties pie v1 vērtības - `sources.arrivedAt === "manual"` nozīmē v2 vērtība (arī tukša) ir galīgā.

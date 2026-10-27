@@ -17,7 +17,7 @@ const rows: AutoparksV2ListRow[] = [
     statusChangedAt: "2026-10-20",
     make: "Volkswagen",
     purchaseDate: "",
-    purchasePriceEur: null, vatMode: "",
+    purchasePriceEur: null, vatMode: "", clientOrder: false,
   },
   {
     id: "b",
@@ -32,7 +32,7 @@ const rows: AutoparksV2ListRow[] = [
     statusChangedAt: "2026-10-21",
     make: "Audi",
     purchaseDate: "",
-    purchasePriceEur: null, vatMode: "",
+    purchasePriceEur: null, vatMode: "", clientOrder: false,
   },
 ];
 
@@ -89,7 +89,8 @@ describe("Autoparks saraksts (Nils 27.10 makets)", () => {
   it("ar Pamatdatu tiesību statusu maina sarakstā (izvēle ar visiem statusiem), bez tās - tikai žetons", () => {
     const html = renderHtml(<AutoparksV2List initialCars={withData} canChangeStatus />);
     expect(html).toContain("Mainīt statusu");
-    expect(html).toContain("Gaida sagatavošanu");
+    expect(html).toContain("Noliktavā");
+    expect(html).not.toContain("Pasūtījums");
     expect(renderHtml(<AutoparksV2List initialCars={withData} />)).not.toContain("Mainīt statusu");
   });
 
@@ -97,5 +98,13 @@ describe("Autoparks saraksts (Nils 27.10 makets)", () => {
     const html = renderHtml(<AutoparksV2ListBody rows={withData} />);
     expect(html.match(/class="ap2-row"/g)).toHaveLength(2);
     expect(html).toContain('href="/admin/iriss/autoparks-v2/a"');
+  });
+});
+
+describe("Klienta auto (Nils 27.10)", () => {
+  it("atzīme rindā, nevis atsevišķs statuss", () => {
+    const text = renderText(<AutoparksV2ListBody rows={[{ ...rows[0]!, clientOrder: true }]} />);
+    expect(text).toContain("Klienta auto");
+    expect(renderText(<AutoparksV2ListBody rows={rows} />)).not.toContain("Klienta auto");
   });
 });

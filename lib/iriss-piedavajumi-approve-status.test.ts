@@ -30,8 +30,8 @@ describe("Autoparka auto «Rezervēts» pēc apstiprinājuma (Nils 27.10)", () =
     expect(irissPdAutoparksCarId("")).toBe("");
   });
 
-  it("pārslēdz no Ceļā / Gaida / Servisā / Pārdošanā; Pasūtījums, Pārdots, Rezervēts netiek pazemināti", () => {
+  it("pārslēdz no Ceļā / Gaida / Servisā / Pārdošanā; Pārdots, Rezervēts netiek pazemināti", () => {
     for (const s of ["in_transit", "prep_waiting", "in_service", "for_sale"] as const) expect(autoparksStatusReservable(s)).toBe(true);
-    for (const s of ["reserved", "ordered", "sold"] as const) expect(autoparksStatusReservable(s)).toBe(false);
+    for (const s of ["reserved", "sold"] as const) expect(autoparksStatusReservable(s)).toBe(false);
   });
 });
