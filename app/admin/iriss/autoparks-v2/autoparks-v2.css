@@ -3309,7 +3309,8 @@
   justify-content: center;
 }
 .ap2.ap2.ap2 .ap2-cl-logo img {
-  width: 116px;
+  /* SVG bez baltajām malām (PNG bija ~15 % platāks ar malām) - tāds pats redzamais izmērs. */
+  width: 100px;
   height: auto;
 }
 .ap2.ap2.ap2 .ap2-cl-title {

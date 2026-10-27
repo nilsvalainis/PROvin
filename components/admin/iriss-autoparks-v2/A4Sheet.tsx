@@ -7,7 +7,7 @@ export function A4Sheet({ s }: { s: V2PriceSheet }) {
   return (
     <div className="ap2-cl">
       <div className="ap2-cl-logo">
-        <img src="/brands/dzintarzeme-auto-logo-original.png" alt="Dzintarzeme Auto" />
+        <img src="/brands/dzintarzeme-auto-logo.svg" alt="Dzintarzeme Auto" />
       </div>
       <h1 className="ap2-cl-title" style={{ fontSize: priceSheetTitlePx(s.displayName) }}>
         {s.displayName}
