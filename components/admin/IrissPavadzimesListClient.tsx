@@ -316,6 +316,7 @@ export function IrissPavadzimesListClient({
       {view === "current" ? (
         <div className="md:hidden">
           <IrissWaybillGauges
+            chrome="float"
             allHref={null}
             selectable
             onExtend={(g) => {
