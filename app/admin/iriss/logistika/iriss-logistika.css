@@ -1539,3 +1539,105 @@ html.iriss-log-printing .iriss-log-pin-tip {
     font-size: 16px;
   }
 }
+
+/*
+ * Dators (≥1024 px), Nils 27.10 makets A: karte ir visas lapas fons. Galvene (augšā pa kreisi), kartes rīki
+ * (apakšā pa kreisi) un kravu plāns / kabinets (pa labi, 380 px, pilnā augstumā) peld virs kartes.
+ * Lapa neritinās: ritenis virs paneļa ritina tikai paneli (overscroll contain), virs kartes - tuvina karti.
+ * Augstums = skata augstums mīnus admin main atkāpes (lg: pt 8 px + pb 24 px).
+ */
+@media (min-width: 1024px) {
+  .iriss-log-screen.iriss-log-desk {
+    position: relative;
+    height: calc(100dvh - 32px);
+    min-height: 560px;
+    overflow: hidden;
+    padding: 0 !important;
+    border-radius: 20px;
+  }
+  .iriss-log-desk .iriss-log-head {
+    position: absolute;
+    z-index: 20;
+    top: 16px;
+    left: 16px;
+    width: fit-content;
+    max-width: calc(100% - 444px);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.94);
+    padding: 10px 14px;
+    box-shadow: 0 6px 24px rgba(22, 23, 26, 0.14);
+  }
+  .iriss-log-desk .iriss-log-head > div:first-child {
+    flex-wrap: nowrap;
+  }
+  .iriss-log-desk .iriss-log-head .mt-3 {
+    margin-top: 8px;
+  }
+  .iriss-log-desk .iriss-log-desk-grid {
+    position: absolute;
+    inset: 0;
+    display: block;
+    margin: 0 !important;
+  }
+  .iriss-log-desk .iriss-log-desk-map {
+    position: absolute;
+    inset: 0;
+  }
+  .iriss-log-desk .iriss-log-desk-mapwrap,
+  .iriss-log-desk .iriss-log-desk-mapcard {
+    position: relative;
+    height: 100%;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .iriss-log-desk .iriss-log-print-root,
+  .iriss-log-desk .iriss-log-map-hero {
+    height: 100%;
+    min-height: 0;
+    aspect-ratio: auto;
+  }
+  .iriss-log-desk .iriss-log-map-toolbar {
+    position: absolute;
+    z-index: 10;
+    left: 16px;
+    bottom: 16px;
+    max-width: calc(100% - 444px);
+    border: 0;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 6px 24px rgba(22, 23, 26, 0.14);
+  }
+  .iriss-log-desk .iriss-log-fs-btn {
+    display: none;
+  }
+  .iriss-log-desk .iriss-log-desk-selbar {
+    position: absolute;
+    z-index: 10;
+    left: 16px;
+    bottom: 76px;
+    margin: 0;
+    box-shadow: 0 6px 24px rgba(22, 23, 26, 0.14);
+  }
+  .iriss-log-desk .iriss-log-cargo-col,
+  .iriss-log-desk .iriss-log-cab-overlay {
+    position: absolute;
+    z-index: 15;
+    top: 16px;
+    right: 16px;
+    bottom: 16px;
+    width: 380px;
+    margin: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 20px;
+    box-shadow: 0 10px 36px rgba(22, 23, 26, 0.18);
+  }
+  .iriss-log-desk .iriss-log-cab-overlay {
+    background: var(--iriss-surface);
+    padding: 12px;
+  }
+  .iriss-log-desk .iriss-log-desk-legacy {
+    display: none;
+  }
+}
+
