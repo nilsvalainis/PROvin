@@ -101,10 +101,10 @@ describe("Autoparks saraksts (Nils 27.10 makets)", () => {
   });
 });
 
-describe("Klienta auto (Nils 27.10)", () => {
+describe("Pasūtījums (Nils 27.10)", () => {
   it("atzīme rindā, nevis atsevišķs statuss", () => {
     const text = renderText(<AutoparksV2ListBody rows={[{ ...rows[0]!, clientOrder: true }]} />);
-    expect(text).toContain("Klienta auto");
-    expect(renderText(<AutoparksV2ListBody rows={rows} />)).not.toContain("Klienta auto");
+    expect(text).toContain("Pasūtījums");
+    expect(renderText(<AutoparksV2ListBody rows={rows} />)).not.toContain("Pasūtījums");
   });
 });

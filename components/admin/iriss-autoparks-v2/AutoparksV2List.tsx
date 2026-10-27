@@ -215,7 +215,7 @@ export function AutoparksV2ListBody({
             <span className="ap2-rt">
               <b>
                 {r.title}
-                {r.clientOrder ? <span className="ap2-client-badge">Klienta auto</span> : null}
+                {r.clientOrder ? <span className="ap2-client-badge">Pasūtījums</span> : null}
               </b>
               <span className="meta">{yearColor(r.year, r.color)}</span>
               {shown ? <span className="meta ap2-sortval">{sortValueLabel(r, shown)}</span> : null}
@@ -227,7 +227,7 @@ export function AutoparksV2ListBody({
             <span className="ap2-rt">
               <b>
                 {r.title}
-                {r.clientOrder ? <span className="ap2-client-badge">Klienta auto</span> : null}
+                {r.clientOrder ? <span className="ap2-client-badge">Pasūtījums</span> : null}
               </b>
               <span className="meta">{yearColor(r.year, r.color)}</span>
               {shown === "sum" ? <span className="meta ap2-sortval">{sortValueLabel(r, shown)}</span> : null}

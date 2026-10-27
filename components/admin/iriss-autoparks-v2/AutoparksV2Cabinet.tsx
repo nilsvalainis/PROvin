@@ -156,7 +156,7 @@ export function AutoparksV2Cabinet({
             <div className="meta">
               <span>{yearColor(basics.year, basics.color)}</span>
               <OwnerBadge basics={basics} canEdit={perms.pamatdati} onBasics={onBasics} />
-              {basics.clientOrder ? <span className="ap2-client-badge">Klienta auto</span> : null}
+              {basics.clientOrder ? <span className="ap2-client-badge">Pasūtījums</span> : null}
               <VinCopy vin={basics.vin} className="ap2-dvin" />
             </div>
           </div>

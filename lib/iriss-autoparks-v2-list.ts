@@ -28,7 +28,7 @@ export type AutoparksV2ListRow = {
   purchasePriceEur: number | null;
   /** Nils 27.10: PVN / Margin / Neto kolonna (tukšs - nav zināms vai nav tiesības «Iegāde»). */
   vatMode: V2VatMode;
-  /** «Klienta auto» atzīme (Nils 27.10). */
+  /** «Pasūtījums» atzīme (Nils 27.10). */
   clientOrder: boolean;
 };
 

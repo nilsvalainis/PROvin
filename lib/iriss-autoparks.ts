@@ -4,7 +4,7 @@ import { normalizeAutoparksRegistry, type AutoparksRegistry } from "@/lib/iriss-
 
 /**
  * Nils 27.10: viens auto ceļš - Ceļā -> Noliktavā -> Servisā -> Pārdošanā -> Rezervēts -> Pārdots.
- * «Pasūtījums» vairs nav statuss: tā ir atzīme «Klienta auto» (`clientOrder`) pie jebkura statusa.
+ * «Pasūtījums» vairs nav statuss: tā ir atzīme «Pasūtījums» (`clientOrder`) pie jebkura statusa.
  */
 export const AUTOPARKS_STATUSES = ["in_transit", "prep_waiting", "in_service", "for_sale", "reserved", "sold"] as const;
 export type AutoparksStatus = (typeof AUTOPARKS_STATUSES)[number];
@@ -100,7 +100,7 @@ export type AutoparksCar = {
   archivedAt: string;
   /** Īpašnieks. Vecajos ierakstos lauka nav (= IRISS, sk. `autoparksOwner`). */
   owner?: AutoparksOwner;
-  /** «Klienta auto» (agrāk statuss «Pasūtījums», Nils 27.10). Tikai, ja true. */
+  /** «Pasūtījums» (agrāk statuss «Pasūtījums», Nils 27.10). Tikai, ja true. */
   clientOrder?: true;
   /** Dropbox /STOCK mapes id (`id:...`); nav/tukšs = vēl nav sasaistīts. Vecos ierakstos lauka nav. */
   dropboxFolderId?: string;
@@ -245,7 +245,7 @@ export function normalizeAutoparksCar(raw: unknown): AutoparksCar | null {
     plate: str(raw.plate, 16).toUpperCase(),
     color: str(raw.color, 40),
     mileageKm: numOrNull(raw.mileageKm),
-    // Vecais statuss «Pasūtījums» -> atzīme «Klienta auto»; posms: ar Loģistikas ierakstu «Ceļā», citādi «Noliktavā».
+    // Vecais statuss «Pasūtījums» -> atzīme «Pasūtījums»; posms: ar Loģistikas ierakstu «Ceļā», citādi «Noliktavā».
     status: isAutoparksStatus(raw.status) ? raw.status : raw.status === "ordered" ? (str(raw.orderId, 80) ? "in_transit" : "prep_waiting") : "prep_waiting",
     statusChangedAt: str(raw.statusChangedAt, 40),
     location: str(raw.location, 120),

@@ -84,7 +84,7 @@ describe("Autoparks dati", () => {
     expect(autoparksDefaultStage("reserved")).toBe("sale");
   });
 
-  it("Nils 27.10: vecais «Pasūtījums» -> atzīme «Klienta auto»; posms pēc Loģistikas saites", () => {
+  it("Nils 27.10: vecais «Pasūtījums» -> atzīme «Pasūtījums»; posms pēc Loģistikas saites", () => {
     const withOrder = normalizeAutoparksCar({ id: "x", status: "ordered", orderId: "lo-1" });
     expect(withOrder?.status).toBe("in_transit");
     expect(withOrder?.clientOrder).toBe(true);
