@@ -53,7 +53,7 @@ const text = (v: unknown, max = 4000): string => (typeof v === "string" ? v.repl
 function normalizePhoto(raw: unknown): IrissPdPhoto | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
-  if (o.kind === "dropbox" && typeof o.id === "string" && typeof o.ref === "string" && /^autoparks:[\w-]{1,80}$/.test(o.ref)) {
+  if (o.kind === "dropbox" && typeof o.id === "string" && typeof o.ref === "string" && /^(autoparks|logistics):[\w-]{1,80}$/.test(o.ref)) {
     const id = o.id.trim();
     return id && id.length <= 200 ? { kind: "dropbox", ref: o.ref, id } : null;
   }
@@ -180,7 +180,7 @@ export function normalizeIrissPiedavajums(raw: unknown): IrissPiedavajums | null
     createdAt: clean(o.createdAt, 40),
     updatedAt: clean(o.updatedAt, 40),
     source: isIrissPdSource(o.source) ? o.source : "manual",
-    sourceRef: /^autoparks:[\w-]{1,80}$/.test(clean(o.sourceRef, 100)) ? clean(o.sourceRef, 100) : "",
+    sourceRef: /^(autoparks|logistics):[\w-]{1,80}$/.test(clean(o.sourceRef, 100)) ? clean(o.sourceRef, 100) : "",
     sourceUrl: /^https:\/\//i.test(clean(o.sourceUrl, 2000)) ? clean(o.sourceUrl, 2000) : "",
     sourceKey: clean(o.sourceKey, 80),
     importedFieldCount: typeof o.importedFieldCount === "number" && Number.isFinite(o.importedFieldCount) ? Math.max(0, Math.floor(o.importedFieldCount)) : 0,
