@@ -3,6 +3,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import {
   AUTOPARKS_STATUS_LV,
+  autoparksStatusReservable,
   isAutoparksStatus,
   type AutoparksCar,
   type AutoparksStatus,
@@ -135,6 +136,27 @@ export async function changeAutoparksStatusV2(
     return { result: null };
   });
   return { ok: true, historyId: row.id, status };
+}
+
+/**
+ * Nils 27.10: klients apstiprināja piedāvājumu ar šo Autoparka auto -> «Rezervēts».
+ * Tikai no posmiem pirms rezervācijas (Ceļā, Gaida sagatavošanu, Servisā, Pārdošanā); Pasūtījums/Pārdots netiek pazemināts.
+ * Nosacīta maiņa (expect = nolasītais statuss), lai paralēla ar roku veikta maiņa netiktu pārrakstīta.
+ */
+export async function reserveAutoparksCarAfterOffer(
+  carId: string,
+  actor: AutoparksV2Actor,
+): Promise<{ ok: true; prev: AutoparksStatus } | { ok: false; reason: "not_found" | "conflict" | "same" | "later_stage" }> {
+  const car = (await readAutoparksState()).cars.find((c) => c.id === carId);
+  if (!car) return { ok: false, reason: "not_found" };
+  if (!autoparksStatusReservable(car.status)) return { ok: false, reason: car.status === "reserved" ? "same" : "later_stage" };
+  const res = await setV1StatusIf(carId, "reserved", car.status, actor);
+  if (!res.ok) return res;
+  await mutateAutoparksV2State((state) => {
+    state.history.push(v2HistoryRow(carId, actor, "status", res.prev, "reserved"));
+    return { result: null };
+  });
+  return { ok: true, prev: res.prev };
 }
 
 export async function undoAutoparksStatusV2(

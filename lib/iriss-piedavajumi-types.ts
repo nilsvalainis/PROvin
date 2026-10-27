@@ -28,7 +28,7 @@ export const IRISS_PD_STATUS_HINT_LV: Record<IrissPdStatus, string> = {
   requested: "Klients pieprasīja - admins aizpilda",
   draft: "Admins veido, klientam nav redzams",
   sent: "Klientam pieejams, gaida atbildi",
-  approved: "Automātiski Pasūtījums «Rezervēts»",
+  approved: "Automātiski Pasūtījums un Autoparka auto «Rezervēts»",
   declined: "Klients atteicās vai admins atzīmēja",
   expired: "Pēc manuālā termiņa - «Izveidot jaunu uz šī bāzes»",
 };

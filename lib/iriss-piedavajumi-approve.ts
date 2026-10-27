@@ -102,7 +102,31 @@ export async function runIrissPdApprovalEffects(
     console.error("[iriss-piedavajumi] approve order", e instanceof Error ? e.message : e);
     next = appendIrissPdHistory(next, { at: opts.at, by: opts.by, text: "Pasūtījumu neizdevās izveidot - izveido ar pogu" });
   }
-  return next;
+  return reserveSourceCar(next, opts);
+}
+
+/** Autoparka auto id no piedāvājuma avota (`autoparks:ID`); citiem avotiem - tukšs. */
+export function irissPdAutoparksCarId(sourceRef: string): string {
+  const m = sourceRef.match(/^autoparks:([\w-]{1,80})$/);
+  return m ? m[1]! : "";
+}
+
+/** Nils 27.10: apstiprināts piedāvājums ar Autoparka auto -> auto «Rezervēts» (ja tas vēl nav tālākā posmā). */
+async function reserveSourceCar(rec: IrissPiedavajums, opts: { at: string; by: string }): Promise<IrissPiedavajums> {
+  const carId = irissPdAutoparksCarId(rec.sourceRef);
+  if (!carId) return rec;
+  try {
+    const { reserveAutoparksCarAfterOffer } = await import("@/lib/iriss-autoparks-v2-store");
+    const res = await reserveAutoparksCarAfterOffer(carId, { id: "pd", name: `Piedāvājums ${irissPdNumberLabel(rec.number)}` });
+    if (res.ok) return appendIrissPdHistory(rec, { at: opts.at, by: opts.by, text: "Autoparka auto pārslēgts uz «Rezervēts»" });
+    if (res.reason === "conflict") {
+      return appendIrissPdHistory(rec, { at: opts.at, by: opts.by, text: "Autoparka auto statuss tikko mainīts - «Rezervēts» iestati ar roku" });
+    }
+  } catch (e) {
+    console.error("[iriss-piedavajumi] reserve autoparks", e instanceof Error ? e.message : e);
+    return appendIrissPdHistory(rec, { at: opts.at, by: opts.by, text: "Autoparka auto neizdevās pārslēgt uz «Rezervēts» - iestati ar roku" });
+  }
+  return rec;
 }
 
 /** Nilam e-pasts + push (tas pats kanāls kā pasūtījumu piedāvājumiem). Saite ved uz izveidoto pasūtījumu. */

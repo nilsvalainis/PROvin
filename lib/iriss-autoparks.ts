@@ -15,6 +15,11 @@ export const AUTOPARKS_STATUS_LV: Record<AutoparksStatus, string> = {
   sold: "Pārdots",
 };
 
+/** Posmi, no kuriem piedāvājuma apstiprinājums auto pārslēdz uz «Rezervēts» (tālākos nepazemina). */
+export function autoparksStatusReservable(status: AutoparksStatus): boolean {
+  return status === "in_transit" || status === "prep_waiting" || status === "in_service" || status === "for_sale";
+}
+
 /** Īsie nosaukumi segmentiem un čipiem telefonā. */
 export const AUTOPARKS_STATUS_SHORT_LV: Record<AutoparksStatus, string> = {
   in_transit: "Ceļā",
