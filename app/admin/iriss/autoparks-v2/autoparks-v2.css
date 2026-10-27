@@ -3020,3 +3020,65 @@
   background: var(--iriss-graphite, #1b1c20);
   color: var(--iriss-on-graphite, #f3f2ef);
 }
+
+/* Cilne «Dokumenti» (Nils 27.10, makets): grupas ar pirmās lapas priekšskatu. */
+.ap2.ap2.ap2 .ap2-docgroups {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 14px;
+}
+.ap2.ap2.ap2 .ap2-docgroup h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--iriss-ink, #1c1c1e);
+}
+.ap2.ap2.ap2 .ap2-docgroup h4 span {
+  font-weight: 500;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-docgroup .ap2-files {
+  margin-top: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.ap2.ap2.ap2 .ap2-docgroup .ap2-fl .pv {
+  height: auto;
+  aspect-ratio: 3 / 4;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+.ap2.ap2.ap2 .ap2-thumb {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+  background: #fff;
+}
+.ap2.ap2.ap2 .ap2-thumb canvas,
+.ap2.ap2.ap2 .ap2-thumb img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.ap2.ap2.ap2 .ap2-thumb img {
+  height: 100%;
+  object-fit: cover;
+}
+.ap2.ap2.ap2 .ap2-thumb.idle canvas,
+.ap2.ap2.ap2 .ap2-thumb.fail canvas {
+  display: none;
+}
+.ap2.ap2.ap2 .ap2-thumb-ph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f7;
+}
+.ap2.ap2.ap2 .ap2-docgroup .ap2-tag {
+  z-index: 1;
+}

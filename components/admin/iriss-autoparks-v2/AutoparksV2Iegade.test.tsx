@@ -5,7 +5,7 @@ import {
   CSDD_DOC_BADGE_SRC,
   CSDD_DOC_BADGE_TITLE,
 } from "@/components/admin/iriss-autoparks-v2/AutoparksV2Iegade";
-import type { V2IegadeFile } from "@/lib/iriss-autoparks-v2-iegade-files";
+import { iegadeDocGroupOfType, type V2IegadeFile } from "@/lib/iriss-autoparks-v2-iegade-files";
 import { renderHtml, renderText } from "@/lib/test-render";
 
 const file = (extra: Partial<V2IegadeFile> & Pick<V2IegadeFile, "id" | "title" | "csddBadge">): V2IegadeFile => ({
@@ -15,6 +15,7 @@ const file = (extra: Partial<V2IegadeFile> & Pick<V2IegadeFile, "id" | "title" |
   link: false,
   editable: false,
   type: "",
+  group: iegadeDocGroupOfType(extra.type ?? ""),
   ...extra,
 });
 
@@ -51,5 +52,20 @@ describe("Autoparks v2 Iegādes CSDD badge", () => {
     const html = renderHtml(<AutoparksV2CsddDocBadge />);
     expect(html).toContain(`title="${CSDD_DOC_BADGE_TITLE}"`);
     expect(renderText(<AutoparksV2IegadeFiles files={files} onOpen={() => undefined} />)).not.toContain("CSDD ✓");
+  });
+});
+
+describe("Dokumenti grupās (Nils 27.10)", () => {
+  it("Pirkums un Transports - atsevišķas grupas ar skaitu; CMR un Pickup kopā", () => {
+    const text = renderText(<AutoparksV2IegadeFiles files={files} onOpen={() => {}} />);
+    expect(text).toContain("Pirkums · 1");
+    expect(text).toContain("Transports · 2");
+    expect(text.indexOf("Pirkums")).toBeLessThan(text.indexOf("Transports"));
+    expect(text).not.toContain("Citi");
+  });
+
+  it("ar adresi - priekšskata vieta katram dokumentam", () => {
+    const html = renderHtml(<AutoparksV2IegadeFiles files={files} onOpen={() => {}} urlFor={(f) => `/x/${f.id}`} />);
+    expect(html.match(/ap2-thumb/g)?.length).toBeGreaterThanOrEqual(3);
   });
 });

@@ -19,7 +19,34 @@ export type V2IegadeFile = {
   csddBadge: boolean;
   /** Kabineta dokumenta tips (pildspalvas tipa izvēlei, J61); v1/akts ierakstiem tukšs - nav maināms. */
   type: CabinetDocType | "";
+  /** Grupa cilnē «Dokumenti» (Nils 27.10). */
+  group: IegadeDocGroup;
 };
+
+/** Nils 27.10: dokumenti grupās, lai vieglāk orientēties. */
+export const IEGADE_DOC_GROUPS = ["pirkums", "transports", "csdd", "citi"] as const;
+export type IegadeDocGroup = (typeof IEGADE_DOC_GROUPS)[number];
+export const IEGADE_DOC_GROUP_LV: Record<IegadeDocGroup, string> = {
+  pirkums: "Pirkums",
+  transports: "Transports",
+  csdd: "CSDD un serviss",
+  citi: "Citi",
+};
+
+export function iegadeDocGroupOfType(type: CabinetDocType | ""): IegadeDocGroup {
+  if (type === "car_invoice" || type === "auction_invoice" || type === "purchase_confirm") return "pirkums";
+  if (type === "pickup_pdf" || type === "cmr" || type === "transport_request_confirm" || type === "transport_invoice") return "transports";
+  if (type === "csdd_status" || type === "service_invoice") return "csdd";
+  return "citi";
+}
+
+/** Grupas secībā; tukšās netiek atgrieztas. */
+export function groupIegadeFiles(files: readonly V2IegadeFile[]): Array<{ group: IegadeDocGroup; files: Array<{ file: V2IegadeFile; index: number }> }> {
+  return IEGADE_DOC_GROUPS.map((group) => ({
+    group,
+    files: files.map((file, index) => ({ file, index })).filter((x) => x.file.group === group),
+  })).filter((g) => g.files.length > 0);
+}
 
 /** Tipi, ko drīkst izvēlēties ar roku Iegādes dokumenta pildspalvā (sadaļas A apakškopa, bez Servisa rēķina). */
 export const IEGADE_DOC_TYPE_OPTIONS: readonly CabinetDocType[] = ["other", "purchase_confirm", "car_invoice", "auction_invoice"];
@@ -76,6 +103,7 @@ export function iegadeFileList(input: {
       editable: true,
       csddBadge: d.type === "car_invoice",
       type: d.type,
+      group: iegadeDocGroupOfType(d.type),
     });
   }
   for (const f of input.v1Files) {
@@ -90,6 +118,7 @@ export function iegadeFileList(input: {
       editable: false,
       csddBadge: false,
       type: "",
+      group: f.stage === "transport" ? "transports" : f.kind === "invoice" ? "pirkums" : "citi",
     });
   }
   out.sort((a, b) => a.date.localeCompare(b.date));
@@ -105,6 +134,7 @@ export function iegadeFileList(input: {
       editable: false,
       csddBadge: false,
       type: "",
+      group: "csdd",
     });
   }
   return out;

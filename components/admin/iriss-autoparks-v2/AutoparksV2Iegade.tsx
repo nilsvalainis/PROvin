@@ -9,9 +9,10 @@ import {
   rekiniLv,
 } from "@/lib/iriss-autoparks-v2-format";
 import type { V2IegadeView } from "@/lib/iriss-autoparks-v2-iegade";
-import { IEGADE_DOC_TYPE_OPTIONS, type V2IegadeFile } from "@/lib/iriss-autoparks-v2-iegade-files";
+import { groupIegadeFiles, IEGADE_DOC_GROUP_LV, IEGADE_DOC_TYPE_OPTIONS, type V2IegadeFile } from "@/lib/iriss-autoparks-v2-iegade-files";
 import { CABINET_DOC_TYPE_LABEL, type CabinetDocType } from "@/lib/iriss-logistics-cabinet";
 import type { CabinetPaneProps } from "./AutoparksV2Cabinet";
+import { DocThumb } from "./DocThumb";
 import { FileModal, LinkIcon, PdfIcon } from "./FileModal";
 
 function PlusIcon() {
@@ -76,26 +77,37 @@ export function AutoparksV2IegadeFiles({
   onOpen,
   onEdit,
   onDelete,
+  urlFor,
 }: {
   files: readonly V2IegadeFile[];
   busy?: boolean;
   onOpen: (index: number) => void;
   onEdit?: (file: V2IegadeFile) => void;
   onDelete?: (file: V2IegadeFile) => void;
+  /** Ar adresi - pirmās lapas priekšskats (Nils 27.10); bez tās - PDF ikona. */
+  urlFor?: (f: V2IegadeFile) => string;
 }) {
+  // Nils 27.10: dokumenti grupās (Pirkums, Transports, CSDD un serviss, Citi) ar priekšskatu.
   return (
-    <div className="ap2-files">
-      {files.map((f, i) => (
+    <div className="ap2-docgroups">
+      {groupIegadeFiles(files).map((g) => (
+        <section key={g.group} className="ap2-docgroup" aria-label={IEGADE_DOC_GROUP_LV[g.group]}>
+          <h4>
+            {IEGADE_DOC_GROUP_LV[g.group]} <span>· {g.files.length}</span>
+          </h4>
+          <div className="ap2-files">
+            {g.files.map(({ file: f, index: i }) => (
         <div key={f.id} className="ap2-fl">
           <button type="button" className="ap2-fl-open" onClick={() => onOpen(i)}>
             <span className="pv">
+              {urlFor ? <DocThumb url={urlFor(f)} contentType={f.contentType} title={f.title} /> : null}
               <span className="ap2-tag">{f.tag}</span>
               {f.link ? (
                 <span className="ap2-lnk">
                   <LinkIcon />
                 </span>
               ) : null}
-              <PdfIcon />
+              {urlFor ? null : <PdfIcon />}
             </span>
             <span className="m">
               <span className="ap2-fl-title">
@@ -133,6 +145,9 @@ export function AutoparksV2IegadeFiles({
             </span>
           ) : null}
         </div>
+            ))}
+          </div>
+        </section>
       ))}
     </div>
   );
@@ -451,6 +466,7 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
         onOpen={setOpen}
         onEdit={openEdit}
         onDelete={setDeleteTarget}
+        urlFor={urlFor}
       />
       {error ? <p className="ap2-err">{error}</p> : null}
       {open != null ? (
