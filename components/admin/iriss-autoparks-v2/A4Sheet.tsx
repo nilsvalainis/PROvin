@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { priceSheetTitlePx, type V2PriceSheet } from "@/lib/iriss-autoparks-v2-cenu-lapa";
+import { DZINTARZEME_AUTO_LOGO_SVG_PUBLIC_PATH } from "@/lib/dzintarzeme-logo";
 import { fmtEurRound } from "@/lib/iriss-autoparks-v2-format";
 
 /** Cenu lapas A4 pēc maketa L7 (Nils 27.10): centrālā ass, plāns šrifts, viena cena. 794x1123 px = A4. */
@@ -7,7 +8,7 @@ export function A4Sheet({ s }: { s: V2PriceSheet }) {
   return (
     <div className="ap2-cl">
       <div className="ap2-cl-logo">
-        <img src="/brands/dzintarzeme-auto-logo.svg" alt="Dzintarzeme Auto" />
+        <img src={DZINTARZEME_AUTO_LOGO_SVG_PUBLIC_PATH} alt="Dzintarzeme Auto" />
       </div>
       <h1 className="ap2-cl-title" style={{ fontSize: priceSheetTitlePx(s.displayName) }}>
         {s.displayName}

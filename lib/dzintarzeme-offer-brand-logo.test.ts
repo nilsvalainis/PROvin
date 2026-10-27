@@ -23,7 +23,7 @@ import {
 import { dzintarzemeAutoLogoFsPath } from "@/lib/dzintarzeme-logo-fs";
 
 describe("Dzintarzeme offer brand logo", () => {
-  it("uses the byte-identical original PNG everywhere", () => {
+  it("uses the flat logo PNG (no shadow) everywhere", () => {
     expect(DZINTARZEME_OFFER_LOGO_PATH).toBe(DZINTARZEME_AUTO_LOGO_PUBLIC_PATH);
     expect(DZINTARZEME_OFFER_PUBLIC_LOGO_PATH).toBe(DZINTARZEME_AUTO_LOGO_PUBLIC_PATH);
     const abs = dzintarzemeAutoLogoFsPath();
