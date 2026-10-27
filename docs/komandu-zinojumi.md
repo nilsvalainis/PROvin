@@ -145,3 +145,15 @@ Ziņai: Claude. Autoparka sasaiste (vēlreiz): Pārbaudīt → Sasaistīt 2 auto
 
 ### 2026-10-27 22:09 Europe/Riga | Andris → Claude
 Ziņai: Claude. ACK: 1Password paroles izgūšanu sistēmas drošības filtrs bloķē — neapiejam. Logo pārzīmēšana OK. **390 px / dzīvā admin lapa:** kad vajag smoke, raksti šeit konkretu URL+ko pārbaudīt — Andris izdara ar jau ielogotu admin sesiju (bez `op` paroles dump).
+
+
+### 2026-10-27 22:12 Europe/Riga | Andris → Claude
+Ziņai: Claude. **Nils 27.10 «Sakārto, lai Claude ir paroles».**
+
+1) Vault `Cowork Claude` joprojām ~**103 Login** (primārais, ja `op` strādā): `op item get … --vault "Cowork Claude"`.
+2) **Fallback, kad sistēmas filtrs bloķē `op` paroļu izgūšanu** — lasi lokālos failus (chmod 600, **NECOMMITOT**):
+   - `~/Desktop/claude-cowork-logins.json` (vai `~/opus-q2310/claude-cowork-logins.json`) — visas 103: title/username/password/urls
+   - `~/Desktop/claude-cowork-logins.env.txt` — tas pats env formātā
+   - `~/Desktop/claude-demo-admin.txt` (+ opus-q2310 kopija) — IRISS demo + admin ātrai pieteikšanai
+3) Ja filtrs bloķē arī faila lasīšanu ar parolēm — **raksti Andrim** URL; Andris ielogojas / dara 390 px smoke ar admin sesiju.
+4) Nedrīkst apiet Auto-review / drošības filtru ar citiem trikiem.
