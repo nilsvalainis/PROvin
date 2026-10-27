@@ -2685,3 +2685,43 @@
   align-items: flex-start;
   gap: 6px;
 }
+
+/* Skeneris (iOS 18 melnā bilde, Nils 27.10): pieskāriens kameras ieslēgšanai un rezerves telefona kamera. */
+.ap2.ap2.ap2 .ap2-camtap {
+  position: absolute;
+  inset: auto 16px 40%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1c1c1e;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-camalt {
+  display: block;
+  margin: 8px auto 0;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Faila logs iPhone: PDF / neatbalstīta bilde - poga «Atvērt» (Safari skatītājs). */
+.ap2.ap2.ap2 .ap2-docopen {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--ink2);
+}

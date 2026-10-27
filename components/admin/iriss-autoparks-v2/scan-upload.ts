@@ -19,6 +19,10 @@ export async function compressScanImage(file: Blob): Promise<Blob> {
     canvas.height = Math.round(bmp.height * scale);
     canvas.getContext("2d")?.drawImage(bmp, 0, 0, canvas.width, canvas.height);
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.74));
+    // iOS: atbrīvo atmiņu uzreiz (citādi pēc vairākām lapām kanva kļūst melna).
+    bmp.close();
+    canvas.width = 0;
+    canvas.height = 0;
     return blob ?? file;
   } catch {
     return file;
