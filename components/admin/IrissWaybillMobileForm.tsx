@@ -67,6 +67,7 @@ export function IrissWaybillMobileForm({
   onOpenArchive,
   plateInGauges = false,
   requirePlateChoice = false,
+  layout = "stack",
 }: {
   plates: WaybillPlateState[];
   /** null = vēl ielādē. */
@@ -92,6 +93,8 @@ export function IrissWaybillMobileForm({
   plateInGauges?: boolean;
   /** Numurs vienmēr jāizvēlas pašam - bez pirmā brīvā noklusējuma (Autoparka kartīte, Nils 27.10). */
   requirePlateChoice?: boolean;
+  /** row = datora Pavadzīmju lapa (makets A): forma vienā horizontālā kartītē, statuss atsevišķā kartītē zem tās. */
+  layout?: "stack" | "row";
 }) {
   const [form, setForm] = useState<WaybillMobileFormState>(() => initialWaybillMobileForm(requirePlateChoice ? "" : IRISS_DEALER_PLATES[0]));
   const [localError, setLocalError] = useState<string | null>(null);
@@ -214,7 +217,7 @@ export function IrissWaybillMobileForm({
   }
 
   return (
-    <div className={styles.mf}>
+    <div className={`${styles.mf} ${layout === "row" ? styles.row : ""}`}>
       <form
         className={styles.card}
         onSubmit={(e) => {
@@ -222,6 +225,7 @@ export function IrissWaybillMobileForm({
           void send();
         }}
       >
+        {layout === "row" ? <h2 className={styles.rowTitle}>Jauna pavadzīme</h2> : null}
         <div className={styles.group} style={plateInGauges ? { display: "none" } : undefined}>
           <span className={styles.label}>Numurs</span>
           <div className={styles.seg3}>
@@ -427,8 +431,9 @@ export function IrissWaybillMobileForm({
         </button>
       </form>
 
+      <div className={styles.live}>
       <div className={styles.secTitle}>
-        <span>CSDD pavadzīme</span>
+        <span>{layout === "row" ? "Pie Aivara" : "CSDD pavadzīme"}</span>
         <span className={styles.count}>{working} darbā</span>
       </div>
       <p className={styles.secNote}>Aivars izveido tikai pavadzīmes</p>
@@ -446,6 +451,7 @@ export function IrissWaybillMobileForm({
           Visas pavadzīmes Arhīvā ›
         </button>
       ) : null}
+      </div>
 
       <IrissWaybillHowItWorks plates={plates.map((p) => p.plate)} />
 

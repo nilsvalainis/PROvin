@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { IrissWaybillGauges, WaybillHomeCar } from "@/components/admin/IrissWaybillGauges";
+import { IrissWaybillGauges, WaybillHomeCar, WaybillPlateCards } from "@/components/admin/IrissWaybillGauges";
 import { renderHtml, renderText } from "@/lib/test-render";
 
 describe("Pavadzīmju sākuma hero (v11d-fix stikls)", () => {
@@ -14,6 +14,40 @@ describe("Pavadzīmju sākuma hero (v11d-fix stikls)", () => {
     expect(html).toContain("B193");
     expect(html).toContain("B762");
     expect(html).toContain("B192");
+  });
+
+  it("strip (dators): 3 numuru kartītes bez apļiem; brīvam - izvēle formā", () => {
+    const html = renderHtml(<IrissWaybillGauges chrome="strip" allHref={null} />);
+    const text = renderText(<IrissWaybillGauges chrome="strip" allHref={null} />);
+    for (const plate of ["B193-7", "B762-7", "B192-7"]) expect(text).toContain(plate);
+    expect(html).toContain("iriss-pill");
+    expect(html).not.toContain("<circle");
+    expect(text).toContain("Izvēlēties formā");
+  });
+
+  it("aizņemtā kartīte: PDF, Pagarināt, Pārtraukt; CSDD bez indeksa (tukšs id) - bez darbībām", () => {
+    const busy = {
+      plate: "B193-7",
+      busy: true,
+      status: "ok",
+      hoursLeft: 24,
+      minutesLeft: 1440,
+      share: 0.5,
+      brandModel: "BMW iX",
+      validUntil: "2026-10-28T11:30:00.000Z",
+      id: "wb_1",
+      number: "P02829",
+    } as const;
+    const text = renderText(<WaybillPlateCards gauges={[busy]} loading={false} />);
+    expect(text).toContain("BMW iX");
+    expect(text).toContain("24 h");
+    expect(text).toContain("Nr. P02829");
+    const html = renderHtml(<WaybillPlateCards gauges={[busy]} loading={false} />);
+    expect(html).toMatch(/iriss-btn--danger-outline[^"]*">Pārtraukt</);
+    expect(html).toMatch(/iriss-btn--secondary[^"]*">Pagarināt</);
+    const csddOnly = renderText(<WaybillPlateCards gauges={[{ ...busy, id: "" }]} loading={false} />);
+    expect(csddOnly).not.toContain("Pārtraukt");
+    expect(csddOnly).not.toContain("Pagarināt");
   });
 
   it("kartītes režīms saglabā virsrakstu sānjoslai / lapai", () => {

@@ -273,3 +273,93 @@
 .wg .item.pickable.free {
   cursor: pointer;
 }
+
+/* ---- Datora numuru kartītes (chrome="strip", makets A) ---- */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.cards .pcard {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 14px;
+  border-radius: var(--iriss-r-lg);
+  background: var(--iriss-surface);
+  padding: 20px;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(22, 23, 26, 0.06);
+}
+.cards .pcardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cards .pcardPlate {
+  border: 1.5px solid var(--iriss-ink);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.cards .pcardCar {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: var(--iriss-ink);
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.cards .pcardMeta {
+  margin: 4px 0 0;
+  color: var(--iriss-ink-2);
+  font-size: 13.5px;
+}
+.cards .pcardLeftRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.cards .pcardLeftRow .pcardMeta {
+  margin: 0;
+}
+.cards .pcardLeft,
+.cards .pcardLeftSoon {
+  color: var(--iriss-info);
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.cards .pcardLeftSoon {
+  color: var(--iriss-warn);
+}
+.cards .pcardBar {
+  display: block;
+  height: 8px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--iriss-surface-2);
+}
+.cards .stripFill,
+.cards .stripFillSoon {
+  display: block;
+  height: 100%;
+  background: var(--iriss-info);
+}
+.cards .stripFillSoon {
+  background: var(--iriss-brand);
+}
+.cards .pcardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}

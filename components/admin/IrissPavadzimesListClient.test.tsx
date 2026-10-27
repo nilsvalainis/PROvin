@@ -66,78 +66,6 @@ describe("Pavadzīmju lapa v2", () => {
   });
 });
 
-describe("Aktīvā karte: Pārtraukt", () => {
-  it("shows PDF, Pagarināt, Pārtraukt and Vēsture on a live card", () => {
-    const page = (
-      <IrissPavadzimesListClient
-        isAdmin
-        initial={{
-          rows: [
-            {
-              ...rowBase,
-              id: "wb_p02819",
-              number: "P02819",
-              vin: "WVWZZZ3CZWE123456",
-              validUntil: "2026-11-01T10:00:00.000Z",
-              validityTone: "ok",
-              lifecycle: "active",
-            },
-          ] as never,
-          pendingParse: 0,
-          dropboxConfigured: true,
-          dropboxError: null,
-        }}
-      />
-    );
-    const text = renderText(page);
-    expect(text).toContain("PDF");
-    expect(text).toContain("Pagarināt");
-    expect(text).toContain("Pārtraukt");
-    expect(text).toContain("Vēsture");
-    expect(text).not.toMatch(/anul/i);
-    const html = renderHtml(page);
-    expect(html).toContain("border-[var(--iriss-bad)]");
-    expect(html).toContain("min-h-11");
-  });
-
-  it("CSDD-only (tukšs id): rāda P02827, PDF paliek; nav Pārtraukt / Pagarināt / Vēsture", () => {
-    const page = (
-      <IrissPavadzimesListClient
-        isAdmin
-        initial={{
-          rows: [
-            {
-              ...rowBase,
-              id: "",
-              number: "P02827",
-              brandModel: "BMW 330",
-              plate: "B193-7",
-              vin: "",
-              validUntil: "2026-10-28T10:00:00.000Z",
-              validityTone: "ok",
-              lifecycle: "active",
-            },
-          ] as never,
-          pendingParse: 0,
-          dropboxConfigured: true,
-          dropboxError: null,
-        }}
-      />
-    );
-    const text = renderText(page);
-    expect(text).toContain("P02827");
-    expect(text).toContain("BMW 330");
-    expect(text).toContain("PDF");
-    expect(text).not.toContain("Pārtraukt");
-    expect(text).not.toContain("Pagarināt");
-    expect(text).not.toContain("Vēsture");
-    expect(text).not.toMatch(/anul/i);
-    const html = renderHtml(page);
-    expect(html).toContain('data-pavadzime="csdd-P02827"');
-    expect(html).not.toContain("border-[var(--iriss-bad)]");
-  });
-});
-
 describe("Saruna C: ikona, badge, nav pastāvīgās slejas", () => {
   it("header has Saruna icon, no overlay until opened, no right column grid", () => {
     const html = renderHtml(page());
@@ -187,5 +115,24 @@ describe("VPN kontrole", () => {
     const inline = renderHtml(<IrissVpnControl />);
     expect(inline).not.toContain("VPN un serveris");
     expect(renderText(<IrissVpnControl />)).toContain("Man vajag VPN");
+  });
+});
+
+describe("IRISS waybill tabs", () => {
+  const empty = (
+    <IrissPavadzimesListClient initial={{ rows: [], pendingParse: 0, dropboxConfigured: true, dropboxError: null }} />
+  );
+
+  it("skaitlis ir atsevišķā žetonā, nevis pielipis nosaukumam (no 'Visas253')", () => {
+    const html = renderHtml(empty);
+    expect(html).toMatch(/>Aktīvās<span class="iriss-chip__n">0<\/span>/);
+    expect(html).toMatch(/>Arhīvs<span class="iriss-chip__n">0<\/span>/);
+  });
+
+  it("datorā filtri ir Aktīvās, Kalendārs, Arhīvs; Aktīvās izvēlēts", () => {
+    const html = renderHtml(empty);
+    expect(html).toMatch(/aria-pressed="true">Aktīvās/);
+    expect(html).toContain(">Kalendārs</button>");
+    expect(html).not.toMatch(/>Visas</);
   });
 });

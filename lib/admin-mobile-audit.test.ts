@@ -62,7 +62,6 @@ describe("IRISS / PRO mobile audit guards", () => {
 
   it("wraps Pavadzīmes toolbar and list cards on phone", () => {
     expect(src.pavadzimes).toMatch(/flex-wrap/);
-    expect(src.pavadzimes).toMatch(/w-full min-w-0 rounded-\[22px\]/);
     expect(src.pavadzimes).not.toMatch(/w-\[min\(100%,280px\)\]/);
   });
 

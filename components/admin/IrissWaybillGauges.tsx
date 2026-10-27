@@ -6,6 +6,8 @@ import { IrissWaybillGaugeDetail } from "@/components/admin/IrissWaybillGaugeDet
 import { IrissWaybillStopConfirm } from "@/components/admin/IrissWaybillStopConfirm";
 import { useWaybillStop } from "@/components/admin/useWaybillStop";
 import styles from "@/components/admin/IrissWaybillGauges.module.css";
+import { IrissButton, IrissStatusPill, type IrissStatusTone } from "@/components/admin/iriss-ui/IrissUi";
+import { formatWaybillExpiryDdMmHm } from "@/lib/iriss-pavadzimes-countdown";
 import type { IrissPavadzimeListRow } from "@/lib/iriss-pavadzimes-types";
 import { irissWaybillGauges, waybillGaugeTimeLeft, waybillGaugesFromPlates, waybillHomeCarText, waybillHomeCarTitle, type WaybillGauge } from "@/lib/iriss-waybill-gauges";
 import { waybillHomeRingColor } from "@/lib/iriss-waybill-home-ring";
@@ -67,8 +69,8 @@ export function IrissWaybillGauges({
   size?: "mobile" | "sidebar";
   /** Saite "Visas ›"; null = nerādīt (pašā pavadzīmju lapā tā vestu uz to pašu lapu). */
   allHref?: string | null;
-  /** float = sākuma hero: bez virsraksta, bez kartītes, luksofors pēc stundām. */
-  chrome?: "card" | "float";
+  /** float = sākuma hero: bez virsraksta, bez kartītes, luksofors pēc stundām. strip = datora numuru kartītes vienā rindā. */
+  chrome?: "card" | "float" | "strip";
   /** Ja ir, viss vidžets ir viena saite (bez atsevišķiem apļu klikšķiem). */
   href?: string | null;
   onExtend?: (gauge: WaybillGauge) => void;
@@ -158,6 +160,10 @@ export function IrissWaybillGauges({
     : selectable
       ? gauges.find((g) => g.plate === picked && g.busy) ?? null
       : gauges.find((g) => g.plate === open && g.busy) ?? null;
+  if (chrome === "strip") {
+    return <WaybillPlateCards gauges={gauges} loading={loading} onExtend={onExtend} onStop={onStop} onOpenPdf={onOpenPdf} />;
+  }
+
   const small = size === "sidebar";
   const floating = chrome === "float";
   const linked = Boolean(href);
@@ -304,6 +310,104 @@ export function IrissWaybillGauges({
           onNo={stop.cancel}
         />
       ) : null}
+    </section>
+  );
+}
+
+function cardStatus(g: WaybillGauge): { tone: IrissStatusTone; text: string } {
+  if (g.busy) return { tone: g.status === "expired" ? "bad" : g.status === "soon" ? "warn" : "info", text: "aizņemts" };
+  if (g.status === "issuing") return { tone: "info", text: g.manual ? "izraksta Aivars" : "izdod..." };
+  return { tone: "ok", text: "brīvs" };
+}
+
+/**
+ * Datora Pavadzīmju lapa (Nils 27.10, makets A): 3 numuri = 3 lielas kartītes. Katrā tā numura aktīvā
+ * pavadzīme ar atlikušo laiku un darbībām (PDF, Pagarināt, Pārtraukt) - atsevišķas tabulas vairs nav.
+ */
+export function WaybillPlateCards({
+  gauges,
+  loading,
+  onExtend,
+  onStop,
+  onOpenPdf,
+}: {
+  gauges: WaybillGauge[];
+  loading: boolean;
+  onExtend?: (gauge: WaybillGauge) => void;
+  onStop?: (gauge: WaybillGauge) => void;
+  onOpenPdf?: (gauge: WaybillGauge) => void;
+}) {
+  return (
+    <section className={styles.cards} aria-label="Numuri un aktīvās pavadzīmes">
+      {gauges.map((g) => {
+        const st = cardStatus(g);
+        const left = waybillGaugeTimeLeft(g);
+        const soon = g.busy && (g.status === "soon" || g.status === "expired");
+        return (
+          <article key={g.plate} className={styles.pcard}>
+            <div className={styles.pcardTop}>
+              <span className={styles.pcardPlate}>{g.plate}</span>
+              <IrissStatusPill tone={st.tone}>{loading ? "..." : st.text}</IrissStatusPill>
+            </div>
+            {g.busy ? (
+              <>
+                <div>
+                  <p className={styles.pcardCar} title={g.brandModel || undefined}>
+                    {g.brandModel || "Auto"}
+                  </p>
+                  <p className={styles.pcardMeta}>
+                    {g.number ? `Nr. ${g.number} · ` : ""}līdz {formatWaybillExpiryDdMmHm(g.validUntil)}
+                  </p>
+                </div>
+                <div>
+                  <div className={styles.pcardLeftRow}>
+                    <span className={soon ? styles.pcardLeftSoon : styles.pcardLeft}>
+                      {left.value} {left.unit}
+                    </span>
+                    <span className={styles.pcardMeta}>no 48 h</span>
+                  </div>
+                  <span className={styles.pcardBar} aria-hidden>
+                    <span className={soon ? styles.stripFillSoon : styles.stripFill} style={{ width: `${Math.round(g.share * 100)}%` }} />
+                  </span>
+                </div>
+                {g.id ? (
+                  <div className={styles.pcardActions}>
+                    <IrissButton size="sm" onClick={() => onOpenPdf?.(g)}>
+                      PDF
+                    </IrissButton>
+                    <IrissButton size="sm" onClick={() => onExtend?.(g)}>
+                      Pagarināt
+                    </IrissButton>
+                    {g.number ? (
+                      <IrissButton size="sm" variant="danger-outline" onClick={() => onStop?.(g)}>
+                        Pārtraukt
+                      </IrissButton>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className={styles.pcardMeta}>Pavadzīme no CSDD - PDF vēl nav indeksā.</p>
+                )}
+              </>
+            ) : (
+              <>
+                <div>
+                  <p className={styles.pcardCar}>{g.status === "issuing" ? g.brandModel || "Pieprasījums" : "Nav pavadzīmes"}</p>
+                  <p className={styles.pcardMeta}>
+                    {g.status === "issuing" ? "Pieprasījums pie Aivara" : "Gatavs jaunai pavadzīmei"}
+                  </p>
+                </div>
+                {g.status === "issuing" ? null : (
+                  <div className={styles.pcardActions}>
+                    <IrissButton size="sm" onClick={() => selectWaybillPlate(g.plate)}>
+                      Izvēlēties formā
+                    </IrissButton>
+                  </div>
+                )}
+              </>
+            )}
+          </article>
+        );
+      })}
     </section>
   );
 }
