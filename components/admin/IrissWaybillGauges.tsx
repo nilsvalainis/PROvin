@@ -6,6 +6,7 @@ import { IrissWaybillGaugeDetail } from "@/components/admin/IrissWaybillGaugeDet
 import { IrissWaybillStopConfirm } from "@/components/admin/IrissWaybillStopConfirm";
 import { useWaybillStop } from "@/components/admin/useWaybillStop";
 import styles from "@/components/admin/IrissWaybillGauges.module.css";
+import { IrissStatusPill, type IrissStatusTone } from "@/components/admin/iriss-ui/IrissUi";
 import type { IrissPavadzimeListRow } from "@/lib/iriss-pavadzimes-types";
 import { irissWaybillGauges, waybillGaugeTimeLeft, waybillGaugesFromPlates, waybillHomeCarText, waybillHomeCarTitle, type WaybillGauge } from "@/lib/iriss-waybill-gauges";
 import { waybillHomeRingColor } from "@/lib/iriss-waybill-home-ring";
@@ -67,8 +68,8 @@ export function IrissWaybillGauges({
   size?: "mobile" | "sidebar";
   /** Saite "Visas ›"; null = nerādīt (pašā pavadzīmju lapā tā vestu uz to pašu lapu). */
   allHref?: string | null;
-  /** float = sākuma hero: bez virsraksta, bez kartītes, luksofors pēc stundām. */
-  chrome?: "card" | "float";
+  /** float = sākuma hero: bez virsraksta, bez kartītes, luksofors pēc stundām. strip = datora numuru kartītes vienā rindā. */
+  chrome?: "card" | "float" | "strip";
   /** Ja ir, viss vidžets ir viena saite (bez atsevišķiem apļu klikšķiem). */
   href?: string | null;
   onExtend?: (gauge: WaybillGauge) => void;
@@ -158,6 +159,24 @@ export function IrissWaybillGauges({
     : selectable
       ? gauges.find((g) => g.plate === picked && g.busy) ?? null
       : gauges.find((g) => g.plate === open && g.busy) ?? null;
+  if (chrome === "strip") {
+    return (
+      <WaybillPlateStrip
+        gauges={gauges}
+        loading={loading}
+        picked={selectable ? picked : ""}
+        onPick={
+          selectable
+            ? (plate) => {
+                setPicked(plate);
+                selectWaybillPlate(plate);
+              }
+            : undefined
+        }
+      />
+    );
+  }
+
   const small = size === "sidebar";
   const floating = chrome === "float";
   const linked = Boolean(href);
@@ -304,6 +323,82 @@ export function IrissWaybillGauges({
           onNo={stop.cancel}
         />
       ) : null}
+    </section>
+  );
+}
+
+function stripStatus(g: WaybillGauge): { tone: IrissStatusTone; text: string; note: string } {
+  if (g.busy) {
+    const left = waybillGaugeTimeLeft(g);
+    const tone: IrissStatusTone = g.status === "expired" ? "bad" : g.status === "soon" ? "warn" : "info";
+    return { tone, text: "aizņemts", note: `atlikušas ${left.value} ${left.unit}` };
+  }
+  if (g.status === "issuing") return { tone: "info", text: g.manual ? "Aivars" : "izdod...", note: "Pieprasījums pie Aivara" };
+  return { tone: "ok", text: "brīvs", note: "Gatavs jaunai pavadzīmei" };
+}
+
+/**
+ * Datora Pavadzīmju lapa (Nils 27.10, makets v3): numuri kā kartītes vienā rindā visā platumā.
+ * Kartīte izvēlas numuru formai (tas pats notikums, ko apļi); darbības ir tabulā, ne kartītē.
+ */
+function WaybillPlateStrip({
+  gauges,
+  loading,
+  picked,
+  onPick,
+}: {
+  gauges: WaybillGauge[];
+  loading: boolean;
+  picked: string;
+  onPick?: (plate: string) => void;
+}) {
+  const free = gauges.filter((g) => !g.busy && g.status !== "issuing").length;
+  return (
+    <section className={styles.strip} aria-labelledby="wb-strip-h">
+      <div className={styles.stripHead}>
+        <h2 id="wb-strip-h">Tranzīta numuri</h2>
+        <span>
+          {loading ? "Ielādē..." : `${free} brīvi no ${gauges.length}`}
+          {onPick ? " · izvēlies numuru, lai pieprasītu pavadzīmi" : ""}
+        </span>
+      </div>
+      <div className={styles.stripRow} style={{ gridTemplateColumns: `repeat(${Math.max(1, gauges.length)}, minmax(0, 1fr))` }}>
+        {gauges.map((g) => {
+          const st = stripStatus(g);
+          const on = picked === g.plate;
+          const soon = g.busy && (g.status === "soon" || g.status === "expired");
+          const body = (
+            <>
+              <span className={styles.stripTop}>
+                <span className={styles.stripPlate}>{g.plate}</span>
+                <IrissStatusPill tone={st.tone}>{loading ? "..." : st.text}</IrissStatusPill>
+              </span>
+              <WaybillHomeCar busy={g.busy} status={g.status} brandModel={g.brandModel} />
+              <span className={styles.stripBar} aria-hidden>
+                <span className={soon ? styles.stripFillSoon : styles.stripFill} style={{ width: `${Math.round((g.busy ? g.share : 0) * 100)}%` }} />
+              </span>
+              <span className={styles.stripNote}>{st.note}</span>
+            </>
+          );
+          return onPick ? (
+            <button
+              key={g.plate}
+              type="button"
+              className={`${styles.stripCard} ${on ? styles.stripOn : ""}`}
+              aria-pressed={on}
+              aria-label={`${g.plate}, ${st.text}${g.brandModel ? `, ${g.brandModel}` : ""}, ${st.note}${on ? ", izvēlēts" : ""}`}
+              onClick={() => onPick(g.plate)}
+              disabled={loading}
+            >
+              {body}
+            </button>
+          ) : (
+            <div key={g.plate} className={styles.stripCard}>
+              {body}
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }

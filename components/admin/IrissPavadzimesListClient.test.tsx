@@ -96,8 +96,9 @@ describe("Aktīvā karte: Pārtraukt", () => {
     expect(text).toContain("Vēsture");
     expect(text).not.toMatch(/anul/i);
     const html = renderHtml(page);
-    expect(html).toContain("border-[var(--iriss-bad)]");
-    expect(html).toContain("min-h-11");
+    // Dizains v0.3: Pārtraukt - sarkanā kontūrpoga, pārējās sekundārās.
+    expect(html).toMatch(/iriss-btn--danger-outline[^"]*">Pārtraukt</);
+    expect(html).toMatch(/iriss-btn--secondary[^"]*">Pagarināt</);
   });
 
   it("CSDD-only (tukšs id): rāda P02827, PDF paliek; nav Pārtraukt / Pagarināt / Vēsture", () => {

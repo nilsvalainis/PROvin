@@ -273,3 +273,103 @@
 .wg .item.pickable.free {
   cursor: pointer;
 }
+
+/* ---- Datora numuru josla (chrome="strip", makets v3) ---- */
+.strip {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.strip .stripHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+}
+.strip .stripHead h2 {
+  margin: 0;
+  color: var(--iriss-ink-2);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.strip .stripHead span {
+  color: var(--iriss-ink-2);
+  font-size: 13px;
+}
+.strip .stripRow {
+  display: grid;
+  gap: 12px;
+}
+/* 2 klases, lai pārspētu vispārīgo admin pogu stilu. */
+.strip .stripCard {
+  display: flex;
+  min-width: 0;
+  min-height: 118px;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--iriss-line) !important;
+  border-radius: var(--iriss-r-md);
+  background: var(--iriss-surface) !important;
+  box-shadow: var(--iriss-shadow-1);
+  padding: 14px;
+  color: var(--iriss-ink);
+  font: inherit;
+  text-align: left;
+}
+.strip button.stripCard {
+  cursor: pointer;
+}
+.strip button.stripCard:hover {
+  border-color: var(--iriss-line-strong) !important;
+}
+.strip .stripCard.stripOn {
+  border-color: var(--iriss-graphite) !important;
+  box-shadow: 0 0 0 1px var(--iriss-graphite), var(--iriss-shadow-1);
+}
+.strip .stripCard:focus-visible {
+  outline: 2px solid var(--iriss-brand);
+  outline-offset: 2px;
+}
+.strip .stripTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.strip .stripPlate {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+.strip .car {
+  overflow: hidden;
+  color: var(--iriss-ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.strip .stripBar {
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--iriss-surface-2);
+}
+.strip .stripFill,
+.strip .stripFillSoon {
+  display: block;
+  height: 100%;
+  background: var(--iriss-info);
+}
+.strip .stripFillSoon {
+  background: var(--iriss-brand);
+}
+.strip .stripNote {
+  color: var(--iriss-ink-2);
+  font-size: 12.5px;
+}

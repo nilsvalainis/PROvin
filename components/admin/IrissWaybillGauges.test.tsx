@@ -16,6 +16,16 @@ describe("Pavadzīmju sākuma hero (v11d-fix stikls)", () => {
     expect(html).toContain("B192");
   });
 
+  it("strip (dators): numuri kā izvēlamas kartītes ar statusu, bez apļiem", () => {
+    const html = renderHtml(<IrissWaybillGauges chrome="strip" allHref={null} selectable />);
+    const text = renderText(<IrissWaybillGauges chrome="strip" allHref={null} selectable />);
+    expect(text).toContain("Tranzīta numuri");
+    for (const plate of ["B193-7", "B762-7", "B192-7"]) expect(text).toContain(plate);
+    expect(html.match(/aria-pressed=/g)).toHaveLength(3);
+    expect(html).toContain("iriss-pill");
+    expect(html).not.toContain("<circle");
+  });
+
   it("kartītes režīms saglabā virsrakstu sānjoslai / lapai", () => {
     const text = renderText(<IrissWaybillGauges allHref={null} />);
     expect(text).toContain("Pavadzīmes");
