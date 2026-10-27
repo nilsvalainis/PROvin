@@ -3,49 +3,57 @@
     "privacyMetaTitle": "Privacy Policy | PROVIN",
     "privacyMetaDescription": "How PROVIN.LV processes personal data, cookies, and analytics after consent under GDPR. Clear and transparent.",
     "privacyTitle": "Privacy Policy",
-    "privacyLead": "This document describes how the service provider PROVIN.LV (\"we\", \"the service\") processes personal data, which cookies are used, and how you can accept or reject non-essential analytics and first- and last-touch (UTM and ad click ID) data storage. Legal identity and controller details are in the website footer.",
+    "privacyLead": "This policy describes what personal data PROVIN.LV (\"we\") processes, why, for how long and with whom we share it, which cookies we use and how you can exercise your rights.",
     "sections": [
       {
         "title": "1. Controller",
-        "body": "The personal data controller is PROVIN.LV; the legal entity and full details are in the website footer. Contact details: the email and WhatsApp listed in the website footer."
+        "body": "Data controller: Nils Valainis, self-employed person (sole trader), reg. No. 09118711109, Jana iela 3, Tukums, LV-3101, Latvia. Contact for data protection matters: info@provin.lv, +371 29 502 039."
       },
       {
         "title": "2. What data we process",
-        "body": "In connection with an order: name (if provided), email, phone, VIN or licence plate, listing URL (if provided), free-form message, and payment metadata (processed by the payment processor Stripe under its own policy). When using the site: technical server logs (for example IP address and request time) may be used for security and availability. The homepage may show curated, publicly available Google reviews (without extra tracking scripts for that block)."
+        "body": "When you order: first and/or last name (if provided), e-mail, phone, VIN or registration plate, listing link (if provided), free-text message and payment information (cards are processed by Stripe; we do not see card details).\n\nFree listing check: the listing link and the contact details you provide.\n\nPartners (businesses): company details, contact person name, e-mail, phone, order and billing history.\n\nWhen you use the website: server logs (IP address, time, requested page) for security and troubleshooting, and cookies as described in sections 4-5 and 9.\n\nWe do not collect special categories of data (health, beliefs etc.)."
       },
       {
         "title": "3. Purposes and legal basis",
-        "body": "Performance of a contract and order processing (GDPR Art. 6(1)(b)). Legitimate interests: site security and error prevention (GDPR Art. 6(1)(f)). If an order is started but not completed, we may send a single reminder to the email address you provided (legitimate interests, GDPR Art. 6(1)(f)). Analytics and first- and last-touch storage (UTM and ad click IDs such as gclid, fbclid, ttclid) only after your voluntary consent via the cookie banner (GDPR Art. 6(1)(a))."
+        "body": "Fulfilling your order, preparing the report, consultation and order communication: performance of a contract (GDPR Art. 6(1)(b)).\n\nInvoices and accounting: legal obligation (Art. 6(1)(c)).\n\nWebsite security, abuse prevention and one reminder about an unfinished order: legitimate interests (Art. 6(1)(f)).\n\nAnalytics and advertising measurement with cookies: your consent (Art. 6(1)(a)), which you can withdraw at any time."
       },
       {
-        "title": "4. Cookies and essential functions",
-        "body": "Essential functions (for example language preference, session operation, security) may use cookies or similar technologies without separate consent where they are objectively necessary to provide the service. A list of such cookies can be provided on request."
+        "title": "4. Essential cookies",
+        "body": "Without consent we only use cookies needed for the website to work: your cookie choice, language, theme and the partner account login session. The list is in section 9."
       },
       {
-        "title": "5. Analytics and first-touch data (after consent)",
-        "body": "If you accept \"analytics\" in the cookie banner, we may store limited first- and last-touch marketing information: site path, HTTP referrer if available, marketing parameters from the link (UTM: source, medium, campaign, term), and ad click IDs (gclid, gbraid, wbraid, fbclid, ttclid) when they are in the URL. After consent we may also count aggregated visits by channel and campaign (no personal data). If you later place an order, we may attach this source to the payment so we can see which ad led to the order. The goal is to understand where visitors come from, not to track individuals across all third-party platforms. This data is not sold. Without consent we do not store it."
+        "title": "5. Analytics, advertising and Google Consent Mode",
+        "body": "We use Google Consent Mode v2. The Google tag (Google Analytics 4 and Google Ads) loads on every visit, but until you consent it runs in \"denied\" mode: it does not set or read cookies and only sends Google cookieless signals without identifiers (for example time, page visited, browser type and consent state). Google uses them for aggregated visit and conversion modelling.\n\nIf you choose \"Accept analytics and advertising\" in the cookie banner: Google Analytics and Google Ads may set cookies; Meta Pixel and TikTok Pixel load to measure ad results; we store the first and last marketing source (page, referrer, UTM parameters, ad click IDs gclid, gbraid, wbraid, fbclid, ttclid) and, if you order, link it to the payment. After a purchase the Meta Conversions API may send the purchase event from our server with a hashed e-mail and phone.\n\nVercel Web Analytics counts visits in aggregate, without cookies.\n\nYou can change or withdraw consent at any time by deleting this site's cookies in your browser or by writing to us; the banner will appear again."
       },
       {
-        "title": "6. Third parties",
-        "body": "Payments: Stripe. Website hosting: your chosen provider (for example Vercel). Vercel Web Analytics collects aggregated visit and page-view data for all visits (first-party hosting statistics). Google Analytics 4, TikTok Pixel and Meta Pixel load only if you consent to \"analytics\" in the cookie banner; if the relevant ID is not configured, those scripts are not loaded. After consent, the Meta Conversions API may send the same purchase event from the server (email and phone are hashed). Contact: email (footer) and WhatsApp (footer and floating button on the site)."
+        "title": "6. Processors and recipients",
+        "body": "We share data only with service providers that process it on our behalf:\n\nVercel Inc. (hosting and data storage); Stripe Payments Europe Ltd. (payments); Google Ireland Ltd. (e-mail, Google Analytics, Google Ads); Meta Platforms Ireland Ltd. (WhatsApp communication; Meta Pixel and Conversions API after consent); TikTok Technology Ltd. (TikTok Pixel after consent); Dropbox International Unlimited Co. (document storage); Google (Gemini API) and Anthropic PBC (support in preparing the report: we send only the VIN and technical vehicle data, not your name, e-mail or phone).\n\nVehicle data by VIN or plate is requested from the Road Traffic Safety Directorate of Latvia (CSDD) and vehicle history providers (for example carVertical, autoDNA, official dealer systems); your contact details are not shared with them.\n\nWe do not sell data."
       },
       {
-        "title": "7. Retention",
-        "body": "Order and customer data are kept as long as needed to deliver the service and meet legal requirements (accounting, disputes). The lifetime of analytics and source cookies (first and last touch, UTM, click IDs) is limited (typically up to 180 days) unless stated otherwise."
+        "title": "7. Transfers outside the EU",
+        "body": "Some processors (for example Vercel, Stripe, Google, Meta, Dropbox, Anthropic) may process data in the USA. Transfers rely on the EU-US Data Privacy Framework where the processor is certified, or on the European Commission's standard contractual clauses (GDPR Art. 46)."
       },
       {
-        "title": "8. Your rights",
-        "body": "Under the GDPR you have the right to access, rectify, erase, restrict processing, object to processing, and data portability where applicable. You may lodge a complaint with the supervisory authority (in Latvia: DVI)."
+        "title": "8. Retention",
+        "body": "Orders, reports and invoices: 5 years after the order (accounting rules and possible disputes).\n\nUnfinished unpaid orders: up to 90 days.\n\nE-mail and WhatsApp communication: up to 2 years after the last message.\n\nFree listing check requests: up to 12 months.\n\nPartner account data: during the cooperation and 5 years after it (billing).\n\nServer logs: up to 30 days. Cookies: as listed in section 9."
       },
       {
-        "title": "9. Policy changes",
-        "body": "We may update this policy. Material changes will be indicated on the site or in the cookie banner if needed."
+        "title": "9. Cookie list",
+        "body": "Essential: provin_consent and provin_cookie_consent (your choice, 180 days); provin-site-theme (theme, 12 months); provin-b2b-locale (partner page language, 12 months); partner login session (7 days).\n\nWith consent: provin_attr (marketing source, 180 days); _ga and _ga_* (Google Analytics, up to 2 years); _gcl_au (Google Ads, 90 days); _fbp (Meta Pixel, 90 days); _ttp, _tt_enable_cookie, ttcsid (TikTok Pixel, up to 13 months)."
+      },
+      {
+        "title": "10. Your rights",
+        "body": "You have the right to access, rectify and erase your data, restrict processing, object to processing based on legitimate interests and receive your data in a portable format. You may withdraw consent at any time; this does not affect the lawfulness of earlier processing. We do not make decisions based solely on automated processing that have legal effects on you.\n\nSend requests to info@provin.lv; we reply within one month.\n\nYou may lodge a complaint with the Data State Inspectorate of Latvia (Datu valsts inspekcija, www.dvi.gov.lv)."
+      },
+      {
+        "title": "11. Changes",
+        "body": "We may update this policy. Material changes will be shown on the website or in the cookie banner. Version: 28 October 2026."
       }
     ],
     "termsMetaTitle": "Terms of Service | PROVIN",
     "termsMetaDescription": "PROVIN.LV terms of use: nature of the service, payment, refunds, distance contracts and withdrawal rights for digital content.",
     "termsTitle": "PROVIN.LV Terms of Service",
-    "termsUpdated": "Effective from: 26 October 2026",
+    "termsUpdated": "Effective from: 28 October 2026",
     "termsLead": "These terms set out the legal relationship between you (the \"Customer\") and the service provider PROVIN.LV (\"we\") regarding use of the website provin.lv and ordering paid consultative services. Please read them together with the Privacy Policy. The main rules on price, payment and refunds, and the non-application of withdrawal rights to digital content, are set out in sections 5 and <section11>11</section11> (there: <note>the bold section on withdrawal rights and Cabinet Regulation No. 255, point 22.13</note>). The legal provider details are listed below.",
     "termsSections": [
       {
@@ -66,7 +74,7 @@
       },
       {
         "title": "5. Order, price, payment and refund principles",
-        "body": "5.1. Orders are placed electronically with the information PROVIN requests. Required: VIN (17 characters) or licence plate, email and phone. A listing URL is optional; if provided, it must be a valid link to a specific listing. Other fields follow the site form. For \"Official dealer service history data\", VIN (or plate) and contact details in Stripe Checkout are sufficient.\n\n5.2. The service price is clearly shown on the site (order form / summary) at the time of order and includes applicable taxes where required by law. Current products and orientative prices: Official dealer service history data €24.99; PROVIN MINI €39.99; PROVIN AUDITS €99.99 (the exact price is the one shown before payment). Prices may change for future orders; for a given order, the price shown before payment confirmation applies.\n\n5.3. Payment is handled by a third-party payment processor (for example Stripe). The legal basis and data processing for payments are described in the Privacy Policy and the processor's documents.\n\n5.4. Payment for the Service is final. Given the nature of the Service (immediate start of digital content preparation), no refund is made after preparation of the Report has started, except as set out in section 11 and the 100% refund in section 2.1.A if official dealer data is not available. For PROVIN AUDITS, the unavailability or absence of data in an individual source (including official dealer data) is not grounds for a refund if the Base Checks under section 3.4 have been performed."
+        "body": "5.1. Orders are placed electronically with the information PROVIN requests. Required: VIN (17 characters) or licence plate, email and phone. A listing URL is optional; if provided, it must be a valid link to a specific listing. Other fields follow the site form. For \"Official dealer service history data\", VIN (or plate) and contact details in Stripe Checkout are sufficient.\n\n5.2. The service price is clearly shown on the site (order form / summary) at the time of order and includes applicable taxes where required by law. Current products and orientative prices: Official dealer service history data €24.99; PROVIN MINI €39.99; PROVIN AUDITS €99.99 (the exact price is the one shown before payment). Prices may change for future orders; for a given order, the price shown before payment confirmation applies.\n\n5.3. Payment is handled by a third-party payment processor (for example Stripe). The legal basis and data processing for payments are described in the Privacy Policy and the processor's documents.\n\n5.4. Payment for the Service is final. Given the nature of the Service (immediate start of digital content preparation), no refund is made after preparation of the Report has started, except as set out in section 11 and the 100% refund in section 2.1.A if official dealer data is not available. For PROVIN AUDITS, the unavailability or absence of data in an individual source (including official dealer data) is not grounds for a refund if the Base Checks under section 3.4 have been performed.\n\n5.5. Prices are final. The service provider is not registered as a VAT payer for domestic supplies in Latvia, so no VAT is added. VAT registration number LV09118711109 is used only for transactions with VAT-registered businesses in other EU countries."
       },
       {
         "title": "6. Performance, delivery and permitted delays",
@@ -91,7 +99,6 @@
       {
         "title": "11. Price, digital content and withdrawal rights (distance contract)",
         "withdrawalIntro": "**Withdrawal rights and refunds.** This section clearly sets out how **withdrawal rights** (the right to withdraw from a distance contract) and **refunds** apply, especially for digital content and the exception under Cabinet Regulation No. 255, point 22.13.",
-        "searchKeywordsLine": "So reviewers and customers can find this section quickly (for example by searching the page for English terms): **refund**, **withdrawal**, **right of withdrawal**.",
         "subsections": [
           {
             "heading": "11.1. General rule on withdrawal rights",
@@ -109,7 +116,7 @@
       },
       {
         "title": "12. Dispute resolution",
-        "body": "12.1. We first try to resolve disputes by negotiation, using the contact details on the site.\n\n12.2. If a dispute cannot be settled amicably, it is heard by the courts of the Republic of Latvia under the rules on jurisdiction, unless mandatory law gives the consumer a more favourable forum.\n\n12.3. Consumers may also turn to the Consumer Dispute Resolution Commission or use other out-of-court mechanisms provided by law where applicable."
+        "body": "12.1. We first try to resolve disputes by negotiation, using the contact details on the site.\n\n12.2. If a dispute cannot be settled amicably, it is heard by the courts of the Republic of Latvia under the rules on jurisdiction, unless mandatory law gives the consumer a more favourable forum.\n\n12.3. Consumers may also turn to the Consumer Dispute Resolution Commission or use other out-of-court mechanisms provided by law where applicable.\n\n12.4. We reply to a written consumer complaint within 15 working days (Consumer Rights Protection Law of Latvia, Section 26.1)."
       },
       {
         "title": "13. Changes to the terms",
@@ -121,15 +128,15 @@
       },
       {
         "title": "15. Contact",
-        "body": "Questions about these terms: contact PROVIN.LV using the email or WhatsApp listed in the website footer."
+        "body": "Questions about these terms: info@provin.lv, +371 29 502 039. Service provider: Nils Valainis, self-employed person (sole trader), reg. No. 09118711109, Jana iela 3, Tukums, LV-3101, Latvia."
       }
     ]
   },
   "Cookies": {
     "bannerTitle": "Cookies and privacy",
-    "bannerText": "We use essential cookies for the site to work. If you consent to analytics, we may store first and last marketing pages, UTM parameters and ad click IDs (gclid, fbclid, ttclid), count aggregated visits, and load Google Analytics, TikTok Pixel and/or Meta Pixel (when configured), to understand where visitors come from.",
+    "bannerText": "Essential cookies keep the website working. With your consent we also use analytics (Google Analytics) to understand how the site is used and advertising measurement (Google Ads, Meta, TikTok), and we store the marketing source (UTM, gclid, fbclid, ttclid). Without consent Google only receives cookieless signals.",
     "reject": "Essential only",
-    "acceptAnalytics": "Accept analytics and storage",
+    "acceptAnalytics": "Accept analytics and advertising",
     "privacyLink": "Privacy Policy"
   }
 }
