@@ -32,7 +32,7 @@ export function servissCanConfirm(perms: AutoparksV2Perms): boolean {
 export async function getAutoparksV2Serviss(carId: string, perms: AutoparksV2Perms): Promise<V2ServissView | null> {
   const [v1, v2] = await Promise.all([readAutoparksState(), readAutoparksV2State()]);
   if (!v1.cars.some((c) => c.id === carId)) return null;
-  return servissView(carV2Of(v2, carId), v1.files.filter((f) => f.carId === carId), { canSums: servissSums(perms), canConfirm: servissCanConfirm(perms) });
+  return servissView(carV2Of(v2, carId), v1.files.filter((f) => f.carId === carId), { canSums: servissSums(perms), canConfirm: servissCanConfirm(perms), canDelete: perms.admin });
 }
 
 export type ServissPatchBody = {
@@ -70,6 +70,7 @@ export async function patchAutoparksV2Serviss(
       if (body.problem && typeof body.problem === "object") {
         const res = applyProblemPatch(c.service.problems, body.problem as ProblemPatch, {
           canConfirm: servissCanConfirm(perms),
+          canRemove: perms.admin,
           actorName: actor.name,
           now,
           newId: () => `apr-${randomUUID()}`,

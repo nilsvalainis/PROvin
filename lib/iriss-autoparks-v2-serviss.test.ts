@@ -62,6 +62,8 @@ describe("Problēmas", () => {
       { id: "b", text: "b", fixedByService: true, confirmedByUs: false, confirmedBy: "", at: "", photoIds: [] },
     ];
     expect(problemsDone(two)).toEqual({ done: 1, total: 2 });
-    expect(applyProblemPatch(two, { id: "a", remove: true }, ctx(true)).problems.map((p) => p.id)).toEqual(["b"]);
+    expect(applyProblemPatch(two, { id: "a", remove: true }, { ...ctx(true), canRemove: true }).problems.map((p) => p.id)).toEqual(["b"]);
+    // Nils 27.10: dzēst drīkst tikai administrators.
+    expect(applyProblemPatch(two, { id: "a", remove: true }, ctx(true)).problems.map((p) => p.id)).toEqual(["a", "b"]);
   });
 });
