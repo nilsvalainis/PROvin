@@ -311,26 +311,13 @@ export function IrissPavadzimesListClient({
         </div>
       ) : null}
 
-      <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 max-md:mt-2 max-md:gap-3">
-        <div className={`min-w-0 ${view === "current" ? "max-md:px-4" : ""}`}>
-      {view === "current" ? (
-        <div className="md:hidden">
-          <IrissWaybillGauges
-            chrome="float"
-            allHref={null}
-            selectable
-            onExtend={(g) => {
-              const row = data.rows.find((r) => r.id === g.id);
-              if (row) setExtendVehicle(chipFromRow(row));
-            }}
-            onStop={(g) => askStop({ id: g.id, number: g.number, plate: g.plate })}
-            onOpenPdf={(g) => {
-              const row = data.rows.find((r) => r.id === g.id);
-              if (row) openPdf(row);
-            }}
-          />
-        </div>
-      ) : null}
+      {/* Nils 27.10: datorā kā telefonā, 2 kolonnās - pa kreisi apļi + forma, pa labi aktīvās pavadzīmes (agrāk ~25 700 px gara lapa). */}
+      <div
+        className={`mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 max-md:mt-2 max-md:gap-3 ${
+          view === "current" ? "md:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] md:items-start" : ""
+        }`}
+      >
+        <div className={`min-w-0 md:order-2 ${view === "current" ? "max-md:hidden" : ""}`}>
       {view === "calendar" ? (
         <IrissWaybillCalendar rows={data.rows} nowMs={nowMs} onOpen={openPdf} />
       ) : view === "current" ? (
@@ -587,12 +574,30 @@ export function IrissPavadzimesListClient({
         </div>
       ) : null}
         </div>
-        <div id="komanda-aivaram" className={`min-w-0 scroll-mt-4 max-md:px-4 ${view === "current" ? "" : "max-md:hidden"}`}>
+        <div id="komanda-aivaram" className={`min-w-0 scroll-mt-4 max-md:px-4 md:order-1 ${view === "current" ? "" : "hidden"}`}>
+          <div className="mb-3">
+            <IrissWaybillGauges
+              chrome="float"
+              allHref={null}
+              selectable
+              onExtend={(g) => {
+                const row = data.rows.find((r) => r.id === g.id);
+                if (row) setExtendVehicle(chipFromRow(row));
+              }}
+              onStop={(g) => askStop({ id: g.id, number: g.number, plate: g.plate })}
+              onOpenPdf={(g) => {
+                const row = data.rows.find((r) => r.id === g.id);
+                if (row) openPdf(row);
+              }}
+            />
+          </div>
+          {/* Tā pati forma un dzīvais statuss kā telefonā; gara sarakste ar Aivaru - pogā «Saruna». */}
           <IrissKomandaAivaramChat
             draftVehicle={extendVehicle}
             onDraftConsumed={onDraftConsumed}
             onOpenArchive={() => setView("archive")}
             plateInGauges
+            compact
           />
         </div>
         {view === "current" ? (
