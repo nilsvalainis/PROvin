@@ -76,7 +76,10 @@ export function hasIso3779CheckDigit(vin: string): boolean {
   return iso3779CheckDigit(v) === v[8];
 }
 
-/** Eiropā kontrolcipars nav obligāts: tikai brīdinājums, ne bloķēšana. */
+/**
+ * Kontrolcipars nav obligāts pasūtījumam (ES, NZ/Okeānija WMI 6-7, citi ne-ISO VIN).
+ * Tikai mīksts brīdinājums OCR/admin ceļiem - pirkumu nebloķē.
+ */
 export function vinNeedsCheckDigitWarning(vin: string): boolean {
   const v = normalizeIsoVin(vin);
   if (!VIN17_RE.test(v)) return false;

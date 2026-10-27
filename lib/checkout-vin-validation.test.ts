@@ -27,4 +27,15 @@ describe("checkout API VIN rejection", () => {
     expect(vinOrPlateErrorMessage("KG982", messages)).toBeNull();
     expect(vinOrPlateErrorMessage("VIN: W0VZCYHZXN6843259", messages)).toBeNull();
   });
+
+  it("accepts an NZ VIN whose ISO 3779 check digit does not match", async () => {
+    const copy = await getOrderCopy("lv");
+    const messages = {
+      vin: copy.validation.vin,
+      vinLength: copy.validation.vinLength,
+    };
+    expect(vinOrPlateErrorMessage("7A81G1E0794001421", messages)).toBeNull();
+    expect(vinOrPlateErrorMessage("7A81G1E079400142", messages)).toBe(copy.validation.vinLength);
+    expect(vinOrPlateErrorMessage("7A81G1EI794001421", messages)).toBe(copy.validation.vin);
+  });
 });
