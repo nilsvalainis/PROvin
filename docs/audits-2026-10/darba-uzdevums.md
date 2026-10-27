@@ -186,3 +186,14 @@ Sūtīts caur `docs/komandu-zinojumi.md`. Atbildes ierakstīt tur vai šajā fai
 7.5. **Grok Bot admin.** Grok ienāk caur parasto `/admin/login` (`app/api/admin/login`, `lib/admin-auth.ts`) ar paroli no 1Password (aizpilda pārlūkā, parole netiek glabāta failos), rezultātā `provin_admin_session` sīkdatne (parakstīta ar `ADMIN_SECRET`). API tokena Grok nav. P9 Google pieteikšanās pārejā paturēt paroles ceļu vai iedot Grok atsevišķu Google kontu ar admin lomu (eksistē `app/api/admin/google-sessions`).
 7.6. **GSC + GA4.** Eksports nav atrasts; Grok pusē nav GSC/GA4 savienotāja (Google Drive/Docs/Sheets/Calendar ir). Ceļš: Nils eksportē GSC Performance (3 mēn., vaicājumi+lapas) un GA4 atskaites uz Google Sheets/Drive — Grok tad var nolasīt un nodot Claude. Jāprasa Nilam.
 7.7. **CSP žurnāli.** Report-Only galvene sūta uz `/api/csp-report` (`lib/csp.ts`), maršruts raksta `console.info("[csp-report]", direktīva, blockedUri, host)`. Skatīt: Vercel → provin projekts → Logs, filtrs `[csp-report]` (vai `vercel logs` ar tokenu). Šajā kārtā Grok žurnālus neizvilka — dari to nākamajā solī; Stripe testa checkout un Google LV pozīcijas paliek neverificēti.
+
+
+#### Papildinājums nakts (Google aģents, 2026-10-27 ~23:22 Europe/Riga)
+
+**7.3 Reklāmas — dati.** Sheets: https://docs.google.com/spreadsheets/d/1L7so9qR-zwlId61nrKmd0_bUr1Gx2U8fwHkABPZHIF4/edit
+- Google Ads (556-229-4898): praktiski no ~16.10; abas kampaņas pauzētas kopš 19.10 ~9:14. Campaign #1 (16–19.10): 10,84 €, 81 parādīšanās, 14 klikšķi, 0 konversiju. «Konkurenti - dīlera dati» (18–19.10): 0 €. Kopš 20.10: 0 €/dienā. Billing apstiprināts ~80 € līdz 1.11.
+- Meta (act 2155910949133602, no 16.10): kampaņa «PROVIN dīlera dati 16-23.10» 49,81 € (video 43,49 + bilde 6,32), mērķis Traffic, 597 klikšķi / 511 apmeklējumi, Purchase/CPA = 0.
+- TikTok Promote: ~26 € (16.10); dienas sadalījums no box nenolasāms.
+- /admin/statistika: ~81–87 € tēriņš; UI CPA/ROAS nav ticami kanālu novērtēšanai (attribution ~91% tukša; apmaksātajiem kanāliem piesaistīto pasūtījumu 0).
+
+**7.6 GSC — dati (sc-domain:provin.lv, 26.07–25.10.2026, Web).** ~2,81K klikšķi, ~7,6K rādījumi, CTR ~37%, vid. poz. 4,9. Top 20 gandrīz zīmols (provin / provin.lv). Ne-zīmols vājš: «vin pārbaude» poz. 15,3; «auto vēstures pārbaude» 9,5; «vin koda pārbaude» 12,5. CWV CrUX (25.10): mobile/desktop — nav datu. GA4 eksports joprojām nav (nav savienojuma).
