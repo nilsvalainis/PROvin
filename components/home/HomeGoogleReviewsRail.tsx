@@ -1,3 +1,4 @@
+import { formatGoogleReviewRelativeDate } from "@/lib/google-reviews-relative";
 import {
   GOOGLE_REVIEWS,
   type GoogleReviewEntry,
@@ -51,7 +52,9 @@ function ReviewCard({
         <p className="provin-google-review-card__author">{review.author}</p>
         <p className="provin-google-review-card__meta">
           <StarRow count={review.rating} />
-          <span className="provin-google-review-card__date">{review.relativeDateLv}</span>
+          <span className="provin-google-review-card__date" suppressHydrationWarning>
+            {formatGoogleReviewRelativeDate("lv", review.relative)}
+          </span>
         </p>
       </div>
       <div className="provin-google-review-card__text-wrap">
