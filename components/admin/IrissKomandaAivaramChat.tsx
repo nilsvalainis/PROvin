@@ -158,6 +158,7 @@ export function IrissKomandaAivaramChat({
   plateInGauges = false,
   compact = false,
   requirePlateChoice = false,
+  layout = "stack",
 }: {
   draftVehicle: WaybillVehicleChip | null;
   onDraftConsumed: () => void;
@@ -169,6 +170,8 @@ export function IrissKomandaAivaramChat({
   compact?: boolean;
   /** Numurs vienmēr jāizvēlas pašam (nav noklusējuma). */
   requirePlateChoice?: boolean;
+  /** Datora Pavadzīmju lapa: forma horizontālā kartītē (IrissWaybillMobileForm layout="row"). */
+  layout?: "stack" | "row";
 }) {
   const [chat, setChat] = useState<WaybillChatState>(emptyChat);
   const [plate, setPlate] = useState<string>(IRISS_DEALER_PLATES[0]);
@@ -482,6 +485,7 @@ export function IrissKomandaAivaramChat({
         }}
         onOpenArchive={onOpenArchive}
         plateInGauges={plateInGauges}
+        layout={layout}
         requirePlateChoice={requirePlateChoice}
       />
     </div>

@@ -324,7 +324,7 @@ function cardStatus(g: WaybillGauge): { tone: IrissStatusTone; text: string } {
  * Datora Pavadzīmju lapa (Nils 27.10, makets A): 3 numuri = 3 lielas kartītes. Katrā tā numura aktīvā
  * pavadzīme ar atlikušo laiku un darbībām (PDF, Pagarināt, Pārtraukt) - atsevišķas tabulas vairs nav.
  */
-function WaybillPlateCards({
+export function WaybillPlateCards({
   gauges,
   loading,
   onExtend,

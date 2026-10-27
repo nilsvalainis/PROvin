@@ -17,15 +17,13 @@ import { IrissWaybillPdfSheet } from "@/components/admin/IrissWaybillPdfSheet";
 import { IrissVpnControl } from "@/components/admin/IrissVpnControl";
 import { IrissWaybillSarunaButton, IrissWaybillSarunaOverlay } from "@/components/admin/IrissWaybillSarunaOverlay";
 import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
-import { IrissButton, IrissChip } from "@/components/admin/iriss-ui/IrissUi";
+import { IrissChip } from "@/components/admin/iriss-ui/IrissUi";
 import { waybillHistoryForVin } from "@/lib/iriss-waybill-calendar";
 import { formatIrissWaybillChip } from "@/lib/admin-mobile-ds";
 import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
-import { waybillRemainingShare } from "@/lib/iriss-pavadzimes-countdown";
 import { sortWaybillsNewestFirst, waybillLifecycleLabel } from "@/lib/iriss-pavadzimes-lifecycle";
 import { formatWaybillDateTime } from "@/lib/iriss-pavadzimes-parse";
 import type { IrissPavadzimeListRow, IrissPavadzimeValidityTone } from "@/lib/iriss-pavadzimes-types";
-import { remainingWaybillDays, remainingWaybillLabel, waybillSoonTone } from "@/lib/iriss-waybill-requests";
 import type { WaybillVehicleChip } from "@/lib/iriss-waybill-vehicles";
 import { useWaybillPageOpenAtTop } from "@/components/admin/useWaybillPageOpenAtTop";
 import {
@@ -276,7 +274,7 @@ export function IrissPavadzimesListClient({
   const sarunaBtnProps = { open: sarunaOpen, unreadCount: sarunaUnread, onClick: openSaruna };
 
   return (
-    <>
+    <div className="md:mx-auto md:max-w-[1200px]">
       <div className="md:hidden">
         <AdminMobileTopBar title="Pavadzīmes" trailing={<IrissWaybillSarunaButton {...sarunaBtnProps} className="h-11 w-11" />} />
       </div>
@@ -285,6 +283,7 @@ export function IrissPavadzimesListClient({
       </Suspense>
       <div className="mt-2 flex max-w-full flex-wrap items-center justify-between gap-2 max-md:hidden">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <h1 className="mr-2 text-[28px] font-bold tracking-[-0.01em] text-[var(--iriss-ink)]">Pavadzīmes</h1>
         <div className="flex min-w-0 flex-wrap items-center gap-2" role="group" aria-label="Pavadzīmju filtrs">
           {(["current", "calendar", "archive"] as const).map((v) => (
             <IrissChip key={v} pressed={view === v} count={v === "calendar" ? undefined : viewCount(v)} onClick={() => setView(v)}>
@@ -315,108 +314,31 @@ export function IrissPavadzimesListClient({
       {/* Nils 27.10: datorā kā telefonā, 2 kolonnās - pa kreisi apļi + forma, pa labi aktīvās pavadzīmes (agrāk ~25 700 px gara lapa). */}
       {view === "current" && wide ? (
         <div className="mt-4 max-md:hidden">
-          <IrissWaybillGauges chrome="strip" allHref={null} selectable />
+          <IrissWaybillGauges
+            chrome="strip"
+            allHref={null}
+            onExtend={(g) => {
+              const row = data.rows.find((r) => r.id === g.id);
+              if (row) {
+                setExtendVehicle(chipFromRow(row));
+                window.setTimeout(() => document.getElementById("komanda-aivaram")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+              }
+            }}
+            onStop={(g) => askStop({ id: g.id, number: g.number, plate: g.plate })}
+            onOpenPdf={(g) => {
+              const row = data.rows.find((r) => r.id === g.id);
+              if (row) openPdf(row);
+            }}
+          />
         </div>
       ) : null}
       <div
-        className={`mt-4 grid grid-cols-[minmax(0,1fr)] gap-5 max-md:mt-2 max-md:gap-3 ${
-          view === "current" ? "md:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] md:items-start" : ""
-        }`}
+        className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-5 max-md:mt-2 max-md:gap-3"
       >
-        <div className={`min-w-0 ${view === "current" ? "max-md:hidden" : ""}`}>
-      {view === "calendar" ? (
+        {/* Aktīvās datorā ir numuru kartītēs augšā (makets A); šī kolonna - Kalendārs un Arhīvs. */}
+        <div className={`min-w-0 ${view === "current" ? "hidden" : ""}`}>
+      {view === "current" ? null : view === "calendar" ? (
         <IrissWaybillCalendar rows={data.rows} nowMs={nowMs} onOpen={openPdf} />
-      ) : view === "current" ? (
-        rows.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-[var(--iriss-line)] bg-white px-6 py-12 text-center shadow-sm max-md:hidden">
-            <p className="font-medium text-black">Nav aktīvu pavadzīmju</p>
-            <p className="mt-1 text-[13px] text-[var(--iriss-ink-2)]">Beigušās un pārtrauktās ir Arhīvā.</p>
-          </div>
-        ) : (
-          <section aria-labelledby="wb-active-h" className="overflow-hidden rounded-[var(--iriss-r-md)] bg-[var(--iriss-surface)] shadow-[0_0_0_0.5px_rgba(0,0,0,0.1),0_1px_2px_rgba(0,0,0,0.04)]">
-            <h2 id="wb-active-h" className="px-[18px] pb-2.5 pt-3.5 text-[16px] font-bold text-[var(--iriss-ink)]">
-              Aktīvās pavadzīmes
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[760px] text-left text-[13.5px]">
-                <thead>
-                  <tr className="text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--iriss-ink-2)]">
-                    <th className="px-[18px] py-2">Auto</th>
-                    <th className={`${hug} px-3 py-2`}>Numurs</th>
-                    <th className="w-[200px] px-3 py-2">Atlicis</th>
-                    <th className={`${hug} px-3 py-2`}>Derīga līdz</th>
-                    <th className={`${hug} px-[18px] py-2 text-right`}>Darbības</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => {
-                    const days = remainingWaybillDays(row.validUntil, now);
-                    const tone = waybillSoonTone(days);
-                    const share = waybillRemainingShare(row.issuedAt, row.validUntil, now);
-                    const bar = tone === "soon" ? "bg-[var(--iriss-brand)]" : "bg-[var(--iriss-info)]";
-                    const leftClass = tone === "soon" ? "text-[var(--iriss-warn)]" : "text-[var(--iriss-info)]";
-                    const indexed = hasIndexedWaybill(row);
-                    const vin = row.vin.trim();
-                    return (
-                      <tr key={waybillRowKey(row)} data-pavadzime={waybillRowKey(row)} className="border-t border-[var(--iriss-line)] align-middle">
-                        <td className="max-w-[320px] px-[18px] py-3">
-                          <p className="truncate text-[14.5px] font-bold text-[var(--iriss-ink)]" title={row.brandModel.trim() || undefined}>
-                            {dash(row.brandModel)}
-                          </p>
-                          <p className="mt-0.5 flex items-center gap-1.5 font-mono text-[12px] text-[var(--iriss-ink-2)]">
-                            <span className="truncate">
-                              {vin || "-"} · Nr. {dash(row.number)}
-                            </span>
-                            {vin ? <AdminVinCopyButton value={vin} /> : null}
-                          </p>
-                        </td>
-                        <td className={`${hug} px-3 py-3 font-mono text-[13.5px] font-semibold`}>{dash(row.plate)}</td>
-                        <td className="px-3 py-3">
-                          <div className="h-1.5 overflow-hidden rounded-full bg-[var(--iriss-surface-2)]">
-                            <div className={`h-full ${bar}`} style={{ width: `${Math.round(share * 100)}%` }} />
-                          </div>
-                          <p className={`mt-1 text-[12.5px] font-semibold ${leftClass}`}>{remainingWaybillLabel(row.validUntil, now)}</p>
-                        </td>
-                        <td className={`${hug} px-3 py-3 tabular-nums text-[var(--iriss-ink-2)]`}>
-                          {formatWaybillDateTime(row.validUntil, now) || "-"}
-                        </td>
-                        <td className={`${hug} px-[18px] py-3`}>
-                          <div className="flex items-center justify-end gap-1.5">
-                            <IrissButton size="sm" onClick={() => openPdf(row)} disabled={!indexed}>
-                              <FileText className="h-3.5 w-3.5" strokeWidth={1.75} aria-hidden />
-                              PDF
-                            </IrissButton>
-                            {indexed ? (
-                              <>
-                                <IrissButton size="sm" onClick={() => setExtendVehicle(chipFromRow(row))}>
-                                  Pagarināt
-                                </IrissButton>
-                                <IrissButton size="sm" variant="danger-outline" onClick={() => askStop(row)}>
-                                  Pārtraukt
-                                </IrissButton>
-                                {row.vin ? (
-                                  <IrissButton size="sm" variant="quiet" onClick={() => setHistoryVin(row.vin)}>
-                                    Auto vēsture
-                                  </IrissButton>
-                                ) : null}
-                                <AdminChangeHistoryButton
-                                  kind="iriss-waybill"
-                                  recordId={row.id}
-                                  endpoint="/api/admin/change-history"
-                                  onRestored={(body) => applyWaybillRestore(row.id, body.record)}
-                                />
-                              </>
-                            ) : null}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        )
       ) : rows.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-[var(--iriss-line)] bg-white px-6 py-12 text-center shadow-sm">
           <p className="font-medium text-black">Nav pavadzīmju</p>
@@ -589,12 +511,8 @@ export function IrissPavadzimesListClient({
         </div>
         <div
           id="komanda-aivaram"
-          className={`min-w-0 scroll-mt-4 max-md:px-4 md:rounded-[var(--iriss-r-md)] md:bg-[var(--iriss-surface)] md:p-[18px] md:shadow-[0_0_0_0.5px_rgba(0,0,0,0.1),0_1px_2px_rgba(0,0,0,0.04)] ${view === "current" ? "" : "hidden"}`}
+          className={`min-w-0 scroll-mt-4 max-md:px-4 ${view === "current" ? "" : "hidden"}`}
         >
-          <div className="mb-3 max-md:hidden">
-            <h2 className="text-[16px] font-bold text-[var(--iriss-ink)]">Jauna pavadzīme</h2>
-            <p className="mt-1 text-[13px] text-[var(--iriss-ink-2)]">Numuru izvēlies kartītēs augšā. Aivars izveido CSDD pavadzīmi pāris minūtēs.</p>
-          </div>
           {wide === false ? (
           <div className="mb-3 md:hidden">
             <IrissWaybillGauges
@@ -618,7 +536,8 @@ export function IrissPavadzimesListClient({
             draftVehicle={extendVehicle}
             onDraftConsumed={onDraftConsumed}
             onOpenArchive={() => setView("archive")}
-            plateInGauges
+            plateInGauges={!wide}
+            layout={wide ? "row" : "stack"}
             compact
           />
         </div>
@@ -705,6 +624,6 @@ export function IrissPavadzimesListClient({
           </ul>
         </AdminMobileSheet>
       </div>
-    </>
+    </div>
   );
 }

@@ -737,3 +737,54 @@
   color: var(--bad, #c2362b);
   font-size: 12px;
 }
+
+/* ---- Datora Pavadzīmju lapa (layout="row", makets A) ---- */
+.mf.row .card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px 20px;
+  border-radius: var(--iriss-r-lg, 20px);
+  background: var(--iriss-surface, #fff);
+  padding: 20px 22px;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(22, 23, 26, 0.06);
+}
+.mf.row .rowTitle {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--iriss-ink, #1c1c1e);
+  font-size: 18px;
+  font-weight: 700;
+}
+.mf.row .group,
+.mf.row .group + .group {
+  min-width: 0;
+  flex: 1 1 220px;
+  margin-top: 0;
+}
+.mf.row .label {
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.mf.row .error {
+  flex-basis: 100%;
+}
+.mf.row .primary {
+  width: auto;
+  flex: 0 0 auto;
+  align-self: flex-end;
+  margin-top: 0;
+  padding: 0 24px;
+}
+.mf.row .live {
+  margin-top: 20px;
+  border-radius: var(--iriss-r-lg, 20px);
+  background: var(--iriss-surface, #fff);
+  padding: 6px 22px 14px;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(22, 23, 26, 0.06);
+}
+.mf.row .live .secTitle {
+  color: var(--iriss-ink, #1c1c1e);
+  font-size: 18px;
+  letter-spacing: 0;
+  text-transform: none;
+}
