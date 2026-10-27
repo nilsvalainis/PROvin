@@ -11,6 +11,7 @@ import { AdminShellMainWithMobilePull } from "./AdminShellMainWithMobilePull";
 import { AdminAuditDeadlineTickProvider } from "./AdminAuditDeadlineTickProvider";
 import { AdminVinHandoffProvider } from "./AdminVinHandoffContext";
 import { AdminShellLayoutContext } from "@/components/admin/AdminShellLayoutContext";
+import { useHideOnScrollDown } from "@/components/admin/mobile/useHideOnScrollDown";
 import {
   useAdminMobileColorScheme,
   useAdminMobileViewport,
@@ -48,6 +49,8 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
   const showProBack = isProWorkspace && proMobileNeedsBack(pathname);
   const { collapsed, toggle } = useAdminSidebarCollapsed();
   const mobile = useAdminMobileViewport();
+  // IRISS telefonā josla paslēpjas, ritinot uz leju (variants A); PRO paliek kā bija.
+  const dockHidden = useHideOnScrollDown(mobile && workspace === "iriss" && !hideTabBar, pathname);
   const adminTheme = useAdminMobileColorScheme();
   useSyncAdminMobileThemeColor(adminTheme, workspace);
   const shellLayoutValue = useMemo(
@@ -91,7 +94,7 @@ export function AdminShell({ children, notice, workspace = "pro" }: Props) {
           </AdminAuditDeadlineTickProvider>
       </div>
       {hideTabBar ? null : (
-        <div className={ADMIN_MOBILE_TABBAR_DOCK_WRAPPER}>
+        <div className={ADMIN_MOBILE_TABBAR_DOCK_WRAPPER} data-hidden={dockHidden ? "true" : undefined}>
           <AdminMobileTabBar workspace={workspace} />
         </div>
       )}

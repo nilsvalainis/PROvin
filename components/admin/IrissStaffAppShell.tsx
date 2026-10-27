@@ -18,6 +18,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { useHideOnScrollDown } from "@/components/admin/mobile/useHideOnScrollDown";
 import {
   IRISS_SECTION_LABELS,
   irissSectionMeta,
@@ -69,6 +70,8 @@ export function IrissStaffAppShell({
   const navSections = staffNavSections(sections, autoparksV2Visible);
   const tabItems = staffTabbarItems(sections, autoparksV2Visible);
   const [moreOpen, setMoreOpen] = useState(false);
+  // Variants A: ritinot uz leju josla aiziet (datorā josla ir paslēpta ar md:hidden).
+  const dockHidden = useHideOnScrollDown(!moreOpen, pathname);
 
   // Pāreja uz citu lapu aizver «Vairāk».
   useEffect(() => {
@@ -156,6 +159,7 @@ export function IrissStaffAppShell({
         <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(64px+env(safe-area-inset-bottom))] md:pb-0">{children}</main>
         <nav
           data-iriss-staff-tabbar=""
+          data-hidden={dockHidden ? "true" : undefined}
           className="iriss-staff-tabbar fixed inset-x-0 bottom-0 z-[30] border-t border-[#ececf2] bg-[#F4F6F9] px-2 pt-1 pb-[max(20px,calc(8px+env(safe-area-inset-bottom)))] md:hidden"
         >
           <div className="mx-auto flex max-w-lg items-stretch gap-0.5">

@@ -509,7 +509,7 @@ export function IrissScanEditor({
             className="text-[13px] font-semibold text-[var(--acc)] disabled:opacity-40"
             title="Atjaunot eCarsTrade saites no Auto1 / Openlane / Autobid / Mobile filtriem"
           >
-            Atjaunot ET
+            Atjaunot eCarsTrade
           </button>
           {persistId ? (
             <IrissMarketplaceLoadPanel scanId={persistId} enabledPlatforms={irissScanApifyPlatforms(rec)} />
