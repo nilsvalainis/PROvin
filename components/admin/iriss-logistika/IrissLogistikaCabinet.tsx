@@ -1,5 +1,6 @@
 "use client";
 
+import { LOGISTICS_STEPS, LOGISTICS_STEP_LV, LOGISTICS_STEP_SHORT_LV, logisticsStepOf, logisticsStepWrite, type LogisticsStep } from "@/lib/iriss-logistics-steps";
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
@@ -9,7 +10,6 @@ import {
   CABINET_DOC_GROUP_LABEL,
   CABINET_DOC_TYPE_LABEL,
   CABINET_LOCAL_PREFS_KEY,
-  CABINET_PICKUP_STAGE_LV,
   cabinetDocumentSourceChip,
   cabinetDocumentsSummary,
   cabinetPhaseForStage,
@@ -32,10 +32,7 @@ import {
   formatLogisticsAddress,
   formatLogisticsDate,
   formatLogisticsEur,
-  isLogisticsOrderStatus,
-  isLogisticsPipelineStatus,
   LOGISTICS_ORDER_STATUS_LV,
-  LOGISTICS_PIPELINE_STATUSES,
   type LogisticsGeocodeStatus,
   type LogisticsOrder,
   type LogisticsPoint,
@@ -72,6 +69,8 @@ type Props = {
   endAction?: ReactNode;
   /** Posma/pickup izmaiņa kabinetā - lai kravu rindas žetons atjaunojas bez pārlādes. */
   onPickupChanged?: (pickup: CabinetPickup) => void;
+  /** Solis «Atvests» (Nils 27.10): auto uz Autoparku («Noliktavā»), Loģistikā - arhīvā. */
+  onMoveToAutopark?: (orderId: string) => void;
 };
 
 const A_SLOT_TYPES: CabinetDocType[] = ["purchase_confirm", "car_invoice"];
@@ -108,7 +107,7 @@ function locationChip(status: LogisticsGeocodeStatus): { label: string; tone: "o
   }
 }
 
-export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onPatchOrder, onOrderUpdated, canCreateOffer = false, endAction, onPickupChanged }: Props) {
+export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onPatchOrder, onOrderUpdated, canCreateOffer = false, endAction, onPickupChanged, onMoveToAutopark }: Props) {
   // Nelasām localStorage renderēšanas laikā: serveris renderē bez tā, tāpēc hidratācija nesakrīt.
   const [prefs, setPrefs] = useState<Record<string, string>>({});
   const [documents, setDocuments] = useState<CabinetDocument[]>([]);
@@ -161,6 +160,20 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
 
   const stage: CabinetPickupStage = pickup?.stage ?? defaultPickupStageFromOrderStatus(order.status);
   const arrived = stage === "arrived";
+  const step = logisticsStepOf(order.status, pickup?.stage);
+
+  /** Nils 27.10: viens solis (4) - raksta pasūtījuma statusu un pickup posmu; «Atvests» - uz Autoparku. */
+  async function chooseStep(next: LogisticsStep) {
+    if (next === step) return;
+    if (next === "arrived") {
+      if (!onMoveToAutopark) return void setStage("arrived");
+      if (window.confirm("Auto atvests? Autoparkā tas būs «Noliktavā», Loģistikā aizies uz arhīvu.")) onMoveToAutopark(order.id);
+      return;
+    }
+    const w = logisticsStepWrite(next);
+    await saveOrderFields({ status: w.status });
+    await setStage(w.stage);
+  }
 
   // Vienotā "Dokumenti" sadaļa paliek uz veco "B" preferences atslēgu (atvērta/ceļā, aizvērta pēc atvešanas pēc noklusējuma).
   const docsOpen = useMemo(() => resolveCabinetSectionOpen(prefs, "B", stage), [prefs, stage]);
@@ -395,22 +408,16 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
       {/* Kompakta forma: pamatlauki 2 kolonnās, nevis 4 pilnas rindas. */}
       <div className="mt-3 grid grid-cols-2 gap-2">
         <label className="block text-[11px] text-[var(--ink2)]">
-          Statuss
+          Solis
           <select
-            value={order.status}
+            value={step}
             disabled={!access.write || isLogisticsOrderArchived(order)}
-            onChange={(e) => {
-              const next = e.target.value;
-              if (isLogisticsOrderStatus(next)) void saveOrderFields({ status: next });
-            }}
+            onChange={(e) => void chooseStep(e.target.value as LogisticsStep)}
             className="mt-1 h-10 w-full rounded-xl border border-[var(--iriss-line)] px-2 text-[13px]"
           >
-            {!isLogisticsPipelineStatus(order.status) ? (
-              <option value={order.status}>{LOGISTICS_ORDER_STATUS_LV[order.status]}</option>
-            ) : null}
-            {LOGISTICS_PIPELINE_STATUSES.map((key) => (
+            {LOGISTICS_STEPS.map((key) => (
               <option key={key} value={key}>
-                {LOGISTICS_ORDER_STATUS_LV[key]}
+                {LOGISTICS_STEP_LV[key]}
               </option>
             ))}
           </select>
@@ -538,7 +545,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
               <span className="block text-[13.5px] font-semibold">Dokumenti</span>
               <span className="block text-[12px] text-[var(--ink3)]">{cabinetDocumentsSummary(documents)}</span>
             </span>
-            <span className={`iriss-log-cab-chip ${arrived ? "done" : "on"}`}>{arrived ? "pabeigts" : CABINET_PICKUP_STAGE_LV[stage]}</span>
+            <span className={`iriss-log-cab-chip ${arrived ? "done" : "on"}`}>{arrived ? "pabeigts" : LOGISTICS_STEP_SHORT_LV[step]}</span>
             <span className="text-[var(--ink3)]">{docsOpen ? "⌃" : "⌄"}</span>
           </button>
 
@@ -561,24 +568,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
                     {CABINET_DOC_GROUP_LABEL.B}
                   </p>
                   <div className="mb-2 rounded-xl border border-[#eef1f4] bg-white px-3 py-2">
-                    <div className="grid grid-cols-3 gap-1 rounded-full bg-[var(--iriss-surface-2)] p-1">
-                      {(["waiting", "planned", "in_transit"] as const).map((key) => (
-                        <button
-                          key={key}
-                          type="button"
-                          disabled={!access.write || arrived}
-                          onClick={() => void setStage(key)}
-                          className={`h-8 rounded-full text-[12px] font-semibold ${stage === key && !arrived ? "bg-white shadow-sm" : "text-[var(--ink3)]"}`}
-                        >
-                          {CABINET_PICKUP_STAGE_LV[key]}
-                        </button>
-                      ))}
-                    </div>
-                    {!arrived && access.write ? (
-                      <button type="button" onClick={() => void setStage("arrived")} className="mt-2 h-8 rounded-full border border-[var(--iriss-line)] px-3 text-[12px] font-semibold">
-                        Atzīmēt kā Atvests
-                      </button>
-                    ) : null}
+                    {/* Soļi (Gaida / Gatavs / Ceļā / Atvests) ir augšā laukā «Solis» - šeit vairs neatkārtojas (Nils 27.10). */}
                     <dl className="mt-2 grid grid-cols-[6rem_1fr] gap-y-1 text-[12.5px]">
                       <dt className="text-[var(--ink2)]">Darba laiks</dt>
                       <dd>{order.pickupSnapshot?.hoursText || "-"}</dd>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { CABINET_PICKUP_STAGE_LV } from "@/lib/iriss-logistics-cabinet";
+import { LOGISTICS_STEP_LV } from "@/lib/iriss-logistics-steps";
 import { AUTOPARKS_TRANSIT_STEPS, type AutoparksTransit } from "@/lib/iriss-autoparks-transit";
 
 function dateLv(iso: string): string {
@@ -47,7 +47,6 @@ export function AutoparksV2Cela({ transit, canWrite = true }: { transit: Autopar
     ["Krava", transit.cargoPlace ? `${transit.cargoLabel} (${transit.cargoPlace}. vieta)` : transit.cargoLabel],
     ["Savākšanas datums", transit.pickupDate ? dateLv(transit.pickupDate) : "-"],
     ["Bezmaksas stāvvieta līdz", transit.freeParkingUntil ? dateLv(transit.freeParkingUntil) : "-"],
-    ["Loģistikas statuss", transit.orderStatusLabel || "-"],
   ];
 
   return (
@@ -56,7 +55,7 @@ export function AutoparksV2Cela({ transit, canWrite = true }: { transit: Autopar
         {AUTOPARKS_TRANSIT_STEPS.map((s, i) => (
           <li key={s} className={i === current ? "cur" : i < current ? "done" : ""} aria-current={i === current ? "step" : undefined}>
             <span>{i + 1}.</span>
-            <b>{CABINET_PICKUP_STAGE_LV[s]}</b>
+            <b>{LOGISTICS_STEP_LV[s]}</b>
           </li>
         ))}
       </ol>

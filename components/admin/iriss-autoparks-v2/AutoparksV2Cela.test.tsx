@@ -15,7 +15,7 @@ const transit = buildAutoparksTransit(
 describe("Kabineta cilne «Ceļā»", () => {
   it("posmi, savākšana, krava; «Atvests» poga un saite uz Loģistiku", () => {
     const text = renderText(<AutoparksV2Cela transit={transit} />);
-    for (const t of ["Gaida", "Ieplānots", "Ceļā", "Atvests", "Zörbig", "KR57312", "Nav kravā", "Atvests → Gaida sagatavošanu"]) expect(text).toContain(t);
+    for (const t of ["Gaida apmaksu/dokumentus", "Gatavs savākšanai", "Ceļā", "Atvests", "Zörbig", "KR57312", "Nav kravā", "Atvests → Gaida sagatavošanu"]) expect(text).toContain(t);
     const html = renderHtml(<AutoparksV2Cela transit={transit} />);
     expect(html).toContain('href="/admin/iriss/logistika?car=lo-1"');
     expect(html).toMatch(/aria-current="step"[^>]*>.*Ceļā/);

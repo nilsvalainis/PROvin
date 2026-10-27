@@ -22,7 +22,7 @@ describe("Loģistika = Autoparka posms «Ceļā» (Nils 27.10)", () => {
         { carId: "lo-1", bucket: "next", sort: 1, showOnMap: true },
       ],
     });
-    expect(t.stageLabel).toBe("Ieplānots");
+    expect(t.stageLabel).toBe("Gatavs savākšanai");
     expect(t.cargoLabel).toBe("Nākošā krava");
     expect(t.cargoPlace).toBe(2);
     expect(t.pickupRef).toBe("KR57312");

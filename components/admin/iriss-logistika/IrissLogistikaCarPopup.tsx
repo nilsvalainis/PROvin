@@ -3,7 +3,8 @@
 import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
 import { CARGO_BUCKET_LV, logisticsCarTitle, logisticsCopyAllCarText, logisticsDriverShareText, moveCargoCar, type CargoPlanState } from "@/lib/iriss-logistics-cargo-plan";
-import { CABINET_PICKUP_STAGE_LV, type CabinetPickupStage } from "@/lib/iriss-logistics-cabinet";
+import type { CabinetPickupStage } from "@/lib/iriss-logistics-cabinet";
+import { LOGISTICS_STEP_SHORT_LV, logisticsStepOf } from "@/lib/iriss-logistics-steps";
 import { formatLogisticsAddress, formatLogisticsDate, formatLogisticsEur, type LogisticsOrder } from "@/lib/iriss-logistics-types";
 
 type Props = {
@@ -22,9 +23,10 @@ export function IrissLogistikaCarPopup({ order, plan, stage, onClose, onPlanChan
   const phone = order.pickupSnapshot?.phone || order.sellerContact;
   const copyAll = logisticsCopyAllCarText(order, {
     cargoLv: CARGO_BUCKET_LV[bucket],
-    stageLv: CABINET_PICKUP_STAGE_LV[stage],
+    stageLv: LOGISTICS_STEP_SHORT_LV[logisticsStepOf(order.status, stage)],
   });
   const driver = logisticsDriverShareText(order);
+  const stepLv = LOGISTICS_STEP_SHORT_LV[logisticsStepOf(order.status, stage)];
 
   return (
     <div className="iriss-log-popup iriss-log-no-print">
@@ -35,7 +37,7 @@ export function IrissLogistikaCarPopup({ order, plan, stage, onClose, onPlanChan
             {order.auction ? <IrissAuctionLogo name={order.auction} /> : null}
             <span className="iriss-log-status-chip">
               <i />
-              {CABINET_PICKUP_STAGE_LV[stage]}
+              {stepLv}
             </span>
           </p>
         </div>
