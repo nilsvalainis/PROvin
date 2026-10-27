@@ -281,11 +281,20 @@ export function DeleteCarButton({ carId, title }: { carId: string; title: string
 /**
  * Īpašnieks galvenes joslā (Nils 27.10): izcelts - Dzintarzeme oranžs, ĪRISS zaļš. Ar Pamatdatu tiesību - maināms.
  */
-function OwnerBadge({ basics, canEdit, onBasics }: { basics: AutoparksV2Basics; canEdit: boolean; onBasics: (b: AutoparksV2Basics) => void }) {
+/** Pilni nosaukumi (Nils 27.10). */
+export const OWNER_FULL_LV = { IRISS: "SIA IRISS", DZA: "SIA Dzintarzeme Auto" } as const;
+
+export function OwnerBadge({ basics, canEdit, onBasics }: { basics: AutoparksV2Basics; canEdit: boolean; onBasics: (b: AutoparksV2Basics) => void }) {
   const [err, setErr] = useState(false);
   const cls = `ap2-owner-badge ${basics.owner === "DZA" ? "dza" : "iriss"}`;
-  const label = basics.owner === "DZA" ? "Dzintarzeme" : "ĪRISS";
-  if (!canEdit) return <span className={cls}>{label}</span>;
+  const label = OWNER_FULL_LV[basics.owner === "DZA" ? "DZA" : "IRISS"];
+  const face = (
+    <>
+      <i aria-hidden className="dot" />
+      <span>{label}</span>
+    </>
+  );
+  if (!canEdit) return <span className={cls}>{face}</span>;
   async function change(next: string) {
     if (next === basics.owner) return;
     setErr(false);
@@ -298,12 +307,16 @@ function OwnerBadge({ basics, canEdit, onBasics }: { basics: AutoparksV2Basics; 
     if (res?.ok && data?.basics) onBasics(data.basics);
     else setErr(true);
   }
+  // Makets B (Nils 27.10): kontūra + krāsains punkts; izvēle ir neredzama virs žetona (atveras kā parasts saraksts).
   return (
-    <label className={cls} title={err ? "Neizdevās saglabāt" : "Mainīt īpašnieku"}>
-      <span className="sr-only">Īpašnieks</span>
-      <select value={basics.owner} onChange={(e) => void change(e.target.value)}>
-        <option value="IRISS">ĪRISS</option>
-        <option value="DZA">Dzintarzeme</option>
+    <label className={`${cls} edit`} title={err ? "Neizdevās saglabāt" : "Mainīt īpašnieku"}>
+      {face}
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+      <select aria-label="Īpašnieks" value={basics.owner} onChange={(e) => void change(e.target.value)}>
+        <option value="IRISS">{OWNER_FULL_LV.IRISS}</option>
+        <option value="DZA">{OWNER_FULL_LV.DZA}</option>
       </select>
     </label>
   );
