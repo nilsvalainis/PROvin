@@ -192,7 +192,7 @@ Sūtīts caur `docs/komandu-zinojumi.md`. Atbildes ierakstīt tur vai šajā fai
 
 **7.3 Reklāmas — dati.** Sheets: https://docs.google.com/spreadsheets/d/1L7so9qR-zwlId61nrKmd0_bUr1Gx2U8fwHkABPZHIF4/edit
 - Google Ads (556-229-4898): praktiski no ~16.10; abas kampaņas pauzētas kopš 19.10 ~9:14. Campaign #1 (16–19.10): 10,84 €, 81 parādīšanās, 14 klikšķi, 0 konversiju. «Konkurenti - dīlera dati» (18–19.10): 0 €. Kopš 20.10: 0 €/dienā. Billing apstiprināts ~80 € līdz 1.11.
-- Meta (act 2155910949133602, no 16.10): kampaņa «PROVIN dīlera dati 16-23.10» 49,81 € (video 43,49 + bilde 6,32), mērķis Traffic, 597 klikšķi / 511 apmeklējumi, Purchase/CPA = 0.
+- Meta (act 2155910949133602, no 16.10): kampaņa «PROVIN dīlera dati 16-23.10» 49,82 € lifetime (video 43,49 + bilde 6,32; Sociālie/Google gala), mērķis Traffic, 597 klikšķi / 511 apmeklējumi, Purchase/CPA = 0.
 - TikTok Promote: ~26 € (16.10); dienas sadalījums no box nenolasāms.
 - /admin/statistika: ~81–87 € tēriņš; UI CPA/ROAS nav ticami kanālu novērtēšanai (attribution ~91% tukša; apmaksātajiem kanāliem piesaistīto pasūtījumu 0).
 
