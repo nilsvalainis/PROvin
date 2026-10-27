@@ -3289,3 +3289,235 @@
   background: rgba(194, 54, 43, 0.08);
   color: var(--bad, #c2362b);
 }
+
+/* ===== Cenu lapa pēc maketa L7 (Nils 27.10): A4 794x1123 px, centrālā ass, plāns šrifts ===== */
+.ap2.ap2.ap2 .ap2-cl {
+  width: 794px;
+  height: 1123px;
+  box-sizing: border-box;
+  background: #fff;
+  color: #141416;
+  font-family: var(--font-inter), Inter, system-ui, sans-serif;
+  padding: 44px 72px 40px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-align: left;
+}
+.ap2.ap2.ap2 .ap2-cl-logo {
+  display: flex;
+  justify-content: center;
+}
+.ap2.ap2.ap2 .ap2-cl-logo img {
+  width: 116px;
+  height: auto;
+}
+.ap2.ap2.ap2 .ap2-cl-title {
+  margin: 36px 0 0;
+  text-align: center;
+  line-height: 1;
+  font-weight: 200;
+  letter-spacing: 4px;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+.ap2.ap2.ap2 .ap2-cl-hl {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2.2px;
+  color: #3a3a3f;
+  text-transform: uppercase;
+}
+.ap2.ap2.ap2 .ap2-cl-price {
+  margin: 36px auto 0;
+  text-align: center;
+  padding: 16px 48px;
+  border-top: 0.75px solid #141416;
+  border-bottom: 0.75px solid #141416;
+}
+.ap2.ap2.ap2 .ap2-cl-price .v {
+  font-size: 92px;
+  font-weight: 200;
+  letter-spacing: -2px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-cl-price .n {
+  font-size: 10.5px;
+  color: #6b6b70;
+  margin-top: 6px;
+}
+.ap2.ap2.ap2 .ap2-cl-lab {
+  margin-top: 36px;
+  text-align: center;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: #6b6b70;
+}
+.ap2.ap2.ap2 .ap2-cl-rows {
+  margin-top: 12px;
+}
+.ap2.ap2.ap2 .ap2-cl-r {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+  column-gap: 18px;
+  font-size: 12px;
+}
+.ap2.ap2.ap2 .ap2-cl-r > span {
+  padding: 5.5px 0;
+}
+.ap2.ap2.ap2 .ap2-cl-r > span:first-child {
+  color: #55555b;
+  text-align: right;
+}
+.ap2.ap2.ap2 .ap2-cl-r > i {
+  background: #f28c22;
+  opacity: 0.55;
+}
+.ap2.ap2.ap2 .ap2-cl-r > span:last-child {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r {
+  font-size: 10.5px;
+}
+.ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r > span {
+  padding: 2.5px 0;
+}
+.ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r > span:last-child {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+}
+.ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r.h > i {
+  opacity: 0;
+}
+.ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r.h > span,
+.ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r.h > span > span {
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  color: #8a8a90;
+  padding: 0 0 3px;
+}
+.ap2.ap2.ap2 .ap2-cl-ok {
+  margin: 24px 0 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-align: center;
+}
+.ap2.ap2.ap2 .ap2-cl-foot {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  column-gap: 24px;
+  align-items: center;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.ap2.ap2.ap2 .ap2-cl-foot .l {
+  text-align: right;
+}
+.ap2.ap2.ap2 .ap2-cl-foot img {
+  width: 76px;
+  height: 76px;
+}
+
+/* Priekšskats cilnē: A4 samazināts (0,62). */
+.ap2.ap2.ap2 .ap2-cl-prev {
+  --s: 0.62;
+  width: calc(794px * var(--s));
+  height: calc(1123px * var(--s));
+  margin-top: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.1), 0 8px 24px rgba(22, 23, 26, 0.1);
+}
+.ap2.ap2.ap2 .ap2-cl-prev .ap2-cl {
+  transform: scale(var(--s));
+  transform-origin: 0 0;
+}
+.ap2.ap2.ap2 .ap2-cl-vat {
+  margin: 4px 0 8px;
+  font-size: 12.5px;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-cl-hled {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.ap2.ap2.ap2 .ap2-cl-hled .k {
+  font-size: 13px;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-cl-hled .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ap2.ap2.ap2 .ap2-cl-hled .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 36px;
+  padding: 0 2px 0 12px;
+  border: 1px solid var(--iriss-line-strong, #d1d1d6);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #fff;
+}
+.ap2.ap2.ap2 .ap2-cl-hled .chip button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--iriss-ink-2, #4a4a4f);
+  font-size: 16px;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-cl-hled .add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+.ap2.ap2.ap2 .ap2-cl-hled .add input {
+  min-height: 44px;
+  border: 1px solid var(--iriss-line-strong, #d1d1d6);
+  border-radius: 12px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 15px;
+}
+.ap2.ap2.ap2 .ap2-cl-printm {
+  margin: 0 0 12px;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-cl-printm {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-clp {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+}
+
+/* Drukas lapa ("Drukāt A4"): A4 = 794x1123 px pie 96 dpi. */
+.ap2.ap2.ap2.ap2-print .ap2-cl {
+  margin: 12px auto 0;
+  box-shadow: 0 8px 24px rgba(22, 23, 26, 0.12);
+}
+@media print {
+  .ap2.ap2.ap2.ap2-print .ap2-cl {
+    margin: 0;
+    box-shadow: none;
+    width: 210mm;
+    height: 297mm;
+  }
+}
