@@ -82,6 +82,7 @@ export default async function IrissPasutijumsDetailPage({
         duplicatesByListing={coerceIrissDuplicatesByListing(roomMatch?.duplicates)}
         initialRoomTab={initialRoomTab}
         googleContactsConfigured={Boolean(readGoogleContactsConfig())}
+        pdEntry={actor.kind === "admin"}
       />
     </>
   );

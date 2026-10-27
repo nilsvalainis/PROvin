@@ -28,8 +28,8 @@ async function clientFromOrder(orderId: string): Promise<IrissPdClient | null> {
  * PD ir tikai administratoram - darbinieks ar Pasūtījumu tiesību paliek pie esošās formas (tas pats avots).
  */
 export default async function IrissPiedavajumsNewPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const entry = parseIrissPdEntry(await searchParams);
   const actor = await getAdminOrStaffActor();
+  const entry = parseIrissPdEntry(await searchParams);
   if (actor?.kind === "staff") {
     redirect(irissCreateOfferHrefLegacy(entry.tab === "autoparks" || entry.tab === "logistics" ? entry.tab : undefined, entry.carId || undefined));
   }
