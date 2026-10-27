@@ -6,7 +6,7 @@ declare namespace google.maps {
     setZoom(z: number): void;
     getZoom(): number | undefined;
     getCenter(): LatLng | undefined;
-    fitBounds(b: LatLngBounds, pad?: number): void;
+    fitBounds(b: LatLngBounds, pad?: number | { top: number; right: number; bottom: number; left: number }): void;
     setOptions(opts: Record<string, unknown>): void;
     addListener(eventName: string, handler: () => void): MapsEventListener;
   }
