@@ -20,6 +20,19 @@ const cars = [
 
 const rows = autoparksV2ListRows(cars, emptyAutoparksV2State());
 
+describe("Tirdzniecībā pieņemtie (Nils 27.10)", () => {
+  it("filtrs rāda tikai auto ar CSDD tirdzniecības aktu, kas nav noņemti", () => {
+    const withReg = [
+      { id: "t1", make: "Audi", model: "SQ5", vin: "WAUZZZ8R7EA126875", status: "for_sale", registry: { tradeActNo: "GDZ00218" } },
+      { id: "t2", make: "BMW", model: "X5", vin: "WBA00000000000001", status: "for_sale", registry: { tradeActNo: "GDZ00219", removedAt: "2026-10-20" } },
+      { id: "t3", make: "Opel", model: "Astra", vin: "W0L00000000000002", status: "for_sale" },
+    ].map((c) => normalizeAutoparksCar(c)!);
+    const r = autoparksV2ListRows(withReg, emptyAutoparksV2State());
+    expect(filterAutoparksV2Rows(r, { owner: "all", inTradeOnly: true }).map((x) => x.id)).toEqual(["t1"]);
+    expect(filterAutoparksV2Rows(r, { owner: "all" }).map((x) => x.id)).toEqual(["t1", "t2", "t3"]);
+  });
+});
+
 describe("Autoparks v2 saraksts", () => {
   it("noklusējuma kārtošana visiem profiliem - Iegāde: jaunākie (Nils 27.10)", () => {
     expect(AUTOPARKS_V2_DEFAULT_SORT).toBe("date_desc");
@@ -32,6 +45,7 @@ describe("Autoparks v2 saraksts", () => {
       "color",
       "hasPhoto",
       "id",
+      "inTrade",
       "make",
       "owner",
       "purchaseDate",

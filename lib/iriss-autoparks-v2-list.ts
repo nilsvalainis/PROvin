@@ -6,7 +6,7 @@
  */
 
 import { autoparksOwner, type AutoparksCar, type AutoparksOwner, type AutoparksStatus } from "@/lib/iriss-autoparks";
-import { AUTOPARKS_V2_STATUS_ORDER, autoparksV2Title, carV2Of, type AutoparksV2State, type V2VatMode } from "@/lib/iriss-autoparks-v2";
+import { AUTOPARKS_V2_STATUS_ORDER, autoparksV2Title, carV2Of, v2RegistryStatus, type AutoparksV2State, type V2VatMode } from "@/lib/iriss-autoparks-v2";
 
 export type AutoparksV2ListRow = {
   id: string;
@@ -30,6 +30,8 @@ export type AutoparksV2ListRow = {
   vatMode: V2VatMode;
   /** «Pasūtījums» atzīme (Nils 27.10). */
   clientOrder: boolean;
+  /** Nils 27.10: pieņemts tirdzniecībā (CSDD akts, nav noņemts). */
+  inTrade: boolean;
 };
 
 /** Kārtošana (Nils 27.10): process, marka, iegādes datums (noklusējums - jaunākie), iegādes summa. */
@@ -90,6 +92,7 @@ export function autoparksV2ListRows(
       purchasePriceEur: opts.sums && typeof price === "number" && Number.isFinite(price) ? price : null,
       vatMode: opts.vat ? carV2.purchase.vat.mode : "",
       clientOrder: carV2.fields.clientOrder ? carV2.fields.clientOrder === "1" : Boolean(car.clientOrder),
+      inTrade: v2RegistryStatus(car) === "accepted",
     };
   });
 }
@@ -98,7 +101,7 @@ export type AutoparksV2OwnerFilter = "all" | AutoparksOwner | "archive";
 
 export function filterAutoparksV2Rows(
   rows: readonly AutoparksV2ListRow[],
-  opts: { owner: AutoparksV2OwnerFilter; status?: AutoparksStatus | null; query?: string },
+  opts: { owner: AutoparksV2OwnerFilter; status?: AutoparksStatus | null; query?: string; inTradeOnly?: boolean },
 ): AutoparksV2ListRow[] {
   const q = (opts.query ?? "").trim().toLowerCase().replace(/\s+/g, " ");
   return rows.filter((r) => {
@@ -107,6 +110,7 @@ export function filterAutoparksV2Rows(
       if (r.owner !== opts.owner) return false;
     }
     if (opts.status && r.status !== opts.status) return false;
+    if (opts.inTradeOnly && !r.inTrade) return false;
     if (!q) return true;
     const hay = `${r.title} ${r.vin}`.toLowerCase();
     return q.split(" ").every((part) => hay.includes(part));

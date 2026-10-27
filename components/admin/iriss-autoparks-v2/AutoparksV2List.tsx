@@ -51,6 +51,8 @@ export function AutoparksV2List({
   const [owner, setOwner] = useState<AutoparksV2OwnerFilter>("all");
   const [status, setStatus] = useState<AutoparksStatus | null>(null);
   const [query, setQuery] = useState("");
+  // Nils 27.10: rādīt tikai tirdzniecībā pieņemtos (CSDD akts).
+  const [inTradeOnly, setInTradeOnly] = useState(false);
   const [adding, setAdding] = useState(false);
   // Nils 27.10: noklusējumā visiem profiliem «Iegāde: jaunākie».
   const [sort, setSort] = useState<AutoparksV2Sort>(AUTOPARKS_V2_DEFAULT_SORT);
@@ -58,7 +60,9 @@ export function AutoparksV2List({
   const sortOptions = AUTOPARKS_V2_SORTS.filter((s) => !s.startsWith("sum_") || (canSortBySum && SHOW_SUM_SORT));
 
   const ownerCounts = useMemo(() => autoparksV2OwnerCounts(cars), [cars]);
-  const base = useMemo(() => filterAutoparksV2Rows(cars, { owner, query }), [cars, owner, query]);
+  const ownerRows = useMemo(() => filterAutoparksV2Rows(cars, { owner, query }), [cars, owner, query]);
+  const inTradeCount = useMemo(() => ownerRows.filter((r) => r.inTrade).length, [ownerRows]);
+  const base = useMemo(() => (inTradeOnly ? ownerRows.filter((r) => r.inTrade) : ownerRows), [ownerRows, inTradeOnly]);
 
   /** Statusa maiņa no saraksta: uzreiz sarakstā, kļūdas gadījumā atpakaļ (tā pati API kā kabinetā). */
   async function changeStatus(id: string, next: AutoparksStatus) {
@@ -139,6 +143,10 @@ export function AutoparksV2List({
               <span className="ap2-d">{c.d}</span>
             </button>
           ))}
+          <button type="button" className={`ap2-chip ${inTradeOnly ? "on" : ""}`} aria-pressed={inTradeOnly} onClick={() => setInTradeOnly((v) => !v)}>
+            <span className="ap2-m">Tirdzniecībā {inTradeCount}</span>
+            <span className="ap2-d">Pieņemti tirdzniecībā {inTradeCount}</span>
+          </button>
         </div>
         <label className="ap2-sort">
           <span className="sr-only">Kārtot</span>
