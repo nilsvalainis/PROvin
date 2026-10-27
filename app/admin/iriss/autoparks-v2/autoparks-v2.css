@@ -2881,3 +2881,71 @@
     font-variant-numeric: tabular-nums;
   }
 }
+
+/* Kabineta cilne «Ceļā» (Nils 27.10): Loģistika kā Autoparka posms. */
+.ap2.ap2.ap2 .ap2-cela {
+  margin-top: 12px;
+  border-radius: 18px;
+  background: var(--iriss-surface, #fff);
+  padding: 16px 18px;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(22, 23, 26, 0.06);
+}
+.ap2.ap2.ap2 .ap2-cela-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+.ap2.ap2.ap2 .ap2-cela-steps li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 12px;
+  background: var(--iriss-surface-2, #f2f2f7);
+  padding: 10px 12px;
+  font-size: 13.5px;
+}
+.ap2.ap2.ap2 .ap2-cela-steps li span {
+  font-size: 12px;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-cela-steps li.done {
+  background: #e8f5ee;
+}
+.ap2.ap2.ap2 .ap2-cela-steps li.cur {
+  background: var(--iriss-graphite, #1b1c20);
+  color: var(--iriss-on-graphite, #f3f2ef);
+}
+.ap2.ap2.ap2 .ap2-cela-steps li.cur span {
+  color: inherit;
+  opacity: 0.8;
+}
+.ap2.ap2.ap2 .ap2-cela-kv {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px 18px;
+  margin: 0;
+}
+.ap2.ap2.ap2 .ap2-cela-kv dt {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-cela-kv dd {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-cela-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+@media (max-width: 599px) {
+  .ap2.ap2.ap2 .ap2-cela-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

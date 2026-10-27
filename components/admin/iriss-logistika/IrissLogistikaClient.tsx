@@ -1,5 +1,6 @@
 "use client";
 
+import { IrissLogistikaAutoparksLink } from "@/components/admin/iriss-logistika/IrissLogistikaAutoparksLink";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -81,6 +82,8 @@ type Props = {
   canCreateOffer?: boolean;
   /** Loģistikas ieraksts -> Autoparka auto (saite "Kartīte" kravu plānā). Tukšs, ja nav tiesību. */
   autoparksByOrder?: Record<string, string>;
+  /** Autoparka sasaistes migrācija (Nils 27.10) - tikai administratoram. */
+  isAdmin?: boolean;
 };
 
 const LABELS_PREF_KEY = "iriss.logistics.mapLabels";
@@ -108,6 +111,7 @@ export function IrissLogistikaClient({
   canCreateOffer = false,
   showAutoparksLink = false,
   autoparksByOrder = {},
+  isAdmin = false,
 }: Props) {
   const [orders, setOrders] = useState(initialOrders);
   const [points] = useState(initialPoints);
@@ -879,6 +883,7 @@ export function IrissLogistikaClient({
 
       {pageTab === "settings" ? (
         <div className="mt-3 max-w-3xl space-y-3 max-md:px-4">
+          {isAdmin ? <IrissLogistikaAutoparksLink /> : null}
           {/* Arhīvs (atvestie un noņemtie) ikdienā nav vajadzīgs - pieejams šeit (Nils 27.10). */}
           <button
             type="button"

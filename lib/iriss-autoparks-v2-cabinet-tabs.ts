@@ -1,18 +1,20 @@
 /**
  * Autoparks v2 kabineta cilnes (j63 / m03): CSDD reģistrs ir sava cilne, ne Pamatdatu karte.
- * `?t=` maršruts: pamatdati | csdd | iegade | serviss | izdevumi | cenu_lapa | vesture.
+ * `?t=` maršruts: pamatdati | cela | csdd | iegade | serviss | izdevumi | cenu_lapa | vesture.
+ * «Ceļā» (Nils 27.10): Loģistikas posms - tikai, ja auto ir aktīvs Loģistikas ieraksts un ir Loģistikas tiesība.
  */
 
 import type { AutoparksV2Perms } from "@/lib/iriss-autoparks-v2-perms";
 
-export type CabinetTab = "pamatdati" | "csdd" | "iegade" | "serviss" | "izdevumi" | "cenu_lapa" | "vesture";
+export type CabinetTab = "pamatdati" | "cela" | "csdd" | "iegade" | "serviss" | "izdevumi" | "cenu_lapa" | "vesture";
 export type CabinetMainTab = Exclude<CabinetTab, "vesture">;
 /** Cilnes, kas nāk no `CABINET_PANES` (CSDD un Pamatdati ir iebūvētas). */
-export type CabinetPaneKey = Exclude<CabinetMainTab, "pamatdati" | "csdd">;
+export type CabinetPaneKey = Exclude<CabinetMainTab, "pamatdati" | "csdd" | "cela">;
 
 /** Cilnes: telefonā īsi (vietas dēļ), datorā pilni nosaukumi. */
 export const CABINET_TAB_LABEL: Record<CabinetMainTab, { m: string; d: string }> = {
   pamatdati: { m: "Pamatdati", d: "Pamatdati" },
+  cela: { m: "Ceļā", d: "Ceļā" },
   csdd: { m: "CSDD reģistrs", d: "CSDD reģistrs" },
   iegade: { m: "Iegāde", d: "Iegādes dokumenti" },
   serviss: { m: "Serviss", d: "Serviss" },
@@ -23,12 +25,12 @@ export const CABINET_TAB_LABEL: Record<CabinetMainTab, { m: string; d: string }>
 export function allowedTabs(
   perms: AutoparksV2Perms,
   panes: Partial<Record<CabinetPaneKey, unknown>>,
+  opts: { transit?: boolean } = {},
 ): CabinetMainTab[] {
   const out: CabinetMainTab[] = [];
-  if (perms.pamatdati) {
-    out.push("pamatdati");
-    out.push("csdd");
-  }
+  if (perms.pamatdati) out.push("pamatdati");
+  if (opts.transit) out.push("cela");
+  if (perms.pamatdati) out.push("csdd");
   if (perms.iegade && panes.iegade) out.push("iegade");
   if (perms.serviss && panes.serviss) out.push("serviss");
   if (perms.izdevumi && panes.izdevumi) out.push("izdevumi");
