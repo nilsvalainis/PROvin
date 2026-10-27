@@ -3,15 +3,16 @@
 import { useEffect, useState } from "react";
 import { AUTOPARKS_STATUS_LV, isAutoparksStatus } from "@/lib/iriss-autoparks";
 import { V2_VAT_MODE_LV, type V2HistoryRow, type V2VatMode } from "@/lib/iriss-autoparks-v2";
-import { groupV2HistoryByDay, v2HistoryParts } from "@/lib/iriss-autoparks-v2-history-text";
+import { groupV2HistoryByDay, v2HistoryFormat, v2HistoryParts, v2HistoryVisible } from "@/lib/iriss-autoparks-v2-history-text";
 
 const value = (s: string, field: string) =>
-  field === "purchase.vat" ? V2_VAT_MODE_LV[s as V2VatMode] || s : isAutoparksStatus(s) ? AUTOPARKS_STATUS_LV[s] : s;
+  field === "purchase.vat" ? V2_VAT_MODE_LV[s as V2VatMode] || s : isAutoparksStatus(s) ? AUTOPARKS_STATUS_LV[s] : v2HistoryFormat(s, field);
 
 const time = (iso: string) => new Date(iso).toLocaleTimeString("lv-LV", { timeZone: "Europe/Riga", hour: "2-digit", minute: "2-digit" });
 
 /** Vēsture (tikai Nilam), makets 27.10: pa dienām, laiks · kurš · kas · vecā (pārsvītrota) -> jaunā. */
-export function AutoparksV2HistoryList({ rows, now }: { rows: V2HistoryRow[]; now?: Date }) {
+export function AutoparksV2HistoryList({ rows: all, now }: { rows: V2HistoryRow[]; now?: Date }) {
+  const rows = all.filter(v2HistoryVisible);
   if (rows.length === 0) return <p className="ap2-empty">Nav izmaiņu</p>;
   return (
     <div className="ap2-vh">

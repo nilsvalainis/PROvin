@@ -15,7 +15,58 @@ const FIELD_LV: Record<string, string> = {
   "purchase.vat": "PVN režīms",
   "purchase.purchasePriceEur": "Iepirkuma cena",
   "purchase.transportEur": "Transports",
+  mainPhoto: "Galvenā bilde",
+  vin: "VIN",
+  make: "Marka",
+  model: "Modelis",
+  year: "Gads",
+  color: "Krāsa",
+  owner: "Īpašnieks",
+  clientOrder: "Pasūtījums",
+  "tech.mileageKm": "Nobraukums",
+  "tech.engine": "Dzinējs",
+  "tech.gearbox": "Pārnesumkārba",
+  "priceSheet.displayName": "Cenu lapa · nosaukums",
+  "priceSheet.equipmentLine": "Cenu lapa · aprīkojums",
+  "priceSheet.listPriceEur": "Cenu lapa · cena",
+  "priceSheet.salePriceEur": "Pārdošanas cena",
+  "service.invoice": "Servisa rēķins",
+  "service.invoice.amount": "Servisa rēķina summa",
+  "service.invoice.pages": "Servisa rēķina lapas",
+  "service.problem": "Problēma",
+  "service.problem.fixed": "Problēma salabota",
+  "service.problem.confirmed": "Problēma apstiprināta",
+  "service.problem.photo": "Problēmas foto",
+  "service.notes": "Servisa piezīmes",
+  "service.diag": "CSDD diagnostika",
+  "service.numberCheck": "Numuru akts",
 };
+
+/**
+ * Nils 27.10: cenas Autoparkā pagaidām nerāda (izņemot servisa rēķina summu un cenu lapas cenu) -
+ * arī Vēsturē šīs rindas netiek rādītas.
+ */
+const HIDDEN_FIELDS = new Set(["purchase.purchasePriceEur", "purchase.transportEur", "expense", "expense.amount", "expense.date", "expense.text"]);
+
+export function v2HistoryVisible(row: V2HistoryRow): boolean {
+  return !HIDDEN_FIELDS.has(row.field);
+}
+
+const group3 = (n: number) => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+
+/** Vērtības formāts pēc lauka: datumi dd.mm.gggg, km, kW, cm³; bildes id netiek rādīts. */
+export function v2HistoryFormat(v: string, field: string): string {
+  if (field === "mainPhoto") return "nomainīta";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v.split("-").reverse().join(".");
+  const n = Number(v);
+  if (v.trim() && Number.isFinite(n)) {
+    if (field === "tech.mileageKm") return `${group3(n)} km`;
+    if (field === "tech.powerKw") return `${group3(n)} kW`;
+    if (field === "tech.displacementCm3") return `${group3(n)} cm³`;
+    if (/Eur$|\.amount$/.test(field)) return `${n.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, " ")} €`;
+  }
+  return v;
+}
 
 /** Vēstures rinda tekstā: lauks un "no -> uz" (tukšs = "-"). */
 export function v2HistoryText(row: V2HistoryRow, value: (v: string, field: string) => string = (v) => v): { field: string; change: string } {
@@ -30,6 +81,7 @@ export function v2HistoryParts(
   value: (v: string, field: string) => string = (v) => v,
 ): { field: string; from: string; to: string } {
   const { field } = v2HistoryText(row, value);
+  if (row.field === "mainPhoto") return { field, from: "", to: "nomainīta" };
   return { field, from: row.from ? value(row.from, row.field) : "", to: row.to ? value(row.to, row.field) : "" };
 }
 
