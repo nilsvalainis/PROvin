@@ -25,7 +25,7 @@ import { dealerPlateMeta, displayDealerPlate, type WaybillPlateState } from "@/l
 import { dzintarzemeAcceptedCars, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 
 /**
- * Datora izveides forma: tās pašas Auto izvēles kā telefonā (No saraksta / Ar roku).
+ * Datora izveides forma: tās pašas Auto izvēles kā telefonā (No saraksta / Cits).
  * Numurs, Derīgums, Komentārs un Izveidot paliek; payload joprojām plate + brandModel + VIN.
  */
 export function IrissWaybillDesktopCreateForm({

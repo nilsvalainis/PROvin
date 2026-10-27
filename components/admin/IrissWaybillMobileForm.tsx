@@ -655,7 +655,7 @@ export function IrissWaybillHowItWorks({ plates }: { plates: readonly string[] }
         <li>
           <span className={styles.num}>2</span>
           <p>
-            <b>Auto.</b> No saraksta - tikai laiks un pārstāvis. Ar roku - marka, modelis, adrese.
+            <b>Auto.</b> No saraksta - tikai laiks un pārstāvis. Cits - marka, modelis, adrese.
           </p>
         </li>
         <li>
@@ -778,11 +778,11 @@ export function IrissWaybillAutoEntry({
           className={`${styles.pick} ${choice === "manual" ? styles.on : ""}`}
           onClick={() => onChoose("manual")}
         >
-          Ar roku
+          Cits
         </button>
       </div>
       {/* Nils 27.10: pogās viens vārds, skaidrojums vienā rindā zem tām (agrāk divrindu pogas). */}
-      <p className={styles.help}>No saraksta - tirdzniecībā pieņemti auto. Ar roku - ieraksti marku un modeli.</p>
+      <p className={styles.help}>No saraksta - tirdzniecībā pieņemti auto. Cits - ieraksti marku un modeli.</p>
       {showManual ? (
         <div className={styles.sub}>
           <input

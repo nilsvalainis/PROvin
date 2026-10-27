@@ -46,11 +46,11 @@ describe("pavadzīmes izveides forma datorā", () => {
     const html = renderHtml(desktopForm());
     const text = renderText(desktopForm());
     expect(html).toContain('data-waybill-desktop-create');
-    for (const t of ["Numurs", "Auto", "No saraksta", "tirdzniecībā pieņemti auto", "Ar roku", "Derīgums", "Komentārs", "Izveidot pavadzīmi"]) {
+    for (const t of ["Numurs", "Auto", "No saraksta", "tirdzniecībā pieņemti auto", "Cits - ieraksti marku un modeli", "Derīgums", "Komentārs", "Izveidot pavadzīmi"]) {
       expect(text).toContain(t);
     }
     expect(html).toMatch(/aria-pressed="(true|false)"[^>]*>No saraksta/);
-    expect(html).toMatch(/aria-pressed="(true|false)"[^>]*>Ar roku/);
+    expect(html).toMatch(/aria-pressed="(true|false)"[^>]*>Cits/);
     expect(html).not.toContain("Ja ievadīts VIN, Aivars meklē");
     expect(html).not.toContain('placeholder="17 zīmes"');
     expect([...text].some((c) => c.charCodeAt(0) === 8211 || c.charCodeAt(0) === 8212)).toBe(false);
@@ -60,7 +60,7 @@ describe("pavadzīmes izveides forma datorā", () => {
     const list = renderText(desktopForm("list"));
     const listHtml = renderHtml(desktopForm("list"));
     expect(list).toContain("No saraksta");
-    expect(list).toContain("Ar roku");
+    expect(list).toContain("Cits - ieraksti marku un modeli");
     expect(list).toContain("Izvēlies auto");
     expect(listHtml).toMatch(/aria-pressed="true"[^>]*>No saraksta/);
     expect(listHtml).not.toContain('aria-label="VIN"');
@@ -68,10 +68,10 @@ describe("pavadzīmes izveides forma datorā", () => {
     const manual = renderText(desktopForm("manual"));
     const manualHtml = renderHtml(desktopForm("manual"));
     expect(manual).toContain("No saraksta");
-    expect(manual).toContain("Ar roku");
+    expect(manual).toContain("Cits - ieraksti marku un modeli");
     expect(manualHtml).toContain('aria-label="Marka, modelis"');
     expect(manualHtml).not.toContain('aria-label="VIN"');
     expect(manualHtml).not.toContain('placeholder="17 zīmes"');
-    expect(manualHtml).toMatch(/aria-pressed="true"[^>]*>Ar roku/);
+    expect(manualHtml).toMatch(/aria-pressed="true"[^>]*>Cits/);
   });
 });
