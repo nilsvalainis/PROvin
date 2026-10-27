@@ -365,6 +365,9 @@
     "metaRegisterTitle": "PROVIN Partnerregistrierung",
     "metaPasswordTitle": "PROVIN Partner-Passwort",
     "metaConfirmTitle": "PROVIN Partner-E-Mail-Bestätigung",
-    "metaAccountTitle": "PROVIN für Partner"
+    "metaAccountTitle": "PROVIN für Partner",
+    "registerTermsConsent": "Ich akzeptiere die <terms>Partnerbedingungen</terms> und die Auftragsverarbeitungsvereinbarung.",
+    "registerTermsRequired": "Bitte akzeptieren Sie die Partnerbedingungen.",
+    "partnerTermsLink": "Partnerbedingungen"
   }
 }
