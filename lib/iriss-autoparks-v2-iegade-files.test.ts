@@ -23,15 +23,24 @@ describe("Iegādes faili", () => {
       ["f:akts", "Akts", true],
     ]);
   });
-  it("kabineta dokumenti - editable + CSDD nozīmīte Car Invoice; v1/akts - nē (J30 F1/F4)", () => {
+  it("kabineta dokumenti - editable + CSDD nozīmīte tikai Car Invoice; CMR/Pickup/v1/akts - nē (J30 F1/F4)", () => {
     const list = iegadeFileList({
-      cabinetDocs: [doc("d1", "car_invoice", "2026-10-09"), doc("d2", "purchase_confirm", "2026-10-08")],
+      cabinetDocs: [
+        doc("d1", "car_invoice", "2026-10-09"),
+        doc("d2", "purchase_confirm", "2026-10-08"),
+        doc("d3", "cmr", "2026-10-10"),
+        doc("d4", "pickup_pdf", "2026-10-11"),
+        doc("d5", "auction_invoice", "2026-10-07"),
+      ],
       v1Files: [file("f1", "purchase"), file("akts", "service")],
       numberCheckFileId: "akts",
     });
     expect(list.map((f) => [f.id, f.editable, f.csddBadge])).toEqual([
+      ["c:d5", true, false],
       ["c:d2", true, false],
       ["c:d1", true, true],
+      ["c:d3", true, false],
+      ["c:d4", true, false],
       ["f:f1", false, false],
       ["f:akts", false, false],
     ]);

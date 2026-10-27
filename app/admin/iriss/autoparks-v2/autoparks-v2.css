@@ -1105,13 +1105,19 @@
   align-items: center;
   gap: 6px;
 }
+.ap2.ap2.ap2 .ap2-fl-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
 .ap2.ap2.ap2 .ap2-fl .m b {
   font-size: 12.5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.ap2.ap2.ap2 .ap2-fl .m span {
+.ap2.ap2.ap2 .ap2-fl .m .ap2-fl-date {
   color: var(--ink3);
   font-size: 11.5px;
   flex: none;
@@ -1255,23 +1261,11 @@
   height: 11px;
 }
 .ap2.ap2.ap2 .ap2-csdd-badge {
-  position: absolute;
-  bottom: 6px;
-  right: 6px;
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  background: #fff;
-  border: 1px solid var(--line);
-  display: grid;
-  place-items: center;
-  z-index: 1;
-}
-.ap2.ap2.ap2 .ap2-csdd-badge img {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-  border-radius: 3px;
+  height: 17px;
+  width: auto;
+  border-radius: 4px;
+  display: block;
+  flex: none;
 }
 .ap2.ap2.ap2 .ap2-del {
   max-width: 320px;
@@ -1549,6 +1543,9 @@
   }
   .ap2.ap2.ap2 .ap2-files {
     grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .ap2.ap2.ap2 .ap2-csdd-badge {
+    height: 20px;
   }
   .ap2.ap2.ap2 .ap2-mbox {
     width: 760px;
