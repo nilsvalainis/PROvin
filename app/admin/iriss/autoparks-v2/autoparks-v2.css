@@ -2952,40 +2952,50 @@
 
 /* Nils 27.10: īpašnieks galvenē izcelts (Dzintarzeme oranžs, ĪRISS zaļš) un «Klienta auto» atzīme. */
 .ap2.ap2.ap2 .ap2-owner-badge {
+  /* Makets B (Nils 27.10): balta kontūra īpašnieka krāsā, krāsains punkts, melns teksts. */
+  position: relative;
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
+  gap: 8px;
+  min-height: 32px;
+  border: 1.5px solid var(--own, #17804a);
   border-radius: 999px;
+  background: var(--iriss-surface, #fff);
   padding: 0 12px;
-  color: #fff;
-  font-size: 12.5px;
+  color: var(--iriss-ink, #1c1c1e);
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 .ap2.ap2.ap2 .ap2-owner-badge.iriss {
-  background: var(--iriss-ok, #17804a);
+  --own: var(--iriss-ok, #17804a);
 }
 .ap2.ap2.ap2 .ap2-owner-badge.dza {
-  background: var(--iriss-brand, #f26522);
+  --own: #e0561a;
 }
-.ap2.ap2.ap2 .ap2-owner-badge select {
-  appearance: none;
-  -webkit-appearance: none;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  padding-right: 14px;
+.ap2.ap2.ap2 .ap2-owner-badge .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--own);
+}
+.ap2.ap2.ap2 .ap2-owner-badge svg {
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-owner-badge.edit {
   cursor: pointer;
 }
-.ap2.ap2.ap2 .ap2-owner-badge:has(select)::after {
-  content: "▾";
-  margin-left: -10px;
-  font-size: 10px;
-  pointer-events: none;
+.ap2.ap2.ap2 .ap2-owner-badge select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
 }
-.ap2.ap2.ap2 .ap2-owner-badge option {
-  color: #1c1c1e;
+.ap2.ap2.ap2 .ap2-owner-badge:focus-within {
+  outline: 2px solid var(--iriss-brand, #f26522);
+  outline-offset: 2px;
 }
 .ap2.ap2.ap2 .ap2-client-badge {
   display: inline-flex;
