@@ -516,42 +516,75 @@
 }
 .mf .howSteps p {
   color: var(--iriss-ink-2, #4a4a4f);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.45;
 }
 .mf .howSteps b {
   color: var(--iriss-ink, #1c1c1e);
-  font-weight: 650;
+  font-weight: 700;
 }
-.mf .num {
+/*
+ * Nils 27.10: cipari apļos nebija redzami - admin-ios-theme `:is(span, ...)` krāso tekstu melnu.
+ * Tāpēc divu klašu selektors + !important baltajam ciparam.
+ */
+.mf .howSteps .num {
   display: grid;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   flex: none;
   place-items: center;
   border-radius: 999px;
   background: var(--iriss-graphite, #1b1c20);
-  color: #fff;
-  font-size: 12px;
+  color: #ffffff !important;
+  font-size: 14px;
   font-weight: 700;
+  line-height: 1;
 }
-.mf .howKnowTitle {
-  margin-top: 6px;
-  color: var(--iriss-ink-3, #8e8e93);
-  font-size: 11px;
+.mf .howSteps > li {
+  align-items: center;
+}
+/* «Jāzina» - atsevišķa tumšāka piezīmes kartīte. */
+.mf .howNote {
+  margin: 4px 0 16px;
+  border-radius: 14px;
+  background: var(--iriss-surface-3, #e5e5ea);
+  padding: 12px 14px;
+}
+.mf .howNote .howKnowTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  color: var(--iriss-ink, #1c1c1e) !important;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
-.mf .howKnow {
-  margin: 6px 0 0;
-  padding: 0 0 14px 18px;
+.mf .howNote .howKnow {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mf .howNote .howKnow > li {
+  position: relative;
+  padding-left: 14px;
   color: var(--iriss-ink-2, #4a4a4f);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.45;
 }
-.mf .howKnow > li + li {
-  margin-top: 4px;
+.mf .howNote .howKnow > li + li {
+  margin-top: 8px;
+}
+.mf .howNote .howKnow > li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--iriss-ink-3, #8e8e93);
 }
 @media (prefers-reduced-motion: reduce) {
   .mf .howChevron {

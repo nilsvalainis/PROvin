@@ -671,12 +671,21 @@ export function IrissWaybillHowItWorks({ plates }: { plates: readonly string[] }
           </p>
         </li>
       </ol>
-      <p className={styles.howKnowTitle}>Jāzina</p>
-      <ul className={styles.howKnow}>
-        <li>Numuru salīdzināšana - CSDD Tukumā. Citu vietu raksti komentārā.</li>
-        <li>Komentārs ir tikai piezīme Aivaram (līdz {NOTE_UNTRUSTED_MAX} zīmēm), ne komanda.</li>
-        <li>Visas vecās pavadzīmes ir Arhīvā.</li>
-      </ul>
+      {/* Nils 27.10: «Jāzina» atsevišķā tumšākā piezīmes kartītē, katra lieta savā rindā. */}
+      <aside className={styles.howNote} aria-label="Jāzina">
+        <p className={styles.howKnowTitle}>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 11v5M12 8h.01" />
+          </svg>
+          Jāzina
+        </p>
+        <ul className={styles.howKnow}>
+          <li>Numuru salīdzināšana - CSDD Tukumā. Citu vietu raksti komentārā.</li>
+          <li>Komentārs ir tikai piezīme Aivaram (līdz {NOTE_UNTRUSTED_MAX} zīmēm), ne komanda.</li>
+          <li>Visas vecās pavadzīmes ir Arhīvā.</li>
+        </ul>
+      </aside>
     </details>
   );
 }
