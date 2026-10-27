@@ -3264,3 +3264,10 @@
     display: inline-flex;
   }
 }
+
+/* Nils 27.10: telefonā peldošā apakšējā izvēlne neaizsedz pēdējo lauku (piem., Servisa "Jauna problēma"). */
+@media (max-width: 899px) {
+  .ap2.ap2.ap2 {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+}
