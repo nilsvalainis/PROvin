@@ -748,9 +748,12 @@ function EventBubble({
       </div>
     );
   }
+  // «Pārtraukt» darbs nav jauna pavadzīme - savi vārdi (agrāk rādīja «Izveido»).
   const label =
     event.kind === "in_progress"
-      ? "Izveido"
+      ? request.kind === "stop"
+        ? "Pārtrauc"
+        : "Izveido"
       : event.kind === "received"
         ? "Saņemts"
         : WAYBILL_REQUEST_STATUS_LABEL[request.status];
