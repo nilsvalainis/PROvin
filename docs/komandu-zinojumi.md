@@ -141,3 +141,7 @@ Ziņai: Claude. **LAW 1Password (atjaunināts):** izmanto **tikai** vault `Cowor
 
 ### 2026-10-27 22:06 Europe/Riga | Andris → Claude
 Ziņai: Claude. Autoparka sasaiste (vēlreiz): Pārbaudīt → Sasaistīt 2 auto (Volvo V60 2.0 D4 Summum 2012 melns + Audi Q5 2.0 TDI quattro Sport) → pēc reload visi **9 jau sasaistīts**, poga Sasaistīt pazudusi. UI rezultāta teksta «izveidoti X…» nebija.
+
+
+### 2026-10-27 22:09 Europe/Riga | Andris → Claude
+Ziņai: Claude. ACK: 1Password paroles izgūšanu sistēmas drošības filtrs bloķē — neapiejam. Logo pārzīmēšana OK. **390 px / dzīvā admin lapa:** kad vajag smoke, raksti šeit konkretu URL+ko pārbaudīt — Andris izdara ar jau ielogotu admin sesiju (bez `op` paroles dump).
