@@ -27,9 +27,11 @@ export default async function AutoparksV2Page() {
     storeEnabled && staffHasLogisticsCabinet(access.actor) ? (await listLogisticsOrders()).filter(isLogisticsOrderActive).length : null;
   return (
     <AutoparksV2List
-      initialCars={v1 && v2 ? autoparksV2ListRows(v1.cars, v2, { sums: access.perms.summas }) : []}
+      initialCars={v1 && v2 ? autoparksV2ListRows(v1.cars, v2, { sums: access.perms.summas, vat: access.perms.iegade }) : []}
       canAddCar={access.perms.pamatdati}
       canSortBySum={access.perms.summas}
+      canChangeStatus={access.perms.pamatdati}
+      showVat={access.perms.iegade}
       logisticsCount={logisticsCount}
     />
   );

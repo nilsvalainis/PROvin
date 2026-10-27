@@ -33,10 +33,13 @@ describe("Autoparks v2 saraksts", () => {
       "status",
       "statusChangedAt",
       "title",
+      "vatMode",
       "vin",
       "year",
     ]);
     expect(rows.every((r) => r.purchasePriceEur === null)).toBe(true);
+    // Bez tiesības «Iegāde» PVN režīms netiek sūtīts.
+    expect(rows.every((r) => r.vatMode === "")).toBe(true);
     expect(rows[0]!.vin).toBe("WVWZZZ3CZKE012345");
   });
 

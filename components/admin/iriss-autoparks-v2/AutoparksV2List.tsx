@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { AUTOPARKS_STATUS_SHORT_LV, type AutoparksOwner, type AutoparksStatus } from "@/lib/iriss-autoparks";
-import { AUTOPARKS_V2_STATUS_ORDER } from "@/lib/iriss-autoparks-v2";
+import { AUTOPARKS_STATUS_LV, AUTOPARKS_STATUS_SHORT_LV, type AutoparksOwner, type AutoparksStatus } from "@/lib/iriss-autoparks";
+import { AUTOPARKS_V2_STATUS_ORDER, V2_VAT_MODE_LV } from "@/lib/iriss-autoparks-v2";
 import {
   AUTOPARKS_V2_SORT_LV,
   AUTOPARKS_V2_SORTS,
@@ -28,8 +28,14 @@ export function AutoparksV2List({
   canAddCar = true,
   logisticsCount = null,
   canSortBySum = false,
+  canChangeStatus = false,
+  showVat = false,
 }: {
   initialCars: AutoparksV2ListRow[];
+  /** Statusa maiņa sarakstā (Nils 27.10) - tikai ar Pamatdatu tiesību (API to pārbauda arī pats). */
+  canChangeStatus?: boolean;
+  /** PVN kolonna (PVN / Margin / Neto) - ar tiesību «Iegāde». */
+  showVat?: boolean;
   /** «Summa» kārtošana tikai ar tiesību «summas» (Nils 27.10). */
   canSortBySum?: boolean;
   /** Aktīvie Loģistikas auto (vēl nav Autoparkā); null - nav Loģistikas tiesību, flīzi nerāda. */
@@ -37,6 +43,8 @@ export function AutoparksV2List({
   /** "+ Auto" tikai ar Pamatdatu tiesību (API to pārbauda arī pats). */
   canAddCar?: boolean;
 }) {
+  const [cars, setCars] = useState(initialCars);
+  const [statusErr, setStatusErr] = useState("");
   const [owner, setOwner] = useState<AutoparksV2OwnerFilter>("all");
   const [status, setStatus] = useState<AutoparksStatus | null>(null);
   const [query, setQuery] = useState("");
@@ -44,8 +52,26 @@ export function AutoparksV2List({
   const [sort, setSort] = useState<AutoparksV2Sort>("process");
   const sortOptions = AUTOPARKS_V2_SORTS.filter((s) => canSortBySum || !s.startsWith("sum_"));
 
-  const ownerCounts = useMemo(() => autoparksV2OwnerCounts(initialCars), [initialCars]);
-  const base = useMemo(() => filterAutoparksV2Rows(initialCars, { owner, query }), [initialCars, owner, query]);
+  const ownerCounts = useMemo(() => autoparksV2OwnerCounts(cars), [cars]);
+  const base = useMemo(() => filterAutoparksV2Rows(cars, { owner, query }), [cars, owner, query]);
+
+  /** Statusa maiņa no saraksta: uzreiz sarakstā, kļūdas gadījumā atpakaļ (tā pati API kā kabinetā). */
+  async function changeStatus(id: string, next: AutoparksStatus) {
+    const prev = cars.find((c) => c.id === id);
+    if (!prev || prev.status === next) return;
+    setStatusErr("");
+    const at = new Date().toISOString();
+    setCars((cs) => cs.map((c) => (c.id === id ? { ...c, status: next, statusChangedAt: at } : c)));
+    const res = await fetch(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(id)}/statuss`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: next }),
+    }).catch(() => null);
+    if (!res?.ok) {
+      setCars((cs) => cs.map((c) => (c.id === id ? prev : c)));
+      setStatusErr(`Statusu neizdevās mainīt (${prev.title})`);
+    }
+  }
   const statusCounts = useMemo(() => autoparksV2StatusCounts(base), [base]);
   const rows = useMemo(
     () => sortAutoparksV2Rows(flattenAutoparksV2Rows(status ? base.filter((r) => r.status === status) : base), sort),
@@ -64,12 +90,13 @@ export function AutoparksV2List({
     <div className="ap2">
       <div className="ap2-top">
         <h1>Autoparks</h1>
+        <span className="ap2-top-n">{base.length} auto</span>
         <div className="ap2-search ap2-search-d">
           <span aria-hidden>⌕</span>
           <input data-bare value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Marka, modelis vai VIN" aria-label="Meklēt" />
         </div>
         {canAddCar ? (
-          <button type="button" className="ap2-btn dark sm" onClick={() => setAdding(true)}>
+          <button type="button" className="ap2-btn dark sm ap2-add" onClick={() => setAdding(true)}>
             + Auto
           </button>
         ) : null}
@@ -123,14 +150,18 @@ export function AutoparksV2List({
         </label>
       </div>
 
+      {statusErr ? <p className="ap2-err" role="alert">{statusErr}</p> : null}
+
       <div className="ap2-thd">
         <span />
         <span>Auto</span>
         <span>VIN</span>
+        <span>{showVat ? "PVN" : ""}</span>
+        <span>Iegāde</span>
         <span>Statuss</span>
       </div>
 
-      <AutoparksV2ListBody rows={rows} shown={shown} />
+      <AutoparksV2ListBody rows={rows} shown={shown} onStatus={canChangeStatus ? (id, s) => void changeStatus(id, s) : undefined} />
 
       {adding && canAddCar ? <AddCarSheet onClose={() => setAdding(false)} /> : null}
     </div>
@@ -150,12 +181,30 @@ function sortValueLabel(r: AutoparksV2ListRow, shown: "date" | "sum" | null): st
   return "";
 }
 
-export function AutoparksV2ListBody({ rows, shown = null }: { rows: readonly AutoparksV2ListRow[]; shown?: "date" | "sum" | null }) {
+function purchaseDateLv(iso: string): string {
+  const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : "-";
+}
+
+/**
+ * Saraksts (Nils 27.10 makets): katrs auto - sava kartīte. Visa kartīte ir saite uz kabinetu (izstiepta saite),
+ * statusa izvēle un VIN kopēšana - virs tās. Statuss neitrāls, krāsa tikai punktā.
+ */
+export function AutoparksV2ListBody({
+  rows,
+  shown = null,
+  onStatus,
+}: {
+  rows: readonly AutoparksV2ListRow[];
+  shown?: "date" | "sum" | null;
+  onStatus?: (id: string, status: AutoparksStatus) => void;
+}) {
   if (rows.length === 0) return <p className="ap2-empty">Nav auto</p>;
   return (
     <div className="ap2-list">
       {rows.map((r) => (
-        <Link key={r.id} href={`${BASE}/${encodeURIComponent(r.id)}`} className="ap2-row">
+        <div key={r.id} className="ap2-row">
+          <Link href={`${BASE}/${encodeURIComponent(r.id)}`} className="ap2-row-hit" aria-label={r.title} />
           <div className="ap2-row-m">
             <CarImg carId={r.id} />
             <span className="ap2-rt">
@@ -170,16 +219,31 @@ export function AutoparksV2ListBody({ rows, shown = null }: { rows: readonly Aut
             <span className="ap2-rt">
               <b>{r.title}</b>
               <span className="meta">{yearColor(r.year, r.color)}</span>
-              {shown ? <span className="meta ap2-sortval">{sortValueLabel(r, shown)}</span> : null}
+              {shown === "sum" ? <span className="meta ap2-sortval">{sortValueLabel(r, shown)}</span> : null}
             </span>
-            <span>
+            <span className="ap2-over">
               <VinCopy vin={r.vin} />
             </span>
-            <span>
-              <span className={`ap2-pill st-${r.status}`}>{AUTOPARKS_STATUS_SHORT_LV[r.status]}</span>
+            <span className="ap2-vat">{V2_VAT_MODE_LV[r.vatMode] || "-"}</span>
+            <span className="ap2-date">{purchaseDateLv(r.purchaseDate)}</span>
+            <span className="ap2-over">
+              {onStatus ? (
+                <label className={`ap2-pill ap2-pill-sel st-${r.status}`}>
+                  <span className="sr-only">Mainīt statusu: {r.title}</span>
+                  <select value={r.status} onChange={(e) => onStatus(r.id, e.target.value as AutoparksStatus)}>
+                    {AUTOPARKS_V2_STATUS_ORDER.map((s) => (
+                      <option key={s} value={s}>
+                        {AUTOPARKS_STATUS_LV[s]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <span className={`ap2-pill st-${r.status}`}>{AUTOPARKS_STATUS_SHORT_LV[r.status]}</span>
+              )}
             </span>
           </div>
-        </Link>
+        </div>
       ))}
     </div>
   );
