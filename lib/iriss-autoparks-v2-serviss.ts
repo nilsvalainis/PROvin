@@ -26,6 +26,8 @@ export type V2ServissView = {
   totalEur: number | null;
   canSums: boolean;
   canConfirm: boolean;
+  /** Nils 27.10: problēmas dzēst drīkst tikai administrators. */
+  canDelete: boolean;
 };
 
 export type ServissScanTarget = "number_check" | "diag" | "invoice" | "invoice_page" | "problem_photo";
@@ -68,7 +70,7 @@ export function servissFileIds(v2: AutoparksCarV2): Set<string> {
 export function servissView(
   v2: AutoparksCarV2,
   v1Files: readonly AutoparksFile[],
-  opts: { canSums: boolean; canConfirm: boolean },
+  opts: { canSums: boolean; canConfirm: boolean; canDelete?: boolean },
 ): V2ServissView {
   const byId = new Map(v1Files.map((f) => [f.id, f]));
   const nc = filesOf(byId, [v2.numberCheck.fileId, ...v2.numberCheck.extraFileIds].filter(Boolean));
@@ -93,6 +95,7 @@ export function servissView(
     totalEur: opts.canSums ? Math.round(total * 100) / 100 : null,
     canSums: opts.canSums,
     canConfirm: opts.canConfirm,
+    canDelete: opts.canDelete ?? false,
   };
 }
 
@@ -111,7 +114,7 @@ export type ProblemPatch = { id?: string; text?: string; fixedByService?: boolea
 export function applyProblemPatch(
   problems: V2Problem[],
   patch: ProblemPatch,
-  ctx: { canConfirm: boolean; actorName: string; now: string; newId: () => string },
+  ctx: { canConfirm: boolean; canRemove?: boolean; actorName: string; now: string; newId: () => string },
 ): { problems: V2Problem[]; history: Array<{ field: string; from: unknown; to: unknown }> } {
   const out = problems.map((p) => ({ ...p }));
   const hist: Array<{ field: string; from: unknown; to: unknown }> = [];
@@ -123,6 +126,7 @@ export function applyProblemPatch(
   }
   const p = out[idx]!;
   if (patch.remove) {
+    if (!ctx.canRemove) return { problems: out, history: hist };
     hist.push({ field: "service.problem", from: p.text, to: "" });
     out.splice(idx, 1);
     return { problems: out, history: hist };

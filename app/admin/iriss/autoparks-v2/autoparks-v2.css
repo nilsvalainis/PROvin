@@ -3271,3 +3271,21 @@
     padding-bottom: calc(96px + env(safe-area-inset-bottom));
   }
 }
+
+/* Nils 27.10: problēmas dzēšana (tikai administrators). */
+.ap2.ap2.ap2 .ap2-sv-del {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--iriss-ink-2, #4a4a4f);
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sv-del:hover {
+  background: rgba(194, 54, 43, 0.08);
+  color: var(--bad, #c2362b);
+}
