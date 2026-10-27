@@ -1,5 +1,6 @@
 "use client";
 
+import { LOGISTICS_STEP_LV, LOGISTICS_STEP_SHORT_LV, logisticsStepOf } from "@/lib/iriss-logistics-steps";
 import { IrissLogistikaAutoparksLink } from "@/components/admin/iriss-logistika/IrissLogistikaAutoparksLink";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -21,7 +22,7 @@ import { AdminMobileChips, AdminMobileRoundBtn, AdminMobileSearchField, AdminMob
 import { IrissLogistikaRouteTemplatesPanel } from "@/components/admin/iriss-logistika/IrissLogistikaRouteTemplatesPanel";
 import { StatusFilterChip, StatusFilterChipRow } from "@/components/shared/StatusFilterChips";
 import { filterLogisticsOrdersByView, isLogisticsOrderActive, isLogisticsOrderArchived } from "@/lib/iriss-logistics-archive";
-import { CABINET_PICKUP_STAGE_LV, type CabinetPickup, type CabinetPickupStage } from "@/lib/iriss-logistics-cabinet";
+import { type CabinetPickup, type CabinetPickupStage } from "@/lib/iriss-logistics-cabinet";
 import {
   CARGO_BUCKET_LV,
   CARGO_COLOR_FALLBACK,
@@ -59,7 +60,6 @@ import {
   LOGISTICS_AUCTIONS,
   LOGISTICS_DEFAULT_LIST_VIEW,
   LOGISTICS_LIST_VIEW_LV,
-  LOGISTICS_ORDER_STATUS_LV,
   type LogisticsListView,
   type LogisticsAuctionSource,
   type LogisticsOrder,
@@ -529,16 +529,21 @@ export function IrissLogistikaClient({
     return m;
   }, [cargoPlan]);
   const showOnMapIds = useMemo(() => new Set(cargoPlan.cars.filter((c) => c.showOnMap).map((c) => c.carId)), [cargoPlan]);
+  /** Nils 27.10: viens solis (Gaida / Gatavs / Ceļā / Atvests) no pasūtījuma statusa + pickup posma. */
+  const stepByCarId = useMemo(() => {
+    const stages = new Map(cargoPickups.map((p) => [p.carId, p.stage]));
+    return new Map(orders.map((o) => [o.id, logisticsStepOf(o.status, stages.get(o.id))]));
+  }, [orders, cargoPickups]);
   const statusByCarId = useMemo(() => {
     const m = new Map<string, string>();
-    for (const p of cargoPickups) m.set(p.carId, CABINET_PICKUP_STAGE_LV[p.stage]);
+    for (const [id, step] of stepByCarId) m.set(id, LOGISTICS_STEP_SHORT_LV[step]);
     return m;
-  }, [cargoPickups]);
-  /** Rindas posma žetons visiem auto (bez pickup ieraksta - "Gaida", kā agrāk tabulā "Visi auto"). */
-  const stageLabelByCarId = useMemo(() => {
-    const stages = new Map(cargoPickups.map((p) => [p.carId, p.stage]));
-    return Object.fromEntries(orders.map((o) => [o.id, CABINET_PICKUP_STAGE_LV[stages.get(o.id) ?? "waiting"]]));
-  }, [orders, cargoPickups]);
+  }, [stepByCarId]);
+  /** Rindas soļa žetons visiem auto. */
+  const stageLabelByCarId = useMemo(
+    () => Object.fromEntries([...stepByCarId].map(([id, step]) => [id, LOGISTICS_STEP_SHORT_LV[step]])),
+    [stepByCarId],
+  );
   /** Gatavība tikai Nākošās kravas auto; pārējiem paliek viļņa krāsa. */
   const readinessByCarId = useMemo(() => {
     const m = new Map<string, ReadinessKind>();
@@ -1159,6 +1164,7 @@ export function IrissLogistikaClient({
                 onPickupChanged={(next) =>
                   setCargoPickups((prev) => (prev.some((p) => p.carId === next.carId) ? prev.map((p) => (p.carId === next.carId ? next : p)) : [...prev, next]))
                 }
+                onMoveToAutopark={(id) => void moveToAutopark(id)}
                 endAction={
                   <>
                     {/* Telefonā kravas rindā slēdža un «Kartīte» nav (makets C1) - tie ir šeit. */}
@@ -1272,7 +1278,7 @@ export function IrissLogistikaClient({
                             {o.source === "private" ? "Sludinājums" : "Atvērt izsolē"}
                           </a>
                         ) : null}
-                        <span>{o.statusNote || LOGISTICS_ORDER_STATUS_LV[o.status]}</span>
+                        <span>{o.statusNote || LOGISTICS_STEP_LV[stepByCarId.get(o.id) ?? "waiting"]}</span>
                       </span>
                       {o.nextAction ? <span className="mt-0.5 block text-[12px] text-[var(--ink2)]">→ {o.nextAction}</span> : null}
                     </button>

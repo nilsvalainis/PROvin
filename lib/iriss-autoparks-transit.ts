@@ -3,11 +3,13 @@
  * pickup posma un kravu plāna (tīra loģika, bez servera atkarībām). Summas šeit netiek nodotas.
  */
 
-import { CABINET_PICKUP_STAGE_LV, type CabinetPickup, type CabinetPickupStage } from "@/lib/iriss-logistics-cabinet";
+import type { CabinetPickup } from "@/lib/iriss-logistics-cabinet";
+import { LOGISTICS_STEPS, LOGISTICS_STEP_LV, logisticsStepOf, type LogisticsStep } from "@/lib/iriss-logistics-steps";
 import { CARGO_BUCKET_LV, type CargoBucket, type CargoPlanState } from "@/lib/iriss-logistics-cargo-plan";
 import { LOGISTICS_ORDER_STATUS_LV, type LogisticsOrder } from "@/lib/iriss-logistics-types";
 
-export const AUTOPARKS_TRANSIT_STEPS: readonly CabinetPickupStage[] = ["waiting", "planned", "in_transit", "arrived"];
+/** Tie paši 4 soļi kā Loģistikā (Nils 27.10). */
+export const AUTOPARKS_TRANSIT_STEPS: readonly LogisticsStep[] = LOGISTICS_STEPS;
 
 export type AutoparksTransit = {
   orderId: string;
@@ -18,7 +20,7 @@ export type AutoparksTransit = {
   pickupDate: string;
   freeParkingUntil: string;
   orderStatusLabel: string;
-  stage: CabinetPickupStage;
+  stage: LogisticsStep;
   stageLabel: string;
   cargo: CargoBucket;
   cargoLabel: string;
@@ -34,7 +36,7 @@ export function buildAutoparksTransit(
   pickup: Pick<CabinetPickup, "stage" | "pickupCode" | "pickupDate"> | null,
   plan: Pick<CargoPlanState, "cars"> | null,
 ): AutoparksTransit {
-  const stage: CabinetPickupStage = pickup?.stage ?? "waiting";
+  const stage = logisticsStepOf(order.status, pickup?.stage);
   const mine = plan?.cars.find((c) => c.carId === order.id);
   const cargo: CargoBucket = mine?.bucket ?? "none";
   const sameBucket = cargo === "none" || !plan ? [] : plan.cars.filter((c) => c.bucket === cargo).sort((a, b) => a.sort - b.sort);
@@ -48,7 +50,7 @@ export function buildAutoparksTransit(
     freeParkingUntil: order.freeParkingUntil || "",
     orderStatusLabel: LOGISTICS_ORDER_STATUS_LV[order.status] ?? "",
     stage,
-    stageLabel: CABINET_PICKUP_STAGE_LV[stage],
+    stageLabel: LOGISTICS_STEP_LV[stage],
     cargo,
     cargoLabel: CARGO_BUCKET_LV[cargo],
     cargoPlace: place > 0 ? place : null,

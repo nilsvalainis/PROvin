@@ -184,8 +184,9 @@ describe("IRISS Loģistika UI contracts", () => {
     const domain = readFileSync("lib/iriss-logistics-cabinet.ts", "utf8");
     const timer = readFileSync("lib/iriss-logistics-parking-timer.ts", "utf8");
     expect(cabinet).toContain("CABINET_DOC_GROUP_LABEL");
-    expect(cabinet).toContain("CABINET_PICKUP_STAGE_LV");
-    expect(cabinet).toContain("Atzīmēt kā Atvests");
+    expect(cabinet).toContain("LOGISTICS_STEP_LV");
+    // Nils 27.10: «Atvests» ir lauka «Solis» 4. solis (uz Autoparku), nevis atsevišķa poga.
+    expect(cabinet).toContain("onMoveToAutopark");
     expect(domain).toContain('A: "Iegādes dokumenti"');
     expect(domain).toContain('B: "Pick up līdz atvešanai"');
     expect(domain).toContain('C: "Pēc atvešanas"');
@@ -198,7 +199,7 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(cabinet).toContain("Bezmaksas stāvv. līdz");
     expect(cabinet).toContain("Pickup kods");
     expect(cabinet).toContain("Piezīme");
-    expect(cabinet).toContain("LOGISTICS_PIPELINE_STATUSES");
+    expect(cabinet).toContain("LOGISTICS_STEPS");
     expect(cabinet).toContain("saveOrderFields");
     expect(cabinet).toContain("Izņemts");
     expect(cabinet).toContain("Piegādāts");
