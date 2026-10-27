@@ -119,7 +119,7 @@ export function adminCostsChrome(workspace: AdminCostsWorkspace): {
 } {
   if (workspace === "iriss") {
     return {
-      crumb: "Vairāk · IRISS admin · Pārvaldība",
+      crumb: "Vairāk · IRISS admin · Iestatījumi",
       brand: "IRISS",
       subtitle: "IRISS · visi projekti",
     };
