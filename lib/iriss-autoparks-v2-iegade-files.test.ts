@@ -50,18 +50,16 @@ describe("Iegādes faili", () => {
     expect(isAuto1Car({ auction: "", cabinetDocs: [doc("d1", "car_invoice", "2026-10-09", { source: "auto1" })] })).toBe(true);
     expect(isAuto1Car({ auction: "openlane", cabinetDocs: [doc("d1", "car_invoice", "2026-10-09", { source: "email" })] })).toBe(false);
   });
-  it("auto1MissingDocLabels - trūkstošās obligātās PDF etiķetes", () => {
-    const docs = [doc("d1", "car_invoice", "2026-10-09")];
-    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: docs })).toEqual(["Pirkuma apstiprinājums"]);
-    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [] })).toEqual(["Pirkuma apstiprinājums", "Car Invoice"]);
+  it("auto1MissingDocLabels - Auto1 prasa tikai Car Invoice (Nils 27.10)", () => {
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [doc("d1", "car_invoice", "2026-10-09")] })).toEqual([]);
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [doc("d2", "purchase_confirm", "2026-10-08")] })).toEqual(["Car Invoice"]);
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [] })).toEqual(["Car Invoice"]);
     expect(auto1MissingDocLabels({ isAuto1: false, cabinetDocs: [] })).toEqual([]);
-    expect(
-      auto1MissingDocLabels({
-        isAuto1: true,
-        cabinetDocs: [doc("d1", "car_invoice", "2026-10-09"), doc("d2", "purchase_confirm", "2026-10-08")],
-      }),
-    ).toEqual([]);
-    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [doc("d1", "car_invoice", "2026-10-09", { deletedAt: "x" })] })).toEqual(["Pirkuma apstiprinājums", "Car Invoice"]);
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [doc("d1", "car_invoice", "2026-10-09", { deletedAt: "x" })] })).toEqual(["Car Invoice"]);
+  });
+  it("rēķina fails grupā Pirkums skaitās kā Car Invoice", () => {
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [], files: [{ group: "pirkums", tag: "Rēķins" }] })).toEqual([]);
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [], files: [{ group: "transports", tag: "Rēķins" }] })).toEqual(["Car Invoice"]);
   });
   it("pirkuma datums - pirmais rēķins", () => {
     expect(purchaseDateFromDocs([doc("a", "cmr", "2026-10-01"), doc("b", "auction_invoice", "2026-10-09T10:00Z"), doc("c", "car_invoice", "2026-10-10")])).toBe("2026-10-09");

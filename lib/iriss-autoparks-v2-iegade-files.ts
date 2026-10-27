@@ -150,7 +150,8 @@ export function purchaseDateFromDocs(docs: readonly CabinetDocument[]): string {
   return inv[0] ?? "";
 }
 
-const AUTO1_REQUIRED_DOCS: readonly CabinetDocType[] = ["purchase_confirm", "car_invoice"];
+/** Nils 27.10: Auto1 autiem obligāts tikai Car Invoice (Pirkuma apstiprinājums vairs netiek prasīts). */
+const AUTO1_REQUIRED_DOCS: readonly CabinetDocType[] = ["car_invoice"];
 
 /** Vai auto ir Auto1 izcelsmes - no izsoles lauka vai jau zināma dokumenta avota (J30 F4). */
 export function isAuto1Car(input: { auction: string; cabinetDocs: readonly CabinetDocument[] }): boolean {
@@ -158,9 +159,17 @@ export function isAuto1Car(input: { auction: string; cabinetDocs: readonly Cabin
   return input.cabinetDocs.some((d) => !d.deletedAt && d.source.trim().toLowerCase() === "auto1");
 }
 
-/** Auto1 autiem jābūt tieši 2 obligātām PDF (Pirkuma apstiprinājums + Car Invoice) - trūkstošo etiķetes (J30 F4). */
-export function auto1MissingDocLabels(input: { isAuto1: boolean; cabinetDocs: readonly CabinetDocument[] }): string[] {
+/**
+ * Auto1 autiem obligāts Car Invoice - trūkstošo etiķetes (J30 F4, Nils 27.10).
+ * Rēķins, kas pievienots Dokumentos kā fails grupā "Pirkums", arī skaitās.
+ */
+export function auto1MissingDocLabels(input: {
+  isAuto1: boolean;
+  cabinetDocs: readonly CabinetDocument[];
+  files?: readonly Pick<V2IegadeFile, "group" | "tag">[];
+}): string[] {
   if (!input.isAuto1) return [];
+  if (input.files?.some((f) => f.group === "pirkums" && f.tag === "Rēķins")) return [];
   const live = input.cabinetDocs.filter((d) => !d.deletedAt);
   return AUTO1_REQUIRED_DOCS.filter((t) => !live.some((d) => d.type === t)).map((t) => CABINET_DOC_TYPE_LABEL[t]);
 }
