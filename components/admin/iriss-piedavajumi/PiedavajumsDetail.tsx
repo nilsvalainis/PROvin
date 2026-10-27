@@ -22,6 +22,7 @@ import {
 } from "@/lib/iriss-piedavajumi";
 import { irissPdAuto1Brief } from "@/lib/iriss-piedavajumi-auto1";
 import { IRISS_PD_ADAPTERS } from "@/lib/iriss-piedavajumi-sources";
+import { irissPdSourceRefHref } from "@/lib/iriss-pd-entry";
 import {
   IRISS_PD_EXCLUDED_TEMPLATE,
   IRISS_PD_FACTS_TEMPLATE,
@@ -370,7 +371,7 @@ export function PiedavajumsDetail({
   const photoUrl = (p: IrissPdPhoto) => `/api/admin/iriss-piedavajumi/${rec.id}/foto/${rec.photos.findIndex((x) => photoKey(x) === photoKey(p))}`;
 
   const showImport = editable && (rec.status === "requested" || (!rec.vehicle.title && rec.source === "manual"));
-  const adapter = rec.source !== "autoparks" && rec.source !== "manual" ? IRISS_PD_ADAPTERS[rec.source] : null;
+  const adapter = rec.source !== "autoparks" && rec.source !== "logistics" && rec.source !== "manual" ? IRISS_PD_ADAPTERS[rec.source] : null;
   const shownPrice = formatIrissPdPrice(d.price);
   const saveLabel = busy === "save" ? "Saglabā..." : "Saglabāt";
 
@@ -693,8 +694,8 @@ export function PiedavajumsDetail({
                     {rec.sourceUrl.replace(/^https:\/\/(www\.)?/, "")}
                   </a>
                 ) : rec.sourceRef ? (
-                  <Link className="pd-lnk" href="/admin/iriss/autoparks">
-                    Autoparka auto
+                  <Link className="pd-lnk" href={irissPdSourceRefHref(rec.sourceRef)}>
+                    {rec.source === "logistics" ? "Loģistikas auto" : "Autoparka auto"}
                   </Link>
                 ) : null}
                 <span className="pd-mu pd-el">

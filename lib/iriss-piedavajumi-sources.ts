@@ -8,7 +8,7 @@
 import { parseIrissAuctionLink } from "@/lib/iriss-auction-link";
 import type { IrissPdSource } from "@/lib/iriss-piedavajumi-types";
 
-export type IrissPdLinkSource = Exclude<IrissPdSource, "autoparks" | "manual">;
+export type IrissPdLinkSource = Exclude<IrissPdSource, "autoparks" | "logistics" | "manual">;
 
 export type IrissPdDetectedLink = { source: IrissPdLinkSource; key: string; url: string };
 

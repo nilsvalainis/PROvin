@@ -781,6 +781,29 @@ export function irissPdCarPicks(
     .filter((r) => r.title);
 }
 
+/** Loģistikas auto izvēlei (Nils 27.10, avots «Loģistika»). Arhivētie netiek rādīti; aizņemtie nav izvēlami. */
+export function irissPdLogisticsPicks(
+  orders: ReadonlyArray<{ id: string; make: string; model: string; title: string; vin: string; stockNo: string; archived?: boolean; status: string }>,
+  rows: readonly IrissPdListRow[],
+): IrissPdCarPick[] {
+  return orders
+    .filter((o) => !o.archived && o.status !== "archived")
+    .map((o) => {
+      const title = clean(o.title) || clean(`${o.make} ${o.model}`) || clean(o.vin);
+      const vin = clean(o.vin).toUpperCase();
+      const taken = findIrissPdTakenConflict(rows, { sourceRef: `logistics:${o.id}`, vin });
+      return {
+        id: o.id,
+        title,
+        vinTail: vin.slice(-6),
+        plate: clean(o.stockNo),
+        search: fold(`${title} ${o.make} ${o.model} ${vin} ${o.stockNo}`),
+        takenBy: taken ? irissPdNumberLabel(taken.number) : "",
+      };
+    })
+    .filter((r) => r.title);
+}
+
 export function filterIrissPdCarPicks(rows: readonly IrissPdCarPick[], query: string): IrissPdCarPick[] {
   const words = fold(query).split(/\s+/).filter(Boolean);
   if (!words.length) return [...rows];

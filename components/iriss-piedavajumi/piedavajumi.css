@@ -548,29 +548,64 @@
   text-align: right;
 }
 
-/* Jauns piedāvājums */
-.pdv .pd-paths {
+/* Jauns piedāvājums - viena ieeja ar 4 avotiem (Nils 27.10) */
+.pdv .pd-new {
+  max-width: 720px;
+  padding: 18px 20px 22px;
   display: flex;
-  gap: 18px;
-  max-width: 1080px;
+  flex-direction: column;
+  gap: 14px;
 }
-.pdv .pd-path {
-  flex: 1;
-  padding: 28px;
-  min-width: 0;
-}
-.pdv .pd-path h2 {
-  margin: 14px 0 4px;
-  font-size: 19px;
-}
-.pdv .pd-ico {
-  width: 44px;
-  height: 44px;
+.pdv .pd-seg {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 3px;
   border-radius: 12px;
-  background: #f0f0f3;
+  background: var(--iriss-surface-2, #f2f2f7);
+}
+.pdv .pd-seg button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--iriss-ink-2, #4a4a4f);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pdv .pd-seg button[aria-selected="true"] {
+  background: var(--iriss-graphite, #1b1c20);
+  color: var(--iriss-on-graphite, #f3f2ef);
+}
+.pdv .pd-new-client {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 0;
+  border-top: 1px solid var(--line2);
+  border-bottom: 1px solid var(--line2);
+  font-size: 14px;
+}
+.pdv .pd-new-search {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--iriss-line-strong, #d1d1d6);
+  border-radius: 12px;
+}
+.pdv .pd-new-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
 }
 .pdv .pd-carrow {
   display: flex;
@@ -1018,11 +1053,8 @@ button.pd-lv {
     flex: 1;
     height: 42px;
   }
-  .pdv .pd-paths {
-    flex-direction: column;
-  }
-  .pdv .pd-path {
-    padding: 18px;
+  .pdv .pd-new {
+    padding: 14px;
   }
   .pd-a1-grid,
   .pd-eqs,
