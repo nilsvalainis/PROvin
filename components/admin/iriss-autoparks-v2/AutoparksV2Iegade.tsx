@@ -456,7 +456,7 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
       {view.missingAuto1Docs.length > 0 ? (
         <div className="ap2-warn">
           <WarnIcon />
-          Trūkst dokumenta: {view.missingAuto1Docs.join(", ")} (Auto1 auto - nepieciešamas 2 PDF)
+          Trūkst dokumenta: {view.missingAuto1Docs.join(", ")} (Auto1 auto)
         </div>
       ) : null}
 
