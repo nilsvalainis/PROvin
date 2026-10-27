@@ -6,7 +6,7 @@
  */
 
 import { autoparksOwner, type AutoparksCar, type AutoparksOwner, type AutoparksStatus } from "@/lib/iriss-autoparks";
-import { AUTOPARKS_V2_STATUS_ORDER, autoparksV2Title, carV2Of, type AutoparksV2State } from "@/lib/iriss-autoparks-v2";
+import { AUTOPARKS_V2_STATUS_ORDER, autoparksV2Title, carV2Of, type AutoparksV2State, type V2VatMode } from "@/lib/iriss-autoparks-v2";
 
 export type AutoparksV2ListRow = {
   id: string;
@@ -26,6 +26,8 @@ export type AutoparksV2ListRow = {
   purchaseDate: string;
   /** Iegādes summa; null - nav ievadīta VAI lietotājam nav tiesības «summas». */
   purchasePriceEur: number | null;
+  /** Nils 27.10: PVN / Margin / Neto kolonna (tukšs - nav zināms vai nav tiesības «Iegāde»). */
+  vatMode: V2VatMode;
 };
 
 /** Kārtošana (Nils 27.10): process, marka, iegādes datums (noklusējums - jaunākie), iegādes summa. */
@@ -65,7 +67,7 @@ export function sortAutoparksV2Rows(rows: readonly AutoparksV2ListRow[], sort: A
 export function autoparksV2ListRows(
   cars: readonly AutoparksCar[],
   v2: AutoparksV2State,
-  opts: { sums?: boolean } = {},
+  opts: { sums?: boolean; vat?: boolean } = {},
 ): AutoparksV2ListRow[] {
   return cars.map((car) => {
     const carV2 = carV2Of(v2, car.id);
@@ -84,6 +86,7 @@ export function autoparksV2ListRows(
       make: (carV2.fields.make || car.make || "").trim(),
       purchaseDate: carV2.purchase.purchaseDate || "",
       purchasePriceEur: opts.sums && typeof price === "number" && Number.isFinite(price) ? price : null,
+      vatMode: opts.vat ? carV2.purchase.vat.mode : "",
     };
   });
 }
