@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { PdfIcon } from "./FileModal";
+import { pdfjsWorkerSrc } from "@/lib/pdfjs-worker-src";
 
 /**
  * Dokumenta priekšskats (Nils 27.10): PDF pirmā lapa pārlūkā (pdfjs, arī iPhone), bilde - pati bilde.
@@ -37,7 +38,7 @@ export function DocThumb({ url, contentType, title }: { url: string; contentType
     (async () => {
       try {
         const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+        pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerSrc(pdfjs.version);
         const doc = await pdfjs.getDocument({ url, withCredentials: true }).promise;
         const page = await doc.getPage(1);
         const c = canvas.current;
