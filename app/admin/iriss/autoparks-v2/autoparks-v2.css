@@ -3522,3 +3522,89 @@
     height: 297mm;
   }
 }
+
+/* ===== Vēsture pēc maketa (Nils 27.10): pa dienām, laiks · kurš · kas · vecā -> jaunā ===== */
+.ap2.ap2.ap2 .ap2-vh {
+  max-width: 1000px;
+}
+.ap2.ap2.ap2 .ap2-vh-day {
+  margin: 16px 4px 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-vh section:first-child .ap2-vh-day {
+  margin-top: 4px;
+}
+.ap2.ap2.ap2 .ap2-vh-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2px 16px;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+}
+.ap2.ap2.ap2 .ap2-vh-r {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "f t" "c c";
+  gap: 3px 10px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+  font-size: 15px;
+}
+.ap2.ap2.ap2 .ap2-vh-r:first-child {
+  border-top: 0;
+}
+.ap2.ap2.ap2 .ap2-vh-r .t {
+  grid-area: t;
+  font-size: 13px;
+  color: var(--iriss-ink-2, #4a4a4f);
+  font-variant-numeric: tabular-nums;
+}
+.ap2.ap2.ap2 .ap2-vh-r .w {
+  display: none;
+}
+.ap2.ap2.ap2 .ap2-vh-r .f {
+  grid-area: f;
+  font-size: 13px;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-vh-r .c {
+  grid-area: c;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ap2.ap2.ap2 .ap2-vh-r s {
+  color: #6e6e73;
+}
+.ap2.ap2.ap2 .ap2-vh-r .ar {
+  color: #8e8e93;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-vh-card {
+    border-radius: 18px;
+    padding: 2px 24px;
+  }
+  .ap2.ap2.ap2 .ap2-vh-r {
+    grid-template-columns: 56px 150px 200px minmax(0, 1fr);
+    grid-template-areas: "t w f c";
+    align-items: baseline;
+    gap: 16px;
+    font-size: 14.5px;
+  }
+  .ap2.ap2.ap2 .ap2-vh-r .t {
+    font-size: 14.5px;
+  }
+  .ap2.ap2.ap2 .ap2-vh-r .wm {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-vh-r .w {
+    display: block;
+    grid-area: w;
+    font-weight: 600;
+  }
+  .ap2.ap2.ap2 .ap2-vh-r .f {
+    font-size: 14.5px;
+  }
+}
