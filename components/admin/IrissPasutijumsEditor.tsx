@@ -2198,7 +2198,6 @@ export function IrissPasutijumsEditor({
         </section>
 
         <section className={shellCard}>
-          <BlockTitle>Sludinājumu platformas (saites)</BlockTitle>
           <IrissListingPlatformsFields
             rec={rec}
             onPatch={patchRecord}

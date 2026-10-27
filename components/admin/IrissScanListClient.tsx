@@ -279,7 +279,7 @@ export function IrissScanListClient({
               title="Atjaunot eCarsTrade saites no Auto1 / Openlane / Autobid / Mobile filtriem"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${ectBusy ? "animate-spin" : ""}`} aria-hidden />
-              {ectBusy ? "ET..." : "Atjaunot ET"}
+              {ectBusy ? "Atjauno..." : "Atjaunot eCarsTrade"}
             </button>
             <Link
               href="/admin/iriss/scan/new"

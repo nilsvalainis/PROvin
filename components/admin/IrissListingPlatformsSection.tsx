@@ -240,7 +240,7 @@ export function IrissListingPlatformsFields({ rec, onPatch, onReadLink, readingU
           className={actionBtn}
           title="Atjaunot eCarsTrade saiti tikai no Auto1 / Openlane / Autobid filtriem"
         >
-          Atjaunot ET
+          Atjaunot eCarsTrade
         </button>
       </div>
       <div className="grid grid-cols-1 gap-3.5">
