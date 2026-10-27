@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeAutoparksCar } from "@/lib/iriss-autoparks";
 import { emptyAutoparksV2State, normalizeAutoparksV2State } from "@/lib/iriss-autoparks-v2";
 import {
+  AUTOPARKS_V2_DEFAULT_SORT,
   autoparksV2ListRows,
   autoparksV2OwnerCounts,
   filterAutoparksV2Rows,
@@ -20,6 +21,10 @@ const cars = [
 const rows = autoparksV2ListRows(cars, emptyAutoparksV2State());
 
 describe("Autoparks v2 saraksts", () => {
+  it("noklusējuma kārtošana visiem profiliem - Iegāde: jaunākie (Nils 27.10)", () => {
+    expect(AUTOPARKS_V2_DEFAULT_SORT).toBe("date_desc");
+  });
+
   it("bez tiesības «summas» rindā nav summas; īpašnieks tikai filtram; VIN pilns", () => {
     expect(Object.keys(rows[0]!).sort()).toEqual([
       "archived",

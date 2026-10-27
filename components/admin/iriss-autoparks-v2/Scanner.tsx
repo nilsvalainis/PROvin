@@ -19,6 +19,8 @@ export function Scanner({ carId, target, onClose, onDone }: { carId: string; tar
   const [pages, setPages] = useState<Array<{ blob: Blob; url: string }>>([]);
   const [busy, setBusy] = useState<number | null>(null);
   const [error, setError] = useState("");
+  /** iOS: ja automātiskā atskaņošana bloķēta - pieskāriens kameras laukam to ieslēdz. */
+  const [needTap, setNeedTap] = useState(false);
 
   useEffect(() => {
     let s: MediaStream | null = null;
@@ -44,11 +46,25 @@ export function Scanner({ carId, target, onClose, onDone }: { carId: string; tar
     };
   }, []);
 
+  // iOS 18 (Nils 27.10: melna bilde): React neieliek `muted`/`playsinline` atribūtus DOM, bez tiem Safari
+  // neatskaņo kameras video un kadrs ir melns. Atribūti tieši elementā, atskaņo pēc metadatiem.
   useEffect(() => {
-    if (video.current && stream) {
-      video.current.srcObject = stream;
-      void video.current.play().catch(() => undefined);
-    }
+    const v = video.current;
+    if (!v || !stream) return;
+    v.muted = true;
+    v.setAttribute("muted", "");
+    v.setAttribute("playsinline", "");
+    v.setAttribute("autoplay", "");
+    v.srcObject = stream;
+    const start = () => {
+      void v
+        .play()
+        .then(() => setNeedTap(false))
+        .catch(() => setNeedTap(true));
+    };
+    if (v.readyState >= 1) start();
+    else v.addEventListener("loadedmetadata", start, { once: true });
+    return () => v.removeEventListener("loadedmetadata", start);
   }, [stream]);
 
   useEffect(() => () => pages.forEach((p) => URL.revokeObjectURL(p.url)), [pages]);
@@ -60,16 +76,29 @@ export function Scanner({ carId, target, onClose, onDone }: { carId: string; tar
 
   async function shoot() {
     const v = video.current;
-    if (!stream || !v || !v.videoWidth) {
+    // Kamera nav gatava (nav kadra) - telefona kamera (sinhroni, kamēr vēl ir pieskāriena žests).
+    if (!stream || !v || !v.videoWidth || v.readyState < 2) {
+      if (v && stream && v.paused) void v.play().catch(() => undefined);
       input.current?.click();
       return;
     }
     const c = document.createElement("canvas");
     c.width = v.videoWidth;
     c.height = v.videoHeight;
-    c.getContext("2d")?.drawImage(v, 0, 0);
+    const ctx = c.getContext("2d");
+    ctx?.drawImage(v, 0, 0);
+    if (!ctx || isBlackFrame(ctx, c.width, c.height)) {
+      releaseCanvas(c);
+      setError("Kamera atdeva melnu kadru - atveru telefona kameru.");
+      input.current?.click();
+      return;
+    }
     const blob = await new Promise<Blob | null>((r) => c.toBlob(r, "image/jpeg", 0.9));
-    if (blob) await addBlob(blob);
+    releaseCanvas(c);
+    if (blob) {
+      setError("");
+      await addBlob(blob);
+    }
   }
 
   /** Vispirms saglabā telefonā (bezsaistes rinda), tad aizver - augšupielāde notiek fonā pa vienam (F6b). */
@@ -92,10 +121,19 @@ export function Scanner({ carId, target, onClose, onDone }: { carId: string; tar
   return (
     <div className="ap2-cam" role="dialog" aria-label={target.title}>
       <div className="ap2-camview">
-        {stream && !noCamera ? <video ref={video} playsInline muted /> : null}
+        {stream && !noCamera ? <video ref={video} playsInline muted autoPlay /> : null}
+        {needTap ? (
+          <button type="button" className="ap2-camtap" onClick={() => void video.current?.play().then(() => setNeedTap(false)).catch(() => undefined)}>
+            Pieskaries, lai ieslēgtu kameru
+          </button>
+        ) : null}
         <div className="ap2-camtop">
           {target.title}
           <small>{pages.length + 1}. lapa</small>
+          {/* Rezerve, ja kameras skats nestrādā: tā pati telefona kamera kā failu izvēlē. */}
+          <button type="button" className="ap2-camalt" onClick={() => input.current?.click()}>
+            Telefona kamera
+          </button>
         </div>
       </div>
       <div className="ap2-tray">
@@ -143,4 +181,22 @@ export function Scanner({ carId, target, onClose, onDone }: { carId: string; tar
       />
     </div>
   );
+}
+
+/** iOS kanvu atmiņa ir ierobežota (~384 MB kopā): pēc lietošanas kanvu atbrīvo, citādi nākamie kadri ir melni. */
+function releaseCanvas(c: HTMLCanvasElement) {
+  c.width = 0;
+  c.height = 0;
+}
+
+/** Kadrs ir melns, ja nevienā no 64 parauga punktiem nav gaismas (kamera vēl nedod attēlu). */
+export function isBlackFrame(ctx: Pick<CanvasRenderingContext2D, "getImageData">, width: number, height: number): boolean {
+  if (width < 1 || height < 1) return true;
+  for (let y = 0; y < 8; y += 1) {
+    for (let x = 0; x < 8; x += 1) {
+      const px = ctx.getImageData(Math.floor(((x + 0.5) * width) / 8), Math.floor(((y + 0.5) * height) / 8), 1, 1).data;
+      if (px[0]! > 12 || px[1]! > 12 || px[2]! > 12) return false;
+    }
+  }
+  return true;
 }

@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { AUTOPARKS_STATUS_LV, AUTOPARKS_STATUS_SHORT_LV, type AutoparksOwner, type AutoparksStatus } from "@/lib/iriss-autoparks";
 import { AUTOPARKS_V2_STATUS_ORDER, V2_VAT_MODE_LV } from "@/lib/iriss-autoparks-v2";
 import {
+  AUTOPARKS_V2_DEFAULT_SORT,
   AUTOPARKS_V2_SORT_LV,
   AUTOPARKS_V2_SORTS,
   sortAutoparksV2Rows,
@@ -49,7 +50,8 @@ export function AutoparksV2List({
   const [status, setStatus] = useState<AutoparksStatus | null>(null);
   const [query, setQuery] = useState("");
   const [adding, setAdding] = useState(false);
-  const [sort, setSort] = useState<AutoparksV2Sort>("process");
+  // Nils 27.10: noklusējumā visiem profiliem «Iegāde: jaunākie».
+  const [sort, setSort] = useState<AutoparksV2Sort>(AUTOPARKS_V2_DEFAULT_SORT);
   const sortOptions = AUTOPARKS_V2_SORTS.filter((s) => canSortBySum || !s.startsWith("sum_"));
 
   const ownerCounts = useMemo(() => autoparksV2OwnerCounts(cars), [cars]);
