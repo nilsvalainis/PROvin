@@ -38,11 +38,12 @@ export const IRISS_PD_TAKEN_STATUSES: readonly IrissPdStatus[] = ["requested", "
 /** Statusi, kuros termiņš var beigties automātiski. */
 export const IRISS_PD_OPEN_STATUSES: readonly IrissPdStatus[] = ["requested", "draft", "sent"];
 
-export const IRISS_PD_SOURCES = ["autoparks", "auto1", "autobid", "openlane", "mobilede", "manual"] as const;
+export const IRISS_PD_SOURCES = ["autoparks", "logistics", "auto1", "autobid", "openlane", "mobilede", "manual"] as const;
 export type IrissPdSource = (typeof IRISS_PD_SOURCES)[number];
 
 export const IRISS_PD_SOURCE_LV: Record<IrissPdSource, string> = {
   autoparks: "Autoparks",
+  logistics: "Loģistika",
   auto1: "Auto1",
   autobid: "Autobid",
   openlane: "Openlane",

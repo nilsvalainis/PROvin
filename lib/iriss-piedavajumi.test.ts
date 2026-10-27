@@ -338,6 +338,18 @@ describe("Piedāvājumi: palīgfunkcijas", () => {
     expect(r?.visibility.blocks.damage).toEqual({ pdf: false, link: false });
     expect(normalizeIrissPiedavajums({ id: "../../etc" })).toBeNull();
   });
+
+  it("Loģistikas avots (Nils 27.10): sourceRef un /STOCK bildes saglabājas lasot", () => {
+    const r = normalizeIrissPiedavajums({
+      id: ID,
+      source: "logistics",
+      sourceRef: "logistics:lo_12",
+      photos: [{ kind: "dropbox", ref: "logistics:lo_12", id: "id:abc" }],
+    });
+    expect(r?.source).toBe("logistics");
+    expect(r?.sourceRef).toBe("logistics:lo_12");
+    expect(r?.photos).toHaveLength(1);
+  });
 });
 
 describe("klienta skats: Autoparka/CSDD vērtības cilvēkam", () => {

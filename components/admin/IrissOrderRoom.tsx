@@ -1,5 +1,6 @@
 "use client";
 
+import { IRISS_PD_NEW_PATH } from "@/lib/iriss-pd-entry";
 import { offerSourceLabel } from "@/lib/iriss-stock-photos";
 import { AdminSaveButton, useSaveMessageState } from "@/components/admin/AdminSaveButton";
 import { ChevronRight, FileDown, FileText, Mail, Pencil, Phone, Plus, Trash2, X } from "lucide-react";
@@ -1439,7 +1440,7 @@ export function IrissOrderRoom({
                 Izveidot piedāvājumu
               </button>
               <IrissOverflowMenu label="Vairāk">
-                <IrissOverflowItem href="/admin/iriss/pasutijumi/new?newOffer=1&noClientPdf=1">
+                <IrissOverflowItem href={IRISS_PD_NEW_PATH}>
                   Jauns piedāvājums bez klienta datiem
                 </IrissOverflowItem>
               </IrissOverflowMenu>

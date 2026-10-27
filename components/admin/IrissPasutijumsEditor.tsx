@@ -23,6 +23,8 @@ import {
 import { IrissLabeledInput as LabeledInput, irissOfferFieldClass } from "@/components/admin/IrissOfferFormFields";
 import { IrissOfferClientPicker, type IrissOfferClientChoice } from "@/components/admin/IrissOfferClientPicker";
 import { IrissOfferSourceSheet } from "@/components/admin/IrissOfferSourceSheet";
+import { irissPdNewHref } from "@/lib/iriss-pd-entry";
+import { irissHitAuctionUrl } from "@/lib/iriss-order-search-view";
 import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
 import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChangesGuard";
 import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
@@ -364,6 +366,7 @@ export function IrissPasutijumsEditor({
   duplicatesByListing = EMPTY_DUPLICATES,
   initialRoomTab = "overview",
   googleContactsConfigured: googleContactsConfiguredInitial = false,
+  pdEntry = false,
 }: {
   initialRecord: IrissPasutijumsRecord;
   autoOpenNewOffer?: boolean;
@@ -381,6 +384,8 @@ export function IrissPasutijumsEditor({
   duplicatesByListing?: Record<string, IrissVinDuplicateLink[]>;
   initialRoomTab?: IrissOrderRoomTab;
   googleContactsConfigured?: boolean;
+  /** Administrators: jauni piedāvājumi tikai PD sadaļā (Nils 27.10, viena sistēma). Darbinieks - esošā forma. */
+  pdEntry?: boolean;
 }) {
   const router = useRouter();
   const [rec, setRec] = useState<IrissPasutijumsRecord>(() => withAutoEcarstradeLinks(initialRecord));
@@ -984,6 +989,14 @@ export function IrissPasutijumsEditor({
     setOfferDraft(newOfferDraft(rec.offers.length + 1));
     setOfferOpen(true);
   }, [rec.offers.length]);
+
+  // Viena piedāvājumu sistēma (Nils 27.10): saglabātā pasūtījumā administrators veido piedāvājumu PD,
+  // klients un pasūtījums piesaistās automātiski. Vecie piedāvājumi šeit paliek lasāmi un nosūtāmi.
+  const pdNew = pdEntry && !unsavedDraft;
+  const createOfferEntry = useCallback(() => {
+    if (pdNew) router.push(irissPdNewHref({ orderId: rec.id }));
+    else openCreateOffer();
+  }, [pdNew, router, rec.id, openCreateOffer]);
 
   const retryGoogleContact = useCallback(async () => {
     if (!persistedIdRef.current) return;
@@ -1831,7 +1844,7 @@ export function IrissPasutijumsEditor({
               ))}
               <button
                 type="button"
-                onClick={openCreateOffer}
+                onClick={createOfferEntry}
                 className={offerPChipButtonClass}
                 style={{ backgroundColor: "#e5e5ea", color: "#3a3a3c", border: "1px solid #d1d1d6" }}
                 title="Jauns piedāvājums"
@@ -1912,7 +1925,7 @@ export function IrissPasutijumsEditor({
         ))}
         <button
           type="button"
-          onClick={openCreateOffer}
+          onClick={createOfferEntry}
           className={offerPChipButtonClass}
           style={{ backgroundColor: "#e5e5ea", color: "#3a3a3c", border: "1px solid #d1d1d6" }}
           title="Jauns piedāvājums"
@@ -2222,7 +2235,7 @@ export function IrissPasutijumsEditor({
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             <button
               type="button"
-              onClick={openCreateOffer}
+              onClick={createOfferEntry}
               className="inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 sm:w-auto"
             >
               <Plus className="h-4 w-4" aria-hidden />
@@ -2260,7 +2273,7 @@ export function IrissPasutijumsEditor({
         </button>
         <button
           type="button"
-          onClick={openCreateOffer}
+          onClick={createOfferEntry}
           className="flex h-[50px] flex-1 items-center justify-center rounded-full bg-[var(--iriss-graphite)] text-[15px] font-semibold text-white"
         >
           Piedāvājums
@@ -2318,9 +2331,11 @@ export function IrissPasutijumsEditor({
           onCall={triggerCall}
           onWhatsappText={openWhatsappText}
           onAppendNote={appendRoomNote}
-          onCreateOffer={() => setOfferSourceSheetOpen(true)}
+          onCreateOffer={pdNew ? createOfferEntry : () => setOfferSourceSheetOpen(true)}
           onEditOffer={openEditOffer}
-          onPrepareOffer={openCreateOfferFromHit}
+          onPrepareOffer={
+            pdNew ? (hit) => router.push(irissPdNewHref({ link: irissHitAuctionUrl(hit), orderId: rec.id })) : openCreateOfferFromHit
+          }
           googleContactsConfigured={googleContactsConfigured}
           googleContactBusy={googleContactBusy}
           onRetryGoogleContact={() => void retryGoogleContact()}

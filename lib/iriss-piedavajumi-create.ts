@@ -30,19 +30,24 @@ function eur(n: number | null | undefined): string {
   return n != null && Number.isFinite(n) && n > 0 ? String(Math.round(n)) : "";
 }
 
-export async function importIrissPdFromAutoparks(carId: string): Promise<IrissPdImport | null> {
-  const ref = { kind: "autoparks" as const, id: carId };
-  const seed = await loadOfferSeed(ref).catch(() => null);
+/**
+ * Autoparka vai Loģistikas auto -> importa dati (tie paši lauki un /STOCK bildes kā vecajā formā).
+ * Cenas tikai Autoparkam (sadaļa ir tikai adminam, tāpēc summas drīkst rādīt).
+ */
+export async function importIrissPdFromStock(kind: "autoparks" | "logistics", carId: string): Promise<IrissPdImport | null> {
+  const seed = await loadOfferSeed({ kind, id: carId }).catch(() => null);
   if (!seed) return null;
   let price = "";
   let purchase = "";
-  try {
-    const { readAutoparksV2Car } = await import("@/lib/iriss-autoparks-v2-store");
-    const both = await readAutoparksV2Car(carId);
-    price = eur(both?.v2?.priceSheet?.salePriceEur) || eur(both?.car?.salePriceEur);
-    purchase = eur(both?.car?.purchasePriceEur);
-  } catch {
-    /* cenas nav obligātas */
+  if (kind === "autoparks") {
+    try {
+      const { readAutoparksV2Car } = await import("@/lib/iriss-autoparks-v2-store");
+      const both = await readAutoparksV2Car(carId);
+      price = eur(both?.v2?.priceSheet?.salePriceEur) || eur(both?.car?.salePriceEur);
+      purchase = eur(both?.car?.purchasePriceEur);
+    } catch {
+      /* cenas nav obligātas */
+    }
   }
   const vehicle = irissPdVehicleFromSeed(seed.fields);
   const photos: IrissPdPhoto[] = seed.attachments
@@ -50,7 +55,7 @@ export async function importIrissPdFromAutoparks(carId: string): Promise<IrissPd
     .map((a) => ({ kind: "dropbox", ref: seed.sourceRef, id: a.dropboxId! }));
   const fieldCount = irissPdFilledCount(vehicle) + (price ? 1 : 0);
   return {
-    source: "autoparks",
+    source: kind,
     sourceRef: seed.sourceRef,
     sourceUrl: "",
     sourceKey: "",
@@ -60,9 +65,13 @@ export async function importIrissPdFromAutoparks(carId: string): Promise<IrissPd
     purchasePrice: purchase,
     auto1: null,
     fieldCount,
-    historyText: `Izveidots no Autoparka · ${fieldCount} lauki, ${photos.length} foto`,
+    historyText: `Izveidots no ${kind === "autoparks" ? "Autoparka" : "Loģistikas"} · ${fieldCount} lauki, ${photos.length} foto`,
     note: seed.photosNote,
   };
+}
+
+export function importIrissPdFromAutoparks(carId: string): Promise<IrissPdImport | null> {
+  return importIrissPdFromStock("autoparks", carId);
 }
 
 export type IrissPdLinkImportResult =
