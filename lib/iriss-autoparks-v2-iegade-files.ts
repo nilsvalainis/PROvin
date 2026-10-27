@@ -67,6 +67,16 @@ export function classifyIegadeDocType(fileName: string): CabinetDocType {
   return "other";
 }
 
+/**
+ * Tips attēlošanai un pārbaudei: vecie dokumenti ar tipu "other" (augšupielādēti pirms automātiskās
+ * klasifikācijas) tiek atpazīti pēc nosaukuma; saglabātie dati netiek mainīti (Nils 27.10, 390 px pārskats).
+ */
+export function effectiveCabinetDocType(d: Pick<CabinetDocument, "type" | "title" | "blobPath">): CabinetDocType {
+  if (d.type !== "other") return d.type;
+  const name = `${d.title} ${d.blobPath.split("/").pop() ?? ""}`;
+  return classifyIegadeDocType(name);
+}
+
 const CABINET_TYPES: readonly CabinetDocType[] = ["car_invoice", "auction_invoice", "purchase_confirm", "pickup_pdf", "cmr", "other"];
 
 const TAG: Partial<Record<CabinetDocType, string>> = {
@@ -91,8 +101,9 @@ export function iegadeFileList(input: {
   numberCheckFileId: string;
 }): V2IegadeFile[] {
   const out: V2IegadeFile[] = [];
-  for (const d of input.cabinetDocs) {
-    if (d.deletedAt || !d.blobPath || !CABINET_TYPES.includes(d.type)) continue;
+  for (const raw of input.cabinetDocs) {
+    if (raw.deletedAt || !raw.blobPath || !CABINET_TYPES.includes(raw.type)) continue;
+    const d = { ...raw, type: effectiveCabinetDocType(raw) };
     out.push({
       id: `c:${d.id}`,
       tag: TAG[d.type] ?? "Dokuments",
@@ -171,5 +182,5 @@ export function auto1MissingDocLabels(input: {
   if (!input.isAuto1) return [];
   if (input.files?.some((f) => f.group === "pirkums" && f.tag === "Rēķins")) return [];
   const live = input.cabinetDocs.filter((d) => !d.deletedAt);
-  return AUTO1_REQUIRED_DOCS.filter((t) => !live.some((d) => d.type === t)).map((t) => CABINET_DOC_TYPE_LABEL[t]);
+  return AUTO1_REQUIRED_DOCS.filter((t) => !live.some((d) => effectiveCabinetDocType(d) === t)).map((t) => CABINET_DOC_TYPE_LABEL[t]);
 }

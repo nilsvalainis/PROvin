@@ -3523,6 +3523,15 @@
   }
 }
 
+/* 390 px pārskats (27.10): "‹ Autoparks" bez rāmīša (kopējais :is rāmja noteikums to atkal ielika). */
+.ap2.ap2.ap2 .ap2-bar .ap2-back {
+  box-shadow: none;
+}
+/* Cenu lapa telefonā: poga nepielīp pie cilnēm. */
+.ap2.ap2.ap2 .ap2-cl-printm {
+  margin-top: 12px;
+}
+
 /* ===== Vēsture pēc maketa (Nils 27.10): pa dienām, laiks · kurš · kas · vecā -> jaunā ===== */
 .ap2.ap2.ap2 .ap2-vh {
   max-width: 1000px;

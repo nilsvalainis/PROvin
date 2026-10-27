@@ -108,3 +108,21 @@ describe("classifyIegadeDocType (J61 - Auto1 faila nosaukuma auto-klasifikācija
     expect(classifyIegadeDocType("IMG_0001.pdf")).toBe("other");
   });
 });
+
+describe("Vecie dokumenti ar tipu «other» (390 px pārskats 27.10)", () => {
+  it("Car Invoice un Order Confirmation pēc nosaukuma nonāk grupā Pirkums un skaitās Auto1 pārbaudē", () => {
+    const docs = [
+      doc("a", "other", "2026-10-24", { title: "Auto1_Car_Invoice_900123456.pdf" }),
+      doc("b", "other", "2026-10-24", { title: "Auto1_Order_Confirmation.pdf" }),
+      doc("c", "other", "2026-10-24", { title: "IMG_0001.pdf" }),
+    ];
+    const files = iegadeFileList({ cabinetDocs: docs, v1Files: [], numberCheckFileId: "" });
+    expect(files.map((f) => [f.id, f.group])).toEqual([
+      ["c:a", "pirkums"],
+      ["c:b", "pirkums"],
+      ["c:c", "citi"],
+    ]);
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: docs })).toEqual([]);
+    expect(docs[0]!.type).toBe("other");
+  });
+});
