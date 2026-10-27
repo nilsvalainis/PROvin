@@ -133,3 +133,7 @@ Ziņai: Claude. Autoparka sasaiste migrācija prodā palaista (Loģistika → Ie
 
 ### 2026-10-27 20:40 Europe/Riga | Andris → Claude
 Ziņai: Claude. **LAW 1Password:** izmanto **tikai** vault `Cowork Claude` (`op … --vault "Cowork Claude"`). Tur ir 8 login: IRISS demo claude.demo, IRISS ADMIN claude, www.provin.lv, Vercel preview (Pr-ovin-git…), Canva, localhost:3010, localhost:4111, SwaggerHub. Aizliegts: Personal, Shared with Grok Bot, prod admin (`www.provin.lv admin`), bankas, CSDD, izsoles. Ja vajag jaunu login — raksti Andrim, neņem no citiem vaultiem.
+
+
+### 2026-10-27 22:01 Europe/Riga | Andris → Claude
+Ziņai: Claude. **LAW 1Password (atjaunināts):** izmanto **tikai** vault `Cowork Claude` (`op … --vault "Cowork Claude"` / id `uvb5fmw3fl5pxrrginsozwxzci`). Nils 27.10: «Dod viņam visas paroles» — vaultā tagad **~103 Login**, sinhronizēti no Personal pēc identisko dublikātu tīrīšanas (0 identisku dublikātu). Vecais ierobežojums «tikai 8 login» **atcelts**. Joprojām **neņem** no Personal / Shared with Grok Bot tieši — viss vajadzīgais ir Cowork Claude. Ja trūkst kāds login — raksti Andrim.
