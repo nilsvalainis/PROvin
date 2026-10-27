@@ -53,6 +53,30 @@ describe("order field validation: VIN vai numurzīme", () => {
     expect(isValidVinOrPlate("1HGCM82633A004352")).toBe(true);
   });
 
+  it("accepts an NZ WMI VIN that fails the ISO 3779 check digit", () => {
+    const nzVin = "7A81G1E0794001421";
+    expect(nzVin).toHaveLength(17);
+    expect(isValidVin(nzVin)).toBe(true);
+    expect(isValidVinOrPlate(nzVin)).toBe(true);
+    expect(
+      validateOrderFields({
+        vin: nzVin,
+        listingUrl: "",
+        email: "test@example.com",
+        phone: "+371 21234567",
+      }),
+    ).toBeNull();
+  });
+
+  it("rejects wrong length and I/O/Q in the VIN alphabet", () => {
+    expect(isValidVin("7A81G1E079400142")).toBe(false);
+    expect(isValidVin("7A81G1E0794001421X")).toBe(false);
+    expect(isValidVin("7A81G1EI794001421")).toBe(false);
+    expect(isValidVin("7A81G1EO794001421")).toBe(false);
+    expect(isValidVin("7A81G1EQ794001421")).toBe(false);
+    expect(isValidVin("7A81G1E-794001421")).toBe(false);
+  });
+
   it("rejects a 16-char VIN", () => {
     expect(isValidVin(VIN16)).toBe(false);
     expect(isValidVinOrPlate(VIN16)).toBe(false);

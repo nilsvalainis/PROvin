@@ -23,7 +23,11 @@ export function sanitizeVinInput(s: string): string {
   return normalizeVin(s).slice(0, 17);
 }
 
-/** VIN: tieši 17 rakstzīmes, bez I, O, Q (standarta VIN alfabēts). */
+/**
+ * VIN: tieši 17 rakstzīmes, standarta alfabēts (A-Z/0-9, bez I, O, Q).
+ * ISO 3779 kontrolcipars (9. zīme) NAV daļa no šīs pārbaudes - NZ / Okeānijas
+ * (WMI 6-7, piem. 7A8) un Eiropas VIN bieži tam neatbilst, bet pasūtījumu nedrīkst bloķēt.
+ */
 export function isValidVin(v: string): boolean {
   const n = normalizeVin(v);
   if (n.length !== 17) return false;

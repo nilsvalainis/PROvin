@@ -25,6 +25,9 @@ describe("test-pricing-5 inline checkout", () => {
     ).toBe(true);
     /** Bez sludinājuma saites — derīgs VIN vai numurzīme pietiek. */
     expect(validateTp5InlineFields("", "1HGCM82633A004352").ok).toBe(true);
+    /** NZ WMI 7A8 - ISO 3779 kontrolcipars nesakrīt, checkout to nedrīkst bloķēt. */
+    expect(validateTp5InlineFields("", "7A81G1E0794001421").ok).toBe(true);
+    expect(validateTp5InlineFields("", "7A81G1EI794001421").ok).toBe(false);
     expect(validateTp5InlineFields("", "KG982").ok).toBe(true);
     expect(validateTp5InlineFields("", "AB-1234").ok).toBe(true);
     const truncated = validateTp5InlineFields("", "W0VZCYHZXN684325");

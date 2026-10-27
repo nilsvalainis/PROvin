@@ -82,6 +82,7 @@ describe("test-pricing plans", () => {
     ).toBe(true);
     /** Sludinājuma saite nav obligāta — VIN vai numurzīme + piekrišana pietiek. */
     expect(validateTestPricingStep2(plus, "", "1HGCM82633A004352", true).ok).toBe(true);
+    expect(validateTestPricingStep2(plus, "", "7A81G1E0794001421", true).ok).toBe(true);
     expect(validateTestPricingStep2(plus, "", "KG982", true).ok).toBe(true);
     expect(validateTestPricingStep2(plus, "", "KG982", false).ok).toBe(false);
     expect(validateTestPricingStep2(plus, "", "AB", true).ok).toBe(false);
