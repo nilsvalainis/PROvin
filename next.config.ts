@@ -72,6 +72,8 @@ const nextConfig: NextConfig = {
     ],
   },
   reactStrictMode: true,
+  /** Nerādīt `X-Powered-By: Next.js` (audits 2026-10-27). */
+  poweredByHeader: false,
   images: {
     remotePatterns: IRISS_LISTING_IMAGE_HOST_SUFFIXES.flatMap((suffix) => [
       { protocol: "https" as const, hostname: suffix },
