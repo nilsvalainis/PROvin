@@ -12,9 +12,9 @@ Versija 1 - 2026-10-27. Izpēte: Claude (Opus 5.5). Nila jautājums: kā īsi un
 | fahrzeugschein.de (DE) | 14,99-34,99 € | Tirgus vērtība + vēsture, automātiski | [fahrzeugschein.de](https://www.fahrzeugschein.de/en/gebrauchtwagen-check) |
 | LTAB negadījumu vēsture | 0 € | Tikai LV negadījumi | [lvportals.lv](https://lvportals.lv/dienaskartiba/363119-pirms-perc-parbaudi-ltab-mudina-lietoto-auto-pircejus-veikt-spekrata-negadijumu-vestures-parbaudi-2024) |
 | Servisa pārbaude pirms pirkuma | ≈30-80 € | Fizisks stāvoklis, bez vēstures | [wheelstreet.lt ceļvedis](https://www.wheelstreet.lt/lv/straipsniai/kaip-patikrinti-naudota-automobili) (cenas no tirgotāja bloga, nav pārbaudītas Rīgas servisos) |
-| PROVIN AUDITS | 99,99 € | 2-3 maksas avoti + eksperta analīze + sludinājums + modeļa riski + konsultācija | provin.lv |
+| PROVIN AUDITS | 99,99 € | Konsultācija: 2-3 maksas avoti, sludinājums un modeļa riski, sasaistīti vienā ieteikumā | provin.lv |
 
-Secinājums: **PROVIN nav "dārgāka VIN atskaite". Tā ir cita kategorija** - eksperta audits, kas ietver 2-3 konkurentu atskaites kā izejvielu. Salīdzinot ar vienu carVertical atskaiti, mēs zaudējam. Salīdzinot ar "3 atskaites + speciālista stunda + kļūdaina pirkuma cena", mēs uzvaram.
+Secinājums: **PROVIN pārdod konsultāciju pirms pirkuma, nevis datu izdruku.** Cilvēks iedziļinās tieši tavā auto un tavā sludinājumā, sasaista visu pieejamo informāciju un pasaka, ko darīt. Pircējs maksā par atbildi uz jautājumu "pirkt vai nepirkt, un par cik", nevis par atskaišu skaitu. Tāpēc cenu nesalīdzinām ar vienu datu atskaiti, bet ar kļūdaina pirkuma cenu un ar laiku, ko pircējs pats pavadītu, mēģinot to visu saprast.
 
 ## 2. Vērtības aritmētika (izmantot tekstos)
 
@@ -28,7 +28,7 @@ Secinājums: **PROVIN nav "dārgāka VIN atskaite". Tā ir cita kategorija** - e
 1. **Vairāki avoti vienā slēdzienā.** carVertical rāda carVertical datus. PROVIN salīdzina carVertical, autoDNA, izcelsmes valsts reģistrus un dīlera sistēmas un meklē pretrunas starp tiem.
 2. **Sludinājuma audits.** Konkurenti skatās tikai VIN. PROVIN lasa sludinājumu: foto, aprakstu, cenu tirgū, pārdevēja vēsturi.
 3. **Modeļa vājās vietas.** Konkrētajam dzinējam un kārbai: ko pārbaudīt klātienē.
-4. **Cilvēks, nevis algoritms.** Atskaiti sagatavo un paraksta eksperts; pēc tās var piezvanīt.
+4. **Konsultācija, nevis algoritms.** Atskaiti sagatavo cilvēks, kas izskata konkrēto gadījumu; pēc tās var piezvanīt un pārrunāt.
 5. **Rīcības ieteikums.** Nevis dati, bet lēmums: pirkt, kaulēties (par cik), pārbaudīt X servisā, atteikties.
 6. **Pieredze no tirgus iekšienes.** IRISS (auto imports un tirdzniecība) - mēs paši pērkam auto Vācijā un zinām shēmas (sk. blogs "mobile.de krāpšanas shēmas").
 7. **4 valodas** - der arī pircējiem Vācijā un citur ES.
@@ -36,11 +36,11 @@ Secinājums: **PROVIN nav "dārgāka VIN atskaite". Tā ir cita kategorija** - e
 ## 4. Vēstījuma varianti (Nils izvēlas vienu)
 
 **A. "Cits produkts"**
-- Virsraksts: "Ne vēl viena VIN atskaite. Eksperta slēdziens pirms pirkuma."
+- Virsraksts: "Ne vēl viena VIN atskaite. Konsultācija pirms pirkuma."
 - Teksts: "Mēs pasūtām 2-3 vēstures atskaites, izlasām sludinājumu, salīdzinām datus un pasakām, vai šo auto pirkt, par cik kaulēties un ko pārbaudīt klātienē."
 
 **B. "Aritmētika"**
-- Virsraksts: "3 atskaites + eksperts par 99,99 €"
+- Virsraksts: "Visi dati + konsultācija par 99,99 €"
 - Teksts: "Tikai dati maksātu ≈50-60 €. Mēs tos sasaistām un atrodam to, ko viena atskaite nerāda."
 
 **C. "Risks"**
@@ -58,7 +58,7 @@ Ieteikums: **A hero, B kā salīdzinājuma tabula /pakalpojumi lapā, C reklām�
 | Pretrunu meklēšana starp avotiem | Nē | Nē | Jā |
 | Sludinājuma analīze | Nē | Nē | Jā |
 | Modeļa vājās vietas | Nē | Daļēji | Jā |
-| Eksperta slēdziens un ieteikums | Nē | Mutiski | Rakstiski + zvans |
+| Konsultācija un ieteikums konkrētajam auto | Nē | Mutiski par stāvokli | Rakstiski + zvans |
 | Var pasūtīt pirms brauciena pie auto | Jā | Nē | Jā |
 
 Piezīme: konkurentu cenas jāpārbauda viņu vietnēs pirms publicēšanas; tabulā nenosaukt zīmolus pēc vārda (salīdzinoša reklāma - tikai pārbaudāmi fakti), rakstīt "VIN vēstures atskaite".

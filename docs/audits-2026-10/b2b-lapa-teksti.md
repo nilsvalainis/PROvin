@@ -15,7 +15,7 @@ Versija 1 - 2026-10-27. LV teksts; EN/DE/RU pēc Nila apstiprinājuma (DE priori
 - Vairāku avotu vēsture: carVertical, autoDNA, izcelsmes valsts reģistri
 - Nobraukuma pretrunu pārbaude un negadījumu vēsture
 - Sludinājuma un tehnisko risku analīze konkrētajam modelim
-- Eksperta slēdziens: pirkt, kaulēties vai atteikties
+- Konsultācija un skaidrs ieteikums: pirkt, kaulēties vai atteikties
 - Atskaite LV, EN, DE vai RU valodā
 - Poga: "Saņemt cenu piedāvājumu"
 

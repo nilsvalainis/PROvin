@@ -40,7 +40,7 @@ Lauki pēc `CsddTechData` tipa (`lib/csdd-tech-data.ts`):
 
 Zem rezultāta: "Nobraukuma vēsture, negadījumi, apskašu defekti un sludinājuma analīze - PROVIN AUDITĀ" + poga "Pārbaudīt sludinājumu bez maksas" (esošais `listing-peek`, 3 dienā uz IP).
 
-**Pirms izstrādes jāapstiprina (Andris, līgums):** vai līgums LĪG-ieņ/375/26 atļauj rādīt šos laukus trešajām personām bez maksas. Ja nē - B režīms paliek tikai iekšējai lietošanai, publiski tikai A.
+**Atļauts:** Nils 27.10 apstiprināja, ka CSDD līgums atļauj rādīt šos datus publiski bez maksas. Precīzais mēneša limits - no Andra (līgums).
 
 ## 3. CSDD kvota
 

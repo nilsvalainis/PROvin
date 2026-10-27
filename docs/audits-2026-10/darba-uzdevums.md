@@ -1,7 +1,7 @@
 # PROVIN.LV audita labojumi: darba uzdevums un plāns
 
 Versija 1 - 2026-10-27. Sagatavoja: Claude (Opus 5.5). Pamats: audits https://claude.ai/artifact/7b2CcByDLCoRbXYAsnkJtX (2 kārtas) un Nila lēmumi 27.10 vakarā.
-Statuss: **gaida Nila "jā" visam plānam** (darbs > 1 h un > 25 failiem, sk. `docs/resursu-sadale.md` 4.-5. sadaļu).
+Statuss: **Nils 27.10 vakarā: visus darbus Claude un Andris veic paši, bez Nila iesaistes, lēmumus pieņem paši, no rīta atskaite.** Tas aizstāj iepriekšējo "gaida Nila jā" šim plānam.
 
 Saistītie melnraksti šajā mapē:
 - `b2b-lapa-teksti.md` - /partneriem lapas teksti (paku karte, BUJ, atskaites paraugs).
@@ -22,14 +22,16 @@ Saistītie melnraksti šajā mapē:
 | VIN dekoders | Jā, arī pēc LV numurzīmes caur CSDD, ar mēneša limitu 2/3 no līguma un bot aizsardzību |
 | "Garantija" zem pogas un "Steidzami?" | Tikai ar maketu; **hero tab bloka izmēri un augstumi nedrīkst mainīties** |
 | Juridiskie teksti | Visu dara Claude A-Z; Nils apstiprina tekstus |
-| Reģistrācijas numurs kājenē | Paliek, ja to prasa Stripe vai likums (sk. 5.3) |
+| Reģistrācijas numurs kājenē | Paliek (likums un Stripe), sk. 2.2 |
+| CSDD dati publiski | Līgums atļauj (Nils 27.10) |
+| Vārdu "eksperts" nelietojam | Vēstījums: konsultācija |
 | Loģika un praktiskums | Labojam visu |
 
 ## 2. Svarīgi precizējumi pēc audita
 
 1. **Consent Mode "advanced" jau darbojas.** Pārbaudē pirms piekrišanas gtag.js ielādējās un sūtīja bezsīkdatņu pingus (`gcs=G100`, `npa=1`), pēc piekrišanas - `G111`. 1. kārtā rakstītais "faktiski basic" ir kļūda. Kods: `lib/google-consent.ts`, `components/RootHtml.tsx`, `components/ConsentAwareAnalytics.tsx`.
    - Sekas: **privātuma politika šobrīd ir nepatiesa** - tā saka, ka GA4 ielādējas tikai pēc piekrišanas. Jālabo teksts, nevis kods (sk. `juridiskie-labojumi.md` 2.4).
-   - Risks Nilam zināšanai: "advanced" režīma atbilstība ePrivacy ES nav viennozīmīga (daļa ekspertu uzskata, ka pingi arī prasa piekrišanu). Mazinām ar atklātu aprakstu politikā un joslā. Ja DVI vai jurists iebilst, pārslēgšana uz "basic" ir 1 rindas maiņa.
+   - Risks Nilam zināšanai: "advanced" režīma atbilstība ePrivacy ES nav viennozīmīga (daļa speciālistu uzskata, ka pingi arī prasa piekrišanu). Mazinām ar atklātu aprakstu politikā un joslā. Ja DVI vai jurists iebilst, pārslēgšana uz "basic" ir 1 rindas maiņa.
 2. **Reģistrācijas numurs kājenē ir jāatstāj.** Informācijas sabiedrības pakalpojumu likuma 4. pants prasa vārdu, uzvārdu, adresi, reģistrācijas numuru "ja tāds ir" un PVN reģistrācijas numuru, ja darbība apliekama ar PVN. Stripe pārbauda nosaukumu, kontaktus, atmaksas un noteikumu lapas. PVN numurs LV09118711109 satur to pašu numuru, tātad slēpšana neko neaizsargā. Kājene paliek, kā Nils lēma.
 3. **B2B cenas kodā nesakrīt ar teikto.** `lib/b2b-wallet.ts`: Business noklusējums 79,99 €, minimums 69,99 €; dīlera dati "raw" minimums 11,99 €, "pro" 14,99 €. Teksts lapā "no 69,99 €" un "no 14,99 €" der, ja raw paku publiski nerādām. Jautājums Nilam: vai "raw" (oriģinālvalodā) pārdodam B2B lapā?
 4. **CSDD līguma limits nav pārbaudīts.** Kodā (`lib/csdd-tech-data.ts`) komentārs: līgums LĪG-ieņ/375/26, "10 000 ierakstu mēnesī par pamata maksu". Gmail savienotājs atteica autorizāciju, Dropbox nav pieslēgts. Jāapstiprina Andrim no līguma (sk. 7. sadaļu). Līdz tam plānojam ar 10 000.
