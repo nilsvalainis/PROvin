@@ -21,6 +21,7 @@ export const INDEXABLE_PUBLIC_PATHS: {
   { path: "/partneriem", changeFrequency: "monthly", priority: 0.6 },
   { path: "/privatuma-politika", changeFrequency: "yearly", priority: 0.4 },
   { path: "/lietosanas-noteikumi", changeFrequency: "yearly", priority: 0.4 },
+  { path: "/partneriem/noteikumi", changeFrequency: "yearly", priority: 0.3 },
 ];
 
 /**

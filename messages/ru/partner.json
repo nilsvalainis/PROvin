@@ -366,6 +366,9 @@
     "metaPasswordTitle": "Пароль партнёра PROVIN",
     "metaConfirmTitle": "Подтверждение e-mail партнёра PROVIN",
     "metaAccountTitle": "PROVIN для партнёров",
+    "registerTermsConsent": "Я принимаю <terms>Условия для партнёров</terms> и соглашение об обработке данных.",
+    "registerTermsRequired": "Пожалуйста, примите Условия для партнёров.",
+    "partnerTermsLink": "Условия для партнёров",
     "landingPacksHeading": "Услуги и цены",
     "landingLegalOnly": "Доступно только юридическим лицам и самозанятым.",
     "landingPacks": [

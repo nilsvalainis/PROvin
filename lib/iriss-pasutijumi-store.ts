@@ -554,6 +554,10 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     interiorFinish: sanitizeDraftTextForStorage(str("interiorFinish"), 400),
     powerKw: sanitizeDraftTextForStorage(str("powerKw"), 80),
     damageTolerance: sanitizeDraftTextForStorage(str("damageTolerance"), 200),
+    budgetIncludes: sanitizeDraftTextForStorage(str("budgetIncludes"), 16),
+    doors: sanitizeDraftTextForStorage(str("doors"), 16),
+    maxRepairCostEur: sanitizeDraftTextForStorage(str("maxRepairCostEur"), 40),
+    sellerType: sanitizeDraftTextForStorage(str("sellerType"), 16),
     preferredCountries: sanitizeDraftTextForStorage(str("preferredCountries"), 200),
     clientFinancingPercent: (() => {
       const raw = o.clientFinancingPercent;

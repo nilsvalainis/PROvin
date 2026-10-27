@@ -161,7 +161,7 @@ export type CreateB2bPartnerResult =
 export async function createB2bPartner(
   input: B2bPartnerWriteInput,
   password: string,
-  opts?: { requireEmailVerification?: boolean },
+  opts?: { requireEmailVerification?: boolean; termsVersion?: string },
 ): Promise<CreateB2bPartnerResult> {
   return mutatePartners<CreateB2bPartnerResult>(async (doc) => {
     const normalized = normalizePartnerWriteInput(input);
@@ -192,6 +192,8 @@ export async function createB2bPartner(
       walletPrices: emptyB2bWalletPrices(),
       walletHiddenProducts: [],
       adminSeenAt: requireVerify ? null : now,
+      termsVersion: opts?.termsVersion ?? null,
+      termsAcceptedAt: opts?.termsVersion ? now : null,
     };
     return {
       value: { ok: true, partner: toPublicPartner(record), verifyToken },

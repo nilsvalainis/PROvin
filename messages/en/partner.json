@@ -366,6 +366,9 @@
     "metaPasswordTitle": "PROVIN partner password",
     "metaConfirmTitle": "PROVIN partner email confirmation",
     "metaAccountTitle": "PROVIN for partners",
+    "registerTermsConsent": "I accept the <terms>Partner Terms</terms> and the data processing addendum.",
+    "registerTermsRequired": "Please accept the Partner Terms.",
+    "partnerTermsLink": "Partner terms",
     "landingPacksHeading": "Services and prices",
     "landingLegalOnly": "Available only to businesses and self-employed persons.",
     "landingPacks": [

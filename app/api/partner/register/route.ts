@@ -3,6 +3,7 @@ import type { B2bPartnerWriteInput } from "@/lib/b2b-partner-account";
 import { consumeB2bInvite, getOpenB2bInvite } from "@/lib/b2b-partner-invite-store";
 import { isSafeB2bInviteToken } from "@/lib/b2b-partner-invite";
 import { createB2bPartner } from "@/lib/b2b-partner-store";
+import { B2B_PARTNER_TERMS_VERSION, isB2bPartnerTermsAccepted } from "@/lib/b2b-partner-terms";
 import { dispatchAdminNewPartnerEmail } from "@/lib/b2b-partner-notify-mail";
 import { dispatchPartnerVerifyEmail } from "@/lib/b2b-partner-verify-mail";
 import { getClientIpFromRequest } from "@/lib/client-ip";
@@ -54,7 +55,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_invite" }, { status: 400 });
   }
 
-  const result = await createB2bPartner(readWriteInput(raw), password, { requireEmailVerification: true });
+  // Partneru sadarbības noteikumi + DPA obligāti (audits P7); versija un laiks paliek ierakstā.
+  if (!isB2bPartnerTermsAccepted(raw.termsAccepted)) {
+    return NextResponse.json({ error: "terms_required" }, { status: 400 });
+  }
+
+  const result = await createB2bPartner(readWriteInput(raw), password, {
+    requireEmailVerification: true,
+    termsVersion: B2B_PARTNER_TERMS_VERSION,
+  });
   if (!result.ok) {
     const status = result.error === "email_taken" ? 409 : 400;
     return NextResponse.json({ error: result.error }, { status });

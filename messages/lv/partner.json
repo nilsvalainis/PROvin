@@ -366,6 +366,9 @@
     "metaPasswordTitle": "PROVIN partneru parole",
     "metaConfirmTitle": "PROVIN partneru e-pasta apstiprinājums",
     "metaAccountTitle": "PROVIN partneriem",
+    "registerTermsConsent": "Piekrītu <terms>Partneru sadarbības noteikumiem</terms> un datu apstrādes pielikumam.",
+    "registerTermsRequired": "Lūdzu, apstipriniet Partneru sadarbības noteikumus.",
+    "partnerTermsLink": "Partneru noteikumi",
     "landingPacksHeading": "Pakalpojumi un cenas",
     "landingLegalOnly": "Pieejams tikai juridiskām personām un saimnieciskās darbības veicējiem.",
     "landingPacks": [
