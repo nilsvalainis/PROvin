@@ -365,6 +365,90 @@
     "metaRegisterTitle": "PROVIN Partnerregistrierung",
     "metaPasswordTitle": "PROVIN Partner-Passwort",
     "metaConfirmTitle": "PROVIN Partner-E-Mail-Bestätigung",
-    "metaAccountTitle": "PROVIN für Partner"
+    "metaAccountTitle": "PROVIN für Partner",
+    "landingPacksHeading": "Leistungen und Preise",
+    "landingLegalOnly": "Nur für Unternehmen und Selbstständige.",
+    "landingPacks": [
+      {
+        "title": "PROVIN Business",
+        "price": "ab 69,99 €",
+        "unit": "pro Bericht",
+        "items": [
+          "Historie aus mehreren Quellen: carVertical, autoDNA, Register des Herkunftslandes",
+          "Prüfung von Kilometerstand-Widersprüchen und Unfallhistorie",
+          "Analyse von Inserat und technischen Risiken des Modells",
+          "Beratung und klare Empfehlung: kaufen, verhandeln oder ablehnen",
+          "Bericht auf Lettisch, Englisch, Deutsch oder Russisch"
+        ]
+      },
+      {
+        "title": "Offizielle Händlerdaten",
+        "price": "ab 14,99 €",
+        "unit": "pro Bericht",
+        "items": [
+          "Serviceeinträge aus dem System des Herstellers oder offiziellen Händlers",
+          "Kilometerstand bei Servicebesuchen",
+          "Keine Einträge: Guthaben kommt automatisch zurück",
+          "Für ausgewählte Marken verfügbar"
+        ]
+      }
+    ],
+    "landingPacksNote": "Der Preis pro Bericht hängt von der Menge ab. Die genaue Preisliste senden wir innerhalb von 1 Werktag.",
+    "landingPacksCta": "Angebot anfordern",
+    "landingStepsHeading": "So funktioniert es",
+    "landingSteps": [
+      {
+        "title": "Anfragen",
+        "body": "Formular ausfüllen, Angebot und Einladung zum Partnerkonto erhalten."
+      },
+      {
+        "title": "Guthaben kaufen",
+        "body": "Firmenrechnung oder Karte im Konto; Guthaben nach Zahlung verfügbar."
+      },
+      {
+        "title": "Berichte bestellen",
+        "body": "Einzeln oder als Liste (Excel). Ergebnis per E-Mail und im Konto."
+      }
+    ],
+    "landingFaqHeading": "Häufige Fragen",
+    "landingFaq": [
+      {
+        "q": "Für wen ist PROVIN Business?",
+        "a": "Für Autohändler, Leasing- und Kommissionshändler, die Gebrauchtwagen in Lettland oder der EU kaufen. Nur für Unternehmen und Selbstständige."
+      },
+      {
+        "q": "Wie wird abgerechnet?",
+        "a": "Sie kaufen Guthaben gegen Rechnung oder per Karte im Konto. Eine Berichtsbestellung verbraucht ein Guthaben. Die Rechnung geht an Ihr Unternehmen mit allen Angaben."
+      },
+      {
+        "q": "Wie lange ist Guthaben gültig?",
+        "a": "12 Monate ab Kauf."
+      },
+      {
+        "q": "Was, wenn keine Händlerdaten verfügbar sind?",
+        "a": "Enthält das offizielle System keinen Eintrag zur VIN, kommt das Guthaben automatisch auf Ihr Konto zurück."
+      },
+      {
+        "q": "Wie schnell erhalte ich den Bericht?",
+        "a": "Innerhalb von 24-72 Stunden an Werktagen. Eilaufträge vereinbaren wir gesondert (Zeit und Preis)."
+      },
+      {
+        "q": "Kann ich mehrere Fahrzeuge auf einmal bestellen?",
+        "a": "Ja, per Upload einer Liste (Excel) mit VIN-Nummern."
+      },
+      {
+        "q": "Darf ich den Bericht meinem Kunden zeigen?",
+        "a": "Ja, im Rahmen des Geschäfts mit genau diesem Fahrzeug. Der Bericht darf nicht öffentlich veröffentlicht oder separat verkauft werden. Details: Partnerbedingungen."
+      },
+      {
+        "q": "In welchen Sprachen ist der Bericht?",
+        "a": "Lettisch, Englisch, Deutsch oder Russisch; Sie wählen bei der Bestellung."
+      },
+      {
+        "q": "Wird Umsatzsteuer berechnet?",
+        "a": "Lettischen Unternehmen wird keine Umsatzsteuer berechnet. Umsatzsteuerlich registrierte Unternehmen in anderen EU-Staaten erhalten Rechnungen im Reverse-Charge-Verfahren."
+      }
+    ],
+    "landingTermsLink": "Partnerbedingungen"
   }
 }

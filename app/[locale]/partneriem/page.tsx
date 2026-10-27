@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
+import { B2bPartnerLandingInfo } from "@/components/b2b/B2bPartnerLandingInfo";
 import { B2bPartnerPreview } from "@/components/b2b/B2bPartnerPreview";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
@@ -30,6 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PartneriemPage({ params }: Props) {
+  const { locale: pageLocale } = await params;
   const session = await readB2bPartnerServerSession();
   if (session) {
     const partner = await resolveActiveB2bPartner();
@@ -46,6 +48,7 @@ export default async function PartneriemPage({ params }: Props) {
     <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
       <div className="home-hero-pricing-unified demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">
         <B2bPartnerPreview />
+        <B2bPartnerLandingInfo locale={pageLocale} />
         <div id="site-content" className="min-w-0 bg-transparent pb-0 text-white home-body-ink">
           <section className="demo-design-dir__section bg-transparent pb-0">
             <Footer variant="b2b" />
