@@ -139,6 +139,22 @@ export function IrissLogistikaClient({
   const [pointQuery, setPointQuery] = useState("");
   const [printing, setPrinting] = useState(false);
   const [mapFullscreen, setMapFullscreen] = useState(false);
+  /** Datorā sakļauts kravu panelis (atceras šajā pārlūkā). */
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
+  useEffect(() => {
+    try {
+      setPanelCollapsed(window.localStorage.getItem("iriss.logistics.panelCollapsed") === "1");
+    } catch {}
+  }, []);
+  const togglePanelCollapsed = useCallback(() => {
+    setPanelCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem("iriss.logistics.panelCollapsed", next ? "1" : "0");
+      } catch {}
+      return next;
+    });
+  }, []);
   const [cargoPlan, setCargoPlan] = useState<CargoPlanState>(emptyCargoPlan());
   const [cargoTemplates, setCargoTemplates] = useState<CargoRouteTemplate[]>([]);
   const [cargoPickups, setCargoPickups] = useState<CabinetPickup[]>([]);
@@ -739,7 +755,7 @@ export function IrissLogistikaClient({
 
   return (
     // Nils 27.10 (makets A): datorā (≥1024 px) Auto cilnē karte ir visas lapas fons, viss pārējais peld virs tās (CSS .iriss-log-desk).
-    <div className={`iriss-log-screen px-3 pb-28 pt-3 max-md:px-0 md:px-4 md:pb-8 ${pageTab === "orders" && !mapFullscreen ? "iriss-log-desk" : ""}`}>
+    <div className={`iriss-log-screen px-3 pb-28 pt-3 max-md:px-0 md:px-4 md:pb-8 ${pageTab === "orders" && !mapFullscreen ? "iriss-log-desk" : ""} ${panelCollapsed ? "iriss-log-desk-collapsed" : ""}`}>
       <div className="iriss-log-no-print md:hidden">
         <AdminMobileTopBar
           title="Loģistika"
@@ -1177,17 +1193,46 @@ export function IrissLogistikaClient({
                   setCabinetOpen(true);
                 }}
               />
-              {popupOrder ? (
-                <IrissLogistikaCarPopup
-                  order={popupOrder}
-                  plan={cargoPlan}
-                  stage={popupStage}
-                  onClose={() => setPopupId(null)}
-                  onPlanChange={(next) => void persistCargoPlan(next)}
-                />
-              ) : null}
             </div>
           )}
+          {/* Auto kartīte pēc klikšķa uz adatas: datorā peld virs kartes (Nils 27.10, makets B), telefonā zem kravām. */}
+          {popupOrder && !cabinetOpen ? (
+            <div className="iriss-log-desk-popup">
+              <IrissLogistikaCarPopup
+                order={popupOrder}
+                plan={cargoPlan}
+                stage={popupStage}
+                onClose={() => setPopupId(null)}
+                onPlanChange={(next) => void persistCargoPlan(next)}
+                onOpenCabinet={() => {
+                  setActiveId(popupOrder.id);
+                  setCabinetOpen(true);
+                  setPopupId(null);
+                }}
+              />
+            </div>
+          ) : null}
+          {/* Datorā kravu paneli var sakļaut līdz šaurai joslai ar skaitļiem (makets B). */}
+          <div className="iriss-log-desk-strip" aria-hidden={!panelCollapsed}>
+            <button
+              type="button"
+              className="iriss-log-desk-strip-btn"
+              aria-label={panelCollapsed ? "Atvērt kravu plānu" : "Sakļaut kravu plānu"}
+              aria-expanded={!panelCollapsed}
+              onClick={() => togglePanelCollapsed()}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d={panelCollapsed ? "M15 6l-6 6 6 6" : "M9 6l6 6-6 6"} />
+              </svg>
+            </button>
+            {panelCollapsed ? (
+              <>
+                <span className="iriss-log-desk-strip-n"><i style={{ background: CARGO_COLOR_FALLBACK.next }} /><b>{bucketCounts.next}</b>Nākošā</span>
+                <span className="iriss-log-desk-strip-n"><i style={{ background: CARGO_COLOR_FALLBACK.after }} /><b>{bucketCounts.after}</b>Aiznāk.</span>
+                <span className="iriss-log-desk-strip-n"><i style={{ background: "var(--iriss-ink)" }} /><b>{Math.max(0, visibleOrders.length - bucketCounts.next - bucketCounts.after)}</b>Nav kravā</span>
+              </>
+            ) : null}
+          </div>
           {/* Datorā tabula aizņem abu kolonnu platumu zem kartes un kravu plāna. Telefonā: karte, kravas, auto. */}
           <div className="iriss-log-desk-legacy min-w-0 lg:col-span-2 lg:row-start-2">
             {/* "Visi auto" tabula noņemta (makets 26.10): posms rindā, statuss/dokumenti/Uz Autoparku - auto kabinetā. */}

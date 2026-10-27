@@ -12,9 +12,11 @@ type Props = {
   stage: CabinetPickupStage;
   onClose: () => void;
   onPlanChange: (plan: CargoPlanState) => void;
+  /** Datorā (makets A/B, Nils 27.10): kartīte virs kartes ved uz auto kabinetu. */
+  onOpenCabinet?: () => void;
 };
 
-export function IrissLogistikaCarPopup({ order, plan, stage, onClose, onPlanChange }: Props) {
+export function IrissLogistikaCarPopup({ order, plan, stage, onClose, onPlanChange, onOpenCabinet }: Props) {
   const cargo = plan.cars.find((c) => c.carId === order.id);
   const bucket = cargo?.bucket ?? "none";
   const phone = order.pickupSnapshot?.phone || order.sellerContact;
@@ -72,6 +74,11 @@ export function IrissLogistikaCarPopup({ order, plan, stage, onClose, onPlanChan
         ) : null}
       </dl>
       <div className="mt-3 flex flex-wrap gap-2">
+        {onOpenCabinet ? (
+          <button type="button" className="iriss-log-btn-brand" onClick={onOpenCabinet}>
+            Kabinets
+          </button>
+        ) : null}
         <button type="button" className={`iriss-log-btn-dark ${bucket === "next" ? "" : "opacity-70"}`} onClick={() => onPlanChange(moveCargoCar(plan, order.id, "next"))}>
           Nākošā krava
         </button>
