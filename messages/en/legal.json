@@ -23,7 +23,7 @@
       },
       {
         "title": "5. Analytics, advertising and Google Consent Mode",
-        "body": "We use Google Consent Mode v2. The Google tag (Google Analytics 4 and Google Ads) loads on every visit, but until you consent it runs in \"denied\" mode: it does not set or read cookies and only sends Google cookieless signals without identifiers (for example time, page visited, browser type and consent state). Google uses them for aggregated visit and conversion modelling.\n\nIf you choose \"Accept analytics and advertising\" in the cookie banner: Google Analytics and Google Ads may set cookies; Meta Pixel and TikTok Pixel load to measure ad results; we store the first and last marketing source (page, referrer, UTM parameters, ad click IDs gclid, gbraid, wbraid, fbclid, ttclid) and, if you order, link it to the payment. After a purchase the Meta Conversions API may send the purchase event from our server with a hashed e-mail and phone.\n\nVercel Web Analytics counts visits in aggregate, without cookies.\n\nYou can change or withdraw consent at any time by deleting this site's cookies in your browser or by writing to us; the banner will appear again."
+        "body": "We use Google Consent Mode v2. The Google tag (Google Analytics 4 and Google Ads) loads on every visit, but until you consent it runs in \"denied\" mode: it does not set or read cookies and only sends Google cookieless signals without identifiers (for example time, page visited, browser type and consent state). Google uses them for aggregated visit and conversion modelling.\n\nIn the cookie banner you can enable two categories separately. \"Analytics\": Google Analytics may set cookies so that we understand how the site is used. \"Advertising\": Google Ads may set cookies; Meta Pixel and TikTok Pixel load to measure ad results; we store the first and last marketing source (page, referrer, UTM parameters, ad click IDs gclid, gbraid, wbraid, fbclid, ttclid) and, if you order, link it to the payment; after a purchase the Meta Conversions API may send the purchase event from our server with a hashed e-mail and phone. The \"Accept analytics and advertising\" button enables both.\n\nVercel Web Analytics counts visits in aggregate, without cookies.\n\nYou can change or withdraw consent at any time by deleting this site's cookies in your browser or by writing to us; the banner will appear again."
       },
       {
         "title": "6. Processors and recipients",
@@ -39,7 +39,7 @@
       },
       {
         "title": "9. Cookie list",
-        "body": "Essential: provin_consent and provin_cookie_consent (your choice, 180 days); provin-site-theme (theme, 12 months); provin-b2b-locale (partner page language, 12 months); partner login session (7 days).\n\nWith consent: provin_attr (marketing source, 180 days); _ga and _ga_* (Google Analytics, up to 2 years); _gcl_au (Google Ads, 90 days); _fbp (Meta Pixel, 90 days); _ttp, _tt_enable_cookie, ttcsid (TikTok Pixel, up to 13 months)."
+        "body": "Essential: provin_consent and provin_cookie_consent (your choice, 180 days); provin-site-theme (theme, 12 months); provin-b2b-locale (partner page language, 12 months); partner login session (7 days).\n\nAnalytics (with consent): _ga and _ga_* (Google Analytics, up to 2 years).\n\nAdvertising (with consent): provin_attr (marketing source, 180 days); _gcl_au (Google Ads, 90 days); _fbp (Meta Pixel, 90 days); _ttp, _tt_enable_cookie, ttcsid (TikTok Pixel, up to 13 months)."
       },
       {
         "title": "10. Your rights",
@@ -137,6 +137,12 @@
     "bannerText": "Essential cookies keep the website working. With your consent we also use analytics (Google Analytics) to understand how the site is used and advertising measurement (Google Ads, Meta, TikTok), and we store the marketing source (UTM, gclid, fbclid, ttclid). Without consent Google only receives cookieless signals.",
     "reject": "Essential only",
     "acceptAnalytics": "Accept analytics and advertising",
-    "privacyLink": "Privacy Policy"
+    "privacyLink": "Privacy Policy",
+    "categoriesLegend": "Cookie categories",
+    "categoryAnalytics": "Analytics.",
+    "categoryAnalyticsDesc": "Google Analytics: how the site is used.",
+    "categoryAds": "Advertising.",
+    "categoryAdsDesc": "Google Ads, Meta, TikTok and the marketing source (UTM, click IDs).",
+    "saveChoice": "Save choice"
   }
 }

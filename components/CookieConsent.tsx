@@ -99,6 +99,9 @@ export function CookieConsent() {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
+  /** Divas kategorijas (audits P6): noklusējumā izslēgtas, kā prasa ePrivacy. */
+  const [analyticsOn, setAnalyticsOn] = useState(false);
+  const [adsOn, setAdsOn] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -111,10 +114,10 @@ export function CookieConsent() {
         setVisible(true);
         return;
       }
-      applyGtagConsent(c.analytics);
-      applyMetaConsent(c.analytics);
-      writeConsentCookie(c.analytics);
-      if (!c.analytics) {
+      applyGtagConsent(c.analytics, c.ads);
+      applyMetaConsent(c.ads);
+      writeConsentCookie(c.ads);
+      if (!c.ads) {
         clearAttrCookie();
         return;
       }
@@ -126,8 +129,9 @@ export function CookieConsent() {
 
   function save(consent: ConsentState) {
     localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(consent));
-    writeConsentCookie(consent.analytics);
-    if (consent.analytics) {
+    // Servera karodziņš (Meta CAPI, attribūcija) un `provin_attr` = reklāmas kategorija.
+    writeConsentCookie(consent.ads);
+    if (consent.ads) {
       try {
         syncConsentedAttribution(consent.updatedAt);
       } catch {
@@ -136,8 +140,8 @@ export function CookieConsent() {
     } else {
       clearAttrCookie();
     }
-    applyGtagConsent(consent.analytics);
-    applyMetaConsent(consent.analytics);
+    applyGtagConsent(consent.analytics, consent.ads);
+    applyMetaConsent(consent.ads);
     setVisible(false);
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent(PROVIN_CONSENT_UPDATED_EVENT));
@@ -145,17 +149,15 @@ export function CookieConsent() {
   }
 
   function onNecessary() {
-    save({
-      analytics: false,
-      updatedAt: new Date().toISOString(),
-    });
+    save({ analytics: false, ads: false, updatedAt: new Date().toISOString() });
   }
 
-  function onAnalytics() {
-    save({
-      analytics: true,
-      updatedAt: new Date().toISOString(),
-    });
+  function onAcceptAll() {
+    save({ analytics: true, ads: true, updatedAt: new Date().toISOString() });
+  }
+
+  function onSaveChoice() {
+    save({ analytics: analyticsOn, ads: adsOn, updatedAt: new Date().toISOString() });
   }
 
   if (!mounted || !visible) return null;
@@ -186,7 +188,31 @@ export function CookieConsent() {
             </Link>
           </p>
         </div>
+        <fieldset className="flex flex-col gap-1.5 border-t border-white/[0.08] pt-2">
+          <legend className="sr-only">{t("categoriesLegend")}</legend>
+          {(
+            [
+              ["cookie-consent-analytics", analyticsOn, setAnalyticsOn, "categoryAnalytics", "categoryAnalyticsDesc"],
+              ["cookie-consent-ads", adsOn, setAdsOn, "categoryAds", "categoryAdsDesc"],
+            ] as const
+          ).map(([id, on, setOn, label, desc]) => (
+            <label key={id} htmlFor={id} className="flex cursor-pointer items-start gap-2">
+              <input
+                id={id}
+                type="checkbox"
+                role="switch"
+                checked={on}
+                onChange={(event) => setOn(event.target.checked)}
+                className="mt-[1px] h-3.5 w-3.5 shrink-0 accent-[var(--color-provin-accent)]"
+              />
+              <span className="min-w-0 text-[10px] leading-snug text-white/70 sm:text-[11px]">
+                <span className="font-semibold text-white/85">{t(label)}</span> {t(desc)}
+              </span>
+            </label>
+          ))}
+        </fieldset>
         <div className="cookie-consent-panel__actions flex flex-col gap-1.5 border-t border-white/[0.08] pt-2">
+          <div className="grid grid-cols-2 gap-1.5">
           <button
             type="button"
             onClick={onNecessary}
@@ -196,7 +222,15 @@ export function CookieConsent() {
           </button>
           <button
             type="button"
-            onClick={onAnalytics}
+            onClick={onSaveChoice}
+            className="cookie-consent-panel__btn-secondary w-full rounded-md border border-white/15 bg-white/[0.06] px-2 py-1.5 text-center text-[10px] font-medium leading-tight text-white/75 transition hover:border-white/25 hover:bg-white/[0.1] sm:text-[11px]"
+          >
+            {t("saveChoice")}
+          </button>
+          </div>
+          <button
+            type="button"
+            onClick={onAcceptAll}
             className="w-full rounded-md bg-[var(--color-provin-accent)] px-2 py-1.5 text-center text-[10px] font-semibold leading-tight text-white shadow-sm transition hover:opacity-95 active:opacity-90 sm:text-[11px]"
           >
             {t("acceptAnalytics")}

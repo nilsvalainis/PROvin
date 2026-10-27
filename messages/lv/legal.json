@@ -23,7 +23,7 @@
       },
       {
         "title": "5. Analītika, reklāma un Google Consent Mode",
-        "body": "Mēs izmantojam Google Consent Mode v2. Google tags (Google Analytics 4 un Google Ads) ielādējas katrā apmeklējumā, bet līdz jūsu piekrišanai darbojas režīmā „liegts”: tas nesaglabā un nelasa sīkdatnes un nosūta Google tikai bezsīkdatņu signālus bez identifikatoriem (piemēram, laiku, apmeklēto lapu, pārlūka veidu un piekrišanas stāvokli). Google tos izmanto apkopotai apmeklējumu un konversiju modelēšanai.\n\nJa sīkdatņu joslā izvēlaties „Piekrītu analītikai un reklāmai”: Google Analytics un Google Ads var saglabāt sīkdatnes; ielādējas Meta Pixel un TikTok Pixel reklāmu rezultātu mērīšanai; mēs saglabājam pirmo un pēdējo mārketinga avotu (lapa, novirzītājs, UTM parametri, reklāmas klikšķa identifikatori gclid, gbraid, wbraid, fbclid, ttclid) un pasūtījuma gadījumā piesaistām to maksājumam. Pēc pirkuma Meta Conversions API var nosūtīt pirkuma notikumu no servera ar hashētu e-pastu un tālruni.\n\nVercel Web Analytics skaita apmeklējumus apkopoti, bez sīkdatnēm.\n\nPiekrišanu varat mainīt vai atsaukt jebkurā laikā, izdzēšot vietnes sīkdatnes pārlūkā vai rakstot mums; josla parādīsies no jauna."
+        "body": "Mēs izmantojam Google Consent Mode v2. Google tags (Google Analytics 4 un Google Ads) ielādējas katrā apmeklējumā, bet līdz jūsu piekrišanai darbojas režīmā „liegts”: tas nesaglabā un nelasa sīkdatnes un nosūta Google tikai bezsīkdatņu signālus bez identifikatoriem (piemēram, laiku, apmeklēto lapu, pārlūka veidu un piekrišanas stāvokli). Google tos izmanto apkopotai apmeklējumu un konversiju modelēšanai.\n\nSīkdatņu joslā varat atsevišķi ieslēgt divas kategorijas. „Analītika”: Google Analytics var saglabāt sīkdatnes, lai mēs saprastu, kā vietne tiek lietota. „Reklāma”: Google Ads var saglabāt sīkdatnes; ielādējas Meta Pixel un TikTok Pixel reklāmu rezultātu mērīšanai; mēs saglabājam pirmo un pēdējo mārketinga avotu (lapa, novirzītājs, UTM parametri, reklāmas klikšķa identifikatori gclid, gbraid, wbraid, fbclid, ttclid) un pasūtījuma gadījumā piesaistām to maksājumam; pēc pirkuma Meta Conversions API var nosūtīt pirkuma notikumu no servera ar hashētu e-pastu un tālruni. Poga „Piekrītu analītikai un reklāmai” ieslēdz abas kategorijas.\n\nVercel Web Analytics skaita apmeklējumus apkopoti, bez sīkdatnēm.\n\nPiekrišanu varat mainīt vai atsaukt jebkurā laikā, izdzēšot vietnes sīkdatnes pārlūkā vai rakstot mums; josla parādīsies no jauna."
       },
       {
         "title": "6. Apstrādātāji un saņēmēji",
@@ -39,7 +39,7 @@
       },
       {
         "title": "9. Sīkdatņu saraksts",
-        "body": "Nepieciešamās: provin_consent un provin_cookie_consent (jūsu izvēle, 180 dienas); provin-site-theme (tēma, 12 mēneši); provin-b2b-locale (partneru lapas valoda, 12 mēneši); partnera pieteikšanās sesija (7 dienas).\n\nAr piekrišanu: provin_attr (mārketinga avots, 180 dienas); _ga un _ga_* (Google Analytics, līdz 2 gadiem); _gcl_au (Google Ads, 90 dienas); _fbp (Meta Pixel, 90 dienas); _ttp, _tt_enable_cookie, ttcsid (TikTok Pixel, līdz 13 mēnešiem)."
+        "body": "Nepieciešamās: provin_consent un provin_cookie_consent (jūsu izvēle, 180 dienas); provin-site-theme (tēma, 12 mēneši); provin-b2b-locale (partneru lapas valoda, 12 mēneši); partnera pieteikšanās sesija (7 dienas).\n\nAnalītika (ar piekrišanu): _ga un _ga_* (Google Analytics, līdz 2 gadiem).\n\nReklāma (ar piekrišanu): provin_attr (mārketinga avots, 180 dienas); _gcl_au (Google Ads, 90 dienas); _fbp (Meta Pixel, 90 dienas); _ttp, _tt_enable_cookie, ttcsid (TikTok Pixel, līdz 13 mēnešiem)."
       },
       {
         "title": "10. Jūsu tiesības",
@@ -137,6 +137,12 @@
     "bannerText": "Nepieciešamās sīkdatnes nodrošina vietnes darbību. Ar jūsu piekrišanu izmantojam arī analītiku (Google Analytics), lai saprastu, kā vietne tiek lietota, un reklāmu mērīšanu (Google Ads, Meta, TikTok) un saglabājam mārketinga avotu (UTM, gclid, fbclid, ttclid). Bez piekrišanas Google saņem tikai bezsīkdatņu signālus.",
     "reject": "Tikai nepieciešamās",
     "acceptAnalytics": "Piekrītu analītikai un reklāmai",
-    "privacyLink": "Privātuma politika"
+    "privacyLink": "Privātuma politika",
+    "categoriesLegend": "Sīkdatņu kategorijas",
+    "categoryAnalytics": "Analītika.",
+    "categoryAnalyticsDesc": "Google Analytics: kā vietne tiek lietota.",
+    "categoryAds": "Reklāma.",
+    "categoryAdsDesc": "Google Ads, Meta, TikTok un mārketinga avots (UTM, klikšķa ID).",
+    "saveChoice": "Saglabāt izvēli"
   }
 }

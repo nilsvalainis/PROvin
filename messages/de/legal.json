@@ -23,7 +23,7 @@
       },
       {
         "title": "5. Analyse, Werbung und Google Consent Mode",
-        "body": "Wir verwenden Google Consent Mode v2. Das Google-Tag (Google Analytics 4 und Google Ads) wird bei jedem Besuch geladen, arbeitet bis zu Ihrer Einwilligung jedoch im Modus „abgelehnt“: Es setzt und liest keine Cookies und sendet Google nur cookielose Signale ohne Kennungen (zum Beispiel Zeit, besuchte Seite, Browsertyp und Einwilligungsstatus). Google nutzt sie für aggregierte Besuchs- und Conversion-Modellierung.\n\nWenn Sie im Cookie-Banner „Analyse und Werbung akzeptieren“ wählen: Google Analytics und Google Ads dürfen Cookies setzen; Meta Pixel und TikTok Pixel werden zur Messung von Werbeergebnissen geladen; wir speichern die erste und letzte Marketingquelle (Seite, Referrer, UTM-Parameter, Klick-IDs gclid, gbraid, wbraid, fbclid, ttclid) und verknüpfen sie bei einer Bestellung mit der Zahlung. Nach einem Kauf kann die Meta Conversions API das Kaufereignis von unserem Server mit gehashter E-Mail und Telefonnummer senden.\n\nVercel Web Analytics zählt Besuche aggregiert und ohne Cookies.\n\nSie können Ihre Einwilligung jederzeit ändern oder widerrufen, indem Sie die Cookies dieser Website im Browser löschen oder uns schreiben; das Banner erscheint dann erneut."
+        "body": "Wir verwenden Google Consent Mode v2. Das Google-Tag (Google Analytics 4 und Google Ads) wird bei jedem Besuch geladen, arbeitet bis zu Ihrer Einwilligung jedoch im Modus „abgelehnt“: Es setzt und liest keine Cookies und sendet Google nur cookielose Signale ohne Kennungen (zum Beispiel Zeit, besuchte Seite, Browsertyp und Einwilligungsstatus). Google nutzt sie für aggregierte Besuchs- und Conversion-Modellierung.\n\nIm Cookie-Banner können Sie zwei Kategorien getrennt aktivieren. „Analyse“: Google Analytics darf Cookies setzen, damit wir verstehen, wie die Website genutzt wird. „Werbung“: Google Ads darf Cookies setzen; Meta Pixel und TikTok Pixel werden zur Messung von Werbeergebnissen geladen; wir speichern die erste und letzte Marketingquelle (Seite, Referrer, UTM-Parameter, Klick-IDs gclid, gbraid, wbraid, fbclid, ttclid) und verknüpfen sie bei einer Bestellung mit der Zahlung; nach einem Kauf kann die Meta Conversions API das Kaufereignis von unserem Server mit gehashter E-Mail und Telefonnummer senden. Die Schaltfläche „Analyse und Werbung akzeptieren“ aktiviert beide.\n\nVercel Web Analytics zählt Besuche aggregiert und ohne Cookies.\n\nSie können Ihre Einwilligung jederzeit ändern oder widerrufen, indem Sie die Cookies dieser Website im Browser löschen oder uns schreiben; das Banner erscheint dann erneut."
       },
       {
         "title": "6. Auftragsverarbeiter und Empfänger",
@@ -39,7 +39,7 @@
       },
       {
         "title": "9. Cookie-Liste",
-        "body": "Notwendig: provin_consent und provin_cookie_consent (Ihre Auswahl, 180 Tage); provin-site-theme (Design, 12 Monate); provin-b2b-locale (Sprache der Partnerseite, 12 Monate); Partner-Anmeldesitzung (7 Tage).\n\nMit Einwilligung: provin_attr (Marketingquelle, 180 Tage); _ga und _ga_* (Google Analytics, bis zu 2 Jahre); _gcl_au (Google Ads, 90 Tage); _fbp (Meta Pixel, 90 Tage); _ttp, _tt_enable_cookie, ttcsid (TikTok Pixel, bis zu 13 Monate)."
+        "body": "Notwendig: provin_consent und provin_cookie_consent (Ihre Auswahl, 180 Tage); provin-site-theme (Design, 12 Monate); provin-b2b-locale (Sprache der Partnerseite, 12 Monate); Partner-Anmeldesitzung (7 Tage).\n\nAnalyse (mit Einwilligung): _ga und _ga_* (Google Analytics, bis zu 2 Jahre).\n\nWerbung (mit Einwilligung): provin_attr (Marketingquelle, 180 Tage); _gcl_au (Google Ads, 90 Tage); _fbp (Meta Pixel, 90 Tage); _ttp, _tt_enable_cookie, ttcsid (TikTok Pixel, bis zu 13 Monate)."
       },
       {
         "title": "10. Ihre Rechte",
@@ -137,6 +137,12 @@
     "bannerText": "Notwendige Cookies halten die Website funktionsfähig. Mit Ihrer Einwilligung nutzen wir außerdem Analyse (Google Analytics), um die Nutzung zu verstehen, und Werbemessung (Google Ads, Meta, TikTok) und speichern die Marketingquelle (UTM, gclid, fbclid, ttclid). Ohne Einwilligung erhält Google nur cookielose Signale.",
     "reject": "Nur erforderliche",
     "acceptAnalytics": "Analyse und Werbung akzeptieren",
-    "privacyLink": "Datenschutzerklärung"
+    "privacyLink": "Datenschutzerklärung",
+    "categoriesLegend": "Cookie-Kategorien",
+    "categoryAnalytics": "Analyse.",
+    "categoryAnalyticsDesc": "Google Analytics: wie die Website genutzt wird.",
+    "categoryAds": "Werbung.",
+    "categoryAdsDesc": "Google Ads, Meta, TikTok und Marketingquelle (UTM, Klick-IDs).",
+    "saveChoice": "Auswahl speichern"
   }
 }
