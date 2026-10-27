@@ -14,6 +14,7 @@ export const INDEXABLE_PUBLIC_PATHS: {
 }[] = [
   { path: "", changeFrequency: "weekly", priority: 1 },
   { path: "/vin-koda-parbaude", changeFrequency: "monthly", priority: 0.9 },
+  { path: "/vin-dekoders", changeFrequency: "monthly", priority: 0.7 },
   { path: "/pakalpojumi", changeFrequency: "weekly", priority: 0.85 },
   { path: "/biezi-jautajumi", changeFrequency: "monthly", priority: 0.8 },
   { path: "/par-mums", changeFrequency: "monthly", priority: 0.75 },
