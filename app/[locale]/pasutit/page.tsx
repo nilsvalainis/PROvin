@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { OperatorPasutitForm } from "@/components/OperatorPasutitForm";
 import { operatorOrderConfigured, verifyOperatorOrderKey } from "@/lib/operator-order-auth";
-import { PasutitRedirect } from "./pasutit-redirect";
+import { homePath } from "@/lib/paths";
 
 type Props = {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ key?: string; atcelts?: string }>;
+  searchParams: Promise<{ key?: string; atcelts?: string; vin?: string }>;
 };
 
 export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata> {
@@ -31,7 +31,8 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   };
 }
 
-export default async function PasutitPage({ searchParams }: Props) {
+export default async function PasutitPage({ params, searchParams }: Props) {
+  const { locale } = await params;
   const sp = await searchParams;
   const key = typeof sp.key === "string" ? sp.key.trim() : "";
 
@@ -52,15 +53,10 @@ export default async function PasutitPage({ searchParams }: Props) {
     );
   }
 
-  return (
-    <Suspense
-      fallback={
-        <div className="mx-auto max-w-[720px] px-4 py-16 text-center text-[15px] font-normal text-[#86868b]">
-          …
-        </div>
-      }
-    >
-      <PasutitRedirect />
-    </Suspense>
-  );
+  /** Vecās saites uz /pasutit: servera pāradresācija uz sākumlapas formu (bez starpekrāna). */
+  const q = new URLSearchParams();
+  if (sp.atcelts === "1") q.set("atcelts", "1");
+  if (typeof sp.vin === "string" && sp.vin.trim()) q.set("vin", sp.vin.trim());
+  const qs = q.toString();
+  redirect(`${homePath(locale)}${qs ? `?${qs}` : ""}#home-hero`);
 }
