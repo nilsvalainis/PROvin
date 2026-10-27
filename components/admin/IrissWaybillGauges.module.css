@@ -68,6 +68,12 @@
   position: relative;
   -webkit-tap-highlight-color: transparent;
 }
+/* Datorā vispārīgais admin pogu stils pieliek 1 px rāmi - vidžetā bez rāmja un fona (Nils). */
+.wg button.item {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
 .wg .item::after {
   content: "";
   position: absolute;

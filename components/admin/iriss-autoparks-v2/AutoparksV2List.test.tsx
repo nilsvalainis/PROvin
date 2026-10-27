@@ -15,6 +15,9 @@ const rows: AutoparksV2ListRow[] = [
     archived: false,
     hasPhoto: false,
     statusChangedAt: "2026-10-20",
+    make: "Volkswagen",
+    purchaseDate: "",
+    purchasePriceEur: null,
   },
   {
     id: "b",
@@ -27,6 +30,9 @@ const rows: AutoparksV2ListRow[] = [
     archived: false,
     hasPhoto: false,
     statusChangedAt: "2026-10-21",
+    make: "Audi",
+    purchaseDate: "",
+    purchasePriceEur: null,
   },
 ];
 
