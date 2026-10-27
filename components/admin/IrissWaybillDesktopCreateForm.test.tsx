@@ -46,7 +46,7 @@ describe("pavadzīmes izveides forma datorā", () => {
     const html = renderHtml(desktopForm());
     const text = renderText(desktopForm());
     expect(html).toContain('data-waybill-desktop-create');
-    for (const t of ["Numurs", "Auto", "No saraksta", "pieņemts tirdzniecībā", "Ar roku", "Derīgums", "Komentārs", "Izveidot pavadzīmi"]) {
+    for (const t of ["Numurs", "Auto", "No saraksta", "tirdzniecībā pieņemti auto", "Ar roku", "Derīgums", "Komentārs", "Izveidot pavadzīmi"]) {
       expect(text).toContain(t);
     }
     expect(html).toMatch(/aria-pressed="(true|false)"[^>]*>No saraksta/);

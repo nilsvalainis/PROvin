@@ -771,7 +771,6 @@ export function IrissWaybillAutoEntry({
           onClick={() => onChoose("list")}
         >
           No saraksta
-          <small>pieņemts tirdzniecībā</small>
         </button>
         <button
           type="button"
@@ -780,9 +779,10 @@ export function IrissWaybillAutoEntry({
           onClick={() => onChoose("manual")}
         >
           Ar roku
-          <small>marka, modelis</small>
         </button>
       </div>
+      {/* Nils 27.10: pogās viens vārds, skaidrojums vienā rindā zem tām (agrāk divrindu pogas). */}
+      <p className={styles.help}>No saraksta - tirdzniecībā pieņemti auto. Ar roku - ieraksti marku un modeli.</p>
       {showManual ? (
         <div className={styles.sub}>
           <input

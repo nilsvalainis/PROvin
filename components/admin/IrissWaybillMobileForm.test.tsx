@@ -58,7 +58,7 @@ function autoEntry(choice: "none" | "list" | "manual") {
 describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
   it("rāda numurus, 2 auto izvēles (No saraksta / Ar roku), sākuma adresi, laiku un komentāru; galamērķa nav", () => {
     const text = renderText(form());
-    for (const t of ["Numurs", "B193-7", "aizņemts", "brīvs", "Auto", "No saraksta", "pieņemts tirdzniecībā", "Ar roku", "Sākuma adrese", "Tukums", "Cita adrese", "Rīgas iela 75", "Laiks", "1 h", "12 h", "48 h", "Cits", "derīga līdz", "Komentārs", "Izveidot pavadzīmi"]) {
+    for (const t of ["Numurs", "B193-7", "aizņemts", "brīvs", "Auto", "No saraksta", "tirdzniecībā pieņemti auto", "Ar roku", "Sākuma adrese", "Tukums", "Cita adrese", "Rīgas iela 75", "Laiks", "1 h", "12 h", "48 h", "Cits", "derīga līdz", "Komentārs", "Izveidot pavadzīmi"]) {
       expect(text).toContain(t);
     }
     expect(text).not.toContain("Galamērķis");
@@ -180,7 +180,7 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     const manualHtml = renderHtml(autoEntry("manual"));
     const manualText = renderText(autoEntry("manual"));
     expect(manualText).toContain("Ar roku");
-    expect(manualText).toContain("marka, modelis");
+    expect(manualText).toContain("ieraksti marku un modeli");
     expect(manualText).not.toContain("marka, modelis, VIN");
     expect(manualHtml).toContain('aria-label="Marka, modelis"');
     expect(manualHtml).toContain('placeholder="Marka, modelis"');
