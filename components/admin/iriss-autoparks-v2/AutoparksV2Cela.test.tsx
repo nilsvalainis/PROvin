@@ -7,7 +7,7 @@ import { buildAutoparksTransit } from "@/lib/iriss-autoparks-transit";
 import { renderHtml, renderText } from "@/lib/test-render";
 
 const transit = buildAutoparksTransit(
-  { id: "lo-1", auction: "auto1", pickupAddress: "Zörbig", pickupRef: "", stockNo: "KR57312", pickupDate: "", freeParkingUntil: "", status: "organize_pickup" },
+  { id: "lo-1", auction: "Auto1", pickupAddress: "Zörbig", pickupRef: "", stockNo: "KR57312", pickupDate: "", freeParkingUntil: "", status: "organize_pickup" },
   { stage: "in_transit", pickupCode: "", pickupDate: "" },
   null,
 );

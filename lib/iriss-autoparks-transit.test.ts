@@ -5,7 +5,7 @@ import { autoparksV2PermsFor } from "@/lib/iriss-autoparks-v2-perms";
 
 const order = {
   id: "lo-1",
-  auction: "auto1" as const,
+  auction: "Auto1" as const,
   pickupAddress: "Rödgener Str. 12, Zörbig",
   pickupRef: "",
   stockNo: "KR57312",
