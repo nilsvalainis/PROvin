@@ -2517,3 +2517,107 @@
   color: inherit;
   --st: var(--iriss-brand);
 }
+
+/* «Pavadzīme» auto kartītē (Nils 27.10): poga augšējā darbību rindā un logs ar pavadzīmju formu. */
+.ap2.ap2.ap2 .ap2-wb {
+  margin: 10px 0 4px;
+}
+.ap2.ap2.ap2 .ap2-wb-main {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--iriss-graphite);
+  padding: 0 16px;
+  color: var(--iriss-on-graphite) !important;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-wb-active {
+  border-radius: 14px;
+  background: var(--iriss-surface);
+  padding: 12px 14px;
+  box-shadow: var(--iriss-shadow-1);
+}
+.ap2.ap2.ap2 .ap2-wb-line {
+  color: var(--iriss-ink-2);
+  font-size: 14px;
+}
+.ap2.ap2.ap2 .ap2-wb-line b {
+  color: var(--iriss-ink);
+}
+.ap2.ap2.ap2 .ap2-wb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ap2.ap2.ap2 .ap2-wb-btn {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  border: 1px solid var(--iriss-line-strong);
+  border-radius: 10px;
+  background: var(--iriss-surface);
+  padding: 0 14px;
+  color: var(--iriss-ink) !important;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none !important;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-wb-btn.stop {
+  border-color: var(--iriss-bad);
+  color: var(--iriss-bad) !important;
+}
+.ap2.ap2.ap2 .ap2-wb-dialog {
+  position: fixed;
+  z-index: 61;
+  left: 50%;
+  top: 50%;
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transform: translate(-50%, -50%);
+  border-radius: 20px;
+  background: var(--iriss-bg);
+  padding: 12px;
+  box-shadow: var(--iriss-shadow-2);
+}
+.ap2.ap2.ap2 .ap2-wb-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 4px 10px;
+  font-size: 15px;
+}
+.ap2.ap2.ap2 .ap2-wb-close {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 18px;
+  background: var(--iriss-surface-3);
+  cursor: pointer;
+}
+@media (max-width: 767px) {
+  .ap2.ap2.ap2 .ap2-wb-dialog {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: auto;
+    max-height: 92dvh;
+    transform: none;
+    border-radius: 20px 20px 0 0;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+}
+

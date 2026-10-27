@@ -66,6 +66,7 @@ export function IrissWaybillMobileForm({
   onPickerOpen,
   onOpenArchive,
   plateInGauges = false,
+  requirePlateChoice = false,
 }: {
   plates: WaybillPlateState[];
   /** null = vēl ielādē. */
@@ -89,8 +90,10 @@ export function IrissWaybillMobileForm({
   onOpenArchive?: () => void;
   /** Numuru izvēlas apļos virs formas (IrissWaybillGauges selectable) - formai sava «Numurs» rinda nav. */
   plateInGauges?: boolean;
+  /** Numurs vienmēr jāizvēlas pašam - bez pirmā brīvā noklusējuma (Autoparka kartīte, Nils 27.10). */
+  requirePlateChoice?: boolean;
 }) {
-  const [form, setForm] = useState<WaybillMobileFormState>(() => initialWaybillMobileForm(IRISS_DEALER_PLATES[0]));
+  const [form, setForm] = useState<WaybillMobileFormState>(() => initialWaybillMobileForm(requirePlateChoice ? "" : IRISS_DEALER_PLATES[0]));
   const [localError, setLocalError] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [otherRep, setOtherRep] = useState(false);
@@ -101,8 +104,9 @@ export function IrissWaybillMobileForm({
   // Pirmais brīvais numurs, kamēr lietotājs nav izvēlējies pats.
   const firstFree = firstFreeWaybillPlate(plates, IRISS_DEALER_PLATES[0]);
   useEffect(() => {
+    if (requirePlateChoice) return;
     setForm((prev) => (prev.plateTouched || prev.plate === firstFree ? prev : { ...prev, plate: firstFree }));
-  }, [firstFree]);
+  }, [firstFree, requirePlateChoice]);
 
   // "Atkārtot" no arhīva: tas pats numurs un auto (pagarināšana ar to pašu formu).
   useEffect(() => {
@@ -165,6 +169,10 @@ export function IrissWaybillMobileForm({
   const shownError = localError ?? error;
 
   async function send() {
+    if (requirePlateChoice && (!form.plateTouched || !form.plate)) {
+      setLocalError("Izvēlies numuru.");
+      return;
+    }
     if (tradeAct && otherRep && !form.representative.trim()) {
       setLocalError("Ieraksti komersanta pārstāvi.");
       return;

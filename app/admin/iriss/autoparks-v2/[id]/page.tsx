@@ -20,5 +20,14 @@ export default async function AutoparksV2CarPage({ params }: Props) {
   if (!found) notFound();
   // "Izveidot piedāvājumu" tikai ar Pasūtījumu tiesību (j20 Nila atbilde 5).
   const canCreateOffer = access.actor.kind === "admin" || staffHasSection(access.actor.user, "pasutijumi");
-  return <AutoparksV2Cabinet initialBasics={autoparksV2Basics(found.car, found.v2)} perms={access.perms} canCreateOffer={canCreateOffer} />;
+  // «Pavadzīme» kartītē (Nils 27.10) - tikai ar Pavadzīmju tiesību (tās pašas API pārbaudes).
+  const canWaybill = access.actor.kind === "admin" || staffHasSection(access.actor.user, "pavadzimes");
+  return (
+    <AutoparksV2Cabinet
+      initialBasics={autoparksV2Basics(found.car, found.v2)}
+      perms={access.perms}
+      canCreateOffer={canCreateOffer}
+      canWaybill={canWaybill}
+    />
+  );
 }

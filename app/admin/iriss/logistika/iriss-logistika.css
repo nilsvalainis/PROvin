@@ -1573,6 +1573,11 @@ html.iriss-log-printing .iriss-log-pin-tip {
   .iriss-log-desk .iriss-log-head .mt-3 {
     margin-top: 8px;
   }
+  /* Cilnes (Auto, Savākšanas vietas, Iestatījumi, Autoparks) vienā rindā. */
+  .iriss-log-desk .iriss-log-head .mt-2.flex-wrap {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
   .iriss-log-desk .iriss-log-desk-grid {
     position: absolute;
     inset: 0;

@@ -1054,7 +1054,7 @@ export function IrissLogistikaClient({
                       className={`iriss-log-switch sm ${showLabels ? "on" : ""}`}
                       onClick={() => toggleLabels()}
                     />
-                    Rādīt nosaukumus
+                    Nosaukumi
                   </label>
                   <label className="mr-1 inline-flex cursor-pointer items-center gap-2 text-[12px] font-semibold" title="Divpusējai drukai: 2. lapa tiek apgriezta, lai pēc lapas apgriešanas tā nav otrādi">
                     <button
