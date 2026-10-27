@@ -360,7 +360,7 @@ function CargoRowText({ order }: { order: LogisticsOrder }) {
   return (
     <>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[14px] font-semibold leading-tight">{logisticsCarTitle(order)}</span>
+        <span className="iriss-log-cargo-title block text-[14px] font-semibold leading-tight">{logisticsCarTitle(order)}</span>
         <span className="mt-0.5 block truncate text-[12px] leading-tight text-[var(--iriss-ink-2)]">{place || "Pickup vieta nav norādīta"}</span>
       </span>
       <span className="iriss-log-cargo-logo">
@@ -510,9 +510,25 @@ function SortableCargoRow({
           </button>
         ) : null}
         {/* Telefonā posms ir ikona (teksta čipi, logo, Kartīte un slēdzis paslēpti CSS; tie ir kabinetā). */}
-        <span className="iriss-log-stage-icon" role="img" aria-label={stageLabel ? `Posms: ${stageLabel}` : "Posms: Gaida"}>
-          <CargoStageIcon label={stageLabel ?? "Gaida"} />
-        </span>
+        {onOpenCabinet ? (
+          <button
+            type="button"
+            className="iriss-log-stage-icon"
+            aria-label={`Posms: ${stageLabel ?? "Gaida"}. Atvērt auto kabinetu`}
+            title={`${stageLabel ?? "Gaida"} - atvērt kabinetu`}
+            {...stopDragStart}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenCabinet();
+            }}
+          >
+            <CargoStageIcon label={stageLabel ?? "Gaida"} />
+          </button>
+        ) : (
+          <span className="iriss-log-stage-icon" role="img" aria-label={`Posms: ${stageLabel ?? "Gaida"}`}>
+            <CargoStageIcon label={stageLabel ?? "Gaida"} />
+          </span>
+        )}
         {cardHref ? (
           <a href={cardHref} className="iriss-log-card-link" {...stopDragStart} onClick={(e) => e.stopPropagation()}>
             Kartīte
@@ -524,13 +540,20 @@ function SortableCargoRow({
           aria-checked={showOnMap}
           aria-label="Rādīt kartē"
           title={showOnMap ? "Rāda kartē" : "Nerāda kartē"}
-          className={`iriss-log-switch sm ${showOnMap ? "on" : ""}`}
+          className={`iriss-log-eye ${showOnMap ? "on" : ""}`}
           {...stopDragStart}
           onClick={(e) => {
             e.stopPropagation();
             onToggleMap();
           }}
-        />
+        >
+          {/* Acs (Nils 27.10, makets A): rāda/paslēpj auto kartē; slēdža vietā, aizņem mazāk vietas. */}
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
+            <circle cx="12" cy="12" r="3" />
+            {showOnMap ? null : <path d="M4 4l16 16" />}
+          </svg>
+        </button>
       </div>
       {colorOpen ? <ColorMenu onPick={onPickColor} /> : null}
     </li>
