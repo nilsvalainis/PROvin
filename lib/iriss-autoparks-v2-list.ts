@@ -28,6 +28,8 @@ export type AutoparksV2ListRow = {
   purchasePriceEur: number | null;
   /** Nils 27.10: PVN / Margin / Neto kolonna (tukšs - nav zināms vai nav tiesības «Iegāde»). */
   vatMode: V2VatMode;
+  /** «Klienta auto» atzīme (Nils 27.10). */
+  clientOrder: boolean;
 };
 
 /** Kārtošana (Nils 27.10): process, marka, iegādes datums (noklusējums - jaunākie), iegādes summa. */
@@ -87,6 +89,7 @@ export function autoparksV2ListRows(
       purchaseDate: carV2.purchase.purchaseDate || "",
       purchasePriceEur: opts.sums && typeof price === "number" && Number.isFinite(price) ? price : null,
       vatMode: opts.vat ? carV2.purchase.vat.mode : "",
+      clientOrder: carV2.fields.clientOrder ? carV2.fields.clientOrder === "1" : Boolean(car.clientOrder),
     };
   });
 }

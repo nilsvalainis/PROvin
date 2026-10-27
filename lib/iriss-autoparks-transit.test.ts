@@ -38,7 +38,7 @@ describe("Loģistika = Autoparka posms «Ceļā» (Nils 27.10)", () => {
 
   it("cilne «Ceļā» tikai ar Loģistikas datiem, otrajā vietā aiz Pamatdatiem", () => {
     const admin = autoparksV2PermsFor({ kind: "admin" }, true);
-    expect(allowedTabs(admin, {}, { transit: true }).slice(0, 3)).toEqual(["pamatdati", "cela", "csdd"]);
+    expect(allowedTabs(admin, {}, { transit: true })).toEqual(["pamatdati", "cela"]);
     expect(allowedTabs(admin, {})).not.toContain("cela");
   });
 

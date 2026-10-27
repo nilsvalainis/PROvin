@@ -33,6 +33,7 @@ const TEXT_MAX: Record<string, number> = {
   year: 4,
   color: 40,
   owner: 4,
+  clientOrder: 1,
 };
 
 /**
@@ -64,6 +65,8 @@ export async function PATCH(req: Request, ctx: Ctx) {
   if (year !== undefined && year !== "" && !/^(19|20)\d{2}$/.test(year)) return autoparksV2Json({ error: "invalid_year" }, 400);
   const owner = text("owner");
   if (owner !== undefined && owner !== "" && !isAutoparksOwner(owner.toUpperCase())) return autoparksV2Json({ error: "invalid_owner" }, 400);
+  const clientOrder = text("clientOrder");
+  if (clientOrder !== undefined && clientOrder !== "1" && clientOrder !== "0") return autoparksV2Json({ error: "invalid_client_order" }, 400);
   const hasDisplacement = Object.prototype.hasOwnProperty.call(body, "displacementCm3");
   const hasPowerKw = Object.prototype.hasOwnProperty.call(body, "powerKw");
   const hasMileage = Object.prototype.hasOwnProperty.call(body, "mileageKm");

@@ -16,20 +16,17 @@ const NONE: AutoparksV2Perms = {
 
 const ALL_PANES = { iegade: 1, serviss: 1, izdevumi: 1, cenu_lapa: 1 };
 
-describe("allowedTabs (j63 CSDD cilne)", () => {
-  it("ar Pamatdatu tiesību rāda Pamatdati un CSDD reģistrs", () => {
-    expect(allowedTabs({ ...NONE, pamatdati: true }, ALL_PANES)).toEqual(["pamatdati", "csdd"]);
-  });
-
-  it("CSDD nav atsevišķa pane atkarība - pietiek ar pamatdati", () => {
-    expect(allowedTabs({ ...NONE, pamatdati: true }, {})).toEqual(["pamatdati", "csdd"]);
+describe("allowedTabs (Nils 27.10: CSDD Pamatdatos, bez Izdevumiem)", () => {
+  it("ar Pamatdatu tiesību - viena cilne Pamatdati (CSDD reģistrs tajā)", () => {
+    expect(allowedTabs({ ...NONE, pamatdati: true }, ALL_PANES)).toEqual(["pamatdati"]);
+    expect(allowedTabs({ ...NONE, pamatdati: true }, {})).toEqual(["pamatdati"]);
   });
 
   it("bez Pamatdatiem CSDD nerāda, pārējās cilnes paliek pēc pane + tiesībām", () => {
     expect(allowedTabs({ ...NONE, iegade: true, cenuLapa: true }, ALL_PANES)).toEqual(["iegade", "cenu_lapa"]);
   });
 
-  it("admins ar visām pane redz secību: Pamatdati, CSDD, Iegāde, Serviss, Izdevumi, Cenu lapa", () => {
+  it("admins: Pamatdati, Dokumenti, Serviss, Cenu lapa (Izdevumi paslēpti)", () => {
     const admin: AutoparksV2Perms = {
       admin: true,
       pamatdati: true,
@@ -41,15 +38,15 @@ describe("allowedTabs (j63 CSDD cilne)", () => {
       pasizmaksa: true,
       vesture: true,
     };
-    expect(allowedTabs(admin, ALL_PANES)).toEqual(["pamatdati", "csdd", "iegade", "serviss", "izdevumi", "cenu_lapa"]);
+    expect(allowedTabs(admin, ALL_PANES)).toEqual(["pamatdati", "iegade", "serviss", "cenu_lapa"]);
   });
 });
 
 describe("resolveCabinetTab (?t=)", () => {
-  const tabs = ["pamatdati", "csdd", "iegade"] as const;
+  const tabs = ["pamatdati", "iegade"] as const;
 
-  it("?t=csdd atver CSDD cilni", () => {
-    expect(resolveCabinetTab("csdd", tabs, false)).toBe("csdd");
+  it("vecā saite ?t=csdd atver Pamatdatus (CSDD reģistrs tajos)", () => {
+    expect(resolveCabinetTab("csdd", tabs, false)).toBe("pamatdati");
   });
 
   it("nezināms ?t= krīt uz pirmo atļauto", () => {

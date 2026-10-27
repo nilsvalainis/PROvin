@@ -64,7 +64,6 @@ describe("Autoparks dati", () => {
       in_service: 2,
       for_sale: 0,
       reserved: 0,
-      ordered: 0,
       sold: 1,
     });
     expect(autoparksDaysInPark({ arrivedAt: "2026-10-11", createdAt: "" }, new Date("2026-10-21T12:00:00Z"))).toBe(10);
@@ -83,13 +82,15 @@ describe("Autoparks dati", () => {
   it("opens the stage that matches the car status", () => {
     expect(autoparksDefaultStage("prep_waiting")).toBe("service");
     expect(autoparksDefaultStage("reserved")).toBe("sale");
-    expect(autoparksDefaultStage("ordered")).toBe("sale");
   });
 
-  it("keeps a saved ordered status and labels it apart from for-sale", () => {
-    expect(normalizeAutoparksCar({ id: "x", status: "ordered" })?.status).toBe("ordered");
-    expect(AUTOPARKS_STATUS_LV.ordered).toBe("Pasūtījums");
-    expect(AUTOPARKS_STATUS_LV.ordered).not.toBe(AUTOPARKS_STATUS_LV.for_sale);
+  it("Nils 27.10: vecais «Pasūtījums» -> atzīme «Klienta auto»; posms pēc Loģistikas saites", () => {
+    const withOrder = normalizeAutoparksCar({ id: "x", status: "ordered", orderId: "lo-1" });
+    expect(withOrder?.status).toBe("in_transit");
+    expect(withOrder?.clientOrder).toBe(true);
+    expect(normalizeAutoparksCar({ id: "y", status: "ordered" })?.status).toBe("prep_waiting");
+    expect(normalizeAutoparksCar({ id: "z", status: "for_sale" })?.clientOrder).toBeUndefined();
+    expect(AUTOPARKS_STATUS_LV.prep_waiting).toBe("Noliktavā");
   });
 
   it("ignores prices from users who cannot see sums", () => {

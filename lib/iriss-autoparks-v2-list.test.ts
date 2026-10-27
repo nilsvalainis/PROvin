@@ -28,6 +28,7 @@ describe("Autoparks v2 saraksts", () => {
   it("bez tiesības «summas» rindā nav summas; īpašnieks tikai filtram; VIN pilns", () => {
     expect(Object.keys(rows[0]!).sort()).toEqual([
       "archived",
+      "clientOrder",
       "color",
       "hasPhoto",
       "id",

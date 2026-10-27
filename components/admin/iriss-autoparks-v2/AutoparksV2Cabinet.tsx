@@ -155,7 +155,8 @@ export function AutoparksV2Cabinet({
             <b>{basics.title}</b>
             <div className="meta">
               <span>{yearColor(basics.year, basics.color)}</span>
-              <span className={`ap2-owner ${basics.owner === "DZA" ? "dza" : ""}`}>{basics.owner === "DZA" ? "DZINTARZEME" : "ĪRISS"}</span>
+              <OwnerBadge basics={basics} canEdit={perms.pamatdati} onBasics={onBasics} />
+              {basics.clientOrder ? <span className="ap2-client-badge">Klienta auto</span> : null}
               <VinCopy vin={basics.vin} className="ap2-dvin" />
             </div>
           </div>
@@ -186,9 +187,10 @@ export function AutoparksV2Cabinet({
       </nav>
 
       {tab === "pamatdati" ? <AutoparksV2Pamatdati basics={basics} onBasics={onBasics} /> : null}
+      {/* Nils 27.10: CSDD reģistrs apvienots ar Pamatdatiem (viena cilne). */}
+      {tab === "pamatdati" ? <AutoparksV2Csdd basics={basics} /> : null}
       {tab === "cela" && transit ? <AutoparksV2Cela transit={transit} canWrite={transitCanWrite} /> : null}
       {tab === "pamatdati" && perms.admin ? <DeleteCarButton carId={basics.id} title={basics.title} /> : null}
-      {tab === "csdd" ? <AutoparksV2Csdd basics={basics} /> : null}
       {tab === "vesture" ? <AutoparksV2History carId={basics.id} /> : null}
       {pane ? pane({ carId: basics.id, perms, basics, onBasics }) : null}
       {canCreateOffer && tab === "cenu_lapa" ? <AutoparksV2OfferActions carId={basics.id} /> : null}
@@ -273,5 +275,36 @@ export function DeleteCarButton({ carId, title }: { carId: string; title: string
       </button>
       {err ? <p className="ap2-err">{err}</p> : null}
     </div>
+  );
+}
+
+/**
+ * Īpašnieks galvenes joslā (Nils 27.10): izcelts - Dzintarzeme oranžs, ĪRISS zaļš. Ar Pamatdatu tiesību - maināms.
+ */
+function OwnerBadge({ basics, canEdit, onBasics }: { basics: AutoparksV2Basics; canEdit: boolean; onBasics: (b: AutoparksV2Basics) => void }) {
+  const [err, setErr] = useState(false);
+  const cls = `ap2-owner-badge ${basics.owner === "DZA" ? "dza" : "iriss"}`;
+  const label = basics.owner === "DZA" ? "Dzintarzeme" : "ĪRISS";
+  if (!canEdit) return <span className={cls}>{label}</span>;
+  async function change(next: string) {
+    if (next === basics.owner) return;
+    setErr(false);
+    const res = await fetch(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ owner: next }),
+    }).catch(() => null);
+    const data = (await res?.json().catch(() => null)) as { basics?: AutoparksV2Basics } | null;
+    if (res?.ok && data?.basics) onBasics(data.basics);
+    else setErr(true);
+  }
+  return (
+    <label className={cls} title={err ? "Neizdevās saglabāt" : "Mainīt īpašnieku"}>
+      <span className="sr-only">Īpašnieks</span>
+      <select value={basics.owner} onChange={(e) => void change(e.target.value)}>
+        <option value="IRISS">ĪRISS</option>
+        <option value="DZA">Dzintarzeme</option>
+      </select>
+    </label>
   );
 }
