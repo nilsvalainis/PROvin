@@ -758,8 +758,8 @@ export function IrissLogistikaClient({
             value={pageTab}
             onChange={(id) => setPageTab(id as PageTab)}
             items={[
-              { id: "orders", label: "Pasūtījumi", count: counts.active },
-              { id: "points", label: "Punkti", count: points.length },
+              { id: "orders", label: "Auto", count: counts.active },
+              { id: "points", label: "Vietas", count: points.length },
               { id: "settings", label: "Iestatījumi" },
             ]}
           />
@@ -767,13 +767,14 @@ export function IrissLogistikaClient({
         {pageTab === "orders" ? (
           <div className="mt-2 px-4">
             <StatusFilterChipRow layout="scroll" label="Loģistikas filtri">
-              {(["today", "due", "active", "archive"] as const).map((key) => (
+              {/* Nils 27.10: «Visi auto» un «Termiņš»; Arhīvs ikdienā nav vajadzīgs - tas ir Iestatījumos. */}
+              {(view === "archive" ? (["active", "due", "archive"] as const) : (["active", "due"] as const)).map((key) => (
                 <StatusFilterChip
                   key={key}
                   label={LOGISTICS_LIST_VIEW_LV[key]}
                   count={counts[key]}
                   pressed={view === key}
-                  tone={key === "archive" ? "inactive" : key === "today" ? "searching" : "active"}
+                  tone={key === "archive" ? "inactive" : key === "due" ? "searching" : "active"}
                   onClick={() => setView(key)}
                 />
               ))}
@@ -806,10 +807,10 @@ export function IrissLogistikaClient({
             </p>
             <div className="mt-2 flex flex-wrap gap-1.5 text-[12px]">
               <button type="button" onClick={() => setPageTab("orders")} className={`rounded-full px-2.5 py-1 ${pageTab === "orders" ? "bg-white font-semibold shadow-sm" : "text-[var(--ink2)]"}`}>
-                Pasūtījumi {counts.active}
+                Auto {counts.active}
               </button>
               <button type="button" onClick={() => setPageTab("points")} className={`rounded-full px-2.5 py-1 ${pageTab === "points" ? "bg-white font-semibold shadow-sm" : "text-[var(--ink2)]"}`}>
-                Punktu datubāze {points.length}
+                Savākšanas vietas {points.length}
               </button>
               <button type="button" onClick={() => setPageTab("settings")} className={`rounded-full px-2.5 py-1 ${pageTab === "settings" ? "bg-white font-semibold shadow-sm" : "text-[var(--ink2)]"}`}>
                 Iestatījumi
@@ -838,13 +839,14 @@ export function IrissLogistikaClient({
         {pageTab === "orders" ? (
           <div className="mt-3 max-md:px-4">
             <StatusFilterChipRow layout="scroll" label="Loģistikas filtri">
-              {(["today", "due", "active", "archive"] as const).map((key) => (
+              {/* Nils 27.10: «Visi auto» un «Termiņš»; Arhīvs ikdienā nav vajadzīgs - tas ir Iestatījumos. */}
+              {(view === "archive" ? (["active", "due", "archive"] as const) : (["active", "due"] as const)).map((key) => (
                 <StatusFilterChip
                   key={key}
                   label={LOGISTICS_LIST_VIEW_LV[key]}
                   count={counts[key]}
                   pressed={view === key}
-                  tone={key === "archive" ? "inactive" : key === "today" ? "searching" : "active"}
+                  tone={key === "archive" ? "inactive" : key === "due" ? "searching" : "active"}
                   onClick={() => setView(key)}
                 />
               ))}
@@ -855,6 +857,18 @@ export function IrissLogistikaClient({
 
       {pageTab === "settings" ? (
         <div className="mt-3 max-w-3xl space-y-3 max-md:px-4">
+          {/* Arhīvs (atvestie un noņemtie) ikdienā nav vajadzīgs - pieejams šeit (Nils 27.10). */}
+          <button
+            type="button"
+            onClick={() => {
+              setPageTab("orders");
+              setView("archive");
+            }}
+            className="flex min-h-11 w-full items-center justify-between rounded-2xl bg-white px-4 text-left text-[14px] font-medium text-[var(--iriss-ink)] shadow-sm"
+          >
+            <span>Arhīvs <span className="text-[var(--iriss-ink-3)]">{counts.archive}</span></span>
+            <span aria-hidden className="text-[var(--iriss-ink-3)]">›</span>
+          </button>
           <IrissLogistikaAuctionSourcesPanel initialSources={initialSources} />
           <IrissLogistikaRouteTemplatesPanel />
           {canEnableTotp ? <IrissLogistikaStaffTotp viewerName={viewerName ?? ""} /> : null}

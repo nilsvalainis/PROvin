@@ -242,10 +242,11 @@ export const LOGISTICS_ORDER_STATUS_LV: Record<LogisticsOrderStatus, string> = {
   archived: "Arhīvs",
 };
 
+/** Nils 27.10: «Šodien jādara» + «Termiņš tuvu» apvienoti vienā «Termiņš»; «Visi aktīvie» -> «Visi auto». */
 export const LOGISTICS_LIST_VIEW_LV: Record<LogisticsListView, string> = {
-  today: "Šodien jādara",
-  due: "Termiņš tuvu",
-  active: "Visi aktīvie",
+  today: "Šodien",
+  due: "Termiņš",
+  active: "Visi auto",
   trips: "Reisi",
   archive: "Arhīvs",
 };

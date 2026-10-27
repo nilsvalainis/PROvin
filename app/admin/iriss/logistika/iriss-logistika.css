@@ -1480,24 +1480,60 @@ html.iriss-log-printing .iriss-log-pin-tip {
  * Izsoles logo, «Cits klients», gatavības un posma teksti, «Kartīte» un slēdzis «kartē» paslēpti -
  * apmaksu rāda kreisais punkts, posmu - ikona; pieskāriens rindai atver kabinetu (tur «Rādīt kartē» un kartīte).
  */
+/* Nils 27.10 (makets A): arī datorā - tikai marka/modelis, vieta, apmaksas punkts, posma ikona un acs. */
+.iriss-log-cargo-row .iriss-log-cargo-logo,
+.iriss-log-cargo-row .iriss-log-ready-chip,
+.iriss-log-cargo-row .iriss-log-stage-chip,
+.iriss-log-cargo-row .iriss-log-card-link {
+  display: none !important;
+}
+.iriss-log-cargo-row .iriss-log-cargo-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
 .iriss-log-stage-icon {
-  display: none;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.iriss-log-stage-icon:hover {
+  background: var(--iriss-surface-2);
+}
+.iriss-log-eye {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  padding: 0;
+  color: var(--iriss-ink-3);
+  cursor: pointer;
+}
+.iriss-log-eye.on {
+  color: var(--iriss-ink-2);
+}
+.iriss-log-eye:hover {
+  background: var(--iriss-surface-2);
 }
 @media (max-width: 767px) {
-  .iriss-log-cargo-row .iriss-log-cargo-logo,
-  .iriss-log-cargo-row .iriss-log-ready-chip,
-  .iriss-log-cargo-row .iriss-log-stage-chip,
-  .iriss-log-cargo-row .iriss-log-card-link,
-  .iriss-log-cargo-row .iriss-log-switch {
+  /* Telefonā (makets C1) acs ir kabinetā; rindas pieskāriens atver kabinetu. */
+  .iriss-log-cargo-row .iriss-log-eye {
     display: none !important;
-  }
-  .iriss-log-cargo-row .iriss-log-stage-icon {
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
   }
   .iriss-log-cargo-row .text-\[14px\] {
     font-size: 16px;
