@@ -2674,3 +2674,12 @@
     margin: 6px 0 4px auto;
   }
 }
+
+/* Dzēst auto (tikai administrators) - Pamatdatu cilnes apakšā. */
+.ap2 .ap2-delete {
+  margin: 24px 0 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
