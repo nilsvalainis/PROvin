@@ -6,6 +6,10 @@ import { useMemo, useState } from "react";
 import { AUTOPARKS_STATUS_SHORT_LV, type AutoparksOwner, type AutoparksStatus } from "@/lib/iriss-autoparks";
 import { AUTOPARKS_V2_STATUS_ORDER } from "@/lib/iriss-autoparks-v2";
 import {
+  AUTOPARKS_V2_SORT_LV,
+  AUTOPARKS_V2_SORTS,
+  sortAutoparksV2Rows,
+  type AutoparksV2Sort,
   autoparksV2OwnerCounts,
   autoparksV2StatusCounts,
   filterAutoparksV2Rows,
@@ -23,8 +27,11 @@ export function AutoparksV2List({
   initialCars,
   canAddCar = true,
   logisticsCount = null,
+  canSortBySum = false,
 }: {
   initialCars: AutoparksV2ListRow[];
+  /** «Summa» kārtošana tikai ar tiesību «summas» (Nils 27.10). */
+  canSortBySum?: boolean;
   /** Aktīvie Loģistikas auto (vēl nav Autoparkā); null - nav Loģistikas tiesību, flīzi nerāda. */
   logisticsCount?: number | null;
   /** "+ Auto" tikai ar Pamatdatu tiesību (API to pārbauda arī pats). */
@@ -34,11 +41,17 @@ export function AutoparksV2List({
   const [status, setStatus] = useState<AutoparksStatus | null>(null);
   const [query, setQuery] = useState("");
   const [adding, setAdding] = useState(false);
+  const [sort, setSort] = useState<AutoparksV2Sort>("process");
+  const sortOptions = AUTOPARKS_V2_SORTS.filter((s) => canSortBySum || !s.startsWith("sum_"));
 
   const ownerCounts = useMemo(() => autoparksV2OwnerCounts(initialCars), [initialCars]);
   const base = useMemo(() => filterAutoparksV2Rows(initialCars, { owner, query }), [initialCars, owner, query]);
   const statusCounts = useMemo(() => autoparksV2StatusCounts(base), [base]);
-  const rows = useMemo(() => flattenAutoparksV2Rows(status ? base.filter((r) => r.status === status) : base), [base, status]);
+  const rows = useMemo(
+    () => sortAutoparksV2Rows(flattenAutoparksV2Rows(status ? base.filter((r) => r.status === status) : base), sort),
+    [base, status, sort],
+  );
+  const shown: "date" | "sum" | null = sort.startsWith("date_") ? "date" : sort.startsWith("sum_") ? "sum" : null;
 
   const chips: Array<{ id: AutoparksV2OwnerFilter; m: string; d: string }> = [
     { id: "all", m: `Visi ${ownerCounts.all}`, d: "Visi īpašnieki" },
@@ -86,13 +99,28 @@ export function AutoparksV2List({
         ))}
       </div>
 
-      <div className="ap2-chips">
-        {chips.map((c) => (
-          <button key={c.id} type="button" className={`ap2-chip ${owner === c.id ? "on" : ""}`} onClick={() => setOwner(c.id)}>
-            <span className="ap2-m">{c.m}</span>
-            <span className="ap2-d">{c.d}</span>
-          </button>
-        ))}
+      <div className="ap2-chips-row">
+        <div className="ap2-chips">
+          {chips.map((c) => (
+            <button key={c.id} type="button" className={`ap2-chip ${owner === c.id ? "on" : ""}`} onClick={() => setOwner(c.id)}>
+              <span className="ap2-m">{c.m}</span>
+              <span className="ap2-d">{c.d}</span>
+            </button>
+          ))}
+        </div>
+        <label className="ap2-sort">
+          <span className="sr-only">Kārtot</span>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M7 4v16M3 16l4 4 4-4M17 20V4M13 8l4-4 4 4" />
+          </svg>
+          <select value={sort} onChange={(e) => setSort(e.target.value as AutoparksV2Sort)} aria-label="Kārtot">
+            {sortOptions.map((s) => (
+              <option key={s} value={s}>
+                {AUTOPARKS_V2_SORT_LV[s]}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <div className="ap2-thd">
@@ -102,7 +130,7 @@ export function AutoparksV2List({
         <span>Statuss</span>
       </div>
 
-      <AutoparksV2ListBody rows={rows} />
+      <AutoparksV2ListBody rows={rows} shown={shown} />
 
       {adding && canAddCar ? <AddCarSheet onClose={() => setAdding(false)} /> : null}
     </div>
@@ -110,7 +138,19 @@ export function AutoparksV2List({
 }
 
 /** Plakans saraksts (m01): statuss ir tikai filtra virsraksts, ne sadaļa un ne atkārtots uz kartītes. */
-export function AutoparksV2ListBody({ rows }: { rows: readonly AutoparksV2ListRow[] }) {
+/** «Iegāde 12.10.2026» / «12 300 €» - rāda tikai, kārtojot pēc datuma vai summas. */
+function sortValueLabel(r: AutoparksV2ListRow, shown: "date" | "sum" | null): string {
+  if (shown === "date") {
+    const m = r.purchaseDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return m ? `Iegāde ${m[3]}.${m[2]}.${m[1]}` : "Iegāde: nav datuma";
+  }
+  if (shown === "sum") {
+    return r.purchasePriceEur == null ? "Summa: nav" : `${Math.round(r.purchasePriceEur).toLocaleString("lv-LV").replace(/\s/g, "\u00a0")}\u00a0€`;
+  }
+  return "";
+}
+
+export function AutoparksV2ListBody({ rows, shown = null }: { rows: readonly AutoparksV2ListRow[]; shown?: "date" | "sum" | null }) {
   if (rows.length === 0) return <p className="ap2-empty">Nav auto</p>;
   return (
     <div className="ap2-list">
@@ -121,6 +161,7 @@ export function AutoparksV2ListBody({ rows }: { rows: readonly AutoparksV2ListRo
             <span className="ap2-rt">
               <b>{r.title}</b>
               <span className="meta">{yearColor(r.year, r.color)}</span>
+              {shown ? <span className="meta ap2-sortval">{sortValueLabel(r, shown)}</span> : null}
               <VinCopy vin={r.vin} />
             </span>
           </div>
@@ -129,6 +170,7 @@ export function AutoparksV2ListBody({ rows }: { rows: readonly AutoparksV2ListRo
             <span className="ap2-rt">
               <b>{r.title}</b>
               <span className="meta">{yearColor(r.year, r.color)}</span>
+              {shown ? <span className="meta ap2-sortval">{sortValueLabel(r, shown)}</span> : null}
             </span>
             <span>
               <VinCopy vin={r.vin} />

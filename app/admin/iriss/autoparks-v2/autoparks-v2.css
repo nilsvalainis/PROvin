@@ -2621,3 +2621,59 @@
   }
 }
 
+/* Kārtošana (Nils 27.10): izvēle vienā rindā ar īpašnieku čipiem. */
+.ap2.ap2.ap2 .ap2-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ap2.ap2.ap2 .ap2-chips-row .ap2-chips {
+  min-width: 0;
+  flex: 1;
+}
+.ap2.ap2.ap2 .ap2-sort {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  margin: 10px 0 4px;
+  border: 1px solid var(--iriss-line-strong);
+  border-radius: 999px;
+  background: var(--iriss-surface);
+  padding: 0 10px;
+  color: var(--iriss-ink-2);
+}
+.ap2.ap2.ap2 .ap2-sort select {
+  appearance: none;
+  -webkit-appearance: none;
+  /* Vispārīgais select stils lika iekšēju rāmi (pārbaudīts prod 27.10). */
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 0 2px !important;
+  color: var(--iriss-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sortval {
+  color: var(--iriss-ink-2);
+  font-weight: 600;
+}
+@media (max-width: 767px) {
+  /* Telefonā kārtošana savā rindā zem čipiem, lai čipi netiek nogriezti. */
+  .ap2.ap2.ap2 .ap2-chips-row {
+    flex-wrap: wrap;
+    gap: 0;
+  }
+  .ap2.ap2.ap2 .ap2-chips-row .ap2-chips {
+    flex-basis: 100%;
+  }
+  .ap2.ap2.ap2 .ap2-sort {
+    margin: 6px 0 4px auto;
+  }
+}
