@@ -47,6 +47,14 @@ describe("Autoparks v2 saraksts (m01 plakans)", () => {
     expect(text).toContain("WVWZZZ3CZKE012345");
   });
 
+  it("telefona kartītē statuss vārdos, bez krāsas (makets B, 28.10)", () => {
+    const text = renderText(<AutoparksV2ListBody rows={rows} onStatus={() => {}} />);
+    expect(text).toContain("Servisā");
+    expect(text).toContain("Pārdošanā");
+    const html = renderHtml(<AutoparksV2ListBody rows={rows} onStatus={() => {}} />);
+    expect(html).toMatch(/class="ap2-mst">Servisā</);
+  });
+
   it("statuss uz kartītes nav sadaļas virsraksts (desktop kolonna paliek .cols)", () => {
     const html = renderHtml(<AutoparksV2ListBody rows={rows} />);
     expect(html).toContain("ap2-row");

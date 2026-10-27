@@ -225,9 +225,12 @@ export function AutoparksV2ListBody({
                 {r.title}
                 {r.clientOrder ? <span className="ap2-client-badge">Pasūtījums</span> : null}
               </b>
-              <span className="meta">{yearColor(r.year, r.color)}</span>
-              {shown ? <span className="meta ap2-sortval">{sortValueLabel(r, shown)}</span> : null}
-              <VinCopy vin={r.vin} />
+              {/* Telefonā (Nils 28.10, makets B): gads · krāsa · iegāde vienā rindā, apakšā neitrāls statuss + VIN. */}
+              <span className="meta">{[yearColor(r.year, r.color), shown ? sortValueLabel(r, shown) : ""].filter(Boolean).join(" · ")}</span>
+              <span className="ap2-mbot">
+                <span className="ap2-mst">{AUTOPARKS_STATUS_LV[r.status]}</span>
+                <VinCopy vin={r.vin} />
+              </span>
             </span>
           </div>
           <div className="cols">
