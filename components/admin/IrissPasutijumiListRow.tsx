@@ -298,7 +298,9 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
             setCriteriaOpen((v) => !v);
           }}
           onPointerDown={(e) => e.stopPropagation()}
-          className={`${actBtn} ${criteriaOpen ? "!border-[var(--ink)] !bg-[var(--ink)] !text-[var(--onink,#fff)]" : ""}`}
+          className={`${actBtn} ${criteriaOpen ? "!bg-[var(--ink)] !text-[var(--onink,#fff)]" : ""}`}
+          // Admin pogu stili noņem rāmi - rāmis tieši (390 px pārbaude 28.10).
+          style={{ border: `1px solid ${criteriaOpen ? "var(--ink)" : "var(--hair)"}` }}
         >
           Kritēriji
         </button>

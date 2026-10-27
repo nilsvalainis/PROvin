@@ -333,6 +333,14 @@ export type IrissPasutijumsRecord = {
   /** Jauda (kW) specifikācijā, ne tikai no teksta. */
   powerKw: string;
   damageTolerance: string;
+  /** Nils 28.10 (jaunā forma): "all" = budžetā viss ar piegādi, "car" = tikai auto; tukšs vecajos JSON. */
+  budgetIncludes?: string;
+  /** Durvju skaits (piem., "5"); tukšs vecajos JSON. */
+  doors?: string;
+  /** Izsolēm: maks. pieļaujamās remonta izmaksas, € (teksts); tukšs vecajos JSON. */
+  maxRepairCostEur?: string;
+  /** "dealer" = tikai dīleri, "any" = arī privāti; tukšs vecajos JSON. */
+  sellerType?: string;
   preferredCountries: string;
   /** Klienta finansējuma % no kopējā budžeta (0 = nav izvēlēts). */
   clientFinancingPercent: number;
@@ -532,6 +540,10 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     interiorFinish: "",
     powerKw: "",
     damageTolerance: "",
+    budgetIncludes: "",
+    doors: "",
+    maxRepairCostEur: "",
+    sellerType: "",
     preferredCountries: "",
     clientFinancingPercent: 0,
     dealLeasingOrCredit: false,
