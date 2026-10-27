@@ -419,7 +419,7 @@ export type AutoparksV2Basics = {
   statusLabel: string;
   owner: "IRISS" | "DZA";
   ownerLabel: string;
-  /** «Klienta auto» (Nils 27.10, agrāk statuss «Pasūtījums»). */
+  /** «Pasūtījums» (Nils 27.10, agrāk statuss «Pasūtījums»). */
   clientOrder: boolean;
   location: string;
   arrivedAt: string;

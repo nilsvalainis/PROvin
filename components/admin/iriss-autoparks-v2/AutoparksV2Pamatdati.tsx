@@ -82,11 +82,11 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
     );
   };
 
-  /** «Klienta auto» (Nils 27.10): atzīme pie jebkura statusa; īpašnieks ir galvenes joslā. */
+  /** «Pasūtījums» (Nils 27.10): atzīme pie jebkura statusa; īpašnieks ir galvenes joslā. */
   const clientOrderToggle = () => (
     <div className="ap2-f">
       <i className="ap2-cd" />
-      <span className="k">Klienta auto</span>
+      <span className="k">Pasūtījums</span>
       <button
         type="button"
         role="switch"
