@@ -19,6 +19,7 @@ import { AutoparksV2History } from "./AutoparksV2History";
 import { AutoparksV2OfferActions } from "./AutoparksV2OfferActions";
 import { AutoparksV2Pamatdati } from "./AutoparksV2Pamatdati";
 import { AutoparksV2PhotoPicker } from "./AutoparksV2PhotoPicker";
+import { AutoparksV2Waybill } from "./AutoparksV2Waybill";
 import { CABINET_PANES } from "./panes";
 import { CarImg, VinCopy, yearColor } from "./ui";
 
@@ -36,10 +37,13 @@ export function AutoparksV2Cabinet({
   initialBasics,
   perms,
   canCreateOffer = false,
+  canWaybill = false,
 }: {
   initialBasics: AutoparksV2Basics;
   perms: AutoparksV2Perms;
   canCreateOffer?: boolean;
+  /** Poga «Pavadzīme» (Nils 27.10): tikai ar Pavadzīmju sadaļas tiesību. */
+  canWaybill?: boolean;
 }) {
   const panes = CABINET_PANES;
   const router = useRouter();
@@ -154,6 +158,7 @@ export function AutoparksV2Cabinet({
       </div>
       {statusBtn("ap2-mstatus")}
       {statusErr ? <p className="ap2-err">{statusErr}</p> : null}
+      {canWaybill ? <AutoparksV2Waybill car={{ title: basics.title, vin: basics.vin }} /> : null}
 
       <IrissSaitesPanel from="autoparks" id={basics.id} vehicle={basics.title} />
 

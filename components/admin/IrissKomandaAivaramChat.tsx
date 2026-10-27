@@ -156,6 +156,8 @@ export function IrissKomandaAivaramChat({
   onDraftConsumed,
   onOpenArchive,
   plateInGauges = false,
+  compact = false,
+  requirePlateChoice = false,
 }: {
   draftVehicle: WaybillVehicleChip | null;
   onDraftConsumed: () => void;
@@ -163,6 +165,10 @@ export function IrissKomandaAivaramChat({
   onOpenArchive?: () => void;
   /** Telefonā numuru izvēlas apļos virs formas (Nils 27.10). */
   plateInGauges?: boolean;
+  /** Tikai forma (arī datorā), bez datora čata bloka - Autoparka auto kartītes logam (Nils 27.10). */
+  compact?: boolean;
+  /** Numurs vienmēr jāizvēlas pašam (nav noklusējuma). */
+  requirePlateChoice?: boolean;
 }) {
   const [chat, setChat] = useState<WaybillChatState>(emptyChat);
   const [plate, setPlate] = useState<string>(IRISS_DEALER_PLATES[0]);
@@ -456,7 +462,7 @@ export function IrissKomandaAivaramChat({
 
   return (
     <>
-    <div className="md:hidden">
+    <div className={compact ? "" : "md:hidden"}>
       <IrissWaybillMobileForm
         plates={chat.plates}
         tradeCars={tradeCars}
@@ -476,8 +482,10 @@ export function IrissKomandaAivaramChat({
         }}
         onOpenArchive={onOpenArchive}
         plateInGauges={plateInGauges}
+        requirePlateChoice={requirePlateChoice}
       />
     </div>
+    {compact ? null : (
     <section className="flex min-h-[28rem] flex-col overflow-hidden rounded-[22px] border border-[var(--iriss-line)] bg-white shadow-sm max-md:hidden">
       <header className="flex items-start justify-between gap-3 px-4 py-3">
         <div className="flex items-center gap-2">
@@ -543,6 +551,7 @@ export function IrissKomandaAivaramChat({
         onSubmit={onSubmitForm}
       />
     </section>
+    )}
       {confirm ? (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#0f172a66] p-4">
           <div className="w-full max-w-[360px] rounded-2xl border border-[var(--iriss-line)] bg-white p-4" role="dialog" aria-modal="true">
