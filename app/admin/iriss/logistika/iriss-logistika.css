@@ -1539,3 +1539,196 @@ html.iriss-log-printing .iriss-log-pin-tip {
     font-size: 16px;
   }
 }
+
+/*
+ * Dators (≥1024 px), Nils 27.10 makets A: karte ir visas lapas fons. Galvene (augšā pa kreisi), kartes rīki
+ * (apakšā pa kreisi) un kravu plāns / kabinets (pa labi, 380 px, pilnā augstumā) peld virs kartes.
+ * Lapa neritinās: ritenis virs paneļa ritina tikai paneli (overscroll contain), virs kartes - tuvina karti.
+ * Augstums = skata augstums mīnus admin main atkāpes (lg: pt 8 px + pb 24 px).
+ */
+@media (min-width: 1024px) {
+  .iriss-log-screen.iriss-log-desk {
+    position: relative;
+    height: calc(100dvh - 32px);
+    min-height: 560px;
+    overflow: hidden;
+    padding: 0 !important;
+    border-radius: 20px;
+  }
+  .iriss-log-desk .iriss-log-head {
+    position: absolute;
+    z-index: 20;
+    top: 16px;
+    left: 16px;
+    width: fit-content;
+    max-width: calc(100% - 444px);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.94);
+    padding: 10px 14px;
+    box-shadow: 0 6px 24px rgba(22, 23, 26, 0.14);
+  }
+  .iriss-log-desk .iriss-log-head > div:first-child {
+    flex-wrap: nowrap;
+  }
+  .iriss-log-desk .iriss-log-head .mt-3 {
+    margin-top: 8px;
+  }
+  .iriss-log-desk .iriss-log-desk-grid {
+    position: absolute;
+    inset: 0;
+    display: block;
+    margin: 0 !important;
+  }
+  .iriss-log-desk .iriss-log-desk-map {
+    position: absolute;
+    inset: 0;
+  }
+  .iriss-log-desk .iriss-log-desk-mapwrap,
+  .iriss-log-desk .iriss-log-desk-mapcard {
+    position: relative;
+    height: 100%;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .iriss-log-desk .iriss-log-print-root,
+  .iriss-log-desk .iriss-log-map-hero {
+    height: 100%;
+    min-height: 0;
+    aspect-ratio: auto;
+  }
+  .iriss-log-desk .iriss-log-map-toolbar {
+    position: absolute;
+    z-index: 10;
+    left: 16px;
+    bottom: 16px;
+    max-width: calc(100% - 444px);
+    border: 0;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 6px 24px rgba(22, 23, 26, 0.14);
+  }
+  .iriss-log-desk .iriss-log-fs-btn {
+    display: none;
+  }
+  .iriss-log-desk .iriss-log-desk-selbar {
+    position: absolute;
+    z-index: 10;
+    left: 16px;
+    bottom: 76px;
+    margin: 0;
+    box-shadow: 0 6px 24px rgba(22, 23, 26, 0.14);
+  }
+  .iriss-log-desk .iriss-log-cargo-col,
+  .iriss-log-desk .iriss-log-cab-overlay {
+    position: absolute;
+    z-index: 15;
+    top: 16px;
+    right: 16px;
+    bottom: 16px;
+    width: 380px;
+    margin: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 20px;
+    box-shadow: 0 10px 36px rgba(22, 23, 26, 0.18);
+  }
+  .iriss-log-desk .iriss-log-cab-overlay {
+    background: var(--iriss-surface);
+    padding: 12px;
+  }
+  .iriss-log-desk .iriss-log-desk-legacy {
+    display: none;
+  }
+}
+
+/* 3. posms (Nils 27.10, makets B): sakļaujams panelis un auto kartīte virs kartes. Ārpus datora - kā agrāk. */
+.iriss-log-desk-strip {
+  display: none;
+}
+.iriss-log-btn-brand {
+  border: 0;
+  border-radius: 10px;
+  background: var(--iriss-brand);
+  padding: 0 14px;
+  min-height: 36px;
+  color: var(--iriss-on-brand);
+  font-size: 13px;
+  font-weight: 700;
+}
+.iriss-log-desk-popup {
+  margin-top: 12px;
+}
+@media (min-width: 1024px) {
+  .iriss-log-desk .iriss-log-desk-popup {
+    position: absolute;
+    z-index: 18;
+    left: 16px;
+    top: 50%;
+    width: min(420px, calc(100% - 460px));
+    margin: 0;
+    transform: translateY(-50%);
+    border-radius: 16px;
+    box-shadow: 0 12px 36px rgba(22, 23, 26, 0.22);
+  }
+  .iriss-log-desk .iriss-log-desk-strip {
+    position: absolute;
+    z-index: 16;
+    top: 16px;
+    right: 404px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .iriss-log-desk .iriss-log-desk-strip-btn {
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--iriss-ink);
+    box-shadow: 0 6px 24px rgba(22, 23, 26, 0.14);
+    cursor: pointer;
+  }
+  .iriss-log-desk.iriss-log-desk-collapsed .iriss-log-desk-strip {
+    right: 16px;
+    width: 72px;
+    padding: 12px 0;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 10px 36px rgba(22, 23, 26, 0.18);
+  }
+  .iriss-log-desk.iriss-log-desk-collapsed .iriss-log-desk-strip-btn {
+    background: var(--iriss-graphite);
+    color: var(--iriss-on-graphite);
+    box-shadow: none;
+  }
+  .iriss-log-desk .iriss-log-desk-strip-n {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 10px;
+    color: var(--iriss-ink-2);
+  }
+  .iriss-log-desk .iriss-log-desk-strip-n i {
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+  }
+  .iriss-log-desk .iriss-log-desk-strip-n b {
+    color: var(--iriss-ink);
+    font-size: 15px;
+  }
+  .iriss-log-desk.iriss-log-desk-collapsed .iriss-log-cargo-col {
+    display: none;
+  }
+  .iriss-log-desk.iriss-log-desk-collapsed .iriss-log-head,
+  .iriss-log-desk.iriss-log-desk-collapsed .iriss-log-map-toolbar {
+    max-width: calc(100% - 120px);
+  }
+}
+

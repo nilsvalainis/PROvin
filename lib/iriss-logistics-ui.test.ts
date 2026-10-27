@@ -15,7 +15,7 @@ const map = readFileSync("components/admin/iriss-logistika/IrissLogistikaMap.tsx
 
 describe("IRISS Loģistika UI contracts", () => {
   it("keeps header and filter chips from being sticky", () => {
-    expect(client).toContain('className="iriss-log-no-print hidden md:static md:block"');
+    expect(client).toContain('className="iriss-log-no-print hidden md:static md:block iriss-log-head"');
     expect(client).not.toMatch(/sticky top-/);
     expect(page).toContain("await requireLogisticsPage();");
     expect(page).toContain("IrissLogistikaClient");
@@ -104,7 +104,7 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(client).toContain("iriss-log-print-root");
     expect(client).toContain("/api/admin/iriss/logistika/print");
     expect(client).not.toMatch(/sticky top-/);
-    expect(client).toContain('className="iriss-log-no-print hidden md:static md:block"');
+    expect(client).toContain('className="iriss-log-no-print hidden md:static md:block iriss-log-head"');
     expect(css).toMatch(/@page\s*\{\s*size:\s*A4 landscape/);
     expect(css).toMatch(/margin:\s*10mm/);
     expect(css).toContain("277mm");
