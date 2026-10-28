@@ -25,6 +25,7 @@ import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardH
 import { AdminMobileRoundBtn, AdminMobileSaveStatus, AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
 import { IrissAdvanceSection } from "@/components/admin/IrissAdvanceSection";
+import { parseIrissAdvanceAmount } from "@/lib/iriss-advance";
 import { IrissCommunicationTimeline } from "@/components/admin/IrissCommunicationTimeline";
 import { IrissOrderPhotoAlbumSection } from "@/components/admin/IrissOrderPhotoAlbumSection";
 import { IrissPriceChangeChip, IrissPriceHistoryPanel } from "@/components/admin/IrissPriceChangeChip";
@@ -1369,12 +1370,15 @@ export function IrissOrderRoom({
               </div>
             </StepCard>
 
-            <div id="iriss-room-client" className="grid grid-cols-1 items-start gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-              <section className={cardClass} aria-label="8. Klienta kontakti">
-                <div className="mb-3 flex items-center gap-2.5">
-                  <StepNum n={8} done={stepStatus[7]?.done} />
-                  <h3 className="text-[15px] font-bold leading-tight text-[var(--iriss-ink)]">Klienta kontakti</h3>
-                </div>
+            {/* Nils 28.10 (makets KlientsFin): kontakti un finansējums vienā kartītē, avanss zem tiem. */}
+            <section id="iriss-room-client" className={cardClass} aria-label="8. Klients un finansējums">
+              <div className="mb-3 flex items-center gap-2.5">
+                <StepNum n={8} done={stepStatus[7]?.done} />
+                <h3 className="text-[15px] font-bold leading-tight text-[var(--iriss-ink)]">Klients un finansējums</h3>
+              </div>
+              <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_1px_minmax(0,1.15fr)]">
+              <div className="min-w-0">
+                <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--iriss-ink-2)]">Klienta kontakti</p>
                 <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                   <Field
                     label="Vārds, uzvārds"
@@ -1395,10 +1399,10 @@ export function IrissOrderRoom({
                     buttonClass={roomBtn}
                   />
                 </div>
-              </section>
-
-              <section className={cardClass} aria-label="Finansējums, avanss un depozīts">
-                <CardTitle>Finansējums, avanss un depozīts</CardTitle>
+              </div>
+              <div className="hidden bg-[var(--iriss-line)] xl:block" aria-hidden />
+              <div className="min-w-0" aria-label="Finansējums, avanss un depozīts">
+                <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--iriss-ink-2)]">Finansējums</p>
                 <div className="flex flex-wrap items-end gap-3">
                   <Segmented
                     label="Klienta finansējums"
@@ -1441,14 +1445,16 @@ export function IrissOrderRoom({
                     })}
                   </div>
                 </div>
-                <IrissAdvanceSection
-                  value={rec.advance}
-                  onChange={(next) => onPatchRecord({ advance: next })}
-                  onInvoicePdf={onPdf}
-                  invoiceBusy={orderPdfBusy}
-                />
-              </section>
-            </div>
+              </div>
+              </div>
+              <IrissAdvanceSection
+                flat
+                value={rec.advance}
+                onChange={(next) => onPatchRecord({ advance: next })}
+                onInvoicePdf={onPdf}
+                invoiceBusy={orderPdfBusy}
+              />
+            </section>
 
             <div id="iriss-room-tame">
               <DzintarzemeTameSection
@@ -1456,6 +1462,8 @@ export function IrissOrderRoom({
                 shellCard={cardClass}
                 draft={rec.dzintarzemeTameDraft ?? defaultIrissDzintarzemeTameDraft()}
                 orderBrandModel={rec.brandModel}
+                advancePaidEur={parseIrissAdvanceAmount(rec.advance?.amount ?? "")}
+                financingPercent={financingPercent}
                 onDraftChange={(next) => onPatchRecord({ dzintarzemeTameDraft: next })}
                 onGeneratedDocument={onGeneratedDocument}
                 sectionSave={<IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />}
@@ -1530,6 +1538,22 @@ export function IrissOrderRoom({
                   <span className="text-[var(--iriss-ink-2)]">Pasūtījuma datums</span>
                   <b>{rec.orderDate ? rec.orderDate.split("-").reverse().join(".") : "-"}</b>
                 </div>
+                {financingPercent > 0 ? (
+                  <div className="flex min-h-[40px] items-center justify-between gap-3">
+                    <span className="text-[var(--iriss-ink-2)]">Finansējums</span>
+                    <b>
+                      {financingPercent} %{financingEuro > 0 ? ` · ${String(Math.round(financingEuro)).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} €` : ""}
+                    </b>
+                  </div>
+                ) : null}
+                {parseIrissAdvanceAmount(rec.advance?.amount ?? "") > 0 ? (
+                  <div className="flex min-h-[40px] items-center justify-between gap-3">
+                    <span className="text-[var(--iriss-ink-2)]">Avanss</span>
+                    <b>
+                      {rec.advance?.amount.trim()} €{rec.advance?.paidAt ? <span className="ml-1 text-[var(--iriss-ok)]">✓</span> : null}
+                    </b>
+                  </div>
+                ) : null}
               </div>
             </section>
             <section className={cardClass}>
