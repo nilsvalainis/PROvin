@@ -3741,3 +3741,19 @@
     max-width: none;
   }
 }
+
+/* Pamatdati režģī: «Pasūtījums» slēdzis paliek salasāms (balts fons no režģa to pārklāja). */
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-pd-grid .ap2-f .v.ap2-switch {
+    justify-self: start;
+    justify-content: center;
+    min-width: 72px;
+    border-radius: 999px;
+    color: var(--iriss-ink, #1c1c1e);
+  }
+  .ap2.ap2.ap2 .ap2-pd-grid .ap2-f .v.ap2-switch.on {
+    background: var(--iriss-graphite, #1b1c20);
+    border-color: var(--iriss-graphite, #1b1c20);
+    color: var(--iriss-on-graphite, #f3f2ef);
+  }
+}

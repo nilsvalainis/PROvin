@@ -14,7 +14,7 @@ import {
   irissClientFinancingPatchFromPercent,
   parseIrissClientFinancingPercent,
 } from "@/lib/iriss-client-financing";
-import { formatIrissListPhoneText } from "@/lib/iriss-pasutijumi-list-view";
+import { formatIrissListPhoneText, irissListBudgetText } from "@/lib/iriss-pasutijumi-list-view";
 import { irissClientNameInputValue, splitIrissClientNameInput } from "@/lib/iriss-client-name-input";
 import { IrissGoogleContactStatusRow } from "@/components/admin/IrissGoogleContactStatusRow";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
@@ -372,9 +372,10 @@ function EquipmentPicker({
               aria-pressed={on}
               onClick={() => onChange(toggleEquipment(value, item))}
               className={`min-h-[34px] rounded-lg border px-2.5 text-[12.5px] font-semibold ${
-                on ? "border-[var(--iriss-ink)] bg-[var(--iriss-ink)] text-white" : "border-[var(--iriss-line-strong)] bg-white text-[var(--iriss-ink)]"
+                on ? "border-[var(--iriss-ink)] bg-white text-[var(--iriss-ink)] shadow-[inset_0_0_0_1px_var(--iriss-ink)]" : "border-[var(--iriss-line-strong)] bg-white text-[var(--iriss-ink)]"
               }`}
             >
+              {on ? <span className="mr-1 text-[var(--iriss-ok)]">✓</span> : null}
               {item}
             </button>
           );
@@ -881,7 +882,7 @@ export function IrissOrderRoom({
 
   const actionBtn = roomBtn;
   const title = rec.brandModel.trim() || "Pasūtījums";
-  const budgetLabel = rec.totalBudget.trim();
+  const budgetLabel = rec.totalBudget.trim() ? irissListBudgetText(rec.totalBudget) : "";
 
   const tabs = (
     <div className="iriss-order-tabs mt-2 flex max-w-full gap-1 overflow-x-auto [scrollbar-width:none] md:mt-3" role="tablist" aria-label="Pasūtījuma istaba">
@@ -1058,7 +1059,7 @@ export function IrissOrderRoom({
                     ) : null}
                   </span>
                   <span className="hidden md:inline">
-                    {[clientName, rec.phone.trim(), rec.email.trim()].filter(Boolean).join(" · ")}
+                    {[clientName, formatIrissListPhoneText(rec.phone), rec.email.trim()].filter(Boolean).join(" · ")}
                     {budgetLabel ? (
                       <>
                         {(clientName || rec.phone.trim() || rec.email.trim()) ? " · " : null}
