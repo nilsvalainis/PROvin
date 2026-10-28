@@ -240,7 +240,7 @@ describe("IrissOrderRoom render", () => {
     expect(errors).toEqual([]);
     expect(html).toContain("Nolasīt");
     expect(html).toContain("Izveidot");
-    expect(html).toContain("Avanss un darījums");
+    expect(html).toContain("Finansējums, avanss un depozīts");
     // Nils 28.10: diapazoni sadalīti soļos (Budžets / Tehniskie dati).
     expect(html).toContain("Tehniskie dati");
     expect(html).toContain("Klienta kontakti");
