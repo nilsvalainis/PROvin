@@ -87,9 +87,11 @@ describe("Loģistika map print helpers", () => {
     expect(logisticsPrintNumberMap([order({ id: "a" }), order({ id: "b" })]).get("b")).toBe(2);
     expect(LOGISTICS_PRINT_PAGE_CSS).toContain("A4 landscape");
     expect(LOGISTICS_PRINT_PAGE_CSS).toContain("margin: 10mm");
-    const sheet = logisticsPrintSheetTitle(new Date(2026, 9, 20, 16, 52), 3);
+    // 14:52 UTC = 17:52 Rīgā (vasaras laiks) - neatkarīgi no servera laika joslas.
+    const sheet = logisticsPrintSheetTitle(new Date("2026-10-20T14:52:00Z"), 3);
     expect(sheet.heading).toBe("IRISS · Loģistika - karte");
-    expect(sheet.meta).toContain("20.10.2026 16:52");
+    expect(sheet.meta).toContain("20.10.2026 17:52");
+    expect(logisticsPrintSheetTitle(new Date("2026-12-31T22:30:00Z")).meta).toContain("01.01.2027 00:30");
     expect(sheet.meta).toContain("3 atzīmēti punkti");
     expect(sheet.heading).not.toMatch(/\u2014/);
   });
