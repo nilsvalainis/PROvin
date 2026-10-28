@@ -139,7 +139,9 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
         {editable("arrivedAt", "Atvests", basics.arrivedAt, fmtDateLv(basics.arrivedAt), "date")}
       </div>
       <div className="ap2-card ap2-pd-grid">
-        <h3>Tehniskie dati</h3>
+        <h3>
+          Tehniskie dati <small className="ap2-h3-sub">· no CSDD, labojami</small>
+        </h3>
         {editable("firstRegDate", "1. reģistrācija", basics.firstRegDate.value, fmtDateLv(basics.firstRegDate.value), "date")}
         {editable("displacementCm3", "Tilpums", basics.displacementCm3.value == null ? "" : String(basics.displacementCm3.value), fmtCm3(basics.displacementCm3.value), "number")}
         {editable("powerKw", "Jauda", basics.powerKw.value == null ? "" : String(basics.powerKw.value), fmtKw(basics.powerKw.value), "number")}

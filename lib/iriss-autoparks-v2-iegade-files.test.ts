@@ -126,3 +126,32 @@ describe("Vecie dokumenti ar tipu «other» (390 px pārskats 27.10)", () => {
     expect(docs[0]!.type).toBe("other");
   });
 });
+
+describe("Car Invoice dublikāti (Nils 28.10)", () => {
+  it("Loģistikas Car Invoice + vecā kopija divreiz -> viens fails", () => {
+    const list = iegadeFileList({
+      cabinetDocs: [
+        doc("c1", "car_invoice", "2026-10-20T10:00:00.000Z", { title: "Auto1_Car_Invoice_90042601275038" }),
+        doc("c2", "purchase_confirm", "2026-10-20T10:00:00.000Z", { title: "Auto1_Order_Confirmation_DEPR02365728" }),
+      ],
+      v1Files: [
+        file("f1", "purchase", { title: "Auto1_Car_Invoice_90042601275038", kind: "invoice" }),
+        file("f2", "purchase", { title: "Auto1_Car_Invoice_90042601275038.pdf", kind: "invoice" }),
+      ],
+      numberCheckFileId: "",
+    });
+    expect(list.filter((f) => f.group === "pirkums").map((f) => f.id)).toEqual(["c:c1", "c:c2"]);
+  });
+
+  it("bez Loģistikas dokumenta paliek viena vecā kopija", () => {
+    const list = iegadeFileList({
+      cabinetDocs: [],
+      v1Files: [
+        file("f1", "purchase", { title: "Auto1_Car_Invoice_90002501031037", kind: "invoice" }),
+        file("f2", "purchase", { title: "Auto1_Car_Invoice_90002501031037", kind: "invoice" }),
+      ],
+      numberCheckFileId: "",
+    });
+    expect(list.filter((f) => /Car_Invoice/.test(f.title))).toHaveLength(1);
+  });
+});

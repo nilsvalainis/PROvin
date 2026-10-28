@@ -133,6 +133,7 @@ export function iegadeFileList(input: {
     });
   }
   out.sort((a, b) => a.date.localeCompare(b.date));
+  dedupeIegadeFiles(out);
   const act = input.numberCheckFileId ? input.v1Files.find((f) => f.id === input.numberCheckFileId && !f.deletedAt) : undefined;
   if (act) {
     out.push({
@@ -149,6 +150,32 @@ export function iegadeFileList(input: {
     });
   }
   return out;
+}
+
+const fileKey = (title: string) =>
+  title
+    .toLowerCase()
+    .replace(/\.(pdf|jpe?g|png|heic)$/i, "")
+    .replace(/\(\d+\)$/, "")
+    .replace(/[\s_.()-]+/g, "");
+
+/**
+ * Nils 28.10: «dokumentu sadaļā dažiem auto ir Car Invoice dublikāts». Tas pats fails bija gan Loģistikas
+ * kabinetā (c:), gan vecajos Autoparka failos (f:), dažreiz f: divreiz. Rāda vienu - Loģistikas dokumentu;
+ * ja kabinetā jau ir Car Invoice, vecā kopija netiek rādīta. Dati netiek dzēsti.
+ */
+export function dedupeIegadeFiles(files: V2IegadeFile[]): void {
+  const cabinetFirst = [...files].sort((a, b) => Number(b.id.startsWith("c:")) - Number(a.id.startsWith("c:")));
+  const seen = new Set<string>();
+  const drop = new Set<V2IegadeFile>();
+  const hasCabinetCarInvoice = files.some((f) => f.id.startsWith("c:") && f.type === "car_invoice");
+  for (const f of cabinetFirst) {
+    const key = `${f.group}|${fileKey(f.title)}`;
+    if (seen.has(key)) drop.add(f);
+    else seen.add(key);
+    if (hasCabinetCarInvoice && f.id.startsWith("f:") && f.group === "pirkums" && /car[\s_-]?invoice/i.test(f.title)) drop.add(f);
+  }
+  for (let i = files.length - 1; i >= 0; i--) if (drop.has(files[i]!)) files.splice(i, 1);
 }
 
 /** Pirkuma datums automātiski: pirmā izsoles/auto rēķina diena (ja nav ievadīts ar roku). */

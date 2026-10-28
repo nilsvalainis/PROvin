@@ -3761,35 +3761,34 @@
 /* ===== Kabinets datorā pēc maketa (Nils 28.10 «izskatās pēc telefona versijas»): kompaktas cilnes,
    pavadzīme kā sekundāra poga, saites un CSDD kompakti. Telefona skats nemainās. ===== */
 @media (min-width: 900px) {
+  /* Cilnes kā maketā «Main»: pogas - aktīvā tumša, pārējās baltas ar rāmi. */
   .ap2.ap2.ap2.ap2-cab .ap2-tabs {
     display: flex;
     flex-wrap: wrap;
-    gap: 2px;
-    width: fit-content;
-    max-width: 100%;
-    padding: 3px;
+    gap: 6px;
+    width: auto;
+    padding: 0;
     margin: 14px 0 4px;
-    border-radius: 11px;
-    background: #e5e5ea;
+    background: none;
   }
   .ap2.ap2.ap2.ap2-cab .ap2-tabs .ap2-tab {
-    min-height: 32px;
+    min-height: 34px;
     padding: 0 14px;
-    border-radius: 8px;
-    background: transparent;
+    border-radius: 999px;
+    background: #fff;
     border: 0;
-    box-shadow: none;
-    color: #3a3a3c;
-    font-size: 13.5px;
+    box-shadow: inset 0 0 0 1px #d1d1d6;
+    color: #1c1c1e;
+    font-size: 13px;
     font-weight: 600;
   }
   .ap2.ap2.ap2.ap2-cab .ap2-tabs .ap2-tab.on {
-    background: #fff;
-    color: var(--iriss-ink, #1c1c1e);
-    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(22, 23, 26, 0.1);
+    background: #1b1c20;
+    color: #f3f2ef;
+    box-shadow: none;
   }
   .ap2.ap2.ap2.ap2-cab .ap2-tabs .ap2-tab-hist {
-    margin-left: 10px;
+    margin-left: 0;
   }
 
   .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-wb {
@@ -3971,4 +3970,183 @@
 .ap2.ap2.ap2 .ap2-cl-foot {
   color: #0e0e10;
   font-weight: 500;
+}
+
+/* Dokumenti datorā (Nils 28.10): Izsole / Izsoles nr. / Pirkuma datums / PVN režīms - šaura josla. */
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-kvwrap {
+    max-width: 760px;
+  }
+  .ap2.ap2.ap2 .ap2-kvwrap .ap2-kvc {
+    padding: 8px 14px;
+    gap: 1px;
+  }
+  .ap2.ap2.ap2 .ap2-kvwrap .ap2-kvc span {
+    font-size: 11.5px;
+  }
+  .ap2.ap2.ap2 .ap2-kvwrap .ap2-kvc button,
+  .ap2.ap2.ap2 .ap2-kvwrap .ap2-kvc b {
+    min-height: 26px;
+    font-size: 14px;
+  }
+}
+
+/* ===== Kabinets datorā tieši pēc maketa «Main» (Nils 28.10 «man viņš nepatīk datora versijā», «redzu izkārtojuma atšķirības»).
+   Galvene ar darbību pogām, kompakts statuss, labajā kolonnā CSDD / Īpašnieks / Saites. Telefons nemainās. ===== */
+@media (min-width: 900px) {
+  .ap2.ap2.ap2.ap2-cab .ap2-carhead {
+    padding: 16px;
+    border-radius: 18px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-carhead-main {
+    align-items: flex-start;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-carhead .ap2-img {
+    width: 138px;
+    height: 92px;
+    border-radius: 12px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-carhead .nm b {
+    font-size: 22px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-carhead .ap2-dstatus {
+    width: auto;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    align-self: flex-start;
+    margin-top: 28px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts .ap2-wb {
+    margin: 0;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts .ap2-wb-main,
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts .ap2-hbtn,
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts .ap2-wb-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 12px;
+    background: #fff;
+    color: #1c1c1e !important;
+    box-shadow: inset 0 0 0 1px #d1d1d6, 0 1px 2px rgba(22, 23, 26, 0.05);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts .ap2-wb-main svg,
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts .ap2-hbtn svg {
+    width: 16px;
+    height: 16px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts .ap2-wb-active {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts .ap2-wb-line {
+    font-size: 13px;
+  }
+
+  /* Labā kolonna */
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top {
+    padding-top: 0;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-layout {
+    margin-top: 12px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-pane,
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-card {
+    margin: 0;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-card {
+    border: 0;
+    border-radius: 18px;
+    padding: 16px 18px;
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(22, 23, 26, 0.06);
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-card h3 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #1c1c1e;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-card .ap2-f {
+    display: grid;
+    grid-template-columns: 0 92px minmax(0, 1fr);
+    min-height: 0;
+    padding: 7px 0;
+    border-top: 1px solid #e5e5ea;
+    font-size: 13px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-card .ap2-f .ap2-cd {
+    visibility: hidden;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-card .ap2-f .k {
+    color: #4a4a4f;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-card .ap2-f .v {
+    text-align: left;
+    font-weight: 600;
+    color: #1c1c1e;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-owner-chips {
+    display: flex;
+    gap: 6px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-owner-chips button {
+    min-height: 34px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: inset 0 0 0 1px #d1d1d6;
+    color: #1c1c1e;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-owner-chips button.on {
+    background: #1b1c20;
+    box-shadow: none;
+    color: #f3f2ef;
+  }
+
+  /* Pamatdati: bez CSDD punktiem (makets - apakšvirsraksts «no CSDD, labojami»). */
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-grid .ap2-f .ap2-cd {
+    display: none;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-grid .ap2-f {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "k" "v";
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-grid h3 {
+    font-size: 16px;
+  }
+}
+.ap2.ap2.ap2 .ap2-h3-sub {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink2, #4a4a4f);
+}
+@media (max-width: 899px) {
+  .ap2.ap2.ap2 .ap2-h3-sub {
+    display: none;
+  }
 }
