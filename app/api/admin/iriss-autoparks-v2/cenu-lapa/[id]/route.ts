@@ -45,6 +45,8 @@ export async function PATCH(req: Request, ctx: Ctx) {
       for (const k of ["salePriceEur", "listPriceEur"] as const) {
         if (!(k in body)) continue;
         const v = body[k] === null || body[k] === "" ? null : parseEurInput(String(body[k]));
+        // Nenolasāma summa netiek saglabāta kā tukša (lauks netiek iztīrīts, Nils 28.10).
+        if (v === null && body[k] !== null && body[k] !== "") continue;
         hist.push({ field: `priceSheet.${k}`, from: c.priceSheet[k], to: v });
         c.priceSheet[k] = v;
       }

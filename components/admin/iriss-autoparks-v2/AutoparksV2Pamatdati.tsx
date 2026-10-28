@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { AutoparksV2Basics } from "@/lib/iriss-autoparks-v2";
-import { fmtCm3, fmtDateLv, fmtKm, fmtKw } from "@/lib/iriss-autoparks-v2-format";
+import { fmtCm3, fmtDateLv, fmtKm, fmtKw, parseNumberFieldInput } from "@/lib/iriss-autoparks-v2-format";
 
 type EditKey =
   | "plate"
@@ -45,10 +45,16 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
     const next = value.trim();
     if (next === current) return;
     setError("");
+    const num = NUM_KEYS.has(key) ? parseNumberFieldInput(next) : null;
+    if (num === "invalid") {
+      setError("Ievadi skaitli, piem., 171048 - lauks netika mainīts");
+      return;
+    }
+    if (NUM_KEYS.has(key) && num !== null && String(num) === current) return;
     const res = await fetch(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ [key]: NUM_KEYS.has(key) ? (next === "" ? null : Number(next)) : next }),
+      body: JSON.stringify({ [key]: NUM_KEYS.has(key) ? num : next }),
     }).catch(() => null);
     const data = (await res?.json().catch(() => null)) as { basics?: AutoparksV2Basics } | null;
     if (res?.ok && data?.basics) onBasics(data.basics);
@@ -64,7 +70,9 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
         {editing === key ? (
           <input
             className="v"
-            type={type}
+            // Skaitļiem teksta lauks ar ciparu tastatūru: `type="number"` atdeva "" pie "171 048" / "1,9" un lauks tika iztīrīts.
+            type={type === "number" ? "text" : type}
+            inputMode={type === "number" ? "decimal" : undefined}
             defaultValue={value}
             autoFocus
             onBlur={(e) => void save(key, e.target.value)}

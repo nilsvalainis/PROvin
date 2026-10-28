@@ -65,8 +65,11 @@ export async function PATCH(req: Request, ctx: Ctx) {
       }
       if ("amountEur" in body) {
         const v = body.amountEur === null || body.amountEur === "" ? null : parseEurInput(String(body.amountEur));
-        hist.push({ field: "expense.amount", from: e.amountEur, to: v });
-        e.amountEur = v;
+        // Nenolasāma summa netiek saglabāta kā tukša (Nils 28.10).
+        if (v !== null || body.amountEur === null || body.amountEur === "") {
+          hist.push({ field: "expense.amount", from: e.amountEur, to: v });
+          e.amountEur = v;
+        }
       }
       return { result: c, history: hist };
     },

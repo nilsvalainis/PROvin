@@ -72,13 +72,13 @@ export function IrissClientFinancingSection({
         <label className="block border-t border-[var(--iriss-line)] bg-white px-3 py-2.5">
           <span className="mb-1 block text-[11px] font-medium text-[var(--iriss-ink-2)]">Procents no budžeta</span>
           <input
-            type="number"
-            min={0}
-            max={100}
+            // Teksts ar ciparu tastatūru: `type="number"` pie "1,5" atdeva "" un lauks nodzēsās (Nils 28.10).
+            type="text"
+            inputMode="numeric"
             className="min-h-[40px] w-full max-w-[8rem] rounded-lg border border-slate-200 px-2.5 text-[14px]"
             value={percent || ""}
             onChange={(e) => {
-              const raw = e.target.value;
+              const raw = e.target.value.replace(/[^\d]/g, "").slice(0, 3);
               if (raw === "") {
                 setPercent(0);
                 return;

@@ -395,13 +395,12 @@ export function DzintarzemeTameSection({
             <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Manuāli (%)</span>
             <input
               className={fieldClass}
-              type="number"
-              min={0}
-              max={100}
-              step={1}
+              // Teksts ar ciparu tastatūru: `type="number"` pie "1,5" atdeva "" un lauks nodzēsās (Nils 28.10).
+              type="text"
+              inputMode="numeric"
               value={d.tameDepositPercent}
               onChange={(e) => {
-                const raw = e.target.value;
+                const raw = e.target.value.replace(/[^\d]/g, "").slice(0, 3);
                 if (raw === "") {
                   set({ tameDepositPercent: 0 });
                   return;

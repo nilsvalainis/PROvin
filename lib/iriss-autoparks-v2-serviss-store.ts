@@ -83,7 +83,11 @@ export async function patchAutoparksV2Serviss(
         if (target) {
           let amount: number | null | undefined;
           if (inv.acceptAi === true && target.ai?.amountEur != null) amount = target.ai.amountEur;
-          else if ("amountEur" in inv) amount = inv.amountEur === null || inv.amountEur === "" ? null : parseEurInput(String(inv.amountEur));
+          else if ("amountEur" in inv) {
+            const parsed = inv.amountEur === null || inv.amountEur === "" ? null : parseEurInput(String(inv.amountEur));
+            // Nenolasāma summa netiek saglabāta kā tukša (Nils 28.10).
+            if (parsed !== null || inv.amountEur === null || inv.amountEur === "") amount = parsed;
+          }
           if (amount !== undefined) {
             hist.push({ field: "service.invoice.amount", from: target.amountEur, to: amount });
             target.amountEur = amount;
