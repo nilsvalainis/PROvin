@@ -962,3 +962,12 @@ input[data-offer-field="empty"],
     min-height: 44px;
   }
 }
+
+/* 28.10: telefonā diapazona ievades lauki nedrīkst būt platāki par savu šūnu (bija 193 px 100 px vietā, vērtības iziet ārā). */
+@media (max-width: 767px) {
+  .iriss-spec-fields .iriss-range-field .iriss-range-input-wrap > input {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+}
