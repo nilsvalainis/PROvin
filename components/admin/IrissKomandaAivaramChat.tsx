@@ -576,7 +576,9 @@ export function IrissKomandaAivaramChat({
             <div className="mt-3.5 flex flex-col gap-2">
               <button
                 type="button"
-                className="h-10 rounded-[10px] bg-[var(--iriss-graphite)] text-[12.5px] font-semibold text-white"
+                className="h-10 rounded-[10px] bg-[var(--iriss-graphite)] text-[12.5px] font-semibold text-white disabled:opacity-60"
+                // Autoparkā `:where(.ap2) button { color: inherit }` pārraksta text-white - «Jā» nebija redzams (Nils 28.10).
+                style={{ color: "white" }}
                 onClick={() => void submit(true)}
                 disabled={busy}
               >
@@ -745,7 +747,7 @@ function EventBubble({
         <span className="rounded-full bg-[#FEF3F2] px-2 py-0.5 text-[11px] font-medium text-[#B42318]">Kļūda</span>
         <p className="mt-1 text-[13px]">{event.text || request.errorReason || "Neizdevās izveidot."}</p>
         <div className="mt-2 flex gap-2">
-          <button type="button" onClick={onRetry} className="rounded-full bg-[var(--iriss-graphite)] px-3 py-1.5 text-[12px] text-white">
+          <button type="button" onClick={onRetry} className="rounded-full bg-[var(--iriss-graphite)] px-3 py-1.5 text-[12px] text-white" style={{ color: "white" }}>
             Atkārtot
           </button>
         </div>
