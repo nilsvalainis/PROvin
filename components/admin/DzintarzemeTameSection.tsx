@@ -305,7 +305,7 @@ export function DzintarzemeTameSection({
         <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-3">
           <label
             className={`cursor-pointer rounded-xl border bg-white p-3 text-[13px] shadow-sm ${
-              d.tameCommissionVariant === "A" ? "border-[#93c5fd] bg-[#eff6ff]/40" : "border-slate-200"
+              d.tameCommissionVariant === "A" ? "border-[var(--iriss-ink,#1c1c1e)] shadow-[inset_0_0_0_1px_#1c1c1e]" : "border-slate-200"
             }`}
           >
             <span className="font-semibold">A · fiksēta</span>
@@ -320,7 +320,7 @@ export function DzintarzemeTameSection({
           </label>
           <label
             className={`cursor-pointer rounded-xl border bg-white p-3 text-[13px] shadow-sm ${
-              d.tameCommissionVariant === "B" ? "border-[#93c5fd] bg-[#eff6ff]/40" : "border-slate-200"
+              d.tameCommissionVariant === "B" ? "border-[var(--iriss-ink,#1c1c1e)] shadow-[inset_0_0_0_1px_#1c1c1e]" : "border-slate-200"
             }`}
           >
             <span className="font-semibold">B · % no atlikuma</span>
@@ -337,7 +337,7 @@ export function DzintarzemeTameSection({
           </label>
           <div
             className={`rounded-xl border bg-white p-3 text-[13px] shadow-sm ${
-              d.tameCommissionVariant === "C" ? "border-[#fcd34d] bg-[#fffbeb]/50" : "border-slate-200"
+              d.tameCommissionVariant === "C" ? "border-[var(--iriss-ink,#1c1c1e)] shadow-[inset_0_0_0_1px_#1c1c1e]" : "border-slate-200"
             }`}
           >
             <span className="font-semibold">C · manuāli</span>
@@ -383,7 +383,7 @@ export function DzintarzemeTameSection({
                 onClick={() => set({ tameDepositPercent: p })}
                 className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold shadow-sm transition ${
                   d.tameDepositPercent === p
-                    ? "border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)] text-[var(--color-provin-accent)]"
+                    ? "border-[var(--iriss-ink,#1c1c1e)] bg-white text-[var(--iriss-ink,#1c1c1e)] shadow-[inset_0_0_0_1px_#1c1c1e]"
                     : "border-slate-200 bg-white text-[var(--color-apple-text)] hover:bg-slate-50"
                 }`}
               >
@@ -547,7 +547,7 @@ export function DzintarzemeTameSection({
           type="button"
           disabled={pdfBusy}
           onClick={() => void onGeneratePdf()}
-          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-[var(--color-provin-accent)] bg-[var(--color-provin-accent)] px-5 text-[13px] font-semibold text-white shadow-sm transition hover:opacity-95 disabled:opacity-50"
+          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[#1c1c1e] bg-[#1c1c1e] px-5 text-[13px] font-semibold text-white transition hover:opacity-95 disabled:opacity-50"
         >
           {pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <FileDown className="h-4 w-4" aria-hidden />}
           Ģenerēt Dzintarzeme Auto tāmi
