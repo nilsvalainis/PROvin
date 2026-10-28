@@ -3915,3 +3915,66 @@
 .ap2.ap2.ap2 .ap2-cl-hl + .ap2-cl-price {
   margin-top: 26px;
 }
+
+/* ===== Cenu lapa drukā (Nils 28.10): «pazudušas vertikālās oranžās līnijas», «izprintējās diezgan bāli».
+   Līnija - apmale (fonus pārlūks drukā izlaiž), krāsas drukā precīzi, tekstam lielāks kontrasts. ===== */
+.ap2.ap2.ap2 .ap2-cl {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  color: #0e0e10;
+}
+.ap2.ap2.ap2 .ap2-cl-r > i {
+  background: none;
+  opacity: 1;
+  border-left: 1.5px solid #f28c22;
+}
+.ap2.ap2.ap2 .ap2-cl-title {
+  font-weight: 300;
+  color: #0e0e10;
+}
+.ap2.ap2.ap2 .ap2-cl-hl {
+  font-weight: 600;
+  color: #1c1c1e;
+}
+.ap2.ap2.ap2 .ap2-cl-price {
+  border-top-width: 1px;
+  border-bottom-width: 1px;
+  border-color: #0e0e10;
+}
+.ap2.ap2.ap2 .ap2-cl-price .v {
+  font-weight: 300;
+  color: #0e0e10;
+}
+.ap2.ap2.ap2 .ap2-cl-price .n,
+.ap2.ap2.ap2 .ap2-cl-lab {
+  color: #2e2e33;
+}
+.ap2.ap2.ap2 .ap2-cl-lab {
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-cl-r > span:first-child {
+  color: #2a2a2e;
+}
+.ap2.ap2.ap2 .ap2-cl-r > span:last-child {
+  font-weight: 600;
+  color: #0e0e10;
+}
+.ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r.h > span,
+.ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r.h > span > span {
+  color: #3a3a3f;
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-cl-ok {
+  font-weight: 700;
+  color: #0e0e10;
+}
+.ap2.ap2.ap2 .ap2-cl-foot {
+  color: #0e0e10;
+  font-weight: 500;
+}
+
+/* «Drukāt A4» poga: teksts bija tumšs uz tumša fona. */
+.ap2.ap2.ap2 a.ap2-a4btn,
+.ap2.ap2.ap2 a.ap2-a4btn:visited {
+  color: #fff !important;
+}
