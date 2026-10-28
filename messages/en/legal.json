@@ -7,7 +7,7 @@
     "sections": [
       {
         "title": "1. Controller",
-        "body": "Data controller: Nils Valainis, self-employed person (sole trader), reg. No. 09118711109, Jana iela 3, Tukums, LV-3101, Latvia. Contact for data protection matters: info@provin.lv, +371 29 502 039."
+        "body": "Data controller: PROVIN. Contact for data protection matters: info@provin.lv, +371 29 502 039."
       },
       {
         "title": "2. What data we process",
@@ -74,7 +74,7 @@
       },
       {
         "title": "5. Order, price, payment and refund principles",
-        "body": "5.1. Orders are placed electronically with the information PROVIN requests. Required: VIN (17 characters) or licence plate, email and phone. A listing URL is optional; if provided, it must be a valid link to a specific listing. Other fields follow the site form. For \"Official dealer service history data\", VIN (or plate) and contact details in Stripe Checkout are sufficient.\n\n5.2. The service price is clearly shown on the site (order form / summary) at the time of order and includes applicable taxes where required by law. Current products and orientative prices: Official dealer service history data €24.99; PROVIN MINI €39.99; PROVIN AUDITS €99.99 (the exact price is the one shown before payment). Prices may change for future orders; for a given order, the price shown before payment confirmation applies.\n\n5.3. Payment is handled by a third-party payment processor (for example Stripe). The legal basis and data processing for payments are described in the Privacy Policy and the processor's documents.\n\n5.4. Payment for the Service is final. Given the nature of the Service (immediate start of digital content preparation), no refund is made after preparation of the Report has started, except as set out in section 11 and the 100% refund in section 2.1.A if official dealer data is not available. For PROVIN AUDITS, the unavailability or absence of data in an individual source (including official dealer data) is not grounds for a refund if the Base Checks under section 3.4 have been performed.\n\n5.5. Prices are final. The service provider is not registered as a VAT payer for domestic supplies in Latvia, so no VAT is added. VAT registration number LV09118711109 is used only for transactions with VAT-registered businesses in other EU countries."
+        "body": "5.1. Orders are placed electronically with the information PROVIN requests. Required: VIN (17 characters) or licence plate, email and phone. A listing URL is optional; if provided, it must be a valid link to a specific listing. Other fields follow the site form. For \"Official dealer service history data\", VIN (or plate) and contact details in Stripe Checkout are sufficient.\n\n5.2. The service price is clearly shown on the site (order form / summary) at the time of order and includes applicable taxes where required by law. Current products and orientative prices: Official dealer service history data €24.99; PROVIN MINI €39.99; PROVIN AUDITS €99.99 (the exact price is the one shown before payment). Prices may change for future orders; for a given order, the price shown before payment confirmation applies.\n\n5.3. Payment is handled by a third-party payment processor (for example Stripe). The legal basis and data processing for payments are described in the Privacy Policy and the processor's documents.\n\n5.4. Payment for the Service is final. Given the nature of the Service (immediate start of digital content preparation), no refund is made after preparation of the Report has started, except as set out in section 11 and the 100% refund in section 2.1.A if official dealer data is not available. For PROVIN AUDITS, the unavailability or absence of data in an individual source (including official dealer data) is not grounds for a refund if the Base Checks under section 3.4 have been performed.\n\n5.5. Prices are final. The service provider is not registered as a VAT payer for domestic supplies in Latvia, so no VAT is added. The PROVIN VAT registration number is used only for transactions with VAT-registered businesses in other EU countries."
       },
       {
         "title": "6. Performance, delivery and permitted delays",
@@ -128,7 +128,7 @@
       },
       {
         "title": "15. Contact",
-        "body": "Questions about these terms: info@provin.lv, +371 29 502 039. Service provider: Nils Valainis, self-employed person (sole trader), reg. No. 09118711109, Jana iela 3, Tukums, LV-3101, Latvia."
+        "body": "Questions about these terms: info@provin.lv, +371 29 502 039. Service provider: PROVIN."
       }
     ],
     "partnerTermsMetaTitle": "Partner Terms | PROVIN",
@@ -139,7 +139,7 @@
     "partnerTermsSections": [
       {
         "title": "1. Parties and scope",
-        "body": "1.1. Service provider: Nils Valainis, self-employed person (sole trader), reg. No. 09118711109, Jana iela 3, Tukums, LV-3101, Latvia, info@provin.lv, +371 29 502 039 (\"PROVIN\").\n\n1.2. Partner: a legal entity or self-employed person registered in the partner account with a PROVIN invitation.\n\n1.3. The agreement consists of these terms, the price list or offer sent to the Partner and the data processing addendum (section 14). The Partner accepts them by ticking the consent box at registration or by making the first purchase.\n\n1.4. Matters not covered here are governed by the Terms of Service, except consumer protection rules (consumer withdrawal right), which do not apply to the Partner."
+        "body": "1.1. Service provider: PROVIN, info@provin.lv, +371 29 502 039.\n\n1.2. Partner: a legal entity or self-employed person registered in the partner account with a PROVIN invitation.\n\n1.3. The agreement consists of these terms, the price list or offer sent to the Partner and the data processing addendum (section 14). The Partner accepts them by ticking the consent box at registration or by making the first purchase.\n\n1.4. Matters not covered here are governed by the Terms of Service, except consumer protection rules (consumer withdrawal right), which do not apply to the Partner."
       },
       {
         "title": "2. Services",
@@ -151,7 +151,7 @@
       },
       {
         "title": "4. Credits and billing",
-        "body": "4.1. Credits are prepayment, bought against a PROVIN invoice or by card in the account. One report order uses one credit of the relevant product.\n\n4.2. Invoice payment term: 7 days unless stated otherwise. Credits become available after payment.\n\n4.3. Credits are valid for 12 months from purchase. Unused credits are not refunded in money, except where PROVIN ends the cooperation without the Partner's fault or cannot provide the service for reasons attributable to PROVIN.\n\n4.4. VAT: PROVIN is not registered as a VAT payer for domestic supplies in Latvia, so no VAT is charged to Latvian Partners. For VAT-registered businesses in other EU countries the invoice carries VAT number LV09118711109 and the reverse charge applies where required by law."
+        "body": "4.1. Credits are prepayment, bought against a PROVIN invoice or by card in the account. One report order uses one credit of the relevant product.\n\n4.2. Invoice payment term: 7 days unless stated otherwise. Credits become available after payment.\n\n4.3. Credits are valid for 12 months from purchase. Unused credits are not refunded in money, except where PROVIN ends the cooperation without the Partner's fault or cannot provide the service for reasons attributable to PROVIN.\n\n4.4. VAT: PROVIN is not registered as a VAT payer for domestic supplies in Latvia, so no VAT is charged to Latvian Partners. For VAT-registered businesses in other EU countries the invoice carries the PROVIN VAT number and the reverse charge applies where required by law."
       },
       {
         "title": "5. Refunds and credit return",

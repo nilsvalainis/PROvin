@@ -7,7 +7,7 @@
     "sections": [
       {
         "title": "1. Pārzinis",
-        "body": "Personas datu pārzinis: Nils Valainis, saimnieciskās darbības veicējs, reģ. nr. 09118711109, Jana iela 3, Tukums, LV-3101, Latvija. Saziņa par datu apstrādi: info@provin.lv, +371 29 502 039."
+        "body": "Personas datu pārzinis: PROVIN. Saziņa par datu apstrādi: info@provin.lv, +371 29 502 039."
       },
       {
         "title": "2. Kādus datus apstrādājam",
@@ -74,7 +74,7 @@
       },
       {
         "title": "5. Pasūtījums, cena, apmaksa un atmaksas pamatprincipi",
-        "body": "5.1. Pasūtījums tiek noformēts elektroniski, norādot PROVIN pieprasīto informāciju. Obligāti: VIN (17 zīmes) vai valsts numurzīme, e-pasts un tālrunis. Sludinājuma saite nav obligāta; ja tā tiek norādīta, tai jābūt derīgai saitei uz konkrētu sludinājumu. Citi lauki pēc vietnes formas. Produktam „Oficiālā dīlera servisa vēstures dati” pietiek ar VIN (vai numurzīmi) un kontaktinformāciju Stripe Checkout.\n\n5.2. Pakalpojuma cena ir skaidri norādīta vietnē (pasūtījuma formā / kopsavilkumā) pasūtījuma brīdī un ietver piemērojamos nodokļus, ja tie ir paredzēti normatīvajos aktos. Aktuālie produkti un orientējošās cenas: Oficiālā dīlera servisa vēstures dati 24,99 €; PROVIN MINI 39,99 €; PROVIN AUDITS 99,99 € (precīzā cena ir tā, kas redzama pirms apmaksas). Cena var tikt mainīta nākotnē jauniem pasūtījumiem; par konkrēto pasūtījumu spēkā ir cena, kas bija norādīta pirms apmaksas apstiprināšanas.\n\n5.3. Apmaksu nodrošina trešās puses maksājumu apstrādātājs (piemēram, Stripe). Maksājuma apstrādes tiesiskais pamats un datu apstrāde ir aprakstīta Privātuma politikā un maksājumu apstrādātāja dokumentos.\n\n5.4. Maksājums par Pakalpojumu ir galīgs. Ņemot vērā Pakalpojuma specifiku (tūlītēja digitālā satura sagatavošanas uzsākšana), atmaksa pēc Atskaites sagatavošanas procesa uzsākšanas netiek veikta, izņemot gadījumus, kas minēti šo noteikumu 11. punktā, kā arī 2.1.A. punktā noteikto 100% atmaksu, ja oficiālie dīlera dati nav pieejami. PROVIN AUDITS gadījumā atsevišķa informācijas avota (tostarp oficiālo dīlera datu) nepieejamība vai datu neesamība nav pamats atmaksai, ja ir veiktas 3.4. punktā noteiktās Pamata pārbaudes.\n\n5.5. Cenas ir galīgās. Pakalpojuma sniedzējs Latvijā nav reģistrēts kā PVN maksātājs iekšzemes darījumiem, tāpēc PVN cenai netiek pievienots. PVN reģistrācijas numurs LV09118711109 tiek izmantots tikai darījumiem ar citu ES valstu PVN maksātājiem."
+        "body": "5.1. Pasūtījums tiek noformēts elektroniski, norādot PROVIN pieprasīto informāciju. Obligāti: VIN (17 zīmes) vai valsts numurzīme, e-pasts un tālrunis. Sludinājuma saite nav obligāta; ja tā tiek norādīta, tai jābūt derīgai saitei uz konkrētu sludinājumu. Citi lauki pēc vietnes formas. Produktam „Oficiālā dīlera servisa vēstures dati” pietiek ar VIN (vai numurzīmi) un kontaktinformāciju Stripe Checkout.\n\n5.2. Pakalpojuma cena ir skaidri norādīta vietnē (pasūtījuma formā / kopsavilkumā) pasūtījuma brīdī un ietver piemērojamos nodokļus, ja tie ir paredzēti normatīvajos aktos. Aktuālie produkti un orientējošās cenas: Oficiālā dīlera servisa vēstures dati 24,99 €; PROVIN MINI 39,99 €; PROVIN AUDITS 99,99 € (precīzā cena ir tā, kas redzama pirms apmaksas). Cena var tikt mainīta nākotnē jauniem pasūtījumiem; par konkrēto pasūtījumu spēkā ir cena, kas bija norādīta pirms apmaksas apstiprināšanas.\n\n5.3. Apmaksu nodrošina trešās puses maksājumu apstrādātājs (piemēram, Stripe). Maksājuma apstrādes tiesiskais pamats un datu apstrāde ir aprakstīta Privātuma politikā un maksājumu apstrādātāja dokumentos.\n\n5.4. Maksājums par Pakalpojumu ir galīgs. Ņemot vērā Pakalpojuma specifiku (tūlītēja digitālā satura sagatavošanas uzsākšana), atmaksa pēc Atskaites sagatavošanas procesa uzsākšanas netiek veikta, izņemot gadījumus, kas minēti šo noteikumu 11. punktā, kā arī 2.1.A. punktā noteikto 100% atmaksu, ja oficiālie dīlera dati nav pieejami. PROVIN AUDITS gadījumā atsevišķa informācijas avota (tostarp oficiālo dīlera datu) nepieejamība vai datu neesamība nav pamats atmaksai, ja ir veiktas 3.4. punktā noteiktās Pamata pārbaudes.\n\n5.5. Cenas ir galīgās. Pakalpojuma sniedzējs Latvijā nav reģistrēts kā PVN maksātājs iekšzemes darījumiem, tāpēc PVN cenai netiek pievienots. PROVIN PVN reģistrācijas numurs tiek izmantots tikai darījumiem ar citu ES valstu PVN maksātājiem."
       },
       {
         "title": "6. Izpilde, piegāde un pieļaujamās novirzes",
@@ -128,7 +128,7 @@
       },
       {
         "title": "15. Kontaktinformācija",
-        "body": "Jautājumi par šiem noteikumiem: info@provin.lv, +371 29 502 039. Pakalpojuma sniedzējs: Nils Valainis, saimnieciskās darbības veicējs, reģ. nr. 09118711109, Jana iela 3, Tukums, LV-3101, Latvija."
+        "body": "Jautājumi par šiem noteikumiem: info@provin.lv, +371 29 502 039. Pakalpojuma sniedzējs: PROVIN."
       }
     ],
     "partnerTermsMetaTitle": "Partneru sadarbības noteikumi | PROVIN",
@@ -139,7 +139,7 @@
     "partnerTermsSections": [
       {
         "title": "1. Puses un piemērošana",
-        "body": "1.1. Pakalpojuma sniedzējs: Nils Valainis, saimnieciskās darbības veicējs, reģ. nr. 09118711109, Jana iela 3, Tukums, LV-3101, info@provin.lv, +371 29 502 039 (turpmāk „PROVIN”).\n\n1.2. Partneris: juridiska persona vai saimnieciskās darbības veicējs, kas reģistrējies partneru kontā ar PROVIN ielūgumu.\n\n1.3. Līgumu veido šie noteikumi, Partnerim nosūtītais cenrādis vai piedāvājums un datu apstrādes pielikums (14. punkts). Partneris tos akceptē, reģistrācijā atzīmējot piekrišanu vai veicot pirmo pirkumu.\n\n1.4. Jautājumos, ko šie noteikumi neregulē, piemēro Lietošanas noteikumus, izņemot patērētāju tiesību normas (atteikuma tiesības patērētājam), kas uz Partneri neattiecas."
+        "body": "1.1. Pakalpojuma sniedzējs: PROVIN, info@provin.lv, +371 29 502 039.\n\n1.2. Partneris: juridiska persona vai saimnieciskās darbības veicējs, kas reģistrējies partneru kontā ar PROVIN ielūgumu.\n\n1.3. Līgumu veido šie noteikumi, Partnerim nosūtītais cenrādis vai piedāvājums un datu apstrādes pielikums (14. punkts). Partneris tos akceptē, reģistrācijā atzīmējot piekrišanu vai veicot pirmo pirkumu.\n\n1.4. Jautājumos, ko šie noteikumi neregulē, piemēro Lietošanas noteikumus, izņemot patērētāju tiesību normas (atteikuma tiesības patērētājam), kas uz Partneri neattiecas."
       },
       {
         "title": "2. Pakalpojumi",
@@ -151,7 +151,7 @@
       },
       {
         "title": "4. Kredīti un norēķini",
-        "body": "4.1. Kredīti ir priekšapmaksa: Partneris tos iegādājas pēc PROVIN rēķina vai kontā ar karti. Vienas atskaites pasūtījums izmanto vienu attiecīgā produkta kredītu.\n\n4.2. Rēķina apmaksas termiņš: 7 dienas, ja rēķinā nav norādīts citādi. Kredīti kļūst pieejami pēc apmaksas.\n\n4.3. Kredīti ir derīgi 12 mēnešus no iegādes. Neizlietoti kredīti naudā netiek atmaksāti, izņemot gadījumus, kad sadarbību izbeidz PROVIN bez Partnera vainas vai pakalpojumu nevar sniegt PROVIN dēļ.\n\n4.4. PVN: PROVIN Latvijā nav reģistrēts kā PVN maksātājs iekšzemes darījumiem, tāpēc Latvijas Partneriem PVN netiek piemērots. Citu ES valstu PVN maksātājiem rēķinu izraksta ar PVN numuru LV09118711109, piemērojot reverso maksāšanu, ja to paredz normatīvie akti."
+        "body": "4.1. Kredīti ir priekšapmaksa: Partneris tos iegādājas pēc PROVIN rēķina vai kontā ar karti. Vienas atskaites pasūtījums izmanto vienu attiecīgā produkta kredītu.\n\n4.2. Rēķina apmaksas termiņš: 7 dienas, ja rēķinā nav norādīts citādi. Kredīti kļūst pieejami pēc apmaksas.\n\n4.3. Kredīti ir derīgi 12 mēnešus no iegādes. Neizlietoti kredīti naudā netiek atmaksāti, izņemot gadījumus, kad sadarbību izbeidz PROVIN bez Partnera vainas vai pakalpojumu nevar sniegt PROVIN dēļ.\n\n4.4. PVN: PROVIN Latvijā nav reģistrēts kā PVN maksātājs iekšzemes darījumiem, tāpēc Latvijas Partneriem PVN netiek piemērots. Citu ES valstu PVN maksātājiem rēķinu izraksta ar PROVIN PVN numuru, piemērojot reverso maksāšanu, ja to paredz normatīvie akti."
       },
       {
         "title": "5. Atmaksa un kredīta atgriešana",
