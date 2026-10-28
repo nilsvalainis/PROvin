@@ -11,7 +11,8 @@ describe("iriss order overview layout", () => {
     expect(room).toContain("iriss-parskats-view");
     expect(room).not.toMatch(/iriss-parskats-view[^\n]*bg-\[var\(--bg-base\)\]/);
     expect(clientCard).toContain("Klienta dati");
-    expect(room).not.toContain("Klienta kontakti");
+    // Nils 28.10: Pārskats pa soļiem, klienta kontakti - 8. (pēdējais) solis.
+    expect(room).toContain("IRISS_ORDER_STEPS");
     expect(room).toContain("Avanss un darījums");
     expect(room).toContain("Atzīmēt avansu saņemtu");
     expect(room).toContain("Darījuma statuss");

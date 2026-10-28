@@ -241,19 +241,20 @@ describe("IrissOrderRoom render", () => {
     expect(html).toContain("Nolasīt");
     expect(html).toContain("Izveidot");
     expect(html).toContain("Avanss un darījums");
-    expect(html).toContain("DIAPAZONI");
+    // Nils 28.10: diapazoni sadalīti soļos (Budžets / Tehniskie dati).
+    expect(html).toContain("Tehniskie dati");
+    expect(html).toContain("Klienta kontakti");
     expect(html).toContain("Gadi");
     expect(html).not.toContain("Gadi no-līdz");
     expect(html).toContain("* filtrē Meklētāju. Cena un Gadi obligāti.");
     expect(html).not.toContain("vismaz viens: nobraukums");
     const starred = (label: string) => new RegExp(`${label}<span class="iriss-range-req" aria-hidden="true"> \\*</span>`).test(html);
-    for (const label of ["Marka / modelis", "Modeļa paplašinājums", "Cena", "Gadi", "Nobraukums", "Degviela", "Ātrumkārba", "Virsbūves tips", "Piedziņas tips", "Sēdvietu skaits"]) {
+    for (const label of ["Marka / modelis", "Komplektācija / līnija", "Cena", "Gadi", "Nobraukums", "Degviela", "Ātrumkārba", "Virsbūve", "Piedziņa", "Sēdvietas"]) {
       expect(starred(label), label).toBe(true);
     }
-    for (const label of ["Tilpums", "Jauda", "Statuss", "Valstis", "Bojājumu tolerance", "Vēlamās krāsas", "Nevēlamās krāsas", "Salona apdare"]) {
+    for (const label of ["Tilpums", "Jauda", "Valstis", "Bojājumu tolerance", "Vēlamās krāsas", "Nevēlamās krāsas", "Salona apdare"]) {
       expect(starred(label), label).toBe(false);
     }
-    expect(html).toContain("iriss-spec-full");
   });
 
   it("lists generated documents newest first", async () => {
