@@ -1,68 +1,56 @@
-# CSDD numurzīme → VIN + pamata dati (hero + checkout)
+# CSDD numurzīme → VIN + pamata dati (hero + checkout popup)
 
 **Kam:** Claude (Kārlis / Opus)  
 **No:** Grok Andris  
 **Datums:** 28.10.2026  
 **Statuss:** Nils pateiks «apskati» — **pārskats / plāns / novērtējums**; **kods tikai pēc Nila «jā»** (UI + maksājumi).  
-**Konteksta Page:** https://cursor.com/canvas/store-d697eb4f-7276-4c2c-85f5-6df7e60ed12c/5a1d8f42-3c71-4786-b20a-80c48e72f36d
+**Page:** https://cursor.com/canvas/store-d697eb4f-7276-4c2c-85f5-6df7e60ed12c/5a1d8f42-3c71-4786-b20a-80c48e72f36d  
+**Esošā spec (P10):** `docs/audits-2026-10/vin-dekoders-specifikacija.md` (Nils 27.10 — publiski bezmaksas dati; pie numurzīmes daļējs VIN 11+`******`).
 
-## Mērķis (produkts)
+## Mērķis (Nils 28.10)
 
-1. **Hero tab blokā** (mājaslapas cenu/pasūtījuma hero) VIN lauka vietā klients var ievadīt **arī LV valsts numurzīmi**.
-2. Sistēma **uzreiz atpazīst** (VIN vs numurzīme), ielasa CSDD tehniskos datus un **saglabā pasūtījuma plūsmā** (VIN + pamata).
-3. Kad klients ievadījis numuru vai VIN un spiež **apmaksu**, **e-pasta popupā** (pirms Stripe) jau redz **auto pamata datus**, kuram tiek sūtīts audits.
+1. Hero tab VIN laukā klients var vadīt **arī valsts numurzīmi** — atpazīt un ielasīt sistēmā.  
+2. Pēc «Apmaksāt», **e-pasta popupā** jau redz **auto pamata datus**, kuram tiek sūtīts audits.
 
-## Konteksts (līgums / API)
+## Kas jau ir kodā (NEIZGUDROT NO JAUNA)
 
-- Līgums **LĪG-ieņ/375/26** — transportlīdzekļu vispārējo tehnisko datu API.
-- `epak.tl_tehn_dati?nr1=` pieņem **numurzīmi VAI VIN** → XML; jau `lib/csdd-tech-data.ts` + relejs `CSDD_RELAY_*`.
-- Limits: **10 000** pieprasījumi/mēn (~45 € + PVN). Šobrīd ~89.
-- **Nav** īpašnieku/turētāju datu šajā līgumā.
-- Pilna atskaite (limits, riski, lauki): augstākminētā Page.
+| Lieta | Kur | Stāvoklis |
+| --- | --- | --- |
+| Hero VIN/plate ievade | `ProvinPricingHero` → `Tp5MobilePricingCard`; validācija `validateTp5InlineFields` / `isValidVinOrPlate` | **Jau pieņem plate**; placeholder vēl «Ievadi VIN kodu», aria jau min numurzīmi |
+| Atpazīšana | `classifyOrderVinOrPlateInput` (`lib/order-vin-plate-resolution.ts`) | Gatavs badge «VIN» / «Valsts numurzīme» |
+| CSDD pirms apmaksas | Tikai MINI: `POST /api/checkout/mini-csdd` → `{variant}` | **Klients neredz** make/model u.c. |
+| Plate→VIN | Stripe webhook `resolveOrderVinFromPlate` **pēc** apmaksas | Pirms apmaksas popupā nav |
+| CSDD API | `fetchCsddTechData`, relejs, kešs mini-csdd 6 h / 40 per IP / 10 min | Gatavs |
+| Kvota plāns | Spec: `lib/csdd-quota.ts` Redis `csdd:usage:YYYY-MM[:public]` | Vēl nav |
 
-## UX prasības
+## Ko uzbūvēt (pēc «jā»)
 
-### A. Hero ievade
-- Viens lauks: placeholder tipa «VIN vai numurzīme» (teksti — Latvietis / Nils pēc maketa).
-- Atpazīšana: 17 zīmju VIN vs LV numurzīme (esošais `getVinOrPlateErrorKind` / saistītie helperi — pārbaudīt un paplašināt, nevis dubultēt).
-- Pēc derīgas ievades (blur / Continue / pirms apmaksas — izvēlies mazāko zvanu skaitu): server-side CSDD lookup; kešs + dedupe.
-- Ja atrasts: aizpilda iekšējo VIN + pamata bloku; UI var rādīt īsu «atrasts: Marka Modelis · gads» jau hero solī (pēc Nila/Dizainera).
-- Ja nav atrasts: skaidra kļūda; VIN-only ceļš joprojām strādā (ārzemju auto).
+1. **Publisks lookup** visiem plāniem (jauns endpoint vai paplašināts `mini-csdd`): atgriež īsu kopsavilkumu — marka, modelis, gads, degviela, kW, cm³, krāsa, 1. reģ., **daļējs VIN** (kā P10 spec). Kešs + rate limit + kvotas skaitītājs.  
+2. **Hero lauks:** placeholder «VIN vai valsts numurzīme»; badge no `classifyOrderVinOrPlateInput`.  
+3. **Abi popupi** (`Tp5MiniConfirmModal`, `Tp5CheckoutEmailModal`): virs e-pasta — pamata datu karte (found / not found / timeout). **Timeout nekad nebloķē apmaksu.**  
+4. Metadata: pēc iespējas jau atrisināts VIN Stripe metadata pirms apmaksas (webhook paliek fallback).
 
-### B. E-pasta / apmaksas popup
-- Kad atvērts e-pasta (un tālruņa) solis pirms apmaksas: **karte ar pamata datiem** — vismaz marka, modelis, gads, krāsa, VIN (un numurzīme, ja bija ievade).
-- Teksts skaidrs: «Audits tiks sagatavots šim auto».
-- Ja CSDD vēl ielādējas — skeleton; ja neizdevās — popup tomēr ļauj turpināt ar ievadīto VIN (bez kartes vai ar brīdinājumu).
+## Pamata lauki (publiski)
 
-### C. Dati, ko rādīt publiski (pamata)
-Ieteikums (Nils var sašaurināt): VIN, numurzīme, marka, modelis, gads, krāsa, degviela, jauda, 1. reģistrācija.  
-**Nerādīt:** īpašnieks, OCTA/TA (ja vien Nils neatsevišķi neapstiprina).
+Kā P10 + Andra Page: VIN (daļējs pie plate), numurzīme, marka, modelis, gads, krāsa, degviela, jauda, 1. reģ.  
+**Nerādīt:** īpašnieks; OCTA/TA — tikai ja Nils atsevišķi apstiprina.
 
-## Tehniskie ierobežojumi
+## Limits / drošība
 
-- Tikai server-side CSDD (tokeni nekad pārlūkā).
-- Kešs pēc `nr1` (relejs jau kešo; papildus order/session).
-- Rate limit + Turnstile, ja publiska bezmaksas pārbaude tiek plaši atvērta (saistīts ar Upstash/Turnstile lēmumu).
-- Nesajaukt ar e.csdd / OWS pārlūku (Aivars) — tas nav šis API.
-- Resursi: `docs/resursu-sadale.md` — UI/maksājumi = Claude Opus pēc Nila «jā»; novērtē, ja >1 h vai >25 faili.
+- Līgums LĪG-ieņ/375/26: **10 000**/mēn (~45 €+PVN). Šobrīd ~89.  
+- Server-side only; Turnstile/Upstash, ja plaša bezmaksas pārbaude.  
+- Resursi: `docs/resursu-sadale.md` — UI/maksājumi Opus pēc «jā»; novērtē ja >1 h / >25 faili.
 
-## Esošais kods (sākumpunkti)
+## Pieņemšana
 
-- `components/OrderForm.tsx` — hero soļi, `getVinOrPlateErrorKind`, e-pasta solis.
-- `components/home/HomePricingHero.tsx` — hero apvalks.
-- `lib/csdd-tech-data.ts`, `lib/csdd-tech-data-apply.ts` — API + apply.
-- Checkout / Stripe sesijas izveide — pārliecināties, ka metadata iet VIN (ne tikai plate string).
+1. Plate hero → sistēmā VIN+pamata; VIN-only kā līdz šim.  
+2. E-pasta popupā redzami pamata dati (ja CSDD atrada).  
+3. Stripe/admin VIN korekti.  
+4. Testi: plate, VIN, neatrasts, timeout, kešs.  
+5. Nav UI regresijas ārpus apstiprinātā maketa.
 
-## Pieņemšanas kritēriji
+## Tagad (pirms koda)
 
-1. Hero: derīga LV numurzīme → sistēmā ir VIN + pamata; derīgs VIN → kā līdz šim.
-2. Apmaksas e-pasta popupā redzami pamata dati (ja CSDD atrada).
-3. Stripe / admin pasūtījumā VIN korekti (ne tukšs, ja bija tikai plate).
-4. Testi: plate→VIN, VIN-only, neatrasts, keša atkārtojums.
-5. Nav UI/fontu regresijas ārpus apstiprinātā maketa; create⇒delete nav attiecināms, bet limitu skaitītājs adminā ieteicams.
-
-## Ko Claude dara tagad (pirms koda)
-
-1. Izlasīt šo failu + Page.
-2. Īss plāns (faili, UX soļi, riski) + novērtējums (stundas / failu skaits).
-3. Ja vajag Dizainera maketu — norādīt; **nekodēt** līdz Nila «jā».
+1. Izlasīt šo + P10 `vin-dekoders-specifikacija.md` + Page.  
+2. Īss plāns (faili, UX, riski) + novērtējums.  
+3. **Nekodēt** līdz Nila «jā».
