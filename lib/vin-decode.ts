@@ -83,6 +83,30 @@ const WMI: Record<string, { make: string; country: string }> = {
   "1G1": { make: "Chevrolet", country: "US" },
   "1C4": { make: "Jeep / Chrysler", country: "US" },
   "2T1": { make: "Toyota", country: "CA" },
+  "1HG": { make: "Honda", country: "US" },
+  "19X": { make: "Honda", country: "US" },
+  "5J6": { make: "Honda", country: "US" },
+  "2HG": { make: "Honda", country: "CA" },
+  "19U": { make: "Acura", country: "US" },
+  "4T1": { make: "Toyota", country: "US" },
+  "5TD": { make: "Toyota", country: "US" },
+  "5TF": { make: "Toyota", country: "US" },
+  "1N4": { make: "Nissan", country: "US" },
+  "5N1": { make: "Nissan", country: "US" },
+  "5NP": { make: "Hyundai", country: "US" },
+  "5XY": { make: "Kia", country: "US" },
+  "4S4": { make: "Subaru", country: "US" },
+  "5UX": { make: "BMW", country: "US" },
+  "4JG": { make: "Mercedes-Benz", country: "US" },
+  "1VW": { make: "Volkswagen", country: "US" },
+  "1FT": { make: "Ford", country: "US" },
+  "1GC": { make: "Chevrolet", country: "US" },
+  "1GT": { make: "GMC", country: "US" },
+  "1G6": { make: "Cadillac", country: "US" },
+  "5LM": { make: "Lincoln", country: "US" },
+  "2C3": { make: "Dodge / Chrysler", country: "CA" },
+  "1C6": { make: "Ram", country: "US" },
+  "7JR": { make: "Volvo", country: "US" },
   "3VW": { make: "Volkswagen", country: "MX" },
   LVS: { make: "Ford", country: "CN" },
   LSJ: { make: "MG", country: "CN" },
@@ -100,6 +124,14 @@ function regionOf(first: string): VinRegion {
   if ("12345".includes(first)) return "northAmerica";
   if ("67".includes(first)) return "oceania";
   return "southAmerica";
+}
+
+/** Ziemeļamerikas valsts pēc 1. zīmes, ja WMI nav sarakstā (ISO 3780). */
+function northAmericaCountry(first: string): string | null {
+  if ("145".includes(first)) return "US";
+  if (first === "2") return "CA";
+  if (first === "3") return "MX";
+  return null;
 }
 
 /** 10. zīmes gadu kods (bez I, O, Q, U, Z un 0); cikls atkārtojas ik pēc 30 gadiem. */
@@ -161,7 +193,7 @@ export function decodeVin(raw: string, now: Date = new Date()): VinDecodeResult 
     vin,
     wmi,
     make: known?.make ?? null,
-    country: known?.country ?? null,
+    country: known?.country ?? northAmericaCountry(vin[0]),
     region: regionOf(vin[0]),
     modelYears: vinModelYears(vin[9], now),
     plantCode: vin[10],
