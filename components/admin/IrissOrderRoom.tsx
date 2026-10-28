@@ -225,11 +225,11 @@ type OrderStep = (typeof IRISS_ORDER_STEPS)[number];
 /** Soļa numurs; aizpildīts - zaļš aplis ar ķeksi (Nils 28.10). */
 function StepNum({ n, done }: { n: number; done?: boolean }) {
   return done ? (
-    <span className="inline-flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-[#1f8a4c] text-[13px] font-bold text-white" aria-label="aizpildīts">
+    <span className="inline-flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-[var(--iriss-ok)] text-[13px] font-bold text-white" aria-label="aizpildīts">
       ✓
     </span>
   ) : (
-    <span className="inline-flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-[#c7c7cc] bg-white text-[12.5px] font-bold text-[#4a4a4f]">
+    <span className="inline-flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-[var(--iriss-line-strong)] bg-white text-[12.5px] font-bold text-[var(--iriss-ink-2)]">
       {n}
     </span>
   );
@@ -255,7 +255,7 @@ function StepCard({
         <StepNum n={n} done={status?.done} />
         <h3 className="text-[15px] font-bold leading-tight text-[var(--iriss-ink)]">{step.title}</h3>
         {status && !status.done ? (
-          <span className="ml-auto text-[12.5px] text-[#6e6e73]">trūkst: {status.missing.join(", ").toLocaleLowerCase("lv")}</span>
+          <span className="ml-auto text-[12.5px] text-[var(--iriss-ink-2)]">trūkst: {status.missing.join(", ").toLocaleLowerCase("lv")}</span>
         ) : null}
       </div>
       {children}
@@ -324,7 +324,7 @@ function Segmented({
           </span>
         ) : null}
       </span>
-      <div className="inline-flex w-fit max-w-full flex-wrap gap-[3px] rounded-[11px] bg-[#f2f2f7] p-[3px]">
+      <div className="inline-flex w-fit max-w-full flex-wrap gap-[3px] rounded-[11px] bg-[var(--iriss-surface-2)] p-[3px]">
         {options.map((o) => {
           const on = value === o.value;
           return (
@@ -334,7 +334,7 @@ function Segmented({
               aria-pressed={on}
               onClick={() => onChange(on && o.value ? "" : o.value)}
               className={`min-h-[32px] whitespace-nowrap rounded-lg px-3 text-[13px] font-semibold ${
-                on ? "bg-white text-[var(--iriss-ink)] shadow-[0_0_0_1px_#1c1c1e,0_1px_2px_rgba(0,0,0,0.06)]" : "bg-transparent text-[#3a3a3c]"
+                on ? "bg-white text-[var(--iriss-ink)] shadow-[0_0_0_1px_var(--iriss-ink),0_1px_2px_rgba(0,0,0,0.06)]" : "bg-transparent text-[var(--iriss-ink-2)]"
               }`}
             >
               {o.label}
@@ -372,7 +372,7 @@ function EquipmentPicker({
               aria-pressed={on}
               onClick={() => onChange(toggleEquipment(value, item))}
               className={`min-h-[34px] rounded-lg border px-2.5 text-[12.5px] font-semibold ${
-                on ? "border-[var(--iriss-ink)] bg-[var(--iriss-ink)] text-white" : "border-[var(--iriss-line-strong,#d1d1d6)] bg-white text-[var(--iriss-ink)]"
+                on ? "border-[var(--iriss-ink)] bg-[var(--iriss-ink)] text-white" : "border-[var(--iriss-line-strong)] bg-white text-[var(--iriss-ink)]"
               }`}
             >
               {item}
@@ -1175,12 +1175,12 @@ export function IrissOrderRoom({
                   {progress.done} no {progress.total} soļiem
                 </span>
               </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#e5e5ea]">
-                <i className="block h-full rounded-full bg-[#1f8a4c]" style={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }} />
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--iriss-line)]">
+                <i className="block h-full rounded-full bg-[var(--iriss-ok)]" style={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }} />
               </div>
             </div>
             {progress.missing.length > 0 ? (
-              <span className="rounded-full bg-[#fff4e5] px-2.5 py-1 text-[12px] font-semibold text-[#8a4b00]">Trūkst: {progress.missing.join(", ")}</span>
+              <span className="rounded-full bg-[color-mix(in_srgb,var(--iriss-warn)_12%,white)] px-2.5 py-1 text-[12px] font-semibold text-[var(--iriss-warn)]">Trūkst: {progress.missing.join(", ")}</span>
             ) : null}
           </section>
         <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_340px]">
@@ -1429,10 +1429,10 @@ export function IrissOrderRoom({
                           aria-pressed={on}
                           onClick={() => onPatch(opt.key, !on)}
                           className={`min-h-[32px] rounded-full border px-3 text-[12.5px] font-semibold ${
-                            on ? "border-[var(--iriss-ink)] bg-white text-[var(--iriss-ink)] shadow-[inset_0_0_0_1px_#1c1c1e]" : "border-[#d1d1d6] bg-white text-[var(--iriss-ink)]"
+                            on ? "border-[var(--iriss-ink)] bg-white text-[var(--iriss-ink)] shadow-[inset_0_0_0_1px_var(--iriss-ink)]" : "border-[var(--iriss-line-strong)] bg-white text-[var(--iriss-ink)]"
                           }`}
                         >
-                          {on ? <span className="mr-1 text-[#1f8a4c]">✓</span> : null}
+                          {on ? <span className="mr-1 text-[var(--iriss-ok)]">✓</span> : null}
                           {opt.label}
                         </button>
                       );
@@ -1484,7 +1484,7 @@ export function IrissOrderRoom({
                 options={IRISS_PASUTIJUMS_PICKER_STATUSES.map((st) => ({ value: st, label: IRISS_PASUTIJUMS_PICKER_STATUS_LV[st] }))}
                 onChange={(value) => value && onSetStatus(value as IrissPasutijumsListStatus)}
               />
-              <label className="mt-3 flex min-h-[40px] items-center justify-between gap-3 border-t border-[#eef0f3] pt-2">
+              <label className="mt-3 flex min-h-[40px] items-center justify-between gap-3 border-t border-[var(--iriss-line)] pt-2">
                 <span className="text-[14px] text-[var(--iriss-ink-2)]">Darījums</span>
                 <select
                   className="h-8 rounded-full bg-[var(--fill)] px-2.5 text-[13px] text-[var(--ink)] outline-none"
@@ -1505,7 +1505,7 @@ export function IrissOrderRoom({
             {/* Nils 28.10: klients dublēts labajā pusē; tālrunis atver WhatsApp lietotni datorā. */}
             <section className={cardClass} aria-label="Klients">
               <CardTitle>Klients</CardTitle>
-              <div className="divide-y divide-[#eef0f3] text-[14px]">
+              <div className="divide-y divide-[var(--iriss-line)] text-[14px]">
                 <div className="flex min-h-[40px] items-center justify-between gap-3">
                   <span className="text-[var(--iriss-ink-2)]">Vārds</span>
                   <b className="text-right">{clientName || "-"}</b>
@@ -1517,12 +1517,12 @@ export function IrissOrderRoom({
                       {formatIrissListPhoneText(rec.phone)}
                     </a>
                   ) : (
-                    <span className="text-[#8e8e93]">nav</span>
+                    <span className="text-[var(--iriss-ink-3)]">nav</span>
                   )}
                 </div>
                 <div className="flex min-h-[40px] items-center justify-between gap-3">
                   <span className="text-[var(--iriss-ink-2)]">E-pasts</span>
-                  {rec.email.trim() ? <b className="truncate">{rec.email}</b> : <span className="text-[#8e8e93]">nav</span>}
+                  {rec.email.trim() ? <b className="truncate">{rec.email}</b> : <span className="text-[var(--iriss-ink-3)]">nav</span>}
                 </div>
                 <div className="flex min-h-[40px] items-center justify-between gap-3">
                   <span className="text-[var(--iriss-ink-2)]">Pasūtījuma datums</span>
