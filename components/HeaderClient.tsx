@@ -31,6 +31,8 @@ export function HeaderClient() {
   const isBlogs = normalizedPath === "/blogs" || normalizedPath.startsWith("/blogs/");
   const isFaqPage = normalizedPath === "/biezi-jautajumi";
   const isVinCheck = normalizedPath === "/vin-koda-parbaude";
+  /** VIN dekoders: tāda pati galvene un izvēlne kā citām lapām, bet pašam saites izvēlnē nav. */
+  const isVinDecoder = normalizedPath === "/vin-dekoders";
   const isPartneriem = normalizedPath === "/partneriem" || normalizedPath.startsWith("/partneriem/");
   const isLegalPage =
     normalizedPath === "/lietosanas-noteikumi" || normalizedPath === "/privatuma-politika";
@@ -41,6 +43,7 @@ export function HeaderClient() {
     normalizedPath === "/pasutit" ||
     isFaqPage ||
     isVinCheck ||
+    isVinDecoder ||
     isPakalpojumi ||
     isParMums ||
     isBlogs;
@@ -58,6 +61,7 @@ export function HeaderClient() {
     isBlogs ||
     isFaqPage ||
     isVinCheck ||
+    isVinDecoder ||
     isPartneriem ||
     isLegalPage ||
     isThanks;
