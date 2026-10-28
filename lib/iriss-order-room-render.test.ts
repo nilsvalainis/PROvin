@@ -227,7 +227,7 @@ describe("IrissOrderRoom render", () => {
     expect(html).not.toMatch(/\u2014|\u2013/);
   });
 
-  it("shows Nolasīt on Pārskats listing links", async () => {
+  it("Pārskatā platformu saites pēc noklusējuma aizvērtas (Nils 28.10)", async () => {
     const { html, errors } = await renderHtml(
       room({
         initialTab: "overview",
@@ -238,8 +238,8 @@ describe("IrissOrderRoom render", () => {
       }),
     );
     expect(errors).toEqual([]);
-    expect(html).toContain("Nolasīt");
-    expect(html).toContain("Izveidot");
+    expect(html).not.toContain("Nolasīt");
+    expect(html).toContain(">Saites<");
     expect(html).toContain("Finansējums, avanss un depozīts");
     // Nils 28.10: diapazoni sadalīti soļos (Budžets / Tehniskie dati).
     expect(html).toContain("Tehniskie dati");
