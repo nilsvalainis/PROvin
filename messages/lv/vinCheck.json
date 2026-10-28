@@ -17,5 +17,39 @@
     "homeBody": "Ja meklē, kur veikt VIN koda pārbaudi vai auto vēstures pārbaudi pirms pirkuma, sāc ar <freeEval>bezmaksas VIN koda un sludinājuma novērtējumu</freeEval>. Sniegsim īsu komentāru, paskaidrosim, ko pārbaude ietver, un ieteiksim piemērotāko paketi.",
     "homeCta": "Kā notiek VIN koda pārbaude",
     "relatedPostsTitle": "No bloga: lietota auto pirkšana"
+  },
+  "VinDecoder": {
+    "metaTitle": "VIN dekoders bez maksas: ražotājs, valsts un gads | PROVIN",
+    "metaDescription": "Bezmaksas VIN dekoders: ražotājs, ražošanas valsts un iespējamais modeļa gads no VIN koda. Vēsture, nobraukums un sludinājuma analīze - PROVIN auditā.",
+    "title": "VIN dekoders",
+    "lead": "Ievadiet 17 zīmju VIN kodu un uzziniet, ko tas pasaka pats par sevi: ražotāju, ražošanas valsti un iespējamo modeļa gadu. Bez maksas un bez reģistrācijas.",
+    "inputLabel": "VIN kods",
+    "inputPlaceholder": "Piemēram, WVWZZZ1KZ6W000001",
+    "submit": "Dekodēt",
+    "errLength": "VIN kodam jābūt tieši 17 zīmēm.",
+    "errChars": "VIN kodā nav burtu I, O un Q. Pārbaudiet ievadīto.",
+    "rowMake": "Ražotājs (pēc WMI)",
+    "rowCountry": "Ražošanas valsts",
+    "rowRegion": "Reģions",
+    "rowYear": "Iespējamais modeļa gads",
+    "rowPlant": "Rūpnīcas kods",
+    "rowCheck": "Kontrolcipars",
+    "checkOk": "Pareizs",
+    "checkBad": "Nesakrīt: iespējama kļūda vai viltots VIN",
+    "checkNa": "Eiropā nav obligāts",
+    "unknownMake": "Nav mūsu sarakstā",
+    "yearHint": "10. zīme atkārtojas ik pēc 30 gadiem; pareizo gadu nosaka pēc auto izskata un dokumentiem.",
+    "limitsTitle": "Ko VIN dekoders nerāda",
+    "limitsBody": "VIN kods pats nesatur nobraukumu, negadījumus, apskašu defektus vai īpašnieku skaitu. Tos atrod tikai vēstures datubāzēs un reģistros, un tie jāsalīdzina ar sludinājumu.",
+    "ctaFree": "Pārbaudīt sludinājumu bez maksas",
+    "ctaAudit": "Pasūtīt PROVIN AUDITU ar šo VIN",
+    "regions": {
+      "africa": "Āfrika",
+      "asia": "Āzija",
+      "europe": "Eiropa",
+      "northAmerica": "Ziemeļamerika",
+      "oceania": "Okeānija",
+      "southAmerica": "Dienvidamerika"
+    }
   }
 }

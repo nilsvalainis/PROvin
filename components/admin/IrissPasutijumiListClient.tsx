@@ -829,7 +829,7 @@ export function IrissPasutijumiListClient({
         <span>Budžets</span>
         <span>Jaunie</span>
         <span>Nākamā darbība</span>
-        <span className="text-right">WhatsApp · statuss</span>
+        <span className="text-right">Statuss</span>
       </div>
 
       <div className="flex flex-col gap-2 max-md:px-4">

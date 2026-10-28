@@ -49,6 +49,9 @@ export type B2bPartnerRecord = {
    * Veciem ierakstiem parse aizpilda ar createdAt.
    */
   adminSeenAt: string | null;
+  /** Partneru sadarbības noteikumu versija un akcepta laiks (reģistrācijā). Veciem ierakstiem - null. */
+  termsVersion: string | null;
+  termsAcceptedAt: string | null;
 };
 
 export type B2bPartnerPublicProfile = Omit<
@@ -152,6 +155,8 @@ export function toPublicPartner(partner: B2bPartnerRecord): B2bPartnerPublicProf
     prices: partner.prices,
     walletPrices: partner.walletPrices ?? emptyB2bWalletPrices(),
     walletHiddenProducts: partner.walletHiddenProducts ?? [],
+    termsVersion: partner.termsVersion ?? null,
+    termsAcceptedAt: partner.termsAcceptedAt ?? null,
   };
 }
 
@@ -243,6 +248,9 @@ export function parsePartnerRecord(raw: unknown): B2bPartnerRecord | null {
     walletPrices: parseB2bWalletPrices(o.walletPrices),
     walletHiddenProducts: parseB2bWalletHiddenProducts(o.walletHiddenProducts),
     adminSeenAt: parseAdminSeenAt(o, createdAt),
+    termsVersion: typeof o.termsVersion === "string" && o.termsVersion.trim() ? clip(o.termsVersion, 32) : null,
+    termsAcceptedAt:
+      typeof o.termsAcceptedAt === "string" && o.termsAcceptedAt.trim() ? o.termsAcceptedAt.trim() : null,
   };
 }
 

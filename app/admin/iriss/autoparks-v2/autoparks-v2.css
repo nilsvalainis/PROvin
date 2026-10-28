@@ -3617,3 +3617,30 @@
     font-size: 14.5px;
   }
 }
+
+/* Saraksts telefonā (Nils 28.10, makets B): apakšējā rindā neitrāls statuss rāmītī + VIN. */
+.ap2.ap2.ap2 .ap2-mbot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  min-width: 0;
+}
+.ap2.ap2.ap2 .ap2-mst {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--iriss-line-strong, #d1d1d6);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--iriss-ink, #1c1c1e);
+  background: #fff;
+}
+.ap2.ap2.ap2 .ap2-mbot .ap2-vin {
+  margin-top: 0;
+  flex: 1;
+  min-width: 0;
+}

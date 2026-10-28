@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
+import { pdfjsWorkerSrc } from "@/lib/pdfjs-worker-src";
 
 /**
  * PDF priekšskatījums lietotnē (arī iPhone): lapas tiek uzzīmētas ar pdf.js, nevis iframe,
@@ -23,7 +24,7 @@ export function IrissWaybillPdfSheet({ href, title, onClose }: { href: string | 
         if (!res.ok) throw new Error("pdf");
         const data = await res.arrayBuffer();
         const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+        pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerSrc(pdfjs.version);
         const pdf = await pdfjs.getDocument({ data }).promise;
         const width = Math.min(host?.clientWidth || 360, 900);
         const ratio = Math.min(window.devicePixelRatio || 1, 2);

@@ -17,5 +17,39 @@
     "homeBody": "If you need a VIN check or a car history check before you buy, start with the VIN and the listing link. Next we explain what the check includes and which package to pick.",
     "homeCta": "How a VIN check works",
     "relatedPostsTitle": "From the blog: buying a used car"
+  },
+  "VinDecoder": {
+    "metaTitle": "Free VIN decoder: manufacturer, country and year | PROVIN",
+    "metaDescription": "Free VIN decoder: manufacturer, country of manufacture and possible model year from the VIN. History, mileage and listing analysis in the PROVIN audit.",
+    "title": "VIN decoder",
+    "lead": "Enter a 17-character VIN and see what it tells by itself: manufacturer, country of manufacture and possible model year. Free, no sign-up.",
+    "inputLabel": "VIN",
+    "inputPlaceholder": "For example WVWZZZ1KZ6W000001",
+    "submit": "Decode",
+    "errLength": "A VIN has exactly 17 characters.",
+    "errChars": "A VIN never contains I, O or Q. Please check the input.",
+    "rowMake": "Manufacturer (by WMI)",
+    "rowCountry": "Country of manufacture",
+    "rowRegion": "Region",
+    "rowYear": "Possible model year",
+    "rowPlant": "Plant code",
+    "rowCheck": "Check digit",
+    "checkOk": "Valid",
+    "checkBad": "Mismatch: possible typo or altered VIN",
+    "checkNa": "Not mandatory in Europe",
+    "unknownMake": "Not in our list",
+    "yearHint": "The 10th character repeats every 30 years; the correct year follows from the car and its documents.",
+    "limitsTitle": "What a VIN decoder does not show",
+    "limitsBody": "The VIN itself holds no mileage, accidents, inspection defects or number of owners. Those come only from history databases and registers and must be compared with the listing.",
+    "ctaFree": "Check a listing for free",
+    "ctaAudit": "Order a PROVIN AUDIT for this VIN",
+    "regions": {
+      "africa": "Africa",
+      "asia": "Asia",
+      "europe": "Europe",
+      "northAmerica": "North America",
+      "oceania": "Oceania",
+      "southAmerica": "South America"
+    }
   }
 }

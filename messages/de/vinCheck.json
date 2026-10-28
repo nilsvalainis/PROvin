@@ -17,5 +17,39 @@
     "homeBody": "Wenn Sie vor dem Kauf einen VIN-Check oder eine Fahrzeughistorie brauchen, beginnen Sie mit VIN und Inseratlink. Als Nächstes erklären wir, was die Prüfung umfasst und welches Paket passt.",
     "homeCta": "So funktioniert der VIN-Check",
     "relatedPostsTitle": "Aus dem Blog: Gebrauchtwagenkauf"
+  },
+  "VinDecoder": {
+    "metaTitle": "Kostenloser VIN-Decoder: Hersteller, Land und Baujahr | PROVIN",
+    "metaDescription": "Kostenloser VIN-Decoder: Hersteller, Herstellungsland und mögliches Modelljahr aus der VIN. Historie, Kilometerstand und Inseratsanalyse im PROVIN-Audit.",
+    "title": "VIN-Decoder",
+    "lead": "Geben Sie eine 17-stellige VIN ein und sehen Sie, was sie selbst verrät: Hersteller, Herstellungsland und mögliches Modelljahr. Kostenlos, ohne Anmeldung.",
+    "inputLabel": "VIN",
+    "inputPlaceholder": "Zum Beispiel WVWZZZ1KZ6W000001",
+    "submit": "Dekodieren",
+    "errLength": "Eine VIN hat genau 17 Zeichen.",
+    "errChars": "Eine VIN enthält nie I, O oder Q. Bitte Eingabe prüfen.",
+    "rowMake": "Hersteller (nach WMI)",
+    "rowCountry": "Herstellungsland",
+    "rowRegion": "Region",
+    "rowYear": "Mögliches Modelljahr",
+    "rowPlant": "Werkscode",
+    "rowCheck": "Prüfziffer",
+    "checkOk": "Gültig",
+    "checkBad": "Stimmt nicht: möglicher Tippfehler oder veränderte VIN",
+    "checkNa": "In Europa nicht vorgeschrieben",
+    "unknownMake": "Nicht in unserer Liste",
+    "yearHint": "Das 10. Zeichen wiederholt sich alle 30 Jahre; das richtige Jahr ergibt sich aus Fahrzeug und Papieren.",
+    "limitsTitle": "Was ein VIN-Decoder nicht zeigt",
+    "limitsBody": "Die VIN selbst enthält keinen Kilometerstand, keine Unfälle, keine Prüfmängel und keine Halterzahl. Diese kommen nur aus Historiendatenbanken und Registern und müssen mit dem Inserat verglichen werden.",
+    "ctaFree": "Inserat kostenlos prüfen",
+    "ctaAudit": "PROVIN AUDIT für diese VIN bestellen",
+    "regions": {
+      "africa": "Afrika",
+      "asia": "Asien",
+      "europe": "Europa",
+      "northAmerica": "Nordamerika",
+      "oceania": "Ozeanien",
+      "southAmerica": "Südamerika"
+    }
   }
 }
