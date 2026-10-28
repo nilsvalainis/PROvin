@@ -35,12 +35,15 @@ export function DocThumb({ url, contentType, title }: { url: string; contentType
   useEffect(() => {
     if (!visible || isImage) return;
     let cancelled = false;
-    (async () => {
+    // Viens atkārtots mēģinājums: pirmā ielāde dažreiz neizdodas (tīkls / vienlaicīgas ielādes) un sīktēls palika pelēks (28.10).
+    const render = async (attempt: number): Promise<void> => {
+      let doc: { getPage: (n: number) => Promise<unknown>; destroy: () => Promise<void> } | null = null;
       try {
         const pdfjs = await import("pdfjs-dist");
         pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerSrc(pdfjs.version);
-        const doc = await pdfjs.getDocument({ url, withCredentials: true }).promise;
-        const page = await doc.getPage(1);
+        const loaded = await pdfjs.getDocument({ url, withCredentials: true }).promise;
+        doc = loaded;
+        const page = await loaded.getPage(1);
         const c = canvas.current;
         if (cancelled || !c) return;
         const base = page.getViewport({ scale: 1 });
@@ -51,12 +54,20 @@ export function DocThumb({ url, contentType, title }: { url: string; contentType
         const ctx = c.getContext("2d");
         if (!ctx) throw new Error("no_ctx");
         await page.render({ canvasContext: ctx, viewport: vp }).promise;
-        void doc.destroy();
         if (!cancelled) setState("ok");
       } catch {
-        if (!cancelled) setState("fail");
+        if (cancelled) return;
+        if (attempt === 0) {
+          await new Promise((r) => setTimeout(r, 1500));
+          if (!cancelled) return render(1);
+          return;
+        }
+        setState("fail");
+      } finally {
+        if (doc) void doc.destroy().catch(() => undefined);
       }
-    })();
+    };
+    void render(0);
     return () => {
       cancelled = true;
     };
