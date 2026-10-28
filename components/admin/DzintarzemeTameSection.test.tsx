@@ -19,7 +19,7 @@ describe("Izmaksu tāme - forma (makets 28.10)", () => {
   it("summas ar tūkstošu atstarpi arī 4 cipariem", () => {
     expect(formatTameEur(1078)).toBe("1 078,00 €");
     expect(formatTameEur(43010.88)).toBe("43 010,88 €");
-    expect(formatTameEur(-500)).toBe("−500,00 €");
+    expect(formatTameEur(-500)).toBe("-500,00 €");
   });
 
   it("kopsavilkums blakus: kopā, avanss un atlikums", async () => {
@@ -29,7 +29,7 @@ describe("Izmaksu tāme - forma (makets 28.10)", () => {
     expect(text).toContain("Kopsavilkums");
     expect(text).toContain("38 500,00 €");
     expect(text).toContain("Avanss");
-    expect(text).toContain("−500,00 €");
+    expect(text).toContain("-500,00 €");
     expect(text).toContain("Atlikums apmaksai");
     // B: 990 + 3,5 % no 30 800
     expect(text).toContain("2 068,00 €");

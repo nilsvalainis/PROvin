@@ -48,7 +48,7 @@ export const TAME_EXTRA_PRESETS = ["Tehniskā apskate", "Riepas"] as const;
 export function formatTameEur(n: number): string {
   const v = Number.isFinite(n) ? n : 0;
   const [int, dec] = Math.abs(v).toFixed(2).split(".");
-  return `${v < 0 ? "−" : ""}${int!.replace(/\B(?=(\d{3})+(?!\d))/g, " ")},${dec} €`;
+  return `${v < 0 ? "-" : ""}${int!.replace(/\B(?=(\d{3})+(?!\d))/g, " ")},${dec} €`;
 }
 
 function mergeDraft(d: IrissDzintarzemeTameDraft): IrissDzintarzemeTameDraft {
@@ -591,7 +591,7 @@ function TameSumRow({ label, value, first, strong }: { label: string; value: num
       }`}
     >
       <span className={strong ? "" : "text-[var(--iriss-ink-2)]"}>{label}</span>
-      <span>{value < 0 ? `−${formatTameEur(-value)}` : formatTameEur(value)}</span>
+      <span>{value < 0 ? `-${formatTameEur(-value)}` : formatTameEur(value)}</span>
     </div>
   );
 }
