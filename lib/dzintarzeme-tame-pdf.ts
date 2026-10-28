@@ -97,7 +97,7 @@ function eur(n: number): string {
 
 function rigaDate(d: Date): string {
   const p = Object.fromEntries(
-    new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Riga", day: "2-digit", month: "2-digit", year: "numeric" })
+    new Intl.DateTimeFormat("lv-LV", { timeZone: "Europe/Riga", day: "2-digit", month: "2-digit", year: "numeric" })
       .formatToParts(d)
       .map((x) => [x.type, x.value]),
   );
