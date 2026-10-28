@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
+import { PdPhotoSorter } from "./PdPhotoSorter";
 import { PdAuto1Blocks, PdToggles, type PdToggleTarget } from "@/components/iriss-piedavajumi/PdAuto1Blocks";
 import { PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
 import { copyText, deleteIrissPdRequest, irissPdAbsoluteLink, usePdRebase } from "@/components/admin/iriss-piedavajumi/pd-actions";
@@ -278,7 +279,6 @@ export function PiedavajumsDetail({
   const [busy, setBusy] = useState("");
   const [err, setErr] = useState("");
   const [info, setInfo] = useState(note);
-  const dragFrom = useRef<number | null>(null);
   const { rebase, rebaseBusy, rebaseError } = usePdRebase();
 
   const editable = isIrissPdEditable(rec.status);
@@ -398,14 +398,6 @@ export function PiedavajumsDetail({
     });
   }
 
-  function movePhoto(from: number, to: number) {
-    if (from === to || from < 0 || to < 0 || from >= d.photos.length || to >= d.photos.length) return;
-    const next = [...d.photos];
-    const [it] = next.splice(from, 1);
-    next.splice(to, 0, it!);
-    set("photos", next);
-  }
-
   const photoUrl = (p: IrissPdPhoto) => `/api/admin/iriss-piedavajumi/${rec.id}/foto/${rec.photos.findIndex((x) => photoKey(x) === photoKey(p))}`;
 
   const showImport = editable && (rec.status === "requested" || (!rec.vehicle.title && rec.source === "manual"));
@@ -474,42 +466,8 @@ export function PiedavajumsDetail({
 
         {showImport ? <PdImportPanel id={rec.id} onDone={applyRecord} /> : null}
 
-        <Card title="Foto" sub={d.photos.length ? `${d.photos.length} foto · velc, lai mainītu secību · pirmā ir vāks` : "Foto nav (nav obligāti)"}>
-          {d.photos.length ? (
-            <div className="pde-ph">
-              {d.photos.map((p, i) => (
-                <div
-                  key={photoKey(p)}
-                  className="it"
-                  draggable={editable}
-                  onDragStart={() => {
-                    dragFrom.current = i;
-                  }}
-                  onDragOver={(e) => {
-                    if (dragFrom.current != null) e.preventDefault();
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    if (dragFrom.current != null) movePhoto(dragFrom.current, i);
-                    dragFrom.current = null;
-                  }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={photoUrl(p)} alt={`Foto ${i + 1}`} loading="lazy" draggable={false} />
-                  {editable && i > 0 ? (
-                    <button type="button" className="l" aria-label={`Foto ${i + 1}: pārvietot pa kreisi`} onClick={() => movePhoto(i, i - 1)}>
-                      ‹
-                    </button>
-                  ) : null}
-                  {editable ? (
-                    <button type="button" className="r" aria-label={`Foto ${i + 1}: noņemt`} onClick={() => set("photos", d.photos.filter((_, j) => j !== i))}>
-                      ×
-                    </button>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          ) : null}
+        <Card title="Foto" sub={d.photos.length ? `${d.photos.length} foto · velc, lai mainītu secību · pirmā ir vāks · klikšķis atver lielā izmērā` : "Foto nav (nav obligāti)"}>
+          <PdPhotoSorter photos={d.photos} editable={editable} urlOf={photoUrl} keyOf={photoKey} onChange={(next) => set("photos", next)} />
         </Card>
 
         <Card title="Pamatdati" sub={rec.auto1 ? "Ielasīts no Auto1 · labojams" : "Labojams"}>
