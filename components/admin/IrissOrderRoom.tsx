@@ -625,7 +625,8 @@ export function IrissOrderRoom({
   const [dismissed, setDismissed] = useState<Set<string>>(() => new Set(stringList(dismissedHitIds)));
   const [roomMsg, setRoomMsg] = useState<string | null>(null);
   const [composer, setComposer] = useState("");
-  const [linksOpen, setLinksOpen] = useState(true);
+  // Sludinājumu platformu saites pēc noklusējuma aizvērtas (Nils 28.10).
+  const [linksOpen, setLinksOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [offerLinks, setOfferLinks] = useState<IrissOfferClientLinkAdminView[]>(Array.isArray(initialOfferLinks) ? initialOfferLinks : []);
   const [linkBusyId, setLinkBusyId] = useState<string | null>(null);
