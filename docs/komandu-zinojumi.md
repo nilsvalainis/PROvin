@@ -187,3 +187,7 @@ Ziņai: Claude. **Nils 27.10 «Sakārto, lai Claude ir paroles».**
 
 ### 2026-10-28 ~14:57 Europe/Riga | Andris → Claude
 Ziņai: Claude. **IRISS demo login salabots.** Lietotājs `claude.demo@provin.lv` (Claude Demo) bija pazudis no Lietotāji — tāpēc «Nepareizs lietotājvārds vai parole». Andris izveidoja no jauna (`usr_f0fec0b42bb76b05`), 15 sadaļas (formā nav Piedāvājumi checkbox), parole iestatīta, `/api/admin/login` OK **bez 2FA**. Atjaunots 1Password `Cowork Claude` ieraksts «IRISS demo claude.demo» + fallback `~/Desktop/claude-demo-admin.txt` un `~/Desktop/claude-cowork-logins.json` (arī opus-q2310). Headless smoke: ņem paroles no Cowork Claude / fallback faila; URL `https://www.provin.lv/admin/login`, username `claude.demo@provin.lv`.
+
+
+### 2026-10-28 Europe/Riga | Claude → Andris
+Ziņai: Andris. **Auto1 dokumentu dublikāti Autoparkā** (Nils 28.10): ~27 no 55 auto Car Invoice ir divās vietās - Loģistikas kabineta dokumentos (c:) un vecajos Autoparka failos (f:, stage purchase), dažiem f: pat 2x (piem. ap-ff7cf01f, ap-6e7b1d57, ap-476cd4af, ap-cbd98bbb, ap-edcb4874). Skatā tagad rāda vienu (priekšroka Loģistikas dokumentam), dati nav dzēsti. **Aģentiem:** no Auto1 augšupielādē tikai 2 failus - Car Invoice + Order Confirmation (+ transporta rēķini, ja ir) - un **tikai vienā vietā** (Loģistikas kabinetā, ar tipu). Neaugšupielādēt to pašu failu atkārtoti un neaugšupielādēt proforma failus.

@@ -14,6 +14,7 @@ import {
 } from "@/lib/iriss-autoparks-v2-cabinet-tabs";
 import type { AutoparksV2Perms } from "@/lib/iriss-autoparks-v2-perms";
 import { IrissSaitesPanel } from "@/components/admin/iriss-saites/IrissSaitesPanel";
+import { IrissCreateOfferButton } from "@/components/admin/IrissCreateOfferButton";
 import type { AutoparksTransit } from "@/lib/iriss-autoparks-transit";
 import { AutoparksV2Cela } from "./AutoparksV2Cela";
 import { AutoparksV2Csdd } from "./AutoparksV2Csdd";
@@ -62,6 +63,7 @@ export function AutoparksV2Cabinet({
   const [photoVersion, setPhotoVersion] = useState(0);
   const [toast, setToast] = useState<{ historyId: string; status: AutoparksStatus; left: number } | null>(null);
   const [statusErr, setStatusErr] = useState("");
+  const desktop = useCabinetDesktop();
   const tabs = allowedTabs(perms, panes, { transit: Boolean(transit) });
   const tab = resolveCabinetTab(params.get("t"), tabs, perms.vesture);
   const compact = tab !== "pamatdati";
@@ -160,6 +162,13 @@ export function AutoparksV2Cabinet({
               {basics.clientOrder ? <span className="ap2-client-badge">Pasūtījums</span> : null}
               <VinCopy vin={basics.vin} className="ap2-dvin" />
             </div>
+            {/* Kabineta makets «Main» (dators, Nils 27.10/28.10): darbības galvenē, tikai Pamatdatos. */}
+            {desktop && tab === "pamatdati" && (canWaybill || canCreateOffer) ? (
+              <div className="ap2-head-acts">
+                {canWaybill ? <AutoparksV2Waybill car={{ title: basics.title, vin: basics.vin }} /> : null}
+                {canCreateOffer ? <IrissCreateOfferButton from="autoparks" id={basics.id} className="ap2-hbtn" /> : null}
+              </div>
+            ) : null}
           </div>
           {onHome ? statusBtn("ap2-dstatus") : null}
         </div>
@@ -196,14 +205,20 @@ export function AutoparksV2Cabinet({
           <div className="ap2-pd-top">
             {statusBtn("ap2-mstatus")}
             {statusErr ? <p className="ap2-err">{statusErr}</p> : null}
-            {canWaybill ? <AutoparksV2Waybill car={{ title: basics.title, vin: basics.vin }} /> : null}
+            {canWaybill && !desktop ? <AutoparksV2Waybill car={{ title: basics.title, vin: basics.vin }} /> : null}
+            {desktop ? (
+              <>
+                <AutoparksV2Csdd basics={basics} />
+                {perms.pamatdati ? <OwnerCard basics={basics} onBasics={onBasics} /> : null}
+              </>
+            ) : null}
             <IrissSaitesPanel from="autoparks" id={basics.id} vehicle={basics.title} />
           </div>
           <div className="ap2-pd-main">
             <AutoparksV2Pamatdati basics={basics} onBasics={onBasics} />
           </div>
           <div className="ap2-pd-bottom">
-            <AutoparksV2Csdd basics={basics} />
+            {desktop ? null : <AutoparksV2Csdd basics={basics} />}
             {perms.admin ? <DeleteCarButton carId={basics.id} title={basics.title} /> : null}
           </div>
         </div>
@@ -337,5 +352,48 @@ export function OwnerBadge({ basics, canEdit, onBasics }: { basics: AutoparksV2B
         <option value="DZA">{OWNER_FULL_LV.DZA}</option>
       </select>
     </label>
+  );
+}
+
+/** Datora izkārtojums (≥900 px) - pēc kabineta maketa «Main»; serverī un telefonā - mobilais. */
+function useCabinetDesktop(): boolean {
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 900px)");
+    const on = () => setDesktop(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return desktop;
+}
+
+/** Īpašnieks labajā kolonnā (makets «Main»): divas pogas ĪRISS / Dzintarzeme. */
+export function OwnerCard({ basics, onBasics }: { basics: AutoparksV2Basics; onBasics: (b: AutoparksV2Basics) => void }) {
+  const [err, setErr] = useState(false);
+  async function change(next: "IRISS" | "DZA") {
+    if (next === basics.owner) return;
+    setErr(false);
+    const res = await fetch(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ owner: next }),
+    }).catch(() => null);
+    const data = (await res?.json().catch(() => null)) as { basics?: AutoparksV2Basics } | null;
+    if (res?.ok && data?.basics) onBasics(data.basics);
+    else setErr(true);
+  }
+  return (
+    <div className="ap2-card ap2-owner-card">
+      <h3>Īpašnieks</h3>
+      <div className="ap2-owner-chips" role="radiogroup" aria-label="Īpašnieks">
+        {(["IRISS", "DZA"] as const).map((o) => (
+          <button key={o} type="button" role="radio" aria-checked={basics.owner === o} className={basics.owner === o ? "on" : ""} onClick={() => void change(o)}>
+            {o === "IRISS" ? "ĪRISS" : "Dzintarzeme"}
+          </button>
+        ))}
+      </div>
+      {err ? <p className="ap2-err">Neizdevās saglabāt</p> : null}
+    </div>
   );
 }
