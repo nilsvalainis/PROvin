@@ -21,27 +21,38 @@ export function IrissAdvanceSection({
   onChange,
   onInvoicePdf,
   invoiceBusy = false,
+  flat = false,
 }: {
   value: IrissAdvanceDraft | undefined;
   onChange: (next: IrissAdvanceDraft) => void;
   onInvoicePdf?: () => void;
   invoiceBusy?: boolean;
+  /** "Klients un finansējums" kartītē (makets 28.10): bez rāmja, lauki vienā rindā. */
+  flat?: boolean;
 }) {
   const draft = value ?? emptyIrissAdvanceDraft();
   const received = irissAdvanceReceivedLabel(draft);
   const set = (patch: Partial<IrissAdvanceDraft>) => onChange({ ...draft, ...patch });
 
   return (
-    <div className="mt-3 rounded-xl border border-[var(--iriss-line)] bg-[#fafafa]">
-      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5">
-        <p className="text-[13px] font-semibold text-[var(--iriss-ink)]">Avanss (depozīts)</p>
+    <div className={flat ? "mt-4 border-t border-[var(--iriss-line)] pt-3" : "mt-3 rounded-xl border border-[var(--iriss-line)] bg-[#fafafa]"}>
+      <div className={`flex flex-wrap items-center justify-between gap-2 ${flat ? "pb-1" : "px-3 py-2.5"}`}>
+        <p className={flat ? "text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--iriss-ink-2)]" : "text-[13px] font-semibold text-[var(--iriss-ink)]"}>
+          Avanss (depozīts)
+        </p>
         {received ? (
           <span className="inline-flex items-center gap-1 rounded-full border border-[#86efac] bg-[#dcfce7] px-2.5 py-1 text-[12px] font-semibold text-[#166534]">
             {received}
           </span>
         ) : null}
       </div>
-      <div className="grid grid-cols-1 gap-2.5 border-t border-[var(--iriss-line)] bg-white px-3 py-3 sm:grid-cols-2">
+      <div
+        className={
+          flat
+            ? "grid grid-cols-1 gap-2.5 py-2 sm:grid-cols-2 xl:grid-cols-4"
+            : "grid grid-cols-1 gap-2.5 border-t border-[var(--iriss-line)] bg-white px-3 py-3 sm:grid-cols-2"
+        }
+      >
         <label className="block min-w-0">
           <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Summa</span>
           <input
@@ -88,7 +99,7 @@ export function IrissAdvanceSection({
           />
         </label>
       </div>
-      <div className="flex flex-wrap gap-2 border-t border-[var(--iriss-line)] bg-white px-3 py-2.5">
+      <div className={flat ? "flex flex-wrap gap-2 pb-1 pt-1" : "flex flex-wrap gap-2 border-t border-[var(--iriss-line)] bg-white px-3 py-2.5"}>
         {IRISS_ADVANCE_QUICK_AMOUNTS.map((amount) => (
           <button
             key={amount}
@@ -128,7 +139,7 @@ export function IrissAdvanceSection({
           </button>
         ) : null}
       </div>
-      <p className="px-3 pb-3 text-[11px] leading-snug text-[var(--iriss-ink-2)]">
+      <p className={`${flat ? "pt-1.5" : "px-3 pb-3"} text-[11px] leading-snug text-[var(--iriss-ink-2)]`}>
         Avanss parādās līguma PDF 1. lapā. Tas ieskaitās komisijas maksā. Tukšs avanss vecajos pasūtījumos netiek rakstīts.
       </p>
     </div>

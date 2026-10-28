@@ -193,6 +193,9 @@ export type IrissDzintarzemeTameDraft = {
   /** Ja tukšs, tāmes PDF / lauki izmanto pasūtījuma `brandModel`. */
   tameBrandModel: string;
   tameVin: string;
+  /** Tāmes forma (Nils 28.10): auto gads un nobraukums. */
+  tameYearStr?: string;
+  tameMileageStr?: string;
   tameAutoPriceStr: string;
   tameApplyVatAuto: boolean;
   tameCommissionVariant: IrissDzintarzemeTameCommissionVariant;
@@ -213,6 +216,8 @@ export function defaultIrissDzintarzemeTameDraft(): IrissDzintarzemeTameDraft {
   return {
     tameBrandModel: "",
     tameVin: "",
+    tameYearStr: "",
+    tameMileageStr: "",
     tameAutoPriceStr: "",
     tameApplyVatAuto: false,
     tameCommissionVariant: "A",
@@ -260,6 +265,8 @@ export function normalizeIrissDzintarzemeTameDraft(raw: unknown): IrissDzintarze
   return {
     tameBrandModel: clipStr(o.tameBrandModel, 400),
     tameVin: clipStr(o.tameVin, 32),
+    tameYearStr: clipStr(o.tameYearStr, 8),
+    tameMileageStr: clipStr(o.tameMileageStr, 16),
     tameAutoPriceStr: clipStr(o.tameAutoPriceStr, 32),
     tameApplyVatAuto: Boolean(o.tameApplyVatAuto),
     tameCommissionVariant: variant,

@@ -1,8 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
-import { FileDown, Loader2, Plus, Trash2 } from "lucide-react";
+import { FileDown, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
@@ -13,11 +12,11 @@ import {
 import { parsePriceLike } from "@/lib/iriss-price-format";
 import {
   defaultIrissTameCommissionSettings,
-  formatIrissTameMoney,
   formatIrissTamePercent,
   parseIrissTameCommissionSettings,
   type IrissTameCommissionRates,
 } from "@/lib/iriss-tame-commission";
+import { irissTameBalanceAfterAdvance } from "@/lib/iriss-advance";
 import {
   IRISS_GENERATED_DOCUMENT_HEADER,
   readGeneratedDocumentFromResponseHeader,
@@ -29,10 +28,27 @@ import {
 } from "@/lib/iriss-pasutijumi-types";
 
 const fieldClass =
-  "min-h-[44px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[16px] text-[var(--color-apple-text)] shadow-sm outline-none transition focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25 sm:text-[15px]";
+  "min-h-[38px] w-full rounded-[10px] border border-[var(--iriss-line-strong)] bg-white px-2.5 text-[16px] text-[var(--iriss-ink)] outline-none focus:border-[var(--iriss-ink)] sm:text-[14px]";
 
-function BlockTitle({ children }: { children: ReactNode }) {
-  return <IrissSectionHeading>{children}</IrissSectionHeading>;
+type TameFixedKey = "tameTransportStr" | "tameChemicalStr" | "tamePolishingStr" | "tamePaintingStr" | "tameLeasingValuationStr";
+
+/** Pastāvīgie pakalpojumi (atsevišķi lauki datos); forma rāda tikai aizpildītos vai pievienotos (makets 28.10). */
+export const TAME_FIXED_SERVICES: ReadonlyArray<{ key: TameFixedKey; label: string }> = [
+  { key: "tameTransportStr", label: "Transports" },
+  { key: "tameChemicalStr", label: "Ķīmiskā tīrīšana" },
+  { key: "tamePolishingStr", label: "Pulēšana" },
+  { key: "tamePaintingStr", label: "Krāsošana" },
+  { key: "tameLeasingValuationStr", label: "Vērtējums līzingam" },
+];
+
+/** Ātrās pogas citiem pakalpojumiem (saglabājas kā "Cits" rinda ar nosaukumu). */
+export const TAME_EXTRA_PRESETS = ["Tehniskā apskate", "Riepas"] as const;
+
+/** "1 078,00 €" - tūkstošu atstarpe arī 4 ciparu summām (lv-LV Intl to nedara). */
+export function formatTameEur(n: number): string {
+  const v = Number.isFinite(n) ? n : 0;
+  const [int, dec] = Math.abs(v).toFixed(2).split(".");
+  return `${v < 0 ? "−" : ""}${int!.replace(/\B(?=(\d{3})+(?!\d))/g, " ")},${dec} €`;
 }
 
 function mergeDraft(d: IrissDzintarzemeTameDraft): IrissDzintarzemeTameDraft {
@@ -91,6 +107,8 @@ export function DzintarzemeTameSection({
   onDraftChange,
   onGeneratedDocument,
   sectionSave,
+  advancePaidEur,
+  financingPercent,
 }: {
   orderId: string;
   shellCard: string;
@@ -99,10 +117,15 @@ export function DzintarzemeTameSection({
   onDraftChange: (next: IrissDzintarzemeTameDraft) => void;
   onGeneratedDocument?: (doc: IrissGeneratedDocument, workspaceRevision?: number) => void;
   sectionSave?: ReactNode;
+  /** Pasūtījuma avanss (tas pats, ko PDF atskaita no gala summas). */
+  advancePaidEur?: number;
+  /** Klienta finansējuma % no pasūtījuma (tikai informācijai kopsavilkumā). */
+  financingPercent?: number;
 }) {
   const d = mergeDraft(draft);
   const set = useCallback((p: Partial<IrissDzintarzemeTameDraft>) => onDraftChange({ ...d, ...p }), [d, onDraftChange]);
   const [rates, setRates] = useState<IrissTameCommissionRates>(() => defaultIrissTameCommissionSettings());
+  const [shownFixed, setShownFixed] = useState<Set<TameFixedKey>>(() => new Set());
 
   useEffect(() => {
     let cancel = false;
@@ -135,6 +158,7 @@ export function DzintarzemeTameSection({
   const manualNet = parseEuroInput(d.tameCommissionManualEurStr);
   const manualPctRaw = parseEuroInput(d.tameCommissionManualPercentStr.replace(",", "."));
   const manualPct = Number.isFinite(manualPctRaw) ? Math.min(100, Math.max(0, manualPctRaw)) : 0;
+  const atlikums = Math.round(parseEuroInput(d.tameAutoPriceStr) * (1 - Math.min(100, d.tameDepositPercent) / 100) * 100) / 100;
 
   const computed = useMemo(() => {
     return computeDzintarzemeTame({
@@ -172,17 +196,6 @@ export function DzintarzemeTameSection({
     rates,
     variant,
   ]);
-
-  const fmt = useMemo(
-    () =>
-      new Intl.NumberFormat("lv-LV", {
-        style: "currency",
-        currency: "EUR",
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      }),
-    [],
-  );
 
   const buildPayload = useCallback(() => {
     return {
@@ -252,308 +265,333 @@ export function DzintarzemeTameSection({
     }
   }, [buildPayload, onGeneratedDocument, orderId]);
 
+  const advanceEur = Math.max(0, advancePaidEur ?? 0);
+  const balance = irissTameBalanceAfterAdvance(computed.galaSumma, advanceEur);
+  const commissionHint =
+    variant === "A"
+      ? ""
+      : variant === "B"
+        ? `${formatTameEur(rates.variantBBaseNet)} + ${formatIrissTamePercent(rates.variantBLoanPercent)} % no ${formatTameEur(atlikums)} = ${formatTameEur(computed.commissionNet)}`
+        : `${formatTameEur(manualNet)} + ${formatIrissTamePercent(manualPct)} % no ${formatTameEur(atlikums)} = ${formatTameEur(computed.commissionNet)}`;
+
+  const fixedVisible = TAME_FIXED_SERVICES.filter((f) => shownFixed.has(f.key) || d[f.key].trim() !== "");
+  const fixedHidden = TAME_FIXED_SERVICES.filter((f) => !fixedVisible.includes(f));
+  const extraPresetsHidden = TAME_EXTRA_PRESETS.filter((label) => !extras.some((x) => x.label.trim() === label));
+
   return (
-    <section className={shellCard}>
-      <BlockTitle>Izmaksu tāme (Dzintarzeme Auto)</BlockTitle>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <label className="block min-w-0">
-          <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Marka / modelis</span>
-          <input
-            className={fieldClass}
-            value={displayBrand}
-            onChange={(e) => set({ tameBrandModel: e.target.value })}
-            autoComplete="off"
-          />
-        </label>
-        <label className="block min-w-0">
-          <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">VIN</span>
-          <input
-            className={fieldClass}
-            value={d.tameVin}
-            onChange={(e) => set({ tameVin: e.target.value })}
-            autoCapitalize="characters"
-            autoComplete="off"
-          />
-        </label>
-        <label className="block min-w-0 sm:col-span-2">
-          <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">
-            Automašīnas cena (EUR)
-          </span>
-          <input
-            className={fieldClass}
-            inputMode="decimal"
-            value={d.tameAutoPriceStr}
-            onChange={(e) => set({ tameAutoPriceStr: e.target.value })}
-            placeholder="piem. 18500"
-            autoComplete="off"
-          />
-        </label>
+    <section className={shellCard} aria-label="Izmaksu tāme">
+      <div className="mb-3.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+        <h3 className="text-[15px] font-bold text-[var(--iriss-ink)]">Izmaksu tāme</h3>
+        <span className="text-[12px] text-[var(--iriss-ink-2)]">Dzintarzeme Auto</span>
       </div>
 
-      <label className="mt-4 flex cursor-pointer items-start gap-2 text-[13px] text-[var(--color-apple-text)]">
-        <input
-          type="checkbox"
-          className="mt-1 shrink-0"
-          checked={d.tameApplyVatAuto}
-          onChange={(e) => set({ tameApplyVatAuto: e.target.checked })}
-        />
-        <span>Piemērot PVN 21%</span>
-      </label>
-
-      <div className="mt-5">
-        <IrissSectionHeading>Komisijas variants</IrissSectionHeading>
-        <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-3">
-          <label
-            className={`cursor-pointer rounded-xl border bg-white p-3 text-[13px] shadow-sm ${
-              d.tameCommissionVariant === "A" ? "border-[var(--iriss-ink,#1c1c1e)] shadow-[inset_0_0_0_1px_#1c1c1e]" : "border-slate-200"
-            }`}
-          >
-            <span className="font-semibold">A · fiksēta</span>
-            <p className="mt-1 text-[12px] text-[var(--color-provin-muted)]">{formatIrissTameMoney(rates.variantANet)} EUR neto</p>
-            <input
-              type="radio"
-              className="mt-2"
-              name="dz-tame-comm"
-              checked={d.tameCommissionVariant === "A"}
-              onChange={() => set({ tameCommissionVariant: "A" })}
-            />
-          </label>
-          <label
-            className={`cursor-pointer rounded-xl border bg-white p-3 text-[13px] shadow-sm ${
-              d.tameCommissionVariant === "B" ? "border-[var(--iriss-ink,#1c1c1e)] shadow-[inset_0_0_0_1px_#1c1c1e]" : "border-slate-200"
-            }`}
-          >
-            <span className="font-semibold">B · % no atlikuma</span>
-            <p className="mt-1 text-[12px] text-[var(--color-provin-muted)]">
-              {formatIrissTameMoney(rates.variantBBaseNet)} EUR + {formatIrissTamePercent(rates.variantBLoanPercent)} %
-            </p>
-            <input
-              type="radio"
-              className="mt-2"
-              name="dz-tame-comm"
-              checked={d.tameCommissionVariant === "B"}
-              onChange={() => set({ tameCommissionVariant: "B" })}
-            />
-          </label>
-          <div
-            className={`rounded-xl border bg-white p-3 text-[13px] shadow-sm ${
-              d.tameCommissionVariant === "C" ? "border-[var(--iriss-ink,#1c1c1e)] shadow-[inset_0_0_0_1px_#1c1c1e]" : "border-slate-200"
-            }`}
-          >
-            <span className="font-semibold">C · manuāli</span>
-            <label className="mt-2 block">
-              <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Komisija EUR</span>
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
+        <div className="min-w-0">
+          <TameCap>Auto</TameCap>
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-[1.4fr_1.3fr_0.6fr_0.8fr]">
+            <TameField label="Marka / modelis" className="col-span-2 sm:col-span-1">
+              <input className={fieldClass} value={displayBrand} onChange={(e) => set({ tameBrandModel: e.target.value })} autoComplete="off" />
+            </TameField>
+            <TameField label="VIN" className="col-span-2 sm:col-span-1">
+              <input className={fieldClass} value={d.tameVin} onChange={(e) => set({ tameVin: e.target.value })} autoCapitalize="characters" autoComplete="off" />
+            </TameField>
+            <TameField label="Gads">
               <input
                 className={fieldClass}
-                inputMode="decimal"
-                value={d.tameCommissionManualEurStr}
-                onChange={(e) => set({ tameCommissionManualEurStr: e.target.value, tameCommissionVariant: "C" })}
+                inputMode="numeric"
+                value={d.tameYearStr ?? ""}
+                onChange={(e) => set({ tameYearStr: e.target.value.replace(/[^\d]/g, "").slice(0, 4) })}
+                autoComplete="off"
               />
-            </label>
-            <label className="mt-2 block">
-              <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Komisija %</span>
+            </TameField>
+            <TameField label="Nobraukums" suffix="km">
               <input
-                className={fieldClass}
-                inputMode="decimal"
-                value={d.tameCommissionManualPercentStr}
-                onChange={(e) => set({ tameCommissionManualPercentStr: e.target.value, tameCommissionVariant: "C" })}
+                className={`${fieldClass} pr-9 text-right`}
+                inputMode="numeric"
+                value={d.tameMileageStr ?? ""}
+                onChange={(e) => set({ tameMileageStr: e.target.value.replace(/[^\d ]/g, "").slice(0, 9) })}
+                autoComplete="off"
               />
-            </label>
-            <label className="mt-2 inline-flex cursor-pointer items-center gap-2">
-              <input
-                type="radio"
-                name="dz-tame-comm"
-                checked={d.tameCommissionVariant === "C"}
-                onChange={() => set({ tameCommissionVariant: "C" })}
-              />
-              Izvēlēts
-            </label>
+            </TameField>
           </div>
-        </div>
-      </div>
+          <div className="mt-2.5 flex flex-wrap items-end gap-2.5">
+            <TameField label="Automašīnas cena" suffix="€" className="min-w-[180px] flex-1">
+              <input
+                className={`${fieldClass} pr-8 text-right`}
+                inputMode="decimal"
+                value={d.tameAutoPriceStr}
+                onChange={(e) => set({ tameAutoPriceStr: e.target.value })}
+                placeholder="18 500"
+                autoComplete="off"
+              />
+            </TameField>
+            <TameSegmented
+              label="PVN režīms"
+              value={d.tameApplyVatAuto ? "vat" : "margin"}
+              options={[
+                { value: "margin", label: "Peļņas daļas režīms" },
+                { value: "vat", label: "+ PVN 21 %" },
+              ]}
+              onChange={(v) => set({ tameApplyVatAuto: v === "vat" })}
+            />
+          </div>
 
-      {d.tameCommissionVariant === "B" || d.tameCommissionVariant === "C" ? (
-        <div className="mt-4">
-          <IrissSectionHeading>Iemaksas procents ({d.tameCommissionVariant} variants)</IrissSectionHeading>
-          <div className="flex flex-wrap gap-2">
-            {[20, 40, 60].map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => set({ tameDepositPercent: p })}
-                className={`rounded-full border px-3 py-1.5 text-[12px] font-semibold shadow-sm transition ${
-                  d.tameDepositPercent === p
-                    ? "border-[var(--iriss-ink,#1c1c1e)] bg-white text-[var(--iriss-ink,#1c1c1e)] shadow-[inset_0_0_0_1px_#1c1c1e]"
-                    : "border-slate-200 bg-white text-[var(--color-apple-text)] hover:bg-slate-50"
-                }`}
-              >
-                {p}%
+          <div className="mt-4 border-t border-[var(--iriss-line)] pt-3.5">
+            <TameCap>Komisija</TameCap>
+            <TameSegmented
+              value={variant}
+              options={[
+                { value: "A", label: "A · fiksēta", sub: formatTameEur(rates.variantANet) },
+                {
+                  value: "B",
+                  label: "B · % no atlikuma",
+                  sub: `${formatTameEur(rates.variantBBaseNet)} + ${formatIrissTamePercent(rates.variantBLoanPercent)} %`,
+                },
+                { value: "C", label: "C · manuāli" },
+              ]}
+              onChange={(v) => set({ tameCommissionVariant: v as DzintarzemeTameCommissionVariant })}
+            />
+            {variant !== "A" ? (
+              <div className="mt-2.5 flex flex-wrap items-end gap-2.5">
+                <TameField label="Priekšapmaksa" suffix="%" className="w-[120px]">
+                  <input
+                    className={`${fieldClass} pr-8 text-right`}
+                    // Teksts ar ciparu tastatūru: `type="number"` pie "1,5" atdeva "" un lauks nodzēsās (Nils 28.10).
+                    type="text"
+                    inputMode="numeric"
+                    value={d.tameDepositPercent}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^\d]/g, "").slice(0, 3);
+                      set({ tameDepositPercent: raw === "" ? 0 : Math.min(100, Number.parseInt(raw, 10)) });
+                    }}
+                  />
+                </TameField>
+                {variant === "C" ? (
+                  <>
+                    <TameField label="Komisija" suffix="€" className="w-[130px]">
+                      <input
+                        className={`${fieldClass} pr-8 text-right`}
+                        inputMode="decimal"
+                        value={d.tameCommissionManualEurStr}
+                        onChange={(e) => set({ tameCommissionManualEurStr: e.target.value })}
+                      />
+                    </TameField>
+                    <TameField label="+ no atlikuma" suffix="%" className="w-[120px]">
+                      <input
+                        className={`${fieldClass} pr-8 text-right`}
+                        inputMode="decimal"
+                        value={d.tameCommissionManualPercentStr}
+                        onChange={(e) => set({ tameCommissionManualPercentStr: e.target.value })}
+                      />
+                    </TameField>
+                  </>
+                ) : null}
+                <p className="pb-2.5 text-[12px] text-[var(--iriss-ink-2)]">
+                  Komisija: <b className="text-[var(--iriss-ink)]">{commissionHint}</b>
+                </p>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-4 border-t border-[var(--iriss-line)] pt-3.5">
+            <TameCap>
+              Pakalpojumi <span className="font-medium normal-case tracking-normal text-[var(--iriss-ink-3)]">· neto, PVN 21 % pieskaitās</span>
+            </TameCap>
+            <div className="grid gap-1.5">
+              {fixedVisible.map((f) => (
+                <TameServiceRow
+                  key={f.key}
+                  label={<span className="flex min-h-[38px] items-center px-2.5 text-[14px] text-[var(--iriss-ink)]">{f.label}</span>}
+                  value={d[f.key]}
+                  onValue={(v) => set({ [f.key]: v } as Partial<IrissDzintarzemeTameDraft>)}
+                  onRemove={() => {
+                    setShownFixed((prev) => {
+                      const next = new Set(prev);
+                      next.delete(f.key);
+                      return next;
+                    });
+                    set({ [f.key]: "" } as Partial<IrissDzintarzemeTameDraft>);
+                  }}
+                />
+              ))}
+              {extras.map((row) => (
+                <TameServiceRow
+                  key={row.id}
+                  label={
+                    <input
+                      className={fieldClass}
+                      value={row.label}
+                      placeholder="Pakalpojums"
+                      aria-label="Pakalpojuma nosaukums"
+                      onChange={(e) => set({ tameExtras: extras.map((x) => (x.id === row.id ? { ...x, label: e.target.value } : x)) })}
+                      autoComplete="off"
+                    />
+                  }
+                  value={row.netStr}
+                  onValue={(v) => set({ tameExtras: extras.map((x) => (x.id === row.id ? { ...x, netStr: v } : x)) })}
+                  onRemove={() => set({ tameExtras: extras.filter((x) => x.id !== row.id) })}
+                />
+              ))}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {fixedHidden.map((f) => (
+                <button key={f.key} type="button" className={addChipClass} onClick={() => setShownFixed((prev) => new Set(prev).add(f.key))}>
+                  + {f.label}
+                </button>
+              ))}
+              {extraPresetsHidden.map((label) => (
+                <button
+                  key={label}
+                  type="button"
+                  className={addChipClass}
+                  onClick={() => set({ tameExtras: [...extras, { id: crypto.randomUUID(), label, netStr: "" }] })}
+                >
+                  + {label}
+                </button>
+              ))}
+              <button type="button" className={addChipClass} onClick={() => set({ tameExtras: [...extras, { id: crypto.randomUUID(), label: "", netStr: "" }] })}>
+                + Cits
               </button>
-            ))}
+            </div>
+            <p className="mt-3 text-[12px] text-[var(--iriss-ink-3)]">CSDD reģistrācijas un valsts nodevas tāmē netiek iekļautas.</p>
           </div>
-          <label className="mt-3 block max-w-xs">
-            <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Manuāli (%)</span>
-            <input
-              className={fieldClass}
-              // Teksts ar ciparu tastatūru: `type="number"` pie "1,5" atdeva "" un lauks nodzēsās (Nils 28.10).
-              type="text"
-              inputMode="numeric"
-              value={d.tameDepositPercent}
-              onChange={(e) => {
-                const raw = e.target.value.replace(/[^\d]/g, "").slice(0, 3);
-                if (raw === "") {
-                  set({ tameDepositPercent: 0 });
-                  return;
-                }
-                const v = Number.parseInt(raw, 10);
-                if (!Number.isFinite(v)) return;
-                set({ tameDepositPercent: Math.min(100, Math.max(0, v)) });
-              }}
-            />
-          </label>
         </div>
-      ) : null}
 
-      <div className="mt-6">
-        <IrissSectionHeading>Papildus pakalpojumi (neto, EUR)</IrissSectionHeading>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <label className="block min-w-0">
-            <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Transporta pakalpojumi</span>
-            <input
-              className={fieldClass}
-              inputMode="decimal"
-              value={d.tameTransportStr}
-              onChange={(e) => set({ tameTransportStr: e.target.value })}
-              autoComplete="off"
-            />
-          </label>
-          <label className="block min-w-0">
-            <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Ķīmiskā tīrīšana</span>
-            <input
-              className={fieldClass}
-              inputMode="decimal"
-              value={d.tameChemicalStr}
-              onChange={(e) => set({ tameChemicalStr: e.target.value })}
-              autoComplete="off"
-            />
-          </label>
-          <label className="block min-w-0">
-            <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Pulēšana</span>
-            <input
-              className={fieldClass}
-              inputMode="decimal"
-              value={d.tamePolishingStr}
-              onChange={(e) => set({ tamePolishingStr: e.target.value })}
-              autoComplete="off"
-            />
-          </label>
-          <label className="block min-w-0">
-            <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Krāsošana</span>
-            <input
-              className={fieldClass}
-              inputMode="decimal"
-              value={d.tamePaintingStr}
-              onChange={(e) => set({ tamePaintingStr: e.target.value })}
-              autoComplete="off"
-            />
-          </label>
-          <label className="block min-w-0">
-            <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Vērtējums līzingam</span>
-            <input
-              className={fieldClass}
-              inputMode="decimal"
-              value={d.tameLeasingValuationStr}
-              onChange={(e) => set({ tameLeasingValuationStr: e.target.value })}
-              autoComplete="off"
-            />
-          </label>
-        </div>
-      </div>
-
-      <div className="mt-4">
-        {extras.map((row) => (
-          <div key={row.id} className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-end">
-            <label className="block min-w-0 flex-1">
-              <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Cits pakalpojums</span>
-              <input
-                className={fieldClass}
-                value={row.label}
-                onChange={(e) =>
-                  set({
-                    tameExtras: extras.map((x) => (x.id === row.id ? { ...x, label: e.target.value } : x)),
-                  })
-                }
-                autoComplete="off"
-              />
-            </label>
-            <label className="block w-full min-w-0 sm:w-36">
-              <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Neto EUR</span>
-              <input
-                className={fieldClass}
-                inputMode="decimal"
-                value={row.netStr}
-                onChange={(e) =>
-                  set({
-                    tameExtras: extras.map((x) => (x.id === row.id ? { ...x, netStr: e.target.value } : x)),
-                  })
-                }
-                autoComplete="off"
-              />
-            </label>
-            <button
-              type="button"
-              title="Noņemt"
-              aria-label="Noņemt rindu"
-              className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50"
-              onClick={() => set({ tameExtras: extras.filter((x) => x.id !== row.id) })}
-            >
-              <Trash2 className="h-4 w-4" aria-hidden />
-            </button>
+        <aside className="rounded-[14px] bg-[var(--iriss-surface-2)] p-4" aria-label="Tāmes kopsavilkums">
+          <TameCap>Kopsavilkums</TameCap>
+          <TameSumRow label="Automašīna" value={computed.autoCena} first />
+          <TameSumRow label="Komisija" value={computed.commissionNet} />
+          <TameSumRow label="Pakalpojumi" value={computed.servicesNetTotal} />
+          <TameSumRow label="PVN 21 %" value={computed.pvnKopa} />
+          <div className="mt-1 border-t border-[var(--iriss-line-strong)] pb-1.5 pt-3">
+            <p className="text-[12px] text-[var(--iriss-ink-2)]">Kopā klientam</p>
+            <p className="text-[26px] font-bold tracking-[-0.3px] text-[var(--iriss-ink)] [font-variant-numeric:tabular-nums]">{formatTameEur(computed.galaSumma)}</p>
           </div>
-        ))}
-        <button
-          type="button"
-          onClick={() =>
-            set({
-              tameExtras: [...extras, { id: crypto.randomUUID(), label: "", netStr: "" }],
-            })
-          }
-          className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-dashed border-slate-300 bg-slate-50/80 px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-100"
-        >
-          <Plus className="h-4 w-4" aria-hidden />
-          Pievienot citu
-        </button>
-      </div>
-
-      <div className="mt-6 rounded-xl border border-slate-200/90 bg-slate-50/80 p-4">
-        <IrissSectionHeading className="mb-2">Klientam redzamā gala summa</IrissSectionHeading>
-        <p className="mt-2 text-2xl font-bold tracking-tight text-[var(--color-apple-text)]">{fmt.format(computed.galaSumma)}</p>
-        <dl className="mt-3 grid gap-1 text-[12px] text-[var(--color-provin-muted)]">
-          <div className="flex justify-between gap-3">
-            <dt>Kopā bez PVN (neto bāze)</dt>
-            <dd className="font-medium text-[var(--color-apple-text)]">{fmt.format(computed.summaBezPVN)}</dd>
-          </div>
-          <div className="flex justify-between gap-3">
-            <dt>PVN 21 %</dt>
-            <dd className="font-medium text-[var(--color-apple-text)]">{fmt.format(computed.pvnKopa)}</dd>
-          </div>
-        </dl>
-      </div>
-
-      {pdfErr ? <p className="mt-3 text-[12px] text-red-700">{pdfErr}</p> : null}
-
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={pdfBusy}
-          onClick={() => void onGeneratePdf()}
-          className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-[#1c1c1e] bg-[#1c1c1e] px-5 text-[13px] font-semibold text-white transition hover:opacity-95 disabled:opacity-50"
-        >
-          {pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <FileDown className="h-4 w-4" aria-hidden />}
-          Ģenerēt Dzintarzeme Auto tāmi
-        </button>
+          {advanceEur > 0 ? <TameSumRow label="Avanss" value={-advanceEur} /> : null}
+          {financingPercent && financingPercent > 0 ? (
+            <div className="flex items-baseline justify-between border-t border-[var(--iriss-line)] py-[7px] text-[13.5px]">
+              <span className="text-[var(--iriss-ink-2)]">Līzings ({financingPercent} %)</span>
+              <span className="text-[var(--iriss-ink-2)]">no pasūtījuma</span>
+            </div>
+          ) : null}
+          <TameSumRow label="Atlikums apmaksai" value={balance} strong />
+          {pdfErr ? <p className="mt-2 text-[12px] text-[var(--iriss-warn)]">{pdfErr}</p> : null}
+          <button
+            type="button"
+            disabled={pdfBusy}
+            onClick={() => void onGeneratePdf()}
+            className="mt-3.5 inline-flex min-h-[40px] w-full items-center justify-center gap-2 rounded-xl border border-[var(--iriss-ink)] bg-[var(--iriss-ink)] px-4 text-[13px] font-semibold disabled:opacity-50"
+            // Globālie admin pogu stili var pārrakstīt text-white.
+            style={{ color: "white" }}
+          >
+            {pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <FileDown className="h-4 w-4" aria-hidden />}
+            Ģenerēt PDF
+          </button>
+          <p className="mt-2.5 text-[12px] text-[var(--iriss-ink-3)]">Avanss un finansējums - no pasūtījuma. Saglabājas kopā ar pasūtījumu.</p>
+        </aside>
       </div>
       {sectionSave}
     </section>
+  );
+}
+
+const addChipClass =
+  "inline-flex min-h-[28px] items-center rounded-full border border-dashed border-[var(--iriss-line-strong)] bg-white px-2.5 text-[12px] font-semibold text-[var(--iriss-ink-2)]";
+
+function TameCap({ children }: { children: ReactNode }) {
+  return <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--iriss-ink-2)]">{children}</p>;
+}
+
+function TameField({ label, suffix, className = "", children }: { label: string; suffix?: string; className?: string; children: ReactNode }) {
+  return (
+    <label className={`block min-w-0 ${className}`}>
+      <span className="mb-1 block text-[12px] font-semibold text-[var(--iriss-ink-2)]">{label}</span>
+      <span className="relative block">
+        {children}
+        {suffix ? (
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12.5px] text-[var(--iriss-ink-3)]">{suffix}</span>
+        ) : null}
+      </span>
+    </label>
+  );
+}
+
+function TameSegmented({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label?: string;
+  value: string;
+  options: Array<{ value: string; label: string; sub?: string }>;
+  onChange: (value: string) => void;
+}) {
+  const seg = (
+    <div role="radiogroup" aria-label={label} className="inline-flex max-w-full flex-wrap gap-[3px] rounded-[11px] bg-[var(--iriss-surface-2)] p-[3px]">
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => onChange(o.value)}
+            className={`min-h-[32px] whitespace-nowrap rounded-lg px-3 text-[13px] font-semibold ${
+              on ? "bg-white text-[var(--iriss-ink)] shadow-[0_0_0_1px_var(--iriss-ink)]" : "bg-transparent text-[var(--iriss-ink-2)]"
+            }`}
+          >
+            {o.label}
+            {o.sub ? <span className="ml-1.5 font-medium text-[var(--iriss-ink-3)]">{o.sub}</span> : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+  if (!label) return seg;
+  return (
+    <div className="min-w-0">
+      <span className="mb-1 block text-[12px] font-semibold text-[var(--iriss-ink-2)]">{label}</span>
+      {seg}
+    </div>
+  );
+}
+
+function TameServiceRow({
+  label,
+  value,
+  onValue,
+  onRemove,
+}: {
+  label: ReactNode;
+  value: string;
+  onValue: (value: string) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_130px_32px] items-center gap-2">
+      <div className="min-w-0 rounded-[10px] border border-[var(--iriss-line)]">{label}</div>
+      <span className="relative block">
+        <input className={`${fieldClass} pr-8 text-right`} inputMode="decimal" value={value} onChange={(e) => onValue(e.target.value)} aria-label="Summa" autoComplete="off" />
+        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12.5px] text-[var(--iriss-ink-3)]">€</span>
+      </span>
+      <button type="button" aria-label="Noņemt" title="Noņemt" onClick={onRemove} className="h-8 w-8 rounded-lg text-[16px] text-[var(--iriss-ink-3)] hover:bg-[var(--iriss-surface-2)]">
+        ×
+      </button>
+    </div>
+  );
+}
+
+function TameSumRow({ label, value, first, strong }: { label: string; value: number; first?: boolean; strong?: boolean }) {
+  return (
+    <div
+      className={`flex items-baseline justify-between gap-3 py-[7px] text-[13.5px] [font-variant-numeric:tabular-nums] ${first ? "" : "border-t border-[var(--iriss-line)]"} ${
+        strong ? "font-bold text-[var(--iriss-ink)]" : ""
+      }`}
+    >
+      <span className={strong ? "" : "text-[var(--iriss-ink-2)]"}>{label}</span>
+      <span>{value < 0 ? `−${formatTameEur(-value)}` : formatTameEur(value)}</span>
+    </div>
   );
 }
