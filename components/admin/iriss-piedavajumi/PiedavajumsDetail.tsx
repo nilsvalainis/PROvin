@@ -79,7 +79,7 @@ function stamp(iso: string): string {
     .replace(",", "");
 }
 
-type Draft = {
+export type Draft = {
   vehicle: IrissPdVehicle;
   price: string;
   validUntil: string;
@@ -94,6 +94,15 @@ type Draft = {
   visibility: IrissPdVisibility;
   content: IrissPdContent;
 };
+
+/** Lauki, kas mainīti pēc nosūtīšanas, paliek; pārējie ņem servera vērtību. */
+export function irissPdRebaseDraft(cur: Draft, sent: Draft, server: Draft): Draft {
+  const out = { ...server };
+  for (const k of Object.keys(cur) as Array<keyof Draft>) {
+    if (JSON.stringify(cur[k]) !== JSON.stringify(sent[k])) (out as Record<string, unknown>)[k] = cur[k];
+  }
+  return out;
+}
 
 function draftOf(r: IrissPiedavajums): Draft {
   return {
@@ -295,9 +304,14 @@ export function PiedavajumsDetail({
     });
   const partsTotal = irissPdTotalFromParts(d.purchasePrice, d.logisticsCost, d.prepCost, d.commission);
 
-  function applyRecord(next: IrissPiedavajums) {
+  function applyRecord(next: IrissPiedavajums, sent?: Draft) {
     setRec(next);
-    setD(draftOf(next));
+    if (!sent) {
+      setD(draftOf(next));
+      return;
+    }
+    // Saglabāšanas laikā ievadītais netiek pārrakstīts ar servera atbildi.
+    setD((cur) => irissPdRebaseDraft(cur, sent, draftOf(next)));
   }
 
   async function save(): Promise<boolean> {
@@ -307,6 +321,7 @@ export function PiedavajumsDetail({
     try {
       const patch: Record<string, unknown> = {};
       const base = draftOf(rec);
+      const sent = d;
       for (const k of Object.keys(d) as Array<keyof Draft>) if (JSON.stringify(d[k]) !== JSON.stringify(base[k])) patch[k] = d[k];
       const res = await fetch(`/api/admin/iriss-piedavajumi/${rec.id}`, {
         method: "PATCH",
@@ -316,7 +331,7 @@ export function PiedavajumsDetail({
       });
       const data = (await res.json()) as { ok?: boolean; record?: IrissPiedavajums; message?: string };
       if (!data.ok || !data.record) throw new Error(data.message || "Neizdevās saglabāt.");
-      applyRecord(data.record);
+      applyRecord(data.record, sent);
       return true;
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Neizdevās saglabāt.");

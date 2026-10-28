@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => undefined, refresh: () => undefined }) }));
 
-import { PiedavajumsDetail } from "@/components/admin/iriss-piedavajumi/PiedavajumsDetail";
+import { PiedavajumsDetail, irissPdRebaseDraft, type Draft } from "@/components/admin/iriss-piedavajumi/PiedavajumsDetail";
 import { PdClientView } from "@/components/iriss-piedavajumi/PdClientView";
 import { buildIrissPdPublicView } from "@/lib/iriss-piedavajumi";
 import type { IrissPdAuto1Blocks } from "@/lib/iriss-piedavajumi-auto1";
@@ -118,5 +118,14 @@ describe("Cenu bloks (Nils 27.10)", () => {
     for (const t of ["PVN atskaitāms", "Ar PVN (marža)", "Nav zināms", "IRISS komisija", "Klientam kopā"]) expect(text).toContain(t);
     expect(html).toMatch(/aria-pressed="true"[^>]*>PVN atskaitāms</);
     expect(text).toMatch(/20.450 €/);
+  });
+});
+
+describe("Saglabāšana neizdzēš tikko ievadīto (audits 28.10)", () => {
+  it("pēc servera atbildes paliek lauki, kas mainīti saglabāšanas laikā", () => {
+    const sent = { price: "10000", internalNotes: "a" } as unknown as Draft;
+    const cur = { price: "10000", internalNotes: "ab" } as unknown as Draft;
+    const server = { price: "10 000", internalNotes: "a" } as unknown as Draft;
+    expect(irissPdRebaseDraft(cur, sent, server)).toEqual({ price: "10 000", internalNotes: "ab" });
   });
 });
