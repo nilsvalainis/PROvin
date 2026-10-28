@@ -3972,9 +3972,3 @@
   color: #0e0e10;
   font-weight: 500;
 }
-
-/* «Drukāt A4» poga: teksts bija tumšs uz tumša fona. */
-.ap2.ap2.ap2 a.ap2-a4btn,
-.ap2.ap2.ap2 a.ap2-a4btn:visited {
-  color: #fff !important;
-}
