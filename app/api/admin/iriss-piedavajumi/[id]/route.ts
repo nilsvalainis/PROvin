@@ -10,7 +10,7 @@ import {
   type IrissPdPatch,
 } from "@/lib/iriss-piedavajumi";
 import { importIrissPdFromAutoparks, importIrissPdFromLink } from "@/lib/iriss-piedavajumi-create";
-import { applyIrissPdImportData, type IrissPdImport } from "@/lib/iriss-piedavajumi-import";
+import { irissPdFillEmpty, irissPdFillFromAutoparks, applyIrissPdImportData, type IrissPdImport } from "@/lib/iriss-piedavajumi-import";
 import { irissPdLinkErrorLv } from "@/lib/iriss-piedavajumi-sources";
 import { runIrissPdApprovalEffects } from "@/lib/iriss-piedavajumi-approve";
 import { claimIrissPdDecision, deleteIrissPd, listIrissPdRows, newIrissPdToken, readIrissPd, readIrissPdFresh, writeIrissPd } from "@/lib/iriss-piedavajumi-store";
@@ -111,6 +111,20 @@ export async function POST(req: Request, { params }: Ctx) {
     const next = appendIrissPdHistory({ ...applyIrissPdImportData(rec, imp, at), updatedAt: at }, { at, by, text: imp.historyText });
     if (!(await writeIrissPd(next))) return fail(500, "write_failed", "Neizdevās saglabāt.");
     return NextResponse.json({ ok: true, record: next, note: imp.note }, { headers: noStore });
+  }
+
+  if (action === "fill-from-stock") {
+    // Nils 28.10: esošam piedāvājumam no Autoparka aizpilda tikai tukšos laukus (nobraukums, jauda, kārba...).
+    if (!isIrissPdEditable(rec.status)) return fail(409, "rejected", "Šo piedāvājumu vairs nevar labot.");
+    const m = /^autoparks:([\w-]{1,80})$/.exec(rec.sourceRef);
+    if (!m) return fail(400, "invalid_source", "Piedāvājums nav no Autoparka.");
+    const imp = await importIrissPdFromAutoparks(m[1]!);
+    if (!imp) return fail(404, "not_found", "Auto Autoparkā nav atrasts.");
+    const vehicle = irissPdFillFromAutoparks(irissPdFillEmpty(rec.vehicle, imp.vehicle), {});
+    const filled = (Object.keys(vehicle) as Array<keyof typeof vehicle>).filter((k) => vehicle[k] !== rec.vehicle[k]).length;
+    const next = appendIrissPdHistory({ ...rec, vehicle, updatedAt: at }, { at, by, text: `Papildināts no Autoparka · ${filled} lauki` });
+    if (!(await writeIrissPd(next))) return fail(500, "write_failed", "Neizdevās saglabāt.");
+    return NextResponse.json({ ok: true, record: next }, { headers: noStore });
   }
 
   if (!["send", "revert", "decline", "approve"].includes(action)) return fail(400, "invalid_action");

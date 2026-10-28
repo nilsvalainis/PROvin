@@ -125,6 +125,11 @@ export function PiedavajumsNew({
         router.push(`/admin/iriss/piedavajumi/${data.id}${data.note ? `?note=${encodeURIComponent(data.note)}` : ""}`);
         return;
       }
+      // Nils 28.10: šim auto piedāvājums jau ir - atver to uzreiz, nevis rāda sarakstu ar kļūdu.
+      if (data.error === "taken" && data.id && kind === "car") {
+        router.push(`/admin/iriss/piedavajumi/${data.id}`);
+        return;
+      }
       setErr(data.message || "Neizdevās izveidot piedāvājumu.");
       if (kind === "link") setCanManual(data.error !== "not_auction_link" && data.error !== "taken");
     } catch {
