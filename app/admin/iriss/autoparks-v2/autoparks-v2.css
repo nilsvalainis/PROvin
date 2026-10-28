@@ -3906,3 +3906,12 @@
   font-size: 13.5px;
   cursor: pointer;
 }
+
+/* Cenu lapa: aprīkojuma rindai vienāda atstarpe augšā (līdz nosaukumam) un apakšā (līdz cenas līnijai) - Nils 28.10. */
+.ap2.ap2.ap2 .ap2-cl-title + .ap2-cl-hl {
+  margin-top: 26px;
+  line-height: 1;
+}
+.ap2.ap2.ap2 .ap2-cl-hl + .ap2-cl-price {
+  margin-top: 26px;
+}
