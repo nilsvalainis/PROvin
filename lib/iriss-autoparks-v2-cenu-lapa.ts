@@ -3,8 +3,13 @@
  * Nav pašizmaksas un iepirkuma cenas (19:53-3). Labojumi glabājas v2; v1 vērtības tikai lasa.
  */
 import type { AutoparksCar } from "@/lib/iriss-autoparks";
-import type { AutoparksCarV2, AutoparksV2Basics } from "@/lib/iriss-autoparks-v2";
-import type { RegistrySafetyState } from "@/lib/iriss-autoparks-registry";
+import {
+  defaultV2PriceSheetSafety,
+  type AutoparksCarV2,
+  type AutoparksV2Basics,
+  type V2PriceSheetSafety,
+  type V2SafetyKey,
+} from "@/lib/iriss-autoparks-v2";
 import { fmtKm, fmtDateLv } from "@/lib/iriss-autoparks-v2-format";
 
 export type V2PriceSheet = {
@@ -28,9 +33,20 @@ export type V2PriceSheet = {
   vatNote: string;
   /** Tehniskie dati; tukšās rindas izlaistas (Nils 27.10). */
   rows: Array<{ label: string; value: string }>;
-  /** Drošības sistēmas; nezināmās izlaistas. Spilveni pēdējā rindā (Nils 27.10). */
+  /** Drošības sistēmas - vienmēr 4 rindas, spilveni pēdējā (Nils 27.10/28.10). */
   safetyRows: Array<{ label: string; present: string; checked: string }>;
+  /** Admin forma: ķeksīšu stāvoklis (noklusējums - viss ieķeksēts). */
+  safetyState: V2PriceSheetSafety;
+  /** Apliecinājums lapā: "tehniski atbilst izmantošanai ceļu satiksmē". */
+  roadworthy: boolean;
 };
+
+export const PRICE_SHEET_SAFETY_LABELS: ReadonlyArray<{ key: V2SafetyKey; label: string; short: string }> = [
+  { key: "esp", label: "Elektroniskā stabilitātes sistēma (ESP)", short: "ESP" },
+  { key: "eps", label: "Elektriskais stūres pastiprinātājs (EPS)", short: "EPS" },
+  { key: "abs", label: "Bremžu antibloķēšanas sistēma (ABS)", short: "ABS" },
+  { key: "airbags", label: "Drošības spilveni", short: "Spilveni" },
+];
 
 export const PRICE_SHEET_MAX_HIGHLIGHTS = 8;
 
@@ -79,18 +95,12 @@ function priceSheetRows(car: AutoparksCar, basics: AutoparksV2Basics): Array<{ l
   return rows.filter(([, v]) => v.trim()).map(([label, value]) => ({ label, value }));
 }
 
-function priceSheetSafety(car: AutoparksCar): Array<{ label: string; present: string; checked: string }> {
-  const r = car.registry;
-  if (!r) return [];
-  const items: Array<[string, RegistrySafetyState]> = [
-    ["Elektroniskā stabilitātes sistēma (ESP)", r.esp],
-    ["Elektriskais stūres pastiprinātājs (EPS)", r.eps],
-    ["Bremžu antibloķēšanas sistēma (ABS)", r.abs],
-    ["Drošības spilveni", r.airbags],
-  ];
-  return items
-    .filter(([, v]) => v)
-    .map(([label, v]) => ({ label, present: v === "no" ? "Nav" : "Ir", checked: v === "yes_checked" ? "Pārbaudīts" : "" }));
+/** Drošības tabula (Nils 28.10): pēc noklusējuma viss "Ir" un "Pārbaudīts" kā CSDD paraugā; Nils maina pats. */
+export function priceSheetSafetyRows(state: V2PriceSheetSafety): Array<{ label: string; present: string; checked: string }> {
+  return PRICE_SHEET_SAFETY_LABELS.map(({ key, label }) => {
+    const it = state.items[key];
+    return { label, present: it.present ? "Ir" : "Nav", checked: it.present ? (it.checked ? "Pārbaudīts" : "Nav pārbaudīts") : "" };
+  });
 }
 
 function safetyLabel(car: AutoparksCar): string {
@@ -115,6 +125,7 @@ export function autoparksV2PriceSheet(car: AutoparksCar, v2: AutoparksCarV2, bas
   const equipmentLine = ps.equipmentLine || car.equipmentLine || "";
   const listPriceEur = ps.listPriceEur ?? car.listPriceEur ?? ps.salePriceEur ?? car.salePriceEur ?? null;
   const vatMode = v2.purchase.vat.mode;
+  const safetyState = ps.safety ?? defaultV2PriceSheetSafety();
   return {
     displayName: ps.displayName || car.displayName || title,
     equipmentLine,
@@ -122,7 +133,9 @@ export function autoparksV2PriceSheet(car: AutoparksCar, v2: AutoparksCarV2, bas
     priceEur: listPriceEur,
     vatNote: vatMode === "gross" || vatMode === "net" ? "cena ar PVN" : "",
     rows: priceSheetRows(car, basics),
-    safetyRows: priceSheetSafety(car),
+    safetyRows: priceSheetSafetyRows(safetyState),
+    safetyState,
+    roadworthy: safetyState.roadworthy,
     salePriceEur: ps.salePriceEur ?? car.salePriceEur ?? null,
     listPriceEur,
     year: car.year,

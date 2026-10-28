@@ -139,8 +139,42 @@ export type AutoparksCarV2 = {
   service: V2Service;
   expenses: V2Expense[];
   /** Cenu lapas labojumi: null/"" = ņem v1 vērtību (v1 lauki netiek pārrakstīti). */
-  priceSheet: { displayName: string; equipmentLine: string; salePriceEur: number | null; listPriceEur: number | null };
+  priceSheet: {
+    displayName: string;
+    equipmentLine: string;
+    salePriceEur: number | null;
+    listPriceEur: number | null;
+    /** Drošības tabula cenu lapā (Nils 28.10); null = noklusējums "viss ir un pārbaudīts". */
+    safety?: V2PriceSheetSafety | null;
+  };
 };
+
+export const V2_SAFETY_KEYS = ["esp", "eps", "abs", "airbags"] as const;
+export type V2SafetyKey = (typeof V2_SAFETY_KEYS)[number];
+export type V2PriceSheetSafety = {
+  items: Record<V2SafetyKey, { present: boolean; checked: boolean }>;
+  /** "Transportlīdzeklis tehniski atbilst izmantošanai ceļu satiksmē!" */
+  roadworthy: boolean;
+};
+
+/** Noklusējums kā CSDD paraugā: visas sistēmas ir, pārbaudītas, apliecinājums ieķeksēts. */
+export function defaultV2PriceSheetSafety(): V2PriceSheetSafety {
+  const all = { present: true, checked: true };
+  return { items: { esp: { ...all }, eps: { ...all }, abs: { ...all }, airbags: { ...all } }, roadworthy: true };
+}
+
+export function normalizeV2PriceSheetSafety(raw: unknown): V2PriceSheetSafety | null {
+  if (!isObj(raw)) return null;
+  const base = defaultV2PriceSheetSafety();
+  const items = isObj(raw.items) ? raw.items : {};
+  for (const k of V2_SAFETY_KEYS) {
+    const it = isObj(items[k]) ? items[k] : {};
+    const present = typeof it.present === "boolean" ? it.present : base.items[k].present;
+    base.items[k] = { present, checked: present && (typeof it.checked === "boolean" ? it.checked : base.items[k].checked) };
+  }
+  if (typeof raw.roadworthy === "boolean") base.roadworthy = raw.roadworthy;
+  return base;
+}
 
 export type V2HistoryRow = {
   id: string;
@@ -353,6 +387,7 @@ export function normalizeCarV2(raw: unknown): AutoparksCarV2 {
       equipmentLine: str(ps.equipmentLine, 300),
       salePriceEur: v2Num(ps.salePriceEur),
       listPriceEur: v2Num(ps.listPriceEur),
+      safety: normalizeV2PriceSheetSafety(ps.safety),
     },
   };
 }
