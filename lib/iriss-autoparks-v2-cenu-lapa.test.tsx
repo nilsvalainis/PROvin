@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeAutoparksCar } from "@/lib/iriss-autoparks";
-import { autoparksV2Basics, emptyCarV2 } from "@/lib/iriss-autoparks-v2";
+import { autoparksV2Basics, emptyCarV2, normalizeV2PriceSheetSafety } from "@/lib/iriss-autoparks-v2";
 import { autoparksV2PriceSheet, engineLabel, priceSheetHighlights, priceSheetHighlightsLine, priceSheetTitlePx } from "@/lib/iriss-autoparks-v2-cenu-lapa";
 import { renderText } from "@/lib/test-render";
 import { A4Sheet } from "@/components/admin/iriss-autoparks-v2/A4Sheet";
@@ -36,12 +36,15 @@ describe("Cenu lapa L7 (Nils 27.10)", () => {
     expect(labels).not.toContain("Izmešu daudzums (CO2)");
     expect(labels).not.toContain("Transportlīdzekļa veids");
     expect(s.rows.find((r) => r.label === "Pilna masa")?.value).toBe("2 530 kg");
+    // Nils 28.10: drošības tabula vienmēr, pēc noklusējuma viss "Ir" un "Pārbaudīts"; spilveni pēdējie.
     expect(s.safetyRows.map((r) => r.label)).toEqual([
       "Elektroniskā stabilitātes sistēma (ESP)",
+      "Elektriskais stūres pastiprinātājs (EPS)",
       "Bremžu antibloķēšanas sistēma (ABS)",
       "Drošības spilveni",
     ]);
-    expect(s.safetyRows[1]).toEqual({ label: "Bremžu antibloķēšanas sistēma (ABS)", present: "Ir", checked: "" });
+    expect(s.safetyRows[2]).toEqual({ label: "Bremžu antibloķēšanas sistēma (ABS)", present: "Ir", checked: "Pārbaudīts" });
+    expect(s.roadworthy).toBe(true);
     expect(s.highlights).toEqual(["ACC DISTRONIC", "LANE ASSIST", "QUATTRO"]);
     expect(s.priceEur).toBe(17900);
   });
@@ -137,5 +140,26 @@ describe("Cenu lapa", () => {
     v2.tech.gearbox = "Manuālā";
     const s = autoparksV2PriceSheet(car, v2, autoparksV2Basics(car, v2));
     expect(s.gearbox).toBe("Manuālā");
+  });
+});
+
+describe("Cenu lapa - drošības tabula (Nils 28.10)", () => {
+  const car = normalizeAutoparksCar({ id: "s80", make: "Volvo", model: "S80", vin: "YV1AS475BC1162162" })!;
+
+  it("bez CSDD datiem tabula un apliecinājums ir lapā pēc noklusējuma", () => {
+    const v2 = emptyCarV2();
+    const text = renderText(<A4Sheet s={autoparksV2PriceSheet(car, v2, autoparksV2Basics(car, v2))} />);
+    expect(text).toContain("Drošības spilveni");
+    expect(text).toContain("Pārbaudīts");
+    expect(text).toContain("Transportlīdzeklis tehniski atbilst izmantošanai ceļu satiksmē!");
+  });
+
+  it("saglabātā izvēle uzvar: Nav un bez apliecinājuma", () => {
+    const v2 = emptyCarV2();
+    const safety = normalizeV2PriceSheetSafety({ items: { eps: { present: false, checked: true } }, roadworthy: false })!;
+    v2.priceSheet.safety = safety;
+    const s = autoparksV2PriceSheet(car, v2, autoparksV2Basics(car, v2));
+    expect(s.safetyRows[1]).toEqual({ label: "Elektriskais stūres pastiprinātājs (EPS)", present: "Nav", checked: "" });
+    expect(renderText(<A4Sheet s={s} />)).not.toContain("tehniski atbilst");
   });
 });

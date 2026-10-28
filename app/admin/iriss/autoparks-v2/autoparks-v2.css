@@ -3859,3 +3859,50 @@
     margin-top: 10px;
   }
 }
+
+/* Cenu lapa: drošības tabula ar ķeksīšiem (Nils 28.10, kompakti kā CSDD formā). */
+.ap2.ap2.ap2 .ap2-cl-safety h3 {
+  margin: 0 0 8px;
+}
+.ap2.ap2.ap2 .ap2-cl-st .hd,
+.ap2.ap2.ap2 .ap2-cl-st .rw {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px 84px;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  font-size: 13.5px;
+}
+.ap2.ap2.ap2 .ap2-cl-st .hd {
+  min-height: 24px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+.ap2.ap2.ap2 .ap2-cl-st .rw {
+  border-top: 1px solid var(--line);
+}
+.ap2.ap2.ap2 .ap2-cl-st label,
+.ap2.ap2.ap2 .ap2-cl-st .hd span:not(:first-child) {
+  justify-self: center;
+  text-align: center;
+}
+.ap2.ap2.ap2 .ap2-cl-st input,
+.ap2.ap2.ap2 .ap2-cl-road input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--iriss-ink, #1c1c1e);
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-cl-road {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 13.5px;
+  cursor: pointer;
+}

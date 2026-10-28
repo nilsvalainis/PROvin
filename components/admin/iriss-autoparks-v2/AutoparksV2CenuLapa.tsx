@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { PRICE_SHEET_MAX_HIGHLIGHTS, priceSheetHighlightsLine, type V2PriceSheet } from "@/lib/iriss-autoparks-v2-cenu-lapa";
+import {
+  PRICE_SHEET_MAX_HIGHLIGHTS,
+  PRICE_SHEET_SAFETY_LABELS,
+  priceSheetHighlightsLine,
+  type V2PriceSheet,
+} from "@/lib/iriss-autoparks-v2-cenu-lapa";
+import type { V2PriceSheetSafety } from "@/lib/iriss-autoparks-v2";
 import { fmtEurRound } from "@/lib/iriss-autoparks-v2-format";
 import type { CabinetPaneProps } from "./AutoparksV2Cabinet";
 import { A4Sheet } from "./A4Sheet";
@@ -38,6 +44,15 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
     setEdit(null);
     setError("");
     const r = await fetch(api, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).catch(() => null);
+    const d = (await r?.json().catch(() => null)) as { cenuLapa?: V2PriceSheet } | null;
+    if (r?.ok && d?.cenuLapa) setS(d.cenuLapa);
+    else setError("Neizdevās saglabāt");
+  }
+
+  async function saveSafety(next: V2PriceSheetSafety) {
+    setError("");
+    setS((prev) => (prev ? { ...prev, safetyState: next, roadworthy: next.roadworthy } : prev));
+    const r = await fetch(api, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ safety: next }) }).catch(() => null);
     const d = (await r?.json().catch(() => null)) as { cenuLapa?: V2PriceSheet } | null;
     if (r?.ok && d?.cenuLapa) setS(d.cenuLapa);
     else setError("Neizdevās saglabāt");
@@ -132,14 +147,8 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
               <span className="v mut">{r.value}</span>
             </div>
           ))}
-          {s.safetyRows.length > 0 ? (
-            <div className="ap2-f">
-              <i className="ap2-cd" />
-              <span className="k">Drošības sistēmas</span>
-              <span className="v mut">{s.safetyRows.map((r) => r.label.replace(/.*\((\w+)\)$/, "$1")).join(", ")}</span>
-            </div>
-          ) : null}
         </div>
+        <SafetyTable state={s.safetyState} onChange={(next) => void saveSafety(next)} />
         {error ? <p className="ap2-err">{error}</p> : null}
       </div>
       <div className="ap2-a4wrap">
@@ -150,6 +159,52 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
           <A4Sheet s={s} />
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Drošības tabula (Nils 28.10, kā CSDD formā): kompakti ķeksīši; noklusējums - viss ieķeksēts. */
+export function SafetyTable({ state, onChange }: { state: V2PriceSheetSafety; onChange: (next: V2PriceSheetSafety) => void }) {
+  const setItem = (key: (typeof PRICE_SHEET_SAFETY_LABELS)[number]["key"], patch: Partial<{ present: boolean; checked: boolean }>) => {
+    const cur = state.items[key];
+    const present = patch.present ?? cur.present;
+    const checked = present && (patch.checked ?? (patch.present === true && !cur.present ? true : cur.checked));
+    onChange({ ...state, items: { ...state.items, [key]: { present, checked } } });
+  };
+  return (
+    <div className="ap2-card ap2-cl-safety">
+      <h3>Drošības sistēmas</h3>
+      <div className="ap2-cl-st" role="table" aria-label="Drošības sistēmas">
+        <div className="hd" role="row">
+          <span role="columnheader">Sistēma</span>
+          <span role="columnheader">Ir</span>
+          <span role="columnheader">Pārbaudīts</span>
+        </div>
+        {PRICE_SHEET_SAFETY_LABELS.map(({ key, label }) => {
+          const it = state.items[key];
+          return (
+            <div key={key} className="rw" role="row">
+              <span role="cell">{label}</span>
+              <label role="cell">
+                <input type="checkbox" checked={it.present} aria-label={`${label}: ir`} onChange={(e) => setItem(key, { present: e.target.checked })} />
+              </label>
+              <label role="cell">
+                <input
+                  type="checkbox"
+                  checked={it.checked}
+                  disabled={!it.present}
+                  aria-label={`${label}: pārbaudīts`}
+                  onChange={(e) => setItem(key, { checked: e.target.checked })}
+                />
+              </label>
+            </div>
+          );
+        })}
+      </div>
+      <label className="ap2-cl-road">
+        <input type="checkbox" checked={state.roadworthy} onChange={(e) => onChange({ ...state, roadworthy: e.target.checked })} />
+        <span>Apliecinu, ka transportlīdzeklis tehniski atbilst izmantošanai ceļu satiksmē</span>
+      </label>
     </div>
   );
 }

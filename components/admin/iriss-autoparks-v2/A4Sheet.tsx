@@ -64,7 +64,7 @@ export function A4Sheet({ s }: { s: V2PriceSheet }) {
               </div>
             ))}
           </div>
-          <p className="ap2-cl-ok">Transportlīdzeklis tehniski atbilst izmantošanai ceļu satiksmē!</p>
+          {s.roadworthy ? <p className="ap2-cl-ok">Transportlīdzeklis tehniski atbilst izmantošanai ceļu satiksmē!</p> : null}
         </>
       ) : null}
       <div className="ap2-cl-foot">
