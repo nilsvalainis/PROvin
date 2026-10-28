@@ -178,6 +178,22 @@ function multiline(v: unknown, max: number): string {
   return typeof v === "string" ? v.replace(/\r\n/g, "\n").slice(0, max).trim() : "";
 }
 
+/**
+ * Ticamas tehnisko datu robežas (Nils 28.10: jaudā bija "23052012 kW" - 1. reģistrācijas datums).
+ * Ārpus robežām vērtību nesaglabā un nerāda.
+ */
+export const V2_TECH_LIMITS = {
+  powerKw: { min: 1, max: 2000 },
+  displacementCm3: { min: 50, max: 20000 },
+  mileageKm: { min: 0, max: 3_000_000 },
+} as const;
+
+export function v2PlausibleTech(kind: keyof typeof V2_TECH_LIMITS, n: number | null | undefined): number | null {
+  if (n == null || !Number.isFinite(n)) return null;
+  const { min, max } = V2_TECH_LIMITS[kind];
+  return n >= min && n <= max ? n : null;
+}
+
 export function v2Num(v: unknown): number | null {
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
   if (typeof v === "string" && v.trim()) {
@@ -486,8 +502,14 @@ export function autoparksV2Basics(car: AutoparksCar, v2: AutoparksCarV2): Autopa
     firstRegDate: v2.tech.firstRegDate
       ? { value: v2.tech.firstRegDate, csdd: csdd("tech.firstRegDate") }
       : { value: regFirst, csdd: Boolean(regFirst) },
-    displacementCm3: { value: v2.tech.displacementCm3, csdd: v2.tech.displacementCm3 != null && csdd("tech.displacementCm3") },
-    powerKw: { value: v2.tech.powerKw, csdd: v2.tech.powerKw != null && csdd("tech.powerKw") },
+    displacementCm3: (() => {
+      const value = v2PlausibleTech("displacementCm3", v2.tech.displacementCm3);
+      return { value, csdd: value != null && csdd("tech.displacementCm3") };
+    })(),
+    powerKw: (() => {
+      const value = v2PlausibleTech("powerKw", v2.tech.powerKw);
+      return { value, csdd: value != null && csdd("tech.powerKw") };
+    })(),
     tyreSize: { value: v2.tech.tyreSize, csdd: false },
     gearbox: v2.tech.gearbox ? { value: v2.tech.gearbox, csdd: false } : { value: reg?.gearbox ?? "", csdd: Boolean(reg?.gearbox) },
     engine: { value: v2.tech.engine, csdd: false },

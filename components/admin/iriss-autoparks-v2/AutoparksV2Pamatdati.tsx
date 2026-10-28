@@ -56,8 +56,11 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ [key]: NUM_KEYS.has(key) ? num : next }),
     }).catch(() => null);
-    const data = (await res?.json().catch(() => null)) as { basics?: AutoparksV2Basics } | null;
+    const data = (await res?.json().catch(() => null)) as { basics?: AutoparksV2Basics; error?: string } | null;
     if (res?.ok && data?.basics) onBasics(data.basics);
+    else if (data?.error === "invalid_power") setError("Jauda nav ticama (1-2000 kW) - lauks netika mainīts");
+    else if (data?.error === "invalid_displacement") setError("Tilpums nav ticams (50-20000 cm3) - lauks netika mainīts");
+    else if (data?.error === "invalid_mileage") setError("Nobraukums nav ticams - lauks netika mainīts");
     else setError(key === "vin" ? "Nederīgs VIN (17 zīmes, bez I/O/Q)" : "Neizdevās saglabāt");
   }
 

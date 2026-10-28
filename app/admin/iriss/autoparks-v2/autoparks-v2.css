@@ -3757,3 +3757,105 @@
     color: var(--iriss-on-graphite, #f3f2ef);
   }
 }
+
+/* ===== Kabinets datorā pēc maketa (Nils 28.10 «izskatās pēc telefona versijas»): kompaktas cilnes,
+   pavadzīme kā sekundāra poga, saites un CSDD kompakti. Telefona skats nemainās. ===== */
+@media (min-width: 900px) {
+  .ap2.ap2.ap2.ap2-cab .ap2-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 3px;
+    margin: 14px 0 4px;
+    border-radius: 11px;
+    background: #e5e5ea;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-tabs .ap2-tab {
+    min-height: 32px;
+    padding: 0 14px;
+    border-radius: 8px;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    color: #3a3a3c;
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-tabs .ap2-tab.on {
+    background: #fff;
+    color: var(--iriss-ink, #1c1c1e);
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(22, 23, 26, 0.1);
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-tabs .ap2-tab-hist {
+    margin-left: 10px;
+  }
+
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-wb {
+    margin: 0;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-wb-main {
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 12px;
+    background: #fff;
+    color: var(--iriss-ink, #1c1c1e) !important;
+    box-shadow: inset 0 0 0 1px var(--iriss-line-strong, #d1d1d6), 0 1px 2px rgba(22, 23, 26, 0.05);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .iriss-saite {
+    background: #fff;
+    border-radius: 18px;
+    padding: 14px 18px;
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(22, 23, 26, 0.06);
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .iriss-saite-sec {
+    margin: 0 0 8px;
+    padding: 0;
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--iriss-ink, #1c1c1e);
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .iriss-saite-card {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .iriss-saite-card + .iriss-saite-card {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--iriss-line, #e5e5ea);
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .iriss-saite-note {
+    font-size: 12.5px;
+    margin: 4px 0 8px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .iriss-saite-btn {
+    min-height: 36px;
+    font-size: 13px;
+    border-radius: 10px;
+  }
+
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-bottom .ap2-card h3 {
+    margin: 0 0 6px;
+    font-size: 15px;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--iriss-ink, #1c1c1e);
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-bottom .ap2-card .ap2-f {
+    min-height: 36px;
+    font-size: 13.5px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-bottom .ap2-delete {
+    margin-top: 10px;
+  }
+}
