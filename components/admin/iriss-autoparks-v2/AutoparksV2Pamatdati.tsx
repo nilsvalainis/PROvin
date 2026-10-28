@@ -121,7 +121,8 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
 
   return (
     <div className="ap2-pane">
-      <div className="ap2-card">
+      {/* Makets (kabinets, apstiprināts 27.10): datorā lauku režģis 3 kolonnās, Auto un Tehniskie dati - atsevišķas kartītes. */}
+      <div className="ap2-card ap2-pd-grid">
         <h3>Auto</h3>
         {clientOrderToggle()}
         {editable("make", "Marka", basics.make, basics.make)}
@@ -133,6 +134,8 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
         {editable("mileageKm", "Nobraukums", basics.mileageKm.value == null ? "" : String(basics.mileageKm.value), fmtKm(basics.mileageKm.value), "number")}
         {/* "Atrašanās vieta" nerāda šeit kopš j62: lauks dzīvo tikai IRISS Loģistikas kabinetā (kartes punkts); dati paliek, tikai nav rediģējami no Autoparka. */}
         {editable("arrivedAt", "Atvests", basics.arrivedAt, fmtDateLv(basics.arrivedAt), "date")}
+      </div>
+      <div className="ap2-card ap2-pd-grid">
         <h3>Tehniskie dati</h3>
         {editable("firstRegDate", "1. reģistrācija", basics.firstRegDate.value, fmtDateLv(basics.firstRegDate.value), "date")}
         {editable("displacementCm3", "Tilpums", basics.displacementCm3.value == null ? "" : String(basics.displacementCm3.value), fmtCm3(basics.displacementCm3.value), "number")}

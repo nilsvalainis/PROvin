@@ -3644,3 +3644,100 @@
   flex: 1;
   min-width: 0;
 }
+
+/* ===== Kabinets pēc apstiprinātā maketa (27.10): Pamatdati divās kolonnās, lauku režģis (Nils 28.10 «rāda veco versiju») ===== */
+.ap2.ap2.ap2 .ap2-pd-layout {
+  display: flex;
+  flex-direction: column;
+}
+.ap2.ap2.ap2 .ap2-pd-top > :first-child,
+.ap2.ap2.ap2 .ap2-pd-bottom .ap2-pane .ap2-card {
+  margin-top: 12px;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2.ap2-cab {
+    max-width: 1260px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .ap2.ap2.ap2 .ap2-pd-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-areas: "main top" "main bottom";
+    gap: 0 16px;
+    align-items: start;
+  }
+  .ap2.ap2.ap2 .ap2-pd-main {
+    grid-area: main;
+    min-width: 0;
+  }
+  .ap2.ap2.ap2 .ap2-pd-top {
+    grid-area: top;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 12px;
+  }
+  .ap2.ap2.ap2 .ap2-pd-top > :first-child {
+    margin-top: 0;
+  }
+  .ap2.ap2.ap2 .ap2-pd-bottom {
+    grid-area: bottom;
+    min-width: 0;
+  }
+  .ap2.ap2.ap2 .ap2-pd-layout .ap2-pane {
+    max-width: none;
+    margin: 0;
+  }
+  .ap2.ap2.ap2 .ap2-pd-layout .ap2-card {
+    border-radius: 18px;
+    padding: 16px 20px;
+  }
+  .ap2.ap2.ap2 .ap2-pd-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 16px;
+  }
+  .ap2.ap2.ap2 .ap2-pd-grid h3 {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 15px;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--ink);
+  }
+  .ap2.ap2.ap2 .ap2-pd-grid .ap2-f {
+    grid-template-columns: 8px minmax(0, 1fr);
+    grid-template-areas: "d k" "v v";
+    gap: 4px 6px;
+    min-height: 0;
+    border-top: 0;
+    align-items: center;
+  }
+  .ap2.ap2.ap2 .ap2-pd-grid .ap2-f .ap2-cd {
+    grid-area: d;
+  }
+  .ap2.ap2.ap2 .ap2-pd-grid .ap2-f .k {
+    grid-area: k;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+  .ap2.ap2.ap2 .ap2-pd-grid .ap2-f .v {
+    grid-area: v;
+    justify-self: stretch;
+    text-align: left;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    border: 1px solid var(--iriss-line-strong, #d1d1d6);
+    border-radius: 12px;
+    padding: 0 12px;
+    background: #fff;
+    font-size: 15px;
+  }
+  .ap2.ap2.ap2 .ap2-pd-grid .ap2-f input.v {
+    max-width: none;
+  }
+}

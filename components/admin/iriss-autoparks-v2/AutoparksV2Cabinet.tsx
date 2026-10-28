@@ -130,7 +130,7 @@ export function AutoparksV2Cabinet({
   const pane = tab === "vesture" || tab === "pamatdati" || tab === "csdd" || tab === "cela" ? null : panes[tab];
 
   return (
-    <div className="ap2">
+    <div className="ap2 ap2-cab">
       <div className="ap2-bar">
         <Link href={BASE} className="ap2-back" aria-label="Atpakaļ uz Autoparks">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -181,8 +181,9 @@ export function AutoparksV2Cabinet({
         ) : null}
       </nav>
 
-      {/* Nils 27.10: statuss, pavadzīme un saites tikai Pamatdatos; pārējās cilnēs tikai pašas sadaļas saturs. */}
-      {onHome ? (
+      {/* Nils 27.10: statuss, pavadzīme un saites tikai Pamatdatos; pārējās cilnēs tikai pašas sadaļas saturs.
+          Pamatdati pēc kabineta maketa (27.10): datorā pa kreisi Auto + Tehniskie dati, pa labi saites, CSDD, dzēšana. */}
+      {onHome && tab !== "pamatdati" ? (
         <>
           {statusBtn("ap2-mstatus")}
           {statusErr ? <p className="ap2-err">{statusErr}</p> : null}
@@ -190,11 +191,24 @@ export function AutoparksV2Cabinet({
           <IrissSaitesPanel from="autoparks" id={basics.id} vehicle={basics.title} />
         </>
       ) : null}
-      {tab === "pamatdati" ? <AutoparksV2Pamatdati basics={basics} onBasics={onBasics} /> : null}
-      {/* Nils 27.10: CSDD reģistrs apvienots ar Pamatdatiem (viena cilne). */}
-      {tab === "pamatdati" ? <AutoparksV2Csdd basics={basics} /> : null}
+      {tab === "pamatdati" ? (
+        <div className="ap2-pd-layout">
+          <div className="ap2-pd-top">
+            {statusBtn("ap2-mstatus")}
+            {statusErr ? <p className="ap2-err">{statusErr}</p> : null}
+            {canWaybill ? <AutoparksV2Waybill car={{ title: basics.title, vin: basics.vin }} /> : null}
+            <IrissSaitesPanel from="autoparks" id={basics.id} vehicle={basics.title} />
+          </div>
+          <div className="ap2-pd-main">
+            <AutoparksV2Pamatdati basics={basics} onBasics={onBasics} />
+          </div>
+          <div className="ap2-pd-bottom">
+            <AutoparksV2Csdd basics={basics} />
+            {perms.admin ? <DeleteCarButton carId={basics.id} title={basics.title} /> : null}
+          </div>
+        </div>
+      ) : null}
       {tab === "cela" && transit ? <AutoparksV2Cela transit={transit} canWrite={transitCanWrite} /> : null}
-      {tab === "pamatdati" && perms.admin ? <DeleteCarButton carId={basics.id} title={basics.title} /> : null}
       {tab === "vesture" ? <AutoparksV2History carId={basics.id} /> : null}
       {pane ? pane({ carId: basics.id, perms, basics, onBasics }) : null}
       {canCreateOffer && tab === "cenu_lapa" ? <AutoparksV2OfferActions carId={basics.id} /> : null}
