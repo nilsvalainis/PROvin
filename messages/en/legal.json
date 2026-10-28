@@ -206,6 +206,7 @@
     "categoryAnalyticsDesc": "Google Analytics: how the site is used.",
     "categoryAds": "Advertising.",
     "categoryAdsDesc": "Google Ads, Meta, TikTok and the marketing source (UTM, click IDs).",
-    "saveChoice": "Save choice"
+    "saveChoice": "Save choice",
+    "settings": "Settings"
   }
 }

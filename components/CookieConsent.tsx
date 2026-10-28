@@ -102,6 +102,8 @@ export function CookieConsent() {
   /** Divas kategorijas (audits P6): noklusējumā izslēgtas, kā prasa ePrivacy. */
   const [analyticsOn, setAnalyticsOn] = useState(false);
   const [adsOn, setAdsOn] = useState(false);
+  /** Slēdži aiz «Iestatījumi», lai aizvērtā josla nav augstāka par veco un neaizsedz hero CTA 390 px. */
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -186,9 +188,23 @@ export function CookieConsent() {
             >
               {t("privacyLink")}
             </Link>
+            <span className="text-white/30" aria-hidden="true">
+              {" "}
+              ·{" "}
+            </span>
+            <button
+              type="button"
+              onClick={() => setSettingsOpen((open) => !open)}
+              aria-expanded={settingsOpen}
+              aria-controls="cookie-consent-categories"
+              className="cookie-consent-panel__link font-medium text-sky-400/95 underline decoration-sky-400/30 underline-offset-2 hover:text-sky-300 hover:decoration-sky-300/50"
+            >
+              {t("settings")}
+            </button>
           </p>
         </div>
-        <fieldset className="flex flex-col gap-1.5 border-t border-white/[0.08] pt-2">
+        {settingsOpen ? (
+        <fieldset id="cookie-consent-categories" className="flex flex-col gap-1.5 border-t border-white/[0.08] pt-2">
           <legend className="sr-only">{t("categoriesLegend")}</legend>
           {(
             [
@@ -211,8 +227,9 @@ export function CookieConsent() {
             </label>
           ))}
         </fieldset>
+        ) : null}
         <div className="cookie-consent-panel__actions flex flex-col gap-1.5 border-t border-white/[0.08] pt-2">
-          <div className="grid grid-cols-2 gap-1.5">
+          <div className={settingsOpen ? "grid grid-cols-2 gap-1.5" : "grid grid-cols-1"}>
           <button
             type="button"
             onClick={onNecessary}
@@ -220,6 +237,7 @@ export function CookieConsent() {
           >
             {t("reject")}
           </button>
+          {settingsOpen ? (
           <button
             type="button"
             onClick={onSaveChoice}
@@ -227,6 +245,7 @@ export function CookieConsent() {
           >
             {t("saveChoice")}
           </button>
+          ) : null}
           </div>
           <button
             type="button"

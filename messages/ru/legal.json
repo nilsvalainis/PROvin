@@ -206,6 +206,7 @@
     "categoryAnalyticsDesc": "Google Analytics: как используется сайт.",
     "categoryAds": "Реклама.",
     "categoryAdsDesc": "Google Ads, Meta, TikTok и маркетинговый источник (UTM, ID кликов).",
-    "saveChoice": "Сохранить выбор"
+    "saveChoice": "Сохранить выбор",
+    "settings": "Настройки"
   }
 }

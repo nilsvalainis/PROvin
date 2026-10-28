@@ -206,6 +206,7 @@
     "categoryAnalyticsDesc": "Google Analytics: kā vietne tiek lietota.",
     "categoryAds": "Reklāma.",
     "categoryAdsDesc": "Google Ads, Meta, TikTok un mārketinga avots (UTM, klikšķa ID).",
-    "saveChoice": "Saglabāt izvēli"
+    "saveChoice": "Saglabāt izvēli",
+    "settings": "Iestatījumi"
   }
 }
