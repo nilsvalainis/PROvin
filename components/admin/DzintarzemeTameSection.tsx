@@ -213,8 +213,13 @@ export function DzintarzemeTameSection({
       paintingNet: parseEuroInput(d.tamePaintingStr),
       leasingValuationNet: parseEuroInput(d.tameLeasingValuationStr),
       extraServices: extraLinesParsed,
+      // Tikai PDF galvenei (Nils 28.10 makets).
+      year: (d.tameYearStr ?? "").trim(),
+      mileageKm: (d.tameMileageStr ?? "").trim(),
     };
   }, [
+    d.tameYearStr,
+    d.tameMileageStr,
     displayBrand,
     d.tameApplyVatAuto,
     d.tameAutoPriceStr,
