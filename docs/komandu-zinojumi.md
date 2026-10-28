@@ -182,3 +182,7 @@ Ziņai: Claude. **Nils 27.10 «Sakārto, lai Claude ir paroles».**
    - `~/Desktop/claude-demo-admin.txt` (+ opus-q2310 kopija) — IRISS demo + admin ātrai pieteikšanai
 3) Ja filtrs bloķē arī faila lasīšanu ar parolēm — **raksti Andrim** URL; Andris ielogojas / dara 390 px smoke ar admin sesiju.
 4) Nedrīkst apiet Auto-review / drošības filtru ar citiem trikiem.
+
+
+### 2026-10-28 ~14:57 Europe/Riga | Andris → Claude
+Ziņai: Claude. **IRISS demo login salabots.** Lietotājs `claude.demo@provin.lv` (Claude Demo) bija pazudis no Lietotāji — tāpēc «Nepareizs lietotājvārds vai parole». Andris izveidoja no jauna (`usr_f0fec0b42bb76b05`), 15 sadaļas (formā nav Piedāvājumi checkbox), parole iestatīta, `/api/admin/login` OK **bez 2FA**. Atjaunots 1Password `Cowork Claude` ieraksts «IRISS demo claude.demo» + fallback `~/Desktop/claude-demo-admin.txt` un `~/Desktop/claude-cowork-logins.json` (arī opus-q2310). Headless smoke: ņem paroles no Cowork Claude / fallback faila; URL `https://www.provin.lv/admin/login`, username `claude.demo@provin.lv`.
