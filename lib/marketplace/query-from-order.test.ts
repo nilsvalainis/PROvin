@@ -202,3 +202,12 @@ describe("marketplaceVehicleMatchesOrder", () => {
     ).toBe(true);
   });
 });
+
+describe("Meklēšanas valstis (Nils 28.10)", () => {
+  it("vienmēr Vācija, Nīderlande, Beļģija - arī ja vecajā pasūtījumā ierakstīts cits", async () => {
+    const { buildAutoscout24SearchUrl } = await import("@/lib/marketplace/search-urls");
+    const q = marketplaceQueryFromOrder({ brandModel: "Volvo XC60", totalBudget: "20000", productionYears: "2015", preferredCountries: "LT" });
+    expect(q.countries).toEqual(["DE", "NL", "BE"]);
+    expect(new URL(buildAutoscout24SearchUrl(q)).searchParams.get("cy")).toBe("D,NL,B");
+  });
+});
