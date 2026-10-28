@@ -12,7 +12,7 @@ export async function GET(req: Request) {
   const days = Number(new URL(req.url).searchParams.get("days") ?? "7");
   const result = await readCspReportDays(Number.isFinite(days) ? days : 7);
   if (!result) {
-    return NextResponse.json({ error: "redis_not_configured" }, { status: 503, headers: { "Cache-Control": "private, no-store" } });
+    return NextResponse.json({ error: "storage_not_configured" }, { status: 503, headers: { "Cache-Control": "private, no-store" } });
   }
   return NextResponse.json({ days: result }, { headers: { "Cache-Control": "private, no-store" } });
 }
