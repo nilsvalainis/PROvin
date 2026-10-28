@@ -341,7 +341,7 @@ export function PiedavajumsDetail({
     }
   }
 
-  async function act(action: IrissPdAction | "create-order") {
+  async function act(action: IrissPdAction | "create-order" | "fill-from-stock") {
     if (action === "decline" && !window.confirm("Atzīmēt piedāvājumu kā noraidītu?")) return;
     if (action === "approve" && !window.confirm("Atzīmēt kā apstiprinātu? Tiks izveidots/rezervēts Pasūtījums.")) return;
     if (dirty && !(await save())) return;
@@ -513,6 +513,11 @@ export function PiedavajumsDetail({
         </Card>
 
         <Card title="Pamatdati" sub={rec.auto1 ? "Ielasīts no Auto1 · labojams" : "Labojams"}>
+          {editable && rec.sourceRef.startsWith("autoparks:") ? (
+            <button type="button" className="pd-btn" style={{ marginBottom: 12 }} disabled={busy !== ""} onClick={() => void act("fill-from-stock")}>
+              {busy === "fill-from-stock" ? "Ielasa..." : "Papildināt tukšos laukus no Autoparka"}
+            </button>
+          ) : null}
           <div className="pde-grid">
             {PRIMARY_FIELDS.map(([k, l, ph]) => (
               <div className="pd-fld" key={k}>

@@ -121,3 +121,49 @@ export function applyIrissPdImportData<T extends {
     auto1ImportedAt: imp.auto1 ? at : "",
   };
 }
+
+/** "2012-03-30" -> "30.03.2012"; citādi bez izmaiņām. */
+function lvDate(v: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(v.trim());
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : v.trim();
+}
+
+export type IrissPdAutoparksFacts = {
+  year?: string;
+  firstRegDate?: string;
+  mileageKm?: number | null;
+  fuel?: string;
+  gearbox?: string;
+  powerKw?: number | null;
+  displacementCm3?: number | null;
+  color?: string;
+};
+
+/**
+ * Nils 28.10: «daļa datu nav ielasījušies automātiski». Piedāvājums no Autoparka ņēma tikai vecā ieraksta laukus;
+ * tukšos aizpilda no Autoparka Pamatdatiem / CSDD. Gads vienmēr 4 cipari, datums DD.MM.GGGG.
+ */
+export function irissPdFillFromAutoparks(v: IrissPdVehicle, f: IrissPdAutoparksFacts): IrissPdVehicle {
+  const num = (n: number | null | undefined) => (n != null && Number.isFinite(n) && n > 0 ? String(Math.round(n)) : "");
+  const firstReg = lvDate(v.firstRegistration || f.firstRegDate || "");
+  const yearRaw = (v.year || f.year || "").trim();
+  const year = /^\d{4}$/.test(yearRaw) ? yearRaw : (/(\d{4})/.exec(yearRaw)?.[1] ?? /(\d{4})$/.exec(firstReg)?.[1] ?? "");
+  return {
+    ...v,
+    year,
+    firstRegistration: firstReg,
+    mileageKm: v.mileageKm || num(f.mileageKm),
+    fuel: v.fuel || (f.fuel ?? "").trim(),
+    transmission: v.transmission || (f.gearbox ?? "").trim(),
+    powerKw: v.powerKw || num(f.powerKw),
+    engine: v.engine || num(f.displacementCm3),
+    color: v.color || (f.color ?? "").trim(),
+  };
+}
+
+/** Tikai tukšie lauki no `src` (esošos, ar roku labotos, nepārraksta). */
+export function irissPdFillEmpty(cur: IrissPdVehicle, src: IrissPdVehicle): IrissPdVehicle {
+  const out = { ...cur };
+  for (const k of Object.keys(cur) as Array<keyof IrissPdVehicle>) if (!cur[k].trim() && src[k].trim()) out[k] = src[k];
+  return out;
+}

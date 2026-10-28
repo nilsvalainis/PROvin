@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { appendIrissPdHistory, canRebaseIrissPd, findIrissPdTakenConflict, irissPdConflictMessage, rebaseIrissPd } from "@/lib/iriss-piedavajumi";
+import { appendIrissPdHistory, canRebaseIrissPd, rebaseIrissPd } from "@/lib/iriss-piedavajumi";
 import { importIrissPdFromLink, importIrissPdFromStock, type IrissPdImport } from "@/lib/iriss-piedavajumi-create";
 import { irissPdLinkErrorLv } from "@/lib/iriss-piedavajumi-sources";
 import { createIrissPd, isIrissPdStoreEnabled, listIrissPdRows, readIrissPd, refreshIrissPdExpiries } from "@/lib/iriss-piedavajumi-store";
@@ -91,7 +91,6 @@ export async function POST(req: Request) {
   const at = new Date().toISOString();
   const by = gate.actor.name || "Admins";
   const id = crypto.randomUUID();
-  const rows = await listIrissPdRows();
 
   let build: ((number: number) => IrissPiedavajums) | null = null;
   let note = "";
@@ -100,12 +99,9 @@ export async function POST(req: Request) {
     const kind = body.kind;
     const carId = typeof body.carId === "string" ? body.carId.trim() : "";
     if (!/^[\w-]{1,80}$/.test(carId)) return fail(400, "invalid");
-    const conflict = findIrissPdTakenConflict(rows, { sourceRef: `${kind}:${carId}` });
-    if (conflict) return fail(409, "taken", { message: irissPdConflictMessage(conflict), id: conflict.id });
+    // Nils 28.10: vienam auto drīkst būt vairāki piedāvājumi (agrāk «1 auto = 1 piedāvājums» bloķēja).
     const imp = await importIrissPdFromStock(kind, carId);
     if (!imp) return fail(404, "not_found", { message: kind === "autoparks" ? "Auto Autoparkā nav atrasts." : "Auto Loģistikā nav atrasts." });
-    const vinConflict = findIrissPdTakenConflict(rows, { vin: imp.vehicle.vin });
-    if (vinConflict) return fail(409, "taken", { message: irissPdConflictMessage(vinConflict), id: vinConflict.id });
     build = fromImport(imp, at, by)(id);
     note = imp.note;
   } else if (body.kind === "link") {
@@ -115,8 +111,6 @@ export async function POST(req: Request) {
       const status = res.error === "not_auction_link" ? 400 : 502;
       return fail(status, res.error, { message: irissPdLinkErrorLv(res.error, res.note), source: res.link?.source ?? null });
     }
-    const conflict = findIrissPdTakenConflict(rows, { source: res.data.source, sourceKey: res.data.sourceKey, vin: res.data.vehicle.vin });
-    if (conflict) return fail(409, "taken", { message: irissPdConflictMessage(conflict), id: conflict.id });
     build = fromImport(res.data, at, by)(id);
     note = res.data.note;
   } else if (body.kind === "rebase") {
@@ -125,8 +119,6 @@ export async function POST(req: Request) {
     const base = await readIrissPd(baseId);
     if (!base) return fail(404, "not_found");
     if (!canRebaseIrissPd(base.status)) return fail(409, "not_rebasable", { message: "Jaunu uz bāzes var veidot tikai no beigušā vai noraidītā piedāvājuma." });
-    const conflict = findIrissPdTakenConflict(rows, { sourceRef: base.sourceRef, source: base.source, sourceKey: base.sourceKey, vin: base.vehicle.vin }, base.id);
-    if (conflict) return fail(409, "taken", { message: irissPdConflictMessage(conflict), id: conflict.id });
     build = (number) => rebaseIrissPd(base, { id, number, at, by });
   } else if (body.kind === "manual") {
     build = (number) =>

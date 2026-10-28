@@ -16,6 +16,7 @@ import { irissPdAuto1BlocksFromDetail, irissPdAuto1FieldCount, type IrissPdAuto1
 import {
   type IrissPdImport,
   irissPdFilledCount,
+  irissPdFillFromAutoparks,
   irissPdPhotosFromUrls,
   irissPdPurchaseFromHit,
   irissPdVehicleFromHit,
@@ -39,17 +40,33 @@ export async function importIrissPdFromStock(kind: "autoparks" | "logistics", ca
   if (!seed) return null;
   let price = "";
   let purchase = "";
+  let vehicle = irissPdVehicleFromSeed(seed.fields);
   if (kind === "autoparks") {
     try {
       const { readAutoparksV2Car } = await import("@/lib/iriss-autoparks-v2-store");
+      const { autoparksV2Basics } = await import("@/lib/iriss-autoparks-v2");
       const both = await readAutoparksV2Car(carId);
       price = eur(both?.v2?.priceSheet?.salePriceEur) || eur(both?.car?.salePriceEur);
       purchase = eur(both?.car?.purchasePriceEur);
+      if (both) {
+        const b = autoparksV2Basics(both.car, both.v2);
+        vehicle = irissPdFillFromAutoparks(vehicle, {
+          year: b.year,
+          firstRegDate: b.firstRegDate.value,
+          mileageKm: b.mileageKm.value,
+          fuel: both.car.registry?.fuel ?? "",
+          gearbox: b.gearbox.value,
+          powerKw: b.powerKw.value,
+          displacementCm3: b.displacementCm3.value,
+          color: b.color,
+        });
+      }
     } catch {
-      /* cenas nav obligātas */
+      /* cenas un papildu lauki nav obligāti */
     }
+  } else {
+    vehicle = irissPdFillFromAutoparks(vehicle, {});
   }
-  const vehicle = irissPdVehicleFromSeed(seed.fields);
   const photos: IrissPdPhoto[] = seed.attachments
     .filter((a) => a.dropboxId)
     .map((a) => ({ kind: "dropbox", ref: seed.sourceRef, id: a.dropboxId! }));
