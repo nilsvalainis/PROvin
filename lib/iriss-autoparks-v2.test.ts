@@ -191,3 +191,14 @@ describe("statusa atsaukšana (5 s)", () => {
     expect(decideStatusUndo({ history: [row], rowId: "h1", actorId: "u2", currentStatus: "for_sale", nowMs: at + 2_000 })).toEqual({ ok: false, reason: "not_owner" });
   });
 });
+
+describe("tehnisko datu ticamība (Nils 28.10: jauda 23052012 kW)", () => {
+  it("datums jaudas laukā netiek pieņemts un nerādās", async () => {
+    const { v2PlausibleTech } = await import("@/lib/iriss-autoparks-v2");
+    expect(v2PlausibleTech("powerKw", 23052012)).toBeNull();
+    expect(v2PlausibleTech("powerKw", 120)).toBe(120);
+    expect(v2PlausibleTech("displacementCm3", 2400)).toBe(2400);
+    expect(v2PlausibleTech("displacementCm3", 23052012)).toBeNull();
+    expect(v2PlausibleTech("mileageKm", 341378)).toBe(341378);
+  });
+});

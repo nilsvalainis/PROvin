@@ -15,6 +15,7 @@ import {
   carV2Of,
   decideStatusUndo,
   normalizeAutoparksV2State,
+  v2PlausibleTech,
   type AutoparksCarV2,
   type AutoparksV2State,
   type V2HistoryRow,
@@ -225,13 +226,13 @@ export async function refreshAutoparksV2Tech(car: AutoparksCar, v2: AutoparksCar
           c.sources["tech.firstRegDate"] = "csdd";
           hist.push({ field: "tech.firstRegDate", from: "", to: reg });
         }
-        const cm3 = num(d.displacementCm3);
+        const cm3 = v2PlausibleTech("displacementCm3", num(d.displacementCm3));
         if (c.tech.displacementCm3 == null && cm3 != null) {
           c.tech.displacementCm3 = cm3;
           c.sources["tech.displacementCm3"] = "csdd";
           hist.push({ field: "tech.displacementCm3", from: "", to: cm3 });
         }
-        const kw = num(d.powerKw) ?? num(d.electricPowerKw);
+        const kw = v2PlausibleTech("powerKw", num(d.powerKw) ?? num(d.electricPowerKw));
         if (c.tech.powerKw == null && kw != null) {
           c.tech.powerKw = kw;
           c.sources["tech.powerKw"] = "csdd";
