@@ -56,6 +56,8 @@ export async function PATCH(req: Request, ctx: Ctx) {
         if (!(k in body)) continue;
         const raw = body[k];
         const v = raw === null || raw === "" ? null : typeof raw === "number" ? (Number.isFinite(raw) && raw >= 0 ? raw : null) : parseEurInput(String(raw));
+        // Nenolasāma summa netiek saglabāta kā tukša (lauks netiek iztīrīts, Nils 28.10).
+        if (v === null && raw !== null && raw !== "") continue;
         hist.push({ field: `purchase.${k}`, from: c.purchase[k], to: v });
         c.purchase[k] = v;
       }

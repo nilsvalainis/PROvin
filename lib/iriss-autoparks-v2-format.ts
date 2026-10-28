@@ -41,9 +41,23 @@ export function fmtEurRound(n: number | null | undefined): string {
   return Number.isInteger(n) ? `${group(n)} €` : fmtEur(n);
 }
 
+/**
+ * Skaitļa lauks (nobraukums, tilpums, jauda): "171 048", "171048 km", "1,9" -> skaitlis; "" -> null (apzināti notīrīts);
+ * nenolasāms -> "invalid" (nesaglabā - agrāk `type="number"` deva "" un lauks tika iztīrīts, Nils 28.10).
+ */
+export function parseNumberFieldInput(raw: string): number | null | "invalid" {
+  const t = raw.replace(/[\s\u00a0]/g, "").replace(/(km|kw|cm3|cm³|ccm)$/i, "").replace(",", ".");
+  if (!t) return null;
+  if (!/^\d+(\.\d+)?$/.test(t)) return "invalid";
+  return Number(t);
+}
+
 /** Lietotāja ievade "1 234,50" / "1234.5" / "258,40 €" -> skaitlis. */
 export function parseEurInput(raw: string): number | null {
-  const t = raw.replace(/[\s €]/g, "").replace(",", ".");
+  let t = raw.replace(/[\s\u00a0€]/g, "").replace(/eur$/i, "");
+  // "17.900" / "1.234.567" - punkts kā tūkstošu atdalītājs (LV ieradums), ne decimāldaļa.
+  if (/^\d{1,3}(\.\d{3})+$/.test(t)) t = t.replace(/\./g, "");
+  t = t.replace(",", ".");
   if (!t) return null;
   const n = Number(t);
   return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null;
