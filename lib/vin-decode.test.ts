@@ -32,4 +32,9 @@ describe("decodeVin", () => {
   it("normalizē atstarpes un mazos burtus", () => {
     expect(decodeVin(" wvw zzz1kz6w000001 ", NOW)).toMatchObject({ ok: true, vin: "WVWZZZ1KZ6W000001" });
   });
+  it("ASV Honda pēc WMI; nezināms Ziemeļamerikas WMI saņem valsti pēc 1. zīmes", () => {
+    expect(decodeVin("1HGCM82633A004352")).toMatchObject({ ok: true, make: "Honda", country: "US", checkDigitValid: true });
+    expect(decodeVin("3ZZCM82633A004352")).toMatchObject({ ok: true, make: null, country: "MX", region: "northAmerica" });
+    expect(decodeVin("WZZZZZ1KZ6W000001")).toMatchObject({ ok: true, make: null, country: null });
+  });
 });
