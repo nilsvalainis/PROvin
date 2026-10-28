@@ -3,8 +3,6 @@ import {
   appendIrissPdHistory,
   applyIrissPdAction,
   applyIrissPdPatch,
-  findIrissPdTakenConflict,
-  irissPdConflictMessage,
   isIrissPdEditable,
   type IrissPdAction,
   type IrissPdPatch,
@@ -13,7 +11,7 @@ import { importIrissPdFromAutoparks, importIrissPdFromLink } from "@/lib/iriss-p
 import { irissPdFillEmpty, irissPdFillFromAutoparks, applyIrissPdImportData, type IrissPdImport } from "@/lib/iriss-piedavajumi-import";
 import { irissPdLinkErrorLv } from "@/lib/iriss-piedavajumi-sources";
 import { runIrissPdApprovalEffects } from "@/lib/iriss-piedavajumi-approve";
-import { claimIrissPdDecision, deleteIrissPd, listIrissPdRows, newIrissPdToken, readIrissPd, readIrissPdFresh, writeIrissPd } from "@/lib/iriss-piedavajumi-store";
+import { claimIrissPdDecision, deleteIrissPd, newIrissPdToken, readIrissPd, readIrissPdFresh, writeIrissPd } from "@/lib/iriss-piedavajumi-store";
 import { isSafeIrissPdId } from "@/lib/iriss-piedavajumi-types";
 import { requireAdminOnlyApi } from "@/lib/staff-auth";
 
@@ -106,8 +104,6 @@ export async function POST(req: Request, { params }: Ctx) {
     } else {
       return fail(400, "invalid_kind");
     }
-    const conflict = findIrissPdTakenConflict(await listIrissPdRows(), { sourceRef: imp.sourceRef, source: imp.source, sourceKey: imp.sourceKey, vin: imp.vehicle.vin }, rec.id);
-    if (conflict) return fail(409, "taken", irissPdConflictMessage(conflict));
     const next = appendIrissPdHistory({ ...applyIrissPdImportData(rec, imp, at), updatedAt: at }, { at, by, text: imp.historyText });
     if (!(await writeIrissPd(next))) return fail(500, "write_failed", "Neizdevās saglabāt.");
     return NextResponse.json({ ok: true, record: next, note: imp.note }, { headers: noStore });

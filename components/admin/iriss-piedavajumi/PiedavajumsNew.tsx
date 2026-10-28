@@ -67,8 +67,9 @@ function CarList({
             type="button"
             key={c.id}
             className="pd-carrow"
-            disabled={Boolean(c.takenBy) || disabled}
-            title={c.takenBy ? `Jau ir piedāvājums ${c.takenBy}` : undefined}
+            // Nils 28.10: vairāki piedāvājumi vienam auto atļauti - esošais tikai kā norāde.
+            disabled={disabled}
+            title={c.takenBy ? `Jau ir piedāvājums ${c.takenBy} - var veidot vēl vienu` : undefined}
             onClick={() => onPick(c.id)}
           >
             <span style={{ display: "flex", gap: 10, alignItems: "center", minWidth: 0 }}>
@@ -123,11 +124,6 @@ export function PiedavajumsNew({
       const data = await postCreate({ ...body, ...clientBody });
       if (data.ok && data.id) {
         router.push(`/admin/iriss/piedavajumi/${data.id}${data.note ? `?note=${encodeURIComponent(data.note)}` : ""}`);
-        return;
-      }
-      // Nils 28.10: šim auto piedāvājums jau ir - atver to uzreiz, nevis rāda sarakstu ar kļūdu.
-      if (data.error === "taken" && data.id && kind === "car") {
-        router.push(`/admin/iriss/piedavajumi/${data.id}`);
         return;
       }
       setErr(data.message || "Neizdevās izveidot piedāvājumu.");
