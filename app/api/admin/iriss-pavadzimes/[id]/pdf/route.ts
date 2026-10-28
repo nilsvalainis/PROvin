@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { contentDispositionHeader } from "@/lib/content-disposition";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { isSafeIrissPavadzimeId } from "@/lib/iriss-pavadzimes-parse";
 import { readIrissPavadzimePdf } from "@/lib/iriss-pavadzimes-store";
@@ -10,12 +11,12 @@ export const maxDuration = 60;
 type RouteContext = { params: Promise<{ id: string }> };
 
 function pdfHeaders(fileName: string, bytes: Uint8Array) {
-  const safeName = fileName.replace(/[^\w.\u0100-\u017F-]+/g, "_") || "pavadzime.pdf";
   return {
     "Content-Type": "application/pdf",
     "Content-Length": String(bytes.byteLength),
     "Cache-Control": "private, no-store",
-    "Content-Disposition": `inline; filename="${safeName}"`,
+    // «Škoda» u.c. latviešu burti galvenē krita ar ByteString kļūdu (Nils 28.10).
+    "Content-Disposition": contentDispositionHeader(fileName, "inline", "pavadzime.pdf"),
   };
 }
 
