@@ -155,3 +155,14 @@ describe("Car Invoice dublikāti (Nils 28.10)", () => {
     expect(list.filter((f) => /Car_Invoice/.test(f.title))).toHaveLength(1);
   });
 });
+
+describe("dublikāts citā grupā", () => {
+  it("Order Confirmation vecā kopija grupā Citi netiek rādīta", () => {
+    const list = iegadeFileList({
+      cabinetDocs: [doc("c2", "purchase_confirm", "2026-10-20T10:00:00.000Z", { title: "Auto1_Order_Confirmation_DEPR02369051" })],
+      v1Files: [file("f9", "purchase", { title: "Auto1_Order_Confirmation_DEPR02369051", kind: "other" })],
+      numberCheckFileId: "",
+    });
+    expect(list.map((f) => f.id)).toEqual(["c:c2"]);
+  });
+});

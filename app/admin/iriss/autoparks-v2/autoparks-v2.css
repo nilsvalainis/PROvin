@@ -3784,8 +3784,14 @@
   }
   .ap2.ap2.ap2.ap2-cab .ap2-tabs .ap2-tab.on {
     background: #1b1c20;
-    color: #f3f2ef;
+    color: #f3f2ef !important;
     box-shadow: none;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-tabs .ap2-tab.on * {
+    color: inherit !important;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-kvwrap {
+    margin-top: 12px;
   }
   .ap2.ap2.ap2.ap2-cab .ap2-tabs .ap2-tab-hist {
     margin-left: 0;

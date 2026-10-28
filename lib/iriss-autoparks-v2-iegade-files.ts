@@ -170,7 +170,8 @@ export function dedupeIegadeFiles(files: V2IegadeFile[]): void {
   const drop = new Set<V2IegadeFile>();
   const hasCabinetCarInvoice = files.some((f) => f.id.startsWith("c:") && f.type === "car_invoice");
   for (const f of cabinetFirst) {
-    const key = `${f.group}|${fileKey(f.title)}`;
+    // Pēc nosaukuma visās grupās: vecā kopija mēdz būt grupā "Citi" (Nils 28.10, Order Confirmation).
+    const key = fileKey(f.title);
     if (seen.has(key)) drop.add(f);
     else seen.add(key);
     if (hasCabinetCarInvoice && f.id.startsWith("f:") && f.group === "pirkums" && /car[\s_-]?invoice/i.test(f.title)) drop.add(f);
