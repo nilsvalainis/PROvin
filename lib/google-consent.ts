@@ -44,7 +44,8 @@ export const GTAG_CONSENT_DEFAULT_SNIPPET =
   "if(!r)return;" +
   "var o=JSON.parse(r);" +
   "if(typeof o.analytics!=='boolean'||typeof o.updatedAt!=='string')return;" +
-  `gtag('consent','update',o.analytics?${consentLiteral(GTAG_CONSENT_GRANTED)}:${consentLiteral(GTAG_CONSENT_DENIED)});` +
+  "var ad=typeof o.ads==='boolean'?o.ads:o.analytics;var g=function(b){return b?'granted':'denied'};" +
+  "gtag('consent','update',{ad_storage:g(ad),ad_user_data:g(ad),ad_personalization:g(ad),analytics_storage:g(o.analytics)});" +
   "}catch(e){}})();";
 
 export type GtagFn = (...args: unknown[]) => void;
@@ -55,9 +56,20 @@ export function getGtag(): GtagFn | null {
   return typeof gtag === "function" ? gtag : null;
 }
 
+/** Consent Mode v2 signāli no divām kategorijām: analītika -> `analytics_storage`, reklāma -> `ad_*`. */
+export function gtagConsentSignals(analytics: boolean, ads: boolean = analytics) {
+  const ad = ads ? "granted" : "denied";
+  return {
+    ad_storage: ad,
+    ad_user_data: ad,
+    ad_personalization: ad,
+    analytics_storage: analytics ? "granted" : "denied",
+  } as const;
+}
+
 /** CookieConsent accept/reject/restore -> Consent Mode v2 update (no-op if gtag stub nav vēl). */
-export function applyGtagConsent(granted: boolean): void {
+export function applyGtagConsent(analytics: boolean, ads: boolean = analytics): void {
   const gtag = getGtag();
   if (!gtag) return;
-  gtag("consent", "update", granted ? GTAG_CONSENT_GRANTED : GTAG_CONSENT_DENIED);
+  gtag("consent", "update", gtagConsentSignals(analytics, ads));
 }
