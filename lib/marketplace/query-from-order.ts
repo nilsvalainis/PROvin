@@ -114,12 +114,13 @@ export function marketplaceQueryFromOrder(order: MarketplaceOrderCriteria): Mark
   q.displacementToCc = filter.ccTo.value;
   q.body = (filter.bodyTypes.value[0] ?? order.bodyType ?? "").trim();
   q.drive = (filter.drive.value[0] ?? order.driveType ?? "").trim();
-  q.countries = filter.countries.value.length ? [...filter.countries.value] : [];
-  if (!q.countries.length && (order.preferredCountries ?? "").trim()) {
-    q.countries = order.preferredCountries!.split(/[,;/]+/).map((s) => s.trim()).filter(Boolean).slice(0, 8);
-  }
+  // Nils 28.10: pasūtījumos meklējam Vācijā, Nīderlandē un Beļģijā; vecais lauks «Valstis» paliek datos, bet netiek izmantots.
+  q.countries = [...IRISS_ORDER_SEARCH_COUNTRIES];
   return q;
 }
+
+/** Pasūtījumu meklēšanas valstis (AutoScout24): Vācija, Nīderlande, Beļģija. */
+export const IRISS_ORDER_SEARCH_COUNTRIES = ["DE", "NL", "BE"] as const;
 
 export const MARKETPLACE_STRICT_FIELD_LABELS = {
   make: "marka",
