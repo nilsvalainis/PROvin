@@ -108,6 +108,16 @@ import {
 } from "@/lib/iriss-pasutijumi-save-safety";
 import { inspectIrissPhone } from "@/lib/iriss-phone-normalize";
 import {
+  clearIrissOrderBackup,
+  formatIrissBackupTime,
+  irissAutosaveRetryDelayMs,
+  irissAutosaveShouldRetry,
+  irissOrderBackupDiffers,
+  readIrissOrderBackup,
+  writeIrissOrderBackup,
+  type IrissOrderBackup,
+} from "@/lib/iriss-order-save-status";
+import {
   buildIrissOfferClientShareBody,
   buildIrissOfferShareSubject,
   irissOfferImagesOmittedNotice,
@@ -423,6 +433,14 @@ export function IrissPasutijumsEditor({
   const autosaveTimer = useRef<number | null>(null);
   const autosaveInFlight = useRef(false);
   const autosaveQueued = useRef(false);
+  const saveRef = useRef<(opts?: { silent?: boolean }) => Promise<SaveResult>>(async () => ({ ok: false, error: "init" }));
+  const retryTimer = useRef<number | null>(null);
+  const retryAttempt = useRef(0);
+  const [autoSaving, setAutoSaving] = useState(0);
+  const [autoSaveError, setAutoSaveError] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
+  const [backupOffer, setBackupOffer] = useState<IrissOrderBackup | null>(null);
+  const backupPending = useRef(true);
   const persistedIdRef = useRef(unsavedDraft ? "" : initialRecord.id);
   const draftHandoffPending = useRef(false);
   const imagesHydrating = useRef(irissRecordNeedsOfferImageHydration(initialRecord));
@@ -468,7 +486,7 @@ export function IrissPasutijumsEditor({
     );
   }, []);
 
-  const save = useCallback(
+  const saveRaw = useCallback(
     async (opts?: {
       redirectToList?: boolean;
       silent?: boolean;
@@ -617,7 +635,7 @@ export function IrissPasutijumsEditor({
           if (autosaveQueued.current) {
             autosaveQueued.current = false;
             window.setTimeout(() => {
-              void save({ silent: true });
+              void saveRef.current({ silent: true });
             }, 0);
           }
         }
@@ -625,6 +643,41 @@ export function IrissPasutijumsEditor({
     },
     [router],
   );
+
+  // Drošā saglabāšana (Nils 29.10): patiesais stāvoklis galvenē + automātiska atkārtošana, ja neizdodas.
+  const save = useCallback(
+    async (opts?: Parameters<typeof saveRaw>[0]): Promise<SaveResult> => {
+      const silent = opts?.silent === true;
+      if (silent) setAutoSaving((n) => n + 1);
+      let result: SaveResult;
+      try {
+        result = await saveRaw(opts);
+      } finally {
+        if (silent) setAutoSaving((n) => Math.max(0, n - 1));
+      }
+      if (retryTimer.current) {
+        window.clearTimeout(retryTimer.current);
+        retryTimer.current = null;
+      }
+      if (result.ok) {
+        retryAttempt.current = 0;
+        setAutoSaveError(null);
+      } else if (irissAutosaveShouldRetry(result.error)) {
+        setAutoSaveError(result.error);
+        // Pēc ~8 mēģinājumiem (~6 min) pārstāj; stāvoklis paliek sarkans, poga ļauj mēģināt vēlreiz.
+        if (retryAttempt.current >= 8) return result;
+        const delay = irissAutosaveRetryDelayMs(retryAttempt.current);
+        retryAttempt.current += 1;
+        retryTimer.current = window.setTimeout(() => {
+          retryTimer.current = null;
+          void saveRef.current({ silent: true });
+        }, delay);
+      }
+      return result;
+    },
+    [saveRaw],
+  );
+  saveRef.current = save;
 
   const saveCurrentPage = useCallback(async (): Promise<SaveResult> => {
     setPdfRetryBar(null);
@@ -728,7 +781,7 @@ export function IrissPasutijumsEditor({
           if (autosaveQueued.current) {
             autosaveQueued.current = false;
             window.setTimeout(() => {
-              void save({ silent: true });
+              void saveRef.current({ silent: true });
             }, 0);
           }
         }
@@ -757,6 +810,84 @@ export function IrissPasutijumsEditor({
       if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
     };
   }, [rec, save, imagesReady]);
+
+  // Bez interneta: rāda stāvokli; kad savienojums atgriežas, saglabā uzreiz.
+  useEffect(() => {
+    setOffline(typeof navigator !== "undefined" && navigator.onLine === false);
+    const goOffline = () => setOffline(true);
+    const goOnline = () => {
+      setOffline(false);
+      if (JSON.stringify(recRef.current) !== lastSavedSnapshot.current) void saveRef.current({ silent: true });
+    };
+    window.addEventListener("offline", goOffline);
+    window.addEventListener("online", goOnline);
+    return () => {
+      window.removeEventListener("offline", goOffline);
+      window.removeEventListener("online", goOnline);
+      if (retryTimer.current) window.clearTimeout(retryTimer.current);
+    };
+  }, []);
+
+  // Rezerves kopija pārlūkā: ja iepriekšējā reizē izmaiņas nepaspēja aiziet uz serveri, piedāvā atjaunot.
+  useEffect(() => {
+    const id = persistedIdRef.current;
+    if (!id) {
+      backupPending.current = false;
+      return;
+    }
+    let storage: Storage | null = null;
+    try {
+      storage = window.localStorage;
+    } catch {
+      storage = null;
+    }
+    const backup = storage ? readIrissOrderBackup(storage, id, new Date()) : null;
+    if (backup && irissOrderBackupDiffers(backup.rec, withAutoEcarstradeLinks(initialRecord))) {
+      setBackupOffer(backup);
+    } else {
+      backupPending.current = false;
+      if (storage) clearIrissOrderBackup(storage, id);
+    }
+    // Tikai atverot ierakstu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const id = persistedIdRef.current;
+    if (!id || backupPending.current) return;
+    let storage: Storage;
+    try {
+      storage = window.localStorage;
+    } catch {
+      return;
+    }
+    if (!dirty) {
+      clearIrissOrderBackup(storage, id);
+      return;
+    }
+    const t = window.setTimeout(() => writeIrissOrderBackup(storage, recRef.current, new Date()), 400);
+    return () => window.clearTimeout(t);
+  }, [rec, dirty]);
+
+  const restoreBackup = useCallback(() => {
+    if (!backupOffer) return;
+    const merged = withAutoEcarstradeLinks(mergeIrissPasutijumsRecords(recRef.current, backupOffer.rec));
+    backupPending.current = false;
+    setBackupOffer(null);
+    setRec(merged);
+    recRef.current = merged;
+    setSaveMsg("Izmaiņas atjaunotas no rezerves kopijas - saglabājas.");
+  }, [backupOffer]);
+
+  const dismissBackup = useCallback(() => {
+    backupPending.current = false;
+    setBackupOffer(null);
+    try {
+      clearIrissOrderBackup(window.localStorage, persistedIdRef.current);
+    } catch {
+      /* nav krātuves */
+    }
+  }, []);
 
   // Jauns pasūtījums → /pasutijumi/{id} ir cita lapa: redaktors tiek uzstādīts no jauna.
   // Nesaglabātais teksts un fokuss tiek nodots jaunajam redaktoram, citādi «Toyota» paliek «To».
@@ -2306,6 +2437,7 @@ export function IrissPasutijumsEditor({
           vinWarning={orderVinWarning}
           canCall={Boolean(normalizedPhone)}
           canEmail={Boolean(rec.email.trim())}
+          saveState={{ dirty, saving: busy || autoSaving > 0, error: autoSaveError, offline }}
           conflict={
             revisionConflict ? (
               <AdminWorkspaceRevisionConflictBanner
@@ -2315,6 +2447,29 @@ export function IrissPasutijumsEditor({
                 onSafeMerge={mergeConflict}
                 layout="room"
               />
+            ) : backupOffer ? (
+              <div
+                role="status"
+                className="flex flex-wrap items-center gap-2 rounded-[14px] bg-[var(--iriss-surface)] px-3 py-2.5 text-[13px] text-[var(--iriss-ink)] shadow-[inset_0_0_0_1px_var(--iriss-warn)]"
+              >
+                <span className="min-w-0 flex-1">
+                  Atrastas nesaglabātas izmaiņas ({formatIrissBackupTime(backupOffer.at)}), kas neaizgāja uz serveri.
+                </span>
+                <button
+                  type="button"
+                  onClick={restoreBackup}
+                  className="inline-flex h-9 items-center rounded-full bg-[var(--iriss-graphite)] px-4 text-[13px] font-semibold text-[var(--iriss-on-graphite)]"
+                >
+                  Atjaunot
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissBackup}
+                  className="inline-flex h-9 items-center rounded-[12px] bg-[var(--iriss-surface)] px-3 text-[13px] font-semibold text-[var(--iriss-ink)] shadow-[inset_0_0_0_1px_var(--iriss-line-strong)]"
+                >
+                  Atmest
+                </button>
+              </div>
             ) : null
           }
           deleted={isIrissRecordDeleted(rec)}
