@@ -940,7 +940,7 @@ export function IrissSludinajumiListClient({
       >
         {/* Makets «Sludinājumi - dators» (Nils 29.10 apstiprināja): bez stikla bloka; 1. rinda - virsraksts un rīki, 2. - avots, klients un cilnes. */}
         <div className="slud-head">
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-nowrap items-center gap-2">
             <h1 className="shrink-0 text-[22px] font-bold leading-none tracking-[-0.02em]">Sludinājumi</h1>
             <button
               type="button"
@@ -952,8 +952,8 @@ export function IrissSludinajumiListClient({
               <span>Atjaunots {refreshedAt || (latest?.summary.finishedAt ? "\u00a0" : "nav")}</span>
               {nextReadLabel ? <span>· nākamā {nextReadLabel}</span> : null}
             </button>
-            <div className="ml-auto flex flex-wrap items-center gap-2">
-              <label className="slud-field relative inline-flex h-[38px] w-[min(300px,24vw)] min-w-[11rem] items-center gap-2 rounded-[12px] px-3 text-[13.5px] text-[var(--slud-ink2)]">
+            <div className="ml-auto flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-2">
+              <label className="slud-field relative inline-flex h-[38px] min-w-[8rem] max-w-[340px] flex-1 items-center gap-2 rounded-[12px] px-3 text-[13.5px] text-[var(--slud-ink2)]">
                 <Search className="h-3.5 w-3.5 shrink-0" strokeWidth={STROKE} aria-hidden />
                 <input
                   type="search"
