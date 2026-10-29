@@ -9,7 +9,8 @@ import {
 } from "@/lib/admin-order-draft-store";
 import type { OrderDraftOrderEdits } from "@/lib/admin-order-draft-types";
 import { patchStripePaidIndexVin } from "@/lib/admin-stripe-paid-index";
-import { fetchCsddTechData, type CsddTechDataResult } from "@/lib/csdd-tech-data";
+import type { CsddTechDataResult } from "@/lib/csdd-tech-data";
+import { fetchCsddTechDataCounted } from "@/lib/csdd-tech-data-counted";
 import {
   isPlaceholderVin,
   isValidVin,
@@ -82,7 +83,7 @@ export async function resolveOrderVinFromPlate(
     return { ok: false, effectiveVin: null, resolution: null, reason: "invalid_session" };
   }
 
-  const fetchCsdd = opts.fetchCsdd ?? ((nr1: string) => fetchCsddTechData(nr1));
+  const fetchCsdd = opts.fetchCsdd ?? ((nr1: string) => fetchCsddTechDataCounted(nr1, "admin"));
   const prev = await readOrderDraft(sessionId);
   const prevResolution = prev?.vinPlateResolution ?? null;
 

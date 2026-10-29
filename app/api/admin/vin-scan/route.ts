@@ -2,7 +2,7 @@ import { NextResponse, after } from "next/server";
 import { recordSourceOutcomes } from "@/lib/source-health-store";
 
 import { requireIrissSectionApi } from "@/lib/staff-auth";
-import { fetchCsddTechData } from "@/lib/csdd-tech-data";
+import { fetchCsddTechDataCounted } from "@/lib/csdd-tech-data-counted";
 import { canonicalizeListingUrl, isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { defaultVinScanSourceIds, VIN_SCAN_TTL_MS } from "@/lib/vin-scan/catalog";
 import { vinScanStatusIsCacheable } from "@/lib/vin-scan/health";
@@ -168,7 +168,7 @@ export async function POST(req: Request) {
   }
 
   if (!isValidVin(vin) && isValidScanPlate("lv", plates.lv)) {
-    const csdd = await fetchCsddTechData(plates.lv).catch(() => null);
+    const csdd = await fetchCsddTechDataCounted(plates.lv, "admin").catch(() => null);
     if (csdd?.found && isValidVin(csdd.data.vin)) vin = normalizeVin(csdd.data.vin);
   }
 
