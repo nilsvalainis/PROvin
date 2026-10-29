@@ -942,8 +942,18 @@ export function IrissSludinajumiListClient({
         <div className="slud-head">
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="shrink-0 text-[22px] font-bold leading-none tracking-[-0.02em]">Sludinājumi</h1>
+            <button
+              type="button"
+              title={nextReadLabel ? `Nākamā nolasīšana ${nextReadLabel}` : "Nākamā nolasīšana"}
+              onClick={() => { setSourceStatusOpen(true); setMenuOpen(false); setFilterOpen(false); }}
+              className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-2 text-[12.5px] text-[var(--slud-ink2)] hover:bg-[var(--slud-fill)]"
+            >
+              {problemSources.length > 0 ? <span className="h-1.5 w-1.5 rounded-full bg-[var(--slud-warn)]" aria-hidden /> : null}
+              <span>Atjaunots {refreshedAt || (latest?.summary.finishedAt ? "\u00a0" : "nav")}</span>
+              {nextReadLabel ? <span>· nākamā {nextReadLabel}</span> : null}
+            </button>
             <div className="ml-auto flex flex-wrap items-center gap-2">
-              <label className="slud-field relative inline-flex h-[38px] w-[min(340px,32vw)] min-w-[12rem] items-center gap-2 rounded-[12px] px-3 text-[13.5px] text-[var(--slud-ink2)]">
+              <label className="slud-field relative inline-flex h-[38px] w-[min(300px,24vw)] min-w-[11rem] items-center gap-2 rounded-[12px] px-3 text-[13.5px] text-[var(--slud-ink2)]">
                 <Search className="h-3.5 w-3.5 shrink-0" strokeWidth={STROKE} aria-hidden />
                 <input
                   type="search"
@@ -1077,7 +1087,7 @@ export function IrissSludinajumiListClient({
                 </button>
               ))}
             </div>
-            <label className="slud-pill inline-flex h-8 max-w-[min(100%,18rem)] min-w-0 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold">
+            <label className="slud-pill inline-flex h-8 max-w-[min(100%,14rem)] min-w-0 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold">
               <Car className="h-3.5 w-3.5 shrink-0 text-[var(--slud-ink2)]" strokeWidth={STROKE} aria-hidden />
               <select
                 aria-label={dataset === "scan" ? "Monitorētais ieraksts" : "Klients un pasūtījums"}
@@ -1095,7 +1105,7 @@ export function IrissSludinajumiListClient({
                 ))}
               </select>
             </label>
-            <span className="mx-1 h-5 w-px bg-[var(--iriss-line-strong)]" aria-hidden />
+            <span className="mx-0.5 h-5 w-px bg-[var(--iriss-line-strong)]" aria-hidden />
             <div className="flex min-w-0 flex-wrap gap-1.5">
               {tabs.map((t) => (
                 <button
@@ -1109,18 +1119,6 @@ export function IrissSludinajumiListClient({
                   <span className="tabular-nums opacity-70">{t.id === "new" || t.id === "price" ? (mounted ? t.count : "\u00a0") : t.count}</span>
                 </button>
               ))}
-            </div>
-            <div className="ml-auto">
-              <button
-                type="button"
-                title={nextReadLabel ? `Nākamā nolasīšana ${nextReadLabel}` : "Nākamā nolasīšana"}
-                onClick={() => { setSourceStatusOpen(true); setMenuOpen(false); setFilterOpen(false); }}
-                className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-2 text-[12.5px] text-[var(--slud-ink2)] hover:bg-[var(--slud-fill)]"
-              >
-                {problemSources.length > 0 ? <span className="h-1.5 w-1.5 rounded-full bg-[var(--slud-warn)]" aria-hidden /> : null}
-                <span>Atjaunots {refreshedAt || (latest?.summary.finishedAt ? "\u00a0" : "nav")}</span>
-                {nextReadLabel ? <span>· nākamā {nextReadLabel}</span> : null}
-              </button>
             </div>
           </div>
 
