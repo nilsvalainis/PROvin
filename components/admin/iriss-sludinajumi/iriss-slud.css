@@ -50,3 +50,23 @@
   background: var(--slud-badge);
   color: var(--slud-badge-ink);
 }
+
+/* Makets «Sludinājumi - dators» (Nils 29.10): čipi un pogas kā Autoparkā / Piedāvājumos. */
+.iriss-slud .slud-pill {
+  background: var(--slud-s1);
+  box-shadow: inset 0 0 0 1px var(--slud-hair);
+}
+.iriss-slud .slud-pill[data-on="true"] {
+  background: var(--slud-primary);
+  color: var(--slud-primary-fg);
+  box-shadow: none;
+}
+.iriss-slud .slud-field {
+  background: var(--slud-s1);
+  box-shadow: inset 0 0 0 1px var(--slud-hair);
+}
+.iriss-slud .slud-btn2 {
+  background: var(--slud-s1);
+  box-shadow: inset 0 0 0 1px var(--iriss-line-strong);
+  color: var(--slud-ink);
+}
