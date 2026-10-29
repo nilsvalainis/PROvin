@@ -39,6 +39,7 @@ import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import { IrissVinDuplicateMark } from "@/components/admin/IrissVinDuplicateMark";
 import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
+import { irissOrderSaveStatus } from "@/lib/iriss-order-save-status";
 import { IrissSpecDiapazoniBlock } from "@/components/admin/IrissSpecDiapazoniBlock";
 import { IrissInternalNoteField } from "@/components/admin/IrissInternalNoteField";
 import { IrissSpecChoiceSelect } from "@/components/admin/IrissSpecChoiceSelect";
@@ -524,6 +525,7 @@ export function IrissOrderRoom({
   busy,
   orderPdfBusy,
   saveMsg,
+  saveState,
   orderPdfRetryOpen,
   phoneWarning,
   vinWarning: _vinWarning,
@@ -574,6 +576,8 @@ export function IrissOrderRoom({
   busy: boolean;
   orderPdfBusy: boolean;
   saveMsg: string | null;
+  /** Drošā saglabāšana: patiesais stāvoklis galvenē. Bez tā - kā agrāk (pēc busy). */
+  saveState?: { dirty: boolean; saving: boolean; error: string | null; offline: boolean };
   orderPdfRetryOpen: boolean;
   phoneWarning: string | null;
   vinWarning: string | null;
@@ -788,7 +792,10 @@ export function IrissOrderRoom({
   const financingChip = formatIrissOverviewFinancingChip(rec.clientFinancingPercent, rec.orderDate);
   const clientName = [rec.clientFirstName, rec.clientLastName].map((part) => part.trim()).filter(Boolean).join(" ");
   const savedTime = irissOrderRoomStamp(rec.updatedAt).split(" ")[1] ?? "";
-  const savedCapsule = formatIrissOverviewSavedCapsule(savedTime);
+  const saveStatus = saveState
+    ? irissOrderSaveStatus({ ...saveState, savedTime })
+    : { kind: busy || orderPdfBusy ? ("saving" as const) : ("saved" as const), label: formatIrissOverviewSavedCapsule(savedTime) };
+  const saveNeedsAction = saveStatus.kind === "error" || saveStatus.kind === "pending" || saveStatus.kind === "offline";
   const refLabel = irissOrderRoomRef(rec.id);
   const linkCount = irissOrderRoomListingLinkCount(rec);
   const platforms = irissOrderRoomPlatformLabels(visibleHits);
@@ -945,8 +952,8 @@ export function IrissOrderRoom({
         mobileTrailing={
           <>
             <AdminMobileSaveStatus
-              saved={!busy && !orderPdfBusy}
-              busy={busy || orderPdfBusy}
+              saved={saveStatus.kind === "saved"}
+              busy={saveStatus.kind === "saving"}
               onSave={() => void onSave()}
             />
             <AdminMobileRoundBtn name="vairak" label="Vairāk" onClick={() => setMoreOpen(true)} />
@@ -1088,9 +1095,22 @@ export function IrissOrderRoom({
                 </p>
               </div>
               <div className="hidden min-w-0 flex-wrap items-center gap-2 md:flex">
-                <span className="inline-flex h-8 items-center rounded-full bg-[var(--fill)] px-2.5 text-[12px] font-semibold text-[var(--ink)]">
-                  {savedCapsule}
-                </span>
+                <button
+                  type="button"
+                  role="status"
+                  aria-live="polite"
+                  data-save-kind={saveStatus.kind}
+                  disabled={!saveNeedsAction}
+                  onClick={() => void onSave()}
+                  title={saveNeedsAction ? "Saglabāt tagad" : undefined}
+                  className={`inline-flex h-8 items-center rounded-full px-2.5 text-[12px] font-semibold disabled:cursor-default ${
+                    saveStatus.kind === "error" || saveStatus.kind === "offline"
+                      ? "bg-[var(--iriss-bad-soft)] text-[var(--iriss-bad)]"
+                      : "bg-[var(--fill)] text-[var(--ink)]"
+                  }`}
+                >
+                  {saveStatus.label}
+                </button>
                 <button type="button" className={roomBtnWa} disabled={!canCall} onClick={() => onWhatsappText("")}>
                   <WhatsAppGlyph className="h-4 w-4 fill-current" />
                   WhatsApp
