@@ -228,15 +228,17 @@ export function IrissListDrawer({
         <button type="button" onClick={onClose} className={`${iconBtn} sm:hidden`} aria-label="Atpakaļ">
           <ChevronLeft className="h-5 w-5" aria-hidden />
         </button>
-        <span className="text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--iriss-ink-2)]">{IRISS_LISTING_PLATFORM_LABEL[v.platform] ?? v.platform}</span>
-        {flag ? <span title={flag.title}>{flag.flag}</span> : null}
-        <span className="grow" />
+        <span className={`text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--iriss-ink-2)] ${position && position.total > 1 ? "hidden sm:inline" : ""}`}>
+          {IRISS_LISTING_PLATFORM_LABEL[v.platform] ?? v.platform}
+        </span>
+        {flag ? <span className={position && position.total > 1 ? "hidden sm:inline" : ""} title={flag.title}>{flag.flag}</span> : null}
+        <span className="hidden grow sm:block" />
         {position && position.total > 1 ? (
-          <div className="hidden items-center gap-1.5 sm:flex">
+          <div className="flex items-center gap-1 sm:gap-1.5">
             <button type="button" className={iconBtn} disabled={!onPrev} onClick={onPrev} aria-label="Iepriekšējais auto" title="Iepriekšējais auto (←)">
               <ChevronLeft className="h-4 w-4" aria-hidden />
             </button>
-            <span className="min-w-[3.5rem] text-center text-[12.5px] font-semibold tabular-nums text-[var(--iriss-ink-2)]">
+            <span className="min-w-[3rem] text-center text-[12.5px] font-semibold tabular-nums text-[var(--iriss-ink-2)]">
               {position.index + 1} / {position.total}
             </span>
             <button type="button" className={iconBtn} disabled={!onNext} onClick={onNext} aria-label="Nākamais auto" title="Nākamais auto (→)">
@@ -244,6 +246,7 @@ export function IrissListDrawer({
             </button>
           </div>
         ) : null}
+        <span className="grow sm:hidden" />
         <button
           type="button"
           className={`${iconBtn} ${fav ? "text-amber-500" : ""}`}
@@ -270,7 +273,14 @@ export function IrissListDrawer({
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-3 pb-6 pt-3 sm:px-5">
         <div>
-          {v.stockNumber ? <div className="text-[12px] font-semibold text-[var(--iriss-ink-3)]">Nr. {v.stockNumber}</div> : null}
+          <div className="text-[12px] font-semibold text-[var(--iriss-ink-3)]">
+            <span className="sm:hidden">
+              {IRISS_LISTING_PLATFORM_LABEL[v.platform] ?? v.platform}
+              {flag ? ` ${flag.flag}` : ""}
+              {v.stockNumber ? " · " : ""}
+            </span>
+            {v.stockNumber ? `Nr. ${v.stockNumber}` : null}
+          </div>
           <h2 className="text-[19px] font-bold leading-tight tracking-[-0.2px] text-[var(--iriss-ink)] sm:text-[21px]">
             {v.title} <span className="font-semibold text-[var(--iriss-ink-3)]">{yearLabel}</span>
           </h2>
@@ -568,41 +578,26 @@ export function IrissListDrawer({
       </div>
 
       {/* Darbības vienmēr redzamas apakšā. */}
-      <div className="flex shrink-0 flex-wrap items-center gap-2 bg-[var(--iriss-surface)] px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 shadow-[0_-1px_0_var(--iriss-line)] sm:px-5">
+      <div className="grid shrink-0 grid-cols-2 gap-2 bg-[var(--iriss-surface)] px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 shadow-[0_-1px_0_var(--iriss-line)] sm:flex sm:flex-wrap sm:items-center sm:px-5">
         {onCreateOffer ? (
-          <button type="button" className={`${btn1} flex-1 sm:flex-none`} disabled={offerBusy} onClick={() => void createOffer()}>
+          <button type="button" className={`${btn1} col-span-2 h-11 sm:h-10`} disabled={offerBusy} onClick={() => void createOffer()}>
             <FilePlus2 className="h-4 w-4" aria-hidden />
             {offerBusy ? "Veido..." : "Izveidot piedāvājumu"}
           </button>
         ) : null}
         {linked.length && onPreviewOrder ? (
-          <button type="button" className={`${btn2} flex-1 sm:flex-none`} onClick={() => onPreviewOrder(linked[0]!)}>
-            <ClipboardList className="h-4 w-4" aria-hidden />
-            Pasūtījuma detaļas
+          <button type="button" className={`${btn2} min-w-0 whitespace-nowrap`} onClick={() => onPreviewOrder(linked[0]!)}>
+            <ClipboardList className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="truncate">Pasūtījuma detaļas</span>
           </button>
         ) : null}
         {sourceHref ? (
-          <IrissListingSourceOpen v={v} mobile={mobile ?? null} className={`${btn2} flex-1 sm:flex-none`}>
-            <ExternalLink className="h-4 w-4" aria-hidden />
-            Atvērt avotā
+          <IrissListingSourceOpen v={v} mobile={mobile ?? null} className={`${btn2} min-w-0 whitespace-nowrap`}>
+            <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="truncate">Atvērt avotā</span>
           </IrissListingSourceOpen>
         ) : null}
         <IrissListingSourceExtras v={v} mobile={mobile ?? null} />
-        {position && position.total > 1 ? (
-          <div className="flex w-full items-center justify-between gap-2 sm:hidden">
-            <button type="button" className={btn2} disabled={!onPrev} onClick={onPrev}>
-              <ChevronLeft className="h-4 w-4" aria-hidden />
-              Iepriekšējais
-            </button>
-            <span className="text-[12.5px] font-semibold tabular-nums text-[var(--iriss-ink-2)]">
-              {position.index + 1} / {position.total}
-            </span>
-            <button type="button" className={btn2} disabled={!onNext} onClick={onNext}>
-              Nākamais
-              <ChevronRight className="h-4 w-4" aria-hidden />
-            </button>
-          </div>
-        ) : null}
       </div>
     </aside>
   );
