@@ -222,6 +222,9 @@
   opacity: 0.35;
 }
 .iriss-log-cargo-row.overlay {
+  /* Portālā (<body>) teksta krāsa netiek mantota no Loģistikas - nosaukums bija balts uz balta. */
+  color: var(--iriss-log-ink, #0b0c10);
+  background: var(--iriss-log-surface, #fff);
   cursor: grabbing;
   border-color: #c7c7cc;
   box-shadow: 0 10px 30px rgba(11, 12, 16, 0.18);
