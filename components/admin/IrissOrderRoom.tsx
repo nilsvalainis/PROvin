@@ -640,6 +640,13 @@ export function IrissOrderRoom({
   const duplicates = coerceIrissDuplicatesByListing(duplicatesByListing);
   const safeHits = (Array.isArray(hits) ? hits : []).filter((hit) => hit && typeof hit.id === "string");
   useAdminScrollLock(criteriaOpen || priceFilterOpen);
+  // QA 29.10: «Visi kritēriji» logs aizveras arī ar Esc.
+  useEffect(() => {
+    if (!criteriaOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setCriteriaOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [criteriaOpen]);
 
   useEffect(() => {
     setDismissed(new Set(stringList(dismissedHitIds)));

@@ -43,6 +43,9 @@ export function PdPhotoSorter<T>({
   const [undo, setUndo] = useState<{ list: T[]; count: number } | null>(null);
   const [view, setView] = useState<number | null>(null);
   const [over, setOver] = useState<number | null>(null);
+  // QA 29.10: bilde, kas neielādējas (piem. izdzēsta Dropbox), - redzama kā «Bilde nav pieejama», lai to var noņemt.
+  const [broken, setBroken] = useState<Set<string>>(new Set());
+  const markBroken = (k: string) => setBroken((prev) => (prev.has(k) ? prev : new Set(prev).add(k)));
   const dragFrom = useRef<number | null>(null);
 
   const n = photos.length;
@@ -132,7 +135,11 @@ export function PdPhotoSorter<T>({
                   });
                 }}
               >
-                <img src={urlOf(p)} alt={`Foto ${i + 1}`} loading="lazy" draggable={false} />
+                {broken.has(keyOf(p)) ? (
+                  <span className="pd-ps-broken">Bilde nav pieejama</span>
+                ) : (
+                  <img src={urlOf(p)} alt={`Foto ${i + 1}`} loading="lazy" draggable={false} onError={() => markBroken(keyOf(p))} />
+                )}
               </button>
               {i === 0 ? <span className="pd-ps-cover">VĀKS</span> : <span className="pd-ps-n">{i + 1}</span>}
               {selectMode ? <span className={`pd-ps-ck${on ? " on" : ""}`} aria-hidden /> : null}
