@@ -1013,3 +1013,25 @@ input[data-offer-field="empty"],
   text-transform: uppercase !important;
   color: var(--iriss-ink-2) !important;
 }
+
+/* ===== QA 29.10 ===== */
+/* Telefonā admin-mobile.css pogām noņem rāmjus (border: 0 !important) - čipi izskatījās pēc teksta. Rāmis ar box-shadow. */
+.admin-ios-theme .admin-m [data-iriss-order-room="1"] button[class*="rounded-full"][class*="border"]:not([aria-pressed="true"]):not([class*="bg-[var(--iriss-graphite)]"]):not([class*="bg-[#dcfce7]"]) {
+  box-shadow: inset 0 0 0 1px var(--iriss-line-strong, #d1d1d6) !important;
+}
+.admin-ios-theme .admin-m [data-iriss-order-room="1"] button[class*="rounded-full"][aria-pressed="true"] {
+  box-shadow: inset 0 0 0 1.5px var(--iriss-ink, #1c1c1e) !important;
+}
+.admin-ios-theme .admin-m [data-iriss-order-room="1"] button[class*="border-dashed"] {
+  box-shadow: none !important;
+  outline: 1px dashed var(--iriss-line-strong, #c7c7cc);
+  outline-offset: -1px;
+}
+/* Diapazona lauki ar mērvienību (cm³, kW, km): teksts nedrīkst uzklāties mērvienībai. */
+.iriss-range-input-wrap:has(.iriss-range-unit) > input {
+  padding-right: 34px !important;
+}
+/* Tāme: cenas/km/% laukos teksts nesaskaras ar mērvienību (€ km %). */
+#iriss-room-tame span.relative > input {
+  padding-right: 30px !important;
+}

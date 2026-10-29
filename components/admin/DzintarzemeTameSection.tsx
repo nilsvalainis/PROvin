@@ -293,7 +293,7 @@ export function DzintarzemeTameSection({
       <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div className="min-w-0">
           <TameCap>Auto</TameCap>
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-[1.4fr_1.3fr_0.6fr_0.8fr]">
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-[1.4fr_1.2fr]">
             <TameField label="Marka / modelis" className="col-span-2 sm:col-span-1">
               <input className={fieldClass} value={displayBrand} onChange={(e) => set({ tameBrandModel: e.target.value })} autoComplete="off" />
             </TameField>
@@ -543,12 +543,13 @@ function TameSegmented({
             role="radio"
             aria-checked={on}
             onClick={() => onChange(o.value)}
-            className={`min-h-[32px] whitespace-nowrap rounded-lg px-3 text-[13px] font-semibold ${
+            className={`min-h-[32px] whitespace-nowrap rounded-lg px-3 text-[13px] font-semibold ${o.sub ? "flex flex-col items-start justify-center py-1 text-left" : ""} ${
               on ? "bg-white text-[var(--iriss-ink)] shadow-[0_0_0_1px_var(--iriss-ink)]" : "bg-transparent text-[var(--iriss-ink-2)]"
             }`}
           >
             {o.label}
-            {o.sub ? <span className="ml-1.5 font-medium text-[var(--iriss-ink-3)]">{o.sub}</span> : null}
+            {/* QA 29.10: summa otrā rindā - trīs varianti satilpst vienā rindā. */}
+            {o.sub ? <span className="block text-[11.5px] font-medium leading-tight text-[var(--iriss-ink-3)]">{o.sub}</span> : null}
           </button>
         );
       })}

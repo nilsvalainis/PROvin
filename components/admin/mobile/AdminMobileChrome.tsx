@@ -98,12 +98,18 @@ export function AdminMobileTopBar({
               >
                 {title}
               </h1>
-              <AdminWorkspaceSwitch />
+              {hasBack ? null : <AdminWorkspaceSwitch />}
             </div>
             {subtitle ? <p className="mt-0.5 truncate text-[13px] text-[var(--label-secondary)]">{subtitle}</p> : null}
           </div>
           {trailing ? <div className="flex shrink-0 items-center gap-1.5">{trailing}</div> : null}
         </div>
+        {/* QA 29.10: iekšējās lapās pārslēgs otrajā rindā - virsraksts vairs netiek saīsināts līdz «Pa...». */}
+        {hasBack ? (
+          <div className="mt-1.5 flex">
+            <AdminWorkspaceSwitch />
+          </div>
+        ) : null}
       </header>
       {children ? <div className="am-topbar-expand px-4 md:hidden">{children}</div> : null}
     </>
