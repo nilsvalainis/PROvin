@@ -69,9 +69,19 @@ describe("decodeVinModel - Mercedes-Benz", () => {
   });
 });
 
-describe("decodeVinModel - citi", () => {
-  it("BMW un ārpus Eiropas VIN modeli nerāda", () => {
-    expect(model("WBA5R1C0XLFH42873")).toBeNull();
+describe("decodeVinModel - Volvo un BMW", () => {
+  it("Volvo: modelis no 4.-5. zīmes ar modeļa gadu", () => {
+    expect(model("YV1BW7051A1153569")).toMatchObject({ make: "Volvo", model: "V70", generation: "III", modelYear: 2010, scheme: "volvo", code: "BW" });
+    expect(model("YV1DZ875XC2000123")).toMatchObject({ model: "XC60", generation: "I", modelYear: 2012 });
+  });
+
+  it("BMW: tikai pārbaudītie kodi; bez gada, ja 10. zīme ir 0", () => {
+    expect(model("WBA5R1C0XLFH42873")).toMatchObject({ make: "BMW", model: "3. sērija", generation: "G20 / G21", modelYear: 2020, scheme: "bmw" });
+    expect(model("WBA5K11000D083631")).toMatchObject({ model: "5. sērija", generation: "F10 / F11", modelYear: null });
+    expect(model("WBAXX11000D083631")).toBeNull();
+  });
+
+  it("ārpus Eiropas VIN modeli nerāda", () => {
     expect(model("1HGCM82633A004352")).toBeNull();
   });
 });
