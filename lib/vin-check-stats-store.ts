@@ -58,8 +58,9 @@ async function writeDay(day: VinCheckDay): Promise<void> {
   await fs.writeFile(fp, body, "utf8");
 }
 
-/** Pieraksta notikumu; nekad nemet kļūdu. */
+/** Pieraksta notikumu; nekad nemet kļūdu. Vercel preview (testi pirms produkcijas) statistiku nepiesārņo. */
 export async function recordVinCheckEvent(e: VinCheckEvent, now: Date = new Date()): Promise<void> {
+  if (process.env.VERCEL_ENV === "preview") return;
   try {
     const date = rigaDate(now);
     await writeDay(applyEvent(await readDay(date), e));
