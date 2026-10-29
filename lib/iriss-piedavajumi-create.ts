@@ -23,7 +23,7 @@ import {
   irissPdVehicleFromSeed,
 } from "@/lib/iriss-piedavajumi-import";
 import { detectIrissPdLink, IRISS_PD_ADAPTERS, type IrissPdDetectedLink } from "@/lib/iriss-piedavajumi-sources";
-import { emptyIrissPdVehicle, type IrissPdPhoto } from "@/lib/iriss-piedavajumi-types";
+import { emptyIrissPdVehicle, IRISS_PD_SOURCE_LV, type IrissPdPhoto } from "@/lib/iriss-piedavajumi-types";
 
 export type { IrissPdImport } from "@/lib/iriss-piedavajumi-import";
 
@@ -102,7 +102,7 @@ function relayLink(link: IrissPdDetectedLink): IrissAuctionLink | null {
 }
 
 function manualImport(link: IrissPdDetectedLink, note: string): IrissPdImport {
-  const label = { auto1: "Auto1", openlane: "Openlane", autobid: "Autobid", mobilede: "mobile.de" }[link.source];
+  const label = IRISS_PD_SOURCE_LV[link.source];
   return {
     source: link.source,
     sourceRef: "",

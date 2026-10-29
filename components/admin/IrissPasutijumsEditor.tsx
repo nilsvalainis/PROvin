@@ -107,6 +107,7 @@ import {
   planSilentAutosave,
 } from "@/lib/iriss-pasutijumi-save-safety";
 import { inspectIrissPhone } from "@/lib/iriss-phone-normalize";
+import { createIrissPdFromListing, irissPdHref } from "@/lib/iriss-pd-from-listing-client";
 import {
   clearIrissOrderBackup,
   formatIrissBackupTime,
@@ -1128,6 +1129,25 @@ export function IrissPasutijumsEditor({
     if (pdNew) router.push(irissPdNewHref({ orderId: rec.id }));
     else openCreateOffer();
   }, [pdNew, router, rec.id, openCreateOffer]);
+
+  // Nils 29.10: piedāvājums no Meklētāja atbilstības - tieši no sludinājuma datiem, šī pasūtījuma klientam.
+  const hitOfferBusy = useRef(false);
+  const prepareOfferFromHit = useCallback(
+    async (hit: IrissOrderRoomHit) => {
+      if (hitOfferBusy.current) return;
+      hitOfferBusy.current = true;
+      const name = [rec.clientFirstName, rec.clientLastName].map((x) => x.trim()).filter(Boolean).join(" ");
+      const res = await createIrissPdFromListing(hit.id, { name, phone: rec.phone, email: rec.email, orderId: rec.id });
+      hitOfferBusy.current = false;
+      if (res.ok) {
+        router.push(irissPdHref(res.id));
+        return;
+      }
+      // Sludinājums vairs nav kopā (piem. pazudis) - kā agrāk, no izsoles saites.
+      router.push(irissPdNewHref({ link: irissHitAuctionUrl(hit), orderId: rec.id }));
+    },
+    [rec.clientFirstName, rec.clientLastName, rec.phone, rec.email, rec.id, router],
+  );
 
   const retryGoogleContact = useCallback(async () => {
     if (!persistedIdRef.current) return;
@@ -2488,9 +2508,7 @@ export function IrissPasutijumsEditor({
           onAppendNote={appendRoomNote}
           onCreateOffer={pdNew ? createOfferEntry : () => setOfferSourceSheetOpen(true)}
           onEditOffer={openEditOffer}
-          onPrepareOffer={
-            pdNew ? (hit) => router.push(irissPdNewHref({ link: irissHitAuctionUrl(hit), orderId: rec.id })) : openCreateOfferFromHit
-          }
+          onPrepareOffer={pdNew ? (hit) => void prepareOfferFromHit(hit) : openCreateOfferFromHit}
           googleContactsConfigured={googleContactsConfigured}
           googleContactBusy={googleContactBusy}
           onRetryGoogleContact={() => void retryGoogleContact()}

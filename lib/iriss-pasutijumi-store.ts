@@ -9,6 +9,7 @@ import { formatIrissOrderPowerKwLabel } from "@/lib/engine-power-kw";
 import { retainStoredIrissCriteria } from "@/lib/iriss-criteria-migrate";
 import { parseIrissCriteriaV1 } from "@/lib/iriss-criteria-types";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
+import { emptyIrissListingMarks, parseIrissListingMarks, type IrissListingMarks } from "@/lib/iriss-listing-marks";
 import { parseIrissListingOrderOv, type IrissListingOrderOv } from "@/lib/iriss-listing-order-ov";
 import {
   generatedDocumentBlobPath,
@@ -1400,6 +1401,50 @@ export async function writeIrissListingOrderOv(
     const tmp = `${fp}.tmp`;
     await fs.writeFile(tmp, JSON.stringify(next, null, 2), "utf8");
     await fs.rename(tmp, fp);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+/* ---------- Sludinājumu piezīmes un favorīti (Nils 29.10: serverī, nevis tikai pārlūkā) ---------- */
+
+const LISTING_MARKS_FILENAME = "_listing-marks.json";
+
+export async function readIrissListingMarks(): Promise<IrissListingMarks> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return emptyIrissListingMarks();
+  if (r.kind === "blob") {
+    const raw = await readJsonFromBlob(`${r.prefix}${LISTING_MARKS_FILENAME}`, r.token);
+    return parseIrissListingMarks(raw);
+  }
+  try {
+    const txt = await fs.readFile(path.join(r.dir, LISTING_MARKS_FILENAME), "utf8");
+    return parseIrissListingMarks(JSON.parse(txt) as unknown);
+  } catch {
+    return emptyIrissListingMarks();
+  }
+}
+
+export async function writeIrissListingMarks(marks: IrissListingMarks): Promise<{ ok: true } | { ok: false; error: string }> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
+  const body = JSON.stringify(parseIrissListingMarks(marks));
+  try {
+    if (r.kind === "blob") {
+      await put(`${r.prefix}${LISTING_MARKS_FILENAME}`, body, {
+        access: "private",
+        token: r.token,
+        contentType: "application/json; charset=utf-8",
+        addRandomSuffix: false,
+        allowOverwrite: true,
+      });
+      return { ok: true };
+    }
+    await fs.mkdir(r.dir, { recursive: true });
+    const fp = path.join(r.dir, LISTING_MARKS_FILENAME);
+    await fs.writeFile(`${fp}.tmp`, body, "utf8");
+    await fs.rename(`${fp}.tmp`, fp);
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };

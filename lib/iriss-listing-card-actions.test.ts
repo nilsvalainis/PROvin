@@ -44,13 +44,13 @@ describe("listing card actions", () => {
     expect(html.match(/h-11 min-h-11 min-w-0 flex-1/g)?.length).toBe(2);
   });
 
-  it("opens order details from the card button, send-to-client uses Mail, radar stays in the overflow menu", () => {
+  it("opens order details from the card button, offer goes to Piedāvājumi, radar stays in the overflow menu", () => {
     expect(IRISS_LISTING_CARD_ACTION_ORDER).toBe("Pasūtījuma detaļas");
-    expect(IRISS_LISTING_CARD_ACTION_OFFER).toBe("Nosūtīt klientam");
+    expect(IRISS_LISTING_CARD_ACTION_OFFER).toBe("Izveidot piedāvājumu");
     expect(IRISS_LISTING_CARD_ACTION_ORDER_MENU).toBe("Izveidot radaru");
     expect(actions).toContain("IRISS_LISTING_CARD_ACTION_ORDER_MENU");
     expect(actions).toContain("ClipboardList");
-    expect(actions).toContain("Mail");
+    expect(actions).toContain("FilePlus2");
     expect(actions).toContain("Plus");
     expect(actions).not.toMatch(/import \{[^}]*Radar[^}]*\} from "lucide-react"/);
     expect(actions).not.toContain("Tag");

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { IrissListDrawer } from "@/components/admin/IrissListDrawer";
 import { formatIrissEurWhole } from "@/lib/iriss-price-format";
 import { IrissListingOrderPreview } from "@/components/admin/IrissListingOrderPreview";
@@ -65,13 +65,15 @@ import {
 import { irissListingMatchKey, type IrissListingHitStatus, type IrissListingMatchNotice } from "@/lib/iriss-listing-match-client";
 import { mergeListingOrderOvMigration } from "@/lib/iriss-listing-order-ov";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
-import { irissPasutijumsOfferSeedFromListing } from "@/lib/iriss-pasutijums-from-listing";
 import { irissScanSeedFromListing } from "@/lib/iriss-scan-from-listing";
 import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
 import { type IrissListingDataset, vehicleInListingDataset } from "@/lib/iriss-scan-listings";
 import type { IrissListingGoneCounts } from "@/lib/iriss-sludinajumi-page-data";
 import { irissListingPlatformIngestStats } from "@/lib/iriss-listings-ingest-stats";
 import { nextIrissListingsAutomaticReadLabel } from "@/lib/iriss-listings-schedule";
+import { createIrissPdFromListing, irissPdClientFromOrderBrief, irissPdHref, irissPdRowsForListing } from "@/lib/iriss-pd-from-listing-client";
+import type { IrissPdListRow } from "@/lib/iriss-piedavajumi-types";
+import { diffIrissListingMarks, mergeIrissListingMarks, parseIrissListingMarks, type IrissListingMarkPatch } from "@/lib/iriss-listing-marks";
 import {
   dismissedHiddenIds,
   uniqueListingIds,
@@ -284,6 +286,7 @@ export function IrissSludinajumiListClient({
   const [vinPatch, setVinPatch] = useState<Record<string, ListingVinOcrPatch>>({});
   const [syncBusy, setSyncBusy] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  const [offerMsg, setOfferMsg] = useState<string | null>(null);
   const [health, setHealth] = useState<IrissPlatformHealthReport | null>(null);
   const [query, setQuery] = useState("");
   const [showSources, setShowSources] = useState(false);
@@ -403,8 +406,86 @@ export function IrissSludinajumiListClient({
     return () => window.clearTimeout(t);
   }, [prefs.costs, prefsReady]);
 
+  // Piezīmes un favorīti serverī (Nils 29.10): kopīgi telefonam un datoram; sūta tikai mainītos auto, pa vienam pieprasījumam.
+  const prefsRef = useRef(prefs);
+  prefsRef.current = prefs;
+  const marksQueue = useRef(new Map<string, IrissListingMarkPatch>());
+  const marksTimer = useRef<number | null>(null);
+  const marksChain = useRef<Promise<void>>(Promise.resolve());
+  const flushMarks = useCallback(() => {
+    marksTimer.current = null;
+    const patches = [...marksQueue.current.values()];
+    marksQueue.current.clear();
+    if (patches.length === 0) return;
+    marksChain.current = marksChain.current.then(async () => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const res = await fetch("/api/admin/iriss-listings/marks", {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ patches }),
+        }).catch(() => null);
+        if (res?.ok) return;
+        await new Promise((done) => window.setTimeout(done, 1500 * (attempt + 1)));
+      }
+    });
+  }, []);
+  const queueMarks = useCallback(
+    (patches: IrissListingMarkPatch[], delayMs: number) => {
+      for (const p of patches) marksQueue.current.set(p.id, { ...marksQueue.current.get(p.id), ...p });
+      if (marksTimer.current) window.clearTimeout(marksTimer.current);
+      marksTimer.current = window.setTimeout(flushMarks, delayMs);
+    },
+    [flushMarks],
+  );
+
+  useEffect(() => {
+    if (!prefsReady) return;
+    let cancelled = false;
+    void fetch("/api/admin/iriss-listings/marks", { credentials: "include", cache: "no-store" })
+      .then((res) => (res.ok ? (res.json() as Promise<{ marks?: unknown }>) : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        const server = parseIrissListingMarks(data.marks);
+        const cur = prefsRef.current;
+        const merged = mergeIrissListingMarks({ notes: cur.notes, fav: cur.fav }, server);
+        setPrefs((p) => ({ ...p, notes: merged.notes, fav: merged.fav }));
+        if (merged.toPush.length) queueMarks(merged.toPush, 0);
+      })
+      .catch(() => {});
+    const flushNow = () => {
+      if (marksTimer.current) {
+        window.clearTimeout(marksTimer.current);
+        flushMarks();
+      }
+    };
+    window.addEventListener("pagehide", flushNow);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("pagehide", flushNow);
+    };
+  }, [prefsReady, queueMarks, flushMarks]);
+
+  /**
+   * Nils 29.10: «Izveidot piedāvājumu» - jaunajā Piedāvājumu sadaļā (agrāk tapa jauns Pasūtījums ar veco bloku).
+   * Ja auto piesaistīts tieši vienam pasūtījumam, piedāvājums uzreiz ir šī klienta.
+   */
+  async function createOfferFor(vehicle: IrissListingVehicle) {
+    setOfferMsg(null);
+    const linkedNow = displayLinkedOf(vehicle, prefs, orderById, matchOrderIds, dataset);
+    const client = dataset === "orders" && linkedNow.length === 1 ? irissPdClientFromOrderBrief(linkedNow[0]!) : null;
+    const res = await createIrissPdFromListing(vehicle.id, client);
+    if (!res.ok) {
+      setOfferMsg(res.message);
+      return;
+    }
+    router.push(irissPdHref(res.id));
+  }
+
   function applyPrefs(next: IrissListPrefs) {
     const prevHidden = prefs.hidden;
+    const markPatches = diffIrissListingMarks(prefs, next);
+    if (markPatches.length) queueMarks(markPatches, markPatches.some((p) => p.note !== undefined) ? 800 : 0);
     const orderOvChanged = JSON.stringify(next.orderOv) !== JSON.stringify(prefs.orderOv);
     setPrefs(next);
     const storage = irissListBrowserStorage();
@@ -427,16 +508,73 @@ export function IrissSludinajumiListClient({
     ]);
   }
 
+  // Sludinājuma logs (Nils 29.10): URL ?listing=<id> (tā pati saite, ko lieto atbilstību paziņojumi), pārlūka «Atpakaļ» aizver, ‹ › / ← → pāriet uz citu auto.
+  const drawerPushed = useRef(false);
+  const openDrawer = useCallback((id: string) => {
+    setDrawerId(id);
+    void markListingViewed(id);
+    const url = new URL(window.location.href);
+    url.searchParams.set("listing", id);
+    if (drawerPushed.current) window.history.replaceState(window.history.state, "", url);
+    else {
+      window.history.pushState(window.history.state, "", url);
+      drawerPushed.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const closeDrawer = useCallback(() => {
+    if (drawerPushed.current) {
+      window.history.back();
+      return;
+    }
+    setDrawerId(null);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("listing")) {
+      url.searchParams.delete("listing");
+      window.history.replaceState(window.history.state, "", url);
+    }
+  }, []);
+  useEffect(() => {
+    const onPop = () => {
+      const id = new URL(window.location.href).searchParams.get("listing");
+      if (!id) {
+        drawerPushed.current = false;
+        setDrawerId(null);
+      } else setDrawerId(id);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   useEffect(() => {
     if (!drawerId) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setDrawerId(null);
+      if (e.key === "Escape") {
+        closeDrawer();
+        return;
+      }
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      const t = e.target;
+      if (t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      e.preventDefault();
+      drawerStepRef.current(e.key === "ArrowLeft" ? -1 : 1);
     };
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
     };
-  }, [drawerId]);
+  }, [drawerId, closeDrawer]);
+  const drawerStepRef = useRef<(delta: number) => void>(() => undefined);
+
+  // Jau izveidotie piedāvājumi (lai neveido otru nejauši) - ielādē vienreiz, atverot pirmo auto.
+  const [pdRows, setPdRows] = useState<IrissPdListRow[] | null>(null);
+  useEffect(() => {
+    if (!drawerId || pdRows) return;
+    void fetch("/api/admin/iriss-piedavajumi", { credentials: "include", cache: "no-store" })
+      .then((res) => (res.ok ? (res.json() as Promise<{ rows?: unknown }>) : null))
+      .then((data) => setPdRows(Array.isArray(data?.rows) ? (data.rows as IrissPdListRow[]) : []))
+      .catch(() => setPdRows([]));
+  }, [drawerId, pdRows]);
 
   useEffect(() => {
     if (!prefsReady || !mounted || restoredQueryRef.current) return;
@@ -864,6 +1002,13 @@ export function IrissSludinajumiListClient({
     );
   }
 
+  const drawerIndex = drawerVehicle ? sorted.findIndex((x) => x.id === drawerVehicle.id) : -1;
+  drawerStepRef.current = (delta: number) => {
+    if (drawerIndex < 0) return;
+    const next = sorted[drawerIndex + delta];
+    if (next) openDrawer(next.id);
+  };
+
   return (
     <div className="iriss-slud mt-1 space-y-2 touch-manipulation sm:mt-1.5 sm:space-y-2">
       <div className="md:hidden">
@@ -1127,6 +1272,12 @@ export function IrissSludinajumiListClient({
         {syncMsg && !syncBusy ? <p className="mt-1 text-center text-[11px] text-[var(--slud-ink3)]">{syncMsg}</p> : null}
       </header>
 
+      {offerMsg ? (
+        <p role="alert" className="mx-4 rounded-[14px] bg-[var(--iriss-bad-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--iriss-bad)] md:mx-0">
+          {offerMsg}
+        </p>
+      ) : null}
+
       <AdminMobileSheet open={phone && filterOpen} title="Filtri" onClose={() => setFilterOpen(false)}>
         <div className="iriss-slud">{filtersForm(
           <>
@@ -1294,10 +1445,7 @@ export function IrissSludinajumiListClient({
             matchNew={listingIsMatchNew(v.id, displayLinkedOf(v, prefs, orderById, matchOrderIds, dataset))}
             duplicates={duplicatesByListing[v.id] ?? []}
             layout={view}
-            onOpen={() => {
-              setDrawerId(v.id);
-              void markListingViewed(v.id);
-            }}
+            onOpen={() => openDrawer(v.id)}
             onPreviewOrder={(o) => setPreviewOrders([o])}
             onPreviewLinked={(orders) => setPreviewOrders([...orders])}
             mobile={mobile}
@@ -1317,45 +1465,31 @@ export function IrissSludinajumiListClient({
               router.push(`/admin/iriss/scan/${encodeURIComponent(data.id)}`);
               router.refresh();
             }}
-            onCreateOffer={async (vehicle) => {
-              const offerId = crypto.randomUUID();
-              const seed = irissPasutijumsOfferSeedFromListing(
-                vehicle,
-                crypto.randomUUID(),
-                new Date().toISOString(),
-                offerId,
-              );
-              const res = await fetch("/api/admin/iriss-pasutijumi", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json", Accept: "application/json" },
-                body: JSON.stringify({ record: seed, listingVehicleId: vehicle.id }),
-              });
-              const data = (await res.json().catch(() => ({}))) as { id?: unknown };
-              if (!res.ok || typeof data.id !== "string") return;
-              router.push(
-                `/admin/iriss/pasutijumi/${encodeURIComponent(data.id)}?offer=${encodeURIComponent(offerId)}&noClientPdf=1`,
-              );
-              router.refresh();
-            }}
+            onCreateOffer={(vehicle) => createOfferFor(vehicle)}
           />
         )}
       />
 
       {drawerVehicle ? (
         <>
-          <button type="button" className="fixed inset-0 z-[55] hidden bg-slate-900/30 sm:block" aria-label="Aizvērt atvilktni" onClick={() => setDrawerId(null)} />
+          <button type="button" className="fixed inset-0 z-[55] hidden bg-slate-900/30 sm:block" aria-label="Aizvērt atvilktni" onClick={closeDrawer} />
           <IrissListDrawer
             v={drawerVehicle}
             prefs={prefs}
             orders={orders}
             linked={displayLinkedOf(drawerVehicle, prefs, orderById, matchOrderIds, dataset)}
             budget={budgetOf(drawerVehicle, prefs, orderById, matchOrderIds)}
-            onClose={() => setDrawerId(null)}
+            onClose={closeDrawer}
             onPrefs={applyPrefs}
             onPreviewOrder={(o) => setPreviewOrders([o])}
             mobile={mobile}
             onVinPatch={(id, patch) => setVinPatch((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }))}
+            position={drawerIndex >= 0 ? { index: drawerIndex, total: sorted.length } : null}
+            onPrev={drawerIndex > 0 ? () => drawerStepRef.current(-1) : undefined}
+            onNext={drawerIndex >= 0 && drawerIndex < sorted.length - 1 ? () => drawerStepRef.current(1) : undefined}
+            onCreateOffer={createOfferFor}
+            offers={irissPdRowsForListing(pdRows ?? [], drawerVehicle)}
+            nowMs={nowMs}
           />
         </>
       ) : null}

@@ -3,7 +3,8 @@
 export const IRISS_LISTING_CARD_ACTION_ORDER = "Pasūtījuma detaļas" as const;
 /** Paliek kā palīga etiķete; kartītē pogu nerāda. */
 export const IRISS_LISTING_CARD_ACTION_RADAR = "Pievienot radaram" as const;
-export const IRISS_LISTING_CARD_ACTION_OFFER = "Nosūtīt klientam" as const;
+/** Nils 29.10: veido piedāvājumu Piedāvājumu sadaļā (agrāk «Nosūtīt klientam» veidoja jaunu pasūtījumu). */
+export const IRISS_LISTING_CARD_ACTION_OFFER = "Izveidot piedāvājumu" as const;
 export const IRISS_LISTING_CARD_ACTION_ORDER_MENU = "Izveidot radaru" as const;
 
 /** Darbības paliek vienā rindā arī ~400px; teksts var iet uz otru rindu pogas iekšā. */

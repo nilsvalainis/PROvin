@@ -18,17 +18,27 @@ describe("IRISS euro formatting", () => {
 
 describe("IRISS listing side panel", () => {
   const drawer = read("components/admin/IrissListDrawer.tsx");
+  const list = read("components/admin/IrissSludinajumiListClient.tsx");
 
-  it("is opaque and sits above the list toolbar with a dimmed backdrop", () => {
-    expect(drawer).toContain('style={{ backgroundColor: "var(--s1, #fff)" }}');
+  it("is opaque, sits above the list toolbar with a dimmed backdrop on desktop", () => {
+    expect(drawer).toContain('style={{ backgroundColor: "var(--iriss-bg)" }}');
     expect(drawer).toContain("fixed inset-0 z-[60]");
-    expect(read("components/admin/IrissSludinajumiListClient.tsx")).toContain("fixed inset-0 z-[55] hidden bg-slate-900/30");
+    expect(list).toContain("fixed inset-0 z-[55] hidden bg-slate-900/30");
   });
 
-  it("shows the platform label (OPENLANE, not openline) and one close X", () => {
+  it("shows the platform label, one close X, favourite / hide and the actions bar", () => {
     expect(drawer).toContain("IRISS_LISTING_PLATFORM_LABEL[v.platform]");
-    expect(drawer).not.toContain('"✕"');
     expect(drawer.match(/<X className/g)?.length).toBe(1);
     expect(drawer).toContain("<EyeOff");
+    expect(drawer).toContain("Izveidot piedāvājumu");
+    expect(drawer).not.toContain("Sagatavot piedāvājumu");
+    expect(drawer).not.toContain("saglabājas tikai šajā ierīcē");
+  });
+
+  it("closes with the browser Back button and steps through the list", () => {
+    expect(list).toContain('url.searchParams.set("listing", id)');
+    expect(list).toContain("window.history.back()");
+    expect(list).toContain('addEventListener("popstate"');
+    expect(list).toContain('drawerStepRef.current(e.key === "ArrowLeft" ? -1 : 1)');
   });
 });
