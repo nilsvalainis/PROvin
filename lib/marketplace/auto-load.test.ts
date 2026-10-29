@@ -428,12 +428,13 @@ describe("marketplace cost-control switches", () => {
     expect(out.loadedCount).toBe(0);
   });
 
-  it("skips cron auto-load when loads are disabled even if auto is on", async () => {
+  it("Nils 29.10: cron automātiskā ielāde vienmēr izlaista, arī ar MARKETPLACE_AUTO_ENABLED=true", async () => {
     process.env.MARKETPLACE_AUTO_ENABLED = "true";
-    delete process.env.MARKETPLACE_LOADS_ENABLED;
+    process.env.MARKETPLACE_LOADS_ENABLED = "true";
     const out = await runMarketplaceAutoLoadNow(NOW);
     expect(out.status).toBe("skipped");
-    expect(out.reason).toBe("Ielāde izslēgta (izmaksu kontrole)");
+    expect(out.reason).toBe("Automātiskā ielāde izslēgta (izmaksu kontrole)");
+    delete process.env.MARKETPLACE_LOADS_ENABLED;
   });
 
   it("does not call the Apify runner without MARKETPLACE_LOADS_ENABLED=true", async () => {

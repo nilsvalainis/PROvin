@@ -129,10 +129,6 @@
       "schedule": "20 3 * * *"
     },
     {
-      "path": "/api/cron/iriss-marketplace-auto",
-      "schedule": "0 6 * * *"
-    },
-    {
       "path": "/api/cron/izmaksas-snapshots",
       "schedule": "0 3,4 * * *"
     },

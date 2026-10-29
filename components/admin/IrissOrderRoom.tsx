@@ -801,6 +801,7 @@ export function IrissOrderRoom({
   const commTimeline = timelineFromPasutijums(rec, offerLinks);
   const commCount = commTimeline.length || irissOrderRoomCommunicationCount((rec.statusHistory ?? []).length, Boolean(rec.notes.trim()));
   const generatedDocs = sortGeneratedDocumentsNewestFirst(rec.generatedDocuments ?? []);
+  const latestContract = [...generatedDocs].filter((d) => d.kind === "contract").sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null;
   const docCount = irissOrderRoomDocumentCount(rec.offers.length, generatedDocs.length);
   const searchHref = `/admin/iriss/sludinajumi?ord=${encodeURIComponent(serializeListingOrderFilter({ kind: "order", id: rec.id }))}`;
   const history = [...(rec.statusHistory ?? [])].reverse();
@@ -2073,7 +2074,7 @@ export function IrissOrderRoom({
             </IrissOverflowMenu>
           </div>
           <ul className="space-y-2">
-            {generatedDocs.map((doc) => (
+            {generatedDocs.filter((doc) => doc.kind !== "contract").map((doc) => (
               <li key={doc.id} className={`${cardClass} flex flex-wrap items-center gap-2`}>
                 <FileText className="h-5 w-5 text-[var(--ink3)]" aria-hidden />
                 <div className="min-w-0 flex-1">
@@ -2099,18 +2100,30 @@ export function IrissOrderRoom({
                 </a>
               </li>
             ))}
+            {/* Nils 29.10: līgums vienā rindā - «Atvērt» saglabāto, «Ģenerēt no jauna» izveido jaunu (agrāk divas rindas). */}
             <li className={`${cardClass} flex flex-wrap items-center gap-2`}>
               <FileText className="h-5 w-5 text-[var(--ink3)]" aria-hidden />
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-semibold text-[var(--ink)]">Pasūtījuma līgums</p>
-                <p className="text-[11.5px] text-[var(--ink2)]">Esošā pasūtījuma izdruka</p>
+                <p className="truncate text-[13px] font-semibold text-[var(--ink)]">Pasūtījuma līgums</p>
+                <p className="text-[11.5px] text-[var(--ink2)]">
+                  {latestContract
+                    ? [latestContract.name, formatGeneratedDocumentWhen(latestContract.createdAt), latestContract.size ? formatGeneratedDocumentSize(latestContract.size) : ""]
+                        .filter(Boolean)
+                        .join(" · ")
+                    : "Vēl nav ģenerēts"}
+                </p>
               </div>
+              {latestContract ? (
+                <a
+                  className={roomBtn}
+                  href={`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/generated-document/${encodeURIComponent(latestContract.id)}`}
+                >
+                  Atvērt
+                </a>
+              ) : null}
               <button type="button" className={roomBtn} onClick={onPdf} disabled={orderPdfBusy}>
-                Atvērt
-              </button>
-              <button type="button" className={roomBtn} onClick={onPdf} disabled={orderPdfBusy} aria-label="Lejupielādēt līgumu">
                 <FileDown className="h-4 w-4" aria-hidden />
-                Lejupielādēt
+                {orderPdfBusy ? "Ģenerē..." : latestContract ? "Ģenerēt no jauna" : "Ģenerēt"}
               </button>
             </li>
             <li className={`${cardClass} flex flex-wrap items-center gap-2`}>
