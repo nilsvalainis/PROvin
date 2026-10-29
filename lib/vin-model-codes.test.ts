@@ -18,6 +18,7 @@ describe("decodeVinModel - VW grupa", () => {
       generation: "III",
       modelYear: 2017,
       scheme: "vag",
+      code: "NP",
     });
   });
 
@@ -52,7 +53,7 @@ describe("decodeVinModel - VW grupa", () => {
 
 describe("decodeVinModel - Mercedes-Benz", () => {
   it("Baureihe no 4.-6. zīmes, gadu nerāda", () => {
-    expect(model("WDD2130041A179362")).toMatchObject({ model: "E-klase", generation: "W213", modelYear: null, scheme: "mercedes" });
+    expect(model("WDD2130041A179362")).toMatchObject({ model: "E-klase", generation: "W213", modelYear: null, scheme: "mercedes", code: "213" });
     expect(model("W1K1186121N098109")).toMatchObject({ model: "CLA", generation: "C118" });
     expect(model("WDB9061331N534460")).toMatchObject({ model: "Sprinter", generation: "906" });
   });

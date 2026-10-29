@@ -25,6 +25,8 @@ export type VinModelInfo = {
   /** Tikai VW grupai, ja gada kods viennozīmīgs paaudzes robežās. */
   modelYear: number | null;
   scheme: "vag" | "mercedes";
+  /** Ražotāja kods VIN (VW grupa 7.-8. zīme, Mercedes Baureihe 4.-6. zīme). */
+  code: string;
 };
 
 type Gen = { model: string; generation: string; from: number; to: number | null; make?: string };
@@ -217,6 +219,7 @@ function decodeVag(vin: string, years: number[], now: Date): VinModelInfo | null
     produced: { from: gen.from, to: gen.to },
     modelYear: fits[0],
     scheme: "vag",
+    code: vin.slice(6, 8),
   };
 }
 
@@ -234,6 +237,7 @@ function decodeMercedes(vin: string): VinModelInfo | null {
     produced: { from: gen.from, to: gen.to },
     modelYear: null,
     scheme: "mercedes",
+    code: vin.slice(3, 6),
   };
 }
 
