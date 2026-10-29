@@ -65,7 +65,7 @@ type Remote =
   | { state: "idle" }
   | { state: "loading"; kind: "vin" | "plate" }
   | { state: "plate"; plate: string; view: PublicPlateView | null; memory: number }
-  | { state: "vin"; memory: number }
+  | { state: "vin"; memory: number; model: VinModelInfo | null }
   | { state: "error"; message: string };
 
 type Source = "home" | "decoder" | "direct";
@@ -136,21 +136,21 @@ export function VinDecoderTool({ locale, labels, auditHref, freeCheckHref, initi
       setRemote({ state: "loading", kind: isPlate ? "plate" : "vin" });
       try {
         const res = await fetch(`/api/vin-dekoders?q=${encodeURIComponent(isPlate ? plate : local!.ok ? local!.vin : raw)}&src=${from}`);
-        const body = (await res.json().catch(() => ({}))) as { error?: string; found?: boolean; csdd?: PublicPlateView; memoryRecords?: number };
+        const body = (await res.json().catch(() => ({}))) as { error?: string; found?: boolean; csdd?: PublicPlateView; memoryRecords?: number; model?: VinModelInfo | null };
         if (id !== reqId.current) return;
         if (!res.ok) {
           const msg = body.error === "quota" ? labels.plateQuota : body.error === "rate_limited" ? labels.rateLimited : labels.plateError;
-          setRemote(isPlate ? { state: "error", message: msg } : { state: "vin", memory: 0 });
+          setRemote(isPlate ? { state: "error", message: msg } : { state: "vin", memory: 0, model: null });
           return;
         }
         setRemote(
           isPlate
             ? { state: "plate", plate, view: body.found ? (body.csdd ?? null) : null, memory: body.memoryRecords ?? 0 }
-            : { state: "vin", memory: body.memoryRecords ?? 0 },
+            : { state: "vin", memory: body.memoryRecords ?? 0, model: body.model ?? null },
         );
       } catch {
         if (id !== reqId.current) return;
-        setRemote(isPlate ? { state: "error", message: labels.plateError } : { state: "vin", memory: 0 });
+        setRemote(isPlate ? { state: "error", message: labels.plateError } : { state: "vin", memory: 0, model: null });
       }
     },
     [labels],
@@ -178,7 +178,7 @@ export function VinDecoderTool({ locale, labels, auditHref, freeCheckHref, initi
     }
   }, [locale]);
 
-  const model = result?.ok ? decodeVinModel(result) : null;
+  const model = result?.ok ? (decodeVinModel(result) ?? (remote.state === "vin" ? remote.model : null)) : null;
   const yearValue = !result?.ok
     ? "-"
     : model?.modelYear

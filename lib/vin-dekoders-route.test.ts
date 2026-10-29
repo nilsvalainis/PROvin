@@ -16,6 +16,7 @@ vi.mock("@/lib/vin-memory-store", () => ({
   readVinMemory: async (vin: string) => (vin === "TMBJG7NE1J0123456" ? { vin, observations: [{}, {}], updatedAt: "" } : null),
 }));
 vi.mock("@/lib/free-vin-details", () => ({ fetchFreeVinDetails: async () => ({ vpic: null, signals: [] }) }));
+vi.mock("@/lib/vin-model-learn-store", () => ({ readLearnedTable: async () => ({}) }));
 vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: async () => ({ ok: true, retryAfterSec: 0 }) }));
 
 const { GET } = await import("@/app/api/vin-dekoders/route");

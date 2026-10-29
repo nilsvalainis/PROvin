@@ -9,7 +9,8 @@ import { VIN_CHECK_SOURCES, type VinCheckModel, type VinCheckOutcome, type VinCh
 import { recordVinCheckEvent, todayDecoderCsddCalls } from "@/lib/vin-check-stats-store";
 import { DECODER_CSDD_DAILY_CAP, toPublicPlateView, type PublicPlateView } from "@/lib/vin-dekoders-plate";
 import { readVinMemory } from "@/lib/vin-memory-store";
-import { decodeVinModel } from "@/lib/vin-model-codes";
+import { decodeLearnedFrom, decodeVinModel } from "@/lib/vin-model-codes";
+import { readLearnedTable } from "@/lib/vin-model-learn-store";
 
 export const runtime = "nodejs";
 export const maxDuration = 25;
@@ -116,7 +117,7 @@ export async function GET(req: Request) {
     await record("vin", "rate_limited");
     return json({ error: "rate_limited", retryAfterSec: retry }, { status: 429, headers: { "Retry-After": String(retry) } });
   }
-  const model = decodeVinModel(local);
+  const model = decodeVinModel(local) ?? decodeLearnedFrom(await readLearnedTable().catch(() => ({})), local.vin);
   const [details, memory] = await Promise.all([fetchFreeVinDetails(local), memoryCount(local.vin)]);
   const modelKind: VinCheckModel = model ? model.scheme : details.vpic ? "vpic" : "none";
   await record("vin", "ok", { region: local.region, model: modelKind, memoryHit: memory > 0 });
