@@ -222,7 +222,7 @@ describe("IrissOrderRoom render", () => {
     expect(errors).toEqual([]);
     assertOrderStaysOpen(html);
     expect(html).toContain("mobile.de un AutoScout24 nāk no ielādes zemāk");
-    expect(html).toContain("tikai jauniem sludinājumiem");
+    expect(html).toContain("Automātiskās ielādes nav");
     expect(html).not.toContain("tikai ar pogu Ielādēt");
     expect(html).not.toMatch(/\u2014|\u2013/);
   });

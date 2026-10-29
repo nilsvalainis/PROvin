@@ -39,8 +39,12 @@ export function marketplaceLoadsEnabled(): boolean {
 }
 
 /** Tikai precīza vērtība `true`. Noklusējums izslēgts. */
+/**
+ * Nils 29.10: «automātisko ielādi izslēdz vispār, veikšu to manuāli pēc nepieciešamības un konkrētiem auto».
+ * Automātiskā ielāde ir izslēgta kodā (neatkarīgi no MARKETPLACE_AUTO_ENABLED); manuālā - poga «Ielādēt».
+ */
 export function marketplaceAutoEnabled(): boolean {
-  return process.env.MARKETPLACE_AUTO_ENABLED === "true";
+  return false;
 }
 
 export function marketplaceMonthlyUsdCap(): number {

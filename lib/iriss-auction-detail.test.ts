@@ -11,6 +11,7 @@ import {
   mergeListedIntoDetailHit,
   type IrissRelayAuctionDetail,
 } from "@/lib/iriss-auction-detail";
+import { irissTitleWithMake } from "@/lib/iriss-auction-detail";
 import { parseIrissAuctionLink } from "@/lib/iriss-auction-link";
 import { isPlausibleListingVin } from "@/lib/iriss-listings-extract";
 
@@ -223,5 +224,14 @@ describe("FABLE F3 (26.10): Auto1 «No saites» PE68796", () => {
       ]),
     ).toEqual(["TEST DRIVE INFORMATION: TEST DRIVE LOCATION: ON PUBLIC STREET < 80KM/H (LOWER SPEED) NO SPECIFIC FINDINGS"]);
     expect(dedupeDamageLines(["Door: Scratch", "Bumper: Dent"])).toEqual(["Door: Scratch", "Bumper: Dent"]);
+  });
+});
+
+describe("nosaukums ar marku (Nils 29.10)", () => {
+  it("Auto1 «V60 2.0 D4 Summum» + marka no lapas vai VIN", () => {
+    expect(irissTitleWithMake("V60 2.0 D4 Summum", "Volvo", "")).toBe("Volvo V60 2.0 D4 Summum");
+    expect(irissTitleWithMake("V60 2.0 D4 Summum", "", "YV1FW88A0C1073855")).toBe("Volvo V60 2.0 D4 Summum");
+    expect(irissTitleWithMake("Volvo V60", "Volvo", "")).toBe("Volvo V60");
+    expect(irissTitleWithMake("V60", "", "")).toBe("V60");
   });
 });

@@ -1,3 +1,4 @@
+import { decodeVin } from "@/lib/vin-decode";
 /**
  * j56 B variants: releja `POST /listings/detail` (viena Auto1/Openlane auto detaļu lapa) -> piedāvājuma sākuma dati.
  * Lauku karte pēc IRISS kartes (~/j41-auto1-karte: AUTO1 + OPENLANE). Etiķetes tiek salīdzinātas normalizētas
@@ -72,6 +73,7 @@ const LABELS = {
   owners: ["totalnumberofowners", "numberofowners", "owners", "previousowners", "ipasniekuskaits", "vorbesitzer"],
   serviceBook: ["servicebook", "servicehistory", "servicedocumentation", "servicedocuments", "servisagramata", "scheckheft"],
   title: ["title", "makemodel", "model", "markamodelis"],
+  make: ["make", "manufacturer", "manufacturername", "brand", "marka", "razotajs", "hersteller", "marke"],
 } as const;
 
 type LabelKey = keyof typeof LABELS;
@@ -314,7 +316,9 @@ export function irissAuctionDetailToSeed(
   const seats = get("seats").match(/\d+/)?.[0] ?? "";
   const photos = (detail.photos ?? []).filter((u) => /^https:\/\//i.test(u) && !isTrackingPixelUrl(u));
   const { visual, technical } = damageTexts(detail);
-  const title = itemStr("title") || clean(detail.title).replace(/\s*[|-]\s*(auto1|openlane).*$/i, "");
+  const titleRaw = itemStr("title") || clean(detail.title).replace(/\s*[|-]\s*(auto1|openlane).*$/i, "");
+  // Nils 29.10: Auto1 nosaukums mēdz būt bez markas («V60 2.0 D4 Summum») - marka no lapas vai pēc VIN.
+  const title = irissTitleWithMake(titleRaw, itemStr("make") || get("make"), vin);
   const priceOf = (k: string) => itemNum(k);
 
   const inspection = get("inspection");
@@ -438,4 +442,19 @@ export function mergeListedIntoDetailHit(detail: IrissOrderRoomHit, listed: Iris
   if (out.vin && !isPlausibleListingVin(out.vin)) out.vin = "";
   out.id = listed.id;
   return out;
+}
+
+/** Pieliek marku nosaukuma priekšā, ja tās tur nav (marka no lapas lauka vai VIN WMI). */
+export function irissTitleWithMake(title: string, make: string, vin: string): string {
+  const t = title.trim();
+  let m = make.trim();
+  if (!m && vin) {
+    const d = decodeVin(vin);
+    m = d.ok && d.make ? d.make : "";
+  }
+  if (!t || !m) return t;
+  const first = t.split(/\s+/)[0]!.toLowerCase();
+  const mk = m.toLowerCase();
+  if (first === mk || t.toLowerCase().startsWith(mk) || mk.startsWith(first)) return t;
+  return `${m} ${t}`;
 }
