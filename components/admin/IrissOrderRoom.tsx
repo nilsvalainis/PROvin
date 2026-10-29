@@ -12,7 +12,7 @@ import {
   IRISS_CLIENT_FINANCING_PRESETS,
   irissClientFinancingEuroFromBudget,
   irissClientFinancingPatchFromPercent,
-  parseIrissClientFinancingPercent,
+  irissEffectiveClientFinancingPercent,
 } from "@/lib/iriss-client-financing";
 import { formatIrissListPhoneText, irissListBudgetText } from "@/lib/iriss-pasutijumi-list-view";
 import { irissClientNameInputValue, splitIrissClientNameInput } from "@/lib/iriss-client-name-input";
@@ -304,6 +304,7 @@ function Segmented({
   onChange,
   keepCustom = false,
   filterMark = false,
+  grid = false,
 }: {
   label: string;
   value: string;
@@ -313,6 +314,8 @@ function Segmented({
   keepCustom?: boolean;
   /** `*`: lauks filtrē Meklētāju. */
   filterMark?: boolean;
+  /** Šaurai kolonnai (QA 29.10): 2 kolonnu režģis, lai pogas nepārlūzt pa vienai. */
+  grid?: boolean;
 }) {
   const known = options.some((o) => o.value === value);
   return (
@@ -325,7 +328,9 @@ function Segmented({
           </span>
         ) : null}
       </span>
-      <div className="inline-flex w-fit max-w-full flex-wrap gap-[3px] rounded-[11px] bg-[var(--iriss-surface-2)] p-[3px]">
+      <div
+        className={`${grid ? "grid w-full grid-cols-2" : "inline-flex w-fit max-w-full flex-wrap"} gap-[3px] rounded-[11px] bg-[var(--iriss-surface-2)] p-[3px]`}
+      >
         {options.map((o) => {
           const on = value === o.value;
           return (
@@ -635,6 +640,13 @@ export function IrissOrderRoom({
   const duplicates = coerceIrissDuplicatesByListing(duplicatesByListing);
   const safeHits = (Array.isArray(hits) ? hits : []).filter((hit) => hit && typeof hit.id === "string");
   useAdminScrollLock(criteriaOpen || priceFilterOpen);
+  // QA 29.10: «Visi kritēriji» logs aizveras arī ar Esc.
+  useEffect(() => {
+    if (!criteriaOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setCriteriaOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [criteriaOpen]);
 
   useEffect(() => {
     setDismissed(new Set(stringList(dismissedHitIds)));
@@ -793,7 +805,7 @@ export function IrissOrderRoom({
   const searchHref = `/admin/iriss/sludinajumi?ord=${encodeURIComponent(serializeListingOrderFilter({ kind: "order", id: rec.id }))}`;
   const history = [...(rec.statusHistory ?? [])].reverse();
   const stepStatus = irissOrderStepStatuses(rec);
-  const financingPercent = parseIrissClientFinancingPercent(rec.clientFinancingPercent);
+  const financingPercent = irissEffectiveClientFinancingPercent(rec);
   const financingEuro = irissClientFinancingEuroFromBudget(rec.totalBudget, financingPercent);
   const waAppHref = irissWhatsAppAppHref(rec.phone);
   const progress = irissOrderProgress(rec);
@@ -1490,6 +1502,7 @@ export function IrissOrderRoom({
               <CardTitle>Statuss</CardTitle>
               <Segmented
                 label="Pasūtījuma statuss"
+                grid
                 value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
                 options={IRISS_PASUTIJUMS_PICKER_STATUSES.map((st) => ({ value: st, label: IRISS_PASUTIJUMS_PICKER_STATUS_LV[st] }))}
                 onChange={(value) => value && onSetStatus(value as IrissPasutijumsListStatus)}

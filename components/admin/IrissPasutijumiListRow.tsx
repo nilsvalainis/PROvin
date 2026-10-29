@@ -300,7 +300,8 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
           onPointerDown={(e) => e.stopPropagation()}
           className={`${actBtn} ${criteriaOpen ? "!bg-[var(--ink)] !text-[var(--onink,#fff)]" : ""}`}
           // Admin pogu stili noņem rāmi - rāmis tieši (390 px pārbaude 28.10).
-          style={{ border: `1px solid ${criteriaOpen ? "var(--ink)" : "var(--hair)"}` }}
+          // `border: 0 !important` pārspēj inline border - rāmis ar box-shadow (QA 29.10).
+          style={{ boxShadow: `inset 0 0 0 1px ${criteriaOpen ? "var(--ink)" : "var(--hair)"}` }}
         >
           Kritēriji
         </button>
@@ -363,7 +364,8 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
             {budget !== "-" ? <span className="shrink-0">· {budget}</span> : null}
           </span>
           <span className="mt-1.5 flex min-w-0 flex-col items-start gap-1 md:hidden">
-            {newHitsLabel}
+            {/* QA 29.10: telefonā bez jauniem sludinājumiem nerāda lieku «-» rindu. */}
+            {newHits > 0 ? newHitsLabel : null}
             {nextStep ? <span className="min-w-0 text-[12px] leading-snug text-[var(--ink2)] max-md:line-clamp-2">{nextStep}</span> : null}
           </span>
           {mobileActions}

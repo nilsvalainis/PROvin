@@ -4156,3 +4156,10 @@
     display: none;
   }
 }
+
+/* QA 29.10: Autoparka kartītē (telefons) saites kartītei bija liela ēna un 14 px atstarpe - zem tās redzama pelēka josla. */
+.ap2.ap2.ap2 .iriss-saite-card {
+  margin-bottom: 0;
+  background: #fff;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(22, 23, 26, 0.06);
+}
