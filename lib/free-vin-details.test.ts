@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildFreeVinSignals, fetchFreeVinDetails, parseUsRecalls, parseVpicDetails } from "@/lib/free-vin-details";
+import { buildFreeVinSignals, fetchFreeVinDetails, parseVpicDetails } from "@/lib/free-vin-details";
 import { decodeVin } from "@/lib/vin-decode";
 
 function vpicJson(row: Record<string, string>): string {
@@ -71,50 +71,43 @@ describe("parseVpicDetails", () => {
   });
 });
 
-describe("parseUsRecalls", () => {
-  it("skaita atsaukumus; 400 ar tukšu sarakstu nozīmē nav", () => {
-    expect(parseUsRecalls(200, JSON.stringify({ results: [{ Component: "AIR BAGS", ReportReceivedDate: "01/02/2023" }] }))?.count).toBe(1);
-    expect(parseUsRecalls(400, JSON.stringify({ results: [] }))).toEqual({ count: 0, items: [] });
-    expect(parseUsRecalls(500, "")).toBeNull();
-  });
-});
-
 describe("buildFreeVinSignals", () => {
-  it("ASV VIN: ražots ASV, kontrolcipars nesakrīt, atsaukumi vienskaitlī", () => {
+  it("ASV VIN: ražots ASV, kontrolcipars nesakrīt", () => {
     const vpic = parseVpicDetails(200, vpicJson(BMW_X5_US));
-    const s = buildFreeVinSignals({ local: local("5UXCR6C05N9K12345"), vpic, recalls: { count: 1, items: [] } });
-    expect(s.map((x) => x.title)).toEqual(["Auto ražots ASV", "VIN kontrolcipars nesakrīt", "1 atsaukšanas akcija ASV"]);
+    const s = buildFreeVinSignals({ local: local("5UXCR6C05N9K12345"), vpic });
+    expect(s.map((x) => x.title)).toEqual(["Auto ražots ASV", "VIN kontrolcipars nesakrīt"]);
   });
 
-  it("derīgs ASV VIN bez atsaukumiem", () => {
-    const vpic = parseVpicDetails(200, vpicJson({ ...BMW_X5_US, Make: "HONDA", Model: "Accord", ModelYear: "2003", ErrorCode: "0" }));
-    const s = buildFreeVinSignals({ local: local("1HGCM82633A004352"), vpic, recalls: { count: 0, items: [] } });
-    expect(s.map((x) => x.id)).toEqual(["north_america", "check_digit_ok", "us_recalls_none"]);
+  it("derīgs ASV VIN", () => {
+    const s = buildFreeVinSignals({ local: local("1HGCM82633A004352"), vpic: null });
+    expect(s.map((x) => x.id)).toEqual(["north_america", "check_digit_ok"]);
   });
 
-  it("Eiropas VIN: nav ASV brīdinājumu", () => {
-    expect(buildFreeVinSignals({ local: local("TMBJH9NP9N7043581"), vpic: null, recalls: null })).toEqual([]);
+  it("Eiropas VIN: nav brīdinājumu", () => {
+    expect(buildFreeVinSignals({ local: local("TMBJH9NP9N7043581"), vpic: null })).toEqual([]);
   });
 });
 
 describe("fetchFreeVinDetails", () => {
-  it("Eiropas VIN: atsaukumus ASV nevaicā", async () => {
-    const f = fakeFetch({ DecodeVinValues: { status: 200, body: vpicJson({ Make: "BMW", Model: "330i", ModelYear: "2020", PlantCity: "MUNICH", PlantCountry: "GERMANY", ErrorCode: "0" }) } });
+  it("Eiropas VIN: NHTSA nevaicā vispār (arī tīrs dekods nav garantija)", async () => {
+    const f = fakeFetch({ DecodeVinValues: { status: 200, body: vpicJson({ Make: "BMW", Model: "330i", ModelYear: "2020", PlantCity: "MUNICH", ErrorCode: "0" }) } });
     const r = await fetchFreeVinDetails(local("WBA5R1C0XLFH42873"), f.impl);
-    expect(r.vpic?.plantCity).toBe("Munich");
-    expect(r.vpic?.plantCountry).toBe("Vācija");
-    expect(r.recalls).toBeNull();
-    expect(f.calls.some((u) => u.includes("recallsByVehicle"))).toBe(false);
+    expect(r.vpic).toBeNull();
+    expect(f.calls).toEqual([]);
   });
 
-  it("ASV VIN: vaicā atsaukumus pēc markas, modeļa, gada", async () => {
-    const f = fakeFetch({
-      DecodeVinValues: { status: 200, body: vpicJson(BMW_X5_US) },
-      recallsByVehicle: { status: 200, body: JSON.stringify({ results: [{ Component: "SEAT BELTS" }] }) },
-    });
+  it("ASV VIN: rūpnīca un motors, atsaukumus nevaicā", async () => {
+    const f = fakeFetch({ DecodeVinValues: { status: 200, body: vpicJson(BMW_X5_US) } });
     const r = await fetchFreeVinDetails(local("5UXCR6C05N9K12345"), f.impl);
-    expect(r.recalls?.count).toBe(1);
-    expect(f.calls.find((u) => u.includes("recallsByVehicle"))).toContain("model=X5&modelYear=2022");
+    expect(r.vpic?.plantCity).toBe("Greer");
+    expect(f.calls).toHaveLength(1);
+    expect(f.calls[0]).toContain("DecodeVinValues/5UXCR6C05N9K12345");
+  });
+
+  it("vPIC ražotājs nesakrīt ar VIN ražotāju -> vPIC nerāda", async () => {
+    const f = fakeFetch({ DecodeVinValues: { status: 200, body: vpicJson({ ...BMW_X5_US, Make: "FORD" }) } });
+    const r = await fetchFreeVinDetails(local("5UXCR6C05N9K12345"), f.impl);
+    expect(r.vpic).toBeNull();
   });
 
   it("NHTSA nesasniedzams: tikai lokālais dekods, bez kļūdas", async () => {

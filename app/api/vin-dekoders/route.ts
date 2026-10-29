@@ -13,7 +13,7 @@ const BURST_WINDOW_MS = 10 * 60 * 1000;
 const DAY_MAX = 100;
 const DAY_WINDOW_MS = 24 * 60 * 60 * 1000;
 
-/** Publisks bezmaksas VIN dekods: lokālā WMI daļa + NHTSA vPIC (rūpnīca, motors) + ASV atsaukumi. */
+/** Publisks bezmaksas VIN dekods: lokālā WMI daļa + NHTSA vPIC (tikai Ziemeļamerikas VIN: rūpnīca, motors). */
 export async function GET(req: Request) {
   const vinRaw = new URL(req.url).searchParams.get("vin") ?? "";
   const local = decodeVin(vinRaw.slice(0, 40));

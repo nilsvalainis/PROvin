@@ -3,8 +3,10 @@ import type { VinDecodeResult } from "@/lib/vin-decode";
 /**
  * Bezmaksas VIN pārbaudes papildu dati (sākumlapa, /vin-dekoders).
  *
- * Avoti ir bez maksas un bez atslēgas: NHTSA vPIC (VIN dekods ar rūpnīcu) un NHTSA atsaukumi.
- * NHTSA atsaukumi ir modeļa līmenī, tāpēc tos vaicājam tikai Ziemeļamerikas VIN (ES auto tas nav fakts).
+ * Rādām tikai to, par ko esam droši. NHTSA vPIC ir bez maksas un bez atslēgas, bet tajā ir ražotāju
+ * pašu iesniegtie VIN dekodēšanas dati tikai ASV tirgus auto (49 CFR 565). Eiropas auto VIN vPIC
+ * mēdz atkodēt nepareizi (VW -> 1984, rūpnīca Westmoreland), tāpēc to vaicājam tikai Ziemeļamerikas VIN.
+ * ASV atsaukšanas akcijas nerādām: tās ir modeļa līmenī, nevis konkrētam auto.
  */
 
 export type VpicDetails = {
@@ -21,10 +23,8 @@ export type VpicDetails = {
   plantCompany: string;
 };
 
-export type UsRecalls = { count: number; items: { component: string; date: string }[] };
-
 export type FreeVinSignal = {
-  id: "north_america" | "check_digit_bad" | "check_digit_ok" | "us_recalls" | "us_recalls_none";
+  id: "north_america" | "check_digit_bad" | "check_digit_ok";
   tone: "warn" | "ok";
   title: string;
   body: string;
@@ -162,39 +162,14 @@ export function parseVpicDetails(status: number, text: string): VpicDetails | nu
   };
 }
 
-/** Tīra funkcija: NHTSA `recallsByVehicle` atbilde. 400 ar tukšu sarakstu nozīmē "nav". */
-export function parseUsRecalls(status: number, text: string): UsRecalls | null {
-  if (status === 404) return { count: 0, items: [] };
-  if (status !== 200 && status !== 400) return null;
-  let data: unknown;
-  try {
-    data = JSON.parse(text) as unknown;
-  } catch {
-    return null;
-  }
-  const o = (data ?? {}) as Record<string, unknown>;
-  const rows = Array.isArray(o.results) ? o.results : Array.isArray(o.Results) ? o.Results : [];
-  const items = rows.map((r) => {
-    const row = (r ?? {}) as Record<string, unknown>;
-    return { component: str(row.Component), date: str(row.ReportReceivedDate) };
-  });
-  return { count: items.length, items: items.slice(0, 5) };
-}
-
-/** Latviešu skaitļa forma: 1, 21, 31 - vienskaitlis (bet ne 11). */
-function lvCount(n: number, one: string, many: string): string {
-  return `${n} ${n % 10 === 1 && n % 100 !== 11 ? one : many}`;
-}
-
 const COUNTRY_CODE_LV: Record<string, string> = { US: "ASV", CA: "Kanādā", MX: "Meksikā" };
 
 /** Brīdinājumi klientam tikai no pārbaudāmiem faktiem (VIN struktūra, NHTSA). */
 export function buildFreeVinSignals(input: {
   local: Extract<VinDecodeResult, { ok: true }>;
   vpic: VpicDetails | null;
-  recalls: UsRecalls | null;
 }): FreeVinSignal[] {
-  const { local, vpic, recalls } = input;
+  const { local, vpic } = input;
   const out: FreeVinSignal[] = [];
   if (local.region === "northAmerica") {
     const where = vpic?.plantCountry === "ASV" || local.country === "US" ? "ASV" : COUNTRY_CODE_LV[local.country ?? ""] ?? "Ziemeļamerikā";
@@ -215,19 +190,6 @@ export function buildFreeVinSignals(input: {
   } else if (local.checkDigitValid === true) {
     out.push({ id: "check_digit_ok", tone: "ok", title: "VIN kontrolcipars derīgs", body: "VIN kods atbilst Ziemeļamerikas standartam." });
   }
-  if (recalls && vpic?.model) {
-    const name = [vpic.modelYear, vpic.make, vpic.model].filter(Boolean).join(" ");
-    if (recalls.count > 0) {
-      out.push({
-        id: "us_recalls",
-        tone: "warn",
-        title: `${lvCount(recalls.count, "atsaukšanas akcija", "atsaukšanas akcijas")} ASV`,
-        body: `NHTSA dati modelim ${name}. Pie dīlera pārbaudi, vai darbi veikti tieši šim auto.`,
-      });
-    } else {
-      out.push({ id: "us_recalls_none", tone: "ok", title: "ASV atsaukšanas akciju nav", body: `NHTSA dati modelim ${name}.` });
-    }
-  }
   return out;
 }
 
@@ -244,18 +206,24 @@ async function getText(fetchImpl: FetchLike, url: string): Promise<{ status: num
   }
 }
 
-/** vPIC + (tikai Ziemeļamerikas VIN) ASV atsaukumi. Kļūdas gadījumā lauks ir `null`, lapa rāda lokālo dekodu. */
+/** Tikai ražotāja dati: ja vPIC ražotājs nesakrīt ar VIN WMI ražotāju, neko no vPIC nerādām. */
+export function vpicMatchesLocal(local: Extract<VinDecodeResult, { ok: true }>, vpic: VpicDetails): boolean {
+  if (!local.make) return true;
+  const a = local.make.toLowerCase().replace(/[^a-z]/g, "");
+  const b = vpic.make.toLowerCase().replace(/[^a-z]/g, "");
+  return a.includes(b) || b.includes(a);
+}
+
+/** vPIC tikai Ziemeļamerikas VIN. Kļūdas vai neatbilstības gadījumā `vpic` ir `null`, lapa rāda lokālo dekodu. */
 export async function fetchFreeVinDetails(
   local: Extract<VinDecodeResult, { ok: true }>,
   fetchImpl: FetchLike = fetch,
-): Promise<{ vpic: VpicDetails | null; recalls: UsRecalls | null; signals: FreeVinSignal[] }> {
-  const dec = await getText(fetchImpl, `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${encodeURIComponent(local.vin)}?format=json`);
-  const vpic = dec ? parseVpicDetails(dec.status, dec.text) : null;
-  let recalls: UsRecalls | null = null;
-  if (local.region === "northAmerica" && vpic?.model && vpic.modelYear) {
-    const q = new URLSearchParams({ make: vpic.make, model: vpic.model, modelYear: vpic.modelYear });
-    const rec = await getText(fetchImpl, `https://api.nhtsa.gov/recalls/recallsByVehicle?${q}`);
-    recalls = rec ? parseUsRecalls(rec.status, rec.text) : null;
+): Promise<{ vpic: VpicDetails | null; signals: FreeVinSignal[] }> {
+  let vpic: VpicDetails | null = null;
+  if (local.region === "northAmerica") {
+    const dec = await getText(fetchImpl, `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${encodeURIComponent(local.vin)}?format=json`);
+    const parsed = dec ? parseVpicDetails(dec.status, dec.text) : null;
+    vpic = parsed && vpicMatchesLocal(local, parsed) ? parsed : null;
   }
-  return { vpic, recalls, signals: buildFreeVinSignals({ local, vpic, recalls }) };
+  return { vpic, signals: buildFreeVinSignals({ local, vpic }) };
 }
