@@ -7,10 +7,12 @@ import {
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
-  closestCorners,
+  closestCenter,
+  pointerWithin,
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -94,6 +96,21 @@ function bucketListsFromPlan(plan: CargoPlanState, byId: Map<string, LogisticsOr
     none: carsInCargoBucket(plan, "none").filter((c) => byId.has(c.carId)).map((c) => c.carId),
   };
 }
+
+/**
+ * Nils 29.10 «kārtošana pa kravām nestrādā korekti»: closestCorners salīdzināja velkamās kartītes stūrus un
+ * izvēlējās nākamo rindu (auto nonāca vienu vietu par tālu). Tagad noteicošā ir rinda zem peles/pirksta;
+ * tukšā kravas laukā - pati krava (auto beigās); citādi tuvākā rinda pēc centra.
+ */
+export const cargoCollision: CollisionDetection = (args) => {
+  const isBucket = (id: string | number) => String(id).startsWith("bucket:");
+  const under = pointerWithin(args);
+  const rowUnder = under.filter((c) => !isBucket(c.id));
+  if (rowUnder.length) return rowUnder;
+  const bucketUnder = under.filter((c) => isBucket(c.id));
+  if (bucketUnder.length) return bucketUnder;
+  return closestCenter({ ...args, droppableContainers: args.droppableContainers.filter((c) => !isBucket(c.id)) });
+};
 
 function bucketOfId(lists: BucketLists, id: string): CargoBucket | null {
   if (id.startsWith("bucket:")) {
@@ -200,7 +217,7 @@ export function IrissLogistikaCargoPlan({
       </div>
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={cargoCollision}
         onDragStart={onDragStart}
         onDragOver={onDragOver}
         onDragEnd={finishDrag}
