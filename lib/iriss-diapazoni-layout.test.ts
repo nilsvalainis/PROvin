@@ -35,7 +35,7 @@ describe("IRISS DIAPAZONI mockup v2", () => {
     expect(query).toContain("Vēl vajag vienu no: nobraukums līdz, tilpums vai jauda.");
     expect(query).not.toContain('yearFrom: "gads no"');
     const panel = sources["components/admin/IrissMarketplaceLoadPanel.tsx"];
-    expect(panel).toContain("tikai jauniem sludinājumiem");
+    expect(panel).toContain("Automātiskās ielādes nav");
     expect(panel).toContain("Poga Ielādēt -");
     expect(panel).toContain("manuāla ielāde tagad");
     expect(panel).toContain("Ielāde izslēgta (izmaksu kontrole)");
