@@ -1,4 +1,6 @@
+import learned from "@/data/vin-model-learned.json";
 import type { VinDecodeResult } from "@/lib/vin-decode";
+import { lookupLearned, type LearnedTable } from "@/lib/vin-model-learn";
 
 /**
  * Modelis no Eiropas VIN bez ārējiem pieprasījumiem (bezmaksas VIN pārbaude).
@@ -12,6 +14,8 @@ import type { VinDecodeResult } from "@/lib/vin-decode";
  * - Volvo: 4.-5. zīme ir modeļa kods (publiska shēma), 10. zīme modeļa gads.
  * - BMW: 4.-5. zīme ir modeļa/paaudzes kods bez publiskas pilnas tabulas - tikai kodi, kas sakrīt ar
  *   mūsu pasūtījumu auto (29.10.2026). Eiropas BMW 10. zīme bieži ir "0" (bez gada), tad gadu nerādām.
+ * - Iemācītā tabula (`data/vin-model-learned.json`, sk. `lib/vin-model-learn.ts`): pārējām markām no mūsu
+ *   pašu datiem, tikai kodi ar 2+ sakritībām un bez konfliktiem. Bez paaudzes un gada.
  * Nezināms kods -> `null` (lapa rāda tikai ražotāju un valsti).
  * VW grupas kods ir platformas kods: vienam kodam var būt vairāki modeļi (5F = Leon III un Ateca), tos rādām visus.
  * Pārbaudīts 29.10.2026 pret 54 īstiem VW grupas un Mercedes auto (CSDD un izsoļu modelis) - kodi laboti pēc tiem.
@@ -22,11 +26,11 @@ export type VinModelInfo = {
   model: string;
   /** Paaudze vai šasija, piem. "III", "B8", "W213". */
   generation: string;
-  /** Paaudzes ražošanas gadi; `to: null` = ražo joprojām. */
-  produced: { from: number; to: number | null };
+  /** Paaudzes ražošanas gadi; `to: null` = ražo joprojām; `null` = iemācītajai tabulai nav zināmi. */
+  produced: { from: number; to: number | null } | null;
   /** Tikai VW grupai, ja gada kods viennozīmīgs paaudzes robežās. */
   modelYear: number | null;
-  scheme: "vag" | "mercedes" | "volvo" | "bmw";
+  scheme: "vag" | "mercedes" | "volvo" | "bmw" | "learned";
   /** Ražotāja kods VIN (VW grupa 7.-8. zīme, Mercedes Baureihe 4.-6. zīme). */
   code: string;
 };
@@ -318,5 +322,14 @@ function decodeMercedes(vin: string): VinModelInfo | null {
 
 export function decodeVinModel(local: Extract<VinDecodeResult, { ok: true }>, now: Date = new Date()): VinModelInfo | null {
   if (local.region !== "europe") return null;
-  return decodeByCode(local.vin, local.modelYears, now) ?? decodeMercedes(local.vin);
+  const wmi = local.vin.slice(0, 3);
+  // Markām ar savu shēmu iemācīto tabulu nelietojam: ja shēma apzināti dod `null` (gads neiekrīt), tā arī paliek.
+  if (SCHEMES[wmi] || MB_WMI.has(wmi)) return decodeByCode(local.vin, local.modelYears, now) ?? decodeMercedes(local.vin);
+  return decodeLearned(local.vin);
+}
+
+function decodeLearned(vin: string): VinModelInfo | null {
+  const hit = lookupLearned((learned as { table: LearnedTable }).table, vin);
+  if (!hit) return null;
+  return { make: hit.make, model: hit.model, generation: "", produced: null, modelYear: null, scheme: "learned", code: hit.code };
 }

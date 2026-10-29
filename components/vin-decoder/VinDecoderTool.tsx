@@ -53,7 +53,8 @@ function localModel(name: string, labels: VinDecoderLabels): string {
   return name.replace(/-klase/g, labels.classSuffix).replace("kupeja / kabriolets", labels.coupeCabrio);
 }
 
-function producedText(m: VinModelInfo, labels: VinDecoderLabels): string {
+function producedText(m: VinModelInfo, labels: VinDecoderLabels): string | null {
+  if (!m.produced) return null;
   return m.produced.to ? `${m.produced.from}-${m.produced.to}` : `${m.produced.from}-${labels.producedOngoing}`;
 }
 
@@ -85,7 +86,7 @@ export function VinDecoderTool({ locale, labels, auditHref, freeCheckHref, initi
     ? "-"
     : model?.modelYear
       ? String(model.modelYear)
-      : model?.scheme === "mercedes"
+      : model?.scheme === "mercedes" || model?.scheme === "learned"
         ? labels.yearNotInVin
         : result.modelYears.length
           ? result.modelYears.join(" / ")
@@ -163,7 +164,7 @@ export function VinDecoderTool({ locale, labels, auditHref, freeCheckHref, initi
                   ? ([
                       [labels.rowModel, `${localModel(model.model, labels)} (${model.code})`],
                       ...(model.generation ? ([[labels.rowGeneration, model.generation]] as const) : []),
-                      [labels.rowProduced, producedText(model, labels)],
+                      ...(producedText(model, labels) ? ([[labels.rowProduced, producedText(model, labels)]] as const) : []),
                     ] as const)
                   : []),
                 [labels.rowRegion, labels.regions[result.region]],

@@ -81,6 +81,11 @@ describe("decodeVinModel - Volvo un BMW", () => {
     expect(model("WBAXX11000D083631")).toBeNull();
   });
 
+  it("iemācītā tabula: tikai markām bez savas shēmas", () => {
+    expect(model("WF0MXXGBWMD012345")).toMatchObject({ make: "Ford", model: "Galaxy", scheme: "learned", produced: null, modelYear: null });
+    expect(model("W0VXXXZZZMD012345")).toBeNull();
+  });
+
   it("ārpus Eiropas VIN modeli nerāda", () => {
     expect(model("1HGCM82633A004352")).toBeNull();
   });
