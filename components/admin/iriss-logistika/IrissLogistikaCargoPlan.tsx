@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import {
   DndContext,
   DragOverlay,
@@ -149,6 +150,8 @@ export function IrissLogistikaCargoPlan({
   const [colorFor, setColorFor] = useState<string | null>(null);
   const [addressFor, setAddressFor] = useState<{ bucket: "next" | "after"; end: "start" | "end" } | null>(null);
   const lists = dragLists ?? planLists;
+  const [portalReady, setPortalReady] = useState(false);
+  useEffect(() => setPortalReady(true), []);
   const carState = useMemo(() => new Map(plan.cars.map((c) => [c.carId, c])), [plan]);
 
   // Pele: vilkšana sākas pēc 5 px (klikšķis paliek klikšķis). Telefons: piespied un turi, tad velc.
@@ -331,14 +334,24 @@ export function IrissLogistikaCargoPlan({
             </section>
           );
         })}
-        <DragOverlay dropAnimation={null}>
-          {dragOrder && dragBucket ? (
-            <div className="iriss-log-cargo-row overlay">
-              <span className="iriss-log-cargo-dot" style={{ background: `var(--iriss-log-cargo-${dragBucket})` }} />
-              <CargoRowText order={dragOrder} />
-            </div>
-          ) : null}
-        </DragOverlay>
+        {/* Nils 29.10 «bloks seko peles kursoram»: kravu kolonnai ir backdrop-filter (stikla kartītes), kas
+            salauž position:fixed - peldošā kartīte bija ārpus ekrāna. Tāpēc DragOverlay portālā uz <body>. */}
+        {portalReady
+          ? createPortal(
+              <DragOverlay dropAnimation={{ duration: 160, easing: "ease-out" }} zIndex={1000}>
+                {dragOrder && dragBucket ? (
+                  // .iriss-log-screen - tikai Loģistikas krāsu mainīgie (portālā ārpus saknes tie citādi pazūd).
+                  <div className="iriss-log-screen">
+                    <div className="iriss-log-cargo-row overlay">
+                      <span className="iriss-log-cargo-dot" style={{ background: `var(--iriss-log-cargo-${dragBucket})` }} />
+                      <CargoRowText order={dragOrder} />
+                    </div>
+                  </div>
+                ) : null}
+              </DragOverlay>,
+              document.body,
+            )
+          : null}
       </DndContext>
     </aside>
   );
