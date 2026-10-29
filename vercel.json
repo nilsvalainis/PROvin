@@ -93,6 +93,9 @@
     },
     "app/api/cron/termini-atgadinajumi/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/cron/vin-memory-sync/route.ts": {
+      "maxDuration": 120
     }
   },
   "crons": [
@@ -151,6 +154,10 @@
     {
       "path": "/api/cron/iriss-offer-deadlines",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/vin-memory-sync",
+      "schedule": "40 3 * * *"
     }
   ]
 }
