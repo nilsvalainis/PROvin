@@ -63,12 +63,18 @@ export function AdminMobileTopBar({
               >
                 {title}
               </h1>
-              <AdminWorkspaceSwitch />
+              {hasBack ? null : <AdminWorkspaceSwitch />}
             </div>
             {subtitle ? <p className="mt-0.5 truncate text-[13px] text-[var(--label-secondary)]">{subtitle}</p> : null}
           </div>
           {trailing ? <div className="flex shrink-0 items-center gap-1.5">{trailing}</div> : null}
         </div>
+        {/* QA 29.10: iekšējās lapās pārslēgs zem virsraksta - nosaukums netiek saīsināts līdz «To...». */}
+        {hasBack ? (
+          <div className="flex">
+            <AdminWorkspaceSwitch />
+          </div>
+        ) : null}
         {children ? <div className="flex flex-col gap-2">{children}</div> : null}
         <IrissPavadzimesMobileBar embedded />
       </header>
