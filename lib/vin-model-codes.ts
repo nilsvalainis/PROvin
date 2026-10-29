@@ -11,6 +11,8 @@ import type { VinDecodeResult } from "@/lib/vin-decode";
  * - Mercedes-Benz: Eiropas VIN 4.-9. zīme ir Baumuster (6 cipari), pirmie 3 = Baureihe. Gads VIN nav.
  * BMW nav: publiskas un pilnīgas 4.-7. zīmes tabulas nav, minēt negribam.
  * Nezināms kods -> `null` (lapa rāda tikai ražotāju un valsti).
+ * VW grupas kods ir platformas kods: vienam kodam var būt vairāki modeļi (5F = Leon III un Ateca), tos rādām visus.
+ * Pārbaudīts 29.10.2026 pret 54 īstiem VW grupas un Mercedes auto (CSDD un izsoļu modelis) - kodi laboti pēc tiem.
  */
 
 export type VinModelInfo = {
@@ -29,11 +31,10 @@ type Gen = { model: string; generation: string; from: number; to: number | null;
 
 const VW: Record<string, Gen> = {
   "1J": { model: "Golf / Bora", generation: "IV", from: 1997, to: 2006 },
-  "1K": { model: "Golf / Jetta", generation: "V (arī Golf VI Variant)", from: 2003, to: 2014 },
+  "1K": { model: "Golf / Golf Plus / Jetta", generation: "V-VI", from: 2003, to: 2014 },
   "5K": { model: "Golf", generation: "VI", from: 2008, to: 2013 },
   AU: { model: "Golf", generation: "VII", from: 2012, to: 2020 },
   CD: { model: "Golf", generation: "VIII", from: 2019, to: null },
-  "5M": { model: "Golf Plus", generation: "", from: 2004, to: 2014 },
   "1T": { model: "Touran", generation: "I-II", from: 2003, to: null },
   "3B": { model: "Passat", generation: "B5", from: 1996, to: 2005 },
   "3C": { model: "Passat / CC", generation: "B6-B8", from: 2005, to: 2024 },
@@ -48,6 +49,7 @@ const VW: Record<string, Gen> = {
   "7M": { model: "Sharan", generation: "I", from: 1995, to: 2010 },
   "7N": { model: "Sharan", generation: "II", from: 2010, to: 2022 },
   "7H": { model: "Transporter / Multivan", generation: "T5-T6", from: 2003, to: 2024 },
+  ST: { model: "Multivan", generation: "T7", from: 2021, to: null },
   "2K": { model: "Caddy", generation: "III-IV", from: 2003, to: 2020 },
   "2E": { model: "Crafter", generation: "I", from: 2006, to: 2016 },
   SY: { model: "Crafter", generation: "II", from: 2016, to: null },
@@ -113,7 +115,7 @@ const SEAT: Record<string, Gen> = {
   "6J": { model: "Ibiza", generation: "IV", from: 2008, to: 2017 },
   KJ: { model: "Ibiza / Arona", generation: "", from: 2017, to: null },
   "1P": { model: "Leon", generation: "II", from: 2005, to: 2012 },
-  "5F": { model: "Leon", generation: "III", from: 2012, to: 2020 },
+  "5F": { model: "Leon / Ateca", generation: "Leon III, Ateca", from: 2012, to: null },
   KL: { model: "Leon", generation: "IV", from: 2020, to: null },
   KM: { model: "Formentor", generation: "", from: 2020, to: null, make: "Cupra" },
   K1: { model: "Born", generation: "", from: 2021, to: null, make: "Cupra" },

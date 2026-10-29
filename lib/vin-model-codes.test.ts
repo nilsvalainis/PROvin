@@ -28,6 +28,13 @@ describe("decodeVinModel - VW grupa", () => {
     expect(model("WVWZZZCDZMW000123")).toMatchObject({ model: "Golf", generation: "VIII", modelYear: 2021 });
   });
 
+  it("platformas kods ar vairākiem modeļiem rāda visus (pārbaudē atrastas kļūdas)", () => {
+    expect(model("VSSZZZ5FZJ6000123")).toMatchObject({ make: "SEAT", model: "Leon / Ateca", modelYear: 2018 });
+    expect(model("WVWZZZ1KZ9W000123")).toMatchObject({ model: "Golf / Golf Plus / Jetta", modelYear: 2009 });
+    expect(model("WVGZZZ1TZLW000123")).toMatchObject({ model: "Touran", modelYear: 2020 });
+    expect(model("WV2ZZZST7RH000123")).toMatchObject({ model: "Multivan", generation: "T7", modelYear: 2024 });
+  });
+
   it("Cupra modeļiem marka Cupra, nevis SEAT", () => {
     expect(model("VSSZZZKMZNR000123")).toMatchObject({ make: "Cupra", model: "Formentor", modelYear: 2022 });
   });
