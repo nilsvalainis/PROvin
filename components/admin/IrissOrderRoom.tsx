@@ -1027,7 +1027,7 @@ export function IrissOrderRoom({
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-[16px] font-bold leading-tight text-[var(--iriss-ink)] md:text-[22px] md:font-semibold">{title}</h1>
+                  <h1 className="text-[16px] font-bold leading-tight text-[var(--iriss-ink)] md:text-[22px] md:font-bold">{title}</h1>
                   <label className="hidden items-center md:inline-flex">
                     <span className="sr-only">Statuss</span>
                     <select

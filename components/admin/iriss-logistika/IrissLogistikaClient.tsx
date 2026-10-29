@@ -841,7 +841,7 @@ export function IrissLogistikaClient({
       {/* Nils 27.10 (makets B): divas zemas rindas; datorā stikla fons, čipi un meklēšana - necaurspīdīgi. */}
       <header className="iriss-log-no-print hidden md:static md:block iriss-log-head">
         <div className="iriss-log-head-r1 flex items-center gap-2.5">
-          <h1 className="text-[20px] font-semibold tracking-tight">Loģistika</h1>
+          <h1 className="text-[22px] font-bold tracking-tight">Loģistika</h1>
           <IrissProjectIndicator />
           <span className="whitespace-nowrap text-[12.5px] text-[var(--ink2)]">
             {counts.active} aktīvi{counts.archive ? ` · ${counts.archive} arhīvā` : ""}

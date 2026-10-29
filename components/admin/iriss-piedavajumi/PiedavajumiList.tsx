@@ -163,7 +163,7 @@ export function PiedavajumiList({
       <div className="pd-top">
         <div>
           <h1>Piedāvājumi</h1>
-          <div className="pd-sub">{irissPdCountLabel(rows.length)} · 1 auto = 1 piedāvājums</div>
+          <div className="pd-sub">{irissPdCountLabel(rows.length)}</div>
         </div>
         <Link className="pd-btn p pd-new-top" href="/admin/iriss/piedavajumi/jauns">
           + Jauns piedāvājums
