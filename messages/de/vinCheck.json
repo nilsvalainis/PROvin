@@ -61,5 +61,22 @@
       "oceania": "Ozeanien",
       "southAmerica": "Südamerika"
     }
+  },
+  "HomeFreeTools": {
+    "title": "Drei Dinge, die du",
+    "titleAccent": "für 0 € tun kannst.",
+    "lead": "Beginne mit einem kostenlosen Schritt. Das volle Audit bestellst du nur, wenn das Auto es wert ist.",
+    "stats": "5,0 Google · 55 Bewertungen · 300+ Audits",
+    "vinTitle": "Kostenloser\nFIN-Check",
+    "vinBody": "Die FIN zeigt sofort Hersteller und Herstellungsland. Bei VW, Audi, Škoda, SEAT und Mercedes auch Modell, Generation und Modelljahr.",
+    "vinPlaceholder": "FIN (17 Zeichen)",
+    "vinSubmit": "Entschlüsseln",
+    "listingTitle": "Inserat\nsenden",
+    "listingBody": "Wir lesen das Inserat wie ein erfahrener Käufer: Preis, Beschreibung, Fotos und Widersprüche darin. Den Kommentar schicken wir kostenlos per E-Mail.",
+    "listingPlaceholder": "Link zum Inserat",
+    "listingSubmit": "Senden",
+    "askTitle": "Frag\nuns",
+    "askBody": "Unsicher, welcher Bericht passt? Fragst du dich, ob ein Auto aus UK, USA oder Japan prüfbar ist? Schreib uns, wir antworten.",
+    "askEmail": "E-Mail"
   }
 }

@@ -12,6 +12,7 @@ export const CLIENT_MESSAGE_NAMESPACES = [
   "Order",
   "ProvinSelect",
   "RiskAuditGuide",
+  "HomeFreeTools",
   "Samples",
   "SiteRail",
 ] as const;

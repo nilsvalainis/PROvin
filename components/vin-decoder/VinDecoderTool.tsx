@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { decodeVin, type VinDecodeResult, type VinRegion } from "@/lib/vin-decode";
 import { decodeVinModel, type VinModelInfo } from "@/lib/vin-model-codes";
 
@@ -60,6 +60,15 @@ function producedText(m: VinModelInfo, labels: VinDecoderLabels): string {
 export function VinDecoderTool({ locale, labels, auditHref, freeCheckHref, initialVin }: Props) {
   const [value, setValue] = useState(initialVin ?? "");
   const [result, setResult] = useState<VinDecodeResult | null>(() => (initialVin ? decodeVin(initialVin) : null));
+
+  // `?vin=` no sākumlapas kartītes: lapa paliek statiska, VIN nolasa pārlūkā.
+  useEffect(() => {
+    if (initialVin) return;
+    const fromUrl = new URLSearchParams(window.location.search).get("vin")?.slice(0, 24);
+    if (!fromUrl) return;
+    setValue(fromUrl);
+    setResult(decodeVin(fromUrl));
+  }, [initialVin]);
 
   const countryName = useMemo(() => {
     try {

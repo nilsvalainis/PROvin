@@ -16,6 +16,7 @@ import {
   vinOrPlateErrorMessage,
 } from "@/lib/order-field-validation";
 import { FREE_EVAL_SECTION_ID, FREE_EVAL_SECTION_ID_LEGACY } from "@/lib/paths";
+import { FREE_EVAL_PREFILL_EVENT, type FreeEvalPrefillDetail } from "@/lib/free-eval-prefill";
 import { HEARD_ABOUT_OPTION_VALUES, isHeardAboutValue } from "@/lib/stripe-session";
 import { trackMetaLead } from "@/lib/meta-pixel";
 import { localizedEmailInputProps } from "@/lib/email-input-validity";
@@ -66,6 +67,21 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
     }
     safeTrack("risk_guide_view", queuePaused ? { paused: true } : undefined);
   }, [queuePaused]);
+
+  // Sākumlapas kartīte "Iesūti sludinājumu": ieliek saiti un atver formu (pārējie lauki paliek klientam).
+  useEffect(() => {
+    function onPrefill(event: Event) {
+      const detail = (event as CustomEvent<FreeEvalPrefillDetail>).detail;
+      if (detail?.listingUrl) setListingUrl(detail.listingUrl);
+      if (paused) return;
+      setExpanded(true);
+      setFormError(null);
+      setRateLimited(false);
+      safeTrack("risk_guide_expand", { from: "home_free_tools" });
+    }
+    window.addEventListener(FREE_EVAL_PREFILL_EVENT, onPrefill);
+    return () => window.removeEventListener(FREE_EVAL_PREFILL_EVENT, onPrefill);
+  }, [paused]);
 
   function openForm() {
     if (paused || expanded) return;
