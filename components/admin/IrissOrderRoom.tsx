@@ -329,7 +329,7 @@ function Segmented({
         ) : null}
       </span>
       <div
-        className={`${grid ? "grid w-full grid-cols-2" : "inline-flex w-fit max-w-full flex-wrap"} gap-[3px] rounded-[11px] bg-[var(--iriss-surface-2)] p-[3px]`}
+        className={`${grid ? "grid w-full grid-cols-2" : "inline-flex w-fit max-w-full flex-wrap"} gap-1.5`}
       >
         {options.map((o) => {
           const on = value === o.value;
@@ -339,9 +339,12 @@ function Segmented({
               type="button"
               aria-pressed={on}
               onClick={() => onChange(on && o.value ? "" : o.value)}
-              className={`min-h-[32px] whitespace-nowrap rounded-lg px-3 text-[13px] font-semibold ${
-                on ? "bg-white text-[var(--iriss-ink)] shadow-[0_0_0_1px_var(--iriss-ink),0_1px_2px_rgba(0,0,0,0.06)]" : "bg-transparent text-[var(--iriss-ink-2)]"
-              }`}
+              className={`min-h-[32px] whitespace-nowrap rounded-lg px-3 text-[13px] font-semibold ${on ? "text-[var(--iriss-ink)]" : "text-[var(--iriss-ink-2)]"}`}
+              // Nils 29.10 «šīm pogām nav vajadzīgs fons»: tikai rāmis (inline - telefona tēma citādi uzliek fonu).
+              style={{
+                background: "transparent",
+                boxShadow: on ? "inset 0 0 0 1.5px var(--iriss-ink)" : "inset 0 0 0 1px var(--iriss-line-strong)",
+              }}
             >
               {o.label}
             </button>

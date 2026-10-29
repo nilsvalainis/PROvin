@@ -50,9 +50,10 @@ export function irissOrderProgress(rec: IrissPasutijumsRecord): { done: number; 
 
 /** Piezīmes aģentam un iekšējās - viens lauks (Nils 28.10); abu vecie teksti saglabājas kopā. */
 export function irissMergedInternalNotes(rec: Pick<IrissPasutijumsRecord, "agentNotes" | "internalNotes">): string {
+  // Nils 29.10: nedrīkst apgriezt - rakstot atstarpe teksta beigās citādi pazūd pēc katra burta.
   return [rec.agentNotes, rec.internalNotes]
-    .map((x) => (x ?? "").trim())
-    .filter(Boolean)
+    .map((x) => x ?? "")
+    .filter((x) => x.trim())
     .join("\n\n");
 }
 

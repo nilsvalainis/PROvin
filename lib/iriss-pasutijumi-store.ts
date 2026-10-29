@@ -1221,6 +1221,7 @@ export async function writeIrissPasutijums(
     out = await persistOfferImages(r, out);
     out = retainStoredIrissCriteria(existing, out);
     out = retainGoogleContactFields(existing, out);
+    out = retainIrissOmittedFields(existing, record, out);
     out = retainIrissOfferDeadlines(existing, out);
     out = {
       ...out,
@@ -1561,4 +1562,24 @@ export async function restoreIrissPasutijums(id: string): Promise<{ ok: true; re
   const w = await writeIrissPasutijums(next, { expectedWorkspaceRevision: irissWorkspaceRevision(existing) });
   if (!w.ok) return { ok: false, error: w.error };
   return { ok: true, record: w.record };
+}
+
+/**
+ * Nils 29.10: ja pieprasījumā lauka nav vispār (vecs klients / cits rakstītājs), saglabāšana to nedrīkst izdzēst.
+ * Tukšs/notīrīts lauks nāk ar atslēgu un tiek saglabāts kā notīrīts.
+ */
+const IRISS_RETAIN_WHEN_OMITTED = ["advance", "communicationEvents", "inspectionPhotos", "documentPhotos"] as const;
+
+export function retainIrissOmittedFields(
+  existing: IrissPasutijumsRecord | null,
+  incoming: Partial<IrissPasutijumsRecord>,
+  out: IrissPasutijumsRecord,
+): IrissPasutijumsRecord {
+  if (!existing) return out;
+  let next = out;
+  for (const key of IRISS_RETAIN_WHEN_OMITTED) {
+    if (key in incoming) continue;
+    if (existing[key] !== undefined) next = { ...next, [key]: existing[key] } as IrissPasutijumsRecord;
+  }
+  return next;
 }

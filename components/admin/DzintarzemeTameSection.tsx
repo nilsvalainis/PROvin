@@ -533,7 +533,7 @@ function TameSegmented({
   onChange: (value: string) => void;
 }) {
   const seg = (
-    <div role="radiogroup" aria-label={label} className="inline-flex max-w-full flex-wrap gap-[3px] rounded-[11px] bg-[var(--iriss-surface-2)] p-[3px]">
+    <div role="radiogroup" aria-label={label} className="inline-flex max-w-full flex-wrap gap-1.5">
       {options.map((o) => {
         const on = o.value === value;
         return (
@@ -544,8 +544,13 @@ function TameSegmented({
             aria-checked={on}
             onClick={() => onChange(o.value)}
             className={`min-h-[32px] whitespace-nowrap rounded-lg px-3 text-[13px] font-semibold ${o.sub ? "flex flex-col items-start justify-center py-1 text-left" : ""} ${
-              on ? "bg-white text-[var(--iriss-ink)] shadow-[0_0_0_1px_var(--iriss-ink)]" : "bg-transparent text-[var(--iriss-ink-2)]"
+              on ? "text-[var(--iriss-ink)]" : "text-[var(--iriss-ink-2)]"
             }`}
+            // Bez fona, tikai rāmis (Nils 29.10).
+            style={{
+              background: "transparent",
+              boxShadow: on ? "inset 0 0 0 1.5px var(--iriss-ink)" : "inset 0 0 0 1px var(--iriss-line-strong)",
+            }}
           >
             {o.label}
             {/* QA 29.10: summa otrā rindā - trīs varianti satilpst vienā rindā. */}
