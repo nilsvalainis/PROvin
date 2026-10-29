@@ -3,7 +3,10 @@
  * lai to pašu izmanto arī POST /api/admin/iriss-pasutijumi/[id]/offers.
  */
 
+import { normalizeIrissAdvanceDraft } from "@/lib/iriss-advance";
+import { normalizeIrissCommunicationEvents } from "@/lib/iriss-communication-timeline";
 import { parseIrissCriteriaV1 } from "@/lib/iriss-criteria-types";
+import { normalizeIrissOrderPhotoAlbum } from "@/lib/iriss-order-photos";
 import { normalizeGeneratedDocuments } from "@/lib/iriss-generated-documents";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import { normalizeIrissOfferBlocks } from "@/lib/iriss-offer-blocks";
@@ -201,6 +204,11 @@ export function parseIrissPasutijumsPatchBody(id: string, body: unknown): IrissP
     ...parseIrissPasutijumsListingLinks(o),
     ...(o.ecarstradeLinksManual === true ? { ecarstradeLinksManual: true } : {}),
     dzintarzemeTameDraft: normalizeIrissDzintarzemeTameDraft(o.dzintarzemeTameDraft),
+    // Nils 29.10 «aizpildot avansu, pie saglabāšanas lauki nodzēšas»: šie lauki agrāk netika pieņemti vispār.
+    ...("advance" in o ? { advance: normalizeIrissAdvanceDraft(o.advance) } : {}),
+    ...("communicationEvents" in o ? { communicationEvents: normalizeIrissCommunicationEvents(o.communicationEvents) } : {}),
+    ...("inspectionPhotos" in o ? { inspectionPhotos: normalizeIrissOrderPhotoAlbum(o.inspectionPhotos, parseIrissOfferAttachmentsFromBody) } : {}),
+    ...("documentPhotos" in o ? { documentPhotos: normalizeIrissOrderPhotoAlbum(o.documentPhotos, parseIrissOfferAttachmentsFromBody) } : {}),
     offers: parseIrissOffersFromBody(o),
     generatedDocuments: normalizeGeneratedDocuments(o.generatedDocuments),
     ...pickIrissPasutijumsAuditFields(o),
