@@ -14,6 +14,7 @@ import { IrissLogistikaCarPopup } from "@/components/admin/iriss-logistika/Iriss
 import { CabinetPhoneMapAndCard, LogisticsCarEndAction } from "@/components/admin/iriss-logistika/IrissLogistikaCarsTable";
 import { autoparksSaitesHref } from "@/lib/iriss-car-share";
 import { IrissLogistikaCargoPlan, type ManualCarInput } from "@/components/admin/iriss-logistika/IrissLogistikaCargoPlan";
+import { CargoPlanBoundary } from "@/components/admin/iriss-logistika/CargoPlanBoundary";
 import { IrissLogistikaMap, type IrissLogistikaMapHandle } from "@/components/admin/iriss-logistika/IrissLogistikaMap";
 import { IrissLogistikaNewPurchase } from "@/components/admin/iriss-logistika/IrissLogistikaNewPurchase";
 import { irissCreateOfferHref } from "@/components/admin/IrissCreateOfferButton";
@@ -276,32 +277,48 @@ export function IrissLogistikaClient({
       .catch(() => undefined);
   }, []);
 
+  /**
+   * Nils 29.10 «kārtojot kartītes lēkā / uzmet kļūdu»: ātri velkot, vecākas saglabāšanas atbilde pārrakstīja
+   * jaunāko secību, un PUT varēja pienākt serverī nepareizā secībā. Tagad saglabāšanas iet pēc kārtas,
+   * novecojušu nesūta, un ekrānu maina tikai jaunākās saglabāšanas atbilde.
+   */
+  const saveSeq = useRef(0);
+  const saveChain = useRef<Promise<void>>(Promise.resolve());
   async function persistCargoPlan(next: CargoPlanState) {
     const before = cargoPlan;
+    const seq = ++saveSeq.current;
     setCargoPlan(next);
-    const res = await fetch("/api/admin/iriss-logistics/cargo-plan", {
-      method: "PUT",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan: next }),
-    }).catch(() => null);
-    if (!res?.ok) {
-      setCargoPlan(before);
-      setNotice("Kravu plānu neizdevās saglabāt. Mēģini vēlreiz.");
-      return;
-    }
-    const body = (await res.json()) as {
-      plan?: CargoPlanState;
-      pickups?: CabinetPickup[];
-      docCounts?: Record<string, { have: number; expected: number }>;
-      templates?: CargoRouteTemplate[];
-      pickupDocCarIds?: string[];
+    const run = async () => {
+      if (seq !== saveSeq.current) return;
+      const res = await fetch("/api/admin/iriss-logistics/cargo-plan", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: next }),
+      }).catch(() => null);
+      const latest = seq === saveSeq.current;
+      if (!res?.ok) {
+        if (latest) {
+          setCargoPlan(before);
+          setNotice("Kravu plānu neizdevās saglabāt. Mēģini vēlreiz.");
+        }
+        return;
+      }
+      const body = (await res.json().catch(() => ({}))) as {
+        plan?: CargoPlanState;
+        pickups?: CabinetPickup[];
+        docCounts?: Record<string, { have: number; expected: number }>;
+        templates?: CargoRouteTemplate[];
+        pickupDocCarIds?: string[];
+      };
+      if (body.pickups) setCargoPickups(body.pickups);
+      if (body.docCounts) setCargoDocs(body.docCounts);
+      if (body.pickupDocCarIds) setPickupDocCarIds(body.pickupDocCarIds);
+      if (body.templates) setCargoTemplates(body.templates);
+      if (latest && body.plan) setCargoPlan(body.plan);
     };
-    if (body.plan) setCargoPlan(body.plan);
-    if (body.pickups) setCargoPickups(body.pickups);
-    if (body.docCounts) setCargoDocs(body.docCounts);
-    if (body.pickupDocCarIds) setPickupDocCarIds(body.pickupDocCarIds);
-    if (body.templates) setCargoTemplates(body.templates);
+    saveChain.current = saveChain.current.then(run, run);
+    await saveChain.current;
   }
 
   /** Jaunākais plāns un pasūtījumi: aprēķina beigās pārbaudām, vai pa to laiku nekas nav mainījies. */
@@ -1186,6 +1203,7 @@ export function IrissLogistikaClient({
             </div>
           ) : (
             <div className="iriss-log-cargo-col space-y-3 lg:col-start-2 lg:row-start-1">
+              <CargoPlanBoundary>
               <IrissLogistikaCargoPlan
                 orders={visibleOrders}
                 plan={cargoPlan}
@@ -1209,6 +1227,7 @@ export function IrissLogistikaClient({
                   setCabinetOpen(true);
                 }}
               />
+              </CargoPlanBoundary>
             </div>
           )}
           {/* Auto kartīte pēc klikšķa uz adatas: datorā peld virs kartes (Nils 27.10, makets B), telefonā zem kravām. */}
