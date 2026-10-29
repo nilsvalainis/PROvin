@@ -746,6 +746,7 @@ export function IrissPasutijumiListClient({
           <Link
             href="/admin/iriss/pasutijumi/new"
             className="inline-flex h-[38px] shrink-0 items-center gap-1.5 rounded-full bg-[var(--iriss-graphite)] px-4 text-[13px] font-semibold text-[var(--iriss-on-graphite)]"
+            style={{ fontWeight: 600 }}
           >
             + Jauns pasūtījums
           </Link>
