@@ -3,6 +3,7 @@ import { getClientIpFromRequest } from "@/lib/client-ip";
 import { fetchFreeVinDetails } from "@/lib/free-vin-details";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { decodeVin } from "@/lib/vin-decode";
+import { decodeVinModel } from "@/lib/vin-model-codes";
 
 export const runtime = "nodejs";
 export const maxDuration = 20;
@@ -13,7 +14,7 @@ const BURST_WINDOW_MS = 10 * 60 * 1000;
 const DAY_MAX = 100;
 const DAY_WINDOW_MS = 24 * 60 * 60 * 1000;
 
-/** Publisks bezmaksas VIN dekods: lokālā WMI daļa + NHTSA vPIC (tikai Ziemeļamerikas VIN: rūpnīca, motors). */
+/** Publisks bezmaksas VIN dekods: lokālā WMI daļa, modelis no ražotāja koda (VW grupa, Mercedes) + NHTSA vPIC (tikai Ziemeļamerikas VIN). */
 export async function GET(req: Request) {
   const vinRaw = new URL(req.url).searchParams.get("vin") ?? "";
   const local = decodeVin(vinRaw.slice(0, 40));
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
 
   const details = await fetchFreeVinDetails(local);
   return NextResponse.json(
-    { vin: local.vin, local, ...details },
+    { vin: local.vin, local, model: decodeVinModel(local), ...details },
     // NHTSA dati par VIN nemainās; CDN kešs taupa limitus un NHTSA.
     { headers: { "Cache-Control": details.vpic ? "public, s-maxage=604800, stale-while-revalidate=86400" : "no-store" } },
   );
