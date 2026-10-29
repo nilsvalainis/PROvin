@@ -12,6 +12,7 @@ import type { V2IegadeView } from "@/lib/iriss-autoparks-v2-iegade";
 import { groupIegadeFiles, IEGADE_DOC_GROUP_LV, IEGADE_DOC_TYPE_OPTIONS, type V2IegadeFile } from "@/lib/iriss-autoparks-v2-iegade-files";
 import { CABINET_DOC_TYPE_LABEL, type CabinetDocType } from "@/lib/iriss-logistics-cabinet";
 import type { CabinetPaneProps } from "./AutoparksV2Cabinet";
+import { ap2PatchJson } from "./ap2-save";
 import { DocThumb } from "./DocThumb";
 import { FileModal, LinkIcon, PdfIcon } from "./FileModal";
 
@@ -160,6 +161,7 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
   const [costOpen, setCostOpen] = useState(false);
   const [open, setOpen] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [retry, setRetry] = useState<(() => void) | null>(null);
   const [busy, setBusy] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<V2IegadeFile | null>(null);
   const [editTarget, setEditTarget] = useState<V2IegadeFile | null>(null);
@@ -238,16 +240,13 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
   async function save(key: Key, value: string) {
     setEditing(null);
     setError("");
-    const res = await fetch(api, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ [key]: value }),
-    }).catch(() => null);
-    const d = (await res?.json().catch(() => null)) as {
-      iegade?: V2IegadeView;
-    } | null;
-    if (res?.ok && d?.iegade) setView(d.iegade);
-    else setError("Neizdevās saglabāt");
+    setRetry(null);
+    const r = await ap2PatchJson<{ iegade?: V2IegadeView }>(api, { [key]: value });
+    if (r.ok && r.data?.iegade) setView(r.data.iegade);
+    else {
+      setError(value.trim() ? `Neizdevās saglabāt «${value.trim()}»` : "Neizdevās saglabāt");
+      setRetry(() => () => void save(key, value));
+    }
   }
 
   const urlFor = useCallback(
@@ -468,7 +467,19 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
         onDelete={setDeleteTarget}
         urlFor={urlFor}
       />
-      {error ? <p className="ap2-err">{error}</p> : null}
+      {error ? (
+        <p className="ap2-err" role="alert">
+          {error}
+          {retry ? (
+            <>
+              {" "}
+              <button type="button" className="ap2-retry" onClick={() => { const r = retry; setRetry(null); r(); }}>
+                Mēģināt vēlreiz
+              </button>
+            </>
+          ) : null}
+        </p>
+      ) : null}
       {open != null ? (
         <FileModal
           files={view.files}

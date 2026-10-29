@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { ap2PatchJson } from "./ap2-save";
 import { AUTOPARKS_STATUS_LV, type AutoparksStatus } from "@/lib/iriss-autoparks";
 import { AUTOPARKS_V2_STATUS_ORDER, V2_STATUS_UNDO_CLIENT_MS, type AutoparksV2Basics } from "@/lib/iriss-autoparks-v2";
 import {
@@ -331,13 +332,8 @@ export function OwnerBadge({ basics, canEdit, onBasics }: { basics: AutoparksV2B
   async function change(next: string) {
     if (next === basics.owner) return;
     setErr(false);
-    const res = await fetch(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ owner: next }),
-    }).catch(() => null);
-    const data = (await res?.json().catch(() => null)) as { basics?: AutoparksV2Basics } | null;
-    if (res?.ok && data?.basics) onBasics(data.basics);
+    const r = await ap2PatchJson<{ basics?: AutoparksV2Basics }>(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`, { owner: next });
+    if (r.ok && r.data?.basics) onBasics(r.data.basics);
     else setErr(true);
   }
   // Makets B (Nils 27.10): kontūra + krāsains punkts; izvēle ir neredzama virs žetona (atveras kā parasts saraksts).
@@ -374,13 +370,8 @@ export function OwnerCard({ basics, onBasics }: { basics: AutoparksV2Basics; onB
   async function change(next: "IRISS" | "DZA") {
     if (next === basics.owner) return;
     setErr(false);
-    const res = await fetch(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ owner: next }),
-    }).catch(() => null);
-    const data = (await res?.json().catch(() => null)) as { basics?: AutoparksV2Basics } | null;
-    if (res?.ok && data?.basics) onBasics(data.basics);
+    const r = await ap2PatchJson<{ basics?: AutoparksV2Basics }>(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`, { owner: next });
+    if (r.ok && r.data?.basics) onBasics(r.data.basics);
     else setErr(true);
   }
   return (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ap2PatchJson } from "./ap2-save";
 import type { AutoparksV2Basics } from "@/lib/iriss-autoparks-v2";
 import { fmtCm3, fmtDateLv, fmtKm, fmtKw, parseNumberFieldInput } from "@/lib/iriss-autoparks-v2-format";
 
@@ -38,6 +39,8 @@ const NUM_KEYS: ReadonlySet<EditKey> = new Set(["displacementCm3", "powerKw", "m
 export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2Basics; onBasics: (b: AutoparksV2Basics) => void }) {
   const [editing, setEditing] = useState<EditKey | null>(null);
   const [error, setError] = useState("");
+  // Ja saglabāšana neizdodas, ievadītā vērtība nepazūd - «Mēģināt vēlreiz».
+  const [retry, setRetry] = useState<(() => void) | null>(null);
 
   async function save(key: EditKey, value: string) {
     setEditing(null);
@@ -51,17 +54,21 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
       return;
     }
     if (NUM_KEYS.has(key) && num !== null && String(num) === current) return;
-    const res = await fetch(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ [key]: NUM_KEYS.has(key) ? num : next }),
-    }).catch(() => null);
-    const data = (await res?.json().catch(() => null)) as { basics?: AutoparksV2Basics; error?: string } | null;
-    if (res?.ok && data?.basics) onBasics(data.basics);
+    setRetry(null);
+    const r = await ap2PatchJson<{ basics?: AutoparksV2Basics; error?: string }>(
+      `/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`,
+      { [key]: NUM_KEYS.has(key) ? num : next },
+    );
+    const data = r.data;
+    if (r.ok && data?.basics) onBasics(data.basics);
     else if (data?.error === "invalid_power") setError("Jauda nav ticama (1-2000 kW) - lauks netika mainīts");
     else if (data?.error === "invalid_displacement") setError("Tilpums nav ticams (50-20000 cm3) - lauks netika mainīts");
     else if (data?.error === "invalid_mileage") setError("Nobraukums nav ticams - lauks netika mainīts");
-    else setError(key === "vin" ? "Nederīgs VIN (17 zīmes, bez I/O/Q)" : "Neizdevās saglabāt");
+    else if (key === "vin" && r.status !== null && r.status < 500) setError("Nederīgs VIN (17 zīmes, bez I/O/Q)");
+    else {
+      setError(`Neizdevās saglabāt «${next}»`);
+      setRetry(() => () => void save(key, value));
+    }
   }
 
   const editable = (key: EditKey, label: string, value: string, shown: string, type: "text" | "date" | "number" = "text") => {
@@ -112,14 +119,15 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
 
   async function saveClientOrder(next: boolean) {
     setError("");
-    const res = await fetch(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clientOrder: next ? "1" : "0" }),
-    }).catch(() => null);
-    const data = (await res?.json().catch(() => null)) as { basics?: AutoparksV2Basics } | null;
-    if (res?.ok && data?.basics) onBasics(data.basics);
-    else setError("Neizdevās saglabāt");
+    setRetry(null);
+    const r = await ap2PatchJson<{ basics?: AutoparksV2Basics }>(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`, {
+      clientOrder: next ? "1" : "0",
+    });
+    if (r.ok && r.data?.basics) onBasics(r.data.basics);
+    else {
+      setError("Neizdevās saglabāt");
+      setRetry(() => () => void saveClientOrder(next));
+    }
   }
 
   return (
@@ -149,7 +157,19 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
         {editable("engine", "Dzinējs", basics.engine.value, basics.engine.value)}
         {editable("tyreSize", "Riepas", basics.tyreSize.value, basics.tyreSize.value)}
       </div>
-      {error ? <p className="ap2-err">{error}</p> : null}
+      {error ? (
+        <p className="ap2-err" role="alert">
+          {error}
+          {retry ? (
+            <>
+              {" "}
+              <button type="button" className="ap2-retry" onClick={() => { const r = retry; setRetry(null); r(); }}>
+                Mēģināt vēlreiz
+              </button>
+            </>
+          ) : null}
+        </p>
+      ) : null}
     </div>
   );
 }
