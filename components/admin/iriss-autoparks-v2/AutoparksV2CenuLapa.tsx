@@ -11,6 +11,7 @@ import type { V2PriceSheetSafety } from "@/lib/iriss-autoparks-v2";
 import { fmtEurRound } from "@/lib/iriss-autoparks-v2-format";
 import type { CabinetPaneProps } from "./AutoparksV2Cabinet";
 import { A4Sheet } from "./A4Sheet";
+import { ap2PatchJson } from "./ap2-save";
 
 type Key = "displayName" | "listPriceEur";
 
@@ -23,6 +24,7 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
   const [edit, setEdit] = useState<Key | null>(null);
   const [newHl, setNewHl] = useState("");
   const [error, setError] = useState("");
+  const [retry, setRetry] = useState<(() => void) | null>(null);
   const api = `/api/admin/iriss-autoparks-v2/cenu-lapa/${encodeURIComponent(carId)}`;
 
   useEffect(() => {
@@ -43,19 +45,25 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
   async function save(body: Record<string, string>) {
     setEdit(null);
     setError("");
-    const r = await fetch(api, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).catch(() => null);
-    const d = (await r?.json().catch(() => null)) as { cenuLapa?: V2PriceSheet } | null;
-    if (r?.ok && d?.cenuLapa) setS(d.cenuLapa);
-    else setError("Neizdevās saglabāt");
+    setRetry(null);
+    const r = await ap2PatchJson<{ cenuLapa?: V2PriceSheet }>(api, body);
+    if (r.ok && r.data?.cenuLapa) setS(r.data.cenuLapa);
+    else {
+      setError("Neizdevās saglabāt");
+      setRetry(() => () => void save(body));
+    }
   }
 
   async function saveSafety(next: V2PriceSheetSafety) {
     setError("");
     setS((prev) => (prev ? { ...prev, safetyState: next, roadworthy: next.roadworthy } : prev));
-    const r = await fetch(api, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ safety: next }) }).catch(() => null);
-    const d = (await r?.json().catch(() => null)) as { cenuLapa?: V2PriceSheet } | null;
-    if (r?.ok && d?.cenuLapa) setS(d.cenuLapa);
-    else setError("Neizdevās saglabāt");
+    setRetry(null);
+    const r = await ap2PatchJson<{ cenuLapa?: V2PriceSheet }>(api, { safety: next });
+    if (r.ok && r.data?.cenuLapa) setS(r.data.cenuLapa);
+    else {
+      setError("Neizdevās saglabāt");
+      setRetry(() => () => void saveSafety(next));
+    }
   }
 
   if (!s) return error ? <p className="ap2-err">{error}</p> : null;
@@ -149,7 +157,19 @@ export function AutoparksV2CenuLapa({ carId }: CabinetPaneProps) {
           ))}
         </div>
         <SafetyTable state={s.safetyState} onChange={(next) => void saveSafety(next)} />
-        {error ? <p className="ap2-err">{error}</p> : null}
+        {error ? (
+          <p className="ap2-err" role="alert">
+            {error}
+            {retry ? (
+            <>
+              {" "}
+              <button type="button" className="ap2-retry" onClick={() => { const r = retry; setRetry(null); r(); }}>
+                Mēģināt vēlreiz
+              </button>
+            </>
+          ) : null}
+          </p>
+        ) : null}
       </div>
       <div className="ap2-a4wrap">
         <a className="ap2-btn dark ap2-a4btn" href={`/admin/iriss/autoparks-v2/${encodeURIComponent(carId)}/cenu-lapa`} target="_blank" rel="noreferrer">

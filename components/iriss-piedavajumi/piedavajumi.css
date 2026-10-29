@@ -1974,3 +1974,48 @@ button.pd-lv {
     box-shadow: inset 0 0 0 1px var(--iriss-line-strong);
   }
 }
+
+/* Drošā saglabāšana (Nils 29.10): stāvoklis galvenē un rezerves kopijas josla. */
+.pdv .pd-save-st {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--iriss-surface-2);
+  color: var(--iriss-ink-2);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pdv .pd-save-st:is(.error, .offline) {
+  background: var(--iriss-bad-soft);
+  color: var(--iriss-bad);
+}
+.pdv .pd-backup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: var(--iriss-surface);
+  box-shadow: inset 0 0 0 1px var(--iriss-warn);
+  font-size: 13px;
+}
+.pdv .pd-backup > span {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+.pdv .pd-backup .pd-btn.p {
+  border-radius: 999px;
+  background: var(--iriss-graphite);
+  border-color: var(--iriss-graphite);
+  color: var(--iriss-on-graphite);
+}
+@media (max-width: 900px) {
+  .pdv .pd-save-st {
+    height: 36px;
+  }
+}

@@ -2,7 +2,20 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChangesGuard";
+import {
+  clearIrissLocalBackup,
+  formatIrissBackupTime,
+  formatIrissSavedTime,
+  irissAutosaveRetryDelayMs,
+  irissAutosaveShouldRetry,
+  irissOrderSaveStatus,
+  irissSameJson,
+  readIrissLocalBackup,
+  writeIrissLocalBackup,
+  type IrissLocalBackup,
+} from "@/lib/iriss-order-save-status";
 import { PdPhotoSorter } from "./PdPhotoSorter";
 import { PdAuto1Blocks, PdToggles, type PdToggleTarget } from "@/components/iriss-piedavajumi/PdAuto1Blocks";
 import { PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
@@ -283,6 +296,21 @@ export function PiedavajumsDetail({
 
   const editable = isIrissPdEditable(rec.status);
   const dirty = JSON.stringify(d) !== JSON.stringify(draftOf(rec));
+  // Drošā saglabāšana (Nils 29.10): automātiski, ar atkārtošanu, stāvokli galvenē un rezerves kopiju pārlūkā.
+  const dRef = useRef(d);
+  dRef.current = d;
+  const recRef = useRef(rec);
+  recRef.current = rec;
+  const inFlight = useRef(false);
+  const queued = useRef(false);
+  const retryTimer = useRef<number | null>(null);
+  const retryAttempt = useRef(0);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [autoErr, setAutoErr] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
+  const [backupOffer, setBackupOffer] = useState<IrissLocalBackup<Draft> | null>(null);
+  const backupPending = useRef(true);
+  const backupKey = `iriss-pd-backup:${initial.id}`;
   const merged: IrissPiedavajums = { ...rec, ...d };
   const actions = irissPdAvailableActions(rec.status);
   const blockers = irissPdSendBlockers(merged, Date.now());
@@ -314,32 +342,159 @@ export function PiedavajumsDetail({
     setD((cur) => irissPdRebaseDraft(cur, sent, draftOf(next)));
   }
 
-  async function save(): Promise<boolean> {
-    if (!dirty) return true;
-    setBusy("save");
-    setErr("");
+  async function save(opts?: { silent?: boolean }): Promise<boolean> {
+    const silent = opts?.silent === true;
+    if (inFlight.current) {
+      if (silent) {
+        queued.current = true;
+        return false;
+      }
+      // Poga / darbība: sagaida automātisko saglabāšanu, tad saglabā atlikušo.
+      const started = Date.now();
+      while (inFlight.current && Date.now() - started < 20_000) await new Promise((r) => window.setTimeout(r, 100));
+    }
+    const cur = dRef.current;
+    const base = draftOf(recRef.current);
+    if (JSON.stringify(cur) === JSON.stringify(base)) return true;
+    inFlight.current = true;
+    if (silent) setAutoSaving(true);
+    else {
+      setBusy("save");
+      setErr("");
+    }
+    let ok = false;
+    let failure = "";
     try {
       const patch: Record<string, unknown> = {};
-      const base = draftOf(rec);
-      const sent = d;
-      for (const k of Object.keys(d) as Array<keyof Draft>) if (JSON.stringify(d[k]) !== JSON.stringify(base[k])) patch[k] = d[k];
-      const res = await fetch(`/api/admin/iriss-piedavajumi/${rec.id}`, {
+      for (const k of Object.keys(cur) as Array<keyof Draft>) if (JSON.stringify(cur[k]) !== JSON.stringify(base[k])) patch[k] = cur[k];
+      const res = await fetch(`/api/admin/iriss-piedavajumi/${recRef.current.id}`, {
         method: "PATCH",
         credentials: "include",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(patch),
       });
-      const data = (await res.json()) as { ok?: boolean; record?: IrissPiedavajums; message?: string };
-      if (!data.ok || !data.record) throw new Error(data.message || "Neizdevās saglabāt.");
-      applyRecord(data.record, sent);
-      return true;
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; record?: IrissPiedavajums; message?: string };
+      if (!data.ok || !data.record) throw new Error(data.message || `Neizdevās saglabāt (${res.status}).`);
+      applyRecord(data.record, cur);
+      ok = true;
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Neizdevās saglabāt.");
-      return false;
+      failure = e instanceof Error ? e.message : "Neizdevās saglabāt.";
+      if (!silent) setErr(failure);
     } finally {
-      setBusy("");
+      inFlight.current = false;
+      if (silent) setAutoSaving(false);
+      else setBusy("");
     }
+    if (retryTimer.current) {
+      window.clearTimeout(retryTimer.current);
+      retryTimer.current = null;
+    }
+    if (ok) {
+      retryAttempt.current = 0;
+      setAutoErr(null);
+    } else if (irissAutosaveShouldRetry(failure)) {
+      setAutoErr(failure);
+      if (retryAttempt.current < 8) {
+        const delay = irissAutosaveRetryDelayMs(retryAttempt.current);
+        retryAttempt.current += 1;
+        retryTimer.current = window.setTimeout(() => {
+          retryTimer.current = null;
+          void saveRef.current({ silent: true });
+        }, delay);
+      }
+    }
+    if (queued.current) {
+      queued.current = false;
+      window.setTimeout(() => void saveRef.current({ silent: true }), 0);
+    }
+    return ok;
   }
+  const saveRef = useRef(save);
+  saveRef.current = save;
+
+  // Automātiski 1,2 s pēc pēdējās izmaiņas (ne darbības laikā - tā pati saglabā pirms sevis).
+  useEffect(() => {
+    if (!dirty || busy !== "") return;
+    const t = window.setTimeout(() => void saveRef.current({ silent: true }), 1200);
+    return () => window.clearTimeout(t);
+  }, [d, dirty, busy]);
+
+  useEffect(() => {
+    setOffline(navigator.onLine === false);
+    const off = () => setOffline(true);
+    const on = () => {
+      setOffline(false);
+      void saveRef.current({ silent: true });
+    };
+    window.addEventListener("offline", off);
+    window.addEventListener("online", on);
+    return () => {
+      window.removeEventListener("offline", off);
+      window.removeEventListener("online", on);
+      if (retryTimer.current) window.clearTimeout(retryTimer.current);
+    };
+  }, []);
+
+  // Rezerves kopija: ja iepriekšējā reizē izmaiņas nepaspēja aiziet uz serveri, piedāvā atjaunot.
+  useEffect(() => {
+    let storage: Storage;
+    try {
+      storage = window.localStorage;
+    } catch {
+      backupPending.current = false;
+      return;
+    }
+    const b = readIrissLocalBackup<Draft>(storage, backupKey, new Date());
+    if (b && !irissSameJson(b.data, draftOf(initial))) setBackupOffer(b);
+    else {
+      backupPending.current = false;
+      clearIrissLocalBackup(storage, backupKey);
+    }
+    // Tikai atverot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (backupPending.current) return;
+    let storage: Storage;
+    try {
+      storage = window.localStorage;
+    } catch {
+      return;
+    }
+    if (!dirty) {
+      clearIrissLocalBackup(storage, backupKey);
+      return;
+    }
+    const t = window.setTimeout(() => writeIrissLocalBackup(storage, backupKey, dRef.current, new Date()), 400);
+    return () => window.clearTimeout(t);
+  }, [d, dirty, backupKey]);
+
+  const restoreBackup = useCallback(() => {
+    if (!backupOffer) return;
+    backupPending.current = false;
+    setD({ ...draftOf(recRef.current), ...backupOffer.data });
+    setBackupOffer(null);
+    setInfo("Izmaiņas atjaunotas no rezerves kopijas - saglabājas.");
+  }, [backupOffer]);
+
+  const dismissBackup = useCallback(() => {
+    backupPending.current = false;
+    setBackupOffer(null);
+    try {
+      clearIrissLocalBackup(window.localStorage, backupKey);
+    } catch {
+      /* nav krātuves */
+    }
+  }, [backupKey]);
+
+  const saveStatus = irissOrderSaveStatus({
+    dirty,
+    saving: autoSaving || busy === "save",
+    error: autoErr,
+    offline,
+    savedTime: formatIrissSavedTime(rec.updatedAt),
+  });
 
   async function act(action: IrissPdAction | "create-order" | "fill-from-stock") {
     if (action === "decline" && !window.confirm("Atzīmēt piedāvājumu kā noraidītu?")) return;
@@ -446,12 +601,35 @@ export function PiedavajumsDetail({
             <button type="button" className="pd-btn bad" disabled={busy !== ""} onClick={() => void remove()}>
               {busy === "delete" ? "Dzēš..." : "Dzēst"}
             </button>
+            <span
+              className={`pd-save-st ${saveStatus.kind}`}
+              role="status"
+              aria-live="polite"
+              data-save-kind={saveStatus.kind}
+            >
+              {saveStatus.label}
+            </span>
             <button type="button" className="pd-btn p" disabled={!dirty || busy !== ""} onClick={() => void save()}>
               {saveLabel}
             </button>
           </div>
         </div>
       </header>
+      <IrissUnsavedChangesGuard
+        dirty={dirty}
+        onSave={async () => ((await save()) ? { ok: true } : { ok: false, error: "Neizdevās saglabāt." })}
+      />
+      {backupOffer ? (
+        <div className="pd-backup" role="status">
+          <span>Atrastas nesaglabātas izmaiņas ({formatIrissBackupTime(backupOffer.at)}), kas neaizgāja uz serveri.</span>
+          <button type="button" className="pd-btn p" onClick={restoreBackup}>
+            Atjaunot
+          </button>
+          <button type="button" className="pd-btn" onClick={dismissBackup}>
+            Atmest
+          </button>
+        </div>
+      ) : null}
 
       <div className="pde-body">
         {err || rebaseError ? <p className="pd-err" role="alert">{err || rebaseError}</p> : null}

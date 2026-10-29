@@ -157,3 +157,54 @@ export function formatIrissBackupTime(iso: string): string {
   const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
   return `${get("day")}.${get("month")}. ${get("hour")}:${get("minute")}`;
 }
+
+/* ---------- Vispārīga rezerves kopija (Piedāvājumi u.c.) ---------- */
+
+export type IrissLocalBackup<T> = { v: 1; at: string; data: T };
+
+export function writeIrissLocalBackup(storage: KvStorage, key: string, data: unknown, now: Date): boolean {
+  try {
+    const raw = JSON.stringify({ v: 1, at: now.toISOString(), data });
+    if (raw.length > BACKUP_MAX_CHARS) return false;
+    storage.setItem(key, raw);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function readIrissLocalBackup<T>(storage: KvStorage, key: string, now: Date): IrissLocalBackup<T> | null {
+  try {
+    const raw = storage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<IrissLocalBackup<T>>;
+    if (parsed?.v !== 1 || typeof parsed.at !== "string" || parsed.data == null) return null;
+    const at = Date.parse(parsed.at);
+    if (!Number.isFinite(at) || now.getTime() - at > IRISS_ORDER_BACKUP_MAX_AGE_MS) return null;
+    return parsed as IrissLocalBackup<T>;
+  } catch {
+    return null;
+  }
+}
+
+export function clearIrissLocalBackup(storage: KvStorage, key: string): void {
+  try {
+    storage.removeItem(key);
+  } catch {
+    /* nav krātuves */
+  }
+}
+
+/** Salīdzināšanai neatkarīgi no atslēgu secības. */
+export function irissSameJson(a: unknown, b: unknown): boolean {
+  return stableJson(a) === stableJson(b);
+}
+
+/** «13:11» no ISO laika (Rīgas laiks). */
+export function formatIrissSavedTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("lv-LV", { timeZone: "Europe/Riga", hour: "2-digit", minute: "2-digit", hour12: false }).formatToParts(d);
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+  return `${get("hour")}:${get("minute")}`;
+}
