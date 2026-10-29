@@ -1883,3 +1883,50 @@ button.pd-lv {
   color: #6e6e73;
   background: repeating-linear-gradient(45deg, #f2f2f7 0 8px, #e9e9ee 8px 16px);
 }
+
+/* Nils 29.10 «salāgo»: datorā kā Autoparkā - virsraksts 22/700, galvenā poga grafīta apaļa, statusa filtri kā čipi, galvenei bez joslas. */
+@media (min-width: 901px) {
+  .pdv h1,
+  .pdv.pde h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .pdv .pd-hdr {
+    border-bottom: 0;
+    margin-bottom: 10px;
+  }
+  .pdv .pd-btn.p.pd-new-top {
+    height: 38px;
+    padding: 0 16px;
+    border-radius: 999px;
+    background: var(--iriss-graphite);
+    border-color: var(--iriss-graphite);
+    color: var(--iriss-on-graphite);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .pdv .pd-fl .pd-seg {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+  }
+  .pdv .pd-fl .pd-seg button {
+    min-height: 32px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: var(--iriss-surface);
+    box-shadow: inset 0 0 0 1px var(--iriss-line);
+    color: var(--iriss-ink);
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+  .pdv .pd-fl .pd-seg button.on {
+    background: var(--iriss-graphite);
+    box-shadow: none;
+    color: var(--iriss-on-graphite);
+  }
+}

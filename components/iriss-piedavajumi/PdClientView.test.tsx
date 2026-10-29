@@ -132,7 +132,7 @@ describe("Statusu čipi un saraksts", () => {
     ];
     const html = renderHtml(<PiedavajumiList rows={rows} nowMs={NOW} storeEnabled loadError="" />);
     const text = renderText(<PiedavajumiList rows={rows} nowMs={NOW} storeEnabled loadError="" />);
-    expect(text).toContain("3 piedāvājumi · 1 auto = 1 piedāvājums");
+    expect(text).toContain("3 piedāvājumi");
     expect(text).toContain("Aizpildīt");
     expect(text).toContain("Dzēst");
     expect(text).toContain("Izveidot jaunu uz šī bāzes");

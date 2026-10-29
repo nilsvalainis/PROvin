@@ -4163,3 +4163,15 @@
   background: #fff;
   box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(22, 23, 26, 0.06);
 }
+
+/* Nils 29.10 «salāgo»: galvenā poga «+ Auto» kā citās sadaļās - grafīta, apaļa, 13/600. */
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-btn.dark.ap2-add {
+    border-radius: 999px;
+    padding: 0 16px;
+    background: var(--iriss-graphite);
+    color: var(--iriss-on-graphite);
+    font-size: 13px;
+    font-weight: 600;
+  }
+}

@@ -1036,3 +1036,19 @@ input[data-offer-field="empty"],
 #iriss-room-tame span.relative > input {
   padding-right: 30px !important;
 }
+
+/* Nils 29.10 «salāgo»: datorā visu pārbūvēto sadaļu virsraksti 22px/700, istabas cilnes kā Autoparka kabinetā (13/600). */
+@media (min-width: 900px) {
+  .admin-ios-theme .admin-m h1.iriss-list-title,
+  .admin-ios-theme h1.iriss-list-title.iriss-list-title {
+    font-size: 22px !important;
+    font-weight: 700 !important;
+  }
+  .admin-ios-theme [data-iriss-order-room="1"] .iriss-order-tabs [role="tab"] {
+    font-weight: 600 !important;
+  }
+  .admin-ios-theme [data-iriss-order-room="1"] .iriss-order-tabs [role="tab"][aria-selected="true"] {
+    background: var(--iriss-graphite) !important;
+    color: var(--iriss-on-graphite) !important;
+  }
+}

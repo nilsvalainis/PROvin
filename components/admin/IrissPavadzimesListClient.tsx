@@ -283,7 +283,7 @@ export function IrissPavadzimesListClient({
       </Suspense>
       <div className="mt-2 flex max-w-full flex-wrap items-center justify-between gap-2 max-md:hidden">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
-        <h1 className="mr-2 text-[28px] font-bold tracking-[-0.01em] text-[var(--iriss-ink)]">Pavadzīmes</h1>
+        <h1 className="mr-2 text-[22px] font-bold tracking-[-0.01em] text-[var(--iriss-ink)]">Pavadzīmes</h1>
         <div className="flex min-w-0 flex-wrap items-center gap-2" role="group" aria-label="Pavadzīmju filtrs">
           {(["current", "calendar", "archive"] as const).map((v) => (
             <IrissChip key={v} pressed={view === v} count={v === "calendar" ? undefined : viewCount(v)} onClick={() => setView(v)}>
