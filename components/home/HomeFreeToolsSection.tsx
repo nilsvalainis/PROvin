@@ -2,6 +2,7 @@
 
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
+import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { useRouter } from "@/i18n/navigation";
 import { contactMailtoHref, whatsappWebUrl } from "@/lib/contact";
 import { FREE_EVAL_PREFILL_EVENT, type FreeEvalPrefillDetail } from "@/lib/free-eval-prefill";
@@ -47,11 +48,18 @@ const ICONS: Record<"vin" | "listing" | "ask", ReactNode> = {
   ),
 };
 
-const INPUT =
-  "box-border min-h-12 w-full rounded-xl border border-white/15 bg-[rgb(8_10_14/0.55)] px-3.5 py-2.5 text-base text-[rgb(245_248_252/0.96)] outline-none transition placeholder:text-[rgb(210_214_222/0.45)] focus:border-[#2563eb] focus:shadow-[0_0_0_3px_rgb(37_99_235/0.22)]";
-const BTN =
-  "flex min-h-12 items-center justify-center rounded-full text-[0.84rem] font-semibold uppercase tracking-[0.04em] no-underline transition";
-const BTN_PRIMARY = `${BTN} bg-gradient-to-b from-[#1a6fd4] to-[#1459ad] text-white hover:from-[#1459ad] hover:to-[#1459ad]`;
+/** Projekta pogas: galvenā ir HERO `liquidCta`, otrā - caurspīdīgā ar baltu kontūru (bezmaksas novērtējuma forma). */
+const GHOST_BTN =
+  "inline-flex min-h-[54px] items-center justify-center rounded-full border border-white/20 bg-white/[0.05] px-5 text-[12px] font-semibold uppercase tracking-[0.1em] text-white/90 no-underline transition hover:border-white/35 hover:bg-white/[0.08] hover:text-white";
+
+function PrimaryLabel({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <span className={tp5Styles.liquidCtaShimmer} aria-hidden />
+      <span className={tp5Styles.liquidCtaLabel}>{children}</span>
+    </>
+  );
+}
 
 function Card({ icon, accent, title, body, children }: { icon: ReactNode; accent?: boolean; title: string; body: string; children: ReactNode }) {
   return (
@@ -127,10 +135,10 @@ export function HomeFreeToolsSection() {
                 autoCapitalize="characters"
                 spellCheck={false}
                 maxLength={24}
-                className={`${INPUT} uppercase placeholder:normal-case`}
+                className={`${tp5Styles.inlineInput} uppercase placeholder:normal-case`}
               />
-              <button type="submit" className={BTN_PRIMARY}>
-                {t("vinSubmit")}
+              <button type="submit" className={tp5Styles.liquidCta}>
+                <PrimaryLabel>{t("vinSubmit")}</PrimaryLabel>
               </button>
             </form>
           </Card>
@@ -148,25 +156,20 @@ export function HomeFreeToolsSection() {
                 onChange={(e) => setListing(e.target.value)}
                 placeholder={t("listingPlaceholder")}
                 autoComplete="off"
-                className={INPUT}
+                className={tp5Styles.inlineInput}
               />
-              <button type="submit" className={BTN_PRIMARY}>
-                {t("listingSubmit")}
+              <button type="submit" className={tp5Styles.liquidCta}>
+                <PrimaryLabel>{t("listingSubmit")}</PrimaryLabel>
               </button>
             </form>
           </Card>
 
           <Card icon={ICONS.ask} title={t("askTitle")} body={t("askBody")}>
-            <div className="flex gap-2.5">
-              <a
-                href={whatsappWebUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`${BTN} flex-1 bg-gradient-to-b from-[#1f9d4f] to-[#16833f] text-white hover:from-[#16833f] hover:to-[#16833f]`}
-              >
-                WhatsApp
+            <div className="grid grid-cols-2 gap-2.5">
+              <a href={whatsappWebUrl()} target="_blank" rel="noopener noreferrer" className={tp5Styles.liquidCtaLink}>
+                <PrimaryLabel>WhatsApp</PrimaryLabel>
               </a>
-              <a href={contactMailtoHref()} className={`${BTN} flex-1 bg-white text-[#0a0a0b] hover:bg-zinc-200`}>
+              <a href={contactMailtoHref()} className={GHOST_BTN}>
                 {t("askEmail")}
               </a>
             </div>
