@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { appendIrissPdHistory, canRebaseIrissPd, rebaseIrissPd } from "@/lib/iriss-piedavajumi";
 import { importIrissPdFromLink, importIrissPdFromStock, type IrissPdImport } from "@/lib/iriss-piedavajumi-create";
+import { irissPdImportFromListing } from "@/lib/iriss-piedavajumi-from-listing";
+import { readIrissListingsLatestViewWithMarketplace } from "@/lib/marketplace/view";
 import { irissPdLinkErrorLv } from "@/lib/iriss-piedavajumi-sources";
 import { createIrissPd, isIrissPdStoreEnabled, listIrissPdRows, readIrissPd, refreshIrissPdExpiries } from "@/lib/iriss-piedavajumi-store";
 import { emptyIrissPdClient, emptyIrissPiedavajums, isSafeIrissPdId, type IrissPdClient, type IrissPiedavajums } from "@/lib/iriss-piedavajumi-types";
@@ -29,6 +31,7 @@ export async function GET() {
 type Body = {
   kind?: unknown;
   carId?: unknown;
+  listingId?: unknown;
   url?: unknown;
   manual?: unknown;
   baseId?: unknown;
@@ -74,6 +77,7 @@ function clientFrom(raw: unknown): IrissPdClient {
  *   { kind: "autoparks" | "logistics", carId }  no Autoparka / Loģistikas (autofill + /STOCK bildes)
  *   { kind: "manual" }                    tukšs piedāvājums, visi lauki ar roku
  *   { kind: "link", url, manual? }        no izsoles saites (Auto1 pilnībā; manual - tikai saite, lauki ar roku)
+ *   { kind: "listing", listingId }       no Sludinājumiem (auto dati, bildes, pirkuma cena jau ielasīti)
  *   { kind: "rebase", baseId }            «Izveidot jaunu uz šī bāzes» (beidzies/noraidīts)
  *   { kind: "request", client? }          klienta pieprasījums bez auto (statuss «Pieprasīts»)
  * Visiem veidiem (izņemot rebase) var nodot `client` - piesaista klientu un pasūtījumu jau izveidē.
@@ -113,6 +117,15 @@ export async function POST(req: Request) {
     }
     build = fromImport(res.data, at, by)(id);
     note = res.data.note;
+  } else if (body.kind === "listing") {
+    const listingId = typeof body.listingId === "string" ? body.listingId.trim() : "";
+    if (!/^[\w-]{1,80}$/.test(listingId)) return fail(400, "invalid");
+    const view = await readIrissListingsLatestViewWithMarketplace().catch(() => null);
+    const vehicle = view?.vehicles.find((v) => v.id === listingId) ?? null;
+    if (!vehicle) return fail(404, "not_found", { message: "Sludinājums vairs nav atrodams - atjauno sarakstu." });
+    const imp = irissPdImportFromListing(vehicle);
+    build = fromImport(imp, at, by)(id);
+    note = imp.note;
   } else if (body.kind === "rebase") {
     const baseId = typeof body.baseId === "string" ? body.baseId : "";
     if (!isSafeIrissPdId(baseId)) return fail(400, "invalid");

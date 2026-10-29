@@ -1,7 +1,7 @@
 "use client";
 
 import { IrissAnchoredPopover } from "@/components/admin/IrissAnchoredPopover";
-import { ClipboardList, Mail, MoreHorizontal, Plus } from "lucide-react";
+import { ClipboardList, FilePlus2, MoreHorizontal, Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import {
   IRISS_LISTING_CARD_ACTION_BTN_CLASS,
@@ -72,7 +72,7 @@ export function IrissListingCardActions({
             run(onCreateOffer, setOfferBusy);
           }}
         >
-          <Mail className={IRISS_LISTING_CARD_ACTION_ICON_CLASS} aria-hidden strokeWidth={1.5} />
+          <FilePlus2 className={IRISS_LISTING_CARD_ACTION_ICON_CLASS} aria-hidden strokeWidth={1.5} />
           {offerBusy ? "Veido…" : IRISS_LISTING_CARD_ACTION_OFFER}
         </button>
       ) : null}

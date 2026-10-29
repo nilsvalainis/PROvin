@@ -51,7 +51,7 @@ export function isIrissPdVatMode(v: unknown): v is IrissPdVatMode {
   return typeof v === "string" && (IRISS_PD_VAT_MODES as readonly string[]).includes(v);
 }
 
-export const IRISS_PD_SOURCES = ["autoparks", "logistics", "auto1", "autobid", "openlane", "mobilede", "manual"] as const;
+export const IRISS_PD_SOURCES = ["autoparks", "logistics", "auto1", "autobid", "openlane", "ecarstrade", "mobilede", "autoscout24", "manual"] as const;
 export type IrissPdSource = (typeof IRISS_PD_SOURCES)[number];
 
 export const IRISS_PD_SOURCE_LV: Record<IrissPdSource, string> = {
@@ -60,7 +60,9 @@ export const IRISS_PD_SOURCE_LV: Record<IrissPdSource, string> = {
   auto1: "Auto1",
   autobid: "Autobid",
   openlane: "Openlane",
+  ecarstrade: "eCarsTrade",
   mobilede: "mobile.de",
+  autoscout24: "AutoScout24",
   manual: "Ar roku",
 };
 
