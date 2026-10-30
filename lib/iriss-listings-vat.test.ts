@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { listingExtrasI, listingFinalPrice, type ListingTaxKind } from "@/lib/iriss-listings-cost";
+import { DEFAULT_LISTING_COSTS, listingExtrasI, listingFinalPrice, type ListingTaxKind } from "@/lib/iriss-listings-cost";
 import {
   computeListingVatHealth,
   detectListingTax,
@@ -13,7 +13,7 @@ import {
 } from "@/lib/iriss-listings-vat";
 import type { IrissListingVehicle } from "@/lib/iriss-listings-types";
 
-const I = listingExtrasI();
+const I = listingExtrasI({ ...DEFAULT_LISTING_COSTS, unplanned: 1000 });
 const FIX = path.join(process.cwd(), "lib/__fixtures__/iriss-vat");
 
 type FixtureRow = {

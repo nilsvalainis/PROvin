@@ -17,8 +17,12 @@ export const DEFAULT_LISTING_COSTS: ListingCostParts = {
   fee: 600,
   transport: 800,
   commission: 1190,
-  unplanned: 1000,
+  // Nils 30.10: 1000 -> 500 (filtru cenas robeža bija par zemu: 15 000 € budžetam izsolē ~10 650 €).
+  unplanned: 500,
 };
+
+/** Iepriekšējais noklusējums: pārlūkā saglabātā vērtība 1000 tiek nomainīta uz jauno (sk. migrateListingCostsUnplanned). */
+export const LEGACY_DEFAULT_UNPLANNED = 1000;
 
 export const LV_VAT_RATE = 0.21;
 

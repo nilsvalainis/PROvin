@@ -16,7 +16,7 @@ import {
   listingVinShort,
   listingVinSourceMark,
 } from "@/lib/iriss-listings-card";
-import { listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost } from "@/lib/iriss-listings-cost";
+import { DEFAULT_LISTING_COSTS, listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost } from "@/lib/iriss-listings-cost";
 
 describe("listingCardGallery", () => {
   it("uses only imageUrl without strip when imageUrls is missing", () => {
@@ -108,7 +108,7 @@ describe("listing thumbs / VIN / specs", () => {
   });
 
   it("receipt rows match a single extras total plus 21% VAT", () => {
-    const extras = listingExtrasI();
+    const extras = listingExtrasI({ ...DEFAULT_LISTING_COSTS, unplanned: 1000 });
     const bid = 24_850;
     const real = listingRealCost("net", 0, bid, extras);
     const total = listingFinalPrice({ kind: "net", rate: null }, bid, extras);

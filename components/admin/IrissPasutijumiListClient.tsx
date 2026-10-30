@@ -220,6 +220,7 @@ export function IrissPasutijumiListClient({
   });
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const [rowError, setRowError] = useState<string | null>(null);
   const [ectBusy, setEctBusy] = useState(false);
   const [ectMsg, setEctMsg] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<IrissListStatusFilterState>(() => readIrissListStatusFilter());
@@ -463,21 +464,36 @@ export function IrissPasutijumiListClient({
 
   const patchRow = useCallback(async (id: string, mutator: (record: IrissPasutijumsRecord) => IrissPasutijumsRecord) => {
     setActionBusy(id);
+    setRowError(null);
     try {
-      const getRes = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}`, { credentials: "include" });
-      if (!getRes.ok) return;
-      const getData = (await getRes.json()) as { record?: IrissPasutijumsRecord };
-      if (!getData?.record) return;
-      const nextRecord = mutator(getData.record);
-      const patchRes = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nextRecord),
-      });
-      if (!patchRes.ok) return;
-      const patchData = (await patchRes.json()) as { record?: IrissPasutijumsRecord };
-      if (!patchData?.record) return;
+      // Nils 30.10 («statuss pārlec atpakaļ»): kļūda vairs netiek noklusēta; konfliktā (409 - pasūtījums atvērts citur)
+      // svaigi nolasa un mēģina vēlreiz, lai izmaiņa netiktu pazaudēta.
+      let patchData: { record?: IrissPasutijumsRecord } | null = null;
+      for (let attempt = 0; attempt < 2 && !patchData; attempt++) {
+        const getRes = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}`, { credentials: "include", cache: "no-store" });
+        const getData = getRes.ok ? ((await getRes.json()) as { record?: IrissPasutijumsRecord }) : null;
+        if (!getData?.record) {
+          setRowError("Neizdevās nolasīt pasūtījumu - izmaiņa netika saglabāta.");
+          return;
+        }
+        const nextRecord = mutator(getData.record);
+        const patchRes = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...nextRecord, expectedWorkspaceRevision: getData.record.workspaceRevision ?? 0 }),
+        });
+        if (patchRes.status === 409) continue;
+        if (!patchRes.ok) {
+          setRowError(`Neizdevās saglabāt (${patchRes.status}) - izmaiņa netika saglabāta.`);
+          return;
+        }
+        patchData = (await patchRes.json()) as { record?: IrissPasutijumsRecord };
+      }
+      if (!patchData?.record) {
+        setRowError("Pasūtījums tikko mainīts citur - atver to un pārbaudi statusu.");
+        return;
+      }
       const nextRow = irissPasutijumsToListRow(patchData.record);
       setLocalRows((prev) => prev.map((r) => (r.id === id ? nextRow : r)));
       setListOrder((prev) => {
@@ -868,6 +884,14 @@ export function IrissPasutijumiListClient({
         {listWindow.hasMore ? <div ref={listSentinelRef} className="h-px w-full" aria-hidden /> : null}
       </div>
 
+      {rowError ? (
+        <div role="alert" className="fixed inset-x-3 bottom-24 z-[70] mx-auto flex max-w-lg items-center gap-3 rounded-[14px] bg-[var(--iriss-bad-soft)] px-4 py-3 text-[13px] font-semibold text-[var(--iriss-bad)] shadow-[0_8px_24px_rgba(0,0,0,.12)] md:bottom-6">
+          <span className="min-w-0 flex-1">{rowError}</span>
+          <button type="button" className="shrink-0 underline underline-offset-2" onClick={() => setRowError(null)}>
+            Aizvērt
+          </button>
+        </div>
+      ) : null}
       {deleteTargetId ? (
         <div
           className="fixed inset-0 z-[110] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
