@@ -275,8 +275,9 @@ export function applyIrissPdPatch(
   let next: IrissPiedavajums = { ...rec };
   const log: string[] = [];
   const editable = isIrissPdEditable(rec.status);
-  const onlyNotes = Object.keys(patch).every((k) => k === "internalNotes");
-  if (!editable && !onlyNotes) return { ok: false, error: "Šo piedāvājumu vairs nevar labot - izveido jaunu uz tā bāzes." };
+  // Nils 30.10: klientu var pārnest arī pēc nosūtīšanas (ne apstiprinātam - tam jau rezervēts pasūtījums).
+  const onlyNotesOrClient = Object.keys(patch).every((k) => k === "internalNotes" || (k === "client" && rec.status !== "approved"));
+  if (!editable && !onlyNotesOrClient) return { ok: false, error: "Šo piedāvājumu vairs nevar labot - izveido jaunu uz tā bāzes." };
 
   if (patch.vehicle) {
     const v = normalizeVehicle({ ...rec.vehicle, ...patch.vehicle });

@@ -16,6 +16,7 @@ import {
   writeIrissLocalBackup,
   type IrissLocalBackup,
 } from "@/lib/iriss-order-save-status";
+import { PdClientPicker } from "./PdClientPicker";
 import { PdPhotoSorter } from "./PdPhotoSorter";
 import { PdAuto1Blocks, PdToggles, type PdToggleTarget } from "@/components/iriss-piedavajumi/PdAuto1Blocks";
 import { PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
@@ -24,7 +25,6 @@ import { PdImportPanel } from "@/components/admin/iriss-piedavajumi/PdImportPane
 import {
   canRebaseIrissPd,
   irissPdDeleteConfirm,
-  filterIrissPdClientOptions,
   formatIrissPdPrice,
   irissPdAvailableActions,
   irissPdEurDigits,
@@ -134,61 +134,6 @@ function draftOf(r: IrissPiedavajums): Draft {
     visibility: JSON.parse(JSON.stringify(r.visibility)) as IrissPdVisibility,
     content: JSON.parse(JSON.stringify(r.content)) as IrissPdContent,
   };
-}
-
-function ClientPicker({
-  value,
-  options,
-  disabled,
-  onChange,
-}: {
-  value: IrissPdClient;
-  options: IrissPdClientOption[];
-  disabled: boolean;
-  onChange: (c: IrissPdClient) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const matches = useMemo(() => filterIrissPdClientOptions(options, value.name), [options, value.name]);
-  // Ieteikumi ir saraksts zem lauka lapas plūsmā (nevis pārklājums).
-  return (
-    <div>
-      <div style={{ display: "flex", gap: 6 }}>
-        <input
-          id="pd-client"
-          value={value.name}
-          disabled={disabled}
-          placeholder="Izvēlies vai ieraksti"
-          autoComplete="off"
-          onFocus={() => setOpen(true)}
-          onBlur={() => window.setTimeout(() => setOpen(false), 150)}
-          onChange={(e) => onChange({ name: e.target.value, phone: value.orderId ? "" : value.phone, email: value.orderId ? "" : value.email, orderId: "" })}
-        />
-        {value.name && !disabled ? (
-          <button type="button" className="pd-btn" aria-label="Noņemt klientu" onClick={() => onChange({ name: "", phone: "", email: "", orderId: "" })}>
-            ×
-          </button>
-        ) : null}
-      </div>
-      {open && !disabled && matches.length > 0 ? (
-        <div className="pde-sugg" role="listbox">
-          {matches.map((o) => (
-            <button
-              type="button"
-              key={o.orderId}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => {
-                onChange({ name: o.name, phone: o.phone, email: o.email, orderId: o.orderId });
-                setOpen(false);
-              }}
-            >
-              <span className="pd-el">{o.name}</span>
-              <span className="pd-mu pd-el">{o.sub}</span>
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
 }
 
 /** Cenu lauka rādījums «18 400» (bez €, jo € ir aiz lauka). */
@@ -687,7 +632,7 @@ export function PiedavajumsDetail({
             </div>
             <div className="pd-fld">
               <label htmlFor="pd-client">Klients</label>
-              <ClientPicker value={d.client} options={clientOptions} disabled={!editable} onChange={(cl) => set("client", cl)} />
+              <PdClientPicker value={d.client} options={clientOptions} disabled={rec.status === "approved"} onChange={(cl) => set("client", cl)} />
             </div>
             <div className="pd-fld">
               <label htmlFor="pd-valid">

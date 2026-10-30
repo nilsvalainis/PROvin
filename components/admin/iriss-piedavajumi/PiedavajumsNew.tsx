@@ -1,5 +1,7 @@
 "use client";
 
+import { PdClientPicker } from "./PdClientPicker";
+import type { IrissPdClientOption } from "@/lib/iriss-piedavajumi";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -97,6 +99,7 @@ export function PiedavajumsNew({
   logisticsError = "",
   entry,
   client = null,
+  clientOptions = [],
 }: {
   cars: IrissPdCarPick[];
   carsError: string;
@@ -104,6 +107,8 @@ export function PiedavajumsNew({
   logisticsError?: string;
   entry?: IrissPdEntry;
   client?: IrissPdClient | null;
+  /** Nils 30.10: klientu var izvēlēties arī šeit (pasūtījuma klients vai jauns). */
+  clientOptions?: IrissPdClientOption[];
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<IrissPdEntryTab>(entry?.tab ?? "link");
@@ -114,7 +119,8 @@ export function PiedavajumsNew({
   const [canManual, setCanManual] = useState(false);
   const started = useRef(false);
   const hint = irissPdLinkSourceHint(url);
-  const clientBody = withClient && client ? { client } : {};
+  const [picked, setPicked] = useState<IrissPdClient>({ name: "", phone: "", email: "", orderId: "" });
+  const clientBody = withClient && client ? { client } : !client && picked.name.trim() ? { client: picked } : {};
 
   async function go(kind: Busy, body: Record<string, unknown>) {
     setBusy(kind);
@@ -194,7 +200,12 @@ export function PiedavajumsNew({
             )}
           </div>
         ) : (
-          <p className="pd-mu pd-new-client">Klients nav obligāts - to var piesaistīt vēlāk.</p>
+          <div className="pd-new-client pd-fld" style={{ display: "block" }}>
+            <label className="pd-mu" htmlFor="pd-client">
+              Klients (nav obligāts - var piesaistīt arī vēlāk)
+            </label>
+            <PdClientPicker value={picked} options={clientOptions} disabled={busy !== ""} onChange={setPicked} />
+          </div>
         )}
 
         {err ? (
