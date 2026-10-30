@@ -351,3 +351,12 @@ export function marketplaceActorSearchInput(
   }
   return mobileDeActorInput(q, maxResults, sortNewest);
 }
+
+/**
+ * Nils 30.10: pasūtījuma mobile.de filtrs pēc pogas «Izveidot» - marka/modelis, gadi, km, cena (55-90 % no
+ * maks. budžeta), degviela, kārba, virsbūve, tilpums/jauda, pilnpiedziņa; bez aprīkojuma un krāsām,
+ * tirgotāji, bez bojājumiem, jaunākie augšā.
+ */
+export function buildMobileDeOrderSearchUrl(q: MarketplaceQuery): string {
+  return buildMobileDeSearchUrl({ ...q, features: [] }, true);
+}

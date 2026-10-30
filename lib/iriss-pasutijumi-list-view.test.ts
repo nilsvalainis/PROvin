@@ -123,9 +123,9 @@ describe("IRISS 01 list chrome", () => {
     expect(page).not.toMatch(/#F8F8F9/);
     expect(list).toContain("AdminCollapsedMenuButton");
     expect(list).toMatch(/Jauns pasūtījums/);
-    expect(list).toMatch(/Atjaunot eCarsTrade saites/);
-    expect(list).toMatch(/eCarsTrade saites jau ir aktuālas/);
-    expect(list).toMatch(/Aizstātas eCarsTrade saites/);
+    // Nils 30.10: masveida eCarsTrade saišu aizstāšana visiem pasūtījumiem noņemta.
+    expect(list).not.toMatch(/Atjaunot eCarsTrade saites/);
+    expect(list).not.toMatch(/Aizstātas eCarsTrade saites/);
     expect(list).not.toMatch(/\u2014|\u2013/);
     expect(row).toMatch(/irissListShowCallAction/);
     // Nils 28.10: telefonā redzama poga "Zvanīt" un "Kritēriji"; datorā zvana ikonas nav.

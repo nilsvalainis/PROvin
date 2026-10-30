@@ -101,7 +101,11 @@ export async function POST(req: Request) {
   }
 
   const apply = body.apply !== false;
-  const replace = body.replace === true;
+  // Nils 30.10: masveida aizstāšana (visiem pasūtījumiem) izslēgta - saites maina tikai pats.
+  if (body.replace === true || body.apply === true) {
+    return NextResponse.json({ error: "disabled", message: "Masveida eCarsTrade saišu maiņa ir izslēgta - saites maina tikai pasūtījumā ar «Izveidot»." }, { status: 410 });
+  }
+  const replace = false;
   const applyLinks = replace ? replaceEcarstradeLinksOnPasutijums : appendEcarstradeLinksToPasutijums;
   const id = typeof body.id === "string" ? body.id.trim() : "";
   const draft = recordFromBody(body.record);
