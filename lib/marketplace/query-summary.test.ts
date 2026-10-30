@@ -19,6 +19,10 @@ describe("Tirgus ielāde: ko meklēs (Nils 30.10 - manuāla ielāde pēc kritēr
     expect(marketplaceQuerySummaryLv(q)).toEqual(["Volkswagen Golf", "2018-2022", "līdz 150 000 km", "līdz 25 000 €", "Dīzelis", "Automātiskā"]);
   });
 
+  it("virsbūve un piedziņa latviski", () => {
+    expect(marketplaceQuerySummaryLv({ ...emptyMarketplaceQuery(), body: "wagon", drive: "awd" })).toEqual(["Universālis", "Pilnpiedziņa"]);
+  });
+
   it("tukšs vaicājums - nekā nav", () => {
     expect(marketplaceQuerySummaryLv(emptyMarketplaceQuery())).toEqual([]);
   });

@@ -353,7 +353,14 @@ export function IrissMarketplaceLoadPanel({
         >
           {busy ? "Ielādē..." : "Ielādēt"}
         </button>
-        {!busy && !allowed && badge && tone !== "done" ? <span className="text-[12px] text-[var(--ink2)]">{badge}</span> : null}
+        {!busy && !allowed && tone !== "done" ? (
+          <span className="text-[12px] text-[var(--ink2)]">
+            {/* Visi iemesli uzreiz (agrāk redzams bija tikai pirmais). */}
+            {[loadsOff ? disabledText : "", missingText, extraText, !loadsOff && estimate?.allowed === false && queryReady ? estimate?.reason ?? "" : ""]
+              .filter(Boolean)
+              .join(" · ")}
+          </span>
+        ) : null}
       </div>
       {radar ? (
         <p className="mt-2 text-[11px] text-[var(--ink3)]">
