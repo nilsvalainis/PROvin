@@ -46,20 +46,76 @@ export function irissPdVehicleFromHit(hit: IrissOrderRoomHit, extras: IrissAucti
   };
 }
 
-/** Izsoles bildes (bez dublikātiem, līdz 60). */
-export function irissPdPhotosFromUrls(urls: readonly string[]): IrissPdPhoto[] {
-  const out: IrissPdPhoto[] = [];
-  const seen = new Set<string>();
-  for (const raw of urls) {
-    const t = raw.trim();
-    if (!/^https:\/\//i.test(t) || t.length > 2000) continue;
-    const k = t.toLowerCase();
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push({ kind: "url", url: t });
-    if (out.length >= IRISS_PD_MAX_PHOTOS) break;
+// Nils 30.10: izsoles lapā ir arī citu auto bildes («līdzīgie», kājene) un tā pati bilde vairākos izmēros.
+const AUTO1_FILE = /\/(?:(max|sr-x2|sr|[a-z0-9-]+)-)?([A-Z]{2}\d{5})_([0-9a-f]{32})\.(?:jpe?g|png|webp)$/i;
+const AUTO1_VARIANT_RANK: Record<string, number> = { max: 3, "sr-x2": 2, "": 1 };
+const OPENLANE_CAR = /\/carimgs\/(\d+)\//i;
+const NOT_A_CAR_PHOTO = /\.(svg|gif)(\?|$)|(^|[/_.-])(logo|icon|sprite|flag|badge|banner|footer|placeholder|avatar|payment)([/_.-]|$)/i;
+
+type PhotoCandidate = { url: string; key: string; rank: number };
+
+function photoCandidate(url: string, mainAuto1: string, mainOpenlane: string): PhotoCandidate | null {
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return null;
   }
-  return out;
+  const host = u.hostname.toLowerCase();
+  const path = u.pathname;
+  if (NOT_A_CAR_PHOTO.test(path)) return null;
+  if (host.endsWith("auto1.com")) {
+    const m = path.match(AUTO1_FILE);
+    if (!m) return { url, key: `${host}${path}`.toLowerCase(), rank: 0 };
+    const [, variant = "", stock, hash] = m;
+    if (mainAuto1 && stock!.toUpperCase() !== mainAuto1) return null; // cita auto bilde («līdzīgie auto»)
+    return { url, key: `auto1:${stock!.toUpperCase()}:${hash!.toLowerCase()}`, rank: AUTO1_VARIANT_RANK[variant.toLowerCase()] ?? 0 };
+  }
+  if (host.endsWith("openlane.eu")) {
+    if (/\/thumbnail\//i.test(path)) return null; // kājenes «citi auto» sīktēli
+    const m = path.match(OPENLANE_CAR);
+    if (m && mainOpenlane && m[1] !== mainOpenlane) return null;
+    return { url, key: `${host}${path}`.toLowerCase(), rank: 1 };
+  }
+  return { url, key: `${host}${path}`.toLowerCase(), rank: 1 };
+}
+
+/** Galvenā auto atslēga: pirmās bildes Auto1 krājuma kods / Openlane auto id. */
+function mainPhotoIds(urls: readonly string[]): { auto1: string; openlane: string } {
+  let auto1 = "";
+  let openlane = "";
+  for (const raw of urls) {
+    try {
+      const u = new URL(raw.trim());
+      if (!auto1 && u.hostname.toLowerCase().endsWith("auto1.com")) auto1 = u.pathname.match(AUTO1_FILE)?.[2]?.toUpperCase() ?? "";
+      if (!openlane && u.hostname.toLowerCase().endsWith("openlane.eu")) openlane = u.pathname.match(OPENLANE_CAR)?.[1] ?? "";
+    } catch {
+      /* nederīga adrese */
+    }
+    if (auto1 && openlane) break;
+  }
+  return { auto1, openlane };
+}
+
+/**
+ * Izsoles bildes (līdz 60): tikai šī auto bildes, bez logo / kājenes, bez dublikātiem.
+ * Ja viena bilde ir vairākos izmēros, paliek lielākā, vietā, kur tā parādījās pirmo reizi.
+ */
+export function irissPdPhotosFromUrls(urls: readonly string[]): IrissPdPhoto[] {
+  const clean = urls.map((u) => u.trim()).filter((t) => /^https:\/\//i.test(t) && t.length <= 2000);
+  const main = mainPhotoIds(clean);
+  const order: string[] = [];
+  const best = new Map<string, PhotoCandidate>();
+  for (const url of clean) {
+    const c = photoCandidate(url, main.auto1, main.openlane);
+    if (!c) continue;
+    const prev = best.get(c.key);
+    if (!prev) {
+      order.push(c.key);
+      best.set(c.key, c);
+    } else if (c.rank > prev.rank) best.set(c.key, c);
+  }
+  return order.slice(0, IRISS_PD_MAX_PHOTOS).map((k) => ({ kind: "url", url: best.get(k)!.url }));
 }
 
 export function irissPdFilledCount(v: IrissPdVehicle): number {

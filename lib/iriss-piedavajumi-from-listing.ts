@@ -10,8 +10,8 @@ import { listingBidPrice } from "@/lib/iriss-listings-cost";
 import { resolveListingDetailUrl } from "@/lib/iriss-listings-detail-url";
 import { LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-panel";
 import type { IrissListingPlatform, IrissListingVehicle } from "@/lib/iriss-listings-types";
-import type { IrissPdImport } from "@/lib/iriss-piedavajumi-import";
-import { IRISS_PD_MAX_PHOTOS, type IrissPdPhoto, type IrissPdSource, type IrissPdVehicle } from "@/lib/iriss-piedavajumi-types";
+import { irissPdPhotosFromUrls, type IrissPdImport } from "@/lib/iriss-piedavajumi-import";
+import { type IrissPdPhoto, type IrissPdSource, type IrissPdVehicle } from "@/lib/iriss-piedavajumi-types";
 
 export const IRISS_PD_SOURCE_FROM_LISTING: Record<IrissListingPlatform, IrissPdSource> = {
   auto1: "auto1",
@@ -33,16 +33,7 @@ function yearOf(v: Pick<IrissListingVehicle, "year" | "firstRegistration">): str
 }
 
 function listingPhotos(v: Pick<IrissListingVehicle, "imageUrl" | "imageUrls">): IrissPdPhoto[] {
-  const seen = new Set<string>();
-  const out: IrissPdPhoto[] = [];
-  for (const raw of [v.imageUrl, ...(v.imageUrls ?? [])]) {
-    const url = (raw ?? "").trim();
-    if (!/^https:\/\//i.test(url) || url.length > 2000 || seen.has(url)) continue;
-    seen.add(url);
-    out.push({ kind: "url", url });
-    if (out.length >= IRISS_PD_MAX_PHOTOS) break;
-  }
-  return out;
+  return irissPdPhotosFromUrls([v.imageUrl, ...(v.imageUrls ?? [])]);
 }
 
 export function irissPdImportFromListing(v: IrissListingVehicle): IrissPdImport {
