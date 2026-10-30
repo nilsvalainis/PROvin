@@ -1,7 +1,8 @@
 /**
  * CSDD tirdzniecības reģistrs: TIKAI LASĪŠANA.
  * Šis modulis ir vienīgais veids, kā skripts drīkst runāt ar reģistru:
- * - tīkla līmenī: atļauti tikai GET/HEAD; POST tikai (a) pieslēgšanās fāzē - pieslēgšanās / firmas izvēles forma,
+ * - tīkla līmenī: atļauti tikai GET/HEAD; POST tikai (a) pieslēgšanās fāzē - pieslēgšanās / firmas izvēles forma
+ *   un CSDD izvēlnes/čaulas ielādes POST bez rakstošiem vārdiem un bez meklēšanas,
  *   (b) lasīšanas fāzē - TIKAI CSDD tirdzniecības atskaites meklēšana `rep_lapt_tl` (whitelist), bez rakstošiem vārdiem;
  * - UI līmenī: nekad nespiež pogas/saites ar rakstošu nozīmi (saglabāt, atcelt, anulēt, dzēst, apstiprināt...);
  * - pārlūka dialogi (confirm/alert) vienmēr tiek noraidīti.
@@ -22,6 +23,8 @@ export const CSDD_SEARCH_ACTION = "rep_lapt_tl";
 const CSDD_SEARCH_RE = new RegExp(`(^|[^A-Za-z0-9_])${CSDD_SEARCH_ACTION}([^A-Za-z0-9_]|$)`);
 /** CSDD pieslēgšanās (#vards/#parole) un firmas izvēles (kiest_id) formas lauki. */
 const CSDD_LOGIN_BODY_RE = /(^|&)(vards|kiest_id)=/;
+/** CSDD rakstošo darbību identifikatori (pavadzīmes lapv, anulēšana) - pieslēgšanās fāzes navigācijā nekad. */
+const CSDD_WRITE_ID_RE = /lapv|anul/i;
 
 function sameOrigin(url, baseUrl) {
   if (!baseUrl) return false;
@@ -51,6 +54,13 @@ export function isAllowedRequest(req, policy) {
     if (policy.loginPostRe && policy.loginPostRe.test(url)) return { allowed: true, reason: "login_post" };
     // CSDD: pieslēgšanās un firmas izvēle (DZA kiest_id). Saturu (paroli) nekad nelogo un nepārbauda pret vārdiem.
     if (csdd && CSDD_LOGIN_BODY_RE.test(body) && !CSDD_SEARCH_RE.test(query)) return { allowed: true, reason: "csdd_login_post" };
+    // CSDD: pēc pieslēgšanās lietotne ielādē izvēlni/čaulu ar papildu POST (bez vards/kiest_id).
+    // Atļauts tikai CSDD origin, ja nav meklēšanas (tā tikai lasīšanas fāzē) un nav rakstošu darbību vārdu.
+    if (csdd && !CSDD_SEARCH_RE.test(query) && !CSDD_SEARCH_RE.test(decodeSafe(body))) {
+      const text = `${decodeSafe(body)} ${query}`;
+      if (FORBIDDEN_ACTION_RE.test(text) || CSDD_WRITE_ID_RE.test(text)) return { allowed: false, reason: "post_forbidden_action" };
+      return { allowed: true, reason: "csdd_login_nav_post" };
+    }
     return { allowed: false, reason: "post_blocked" };
   }
   if (policy.phase !== "read") return { allowed: false, reason: "post_blocked" };

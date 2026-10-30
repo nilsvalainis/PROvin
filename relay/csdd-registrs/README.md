@@ -36,7 +36,10 @@ meklēšanas poga -> lapošana `ex('rep_lapt_tl',1,'porcijas_numurs=N')` līdz n
 ## Tikai lasīšana (obligāti)
 
 - Tīklā: GET/HEAD. POST tikai:
-  - pieslēgšanās fāzē - CSDD pieslēgšanās (`vards=`) vai firmas izvēles (`kiest_id=`) forma uz `REGISTRS_BASE_URL`;
+  - pieslēgšanās fāzē - CSDD pieslēgšanās (`vards=`) vai firmas izvēles (`kiest_id=`) forma uz `REGISTRS_BASE_URL`,
+    kā arī CSDD izvēlnes/čaulas ielādes POST tajā pašā adresē - ja nav meklēšanas `rep_lapt_tl` un nav rakstošu
+    vārdu (`saglab`, `anul`, `lapv`, `save`, `delete`...). Bez tā kopš 23.10 pieslēgšanās izvēlne netika ielādēta un
+    atskaites forma (`#lapt_veids`) neparādījās (`csdd_report_form_missing_*`);
   - lasīšanas fāzē - TIKAI meklēšana `rep_lapt_tl` uz `REGISTRS_BASE_URL` (adresē vai saturā), un arī tad pieprasījums ar
     rakstošas darbības vārdiem tiek bloķēts.
   Viss cits (piem. `lapv`, `lapv_par`, cita adrese) tiek pārtraukts (`BLOĶĒTS` žurnālā, `blockedList` failā `last-run.json`).
