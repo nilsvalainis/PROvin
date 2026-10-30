@@ -26,6 +26,7 @@ import {
   readMarketplaceUsageMonth,
   writeMarketplaceAutoCronState,
 } from "@/lib/marketplace/store";
+import type { MarketplacePlatform } from "@/lib/marketplace/types";
 import type {
   ListingProvider,
   MarketplaceAutoCronState,
@@ -47,7 +48,10 @@ import {
   type IrissPasutijumsListStatus,
 } from "@/lib/iriss-pasutijumi-types";
 
-export const MARKETPLACE_AUTO_CRON_HOUR_UTC = 6;
+/** 07:00 UTC = 9:00 Rīgā ziemā (10:00 vasarā). Grafiks vercel.json: pirmdiena-sestdiena. */
+export const MARKETPLACE_AUTO_CRON_HOUR_UTC = 7;
+/** Automātiski - tikai mobile.de (AutoScout24 vēlāk, pēc Nila lēmuma). */
+export const MARKETPLACE_AUTO_PLATFORMS = ["mobilede"] as const;
 export const MARKETPLACE_AUTO_TIME_BUDGET_MS = 250_000;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -92,6 +96,7 @@ export type MarketplaceAutoSweepDeps = {
   estimateForOrder: (input: {
     order: MarketplaceOrderCriteria;
     maxItems: number;
+    platforms?: MarketplacePlatform[];
     providers?: ListingProvider[];
   }) => { estimates: MarketplaceCostEstimate[] };
   writeAutoState?: (state: MarketplaceAutoCronState) => Promise<void>;
@@ -189,7 +194,8 @@ export function orderDueForMarketplaceAuto(
   if (!lastLoadAt) return true;
   const t = Date.parse(lastLoadAt);
   if (!Number.isFinite(t)) return true;
-  return now.getTime() - t >= intervalDays * DAY_MS;
+  // 3 h rezerve: vakardienas ielāde 9:00:40 nedrīkst atlikt šodienas 9:00:05 cron.
+  return now.getTime() - t >= intervalDays * DAY_MS - 3 * 60 * 60 * 1000;
 }
 
 export function nextDailyCronUtc(now: Date, hourUtc = MARKETPLACE_AUTO_CRON_HOUR_UTC): string {
@@ -333,6 +339,7 @@ export async function runMarketplaceAutoSweep(deps: MarketplaceAutoSweepDeps): P
     const est = deps.estimateForOrder({
       order,
       maxItems: items.maxItems,
+      platforms: [...MARKETPLACE_AUTO_PLATFORMS],
       ...(deps.providers ? { providers: deps.providers } : {}),
     });
     const estimates = est.estimates.filter((e) => e.configured);
@@ -357,6 +364,7 @@ export async function runMarketplaceAutoSweep(deps: MarketplaceAutoSweepDeps): P
       orderId: row.id,
       order,
       trigger: "auto",
+      platforms: [...MARKETPLACE_AUTO_PLATFORMS],
       maxItems: items.maxItems,
       sortNewest: items.sortNewest,
       now: new Date().toISOString(),
