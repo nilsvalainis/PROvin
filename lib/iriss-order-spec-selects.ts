@@ -192,19 +192,29 @@ function specTokenGroup(kind: IrissSpecMultiKind, token: string): string | null 
   return IRISS_SPEC_MULTI_OPTIONS[kind].some((o) => o.group === hit.group) ? hit.group : null;
 }
 
+/** Saraksta daļas pēc komata/semikola - katra paliek kā ierakstīta (piem., «Petrol 184», «Benzīns (vai D3)»). */
 function specTokens(raw: string): string[] {
   return raw
-    .split(/\s*(?:,|;|\n|\s\/\s|\bvai\b|\bor\b)\s*/i)
+    .split(/\s*[,;\n]\s*/)
     .map((t) => t.trim())
     .filter(Boolean);
+}
+
+/** Grupas vienā daļā («dīzelis vai benzīns» -> abas). */
+function tokenGroups(kind: IrissSpecMultiKind, token: string): string[] {
+  const out: string[] = [];
+  for (const part of token.split(/\s\/\s|\bvai\b|\bor\b/i)) {
+    const g = part.trim() ? specTokenGroup(kind, part) : null;
+    if (g && !out.includes(g)) out.push(g);
+  }
+  return out;
 }
 
 /** Atzīmētās grupas no saglabātā teksta. */
 export function irissSpecMultiGroups(kind: IrissSpecMultiKind, raw: string): string[] {
   const out: string[] = [];
   for (const token of specTokens(raw)) {
-    const g = specTokenGroup(kind, token);
-    if (g && !out.includes(g)) out.push(g);
+    for (const g of tokenGroups(kind, token)) if (!out.includes(g)) out.push(g);
   }
   return out;
 }
@@ -212,15 +222,28 @@ export function irissSpecMultiGroups(kind: IrissSpecMultiKind, raw: string): str
 /** Teksts, ko čipi nesaprot (paliek redzams un netiek dzēsts). */
 export function irissSpecMultiCustom(kind: IrissSpecMultiKind, raw: string): string {
   return specTokens(raw)
-    .filter((token) => !specTokenGroup(kind, token))
+    .filter((token) => tokenGroups(kind, token).length === 0)
     .join(", ");
 }
 
-/** Ieslēdz/izslēdz vienu grupu; pārējās atzīmes un nesaprotamais teksts paliek. */
+/**
+ * Ieslēdz/izslēdz vienu grupu. Pārējās daļas paliek burtiski (arī jauda vai piezīme tajā pašā laukā);
+ * noņem tikai daļu, kurā ir izslēgtā grupa.
+ */
 export function toggleIrissSpecMulti(kind: IrissSpecMultiKind, raw: string, group: string): string {
-  const groups = irissSpecMultiGroups(kind, raw);
-  const next = groups.includes(group) ? groups.filter((g) => g !== group) : [...groups, group];
-  const labels = IRISS_SPEC_MULTI_OPTIONS[kind].filter((o) => next.includes(o.group)).map((o) => o.stored);
-  const custom = irissSpecMultiCustom(kind, raw);
-  return [...labels, ...(custom ? [custom] : [])].join(", ");
+  const tokens = specTokens(raw);
+  const stored = (g: string) => IRISS_SPEC_MULTI_OPTIONS[kind].find((o) => o.group === g)?.stored ?? g;
+  if (!irissSpecMultiGroups(kind, raw).includes(group)) return [...tokens, stored(group)].join(", ");
+  const out: string[] = [];
+  for (const token of tokens) {
+    const gs = tokenGroups(kind, token);
+    if (!gs.includes(group)) {
+      out.push(token);
+      continue;
+    }
+    for (const other of gs) {
+      if (other !== group && !out.some((t) => tokenGroups(kind, t).includes(other))) out.push(stored(other));
+    }
+  }
+  return out.join(", ");
 }

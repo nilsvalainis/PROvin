@@ -13,10 +13,16 @@ describe("Nils 30.10: vairākas izvēles meklēšanas filtros", () => {
     expect(fuel).toBe("Dīzelis, Benzīns");
     expect(irissSpecMultiGroups("fuel", fuel)).toEqual(["diesel", "petrol"]);
     expect(toggleIrissSpecMulti("fuel", fuel, "diesel")).toBe("Benzīns");
-    expect(toggleIrissSpecMulti("body", "Apvidus, kaut kas cits", "wagon")).toBe("Apvidus, Universālis, kaut kas cits");
+    expect(toggleIrissSpecMulti("body", "Apvidus, kaut kas cits", "wagon")).toBe("Apvidus, kaut kas cits, Universālis");
     expect(irissSpecMultiCustom("body", "Apvidus, kaut kas cits")).toBe("kaut kas cits");
     expect(toggleIrissSpecMulti("drive", "", "awd")).toBe("4x4");
     expect(irissSpecMultiGroups("gearbox", "Automāts")).toEqual(["automatic"]);
+  });
+
+  it("vecais teksts tajā pašā laukā (jauda, piezīme) nepazūd", () => {
+    expect(toggleIrissSpecMulti("fuel", "Petrol 184", "diesel")).toBe("Petrol 184, Dīzelis");
+    expect(toggleIrissSpecMulti("fuel", "Benzīns (vai D3)", "diesel")).toBe("Benzīns (vai D3), Dīzelis");
+    expect(toggleIrissSpecMulti("fuel", "dīzelis vai benzīns", "diesel")).toBe("Benzīns");
   });
 
   it("vecie dati čipos atzīmējas", () => {
