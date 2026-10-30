@@ -92,6 +92,29 @@ export function orderSearchPriceBounds(order: MarketplaceOrderCriteria): { from:
   return orderSearchPriceBoundsFromFilter(order, effectiveFilter(order));
 }
 
+/**
+ * Nils 30.10: mobile.de / AutoScout24 cenas ir kaulējamas un nav izsoles komisijas - filtrs ar rezervi:
+ * līdz 90 % un no 55 % no klienta maksimālā budžeta (Nila manuālo filtru vidējā prakse: mediāna 0,90).
+ */
+export const MARKETPLACE_PRICE_TO_SHARE = 0.9;
+export const MARKETPLACE_PRICE_FROM_SHARE = 0.55;
+
+export function marketplacePriceBoundsFromBudget(budget: { from: number | null; to: number | null }): { from: number | null; to: number | null } {
+  const ok = (n: number | null | undefined): n is number => n != null && Number.isFinite(n) && n > 0;
+  const top = ok(budget.to) ? budget.to : ok(budget.from) ? budget.from : null;
+  if (top == null) return { from: null, to: null };
+  const round100 = (n: number) => Math.round(n / 100) * 100;
+  return { from: round100(top * MARKETPLACE_PRICE_FROM_SHARE), to: round100(top * MARKETPLACE_PRICE_TO_SHARE) };
+}
+
+function orderMarketplacePriceBounds(order: MarketplaceOrderCriteria, filter: IrissCriteriaFilter): { from: number | null; to: number | null } {
+  const budget =
+    filter.budgetFrom.value != null || filter.budgetTo.value != null
+      ? { from: filter.budgetFrom.value, to: filter.budgetTo.value }
+      : parseIrissOrderBoundRange(order.totalBudget ?? "");
+  return marketplacePriceBoundsFromBudget(budget);
+}
+
 /** Pasūtījuma forma / IrissCriteriaV1 -> vienots tirgus vaicājums. */
 export function marketplaceQueryFromOrder(order: MarketplaceOrderCriteria): MarketplaceQuery {
   const filter = effectiveFilter(order);
@@ -103,7 +126,7 @@ export function marketplaceQueryFromOrder(order: MarketplaceOrderCriteria): Mark
   q.yearTo = filter.yearTo.value;
   q.mileageFrom = filter.mileageFrom.value;
   q.mileageTo = filter.mileageTo.value ?? digits(order.maxMileage);
-  const price = orderSearchPriceBoundsFromFilter(order, filter);
+  const price = orderMarketplacePriceBounds(order, filter);
   q.priceFrom = price.from;
   q.priceTo = price.to;
   q.fuel = fuelLabel(filter, order.engineType ?? "");
@@ -113,7 +136,9 @@ export function marketplaceQueryFromOrder(order: MarketplaceOrderCriteria): Mark
   q.displacementFromCc = filter.ccFrom.value;
   q.displacementToCc = filter.ccTo.value;
   q.body = (filter.bodyTypes.value[0] ?? order.bodyType ?? "").trim();
-  q.drive = (filter.drive.value[0] ?? order.driveType ?? "").trim();
+  // mobile.de pārdevēji piedziņu bieži nenorāda - filtrā tikai pilnpiedziņa (citādi pazustu derīgi auto).
+  const drive = (filter.drive.value[0] ?? order.driveType ?? "").trim();
+  q.drive = /awd|4x4|4wd|pilnpiedzi|quattro|xdrive|4matic|4motion|allrad/i.test(drive) ? "awd" : "";
   // Nils 28.10: pasūtījumos meklējam Vācijā, Nīderlandē un Beļģijā; vecais lauks «Valstis» paliek datos, bet netiek izmantots.
   q.countries = [...IRISS_ORDER_SEARCH_COUNTRIES];
   return q;

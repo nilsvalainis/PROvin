@@ -32,7 +32,9 @@ describe("marketplaceQueryFromOrder", () => {
     expect(q.yearFrom).toBe(2018);
     expect(q.yearTo).toBe(2020);
     expect(q.mileageTo).toBe(140000);
-    expect(q.priceTo).toBe(searchBound(22000));
+    // Nils 30.10: mobile.de / AutoScout24 - 90 % un 55 % no maks. budžeta.
+    expect(q.priceTo).toBe(19800);
+    expect(q.priceFrom).toBe(12100);
     expect(q.fuel).toMatch(/dīzel|diesel/i);
     expect(q.gearbox).toMatch(/autom|automatic/i);
     expect(q.vehicleCategory).toBe("car");
@@ -78,7 +80,7 @@ describe("marketplaceQueryFromOrder", () => {
       yearFrom: 2017,
       yearTo: 2019,
       mileageTo: 160000,
-      priceTo: searchBound(25000),
+      priceTo: 22500,
       fuel: "diesel",
       gearbox: "automatic",
     });
@@ -187,7 +189,8 @@ describe("marketplaceVehicleMatchesOrder", () => {
       maxMileage: "150000",
       totalBudget: "25000",
     };
-    expect(marketplaceOrderHasFetchBounds(loose)).toBe(false);
+    // Nils 30.10: cena no = 55 % no budžeta, tāpēc šim pasūtījumam robežas jau ir.
+    expect(marketplaceOrderHasFetchBounds(loose)).toBe(true);
     expect(
       marketplaceVehicleMatchesOrder(
         {

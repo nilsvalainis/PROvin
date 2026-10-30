@@ -249,10 +249,10 @@ describe("IrissOrderRoom render", () => {
     expect(html).toContain("* filtrē Meklētāju. Cena un Gadi obligāti.");
     expect(html).not.toContain("vismaz viens: nobraukums");
     const starred = (label: string) => new RegExp(`${label}<span class="iriss-range-req" aria-hidden="true"> \\*</span>`).test(html);
-    for (const label of ["Marka / modelis", "Komplektācija / līnija", "Cena", "Gadi", "Nobraukums", "Degviela", "Ātrumkārba", "Virsbūve", "Piedziņa", "Sēdvietas"]) {
+    for (const label of ["Marka / modelis", "Cena", "Gadi", "Nobraukums", "Degviela", "Ātrumkārba", "Virsbūve", "Piedziņa", "Sēdvietas"]) {
       expect(starred(label), label).toBe(true);
     }
-    for (const label of ["Tilpums", "Jauda", "Valstis", "Bojājumu tolerance", "Vēlamās krāsas", "Nevēlamās krāsas", "Salona apdare"]) {
+    for (const label of ["Komplektācija / līnija", "Tilpums", "Jauda", "Valstis", "Bojājumu tolerance", "Vēlamās krāsas", "Nevēlamās krāsas", "Salona apdare"]) {
       expect(starred(label), label).toBe(false);
     }
   });

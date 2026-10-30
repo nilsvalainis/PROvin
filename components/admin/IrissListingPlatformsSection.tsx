@@ -23,7 +23,8 @@ import {
   applyGeneratedPlatformSearchLink,
   type IrissAuctionSearchPlatform,
 } from "@/lib/iriss-listings-platform-search";
-import { replaceEcarstradeLinksOnPasutijums } from "@/lib/iriss-pasutijumi-ecarstrade-links";
+import { buildMobileDeOrderSearchUrl } from "@/lib/marketplace/search-urls";
+import { marketplaceQueryFromOrder } from "@/lib/marketplace/query-from-order";
 import type { IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 import { nextStableRowKeys } from "@/lib/iriss-stable-row-keys";
 
@@ -222,26 +223,18 @@ export function IrissListingPlatformsFields({ rec, onPatch, onReadLink, readingU
     });
   };
 
-  const generateEcarstrade = () => {
-    const next = replaceEcarstradeLinksOnPasutijums(rec);
-    onPatch({
-      listingLinkEcarstrade: next.record.listingLinkEcarstrade,
-      ecarstradeLinksManual: true,
-    });
+  // Nils 30.10: mobile.de filtrs pēc tā paša principa kā viņa manuālie (pievieno blakus, esošās nemaina).
+  const generateMobile = () => {
+    const url = buildMobileDeOrderSearchUrl(marketplaceQueryFromOrder(rec));
+    const existing = rec.listingLinkMobile.filter((u) => u.trim());
+    if (existing.includes(url)) return;
+    onPatch({ listingLinkMobile: [...existing, url] });
   };
 
   return (
     <div className="mt-3 border-t border-slate-200/80 pt-3">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <IrissSectionHeading className="mb-0">Sludinājumu platformas (saites)</IrissSectionHeading>
-        <button
-          type="button"
-          onClick={generateEcarstrade}
-          className={actionBtn}
-          title="Atjaunot eCarsTrade saiti tikai no Auto1 / Openlane / Autobid filtriem"
-        >
-          Atjaunot eCarsTrade
-        </button>
       </div>
       <div className="grid grid-cols-1 gap-3.5">
         <SourceLinkList
@@ -249,6 +242,7 @@ export function IrissListingPlatformsFields({ rec, onPatch, onReadLink, readingU
           logoKey="mobile"
           links={rec.listingLinkMobile}
           onChange={(next) => patchLinks("listingLinkMobile", next)}
+          onGenerateFilter={generateMobile}
           onReadLink={onReadLink}
           readingUrl={readingUrl}
           readCountByUrl={readCountByUrl}

@@ -221,8 +221,7 @@ export function IrissPasutijumiListClient({
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
   const [rowError, setRowError] = useState<string | null>(null);
-  const [ectBusy, setEctBusy] = useState(false);
-  const [ectMsg, setEctMsg] = useState<string | null>(null);
+  const ectMsg: string | null = null;
   const [statusFilter, setStatusFilter] = useState<IrissListStatusFilterState>(() => readIrissListStatusFilter());
   const [trashOn, setTrashOn] = useState(() => readIrissListTrashFilter());
   const [listLimit, setListLimit] = useState(IRISS_ORDERS_LIST_PAGE);
@@ -584,37 +583,6 @@ export function IrissPasutijumiListClient({
     });
   }, [schedulePersistListOrder]);
 
-  async function appendEcarstradeLinks() {
-    if (ectBusy) return;
-    setEctBusy(true);
-    setEctMsg(null);
-    try {
-      const res = await fetch("/api/admin/iriss-pasutijumi/ecarstrade-links", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apply: true, replace: true }),
-      });
-      const data = (await res.json()) as {
-        error?: string;
-        updatedCount?: number;
-        saved?: IrissPasutijumsListRow[];
-      };
-      if (!res.ok) {
-        setEctMsg(data.error === "store_disabled" ? "Krātuve nav pieejama" : "eCarsTrade saišu atjaunošana neizdevās");
-        return;
-      }
-      if (data.saved?.length) {
-        const byId = new Map(data.saved.map((r) => [r.id, r]));
-        setLocalRows((prev) => prev.map((row) => (byId.has(row.id) ? { ...row, ...byId.get(row.id)! } : row)));
-      }
-      const updated = data.updatedCount ?? data.saved?.length ?? 0;
-      setEctMsg(updated === 0 ? "eCarsTrade saites jau ir aktuālas" : `Aizstātas eCarsTrade saites: ${updated} pasūtījumi`);
-    } finally {
-      setEctBusy(false);
-    }
-  }
-
   const onReorderUnpinned = useCallback((ids: string[]) => {
     setListOrder((prev) => {
       const next = { ...prev, unpinnedOrder: ids };
@@ -697,9 +665,6 @@ export function IrissPasutijumiListClient({
   const toolbarMenu = (
     <IrissOverflowMenu label="Vairāk">
       <IrissOverflowLabel>Saraksts</IrissOverflowLabel>
-      <IrissOverflowItem disabled={ectBusy} onClick={() => void appendEcarstradeLinks()}>
-        {ectBusy ? "Atjauno eCarsTrade saites…" : "Atjaunot eCarsTrade saites"}
-      </IrissOverflowItem>
       <IrissOverflowItem href="/admin/iriss/atskaite">Mēneša atskaite</IrissOverflowItem>
       <IrissOverflowLabel>Eksports</IrissOverflowLabel>
       <AdminIrissOrdersExportButton menu />
@@ -800,15 +765,7 @@ export function IrissPasutijumiListClient({
         onClose={() => setMoreSheetOpen(false)}
       >
         <div className="overflow-hidden rounded-xl bg-[var(--s1)]">
-          <button
-            type="button"
-            onClick={() => void appendEcarstradeLinks()}
-            disabled={ectBusy}
-            className="flex min-h-12 w-full items-center px-4 text-left text-[17px] disabled:opacity-40"
-          >
-            {ectBusy ? "eCarsTrade…" : "Atjaunot eCarsTrade saites"}
-          </button>
-          <Link href="/admin/iriss/atskaite" className="flex min-h-12 items-center border-t border-[var(--hair)] px-4 text-[17px] text-[var(--ink)]">
+          <Link href="/admin/iriss/atskaite" className="flex min-h-12 items-center px-4 text-[17px] text-[var(--ink)]">
             Mēneša atskaite
           </Link>
           <div className="border-t border-[var(--hair)] px-4 py-2">

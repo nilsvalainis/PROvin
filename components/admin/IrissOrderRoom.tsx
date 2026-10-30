@@ -1228,9 +1228,9 @@ export function IrissOrderRoom({
             <StepCard n={1} step={IRISS_ORDER_STEPS[0]} status={stepStatus[0]} cardClass={cardClass}>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <Field label="Marka / modelis" filterMark value={rec.brandModel} onChange={(value) => onPatch("brandModel", value)} />
+                {/* Nils 30.10: komplektācija nav obligāta un filtru veidošanā neietekmē (bez «*»). */}
                 <Field
                   label="Komplektācija / līnija"
-                  filterMark
                   value={rec.modelExtension}
                   placeholder="piem., S-line, AMG"
                   onChange={(value) => onPatch("modelExtension", value)}

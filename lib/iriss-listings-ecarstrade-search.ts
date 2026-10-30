@@ -1025,10 +1025,9 @@ export function filterFromOrderFields(fields: OrderSearchFields): EcarstradeSear
     filter.seatsFrom = seats;
     filter.seatsTo = seats;
   }
-  filter.colors = uniq((fields.preferredColors ?? "").split(/[,;/]+/).map(mapEcarstradeColor).filter((x): x is string => Boolean(x)));
-  filter.excludeColors = uniq(
-    (fields.nonPreferredColors ?? "").split(/[,;/]+/).map(mapEcarstradeColor).filter((x): x is string => Boolean(x)),
-  );
+  // Nils 30.10: krāsas prasības filtros neņem vērā (sašaurina rezultātus).
+  filter.colors = [];
+  filter.excludeColors = [];
   filter.includeTokens = uniq(splitListTokens(fields.agentNotes ?? ""));
   filter.modelExtensions = splitModelExtensions(fields.modelExtension ?? "");
   if (fields.dealVat21Required) filter.vat = ["reclaimable"];
