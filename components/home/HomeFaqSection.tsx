@@ -21,11 +21,11 @@ export async function HomeFaqSection() {
   const faqJsonLd = items.length > 0 ? buildFaqPageJsonLd(locale, "", items) : null;
 
   return (
-    <section id="biezi-jautajumi" aria-labelledby="home-faq-heading" className="home-body-ink scroll-mt-16 border-t border-[#1d2130] bg-[#07080b]">
+    <section id="biezi-jautajumi" aria-labelledby="home-faq-heading" className="home-body-ink scroll-mt-16 bg-transparent">
       <div className="mx-auto grid max-w-[80rem] gap-10 px-[max(1rem,env(safe-area-inset-left,0px))] py-14 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:py-20 lg:grid-cols-12 lg:gap-10 lg:px-10 lg:py-24">
         <div className="flex flex-col gap-4 lg:col-span-4 lg:self-start">
           <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-zinc-400">{t("homeEyebrow")}</p>
-          <h2 id="home-faq-heading" className="text-balance text-[2.2rem] font-extrabold leading-[1.02] tracking-[-0.035em] text-zinc-50 sm:text-[2.8rem]">
+          <h2 id="home-faq-heading" className="text-balance text-[1.75rem] font-extrabold leading-[1.08] tracking-[-0.03em] text-zinc-50 sm:text-[2.25rem]">
             {t("homeTitle")}
           </h2>
           <p className="text-[15px] leading-relaxed text-zinc-400">{t("homeSub")}</p>

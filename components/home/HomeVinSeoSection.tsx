@@ -39,11 +39,11 @@ export async function HomeVinSeoSection() {
             <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#5c9dff]">{t("homeEyebrow")}</p>
             <h2
               id="home-vin-seo-heading"
-              className="mt-3.5 text-balance text-[2.2rem] font-extrabold leading-[1.05] tracking-[-0.035em] text-zinc-50 sm:text-[3rem]"
+              className="mt-3.5 text-balance text-[1.75rem] font-extrabold leading-[1.08] tracking-[-0.03em] text-zinc-50 sm:text-[2.25rem]"
             >
               {t("homeTitle")}
             </h2>
-            <p className="mt-5 max-w-[60ch] text-pretty text-[1.05rem] leading-[1.65] text-zinc-300 sm:text-lg">
+            <p className="mt-5 max-w-[60ch] text-pretty text-[1rem] leading-[1.65] text-zinc-300">
               {t.rich("homeBody", {
                 freeEval: (chunks) => (
                   <FreeEvalHashLink className="text-[#5c9dff] underline decoration-[#5c9dff]/40 underline-offset-[3px] transition hover:text-white">
@@ -58,7 +58,7 @@ export async function HomeVinSeoSection() {
               <Link
                 key={href}
                 href={href}
-                className="group flex items-center justify-between gap-4 border-b border-[#262a36] py-5 text-[1.1rem] font-semibold text-zinc-50 no-underline transition hover:text-[#5c9dff]"
+                className="group flex items-center justify-between gap-4 border-b border-[#262a36] py-4 text-[1rem] font-semibold text-zinc-50 no-underline transition hover:text-[#5c9dff]"
               >
                 {label}
                 <Arrow />
@@ -80,7 +80,7 @@ export async function HomeVinSeoSection() {
                     className="group flex flex-col gap-4 rounded-[20px] border border-white/[0.09] bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-6 no-underline transition hover:border-white/20 sm:p-8"
                   >
                     <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-zinc-400">{t("blogKicker")}</span>
-                    <span className="flex-1 text-balance text-[1.3rem] font-bold leading-snug tracking-[-0.02em] text-zinc-50 sm:text-[1.55rem]">
+                    <span className="flex-1 text-balance text-[1.15rem] font-bold leading-snug tracking-[-0.015em] text-zinc-50 sm:text-[1.3rem]">
                       {content.title}
                     </span>
                     <span className="text-sm font-semibold text-[#5c9dff]">{t("readPost")} →</span>

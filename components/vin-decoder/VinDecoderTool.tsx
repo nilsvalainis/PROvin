@@ -138,7 +138,7 @@ function producedText(m: VinModelInfo, labels: VinDecoderLabels): string | null 
 const PRIMARY_BTN = `${tp5Styles.liquidCta} !w-auto !min-h-[52px] shrink-0 !px-7 !py-0`;
 const GHOST_BTN =
   "inline-flex min-h-[48px] shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/[0.04] px-5 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-white/85 no-underline transition hover:border-white/35 hover:bg-white/[0.08] hover:text-white";
-const CARD = "rounded-[20px] border border-white/[0.09] bg-gradient-to-b from-white/[0.05] to-white/[0.015]";
+const CARD = "rounded-[20px] border border-white/[0.08] bg-white/[0.015]";
 
 function Primary({ children }: { children: ReactNode }) {
   return (
@@ -168,7 +168,7 @@ function Header({ kicker, title, sub, badge }: { kicker: string; title: string; 
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
       <div className="min-w-0">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-zinc-400">{kicker}</p>
-        <p className="mt-2 text-[1.65rem] font-extrabold leading-tight tracking-[-0.03em] text-zinc-50 sm:text-[2.1rem]">{title}</p>
+        <p className="mt-2 text-[1.4rem] font-extrabold leading-tight tracking-[-0.025em] text-zinc-50 sm:text-[1.7rem]">{title}</p>
         {sub ? <p className="mt-2 text-[15px] text-zinc-400">{sub}</p> : null}
       </div>
       {badge ? <span className={`shrink-0 self-start rounded-full border px-3 py-2 text-[13px] font-semibold ${badge.cls}`}>{badge.text}</span> : null}
@@ -410,22 +410,25 @@ export function VinDecoderTool({ locale, labels, home, onAudit, onListing, autoF
           ) : null}
 
           {memory > 0 ? (
-            <div className="rounded-2xl border border-[#1a6fd4]/40 bg-[#1a6fd4]/[0.08] px-5 py-4">
-              <p className="text-[0.98rem] font-semibold text-zinc-50">{labels.memoryTitle.replace("{n}", String(memory))}</p>
-              <p className="mt-1 text-[0.86rem] leading-relaxed text-zinc-300">{labels.memoryBody}</p>
+            <div className="flex gap-3">
+              <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-[#4ade80]" aria-hidden />
+              <div>
+              <p className="text-[15px] font-semibold text-zinc-50">{labels.memoryTitle.replace("{n}", String(memory))}</p>
+              <p className="mt-1 text-[14px] leading-relaxed text-zinc-400">{labels.memoryBody}</p>
+              </div>
             </div>
           ) : null}
 
           {showNext ? (
-            <div className="grid gap-4 border-t border-[#262a36] pt-6 lg:grid-cols-2">
+            <div className="grid gap-8 border-t border-[#262a36] pt-6 lg:grid-cols-2 lg:gap-0 lg:divide-x lg:divide-[#262a36]">
               <form
-                className="flex flex-col gap-3 rounded-2xl border border-[#262a36] bg-[#080a0e]/55 p-5"
+                className="flex flex-col gap-3 lg:pr-8"
                 onSubmit={(event) => {
                   event.preventDefault();
                   sendListing();
                 }}
               >
-                <p className="text-[17px] font-semibold text-zinc-50">{labels.nextListingTitle}</p>
+                <p className="text-[16px] font-semibold text-zinc-50">{labels.nextListingTitle}</p>
                 <p className="flex-1 text-[14px] leading-relaxed text-zinc-400">{labels.nextListingBody.replace("{q}", handoff)}</p>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <label className="block min-w-0 flex-1">
@@ -451,8 +454,8 @@ export function VinDecoderTool({ locale, labels, home, onAudit, onListing, autoF
                   </p>
                 ) : null}
               </form>
-              <div className="flex flex-col gap-3 rounded-2xl border border-[#2563eb]/45 bg-[#080a0e]/55 p-5">
-                <p className="text-[17px] font-semibold text-zinc-50">{labels.nextAuditTitle}</p>
+              <div className="flex flex-col gap-3 lg:pl-8">
+                <p className="text-[16px] font-semibold text-zinc-50">{labels.nextAuditTitle}</p>
                 <p className="flex-1 text-[14px] leading-relaxed text-zinc-400">{labels.nextAuditBody}</p>
                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                   <button type="button" onClick={() => audit("audits")} className={`${tp5Styles.liquidCta} !min-h-[48px] !py-0 sm:!w-auto sm:!px-6`}>
@@ -518,7 +521,7 @@ function PlateBody({ view, labels }: { view: PublicPlateView; labels: VinDecoder
         <Grid rows={rows.filter(([, v]) => v).map(([l, v]) => (l === labels.rowVinMasked ? [l, v, true] : [l, v]))} />
       </div>
       {vin11 ? (
-        <div className="flex gap-3.5 rounded-[14px] border border-[#5c9dff]/35 bg-[#2563eb]/[0.07] p-4 sm:p-5">
+        <div className="flex gap-3">
           <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-[#5c9dff]" aria-hidden />
           <div>
             <p className="text-[15px] font-semibold text-zinc-50">{labels.compareTitle}</p>

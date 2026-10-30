@@ -57,11 +57,11 @@ const PRIMARY_BTN = `${tp5Styles.liquidCta} !w-auto !min-h-[44px] !px-6 !py-0 !t
 function Card({ icon, active, title, body, children, className = "" }: { icon: ReactNode; active?: boolean; title: string; body: string; children: ReactNode; className?: string }) {
   return (
     <article className={`flex flex-col gap-4 ${className}`}>
-      <span aria-hidden className={`mx-auto mb-1 block h-24 w-24 sm:h-[6.5rem] sm:w-[6.5rem] ${active ? "text-[#5c9dff]" : "text-[#4a5a78]"}`}>
+      <span aria-hidden className={`mx-auto mb-1 block h-[4.5rem] w-[4.5rem] sm:h-20 sm:w-20 ${active ? "text-[#5c9dff]" : "text-[#4a5a78]"}`}>
         {icon}
       </span>
-      <h3 className={`text-balance border-t pt-5 text-center text-[1.4rem] font-bold leading-tight text-zinc-50 ${active ? "border-[#2563eb]" : "border-[#262a36]"}`}>{title}</h3>
-      <p className="flex-1 text-center text-[0.94rem] leading-relaxed text-zinc-400">{body}</p>
+      <h3 className={`text-balance border-t pt-5 text-center text-[1.2rem] font-bold leading-tight text-zinc-50 ${active ? "border-[#2563eb]" : "border-[#262a36]"}`}>{title}</h3>
+      <p className="flex-1 text-center text-[0.92rem] leading-relaxed text-zinc-400">{body}</p>
       <div className="flex flex-wrap justify-center gap-2">{children}</div>
     </article>
   );
@@ -104,17 +104,17 @@ export function HomeFreeToolsSection({ decoderLabels, home }: { decoderLabels: V
   }
 
   return (
-    <section aria-labelledby={`${id}-h`} className="border-b border-[#1d2130] bg-[#07080b]">
-      <div className="mx-auto flex max-w-[80rem] flex-col gap-12 px-[max(1rem,env(safe-area-inset-left,0px))] py-14 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:gap-16 sm:py-20 lg:px-10 lg:pb-[4.5rem] lg:pt-[5.5rem]">
+    <section aria-labelledby={`${id}-h`} className="bg-transparent">
+      <div className="mx-auto flex max-w-[80rem] flex-col gap-12 px-[max(1rem,env(safe-area-inset-left,0px))] py-12 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:gap-14 sm:py-16 lg:px-10 lg:pb-16 lg:pt-20">
         <div className="grid gap-6 lg:grid-cols-12 lg:items-end lg:gap-10">
           <h2
             id={`${id}-h`}
-            className="text-balance text-[2.5rem] font-extrabold leading-[1.02] tracking-[-0.04em] text-zinc-50 sm:text-[3.3rem] lg:col-span-7 lg:text-[4rem]"
+            className="text-balance text-[1.9rem] font-extrabold leading-[1.08] tracking-[-0.035em] text-zinc-50 sm:text-[2.3rem] lg:col-span-7 lg:text-[2.5rem]"
           >
             {t("title")} <span className="text-[#5c9dff]">{t("titleAccent")}</span>
           </h2>
           <div className="flex flex-col gap-3 lg:col-span-5">
-            <p className="text-[1.05rem] leading-relaxed text-zinc-200 sm:text-lg">{t("lead")}</p>
+            <p className="text-[1rem] leading-relaxed text-zinc-300">{t("lead")}</p>
             <p className="text-sm text-zinc-400">
               <span className="text-[#f5b400]" aria-hidden>
                 ★
@@ -136,7 +136,7 @@ export function HomeFreeToolsSection({ decoderLabels, home }: { decoderLabels: V
             <div
               ref={panelRef}
               id={`${id}-vin`}
-              className="order-2 scroll-mt-[calc(4.75rem+env(safe-area-inset-top,0px))] rounded-[20px] border border-white/[0.09] bg-white/[0.02] p-4 sm:p-7 md:order-4 md:col-span-3"
+              className="order-2 scroll-mt-[calc(4.75rem+env(safe-area-inset-top,0px))] md:order-4 md:col-span-3"
             >
               <div className="mb-4 flex items-center justify-between gap-4">
                 <p className="text-[15px] font-semibold text-zinc-50">{t("vinTitle")}</p>

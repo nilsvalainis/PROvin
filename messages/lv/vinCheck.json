@@ -52,7 +52,7 @@
     "modelHint": "Modelis ir pēc ražotāja koda VIN kodā. Viens kods var aptvert vairākus vienas platformas modeļus, tāpēc tie norādīti visi.",
     "classSuffix": "-klase",
     "coupeCabrio": "kupeja / kabriolets",
-    "ctaAudit": "Pasūtīt auditu ar šo auto · 99,99 €",
+    "ctaAudit": "Pasūtīt auditu šim auto · 99,99 €",
     "regions": {
       "africa": "Āfrika",
       "asia": "Āzija",

@@ -42,7 +42,7 @@ export async function HomeTrustBand() {
               key={label}
               className={`flex flex-col gap-2 py-6 pr-4 sm:py-8 lg:px-7 lg:first:pl-0 ${i % 2 === 0 ? "border-r border-[#262a36]" : ""} ${i < 2 ? "border-b border-[#262a36] lg:border-b-0" : ""} ${i === 1 ? "pl-4 lg:border-r" : ""} ${i === 3 ? "pl-4" : ""} ${i === 2 ? "lg:border-r" : ""}`}
             >
-              <span className="whitespace-nowrap text-[2.6rem] font-extrabold leading-none tracking-[-0.04em] text-zinc-50 sm:text-[3.5rem] lg:text-[4.5rem]">
+              <span className="whitespace-nowrap text-[2.1rem] font-extrabold leading-none tracking-[-0.035em] text-zinc-50 sm:text-[2.6rem] lg:text-[3rem]">
                 {value}
                 {i === 0 ? (
                   <span className="ml-1 align-middle text-[1.4rem] text-[#f5b400]" aria-hidden>
@@ -64,7 +64,7 @@ export async function HomeTrustBand() {
               <div className="tracking-[3px] text-[15px] text-[#f5b400]" aria-label={t("starsAria")}>
                 ★★★★★
               </div>
-              <blockquote className="m-0 flex-1 text-[1.02rem] leading-relaxed text-zinc-200">“{clip(r.text)}”</blockquote>
+              <blockquote className="m-0 flex-1 text-[0.95rem] leading-relaxed text-zinc-200">“{clip(r.text)}”</blockquote>
               <figcaption className="text-[13px] text-zinc-400">
                 <b className="font-semibold text-zinc-50">{r.author}</b> · Google · {formatGoogleReviewRelativeDate(locale, r.relative)}
               </figcaption>

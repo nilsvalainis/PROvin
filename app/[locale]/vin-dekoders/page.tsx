@@ -34,15 +34,15 @@ export default async function VinDecoderPage({ params }: Props) {
   return (
     <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
       <div className="demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">
-        <section className="border-b border-[#1d2130] bg-[#07080b]">
+        <section className="bg-transparent">
           <div className="mx-auto flex max-w-[80rem] flex-col gap-10 px-[max(1rem,env(safe-area-inset-left,0px))] pb-16 pr-[max(1rem,env(safe-area-inset-right,0px))] pt-24 sm:pb-20 sm:pt-32 lg:px-10">
             <div className="grid gap-6 lg:grid-cols-12 lg:items-end lg:gap-10">
-              <h1 className="text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-[-0.04em] text-zinc-50 sm:text-[3.4rem] lg:col-span-6 lg:text-[4rem]">
+              <h1 className="text-balance text-[2rem] font-extrabold leading-[1.05] tracking-[-0.035em] text-zinc-50 sm:text-[2.6rem] lg:col-span-6 lg:text-[3rem]">
                 {raw.title}
               </h1>
               <p className="text-[1.05rem] leading-relaxed text-zinc-300 lg:col-span-6">{raw.lead}</p>
             </div>
-            <div className="rounded-[20px] border border-white/[0.09] bg-white/[0.02] p-4 sm:p-7">
+            <div>
               <VinDecoderTool locale={locale} labels={raw} home={home} source="decoder" />
             </div>
           </div>
