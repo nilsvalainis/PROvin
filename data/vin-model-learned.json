@@ -1,0 +1,112 @@
+{
+  "generatedAt": "2026-10-29",
+  "pairs": 131,
+  "table": {
+    "YV1": {
+      "BW7": {
+        "make": "Volvo",
+        "model": "V70",
+        "samples": 3
+      },
+      "DZ875": {
+        "make": "Volvo",
+        "model": "XC60",
+        "samples": 3
+      },
+      "DZ8": {
+        "make": "Volvo",
+        "model": "XC60",
+        "samples": 6
+      },
+      "DZ825": {
+        "make": "Volvo",
+        "model": "XC60",
+        "samples": 2
+      }
+    },
+    "WBA": {
+      "FF410": {
+        "make": "BMW",
+        "model": "X5",
+        "samples": 2
+      },
+      "FF4": {
+        "make": "BMW",
+        "model": "X5",
+        "samples": 2
+      }
+    },
+    "WF0": {
+      "MXXGB": {
+        "make": "Ford",
+        "model": "Galaxy",
+        "samples": 2
+      },
+      "MXX": {
+        "make": "Ford",
+        "model": "Galaxy",
+        "samples": 2
+      }
+    },
+    "WVW": {
+      "ZZZ1K": {
+        "make": "Volkswagen",
+        "model": "Golf",
+        "samples": 2
+      },
+      "ZZZAU": {
+        "make": "Volkswagen",
+        "model": "Golf",
+        "samples": 2
+      }
+    },
+    "WAU": {
+      "ZZZ4G": {
+        "make": "Audi",
+        "model": "A6",
+        "samples": 2
+      },
+      "ZZZ4L": {
+        "make": "Audi",
+        "model": "Q7",
+        "samples": 2
+      },
+      "ZZZ4F": {
+        "make": "Audi",
+        "model": "A6",
+        "samples": 2
+      },
+      "ZZZ8K": {
+        "make": "Audi",
+        "model": "A4",
+        "samples": 3
+      }
+    },
+    "WDF": {
+      "639": {
+        "make": "Mercedes-Benz",
+        "model": "Viano",
+        "samples": 4
+      },
+      "63981": {
+        "make": "Mercedes-Benz",
+        "model": "Viano",
+        "samples": 4
+      }
+    },
+    "WDD": {
+      "21229": {
+        "make": "Mercedes-Benz",
+        "model": "E",
+        "samples": 2
+      }
+    },
+    "WVG": {
+      "ZZZ1T": {
+        "make": "Volkswagen",
+        "model": "Touran",
+        "samples": 2
+      }
+    }
+  }
+}

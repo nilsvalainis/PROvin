@@ -1,4 +1,6 @@
+import learned from "@/data/vin-model-learned.json";
 import type { VinDecodeResult } from "@/lib/vin-decode";
+import { lookupLearned, type LearnedTable } from "@/lib/vin-model-learn";
 
 /**
  * Modelis no Eiropas VIN bez ārējiem pieprasījumiem (bezmaksas VIN pārbaude).
@@ -9,7 +11,11 @@ import type { VinDecodeResult } from "@/lib/vin-decode";
  *   virsbūvi, motoru un drošības spilvenus. Modeli rādām tikai tad, ja gada kods iekrīt paaudzes ražošanas gados -
  *   ja nesakrīt, VIN ir neparasts un neko nerādām.
  * - Mercedes-Benz: Eiropas VIN 4.-9. zīme ir Baumuster (6 cipari), pirmie 3 = Baureihe. Gads VIN nav.
- * BMW nav: publiskas un pilnīgas 4.-7. zīmes tabulas nav, minēt negribam.
+ * - Volvo: 4.-5. zīme ir modeļa kods (publiska shēma), 10. zīme modeļa gads.
+ * - BMW: 4.-5. zīme ir modeļa/paaudzes kods bez publiskas pilnas tabulas - tikai kodi, kas sakrīt ar
+ *   mūsu pasūtījumu auto (29.10.2026). Eiropas BMW 10. zīme bieži ir "0" (bez gada), tad gadu nerādām.
+ * - Iemācītā tabula (`data/vin-model-learned.json`, sk. `lib/vin-model-learn.ts`): pārējām markām no mūsu
+ *   pašu datiem, tikai kodi ar 2+ sakritībām un bez konfliktiem. Bez paaudzes un gada.
  * Nezināms kods -> `null` (lapa rāda tikai ražotāju un valsti).
  * VW grupas kods ir platformas kods: vienam kodam var būt vairāki modeļi (5F = Leon III un Ateca), tos rādām visus.
  * Pārbaudīts 29.10.2026 pret 54 īstiem VW grupas un Mercedes auto (CSDD un izsoļu modelis) - kodi laboti pēc tiem.
@@ -20,11 +26,11 @@ export type VinModelInfo = {
   model: string;
   /** Paaudze vai šasija, piem. "III", "B8", "W213". */
   generation: string;
-  /** Paaudzes ražošanas gadi; `to: null` = ražo joprojām. */
-  produced: { from: number; to: number | null };
+  /** Paaudzes ražošanas gadi; `to: null` = ražo joprojām; `null` = iemācītajai tabulai nav zināmi. */
+  produced: { from: number; to: number | null } | null;
   /** Tikai VW grupai, ja gada kods viennozīmīgs paaudzes robežās. */
   modelYear: number | null;
-  scheme: "vag" | "mercedes";
+  scheme: "vag" | "mercedes" | "volvo" | "bmw" | "learned";
   /** Ražotāja kods VIN (VW grupa 7.-8. zīme, Mercedes Baureihe 4.-6. zīme). */
   code: string;
 };
@@ -123,6 +129,68 @@ const SEAT: Record<string, Gen> = {
   K1: { model: "Born", generation: "", from: 2021, to: null, make: "Cupra" },
 };
 
+/** Volvo 4.-5. zīme (YV1 vieglie, YV4 apvidus). Pārbaudīts ar 23 mūsu auto. */
+const VOLVO: Record<string, Gen> = {
+  LS: { model: "850 / S70", generation: "I", from: 1991, to: 2000 },
+  LW: { model: "850 / V70", generation: "I", from: 1991, to: 2000 },
+  TS: { model: "S80", generation: "I", from: 1998, to: 2006 },
+  RS: { model: "S60", generation: "I", from: 2000, to: 2009 },
+  SW: { model: "V70", generation: "II", from: 2000, to: 2007 },
+  SZ: { model: "XC70", generation: "I", from: 2000, to: 2007 },
+  MS: { model: "S40", generation: "II", from: 2004, to: 2012 },
+  MW: { model: "V50", generation: "", from: 2004, to: 2012 },
+  MK: { model: "C30", generation: "", from: 2006, to: 2013 },
+  MC: { model: "C70", generation: "II", from: 2006, to: 2013 },
+  MV: { model: "V40", generation: "II", from: 2012, to: 2019 },
+  AS: { model: "S80", generation: "II", from: 2006, to: 2016 },
+  BW: { model: "V70", generation: "III", from: 2007, to: 2016 },
+  BZ: { model: "XC70", generation: "II", from: 2007, to: 2016 },
+  CM: { model: "XC90", generation: "I", from: 2002, to: 2014 },
+  CT: { model: "XC90", generation: "I", from: 2002, to: 2014 },
+  CY: { model: "XC90", generation: "I", from: 2002, to: 2014 },
+  CZ: { model: "XC90", generation: "I", from: 2002, to: 2014 },
+  DZ: { model: "XC60", generation: "I", from: 2008, to: 2017 },
+  FS: { model: "S60", generation: "II", from: 2010, to: 2018 },
+  FW: { model: "V60", generation: "I", from: 2010, to: 2018 },
+  LF: { model: "XC90", generation: "II", from: 2015, to: null },
+  PS: { model: "S90", generation: "II", from: 2016, to: null },
+  PW: { model: "V90", generation: "II", from: 2016, to: null },
+  UZ: { model: "XC60", generation: "II", from: 2017, to: null },
+  XZ: { model: "XC40", generation: "", from: 2017, to: null },
+  ZS: { model: "S60", generation: "III", from: 2018, to: null },
+  ZW: { model: "V60", generation: "II", from: 2018, to: null },
+};
+
+/** BMW 4.-5. zīme: tikai kodi, kas sakrīt ar mūsu auto. Vienam kodam var būt vairāki modeļi. */
+const BMW: Record<string, Gen> = {
+  "1B": { model: "1. sērija", generation: "F20 / F21", from: 2011, to: 2019 },
+  "1J": { model: "2. sērija kupeja / kabriolets", generation: "F22 / F23", from: 2013, to: 2021 },
+  "2E": { model: "2. sērija Active / Gran Tourer", generation: "F45 / F46", from: 2014, to: 2022 },
+  "6X": { model: "2. sērija Active Tourer", generation: "U06", from: 2021, to: null },
+  "3A": { model: "3. sērija", generation: "F30 / F31", from: 2012, to: 2019 },
+  "5R": { model: "3. sērija", generation: "G20 / G21", from: 2018, to: null },
+  PN: { model: "3. sērija", generation: "E90 / E91", from: 2005, to: 2012 },
+  UT: { model: "3. sērija Touring", generation: "E91", from: 2005, to: 2012 },
+  NC: { model: "5. sērija", generation: "E60 / E61", from: 2003, to: 2010 },
+  NX: { model: "5. sērija", generation: "E60 / E61", from: 2003, to: 2010 },
+  PX: { model: "5. sērija", generation: "E60 / E61", from: 2003, to: 2010 },
+  "5K": { model: "5. sērija", generation: "F10 / F11", from: 2010, to: 2017 },
+  "51": { model: "5. sērija", generation: "G30 / G31", from: 2016, to: 2023 },
+  JD: { model: "5. sērija", generation: "G30 / G31", from: 2016, to: 2023 },
+  JW: { model: "6. sērija Gran Turismo", generation: "G32", from: 2017, to: 2023 },
+  LW: { model: "6. sērija kupeja / kabriolets", generation: "F12 / F13", from: 2011, to: 2018 },
+  YM: { model: "6. sērija Gran Coupé", generation: "F06", from: 2012, to: 2018 },
+  VN: { model: "X1", generation: "E84", from: 2009, to: 2015 },
+  HS: { model: "X1", generation: "F48", from: 2015, to: 2022 },
+  HT: { model: "X1", generation: "F48", from: 2015, to: 2022 },
+  WY: { model: "X3", generation: "F25", from: 2010, to: 2017 },
+  FF: { model: "X5", generation: "E70", from: 2006, to: 2013 },
+  KS: { model: "X5", generation: "F15", from: 2013, to: 2018 },
+  TA: { model: "X5", generation: "G05", from: 2018, to: null },
+  GT: { model: "X6", generation: "G06", from: 2019, to: null },
+  TC: { model: "X6", generation: "G06", from: 2019, to: null },
+};
+
 const VAG_TABLES: Record<string, { make: string; table: Record<string, Gen>; zzz?: false }> = {
   WVW: { make: "Volkswagen", table: VW },
   WVG: { make: "Volkswagen", table: VW },
@@ -203,23 +271,34 @@ const MB: Record<string, { car?: MbGen; suv?: MbGen }> = {
 const MB_WMI = new Set(["WDD", "WDB", "WDC", "WDF", "W1K", "W1N", "W1V"]);
 const MB_SUV_WMI = new Set(["WDC", "W1N"]);
 
-function decodeVag(vin: string, years: number[], now: Date): VinModelInfo | null {
-  const brand = VAG_TABLES[vin.slice(0, 3)];
-  if (!brand || (brand.zzz !== false && vin.slice(3, 6) !== "ZZZ")) return null;
-  const gen = brand.table[vin.slice(6, 8)];
+type CodeScheme = { make: string; table: Record<string, Gen>; start: number; len: number; zzz: boolean; year: "required" | "optional"; scheme: VinModelInfo["scheme"] };
+
+const SCHEMES: Record<string, CodeScheme> = Object.fromEntries([
+  ...Object.entries(VAG_TABLES).map(([wmi, v]) => [wmi, { make: v.make, table: v.table, start: 6, len: 2, zzz: v.zzz !== false, year: "required", scheme: "vag" } as CodeScheme]),
+  ...["YV1", "YV4"].map((wmi) => [wmi, { make: "Volvo", table: VOLVO, start: 3, len: 2, zzz: false, year: "required", scheme: "volvo" } as CodeScheme]),
+  ...["WBA", "WBS"].map((wmi) => [wmi, { make: "BMW", table: BMW, start: 3, len: 2, zzz: false, year: "optional", scheme: "bmw" } as CodeScheme]),
+]);
+
+function decodeByCode(vin: string, years: number[], now: Date): VinModelInfo | null {
+  const sch = SCHEMES[vin.slice(0, 3)];
+  if (!sch || (sch.zzz && vin.slice(3, 6) !== "ZZZ")) return null;
+  const code = vin.slice(sch.start, sch.start + sch.len);
+  const gen = sch.table[code];
   if (!gen) return null;
   // Modeļa gads var apsteigt ražošanu par gadu (rudens izlaidums).
   const last = (gen.to ?? now.getUTCFullYear()) + 1;
   const fits = years.filter((y) => y >= gen.from - 1 && y <= last);
-  if (fits.length !== 1) return null;
+  // Gada kods, kas neiekrīt paaudzes gados, nozīmē neparastu VIN: labāk neko nerādīt.
+  if (years.length && fits.length !== 1) return null;
+  if (!years.length && sch.year === "required") return null;
   return {
-    make: gen.make ?? brand.make,
+    make: gen.make ?? sch.make,
     model: gen.model,
     generation: gen.generation,
     produced: { from: gen.from, to: gen.to },
-    modelYear: fits[0],
-    scheme: "vag",
-    code: vin.slice(6, 8),
+    modelYear: fits[0] ?? null,
+    scheme: sch.scheme,
+    code,
   };
 }
 
@@ -243,5 +322,14 @@ function decodeMercedes(vin: string): VinModelInfo | null {
 
 export function decodeVinModel(local: Extract<VinDecodeResult, { ok: true }>, now: Date = new Date()): VinModelInfo | null {
   if (local.region !== "europe") return null;
-  return decodeVag(local.vin, local.modelYears, now) ?? decodeMercedes(local.vin);
+  const wmi = local.vin.slice(0, 3);
+  // Markām ar savu shēmu iemācīto tabulu nelietojam: ja shēma apzināti dod `null` (gads neiekrīt), tā arī paliek.
+  if (SCHEMES[wmi] || MB_WMI.has(wmi)) return decodeByCode(local.vin, local.modelYears, now) ?? decodeMercedes(local.vin);
+  return decodeLearned(local.vin);
+}
+
+function decodeLearned(vin: string): VinModelInfo | null {
+  const hit = lookupLearned((learned as { table: LearnedTable }).table, vin);
+  if (!hit) return null;
+  return { make: hit.make, model: hit.model, generation: "", produced: null, modelYear: null, scheme: "learned", code: hit.code };
 }

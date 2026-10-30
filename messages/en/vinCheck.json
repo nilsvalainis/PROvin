@@ -61,5 +61,22 @@
       "oceania": "Oceania",
       "southAmerica": "South America"
     }
+  },
+  "HomeFreeTools": {
+    "title": "Three things you can do",
+    "titleAccent": "for 0 €.",
+    "lead": "Start with a free step. Order the full audit only if the car is worth it.",
+    "stats": "5.0 Google · 55 reviews · 300+ audits done",
+    "vinTitle": "Free\nVIN check",
+    "vinBody": "The VIN instantly shows the manufacturer and country of production. For VW, Audi, Škoda, SEAT and Mercedes also the model, generation and model year.",
+    "vinPlaceholder": "VIN (17 characters)",
+    "vinSubmit": "Decode",
+    "listingTitle": "Send us\nthe listing",
+    "listingBody": "We read the listing like an experienced buyer: price, description, photos and contradictions between them. We email you a comment, free of charge.",
+    "listingPlaceholder": "Listing link",
+    "listingSubmit": "Send",
+    "askTitle": "Ask\nus",
+    "askBody": "Not sure which report fits? Wondering whether a car from the UK, USA or Japan can be checked? Write to us and we will answer.",
+    "askEmail": "Email"
   }
 }

@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { isAppLocale } from "@/i18n/locales";
 import { Footer } from "@/components/Footer";
+import { HomeFreeToolsSection } from "@/components/home/HomeFreeToolsSection";
 import { HomeGoogleReviews } from "@/components/home/HomeGoogleReviews";
 import { HomeRiskAuditGuideSection } from "@/components/home/HomeRiskAuditGuideSection";
 import { HomeVinSeoSection } from "@/components/home/HomeVinSeoSection";
@@ -54,6 +55,7 @@ export default async function HomePage({ params }: Props) {
         <HomePricingHero />
 
         <div id="site-content" className="min-w-0 scroll-mt-14 bg-transparent pb-0 text-white home-body-ink">
+          <HomeFreeToolsSection />
           <HomeVinSeoSection />
           <RelatedBlogLinks />
           <Suspense fallback={null}>

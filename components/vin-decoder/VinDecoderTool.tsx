@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { decodeVin, type VinDecodeResult, type VinRegion } from "@/lib/vin-decode";
 import { decodeVinModel, type VinModelInfo } from "@/lib/vin-model-codes";
 
@@ -52,7 +53,8 @@ function localModel(name: string, labels: VinDecoderLabels): string {
   return name.replace(/-klase/g, labels.classSuffix).replace("kupeja / kabriolets", labels.coupeCabrio);
 }
 
-function producedText(m: VinModelInfo, labels: VinDecoderLabels): string {
+function producedText(m: VinModelInfo, labels: VinDecoderLabels): string | null {
+  if (!m.produced) return null;
   return m.produced.to ? `${m.produced.from}-${m.produced.to}` : `${m.produced.from}-${labels.producedOngoing}`;
 }
 
@@ -60,6 +62,15 @@ function producedText(m: VinModelInfo, labels: VinDecoderLabels): string {
 export function VinDecoderTool({ locale, labels, auditHref, freeCheckHref, initialVin }: Props) {
   const [value, setValue] = useState(initialVin ?? "");
   const [result, setResult] = useState<VinDecodeResult | null>(() => (initialVin ? decodeVin(initialVin) : null));
+
+  // `?vin=` no sākumlapas kartītes: lapa paliek statiska, VIN nolasa pārlūkā.
+  useEffect(() => {
+    if (initialVin) return;
+    const fromUrl = new URLSearchParams(window.location.search).get("vin")?.slice(0, 24);
+    if (!fromUrl) return;
+    setValue(fromUrl);
+    setResult(decodeVin(fromUrl));
+  }, [initialVin]);
 
   const countryName = useMemo(() => {
     try {
@@ -75,7 +86,7 @@ export function VinDecoderTool({ locale, labels, auditHref, freeCheckHref, initi
     ? "-"
     : model?.modelYear
       ? String(model.modelYear)
-      : model?.scheme === "mercedes"
+      : model?.scheme === "mercedes" || model?.scheme === "learned"
         ? labels.yearNotInVin
         : result.modelYears.length
           ? result.modelYears.join(" / ")
@@ -106,14 +117,12 @@ export function VinDecoderTool({ locale, labels, auditHref, freeCheckHref, initi
             maxLength={24}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? "vin-decoder-error" : undefined}
-            className="w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 font-mono text-[1rem] uppercase tracking-[0.08em] text-zinc-100 placeholder:normal-case placeholder:tracking-normal placeholder:text-zinc-500 focus:border-[#2563EB] focus:outline-none"
+            className={`${tp5Styles.inlineInput} font-mono uppercase tracking-[0.08em] placeholder:normal-case placeholder:tracking-normal`}
           />
         </label>
-        <button
-          type="submit"
-          className="min-h-12 rounded-xl bg-[#2563EB] px-6 text-[0.85rem] font-semibold uppercase tracking-[0.1em] text-white transition hover:bg-[#1d4ed8]"
-        >
-          {labels.submit}
+        <button type="submit" className={`${tp5Styles.liquidCta} sm:!w-auto sm:min-w-[11rem]`}>
+          <span className={tp5Styles.liquidCtaShimmer} aria-hidden />
+          <span className={tp5Styles.liquidCtaLabel}>{labels.submit}</span>
         </button>
       </form>
       {error ? (
@@ -155,7 +164,7 @@ export function VinDecoderTool({ locale, labels, auditHref, freeCheckHref, initi
                   ? ([
                       [labels.rowModel, `${localModel(model.model, labels)} (${model.code})`],
                       ...(model.generation ? ([[labels.rowGeneration, model.generation]] as const) : []),
-                      [labels.rowProduced, producedText(model, labels)],
+                      ...(producedText(model, labels) ? ([[labels.rowProduced, producedText(model, labels)]] as const) : []),
                     ] as const)
                   : []),
                 [labels.rowRegion, labels.regions[result.region]],
@@ -182,13 +191,14 @@ export function VinDecoderTool({ locale, labels, auditHref, freeCheckHref, initi
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <a
               href={`${auditHref}?vin=${encodeURIComponent(result.vin)}#home-hero`}
-              className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#2563EB] px-5 text-[0.8rem] font-semibold uppercase tracking-[0.1em] text-white transition hover:bg-[#1d4ed8]"
+              className={`${tp5Styles.liquidCtaLink} sm:flex-1`}
             >
-              {labels.ctaAudit}
+              <span className={tp5Styles.liquidCtaShimmer} aria-hidden />
+              <span className={tp5Styles.liquidCtaLabel}>{labels.ctaAudit}</span>
             </a>
             <a
               href={freeCheckHref}
-              className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 px-5 text-[0.8rem] font-semibold uppercase tracking-[0.1em] text-zinc-100 transition hover:border-white/40"
+              className="inline-flex min-h-[54px] items-center justify-center rounded-full border border-white/20 bg-white/[0.05] px-5 text-center text-[12px] font-semibold uppercase tracking-[0.1em] text-white/90 no-underline transition hover:border-white/35 hover:bg-white/[0.08] hover:text-white sm:flex-1"
             >
               {labels.ctaFree}
             </a>

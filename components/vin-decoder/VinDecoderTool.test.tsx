@@ -26,9 +26,9 @@ describe("VIN dekoders - modelis no ražotāja koda", () => {
   });
 
   it("nezināms modelis: bez modeļa rindas, gada varianti ar paskaidrojumu", () => {
-    const t = text("WBA5R1C0XLFH42873");
+    const t = text("W0VXXXZZZMD012345");
     expect(t).not.toContain("Modelis pēc ražotāja koda");
-    expect(t).toContain("2020 / 1990");
+    expect(t).toContain("2021 / 1991");
     expect(t).toContain("10. zīme atkārtojas");
   });
 });
