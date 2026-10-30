@@ -20,7 +20,7 @@ export const VIN_CHECK_OUTCOMES = [
 ] as const;
 export type VinCheckOutcome = (typeof VIN_CHECK_OUTCOMES)[number];
 
-export const VIN_CHECK_SOURCES = ["home", "decoder", "direct"] as const;
+export const VIN_CHECK_SOURCES = ["home", "decoder", "direct", "test"] as const;
 export type VinCheckSource = (typeof VIN_CHECK_SOURCES)[number];
 
 /** Modeļa atpazīšana: kura shēma deva modeli; `none` = tikai ražotājs/valsts. */

@@ -22,7 +22,7 @@ const MODEL_LV: Record<string, string> = {
   none: "Tikai ražotājs",
 };
 
-const SOURCE_LV: Record<string, string> = { home: "Sākumlapa", decoder: "/vin-dekoders", direct: "Tieši (API)" };
+const SOURCE_LV: Record<string, string> = { home: "Sākumlapa", decoder: "/vin-dekoders", direct: "Tieši (API)", test: "PROVIN tests" };
 
 function n(v: number): string {
   return v.toLocaleString("lv-LV");
