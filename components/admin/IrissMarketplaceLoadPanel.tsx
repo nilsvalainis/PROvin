@@ -28,6 +28,7 @@ type EstimateResponse = {
   ok?: boolean;
   error?: string;
   queryReady?: boolean;
+  querySummary?: string[];
   missingFields?: string[];
   needsOneOfExtra?: boolean;
   tooBroadReason?: string;
@@ -65,6 +66,8 @@ type LoadResponse = {
 };
 
 type StatusResponse = {
+  count?: number;
+  lastLoadAt?: string;
   lastAutoAt?: string;
   nextAutoAt?: string;
   intervalDays?: number;
@@ -229,7 +232,9 @@ export function IrissMarketplaceLoadPanel({
       ? MARKETPLACE_RADAR_EXTRA_RANGE_MESSAGE
       : ""
     : marketplaceMissingExtraRangeMessage(extraMissing);
+  // Izslēgta tikai, ja Vercel MARKETPLACE_LOADS_ENABLED=false (avārijas slēdzis).
   const disabledText = "Ielāde izslēgta (izmaksu kontrole)";
+  const tokenMissing = estimate?.ok === true && estimate.tokenReady === false;
   const monthlyUsedUsd = lastLoadCost?.monthlyUsedUsd ?? status?.lastRun?.monthUsd ?? usage?.lastMonthUsd ?? usage?.spentUsd ?? estimate?.monthlyUsedUsd ?? 0;
   const monthlyCapUsd = usage?.monthlyCapUsd ?? estimate?.monthlyCapUsd ?? 4.5;
   const perRunCapUsd = estimate?.perRunCapUsd ?? 0;
@@ -259,7 +264,9 @@ export function IrissMarketplaceLoadPanel({
                 ? IRISS_LOAD_FAIL
                 : tone === "done"
                   ? msg
-                  : "Gatavs";
+                  : tokenMissing
+                    ? "Nav Apify atslēgas (APIFY_TOKEN)"
+                    : "Gatavs";
 
   return (
     <section className="rounded-[22px] bg-[var(--s1)] px-4 py-3.5 shadow-[var(--sh)]">
@@ -298,8 +305,27 @@ export function IrissMarketplaceLoadPanel({
           </IrissOverflowMenu>
         </span>
       </div>
+      {/* Nils 30.10: ielāde pēc šī pasūtījuma (radara) kritērijiem - redzams, ko tieši meklēs. */}
+      {estimate?.querySummary?.length ? (
+        <div className="mt-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--ink3)]">Meklēs pēc kritērijiem</p>
+          <div className="mt-1 flex flex-wrap gap-1.5">
+            {estimate.querySummary.map((part) => (
+              <span key={part} className="rounded-full px-2.5 py-1 text-[12px] font-semibold text-[var(--ink)] shadow-[inset_0_0_0_1px_var(--iriss-line-strong)]">
+                {part}
+              </span>
+            ))}
+            {onFixCriteria ? (
+              <button type="button" className="rounded-full px-2.5 py-1 text-[12px] font-semibold text-[var(--ink2)] underline underline-offset-2" onClick={onFixCriteria}>
+                Labot kritērijus
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       <p className="mt-2 text-[12px] text-[var(--ink2)]">
-        Pēdējā: {formatLvDate(status?.lastAutoAt) || "vēl nav"} · Nākamā: {formatLvDate(status?.nextAutoAt) || "pēc cron"}
+        Pēdējā ielāde: {formatLvDate(status?.lastLoadAt) || "vēl nav"}
+        {status?.count ? ` · ${status.count} sludinājumi` : ""}
       </p>
       <p className="mt-1 text-[12px] text-[var(--ink2)]">
         {formatIrissLoadEstimateLine(maxUsd, perRunCapUsd)}
@@ -310,7 +336,7 @@ export function IrissMarketplaceLoadPanel({
       <div className="mt-1.5 h-[3px] overflow-hidden rounded-full bg-[var(--fill)]" aria-hidden>
         <div className="h-full bg-[var(--ink3)]" style={{ width: `${pct}%` }} />
       </div>
-      {tone === "missing" && onFixCriteria ? (
+      {tone === "missing" && onFixCriteria && !estimate?.querySummary?.length ? (
         <button type="button" className="mt-2 text-[12px] font-semibold text-[var(--acc)]" onClick={onFixCriteria}>
           Labot kritērijus
         </button>
@@ -318,23 +344,24 @@ export function IrissMarketplaceLoadPanel({
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button
           type="button"
-          disabled={busy}
+          disabled={busy || !allowed || tokenMissing}
           onClick={() => {
             if (!allowed || loadsOff) return;
             setConfirmOpen(true);
           }}
-          className="inline-flex h-10 items-center justify-center rounded-full bg-[var(--chip-active-bg)] px-3.5 text-[13px] font-semibold text-[var(--chip-active-fg)] disabled:opacity-40"
+          className="inline-flex h-10 items-center justify-center rounded-full bg-[var(--iriss-graphite)] px-4 text-[13px] font-semibold text-[var(--iriss-on-graphite)] disabled:opacity-40"
         >
           {busy ? "Ielādē..." : "Ielādēt"}
         </button>
+        {!busy && !allowed && badge && tone !== "done" ? <span className="text-[12px] text-[var(--ink2)]">{badge}</span> : null}
       </div>
       {radar ? (
         <p className="mt-2 text-[11px] text-[var(--ink3)]">
-          Ielāde tikai ar pogu Ielādēt. Automātiska ielāde radarā nav. Mēneša griests {formatMarketplaceUsd(monthlyCapUsd)}.
+          Ielāde tikai ar pogu Ielādēt, pēc radara kritērijiem. Automātiska ielāde radarā nav. Mēneša griests {formatMarketplaceUsd(monthlyCapUsd)}.
         </p>
       ) : (
         <p className="mt-2 text-[11px] text-[var(--ink3)]">
-          Automātiskās ielādes nav - ielādē ar pogu Ielādēt, kad vajag konkrētam pasūtījumam. Mēneša griests{" "}
+          Automātiskās ielādes nav - ielādē ar pogu Ielādēt pēc šī pasūtījuma kritērijiem. Mēneša griests{" "}
           {formatMarketplaceUsd(monthlyCapUsd)}.
         </p>
       )}
@@ -352,6 +379,11 @@ export function IrissMarketplaceLoadPanel({
             className="w-full max-w-md rounded-[22px] bg-[var(--s1)] p-4 shadow-[var(--gsh)]"
           >
             <p className="text-[15px] font-semibold text-[var(--ink)]">Apstiprināt ielādi</p>
+            {estimate?.querySummary?.length ? (
+              <p className="mt-2 text-[13px] text-[var(--ink)]">
+                {platforms.map((pl) => (pl === "mobilede" ? "mobile.de" : "AutoScout24")).join(" + ")}: {estimate.querySummary.join(" · ")}
+              </p>
+            ) : null}
             <p className="mt-2 text-[13px] text-[var(--ink2)]">{formatIrissLoadEstimateLine(maxUsd, perRunCapUsd)}</p>
             <p className="mt-1 text-[13px] text-[var(--ink2)]">
               {formatIrissLoadMonthSpent(monthKey, monthlyUsedUsd + maxUsd, monthlyCapUsd)}

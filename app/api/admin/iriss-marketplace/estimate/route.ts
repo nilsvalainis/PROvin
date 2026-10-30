@@ -11,6 +11,7 @@ import { parseMarketplacePlatforms, resolveMarketplaceAdminTarget } from "@/lib/
 import { previewMarketplaceLoad } from "@/lib/marketplace/load";
 import { MARKETPLACE_PLATFORM_LABEL } from "@/lib/marketplace/providers";
 import { marketplaceTooBroadSkipReason } from "@/lib/marketplace/query-from-order";
+import { marketplaceQuerySummaryLv } from "@/lib/marketplace/query-summary";
 import { marketplaceRadarTooBroadSkipReason } from "@/lib/marketplace/query-from-scan";
 import { isMarketplacePlatform } from "@/lib/marketplace/types";
 
@@ -50,6 +51,7 @@ export async function GET(req: Request) {
     ok: true,
     ownerKind: target.ownerKind,
     queryReady: preview.queryReady,
+    querySummary: marketplaceQuerySummaryLv(preview.query),
     missingFields: preview.missingFields,
     needsOneOfExtra: preview.needsOneOfExtra,
     tooBroadReason,

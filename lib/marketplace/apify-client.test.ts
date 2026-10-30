@@ -208,8 +208,8 @@ describe("marketplace Apify HTTP runner", () => {
     );
   });
 
-  it("does not fetch when MARKETPLACE_LOADS_ENABLED is not true", async () => {
-    delete process.env.MARKETPLACE_LOADS_ENABLED;
+  it("does not fetch when MARKETPLACE_LOADS_ENABLED is switched off", async () => {
+    process.env.MARKETPLACE_LOADS_ENABLED = "false";
     const fetchImpl = vi.fn();
     useFetch(fetchImpl as unknown as typeof fetch);
     const out = await runMarketplaceApifyActor({

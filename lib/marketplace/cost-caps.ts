@@ -33,9 +33,15 @@ function envNumber(name: string, fallback: number, min: number, max: number): nu
 export const MARKETPLACE_LOADS_DISABLED_REASON = "Ielāde izslēgta (izmaksu kontrole)";
 export const MARKETPLACE_AUTO_DISABLED_REASON = "Automātiskā ielāde izslēgta (izmaksu kontrole)";
 
-/** Tikai precīza vērtība `true`. Tukšs, 1, yes, TRUE = izslēgts. */
+const LOADS_OFF_VALUES = new Set(["false", "0", "off", "no"]);
+
+/**
+ * Nils 30.10: «man ir nepieciešama manuāla ielādes opcija pēc kritērijiem» - manuālā ielāde (poga «Ielādēt» +
+ * apstiprinājums ar cenu) strādā pēc noklusējuma; griesti paliek (vienai ielādei un mēnesim).
+ * MARKETPLACE_LOADS_ENABLED=false (vai 0 / off / no) - avārijas izslēgšana. Automātiskā ielāde - vienmēr izslēgta kodā.
+ */
 export function marketplaceLoadsEnabled(): boolean {
-  return process.env.MARKETPLACE_LOADS_ENABLED === "true";
+  return !LOADS_OFF_VALUES.has((process.env.MARKETPLACE_LOADS_ENABLED ?? "").trim().toLowerCase());
 }
 
 /** Tikai precīza vērtība `true`. Noklusējums izslēgts. */

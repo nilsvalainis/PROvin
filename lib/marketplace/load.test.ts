@@ -181,8 +181,8 @@ describe("loadMarketplaceForOrder", () => {
     expect(preview.queryReady).toBe(true);
   });
 
-  it("does not call provider search when MARKETPLACE_LOADS_ENABLED is not true", async () => {
-    delete process.env.MARKETPLACE_LOADS_ENABLED;
+  it("does not call provider search when MARKETPLACE_LOADS_ENABLED is switched off", async () => {
+    process.env.MARKETPLACE_LOADS_ENABLED = "false";
     const search = vi.fn(async () => ({ items: RAW, chargedUsd: 0 }));
     const provider = { ...mockProvider("mobilede", RAW), search };
     const out = await loadMarketplaceForOrder({
