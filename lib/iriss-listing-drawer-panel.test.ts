@@ -35,6 +35,10 @@ describe("IRISS listing side panel", () => {
     expect(drawer).not.toContain("saglabājas tikai šajā ierīcē");
   });
 
+  it("phone sheets (Filtri, Vairāk) do not close on a tap inside them - tap must not fall through to a card", () => {
+    expect(list).toContain('t.closest("[data-admin-list-sheet], .admin-sheet-root, [role=dialog]")');
+  });
+
   it("closes with the browser Back button and steps through the list", () => {
     expect(list).toContain('url.searchParams.set("listing", id)');
     expect(list).toContain("window.history.back()");
