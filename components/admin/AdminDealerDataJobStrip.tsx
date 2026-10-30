@@ -18,6 +18,14 @@ import {
   type DealerClientEmailKind,
 } from "@/lib/dealer-data-client-email";
 import {
+  buildDealerRefundRequestBody,
+  dealerRefundConfirmMessage,
+  dealerRefundEmailSheetHint,
+  dealerRefundResultNotice,
+  resolveDealerRefundActionKind,
+  shouldOpenDealerRefundEmailSheet,
+} from "@/lib/admin-dealer-data-refund";
+import {
   DEALER_DATA_RETRY_NO_RECHARGE_HINT,
   dealerDataRetryButtonLabel,
   describeDealerDataJob,
@@ -31,6 +39,7 @@ import { AdminOrderUpsellPanel } from "@/components/admin/AdminOrderUpsellPanel"
 /**
  * Automātiskās dīlera datu ielases statuss pēc apmaksas + klienta saziņa.
  * WA un e-pasts vienmēr redzami; atmaksa tikai Stripe cs_* + no_data.
+ * B2C Stripe «Atgriezt maksājumu»: atmaksa un klienta e-pasts vienā solī.
  */
 
 type Props = {
@@ -118,6 +127,7 @@ export function AdminDealerDataJobStrip({
   const [busy, setBusy] = useState<null | "run" | "refund" | "email" | "pdf">(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [sheet, setSheet] = useState<MailSheet | null>(null);
+  const [sheetHint, setSheetHint] = useState<string | null>(null);
   const [mailTo, setMailTo] = useState("");
   const [mailSubject, setMailSubject] = useState("");
   const [mailText, setMailText] = useState("");
@@ -190,6 +200,7 @@ export function AdminDealerDataJobStrip({
     setMailLang(lang);
     setPdfFile(null);
     setSheet({ mode, kind });
+    setSheetHint(null);
     setNotice(null);
   };
 
@@ -231,16 +242,8 @@ export function AdminDealerDataJobStrip({
 
   const refund = async () => {
     if (!editable || busy || !job || !canRefund) return;
-    const isCredit = sessionId.startsWith("manual_order_") && !walletRefund;
-    if (
-      !window.confirm(
-        walletRefund
-          ? "Atgriezt summu partnera atlikumā? Partneris saņems IRISS e-pastu."
-          : isCredit
-            ? "Atgriezt 1 dīlera kredītu partnera kontā? E-pastu sūti atsevišķi ar „Nosūtīt e-pastu”."
-            : "Atgriezt maksājumu pilnā apmērā? Darbība ir neatgriezeniska. E-pastu sūti atsevišķi ar „Nosūtīt e-pastu”.",
-      )
-    ) {
+    const kind = resolveDealerRefundActionKind({ sessionId, walletRefund });
+    if (!window.confirm(dealerRefundConfirmMessage(kind))) {
       return;
     }
     setBusy("refund");
@@ -250,27 +253,27 @@ export function AdminDealerDataJobStrip({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, notifyEmail: false }),
+        body: JSON.stringify(buildDealerRefundRequestBody({ sessionId, kind })),
       });
       const body = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         error?: string;
         emailSent?: boolean;
+        emailError?: string;
         job?: DealerDataJob | null;
       };
       if (body.job) setJob(body.job);
+      const ok = Boolean(body.ok);
       setNotice(
-        body.ok
-          ? walletRefund
-            ? body.emailSent
-              ? "Summa atgriezta partnera atlikumā. IRISS e-pasts nosūtīts."
-              : "Summa atgriezta partnera atlikumā. E-pastu nesanāca nosūtīt, mēģini pogu vēlreiz."
-            : isCredit
-              ? "Kredīts atgriezts partnera kontā. Nosūti e-pastu ar „Nosūtīt e-pastu”, ja vajag."
-              : "Atmaksa veikta. Nosūti e-pastu ar „Nosūtīt e-pastu”, ja vajag."
-          : `Atmaksa neizdevās: ${body.error ?? "nezināma kļūda"}`,
+        dealerRefundResultNotice({
+          kind,
+          ok,
+          emailSent: body.emailSent,
+          emailError: body.emailError,
+          error: body.error,
+        }),
       );
-      if (body.ok) {
+      if (shouldOpenDealerRefundEmailSheet({ kind, ok, emailSent: body.emailSent })) {
         const amount =
           body.job?.refund != null
             ? `${(body.job.refund.amountCents / 100).toFixed(2)} €`
@@ -285,6 +288,7 @@ export function AdminDealerDataJobStrip({
         setMailText(draft.text);
         setPdfFile(null);
         setSheet({ mode: "message", kind: "no_data" });
+        setSheetHint(dealerRefundEmailSheetHint({ kind, emailSent: body.emailSent }));
       }
     } catch {
       setNotice("Neizdevās sazināties ar serveri.");
@@ -553,7 +557,8 @@ export function AdminDealerDataJobStrip({
               </button>
             </div>
             <p className="mt-1 text-[11px] leading-snug text-[var(--color-provin-muted)]">
-              Tekstu vari papildināt vai labot pirms sūtīšanas. Atmaksa šajā dialogā nenotiek.
+              {sheetHint ??
+                "Tekstu vari papildināt vai labot pirms sūtīšanas. Atmaksa šajā dialogā nenotiek."}
             </p>
 
             <label className="mt-3 block text-[10px] font-medium text-slate-500">Klienta e-pasts</label>

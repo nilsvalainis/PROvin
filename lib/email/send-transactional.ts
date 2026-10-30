@@ -879,8 +879,8 @@ export async function trySendPartnerPasswordResetEmail(opts: {
 }
 
 /**
- * Dīlera datu atmaksas paziņojums klientam. Sūta operators no admin, nevis
- * automātika: naudas atgriešanu vienmēr apstiprina cilvēks.
+ * Dīlera datu atmaksas paziņojums klientam. Sūta operators no admin
+ * (B2C Stripe: atmaksa + e-pasts vienā solī). Naudas atgriešanu apstiprina cilvēks.
  */
 export async function sendDealerDataRefundEmail(opts: {
   to: string;

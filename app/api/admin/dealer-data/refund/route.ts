@@ -1,12 +1,16 @@
 /**
  * Manuāla dīlera pasūtījuma atmaksa, kad OEM datu par VIN nav.
  *
- * B2C Stripe `cs_*`: nauda uz karti.
+ * B2C Stripe `cs_*`: nauda uz karti + klienta no_data e-pasts vienā solī.
  * B2B manuālais VIN (manual_order_*): 1 kredīts atpakaļ partnera kontā.
- * B2B maka pirkums (wallet_txn=): summa atpakaļ partnera atlikumā.
+ * B2B maka pirkums (wallet_txn=): summa atpakaļ partnera atlikumā + IRISS e-pasts.
  */
 import { NextResponse } from "next/server";
 
+import {
+  resolveDealerRefundClientEmail,
+  shouldSendDealerStripeRefundEmail,
+} from "@/lib/admin-dealer-data-refund";
 import { getAdminSession } from "@/lib/admin-auth";
 import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
 import { isManualOrderId } from "@/lib/admin-manual-orders";
@@ -216,14 +220,25 @@ export async function POST(req: Request) {
   }
 
   let emailSent = false;
-  const to = session.customer_details?.email ?? session.customer_email ?? "";
-  if (o.notifyEmail === true && to) {
-    emailSent = await trySendDealerDataRefundEmail({
-      to,
-      vin: job?.vin ?? null,
-      amountEur: `${(decision.amountCents / 100).toFixed(2)} €`,
-      cancelled: o.cancelled === true,
-    });
+  let emailError: "no_recipient" | "send_failed" | undefined;
+  const draft = await readOrderDraft(sessionId);
+  const to = resolveDealerRefundClientEmail([
+    session.customer_details?.email,
+    session.customer_email,
+    draft?.orderEdits?.customerEmail,
+  ]);
+  if (shouldSendDealerStripeRefundEmail(o.notifyEmail)) {
+    if (!to) {
+      emailError = "no_recipient";
+    } else {
+      emailSent = await trySendDealerDataRefundEmail({
+        to,
+        vin: job?.vin ?? draft?.orderEdits?.vin ?? null,
+        amountEur: `${(decision.amountCents / 100).toFixed(2)} €`,
+        cancelled: o.cancelled === true,
+      });
+      if (!emailSent) emailError = "send_failed";
+    }
   }
 
   return NextResponse.json({
@@ -232,6 +247,7 @@ export async function POST(req: Request) {
     kind: "stripe",
     statePersisted: persisted,
     emailSent,
+    ...(emailError ? { emailError } : {}),
     job: await readDealerDataJob(sessionId),
   });
 }
