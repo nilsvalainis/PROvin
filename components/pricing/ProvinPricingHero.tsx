@@ -7,7 +7,7 @@ import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { HeroVisual } from "@/components/HeroVisual";
 import { Tp5DesktopFeatureIconRow } from "@/components/test-pricing-5/Tp5DesktopFeatureIconRow";
 import { Tp5CheckoutEmailModal, Tp5MiniConfirmModal } from "@/components/test-pricing-5/Tp5MiniConfirmModal";
-import { Tp5MobilePricingCard } from "@/components/test-pricing-5/Tp5MobilePricingCard";
+import { Tp5MobilePricingCard, Tp5VinHighlightContext } from "@/components/test-pricing-5/Tp5MobilePricingCard";
 import { getTp5HeroCopy } from "@/lib/test-pricing-5-hero-copy";
 import {
   getTp5HeroSwipeOrder,
@@ -29,6 +29,7 @@ import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
 import { useTierSwipe } from "@/lib/use-test-pricing-tier-swipe";
 import { parseHeroPlanParam } from "@/lib/home-hero-plan";
 import { publicOrderVinFromQuery, PUBLIC_ORDER_VIN_QUERY } from "@/lib/public-order-vin-prefill";
+import { HERO_PREFILL_EVENT, type HeroPrefillDetail } from "@/lib/hero-prefill";
 import { followStripeCheckoutUrl, trackMetaLead } from "@/lib/meta-pixel";
 
 /**
@@ -102,10 +103,38 @@ export function ProvinPricingHero({
 
   const cancelled = searchParams.get("atcelts") === "1";
 
+  /** VIN / numurzīme, kas ielikta no bezmaksas pārbaudes: lauks nomirgo zaļš un paliek zaļš, līdz to maina. */
+  const [prefilledVin, setPrefilledVin] = useState("");
+
   useEffect(() => {
     const prefilled = publicOrderVinFromQuery(searchParams.get(PUBLIC_ORDER_VIN_QUERY));
-    if (prefilled) setVin(prefilled);
+    if (prefilled) {
+      setVin(prefilled);
+      setPrefilledVin(prefilled);
+    }
   }, [searchParams]);
+
+  useEffect(() => {
+    function onPrefill(event: Event) {
+      const detail = (event as CustomEvent<HeroPrefillDetail>).detail;
+      const value = publicOrderVinFromQuery(detail?.vin);
+      if (!value) return;
+      setErrors({});
+      setGlobalError(null);
+      setVin(value);
+      if (detail.listingUrl) setListingUrl(detail.listingUrl);
+      if (detail.plan) {
+        setMobileActiveId(detail.plan);
+        setDesktopActiveId(detail.plan);
+      }
+      // Notīra un ieliek no jauna, lai animācija atkārtojas arī ar to pašu VIN.
+      setPrefilledVin("");
+      window.requestAnimationFrame(() => setPrefilledVin(value));
+    }
+    window.addEventListener(HERO_PREFILL_EVENT, onPrefill);
+    return () => window.removeEventListener(HERO_PREFILL_EVENT, onPrefill);
+  }, []);
+  const vinHighlight = Boolean(prefilledVin) && vin === prefilledVin;
 
   const submitCheckout = useCallback(
     async (planId: TestPricingPlanId, customerEmail?: string) => {
@@ -243,6 +272,7 @@ export function ProvinPricingHero({
   };
 
   return (
+    <Tp5VinHighlightContext.Provider value={vinHighlight}>
     <div className={styles.heroPricingShell}>
       <Suspense fallback={null}>
         <HeroSearchParamsSync onChange={onSearchParams} />
@@ -340,5 +370,6 @@ export function ProvinPricingHero({
         onClose={closeEmailConfirm}
       />
     </div>
+    </Tp5VinHighlightContext.Provider>
   );
 }

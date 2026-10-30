@@ -5,6 +5,12 @@
     "viewAll": "View on Google",
     "sourceLabel": "Google",
     "prev": "Previous review",
-    "next": "Next review"
+    "next": "Next review",
+    "kpiRating": "Google rating",
+    "kpiCount": "reviews, all 5 ★",
+    "kpiAudits": "audits done",
+    "kpiSources": "data sources in one audit",
+    "allReviews": "All Google reviews",
+    "starsAria": "5 out of 5"
   }
 }

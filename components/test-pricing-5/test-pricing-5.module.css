@@ -1556,6 +1556,22 @@ html[data-site-theme="light"] .dealerInlineBrandTip::after {
   box-shadow: 0 0 0 2px rgb(248 113 113 / 0.2);
 }
 
+/* HERO VIN no bezmaksas pārbaudes: 2 zaļi mirgojumi, tad paliek zaļa apmale. */
+.inlineInputPrefilled {
+  border-color: rgb(34 197 94 / 0.9);
+  box-shadow: 0 0 0 3px rgb(34 197 94 / 0.22);
+  animation: tp5VinPrefillFlash 1.2s ease-in-out 1;
+}
+
+@keyframes tp5VinPrefillFlash {
+  0%, 50%, 100% { box-shadow: 0 0 0 3px rgb(34 197 94 / 0.22); }
+  25%, 75% { box-shadow: 0 0 0 6px rgb(34 197 94 / 0.55); border-color: rgb(74 222 128); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inlineInputPrefilled { animation: none; }
+}
+
 .inlineFieldError {
   margin: -0.2rem 0 0;
   font-size: 0.68rem;

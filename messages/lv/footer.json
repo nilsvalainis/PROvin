@@ -1,6 +1,6 @@
 {
   "Footer": {
-    "body": "Standarta auto vēstures atskaites uzrāda tikai pagātnes fragmentus. PROVIN ir manuāls eksperta audits lietotai automašīnai pirms pirkuma: vairāku VIN avotu dati, pārdevēja sludinājums un konkrētā modeļa vājās vietas vienā pamatotā slēdzienā.",
+    "body": "Standarta auto vēstures atskaites uzrāda tikai pagātnes fragmentus. PROVIN ir manuāls audits lietotai automašīnai pirms pirkuma: vairāku VIN avotu dati, pārdevēja sludinājums un konkrētā modeļa vājās vietas vienā pamatotā slēdzienā.",
     "legalRegionLabel": "Juridiskā informācija un saites",
     "contacts": "Kontakti",
     "contactsHint": "Jautājumi? Sazinies ar mums.",
@@ -25,6 +25,8 @@
     "navVinCheck": "VIN koda pārbaude",
     "navFaq": "BUJ",
     "navAbout": "Par PROVIN",
-    "navBlog": "Blogs"
+    "navBlog": "Blogs",
+    "emailShort": "E-pasts",
+    "phoneLabel": "Tālrunis:"
   }
 }

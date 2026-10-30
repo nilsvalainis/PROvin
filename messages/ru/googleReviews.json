@@ -5,6 +5,12 @@
     "viewAll": "Смотреть в Google",
     "sourceLabel": "Google",
     "prev": "Предыдущий отзыв",
-    "next": "Следующий отзыв"
+    "next": "Следующий отзыв",
+    "kpiRating": "оценка в Google",
+    "kpiCount": "отзывов, все 5 ★",
+    "kpiAudits": "проведённых аудитов",
+    "kpiSources": "источников данных в одном аудите",
+    "allReviews": "Все отзывы в Google",
+    "starsAria": "5 из 5"
   }
 }

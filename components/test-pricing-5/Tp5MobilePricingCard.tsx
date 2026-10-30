@@ -1,6 +1,6 @@
 "use client";
 
-import { type SyntheticEvent, type TouchEvent, useId } from "react";
+import { createContext, type SyntheticEvent, type TouchEvent, useContext, useId } from "react";
 import { useLocale } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import type { Tp5InlineFieldErrors } from "@/lib/test-pricing-5-inline-checkout";
@@ -152,6 +152,9 @@ function PackTitle({ title }: { title: string }) {
   return <>{title}</>;
 }
 
+/** HERO: VIN ielikts no bezmaksas pārbaudes - lauks nomirgo zaļš (`inlineInputPrefilled`). */
+export const Tp5VinHighlightContext = createContext(false);
+
 export function CheckoutFields({
   vin,
   listingUrl,
@@ -174,6 +177,7 @@ export function CheckoutFields({
   // a11y (FABLE v3): kļūda piesaistīta laukam - ekrāna lasītājs to nolasa; vairākas kartītes lapā -> useId.
   const errId = useId();
   const vinErrId = `${errId}-vin`;
+  const vinHighlight = useContext(Tp5VinHighlightContext);
   const listingErrId = `${errId}-listing`;
   return (
     <div
@@ -186,7 +190,7 @@ export function CheckoutFields({
       <input
         type="text"
         name="vin"
-        className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : ""}`}
+        className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : vinHighlight ? styles.inlineInputPrefilled : ""}`}
         value={vin}
         onChange={(event) => onVinChange(sanitizeVinInput(event.target.value))}
         onPaste={(event) => {

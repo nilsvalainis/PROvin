@@ -28,21 +28,25 @@ export default async function VinDecoderPage({ params }: Props) {
   if (!routing.locales.includes(locale as (typeof routing.locales)[number])) notFound();
   setRequestLocale(locale);
   const tAll = await getTranslations({ locale });
-  const raw = tAll.raw("VinDecoder") as VinDecoderLabels & { title: string; lead: string; limitsTitle: string; limitsBody: string };
+  const raw = tAll.raw("VinDecoder") as VinDecoderLabels & { title: string; lead: string };
   const home = homePath(locale);
 
   return (
     <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
       <div className="demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">
-        <article className="mx-auto w-full max-w-[42.5rem] px-4 pb-16 pt-24 sm:px-6 sm:pb-20 sm:pt-28">
-          <h1 className="text-3xl font-semibold tracking-tight text-white/[0.96]">{raw.title}</h1>
-          <p className="mt-4 text-base leading-relaxed text-white/70">{raw.lead}</p>
-          <VinDecoderTool locale={locale} labels={raw} auditHref={home} freeCheckHref={`${home}#bezmaksas-novertejums`} source="decoder" />
-          <section className="mt-12">
-            <h2 className="text-lg font-semibold text-white/[0.96]">{raw.limitsTitle}</h2>
-            <p className="mt-3 text-sm leading-relaxed text-white/70">{raw.limitsBody}</p>
-          </section>
-        </article>
+        <section className="border-b border-[#1d2130] bg-[#07080b]">
+          <div className="mx-auto flex max-w-[80rem] flex-col gap-10 px-[max(1rem,env(safe-area-inset-left,0px))] pb-16 pr-[max(1rem,env(safe-area-inset-right,0px))] pt-24 sm:pb-20 sm:pt-32 lg:px-10">
+            <div className="grid gap-6 lg:grid-cols-12 lg:items-end lg:gap-10">
+              <h1 className="text-balance text-[2.6rem] font-extrabold leading-[1.02] tracking-[-0.04em] text-zinc-50 sm:text-[3.4rem] lg:col-span-6 lg:text-[4rem]">
+                {raw.title}
+              </h1>
+              <p className="text-[1.05rem] leading-relaxed text-zinc-300 lg:col-span-6">{raw.lead}</p>
+            </div>
+            <div className="rounded-[20px] border border-white/[0.09] bg-white/[0.02] p-4 sm:p-7">
+              <VinDecoderTool locale={locale} labels={raw} home={home} source="decoder" />
+            </div>
+          </div>
+        </section>
         <Footer />
       </div>
     </div>
