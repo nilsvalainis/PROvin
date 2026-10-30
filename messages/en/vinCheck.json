@@ -22,7 +22,7 @@
     "metaTitle": "Free VIN decoder: manufacturer, country and year | PROVIN",
     "metaDescription": "Free VIN decoder: manufacturer, country of manufacture and possible model year from the VIN. History, mileage and listing analysis in the PROVIN audit.",
     "title": "VIN decoder",
-    "lead": "Enter a Latvian plate or a 17-character VIN. For a plate we show make, model, year, engine and inspection date; for a VIN - manufacturer, country and, for many makes, model and year. Free, no sign-up.",
+    "lead": "Check a car by its Latvian plate or 17-character VIN. With a plate you see the registry data (make, model, year, engine, inspection) and the start of the VIN - compare it with the VIN in the advert to make sure it is genuine and belongs to this car. With a VIN you get the manufacturer, country and, for many makes, model and year. Free, no sign-up.",
     "inputLabel": "VIN or licence plate",
     "inputPlaceholder": "AB1234 or 17-character VIN",
     "submit": "Decode",
