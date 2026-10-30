@@ -3,13 +3,13 @@ import { emptyCsddTechData } from "@/lib/csdd-tech-data";
 
 const events: unknown[] = [];
 const csdd = vi.fn();
-let csddToday = 0;
+let usage = { decoderToday: 0, monthTotal: 0 };
 
 vi.mock("@/lib/vin-check-stats-store", () => ({
   recordVinCheckEvent: async (e: unknown) => {
     events.push(e);
   },
-  todayDecoderCsddCalls: async () => csddToday,
+  csddUsage: async () => usage,
 }));
 vi.mock("@/lib/csdd-tech-data-counted", () => ({ fetchCsddTechDataCounted: (...a: unknown[]) => csdd(...a) }));
 vi.mock("@/lib/vin-memory-store", () => ({
@@ -28,7 +28,7 @@ function req(q: string, src = "home") {
 beforeEach(() => {
   events.length = 0;
   csdd.mockReset();
-  csddToday = 0;
+  usage = { decoderToday: 0, monthTotal: 0 };
 });
 
 describe("/api/vin-dekoders", () => {
@@ -61,12 +61,23 @@ describe("/api/vin-dekoders", () => {
     expect(events.map((e) => (e as { outcome: string }).outcome)).toEqual(["not_found", "csdd_error"]);
   });
 
-  it("dienas CSDD limits sasniegts -> 503 'quota', CSDD nezvana", async () => {
-    csddToday = 10_000;
-    const res = await GET(req("XY1111"));
-    expect(res.status).toBe(503);
+  it("dienas vai mēneša CSDD griesti sasniegti -> 503 'quota', CSDD nezvana", async () => {
+    usage = { decoderToday: 200, monthTotal: 500 };
+    expect((await GET(req("XY1111"))).status).toBe(503);
+    usage = { decoderToday: 3, monthTotal: 9_000 };
+    expect((await GET(req("XY1112"))).status).toBe(503);
     expect(csdd).not.toHaveBeenCalled();
-    expect(events).toEqual([{ type: "check", kind: "plate", outcome: "quota", source: "home" }]);
+    expect(events).toEqual([
+      { type: "check", kind: "plate", outcome: "quota", source: "home" },
+      { type: "check", kind: "plate", outcome: "quota", source: "home" },
+    ]);
+  });
+
+  it("zem griestiem (8999 mēnesī, 199 šodien) numurzīme iet uz CSDD", async () => {
+    usage = { decoderToday: 199, monthTotal: 8_999 };
+    csdd.mockResolvedValue({ found: false, message: "netika atrasts" });
+    expect((await GET(req("XY1113"))).status).toBe(200);
+    expect(csdd).toHaveBeenCalledTimes(1);
   });
 
   it("kļūdains VIN un numurzīme tiek uzskaitīti atsevišķi", async () => {

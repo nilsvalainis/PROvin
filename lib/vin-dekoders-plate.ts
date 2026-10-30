@@ -22,7 +22,20 @@ export type PublicPlateView = {
   inspection: "valid" | "expiring" | "expired" | "unknown";
 };
 
-export const DECODER_CSDD_DAILY_CAP = 300;
+/** Dekodera CSDD zvani dienā (visiem kopā). */
+export const DECODER_CSDD_DAILY_CAP = 200;
+/** CSDD līgums: 10 000 mēnesī. Dekoders apstājas, kad kopējais mēneša lietojums (dekoders + MINI + admin) sasniedz šo; 1000 paliek rezervē MINI pirkumiem un adminam. */
+export const CSDD_MONTH_CONTRACT = 10_000;
+export const CSDD_MONTH_DECODER_STOP = 9_000;
+
+export type CsddUsage = { decoderToday: number; monthTotal: number };
+
+/** Vai publiskajam dekoderim vairs nedrīkst zvanīt CSDD (dienas vai mēneša griesti). */
+export function decoderCsddBlocked(u: CsddUsage): "day" | "month" | null {
+  if (u.monthTotal >= CSDD_MONTH_DECODER_STOP) return "month";
+  if (u.decoderToday >= DECODER_CSDD_DAILY_CAP) return "day";
+  return null;
+}
 
 export function maskVin(vin: string): string {
   const v = vin.replace(/\s+/g, "").toUpperCase();

@@ -6,8 +6,8 @@ import { isValidPlateNumber, normalizePlateNumber } from "@/lib/order-field-vali
 import { checkRateLimit } from "@/lib/rate-limit";
 import { decodeVin } from "@/lib/vin-decode";
 import { VIN_CHECK_SOURCES, type VinCheckModel, type VinCheckOutcome, type VinCheckSource } from "@/lib/vin-check-stats";
-import { recordVinCheckEvent, todayDecoderCsddCalls } from "@/lib/vin-check-stats-store";
-import { DECODER_CSDD_DAILY_CAP, toPublicPlateView, type PublicPlateView } from "@/lib/vin-dekoders-plate";
+import { csddUsage, recordVinCheckEvent } from "@/lib/vin-check-stats-store";
+import { decoderCsddBlocked, toPublicPlateView, type PublicPlateView } from "@/lib/vin-dekoders-plate";
 import { readVinMemory } from "@/lib/vin-memory-store";
 import { decodeLearnedFrom, decodeVinModel } from "@/lib/vin-model-codes";
 import { readLearnedTable } from "@/lib/vin-model-learn-store";
@@ -15,10 +15,13 @@ import { readLearnedTable } from "@/lib/vin-model-learn-store";
 export const runtime = "nodejs";
 export const maxDuration = 25;
 
-/** VIN: 20 / 10 min un 100 / dienā no IP. Numurzīme (CSDD līgums, 10 000 mēnesī): 10 / 10 min, 30 / dienā no IP un DECODER_CSDD_DAILY_CAP kopā. */
+/**
+ * VIN: 20 / 10 min un 100 / dienā no IP. Numurzīme: 10 / 10 min un 100 / dienā no IP (mobilajiem operatoriem
+ * viens IP daudziem). Īstā CSDD līguma aizsardzība ir `decoderCsddBlocked`: 200 dienā un mēneša griesti.
+ */
 const LIMITS = {
   vin: { burst: 20, day: 100 },
-  plate: { burst: 10, day: 30 },
+  plate: { burst: 10, day: 100 },
 };
 const BURST_WINDOW_MS = 10 * 60 * 1000;
 const DAY_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -80,7 +83,7 @@ export async function GET(req: Request) {
     }
     let entry = plateCache.get(plate);
     if (!entry || Date.now() - entry.at >= PLATE_CACHE_TTL_MS) {
-      if ((await todayDecoderCsddCalls()) >= DECODER_CSDD_DAILY_CAP) {
+      if (decoderCsddBlocked(await csddUsage())) {
         await record("plate", "quota");
         return json({ error: "quota" }, { status: 503 });
       }

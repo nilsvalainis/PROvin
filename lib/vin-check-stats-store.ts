@@ -3,7 +3,7 @@ import "server-only";
 import fs from "fs/promises";
 import path from "path";
 import { get, put } from "@vercel/blob";
-import { applyEvent, parseVinCheckDay, rigaDate, type VinCheckDay, type VinCheckEvent } from "@/lib/vin-check-stats";
+import { applyEvent, parseVinCheckDay, rigaDate, rigaMonthDates, summarizeVinCheckDays, type VinCheckDay, type VinCheckEvent } from "@/lib/vin-check-stats";
 
 /**
  * Skaitītāji pa dienām: Blob `site-stats/vin-checks/YYYY-MM-DD.json` (lokāli `.data/site-stats/vin-checks/`).
@@ -73,10 +73,26 @@ export async function readVinCheckDays(dates: string[]): Promise<VinCheckDay[]> 
   return Promise.all(dates.map((d) => readDay(d)));
 }
 
-/** Šodienas dekodera CSDD zvanu skaits (dienas limitam). */
-export async function todayDecoderCsddCalls(now: Date = new Date()): Promise<number> {
-  const day = await readDay(rigaDate(now));
-  return Object.entries(day.counts)
-    .filter(([k]) => k.startsWith("csdd:decoder:"))
-    .reduce((n, [, v]) => n + v, 0);
+/** Iepriekšējo šī mēneša dienu CSDD kopsumma (tās vairs nemainās); instances kešs 10 min. */
+let pastMonthCache: { key: string; at: number; total: number } | null = null;
+const PAST_CACHE_MS = 10 * 60 * 1000;
+
+/**
+ * CSDD lietojums dekodera griestiem: šodienas dekodera zvani un kopējais mēneša lietojums
+ * (dekoders + MINI + admin). Šodiena vienmēr lasīta svaigi, iepriekšējās dienas no keša.
+ */
+export async function csddUsage(now: Date = new Date()): Promise<{ decoderToday: number; monthTotal: number }> {
+  const today = rigaDate(now);
+  const past = rigaMonthDates(now).filter((d) => d !== today);
+  const key = `${today}|${past.length}`;
+  let pastTotal: number;
+  if (pastMonthCache && pastMonthCache.key === key && Date.now() - pastMonthCache.at < PAST_CACHE_MS) {
+    pastTotal = pastMonthCache.total;
+  } else {
+    pastTotal = summarizeVinCheckDays(await readVinCheckDays(past)).csddTotal;
+    pastMonthCache = { key, at: Date.now(), total: pastTotal };
+  }
+  const t = summarizeVinCheckDays([await readDay(today)]);
+  const decoderToday = Object.values(t.csdd.decoder).reduce((n, v) => n + v, 0);
+  return { decoderToday, monthTotal: pastTotal + t.csddTotal };
 }

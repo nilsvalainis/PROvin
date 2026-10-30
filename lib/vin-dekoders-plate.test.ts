@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { emptyCsddTechData } from "@/lib/csdd-tech-data";
-import { inspectionState, maskVin, toPublicPlateView } from "@/lib/vin-dekoders-plate";
+import { inspectionState, maskVin, toPublicPlateView, decoderCsddBlocked } from "@/lib/vin-dekoders-plate";
 
 const NOW = new Date("2026-10-29T10:00:00Z");
 
@@ -54,5 +54,14 @@ describe("toPublicPlateView", () => {
     });
     expect(JSON.stringify(v)).not.toContain("2027-01-01");
     expect(JSON.stringify(v)).not.toContain("123456");
+  });
+});
+
+describe("decoderCsddBlocked", () => {
+  it("mēneša griesti 9000 kopā atstāj 1000 rezervē MINI un adminam; dienā 200", () => {
+    expect(decoderCsddBlocked({ decoderToday: 0, monthTotal: 8_999 })).toBeNull();
+    expect(decoderCsddBlocked({ decoderToday: 0, monthTotal: 9_000 })).toBe("month");
+    expect(decoderCsddBlocked({ decoderToday: 199, monthTotal: 100 })).toBeNull();
+    expect(decoderCsddBlocked({ decoderToday: 200, monthTotal: 100 })).toBe("day");
   });
 });
