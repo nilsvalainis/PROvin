@@ -49,6 +49,10 @@
         "q": "Is vehicle history data always 100% complete?",
         "a": "Let's be honest: there is no single \"perfect\" database in the world, and neither honest nor dishonest sellers put everything on paper. Our job is to pull every available thread together and flag contradictions when they appear. A PROVIN audit gives you a major advantage in negotiations and protects you from an obvious lemon, but a physical workshop diagnosis before purchase is always a sensible final step."
       }
-    ]
+    ],
+    "homeTitle": "Frequently asked questions",
+    "homeSub": "No answer? Write to us and we will reply personally.",
+    "homeAll": "All questions",
+    "homeEmail": "E-mail"
   }
 }

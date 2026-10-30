@@ -73,6 +73,7 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
     function onPrefill(event: Event) {
       const detail = (event as CustomEvent<FreeEvalPrefillDetail>).detail;
       if (detail?.listingUrl) setListingUrl(detail.listingUrl);
+      if (detail?.vin) setVin(detail.vin);
       if (paused) return;
       setExpanded(true);
       setFormError(null);
@@ -87,7 +88,14 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
   useEffect(() => {
     function fromHash() {
       const h = window.location.hash.replace(/^#/, "");
-      if (!paused && (h === FREE_EVAL_SECTION_ID || h === FREE_EVAL_SECTION_ID_LEGACY)) setExpanded(true);
+      if (paused || (h !== FREE_EVAL_SECTION_ID && h !== FREE_EVAL_SECTION_ID_LEGACY)) return;
+      // No /vin-dekoders: `?listing=` un `?vin=` priekšaizpilda formu.
+      const q = new URLSearchParams(window.location.search);
+      const l = q.get("listing")?.slice(0, 500);
+      const v = q.get("vin")?.slice(0, 24);
+      if (l) setListingUrl(l);
+      if (v) setVin(v);
+      setExpanded(true);
     }
     fromHash();
     window.addEventListener("hashchange", fromHash);

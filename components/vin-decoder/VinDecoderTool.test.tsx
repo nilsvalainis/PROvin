@@ -5,7 +5,7 @@ import { VinDecoderTool, type VinDecoderLabels } from "@/components/vin-decoder/
 import { renderText } from "@/lib/test-render";
 
 function text(vin: string, labels: VinDecoderLabels = lv.VinDecoder as VinDecoderLabels, locale = "lv") {
-  return renderText(<VinDecoderTool locale={locale} labels={labels} auditHref="/lv" freeCheckHref="/lv#x" initialVin={vin} />);
+  return renderText(<VinDecoderTool locale={locale} labels={labels} home="/lv" initialVin={vin} />);
 }
 
 describe("VIN dekoders - modelis no ražotāja koda", () => {

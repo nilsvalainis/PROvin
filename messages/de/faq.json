@@ -49,6 +49,10 @@
         "q": "Ist die Fahrzeughistorie immer zu 100 % vollständig?",
         "a": "Seien wir ehrlich: Es gibt weltweit keine einzige „perfekte“ Datenbank, und weder ehrliche noch unehrliche Verkäufer dokumentieren alles. Unsere Aufgabe ist es, alle verfügbaren Fäden zusammenzuführen und Widersprüche zu markieren, sobald sie auftauchen. Ein PROVIN-Audit verschafft Ihnen einen klaren Vorteil in der Preisverhandlung und schützt vor einem offensichtlichen Fehlkauf. Eine Diagnose in der Werkstatt vor dem Kauf bleibt trotzdem ein sinnvoller letzter Schritt."
       }
-    ]
+    ],
+    "homeTitle": "Häufige Fragen",
+    "homeSub": "Keine Antwort gefunden? Schreiben Sie uns, wir antworten persönlich.",
+    "homeAll": "Alle Fragen",
+    "homeEmail": "E-Mail"
   }
 }
