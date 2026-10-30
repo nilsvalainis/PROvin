@@ -96,6 +96,9 @@
     },
     "app/api/cron/vin-memory-sync/route.ts": {
       "maxDuration": 120
+    },
+    "app/api/cron/vin-model-learn/route.ts": {
+      "maxDuration": 120
     }
   },
   "crons": [
@@ -158,6 +161,10 @@
     {
       "path": "/api/cron/vin-memory-sync",
       "schedule": "40 3 * * *"
+    },
+    {
+      "path": "/api/cron/vin-model-learn",
+      "schedule": "10 4 * * 0"
     }
   ]
 }

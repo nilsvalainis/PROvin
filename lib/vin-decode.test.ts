@@ -32,6 +32,12 @@ describe("decodeVin", () => {
   it("normalizē atstarpes un mazos burtus", () => {
     expect(decodeVin(" wvw zzz1kz6w000001 ", NOW)).toMatchObject({ ok: true, vin: "WVWZZZ1KZ6W000001" });
   });
+  it("pārbaudē atrastie WMI: Jeep, Chrysler, VW komerctransports, Ford Austrālija", () => {
+    expect(decodeVin("1J4RR6GM2BC000001", NOW)).toMatchObject({ ok: true, make: "Jeep" });
+    expect(decodeVin("1C3H8E3D47Y000001", NOW)).toMatchObject({ ok: true, make: "Chrysler" });
+    expect(decodeVin("WV3ZZZSZZK9000001", NOW)).toMatchObject({ ok: true, make: "Volkswagen", country: "DE" });
+    expect(decodeVin("6FPPXXMJ2PM000001", NOW)).toMatchObject({ ok: true, make: "Ford", country: "AU" });
+  });
   it("ASV Honda pēc WMI; nezināms Ziemeļamerikas WMI saņem valsti pēc 1. zīmes", () => {
     expect(decodeVin("1HGCM82633A004352")).toMatchObject({ ok: true, make: "Honda", country: "US", checkDigitValid: true });
     expect(decodeVin("3ZZCM82633A004352")).toMatchObject({ ok: true, make: null, country: "MX", region: "northAmerica" });

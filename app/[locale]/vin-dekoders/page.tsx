@@ -37,7 +37,7 @@ export default async function VinDecoderPage({ params }: Props) {
         <article className="mx-auto w-full max-w-[42.5rem] px-4 pb-16 pt-24 sm:px-6 sm:pb-20 sm:pt-28">
           <h1 className="text-3xl font-semibold tracking-tight text-white/[0.96]">{raw.title}</h1>
           <p className="mt-4 text-base leading-relaxed text-white/70">{raw.lead}</p>
-          <VinDecoderTool locale={locale} labels={raw} auditHref={home} freeCheckHref={`${home}#bezmaksas-novertejums`} />
+          <VinDecoderTool locale={locale} labels={raw} auditHref={home} freeCheckHref={`${home}#bezmaksas-novertejums`} source="decoder" />
           <section className="mt-12">
             <h2 className="text-lg font-semibold text-white/[0.96]">{raw.limitsTitle}</h2>
             <p className="mt-3 text-sm leading-relaxed text-white/70">{raw.limitsBody}</p>

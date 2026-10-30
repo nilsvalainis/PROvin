@@ -3,6 +3,7 @@ import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardH
 import { AdminAdsAttributionCard } from "@/components/admin/AdminAdsAttributionCard";
 import { AdminHeardAboutCard } from "@/components/admin/AdminHeardAboutCard";
 import { AdminListingPeekConversionCard } from "@/components/admin/AdminListingPeekConversionCard";
+import { AdminVinChecksCard } from "@/components/admin/AdminVinChecksCard";
 import { emptyAdVisitDoc } from "@/lib/admin-ad-visits";
 import { readAdSpendRows } from "@/lib/admin-ad-spend-store";
 import { readAdVisitDoc } from "@/lib/admin-ad-visit-store";
@@ -20,12 +21,34 @@ import { listAdminOrders } from "@/lib/admin-orders";
 import { loadListingPeekConversionStats } from "@/lib/listing-peek-conversion-load";
 import { getSampleReportClickStats } from "@/lib/sample-report-click-store";
 import { requireAdminPage } from "@/lib/admin-auth";
+import { lastRigaDates, rigaDate, rigaMonthDates, summarizeVinCheckDays } from "@/lib/vin-check-stats";
+import { readVinCheckDays } from "@/lib/vin-check-stats-store";
 
 export const metadata = {
   title: "Statistika",
 };
 
 export const dynamic = "force-dynamic";
+
+/** VIN pārbaužu skaitītāji: 30 dienas, šodiena, šis mēnesis (CSDD līgumam). */
+async function loadVinChecks() {
+  const now = new Date();
+  const dates = [...new Set([...lastRigaDates(30, now), ...rigaMonthDates(now)])];
+  try {
+    const days = await readVinCheckDays(dates);
+    const last30Set = new Set(lastRigaDates(30, now));
+    const monthSet = new Set(rigaMonthDates(now));
+    const today = rigaDate(now);
+    return {
+      last30: summarizeVinCheckDays(days.filter((d) => last30Set.has(d.date))),
+      today: summarizeVinCheckDays(days.filter((d) => d.date === today)),
+      month: summarizeVinCheckDays(days.filter((d) => monthSet.has(d.date))),
+    };
+  } catch {
+    const empty = summarizeVinCheckDays([]);
+    return { last30: empty, today: empty, month: empty };
+  }
+}
 
 /** Tie paši pasūtījumi kā sarakstā pēc noklusējuma (summa > 10 €). */
 async function loadStatistikaOrders(): Promise<{ heard: HeardAboutOrder[]; ads: AdsAttributionOrder[] }> {
@@ -82,11 +105,12 @@ export default async function AdminStatistikaPage() {
   const gaId = getGaMeasurementId();
   const onVercel = isVercelDeployment();
   const sampleClicks = await getSampleReportClickStats();
-  const [peekConversion, statOrders, adSpend, adVisits] = await Promise.all([
+  const [peekConversion, statOrders, adSpend, adVisits, vinChecks] = await Promise.all([
     loadListingPeekConversionStats(),
     loadStatistikaOrders(),
     readAdSpendRows().catch(() => []),
     readAdVisitDoc().catch(() => emptyAdVisitDoc()),
+    loadVinChecks(),
   ]);
   const heardOrders = statOrders.heard;
   const nowSec = Math.floor(Date.now() / 1000);
@@ -110,6 +134,10 @@ export default async function AdminStatistikaPage() {
 
       <div className="mt-6">
         <AdminListingPeekConversionCard stats={peekConversion} />
+      </div>
+
+      <div className="mt-5">
+        <AdminVinChecksCard {...vinChecks} />
       </div>
 
       <div className="mt-5">

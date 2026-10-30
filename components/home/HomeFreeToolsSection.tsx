@@ -85,7 +85,7 @@ export function HomeFreeToolsSection() {
   function onVin(event: FormEvent) {
     event.preventDefault();
     const clean = vin.replace(/\s+/g, "").toUpperCase();
-    router.push(clean ? `/vin-dekoders?vin=${encodeURIComponent(clean)}` : "/vin-dekoders");
+    router.push(clean ? `/vin-dekoders?q=${encodeURIComponent(clean)}&src=home` : "/vin-dekoders");
   }
 
   function onListing(event: FormEvent) {

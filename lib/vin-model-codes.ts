@@ -320,6 +320,20 @@ function decodeMercedes(vin: string): VinModelInfo | null {
   };
 }
 
+/** Vai šim WMI ir sava pārbaudīta shēma (tad iemācīto tabulu nelieto). */
+export function hasCuratedScheme(vin: string): boolean {
+  const wmi = vin.slice(0, 3);
+  return Boolean(SCHEMES[wmi]) || MB_WMI.has(wmi);
+}
+
+/** Serverim: iemācītais modelis no dotas tabulas (Blob versija, kas atjaunojas reizi nedēļā). */
+export function decodeLearnedFrom(table: LearnedTable, vin: string): VinModelInfo | null {
+  if (hasCuratedScheme(vin)) return null;
+  const hit = lookupLearned(table, vin);
+  if (!hit) return null;
+  return { make: hit.make, model: hit.model, generation: "", produced: null, modelYear: null, scheme: "learned", code: hit.code };
+}
+
 export function decodeVinModel(local: Extract<VinDecodeResult, { ok: true }>, now: Date = new Date()): VinModelInfo | null {
   if (local.region !== "europe") return null;
   const wmi = local.vin.slice(0, 3);
