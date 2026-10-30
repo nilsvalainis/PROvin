@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { DzintarzemeOfferBrandLogo } from "@/components/iriss-offer-public/DzintarzemeOfferBrandLogo";
-import { IRISS_OFFER_PUBLIC_BRAND, IRISS_OFFER_PUBLIC_LEGAL } from "@/lib/iriss-offer-client-link";
+import { IRISS_OFFER_PUBLIC_BRAND } from "@/lib/iriss-offer-client-link";
 
 export function irissOfferPublicCardClass(extra = "") {
   return `mt-3.5 rounded-2xl border border-[#e4e4e7] bg-white p-4 shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${extra}`.trim();
@@ -51,9 +51,8 @@ export function IrissOfferPublicBrandHeader() {
     <div className="flex items-start justify-between gap-3">
       <DzintarzemeOfferBrandLogo />
       <p className="text-right text-[11px] leading-tight text-[#6e6e73]">
+        {/* Nils 30.10: uz Dzintarzeme Auto materiāliem SIA ĪRISS nemin. */}
         {IRISS_OFFER_PUBLIC_BRAND}
-        <br />
-        {IRISS_OFFER_PUBLIC_LEGAL}
       </p>
     </div>
   );
@@ -63,7 +62,7 @@ export function IrissOfferPublicFooter({ pathHint }: { pathHint?: string }) {
   return (
     <footer className="mt-6 text-center text-[10px] leading-relaxed text-[#a1a1aa]">
       <p>
-        {IRISS_OFFER_PUBLIC_BRAND} · {IRISS_OFFER_PUBLIC_LEGAL}
+        {IRISS_OFFER_PUBLIC_BRAND}
       </p>
       {pathHint ? <p className="mt-0.5 truncate">{pathHint}</p> : null}
     </footer>

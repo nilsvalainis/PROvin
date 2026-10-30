@@ -425,7 +425,8 @@ describe("IRISS offer client link share copy", () => {
     const mail = buildIrissOfferClientLinkMailto("anna@example.com", message);
     expect(message.subject.startsWith("Dzintarzeme Auto: piedāvājums")).toBe(true);
     expect(message.text).toContain(url);
-    expect(message.text).toContain("SIA ĪRISS");
+    // Nils 30.10: klientam SIA ĪRISS nemin (Dzintarzeme Auto zīmols).
+    expect(message.text).not.toContain("SIA ĪRISS");
     expect(message.text).not.toContain("PROVIN");
     expect(wa.startsWith("https://wa.me/37120000000?text=")).toBe(true);
     expect(decodeURIComponent(wa)).toContain(url);

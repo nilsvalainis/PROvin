@@ -1,4 +1,4 @@
-import { IRISS_OFFER_PUBLIC_BRAND, IRISS_OFFER_PUBLIC_LABELS, IRISS_OFFER_PUBLIC_LEGAL } from "@/lib/iriss-offer-client-link";
+import { IRISS_OFFER_PUBLIC_BRAND, IRISS_OFFER_PUBLIC_LABELS } from "@/lib/iriss-offer-client-link";
 
 export function IrissOfferPublicUnavailable({
   title = IRISS_OFFER_PUBLIC_LABELS.unavailableTitle,
@@ -14,8 +14,6 @@ export function IrissOfferPublicUnavailable({
       <p className="mt-3 text-[15px] leading-relaxed text-[#6e6e73]">{body}</p>
       <p className="mt-8 text-[10px] leading-relaxed text-[#c7c7cc]">
         {IRISS_OFFER_PUBLIC_BRAND}
-        <br />
-        {IRISS_OFFER_PUBLIC_LEGAL}
       </p>
     </main>
   );

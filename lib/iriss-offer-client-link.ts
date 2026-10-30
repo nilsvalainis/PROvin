@@ -633,7 +633,6 @@ export function buildIrissOfferClientLinkMessage(opts: { url: string; vehicle: s
     "",
     "Labu dienu,",
     IRISS_OFFER_PUBLIC_BRAND,
-    IRISS_OFFER_PUBLIC_LEGAL,
   ].join("\n");
   return { subject, text };
 }
