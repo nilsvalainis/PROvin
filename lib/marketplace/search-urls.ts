@@ -51,6 +51,37 @@ function mobileDeMakeId(make: string): string | null {
   return null;
 }
 
+/**
+ * mobile.de modeļu ID (ms=marka;modelis) - no Nila manuāli veidotajiem filtriem (30.10 rezerves kopija).
+ * Tikai viennozīmīgi modeļi; BMW / Mercedes ID atkarīgi no dzinēja - tos neliek (paliek tikai marka).
+ */
+const MOBILE_DE_MODEL_ID: Record<string, Record<string, string>> = {
+  "1900": { a6: "10", q5: "32" },
+  "9000": { kuga: "49" },
+  "11600": { ix35: "12", ioniq: "40" },
+  "13200": { sportage: "25" },
+  "18700": { "qashqai+2": "50", qashqai2: "50" },
+  "22900": { superb: "12", kodiaq: "19" },
+  "23600": { vitara: "20" },
+  "24100": { landcruiser: "19" },
+  "25100": { v60: "16", s60: "28", xc90: "37", xc60: "40" },
+  "25200": { golf: "14", touareg: "36", tiguan: "54", tiguanallspace: "66", sharan: "30" },
+  "3500": { x3: "48", x5: "49" },
+};
+
+export function mobileDeModelId(makeId: string, model: string): string | null {
+  const map = MOBILE_DE_MODEL_ID[makeId];
+  if (!map) return null;
+  const key = fold(model).replace(/[\s-]+/g, "");
+  if (!key) return null;
+  if (map[key]) return map[key]!;
+  // «Golf 7», «XC60 D4», «Tiguan Allspace» - garākā atbilstošā atslēga no sākuma.
+  const hit = Object.keys(map)
+    .filter((k) => key.startsWith(k))
+    .sort((a, b) => b.length - a.length)[0];
+  return hit ? map[hit]! : null;
+}
+
 export function marketplaceSearchMake(make: string): string {
   const t = fold(make).replace(/\s+/g, "");
   if (t === "mercedes" || t === "mercedes-benz" || t === "mercedesbenz") return "Mercedes-Benz";
@@ -196,7 +227,8 @@ export function buildMobileDeSearchUrl(q: MarketplaceQuery, sortNewest = false):
   url.searchParams.set("st", "DEALER");
   const makeId = mobileDeMakeId(q.make);
   if (makeId) {
-    url.searchParams.set("ms", makeId);
+    const modelId = mobileDeModelId(makeId, q.model);
+    url.searchParams.set("ms", modelId ? `${makeId};${modelId}` : makeId);
   } else if (q.make.trim()) {
     url.searchParams.set("make", marketplaceSearchMake(q.make));
     if (model) url.searchParams.set("model", model);
