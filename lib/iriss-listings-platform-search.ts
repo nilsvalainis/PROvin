@@ -226,7 +226,10 @@ export function autobidSearchUrl(filter: EcarstradeSearchFilter): string | null 
     const mapped = AUTOBID_FUEL[fuel];
     if (mapped) appendQuery(parts, "e17", mapped);
   }
-  if (filter.gearboxes.includes(ECARSTRADE_GEARBOX.automatic)) {
+  const bothGears = filter.gearboxes.includes(ECARSTRADE_GEARBOX.automatic) && filter.gearboxes.includes(ECARSTRADE_GEARBOX.manual);
+  if (bothGears) {
+    // Abas kārbas = jebkura.
+  } else if (filter.gearboxes.includes(ECARSTRADE_GEARBOX.automatic)) {
     appendQuery(parts, "gearboxId-gearbox", "Automatic");
   } else if (filter.gearboxes.includes(ECARSTRADE_GEARBOX.manual)) {
     appendQuery(parts, "gearboxId-gearbox", "Manual");

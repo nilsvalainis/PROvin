@@ -7,6 +7,7 @@ import {
   acceptedNormalization,
   foldCriterion,
   normalizeBody,
+  normalizeDrive,
   normalizeFuel,
   normalizeGearbox,
   type BodyGroup,
@@ -145,4 +146,104 @@ export function migrateIrissSpecSelectLabels(rec: {
     transmission: rewriteDeprecatedLabel(rec.transmission, TRANSMISSION_ALIASES),
     bodyType: rewriteDeprecatedLabel(rec.bodyType, BODY_ALIASES),
   };
+}
+
+/**
+ * Nils 30.10 (makets «Meklēšanas filtri»): vairākas izvēles čipos.
+ * Glabājas tajā pašā teksta laukā kā saraksts («Dīzelis, Benzīns») - kritēriju lasītājs to jau saprot.
+ * Nesaprotams vecais teksts paliek saraksta beigās.
+ */
+export type IrissSpecMultiKind = "fuel" | "gearbox" | "body" | "drive";
+
+export const IRISS_SPEC_MULTI_OPTIONS: Record<IrissSpecMultiKind, ReadonlyArray<{ group: string; label: string; stored: string }>> = {
+  fuel: [
+    { group: "diesel", label: "Dīzelis", stored: "Dīzelis" },
+    { group: "petrol", label: "Benzīns", stored: "Benzīns" },
+    { group: "hybrid", label: "Hibrīds", stored: "Hibrīds" },
+    { group: "electric", label: "Elektro", stored: "Elektro" },
+    { group: "gas", label: "Gāze", stored: "Gāze" },
+  ],
+  gearbox: [
+    { group: "automatic", label: "Automātiskā", stored: "Automāts" },
+    { group: "manual", label: "Mehāniskā", stored: "Manuāla" },
+  ],
+  body: [
+    { group: "suv", label: "Apvidus (SUV)", stored: "Apvidus" },
+    { group: "wagon", label: "Universālis", stored: "Universālis" },
+    { group: "sedan", label: "Sedans", stored: "Sedans" },
+    { group: "hatchback", label: "Hečbeks", stored: "Hečbeks" },
+    { group: "mpv", label: "Minivens", stored: "Minivens" },
+    { group: "van_bus", label: "Mikroautobuss", stored: "Mikroautobuss" },
+    { group: "coupe", label: "Kupeja", stored: "Kupeja" },
+    { group: "cabrio", label: "Kabriolets", stored: "Kabriolets" },
+    { group: "pickup", label: "Pikaps", stored: "Pikaps" },
+  ],
+  drive: [
+    { group: "fwd", label: "Priekšējā", stored: "Priekšējā" },
+    { group: "rwd", label: "Aizmugurējā", stored: "Aizmugurējā" },
+    { group: "awd", label: "4×4", stored: "4x4" },
+  ],
+};
+
+function specTokenGroup(kind: IrissSpecMultiKind, token: string): string | null {
+  const hit =
+    kind === "fuel" ? normalizeFuel(token) : kind === "gearbox" ? normalizeGearbox(token) : kind === "body" ? normalizeBody(token) : normalizeDrive(token);
+  if (!hit.group || !acceptedNormalization(hit.confidence, hit.group)) return null;
+  return IRISS_SPEC_MULTI_OPTIONS[kind].some((o) => o.group === hit.group) ? hit.group : null;
+}
+
+/** Saraksta daļas pēc komata/semikola - katra paliek kā ierakstīta (piem., «Petrol 184», «Benzīns (vai D3)»). */
+function specTokens(raw: string): string[] {
+  return raw
+    .split(/\s*[,;\n]\s*/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
+
+/** Grupas vienā daļā («dīzelis vai benzīns» -> abas). */
+function tokenGroups(kind: IrissSpecMultiKind, token: string): string[] {
+  const out: string[] = [];
+  for (const part of token.split(/\s\/\s|\bvai\b|\bor\b/i)) {
+    const g = part.trim() ? specTokenGroup(kind, part) : null;
+    if (g && !out.includes(g)) out.push(g);
+  }
+  return out;
+}
+
+/** Atzīmētās grupas no saglabātā teksta. */
+export function irissSpecMultiGroups(kind: IrissSpecMultiKind, raw: string): string[] {
+  const out: string[] = [];
+  for (const token of specTokens(raw)) {
+    for (const g of tokenGroups(kind, token)) if (!out.includes(g)) out.push(g);
+  }
+  return out;
+}
+
+/** Teksts, ko čipi nesaprot (paliek redzams un netiek dzēsts). */
+export function irissSpecMultiCustom(kind: IrissSpecMultiKind, raw: string): string {
+  return specTokens(raw)
+    .filter((token) => tokenGroups(kind, token).length === 0)
+    .join(", ");
+}
+
+/**
+ * Ieslēdz/izslēdz vienu grupu. Pārējās daļas paliek burtiski (arī jauda vai piezīme tajā pašā laukā);
+ * noņem tikai daļu, kurā ir izslēgtā grupa.
+ */
+export function toggleIrissSpecMulti(kind: IrissSpecMultiKind, raw: string, group: string): string {
+  const tokens = specTokens(raw);
+  const stored = (g: string) => IRISS_SPEC_MULTI_OPTIONS[kind].find((o) => o.group === g)?.stored ?? g;
+  if (!irissSpecMultiGroups(kind, raw).includes(group)) return [...tokens, stored(group)].join(", ");
+  const out: string[] = [];
+  for (const token of tokens) {
+    const gs = tokenGroups(kind, token);
+    if (!gs.includes(group)) {
+      out.push(token);
+      continue;
+    }
+    for (const other of gs) {
+      if (other !== group && !out.some((t) => tokenGroups(kind, t).includes(other))) out.push(stored(other));
+    }
+  }
+  return out.join(", ");
 }

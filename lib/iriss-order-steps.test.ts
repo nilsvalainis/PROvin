@@ -2,8 +2,9 @@ import { describe, expect, it } from "vitest";
 import { IRISS_ORDER_STEPS, equipmentHas, seatsRange, seatsValue, toggleEquipment } from "@/lib/iriss-order-steps";
 
 describe("Pasūtījums pa soļiem (Nils 28.10)", () => {
-  it("8 soļi, klienta kontakti pēdējie", () => {
-    expect(IRISS_ORDER_STEPS).toHaveLength(8);
+  it("6 soļi: meklēšanas filtri pirmie, klienta kontakti pēdējie (Nils 30.10)", () => {
+    expect(IRISS_ORDER_STEPS).toHaveLength(6);
+    expect(IRISS_ORDER_STEPS[0]?.title).toBe("Meklēšanas filtri");
     expect(IRISS_ORDER_STEPS.at(-1)?.title).toBe("Klienta kontakti");
   });
 

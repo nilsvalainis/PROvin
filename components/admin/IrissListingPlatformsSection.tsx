@@ -1,7 +1,7 @@
 "use client";
 
 import { Filter, Loader2 } from "lucide-react";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import type { IrissAuctionLogoKey } from "@/lib/iriss-auction-logos";
@@ -298,6 +298,102 @@ export function IrissListingPlatformsFields({ rec, onPatch, onReadLink, readingU
           readCountByUrl={readCountByUrl}
         />
       </div>
+    </div>
+  );
+}
+
+const SOURCE_ROWS: ReadonlyArray<{ key: LinkKey; label: string; logoKey?: IrissAuctionLogoKey; platform?: IrissAuctionSearchPlatform | "mobile" }> = [
+  { key: "listingLinkMobile", label: "mobile.de", logoKey: "mobile", platform: "mobile" },
+  { key: "listingLinkAuto1", label: "Auto1", logoKey: "auto1", platform: "auto1" },
+  { key: "listingLinkOpenline", label: "Openlane", logoKey: "openline", platform: "openline" },
+  { key: "listingLinkAutobid", label: "Autobid", logoKey: "autobid", platform: "autobid" },
+  { key: "listingLinkEcarstrade", label: "eCarsTrade", logoKey: "ecarstrade", platform: "ecarstrade" },
+  { key: "listingLinksOther", label: "Citi" },
+];
+
+function linkWord(n: number): string {
+  return n % 10 === 1 && n % 100 !== 11 ? "saite" : "saites";
+}
+
+/**
+ * Nils 30.10 (makets «Meklēšanas filtri»): saites pa avotiem filtru kartītē.
+ * Rinda: avots, pirmā saite, skaits (atver sarakstu labošanai), «+ Izveidot» - pievieno jaunu blakus, esošās nemaina.
+ */
+export function IrissFilterSourceLinks({ rec, onPatch, onReadLink, readingUrl, readCountByUrl }: Props) {
+  const [open, setOpen] = useState<LinkKey | null>(null);
+  const generate = (platform: IrissAuctionSearchPlatform | "mobile") => {
+    if (platform === "mobile") {
+      const url = buildMobileDeOrderSearchUrl(marketplaceQueryFromOrder(rec));
+      const existing = rec.listingLinkMobile.filter((u) => u.trim());
+      if (existing.includes(url)) return;
+      onPatch({ listingLinkMobile: [...existing, url] });
+      return;
+    }
+    const next = applyGeneratedPlatformSearchLink(rec, platform);
+    if (!next.url) return;
+    onPatch({
+      listingLinkAuto1: next.record.listingLinkAuto1,
+      listingLinkOpenline: next.record.listingLinkOpenline,
+      listingLinkAutobid: next.record.listingLinkAutobid,
+      listingLinkEcarstrade: next.record.listingLinkEcarstrade,
+      ...(platform === "ecarstrade" ? { ecarstradeLinksManual: true } : {}),
+    });
+  };
+  return (
+    <div className="iriss-filter-links">
+      {SOURCE_ROWS.map((row) => {
+        const links = coerceIrissListingLinkList(rec[row.key]).filter((u) => u.trim());
+        const isOpen = open === row.key;
+        if (row.key === "listingLinksOther" && links.length === 0 && !isOpen) return null;
+        const first = links[0] ?? "";
+        return (
+          <div key={row.key} className="iriss-filter-links-row">
+            <div className="iriss-filter-links-head">
+              <span className="iriss-filter-links-src">{row.label}</span>
+              {first ? (
+                <a className="iriss-filter-links-url" href={first} target="_blank" rel="noopener noreferrer" title={first}>
+                  {first.replace(/^https?:\/\/(www\.)?/, "")}
+                </a>
+              ) : (
+                <span className="iriss-filter-links-url is-empty">nav saites</span>
+              )}
+              <button
+                type="button"
+                className="iriss-filter-links-count"
+                aria-expanded={isOpen}
+                aria-label={`${row.label}: ${links.length} ${linkWord(links.length)} - rādīt un labot`}
+                onClick={() => setOpen(isOpen ? null : row.key)}
+              >
+                {links.length > 0 ? `${links.length} ${linkWord(links.length)}` : "0"} {isOpen ? "▴" : "▾"}
+              </button>
+              {row.platform ? (
+                <button
+                  type="button"
+                  className={actionBtn}
+                  aria-label={`${row.label}: izveidot filtru`}
+                  onClick={() => generate(row.platform!)}
+                  title="Pievieno jaunu saiti no filtriem; esošās netiek mainītas"
+                >
+                  + Izveidot
+                </button>
+              ) : null}
+            </div>
+            {isOpen ? (
+              <div className="mt-2">
+                <SourceLinkList
+                  label={row.label}
+                  logoKey={row.logoKey}
+                  links={rec[row.key]}
+                  onChange={(next) => onPatch({ [row.key]: next })}
+                  onReadLink={onReadLink}
+                  readingUrl={readingUrl}
+                  readCountByUrl={readCountByUrl}
+                />
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }

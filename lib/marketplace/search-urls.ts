@@ -113,6 +113,16 @@ export function marketplaceHasAirConditioning(q: MarketplaceQuery): boolean {
   return q.features.some((f) => /air.?cond|klima|ac\b/i.test(f));
 }
 
+/** Nils 30.10: vairākas izvēles («diesel, petrol») -> katra vērtība atsevišķi, bez dublikātiem. */
+function mapList(raw: string, map: (one: string) => string): string[] {
+  const out: string[] = [];
+  for (const one of raw.split(",")) {
+    const v = one.trim() ? map(one) : "";
+    if (v && !out.includes(v)) out.push(v);
+  }
+  return out;
+}
+
 function mobileFuel(raw: string): string {
   const t = fold(raw);
   if (/dizel|diesel/.test(t)) return "DIESEL";
@@ -244,13 +254,11 @@ export function buildMobileDeSearchUrl(q: MarketplaceQuery, sortNewest = false):
   if (cc) url.searchParams.set("cc", cc);
   const power = colonRange(q.powerFromKw, q.powerToKw);
   if (power) url.searchParams.set("pw", power);
-  const fuel = mobileFuel(q.fuel);
-  if (fuel) url.searchParams.set("ft", fuel);
+  for (const fuel of mapList(q.fuel, mobileFuel)) url.searchParams.append("ft", fuel);
   const gear = mobileGear(q.gearbox);
   if (gear) url.searchParams.set("tr", gear);
   if (category !== "van") {
-    const body = mobileUrlBody(q.body);
-    if (body) url.searchParams.set("c", body);
+    for (const body of mapList(q.body, mobileUrlBody)) url.searchParams.append("c", body);
   }
   const drive = mobileDrive(q.drive);
   if (drive) url.searchParams.set("dr", drive);
@@ -310,12 +318,12 @@ export function buildAutoscout24SearchUrl(q: MarketplaceQuery, sortNewest = fals
   if (q.powerFromKw != null) url.searchParams.set("powerfrom", String(q.powerFromKw));
   if (q.powerToKw != null) url.searchParams.set("powerto", String(q.powerToKw));
   if (q.powerFromKw != null || q.powerToKw != null) url.searchParams.set("powertype", "kw");
-  const fuel = as24Fuel(q.fuel);
+  const fuel = mapList(q.fuel, as24Fuel).join(",");
   if (fuel) url.searchParams.set("fuel", fuel);
   const gear = as24Gear(q.gearbox);
   if (gear) url.searchParams.set("gear", gear);
   if (category !== "van") {
-    const body = as24Body(q.body);
+    const body = mapList(q.body, as24Body).join(",");
     if (body) url.searchParams.set("body", body);
   }
   if (marketplaceHasAirConditioning(q)) url.searchParams.set("eq", "5");
@@ -354,11 +362,11 @@ function mobileDeActorInput(q: MarketplaceQuery, maxResults: number, sortNewest:
   const gear = mobileGear(q.gearbox);
   if (gear) input.transmission = [gear];
   if (category !== "van") {
-    const body = mobileActorBody(q.body);
-    if (body) input.bodyType = [body];
+    const bodies = mapList(q.body, mobileActorBody);
+    if (bodies.length > 0) input.bodyType = bodies;
   }
-  const fuel = mobileFuel(q.fuel);
-  if (fuel) input.fuelType = [fuel];
+  const fuels = mapList(q.fuel, mobileFuel);
+  if (fuels.length > 0) input.fuelType = fuels;
   if (marketplaceHasAirConditioning(q)) input.features = ["AIR_CONDITIONING"];
   if (sortNewest) input.sort = "newest";
   // Schema has no country field. customFilters keeps only DE rows after scrape.

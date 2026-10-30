@@ -225,6 +225,15 @@ function yearFromRaw(raw: string): number | null {
   return n != null && n >= 1980 && n <= 2035 ? n : null;
 }
 
+function mapEach(raw: string, map: (one: string) => string | null): string[] {
+  const out: string[] = [];
+  for (const one of raw.split(/\s*[,;]\s*/)) {
+    const v = one.trim() ? map(one) : null;
+    if (v && !out.includes(v)) out.push(v);
+  }
+  return out;
+}
+
 function mapFuel(raw: string): string | null {
   const s = raw.toLowerCase().replace(/[_-]+/g, " ").trim();
   if (isWildcardCriterion(s)) return null;
@@ -254,12 +263,13 @@ function mapBody(raw: string): string | null {
   if (fromId) return fromId;
   const s = raw.toLowerCase().replace(/[_-]+/g, " ").trim();
   if (isWildcardCriterion(s)) return null;
-  if (/suv|off.?road|offroad|pickup|crossover|gelande/.test(s)) return ECARSTRADE_BODY.suv;
-  if (/estate|avant|variant|kombi|combi|touring|wagon|\bbreak\b|station/.test(s)) return ECARSTRADE_BODY.estate;
-  if (/convertible|cabrio|roadster/.test(s)) return ECARSTRADE_BODY.convertible;
-  if (/coupe|coupé|sports?\s*car|sportscar/.test(s)) return ECARSTRADE_BODY.coupe;
-  if (/\bmpv\b|van|minibus|transporter/.test(s)) return ECARSTRADE_BODY.van;
-  if (/small|hatch|compact/.test(s)) return ECARSTRADE_BODY.small;
+  // Latviskās etiķetes no pasūtījuma formas (Apvidus, Universālis, ...).
+  if (/suv|off.?road|offroad|pickup|crossover|gelande|apvidus|pikap/.test(s)) return ECARSTRADE_BODY.suv;
+  if (/estate|avant|variant|kombi|combi|touring|wagon|\bbreak\b|station|universāl|universal/.test(s)) return ECARSTRADE_BODY.estate;
+  if (/convertible|cabrio|roadster|kabriolet/.test(s)) return ECARSTRADE_BODY.convertible;
+  if (/coupe|coupé|sports?\s*car|sportscar|kupej/.test(s)) return ECARSTRADE_BODY.coupe;
+  if (/\bmpv\b|van|minibus|transporter|miniven|mikroautobus/.test(s)) return ECARSTRADE_BODY.van;
+  if (/small|hatch|compact|hečbek|hecbek/.test(s)) return ECARSTRADE_BODY.small;
   if (/saloon|sedan|limousine|\blimo\b|berline/.test(s)) return ECARSTRADE_BODY.saloon;
   if (/bike|motorcycle/.test(s)) return ECARSTRADE_BODY.bike;
   return null;
@@ -1008,18 +1018,19 @@ export function filterFromOrderFields(fields: OrderSearchFields): EcarstradeSear
   const price = listingSearchPriceBounds(parseIrissOrderBoundRange(fields.totalBudget ?? ""), currentListingSearchCosts());
   if (price.from != null) filter.priceFrom = price.from;
   if (price.to != null) filter.priceTo = price.to;
-  const fuel = mapFuel(fields.engineType ?? "");
-  if (fuel) filter.fuels = [fuel];
+  // Nils 30.10: vairākas izvēles («Dīzelis, Benzīns») - katra savā vērtībā.
+  const fuels = mapEach(fields.engineType ?? "", mapFuel);
+  if (fuels.length > 0) filter.fuels = fuels;
   const cc = mapEngineCc(fields.engineType ?? "");
   if (cc) {
     filter.engineFromCc = cc;
     filter.engineToCc = cc;
   }
-  const gear = mapGearbox(fields.transmission ?? "");
-  if (gear) filter.gearboxes = [gear];
-  const body = mapBody(fields.bodyType ?? "");
-  if (body) filter.bodies = [body];
-  pushDriveFromText(filter, fields.driveType ?? "");
+  const gears = mapEach(fields.transmission ?? "", mapGearbox);
+  if (gears.length > 0) filter.gearboxes = gears;
+  const bodies = mapEach(fields.bodyType ?? "", mapBody);
+  if (bodies.length > 0) filter.bodies = bodies;
+  for (const one of (fields.driveType ?? "").split(/\s*[,;]\s*/)) if (one.trim()) pushDriveFromText(filter, one);
   const seats = intFromRaw(fields.seatCount ?? "");
   if (seats != null && seats >= 2 && seats <= 9) {
     filter.seatsFrom = seats;
