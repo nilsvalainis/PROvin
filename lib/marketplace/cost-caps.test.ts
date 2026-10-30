@@ -48,17 +48,17 @@ describe("marketplace cost caps", () => {
     expect(marketplaceWarningAt80(20, 30)).toBe(false);
   });
 
-  it("keeps auto defaults at 3 days, 40 items and 4.5 $ and counts only auto entries toward the auto cap", () => {
+  it("auto defaults (Nils 30.10): 1 diena, 40 sludinājumi, 15 $ auto / 20 $ kopā; auto griesti skaita tikai auto", () => {
     delete process.env.MARKETPLACE_AUTO_INTERVAL_DAYS;
     delete process.env.MARKETPLACE_AUTO_MAX_ITEMS_PER_PROVIDER;
     delete process.env.MARKETPLACE_AUTO_MONTHLY_USD_CAP;
     delete process.env.MARKETPLACE_MAX_ITEMS_PER_PROVIDER;
     delete process.env.MARKETPLACE_MONTHLY_USD_CAP;
     delete process.env.MARKETPLACE_PER_RUN_USD_CAP;
-    expect(marketplaceAutoIntervalDays()).toBe(3);
+    expect(marketplaceAutoIntervalDays()).toBe(1);
     expect(marketplaceAutoMaxItemsPerProvider()).toBe(40);
-    expect(marketplaceAutoMonthlyUsdCap()).toBe(4.5);
-    expect(marketplaceMonthlyUsdCap()).toBe(4.5);
+    expect(marketplaceAutoMonthlyUsdCap()).toBe(15);
+    expect(marketplaceMonthlyUsdCap()).toBe(20);
     expect(marketplacePerRunUsdCap()).toBe(0.5);
     const used = emptyMarketplaceUsageMonth("2026-10", 30);
     used.entries.push(
@@ -74,7 +74,7 @@ describe("marketplace cost caps", () => {
     expect(MARKETPLACE_APIFY_AUTOSCOUT24_USD_PER_RESULT).toBe(0.00049);
   });
 
-  it("manual loads are on unless explicitly switched off; auto is always off", () => {
+  it("manual and auto loads are on unless explicitly switched off (Nils 30.10)", () => {
     const prevLoads = process.env.MARKETPLACE_LOADS_ENABLED;
     const prevAuto = process.env.MARKETPLACE_AUTO_ENABLED;
     try {
@@ -82,18 +82,17 @@ describe("marketplace cost caps", () => {
       delete process.env.MARKETPLACE_AUTO_ENABLED;
       // Nils 30.10: manuālā ielāde pēc noklusējuma ieslēgta (poga + apstiprinājums, griesti paliek).
       expect(marketplaceLoadsEnabled()).toBe(true);
-      expect(marketplaceAutoEnabled()).toBe(false);
+      expect(marketplaceAutoEnabled()).toBe(true);
       for (const off of ["false", "0", "off", "NO", " False "]) {
         process.env.MARKETPLACE_LOADS_ENABLED = off;
+        process.env.MARKETPLACE_AUTO_ENABLED = off;
         expect(marketplaceLoadsEnabled()).toBe(false);
+        expect(marketplaceAutoEnabled()).toBe(false);
       }
-      process.env.MARKETPLACE_AUTO_ENABLED = "TRUE";
-      expect(marketplaceAutoEnabled()).toBe(false);
       process.env.MARKETPLACE_LOADS_ENABLED = "true";
       process.env.MARKETPLACE_AUTO_ENABLED = "true";
       expect(marketplaceLoadsEnabled()).toBe(true);
-      // Nils 29.10: automātiskā ielāde izslēgta kodā - arī ar "true".
-      expect(marketplaceAutoEnabled()).toBe(false);
+      expect(marketplaceAutoEnabled()).toBe(true);
     } finally {
       if (prevLoads == null) delete process.env.MARKETPLACE_LOADS_ENABLED;
       else process.env.MARKETPLACE_LOADS_ENABLED = prevLoads;

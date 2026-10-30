@@ -6,12 +6,15 @@ import type {
   MarketplaceUsageMonth,
 } from "@/lib/marketplace/types";
 
-export const MARKETPLACE_DEFAULT_MONTHLY_USD_CAP = 4.5;
+// Automātiskā (15 $) + manuālās ielādes.
+export const MARKETPLACE_DEFAULT_MONTHLY_USD_CAP = 20;
 export const MARKETPLACE_DEFAULT_PER_RUN_USD_CAP = 0.5;
 export const MARKETPLACE_DEFAULT_MAX_ITEMS = 150;
-export const MARKETPLACE_DEFAULT_AUTO_INTERVAL_DAYS = 3;
+// Nils 30.10: mobile.de automātiski 1x dienā (9:00, izņemot svētdienas).
+export const MARKETPLACE_DEFAULT_AUTO_INTERVAL_DAYS = 1;
 export const MARKETPLACE_DEFAULT_AUTO_MAX_ITEMS = 40;
-export const MARKETPLACE_DEFAULT_AUTO_MONTHLY_USD_CAP = 4.5;
+// ~27 aktīvi pasūtījumi x ~0,02 $ x 26 dienas ≈ 14 $ mēnesī.
+export const MARKETPLACE_DEFAULT_AUTO_MONTHLY_USD_CAP = 15;
 export const MARKETPLACE_HARD_MAX_ITEMS = 300;
 export const MARKETPLACE_RUNS_KEEP = 300;
 export const MARKETPLACE_APIFY_START_USD = 0.005;
@@ -50,7 +53,8 @@ export function marketplaceLoadsEnabled(): boolean {
  * Automātiskā ielāde ir izslēgta kodā (neatkarīgi no MARKETPLACE_AUTO_ENABLED); manuālā - poga «Ielādēt».
  */
 export function marketplaceAutoEnabled(): boolean {
-  return false;
+  // Nils 30.10: «1x dienā pagaidām (9:00), izņemot svētdienas» - tikai mobile.de. MARKETPLACE_AUTO_ENABLED=false - izslēdz.
+  return !["false", "0", "off", "no"].includes((process.env.MARKETPLACE_AUTO_ENABLED ?? "").trim().toLowerCase());
 }
 
 export function marketplaceMonthlyUsdCap(): number {

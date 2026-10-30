@@ -116,17 +116,20 @@ function baseDeps(overrides: Partial<MarketplaceAutoSweepDeps> = {}): Marketplac
 }
 
 describe("marketplace auto interval", () => {
-  it("is due when never loaded or last load is at least 3 days ago", () => {
+  it("is due when never loaded or last load is at least the interval ago (3 h rezerve cron nobīdei)", () => {
     expect(orderDueForMarketplaceAuto(null, NOW, 3)).toBe(true);
     expect(orderDueForMarketplaceAuto("2026-10-16T06:00:00.000Z", NOW, 3)).toBe(true);
-    expect(orderDueForMarketplaceAuto("2026-10-16T06:00:01.000Z", NOW, 3)).toBe(false);
+    expect(orderDueForMarketplaceAuto("2026-10-16T09:00:00.000Z", NOW, 3)).toBe(true);
+    expect(orderDueForMarketplaceAuto("2026-10-16T09:00:01.000Z", NOW, 3)).toBe(false);
     expect(orderDueForMarketplaceAuto("2026-10-18T06:00:00.000Z", NOW, 3)).toBe(false);
+    // Nils 30.10: katru dienu - vakardienas 06:00:40 ielāde neatliek šodienas 06:00:05 cron.
+    expect(orderDueForMarketplaceAuto("2026-10-18T06:00:40.000Z", NOW, 1)).toBe(true);
   });
 
-  it("computes next auto from last load plus interval, or next 06:00 UTC when due", () => {
+  it("computes next auto from last load plus interval, or next 07:00 UTC (9:00 Rīgā) when due", () => {
     expect(nextMarketplaceAutoAt("2026-10-18T06:00:00.000Z", NOW, 3)).toBe("2026-10-21T06:00:00.000Z");
-    expect(nextMarketplaceAutoAt(null, NOW, 3)).toBe("2026-10-19T06:00:00.000Z");
-    expect(nextMarketplaceAutoAt("2026-10-10T06:00:00.000Z", NOW, 3)).toBe("2026-10-19T06:00:00.000Z");
+    expect(nextMarketplaceAutoAt(null, NOW, 3)).toBe("2026-10-19T07:00:00.000Z");
+    expect(nextMarketplaceAutoAt("2026-10-10T06:00:00.000Z", NOW, 3)).toBe("2026-10-19T07:00:00.000Z");
   });
 
   it("sorts newest and active orders first and keeps reserved after searching", () => {
@@ -174,7 +177,7 @@ describe("marketplace auto interval", () => {
     expect(lastMarketplaceLoadAt([emptyManual, failedManual], "o1")).toBeNull();
     expect(orderDueForMarketplaceAuto(lastMarketplaceLoadAt([emptyManual, failedManual], "o1"), NOW, 3)).toBe(true);
     expect(nextMarketplaceAutoAt(lastMarketplaceLoadAt([emptyManual, failedManual], "o1"), NOW, 3)).toBe(
-      "2026-10-19T06:00:00.000Z",
+      "2026-10-19T07:00:00.000Z",
     );
     expect(hasPriorMarketplaceLoad([emptyManual, failedManual], "o1")).toBe(false);
 
@@ -310,7 +313,7 @@ describe("marketplace auto budget and skip", () => {
           runRecord({
             id: "prev",
             orderId: "00000000-0000-4000-8000-000000000001",
-            finishedAt: "2026-10-18T06:00:00.000Z",
+            finishedAt: "2026-10-19T02:00:00.000Z",
             trigger: "manual",
           }),
         ],
@@ -420,20 +423,21 @@ describe("marketplace cost-control switches", () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  it("skips cron auto-load when MARKETPLACE_AUTO_ENABLED is not true", async () => {
+  it("skips cron auto-load when MARKETPLACE_AUTO_ENABLED=false", async () => {
     process.env.MARKETPLACE_LOADS_ENABLED = "true";
+    process.env.MARKETPLACE_AUTO_ENABLED = "false";
     const out = await runMarketplaceAutoLoadNow(NOW);
     expect(out.status).toBe("skipped");
     expect(out.reason).toBe("Automātiskā ielāde izslēgta (izmaksu kontrole)");
     expect(out.loadedCount).toBe(0);
   });
 
-  it("Nils 29.10: cron automātiskā ielāde vienmēr izlaista, arī ar MARKETPLACE_AUTO_ENABLED=true", async () => {
-    process.env.MARKETPLACE_AUTO_ENABLED = "true";
+  it("Nils 30.10: automātiskā ielāde ieslēgta pēc noklusējuma (bez Apify atslēgas - izlaista ar citu iemeslu)", async () => {
+    delete process.env.MARKETPLACE_AUTO_ENABLED;
     process.env.MARKETPLACE_LOADS_ENABLED = "true";
+    delete process.env.APIFY_TOKEN;
     const out = await runMarketplaceAutoLoadNow(NOW);
-    expect(out.status).toBe("skipped");
-    expect(out.reason).toBe("Automātiskā ielāde izslēgta (izmaksu kontrole)");
+    expect(out.reason).not.toBe("Automātiskā ielāde izslēgta (izmaksu kontrole)");
     delete process.env.MARKETPLACE_LOADS_ENABLED;
   });
 
