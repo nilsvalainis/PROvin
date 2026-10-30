@@ -201,7 +201,8 @@ export function IrissListingVehicleCard({
   ) : null;
 
   const photoBlock = (
-    <div className={`relative w-full shrink-0 ${grid ? "" : "sm:w-[300px]"}`} onClick={(e) => sourceHref && e.stopPropagation()}>
+    // Nils 30.10: bilde atver auto logu (tur ir visa galerija un «Atvērt avotā»), nevis izsoles vietni.
+    <div className={`relative w-full shrink-0 ${grid ? "" : "sm:w-[300px]"}`}>
       <IrissListingCardPhotoGallery
         photos={photos}
         thumbUrl={v.thumbUrl}
@@ -210,15 +211,6 @@ export function IrissListingVehicleCard({
         referrerPolicy={referrerPolicy}
         onImageError={onImageError}
         compactMobile={phone}
-        wrapHero={(inner) =>
-          sourceHref ? (
-            <IrissListingSourceOpen v={v} mobile={mobile} title={`Atvērt ${LISTING_PLATFORM_LABEL[v.platform]}`} className="block h-full w-full">
-              {inner}
-            </IrissListingSourceOpen>
-          ) : (
-            inner
-          )
-        }
       />
       {photoOverlay}
     </div>

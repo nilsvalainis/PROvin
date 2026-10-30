@@ -316,7 +316,9 @@ export function IrissSludinajumiListClient({
     if (!filterOpen && !menuOpen && !sortOpen) return;
     const onDown = (e: PointerEvent) => {
       const t = e.target as Node;
-      if (t instanceof Element && t.closest("[data-admin-list-sheet]")) return;
+      // Telefona paneļi (Filtri, Vairāk, Kārtot) ir portālā ārpus pogas: pieskāriens tajos nedrīkst tos aizvērt,
+      // citādi panelis aizveras jau pie pieskāriena un klikšķis nokrīt uz kartītes zem tā (Nils 30.10).
+      if (t instanceof Element && t.closest("[data-admin-list-sheet], .admin-sheet-root, [role=dialog]")) return;
       if (filterOpen && filterRef.current && !filterRef.current.contains(t)) setFilterOpen(false);
       if (menuOpen && menuRef.current && !menuRef.current.contains(t)) setMenuOpen(false);
       if (sortOpen && sortRef.current && !sortRef.current.contains(t)) setSortOpen(false);
@@ -939,6 +941,11 @@ export function IrissSludinajumiListClient({
       window.dispatchEvent(new Event("admin-iriss-matches-changed"));
     } catch {
       /* saite tik un tā atveras */
+    }
+    // Sludinājumos atbilstība atver pašu auto (logā ir arī pasūtījuma detaļas); ja tā vairs nav sarakstā - pasūtījuma Meklētājs.
+    if (allVehicles.some((v) => v.id === notice.listingId)) {
+      openDrawer(notice.listingId);
+      return;
     }
     router.push(notice.href);
   }
