@@ -74,17 +74,20 @@ describe("marketplace cost caps", () => {
     expect(MARKETPLACE_APIFY_AUTOSCOUT24_USD_PER_RESULT).toBe(0.00049);
   });
 
-  it("treats only exact true as enabled for loads and auto", () => {
+  it("manual loads are on unless explicitly switched off; auto is always off", () => {
     const prevLoads = process.env.MARKETPLACE_LOADS_ENABLED;
     const prevAuto = process.env.MARKETPLACE_AUTO_ENABLED;
     try {
       delete process.env.MARKETPLACE_LOADS_ENABLED;
       delete process.env.MARKETPLACE_AUTO_ENABLED;
-      expect(marketplaceLoadsEnabled()).toBe(false);
+      // Nils 30.10: manuālā ielāde pēc noklusējuma ieslēgta (poga + apstiprinājums, griesti paliek).
+      expect(marketplaceLoadsEnabled()).toBe(true);
       expect(marketplaceAutoEnabled()).toBe(false);
-      process.env.MARKETPLACE_LOADS_ENABLED = "1";
+      for (const off of ["false", "0", "off", "NO", " False "]) {
+        process.env.MARKETPLACE_LOADS_ENABLED = off;
+        expect(marketplaceLoadsEnabled()).toBe(false);
+      }
       process.env.MARKETPLACE_AUTO_ENABLED = "TRUE";
-      expect(marketplaceLoadsEnabled()).toBe(false);
       expect(marketplaceAutoEnabled()).toBe(false);
       process.env.MARKETPLACE_LOADS_ENABLED = "true";
       process.env.MARKETPLACE_AUTO_ENABLED = "true";

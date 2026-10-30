@@ -32,6 +32,7 @@ export async function GET(req: Request) {
     lastRun,
     fetchedAt: items[0]?.fetchedAt ?? lastRun?.finishedAt ?? "",
     lastAutoAt: lastAutoAt ?? "",
+    lastLoadAt: lastLoadAt ?? "",
     nextAutoAt: target.ownerKind === "radar" ? "" : nextMarketplaceAutoAt(lastLoadAt, now, intervalDays),
     intervalDays,
   });

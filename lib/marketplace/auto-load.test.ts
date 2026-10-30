@@ -437,9 +437,9 @@ describe("marketplace cost-control switches", () => {
     delete process.env.MARKETPLACE_LOADS_ENABLED;
   });
 
-  it("does not call the Apify runner without MARKETPLACE_LOADS_ENABLED=true", async () => {
+  it("does not call the Apify runner when MARKETPLACE_LOADS_ENABLED=false", async () => {
     process.env.APIFY_TOKEN = "not-a-real-token";
-    delete process.env.MARKETPLACE_LOADS_ENABLED;
+    process.env.MARKETPLACE_LOADS_ENABLED = "false";
     const runner = vi.fn(async () => ({ ok: true, items: [{ id: "x" }], chargedUsd: 1 }));
     setMarketplaceApifyRunner(runner);
     const out = await runMarketplaceApifyActor({
