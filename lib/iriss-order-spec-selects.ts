@@ -7,6 +7,7 @@ import {
   acceptedNormalization,
   foldCriterion,
   normalizeBody,
+  normalizeDrive,
   normalizeFuel,
   normalizeGearbox,
   type BodyGroup,
@@ -145,4 +146,81 @@ export function migrateIrissSpecSelectLabels(rec: {
     transmission: rewriteDeprecatedLabel(rec.transmission, TRANSMISSION_ALIASES),
     bodyType: rewriteDeprecatedLabel(rec.bodyType, BODY_ALIASES),
   };
+}
+
+/**
+ * Nils 30.10 (makets «Meklēšanas filtri»): vairākas izvēles čipos.
+ * Glabājas tajā pašā teksta laukā kā saraksts («Dīzelis, Benzīns») - kritēriju lasītājs to jau saprot.
+ * Nesaprotams vecais teksts paliek saraksta beigās.
+ */
+export type IrissSpecMultiKind = "fuel" | "gearbox" | "body" | "drive";
+
+export const IRISS_SPEC_MULTI_OPTIONS: Record<IrissSpecMultiKind, ReadonlyArray<{ group: string; label: string; stored: string }>> = {
+  fuel: [
+    { group: "diesel", label: "Dīzelis", stored: "Dīzelis" },
+    { group: "petrol", label: "Benzīns", stored: "Benzīns" },
+    { group: "hybrid", label: "Hibrīds", stored: "Hibrīds" },
+    { group: "electric", label: "Elektro", stored: "Elektro" },
+    { group: "gas", label: "Gāze", stored: "Gāze" },
+  ],
+  gearbox: [
+    { group: "automatic", label: "Automātiskā", stored: "Automāts" },
+    { group: "manual", label: "Mehāniskā", stored: "Manuāla" },
+  ],
+  body: [
+    { group: "suv", label: "Apvidus (SUV)", stored: "Apvidus" },
+    { group: "wagon", label: "Universālis", stored: "Universālis" },
+    { group: "sedan", label: "Sedans", stored: "Sedans" },
+    { group: "hatchback", label: "Hečbeks", stored: "Hečbeks" },
+    { group: "mpv", label: "Minivens", stored: "Minivens" },
+    { group: "van_bus", label: "Mikroautobuss", stored: "Mikroautobuss" },
+    { group: "coupe", label: "Kupeja", stored: "Kupeja" },
+    { group: "cabrio", label: "Kabriolets", stored: "Kabriolets" },
+    { group: "pickup", label: "Pikaps", stored: "Pikaps" },
+  ],
+  drive: [
+    { group: "fwd", label: "Priekšējā", stored: "Priekšējā" },
+    { group: "rwd", label: "Aizmugurējā", stored: "Aizmugurējā" },
+    { group: "awd", label: "4×4", stored: "4x4" },
+  ],
+};
+
+function specTokenGroup(kind: IrissSpecMultiKind, token: string): string | null {
+  const hit =
+    kind === "fuel" ? normalizeFuel(token) : kind === "gearbox" ? normalizeGearbox(token) : kind === "body" ? normalizeBody(token) : normalizeDrive(token);
+  if (!hit.group || !acceptedNormalization(hit.confidence, hit.group)) return null;
+  return IRISS_SPEC_MULTI_OPTIONS[kind].some((o) => o.group === hit.group) ? hit.group : null;
+}
+
+function specTokens(raw: string): string[] {
+  return raw
+    .split(/\s*(?:,|;|\n|\s\/\s|\bvai\b|\bor\b)\s*/i)
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
+
+/** Atzīmētās grupas no saglabātā teksta. */
+export function irissSpecMultiGroups(kind: IrissSpecMultiKind, raw: string): string[] {
+  const out: string[] = [];
+  for (const token of specTokens(raw)) {
+    const g = specTokenGroup(kind, token);
+    if (g && !out.includes(g)) out.push(g);
+  }
+  return out;
+}
+
+/** Teksts, ko čipi nesaprot (paliek redzams un netiek dzēsts). */
+export function irissSpecMultiCustom(kind: IrissSpecMultiKind, raw: string): string {
+  return specTokens(raw)
+    .filter((token) => !specTokenGroup(kind, token))
+    .join(", ");
+}
+
+/** Ieslēdz/izslēdz vienu grupu; pārējās atzīmes un nesaprotamais teksts paliek. */
+export function toggleIrissSpecMulti(kind: IrissSpecMultiKind, raw: string, group: string): string {
+  const groups = irissSpecMultiGroups(kind, raw);
+  const next = groups.includes(group) ? groups.filter((g) => g !== group) : [...groups, group];
+  const labels = IRISS_SPEC_MULTI_OPTIONS[kind].filter((o) => next.includes(o.group)).map((o) => o.stored);
+  const custom = irissSpecMultiCustom(kind, raw);
+  return [...labels, ...(custom ? [custom] : [])].join(", ");
 }

@@ -227,7 +227,7 @@ describe("IrissOrderRoom render", () => {
     expect(html).not.toMatch(/\u2014|\u2013/);
   });
 
-  it("Pārskatā platformu saites pēc noklusējuma aizvērtas (Nils 28.10)", async () => {
+  it("Pārskatā viena filtru kartīte; saišu saraksti aizvērti (Nils 30.10)", async () => {
     const { html, errors } = await renderHtml(
       room({
         initialTab: "overview",
@@ -239,20 +239,23 @@ describe("IrissOrderRoom render", () => {
     );
     expect(errors).toEqual([]);
     expect(html).not.toContain("Nolasīt");
-    expect(html).toContain(">Saites<");
+    // Nils 30.10 (makets «Meklēšanas filtri»): Auto, Cena, Tehniskie, Stāvoklis un saites vienā kartītē.
+    expect(html).toContain("Meklēšanas filtri");
+    expect(html).toContain("Tehniskie (var atzīmēt vairākus)");
+    expect(html).toContain("Budžets un PVN");
+    expect(html).toContain("1 saite");
+    expect(html).toContain("+ Izveidot");
     expect(html).toContain("Finansējums, avanss un depozīts");
-    // Nils 28.10: diapazoni sadalīti soļos (Budžets / Tehniskie dati).
-    expect(html).toContain("Tehniskie dati");
     expect(html).toContain("Klienta kontakti");
     expect(html).toContain("Gadi");
     expect(html).not.toContain("Gadi no-līdz");
     expect(html).toContain("* filtrē Meklētāju. Cena un Gadi obligāti.");
     expect(html).not.toContain("vismaz viens: nobraukums");
     const starred = (label: string) => new RegExp(`${label}<span class="iriss-range-req" aria-hidden="true"> \\*</span>`).test(html);
-    for (const label of ["Marka / modelis", "Cena", "Gadi", "Nobraukums", "Degviela", "Ātrumkārba", "Virsbūve", "Piedziņa", "Sēdvietas"]) {
+    for (const label of ["Marka / modelis", "Cena", "Gadi", "Nobraukums", "Degviela", "Ātrumkārba", "Virsbūve", "Sēdvietas"]) {
       expect(starred(label), label).toBe(true);
     }
-    for (const label of ["Komplektācija / līnija", "Tilpums", "Jauda", "Valstis", "Bojājumu tolerance", "Vēlamās krāsas", "Nevēlamās krāsas", "Salona apdare"]) {
+    for (const label of ["Komplektācija / līnija", "Piedziņa", "Tilpums", "Jauda", "Valstis", "Bojājumu tolerance", "Vēlamās krāsas", "Nevēlamās krāsas", "Salona apdare"]) {
       expect(starred(label), label).toBe(false);
     }
   });

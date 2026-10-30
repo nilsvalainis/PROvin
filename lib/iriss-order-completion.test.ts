@@ -5,15 +5,24 @@ import { emptyIrissPasutijums } from "@/lib/iriss-pasutijumi-types";
 const base = () => ({ ...emptyIrissPasutijums("x", "2026-10-28T10:00:00.000Z") });
 
 describe("Pasūtījuma aizpildījums (Nils 28.10)", () => {
-  it("tukšs pasūtījums - 0 no 7, trūkstošie lauki nosaukti", () => {
+  it("tukšs pasūtījums - 0 no 5, trūkstošie lauki nosaukti", () => {
     const p = irissOrderProgress(base());
-    expect(p).toMatchObject({ done: 0, total: 7 });
+    expect(p).toMatchObject({ done: 0, total: 5 });
     expect(p.missing).toContain("Virsbūve");
     expect(p.missing).toContain("Gadi");
   });
 
-  it("aizpildīts auto un budžets - soļi zaļi", () => {
-    const rec = { ...base(), brandModel: "Volvo V60", bodyType: "Universālis", totalBudget: "20000" };
+  it("meklēšanas filtri zaļi tikai ar visiem obligātajiem laukiem", () => {
+    const part = { ...base(), brandModel: "Volvo V60", bodyType: "Universālis", totalBudget: "20000" };
+    expect(irissOrderStepStatuses(part)[0]!.missing).toEqual(["Gadi", "Nobraukums", "Degviela", "Ātrumkārba"]);
+    const rec = {
+      ...part,
+      productionYears: "2016-2019",
+      maxMileage: "180000",
+      engineType: "Dīzelis, Benzīns",
+      transmission: "Automāts",
+      budgetIncludes: "all",
+    };
     const s = irissOrderStepStatuses(rec);
     expect(s[0]).toEqual({ done: true, missing: [] });
     expect(s[1]!.done).toBe(true);

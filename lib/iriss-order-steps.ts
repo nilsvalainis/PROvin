@@ -4,10 +4,9 @@
  */
 
 export const IRISS_ORDER_STEPS = [
-  { id: "auto", title: "Kāds auto", question: "Kādu auto meklējam?" },
-  { id: "budget", title: "Budžets", question: "Cik gatavs maksāt un kā maksās?" },
-  { id: "tech", title: "Tehniskie dati", question: "Gadi, nobraukums, dzinējs - filtri izsolēm un mobile.de." },
-  { id: "condition", title: "Stāvoklis un izcelsme", question: "Cik bojājumu pieļaujam un no kurienes vest?" },
+  // Nils 30.10 (makets «Meklēšanas filtri»): viss, kas veido izsoļu un mobile.de filtrus, vienā solī.
+  { id: "filters", title: "Meklēšanas filtri", question: "Kādu auto meklējam - filtri izsolēm un mobile.de." },
+  { id: "budget", title: "Budžets un PVN", question: "Kas iekļauts budžetā un vai vajag PVN?" },
   { id: "equipment", title: "Prasības", question: "Kas noteikti jābūt un kas būtu labi?" },
   { id: "colors", title: "Krāsas un salons", question: "Kādas krāsas der un kādas noteikti nē?" },
   { id: "notes", title: "Piezīmes", question: "Viss pārējais no sarunas." },

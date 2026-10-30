@@ -1052,3 +1052,54 @@ input[data-offer-field="empty"],
     color: var(--iriss-on-graphite) !important;
   }
 }
+
+/* Nils 30.10 (makets «Meklēšanas filtri»): saites pa avotiem filtru kartītē. */
+.iriss-filter-links-row {
+  padding: 9px 0;
+  border-top: 1px solid var(--iriss-line);
+}
+.iriss-filter-links-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.iriss-filter-links-head {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+}
+.iriss-filter-links-src {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--iriss-ink);
+}
+.iriss-filter-links-url {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  color: var(--iriss-ink-2);
+}
+.iriss-filter-links-url.is-empty {
+  color: var(--iriss-ink-3, #8e8e93);
+}
+.iriss-filter-links-count {
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--iriss-line);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--iriss-ink);
+  white-space: nowrap;
+}
+@media (max-width: 639px) {
+  .iriss-filter-links-head {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+  .iriss-filter-links-url {
+    display: none;
+  }
+}

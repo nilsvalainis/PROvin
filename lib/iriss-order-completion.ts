@@ -16,18 +16,17 @@ export function irissOrderStepStatuses(rec: IrissPasutijumsRecord): IrissOrderSt
     return { done: missing.length === 0, missing };
   };
   return [
+    // Nils 30.10: 1. Meklēšanas filtri (obligātie «*» lauki).
     need([
       ["Marka / modelis", filled(rec.brandModel)],
-      ["Virsbūve", filled(rec.bodyType)],
-    ]),
-    need([["Budžets", filled(r.budgetTo) || filled(r.budgetFrom) || filled(rec.totalBudget)]]),
-    need([
       ["Gadi", filled(r.yearFrom) || filled(r.yearTo)],
       ["Nobraukums", filled(r.mileageTo) || filled(r.mileageFrom)],
+      ["Budžets", filled(r.budgetTo) || filled(r.budgetFrom) || filled(rec.totalBudget)],
       ["Degviela", filled(rec.engineType)],
       ["Ātrumkārba", filled(rec.transmission)],
+      ["Virsbūve", filled(rec.bodyType)],
     ]),
-    need([["Bojājumi", filled(rec.damageTolerance)]]),
+    need([["Budžetā iekļauts", filled(rec.budgetIncludes)]]),
     need([["Prasības", filled(rec.equipmentRequired) || filled(rec.equipmentDesired)]]),
     need([["Krāsas", filled(rec.preferredColors) || filled(rec.nonPreferredColors) || filled(rec.interiorFinish)]]),
     need([["Piezīmes", filled(rec.notes) || filled(rec.agentNotes) || filled(rec.internalNotes)]]),
@@ -38,9 +37,9 @@ export function irissOrderStepStatuses(rec: IrissPasutijumsRecord): IrissOrderSt
   ];
 }
 
-/** Augšējā josla: soļi 1-7 (kontakti - atsevišķi) un trūkstošo lauku saraksts. */
+/** Augšējā josla: soļi bez pēdējā (kontakti - atsevišķi) un trūkstošo lauku saraksts. */
 export function irissOrderProgress(rec: IrissPasutijumsRecord): { done: number; total: number; missing: string[] } {
-  const steps = irissOrderStepStatuses(rec).slice(0, 7);
+  const steps = irissOrderStepStatuses(rec).slice(0, -1);
   return {
     done: steps.filter((s) => s.done).length,
     total: steps.length,

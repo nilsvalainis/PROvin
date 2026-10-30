@@ -31,7 +31,15 @@ import { IrissOrderPhotoAlbumSection } from "@/components/admin/IrissOrderPhotoA
 import { IrissPriceChangeChip, IrissPriceHistoryPanel } from "@/components/admin/IrissPriceChangeChip";
 import { IrissOverflowItem, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
 import { IrissOrderRoomNextSteps } from "@/components/admin/IrissOrderRoomNextSteps";
-import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
+import { IrissFilterSourceLinks, IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
+import { irissOrderFilterPriceHint } from "@/lib/iriss-order-filter-hint";
+import {
+  IRISS_SPEC_MULTI_OPTIONS,
+  irissSpecMultiCustom,
+  irissSpecMultiGroups,
+  toggleIrissSpecMulti,
+  type IrissSpecMultiKind,
+} from "@/lib/iriss-order-spec-selects";
 import { IrissMarketplaceLoadPanel } from "@/components/admin/IrissMarketplaceLoadPanel";
 import { IrissOfferClientLinkBar } from "@/components/admin/IrissOfferClientLinkBar";
 import { IrissOrderMatchBoundary, IrissOrderMatchFallback } from "@/components/admin/IrissOrderMatchBoundary";
@@ -42,7 +50,6 @@ import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectio
 import { irissOrderSaveStatus } from "@/lib/iriss-order-save-status";
 import { IrissSpecDiapazoniBlock } from "@/components/admin/IrissSpecDiapazoniBlock";
 import { IrissInternalNoteField } from "@/components/admin/IrissInternalNoteField";
-import { IrissSpecChoiceSelect } from "@/components/admin/IrissSpecChoiceSelect";
 import { listingHistoryRecordId } from "@/lib/admin-change-history";
 import { IrissBrandLogoSlot } from "@/components/admin/IrissBrandLogoSlot";
 import { listingFmtEur } from "@/lib/iriss-listings-card";
@@ -139,17 +146,6 @@ import {
   irissOrderRangeView,
   type IrissOrderRangeField,
 } from "@/lib/iriss-order-range-fields";
-import {
-  IRISS_BODY_SELECT_OPTIONS,
-  IRISS_FUEL_SELECT_OPTIONS,
-  IRISS_GEARBOX_SELECT_OPTIONS,
-  bodySelectValue,
-  fuelSelectValue,
-  gearboxSelectValue,
-  persistBodySelect,
-  persistFuelSelect,
-  persistGearboxSelect,
-} from "@/lib/iriss-order-spec-selects";
 
 const fieldClass =
   "min-h-[44px] w-full min-w-0 rounded-[10px] border border-[var(--iriss-line)] bg-white px-2.5 py-2 text-[16px] text-[var(--iriss-ink)] outline-none transition focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 sm:min-h-[38px] sm:text-[13px]";
@@ -353,6 +349,71 @@ function Segmented({
         })}
       </div>
       {keepCustom && value.trim() && !known ? <p className="mt-1 text-[12px] text-[var(--iriss-ink-2)]">Ierakstīts: {value}</p> : null}
+    </div>
+  );
+}
+
+/** Nils 30.10 (makets «Meklēšanas filtri»): vairākas izvēles - čipi ar ✓; glabājas tajā pašā teksta laukā. */
+function MultiChips({
+  label,
+  kind,
+  value,
+  onChange,
+  filterMark = false,
+  note,
+}: {
+  label: string;
+  kind: IrissSpecMultiKind;
+  value: string;
+  onChange: (value: string) => void;
+  filterMark?: boolean;
+  note?: string;
+}) {
+  const groups = irissSpecMultiGroups(kind, value);
+  const custom = irissSpecMultiCustom(kind, value);
+  return (
+    <div className="min-w-0" role="group" aria-label={label}>
+      <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">
+        {label}
+        {filterMark ? (
+          <span className="iriss-range-req" aria-hidden="true">
+            {" *"}
+          </span>
+        ) : null}
+      </span>
+      <div className="flex flex-wrap gap-1.5">
+        {IRISS_SPEC_MULTI_OPTIONS[kind].map((o) => {
+          const on = groups.includes(o.group);
+          return (
+            <button
+              key={o.group}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onChange(toggleIrissSpecMulti(kind, value, o.group))}
+              className={`inline-flex min-h-[34px] items-center gap-1 whitespace-nowrap rounded-full px-3 text-[13px] font-semibold ${on ? "text-[var(--iriss-ink)]" : "text-[var(--iriss-ink-2)]"}`}
+              style={{
+                background: "transparent",
+                boxShadow: on ? "inset 0 0 0 1.5px var(--iriss-ink)" : "inset 0 0 0 1px var(--iriss-line-strong)",
+              }}
+            >
+              {on ? <span aria-hidden>✓</span> : null}
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+      {custom ? <p className="mt-1 text-[12px] text-[var(--iriss-ink-2)]">Ierakstīts: {custom}</p> : null}
+      {note ? <p className="mt-1 text-[12px] text-[var(--iriss-ink-2)]">{note}</p> : null}
+    </div>
+  );
+}
+
+/** Filtru kartītes daļas virsraksts (Auto / Cena / Tehniskie / Stāvoklis / Saites). */
+function FilterPart({ title, first = false, children }: { title: string; first?: boolean; children: ReactNode }) {
+  return (
+    <div className={first ? "" : "mt-4 border-t border-[var(--iriss-line)] pt-3.5"}>
+      <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.06em] text-[var(--iriss-ink-2)]">{title}</p>
+      {children}
     </div>
   );
 }
@@ -639,7 +700,6 @@ export function IrissOrderRoom({
   const [roomMsg, setRoomMsg] = useState<string | null>(null);
   const [composer, setComposer] = useState("");
   // Sludinājumu platformu saites pēc noklusējuma aizvērtas (Nils 28.10).
-  const [linksOpen, setLinksOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [offerLinks, setOfferLinks] = useState<IrissOfferClientLinkAdminView[]>(Array.isArray(initialOfferLinks) ? initialOfferLinks : []);
   const [linkBusyId, setLinkBusyId] = useState<string | null>(null);
@@ -816,6 +876,7 @@ export function IrissOrderRoom({
   const searchHref = `/admin/iriss/sludinajumi?ord=${encodeURIComponent(serializeListingOrderFilter({ kind: "order", id: rec.id }))}`;
   const history = [...(rec.statusHistory ?? [])].reverse();
   const stepStatus = irissOrderStepStatuses(rec);
+  const priceHint = irissOrderFilterPriceHint(rec);
   const financingPercent = irissEffectiveClientFinancingPercent(rec);
   const financingEuro = irissClientFinancingEuroFromBudget(rec.totalBudget, financingPercent);
   const waAppHref = irissWhatsAppAppHref(rec.phone);
@@ -1224,55 +1285,127 @@ export function IrissOrderRoom({
           </section>
         <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="min-w-0 space-y-3">
-            {/* Nils 28.10: Pārskats pa soļiem, kādos iet sarunā ar klientu; lauki un dati tie paši. */}
+            {/* Nils 30.10 (makets «Meklēšanas filtri»): viss, kas veido izsoļu un mobile.de filtrus, vienā kartītē. */}
             <StepCard n={1} step={IRISS_ORDER_STEPS[0]} status={stepStatus[0]} cardClass={cardClass}>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <Field label="Marka / modelis" filterMark value={rec.brandModel} onChange={(value) => onPatch("brandModel", value)} />
-                {/* Nils 30.10: komplektācija nav obligāta un filtru veidošanā neietekmē (bez «*»). */}
-                <Field
-                  label="Komplektācija / līnija"
-                  value={rec.modelExtension}
-                  placeholder="piem., S-line, AMG"
-                  onChange={(value) => onPatch("modelExtension", value)}
+              <FilterPart title="Auto" first>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <Field label="Marka / modelis" filterMark value={rec.brandModel} onChange={(value) => onPatch("brandModel", value)} />
+                  {/* Nils 30.10: komplektācija nav obligāta un filtru veidošanā neietekmē (bez «*»). */}
+                  <Field
+                    label="Komplektācija / līnija (nefiltrē)"
+                    value={rec.modelExtension}
+                    placeholder="piem., S-line, AMG"
+                    onChange={(value) => onPatch("modelExtension", value)}
+                  />
+                </div>
+                <div className="iriss-mobile-kv iriss-spec-fields mt-3">
+                  <IrissSpecDiapazoniBlock
+                    ranges={irissOrderRangeView(rec)}
+                    onPatchRange={onPatchRange}
+                    rangeError={(pair) => irissOrderRangeErrorFor(rec, pair)}
+                    inputClassName={fieldClass}
+                    only={["year", "mileage"]}
+                  />
+                </div>
+                {rec.listStatus === "inactive" ? (
+                  <input
+                    className={`${fieldClass} mt-3`}
+                    value={rec.inactiveReason ?? ""}
+                    placeholder="Neaktīvs - iemesls (neobligāti)"
+                    aria-label="Neaktīvs iemesls"
+                    onChange={(e) => onInactiveReason(e.target.value)}
+                  />
+                ) : null}
+              </FilterPart>
+
+              <FilterPart title="Cena">
+                <div className="iriss-mobile-kv iriss-spec-fields">
+                  <IrissSpecDiapazoniBlock
+                    ranges={irissOrderRangeView(rec)}
+                    onPatchRange={onPatchRange}
+                    rangeError={(pair) => irissOrderRangeErrorFor(rec, pair)}
+                    inputClassName={fieldClass}
+                    only={["budget"]}
+                  />
+                </div>
+                {priceHint ? <p className="mt-1.5 text-[12.5px] text-[var(--iriss-ink-2)]">{priceHint}</p> : null}
+              </FilterPart>
+
+              <FilterPart title="Tehniskie (var atzīmēt vairākus)">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                  <MultiChips label="Degviela" kind="fuel" filterMark value={rec.engineType} onChange={(value) => onPatch("engineType", value)} />
+                  <MultiChips label="Ātrumkārba" kind="gearbox" filterMark value={rec.transmission} onChange={(value) => onPatch("transmission", value)} />
+                  <MultiChips label="Virsbūve" kind="body" filterMark value={rec.bodyType} onChange={(value) => onPatch("bodyType", value)} />
+                  <MultiChips
+                    label="Piedziņa"
+                    kind="drive"
+                    value={rec.driveType}
+                    onChange={(value) => onPatch("driveType", value)}
+                    note="mobile.de liek tikai 4×4 (pārdevēji citu nenorāda)."
+                  />
+                </div>
+                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <RangePair
+                    label="Sēdvietas"
+                    from={seatsRange(rec.seatCount).from}
+                    to={seatsRange(rec.seatCount).to}
+                    fieldClass={fieldClass}
+                    onChange={(from, to) => onPatch("seatCount", seatsValue(from, to))}
+                  />
+                  <Field label="Durvis" value={rec.doors ?? ""} placeholder="piem., 5" onChange={(value) => onPatch("doors", value)} />
+                </div>
+                <div className="iriss-mobile-kv iriss-spec-fields mt-3">
+                  <IrissSpecDiapazoniBlock
+                    ranges={irissOrderRangeView(rec)}
+                    onPatchRange={onPatchRange}
+                    rangeError={(pair) => irissOrderRangeErrorFor(rec, pair)}
+                    inputClassName={fieldClass}
+                    only={["kw", "cc"]}
+                  />
+                </div>
+              </FilterPart>
+
+              <FilterPart title="Stāvoklis un pārdevējs">
+                <div className="grid grid-cols-1 items-end gap-3 lg:grid-cols-[auto_minmax(0,1fr)_auto]">
+                  <Segmented
+                    label="Bojājumi"
+                    keepCustom
+                    value={rec.damageTolerance}
+                    options={[
+                      { value: "Bez bojājumiem", label: "Bez bojājumiem" },
+                      { value: "Kosmētiski", label: "Kosmētiski" },
+                      { value: "Remontējams", label: "Remontējams" },
+                    ]}
+                    onChange={(value) => onPatch("damageTolerance", value)}
+                  />
+                  <Field label="Maks. remonts, € (izsolēm)" value={rec.maxRepairCostEur ?? ""} placeholder="piem., 800" onChange={(value) => onPatch("maxRepairCostEur", value)} />
+                  <Segmented
+                    label="Pārdevējs"
+                    value={rec.sellerType ?? ""}
+                    options={[
+                      { value: "dealer", label: "Dīleri" },
+                      { value: "any", label: "Arī privāti" },
+                    ]}
+                    onChange={(value) => onPatch("sellerType", value)}
+                  />
+                </div>
+                {/* Nils 28.10: valstis nenorāda - vienmēr DE, NL, BE (vecais lauks datos paliek). */}
+                <p className="mt-2 text-[12px] text-[var(--iriss-ink-2)]">Valstis: DE, NL, BE.</p>
+              </FilterPart>
+
+              <FilterPart title="Saites pa avotiem · tavas saites netiek mainītas, «Izveidot» pievieno jaunu blakus">
+                <IrissFilterSourceLinks
+                  rec={rec}
+                  onPatch={onPatchRecord}
+                  onReadLink={onReadLink}
+                  readingUrl={readingUrl}
+                  readCountByUrl={readCountByUrl}
                 />
-                <IrissSpecChoiceSelect
-                  label="Virsbūve"
-                  filterMark
-                  value={bodySelectValue(rec.bodyType)}
-                  options={IRISS_BODY_SELECT_OPTIONS}
-                  selectClassName={fieldClass}
-                  onChange={(value) => onPatch("bodyType", persistBodySelect(value, rec.bodyType))}
-                />
-                <RangePair
-                  label="Sēdvietas"
-                  from={seatsRange(rec.seatCount).from}
-                  to={seatsRange(rec.seatCount).to}
-                  fieldClass={fieldClass}
-                  onChange={(from, to) => onPatch("seatCount", seatsValue(from, to))}
-                />
-              </div>
-              {rec.listStatus === "inactive" ? (
-                <input
-                  className={`${fieldClass} mt-3`}
-                  value={rec.inactiveReason ?? ""}
-                  placeholder="Neaktīvs - iemesls (neobligāti)"
-                  aria-label="Neaktīvs iemesls"
-                  onChange={(e) => onInactiveReason(e.target.value)}
-                />
-              ) : null}
+              </FilterPart>
             </StepCard>
 
             <StepCard n={2} step={IRISS_ORDER_STEPS[1]} status={stepStatus[1]} cardClass={cardClass}>
-              <div className="iriss-mobile-kv iriss-spec-fields">
-                <IrissSpecDiapazoniBlock
-                  ranges={irissOrderRangeView(rec)}
-                  onPatchRange={onPatchRange}
-                  rangeError={(pair) => irissOrderRangeErrorFor(rec, pair)}
-                  inputClassName={fieldClass}
-                  only={["budget"]}
-                />
-              </div>
-              <div className="mt-3 flex flex-wrap items-end gap-x-8 gap-y-3">
+              <div className="flex flex-wrap items-end gap-x-8 gap-y-3">
                 <Segmented
                   label="Budžetā iekļauts"
                   value={rec.budgetIncludes ?? ""}
@@ -1295,77 +1428,6 @@ export function IrissOrderRoom({
             </StepCard>
 
             <StepCard n={3} step={IRISS_ORDER_STEPS[2]} status={stepStatus[2]} cardClass={cardClass}>
-              <div className="iriss-mobile-kv iriss-spec-fields">
-                <IrissSpecDiapazoniBlock
-                  ranges={irissOrderRangeView(rec)}
-                  onPatchRange={onPatchRange}
-                  rangeError={(pair) => irissOrderRangeErrorFor(rec, pair)}
-                  inputClassName={fieldClass}
-                  only={["year", "mileage", "kw", "cc"]}
-                />
-              </div>
-              <div className="mt-3 grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_minmax(0,140px)]">
-                <IrissSpecChoiceSelect
-                  label="Degviela"
-                  filterMark
-                  value={fuelSelectValue(rec.engineType)}
-                  options={IRISS_FUEL_SELECT_OPTIONS}
-                  selectClassName={fieldClass}
-                  onChange={(value) => onPatch("engineType", persistFuelSelect(value, rec.engineType))}
-                />
-                <IrissSpecChoiceSelect
-                  label="Ātrumkārba"
-                  filterMark
-                  value={gearboxSelectValue(rec.transmission)}
-                  options={IRISS_GEARBOX_SELECT_OPTIONS}
-                  selectClassName={fieldClass}
-                  onChange={(value) => onPatch("transmission", persistGearboxSelect(value, rec.transmission))}
-                />
-                <Segmented
-                  label="Piedziņa"
-                  filterMark
-                  keepCustom
-                  value={rec.driveType}
-                  options={[
-                    { value: "Priekšējā", label: "Priekšējā" },
-                    { value: "Aizmugurējā", label: "Aizmugurējā" },
-                    { value: "4x4", label: "4×4" },
-                  ]}
-                  onChange={(value) => onPatch("driveType", value)}
-                />
-                <Field label="Durvis" value={rec.doors ?? ""} placeholder="piem., 5" onChange={(value) => onPatch("doors", value)} />
-              </div>
-            </StepCard>
-
-            <StepCard n={4} step={IRISS_ORDER_STEPS[3]} status={stepStatus[3]} cardClass={cardClass}>
-              <div className="grid grid-cols-1 items-end gap-3 lg:grid-cols-[auto_minmax(0,1fr)_auto]">
-                <Segmented
-                  label="Bojājumi"
-                  keepCustom
-                  value={rec.damageTolerance}
-                  options={[
-                    { value: "Bez bojājumiem", label: "Bez bojājumiem" },
-                    { value: "Kosmētiski", label: "Kosmētiski" },
-                    { value: "Remontējams", label: "Remontējams" },
-                  ]}
-                  onChange={(value) => onPatch("damageTolerance", value)}
-                />
-                <Field label="Maks. remonts, € (izsolēm)" value={rec.maxRepairCostEur ?? ""} placeholder="piem., 800" onChange={(value) => onPatch("maxRepairCostEur", value)} />
-                <Segmented
-                  label="Pārdevējs"
-                  value={rec.sellerType ?? ""}
-                  options={[
-                    { value: "dealer", label: "Dīleri" },
-                    { value: "any", label: "Arī privāti" },
-                  ]}
-                  onChange={(value) => onPatch("sellerType", value)}
-                />
-              </div>
-              {/* Nils 28.10: valstis nenorāda - vienmēr DE, NL, BE (vecais lauks datos paliek). */}
-              <p className="mt-2 text-[12px] text-[var(--iriss-ink-2)]">Meklējam Vācijā, Nīderlandē un Beļģijā.</p>
-            </StepCard>
-
-            <StepCard n={5} step={IRISS_ORDER_STEPS[4]} status={stepStatus[4]} cardClass={cardClass}>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <EquipmentPicker
                   label="Obligātās prasības"
@@ -1382,7 +1444,7 @@ export function IrissOrderRoom({
               </div>
             </StepCard>
 
-            <StepCard n={6} step={IRISS_ORDER_STEPS[5]} status={stepStatus[5]} cardClass={cardClass}>
+            <StepCard n={4} step={IRISS_ORDER_STEPS[3]} status={stepStatus[3]} cardClass={cardClass}>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <Field label="Vēlamās krāsas" value={rec.preferredColors} onChange={(value) => onPatch("preferredColors", value)} />
                 <Field label="Nevēlamās krāsas" value={rec.nonPreferredColors} onChange={(value) => onPatch("nonPreferredColors", value)} />
@@ -1390,7 +1452,7 @@ export function IrissOrderRoom({
               </div>
             </StepCard>
 
-            <StepCard n={7} step={IRISS_ORDER_STEPS[6]} status={stepStatus[6]} cardClass={cardClass}>
+            <StepCard n={5} step={IRISS_ORDER_STEPS[4]} status={stepStatus[4]} cardClass={cardClass}>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label className="block">
                   <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Piezīmes (redzamas līgumā)</span>
@@ -1407,9 +1469,9 @@ export function IrissOrderRoom({
             </StepCard>
 
             {/* Nils 28.10 (makets KlientsFin): kontakti un finansējums vienā kartītē, avanss zem tiem. */}
-            <section id="iriss-room-client" className={cardClass} aria-label="8. Klients un finansējums">
+            <section id="iriss-room-client" className={cardClass} aria-label="6. Klients un finansējums">
               <div className="mb-3 flex items-center gap-2.5">
-                <StepNum n={8} done={stepStatus[7]?.done} />
+                <StepNum n={6} done={stepStatus[5]?.done} />
                 <h3 className="text-[15px] font-bold leading-tight text-[var(--iriss-ink)]">Klients un finansējums</h3>
               </div>
               <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_1px_minmax(0,1.15fr)]">
@@ -1625,20 +1687,13 @@ export function IrissOrderRoom({
                 <summary className="cursor-pointer text-[12px] font-semibold text-[var(--ink2)]">Platformu čipi</summary>
                 <IrissListingPlatformChipsRow rec={rec} />
               </details>
-              <button type="button" className="mt-2 text-[13px] font-semibold text-[var(--color-provin-accent)]" onClick={() => setLinksOpen((v) => !v)}>
-                {linksOpen ? "Aizvērt saites" : "Saites"}
+              <button
+                type="button"
+                className="mt-2 text-[13px] font-semibold text-[var(--color-provin-accent)]"
+                onClick={() => document.getElementById("iriss-step-filters")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              >
+                Saites - filtru kartītē
               </button>
-              {linksOpen ? (
-                <div className="mt-3">
-                  <IrissListingPlatformsFields
-                    rec={rec}
-                    onPatch={onPatchRecord}
-                    onReadLink={onReadLink}
-                    readingUrl={readingUrl}
-                    readCountByUrl={readCountByUrl}
-                  />
-                </div>
-              ) : null}
               <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />
             </section>
           </aside>
@@ -2285,7 +2340,6 @@ export function IrissOrderRoom({
                   ["totalBudget", "Budžets līdz"],
                   ["productionYears", "Gadi"],
                   ["preferredColors", "Krāsa"],
-                  ["driveType", "Piedziņa"],
                   ["maxMileage", "Max km"],
                   ["interiorFinish", "Salons"],
                   ["modelExtension", "Modeļa paplašinājums"],
@@ -2298,36 +2352,19 @@ export function IrissOrderRoom({
                   onChange={(value) => setCriteriaDraft((prev) => ({ ...prev, [key]: value }))}
                 />
               ))}
-              <IrissSpecChoiceSelect
-                label="Degviela"
-                value={fuelSelectValue(criteriaDraft.engineType)}
-                options={IRISS_FUEL_SELECT_OPTIONS}
-                selectClassName={fieldClass}
-                onChange={(value) =>
-                  setCriteriaDraft((prev) => ({ ...prev, engineType: persistFuelSelect(value, prev.engineType) }))
-                }
-              />
-              <IrissSpecChoiceSelect
-                label="Ātrumkārba"
-                value={gearboxSelectValue(criteriaDraft.transmission)}
-                options={IRISS_GEARBOX_SELECT_OPTIONS}
-                selectClassName={fieldClass}
-                onChange={(value) =>
-                  setCriteriaDraft((prev) => ({
-                    ...prev,
-                    transmission: persistGearboxSelect(value, prev.transmission),
-                  }))
-                }
-              />
-              <IrissSpecChoiceSelect
-                label="Virsbūves tips"
-                value={bodySelectValue(criteriaDraft.bodyType)}
-                options={IRISS_BODY_SELECT_OPTIONS}
-                selectClassName={fieldClass}
-                onChange={(value) =>
-                  setCriteriaDraft((prev) => ({ ...prev, bodyType: persistBodySelect(value, prev.bodyType) }))
-                }
-              />
+              {/* Nils 30.10: tās pašas vairāku izvēļu pogas kā filtru kartītē (vienas izvēles saraksts pārrakstītu «Dīzelis, Benzīns»). */}
+              <div className="sm:col-span-2">
+                <MultiChips label="Degviela" kind="fuel" value={criteriaDraft.engineType} onChange={(value) => setCriteriaDraft((prev) => ({ ...prev, engineType: value }))} />
+              </div>
+              <div className="sm:col-span-2">
+                <MultiChips label="Ātrumkārba" kind="gearbox" value={criteriaDraft.transmission} onChange={(value) => setCriteriaDraft((prev) => ({ ...prev, transmission: value }))} />
+              </div>
+              <div className="sm:col-span-2">
+                <MultiChips label="Virsbūve" kind="body" value={criteriaDraft.bodyType} onChange={(value) => setCriteriaDraft((prev) => ({ ...prev, bodyType: value }))} />
+              </div>
+              <div className="sm:col-span-2">
+                <MultiChips label="Piedziņa" kind="drive" value={criteriaDraft.driveType} onChange={(value) => setCriteriaDraft((prev) => ({ ...prev, driveType: value }))} />
+              </div>
               <label className="block sm:col-span-2">
                 <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Obligātās prasības</span>
                 <textarea className={areaClass} value={criteriaDraft.equipmentRequired} onChange={(e) => setCriteriaDraft((prev) => ({ ...prev, equipmentRequired: e.target.value }))} />

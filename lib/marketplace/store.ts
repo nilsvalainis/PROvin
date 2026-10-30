@@ -137,13 +137,13 @@ function parseQuery(raw: unknown): MarketplaceQuery {
     mileageTo: numOrNull(q.mileageTo),
     priceFrom: numOrNull(q.priceFrom),
     priceTo: numOrNull(q.priceTo),
-    fuel: str(q.fuel, 40),
+    fuel: str(q.fuel, 120),
     gearbox: str(q.gearbox, 40),
     powerFromKw: numOrNull(q.powerFromKw),
     powerToKw: numOrNull(q.powerToKw),
     displacementFromCc: numOrNull(q.displacementFromCc),
     displacementToCc: numOrNull(q.displacementToCc),
-    body: str(q.body, 40),
+    body: str(q.body, 120),
     drive: str(q.drive, 40),
     countries: Array.isArray(q.countries)
       ? q.countries.map((c) => str(c, 8)).filter(Boolean).slice(0, 8)
