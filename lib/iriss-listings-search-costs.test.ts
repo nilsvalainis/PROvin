@@ -75,7 +75,7 @@ describe("saglabātās saites ar vecām cenas robežām saņem svaigas robežas"
   it("bez budžeta saite paliek kā ir; ja grīda ≤ 0, vecā grīda tiek noņemta", () => {
     const url = "https://ecarstrade.com/search?mark[]=68&price_from=15000&price_to=22500";
     expect(listingUrlWithSearchPriceBounds(url, { from: null, to: null })).toBe(url);
-    const fresh = new URL(listingUrlWithSearchPriceBounds(url, orderSearchPriceBounds({ totalBudget: "4000-22500" })));
+    const fresh = new URL(listingUrlWithSearchPriceBounds(url, orderSearchPriceBounds({ totalBudget: "3500-22500" })));
     expect(fresh.searchParams.get("price_from")).toBeNull();
     expect(fresh.searchParams.get("price_to")).toBe(String(bound(22500, DEFAULT_I)));
   });

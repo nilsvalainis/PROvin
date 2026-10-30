@@ -103,7 +103,7 @@ describe("listingSearchPriceBounds: sludinājuma cena = budžets mīnus izmaksas
   it("nekad zem 0; grīda 0 nozīmē bez grīdas", () => {
     const big = { fee: 5000, transport: 0, commission: 0, unplanned: 0 };
     expect(listingSearchPriceBounds({ from: 2000, to: 3000 }, big)).toEqual({ from: null, to: 0 });
-    expect(listingSearchPriceBounds({ from: 4000, to: 15000 })).toEqual({ from: null, to: B(15000) });
+    expect(listingSearchPriceBounds({ from: 3500, to: 15000 })).toEqual({ from: null, to: B(15000) });
   });
 
   it("tikai 'no X': griesti no lielākā pieejamā skaitļa", () => {
