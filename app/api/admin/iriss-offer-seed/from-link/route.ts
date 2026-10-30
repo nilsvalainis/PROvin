@@ -39,11 +39,13 @@ export async function POST(req: Request) {
   const gate = await requireIrissSectionApi("pasutijumi");
   if (!gate.ok) return gate.response;
   let raw = "";
-  let mode: "listing" | "detail" = "listing";
+  let mode: "listing" | "detail" | "diag" = "listing";
   try {
     const body = (await req.json()) as { url?: unknown; mode?: unknown };
     raw = typeof body.url === "string" ? body.url : "";
     if (body.mode === "detail") mode = "detail";
+    // Diagnostika (tikai admins): ko relejs redz detaļu lapā - lai saprastu, kāpēc kāds bloks netiek ielasīts.
+    if (body.mode === "diag" && gate.actor.kind === "admin") mode = "diag";
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400, headers: noStore });
   }
@@ -59,6 +61,23 @@ export async function POST(req: Request) {
   }
   const relay = await fetchIrissAuctionDetailViaRelay(link);
   if (!relay.ok) return NextResponse.json({ ok: false, error: relay.error, note: relay.note, platform: link.platform }, { status: 502, headers: noStore });
+  if (mode === "diag") {
+    const d = relay.detail;
+    const um = [...(d.text ?? "").matchAll(/.{0,60}\d{2,4}\s?(?:µm|μm|um)\b.{0,30}/gi)].map((m) => m[0]).slice(0, 30);
+    return NextResponse.json(
+      {
+        ok: true,
+        fields: (d.fields ?? []).slice(0, 120),
+        lists: (d.lists ?? []).map((l) => ({ heading: l.heading, count: l.items.length, first: l.items.slice(0, 3) })),
+        tables: (d.tables ?? []).length,
+        jsonPaint: (d.jsonFields ?? []).filter(([k]) => /paint|thick|lack|coat|layer/i.test(k)).slice(0, 80),
+        jsonKeys: [...new Set((d.jsonFields ?? []).map(([k]) => k.split(/[.[]/)[0]))].slice(0, 80),
+        textUm: um,
+        textLength: (d.text ?? "").length,
+      },
+      { headers: noStore },
+    );
+  }
   const { hit, extras } = irissAuctionDetailToSeed(relay.detail, link);
   // Saraksta dati aizpilda to, ko detaļu lapa nedeva (piem. cenas, izsoles beigas).
   return NextResponse.json({ ok: true, source: "detail", hit: listed ? mergeListedIntoDetailHit(hit, listed) : hit, extras }, { headers: noStore });

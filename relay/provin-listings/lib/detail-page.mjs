@@ -175,7 +175,15 @@ export function mergeDetailExtracts(extracts) {
     }
     for (const l of e.lists ?? []) {
       const k = `${l.heading}|${(l.items ?? []).join("|")}`.slice(0, 400);
-      if (listSeen.has(k) || lists.length >= 24) continue;
+      if (listSeen.has(k)) continue;
+      // Tas pats virsraksts pēc «Show more +» - paliek garākais saraksts (lietotne ņem pirmo atbilstošo).
+      const same = l.heading ? lists.findIndex((x) => x.heading === l.heading) : -1;
+      if (same >= 0) {
+        if ((l.items ?? []).length > (lists[same].items ?? []).length) lists[same] = l;
+        listSeen.add(k);
+        continue;
+      }
+      if (lists.length >= 24) continue;
       listSeen.add(k);
       lists.push(l);
     }
@@ -355,6 +363,23 @@ export async function fetchAuctionDetail(page, platform, url, opts = {}) {
       await sleep(1_800);
       await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)).catch(() => undefined);
       await sleep(800);
+      await grab();
+    }
+    // Nils 30.10: Auto1 «DATI PĒC VIN» u.c. saraksti daļēji paslēpti zem «Show more +» - atver visus un nolasa vēlreiz.
+    for (let round = 0; round < 3; round += 1) {
+      const more = page.locator("button, a, [role=button]").filter({ hasText: /^\s*(show more|mehr anzeigen|rādīt vairāk|meer tonen|voir plus)\s*\+?\s*$/i });
+      const n = typeof more.count === "function" ? Math.min(await more.count().catch(() => 0), 12) : 0;
+      if (n === 0) break;
+      let clicked = 0;
+      for (let i = 0; i < n; i += 1) {
+        const btn = more.nth(i);
+        if (!(await btn.isVisible().catch(() => false))) continue;
+        await btn.click({ timeout: 3_000 }).catch(() => undefined);
+        clicked += 1;
+        await sleep(400);
+      }
+      if (clicked === 0) break;
+      await sleep(900);
       await grab();
     }
     const merged = mergeDetailExtracts(extracts);
