@@ -326,12 +326,14 @@ function parseEquipment(detail: IrissRelayAuctionDetail): IrissPdEquipmentRow[] 
 }
 
 function parseVinData(detail: IrissRelayAuctionDetail): string[] {
+  // Nils 30.10: pēc «Show more +» tas pats saraksts var būt divreiz - ņem garāko (pilno).
+  let best: string[] = [];
   for (const l of detail.lists ?? []) {
-    if (/according to (the )?(identification number|vin)|car data/i.test(l.heading)) {
-      return l.items.map(clean).filter(Boolean).slice(0, 200);
-    }
+    if (!/according to (the )?(identification number|vin)|car data/i.test(l.heading)) continue;
+    const items = l.items.map(clean).filter(Boolean);
+    if (items.length > best.length) best = items;
   }
-  return [];
+  return best.slice(0, 200);
 }
 
 export function irissPdAuto1BlocksFromDetail(detail: IrissRelayAuctionDetail): IrissPdAuto1Blocks {

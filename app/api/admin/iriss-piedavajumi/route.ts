@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { appendIrissPdHistory, canRebaseIrissPd, rebaseIrissPd } from "@/lib/iriss-piedavajumi";
 import { importIrissPdFromLink, importIrissPdFromStock, type IrissPdImport } from "@/lib/iriss-piedavajumi-create";
 import { irissPdImportFromListing } from "@/lib/iriss-piedavajumi-from-listing";
+import { irissPdFactsFromAuto1 } from "@/lib/iriss-piedavajumi-facts";
 import { readIrissListingsLatestViewWithMarketplace } from "@/lib/marketplace/view";
 import { irissPdLinkErrorLv } from "@/lib/iriss-piedavajumi-sources";
 import { createIrissPd, isIrissPdStoreEnabled, listIrissPdRows, readIrissPd, refreshIrissPdExpiries } from "@/lib/iriss-piedavajumi-store";
@@ -56,6 +57,8 @@ function fromImport(imp: IrissPdImport, at: string, by: string) {
       auto1: imp.auto1,
       auto1ImportedAt: imp.auto1 ? at : "",
     };
+    // Nils 30.10: Novērtējums klientam - fakti no izsoles (atslēgas, serviss, TA, avārija, krāsojums).
+    if (imp.auto1) rec.content = { ...rec.content, facts: irissPdFactsFromAuto1(imp.auto1, rec.content.facts) };
     return appendIrissPdHistory(rec, { at, by: imp.fieldCount ? "Sistēma" : by, text: imp.historyText });
   };
 }

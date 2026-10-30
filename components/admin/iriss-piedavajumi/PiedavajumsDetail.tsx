@@ -17,6 +17,7 @@ import {
   type IrissLocalBackup,
 } from "@/lib/iriss-order-save-status";
 import { PdClientPicker } from "./PdClientPicker";
+import { irissPdFactsFromAuto1 } from "@/lib/iriss-piedavajumi-facts";
 import { PdPhotoSorter } from "./PdPhotoSorter";
 import { PdAuto1Blocks, PdToggles, type PdToggleTarget } from "@/components/iriss-piedavajumi/PdAuto1Blocks";
 import { PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
@@ -534,6 +535,20 @@ export function PiedavajumsDetail({
             </div>
           </div>
           <div className="pd-acts">
+            {/* Nils 30.10: priekšskatījums pirms sūtīšanas - vispirms saglabā, lai redzams viss jaunākais. */}
+            <button
+              type="button"
+              className="pd-btn"
+              disabled={busy !== ""}
+              onClick={() => {
+                void (async () => {
+                  if (dirty && !(await save())) return;
+                  router.push(`/admin/iriss/piedavajumi/${rec.id}/skats`);
+                })();
+              }}
+            >
+              Priekšskatījums
+            </button>
             {rec.linkToken && (rec.status === "sent" || rec.status === "approved") ? (
               <button type="button" className="pd-btn" onClick={() => void copyLink()}>
                 Kopēt saiti
@@ -730,6 +745,17 @@ export function PiedavajumsDetail({
         >
           <div className="pde-facts">{checkList("facts", IRISS_PD_FACTS_TEMPLATE)}</div>
           <AddInline label="pievienot faktu" disabled={!editable} onAdd={(t) => setC({ facts: addItem(c.facts, t) })} />
+          {rec.auto1 && editable ? (
+            <button
+              type="button"
+              className="pd-btn"
+              style={{ marginTop: 8 }}
+              title="Atslēgas, servisa grāmatiņa, TA, avārijas vēsture un krāsojums no izsoles datiem (mainītās rindas paliek)"
+              onClick={() => setC({ facts: irissPdFactsFromAuto1(rec.auto1, c.facts) })}
+            >
+              Aizpildīt no izsoles datiem
+            </button>
+          ) : null}
           <div className="pde-2c" style={{ marginTop: 12 }}>
             <div className="pd-fld">
               <label htmlFor="pd-visual">Vizuālais</label>

@@ -143,3 +143,40 @@ test("fetchAuctionDetail: login lapa -> login_required, 404 -> not_found", async
   const gone = fakePage({ status: 404, extract: null });
   assert.equal((await fetchAuctionDetail(gone, "openlane", "https://www.openlane.eu/en/car/8123456", { sleep: async () => undefined })).status, "not_found");
 });
+
+test("fetchAuctionDetail: «Show more +» tiek atvērts un saraksts nolasīts vēlreiz (Nils 30.10, DATI PĒC VIN)", async () => {
+  let clicks = 0;
+  let expanded = false;
+  const base = { title: "BMW", fields: [["a", "1"], ["b", "2"], ["c", "3"], ["d", "4"], ["e", "5"], ["f", "6"], ["g", "7"], ["h", "8"]], tables: [], photos: [], text: "" };
+  const page = {
+    on: () => undefined,
+    off: () => undefined,
+    url: () => "https://www.auto1.com/en/app/merchant/car/DE1",
+    goto: async () => ({ status: () => 200 }),
+    evaluate: async (fn) =>
+      fn.name === "extractDetailDom"
+        ? { ...base, lists: [{ heading: "Equipment according to the identification number", items: expanded ? ["A", "B", "C"] : ["A"] }] }
+        : undefined,
+    locator: () => ({
+      filter: ({ hasText }) => {
+        const isMore = hasText instanceof RegExp && hasText.test("Show more +");
+        return {
+          first: () => ({ count: async () => 0 }),
+          count: async () => (isMore && !expanded ? 1 : 0),
+          nth: () => ({
+            isVisible: async () => true,
+            click: async () => {
+              clicks += 1;
+              expanded = true;
+            },
+          }),
+        };
+      },
+    }),
+  };
+  const out = await fetchAuctionDetail(page, "auto1", "https://www.auto1.com/en/app/merchant/car/DE1", { sleep: async () => undefined });
+  assert.equal(out.status, "ok");
+  assert.equal(clicks, 1);
+  const vinList = out.detail.lists.find((l) => /identification/.test(l.heading));
+  assert.ok(vinList.items.includes("C"));
+});
