@@ -368,7 +368,7 @@ export function IrissMarketplaceLoadPanel({
         </p>
       ) : (
         <p className="mt-2 text-[11px] text-[var(--ink3)]">
-          Automātiskās ielādes nav - ielādē ar pogu Ielādēt pēc šī pasūtījuma kritērijiem. Mēneša griests{" "}
+          mobile.de ielādējas automātiski katru dienu 9:00 (izņemot svētdienas){formatLvDate(status?.nextAutoAt) ? `, nākamā ${formatLvDate(status?.nextAutoAt)}` : ""}. AutoScout24 un ārpus grafika - ar pogu Ielādēt pēc šī pasūtījuma kritērijiem. Mēneša griests{" "}
           {formatMarketplaceUsd(monthlyCapUsd)}.
         </p>
       )}
