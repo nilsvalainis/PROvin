@@ -22,7 +22,7 @@
     "metaTitle": "Kostenloser VIN-Decoder: Hersteller, Land und Baujahr | PROVIN",
     "metaDescription": "Kostenloser VIN-Decoder: Hersteller, Herstellungsland und mögliches Modelljahr aus der VIN. Historie, Kilometerstand und Inseratsanalyse im PROVIN-Audit.",
     "title": "VIN-Decoder",
-    "lead": "Geben Sie eine 17-stellige VIN ein und sehen Sie, was sie selbst verrät: Hersteller, Herstellungsland und mögliches Modelljahr. Kostenlos, ohne Anmeldung.",
+    "lead": "Prüfen Sie ein Auto per lettischem Kennzeichen oder 17-stelliger VIN. Zum Kennzeichen sehen Sie die Registerdaten (Marke, Modell, Baujahr, Motor, TÜV) und den Anfang der VIN - vergleichen Sie ihn mit der VIN im Inserat, um sicherzugehen, dass sie echt ist und zu diesem Auto gehört. Zur VIN erhalten Sie Hersteller, Land und bei vielen Marken auch Modell und Baujahr. Kostenlos, ohne Anmeldung.",
     "inputLabel": "FIN oder Kennzeichen",
     "inputPlaceholder": "AB1234 oder 17-stellige FIN",
     "submit": "Dekodieren",

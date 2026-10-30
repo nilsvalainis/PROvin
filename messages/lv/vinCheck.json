@@ -22,7 +22,7 @@
     "metaTitle": "VIN dekoders bez maksas: ražotājs, valsts un gads | PROVIN",
     "metaDescription": "Bezmaksas VIN dekoders: ražotājs, ražošanas valsts un iespējamais modeļa gads no VIN koda. Vēsture, nobraukums un sludinājuma analīze - PROVIN auditā.",
     "title": "VIN dekoders",
-    "lead": "Ievadiet 17 zīmju VIN kodu un uzziniet, ko tas pasaka pats par sevi: ražotāju, ražošanas valsti un iespējamo modeļa gadu. Bez maksas un bez reģistrācijas.",
+    "lead": "Pārbaudi auto pēc Latvijas numurzīmes vai 17 zīmju VIN koda. Ievadot numurzīmi, redzēsi CSDD datus (marku, modeli, gadu, motoru, tehnisko apskati) un VIN koda sākumu - salīdzini to ar sludinājumā norādīto VIN, lai pārliecinātos, ka tas ir īsts un pieder šim auto. Ievadot VIN, uzzināsi ražotāju, valsti un daudzām markām arī modeli un gadu. Bez maksas un bez reģistrācijas.",
     "inputLabel": "VIN kods vai numurzīme",
     "inputPlaceholder": "AB1234 vai 17 zīmju VIN",
     "submit": "Dekodēt",

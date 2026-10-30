@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useState, useTransition, type FormEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ArrowDown, ArrowRight, Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { track } from "@vercel/analytics";
 import { useLocale, useTranslations } from "next-intl";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
@@ -83,13 +83,16 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
     return () => window.removeEventListener(FREE_EVAL_PREFILL_EVENT, onPrefill);
   }, [paused]);
 
-  function openForm() {
-    if (paused || expanded) return;
-    setExpanded(true);
-    setFormError(null);
-    setRateLimited(false);
-    safeTrack("risk_guide_expand");
-  }
+  // Sākumlapā bloks ir paslēpts, līdz to atver kartīte vai saite ar #bezmaksas-novertejums.
+  useEffect(() => {
+    function fromHash() {
+      const h = window.location.hash.replace(/^#/, "");
+      if (!paused && (h === FREE_EVAL_SECTION_ID || h === FREE_EVAL_SECTION_ID_LEGACY)) setExpanded(true);
+    }
+    fromHash();
+    window.addEventListener("hashchange", fromHash);
+    return () => window.removeEventListener("hashchange", fromHash);
+  }, [paused]);
 
   function submitFree(e: FormEvent) {
     e.preventDefault();
@@ -187,6 +190,15 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
     });
   }
 
+  if (!paused && !expanded && !success) {
+    // Tikai enkurs: atvēršanas poga ir sākumlapas kartītē «Iesūtīt sludinājumu».
+    return (
+      <div id={FREE_EVAL_SECTION_ID} className="scroll-mt-[calc(4.75rem+env(safe-area-inset-top,0px))]">
+        <span id={FREE_EVAL_SECTION_ID_LEGACY} className="block scroll-mt-[calc(4.75rem+env(safe-area-inset-top,0px))]" aria-hidden />
+      </div>
+    );
+  }
+
   return (
     <div
       id={FREE_EVAL_SECTION_ID}
@@ -239,21 +251,6 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
               )}
             </div>
 
-            {!paused && !expanded && !success ? (
-              <div className="mt-7 flex justify-center">
-                <button
-                  type="button"
-                  onClick={openForm}
-                  aria-expanded={false}
-                  className="group inline-flex min-h-[48px] items-center gap-3 rounded-full border border-white/[0.14] bg-white/[0.03] px-5 text-[12px] font-semibold uppercase tracking-[0.12em] text-white/75 transition hover:border-white/30 hover:bg-white/[0.06] hover:text-white"
-                >
-                  {t("triggerCta")}
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 text-white/50 transition group-hover:border-white/30 group-hover:text-white/80">
-                    <ArrowDown className="h-3.5 w-3.5 transition group-hover:translate-y-0.5" strokeWidth={2} aria-hidden />
-                  </span>
-                </button>
-              </div>
-            ) : null}
 
             <AnimatePresence initial={false}>
               {!paused && (expanded || success) && (

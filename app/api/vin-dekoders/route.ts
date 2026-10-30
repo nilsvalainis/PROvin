@@ -16,11 +16,11 @@ export const runtime = "nodejs";
 export const maxDuration = 25;
 
 /**
- * VIN: 20 / 10 min un 100 / dienā no IP. Numurzīme: 10 / 10 min un 100 / dienā no IP (mobilajiem operatoriem
+ * VIN (bez maksas, CSDD netiek zvanīts): 40 / 10 min un 300 / dienā no IP. Numurzīme: 10 / 10 min un 100 / dienā no IP (mobilajiem operatoriem
  * viens IP daudziem). Īstā CSDD līguma aizsardzība ir `decoderCsddBlocked`: 200 dienā un mēneša griesti.
  */
 const LIMITS = {
-  vin: { burst: 20, day: 100 },
+  vin: { burst: 40, day: 300 },
   plate: { burst: 10, day: 100 },
 };
 const BURST_WINDOW_MS = 10 * 60 * 1000;
