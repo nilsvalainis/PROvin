@@ -1,10 +1,22 @@
 "use client";
 
+import { IRISS_PD_NEW_PATH } from "@/lib/iriss-pd-entry";
 import { offerSourceLabel } from "@/lib/iriss-stock-photos";
 import { AdminSaveButton, useSaveMessageState } from "@/components/admin/AdminSaveButton";
 import { ChevronRight, FileDown, FileText, Mail, Pencil, Phone, Plus, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode, type TouchEvent } from "react";
+import { IRISS_EQUIPMENT_CHIPS, IRISS_ORDER_STEPS, equipmentHas, seatsRange, seatsValue, toggleEquipment } from "@/lib/iriss-order-steps";
+import { irissMergedInternalNotes, irissOrderProgress, irissOrderStepStatuses, irissWhatsAppAppHref, type IrissOrderStepStatus } from "@/lib/iriss-order-completion";
+import {
+  IRISS_CLIENT_FINANCING_PRESETS,
+  irissClientFinancingEuroFromBudget,
+  irissClientFinancingPatchFromPercent,
+  irissEffectiveClientFinancingPercent,
+} from "@/lib/iriss-client-financing";
+import { formatIrissListPhoneText, irissListBudgetText } from "@/lib/iriss-pasutijumi-list-view";
+import { irissClientNameInputValue, splitIrissClientNameInput } from "@/lib/iriss-client-name-input";
+import { IrissGoogleContactStatusRow } from "@/components/admin/IrissGoogleContactStatusRow";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { IrissLazyImage } from "@/components/admin/IrissLazyImage";
@@ -13,7 +25,7 @@ import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardH
 import { AdminMobileRoundBtn, AdminMobileSaveStatus, AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
 import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
 import { IrissAdvanceSection } from "@/components/admin/IrissAdvanceSection";
-import { IrissClientFinancingSection } from "@/components/admin/IrissClientFinancingSection";
+import { parseIrissAdvanceAmount } from "@/lib/iriss-advance";
 import { IrissCommunicationTimeline } from "@/components/admin/IrissCommunicationTimeline";
 import { IrissOrderPhotoAlbumSection } from "@/components/admin/IrissOrderPhotoAlbumSection";
 import { IrissPriceChangeChip, IrissPriceHistoryPanel } from "@/components/admin/IrissPriceChangeChip";
@@ -27,9 +39,9 @@ import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
 import { IrissVinDuplicateMark } from "@/components/admin/IrissVinDuplicateMark";
 import { AdminChangeHistoryButton } from "@/components/admin/AdminChangeHistoryButton";
 import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
+import { irissOrderSaveStatus } from "@/lib/iriss-order-save-status";
 import { IrissSpecDiapazoniBlock } from "@/components/admin/IrissSpecDiapazoniBlock";
 import { IrissInternalNoteField } from "@/components/admin/IrissInternalNoteField";
-import { IrissOrderClientDataCard } from "@/components/admin/IrissOrderClientDataCard";
 import { IrissSpecChoiceSelect } from "@/components/admin/IrissSpecChoiceSelect";
 import { listingHistoryRecordId } from "@/lib/admin-change-history";
 import { IrissBrandLogoSlot } from "@/components/admin/IrissBrandLogoSlot";
@@ -51,16 +63,12 @@ import {
   sortGeneratedDocumentsNewestFirst,
 } from "@/lib/iriss-generated-documents";
 import type { IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
-import { irissAdvancePaidToday } from "@/lib/iriss-advance";
 import {
-  IRISS_ADVANCE_NOT_RECEIVED,
-  IRISS_ADVANCE_RECEIVED,
   IRISS_DEAL_WORKFLOW_STATUSES,
   formatIrissOverviewFinancingChip,
   formatIrissOverviewPlatformsLine,
   formatIrissOverviewSavedCapsule,
   irissDealWorkflowStatusOf,
-  irissOverviewAdvanceReceived,
 } from "@/lib/iriss-order-overview-view";
 import {
   newIrissCommunicationEvent,
@@ -144,7 +152,7 @@ import {
 } from "@/lib/iriss-order-spec-selects";
 
 const fieldClass =
-  "min-h-[44px] w-full min-w-0 rounded-[10px] border border-[#e5e7eb] bg-white px-2.5 py-2 text-[16px] text-[#111827] outline-none transition focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 sm:min-h-[38px] sm:text-[13px]";
+  "min-h-[44px] w-full min-w-0 rounded-[10px] border border-[var(--iriss-line)] bg-white px-2.5 py-2 text-[16px] text-[var(--iriss-ink)] outline-none transition focus:border-[#6366f1] focus:ring-2 focus:ring-[#6366f1]/20 sm:min-h-[38px] sm:text-[13px]";
 
 const areaClass = `${fieldClass} min-h-[60px] resize-y py-2 leading-snug sm:min-h-[60px]`;
 
@@ -154,16 +162,16 @@ const cardClass = "min-w-0 rounded-[22px] bg-[var(--s1)] p-4 shadow-[var(--sh)]"
 const IRISS_ORDER_ROOM_SHOW_CHANGE_HISTORY = false;
 
 const roomBtn =
-  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#e5e7eb] bg-white px-3 text-[12.5px] font-semibold text-[#111827] shadow-[0_1px_2px_#0000000d] transition hover:bg-[#f9fafb] disabled:opacity-40";
+  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--iriss-line)] bg-white px-3 text-[12.5px] font-semibold text-[var(--iriss-ink)] shadow-[0_1px_2px_#0000000d] transition hover:bg-[var(--iriss-surface-2)] disabled:opacity-40";
 
 const roomBtnWa =
   "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#25D366] bg-[#25D366] px-3 text-[12.5px] font-semibold text-white shadow-sm transition hover:bg-[#20BD5A] hover:brightness-105 disabled:opacity-40";
 
 const roomBtnPrimary =
-  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#2563eb] bg-[#2563eb] px-3 text-[12.5px] font-semibold text-white shadow-[0_1px_2px_#0000000d] transition hover:brightness-105 disabled:opacity-40";
+  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--iriss-info)] bg-[var(--iriss-info)] px-3 text-[12.5px] font-semibold text-white shadow-[0_1px_2px_#0000000d] transition hover:brightness-105 disabled:opacity-40";
 
 const roomBtnDark =
-  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#111827] bg-[#111827] px-3 text-[12.5px] font-semibold text-white shadow-[0_1px_2px_#0000000d] transition hover:brightness-110 disabled:opacity-40";
+  "inline-flex h-10 min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[var(--iriss-ink)] bg-[var(--iriss-graphite)] px-3 text-[12.5px] font-semibold text-white shadow-[0_1px_2px_#0000000d] transition hover:brightness-110 disabled:opacity-40";
 
 type CriteriaDraft = Pick<
   IrissPasutijumsRecord,
@@ -214,6 +222,183 @@ function CardTitle({ children }: { children: ReactNode }) {
   return <IrissSectionHeading>{children}</IrissSectionHeading>;
 }
 
+type OrderStep = (typeof IRISS_ORDER_STEPS)[number];
+
+/** Soļa numurs; aizpildīts - zaļš aplis ar ķeksi (Nils 28.10). */
+function StepNum({ n, done }: { n: number; done?: boolean }) {
+  return done ? (
+    <span className="inline-flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full bg-[var(--iriss-ok)] text-[13px] font-bold text-white" aria-label="aizpildīts">
+      ✓
+    </span>
+  ) : (
+    <span className="inline-flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-[var(--iriss-line-strong)] bg-white text-[12.5px] font-bold text-[var(--iriss-ink-2)]">
+      {n}
+    </span>
+  );
+}
+
+/** Viens solis sarunā ar klientu (Nils 28.10): numurs, nosaukums, jautājums, lauki. */
+function StepCard({
+  n,
+  step,
+  status,
+  cardClass,
+  children,
+}: {
+  n: number;
+  step: OrderStep;
+  status?: IrissOrderStepStatus;
+  cardClass: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className={cardClass} id={`iriss-step-${step.id}`} aria-label={`${n}. ${step.title}`}>
+      <div className="mb-3 flex items-center gap-2.5">
+        <StepNum n={n} done={status?.done} />
+        <h3 className="text-[15px] font-bold leading-tight text-[var(--iriss-ink)]">{step.title}</h3>
+        {status && !status.done ? (
+          <span className="ml-auto text-[12.5px] text-[var(--iriss-ink-2)]">trūkst: {status.missing.join(", ").toLocaleLowerCase("lv")}</span>
+        ) : null}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function RangePair({
+  label,
+  from,
+  to,
+  fieldClass,
+  onChange,
+}: {
+  label: string;
+  from: string;
+  to: string;
+  fieldClass: string;
+  onChange: (from: string, to: string) => void;
+}) {
+  return (
+    <div className="block min-w-0">
+      <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">
+        {label}
+        <span className="iriss-range-req" aria-hidden="true">
+          {" *"}
+        </span>
+      </span>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5">
+        <input className={fieldClass} inputMode="numeric" value={from} placeholder="no" aria-label={`${label} no`} onChange={(e) => onChange(e.target.value, to)} />
+        <span className="text-[var(--iriss-ink-2)]" aria-hidden>
+          -
+        </span>
+        <input className={fieldClass} inputMode="numeric" value={to} placeholder="līdz" aria-label={`${label} līdz`} onChange={(e) => onChange(from, e.target.value)} />
+      </div>
+    </div>
+  );
+}
+
+/** Izvēles pogas teksta garumā (makets v3); nezināma vecā vērtība paliek redzama zem tām. */
+function Segmented({
+  label,
+  value,
+  options,
+  onChange,
+  keepCustom = false,
+  filterMark = false,
+  grid = false,
+}: {
+  label: string;
+  value: string;
+  options: ReadonlyArray<{ value: string; label: string }>;
+  onChange: (value: string) => void;
+  /** Brīva teksta laukiem: vecais teksts, kas nav starp pogām, tiek parādīts un nepazūd. */
+  keepCustom?: boolean;
+  /** `*`: lauks filtrē Meklētāju. */
+  filterMark?: boolean;
+  /** Šaurai kolonnai (QA 29.10): 2 kolonnu režģis, lai pogas nepārlūzt pa vienai. */
+  grid?: boolean;
+}) {
+  const known = options.some((o) => o.value === value);
+  return (
+    <div className="block min-w-0" role="group" aria-label={label}>
+      <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">
+        {label}
+        {filterMark ? (
+          <span className="iriss-range-req" aria-hidden="true">
+            {" *"}
+          </span>
+        ) : null}
+      </span>
+      <div
+        className={`${grid ? "grid w-full grid-cols-2" : "inline-flex w-fit max-w-full flex-wrap"} gap-1.5`}
+      >
+        {options.map((o) => {
+          const on = value === o.value;
+          return (
+            <button
+              key={o.value || "none"}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onChange(on && o.value ? "" : o.value)}
+              className={`min-h-[32px] whitespace-nowrap rounded-lg px-3 text-[13px] font-semibold ${on ? "text-[var(--iriss-ink)]" : "text-[var(--iriss-ink-2)]"}`}
+              // Nils 29.10 «šīm pogām nav vajadzīgs fons»: tikai rāmis (inline - telefona tēma citādi uzliek fonu).
+              style={{
+                background: "transparent",
+                boxShadow: on ? "inset 0 0 0 1.5px var(--iriss-ink)" : "inset 0 0 0 1px var(--iriss-line-strong)",
+              }}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+      {keepCustom && value.trim() && !known ? <p className="mt-1 text-[12px] text-[var(--iriss-ink-2)]">Ierakstīts: {value}</p> : null}
+    </div>
+  );
+}
+
+/** Prasības: pogas pievieno/noņem biežākās; teksta laukā - jebkas cits (esošais teksts paliek). */
+function EquipmentPicker({
+  label,
+  value,
+  areaClass,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  areaClass: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.05em] text-[var(--iriss-ink)]">{label}</p>
+      <div className="flex flex-wrap gap-1.5">
+        {IRISS_EQUIPMENT_CHIPS.map((item) => {
+          const on = equipmentHas(value, item);
+          return (
+            <button
+              key={item}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onChange(toggleEquipment(value, item))}
+              className={`min-h-[34px] rounded-lg border px-2.5 text-[12.5px] font-semibold ${
+                on ? "border-[var(--iriss-ink)] bg-white text-[var(--iriss-ink)] shadow-[inset_0_0_0_1px_var(--iriss-ink)]" : "border-[var(--iriss-line-strong)] bg-white text-[var(--iriss-ink)]"
+              }`}
+            >
+              {on ? <span className="mr-1 text-[var(--iriss-ok)]">✓</span> : null}
+              {item}
+            </button>
+          );
+        })}
+      </div>
+      <label className="mt-2 block">
+        <span className="sr-only">{label} - teksts</span>
+        <textarea className={areaClass} value={value} placeholder="Cits - brīvs teksts" onChange={(e) => onChange(e.target.value)} />
+      </label>
+    </div>
+  );
+}
+
 function Field({
   label,
   value,
@@ -225,6 +410,7 @@ function Field({
   warning,
   type = "text",
   className,
+  filterMark,
 }: {
   label: string;
   value: string;
@@ -236,10 +422,19 @@ function Field({
   warning?: string | null;
   type?: string;
   className?: string;
+  /** `*`: lauks filtrē Meklētāju. */
+  filterMark?: boolean;
 }) {
   return (
     <label className={`block min-w-0${className ? ` ${className}` : ""}`}>
-      <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">{label}</span>
+      <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">
+        {label}
+        {filterMark ? (
+          <span className="iriss-range-req" aria-hidden>
+            {" *"}
+          </span>
+        ) : null}
+      </span>
       <input
         id={id}
         type={type}
@@ -267,13 +462,13 @@ function offerPortfolioBadge(
   link: IrissOfferClientLinkAdminView | null,
 ): { label: string; className: string } {
   if (link?.status === "declined") {
-    return { label: "Noraidīts", className: "border border-[#fca5a5] bg-[#fee2e2] text-[#991b1b]" };
+    return { label: "Noraidīts", className: "border border-[#fca5a5] bg-[#fee2e2] text-[var(--iriss-bad)]" };
   }
   if (link && link.status !== "revoked" && link.viewCount > 0) {
     return { label: `Atvērts ${link.viewCount}×`, className: "border border-[#93c5fd] bg-[#dbeafe] text-[#1e40af]" };
   }
   if (irissOrderRoomOfferStatus(offer) !== "ready") {
-    return { label: "Melnraksts", className: "border border-[#e5e7eb] bg-[#f3f4f6] text-[#374151]" };
+    return { label: "Melnraksts", className: "border border-[var(--iriss-line)] bg-[var(--iriss-surface-2)] text-[var(--iriss-ink-2)]" };
   }
   if (link && link.status !== "revoked") {
     return { label: link.statusLabel, className: "border border-[#93c5fd] bg-[#dbeafe] text-[#1e40af]" };
@@ -330,6 +525,7 @@ export function IrissOrderRoom({
   busy,
   orderPdfBusy,
   saveMsg,
+  saveState,
   orderPdfRetryOpen,
   phoneWarning,
   vinWarning: _vinWarning,
@@ -380,6 +576,8 @@ export function IrissOrderRoom({
   busy: boolean;
   orderPdfBusy: boolean;
   saveMsg: string | null;
+  /** Drošā saglabāšana: patiesais stāvoklis galvenē. Bez tā - kā agrāk (pēc busy). */
+  saveState?: { dirty: boolean; saving: boolean; error: string | null; offline: boolean };
   orderPdfRetryOpen: boolean;
   phoneWarning: string | null;
   vinWarning: string | null;
@@ -440,7 +638,8 @@ export function IrissOrderRoom({
   const [dismissed, setDismissed] = useState<Set<string>>(() => new Set(stringList(dismissedHitIds)));
   const [roomMsg, setRoomMsg] = useState<string | null>(null);
   const [composer, setComposer] = useState("");
-  const [linksOpen, setLinksOpen] = useState(true);
+  // Sludinājumu platformu saites pēc noklusējuma aizvērtas (Nils 28.10).
+  const [linksOpen, setLinksOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [offerLinks, setOfferLinks] = useState<IrissOfferClientLinkAdminView[]>(Array.isArray(initialOfferLinks) ? initialOfferLinks : []);
   const [linkBusyId, setLinkBusyId] = useState<string | null>(null);
@@ -448,6 +647,13 @@ export function IrissOrderRoom({
   const duplicates = coerceIrissDuplicatesByListing(duplicatesByListing);
   const safeHits = (Array.isArray(hits) ? hits : []).filter((hit) => hit && typeof hit.id === "string");
   useAdminScrollLock(criteriaOpen || priceFilterOpen);
+  // QA 29.10: «Visi kritēriji» logs aizveras arī ar Esc.
+  useEffect(() => {
+    if (!criteriaOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setCriteriaOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [criteriaOpen]);
 
   useEffect(() => {
     setDismissed(new Set(stringList(dismissedHitIds)));
@@ -586,7 +792,10 @@ export function IrissOrderRoom({
   const financingChip = formatIrissOverviewFinancingChip(rec.clientFinancingPercent, rec.orderDate);
   const clientName = [rec.clientFirstName, rec.clientLastName].map((part) => part.trim()).filter(Boolean).join(" ");
   const savedTime = irissOrderRoomStamp(rec.updatedAt).split(" ")[1] ?? "";
-  const savedCapsule = formatIrissOverviewSavedCapsule(savedTime);
+  const saveStatus = saveState
+    ? irissOrderSaveStatus({ ...saveState, savedTime })
+    : { kind: busy || orderPdfBusy ? ("saving" as const) : ("saved" as const), label: formatIrissOverviewSavedCapsule(savedTime) };
+  const saveNeedsAction = saveStatus.kind === "error" || saveStatus.kind === "pending" || saveStatus.kind === "offline";
   const refLabel = irissOrderRoomRef(rec.id);
   const linkCount = irissOrderRoomListingLinkCount(rec);
   const platforms = irissOrderRoomPlatformLabels(visibleHits);
@@ -597,13 +806,20 @@ export function IrissOrderRoom({
     offerCount: rec.offers.length,
     hasPhone: canCall,
     hasVin: Boolean(rec.vin.trim()),
+    listStatus: rec.listStatus,
   });
   const commTimeline = timelineFromPasutijums(rec, offerLinks);
   const commCount = commTimeline.length || irissOrderRoomCommunicationCount((rec.statusHistory ?? []).length, Boolean(rec.notes.trim()));
   const generatedDocs = sortGeneratedDocumentsNewestFirst(rec.generatedDocuments ?? []);
+  const latestContract = [...generatedDocs].filter((d) => d.kind === "contract").sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null;
   const docCount = irissOrderRoomDocumentCount(rec.offers.length, generatedDocs.length);
   const searchHref = `/admin/iriss/sludinajumi?ord=${encodeURIComponent(serializeListingOrderFilter({ kind: "order", id: rec.id }))}`;
   const history = [...(rec.statusHistory ?? [])].reverse();
+  const stepStatus = irissOrderStepStatuses(rec);
+  const financingPercent = irissEffectiveClientFinancingPercent(rec);
+  const financingEuro = irissClientFinancingEuroFromBudget(rec.totalBudget, financingPercent);
+  const waAppHref = irissWhatsAppAppHref(rec.phone);
+  const progress = irissOrderProgress(rec);
   const noteLines = rec.notes
     .split(/\n+/)
     .map((line) => line.trim())
@@ -691,7 +907,7 @@ export function IrissOrderRoom({
 
   const actionBtn = roomBtn;
   const title = rec.brandModel.trim() || "Pasūtījums";
-  const budgetLabel = rec.totalBudget.trim();
+  const budgetLabel = rec.totalBudget.trim() ? irissListBudgetText(rec.totalBudget) : "";
 
   const tabs = (
     <div className="iriss-order-tabs mt-2 flex max-w-full gap-1 overflow-x-auto [scrollbar-width:none] md:mt-3" role="tablist" aria-label="Pasūtījuma istaba">
@@ -736,8 +952,8 @@ export function IrissOrderRoom({
         mobileTrailing={
           <>
             <AdminMobileSaveStatus
-              saved={!busy && !orderPdfBusy}
-              busy={busy || orderPdfBusy}
+              saved={saveStatus.kind === "saved"}
+              busy={saveStatus.kind === "saving"}
               onSave={() => void onSave()}
             />
             <AdminMobileRoundBtn name="vairak" label="Vairāk" onClick={() => setMoreOpen(true)} />
@@ -749,6 +965,7 @@ export function IrissOrderRoom({
               <span className="sr-only">Statuss</span>
               <select
                 className="iriss-status-pill h-8 rounded-full border border-[var(--hair)] bg-[var(--s1)] px-2.5 text-[12px] font-semibold text-[var(--ink)] outline-none"
+                data-status={canonicalIrissPasutijumsListStatus(rec.listStatus)}
                 value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
                 aria-label="Pasūtījuma statuss"
                 onChange={(e) => onSetStatus(e.target.value as IrissPasutijumsListStatus)}
@@ -801,27 +1018,28 @@ export function IrissOrderRoom({
           <Link
             href="/admin/iriss/pasutijumi"
             title={rec.id}
-            className="mb-2 inline-flex min-h-10 items-center gap-1 text-[13px] font-medium text-[#6b7280]"
+            className="mb-2 inline-flex min-h-10 items-center gap-1 text-[13px] font-medium text-[var(--iriss-ink-2)]"
           >
             <span aria-hidden>←</span>
             <span className="hidden md:inline">IRISS · Pasūtījumi / {refLabel}</span>
           </Link>
-          <div className="rounded-2xl border border-[#e5e7eb] bg-white px-3 py-3 sm:px-[18px] sm:py-3.5">
+          <div className="rounded-2xl border border-[var(--iriss-line)] bg-white px-3 py-3 sm:px-[18px] sm:py-3.5">
             <div className="flex min-w-0 flex-wrap items-center gap-3.5">
               <div className="hidden md:block">
                 <IrissBrandLogoSlot
                   brandModel={rec.brandModel}
-                  fallbackClassName="text-[#111827] font-extrabold"
+                  fallbackClassName="text-[var(--iriss-ink)] font-extrabold"
                   imgLoading="eager"
                 />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h1 className="text-[16px] font-bold leading-tight text-[#111827] md:text-[22px] md:font-semibold">{title}</h1>
+                  <h1 className="text-[16px] font-bold leading-tight text-[var(--iriss-ink)] md:text-[22px] md:font-bold">{title}</h1>
                   <label className="hidden items-center md:inline-flex">
                     <span className="sr-only">Statuss</span>
                     <select
                       className="iriss-status-pill h-8 rounded-full border border-[var(--hair)] bg-[var(--s1)] px-2.5 text-[12px] font-semibold text-[var(--ink)] outline-none"
+                      data-status={canonicalIrissPasutijumsListStatus(rec.listStatus)}
                       value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
                       aria-label="Pasūtījuma statuss"
                       onChange={(e) => onSetStatus(e.target.value as IrissPasutijumsListStatus)}
@@ -855,18 +1073,18 @@ export function IrissOrderRoom({
                     />
                   ) : null}
                 </div>
-                <p className="mt-1 text-[12px] leading-snug text-[#6b7280] md:text-[13px]">
+                <p className="mt-1 text-[12px] leading-snug text-[var(--iriss-ink-2)] md:text-[13px]">
                   <span className="md:hidden">
                     {[clientName, budgetLabel].filter(Boolean).join(" · ")}
                     {dealPill ? (
                       <>
                         {clientName || budgetLabel ? " · " : null}
-                        <span className="font-semibold text-[#15803d]">{dealPill} ✓</span>
+                        <span className="font-semibold text-[var(--iriss-ok)]">{dealPill} ✓</span>
                       </>
                     ) : null}
                   </span>
                   <span className="hidden md:inline">
-                    {[clientName, rec.phone.trim(), rec.email.trim()].filter(Boolean).join(" · ")}
+                    {[clientName, formatIrissListPhoneText(rec.phone), rec.email.trim()].filter(Boolean).join(" · ")}
                     {budgetLabel ? (
                       <>
                         {(clientName || rec.phone.trim() || rec.email.trim()) ? " · " : null}
@@ -877,9 +1095,22 @@ export function IrissOrderRoom({
                 </p>
               </div>
               <div className="hidden min-w-0 flex-wrap items-center gap-2 md:flex">
-                <span className="inline-flex h-8 items-center rounded-full bg-[var(--fill)] px-2.5 text-[12px] font-semibold text-[var(--ink)]">
-                  {savedCapsule}
-                </span>
+                <button
+                  type="button"
+                  role="status"
+                  aria-live="polite"
+                  data-save-kind={saveStatus.kind}
+                  disabled={!saveNeedsAction}
+                  onClick={() => void onSave()}
+                  title={saveNeedsAction ? "Saglabāt tagad" : undefined}
+                  className={`inline-flex h-8 items-center rounded-full px-2.5 text-[12px] font-semibold disabled:cursor-default ${
+                    saveStatus.kind === "error" || saveStatus.kind === "offline"
+                      ? "bg-[var(--iriss-bad-soft)] text-[var(--iriss-bad)]"
+                      : "bg-[var(--fill)] text-[var(--ink)]"
+                  }`}
+                >
+                  {saveStatus.label}
+                </button>
                 <button type="button" className={roomBtnWa} disabled={!canCall} onClick={() => onWhatsappText("")}>
                   <WhatsAppGlyph className="h-4 w-4 fill-current" />
                   WhatsApp
@@ -974,120 +1205,291 @@ export function IrissOrderRoom({
               onOpenSearch={() => setTab("search")}
             />
           </section>
+          {/* Nils 28.10 (makets v3): aizpildījuma josla + kas trūkst. */}
+          <section className={`${cardClass} flex flex-wrap items-center gap-3 py-3`} aria-label="Pasūtījuma aizpildījums">
+            <div className="min-w-[220px] flex-1">
+              <div className="flex justify-between text-[13px] font-semibold text-[var(--iriss-ink)]">
+                <span>Pasūtījums aizpildīts</span>
+                <span>
+                  {progress.done} no {progress.total} soļiem
+                </span>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--iriss-line)]">
+                <i className="block h-full rounded-full bg-[var(--iriss-ok)]" style={{ width: `${Math.round((progress.done / progress.total) * 100)}%` }} />
+              </div>
+            </div>
+            {progress.missing.length > 0 ? (
+              <span className="rounded-full bg-[color-mix(in_srgb,var(--iriss-warn)_12%,white)] px-2.5 py-1 text-[12px] font-semibold text-[var(--iriss-warn)]">Trūkst: {progress.missing.join(", ")}</span>
+            ) : null}
+          </section>
         <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_340px]">
           <div className="min-w-0 space-y-3">
-            <section className={cardClass}>
-              <CardTitle>Kritēriji</CardTitle>
+            {/* Nils 28.10: Pārskats pa soļiem, kādos iet sarunā ar klientu; lauki un dati tie paši. */}
+            <StepCard n={1} step={IRISS_ORDER_STEPS[0]} status={stepStatus[0]} cardClass={cardClass}>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <Field label="Marka / modelis" filterMark value={rec.brandModel} onChange={(value) => onPatch("brandModel", value)} />
+                <Field
+                  label="Komplektācija / līnija"
+                  filterMark
+                  value={rec.modelExtension}
+                  placeholder="piem., S-line, AMG"
+                  onChange={(value) => onPatch("modelExtension", value)}
+                />
+                <IrissSpecChoiceSelect
+                  label="Virsbūve"
+                  filterMark
+                  value={bodySelectValue(rec.bodyType)}
+                  options={IRISS_BODY_SELECT_OPTIONS}
+                  selectClassName={fieldClass}
+                  onChange={(value) => onPatch("bodyType", persistBodySelect(value, rec.bodyType))}
+                />
+                <RangePair
+                  label="Sēdvietas"
+                  from={seatsRange(rec.seatCount).from}
+                  to={seatsRange(rec.seatCount).to}
+                  fieldClass={fieldClass}
+                  onChange={(from, to) => onPatch("seatCount", seatsValue(from, to))}
+                />
+              </div>
+              {rec.listStatus === "inactive" ? (
+                <input
+                  className={`${fieldClass} mt-3`}
+                  value={rec.inactiveReason ?? ""}
+                  placeholder="Neaktīvs - iemesls (neobligāti)"
+                  aria-label="Neaktīvs iemesls"
+                  onChange={(e) => onInactiveReason(e.target.value)}
+                />
+              ) : null}
+            </StepCard>
+
+            <StepCard n={2} step={IRISS_ORDER_STEPS[1]} status={stepStatus[1]} cardClass={cardClass}>
               <div className="iriss-mobile-kv iriss-spec-fields">
-                <div className="iriss-spec-top">
-                  <label className="block min-w-0">
-                    <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Statuss</span>
-                    <select
-                      className={fieldClass}
-                      value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
-                      aria-label="Statuss specifikācijā"
-                      onChange={(e) => onSetStatus(e.target.value as IrissPasutijumsListStatus)}
-                    >
-                      {IRISS_PASUTIJUMS_PICKER_STATUSES.map((status) => (
-                        <option key={status} value={status}>
-                          {IRISS_PASUTIJUMS_PICKER_STATUS_LV[status]}
-                        </option>
-                      ))}
-                    </select>
-                    {rec.listStatus === "inactive" ? (
-                      <input
-                        className={`${fieldClass} mt-1.5`}
-                        value={rec.inactiveReason ?? ""}
-                        placeholder="Iemesls (neobligāti)"
-                        aria-label="Neaktīvs iemesls"
-                        onChange={(e) => onInactiveReason(e.target.value)}
-                      />
-                    ) : null}
-                  </label>
-                  <Field label="Marka / modelis" value={rec.brandModel} onChange={(value) => onPatch("brandModel", value)} />
-                  <Field
-                    label="Modeļa paplašinājums"
-                    value={rec.modelExtension}
-                    placeholder="piem., S-line"
-                    onChange={(value) => onPatch("modelExtension", value)}
-                  />
-                </div>
                 <IrissSpecDiapazoniBlock
                   ranges={irissOrderRangeView(rec)}
                   onPatchRange={onPatchRange}
                   rangeError={(pair) => irissOrderRangeErrorFor(rec, pair)}
                   inputClassName={fieldClass}
+                  only={["budget"]}
                 />
-                <div className="iriss-spec-rest">
-                  <IrissSpecChoiceSelect
-                    label="Degviela"
-                    value={fuelSelectValue(rec.engineType)}
-                    options={IRISS_FUEL_SELECT_OPTIONS}
-                    selectClassName={fieldClass}
-                    onChange={(value) => onPatch("engineType", persistFuelSelect(value, rec.engineType))}
-                  />
-                  <IrissSpecChoiceSelect
-                    label="Ātrumkārba"
-                    value={gearboxSelectValue(rec.transmission)}
-                    options={IRISS_GEARBOX_SELECT_OPTIONS}
-                    selectClassName={fieldClass}
-                    onChange={(value) => onPatch("transmission", persistGearboxSelect(value, rec.transmission))}
-                  />
-                  <IrissSpecChoiceSelect
-                    label="Virsbūves tips"
-                    value={bodySelectValue(rec.bodyType)}
-                    options={IRISS_BODY_SELECT_OPTIONS}
-                    selectClassName={fieldClass}
-                    onChange={(value) => onPatch("bodyType", persistBodySelect(value, rec.bodyType))}
-                  />
-                  <Field label="Piedziņas tips" value={rec.driveType} placeholder="piem., priekšējā, 4x4" onChange={(value) => onPatch("driveType", value)} />
-                  <Field label="Sēdvietu skaits" value={rec.seatCount} placeholder="piem., 5" onChange={(value) => onPatch("seatCount", value)} />
-                  <Field label="Vēlamās krāsas" value={rec.preferredColors} onChange={(value) => onPatch("preferredColors", value)} />
-                  <Field label="Nevēlamās krāsas" value={rec.nonPreferredColors} onChange={(value) => onPatch("nonPreferredColors", value)} />
-                  <Field label="Bojājumu tolerance" value={rec.damageTolerance} placeholder="piem., tikai kosmētika" onChange={(value) => onPatch("damageTolerance", value)} />
-                  <Field label="Valstis" value={rec.preferredCountries} placeholder="piem., DE, NL, BE" onChange={(value) => onPatch("preferredCountries", value)} />
-                  <Field className="iriss-spec-full" label="Salona apdare" value={rec.interiorFinish} onChange={(value) => onPatch("interiorFinish", value)} />
-                </div>
               </div>
-              <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />
-            </section>
+              <div className="mt-3 flex flex-wrap items-end gap-x-8 gap-y-3">
+                <Segmented
+                  label="Budžetā iekļauts"
+                  value={rec.budgetIncludes ?? ""}
+                  options={[
+                    { value: "all", label: "Viss ar piegādi" },
+                    { value: "car", label: "Tikai auto" },
+                  ]}
+                  onChange={(value) => onPatch("budgetIncludes", value)}
+                />
+                <Segmented
+                  label="PVN"
+                  value={rec.dealVat21Required ? "vat" : ""}
+                  options={[
+                    { value: "vat", label: "Ar PVN atskaitīšanu" },
+                    { value: "", label: "Nav svarīgi" },
+                  ]}
+                  onChange={(value) => onPatch("dealVat21Required", value === "vat")}
+                />
+              </div>
+            </StepCard>
 
-            <section className={cardClass}>
-              <CardTitle>Aprīkojums</CardTitle>
+            <StepCard n={3} step={IRISS_ORDER_STEPS[2]} status={stepStatus[2]} cardClass={cardClass}>
+              <div className="iriss-mobile-kv iriss-spec-fields">
+                <IrissSpecDiapazoniBlock
+                  ranges={irissOrderRangeView(rec)}
+                  onPatchRange={onPatchRange}
+                  rangeError={(pair) => irissOrderRangeErrorFor(rec, pair)}
+                  inputClassName={fieldClass}
+                  only={["year", "mileage", "kw", "cc"]}
+                />
+              </div>
+              <div className="mt-3 grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto_minmax(0,140px)]">
+                <IrissSpecChoiceSelect
+                  label="Degviela"
+                  filterMark
+                  value={fuelSelectValue(rec.engineType)}
+                  options={IRISS_FUEL_SELECT_OPTIONS}
+                  selectClassName={fieldClass}
+                  onChange={(value) => onPatch("engineType", persistFuelSelect(value, rec.engineType))}
+                />
+                <IrissSpecChoiceSelect
+                  label="Ātrumkārba"
+                  filterMark
+                  value={gearboxSelectValue(rec.transmission)}
+                  options={IRISS_GEARBOX_SELECT_OPTIONS}
+                  selectClassName={fieldClass}
+                  onChange={(value) => onPatch("transmission", persistGearboxSelect(value, rec.transmission))}
+                />
+                <Segmented
+                  label="Piedziņa"
+                  filterMark
+                  keepCustom
+                  value={rec.driveType}
+                  options={[
+                    { value: "Priekšējā", label: "Priekšējā" },
+                    { value: "Aizmugurējā", label: "Aizmugurējā" },
+                    { value: "4x4", label: "4×4" },
+                  ]}
+                  onChange={(value) => onPatch("driveType", value)}
+                />
+                <Field label="Durvis" value={rec.doors ?? ""} placeholder="piem., 5" onChange={(value) => onPatch("doors", value)} />
+              </div>
+            </StepCard>
+
+            <StepCard n={4} step={IRISS_ORDER_STEPS[3]} status={stepStatus[3]} cardClass={cardClass}>
+              <div className="grid grid-cols-1 items-end gap-3 lg:grid-cols-[auto_minmax(0,1fr)_auto]">
+                <Segmented
+                  label="Bojājumi"
+                  keepCustom
+                  value={rec.damageTolerance}
+                  options={[
+                    { value: "Bez bojājumiem", label: "Bez bojājumiem" },
+                    { value: "Kosmētiski", label: "Kosmētiski" },
+                    { value: "Remontējams", label: "Remontējams" },
+                  ]}
+                  onChange={(value) => onPatch("damageTolerance", value)}
+                />
+                <Field label="Maks. remonts, € (izsolēm)" value={rec.maxRepairCostEur ?? ""} placeholder="piem., 800" onChange={(value) => onPatch("maxRepairCostEur", value)} />
+                <Segmented
+                  label="Pārdevējs"
+                  value={rec.sellerType ?? ""}
+                  options={[
+                    { value: "dealer", label: "Dīleri" },
+                    { value: "any", label: "Arī privāti" },
+                  ]}
+                  onChange={(value) => onPatch("sellerType", value)}
+                />
+              </div>
+              {/* Nils 28.10: valstis nenorāda - vienmēr DE, NL, BE (vecais lauks datos paliek). */}
+              <p className="mt-2 text-[12px] text-[var(--iriss-ink-2)]">Meklējam Vācijā, Nīderlandē un Beļģijā.</p>
+            </StepCard>
+
+            <StepCard n={5} step={IRISS_ORDER_STEPS[4]} status={stepStatus[4]} cardClass={cardClass}>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <EquipmentPicker
+                  label="Obligātās prasības"
+                  value={rec.equipmentRequired}
+                  areaClass={areaClass}
+                  onChange={(value) => onPatch("equipmentRequired", value)}
+                />
+                <EquipmentPicker
+                  label="Vēlamās prasības"
+                  value={rec.equipmentDesired}
+                  areaClass={areaClass}
+                  onChange={(value) => onPatch("equipmentDesired", value)}
+                />
+              </div>
+            </StepCard>
+
+            <StepCard n={6} step={IRISS_ORDER_STEPS[5]} status={stepStatus[5]} cardClass={cardClass}>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <Field label="Vēlamās krāsas" value={rec.preferredColors} onChange={(value) => onPatch("preferredColors", value)} />
+                <Field label="Nevēlamās krāsas" value={rec.nonPreferredColors} onChange={(value) => onPatch("nonPreferredColors", value)} />
+                <Field label="Salona apdare" value={rec.interiorFinish} onChange={(value) => onPatch("interiorFinish", value)} />
+              </div>
+            </StepCard>
+
+            <StepCard n={7} step={IRISS_ORDER_STEPS[6]} status={stepStatus[6]} cardClass={cardClass}>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label className="block">
-                  <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Obligātās prasības</span>
-                  <textarea className={areaClass} value={rec.equipmentRequired} onChange={(e) => onPatch("equipmentRequired", e.target.value)} />
-                </label>
-                <IrissInternalNoteField
-                  label="Piezīmes aģentam"
-                  value={rec.agentNotes}
-                  onChange={(value) => onPatch("agentNotes", value)}
-                  className={areaClass}
-                />
-                <label className="block sm:col-span-2">
-                  <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Vēlamās prasības</span>
-                  <textarea className={areaClass} value={rec.equipmentDesired} onChange={(e) => onPatch("equipmentDesired", e.target.value)} />
-                </label>
-              </div>
-              <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />
-            </section>
-
-            <section className={cardClass}>
-              <CardTitle>Piezīmes</CardTitle>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <label className="block">
-                  <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Piezīmes</span>
+                  <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Piezīmes (redzamas līgumā)</span>
                   <textarea className={areaClass} aria-label="Piezīmes" value={rec.notes} onChange={(e) => onPatch("notes", e.target.value)} />
                 </label>
+                {/* Nils 28.10: aģentam + iekšējās - viens lauks; abu vecie teksti saliek kopā aģenta piezīmēs (redz aģenti, līgumā nav). */}
                 <IrissInternalNoteField
-                  label="Piezīmes (iekšējās)"
-                  value={rec.internalNotes}
-                  onChange={(value) => onPatch("internalNotes", value)}
+                  label="Iekšējās piezīmes · aģentam un komandai"
+                  value={irissMergedInternalNotes(rec)}
+                  onChange={(value) => onPatchRecord({ agentNotes: value, internalNotes: "" })}
                   className={areaClass}
                 />
               </div>
-              <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />
+            </StepCard>
+
+            {/* Nils 28.10 (makets KlientsFin): kontakti un finansējums vienā kartītē, avanss zem tiem. */}
+            <section id="iriss-room-client" className={cardClass} aria-label="8. Klients un finansējums">
+              <div className="mb-3 flex items-center gap-2.5">
+                <StepNum n={8} done={stepStatus[7]?.done} />
+                <h3 className="text-[15px] font-bold leading-tight text-[var(--iriss-ink)]">Klients un finansējums</h3>
+              </div>
+              <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_1px_minmax(0,1.15fr)]">
+              <div className="min-w-0">
+                <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--iriss-ink-2)]">Klienta kontakti</p>
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                  <Field
+                    label="Vārds, uzvārds"
+                    value={irissClientNameInputValue(rec)}
+                    autoComplete="name"
+                    onChange={(value) => onPatchRecord(splitIrissClientNameInput(value))}
+                  />
+                  <Field label="Tālrunis" value={rec.phone} inputMode="tel" autoComplete="tel" warning={phoneWarning} onChange={(value) => onPatch("phone", value)} />
+                  <Field label="E-pasts" value={rec.email} inputMode="email" autoComplete="email" onChange={(value) => onPatch("email", value)} />
+                  <Field label="Pasūtījuma datums" type="date" value={rec.orderDate} onChange={(value) => onPatch("orderDate", value)} />
+                </div>
+                <div className="mt-2">
+                  <IrissGoogleContactStatusRow
+                    rec={rec}
+                    configured={googleContactsConfigured}
+                    busy={googleContactBusy}
+                    onRetry={onRetryGoogleContact ? () => onRetryGoogleContact() : undefined}
+                    buttonClass={roomBtn}
+                  />
+                </div>
+              </div>
+              <div className="hidden bg-[var(--iriss-line)] xl:block" aria-hidden />
+              <div className="min-w-0" aria-label="Finansējums, avanss un depozīts">
+                <p className="mb-2 text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--iriss-ink-2)]">Finansējums</p>
+                <div className="flex flex-wrap items-end gap-3">
+                  <Segmented
+                    label="Klienta finansējums"
+                    value={financingPercent > 0 ? String(financingPercent) : ""}
+                    options={[...IRISS_CLIENT_FINANCING_PRESETS.map((p) => ({ value: String(p), label: `${p} %` }))]}
+                    onChange={(value) => onPatchRecord(irissClientFinancingPatchFromPercent(Number(value) || 0))}
+                  />
+                  <label className="block w-[92px]">
+                    <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Cits %</span>
+                    <input
+                      className={fieldClass}
+                      inputMode="numeric"
+                      value={financingPercent > 0 && !(IRISS_CLIENT_FINANCING_PRESETS as readonly number[]).includes(financingPercent) ? String(financingPercent) : ""}
+                      placeholder="%"
+                      aria-label="Cits finansējuma procents"
+                      onChange={(e) => onPatchRecord(irissClientFinancingPatchFromPercent(Number(e.target.value.replace(/[^\d]/g, "").slice(0, 3)) || 0))}
+                    />
+                  </label>
+                  {financingEuro > 0 ? <span className="pb-2 text-[15px] font-bold text-[var(--iriss-ink)]">= {financingEuro.toLocaleString("lv-LV")} €</span> : null}
+                </div>
+                <div className="mt-3">
+                  <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Veids</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {IRISS_DEAL_DETAIL_OPTIONS.filter((opt) => opt.key !== "dealClientFinancing100" && opt.key !== "dealClientFinancing20").map((opt) => {
+                      const on = Boolean(rec[opt.key]);
+                      return (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          aria-pressed={on}
+                          onClick={() => onPatch(opt.key, !on)}
+                          className={`min-h-[32px] rounded-full border px-3 text-[12.5px] font-semibold ${
+                            on ? "border-[var(--iriss-ink)] bg-white text-[var(--iriss-ink)] shadow-[inset_0_0_0_1px_var(--iriss-ink)]" : "border-[var(--iriss-line-strong)] bg-white text-[var(--iriss-ink)]"
+                          }`}
+                        >
+                          {on ? <span className="mr-1 text-[var(--iriss-ok)]">✓</span> : null}
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+              </div>
+              <IrissAdvanceSection
+                flat
+                value={rec.advance}
+                onChange={(next) => onPatchRecord({ advance: next })}
+                onInvoicePdf={onPdf}
+                invoiceBusy={orderPdfBusy}
+              />
             </section>
 
             <div id="iriss-room-tame">
@@ -1096,6 +1498,8 @@ export function IrissOrderRoom({
                 shellCard={cardClass}
                 draft={rec.dzintarzemeTameDraft ?? defaultIrissDzintarzemeTameDraft()}
                 orderBrandModel={rec.brandModel}
+                advancePaidEur={parseIrissAdvanceAmount(rec.advance?.amount ?? "")}
+                financingPercent={financingPercent}
                 onDraftChange={(next) => onPatchRecord({ dzintarzemeTameDraft: next })}
                 onGeneratedDocument={onGeneratedDocument}
                 sectionSave={<IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={onSave} />}
@@ -1118,89 +1522,77 @@ export function IrissOrderRoom({
           </div>
 
           <aside className="space-y-3">
-            <section className={cardClass}>
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--ink3)]">Avanss un darījums</p>
-              <div className="divide-y divide-[var(--hair)]">
-                <div className="flex min-h-[48px] items-center justify-between gap-3">
-                  <span className="text-[14px] text-[var(--ink)]">Avanss</span>
-                  <span className="text-[14px] text-[var(--ink2)]">
-                    {irissOverviewAdvanceReceived(rec.advance?.paidAt) ? IRISS_ADVANCE_RECEIVED : IRISS_ADVANCE_NOT_RECEIVED}
-                  </span>
-                </div>
-                <div className="flex min-h-[48px] items-center justify-between gap-3">
-                  <span className="text-[14px] text-[var(--ink)]">Avansa summa</span>
-                  <span className="text-[14px] text-[var(--ink2)]">{rec.advance?.amount.trim() ? `${rec.advance.amount} €` : "-"}</span>
-                </div>
-                <label className="flex min-h-[48px] items-center justify-between gap-3">
-                  <span className="text-[14px] text-[var(--ink)]">Darījuma statuss</span>
-                  <select
-                    className="h-8 rounded-full bg-[var(--fill)] px-2.5 text-[13px] text-[var(--ink)] outline-none"
-                    value={irissDealWorkflowStatusOf(rec.dealWorkflowStatus)}
-                    onChange={(e) => {
-                      onPatchRecord({ dealWorkflowStatus: e.target.value });
-                      void onSave();
-                    }}
-                  >
-                    {IRISS_DEAL_WORKFLOW_STATUSES.map((status) => (
-                      <option key={status.id} value={status.id}>
-                        {status.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
-              <div className="mt-3">
-                <IrissClientFinancingSection rec={rec} onPatchRecord={onPatchRecord} />
-              </div>
-              <button
-                type="button"
-                className="mt-3 inline-flex h-9 w-full items-center justify-center rounded-full bg-[var(--fill)] text-[13px] font-semibold text-[var(--ink)]"
-                onClick={() => {
-                  onPatchRecord({ advance: irissAdvancePaidToday(rec.advance) });
-                  void onSave();
-                }}
-              >
-                Atzīmēt avansu saņemtu
-              </button>
-              <details className="mt-3">
-                <summary className="cursor-pointer text-[12px] font-semibold text-[var(--ink2)]">Avansa detaļas</summary>
-                <IrissAdvanceSection
-                  value={rec.advance}
-                  onChange={(next) => onPatchRecord({ advance: next })}
-                  onInvoicePdf={onPdf}
-                  invoiceBusy={orderPdfBusy}
-                />
-                <div className="mt-3 grid grid-cols-1 gap-1.5">
-                  {IRISS_DEAL_DETAIL_OPTIONS.filter(
-                    (opt) => opt.key !== "dealClientFinancing100" && opt.key !== "dealClientFinancing20",
-                  ).map((opt) => (
-                    <label key={opt.key} className="inline-flex items-center gap-2 text-[13px] text-[var(--ink)]">
-                      <input type="checkbox" checked={Boolean(rec[opt.key])} onChange={(e) => onPatch(opt.key, e.target.checked)} />
-                      {opt.label}
-                    </label>
+            <section className={cardClass} aria-label="Statuss">
+              <CardTitle>Statuss</CardTitle>
+              <Segmented
+                label="Pasūtījuma statuss"
+                grid
+                value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
+                options={IRISS_PASUTIJUMS_PICKER_STATUSES.map((st) => ({ value: st, label: IRISS_PASUTIJUMS_PICKER_STATUS_LV[st] }))}
+                onChange={(value) => value && onSetStatus(value as IrissPasutijumsListStatus)}
+              />
+              <label className="mt-3 flex min-h-[40px] items-center justify-between gap-3 border-t border-[var(--iriss-line)] pt-2">
+                <span className="text-[14px] text-[var(--iriss-ink-2)]">Darījums</span>
+                <select
+                  className="h-8 rounded-full bg-[var(--fill)] px-2.5 text-[13px] text-[var(--ink)] outline-none"
+                  value={irissDealWorkflowStatusOf(rec.dealWorkflowStatus)}
+                  onChange={(e) => {
+                    onPatchRecord({ dealWorkflowStatus: e.target.value });
+                    void onSave();
+                  }}
+                >
+                  {IRISS_DEAL_WORKFLOW_STATUSES.map((status) => (
+                    <option key={status.id} value={status.id}>
+                      {status.label}
+                    </option>
                   ))}
-                </div>
-              </details>
+                </select>
+              </label>
             </section>
-            <IrissOrderClientDataCard
-              rec={rec}
-              fieldClass={fieldClass}
-              phoneWarning={phoneWarning}
-              canCall={canCall}
-              canEmail={canEmail}
-              busy={busy || orderPdfBusy}
-              onPatch={onPatch}
-              onPatchRecord={onPatchRecord}
-              onSave={onSave}
-              onCall={onCall}
-              onWhatsapp={() => onWhatsappText("")}
-              onEmail={() => openMail("")}
-              googleContactsConfigured={googleContactsConfigured}
-              googleContactBusy={googleContactBusy}
-              onRetryGoogleContact={onRetryGoogleContact}
-              buttonClass={roomBtn}
-              whatsappClass={roomBtnWa}
-            />
+            {/* Nils 28.10: klients dublēts labajā pusē; tālrunis atver WhatsApp lietotni datorā. */}
+            <section className={cardClass} aria-label="Klients">
+              <CardTitle>Klients</CardTitle>
+              <div className="divide-y divide-[var(--iriss-line)] text-[14px]">
+                <div className="flex min-h-[40px] items-center justify-between gap-3">
+                  <span className="text-[var(--iriss-ink-2)]">Vārds</span>
+                  <b className="text-right">{clientName || "-"}</b>
+                </div>
+                <div className="flex min-h-[40px] items-center justify-between gap-3">
+                  <span className="text-[var(--iriss-ink-2)]">Tālrunis</span>
+                  {waAppHref ? (
+                    <a href={waAppHref} className="font-bold text-[var(--iriss-ink)] underline underline-offset-[3px]" title="Atvērt WhatsApp">
+                      {formatIrissListPhoneText(rec.phone)}
+                    </a>
+                  ) : (
+                    <span className="text-[var(--iriss-ink-3)]">nav</span>
+                  )}
+                </div>
+                <div className="flex min-h-[40px] items-center justify-between gap-3">
+                  <span className="text-[var(--iriss-ink-2)]">E-pasts</span>
+                  {rec.email.trim() ? <b className="truncate">{rec.email}</b> : <span className="text-[var(--iriss-ink-3)]">nav</span>}
+                </div>
+                <div className="flex min-h-[40px] items-center justify-between gap-3">
+                  <span className="text-[var(--iriss-ink-2)]">Pasūtījuma datums</span>
+                  <b>{rec.orderDate ? rec.orderDate.split("-").reverse().join(".") : "-"}</b>
+                </div>
+                {financingPercent > 0 ? (
+                  <div className="flex min-h-[40px] items-center justify-between gap-3">
+                    <span className="text-[var(--iriss-ink-2)]">Finansējums</span>
+                    <b>
+                      {financingPercent} %{financingEuro > 0 ? ` · ${String(Math.round(financingEuro)).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} €` : ""}
+                    </b>
+                  </div>
+                ) : null}
+                {parseIrissAdvanceAmount(rec.advance?.amount ?? "") > 0 ? (
+                  <div className="flex min-h-[40px] items-center justify-between gap-3">
+                    <span className="text-[var(--iriss-ink-2)]">Avanss</span>
+                    <b>
+                      {rec.advance?.amount.trim()} €{rec.advance?.paidAt ? <span className="ml-1 text-[var(--iriss-ok)]">✓</span> : null}
+                    </b>
+                  </div>
+                ) : null}
+              </div>
+            </section>
             <section className={cardClass}>
               <CardTitle>Statusa vēsture</CardTitle>
               {history.length === 0 ? (
@@ -1424,7 +1816,7 @@ export function IrissOrderRoom({
                 Izveidot piedāvājumu
               </button>
               <IrissOverflowMenu label="Vairāk">
-                <IrissOverflowItem href="/admin/iriss/pasutijumi/new?newOffer=1&noClientPdf=1">
+                <IrissOverflowItem href={IRISS_PD_NEW_PATH}>
                   Jauns piedāvājums bez klienta datiem
                 </IrissOverflowItem>
               </IrissOverflowMenu>
@@ -1705,7 +2097,7 @@ export function IrissOrderRoom({
             </IrissOverflowMenu>
           </div>
           <ul className="space-y-2">
-            {generatedDocs.map((doc) => (
+            {generatedDocs.filter((doc) => doc.kind !== "contract").map((doc) => (
               <li key={doc.id} className={`${cardClass} flex flex-wrap items-center gap-2`}>
                 <FileText className="h-5 w-5 text-[var(--ink3)]" aria-hidden />
                 <div className="min-w-0 flex-1">
@@ -1731,18 +2123,30 @@ export function IrissOrderRoom({
                 </a>
               </li>
             ))}
+            {/* Nils 29.10: līgums vienā rindā - «Atvērt» saglabāto, «Ģenerēt no jauna» izveido jaunu (agrāk divas rindas). */}
             <li className={`${cardClass} flex flex-wrap items-center gap-2`}>
               <FileText className="h-5 w-5 text-[var(--ink3)]" aria-hidden />
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-semibold text-[var(--ink)]">Pasūtījuma līgums</p>
-                <p className="text-[11.5px] text-[var(--ink2)]">Esošā pasūtījuma izdruka</p>
+                <p className="truncate text-[13px] font-semibold text-[var(--ink)]">Pasūtījuma līgums</p>
+                <p className="text-[11.5px] text-[var(--ink2)]">
+                  {latestContract
+                    ? [latestContract.name, formatGeneratedDocumentWhen(latestContract.createdAt), latestContract.size ? formatGeneratedDocumentSize(latestContract.size) : ""]
+                        .filter(Boolean)
+                        .join(" · ")
+                    : "Vēl nav ģenerēts"}
+                </p>
               </div>
+              {latestContract ? (
+                <a
+                  className={roomBtn}
+                  href={`/api/admin/iriss-pasutijumi/${encodeURIComponent(rec.id)}/generated-document/${encodeURIComponent(latestContract.id)}`}
+                >
+                  Atvērt
+                </a>
+              ) : null}
               <button type="button" className={roomBtn} onClick={onPdf} disabled={orderPdfBusy}>
-                Atvērt
-              </button>
-              <button type="button" className={roomBtn} onClick={onPdf} disabled={orderPdfBusy} aria-label="Lejupielādēt līgumu">
                 <FileDown className="h-4 w-4" aria-hidden />
-                Lejupielādēt
+                {orderPdfBusy ? "Ģenerē..." : latestContract ? "Ģenerēt no jauna" : "Ģenerēt"}
               </button>
             </li>
             <li className={`${cardClass} flex flex-wrap items-center gap-2`}>
@@ -1824,7 +2228,7 @@ export function IrissOrderRoom({
         <button type="button" disabled={orderPdfBusy} onClick={onPdf} className="iriss-ink-link flex h-[50px] min-w-0 flex-1 items-center justify-center rounded-full bg-[var(--s1,#fff)] text-[15px] font-semibold text-[var(--ink)] shadow-[inset_0_0_0_1px_var(--hair,#e5e7eb)]">
           {orderPdfBusy ? "PDF…" : "Līgums"}
         </button>
-        <button type="button" onClick={onCreateOffer} className="flex h-[50px] min-w-0 flex-1 items-center justify-center rounded-full bg-[#111827] text-[15px] font-semibold text-white">
+        <button type="button" onClick={onCreateOffer} className="flex h-[50px] min-w-0 flex-1 items-center justify-center rounded-full bg-[var(--iriss-graphite)] text-[15px] font-semibold text-white">
           Piedāvājums
         </button>
         <AdminSaveButton onSave={() => void onSave()} state={roomSaveState} className="!h-[50px] min-w-0 flex-1 text-[15px]" />
@@ -1864,7 +2268,7 @@ export function IrissOrderRoom({
             className="flex max-h-[88dvh] w-full max-w-[440px] flex-col rounded-t-[22px] bg-white shadow-xl md:h-full md:max-h-none md:rounded-l-[22px] md:rounded-tr-none"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between gap-2 border-b border-[#e5e5ea] px-4 py-3">
+            <div className="flex items-center justify-between gap-2 border-b border-[var(--iriss-line)] px-4 py-3">
               <div>
                 <h2 id="iriss-room-criteria-title" className="text-[16px] font-semibold">
                   Klienta kritēriji
@@ -1925,7 +2329,7 @@ export function IrissOrderRoom({
                 }
               />
               <label className="block sm:col-span-2">
-                <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Obligātās prasības</span>
+                <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Obligātās prasības</span>
                 <textarea className={areaClass} value={criteriaDraft.equipmentRequired} onChange={(e) => setCriteriaDraft((prev) => ({ ...prev, equipmentRequired: e.target.value }))} />
               </label>
               <div className="sm:col-span-2">
@@ -1937,11 +2341,11 @@ export function IrissOrderRoom({
                 />
               </div>
               <label className="block sm:col-span-2">
-                <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Vēlamās prasības</span>
+                <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Vēlamās prasības</span>
                 <textarea className={areaClass} value={criteriaDraft.equipmentDesired} onChange={(e) => setCriteriaDraft((prev) => ({ ...prev, equipmentDesired: e.target.value }))} />
               </label>
               <div className="sm:col-span-2">
-                <p className="mb-1 text-[11.5px] font-semibold text-[#374151]">Izslēgt</p>
+                <p className="mb-1 text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Izslēgt</p>
                 <div className="flex flex-wrap gap-1.5">
                   {irissOrderRoomExcludeTokens(criteriaDraft.nonPreferredColors).map((token) => (
                     <button
@@ -1979,7 +2383,7 @@ export function IrissOrderRoom({
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2 border-t border-[#e5e5ea] px-4 py-3">
+            <div className="flex justify-end gap-2 border-t border-[var(--iriss-line)] px-4 py-3">
               <button type="button" className={actionBtn} onClick={() => setCriteriaOpen(false)}>
                 Atcelt
               </button>
@@ -2080,7 +2484,7 @@ function IrissOrderHitMatchChrome({
               aria-pressed={on}
               onClick={() => onStatus(item)}
               className={`min-h-11 rounded-full px-3 py-2 text-[13px] font-semibold ${
-                on ? "bg-[#111827] text-white" : "bg-white text-[#111827] ring-1 ring-[#e5e7eb]"
+                on ? "bg-[var(--iriss-graphite)] text-white" : "bg-white text-[var(--iriss-ink)] ring-1 ring-[var(--iriss-line)]"
               }`}
             >
               {IRISS_LISTING_HIT_STATUS_LV[item]}

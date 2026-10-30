@@ -5,6 +5,7 @@ import { getClientIpFromRequest } from "@/lib/client-ip";
 import { getSiteOrigin } from "@/lib/email/mail-config";
 import { trySendAdminPartnerLeadEmail } from "@/lib/email/send-transactional";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { gatePartnerLoginTurnstile } from "@/lib/turnstile";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,7 +13,8 @@ export const dynamic = "force-dynamic";
 const LOCALES = new Set(["lv", "en", "de", "ru"]);
 
 export async function POST(req: Request) {
-  const limited = await checkRateLimit(`partner-lead:${getClientIpFromRequest(req)}`, 5, 10 * 60 * 1000);
+  const ip = getClientIpFromRequest(req);
+  const limited = await checkRateLimit(`partner-lead:${ip}`, 5, 10 * 60 * 1000);
   if (!limited.ok) {
     return NextResponse.json(
       { error: "rate_limited" },
@@ -26,6 +28,10 @@ export async function POST(req: Request) {
   } catch {
     return NextResponse.json({ error: "bad_request" }, { status: 400 });
   }
+
+  // Tā pati Turnstile atslēga kā partneru pieteikšanās; bez atslēgām vārti atvērti (audits P9).
+  const captcha = await gatePartnerLoginTurnstile({ token: raw.turnstileToken, remoteIp: ip });
+  if (!captcha.ok) return NextResponse.json({ error: captcha.error }, { status: captcha.status });
 
   const input = normalizeB2bPartnerLeadInput(raw);
   const field = b2bPartnerLeadFieldError(input);

@@ -7,6 +7,7 @@ import {
   List,
   LogOut,
   Map,
+  MoreHorizontal,
   Radar,
   ScanLine,
   Wallet,
@@ -16,7 +17,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useHideOnScrollDown } from "@/components/admin/mobile/useHideOnScrollDown";
 import {
   IRISS_SECTION_LABELS,
   irissSectionMeta,
@@ -67,6 +69,14 @@ export function IrissStaffAppShell({
   const home = "/admin/iriss";
   const navSections = staffNavSections(sections, autoparksV2Visible);
   const tabItems = staffTabbarItems(sections, autoparksV2Visible);
+  const [moreOpen, setMoreOpen] = useState(false);
+  // Variants A: ritinot uz leju josla aiziet (datorā josla ir paslēpta ar md:hidden).
+  const dockHidden = useHideOnScrollDown(!moreOpen, pathname);
+
+  // Pāreja uz citu lapu aizver «Vairāk».
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [pathname]);
 
   async function logout() {
     await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
@@ -79,7 +89,7 @@ export function IrissStaffAppShell({
   // un garā saraksta apakšā neparādās tumšais body fons (j22).
   if (isWaybillOnlyStaff(sections)) {
     return (
-      <div className="iriss-admin-scope flex min-h-dvh flex-col text-[#111827]">
+      <div className="iriss-admin-scope flex min-h-dvh flex-col text-[var(--iriss-ink)]">
         <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</main>
       </div>
     );
@@ -89,21 +99,21 @@ export function IrissStaffAppShell({
   // vecākā iOS Safari atstāja joslu ekrāna vidū virs laukiem un zem tās tumšo body fonu); apakšējā josla ir fixed.
   // Datorā (md+) paliek pilna augstuma rinda ar sānu joslu (j69).
   return (
-    <div data-iriss-staff-shell="" className="iriss-admin-scope iriss-staff-shell flex flex-col text-[#111827] md:h-dvh md:flex-row">
+    <div data-iriss-staff-shell="" className="iriss-admin-scope iriss-staff-shell flex flex-col text-[var(--iriss-ink)] md:h-dvh md:flex-row">
       <aside data-iriss-nav="" className="relative hidden w-[220px] shrink-0 flex-col border-r border-[#ececf2] bg-[#F4F6F9] px-3 py-4 md:flex">
         <div className="mb-5 flex items-center gap-2 px-2">
           <span className="text-[15px] font-semibold tracking-tight">IRISS</span>
-          <span className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#3d5bd9]">
+          <span className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--iriss-info)]">
             IRISS
           </span>
         </div>
         <div className="mb-4 flex items-center gap-2 px-2">
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-[#EEF2FF] text-[11px] font-semibold text-[#3d5bd9]">
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-[#EEF2FF] text-[11px] font-semibold text-[var(--iriss-info)]">
             {initials(name)}
           </span>
           <div className="min-w-0">
             <p className="truncate text-[13px] font-medium">{name}</p>
-            <p className="text-[11px] text-[#9aa3b2]">
+            <p className="text-[11px] text-[var(--iriss-ink-3)]">
               {navSections.length} {navSections.length === 1 ? "sadaļa" : "sadaļas"}
             </p>
           </div>
@@ -112,7 +122,7 @@ export function IrissStaffAppShell({
           <Link
             href={home}
             className={`flex items-center gap-2 rounded-xl px-3 py-2 text-[13.5px] font-medium ${
-              pathname === home || pathname === `${home}/` ? "bg-[#ececf3] text-[#111827]" : "text-[#4b5563] hover:bg-white"
+              pathname === home || pathname === `${home}/` ? "bg-[#ececf3] text-[var(--iriss-ink)]" : "text-[var(--iriss-ink-2)] hover:bg-white"
             }`}
           >
             Sākums
@@ -126,7 +136,7 @@ export function IrissStaffAppShell({
                 key={id}
                 href={href}
                 className={`flex items-center gap-2 rounded-xl px-3 py-2 text-[13.5px] font-medium ${
-                  active ? "bg-[#ececf3] text-[#111827]" : "text-[#4b5563] hover:bg-white"
+                  active ? "bg-[#ececf3] text-[var(--iriss-ink)]" : "text-[var(--iriss-ink-2)] hover:bg-white"
                 }`}
               >
                 <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
@@ -138,7 +148,7 @@ export function IrissStaffAppShell({
         <button
           type="button"
           onClick={() => void logout()}
-          className="mt-3 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-[13px] font-medium text-[#111827] hover:bg-white"
+          className="mt-3 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-[13px] font-medium text-[var(--iriss-ink)] hover:bg-white"
         >
           <LogOut className="h-4 w-4" strokeWidth={1.75} aria-hidden />
           Iziet
@@ -149,6 +159,7 @@ export function IrissStaffAppShell({
         <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(64px+env(safe-area-inset-bottom))] md:pb-0">{children}</main>
         <nav
           data-iriss-staff-tabbar=""
+          data-hidden={dockHidden ? "true" : undefined}
           className="iriss-staff-tabbar fixed inset-x-0 bottom-0 z-[30] border-t border-[#ececf2] bg-[#F4F6F9] px-2 pt-1 pb-[max(20px,calc(8px+env(safe-area-inset-bottom)))] md:hidden"
         >
           <div className="mx-auto flex max-w-lg items-stretch gap-0.5">
@@ -160,11 +171,29 @@ export function IrissStaffAppShell({
                     key="home"
                     href={item.href}
                     className={`iriss-staff-tab flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-[11px] font-medium ${
-                      active ? "bg-[#ececf3] text-[#111827]" : "text-[#6b7280]"
+                      active ? "bg-[#ececf3] text-[var(--iriss-ink)]" : "text-[var(--iriss-ink-2)]"
                     }`}
                   >
                     <span className="truncate whitespace-nowrap">{item.label}</span>
                   </Link>
+                );
+              }
+              if (item.kind === "more") {
+                const active = item.sections.some((s) => pathname === s.href || pathname.startsWith(`${s.href}/`));
+                return (
+                  <button
+                    key="more"
+                    type="button"
+                    aria-expanded={moreOpen}
+                    aria-controls="iriss-staff-more"
+                    onClick={() => setMoreOpen((v) => !v)}
+                    className={`iriss-staff-tab flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-[11px] font-medium ${
+                      active || moreOpen ? "bg-[var(--iriss-surface-3)] text-[var(--iriss-ink)]" : "text-[var(--iriss-ink-2)]"
+                    }`}
+                  >
+                    <MoreHorizontal className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
+                    {item.label}
+                  </button>
                 );
               }
               if (item.kind === "logout") {
@@ -173,7 +202,7 @@ export function IrissStaffAppShell({
                     key="logout"
                     type="button"
                     onClick={() => void logout()}
-                    className="iriss-staff-tab flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-[11px] font-medium text-[#6b7280]"
+                    className="iriss-staff-tab flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-[11px] font-medium text-[var(--iriss-ink-2)]"
                   >
                     <LogOut className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
                     {item.label}
@@ -187,7 +216,7 @@ export function IrissStaffAppShell({
                   key={item.id}
                   href={item.href}
                   className={`iriss-staff-tab flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 px-1 text-[11px] font-medium ${
-                    active ? "bg-[#ececf3] text-[#111827]" : "text-[#6b7280]"
+                    active ? "bg-[#ececf3] text-[var(--iriss-ink)]" : "text-[var(--iriss-ink-2)]"
                   }`}
                 >
                   <Icon className="h-4 w-4 shrink-0" strokeWidth={1.75} aria-hidden />
@@ -197,6 +226,50 @@ export function IrissStaffAppShell({
             })}
           </div>
         </nav>
+        {moreOpen
+          ? tabItems.map((item) =>
+              item.kind === "more" ? (
+                <div key="more-sheet" className="md:hidden">
+                  <button
+                    type="button"
+                    aria-label="Aizvērt"
+                    className="fixed inset-0 z-[31] bg-black/30"
+                    onClick={() => setMoreOpen(false)}
+                  />
+                  <div
+                    id="iriss-staff-more"
+                    role="menu"
+                    className="fixed inset-x-2 bottom-[calc(64px+env(safe-area-inset-bottom))] z-[32] rounded-2xl border border-[var(--iriss-line)] bg-[var(--iriss-surface)] p-2 shadow-[var(--iriss-shadow-2)]"
+                  >
+                    {item.sections.map((sec) => {
+                      const Icon = SECTION_ICON[sec.id];
+                      const active = pathname === sec.href || pathname.startsWith(`${sec.href}/`);
+                      return (
+                        <Link
+                          key={sec.id}
+                          role="menuitem"
+                          href={sec.href}
+                          className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-[15px] font-medium text-[var(--iriss-ink)] ${active ? "bg-[var(--iriss-surface-2)]" : ""}`}
+                        >
+                          <Icon className="h-[18px] w-[18px] shrink-0 text-[var(--iriss-ink-2)]" strokeWidth={1.75} aria-hidden />
+                          {sec.label}
+                        </Link>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => void logout()}
+                      className="mt-1 flex min-h-11 w-full items-center gap-3 rounded-xl border-t border-[var(--iriss-line)] px-3 text-[15px] font-medium text-[var(--iriss-ink-2)]"
+                    >
+                      <LogOut className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} aria-hidden />
+                      Iziet
+                    </button>
+                  </div>
+                </div>
+              ) : null,
+            )
+          : null}
       </div>
     </div>
   );

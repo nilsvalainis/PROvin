@@ -19,6 +19,7 @@ export function IrissListingCardPriceColumn({
   maxBid,
   room,
   topActions,
+  hidePanel = false,
   className = "hidden w-[260px] shrink-0 sm:block",
 }: {
   priceLabel: string;
@@ -34,10 +35,12 @@ export function IrissListingCardPriceColumn({
   maxBid: number | null;
   room: number | null;
   topActions?: ReactNode;
+  /** Telefonā cena un termiņš ir uz bildes (makets «Sludinājumi - telefons»): šeit tikai budžeta aprēķins. */
+  hidePanel?: boolean;
   className?: string;
 }) {
   const panel = (
-    <div className="rounded-xl bg-[#f2f2f5] p-3">
+    <div className="rounded-xl bg-[var(--iriss-surface-2)] p-3">
       <div className="flex flex-nowrap items-start justify-between gap-2">
         <div className="min-w-0 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
           {priceLabel}{bidCount != null ? ` · ${bidCount} solījumi` : ""}
@@ -65,7 +68,7 @@ export function IrissListingCardPriceColumn({
 
   return (
     <div className={className}>
-      {panel}
+      {hidePanel ? null : panel}
       <IrissListingBudgetBox budget={budget} gala={gala} real={real} maxBid={maxBid} room={room} priceMissing={bid == null} priceLabel={priceLabel} />
     </div>
   );

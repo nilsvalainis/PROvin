@@ -138,6 +138,73 @@ function MoveToAutopark({
   );
 }
 
+/** Auto kabineta beigu darbība: "Uz Autoparku" (ar apstiprinājumu) vai cita klienta auto "Dzēst". */
+/**
+ * Telefonā kabinetā (Nils 27.10, makets C1): «Rādīt kartē» un Autoparka kartīte, jo kravas rindā to vairs nav.
+ * Datorā paslēpts - tur tie ir pašā rindā.
+ */
+export function CabinetPhoneMapAndCard({
+  showOnMap,
+  inPlan,
+  onToggleMap,
+  cardHref,
+}: {
+  showOnMap: boolean;
+  inPlan: boolean;
+  onToggleMap: (next: boolean) => void;
+  cardHref?: string;
+}) {
+  if (!inPlan && !cardHref) return null;
+  return (
+    <div className="mb-3 flex flex-col gap-1" data-cabinet-phone-extras="">
+      {inPlan ? (
+        <div className="flex min-h-11 items-center justify-between gap-3 md:hidden">
+          <span className="text-[15px] text-[var(--iriss-ink)]">Rādīt kartē</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showOnMap}
+            aria-label="Rādīt kartē"
+            className={`iriss-log-switch ${showOnMap ? "on" : ""}`}
+            onClick={() => onToggleMap(!showOnMap)}
+          />
+        </div>
+      ) : null}
+      {cardHref ? (
+        <a href={cardHref} className="flex min-h-11 items-center justify-between text-[15px] text-[var(--iriss-ink)]">
+          Autoparka kartīte
+          <span aria-hidden className="text-[var(--iriss-ink-3)]">›</span>
+        </a>
+      ) : null}
+    </div>
+  );
+}
+
+export function LogisticsCarEndAction({
+  order,
+  stage,
+  onMoveToAutopark,
+  onDeleteManual,
+}: {
+  order: LogisticsOrder;
+  stage: CabinetPickupStage;
+  onMoveToAutopark: (id: string) => void;
+  onDeleteManual: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  if (order.source === "manual") return <DeleteManual order={order} onDelete={onDeleteManual} />;
+  return (
+    <MoveToAutopark
+      order={order}
+      arrived={stage === "arrived"}
+      open={open}
+      onOpen={() => setOpen(true)}
+      onClose={() => setOpen(false)}
+      onConfirm={() => onMoveToAutopark(order.id)}
+    />
+  );
+}
+
 export function IrissLogistikaCarsTable({
   orders,
   plan,
@@ -156,8 +223,8 @@ export function IrissLogistikaCarsTable({
   return (
     <section className="iriss-log-table-wrap iriss-log-no-print mt-3">
       <div className="flex items-center justify-between gap-2 px-3.5 pt-3">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6e6e73]">Visi auto · {orders.length}</p>
-        <p className="text-right text-[12px] text-[#6e6e73]">Statusu maini ar klikšķi. Rinda atver Auto kabinetu</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--iriss-ink-2)]">Visi auto · {orders.length}</p>
+        <p className="text-right text-[12px] text-[var(--iriss-ink-2)]">Statusu maini ar klikšķi. Rinda atver Auto kabinetu</p>
       </div>
       <table className="iriss-log-table max-xl:hidden">
         <thead>
@@ -180,7 +247,7 @@ export function IrissLogistikaCarsTable({
               <tr key={order.id} onClick={() => onOpenCabinet(order.id)} className="cursor-pointer">
                 <td className="min-w-[11rem]">
                   <span className="block font-semibold leading-snug">{logisticsCarTitle(order)}</span>
-                  <span className="block font-mono text-[11.5px] text-[#6e6e73]">{order.vin || "-"}</span>
+                  <span className="block font-mono text-[11.5px] text-[var(--iriss-ink-2)]">{order.vin || "-"}</span>
                 </td>
                 <td>{order.source === "manual" ? <span className="iriss-log-manual-chip">Cits klients</span> : order.auction ? <IrissAuctionLogo name={order.auction} /> : "Privāts"}</td>
                 <td className="whitespace-nowrap">{formatLogisticsDate(order.pickupDate) || "-"}</td>
@@ -212,7 +279,7 @@ export function IrissLogistikaCarsTable({
           })}
           {orders.length === 0 ? (
             <tr>
-              <td colSpan={7} className="py-6 text-center text-[#6e6e73]">
+              <td colSpan={7} className="py-6 text-center text-[var(--iriss-ink-2)]">
                 Nav aktīvu auto. Piegādātie ir arhīvā.
               </td>
             </tr>
@@ -231,7 +298,7 @@ export function IrissLogistikaCarsTable({
               <button type="button" className="flex w-full items-start gap-2 text-left" onClick={() => onOpenCabinet(order.id)}>
                 <span className="min-w-0 flex-1">
                   <span className="block text-[15px] font-semibold leading-snug">{logisticsCarTitle(order)}</span>
-                  <span className="block truncate font-mono text-[12px] text-[#6e6e73]">{order.vin || "-"}</span>
+                  <span className="block truncate font-mono text-[12px] text-[var(--iriss-ink-2)]">{order.vin || "-"}</span>
                 </span>
                 <span className="shrink-0 pt-0.5">
                   {order.source === "manual" ? <span className="iriss-log-manual-chip">Cits klients</span> : order.auction ? <IrissAuctionLogo name={order.auction} /> : null}
@@ -240,7 +307,7 @@ export function IrissLogistikaCarsTable({
               <div className="mt-2.5">
                 <StageSwitch full stage={stage} onChange={(s) => onSetStage(order.id, s)} />
               </div>
-              <div className="mt-2.5 flex items-center gap-2 text-[12px] text-[#6e6e73]">
+              <div className="mt-2.5 flex items-center gap-2 text-[12px] text-[var(--iriss-ink-2)]">
                 <BucketDots bucket={bucket} onChange={(b) => onSetBucket(order.id, b)} />
                 <span className="min-w-0 truncate whitespace-nowrap">{CARGO_BUCKET_LV[bucket]}</span>
                 <span className="ml-auto shrink-0 whitespace-nowrap tabular-nums">Dok. {docs.have}/{docs.expected}</span>
@@ -260,7 +327,7 @@ export function IrissLogistikaCarsTable({
             </li>
           );
         })}
-        {orders.length === 0 ? <li className="py-6 text-center text-[13px] text-[#6e6e73]">Nav aktīvu auto. Piegādātie ir arhīvā.</li> : null}
+        {orders.length === 0 ? <li className="py-6 text-center text-[13px] text-[var(--iriss-ink-2)]">Nav aktīvu auto. Piegādātie ir arhīvā.</li> : null}
       </ul>
     </section>
   );

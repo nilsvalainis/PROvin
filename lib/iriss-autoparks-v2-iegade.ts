@@ -68,7 +68,7 @@ export async function autoparksV2IegadeView(carId: string, perms: AutoparksV2Per
       ? autoparksV2Cost({ purchaseEur: purchase, transportEur: p.transportEur, invoices: v2.service.invoices, expenses: v2.expenses })
       : null,
     canSums: perms.summas,
-    missingAuto1Docs: auto1MissingDocLabels({ isAuto1: isAuto1Car({ auction, cabinetDocs: docs }), cabinetDocs: docs }),
+    missingAuto1Docs: auto1MissingDocLabels({ isAuto1: isAuto1Car({ auction, cabinetDocs: docs }), cabinetDocs: docs, files }),
   };
 }
 

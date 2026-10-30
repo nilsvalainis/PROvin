@@ -6,6 +6,8 @@ import {
   pendingWaybillRequests,
   waybillRequestCancellable,
   remainingWaybillDays,
+  waybillDocForCreator,
+  remainingWaybillLabel,
   waybillAivarsReply,
   waybillChatPayload,
   waybillChatTimeline,
@@ -307,5 +309,42 @@ describe("withWaybillLegacyTimeFixes (j57: P00746 - CSDD laiki pārrakstīti tik
     const once = withWaybillLegacyTimeFixes([req]);
     const twice = withWaybillLegacyTimeFixes(once);
     expect(twice).toBe(once);
+  });
+});
+
+describe("remainingWaybillLabel", () => {
+  const now = new Date("2026-10-26T20:00:00.000Z");
+  it("1 h pavadzīme: minūtes, ne 'vēl 1 d.'", () => {
+    expect(remainingWaybillLabel("2026-10-26T20:58:00.000Z", now)).toBe("vēl 58 min");
+  });
+  it("līdz 24 h - stundas, tālāk dienas un stundas", () => {
+    expect(remainingWaybillLabel("2026-10-27T07:30:00.000Z", now)).toBe("vēl 11 h");
+    expect(remainingWaybillLabel("2026-10-28T11:30:00.000Z", now)).toBe("vēl 1 d. 15 h");
+    expect(remainingWaybillLabel("2026-10-28T20:00:00.000Z", now)).toBe("vēl 2 d.");
+  });
+  it("beigusies un nederīgs datums", () => {
+    expect(remainingWaybillLabel("2026-10-26T19:00:00.000Z", now)).toBe("beigusies");
+    expect(remainingWaybillLabel("", now)).toBe("");
+  });
+});
+
+describe("waybillDocForCreator (partneris redz tikai savus)", () => {
+  it("atstāj tikai šī lietotāja pieprasījumus un to notikumus", () => {
+    const base = { version: 1 as const, updatedAt: "", requests: [], events: [] };
+    const doc = {
+      ...base,
+      requests: [
+        { id: "a", createdBy: "usr_partner" },
+        { id: "b", createdBy: "env-admin" },
+        { id: "c", createdBy: "usr_toms" },
+      ] as unknown as WaybillRequestsDoc["requests"],
+      events: [
+        { id: "e1", requestId: "a" },
+        { id: "e2", requestId: "b" },
+      ] as unknown as WaybillRequestsDoc["events"],
+    };
+    const mine = waybillDocForCreator(doc, "usr_partner");
+    expect(mine.requests.map((r) => r.id)).toEqual(["a"]);
+    expect(mine.events.map((e) => e.id)).toEqual(["e1"]);
   });
 });

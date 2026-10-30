@@ -2,6 +2,7 @@
 
 import { FileText, Plus } from "lucide-react";
 import Link from "next/link";
+import { irissPdNewHref } from "@/lib/iriss-pd-entry";
 import type { OfferSourceKind } from "@/lib/iriss-stock-photos";
 
 type Props = {
@@ -11,10 +12,18 @@ type Props = {
   className?: string;
 };
 
-/** Viena poga piedāvājuma formai (Loģistika, Autoparks v2, Pasūtījumi). Atver formu uzreiz, bez starplapas. */
-export function irissCreateOfferHref(from?: OfferSourceKind, id?: string): string {
+/** Vecā piedāvājuma forma pasūtījumā - tikai darbiniekiem (PD ir tikai administratoram). */
+export function irissCreateOfferHrefLegacy(from?: OfferSourceKind, id?: string): string {
   const base = "/admin/iriss/pasutijumi/new?newOffer=1&noClientPdf=1";
   return from && id ? `${base}&from=${encodeURIComponent(`${from}:${id}`)}` : base;
+}
+
+/**
+ * Viena poga piedāvājumam (Loģistika, Autoparks v2, Pasūtījumi, sānjosla): vienmēr PD ieeja ar izvēlētu avotu
+ * (Nils 27.10 - viena piedāvājumu sistēma). Darbinieku PD lapa pati novirza uz veco formu.
+ */
+export function irissCreateOfferHref(from?: OfferSourceKind, id?: string): string {
+  return irissPdNewHref(from && id ? { from, id } : {});
 }
 
 export function IrissCreateOfferButton({ from, id, className }: Props) {

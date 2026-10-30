@@ -119,7 +119,7 @@ export function adminCostsChrome(workspace: AdminCostsWorkspace): {
 } {
   if (workspace === "iriss") {
     return {
-      crumb: "Vairāk · IRISS admin · Pārvaldība",
+      crumb: "Vairāk · IRISS admin · Iestatījumi",
       brand: "IRISS",
       subtitle: "IRISS · visi projekti",
     };
@@ -503,6 +503,8 @@ export type BuildCostDashboardInput = {
   snapshots: readonly CostSnapshot[];
   limits: readonly CostLimit[];
   marketplace: CostMarketplaceMonth | null;
+  /** Loģistikas Google Maps skaitītāji šim mēnesim (tie paši, ko rāda Iestatījumi); bez tiem Maps rindas bija 0. */
+  mapsUnits?: Partial<Record<"maps-dynamic" | "maps-geocoding", number>> | null;
 };
 
 function sourceAmounts(
@@ -521,6 +523,10 @@ function sourceAmounts(
       badge: "live",
       perRunUsd: input.marketplace?.perRunUsd ?? null,
     };
+  }
+  const mapsUnits = def.googleQuota ? input.mapsUnits?.[def.id as "maps-dynamic" | "maps-geocoding"] : undefined;
+  if (mapsUnits != null && (!snap || snap.units < mapsUnits)) {
+    return { usd: snap ? roundCostUsd(snap.usd) : 0, units: mapsUnits, updatedAt: null, badge: "live", perRunUsd: null };
   }
   if (snap) {
     return {

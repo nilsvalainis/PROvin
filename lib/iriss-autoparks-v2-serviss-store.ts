@@ -19,6 +19,11 @@ import {
 import { sniffContentType } from "@/lib/iriss-autoparks-v2-sniff";
 import { readAutoparksV2State, updateCarV2, type AutoparksV2Actor } from "@/lib/iriss-autoparks-v2-store";
 
+/** Nils 27.10: Servisa rēķinu summas redz un ievada visi, kam ir Servisa piekļuve. */
+export function servissSums(perms: AutoparksV2Perms): boolean {
+  return perms.summas || perms.serviss;
+}
+
 /** "Mēs apstiprinām" - līdz Nila lēmumam (IETEIKUMI 7.3) tikai administrators. */
 export function servissCanConfirm(perms: AutoparksV2Perms): boolean {
   return perms.admin;
@@ -27,13 +32,15 @@ export function servissCanConfirm(perms: AutoparksV2Perms): boolean {
 export async function getAutoparksV2Serviss(carId: string, perms: AutoparksV2Perms): Promise<V2ServissView | null> {
   const [v1, v2] = await Promise.all([readAutoparksState(), readAutoparksV2State()]);
   if (!v1.cars.some((c) => c.id === carId)) return null;
-  return servissView(carV2Of(v2, carId), v1.files.filter((f) => f.carId === carId), { canSums: perms.summas, canConfirm: servissCanConfirm(perms) });
+  return servissView(carV2Of(v2, carId), v1.files.filter((f) => f.carId === carId), { canSums: servissSums(perms), canConfirm: servissCanConfirm(perms), canDelete: perms.admin });
 }
 
 export type ServissPatchBody = {
   notes?: unknown;
   problem?: unknown;
   invoice?: unknown;
+  /** «+ Ar roku» (Nils 27.10): rēķins bez skenējuma, tikai summa bez PVN. */
+  addInvoice?: unknown;
 };
 
 /** Atgriež `forbidden`, ja kāds mēģina mainīt summu bez Summu tiesības (servisa kolēģis summu neievada). */
@@ -44,7 +51,10 @@ export async function patchAutoparksV2Serviss(
   actor: AutoparksV2Actor,
 ): Promise<"ok" | "forbidden" | "not_found"> {
   const inv = body.invoice && typeof body.invoice === "object" ? (body.invoice as Record<string, unknown>) : null;
-  if (inv && ("amountEur" in inv || "acceptAi" in inv) && !perms.summas) return "forbidden";
+  if (inv && ("amountEur" in inv || "acceptAi" in inv) && !servissSums(perms)) return "forbidden";
+  const add = body.addInvoice && typeof body.addInvoice === "object" ? (body.addInvoice as Record<string, unknown>) : null;
+  const addAmount = add ? parseEurInput(String(add.amountEur ?? "")) : null;
+  if (add && !servissSums(perms)) return "forbidden";
   const v1 = await readAutoparksState();
   if (!v1.cars.some((c) => c.id === carId)) return "not_found";
   const now = new Date().toISOString();
@@ -60,6 +70,7 @@ export async function patchAutoparksV2Serviss(
       if (body.problem && typeof body.problem === "object") {
         const res = applyProblemPatch(c.service.problems, body.problem as ProblemPatch, {
           canConfirm: servissCanConfirm(perms),
+          canRemove: perms.admin,
           actorName: actor.name,
           now,
           newId: () => `apr-${randomUUID()}`,
@@ -72,7 +83,11 @@ export async function patchAutoparksV2Serviss(
         if (target) {
           let amount: number | null | undefined;
           if (inv.acceptAi === true && target.ai?.amountEur != null) amount = target.ai.amountEur;
-          else if ("amountEur" in inv) amount = inv.amountEur === null || inv.amountEur === "" ? null : parseEurInput(String(inv.amountEur));
+          else if ("amountEur" in inv) {
+            const parsed = inv.amountEur === null || inv.amountEur === "" ? null : parseEurInput(String(inv.amountEur));
+            // Nenolasāma summa netiek saglabāta kā tukša (Nils 28.10).
+            if (parsed !== null || inv.amountEur === null || inv.amountEur === "") amount = parsed;
+          }
           if (amount !== undefined) {
             hist.push({ field: "service.invoice.amount", from: target.amountEur, to: amount });
             target.amountEur = amount;
@@ -80,6 +95,15 @@ export async function patchAutoparksV2Serviss(
             target.amountAt = now;
           }
         }
+      }
+      if (add && addAmount != null) {
+        const day = now.slice(0, 10);
+        const manual = emptyInvoice(`ainv-${randomUUID()}`, "", 0, day);
+        manual.amountEur = addAmount;
+        manual.amountBy = actor.name;
+        manual.amountAt = now;
+        c.service.invoices.push(manual);
+        hist.push({ field: "service.invoice", from: "", to: `Ar roku ${addAmount} €` });
       }
       return { result: "ok" as const, history: hist };
     },
@@ -95,12 +119,15 @@ export async function scanAutoparksV2Serviss(input: {
   carId: string;
   target: ServissScanTarget;
   invoiceId?: string;
+  /** `problem_photo`: problēma, kurai pievieno foto. */
+  problemId?: string;
   images: Buffer[];
   actor: AutoparksV2Actor;
 }): Promise<{ ok: true; invoiceId?: string } | { ok: false; reason: "not_found" | "no_invoice" | "duplicate" }> {
   const v2state = await readAutoparksV2State();
   const v2 = carV2Of(v2state, input.carId);
   if (input.target === "invoice_page" && !v2.service.invoices.some((i) => i.id === input.invoiceId)) return { ok: false, reason: "no_invoice" };
+  if (input.target === "problem_photo") return addProblemPhotos({ ...input, v2 });
   const pdf = await imagesToPdf(input.images);
   const day = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" });
   const title = input.target === "invoice_page" ? SERVISS_SCAN_TITLE.invoice : SERVISS_SCAN_TITLE[input.target];
@@ -159,4 +186,43 @@ export async function readAutoparksV2ServissFile(carId: string, fileId: string):
   const got = await readAutoparksFileBytes(fileId);
   if (!got || got.car.id !== carId) return null;
   return { bytes: got.bytes, contentType: sniffContentType(got.bytes, got.contentType), name: got.file.title };
+}
+
+/** Problēmas foto (Nils 27.10): katra bilde - atsevišķs Autoparka fails posmā Serviss, piesaistīts problēmai. */
+async function addProblemPhotos(input: {
+  carId: string;
+  problemId?: string;
+  images: Buffer[];
+  actor: AutoparksV2Actor;
+  v2: ReturnType<typeof carV2Of>;
+}): Promise<{ ok: true } | { ok: false; reason: "not_found" | "no_invoice" | "duplicate" }> {
+  if (!input.problemId || !input.v2.service.problems.some((p) => p.id === input.problemId)) return { ok: false, reason: "not_found" };
+  const day = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" });
+  const ids: string[] = [];
+  for (const img of input.images) {
+    const added = await addAutoparksFile({
+      carId: input.carId,
+      stage: "service",
+      kind: "other",
+      title: `${SERVISS_SCAN_TITLE.problem_photo} ${day.split("-").reverse().join(".")}`,
+      fileName: "foto.jpg",
+      contentType: "image/jpeg",
+      bytes: img,
+      scanned: true,
+      actor: input.actor,
+    });
+    if (added) ids.push(added.file.id);
+  }
+  if (ids.length === 0) return { ok: false, reason: "not_found" };
+  await updateCarV2(
+    input.carId,
+    (c) => {
+      const p = c.service.problems.find((x) => x.id === input.problemId);
+      if (!p) return { result: null };
+      for (const id of ids) if (!p.photoIds.includes(id)) p.photoIds.push(id);
+      return { result: null, history: [{ field: "service.problem.photo", from: "", to: `${ids.length} foto` }] };
+    },
+    input.actor,
+  );
+  return { ok: true };
 }

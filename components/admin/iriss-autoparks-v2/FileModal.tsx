@@ -1,9 +1,20 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { fmtDateLv } from "@/lib/iriss-autoparks-v2-format";
 
 export type ModalFile = { id: string; title: string; date: string; contentType: string };
+
+/** Bilde pēc tipa vai, ja Dropbox/serveris dod vispārīgu tipu, pēc faila nosaukuma (arī iPhone HEIC). */
+export function isModalImage(f: Pick<ModalFile, "contentType" | "title">): boolean {
+  if (f.contentType.startsWith("image/")) return true;
+  return /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(f.title.trim());
+}
+
+/** iPhone/iPad Safari PDF iframe rāda tukšu vai tikai 1. lapu - tur PDF atver Safari skatītājā (Nils 27.10, iOS 18.3.1). */
+export function isIosWebKit(ua: string, maxTouchPoints = 0): boolean {
+  return /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && maxTouchPoints > 1);
+}
 
 /** Faila logs (D3): nosaukums · datums, "1 / N", LEJUPIELĀDĒT, ×; ‹ › starp failiem. Fails tikai caur servera API. */
 export function FileModal({
@@ -20,6 +31,10 @@ export function FileModal({
   onClose: () => void;
 }) {
   const f = files[index];
+  const [ios, setIos] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
+  useEffect(() => setIos(isIosWebKit(navigator.userAgent, navigator.maxTouchPoints)), []);
+  useEffect(() => setImgFailed(false), [index]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -31,7 +46,7 @@ export function FileModal({
   }, [files.length, index, onClose, onIndex]);
   if (!f) return null;
   const url = urlFor(f);
-  const isImg = f.contentType.startsWith("image/");
+  const isImg = isModalImage(f);
   return (
     <div className="ap2-modal" role="dialog" aria-label={f.title} onClick={onClose}>
       <div className="ap2-mbox" onClick={(e) => e.stopPropagation()}>
@@ -58,9 +73,16 @@ export function FileModal({
               ‹
             </button>
           ) : null}
-          {isImg ? (
+          {isImg && !imgFailed ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={url} alt={f.title} />
+            <img src={url} alt={f.title} onError={() => setImgFailed(true)} />
+          ) : isImg || ios ? (
+            <div className="ap2-docopen">
+              <p>{isImg ? "Šo bildi pārlūks nevar parādīt šeit." : "PDF šajā telefonā atveras Safari skatītājā."}</p>
+              <a className="ap2-btn dark" href={url} target="_blank" rel="noopener">
+                Atvērt
+              </a>
+            </div>
           ) : (
             <iframe src={url} title={f.title} />
           )}

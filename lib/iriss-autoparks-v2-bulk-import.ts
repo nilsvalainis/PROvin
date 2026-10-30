@@ -2,6 +2,7 @@
  * Admin bulk importa endpoints (VIN -> lauki): tīra validācijas/lēmumu loģika, bez servera atkarībām - testējama.
  * Pēc noklusējuma aizpildītus laukus nepārraksta - tikai `overwrite=true` ļauj pārrakstīt (katram laukam atsevišķi).
  */
+import { v2PlausibleTech } from "@/lib/iriss-autoparks-v2";
 
 export const BULK_IMPORT_FIELD_KEYS = [
   "mileageKm",
@@ -65,10 +66,10 @@ function textField(raw: unknown, max: number, upper = false): string | null {
 
 /** Katra lauka validators/normalizators; `null` = dota vērtība neizturēja validāciju. */
 const VALIDATORS: Record<BulkImportFieldKey, (raw: unknown) => string | number | null> = {
-  mileageKm: (raw) => numField(raw, 0),
+  mileageKm: (raw) => v2PlausibleTech("mileageKm", numField(raw, 0)),
   firstRegDate: dateField,
-  displacementCm3: (raw) => numField(raw, 1),
-  powerKw: (raw) => numField(raw, 1),
+  displacementCm3: (raw) => v2PlausibleTech("displacementCm3", numField(raw, 1)),
+  powerKw: (raw) => v2PlausibleTech("powerKw", numField(raw, 1)),
   tyreSize: (raw) => textField(raw, 40),
   make: (raw) => textField(raw, 60),
   model: (raw) => textField(raw, 80),

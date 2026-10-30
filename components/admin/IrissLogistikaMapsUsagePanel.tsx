@@ -14,7 +14,8 @@ type Usage = {
   directions?: { monthlyUsed: number; monthlyCap: number; dailyUsed: number; dailyCap: number };
 };
 
-export function IrissLogistikaMapsUsagePanel() {
+/** embedded - bez savas kartītes un virsraksta (Iestatījumos atrodas IrissDisclosure iekšā). */
+export function IrissLogistikaMapsUsagePanel({ embedded = false }: { embedded?: boolean } = {}) {
   const [usage, setUsage] = useState<Usage | null>(null);
   useEffect(() => {
     void fetch("/api/admin/iriss-logistics/maps-usage", { credentials: "include", cache: "no-store" })
@@ -29,8 +30,8 @@ export function IrissLogistikaMapsUsagePanel() {
   const dest = usage?.searchDestinations;
   const dir = usage?.directions;
   return (
-    <section className="mt-5 max-w-xl rounded-[22px] bg-[var(--s1)] p-4 shadow-[var(--sh)] sm:p-5">
-      <h2 className="text-[15px] font-semibold text-[var(--ink)]">Pārvaldība · Google Maps</h2>
+    <section className={embedded ? "" : "mt-5 max-w-xl rounded-[22px] bg-[var(--s1)] p-4 shadow-[var(--sh)] sm:p-5"}>
+      {embedded ? null : <h2 className="text-[15px] font-semibold text-[var(--ink)]">Google Maps</h2>}
       <p className="mt-1 text-[13px] leading-snug text-[var(--ink2)]">
         Loģistikas karte, ģeokodēšana un maršruti. Maps JS, Geocoding, GeocodePlace, SearchDestinations un Directions.
         Cietais limits 10 000 / mēn. katram (~320 / dienā), lai nerastos rēķins. Kešotās adreses skaitītāju netērē.

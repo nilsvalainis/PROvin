@@ -273,14 +273,16 @@
   padding: 4px 10px;
   font-size: 12px;
   font-weight: 600;
-  background: color-mix(in srgb, var(--st) 12%, #fff);
-  color: color-mix(in srgb, var(--st) 85%, #000);
+  /* Nils 27.10: statusa teksts melns, krāsa tikai punktā (dizains v0.3). */
+  border: 1px solid var(--iriss-line-strong, #d1d1d6);
+  background: var(--iriss-surface, #fff);
+  color: var(--iriss-ink, #1c1c1e);
   white-space: nowrap;
 }
 .ap2.ap2.ap2 .ap2-pill::before {
   content: "";
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: var(--st);
 }
@@ -1105,13 +1107,19 @@
   align-items: center;
   gap: 6px;
 }
+.ap2.ap2.ap2 .ap2-fl-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
 .ap2.ap2.ap2 .ap2-fl .m b {
   font-size: 12.5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.ap2.ap2.ap2 .ap2-fl .m span {
+.ap2.ap2.ap2 .ap2-fl .m .ap2-fl-date {
   color: var(--ink3);
   font-size: 11.5px;
   flex: none;
@@ -1255,23 +1263,11 @@
   height: 11px;
 }
 .ap2.ap2.ap2 .ap2-csdd-badge {
-  position: absolute;
-  bottom: 6px;
-  right: 6px;
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  background: #fff;
-  border: 1px solid var(--line);
-  display: grid;
-  place-items: center;
-  z-index: 1;
-}
-.ap2.ap2.ap2 .ap2-csdd-badge img {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-  border-radius: 3px;
+  height: 17px;
+  width: auto;
+  border-radius: 4px;
+  display: block;
+  flex: none;
 }
 .ap2.ap2.ap2 .ap2-del {
   max-width: 320px;
@@ -1549,6 +1545,9 @@
   }
   .ap2.ap2.ap2 .ap2-files {
     grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+  .ap2.ap2.ap2 .ap2-csdd-badge {
+    height: 20px;
   }
   .ap2.ap2.ap2 .ap2-mbox {
     width: 760px;
@@ -2509,4 +2508,1685 @@
     border: 0;
     background: #e3e3e8;
   }
+}
+
+/* Ātrā pāreja uz Loģistiku (posms "Ceļā", makets 26.10). */
+.ap2 .ap2-pp-link {
+  text-decoration: none;
+  color: inherit;
+  --st: var(--iriss-brand);
+}
+
+/* «Pavadzīme» auto kartītē (Nils 27.10): poga augšējā darbību rindā un logs ar pavadzīmju formu. */
+.ap2.ap2.ap2 .ap2-wb {
+  margin: 10px 0 4px;
+}
+.ap2.ap2.ap2 .ap2-wb-main {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--iriss-graphite);
+  padding: 0 16px;
+  color: var(--iriss-on-graphite) !important;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-wb-active {
+  border-radius: 14px;
+  background: var(--iriss-surface);
+  padding: 12px 14px;
+  box-shadow: var(--iriss-shadow-1);
+}
+.ap2.ap2.ap2 .ap2-wb-line {
+  color: var(--iriss-ink-2);
+  font-size: 14px;
+}
+.ap2.ap2.ap2 .ap2-wb-line b {
+  color: var(--iriss-ink);
+}
+.ap2.ap2.ap2 .ap2-wb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ap2.ap2.ap2 .ap2-wb-btn {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  border: 1px solid var(--iriss-line-strong);
+  border-radius: 10px;
+  background: var(--iriss-surface);
+  padding: 0 14px;
+  color: var(--iriss-ink) !important;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none !important;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-wb-btn.stop {
+  border-color: var(--iriss-bad);
+  color: var(--iriss-bad) !important;
+}
+.ap2.ap2.ap2 .ap2-wb-dialog {
+  position: fixed;
+  z-index: 61;
+  left: 50%;
+  top: 50%;
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transform: translate(-50%, -50%);
+  border-radius: 20px;
+  background: var(--iriss-bg);
+  padding: 12px;
+  box-shadow: var(--iriss-shadow-2);
+}
+.ap2.ap2.ap2 .ap2-wb-dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 4px 10px;
+  font-size: 15px;
+}
+.ap2.ap2.ap2 .ap2-wb-close {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 18px;
+  background: var(--iriss-surface-3);
+  cursor: pointer;
+}
+@media (max-width: 767px) {
+  .ap2.ap2.ap2 .ap2-wb-dialog {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: auto;
+    max-height: 92dvh;
+    transform: none;
+    border-radius: 20px 20px 0 0;
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Kārtošana (Nils 27.10): izvēle vienā rindā ar īpašnieku čipiem. */
+.ap2.ap2.ap2 .ap2-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ap2.ap2.ap2 .ap2-chips-row .ap2-chips {
+  min-width: 0;
+  flex: 1;
+}
+.ap2.ap2.ap2 .ap2-sort {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  margin: 10px 0 4px;
+  border: 1px solid var(--iriss-line-strong);
+  border-radius: 999px;
+  background: var(--iriss-surface);
+  padding: 0 10px;
+  color: var(--iriss-ink-2);
+}
+.ap2.ap2.ap2 .ap2-sort select {
+  appearance: none;
+  -webkit-appearance: none;
+  /* Vispārīgais select stils lika iekšēju rāmi (pārbaudīts prod 27.10). */
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 0 2px !important;
+  color: var(--iriss-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sortval {
+  color: var(--iriss-ink-2);
+  font-weight: 600;
+}
+@media (max-width: 767px) {
+  /* Telefonā kārtošana savā rindā zem čipiem, lai čipi netiek nogriezti. */
+  .ap2.ap2.ap2 .ap2-chips-row {
+    flex-wrap: wrap;
+    gap: 0;
+  }
+  .ap2.ap2.ap2 .ap2-chips-row .ap2-chips {
+    flex-basis: 100%;
+  }
+  .ap2.ap2.ap2 .ap2-sort {
+    margin: 6px 0 4px auto;
+  }
+}
+
+/* Dzēst auto (tikai administrators) - Pamatdatu cilnes apakšā. */
+.ap2 .ap2-delete {
+  margin: 24px 0 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+/* Skeneris (iOS 18 melnā bilde, Nils 27.10): pieskāriens kameras ieslēgšanai un rezerves telefona kamera. */
+.ap2.ap2.ap2 .ap2-camtap {
+  position: absolute;
+  inset: auto 16px 40%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1c1c1e;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-camalt {
+  display: block;
+  margin: 8px auto 0;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Faila logs iPhone: PDF / neatbalstīta bilde - poga «Atvērt» (Safari skatītājs). */
+.ap2.ap2.ap2 .ap2-docopen {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--ink2);
+}
+
+/* ---- Saraksts (Nils 27.10 makets, apstiprināts): visa kartīte ir saite, statusa izvēle un VIN - virs tās ---- */
+.ap2.ap2.ap2 .ap2-row {
+  position: relative;
+}
+.ap2.ap2.ap2 .ap2-row-hit {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+}
+.ap2.ap2.ap2 .ap2-row :is(button, select, label, .ap2-over) {
+  position: relative;
+  z-index: 1;
+}
+.ap2.ap2.ap2 .ap2-row-hit:focus-visible {
+  outline: 2px solid var(--iriss-brand, #f26522);
+  outline-offset: 2px;
+}
+.ap2.ap2.ap2 .ap2-top-n {
+  font-size: 14px;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-pill-sel {
+  padding-right: 6px;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-pill-sel select {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0 18px 0 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-pill-sel::after {
+  content: "▾";
+  margin-left: -16px;
+  pointer-events: none;
+  color: var(--iriss-ink-2, #4a4a4f);
+  font-size: 11px;
+}
+
+@media (min-width: 900px) {
+  .ap2 {
+    background: var(--iriss-bg, #f2f2f7);
+  }
+  .ap2.ap2.ap2 .ap2-top {
+    gap: 12px;
+  }
+  .ap2.ap2.ap2 .ap2-top .ap2-search {
+    margin-left: auto;
+  }
+  .ap2.ap2.ap2 .ap2-add {
+    background: var(--iriss-brand, #f26522);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 1px 2px rgba(217, 84, 26, 0.35);
+  }
+  /* Statusi - viena čipu rinda (Nils: augšējā josla vienā rindā), nekad nepāriet otrā rindā. */
+  .ap2.ap2.ap2 .ap2-pipe {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    margin-bottom: 12px;
+  }
+  .ap2.ap2.ap2 .ap2-pipe::-webkit-scrollbar {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-pp {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 999px;
+    background: var(--iriss-surface, #fff);
+    --bd: var(--iriss-line-strong, #d1d1d6);
+  }
+  .ap2.ap2.ap2 .ap2-pp .l {
+    order: 1;
+    margin: 0;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--iriss-ink, #1c1c1e);
+  }
+  .ap2.ap2.ap2 .ap2-pp .n {
+    order: 2;
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--iriss-surface-2, #f2f2f7);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .ap2.ap2.ap2 .ap2-pp.on {
+    background: var(--iriss-graphite, #1b1c20);
+    box-shadow: none;
+  }
+  .ap2.ap2.ap2 .ap2-pp.on .l {
+    color: var(--iriss-on-graphite, #f3f2ef);
+  }
+  .ap2.ap2.ap2 .ap2-pp.on .n {
+    background: var(--iriss-brand, #f26522);
+    color: #fff;
+  }
+  .ap2.ap2.ap2 .ap2-thd,
+  .ap2.ap2.ap2 .ap2-row .cols {
+    grid-template-columns: 92px minmax(0, 1fr) 220px 90px 110px 190px;
+  }
+  .ap2.ap2.ap2 .ap2-thd {
+    padding: 0 16px 4px;
+    color: var(--iriss-ink-2, #4a4a4f);
+  }
+  /* Katrs auto - sava kartīte, bez kopīga baltā bloka. */
+  .ap2.ap2.ap2 .ap2-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .ap2.ap2.ap2 .ap2-row,
+  .ap2.ap2.ap2 .ap2-row:first-child {
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 16px;
+    background: var(--iriss-surface, #fff);
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(22, 23, 26, 0.06);
+  }
+  .ap2.ap2.ap2 .ap2-row:hover {
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.12), 0 4px 14px rgba(22, 23, 26, 0.1);
+  }
+  .ap2.ap2.ap2 .ap2-row .cols .ap2-img {
+    width: 92px;
+    height: 64px;
+    border-radius: 10px;
+  }
+  .ap2.ap2.ap2 .ap2-vat {
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .ap2.ap2.ap2 .ap2-date {
+    font-size: 13.5px;
+    color: var(--iriss-ink-2, #4a4a4f);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Kabineta cilne «Ceļā» (Nils 27.10): Loģistika kā Autoparka posms. */
+.ap2.ap2.ap2 .ap2-cela {
+  margin-top: 12px;
+  border-radius: 18px;
+  background: var(--iriss-surface, #fff);
+  padding: 16px 18px;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(22, 23, 26, 0.06);
+}
+.ap2.ap2.ap2 .ap2-cela-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+.ap2.ap2.ap2 .ap2-cela-steps li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 12px;
+  background: var(--iriss-surface-2, #f2f2f7);
+  padding: 10px 12px;
+  font-size: 13.5px;
+}
+.ap2.ap2.ap2 .ap2-cela-steps li span {
+  font-size: 12px;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-cela-steps li.done {
+  background: #e8f5ee;
+}
+.ap2.ap2.ap2 .ap2-cela-steps li.cur {
+  background: var(--iriss-graphite, #1b1c20);
+  color: var(--iriss-on-graphite, #f3f2ef);
+}
+.ap2.ap2.ap2 .ap2-cela-steps li.cur span {
+  color: inherit;
+  opacity: 0.8;
+}
+.ap2.ap2.ap2 .ap2-cela-kv {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px 18px;
+  margin: 0;
+}
+.ap2.ap2.ap2 .ap2-cela-kv dt {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-cela-kv dd {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-cela-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+@media (max-width: 599px) {
+  .ap2.ap2.ap2 .ap2-cela-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Nils 27.10: īpašnieks galvenē izcelts (Dzintarzeme oranžs, ĪRISS zaļš) un «Pasūtījums» atzīme. */
+.ap2.ap2.ap2 .ap2-owner-badge {
+  /* Makets B (Nils 27.10): balta kontūra īpašnieka krāsā, krāsains punkts, melns teksts. */
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  border: 1.5px solid var(--own, #17804a);
+  border-radius: 999px;
+  background: var(--iriss-surface, #fff);
+  padding: 0 12px;
+  color: var(--iriss-ink, #1c1c1e);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-owner-badge.iriss {
+  --own: var(--iriss-ok, #17804a);
+}
+.ap2.ap2.ap2 .ap2-owner-badge.dza {
+  --own: #e0561a;
+}
+.ap2.ap2.ap2 .ap2-owner-badge .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--own);
+}
+.ap2.ap2.ap2 .ap2-owner-badge svg {
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-owner-badge.edit {
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-owner-badge select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-owner-badge:focus-within {
+  outline: 2px solid var(--iriss-brand, #f26522);
+  outline-offset: 2px;
+}
+.ap2.ap2.ap2 .ap2-client-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 8px;
+  vertical-align: middle;
+  min-height: 22px;
+  border-radius: 999px;
+  padding: 0 9px;
+  background: var(--iriss-info, #2c4fb8);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-switch {
+  min-width: 56px;
+  border-radius: 999px;
+  text-align: center;
+}
+.ap2.ap2.ap2 .ap2-switch.on {
+  background: var(--iriss-graphite, #1b1c20);
+  color: var(--iriss-on-graphite, #f3f2ef);
+}
+
+/* Cilne «Dokumenti» (Nils 27.10, makets): grupas ar pirmās lapas priekšskatu. */
+.ap2.ap2.ap2 .ap2-docgroups {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 14px;
+}
+.ap2.ap2.ap2 .ap2-docgroup h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--iriss-ink, #1c1c1e);
+}
+.ap2.ap2.ap2 .ap2-docgroup h4 span {
+  font-weight: 500;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-docgroup .ap2-files {
+  margin-top: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.ap2.ap2.ap2 .ap2-docgroup .ap2-fl .pv {
+  height: auto;
+  aspect-ratio: 3 / 4;
+  background: #fff;
+  border-bottom: 1px solid var(--line);
+}
+.ap2.ap2.ap2 .ap2-thumb {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: hidden;
+  background: #fff;
+}
+.ap2.ap2.ap2 .ap2-thumb canvas,
+.ap2.ap2.ap2 .ap2-thumb img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.ap2.ap2.ap2 .ap2-thumb img {
+  height: 100%;
+  object-fit: cover;
+}
+.ap2.ap2.ap2 .ap2-thumb.idle canvas,
+.ap2.ap2.ap2 .ap2-thumb.fail canvas {
+  display: none;
+}
+.ap2.ap2.ap2 .ap2-thumb-ph {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f7;
+}
+.ap2.ap2.ap2 .ap2-docgroup .ap2-tag {
+  z-index: 1;
+}
+
+/* Serviss (Nils 27.10, makets): rēķini + problēmas; telefonā divas lielas pogas augšā. */
+.ap2.ap2.ap2 .ap2-sv-acts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.ap2.ap2.ap2 .ap2-sv-big {
+  min-height: 60px;
+  border: 1px solid var(--iriss-line-strong, #d1d1d6);
+  border-radius: 16px;
+  background: var(--iriss-surface, #fff);
+  color: var(--iriss-ink, #1c1c1e);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-sv-big.pri {
+  border-color: transparent;
+  background: var(--iriss-brand, #f26522);
+  color: #fff;
+}
+.ap2.ap2.ap2 .ap2-sv {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+.ap2.ap2.ap2 .ap2-sv-card {
+  border-radius: 16px;
+  background: var(--iriss-surface, #fff);
+  padding: 14px 16px;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(22, 23, 26, 0.06);
+}
+.ap2.ap2.ap2 .ap2-sv-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.ap2.ap2.ap2 .ap2-sv-head h3 {
+  margin: 0;
+  font-size: 17px;
+}
+.ap2.ap2.ap2 .ap2-sv-headbtns {
+  display: inline-flex;
+  gap: 8px;
+}
+/* Telefonā «Skenēt rēķinu» ir lielā poga augšā; kartītē paliek «+ Ar roku». */
+.ap2.ap2.ap2 .ap2-sv-headbtns .iriss-btn--primary {
+  display: none;
+}
+.ap2.ap2.ap2 .ap2-sv-mu {
+  margin: 6px 0 4px;
+  font-size: 13px;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-sv-manual {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  margin: 8px 0;
+}
+.ap2.ap2.ap2 .ap2-sv-manual label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-sv-manual input,
+.ap2.ap2.ap2 .ap2-sv-newprob input {
+  min-height: 44px;
+  border: 1px solid var(--iriss-line-strong, #d1d1d6);
+  border-radius: 12px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 15px;
+}
+.ap2.ap2.ap2 .ap2-sv-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-sv-total b {
+  font-size: 18px;
+}
+.ap2.ap2.ap2 .ap2-sv-prob {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.ap2.ap2.ap2 .ap2-sv-prob .chk {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sv-prob .chk input {
+  width: 22px;
+  height: 22px;
+  flex: none;
+}
+.ap2.ap2.ap2 .ap2-sv-prob.done .chk span {
+  color: var(--iriss-ink-2, #4a4a4f);
+  text-decoration: line-through;
+}
+.ap2.ap2.ap2 .ap2-sv-prob .ph {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+.ap2.ap2.ap2 .ap2-sv-photo {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--iriss-surface-2, #f2f2f7);
+}
+.ap2.ap2.ap2 .ap2-sv-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ap2.ap2.ap2 .ap2-sv-addphoto {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--iriss-line-strong, #d1d1d6);
+  border-radius: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sv-addphoto input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sv-newprob {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-top: 10px;
+}
+.ap2.ap2.ap2 .ap2-irow .a.sug small {
+  color: var(--iriss-warn, #a75c00);
+  font-weight: 600;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-sv-acts {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-sv {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 16px;
+    margin-top: 12px;
+  }
+  .ap2.ap2.ap2 .ap2-sv-card {
+    padding: 18px 20px;
+  }
+  .ap2.ap2.ap2 .ap2-sv-headbtns .iriss-btn--primary {
+    display: inline-flex;
+  }
+}
+
+/* Nils 27.10: telefonā peldošā apakšējā izvēlne neaizsedz pēdējo lauku (piem., Servisa "Jauna problēma"). */
+@media (max-width: 899px) {
+  .ap2.ap2.ap2 {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Nils 27.10: problēmas dzēšana (tikai administrators). */
+.ap2.ap2.ap2 .ap2-sv-del {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--iriss-ink-2, #4a4a4f);
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sv-del:hover {
+  background: rgba(194, 54, 43, 0.08);
+  color: var(--bad, #c2362b);
+}
+
+/* ===== Cenu lapa pēc maketa L7 (Nils 27.10): A4 794x1123 px, centrālā ass, plāns šrifts ===== */
+.ap2.ap2.ap2 .ap2-cl {
+  width: 794px;
+  height: 1123px;
+  box-sizing: border-box;
+  background: #fff;
+  color: #141416;
+  font-family: var(--font-inter), Inter, system-ui, sans-serif;
+  padding: 44px 72px 40px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-align: left;
+}
+.ap2.ap2.ap2 .ap2-cl-logo {
+  display: flex;
+  justify-content: center;
+}
+.ap2.ap2.ap2 .ap2-cl-logo img {
+  /* SVG bez baltajām malām (PNG bija ~15 % platāks ar malām) - tāds pats redzamais izmērs. */
+  width: 100px;
+  height: auto;
+}
+.ap2.ap2.ap2 .ap2-cl-title {
+  margin: 36px 0 0;
+  text-align: center;
+  line-height: 1;
+  font-weight: 200;
+  letter-spacing: 4px;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+.ap2.ap2.ap2 .ap2-cl-hl {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 2.2px;
+  color: #3a3a3f;
+  text-transform: uppercase;
+}
+.ap2.ap2.ap2 .ap2-cl-price {
+  margin: 36px auto 0;
+  text-align: center;
+  padding: 16px 48px;
+  border-top: 0.75px solid #141416;
+  border-bottom: 0.75px solid #141416;
+}
+.ap2.ap2.ap2 .ap2-cl-price .v {
+  font-size: 92px;
+  font-weight: 200;
+  letter-spacing: -2px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-cl-price .n {
+  font-size: 10.5px;
+  color: #6b6b70;
+  margin-top: 6px;
+}
+.ap2.ap2.ap2 .ap2-cl-lab {
+  margin-top: 36px;
+  text-align: center;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: #6b6b70;
+}
+.ap2.ap2.ap2 .ap2-cl-rows {
+  margin-top: 12px;
+}
+.ap2.ap2.ap2 .ap2-cl-r {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+  column-gap: 18px;
+  font-size: 12px;
+}
+.ap2.ap2.ap2 .ap2-cl-r > span {
+  padding: 5.5px 0;
+}
+.ap2.ap2.ap2 .ap2-cl-r > span:first-child {
+  color: #55555b;
+  text-align: right;
+}
+.ap2.ap2.ap2 .ap2-cl-r > i {
+  background: #f28c22;
+  opacity: 0.55;
+}
+.ap2.ap2.ap2 .ap2-cl-r > span:last-child {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r {
+  font-size: 10.5px;
+}
+.ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r > span {
+  padding: 2.5px 0;
+}
+.ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r > span:last-child {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+}
+.ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r.h > i {
+  opacity: 0;
+}
+.ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r.h > span,
+.ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r.h > span > span {
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  color: #8a8a90;
+  padding: 0 0 3px;
+}
+.ap2.ap2.ap2 .ap2-cl-ok {
+  margin: 24px 0 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-align: center;
+}
+.ap2.ap2.ap2 .ap2-cl-foot {
+  margin-top: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  column-gap: 24px;
+  align-items: center;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.ap2.ap2.ap2 .ap2-cl-foot .l {
+  text-align: right;
+}
+.ap2.ap2.ap2 .ap2-cl-foot img {
+  width: 76px;
+  height: 76px;
+}
+
+/* Priekšskats cilnē: A4 samazināts (0,62). */
+.ap2.ap2.ap2 .ap2-cl-prev {
+  --s: 0.62;
+  width: calc(794px * var(--s));
+  height: calc(1123px * var(--s));
+  margin-top: 12px;
+  overflow: hidden;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.1), 0 8px 24px rgba(22, 23, 26, 0.1);
+}
+.ap2.ap2.ap2 .ap2-cl-prev .ap2-cl {
+  transform: scale(var(--s));
+  transform-origin: 0 0;
+}
+.ap2.ap2.ap2 .ap2-cl-vat {
+  margin: 4px 0 8px;
+  font-size: 12.5px;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-cl-hled {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.ap2.ap2.ap2 .ap2-cl-hled .k {
+  font-size: 13px;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-cl-hled .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ap2.ap2.ap2 .ap2-cl-hled .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 36px;
+  padding: 0 2px 0 12px;
+  border: 1px solid var(--iriss-line-strong, #d1d1d6);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #fff;
+}
+.ap2.ap2.ap2 .ap2-cl-hled .chip button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--iriss-ink-2, #4a4a4f);
+  font-size: 16px;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-cl-hled .add {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+.ap2.ap2.ap2 .ap2-cl-hled .add input {
+  min-height: 44px;
+  border: 1px solid var(--iriss-line-strong, #d1d1d6);
+  border-radius: 12px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 15px;
+}
+.ap2.ap2.ap2 .ap2-cl-printm {
+  margin: 0 0 12px;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-cl-printm {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-clp {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+}
+
+/* Drukas lapa ("Drukāt A4"): A4 = 794x1123 px pie 96 dpi. */
+.ap2.ap2.ap2.ap2-print .ap2-cl {
+  margin: 12px auto 0;
+  box-shadow: 0 8px 24px rgba(22, 23, 26, 0.12);
+}
+@media print {
+  .ap2.ap2.ap2.ap2-print .ap2-cl {
+    margin: 0;
+    box-shadow: none;
+    width: 210mm;
+    height: 297mm;
+  }
+}
+
+/* 390 px pārskats (27.10): "‹ Autoparks" bez rāmīša (kopējais :is rāmja noteikums to atkal ielika). */
+.ap2.ap2.ap2 .ap2-bar .ap2-back {
+  box-shadow: none;
+}
+/* Cenu lapa telefonā: poga nepielīp pie cilnēm. */
+.ap2.ap2.ap2 .ap2-cl-printm {
+  margin-top: 12px;
+}
+
+/* ===== Vēsture pēc maketa (Nils 27.10): pa dienām, laiks · kurš · kas · vecā -> jaunā ===== */
+.ap2.ap2.ap2 .ap2-vh {
+  max-width: 1000px;
+}
+.ap2.ap2.ap2 .ap2-vh-day {
+  margin: 16px 4px 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-vh section:first-child .ap2-vh-day {
+  margin-top: 14px;
+}
+.ap2.ap2.ap2 .ap2-vh-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2px 16px;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+}
+.ap2.ap2.ap2 .ap2-vh-r {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "f t" "c c";
+  gap: 3px 10px;
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+  font-size: 15px;
+}
+.ap2.ap2.ap2 .ap2-vh-r:first-child {
+  border-top: 0;
+}
+.ap2.ap2.ap2 .ap2-vh-r .t {
+  grid-area: t;
+  font-size: 13px;
+  color: var(--iriss-ink-2, #4a4a4f);
+  font-variant-numeric: tabular-nums;
+}
+.ap2.ap2.ap2 .ap2-vh-r .w {
+  display: none;
+}
+.ap2.ap2.ap2 .ap2-vh-r .f {
+  grid-area: f;
+  font-size: 13px;
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.ap2.ap2.ap2 .ap2-vh-r .c {
+  grid-area: c;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.ap2.ap2.ap2 .ap2-vh-r s {
+  color: #6e6e73;
+}
+.ap2.ap2.ap2 .ap2-vh-r .ar {
+  color: #8e8e93;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-vh-card {
+    border-radius: 18px;
+    padding: 2px 24px;
+  }
+  .ap2.ap2.ap2 .ap2-vh-r {
+    grid-template-columns: 56px 150px 200px minmax(0, 1fr);
+    grid-template-areas: "t w f c";
+    align-items: baseline;
+    gap: 16px;
+    font-size: 14.5px;
+  }
+  .ap2.ap2.ap2 .ap2-vh-r .t {
+    font-size: 14.5px;
+  }
+  .ap2.ap2.ap2 .ap2-vh-r .wm {
+    display: none;
+  }
+  .ap2.ap2.ap2 .ap2-vh-r .w {
+    display: block;
+    grid-area: w;
+    font-weight: 600;
+  }
+  .ap2.ap2.ap2 .ap2-vh-r .f {
+    font-size: 14.5px;
+  }
+}
+
+/* Saraksts telefonā (Nils 28.10, makets B): apakšējā rindā neitrāls statuss rāmītī + VIN. */
+.ap2.ap2.ap2 .ap2-mbot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  min-width: 0;
+}
+.ap2.ap2.ap2 .ap2-mst {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--iriss-line-strong, #d1d1d6);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--iriss-ink, #1c1c1e);
+  background: #fff;
+}
+.ap2.ap2.ap2 .ap2-mbot .ap2-vin {
+  margin-top: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+/* ===== Kabinets pēc apstiprinātā maketa (27.10): Pamatdati divās kolonnās, lauku režģis (Nils 28.10 «rāda veco versiju») ===== */
+.ap2.ap2.ap2 .ap2-pd-layout {
+  display: flex;
+  flex-direction: column;
+}
+.ap2.ap2.ap2 .ap2-pd-top > :first-child,
+.ap2.ap2.ap2 .ap2-pd-bottom .ap2-pane .ap2-card {
+  margin-top: 12px;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2.ap2-cab {
+    max-width: 1260px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .ap2.ap2.ap2 .ap2-pd-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    grid-template-areas: "main top" "main bottom";
+    gap: 0 16px;
+    align-items: start;
+  }
+  .ap2.ap2.ap2 .ap2-pd-main {
+    grid-area: main;
+    min-width: 0;
+  }
+  .ap2.ap2.ap2 .ap2-pd-top {
+    grid-area: top;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 12px;
+  }
+  .ap2.ap2.ap2 .ap2-pd-top > :first-child {
+    margin-top: 0;
+  }
+  .ap2.ap2.ap2 .ap2-pd-bottom {
+    grid-area: bottom;
+    min-width: 0;
+  }
+  .ap2.ap2.ap2 .ap2-pd-layout .ap2-pane {
+    max-width: none;
+    margin: 0;
+  }
+  .ap2.ap2.ap2 .ap2-pd-layout .ap2-card {
+    border-radius: 18px;
+    padding: 16px 20px;
+  }
+  .ap2.ap2.ap2 .ap2-pd-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 16px;
+  }
+  .ap2.ap2.ap2 .ap2-pd-grid h3 {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: 15px;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--ink);
+  }
+  .ap2.ap2.ap2 .ap2-pd-grid .ap2-f {
+    grid-template-columns: 8px minmax(0, 1fr);
+    grid-template-areas: "d k" "v v";
+    gap: 4px 6px;
+    min-height: 0;
+    border-top: 0;
+    align-items: center;
+  }
+  .ap2.ap2.ap2 .ap2-pd-grid .ap2-f .ap2-cd {
+    grid-area: d;
+  }
+  .ap2.ap2.ap2 .ap2-pd-grid .ap2-f .k {
+    grid-area: k;
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+  .ap2.ap2.ap2 .ap2-pd-grid .ap2-f .v {
+    grid-area: v;
+    justify-self: stretch;
+    text-align: left;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    border: 1px solid var(--iriss-line-strong, #d1d1d6);
+    border-radius: 12px;
+    padding: 0 12px;
+    background: #fff;
+    font-size: 15px;
+  }
+  .ap2.ap2.ap2 .ap2-pd-grid .ap2-f input.v {
+    max-width: none;
+  }
+}
+
+/* Pamatdati režģī: «Pasūtījums» slēdzis paliek salasāms (balts fons no režģa to pārklāja). */
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-pd-grid .ap2-f .v.ap2-switch {
+    justify-self: start;
+    justify-content: center;
+    min-width: 72px;
+    border-radius: 999px;
+    color: var(--iriss-ink, #1c1c1e);
+  }
+  .ap2.ap2.ap2 .ap2-pd-grid .ap2-f .v.ap2-switch.on {
+    background: var(--iriss-graphite, #1b1c20);
+    border-color: var(--iriss-graphite, #1b1c20);
+    color: var(--iriss-on-graphite, #f3f2ef);
+  }
+}
+
+/* ===== Kabinets datorā pēc maketa (Nils 28.10 «izskatās pēc telefona versijas»): kompaktas cilnes,
+   pavadzīme kā sekundāra poga, saites un CSDD kompakti. Telefona skats nemainās. ===== */
+@media (min-width: 900px) {
+  /* Cilnes kā maketā «Main»: pogas - aktīvā tumša, pārējās baltas ar rāmi. */
+  .ap2.ap2.ap2.ap2-cab .ap2-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    width: auto;
+    padding: 0;
+    margin: 14px 0 4px;
+    background: none;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-tabs .ap2-tab {
+    min-height: 34px;
+    padding: 0 14px;
+    border-radius: 999px;
+    background: #fff;
+    border: 0;
+    box-shadow: inset 0 0 0 1px #d1d1d6;
+    color: #1c1c1e;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-tabs .ap2-tab.on {
+    background: #1b1c20;
+    color: #f3f2ef !important;
+    box-shadow: none;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-tabs .ap2-tab.on * {
+    color: inherit !important;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-kvwrap {
+    margin-top: 12px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-tabs .ap2-tab-hist {
+    margin-left: 0;
+  }
+
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-wb {
+    margin: 0;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-wb-main {
+    min-height: 38px;
+    padding: 0 14px;
+    border-radius: 12px;
+    background: #fff;
+    color: var(--iriss-ink, #1c1c1e) !important;
+    box-shadow: inset 0 0 0 1px var(--iriss-line-strong, #d1d1d6), 0 1px 2px rgba(22, 23, 26, 0.05);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .iriss-saite {
+    background: #fff;
+    border-radius: 18px;
+    padding: 14px 18px;
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(22, 23, 26, 0.06);
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .iriss-saite-sec {
+    margin: 0 0 8px;
+    padding: 0;
+    font-size: 15px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--iriss-ink, #1c1c1e);
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .iriss-saite-card {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .iriss-saite-card + .iriss-saite-card {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--iriss-line, #e5e5ea);
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .iriss-saite-note {
+    font-size: 12.5px;
+    margin: 4px 0 8px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .iriss-saite-btn {
+    min-height: 36px;
+    font-size: 13px;
+    border-radius: 10px;
+  }
+
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-bottom .ap2-card h3 {
+    margin: 0 0 6px;
+    font-size: 15px;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--iriss-ink, #1c1c1e);
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-bottom .ap2-card .ap2-f {
+    min-height: 36px;
+    font-size: 13.5px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-bottom .ap2-delete {
+    margin-top: 10px;
+  }
+}
+
+/* Cenu lapa: drošības tabula ar ķeksīšiem (Nils 28.10, kompakti kā CSDD formā). */
+.ap2.ap2.ap2 .ap2-cl-safety h3 {
+  margin: 0 0 8px;
+}
+.ap2.ap2.ap2 .ap2-cl-st .hd,
+.ap2.ap2.ap2 .ap2-cl-st .rw {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px 84px;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  font-size: 13.5px;
+}
+.ap2.ap2.ap2 .ap2-cl-st .hd {
+  min-height: 24px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink2);
+}
+.ap2.ap2.ap2 .ap2-cl-st .rw {
+  border-top: 1px solid var(--line);
+}
+.ap2.ap2.ap2 .ap2-cl-st label,
+.ap2.ap2.ap2 .ap2-cl-st .hd span:not(:first-child) {
+  justify-self: center;
+  text-align: center;
+}
+.ap2.ap2.ap2 .ap2-cl-st input,
+.ap2.ap2.ap2 .ap2-cl-road input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--iriss-ink, #1c1c1e);
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-cl-road {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+/* Cenu lapa: aprīkojuma rindai vienāda atstarpe augšā (līdz nosaukumam) un apakšā (līdz cenas līnijai) - Nils 28.10. */
+.ap2.ap2.ap2 .ap2-cl-title + .ap2-cl-hl {
+  margin-top: 26px;
+  line-height: 1;
+}
+.ap2.ap2.ap2 .ap2-cl-hl + .ap2-cl-price {
+  margin-top: 26px;
+}
+
+/* ===== Cenu lapa drukā (Nils 28.10): «pazudušas vertikālās oranžās līnijas», «izprintējās diezgan bāli».
+   Līnija - apmale (fonus pārlūks drukā izlaiž), krāsas drukā precīzi, tekstam lielāks kontrasts. ===== */
+.ap2.ap2.ap2 .ap2-cl {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  color: #0e0e10;
+}
+.ap2.ap2.ap2 .ap2-cl-r > i {
+  background: none;
+  opacity: 1;
+  border-left: 1.5px solid #f28c22;
+}
+.ap2.ap2.ap2 .ap2-cl-title {
+  font-weight: 300;
+  color: #0e0e10;
+}
+.ap2.ap2.ap2 .ap2-cl-hl {
+  font-weight: 600;
+  color: #1c1c1e;
+}
+.ap2.ap2.ap2 .ap2-cl-price {
+  border-top-width: 1px;
+  border-bottom-width: 1px;
+  border-color: #0e0e10;
+}
+.ap2.ap2.ap2 .ap2-cl-price .v {
+  font-weight: 300;
+  color: #0e0e10;
+}
+.ap2.ap2.ap2 .ap2-cl-price .n,
+.ap2.ap2.ap2 .ap2-cl-lab {
+  color: #2e2e33;
+}
+.ap2.ap2.ap2 .ap2-cl-lab {
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-cl-r > span:first-child {
+  color: #2a2a2e;
+}
+.ap2.ap2.ap2 .ap2-cl-r > span:last-child {
+  font-weight: 600;
+  color: #0e0e10;
+}
+.ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r.h > span,
+.ap2.ap2.ap2 .ap2-cl-rows.sm .ap2-cl-r.h > span > span {
+  color: #3a3a3f;
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-cl-ok {
+  font-weight: 700;
+  color: #0e0e10;
+}
+.ap2.ap2.ap2 .ap2-cl-foot {
+  color: #0e0e10;
+  font-weight: 500;
+}
+
+/* Dokumenti datorā (Nils 28.10): Izsole / Izsoles nr. / Pirkuma datums / PVN režīms - šaura josla. */
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-kvwrap {
+    max-width: 760px;
+  }
+  .ap2.ap2.ap2 .ap2-kvwrap .ap2-kvc {
+    padding: 8px 14px;
+    gap: 1px;
+  }
+  .ap2.ap2.ap2 .ap2-kvwrap .ap2-kvc span {
+    font-size: 11.5px;
+  }
+  .ap2.ap2.ap2 .ap2-kvwrap .ap2-kvc button,
+  .ap2.ap2.ap2 .ap2-kvwrap .ap2-kvc b {
+    min-height: 26px;
+    font-size: 14px;
+  }
+}
+
+/* ===== Kabinets datorā tieši pēc maketa «Main» (Nils 28.10 «man viņš nepatīk datora versijā», «redzu izkārtojuma atšķirības»).
+   Galvene ar darbību pogām, kompakts statuss, labajā kolonnā CSDD / Īpašnieks / Saites. Telefons nemainās. ===== */
+@media (min-width: 900px) {
+  .ap2.ap2.ap2.ap2-cab .ap2-carhead {
+    padding: 16px;
+    border-radius: 18px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-carhead-main {
+    align-items: flex-start;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-carhead .ap2-img {
+    width: 138px;
+    height: 92px;
+    border-radius: 12px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-carhead .nm b {
+    font-size: 22px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-carhead .ap2-dstatus {
+    width: auto;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 12px;
+    font-size: 14px;
+    align-self: flex-start;
+    margin-top: 28px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts .ap2-wb {
+    margin: 0;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts .ap2-wb-main,
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts .ap2-hbtn,
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts .ap2-wb-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 14px;
+    border-radius: 12px;
+    background: #fff;
+    color: #1c1c1e !important;
+    box-shadow: inset 0 0 0 1px #d1d1d6, 0 1px 2px rgba(22, 23, 26, 0.05);
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts .ap2-wb-main svg,
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts .ap2-hbtn svg {
+    width: 16px;
+    height: 16px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts .ap2-wb-active {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-head-acts .ap2-wb-line {
+    font-size: 13px;
+  }
+
+  /* Labā kolonna */
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top {
+    padding-top: 0;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-layout {
+    margin-top: 12px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-pane,
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-card {
+    margin: 0;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-card {
+    border: 0;
+    border-radius: 18px;
+    padding: 16px 18px;
+    box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(22, 23, 26, 0.06);
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-card h3 {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #1c1c1e;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-card .ap2-f {
+    display: grid;
+    grid-template-columns: 0 92px minmax(0, 1fr);
+    min-height: 0;
+    padding: 7px 0;
+    border-top: 1px solid #e5e5ea;
+    font-size: 13px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-card .ap2-f .ap2-cd {
+    visibility: hidden;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-card .ap2-f .k {
+    color: #4a4a4f;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-top .ap2-card .ap2-f .v {
+    text-align: left;
+    font-weight: 600;
+    color: #1c1c1e;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-owner-chips {
+    display: flex;
+    gap: 6px;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-owner-chips button {
+    min-height: 34px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: inset 0 0 0 1px #d1d1d6;
+    color: #1c1c1e;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-owner-chips button.on {
+    background: #1b1c20;
+    box-shadow: none;
+    color: #f3f2ef;
+  }
+
+  /* Pamatdati: bez CSDD punktiem (makets - apakšvirsraksts «no CSDD, labojami»). */
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-grid .ap2-f .ap2-cd {
+    display: none;
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-grid .ap2-f {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "k" "v";
+  }
+  .ap2.ap2.ap2.ap2-cab .ap2-pd-grid h3 {
+    font-size: 16px;
+  }
+}
+.ap2.ap2.ap2 .ap2-h3-sub {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink2, #4a4a4f);
+}
+@media (max-width: 899px) {
+  .ap2.ap2.ap2 .ap2-h3-sub {
+    display: none;
+  }
+}
+
+/* QA 29.10: Autoparka kartītē (telefons) saites kartītei bija liela ēna un 14 px atstarpe - zem tās redzama pelēka josla. */
+.ap2.ap2.ap2 .iriss-saite-card {
+  margin-bottom: 0;
+  background: #fff;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(22, 23, 26, 0.06);
+}
+
+/* Nils 29.10 «salāgo»: galvenā poga «+ Auto» kā citās sadaļās - grafīta, apaļa, 13/600 (arī telefonā). */
+.ap2.ap2.ap2 .ap2-btn.dark.ap2-add {
+  border-radius: 999px;
+  padding: 0 16px;
+  background: var(--iriss-graphite);
+  color: var(--iriss-on-graphite);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Drošā saglabāšana (Nils 29.10): «Mēģināt vēlreiz» pie kļūdas - ievadītā vērtība nepazūd. */
+.ap2.ap2.ap2 .ap2-retry {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  margin-left: 6px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--iriss-graphite);
+  color: var(--iriss-on-graphite);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
 }

@@ -1,54 +1,18 @@
 import { Suspense } from "react";
 import { IrissSludinajumiListClient } from "@/components/admin/IrissSludinajumiListClient";
-import {
-  getIrissListingsStorageState,
-  readIrissListingsDismissed,
-} from "@/lib/iriss-listings-aggregate-store";
-import { readIrissListingsLatestViewWithMarketplace } from "@/lib/marketplace/view";
-import { emptyIrissListingsDismissed } from "@/lib/iriss-listings-dismiss";
 import { irissListingMatchKey } from "@/lib/iriss-listing-match";
-import { prepareIrissListingMatchWorkspace } from "@/lib/iriss-listing-match-store";
-import { gateListingVehiclesForView, isEcarstradeNoPriceNoBid } from "@/lib/iriss-listing-order-gate";
-import { irissListingOrderBrief } from "@/lib/iriss-listings-orders";
-import { listIrissPasutijumi, readIrissListingOrderOv } from "@/lib/iriss-pasutijumi-store";
-import { irissScanOrderBrief } from "@/lib/iriss-scan-listings";
-import { listIrissScan } from "@/lib/iriss-scan-store";
+import { loadIrissSludinajumiPageData, splitGoneListingVehicles } from "@/lib/iriss-sludinajumi-page-data";
 import { requireIrissSectionPage } from "@/lib/staff-auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function IrissSludinajumiPage() {
   await requireIrissSectionPage("sludinajumi");
-  const storage = getIrissListingsStorageState();
-  // Abi datu kopumi (klientu pasūtījumi + SCAN) ielādējas paralēli; kļūda vienā neaptur otru.
-  const [latest, dismissedView, orders, scanOrders, initialOrderOv] = await Promise.all([
-    storage.enabled ? readIrissListingsLatestViewWithMarketplace() : Promise.resolve(null),
-    storage.enabled ? readIrissListingsDismissed() : Promise.resolve(emptyIrissListingsDismissed()),
-    listIrissPasutijumi().then((rows) => rows.map(irissListingOrderBrief)).catch(() => []),
-    listIrissScan().then((rows) => rows.map(irissScanOrderBrief)).catch(() => []),
-    readIrissListingOrderOv().catch(() => ({})),
-  ]);
-  const dismissed = dismissedView.entries;
-  const listable = (latest?.vehicles ?? []).filter((v) => !isEcarstradeNoPriceNoBid(v));
-  const match = storage.enabled
-    ? await prepareIrissListingMatchWorkspace(
-        listable,
-        orders.map((o) => ({
-          id: o.id,
-          brandModel: o.brandModel,
-          listStatus: o.listStatus,
-          clientFirstName: o.clientName,
-          productionYears: o.productionYears,
-          totalBudget: o.budgetRaw,
-          engineType: o.engineType,
-          transmission: o.transmission,
-        })),
-      ).catch(() => null)
-    : null;
-  const matchOrderIds = match?.orderIdsByListing ?? {};
-  const view = latest
-    ? { ...latest, vehicles: gateListingVehiclesForView(listable, orders, { orderOv: initialOrderOv, matchOrderIds }) }
-    : null;
+  const { storage, view: fullView, dismissed, orders, scanOrders, initialOrderOv, match, matchOrderIds } =
+    await loadIrissSludinajumiPageData();
+  // Pazudušos (~85% no 6,7 MB) nesūtām lapā; cilne „Pazuduši” tos ielādē pēc pieprasījuma.
+  const split = splitGoneListingVehicles(fullView?.vehicles ?? [], { orderOv: initialOrderOv, matchOrderIds });
+  const view = fullView ? { ...fullView, vehicles: split.active } : null;
 
   return (
     <div className="relative min-h-full w-full max-w-none pb-24 sm:pb-8">
@@ -74,6 +38,7 @@ export default async function IrissSludinajumiPage() {
         <Suspense fallback={null}>
           <IrissSludinajumiListClient
             latest={view}
+            goneCounts={split.goneCounts}
             orders={orders}
             scanOrders={scanOrders}
             dismissed={dismissed}

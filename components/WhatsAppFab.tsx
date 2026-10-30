@@ -50,19 +50,22 @@ export function WhatsAppFab() {
     }, 700);
   };
 
+  /* `aside` = landmark (axe "region"); poga pati ir `position: fixed`, tāpēc ietinums izkārtojumu nemaina. */
   return (
-    <a
-      href={webHref}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={onClick}
-      aria-label={t("whatsappFab")}
-      className="provin-whatsapp-fab"
-    >
-      <span className="provin-whatsapp-fab__ring" aria-hidden />
-      <span className="provin-whatsapp-fab__icon">
-        <WhatsAppIcon gradientId={gradientId} />
-      </span>
-    </a>
+    <aside aria-label={t("whatsappFab")}>
+      <a
+        href={webHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={onClick}
+        aria-label={t("whatsappFab")}
+        className="provin-whatsapp-fab"
+      >
+        <span className="provin-whatsapp-fab__ring" aria-hidden />
+        <span className="provin-whatsapp-fab__icon">
+          <WhatsAppIcon gradientId={gradientId} />
+        </span>
+      </a>
+    </aside>
   );
 }

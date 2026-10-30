@@ -5,6 +5,7 @@ import { IrissListingCardPhotoGallery } from "@/components/admin/IrissListingCar
 import { useAdminClientReady, useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
 import { IrissListingCardPriceColumn, IrissListingCardPriceColumnMobile } from "@/components/admin/IrissListingCardPriceColumn";
 import { IrissListingCardSpecGrid } from "@/components/admin/IrissListingCardSpecGrid";
+import { IrissListTaxBadge } from "@/components/admin/IrissListTaxBadge";
 import { useListingVinOcr, type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { IrissListingCardActions } from "@/components/admin/IrissListingCardActions";
@@ -16,6 +17,7 @@ import {
   listingCardGallery,
   listingCountdown,
   listingDaysInAuctionLabel,
+  listingFmtEur,
   listingSpecCells,
   listingStockNo,
   listingSubtitleParts,
@@ -136,14 +138,14 @@ export function IrissListingVehicleCard({
   const referrerPolicy: "no-referrer" | undefined =
     v.platform === "openline" || /images\.openlane\.eu/i.test(photos[0] ?? "") ? "no-referrer" : undefined;
   const border = gone
-    ? "border-[#E5E7EB] opacity-70"
+    ? "border-[var(--iriss-line)] opacity-70"
     : fav
       ? "border-amber-200"
       : fresh
         ? "border-emerald-200"
         : changes.length > 0
           ? "border-sky-200"
-          : "border-[#E5E7EB]";
+          : "border-[var(--iriss-line)]";
   const city = v.location.replace(/,\s*[A-Z]{2}$/i, "").trim();
 
   function toggle(list: "fav" | "hidden") {
@@ -164,8 +166,43 @@ export function IrissListingVehicleCard({
   }
 
   const grid = layout === "grid";
+  // Makets «Sludinājumi - telefons» (Nils 29.10): cena, termiņš un ☆ / ✕ uz bildes.
+  const photoOverlay = phone ? (
+    <>
+      <div className="pointer-events-none absolute bottom-2.5 left-2.5 z-[2] max-w-[75%] rounded-[12px] bg-white/95 px-2.5 py-1.5 shadow-[0_1px_3px_rgba(0,0,0,.18)]">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[18px] font-bold tabular-nums leading-none text-[var(--iriss-ink)]">{bid == null ? "-" : listingFmtEur(bid)}</span>
+          <IrissListTaxBadge tax={tax} size="sm" quiet />
+        </div>
+        <div className={`mt-0.5 truncate text-[11.5px] font-semibold tabular-nums ${cd.t ? "text-[var(--iriss-brand)]" : "text-[var(--iriss-ink-3)]"}`}>
+          {cd.t ? `⏱ ${cd.t} · ` : ""}
+          {priceLabel}
+        </div>
+      </div>
+      <div className="absolute right-2.5 top-2.5 z-[2] flex gap-1.5" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          title={fav ? "Noņemt no favorītiem" : "Favorīts"}
+          onClick={() => toggle("fav")}
+          className={`grid h-10 w-10 place-items-center rounded-full bg-white/95 text-[16px] shadow-[0_1px_3px_rgba(0,0,0,.18)] ${fav ? "text-amber-500" : "text-[var(--iriss-ink)]"}`}
+        >
+          {fav ? "★" : "☆"}
+        </button>
+        <button
+          type="button"
+          title={hidden ? "Rādīt atkal" : "Nav interesanti"}
+          onClick={() => toggle("hidden")}
+          className="grid h-10 w-10 place-items-center rounded-full bg-white/95 text-[15px] text-[var(--iriss-ink)] shadow-[0_1px_3px_rgba(0,0,0,.18)]"
+        >
+          {hidden ? "↺" : "✕"}
+        </button>
+      </div>
+    </>
+  ) : null;
+
   const photoBlock = (
-    <div className={`w-full shrink-0 ${grid ? "" : "sm:w-[300px]"}`} onClick={(e) => sourceHref && e.stopPropagation()}>
+    // Nils 30.10: bilde atver auto logu (tur ir visa galerija un «Atvērt avotā»), nevis izsoles vietni.
+    <div className={`relative w-full shrink-0 ${grid ? "" : "sm:w-[300px]"}`}>
       <IrissListingCardPhotoGallery
         photos={photos}
         thumbUrl={v.thumbUrl}
@@ -174,16 +211,8 @@ export function IrissListingVehicleCard({
         referrerPolicy={referrerPolicy}
         onImageError={onImageError}
         compactMobile={phone}
-        wrapHero={(inner) =>
-          sourceHref ? (
-            <IrissListingSourceOpen v={v} mobile={mobile} title={`Atvērt ${LISTING_PLATFORM_LABEL[v.platform]}`} className="block h-full w-full">
-              {inner}
-            </IrissListingSourceOpen>
-          ) : (
-            inner
-          )
-        }
       />
+      {photoOverlay}
     </div>
   );
 
@@ -193,7 +222,7 @@ export function IrissListingVehicleCard({
         type="button"
         title={fav ? "Noņemt no favorītiem" : "Favorīts"}
         onClick={() => toggle("fav")}
-        className={`grid h-11 w-11 place-items-center rounded-lg border sm:h-9 sm:w-9 ${fav ? "border-amber-300 bg-amber-50 text-amber-500" : "border-[#E5E7EB] bg-white"}`}
+        className={`grid h-11 w-11 place-items-center rounded-lg border sm:h-9 sm:w-9 ${fav ? "border-amber-300 bg-amber-50 text-amber-500" : "border-[var(--iriss-line)] bg-white"}`}
       >
         {fav ? "★" : "☆"}
       </button>
@@ -201,7 +230,7 @@ export function IrissListingVehicleCard({
         type="button"
         title={hidden ? "Rādīt atkal" : "Nav interesanti"}
         onClick={() => toggle("hidden")}
-        className="grid h-11 w-11 place-items-center rounded-lg border border-[#E5E7EB] bg-white sm:h-9 sm:w-9"
+        className="grid h-11 w-11 place-items-center rounded-lg border border-[var(--iriss-line)] bg-white sm:h-9 sm:w-9"
       >
         {hidden ? "↺" : "✕"}
       </button>
@@ -219,7 +248,7 @@ export function IrissListingVehicleCard({
           onOpen();
         }
       }}
-      className={`flex cursor-pointer flex-col overflow-hidden rounded-xl border bg-white shadow-sm [content-visibility:auto] [contain-intrinsic-size:1px_220px] touch-manipulation hover:border-slate-300 ${grid ? "sm:flex-col sm:items-stretch sm:gap-3 sm:overflow-hidden sm:rounded-2xl sm:p-3" : "sm:flex-row sm:items-stretch sm:gap-4 sm:overflow-visible sm:rounded-2xl sm:p-3.5"} sm:[content-visibility:visible] ${border} ${fav ? "shadow-[0_0_0_2px_#fde68a]" : ""} ${hidden ? "opacity-50" : ""}`}
+      className={`flex cursor-pointer flex-col overflow-hidden rounded-[18px] border bg-white shadow-sm [content-visibility:auto] [contain-intrinsic-size:1px_220px] touch-manipulation hover:border-slate-300 ${grid ? "sm:flex-col sm:items-stretch sm:gap-3 sm:overflow-hidden sm:rounded-[18px] sm:p-3" : "sm:flex-row sm:items-stretch sm:gap-4 sm:overflow-visible sm:rounded-[18px] sm:p-3.5"} sm:[content-visibility:visible] ${border} ${fav ? "shadow-[0_0_0_2px_#fde68a]" : ""} ${hidden ? "opacity-50" : ""}`}
     >
       {photoBlock}
 
@@ -295,7 +324,7 @@ export function IrissListingVehicleCard({
           )}
           <IrissListingSourceExtras v={v} mobile={mobile} />
           {days ? (
-            <span className="inline-flex rounded-full border border-[#E5E7EB] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+            <span className="inline-flex rounded-full border border-[var(--iriss-line)] bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
               {days}
             </span>
           ) : null}
@@ -329,7 +358,8 @@ export function IrissListingVehicleCard({
           ) : null}
         </div>
         <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
-          <IrissListingOrderChips orders={linked} onPreview={onPreviewOrder} />
+          {/* «Pasūtījuma detaļas» ir darbību rindā; šeit tikai klients un ✓/✕ pa prasībām. */}
+          <IrissListingOrderChips orders={linked} vehicle={v} />
           <IrissListingCardActions
             v={v}
             previewDisabled={linked.length === 0}
@@ -377,7 +407,8 @@ export function IrissListingVehicleCard({
               real={real}
               maxBid={mb}
               room={room}
-              topActions={favHide}
+              topActions={phone ? undefined : favHide}
+              hidePanel={phone}
             />
           )}
         </div>

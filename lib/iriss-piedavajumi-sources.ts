@@ -8,7 +8,7 @@
 import { parseIrissAuctionLink } from "@/lib/iriss-auction-link";
 import type { IrissPdSource } from "@/lib/iriss-piedavajumi-types";
 
-export type IrissPdLinkSource = Exclude<IrissPdSource, "autoparks" | "manual">;
+export type IrissPdLinkSource = Exclude<IrissPdSource, "autoparks" | "logistics" | "manual">;
 
 export type IrissPdDetectedLink = { source: IrissPdLinkSource; key: string; url: string };
 
@@ -26,6 +26,9 @@ export const IRISS_PD_ADAPTERS: Record<IrissPdLinkSource, IrissPdAdapter> = {
   openlane: { source: "openlane", mode: "relay_basic", stubNote: "" },
   autobid: { source: "autobid", mode: "stub", stubNote: "Autobid datu nolasīšana vēl nav pieslēgta - saite saglabāta, lauki jāaizpilda ar roku." },
   mobilede: { source: "mobilede", mode: "stub", stubNote: "mobile.de datu nolasīšana vēl nav pieslēgta - saite saglabāta, lauki jāaizpilda ar roku." },
+  // Šie nāk no Sludinājumiem (dati jau ielasīti) - saites atpazīšana vēl nav.
+  ecarstrade: { source: "ecarstrade", mode: "stub", stubNote: "eCarsTrade saiti izveido no Sludinājumiem (poga «Izveidot piedāvājumu»)." },
+  autoscout24: { source: "autoscout24", mode: "stub", stubNote: "AutoScout24 saiti izveido no Sludinājumiem (poga «Izveidot piedāvājumu»)." },
 };
 
 function toUrl(raw: string): URL | null {

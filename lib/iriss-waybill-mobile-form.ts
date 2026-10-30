@@ -72,7 +72,7 @@ export type WaybillMobileFormState = {
   /** "none" | "list" (No saraksta) | "manual" (Ar roku). */
   autoChoice: WaybillAutoChoice;
   manualBrandModel: string;
-  /** VIN ar roku (nav obligāts). */
+  /** Atstāts stāvoklī, bet «Ar roku» VIN vairs neievada un nesūta. */
   manualVin: string;
   /** null = "cits". */
   hoursPreset: number | null;
@@ -133,7 +133,7 @@ export function applyWaybillAutoChoice(state: WaybillMobileFormState, choice: Wa
   };
 }
 
-/** Manuālie lauki (marka, modelis, VIN) redzami tikai pēc "Ar roku". */
+/** Manuālie lauki (marka, modelis) redzami tikai pēc "Ar roku". */
 export function waybillShowsManualFields(state: Pick<WaybillMobileFormState, "autoChoice" | "manual">): boolean {
   return state.autoChoice === "manual" || state.manual;
 }
@@ -143,12 +143,12 @@ export function waybillShowsTradeList(state: Pick<WaybillMobileFormState, "autoC
   return state.autoChoice === "list" && !state.manual;
 }
 
-/** Marka/VIN no izvēlētā ceļa (saraksts vai ar roku). Desktop forma sūta tos pašus laukus kā līdz šim. */
+/** Marka no izvēlētā ceļa; VIN tikai no saraksta auto. «Ar roku» VIN vienmēr tukšs. */
 export function waybillAutoEntryValues(
   state: Pick<WaybillMobileFormState, "manual" | "manualBrandModel" | "manualVin" | "car">,
 ): { brandModel: string; vin: string } {
   if (state.manual) {
-    return { brandModel: state.manualBrandModel.trim(), vin: state.manualVin.trim() };
+    return { brandModel: state.manualBrandModel.trim(), vin: "" };
   }
   return { brandModel: (state.car?.brandModel ?? "").trim(), vin: (state.car?.vin ?? "").trim() };
 }
@@ -206,7 +206,7 @@ export function buildWaybillMobilePayload(state: WaybillMobileFormState): Waybil
     payload: {
       plate,
       brandModel,
-      vin: state.manual ? state.manualVin.trim() : (state.car?.vin ?? ""),
+      vin: state.manual ? "" : (state.car?.vin ?? ""),
       validHours,
       comment_untrusted: comment,
       routeFromAddress: fromAddress,
@@ -214,6 +214,26 @@ export function buildWaybillMobilePayload(state: WaybillMobileFormState): Waybil
       representative: "",
     },
   };
+}
+
+/**
+ * Datora forma: tas pats pieprasījums kā telefonā (tirdzniecības akts, pārstāvis, numurs).
+ * Datorā nav sākuma adreses izvēles - maršruts pēc noklusējuma; numuru lietotājs izvēlas pats.
+ */
+export function buildWaybillDesktopPayload(
+  auto: WaybillMobileFormState,
+  form: { plate: string; hoursPreset: number | null; hoursOther: string; comment: string },
+): WaybillMobileBuildResult {
+  return buildWaybillMobilePayload({
+    ...auto,
+    plate: form.plate,
+    plateTouched: true,
+    hoursPreset: form.hoursPreset,
+    hoursOther: form.hoursOther,
+    comment: form.comment,
+    from: "tukums",
+    fromAddress: "",
+  });
 }
 
 /** Pieņemts tirdzniecībā (no saraksta): tikai laiks + komersanta pārstāvis, maršruta nav. */
@@ -328,6 +348,24 @@ function hm(iso: string): string {
 function sinceMs(iso: string, nowMs: number): number {
   const t = Date.parse(iso);
   return Number.isFinite(t) ? Math.max(0, nowMs - t) : 0;
+}
+
+/** «Pārtraukt» darba statusi telefona sarakstā (agrāk rādīja «Izveido · Aivars veido pavadzīmi»). */
+export const WAYBILL_STOP_STATUS_LABEL: Record<WaybillRequestStatus, string> = {
+  queued: "Gaida",
+  in_progress: "Pārtrauc",
+  issued: "Pārtraukta",
+  error: "Kļūda",
+  cancelled: "Atcelts",
+};
+
+export function waybillStopProgress(status: WaybillRequestStatus, waybillNo: string): WaybillMobileProgress {
+  const no = waybillNo.trim();
+  if (status === "issued") return { step: 3, pct: 100, text: `Pārtraukta CSDD${no ? ` · ${no}` : ""}` };
+  if (status === "in_progress") return { step: 2, pct: 50, text: `Aivars pārtrauc pavadzīmi${no ? ` ${no}` : ""} CSDD...` };
+  if (status === "error") return { step: 2, pct: 50, text: `Neizdevās pārtraukt${no ? ` ${no}` : ""}. Pārbaudi CSDD.` };
+  if (status === "cancelled") return { step: 1, pct: 0, text: "Atcelts." };
+  return { step: 1, pct: 10, text: `Rindā: pārtraukt${no ? ` ${no}` : ""}.` };
 }
 
 export function waybillMobileProgress(
@@ -461,13 +499,17 @@ export function waybillMobileRequestRows(
       ]
         .filter(Boolean)
         .join(" · ");
-      const progress = waybillMobileProgress({ ...request, status, waybillNo }, nowMs, {
-        autoMode: reply?.autoMode,
-        autoStandard: reply?.autoStandard,
-        autoReason: reply?.autoReason,
-      });
+      // «Pārtraukt» darbs (kind=stop) nav jauna pavadzīme: savi vārdi, bez «Izrakstīta» un PDF.
+      const isStop = request.kind === "stop";
+      const progress = isStop
+        ? waybillStopProgress(status, request.stopWaybillNo || waybillNo)
+        : waybillMobileProgress({ ...request, status, waybillNo }, nowMs, {
+            autoMode: reply?.autoMode,
+            autoStandard: reply?.autoStandard,
+            autoReason: reply?.autoReason,
+          });
       const longWait = status === "queued" && sinceMs(request.updatedAt || request.createdAt, nowMs) > WAYBILL_MOBILE_LONG_WAIT_MS;
-      const offAt = writtenOffAt({ ...request, status }, waybillNo);
+      const offAt = isStop ? null : writtenOffAt({ ...request, status }, waybillNo);
       const writtenOff = offAt != null;
       const plate = displayDealerPlate(request.vehicle.plate) || request.vehicle.plate;
       const plateBusyNow = plateState(request)?.busy === true;
@@ -484,7 +526,13 @@ export function waybillMobileRequestRows(
         id: request.id,
         title: request.vehicle.brandModel || request.noteUntrusted || "Auto",
         sub: writtenOff ? offSub : sub,
-        label: stale ? WAYBILL_STALE_LABEL : writtenOff ? WAYBILL_WRITTEN_OFF_LABEL : WAYBILL_MOBILE_STATUS[status].label,
+        label: stale
+          ? WAYBILL_STALE_LABEL
+          : isStop
+            ? WAYBILL_STOP_STATUS_LABEL[status]
+            : writtenOff
+              ? WAYBILL_WRITTEN_OFF_LABEL
+              : WAYBILL_MOBILE_STATUS[status].label,
         tone: stale || writtenOff ? "wait" : WAYBILL_MOBILE_STATUS[status].tone,
         pdfUrl,
         canRetry: status === "error" || (status === "queued" && (longWait || stale) && !waybillPendingExpired(request, nowMs)),

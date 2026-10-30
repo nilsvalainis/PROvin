@@ -87,8 +87,21 @@ export function logisticsPrintLegendRows(orders: LogisticsOrder[]): LogisticsPri
 }
 
 export function logisticsPrintSheetTitle(now = new Date(), count = 0): { heading: string; meta: string } {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const stamp = `${pad(now.getDate())}.${pad(now.getMonth() + 1)}.${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  // Vienmēr Rīgas laiks: serveris (UTC) un pārlūks citādi atšķiras par 2-3 h (React #418).
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Riga",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(now)
+      .map((p) => [p.type, p.value]),
+  );
+  const stamp = `${parts.day}.${parts.month}.${parts.year} ${parts.hour}:${parts.minute}`;
   return {
     heading: "IRISS · Loģistika - karte",
     meta: `${stamp} · ${count} atzīmēti punkti`,

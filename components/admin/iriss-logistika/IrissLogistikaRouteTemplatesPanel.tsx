@@ -45,7 +45,7 @@ export function IrissLogistikaRouteTemplatesPanel() {
   return (
     <section id="iriss-log-route-templates" className="rounded-[14px] bg-white p-4">
       <h2 className="text-[15px] font-semibold">Maršruta šabloni</h2>
-      <p className="mt-1 text-[13px] text-[#6e6e73]">
+      <p className="mt-1 text-[13px] text-[var(--iriss-ink-2)]">
         Ģeokodē vienreiz. Maršrutā izmanto saglabātās koordinātes. Osta, robeža vai cits punkts.
       </p>
       <ul className="mt-3 divide-y divide-[var(--iriss-log-line)]">
@@ -53,7 +53,7 @@ export function IrissLogistikaRouteTemplatesPanel() {
           <li key={tpl.id} className="flex items-start gap-2 py-2">
             <span className="min-w-0 flex-1">
               <span className="block text-[13px] font-semibold">{tpl.name}</span>
-              <span className="block text-[12px] text-[#6e6e73]">
+              <span className="block text-[12px] text-[var(--iriss-ink-2)]">
                 {tpl.address} · {ROUTE_TEMPLATE_TYPE_LV[tpl.type]}
               </span>
             </span>

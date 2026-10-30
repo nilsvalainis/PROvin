@@ -52,6 +52,19 @@ function order(partial: Partial<LogisticsOrder>): LogisticsOrder {
   };
 }
 
+describe("«Termiņš» = šodien + tuvākās 3 dienas (Nils 27.10)", () => {
+  it("ietver šodienas, tuvāko dienu un «jādara» auto; neietver tālus", () => {
+    const today = "2026-10-27";
+    const list = [
+      order({ id: "a", pickupDate: "2026-10-27" }),
+      order({ id: "b", pickupDate: "2026-10-30" }),
+      order({ id: "c", pickupDate: "2026-11-15" }),
+      order({ id: "d", pickupDate: "", nextAction: "Šodien jādara: zvanīt" }),
+    ];
+    expect(filterLogisticsOrdersByView(list, "due", today).map((o) => o.id)).toEqual(["a", "b", "d"]);
+  });
+});
+
 describe("IRISS Loģistika arhīvs", () => {
   it("default view is active (not yet delivered)", () => {
     expect(LOGISTICS_DEFAULT_LIST_VIEW).toBe("active");

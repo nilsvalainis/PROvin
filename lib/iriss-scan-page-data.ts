@@ -14,6 +14,8 @@ export type IrissScanPageData = {
   initialListOrder: IrissScanListOrder | null;
   newHitsByScan: Record<string, number>;
   finds: IrissScanFindCard[];
+  /** Pēdējā sludinājumu nolasīšana (sinhronizācija), nevis ieraksta labošanas laiks. */
+  lastReadAt: string;
 };
 
 export async function loadIrissScanPageData(): Promise<IrissScanPageData> {
@@ -26,12 +28,17 @@ export async function loadIrissScanPageData(): Promise<IrissScanPageData> {
   const budgets: Record<string, number | null> = {};
   for (const row of rows) budgets[row.id] = irissScanBudgetFromFilters(row);
   const vehicles = (latest?.vehicles ?? []).filter((v) => !isEcarstradeNoPriceNoBid(v));
+  const finds = buildIrissScanFindCards({
+    vehicles,
+    entries: match?.entries ?? [],
+    budgetsByScanId: budgets,
+    nowMs: Date.now(),
+  });
   return {
     rows,
     initialListOrder,
-    newHitsByScan: match ? countIrissScanNewHitsByScan(match.entries) : {},
-    finds: match
-      ? buildIrissScanFindCards({ vehicles, entries: match.entries, budgetsByScanId: budgets })
-      : [],
+    newHitsByScan: countIrissScanNewHitsByScan(finds.map((f) => ({ orderId: f.orderId, status: f.status }))),
+    finds,
+    lastReadAt: latest?.summary.finishedAt ?? "",
   };
 }

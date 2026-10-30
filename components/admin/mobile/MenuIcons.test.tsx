@@ -14,11 +14,8 @@ describe("v11d-fix flīžu glifi (iepriekšējais krāsu komplekts, ne ikonas-v2
     expect(vin).toContain("M8 12h8");
     expect(vin).toContain('width="26"');
     const pin = renderHtml(<MenuIcon name="pin" size={34} />);
-    expect(pin).toContain("#ea4335");
-    expect(pin).toContain("#4285f4");
-    expect(pin).toContain("#fbbc04");
-    expect(pin).toContain('viewBox="0 0 24 24"');
-    expect(pin).not.toContain('viewBox="0 0 24 34"');
+    // Īstā Google Maps ikona (Nils 27.10), ne pašzīmēta adata.
+    expect(pin).toContain("/admin/menu/google-maps.svg");
     const box = renderHtml(<MenuIcon name="box" size={26} />);
     expect(box).toContain("M3 7l9-4 9 4v10l-9 4-9-4z");
     const tag = renderHtml(<MenuIcon name="lst" size={26} />);

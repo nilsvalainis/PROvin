@@ -745,7 +745,8 @@ export function IrissPasutijumiListClient({
           {toolbarMenu}
           <Link
             href="/admin/iriss/pasutijumi/new"
-            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-[var(--chip-active-bg)] px-4 text-[14px] font-semibold text-[var(--chip-active-fg)]"
+            className="inline-flex h-[38px] shrink-0 items-center gap-1.5 rounded-full bg-[var(--iriss-graphite)] px-4 text-[13px] font-semibold text-[var(--iriss-on-graphite)]"
+            style={{ fontWeight: 600 }}
           >
             + Jauns pasūtījums
           </Link>
@@ -829,7 +830,7 @@ export function IrissPasutijumiListClient({
         <span>Budžets</span>
         <span>Jaunie</span>
         <span>Nākamā darbība</span>
-        <span className="text-right">WhatsApp · statuss</span>
+        <span className="text-right">Statuss</span>
       </div>
 
       <div className="flex flex-col gap-2 max-md:px-4">

@@ -24,7 +24,6 @@ export const IRISS_MOBILE_MENU_ITEMS: readonly IrissMobileMenuItem[] = [
     icon: "sludinajums",
     group: 1,
     section: "sludinajumi",
-    badge: "irissMatches",
   },
   { id: "radars", href: "/admin/iriss/scan", label: "Radars", icon: "radars", group: 1, section: "radars" },
   {
@@ -34,7 +33,6 @@ export const IRISS_MOBILE_MENU_ITEMS: readonly IrissMobileMenuItem[] = [
     icon: "logistika",
     group: 2,
     section: "logistika",
-    badge: "irissLogistics",
   },
   { id: "autoparks", href: "/admin/iriss/autoparks", label: "Autoparks", icon: "avatar", group: 2, section: "logistika" },
   {
@@ -47,8 +45,8 @@ export const IRISS_MOBILE_MENU_ITEMS: readonly IrissMobileMenuItem[] = [
     badge: "waybills",
   },
   { id: "vin", href: "/admin/vin-scan", label: "VIN pārbaude", icon: "vinParbaude", group: 3, section: "vin" },
-  { id: "atskaite", href: "/admin/iriss/atskaite", label: "Atskaite", icon: "atskaite", group: 3, section: "atskaite" },
-  { id: "iestatijumi", href: "/admin/iriss/iestatijumi", label: "Pārvaldība", icon: "iestatijumi", group: 3, section: "iestatijumi" },
+  // Mēneša atskaite izvēlnē paslēpta (Nils 26.10: pagaidām nelieto); lapa /admin/iriss/atskaite paliek.
+  { id: "iestatijumi", href: "/admin/iriss/iestatijumi", label: "Iestatījumi", icon: "iestatijumi", group: 3, section: "iestatijumi" },
 ];
 
 export function canSeeIrissMobileMenuItem(

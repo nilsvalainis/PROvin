@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { ap2PatchJson } from "./ap2-save";
 import { AUTOPARKS_STATUS_LV, type AutoparksStatus } from "@/lib/iriss-autoparks";
 import { AUTOPARKS_V2_STATUS_ORDER, V2_STATUS_UNDO_CLIENT_MS, type AutoparksV2Basics } from "@/lib/iriss-autoparks-v2";
 import {
@@ -14,11 +15,15 @@ import {
 } from "@/lib/iriss-autoparks-v2-cabinet-tabs";
 import type { AutoparksV2Perms } from "@/lib/iriss-autoparks-v2-perms";
 import { IrissSaitesPanel } from "@/components/admin/iriss-saites/IrissSaitesPanel";
+import { IrissCreateOfferButton } from "@/components/admin/IrissCreateOfferButton";
+import type { AutoparksTransit } from "@/lib/iriss-autoparks-transit";
+import { AutoparksV2Cela } from "./AutoparksV2Cela";
 import { AutoparksV2Csdd } from "./AutoparksV2Csdd";
 import { AutoparksV2History } from "./AutoparksV2History";
 import { AutoparksV2OfferActions } from "./AutoparksV2OfferActions";
 import { AutoparksV2Pamatdati } from "./AutoparksV2Pamatdati";
 import { AutoparksV2PhotoPicker } from "./AutoparksV2PhotoPicker";
+import { AutoparksV2Waybill } from "./AutoparksV2Waybill";
 import { CABINET_PANES } from "./panes";
 import { CarImg, VinCopy, yearColor } from "./ui";
 
@@ -36,10 +41,18 @@ export function AutoparksV2Cabinet({
   initialBasics,
   perms,
   canCreateOffer = false,
+  canWaybill = false,
+  transit = null,
+  transitCanWrite = false,
 }: {
   initialBasics: AutoparksV2Basics;
+  /** «Ceļā» posms (Nils 27.10): Loģistikas dati, ja auto ir aktīvs Loģistikas ieraksts un ir Loģistikas tiesība. */
+  transit?: AutoparksTransit | null;
+  transitCanWrite?: boolean;
   perms: AutoparksV2Perms;
   canCreateOffer?: boolean;
+  /** Poga «Pavadzīme» (Nils 27.10): tikai ar Pavadzīmju sadaļas tiesību. */
+  canWaybill?: boolean;
 }) {
   const panes = CABINET_PANES;
   const router = useRouter();
@@ -51,7 +64,8 @@ export function AutoparksV2Cabinet({
   const [photoVersion, setPhotoVersion] = useState(0);
   const [toast, setToast] = useState<{ historyId: string; status: AutoparksStatus; left: number } | null>(null);
   const [statusErr, setStatusErr] = useState("");
-  const tabs = allowedTabs(perms, panes);
+  const desktop = useCabinetDesktop();
+  const tabs = allowedTabs(perms, panes, { transit: Boolean(transit) });
   const tab = resolveCabinetTab(params.get("t"), tabs, perms.vesture);
   const compact = tab !== "pamatdati";
 
@@ -115,10 +129,11 @@ export function AutoparksV2Cabinet({
       </div>
     );
 
-  const pane = tab === "vesture" || tab === "pamatdati" || tab === "csdd" ? null : panes[tab];
+  const onHome = tab === (tabs.includes("pamatdati") ? "pamatdati" : (tabs[0] ?? tab));
+  const pane = tab === "vesture" || tab === "pamatdati" || tab === "csdd" || tab === "cela" ? null : panes[tab];
 
   return (
-    <div className="ap2">
+    <div className="ap2 ap2-cab">
       <div className="ap2-bar">
         <Link href={BASE} className="ap2-back" aria-label="Atpakaļ uz Autoparks">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -144,19 +159,22 @@ export function AutoparksV2Cabinet({
             <b>{basics.title}</b>
             <div className="meta">
               <span>{yearColor(basics.year, basics.color)}</span>
-              <span className={`ap2-owner ${basics.owner === "DZA" ? "dza" : ""}`}>{basics.owner === "DZA" ? "DZINTARZEME" : "ĪRISS"}</span>
+              <OwnerBadge basics={basics} canEdit={perms.pamatdati} onBasics={onBasics} />
+              {basics.clientOrder ? <span className="ap2-client-badge">Pasūtījums</span> : null}
               <VinCopy vin={basics.vin} className="ap2-dvin" />
             </div>
+            {/* Kabineta makets «Main» (dators, Nils 27.10/28.10): darbības galvenē, tikai Pamatdatos. */}
+            {desktop && tab === "pamatdati" && (canWaybill || canCreateOffer) ? (
+              <div className="ap2-head-acts">
+                {canWaybill ? <AutoparksV2Waybill car={{ title: basics.title, vin: basics.vin }} /> : null}
+                {canCreateOffer ? <IrissCreateOfferButton from="autoparks" id={basics.id} className="ap2-hbtn" /> : null}
+              </div>
+            ) : null}
           </div>
-          {statusBtn("ap2-dstatus")}
+          {onHome ? statusBtn("ap2-dstatus") : null}
         </div>
         <VinCopy vin={basics.vin} className="ap2-mvin" />
       </div>
-      {statusBtn("ap2-mstatus")}
-      {statusErr ? <p className="ap2-err">{statusErr}</p> : null}
-
-      <IrissSaitesPanel from="autoparks" id={basics.id} vehicle={basics.title} />
-
       <nav className="ap2-tabs" style={{ ["--tabs" as string]: tabs.length }} aria-label="Sadaļas">
         {tabs.length > 1 || perms.vesture
           ? tabs.map((t) => (
@@ -173,8 +191,40 @@ export function AutoparksV2Cabinet({
         ) : null}
       </nav>
 
-      {tab === "pamatdati" ? <AutoparksV2Pamatdati basics={basics} onBasics={onBasics} /> : null}
-      {tab === "csdd" ? <AutoparksV2Csdd basics={basics} /> : null}
+      {/* Nils 27.10: statuss, pavadzīme un saites tikai Pamatdatos; pārējās cilnēs tikai pašas sadaļas saturs.
+          Pamatdati pēc kabineta maketa (27.10): datorā pa kreisi Auto + Tehniskie dati, pa labi saites, CSDD, dzēšana. */}
+      {onHome && tab !== "pamatdati" ? (
+        <>
+          {statusBtn("ap2-mstatus")}
+          {statusErr ? <p className="ap2-err">{statusErr}</p> : null}
+          {canWaybill ? <AutoparksV2Waybill car={{ title: basics.title, vin: basics.vin }} /> : null}
+          <IrissSaitesPanel from="autoparks" id={basics.id} vehicle={basics.title} />
+        </>
+      ) : null}
+      {tab === "pamatdati" ? (
+        <div className="ap2-pd-layout">
+          <div className="ap2-pd-top">
+            {statusBtn("ap2-mstatus")}
+            {statusErr ? <p className="ap2-err">{statusErr}</p> : null}
+            {canWaybill && !desktop ? <AutoparksV2Waybill car={{ title: basics.title, vin: basics.vin }} /> : null}
+            {desktop ? (
+              <>
+                <AutoparksV2Csdd basics={basics} />
+                {perms.pamatdati ? <OwnerCard basics={basics} onBasics={onBasics} /> : null}
+              </>
+            ) : null}
+            <IrissSaitesPanel from="autoparks" id={basics.id} vehicle={basics.title} />
+          </div>
+          <div className="ap2-pd-main">
+            <AutoparksV2Pamatdati basics={basics} onBasics={onBasics} />
+          </div>
+          <div className="ap2-pd-bottom">
+            {desktop ? null : <AutoparksV2Csdd basics={basics} />}
+            {perms.admin ? <DeleteCarButton carId={basics.id} title={basics.title} /> : null}
+          </div>
+        </div>
+      ) : null}
+      {tab === "cela" && transit ? <AutoparksV2Cela transit={transit} canWrite={transitCanWrite} /> : null}
       {tab === "vesture" ? <AutoparksV2History carId={basics.id} /> : null}
       {pane ? pane({ carId: basics.id, perms, basics, onBasics }) : null}
       {canCreateOffer && tab === "cenu_lapa" ? <AutoparksV2OfferActions carId={basics.id} /> : null}
@@ -225,5 +275,116 @@ function StatusSheet({ current, onPick, onClose }: { current: AutoparksStatus; o
         ))}
       </div>
     </>
+  );
+}
+
+/**
+ * Create => delete (LAW 26.10): auto dzēšana ar visu istabu (faili, piezīmes, tāme). Tikai administrators;
+ * apstiprinājums pirms dzēšanas, jo to nevar atsaukt. API tā pati, ko lietoja vecais Autoparks (v1).
+ */
+export function DeleteCarButton({ carId, title }: { carId: string; title: string }) {
+  const router = useRouter();
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  async function remove() {
+    if (!window.confirm(`Dzēst "${title}" ar visiem failiem, piezīmēm un tāmi? To nevar atsaukt.`)) return;
+    setBusy(true);
+    setErr(null);
+    const res = await fetch(`/api/admin/iriss-logistics/autoparks/${encodeURIComponent(carId)}`, {
+      method: "DELETE",
+      credentials: "include",
+    }).catch(() => null);
+    setBusy(false);
+    if (!res?.ok) {
+      setErr("Neizdevās dzēst auto.");
+      return;
+    }
+    router.push(BASE);
+    router.refresh();
+  }
+  return (
+    <div className="ap2-delete">
+      <button type="button" className="iriss-btn iriss-btn--danger-outline iriss-btn--sm" disabled={busy} onClick={() => void remove()}>
+        {busy ? "Dzēš..." : "Dzēst auto"}
+      </button>
+      {err ? <p className="ap2-err">{err}</p> : null}
+    </div>
+  );
+}
+
+/**
+ * Īpašnieks galvenes joslā (Nils 27.10): izcelts - Dzintarzeme oranžs, ĪRISS zaļš. Ar Pamatdatu tiesību - maināms.
+ */
+/** Pilni nosaukumi (Nils 27.10). */
+export const OWNER_FULL_LV = { IRISS: "SIA IRISS", DZA: "SIA Dzintarzeme Auto" } as const;
+
+export function OwnerBadge({ basics, canEdit, onBasics }: { basics: AutoparksV2Basics; canEdit: boolean; onBasics: (b: AutoparksV2Basics) => void }) {
+  const [err, setErr] = useState(false);
+  const cls = `ap2-owner-badge ${basics.owner === "DZA" ? "dza" : "iriss"}`;
+  const label = OWNER_FULL_LV[basics.owner === "DZA" ? "DZA" : "IRISS"];
+  const face = (
+    <>
+      <i aria-hidden className="dot" />
+      <span>{label}</span>
+    </>
+  );
+  if (!canEdit) return <span className={cls}>{face}</span>;
+  async function change(next: string) {
+    if (next === basics.owner) return;
+    setErr(false);
+    const r = await ap2PatchJson<{ basics?: AutoparksV2Basics }>(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`, { owner: next });
+    if (r.ok && r.data?.basics) onBasics(r.data.basics);
+    else setErr(true);
+  }
+  // Makets B (Nils 27.10): kontūra + krāsains punkts; izvēle ir neredzama virs žetona (atveras kā parasts saraksts).
+  return (
+    <label className={`${cls} edit`} title={err ? "Neizdevās saglabāt" : "Mainīt īpašnieku"}>
+      {face}
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+        <path d="m6 9 6 6 6-6" />
+      </svg>
+      <select aria-label="Īpašnieks" value={basics.owner} onChange={(e) => void change(e.target.value)}>
+        <option value="IRISS">{OWNER_FULL_LV.IRISS}</option>
+        <option value="DZA">{OWNER_FULL_LV.DZA}</option>
+      </select>
+    </label>
+  );
+}
+
+/** Datora izkārtojums (≥900 px) - pēc kabineta maketa «Main»; serverī un telefonā - mobilais. */
+function useCabinetDesktop(): boolean {
+  const [desktop, setDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 900px)");
+    const on = () => setDesktop(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return desktop;
+}
+
+/** Īpašnieks labajā kolonnā (makets «Main»): divas pogas ĪRISS / Dzintarzeme. */
+export function OwnerCard({ basics, onBasics }: { basics: AutoparksV2Basics; onBasics: (b: AutoparksV2Basics) => void }) {
+  const [err, setErr] = useState(false);
+  async function change(next: "IRISS" | "DZA") {
+    if (next === basics.owner) return;
+    setErr(false);
+    const r = await ap2PatchJson<{ basics?: AutoparksV2Basics }>(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`, { owner: next });
+    if (r.ok && r.data?.basics) onBasics(r.data.basics);
+    else setErr(true);
+  }
+  return (
+    <div className="ap2-card ap2-owner-card">
+      <h3>Īpašnieks</h3>
+      <div className="ap2-owner-chips" role="radiogroup" aria-label="Īpašnieks">
+        {(["IRISS", "DZA"] as const).map((o) => (
+          <button key={o} type="button" role="radio" aria-checked={basics.owner === o} className={basics.owner === o ? "on" : ""} onClick={() => void change(o)}>
+            {o === "IRISS" ? "ĪRISS" : "Dzintarzeme"}
+          </button>
+        ))}
+      </div>
+      {err ? <p className="ap2-err">Neizdevās saglabāt</p> : null}
+    </div>
   );
 }

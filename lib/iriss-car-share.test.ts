@@ -20,6 +20,7 @@ import {
   isIrissCarSharePath,
   isSafeIrissCarShareToken,
   logistikaSaitesHref,
+  autoparksCarIdsByLogisticsOrder,
   logisticsSaitesCity,
   logisticsSaitesStatusShort,
   pasutijumsSaitesHref,
@@ -100,7 +101,7 @@ describe("IRISS auto saite bez cenas", () => {
 
   it("builds Autoparks / Loģistika / Pasūtījums hrefs and subtitles", () => {
     expect(autoparksSaitesHref("ap-1")).toBe("/admin/iriss/autoparks-v2/ap-1");
-    expect(logistikaSaitesHref("lo-1")).toBe("/admin/iriss/logistika?car=lo-1");
+    expect(logistikaSaitesHref("lo-1")).toBe("/admin/iriss/logistika?car=lo-1&view=map");
     expect(pasutijumsSaitesHref("ord-1")).toBe("/admin/iriss/pasutijumi/ord-1");
     expect(formatSaitesDotLine(["Ceļā", "Rīga"])).toBe("Ceļā · Rīga");
     expect(formatPasutijumsSaitesSubtitle("Evita", "Piedāvājums 1")).toBe("Evita · Piedāvājums 1");
@@ -110,5 +111,20 @@ describe("IRISS auto saite bez cenas", () => {
     expect(formatIrissCarShareDisplayUrl("https://www.iriss.lv/", "abc12345")).toBe("iriss.lv/a/abc12345");
     expect(IRISS_CAR_SHARE_CREATED_NOTE).not.toMatch(/[\u2013\u2014]/);
     expect(buildIrissCarShareMessage({ url: "https://x.lv/a/k7Q2xAb1", vehicle: "VW" })).not.toMatch(/[\u2013\u2014]/);
+  });
+});
+
+describe("Loģistika -> Autoparka auto (kravu plāna saite Kartīte)", () => {
+  it("sasaista pēc orderId, citādi pēc VIN; bez sasaistes saites nav", () => {
+    const orders = [
+      { id: "lo-1", vin: "" },
+      { id: "lo-2", vin: "wauzzz8k0fa036715" },
+      { id: "lo-3", vin: "YV1DZ8256D2439274" },
+    ];
+    const cars = [
+      { id: "ap-1", orderId: "lo-1", vin: "" },
+      { id: "ap-2", orderId: "", vin: "WAUZZZ8K0FA036715" },
+    ];
+    expect(autoparksCarIdsByLogisticsOrder(orders, cars)).toEqual({ "lo-1": "ap-1", "lo-2": "ap-2" });
   });
 });

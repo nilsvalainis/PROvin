@@ -18,6 +18,7 @@ export function AutoparksV2Csdd({ basics }: { basics: AutoparksV2Basics }) {
   return (
     <div className="ap2-pane">
       <div className="ap2-card">
+        <h3>CSDD reģistrs</h3>
         {row("Reģ. numurs", basics.plate, Boolean(basics.plate && reg.known))}
         {row("Nobraukums", fmtKm(basics.mileageKm.value), basics.mileageKm.csdd)}
         {row("Statuss", V2_REGISTRY_STATUS_LV[reg.status], reg.known)}

@@ -37,7 +37,7 @@ export function IrissNewMatchNotice({
       <button
         type="button"
         disabled={empty}
-        className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[13px] font-medium text-[var(--slud-ink,#0b0c10)] hover:bg-[var(--slud-fill,rgba(116,120,138,.11))] disabled:cursor-default disabled:opacity-45 disabled:hover:bg-transparent"
+        className="inline-flex h-[38px] items-center gap-2 whitespace-nowrap rounded-full bg-[var(--iriss-graphite)] px-4 text-[13px] font-semibold text-[var(--iriss-on-graphite)] disabled:cursor-default disabled:opacity-45"
         aria-expanded={open}
         aria-label={open ? `Aizvērt, ${label} ${n}` : `${label} ${n}`}
         title={empty ? `${label} 0` : label}
@@ -47,7 +47,7 @@ export function IrissNewMatchNotice({
         }}
       >
         {label}
-        <span className="slud-badge inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[11px] font-semibold tabular-nums">
+        <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[var(--iriss-brand)] px-1.5 text-[11px] font-semibold tabular-nums text-[var(--iriss-on-brand)]">
           {n}
         </span>
       </button>
@@ -67,7 +67,7 @@ export function IrissNewMatchNotice({
                 <span className="min-w-0 truncate">
                   {notice.clientName} · {notice.title}
                 </span>
-                <span className="shrink-0 text-[11px] font-medium text-[var(--slud-ink2,#5e636e)]">
+                <span className="shrink-0 text-[11px] font-medium text-[var(--slud-ink2,var(--iriss-ink-2))]">
                   {LISTING_PLATFORM_LABEL[notice.platform as IrissListingPlatform] ?? notice.platform}
                 </span>
               </a>

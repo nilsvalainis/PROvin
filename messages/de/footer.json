@@ -1,6 +1,6 @@
 {
   "Footer": {
-    "body": "Übliche Fahrzeughistorien-Berichte zeigen nur Bruchstücke der Vergangenheit. PROVIN ist eine manuelle Expertenprüfung für einen Gebrauchtwagen vor dem Kauf: Daten aus mehreren VIN-Quellen, das Inserat des Verkäufers und die Schwachstellen des konkreten Modells in einer begründeten Einschätzung.",
+    "body": "Übliche Fahrzeughistorien-Berichte zeigen nur Bruchstücke der Vergangenheit. PROVIN ist eine manuelle Prüfung für einen Gebrauchtwagen vor dem Kauf: Daten aus mehreren VIN-Quellen, das Inserat des Verkäufers und die Schwachstellen des konkreten Modells in einer begründeten Einschätzung.",
     "legalRegionLabel": "Rechtliche Hinweise und Links",
     "contacts": "Kontakt",
     "contactsHint": "Fragen? Schreiben Sie uns.",
@@ -25,6 +25,8 @@
     "navVinCheck": "VIN-Check",
     "navFaq": "FAQ",
     "navAbout": "Über PROVIN",
-    "navBlog": "Blog"
+    "navBlog": "Blog",
+    "emailShort": "E-Mail",
+    "phoneLabel": "Telefon:"
   }
 }

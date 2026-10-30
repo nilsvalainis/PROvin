@@ -1,5 +1,5 @@
 import { isAutoparksOwner } from "@/lib/iriss-autoparks";
-import { autoparksV2Basics, v2Num, V2_FIELD_KEYS } from "@/lib/iriss-autoparks-v2";
+import { autoparksV2Basics, v2Num, v2PlausibleTech, V2_FIELD_KEYS } from "@/lib/iriss-autoparks-v2";
 import { autoparksV2Json, requireAutoparksV2Api } from "@/lib/iriss-autoparks-v2-access";
 import { readAutoparksV2Car, refreshAutoparksV2Tech, updateCarV2 } from "@/lib/iriss-autoparks-v2-store";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
@@ -33,6 +33,7 @@ const TEXT_MAX: Record<string, number> = {
   year: 4,
   color: 40,
   owner: 4,
+  clientOrder: 1,
 };
 
 /**
@@ -64,9 +65,18 @@ export async function PATCH(req: Request, ctx: Ctx) {
   if (year !== undefined && year !== "" && !/^(19|20)\d{2}$/.test(year)) return autoparksV2Json({ error: "invalid_year" }, 400);
   const owner = text("owner");
   if (owner !== undefined && owner !== "" && !isAutoparksOwner(owner.toUpperCase())) return autoparksV2Json({ error: "invalid_owner" }, 400);
+  const clientOrder = text("clientOrder");
+  if (clientOrder !== undefined && clientOrder !== "1" && clientOrder !== "0") return autoparksV2Json({ error: "invalid_client_order" }, 400);
   const hasDisplacement = Object.prototype.hasOwnProperty.call(body, "displacementCm3");
   const hasPowerKw = Object.prototype.hasOwnProperty.call(body, "powerKw");
   const hasMileage = Object.prototype.hasOwnProperty.call(body, "mileageKm");
+  const implausible = (key: "powerKw" | "displacementCm3" | "mileageKm") => {
+    const n = v2Num(body[key]);
+    return n != null && v2PlausibleTech(key, n) == null;
+  };
+  if (hasPowerKw && implausible("powerKw")) return autoparksV2Json({ error: "invalid_power" }, 400);
+  if (hasDisplacement && implausible("displacementCm3")) return autoparksV2Json({ error: "invalid_displacement" }, 400);
+  if (hasMileage && implausible("mileageKm")) return autoparksV2Json({ error: "invalid_mileage" }, 400);
   const v2 = await updateCarV2(
     id,
     (c) => {

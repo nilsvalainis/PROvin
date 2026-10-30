@@ -10,9 +10,9 @@ describe("Autoparks v2 piedāvājuma pogas (m09)", () => {
     expect(text).not.toContain("Peļņa");
   });
 
-  it("tukšais piedāvājums iet bez from, auto piedāvājums ar autoparks avotu", () => {
+  it("abas pogas ved uz PD ieeju; auto piedāvājums ar autoparks avotu (Nils 27.10)", () => {
     const html = renderHtml(<AutoparksV2OfferActions carId="car-1" />);
-    expect(html).toContain("newOffer=1");
+    expect(html).toContain('href="/admin/iriss/piedavajumi/jauns"');
     expect(html).toContain("from=autoparks%3Acar-1");
     expect(html.match(/href="/g)?.length).toBe(2);
   });

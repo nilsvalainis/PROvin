@@ -23,15 +23,24 @@ describe("Iegādes faili", () => {
       ["f:akts", "Akts", true],
     ]);
   });
-  it("kabineta dokumenti - editable + CSDD nozīmīte Car Invoice; v1/akts - nē (J30 F1/F4)", () => {
+  it("kabineta dokumenti - editable + CSDD nozīmīte tikai Car Invoice; CMR/Pickup/v1/akts - nē (J30 F1/F4)", () => {
     const list = iegadeFileList({
-      cabinetDocs: [doc("d1", "car_invoice", "2026-10-09"), doc("d2", "purchase_confirm", "2026-10-08")],
+      cabinetDocs: [
+        doc("d1", "car_invoice", "2026-10-09"),
+        doc("d2", "purchase_confirm", "2026-10-08"),
+        doc("d3", "cmr", "2026-10-10"),
+        doc("d4", "pickup_pdf", "2026-10-11"),
+        doc("d5", "auction_invoice", "2026-10-07"),
+      ],
       v1Files: [file("f1", "purchase"), file("akts", "service")],
       numberCheckFileId: "akts",
     });
     expect(list.map((f) => [f.id, f.editable, f.csddBadge])).toEqual([
+      ["c:d5", true, false],
       ["c:d2", true, false],
       ["c:d1", true, true],
+      ["c:d3", true, false],
+      ["c:d4", true, false],
       ["f:f1", false, false],
       ["f:akts", false, false],
     ]);
@@ -41,18 +50,16 @@ describe("Iegādes faili", () => {
     expect(isAuto1Car({ auction: "", cabinetDocs: [doc("d1", "car_invoice", "2026-10-09", { source: "auto1" })] })).toBe(true);
     expect(isAuto1Car({ auction: "openlane", cabinetDocs: [doc("d1", "car_invoice", "2026-10-09", { source: "email" })] })).toBe(false);
   });
-  it("auto1MissingDocLabels - trūkstošās obligātās PDF etiķetes", () => {
-    const docs = [doc("d1", "car_invoice", "2026-10-09")];
-    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: docs })).toEqual(["Pirkuma apstiprinājums"]);
-    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [] })).toEqual(["Pirkuma apstiprinājums", "Car Invoice"]);
+  it("auto1MissingDocLabels - Auto1 prasa tikai Car Invoice (Nils 27.10)", () => {
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [doc("d1", "car_invoice", "2026-10-09")] })).toEqual([]);
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [doc("d2", "purchase_confirm", "2026-10-08")] })).toEqual(["Car Invoice"]);
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [] })).toEqual(["Car Invoice"]);
     expect(auto1MissingDocLabels({ isAuto1: false, cabinetDocs: [] })).toEqual([]);
-    expect(
-      auto1MissingDocLabels({
-        isAuto1: true,
-        cabinetDocs: [doc("d1", "car_invoice", "2026-10-09"), doc("d2", "purchase_confirm", "2026-10-08")],
-      }),
-    ).toEqual([]);
-    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [doc("d1", "car_invoice", "2026-10-09", { deletedAt: "x" })] })).toEqual(["Pirkuma apstiprinājums", "Car Invoice"]);
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [doc("d1", "car_invoice", "2026-10-09", { deletedAt: "x" })] })).toEqual(["Car Invoice"]);
+  });
+  it("rēķina fails grupā Pirkums skaitās kā Car Invoice", () => {
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [], files: [{ group: "pirkums", tag: "Rēķins" }] })).toEqual([]);
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: [], files: [{ group: "transports", tag: "Rēķins" }] })).toEqual(["Car Invoice"]);
   });
   it("pirkuma datums - pirmais rēķins", () => {
     expect(purchaseDateFromDocs([doc("a", "cmr", "2026-10-01"), doc("b", "auction_invoice", "2026-10-09T10:00Z"), doc("c", "car_invoice", "2026-10-10")])).toBe("2026-10-09");
@@ -99,5 +106,63 @@ describe("classifyIegadeDocType (J61 - Auto1 faila nosaukuma auto-klasifikācija
   it("neatpazīts nosaukums - 'other', pildspalva paliek vienīgais ceļš labot", () => {
     expect(classifyIegadeDocType("skenets.pdf")).toBe("other");
     expect(classifyIegadeDocType("IMG_0001.pdf")).toBe("other");
+  });
+});
+
+describe("Vecie dokumenti ar tipu «other» (390 px pārskats 27.10)", () => {
+  it("Car Invoice un Order Confirmation pēc nosaukuma nonāk grupā Pirkums un skaitās Auto1 pārbaudē", () => {
+    const docs = [
+      doc("a", "other", "2026-10-24", { title: "Auto1_Car_Invoice_900123456.pdf" }),
+      doc("b", "other", "2026-10-24", { title: "Auto1_Order_Confirmation.pdf" }),
+      doc("c", "other", "2026-10-24", { title: "IMG_0001.pdf" }),
+    ];
+    const files = iegadeFileList({ cabinetDocs: docs, v1Files: [], numberCheckFileId: "" });
+    expect(files.map((f) => [f.id, f.group])).toEqual([
+      ["c:a", "pirkums"],
+      ["c:b", "pirkums"],
+      ["c:c", "citi"],
+    ]);
+    expect(auto1MissingDocLabels({ isAuto1: true, cabinetDocs: docs })).toEqual([]);
+    expect(docs[0]!.type).toBe("other");
+  });
+});
+
+describe("Car Invoice dublikāti (Nils 28.10)", () => {
+  it("Loģistikas Car Invoice + vecā kopija divreiz -> viens fails", () => {
+    const list = iegadeFileList({
+      cabinetDocs: [
+        doc("c1", "car_invoice", "2026-10-20T10:00:00.000Z", { title: "Auto1_Car_Invoice_90042601275038" }),
+        doc("c2", "purchase_confirm", "2026-10-20T10:00:00.000Z", { title: "Auto1_Order_Confirmation_DEPR02365728" }),
+      ],
+      v1Files: [
+        file("f1", "purchase", { title: "Auto1_Car_Invoice_90042601275038", kind: "invoice" }),
+        file("f2", "purchase", { title: "Auto1_Car_Invoice_90042601275038.pdf", kind: "invoice" }),
+      ],
+      numberCheckFileId: "",
+    });
+    expect(list.filter((f) => f.group === "pirkums").map((f) => f.id)).toEqual(["c:c1", "c:c2"]);
+  });
+
+  it("bez Loģistikas dokumenta paliek viena vecā kopija", () => {
+    const list = iegadeFileList({
+      cabinetDocs: [],
+      v1Files: [
+        file("f1", "purchase", { title: "Auto1_Car_Invoice_90002501031037", kind: "invoice" }),
+        file("f2", "purchase", { title: "Auto1_Car_Invoice_90002501031037", kind: "invoice" }),
+      ],
+      numberCheckFileId: "",
+    });
+    expect(list.filter((f) => /Car_Invoice/.test(f.title))).toHaveLength(1);
+  });
+});
+
+describe("dublikāts citā grupā", () => {
+  it("Order Confirmation vecā kopija grupā Citi netiek rādīta", () => {
+    const list = iegadeFileList({
+      cabinetDocs: [doc("c2", "purchase_confirm", "2026-10-20T10:00:00.000Z", { title: "Auto1_Order_Confirmation_DEPR02369051" })],
+      v1Files: [file("f9", "purchase", { title: "Auto1_Order_Confirmation_DEPR02369051", kind: "other" })],
+      numberCheckFileId: "",
+    });
+    expect(list.map((f) => f.id)).toEqual(["c:c2"]);
   });
 });

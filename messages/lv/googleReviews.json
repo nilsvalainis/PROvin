@@ -5,6 +5,12 @@
     "viewAll": "Skatīt Google profilā",
     "sourceLabel": "Google",
     "prev": "Iepriekšējā atsauksme",
-    "next": "Nākamā atsauksme"
+    "next": "Nākamā atsauksme",
+    "kpiRating": "Google vērtējums",
+    "kpiCount": "atsauksmes, visas 5 ★",
+    "kpiAudits": "veikti auditi",
+    "kpiSources": "datu avoti vienā auditā",
+    "allReviews": "Visas Google atsauksmes",
+    "starsAria": "5 no 5"
   }
 }

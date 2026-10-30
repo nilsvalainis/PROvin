@@ -1,5 +1,8 @@
 "use client";
 
+import { LOGISTICS_STEP_LV, LOGISTICS_STEP_SHORT_LV, logisticsStepOf } from "@/lib/iriss-logistics-steps";
+import { IrissLogistikaAutoparksLink } from "@/components/admin/iriss-logistika/IrissLogistikaAutoparksLink";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -8,17 +11,19 @@ import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctio
 import { IrissLogistikaAuctionSourcesPanel } from "@/components/admin/iriss-logistika/IrissLogistikaAuctionSourcesPanel";
 import { IrissLogistikaCabinet } from "@/components/admin/iriss-logistika/IrissLogistikaCabinet";
 import { IrissLogistikaCarPopup } from "@/components/admin/iriss-logistika/IrissLogistikaCarPopup";
-import { IrissLogistikaCarsTable } from "@/components/admin/iriss-logistika/IrissLogistikaCarsTable";
+import { CabinetPhoneMapAndCard, LogisticsCarEndAction } from "@/components/admin/iriss-logistika/IrissLogistikaCarsTable";
+import { autoparksSaitesHref } from "@/lib/iriss-car-share";
 import { IrissLogistikaCargoPlan, type ManualCarInput } from "@/components/admin/iriss-logistika/IrissLogistikaCargoPlan";
+import { CargoPlanBoundary } from "@/components/admin/iriss-logistika/CargoPlanBoundary";
 import { IrissLogistikaMap, type IrissLogistikaMapHandle } from "@/components/admin/iriss-logistika/IrissLogistikaMap";
 import { IrissLogistikaNewPurchase } from "@/components/admin/iriss-logistika/IrissLogistikaNewPurchase";
-import { IrissCreateOfferButton, irissCreateOfferHref } from "@/components/admin/IrissCreateOfferButton";
+import { irissCreateOfferHref } from "@/components/admin/IrissCreateOfferButton";
 import { IrissLogistikaPrintList } from "@/components/admin/iriss-logistika/IrissLogistikaPrintList";
 import { AdminMobileChips, AdminMobileRoundBtn, AdminMobileSearchField, AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
 import { IrissLogistikaRouteTemplatesPanel } from "@/components/admin/iriss-logistika/IrissLogistikaRouteTemplatesPanel";
 import { StatusFilterChip, StatusFilterChipRow } from "@/components/shared/StatusFilterChips";
 import { filterLogisticsOrdersByView, isLogisticsOrderActive, isLogisticsOrderArchived } from "@/lib/iriss-logistics-archive";
-import { CABINET_PICKUP_STAGE_LV, type CabinetPickup, type CabinetPickupStage } from "@/lib/iriss-logistics-cabinet";
+import { type CabinetPickup, type CabinetPickupStage } from "@/lib/iriss-logistics-cabinet";
 import {
   CARGO_BUCKET_LV,
   CARGO_COLOR_FALLBACK,
@@ -33,12 +38,14 @@ import {
   emptyCargoPlan,
   normalizeCargoPath,
   moveCargoCar,
+  setCargoShowOnMap,
   type CargoBucket,
   type CargoPlanState,
   type CargoRouteTemplate,
 } from "@/lib/iriss-logistics-cargo-plan";
 import { logisticsGoogleMapsDirUrl, logisticsGoogleMapsPlaceUrl } from "@/lib/iriss-logistics-maps-dir";
 import { logisticsOrderMapLabel } from "@/lib/iriss-logistics-labels";
+import { logisticsReadiness, READINESS_PREF_KEY, readinessPinColors, type ReadinessKind } from "@/lib/iriss-logistics-readiness";
 import {
   LOGISTICS_PRINT_HTML_CLASS,
   LOGISTICS_PRINT_PAGE_CSS,
@@ -54,7 +61,6 @@ import {
   LOGISTICS_AUCTIONS,
   LOGISTICS_DEFAULT_LIST_VIEW,
   LOGISTICS_LIST_VIEW_LV,
-  LOGISTICS_ORDER_STATUS_LV,
   type LogisticsListView,
   type LogisticsAuctionSource,
   type LogisticsOrder,
@@ -72,7 +78,13 @@ type Props = {
   storeEnabled: boolean;
   viewerName?: string;
   canEnableTotp?: boolean;
+  /** Saite "Autoparks →" galvenē (tikai, ja Autoparks lomai atveras). */
+  showAutoparksLink?: boolean;
   canCreateOffer?: boolean;
+  /** Loģistikas ieraksts -> Autoparka auto (saite "Kartīte" kravu plānā). Tukšs, ja nav tiesību. */
+  autoparksByOrder?: Record<string, string>;
+  /** Autoparka sasaistes migrācija (Nils 27.10) - tikai administratoram. */
+  isAdmin?: boolean;
 };
 
 const LABELS_PREF_KEY = "iriss.logistics.mapLabels";
@@ -98,6 +110,9 @@ export function IrissLogistikaClient({
   viewerName,
   canEnableTotp,
   canCreateOffer = false,
+  showAutoparksLink = false,
+  autoparksByOrder = {},
+  isAdmin = false,
 }: Props) {
   const [orders, setOrders] = useState(initialOrders);
   const [points] = useState(initialPoints);
@@ -110,6 +125,8 @@ export function IrissLogistikaClient({
     initialOrders.find((o) => isLogisticsOrderActive(o))?.id ?? null,
   );
   const [showLabels, setShowLabels] = useState(false);
+  /** «Gatavība» Nākošās kravas galvenē: noklusēti ieslēgts (makets 01), izvēli atceras pārlūks. */
+  const [readinessOn, setReadinessOn] = useState(true);
   /** Abpusēja druka: 2. lapu apgriež par 180°, lai, apgriežot lapu pa garo malu, tā nav otrādi. */
   const [printDuplex, setPrintDuplex] = useState(false);
   useEffect(() => {
@@ -127,10 +144,27 @@ export function IrissLogistikaClient({
   const [pointQuery, setPointQuery] = useState("");
   const [printing, setPrinting] = useState(false);
   const [mapFullscreen, setMapFullscreen] = useState(false);
+  /** Datorā sakļauts kravu panelis (atceras šajā pārlūkā). */
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
+  useEffect(() => {
+    try {
+      setPanelCollapsed(window.localStorage.getItem("iriss.logistics.panelCollapsed") === "1");
+    } catch {}
+  }, []);
+  const togglePanelCollapsed = useCallback(() => {
+    setPanelCollapsed((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem("iriss.logistics.panelCollapsed", next ? "1" : "0");
+      } catch {}
+      return next;
+    });
+  }, []);
   const [cargoPlan, setCargoPlan] = useState<CargoPlanState>(emptyCargoPlan());
   const [cargoTemplates, setCargoTemplates] = useState<CargoRouteTemplate[]>([]);
   const [cargoPickups, setCargoPickups] = useState<CabinetPickup[]>([]);
-  const [cargoDocs, setCargoDocs] = useState<Record<string, { have: number; expected: number }>>({});
+  const [, setCargoDocs] = useState<Record<string, { have: number; expected: number }>>({});
+  const [pickupDocCarIds, setPickupDocCarIds] = useState<string[]>([]);
   const [bounceId, setBounceId] = useState<string | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
   const [popupId, setPopupId] = useState<string | null>(null);
@@ -142,6 +176,12 @@ export function IrissLogistikaClient({
     if (!car) return;
     if (!orders.some((o) => o.id === car)) return;
     setActiveId(car);
+    // No Autoparka kartītes ("Kartē"): iezīmē auto kartē; vecā saite bez view atver kabinetu.
+    if (searchParams.get("view") === "map") {
+      setPopupId(car);
+      setBounceId(car);
+      return;
+    }
     setCabinetOpen(true);
   }, [orders, searchParams]);
   /** Maršruta poga: "Sastāda…" un kļūda tieši pie pogas, nevis lapas augšā. */
@@ -226,39 +266,59 @@ export function IrissLogistikaClient({
         templates?: CargoRouteTemplate[];
         pickups?: CabinetPickup[];
         docCounts?: Record<string, { have: number; expected: number }>;
+        pickupDocCarIds?: string[];
       }) => {
         if (body.plan) setCargoPlan(body.plan);
         setCargoTemplates(body.templates ?? []);
         setCargoPickups(body.pickups ?? []);
         setCargoDocs(body.docCounts ?? {});
+        setPickupDocCarIds(body.pickupDocCarIds ?? []);
       })
       .catch(() => undefined);
   }, []);
 
+  /**
+   * Nils 29.10 «kārtojot kartītes lēkā / uzmet kļūdu»: ātri velkot, vecākas saglabāšanas atbilde pārrakstīja
+   * jaunāko secību, un PUT varēja pienākt serverī nepareizā secībā. Tagad saglabāšanas iet pēc kārtas,
+   * novecojušu nesūta, un ekrānu maina tikai jaunākās saglabāšanas atbilde.
+   */
+  const saveSeq = useRef(0);
+  const saveChain = useRef<Promise<void>>(Promise.resolve());
   async function persistCargoPlan(next: CargoPlanState) {
     const before = cargoPlan;
+    const seq = ++saveSeq.current;
     setCargoPlan(next);
-    const res = await fetch("/api/admin/iriss-logistics/cargo-plan", {
-      method: "PUT",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan: next }),
-    }).catch(() => null);
-    if (!res?.ok) {
-      setCargoPlan(before);
-      setNotice("Kravu plānu neizdevās saglabāt. Mēģini vēlreiz.");
-      return;
-    }
-    const body = (await res.json()) as {
-      plan?: CargoPlanState;
-      pickups?: CabinetPickup[];
-      docCounts?: Record<string, { have: number; expected: number }>;
-      templates?: CargoRouteTemplate[];
+    const run = async () => {
+      if (seq !== saveSeq.current) return;
+      const res = await fetch("/api/admin/iriss-logistics/cargo-plan", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: next }),
+      }).catch(() => null);
+      const latest = seq === saveSeq.current;
+      if (!res?.ok) {
+        if (latest) {
+          setCargoPlan(before);
+          setNotice("Kravu plānu neizdevās saglabāt. Mēģini vēlreiz.");
+        }
+        return;
+      }
+      const body = (await res.json().catch(() => ({}))) as {
+        plan?: CargoPlanState;
+        pickups?: CabinetPickup[];
+        docCounts?: Record<string, { have: number; expected: number }>;
+        templates?: CargoRouteTemplate[];
+        pickupDocCarIds?: string[];
+      };
+      if (body.pickups) setCargoPickups(body.pickups);
+      if (body.docCounts) setCargoDocs(body.docCounts);
+      if (body.pickupDocCarIds) setPickupDocCarIds(body.pickupDocCarIds);
+      if (body.templates) setCargoTemplates(body.templates);
+      if (latest && body.plan) setCargoPlan(body.plan);
     };
-    if (body.plan) setCargoPlan(body.plan);
-    if (body.pickups) setCargoPickups(body.pickups);
-    if (body.docCounts) setCargoDocs(body.docCounts);
-    if (body.templates) setCargoTemplates(body.templates);
+    saveChain.current = saveChain.current.then(run, run);
+    await saveChain.current;
   }
 
   /** Jaunākais plāns un pasūtījumi: aprēķina beigās pārbaudām, vai pa to laiku nekas nav mainījies. */
@@ -346,8 +406,9 @@ export function IrissLogistikaClient({
   useEffect(() => {
     try {
       setShowLabels(window.localStorage.getItem(LABELS_PREF_KEY) === "1");
+      setReadinessOn(window.localStorage.getItem(READINESS_PREF_KEY) !== "0");
     } catch {
-      // privāts režīms: paliek izslēgts
+      // privāts režīms: paliek noklusējums
     }
   }, []);
 
@@ -380,6 +441,17 @@ export function IrissLogistikaClient({
     });
   }
 
+  function toggleReadiness() {
+    setReadinessOn((v) => {
+      try {
+        window.localStorage.setItem(READINESS_PREF_KEY, v ? "0" : "1");
+      } catch {
+        // nav krātuves
+      }
+      return !v;
+    });
+  }
+
   function toggleLabels() {
     setShowLabels((v) => {
       try {
@@ -392,30 +464,6 @@ export function IrissLogistikaClient({
   }
 
   /** Statuss ar vienu klikšķi: uzreiz redzams, ja serveris atsaka - atgriežas. */
-  async function setPickupStage(carId: string, stage: CabinetPickupStage) {
-    const before = cargoPickups;
-    setCargoPickups((prev) => {
-      const at = new Date().toISOString();
-      const has = prev.some((p) => p.carId === carId);
-      return has
-        ? prev.map((p) => (p.carId === carId ? { ...p, stage, updatedAt: at } : p))
-        : [...prev, { carId, stage, pickupCode: "", pickupDate: "", arrivedAt: "", notes: "", updatedAt: at, updatedBy: "" }];
-    });
-    const res = await fetch(`/api/admin/iriss-logistics/orders/${encodeURIComponent(carId)}/pickup`, {
-      method: "PATCH",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stage }),
-    }).catch(() => null);
-    if (!res?.ok) {
-      setCargoPickups(before);
-      setNotice(res?.status === 403 ? "Tev nav tiesību mainīt statusu." : "Statusu neizdevās saglabāt.");
-      return;
-    }
-    const body = (await res.json()) as { pickup?: CabinetPickup };
-    if (body.pickup) setCargoPickups((prev) => prev.map((p) => (p.carId === carId ? body.pickup! : p)));
-  }
-
   async function moveToAutopark(orderId: string) {
     const res = await fetch("/api/admin/iriss-logistics/autoparks", {
       method: "POST",
@@ -498,11 +546,38 @@ export function IrissLogistikaClient({
     return m;
   }, [cargoPlan]);
   const showOnMapIds = useMemo(() => new Set(cargoPlan.cars.filter((c) => c.showOnMap).map((c) => c.carId)), [cargoPlan]);
+  /** Nils 27.10: viens solis (Gaida / Gatavs / Ceļā / Atvests) no pasūtījuma statusa + pickup posma. */
+  const stepByCarId = useMemo(() => {
+    const stages = new Map(cargoPickups.map((p) => [p.carId, p.stage]));
+    return new Map(orders.map((o) => [o.id, logisticsStepOf(o.status, stages.get(o.id))]));
+  }, [orders, cargoPickups]);
   const statusByCarId = useMemo(() => {
     const m = new Map<string, string>();
-    for (const p of cargoPickups) m.set(p.carId, CABINET_PICKUP_STAGE_LV[p.stage]);
+    for (const [id, step] of stepByCarId) m.set(id, LOGISTICS_STEP_SHORT_LV[step]);
     return m;
-  }, [cargoPickups]);
+  }, [stepByCarId]);
+  /** Rindas soļa žetons visiem auto. */
+  const stageLabelByCarId = useMemo(
+    () => Object.fromEntries([...stepByCarId].map(([id, step]) => [id, LOGISTICS_STEP_SHORT_LV[step]])),
+    [stepByCarId],
+  );
+  /** Gatavība tikai Nākošās kravas auto; pārējiem paliek viļņa krāsa. */
+  const readinessByCarId = useMemo(() => {
+    const m = new Map<string, ReadinessKind>();
+    const docs = new Set(pickupDocCarIds);
+    const codes = new Map(cargoPickups.map((p) => [p.carId, p.pickupCode]));
+    const byId = new Map(orders.map((o) => [o.id, o]));
+    for (const c of carsInCargoBucket(cargoPlan, "next")) {
+      const order = byId.get(c.carId);
+      if (!order) continue;
+      m.set(c.carId, logisticsReadiness({ order, hasPickupDoc: docs.has(c.carId), pickupCode: codes.get(c.carId) }));
+    }
+    return m;
+  }, [cargoPlan, orders, cargoPickups, pickupDocCarIds]);
+  const pinColorByCarId = useMemo(
+    () => readinessPinColors(readinessOn, readinessByCarId, cargoByCarId),
+    [readinessByCarId, readinessOn, cargoByCarId],
+  );
   const routeNumbers = useMemo(() => {
     const m = new Map<string, number>();
     for (const bucket of ["next", "after"] as const) {
@@ -705,7 +780,8 @@ export function IrissLogistikaClient({
   }
 
   return (
-    <div className="iriss-log-screen px-3 pb-28 pt-3 max-md:px-0 md:px-4 md:pb-8">
+    // Nils 27.10 (makets A): datorā (≥1024 px) Auto cilnē karte ir visas lapas fons, viss pārējais peld virs tās (CSS .iriss-log-desk).
+    <div className={`iriss-log-screen px-3 pb-28 pt-3 max-md:px-0 md:px-4 md:pb-8 ${pageTab === "orders" && !mapFullscreen ? "iriss-log-desk" : ""} ${panelCollapsed ? "iriss-log-desk-collapsed" : ""}`}>
       <div className="iriss-log-no-print md:hidden">
         <AdminMobileTopBar
           title="Loģistika"
@@ -725,8 +801,8 @@ export function IrissLogistikaClient({
             value={pageTab}
             onChange={(id) => setPageTab(id as PageTab)}
             items={[
-              { id: "orders", label: "Pasūtījumi", count: counts.active },
-              { id: "points", label: "Punkti", count: points.length },
+              { id: "orders", label: "Auto", count: counts.active },
+              { id: "points", label: "Vietas", count: points.length },
               { id: "settings", label: "Iestatījumi" },
             ]}
           />
@@ -734,13 +810,14 @@ export function IrissLogistikaClient({
         {pageTab === "orders" ? (
           <div className="mt-2 px-4">
             <StatusFilterChipRow layout="scroll" label="Loģistikas filtri">
-              {(["today", "due", "active", "archive"] as const).map((key) => (
+              {/* Nils 27.10: «Visi auto» un «Termiņš»; Arhīvs ikdienā nav vajadzīgs - tas ir Iestatījumos. */}
+              {(view === "archive" ? (["active", "due", "archive"] as const) : (["active", "due"] as const)).map((key) => (
                 <StatusFilterChip
                   key={key}
                   label={LOGISTICS_LIST_VIEW_LV[key]}
                   count={counts[key]}
                   pressed={view === key}
-                  tone={key === "archive" ? "inactive" : key === "today" ? "searching" : "active"}
+                  tone={key === "archive" ? "inactive" : key === "due" ? "searching" : "active"}
                   onClick={() => setView(key)}
                 />
               ))}
@@ -756,67 +833,91 @@ export function IrissLogistikaClient({
               Atvērt Autoparkā
             </a>
           ) : null}
-          <button type="button" aria-label="Aizvērt" className="px-1 text-[#6e6e73]" onClick={() => { setNotice(""); setAutoparkLink(null); }}>
+          <button type="button" aria-label="Aizvērt" className="px-1 text-[var(--iriss-ink-2)]" onClick={() => { setNotice(""); setAutoparkLink(null); }}>
             ✕
           </button>
         </div>
       ) : null}
-      <header className="iriss-log-no-print hidden md:static md:block">
-        <div className="flex flex-wrap items-start gap-2">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h1 className="text-[22px] font-semibold tracking-tight md:text-[20px]">Loģistika</h1>
-              <IrissProjectIndicator />
-            </div>
-            <p className="mt-0.5 text-[12px] text-[var(--ink2)]">
-              {counts.active} aktīvi{counts.archive ? ` · ${counts.archive} arhīvā` : ""}
-            </p>
-            <div className="mt-2 flex flex-wrap gap-1.5 text-[12px]">
-              <button type="button" onClick={() => setPageTab("orders")} className={`rounded-full px-2.5 py-1 ${pageTab === "orders" ? "bg-white font-semibold shadow-sm" : "text-[var(--ink2)]"}`}>
-                Pasūtījumi {counts.active}
-              </button>
-              <button type="button" onClick={() => setPageTab("points")} className={`rounded-full px-2.5 py-1 ${pageTab === "points" ? "bg-white font-semibold shadow-sm" : "text-[var(--ink2)]"}`}>
-                Punktu datubāze {points.length}
-              </button>
-              <button type="button" onClick={() => setPageTab("settings")} className={`rounded-full px-2.5 py-1 ${pageTab === "settings" ? "bg-white font-semibold shadow-sm" : "text-[var(--ink2)]"}`}>
-                Iestatījumi
-              </button>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="search"
-              value={pageTab === "points" ? pointQuery : query}
-              onChange={(e) => (pageTab === "points" ? setPointQuery(e.target.value) : setQuery(e.target.value))}
-              placeholder={pageTab === "points" ? "Meklēt punktu, pilsētu, izsoli" : "VIN, nosaukums, pickup nr."}
-              className="hidden h-9 w-56 rounded-full border-0 bg-white px-3 text-[13px] shadow-sm md:block"
-            />
-            {canCreateOffer ? <IrissCreateOfferButton /> : null}
-            <button type="button" onClick={() => setPurchaseOpen(true)} className="inline-flex h-9 items-center rounded-full bg-[var(--ink)] px-3 text-[12.5px] font-semibold text-white">
-              + Nopirkts
-            </button>
-          </div>
+      {/* Nils 27.10 (makets B): divas zemas rindas; datorā stikla fons, čipi un meklēšana - necaurspīdīgi. */}
+      <header className="iriss-log-no-print hidden md:static md:block iriss-log-head">
+        <div className="iriss-log-head-r1 flex items-center gap-2.5">
+          <h1 className="text-[22px] font-bold tracking-tight">Loģistika</h1>
+          <IrissProjectIndicator />
+          <span className="whitespace-nowrap text-[12.5px] text-[var(--ink2)]">
+            {counts.active} aktīvi{counts.archive ? ` · ${counts.archive} arhīvā` : ""}
+          </span>
+          <input
+            type="search"
+            value={pageTab === "points" ? pointQuery : query}
+            onChange={(e) => (pageTab === "points" ? setPointQuery(e.target.value) : setQuery(e.target.value))}
+            placeholder={pageTab === "points" ? "Meklēt punktu, pilsētu, izsoli" : "VIN, nosaukums, pickup nr."}
+            aria-label="Meklēt"
+            className="ml-auto h-9 w-72 min-w-0 rounded-[11px] border border-[var(--iriss-line)] bg-white px-3 text-[13px]"
+          />
+          {/* Viena galvenā poga (dizains v0.3): piedāvājumu veido no auto kartītes, ne no galvenes. */}
+          <button type="button" onClick={() => setPurchaseOpen(true)} className="inline-flex h-9 shrink-0 items-center rounded-[12px] bg-[var(--iriss-brand)] px-4 text-[13.5px] font-bold text-white hover:bg-[#d9541a]">
+            + Nopirkts
+          </button>
         </div>
-        {pageTab === "orders" ? (
-          <div className="mt-3 max-md:px-4">
-            <StatusFilterChipRow layout="scroll" label="Loģistikas filtri">
-              {(["today", "due", "active", "archive"] as const).map((key) => (
-                <StatusFilterChip
-                  key={key}
-                  label={LOGISTICS_LIST_VIEW_LV[key]}
-                  count={counts[key]}
-                  pressed={view === key}
-                  tone={key === "archive" ? "inactive" : key === "today" ? "searching" : "active"}
-                  onClick={() => setView(key)}
-                />
-              ))}
-            </StatusFilterChipRow>
-          </div>
-        ) : null}
+        <div className="iriss-log-head-r2 mt-2 flex items-center gap-1.5">
+          {(
+            [
+              ["orders", `Auto ${counts.active}`],
+              ["points", `Savākšanas vietas ${points.length}`],
+              ["settings", "Iestatījumi"],
+            ] as const
+          ).map(([tab, label]) => (
+            <button
+              key={tab}
+              type="button"
+              aria-pressed={pageTab === tab}
+              onClick={() => setPageTab(tab)}
+              className={`iriss-log-head-chip rounded-full border px-3 min-h-8 text-[13px] font-semibold ${pageTab === tab ? "on" : ""}`}
+            >
+              {label}
+            </button>
+          ))}
+          {pageTab === "orders" ? (
+            <>
+              <span aria-hidden className="mx-1 h-5 w-px shrink-0 bg-black/15" />
+              <StatusFilterChipRow layout="scroll" label="Loģistikas filtri">
+                {/* Nils 27.10: «Visi auto» un «Termiņš»; Arhīvs ikdienā nav vajadzīgs - tas ir Iestatījumos. */}
+                {(view === "archive" ? (["active", "due", "archive"] as const) : (["active", "due"] as const)).map((key) => (
+                  <StatusFilterChip
+                    key={key}
+                    label={LOGISTICS_LIST_VIEW_LV[key]}
+                    count={counts[key]}
+                    pressed={view === key}
+                    tone={key === "archive" ? "inactive" : key === "due" ? "searching" : "active"}
+                    onClick={() => setView(key)}
+                  />
+                ))}
+              </StatusFilterChipRow>
+            </>
+          ) : null}
+          {showAutoparksLink ? (
+            <Link href="/admin/iriss/autoparks-v2" className="ml-auto shrink-0 whitespace-nowrap pl-2 text-[13.5px] font-semibold text-[var(--iriss-ink)]">
+              Autoparks →
+            </Link>
+          ) : null}
+        </div>
       </header>
 
       {pageTab === "settings" ? (
         <div className="mt-3 max-w-3xl space-y-3 max-md:px-4">
+          {isAdmin ? <IrissLogistikaAutoparksLink /> : null}
+          {/* Arhīvs (atvestie un noņemtie) ikdienā nav vajadzīgs - pieejams šeit (Nils 27.10). */}
+          <button
+            type="button"
+            onClick={() => {
+              setPageTab("orders");
+              setView("archive");
+            }}
+            className="flex min-h-11 w-full items-center justify-between rounded-2xl bg-white px-4 text-left text-[14px] font-medium text-[var(--iriss-ink)] shadow-sm"
+          >
+            <span>Arhīvs <span className="text-[var(--iriss-ink-3)]">{counts.archive}</span></span>
+            <span aria-hidden className="text-[var(--iriss-ink-3)]">›</span>
+          </button>
           <IrissLogistikaAuctionSourcesPanel initialSources={initialSources} />
           <IrissLogistikaRouteTemplatesPanel />
           {canEnableTotp ? <IrissLogistikaStaffTotp viewerName={viewerName ?? ""} /> : null}
@@ -861,7 +962,7 @@ export function IrissLogistikaClient({
                 </div>
                 {selectedPoint.lat != null && selectedPoint.lng != null ? (
                   <a
-                    className="inline-flex h-8 items-center rounded-full border border-[#e5e7eb] px-3 text-[12px] font-semibold"
+                    className="inline-flex h-8 items-center rounded-full border border-[var(--iriss-line)] px-3 text-[12px] font-semibold"
                     href={logisticsGoogleMapsPlaceUrl(selectedPoint.lat, selectedPoint.lng)}
                     target="_blank"
                     rel="noreferrer"
@@ -913,26 +1014,26 @@ export function IrissLogistikaClient({
           ) : null}
         </div>
       ) : (
-        <div className="mt-3 grid grid-cols-[minmax(0,1fr)] items-start gap-3 max-md:px-4 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]">
-          <div className="min-w-0">
+        <div className="iriss-log-desk-grid mt-3 grid grid-cols-[minmax(0,1fr)] items-start gap-3 max-md:px-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(22rem,1fr)]">
+          <div className="iriss-log-desk-map min-w-0">
             {selectedIds.length > 0 ? (
-              <div className="iriss-log-no-print mb-2 hidden items-center gap-2 rounded-2xl bg-white px-3 py-2 text-[12.5px] shadow-sm md:flex">
+              <div className="iriss-log-no-print iriss-log-desk-selbar mb-2 hidden items-center gap-2 rounded-2xl bg-white px-3 py-2 text-[12.5px] shadow-sm md:flex">
                 <span className="font-semibold">Atzīmētas {selectedIds.length}</span>
                 <button type="button" className="text-[var(--ink2)]" onClick={() => setSelectedIds([])}>
                   Notīrīt
                 </button>
-                <button type="button" className="ml-auto rounded-full border border-[#e5e7eb] px-3 py-1 font-semibold" onClick={() => void printCurrentMap()}>
+                <button type="button" className="ml-auto rounded-full border border-[var(--iriss-line)] px-3 py-1 font-semibold" onClick={() => void printCurrentMap()}>
                   Drukāt karti
                 </button>
                 {dirUrl ? (
-                  <a href={dirUrl} target="_blank" rel="noreferrer" className="rounded-full bg-[var(--ink)] px-3 py-1 font-semibold text-white">
+                  <a href={dirUrl} target="_blank" rel="noreferrer" className="rounded-full bg-[var(--ink,#111827)] px-3 py-1 font-semibold text-white">
                     Sastādīt maršrutu
                   </a>
                 ) : null}
               </div>
             ) : null}
             <div
-              className={mapFullscreen ? "iriss-log-map-fs" : ""}
+              className={mapFullscreen ? "iriss-log-map-fs" : "iriss-log-desk-mapwrap"}
               onClick={mapFullscreen ? () => closeMapFullscreen() : undefined}
               role={mapFullscreen ? "presentation" : undefined}
             >
@@ -942,7 +1043,7 @@ export function IrissLogistikaClient({
               role={mapFullscreen ? "dialog" : undefined}
               aria-modal={mapFullscreen ? true : undefined}
               aria-label={mapFullscreen ? "Karte" : undefined}
-              className={mapFullscreen ? "iriss-log-map-fs-card" : "overflow-hidden rounded-2xl bg-white shadow-sm"}
+              className={mapFullscreen ? "iriss-log-map-fs-card" : "iriss-log-desk-mapcard overflow-hidden rounded-2xl bg-white shadow-sm"}
               onClick={mapFullscreen ? (e) => e.stopPropagation() : undefined}
             >
               <div className="iriss-log-no-print iriss-log-map-toolbar flex flex-wrap items-center justify-between gap-2 px-3 py-2">
@@ -985,7 +1086,7 @@ export function IrissLogistikaClient({
                       className={`iriss-log-switch sm ${showLabels ? "on" : ""}`}
                       onClick={() => toggleLabels()}
                     />
-                    Rādīt nosaukumus
+                    Nosaukumi
                   </label>
                   <label className="mr-1 inline-flex cursor-pointer items-center gap-2 text-[12px] font-semibold" title="Divpusējai drukai: 2. lapa tiek apgriezta, lai pēc lapas apgriešanas tā nav otrādi">
                     <button
@@ -1000,16 +1101,16 @@ export function IrissLogistikaClient({
                   <button
                     type="button"
                     onClick={() => void printCurrentMap()}
-                    className="rounded-full border border-[#e5e7eb] px-2.5 py-1 text-[12px] font-semibold"
+                    className="rounded-full border border-[var(--iriss-line)] px-2.5 py-1 text-[12px] font-semibold"
                   >
                     Drukāt
                   </button>
                   {mapFullscreen ? (
-                    <button type="button" aria-label="Aizvērt" onClick={() => closeMapFullscreen()} className="rounded-full border border-[#e5e7eb] px-2 py-1 text-[12px] font-semibold">
+                    <button type="button" aria-label="Aizvērt" onClick={() => closeMapFullscreen()} className="rounded-full border border-[var(--iriss-line)] px-2 py-1 text-[12px] font-semibold">
                       X
                     </button>
                   ) : (
-                    <button type="button" onClick={() => openMapFullscreen()} className="rounded-full border border-[#e5e7eb] px-2.5 py-1 text-[12px] font-semibold">
+                    <button type="button" onClick={() => openMapFullscreen()} className="iriss-log-fs-btn rounded-full border border-[var(--iriss-line)] px-2.5 py-1 text-[12px] font-semibold">
                       Pilnekrāns
                     </button>
                   )}
@@ -1040,6 +1141,7 @@ export function IrissLogistikaClient({
                     hoverCarId={hoverId}
                     statusByCarId={statusByCarId}
                     routeNumbers={routeNumbers}
+                    pinColorByCarId={pinColorByCarId}
                     routeEnds={routeEnds}
                     routePaths={routePaths}
                     onRouteVia={(bucket, a) => {
@@ -1076,10 +1178,32 @@ export function IrissLogistikaClient({
                 onPatchOrder={(id, action) => void patchOrder(id, action)}
                 onOrderUpdated={(next) => setOrders((prev) => prev.map((o) => (o.id === next.id ? next : o)))}
                 canCreateOffer={canCreateOffer}
+                onPickupChanged={(next) =>
+                  setCargoPickups((prev) => (prev.some((p) => p.carId === next.carId) ? prev.map((p) => (p.carId === next.carId ? next : p)) : [...prev, next]))
+                }
+                onMoveToAutopark={(id) => void moveToAutopark(id)}
+                endAction={
+                  <>
+                    {/* Telefonā kravas rindā slēdža un «Kartīte» nav (makets C1) - tie ir šeit. */}
+                    <CabinetPhoneMapAndCard
+                      showOnMap={cargoPlan.cars.find((c) => c.carId === active.id)?.showOnMap ?? true}
+                      inPlan={cargoPlan.cars.some((c) => c.carId === active.id)}
+                      onToggleMap={(next) => void persistCargoPlan(setCargoShowOnMap(cargoPlan, active.id, next))}
+                      cardHref={autoparksByOrder[active.id] ? autoparksSaitesHref(autoparksByOrder[active.id]!) : undefined}
+                    />
+                    <LogisticsCarEndAction
+                      order={active}
+                      stage={(cargoPickups.find((p) => p.carId === active.id)?.stage ?? "waiting") as CabinetPickupStage}
+                      onMoveToAutopark={(id) => void moveToAutopark(id)}
+                      onDeleteManual={(id) => void deleteManualCar(id)}
+                    />
+                  </>
+                }
               />
             </div>
           ) : (
-            <div className="space-y-3 lg:col-start-2 lg:row-start-1">
+            <div className="iriss-log-cargo-col space-y-3 lg:col-start-2 lg:row-start-1">
+              <CargoPlanBoundary>
               <IrissLogistikaCargoPlan
                 orders={visibleOrders}
                 plan={cargoPlan}
@@ -1093,34 +1217,60 @@ export function IrissLogistikaClient({
                 routeUi={routeUi}
                 onTemplatesChanged={() => void reloadTemplates()}
                 onAddManual={addManualCar}
+                readinessOn={readinessOn}
+                onToggleReadiness={toggleReadiness}
+                readinessByCarId={readinessByCarId}
+                cardHrefByCarId={autoparksByOrder}
+                stageLabelByCarId={stageLabelByCarId}
+                onOpenCabinet={(id) => {
+                  setActiveId(id);
+                  setCabinetOpen(true);
+                }}
               />
-              {popupOrder ? (
-                <IrissLogistikaCarPopup
-                  order={popupOrder}
-                  plan={cargoPlan}
-                  stage={popupStage}
-                  onClose={() => setPopupId(null)}
-                  onPlanChange={(next) => void persistCargoPlan(next)}
-                />
-              ) : null}
+              </CargoPlanBoundary>
             </div>
           )}
+          {/* Auto kartīte pēc klikšķa uz adatas: datorā peld virs kartes (Nils 27.10, makets B), telefonā zem kravām. */}
+          {popupOrder && !cabinetOpen ? (
+            <div className="iriss-log-desk-popup">
+              <IrissLogistikaCarPopup
+                order={popupOrder}
+                plan={cargoPlan}
+                stage={popupStage}
+                onClose={() => setPopupId(null)}
+                onPlanChange={(next) => void persistCargoPlan(next)}
+                onOpenCabinet={() => {
+                  setActiveId(popupOrder.id);
+                  setCabinetOpen(true);
+                  setPopupId(null);
+                }}
+              />
+            </div>
+          ) : null}
+          {/* Datorā kravu paneli var sakļaut līdz šaurai joslai ar skaitļiem (makets B). */}
+          <div className="iriss-log-desk-strip" aria-hidden={!panelCollapsed}>
+            <button
+              type="button"
+              className="iriss-log-desk-strip-btn"
+              aria-label={panelCollapsed ? "Atvērt kravu plānu" : "Sakļaut kravu plānu"}
+              aria-expanded={!panelCollapsed}
+              onClick={() => togglePanelCollapsed()}
+            >
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d={panelCollapsed ? "M15 6l-6 6 6 6" : "M9 6l6 6-6 6"} />
+              </svg>
+            </button>
+            {panelCollapsed ? (
+              <>
+                <span className="iriss-log-desk-strip-n"><i style={{ background: CARGO_COLOR_FALLBACK.next }} /><b>{bucketCounts.next}</b>Nākošā</span>
+                <span className="iriss-log-desk-strip-n"><i style={{ background: CARGO_COLOR_FALLBACK.after }} /><b>{bucketCounts.after}</b>Aiznāk.</span>
+                <span className="iriss-log-desk-strip-n"><i style={{ background: "var(--iriss-ink)" }} /><b>{Math.max(0, visibleOrders.length - bucketCounts.next - bucketCounts.after)}</b>Nav kravā</span>
+              </>
+            ) : null}
+          </div>
           {/* Datorā tabula aizņem abu kolonnu platumu zem kartes un kravu plāna. Telefonā: karte, kravas, auto. */}
-          <div className="min-w-0 lg:col-span-2 lg:row-start-2">
-            <IrissLogistikaCarsTable
-              orders={visibleOrders}
-              plan={cargoPlan}
-              pickups={cargoPickups}
-              docCounts={cargoDocs}
-              onOpenCabinet={(id) => {
-                setActiveId(id);
-                setCabinetOpen(true);
-              }}
-              onMoveToAutopark={(id) => void moveToAutopark(id)}
-              onSetStage={(id, stage) => void setPickupStage(id, stage)}
-              onSetBucket={(id, bucket) => void persistCargoPlan(moveCargoCar(cargoPlan, id, bucket))}
-              onDeleteManual={(id) => void deleteManualCar(id)}
-            />
+          <div className="iriss-log-desk-legacy min-w-0 lg:col-span-2 lg:row-start-2">
+            {/* "Visi auto" tabula noņemta (makets 26.10): posms rindā, statuss/dokumenti/Uz Autoparku - auto kabinetā. */}
             <ul className="iriss-log-legacy-orders hidden iriss-log-no-print mt-3 overflow-hidden rounded-2xl bg-white shadow-sm">
               {visibleOrders.map((o) => {
                 const archived = isLogisticsOrderArchived(o);
@@ -1147,14 +1297,14 @@ export function IrissLogistikaClient({
                             {o.source === "private" ? "Sludinājums" : "Atvērt izsolē"}
                           </a>
                         ) : null}
-                        <span>{o.statusNote || LOGISTICS_ORDER_STATUS_LV[o.status]}</span>
+                        <span>{o.statusNote || LOGISTICS_STEP_LV[stepByCarId.get(o.id) ?? "waiting"]}</span>
                       </span>
                       {o.nextAction ? <span className="mt-0.5 block text-[12px] text-[var(--ink2)]">→ {o.nextAction}</span> : null}
                     </button>
                     {archived ? (
                       <button
                         type="button"
-                        className="shrink-0 rounded-full border border-[#e5e7eb] px-2.5 py-1 text-[12px] font-semibold"
+                        className="shrink-0 rounded-full border border-[var(--iriss-line)] px-2.5 py-1 text-[12px] font-semibold"
                         onClick={() => void patchOrder(o.id, "wake")}
                       >
                         Pamodināt
@@ -1182,7 +1332,7 @@ export function IrissLogistikaClient({
             Drukāt
           </button>
           {dirUrl ? (
-            <a href={dirUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-full bg-[var(--ink)] px-3 text-[13px] font-semibold text-white">
+            <a href={dirUrl} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-full bg-[var(--ink,#111827)] px-3 text-[13px] font-semibold text-white">
               Sastādīt maršrutu
             </a>
           ) : null}
@@ -1233,13 +1383,13 @@ function IrissLogistikaStaffTotp({ viewerName }: { viewerName: string }) {
           <input
             value={totpCode}
             onChange={(e) => setTotpCode(e.target.value)}
-            className="h-10 w-full rounded-xl border border-[#e5e7eb] px-3 text-[16px]"
+            className="h-10 w-full rounded-xl border border-[var(--iriss-line)] px-3 text-[16px]"
             placeholder="6 ciparu kods"
             inputMode="numeric"
           />
           <button
             type="button"
-            className="h-9 rounded-full bg-[var(--ink)] px-3 text-[12.5px] font-semibold text-white"
+            className="h-9 rounded-full bg-[var(--ink,#111827)] px-3 text-[12.5px] font-semibold text-white"
             onClick={async () => {
               const res = await post({ action: "confirm", code: totpCode });
               setNotice(res.ok ? "2FA ieslēgta." : "Kods nederīgs.");
@@ -1251,7 +1401,7 @@ function IrissLogistikaStaffTotp({ viewerName }: { viewerName: string }) {
       ) : (
         <button
           type="button"
-          className="mt-3 h-9 rounded-full border border-[#e5e7eb] px-3 text-[12.5px] font-semibold"
+          className="mt-3 h-9 rounded-full border border-[var(--iriss-line)] px-3 text-[12.5px] font-semibold"
           onClick={async () => {
             const res = await post({ action: "start" });
             const data = (await res.json()) as { secret?: string };

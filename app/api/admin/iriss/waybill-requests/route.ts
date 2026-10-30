@@ -6,6 +6,7 @@ import { parseCreateWaybillInput } from "@/lib/iriss-waybill-create";
 import {
   emptyWaybillRequestsDoc,
   waybillChatPayload,
+  waybillDocForCreator,
   waybillDocWithoutOrders,
   waybillRequestWithoutOrder,
   WaybillPendingSamePlateError,
@@ -18,7 +19,7 @@ import { listWaybillVehicleChips } from "@/lib/iriss-waybill-vehicles";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { waybillTradeCarsWithSource, type WaybillCarsSource, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 import { canSeeWaybillOrders } from "@/lib/iriss-pavadzimes-list";
-import { requireIrissSectionApi, waybillPdfViewer } from "@/lib/staff-auth";
+import { isWaybillOnlyActor, requireIrissSectionApi, waybillPdfViewer } from "@/lib/staff-auth";
 import { withWaybillPdfAccess } from "@/lib/iriss-waybill-pdf";
 
 export const runtime = "nodejs";
@@ -109,11 +110,13 @@ export async function GET(req: Request) {
     const plates = livePlates(occupancy, doc.requests);
     const auto = await waybillAutoContext(doc, busyFromPlates(plates));
     const withOrders = canSeeWaybillOrders(gate.actor);
+    // Partneris ("tikai Pavadzīmes") redz tikai savus pieprasījumus; numuru stāvoklis (plates) - no visiem.
+    const visible = gate.actor.kind === "staff" && isWaybillOnlyActor(gate.actor) ? waybillDocForCreator(doc, gate.actor.user.id) : doc;
     return NextResponse.json(
       {
         ok: true,
         ...withWaybillPdfAccess(
-          waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc), Date.now(), auto),
+          waybillChatPayload(withOrders ? visible : waybillDocWithoutOrders(visible), Date.now(), auto),
           waybillPdfViewer(gate.actor),
         ),
         autoMode: auto.mode,

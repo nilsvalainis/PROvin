@@ -19,4 +19,12 @@ describe("Autoparks v2 mobile CSS (j63)", () => {
     expect(css).toMatch(/\.ap2-tab \{\s*flex:\s*0 0 auto;/);
     expect(css).toMatch(/@media \(min-width: 900px\)[\s\S]*?\.ap2-tabs \{\s*display:\s*grid;/);
   });
+
+  it("CSDD badge pie nosaukuma: 17px mobile / 20px desktop, noapaļoti stūri", () => {
+    expect(css).toMatch(/\.ap2-csdd-badge \{\s*height:\s*17px;/);
+    expect(css).toMatch(/\.ap2-csdd-badge \{[\s\S]*?border-radius:\s*4px;/);
+    expect(css).toMatch(
+      /\.ap2-files \{\s*grid-template-columns:\s*repeat\(6, minmax\(0, 1fr\)\);\s*\}\s*\.ap2(?:\.ap2){2} \.ap2-csdd-badge \{\s*height:\s*20px;/,
+    );
+  });
 });

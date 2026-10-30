@@ -33,12 +33,12 @@ export function IrissClientFinancingSection({
   };
 
   return (
-    <div className="mt-3 rounded-xl border border-[#e5e7eb] bg-[#fafafa]">
-      <div className="flex items-center justify-between gap-2 px-3 py-2.5 text-[13px] font-semibold text-[#111827]">
+    <div className="mt-3 rounded-xl border border-[var(--iriss-line)] bg-[#fafafa]">
+      <div className="flex items-center justify-between gap-2 px-3 py-2.5 text-[13px] font-semibold text-[var(--iriss-ink)]">
         <span>Klienta finansējums</span>
-        <span className="text-[12px] font-medium text-[#6b7280]">{summary}</span>
+        <span className="text-[12px] font-medium text-[var(--iriss-ink-2)]">{summary}</span>
       </div>
-      <div className="flex flex-wrap gap-2 border-t border-[#e5e7eb] bg-white px-3 py-2.5">
+      <div className="flex flex-wrap gap-2 border-t border-[var(--iriss-line)] bg-white px-3 py-2.5">
         {IRISS_CLIENT_FINANCING_PRESETS.map((p) => (
           <button
             key={p}
@@ -50,7 +50,7 @@ export function IrissClientFinancingSection({
             className={`${presetBtn} ${
               percent === p
                 ? "border-[var(--color-provin-accent)] bg-[var(--color-provin-accent-soft)] text-[var(--color-provin-accent)]"
-                : "border-slate-200 bg-white text-[#111827] hover:bg-slate-50"
+                : "border-slate-200 bg-white text-[var(--iriss-ink)] hover:bg-slate-50"
             }`}
           >
             {formatIrissClientFinancingChip(rec.totalBudget, p)}
@@ -62,23 +62,23 @@ export function IrissClientFinancingSection({
           className={`${presetBtn} ${
             customOpen || (percent > 0 && !isPresetPercent(percent))
               ? "border-[var(--color-provin-accent)] text-[var(--color-provin-accent)]"
-              : "border-slate-200 bg-white text-[#111827] hover:bg-slate-50"
+              : "border-slate-200 bg-white text-[var(--iriss-ink)] hover:bg-slate-50"
           }`}
         >
           Cits %
         </button>
       </div>
       {customOpen ? (
-        <label className="block border-t border-[#e5e7eb] bg-white px-3 py-2.5">
-          <span className="mb-1 block text-[11px] font-medium text-[#6b7280]">Procents no budžeta</span>
+        <label className="block border-t border-[var(--iriss-line)] bg-white px-3 py-2.5">
+          <span className="mb-1 block text-[11px] font-medium text-[var(--iriss-ink-2)]">Procents no budžeta</span>
           <input
-            type="number"
-            min={0}
-            max={100}
+            // Teksts ar ciparu tastatūru: `type="number"` pie "1,5" atdeva "" un lauks nodzēsās (Nils 28.10).
+            type="text"
+            inputMode="numeric"
             className="min-h-[40px] w-full max-w-[8rem] rounded-lg border border-slate-200 px-2.5 text-[14px]"
             value={percent || ""}
             onChange={(e) => {
-              const raw = e.target.value;
+              const raw = e.target.value.replace(/[^\d]/g, "").slice(0, 3);
               if (raw === "") {
                 setPercent(0);
                 return;

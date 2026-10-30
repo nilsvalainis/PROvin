@@ -89,7 +89,8 @@ describe("marketplace cost caps", () => {
       process.env.MARKETPLACE_LOADS_ENABLED = "true";
       process.env.MARKETPLACE_AUTO_ENABLED = "true";
       expect(marketplaceLoadsEnabled()).toBe(true);
-      expect(marketplaceAutoEnabled()).toBe(true);
+      // Nils 29.10: automātiskā ielāde izslēgta kodā - arī ar "true".
+      expect(marketplaceAutoEnabled()).toBe(false);
     } finally {
       if (prevLoads == null) delete process.env.MARKETPLACE_LOADS_ENABLED;
       else process.env.MARKETPLACE_LOADS_ENABLED = prevLoads;

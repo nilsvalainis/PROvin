@@ -2,7 +2,7 @@ import { after, NextResponse } from "next/server";
 import { autoparksListRows, filterAutoparksByOwner } from "@/lib/iriss-autoparks";
 import { autoparksActor, autoparksHidesSums, autoparksRowsForActor } from "@/lib/iriss-autoparks-access";
 import { linkAutoparksCarToDropbox } from "@/lib/iriss-autoparks-dropbox-sync";
-import { createAutoparksCar, ensureAutoparksCarFromOrder, readAutoparksState } from "@/lib/iriss-autoparks-store";
+import { createAutoparksCar, ensureAutoparksCarFromOrder, markAutoparksCarArrived, readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { parseAutoparksCarInput } from "@/lib/iriss-autoparks-input";
 import { irissLogisticsScopeHeader, logisticsCabinetActorId, logisticsCabinetWriteForbidden, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
 import { upsertCabinetPickup } from "@/lib/iriss-logistics-cabinet-store";
@@ -39,7 +39,10 @@ export async function POST(req: Request) {
   if (fromOrderId) {
     const order = await getLogisticsOrder(fromOrderId);
     if (!order) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
-    const { car, created } = await ensureAutoparksCarFromOrder(order, actor);
+    const ensured = await ensureAutoparksCarFromOrder(order, actor);
+    const created = ensured.created;
+    // Auto jau bija Autoparkā kā «Ceļā» (izveidots ar «+ Nopirkts») - atvests: «Gaida sagatavošanu».
+    const car = created ? ensured.car : ((await markAutoparksCarArrived(ensured.car.id, actor)) ?? ensured.car);
     await upsertCabinetPickup({ carId: order.id, stage: "arrived", updatedBy: logisticsCabinetActorId(gate.actor) });
     const archived = await setLogisticsOrderArchiveState(order.id, "delivered");
     // Jaunam auto /STOCK mape (atrod pēc VIN vai izveido) pēc atbildes - auto izveide no Dropbox neatkarīga.

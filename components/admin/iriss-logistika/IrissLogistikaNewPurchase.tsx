@@ -159,6 +159,8 @@ export function IrissLogistikaNewPurchase({ open, points, onClose, onCreated, on
             : null,
           status: "organize_pickup",
           archived: false,
+          // Nils 27.10: nopirktais auto uzreiz Autoparkā ar statusu «Ceļā».
+          toAutoparks: true,
         }),
       });
       const body = (await res.json()) as { ok?: boolean; order?: LogisticsOrder; error?: string };
@@ -181,30 +183,30 @@ export function IrissLogistikaNewPurchase({ open, points, onClose, onCreated, on
         <div className="flex items-center justify-between border-b border-[#eee] px-4 py-3">
           <div>
             <p className="text-[15px] font-semibold">Nopirkts · jauns ieraksts</p>
-            <div className="mt-2 inline-flex rounded-full bg-[#f3f4f6] p-0.5 text-[12px] font-semibold">
-              <button type="button" className={`rounded-full px-3 py-1 ${source === "auction" ? "bg-white shadow-sm" : "text-[#6b7280]"}`} onClick={() => setSource("auction")}>
+            <div className="mt-2 inline-flex rounded-full bg-[var(--iriss-surface-2)] p-0.5 text-[12px] font-semibold">
+              <button type="button" className={`rounded-full px-3 py-1 ${source === "auction" ? "bg-white shadow-sm" : "text-[var(--iriss-ink-2)]"}`} onClick={() => setSource("auction")}>
                 Izsole
               </button>
-              <button type="button" className={`rounded-full px-3 py-1 ${source === "private" ? "bg-white shadow-sm" : "text-[#6b7280]"}`} onClick={() => setSource("private")}>
+              <button type="button" className={`rounded-full px-3 py-1 ${source === "private" ? "bg-white shadow-sm" : "text-[var(--iriss-ink-2)]"}`} onClick={() => setSource("private")}>
                 Privāts
               </button>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-full text-[#6b7280]" aria-label="Aizvērt">
+          <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-full text-[var(--iriss-ink-2)]" aria-label="Aizvērt">
             ×
           </button>
         </div>
         <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-          <label className="block text-[12px] font-medium text-[#6b7280]">Saite uz sludinājumu</label>
+          <label className="block text-[12px] font-medium text-[var(--iriss-ink-2)]">Saite uz sludinājumu</label>
           <div className="mt-1 flex gap-2">
             <input
               value={link}
               onChange={(e) => setLink(e.target.value)}
               onBlur={() => void onLinkBlur()}
               placeholder="https://suchen.mobile.de/..."
-              className="h-10 min-w-0 flex-1 rounded-xl border border-[#e5e7eb] px-3 text-[13px]"
+              className="h-10 min-w-0 flex-1 rounded-xl border border-[var(--iriss-line)] px-3 text-[13px]"
             />
-            <button type="button" onClick={() => void onLinkBlur()} className="h-10 rounded-xl border border-[#e5e7eb] px-3 text-[12px] font-semibold">
+            <button type="button" onClick={() => void onLinkBlur()} className="h-10 rounded-xl border border-[var(--iriss-line)] px-3 text-[12px] font-semibold">
               {parseBusy ? "…" : "Atpazīt"}
             </button>
           </div>
@@ -212,27 +214,27 @@ export function IrissLogistikaNewPurchase({ open, points, onClose, onCreated, on
             <div className="mt-3 rounded-xl border border-[#c7d2fe] bg-[#eef2ff] p-3 text-[13px]">
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--acc)]">Atpazīts no sludinājuma{parsed.source ? ` · ${parsed.source}` : ""}</p>
               <dl className="mt-2 grid grid-cols-[7rem_1fr] gap-y-1">
-                <dt className="text-[#6b7280]">Marka</dt>
+                <dt className="text-[var(--iriss-ink-2)]">Marka</dt>
                 <dd>
                   <input value={make} onChange={(e) => setMake(e.target.value)} className="w-full bg-transparent" />
                 </dd>
-                <dt className="text-[#6b7280]">Modelis</dt>
+                <dt className="text-[var(--iriss-ink-2)]">Modelis</dt>
                 <dd>
                   <input value={model} onChange={(e) => setModel(e.target.value)} className="w-full bg-transparent" />
                 </dd>
-                <dt className="text-[#6b7280]">VIN</dt>
+                <dt className="text-[var(--iriss-ink-2)]">VIN</dt>
                 <dd>
                   <input value={vin} onChange={(e) => setVin(e.target.value)} className="w-full bg-transparent font-mono text-[12px]" />
                 </dd>
-                <dt className="text-[#6b7280]">Cena</dt>
+                <dt className="text-[var(--iriss-ink-2)]">Cena</dt>
                 <dd>
                   <input value={price} onChange={(e) => setPrice(e.target.value)} className="w-full bg-transparent" />
-                  {parsed.priceEur != null ? <span className="text-[11px] text-[#6b7280]"> {formatLogisticsEur(parsed.priceEur)}</span> : null}
+                  {parsed.priceEur != null ? <span className="text-[11px] text-[var(--iriss-ink-2)]"> {formatLogisticsEur(parsed.priceEur)}</span> : null}
                 </dd>
-                <dt className="text-[#6b7280]">Nobraukums</dt>
+                <dt className="text-[var(--iriss-ink-2)]">Nobraukums</dt>
                 <dd>
                   <input value={km} onChange={(e) => setKm(e.target.value)} className="w-full bg-transparent" />
-                  {parsed.mileageKm != null ? <span className="text-[11px] text-[#6b7280]"> {formatLogisticsKm(parsed.mileageKm)}</span> : null}
+                  {parsed.mileageKm != null ? <span className="text-[11px] text-[var(--iriss-ink-2)]"> {formatLogisticsKm(parsed.mileageKm)}</span> : null}
                 </dd>
               </dl>
             </div>
@@ -241,7 +243,7 @@ export function IrissLogistikaNewPurchase({ open, points, onClose, onCreated, on
               {source === "auction" ? (
                 <label className="col-span-2 text-[12px]">
                   Izsole
-                  <select value={auction} onChange={(e) => setAuction(e.target.value as LogisticsAuction)} className="mt-1 h-10 w-full rounded-xl border border-[#e5e7eb] px-2">
+                  <select value={auction} onChange={(e) => setAuction(e.target.value as LogisticsAuction)} className="mt-1 h-10 w-full rounded-xl border border-[var(--iriss-line)] px-2">
                     {LOGISTICS_AUCTIONS.map((a) => (
                       <option key={a} value={a}>
                         {a}
@@ -252,24 +254,24 @@ export function IrissLogistikaNewPurchase({ open, points, onClose, onCreated, on
               ) : null}
               <label className="text-[12px]">
                 Marka
-                <input value={make} onChange={(e) => setMake(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-[#e5e7eb] px-3" />
+                <input value={make} onChange={(e) => setMake(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-[var(--iriss-line)] px-3" />
               </label>
               <label className="text-[12px]">
                 Modelis
-                <input value={model} onChange={(e) => setModel(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-[#e5e7eb] px-3" />
+                <input value={model} onChange={(e) => setModel(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-[var(--iriss-line)] px-3" />
               </label>
             </div>
           )}
-          <label className="mt-3 block text-[12px] font-medium text-[#6b7280]">Adrese</label>
+          <label className="mt-3 block text-[12px] font-medium text-[var(--iriss-ink-2)]">Adrese</label>
           <input
             value={address}
             onChange={(e) => setAddress(e.target.value)}
             placeholder="Musterweg 7, 21000 Lüneburg, DE"
-            className="mt-1 h-10 w-full rounded-xl border border-[#e5e7eb] px-3 text-[13px]"
+            className="mt-1 h-10 w-full rounded-xl border border-[var(--iriss-line)] px-3 text-[13px]"
           />
           {geoNotice ? <p className="mt-1 text-[12px] text-[var(--warn)]">{geoNotice}</p> : null}
           {lat != null && lng != null ? (
-            <p className="mt-1 text-[12px] text-[#6b7280]">
+            <p className="mt-1 text-[12px] text-[var(--iriss-ink-2)]">
               Punkts kartē: {lat.toFixed(4)}, {lng.toFixed(4)}
             </p>
           ) : null}
@@ -279,10 +281,10 @@ export function IrissLogistikaNewPurchase({ open, points, onClose, onCreated, on
           {err ? <p className="mt-2 text-[12px] text-[#b91c1c]">{err}</p> : null}
         </div>
         <div className="flex justify-end gap-2 border-t border-[#eee] px-4 py-3">
-          <button type="button" onClick={onClose} className="h-10 rounded-full bg-[#f3f4f6] px-4 text-[13px] font-semibold">
+          <button type="button" onClick={onClose} className="h-10 rounded-full bg-[var(--iriss-surface-2)] px-4 text-[13px] font-semibold">
             Atcelt
           </button>
-          <button type="button" onClick={() => void save()} disabled={busy || !make} className="h-10 rounded-full bg-[var(--ink)] px-4 text-[13px] font-semibold text-white disabled:opacity-40">
+          <button type="button" onClick={() => void save()} disabled={busy || !make} className="h-10 rounded-full bg-[var(--ink,#111827)] px-4 text-[13px] font-semibold text-white disabled:opacity-40">
             {busy ? "Saglabā…" : "Saglabāt ierakstu"}
           </button>
         </div>

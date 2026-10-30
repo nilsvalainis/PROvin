@@ -4,12 +4,16 @@
  * Termiņš ir obligāts nosūtīšanai, bez noklusējuma. Beidzies automātiski pēc Rīgas dienas beigām.
  */
 
-import { normalizeIrissPdAuto1Blocks, type IrissPdAuto1Blocks } from "@/lib/iriss-piedavajumi-auto1";
+import { irissPdAuto1BlockCount, normalizeIrissPdAuto1Blocks, type IrissPdAuto1Blocks } from "@/lib/iriss-piedavajumi-auto1";
 import {
+  defaultIrissPdContent,
   defaultIrissPdVisibility,
   emptyIrissPdClient,
   emptyIrissPdVehicle,
   IRISS_PD_BLOCK_IDS,
+  IRISS_PD_BLOCK_LV,
+  IRISS_PD_MAX_CHECK_ITEMS,
+  IRISS_PD_MAX_HIGHLIGHTS,
   IRISS_PD_MAX_HISTORY,
   IRISS_PD_MAX_PHOTOS,
   IRISS_PD_OPEN_STATUSES,
@@ -19,10 +23,15 @@ import {
   irissPdNumberLabel,
   isIrissPdSource,
   isIrissPdStatus,
+  isIrissPdVatMode,
+  IRISS_PD_VAT_LV,
+  type IrissPdVatMode,
   isSafeIrissPdId,
   isSafeIrissPdToken,
   type IrissPdBlockId,
+  type IrissPdCheckItem,
   type IrissPdClient,
+  type IrissPdContent,
   type IrissPdHistoryEntry,
   type IrissPdListRow,
   type IrissPdPhoto,
@@ -47,7 +56,7 @@ const text = (v: unknown, max = 4000): string => (typeof v === "string" ? v.repl
 function normalizePhoto(raw: unknown): IrissPdPhoto | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
-  if (o.kind === "dropbox" && typeof o.id === "string" && typeof o.ref === "string" && /^autoparks:[\w-]{1,80}$/.test(o.ref)) {
+  if (o.kind === "dropbox" && typeof o.id === "string" && typeof o.ref === "string" && /^(autoparks|logistics):[\w-]{1,80}$/.test(o.ref)) {
     const id = o.id.trim();
     return id && id.length <= 200 ? { kind: "dropbox", ref: o.ref, id } : null;
   }
@@ -99,6 +108,53 @@ function normalizeClient(raw: unknown): IrissPdClient {
   };
 }
 
+function normalizeCheckItems(raw: unknown, fallback: readonly IrissPdCheckItem[]): IrissPdCheckItem[] {
+  if (!Array.isArray(raw)) return fallback.map((x) => ({ ...x }));
+  const out: IrissPdCheckItem[] = [];
+  const seen = new Set<string>();
+  for (const it of raw) {
+    if (!it || typeof it !== "object") continue;
+    const o = it as Record<string, unknown>;
+    const t = clean(o.text, 120);
+    if (!t || seen.has(t.toLowerCase())) continue;
+    seen.add(t.toLowerCase());
+    out.push({ text: t, on: o.on === true });
+    if (out.length >= IRISS_PD_MAX_CHECK_ITEMS) break;
+  }
+  return out;
+}
+
+function normalizeHighlights(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const h of raw) {
+    const t = clean(h, 80);
+    if (t && !out.some((x) => x.toLowerCase() === t.toLowerCase())) out.push(t);
+    if (out.length >= IRISS_PD_MAX_HIGHLIGHTS) break;
+  }
+  return out;
+}
+
+/** j75: JSON bez `content` (pirms j75) -> šabloni, bet sadaļas klientam izslēgtas (sk. `defaultIrissPdContent`). */
+export function normalizeIrissPdContent(raw: unknown): IrissPdContent {
+  if (!raw || typeof raw !== "object") return defaultIrissPdContent(true);
+  const o = raw as Record<string, unknown>;
+  const d = defaultIrissPdContent();
+  const flag = (v: unknown, fb: boolean) => (typeof v === "boolean" ? v : fb);
+  return {
+    highlights: normalizeHighlights(o.highlights),
+    highlightsOn: flag(o.highlightsOn, d.highlightsOn),
+    included: normalizeCheckItems(o.included, d.included),
+    excluded: normalizeCheckItems(o.excluded, d.excluded),
+    summaryOn: flag(o.summaryOn, d.summaryOn),
+    facts: normalizeCheckItems(o.facts, d.facts),
+    visual: text(o.visual),
+    technical: text(o.technical),
+    note: text(o.note),
+    assessmentOn: flag(o.assessmentOn, d.assessmentOn),
+  };
+}
+
 function normalizeHistory(raw: unknown): IrissPdHistoryEntry[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -127,11 +183,15 @@ export function normalizeIrissPiedavajums(raw: unknown): IrissPiedavajums | null
     createdAt: clean(o.createdAt, 40),
     updatedAt: clean(o.updatedAt, 40),
     source: isIrissPdSource(o.source) ? o.source : "manual",
-    sourceRef: /^autoparks:[\w-]{1,80}$/.test(clean(o.sourceRef, 100)) ? clean(o.sourceRef, 100) : "",
+    sourceRef: /^(autoparks|logistics):[\w-]{1,80}$/.test(clean(o.sourceRef, 100)) ? clean(o.sourceRef, 100) : "",
     sourceUrl: /^https:\/\//i.test(clean(o.sourceUrl, 2000)) ? clean(o.sourceUrl, 2000) : "",
     sourceKey: clean(o.sourceKey, 80),
     importedFieldCount: typeof o.importedFieldCount === "number" && Number.isFinite(o.importedFieldCount) ? Math.max(0, Math.floor(o.importedFieldCount)) : 0,
     purchasePrice: clean(o.purchasePrice, 80),
+    logisticsCost: clean(o.logisticsCost, 80),
+    prepCost: clean(o.prepCost, 80),
+    commission: clean(o.commission, 80),
+    vatMode: isIrissPdVatMode(o.vatMode) ? o.vatMode : "unknown",
     internalNotes: text(o.internalNotes),
     vehicle: normalizeVehicle(o.vehicle),
     photos,
@@ -141,6 +201,7 @@ export function normalizeIrissPiedavajums(raw: unknown): IrissPiedavajums | null
     auto1: normalizeIrissPdAuto1Blocks(o.auto1),
     auto1ImportedAt: clean(o.auto1ImportedAt, 40),
     visibility: normalizeIrissPdVisibility(o.visibility),
+    content: normalizeIrissPdContent(o.content),
     linkToken: isSafeIrissPdToken(o.linkToken) ? o.linkToken : "",
     decidedAt: clean(o.decidedAt, 40),
     approvedOrderId: isSafeIrissPdId(approvedOrderId) ? approvedOrderId : "",
@@ -186,9 +247,14 @@ export type IrissPdPatch = Partial<{
   validUntil: string;
   client: Partial<IrissPdClient>;
   purchasePrice: string;
+  logisticsCost: string;
+  prepCost: string;
+  commission: string;
+  vatMode: IrissPdVatMode;
   internalNotes: string;
   photos: IrissPdPhoto[];
   visibility: IrissPdVisibility;
+  content: Partial<IrissPdContent>;
   status: IrissPdStatus;
 }>;
 
@@ -249,6 +315,30 @@ export function applyIrissPdPatch(
     if (p !== rec.purchasePrice) {
       next.purchasePrice = p;
       log.push("Iepirkuma cena mainīta");
+    }
+  }
+  for (const [k, l] of [
+    ["logisticsCost", "Loģistikas izmaksas"],
+    ["prepCost", "Sagatavošanas izmaksas"],
+    ["commission", "IRISS komisija"],
+  ] as const) {
+    const raw = patch[k];
+    if (typeof raw !== "string") continue;
+    const v = clean(raw, 80);
+    if (v !== rec[k]) {
+      next[k] = v;
+      log.push(`${l} mainītas`);
+    }
+  }
+  if (isIrissPdVatMode(patch.vatMode) && patch.vatMode !== rec.vatMode) {
+    next.vatMode = patch.vatMode;
+    log.push(`PVN: ${IRISS_PD_VAT_LV[patch.vatMode]}`);
+  }
+  if (patch.content && typeof patch.content === "object") {
+    const c = normalizeIrissPdContent({ ...rec.content, ...patch.content });
+    if (JSON.stringify(c) !== JSON.stringify(rec.content)) {
+      next.content = c;
+      log.push("Klienta apraksts mainīts");
     }
   }
   if (typeof patch.internalNotes === "string") {
@@ -374,6 +464,7 @@ export function rebaseIrissPd(
     client: { ...base.client },
     photos: base.photos.map((p) => ({ ...p })),
     visibility: normalizeIrissPdVisibility(base.visibility),
+    content: normalizeIrissPdContent(base.content),
   };
   return appendIrissPdHistory(rec, { at: input.at, by: input.by, text: `Izveidots uz ${irissPdNumberLabel(base.number)} bāzes` });
 }
@@ -504,13 +595,30 @@ export function formatIrissPdPrice(raw: string): string {
   return n > 0 ? formatIrissEurWhole(n) : t;
 }
 
-/** Marža = gala cena - iepirkuma cena (tikai, ja abas ir skaitļi). */
-export function irissPdMargin(price: string, purchase: string): string {
+/** Cenu bloka lauks: tikai cipari (burti un «ap 1000» neiziet cauri), bez nullēm sākumā. */
+export function irissPdEurDigits(raw: string): string {
+  return raw.replace(/\D/g, "").replace(/^0+(?=\d)/, "").slice(0, 9);
+}
+
+/** Klientam kopā = iepirkums + loģistika + sagatavošana + komisija (tukšie = 0). 0, ja neviens nav aizpildīts. */
+export function irissPdTotalFromParts(...parts: string[]): number {
+  return parts.reduce((sum, x) => {
+    const n = /\d/.test(x) ? parsePriceLike(x) : 0;
+    return sum + (Number.isFinite(n) && n > 0 ? n : 0);
+  }, 0);
+}
+
+/** Marža = gala cena - iepirkuma cena - izmaksas (loģistika, sagatavošana; tukšās neskaita). Tikai, ja cena un iepirkums ir skaitļi. */
+export function irissPdMargin(price: string, purchase: string, ...costs: string[]): string {
   if (!/\d/.test(price) || !/\d/.test(purchase)) return "";
   const p = parsePriceLike(price);
   const c = parsePriceLike(purchase);
   if (!(p > 0) || !(c > 0)) return "";
-  return formatIrissEurWhole(p - c);
+  const extra = costs.reduce((sum, x) => {
+    const n = /\d/.test(x) ? parsePriceLike(x) : 0;
+    return sum + (n > 0 ? n : 0);
+  }, 0);
+  return formatIrissEurWhole(p - c - extra);
 }
 
 export function splitIrissPdClientName(name: string): { first: string; last: string } {
@@ -536,6 +644,8 @@ export type IrissPdPublicView = {
   state: "open" | "approved" | "closed";
   title: string;
   price: string;
+  /** PVN režīms pie cenas («PVN atskaitāms» / «Ar PVN (marža)»); tukšs, ja nav zināms. */
+  vatLabel: string;
   validUntilLabel: string;
   facts: IrissPdPublicFact[];
   /** Bilžu skaits (bildes tikai caur `/p/d/<token>/foto/<n>`). */
@@ -544,7 +654,35 @@ export type IrissPdPublicView = {
   auto1: IrissPdAuto1Blocks | null;
   /** Bez klienta - apstiprinot jāieraksta vārds un tālrunis. */
   needsContact: boolean;
+  /** j75: Aprīkojums, Kopsavilkums, Novērtējums (tikai ieslēgtās sadaļas un ieķeksētās rindas). */
+  content: IrissPdPublicContent | null;
 };
+
+export type IrissPdPublicContent = {
+  highlights: string[];
+  included: string[];
+  excluded: string[];
+  facts: string[];
+  visual: string;
+  technical: string;
+  note: string;
+};
+
+/** Klientam: tikai ieslēgtās sadaļas; null - nav ko rādīt. */
+export function buildIrissPdPublicContent(c: IrissPdContent): IrissPdPublicContent | null {
+  const on = (items: IrissPdCheckItem[]) => items.filter((x) => x.on).map((x) => x.text);
+  const out: IrissPdPublicContent = {
+    highlights: c.highlightsOn ? [...c.highlights] : [],
+    included: c.summaryOn ? on(c.included) : [],
+    excluded: c.summaryOn ? on(c.excluded) : [],
+    facts: c.assessmentOn ? on(c.facts) : [],
+    visual: c.assessmentOn ? c.visual : "",
+    technical: c.assessmentOn ? c.technical : "",
+    note: c.assessmentOn ? c.note : "",
+  };
+  const any = Object.values(out).some((v) => (Array.isArray(v) ? v.length > 0 : Boolean(v)));
+  return any ? out : null;
+}
 
 const FACT_LABELS: Array<[keyof IrissPdVehicle, string]> = [
   ["year", "Gads"],
@@ -557,12 +695,45 @@ const FACT_LABELS: Array<[keyof IrissPdVehicle, string]> = [
   ["color", "Krāsa"],
   ["body", "Virsbūve"],
   ["vin", "VIN"],
+  ["location", "Atrašanās vieta"],
 ];
+
+/** CSDD transportlīdzekļa kategorijas nav virsbūves tips - klientam tās nerāda. */
+const CSDD_CATEGORY_RE = /^(vieglais|kravas|autobuss|piekabe|puspiekabe|motocikls|mopēds|kvadricikls)\b/i;
 
 function factValue(k: keyof IrissPdVehicle, v: string): string {
   if (k === "mileageKm" && /^\d[\d\s.,]*$/.test(v)) return `${v.replace(/[\s.,]/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, " ")} km`;
   if (k === "powerKw" && /^\d{2,4}$/.test(v)) return `${v} kW`;
+  // Datumi no Autoparka/CSDD ir ISO (2017-08-23): gadam - "2017", 1. reģistrācijai - "08.2017".
+  const iso = /^(\d{4})-(\d{2})-\d{2}/.exec(v);
+  if (iso && k === "year") return iso[1]!;
+  if (iso && k === "firstRegistration") return `${iso[2]}.${iso[1]}`;
+  if (k === "body" && CSDD_CATEGORY_RE.test(v)) return "";
   return v;
+}
+
+export function irissPdFactValue(facts: readonly IrissPdPublicFact[], label: string): string {
+  return facts.find((f) => f.label === label)?.value.trim() ?? "";
+}
+
+/** Kompakts apakšvirsraksts kā `/p/`: gads · nobraukums · ātrumkārba. */
+export function irissPdSubtitle(facts: readonly IrissPdPublicFact[]): string {
+  return [irissPdFactValue(facts, "Pirmā reģistrācija") || irissPdFactValue(facts, "Gads"), irissPdFactValue(facts, "Nobraukums"), irissPdFactValue(facts, "Ātrumkārba")]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+/** Admina slēpto, bet datos esošo bloku etiķetes (tukšos nerāda). */
+export function irissPdHiddenBlockLabels(rec: IrissPiedavajums, mode: IrissPdViewMode): string[] {
+  const a = rec.auto1;
+  if (!a) return [];
+  return IRISS_PD_BLOCK_IDS.filter((id) => irissPdAuto1BlockCount(a, id) > 0 && !irissPdBlockVisible(rec.visibility, id, mode)).map(
+    (id) => IRISS_PD_BLOCK_LV[id],
+  );
+}
+
+export function irissPdDeleteConfirm(label: string): string {
+  return `Vai tiešām dzēst piedāvājumu ${label}? Publiskā saite vairs nestrādās. Šo nevar atsaukt.`;
 }
 
 /**
@@ -576,7 +747,9 @@ export function buildIrissPdPublicView(rec: IrissPiedavajums, mode: IrissPdViewM
   const blocks: IrissPdPublicView["blocks"] = {};
   const a = rec.auto1;
   if (a) {
-    for (const id of IRISS_PD_BLOCK_IDS) if (irissPdBlockVisible(rec.visibility, id, mode)) blocks[id] = true;
+    for (const id of IRISS_PD_BLOCK_IDS) {
+      if (irissPdBlockVisible(rec.visibility, id, mode) && irissPdAuto1BlockCount(a, id) > 0) blocks[id] = true;
+    }
   }
   const auto1: IrissPdAuto1Blocks | null = a
     ? {
@@ -593,12 +766,17 @@ export function buildIrissPdPublicView(rec: IrissPiedavajums, mode: IrissPdViewM
     state,
     title: rec.vehicle.title,
     price: formatIrissPdPrice(rec.price),
+    vatLabel: rec.vatMode === "unknown" ? "" : IRISS_PD_VAT_LV[rec.vatMode],
     validUntilLabel: rec.validUntil ? formatOfferValidUntilLv(rec.validUntil) : "",
-    facts: FACT_LABELS.flatMap(([k, label]) => (rec.vehicle[k] ? [{ label, value: factValue(k, rec.vehicle[k]) }] : [])),
+    facts: FACT_LABELS.flatMap(([k, label]) => {
+      const value = rec.vehicle[k] ? factValue(k, rec.vehicle[k]) : "";
+      return value ? [{ label, value }] : [];
+    }),
     photoCount: rec.photos.length,
     blocks,
     auto1,
     needsContact: !rec.client.name.trim() && !rec.client.orderId,
+    content: buildIrissPdPublicContent(rec.content),
   };
 }
 
@@ -625,6 +803,29 @@ export function irissPdCarPicks(
         vinTail: vin.slice(-6),
         plate: clean(c.plate),
         search: fold(`${title} ${c.make} ${c.model} ${vin} ${c.plate} ${c.plate.replace(/[\s-]/g, "")}`),
+        takenBy: taken ? irissPdNumberLabel(taken.number) : "",
+      };
+    })
+    .filter((r) => r.title);
+}
+
+/** Loģistikas auto izvēlei (Nils 27.10, avots «Loģistika»). Arhivētie netiek rādīti; aizņemtie nav izvēlami. */
+export function irissPdLogisticsPicks(
+  orders: ReadonlyArray<{ id: string; make: string; model: string; title: string; vin: string; stockNo: string; archived?: boolean; status: string }>,
+  rows: readonly IrissPdListRow[],
+): IrissPdCarPick[] {
+  return orders
+    .filter((o) => !o.archived && o.status !== "archived")
+    .map((o) => {
+      const title = clean(o.title) || clean(`${o.make} ${o.model}`) || clean(o.vin);
+      const vin = clean(o.vin).toUpperCase();
+      const taken = findIrissPdTakenConflict(rows, { sourceRef: `logistics:${o.id}`, vin });
+      return {
+        id: o.id,
+        title,
+        vinTail: vin.slice(-6),
+        plate: clean(o.stockNo),
+        search: fold(`${title} ${o.make} ${o.model} ${vin} ${o.stockNo}`),
         takenBy: taken ? irissPdNumberLabel(taken.number) : "",
       };
     })

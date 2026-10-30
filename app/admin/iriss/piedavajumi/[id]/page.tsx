@@ -24,7 +24,6 @@ export default async function IrissPiedavajumsPage({ params, searchParams }: Pro
   return (
     <PiedavajumsDetail
       initial={rec}
-      nowMs={nowMs}
       clientOptions={irissPdClientOptions(orders)}
       note={typeof sp.note === "string" ? sp.note.slice(0, 300) : ""}
     />

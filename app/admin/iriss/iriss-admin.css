@@ -962,3 +962,93 @@ input[data-offer-field="empty"],
     min-height: 44px;
   }
 }
+
+/* 28.10: telefonā diapazona ievades lauki nedrīkst būt platāki par savu šūnu (bija 193 px 100 px vietā, vērtības iziet ārā). */
+@media (max-width: 767px) {
+  .iriss-spec-fields .iriss-range-field .iriss-range-input-wrap > input {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+}
+
+/* Pārskats v3 (Nils 28.10): tāmes forma bez zilajām virsrakstu joslām - kā pārējie soļi. */
+#iriss-room-tame .iriss-section-heading {
+  background: none !important;
+  padding: 0 !important;
+  margin: 18px 0 8px !important;
+  border: 0 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  color: #4a4a4f !important;
+}
+
+/* Pārskats v3: galvenes statuss - zaļš Aktīvs/Rezervēts, pelēks pārējie (bija melns). */
+.admin-ios-theme [data-iriss-order-room="1"] select.iriss-status-pill[data-status="active"],
+.admin-ios-theme [data-iriss-order-room="1"] select.iriss-status-pill[data-status="reserved"] {
+  border-color: #b7e2c5 !important;
+  background-color: #e8f5ec !important;
+  color: #14532d !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2314532d' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important;
+}
+.admin-ios-theme [data-iriss-order-room="1"] select.iriss-status-pill[data-status="completed"],
+.admin-ios-theme [data-iriss-order-room="1"] select.iriss-status-pill[data-status="inactive"] {
+  border-color: #d1d1d6 !important;
+  background-color: #f2f2f7 !important;
+  color: #3a3a3c !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%233a3a3c' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important;
+}
+
+/* Pārskats v3: visi sadaļu virsraksti pasūtījumā bez zilās joslas (Statuss, Klients, Platformas, Finansējums). */
+.admin-ios-theme [data-iriss-order-room="1"] .iriss-section-heading {
+  background: none !important;
+  padding: 0 !important;
+  margin: 0 0 10px !important;
+  border: 0 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  color: var(--iriss-ink-2) !important;
+}
+
+/* ===== QA 29.10 ===== */
+/* Telefonā admin-mobile.css pogām noņem rāmjus (border: 0 !important) - čipi izskatījās pēc teksta. Rāmis ar box-shadow. */
+.admin-ios-theme .admin-m [data-iriss-order-room="1"] button:is([class*="rounded-full"], [class*="rounded-lg"])[class*="border"]:not([aria-pressed="true"]):not([class*="bg-[var(--iriss-graphite)]"]):not([class*="bg-[#dcfce7]"]):not([class*="border-dashed"]) {
+  box-shadow: inset 0 0 0 1px var(--iriss-line-strong, #d1d1d6) !important;
+}
+.admin-ios-theme .admin-m [data-iriss-order-room="1"] button:is([class*="rounded-full"], [class*="rounded-lg"])[class*="border"][aria-pressed="true"] {
+  box-shadow: inset 0 0 0 1.5px var(--iriss-ink, #1c1c1e) !important;
+}
+.admin-ios-theme .admin-m [data-iriss-order-room="1"] button[class*="border-dashed"] {
+  box-shadow: none !important;
+  outline: 1px dashed var(--iriss-line-strong, #c7c7cc);
+  outline-offset: -1px;
+}
+/* Diapazona lauki ar mērvienību (cm³, kW, km): teksts nedrīkst uzklāties mērvienībai. */
+.iriss-range-input-wrap:has(.iriss-range-unit) > input,
+.iriss-spec-fields .iriss-range-field .iriss-range-input-wrap > input.iriss-range-input-has-unit {
+  padding-right: 36px !important;
+}
+/* Tāme: cenas/km/% laukos teksts nesaskaras ar mērvienību (€ km %). */
+#iriss-room-tame span.relative > input {
+  padding-right: 30px !important;
+}
+
+/* Nils 29.10 «salāgo»: datorā visu pārbūvēto sadaļu virsraksti 22px/700, istabas cilnes kā Autoparka kabinetā (13/600). */
+@media (min-width: 900px) {
+  .admin-ios-theme .admin-m h1.iriss-list-title,
+  .admin-ios-theme h1.iriss-list-title.iriss-list-title {
+    font-size: 22px !important;
+    font-weight: 700 !important;
+  }
+  .admin-ios-theme [data-iriss-order-room="1"] .iriss-order-tabs [role="tab"] {
+    font-weight: 600 !important;
+  }
+  .admin-ios-theme [data-iriss-order-room="1"] .iriss-order-tabs [role="tab"][aria-selected="true"] {
+    background: var(--iriss-graphite) !important;
+    color: var(--iriss-on-graphite) !important;
+  }
+}

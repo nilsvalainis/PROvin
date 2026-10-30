@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { IrissListDrawer } from "@/components/admin/IrissListDrawer";
 import { formatIrissEurWhole } from "@/lib/iriss-price-format";
 import { IrissListingOrderPreview } from "@/components/admin/IrissListingOrderPreview";
@@ -65,12 +65,15 @@ import {
 import { irissListingMatchKey, type IrissListingHitStatus, type IrissListingMatchNotice } from "@/lib/iriss-listing-match-client";
 import { mergeListingOrderOvMigration } from "@/lib/iriss-listing-order-ov";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
-import { irissPasutijumsOfferSeedFromListing } from "@/lib/iriss-pasutijums-from-listing";
 import { irissScanSeedFromListing } from "@/lib/iriss-scan-from-listing";
 import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
 import { type IrissListingDataset, vehicleInListingDataset } from "@/lib/iriss-scan-listings";
+import type { IrissListingGoneCounts } from "@/lib/iriss-sludinajumi-page-data";
 import { irissListingPlatformIngestStats } from "@/lib/iriss-listings-ingest-stats";
 import { nextIrissListingsAutomaticReadLabel } from "@/lib/iriss-listings-schedule";
+import { createIrissPdFromListing, irissPdClientFromOrderBrief, irissPdHref, irissPdRowsForListing } from "@/lib/iriss-pd-from-listing-client";
+import type { IrissPdListRow } from "@/lib/iriss-piedavajumi-types";
+import { diffIrissListingMarks, mergeIrissListingMarks, parseIrissListingMarks, type IrissListingMarkPatch } from "@/lib/iriss-listing-marks";
 import {
   dismissedHiddenIds,
   uniqueListingIds,
@@ -207,6 +210,8 @@ function useListingGridColumns(): number {
 
 type Props = {
   latest: IrissListingsLatestView | null;
+  /** Pazudušo skaits; paši auto nāk no `/api/admin/iriss-listings/gone` tikai cilnē „Pazuduši”. */
+  goneCounts?: IrissListingGoneCounts;
   orders: IrissListingOrderBrief[];
   /** SCAN ieraksti kā „pasūtījumi” ar `scan:` id. */
   scanOrders?: IrissListingOrderBrief[];
@@ -253,6 +258,7 @@ function dismissPatchesFromIds(
 
 export function IrissSludinajumiListClient({
   latest,
+  goneCounts,
   orders: clientOrders,
   scanOrders = [],
   dismissed = [],
@@ -274,10 +280,13 @@ export function IrissSludinajumiListClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [goneVehicles, setGoneVehicles] = useState<IrissListingVehicle[] | null>(null);
+  const [goneState, setGoneState] = useState<"idle" | "loading" | "error">("idle");
   const [hiddenImages, setHiddenImages] = useState<Record<string, true>>({});
   const [vinPatch, setVinPatch] = useState<Record<string, ListingVinOcrPatch>>({});
   const [syncBusy, setSyncBusy] = useState(false);
   const [syncMsg, setSyncMsg] = useState<string | null>(null);
+  const [offerMsg, setOfferMsg] = useState<string | null>(null);
   const [health, setHealth] = useState<IrissPlatformHealthReport | null>(null);
   const [query, setQuery] = useState("");
   const [showSources, setShowSources] = useState(false);
@@ -307,7 +316,9 @@ export function IrissSludinajumiListClient({
     if (!filterOpen && !menuOpen && !sortOpen) return;
     const onDown = (e: PointerEvent) => {
       const t = e.target as Node;
-      if (t instanceof Element && t.closest("[data-admin-list-sheet]")) return;
+      // Telefona paneļi (Filtri, Vairāk, Kārtot) ir portālā ārpus pogas: pieskāriens tajos nedrīkst tos aizvērt,
+      // citādi panelis aizveras jau pie pieskāriena un klikšķis nokrīt uz kartītes zem tā (Nils 30.10).
+      if (t instanceof Element && t.closest("[data-admin-list-sheet], .admin-sheet-root, [role=dialog]")) return;
       if (filterOpen && filterRef.current && !filterRef.current.contains(t)) setFilterOpen(false);
       if (menuOpen && menuRef.current && !menuRef.current.contains(t)) setMenuOpen(false);
       if (sortOpen && sortRef.current && !sortRef.current.contains(t)) setSortOpen(false);
@@ -397,8 +408,86 @@ export function IrissSludinajumiListClient({
     return () => window.clearTimeout(t);
   }, [prefs.costs, prefsReady]);
 
+  // Piezīmes un favorīti serverī (Nils 29.10): kopīgi telefonam un datoram; sūta tikai mainītos auto, pa vienam pieprasījumam.
+  const prefsRef = useRef(prefs);
+  prefsRef.current = prefs;
+  const marksQueue = useRef(new Map<string, IrissListingMarkPatch>());
+  const marksTimer = useRef<number | null>(null);
+  const marksChain = useRef<Promise<void>>(Promise.resolve());
+  const flushMarks = useCallback(() => {
+    marksTimer.current = null;
+    const patches = [...marksQueue.current.values()];
+    marksQueue.current.clear();
+    if (patches.length === 0) return;
+    marksChain.current = marksChain.current.then(async () => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const res = await fetch("/api/admin/iriss-listings/marks", {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ patches }),
+        }).catch(() => null);
+        if (res?.ok) return;
+        await new Promise((done) => window.setTimeout(done, 1500 * (attempt + 1)));
+      }
+    });
+  }, []);
+  const queueMarks = useCallback(
+    (patches: IrissListingMarkPatch[], delayMs: number) => {
+      for (const p of patches) marksQueue.current.set(p.id, { ...marksQueue.current.get(p.id), ...p });
+      if (marksTimer.current) window.clearTimeout(marksTimer.current);
+      marksTimer.current = window.setTimeout(flushMarks, delayMs);
+    },
+    [flushMarks],
+  );
+
+  useEffect(() => {
+    if (!prefsReady) return;
+    let cancelled = false;
+    void fetch("/api/admin/iriss-listings/marks", { credentials: "include", cache: "no-store" })
+      .then((res) => (res.ok ? (res.json() as Promise<{ marks?: unknown }>) : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        const server = parseIrissListingMarks(data.marks);
+        const cur = prefsRef.current;
+        const merged = mergeIrissListingMarks({ notes: cur.notes, fav: cur.fav }, server);
+        setPrefs((p) => ({ ...p, notes: merged.notes, fav: merged.fav }));
+        if (merged.toPush.length) queueMarks(merged.toPush, 0);
+      })
+      .catch(() => {});
+    const flushNow = () => {
+      if (marksTimer.current) {
+        window.clearTimeout(marksTimer.current);
+        flushMarks();
+      }
+    };
+    window.addEventListener("pagehide", flushNow);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("pagehide", flushNow);
+    };
+  }, [prefsReady, queueMarks, flushMarks]);
+
+  /**
+   * Nils 29.10: «Izveidot piedāvājumu» - jaunajā Piedāvājumu sadaļā (agrāk tapa jauns Pasūtījums ar veco bloku).
+   * Ja auto piesaistīts tieši vienam pasūtījumam, piedāvājums uzreiz ir šī klienta.
+   */
+  async function createOfferFor(vehicle: IrissListingVehicle) {
+    setOfferMsg(null);
+    const linkedNow = displayLinkedOf(vehicle, prefs, orderById, matchOrderIds, dataset);
+    const client = dataset === "orders" && linkedNow.length === 1 ? irissPdClientFromOrderBrief(linkedNow[0]!) : null;
+    const res = await createIrissPdFromListing(vehicle.id, client);
+    if (!res.ok) {
+      setOfferMsg(res.message);
+      return;
+    }
+    router.push(irissPdHref(res.id));
+  }
+
   function applyPrefs(next: IrissListPrefs) {
     const prevHidden = prefs.hidden;
+    const markPatches = diffIrissListingMarks(prefs, next);
+    if (markPatches.length) queueMarks(markPatches, markPatches.some((p) => p.note !== undefined) ? 800 : 0);
     const orderOvChanged = JSON.stringify(next.orderOv) !== JSON.stringify(prefs.orderOv);
     setPrefs(next);
     const storage = irissListBrowserStorage();
@@ -421,16 +510,73 @@ export function IrissSludinajumiListClient({
     ]);
   }
 
+  // Sludinājuma logs (Nils 29.10): URL ?listing=<id> (tā pati saite, ko lieto atbilstību paziņojumi), pārlūka «Atpakaļ» aizver, ‹ › / ← → pāriet uz citu auto.
+  const drawerPushed = useRef(false);
+  const openDrawer = useCallback((id: string) => {
+    setDrawerId(id);
+    void markListingViewed(id);
+    const url = new URL(window.location.href);
+    url.searchParams.set("listing", id);
+    if (drawerPushed.current) window.history.replaceState(window.history.state, "", url);
+    else {
+      window.history.pushState(window.history.state, "", url);
+      drawerPushed.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const closeDrawer = useCallback(() => {
+    if (drawerPushed.current) {
+      window.history.back();
+      return;
+    }
+    setDrawerId(null);
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("listing")) {
+      url.searchParams.delete("listing");
+      window.history.replaceState(window.history.state, "", url);
+    }
+  }, []);
+  useEffect(() => {
+    const onPop = () => {
+      const id = new URL(window.location.href).searchParams.get("listing");
+      if (!id) {
+        drawerPushed.current = false;
+        setDrawerId(null);
+      } else setDrawerId(id);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   useEffect(() => {
     if (!drawerId) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setDrawerId(null);
+      if (e.key === "Escape") {
+        closeDrawer();
+        return;
+      }
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      const t = e.target;
+      if (t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      e.preventDefault();
+      drawerStepRef.current(e.key === "ArrowLeft" ? -1 : 1);
     };
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
     };
-  }, [drawerId]);
+  }, [drawerId, closeDrawer]);
+  const drawerStepRef = useRef<(delta: number) => void>(() => undefined);
+
+  // Jau izveidotie piedāvājumi (lai neveido otru nejauši) - ielādē vienreiz, atverot pirmo auto.
+  const [pdRows, setPdRows] = useState<IrissPdListRow[] | null>(null);
+  useEffect(() => {
+    if (!drawerId || pdRows) return;
+    void fetch("/api/admin/iriss-piedavajumi", { credentials: "include", cache: "no-store" })
+      .then((res) => (res.ok ? (res.json() as Promise<{ rows?: unknown }>) : null))
+      .then((data) => setPdRows(Array.isArray(data?.rows) ? (data.rows as IrissPdListRow[]) : []))
+      .catch(() => setPdRows([]));
+  }, [drawerId, pdRows]);
 
   useEffect(() => {
     if (!prefsReady || !mounted || restoredQueryRef.current) return;
@@ -498,9 +644,34 @@ export function IrissSludinajumiListClient({
     setPrefs((p) => ({ ...p, hideTech: false, hideOverBudget: false, listScope: "all" }));
   }
 
+  // Pēc „Nolasīt tagad” (router.refresh) pazudušo kopa var būt mainījusies.
+  useEffect(() => {
+    setGoneVehicles(null);
+    setGoneState("idle");
+  }, [latest?.generatedAt]);
+
+  const needGone =
+    tab === "gone" ||
+    (drawerId != null && !(latest?.vehicles ?? []).some((v) => v.id === drawerId));
+  useEffect(() => {
+    if (!needGone || goneVehicles !== null || goneState !== "idle") return;
+    setGoneState("loading");
+    void fetch("/api/admin/iriss-listings/gone", { credentials: "include", cache: "no-store" })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(String(res.status));
+        const body = (await res.json()) as { vehicles?: IrissListingVehicle[] };
+        setGoneVehicles(Array.isArray(body.vehicles) ? body.vehicles : []);
+        setGoneState("idle");
+      })
+      .catch(() => setGoneState("error"));
+  }, [needGone, goneVehicles, goneState]);
+
   const allVehicles = useMemo(
-    () => (latest?.vehicles ?? []).map((v) => (vinPatch[v.id] ? { ...v, ...vinPatch[v.id] } : v)),
-    [latest?.vehicles, vinPatch],
+    () =>
+      [...(latest?.vehicles ?? []), ...(goneVehicles ?? [])].map((v) =>
+        vinPatch[v.id] ? { ...v, ...vinPatch[v.id] } : v,
+      ),
+    [latest?.vehicles, goneVehicles, vinPatch],
   );
   /** Divi datu kopumi: klientu pasūtījumu auto vai SCAN saraksta auto. Kartītes tās pašas. */
   const vehicles = useMemo(
@@ -517,8 +688,13 @@ export function IrissSludinajumiListClient({
       if (isNew(v, nowMs)) fresh += 1;
       if (recentPriceChanges(v, nowMs).length > 0) price += 1;
     }
-    return { fresh, price, gone, all: vehicles.length - gone };
-  }, [vehicles, nowMs]);
+    return {
+      fresh,
+      price,
+      gone: goneVehicles === null ? (goneCounts?.[dataset] ?? 0) : gone,
+      all: vehicles.length - gone,
+    };
+  }, [vehicles, nowMs, goneVehicles, goneCounts, dataset]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -766,6 +942,11 @@ export function IrissSludinajumiListClient({
     } catch {
       /* saite tik un tā atveras */
     }
+    // Sludinājumos atbilstība atver pašu auto (logā ir arī pasūtījuma detaļas); ja tā vairs nav sarakstā - pasūtījuma Meklētājs.
+    if (allVehicles.some((v) => v.id === notice.listingId)) {
+      openDrawer(notice.listingId);
+      return;
+    }
     router.push(notice.href);
   }
 
@@ -827,6 +1008,13 @@ export function IrissSludinajumiListClient({
       />
     );
   }
+
+  const drawerIndex = drawerVehicle ? sorted.findIndex((x) => x.id === drawerVehicle.id) : -1;
+  drawerStepRef.current = (delta: number) => {
+    if (drawerIndex < 0) return;
+    const next = sorted[drawerIndex + delta];
+    if (next) openDrawer(next.id);
+  };
 
   return (
     <div className="iriss-slud mt-1 space-y-2 touch-manipulation sm:mt-1.5 sm:space-y-2">
@@ -891,7 +1079,7 @@ export function IrissSludinajumiListClient({
             title={nextReadLabel ? `Nākamā nolasīšana ${nextReadLabel}` : "Nākamā nolasīšana"}
             onClick={() => { setSourceStatusOpen(true); setMenuOpen(false); }}
           >
-            {problemSources.length > 0 ? <span className="h-1.5 w-1.5 rounded-full bg-[var(--slud-warn,#c2410c)]" aria-hidden /> : null}
+            {problemSources.length > 0 ? <span className="h-1.5 w-1.5 rounded-full bg-[var(--slud-warn,var(--iriss-warn))]" aria-hidden /> : null}
             <span>Atjaunots {refreshedAt || (latest?.summary.finishedAt ? "\u00a0" : "nav")}</span>
             {nextReadLabel ? <span>· nākamā {nextReadLabel}</span> : null}
           </button>
@@ -902,10 +1090,137 @@ export function IrissSludinajumiListClient({
         data-iriss-listings-toolbar=""
         className="relative z-20 hidden bg-transparent pb-1 pt-0.5 md:static md:z-auto md:block md:bg-transparent md:backdrop-blur-none"
       >
-        <div className="slud-glass rounded-[28px] px-4 py-3.5">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
-            <h1 className="shrink-0 text-[26px] font-bold leading-none tracking-[-0.028em]">Sludinājumi</h1>
-            <div role="tablist" aria-label="Datu kopums" className="inline-flex rounded-full bg-[var(--slud-fill)] p-[3px] text-[13px]">
+        {/* Makets «Sludinājumi - dators» (Nils 29.10 apstiprināja): bez stikla bloka; 1. rinda - virsraksts un rīki, 2. - avots, klients un cilnes. */}
+        <div className="slud-head">
+          <div className="flex flex-nowrap items-center gap-2">
+            <h1 className="shrink-0 text-[22px] font-bold leading-none tracking-[-0.02em]">Sludinājumi</h1>
+            <button
+              type="button"
+              title={nextReadLabel ? `Nākamā nolasīšana ${nextReadLabel}` : "Nākamā nolasīšana"}
+              onClick={() => { setSourceStatusOpen(true); setMenuOpen(false); setFilterOpen(false); }}
+              className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-2 text-[12.5px] text-[var(--slud-ink2)] hover:bg-[var(--slud-fill)]"
+            >
+              {problemSources.length > 0 ? <span className="h-1.5 w-1.5 rounded-full bg-[var(--slud-warn)]" aria-hidden /> : null}
+              <span>Atjaunots {refreshedAt || (latest?.summary.finishedAt ? "\u00a0" : "nav")}</span>
+              {nextReadLabel ? <span>· nākamā {nextReadLabel}</span> : null}
+            </button>
+            <div className="ml-auto flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-2">
+              <label className="slud-field relative inline-flex h-[38px] min-w-[8rem] max-w-[340px] flex-1 items-center gap-2 rounded-[12px] px-3 text-[13.5px] text-[var(--slud-ink2)]">
+                <Search className="h-3.5 w-3.5 shrink-0" strokeWidth={STROKE} aria-hidden />
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Meklēt auto, VIN, klientu"
+                  className="min-w-0 flex-1 bg-transparent text-[13px] text-[var(--slud-ink)] outline-none placeholder:text-[var(--slud-ink3)]"
+                />
+              </label>
+              <div ref={filterRef} className="relative shrink-0">
+                <button
+                  type="button"
+                  aria-label="Filtri"
+                  aria-expanded={filterOpen}
+                  onClick={() => { setFilterOpen((v) => !v); setMenuOpen(false); setSortOpen(false); }}
+                  className="slud-btn2 inline-flex h-9 items-center gap-1.5 rounded-[12px] px-3 text-[13px] font-semibold"
+                >
+                  <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={STROKE} aria-hidden />
+                  Filtri
+                  {activeFilterCount > 0 ? (
+                    <span className="slud-badge inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[11px] font-semibold tabular-nums">{activeFilterCount}</span>
+                  ) : null}
+                </button>
+                {filterOpen ? (
+                  <div className="absolute right-0 top-10 z-40 hidden w-[min(92vw,22.5rem)] rounded-[22px] bg-[var(--slud-s1)] p-4 shadow-[var(--slud-shadow)] md:block">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-[16px] font-semibold">Filtri</p>
+                      <button type="button" onClick={clearAllFilters} className="text-[13px] font-medium text-[var(--slud-ink2)] hover:underline">
+                        Notīrīt
+                      </button>
+                    </div>
+                    {filtersForm()}
+                  </div>
+                ) : null}
+              </div>
+              <div ref={sortRef} className="relative shrink-0">
+                <button
+                  type="button"
+                  aria-label="Kārtot"
+                  aria-expanded={sortOpen}
+                  onClick={() => { setSortOpen((v) => !v); setFilterOpen(false); setMenuOpen(false); }}
+                  className="slud-btn2 inline-flex h-9 items-center gap-1.5 rounded-[12px] px-3 text-[13px] font-semibold"
+                >
+                  <ArrowUpDown className="h-3.5 w-3.5" strokeWidth={STROKE} aria-hidden />
+                  {sortLabel}
+                </button>
+                {sortOpen ? (
+                  <div className="absolute right-0 top-10 z-40 hidden w-56 overflow-hidden rounded-2xl bg-[var(--slud-s1)] py-1 shadow-[var(--slud-shadow)] md:block">
+                    {LISTING_SORTS.map((x) => (
+                      <button
+                        key={x.id}
+                        type="button"
+                        onClick={() => {
+                          writeListQuery({ sort: x.id });
+                          setSortOpen(false);
+                        }}
+                        className="flex min-h-10 w-full items-center justify-between px-3 text-left text-[14px] hover:bg-[var(--slud-fill)]"
+                      >
+                        {x.label}
+                        {sort === x.id ? <span className="text-[var(--slud-ink3)]">✓</span> : null}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+              <div role="group" aria-label="Skats" className="slud-btn2 inline-flex h-9 items-center rounded-[12px] p-[3px]">
+                <button
+                  type="button"
+                  aria-label="Saraksts"
+                  aria-pressed={view === "list"}
+                  onClick={() => writeListQuery({ view: "list" })}
+                  className={`grid h-7 w-8 place-items-center rounded-[9px] ${view === "list" ? "bg-[var(--slud-primary)] text-[var(--slud-primary-fg)]" : ""}`}
+                >
+                  <List className="h-3.5 w-3.5" strokeWidth={STROKE} />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Režģis"
+                  aria-pressed={view === "grid"}
+                  onClick={() => writeListQuery({ view: "grid" })}
+                  className={`grid h-7 w-8 place-items-center rounded-[9px] ${view === "grid" ? "bg-[var(--slud-primary)] text-[var(--slud-primary-fg)]" : ""}`}
+                >
+                  <LayoutGrid className="h-3.5 w-3.5" strokeWidth={STROKE} />
+                </button>
+              </div>
+              <div ref={menuRef} className="relative shrink-0">
+                <button
+                  type="button"
+                  aria-label="Vairāk"
+                  aria-expanded={menuOpen}
+                  onClick={() => { setMenuOpen((v) => !v); setFilterOpen(false); setSortOpen(false); }}
+                  className="slud-btn2 grid h-9 w-9 place-items-center rounded-[12px]"
+                >
+                  <MoreHorizontal className="h-4 w-4" strokeWidth={STROKE} />
+                </button>
+                {menuOpen ? (
+                  <div className="absolute right-0 top-10 z-40 hidden w-[22rem] rounded-[22px] bg-[var(--slud-s1)] p-3.5 shadow-[var(--slud-shadow)] md:block">
+                    <IrissSludinajumiMoreMenu
+                      syncBusy={syncBusy}
+                      syncMsg={syncMsg}
+                      problemCount={problemSources.length}
+                      extrasLabel={extrasLabel}
+                      onSync={() => void syncNow()}
+                      onSourceStatus={() => { setSourceStatusOpen(true); setMenuOpen(false); }}
+                      onCosts={() => { setCostsOpen(true); setMenuOpen(false); }}
+                    />
+                  </div>
+                ) : null}
+              </div>
+              <IrissNewMatchNotice notices={notices} onOpen={(notice) => void openMatchNotice(notice)} />
+            </div>
+          </div>
+
+          <div className="mt-3.5 flex flex-wrap items-center gap-2">
+            <div role="tablist" aria-label="Datu kopums" className="inline-flex gap-1.5 text-[12.5px]">
               {([
                 ["orders", "Klientu pasūtījumi", clientOrders.length],
                 ["scan", "Mūsu monitorings", scanOrders.length],
@@ -916,14 +1231,15 @@ export function IrissSludinajumiListClient({
                   role="tab"
                   aria-selected={dataset === id}
                   onClick={() => setDataset(id)}
-                  className={`inline-flex h-8 shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-3 transition ${dataset === id ? "bg-[var(--slud-s1)] font-semibold shadow-sm" : "font-medium text-[var(--slud-ink2)]"}`}
+                  data-on={dataset === id ? "true" : "false"}
+                  className="slud-chip slud-pill inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 font-semibold"
                 >
                   {label}
-                  <span className="text-[12px] font-normal text-[var(--slud-ink3)]">{n}</span>
+                  <span className="tabular-nums opacity-70">{n}</span>
                 </button>
               ))}
             </div>
-            <label className="inline-flex h-8 max-w-[min(100%,22rem)] min-w-0 items-center gap-1.5 rounded-full bg-[var(--slud-fill)] px-2.5 text-[13px]">
+            <label className="slud-pill inline-flex h-8 max-w-[min(100%,14rem)] min-w-0 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold">
               <Car className="h-3.5 w-3.5 shrink-0 text-[var(--slud-ink2)]" strokeWidth={STROKE} aria-hidden />
               <select
                 aria-label={dataset === "scan" ? "Monitorētais ieraksts" : "Klients un pasūtījums"}
@@ -941,144 +1257,20 @@ export function IrissSludinajumiListClient({
                 ))}
               </select>
             </label>
-            <div className="ml-auto flex flex-wrap items-center gap-1">
-              <button
-                type="button"
-                title={nextReadLabel ? `Nākamā nolasīšana ${nextReadLabel}` : "Nākamā nolasīšana"}
-                onClick={() => { setSourceStatusOpen(true); setMenuOpen(false); setFilterOpen(false); }}
-                className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[13px] text-[var(--slud-ink2)] hover:bg-[var(--slud-fill)]"
-              >
-                {problemSources.length > 0 ? <span className="h-1.5 w-1.5 rounded-full bg-[var(--slud-warn)]" aria-hidden /> : null}
-                <span>Atjaunots {refreshedAt || (latest?.summary.finishedAt ? "\u00a0" : "nav")}</span>
-              </button>
-              <IrissNewMatchNotice notices={notices} onOpen={(notice) => void openMatchNotice(notice)} />
-            </div>
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <div className="flex min-w-0 flex-1 flex-wrap gap-1">
+            <span className="mx-0.5 h-5 w-px bg-[var(--iriss-line-strong)]" aria-hidden />
+            <div className="flex min-w-0 flex-wrap gap-1.5">
               {tabs.map((t) => (
                 <button
                   key={t.id}
                   type="button"
                   onClick={() => setPrefs((p) => ({ ...p, tab: t.id }))}
                   data-on={tab === t.id ? "true" : "false"}
-                  className="slud-chip inline-flex h-8 items-center gap-1.5 rounded-full bg-[var(--slud-fill)] px-3 text-[13px] font-medium"
+                  className="slud-chip slud-pill inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold"
                 >
                   {t.label}
                   <span className="tabular-nums opacity-70">{t.id === "new" || t.id === "price" ? (mounted ? t.count : "\u00a0") : t.count}</span>
                 </button>
               ))}
-            </div>
-            <label className="relative inline-flex h-8 min-w-[12rem] flex-1 items-center gap-1.5 rounded-full bg-[var(--slud-fill)] px-3 text-[13px] text-[var(--slud-ink2)]">
-              <Search className="h-3.5 w-3.5 shrink-0" strokeWidth={STROKE} aria-hidden />
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Meklēt auto, VIN, klientu"
-                className="min-w-0 flex-1 bg-transparent text-[13px] text-[var(--slud-ink)] outline-none placeholder:text-[var(--slud-ink3)]"
-              />
-            </label>
-            <div ref={filterRef} className="relative shrink-0">
-              <button
-                type="button"
-                aria-label="Filtri"
-                aria-expanded={filterOpen}
-                onClick={() => { setFilterOpen((v) => !v); setMenuOpen(false); setSortOpen(false); }}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-medium hover:bg-[var(--slud-fill)]"
-              >
-                <SlidersHorizontal className="h-3.5 w-3.5" strokeWidth={STROKE} aria-hidden />
-                Filtri
-                {activeFilterCount > 0 ? (
-                  <span className="slud-badge inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[11px] font-semibold tabular-nums">{activeFilterCount}</span>
-                ) : null}
-              </button>
-              {filterOpen ? (
-                <div className="absolute right-0 top-10 z-40 hidden w-[min(92vw,22.5rem)] rounded-[22px] bg-[var(--slud-s1)] p-4 shadow-[var(--slud-shadow)] md:block">
-                  <div className="mb-3 flex items-center justify-between">
-                    <p className="text-[16px] font-semibold">Filtri</p>
-                    <button type="button" onClick={clearAllFilters} className="text-[13px] font-medium text-[var(--slud-ink2)] hover:underline">
-                      Notīrīt
-                    </button>
-                  </div>
-                  {filtersForm()}
-                </div>
-              ) : null}
-            </div>
-            <div ref={sortRef} className="relative shrink-0">
-              <button
-                type="button"
-                aria-label="Kārtot"
-                aria-expanded={sortOpen}
-                onClick={() => { setSortOpen((v) => !v); setFilterOpen(false); setMenuOpen(false); }}
-                className="inline-flex h-8 items-center gap-1.5 rounded-full px-2.5 text-[13px] font-medium hover:bg-[var(--slud-fill)]"
-              >
-                <ArrowUpDown className="h-3.5 w-3.5" strokeWidth={STROKE} aria-hidden />
-                {sortLabel}
-              </button>
-              {sortOpen ? (
-                <div className="absolute right-0 top-10 z-40 hidden w-56 overflow-hidden rounded-2xl bg-[var(--slud-s1)] py-1 shadow-[var(--slud-shadow)] md:block">
-                  {LISTING_SORTS.map((x) => (
-                    <button
-                      key={x.id}
-                      type="button"
-                      onClick={() => {
-                        writeListQuery({ sort: x.id });
-                        setSortOpen(false);
-                      }}
-                      className="flex min-h-10 w-full items-center justify-between px-3 text-left text-[14px] hover:bg-[var(--slud-fill)]"
-                    >
-                      {x.label}
-                      {sort === x.id ? <span className="text-[var(--slud-ink3)]">✓</span> : null}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-            <div role="group" aria-label="Skats" className="inline-flex rounded-full bg-[var(--slud-fill)] p-[3px]">
-              <button
-                type="button"
-                aria-label="Saraksts"
-                aria-pressed={view === "list"}
-                onClick={() => writeListQuery({ view: "list" })}
-                className={`grid h-7 w-8 place-items-center rounded-full ${view === "list" ? "bg-[var(--slud-s1)] shadow-sm" : ""}`}
-              >
-                <List className="h-3.5 w-3.5" strokeWidth={STROKE} />
-              </button>
-              <button
-                type="button"
-                aria-label="Režģis"
-                aria-pressed={view === "grid"}
-                onClick={() => writeListQuery({ view: "grid" })}
-                className={`grid h-7 w-8 place-items-center rounded-full ${view === "grid" ? "bg-[var(--slud-s1)] shadow-sm" : ""}`}
-              >
-                <LayoutGrid className="h-3.5 w-3.5" strokeWidth={STROKE} />
-              </button>
-            </div>
-            <div ref={menuRef} className="relative shrink-0">
-              <button
-                type="button"
-                aria-label="Vairāk"
-                aria-expanded={menuOpen}
-                onClick={() => { setMenuOpen((v) => !v); setFilterOpen(false); setSortOpen(false); }}
-                className="grid h-8 w-8 place-items-center rounded-full hover:bg-[var(--slud-fill)]"
-              >
-                <MoreHorizontal className="h-4 w-4" strokeWidth={STROKE} />
-              </button>
-              {menuOpen ? (
-                <div className="absolute right-0 top-10 z-40 hidden w-[22rem] rounded-[22px] bg-[var(--slud-s1)] p-3.5 shadow-[var(--slud-shadow)] md:block">
-                  <IrissSludinajumiMoreMenu
-                    syncBusy={syncBusy}
-                    syncMsg={syncMsg}
-                    problemCount={problemSources.length}
-                    extrasLabel={extrasLabel}
-                    onSync={() => void syncNow()}
-                    onSourceStatus={() => { setSourceStatusOpen(true); setMenuOpen(false); }}
-                    onCosts={() => { setCostsOpen(true); setMenuOpen(false); }}
-                  />
-                </div>
-              ) : null}
             </div>
           </div>
 
@@ -1086,6 +1278,12 @@ export function IrissSludinajumiListClient({
         </div>
         {syncMsg && !syncBusy ? <p className="mt-1 text-center text-[11px] text-[var(--slud-ink3)]">{syncMsg}</p> : null}
       </header>
+
+      {offerMsg ? (
+        <p role="alert" className="mx-4 rounded-[14px] bg-[var(--iriss-bad-soft)] px-3 py-2 text-[13px] font-semibold text-[var(--iriss-bad)] md:mx-0">
+          {offerMsg}
+        </p>
+      ) : null}
 
       <AdminMobileSheet open={phone && filterOpen} title="Filtri" onClose={() => setFilterOpen(false)}>
         <div className="iriss-slud">{filtersForm(
@@ -1213,9 +1411,24 @@ export function IrissSludinajumiListClient({
       {visible.length === 0 ? (
         <section className="mx-4 rounded-2xl border border-dashed border-[var(--separator)] bg-[var(--surface)] px-6 py-10 text-center shadow-none max-md:mx-4">
           <p className="text-sm font-medium text-[var(--label)]">
-            {vehicles.length === 0 ? "Nav nolasītu auto" : "Šajā filtrā nav auto"}
+            {tab === "gone" && goneVehicles === null
+              ? goneState === "error"
+                ? "Pazudušos auto neizdevās ielādēt"
+                : "Ielādē pazudušos auto…"
+              : vehicles.length === 0
+                ? "Nav nolasītu auto"
+                : "Šajā filtrā nav auto"}
           </p>
-          <p className="mt-1.5 text-[12px] text-[var(--color-provin-muted)]">
+          {tab === "gone" && goneState === "error" ? (
+            <button
+              type="button"
+              className="mt-3 rounded-lg border border-[var(--separator)] px-3 py-1.5 text-[13px] font-medium text-[var(--label)]"
+              onClick={() => setGoneState("idle")}
+            >
+              Mēģināt vēlreiz
+            </button>
+          ) : null}
+          <p className={`mt-1.5 text-[12px] text-[var(--color-provin-muted)]${tab === "gone" && goneVehicles === null ? " hidden" : ""}`}>
             {vehicles.length === 0
               ? "Spied „Nolasīt tagad”, lai ievāktu datus uzreiz, vai sagaidi ikdienas nolasīšanu. Lasa tikai aktīvo pasūtījumu izsoļu saites."
               : "Izvēlies citu cilni, avotu vai notīri meklēšanu un cenas diapazonu."}
@@ -1239,10 +1452,7 @@ export function IrissSludinajumiListClient({
             matchNew={listingIsMatchNew(v.id, displayLinkedOf(v, prefs, orderById, matchOrderIds, dataset))}
             duplicates={duplicatesByListing[v.id] ?? []}
             layout={view}
-            onOpen={() => {
-              setDrawerId(v.id);
-              void markListingViewed(v.id);
-            }}
+            onOpen={() => openDrawer(v.id)}
             onPreviewOrder={(o) => setPreviewOrders([o])}
             onPreviewLinked={(orders) => setPreviewOrders([...orders])}
             mobile={mobile}
@@ -1262,45 +1472,31 @@ export function IrissSludinajumiListClient({
               router.push(`/admin/iriss/scan/${encodeURIComponent(data.id)}`);
               router.refresh();
             }}
-            onCreateOffer={async (vehicle) => {
-              const offerId = crypto.randomUUID();
-              const seed = irissPasutijumsOfferSeedFromListing(
-                vehicle,
-                crypto.randomUUID(),
-                new Date().toISOString(),
-                offerId,
-              );
-              const res = await fetch("/api/admin/iriss-pasutijumi", {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json", Accept: "application/json" },
-                body: JSON.stringify({ record: seed, listingVehicleId: vehicle.id }),
-              });
-              const data = (await res.json().catch(() => ({}))) as { id?: unknown };
-              if (!res.ok || typeof data.id !== "string") return;
-              router.push(
-                `/admin/iriss/pasutijumi/${encodeURIComponent(data.id)}?offer=${encodeURIComponent(offerId)}&noClientPdf=1`,
-              );
-              router.refresh();
-            }}
+            onCreateOffer={(vehicle) => createOfferFor(vehicle)}
           />
         )}
       />
 
       {drawerVehicle ? (
         <>
-          <button type="button" className="fixed inset-0 z-[55] hidden bg-slate-900/30 sm:block" aria-label="Aizvērt atvilktni" onClick={() => setDrawerId(null)} />
+          <button type="button" className="fixed inset-0 z-[55] hidden bg-slate-900/30 sm:block" aria-label="Aizvērt atvilktni" onClick={closeDrawer} />
           <IrissListDrawer
             v={drawerVehicle}
             prefs={prefs}
             orders={orders}
             linked={displayLinkedOf(drawerVehicle, prefs, orderById, matchOrderIds, dataset)}
             budget={budgetOf(drawerVehicle, prefs, orderById, matchOrderIds)}
-            onClose={() => setDrawerId(null)}
+            onClose={closeDrawer}
             onPrefs={applyPrefs}
             onPreviewOrder={(o) => setPreviewOrders([o])}
             mobile={mobile}
             onVinPatch={(id, patch) => setVinPatch((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }))}
+            position={drawerIndex >= 0 ? { index: drawerIndex, total: sorted.length } : null}
+            onPrev={drawerIndex > 0 ? () => drawerStepRef.current(-1) : undefined}
+            onNext={drawerIndex >= 0 && drawerIndex < sorted.length - 1 ? () => drawerStepRef.current(1) : undefined}
+            onCreateOffer={createOfferFor}
+            offers={irissPdRowsForListing(pdRows ?? [], drawerVehicle)}
+            nowMs={nowMs}
           />
         </>
       ) : null}

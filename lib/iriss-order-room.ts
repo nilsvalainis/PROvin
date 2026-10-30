@@ -329,7 +329,22 @@ function driveHit(orderDrive: string, hay: string): boolean | null {
   return drivesMatchGroups(hay, [raw]);
 }
 
-export function irissOrderRoomMatch(rec: IrissPasutijumsRecord, hit: IrissOrderRoomHit): IrissOrderRoomMatch {
+/** Pasūtījuma lauki, pēc kuriem auto salīdzina ar prasībām (pasūtījuma telpa un Sludinājumu kartīte). */
+export type IrissOrderRoomMatchCriteria = Pick<
+  IrissPasutijumsRecord,
+  | "totalBudget"
+  | "productionYears"
+  | "maxMileage"
+  | "transmission"
+  | "bodyType"
+  | "driveType"
+  | "preferredColors"
+  | "nonPreferredColors"
+  | "engineType"
+  | "modelExtension"
+>;
+
+export function irissOrderRoomCriteriaChecks(rec: IrissOrderRoomMatchCriteria, hit: IrissOrderRoomHit): IrissOrderRoomCheck[] {
   const checks: IrissOrderRoomCheck[] = [];
   const budget = parseLooseNumber(rec.totalBudget);
   if (budget != null) {
@@ -378,6 +393,11 @@ export function irissOrderRoomMatch(rec: IrissPasutijumsRecord, hit: IrissOrderR
     });
   }
 
+  return checks;
+}
+
+export function irissOrderRoomMatch(rec: IrissOrderRoomMatchCriteria, hit: IrissOrderRoomHit): IrissOrderRoomMatch {
+  const checks = irissOrderRoomCriteriaChecks(rec, hit);
   const equipmentBadges: IrissOrderRoomCheck[] = [];
   const trimHay = `${hit.title} ${hit.bodyType}`;
   if (rec.modelExtension.trim() && titleHasAnyModelExtension(trimHay, splitModelExtensions(rec.modelExtension))) {
@@ -576,8 +596,17 @@ export function irissOrderRoomNextSteps(input: {
   offerCount: number;
   hasPhone: boolean;
   hasVin?: boolean;
+  /** Pasūtījuma saraksta statuss: pēc apstiprināta piedāvājuma («Rezervēts») piedāvājums vairs nav jāgatavo. */
+  listStatus?: string;
 }): IrissOrderRoomNextStep[] {
   const steps: IrissOrderRoomNextStep[] = [];
+  if (input.listStatus === "reserved") {
+    // Audits 27.10: pēc klienta apstiprinājuma rādīja «Sagatavot pirmo piedāvājumu».
+    steps.push({ id: "deposit", label: "Saņemt avansu", tab: "overview" });
+    if (input.hasPhone) steps.push({ id: "contact", label: "Sazināties ar klientu", tab: "communication" });
+    return steps;
+  }
+  if (input.listStatus === "completed" || input.listStatus === "inactive") return steps;
   if (input.newHits > 0) {
     steps.push({
       id: "hits",

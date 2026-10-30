@@ -49,6 +49,10 @@
         "q": "Vai auto vēstures dati vienmēr ir 100% pilnīgi?",
         "a": "Būsim godīgi: pasaulē nav vienas \"ideālas\" datubāzes, un ne godīgie, ne viltīgie pārdevēji visu nefiksē uz papīra. Mūsu darbs ir savilkt kopā visus pieejamos pavedienus un norādīt uz pretrunām, ja tādas ir. PROVIN audits dod tev milzīgu priekšrocību sarunās un pasargā no acīmredzama \"ieberziena\", taču fiziska auto diagnostika servisā pirms pirkšanas vienmēr ir saprātīgs pēdējais solis."
       }
-    ]
+    ],
+    "homeTitle": "Biežāk uzdotie jautājumi",
+    "homeSub": "Nav atbildes? Uzraksti, un atbildēsim personīgi.",
+    "homeAll": "Visi jautājumi",
+    "homeEmail": "E-pasts"
   }
 }

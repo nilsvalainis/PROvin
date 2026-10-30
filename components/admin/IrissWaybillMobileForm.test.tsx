@@ -43,7 +43,6 @@ function autoEntry(choice: "none" | "list" | "manual") {
       choice={state.autoChoice}
       car={state.car}
       manualBrandModel={state.manualBrandModel}
-      manualVin={state.manualVin}
       isB192={false}
       b192Empty={false}
       showManual={waybillShowsManualFields(state)}
@@ -52,7 +51,6 @@ function autoEntry(choice: "none" | "list" | "manual") {
       onOpenList={() => undefined}
       onClearCar={() => undefined}
       onManualBrandModel={() => undefined}
-      onManualVin={() => undefined}
     />
   );
 }
@@ -60,7 +58,7 @@ function autoEntry(choice: "none" | "list" | "manual") {
 describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
   it("rāda numurus, 2 auto izvēles (No saraksta / Ar roku), sākuma adresi, laiku un komentāru; galamērķa nav", () => {
     const text = renderText(form());
-    for (const t of ["Numurs", "B193-7", "aizņemts", "brīvs", "Auto", "No saraksta", "pieņemts tirdzniecībā", "Ar roku", "Sākuma adrese", "Tukums", "Cita adrese", "Rīgas iela 75", "Laiks", "1 h", "12 h", "48 h", "Cits", "derīga līdz", "Komentārs", "Izveidot pavadzīmi"]) {
+    for (const t of ["Numurs", "B193-7", "aizņemts", "brīvs", "Auto", "No saraksta", "tirdzniecībā pieņemti auto", "Cits - ieraksti marku un modeli", "Sākuma adrese", "Tukums", "Cita adrese", "Rīgas iela 75", "Laiks", "1 h", "12 h", "48 h", "Cits", "derīga līdz", "Komentārs", "Izveidot pavadzīmi"]) {
       expect(text).toContain(t);
     }
     expect(text).not.toContain("Galamērķis");
@@ -73,7 +71,7 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     expect(html).not.toContain('placeholder="17 zīmes"');
     expect(html).not.toContain("tirdzniecībā pieņemtie");
     // Laika izvēles TIEŠI 1 h, 12 h, 48 h, Cits (24 h vairs nav); noklusējums 12 h; brīvais lauks tikai pēc "Cits".
-    const hourButtons = [...html.matchAll(/aria-pressed="(true|false)"[^>]*>(\d+ h|Cits)</g)].map((m) => m[2]);
+    const hourButtons = [...html.slice(html.indexOf(">Laiks<")).matchAll(/aria-pressed="(true|false)"[^>]*>(\d+ h|Cits)</g)].map((m) => m[2]);
     expect(hourButtons).toEqual(["1 h", "12 h", "48 h", "Cits"]);
     expect(text).not.toContain("24 h");
     expect(html).toMatch(/aria-pressed="true"[^>]*>12 h</);
@@ -91,17 +89,17 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     expect(text).not.toContain("SIA ĪRISS auto šim numuram netiek rādīti");
   });
 
-  it("'Kā tas strādā' ir liela kartīte ar numurētiem soļiem un 'Jāzina'", () => {
+  it("'Kā tas strādā' ir aizverams bloks ar 4 īsiem soļiem un 'Jāzina' punktiem (Nils 27.10)", () => {
+    const html = renderHtml(form());
     const text = renderText(form());
-    expect(text).toContain("Pavadzīme 5 soļos. Parasti gatava dažu minūšu laikā.");
-    expect(text).toContain("Aivars ir Dzintarzeme Auto jaunais pavadzīmju asistents");
-    for (const t of ["Izvēlies numuru un auto", "Izvēlies laiku", 'Spied "Izveidot pavadzīmi"', "Ja numurs aizņemts", "Jāzina"]) {
-      expect(text).toContain(t);
-    }
-    expect(text).toContain("Numuru salīdzināšana - CSDD Tukuma filiālē.");
-    expect(text).toContain("Aivars to neizpilda kā komandu, citi to neredz.");
-    expect(text).toContain("tad jānorāda tikai laiks un komersanta pārstāvis.");
-    expect(text).toContain('Izvēlies 1, 12 vai 48 h, vai "Cits" un ieraksti stundas (1-48).');
+    expect(html).toMatch(/<details[^>]*>[\s\S]*Kā tas strādā/);
+    expect(html).not.toMatch(/<details[^>]*\sopen/);
+    for (const t of ["Numurs.", "Auto.", "Laiks.", "Izveidot."]) expect(text).toContain(t);
+    expect(text).toContain("1, 12, 48 h vai Cits (līdz 48 h).");
+    expect(text).toContain("Numuru salīdzināšana - CSDD Tukumā.");
+    expect(text).toContain("Komentārs ir tikai piezīme Aivaram");
+    // Vecie garie teksti vairs nav.
+    expect(text).not.toContain("Aivars ir Dzintarzeme Auto jaunais pavadzīmju asistents");
     // Tikai īsā defise: nav garās domuzīmes (kodi 8211, 8212).
     expect([...text].some((c) => c.charCodeAt(0) === 8211 || c.charCodeAt(0) === 8212)).toBe(false);
   });
@@ -171,23 +169,25 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     expect(withArchive).toContain("Visas pavadzīmes Arhīvā ›");
   });
 
-  it("Auto ievade: noklusējumā abi ceļi; 'Ar roku' uzreiz rāda marku, modeli un VIN", () => {
+  it("Auto ievade: noklusējumā abi ceļi; 'Ar roku' rāda tikai marku un modeli, bez VIN", () => {
     const none = renderText(autoEntry("none"));
     expect(none).toContain("No saraksta");
-    expect(none).toContain("Ar roku");
+    expect(none).toContain("Cits - ieraksti marku un modeli");
     expect(none).not.toContain("Marka, modelis");
     expect(none).not.toContain("Izvēlies auto");
     expect(renderHtml(autoEntry("none"))).not.toContain('aria-label="VIN"');
 
     const manualHtml = renderHtml(autoEntry("manual"));
     const manualText = renderText(autoEntry("manual"));
-    expect(manualText).toContain("Ar roku");
+    expect(manualText).toContain("Cits - ieraksti marku un modeli");
+    expect(manualText).toContain("ieraksti marku un modeli");
+    expect(manualText).not.toContain("marka, modelis, VIN");
     expect(manualHtml).toContain('aria-label="Marka, modelis"');
     expect(manualHtml).toContain('placeholder="Marka, modelis"');
-    expect(manualHtml).toContain('aria-label="VIN"');
-    expect(manualHtml).toContain('placeholder="17 zīmes"');
+    expect(manualHtml).not.toContain('aria-label="VIN"');
+    expect(manualHtml).not.toContain('placeholder="17 zīmes"');
     expect(manualText).not.toContain("Izvēlies auto");
-    expect(manualHtml).toMatch(/aria-pressed="true"[^>]*>Ar roku/);
+    expect(manualHtml).toMatch(/aria-pressed="true"[^>]*>Cits/);
 
     const list = renderText(autoEntry("list"));
     expect(list).toContain("Izvēlies auto");

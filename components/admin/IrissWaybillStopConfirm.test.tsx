@@ -9,6 +9,7 @@ const gauge: WaybillGauge = {
   busy: true,
   status: "ok",
   hoursLeft: 12,
+  minutesLeft: 720,
   share: 0.5,
   brandModel: "VW Golf",
   validUntil: "2026-10-26T10:00:00.000Z",

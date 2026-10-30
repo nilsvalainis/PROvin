@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { PdPaintMap } from "@/components/iriss-piedavajumi/PdPaintMap";
 import {
   IRISS_PD_DAMAGE_AREA_LV,
+  irissPdAuto1BlockCount,
   irissPdDamageSummary,
   type IrissPdAuto1Blocks,
   type IrissPdKv,
@@ -244,7 +245,7 @@ export function PdAuto1Blocks({
   /** PDF: visi «Dati pēc VIN» bez «Rādīt vairāk». */
   expandAll?: boolean;
 }) {
-  const visible = (id: IrissPdBlockId) => (show ? Boolean(show[id]) : true);
+  const visible = (id: IrissPdBlockId) => (show ? Boolean(show[id]) : irissPdAuto1BlockCount(blocks, id) > 0);
   const right = (id: IrissPdBlockId) =>
     visibility ? (
       <PdToggles value={visibility.blocks[id]} disabled={disabled || (!visibility.group.pdf && !visibility.group.link)} onToggle={onToggle ? (m) => onToggle(id, m) : undefined} />

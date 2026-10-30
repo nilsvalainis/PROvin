@@ -21,11 +21,12 @@ export const INVOICE_AI_SCHEMA: AiJsonSchema = {
 };
 
 export const INVOICE_AI_SYSTEM = `Tu nolasi auto servisa rēķina (Latvija) skenētas lapas.
-Atrodi GALĪGO summu apmaksai AR PVN - parasti "Kopā apmaksai", "Summa apmaksai", "Kopā ar PVN", "Total".
-Neņem summu bez PVN, PVN summu, atsevišķu rindu summas, avansu vai iepriekšējo parādu.
+Atrodi rēķina KOPSUMMU BEZ PVN (Nils 27.10) - parasti "Kopā bez PVN", "Summa bez PVN", "Apliekamā summa", "Neto", "Subtotal".
+Neņem summu ar PVN ("Kopā apmaksai"), PVN summu, atsevišķu rindu summas, avansu vai iepriekšējo parādu.
+Ja rēķinā ir tikai summa ar PVN un PVN likme ir norādīta, aprēķini summu bez PVN.
 Ja rēķinā ir vairākas lapas, kopsumma parasti ir pēdējā lapā.
 totalAmount - skaitlis eiro ar punktu kā decimālo atdalītāju (piem. 258.4). currency - valūtas kods (EUR).
-amountIncludesVat - vai totalAmount ietver PVN. invoiceDate - rēķina datums YYYY-MM-DD vai "".
+amountIncludesVat - vai totalAmount ietver PVN (pareizi: false). invoiceDate - rēķina datums YYYY-MM-DD vai "".
 confidence 0..1 - cik droši, ka tā ir pareizā galīgā summa (ar roku rakstīts, izplūdis vai vairākas iespējamas summas - zemāk).
 Ja kopsummu nevar atrast, found=false un totalAmount=0.`;
 

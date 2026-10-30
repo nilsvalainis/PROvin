@@ -334,8 +334,8 @@ export function IrissMarketplaceLoadPanel({
         </p>
       ) : (
         <p className="mt-2 text-[11px] text-[var(--ink3)]">
-          Automātiska ielāde ik pa {status?.intervalDays ?? 3} dienām tikai jauniem sludinājumiem. Poga Ielādēt -
-          manuāla ielāde tagad.
+          Automātiskās ielādes nav - ielādē ar pogu Ielādēt, kad vajag konkrētam pasūtījumam. Mēneša griests{" "}
+          {formatMarketplaceUsd(monthlyCapUsd)}.
         </p>
       )}
       <p className="sr-only">

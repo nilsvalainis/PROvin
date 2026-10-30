@@ -68,10 +68,14 @@ export function isAutoparksV2Section(value: unknown): value is AutoparksV2Sectio
  * Darbinieka navigācijas sadaļas: Autoparka apakštiesības nav atsevišķi punkti. Kamēr v2 nav ieslēgts
  * darbiniekiem, tās navigācijā neparādās vispār; pēc tam - viens punkts (pirmā `ap_*` ar lapu).
  */
+/** Sadaļas ar tiesībām, bet bez punkta izvēlnē (Mēneša atskaite - Nils 26.10: pagaidām nelieto; lapa paliek). */
+export const IRISS_NAV_HIDDEN_SECTIONS: readonly IrissSection[] = ["atskaite"];
+
 export function staffNavSections(sections: readonly IrissSection[], autoparksV2Visible: boolean): IrissSection[] {
   const out: IrissSection[] = [];
   let apAdded = false;
   for (const id of sections) {
+    if (IRISS_NAV_HIDDEN_SECTIONS.includes(id)) continue;
     if (!isAutoparksV2Section(id)) {
       out.push(id);
       continue;
@@ -88,7 +92,12 @@ export const STAFF_TABBAR_HOME_HREF = "/admin/iriss" as const;
 export type StaffTabbarItem =
   | { kind: "home"; href: typeof STAFF_TABBAR_HOME_HREF; label: "Sākums" }
   | { kind: "section"; id: IrissSection; href: string; label: string }
-  | { kind: "logout"; label: "Iziet" };
+  | { kind: "logout"; label: "Iziet" }
+  /** Pārējās sadaļas un Iziet - lapā no apakšas (audits 26.10: 11 punkti joslā, nogriezti nosaukumi). */
+  | { kind: "more"; label: "Vairāk"; sections: Array<{ id: IrissSection; href: string; label: string }> };
+
+/** Joslā redzamo sadaļu skaits; ja vairāk, pārējās un Iziet ir zem «Vairāk». */
+export const STAFF_TABBAR_MAX_SECTIONS = 3;
 
 /**
  * Telefonā apakšējā josla: tikai piešķirtās sadaļas (ne visiem vienāds ikonu komplekts).
@@ -99,13 +108,23 @@ export function staffTabbarItems(
   autoparksV2Visible: boolean,
 ): StaffTabbarItem[] {
   if (isWaybillOnlyStaff(sections)) return [];
-  const items: StaffTabbarItem[] = [{ kind: "home", href: STAFF_TABBAR_HOME_HREF, label: "Sākums" }];
+  const links: Array<{ id: IrissSection; href: string; label: string }> = [];
+  const hrefs = new Set<string>();
   for (const id of staffNavSections(sections, autoparksV2Visible)) {
     const href = irissSectionMeta(id).pagePrefixes[0];
-    if (!href) continue;
-    items.push({ kind: "section", id, href, label: IRISS_SECTION_LABELS[id] });
+    // Vairākas sadaļas ved uz vienu lapu (Loģistika, Grāmatvede, Serviss) - joslā vienreiz.
+    if (!href || hrefs.has(href)) continue;
+    hrefs.add(href);
+    links.push({ id, href, label: IRISS_SECTION_LABELS[id] });
   }
-  items.push({ kind: "logout", label: "Iziet" });
+  const items: StaffTabbarItem[] = [{ kind: "home", href: STAFF_TABBAR_HOME_HREF, label: "Sākums" }];
+  if (links.length <= STAFF_TABBAR_MAX_SECTIONS) {
+    for (const l of links) items.push({ kind: "section", ...l });
+    items.push({ kind: "logout", label: "Iziet" });
+    return items;
+  }
+  for (const l of links.slice(0, STAFF_TABBAR_MAX_SECTIONS)) items.push({ kind: "section", ...l });
+  items.push({ kind: "more", label: "Vairāk", sections: links.slice(STAFF_TABBAR_MAX_SECTIONS) });
   return items;
 }
 

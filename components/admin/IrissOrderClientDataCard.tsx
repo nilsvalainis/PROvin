@@ -59,7 +59,7 @@ export function IrissOrderClientDataCard({
       <p className="mb-3 text-[12px] text-[var(--ink2)]">Vienā blokā: kontakti un dati. Labo uzreiz, saglabā šeit.</p>
       <div className="grid grid-cols-1 gap-3">
         <label className="block min-w-0">
-          <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Vārds, uzvārds</span>
+          <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Vārds, uzvārds</span>
           <input
             className={fieldClass}
             value={irissClientNameInputValue(rec)}
@@ -68,7 +68,7 @@ export function IrissOrderClientDataCard({
           />
         </label>
         <label className="block min-w-0">
-          <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Tālrunis</span>
+          <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Tālrunis</span>
           <input
             className={fieldClass}
             value={rec.phone}
@@ -79,7 +79,7 @@ export function IrissOrderClientDataCard({
           {phoneWarning ? <p className="mt-1 text-[11px] text-amber-800">{phoneWarning}</p> : null}
         </label>
         <label className="block min-w-0">
-          <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">E-pasts</span>
+          <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">E-pasts</span>
           <input
             className={fieldClass}
             value={rec.email}
@@ -93,7 +93,7 @@ export function IrissOrderClientDataCard({
           ) : null}
         </label>
         <label className="block min-w-0">
-          <span className="mb-1 block text-[11.5px] font-semibold text-[#374151]">Pasūtījuma datums</span>
+          <span className="mb-1 block text-[11.5px] font-semibold text-[var(--iriss-ink-2)]">Pasūtījuma datums</span>
           <input
             className={fieldClass}
             type="date"

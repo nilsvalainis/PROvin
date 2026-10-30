@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Link } from "@/i18n/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 
@@ -24,10 +25,16 @@ export function B2bPartnerInviteRegister({ token }: { token: string }) {
   const [pendingEmail, setPendingEmail] = useState("");
   const [resendBusy, setResendBusy] = useState(false);
   const [resendOk, setResendOk] = useState(false);
+  /** Partneru sadarbības noteikumi + DPA (audits P7); serveris bez tā atbild 400 terms_required. */
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const onSubmit = async () => {
     if (form.password.trim() !== form.passwordConfirm.trim()) {
       setError(t("passwordMismatch"));
+      return;
+    }
+    if (!termsAccepted) {
+      setError(t("registerTermsRequired"));
       return;
     }
     setBusy(true);
@@ -47,6 +54,7 @@ export function B2bPartnerInviteRegister({ token }: { token: string }) {
           password: form.password,
           token,
           locale,
+          termsAccepted: true,
         }),
       });
       if (!res.ok) {
@@ -153,6 +161,24 @@ export function B2bPartnerInviteRegister({ token }: { token: string }) {
         {field("password", "loginPassword", { type: "password", autoComplete: "new-password" })}
         {field("passwordConfirm", "passwordConfirm", { type: "password", autoComplete: "new-password" })}
       </div>
+      <label className="flex cursor-pointer items-start gap-3">
+        <input
+          type="checkbox"
+          checked={termsAccepted}
+          onChange={(event) => setTermsAccepted(event.target.checked)}
+          className="mt-0.5 h-4 w-4 shrink-0 rounded-[0.2rem] border-zinc-500 bg-transparent text-[#2563EB] focus:ring-1 focus:ring-[#2563EB]/40"
+          disabled={busy}
+        />
+        <span className="text-[0.75rem] leading-snug text-zinc-400">
+          {t.rich("registerTermsConsent", {
+            terms: (chunks) => (
+              <Link href="/partneriem/noteikumi" target="_blank" className="text-[#93c5fd] underline-offset-2 hover:underline">
+                {chunks}
+              </Link>
+            ),
+          })}
+        </span>
+      </label>
       {error ? <p className={styles.inlineFieldError}>{error}</p> : null}
       <button type="submit" className={styles.liquidCta} disabled={busy}>
         <span className={styles.liquidCtaShimmer} aria-hidden />

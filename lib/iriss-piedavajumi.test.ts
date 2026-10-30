@@ -4,7 +4,11 @@ import {
   applyIrissPdExpiry,
   applyIrissPdPatch,
   buildIrissPdPublicView,
+  irissPdFactValue,
   countIrissPdByStatus,
+  irissPdDeleteConfirm,
+  irissPdHiddenBlockLabels,
+  irissPdSubtitle,
   filterIrissPdRows,
   findIrissPdTakenConflict,
   formatIrissPdPrice,
@@ -12,8 +16,11 @@ import {
   irissPdBadgeCount,
   irissPdCarPicks,
   irissPdClientOptions,
+  irissPdEurDigits,
   irissPdMargin,
   irissPdRowEffectiveStatus,
+  irissPdTotalFromParts,
+  buildIrissPdPublicView as buildPublicView,
   irissPdSendBlockers,
   irissPdToListRow,
   normalizeIrissPiedavajums,
@@ -137,6 +144,37 @@ describe("Piedāvājumi: dzīves cikls", () => {
   });
 });
 
+describe("Cenu bloks ar PVN (Nils 27.10)", () => {
+  it("tikai cipari: burti un «ap 1000» neiziet cauri", () => {
+    expect(irissPdEurDigits("ap 1 000 €")).toBe("1000");
+    expect(irissPdEurDigits("18 400")).toBe("18400");
+    expect(irissPdEurDigits("abc")).toBe("");
+    expect(irissPdEurDigits("007")).toBe("7");
+  });
+
+  it("Klientam kopā = izsole + piegāde + sagatavošana + komisija", () => {
+    expect(irissPdTotalFromParts("18400", "1150", "", "900")).toBe(20450);
+    expect(irissPdTotalFromParts("", "", "", "")).toBe(0);
+  });
+
+  it("PVN režīms un komisija saglabājas, vēsturē ieraksts; klients redz tikai režīma nosaukumu", () => {
+    const r = applyIrissPdPatch(rec(), { vatMode: "margin", commission: "900" }, ctx);
+    expect(r.ok && r.record.vatMode).toBe("margin");
+    expect(r.ok && r.record.commission).toBe("900");
+    expect(r.ok && r.record.history.map((h) => h.text)).toEqual(expect.arrayContaining(["PVN: Ar PVN (marža)", "IRISS komisija mainītas"]));
+    const view = buildPublicView({ ...rec({ price: "20450" }), vatMode: "deductible" }, "link", NOW);
+    expect(view.vatLabel).toBe("PVN atskaitāms");
+    expect(buildPublicView(rec({ price: "20450" }), "link", NOW).vatLabel).toBe("");
+    expect(JSON.stringify(view)).not.toContain("900");
+  });
+
+  it("vecs ieraksts bez lauka - PVN «Nav zināms», komisija tukša", () => {
+    const r = normalizeIrissPiedavajums({ id: ID });
+    expect(r?.vatMode).toBe("unknown");
+    expect(r?.commission).toBe("");
+  });
+});
+
 describe("Piedāvājumi: labojumi", () => {
   it("cenas maiņa vēsturē «Cena 12 900 € → 12 750 €»", () => {
     const r = applyIrissPdPatch(rec({ price: "12900" }), { price: "12750" }, ctx);
@@ -255,6 +293,32 @@ describe("Piedāvājumi: klienta skats (nekad iekšējie dati)", () => {
     const facts = buildIrissPdPublicView(secretRec, "link", NOW).facts;
     expect(facts.map((f) => ({ ...f, value: sp(f.value) }))).toContainEqual({ label: "Nobraukums", value: "118 400 km" });
     expect(facts).toContainEqual({ label: "VIN", value: "WF0YXXTTGYKA34521" });
+    expect(irissPdSubtitle(facts.map((f) => ({ ...f, value: sp(f.value) })))).toBe("2019 · 118 400 km");
+  });
+
+  it("tukša krāsas karte un tukši Auto1 bloki nav klienta skatā", () => {
+    const emptyPaint: IrissPdAuto1Blocks = {
+      paint: { zones: [{ id: "front", readings: [], warning: false }, { id: "roof", readings: [], warning: false }, { id: "rear", readings: [], warning: false }, { id: "left", readings: [], warning: false }, { id: "right", readings: [], warning: false }], unassigned: [] },
+      tech: [],
+      equipment: [],
+      service: [],
+      inspection: [],
+      damage: [],
+      vinData: [],
+    };
+    const view = buildIrissPdPublicView(rec({ auto1: emptyPaint, status: "sent", validUntil: "2026-11-02" }), "link", NOW);
+    expect(view.blocks).toEqual({});
+    expect(view.auto1?.paint).toBeNull();
+  });
+
+  it("paslēpto bloku etiķetes tikai ja datos ir saturs", () => {
+    expect(irissPdHiddenBlockLabels(secretRec, "link")).toEqual(["Bojājumu kopsavilkums"]);
+    expect(irissPdHiddenBlockLabels(rec({ auto1: null }), "link")).toEqual([]);
+  });
+
+  it("dzēšanas apstiprinājums nosauc numuru", () => {
+    expect(irissPdDeleteConfirm("PD-0217")).toContain("PD-0217");
+    expect(irissPdDeleteConfirm("PD-0217")).toContain("nevar atsaukt");
   });
 });
 
@@ -307,5 +371,34 @@ describe("Piedāvājumi: palīgfunkcijas", () => {
     expect(r?.linkToken).toBe("");
     expect(r?.visibility.blocks.damage).toEqual({ pdf: false, link: false });
     expect(normalizeIrissPiedavajums({ id: "../../etc" })).toBeNull();
+  });
+
+  it("Loģistikas avots (Nils 27.10): sourceRef un /STOCK bildes saglabājas lasot", () => {
+    const r = normalizeIrissPiedavajums({
+      id: ID,
+      source: "logistics",
+      sourceRef: "logistics:lo_12",
+      photos: [{ kind: "dropbox", ref: "logistics:lo_12", id: "id:abc" }],
+    });
+    expect(r?.source).toBe("logistics");
+    expect(r?.sourceRef).toBe("logistics:lo_12");
+    expect(r?.photos).toHaveLength(1);
+  });
+});
+
+describe("klienta skats: Autoparka/CSDD vērtības cilvēkam", () => {
+  it("ISO datumi -> gads / MM.GGGG, CSDD kategorija netiek rādīta kā virsbūve", () => {
+    const r = emptyIrissPiedavajums("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", "2026-10-26T10:00:00.000Z");
+    const rec = {
+      ...r,
+      status: "sent" as const,
+      validUntil: "2026-11-02",
+      price: "12900",
+      vehicle: { ...r.vehicle, title: "ŠKODA OCTAVIA", year: "2017-08-23", firstRegistration: "2017-08-23", body: "Vieglais plašlietojuma" },
+    };
+    const view = buildIrissPdPublicView(rec, "link", Date.parse("2026-10-26T12:00:00.000Z"));
+    expect(irissPdFactValue(view.facts, "Gads")).toBe("2017");
+    expect(irissPdFactValue(view.facts, "Pirmā reģistrācija")).toBe("08.2017");
+    expect(view.facts.some((f) => f.label === "Virsbūve")).toBe(false);
   });
 });

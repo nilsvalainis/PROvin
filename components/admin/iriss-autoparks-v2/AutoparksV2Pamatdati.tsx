@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { AUTOPARKS_OWNER_LV, AUTOPARKS_OWNERS, type AutoparksOwner } from "@/lib/iriss-autoparks";
+import { ap2PatchJson } from "./ap2-save";
 import type { AutoparksV2Basics } from "@/lib/iriss-autoparks-v2";
-import { fmtCm3, fmtDateLv, fmtKm, fmtKw } from "@/lib/iriss-autoparks-v2-format";
+import { fmtCm3, fmtDateLv, fmtKm, fmtKw, parseNumberFieldInput } from "@/lib/iriss-autoparks-v2-format";
 
 type EditKey =
   | "plate"
@@ -39,6 +39,8 @@ const NUM_KEYS: ReadonlySet<EditKey> = new Set(["displacementCm3", "powerKw", "m
 export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2Basics; onBasics: (b: AutoparksV2Basics) => void }) {
   const [editing, setEditing] = useState<EditKey | null>(null);
   const [error, setError] = useState("");
+  // Ja saglabāšana neizdodas, ievadītā vērtība nepazūd - «Mēģināt vēlreiz».
+  const [retry, setRetry] = useState<(() => void) | null>(null);
 
   async function save(key: EditKey, value: string) {
     setEditing(null);
@@ -46,14 +48,27 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
     const next = value.trim();
     if (next === current) return;
     setError("");
-    const res = await fetch(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ [key]: NUM_KEYS.has(key) ? (next === "" ? null : Number(next)) : next }),
-    }).catch(() => null);
-    const data = (await res?.json().catch(() => null)) as { basics?: AutoparksV2Basics } | null;
-    if (res?.ok && data?.basics) onBasics(data.basics);
-    else setError(key === "vin" ? "Nederīgs VIN (17 zīmes, bez I/O/Q)" : "Neizdevās saglabāt");
+    const num = NUM_KEYS.has(key) ? parseNumberFieldInput(next) : null;
+    if (num === "invalid") {
+      setError("Ievadi skaitli, piem., 171048 - lauks netika mainīts");
+      return;
+    }
+    if (NUM_KEYS.has(key) && num !== null && String(num) === current) return;
+    setRetry(null);
+    const r = await ap2PatchJson<{ basics?: AutoparksV2Basics; error?: string }>(
+      `/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`,
+      { [key]: NUM_KEYS.has(key) ? num : next },
+    );
+    const data = r.data;
+    if (r.ok && data?.basics) onBasics(data.basics);
+    else if (data?.error === "invalid_power") setError("Jauda nav ticama (1-2000 kW) - lauks netika mainīts");
+    else if (data?.error === "invalid_displacement") setError("Tilpums nav ticams (50-20000 cm3) - lauks netika mainīts");
+    else if (data?.error === "invalid_mileage") setError("Nobraukums nav ticams - lauks netika mainīts");
+    else if (key === "vin" && r.status !== null && r.status < 500) setError("Nederīgs VIN (17 zīmes, bez I/O/Q)");
+    else {
+      setError(`Neizdevās saglabāt «${next}»`);
+      setRetry(() => () => void save(key, value));
+    }
   }
 
   const editable = (key: EditKey, label: string, value: string, shown: string, type: "text" | "date" | "number" = "text") => {
@@ -65,7 +80,9 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
         {editing === key ? (
           <input
             className="v"
-            type={type}
+            // Skaitļiem teksta lauks ar ciparu tastatūru: `type="number"` atdeva "" pie "171 048" / "1,9" un lauks tika iztīrīts.
+            type={type === "number" ? "text" : type}
+            inputMode={type === "number" ? "decimal" : undefined}
             defaultValue={value}
             autoFocus
             onBlur={(e) => void save(key, e.target.value)}
@@ -83,31 +100,42 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
     );
   };
 
-  const editableOwner = (owner: AutoparksOwner) => (
+  /** «Pasūtījums» (Nils 27.10): atzīme pie jebkura statusa; īpašnieks ir galvenes joslā. */
+  const clientOrderToggle = () => (
     <div className="ap2-f">
       <i className="ap2-cd" />
-      <span className="k">Īpašnieks</span>
-      {editing === "owner" ? (
-        <select className="v" autoFocus defaultValue={owner} onChange={(e) => void save("owner", e.target.value)} onBlur={() => setEditing(null)}>
-          {AUTOPARKS_OWNERS.map((o) => (
-            <option key={o} value={o}>
-              {AUTOPARKS_OWNER_LV[o]}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <button type="button" className="v" onClick={() => setEditing("owner")}>
-          {AUTOPARKS_OWNER_LV[owner]}
-        </button>
-      )}
+      <span className="k">Pasūtījums</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={basics.clientOrder}
+        className={`v ap2-switch ${basics.clientOrder ? "on" : ""}`}
+        onClick={() => void saveClientOrder(!basics.clientOrder)}
+      >
+        {basics.clientOrder ? "Jā" : "Nē"}
+      </button>
     </div>
   );
 
+  async function saveClientOrder(next: boolean) {
+    setError("");
+    setRetry(null);
+    const r = await ap2PatchJson<{ basics?: AutoparksV2Basics }>(`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(basics.id)}`, {
+      clientOrder: next ? "1" : "0",
+    });
+    if (r.ok && r.data?.basics) onBasics(r.data.basics);
+    else {
+      setError("Neizdevās saglabāt");
+      setRetry(() => () => void saveClientOrder(next));
+    }
+  }
+
   return (
     <div className="ap2-pane">
-      <div className="ap2-card">
+      {/* Makets (kabinets, apstiprināts 27.10): datorā lauku režģis 3 kolonnās, Auto un Tehniskie dati - atsevišķas kartītes. */}
+      <div className="ap2-card ap2-pd-grid">
         <h3>Auto</h3>
-        {editableOwner(basics.owner)}
+        {clientOrderToggle()}
         {editable("make", "Marka", basics.make, basics.make)}
         {editable("model", "Modelis", basics.model, basics.model)}
         {editable("year", "Gads", basics.year, basics.year)}
@@ -117,7 +145,11 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
         {editable("mileageKm", "Nobraukums", basics.mileageKm.value == null ? "" : String(basics.mileageKm.value), fmtKm(basics.mileageKm.value), "number")}
         {/* "Atrašanās vieta" nerāda šeit kopš j62: lauks dzīvo tikai IRISS Loģistikas kabinetā (kartes punkts); dati paliek, tikai nav rediģējami no Autoparka. */}
         {editable("arrivedAt", "Atvests", basics.arrivedAt, fmtDateLv(basics.arrivedAt), "date")}
-        <h3>Tehniskie dati</h3>
+      </div>
+      <div className="ap2-card ap2-pd-grid">
+        <h3>
+          Tehniskie dati <small className="ap2-h3-sub">· no CSDD, labojami</small>
+        </h3>
         {editable("firstRegDate", "1. reģistrācija", basics.firstRegDate.value, fmtDateLv(basics.firstRegDate.value), "date")}
         {editable("displacementCm3", "Tilpums", basics.displacementCm3.value == null ? "" : String(basics.displacementCm3.value), fmtCm3(basics.displacementCm3.value), "number")}
         {editable("powerKw", "Jauda", basics.powerKw.value == null ? "" : String(basics.powerKw.value), fmtKw(basics.powerKw.value), "number")}
@@ -125,7 +157,19 @@ export function AutoparksV2Pamatdati({ basics, onBasics }: { basics: AutoparksV2
         {editable("engine", "Dzinējs", basics.engine.value, basics.engine.value)}
         {editable("tyreSize", "Riepas", basics.tyreSize.value, basics.tyreSize.value)}
       </div>
-      {error ? <p className="ap2-err">{error}</p> : null}
+      {error ? (
+        <p className="ap2-err" role="alert">
+          {error}
+          {retry ? (
+            <>
+              {" "}
+              <button type="button" className="ap2-retry" onClick={() => { const r = retry; setRetry(null); r(); }}>
+                Mēģināt vēlreiz
+              </button>
+            </>
+          ) : null}
+        </p>
+      ) : null}
     </div>
   );
 }

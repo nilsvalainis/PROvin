@@ -297,7 +297,7 @@ exports[`IRISS printable PDF HTML (template defaults) > offer print HTML matches
       .oem-extra{margin-top:0;}
       .pdf-ccvin-flags{margin-bottom:1em;}
   </style></head><body><div class="ipdf-root"><header class="ipdf-header">
-    <img class="ipdf-logo" src="/brands/dzintarzeme-auto-logo-original.png" alt="Dzintarzeme Auto"/>
+    <img class="ipdf-logo" src="/brands/dzintarzeme-auto-logo.png" alt="Dzintarzeme Auto"/>
     <div>
       <p class="ipdf-hero-model">BMW 320d</p>
       <p class="ipdf-hero-sub">2026. gada 15. aprīlis · Auto pārbaude / piedāvājums</p>
@@ -625,7 +625,7 @@ exports[`IRISS printable PDF HTML (template defaults) > pasūtījuma print HTML 
       .oem-extra{margin-top:0;}
       .pdf-ccvin-flags{margin-bottom:1em;}
   </style></head><body><div class="ipdf-root ipdf-root--muted"><header class="ipdf-header">
-    <img class="ipdf-logo" src="/brands/dzintarzeme-auto-logo-original.png" alt="Dzintarzeme Auto"/>
+    <img class="ipdf-logo" src="/brands/dzintarzeme-auto-logo.png" alt="Dzintarzeme Auto"/>
     <div>
       <p class="ipdf-hero-model">VW Golf</p>
       <p class="ipdf-hero-sub">2026. gada 15. aprīlis · IRISS pasūtījums</p>

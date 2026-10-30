@@ -71,7 +71,10 @@ export function filterLogisticsOrdersByView(
     return active.filter((o) => pickupIsToday(o.pickupDate, todayIso) || /šodien|jādara/i.test(o.nextAction));
   }
   if (view === "due") {
-    return active.filter((o) => pickupIsDueSoon(o.pickupDate, todayIso));
+    // «Termiņš» (Nils 27.10): savākšana šodien līdz 3 dienām, arī ar «šodien/jādara» nākamajā darbībā.
+    return active.filter(
+      (o) => pickupIsDueSoon(o.pickupDate, todayIso) || pickupIsToday(o.pickupDate, todayIso) || /šodien|jādara/i.test(o.nextAction),
+    );
   }
   if (view === "trips") return active;
   return active;

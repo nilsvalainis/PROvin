@@ -25,6 +25,8 @@ export type WaybillGauge = {
   manual?: boolean;
   /** Atlikušās pilnās stundas (noapaļotas uz leju, lai "1 h" nozīmē vismaz 1 h). */
   hoursLeft: number;
+  /** Atlikušās minūtes (uz augšu), lai < 1 h aplis nerāda "0h". */
+  minutesLeft: number;
   /** 0..1 no 48 h. */
   share: number;
   brandModel: string;
@@ -64,6 +66,7 @@ export function waybillGaugesFromPlates(
         status: issuing ? "issuing" : "free",
         ...(issuing?.manual ? { manual: true } : {}),
         hoursLeft: 0,
+        minutesLeft: 0,
         share: 0,
         brandModel: issuing?.brandModel ?? "",
         validUntil: "",
@@ -83,6 +86,7 @@ export function waybillGaugesFromPlates(
       busy: true,
       status: waybillCountdownStatus(cur.validUntil, now),
       hoursLeft: Math.floor(leftMs / HOUR_MS),
+      minutesLeft: Math.ceil(leftMs / 60_000),
       share: Math.min(1, leftMs / (WAYBILL_MAX_HOURS * HOUR_MS)),
       brandModel: cur.brandModel || row?.brandModel || "",
       validUntil: cur.validUntil,
@@ -114,4 +118,9 @@ export function formatWaybillLeft(validUntil: string, now = new Date()): string 
   const m = totalMin % 60;
   if (totalMin === 0) return "beigusies";
   return h > 0 ? `${h} h ${String(m).padStart(2, "0")} min` : `${m} min`;
+}
+
+/** Apļa vērtība: < 1 h - minūtes ("17 min"), citādi stundas ("38 h"). */
+export function waybillGaugeTimeLeft(g: Pick<WaybillGauge, "hoursLeft" | "minutesLeft">): { value: number; unit: "h" | "min" } {
+  return g.hoursLeft >= 1 ? { value: g.hoursLeft, unit: "h" } : { value: Math.max(0, g.minutesLeft), unit: "min" };
 }

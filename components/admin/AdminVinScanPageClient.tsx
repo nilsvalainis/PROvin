@@ -26,6 +26,7 @@ import {
 } from "@/components/admin/AdminVinScanPanel";
 import { canonicalizeListingUrl, isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { isCsddTechDataResult, type CsddTechData } from "@/lib/csdd-tech-data";
+import { AdminVinMemoryPanel } from "@/components/admin/AdminVinMemoryPanel";
 import {
   emptyVinScanPlates,
   isValidScanPlate,
@@ -356,6 +357,11 @@ export function AdminVinScanPageClient({
           <label className="block min-w-0"><span className={lab}>LV numurs</span>{plateInput}</label>
           <div className="flex items-end">{scanButton}</div>
         </div>
+        {vin.length === 17 ? (
+          <div className="mt-2.5">
+            <AdminVinMemoryPanel vin={vin} />
+          </div>
+        ) : null}
       </div>
       {/* Telefons: tikai ievade + kamera, līdz ielādei avoti paliek slēpti. */}
       <div className="md:hidden">

@@ -4,10 +4,13 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { isAppLocale } from "@/i18n/locales";
 import { Footer } from "@/components/Footer";
-import { HomeGoogleReviews } from "@/components/home/HomeGoogleReviews";
+import { HomeFreeToolsSection } from "@/components/home/HomeFreeToolsSection";
+import { HomeFaqSection } from "@/components/home/HomeFaqSection";
+import { HomeTrustBand } from "@/components/home/HomeTrustBand";
 import { HomeRiskAuditGuideSection } from "@/components/home/HomeRiskAuditGuideSection";
 import { HomeVinSeoSection } from "@/components/home/HomeVinSeoSection";
-import { RelatedBlogLinks } from "@/components/seo/RelatedBlogLinks";
+import type { VinDecoderLabels } from "@/components/vin-decoder/VinDecoderTool";
+import { homePath } from "@/lib/paths";
 import HomePricingHero from "@/components/home/HomePricingHero";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildServiceOffersJsonLd } from "@/lib/seo-json-ld";
@@ -24,6 +27,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // `/.env`, `/llms.txt` u.c. nonāk šeit kā `[locale]`: 404, nevis 500 (static→dynamic).
   if (!isAppLocale(locale)) notFound();
   const t = await getTranslations({ locale, namespace: "Meta" });
+  const tAll = await getTranslations({ locale });
+  const decoderLabels = tAll.raw("VinDecoder") as VinDecoderLabels;
   return buildPublicPageMetadata({
     locale,
     path: "",
@@ -40,6 +45,8 @@ export default async function HomePage({ params }: Props) {
   const { locale } = await params;
   if (!isAppLocale(locale)) notFound();
   const t = await getTranslations({ locale, namespace: "Meta" });
+  const tAll = await getTranslations({ locale });
+  const decoderLabels = tAll.raw("VinDecoder") as VinDecoderLabels;
   const offers = buildServiceOffersJsonLd(
     locale,
     { mini: t("offerMiniName"), audits: t("offerAuditsName"), dealer: t("offerDealerName") },
@@ -50,17 +57,17 @@ export default async function HomePage({ params }: Props) {
     <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
       <JsonLd data={offers} />
       <div className="home-hero-pricing-unified demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">
-        <Suspense fallback={null}>
-          <HomePricingHero />
-        </Suspense>
+        {/* Bez ārējā Suspense: hero (H1 + cenu karte) jābūt servera HTML pirmajā kadrā, citādi CLS. useSearchParams ir savā Suspense iekšā. */}
+        <HomePricingHero />
 
         <div id="site-content" className="min-w-0 scroll-mt-14 bg-transparent pb-0 text-white home-body-ink">
+          <HomeFreeToolsSection decoderLabels={decoderLabels} home={homePath(locale)} />
+          <HomeTrustBand />
           <HomeVinSeoSection />
-          <RelatedBlogLinks />
           <Suspense fallback={null}>
             <HomeRiskAuditGuideSection />
           </Suspense>
-          <HomeGoogleReviews />
+          <HomeFaqSection />
 
           <section className="demo-design-dir__section bg-transparent pb-0">
             <Footer />

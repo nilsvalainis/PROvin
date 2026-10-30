@@ -1,16 +1,19 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
   MouseSensor,
   TouchSensor,
-  closestCorners,
+  closestCenter,
+  pointerWithin,
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -18,6 +21,7 @@ import {
 import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { IrissAddressAutocomplete, type PickedAddress } from "@/components/admin/iriss-logistika/IrissAddressAutocomplete";
+import { autoparksSaitesHref } from "@/lib/iriss-car-share";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
 import {
   CARGO_BUCKET_ADD_LV,
@@ -45,6 +49,7 @@ import {
   type RouteTemplateType,
 } from "@/lib/iriss-logistics-cargo-plan";
 import { logisticsGoogleMapsDirUrl } from "@/lib/iriss-logistics-maps-dir";
+import { READINESS_COLOR, READINESS_LV, type ReadinessKind } from "@/lib/iriss-logistics-readiness";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
 
 type Props = {
@@ -56,6 +61,11 @@ type Props = {
   onPlanChange: (plan: CargoPlanState) => void;
   onRowClick: (id: string) => void;
   onRowHover: (id: string | null) => void;
+  /** Loģistikas ieraksts -> Autoparka auto id (saite "Kartīte"). */
+  cardHrefByCarId?: Readonly<Record<string, string>>;
+  /** Pickup posms rindā (Gaida / Ceļā / ...); klikšķis atver auto kabinetu (statuss, dokumenti, Uz Autoparku). */
+  stageLabelByCarId?: Readonly<Record<string, string>>;
+  onOpenCabinet?: (id: string) => void;
   /** `base`: tikko mainītais plāns, ko aprēķins izmanto (nevis veco stāvokli). */
   onRefreshDirections: (bucket: "next" | "after", base?: CargoPlanState) => void;
   routeUi?: Record<"next" | "after", { busy: boolean; notice: string }>;
@@ -63,6 +73,10 @@ type Props = {
   onTemplatesChanged?: () => void;
   /** Citu klientu auto ar roku: marka, modelis, adrese no ģeokodētāja. */
   onAddManual?: (bucket: CargoBucket, input: ManualCarInput) => Promise<boolean>;
+  /** Slēdzis «Gatavība» Nākošās kravas galvenē: ON = gatavības krāsas un čipi Nākošajā kravā. */
+  readinessOn?: boolean;
+  onToggleReadiness?: () => void;
+  readinessByCarId?: ReadonlyMap<string, ReadinessKind>;
 };
 
 export type ManualCarInput = {
@@ -84,6 +98,21 @@ function bucketListsFromPlan(plan: CargoPlanState, byId: Map<string, LogisticsOr
   };
 }
 
+/**
+ * Nils 29.10 «kārtošana pa kravām nestrādā korekti»: closestCorners salīdzināja velkamās kartītes stūrus un
+ * izvēlējās nākamo rindu (auto nonāca vienu vietu par tālu). Tagad noteicošā ir rinda zem peles/pirksta;
+ * tukšā kravas laukā - pati krava (auto beigās); citādi tuvākā rinda pēc centra.
+ */
+export const cargoCollision: CollisionDetection = (args) => {
+  const isBucket = (id: string | number) => String(id).startsWith("bucket:");
+  const under = pointerWithin(args);
+  const rowUnder = under.filter((c) => !isBucket(c.id));
+  if (rowUnder.length) return rowUnder;
+  const bucketUnder = under.filter((c) => isBucket(c.id));
+  if (bucketUnder.length) return bucketUnder;
+  return closestCenter({ ...args, droppableContainers: args.droppableContainers.filter((c) => !isBucket(c.id)) });
+};
+
 function bucketOfId(lists: BucketLists, id: string): CargoBucket | null {
   if (id.startsWith("bucket:")) {
     const b = id.slice("bucket:".length);
@@ -102,10 +131,16 @@ export function IrissLogistikaCargoPlan({
   onPlanChange,
   onRowClick,
   onRowHover,
+  cardHrefByCarId,
+  stageLabelByCarId,
+  onOpenCabinet,
   onRefreshDirections,
   routeUi,
   onTemplatesChanged,
   onAddManual,
+  readinessOn = false,
+  onToggleReadiness,
+  readinessByCarId,
 }: Props) {
   const byId = useMemo(() => new Map(orders.map((o) => [o.id, o])), [orders]);
   const planLists = useMemo(() => bucketListsFromPlan(plan, byId), [plan, byId]);
@@ -115,6 +150,8 @@ export function IrissLogistikaCargoPlan({
   const [colorFor, setColorFor] = useState<string | null>(null);
   const [addressFor, setAddressFor] = useState<{ bucket: "next" | "after"; end: "start" | "end" } | null>(null);
   const lists = dragLists ?? planLists;
+  const [portalReady, setPortalReady] = useState(false);
+  useEffect(() => setPortalReady(true), []);
   const carState = useMemo(() => new Map(plan.cars.map((c) => [c.carId, c])), [plan]);
 
   // Pele: vilkšana sākas pēc 5 px (klikšķis paliek klikšķis). Telefons: piespied un turi, tad velc.
@@ -178,12 +215,12 @@ export function IrissLogistikaCargoPlan({
   return (
     <aside className="iriss-log-cargo-card">
       <div className="flex items-center justify-between px-3.5 pb-1 pt-3">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6e6e73]">Kravu plāns</p>
-        <p className="text-[12px] text-[#6e6e73]">{orders.length} auto · velc kartīti uz citu kravu</p>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--iriss-ink-2)]">Kravu plāns</p>
+        <p className="text-[12px] text-[var(--iriss-ink-2)]">{orders.length} auto · velc kartīti uz citu kravu</p>
       </div>
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={cargoCollision}
         onDragStart={onDragStart}
         onDragOver={onDragOver}
         onDragEnd={finishDrag}
@@ -205,18 +242,23 @@ export function IrissLogistikaCargoPlan({
                 const order = byId.get(id);
                 if (!order) return null;
                 const car = carState.get(id);
+                const readiness = readinessOn && bucket === "next" ? readinessByCarId?.get(id) : undefined;
                 return (
                   <SortableCargoRow
                     key={id}
                     id={id}
                     order={order}
                     number={route?.enabled ? i + 1 : undefined}
-                    colorVar={colorVar}
+                    colorVar={readiness ? READINESS_COLOR[readiness] : colorVar}
+                    readiness={readiness}
                     showOnMap={car?.showOnMap ?? true}
                     active={bounceId === id || hoverId === id}
                     colorOpen={colorFor === id}
                     onClick={() => onRowClick(id)}
                     onHover={onRowHover}
+                    cardHref={cardHrefByCarId?.[id] ? autoparksSaitesHref(cardHrefByCarId[id]) : undefined}
+                    stageLabel={stageLabelByCarId?.[id]}
+                    onOpenCabinet={onOpenCabinet ? () => onOpenCabinet(id) : undefined}
                     onToggleMap={() => onPlanChange(setCargoShowOnMap(plan, id, !(car?.showOnMap ?? true)))}
                     onToggleColor={() => setColorFor((cur) => (cur === id ? null : id))}
                     onPickColor={(next) => {
@@ -235,9 +277,10 @@ export function IrissLogistikaCargoPlan({
               <div className="iriss-log-cargo-head">
                 <span className="iriss-log-cargo-dot" style={{ background: colorVar }} />
                 <span className="text-[13px] font-semibold">{CARGO_BUCKET_LV[bucket]}</span>
-                <span className="text-[12px] text-[#6e6e73]">{ids.length}</span>
+                <span className="text-[12px] text-[var(--iriss-ink-2)]">{ids.length}</span>
                 {route ? (
-                  <label className="ml-auto flex items-center gap-2 text-[12px] font-medium">
+                  <span className="ml-auto flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-[12px] font-medium">
                     Maršruts
                     <button
                       type="button"
@@ -251,6 +294,21 @@ export function IrissLogistikaCargoPlan({
                       }}
                     />
                   </label>
+                  {bucket === "next" && onToggleReadiness ? (
+                    <label className="flex items-center gap-2 text-[12px] font-medium">
+                      Gatavība
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={readinessOn}
+                        data-testid="toggle-readiness-colors"
+                        className={`iriss-log-switch ${readinessOn ? "on" : ""}`}
+                        style={readinessOn ? { background: READINESS_COLOR.paid } : undefined}
+                        onClick={onToggleReadiness}
+                      />
+                    </label>
+                  ) : null}
+                  </span>
                 ) : null}
               </div>
               {route?.enabled && cargoBucket ? (
@@ -276,14 +334,24 @@ export function IrissLogistikaCargoPlan({
             </section>
           );
         })}
-        <DragOverlay dropAnimation={null}>
-          {dragOrder && dragBucket ? (
-            <div className="iriss-log-cargo-row overlay">
-              <span className="iriss-log-cargo-dot" style={{ background: `var(--iriss-log-cargo-${dragBucket})` }} />
-              <CargoRowText order={dragOrder} />
-            </div>
-          ) : null}
-        </DragOverlay>
+        {/* Nils 29.10 «bloks seko peles kursoram»: kravu kolonnai ir backdrop-filter (stikla kartītes), kas
+            salauž position:fixed - peldošā kartīte bija ārpus ekrāna. Tāpēc DragOverlay portālā uz <body>. */}
+        {portalReady
+          ? createPortal(
+              <DragOverlay dropAnimation={{ duration: 160, easing: "ease-out" }} zIndex={1000}>
+                {dragOrder && dragBucket ? (
+                  // .iriss-log-screen - tikai Loģistikas krāsu mainīgie (portālā ārpus saknes tie citādi pazūd).
+                  <div className="iriss-log-screen">
+                    <div className="iriss-log-cargo-row overlay">
+                      <span className="iriss-log-cargo-dot" style={{ background: `var(--iriss-log-cargo-${dragBucket})` }} />
+                      <CargoRowText order={dragOrder} />
+                    </div>
+                  </div>
+                ) : null}
+              </DragOverlay>,
+              document.body,
+            )
+          : null}
       </DndContext>
     </aside>
   );
@@ -322,14 +390,58 @@ function CargoRowText({ order }: { order: LogisticsOrder }) {
   return (
     <>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[14px] font-semibold leading-tight">{logisticsCarTitle(order)}</span>
-        <span className="mt-0.5 block truncate text-[12px] leading-tight text-[#6e6e73]">{place || "Pickup vieta nav norādīta"}</span>
+        <span className="iriss-log-cargo-title block text-[14px] font-semibold leading-tight">{logisticsCarTitle(order)}</span>
+        <span className="mt-0.5 block truncate text-[12px] leading-tight text-[var(--iriss-ink-2)]">{place || "Pickup vieta nav norādīta"}</span>
       </span>
       <span className="iriss-log-cargo-logo">
         {order.source === "manual" ? <span className="iriss-log-manual-chip">Cits klients</span> : order.auction ? <IrissAuctionLogo name={order.auction} /> : null}
       </span>
     </>
   );
+}
+
+/**
+ * Telefona posma ikona (Nils 27.10, makets C1): pulkstenis = Gaida, kalendārs = Ieplānots,
+ * kravas auto = Ceļā, māja ar ķeksi = Atvests. Bez teksta - posmus Nils zina no galvas.
+ */
+export function CargoStageIcon({ label }: { label: string }) {
+  const common = { width: 22, height: 22, viewBox: "0 0 24 24", fill: "none", strokeWidth: 1.9, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
+  if (label === "Ieplānots") {
+    return (
+      <svg {...common} stroke="var(--iriss-info)" aria-hidden>
+        <rect x="4" y="5" width="16" height="15" rx="2" />
+        <path d="M4 10h16M8 3v4M16 3v4" />
+      </svg>
+    );
+  }
+  if (label === "Ceļā") {
+    return (
+      <svg {...common} stroke="var(--iriss-info)" aria-hidden>
+        <path d="M3 7h11v9H3zM14 10h4l3 3v3h-7" />
+        <circle cx="7" cy="17" r="1.6" />
+        <circle cx="17" cy="17" r="1.6" />
+      </svg>
+    );
+  }
+  if (label === "Atvests") {
+    return (
+      <svg {...common} stroke="var(--iriss-ok)" aria-hidden>
+        <path d="M4 11l8-6 8 6v9H4z" />
+        <path d="M9 15l2 2 4-4" />
+      </svg>
+    );
+  }
+  return (
+    <svg {...common} stroke="var(--iriss-ink-3)" aria-hidden>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  );
+}
+
+/** Telefonā (≤767 px) rindas pieskāriens atver auto kabinetu; datorā - kā līdz šim (iezīmē kartē). */
+function isPhoneViewport(): boolean {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
 }
 
 /** Iekšējās pogas nesāk vilkšanu (pele, pieskāriens, tastatūra). */
@@ -344,6 +456,7 @@ function SortableCargoRow({
   order,
   number,
   colorVar,
+  readiness,
   showOnMap,
   active,
   colorOpen,
@@ -352,11 +465,15 @@ function SortableCargoRow({
   onToggleMap,
   onToggleColor,
   onPickColor,
+  cardHref,
+  stageLabel,
+  onOpenCabinet,
 }: {
   id: string;
   order: LogisticsOrder;
   number?: number;
   colorVar: string;
+  readiness?: ReadinessKind;
   showOnMap: boolean;
   active: boolean;
   colorOpen: boolean;
@@ -365,6 +482,10 @@ function SortableCargoRow({
   onToggleMap: () => void;
   onToggleColor: () => void;
   onPickColor: (bucket: CargoBucket) => void;
+  /** Autoparka auto kartīte (posms "Ceļā" -> galvenā auto kartīte). */
+  cardHref?: string;
+  stageLabel?: string;
+  onOpenCabinet?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   return (
@@ -378,7 +499,10 @@ function SortableCargoRow({
         {...attributes}
         {...listeners}
         aria-roledescription="velkama kartīte"
-        onClick={onClick}
+        onClick={() => {
+          if (onOpenCabinet && isPhoneViewport()) onOpenCabinet();
+          else onClick();
+        }}
         onMouseEnter={() => onHover(id)}
         onMouseLeave={() => onHover(null)}
       >
@@ -396,19 +520,70 @@ function SortableCargoRow({
           <span className="iriss-log-cargo-dot" style={{ background: colorVar }} />
         </button>
         <CargoRowText order={order} />
+        {readiness ? (
+          <span className={`iriss-log-ready-chip ${readiness}`} data-readiness={readiness}>
+            {READINESS_LV[readiness]}
+          </span>
+        ) : null}
+        {stageLabel && onOpenCabinet ? (
+          <button
+            type="button"
+            className="iriss-log-stage-chip"
+            title="Atvērt auto kabinetu: statuss, dokumenti, Uz Autoparku"
+            {...stopDragStart}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenCabinet();
+            }}
+          >
+            {stageLabel}
+          </button>
+        ) : null}
+        {/* Telefonā posms ir ikona (teksta čipi, logo, Kartīte un slēdzis paslēpti CSS; tie ir kabinetā). */}
+        {onOpenCabinet ? (
+          <button
+            type="button"
+            className="iriss-log-stage-icon"
+            aria-label={`Posms: ${stageLabel ?? "Gaida"}. Atvērt auto kabinetu`}
+            title={`${stageLabel ?? "Gaida"} - atvērt kabinetu`}
+            {...stopDragStart}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenCabinet();
+            }}
+          >
+            <CargoStageIcon label={stageLabel ?? "Gaida"} />
+          </button>
+        ) : (
+          <span className="iriss-log-stage-icon" role="img" aria-label={`Posms: ${stageLabel ?? "Gaida"}`}>
+            <CargoStageIcon label={stageLabel ?? "Gaida"} />
+          </span>
+        )}
+        {cardHref ? (
+          <a href={cardHref} className="iriss-log-card-link" {...stopDragStart} onClick={(e) => e.stopPropagation()}>
+            Kartīte
+          </a>
+        ) : null}
         <button
           type="button"
           role="switch"
           aria-checked={showOnMap}
           aria-label="Rādīt kartē"
           title={showOnMap ? "Rāda kartē" : "Nerāda kartē"}
-          className={`iriss-log-switch sm ${showOnMap ? "on" : ""}`}
+          className={`iriss-log-eye ${showOnMap ? "on" : ""}`}
           {...stopDragStart}
           onClick={(e) => {
             e.stopPropagation();
             onToggleMap();
           }}
-        />
+        >
+          {/* Acs (Nils 27.10, makets A): rāda/paslēpj auto kartē; slēdža vietā, aizņem mazāk vietas. */}
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7z" />
+            <circle cx="12" cy="12" r="3" />
+            {showOnMap ? null : <path d="M4 4l16 16" />}
+          </svg>
+        </button>
       </div>
       {colorOpen ? <ColorMenu onPick={onPickColor} /> : null}
     </li>
@@ -466,9 +641,9 @@ function ManualCarAdd({ bucket, onAdd }: { bucket: CargoBucket; onAdd: (bucket: 
             setNotice("");
           }}
         />
-        {picked ? <p className="mt-1 truncate text-[12px] text-[#15803d]">Kartē: {picked.formatted}</p> : null}
+        {picked ? <p className="mt-1 truncate text-[12px] text-[var(--iriss-ok)]">Kartē: {picked.formatted}</p> : null}
       </div>
-      {notice ? <p className="mt-1.5 text-[12px] text-[#6e6e73]">{notice}</p> : null}
+      {notice ? <p className="mt-1.5 text-[12px] text-[var(--iriss-ink-2)]">{notice}</p> : null}
       <div className="mt-2.5 flex justify-end gap-2">
         <button type="button" className="iriss-log-btn-sec h-9 min-h-9 px-3 text-[12.5px]" onClick={reset}>
           Atcelt
@@ -569,9 +744,9 @@ function RouteBlock({
       <div className="mt-3 flex items-end justify-between gap-2">
         <div>
           <p className="text-[22px] font-semibold tracking-tight">{formatCargoKm(route.distanceKm) || "- km"}</p>
-          <p className="text-[12px] text-[#6e6e73]">{formatCargoDuration(route.durationMin) || "laiks pēc aprēķina"}</p>
+          <p className="text-[12px] text-[var(--iriss-ink-2)]">{formatCargoDuration(route.durationMin) || "laiks pēc aprēķina"}</p>
         </div>
-        {hasLine && !stale ? <p className="text-[12px] font-medium text-[#15803d]">Maršruts ir kartē</p> : null}
+        {hasLine && !stale ? <p className="text-[12px] font-medium text-[var(--iriss-ok)]">Maršruts ir kartē</p> : null}
       </div>
       {error ? (
         <p className="mt-2 rounded-[10px] bg-[#fdecea] px-2.5 py-2 text-[12.5px] text-[#9b1c13]" role="alert">
@@ -579,7 +754,7 @@ function RouteBlock({
         </p>
       ) : null}
       {hasLine ? (
-        <p className="mt-2 text-[12px] leading-snug text-[#6e6e73]">
+        <p className="mt-2 text-[12px] leading-snug text-[var(--iriss-ink-2)]">
           Lai maršruts iet pa citu ceļu (piem. automaģistrāli), pieskaries zilajai līnijai kartē un pavelc punktu uz vajadzīgo ceļu. Pieskāriens punktam to noņem.
           {route.via.length > 0 ? ` Caurbraucamie punkti: ${route.via.length}.` : ""}
         </p>
@@ -660,7 +835,7 @@ function DriverLinkButton({ bucket, disabled }: { bucket: "next" | "after"; disa
       </button>
       <button
         type="button"
-        className="text-[12px] font-medium text-[#6e6e73] underline decoration-dotted underline-offset-2"
+        className="text-[12px] font-medium text-[var(--iriss-ink-2)] underline decoration-dotted underline-offset-2"
         disabled={state === "busy"}
         onClick={() => void revoke()}
       >
@@ -754,7 +929,7 @@ function TemplateEditor({
       </div>
       <div className="mt-2">
         <IrissAddressAutocomplete defaultValue={tpl.address} placeholder="Adrese" onPick={setPicked} />
-        {picked ? <p className="mt-1 text-[12px] text-[#15803d]">Jaunā adrese: {picked.formatted}</p> : null}
+        {picked ? <p className="mt-1 text-[12px] text-[var(--iriss-ok)]">Jaunā adrese: {picked.formatted}</p> : null}
       </div>
       {error ? <p className="mt-1.5 text-[12px] text-[#c2362b]">{error}</p> : null}
       <div className="mt-2 flex items-center gap-2">
@@ -836,13 +1011,13 @@ function EndpointRow({
           <TemplateIcon type={value.type} />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[11px] font-semibold uppercase tracking-wide text-[#6e6e73]">{label}</span>
+          <span className="block text-[11px] font-semibold uppercase tracking-wide text-[var(--iriss-ink-2)]">{label}</span>
           <span className="block truncate text-[14px] font-semibold">{value.label || value.address}</span>
         </span>
         <button type="button" className="text-[12.5px] font-medium text-[var(--iriss-log-focus)]" onClick={onOpen}>
           Mainīt
         </button>
-        <button type="button" className="px-1 text-[13px] text-[#6e6e73]" onClick={() => onPick(null)} aria-label="Noņemt">
+        <button type="button" className="px-1 text-[13px] text-[var(--iriss-ink-2)]" onClick={() => onPick(null)} aria-label="Noņemt">
           ✕
         </button>
       </div>
@@ -851,8 +1026,8 @@ function EndpointRow({
   return (
     <div className="iriss-log-endpoint-picker">
       <div className="flex items-center justify-between px-0.5">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-[#6e6e73]">{label}: šabloni</p>
-        <button type="button" className="text-[12.5px] font-medium text-[#6e6e73]" onClick={onClose}>
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--iriss-ink-2)]">{label}: šabloni</p>
+        <button type="button" className="text-[12.5px] font-medium text-[var(--iriss-ink-2)]" onClick={onClose}>
           Aizvērt
         </button>
       </div>
@@ -870,7 +1045,7 @@ function EndpointRow({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[14px] font-semibold">{tpl.name}</span>
-                  <span className="block truncate text-[12px] text-[#6e6e73]">{tpl.address}</span>
+                  <span className="block truncate text-[12px] text-[var(--iriss-ink-2)]">{tpl.address}</span>
                 </span>
               </button>
               <button type="button" className="iriss-log-tpl-edit-btn" aria-label={`Labot ${tpl.name}`} title="Labot" onClick={() => setEditId(tpl.id)}>
@@ -882,12 +1057,12 @@ function EndpointRow({
           ),
         )}
       </ul>
-      <p className="mt-3 px-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#6e6e73]">Cita adrese</p>
+      <p className="mt-3 px-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--iriss-ink-2)]">Cita adrese</p>
       <div className="mt-1.5">
         <IrissAddressAutocomplete placeholder="Sāc rakstīt adresi vai vietu" onPick={(a) => void pickAddress(a)} />
       </div>
       <label className="mt-2 flex items-center gap-2 px-0.5 text-[12.5px]">
-        <input type="checkbox" className="h-4 w-4 accent-[#1d1d1f]" checked={saveTpl} onChange={(e) => setSaveTpl(e.target.checked)} />
+        <input type="checkbox" className="h-4 w-4 accent-[var(--iriss-ink)]" checked={saveTpl} onChange={(e) => setSaveTpl(e.target.checked)} />
         Saglabāt kā šablonu
       </label>
       {saveTpl ? (

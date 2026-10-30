@@ -26,18 +26,21 @@ export type V2ServissView = {
   totalEur: number | null;
   canSums: boolean;
   canConfirm: boolean;
+  /** Nils 27.10: problēmas dzēst drīkst tikai administrators. */
+  canDelete: boolean;
 };
 
-export type ServissScanTarget = "number_check" | "diag" | "invoice" | "invoice_page";
+export type ServissScanTarget = "number_check" | "diag" | "invoice" | "invoice_page" | "problem_photo";
 
 export const SERVISS_SCAN_TITLE: Record<Exclude<ServissScanTarget, "invoice_page">, string> = {
+  problem_photo: "Problēmas foto",
   number_check: "Numuru salīdzināšanas akts",
   diag: "CSDD diagnostika",
   invoice: "Servisa rēķins",
 };
 
 export function isServissScanTarget(v: unknown): v is ServissScanTarget {
-  return v === "number_check" || v === "diag" || v === "invoice" || v === "invoice_page";
+  return v === "number_check" || v === "diag" || v === "invoice" || v === "invoice_page" || v === "problem_photo";
 }
 
 function fileView(files: ReadonlyMap<string, AutoparksFile>, id: string): V2ServissFile | null {
@@ -57,16 +60,17 @@ export function servissFileIds(v2: AutoparksCarV2): Set<string> {
   for (const id of v2.numberCheck.extraFileIds) ids.add(id);
   for (const id of v2.service.diagFileIds) ids.add(id);
   for (const inv of v2.service.invoices) {
-    ids.add(inv.fileId);
+    if (inv.fileId) ids.add(inv.fileId);
     for (const id of inv.extraFileIds) ids.add(id);
   }
+  for (const p of v2.service.problems) for (const id of p.photoIds) ids.add(id);
   return ids;
 }
 
 export function servissView(
   v2: AutoparksCarV2,
   v1Files: readonly AutoparksFile[],
-  opts: { canSums: boolean; canConfirm: boolean },
+  opts: { canSums: boolean; canConfirm: boolean; canDelete?: boolean },
 ): V2ServissView {
   const byId = new Map(v1Files.map((f) => [f.id, f]));
   const nc = filesOf(byId, [v2.numberCheck.fileId, ...v2.numberCheck.extraFileIds].filter(Boolean));
@@ -91,6 +95,7 @@ export function servissView(
     totalEur: opts.canSums ? Math.round(total * 100) / 100 : null,
     canSums: opts.canSums,
     canConfirm: opts.canConfirm,
+    canDelete: opts.canDelete ?? false,
   };
 }
 
@@ -109,18 +114,19 @@ export type ProblemPatch = { id?: string; text?: string; fixedByService?: boolea
 export function applyProblemPatch(
   problems: V2Problem[],
   patch: ProblemPatch,
-  ctx: { canConfirm: boolean; actorName: string; now: string; newId: () => string },
+  ctx: { canConfirm: boolean; canRemove?: boolean; actorName: string; now: string; newId: () => string },
 ): { problems: V2Problem[]; history: Array<{ field: string; from: unknown; to: unknown }> } {
   const out = problems.map((p) => ({ ...p }));
   const hist: Array<{ field: string; from: unknown; to: unknown }> = [];
   let idx = patch.id ? out.findIndex((p) => p.id === patch.id) : -1;
   if (idx < 0) {
     if (patch.remove || !patch.text?.trim()) return { problems: out, history: hist };
-    out.push({ id: ctx.newId(), text: "", fixedByService: false, confirmedByUs: false, confirmedBy: "", at: ctx.now });
+    out.push({ id: ctx.newId(), text: "", fixedByService: false, confirmedByUs: false, confirmedBy: "", at: ctx.now, photoIds: [] });
     idx = out.length - 1;
   }
   const p = out[idx]!;
   if (patch.remove) {
+    if (!ctx.canRemove) return { problems: out, history: hist };
     hist.push({ field: "service.problem", from: p.text, to: "" });
     out.splice(idx, 1);
     return { problems: out, history: hist };

@@ -3,10 +3,10 @@
   /* Nils 21.10: Nākošā krava spilgti sarkana, Aiznākošā melna, pārējie pelēki (kā kartes lāses). */
   --iriss-log-cargo-next: #ea4335;
   --krava-next: var(--iriss-log-cargo-next);
-  --krava-next2: #1d1d1f;
+  --krava-next2: #5f6368;
   --iriss-log-cargo-after: var(--krava-next2);
   --krava-after: var(--krava-next2);
-  --iriss-log-cargo-none: #9aa0a6;
+  --iriss-log-cargo-none: #1d1d1f;
   --krava-none: var(--iriss-log-cargo-none);
   --iriss-log-news-bg: #2563eb;
   --iriss-log-news-fg: #fff;
@@ -173,8 +173,10 @@
 }
 .iriss-log-cargo-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  row-gap: 6px;
   padding: 12px 14px 8px;
 }
 /* Kravas kartīte: visa kartīte ir velkama (pele uzreiz, telefonā piespied un turi). */
@@ -220,6 +222,9 @@
   opacity: 0.35;
 }
 .iriss-log-cargo-row.overlay {
+  /* Portālā (<body>) teksta krāsa netiek mantota no Loģistikas - nosaukums bija balts uz balta. */
+  color: var(--iriss-log-ink, #0b0c10);
+  background: var(--iriss-log-surface, #fff);
   cursor: grabbing;
   border-color: #c7c7cc;
   box-shadow: 0 10px 30px rgba(11, 12, 16, 0.18);
@@ -984,6 +989,28 @@ html.iriss-log-printing .iriss-log-pin-tip {
 .iriss-log-manual-choice.on {
   box-shadow: inset 0 0 0 2px var(--iriss-log-focus);
 }
+/* Gatavības čips (tikai Nākošā krava ar ieslēgtu «Gatavība»). */
+.iriss-log-ready-chip {
+  flex-shrink: 0;
+  border-radius: 20px;
+  padding: 3px 9px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.iriss-log-ready-chip.unpaid {
+  background: #fde8e6;
+  color: #c5221f;
+}
+.iriss-log-ready-chip.no_pickup {
+  background: #fef3d6;
+  color: #9a6200;
+}
+.iriss-log-ready-chip.paid,
+.iriss-log-ready-chip.client {
+  background: #e3f6e8;
+  color: #1f7a37;
+}
 .iriss-log-manual-chip {
   border-radius: 999px;
   background: #f2f2f7;
@@ -1382,5 +1409,386 @@ html.iriss-log-printing .iriss-log-pin-tip {
   .iriss-log-screen .iriss-log-bucket-dots button {
     width: 44px;
     height: 44px;
+  }
+}
+
+/* Audits 26.10 (makets apstiprināts): datorā karte ietilpst ekrānā, kravu kolonna ritinās pati (kārtošana labajā). */
+@media (min-width: 1024px) {
+  .iriss-log-map-hero {
+    aspect-ratio: auto;
+    height: max(420px, calc(100vh - 250px));
+  }
+  .iriss-log-cargo-col {
+    max-height: calc(100vh - 150px);
+    overflow-y: auto;
+    padding-right: 2px;
+  }
+}
+.iriss-log-card-link {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 9px;
+  border: 1px solid #d1d1d6;
+  background: #fff;
+  color: #1c1c1e;
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.iriss-log-card-link:hover {
+  background: #f2f2f7;
+}
+
+/* Pickup posms rindā (agrāk tikai tabulā "Visi auto"): neitrāls žetons, klikšķis atver auto kabinetu. */
+.iriss-log-stage-chip {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 10px 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--iriss-line-strong);
+  background: var(--iriss-surface);
+  color: var(--iriss-ink);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.iriss-log-stage-chip::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--iriss-info);
+}
+.iriss-log-stage-chip:hover {
+  background: var(--iriss-surface-2);
+}
+@media (max-width: 420px) {
+  .iriss-log-stage-chip {
+    padding: 0 8px 0 6px;
+    font-size: 11.5px;
+  }
+}
+
+/*
+ * Telefons (Nils 27.10, makets C1): kravas rindā marka/modelis un vieta pa visu platumu.
+ * Izsoles logo, «Cits klients», gatavības un posma teksti, «Kartīte» un slēdzis «kartē» paslēpti -
+ * apmaksu rāda kreisais punkts, posmu - ikona; pieskāriens rindai atver kabinetu (tur «Rādīt kartē» un kartīte).
+ */
+/* Nils 27.10 (makets A): arī datorā - tikai marka/modelis, vieta, apmaksas punkts, posma ikona un acs. */
+.iriss-log-cargo-row .iriss-log-cargo-logo,
+.iriss-log-cargo-row .iriss-log-ready-chip,
+.iriss-log-cargo-row .iriss-log-stage-chip,
+.iriss-log-cargo-row .iriss-log-card-link {
+  display: none !important;
+}
+.iriss-log-cargo-row .iriss-log-cargo-title {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+.iriss-log-stage-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+.iriss-log-stage-icon:hover {
+  background: var(--iriss-surface-2);
+}
+.iriss-log-eye {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  padding: 0;
+  color: var(--iriss-ink-3);
+  cursor: pointer;
+}
+.iriss-log-eye.on {
+  color: var(--iriss-ink-2);
+}
+.iriss-log-eye:hover {
+  background: var(--iriss-surface-2);
+}
+@media (max-width: 767px) {
+  /* Telefonā (makets C1) acs ir kabinetā; rindas pieskāriens atver kabinetu. */
+  .iriss-log-cargo-row .iriss-log-eye {
+    display: none !important;
+  }
+  .iriss-log-cargo-row .text-\[14px\] {
+    font-size: 16px;
+  }
+}
+
+/*
+ * Dators (≥1024 px), Nils 27.10 makets A: karte ir visas lapas fons. Galvene (augšā pa kreisi), kartes rīki
+ * (apakšā pa kreisi) un kravu plāns / kabinets (pa labi, 380 px, pilnā augstumā) peld virs kartes.
+ * Lapa neritinās: ritenis virs paneļa ritina tikai paneli (overscroll contain), virs kartes - tuvina karti.
+ * Augstums = skata augstums mīnus admin main atkāpes (lg: pt 8 px + pb 24 px).
+ */
+@media (min-width: 1024px) {
+  .iriss-log-screen.iriss-log-desk {
+    position: relative;
+    height: calc(100dvh - 32px);
+    min-height: 560px;
+    overflow: hidden;
+    padding: 0 !important;
+    border-radius: 20px;
+  }
+  .iriss-log-desk .iriss-log-head {
+    position: absolute;
+    z-index: 20;
+    top: 16px;
+    left: 16px;
+    width: fit-content;
+    max-width: calc(100% - 444px);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.94);
+    padding: 10px 14px;
+    box-shadow: 0 6px 24px rgba(22, 23, 26, 0.14);
+  }
+  .iriss-log-desk .iriss-log-desk-grid {
+    position: absolute;
+    inset: 0;
+    display: block;
+    margin: 0 !important;
+  }
+  .iriss-log-desk .iriss-log-desk-map {
+    position: absolute;
+    inset: 0;
+  }
+  .iriss-log-desk .iriss-log-desk-mapwrap,
+  .iriss-log-desk .iriss-log-desk-mapcard {
+    position: relative;
+    height: 100%;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .iriss-log-desk .iriss-log-print-root,
+  .iriss-log-desk .iriss-log-map-hero {
+    height: 100%;
+    min-height: 0;
+    aspect-ratio: auto;
+  }
+  .iriss-log-desk .iriss-log-map-toolbar {
+    position: absolute;
+    z-index: 10;
+    left: 16px;
+    bottom: 16px;
+    max-width: calc(100% - 444px);
+    border: 0;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 6px 24px rgba(22, 23, 26, 0.14);
+  }
+  .iriss-log-desk .iriss-log-fs-btn {
+    display: none;
+  }
+  .iriss-log-desk .iriss-log-desk-selbar {
+    position: absolute;
+    z-index: 10;
+    left: 16px;
+    bottom: 76px;
+    margin: 0;
+    box-shadow: 0 6px 24px rgba(22, 23, 26, 0.14);
+  }
+  .iriss-log-desk .iriss-log-cargo-col,
+  .iriss-log-desk .iriss-log-cab-overlay {
+    position: absolute;
+    z-index: 15;
+    top: 16px;
+    right: 16px;
+    bottom: 16px;
+    width: 380px;
+    margin: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-radius: 20px;
+    box-shadow: 0 10px 36px rgba(22, 23, 26, 0.18);
+  }
+  .iriss-log-desk .iriss-log-cab-overlay {
+    background: var(--iriss-surface);
+    padding: 12px;
+  }
+  .iriss-log-desk .iriss-log-desk-legacy {
+    display: none;
+  }
+}
+
+/* 3. posms (Nils 27.10, makets B): sakļaujams panelis un auto kartīte virs kartes. Ārpus datora - kā agrāk. */
+.iriss-log-desk-strip {
+  display: none;
+}
+.iriss-log-btn-brand {
+  border: 0;
+  border-radius: 10px;
+  background: var(--iriss-brand);
+  padding: 0 14px;
+  min-height: 36px;
+  color: var(--iriss-on-brand);
+  font-size: 13px;
+  font-weight: 700;
+}
+.iriss-log-desk-popup {
+  margin-top: 12px;
+}
+@media (min-width: 1024px) {
+  .iriss-log-desk .iriss-log-desk-popup {
+    position: absolute;
+    z-index: 18;
+    left: 16px;
+    top: 50%;
+    width: min(420px, calc(100% - 460px));
+    margin: 0;
+    transform: translateY(-50%);
+    border-radius: 16px;
+    box-shadow: 0 12px 36px rgba(22, 23, 26, 0.22);
+  }
+  .iriss-log-desk .iriss-log-desk-strip {
+    position: absolute;
+    z-index: 16;
+    top: 16px;
+    right: 404px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  .iriss-log-desk .iriss-log-desk-strip-btn {
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.96);
+    color: var(--iriss-ink);
+    box-shadow: 0 6px 24px rgba(22, 23, 26, 0.14);
+    cursor: pointer;
+  }
+  .iriss-log-desk.iriss-log-desk-collapsed .iriss-log-desk-strip {
+    right: 16px;
+    width: 72px;
+    padding: 12px 0;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 10px 36px rgba(22, 23, 26, 0.18);
+  }
+  .iriss-log-desk.iriss-log-desk-collapsed .iriss-log-desk-strip-btn {
+    background: var(--iriss-graphite);
+    color: var(--iriss-on-graphite);
+    box-shadow: none;
+  }
+  .iriss-log-desk .iriss-log-desk-strip-n {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    font-size: 10px;
+    color: var(--iriss-ink-2);
+  }
+  .iriss-log-desk .iriss-log-desk-strip-n i {
+    width: 10px;
+    height: 10px;
+    border-radius: 5px;
+  }
+  .iriss-log-desk .iriss-log-desk-strip-n b {
+    color: var(--iriss-ink);
+    font-size: 15px;
+  }
+  .iriss-log-desk.iriss-log-desk-collapsed .iriss-log-cargo-col {
+    display: none;
+  }
+  .iriss-log-desk.iriss-log-desk-collapsed .iriss-log-head,
+  .iriss-log-desk.iriss-log-desk-collapsed .iriss-log-map-toolbar {
+    max-width: calc(100% - 120px);
+  }
+}
+
+
+/* Galvenes čipi (Auto / Savākšanas vietas / Iestatījumi): balti, izvēlētais grafīta (dizains v0.3). */
+.iriss-log-head-chip {
+  border-color: var(--iriss-line-strong);
+  background: var(--iriss-surface);
+  color: var(--iriss-ink);
+  white-space: nowrap;
+}
+.iriss-log-head-chip.on {
+  border-color: var(--iriss-graphite);
+  background: var(--iriss-graphite);
+  color: var(--iriss-on-graphite);
+}
+
+/*
+ * Nils 27.10 (makets B, apstiprināts): kartītēm virs kartes - caurspīdīgs stikla fons;
+ * bloki ar informāciju un pogām (čipi, meklēšana, kravu rindas, sākums/beigas) paliek necaurspīdīgi.
+ */
+@media (min-width: 1024px) {
+  .iriss-log-desk .iriss-log-head,
+  .iriss-log-desk .iriss-log-map-toolbar,
+  .iriss-log-desk .iriss-log-cargo-col,
+  .iriss-log-desk.iriss-log-desk-collapsed .iriss-log-desk-strip {
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    background: rgba(255, 255, 255, 0.42);
+    -webkit-backdrop-filter: blur(22px) saturate(170%);
+    backdrop-filter: blur(22px) saturate(170%);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.12);
+  }
+  .iriss-log-desk .iriss-log-head {
+    width: auto;
+    right: 412px;
+    max-width: none;
+    padding: 10px 12px 10px 16px;
+  }
+  .iriss-log-desk.iriss-log-desk-collapsed .iriss-log-head {
+    right: 104px;
+    max-width: none;
+  }
+  .iriss-log-desk .iriss-log-cargo-col {
+    padding: 10px;
+  }
+  .iriss-log-desk .iriss-log-cargo-col .iriss-log-cargo-card {
+    background: transparent;
+  }
+  .iriss-log-desk .iriss-log-cargo-col .iriss-log-cargo-row,
+  .iriss-log-desk .iriss-log-cargo-col .iriss-log-endpoint,
+  .iriss-log-desk .iriss-log-cargo-col .iriss-log-endpoint-add {
+    border-color: transparent;
+    background: var(--iriss-surface);
+  }
+  .iriss-log-desk .iriss-log-map-toolbar .iriss-log-trip-seg button:not(.on),
+  .iriss-log-desk .iriss-log-map-toolbar > div:last-child > button {
+    background: var(--iriss-surface);
+  }
+}
+@media (min-width: 1024px) and (prefers-reduced-transparency: reduce) {
+  .iriss-log-desk .iriss-log-head,
+  .iriss-log-desk .iriss-log-map-toolbar,
+  .iriss-log-desk .iriss-log-cargo-col {
+    background: rgba(255, 255, 255, 0.94);
   }
 }

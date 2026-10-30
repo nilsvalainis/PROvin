@@ -75,3 +75,15 @@ describe("IRISS Saites makets A", () => {
     expect(text).toContain("Bez cenas");
   });
 });
+
+describe("publiskā saite tikai ar pogu (Nils 27.10)", () => {
+  it("bez saites rāda pogu Izveidot saiti klientam, bez Kopēt/WhatsApp", () => {
+    const text = renderText(<IrissSaitesSection view={{ ...created, share: null }} onCreate={() => undefined} />);
+    expect(text).toContain("Izveidot saiti klientam");
+    expect(text).not.toContain("Kopēt");
+    expect(text).not.toContain("WhatsApp");
+  });
+  it("ar saiti pogas Izveidot nav", () => {
+    expect(renderText(<IrissSaitesSection view={created} />)).not.toContain("Izveidot saiti klientam");
+  });
+});

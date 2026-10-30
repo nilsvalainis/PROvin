@@ -1,4 +1,4 @@
-import { autoparksV2Basics } from "@/lib/iriss-autoparks-v2";
+import { autoparksV2Basics, normalizeV2PriceSheetSafety } from "@/lib/iriss-autoparks-v2";
 import { autoparksV2Json, requireAutoparksV2Api } from "@/lib/iriss-autoparks-v2-access";
 import { autoparksV2PriceSheet } from "@/lib/iriss-autoparks-v2-cenu-lapa";
 import { parseEurInput } from "@/lib/iriss-autoparks-v2-format";
@@ -45,8 +45,18 @@ export async function PATCH(req: Request, ctx: Ctx) {
       for (const k of ["salePriceEur", "listPriceEur"] as const) {
         if (!(k in body)) continue;
         const v = body[k] === null || body[k] === "" ? null : parseEurInput(String(body[k]));
+        // Nenolasāma summa netiek saglabāta kā tukša (lauks netiek iztīrīts, Nils 28.10).
+        if (v === null && body[k] !== null && body[k] !== "") continue;
         hist.push({ field: `priceSheet.${k}`, from: c.priceSheet[k], to: v });
         c.priceSheet[k] = v;
+      }
+      if ("safety" in body) {
+        // Drošības tabula (Nils 28.10): ķeksīši no admin formas.
+        const v = normalizeV2PriceSheetSafety(body.safety);
+        if (v) {
+          hist.push({ field: "priceSheet.safety", from: c.priceSheet.safety ?? null, to: v });
+          c.priceSheet.safety = v;
+        }
       }
       return { result: c, history: hist };
     },

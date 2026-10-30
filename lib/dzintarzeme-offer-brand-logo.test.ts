@@ -19,15 +19,16 @@ import {
   DZINTARZEME_AUTO_LOGO_FILENAME,
   DZINTARZEME_AUTO_LOGO_MD5,
   DZINTARZEME_AUTO_LOGO_PUBLIC_PATH,
-  dzintarzemeAutoLogoFsPath,
 } from "@/lib/dzintarzeme-logo";
+import { dzintarzemeAutoLogoFsPath } from "@/lib/dzintarzeme-logo-fs";
 
 describe("Dzintarzeme offer brand logo", () => {
-  it("uses the byte-identical original PNG everywhere", () => {
+  it("uses the flat logo PNG (no shadow) everywhere", () => {
     expect(DZINTARZEME_OFFER_LOGO_PATH).toBe(DZINTARZEME_AUTO_LOGO_PUBLIC_PATH);
     expect(DZINTARZEME_OFFER_PUBLIC_LOGO_PATH).toBe(DZINTARZEME_AUTO_LOGO_PUBLIC_PATH);
     const abs = dzintarzemeAutoLogoFsPath();
     expect(existsSync(abs)).toBe(true);
+    expect(readFileSync(path.join(process.cwd(), "lib/dzintarzeme-logo.ts"), "utf8")).not.toContain("node:path");
     const buf = readFileSync(abs);
     const md5 = createHash("md5").update(buf).digest("hex");
     expect(md5).toBe(DZINTARZEME_AUTO_LOGO_MD5);

@@ -2,6 +2,7 @@
 
 import { Car, Check, ChevronDown, ChevronRight, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { publishWaybillFormPlate, WAYBILL_SELECT_PLATE_EVENT } from "@/lib/iriss-waybill-live-plates";
 import styles from "@/components/admin/IrissWaybillMobileForm.module.css";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { IrissWaybillSavePdfButton } from "@/components/admin/IrissWaybillSavePdfButton";
@@ -64,6 +65,9 @@ export function IrissWaybillMobileForm({
   onDismiss,
   onPickerOpen,
   onOpenArchive,
+  plateInGauges = false,
+  requirePlateChoice = false,
+  layout = "stack",
 }: {
   plates: WaybillPlateState[];
   /** null = vēl ielādē. */
@@ -85,8 +89,14 @@ export function IrissWaybillMobileForm({
   onPickerOpen?: () => void;
   /** "Visas pavadzīmes Arhīvā ›" (lapa pārslēdz skatu uz Arhīvu). */
   onOpenArchive?: () => void;
+  /** Numuru izvēlas apļos virs formas (IrissWaybillGauges selectable) - formai sava «Numurs» rinda nav. */
+  plateInGauges?: boolean;
+  /** Numurs vienmēr jāizvēlas pašam - bez pirmā brīvā noklusējuma (Autoparka kartīte, Nils 27.10). */
+  requirePlateChoice?: boolean;
+  /** row = datora Pavadzīmju lapa (makets A): forma vienā horizontālā kartītē, statuss atsevišķā kartītē zem tās. */
+  layout?: "stack" | "row";
 }) {
-  const [form, setForm] = useState<WaybillMobileFormState>(() => initialWaybillMobileForm(IRISS_DEALER_PLATES[0]));
+  const [form, setForm] = useState<WaybillMobileFormState>(() => initialWaybillMobileForm(requirePlateChoice ? "" : IRISS_DEALER_PLATES[0]));
   const [localError, setLocalError] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [otherRep, setOtherRep] = useState(false);
@@ -97,8 +107,9 @@ export function IrissWaybillMobileForm({
   // Pirmais brīvais numurs, kamēr lietotājs nav izvēlējies pats.
   const firstFree = firstFreeWaybillPlate(plates, IRISS_DEALER_PLATES[0]);
   useEffect(() => {
+    if (requirePlateChoice) return;
     setForm((prev) => (prev.plateTouched || prev.plate === firstFree ? prev : { ...prev, plate: firstFree }));
-  }, [firstFree]);
+  }, [firstFree, requirePlateChoice]);
 
   // "Atkārtot" no arhīva: tas pats numurs un auto (pagarināšana ar to pašu formu).
   useEffect(() => {
@@ -124,6 +135,21 @@ export function IrissWaybillMobileForm({
   }, [inFlight]);
 
   const shownPlate = waybillMobilePlate(form);
+
+  // Apļi <-> forma: aplis izvēlas numuru, forma paziņo, kurš ir izvēlēts.
+  useEffect(() => {
+    const onSelect = (e: Event) => {
+      const plate = (e as CustomEvent<string>).detail;
+      if (typeof plate !== "string" || !plate) return;
+      setForm((prev) => ({ ...prev, plate, plateTouched: true, representative: "" }));
+      setOtherRep(false);
+    };
+    window.addEventListener(WAYBILL_SELECT_PLATE_EVENT, onSelect);
+    return () => window.removeEventListener(WAYBILL_SELECT_PLATE_EVENT, onSelect);
+  }, []);
+  useEffect(() => {
+    publishWaybillFormPlate(shownPlate);
+  }, [shownPlate]);
   const hours = waybillMobileHours(form);
   const untilText = hours ? formatRigaDateTimeComma(new Date(nowMs + hours * 3_600_000).toISOString()) : "";
   const tradeAct = waybillMobileTradeAct(form);
@@ -146,6 +172,10 @@ export function IrissWaybillMobileForm({
   const shownError = localError ?? error;
 
   async function send() {
+    if (requirePlateChoice && (!form.plateTouched || !form.plate)) {
+      setLocalError("Izvēlies numuru.");
+      return;
+    }
     if (tradeAct && otherRep && !form.representative.trim()) {
       setLocalError("Ieraksti komersanta pārstāvi.");
       return;
@@ -187,7 +217,7 @@ export function IrissWaybillMobileForm({
   }
 
   return (
-    <div className={styles.mf}>
+    <div className={`${styles.mf} ${layout === "row" ? styles.row : ""}`}>
       <form
         className={styles.card}
         onSubmit={(e) => {
@@ -195,7 +225,8 @@ export function IrissWaybillMobileForm({
           void send();
         }}
       >
-        <div className={styles.group}>
+        {layout === "row" ? <h2 className={styles.rowTitle}>Jauna pavadzīme</h2> : null}
+        <div className={styles.group} style={plateInGauges ? { display: "none" } : undefined}>
           <span className={styles.label}>Numurs</span>
           <div className={styles.seg3}>
             {plates.map((row) => {
@@ -228,7 +259,6 @@ export function IrissWaybillMobileForm({
             choice={form.autoChoice}
             car={form.car}
             manualBrandModel={form.manualBrandModel}
-            manualVin={form.manualVin}
             isB192={isB192}
             b192Empty={b192Empty}
             showManual={showManual}
@@ -240,7 +270,6 @@ export function IrissWaybillMobileForm({
             }}
             onClearCar={() => patch({ car: null })}
             onManualBrandModel={(value) => patch({ manualBrandModel: value })}
-            onManualVin={(value) => patch({ manualVin: value })}
           />
         </div>
 
@@ -402,8 +431,9 @@ export function IrissWaybillMobileForm({
         </button>
       </form>
 
+      <div className={styles.live}>
       <div className={styles.secTitle}>
-        <span>CSDD pavadzīme</span>
+        <span>{layout === "row" ? "Pie Aivara" : "CSDD pavadzīme"}</span>
         <span className={styles.count}>{working} darbā</span>
       </div>
       <p className={styles.secNote}>Aivars izveido tikai pavadzīmes</p>
@@ -421,6 +451,7 @@ export function IrissWaybillMobileForm({
           Visas pavadzīmes Arhīvā ›
         </button>
       ) : null}
+      </div>
 
       <IrissWaybillHowItWorks plates={plates.map((p) => p.plate)} />
 
@@ -482,25 +513,25 @@ export function WaybillDismissDialog({ title, onYes, onNo }: { title: string; on
   return (
     <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#0f172a66] p-4" {...backdropClose}>
       <div
-        className="w-full max-w-[360px] rounded-2xl border border-[#E5E7EB] bg-white p-4"
+        className="w-full max-w-[360px] rounded-2xl border border-[var(--iriss-line)] bg-white p-4"
         role="dialog"
         aria-modal="true"
         aria-labelledby="wb-dismiss-title"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 id="wb-dismiss-title" className="m-0 text-[15px] font-semibold text-[#111827] [overflow-wrap:anywhere]">
+        <h3 id="wb-dismiss-title" className="m-0 text-[15px] font-semibold text-[var(--iriss-ink)] [overflow-wrap:anywhere]">
           Noņemt no saraksta{title ? ` - ${title}` : ""}?
         </h3>
         <p className="mt-2 text-[13px] leading-snug text-[#5e636e]">
           Ieraksts pazudīs tikai no šī saraksta. Pavadzīme, PDF un Arhīvs paliek nemainīti.
         </p>
         <div className="mt-3.5 flex flex-col gap-2">
-          <button type="button" className="h-10 rounded-[10px] bg-[#111827] text-[12.5px] font-semibold text-white" onClick={onYes}>
+          <button type="button" className="h-10 rounded-[10px] bg-[var(--iriss-graphite)] text-[12.5px] font-semibold text-white" onClick={onYes}>
             Jā
           </button>
           <button
             type="button"
-            className="h-10 rounded-[10px] border border-[#E5E7EB] bg-white text-[12.5px] font-semibold text-[#111827]"
+            className="h-10 rounded-[10px] border border-[var(--iriss-line)] bg-white text-[12.5px] font-semibold text-[var(--iriss-ink)]"
             onClick={onNo}
           >
             Nē
@@ -611,79 +642,65 @@ function WaybillRowSavePdf({ row }: { row: WaybillMobileRequestRow }) {
   );
 }
 
-/** "Kā tas strādā" (v2): liela kartīte ar numurētiem soļiem, teksti no ~/pz-teksti-latvietis.md 3a. */
+/**
+ * "Kā tas strādā" (v3, Nils 27.10): aizverams bloks, 4 īsi soļi un «Jāzina» punktos (agrāk 5 gari teksti).
+ * Dizains v0.3: grafīta numuri, bez zilā.
+ */
 export function IrissWaybillHowItWorks({ plates }: { plates: readonly string[] }) {
+  void plates;
   return (
-    <section className={styles.how} aria-labelledby="wb-how-title">
-      <h3 id="wb-how-title">Kā tas strādā</h3>
-      <p className={styles.howLead}>Pavadzīme 5 soļos. Parasti gatava dažu minūšu laikā.</p>
+    <details className={styles.how}>
+      <summary className={styles.howSummary}>
+        <span>
+          <span className={styles.howTitle}>Kā tas strādā</span>
+          <span className={styles.howLead}>Aivars izveido CSDD pavadzīmi un atsūta PDF. Parasti pāris minūtēs.</span>
+        </span>
+        <svg className={styles.howChevron} viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <path d="M9 6l6 6-6 6" />
+        </svg>
+      </summary>
       <ol className={styles.howSteps}>
         <li>
           <span className={styles.num}>1</span>
-          <div>
-            <h4>Aivars ir Dzintarzeme Auto jaunais pavadzīmju asistents</h4>
-            <p>Tu aizpildi formu, Aivars pats izveido CSDD pavadzīmi un atsūta PDF. Citus darbus viņš neveic.</p>
-          </div>
+          <p>
+            <b>Numurs.</b> Ja aizņemts, jaunā pavadzīme pārtrauks veco (vispirms pajautās).
+          </p>
         </li>
         <li>
           <span className={styles.num}>2</span>
-          <div>
-            <h4>Izvēlies numuru un auto</h4>
-            <p>
-              Numurs ar atzīmi &quot;brīvs&quot; ir gatavs lietošanai. Izvēlies auto no tirdzniecībā pieņemto auto saraksta - tad jānorāda
-              tikai laiks un komersanta pārstāvis. Ja auto sarakstā nav, ieraksti marku, modeli un sākuma adresi.
-            </p>
-            {plates.length ? (
-              <div className={styles.mini}>
-                {plates.map((p) => (
-                  <span key={p}>{p}</span>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          <p>
+            <b>Auto.</b> No saraksta - tikai laiks un pārstāvis. Cits - marka, modelis, adrese.
+          </p>
         </li>
         <li>
           <span className={styles.num}>3</span>
-          <div>
-            <h4>Izvēlies laiku</h4>
-            <p>
-              Izvēlies 1, 12 vai 48 h, vai &quot;Cits&quot; un ieraksti stundas (1-{WAYBILL_VALID_MAX_HOURS}). Derīga no šī brīža. Lai
-              pagarinātu, izvēlies to pašu numuru un auto vēlreiz.
-            </p>
-          </div>
+          <p>
+            <b>Laiks.</b> 1, 12, 48 h vai Cits (līdz {WAYBILL_VALID_MAX_HOURS} h). Derīga no šī brīža.
+          </p>
         </li>
         <li>
           <span className={styles.num}>4</span>
-          <div>
-            <h4>Spied &quot;Izveidot pavadzīmi&quot;</h4>
-            <p>Statuss redzams saraksta augšā: Gaida, Izveido, Izdota. Kad pavadzīme izdota, parādās PDF un telefonā pienāk paziņojums.</p>
-            <div className={styles.mini}>
-              <span className={`${styles.chip} ${styles.wait}`}>Gaida</span>
-              <span className={`${styles.chip} ${styles.wip}`}>Izveido</span>
-              <span className={`${styles.chip} ${styles.ok}`}>Izdota</span>
-            </div>
-          </div>
-        </li>
-        <li>
-          <span className={styles.num}>5</span>
-          <div>
-            <h4>Ja numurs aizņemts</h4>
-            <p>Jauna pavadzīme pārtrauc šī numura esošo pavadzīmi. Lietotne vispirms pajautās, vai tiešām to vēlies.</p>
-          </div>
-        </li>
-        <li>
-          <span className={styles.num}>i</span>
-          <div>
-            <h4>Jāzina</h4>
-            <p>Numuru salīdzināšana - CSDD Tukuma filiālē. Ja vajag citu vietu, raksti komentārā.</p>
-            <p>
-              Komentārs ir tikai teksts šai pavadzīmei (līdz {NOTE_UNTRUSTED_MAX} zīmēm). Aivars to neizpilda kā komandu, citi to neredz.
-            </p>
-            <p>Visas izdotās un beigušās pavadzīmes ir Arhīvā.</p>
-          </div>
+          <p>
+            <b>Izveidot.</b> Gaida - Izveido - Izdota, tad PDF un paziņojums telefonā.
+          </p>
         </li>
       </ol>
-    </section>
+      {/* Nils 27.10: «Jāzina» atsevišķā tumšākā piezīmes kartītē, katra lieta savā rindā. */}
+      <aside className={styles.howNote} aria-label="Jāzina">
+        <p className={styles.howKnowTitle}>
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 11v5M12 8h.01" />
+          </svg>
+          Jāzina
+        </p>
+        <ul className={styles.howKnow}>
+          <li>Numuru salīdzināšana - CSDD Tukumā. Citu vietu raksti komentārā.</li>
+          <li>Komentārs ir tikai piezīme Aivaram (līdz {NOTE_UNTRUSTED_MAX} zīmēm), ne komanda.</li>
+          <li>Visas vecās pavadzīmes ir Arhīvā.</li>
+        </ul>
+      </aside>
+    </details>
   );
 }
 
@@ -740,13 +757,12 @@ export function IrissWaybillRequestArchive() {
 
 /**
  * Auto ievade: uzreiz 2 izvēles. Noklusējumā neviens ceļš nav piespiests.
- * "Ar roku" rāda marku, modeli un VIN turpat formā (bez saraksta scroll).
+ * "Ar roku" rāda marku un modeli turpat formā (bez VIN, bez saraksta scroll).
  */
 export function IrissWaybillAutoEntry({
   choice,
   car,
   manualBrandModel,
-  manualVin,
   isB192,
   b192Empty,
   showManual,
@@ -755,12 +771,10 @@ export function IrissWaybillAutoEntry({
   onOpenList,
   onClearCar,
   onManualBrandModel,
-  onManualVin,
 }: {
   choice: WaybillAutoChoice;
   car: WaybillMobileCar | null;
   manualBrandModel: string;
-  manualVin: string;
   isB192: boolean;
   b192Empty: boolean;
   showManual: boolean;
@@ -769,7 +783,6 @@ export function IrissWaybillAutoEntry({
   onOpenList: () => void;
   onClearCar: () => void;
   onManualBrandModel: (value: string) => void;
-  onManualVin: (value: string) => void;
 }) {
   return (
     <>
@@ -781,7 +794,6 @@ export function IrissWaybillAutoEntry({
           onClick={() => onChoose("list")}
         >
           No saraksta
-          <small>pieņemts tirdzniecībā</small>
         </button>
         <button
           type="button"
@@ -789,10 +801,11 @@ export function IrissWaybillAutoEntry({
           className={`${styles.pick} ${choice === "manual" ? styles.on : ""}`}
           onClick={() => onChoose("manual")}
         >
-          Ar roku
-          <small>marka, modelis, VIN</small>
+          Cits
         </button>
       </div>
+      {/* Nils 27.10: pogās viens vārds, skaidrojums vienā rindā zem tām (agrāk divrindu pogas). */}
+      <p className={styles.help}>No saraksta - tirdzniecībā pieņemti auto. Cits - ieraksti marku un modeli.</p>
       {showManual ? (
         <div className={styles.sub}>
           <input
@@ -803,16 +816,6 @@ export function IrissWaybillAutoEntry({
             placeholder="Marka, modelis"
             aria-label="Marka, modelis"
             autoComplete="off"
-          />
-          <input
-            className={`${styles.input} ${styles.sub} ${styles.mono}`}
-            value={manualVin}
-            onChange={(e) => onManualVin(e.target.value)}
-            maxLength={17}
-            placeholder="17 zīmes"
-            aria-label="VIN"
-            autoComplete="off"
-            spellCheck={false}
           />
         </div>
       ) : null}

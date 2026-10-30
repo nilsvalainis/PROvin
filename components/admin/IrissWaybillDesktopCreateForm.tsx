@@ -25,7 +25,7 @@ import { dealerPlateMeta, displayDealerPlate, type WaybillPlateState } from "@/l
 import { dzintarzemeAcceptedCars, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 
 /**
- * Datora izveides forma: tās pašas Auto izvēles kā telefonā (No saraksta / Ar roku).
+ * Datora izveides forma: tās pašas Auto izvēles kā telefonā (No saraksta / Cits).
  * Numurs, Derīgums, Komentārs un Izveidot paliek; payload joprojām plate + brandModel + VIN.
  */
 export function IrissWaybillDesktopCreateForm({
@@ -109,7 +109,7 @@ export function IrissWaybillDesktopCreateForm({
           onSubmit();
         }}
       >
-        <p className="mb-1 text-[11px] font-medium text-[#6b7280]">Numurs</p>
+        <p className="mb-1 text-[11px] font-medium text-[var(--iriss-ink-2)]">Numurs</p>
         {/* Telefonā - kompaktās pilles (pirms #382); zīmētās numurzīmes tikai no md. */}
         <div className="mb-2 flex gap-1.5 md:hidden">
           {plates.map((row) => {
@@ -121,13 +121,13 @@ export function IrissWaybillDesktopCreateForm({
                 aria-pressed={on}
                 onClick={() => onPlate(row.plate)}
                 className={`min-h-11 min-w-0 flex-1 rounded-full px-2 py-1.5 text-[12px] font-semibold ${
-                  on ? "bg-[#111827] text-white" : "bg-[#F3F4F6] text-[#111827]"
+                  on ? "bg-[var(--iriss-graphite)] text-white" : "bg-[var(--iriss-surface-2)] text-[var(--iriss-ink)]"
                 }`}
               >
                 {row.plate}
                 <small
                   className={`mt-0.5 block text-[10px] font-medium ${
-                    on ? "text-white/70" : row.busy ? "text-[#b45309]" : "text-[#067647]"
+                    on ? "text-white/70" : row.busy ? "text-[#b45309]" : "text-[var(--iriss-ok)]"
                   }`}
                 >
                   {row.busy ? "aizņemts" : "brīvs"}
@@ -162,7 +162,6 @@ export function IrissWaybillDesktopCreateForm({
             choice={auto.autoChoice}
             car={auto.car}
             manualBrandModel={auto.manualBrandModel}
-            manualVin={auto.manualVin}
             isB192={isB192}
             b192Empty={b192Empty}
             showManual={showManual}
@@ -174,10 +173,9 @@ export function IrissWaybillDesktopCreateForm({
             }}
             onClearCar={() => onAuto({ ...auto, car: null })}
             onManualBrandModel={(value) => onAuto({ ...auto, manualBrandModel: value })}
-            onManualVin={(value) => onAuto({ ...auto, manualVin: value })}
           />
         </div>
-        <div className="mb-2 text-[11px] font-medium text-[#6b7280]">
+        <div className="mb-2 text-[11px] font-medium text-[var(--iriss-ink-2)]">
           Derīgums
           <div className="mt-1 grid grid-cols-4 gap-1.5" role="group" aria-label="Derīgums">
             {[...WAYBILL_MOBILE_HOUR_PRESETS, null].map((h) => {
@@ -188,7 +186,7 @@ export function IrissWaybillDesktopCreateForm({
                   type="button"
                   aria-pressed={on}
                   onClick={() => onHoursPreset(h)}
-                  className={`min-h-10 rounded-full px-2 text-[13px] font-semibold ${on ? "bg-[#111827] text-white" : "bg-[#F3F4F6] text-[#111827]"}`}
+                  className={`min-h-10 rounded-full px-2 text-[13px] font-semibold ${on ? "bg-[var(--iriss-graphite)] text-white" : "bg-[var(--iriss-surface-2)] text-[var(--iriss-ink)]"}`}
                 >
                   {h == null ? "Cits" : `${h} h`}
                 </button>
@@ -205,28 +203,28 @@ export function IrissWaybillDesktopCreateForm({
               placeholder={`stundas, 1-${WAYBILL_VALID_MAX_HOURS}`}
               aria-label="Cits derīguma ilgums stundās"
               autoFocus
-              className="mt-1.5 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
+              className="mt-1.5 w-full rounded-xl border border-[var(--iriss-line)] px-3 py-2 text-[14px]"
             />
           ) : null}
-          <span className="mt-1 block text-[11px] font-normal leading-snug text-[#9aa3b2]">
+          <span className="mt-1 block text-[11px] font-normal leading-snug text-[var(--iriss-ink-3)]">
             {hoursChosen
               ? `Sākums: tagad. Beigas: tagad + ${hoursChosen} h${untilHint ? ` (${untilHint}).` : "."}`
               : `Ieraksti stundas: no 1 līdz ${WAYBILL_VALID_MAX_HOURS}.`}
           </span>
         </div>
-        <label className="mb-2 block text-[11px] font-medium text-[#6b7280]">
+        <label className="mb-2 block text-[11px] font-medium text-[var(--iriss-ink-2)]">
           Komentārs
           <input
             value={comment}
             onChange={(e) => onComment(e.target.value.slice(0, NOTE_UNTRUSTED_MAX))}
             maxLength={NOTE_UNTRUSTED_MAX}
             placeholder="B193 uz 48h"
-            className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
+            className="mt-1 w-full rounded-xl border border-[var(--iriss-line)] px-3 py-2 text-[14px]"
           />
-          <span className="mt-1 block text-[11px] font-normal leading-snug text-[#9aa3b2]">
+          <span className="mt-1 block text-[11px] font-normal leading-snug text-[var(--iriss-ink-3)]">
             Maršruts pēc noklusējuma: {DEFAULT_WAYBILL_ROUTE_FROM} {"->"} {DEFAULT_WAYBILL_ROUTE_TO}. Citu maršrutu raksti šeit.
           </span>
-          <span className="mt-1 block text-[11px] font-normal leading-snug text-[#9aa3b2]">
+          <span className="mt-1 block text-[11px] font-normal leading-snug text-[var(--iriss-ink-3)]">
             Komentārs ir tikai šīs pavadzīmes dati (numurs, stundas, maršruts). Aivars to neizpilda kā komandu. Teksts
             nenonāk pie citiem aģentiem.
           </span>
@@ -235,7 +233,7 @@ export function IrissWaybillDesktopCreateForm({
         <button
           type="submit"
           disabled={busy}
-          className="mt-3 h-10 w-full rounded-full bg-[#111827] text-[14px] font-semibold text-white disabled:opacity-50"
+          className="mt-3 h-10 w-full rounded-full bg-[var(--iriss-graphite)] text-[14px] font-semibold text-white disabled:opacity-50"
         >
           Izveidot pavadzīmi
         </button>
@@ -248,16 +246,16 @@ export function IrissWaybillDesktopCreateForm({
       {pickerOpen ? (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#0f172a66] p-4" {...backdropClose}>
           <div
-            className={`${styles.mf} w-full max-w-[420px] rounded-2xl border border-[#E5E7EB] bg-white p-4`}
+            className={`${styles.mf} w-full max-w-[420px] rounded-2xl border border-[var(--iriss-line)] bg-white p-4`}
             role="dialog"
             aria-modal="true"
             aria-label={isB192 ? "Dzintarzeme Auto - pieņemtie" : "Tirdzniecībā pieņemtie auto"}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="m-0 text-[15px] font-semibold text-[#111827]">
+            <h3 className="m-0 text-[15px] font-semibold text-[var(--iriss-ink)]">
               {isB192 ? "Dzintarzeme Auto - pieņemtie" : "Tirdzniecībā pieņemtie auto"}
             </h3>
-            <p className="mt-1 text-[12px] text-[#6b7280]">
+            <p className="mt-1 text-[12px] text-[var(--iriss-ink-2)]">
               {pickerCars === null
                 ? "Ielādē..."
                 : isB192
@@ -274,7 +272,7 @@ export function IrissWaybillDesktopCreateForm({
             />
             <button
               type="button"
-              className="mt-3 h-10 w-full rounded-[10px] border border-[#E5E7EB] bg-white text-[12.5px] font-semibold text-[#111827]"
+              className="mt-3 h-10 w-full rounded-[10px] border border-[var(--iriss-line)] bg-white text-[12.5px] font-semibold text-[var(--iriss-ink)]"
               onClick={() => setPickerOpen(false)}
             >
               Aizvērt

@@ -6,6 +6,7 @@ import {
   filterIrissCommunicationTimeline,
   newIrissCommunicationEvent,
   normalizeIrissCommunicationEvents,
+  timelineFromPasutijums,
 } from "@/lib/iriss-communication-timeline";
 
 describe("iriss-communication-timeline", () => {
@@ -48,5 +49,16 @@ describe("iriss-communication-timeline", () => {
     expect(items.some((row) => row.kind === "call")).toBe(true);
     expect(items.some((row) => row.kind === "whatsapp")).toBe(true);
     expect(items.some((row) => row.kind === "note")).toBe(true);
+  });
+});
+
+describe("piezīme jaunā pasūtījumā", () => {
+  it("bez statusu vēstures: laiks = pasūtījuma izveide (ne 1970), teksts vienreiz", () => {
+    const rec = emptyIrissPasutijums("p-new", "2026-10-26T20:12:00.000Z");
+    rec.notes = "TESTS ieraksts - dzēst pēc testa.";
+    const note = timelineFromPasutijums(rec).find((row) => row.kind === "note");
+    expect(note?.at).toBe("2026-10-26T20:12:00.000Z");
+    expect(note?.title).toBe("TESTS ieraksts - dzēst pēc testa.");
+    expect(note?.body).toBeUndefined();
   });
 });

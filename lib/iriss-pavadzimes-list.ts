@@ -3,7 +3,7 @@ import { toActiveWaybillRows } from "@/lib/iriss-pavadzimes-active";
 import { computeWaybillLifecycles, sortWaybillsNewestFirst } from "@/lib/iriss-pavadzimes-lifecycle";
 import { matchIrissPavadzimesToOrders } from "@/lib/iriss-pavadzimes-match";
 import { waybillValidityTone } from "@/lib/iriss-pavadzimes-parse";
-import { listIrissPavadzimes, readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
+import { listIrissPavadzimes, listIrissPavadzimesCached, readIrissPavadzimesCached } from "@/lib/iriss-pavadzimes-store";
 import type { IrissPavadzimeListRow, IrissPavadzimeRecord } from "@/lib/iriss-pavadzimes-types";
 import { isAllowlistedWaybillPlate, withdrawnWaybillNos, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
 import {
@@ -36,12 +36,14 @@ export function waybillRowWithoutOrder<T extends IrissPavadzimeListRow>(row: T):
 
 export async function loadIrissPavadzimesPageData(
   now = new Date(),
-  opts: { withOrders?: boolean } = {},
+  opts: { withOrders?: boolean; sync?: boolean } = {},
 ): Promise<IrissPavadzimesPageData> {
   const withOrders = opts.withOrders ?? true;
+  // Lapas atvēršana: kešs (agrāk katrā atvēršanā Dropbox sinhronizācija, 6-10 s); klients pēc tam sinhronizē caur API.
+  const sync = opts.sync ?? true;
   // Pasūtījumus lasa paralēli Dropbox sinhronizācijai (agrāk - pēc tās, +1 secīgs Blob ceļš).
   const [listed, csdd, orders] = await Promise.all([
-    listIrissPavadzimes(),
+    sync ? listIrissPavadzimes() : listIrissPavadzimesCached(),
     readCsddPlatesDocSafe(),
     withOrders ? listIrissPasutijumi().catch(() => []) : Promise.resolve([]),
   ]);

@@ -19,7 +19,6 @@ export const AUTOPARKS_V2_FILE = "autoparks-v2.json";
 
 /** Statusu secība v2 (saraksta sadaļas un statusa lapa, T6). */
 export const AUTOPARKS_V2_STATUS_ORDER: readonly AutoparksStatus[] = [
-  "ordered",
   "in_transit",
   "prep_waiting",
   "in_service",
@@ -29,7 +28,6 @@ export const AUTOPARKS_V2_STATUS_ORDER: readonly AutoparksStatus[] = [
 ];
 
 export const AUTOPARKS_V2_STATUS_COLOR: Record<AutoparksStatus, string> = {
-  ordered: "#0891b2",
   in_transit: "#0d9488",
   prep_waiting: "#d97706",
   in_service: "#6366f1",
@@ -84,6 +82,8 @@ export type V2Problem = {
   confirmedByUs: boolean;
   confirmedBy: string;
   at: string;
+  /** Foto pie problēmas (Nils 27.10: «reizēm vajag foto»). Autoparka failu id. */
+  photoIds: string[];
 };
 
 /** AI ieteikums no rēķina PDF (F10). Pašizmaksā nonāk tikai pēc apstiprināšanas (`amountEur`). */
@@ -123,7 +123,8 @@ export type V2Service = {
 };
 
 /** v2 labotie v1 lauki: v1 vērtība netiek pārrakstīta, v2 rāda šo, ja aizpildīts (J29 B papildus: + gads, krāsa, īpašnieks). */
-export const V2_FIELD_KEYS = ["plate", "location", "arrivedAt", "make", "model", "vin", "year", "color", "owner"] as const;
+/** `clientOrder`: "1" / "0" / "" (nav labots - ņem v1 `clientOrder`). */
+export const V2_FIELD_KEYS = ["plate", "location", "arrivedAt", "make", "model", "vin", "year", "color", "owner", "clientOrder"] as const;
 export type V2FieldKey = (typeof V2_FIELD_KEYS)[number];
 
 export type AutoparksCarV2 = {
@@ -138,8 +139,42 @@ export type AutoparksCarV2 = {
   service: V2Service;
   expenses: V2Expense[];
   /** Cenu lapas labojumi: null/"" = ņem v1 vērtību (v1 lauki netiek pārrakstīti). */
-  priceSheet: { displayName: string; equipmentLine: string; salePriceEur: number | null; listPriceEur: number | null };
+  priceSheet: {
+    displayName: string;
+    equipmentLine: string;
+    salePriceEur: number | null;
+    listPriceEur: number | null;
+    /** Drošības tabula cenu lapā (Nils 28.10); null = noklusējums "viss ir un pārbaudīts". */
+    safety?: V2PriceSheetSafety | null;
+  };
 };
+
+export const V2_SAFETY_KEYS = ["esp", "eps", "abs", "airbags"] as const;
+export type V2SafetyKey = (typeof V2_SAFETY_KEYS)[number];
+export type V2PriceSheetSafety = {
+  items: Record<V2SafetyKey, { present: boolean; checked: boolean }>;
+  /** "Transportlīdzeklis tehniski atbilst izmantošanai ceļu satiksmē!" */
+  roadworthy: boolean;
+};
+
+/** Noklusējums kā CSDD paraugā: visas sistēmas ir, pārbaudītas, apliecinājums ieķeksēts. */
+export function defaultV2PriceSheetSafety(): V2PriceSheetSafety {
+  const all = { present: true, checked: true };
+  return { items: { esp: { ...all }, eps: { ...all }, abs: { ...all }, airbags: { ...all } }, roadworthy: true };
+}
+
+export function normalizeV2PriceSheetSafety(raw: unknown): V2PriceSheetSafety | null {
+  if (!isObj(raw)) return null;
+  const base = defaultV2PriceSheetSafety();
+  const items = isObj(raw.items) ? raw.items : {};
+  for (const k of V2_SAFETY_KEYS) {
+    const it = isObj(items[k]) ? items[k] : {};
+    const present = typeof it.present === "boolean" ? it.present : base.items[k].present;
+    base.items[k] = { present, checked: present && (typeof it.checked === "boolean" ? it.checked : base.items[k].checked) };
+  }
+  if (typeof raw.roadworthy === "boolean") base.roadworthy = raw.roadworthy;
+  return base;
+}
 
 export type V2HistoryRow = {
   id: string;
@@ -177,6 +212,22 @@ function multiline(v: unknown, max: number): string {
   return typeof v === "string" ? v.replace(/\r\n/g, "\n").slice(0, max).trim() : "";
 }
 
+/**
+ * Ticamas tehnisko datu robežas (Nils 28.10: jaudā bija "23052012 kW" - 1. reģistrācijas datums).
+ * Ārpus robežām vērtību nesaglabā un nerāda.
+ */
+export const V2_TECH_LIMITS = {
+  powerKw: { min: 1, max: 2000 },
+  displacementCm3: { min: 50, max: 20000 },
+  mileageKm: { min: 0, max: 3_000_000 },
+} as const;
+
+export function v2PlausibleTech(kind: keyof typeof V2_TECH_LIMITS, n: number | null | undefined): number | null {
+  if (n == null || !Number.isFinite(n)) return null;
+  const { min, max } = V2_TECH_LIMITS[kind];
+  return n >= min && n <= max ? n : null;
+}
+
 export function v2Num(v: unknown): number | null {
   if (typeof v === "number") return Number.isFinite(v) ? v : null;
   if (typeof v === "string" && v.trim()) {
@@ -196,7 +247,7 @@ function list<T>(raw: unknown, parse: (row: unknown) => T | null, max = 500): T[
 
 export function emptyCarV2(): AutoparksCarV2 {
   return {
-    fields: { plate: "", location: "", arrivedAt: "", make: "", model: "", vin: "", year: "", color: "", owner: "" },
+    fields: { plate: "", location: "", arrivedAt: "", make: "", model: "", vin: "", year: "", color: "", owner: "", clientOrder: "" },
     tech: { firstRegDate: "", displacementCm3: null, powerKw: null, tyreSize: "", gearbox: "", engine: "", mileageKm: null, csddCheckedAt: "" },
     sources: {},
     purchase: { auction: "", auctionNo: "", purchaseDate: "", purchasePriceEur: null, transportEur: null, vat: { mode: "", source: "", at: "" } },
@@ -224,6 +275,7 @@ function normalizeProblem(raw: unknown): V2Problem | null {
     confirmedByUs: raw.confirmedByUs === true,
     confirmedBy: str(raw.confirmedBy, 80),
     at: str(raw.at, 40),
+    photoIds: Array.isArray(raw.photoIds) ? raw.photoIds.filter((x): x is string => typeof x === "string" && x.length > 0).slice(0, 12) : [],
   };
 }
 
@@ -299,6 +351,7 @@ export function normalizeCarV2(raw: unknown): AutoparksCarV2 {
       year: str(fields.year, 4),
       color: str(fields.color, 40),
       owner: isAutoparksOwner(fields.owner) ? fields.owner : "",
+      clientOrder: fields.clientOrder === "1" || fields.clientOrder === "0" ? fields.clientOrder : "",
     },
     tech: {
       firstRegDate: str(tech.firstRegDate, 10),
@@ -334,6 +387,7 @@ export function normalizeCarV2(raw: unknown): AutoparksCarV2 {
       equipmentLine: str(ps.equipmentLine, 300),
       salePriceEur: v2Num(ps.salePriceEur),
       listPriceEur: v2Num(ps.listPriceEur),
+      safety: normalizeV2PriceSheetSafety(ps.safety),
     },
   };
 }
@@ -419,6 +473,8 @@ export type AutoparksV2Basics = {
   statusLabel: string;
   owner: "IRISS" | "DZA";
   ownerLabel: string;
+  /** «Pasūtījums» (Nils 27.10, agrāk statuss «Pasūtījums»). */
+  clientOrder: boolean;
   location: string;
   arrivedAt: string;
   archived: boolean;
@@ -466,6 +522,7 @@ export function autoparksV2Basics(car: AutoparksCar, v2: AutoparksCarV2): Autopa
     statusLabel: AUTOPARKS_STATUS_LV[car.status],
     owner,
     ownerLabel: AUTOPARKS_OWNER_LV[owner],
+    clientOrder: v2.fields.clientOrder ? v2.fields.clientOrder === "1" : Boolean(car.clientOrder),
     location: v2.fields.location || car.location,
     // J52b LABOJUMS: kad "Atvests" ar roku notīrīts (v2 pārraksts = ""), tas vairs nedrīkst
     // atgriezties pie v1 vērtības - `sources.arrivedAt === "manual"` nozīmē v2 vērtība (arī tukša) ir galīgā.
@@ -480,8 +537,14 @@ export function autoparksV2Basics(car: AutoparksCar, v2: AutoparksCarV2): Autopa
     firstRegDate: v2.tech.firstRegDate
       ? { value: v2.tech.firstRegDate, csdd: csdd("tech.firstRegDate") }
       : { value: regFirst, csdd: Boolean(regFirst) },
-    displacementCm3: { value: v2.tech.displacementCm3, csdd: v2.tech.displacementCm3 != null && csdd("tech.displacementCm3") },
-    powerKw: { value: v2.tech.powerKw, csdd: v2.tech.powerKw != null && csdd("tech.powerKw") },
+    displacementCm3: (() => {
+      const value = v2PlausibleTech("displacementCm3", v2.tech.displacementCm3);
+      return { value, csdd: value != null && csdd("tech.displacementCm3") };
+    })(),
+    powerKw: (() => {
+      const value = v2PlausibleTech("powerKw", v2.tech.powerKw);
+      return { value, csdd: value != null && csdd("tech.powerKw") };
+    })(),
     tyreSize: { value: v2.tech.tyreSize, csdd: false },
     gearbox: v2.tech.gearbox ? { value: v2.tech.gearbox, csdd: false } : { value: reg?.gearbox ?? "", csdd: Boolean(reg?.gearbox) },
     engine: { value: v2.tech.engine, csdd: false },

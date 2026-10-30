@@ -171,6 +171,16 @@ describe("CSDD reģistrs: meklēšanas POST whitelist (rep_lapt_tl)", () => {
     expect(isAllowedRequest({ method: "POST", url: `${CSDD}/?ix=1&v=gli`, postData: "kiest_id=5092" }, login).allowed).toBe(true);
     expect(isAllowedRequest({ method: "POST", url: `${CSDD}/?v=rep_lapt_tl`, postData: "vards=u" }, login).allowed).toBe(false);
     expect(isAllowedRequest({ method: "POST", url: `${CSDD}/`, postData: "lapv_id=1" }, login).allowed).toBe(false);
+  });
+
+  it("login phase: CSDD menu/shell load POSTs allowed; write actions and other origins still blocked", () => {
+    expect(isAllowedRequest({ method: "POST", url: `${CSDD}/`, postData: "" }, login)).toMatchObject({ allowed: true, reason: "csdd_login_nav_post" });
+    expect(isAllowedRequest({ method: "POST", url: `${CSDD}/?v=menu&ix=2`, postData: "sid=abc" }, login).allowed).toBe(true);
+    for (const postData of ["darb=anul&id=1", "v=lapv_saglabat", "action=save", "dzest=1"])
+      expect(isAllowedRequest({ method: "POST", url: `${CSDD}/`, postData }, login)).toMatchObject({ allowed: false, reason: "post_forbidden_action" });
+    expect(isAllowedRequest({ method: "POST", url: `${CSDD}/?v=lapv`, postData: "" }, login).allowed).toBe(false);
+    expect(isAllowedRequest({ method: "POST", url: `${CSDD}/`, postData: "v=rep_lapt_tl" }, login).allowed).toBe(false);
+    expect(isAllowedRequest({ method: "POST", url: "https://evil.example/", postData: "" }, login).allowed).toBe(false);
     expect(isAllowedRequest({ method: "POST", url: `${CSDD}/`, postData: "vards=u" }, read).allowed).toBe(false);
   });
 

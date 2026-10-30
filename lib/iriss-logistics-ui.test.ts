@@ -15,7 +15,7 @@ const map = readFileSync("components/admin/iriss-logistika/IrissLogistikaMap.tsx
 
 describe("IRISS Loģistika UI contracts", () => {
   it("keeps header and filter chips from being sticky", () => {
-    expect(client).toContain('className="iriss-log-no-print hidden md:static md:block"');
+    expect(client).toContain('className="iriss-log-no-print hidden md:static md:block iriss-log-head"');
     expect(client).not.toMatch(/sticky top-/);
     expect(page).toContain("await requireLogisticsPage();");
     expect(page).toContain("IrissLogistikaClient");
@@ -42,9 +42,9 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(client).toContain("IrissLogistikaCabinet");
     expect(client).toContain('onPatchOrder={(id, action) => void patchOrder(id, action)}');
     expect(client).toContain("Nav aktīvu auto. Piegādātie ir arhīvā.");
-    // Kartē "Iepriekš izmantotie punkti" vietā ir slēdzis "Rādīt nosaukumus".
+    // Kartē "Iepriekš izmantotie punkti" vietā ir slēdzis "Nosaukumi".
     expect(client).not.toContain("Iepriekš izmantotie punkti");
-    expect(client).toContain("Rādīt nosaukumus");
+    expect(client).toMatch(/\n\s+Nosaukumi\n/);
     expect(client).toContain("Atvērt izsolē");
     expect(client).toContain("+ Nopirkts");
     expect(listApi).toContain("LOGISTICS_DEFAULT_LIST_VIEW");
@@ -104,7 +104,7 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(client).toContain("iriss-log-print-root");
     expect(client).toContain("/api/admin/iriss/logistika/print");
     expect(client).not.toMatch(/sticky top-/);
-    expect(client).toContain('className="iriss-log-no-print hidden md:static md:block"');
+    expect(client).toContain('className="iriss-log-no-print hidden md:static md:block iriss-log-head"');
     expect(css).toMatch(/@page\s*\{\s*size:\s*A4 landscape/);
     expect(css).toMatch(/margin:\s*10mm/);
     expect(css).toContain("277mm");
@@ -160,7 +160,7 @@ describe("IRISS Loģistika UI contracts", () => {
 
   it("keeps an editable auction-sources list in Loģistika settings", () => {
     expect(client).toContain("IrissLogistikaAuctionSourcesPanel");
-    expect(client).toContain('setPageTab("settings")');
+    expect(client).toContain('["settings", "Iestatījumi"]');
     expect(client).toContain("Iestatījumi");
     expect(settings).toContain("IrissLogistikaAuctionSourcesPanel");
     expect(settings).toContain("Lietotāji un pieeja");
@@ -184,8 +184,9 @@ describe("IRISS Loģistika UI contracts", () => {
     const domain = readFileSync("lib/iriss-logistics-cabinet.ts", "utf8");
     const timer = readFileSync("lib/iriss-logistics-parking-timer.ts", "utf8");
     expect(cabinet).toContain("CABINET_DOC_GROUP_LABEL");
-    expect(cabinet).toContain("CABINET_PICKUP_STAGE_LV");
-    expect(cabinet).toContain("Atzīmēt kā Atvests");
+    expect(cabinet).toContain("LOGISTICS_STEP_LV");
+    // Nils 27.10: «Atvests» ir lauka «Solis» 4. solis (uz Autoparku), nevis atsevišķa poga.
+    expect(cabinet).toContain("onMoveToAutopark");
     expect(domain).toContain('A: "Iegādes dokumenti"');
     expect(domain).toContain('B: "Pick up līdz atvešanai"');
     expect(domain).toContain('C: "Pēc atvešanas"');
@@ -198,7 +199,7 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(cabinet).toContain("Bezmaksas stāvv. līdz");
     expect(cabinet).toContain("Pickup kods");
     expect(cabinet).toContain("Piezīme");
-    expect(cabinet).toContain("LOGISTICS_PIPELINE_STATUSES");
+    expect(cabinet).toContain("LOGISTICS_STEPS");
     expect(cabinet).toContain("saveOrderFields");
     expect(cabinet).toContain("Izņemts");
     expect(cabinet).toContain("Piegādāts");

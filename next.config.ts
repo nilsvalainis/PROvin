@@ -57,6 +57,8 @@ const nextConfig: NextConfig = {
   ],
   /** pdfjs / tesseract worker faili tiek ielādēti pēc ceļa, tāpēc Next izsekošana tos neatrod automātiski. */
   outputFileTracingIncludes: {
+    // Dzintarzeme Auto logo PDF failos lasa no diska (fs.readFile) - bez šī produkcijā PDF bija bez logo (#729).
+    "/**": ["./public/brands/dzintarzeme-auto-logo.png"],
     "/api/admin/**": ["./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"],
     "/api/admin/iriss-listings/vin-ocr": [
       "./node_modules/tesseract.js/dist/**",
@@ -72,6 +74,8 @@ const nextConfig: NextConfig = {
     ],
   },
   reactStrictMode: true,
+  /** Nerādīt `X-Powered-By: Next.js` (audits 2026-10-27). */
+  poweredByHeader: false,
   images: {
     remotePatterns: IRISS_LISTING_IMAGE_HOST_SUFFIXES.flatMap((suffix) => [
       { protocol: "https" as const, hostname: suffix },

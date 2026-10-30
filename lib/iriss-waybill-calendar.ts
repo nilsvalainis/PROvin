@@ -41,7 +41,13 @@ function plateKey(p: string): string {
 
 /** Logs: no šodienas sākuma `days` dienas uz priekšu. Joslas sakārtotas pēc numura. */
 export function buildWaybillCalendar(
-  rows: ReadonlyArray<Pick<IrissPavadzimeRecord, "id" | "number" | "brandModel" | "plate" | "issuedAt" | "validUntil">>,
+  rows: ReadonlyArray<
+    Pick<IrissPavadzimeRecord, "id" | "number" | "brandModel" | "plate" | "issuedAt" | "validUntil"> & {
+      /** "interrupted" = pārtraukta: josla beidzas pārtraukšanas brīdī un ir pelēka (agrāk - līdz sākotnējām beigām, oranža). */
+      lifecycle?: string;
+      supersededBy?: string;
+    }
+  >,
   nowMs: number,
   days = 7,
 ): WaybillCalendar {
@@ -49,14 +55,20 @@ export function buildWaybillCalendar(
   const endMs = startMs + days * DAY;
   const span = endMs - startMs;
   const lanes = new Map<string, WaybillCalendarSegment[]>();
+  const issuedByNumber = new Map(rows.map((r) => [r.number.trim().toUpperCase(), Date.parse(r.issuedAt)] as const));
   for (const r of rows) {
-    const until = Date.parse(r.validUntil);
-    if (!Number.isFinite(until)) continue;
+    const validUntil = Date.parse(r.validUntil);
+    if (!Number.isFinite(validUntil)) continue;
+    const interrupted = r.lifecycle === "interrupted";
+    const successorIssued = r.supersededBy ? issuedByNumber.get(r.supersededBy.trim().toUpperCase()) : undefined;
+    const until = interrupted
+      ? Math.min(validUntil, successorIssued != null && Number.isFinite(successorIssued) ? successorIssued : nowMs)
+      : validUntil;
     const issued = Date.parse(r.issuedAt);
     const from = Math.max(Number.isFinite(issued) ? issued : until - SOON_MS, startMs);
     const to = Math.min(until, endMs);
     if (to <= startMs || from >= endMs || to <= from) continue;
-    const tone: WaybillCalendarTone = until <= nowMs ? "expired" : until - nowMs <= SOON_MS ? "soon" : "active";
+    const tone: WaybillCalendarTone = interrupted || until <= nowMs ? "expired" : until - nowMs <= SOON_MS ? "soon" : "active";
     const plate = plateKey(r.plate) || "Bez numura";
     const seg: WaybillCalendarSegment = {
       id: r.id,

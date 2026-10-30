@@ -19,7 +19,34 @@ export type V2IegadeFile = {
   csddBadge: boolean;
   /** Kabineta dokumenta tips (pildspalvas tipa izvēlei, J61); v1/akts ierakstiem tukšs - nav maināms. */
   type: CabinetDocType | "";
+  /** Grupa cilnē «Dokumenti» (Nils 27.10). */
+  group: IegadeDocGroup;
 };
+
+/** Nils 27.10: dokumenti grupās, lai vieglāk orientēties. */
+export const IEGADE_DOC_GROUPS = ["pirkums", "transports", "csdd", "citi"] as const;
+export type IegadeDocGroup = (typeof IEGADE_DOC_GROUPS)[number];
+export const IEGADE_DOC_GROUP_LV: Record<IegadeDocGroup, string> = {
+  pirkums: "Pirkums",
+  transports: "Transports",
+  csdd: "CSDD un serviss",
+  citi: "Citi",
+};
+
+export function iegadeDocGroupOfType(type: CabinetDocType | ""): IegadeDocGroup {
+  if (type === "car_invoice" || type === "auction_invoice" || type === "purchase_confirm") return "pirkums";
+  if (type === "pickup_pdf" || type === "cmr" || type === "transport_request_confirm" || type === "transport_invoice") return "transports";
+  if (type === "csdd_status" || type === "service_invoice") return "csdd";
+  return "citi";
+}
+
+/** Grupas secībā; tukšās netiek atgrieztas. */
+export function groupIegadeFiles(files: readonly V2IegadeFile[]): Array<{ group: IegadeDocGroup; files: Array<{ file: V2IegadeFile; index: number }> }> {
+  return IEGADE_DOC_GROUPS.map((group) => ({
+    group,
+    files: files.map((file, index) => ({ file, index })).filter((x) => x.file.group === group),
+  })).filter((g) => g.files.length > 0);
+}
 
 /** Tipi, ko drīkst izvēlēties ar roku Iegādes dokumenta pildspalvā (sadaļas A apakškopa, bez Servisa rēķina). */
 export const IEGADE_DOC_TYPE_OPTIONS: readonly CabinetDocType[] = ["other", "purchase_confirm", "car_invoice", "auction_invoice"];
@@ -38,6 +65,16 @@ export function classifyIegadeDocType(fileName: string): CabinetDocType {
   if (/auction ?invoice|izsoles ?r[ēe][ķk]ins/.test(n)) return "auction_invoice";
   if (/\bcar ?invoice\b|\binvoice\b|r[ēe][ķk]ins|detrphl|\b9\d{8}\b/.test(n)) return "car_invoice";
   return "other";
+}
+
+/**
+ * Tips attēlošanai un pārbaudei: vecie dokumenti ar tipu "other" (augšupielādēti pirms automātiskās
+ * klasifikācijas) tiek atpazīti pēc nosaukuma; saglabātie dati netiek mainīti (Nils 27.10, 390 px pārskats).
+ */
+export function effectiveCabinetDocType(d: Pick<CabinetDocument, "type" | "title" | "blobPath">): CabinetDocType {
+  if (d.type !== "other") return d.type;
+  const name = `${d.title} ${d.blobPath.split("/").pop() ?? ""}`;
+  return classifyIegadeDocType(name);
 }
 
 const CABINET_TYPES: readonly CabinetDocType[] = ["car_invoice", "auction_invoice", "purchase_confirm", "pickup_pdf", "cmr", "other"];
@@ -64,8 +101,9 @@ export function iegadeFileList(input: {
   numberCheckFileId: string;
 }): V2IegadeFile[] {
   const out: V2IegadeFile[] = [];
-  for (const d of input.cabinetDocs) {
-    if (d.deletedAt || !d.blobPath || !CABINET_TYPES.includes(d.type)) continue;
+  for (const raw of input.cabinetDocs) {
+    if (raw.deletedAt || !raw.blobPath || !CABINET_TYPES.includes(raw.type)) continue;
+    const d = { ...raw, type: effectiveCabinetDocType(raw) };
     out.push({
       id: `c:${d.id}`,
       tag: TAG[d.type] ?? "Dokuments",
@@ -76,6 +114,7 @@ export function iegadeFileList(input: {
       editable: true,
       csddBadge: d.type === "car_invoice",
       type: d.type,
+      group: iegadeDocGroupOfType(d.type),
     });
   }
   for (const f of input.v1Files) {
@@ -90,9 +129,11 @@ export function iegadeFileList(input: {
       editable: false,
       csddBadge: false,
       type: "",
+      group: f.stage === "transport" ? "transports" : f.kind === "invoice" ? "pirkums" : "citi",
     });
   }
   out.sort((a, b) => a.date.localeCompare(b.date));
+  dedupeIegadeFiles(out);
   const act = input.numberCheckFileId ? input.v1Files.find((f) => f.id === input.numberCheckFileId && !f.deletedAt) : undefined;
   if (act) {
     out.push({
@@ -105,9 +146,37 @@ export function iegadeFileList(input: {
       editable: false,
       csddBadge: false,
       type: "",
+      group: "csdd",
     });
   }
   return out;
+}
+
+const fileKey = (title: string) =>
+  title
+    .toLowerCase()
+    .replace(/\.(pdf|jpe?g|png|heic)$/i, "")
+    .replace(/\(\d+\)$/, "")
+    .replace(/[\s_.()-]+/g, "");
+
+/**
+ * Nils 28.10: «dokumentu sadaļā dažiem auto ir Car Invoice dublikāts». Tas pats fails bija gan Loģistikas
+ * kabinetā (c:), gan vecajos Autoparka failos (f:), dažreiz f: divreiz. Rāda vienu - Loģistikas dokumentu;
+ * ja kabinetā jau ir Car Invoice, vecā kopija netiek rādīta. Dati netiek dzēsti.
+ */
+export function dedupeIegadeFiles(files: V2IegadeFile[]): void {
+  const cabinetFirst = [...files].sort((a, b) => Number(b.id.startsWith("c:")) - Number(a.id.startsWith("c:")));
+  const seen = new Set<string>();
+  const drop = new Set<V2IegadeFile>();
+  const hasCabinetCarInvoice = files.some((f) => f.id.startsWith("c:") && f.type === "car_invoice");
+  for (const f of cabinetFirst) {
+    // Pēc nosaukuma visās grupās: vecā kopija mēdz būt grupā "Citi" (Nils 28.10, Order Confirmation).
+    const key = fileKey(f.title);
+    if (seen.has(key)) drop.add(f);
+    else seen.add(key);
+    if (hasCabinetCarInvoice && f.id.startsWith("f:") && f.group === "pirkums" && /car[\s_-]?invoice/i.test(f.title)) drop.add(f);
+  }
+  for (let i = files.length - 1; i >= 0; i--) if (drop.has(files[i]!)) files.splice(i, 1);
 }
 
 /** Pirkuma datums automātiski: pirmā izsoles/auto rēķina diena (ja nav ievadīts ar roku). */
@@ -120,7 +189,8 @@ export function purchaseDateFromDocs(docs: readonly CabinetDocument[]): string {
   return inv[0] ?? "";
 }
 
-const AUTO1_REQUIRED_DOCS: readonly CabinetDocType[] = ["purchase_confirm", "car_invoice"];
+/** Nils 27.10: Auto1 autiem obligāts tikai Car Invoice (Pirkuma apstiprinājums vairs netiek prasīts). */
+const AUTO1_REQUIRED_DOCS: readonly CabinetDocType[] = ["car_invoice"];
 
 /** Vai auto ir Auto1 izcelsmes - no izsoles lauka vai jau zināma dokumenta avota (J30 F4). */
 export function isAuto1Car(input: { auction: string; cabinetDocs: readonly CabinetDocument[] }): boolean {
@@ -128,9 +198,17 @@ export function isAuto1Car(input: { auction: string; cabinetDocs: readonly Cabin
   return input.cabinetDocs.some((d) => !d.deletedAt && d.source.trim().toLowerCase() === "auto1");
 }
 
-/** Auto1 autiem jābūt tieši 2 obligātām PDF (Pirkuma apstiprinājums + Car Invoice) - trūkstošo etiķetes (J30 F4). */
-export function auto1MissingDocLabels(input: { isAuto1: boolean; cabinetDocs: readonly CabinetDocument[] }): string[] {
+/**
+ * Auto1 autiem obligāts Car Invoice - trūkstošo etiķetes (J30 F4, Nils 27.10).
+ * Rēķins, kas pievienots Dokumentos kā fails grupā "Pirkums", arī skaitās.
+ */
+export function auto1MissingDocLabels(input: {
+  isAuto1: boolean;
+  cabinetDocs: readonly CabinetDocument[];
+  files?: readonly Pick<V2IegadeFile, "group" | "tag">[];
+}): string[] {
   if (!input.isAuto1) return [];
+  if (input.files?.some((f) => f.group === "pirkums" && f.tag === "Rēķins")) return [];
   const live = input.cabinetDocs.filter((d) => !d.deletedAt);
-  return AUTO1_REQUIRED_DOCS.filter((t) => !live.some((d) => d.type === t)).map((t) => CABINET_DOC_TYPE_LABEL[t]);
+  return AUTO1_REQUIRED_DOCS.filter((t) => !live.some((d) => effectiveCabinetDocType(d) === t)).map((t) => CABINET_DOC_TYPE_LABEL[t]);
 }

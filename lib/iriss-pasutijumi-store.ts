@@ -9,6 +9,7 @@ import { formatIrissOrderPowerKwLabel } from "@/lib/engine-power-kw";
 import { retainStoredIrissCriteria } from "@/lib/iriss-criteria-migrate";
 import { parseIrissCriteriaV1 } from "@/lib/iriss-criteria-types";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
+import { emptyIrissListingMarks, parseIrissListingMarks, type IrissListingMarks } from "@/lib/iriss-listing-marks";
 import { parseIrissListingOrderOv, type IrissListingOrderOv } from "@/lib/iriss-listing-order-ov";
 import {
   generatedDocumentBlobPath,
@@ -554,6 +555,10 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     interiorFinish: sanitizeDraftTextForStorage(str("interiorFinish"), 400),
     powerKw: sanitizeDraftTextForStorage(str("powerKw"), 80),
     damageTolerance: sanitizeDraftTextForStorage(str("damageTolerance"), 200),
+    budgetIncludes: sanitizeDraftTextForStorage(str("budgetIncludes"), 16),
+    doors: sanitizeDraftTextForStorage(str("doors"), 16),
+    maxRepairCostEur: sanitizeDraftTextForStorage(str("maxRepairCostEur"), 40),
+    sellerType: sanitizeDraftTextForStorage(str("sellerType"), 16),
     preferredCountries: sanitizeDraftTextForStorage(str("preferredCountries"), 200),
     clientFinancingPercent: (() => {
       const raw = o.clientFinancingPercent;
@@ -1217,6 +1222,7 @@ export async function writeIrissPasutijums(
     out = await persistOfferImages(r, out);
     out = retainStoredIrissCriteria(existing, out);
     out = retainGoogleContactFields(existing, out);
+    out = retainIrissOmittedFields(existing, record, out);
     out = retainIrissOfferDeadlines(existing, out);
     out = {
       ...out,
@@ -1401,6 +1407,50 @@ export async function writeIrissListingOrderOv(
   }
 }
 
+/* ---------- Sludinājumu piezīmes un favorīti (Nils 29.10: serverī, nevis tikai pārlūkā) ---------- */
+
+const LISTING_MARKS_FILENAME = "_listing-marks.json";
+
+export async function readIrissListingMarks(): Promise<IrissListingMarks> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return emptyIrissListingMarks();
+  if (r.kind === "blob") {
+    const raw = await readJsonFromBlob(`${r.prefix}${LISTING_MARKS_FILENAME}`, r.token);
+    return parseIrissListingMarks(raw);
+  }
+  try {
+    const txt = await fs.readFile(path.join(r.dir, LISTING_MARKS_FILENAME), "utf8");
+    return parseIrissListingMarks(JSON.parse(txt) as unknown);
+  } catch {
+    return emptyIrissListingMarks();
+  }
+}
+
+export async function writeIrissListingMarks(marks: IrissListingMarks): Promise<{ ok: true } | { ok: false; error: string }> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
+  const body = JSON.stringify(parseIrissListingMarks(marks));
+  try {
+    if (r.kind === "blob") {
+      await put(`${r.prefix}${LISTING_MARKS_FILENAME}`, body, {
+        access: "private",
+        token: r.token,
+        contentType: "application/json; charset=utf-8",
+        addRandomSuffix: false,
+        allowOverwrite: true,
+      });
+      return { ok: true };
+    }
+    await fs.mkdir(r.dir, { recursive: true });
+    const fp = path.join(r.dir, LISTING_MARKS_FILENAME);
+    await fs.writeFile(`${fp}.tmp`, body, "utf8");
+    await fs.rename(`${fp}.tmp`, fp);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 function normalizeListOrderIdList(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   const out: string[] = [];
@@ -1557,4 +1607,24 @@ export async function restoreIrissPasutijums(id: string): Promise<{ ok: true; re
   const w = await writeIrissPasutijums(next, { expectedWorkspaceRevision: irissWorkspaceRevision(existing) });
   if (!w.ok) return { ok: false, error: w.error };
   return { ok: true, record: w.record };
+}
+
+/**
+ * Nils 29.10: ja pieprasījumā lauka nav vispār (vecs klients / cits rakstītājs), saglabāšana to nedrīkst izdzēst.
+ * Tukšs/notīrīts lauks nāk ar atslēgu un tiek saglabāts kā notīrīts.
+ */
+const IRISS_RETAIN_WHEN_OMITTED = ["advance", "communicationEvents", "inspectionPhotos", "documentPhotos"] as const;
+
+export function retainIrissOmittedFields(
+  existing: IrissPasutijumsRecord | null,
+  incoming: Partial<IrissPasutijumsRecord>,
+  out: IrissPasutijumsRecord,
+): IrissPasutijumsRecord {
+  if (!existing) return out;
+  let next = out;
+  for (const key of IRISS_RETAIN_WHEN_OMITTED) {
+    if (key in incoming) continue;
+    if (existing[key] !== undefined) next = { ...next, [key]: existing[key] } as IrissPasutijumsRecord;
+  }
+  return next;
 }

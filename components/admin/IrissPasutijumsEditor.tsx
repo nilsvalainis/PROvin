@@ -23,6 +23,8 @@ import {
 import { IrissLabeledInput as LabeledInput, irissOfferFieldClass } from "@/components/admin/IrissOfferFormFields";
 import { IrissOfferClientPicker, type IrissOfferClientChoice } from "@/components/admin/IrissOfferClientPicker";
 import { IrissOfferSourceSheet } from "@/components/admin/IrissOfferSourceSheet";
+import { irissPdNewHref } from "@/lib/iriss-pd-entry";
+import { irissHitAuctionUrl } from "@/lib/iriss-order-search-view";
 import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
 import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChangesGuard";
 import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
@@ -105,6 +107,17 @@ import {
   planSilentAutosave,
 } from "@/lib/iriss-pasutijumi-save-safety";
 import { inspectIrissPhone } from "@/lib/iriss-phone-normalize";
+import { createIrissPdFromListing, irissPdHref } from "@/lib/iriss-pd-from-listing-client";
+import {
+  clearIrissOrderBackup,
+  formatIrissBackupTime,
+  irissAutosaveRetryDelayMs,
+  irissAutosaveShouldRetry,
+  irissOrderBackupDiffers,
+  readIrissOrderBackup,
+  writeIrissOrderBackup,
+  type IrissOrderBackup,
+} from "@/lib/iriss-order-save-status";
 import {
   buildIrissOfferClientShareBody,
   buildIrissOfferShareSubject,
@@ -364,6 +377,7 @@ export function IrissPasutijumsEditor({
   duplicatesByListing = EMPTY_DUPLICATES,
   initialRoomTab = "overview",
   googleContactsConfigured: googleContactsConfiguredInitial = false,
+  pdEntry = false,
 }: {
   initialRecord: IrissPasutijumsRecord;
   autoOpenNewOffer?: boolean;
@@ -381,6 +395,8 @@ export function IrissPasutijumsEditor({
   duplicatesByListing?: Record<string, IrissVinDuplicateLink[]>;
   initialRoomTab?: IrissOrderRoomTab;
   googleContactsConfigured?: boolean;
+  /** Administrators: jauni piedāvājumi tikai PD sadaļā (Nils 27.10, viena sistēma). Darbinieks - esošā forma. */
+  pdEntry?: boolean;
 }) {
   const router = useRouter();
   const [rec, setRec] = useState<IrissPasutijumsRecord>(() => withAutoEcarstradeLinks(initialRecord));
@@ -418,6 +434,14 @@ export function IrissPasutijumsEditor({
   const autosaveTimer = useRef<number | null>(null);
   const autosaveInFlight = useRef(false);
   const autosaveQueued = useRef(false);
+  const saveRef = useRef<(opts?: { silent?: boolean }) => Promise<SaveResult>>(async () => ({ ok: false, error: "init" }));
+  const retryTimer = useRef<number | null>(null);
+  const retryAttempt = useRef(0);
+  const [autoSaving, setAutoSaving] = useState(0);
+  const [autoSaveError, setAutoSaveError] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
+  const [backupOffer, setBackupOffer] = useState<IrissOrderBackup | null>(null);
+  const backupPending = useRef(true);
   const persistedIdRef = useRef(unsavedDraft ? "" : initialRecord.id);
   const draftHandoffPending = useRef(false);
   const imagesHydrating = useRef(irissRecordNeedsOfferImageHydration(initialRecord));
@@ -463,7 +487,7 @@ export function IrissPasutijumsEditor({
     );
   }, []);
 
-  const save = useCallback(
+  const saveRaw = useCallback(
     async (opts?: {
       redirectToList?: boolean;
       silent?: boolean;
@@ -612,7 +636,7 @@ export function IrissPasutijumsEditor({
           if (autosaveQueued.current) {
             autosaveQueued.current = false;
             window.setTimeout(() => {
-              void save({ silent: true });
+              void saveRef.current({ silent: true });
             }, 0);
           }
         }
@@ -620,6 +644,41 @@ export function IrissPasutijumsEditor({
     },
     [router],
   );
+
+  // Drošā saglabāšana (Nils 29.10): patiesais stāvoklis galvenē + automātiska atkārtošana, ja neizdodas.
+  const save = useCallback(
+    async (opts?: Parameters<typeof saveRaw>[0]): Promise<SaveResult> => {
+      const silent = opts?.silent === true;
+      if (silent) setAutoSaving((n) => n + 1);
+      let result: SaveResult;
+      try {
+        result = await saveRaw(opts);
+      } finally {
+        if (silent) setAutoSaving((n) => Math.max(0, n - 1));
+      }
+      if (retryTimer.current) {
+        window.clearTimeout(retryTimer.current);
+        retryTimer.current = null;
+      }
+      if (result.ok) {
+        retryAttempt.current = 0;
+        setAutoSaveError(null);
+      } else if (irissAutosaveShouldRetry(result.error)) {
+        setAutoSaveError(result.error);
+        // Pēc ~8 mēģinājumiem (~6 min) pārstāj; stāvoklis paliek sarkans, poga ļauj mēģināt vēlreiz.
+        if (retryAttempt.current >= 8) return result;
+        const delay = irissAutosaveRetryDelayMs(retryAttempt.current);
+        retryAttempt.current += 1;
+        retryTimer.current = window.setTimeout(() => {
+          retryTimer.current = null;
+          void saveRef.current({ silent: true });
+        }, delay);
+      }
+      return result;
+    },
+    [saveRaw],
+  );
+  saveRef.current = save;
 
   const saveCurrentPage = useCallback(async (): Promise<SaveResult> => {
     setPdfRetryBar(null);
@@ -723,7 +782,7 @@ export function IrissPasutijumsEditor({
           if (autosaveQueued.current) {
             autosaveQueued.current = false;
             window.setTimeout(() => {
-              void save({ silent: true });
+              void saveRef.current({ silent: true });
             }, 0);
           }
         }
@@ -752,6 +811,84 @@ export function IrissPasutijumsEditor({
       if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
     };
   }, [rec, save, imagesReady]);
+
+  // Bez interneta: rāda stāvokli; kad savienojums atgriežas, saglabā uzreiz.
+  useEffect(() => {
+    setOffline(typeof navigator !== "undefined" && navigator.onLine === false);
+    const goOffline = () => setOffline(true);
+    const goOnline = () => {
+      setOffline(false);
+      if (JSON.stringify(recRef.current) !== lastSavedSnapshot.current) void saveRef.current({ silent: true });
+    };
+    window.addEventListener("offline", goOffline);
+    window.addEventListener("online", goOnline);
+    return () => {
+      window.removeEventListener("offline", goOffline);
+      window.removeEventListener("online", goOnline);
+      if (retryTimer.current) window.clearTimeout(retryTimer.current);
+    };
+  }, []);
+
+  // Rezerves kopija pārlūkā: ja iepriekšējā reizē izmaiņas nepaspēja aiziet uz serveri, piedāvā atjaunot.
+  useEffect(() => {
+    const id = persistedIdRef.current;
+    if (!id) {
+      backupPending.current = false;
+      return;
+    }
+    let storage: Storage | null = null;
+    try {
+      storage = window.localStorage;
+    } catch {
+      storage = null;
+    }
+    const backup = storage ? readIrissOrderBackup(storage, id, new Date()) : null;
+    if (backup && irissOrderBackupDiffers(backup.rec, withAutoEcarstradeLinks(initialRecord))) {
+      setBackupOffer(backup);
+    } else {
+      backupPending.current = false;
+      if (storage) clearIrissOrderBackup(storage, id);
+    }
+    // Tikai atverot ierakstu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const id = persistedIdRef.current;
+    if (!id || backupPending.current) return;
+    let storage: Storage;
+    try {
+      storage = window.localStorage;
+    } catch {
+      return;
+    }
+    if (!dirty) {
+      clearIrissOrderBackup(storage, id);
+      return;
+    }
+    const t = window.setTimeout(() => writeIrissOrderBackup(storage, recRef.current, new Date()), 400);
+    return () => window.clearTimeout(t);
+  }, [rec, dirty]);
+
+  const restoreBackup = useCallback(() => {
+    if (!backupOffer) return;
+    const merged = withAutoEcarstradeLinks(mergeIrissPasutijumsRecords(recRef.current, backupOffer.rec));
+    backupPending.current = false;
+    setBackupOffer(null);
+    setRec(merged);
+    recRef.current = merged;
+    setSaveMsg("Izmaiņas atjaunotas no rezerves kopijas - saglabājas.");
+  }, [backupOffer]);
+
+  const dismissBackup = useCallback(() => {
+    backupPending.current = false;
+    setBackupOffer(null);
+    try {
+      clearIrissOrderBackup(window.localStorage, persistedIdRef.current);
+    } catch {
+      /* nav krātuves */
+    }
+  }, []);
 
   // Jauns pasūtījums → /pasutijumi/{id} ir cita lapa: redaktors tiek uzstādīts no jauna.
   // Nesaglabātais teksts un fokuss tiek nodots jaunajam redaktoram, citādi «Toyota» paliek «To».
@@ -984,6 +1121,33 @@ export function IrissPasutijumsEditor({
     setOfferDraft(newOfferDraft(rec.offers.length + 1));
     setOfferOpen(true);
   }, [rec.offers.length]);
+
+  // Viena piedāvājumu sistēma (Nils 27.10): saglabātā pasūtījumā administrators veido piedāvājumu PD,
+  // klients un pasūtījums piesaistās automātiski. Vecie piedāvājumi šeit paliek lasāmi un nosūtāmi.
+  const pdNew = pdEntry && !unsavedDraft;
+  const createOfferEntry = useCallback(() => {
+    if (pdNew) router.push(irissPdNewHref({ orderId: rec.id }));
+    else openCreateOffer();
+  }, [pdNew, router, rec.id, openCreateOffer]);
+
+  // Nils 29.10: piedāvājums no Meklētāja atbilstības - tieši no sludinājuma datiem, šī pasūtījuma klientam.
+  const hitOfferBusy = useRef(false);
+  const prepareOfferFromHit = useCallback(
+    async (hit: IrissOrderRoomHit) => {
+      if (hitOfferBusy.current) return;
+      hitOfferBusy.current = true;
+      const name = [rec.clientFirstName, rec.clientLastName].map((x) => x.trim()).filter(Boolean).join(" ");
+      const res = await createIrissPdFromListing(hit.id, { name, phone: rec.phone, email: rec.email, orderId: rec.id });
+      hitOfferBusy.current = false;
+      if (res.ok) {
+        router.push(irissPdHref(res.id));
+        return;
+      }
+      // Sludinājums vairs nav kopā (piem. pazudis) - kā agrāk, no izsoles saites.
+      router.push(irissPdNewHref({ link: irissHitAuctionUrl(hit), orderId: rec.id }));
+    },
+    [rec.clientFirstName, rec.clientLastName, rec.phone, rec.email, rec.id, router],
+  );
 
   const retryGoogleContact = useCallback(async () => {
     if (!persistedIdRef.current) return;
@@ -1434,7 +1598,7 @@ export function IrissPasutijumsEditor({
   }, [offerDraft.id, rec, save]);
 
   const shellCard = useMemo(
-    () => "rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5",
+    () => "rounded-xl border border-[var(--iriss-line)] bg-white p-4 shadow-sm sm:p-5",
     [],
   );
 
@@ -1831,7 +1995,7 @@ export function IrissPasutijumsEditor({
               ))}
               <button
                 type="button"
-                onClick={openCreateOffer}
+                onClick={createOfferEntry}
                 className={offerPChipButtonClass}
                 style={{ backgroundColor: "#e5e5ea", color: "#3a3a3c", border: "1px solid #d1d1d6" }}
                 title="Jauns piedāvājums"
@@ -1912,7 +2076,7 @@ export function IrissPasutijumsEditor({
         ))}
         <button
           type="button"
-          onClick={openCreateOffer}
+          onClick={createOfferEntry}
           className={offerPChipButtonClass}
           style={{ backgroundColor: "#e5e5ea", color: "#3a3a3c", border: "1px solid #d1d1d6" }}
           title="Jauns piedāvājums"
@@ -2198,7 +2362,6 @@ export function IrissPasutijumsEditor({
         </section>
 
         <section className={shellCard}>
-          <BlockTitle>Sludinājumu platformas (saites)</BlockTitle>
           <IrissListingPlatformsFields
             rec={rec}
             onPatch={patchRecord}
@@ -2223,7 +2386,7 @@ export function IrissPasutijumsEditor({
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             <button
               type="button"
-              onClick={openCreateOffer}
+              onClick={createOfferEntry}
               className="inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 sm:w-auto"
             >
               <Plus className="h-4 w-4" aria-hidden />
@@ -2261,8 +2424,8 @@ export function IrissPasutijumsEditor({
         </button>
         <button
           type="button"
-          onClick={openCreateOffer}
-          className="flex h-[50px] flex-1 items-center justify-center rounded-full bg-[#111827] text-[15px] font-semibold text-white"
+          onClick={createOfferEntry}
+          className="flex h-[50px] flex-1 items-center justify-center rounded-full bg-[var(--iriss-graphite)] text-[15px] font-semibold text-white"
         >
           Piedāvājums
         </button>
@@ -2294,6 +2457,7 @@ export function IrissPasutijumsEditor({
           vinWarning={orderVinWarning}
           canCall={Boolean(normalizedPhone)}
           canEmail={Boolean(rec.email.trim())}
+          saveState={{ dirty, saving: busy || autoSaving > 0, error: autoSaveError, offline }}
           conflict={
             revisionConflict ? (
               <AdminWorkspaceRevisionConflictBanner
@@ -2303,6 +2467,29 @@ export function IrissPasutijumsEditor({
                 onSafeMerge={mergeConflict}
                 layout="room"
               />
+            ) : backupOffer ? (
+              <div
+                role="status"
+                className="flex flex-wrap items-center gap-2 rounded-[14px] bg-[var(--iriss-surface)] px-3 py-2.5 text-[13px] text-[var(--iriss-ink)] shadow-[inset_0_0_0_1px_var(--iriss-warn)]"
+              >
+                <span className="min-w-0 flex-1">
+                  Atrastas nesaglabātas izmaiņas ({formatIrissBackupTime(backupOffer.at)}), kas neaizgāja uz serveri.
+                </span>
+                <button
+                  type="button"
+                  onClick={restoreBackup}
+                  className="inline-flex h-9 items-center rounded-full bg-[var(--iriss-graphite)] px-4 text-[13px] font-semibold text-[var(--iriss-on-graphite)]"
+                >
+                  Atjaunot
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissBackup}
+                  className="inline-flex h-9 items-center rounded-[12px] bg-[var(--iriss-surface)] px-3 text-[13px] font-semibold text-[var(--iriss-ink)] shadow-[inset_0_0_0_1px_var(--iriss-line-strong)]"
+                >
+                  Atmest
+                </button>
+              </div>
             ) : null
           }
           deleted={isIrissRecordDeleted(rec)}
@@ -2319,9 +2506,9 @@ export function IrissPasutijumsEditor({
           onCall={triggerCall}
           onWhatsappText={openWhatsappText}
           onAppendNote={appendRoomNote}
-          onCreateOffer={() => setOfferSourceSheetOpen(true)}
+          onCreateOffer={pdNew ? createOfferEntry : () => setOfferSourceSheetOpen(true)}
           onEditOffer={openEditOffer}
-          onPrepareOffer={openCreateOfferFromHit}
+          onPrepareOffer={pdNew ? (hit) => void prepareOfferFromHit(hit) : openCreateOfferFromHit}
           googleContactsConfigured={googleContactsConfigured}
           googleContactBusy={googleContactBusy}
           onRetryGoogleContact={() => void retryGoogleContact()}

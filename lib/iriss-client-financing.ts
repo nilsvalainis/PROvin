@@ -34,3 +34,19 @@ export function irissClientFinancingPatchFromPercent(percent: number): {
     dealClientFinancing100: p === 100,
   };
 }
+
+/**
+ * Faktiskais finansējuma % (QA 29.10): vecajiem pasūtījumiem procents ir 0, bet ieķeksēts vecais
+ * «Klienta finansējums 100 % / 20 %» - tad to ņem no ķeksīša, lai izvēle un kopsavilkums sakrīt ar galveni.
+ */
+export function irissEffectiveClientFinancingPercent(rec: {
+  clientFinancingPercent?: unknown;
+  dealClientFinancing100?: boolean;
+  dealClientFinancing20?: boolean;
+}): number {
+  const p = parseIrissClientFinancingPercent(rec.clientFinancingPercent);
+  if (p > 0) return p;
+  if (rec.dealClientFinancing100) return 100;
+  if (rec.dealClientFinancing20) return 20;
+  return 0;
+}

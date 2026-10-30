@@ -9,9 +9,11 @@ import {
   rekiniLv,
 } from "@/lib/iriss-autoparks-v2-format";
 import type { V2IegadeView } from "@/lib/iriss-autoparks-v2-iegade";
-import { IEGADE_DOC_TYPE_OPTIONS, type V2IegadeFile } from "@/lib/iriss-autoparks-v2-iegade-files";
+import { groupIegadeFiles, IEGADE_DOC_GROUP_LV, IEGADE_DOC_TYPE_OPTIONS, type V2IegadeFile } from "@/lib/iriss-autoparks-v2-iegade-files";
 import { CABINET_DOC_TYPE_LABEL, type CabinetDocType } from "@/lib/iriss-logistics-cabinet";
 import type { CabinetPaneProps } from "./AutoparksV2Cabinet";
+import { ap2PatchJson } from "./ap2-save";
+import { DocThumb } from "./DocThumb";
 import { FileModal, LinkIcon, PdfIcon } from "./FileModal";
 
 function PlusIcon() {
@@ -55,6 +57,103 @@ type Key =
   | "purchasePriceEur"
   | "transportEur";
 
+/** Izmaksu bloks (Pašizmaksa) - izslēgts līdz atsevišķai izmaksu sadaļai (Nils 27.10). */
+const SHOW_COSTS = false;
+
+export const CSDD_DOC_BADGE_SRC = "/brand/csdd-logo.png";
+export const CSDD_DOC_BADGE_TITLE = "Paredzēts CSDD darbībām";
+
+/** Oriģinālais CSDD logo pie Car Invoice nosaukuma (Nils 27.10, t341u). */
+export function AutoparksV2CsddDocBadge() {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img className="ap2-csdd-badge" src={CSDD_DOC_BADGE_SRC} alt="CSDD" title={CSDD_DOC_BADGE_TITLE} />
+  );
+}
+
+/** Iegādes failu režģis/saraksts - prezentācija, lai var testēt CSDD nozīmi. */
+export function AutoparksV2IegadeFiles({
+  files,
+  busy,
+  onOpen,
+  onEdit,
+  onDelete,
+  urlFor,
+}: {
+  files: readonly V2IegadeFile[];
+  busy?: boolean;
+  onOpen: (index: number) => void;
+  onEdit?: (file: V2IegadeFile) => void;
+  onDelete?: (file: V2IegadeFile) => void;
+  /** Ar adresi - pirmās lapas priekšskats (Nils 27.10); bez tās - PDF ikona. */
+  urlFor?: (f: V2IegadeFile) => string;
+}) {
+  // Nils 27.10: dokumenti grupās (Pirkums, Transports, CSDD un serviss, Citi) ar priekšskatu.
+  return (
+    <div className="ap2-docgroups">
+      {groupIegadeFiles(files).map((g) => (
+        <section key={g.group} className="ap2-docgroup" aria-label={IEGADE_DOC_GROUP_LV[g.group]}>
+          <h4>
+            {IEGADE_DOC_GROUP_LV[g.group]} <span>· {g.files.length}</span>
+          </h4>
+          <div className="ap2-files">
+            {g.files.map(({ file: f, index: i }) => (
+        <div key={f.id} className="ap2-fl">
+          <button type="button" className="ap2-fl-open" onClick={() => onOpen(i)}>
+            <span className="pv">
+              {urlFor ? <DocThumb url={urlFor(f)} contentType={f.contentType} title={f.title} /> : null}
+              <span className="ap2-tag">{f.tag}</span>
+              {f.link ? (
+                <span className="ap2-lnk">
+                  <LinkIcon />
+                </span>
+              ) : null}
+              {urlFor ? null : <PdfIcon />}
+            </span>
+            <span className="m">
+              <span className="ap2-fl-title">
+                <b>{f.title}</b>
+                {f.csddBadge ? <AutoparksV2CsddDocBadge /> : null}
+              </span>
+              <span className="ap2-fl-date">{fmtDayMonth(f.date)}</span>
+            </span>
+          </button>
+          {f.editable ? (
+            <span className="ap2-fl-actions">
+              <button
+                type="button"
+                title="Pārdēvēt / mainīt tipu"
+                disabled={busy}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit?.(f);
+                }}
+              >
+                <PencilIcon />
+              </button>
+              <button
+                type="button"
+                className="danger"
+                title="Dzēst"
+                disabled={busy}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete?.(f);
+                }}
+              >
+                <TrashIcon />
+              </button>
+            </span>
+          ) : null}
+        </div>
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
 /** Iegādes dokumenti (D2, D3). Ar roku pievienotiem dokumentiem - augšupielāde/pārdēvēšana/dzēšana ar Dropbox /STOCK sinhronizāciju (J30 F1). */
 export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
   const [view, setView] = useState<V2IegadeView | null>(null);
@@ -62,6 +161,7 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
   const [costOpen, setCostOpen] = useState(false);
   const [open, setOpen] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [retry, setRetry] = useState<(() => void) | null>(null);
   const [busy, setBusy] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<V2IegadeFile | null>(null);
   const [editTarget, setEditTarget] = useState<V2IegadeFile | null>(null);
@@ -140,16 +240,13 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
   async function save(key: Key, value: string) {
     setEditing(null);
     setError("");
-    const res = await fetch(api, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ [key]: value }),
-    }).catch(() => null);
-    const d = (await res?.json().catch(() => null)) as {
-      iegade?: V2IegadeView;
-    } | null;
-    if (res?.ok && d?.iegade) setView(d.iegade);
-    else setError("Neizdevās saglabāt");
+    setRetry(null);
+    const r = await ap2PatchJson<{ iegade?: V2IegadeView }>(api, { [key]: value });
+    if (r.ok && r.data?.iegade) setView(r.data.iegade);
+    else {
+      setError(value.trim() ? `Neizdevās saglabāt «${value.trim()}»` : "Neizdevās saglabāt");
+      setRetry(() => () => void save(key, value));
+    }
   }
 
   const urlFor = useCallback(
@@ -219,7 +316,8 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
     </div>
   );
 
-  const c = view.cost;
+  // Nils 27.10: pašizmaksa, iepirkuma cena un transports pagaidām netiek rādīti (vēlāk atsevišķa izmaksu sadaļa).
+  const c = SHOW_COSTS ? view.cost : null;
   return (
     <div className="ap2-pane wide">
       <div className="ap2-kvwrap">
@@ -357,65 +455,31 @@ export function AutoparksV2Iegade({ carId }: CabinetPaneProps) {
       {view.missingAuto1Docs.length > 0 ? (
         <div className="ap2-warn">
           <WarnIcon />
-          Trūkst dokumenta: {view.missingAuto1Docs.join(", ")} (Auto1 auto - nepieciešamas 2 PDF)
+          Trūkst dokumenta: {view.missingAuto1Docs.join(", ")} (Auto1 auto)
         </div>
       ) : null}
 
-      <div className="ap2-files">
-        {view.files.map((f, i) => (
-          <div key={f.id} className="ap2-fl">
-            <button type="button" className="ap2-fl-open" onClick={() => setOpen(i)}>
-              <span className="pv">
-                <span className="ap2-tag">{f.tag}</span>
-                {f.link ? (
-                  <span className="ap2-lnk">
-                    <LinkIcon />
-                  </span>
-                ) : null}
-                {f.csddBadge ? (
-                  <span className="ap2-csdd-badge" title="CSDD oriģinālais dokuments">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/brand/csdd-logo.png" alt="CSDD" />
-                  </span>
-                ) : null}
-                <PdfIcon />
-              </span>
-              <span className="m">
-                <b>{f.title}</b>
-                <span>{fmtDayMonth(f.date)}</span>
-              </span>
-            </button>
-            {f.editable ? (
-              <span className="ap2-fl-actions">
-                <button
-                  type="button"
-                  title="Pārdēvēt / mainīt tipu"
-                  disabled={busy}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openEdit(f);
-                  }}
-                >
-                  <PencilIcon />
-                </button>
-                <button
-                  type="button"
-                  className="danger"
-                  title="Dzēst"
-                  disabled={busy}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteTarget(f);
-                  }}
-                >
-                  <TrashIcon />
-                </button>
-              </span>
-            ) : null}
-          </div>
-        ))}
-      </div>
-      {error ? <p className="ap2-err">{error}</p> : null}
+      <AutoparksV2IegadeFiles
+        files={view.files}
+        busy={busy}
+        onOpen={setOpen}
+        onEdit={openEdit}
+        onDelete={setDeleteTarget}
+        urlFor={urlFor}
+      />
+      {error ? (
+        <p className="ap2-err" role="alert">
+          {error}
+          {retry ? (
+            <>
+              {" "}
+              <button type="button" className="ap2-retry" onClick={() => { const r = retry; setRetry(null); r(); }}>
+                Mēģināt vēlreiz
+              </button>
+            </>
+          ) : null}
+        </p>
+      ) : null}
       {open != null ? (
         <FileModal
           files={view.files}

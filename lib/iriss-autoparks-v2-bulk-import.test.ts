@@ -78,3 +78,16 @@ describe("planBulkImportRow - validācija", () => {
     expect(planBulkImportRow(EMPTY, { year: "99" }, false).invalid).toEqual(["year"]);
   });
 });
+
+describe("bulk imports - neticamas vērtības", () => {
+  it("jauda 23052012 neizturēja validāciju", async () => {
+    const mod = await import("@/lib/iriss-autoparks-v2-bulk-import");
+    const plan = mod.planBulkImportRow(
+      { mileageKm: null, firstRegDate: "", displacementCm3: null, powerKw: null, tyreSize: "", make: "", model: "", plate: "" } as never,
+      { powerKw: 23052012, displacementCm3: 2400 } as never,
+      false,
+    );
+    expect(plan.updates.powerKw).toBeUndefined();
+    expect(plan.updates.displacementCm3).toBe(2400);
+  });
+});

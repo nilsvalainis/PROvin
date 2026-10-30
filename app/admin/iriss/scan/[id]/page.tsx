@@ -25,6 +25,7 @@ export default async function IrissScanDetailPage({ params }: Props) {
         initialListOrder={data.initialListOrder}
         newHitsByScan={data.newHitsByScan}
         finds={data.finds}
+        lastReadAt={data.lastReadAt}
         selectedRecord={rec}
         mode="edit"
       />

@@ -16,13 +16,14 @@ import { irissPdAuto1BlocksFromDetail, irissPdAuto1FieldCount, type IrissPdAuto1
 import {
   type IrissPdImport,
   irissPdFilledCount,
+  irissPdFillFromAutoparks,
   irissPdPhotosFromUrls,
   irissPdPurchaseFromHit,
   irissPdVehicleFromHit,
   irissPdVehicleFromSeed,
 } from "@/lib/iriss-piedavajumi-import";
 import { detectIrissPdLink, IRISS_PD_ADAPTERS, type IrissPdDetectedLink } from "@/lib/iriss-piedavajumi-sources";
-import { emptyIrissPdVehicle, type IrissPdPhoto } from "@/lib/iriss-piedavajumi-types";
+import { emptyIrissPdVehicle, IRISS_PD_SOURCE_LV, type IrissPdPhoto } from "@/lib/iriss-piedavajumi-types";
 
 export type { IrissPdImport } from "@/lib/iriss-piedavajumi-import";
 
@@ -30,27 +31,48 @@ function eur(n: number | null | undefined): string {
   return n != null && Number.isFinite(n) && n > 0 ? String(Math.round(n)) : "";
 }
 
-export async function importIrissPdFromAutoparks(carId: string): Promise<IrissPdImport | null> {
-  const ref = { kind: "autoparks" as const, id: carId };
-  const seed = await loadOfferSeed(ref).catch(() => null);
+/**
+ * Autoparka vai Loģistikas auto -> importa dati (tie paši lauki un /STOCK bildes kā vecajā formā).
+ * Cenas tikai Autoparkam (sadaļa ir tikai adminam, tāpēc summas drīkst rādīt).
+ */
+export async function importIrissPdFromStock(kind: "autoparks" | "logistics", carId: string): Promise<IrissPdImport | null> {
+  const seed = await loadOfferSeed({ kind, id: carId }).catch(() => null);
   if (!seed) return null;
   let price = "";
   let purchase = "";
-  try {
-    const { readAutoparksV2Car } = await import("@/lib/iriss-autoparks-v2-store");
-    const both = await readAutoparksV2Car(carId);
-    price = eur(both?.v2?.priceSheet?.salePriceEur) || eur(both?.car?.salePriceEur);
-    purchase = eur(both?.car?.purchasePriceEur);
-  } catch {
-    /* cenas nav obligātas */
+  let vehicle = irissPdVehicleFromSeed(seed.fields);
+  if (kind === "autoparks") {
+    try {
+      const { readAutoparksV2Car } = await import("@/lib/iriss-autoparks-v2-store");
+      const { autoparksV2Basics } = await import("@/lib/iriss-autoparks-v2");
+      const both = await readAutoparksV2Car(carId);
+      price = eur(both?.v2?.priceSheet?.salePriceEur) || eur(both?.car?.salePriceEur);
+      purchase = eur(both?.car?.purchasePriceEur);
+      if (both) {
+        const b = autoparksV2Basics(both.car, both.v2);
+        vehicle = irissPdFillFromAutoparks(vehicle, {
+          year: b.year,
+          firstRegDate: b.firstRegDate.value,
+          mileageKm: b.mileageKm.value,
+          fuel: both.car.registry?.fuel ?? "",
+          gearbox: b.gearbox.value,
+          powerKw: b.powerKw.value,
+          displacementCm3: b.displacementCm3.value,
+          color: b.color,
+        });
+      }
+    } catch {
+      /* cenas un papildu lauki nav obligāti */
+    }
+  } else {
+    vehicle = irissPdFillFromAutoparks(vehicle, {});
   }
-  const vehicle = irissPdVehicleFromSeed(seed.fields);
   const photos: IrissPdPhoto[] = seed.attachments
     .filter((a) => a.dropboxId)
     .map((a) => ({ kind: "dropbox", ref: seed.sourceRef, id: a.dropboxId! }));
   const fieldCount = irissPdFilledCount(vehicle) + (price ? 1 : 0);
   return {
-    source: "autoparks",
+    source: kind,
     sourceRef: seed.sourceRef,
     sourceUrl: "",
     sourceKey: "",
@@ -60,9 +82,13 @@ export async function importIrissPdFromAutoparks(carId: string): Promise<IrissPd
     purchasePrice: purchase,
     auto1: null,
     fieldCount,
-    historyText: `Izveidots no Autoparka · ${fieldCount} lauki, ${photos.length} foto`,
+    historyText: `Izveidots no ${kind === "autoparks" ? "Autoparka" : "Loģistikas"} · ${fieldCount} lauki, ${photos.length} foto`,
     note: seed.photosNote,
   };
+}
+
+export function importIrissPdFromAutoparks(carId: string): Promise<IrissPdImport | null> {
+  return importIrissPdFromStock("autoparks", carId);
 }
 
 export type IrissPdLinkImportResult =
@@ -76,7 +102,7 @@ function relayLink(link: IrissPdDetectedLink): IrissAuctionLink | null {
 }
 
 function manualImport(link: IrissPdDetectedLink, note: string): IrissPdImport {
-  const label = { auto1: "Auto1", openlane: "Openlane", autobid: "Autobid", mobilede: "mobile.de" }[link.source];
+  const label = IRISS_PD_SOURCE_LV[link.source];
   return {
     source: link.source,
     sourceRef: "",

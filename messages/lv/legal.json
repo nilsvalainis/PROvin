@@ -1,51 +1,59 @@
 {
   "Legal": {
-    "privacyMetaTitle": "Privātuma politika",
+    "privacyMetaTitle": "Privātuma politika | PROVIN",
     "privacyMetaDescription": "Kā PROVIN.LV apstrādā personas datus, sīkdatnes un analītiku pēc piekrišanas. GDPR ietvaros: pārskatāmi un skaidri.",
     "privacyTitle": "Privātuma politika",
-    "privacyLead": "Šajā dokumentā aprakstīts, kā pakalpojumu sniedzējs PROVIN.LV (turpmāk „mēs”, „pakalpojums”) apstrādā personas datus, kādas sīkdatnes tiek izmantotas un kā jūs varat piekrist vai noraidīt nebūtisko analītiku, pirmās un pēdējās izcelsmes (UTM) un reklāmas klikšķa identifikatoru saglabāšanu. Juridiskā identitāte un pārzinātāja rekvizīti ir vietnes kājenē.",
+    "privacyLead": "Šajā politikā aprakstīts, kādus personas datus apstrādā PROVIN.LV (turpmāk „mēs”), kāpēc, cik ilgi un kam tos nododam, kādas sīkdatnes izmantojam un kā varat izmantot savas tiesības.",
     "sections": [
       {
         "title": "1. Pārzinis",
-        "body": "Personas datu pārzinis ir PROVIN.LV; juridiskā persona un pilni rekvizīti ir vietnes kājenē. Kontaktinformācija saziņai: vietnes kājenē norādītais e-pasts un WhatsApp."
+        "body": "Personas datu pārzinis: PROVIN. Saziņa par datu apstrādi: info@provin.lv, +371 29 502 039."
       },
       {
         "title": "2. Kādus datus apstrādājam",
-        "body": "Pasūtījuma ietvaros: vārds (ja norādīts), e-pasts, tālrunis, VIN vai valsts numurzīme, sludinājuma saite (ja norādīta), brīvas formas ziņojums un maksājuma metadati (apstrādi veic maksājumu apstrādātājs Stripe saskaņā ar tā politiku). Vietnes lietošanā: tehniskie žurnāli servera līmenī (piemēram, IP adrese, pieprasījuma laiks) var tikt izmantoti drošības un darbspējas nodrošināšanai. Mājas lapā varam rādīt kurētas, publiski pieejamas Google atsauksmes (bez papildu izsekošanas skriptiem atsauksmju blokam)."
+        "body": "Pasūtot pakalpojumu: vārds un/vai uzvārds (ja norādīts), e-pasts, tālrunis, VIN vai valsts numurzīme, sludinājuma saite (ja norādīta), brīvas formas ziņojums un maksājuma informācija (karti apstrādā Stripe, mēs kartes datus neredzam).\n\nBezmaksas sludinājuma pārbaudē: sludinājuma saite un kontaktinformācija, ko norādāt.\n\nPartneriem (uzņēmumiem): uzņēmuma rekvizīti, kontaktpersonas vārds, e-pasts, tālrunis, pasūtījumu un norēķinu vēsture.\n\nVietnes lietošanā: servera žurnāli (IP adrese, laiks, pieprasītā lapa) drošībai un kļūdu novēršanai, un sīkdatnes, kā aprakstīts 4.-5. un 9. punktā.\n\nSensitīvus datus (veselība, uzskati u.tml.) mēs nevācam."
       },
       {
         "title": "3. Mērķi un tiesiskais pamats",
-        "body": "Līguma izpilde un pasūtījuma apstrāde (GDPR 6. panta 1. punkta b) apakšpunkts). Likumīgās intereses: vietnes drošība, kļūdu novēršana (GDPR 6. panta 1. punkta f) apakšpunkts). Nepabeigta pasūtījuma gadījumā varam vienreiz atgādināt uz norādīto e-pastu (likumīgās intereses, GDPR 6. panta 1. punkta f) apakšpunkts). Analītika, pirmās un pēdējās izcelsmes (UTM) un reklāmas klikšķa identifikatoru (piemēram, gclid, fbclid, ttclid) saglabāšana tikai pēc jūsu brīvprātīgas piekrišanas, izmantojot sīkdatņu joslu (GDPR 6. panta 1. punkta a) apakšpunkts)."
+        "body": "Pasūtījuma izpilde, atskaites sagatavošana, konsultācija un saziņa par pasūtījumu: līguma izpilde (GDPR 6. panta 1. punkta b) apakšpunkts).\n\nRēķini un grāmatvedība: juridisks pienākums (6. panta 1. punkta c) apakšpunkts).\n\nVietnes drošība, ļaunprātīgas lietošanas novēršana un viens atgādinājums par nepabeigtu pasūtījumu: leģitīmās intereses (6. panta 1. punkta f) apakšpunkts).\n\nAnalītika un reklāmas mērīšana ar sīkdatnēm: jūsu piekrišana (6. panta 1. punkta a) apakšpunkts), ko varat jebkurā laikā atsaukt."
       },
       {
-        "title": "4. Sīkdatnes un nepieciešamās funkcijas",
-        "body": "Nepieciešamās funkcijas (piemēram, valodas izvēles saglabāšana, sesijas darbība, drošība) var izmantot sīkdatnes vai līdzīgas tehnoloģijas bez atsevišķas piekrišanas, ja tās ir objektīvi nepieciešamas pakalpojuma sniegšanai. Šādu sīkdatņu sarakstu var precizēt pēc pieprasījuma."
+        "title": "4. Nepieciešamās sīkdatnes",
+        "body": "Bez piekrišanas izmantojam tikai sīkdatnes, kas vajadzīgas vietnes darbībai: jūsu sīkdatņu izvēle, valoda, tēma un pieteikšanās sesija partneru kontā. Saraksts ir 9. punktā."
       },
       {
-        "title": "5. Analītika un izcelsmes dati (pēc piekrišanas)",
-        "body": "Ja jūs sīkdatņu joslā piekrītat „analītikai”, mēs varam saglabāt ierobežotu informāciju par pirmo un pēdējo mārketinga apmeklējumu: vietnes ceļu, HTTP novirzītāju (referrer), ja pieejams, mārketinga parametrus no saites (UTM: source, medium, campaign, term) un reklāmas klikšķa identifikatorus (gclid, gbraid, wbraid, fbclid, ttclid), ja tie ir adresē. Pēc piekrišanas varam arī skaitīt agregētus apmeklējumus pa kanālu un kampaņu (bez personas datiem). Ja pēc tam veicat pasūtījumu, šo izcelsmi varam piesaistīt maksājumam, lai saprastu, kura reklāma nesa pasūtījumu. Mērķis ir saprast, no kurienes lietotāji ierodas, neizsekojot individuāli pāri visām trešo pušu platformām. Šie dati netiek pārdoti. Bez piekrišanas šos datus nesaglabājam."
+        "title": "5. Analītika, reklāma un Google Consent Mode",
+        "body": "Mēs izmantojam Google Consent Mode v2. Google tags (Google Analytics 4 un Google Ads) ielādējas katrā apmeklējumā, bet līdz jūsu piekrišanai darbojas režīmā „liegts”: tas nesaglabā un nelasa sīkdatnes un nosūta Google tikai bezsīkdatņu signālus bez identifikatoriem (piemēram, laiku, apmeklēto lapu, pārlūka veidu un piekrišanas stāvokli). Google tos izmanto apkopotai apmeklējumu un konversiju modelēšanai.\n\nSīkdatņu joslā varat atsevišķi ieslēgt divas kategorijas. „Analītika”: Google Analytics var saglabāt sīkdatnes, lai mēs saprastu, kā vietne tiek lietota. „Reklāma”: Google Ads var saglabāt sīkdatnes; ielādējas Meta Pixel un TikTok Pixel reklāmu rezultātu mērīšanai; mēs saglabājam pirmo un pēdējo mārketinga avotu (lapa, novirzītājs, UTM parametri, reklāmas klikšķa identifikatori gclid, gbraid, wbraid, fbclid, ttclid) un pasūtījuma gadījumā piesaistām to maksājumam; pēc pirkuma Meta Conversions API var nosūtīt pirkuma notikumu no servera ar hashētu e-pastu un tālruni. Poga „Piekrītu analītikai un reklāmai” ieslēdz abas kategorijas.\n\nVercel Web Analytics skaita apmeklējumus apkopoti, bez sīkdatnēm.\n\nPiekrišanu varat mainīt vai atsaukt jebkurā laikā, izdzēšot vietnes sīkdatnes pārlūkā vai rakstot mums; josla parādīsies no jauna."
       },
       {
-        "title": "6. Trešās puses",
-        "body": "Maksājumi: Stripe. Vietnes mitināšana: jūsu izvēlētais pakalpojumu sniedzējs (piemēram, Vercel). Vercel Web Analytics apkopo agregētus apmeklējumu un lapu skatījumu datus visiem apmeklējumiem (pirmās puses statistika mitināšanas ietvaros). Google Analytics 4, TikTok Pixel un Meta Pixel ielādējas tikai tad, ja sīkdatņu joslā piekrītat „analītikai”; ja attiecīgais identifikators nav konfigurēts, attiecīgie skripti netiek ielādēti. Pēc piekrišanas Meta Conversions API var nosūtīt to pašu pirkuma notikumu no servera (e-pasts un tālrunis tiek hashēti). Saziņa: e-pasts (kājenē) un WhatsApp (kājene un peldošā poga vietnē)."
+        "title": "6. Apstrādātāji un saņēmēji",
+        "body": "Datus nododam tikai pakalpojumu sniedzējiem, kas tos apstrādā mūsu uzdevumā:\n\nVercel Inc. (vietnes mitināšana un datu glabāšana); Stripe Payments Europe Ltd. (maksājumi); Google Ireland Ltd. (e-pasts, Google Analytics, Google Ads); Meta Platforms Ireland Ltd. (WhatsApp saziņa; Meta Pixel un Conversions API pēc piekrišanas); TikTok Technology Ltd. (TikTok Pixel pēc piekrišanas); Dropbox International Unlimited Co. (dokumentu glabāšana); Google (Gemini API) un Anthropic PBC (atskaites sagatavošanas atbalsts: nosūtām tikai VIN un transportlīdzekļa tehniskos datus, nevis jūsu vārdu, e-pastu vai tālruni).\n\nTransportlīdzekļa datus pēc VIN vai numurzīmes pieprasām VAS „Ceļu satiksmes drošības direkcija” un vēstures datu sniedzējiem (piemēram, carVertical, autoDNA, oficiālo dīleru sistēmas); jūsu kontaktinformāciju tiem nenododam.\n\nDatus nepārdodam."
       },
       {
-        "title": "7. Glabāšanas termiņš",
-        "body": "Pasūtījuma un klientu dati tiek glabāti tik ilgi, cik nepieciešams pakalpojuma sniegšanai un juridiskajām prasībām (grāmatvedība, strīdi). Analītikas un izcelsmes sīkdatņu (pirmā un pēdējā pieskāriena, UTM, klikšķa identifikatori) derīguma termiņš ir ierobežots (parasti līdz 180 dienām), ja nav norādīts citādi."
+        "title": "7. Datu nosūtīšana ārpus ES",
+        "body": "Daļa apstrādātāju (piemēram, Vercel, Stripe, Google, Meta, Dropbox, Anthropic) var apstrādāt datus ASV. Nosūtīšanas pamats ir ES un ASV datu privātuma regulējums (Data Privacy Framework), ja apstrādātājs tajā ir sertificēts, vai Eiropas Komisijas standarta līguma klauzulas (GDPR 46. pants)."
       },
       {
-        "title": "8. Jūsu tiesības",
-        "body": "Saskaņā ar GDPR jums ir tiesības piekļūt datiem, tos labot, dzēst, ierobežot apstrādi, iebilst pret apstrādi, kā arī tiesības uz datu pārnesamību (kur piemērojams). Sūdzību var iesniegt uzraudzības iestādē (Latvijā: VDAR)."
+        "title": "8. Glabāšanas termiņi",
+        "body": "Pasūtījumi, atskaites un rēķini: 5 gadi pēc pasūtījuma (grāmatvedības prasības un iespējamie strīdi).\n\nNepabeigti pasūtījumi bez apmaksas: līdz 90 dienām.\n\nSaziņa e-pastā un WhatsApp: līdz 2 gadiem pēc pēdējās ziņas.\n\nBezmaksas sludinājuma pārbaudes pieteikumi: līdz 12 mēnešiem.\n\nPartneru konta dati: sadarbības laikā un 5 gadus pēc tās (norēķini).\n\nServera žurnāli: līdz 30 dienām. Sīkdatnes: 9. punktā norādītie termiņi."
       },
       {
-        "title": "9. Politikas izmaiņas",
-        "body": "Politiku varam atjaunināt. Būtiskas izmaiņas tiks norādītas vietnē vai sīkdatņu joslā, ja nepieciešams."
+        "title": "9. Sīkdatņu saraksts",
+        "body": "Nepieciešamās: provin_consent un provin_cookie_consent (jūsu izvēle, 180 dienas); provin-site-theme (tēma, 12 mēneši); provin-b2b-locale (partneru lapas valoda, 12 mēneši); partnera pieteikšanās sesija (7 dienas).\n\nAnalītika (ar piekrišanu): _ga un _ga_* (Google Analytics, līdz 2 gadiem).\n\nReklāma (ar piekrišanu): provin_attr (mārketinga avots, 180 dienas); _gcl_au (Google Ads, 90 dienas); _fbp (Meta Pixel, 90 dienas); _ttp, _tt_enable_cookie, ttcsid (TikTok Pixel, līdz 13 mēnešiem)."
+      },
+      {
+        "title": "10. Jūsu tiesības",
+        "body": "Jums ir tiesības piekļūt saviem datiem, tos labot, dzēst, ierobežot apstrādi, iebilst pret apstrādi uz leģitīmo interešu pamata un saņemt datus pārnesamā formātā. Piekrišanu varat atsaukt jebkurā laikā; tas neietekmē iepriekšējās apstrādes likumību. Mēs nepieņemam lēmumus, kas balstīti tikai uz automatizētu apstrādi un rada jums juridiskas sekas.\n\nPieprasījumus rakstiet uz info@provin.lv; atbildam viena mēneša laikā.\n\nSūdzību varat iesniegt Datu valsts inspekcijā (www.dvi.gov.lv)."
+      },
+      {
+        "title": "11. Politikas izmaiņas",
+        "body": "Politiku varam atjaunināt. Būtiskas izmaiņas norādīsim vietnē vai sīkdatņu joslā. Redakcija: 2026. gada 28. oktobris."
       }
     ],
-    "termsMetaTitle": "Lietošanas noteikumi",
+    "termsMetaTitle": "Lietošanas noteikumi | PROVIN",
     "termsMetaDescription": "PROVIN.LV lietošanas noteikumi: pakalpojuma būtība, apmaksa, atmaksa, distances līgums un atteikuma tiesības digitālajam saturam.",
     "termsTitle": "PROVIN.LV lietošanas noteikumi",
-    "termsUpdated": "Spēkā no: 2026. gada 26. oktobra",
+    "termsUpdated": "Spēkā no: 2026. gada 28. oktobra",
     "termsLead": "Šie noteikumi nosaka tiesiskās attiecības starp jums (turpmāk „Klients”) un pakalpojuma sniedzēju PROVIN.LV (turpmāk „mēs”) par vietnes provin.lv izmantošanu un maksas konsultatīvā pakalpojuma pasūtīšanu. Lūdzu izlasiet tos kopā ar Privātuma politiku. Cenas, apmaksas un atmaksas pamatprincipi, kā arī atteikuma tiesību nepiemērošana digitālajam saturam, ir izklāstīti 5. un <section11>11. punktā</section11> (tur: <note>treknrakstā izcelta sadaļa par atteikuma tiesībām un MK 255 22.13.</note>). Zemāk norādīti juridiskā sniedzēja rekvizīti.",
     "termsSections": [
       {
@@ -66,7 +74,7 @@
       },
       {
         "title": "5. Pasūtījums, cena, apmaksa un atmaksas pamatprincipi",
-        "body": "5.1. Pasūtījums tiek noformēts elektroniski, norādot PROVIN pieprasīto informāciju. Obligāti: VIN (17 zīmes) vai valsts numurzīme, e-pasts un tālrunis. Sludinājuma saite nav obligāta; ja tā tiek norādīta, tai jābūt derīgai saitei uz konkrētu sludinājumu. Citi lauki pēc vietnes formas. Produktam „Oficiālā dīlera servisa vēstures dati” pietiek ar VIN (vai numurzīmi) un kontaktinformāciju Stripe Checkout.\n\n5.2. Pakalpojuma cena ir skaidri norādīta vietnē (pasūtījuma formā / kopsavilkumā) pasūtījuma brīdī un ietver piemērojamos nodokļus, ja tie ir paredzēti normatīvajos aktos. Aktuālie produkti un orientējošās cenas: Oficiālā dīlera servisa vēstures dati 24,99 €; PROVIN MINI 39,99 €; PROVIN AUDITS 99,99 € (precīzā cena ir tā, kas redzama pirms apmaksas). Cena var tikt mainīta nākotnē jauniem pasūtījumiem; par konkrēto pasūtījumu spēkā ir cena, kas bija norādīta pirms apmaksas apstiprināšanas.\n\n5.3. Apmaksu nodrošina trešās puses maksājumu apstrādātājs (piemēram, Stripe). Maksājuma apstrādes tiesiskais pamats un datu apstrāde ir aprakstīta Privātuma politikā un maksājumu apstrādātāja dokumentos.\n\n5.4. Maksājums par Pakalpojumu ir galīgs. Ņemot vērā Pakalpojuma specifiku (tūlītēja digitālā satura sagatavošanas uzsākšana), atmaksa pēc Atskaites sagatavošanas procesa uzsākšanas netiek veikta, izņemot gadījumus, kas minēti šo noteikumu 11. punktā, kā arī 2.1.A. punktā noteikto 100% atmaksu, ja oficiālie dīlera dati nav pieejami. PROVIN AUDITS gadījumā atsevišķa informācijas avota (tostarp oficiālo dīlera datu) nepieejamība vai datu neesamība nav pamats atmaksai, ja ir veiktas 3.4. punktā noteiktās Pamata pārbaudes."
+        "body": "5.1. Pasūtījums tiek noformēts elektroniski, norādot PROVIN pieprasīto informāciju. Obligāti: VIN (17 zīmes) vai valsts numurzīme, e-pasts un tālrunis. Sludinājuma saite nav obligāta; ja tā tiek norādīta, tai jābūt derīgai saitei uz konkrētu sludinājumu. Citi lauki pēc vietnes formas. Produktam „Oficiālā dīlera servisa vēstures dati” pietiek ar VIN (vai numurzīmi) un kontaktinformāciju Stripe Checkout.\n\n5.2. Pakalpojuma cena ir skaidri norādīta vietnē (pasūtījuma formā / kopsavilkumā) pasūtījuma brīdī un ietver piemērojamos nodokļus, ja tie ir paredzēti normatīvajos aktos. Aktuālie produkti un orientējošās cenas: Oficiālā dīlera servisa vēstures dati 24,99 €; PROVIN MINI 39,99 €; PROVIN AUDITS 99,99 € (precīzā cena ir tā, kas redzama pirms apmaksas). Cena var tikt mainīta nākotnē jauniem pasūtījumiem; par konkrēto pasūtījumu spēkā ir cena, kas bija norādīta pirms apmaksas apstiprināšanas.\n\n5.3. Apmaksu nodrošina trešās puses maksājumu apstrādātājs (piemēram, Stripe). Maksājuma apstrādes tiesiskais pamats un datu apstrāde ir aprakstīta Privātuma politikā un maksājumu apstrādātāja dokumentos.\n\n5.4. Maksājums par Pakalpojumu ir galīgs. Ņemot vērā Pakalpojuma specifiku (tūlītēja digitālā satura sagatavošanas uzsākšana), atmaksa pēc Atskaites sagatavošanas procesa uzsākšanas netiek veikta, izņemot gadījumus, kas minēti šo noteikumu 11. punktā, kā arī 2.1.A. punktā noteikto 100% atmaksu, ja oficiālie dīlera dati nav pieejami. PROVIN AUDITS gadījumā atsevišķa informācijas avota (tostarp oficiālo dīlera datu) nepieejamība vai datu neesamība nav pamats atmaksai, ja ir veiktas 3.4. punktā noteiktās Pamata pārbaudes.\n\n5.5. Cenas ir galīgās. Pakalpojuma sniedzējs Latvijā nav reģistrēts kā PVN maksātājs iekšzemes darījumiem, tāpēc PVN cenai netiek pievienots. PROVIN PVN reģistrācijas numurs tiek izmantots tikai darījumiem ar citu ES valstu PVN maksātājiem."
       },
       {
         "title": "6. Izpilde, piegāde un pieļaujamās novirzes",
@@ -78,11 +86,11 @@
       },
       {
         "title": "8. Intelektuālā īpašuma tiesības uz PROVIN materiālu",
-        "body": "8.1. PROVIN sagatavotās Atskaites saturs (teksts, struktūra, noformējums, zīmols, ja piemērojams) ir PROVIN intelektuālais īpašums vai tam ir likumīgs lietošanas pamats.\n\n8.2. Klients saņem neekskluzīvu, neparedzamu tiesību izmantot Atskaiti savām personīgām vajadzībām saistībā ar konkrēto transportlīdzekļa izvērtēšanu.\n\n8.3. Bez PROVIN iepriekšējas rakstiskas piekrišanas ir aizliegts Atskaiti pārdot, izplatīt masveidā, publicēt kā pašu komerciālo produktu vai citādi izmantot komerciālos nolūkos tā, ka tas pārkāpj PROVIN tiesības vai trešo pušu tiesības uz avotu materiāliem."
+        "body": "8.1. PROVIN sagatavotās Atskaites saturs (teksts, struktūra, noformējums, zīmols, ja piemērojams) ir PROVIN intelektuālais īpašums vai tam ir likumīgs lietošanas pamats.\n\n8.2. Klients saņem neekskluzīvu, neekskluzīvas, nenododamas tiesības izmantot Atskaiti savām personīgām vajadzībām saistībā ar konkrēto transportlīdzekļa izvērtēšanu.\n\n8.3. Bez PROVIN iepriekšējas rakstiskas piekrišanas ir aizliegts Atskaiti pārdot, izplatīt masveidā, publicēt kā pašu komerciālo produktu vai citādi izmantot komerciālos nolūkos tā, ka tas pārkāpj PROVIN tiesības vai trešo pušu tiesības uz avotu materiāliem."
       },
       {
         "title": "9. Atbildības ierobežojums un atrunas",
-        "body": "9.1. PROVIN nav atbildīgs par trešo pušu datu bāžu, reģistru vai pakalpojumu sniegtās informācijas nepilnībām, kavējumiem vai kļūdām, jo PROVIN šos avotus nepilnībā nekontrolē.\n\n9.2. PROVIN nav atbildīgs par netiešiem zaudējumiem (piemēram, izlaidītu peļņu, laika zaudējumu), ja to pieļauj piemērojamie tiesību akti.\n\n9.3. PROVIN kopējā atbildība pret Klientu par vienu pasūtījumu ir ierobežota līdz summai, ko Klients ir samaksājis par šo konkrēto pasūtījumu, izņemot gadījumus, kad likums paredz citādi (piemēram, tīša vaina vai personas bojājumi).\n\n9.4. Neko šajos noteikumos nevar interpretēt kā PROVIN garantiju par transportlīdzekļa tehnisko stāvokli, tiesisko tīrību visos aspektos vai pilnīgu visu risku izslēgšanu."
+        "body": "9.1. PROVIN nav atbildīgs par trešo pušu datu bāžu, reģistru vai pakalpojumu sniegtās informācijas nepilnībām, kavējumiem vai kļūdām, jo PROVIN šos avotus pilnībā nekontrolē.\n\n9.2. PROVIN nav atbildīgs par netiešiem zaudējumiem (piemēram, izlaidītu peļņu, laika zaudējumu), ja to pieļauj piemērojamie tiesību akti.\n\n9.3. PROVIN kopējā atbildība pret Klientu par vienu pasūtījumu ir ierobežota līdz summai, ko Klients ir samaksājis par šo konkrēto pasūtījumu, izņemot gadījumus, kad likums paredz citādi (piemēram, tīša vaina vai personas bojājumi).\n\n9.4. Neko šajos noteikumos nevar interpretēt kā PROVIN garantiju par transportlīdzekļa tehnisko stāvokli, tiesisko tīrību visos aspektos vai pilnīgu visu risku izslēgšanu."
       },
       {
         "title": "10. Personas dati",
@@ -90,8 +98,7 @@
       },
       {
         "title": "11. Cena, digitālais saturs un atteikuma tiesības (distances līgums)",
-        "withdrawalIntro": "**Atteikuma tiesības un atmaksa.** Šajā punktā skaidri noteikts, kā attiecas **atteikuma tiesības** (tiesības atteikties no distances līguma; angliski bieži meklē kā **withdrawal** vai **right of withdrawal**) un **atmaksa** (**refund**), jo īpaši attiecībā uz digitālo saturu un izņēmumu pēc MK 255 22.13.",
-        "searchKeywordsLine": "Lai politikas pārbaudītāji un klienti ātri atrastu šo vietu (piemēram, meklējot lapā vārdus angļu valodā): **refund**, **withdrawal**, **right of withdrawal**.",
+        "withdrawalIntro": "**Atteikuma tiesības un atmaksa.** Šajā punktā noteikts, kā piemēro **atteikuma tiesības** (tiesības atteikties no distances līguma) un **atmaksu**, jo īpaši digitālajam saturam un izņēmumam pēc MK noteikumu Nr. 255 22.13. apakšpunkta.",
         "subsections": [
           {
             "heading": "11.1. Vispārīgi par atteikuma tiesībām",
@@ -109,7 +116,7 @@
       },
       {
         "title": "12. Strīdu risināšana",
-        "body": "12.1. Strīdus vispirms cenšamies atrisināt sarunu ceļā, rakstot uz vietnē norādīto kontaktu.\n\n12.2. Ja strīdu neizdodas atrisināt mierīgi, to risina Latvijas Republikas tiesās atbilstoši kompetences noteikumiem, ja obligātie tiesību akti neparedz citādi patērētājam labvēzīgāku jurisdikciju.\n\n12.3. Patērētāji var vērsties arī Patērētāju strīdu risināšanas komisijā vai izmantot citus likumā paredzētos ārpustiesas mehānismus, ja tie ir piemērojami."
+        "body": "12.1. Strīdus vispirms cenšamies atrisināt sarunu ceļā, rakstot uz vietnē norādīto kontaktu.\n\n12.2. Ja strīdu neizdodas atrisināt mierīgi, to risina Latvijas Republikas tiesās atbilstoši kompetences noteikumiem, ja obligātie tiesību akti neparedz citādi patērētājam labvēlīgāku jurisdikciju.\n\n12.3. Patērētāji var vērsties arī Patērētāju strīdu risināšanas komisijā vai izmantot citus likumā paredzētos ārpustiesas mehānismus, ja tie ir piemērojami.\n\n12.4. Uz rakstisku patērētāja sūdzību atbildam 15 darba dienu laikā (Patērētāju tiesību aizsardzības likuma 26.¹ pants)."
       },
       {
         "title": "13. Noteikumu grozījumi",
@@ -121,15 +128,85 @@
       },
       {
         "title": "15. Kontaktinformācija",
-        "body": "Jautājumi par šiem noteikumiem: sazinieties ar PROVIN.LV, izmantojot vietnes kājenē norādīto e-pastu vai WhatsApp saziņu."
+        "body": "Jautājumi par šiem noteikumiem: info@provin.lv, +371 29 502 039. Pakalpojuma sniedzējs: PROVIN."
+      }
+    ],
+    "partnerTermsMetaTitle": "Partneru sadarbības noteikumi | PROVIN",
+    "partnerTermsMetaDescription": "PROVIN Business partneru (uzņēmumu) sadarbības noteikumi: kredīti, norēķini, atskaišu izmantošana, atbildība un datu apstrādes pielikums.",
+    "partnerTermsTitle": "Partneru sadarbības noteikumi",
+    "partnerTermsUpdated": "Spēkā no: 2026. gada 28. oktobra. Versija 2026-10-28.",
+    "partnerTermsLead": "Šie noteikumi attiecas tikai uz uzņēmumiem un saimnieciskās darbības veicējiem, kas izmanto PROVIN partneru kontu (PROVIN Business). Patērētājiem piemēro Lietošanas noteikumus.",
+    "partnerTermsSections": [
+      {
+        "title": "1. Puses un piemērošana",
+        "body": "1.1. Pakalpojuma sniedzējs: PROVIN, info@provin.lv, +371 29 502 039.\n\n1.2. Partneris: juridiska persona vai saimnieciskās darbības veicējs, kas reģistrējies partneru kontā ar PROVIN ielūgumu.\n\n1.3. Līgumu veido šie noteikumi, Partnerim nosūtītais cenrādis vai piedāvājums un datu apstrādes pielikums (14. punkts). Partneris tos akceptē, reģistrācijā atzīmējot piekrišanu vai veicot pirmo pirkumu.\n\n1.4. Jautājumos, ko šie noteikumi neregulē, piemēro Lietošanas noteikumus, izņemot patērētāju tiesību normas (atteikuma tiesības patērētājam), kas uz Partneri neattiecas."
+      },
+      {
+        "title": "2. Pakalpojumi",
+        "body": "2.1. PROVIN Business atskaite: transportlīdzekļa vēstures un sludinājuma izvērtējums ar konsultatīvu ieteikumu, kā aprakstīts Lietošanas noteikumu 2.-3. punktā.\n\n2.2. Oficiālā dīlera dati: ražotāja vai oficiālā dīlera servisa vēstures ieraksti, cik tie pieejami konkrētajam VIN un markai.\n\n2.3. Cenas: PROVIN Business no 69,99 € un Oficiālā dīlera dati no 14,99 € par atskaiti; konkrētās Partnera cenas ir viņa kontā un cenrādī."
+      },
+      {
+        "title": "3. Konts un piekļuve",
+        "body": "3.1. Vienam uzņēmumam ir viens konts. Partneris atbild par paroles drošību un par darbiniekiem, kuriem dod piekļuvi.\n\n3.2. Par aizdomām par nesankcionētu piekļuvi Partneris paziņo PROVIN 24 stundu laikā.\n\n3.3. PROVIN var nekavējoties bloķēt kontu, ja ir pamatotas aizdomas par ļaunprātīgu lietošanu vai šo noteikumu pārkāpumu."
+      },
+      {
+        "title": "4. Kredīti un norēķini",
+        "body": "4.1. Kredīti ir priekšapmaksa: Partneris tos iegādājas pēc PROVIN rēķina vai kontā ar karti. Vienas atskaites pasūtījums izmanto vienu attiecīgā produkta kredītu.\n\n4.2. Rēķina apmaksas termiņš: 7 dienas, ja rēķinā nav norādīts citādi. Kredīti kļūst pieejami pēc apmaksas.\n\n4.3. Kredīti ir derīgi 12 mēnešus no iegādes. Neizlietoti kredīti naudā netiek atmaksāti, izņemot gadījumus, kad sadarbību izbeidz PROVIN bez Partnera vainas vai pakalpojumu nevar sniegt PROVIN dēļ.\n\n4.4. PVN: PROVIN Latvijā nav reģistrēts kā PVN maksātājs iekšzemes darījumiem, tāpēc Latvijas Partneriem PVN netiek piemērots. Citu ES valstu PVN maksātājiem rēķinu izraksta ar PROVIN PVN numuru, piemērojot reverso maksāšanu, ja to paredz normatīvie akti."
+      },
+      {
+        "title": "5. Atmaksa un kredīta atgriešana",
+        "body": "5.1. Oficiālā dīlera dati: ja oficiālajā sistēmā par konkrēto VIN nav neviena ieraksta, kredīts automātiski atgriežas Partnera kontā.\n\n5.2. PROVIN Business: atskaite ir izpildīta, ja veiktas Lietošanas noteikumu 3.4. punktā noteiktās pārbaudes, arī tad, ja kāds avots datus neuzrāda."
+      },
+      {
+        "title": "6. Izpildes termiņi",
+        "body": "Atskaiti sagatavo 24-72 stundu laikā darba dienās no pasūtījuma. Steidzamiem pasūtījumiem termiņu un cenu puses saskaņo atsevišķi. Termiņš var pagarināties trešo pušu avotu traucējumu dēļ; par to PROVIN informē."
+      },
+      {
+        "title": "7. Atskaišu izmantošana",
+        "body": "7.1. Partneris drīkst atskaiti izmantot savā darbībā un parādīt vai nodot savam klientam konkrētā transportlīdzekļa darījuma ietvaros (iegāde, pārdošana, komisija, maiņa).\n\n7.2. Aizliegts: publicēt atskaiti atklāti (piemēram, sludinājumā kā pielikumu vai publiskā saitē), pārdot to atsevišķi, izmantot datu bāzes veidošanai, noņemt PROVIN zīmolu, atrunas vai mainīt saturu.\n\n7.3. Atskaites saturs paliek PROVIN intelektuālais īpašums; Partneris saņem neekskluzīvas, nenododamas lietošanas tiesības 7.1. punktā noteiktajā apjomā."
+      },
+      {
+        "title": "8. Partnera pienākumi",
+        "body": "Partneris norāda pareizu VIN vai numurzīmi, izmanto atskaites likumīgiem nolūkiem un nodrošina, ka viņa klientam ir skaidrs, ka atskaite ir konsultatīvs izvērtējums, nevis tehniskā ekspertīze vai garantija."
+      },
+      {
+        "title": "9. Atbildība",
+        "body": "9.1. Atbildības ierobežojumi ir tādi paši kā Lietošanas noteikumu 9. punktā.\n\n9.2. PROVIN kopējā atbildība par vienu atskaiti ir ierobežota līdz summai, ko Partneris par to samaksājis.\n\n9.3. PROVIN neatbild par Partnera saistībām pret viņa klientiem, tostarp par cenu, garantijām un transportlīdzekļa stāvokli."
+      },
+      {
+        "title": "10. Konfidencialitāte",
+        "body": "Puses neizpauž otras puses komerciālo informāciju (cenas, apjomus, klientu datus), ko uzzinājušas sadarbībā, izņemot gadījumus, kad to prasa likums."
+      },
+      {
+        "title": "11. Termiņš un izbeigšana",
+        "body": "Sadarbība ir beztermiņa. Jebkura puse to var izbeigt, rakstiski paziņojot 14 dienas iepriekš. PROVIN var izbeigt nekavējoties, ja Partneris būtiski pārkāpj šos noteikumus. Pēc izbeigšanas neizmantoto kredītu atmaksu nosaka 4.3. punkts."
+      },
+      {
+        "title": "12. Grozījumi",
+        "body": "PROVIN var grozīt šos noteikumus, paziņojot Partnerim e-pastā vismaz 14 dienas iepriekš. Ja Partneris turpina izmantot kontu pēc grozījumu spēkā stāšanās, viņš tiem piekrīt."
+      },
+      {
+        "title": "13. Piemērojamās tiesības un strīdi",
+        "body": "Piemēro Latvijas Republikas tiesības. Strīdus puses risina sarunās, bet, ja neizdodas, Latvijas Republikas tiesā pēc PROVIN atrašanās vietas."
+      },
+      {
+        "title": "14. Pielikums: datu apstrādes līgums (GDPR 28. pants)",
+        "body": "14.1. Ja Partneris, pasūtot atskaiti, norāda sava klienta personas datus (piemēram, vārdu), Partneris ir pārzinis un PROVIN ir apstrādātājs.\n\n14.2. Priekšmets un mērķis: atskaites sagatavošana un piegāde. Ilgums: sadarbības laiks un 14.8. punktā noteiktā glabāšana.\n\n14.3. Datu veidi: VIN, numurzīme, sludinājuma saite, Partnera klienta vārds, ja norādīts. Datu subjekti: Partnera klienti.\n\n14.4. PROVIN apstrādā datus tikai pēc Partnera norādījumiem (pasūtījuma) un nodrošina, ka personas ar piekļuvi ievēro konfidencialitāti.\n\n14.5. Drošība: šifrēti savienojumi (HTTPS), piekļuves kontrole un parakstītas sesijas, piekļuve tikai pilnvarotām personām.\n\n14.6. Apakšapstrādātāji: kā norādīts Privātuma politikas 6. punktā. Par jaunu apakšapstrādātāju PROVIN paziņo 14 dienas iepriekš; Partneris var iebilst.\n\n14.7. PROVIN palīdz Partnerim atbildēt uz datu subjektu pieprasījumiem un par personas datu aizsardzības pārkāpumu paziņo bez nepamatotas kavēšanās, ne vēlāk kā 48 stundu laikā pēc tā konstatēšanas.\n\n14.8. Pēc sadarbības beigām PROVIN dzēš vai atdod Partnera klientu datus, izņemot to, kas jāglabā pēc likuma (piemēram, grāmatvedības dokumenti 5 gadus).\n\n14.9. Pēc pieprasījuma PROVIN sniedz informāciju, kas vajadzīga šo pienākumu izpildes pārbaudei."
       }
     ]
   },
   "Cookies": {
     "bannerTitle": "Sīkdatnes un privātums",
-    "bannerText": "Mēs izmantojam nepieciešamās sīkdatnes vietnes darbībai. Ja piekrītat analītikai, varam saglabāt pirmo un pēdējo mārketinga lapu, UTM parametrus un reklāmas klikšķa identifikatorus (gclid, fbclid, ttclid), skaitīt agregētus apmeklējumus, kā arī ielādēt Google Analytics, TikTok Pixel un/vai Meta Pixel (ja konfigurēti), lai saprastu, no kurienes apmeklētāji ierodas.",
+    "bannerText": "Nepieciešamās sīkdatnes nodrošina vietnes darbību. Ar jūsu piekrišanu izmantojam arī analītiku (Google Analytics), lai saprastu, kā vietne tiek lietota, un reklāmu mērīšanu (Google Ads, Meta, TikTok) un saglabājam mārketinga avotu (UTM, gclid, fbclid, ttclid). Bez piekrišanas Google saņem tikai bezsīkdatņu signālus.",
     "reject": "Tikai nepieciešamās",
-    "acceptAnalytics": "Piekrītu analītikai un saglabāšanai",
-    "privacyLink": "Privātuma politika"
+    "acceptAnalytics": "Piekrītu analītikai un reklāmai",
+    "privacyLink": "Privātuma politika",
+    "categoriesLegend": "Sīkdatņu kategorijas",
+    "categoryAnalytics": "Analītika.",
+    "categoryAnalyticsDesc": "Google Analytics: kā vietne tiek lietota.",
+    "categoryAds": "Reklāma.",
+    "categoryAdsDesc": "Google Ads, Meta, TikTok un mārketinga avots (UTM, klikšķa ID).",
+    "saveChoice": "Saglabāt izvēli",
+    "settings": "Iestatījumi"
   }
 }

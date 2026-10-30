@@ -32,6 +32,11 @@ export async function POST(req: Request, ctx: Ctx) {
   } catch {
     return NextResponse.json({ error: "invalid_json" }, { status: 400, headers: irissLogisticsScopeHeader() });
   }
+  if (action === "create") {
+    const created = await loadIrissSaitesView("logistics", id, { create: true }).catch(() => null);
+    if (!created) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
+    return NextResponse.json({ ok: true, ...created }, { headers: irissLogisticsScopeHeader() });
+  }
   if (action !== "sent") return NextResponse.json({ error: "invalid_action" }, { status: 400, headers: irissLogisticsScopeHeader() });
   const loaded = await sendIrissSaitesWhatsApp("logistics", id, actorName(gate.actor)).catch(() => null);
   if (!loaded) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });

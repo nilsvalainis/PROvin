@@ -4,11 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
-import { usePdCopyLink, usePdRebase } from "@/components/admin/iriss-piedavajumi/pd-actions";
+import { deleteIrissPdRequest, usePdCopyLink, usePdRebase } from "@/components/admin/iriss-piedavajumi/pd-actions";
 import {
   countIrissPdByStatus,
   filterIrissPdRows,
   formatIrissPdPrice,
+  irissPdDeleteConfirm,
   irissPdRowEffectiveStatus,
   sortIrissPdRows,
   type IrissPdListFilter,
@@ -45,20 +46,77 @@ function Source({ row }: { row: IrissPdListRow }) {
   );
 }
 
-function RowAction({ row, status, onCopy, onRebase, busy }: { row: IrissPdListRow; status: IrissPdStatus; onCopy: () => void; onRebase: () => void; busy: boolean }) {
+function RowAction({
+  row,
+  status,
+  onCopy,
+  onRebase,
+  onDelete,
+  busy,
+}: {
+  row: IrissPdListRow;
+  status: IrissPdStatus;
+  onCopy: () => void;
+  onRebase: () => void;
+  onDelete: () => void;
+  busy: boolean;
+}) {
   const href = `/admin/iriss/piedavajumi/${row.id}`;
-  if (status === "requested") return <Link className="pd-btn p s" href={href}>Aizpildīt</Link>;
-  if (status === "draft") return <Link className="pd-btn s" href={href}>Turpināt</Link>;
-  if (status === "sent") return <button type="button" className="pd-btn s" onClick={onCopy} disabled={busy}>Kopēt saiti</button>;
-  if (status === "approved") {
-    return row.approvedOrderId ? (
-      <Link className="pd-lnk" href={`/admin/iriss/pasutijumi/${row.approvedOrderId}`}>Pasūtījums · Rezervēts →</Link>
-    ) : (
-      <Link className="pd-btn s" href={href}>Izveidot pasūtījumu</Link>
+  const del = (
+    <button type="button" className="pd-btn s bad" onClick={onDelete} disabled={busy}>
+      Dzēst
+    </button>
+  );
+  if (status === "requested") {
+    return (
+      <span className="inline-flex flex-wrap items-center gap-1">
+        <Link className="pd-btn p s" href={href}>Aizpildīt</Link>
+        {del}
+      </span>
     );
   }
-  if (status === "declined") return <span className="pd-mu">Noraidīts</span>;
-  return <button type="button" className="pd-btn s" onClick={onRebase} disabled={busy}>Izveidot jaunu uz šī bāzes</button>;
+  if (status === "draft") {
+    return (
+      <span className="inline-flex flex-wrap items-center gap-1">
+        <Link className="pd-btn s" href={href}>Turpināt</Link>
+        {del}
+      </span>
+    );
+  }
+  if (status === "sent") {
+    return (
+      <span className="inline-flex flex-wrap items-center gap-1">
+        <button type="button" className="pd-btn s" onClick={onCopy} disabled={busy}>Kopēt saiti</button>
+        {del}
+      </span>
+    );
+  }
+  if (status === "approved") {
+    return (
+      <span className="inline-flex flex-wrap items-center gap-1">
+        {row.approvedOrderId ? (
+          <Link className="pd-lnk" href={`/admin/iriss/pasutijumi/${row.approvedOrderId}`}>Pasūtījums · Rezervēts →</Link>
+        ) : (
+          <Link className="pd-btn s" href={href}>Izveidot pasūtījumu</Link>
+        )}
+        {del}
+      </span>
+    );
+  }
+  if (status === "declined") {
+    return (
+      <span className="inline-flex flex-wrap items-center gap-1">
+        <span className="pd-mu">Noraidīts</span>
+        {del}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1">
+      <button type="button" className="pd-btn s" onClick={onRebase} disabled={busy}>Izveidot jaunu uz šī bāzes</button>
+      {del}
+    </span>
+  );
 }
 
 export function PiedavajumiList({
@@ -76,9 +134,26 @@ export function PiedavajumiList({
   const [filter, setFilter] = useState<IrissPdListFilter>({ status: "all", source: "all", query: "" });
   const { copy, copiedId, copyError } = usePdCopyLink();
   const { rebase, rebaseBusy, rebaseError } = usePdRebase();
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const counts = useMemo(() => countIrissPdByStatus(rows, nowMs), [rows, nowMs]);
   const shown = useMemo(() => sortIrissPdRows(filterIrissPdRows(rows, filter, nowMs)), [rows, filter, nowMs]);
-  const err = copyError || rebaseError;
+  const err = copyError || rebaseError || deleteError;
+  const busy = rebaseBusy || deleteBusy;
+
+  async function remove(row: IrissPdListRow) {
+    if (!window.confirm(irissPdDeleteConfirm(irissPdNumberLabel(row.number)))) return;
+    setDeleteBusy(true);
+    setDeleteError("");
+    try {
+      await deleteIrissPdRequest(row.id);
+      router.refresh();
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "Neizdevās dzēst.");
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
 
   const header = (
     <header className="pd-hdr">
@@ -88,7 +163,7 @@ export function PiedavajumiList({
       <div className="pd-top">
         <div>
           <h1>Piedāvājumi</h1>
-          <div className="pd-sub">{irissPdCountLabel(rows.length)} · 1 auto = 1 piedāvājums</div>
+          <div className="pd-sub">{irissPdCountLabel(rows.length)}</div>
         </div>
         <Link className="pd-btn p pd-new-top" href="/admin/iriss/piedavajumi/jauns">
           + Jauns piedāvājums
@@ -193,7 +268,14 @@ export function PiedavajumiList({
                     <PdStatusChip status={status} />
                   </span>
                   <span>
-                    <RowAction row={row} status={status} busy={rebaseBusy} onCopy={() => void copy(row.id)} onRebase={() => void rebase(row.id, router)} />
+                    <RowAction
+                      row={row}
+                      status={status}
+                      busy={busy}
+                      onCopy={() => void copy(row.id)}
+                      onRebase={() => void rebase(row.id, router)}
+                      onDelete={() => void remove(row)}
+                    />
                     {copiedId === row.id ? <span className="pd-ok-hint">Saite nokopēta</span> : null}
                   </span>
                 </div>
@@ -225,7 +307,14 @@ export function PiedavajumiList({
                   </Link>
                   {status !== "declined" ? (
                     <div style={{ marginTop: 8 }}>
-                      <RowAction row={row} status={status} busy={rebaseBusy} onCopy={() => void copy(row.id)} onRebase={() => void rebase(row.id, router)} />
+                      <RowAction
+                      row={row}
+                      status={status}
+                      busy={busy}
+                      onCopy={() => void copy(row.id)}
+                      onRebase={() => void rebase(row.id, router)}
+                      onDelete={() => void remove(row)}
+                    />
                       {copiedId === row.id ? <span className="pd-ok-hint">Saite nokopēta</span> : null}
                     </div>
                   ) : null}

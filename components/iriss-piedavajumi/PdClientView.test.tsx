@@ -1,11 +1,17 @@
+import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => undefined, refresh: () => undefined }) }));
+vi.mock("next/image", () => ({
+  default: (props: { alt?: string; src?: unknown }) =>
+    createElement("img", { alt: props.alt ?? "", src: typeof props.src === "string" ? props.src : "" }),
+}));
 
 import { PiedavajumiList } from "@/components/admin/iriss-piedavajumi/PiedavajumiList";
-import { PdClientView } from "@/components/iriss-piedavajumi/PdClientView";
+import { IrissOfferPublicGallery } from "@/components/iriss-offer-public/IrissOfferPublicGallery";
+import { PdClientView, pdGalleryUrlMap } from "@/components/iriss-piedavajumi/PdClientView";
 import { PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
-import { buildIrissPdPublicView, irissPdToListRow } from "@/lib/iriss-piedavajumi";
+import { buildIrissPdPublicView, irissPdHiddenBlockLabels, irissPdToListRow } from "@/lib/iriss-piedavajumi";
 import type { IrissPdAuto1Blocks } from "@/lib/iriss-piedavajumi-auto1";
 import { emptyIrissPiedavajums, IRISS_PD_STATUSES, type IrissPiedavajums } from "@/lib/iriss-piedavajumi-types";
 import { renderHtml, renderText } from "@/lib/test-render";
@@ -47,10 +53,13 @@ const src = (n: number, s: string) => `/p/d/TOKEN/foto/${n}${s === "full" ? "?s=
 
 describe("Klienta skats (publiskā saite)", () => {
   it("rāda auto, cenu, termiņu un ieslēgtos Auto1 blokus; bojājumi pēc noklusējuma paslēpti", () => {
-    const text = renderText(<PdClientView view={buildIrissPdPublicView(rec(), "link", NOW)} mode="link" photoSrc={src} />).replace(/ /g, " ");
+    const view = buildIrissPdPublicView(rec(), "link", NOW);
+    const text = renderText(<PdClientView view={view} mode="link" token="tokentokentokentoken12" photoSrc={src} />).replace(/ /g, " ");
     expect(text).toContain("Ford Transit Custom 2.0 L2H1");
     expect(text).toContain("12 750 €");
     expect(text).toContain("līdz 02.11.2026");
+    expect(text).toContain("Parametri");
+    expect(text).not.toContain("Auto dati");
     expect(text).toContain("Ārpuses krāsas karte");
     expect(text).toContain("◐ 276 µm");
     expect(text).toContain("Izlaiduma gads");
@@ -76,9 +85,36 @@ describe("Klienta skats (publiskā saite)", () => {
   });
 
   it("admina priekšskatījums nosauc paslēptos blokus", () => {
-    const text = renderText(<PdClientView view={buildIrissPdPublicView(rec(), "link", NOW)} mode="link" photoSrc={src} compact showHiddenNote />);
+    const row = rec();
+    const text = renderText(
+      <PdClientView
+        view={buildIrissPdPublicView(row, "link", NOW)}
+        mode="link"
+        photoSrc={src}
+        embedded
+        showHiddenNote
+        hiddenLabels={irissPdHiddenBlockLabels(row, "link")}
+      />,
+    );
     expect(text).toContain("Paslēpts (saite=OFF): Bojājumu kopsavilkums.");
     expect(text).toContain("Nekad: avots, saite, iepirkuma cena");
+  });
+
+  it("tukšu krāsas karti un tukšus blokus nerāda", () => {
+    const empty: IrissPdAuto1Blocks = {
+      paint: { zones: [{ id: "front", readings: [], warning: false }, { id: "roof", readings: [], warning: false }, { id: "rear", readings: [], warning: false }, { id: "left", readings: [], warning: false }, { id: "right", readings: [], warning: false }], unassigned: [] },
+      tech: [],
+      equipment: [],
+      service: [],
+      inspection: [],
+      damage: [],
+      vinData: [],
+    };
+    const text = renderText(<PdClientView view={buildIrissPdPublicView(rec({ auto1: empty }), "link", NOW)} mode="link" photoSrc={src} />);
+    expect(text).not.toContain("Ārpuses krāsas karte");
+    expect(text).not.toContain("Tehniskie dati");
+    expect(text).not.toContain("Dati pēc VIN");
+    expect(text).toContain("Parametri");
   });
 });
 
@@ -96,8 +132,9 @@ describe("Statusu čipi un saraksts", () => {
     ];
     const html = renderHtml(<PiedavajumiList rows={rows} nowMs={NOW} storeEnabled loadError="" />);
     const text = renderText(<PiedavajumiList rows={rows} nowMs={NOW} storeEnabled loadError="" />);
-    expect(text).toContain("3 piedāvājumi · 1 auto = 1 piedāvājums");
+    expect(text).toContain("3 piedāvājumi");
     expect(text).toContain("Aizpildīt");
+    expect(text).toContain("Dzēst");
     expect(text).toContain("Izveidot jaunu uz šī bāzes");
     expect(text).toContain("Beidzies termiņš");
     expect(html).toContain('href="/admin/iriss/pasutijumi/44444444-4444-4444-8444-444444444444"');
@@ -106,5 +143,45 @@ describe("Statusu čipi un saraksts", () => {
 
   it("tukšs saraksts", () => {
     expect(renderText(<PiedavajumiList rows={[]} nowMs={NOW} storeEnabled loadError="" />)).toContain("Vēl nav neviena piedāvājuma.");
+  });
+});
+
+describe("Klienta skats: servera/klienta robeža", () => {
+  /** Atrod elementu pēc komponentes un atgriež tā props (PdClientView ir servera komponente - izsaucam kā funkciju). */
+  function findProps(node: unknown, type: unknown): Record<string, unknown> | null {
+    if (!node || typeof node !== "object") return null;
+    if (Array.isArray(node)) {
+      for (const child of node) {
+        const hit = findProps(child, type);
+        if (hit) return hit;
+      }
+      return null;
+    }
+    const el = node as { type?: unknown; props?: Record<string, unknown> };
+    if (el.type === type && el.props) return el.props;
+    return el.props ? findProps(el.props.children, type) : null;
+  }
+
+  function hasFunction(value: unknown): boolean {
+    if (typeof value === "function") return true;
+    if (!value || typeof value !== "object") return false;
+    return Object.values(value).some(hasFunction);
+  }
+
+  it("galerijai nodod tikai virknes (produkcijā funkcijas lauza /p/d ar 500)", () => {
+    const view = buildIrissPdPublicView(rec({ photos: [{ kind: "url", url: "https://a/1.jpg" }, { kind: "url", url: "https://a/2.jpg" }] }), "link", NOW);
+    const tree = PdClientView({ view, mode: "link", token: "tokentokentokentoken12", photoSrc: src });
+    const props = findProps(tree, IrissOfferPublicGallery);
+    expect(props).not.toBeNull();
+    expect(hasFunction(props)).toBe(false);
+    expect(props?.urlMap).toEqual({
+      thumb: { "0": "/p/d/TOKEN/foto/0", "1": "/p/d/TOKEN/foto/1" },
+      full: { "0": "/p/d/TOKEN/foto/0?s=full", "1": "/p/d/TOKEN/foto/1?s=full" },
+    });
+  });
+
+  it("pdGalleryUrlMap: viens URL katram foto", () => {
+    expect(pdGalleryUrlMap(0, src)).toEqual({ thumb: {}, full: {} });
+    expect(pdGalleryUrlMap(1, src).full["0"]).toBe("/p/d/TOKEN/foto/0?s=full");
   });
 });
