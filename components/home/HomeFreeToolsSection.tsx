@@ -50,7 +50,9 @@ const ICONS: Record<"vin" | "listing" | "ask", ReactNode> = {
 
 /** Projekta pogas: galvenā ir HERO `liquidCta`, otrā - caurspīdīgā ar baltu kontūru (bezmaksas novērtējuma forma). */
 const GHOST_BTN =
-  "inline-flex min-h-[54px] items-center justify-center rounded-full border border-white/20 bg-white/[0.05] px-5 text-[12px] font-semibold uppercase tracking-[0.1em] text-white/90 no-underline transition hover:border-white/35 hover:bg-white/[0.08] hover:text-white";
+  "inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/[0.04] px-5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/85 no-underline transition hover:border-white/35 hover:bg-white/[0.08] hover:text-white";
+/** Kompakta galvenā poga blakus laukam (tāds pats augstums kā laukam - 44 px). */
+const PRIMARY_COMPACT = `${tp5Styles.liquidCta} !w-auto !min-h-[44px] shrink-0 !px-5 !py-0 !text-[11px]`;
 
 function PrimaryLabel({ children }: { children: ReactNode }) {
   return (
@@ -120,9 +122,9 @@ export function HomeFreeToolsSection() {
           </div>
         </div>
 
-        <div className="grid gap-14 md:grid-cols-3 md:gap-12">
+        <div className="grid gap-14 md:grid-cols-3 md:gap-10 lg:gap-16 xl:gap-20">
           <Card icon={ICONS.vin} accent title={t("vinTitle")} body={t("vinBody")}>
-            <form className="flex flex-col gap-2.5" onSubmit={onVin}>
+            <form className="flex gap-2" onSubmit={onVin}>
               <label htmlFor={`${id}-vin`} className="sr-only">
                 {t("vinPlaceholder")}
               </label>
@@ -135,16 +137,16 @@ export function HomeFreeToolsSection() {
                 autoCapitalize="characters"
                 spellCheck={false}
                 maxLength={24}
-                className={`${tp5Styles.inlineInput} uppercase placeholder:normal-case`}
+                className={`${tp5Styles.inlineInput} min-w-0 flex-1 uppercase placeholder:normal-case`}
               />
-              <button type="submit" className={tp5Styles.liquidCta}>
+              <button type="submit" className={PRIMARY_COMPACT}>
                 <PrimaryLabel>{t("vinSubmit")}</PrimaryLabel>
               </button>
             </form>
           </Card>
 
           <Card icon={ICONS.listing} title={t("listingTitle")} body={t("listingBody")}>
-            <form className="flex flex-col gap-2.5" onSubmit={onListing}>
+            <form className="flex gap-2" onSubmit={onListing}>
               <label htmlFor={`${id}-listing`} className="sr-only">
                 {t("listingPlaceholder")}
               </label>
@@ -156,18 +158,18 @@ export function HomeFreeToolsSection() {
                 onChange={(e) => setListing(e.target.value)}
                 placeholder={t("listingPlaceholder")}
                 autoComplete="off"
-                className={tp5Styles.inlineInput}
+                className={`${tp5Styles.inlineInput} min-w-0 flex-1`}
               />
-              <button type="submit" className={tp5Styles.liquidCta}>
-                <PrimaryLabel>{t("listingSubmit")}</PrimaryLabel>
+              <button type="submit" className={GHOST_BTN}>
+                {t("listingSubmit")}
               </button>
             </form>
           </Card>
 
           <Card icon={ICONS.ask} title={t("askTitle")} body={t("askBody")}>
-            <div className="grid grid-cols-2 gap-2.5">
-              <a href={whatsappWebUrl()} target="_blank" rel="noopener noreferrer" className={tp5Styles.liquidCtaLink}>
-                <PrimaryLabel>WhatsApp</PrimaryLabel>
+            <div className="flex justify-center gap-2">
+              <a href={whatsappWebUrl()} target="_blank" rel="noopener noreferrer" className={GHOST_BTN}>
+                WhatsApp
               </a>
               <a href={contactMailtoHref()} className={GHOST_BTN}>
                 {t("askEmail")}
