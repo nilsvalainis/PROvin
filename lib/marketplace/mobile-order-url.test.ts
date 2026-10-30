@@ -38,3 +38,17 @@ describe("Nils 30.10: mobile.de «Izveidot» pēc Nila manuālo filtru principa"
     expect(p.get("dr")).toBeNull();
   });
 });
+
+describe("mobile.de modeļa ID no Nila filtriem", () => {
+  const ms = (brandModel: string) =>
+    new URL(buildMobileDeOrderSearchUrl(marketplaceQueryFromOrder({ brandModel, totalBudget: "15000" }))).searchParams.get("ms");
+  it("zināmie modeļi saņem marka;modelis", () => {
+    expect(ms("Volvo XC60")).toBe("25100;40");
+    expect(ms("VW Golf 7")).toBe("25200;14");
+    expect(ms("Škoda Kodiaq")).toBe("22900;19");
+    expect(ms("Volkswagen Tiguan Allspace")).toBe("25200;66");
+  });
+  it("nezināms modelis - tikai marka (Nils pielabo ar roku)", () => {
+    expect(ms("Volvo V90")).toBe("25100");
+  });
+});
