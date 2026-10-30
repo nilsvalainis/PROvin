@@ -484,6 +484,23 @@ export function IrissSludinajumiListClient({
     router.push(irissPdHref(res.id));
   }
 
+  async function resetListings() {
+    if (!window.confirm("Notīrīt visus ielasītos izsoļu sludinājumus (arī Pazudušos)? Pasūtījumi, saites, piezīmes un favorīti paliek; sludinājumi ielasīsies no jauna pēc pašreizējām saitēm nākamajā nolasīšanā.")) return;
+    try {
+      const res = await fetch("/api/admin/iriss-listings/reset", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ confirm: "NOTĪRĪT" }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { removed?: number; error?: string };
+      setSyncMsg(res.ok ? `Notīrīti ${data.removed ?? 0} sludinājumi. Jaunie ielasīsies nākamajā nolasīšanā.` : `Notīrīt neizdevās (${data.error ?? res.status}).`);
+      if (res.ok) router.refresh();
+    } catch {
+      setSyncMsg("Notīrīt neizdevās (tīkla kļūda).");
+    }
+  }
+
   function applyPrefs(next: IrissListPrefs) {
     const prevHidden = prefs.hidden;
     const markPatches = diffIrissListingMarks(prefs, next);
@@ -1211,6 +1228,7 @@ export function IrissSludinajumiListClient({
                       onSync={() => void syncNow()}
                       onSourceStatus={() => { setSourceStatusOpen(true); setMenuOpen(false); }}
                       onCosts={() => { setCostsOpen(true); setMenuOpen(false); }}
+                    onReset={() => { setMenuOpen(false); void resetListings(); }}
                     />
                   </div>
                 ) : null}
@@ -1337,6 +1355,7 @@ export function IrissSludinajumiListClient({
           onSync={() => void syncNow()}
           onSourceStatus={() => { setSourceStatusOpen(true); setMenuOpen(false); }}
           onCosts={() => { setCostsOpen(true); setMenuOpen(false); }}
+                    onReset={() => { setMenuOpen(false); void resetListings(); }}
         />
         </div>
       </AdminMobileSheet>
