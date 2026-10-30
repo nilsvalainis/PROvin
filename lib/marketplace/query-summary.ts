@@ -25,6 +25,21 @@ function yearRange(from: number | null, to: number | null): string {
 
 const FUEL_LV: Record<string, string> = { diesel: "Dīzelis", petrol: "Benzīns", gasoline: "Benzīns", hybrid: "Hibrīds", electric: "Elektro", lpg: "Gāze" };
 const GEAR_LV: Record<string, string> = { automatic: "Automātiskā", manual: "Mehāniskā" };
+const BODY_LV: Record<string, string> = {
+  wagon: "Universālis",
+  estate: "Universālis",
+  sedan: "Sedans",
+  limousine: "Sedans",
+  hatchback: "Hečbeks",
+  suv: "Apvidus (SUV)",
+  coupe: "Kupeja",
+  cabrio: "Kabriolets",
+  convertible: "Kabriolets",
+  van: "Furgons",
+  minivan: "Minivens",
+  pickup: "Pikaps",
+};
+const DRIVE_LV: Record<string, string> = { awd: "Pilnpiedziņa", "4x4": "Pilnpiedziņa", fwd: "Priekšpiedziņa", rwd: "Aizmugurpiedziņa" };
 
 export function marketplaceQuerySummaryLv(q: MarketplaceQuery): string[] {
   const out: string[] = [];
@@ -42,8 +57,8 @@ export function marketplaceQuerySummaryLv(q: MarketplaceQuery): string[] {
   if (kw) out.push(kw);
   const cc = range(q.displacementFromCc, q.displacementToCc, "cm3");
   if (cc) out.push(cc);
-  if (q.body.trim()) out.push(q.body.trim());
-  if (q.drive.trim()) out.push(q.drive.trim());
+  if (q.body.trim()) out.push(BODY_LV[q.body.trim().toLowerCase()] ?? q.body.trim());
+  if (q.drive.trim()) out.push(DRIVE_LV[q.drive.trim().toLowerCase()] ?? q.drive.trim());
   if (q.vehicleCategory === "van") out.push("Furgons");
   if (q.countries.length) out.push(q.countries.join(", "));
   return out;
