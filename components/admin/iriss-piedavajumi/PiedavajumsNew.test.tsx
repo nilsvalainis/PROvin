@@ -12,7 +12,7 @@ describe("Jauns piedāvājums - viena ieeja", () => {
     const text = renderText(<PiedavajumsNew cars={[car]} carsError="" />);
     for (const t of ["Saite", "Autoparks", "Loģistika", "Tukšs"]) expect(text).toContain(t);
     expect(renderHtml(<PiedavajumsNew cars={[car]} carsError="" />)).toMatch(/aria-selected="true"[^>]*>Saite</);
-    expect(text).toContain("Klients nav obligāts");
+    expect(text).toContain("Klients (nav obligāts");
   });
 
   it("no pasūtījuma - klients piesaistīts, to var noņemt", () => {

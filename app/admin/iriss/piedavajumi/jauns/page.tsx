@@ -2,6 +2,8 @@ import "@/components/iriss-piedavajumi/piedavajumi.css";
 import { redirect } from "next/navigation";
 import { irissCreateOfferHrefLegacy } from "@/components/admin/IrissCreateOfferButton";
 import { PiedavajumsNew } from "@/components/admin/iriss-piedavajumi/PiedavajumsNew";
+import { isIrissPasutijumiStoreEnabled, listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
+import { irissPdClientOptions } from "@/lib/iriss-piedavajumi";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { listLogisticsOrders } from "@/lib/iriss-logistics-store";
 import { readIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
@@ -34,11 +36,12 @@ export default async function IrissPiedavajumsNewPage({ searchParams }: { search
     redirect(irissCreateOfferHrefLegacy(entry.tab === "autoparks" || entry.tab === "logistics" ? entry.tab : undefined, entry.carId || undefined));
   }
   await requireAdminPage();
-  const [state, orders, rows, client] = await Promise.all([
+  const [state, orders, rows, client, irissOrders] = await Promise.all([
     readAutoparksState().catch(() => null),
     listLogisticsOrders().catch(() => null),
     listIrissPdRows().catch(() => []),
     clientFromOrder(entry.orderId),
+    isIrissPasutijumiStoreEnabled() ? listIrissPasutijumi().catch(() => []) : Promise.resolve([]),
   ]);
   return (
     <PiedavajumsNew
@@ -48,6 +51,7 @@ export default async function IrissPiedavajumsNewPage({ searchParams }: { search
       logisticsError={orders ? "" : "Loģistiku neizdevās ielādēt."}
       entry={entry}
       client={client}
+      clientOptions={irissPdClientOptions(irissOrders)}
     />
   );
 }
