@@ -107,8 +107,12 @@ export type MarketplaceRawListing = {
   sellerName?: unknown;
   /** Atļauts adapterim, bet normalizācija šos laukus izmet. */
   description?: unknown;
+  /** Nils 31.10: bilžu saites glabā (tikai URL, ne kopijas). */
   images?: unknown;
   imageUrl?: unknown;
+  imageUrls?: unknown;
+  photos?: unknown;
+  thumbnail?: unknown;
   sellerPhone?: unknown;
   sellerEmail?: unknown;
 };
@@ -119,7 +123,7 @@ export type MarketplaceSourceLink = {
 };
 
 /**
- * Saglabājamie lauki. Nav fotogrāfiju, pilna teksta, pārdevēja kontaktu.
+ * Saglabājamie lauki. Bildes - tikai saites (Nils 31.10); nav pilna teksta, pārdevēja kontaktu.
  */
 export type MarketplaceNormalizedListing = {
   platform: MarketplacePlatform;
@@ -140,6 +144,7 @@ export type MarketplaceNormalizedListing = {
   vin?: string;
   sellerName?: string;
   location?: string;
+  imageUrls?: string[];
   sourceLinks?: MarketplaceSourceLink[];
 };
 

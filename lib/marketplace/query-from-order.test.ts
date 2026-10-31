@@ -8,6 +8,7 @@ import {
   marketplaceMissingExtraRangeMessage,
   marketplaceMissingFieldsMessage,
   marketplaceOrderHasFetchBounds,
+  marketplacePriceBoundsFromBudget,
   marketplaceQueryFromOrder,
   marketplaceStrictMissingFields,
   marketplaceTooBroadSkipReason,
@@ -16,6 +17,16 @@ import {
 
 /** Noklusējuma izmaksas, Margin formula kā `listingMaxBid` (I × 1,21). */
 const searchBound = (budget: number) => Math.round(budget - listingExtrasI() * (1 + LV_VAT_RATE));
+
+describe("Nils 31.10: mobile.de cenas griesti no budžeta", () => {
+  it("5 000 -> 3 000, 15 000 -> 13 000, 20 000 -> 17 000", () => {
+    expect(marketplacePriceBoundsFromBudget({ from: null, to: 5000 }).to).toBe(3000);
+    expect(marketplacePriceBoundsFromBudget({ from: null, to: 15000 }).to).toBe(13000);
+    expect(marketplacePriceBoundsFromBudget({ from: 10000, to: 20000 }).to).toBe(17000);
+    expect(marketplacePriceBoundsFromBudget({ from: null, to: 15000 }).from).toBe(8300);
+    expect(marketplacePriceBoundsFromBudget({ from: null, to: 1500 })).toEqual({ from: null, to: null });
+  });
+});
 
 describe("marketplaceQueryFromOrder", () => {
   it("reads make/model/years/km/price/fuel/gearbox from the order form", () => {
@@ -32,8 +43,8 @@ describe("marketplaceQueryFromOrder", () => {
     expect(q.yearFrom).toBe(2018);
     expect(q.yearTo).toBe(2020);
     expect(q.mileageTo).toBe(140000);
-    // Nils 30.10: mobile.de / AutoScout24 - 90 % un 55 % no maks. budžeta.
-    expect(q.priceTo).toBe(19800);
+    // Nils 31.10: budžets - 15 % (min. 2 000 €), noapaļots līdz 500 €; no 55 %.
+    expect(q.priceTo).toBe(18500);
     expect(q.priceFrom).toBe(12100);
     expect(q.fuel).toMatch(/dīzel|diesel/i);
     expect(q.gearbox).toMatch(/autom|automatic/i);
@@ -80,7 +91,7 @@ describe("marketplaceQueryFromOrder", () => {
       yearFrom: 2017,
       yearTo: 2019,
       mileageTo: 160000,
-      priceTo: 22500,
+      priceTo: 21500,
       fuel: "diesel",
       gearbox: "automatic",
     });

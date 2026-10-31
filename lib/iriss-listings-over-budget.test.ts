@@ -55,6 +55,10 @@ describe("over-budget filter", () => {
     expect(listingIsOverBudgetHidden(v, extras, { kind: "margin" }, budget - 2500, true, 2000)).toBe(true);
     expect(listingIsOverBudgetHidden(v, extras, { kind: "margin" }, budget - 2500, false, 2000)).toBe(false);
     expect(listingIsOverBudgetHidden(v, extras, { kind: "margin" }, budget - 1500, true, 2000)).toBe(false);
+    // Nils 31.10: mobile.de / AutoScout24 - kaulējama cena, filtru nepiemēro.
+    expect(listingIsOverBudgetHidden({ ...v, platform: "mobilede" as never }, extras, { kind: "margin" }, budget - 2500, true, 2000)).toBe(false);
+    expect(listingIsOverBudgetHidden({ ...v, platform: "autoscout24" as never }, extras, { kind: "margin" }, budget - 2500, true, 2000)).toBe(false);
+    expect(listingExcludedForMissingPrice({ ...v, platform: "mobilede" as never, priceCurrent: null, priceStart: null }, 15000, true)).toBe(false);
   });
 
   it("does not treat an 850 € floor as cheap enough to stay in budget", () => {

@@ -1,6 +1,6 @@
 /**
  * Nils 30.10 (makets «Meklēšanas filtri»): zem budžeta redzams, ar kādu cenu filtri meklēs.
- * Izsolēs - budžets mīnus izmaksu pieņēmumi (tas pats aprēķins, ko izsoļu saites), mobile.de - 55-90 %.
+ * Izsolēs - budžets mīnus izmaksu pieņēmumi (tas pats aprēķins, ko izsoļu saites), mobile.de - no 55 % līdz budžets mīnus 15 % (min. 2 000 €).
  */
 
 import {

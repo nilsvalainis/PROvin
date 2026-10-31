@@ -93,6 +93,9 @@ function parseStoredListing(v: unknown): MarketplaceStoredListing | null {
     ...(str(v.vin, 17).length === 17 ? { vin: str(v.vin, 17).toUpperCase() } : {}),
     ...(str(v.sellerName, 80) ? { sellerName: str(v.sellerName, 80) } : {}),
     ...(str(v.location, 80) ? { location: str(v.location, 80) } : {}),
+    ...(Array.isArray(v.imageUrls)
+      ? { imageUrls: v.imageUrls.map((u) => str(u, 600)).filter((u) => /^https?:\/\//.test(u)).slice(0, 12) }
+      : {}),
     ...(Array.isArray(v.sourceLinks)
       ? {
           sourceLinks: v.sourceLinks

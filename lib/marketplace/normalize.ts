@@ -9,11 +9,6 @@ import {
 
 const FORBIDDEN_KEYS = [
   "description",
-  "images",
-  "imageUrl",
-  "imageUrls",
-  "photos",
-  "photo",
   "sellerPhone",
   "sellerEmail",
   "phone",
@@ -129,6 +124,43 @@ function powerOf(raw: MarketplaceRawListing): string {
   return direct;
 }
 
+/** Nils 31.10: bilžu saites (http/https), max 12; saturs netiek kopēts. */
+export const MARKETPLACE_MAX_IMAGE_URLS = 12;
+
+function imageUrlOf(v: unknown): string {
+  if (typeof v === "string") return v.trim();
+  if (v && typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    for (const k of ["url", "uri", "src", "href", "large", "full", "original", "medium", "thumbnail"]) {
+      if (typeof o[k] === "string" && (o[k] as string).trim()) return (o[k] as string).trim();
+    }
+  }
+  return "";
+}
+
+export function marketplaceImageUrls(raw: MarketplaceRawListing): string[] {
+  const out: string[] = [];
+  const push = (v: unknown) => {
+    const s = imageUrlOf(v);
+    if (!s || s.length > 600) return;
+    try {
+      const u = new URL(s.startsWith("//") ? `https:${s}` : s);
+      if (u.protocol !== "http:" && u.protocol !== "https:") return;
+      const href = u.toString();
+      if (!out.includes(href)) out.push(href);
+    } catch {
+      /* nav URL */
+    }
+  };
+  for (const key of ["images", "imageUrls", "photos", "imageUrl", "photo", "thumbnail"] as const) {
+    const v = (raw as Record<string, unknown>)[key];
+    if (Array.isArray(v)) v.forEach(push);
+    else push(v);
+    if (out.length >= MARKETPLACE_MAX_IMAGE_URLS) break;
+  }
+  return out.slice(0, MARKETPLACE_MAX_IMAGE_URLS);
+}
+
 function stripForbidden(raw: MarketplaceRawListing): MarketplaceRawListing {
   const out: Record<string, unknown> = { ...raw };
   for (const key of FORBIDDEN_KEYS) delete out[key];
@@ -162,6 +194,7 @@ export function normalizeMarketplaceListing(
   const vin = str(cleaned.vin, 17).toUpperCase();
   const sellerName = str(cleaned.sellerName, 80);
   const location = str(cleaned.location ?? cleaned.city, 80);
+  const imageUrls = marketplaceImageUrls(cleaned);
   return {
     platform,
     providerId,
@@ -181,6 +214,7 @@ export function normalizeMarketplaceListing(
     ...(vin.length === 17 ? { vin } : {}),
     ...(sellerName ? { sellerName } : {}),
     ...(location ? { location } : {}),
+    ...(imageUrls.length > 0 ? { imageUrls } : {}),
   };
 }
 
