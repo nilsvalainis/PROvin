@@ -694,7 +694,7 @@ html.iriss-log-printing .iriss-log-map-fs-card {
  */
 html.iriss-log-printing .iriss-log-print-root {
   display: block;
-  width: 277mm;
+  width: 100%;
   height: auto !important;
   max-width: none;
   margin: 0 auto;
@@ -736,8 +736,8 @@ html.iriss-log-printing .iriss-log-print-chrome {
 }
 html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero {
   position: relative;
-  width: 277mm;
-  height: 165mm;
+  width: 100%;
+  height: 186mm;
   max-width: none;
   min-height: 0;
   aspect-ratio: auto;
@@ -764,8 +764,8 @@ html.iriss-log-printing body > :not(.iriss-log-print-host) {
 }
 html.iriss-log-printing .iriss-log-print-host {
   display: block;
-  width: 277mm;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   padding: 0;
   background: #fff;
 }

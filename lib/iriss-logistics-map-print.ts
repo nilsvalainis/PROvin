@@ -9,7 +9,8 @@ export const LOGISTICS_PRINT_AFTER_IDLE_MS = 400;
 export const LOGISTICS_PRINT_IDLE_TIMEOUT_MS = 5000;
 export const LOGISTICS_PRINT_PAGE_CSS = "@page { size: A4 landscape; margin: 10mm; }";
 export const LOGISTICS_PRINT_MAP_WIDTH_MM = 277;
-export const LOGISTICS_PRINT_MAP_HEIGHT_MM = 170;
+/** Nils 31.10: karte pa visu 1. lapu (190 mm drukājamais augstums, 4 mm rezerve). */
+export const LOGISTICS_PRINT_MAP_HEIGHT_MM = 186;
 
 export type LogisticsMapCamera = {
   lat: number;

@@ -677,6 +677,9 @@ export function IrissLogistikaClient({
     document.documentElement.classList.toggle(LOGISTICS_PRINT_HTML_CLASS, printing);
     let pageStyle: HTMLStyleElement | null = null;
     if (printing) {
+      // Nils 31.10: drukā fons vienmēr balts (admin tēma uz <html>/<body> ir pelēka).
+      document.documentElement.style.setProperty("background", "#fff", "important");
+      document.body.style.setProperty("background", "#fff", "important");
       document.documentElement.classList.toggle("iriss-log-print-duplex", printDuplex);
       pageStyle = document.createElement("style");
       pageStyle.setAttribute("data-iriss-log-print-page", "1");
@@ -686,6 +689,8 @@ export function IrissLogistikaClient({
     return () => {
       document.documentElement.classList.remove(LOGISTICS_PRINT_HTML_CLASS);
       document.documentElement.classList.remove("iriss-log-print-duplex");
+      document.documentElement.style.removeProperty("background");
+      document.body.style.removeProperty("background");
       pageStyle?.remove();
     };
   }, [printing, printDuplex]);
@@ -758,9 +763,9 @@ export function IrissLogistikaClient({
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });
     handle?.notifyResize();
-    // Nils 31.10: karte drukājas savā izmērā (277 × 165 mm), bez 2× mērogošanas - Google Maps to drukā nepilnīgi.
+    // Nils 31.10: karte pa visu lapu, bez 2× mērogošanas; maršruts (drukātie punkti) centrēts lapā.
     viewBeforePrintRef.current = view;
-    if (view) handle?.applyView(view);
+    handle?.fitVisible(48);
     await handle?.waitForTilesIdle();
     void fetch("/api/admin/iriss/logistika/print", {
       method: "POST",
