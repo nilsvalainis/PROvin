@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { IrissListingVehicle } from "@/lib/iriss-listings-types";
+import { mobileDeImageDisplayUrl } from "@/lib/marketplace/image-url";
 import type { MarketplaceStoredListing } from "@/lib/marketplace/types";
 
 export function marketplaceListingVehicleId(platform: MarketplaceStoredListing["platform"], externalId: string): string {
@@ -41,8 +42,10 @@ export function marketplaceListingToVehicle(item: MarketplaceStoredListing): Iri
     powerKw: item.powerKw,
     location: item.sellerName || item.location || item.locationCountry,
     countryCode: item.locationCountry,
-    imageUrl: item.imageUrls?.[0] ?? "",
-    ...(item.imageUrls && item.imageUrls.length > 1 ? { imageUrls: item.imageUrls } : {}),
+    // Nils 31.10: mobile.de bildes tieši no CDN (m.mobile.de bloķē IP); sarakstam mazāka, galerijai lielāka.
+    imageUrl: mobileDeImageDisplayUrl(item.imageUrls?.[0] ?? "", 1024),
+    ...(item.imageUrls?.[0] ? { thumbUrl: mobileDeImageDisplayUrl(item.imageUrls[0], 640) } : {}),
+    ...(item.imageUrls && item.imageUrls.length > 1 ? { imageUrls: item.imageUrls.map((u) => mobileDeImageDisplayUrl(u, 1024)) } : {}),
     currency: "EUR",
     priceStart: null,
     priceMinimal: null,

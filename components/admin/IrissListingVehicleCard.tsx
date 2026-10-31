@@ -135,8 +135,11 @@ export function IrissListingVehicleCard({
   const vinUi = listingVinCardState(v);
   const vin = vinUi?.vin ?? "";
   const days = listingDaysInAuctionLabel(v.auctionStartAt || v.firstSeenAt, nowMs);
+  // mobile.de / AutoScout24 bildes - bez referer (Nils 31.10: citādi avots redz hotlink no provin.lv).
   const referrerPolicy: "no-referrer" | undefined =
-    v.platform === "openline" || /images\.openlane\.eu/i.test(photos[0] ?? "") ? "no-referrer" : undefined;
+    v.platform === "openline" || v.platform === "mobilede" || v.platform === "autoscout24" || /images\.openlane\.eu|classistatic\.de/i.test(photos[0] ?? "")
+      ? "no-referrer"
+      : undefined;
   const border = gone
     ? "border-[var(--iriss-line)] opacity-70"
     : fav
