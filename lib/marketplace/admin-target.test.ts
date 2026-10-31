@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { irissScanOrderId } from "@/lib/iriss-scan-listings";
-import { MARKETPLACE_RADAR_APIFY_DISABLED, parseMarketplacePlatforms } from "@/lib/marketplace/admin-target";
+import { MARKETPLACE_RADAR_APIFY_DISABLED, MARKETPLACE_RADAR_PAUSED, parseMarketplacePlatforms } from "@/lib/marketplace/admin-target";
 
 vi.mock("server-only", () => ({}));
 
@@ -23,7 +23,7 @@ describe("marketplace admin target", () => {
     expect(MARKETPLACE_RADAR_APIFY_DISABLED).toMatch(/mobile\.de vai AutoScout24/);
   });
 
-  it("resolves a radar only after Apify is enabled and never treats it as an order", async () => {
+  it("Nils 31.10: radaram mobile.de / AutoScout24 ielāde izslēgta pat ar ieslēgtu Apify; priekšskatījums paliek", async () => {
     const dir = mkdtempSync(path.join(os.tmpdir(), "iriss-scan-"));
     dirs.push(dir);
     vi.stubEnv("ADMIN_IRISS_SCAN_DIR", dir);
@@ -40,7 +40,7 @@ describe("marketplace admin target", () => {
     if (!created.ok) return;
     const { resolveMarketplaceAdminTarget } = await import("@/lib/marketplace/admin-target");
     const off = await resolveMarketplaceAdminTarget({ scanId: created.record.id });
-    expect(off).toEqual({ ok: false, status: 409, error: MARKETPLACE_RADAR_APIFY_DISABLED });
+    expect(off).toEqual({ ok: false, status: 409, error: MARKETPLACE_RADAR_PAUSED });
 
     const preview = await resolveMarketplaceAdminTarget({
       scanId: created.record.id,
@@ -56,10 +56,6 @@ describe("marketplace admin target", () => {
       { expectedWorkspaceRevision: created.record.workspaceRevision },
     );
     const on = await resolveMarketplaceAdminTarget({ scanId: created.record.id, platforms: ["mobilede", "autoscout24"] });
-    expect(on.ok).toBe(true);
-    if (!on.ok) return;
-    expect(on.ownerKind).toBe("radar");
-    expect(on.platforms).toEqual(["mobilede"]);
-    expect(on.scan.vehicleCategory).toBe("van");
+    expect(on).toEqual({ ok: false, status: 409, error: MARKETPLACE_RADAR_PAUSED });
   });
 });

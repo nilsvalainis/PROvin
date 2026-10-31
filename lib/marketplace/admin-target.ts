@@ -10,6 +10,8 @@ import {
 import { isMarketplacePlatform, type MarketplaceOwnerKind, type MarketplacePlatform } from "@/lib/marketplace/types";
 
 export const MARKETPLACE_RADAR_APIFY_DISABLED = "Ieslēdz mobile.de vai AutoScout24 Apify šajā radarā.";
+import { MARKETPLACE_RADAR_LOADS_ENABLED, MARKETPLACE_RADAR_PAUSED } from "@/lib/marketplace/radar-pause";
+export { MARKETPLACE_RADAR_LOADS_ENABLED, MARKETPLACE_RADAR_PAUSED };
 
 export type MarketplaceAdminTarget =
   | {
@@ -48,6 +50,7 @@ export async function resolveMarketplaceAdminTarget(input: {
     if (!isSafeIrissScanId(scanId)) return { ok: false, status: 400, error: "invalid_id" };
     const rec = await readIrissScan(scanId);
     if (!rec) return { ok: false, status: 404, error: "not_found" };
+    if (requireEnabled && !MARKETPLACE_RADAR_LOADS_ENABLED) return { ok: false, status: 409, error: MARKETPLACE_RADAR_PAUSED };
     const enabled = irissScanApifyPlatforms(rec);
     if (requireEnabled && !enabled.length) return { ok: false, status: 409, error: MARKETPLACE_RADAR_APIFY_DISABLED };
     const wanted = (input.platforms?.length ? input.platforms : enabled.length ? enabled : undefined)?.filter(
