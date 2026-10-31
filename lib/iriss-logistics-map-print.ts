@@ -288,8 +288,30 @@ export function logisticsPrintPlan(input: {
  * Drukas brīdī paslēpj visu, kas nav drukas bloks (katra priekšteča brāļus līdz <body>), lai karte un
  * saraksts plūst normāli uz 2 lapām. Atgriež funkciju, kas visu atjauno.
  */
+/**
+ * Nils 31.10: drukā arī priekšteči (admin čaula, Loģistikas ekrāns) nedrīkst dot atkāpes, fonu, apgriešanu vai
+ * pozicionēšanu - citādi karte lapā nobīdās un ap to paliek pelēkas malas. Pēc drukas inline stili tiek atjaunoti.
+ */
+export const LOGISTICS_PRINT_ANCESTOR_STYLE: Readonly<Record<string, string>> = {
+  position: "static",
+  inset: "auto",
+  transform: "none",
+  width: "auto",
+  "max-width": "none",
+  height: "auto",
+  "min-height": "0",
+  margin: "0",
+  padding: "0",
+  overflow: "visible",
+  "border-radius": "0",
+  background: "none",
+  "box-shadow": "none",
+  "backdrop-filter": "none",
+};
+
 export function isolateElementForPrint(el: HTMLElement): () => void {
   const hidden: Array<{ node: HTMLElement; prev: string }> = [];
+  const styled: Array<{ node: HTMLElement; prev: string }> = [];
   let cur: HTMLElement | null = el;
   while (cur && cur !== document.body) {
     const parent: HTMLElement | null = cur.parentElement;
@@ -300,9 +322,17 @@ export function isolateElementForPrint(el: HTMLElement): () => void {
       hidden.push({ node: sib, prev: sib.style.display });
       sib.style.display = "none";
     }
+    if (parent !== document.body) {
+      styled.push({ node: parent, prev: parent.getAttribute("style") ?? "" });
+      for (const [k, v] of Object.entries(LOGISTICS_PRINT_ANCESTOR_STYLE)) parent.style.setProperty(k, v, "important");
+    }
     cur = parent;
   }
   return () => {
     for (const h of hidden) h.node.style.display = h.prev;
+    for (const s of styled) {
+      if (s.prev) s.node.setAttribute("style", s.prev);
+      else s.node.removeAttribute("style");
+    }
   };
 }
