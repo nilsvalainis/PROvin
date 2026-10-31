@@ -10,9 +10,8 @@ import {
 import { isMarketplacePlatform, type MarketplaceOwnerKind, type MarketplacePlatform } from "@/lib/marketplace/types";
 
 export const MARKETPLACE_RADAR_APIFY_DISABLED = "Ieslēdz mobile.de vai AutoScout24 Apify šajā radarā.";
-/** Nils 31.10: mobile.de / AutoScout24 pagaidām tikai pasūtījumiem; radariem (Mūsu monitorings) ielāde izslēgta. */
-export const MARKETPLACE_RADAR_PAUSED = "mobile.de / AutoScout24 radariem pagaidām izslēgts (Nils 31.10) - ielāde tikai pasūtījumiem.";
-export const MARKETPLACE_RADAR_LOADS_ENABLED = false;
+import { MARKETPLACE_RADAR_LOADS_ENABLED, MARKETPLACE_RADAR_PAUSED } from "@/lib/marketplace/radar-pause";
+export { MARKETPLACE_RADAR_LOADS_ENABLED, MARKETPLACE_RADAR_PAUSED };
 
 export type MarketplaceAdminTarget =
   | {

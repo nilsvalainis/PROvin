@@ -26,7 +26,7 @@ import { IRISS_STALE_REVISION, irissScanWorkspaceRevision, mergeIrissScanRecords
 import type { IrissScanLinkKey } from "@/lib/iriss-scan-sources";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
 import { irissScanHasOperatorContent } from "@/lib/iriss-scan-vin";
-import { MARKETPLACE_RADAR_LOADS_ENABLED, MARKETPLACE_RADAR_PAUSED } from "@/lib/marketplace/admin-target";
+import { MARKETPLACE_RADAR_LOADS_ENABLED, MARKETPLACE_RADAR_PAUSED } from "@/lib/marketplace/radar-pause";
 import { irissScanApifyPlatforms } from "@/lib/marketplace/query-from-scan";
 import type { MarketplaceVehicleCategory } from "@/lib/marketplace/types";
 import { planSilentAutosave } from "@/lib/iriss-pasutijumi-save-safety";
