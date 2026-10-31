@@ -695,9 +695,32 @@ html.iriss-log-printing .iriss-log-map-fs-card {
 html.iriss-log-printing .iriss-log-print-root {
   display: block;
   width: 277mm;
+  height: auto !important;
   max-width: none;
   margin: 0 auto;
   background: #fff;
+}
+/*
+ * Nils 31.10: A4 ainava (277 mm ≈ 1047 px) iekrīt datora izkārtojumā (≥1024 px), kur karte ir visas lapas fons
+ * (absolūti konteineri, ekrāna augstums, noapaļoti stūri, overflow hidden). Drukā tos atceļ - citādi karte nobīdās un apgriežas.
+ */
+html.iriss-log-printing .iriss-log-screen,
+html.iriss-log-printing .iriss-log-screen.iriss-log-desk,
+html.iriss-log-printing .iriss-log-desk .iriss-log-desk-grid,
+html.iriss-log-printing .iriss-log-desk .iriss-log-desk-map,
+html.iriss-log-printing .iriss-log-desk .iriss-log-desk-mapwrap,
+html.iriss-log-printing .iriss-log-desk .iriss-log-desk-mapcard {
+  position: static !important;
+  inset: auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 html.iriss-log-printing .iriss-log-print-chrome {
   position: relative;
