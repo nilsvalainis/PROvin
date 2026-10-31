@@ -19,6 +19,8 @@ import {
 
 export type MarketplaceOrderCriteria = {
   brandModel?: string;
+  clientFirstName?: string;
+  clientLastName?: string;
   productionYears?: string;
   maxMileage?: string;
   totalBudget?: string;

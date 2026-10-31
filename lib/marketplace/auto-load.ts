@@ -3,6 +3,7 @@
  * Izsoļu (Auto1 / Openlane / Autobid / eCarsTrade) sync šeit nesauc.
  * Radara (SCAN) ieraksti šeit NAV: radarā Apify ir tikai manuāla poga, bez cron.
  */
+import { MARKETPLACE_TEST_ORDER_SKIP, marketplaceOrderIsTest } from "@/lib/marketplace/test-orders";
 import { marketplaceActorId, readApifyToken } from "@/lib/marketplace/apify-client";
 import {
   decideMarketplaceBudget,
@@ -330,6 +331,10 @@ export async function runMarketplaceAutoSweep(deps: MarketplaceAutoSweepDeps): P
     }
     const usage = await deps.readUsage();
     const order = await deps.readOrder(row.id);
+    if (marketplaceOrderIsTest(order)) {
+      skipped.push({ orderId: row.id, reason: MARKETPLACE_TEST_ORDER_SKIP });
+      continue;
+    }
     if (!order || !marketplaceOrderHasFetchBounds(order)) {
       skipped.push({ orderId: row.id, reason: marketplaceTooBroadSkipReason(order) });
       continue;

@@ -9,8 +9,10 @@ import {
 } from "@/lib/marketplace/query-from-scan";
 import { isMarketplacePlatform, type MarketplaceOwnerKind, type MarketplacePlatform } from "@/lib/marketplace/types";
 
-export const MARKETPLACE_RADAR_APIFY_DISABLED = "Ieslēdz mobile.de vai AutoScout24 Apify šajā radarā.";
+import { MARKETPLACE_TEST_ORDER_SKIP, marketplaceOrderIsTest } from "@/lib/marketplace/test-orders";
 import { MARKETPLACE_RADAR_LOADS_ENABLED, MARKETPLACE_RADAR_PAUSED } from "@/lib/marketplace/radar-pause";
+
+export const MARKETPLACE_RADAR_APIFY_DISABLED = "Ieslēdz mobile.de vai AutoScout24 Apify šajā radarā.";
 export { MARKETPLACE_RADAR_LOADS_ENABLED, MARKETPLACE_RADAR_PAUSED };
 
 export type MarketplaceAdminTarget =
@@ -69,6 +71,7 @@ export async function resolveMarketplaceAdminTarget(input: {
   if (!isSafeIrissPasutijumsId(orderId)) return { ok: false, status: 400, error: "invalid_id" };
   const rec = await readIrissPasutijums(orderId);
   if (!rec) return { ok: false, status: 404, error: "not_found" };
+  if (requireEnabled && marketplaceOrderIsTest(rec)) return { ok: false, status: 409, error: MARKETPLACE_TEST_ORDER_SKIP };
   return {
     ok: true,
     ownerKind: "order",
