@@ -744,9 +744,14 @@ html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero {
   border-radius: 0 !important;
   margin: 0 auto;
 }
-/* Nils 31.10: karte drukā savā izmērā (bez 2× mērogošanas), aizpilda visu 277 × 165 mm laukumu. */
+/*
+ * Nils 31.10: karte pa visu lapu bez 2× mērogošanas. Google kartes flīzes atrodas arī ārpus kartes rāmja;
+ * Chrome drukā tās ieskaita lapas platumā (pat ar overflow: hidden) un visu lapu samazina (~65 %).
+ * `contain: strict` izolē rāmi - lapas platums vairs nav atkarīgs no flīzēm.
+ */
 html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero {
   overflow: hidden;
+  contain: strict;
 }
 html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero .iriss-log-map-shell {
   position: absolute;
@@ -762,9 +767,14 @@ html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero .iriss-log-map
 html.iriss-log-printing body > :not(.iriss-log-print-host) {
   display: none !important;
 }
+/*
+ * Nils 31.10: drukas bloks jau ekrānā ir tieši drukājamā laukuma platumā (A4 ainava 297 - 2 × 10 mm = 277 mm),
+ * lai Google karte un maršruta centrējums tiek aprēķināti tieši tam laukumam, kas tiks izdrukāts.
+ */
 html.iriss-log-printing .iriss-log-print-host {
   display: block;
-  width: 100%;
+  width: 277mm;
+  max-width: none;
   margin: 0;
   padding: 0;
   background: #fff;
