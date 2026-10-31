@@ -1,8 +1,7 @@
 "use client";
 
-import { formatRigaIsoShort } from "@/lib/riga-datetime";
 import { AdminSaveButton, useSaveMessageState } from "@/components/admin/AdminSaveButton";
-import { ArrowLeft, FileDown, Phone, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, FileDown, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -10,9 +9,7 @@ import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWorkspaceRevisionConflictBanner";
-import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
-import { IrissGoogleContactStatusRow } from "@/components/admin/IrissGoogleContactStatusRow";
-import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
+import { IrissListingPlatformChipsRow } from "@/components/admin/IrissListingPlatformsSection";
 import { IrissOfferForm } from "@/components/admin/IrissOfferForm";
 import {
   OFFER_SOURCE_LABEL_LV,
@@ -20,19 +17,13 @@ import {
   parseOfferSourceRef,
   pendingDropboxPhotoCount,
 } from "@/lib/iriss-stock-photos";
-import { IrissLabeledInput as LabeledInput, irissOfferFieldClass } from "@/components/admin/IrissOfferFormFields";
 import { IrissOfferClientPicker, type IrissOfferClientChoice } from "@/components/admin/IrissOfferClientPicker";
 import { IrissOfferSourceSheet } from "@/components/admin/IrissOfferSourceSheet";
 import { irissPdNewHref } from "@/lib/iriss-pd-entry";
 import { irissHitAuctionUrl } from "@/lib/iriss-order-search-view";
-import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
+import { IrissOrderRoom, IrissOrderStepCards } from "@/components/admin/IrissOrderRoom";
+import { IRISS_ORDER_STEPS } from "@/lib/iriss-order-steps";
 import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChangesGuard";
-import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
-import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
-import { IrissInternalNoteField } from "@/components/admin/IrissInternalNoteField";
-import { IrissSpecChoiceSelect } from "@/components/admin/IrissSpecChoiceSelect";
-import { IrissSpecDiapazoniBlock } from "@/components/admin/IrissSpecDiapazoniBlock";
-import { SharedOrderCriteriaForm } from "@/components/shared/SharedOrderCriteriaForm";
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
 import { IRISS_OFFER_LINK_NEEDS_DEADLINE, offerClientLinkDeadlineReady, pickReusableOfferClientLink } from "@/lib/iriss-offer-form-link";
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
@@ -61,7 +52,6 @@ import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import { IRISS_AUCTION_LINK_LABEL, offerLinkErrorNote, parseIrissAuctionLink } from "@/lib/iriss-auction-link";
 import type { IrissAuctionDetailExtras } from "@/lib/iriss-auction-detail";
 import { mergeServerOwnedIrissFields } from "@/lib/iriss-server-owned-fields";
-import { irissClientNameInputValue, splitIrissClientNameInput } from "@/lib/iriss-client-name-input";
 import {
   irissDraftFieldLabel,
   takeIrissDraftHandoff,
@@ -73,24 +63,11 @@ import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links
 import {
   applyIrissOrderRangeEdit,
   applyIrissOrderSpecTextEdit,
-  irissOrderRangeErrorFor,
-  irissOrderRangeView,
   isIrissOrderSpecTextKey,
   syncIrissOrderRangesFromLegacy,
   type IrissOrderRangeField,
   type IrissOrderSpecTextKey,
 } from "@/lib/iriss-order-range-fields";
-import {
-  IRISS_BODY_SELECT_OPTIONS,
-  IRISS_FUEL_SELECT_OPTIONS,
-  IRISS_GEARBOX_SELECT_OPTIONS,
-  bodySelectValue,
-  fuelSelectValue,
-  gearboxSelectValue,
-  persistBodySelect,
-  persistFuelSelect,
-  persistGearboxSelect,
-} from "@/lib/iriss-order-spec-selects";
 import {
   appendIrissStatusHistory,
   applyIrissFieldEdit,
@@ -125,14 +102,7 @@ import {
 } from "@/lib/iriss-offer-share";
 import { irissVinWarning } from "@/lib/iriss-vin-check";
 import {
-  defaultIrissDzintarzemeTameDraft,
-  IRISS_DEAL_DETAIL_OPTIONS,
   IRISS_MAX_OFFER_ATTACHMENTS,
-  canonicalIrissPasutijumsListStatus,
-  displayIrissPasutijumsListStatusLabel,
-  IRISS_PASUTIJUMS_PICKER_STATUSES,
-  IRISS_PASUTIJUMS_PICKER_STATUS_LV,
-  parseIrissPasutijumsListStatus,
   type IrissGeneratedDocument,
   type IrissOfferAttachment,
   type IrissOfferRecord,
@@ -164,9 +134,7 @@ const toolbarBtnBase =
   "h-12 w-12 shadow-md hover:opacity-95 " +
   "sm:h-11 sm:min-h-[44px] sm:w-auto sm:rounded-full sm:gap-1.5 sm:px-4 sm:shadow-sm sm:hover:opacity-100 sm:active:scale-100";
 
-const fieldClass = irissOfferFieldClass;
 
-const textareaClass = `${fieldClass} min-h-[100px] resize-y py-2.5 leading-snug`;
 
 /** P1/P2/+ telefonā: pieskāriena mērķis vismaz 44x44 (bāzes čips ir logo platumā - "+" bija 11 px). */
 const offerPChipButtonClass = `${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} min-h-11 min-w-11 cursor-pointer select-none rounded-full px-3`;
@@ -339,21 +307,7 @@ async function buildAttachmentFingerprint(att: IrissOfferAttachment): Promise<st
   return `${key}|${digest}`;
 }
 
-function BlockTitle({ children }: { children: React.ReactNode }) {
-  return <IrissSectionHeading>{children}</IrissSectionHeading>;
-}
 
-function LabeledTextarea({
-  label,
-  ...rest
-}: { label: string } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return (
-    <label className="block min-w-0">
-      <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">{label}</span>
-      <textarea className={textareaClass} {...rest} />
-    </label>
-  );
-}
 
 /** Noklusējumi ārpus komponentes: `= []` katrā renderī ir jauns masīvs, un efekts ar [roomHits] tad griežas bez gala. */
 const EMPTY_ROOM_HITS: IrissOrderRoomHit[] = [];
@@ -1605,21 +1559,12 @@ export function IrissPasutijumsEditor({
   const phoneInspect = useMemo(() => inspectIrissPhone(rec.phone), [rec.phone]);
   const normalizedPhone = phoneInspect.hrefValue;
   const orderVinWarning = useMemo(() => irissVinWarning(rec.vin), [rec.vin]);
-  const specRanges = irissOrderRangeView(rec);
-
   const triggerCall = useCallback(() => {
     if (!normalizedPhone) return;
     if (phoneInspect.appliedLvPrefix && normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
     window.location.href = `tel:${normalizedPhone}`;
   }, [normalizedPhone, patch, phoneInspect.appliedLvPrefix, rec.phone]);
 
-  const triggerWhatsapp = useCallback(() => {
-    if (!normalizedPhone) return;
-    if (phoneInspect.appliedLvPrefix && normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
-    const digits = normalizedPhone.replace(/[^\d]/g, "");
-    if (!digits) return;
-    window.open(`https://wa.me/${digits}`, "_blank", "noopener,noreferrer");
-  }, [normalizedPhone, patch, phoneInspect.appliedLvPrefix, rec.phone]);
 
   const openWhatsappText = useCallback(
     (text: string) => {
@@ -1920,7 +1865,7 @@ export function IrissPasutijumsEditor({
     <div
       className={
         unsavedDraft
-          ? "mx-auto w-full max-w-[1200px] bg-white px-3 pb-8 max-md:px-0 max-md:pb-28 sm:px-6 lg:px-10"
+          ? "mx-auto w-full max-w-[1200px] bg-[#f4f5f7] px-3 pb-8 max-md:px-0 max-md:pb-28 sm:px-6 lg:px-10"
           : "mx-auto w-full min-w-0 max-w-[1280px] overflow-x-hidden bg-[#f4f5f7] px-3 pb-4 max-md:px-0 max-md:pb-28 sm:px-4 lg:px-5"
       }
     >
@@ -1928,7 +1873,7 @@ export function IrissPasutijumsEditor({
       {unsavedDraft ? (
       <>
       <AdminDashboardHeaderWithMenu
-        mobileTitle={rec.brandModel.trim() || "Pasūtījums"}
+        mobileTitle={rec.brandModel.trim() || "Jauns pasūtījums"}
         mobileBackHref="/admin/iriss/pasutijumi"
       >
         <div className="flex flex-col gap-2">
@@ -1948,7 +1893,7 @@ export function IrissPasutijumsEditor({
               </p>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <h1 className="text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
-                  Pasūtījums
+                  Jauns pasūtījums
                 </h1>
                 {rec.offers.map((offer, idx) => (
                   <button
@@ -2008,6 +1953,7 @@ export function IrissPasutijumsEditor({
               <AdminSaveButton
                 onSave={saveCurrentPage}
                 state={pageSaveState}
+                label="Izveidot pasūtījumu"
                 shortcut
               />
               <button
@@ -2120,267 +2066,35 @@ export function IrissPasutijumsEditor({
           </section>
         ) : null}
 
-        <section className={shellCard}>
-          <BlockTitle>Transportlīdzekļa specifikācija</BlockTitle>
-          <div className="iriss-mobile-kv iriss-spec-fields">
-            <div className="iriss-spec-top">
-              <label className="block min-w-0">
-                <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Statuss</span>
-                <select
-                  className={fieldClass}
-                  value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
-                  onChange={(e) => setListStatus(parseIrissPasutijumsListStatus(e.target.value))}
-                  aria-label="Pasūtījuma statuss"
-                >
-                  {IRISS_PASUTIJUMS_PICKER_STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {IRISS_PASUTIJUMS_PICKER_STATUS_LV[s]}
-                    </option>
-                  ))}
-                </select>
-                {rec.listStatus === "inactive" ? (
-                  <input
-                    className={`${fieldClass} mt-1.5`}
-                    value={rec.inactiveReason ?? ""}
-                    onChange={(e) => setRec((r) => withAutoEcarstradeLinks(setIrissInactiveReason(r, e.target.value)))}
-                    placeholder="Iemesls (neobligāti)"
-                    aria-label="Neaktīvs iemesls"
-                  />
-                ) : null}
-                {(rec.statusHistory ?? []).length > 0 ? (
-                  <ol className="mt-1.5 space-y-0.5">
-                    {[...(rec.statusHistory ?? [])].slice(-6).reverse().map((h) => (
-                      <li key={`${h.at}-${h.from}-${h.to}`} className="text-[11px] text-[var(--color-provin-muted)]">
-                        {formatRigaIsoShort(h.at)}: {displayIrissPasutijumsListStatusLabel(h.from)} →{" "}
-                        {displayIrissPasutijumsListStatusLabel(h.to)}
-                        {h.reason ? ` (${h.reason})` : ""}
-                      </li>
-                    ))}
-                  </ol>
-                ) : null}
-              </label>
-              <LabeledInput
-                label="Marka / modelis"
-                value={rec.brandModel}
-                onChange={(e) => patch("brandModel", e.target.value)}
-              />
-              <LabeledInput
-                label="Modeļa paplašinājums"
-                value={rec.modelExtension}
-                placeholder="piem., S-line"
-                onChange={(e) => patch("modelExtension", e.target.value)}
-              />
-            </div>
-            <IrissSpecDiapazoniBlock
-              ranges={specRanges}
-              onPatchRange={patchRange}
-              rangeError={(pair) => irissOrderRangeErrorFor(rec, pair)}
-              inputClassName={fieldClass}
-            />
-            <div className="iriss-spec-rest">
-              <IrissSpecChoiceSelect
-                label="Degviela"
-                value={fuelSelectValue(rec.engineType)}
-                options={IRISS_FUEL_SELECT_OPTIONS}
-                selectClassName={fieldClass}
-                labelClassName="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]"
-                onChange={(value) => patch("engineType", persistFuelSelect(value, rec.engineType))}
-              />
-              <IrissSpecChoiceSelect
-                label="Ātrumkārba"
-                value={gearboxSelectValue(rec.transmission)}
-                options={IRISS_GEARBOX_SELECT_OPTIONS}
-                selectClassName={fieldClass}
-                labelClassName="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]"
-                onChange={(value) => patch("transmission", persistGearboxSelect(value, rec.transmission))}
-              />
-              <IrissSpecChoiceSelect
-                label="Virsbūves tips"
-                value={bodySelectValue(rec.bodyType)}
-                options={IRISS_BODY_SELECT_OPTIONS}
-                selectClassName={fieldClass}
-                labelClassName="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]"
-                onChange={(value) => patch("bodyType", persistBodySelect(value, rec.bodyType))}
-              />
-              <LabeledInput
-                label="Piedziņas tips"
-                value={rec.driveType}
-                onChange={(e) => patch("driveType", e.target.value)}
-                placeholder="piem., priekšējā, 4x4"
-              />
-              <LabeledInput
-                label="Sēdvietu skaits"
-                value={rec.seatCount}
-                onChange={(e) => patch("seatCount", e.target.value)}
-                placeholder="piem., 5"
-              />
-              <LabeledInput
-                label="Vēlamās krāsas"
-                value={rec.preferredColors}
-                onChange={(e) => patch("preferredColors", e.target.value)}
-              />
-              <LabeledInput
-                label="Nevēlamās krāsas"
-                value={rec.nonPreferredColors}
-                onChange={(e) => patch("nonPreferredColors", e.target.value)}
-              />
-              <LabeledInput
-                wrapperClassName="iriss-spec-full"
-                label="Salona apdare"
-                value={rec.interiorFinish}
-                onChange={(e) => patch("interiorFinish", e.target.value)}
-              />
-              <div className="iriss-spec-full">
-                <IrissSectionHeading>Darījuma detaļas</IrissSectionHeading>
-                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                  {IRISS_DEAL_DETAIL_OPTIONS.map((opt) => (
-                    <label key={opt.key} className="inline-flex items-center gap-2 text-[12px] text-[var(--color-apple-text)]">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(rec[opt.key])}
-                        onChange={(e) => patch(opt.key, e.target.checked)}
-                      />
-                      {opt.label}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-          <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
-        </section>
-
-        <SharedOrderCriteriaForm source={rec} />
-
-        <section className={shellCard}>
-          <BlockTitle>Aprīkojums</BlockTitle>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <LabeledTextarea
-              label="Obligātās prasības"
-              value={rec.equipmentRequired}
-              onChange={(e) => patch("equipmentRequired", e.target.value)}
-            />
-            <IrissInternalNoteField
-              label="Piezīmes aģentam"
-              value={rec.agentNotes}
-              onChange={(value) => patch("agentNotes", value)}
-              className={textareaClass}
-              labelClassName="text-[11px] font-medium text-[var(--color-provin-muted)]"
-            />
-            <div className="sm:col-span-2">
-              <LabeledTextarea
-                label="Vēlamās prasības"
-                value={rec.equipmentDesired}
-                onChange={(e) => patch("equipmentDesired", e.target.value)}
-              />
-            </div>
-          </div>
-          <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
-        </section>
-
-        <section className={shellCard}>
-          <BlockTitle>Piezīmes</BlockTitle>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <LabeledTextarea label="Piezīmes" value={rec.notes} onChange={(e) => patch("notes", e.target.value)} />
-            <IrissInternalNoteField
-              label="Piezīmes (iekšējās)"
-              value={rec.internalNotes}
-              onChange={(value) => patch("internalNotes", value)}
-              className={textareaClass}
-              labelClassName="text-[11px] font-medium text-[var(--color-provin-muted)]"
-            />
-          </div>
-          <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
-        </section>
-
-        <section className={shellCard}>
-          <BlockTitle>Klienta dati</BlockTitle>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <LabeledInput
-              label="Vārds, uzvārds"
-              value={irissClientNameInputValue(rec)}
-              onChange={(e) => patchRecord(splitIrissClientNameInput(e.target.value))}
-              autoComplete="name"
-            />
-            <label className="block min-w-0">
-              <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Tālrunis</span>
-              <div className="flex min-w-0 items-center gap-1.5">
-                <input
-                  className={`${fieldClass} min-w-0 flex-1`}
-                  value={rec.phone}
-                  onChange={(e) => patch("phone", e.target.value)}
-                  inputMode="tel"
-                  autoComplete="tel"
-                />
-                <button
-                  type="button"
-                  onClick={triggerCall}
-                  disabled={!normalizedPhone}
-                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 aria-disabled:pointer-events-none aria-disabled:opacity-35"
-                  title="Zvanīt"
-                  aria-label="Zvanīt"
-                >
-                  <Phone className="h-5 w-5" strokeWidth={2.2} aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  onClick={triggerWhatsapp}
-                  disabled={!normalizedPhone}
-                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-200/80 bg-emerald-50 text-emerald-700 shadow-sm transition hover:bg-emerald-100/70 aria-disabled:pointer-events-none aria-disabled:opacity-35"
-                  title="Atvērt WhatsApp"
-                  aria-label="Atvērt WhatsApp"
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden>
-                    <path d="M12.04 2C6.55 2 2.1 6.45 2.1 11.94c0 1.93.55 3.81 1.59 5.43L2 22l4.8-1.61a9.9 9.9 0 0 0 5.24 1.5h.01c5.49 0 9.95-4.45 9.95-9.95A9.96 9.96 0 0 0 12.04 2Zm0 18.1h-.01a8.1 8.1 0 0 1-4.13-1.13l-.3-.18-2.85.95.95-2.78-.19-.29a8.1 8.1 0 0 1-1.25-4.33c0-4.49 3.65-8.14 8.14-8.14a8.1 8.1 0 0 1 5.76 2.38 8.08 8.08 0 0 1 2.38 5.76c0 4.48-3.65 8.13-8.14 8.13Zm4.46-6.06c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.95-1.22a7.34 7.34 0 0 1-1.35-1.67c-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.58.18 1.11.15 1.53.09.47-.07 1.43-.58 1.63-1.13.2-.56.2-1.04.14-1.13-.06-.1-.22-.16-.46-.28Z" />
-                  </svg>
-                </button>
-              </div>
-              {phoneInspect.warning ? <p className="mt-1 text-[11px] text-amber-800">{phoneInspect.warning}</p> : null}
-            </label>
-            <LabeledInput
-              label="E-pasts"
-              value={rec.email}
-              onChange={(e) => patch("email", e.target.value)}
-              inputMode="email"
-              autoComplete="email"
-            />
-            <LabeledInput
-              label="Pasūtījuma datums"
-              type="date"
-              value={rec.orderDate}
-              onChange={(e) => patch("orderDate", e.target.value)}
-            />
-          </div>
-          <IrissGoogleContactStatusRow
+        {/* Nils 31.10 (makets «Jauns pasūtījums v2»): tie paši 6 soļi kā atvērtā pasūtījumā; tāme, avanss un dokumenti - pēc izveides. */}
+        <nav aria-label="Soļi" className="flex flex-wrap gap-1.5 max-md:px-3">
+          {IRISS_ORDER_STEPS.map((step, i) => (
+            <a
+              key={step.id}
+              href={i === IRISS_ORDER_STEPS.length - 1 ? "#iriss-room-client" : `#iriss-step-${step.id}`}
+              className="inline-flex min-h-[32px] items-center rounded-full bg-white px-3 text-[12.5px] font-semibold text-[var(--iriss-ink)] shadow-[inset_0_0_0_1px_var(--iriss-line-strong)]"
+            >
+              {i + 1} {step.title}
+            </a>
+          ))}
+        </nav>
+        <div className="space-y-3">
+          <IrissOrderStepCards
+            draft
             rec={rec}
-            configured={googleContactsConfigured}
-            busy={googleContactBusy}
-            onRetry={() => void retryGoogleContact()}
-            buttonClass="inline-flex h-10 min-h-10 items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 text-[12.5px] font-semibold text-[var(--color-provin-accent)] shadow-sm"
-          />
-          <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
-        </section>
-
-        <section className={shellCard}>
-          <IrissListingPlatformsFields
-            rec={rec}
-            onPatch={patchRecord}
+            onPatch={patch}
+            onPatchRange={patchRange}
+            onPatchRecord={patchRecord}
+            onInactiveReason={(value) => setRec((r) => withAutoEcarstradeLinks(setIrissInactiveReason(r, value)))}
             onReadLink={(url) => void readListingLink(url)}
             readingUrl={readingListingUrl}
             readCountByUrl={listingReadByUrl}
+            phoneWarning={phoneInspect.warning}
+            googleContactsConfigured={googleContactsConfigured}
+            googleContactBusy={googleContactBusy}
+            onRetryGoogleContact={() => void retryGoogleContact()}
           />
-          <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
-        </section>
-
-        <DzintarzemeTameSection
-          orderId={rec.id}
-          shellCard={shellCard}
-          draft={rec.dzintarzemeTameDraft ?? defaultIrissDzintarzemeTameDraft()}
-          orderBrandModel={rec.brandModel}
-          onDraftChange={(next) => patchRecord({ dzintarzemeTameDraft: next })}
-          onGeneratedDocument={ingestGeneratedDocument}
-          sectionSave={<IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />}
-        />
+        </div>
 
         <section className={`${shellCard} border-red-100/80 bg-red-50/20`}>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
@@ -2395,6 +2109,7 @@ export function IrissPasutijumsEditor({
             <AdminSaveButton
               onSave={saveCurrentPage}
               state={pageSaveState}
+              label="Izveidot pasūtījumu"
               className="min-h-[44px] w-full sm:w-auto"
             />
             <button
@@ -2432,6 +2147,7 @@ export function IrissPasutijumsEditor({
         <AdminSaveButton
           onSave={saveCurrentPage}
           state={pageSaveState}
+          label="Izveidot"
           className="!h-[50px] flex-1 text-[15px]"
         />
       </div>
