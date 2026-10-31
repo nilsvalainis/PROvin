@@ -37,8 +37,8 @@ describe("LIST izmaksu iestatījumi meklēšanas robežām", () => {
 
   it("paneļa iestatījumi pārraksta noklusējumus visās trīs izsaukuma vietās (viens skaitlis)", () => {
     setListingSearchCosts(PANEL);
-    // mobile.de / AutoScout24 vairs nelieto izsoļu izmaksas (Nils 30.10: 90 % no budžeta).
-    expect(marketplaceQueryFromOrder({ brandModel: "Volvo XC60", totalBudget: "25000" }).priceTo).toBe(22500);
+    // mobile.de / AutoScout24 nelieto izsoļu izmaksas (Nils 31.10: budžets - 15 %, min. 2 000 €, pa 500 €).
+    expect(marketplaceQueryFromOrder({ brandModel: "Volvo XC60", totalBudget: "25000" }).priceTo).toBe(21500);
     expect(filterFromOrderFields({ brandModel: "Volvo XC60", totalBudget: "25000" }).priceTo).toBe(bound(25000, PANEL_I));
     const filter = migrateIrissCriteria({ brandModel: "Volvo XC60", totalBudget: "25000" }).filters[0]!;
     expect(filterToSearchFilter(filter).priceTo).toBe(bound(25000, PANEL_I));

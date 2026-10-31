@@ -89,7 +89,7 @@ describe("loadMarketplaceForOrder", () => {
     transmission: "automatic",
   };
 
-  it("refuses a load that is not explicit and stores no photos or contacts", async () => {
+  it("refuses a load that is not explicit and stores no description or contacts", async () => {
     const blocked = await loadMarketplaceForOrder({
       orderId: "00000000-0000-4000-8000-000000000001",
       order,
@@ -100,7 +100,8 @@ describe("loadMarketplaceForOrder", () => {
     expect(blocked.added).toBeGreaterThan(0);
     const state = await readMarketplaceListingsState();
     const blob = JSON.stringify(state);
-    expect(blob).not.toMatch(/secret text|cdn\.example|hide@me/);
+    // Nils 31.10: bilžu saites glabā; apraksts un kontakti - nē.
+    expect(blob).not.toMatch(/secret text|hide@me/);
     expect(state.items.every((i) => i.listingUrl.startsWith("https://"))).toBe(true);
     expect(state.items.some((i) => i.platform === "mobilede")).toBe(true);
     expect(state.items.some((i) => i.platform === "autoscout24")).toBe(true);

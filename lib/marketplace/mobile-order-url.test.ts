@@ -21,9 +21,9 @@ describe("Nils 30.10: mobile.de «Izveidot» pēc Nila manuālo filtru principa"
   );
   const p = url.searchParams;
 
-  it("cena 55-90 % no maks. budžeta, gadi, km, degviela, kārba, tirgotāji, bez bojājumiem", () => {
+  it("cena no 55 % līdz budžets - 2 000 €, gadi, km, degviela, kārba, tirgotāji, bez bojājumiem", () => {
     expect(url.hostname).toBe("suchen.mobile.de");
-    expect(p.get("p")).toBe("8300:13500");
+    expect(p.get("p")).toBe("8300:13000");
     expect(p.get("fr")).toBe("2014:2016");
     expect(p.get("ml")).toBe(":200000");
     expect(p.get("ft")).toBeTruthy();

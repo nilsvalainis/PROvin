@@ -21,7 +21,7 @@ export function marketplaceListingIsExpired(expiresAtIso: string, nowMs = Date.n
   return Number.isFinite(t) && t <= nowMs;
 }
 
-/** Pārvērš saglabāto sludinājumu tajā pašā kartītes formā, ko lieto izsoles. Foto nav. */
+/** Pārvērš saglabāto sludinājumu tajā pašā kartītes formā, ko lieto izsoles. Bildes - avota saites. */
 export function marketplaceListingToVehicle(item: MarketplaceStoredListing): IrissListingVehicle {
   const year = item.year;
   return {
@@ -41,7 +41,8 @@ export function marketplaceListingToVehicle(item: MarketplaceStoredListing): Iri
     powerKw: item.powerKw,
     location: item.sellerName || item.location || item.locationCountry,
     countryCode: item.locationCountry,
-    imageUrl: "",
+    imageUrl: item.imageUrls?.[0] ?? "",
+    ...(item.imageUrls && item.imageUrls.length > 1 ? { imageUrls: item.imageUrls } : {}),
     currency: "EUR",
     priceStart: null,
     priceMinimal: null,

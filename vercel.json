@@ -104,7 +104,7 @@
   "crons": [
     {
       "path": "/api/cron/iriss-marketplace-auto",
-      "schedule": "0 7 * * 1-6"
+      "schedule": "0,10,20,30 7 * * 1-6"
     },
     {
       "path": "/api/cron/admin-drafts-daily-backup",

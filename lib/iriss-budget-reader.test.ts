@@ -116,13 +116,13 @@ describe("listingSearchPriceBounds: sludinājuma cena = budžets mīnus izmaksas
 });
 
 describe("meklēšana no pasūtījuma lieto budžetu mīnus izmaksas", () => {
-  it("tirgus vaicājums (mobile.de / autoscout24): Nils 30.10 - 55 % līdz 90 % no maks. budžeta", () => {
+  it("tirgus vaicājums (mobile.de / autoscout24): Nils 31.10 - no 55 % līdz budžets mīnus 15 % (min. 2 000 €)", () => {
     const single = marketplaceQueryFromOrder({ brandModel: "Volvo XC60", totalBudget: "15k" });
     expect(single.priceFrom).toBe(8300);
-    expect(single.priceTo).toBe(13500);
+    expect(single.priceTo).toBe(13000);
     const range = marketplaceQueryFromOrder({ brandModel: "Volvo XC60", totalBudget: "12-15 tūkst" });
     expect(range.priceFrom).toBe(8300);
-    expect(range.priceTo).toBe(13500);
+    expect(range.priceTo).toBe(13000);
   });
 
   it("formas filtrs uz eCarsTrade filtru", () => {
