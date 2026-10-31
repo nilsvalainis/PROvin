@@ -758,9 +758,9 @@ export function IrissLogistikaClient({
       requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
     });
     handle?.notifyResize();
-    // Drukā karte ir divreiz lielāka un samazināta uz pusi: tas pats laukums, bet zoom +1 = divreiz asāka.
+    // Nils 31.10: karte drukājas savā izmērā (277 × 165 mm), bez 2× mērogošanas - Google Maps to drukā nepilnīgi.
     viewBeforePrintRef.current = view;
-    if (view) handle?.applyView({ ...view, zoom: view.zoom + 1 });
+    if (view) handle?.applyView(view);
     await handle?.waitForTilesIdle();
     void fetch("/api/admin/iriss/logistika/print", {
       method: "POST",

@@ -722,10 +722,15 @@ html.iriss-log-printing .iriss-log-desk .iriss-log-desk-mapcard {
   box-shadow: none !important;
   transform: none !important;
 }
+/* Nils 31.10: virsraksts kartes augšā visā platumā (iepriekš relative + left-2 nobīdīja to un labā mala tika apgriezta). */
 html.iriss-log-printing .iriss-log-print-chrome {
-  position: relative;
+  position: absolute;
+  inset: 0 0 auto 0;
+  z-index: 3;
   display: flex;
-  margin: 0 0 3mm;
+  margin: 0;
+  padding: 2mm 3mm;
+  background: rgba(255, 255, 255, 0.88);
   font-size: 12px !important;
   color: #1d1d1f !important;
 }
@@ -739,34 +744,30 @@ html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero {
   border-radius: 0 !important;
   margin: 0 auto;
 }
-/*
- * Augstāka izšķirtspēja: karte ir divreiz lielāka (zoom +1) un samazināta uz pusi, tāpēc drukā ir
- * divreiz vairāk detaļu tajā pašā laukumā. Lāses un nosaukumi tiek palielināti atpakaļ, lai izmērs nemainās.
- */
+/* Nils 31.10: karte drukā savā izmērā (bez 2× mērogošanas), aizpilda visu 277 × 165 mm laukumu. */
 html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero {
   overflow: hidden;
 }
 html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero .iriss-log-map-shell {
   position: absolute;
-  inset: auto;
-  left: 0;
-  top: 0;
-  width: 200%;
-  height: 200% !important;
+  inset: 0;
+  width: 100%;
+  height: 100% !important;
   max-width: none;
   border-radius: 0 !important;
-  transform: scale(0.5);
-  transform-origin: 0 0;
+  transform: none;
 }
-html.iriss-log-printing .iriss-log-tear,
-html.iriss-log-printing .iriss-log-pin-wrap {
-  transform: translate(-50%, -100%) scale(2);
-  transform-origin: 50% 100%;
+
+/* Drukas bloks tieši zem <body>; viss pārējais (admin čaula, izvēlne, fons) drukā paslēpts. */
+html.iriss-log-printing body > :not(.iriss-log-print-host) {
+  display: none !important;
 }
-html.iriss-log-printing .iriss-log-pin,
-html.iriss-log-printing .iriss-log-pin-cluster,
-html.iriss-log-printing .iriss-log-spread-dot {
-  transform: translate(-50%, -50%) scale(2);
+html.iriss-log-printing .iriss-log-print-host {
+  display: block;
+  width: 277mm;
+  margin: 0 auto;
+  padding: 0;
+  background: #fff;
 }
 
 /* Abpusēja druka (pa garo malu): 2. lapa otrādi, lai, apgriežot lapu, saraksts ir pareizi. */
