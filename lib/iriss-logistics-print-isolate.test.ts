@@ -1,71 +1,67 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { isolateElementForPrint } from "@/lib/iriss-logistics-map-print";
+import { isolateElementForPrint, LOGISTICS_PRINT_HOST_CLASS } from "@/lib/iriss-logistics-map-print";
 
 /** Minimāls DOM bez jsdom: tikai tas, ko lieto isolateElementForPrint. */
-class FakeStyle {
-  display = "";
-  props = new Map<string, string>();
-  setProperty(k: string, v: string) {
-    this.props.set(k, v);
-  }
-}
 class FakeEl {
-  style = new FakeStyle();
+  className = "";
   children: FakeEl[] = [];
   parentElement: FakeEl | null = null;
-  attrs = new Map<string, string>();
   constructor(public tagName = "DIV") {}
-  add(child: FakeEl) {
+  get parentNode() {
+    return this.parentElement;
+  }
+  get nextSibling(): FakeEl | null {
+    const p = this.parentElement;
+    if (!p) return null;
+    return p.children[p.children.indexOf(this) + 1] ?? null;
+  }
+  appendChild(child: FakeEl) {
+    child.parentElement?.removeChild(child);
     child.parentElement = this;
     this.children.push(child);
     return child;
   }
-  getAttribute(k: string) {
-    return this.attrs.get(k) ?? null;
+  insertBefore(child: FakeEl, ref: FakeEl | null) {
+    child.parentElement?.removeChild(child);
+    child.parentElement = this;
+    const i = ref ? this.children.indexOf(ref) : -1;
+    if (i < 0) this.children.push(child);
+    else this.children.splice(i, 0, child);
+    return child;
   }
-  setAttribute(k: string, v: string) {
-    this.attrs.set(k, v);
-    if (k === "style") this.style = new FakeStyle();
+  removeChild(child: FakeEl) {
+    this.children = this.children.filter((c) => c !== child);
+    child.parentElement = null;
   }
-  removeAttribute(k: string) {
-    this.attrs.delete(k);
-    if (k === "style") this.style = new FakeStyle();
+  remove() {
+    this.parentElement?.removeChild(this);
   }
 }
 
-const g = globalThis as unknown as { HTMLElement?: unknown; document?: unknown };
-const prevHTMLElement = g.HTMLElement;
+const g = globalThis as unknown as { document?: unknown };
 const prevDocument = g.document;
-
 afterEach(() => {
-  g.HTMLElement = prevHTMLElement;
   g.document = prevDocument;
 });
 
-describe("Nils 31.10: Loģistikas druka - karte bez admin čaulas atkāpēm", () => {
-  it("paslēpj blakus elementus, neitralizē priekštečus un pēc drukas visu atjauno", () => {
+describe("Nils 31.10: Loģistikas druka - karte ārpus admin čaulas", () => {
+  it("drukas laikā bloks ir tieši zem <body>, pēc drukas atgriežas tajā pašā vietā", () => {
     const body = new FakeEl("BODY");
-    const shell = body.add(new FakeEl());
-    shell.setAttribute("style", "padding-left: 260px");
-    const sidebar = shell.add(new FakeEl("ASIDE"));
-    const main = shell.add(new FakeEl("MAIN"));
-    const root = main.add(new FakeEl());
-    const toolbar = main.add(new FakeEl());
-    g.HTMLElement = FakeEl;
-    g.document = { body };
+    const shell = body.appendChild(new FakeEl());
+    const card = shell.appendChild(new FakeEl());
+    const toolbar = card.appendChild(new FakeEl());
+    const root = card.appendChild(new FakeEl());
+    const after = card.appendChild(new FakeEl());
+    g.document = { body, createElement: (t: string) => new FakeEl(t.toUpperCase()) };
 
     const restore = isolateElementForPrint(root as unknown as HTMLElement);
-    expect(sidebar.style.display).toBe("none");
-    expect(toolbar.style.display).toBe("none");
-    expect(main.style.props.get("padding")).toBe("0");
-    expect(main.style.props.get("position")).toBe("static");
-    expect(shell.style.props.get("background")).toBe("none");
-    expect(shell.style.props.get("overflow")).toBe("visible");
-    expect(body.style.props.size).toBe(0);
+    const host = body.children.at(-1)!;
+    expect(host.className).toBe(LOGISTICS_PRINT_HOST_CLASS);
+    expect(root.parentElement).toBe(host);
+    expect(card.children).toEqual([toolbar, after]);
 
     restore();
-    expect(sidebar.style.display).toBe("");
-    expect(shell.getAttribute("style")).toBe("padding-left: 260px");
-    expect(main.getAttribute("style")).toBeNull();
+    expect(card.children).toEqual([toolbar, root, after]);
+    expect(body.children).toEqual([shell]);
   });
 });
