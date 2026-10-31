@@ -1,8 +1,7 @@
 "use client";
 
-import { formatRigaIsoShort } from "@/lib/riga-datetime";
 import { AdminSaveButton, useSaveMessageState } from "@/components/admin/AdminSaveButton";
-import { ArrowLeft, FileDown, Phone, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, FileDown, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -10,9 +9,7 @@ import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWorkspaceRevisionConflictBanner";
-import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
-import { IrissGoogleContactStatusRow } from "@/components/admin/IrissGoogleContactStatusRow";
-import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
+import { IrissListingPlatformChipsRow } from "@/components/admin/IrissListingPlatformsSection";
 import { IrissOfferForm } from "@/components/admin/IrissOfferForm";
 import {
   OFFER_SOURCE_LABEL_LV,
@@ -20,7 +17,6 @@ import {
   parseOfferSourceRef,
   pendingDropboxPhotoCount,
 } from "@/lib/iriss-stock-photos";
-import { IrissLabeledInput as LabeledInput, irissOfferFieldClass } from "@/components/admin/IrissOfferFormFields";
 import { IrissOfferClientPicker, type IrissOfferClientChoice } from "@/components/admin/IrissOfferClientPicker";
 import { IrissOfferSourceSheet } from "@/components/admin/IrissOfferSourceSheet";
 import { irissPdNewHref } from "@/lib/iriss-pd-entry";
@@ -28,12 +24,6 @@ import { irissHitAuctionUrl } from "@/lib/iriss-order-search-view";
 import { IrissOrderRoom, IrissOrderStepCards } from "@/components/admin/IrissOrderRoom";
 import { IRISS_ORDER_STEPS } from "@/lib/iriss-order-steps";
 import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChangesGuard";
-import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
-import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
-import { IrissInternalNoteField } from "@/components/admin/IrissInternalNoteField";
-import { IrissSpecChoiceSelect } from "@/components/admin/IrissSpecChoiceSelect";
-import { IrissSpecDiapazoniBlock } from "@/components/admin/IrissSpecDiapazoniBlock";
-import { SharedOrderCriteriaForm } from "@/components/shared/SharedOrderCriteriaForm";
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
 import { IRISS_OFFER_LINK_NEEDS_DEADLINE, offerClientLinkDeadlineReady, pickReusableOfferClientLink } from "@/lib/iriss-offer-form-link";
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
@@ -62,7 +52,6 @@ import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import { IRISS_AUCTION_LINK_LABEL, offerLinkErrorNote, parseIrissAuctionLink } from "@/lib/iriss-auction-link";
 import type { IrissAuctionDetailExtras } from "@/lib/iriss-auction-detail";
 import { mergeServerOwnedIrissFields } from "@/lib/iriss-server-owned-fields";
-import { irissClientNameInputValue, splitIrissClientNameInput } from "@/lib/iriss-client-name-input";
 import {
   irissDraftFieldLabel,
   takeIrissDraftHandoff,
@@ -74,24 +63,11 @@ import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links
 import {
   applyIrissOrderRangeEdit,
   applyIrissOrderSpecTextEdit,
-  irissOrderRangeErrorFor,
-  irissOrderRangeView,
   isIrissOrderSpecTextKey,
   syncIrissOrderRangesFromLegacy,
   type IrissOrderRangeField,
   type IrissOrderSpecTextKey,
 } from "@/lib/iriss-order-range-fields";
-import {
-  IRISS_BODY_SELECT_OPTIONS,
-  IRISS_FUEL_SELECT_OPTIONS,
-  IRISS_GEARBOX_SELECT_OPTIONS,
-  bodySelectValue,
-  fuelSelectValue,
-  gearboxSelectValue,
-  persistBodySelect,
-  persistFuelSelect,
-  persistGearboxSelect,
-} from "@/lib/iriss-order-spec-selects";
 import {
   appendIrissStatusHistory,
   applyIrissFieldEdit,
@@ -126,14 +102,7 @@ import {
 } from "@/lib/iriss-offer-share";
 import { irissVinWarning } from "@/lib/iriss-vin-check";
 import {
-  defaultIrissDzintarzemeTameDraft,
-  IRISS_DEAL_DETAIL_OPTIONS,
   IRISS_MAX_OFFER_ATTACHMENTS,
-  canonicalIrissPasutijumsListStatus,
-  displayIrissPasutijumsListStatusLabel,
-  IRISS_PASUTIJUMS_PICKER_STATUSES,
-  IRISS_PASUTIJUMS_PICKER_STATUS_LV,
-  parseIrissPasutijumsListStatus,
   type IrissGeneratedDocument,
   type IrissOfferAttachment,
   type IrissOfferRecord,
@@ -165,9 +134,7 @@ const toolbarBtnBase =
   "h-12 w-12 shadow-md hover:opacity-95 " +
   "sm:h-11 sm:min-h-[44px] sm:w-auto sm:rounded-full sm:gap-1.5 sm:px-4 sm:shadow-sm sm:hover:opacity-100 sm:active:scale-100";
 
-const fieldClass = irissOfferFieldClass;
 
-const textareaClass = `${fieldClass} min-h-[100px] resize-y py-2.5 leading-snug`;
 
 /** P1/P2/+ telefonā: pieskāriena mērķis vismaz 44x44 (bāzes čips ir logo platumā - "+" bija 11 px). */
 const offerPChipButtonClass = `${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} min-h-11 min-w-11 cursor-pointer select-none rounded-full px-3`;
@@ -340,21 +307,7 @@ async function buildAttachmentFingerprint(att: IrissOfferAttachment): Promise<st
   return `${key}|${digest}`;
 }
 
-function BlockTitle({ children }: { children: React.ReactNode }) {
-  return <IrissSectionHeading>{children}</IrissSectionHeading>;
-}
 
-function LabeledTextarea({
-  label,
-  ...rest
-}: { label: string } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return (
-    <label className="block min-w-0">
-      <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">{label}</span>
-      <textarea className={textareaClass} {...rest} />
-    </label>
-  );
-}
 
 /** Noklusējumi ārpus komponentes: `= []` katrā renderī ir jauns masīvs, un efekts ar [roomHits] tad griežas bez gala. */
 const EMPTY_ROOM_HITS: IrissOrderRoomHit[] = [];
@@ -1606,21 +1559,12 @@ export function IrissPasutijumsEditor({
   const phoneInspect = useMemo(() => inspectIrissPhone(rec.phone), [rec.phone]);
   const normalizedPhone = phoneInspect.hrefValue;
   const orderVinWarning = useMemo(() => irissVinWarning(rec.vin), [rec.vin]);
-  const specRanges = irissOrderRangeView(rec);
-
   const triggerCall = useCallback(() => {
     if (!normalizedPhone) return;
     if (phoneInspect.appliedLvPrefix && normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
     window.location.href = `tel:${normalizedPhone}`;
   }, [normalizedPhone, patch, phoneInspect.appliedLvPrefix, rec.phone]);
 
-  const triggerWhatsapp = useCallback(() => {
-    if (!normalizedPhone) return;
-    if (phoneInspect.appliedLvPrefix && normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
-    const digits = normalizedPhone.replace(/[^\d]/g, "");
-    if (!digits) return;
-    window.open(`https://wa.me/${digits}`, "_blank", "noopener,noreferrer");
-  }, [normalizedPhone, patch, phoneInspect.appliedLvPrefix, rec.phone]);
 
   const openWhatsappText = useCallback(
     (text: string) => {
@@ -2009,6 +1953,7 @@ export function IrissPasutijumsEditor({
               <AdminSaveButton
                 onSave={saveCurrentPage}
                 state={pageSaveState}
+                label="Izveidot pasūtījumu"
                 shortcut
               />
               <button
@@ -2164,6 +2109,7 @@ export function IrissPasutijumsEditor({
             <AdminSaveButton
               onSave={saveCurrentPage}
               state={pageSaveState}
+              label="Izveidot pasūtījumu"
               className="min-h-[44px] w-full sm:w-auto"
             />
             <button
@@ -2201,6 +2147,7 @@ export function IrissPasutijumsEditor({
         <AdminSaveButton
           onSave={saveCurrentPage}
           state={pageSaveState}
+          label="Izveidot"
           className="!h-[50px] flex-1 text-[15px]"
         />
       </div>

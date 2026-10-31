@@ -32,10 +32,10 @@ describe("iriss order overview layout", () => {
     expect(room).not.toMatch(/sticky top-0/);
     expect(room).not.toMatch(/\u2014|\u2013/);
     const editor = readFileSync("components/admin/IrissPasutijumsEditor.tsx", "utf8");
-    expect(editor).toContain("Modeļa paplašinājums");
-    expect(editor).toContain("Piezīmes aģentam");
-    expect(editor).toContain("Piezīmes (iekšējās)");
-    expect(editor).toContain('label="Modeļa paplašinājums"');
+    // Nils 31.10 (makets «Jauns pasūtījums v2»): jaunam pasūtījumam tie paši soļi kā atvērtam.
+    expect(editor).toContain("<IrissOrderStepCards");
+    expect(editor).toContain("Jauns pasūtījums");
+    expect(editor).not.toContain("SharedOrderCriteriaForm");
     expect(editor).not.toContain("VIN (ja zināms)");
 
     const css = readFileSync("app/admin/iriss/iriss-admin.css", "utf8");
