@@ -109,6 +109,9 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(css).toMatch(/margin:\s*10mm/);
     // Nils 31.10: drukas bloks lapas platumā (100 %), karte pa visu 1. lapu (186 mm).
     expect(css).toContain("height: 186mm");
+    // Kartes flīzes ārpus rāmja nedrīkst paplašināt drukas lapu (Chrome to samazina) - rāmis izolēts.
+    expect(css).toContain("contain: strict");
+    expect(css).toContain("width: 277mm");
     expect(css).toContain("break-before: page");
     expect(css).toContain("aspect-ratio: 8 / 7");
 
