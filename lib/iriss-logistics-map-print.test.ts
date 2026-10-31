@@ -83,7 +83,7 @@ describe("Loģistika map print helpers", () => {
 
   it("uses A4 landscape with 10 mm margin and a dated sheet title", () => {
     expect(LOGISTICS_PRINT_MAP_WIDTH_MM).toBe(277);
-    expect(LOGISTICS_PRINT_MAP_HEIGHT_MM).toBe(170);
+    expect(LOGISTICS_PRINT_MAP_HEIGHT_MM).toBe(186);
     expect(logisticsPrintNumberMap([order({ id: "a" }), order({ id: "b" })]).get("b")).toBe(2);
     expect(LOGISTICS_PRINT_PAGE_CSS).toContain("A4 landscape");
     expect(LOGISTICS_PRINT_PAGE_CSS).toContain("margin: 10mm");

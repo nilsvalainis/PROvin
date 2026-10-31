@@ -107,8 +107,8 @@ describe("IRISS Loģistika UI contracts", () => {
     expect(client).toContain('className="iriss-log-no-print hidden md:static md:block iriss-log-head"');
     expect(css).toMatch(/@page\s*\{\s*size:\s*A4 landscape/);
     expect(css).toMatch(/margin:\s*10mm/);
-    expect(css).toContain("277mm");
-    expect(css).toContain("165mm");
+    // Nils 31.10: drukas bloks lapas platumā (100 %), karte pa visu 1. lapu (186 mm).
+    expect(css).toContain("height: 186mm");
     expect(css).toContain("break-before: page");
     expect(css).toContain("aspect-ratio: 8 / 7");
 
