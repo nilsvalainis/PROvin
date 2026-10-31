@@ -101,11 +101,10 @@ export function orderSearchPriceBounds(order: MarketplaceOrderCriteria): { from:
 }
 
 /**
- * Nils 31.10: mobile.de / AutoScout24 griesti = budžets mīnus 15 %, bet ne mazāk kā 2 000 €, noapaļoti līdz 500 €
- * (5 000 -> 3 000, 15 000 -> 13 000, 20 000 -> 17 000). Apakšā - 55 % no budžeta (kā līdz šim).
+ * Nils 31.10: mobile.de / AutoScout24 griesti = budžets mīnus 2 000 € (izdevumi mazāki nekā izsolē):
+ * 5 000 -> 3 000, 15 000 -> 13 000, 20 000 -> 18 000. Apakšā - 55 % no budžeta (kā līdz šim).
  */
-export const MARKETPLACE_PRICE_RESERVE_SHARE = 0.15;
-export const MARKETPLACE_PRICE_RESERVE_MIN_EUR = 2000;
+export const MARKETPLACE_PRICE_RESERVE_EUR = 2000;
 export const MARKETPLACE_PRICE_FROM_SHARE = 0.55;
 
 export function marketplacePriceBoundsFromBudget(budget: { from: number | null; to: number | null }): { from: number | null; to: number | null } {
@@ -113,8 +112,7 @@ export function marketplacePriceBoundsFromBudget(budget: { from: number | null; 
   const top = ok(budget.to) ? budget.to : ok(budget.from) ? budget.from : null;
   if (top == null) return { from: null, to: null };
   const round100 = (n: number) => Math.round(n / 100) * 100;
-  const reserve = Math.max(MARKETPLACE_PRICE_RESERVE_MIN_EUR, top * MARKETPLACE_PRICE_RESERVE_SHARE);
-  const to = Math.max(0, Math.round((top - reserve) / 500) * 500);
+  const to = Math.max(0, round100(top - MARKETPLACE_PRICE_RESERVE_EUR));
   if (to <= 0) return { from: null, to: null };
   return { from: Math.min(round100(top * MARKETPLACE_PRICE_FROM_SHARE), to), to };
 }
