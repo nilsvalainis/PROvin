@@ -26,6 +26,7 @@ import { IRISS_STALE_REVISION, irissScanWorkspaceRevision, mergeIrissScanRecords
 import type { IrissScanLinkKey } from "@/lib/iriss-scan-sources";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
 import { irissScanHasOperatorContent } from "@/lib/iriss-scan-vin";
+import { MARKETPLACE_RADAR_LOADS_ENABLED, MARKETPLACE_RADAR_PAUSED } from "@/lib/marketplace/admin-target";
 import { irissScanApifyPlatforms } from "@/lib/marketplace/query-from-scan";
 import type { MarketplaceVehicleCategory } from "@/lib/marketplace/types";
 import { planSilentAutosave } from "@/lib/iriss-pasutijumi-save-safety";
@@ -511,10 +512,11 @@ export function IrissScanEditor({
           >
             Atjaunot eCarsTrade
           </button>
-          {persistId ? (
+          {/* Nils 31.10: mobile.de / AutoScout24 pagaidām tikai pasūtījumiem; radara panelis atgriežas ar MARKETPLACE_RADAR_LOADS_ENABLED. */}
+          {MARKETPLACE_RADAR_LOADS_ENABLED && persistId ? (
             <IrissMarketplaceLoadPanel scanId={persistId} enabledPlatforms={irissScanApifyPlatforms(rec)} />
           ) : (
-            <p className="text-[12px] text-[var(--ink3)]">Saglabā radaru, tad ielādē mobile.de / AutoScout24.</p>
+            <p className="text-[12px] text-[var(--ink3)]">{MARKETPLACE_RADAR_LOADS_ENABLED ? "Saglabā radaru, tad ielādē mobile.de / AutoScout24." : MARKETPLACE_RADAR_PAUSED}</p>
           )}
         </div>
       </details>
