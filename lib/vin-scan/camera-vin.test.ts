@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   VIN_SCAN_HISTORY_MAX,
   cameraVinCandidates,
+  cameraVinConsensus,
   mergeVinScanHistory,
   parseVinScanHistory,
   pickCameraVin,
@@ -59,5 +60,23 @@ describe("VIN vēsture: serveris + pārlūks", () => {
       { vin: "WBA3A5C50CF256551", at: "2026-10-21T12:00:00Z" },
       { vin: "1M8GDM9AXKP042788", at: "2026-10-21T11:00:00Z" },
     ]);
+  });
+
+  it("Nils 01.11: viens kadrs nepietiek - VIN pieņem, kad 2 kadri sakrīt", () => {
+    expect(cameraVinConsensus(["WBA3A5C50CF256551"])).toBeNull();
+    expect(cameraVinConsensus(["WBA3A5C50CF256551", "WBA3A5C50CF256551"])?.vin).toBe("WBA3A5C50CF256551");
+  });
+
+  it("vairākums izlabo vienas rakstzīmes OCR kļūdas dažādās vietās", () => {
+    const c = cameraVinConsensus(["WBA3A5C50CF256581", "WBA3A5C80CF256551", "WBA3A5C50CF256551"]);
+    expect(c?.vin).toBe("WBA3A5C50CF256551");
+    expect(c?.agree).toBeGreaterThanOrEqual(2);
+  });
+
+  it("divi atšķirīgi kadri vēl nav vienošanās; cits teksts kadrā (cits WMI) netraucē", () => {
+    expect(cameraVinConsensus(["WBA3A5C50CF256551", "WBA3A5C50CF256581"])).toBeNull();
+    const c = cameraVinConsensus(["WBA3A5C50CF256551", "1M8GDM9AXKP042788", "WBA3A5C50CF256551"]);
+    expect(c?.vin).toBe("WBA3A5C50CF256551");
+    expect(c?.frames).toBe(2);
   });
 });

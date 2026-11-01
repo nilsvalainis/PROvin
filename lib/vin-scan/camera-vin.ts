@@ -55,6 +55,41 @@ export function pickCameraVin(texts: readonly string[]): CameraVinPick | null {
   return { vin, checkDigitOk: hasIso3779CheckDigit(vin), alts: ranked.slice(1, 4).map(([v]) => v) };
 }
 
+/**
+ * Nils 01.11: «VIN ielasa nepareizi». Viens kadrs OCR bieži kļūdās 1-2 rakstzīmēs, tāpēc VIN pieņem tikai,
+ * kad vairāki kadri sakrīt. Balsojums pa pozīcijām: ja 3 kadros katrā kļūda citā vietā, vairākums to izlabo.
+ */
+export type CameraVinConsensus = { vin: string; checkDigitOk: boolean; agree: number; frames: number };
+
+/** Kadri ar to pašu WMI (pirmās 3 rakstzīmes) kā biežākais - citi ir cits teksts kadrā. */
+function sameWmiGroup(picks: readonly string[]): string[] {
+  const count = new Map<string, number>();
+  for (const v of picks) count.set(v.slice(0, 3), (count.get(v.slice(0, 3)) ?? 0) + 1);
+  const wmi = [...count.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? "";
+  return picks.filter((v) => v.startsWith(wmi));
+}
+
+/**
+ * Kopējais VIN no kadru izvēlēm. `agree` = mazākais balsu skaits kādai pozīcijai (cik kadri apstiprina vājāko rakstzīmi).
+ * Pieņem, kad agree >= minAgree (noklusējumā 2).
+ */
+export function cameraVinConsensus(picks: readonly string[], minAgree = 2): CameraVinConsensus | null {
+  const valid = picks.map((v) => normalizeVin(v)).filter((v) => v.length === 17 && isValidVin(v));
+  if (valid.length === 0) return null;
+  const group = sameWmiGroup(valid);
+  let vin = "";
+  let agree = Number.POSITIVE_INFINITY;
+  for (let i = 0; i < 17; i++) {
+    const votes = new Map<string, number>();
+    for (const v of group) votes.set(v[i]!, (votes.get(v[i]!) ?? 0) + 1);
+    const [ch, n] = [...votes.entries()].sort((a, b) => b[1] - a[1])[0]!;
+    vin += ch;
+    agree = Math.min(agree, n);
+  }
+  if (agree < minAgree) return null;
+  return { vin, checkDigitOk: hasIso3779CheckDigit(vin), agree, frames: group.length };
+}
+
 export const VIN_SCAN_HISTORY_KEY = "provin-vin-scan-history-v1";
 export const VIN_SCAN_HISTORY_MAX = 15;
 
