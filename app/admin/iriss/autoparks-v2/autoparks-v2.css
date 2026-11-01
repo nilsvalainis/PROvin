@@ -223,6 +223,23 @@
   display: block;
   object-fit: cover;
 }
+.ap2.ap2.ap2 .ap2-img img {
+  position: absolute;
+  inset: 0;
+}
+/* LAW 30.10: klikšķis uz titulbildes atver popup; kamera paliek virsū. */
+.ap2.ap2.ap2 .ap2-img-open {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: zoom-in;
+}
+.ap2.ap2.ap2 .ap2-img-open img {
+  position: absolute;
+  inset: 0;
+}
 /* J29 B: kameras poga pār galveno bildi "Mainīt galveno bildi". */
 .ap2.ap2.ap2 .ap2-cambtn {
   position: absolute;
