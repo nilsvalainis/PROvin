@@ -35,6 +35,15 @@ describe("iriss offer validUntil", () => {
     expect(formatOfferValidUntilLv(ymd)).toBe("14.10.2026");
   });
 
+  it("bez datuma vai ar nederīgām dienām nav beidzies; dienas skaita no createdAt", () => {
+    expect(isIrissOfferExpired({}, Date.parse("2026-11-01T10:00:00.000Z"))).toBe(false);
+    expect(isIrissOfferExpired({ offerValidDays: "0", createdAt: "2026-10-14T08:00:00.000Z" })).toBe(false);
+    expect(isIrissOfferExpired({ offerValidDays: "abc", createdAt: "2026-10-14T08:00:00.000Z" })).toBe(false);
+    expect(deriveOfferValidUntil({ offerValidDays: "2", createdAt: "2026-10-14T21:30:00.000Z" })).toBe("2026-10-17");
+    expect(isIrissOfferExpired({ offerValidDays: "2", createdAt: "2026-10-14T08:00:00.000Z" }, Date.parse("2026-10-16T12:00:00.000Z"))).toBe(false);
+    expect(isIrissOfferExpired({ offerValidDays: "2", createdAt: "2026-10-14T08:00:00.000Z" }, Date.parse("2026-10-17T00:00:00.000Z"))).toBe(true);
+  });
+
   it("defaults a LIST offer to +3 Riga days", () => {
     expect(defaultOfferValidUntilYmd(Date.parse("2026-10-14T10:00:00.000Z"))).toBe("2026-10-17");
   });
