@@ -332,12 +332,12 @@ export const PROVIN_ALERT_CARD_DEFAULTS: Record<ProvinAlertBannerKind, ProvinBan
   tirgus_high_supply: {
     label: "Sludinājuma vecums",
     value: "Ilgi pārdošanā",
-    note: "Tirgū virs 200 dienām — iespējama zema likviditāte vai slēpti defekti",
+    note: "Tirgū virs 200 dienām, iespējama zema likviditāte vai slēpti defekti",
   },
   particulate: {
     label: "Izplūdes cietās daļiņas",
     value: "Paaugstināts līmenis",
-    note: "Pēdējā apskatē fiksēts pārsniegums — iespējami izplūdes sistēmas defekti",
+    note: "Pēdējā apskatē fiksēts pārsniegums, iespējami izplūdes sistēmas defekti",
   },
   inspection: {
     label: "Tehniskā apskate",

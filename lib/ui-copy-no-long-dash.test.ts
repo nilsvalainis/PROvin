@@ -1,5 +1,6 @@
 import { globSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { PROVIN_ALERT_CARD_DEFAULTS } from "@/lib/provin-alert-banners";
 
 /**
  * Nila likums: lietotājam redzamā tekstā tikai «-», nekad garā (—) vai vidējā (–) domuzīme.
@@ -32,5 +33,14 @@ describe("UI teksti bez garās domuzīmes", () => {
         });
     }
     expect(hits).toEqual([]);
+  });
+
+  it("PDF brīdinājumu kartīšu noklusējuma piezīmēs nav garās domuzīmes", () => {
+    for (const card of Object.values(PROVIN_ALERT_CARD_DEFAULTS)) {
+      if (!card) continue;
+      for (const part of [card.label, card.value, card.note]) {
+        expect(part).not.toMatch(/[\u2013\u2014]/);
+      }
+    }
   });
 });
