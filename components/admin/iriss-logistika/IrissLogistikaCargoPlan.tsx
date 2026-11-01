@@ -162,6 +162,8 @@ export function IrissLogistikaCargoPlan({
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [bulkMenu, setBulkMenu] = useState(false);
+  /** Telefonā (bez peles) ↑ ↓ «Uz ▾» rāda tikai «Kārtot» režīmā, lai nosaukums paliek pilnā platumā. */
+  const [sortMode, setSortMode] = useState(false);
   useEffect(() => () => {
     if (undoTimer.current) clearTimeout(undoTimer.current);
   }, []);
@@ -262,10 +264,18 @@ export function IrissLogistikaCargoPlan({
   const dragBucket = dragId ? bucketOfId(lists, dragId) : null;
 
   return (
-    <aside className="iriss-log-cargo-card">
+    <aside className={`iriss-log-cargo-card ${sortMode ? "sorting" : ""}`}>
       <div className="flex items-center justify-between gap-2 px-3.5 pb-1 pt-3">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--iriss-ink-2)]">Kravu plāns</p>
         <p className="ml-auto text-[12px] text-[var(--iriss-ink-2)]">{orders.length} auto</p>
+        <button
+          type="button"
+          className="iriss-log-cargo-pill iriss-log-cargo-sortbtn"
+          aria-pressed={sortMode}
+          onClick={() => setSortMode((v) => !v)}
+        >
+          {sortMode ? "Gatavs" : "Kārtot"}
+        </button>
         <button
           type="button"
           className="iriss-log-cargo-pill"

@@ -337,7 +337,48 @@
   background: var(--iriss-surface-2, #f2f2f7);
   font-size: 12.5px;
 }
-@media (max-width: 767px) {
+/*
+ * Nils 02.11: pogas nedrīkst saspiest auto nosaukumu.
+ * Ar peli - parādās, kad pele virs rindas (pārsedz posma ikonu un aci). Bez peles (telefons) - tikai «Kārtot» režīmā.
+ */
+.iriss-log-cargo-row {
+  position: relative;
+}
+@media (hover: hover) and (pointer: fine) {
+  .iriss-log-cargo-sortbtn {
+    display: none;
+  }
+  .iriss-log-cargo-move {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    z-index: 2;
+    padding: 3px;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(11, 12, 16, 0.12);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-50%);
+    transition: opacity 0.12s ease;
+  }
+  .iriss-log-cargo-row:hover .iriss-log-cargo-move,
+  .iriss-log-cargo-row:focus-within .iriss-log-cargo-move {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+@media (hover: none), (pointer: coarse) {
+  .iriss-log-cargo-move {
+    display: none;
+  }
+  .iriss-log-cargo-card.sorting .iriss-log-cargo-move {
+    display: inline-flex;
+  }
+  .iriss-log-cargo-card.sorting .iriss-log-cargo-row .iriss-log-stage-icon,
+  .iriss-log-cargo-card.sorting .iriss-log-cargo-row .iriss-log-eye {
+    display: none !important;
+  }
   .iriss-log-cargo-move button {
     min-width: 36px;
     height: 36px;
