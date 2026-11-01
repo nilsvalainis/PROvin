@@ -380,6 +380,45 @@ export function moveCargoCar(
   };
 }
 
+/**
+ * Nils 02.11 (makets LogKravas): ↑ ↓ - par vienu vietu savā kravā, bez vilkšanas (ērti telefonā).
+ * Malā (pirmais uz augšu / pēdējais uz leju) nekas nemainās.
+ */
+export function moveCargoCarBy(plan: CargoPlanState, carId: string, delta: -1 | 1, at = new Date().toISOString()): CargoPlanState {
+  const car = plan.cars.find((c) => c.carId === carId);
+  if (!car) return plan;
+  const list = carsInCargoBucket(plan, car.bucket);
+  const from = list.findIndex((c) => c.carId === carId);
+  const to = from + delta;
+  if (from < 0 || to < 0 || to >= list.length) return plan;
+  return moveCargoCar(plan, carId, car.bucket, to, at);
+}
+
+/**
+ * Nils 02.11 (makets LogKravas): «Uz ▾» un «Atzīmēt vairākus» - viens vai vairāki auto uz kravas sākumu vai beigām.
+ * Atzīmēto savstarpējā secība paliek tāda pati kā sarakstā (pēc kravas, tad pēc vietas).
+ */
+export function moveCargoCarsTo(
+  plan: CargoPlanState,
+  carIds: readonly string[],
+  bucket: CargoBucket,
+  where: "start" | "end" = "end",
+  at = new Date().toISOString(),
+): CargoPlanState {
+  const want = new Set(carIds);
+  const ordered = CARGO_BUCKETS.flatMap((b) => carsInCargoBucket(plan, b)).filter((c) => want.has(c.carId));
+  if (ordered.length === 0) return plan;
+  const others = plan.cars.filter((c) => !want.has(c.carId));
+  const target = carsInCargoBucket({ ...plan, cars: others }, bucket);
+  const moved = ordered.map((c) => ({ ...c, bucket }));
+  const list = where === "start" ? [...moved, ...target] : [...target, ...moved];
+  return {
+    ...plan,
+    cars: reindexCargoSort([...others.filter((c) => c.bucket !== bucket), ...list.map((c, i) => ({ ...c, sort: i }))]),
+    updatedAt: at,
+  };
+}
+
 export function setCargoShowOnMap(plan: CargoPlanState, carId: string, showOnMap: boolean, at = new Date().toISOString()): CargoPlanState {
   return {
     ...plan,

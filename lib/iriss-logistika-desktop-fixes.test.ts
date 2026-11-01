@@ -60,7 +60,8 @@ describe("Kravu plāns", () => {
   it("drags the whole card with mouse and touch, drops at an exact position", () => {
     expect(plan).toContain("useSensor(MouseSensor, { activationConstraint: { distance: 5 } })");
     expect(plan).toContain("useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } })");
-    expect(plan).toContain("onPlanChange(moveCargoCar(plan, activeId, bucket, index))");
+    // Nils 02.11: nomešana iet caur change() ar «Atsaukt».
+    expect(plan).toContain("change(moveCargoCar(plan, activeId, bucket, index)");
     expect(plan).toContain("onDragCancel={() => finishDrag(null)}");
     expect(plan).toMatch(/className=\{`iriss-log-cargo-row[^`]*`\}\s*\{\.\.\.attributes\}\s*\{\.\.\.listeners\}/);
   });
