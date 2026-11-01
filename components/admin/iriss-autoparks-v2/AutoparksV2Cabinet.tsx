@@ -23,6 +23,7 @@ import { AutoparksV2History } from "./AutoparksV2History";
 import { AutoparksV2OfferActions } from "./AutoparksV2OfferActions";
 import { AutoparksV2Pamatdati } from "./AutoparksV2Pamatdati";
 import { AutoparksV2PhotoPicker } from "./AutoparksV2PhotoPicker";
+import { AutoparksV2TitlePhotoModal, titlePhotoSrc } from "./AutoparksV2TitlePhoto";
 import { AutoparksV2Waybill } from "./AutoparksV2Waybill";
 import { CABINET_PANES } from "./panes";
 import { CarImg, VinCopy, yearColor } from "./ui";
@@ -61,6 +62,7 @@ export function AutoparksV2Cabinet({
   const [basics, setBasics] = useState(initialBasics);
   const [sheet, setSheet] = useState(false);
   const [photoPicker, setPhotoPicker] = useState(false);
+  const [titlePhoto, setTitlePhoto] = useState(false);
   const [photoVersion, setPhotoVersion] = useState(0);
   const [toast, setToast] = useState<{ historyId: string; status: AutoparksStatus; left: number } | null>(null);
   const [statusErr, setStatusErr] = useState("");
@@ -154,7 +156,12 @@ export function AutoparksV2Cabinet({
 
       <div className={`ap2-carhead ${compact ? "compact" : ""}`}>
         <div className="ap2-carhead-main">
-          <CarImg carId={basics.id} version={photoVersion} onEditPhoto={!compact && perms.pamatdati ? () => setPhotoPicker(true) : undefined} />
+          <CarImg
+            carId={basics.id}
+            version={photoVersion}
+            onOpenPhoto={() => setTitlePhoto(true)}
+            onEditPhoto={!compact && perms.pamatdati ? () => setPhotoPicker(true) : undefined}
+          />
           <div className="nm">
             <b>{basics.title}</b>
             <div className="meta">
@@ -230,6 +237,7 @@ export function AutoparksV2Cabinet({
       {canCreateOffer && tab === "cenu_lapa" ? <AutoparksV2OfferActions carId={basics.id} /> : null}
 
       {sheet ? <StatusSheet current={basics.status} onPick={setStatus} onClose={() => setSheet(false)} /> : null}
+      {titlePhoto ? <AutoparksV2TitlePhotoModal src={titlePhotoSrc(basics.id, photoVersion)} onClose={() => setTitlePhoto(false)} /> : null}
       {photoPicker ? (
         <AutoparksV2PhotoPicker
           carId={basics.id}
