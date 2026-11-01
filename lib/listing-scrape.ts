@@ -292,7 +292,7 @@ export function parseSsLvListingHtml(html: string, now: Date = new Date()): List
     priceChanges,
     note:
       priceChanges.length === 0
-        ? "Cenu izmaiņu tabula šajā lapā nav atpazīta — iespējams, vēsture nav publicēta vai ir cits sludinājuma veids."
+        ? "Cenu izmaiņu tabula šajā lapā nav atpazīta; iespējams, vēsture nav publicēta vai ir cits sludinājuma veids."
         : undefined,
   };
 }
@@ -433,7 +433,7 @@ export function parseGenericListingHtml(html: string, url: string, now: Date = n
 export function formatListingAiSnapshotForAi(snapshot: ListingAiSnapshot): string {
   if (!snapshot.ok) {
     return [
-      "### Sludinājums (ss.lv — neizdevās nolasīt)",
+      "### Sludinājums (ss.lv - neizdevās nolasīt)",
       snapshot.url ? `Saite: ${snapshot.url}` : "",
       snapshot.note ? `Kļūda: ${snapshot.note}` : "Sludinājuma saturs nav pieejams.",
     ]
@@ -441,7 +441,7 @@ export function formatListingAiSnapshotForAi(snapshot: ListingAiSnapshot): strin
       .join("\n");
   }
 
-  const lines: string[] = ["### Sludinājums (ss.lv — nolasīts serverī)"];
+  const lines: string[] = ["### Sludinājums (ss.lv - nolasīts serverī)"];
   if (snapshot.url) lines.push(`Saite: ${snapshot.url}`);
   if (snapshot.pageTitle) lines.push(`Virsraksts: ${snapshot.pageTitle}`);
   if (snapshot.currentPriceEur) lines.push(`Cena: ${snapshot.currentPriceEur}`);

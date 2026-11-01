@@ -15,11 +15,11 @@ export const UNPAID_REMINDER_BODY_TEMPLATE = [
   "Ja pārbaude joprojām ir aktuāla, apmaksu varat pabeigt šeit:",
   "{{maksājuma_saite}}",
   "",
-  "Paldies, ka izvēlējāties Provin.lv, un veiksmi auto izvēlē!",
+  "Paldies, ka izvēlējāties PROVIN.LV, un veiksmi auto izvēlē!",
   "",
   "Ar cieņu,",
   "Nils V. (IRISS)",
-  "Provin.lv",
+  "PROVIN.LV",
 ].join("\n");
 
 const PAYMENT_URL_PLACEHOLDERS = ["{{maksājuma_saite}}", "{{maksajuma_saite}}"] as const;

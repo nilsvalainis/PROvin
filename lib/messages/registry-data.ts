@@ -176,11 +176,11 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "Ja pārbaude joprojām ir aktuāla, apmaksu varat pabeigt šeit:",
       "{{maksājuma_saite}}",
       "",
-      "Paldies, ka izvēlējāties Provin.lv, un veiksmi auto izvēlē!",
+      "Paldies, ka izvēlējāties PROVIN.LV, un veiksmi auto izvēlē!",
       "",
       "Ar cieņu,",
       "Nils V. (IRISS)",
-      "Provin.lv",
+      "PROVIN.LV",
     ].join("\n"),
     vars: [
       { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123", required: true },

@@ -325,7 +325,7 @@ export function buildTjekbilIncidents(dmr: TjekbilDmrResponse, inspections: Tjek
       date: isoDay(r.synsdato),
       amount: "",
       country: DK_COUNTRY_LV,
-      note: `Apskate nav izturēta (${translateTermLv(str(r.synsresultat), "da")})${faultText ? ` — ${translateTextLv(faultText, "da")}` : ""}`,
+      note: `Apskate nav izturēta (${translateTermLv(str(r.synsresultat), "da")})${faultText ? ` - ${translateTextLv(faultText, "da")}` : ""}`,
     });
   }
 
@@ -335,7 +335,7 @@ export function buildTjekbilIncidents(dmr: TjekbilDmrResponse, inspections: Tjek
       date: isoDay(d.dato ?? d.date),
       amount: str(d.beloeb ?? d.amount),
       country: DK_COUNTRY_LV,
-      note: `Ķīla / parāds (Bilbogen)${str(d.kreditor ?? d.creditor) ? ` — ${str(d.kreditor ?? d.creditor)}` : ""}`,
+      note: `Ķīla / parāds (Bilbogen)${str(d.kreditor ?? d.creditor) ? ` - ${str(d.kreditor ?? d.creditor)}` : ""}`,
     });
   }
   return rows;
