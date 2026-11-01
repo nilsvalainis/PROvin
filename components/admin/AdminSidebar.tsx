@@ -8,6 +8,7 @@ import {
   ChevronsRight,
   Cog,
   Euro,
+  Factory,
   FileText,
   Handshake,
   Home,
@@ -73,6 +74,7 @@ export const ADMIN_NAV_LABELS = {
   orders: "Pasūtījumi",
   morning: "Rīta kopsavilkums",
   vinScan: "VIN pārbaude",
+  dealerCheck: "Dīlera dati",
   fast: "Ātrie vērtējumi",
   irissMenu: "Sākums",
   irissHome: "Pasūtījumi",
@@ -109,6 +111,12 @@ const PRO_MENU: Item = { href: "/admin/pro", label: "Sākums", icon: Home, match
 const MORNING: Item = { href: "/admin/kopsavilkums", label: L.morning, icon: Sun, match: starts("/admin/kopsavilkums") };
 const FAST: Item = { href: "/admin/atras-vertesanas", label: L.fast, icon: Zap, badge: "fast", match: starts("/admin/atras-vertesanas") };
 const VIN: Item = { href: "/admin/vin-scan", label: L.vinScan, icon: ScanLine, match: starts("/admin/vin-scan") };
+const DEALER_CHECK: Item = {
+  href: "/admin/dilera-dati",
+  label: L.dealerCheck,
+  icon: Factory,
+  match: starts("/admin/dilera-dati"),
+};
 const PARTNERI: Item = { href: "/admin/partneri", label: L.partners, icon: Handshake, badge: "partners", match: starts("/admin/partneri") };
 const DEMO_DILERI: Item = { href: "/admin/b2b-demo", label: L.demoDealers, icon: Building2, match: starts("/admin/b2b-demo") };
 const IZMAKSAS: Item = { href: "/admin/izmaksas", label: L.costs, icon: Wallet, match: starts("/admin/izmaksas") };
@@ -139,7 +147,7 @@ const I_SETTINGS: Item = { href: "/admin/iriss/iestatijumi", label: L.irissSetti
 const I_VIN: Item = { ...VIN, label: L.vinScan };
 
 export const ADMIN_NAV_GROUPS: Group[] = [
-  { title: L.groupPro, items: [MORNING, SAKUMS, VIN, FAST] },
+  { title: L.groupPro, items: [MORNING, SAKUMS, VIN, DEALER_CHECK, FAST] },
   { title: L.groupIriss, items: [I_MENU, I_HOME, I_PIEDAVAJUMI, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_WAYBILLS, I_SETTINGS] },
   {
     title: L.groupWeb,

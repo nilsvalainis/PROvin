@@ -52,6 +52,11 @@ export function buildOneautoProductResult(fetched: {
   if (oneautoPayloadIsPending(fetched.status, fetched.payload)) {
     return { ok: false, error: "pending", ...base };
   }
+  // 206: Response.ok ir true (200-299), bet OEM nav devis datus un nav iekasējis.
+  // Tukšs ≠ vēstures nav - nedrīkst kļūt par no_data / ok.
+  if (fetched.status === 206) {
+    return { ok: false, error: "http_206", ...base };
+  }
   if (oneautoPayloadIsNoData(fetched.payload, errText)) {
     return { ok: false, error: "no_data", ...base };
   }

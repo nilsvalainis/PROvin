@@ -136,6 +136,7 @@ export function oneautoResultTone(result: OneautoResultLike): OneautoResultTone 
 
 export function oneautoProductStatusLabel(result: OneautoResultLike): string {
   if (oneautoResultIsPending(result)) return "gaida OEM";
+  if (result.error === "http_206" || result.httpStatus === 206) return "HTTP 206 (nav iekasēts)";
   if (oneautoResultIsNoData(result)) {
     return result.fallback
       ? "nav datu (nav iekasēts) · fallback: lokālais VIN dekodējums"

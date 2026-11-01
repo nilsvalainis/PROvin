@@ -72,7 +72,8 @@ describe("PRO katalogs", () => {
     const cat = proMenuCatalog();
     expect(PRO_DEFAULT_LAYOUT_IDS.slice(0, 3)).toEqual(["w-pro-mini", "w-pro-dileri", "w-pro-ienemumi"]);
     expect(cat.filter((c) => c.kind === "widget").every((c) => c.sizes.includes("app"))).toBe(true);
-    expect(cat.filter((c) => c.kind === "app").length).toBe(12);
+    expect(cat.filter((c) => c.kind === "app").length).toBe(13);
+    expect(cat.some((c) => c.id === "pro-dilera" && c.href === "/admin/dilera-dati")).toBe(true);
     expect(defaultMenuLayout(cat, PRO_DEFAULT_LAYOUT_IDS).length).toBe(PRO_DEFAULT_LAYOUT_IDS.length);
   });
 });
