@@ -326,7 +326,7 @@ export function DzintarzemeTameSection({
                 inputMode="decimal"
                 value={d.tameAutoPriceStr}
                 onChange={(e) => set({ tameAutoPriceStr: e.target.value })}
-                placeholder="18 500"
+                placeholder="ievadi cenu"
                 autoComplete="off"
               />
             </TameField>
@@ -406,6 +406,7 @@ export function DzintarzemeTameSection({
               {fixedVisible.map((f) => (
                 <TameServiceRow
                   key={f.key}
+                  name={f.label}
                   label={<span className="flex min-h-[38px] items-center px-2.5 text-[14px] text-[var(--iriss-ink)]">{f.label}</span>}
                   value={d[f.key]}
                   onValue={(v) => set({ [f.key]: v } as Partial<IrissDzintarzemeTameDraft>)}
@@ -422,6 +423,7 @@ export function DzintarzemeTameSection({
               {extras.map((row) => (
                 <TameServiceRow
                   key={row.id}
+                  name={row.label || "Pakalpojums"}
                   label={
                     <input
                       className={fieldClass}
@@ -570,11 +572,14 @@ function TameSegmented({
 }
 
 function TameServiceRow({
+  name,
   label,
   value,
   onValue,
   onRemove,
 }: {
+  /** Pakalpojuma nosaukums summas laukam un «Noņemt» (ekrāna lasītājam). */
+  name: string;
   label: ReactNode;
   value: string;
   onValue: (value: string) => void;
@@ -584,10 +589,10 @@ function TameServiceRow({
     <div className="grid grid-cols-[minmax(0,1fr)_130px_32px] items-center gap-2">
       <div className="min-w-0 rounded-[10px] border border-[var(--iriss-line)]">{label}</div>
       <span className="relative block">
-        <input className={`${fieldClass} pr-8 text-right`} inputMode="decimal" value={value} onChange={(e) => onValue(e.target.value)} aria-label="Summa" autoComplete="off" />
+        <input className={`${fieldClass} pr-8 text-right`} inputMode="decimal" value={value} onChange={(e) => onValue(e.target.value)} aria-label={`${name} - summa`} autoComplete="off" />
         <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12.5px] text-[var(--iriss-ink-3)]">€</span>
       </span>
-      <button type="button" aria-label="Noņemt" title="Noņemt" onClick={onRemove} className="h-8 w-8 rounded-lg text-[16px] text-[var(--iriss-ink-3)] hover:bg-[var(--iriss-surface-2)]">
+      <button type="button" aria-label={`Noņemt: ${name}`} title="Noņemt" onClick={onRemove} className="h-8 w-8 rounded-lg text-[16px] text-[var(--iriss-ink-3)] hover:bg-[var(--iriss-surface-2)]">
         ×
       </button>
     </div>
