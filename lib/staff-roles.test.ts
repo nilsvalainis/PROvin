@@ -116,6 +116,8 @@ describe("IRISS section path access (deny by default)", () => {
     }
     const otherAgentApis = [
       "/api/admin/vin-scan",
+      "/api/admin/dealer-check",
+      "/api/admin/dealer-check/pdf",
       "/api/admin/vin-sources/fetch",
       "/api/admin/vin-history",
       "/api/admin/outvin/purchase",
@@ -132,6 +134,7 @@ describe("IRISS section path access (deny by default)", () => {
       expect(decideAdminApiAccess(api, waybills), api).toBe("forbidden");
     }
     expect(decideAdminPageAccess("/admin/vin-scan", waybills)).toBe("forbidden");
+    expect(decideAdminPageAccess("/admin/dilera-dati", waybills)).toBe("forbidden");
     expect(decideAdminPageAccess("/admin/iriss/iestatijumi", waybills)).toBe("forbidden");
     expect(decideAdminPageAccess("/admin/dashboard", waybills)).toBe("forbidden");
   });

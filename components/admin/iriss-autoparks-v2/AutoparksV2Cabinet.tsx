@@ -25,6 +25,7 @@ import { AutoparksV2Pamatdati } from "./AutoparksV2Pamatdati";
 import { AutoparksV2PhotoPicker } from "./AutoparksV2PhotoPicker";
 import { AutoparksV2Waybill } from "./AutoparksV2Waybill";
 import { CABINET_PANES } from "./panes";
+import { dealerCheckPageHref } from "@/lib/dealer-check";
 import { CarImg, VinCopy, yearColor } from "./ui";
 
 export type { CabinetTab } from "@/lib/iriss-autoparks-v2-cabinet-tabs";
@@ -162,6 +163,11 @@ export function AutoparksV2Cabinet({
               <OwnerBadge basics={basics} canEdit={perms.pamatdati} onBasics={onBasics} />
               {basics.clientOrder ? <span className="ap2-client-badge">Pasūtījums</span> : null}
               <VinCopy vin={basics.vin} className="ap2-dvin" />
+              {perms.admin && basics.vin ? (
+                <Link href={dealerCheckPageHref({ vin: basics.vin, from: "autoparks" })} className="ap2-dealer-data">
+                  Dīlera dati ↗
+                </Link>
+              ) : null}
             </div>
             {/* Kabineta makets «Main» (dators, Nils 27.10/28.10): darbības galvenē, tikai Pamatdatos. */}
             {desktop && tab === "pamatdati" && (canWaybill || canCreateOffer) ? (
@@ -173,7 +179,14 @@ export function AutoparksV2Cabinet({
           </div>
           {onHome ? statusBtn("ap2-dstatus") : null}
         </div>
-        <VinCopy vin={basics.vin} className="ap2-mvin" />
+        <div className="ap2-mvin-row">
+          <VinCopy vin={basics.vin} className="ap2-mvin" />
+          {perms.admin && basics.vin ? (
+            <Link href={dealerCheckPageHref({ vin: basics.vin, from: "autoparks" })} className="ap2-dealer-data">
+              Dīlera dati ↗
+            </Link>
+          ) : null}
+        </div>
       </div>
       <nav className="ap2-tabs" style={{ ["--tabs" as string]: tabs.length }} aria-label="Sadaļas">
         {tabs.length > 1 || perms.vesture
