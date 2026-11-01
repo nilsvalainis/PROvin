@@ -3,7 +3,7 @@
  * Iekšēja OneAuto ielāde bez klienta pasūtījuma. Speckr nav.
  */
 import { formatEurFromCents } from "@/lib/order-upsell";
-import { isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
+import { isValidPlateNumber, isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
 import {
   ONEAUTO_PRODUCTS,
   ONEAUTO_PRODUCT_IDS,
@@ -209,6 +209,13 @@ export function dealerCheckPageHref(args: { vin?: string; from?: "autoparks"; pl
 export function parseDealerCheckSearchVin(raw: string | null | undefined): string {
   const vin = normalizeVin(raw ?? "");
   return isValidVin(vin) ? vin : "";
+}
+
+export function parseDealerCheckSearchPlate(raw: string | null | undefined): string {
+  const t = (raw ?? "").trim();
+  if (!t) return "";
+  if (isValidPlateNumber(t)) return normalizeDealerCheckPlate(t);
+  return t.toUpperCase();
 }
 
 export function emptyDealerCheckVehicle(vin = ""): DealerCheckVehicleInfo {
@@ -457,7 +464,7 @@ export function dealerCheckMileageHttp206Note(opts: { mentionCsdd?: boolean } = 
 }
 
 export function dealerCheckEmptyStateText(): string {
-  return "Ievadi VIN vai numurzīmi un atzīmē OneAuto avotus. Nekas netiek iekasēts līdz «Ielādēt».";
+  return "Ievadi VIN vai numurzīmi un atzīmē OneAuto avotus. Numurzīme aizpilda VIN no CSDD. Nekas netiek iekasēts līdz «Ielādēt».";
 }
 
 export function findAutoparksCarByVin<T extends { vin?: string | null }>(

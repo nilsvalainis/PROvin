@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminDealerCheckPage } from "@/components/admin/AdminDealerCheckPage";
 import { requireAdminPage } from "@/lib/admin-auth";
-import { parseDealerCheckSearchVin } from "@/lib/dealer-check";
+import { parseDealerCheckSearchPlate, parseDealerCheckSearchVin } from "@/lib/dealer-check";
+import { prefetchDealerCheckCsdd } from "@/lib/dealer-check-csdd-prefetch";
 
 export const metadata = {
   title: "Dīlera datu pārbaude",
@@ -17,9 +18,10 @@ export default async function AdminDealerCheckRoute({
 }) {
   await requireAdminPage();
   const sp = searchParams ? await searchParams : undefined;
-  const initialVin = parseDealerCheckSearchVin(sp?.vin ?? "");
-  const initialPlate = (sp?.vn ?? "").trim();
+  const searchVin = parseDealerCheckSearchVin(sp?.vin ?? "");
+  const searchPlate = parseDealerCheckSearchPlate(sp?.vn ?? "");
   const fromAutoparks = sp?.no === "autoparks";
+  const prefetched = await prefetchDealerCheckCsdd({ vin: searchVin, plate: searchPlate });
   return (
     <div className="w-full max-w-none">
       <AdminDashboardHeaderWithMenu
@@ -30,7 +32,13 @@ export default async function AdminDealerCheckRoute({
         {null}
       </AdminDashboardHeaderWithMenu>
       <Suspense fallback={<p className="text-[12px] text-[#86868b]">Ielādē…</p>}>
-        <AdminDealerCheckPage initialVin={initialVin} initialPlate={initialPlate} fromAutoparks={fromAutoparks} />
+        <AdminDealerCheckPage
+          initialVin={prefetched.vin || searchVin}
+          initialPlate={prefetched.plate || searchPlate}
+          initialCsdd={prefetched.csdd}
+          initialCsddMessage={prefetched.message}
+          fromAutoparks={fromAutoparks}
+        />
       </Suspense>
     </div>
   );

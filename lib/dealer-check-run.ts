@@ -18,6 +18,7 @@ import { fetchCsddTechDataCounted } from "@/lib/csdd-tech-data-counted";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { readAutoparksV2State } from "@/lib/iriss-autoparks-v2-store";
 import { autoparksV2Basics, carV2Of } from "@/lib/iriss-autoparks-v2";
+import { dealerCheckVinFromCsdd } from "@/lib/dealer-check-csdd";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { parseOneautoProductIds, type OneautoProductId } from "@/lib/oneauto-catalog";
 import { rigaYearMonthKey } from "@/lib/admin-riga-calendar";
@@ -51,7 +52,7 @@ async function resolveVinFromPlate(plate: string): Promise<string> {
   if (!plate) return "";
   try {
     const res = await fetchCsddTechDataCounted(plate, "admin");
-    if (res.found && isValidVin(res.data.vin)) return normalizeVin(res.data.vin);
+    return dealerCheckVinFromCsdd(res);
   } catch {
     /* CSDD nav bloķējošs */
   }
