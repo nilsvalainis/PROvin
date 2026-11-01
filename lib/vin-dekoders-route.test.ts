@@ -17,7 +17,8 @@ vi.mock("@/lib/vin-memory-store", () => ({
 }));
 vi.mock("@/lib/free-vin-details", () => ({ fetchFreeVinDetails: async () => ({ vpic: null, signals: [] }) }));
 vi.mock("@/lib/vin-model-learn-store", () => ({ readLearnedTable: async () => ({}) }));
-vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: async () => ({ ok: true, retryAfterSec: 0 }) }));
+const rateLimit = { ok: true, retryAfterSec: 0 };
+vi.mock("@/lib/rate-limit", () => ({ checkRateLimit: async () => rateLimit }));
 
 const { GET } = await import("@/app/api/vin-dekoders/route");
 
@@ -29,6 +30,8 @@ beforeEach(() => {
   events.length = 0;
   csdd.mockReset();
   usage = { decoderToday: 0, monthTotal: 0 };
+  rateLimit.ok = true;
+  rateLimit.retryAfterSec = 0;
 });
 
 describe("/api/vin-dekoders", () => {
@@ -89,5 +92,62 @@ describe("/api/vin-dekoders", () => {
       "vin:invalid_chars",
       "plate:invalid_plate",
     ]);
+  });
+
+  it("tukšs q un bez parametriem ir invalid_plate, CSDD nezvana", async () => {
+    expect((await GET(req(""))).status).toBe(400);
+    const bare = await GET(new Request("https://www.provin.lv/api/vin-dekoders", { headers: { "x-forwarded-for": "1.2.3.4" } }));
+    expect(bare.status).toBe(400);
+    expect(csdd).not.toHaveBeenCalled();
+    expect(events.map((e) => `${(e as { kind: string }).kind}:${(e as { outcome: string }).outcome}`)).toEqual([
+      "plate:invalid_plate",
+      "plate:invalid_plate",
+    ]);
+  });
+
+  it("pieņem ?vin= un ?plate= tāpat kā ?q=", async () => {
+    const vinRes = await GET(
+      new Request("https://www.provin.lv/api/vin-dekoders?vin=TMBJG7NE1J0123456&src=home", {
+        headers: { "x-forwarded-for": "1.2.3.4" },
+      }),
+    );
+    expect(await vinRes.json()).toMatchObject({ kind: "vin", model: { make: "Škoda" } });
+    expect(csdd).not.toHaveBeenCalled();
+
+    csdd.mockResolvedValue({
+      found: true,
+      message: "",
+      data: { ...emptyCsddTechData(), vin: "TMBJG7NE1J0123456", make: "SKODA", inspectionValidUntilIso: "2099-01-01" },
+    });
+    const plateRes = await GET(
+      new Request("https://www.provin.lv/api/vin-dekoders?plate=CD4321&src=decoder", {
+        headers: { "x-forwarded-for": "1.2.3.4" },
+      }),
+    );
+    expect(await plateRes.json()).toMatchObject({ kind: "plate", plate: "CD4321", found: true });
+  });
+
+  it("to pašu numurzīmi 6 h kešs nezvana CSDD otro reizi", async () => {
+    csdd.mockResolvedValue({
+      found: true,
+      message: "",
+      data: { ...emptyCsddTechData(), vin: "TMBJG7NE1J0123456", make: "SKODA", inspectionValidUntilIso: "2099-01-01" },
+    });
+    const first = await GET(req("EF4321", "decoder"));
+    const second = await GET(req("ef-4321", "decoder"));
+    expect((await first.json()).found).toBe(true);
+    expect((await second.json()).found).toBe(true);
+    expect(csdd).toHaveBeenCalledTimes(1);
+  });
+
+  it("IP limits -> 429 rate_limited, CSDD nezvana", async () => {
+    rateLimit.ok = false;
+    rateLimit.retryAfterSec = 42;
+    const res = await GET(req("GH9876"));
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBe("42");
+    expect(await res.json()).toEqual({ error: "rate_limited", retryAfterSec: 42 });
+    expect(csdd).not.toHaveBeenCalled();
+    expect(events).toEqual([{ type: "check", kind: "plate", outcome: "rate_limited", source: "home" }]);
   });
 });

@@ -5,6 +5,7 @@ import {
   irissAdvanceHeaderChip,
   irissAdvancePaidToday,
   irissAdvanceReceivedLabel,
+  irissAdvanceMethodLabel,
   irissAdvanceTowardCommission,
   irissAdvanceWithQuickAmount,
   irissTameBalanceAfterAdvance,
@@ -63,5 +64,32 @@ describe("iriss-advance", () => {
   it("subtracts advance from the tame total", () => {
     expect(irissTameBalanceAfterAdvance(5000, 200)).toBe(4800);
     expect(irissTameBalanceAfterAdvance(200, 500)).toBe(0);
+  });
+
+  it("nederīgs datums pazūd; čips atšķir melnrakstu no saņemta", () => {
+    expect(normalizeIrissAdvanceDraft({ amount: "200", paidAt: "17.10.2026", method: "cash" })).toEqual({
+      amount: "200",
+      paidAt: "",
+      method: "cash",
+      invoiceNo: "",
+    });
+    expect(irissAdvanceHeaderChip({ amount: "200", paidAt: "", method: "", invoiceNo: "" })).toEqual({
+      label: "Avanss 200 €",
+      tone: "draft",
+    });
+    expect(irissAdvanceHeaderChip({ amount: "", paidAt: "2026-10-17", method: "", invoiceNo: "" })).toEqual({
+      label: "Avanss · 17.10",
+      tone: "paid",
+    });
+    expect(irissAdvanceHeaderChip({ amount: "", paidAt: "", method: "card", invoiceNo: "" })).toEqual({
+      label: "Avanss",
+      tone: "draft",
+    });
+    expect(irissAdvanceMethodLabel("card")).toBe("Karte");
+  });
+
+  it("Rīgas datums pāriet naktī pēc UTC, nevis pēc UTC pusnakts", () => {
+    expect(rigaTodayYmd(new Date("2026-10-17T20:59:00.000Z"))).toBe("2026-10-17");
+    expect(rigaTodayYmd(new Date("2026-10-17T21:00:00.000Z"))).toBe("2026-10-18");
   });
 });
