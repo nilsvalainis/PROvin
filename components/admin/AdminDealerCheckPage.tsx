@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { openGeneratedHtmlDocument } from "@/lib/admin-open-window";
 import {
   DEALER_CHECK_DEFAULT_SELECTED,
@@ -22,7 +22,18 @@ import {
   type DealerCheckRecord,
   type DealerCheckTemplateId,
 } from "@/lib/dealer-check";
+import {
+  DEALER_CHECK_CSDD_LOOKUP_PATH,
+  DEALER_CHECK_CSDD_TITLE,
+  applyDealerCheckCsddResult,
+  dealerCheckCsddLookupQuery,
+  dealerCheckCsddPreviewMatchesQuery,
+  dealerCheckCsddPreviewRows,
+  dealerCheckHasCsddPreview,
+  parseDealerCheckCsddResponse,
+} from "@/lib/dealer-check-csdd";
 import { isValidVin, normalizeVin, sanitizeVinInput } from "@/lib/order-field-validation";
+import type { CsddTechData } from "@/lib/csdd-tech-data";
 import type { OneautoProductId } from "@/lib/oneauto-catalog";
 
 const inp =
@@ -48,10 +59,14 @@ function errorLv(code: string): string {
 export function AdminDealerCheckPage({
   initialVin,
   initialPlate = "",
+  initialCsdd = null,
+  initialCsddMessage = "",
   fromAutoparks = false,
 }: {
   initialVin: string;
   initialPlate?: string;
+  initialCsdd?: CsddTechData | null;
+  initialCsddMessage?: string;
   fromAutoparks?: boolean;
 }) {
   const [template, setTemplate] = useState<DealerCheckTemplateId>(DEALER_CHECK_DEFAULT_TEMPLATE);
@@ -59,6 +74,9 @@ export function AdminDealerCheckPage({
   const [plate, setPlate] = useState(initialPlate);
   const [selected, setSelected] = useState<OneautoProductId[]>([...DEALER_CHECK_DEFAULT_SELECTED]);
   const [record, setRecord] = useState<DealerCheckRecord | null>(null);
+  const [csddPreview, setCsddPreview] = useState<CsddTechData | null>(initialCsdd);
+  const [csddBusy, setCsddBusy] = useState(false);
+  const [csddError, setCsddError] = useState(initialCsddMessage);
   const [ledgerBar, setLedgerBar] = useState("");
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -68,6 +86,7 @@ export function AdminDealerCheckPage({
   });
   const [error, setError] = useState("");
   const [notice, setNotice] = useState(fromAutoparks && initialVin ? "VIN iekopēts no Autoparks. Avoti paliek izslēgti." : "");
+  const csddLookupSeq = useRef(0);
 
   const pick = dealerCheckSelection(selected);
   const canLoad = dealerCheckCanLoad(selected) && !busy && (Boolean(normalizeVin(vin)) || Boolean(plate.trim()));
@@ -91,6 +110,57 @@ export function AdminDealerCheckPage({
   useEffect(() => {
     void loadLedger(initialVin || undefined);
   }, [initialVin, loadLedger]);
+
+  const lookupCsdd = useCallback(async (query: string, current: { vin: string; plate: string }) => {
+    const seq = ++csddLookupSeq.current;
+    setCsddBusy(true);
+    setCsddError("");
+    try {
+      const res = await fetch(DEALER_CHECK_CSDD_LOOKUP_PATH, {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ nr1: query }),
+      });
+      const parsed = parseDealerCheckCsddResponse(await res.json().catch(() => null));
+      if (seq !== csddLookupSeq.current) return;
+      if (!res.ok || !parsed) {
+        setCsddPreview(null);
+        setCsddError(
+          res.status === 401
+            ? "Admin sesija beigusies. Ielādē lapu no jauna."
+            : res.status === 400
+              ? "Nav derīga VIN vai numurzīmes."
+              : "Neizdevās ielādēt CSDD reģistra datus.",
+        );
+        return;
+      }
+      const applied = applyDealerCheckCsddResult(current, parsed);
+      if (applied.vin && applied.vin !== current.vin) setVin(applied.vin);
+      if (applied.plate && applied.plate !== current.plate) setPlate(applied.plate);
+      setCsddPreview(applied.csdd);
+      setCsddError(applied.found ? "" : applied.message);
+    } catch {
+      if (seq !== csddLookupSeq.current) return;
+      setCsddPreview(null);
+      setCsddError("Neizdevās savienoties ar CSDD releju.");
+    } finally {
+      if (seq === csddLookupSeq.current) setCsddBusy(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const query = dealerCheckCsddLookupQuery(plate, vin);
+    if (!query) {
+      if (csddPreview) setCsddPreview(null);
+      return;
+    }
+    if (dealerCheckCsddPreviewMatchesQuery(csddPreview, query)) return;
+    const t = window.setTimeout(() => {
+      void lookupCsdd(query, { vin, plate });
+    }, 450);
+    return () => window.clearTimeout(t);
+  }, [plate, vin, csddPreview, lookupCsdd]);
 
   function toggle(id: OneautoProductId) {
     setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
@@ -272,9 +342,20 @@ export function AdminDealerCheckPage({
               placeholder="piem. AB-1234"
               autoComplete="off"
               spellCheck={false}
+              aria-label="Valsts numurzīme"
             />
           </label>
         </div>
+        {csddBusy ? (
+          <p className="mt-2 text-[12.5px] text-[#6e6e73]" role="status">
+            CSDD: meklē VIN pēc numurzīmes…
+          </p>
+        ) : null}
+        {csddError ? (
+          <p className="mt-2 text-[12.5px] text-[#d70015]" role="alert">
+            {csddError}
+          </p>
+        ) : null}
 
         <h2 className="mb-3 mt-[18px] flex flex-wrap items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.5px] text-[#3a3a3c]">
           OneAuto avoti
@@ -331,6 +412,10 @@ export function AdminDealerCheckPage({
       ) : null}
       {notice ? (
         <p className="mb-3.5 rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-3.5 py-3 text-[13px] text-[#166534]">{notice}</p>
+      ) : null}
+
+      {dealerCheckHasCsddPreview(csddPreview) ? (
+        <AdminDealerCheckCsddPreview data={csddPreview!} />
       ) : null}
 
       {!dealerCheckHasResult(record) ? (
@@ -577,5 +662,33 @@ function CsddKv({
       <span className="block text-[11px] font-semibold text-[#8e8e93]">{label}</span>
       <b className={`font-medium ${ok ? "text-[#16a34a]" : "text-[#111]"} ${mono ? "font-mono" : ""}`}>{value || "-"}</b>
     </div>
+  );
+}
+
+export function AdminDealerCheckCsddPreview({ data }: { data: CsddTechData }) {
+  const rows = dealerCheckCsddPreviewRows(data);
+  if (rows.length === 0) return null;
+  return (
+    <section className="mb-3.5 rounded-2xl border border-[#e5e5ea] bg-white p-4 sm:p-5" data-dealer-check-csdd-preview>
+      <h2 className="mb-1.5 flex flex-wrap items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.5px] text-[#3a3a3c]">
+        {DEALER_CHECK_CSDD_TITLE}
+        <span className="rounded-full bg-[#eef4ff] px-2 py-0.5 text-[10.5px] font-bold normal-case tracking-normal text-[#2563EB]">
+          Pirms OneAuto · iekšēji
+        </span>
+      </h2>
+      <p className="mb-3 text-[12.5px] text-[#6e6e73]">
+        Pilni CSDD reģistra tehniskie dati. OneAuto avoti paliek izslēgti, līdz nospied Ielādēt.
+      </p>
+      <div className="grid grid-cols-2 gap-x-[18px] gap-y-3 lg:grid-cols-4">
+        {rows.map((row) => (
+          <div key={row.key}>
+            <span className="block text-[11px] font-semibold text-[#8e8e93]">{row.label}</span>
+            <b className={`font-medium text-[#111] ${row.key === "vin" || row.key === "registrationNumber" ? "font-mono" : ""}`}>
+              {row.value}
+            </b>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

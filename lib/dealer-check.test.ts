@@ -30,6 +30,7 @@ import {
   lastDealerCheckOdometerKm,
   normalizeDealerCheckPlate,
   oneautoResultIsHttp206,
+  parseDealerCheckSearchPlate,
   parseDealerCheckSearchVin,
   parseDealerCheckTemplateId,
   sanitizeDealerCheckComment,
@@ -176,6 +177,8 @@ describe("Dīlera datu pārbaude: deep-link un šablons", () => {
     );
     expect(parseDealerCheckSearchVin(VIN)).toBe(VIN);
     expect(parseDealerCheckSearchVin("abc")).toBe("");
+    expect(parseDealerCheckSearchPlate("lr 4521")).toBe("LR-4521");
+    expect(parseDealerCheckSearchPlate("")).toBe("");
     expect(parseDealerCheckTemplateId("cits")).toBe("cits");
     expect(parseDealerCheckTemplateId("nope")).toBe("dzintarzeme");
   });
