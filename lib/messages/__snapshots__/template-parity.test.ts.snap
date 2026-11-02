@@ -419,7 +419,7 @@ exports[`template snapshots (default text) > snapshot email.report_ready.audits 
 <tr><td>
 
 <p style="margin:0 0 14px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu PROVIN AUDITS atskaite ir gatava.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu PROVIN AUDITS atskaite transportlīdzeklim ar VIN <strong>WVWZZZ1KZAW000123</strong> ir gatava.</p>
 <p style="margin:0 0 4px;font-size:15px;color:#1d1d1f;line-height:1.6;">Pielikumā atradīsiet:</p>
 <ul style="margin:4px 0 16px;padding-left:22px;color:#1d1d1f;font-size:15px;line-height:1.45;">
 <li style="margin:4px 0;">Kopsavilkuma PDF atskaiti</li>
@@ -433,7 +433,7 @@ exports[`template snapshots (default text) > snapshot email.report_ready.audits 
 </td></tr></table>
 </body>
 </html>",
-  "subject": "PROVIN AUDITS atskaite ir gatava",
+  "subject": "PROVIN AUDITS atskaite ir gatava (WVWZZZ1KZAW000123)",
   "text": "Labdien!
 
 Jūsu PROVIN AUDITS atskaite ir gatava.
@@ -470,7 +470,7 @@ exports[`template snapshots (default text) > snapshot email.report_ready.dealer 
 <tr><td>
 
 <p style="margin:0 0 14px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtītie oficiālā dīlera dati ir gatavi.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu pasūtītie oficiālā dīlera dati transportlīdzeklim ar VIN <strong>WVWZZZ1KZAW000123</strong> ir gatavi.</p>
 <p style="margin:0 0 4px;font-size:15px;color:#1d1d1f;line-height:1.6;">Pielikumā atradīsiet:</p>
 <ul style="margin:4px 0 16px;padding-left:22px;color:#1d1d1f;font-size:15px;line-height:1.45;"><li style="margin:4px 0;">OFICIALA_DILERA_DATI.pdf</li></ul>
 <p style="margin:0 0 12px;font-size:15px;color:#6b7280;line-height:1.55;">Ja rodas jautājumi, rakstiet uz <a href="mailto:info@provin.lv" style="color:#0061D2;text-decoration:none;font-weight:500;">info@provin.lv</a>. Labprāt palīdzēsim.</p>
@@ -481,7 +481,7 @@ exports[`template snapshots (default text) > snapshot email.report_ready.dealer 
 </td></tr></table>
 </body>
 </html>",
-  "subject": "PROVIN: oficiālā dīlera dati ir gatavi",
+  "subject": "PROVIN: oficiālā dīlera dati ir gatavi (WVWZZZ1KZAW000123)",
   "text": "Labdien!
 
 Jūsu pasūtītie oficiālā dīlera dati ir gatavi.
@@ -517,7 +517,7 @@ exports[`template snapshots (default text) > snapshot email.report_ready.mini 1`
 <tr><td>
 
 <p style="margin:0 0 14px;font-size:15px;color:#1d1d1f;line-height:1.6;">Labdien!</p>
-<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu PROVIN MINI atskaite ir gatava. Tā pievienota šī e-pasta pielikumā.</p>
+<p style="margin:0 0 12px;font-size:15px;color:#1d1d1f;line-height:1.6;">Jūsu PROVIN MINI atskaite transportlīdzeklim ar VIN <strong>WVWZZZ1KZAW000123</strong> ir gatava. Tā pievienota šī e-pasta pielikumā.</p>
 <p style="margin:0 0 12px;font-size:15px;color:#6b7280;line-height:1.55;">Ja rodas jautājumi, rakstiet uz <a href="mailto:info@provin.lv" style="color:#0061D2;text-decoration:none;font-weight:500;">info@provin.lv</a>. Labprāt palīdzēsim.</p>
 <p style="margin:0 0 20px;font-size:15px;color:#1d1d1f;line-height:1.6;">Ja mūsu darbs Jums noderēja, būšu pateicīgs par īsu atsauksmi Google: <a href="https://g.page/r/CamRaT51IPQ_EBM/review" style="color:#0061D2;text-decoration:none;font-weight:500;word-break:break-all;">https://g.page/r/CamRaT51IPQ_EBM/review</a></p>
 <p style="margin:0;font-size:15px;color:#1d1d1f;line-height:1.6;">Ar cieņu,<br/>Nils<br/>PROVIN.LV</p>
@@ -526,7 +526,7 @@ exports[`template snapshots (default text) > snapshot email.report_ready.mini 1`
 </td></tr></table>
 </body>
 </html>",
-  "subject": "PROVIN MINI atskaite ir gatava",
+  "subject": "PROVIN MINI atskaite ir gatava (WVWZZZ1KZAW000123)",
   "text": "Labdien!
 
 Jūsu PROVIN MINI atskaite ir gatava. Tā pievienota šī e-pasta pielikumā.

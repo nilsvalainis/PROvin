@@ -194,7 +194,8 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     channel: "email",
     group: "Atskaite gatava",
     title: "PROVIN AUDITS",
-    subject: "PROVIN AUDITS atskaite ir gatava",
+    description: "Temats iekļauj VIN iekavās, ja tas ir derīgs. Mainīgie: {{vin}}.",
+    subject: "PROVIN AUDITS atskaite ir gatava{{#vin}} ({{vin}}){{/vin}}",
     body: [
       "Labdien!",
       "",
@@ -212,6 +213,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "{{paraksts}}",
     ].join("\n"),
     vars: [
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
       { key: "pielikumi", label: "Pielikumi", sample: "- Kopsavilkuma PDF atskaiti\n- Papildu materiālus un pielikumus" },
       { key: "google_atsauksme", label: "Google atsauksme", sample: defaultGoogleReviewBlock() },
       { key: "paraksts", label: "Paraksts", sample: defaultSignOffBlock(), required: true },
@@ -224,7 +226,8 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     channel: "email",
     group: "Atskaite gatava",
     title: "PROVIN MINI",
-    subject: "PROVIN MINI atskaite ir gatava",
+    description: "Temats iekļauj VIN iekavās, ja tas ir derīgs. Mainīgie: {{vin}}.",
+    subject: "PROVIN MINI atskaite ir gatava{{#vin}} ({{vin}}){{/vin}}",
     body: [
       "Labdien!",
       "",
@@ -239,6 +242,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "{{paraksts}}",
     ].join("\n"),
     vars: [
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
       { key: "google_atsauksme", label: "Google atsauksme", sample: defaultGoogleReviewBlock() },
       { key: "paraksts", label: "Paraksts", sample: defaultSignOffBlock(), required: true },
     ],
@@ -250,7 +254,8 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     channel: "email",
     group: "Atskaite gatava",
     title: "Dīlera servisa vēsture",
-    subject: "PROVIN: oficiālā dīlera dati ir gatavi",
+    description: "Temats iekļauj VIN iekavās, ja tas ir derīgs. Mainīgie: {{vin}}.",
+    subject: "PROVIN: oficiālā dīlera dati ir gatavi{{#vin}} ({{vin}}){{/vin}}",
     body: [
       "Labdien!",
       "",
@@ -268,6 +273,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "{{paraksts}}",
     ].join("\n"),
     vars: [
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
       { key: "pielikumi", label: "Pielikumi", sample: "- OFICIALA_DILERA_DATI.pdf" },
       { key: "google_atsauksme", label: "Google atsauksme", sample: defaultGoogleReviewBlock() },
       { key: "paraksts", label: "Paraksts", sample: defaultSignOffBlock(), required: true },

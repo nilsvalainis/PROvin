@@ -15,7 +15,7 @@ describe("report-ready product emails", () => {
 
   it("builds dealer subject without a consumer discount", () => {
     expect(buildReportReadySubject("dealer", "WAUZZZF44LA062962")).toBe(
-      "PROVIN: oficiālā dīlera dati ir gatavi",
+      "PROVIN: oficiālā dīlera dati ir gatavi (WAUZZZF44LA062962)",
     );
     const text = buildReportReadyPlainText({
       kind: "dealer",
@@ -134,15 +134,23 @@ describe("report-ready product emails", () => {
     expect(on.indexOf("g.page")).toBeLessThan(on.indexOf("Nils"));
   });
 
+  it("omits VIN parentheses when the VIN is missing or invalid", () => {
+    expect(buildReportReadySubject("dealer")).toBe("PROVIN: oficiālā dīlera dati ir gatavi");
+    expect(buildReportReadySubject("dealer", "")).toBe("PROVIN: oficiālā dīlera dati ir gatavi");
+    expect(buildReportReadySubject("dealer", "ABC")).toBe("PROVIN: oficiālā dīlera dati ir gatavi");
+    expect(buildReportReadySubject("mini", "ABC")).toBe("PROVIN MINI atskaite ir gatava");
+    expect(buildReportReadySubject("audits", "  ")).toBe("PROVIN AUDITS atskaite ir gatava");
+  });
+
   it("sends the dealer ready subject and body in the client's chosen language", () => {
     expect(buildReportReadySubject("dealer", "WAUZZZF44LA062962", "en")).toBe(
-      "PROVIN: your official dealer data is ready",
+      "PROVIN: your official dealer data is ready (WAUZZZF44LA062962)",
     );
     expect(buildReportReadySubject("dealer", "WAUZZZF44LA062962", "ru")).toBe(
-      "PROVIN: официальные данные дилера готовы",
+      "PROVIN: официальные данные дилера готовы (WAUZZZF44LA062962)",
     );
     expect(buildReportReadySubject("dealer", "WAUZZZF44LA062962", "de")).toBe(
-      "PROVIN: Ihre offiziellen Händlerdaten sind fertig",
+      "PROVIN: Ihre offiziellen Händlerdaten sind fertig (WAUZZZF44LA062962)",
     );
 
     const textEn = buildReportReadyPlainText({
