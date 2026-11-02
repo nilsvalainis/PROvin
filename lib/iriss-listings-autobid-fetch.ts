@@ -22,6 +22,11 @@ export type AutobidFetchOptions = {
   /** Pauze starp lapām (ms). Nejauša vērtība intervālā, lai neizskatās pēc robota. */
   pauseMinMs: number;
   pauseMaxMs: number;
+  /**
+   * 1-based lapa, no kuras sākt. Noklusējums 1 (kā līdz šim: pirmā lapa bez `currentPage`).
+   * VIN atmiņas masveida gājiens turpina no saglabātās lapas, nevis no sākuma.
+   */
+  startPage?: number;
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
 };
@@ -82,10 +87,12 @@ export async function fetchAutobidSource(sourceUrl: string, opts: AutobidFetchOp
   let pageCount = 0;
   let pagesFetched = 0;
   let partialNote = "";
+  const startPage = Math.max(1, Math.floor(opts.startPage ?? 1));
+  const lastPage = startPage + Math.max(1, opts.maxPages) - 1;
 
-  for (let page = 1; page <= Math.max(1, opts.maxPages); page += 1) {
-    if (page > 1) {
-      if (page > pageCount) break;
+  for (let page = startPage; page <= lastPage; page += 1) {
+    if (page > startPage) {
+      if (pageCount > 0 && page > pageCount) break;
       await sleep(randomPauseMs(opts.pauseMinMs, opts.pauseMaxMs));
     }
     let url: string;
@@ -96,19 +103,19 @@ export async function fetchAutobidSource(sourceUrl: string, opts: AutobidFetchOp
     }
     const got = await fetchPageHtml(url, opts.timeoutMs, fetchImpl);
     if (!got.ok) {
-      if (page === 1) return { status: "fetch_failed", note: got.note, vehicles: [], rawPages, pagesFetched, pageCount };
+      if (page === startPage) return { status: "fetch_failed", note: got.note, vehicles: [], rawPages, pagesFetched, pageCount };
       partialNote = `${page}. lapa neizdevās: ${got.note}`;
       break;
     }
     const http = httpStatusToSource(got.statusCode);
     if (http) {
-      if (page === 1) return { ...http, vehicles: [], rawPages, pagesFetched, pageCount };
+      if (page === startPage) return { ...http, vehicles: [], rawPages, pagesFetched, pageCount };
       partialNote = `${page}. lapa: ${http.note}`;
       break;
     }
     const parsed = parseAutobidSearchPage(got.html);
     if (!parsed) {
-      if (page === 1) {
+      if (page === startPage) {
         rawPages.push(got.html.slice(0, 400_000));
         return {
           status: "parse_failed",

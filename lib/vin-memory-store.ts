@@ -2,12 +2,14 @@ import "server-only";
 
 import fs from "fs/promises";
 import path from "path";
-import { get, put } from "@vercel/blob";
+import { del, get, put } from "@vercel/blob";
 import { getOrderDraftBlobConfig, getOrderDraftStorageDir } from "@/lib/admin-order-draft-store";
 import {
+  isMemoryVin,
   mergeObservations,
   normalizeVin,
   parseVinMemoryTable,
+  removeVinFromTable,
   serializeVinMemoryTable,
   type VinMemoryEntry,
   type VinMemoryTable,
@@ -124,4 +126,44 @@ export async function addVinObservations(inputs: VinObservationInput[], now: Dat
     updated += merged.updated;
   }
   return { ok: failedShards.length === 0, added, updated, shards: byWmi.size, failedShards };
+}
+
+async function deleteShardFile(wmi: string): Promise<boolean> {
+  const rel = relPath(wmi);
+  const blob = getOrderDraftBlobConfig();
+  if (blob) {
+    try {
+      await del(`${blob.prefix}${rel}`, { token: blob.token });
+      return true;
+    } catch {
+      if (process.env.VERCEL === "1") return false;
+    }
+  }
+  const dir = getOrderDraftStorageDir();
+  if (dir && process.env.VERCEL !== "1") {
+    try {
+      await fs.unlink(path.join(dir, rel));
+      return true;
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") return true;
+      return false;
+    }
+  }
+  return false;
+}
+
+/** Izņem VIN no WMI šķembas. Ja šķemba paliek tukša, fails tiek dzēsts. */
+export async function deleteVinMemory(vinRaw: string): Promise<{ ok: boolean; removed: boolean }> {
+  const vin = normalizeVin(vinRaw);
+  if (!isMemoryVin(vin)) return { ok: false, removed: false };
+  const wmi = vin.slice(0, 3);
+  const prev = await readShard(wmi);
+  const cut = removeVinFromTable(prev, vin);
+  if (!cut.removed) return { ok: true, removed: false };
+  if (Object.keys(cut.table).length === 0) {
+    const gone = await deleteShardFile(wmi);
+    if (gone) return { ok: true, removed: true };
+  }
+  const ok = await writeShard(wmi, cut.table);
+  return { ok, removed: ok };
 }

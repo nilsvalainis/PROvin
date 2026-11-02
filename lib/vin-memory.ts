@@ -126,6 +126,15 @@ export function mergeObservations(
   return { table: out, added, updated };
 }
 
+/** Izņem vienu VIN no šķembas. Tukša šķemba paliek tukša tabula; fails jādzēš krātuvē. */
+export function removeVinFromTable(table: VinMemoryTable, vinRaw: string): { table: VinMemoryTable; removed: boolean } {
+  const vin = normalizeVin(vinRaw);
+  if (!table[vin]) return { table, removed: false };
+  const next = { ...table };
+  delete next[vin];
+  return { table: next, removed: true };
+}
+
 /** Pēdējais zināmais nobraukums (ar datumu un avotu) vai `null`. */
 export function latestKm(entry: VinMemoryEntry | undefined): VinObservation | null {
   if (!entry) return null;
