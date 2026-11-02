@@ -10,6 +10,7 @@ import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import { extractPdfTextDetailed, type PdfExtractResult } from "@/lib/pdf-text-extract-server";
 import {
   buildCsddPdfParseResultFromTextLayer,
+  csddTextLayerNeedsAiFallback,
   pickRicherCsddFields,
   type CsddPdfParseResult,
 } from "@/lib/csdd-pdf-ingest";
@@ -241,7 +242,7 @@ export async function ingestSourcePdfFile(opts: {
       : null;
     const localOk = Boolean(local && csddParseHasData(local));
 
-    if (localOk && local) {
+    if (localOk && local && !csddTextLayerNeedsAiFallback(local.fields, text)) {
       const hasInspection =
         local.fields.technicalInspectionHistory.some((r) => r.date.trim()) ||
         (local.fields.prevInspectionBlock.defects?.length ?? 0) > 0 ||

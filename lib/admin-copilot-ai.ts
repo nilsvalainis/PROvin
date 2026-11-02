@@ -49,7 +49,7 @@ What PROVIN typically extracts from these reports (do this for each matching PDF
 - Traficom / Finnish Transport Register (Finland, „Vehicle information — Source: Transport Register”, footer „Finnish Transport and Communications Agency”) → traficom_fi: Owner(s) + Owner history → ownersSummary (owner count + owner-change dates; operator/holder rows are not owners). Vehicle status, next inspection period, tax status, restrictions → statusRecords. Use history + decommissioning (especially "Deregistrated due to a damage") → autoNotes. If the extract publishes odometer/inspection km with a date, emit upsert_mileage (country Somija). If it publishes accident/damage/claim dates, emit incidents. Never invent km or crash dates that the dump does not show. The local parser already extracts owners/status/use; do not duplicate those from a paste it already handled.
 
 Sources (must match exactly):
-- csdd is handled by dedicated CSDD PDF import when enabled — no JSON actions for csdd
+- csdd is handled by dedicated CSDD PDF import when enabled. No JSON actions for csdd. That import runs on the server before you, and it fills empty CSDD fields (owner count, previous country, inspections, mileage, and the other mapped fields) only when a CSDD PDF is attached in THIS message. If this message has no PDF, do not claim any field was filled and do not say that chat cannot import CSDD. Reply in Latvian that this message has no PDF and the file must be attached again. If CURRENT TABLES already show CSDD values, describe those.
 - autodna | carvertical | ltab | auto_records | cc_vin | citi_avoti | tjekbil | finnik | mnt_ee | lkf_ee | carinfo | traficom_fi
 
 Actions:
