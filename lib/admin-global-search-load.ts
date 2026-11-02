@@ -3,6 +3,7 @@ import "server-only";
 import { filterAdminOrdersForDashboard } from "@/lib/admin-order-amount-filter";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
 import { listManualOrders, type ManualOrderRecord } from "@/lib/admin-manual-orders";
+import { MANUAL_ORDER_PAYMENT_FULFILLMENT } from "@/lib/manual-order-payment";
 import { readStripePaidIndex } from "@/lib/admin-stripe-paid-index";
 import {
   ADMIN_SEARCH_OPERATOR_TENANT,
@@ -148,7 +149,9 @@ async function loadProOrders(): Promise<AdminSearchRecord[]> {
     readStripePaidIndex().catch(() => null),
     listManualOrders().catch(() => [] as ManualOrderRecord[]),
   ]);
-  const stripeRows = (index?.rows ?? []).filter((row) => row.fulfillment !== "order_upsell");
+  const stripeRows = (index?.rows ?? []).filter(
+    (row) => row.fulfillment !== "order_upsell" && row.fulfillment !== MANUAL_ORDER_PAYMENT_FULFILLMENT,
+  );
   const demo = demoOrdersEnabled() ? getDemoOrderRows() : [];
   const merged: ProSource[] = [...demo, ...manual.map(manualSource), ...stripeRows];
   const visible = filterAdminOrdersForDashboard(merged, false);

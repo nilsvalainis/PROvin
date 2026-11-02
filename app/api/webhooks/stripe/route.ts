@@ -34,6 +34,8 @@ import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { autoImportQuickEvalForPaidOrder } from "@/lib/quick-eval-service";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
+import { fulfillManualOrderPayment } from "@/lib/manual-order-fulfill";
+import { isManualOrderPaymentFulfillment } from "@/lib/manual-order-payment";
 import { fulfillOrderUpsellPayment } from "@/lib/order-upsell-fulfill";
 import { businessLinkHashFromStripeMetadata } from "@/lib/business-link";
 import { clientLinkHashFromStripeMetadata } from "@/lib/client-link";
@@ -84,6 +86,12 @@ async function fulfillPaidCheckoutSession(
   try {
     if ((session.metadata?.fulfillment ?? "").trim() === "order_upsell") {
       await fulfillOrderUpsellPayment(session);
+      await completeStripeEvent(fulfillDedupeKey(thinSession.id));
+      return "done";
+    }
+
+    if (isManualOrderPaymentFulfillment(session.metadata?.fulfillment)) {
+      await fulfillManualOrderPayment(session);
       await completeStripeEvent(fulfillDedupeKey(thinSession.id));
       return "done";
     }

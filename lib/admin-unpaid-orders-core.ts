@@ -5,6 +5,7 @@
  */
 
 import { isValidOrderEmail, normalizeVin } from "@/lib/order-field-validation";
+import { isManualOrderPaymentFulfillment } from "@/lib/manual-order-payment";
 import { isOrderUpsellFulfillment } from "@/lib/order-upsell";
 import { isB2bPackFulfillment, isB2bWalletTopupFulfillment } from "@/lib/b2b-partner-orders";
 
@@ -166,6 +167,7 @@ export function isEligibleUnpaidCandidate(c: UnpaidSessionCandidate, nowMs: numb
   if (!isUnpaidPaymentEligible(c, nowMs)) return false;
   if ((c.reminderOf ?? "").trim()) return false;
   if (isOrderUpsellFulfillment(c.fulfillment, c.upgradeOf)) return false;
+  if (isManualOrderPaymentFulfillment(c.fulfillment)) return false;
   if (isB2bUnpaidSession(c)) return false;
   if (!isUnpaidReminderCheckoutLine(c.checkoutLine)) return false;
   return true;
