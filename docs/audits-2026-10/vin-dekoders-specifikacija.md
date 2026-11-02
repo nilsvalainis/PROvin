@@ -2,6 +2,17 @@
 
 Versija 1 - 2026-10-27. Klase A (ārēja kvota, ļaunprātīgas lietošanas risks). Izpildītājs: Claude Opus.
 
+## Implementācijas statuss (2026-11-01)
+
+| Daļa | Prodā | Piezīmes |
+| --- | --- | --- |
+| A. WMI `/vin-dekoders` | Jā (#744 u.c.) | Bez CSDD |
+| B. LV numurzīme dekoderā | Jā (#804) | `lib/vin-dekoders-plate.ts`, daļējs VIN publiski |
+| CSDD zvanu uzskaite | Daļēji | `fetchCsddTechDataCounted` + admin statistika; **nav** vēl `lib/csdd-quota.ts` Redis griestu no 3. sadaļas |
+| Hero: VIN vai numurzīme | Jā | Checkout hero |
+| Pasūtījums: plate → VIN | Jā | Pēc apmaksas, `lib/order-plate-vin-resolve.ts` |
+| Checkout popup: CSDD pamata pirms apmaksas | Nē | Bija atsevišķs plāns (PR #762 docs, aizvērt); sk. `docs/csdd-numurzime-vin-uzdevums.md` |
+
 ## 1. Mērķis
 
 Piltuves augšdaļa: cilvēks, kas meklē "VIN koda pārbaude" vai "auto pēc numura", bez maksas saņem pamatdatus un tiek novests uz bezmaksas sludinājuma pārbaudi un maksas AUDITU. Konkurenti (carVertical, wheelstreet.lt, automoli.com) šo lapu tipu jau izmanto.
@@ -45,8 +56,10 @@ Zem rezultāta: "Nobraukuma vēsture, negadījumi, apskašu defekti un sludināj
 ## 3. CSDD kvota
 
 ### 3.1 Kopējais skaitītājs (visiem izsaucējiem)
-- Jauns `lib/csdd-quota.ts`; visi izsaukumi iet caur `fetchCsddTechData` (6 izsaucēji), skaitītājs tiek palielināts tur, vienā vietā.
-- Redis (P1 Upstash) atslēgas: `csdd:usage:2026-11` (kopā), `csdd:usage:2026-11:public` (publiskais dekoders), `csdd:usage:2026-11-15:public` (diena). Atomisks `INCR` + `EXPIRE` 40 dienas.
+
+**Prodā (2026-10-30, #804):** visi servera CSDD izsaukumi iet caur `fetchCsddTechDataCounted` (`lib/csdd-tech-data-counted.ts`); notikumi `lib/vin-check-stats.ts` / admin «VIN pārbaudes». Kešs CSDD atbildes skaitītāju **nepalielina**.
+
+**Plānots (šī spec v1, vēl nav):** atsevišķs `lib/csdd-quota.ts` ar Redis (P1 Upstash) atslēgām `csdd:usage:YYYY-MM` (kopā), `csdd:usage:YYYY-MM:public`, dienas atslēga. Atomisks `INCR` + `EXPIRE` 40 dienas.
 - Kešotie atbildes (sk. 3.3) skaitītāju **nepalielina**, jo CSDD netiek izsaukts.
 - Admin skatā: "CSDD šomēnes: 1 234 / 10 000 (12 %)".
 
