@@ -1,6 +1,6 @@
 /**
  * Klienta PDF - atskaites kopsavilkuma plāksnītes (pirmā lapa).
- * Tikai jau savākto datu interpretācija: negadījumi, nobraukums, īpašnieku skaits, servisa dziļums.
+ * Tikai jau savākto datu interpretācija: negadījumi, nobraukums, īpašnieku skaits, serviss, sludinājums.
  */
 
 import { countPdfDamageEvidence } from "@/lib/damage-evidence";
@@ -60,6 +60,13 @@ import {
 import { formatPdfOdometerDisplay, isPdfEmptyPlaceholder } from "@/lib/pdf-odometer-display";
 import { detectTotalLossFromPdfInput } from "@/lib/total-loss-detect";
 import { explainMissingOwnerCount } from "@/lib/owner-count-synthesis";
+import { formatAdifySignedEur } from "@/lib/adify-listing-history";
+import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
+import { formatLvDayCount } from "@/lib/lv-day-plural";
+import {
+  parseListedForSaleDays,
+  shouldShowListedForSaleCriticalBanner,
+} from "@/lib/tirgus-listed-ui";
 
 export type PdfSummaryTileTone = "ok" | "warn" | "alert" | "neutral";
 
@@ -229,6 +236,72 @@ function buildOwnerCountTile(input: PdfSummaryInput): PdfSummaryTile {
   };
 }
 
+const LISTING_EMPTY = "Nav datu";
+
+function listingTextMissing(raw: string | null | undefined): boolean {
+  const t = (raw ?? "").replace(/\u00a0/g, " ").trim();
+  if (!t || isPdfEmptyPlaceholder(t)) return true;
+  return /^nav datu\.?$/i.test(t);
+}
+
+function listingPublishedDate(form: TirgusFormFields | null | undefined): string {
+  const created = (form?.listingCreated ?? "").trim();
+  if (!listingTextMissing(created)) return created;
+  const dated = (form?.priceHistory ?? [])
+    .map((row) => ({ date: row.date.trim(), ms: parseDotOrIsoDateToMs(row.date) }))
+    .filter((row) => row.date && row.ms > 0)
+    .sort((a, b) => a.ms - b.ms);
+  return dated[0]?.date ?? "";
+}
+
+/** Jaunākā cena mīnus pirmā. `priceDrop` ir jau saglabātais Adify / operatora teksts. */
+function listingPriceChangeLabel(form: TirgusFormFields | null | undefined): string {
+  const drop = (form?.priceDrop ?? "").trim();
+  if (!listingTextMissing(drop)) return drop;
+  const rows = (form?.priceHistory ?? []).filter(
+    (row) => Number.isFinite(row.price) && Boolean(row.date?.trim()),
+  );
+  if (rows.length === 0) return "";
+  const dated = rows
+    .map((row) => ({ row, ms: parseDotOrIsoDateToMs(row.date) }))
+    .filter((item) => item.ms > 0)
+    .sort((a, b) => a.ms - b.ms);
+  if (dated.length > 0) {
+    const oldest = dated[0]!.row.price;
+    const newest = dated[dated.length - 1]!.row.price;
+    return formatAdifySignedEur(newest - oldest);
+  }
+  return formatAdifySignedEur(rows[0]!.price - rows[rows.length - 1]!.price);
+}
+
+function buildListingTile(input: PdfSummaryInput): PdfSummaryTile {
+  const form = input.tirgusForm ?? null;
+  const days = form ? parseListedForSaleDays(form.listedForSale) : null;
+  const published = listingPublishedDate(form);
+  const price = listingPriceChangeLabel(form);
+  const longListing = Boolean(form && shouldShowListedForSaleCriticalBanner(form.listedForSale));
+  if (days == null && !published && !price) {
+    return {
+      id: "listing",
+      label: "Sludinājuma vēsture",
+      value: LISTING_EMPTY,
+      note: "",
+      tone: "neutral",
+    };
+  }
+  const note = [
+    published ? `Publicēts: ${published}` : `Publicēts: ${LISTING_EMPTY}`,
+    price ? `Cenas izmaiņa: ${price}` : `Cenas izmaiņa: ${LISTING_EMPTY}`,
+  ].join(" · ");
+  return {
+    id: "listing",
+    label: "Sludinājuma vēsture",
+    value: days != null ? formatLvDayCount(days) : LISTING_EMPTY,
+    note,
+    tone: longListing ? "alert" : "neutral",
+  };
+}
+
 function buildServiceTile(input: PdfSummaryInput): PdfSummaryTile {
   const ar = input.autoRecordsBlock;
   const dealer =
@@ -282,11 +355,12 @@ export function buildPdfReportSummaryTiles(
     buildMileageTile(input),
     buildOwnerCountTile(input),
     buildServiceTile(input),
+    buildListingTile(input),
   ];
   const include = opts?.pdfBannerInclude;
   const manuals = opts?.manualBanners;
   return computed.flatMap((tile) => {
-    const kind = summaryTileBannerKind(tile.id as "incidents" | "mileage" | "owners" | "service");
+    const kind = summaryTileBannerKind(tile.id as "incidents" | "mileage" | "owners" | "service" | "listing");
     if (!isProvinBannerIncludedInPdf(kind, include)) return [];
     const applied = applySummaryTileOverride(tile, provinBannerOverrideFor(manuals, kind));
     if (applied.id !== "incidents" && isPdfEmptyPlaceholder(applied.value)) return [];
@@ -299,7 +373,7 @@ export function summaryTilesAsResolvedBanners(
   manualBanners?: ProvinManualBanner[] | null,
 ): ProvinResolvedBanner[] {
   return tiles.map((tile) => {
-    const kind = summaryTileBannerKind(tile.id as "incidents" | "mileage" | "owners" | "service");
+    const kind = summaryTileBannerKind(tile.id as "incidents" | "mileage" | "owners" | "service" | "listing");
     const override = provinBannerOverrideFor(manualBanners, kind);
     const computedSeverity = tileToneToSeverity(tile.tone);
     const card = { label: tile.label, value: tile.value, note: tile.note };

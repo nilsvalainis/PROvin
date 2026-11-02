@@ -156,6 +156,8 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
     ru: "В источниках ДТП не зафиксированы",
   },
   "Nav ierakstu": { en: "No records", ru: "Записей нет" },
+  "Nav datu": { en: "No data", ru: "Нет данных" },
+  "Publicēts:": { en: "Published:", ru: "Опубликовано:" },
   "Izsoļu / reģistru bojājumi bez summas": {
     en: "Auction / register damage without amount",
     ru: "Повреждения на аукционах / в реестрах без суммы",
@@ -478,6 +480,8 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "Negadījumi un bojājumi": "Schäden und Beschädigungen",
   "Avotos nav fiksētu negadījumu": "In den Quellen sind keine Unfälle erfasst",
   "Nav ierakstu": "Keine Einträge",
+  "Nav datu": "Keine Daten",
+  "Publicēts:": "Veröffentlicht:",
   "Izsoļu / reģistru bojājumi bez summas": "Auktions- / Registerschäden ohne Betrag",
   "Bojājumi:": "Schäden:",
   "Īpašnieku skaits": "Anzahl der Halter",

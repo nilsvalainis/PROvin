@@ -6,6 +6,7 @@ import {
   SOURCE_BLOCK_LABELS,
 } from "@/lib/admin-source-blocks";
 import { emptyCcVinBlock } from "@/lib/cc-vin-report";
+import { buildClientReportDocumentHtml, type ClientReportPayload } from "@/lib/client-report-html";
 import { buildPdfReportSummaryTiles, buildPdfSummaryBannerTiles } from "@/lib/pdf-report-summary";
 import {
   filterManualBannersForPdf,
@@ -321,11 +322,11 @@ describe("kopsavilkuma bāzes plāksnītes", () => {
       citiAvoti: null,
     };
     const all = buildPdfReportSummaryTiles(input);
-    expect(all.map((t) => t.id)).toEqual(["incidents"]);
+    expect(all.map((t) => t.id)).toEqual(["incidents", "listing"]);
     const hidden = buildPdfReportSummaryTiles(input, {
       pdfBannerInclude: { "summary:owners": false },
     });
-    expect(hidden.map((t) => t.id)).toEqual(["incidents"]);
+    expect(hidden.map((t) => t.id)).toEqual(["incidents", "listing"]);
     const edited = buildPdfReportSummaryTiles(input, {
       manualBanners: [
         {
@@ -342,5 +343,152 @@ describe("kopsavilkuma bāzes plāksnītes", () => {
     expect(owners?.value).toBe("4 maiņas");
     expect(owners?.note).toBe("CarVertical: četras īpašnieku maiņas.");
     expect(owners?.tone).toBe("warn");
+  });
+});
+
+describe("sludinājuma vēstures kartīte", () => {
+  it("rāda publicēšanas datumu, ilgumu un cenas izmaiņu no tirgus laukiem", () => {
+    const tiles = buildPdfReportSummaryTiles({
+      tirgusForm: {
+        ...emptyTirgusFields(),
+        listingCreated: "01.08.2026",
+        listedForSale: "47",
+        priceDrop: "€ -500",
+      },
+    });
+    expect(tiles.find((t) => t.id === "listing")).toEqual({
+      id: "listing",
+      label: "Sludinājuma vēsture",
+      value: "47 dienas",
+      note: "Publicēts: 01.08.2026 · Cenas izmaiņa: € -500",
+      tone: "neutral",
+    });
+  });
+
+  it("cenas izmaiņu ņem no vēstures rindām, ja priceDrop ir tukšs, un sakārto pēc datuma", () => {
+    const tiles = buildPdfReportSummaryTiles({
+      tirgusForm: {
+        ...emptyTirgusFields(),
+        listedForSale: "22",
+        priceHistory: [
+          { date: "22.03.2026", price: 7999, mileage: 300000, year: 2012, delta: 0 },
+          { date: "13.04.2026", price: 7850, mileage: 300000, year: 2012, delta: -149 },
+        ],
+      },
+    });
+    const listing = tiles.find((t) => t.id === "listing");
+    expect(listing?.value).toBe("22 dienas");
+    expect(listing?.note).toBe("Publicēts: 22.03.2026 · Cenas izmaiņa: € -149");
+    expect(listing?.tone).toBe("neutral");
+  });
+
+  it("saglabātais priceDrop ir svarīgāks par vēstures rindu starpību", () => {
+    const tiles = buildPdfReportSummaryTiles({
+      tirgusForm: {
+        ...emptyTirgusFields(),
+        listingCreated: "01.08.2026",
+        listedForSale: "10",
+        priceDrop: "€ -500",
+        priceHistory: [
+          { date: "01.08.2026", price: 9000, mileage: null, year: null, delta: 0 },
+          { date: "05.08.2026", price: 8000, mileage: null, year: null, delta: -1000 },
+        ],
+      },
+    });
+    expect(tiles.find((t) => t.id === "listing")?.note).toContain("€ -500");
+    expect(tiles.find((t) => t.id === "listing")?.note).not.toContain("1 000");
+  });
+
+  it("virs 200 dienām kartīte ir sarkana, zem sliekšņa paliek pelēka", () => {
+    const long = buildPdfReportSummaryTiles({
+      tirgusForm: { ...emptyTirgusFields(), listedForSale: "201", listingCreated: "01.01.2026" },
+    });
+    expect(long.find((t) => t.id === "listing")).toMatchObject({
+      value: "201 diena",
+      tone: "alert",
+    });
+    const atLimit = buildPdfReportSummaryTiles({
+      tirgusForm: { ...emptyTirgusFields(), listedForSale: "200" },
+    });
+    expect(atLimit.find((t) => t.id === "listing")?.tone).toBe("neutral");
+  });
+
+  it("bez sludinājuma datiem rāda Nav datu un nepaliek zaļa", () => {
+    const tiles = buildPdfReportSummaryTiles({
+      tirgusForm: emptyTirgusFields(),
+      listingUrl: "https://www.ss.lv/msg/lv/transport/cars/audi/a3/x.html",
+    });
+    const listing = tiles.find((t) => t.id === "listing");
+    expect(listing).toEqual({
+      id: "listing",
+      label: "Sludinājuma vēsture",
+      value: "Nav datu",
+      note: "",
+      tone: "neutral",
+    });
+    expect(listing?.tone).not.toBe("ok");
+  });
+
+  it("trūkstošo datumu un cenu nenoklusē, ja zināms tikai ilgums", () => {
+    const listing = buildPdfReportSummaryTiles({
+      tirgusForm: { ...emptyTirgusFields(), listedForSale: "12" },
+    }).find((t) => t.id === "listing");
+    expect(listing?.value).toBe("12 dienas");
+    expect(listing?.note).toBe("Publicēts: Nav datu · Cenas izmaiņa: Nav datu");
+    expect(listing?.tone).toBe("neutral");
+  });
+
+  it("ļauj slēpt sludinājuma kartīti", () => {
+    const tiles = buildPdfReportSummaryTiles(
+      { tirgusForm: { ...emptyTirgusFields(), listedForSale: "12", listingCreated: "01.08.2026" } },
+      { pdfBannerInclude: { "summary:listing": false } },
+    );
+    expect(tiles.map((t) => t.id)).not.toContain("listing");
+  });
+
+  it("ieliek kartīti ATSKAITES KOPSAVILKUMĀ ar esošo plāksnītes klasi", () => {
+    const html = buildClientReportDocumentHtml({
+      payload: {
+        sessionId: "cs_test",
+        vin: "WAUZZZ8V1H1033853",
+        created: Date.now(),
+        amountTotal: 7999,
+        currency: "eur",
+        paymentStatus: "paid",
+        listingUrl: null,
+        customerEmail: null,
+        customerPhone: null,
+        customerName: null,
+        contactMethod: null,
+        notes: null,
+        csdd: "",
+        ltab: "",
+        tirgus: "",
+        citi: "",
+        iriss: "",
+        apskatesPlāns: "",
+        tehniskoRiskuAnalize: "",
+        cenasAtbilstiba: "",
+        tirgusForm: {
+          ...emptyTirgusFields(),
+          listingCreated: "01.08.2026",
+          listedForSale: "47",
+          priceDrop: "€ -500",
+        },
+      } as ClientReportPayload,
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    const start = html.indexOf("ATSKAITES KOPSAVILKUMS");
+    const end = html.indexOf("Kas tika pārbaudīts", start);
+    const summary = html.slice(start, end > start ? end : undefined);
+    expect(summary).toContain('pdf-summary-tile pdf-summary-tile--neutral');
+    expect(summary).toContain("Sludinājuma vēsture");
+    expect(summary).toContain("47 dienas");
+    expect(summary).toContain("Publicēts: 01.08.2026");
+    expect(summary).toContain("Cenas izmaiņa: € -500");
+    expect(summary).not.toContain("pdf-summary-tile--ok\">\n      <p class=\"pdf-summary-tile__label\">Sludinājuma vēsture");
   });
 });
