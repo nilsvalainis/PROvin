@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isMemoryVin, kmRollback, latestKm, mergeObservations, parseVinMemoryTable, serializeVinMemoryTable, toObservation } from "@/lib/vin-memory";
+import { isMemoryVin, kmRollback, latestKm, mergeObservations, parseVinMemoryTable, removeVinFromTable, serializeVinMemoryTable, toObservation } from "@/lib/vin-memory";
 
 const NOW = new Date("2026-10-29T10:00:00Z");
 
@@ -82,5 +82,25 @@ describe("serialize / parse", () => {
     expect(parseVinMemoryTable(JSON.parse(serializeVinMemoryTable(table)))).toEqual(table);
     expect(parseVinMemoryTable({ entries: { [vin]: { observations: [{ date: "x", source: "autobid" }] }, "7B7A4C2C89AE96965": { observations: [{ date: "2026-10-29", source: "auto1" }] } } })).toEqual({});
     expect(parseVinMemoryTable(null)).toEqual({});
+  });
+});
+
+describe("removeVinFromTable", () => {
+  it("izņem vienu VIN un atstāj pārējos šķembā", () => {
+    const vin = "WVWZZZ7NZEV015204";
+    const other = "WVWZZZ3CZGE000001";
+    const table = mergeObservations(
+      {},
+      [
+        { vin, date: "2026-10-29", source: "autobid", km: 184350 },
+        { vin: other, date: "2026-10-29", source: "openline", km: 10 },
+      ],
+      NOW,
+    ).table;
+    const cut = removeVinFromTable(table, vin);
+    expect(cut.removed).toBe(true);
+    expect(cut.table[vin]).toBeUndefined();
+    expect(cut.table[other]?.observations).toHaveLength(1);
+    expect(removeVinFromTable(cut.table, vin).removed).toBe(false);
   });
 });

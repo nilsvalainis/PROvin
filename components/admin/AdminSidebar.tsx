@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Archive,
   BarChart3,
   Building2,
   Car,
@@ -74,6 +75,7 @@ export const ADMIN_NAV_LABELS = {
   orders: "Pasūtījumi",
   morning: "Rīta kopsavilkums",
   vinScan: "VIN pārbaude",
+  auctionArchive: "Izsoļu portālu arhīvs",
   dealerCheck: "Dīlera dati",
   fast: "Ātrie vērtējumi",
   irissMenu: "Sākums",
@@ -111,6 +113,13 @@ const PRO_MENU: Item = { href: "/admin/pro", label: "Sākums", icon: Home, match
 const MORNING: Item = { href: "/admin/kopsavilkums", label: L.morning, icon: Sun, match: starts("/admin/kopsavilkums") };
 const FAST: Item = { href: "/admin/atras-vertesanas", label: L.fast, icon: Zap, badge: "fast", match: starts("/admin/atras-vertesanas") };
 const VIN: Item = { href: "/admin/vin-scan", label: L.vinScan, icon: ScanLine, match: starts("/admin/vin-scan") };
+/** Tikai PRO administratora izvēlne. IRISS darbinieku sarakstā šīs lapas nav. */
+const AUCTION_ARCHIVE: Item = {
+  href: "/admin/izsolu-arhivs",
+  label: L.auctionArchive,
+  icon: Archive,
+  match: starts("/admin/izsolu-arhivs"),
+};
 const DEALER_CHECK: Item = {
   href: "/admin/dilera-dati",
   label: L.dealerCheck,
@@ -147,7 +156,7 @@ const I_SETTINGS: Item = { href: "/admin/iriss/iestatijumi", label: L.irissSetti
 const I_VIN: Item = { ...VIN, label: L.vinScan };
 
 export const ADMIN_NAV_GROUPS: Group[] = [
-  { title: L.groupPro, items: [MORNING, SAKUMS, VIN, DEALER_CHECK, FAST] },
+  { title: L.groupPro, items: [MORNING, SAKUMS, VIN, AUCTION_ARCHIVE, DEALER_CHECK, FAST] },
   { title: L.groupIriss, items: [I_MENU, I_HOME, I_PIEDAVAJUMI, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_WAYBILLS, I_SETTINGS] },
   {
     title: L.groupWeb,
@@ -591,6 +600,7 @@ const MORE_ROW_ICON: Record<string, AdminMobileIconName> = {
   "/admin/kopsavilkums": "rits",
   "/admin/dashboard": "pasutijumi",
   "/admin/vin-scan": "vinParbaude",
+  "/admin/izsolu-arhivs": "vinParbaude",
   "/admin/atras-vertesanas": "atrie",
   "/admin/commission-invoice": "rekini",
   "/admin/partneri": "partneri",

@@ -183,6 +183,7 @@ export function irissDefaultLayoutIds(isAdmin: boolean): readonly string[] {
 const PRO_APPS: Array<Omit<MenuCatalogItem, "kind" | "sizes" | "defaultSize">> = [
   { id: "pro-pasutijumi", title: "Pasūtījumi", href: "/admin/dashboard", icon: "car", tone: "#1a73e8", badge: "orders" },
   { id: "pro-vin", title: "VIN pārbaude", href: "/admin/vin-scan", icon: "scan", tone: "#2b2f3a" },
+  { id: "pro-arhivs", title: "Izsoļu portālu arhīvs", href: "/admin/izsolu-arhivs", icon: "scan", tone: "#2b2f3a" },
   { id: "pro-dilera", title: "Dīlera dati", href: "/admin/dilera-dati", icon: "dealers", tone: "#2563eb" },
   { id: "pro-atrie", title: "Ātrie", href: "/admin/atras-vertesanas", icon: "bolt", tone: "#ff9f0a", badge: "fast" },
   { id: "pro-rits", title: "Rīta kopsavilkums", href: "/admin/kopsavilkums", icon: "sun", tone: "#e0a800" },
@@ -208,4 +209,4 @@ export function proMenuCatalog(): MenuCatalogItem[] {
   return [...apps, ...widgets];
 }
 
-export const PRO_DEFAULT_LAYOUT_IDS = ["w-pro-mini", "w-pro-dileri", "w-pro-ienemumi", "pro-pasutijumi", "pro-atrie", "pro-vin", "pro-dilera", "pro-rits", "pro-partneri", "pro-dileri", "pro-izmaksas", "pro-rekini", "pro-blogs", "pro-agregati", "pro-statistika", "pro-teksti"];
+export const PRO_DEFAULT_LAYOUT_IDS = ["w-pro-mini", "w-pro-dileri", "w-pro-ienemumi", "pro-pasutijumi", "pro-atrie", "pro-vin", "pro-arhivs", "pro-dilera", "pro-rits", "pro-partneri", "pro-dileri", "pro-izmaksas", "pro-rekini", "pro-blogs", "pro-agregati", "pro-statistika", "pro-teksti"];
