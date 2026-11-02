@@ -26,6 +26,14 @@ import { parseOneautoDisplay, parseOneautoProductIds } from "@/lib/oneauto-catal
 import { parseResultMap } from "@/lib/oneauto-block";
 import { rigaYearMonthKey } from "@/lib/admin-riga-calendar";
 import { normalizeVin } from "@/lib/order-field-validation";
+import {
+  dealerCheckHistoryEntryFromRecord,
+  dealerCheckLoadShouldPersist,
+  dealerCheckVisibleTo,
+  parseDealerCheckCsddSnapshot,
+  parseDealerCheckHistoryEntry,
+  type DealerCheckHistoryEntry,
+} from "@/lib/dealer-check-history";
 
 const DEFAULT_RELATIVE_DIR = ".data/dealer-checks";
 const DEFAULT_BLOB_SUBPREFIX = "dealer-checks/";
@@ -37,6 +45,7 @@ type BlobConfig = { token: string; prefix: string };
 type DealerCheckIndex = {
   byVin: Record<string, string>;
   ids: string[];
+  entries: DealerCheckHistoryEntry[];
 };
 
 type DealerCheckLedgerFile = {
@@ -237,6 +246,8 @@ export function normalizeDealerCheckRecord(raw: unknown, fallbackId = ""): Deale
   if (!isSafeDealerCheckId(id)) return null;
   const vin = normalizeVin(typeof o.vin === "string" ? o.vin : "");
   const selected = parseOneautoProductIds(o.selectedProducts);
+  const csddSnapshot = parseDealerCheckCsddSnapshot(o.csddSnapshot);
+  const orderId = typeof o.orderId === "string" ? o.orderId.trim().slice(0, 80) : "";
   return {
     id,
     vin,
@@ -259,7 +270,21 @@ export function normalizeDealerCheckRecord(raw: unknown, fallbackId = ""): Deale
     saved: o.saved === true,
     createdAt: typeof o.createdAt === "string" ? o.createdAt.slice(0, 40) : "",
     updatedAt: typeof o.updatedAt === "string" ? o.updatedAt.slice(0, 40) : "",
+    ...(typeof o.createdBy === "string" && o.createdBy.trim() ? { createdBy: o.createdBy.trim().slice(0, 120) } : {}),
+    ...(o.status === "converted" || orderId ? { status: "converted" as const } : {}),
+    ...(orderId ? { orderId } : {}),
+    ...(csddSnapshot ? { csddSnapshot } : {}),
   };
+}
+
+function parseEntries(raw: unknown): DealerCheckHistoryEntry[] {
+  if (!Array.isArray(raw)) return [];
+  const out: DealerCheckHistoryEntry[] = [];
+  for (const item of raw) {
+    const entry = parseDealerCheckHistoryEntry(item);
+    if (entry && !out.some((row) => row.id === entry.id)) out.push(entry);
+  }
+  return out;
 }
 
 async function readIndex(): Promise<DealerCheckIndex> {
@@ -277,7 +302,7 @@ async function readIndex(): Promise<DealerCheckIndex> {
       if (typeof id === "string" && isSafeDealerCheckId(id) && !ids.includes(id)) ids.push(id);
     }
   }
-  return { byVin, ids: ids.slice(-500) };
+  return { byVin, ids, entries: parseEntries(raw?.entries) };
 }
 
 async function writeIndex(index: DealerCheckIndex): Promise<void> {
@@ -304,8 +329,74 @@ export async function writeDealerCheck(record: DealerCheckRecord): Promise<boole
   const index = await readIndex();
   if (record.vin) index.byVin[record.vin] = record.id;
   if (!index.ids.includes(record.id)) index.ids.push(record.id);
+  const entry = dealerCheckHistoryEntryFromRecord(record);
+  if (entry) {
+    const at = index.entries.findIndex((row) => row.id === entry.id);
+    if (at >= 0) index.entries[at] = entry;
+    else index.entries.push(entry);
+  }
   await writeIndex(index);
   return true;
+}
+
+export async function commitDealerCheckLoad(
+  record: DealerCheckRecord,
+  createdBy: string,
+): Promise<{ stored: boolean; durable: boolean; record: DealerCheckRecord }> {
+  if (!dealerCheckLoadShouldPersist(record) || !isSafeDealerCheckId(record.id)) {
+    return { stored: false, durable: false, record };
+  }
+  const next: DealerCheckRecord = {
+    ...record,
+    createdBy,
+    status: "open",
+    orderId: "",
+  };
+  const stored = await writeDealerCheck(next);
+  return { stored, durable: true, record: next };
+}
+
+async function hydrateMissingEntries(index: DealerCheckIndex): Promise<DealerCheckHistoryEntry[]> {
+  const known = new Set(index.entries.map((row) => row.id));
+  const missing = index.ids.filter((id) => !known.has(id));
+  if (missing.length === 0) return index.entries;
+  let changed = false;
+  for (const id of missing) {
+    const rec = await readDealerCheck(id);
+    const entry = rec ? dealerCheckHistoryEntryFromRecord(rec) : null;
+    if (!entry) continue;
+    index.entries.push(entry);
+    changed = true;
+  }
+  if (changed) await writeIndex(index);
+  return index.entries;
+}
+
+export async function listDealerCheckEntries(creatorId: string): Promise<DealerCheckHistoryEntry[]> {
+  const index = await readIndex();
+  const entries = await hydrateMissingEntries(index);
+  return entries
+    .filter((row) => row.createdBy === creatorId)
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
+}
+
+export async function readOwnedDealerCheck(id: string, creatorId: string): Promise<DealerCheckRecord | null> {
+  const record = await readDealerCheck(id);
+  if (!record || !dealerCheckVisibleTo(record, creatorId)) return null;
+  return record;
+}
+
+export async function convertDealerCheckToOrder(id: string, orderId: string, createdBy: string): Promise<boolean> {
+  const current = await readOwnedDealerCheck(id, createdBy);
+  const order = orderId.trim().slice(0, 80);
+  if (!current || !order) return false;
+  const next: DealerCheckRecord = {
+    ...current,
+    status: "converted",
+    orderId: order,
+    updatedAt: new Date().toISOString(),
+  };
+  return writeDealerCheck(next);
 }
 
 export async function deleteDealerCheck(id: string): Promise<DealerCheckRecord | null> {
@@ -313,6 +404,7 @@ export async function deleteDealerCheck(id: string): Promise<DealerCheckRecord |
   if (!current) return null;
   const index = await readIndex();
   index.ids = index.ids.filter((x) => x !== id);
+  index.entries = index.entries.filter((row) => row.id !== id);
   if (current.vin && index.byVin[current.vin] === id) delete index.byVin[current.vin];
   await writeIndex(index);
   await deleteJson(id);

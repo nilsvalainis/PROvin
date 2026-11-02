@@ -2,8 +2,16 @@ import { Suspense } from "react";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminDealerCheckPage } from "@/components/admin/AdminDealerCheckPage";
 import { requireAdminPage } from "@/lib/admin-auth";
-import { parseDealerCheckSearchPlate, parseDealerCheckSearchVin } from "@/lib/dealer-check";
+import { currentDealerCheckCreatorId } from "@/lib/dealer-check-actor";
+import {
+  isSafeDealerCheckId,
+  parseDealerCheckSearchPlate,
+  parseDealerCheckSearchVin,
+  type DealerCheckRecord,
+} from "@/lib/dealer-check";
 import { prefetchDealerCheckCsdd } from "@/lib/dealer-check-csdd-prefetch";
+import type { DealerCheckHistoryEntry } from "@/lib/dealer-check-history";
+import { listDealerCheckEntries, readOwnedDealerCheck } from "@/lib/dealer-check-store";
 
 export const metadata = {
   title: "Dīlera datu pārbaude",
@@ -14,14 +22,27 @@ export const dynamic = "force-dynamic";
 export default async function AdminDealerCheckRoute({
   searchParams,
 }: {
-  searchParams?: Promise<{ vin?: string; no?: string; vn?: string }>;
+  searchParams?: Promise<{ vin?: string; no?: string; vn?: string; id?: string }>;
 }) {
   await requireAdminPage();
   const sp = searchParams ? await searchParams : undefined;
-  const searchVin = parseDealerCheckSearchVin(sp?.vin ?? "");
-  const searchPlate = parseDealerCheckSearchPlate(sp?.vn ?? "");
-  const fromAutoparks = sp?.no === "autoparks";
-  const prefetched = await prefetchDealerCheckCsdd({ vin: searchVin, plate: searchPlate });
+  const initialId = isSafeDealerCheckId(sp?.id ?? "") ? (sp?.id ?? "") : "";
+  let saved: DealerCheckRecord | null = null;
+  let initialEntries: DealerCheckHistoryEntry[] = [];
+  try {
+    const creator = await currentDealerCheckCreatorId();
+    initialEntries = await listDealerCheckEntries(creator);
+    if (initialId) saved = await readOwnedDealerCheck(initialId, creator);
+  } catch {
+    saved = null;
+    initialEntries = [];
+  }
+  const searchVin = saved?.vin || parseDealerCheckSearchVin(sp?.vin ?? "");
+  const searchPlate = saved?.plate || parseDealerCheckSearchPlate(sp?.vn ?? "");
+  const fromAutoparks = !saved && sp?.no === "autoparks";
+  const prefetched = saved?.csddSnapshot
+    ? { vin: searchVin, plate: searchPlate, csdd: saved.csddSnapshot, message: "" }
+    : await prefetchDealerCheckCsdd({ vin: searchVin, plate: searchPlate });
   return (
     <div className="w-full max-w-none">
       <AdminDashboardHeaderWithMenu
@@ -38,6 +59,8 @@ export default async function AdminDealerCheckRoute({
           initialCsdd={prefetched.csdd}
           initialCsddMessage={prefetched.message}
           fromAutoparks={fromAutoparks}
+          initialRecord={saved}
+          initialEntries={initialEntries}
         />
       </Suspense>
     </div>
