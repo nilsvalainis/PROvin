@@ -99,6 +99,22 @@ describe("Autoparks v2 saraksts", () => {
     expect(autoparksV2OwnerCounts(rows)).toEqual({ all: 3, IRISS: 2, DZA: 1 });
   });
 
+  it("meklēšana ignorē atstarpes markā un modelī («E 350» un «E350»)", () => {
+    const found = [
+      { id: "e1", make: "Mercedes-Benz", model: "E350", vin: "WDDHF5GB7AA111111", status: "for_sale" },
+      { id: "e2", make: "Mercedes-Benz", model: "E 350", vin: "WDDHF5GB7AA222222", status: "for_sale" },
+      { id: "e3", make: "Mercedes-Benz", model: "E 350", vin: "WDDHF5GB7AA333333", status: "for_sale" },
+      { id: "x", make: "BMW", model: "320d", vin: "WBA000000000000099", status: "for_sale" },
+    ].map((c) => normalizeAutoparksCar(c)!);
+    const listed = autoparksV2ListRows(found, emptyAutoparksV2State());
+    const multi = listed.map((row) => (row.id === "e3" ? { ...row, title: "Mercedes-Benz E  350" } : row));
+    for (const query of ["E 350", "E350", "E  350", "e350"]) {
+      expect(filterAutoparksV2Rows(multi, { owner: "all", query }).map((row) => row.id).sort()).toEqual(["e1", "e2", "e3"]);
+    }
+    expect(filterAutoparksV2Rows(multi, { owner: "all", query: "e350 222222" }).map((row) => row.id)).toEqual(["e2"]);
+    expect(filterAutoparksV2Rows(multi, { owner: "all", query: "320d" }).map((row) => row.id)).toEqual(["x"]);
+  });
+
   it("J29 C: sarakstā redzama v2 labotā marka/modelis/VIN", () => {
     const v2 = normalizeAutoparksV2State({ cars: { c: { fields: { make: "BMW", model: "220d Gran Tourer", vin: "WBA2A1234A1234567" } } } });
     const r = autoparksV2ListRows(cars, v2).find((x) => x.id === "c")!;
