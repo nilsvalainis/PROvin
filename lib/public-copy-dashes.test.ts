@@ -32,6 +32,7 @@ const USER_FACING_STRING_FILES = [
   join(REPO_ROOT, "lib/email/html-templates.ts"),
   join(REPO_ROOT, "lib/email/report-ready-copy.ts"),
   join(REPO_ROOT, "lib/client-link.ts"),
+  join(REPO_ROOT, "lib/manual-order-payment.ts"),
   join(REPO_ROOT, "lib/dzintarzeme-pasutijums-terms-content.ts"),
   join(REPO_ROOT, "lib/admin-workspace-field-labels.ts"),
   join(REPO_ROOT, "lib/format-order-datetime.ts"),

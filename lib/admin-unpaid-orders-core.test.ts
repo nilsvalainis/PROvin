@@ -81,6 +81,7 @@ describe("isEligibleUnpaidCandidate / B2B", () => {
 
   it("rejects upsell, reminder clones, SELECT, too fresh, too old; keeps missing email", () => {
     expect(isEligibleUnpaidCandidate(cand({ id: "u", fulfillment: "order_upsell" }), NOW)).toBe(false);
+    expect(isEligibleUnpaidCandidate(cand({ id: "u", fulfillment: "manual_order_payment" }), NOW)).toBe(false);
     expect(isEligibleUnpaidCandidate(cand({ id: "u", upgradeOf: "cs_old" }), NOW)).toBe(false);
     expect(isEligibleUnpaidCandidate(cand({ id: "u", reminderOf: "cs_orig" }), NOW)).toBe(false);
     expect(isEligibleUnpaidCandidate(cand({ id: "u", checkoutLine: "provin_select" }), NOW)).toBe(false);

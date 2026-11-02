@@ -55,6 +55,7 @@ export const STRIPE_SERVER_METADATA_KEYS = [
   "upgrade_kind",
   "upgrade_token",
   "client_link_hash",
+  "manual_order_id",
 ] as const;
 
 export type StripeServerMetadataKey = (typeof STRIPE_SERVER_METADATA_KEYS)[number];

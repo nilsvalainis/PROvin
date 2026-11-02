@@ -24,6 +24,7 @@ import { formatMoneyEur } from "@/lib/format-money";
 import { isMiniHighlightAdminOrder, paidProductLabel } from "@/lib/admin-customer-identity";
 import { b2bPaidServiceLabelLv } from "@/lib/b2b-paid-service-label";
 import { b2bChosenReportLangLabel } from "@/lib/b2b-report-lang-lock";
+import { AdminManualOrderPaymentPanel } from "@/components/admin/AdminManualOrderPaymentPanel";
 import { AdminOrderUpsellPanel } from "@/components/admin/AdminOrderUpsellPanel";
 import {
   isPartnerVinAdminOrder,
@@ -813,6 +814,8 @@ export function AdminOrderDetailView({
           ) : null}
         </p>
       </header>
+
+      {order.isManual && !isPartnerVin ? <AdminManualOrderPaymentPanel sessionId={order.id} /> : null}
 
       {isMiniHighlightAdminOrder({
         checkoutLine: order.checkoutLine,
