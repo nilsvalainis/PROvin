@@ -4,7 +4,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import { Footer } from "@/components/Footer";
 import { VinDecoderTool, type VinDecoderLabels } from "@/components/vin-decoder/VinDecoderTool";
-import { homePath } from "@/lib/paths";
+import { homePath, vinCheckHref } from "@/lib/paths";
+import { PublicTopicLinks } from "@/components/seo/PublicTopicLinks";
 import { buildPublicPageMetadata } from "@/lib/seo-public-metadata";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
@@ -29,6 +30,7 @@ export default async function VinDecoderPage({ params }: Props) {
   setRequestLocale(locale);
   const tAll = await getTranslations({ locale });
   const raw = tAll.raw("VinDecoder") as VinDecoderLabels & { title: string; lead: string };
+  const tVin = await getTranslations({ locale, namespace: "VinCheck" });
   const home = homePath(locale);
 
   return (
@@ -44,6 +46,15 @@ export default async function VinDecoderPage({ params }: Props) {
             </div>
             <div className="rounded-[20px] border border-white/[0.09] bg-white/[0.02] p-4 sm:p-7">
               <VinDecoderTool locale={locale} labels={raw} home={home} source="decoder" />
+            </div>
+            <div className="max-w-[46rem]">
+              <p className="text-[1.05rem] leading-relaxed text-zinc-300">{tVin("decoderCrossLink")}</p>
+              <PublicTopicLinks
+                links={[
+                  { href: vinCheckHref(), label: tVin("homeCta"), primary: true },
+                  { href: vinCheckHref(), label: tVin("homeHistoryCta") },
+                ]}
+              />
             </div>
           </div>
         </section>

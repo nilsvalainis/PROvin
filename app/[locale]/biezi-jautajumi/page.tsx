@@ -5,7 +5,9 @@ import { Faq } from "@/components/Faq";
 import { Footer } from "@/components/Footer";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { PageBreadcrumbs } from "@/components/seo/PageBreadcrumbs";
+import { PublicTopicLinks } from "@/components/seo/PublicTopicLinks";
 import { buildFaqPageJsonLd } from "@/lib/seo-json-ld";
+import { vinCheckHref } from "@/lib/paths";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 
@@ -29,6 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function FaqPage({ params }: Props) {
   const { locale } = await params;
   const tCrumb = await getTranslations("Breadcrumbs");
+  const tVin = await getTranslations("VinCheck");
   const messages = await getMessages();
   const raw = (messages as { Faq?: { items?: FaqMsgItem[] } }).Faq?.items;
   const items = Array.isArray(raw) ? raw : [];
@@ -48,6 +51,14 @@ export default async function FaqPage({ params }: Props) {
         {faqLd ? <JsonLd data={faqLd} /> : null}
 
         <Faq tone="dark" headingAs="h1" />
+        <div className="mx-auto w-full max-w-[80rem] px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] lg:px-10">
+          <PublicTopicLinks
+            links={[
+              { href: vinCheckHref(), label: tVin("homeCta"), primary: true },
+              { href: vinCheckHref(), label: tVin("homeHistoryCta") },
+            ]}
+          />
+        </div>
 
         <div id="site-content" className="min-w-0 bg-transparent pb-0 text-white home-body-ink">
           <section className="demo-design-dir__section bg-transparent pb-0">

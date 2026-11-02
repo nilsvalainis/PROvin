@@ -15,7 +15,7 @@ function Arrow() {
   );
 }
 
-/** Sākumlapas SEO bloks + raksti no bloga (makets «Pilna lapa»; teksts tas pats). */
+/** Sākumlapas SEO bloks + raksti no bloga. Iekšējā saite uz /vin-koda-parbaude. */
 export async function HomeVinSeoSection() {
   const t = await getTranslations("VinCheck");
   const locale = await getLocale();
@@ -27,6 +27,7 @@ export async function HomeVinSeoSection() {
   }
   const links: Array<[string, string]> = [
     [vinCheckHref(), t("homeCta")],
+    [vinCheckHref(), t("homeHistoryCta")],
     [pakalpojumiHref(), t("ctaServices")],
     [faqPageHref(), t("ctaFaq")],
   ];
@@ -52,11 +53,23 @@ export async function HomeVinSeoSection() {
                 ),
               })}
             </p>
+            <p className="mt-4 max-w-[60ch] text-pretty text-[1.05rem] leading-[1.65] text-zinc-300 sm:text-lg">
+              {t.rich("homeMore", {
+                vinPage: (chunks) => (
+                  <Link
+                    href={vinCheckHref()}
+                    className="text-[#5c9dff] underline decoration-[#5c9dff]/40 underline-offset-[3px] transition hover:text-white"
+                  >
+                    {chunks}
+                  </Link>
+                ),
+              })}
+            </p>
           </div>
           <nav aria-label={t("homeTitle")} className="flex flex-col border-t border-[#262a36] lg:col-span-5">
             {links.map(([href, label]) => (
               <Link
-                key={href}
+                key={`${href}:${label}`}
                 href={href}
                 className="group flex items-center justify-between gap-4 border-b border-[#262a36] py-5 text-[1.1rem] font-semibold text-zinc-50 no-underline transition hover:text-[#5c9dff]"
               >
