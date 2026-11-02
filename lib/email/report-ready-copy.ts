@@ -15,7 +15,7 @@ import {
   defaultSignOffBlock,
 } from "@/lib/messages/shared-blocks";
 import { resolveMessageSync } from "@/lib/messages/resolve-message";
-import { buildReportReadyEmailVars, reportReadyTemplateId } from "@/lib/messages/template-vars";
+import { buildReportReadyEmailVars, reportReadyTemplateId, reportReadyVinVar } from "@/lib/messages/template-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
 export { GOOGLE_REVIEW_URL, CLIENT_MESSAGE_SIGN_OFF_LINES };
@@ -86,10 +86,12 @@ const REPORT_READY_SUBJECT: Record<ReportReadyProductKind, Record<ClientReportLa
 
 export function buildReportReadySubject(
   kind: ReportReadyProductKind,
-  _vin?: string,
+  vin?: string,
   lang: ClientReportLang = "lv",
 ): string {
-  return REPORT_READY_SUBJECT[kind][lang];
+  const base = REPORT_READY_SUBJECT[kind][lang];
+  const code = reportReadyVinVar(vin);
+  return code ? `${base} (${code})` : base;
 }
 
 const REPORT_READY_GREETING: Record<ClientReportLang, string> = {

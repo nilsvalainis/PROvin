@@ -7,6 +7,13 @@ import {
 } from "@/lib/email/mini-to-audits-approved-text";
 import { latvianVocativeFirstName } from "@/lib/email/mini-to-audits-recommendation";
 import type { ReportReadyProductKind } from "@/lib/email/report-ready-copy";
+import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+
+/** Valid 17-char VIN for {{vin}} / temats; otherwise empty so stale `({{vin}})` does not render as `()`. */
+export function reportReadyVinVar(vin?: string | null): string {
+  const raw = (vin ?? "").trim();
+  return isValidVin(raw) ? normalizeVin(raw) : "";
+}
 
 export function amountLineDefault(amountEur?: string | null): string {
   const a = (amountEur ?? "").trim();
@@ -34,7 +41,10 @@ export function buildReportReadyEmailVars(opts: {
   } else if (opts.kind === "dealer" && files.length > 0) {
     pielikumi = ["", ...files.map((n) => `- ${n}`)].join("\n");
   }
-  const vars: Record<string, string> = { pielikumi };
+  const vars: Record<string, string> = {
+    pielikumi,
+    vin: reportReadyVinVar(opts.vin),
+  };
   if (!opts.includeGoogleReview) vars.google_atsauksme = "";
   return vars;
 }
