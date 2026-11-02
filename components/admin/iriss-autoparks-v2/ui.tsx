@@ -57,16 +57,19 @@ export function CarPlaceholder() {
  * Galvenā bilde no /STOCK (API to atrod pirmajā pieprasījumā) virs vietturā; ja bildes nav - paliek vietturis.
  * `onEditPhoto` (J29 B): ja dots, rāda kameras pogu stūrī "Mainīt galveno bildi" izvēlei. `version` - atjaunina
  * `<img>` src pēc izvēles, lai pārlūks neizmanto vecā attēla kešu.
+ * `onOpenPhoto` (LAW 30.10): klikšķis uz bildes atver titulbildes popup (kameras poga paliek atsevišķa).
  */
 export function CarImg({
   carId,
   className = "ap2-img",
   onEditPhoto,
+  onOpenPhoto,
   version = 0,
 }: {
   carId: string;
   className?: string;
   onEditPhoto?: () => void;
+  onOpenPhoto?: () => void;
   version?: number;
 }) {
   const [failed, setFailed] = useState(false);
@@ -74,19 +77,21 @@ export function CarImg({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   useEffect(() => setFailed(false), [version]);
+  const src = `/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(carId)}/foto${version ? `?v=${version}` : ""}`;
+  const photo = mounted && !failed ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt="" loading="lazy" onError={() => setFailed(true)} />
+  ) : null;
   return (
     <span className={className} style={{ position: "relative" }}>
       <CarPlaceholder />
-      {mounted && !failed ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={`/api/admin/iriss-autoparks-v2/pamatdati/${encodeURIComponent(carId)}/foto${version ? `?v=${version}` : ""}`}
-          alt=""
-          loading="lazy"
-          style={{ position: "absolute", inset: 0 }}
-          onError={() => setFailed(true)}
-        />
-      ) : null}
+      {onOpenPhoto && !failed ? (
+        <button type="button" className="ap2-img-open" onClick={onOpenPhoto} aria-label="Atvērt galveno bildi">
+          {photo}
+        </button>
+      ) : (
+        photo
+      )}
       {onEditPhoto ? (
         <button type="button" className="ap2-cambtn" onClick={onEditPhoto} aria-label="Mainīt galveno bildi">
           <CameraIcon />
