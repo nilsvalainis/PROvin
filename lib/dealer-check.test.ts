@@ -266,6 +266,9 @@ describe("Dīlera datu pārbaude: ADMIN only", () => {
     expect(decideAdminPageAccess("/admin/dilera-dati", vinStaff)).toBe("forbidden");
     expect(decideAdminApiAccess("/api/admin/dealer-check", vinStaff)).toBe("forbidden");
     expect(decideAdminApiAccess("/api/admin/dealer-check/pdf", vinStaff)).toBe("forbidden");
+    expect(decideAdminApiAccess("/api/admin/manual-orders", { kind: "admin" })).toBe("allow");
+    expect(decideAdminApiAccess("/api/admin/manual-orders", vinStaff)).toBe("forbidden");
+    expect(decideAdminApiAccess("/api/admin/manual-orders", allIrissStaff)).toBe("forbidden");
     expect(decideAdminPageAccess("/admin/dilera-dati", allIrissStaff)).toBe("forbidden");
     expect(decideAdminPageAccess("/admin/vin-scan", vinStaff)).toBe("allow");
   });

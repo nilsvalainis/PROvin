@@ -1,6 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: () => undefined, replace: () => undefined, refresh: () => undefined, prefetch: () => undefined }),
+}));
+
 import { AdminDealerCheckCsddPreview, AdminDealerCheckPage } from "@/components/admin/AdminDealerCheckPage";
 import { dealerCheckEmptyStateText, dealerCheckPageHref, DEALER_CHECK_PAGE_PATH } from "@/lib/dealer-check";
+import { DEALER_CHECK_MANUAL_ORDER_LABEL } from "@/lib/dealer-check-manual-order";
 import { DEALER_CHECK_CSDD_TITLE } from "@/lib/dealer-check-csdd";
 import { emptyCsddTechData, type CsddTechData } from "@/lib/csdd-tech-data";
 import { renderHtml, renderText } from "@/lib/test-render";
@@ -42,6 +48,7 @@ describe("AdminDealerCheckPage", () => {
     expect(text).not.toMatch(/speckr/i);
     expect(html).toContain("disabled");
     expect(text).toContain(dealerCheckEmptyStateText());
+    expect(text).not.toContain(DEALER_CHECK_MANUAL_ORDER_LABEL);
     expect(text).not.toContain("Gemini: Servisa vēsture");
     expect(text).not.toContain("CSDD salīdzinājums");
     expect(text).not.toContain(DEALER_CHECK_CSDD_TITLE);
@@ -54,6 +61,7 @@ describe("AdminDealerCheckPage", () => {
     expect(html).toContain(`value="${vin}"`);
     expect(text).toContain("VIN iekopēts no Autoparks");
     expect(text).toContain("Avoti paliek izslēgti");
+    expect(text).not.toContain(DEALER_CHECK_MANUAL_ORDER_LABEL);
     expect(text).toContain("noklusējumā visi izslēgti");
     expect(html).toContain("disabled");
     expect(dealerCheckPageHref({ vin, from: "autoparks" })).toBe(
@@ -81,6 +89,10 @@ describe("AdminDealerCheckPage", () => {
     expect(text).toContain("Vieglais plašlietojuma");
     expect(text).toContain("e1*2007/46*0317*20");
     expect(text).toContain(dealerCheckEmptyStateText());
+    expect(text).toContain(DEALER_CHECK_MANUAL_ORDER_LABEL);
+    const createBtn = html.match(/<button[^>]*data-dealer-check-create-order[^>]*>/);
+    expect(createBtn?.[0]).toBeTruthy();
+    expect(createBtn?.[0]).not.toMatch(/\sdisabled[=\s>]/);
     expect(text).not.toContain("Gemini: Servisa vēsture");
     expect(text).not.toContain("CSDD salīdzinājums");
     expect(text).not.toMatch(/speckr/i);
