@@ -10,6 +10,11 @@ import {
   deleteManualOrder,
   updateManualOrder,
 } from "@/lib/admin-manual-orders";
+import { createDealerCheckManualOrder } from "@/lib/dealer-check-create-manual-order";
+import {
+  DEALER_CHECK_MANUAL_ORDER_ORIGIN,
+  parseDealerCheckManualOrderBody,
+} from "@/lib/dealer-check-manual-order";
 import { createVinScanManualOrder } from "@/lib/vin-scan/create-manual-order";
 import { parseVinScanManualOrderInput } from "@/lib/vin-scan/manual-order-seed";
 
@@ -35,6 +40,21 @@ export async function POST(req: Request) {
       } catch {
         return NextResponse.json({ error: "invalid_json" }, { status: 400 });
       }
+    }
+    if (
+      body &&
+      typeof body === "object" &&
+      (body as Record<string, unknown>).origin === DEALER_CHECK_MANUAL_ORDER_ORIGIN
+    ) {
+      const parsed = parseDealerCheckManualOrderBody(body);
+      if (!parsed.ok) {
+        return NextResponse.json({ error: parsed.error }, { status: 400 });
+      }
+      const created = await createDealerCheckManualOrder(parsed.input);
+      if (!created.ok) {
+        return NextResponse.json({ error: created.error }, { status: storeErrorStatus(created.error) });
+      }
+      return NextResponse.json({ ok: true, orderId: created.orderId, record: { id: created.orderId } });
     }
     if (body && typeof body === "object" && "vin" in (body as Record<string, unknown>)) {
       const input = parseVinScanManualOrderInput(body);

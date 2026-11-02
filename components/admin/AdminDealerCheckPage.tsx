@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { openGeneratedHtmlDocument } from "@/lib/admin-open-window";
 import {
   DEALER_CHECK_DEFAULT_SELECTED,
@@ -32,12 +33,24 @@ import {
   dealerCheckHasCsddPreview,
   parseDealerCheckCsddResponse,
 } from "@/lib/dealer-check-csdd";
+import {
+  buildDealerCheckManualOrderBody,
+  DEALER_CHECK_MANUAL_ORDER_LABEL,
+  dealerCheckManualOrderCanCreate,
+} from "@/lib/dealer-check-manual-order";
 import { isValidVin, normalizeVin, sanitizeVinInput } from "@/lib/order-field-validation";
 import type { CsddTechData } from "@/lib/csdd-tech-data";
 import type { OneautoProductId } from "@/lib/oneauto-catalog";
 
 const inp =
   "w-full min-w-0 rounded-[10px] border border-[#d1d1d6] bg-white px-3 py-[10px] font-mono text-[14px] text-[#111] placeholder:text-[#8e8e93] focus:border-[#2563EB] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/25";
+
+function createOrderErrorLv(status: number, code: string): string {
+  if (status === 401 || code === "unauthorized") return "Nav admin sesijas. Ielādē lapu no jauna.";
+  if (code === "invalid_vin") return "Ievadi derīgu VIN.";
+  if (code === "insufficient_data") return "Nepietiek datu pasūtījumam. Vajag VIN un CSDD vai dīlera ielādi.";
+  return "Neizdevās izveidot pasūtījumu.";
+}
 
 function errorLv(code: string): string {
   switch (code) {
@@ -86,10 +99,24 @@ export function AdminDealerCheckPage({
   });
   const [error, setError] = useState("");
   const [notice, setNotice] = useState(fromAutoparks && initialVin ? "VIN iekopēts no Autoparks. Avoti paliek izslēgti." : "");
+  const [creatingOrder, setCreatingOrder] = useState(false);
+  const [createOrderError, setCreateOrderError] = useState("");
+  const router = useRouter();
   const csddLookupSeq = useRef(0);
 
   const pick = dealerCheckSelection(selected);
   const canLoad = dealerCheckCanLoad(selected) && !busy && (Boolean(normalizeVin(vin)) || Boolean(plate.trim()));
+  const orderComments = editing ? draftComments : record?.comments;
+  const canCreateOrder =
+    !creatingOrder &&
+    !busy &&
+    dealerCheckManualOrderCanCreate({
+      vin,
+      plate,
+      csdd: csddPreview,
+      record,
+      comments: orderComments,
+    });
 
   const loadLedger = useCallback(async (vinHint?: string) => {
     const q = vinHint ? `?vin=${encodeURIComponent(vinHint)}` : "";
@@ -164,6 +191,46 @@ export function AdminDealerCheckPage({
 
   function toggle(id: OneautoProductId) {
     setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
+  }
+
+  async function onCreateManualOrder() {
+    if (!canCreateOrder || creatingOrder) return;
+    setCreatingOrder(true);
+    setCreateOrderError("");
+    try {
+      const res = await fetch("/api/admin/manual-orders", {
+        method: "POST",
+        credentials: "include",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(
+          buildDealerCheckManualOrderBody({
+            vin,
+            plate,
+            csdd: csddPreview,
+            record,
+            comments: editing ? draftComments : record?.comments,
+          }),
+        ),
+      });
+      const data = (await res.json().catch(() => null)) as {
+        orderId?: unknown;
+        record?: { id?: unknown };
+        error?: unknown;
+      } | null;
+      const orderId =
+        (typeof data?.orderId === "string" && data.orderId) ||
+        (typeof data?.record?.id === "string" && data.record.id) ||
+        "";
+      if (!res.ok || !orderId) {
+        setCreateOrderError(createOrderErrorLv(res.status, typeof data?.error === "string" ? data.error : ""));
+        return;
+      }
+      router.push(`/admin/orders/${encodeURIComponent(orderId)}`);
+    } catch {
+      setCreateOrderError(createOrderErrorLv(0, ""));
+    } finally {
+      setCreatingOrder(false);
+    }
   }
 
   async function onLoad() {
@@ -412,6 +479,28 @@ export function AdminDealerCheckPage({
       ) : null}
       {notice ? (
         <p className="mb-3.5 rounded-xl border border-[#bbf7d0] bg-[#f0fdf4] px-3.5 py-3 text-[13px] text-[#166534]">{notice}</p>
+      ) : null}
+
+      {canCreateOrder || creatingOrder ? (
+        <div className="mb-3.5 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <button
+            type="button"
+            data-dealer-check-create-order
+            disabled={!canCreateOrder}
+            onClick={() => void onCreateManualOrder()}
+            className="rounded-[10px] bg-[#111] px-4 py-2.5 text-[13.5px] font-semibold text-white disabled:opacity-45"
+          >
+            {creatingOrder ? "Veido…" : DEALER_CHECK_MANUAL_ORDER_LABEL}
+          </button>
+          <span className="text-[12.5px] text-[#6e6e73]">
+            Jauns manuāls pasūtījums ar šiem datiem. Klientu un apmaksu papildini pēc tam.
+          </span>
+        </div>
+      ) : null}
+      {createOrderError ? (
+        <p className="mb-3.5 rounded-xl border border-[#f3c2c7] bg-[#fff5f5] px-3.5 py-3 text-[13px] text-[#d70015]" role="alert">
+          {createOrderError}
+        </p>
       ) : null}
 
       {dealerCheckHasCsddPreview(csddPreview) ? (
