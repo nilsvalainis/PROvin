@@ -7,8 +7,8 @@ import { contactMailtoHref, whatsappWebUrl } from "@/lib/contact";
 import { VinDecoderTool, type VinDecoderLabels } from "@/components/vin-decoder/VinDecoderTool";
 import { FREE_EVAL_PREFILL_EVENT, type FreeEvalPrefillDetail } from "@/lib/free-eval-prefill";
 import { requestHeroPrefill } from "@/lib/hero-prefill";
-import { FREE_EVAL_SECTION_ID } from "@/lib/paths";
-
+import { FREE_EVAL_SECTION_ID, vinCheckHref } from "@/lib/paths";
+import { Link } from "@/i18n/navigation";
 
 const ICON_PROPS = {
   viewBox: "0 0 48 48",
@@ -130,6 +130,12 @@ export function HomeFreeToolsSection({ decoderLabels, home }: { decoderLabels: V
               <span className={tp5Styles.liquidCtaShimmer} aria-hidden />
               <span className={tp5Styles.liquidCtaLabel}>{t("vinOpen")}</span>
             </button>
+            <Link
+              href={vinCheckHref()}
+              className="text-center text-sm font-semibold text-[#5c9dff] no-underline transition hover:text-white"
+            >
+              {t("vinExplain")}
+            </Link>
           </Card>
 
           {vinOpen ? (

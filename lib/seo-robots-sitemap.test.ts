@@ -1,13 +1,17 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import sitemap from "@/app/sitemap";
 import robots from "@/app/robots";
 import { getBlogPost, isBlogLocaleIndexable } from "@/lib/blog/posts";
 import { parsePrefixedPath } from "@/i18n/locales";
 import { buildPublicPageMetadata } from "@/lib/seo-public-metadata";
+import { sitemapLastModified, withSitemapTimeout } from "@/lib/seo-sitemap";
 import {
+  GSC_NOINDEX_SITEMAP_BLOCKLIST,
+  GSC_REDIRECTING_INDEX_URLS,
   INDEXABLE_PUBLIC_LOCALES,
   INDEXABLE_PUBLIC_PATHS,
   NEVER_INDEX_PUBLIC_PATHS,
+  isCanonicalSitemapHref,
   isIndexablePublicPage,
   publicPageRobots,
 } from "@/lib/seo-public-paths";
@@ -93,6 +97,21 @@ describe("sitemap contains only indexable canonical URLs", () => {
     for (const blocked of NEVER_INDEX_PUBLIC_PATHS) {
       expect(locs.some((url) => url.includes(blocked))).toBe(false);
     }
+    for (const url of locs) {
+      expect(isCanonicalSitemapHref(url)).toBe(true);
+      const parsed = new URL(url);
+      if (parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+        expect(parsed.protocol).toBe("http:");
+      } else {
+        expect(parsed.protocol).toBe("https:");
+      }
+      expect(parsed.search).toBe("");
+      expect(url.includes("/paraugi")).toBe(false);
+      expect(url.includes("/samples/")).toBe(false);
+    }
+    for (const blocked of [...GSC_REDIRECTING_INDEX_URLS, ...GSC_NOINDEX_SITEMAP_BLOCKLIST]) {
+      expect(locs).not.toContain(blocked);
+    }
   });
 
   it("keeps lv public pages in the sitemap", async () => {
@@ -115,6 +134,49 @@ describe("sitemap contains only indexable canonical URLs", () => {
     expect(blogLocs.some((url) => splitSitemapUrl(url).locale === "ru")).toBe(false);
     expect(blogLocs.some((url) => splitSitemapUrl(url).locale === "en")).toBe(false);
     expect(blogLocs.some((url) => splitSitemapUrl(url).locale === "lv")).toBe(true);
+  });
+});
+
+describe("isCanonicalSitemapHref", () => {
+  const previous = process.env.NEXT_PUBLIC_SITE_URL;
+
+  afterEach(() => {
+    if (previous == null) delete process.env.NEXT_PUBLIC_SITE_URL;
+    else process.env.NEXT_PUBLIC_SITE_URL = previous;
+  });
+
+  it("accepts locale-prefixed https www URLs without a trailing slash", () => {
+    process.env.NEXT_PUBLIC_SITE_URL = "https://www.provin.lv";
+    expect(isCanonicalSitemapHref("https://www.provin.lv/lv")).toBe(true);
+    expect(isCanonicalSitemapHref("https://www.provin.lv/lv/vin-koda-parbaude")).toBe(true);
+    expect(isCanonicalSitemapHref("https://www.provin.lv/de/partneriem")).toBe(true);
+    expect(isCanonicalSitemapHref("https://www.provin.lv/ru/partneriem")).toBe(true);
+  });
+
+  it("rejects the GSC redirecting URL set from 02.11.2026", () => {
+    process.env.NEXT_PUBLIC_SITE_URL = "https://www.provin.lv";
+    for (const url of GSC_REDIRECTING_INDEX_URLS) {
+      expect(isCanonicalSitemapHref(url), url).toBe(false);
+    }
+  });
+
+  it("rejects GSC noindex URLs that must stay out of the sitemap", () => {
+    process.env.NEXT_PUBLIC_SITE_URL = "https://www.provin.lv";
+    for (const url of GSC_NOINDEX_SITEMAP_BLOCKLIST) {
+      expect(isCanonicalSitemapHref(url), url).toBe(false);
+    }
+  });
+});
+
+describe("sitemap helpers", () => {
+  it("drops invalid blog dates instead of emitting Invalid Date", () => {
+    expect(sitemapLastModified("2026-10-30")?.toISOString()).toBe("2026-10-30T12:00:00.000Z");
+    expect(sitemapLastModified("not-a-date")).toBeUndefined();
+  });
+
+  it("returns the fallback when the sitemap blog listing times out", async () => {
+    const result = await withSitemapTimeout(new Promise<string[]>(() => undefined), 15, []);
+    expect(result).toEqual([]);
   });
 });
 

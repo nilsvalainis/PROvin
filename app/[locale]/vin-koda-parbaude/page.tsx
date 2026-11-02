@@ -3,8 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { Footer } from "@/components/Footer";
 import { PageBreadcrumbs } from "@/components/seo/PageBreadcrumbs";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { Link } from "@/i18n/navigation";
-import { faqPageHref, pakalpojumiHref } from "@/lib/paths";
+import { VinCheckArticle } from "@/components/seo/VinCheckArticle";
+import { faqPageHref, pakalpojumiHref, vinDecoderHref } from "@/lib/paths";
 import { buildPublicPageMetadata } from "@/lib/seo-public-metadata";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
@@ -41,37 +41,25 @@ export default async function VinCheckPage({ params }: Props) {
           ]}
         />
 
-        <article className="mx-auto w-full max-w-[42.5rem] px-4 pb-16 pt-6 sm:px-6 sm:pb-20 sm:pt-8">
-          <h1 className="text-balance text-3xl font-semibold tracking-tight text-white/[0.96] sm:text-4xl">
-            {t("h1")}
-          </h1>
-          <p className="mt-4 text-base leading-relaxed text-white/70">{t("lead")}</p>
-
-          <section className="mt-10">
-            <h2 className="text-lg font-semibold text-white/[0.96]">{t("whatTitle")}</h2>
-            <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-white/70">{t("whatBody")}</p>
-          </section>
-          <section className="mt-8">
-            <h2 className="text-lg font-semibold text-white/[0.96]">{t("whyTitle")}</h2>
-            <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-white/70">{t("whyBody")}</p>
-          </section>
-          <section className="mt-8">
-            <h2 className="text-lg font-semibold text-white/[0.96]">{t("howTitle")}</h2>
-            <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-white/70">{t("howBody")}</p>
-          </section>
-
-          <p className="mt-10 flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-semibold uppercase tracking-[0.16em]">
-            <Link href="/#home-hero" className="text-provin-accent no-underline transition hover:text-white">
-              {t("ctaOrder")}
-            </Link>
-            <Link href={pakalpojumiHref()} className="text-white/55 no-underline transition hover:text-provin-accent">
-              {t("ctaServices")}
-            </Link>
-            <Link href={faqPageHref()} className="text-white/55 no-underline transition hover:text-provin-accent">
-              {t("ctaFaq")}
-            </Link>
-          </p>
-        </article>
+        <VinCheckArticle
+          h1={t("h1")}
+          lead={t("lead")}
+          sections={[
+            { title: t("whatTitle"), body: t("whatBody") },
+            { title: t("whyTitle"), body: t("whyBody") },
+            { title: t("howTitle"), body: t("howBody") },
+            { title: t("findTitle"), body: t("findBody") },
+            { title: t("historyTitle"), body: t("historyBody") },
+            { title: t("vsDecoderTitle"), body: t("vsDecoderBody") },
+            { title: t("latviaTitle"), body: t("latviaBody") },
+          ]}
+          links={[
+            { href: "/#home-hero", label: t("ctaOrder"), primary: true },
+            { href: pakalpojumiHref(), label: t("ctaServices") },
+            { href: vinDecoderHref(), label: t("ctaDecoder") },
+            { href: faqPageHref(), label: t("ctaFaq") },
+          ]}
+        />
 
         <JsonLd
           data={{
