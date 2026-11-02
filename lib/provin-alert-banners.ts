@@ -57,13 +57,15 @@ export type ProvinSummaryTileKind =
   | "summary:incidents"
   | "summary:mileage"
   | "summary:owners"
-  | "summary:service";
+  | "summary:service"
+  | "summary:listing";
 
 export const PROVIN_SUMMARY_TILE_KINDS = [
   "summary:incidents",
   "summary:mileage",
   "summary:owners",
   "summary:service",
+  "summary:listing",
 ] as const satisfies readonly ProvinSummaryTileKind[];
 
 const SUMMARY_TILE_KIND_SET = new Set<string>(PROVIN_SUMMARY_TILE_KINDS);
@@ -72,7 +74,9 @@ export function isSummaryTileBannerKind(raw: string): raw is ProvinSummaryTileKi
   return SUMMARY_TILE_KIND_SET.has(raw);
 }
 
-export function summaryTileBannerKind(tileId: "incidents" | "mileage" | "owners" | "service"): ProvinSummaryTileKind {
+export function summaryTileBannerKind(
+  tileId: "incidents" | "mileage" | "owners" | "service" | "listing",
+): ProvinSummaryTileKind {
   return `summary:${tileId}`;
 }
 
