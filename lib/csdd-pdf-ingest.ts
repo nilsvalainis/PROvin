@@ -1,7 +1,7 @@
 /**
  * CSDD PDF → forma: apvieno PDF teksta slāni ar AI izvilkumu un lokālo parseri.
  */
-import { emptyCsddFields, type CsddFormFields } from "@/lib/admin-source-blocks";
+import { CSDD_FORM_STRUCTURED_FIELDS, emptyCsddFields, type CsddFormFields } from "@/lib/admin-source-blocks";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import {
   normalizeCsddRawText,
@@ -76,35 +76,103 @@ function countTaDefectsInFields(fields: CsddFormFields): number {
   );
 }
 
-/** Apvieno divus lokāli parsētus laukus - ņem pilnākos masīvus. */
+function richerTaHistory(primary: CsddFormFields, secondary: CsddFormFields) {
+  const primaryDefects = countTaDefectsInFields(primary);
+  const secondaryDefects = countTaDefectsInFields(secondary);
+  const primaryRows = (primary.technicalInspectionHistory ?? []).filter((row) => row.date.trim()).length;
+  const secondaryRows = (secondary.technicalInspectionHistory ?? []).filter((row) => row.date.trim()).length;
+  if (secondaryDefects > primaryDefects) return secondary.technicalInspectionHistory;
+  if (primaryDefects > secondaryDefects) return primary.technicalInspectionHistory;
+  if (secondaryRows > primaryRows) return secondary.technicalInspectionHistory;
+  return primaryRows > 0 ? primary.technicalInspectionHistory : secondary.technicalInspectionHistory;
+}
+
+function richerPrevBlock(primary: CsddFormFields, secondary: CsddFormFields) {
+  const primaryDefects = countPrevDefects(primary);
+  const secondaryDefects = countPrevDefects(secondary);
+  if (secondaryDefects > primaryDefects && previousInspectionBlockHasData(secondary.prevInspectionBlock)) {
+    return secondary.prevInspectionBlock;
+  }
+  if (primaryDefects > 0 || previousInspectionBlockHasData(primary.prevInspectionBlock)) {
+    return primary.prevInspectionBlock;
+  }
+  return secondary.prevInspectionBlock;
+}
+
+function richerOwnerEvents(primary: CsddFormFields, secondary: CsddFormFields) {
+  const count = (fields: CsddFormFields) =>
+    (fields.ownerRegistrationEvents ?? []).filter((event) => event.date.trim() || event.label.trim()).length;
+  if (count(secondary) > count(primary)) return secondary.ownerRegistrationEvents;
+  if (count(primary) > 0) return primary.ownerRegistrationEvents;
+  return secondary.ownerRegistrationEvents ?? primary.ownerRegistrationEvents;
+}
+
+function fillEmptyCsddScalar<K extends (typeof CSDD_FORM_STRUCTURED_FIELDS)[number]["key"]>(
+  target: CsddFormFields,
+  key: K,
+  value: CsddFormFields[K],
+): void {
+  const current = String(target[key] ?? "").trim();
+  const incoming = String(value ?? "").trim();
+  if (!current && incoming) target[key] = value;
+}
+
+/**
+ * AI (primary) + teksta slānis (secondary).
+ * Tukšs secondary nedrīkst izdzēst jau nolasītu īpašnieku skaitu, valsti vai apskates defektus.
+ */
 export function pickRicherCsddFields(primary: CsddFormFields, secondary: CsddFormFields): CsddFormFields {
+  const next: CsddFormFields = { ...primary };
+  for (const { key } of CSDD_FORM_STRUCTURED_FIELDS) {
+    fillEmptyCsddScalar(next, key, secondary[key]);
+  }
+  if (secondary.registrationNumber.trim()) next.registrationNumber = secondary.registrationNumber.trim();
   const mileage =
     countMileageRows(secondary) > countMileageRows(primary)
       ? secondary.mileageHistory
       : primary.mileageHistory;
-  const ta =
-    countTaDefectsInFields(secondary) > countTaDefectsInFields(primary)
-      ? secondary.technicalInspectionHistory
-      : primary.technicalInspectionHistory;
-  const prev =
-    countPrevDefects(secondary) > countPrevDefects(primary)
-      ? secondary.prevInspectionBlock
-      : previousInspectionBlockHasData(secondary.prevInspectionBlock)
-        ? secondary.prevInspectionBlock
-        : primary.prevInspectionBlock;
-
+  const secondaryRaw = (secondary.rawUnprocessedData ?? "").trim();
+  const primaryRaw = (primary.rawUnprocessedData ?? "").trim();
   return {
-    ...primary,
-    ...secondary,
+    ...next,
     mileageHistory: mileage.length > 0 ? mileage : primary.mileageHistory,
-    technicalInspectionHistory:
-      ta.length > 0 ? ta : primary.technicalInspectionHistory,
-    prevInspectionBlock: prev,
-    registrationNumber: secondary.registrationNumber.trim() || primary.registrationNumber,
-    ownerCountLatvia: secondary.ownerCountLatvia.trim() || primary.ownerCountLatvia,
-    previousRegistrationCountry:
-      secondary.previousRegistrationCountry.trim() || primary.previousRegistrationCountry,
+    technicalInspectionHistory: richerTaHistory(primary, secondary),
+    prevInspectionBlock: richerPrevBlock(primary, secondary),
+    ownerRegistrationEvents: richerOwnerEvents(primary, secondary),
+    rawUnprocessedData: secondaryRaw.length > primaryRaw.length ? secondary.rawUnprocessedData : primary.rawUnprocessedData,
   };
+}
+
+const CSDD_OWNER_EVIDENCE_RE =
+  /īpašnieku\s+skaits|\d{1,2}\s*(?:ī|i)pa[sš]nieki\b|īpašnieka\s+maiņa|pirmā\s+reģistrācija\s+latvijā/i;
+const CSDD_COUNTRY_EVIDENCE_RE = /iepriekšēj[āa]s?\s+reģistrācijas\s+valsts\s*[:\s]+\p{L}/iu;
+const CSDD_TA_EVIDENCE_RE = /tehnisko\s+apska[šs]u\s+vēsture|apskates\s+datums/i;
+const CSDD_INSPECTION_EVIDENCE_RE =
+  /iepriekšēj[āa]s\s+apskates\s+dati|pēdēj[āa]\s+tehnisk[āa]\s+apskate|\bTA\s+datums/i;
+
+/** Kritiskie lauki, kurus teksts sola, bet forma joprojām ir tukša. */
+export function listCsddCriticalGaps(fields: CsddFormFields, raw: string): string[] {
+  const text = normalizeCsddRawText(raw);
+  const gaps: string[] = [];
+  const ownersFilled =
+    Boolean(fields.ownerCountLatvia.trim()) ||
+    (fields.ownerRegistrationEvents ?? []).some((event) => event.date.trim() || event.label.trim());
+  if (CSDD_OWNER_EVIDENCE_RE.test(text) && !ownersFilled) gaps.push("īpašnieku skaits");
+  if (CSDD_COUNTRY_EVIDENCE_RE.test(text) && !fields.previousRegistrationCountry.trim()) {
+    gaps.push("iepriekšējās reģistrācijas valsts");
+  }
+  const taFilled = (fields.technicalInspectionHistory ?? []).some((row) => row.date.trim());
+  if (CSDD_TA_EVIDENCE_RE.test(text) && !taFilled) gaps.push("TA vēsture");
+  const inspectionFilled =
+    previousInspectionBlockHasData(fields.prevInspectionBlock) ||
+    Boolean(fields.prevInspectionDate.trim() || fields.nextInspectionDate.trim());
+  if (CSDD_INSPECTION_EVIDENCE_RE.test(text) && !inspectionFilled) gaps.push("apskates dati");
+  return gaps;
+}
+
+/** Teksta slānis iedeva numuru vai nobraukumu, bet PDF solītos kritiskos laukus nenoņēma. Tad vajag AI. */
+export function csddTextLayerNeedsAiFallback(fields: CsddFormFields, raw: string): boolean {
+  return listCsddCriticalGaps(fields, raw).length > 0;
 }
 
 /** Ātra CSDD forma tikai no PDF teksta slāņa (bez AI). */

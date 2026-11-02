@@ -704,25 +704,36 @@ export function technicalInspectionRowHasData(r: CsddTechnicalInspectionRow): bo
   return Boolean(r.date.trim());
 }
 
+const CSDD_COUNTRY_LABEL_RE = /Iepriekšēj[āa]s?\s+reģistrācijas\s+valsts/i;
+const CSDD_COUNTRY_VALUE_STOP_RE =
+  /\s+(?=Transportlīdzekļa\s|Reģistrācija\s+Latvijā|Statuss\s|Marka\s|Degviela\s|VIN\s|Reģistrācijas\s+numurs|Nobraukuma\s|Tehnisko\s|Pēdējā\s|Īpašnieku\s)/i;
+
+function cleanCsddCountryValue(raw: string): string {
+  const cut = raw.split(CSDD_COUNTRY_VALUE_STOP_RE)[0] ?? raw;
+  const v = cut.replace(/\s+/g, " ").trim();
+  if (!v || /^(Transportlīdzekļa|Statuss|Marka|Degviela|VIN|Reģistrācijas\s+numurs|Īpašnieku\s+skaits)/i.test(v)) {
+    return "";
+  }
+  return v.slice(0, 80);
+}
+
 export function parsePreviousRegistrationCountry(raw: string): string {
   const text = normalizeCsddRawText(raw);
   const inline = text.match(
-    /Iepriekšēj[āa]s\s+reģistrācijas\s+valsts\s*:?\s*([^\n]+)/i,
+    new RegExp(`${CSDD_COUNTRY_LABEL_RE.source}\\s*:?\\s*([^\\n]+)`, "i"),
   );
   if (inline?.[1]) {
-    const v = inline[1].trim();
-    if (v && !/^(Transportlīdzekļa|Statuss|Marka|Degviela|VIN|Reģistrācijas\s+numurs)/i.test(v)) {
-      return v;
-    }
+    const v = cleanCsddCountryValue(inline[1]);
+    if (v) return v;
   }
   const lines = text.split("\n");
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]!.trim();
-    if (!/^Iepriekšēj[āa]s\s+reģistrācijas\s+valsts\s*:?\s*$/i.test(line)) continue;
+    if (!new RegExp(`^${CSDD_COUNTRY_LABEL_RE.source}\\s*:?\\s*$`, "i").test(line)) continue;
     for (let j = i + 1; j < lines.length && j < i + 4; j++) {
-      const v = lines[j]!.trim();
-      if (!v || PAGE_FOOTER_RE.test(v)) continue;
-      if (/^(Transportlīdzekļa|Statuss|Marka|Degviela|VIN|Reģistrācijas)/i.test(v)) break;
+      const v = cleanCsddCountryValue(lines[j]!.trim());
+      if (!v || PAGE_FOOTER_RE.test(lines[j]!.trim())) continue;
+      if (/^(Transportlīdzekļa|Statuss|Marka|Degviela|VIN|Reģistrācijas)/i.test(lines[j]!.trim())) break;
       return v;
     }
   }
@@ -736,8 +747,9 @@ export function parseOwnerRegistrationFromRaw(raw: string): {
   const text = normalizeCsddRawText(raw);
   let ownerCount = "";
   const countPatterns = [
-    /Transportlīdzekļa\s+reģistrācija[\s\S]*?No\s+[\d./]+\s+(\d+)\s+(?:ī|i)pa[sš]niek/i,
-    /Transportlīdzekļa\s+reģistrācija[\s\S]{0,400}?(\d+)\s+(?:ī|i)pa[sš]niek/i,
+    /Īpašnieku\s+skaits(?:\s+Latvijā)?\s*[:\s]\s*(\d{1,2})\b/i,
+    /Transportlīdzekļa\s+reģistrācija[\s\S]*?No\s+[\d./]+\s+(\d{1,2})\s+(?:ī|i)pa[sš]niek/i,
+    /(?:Transportlīdzekļa\s+reģistrācija|Reģistrācija\s+Latvijā)[\s\S]{0,500}?(\d{1,2})\s+(?:ī|i)pa[sš]niek/i,
   ];
   for (const re of countPatterns) {
     const countM = text.match(re);
@@ -748,18 +760,30 @@ export function parseOwnerRegistrationFromRaw(raw: string): {
   }
 
   const events: CsddOwnerChangeRow[] = [];
+  const pushOwnerEvent = (date: string, label: string) => {
+    const normalizedDate = normalizeDotDate(date);
+    const normalizedLabel = label.trim();
+    if (!normalizedDate || !/reģistrācij|īpašniek/i.test(normalizedLabel)) return;
+    if (events.some((event) => event.date === normalizedDate && event.label === normalizedLabel)) return;
+    events.push({ date: normalizedDate, label: normalizedLabel });
+  };
   const sectionM = text.match(
-    /Transportlīdzekļa\s+reģistrācija([\s\S]*?)(?=Transportlīdzekļa\s+ekspluatācijas|Civiltiesiskā\s+apdrošināšana|Nobraukuma\s+vēsture|$)/i,
+    /(?:^|\n)\s*(?:Transportlīdzekļa\s+reģistrācija|Reģistrācija\s+Latvijā|Īpašnieku\s+vēsture)\s*(?:\n|$)([\s\S]*?)(?=\n\s*(?:Transportlīdzekļa\s+ekspluatācijas|Civiltiesiskā\s+apdrošināšana|Nobraukuma\s+vēsture|Pēdējā\s+tehniskā\s+apskate|Tehnisko\s+apska)|$)/i,
   );
-  if (sectionM?.[1]) {
-    for (const line of sectionM[1].split(/\n/)) {
-      const t = line.trim();
-      if (!t || PAGE_FOOTER_RE.test(t)) continue;
-      if (/^No\s+[\d./]+/i.test(t)) continue;
-      const ev = t.match(/^(\d{2}[./]\d{2}[./]\d{4})\s*[-–—]\s*(.+)$/);
-      if (ev?.[1] && ev[2]) {
-        events.push({ date: normalizeDotDate(ev[1]), label: ev[2].trim() });
-      }
+  const eventSource = sectionM?.[1] ?? text;
+  for (const line of eventSource.split(/\n/)) {
+    const t = line.trim();
+    if (!t || PAGE_FOOTER_RE.test(t)) continue;
+    if (/^No\s+[\d./]+/i.test(t)) continue;
+    const ev = t.match(/^(\d{2}[./]\d{2}[./]\d{4})\s*[-–—]\s*(.+)$/);
+    if (ev?.[1] && ev[2]) pushOwnerEvent(ev[1], ev[2]);
+  }
+  if (events.length === 0) {
+    const inlineEvents = text.matchAll(
+      /(\d{2}[./]\d{2}[./]\d{4})\s*[-–—]\s*((?:Pirmā\s+reģistrācija|Īpašnieka\s+maiņa)[^.\n]*)/gi,
+    );
+    for (const ev of inlineEvents) {
+      if (ev[1] && ev[2]) pushOwnerEvent(ev[1], ev[2]);
     }
   }
 

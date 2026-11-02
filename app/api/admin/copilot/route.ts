@@ -8,7 +8,11 @@ import { withAiUsageOnJsonResponse } from "@/lib/admin-ai-route-response";
 import { assertAiAllowedForSession } from "@/lib/admin-ai-demo-guard";
 import { getAnthropicApiKeyFromEnv } from "@/lib/admin-ai";
 import { applyCopilotActions } from "@/lib/admin-copilot-apply";
-import { isLikelyCsddPdfText, mergeCsddFieldsFillEmpty } from "@/lib/admin-copilot-csdd";
+import {
+  applyCsddPdfToEmptyFields,
+  isLikelyCsddPdfText,
+  selectCopilotClientPatch,
+} from "@/lib/admin-copilot-csdd";
 import { runOrderCopilotAi } from "@/lib/admin-copilot-ai";
 import {
   COPILOT_SOURCE_KEYS,
@@ -456,6 +460,8 @@ export async function POST(req: Request) {
     const allowedSet = new Set<CopilotSourceKey>(allowedSources);
     let workingBlocks = sourceBlocks;
     const csddImportNotes: string[] = [];
+    const csddDeterministicPatches: Partial<WorkspaceSourceBlocks> = {};
+    let csddPdfConsumed = false;
     const vendorAgentNotes: string[] = [];
     const vendorAgentApplied: CopilotAction[] = [];
     const vendorHandledFiles = new Set<string>();
@@ -546,8 +552,20 @@ export async function POST(req: Request) {
     if (allowedSet.has("csdd") && pdfs.length > 0) {
       for (const pdf of pdfs) {
         if (vendorHandledFiles.has(pdf.fileName)) continue;
-        const extract = await extractPdfTextDetailed(pdf.buffer, { fileName: pdf.fileName });
-        if (!isLikelyCsddPdfText(extract.text)) continue;
+        let extractText = "";
+        try {
+          const extract = await extractPdfTextDetailed(pdf.buffer, { fileName: pdf.fileName });
+          extractText = extract.text ?? "";
+        } catch {
+          extractText = "";
+        }
+        if (!isLikelyCsddPdfText(extractText)) {
+          if (allowedSources.length === 1) {
+            csddPdfConsumed = true;
+            csddImportNotes.push(`„${pdf.fileName}” - neatpazinu kā CSDD izdruku. Lauki nav ierakstīti.`);
+          }
+          continue;
+        }
         try {
           const { result } = await ingestSourcePdfFile({
             target: "csdd",
@@ -555,21 +573,29 @@ export async function POST(req: Request) {
             fileName: pdf.fileName,
           });
           const csddResult = result as CsddPdfParseResult;
-          if (csddParseHasData(csddResult)) {
-            workingBlocks = {
-              ...workingBlocks,
-              csdd: mergeCsddFieldsFillEmpty(
-                workingBlocks.csdd,
-                csddResult.fields,
-                csddResult.rawUnprocessedData,
-              ),
-            };
-            csddImportNotes.push(`CSDD PDF „${pdf.fileName}” — aizpildīti tukšie lauki (TA vēsture, nobraukums u.c.).`);
+          csddPdfConsumed = true;
+          vendorHandledFiles.add(pdf.fileName);
+          if (!csddParseHasData(csddResult)) {
+            csddImportNotes.push(`CSDD PDF „${pdf.fileName}” - neizdevās nolasīt laukus. Nekas nav ierakstīts.`);
+            continue;
           }
+          const applied = applyCsddPdfToEmptyFields(
+            workingBlocks.csdd,
+            csddResult.fields,
+            csddResult.rawUnprocessedData,
+            pdf.fileName,
+          );
+          if (applied.changed) {
+            workingBlocks = { ...workingBlocks, csdd: applied.block };
+            csddDeterministicPatches.csdd = applied.block;
+          }
+          csddImportNotes.push(applied.note);
         } catch (csddErr) {
           const detail = csddErr instanceof Error ? csddErr.message : "unknown";
           console.warn(`${LOG_PREFIX} csdd_pdf_failed`, { fileName: pdf.fileName, detail });
-          csddImportNotes.push(`CSDD PDF „${pdf.fileName}” — neizdevās pilnībā importēt (${detail}).`);
+          csddPdfConsumed = true;
+          vendorHandledFiles.add(pdf.fileName);
+          csddImportNotes.push(`CSDD PDF „${pdf.fileName}” - neizdevās pilnībā importēt (${detail}).`);
         }
       }
     }
@@ -600,10 +626,7 @@ export async function POST(req: Request) {
       !factoryEquipmentPasteHasVehicleHeader(message);
     const skipGenericCopilot =
       photos.length === 0 &&
-      ((allowedSet.has("csdd") &&
-        allowedSources.length === 1 &&
-        pdfs.length > 0 &&
-        csddImportNotes.some((n) => n.includes("aizpildīti"))) ||
+      ((allowedSet.has("csdd") && allowedSources.length === 1 && pdfs.length > 0 && csddPdfConsumed) ||
         (!message && remainingPdfs.length === 0 && vendorHandledFiles.size > 0) ||
         (carinfoPasteActions.length > 0 && remainingPdfs.length === 0) ||
         (finnikPasteNote.length > 0 && remainingPdfs.length === 0) ||
@@ -672,12 +695,23 @@ export async function POST(req: Request) {
       ...blocked.map((action) => ({ action, reason: "source_disabled" as const })),
     ];
 
+    const changedList = [...changedKeys];
     const shouldPatch = applyMode === "auto" && (autoResult.applied.length > 0 || changedKeys.size > 0);
+    const clientPatch = selectCopilotClientPatch({
+      applyMode,
+      autoAppliedCount: autoResult.applied.length,
+      changedKeys: changedList,
+      workingBlocks,
+      deterministicPatches: csddDeterministicPatches,
+    });
     const previewConfirm =
       applyMode === "preview" ? [...vendorAgentApplied, ...autoResult.applied, ...needsConfirm] : needsConfirm;
     const replyParts = [ai.reply.trim()];
     if (applyMode === "preview" && previewConfirm.length > 0) {
-      replyParts.push("Priekšskatījums: izmaiņas nav ierakstītas. Apstiprini zemāk, ja tās der.");
+      const lead = csddDeterministicPatches.csdd
+        ? "Priekšskatījums: pārējās izmaiņas nav ierakstītas."
+        : "Priekšskatījums: izmaiņas nav ierakstītas.";
+      replyParts.push(`${lead} Apstiprini zemāk, ja tās der.`);
     }
     if (!skipGenericCopilot) {
       if (vendorAgentNotes.length > 0) replyParts.push(vendorAgentNotes.filter(Boolean).join("\n"));
@@ -699,7 +733,6 @@ export async function POST(req: Request) {
       csddImports: csddImportNotes.length,
     });
 
-    const changedList = [...changedKeys];
     const replyText = replyParts.filter(Boolean).join("\n\n");
 
     // Saruna glabājas serverī, lai neizzustu, mainot ierīci vai pārlūku.
@@ -730,10 +763,8 @@ export async function POST(req: Request) {
         : [],
       needsConfirm: previewConfirm.map((a) => ({ ...a, label: describeAction(a) })),
       skipped: hardSkipped.map((s) => ({ ...s.action, label: describeAction(s.action), reason: s.reason })),
-      patchedSourceBlocks: shouldPatch
-        ? Object.fromEntries(changedList.map((k) => [k, workingBlocks[k]]))
-        : {},
-      changedKeys: shouldPatch ? changedList : [],
+      patchedSourceBlocks: clientPatch.patchedSourceBlocks,
+      changedKeys: clientPatch.changedKeys,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
