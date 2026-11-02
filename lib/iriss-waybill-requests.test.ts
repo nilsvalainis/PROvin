@@ -4,6 +4,7 @@ import {
   isStaleWaybillRequest,
   parseWaybillRequest,
   pendingWaybillRequests,
+  waybillPendingExpired,
   waybillRequestCancellable,
   remainingWaybillDays,
   waybillDocForCreator,
@@ -253,6 +254,14 @@ describe("honest status (cancel, test mode, expiry)", () => {
     expect(WAYBILL_WORKER_STAGE_TEXT.annulling).toBe("Pārtrauc iepriekšējo pavadzīmi CSDD...");
     expect(WAYBILL_WORKER_STAGE_TEXT.annulling).not.toMatch(/anul/i);
     expect(parseWaybillRequest({ ...sample(), stage: "partraukt" })?.stage).toBe("");
+  });
+
+  it("queued pēc pieprasītā termiņa vairs nav rindā; izdota paliek", () => {
+    expect(waybillPendingExpired(q({ validUntil: "2026-10-23T12:10:00.000Z" }), nowMs)).toBe(true);
+    expect(waybillPendingExpired(q({ validUntil: "2026-10-23T13:00:00.000Z" }), nowMs)).toBe(false);
+    expect(waybillPendingExpired(q({ status: "issued", validUntil: "2026-10-23T12:10:00.000Z" }), nowMs)).toBe(false);
+    expect(waybillPendingExpired(q({ status: "in_progress", validUntil: "2026-10-23T12:10:00.000Z" }), nowMs)).toBe(false);
+    expect(waybillPendingExpired(q({ validUntil: "nav-datums" }), nowMs)).toBe(false);
   });
 
   it("pending list skips cancelled, stale and expired requests", () => {

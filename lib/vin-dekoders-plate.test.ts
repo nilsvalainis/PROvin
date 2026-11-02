@@ -7,7 +7,9 @@ const NOW = new Date("2026-10-29T10:00:00Z");
 describe("maskVin", () => {
   it("rāda 11 zīmes, pēdējās 6 slēpj; nederīgs -> tukšs", () => {
     expect(maskVin("TMBJG7NE1J0123456")).toBe("TMBJG7NE1J0******");
+    expect(maskVin(" tmb jg7ne1j0123456 ")).toBe("TMBJG7NE1J0******");
     expect(maskVin("ABC")).toBe("");
+    expect(maskVin("")).toBe("");
   });
 });
 
@@ -17,6 +19,14 @@ describe("inspectionState", () => {
     expect(inspectionState("2026-11-20", NOW)).toBe("expiring");
     expect(inspectionState("2026-10-01", NOW)).toBe("expired");
     expect(inspectionState("", NOW)).toBe("unknown");
+    expect(inspectionState("29.10.2026", NOW)).toBe("unknown");
+  });
+
+  it("tieši 60 dienas ir expiring, 61 diena ir valid, šodien vēl nav expired", () => {
+    expect(inspectionState("2026-12-28", NOW)).toBe("expiring");
+    expect(inspectionState("2026-12-29", NOW)).toBe("valid");
+    expect(inspectionState("2026-10-29", NOW)).toBe("expiring");
+    expect(inspectionState("2026-10-28", NOW)).toBe("expired");
   });
 });
 

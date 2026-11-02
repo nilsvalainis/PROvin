@@ -39,4 +39,52 @@ describe("Nils 29.10: lauki nedrīkst nodzēsties pēc saglabāšanas", () => {
   it("iekšējās piezīmes: atstarpe teksta beigās paliek, rakstot", () => {
     expect(irissMergedInternalNotes({ agentNotes: "Zvanīt rīt ", internalNotes: "" })).toBe("Zvanīt rīt ");
   });
+
+  it("#788: komunikācija un foto albumi tiek pieņemti PATCH ķermenī", () => {
+    const rec = parseIrissPasutijumsPatchBody("x", {
+      ...base(),
+      communicationEvents: [
+        { id: "e1", at: "2026-10-28T10:00:00.000Z", kind: "note", title: "Zvans" },
+      ],
+      inspectionPhotos: {
+        attachments: [{ id: "ph1", name: "a.jpg", mimeType: "image/jpeg", dataUrl: "data:image/jpeg;base64,AAAA", size: 4 }],
+      },
+      documentPhotos: {
+        attachments: [{ id: "ph2", name: "b.jpg", mimeType: "image/jpeg", dataUrl: "data:image/jpeg;base64,BBBB", size: 4 }],
+      },
+    });
+    expect(rec?.communicationEvents).toEqual([
+      { id: "e1", at: "2026-10-28T10:00:00.000Z", kind: "note", title: "Zvans" },
+    ]);
+    expect(rec?.inspectionPhotos?.attachments.map((a) => a.id)).toEqual(["ph1"]);
+    expect(rec?.documentPhotos?.attachments.map((a) => a.id)).toEqual(["ph2"]);
+  });
+
+  it("#788: ja albumu atslēgas nav, esošie foto paliek; tukšs albums notīra", () => {
+    const album = {
+      attachments: [{ id: "ph1", name: "a.jpg", mimeType: "image/jpeg", dataUrl: "data:image/jpeg;base64,AAAA", size: 4 }],
+    };
+    const existing = {
+      ...base(),
+      inspectionPhotos: album,
+      documentPhotos: album,
+      communicationEvents: [{ id: "e1", at: "2026-10-28T10:00:00.000Z", kind: "note", title: "Zvans" }],
+    } as never;
+    const omitted = parseIrissPasutijumsPatchBody("x", { ...base() })!;
+    const kept = retainIrissOmittedFields(existing, omitted, omitted);
+    expect(kept.inspectionPhotos?.attachments[0]?.id).toBe("ph1");
+    expect(kept.documentPhotos?.attachments[0]?.id).toBe("ph1");
+    expect(kept.communicationEvents?.[0]?.id).toBe("e1");
+
+    const cleared = parseIrissPasutijumsPatchBody("x", {
+      ...base(),
+      inspectionPhotos: { attachments: [] },
+      documentPhotos: { attachments: [] },
+      communicationEvents: [],
+    })!;
+    const out = retainIrissOmittedFields(existing, cleared, cleared);
+    expect(out.inspectionPhotos).toBeUndefined();
+    expect(out.documentPhotos).toBeUndefined();
+    expect(out.communicationEvents).toBeUndefined();
+  });
 });

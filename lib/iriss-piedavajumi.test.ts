@@ -128,6 +128,14 @@ describe("Piedāvājumi: dzīves cikls", () => {
     expect(applyIrissPdExpiry(rec({ status: "draft", validUntil: "" }), NOW)).toBeNull();
   });
 
+  it("vasaras laikā 23:59 Rīgā ir 20:59 UTC; Pieprasīts beidzas, Noraidīts nē", () => {
+    const summer = rec({ status: "requested", validUntil: "2026-10-24" });
+    expect(applyIrissPdExpiry(summer, Date.parse("2026-10-24T20:59:00.000Z"))).toBeNull();
+    expect(applyIrissPdExpiry(summer, Date.parse("2026-10-24T21:00:00.000Z"))?.status).toBe("expired");
+    expect(applyIrissPdExpiry(rec({ status: "declined", validUntil: "2026-10-01" }), NOW)).toBeNull();
+    expect(applyIrissPdExpiry(rec({ status: "sent", validUntil: "" }), NOW)).toBeNull();
+  });
+
   it("saraksts rāda beigušos arī pirms pārrakstīšanas", () => {
     const row = irissPdToListRow(rec({ status: "sent", validUntil: "2026-10-20" }));
     expect(irissPdRowEffectiveStatus(row, NOW)).toBe("expired");
