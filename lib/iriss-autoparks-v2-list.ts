@@ -112,7 +112,8 @@ export function filterAutoparksV2Rows(
     if (opts.status && r.status !== opts.status) return false;
     if (opts.inTradeOnly && !r.inTrade) return false;
     if (!q) return true;
-    const hay = `${r.title} ${r.vin}`.toLowerCase();
+    // Atstarpes salīdzināšanā ignorē (marka/modelis un VIN tajā pašā laukā): «E 350» = «E350». Burtu lielums kā līdz šim.
+    const hay = `${r.title} ${r.vin}`.toLowerCase().replace(/\s+/g, "");
     return q.split(" ").every((part) => hay.includes(part));
   });
 }
