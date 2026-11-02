@@ -76,13 +76,18 @@ async function lookupAutoparksLink(vin: string): Promise<DealerCheckAutoparksLin
   }
 }
 
-async function lookupCsdd(vin: string, plate: string, dealerLastKm: number | null, http206: boolean) {
+async function lookupCsdd(
+  vin: string,
+  plate: string,
+  dealerLastKm: number | null,
+  http206: boolean,
+): Promise<{ compare: DealerCheckRecord["csdd"]; snapshot: DealerCheckRecord["csddSnapshot"] }> {
   const query = plate || vin;
-  if (!query) return null;
+  if (!query) return { compare: null, snapshot: null };
   try {
     const res = await fetchCsddTechDataCounted(query, "admin");
     if (!res.found) {
-      return compareDealerCheckCsdd({ dealerLastKm, csddKm: null, http206 });
+      return { compare: compareDealerCheckCsdd({ dealerLastKm, csddKm: null, http206 }), snapshot: null };
     }
     let csddKm: number | null = null;
     try {
@@ -98,15 +103,18 @@ async function lookupCsdd(vin: string, plate: string, dealerLastKm: number | nul
     } catch {
       /* Autoparks nav obligāts CSDD salīdzinājumam */
     }
-    return compareDealerCheckCsdd({
-      dealerLastKm,
-      csddKm,
-      http206,
-      firstRegLv: formatDealerCheckDateLv(res.data.firstRegistrationIso),
-      inspectionUntil: formatDealerCheckDateLv(res.data.inspectionValidUntilIso),
-    });
+    return {
+      compare: compareDealerCheckCsdd({
+        dealerLastKm,
+        csddKm,
+        http206,
+        firstRegLv: formatDealerCheckDateLv(res.data.firstRegistrationIso),
+        inspectionUntil: formatDealerCheckDateLv(res.data.inspectionValidUntilIso),
+      }),
+      snapshot: res.data,
+    };
   } catch {
-    return compareDealerCheckCsdd({ dealerLastKm, csddKm: null, http206 });
+    return { compare: compareDealerCheckCsdd({ dealerLastKm, csddKm: null, http206 }), snapshot: null };
   }
 }
 
@@ -235,7 +243,7 @@ export async function runDealerCheck(args: {
   const http206 = dealerCheckServiceHistoryHttp206(fetched.results);
   const now = new Date().toISOString();
   const monthKey = rigaYearMonthKey(Date.now());
-  const [csdd, autoparks] = await Promise.all([
+  const [csddLookup, autoparks] = await Promise.all([
     lookupCsdd(vin, plate, lastDealerCheckOdometerKm(mileageRows), http206),
     lookupAutoparksLink(vin),
   ]);
@@ -253,7 +261,8 @@ export async function runDealerCheck(args: {
     mileageRows,
     serviceRows,
     comments: http206 ? dealerCheckHttp206Comments(vehicle.make) : { serviceHistory: "", oilIntervals: "" },
-    csdd,
+    csdd: csddLookup.compare,
+    csddSnapshot: csddLookup.snapshot,
     chargedCents,
     quotedCents,
     fetchedAt: now,

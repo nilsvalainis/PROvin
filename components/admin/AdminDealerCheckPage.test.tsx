@@ -5,7 +5,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { AdminDealerCheckCsddPreview, AdminDealerCheckPage } from "@/components/admin/AdminDealerCheckPage";
-import { dealerCheckEmptyStateText, dealerCheckPageHref, DEALER_CHECK_PAGE_PATH } from "@/lib/dealer-check";
+import { dealerCheckEmptyStateText, dealerCheckPageHref, DEALER_CHECK_PAGE_PATH, type DealerCheckRecord } from "@/lib/dealer-check";
+import type { DealerCheckHistoryEntry } from "@/lib/dealer-check-history";
 import { DEALER_CHECK_MANUAL_ORDER_LABEL } from "@/lib/dealer-check-manual-order";
 import { DEALER_CHECK_CSDD_TITLE } from "@/lib/dealer-check-csdd";
 import { emptyCsddTechData, type CsddTechData } from "@/lib/csdd-tech-data";
@@ -96,6 +97,85 @@ describe("AdminDealerCheckPage", () => {
     expect(text).not.toContain("Gemini: Servisa vēsture");
     expect(text).not.toContain("CSDD salīdzinājums");
     expect(text).not.toMatch(/speckr/i);
+  });
+
+  it("atsvaidzināta lapa rāda saglabāto pārbaudi, konvertētā nav noklusējuma sarakstā", () => {
+    const openVin = VIN;
+    const convertedVin = "WF0XXXGCDX1234567";
+    const saved: DealerCheckRecord = {
+      id: "dc-refresh-open1",
+      vin: openVin,
+      plate: "LR-4521",
+      template: "dzintarzeme",
+      selectedProducts: ["vin_decoder"],
+      results: { vin_decoder: { ok: true, payload: { make: "BMW" }, httpStatus: 200 } },
+      display: { equipment: [], serviceTimeline: [], powertrain: [] },
+      displayOriginal: { equipment: [], serviceTimeline: [], powertrain: [] },
+      vehicle: {
+        make: "BMW",
+        model: "320d",
+        body: "",
+        engine: "",
+        firstReg: "",
+        color: "",
+        gearbox: "",
+        manufacturer: "",
+        vin: openVin,
+      },
+      mileageRows: [],
+      serviceRows: [],
+      comments: { serviceHistory: "Serviss saglabāts.", oilIntervals: "Eļļa saglabāta." },
+      csdd: null,
+      csddSnapshot: sampleCsdd(),
+      chargedCents: 18,
+      quotedCents: 18,
+      fetchedAt: "2026-11-02T10:00:00.000Z",
+      monthKey: "2026-11",
+      autoparks: { carId: "ap-1", title: "BMW 320d", stockPath: "/STOCK", dropboxFolderId: "id:1" },
+      saved: true,
+      createdAt: "2026-11-02T10:00:00.000Z",
+      updatedAt: "2026-11-02T10:00:00.000Z",
+      createdBy: "env-admin",
+      status: "open",
+    };
+    const openRow: DealerCheckHistoryEntry = {
+      id: saved.id,
+      vin: openVin,
+      plate: "LR-4521",
+      template: "dzintarzeme",
+      createdAt: saved.createdAt,
+      fetchedAt: saved.fetchedAt,
+      createdBy: "env-admin",
+      status: "open",
+      orderId: "",
+      chargedCents: 18,
+      hasData: true,
+      autoparksTitle: "BMW 320d",
+    };
+    const convertedRow: DealerCheckHistoryEntry = {
+      ...openRow,
+      id: "dc-refresh-conv1",
+      vin: convertedVin,
+      status: "converted",
+      orderId: "ord_1",
+    };
+    const html = renderHtml(
+      <AdminDealerCheckPage initialVin={openVin} initialPlate="LR-4521" initialRecord={saved} initialEntries={[convertedRow, openRow]} />,
+    );
+    const text = renderText(
+      <AdminDealerCheckPage initialVin={openVin} initialPlate="LR-4521" initialRecord={saved} initialEntries={[convertedRow, openRow]} />,
+    );
+    expect(html).toContain('data-dealer-check-history-row="dc-refresh-open1"');
+    expect(html).not.toContain('data-dealer-check-history-row="dc-refresh-conv1"');
+    expect(text).toContain("Saglabātās pārbaudes");
+    expect(text).toContain("Eksportēt CSV");
+    expect(text).toContain("Datums no");
+    expect(text).toContain("Pasūtījums");
+    expect(text).toContain("Šablons");
+    expect(text).toContain("Serviss saglabāts.");
+    expect(text).toContain(openVin);
+    expect(text).not.toContain(convertedVin);
+    expect(text).toContain(DEALER_CHECK_CSDD_TITLE);
   });
 
   it("CSDD priekšskatījums rāda reģistra laukus, ne 4 lauku stub", () => {

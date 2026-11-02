@@ -134,6 +134,8 @@ describe("dīlera pārbaude → manuālā pasūtījuma lauki", () => {
     expect(seed.orderEdits.customerPhone).toBeUndefined();
     expect(seed.orderEdits.customerName).toBeUndefined();
     expect(seed.orderEdits.notes).toBeUndefined();
+    expect(seed.orderEdits.internalComment).toBeUndefined();
+    expect(parsed.input.checkId).toBeUndefined();
     expect(seed.orderEdits.listingUrl).toBeUndefined();
     const csdd = seed.workspace.sourceBlocks.csdd;
     expect(csdd.makeModel).toBe("BMW 320d");
@@ -169,7 +171,9 @@ describe("dīlera pārbaude → manuālā pasūtījuma lauki", () => {
     expect(parsed.ok).toBe(true);
     if (!parsed.ok) return;
     expect(parsed.input.dealer?.comments.serviceHistory).toBe("Labots komentārs.");
+    expect(parsed.input.checkId).toBe("dc-test-record-1");
     const seed = buildDealerCheckManualOrderSeed(parsed.input);
+    expect(seed.orderEdits.internalComment).toBeUndefined();
     const auto = seed.workspace.sourceBlocks.auto_records;
     expect(auto.outvinReport?.vehicleInfo.model).toBe("BMW 320d");
     expect(auto.outvinReport?.vehicleInfo.transmission).toBe("automatic");

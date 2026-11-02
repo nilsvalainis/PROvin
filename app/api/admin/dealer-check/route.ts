@@ -1,20 +1,29 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getOneautoApiConfig } from "@/lib/oneauto-api";
+import { currentDealerCheckCreatorId } from "@/lib/dealer-check-actor";
+import {
+  dealerCheckListToCsv,
+  dealerCheckVisibleTo,
+  filterDealerCheckList,
+  parseDealerCheckCsddSnapshot,
+  type DealerCheckListFilter,
+} from "@/lib/dealer-check-history";
 import {
   addDealerCheckCost,
+  commitDealerCheckLoad,
   deleteDealerCheck,
-  isDealerCheckStoreEnabled,
+  listDealerCheckEntries,
   patchDealerCheck,
-  readDealerCheck,
   readDealerCheckByVin,
   readDealerCheckLedgerMonth,
-  writeDealerCheck,
+  readOwnedDealerCheck,
 } from "@/lib/dealer-check-store";
 import { generateDealerCheckComments, runDealerCheck } from "@/lib/dealer-check-run";
 import {
   dealerCheckHasHttp206,
   formatDealerCheckLedgerBar,
+  isDealerCheckTemplateId,
   isSafeDealerCheckId,
   parseDealerCheckSearchVin,
 } from "@/lib/dealer-check";
@@ -32,21 +41,49 @@ async function ledgerPayload() {
   return { month, bar: formatDealerCheckLedgerBar(month) };
 }
 
+function listFilterFromUrl(url: URL): DealerCheckListFilter {
+  const template = url.searchParams.get("template");
+  const status = url.searchParams.get("status");
+  const ordered = url.searchParams.get("ordered");
+  return {
+    vin: url.searchParams.get("vin") ?? "",
+    plate: url.searchParams.get("plate") ?? "",
+    from: url.searchParams.get("from") ?? "",
+    to: url.searchParams.get("to") ?? "",
+    template: isDealerCheckTemplateId(template) ? template : "all",
+    status: status === "open" || status === "converted" ? status : "all",
+    ordered: ordered === "yes" || ordered === "no" ? ordered : "all",
+  };
+}
+
 export async function GET(req: Request) {
   if (!(await getAdminSession())) return unauthorized();
   const url = new URL(req.url);
+  const creator = await currentDealerCheckCreatorId();
+  const entries = await listDealerCheckEntries(creator);
+  if (url.searchParams.get("format") === "csv") {
+    const csv = dealerCheckListToCsv(filterDealerCheckList(entries, listFilterFromUrl(url)));
+    return new NextResponse(csv, {
+      status: 200,
+      headers: {
+        "content-type": "text/csv; charset=utf-8",
+        "content-disposition": "attachment; filename=\"dilera-parbaudes.csv\"",
+      },
+    });
+  }
+  const ledger = await ledgerPayload();
   const id = url.searchParams.get("id") ?? "";
   const vin = parseDealerCheckSearchVin(url.searchParams.get("vin"));
-  const ledger = await ledgerPayload();
   if (id && isSafeDealerCheckId(id)) {
-    const record = await readDealerCheck(id);
-    return NextResponse.json({ ok: true, record, ...ledger });
+    const record = await readOwnedDealerCheck(id, creator);
+    return NextResponse.json({ ok: true, record, entries, ...ledger });
   }
   if (vin) {
-    const record = await readDealerCheckByVin(vin);
-    return NextResponse.json({ ok: true, record, ...ledger });
+    const found = await readDealerCheckByVin(vin);
+    const record = found && dealerCheckVisibleTo(found, creator) ? found : null;
+    return NextResponse.json({ ok: true, record, entries, ...ledger });
   }
-  return NextResponse.json({ ok: true, record: null, ...ledger });
+  return NextResponse.json({ ok: true, record: null, entries, ...ledger });
 }
 
 export async function POST(req: Request) {
@@ -71,12 +108,20 @@ export async function POST(req: Request) {
     if ("error" in result) {
       return NextResponse.json({ error: result.error }, { status: result.status });
     }
-    const stored = isDealerCheckStoreEnabled() ? await writeDealerCheck(result.record) : false;
+    const clientSnapshot = parseDealerCheckCsddSnapshot(o.csdd);
+    if (clientSnapshot) result.record.csddSnapshot = clientSnapshot;
+    // Katrs Ielādēt ir jauns OneAuto zvans (klients kešo nē). Vietējā maksa tikai ok rezultātiem.
+    // 24h brīdinājums ir pasūtījuma OneAuto joslā, ne šajā lapā. Nesaglabājam 206 / tukšu / kļūdu.
+    const creator = await currentDealerCheckCreatorId();
+    const saved = await commitDealerCheckLoad(result.record, creator);
     const month = await addDealerCheckCost(result.record.template, result.record.chargedCents);
+    const entries = await listDealerCheckEntries(creator);
     return NextResponse.json({
       ok: true,
-      record: result.record,
-      stored,
+      record: saved.record,
+      stored: saved.stored,
+      durable: saved.durable,
+      entries,
       month,
       bar: formatDealerCheckLedgerBar(month),
       http206: dealerCheckHasHttp206(result.record.results),
@@ -104,8 +149,9 @@ export async function PATCH(req: Request) {
   if (!isSafeDealerCheckId(id)) {
     return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   }
+  const creator = await currentDealerCheckCreatorId();
   if (o.generateComments === true) {
-    const current = await readDealerCheck(id);
+    const current = await readOwnedDealerCheck(id, creator);
     if (!current) return NextResponse.json({ error: "not_found" }, { status: 404 });
     const comments = await generateDealerCheckComments(current);
     const record = await patchDealerCheck(id, { comments });
@@ -118,6 +164,8 @@ export async function PATCH(req: Request) {
           oilIntervals: String((o.comments as { oilIntervals?: unknown }).oilIntervals ?? ""),
         }
       : undefined;
+  const owned = await readOwnedDealerCheck(id, creator);
+  if (!owned) return NextResponse.json({ error: "not_found" }, { status: 404 });
   const record = await patchDealerCheck(id, {
     ...(comments ? { comments } : {}),
     saved: o.saved === true ? true : undefined,
@@ -141,6 +189,9 @@ export async function DELETE(req: Request) {
   if (!isSafeDealerCheckId(id)) {
     return NextResponse.json({ error: "invalid_id" }, { status: 400 });
   }
+  const creator = await currentDealerCheckCreatorId();
+  const owned = await readOwnedDealerCheck(id, creator);
+  if (!owned) return NextResponse.json({ error: "not_found" }, { status: 404 });
   const deleted = await deleteDealerCheck(id);
   if (!deleted) return NextResponse.json({ error: "not_found" }, { status: 404 });
   const ledger = await ledgerPayload();

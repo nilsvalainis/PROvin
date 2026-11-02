@@ -19,6 +19,7 @@ import { oneautoDisplayToMileageRows, oneautoPowertrainToVehicleInfo } from "@/l
 import { formatKmGrouped } from "@/lib/miles-to-km";
 import { LV_MONTH_NAMES, rigaYearMonthKey } from "@/lib/admin-riga-calendar";
 import { formatRigaIsoShort } from "@/lib/riga-datetime";
+import type { CsddTechData } from "@/lib/csdd-tech-data";
 import type { OneautoProductResult } from "@/lib/oneauto-block";
 
 export const DEALER_CHECK_PAGE_PATH = "/admin/dilera-dati" as const;
@@ -127,6 +128,13 @@ export type DealerCheckRecord = {
   saved: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Īpašnieks. Tukšs vecajos ierakstos nozīmē env-admin. */
+  createdBy?: string;
+  /** open paliek sarakstā. converted ir pasūtījums un noklusējumā slēpts. */
+  status?: "open" | "converted";
+  orderId?: string;
+  /** Pilns CSDD reģistra snapshots, ko lapa rāda pēc ielādes. */
+  csddSnapshot?: CsddTechData | null;
 };
 
 const HTTP_206_ERROR = "http_206";
@@ -195,7 +203,9 @@ export function formatDealerCheckEur(cents: number): string {
   return formatEurFromCents(cents);
 }
 
-export function dealerCheckPageHref(args: { vin?: string; from?: "autoparks"; plate?: string } = {}): string {
+export function dealerCheckPageHref(args: { vin?: string; from?: "autoparks"; plate?: string; id?: string } = {}): string {
+  const id = (args.id ?? "").trim();
+  if (id && isSafeDealerCheckId(id)) return `${DEALER_CHECK_PAGE_PATH}?id=${encodeURIComponent(id)}`;
   const q = new URLSearchParams();
   const vin = normalizeVin(args.vin ?? "");
   if (vin) q.set("vin", vin);

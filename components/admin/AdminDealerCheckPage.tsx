@@ -6,12 +6,14 @@ import { openGeneratedHtmlDocument } from "@/lib/admin-open-window";
 import {
   DEALER_CHECK_DEFAULT_SELECTED,
   DEALER_CHECK_DEFAULT_TEMPLATE,
+  DEALER_CHECK_PAGE_PATH,
   DEALER_CHECK_SOURCES,
   DEALER_CHECK_TEMPLATE_LABEL,
   DEALER_CHECK_TEMPLATES,
   buildDealerCheckLvHtml,
   dealerCheckCanLoad,
   dealerCheckEmptyStateText,
+  dealerCheckPageHref,
   dealerCheckHasResult,
   dealerCheckHttp206Warning,
   dealerCheckMileageHttp206Note,
@@ -38,9 +40,17 @@ import {
   DEALER_CHECK_MANUAL_ORDER_LABEL,
   dealerCheckManualOrderCanCreate,
 } from "@/lib/dealer-check-manual-order";
-import { isValidVin, normalizeVin, sanitizeVinInput } from "@/lib/order-field-validation";
+import { normalizeVin, sanitizeVinInput } from "@/lib/order-field-validation";
 import type { CsddTechData } from "@/lib/csdd-tech-data";
 import type { OneautoProductId } from "@/lib/oneauto-catalog";
+import { AdminDealerCheckHistory } from "@/components/admin/AdminDealerCheckHistory";
+import {
+  DEALER_CHECK_LIST_DEFAULT_FILTER,
+  dealerCheckListToCsv,
+  filterDealerCheckList,
+  type DealerCheckHistoryEntry,
+  type DealerCheckListFilter,
+} from "@/lib/dealer-check-history";
 
 const inp =
   "w-full min-w-0 rounded-[10px] border border-[#d1d1d6] bg-white px-3 py-[10px] font-mono text-[14px] text-[#111] placeholder:text-[#8e8e93] focus:border-[#2563EB] focus:outline-none focus:ring-1 focus:ring-[#2563EB]/25";
@@ -75,34 +85,45 @@ export function AdminDealerCheckPage({
   initialCsdd = null,
   initialCsddMessage = "",
   fromAutoparks = false,
+  initialRecord = null,
+  initialEntries = [],
 }: {
   initialVin: string;
   initialPlate?: string;
   initialCsdd?: CsddTechData | null;
   initialCsddMessage?: string;
   fromAutoparks?: boolean;
+  initialRecord?: DealerCheckRecord | null;
+  initialEntries?: DealerCheckHistoryEntry[];
 }) {
-  const [template, setTemplate] = useState<DealerCheckTemplateId>(DEALER_CHECK_DEFAULT_TEMPLATE);
-  const [vin, setVin] = useState(initialVin);
-  const [plate, setPlate] = useState(initialPlate);
-  const [selected, setSelected] = useState<OneautoProductId[]>([...DEALER_CHECK_DEFAULT_SELECTED]);
-  const [record, setRecord] = useState<DealerCheckRecord | null>(null);
-  const [csddPreview, setCsddPreview] = useState<CsddTechData | null>(initialCsdd);
+  const [template, setTemplate] = useState<DealerCheckTemplateId>(initialRecord?.template ?? DEALER_CHECK_DEFAULT_TEMPLATE);
+  const [vin, setVin] = useState(initialRecord?.vin || initialVin);
+  const [plate, setPlate] = useState(initialRecord?.plate || initialPlate);
+  const [selected, setSelected] = useState<OneautoProductId[]>(
+    initialRecord?.selectedProducts?.length ? [...initialRecord.selectedProducts] : [...DEALER_CHECK_DEFAULT_SELECTED],
+  );
+  const [record, setRecord] = useState<DealerCheckRecord | null>(initialRecord);
+  const [entries, setEntries] = useState<DealerCheckHistoryEntry[]>(initialEntries);
+  const [filter, setFilter] = useState<DealerCheckListFilter>(DEALER_CHECK_LIST_DEFAULT_FILTER);
+  const [csddPreview, setCsddPreview] = useState<CsddTechData | null>(initialRecord?.csddSnapshot ?? initialCsdd);
   const [csddBusy, setCsddBusy] = useState(false);
   const [csddError, setCsddError] = useState(initialCsddMessage);
   const [ledgerBar, setLedgerBar] = useState("");
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
-  const [draftComments, setDraftComments] = useState<DealerCheckComments>({
-    serviceHistory: "",
-    oilIntervals: "",
-  });
+  const [draftComments, setDraftComments] = useState<DealerCheckComments>(
+    initialRecord?.comments ?? { serviceHistory: "", oilIntervals: "" },
+  );
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState(fromAutoparks && initialVin ? "VIN iekopēts no Autoparks. Avoti paliek izslēgti." : "");
+  const [notice, setNotice] = useState(
+    initialRecord ? "" : fromAutoparks && initialVin ? "VIN iekopēts no Autoparks. Avoti paliek izslēgti." : "",
+  );
   const [creatingOrder, setCreatingOrder] = useState(false);
   const [createOrderError, setCreateOrderError] = useState("");
   const router = useRouter();
   const csddLookupSeq = useRef(0);
+  const listSeq = useRef(0);
+  const filteredEntries = useMemo(() => filterDealerCheckList(entries, filter), [entries, filter]);
 
   const pick = dealerCheckSelection(selected);
   const canLoad = dealerCheckCanLoad(selected) && !busy && (Boolean(normalizeVin(vin)) || Boolean(plate.trim()));
@@ -118,25 +139,41 @@ export function AdminDealerCheckPage({
       comments: orderComments,
     });
 
-  const loadLedger = useCallback(async (vinHint?: string) => {
-    const q = vinHint ? `?vin=${encodeURIComponent(vinHint)}` : "";
-    const res = await fetch(`/api/admin/dealer-check${q}`, { credentials: "include" });
-    const body = (await res.json().catch(() => ({}))) as {
-      bar?: string;
-      record?: DealerCheckRecord | null;
-    };
-    if (body.bar) setLedgerBar(body.bar);
-    if (vinHint && body.record && !fromAutoparks) {
-      setRecord(body.record);
-      setDraftComments(body.record.comments);
-      setTemplate(body.record.template);
-      if (body.record.plate && !plate) setPlate(body.record.plate);
+  const refreshList = useCallback(async () => {
+    const seq = ++listSeq.current;
+    try {
+      const res = await fetch("/api/admin/dealer-check?list=1", { credentials: "include" });
+      const body = (await res.json().catch(() => ({}))) as {
+        bar?: string;
+        entries?: DealerCheckHistoryEntry[];
+      };
+      if (seq !== listSeq.current) return;
+      if (body.bar) setLedgerBar(body.bar);
+      if (Array.isArray(body.entries)) setEntries(body.entries);
+    } catch {
+      /* saraksts paliek tāds, kādu to iedeva serveris */
     }
-  }, [fromAutoparks, plate]);
+  }, []);
 
   useEffect(() => {
-    void loadLedger(initialVin || undefined);
-  }, [initialVin, loadLedger]);
+    void refreshList();
+  }, [refreshList]);
+
+  function rememberUrl(id: string | null) {
+    const href = id ? dealerCheckPageHref({ id }) : DEALER_CHECK_PAGE_PATH;
+    window.history.replaceState(null, "", href);
+  }
+
+  function showRecord(next: DealerCheckRecord) {
+    setRecord(next);
+    setDraftComments(next.comments);
+    setTemplate(next.template);
+    setSelected(next.selectedProducts.length ? [...next.selectedProducts] : []);
+    setVin(next.vin || "");
+    setPlate(next.plate || "");
+    setCsddPreview(next.csddSnapshot ?? null);
+    setEditing(false);
+  }
 
   const lookupCsdd = useCallback(async (query: string, current: { vin: string; plate: string }) => {
     const seq = ++csddLookupSeq.current;
@@ -225,6 +262,12 @@ export function AdminDealerCheckPage({
         setCreateOrderError(createOrderErrorLv(res.status, typeof data?.error === "string" ? data.error : ""));
         return;
       }
+      if (record?.id && normalizeVin(record.vin) === normalizeVin(vin) && record.status !== "converted") {
+        listSeq.current += 1;
+        setEntries((cur) =>
+          cur.map((row) => (row.id === record.id ? { ...row, status: "converted", orderId } : row)),
+        );
+      }
       router.push(`/admin/orders/${encodeURIComponent(orderId)}`);
     } catch {
       setCreateOrderError(createOrderErrorLv(0, ""));
@@ -243,22 +286,36 @@ export function AdminDealerCheckPage({
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ vin, plate, template, products: selected }),
+        body: JSON.stringify({ vin, plate, template, products: selected, csdd: csddPreview }),
       });
       const body = (await res.json().catch(() => ({}))) as {
         error?: string;
         record?: DealerCheckRecord;
         bar?: string;
+        stored?: boolean;
+        durable?: boolean;
+        entries?: DealerCheckHistoryEntry[];
       };
       if (!res.ok || !body.record) {
         setError(errorLv(body.error ?? "upstream_error"));
         return;
       }
-      setRecord(body.record);
-      setDraftComments(body.record.comments);
-      setEditing(false);
+      showRecord(body.record);
       if (body.bar) setLedgerBar(body.bar);
-      if (body.record.vin && !isValidVin(vin)) setVin(body.record.vin);
+      if (Array.isArray(body.entries)) {
+        listSeq.current += 1;
+        setEntries(body.entries);
+      }
+      if (body.durable && body.stored) {
+        setNotice("Pārbaude saglabāta sarakstā.");
+        rememberUrl(body.record.id);
+      } else if (body.durable) {
+        setNotice("Pārbaude nav ierakstīta krātuvē. Mēģini vēlreiz.");
+        rememberUrl(null);
+      } else {
+        setNotice("Ielāde nav saglabāta: OneAuto neatdeva datus (206, tukšs vai kļūda).");
+        rememberUrl(null);
+      }
     } catch {
       setError(errorLv("upstream_error"));
     } finally {
@@ -295,12 +352,23 @@ export function AdminDealerCheckPage({
     }
   }
 
-  async function onDelete() {
-    if (!record) return;
-    if (!window.confirm("Dzēst šo dīlera datu pārskatu? OneAuto maksa paliek uzskaitē.")) return;
+  async function onDelete(id = record?.id ?? "") {
+    if (!id) return;
+    if (!window.confirm("Dzēst šo dīlera datu pārbaudi? Ieraksts un saglabātie dati tiek izņemti. OneAuto maksa paliek uzskaitē.")) return;
+    const persisted = entries.some((row) => row.id === id);
+    if (!persisted) {
+      if (record?.id === id) {
+        setRecord(null);
+        setDraftComments({ serviceHistory: "", oilIntervals: "" });
+        setEditing(false);
+        rememberUrl(null);
+      }
+      setNotice("Pārbaude nav bijusi sarakstā.");
+      return;
+    }
     setBusy(true);
     try {
-      const res = await fetch(`/api/admin/dealer-check?id=${encodeURIComponent(record.id)}`, {
+      const res = await fetch(`/api/admin/dealer-check?id=${encodeURIComponent(id)}`, {
         method: "DELETE",
         credentials: "include",
       });
@@ -309,14 +377,49 @@ export function AdminDealerCheckPage({
         setError(errorLv(body.error ?? "upstream_error"));
         return;
       }
-      setRecord(null);
-      setDraftComments({ serviceHistory: "", oilIntervals: "" });
-      setEditing(false);
+      listSeq.current += 1;
+      setEntries((cur) => cur.filter((row) => row.id !== id));
+      if (record?.id === id) {
+        setRecord(null);
+        setDraftComments({ serviceHistory: "", oilIntervals: "" });
+        setEditing(false);
+        rememberUrl(null);
+      }
       if (body.bar) setLedgerBar(body.bar);
-      setNotice("Pārskats dzēsts.");
+      setNotice("Pārbaude dzēsta.");
     } finally {
       setBusy(false);
     }
+  }
+
+  async function onOpen(id: string) {
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/admin/dealer-check?id=${encodeURIComponent(id)}`, { credentials: "include" });
+      const body = (await res.json().catch(() => ({}))) as { record?: DealerCheckRecord | null; error?: string; bar?: string };
+      if (!res.ok || !body.record) {
+        setError(errorLv(body.error ?? "not_found"));
+        return;
+      }
+      showRecord(body.record);
+      if (body.bar) setLedgerBar(body.bar);
+      rememberUrl(body.record.id);
+      setNotice("");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function onExport() {
+    const csv = dealerCheckListToCsv(filteredEntries);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "dilera-parbaudes.csv";
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   async function onGenerateComment() {
@@ -361,6 +464,17 @@ export function AdminDealerCheckPage({
     <div className="mx-auto max-w-[1180px] px-4 pb-16 pt-2 sm:px-7 sm:pt-4">
       <h1 className="text-[23px] font-semibold tracking-tight text-[#111] sm:text-[26px]">Dīlera datu pārbaude</h1>
       <p className="mb-5 mt-1 text-[13.5px] text-[#6e6e73]">Iekšējā · bez klienta pasūtījuma · ADMIN</p>
+
+      <AdminDealerCheckHistory
+        entries={filteredEntries}
+        total={entries.length}
+        filter={filter}
+        onFilter={setFilter}
+        onOpen={(id) => void onOpen(id)}
+        onDelete={(id) => void onDelete(id)}
+        onExport={onExport}
+        busy={busy}
+      />
 
       <section className="mb-3.5 rounded-2xl border border-[#e5e5ea] bg-white p-4 sm:p-5">
         <h2 className="mb-3 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.5px] text-[#3a3a3c]">
@@ -523,7 +637,7 @@ export function AdminDealerCheckPage({
           onGenerate={() => void onGenerateComment()}
           onPdf={(k) => void openPdf(k)}
           onSave={() => void onSave()}
-          onDelete={() => void onDelete()}
+          onDelete={() => void onDelete(record?.id)}
           busy={busy}
         />
       )}

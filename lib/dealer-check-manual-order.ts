@@ -14,6 +14,7 @@ import { applyCsddTechDataToBlock } from "@/lib/csdd-tech-data-apply";
 import { emptyCsddTechData, type CsddTechData } from "@/lib/csdd-tech-data";
 import {
   dealerCheckHasResult,
+  isSafeDealerCheckId,
   type DealerCheckComments,
   type DealerCheckRecord,
 } from "@/lib/dealer-check";
@@ -48,6 +49,7 @@ export type DealerCheckManualOrderInput = {
   plate: string;
   csdd: CsddTechData | null;
   dealer: DealerCheckManualOrderDealer | null;
+  checkId?: string;
 };
 
 export type DealerCheckManualOrderSeed = {
@@ -160,12 +162,22 @@ export function buildDealerCheckManualOrderBody(state: DealerCheckManualOrderPag
     csddPlate: state.csdd?.registrationNumber,
   });
   const dealer = dealerFromRecord(state.record, state.comments);
+  const recordVin = normalizeVin(state.record?.vin ?? "");
+  const checkStillOpen = state.record?.status !== "converted" && !(state.record?.orderId ?? "").trim();
+  const checkId =
+    state.record &&
+    checkStillOpen &&
+    isSafeDealerCheckId(state.record.id) &&
+    recordVin === vin
+      ? state.record.id
+      : "";
   return {
     origin: DEALER_CHECK_MANUAL_ORDER_ORIGIN,
     vin,
     ...(plate ? { plate } : {}),
     ...(state.csdd && csddUseful(state.csdd) ? { csdd: state.csdd } : {}),
     ...(dealer ? { dealer } : {}),
+    ...(checkId ? { checkId } : {}),
   };
 }
 
@@ -213,6 +225,7 @@ export function parseDealerCheckManualOrderBody(
   const csdd = parseCsdd(o.csdd);
   const dealer = parseDealer(o.dealer);
   if (!csdd && !dealer) return { ok: false, error: "insufficient_data" };
+  const checkId = typeof o.checkId === "string" && isSafeDealerCheckId(o.checkId) ? o.checkId : "";
   return {
     ok: true,
     input: {
@@ -220,6 +233,7 @@ export function parseDealerCheckManualOrderBody(
       plate,
       csdd,
       dealer,
+      ...(checkId ? { checkId } : {}),
     },
   };
 }

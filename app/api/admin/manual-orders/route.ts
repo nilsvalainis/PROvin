@@ -10,7 +10,9 @@ import {
   deleteManualOrder,
   updateManualOrder,
 } from "@/lib/admin-manual-orders";
+import { currentDealerCheckCreatorId } from "@/lib/dealer-check-actor";
 import { createDealerCheckManualOrder } from "@/lib/dealer-check-create-manual-order";
+import { convertDealerCheckToOrder } from "@/lib/dealer-check-store";
 import {
   DEALER_CHECK_MANUAL_ORDER_ORIGIN,
   parseDealerCheckManualOrderBody,
@@ -53,6 +55,12 @@ export async function POST(req: Request) {
       const created = await createDealerCheckManualOrder(parsed.input);
       if (!created.ok) {
         return NextResponse.json({ error: created.error }, { status: storeErrorStatus(created.error) });
+      }
+      if (parsed.input.checkId) {
+        const creator = await currentDealerCheckCreatorId();
+        await convertDealerCheckToOrder(parsed.input.checkId, created.orderId, creator).catch((err) => {
+          console.error("[dealer-check] convert", err);
+        });
       }
       return NextResponse.json({ ok: true, orderId: created.orderId, record: { id: created.orderId } });
     }
