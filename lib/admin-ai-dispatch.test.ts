@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
@@ -26,9 +26,22 @@ vi.mock("@/lib/admin-gemini", () => ({
   resolveGeminiAdminModel: vi.fn(() => "gemini-model"),
 }));
 
+const finalizeGeneratedComment = vi.fn(async (text: string, _opts?: unknown) => text);
+
+vi.mock("@/lib/admin-ai-polish", () => ({
+  finalizeGeneratedComment: (text: string, opts?: unknown) => finalizeGeneratedComment(text, opts),
+  shouldSkipGeneratedCommentPolish: () => false,
+}));
+
 import { aiGenerateExpertText, aiGenerateTextWithVocabulary } from "@/lib/admin-ai";
 import { geminiGenerateExpertText, getGeminiApiKeyFromEnv } from "@/lib/admin-gemini";
-import { adminGenerateExpertText, adminGenerateTextWithVocabulary } from "@/lib/admin-ai-dispatch";
+import { AiIncompleteCommentError } from "@/lib/admin-ai-incomplete";
+import {
+  adminGenerateExpertText,
+  adminGenerateJsonText,
+  adminGenerateRawTextWithWebSearch,
+  adminGenerateTextWithVocabulary,
+} from "@/lib/admin-ai-dispatch";
 import { golfBlocks } from "@/lib/ai-eval/golf-gte-fixture";
 import { buildCanonicalFactsSheet } from "@/lib/canonical-facts-sheet";
 
@@ -175,5 +188,87 @@ describe("admin-ai-dispatch self-correction retry", () => {
     expect(text).toBe("Avotos nav fiksētu bojājumu vai atlīdzību.");
     expect(aiGenerateExpertText).toHaveBeenCalledTimes(1);
     expect(geminiGenerateExpertText).not.toHaveBeenCalled();
+  });
+});
+
+describe("admin-ai-dispatch final Claude review", () => {
+  beforeEach(() => {
+    finalizeGeneratedComment.mockReset();
+    finalizeGeneratedComment.mockImplementation(async (text: string) => text);
+  });
+
+  it("runs the final review after generation, including the PRO path", async () => {
+    vi.clearAllMocks();
+    finalizeGeneratedComment.mockImplementation(async (text: string) => `Pārskatīts: ${text}`);
+    const text = await adminGenerateExpertText({
+      systemInstruction: "sys",
+      userPrompt: "sākotnējais prompts",
+      qualityField: "generic",
+      modelTier: "pro",
+    });
+    expect(finalizeGeneratedComment).toHaveBeenCalledTimes(1);
+    expect(text).toBe("Pārskatīts: Šis auto pieder tai pašai saimei un ir kopts.");
+    expect(aiGenerateExpertText).toHaveBeenCalledWith(
+      expect.objectContaining({ skipLatvianPolish: true }),
+    );
+  });
+
+  it("keeps the generated text when the final review fails", async () => {
+    vi.clearAllMocks();
+    finalizeGeneratedComment.mockImplementation(async (text: string) => text);
+    const text = await adminGenerateExpertText({
+      systemInstruction: "sys",
+      userPrompt: "sākotnējais prompts",
+      qualityField: "generic",
+    });
+    expect(text).toBe("Šis auto pieder tai pašai saimei un ir kopts.");
+    expect(finalizeGeneratedComment).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not review JSON / raw schema extracts", async () => {
+    vi.clearAllMocks();
+    await adminGenerateJsonText({
+      systemInstruction: "sys",
+      userPrompt: '{"schema":true}',
+    });
+    await adminGenerateRawTextWithWebSearch({
+      systemInstruction: "sys",
+      userPrompt: '{"karte":true}',
+      skipLatvianPolish: true,
+    });
+    expect(finalizeGeneratedComment).not.toHaveBeenCalled();
+  });
+
+  it("skips the inner Haiku polish so the final review is the only Sonnet pass", async () => {
+    vi.clearAllMocks();
+    finalizeGeneratedComment.mockImplementation(async (text: string) => text);
+    await adminGenerateExpertText({
+      systemInstruction: "sys",
+      userPrompt: "sākotnējais prompts",
+      qualityField: "generic",
+      modelTier: "lite",
+    });
+    expect(aiGenerateExpertText).toHaveBeenCalledWith(
+      expect.objectContaining({ skipLatvianPolish: true }),
+    );
+    expect(finalizeGeneratedComment).toHaveBeenCalledTimes(1);
+  });
+
+  it("reviews incomplete comment text and still reports incomplete", async () => {
+    vi.clearAllMocks();
+    vi.mocked(aiGenerateExpertText).mockRejectedValueOnce(
+      new AiIncompleteCommentError("Daļējs teksts par ķēdi.", "timeout"),
+    );
+    finalizeGeneratedComment.mockImplementation(async (text: string) => `Pārskatīts: ${text}`);
+    await expect(
+      adminGenerateExpertText({
+        systemInstruction: "sys",
+        userPrompt: "sākotnējais prompts",
+        qualityField: "generic",
+      }),
+    ).rejects.toMatchObject({
+      name: "AiIncompleteCommentError",
+      partialText: "Pārskatīts: Daļējs teksts par ķēdi.",
+    });
   });
 });

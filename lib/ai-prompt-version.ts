@@ -222,5 +222,9 @@
  *   un klienta tekstā jūdzes / mi / mph neraksta.
  * - 2026-10-21.0 - OE VIN Lookup ir degvielas/dzinēja avots; komentārs
  *   nedrīkst runāt pretī ielādētajiem laukiem.
+ * - 2026-11-03.0 - Automātisks Claude Sonnet pēdējais pārskats pēc ✨ / PRO /
+ *   Copilot prozas: gramatika, stils un vājš tehniskais formulējums, bez
+ *   jauniem auto faktiem. JSON shēmas izvilkumi paliek neskarti. Haiku
+ *   dispatch ceļā slīpē tikai vienu reizi.
  */
-export const PROVIN_AI_PROMPT_VERSION = "2026-10-21.0";
+export const PROVIN_AI_PROMPT_VERSION = "2026-11-03.0";

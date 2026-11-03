@@ -56,7 +56,8 @@ When tone or LV grammar rules change, update provin-field-agent first, then mirr
 | `aiAutoRecordsServiceHistorySystemPrompt()` | Oficiālā dīlera „Servisa vēsture” | `admin-ai-source-comment.ts` (`targetField=serviceHistoryNotes`) |
 | `aiAutoRecordsOilIntervalSystemPrompt()` | Oficiālā dīlera „Eļļas maiņas intervāli” | `admin-ai-source-comment.ts` (`targetField=oilChangeIntervalNotes`) — rēķina no visiem avotiem |
 | `AI_LISTING_PEEK_COMMENT_SYSTEM` | Ātrais sludinājuma vērtējums | `admin-ai-listing-peek.ts` - Smart (gemini-3.8-flash) / PRO (Opus 5.5) |
-| `AI_LV_POLISH_SYSTEM` | Gramatika (✨ polish) | `admin-ai-polish.ts` → [provin-lv-polish](../provin-lv-polish/SKILL.md) |
+| `AI_LV_POLISH_SYSTEM` | Gramatika (manuālā ✨ polish) | `admin-ai-polish.ts` → [provin-lv-polish](../provin-lv-polish/SKILL.md) |
+| `AI_LV_FINAL_REVIEW_SYSTEM` | Automātiskais pēdējais pārskats pēc ģenerēšanas | `finalizeGeneratedComment` (`admin-ai-dispatch.ts`, Copilot `reply`) |
 
 `AI_CLIENT_EMAIL_FORMAT_RULES` applies only to **3. Kopsavilkums** (plain text, end with `APPROVED BY IRISS`).
 
