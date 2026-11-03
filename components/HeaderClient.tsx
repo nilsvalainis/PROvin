@@ -38,9 +38,6 @@ export function HeaderClient() {
   /** VIN dekoders: tāda pati galvene un izvēlne kā citām lapām, bet pašam saites izvēlnē nav. */
   const isVinDecoder = normalizedPath === "/vin-dekoders";
   const isPartneriem = normalizedPath === "/partneriem" || normalizedPath.startsWith("/partneriem/");
-  const isLegalPage =
-    normalizedPath === "/lietosanas-noteikumi" || normalizedPath === "/privatuma-politika";
-  const isThanks = normalizedPath === "/paldies";
   /** Tās pašas lapas kā kreisā slide — arī šeit navigācijas saraksts. */
   const showHomeNavRail =
     isHome ||
@@ -54,21 +51,12 @@ export function HeaderClient() {
 
   const isAzvinDemo = isAzvinPublicPath(pathname);
   /**
-   * Tumšais headeris — sākums / pakalpojumi / Par mums / blogs / BUJ / SELECT / azvin.
+   * Gaišais headeris paliek tikai iekšējām / vecajām plūsmām; visas publiskās lapas (arī 404) ir tumšas.
    */
-  const isDarkHeaderSurface =
-    isHome ||
-    isProvinSelectPieteikums ||
-    isAzvinDemo ||
-    isPakalpojumi ||
-    isParMums ||
-    isBlogs ||
-    isFaqPage ||
-    isVinCheck ||
-    isVinDecoder ||
-    isPartneriem ||
-    isLegalPage ||
-    isThanks;
+  const isLightHeaderRoute = ["/pasutit", "/papildinajums", "/view", "/demo", "/dev"].some(
+    (prefix) => normalizedPath === prefix || normalizedPath.startsWith(`${prefix}/`),
+  );
+  const isDarkHeaderSurface = isAzvinDemo || isProvinSelectPieteikums || !isLightHeaderRoute;
   const headerChromeDark = isDarkHeaderSurface;
 
   const headerSurface = isHome
