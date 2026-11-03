@@ -24,7 +24,8 @@ describe("seo json-ld", () => {
     const org = buildOrganizationJsonLd("lv", "VIN koda pārbaude");
     expect(org["@type"]).toEqual(expect.arrayContaining(["Organization", "LocalBusiness"]));
     expect(org.address).toMatchObject({ "@type": "PostalAddress", addressCountry: "LV" });
-    expect(org.telephone).toMatch(/371/);
+    expect(org).not.toHaveProperty("telephone");
+    expect(org.email).toBeTruthy();
     expect(org.sameAs.length).toBeGreaterThan(0);
   });
 
