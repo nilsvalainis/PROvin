@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { B2bQuoteCta } from "@/components/b2b/B2bQuoteCta";
 import { homeFooterColumnClass } from "@/lib/home-layout";
 
 type Pack = { title: string; price: string; unit: string; items: string[] };
@@ -36,7 +37,7 @@ export async function B2bPartnerLandingInfo({ locale }: { locale: string }) {
   return (
     <section
       aria-labelledby={SHOW_PACKS ? "b2b-packs-heading" : "b2b-steps-heading"}
-      className={`${homeFooterColumnClass} relative z-[3] pb-12 lg:pb-16`}
+      className={`${homeFooterColumnClass} relative z-[3] pb-12 pt-24 lg:pb-16 lg:pt-28`}
     >
       <JsonLd data={faqJsonLd} />
 
@@ -93,53 +94,36 @@ export async function B2bPartnerLandingInfo({ locale }: { locale: string }) {
         </>
       ) : null}
 
-      <h2
-        id="b2b-steps-heading"
-        className={`${KICKER} ${SHOW_PACKS ? "mt-10" : ""}`}
-      >
+      <h2 id="b2b-steps-heading" className={`b2b-h2 ${SHOW_PACKS ? "" : "mt-0"}`}>
         {t("landingStepsHeading")}
       </h2>
-      <ol className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <ol className="b2b-3">
         {steps.map((step, i) => (
-          <li
-            key={step.title}
-            className="min-w-0 border-t border-white/10 pt-4"
-          >
-            <p className="text-[0.84rem] font-semibold text-zinc-100">
-              {i + 1}. {step.title}
-            </p>
-            <p className="mt-1.5 text-[0.84rem] leading-relaxed text-zinc-400">
-              {step.body}
-            </p>
+          <li key={step.title} className="b2b-step">
+            <i aria-hidden>{i + 1}</i>
+            <b>{step.title}</b>
+            <p className="b2b-beat-p">{step.body}</p>
           </li>
         ))}
       </ol>
 
-      <h2 className={`${KICKER} mt-10`}>{t("landingFaqHeading")}</h2>
-      <div className="mt-3 divide-y divide-white/10 border-y border-white/10">
+      <B2bQuoteCta className="b2b-quote-mid" />
+
+      <h2 className="b2b-h2">{t("landingFaqHeading")}</h2>
+      <div className="b2b-faq">
         {faq.map((item) => (
-          <details key={item.q} className="group py-3">
-            <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 text-[0.88rem] font-semibold text-zinc-100">
-              <h3 className="min-w-0">{item.q}</h3>
-              <span
-                aria-hidden
-                className="text-zinc-500 transition group-open:rotate-45"
-              >
-                +
-              </span>
+          <details key={item.q} className="b2b-faq-i group">
+            <summary>
+              <h3>{item.q}</h3>
+              <span aria-hidden className="b2b-faq-plus" />
             </summary>
-            <p className="mt-2 text-[0.84rem] leading-relaxed text-zinc-400">
-              {item.a}
-            </p>
+            <p>{item.a}</p>
           </details>
         ))}
       </div>
 
-      <p className="mt-6 text-[0.8rem] text-zinc-400">
-        <Link
-          href="/partneriem/noteikumi"
-          className="text-[#93c5fd] underline-offset-2 hover:underline"
-        >
+      <p className="mt-6">
+        <Link href="/partneriem/noteikumi" className="b2b-terms">
           {t("landingTermsLink")}
         </Link>
       </p>

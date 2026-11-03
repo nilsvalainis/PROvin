@@ -3,8 +3,6 @@
 import { useCallback, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
-import { B2B_SECONDARY_BUTTON_CLASS } from "@/components/b2b/b2b-partner-ui";
-import { B2bPartnerQuoteDialog } from "@/components/b2b/B2bPartnerQuoteDialog";
 import { B2bTurnstile, partnerLoginNeedsTurnstile } from "@/components/b2b/B2bTurnstile";
 import { useRouter } from "@/i18n/navigation";
 import { localizedEmailInputProps } from "@/lib/email-input-validity";
@@ -28,7 +26,6 @@ export function B2bPartnerLogin() {
   const [forgot, setForgot] = useState(false);
   const [forgotBusy, setForgotBusy] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
-  const [quoteOpen, setQuoteOpen] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileReset, setTurnstileReset] = useState(0);
   const onTurnstileToken = useCallback((token: string | null) => {
@@ -181,7 +178,6 @@ export function B2bPartnerLogin() {
   }
 
   return (
-    <>
     <form
       className="flex w-full flex-col gap-4"
       onSubmit={(event) => {
@@ -261,20 +257,6 @@ export function B2bPartnerLogin() {
           {resendBusy ? t("verifyResendBusy") : t("verifyResend")}
         </button>
       ) : null}
-      <div className="mt-2 flex items-center gap-3" aria-hidden>
-        <span className="h-px flex-1 bg-white/10" />
-        <span className="text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-          {t("quoteDivider")}
-        </span>
-        <span className="h-px flex-1 bg-white/10" />
-      </div>
-      <p className="sr-only">{t("quoteDivider")}</p>
-      <button type="button" className={B2B_SECONDARY_BUTTON_CLASS} onClick={() => setQuoteOpen(true)}>
-        {t("quoteCta")}
-      </button>
-      <p className="-mt-2 text-center text-[0.68rem] leading-snug text-zinc-500">{t("quoteCtaNote")}</p>
     </form>
-    <B2bPartnerQuoteDialog open={quoteOpen} onClose={() => setQuoteOpen(false)} />
-    </>
   );
 }
