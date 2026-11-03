@@ -18,12 +18,11 @@ import {
   type DealerClientEmailKind,
 } from "@/lib/dealer-data-client-email";
 import {
-  buildDealerRefundRequestBody,
-  dealerRefundConfirmMessage,
   dealerRefundEmailSheetHint,
   dealerRefundResultNotice,
-  resolveDealerRefundActionKind,
+  planDealerRefund,
   shouldOpenDealerRefundEmailSheet,
+  shouldShowDealerRefundButton,
 } from "@/lib/admin-dealer-data-refund";
 import {
   DEALER_DATA_RETRY_NO_RECHARGE_HINT,
@@ -38,7 +37,8 @@ import { AdminOrderUpsellPanel } from "@/components/admin/AdminOrderUpsellPanel"
 
 /**
  * Automātiskās dīlera datu ielases statuss pēc apmaksas + klienta saziņa.
- * WA un e-pasts vienmēr redzami; atmaksa tikai Stripe cs_* + no_data.
+ * WA un e-pasts vienmēr redzami; atmaksa pie no_data, failed vai bez job
+ * (canRefund: Stripe cs_* vai B2B partner_id=). Bez no_data sūta override.
  * B2C Stripe «Atgriezt maksājumu»: atmaksa un klienta e-pasts vienā solī.
  */
 
@@ -241,9 +241,9 @@ export function AdminDealerDataJobStrip({
   };
 
   const refund = async () => {
-    if (!editable || busy || !job || !canRefund) return;
-    const kind = resolveDealerRefundActionKind({ sessionId, walletRefund });
-    if (!window.confirm(dealerRefundConfirmMessage(kind))) {
+    if (!editable || busy || !canRefund) return;
+    const plan = planDealerRefund({ sessionId, walletRefund, job });
+    if (!window.confirm(plan.confirmMessage)) {
       return;
     }
     setBusy("refund");
@@ -253,7 +253,7 @@ export function AdminDealerDataJobStrip({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildDealerRefundRequestBody({ sessionId, kind })),
+        body: JSON.stringify(plan.requestBody),
       });
       const body = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
@@ -266,14 +266,14 @@ export function AdminDealerDataJobStrip({
       const ok = Boolean(body.ok);
       setNotice(
         dealerRefundResultNotice({
-          kind,
+          kind: plan.kind,
           ok,
           emailSent: body.emailSent,
           emailError: body.emailError,
           error: body.error,
         }),
       );
-      if (shouldOpenDealerRefundEmailSheet({ kind, ok, emailSent: body.emailSent })) {
+      if (shouldOpenDealerRefundEmailSheet({ kind: plan.kind, ok, emailSent: body.emailSent })) {
         const amount =
           body.job?.refund != null
             ? `${(body.job.refund.amountCents / 100).toFixed(2)} €`
@@ -288,7 +288,7 @@ export function AdminDealerDataJobStrip({
         setMailText(draft.text);
         setPdfFile(null);
         setSheet({ mode: "message", kind: "no_data" });
-        setSheetHint(dealerRefundEmailSheetHint({ kind, emailSent: body.emailSent }));
+        setSheetHint(dealerRefundEmailSheetHint({ kind: plan.kind, emailSent: body.emailSent }));
       }
     } catch {
       setNotice("Neizdevās sazināties ar serveri.");
@@ -406,7 +406,7 @@ export function AdminDealerDataJobStrip({
   if (!loaded) return null;
 
   const refunded = Boolean(job?.refund);
-  const showRefund = Boolean(job && job.status === "no_data" && !refunded && canRefund);
+  const showRefund = shouldShowDealerRefundButton({ canRefund, job });
 
   return (
     <section className="mb-2 rounded-lg border border-slate-200/90 bg-white px-2 py-2">
