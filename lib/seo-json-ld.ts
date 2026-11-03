@@ -193,3 +193,20 @@ export function buildBlogPostingJsonLd(args: {
     image: args.image ? [args.image] : [`${origin}${DEFAULT_OG_IMAGE_PATH}`],
   };
 }
+
+/** Bloga saraksta lapa: `Blog` ar ierakstu sarakstu (papildinājums 03.11). */
+export function buildBlogIndexJsonLd(locale: string, posts: { slug: string; title: string; publishedAt: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    url: publicPageUrl(locale, "/blogs"),
+    inLanguage: jsonLdLanguage(locale),
+    publisher: { "@type": "Organization", "@id": organizationId(), name: getCompanyPublicBrand() },
+    blogPost: posts.map((p) => ({
+      "@type": "BlogPosting",
+      headline: p.title,
+      url: publicPageUrl(locale, `/blogs/${p.slug}`),
+      datePublished: `${p.publishedAt}T12:00:00.000Z`,
+    })),
+  };
+}
