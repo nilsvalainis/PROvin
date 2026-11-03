@@ -27,4 +27,10 @@ describe("Autoparks v2 mobile CSS (j63)", () => {
       /\.ap2-files \{\s*grid-template-columns:\s*repeat\(6, minmax\(0, 1fr\)\);\s*\}\s*\.ap2(?:\.ap2){2} \.ap2-csdd-badge \{\s*height:\s*20px;/,
     );
   });
+
+  it("Serviss A: 44px skenēšanas aplis, 72px centrālais +, bez pilna platuma Skenēt rēķinu", () => {
+    expect(css).toMatch(/\.ap2-sv-scan \{[\s\S]*?width:\s*44px;[\s\S]*?height:\s*44px;/);
+    expect(css).toMatch(/\.ap2-sv-bigplus \{[\s\S]*?width:\s*72px;[\s\S]*?height:\s*72px;/);
+    expect(css).not.toContain("Skenēt rēķinu");
+  });
 });

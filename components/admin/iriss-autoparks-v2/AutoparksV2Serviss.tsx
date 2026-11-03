@@ -8,19 +8,26 @@ import {
   parseEurInput,
 } from "@/lib/iriss-autoparks-v2-format";
 import {
+  SERVISS_SCAN_TITLE,
   type V2ServissFile,
   type V2ServissInvoiceView,
   type V2ServissView,
 } from "@/lib/iriss-autoparks-v2-serviss";
-import type { V2Problem } from "@/lib/iriss-autoparks-v2";
 import type { CabinetPaneProps } from "./AutoparksV2Cabinet";
 import { FileModal, PdfIcon } from "./FileModal";
 import { Scanner, type ScannerTarget } from "./Scanner";
 import { compressScanImage } from "./scan-upload";
+import { enqueueScan } from "./scan-queue";
 import { useScanQueue } from "./useScanQueue";
 import type { QueuedScan } from "./scan-queue";
+import {
+  ServissProblemSheet,
+  ServissScanSheet,
+  ServissStages,
+} from "./ServissPhone";
+import type { ServissDocKey } from "@/lib/iriss-autoparks-v2-serviss-ui";
 
-/** Serviss (T3-T5, T7): tehniskā josla + 5 posmi. Galvenā poga - "Skenēt". */
+/** Serviss (F6, Nils A «Centra +»): dokumenti, problēmas, piezīmes, rēķins pēdējais. */
 export function AutoparksV2Serviss({ carId }: CabinetPaneProps) {
   const [view, setView] = useState<V2ServissView | null>(null);
   const [scan, setScan] = useState<ScannerTarget | null>(null);
@@ -32,6 +39,10 @@ export function AutoparksV2Serviss({ carId }: CabinetPaneProps) {
   const [error, setError] = useState("");
   const [manual, setManual] = useState(false);
   const [manualAmount, setManualAmount] = useState("");
+  const [scanPick, setScanPick] = useState<ScannerTarget | null>(null);
+  const [problemSheet, setProblemSheet] = useState<{ id?: string; text: string } | null>(null);
+  const [notesEdit, setNotesEdit] = useState(false);
+  const [notesDraft, setNotesDraft] = useState("");
   const api = `/api/admin/iriss-autoparks-v2/serviss/${encodeURIComponent(carId)}`;
 
   const load = useCallback(async () => {
@@ -48,7 +59,7 @@ export function AutoparksV2Serviss({ carId }: CabinetPaneProps) {
   const queue = useScanQueue(carId, () => void load());
   const afterScan = () => void queue.refresh().then(queue.drain);
 
-  async function patch(body: Record<string, unknown>) {
+  async function patch(body: Record<string, unknown>): Promise<V2ServissView | null> {
     setError("");
     const r = await fetch(api, {
       method: "PATCH",
@@ -58,8 +69,52 @@ export function AutoparksV2Serviss({ carId }: CabinetPaneProps) {
     const d = (await r?.json().catch(() => null)) as {
       serviss?: V2ServissView;
     } | null;
-    if (r?.ok && d?.serviss) setView(d.serviss);
-    else setError("Neizdevās saglabāt");
+    if (r?.ok && d?.serviss) {
+      setView(d.serviss);
+      return d.serviss;
+    }
+    setError("Neizdevās saglabāt");
+    return null;
+  }
+
+  function openScan(target: ScannerTarget) {
+    setScanPick(target);
+  }
+
+  function openDocScan(key: Exclude<ServissDocKey, "invoice">) {
+    openScan({ target: key, title: SERVISS_SCAN_TITLE[key] });
+  }
+
+  async function enqueuePickedFiles(target: ScannerTarget, files: File[]) {
+    if (files.length === 0) return;
+    setError("");
+    try {
+      const pages = [];
+      for (const f of files.slice(0, 20)) pages.push(await compressScanImage(f));
+      await enqueueScan({
+        carId,
+        target: target.target,
+        invoiceId: target.invoiceId,
+        title: target.title,
+        pages,
+      });
+      setScanPick(null);
+      afterScan();
+    } catch {
+      setError("Neizdevās saglabāt skenējumu");
+    }
+  }
+
+  async function saveProblem(text: string, photos: File[]) {
+    const next = await patch(problemSheet?.id ? { problem: { id: problemSheet.id, text } } : { problem: { text } });
+    if (!next) return;
+    let pid = problemSheet?.id;
+    if (!pid) {
+      const match = next.problems.filter((p) => p.text.trim() === text);
+      pid = match[match.length - 1]?.id;
+    }
+    if (pid && photos.length) await uploadPhotos(pid, photos);
+    setProblemSheet(null);
   }
 
   /** Problēmas foto: telefona kamera / bildes, saspiež un sūta uzreiz (Nils 27.10). */
@@ -91,10 +146,10 @@ export function AutoparksV2Serviss({ carId }: CabinetPaneProps) {
         onBack={() => setInvoice(null)}
         onOpenFiles={(i) => setModal({ files: inv.files, index: i })}
         onAddPage={() =>
-          setScan({
+          setScanPick({
             target: "invoice_page",
             invoiceId: inv.id,
-            title: "Servisa rēķins",
+            title: SERVISS_SCAN_TITLE.invoice,
           })
         }
         onAmount={(v) => void patch({ invoice: { id: inv.id, amountEur: v } })}
@@ -113,14 +168,27 @@ export function AutoparksV2Serviss({ carId }: CabinetPaneProps) {
           ) : null
         }
         scanner={
-          scan ? (
-            <Scanner
-              carId={carId}
-              target={scan}
-              onClose={() => setScan(null)}
-              onDone={afterScan}
-            />
-          ) : null
+          <>
+            {scanPick ? (
+              <ServissScanSheet
+                title={scanPick.title}
+                onCamera={() => {
+                  setScan(scanPick);
+                  setScanPick(null);
+                }}
+                onFiles={(files) => void enqueuePickedFiles(scanPick, files)}
+                onClose={() => setScanPick(null)}
+              />
+            ) : null}
+            {scan ? (
+              <Scanner
+                carId={carId}
+                target={scan}
+                onClose={() => setScan(null)}
+                onDone={afterScan}
+              />
+            ) : null}
+          </>
         }
       />
     );
@@ -133,83 +201,65 @@ export function AutoparksV2Serviss({ carId }: CabinetPaneProps) {
         items={queue.items}
         onRetry={() => void queue.drain()}
       />
-      {/* Nils 27.10 (makets «Serviss»): tikai rēķini un problēmas; telefonā divas lielas pogas augšā. */}
-      <div className="ap2-sv-acts">
-        <button type="button" className="ap2-sv-big pri" onClick={() => setScan({ target: "invoice", title: "Servisa rēķins" })}>
-          Skenēt rēķinu
-        </button>
-        <button type="button" className="ap2-sv-big" onClick={() => document.getElementById("ap2-sv-newprob")?.focus()}>
-          + Problēma
-        </button>
-      </div>
-      <div className="ap2-sv">
-        <section className="ap2-sv-card" aria-label="Servisa rēķini">
-          <div className="ap2-sv-head">
-            <h3>Servisa rēķini</h3>
-            <span className="ap2-sv-headbtns">
-              <button type="button" className="iriss-btn iriss-btn--secondary iriss-btn--sm" onClick={() => setManual((m) => !m)}>
-                + Ar roku
-              </button>
-              <button type="button" className="iriss-btn iriss-btn--primary iriss-btn--sm" onClick={() => setScan({ target: "invoice", title: "Servisa rēķins" })}>
-                Skenēt rēķinu
-              </button>
-            </span>
-          </div>
-          <p className="ap2-sv-mu">Summa bez PVN. Skenējot to nolasa automātiski - pārbaudi un apstiprini.</p>
-          {manual ? (
-            <form
-              className="ap2-sv-manual"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const v = manualAmount.trim();
-                if (!v) return;
-                void patch({ addInvoice: { amountEur: v } }).then(() => {
-                  setManual(false);
-                  setManualAmount("");
-                });
-              }}
-            >
-              <label>
-                <span>Summa bez PVN</span>
-                <input inputMode="decimal" value={manualAmount} onChange={(e) => setManualAmount(e.target.value)} placeholder="0,00" autoFocus />
-              </label>
-              <button type="submit" className="iriss-btn iriss-btn--primary iriss-btn--sm">
-                Saglabāt
-              </button>
-            </form>
-          ) : null}
-          {view.invoices.length === 0 ? <p className="ap2-sv-mu">Vēl nav rēķinu.</p> : null}
-          {view.invoices.map((i) => (
-            <InvoiceRow key={i.id} inv={i} canSums={view.canSums} onOpen={() => setInvoice(i.id)} />
-          ))}
-          {view.canSums && view.totalEur != null && view.invoices.length > 0 ? (
-            <div className="ap2-sv-total">
-              <span>Kopā bez PVN</span>
-              <b>{fmtEur(view.totalEur)}</b>
-            </div>
-          ) : null}
-        </section>
-
-        <section className="ap2-sv-card" aria-label="Problēmas">
-          <div className="ap2-sv-head">
-            <h3>Problēmas</h3>
-          </div>
-          <p className="ap2-sv-mu">Pievieno jebkurš ar piekļuvi; foto - pēc vajadzības.</p>
-          <SimpleProblems
-            problems={view.problems}
-            canDelete={view.canDelete}
-            photoUrl={(id) => urlFor({ id })}
-            onPatch={(p) => void patch({ problem: p })}
-            onPhotos={(id, files) => void uploadPhotos(id, files)}
-            onOpenPhoto={(p, i) =>
-              setModal({
-                files: p.photoIds.map((pid) => ({ id: pid, title: p.text || "Foto", date: "", contentType: "image/jpeg" })),
-                index: i,
-              })
-            }
-          />
-        </section>
-      </div>
+      <ServissStages
+        view={view}
+        notesEditing={notesEdit}
+        notesDraft={notesDraft}
+        onNotesDraft={setNotesDraft}
+        onNotesEdit={() => {
+          setNotesDraft(view.notes);
+          setNotesEdit(true);
+        }}
+        onNotesSave={() => {
+          void patch({ notes: notesDraft }).then((ok) => {
+            if (ok) setNotesEdit(false);
+          });
+        }}
+        onNotesCancel={() => setNotesEdit(false)}
+        onScanDoc={openDocScan}
+        onScanInvoice={() => openScan({ target: "invoice", title: SERVISS_SCAN_TITLE.invoice })}
+        onViewFiles={(files) => setModal({ files, index: 0 })}
+        onOpenInvoice={(id) => setInvoice(id)}
+        onManualInvoice={view.canSums ? () => setManual((m) => !m) : undefined}
+        onAddProblem={() => setProblemSheet({ text: "" })}
+        onEditProblem={(p) => setProblemSheet({ id: p.id, text: p.text })}
+        onAddPhotos={(id, files) => void uploadPhotos(id, files)}
+        onOpenPhoto={(p, i) =>
+          setModal({
+            files: p.photoIds.map((pid) => ({ id: pid, title: p.text || "Foto", date: "", contentType: "image/jpeg" })),
+            index: i,
+          })
+        }
+        onDeleteProblem={(p) => {
+          if (window.confirm(`Dzēst problēmu "${p.text}"?`)) void patch({ problem: { id: p.id, remove: true } });
+        }}
+        onToggleFixed={(p, fixed) => void patch({ problem: { id: p.id, fixedByService: fixed } })}
+        photoUrl={(id) => urlFor({ id })}
+      />
+      {manual ? (
+        <form
+          className="ap2-sv-manual"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const v = manualAmount.trim();
+            if (!v) return;
+            void patch({ addInvoice: { amountEur: v } }).then((ok) => {
+              if (ok) {
+                setManual(false);
+                setManualAmount("");
+              }
+            });
+          }}
+        >
+          <label>
+            <span>Summa bez PVN</span>
+            <input inputMode="decimal" value={manualAmount} onChange={(e) => setManualAmount(e.target.value)} placeholder="0,00" autoFocus />
+          </label>
+          <button type="submit" className="iriss-btn iriss-btn--primary iriss-btn--sm">
+            Saglabāt
+          </button>
+        </form>
+      ) : null}
 
       {error ? <p className="ap2-err">{error}</p> : null}
       {modal ? (
@@ -219,6 +269,26 @@ export function AutoparksV2Serviss({ carId }: CabinetPaneProps) {
           urlFor={urlFor}
           onIndex={(i) => setModal({ ...modal, index: i })}
           onClose={() => setModal(null)}
+        />
+      ) : null}
+      {scanPick ? (
+        <ServissScanSheet
+          title={scanPick.title}
+          csdd={scanPick.target === "number_check" || scanPick.target === "diag"}
+          onCamera={() => {
+            setScan(scanPick);
+            setScanPick(null);
+          }}
+          onFiles={(files) => void enqueuePickedFiles(scanPick, files)}
+          onClose={() => setScanPick(null)}
+        />
+      ) : null}
+      {problemSheet ? (
+        <ServissProblemSheet
+          title={problemSheet.id ? "Labot problēmu" : "Jauna problēma"}
+          initialText={problemSheet.text}
+          onSave={(text, photos) => void saveProblem(text, photos)}
+          onClose={() => setProblemSheet(null)}
         />
       ) : null}
       {scan ? (
@@ -513,92 +583,6 @@ function ScanQueue({
           ))}
         </>
       ) : null}
-    </div>
-  );
-}
-
-/**
- * Problēmas (Nils 27.10): atzīme «salabots», teksts, foto pēc vajadzības; jaunu pievieno jebkurš.
- */
-function SimpleProblems({
-  problems,
-  canDelete,
-  photoUrl,
-  onPatch,
-  onPhotos,
-  onOpenPhoto,
-}: {
-  problems: V2Problem[];
-  canDelete: boolean;
-  photoUrl: (id: string) => string;
-  onPatch: (p: Record<string, unknown>) => void;
-  onPhotos: (problemId: string, files: File[]) => void;
-  onOpenPhoto: (p: V2Problem, index: number) => void;
-}) {
-  const [text, setText] = useState("");
-  const live = problems.filter((p) => p.text.trim());
-  return (
-    <div className="ap2-sv-probs">
-      {live.map((p) => (
-        <div key={p.id} className={`ap2-sv-prob ${p.fixedByService ? "done" : ""}`}>
-          <label className="chk">
-            <input type="checkbox" checked={p.fixedByService} onChange={(e) => onPatch({ id: p.id, fixedByService: e.target.checked })} />
-            <span>{p.text}</span>
-          </label>
-          <span className="ph">
-            {p.photoIds.map((id, i) => (
-              <button key={id} type="button" className="ap2-sv-photo" onClick={() => onOpenPhoto(p, i)} aria-label="Atvērt foto">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photoUrl(id)} alt="" loading="lazy" />
-              </button>
-            ))}
-            <label className="ap2-sv-addphoto" title="Pievienot foto">
-              <span aria-hidden>+ Foto</span>
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                multiple
-                aria-label="Pievienot foto"
-                onChange={(e) => {
-                  const files = Array.from(e.target.files ?? []);
-                  e.target.value = "";
-                  onPhotos(p.id, files);
-                }}
-              />
-            </label>
-            {canDelete ? (
-              <button
-                type="button"
-                className="ap2-sv-del"
-                aria-label={`Dzēst problēmu: ${p.text}`}
-                title="Dzēst"
-                onClick={() => {
-                  if (window.confirm(`Dzēst problēmu "${p.text}"?`)) onPatch({ id: p.id, remove: true });
-                }}
-              >
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                  <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
-                </svg>
-              </button>
-            ) : null}
-          </span>
-        </div>
-      ))}
-      <form
-        className="ap2-sv-newprob"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!text.trim()) return;
-          onPatch({ text: text.trim() });
-          setText("");
-        }}
-      >
-        <input id="ap2-sv-newprob" value={text} onChange={(e) => setText(e.target.value)} placeholder="Jauna problēma..." aria-label="Jauna problēma" />
-        <button type="submit" className="iriss-btn iriss-btn--secondary iriss-btn--sm">
-          Pievienot
-        </button>
-      </form>
     </div>
   );
 }

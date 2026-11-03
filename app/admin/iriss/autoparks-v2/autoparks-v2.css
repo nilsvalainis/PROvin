@@ -3118,189 +3118,583 @@
   z-index: 1;
 }
 
-/* Serviss (Nils 27.10, makets): rēķini + problēmas; telefonā divas lielas pogas augšā. */
-.ap2.ap2.ap2 .ap2-sv-acts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin: 12px 0;
-}
-.ap2.ap2.ap2 .ap2-sv-big {
-  min-height: 60px;
-  border: 1px solid var(--iriss-line-strong, #d1d1d6);
-  border-radius: 16px;
-  background: var(--iriss-surface, #fff);
-  color: var(--iriss-ink, #1c1c1e);
-  font: inherit;
-  font-size: 15px;
-  font-weight: 700;
-}
-.ap2.ap2.ap2 .ap2-sv-big.pri {
-  border-color: transparent;
-  background: var(--iriss-brand, #f26522);
-  color: #fff;
-}
-.ap2.ap2.ap2 .ap2-sv {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
-}
-.ap2.ap2.ap2 .ap2-sv-card {
-  border-radius: 16px;
-  background: var(--iriss-surface, #fff);
-  padding: 14px 16px;
-  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(22, 23, 26, 0.06);
-}
-.ap2.ap2.ap2 .ap2-sv-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.ap2.ap2.ap2 .ap2-sv-head h3 {
-  margin: 0;
-  font-size: 17px;
-}
-.ap2.ap2.ap2 .ap2-sv-headbtns {
-  display: inline-flex;
-  gap: 8px;
-}
-/* Telefonā «Skenēt rēķinu» ir lielā poga augšā; kartītē paliek «+ Ar roku». */
-.ap2.ap2.ap2 .ap2-sv-headbtns .iriss-btn--primary {
-  display: none;
-}
-.ap2.ap2.ap2 .ap2-sv-mu {
-  margin: 6px 0 4px;
-  font-size: 13px;
-  color: var(--iriss-ink-2, #4a4a4f);
-}
-.ap2.ap2.ap2 .ap2-sv-manual {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  margin: 8px 0;
-}
-.ap2.ap2.ap2 .ap2-sv-manual label {
+/* Serviss F6 telefons: Nils A «Centra +» (03.11.2026). */
+.ap2.ap2.ap2 .ap2-sv-a {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--iriss-ink-2, #4a4a4f);
 }
-.ap2.ap2.ap2 .ap2-sv-manual input,
-.ap2.ap2.ap2 .ap2-sv-newprob input {
-  min-height: 44px;
-  border: 1px solid var(--iriss-line-strong, #d1d1d6);
-  border-radius: 12px;
-  padding: 0 12px;
-  font: inherit;
-  font-size: 15px;
+.ap2.ap2.ap2 .ap2-sv-sec {
+  margin: 28px 16px 8px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #8e8e93;
 }
-.ap2.ap2.ap2 .ap2-sv-total {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-top: 8px;
-  padding-top: 10px;
-  border-top: 1px solid var(--line);
-  font-weight: 700;
+.ap2.ap2.ap2 .ap2-sv-a > section:first-child .ap2-sv-sec {
+  margin-top: 6px;
 }
-.ap2.ap2.ap2 .ap2-sv-total b {
-  font-size: 18px;
-}
-.ap2.ap2.ap2 .ap2-sv-prob {
+.ap2.ap2.ap2 .ap2-sv-prog {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 0;
-  border-top: 1px solid var(--line);
+  gap: 12px;
+  margin: 0 16px 12px;
+  font-size: 13px;
+  color: #8e8e93;
 }
-.ap2.ap2.ap2 .ap2-sv-prob .chk {
+.ap2.ap2.ap2 .ap2-sv-bar {
+  flex: 1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #e5e5ea;
+}
+.ap2.ap2.ap2 .ap2-sv-bar i {
+  display: block;
+  height: 100%;
+  background: #34c759;
+}
+.ap2.ap2.ap2 .ap2-sv-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(22, 23, 26, 0.06);
+  overflow: hidden;
+}
+.ap2.ap2.ap2 .ap2-sv-drow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 76px;
+  padding: 12px 14px 12px 16px;
+}
+.ap2.ap2.ap2 .ap2-sv-drow + .ap2-sv-drow,
+.ap2.ap2.ap2 .ap2-sv-prow,
+.ap2.ap2.ap2 .ap2-sv-invline,
+.ap2.ap2.ap2 .ap2-sv-cpill {
+  border-top: 0.5px solid #e5e5ea;
+}
+.ap2.ap2.ap2 .ap2-sv-num {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #c7c7cc;
+  border-radius: 50%;
+  color: #8e8e93;
+  font-size: 13px;
+  font-weight: 600;
+}
+.ap2.ap2.ap2 .ap2-sv-num.ok {
+  border-color: #34c759;
+  background: #34c759;
+  color: #fff;
+}
+.ap2.ap2.ap2 .ap2-sv-dt {
+  flex: 1;
+  min-width: 0;
+}
+.ap2.ap2.ap2 .ap2-sv-dt b {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 21px;
+  letter-spacing: -0.2px;
+}
+.ap2.ap2.ap2 .ap2-sv-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 20px;
+  color: #8e8e93;
+}
+.ap2.ap2.ap2 .ap2-sv-meta .ap2-csdd-badge {
+  height: 16px;
+  margin: 0;
+  border-radius: 3px;
+  display: inline-block;
+}
+.ap2.ap2.ap2 .ap2-sv-dot {
+  color: #c7c7cc;
+}
+.ap2.ap2.ap2 .ap2-sv-chip {
+  padding: 1px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+}
+.ap2.ap2.ap2 .ap2-sv-chip.g {
+  background: #e6f7ea;
+  color: #1f8a3b;
+}
+.ap2.ap2.ap2 .ap2-sv-chip.a {
+  background: #fff4e0;
+  color: #b26a00;
+}
+.ap2.ap2.ap2 .ap2-sv-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #007aff;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sv-sum {
+  margin-left: auto;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #1c1c1e;
+}
+.ap2.ap2.ap2 .ap2-sv-sum.sug {
+  color: #a75c00;
+}
+.ap2.ap2.ap2 .ap2-sv-scan {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: #eaf2ff;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sv-scan svg {
+  fill: none;
+  stroke: #007aff;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ap2.ap2.ap2 .ap2-sv-scan.pri {
+  background: #007aff;
+}
+.ap2.ap2.ap2 .ap2-sv-scan.pri svg {
+  stroke: #fff;
+}
+.ap2.ap2.ap2 .ap2-sv-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 26px 16px 24px;
+  border: 0;
+  background: none;
+  text-align: center;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sv-bigplus {
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #007aff;
+  box-shadow: 0 6px 16px rgba(0, 122, 255, 0.28);
+}
+.ap2.ap2.ap2 .ap2-sv-bigplus svg {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+.ap2.ap2.ap2 .ap2-sv-hero b {
+  margin-top: 12px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #007aff;
+}
+.ap2.ap2.ap2 .ap2-sv-hero p {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: #8e8e93;
+}
+.ap2.ap2.ap2 .ap2-sv-prow {
+  padding: 14px 16px;
+}
+.ap2.ap2.ap2 .ap2-sv-prow:first-child {
+  border-top: 0;
+}
+.ap2.ap2.ap2 .ap2-sv-pt {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.ap2.ap2.ap2 .ap2-sv-chk {
   flex: 1;
   min-width: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
-  font-size: 15px;
-  cursor: pointer;
 }
-.ap2.ap2.ap2 .ap2-sv-prob .chk input {
+.ap2.ap2.ap2 .ap2-sv-chk input {
   width: 22px;
   height: 22px;
+  margin-top: 2px;
   flex: none;
 }
-.ap2.ap2.ap2 .ap2-sv-prob.done .chk span {
-  color: var(--iriss-ink-2, #4a4a4f);
-  text-decoration: line-through;
-}
-.ap2.ap2.ap2 .ap2-sv-prob .ph {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: none;
-}
-.ap2.ap2.ap2 .ap2-sv-photo {
-  width: 40px;
-  height: 40px;
+.ap2.ap2.ap2 .ap2-sv-ptitle {
+  flex: 1;
+  min-width: 0;
   padding: 0;
   border: 0;
-  border-radius: 8px;
-  overflow: hidden;
-  background: var(--iriss-surface-2, #f2f2f7);
+  background: none;
+  text-align: left;
+  cursor: pointer;
 }
-.ap2.ap2.ap2 .ap2-sv-photo img {
+.ap2.ap2.ap2 .ap2-sv-ptitle b {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  color: #1c1c1e;
+}
+.ap2.ap2.ap2 .ap2-sv-prow.done .ap2-sv-ptitle b {
+  color: #8e8e93;
+  text-decoration: line-through;
+}
+.ap2.ap2.ap2 .ap2-sv-phint {
+  display: block;
+  margin: 3px 0 0 32px;
+  font-size: 13px;
+  color: #8e8e93;
+}
+.ap2.ap2.ap2 .ap2-sv-ph {
+  display: flex;
+  gap: 8px;
+  padding: 8px 0 0 32px;
+  align-items: center;
+}
+.ap2.ap2.ap2 .ap2-sv-thumb {
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #e5e5ea;
+}
+.ap2.ap2.ap2 .ap2-sv-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.ap2.ap2.ap2 .ap2-sv-addphoto {
+.ap2.ap2.ap2 .ap2-sv-addph {
   position: relative;
-  display: inline-flex;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  min-height: 36px;
-  padding: 0 10px;
-  border: 1px solid var(--iriss-line-strong, #d1d1d6);
+  justify-content: center;
+  gap: 2px;
+  border: 1.5px dashed #aeb4be;
   border-radius: 10px;
-  font-size: 12.5px;
-  font-weight: 600;
+  color: #007aff;
+  font-size: 11px;
+  font-weight: 500;
   cursor: pointer;
 }
-.ap2.ap2.ap2 .ap2-sv-addphoto input {
+.ap2.ap2.ap2 .ap2-sv-addph svg {
+  fill: none;
+  stroke: #007aff;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.ap2.ap2.ap2 .ap2-sv-addph input {
   position: absolute;
   inset: 0;
   opacity: 0;
   cursor: pointer;
 }
-.ap2.ap2.ap2 .ap2-sv-newprob {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+.ap2.ap2.ap2 .ap2-sv-cpill {
+  display: flex;
+  justify-content: center;
+  padding: 14px 16px 18px;
+}
+.ap2.ap2.ap2 .ap2-sv-cpill button {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 26px 12px 14px;
+  border: 0;
+  border-radius: 99px;
+  background: #007aff;
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.22);
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sv-cpill i {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+}
+.ap2.ap2.ap2 .ap2-sv-cpill svg {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+.ap2.ap2.ap2 .ap2-sv-note {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 15px 16px;
+  font-size: 15px;
+  color: #3a3a3c;
+}
+.ap2.ap2.ap2 .ap2-sv-note-edit {
+  padding: 12px 16px 14px;
+}
+.ap2.ap2.ap2 .ap2-sv-note-edit textarea,
+.ap2.ap2.ap2 .ap2-sv-fld {
+  width: 100%;
+  min-height: 64px;
+  margin: 6px 0 12px;
+  padding: 11px 12px;
+  border: 1px solid #e5e5ea;
+  border-radius: 12px;
+  background: #f7f7fa;
+  font: inherit;
+  font-size: 15px;
+  color: #3a3a3c;
+  resize: vertical;
+}
+.ap2.ap2.ap2 .ap2-sv-note-acts {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+}
+.ap2.ap2.ap2 .ap2-sv-save-sm {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #007aff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sv-dtbtn {
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sv-dtbtn:disabled {
+  cursor: default;
+}
+.ap2.ap2.ap2 .ap2-sv-invline {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 12px 16px 12px 56px;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  color: #3a3a3c;
+  text-align: left;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sv-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0 16px;
+  padding: 10px 0 14px;
+  border-top: 0.5px solid #e5e5ea;
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-sv-total b {
+  font-size: 18px;
+}
+.ap2.ap2.ap2 .ap2-sv-manual {
+  display: flex;
+  align-items: flex-end;
   gap: 8px;
-  margin-top: 10px;
+  margin: 12px 0 0;
+  padding: 14px 16px;
+  background: #fff;
+  border-radius: 16px;
+}
+.ap2.ap2.ap2 .ap2-sv-manual label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #4a4a4f;
+}
+.ap2.ap2.ap2 .ap2-sv-manual input {
+  min-height: 44px;
+  border: 1px solid #d1d1d6;
+  border-radius: 12px;
+  padding: 0 12px;
+  font: inherit;
+  font-size: 15px;
+}
+.ap2.ap2.ap2 .ap2-sv-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+}
+.ap2.ap2.ap2 .ap2-sv-dim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sv-sheet {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 12px;
+}
+.ap2.ap2.ap2 .ap2-sv-sheet-card {
+  overflow: hidden;
+  background: #fff;
+  border-radius: 20px;
+}
+.ap2.ap2.ap2 .ap2-sv-grab {
+  width: 36px;
+  height: 5px;
+  margin: 8px auto 2px;
+  border-radius: 3px;
+  background: #d1d1d6;
+}
+.ap2.ap2.ap2 .ap2-sv-sh {
+  padding: 10px 16px 12px;
+  text-align: center;
+  color: #8e8e93;
+  font-size: 13px;
+}
+.ap2.ap2.ap2 .ap2-sv-sht {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #1c1c1e;
+}
+.ap2.ap2.ap2 .ap2-sv-sht .ap2-csdd-badge {
+  height: 20px;
+  display: inline-block;
+}
+.ap2.ap2.ap2 .ap2-sv-sh p {
+  margin: 2px 0 0;
+}
+.ap2.ap2.ap2 .ap2-sv-fl {
+  display: block;
+  padding: 8px 16px 0;
+  font-size: 13px;
+  color: #8e8e93;
+}
+.ap2.ap2.ap2 .ap2-sv-fld {
+  width: calc(100% - 32px);
+  margin: 6px 16px 12px;
+}
+.ap2.ap2.ap2 .ap2-sv-opt {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 0;
+  border-top: 0.5px solid #e5e5ea;
+  background: none;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sv-opt.first {
+  border-top: 0;
+}
+.ap2.ap2.ap2 .ap2-sv-opt small {
+  display: block;
+  margin-top: 1px;
+  font-size: 13px;
+  font-weight: 400;
+  color: #8e8e93;
+}
+.ap2.ap2.ap2 .ap2-sv-save {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 8px 16px 16px;
+  padding: 15px;
+  border: 0;
+  border-radius: 14px;
+  background: #007aff;
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ap2.ap2.ap2 .ap2-sv-save:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.ap2.ap2.ap2 .ap2-sv-cancel {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 17px;
+  border: 0;
+  border-radius: 16px;
+  background: #fff;
+  color: #007aff;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
 }
 .ap2.ap2.ap2 .ap2-irow .a.sug small {
   color: var(--iriss-warn, #a75c00);
   font-weight: 600;
 }
+
 @media (min-width: 900px) {
-  .ap2.ap2.ap2 .ap2-sv-acts {
-    display: none;
+  .ap2.ap2.ap2 .ap2-sv-a {
+    max-width: 560px;
   }
-  .ap2.ap2.ap2 .ap2-sv {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-    gap: 16px;
-    margin-top: 12px;
-  }
-  .ap2.ap2.ap2 .ap2-sv-card {
-    padding: 18px 20px;
-  }
-  .ap2.ap2.ap2 .ap2-sv-headbtns .iriss-btn--primary {
-    display: inline-flex;
+  .ap2.ap2.ap2 .ap2-sv-sheet {
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    top: 50%;
+    width: 400px;
+    transform: translate(-50%, -50%);
   }
 }
 
-/* Nils 27.10: telefonā peldošā apakšējā izvēlne neaizsedz pēdējo lauku (piem., Servisa "Jauna problēma"). */
+/* Nils 27.10: telefonā peldošā apakšējā izvēlne neaizsedz pēdējo lauku. */
 @media (max-width: 899px) {
   .ap2.ap2.ap2 {
     padding-bottom: calc(96px + env(safe-area-inset-bottom));
