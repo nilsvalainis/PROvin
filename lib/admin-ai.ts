@@ -534,18 +534,18 @@ export async function aiGenerateText(opts: AiTextOptions): Promise<string> {
     primaryModel: opts.model,
     logLabel: "text",
     budget: opts.budget,
-    run: async (model) =>
-      polishHaikuLatvianProse(
-        model,
-        await aiGenerateTextOnce(key, { ...opts, model }),
-        opts.budget,
-      ),
+    run: async (model) => {
+      const raw = await aiGenerateTextOnce(key, { ...opts, model });
+      return opts.skipLatvianPolish ? raw : polishHaikuLatvianProse(model, raw, opts.budget);
+    },
   });
 }
 
 /**
  * Haiku neder latviešu eksperta prozai (gramatika/stils). Ģenerē lēti, tad Sonnet
- * slīpē tikai īso izejas tekstu — nevis visu pasūtījuma kontekstu.
+ * slīpē tikai īso izejas tekstu, nevis visu pasūtījuma kontekstu.
+ * Admin dispatch (`adminGenerate*`) šo soli izlaiž (`skipLatvianPolish`) un dara
+ * vienu Opus `finalizeGeneratedComment` pēc ģenerēšanas, lai Haiku netiktu slīpēts divreiz.
  */
 async function polishHaikuLatvianProse(
   model: string,

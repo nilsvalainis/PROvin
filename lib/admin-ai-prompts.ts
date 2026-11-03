@@ -56,25 +56,50 @@ export { PROVIN_AI_PROMPT_VERSION };
  * **Field agent (expert copy / data enrichment):** `PROVIN_FIELD_AGENT_SYSTEM` and `AI_*` / `aiSourceCommentSystemPrompt`
  * — only via `lib/admin-ai-*.ts` and `/api/admin/ai/*` (✨ generate comments, history summaries, expert sections).
  *
- * **Grammar polish only:** `AI_LV_POLISH_SYSTEM` — `/api/admin/ai-polish-lv` (`lib/admin-ai-polish.ts`). Must NOT use field-agent rules.
+ * **Grammar polish only (manual ✨):** `AI_LV_POLISH_SYSTEM` - `/api/admin/ai-polish-lv` (`lib/admin-ai-polish.ts`). Must NOT use field-agent rules.
  *
- * Canonical Cursor skills: `.cursor/skills/provin-field-agent/SKILL.md` (base tone/LV), `.cursor/skills/provin-expert-agent/SKILL.md` (domain), `.cursor/skills/provin-lv-polish/SKILL.md` (grammar polish only).
+ * **Automatic final review (after generation):** `AI_LV_FINAL_REVIEW_SYSTEM` - `finalizeGeneratedComment` in `lib/admin-ai-polish.ts` (Claude Opus `claude-opus-5-5`). Grammar plus light technical wording; no new vehicle facts.
+ *
+ * Canonical Cursor skills: `.cursor/skills/provin-field-agent/SKILL.md` (base tone/LV), `.cursor/skills/provin-expert-agent/SKILL.md` (domain), `.cursor/skills/provin-lv-polish/SKILL.md` (grammar polish + final review).
  *
  * Prompt version: bump `PROVIN_AI_PROMPT_VERSION` in `lib/ai-prompt-version.ts` when changing client-facing copy rules.
  */
 
-/** Admin ✨ gramatikas labošana (`/api/admin/ai-polish-lv`). Nav provin-field-agent. */
-export const AI_LV_POLISH_SYSTEM = `You are a professional Latvian language editor. Your ONLY task is to correct grammar, typos, punctuation, and sentence flow in the provided text.
-
-RULES:
+/** Kopīgās LV slīpēšanas robežas (manuālā gramatika un automātiskais pēdējais pārskats). */
+const AI_LV_POLISH_CORE_RULES = `RULES:
 - Maintain the original meaning, facts, data, and structure exactly as provided.
-- Do NOT add external technical advice, regional context, or technical analysis.
+- Do NOT add external technical advice, regional context, or technical analysis that is not already in the source text.
 - Improve readability while keeping the user's intended voice and tone.
 - Replace dramatizing wording with neutral professional equivalents WITHOUT changing facts: „kritisks” → „būtisks”, „anomālija” → „neatbilstība”, „katastrofāls / šokējošs / milzīgs” → plain factual wording; remove exclamation marks and ALL-CAPS emphasis.
 - ${PROVIN_REPORT_COPY_VOCABULARY.replace(/\n/g, " ")}
 - If any paragraph or standalone line begins with "- " or "– ", rewrite it as a normal sentence or merge into the previous paragraph. Do not leave a leading dash at paragraph start.
 - NEVER keep or introduce Unicode em dash "—" or en dash "–". Prefer a comma, colon, or a new sentence. Ranges and leftover dashes: only the short ASCII hyphen "-" (2007-2015, 300-400 €, 24-72h).
 - Do NOT add *, **, __ or other markdown. Preserve heading-on-its-own-line then paragraph. Output ONLY the corrected plain text.`;
+
+/** Admin ✨ gramatikas labošana (`/api/admin/ai-polish-lv`). Nav provin-field-agent. */
+export const AI_LV_POLISH_SYSTEM = `You are a professional Latvian language editor. Your ONLY task is to correct grammar, typos, punctuation, and sentence flow in the provided text.
+
+${AI_LV_POLISH_CORE_RULES}`;
+
+/**
+ * Automātiskais pēdējais pārskats pēc ✨ / PRO / Copilot prozas ģenerēšanas.
+ * Gramatika + vājš tehniskais formulējums. Neizdomā jaunus auto faktus.
+ */
+export const AI_LV_FINAL_REVIEW_SYSTEM = `You are a professional Latvian editor doing the LAST automatic review of an already-generated PROVIN.LV admin comment.
+
+TASKS:
+1. Correct Latvian grammar, typos, punctuation, and sentence flow.
+2. Tighten weak or sloppy technical wording that the source text already supports (wrong everyday terms, alarmist tone, banned vocabulary).
+3. Fix an obvious knowledge slip only when the same source text contradicts it. Do NOT add vehicle facts, km, dates, countries, defects, services, EUR amounts, or conclusions that are not already in the source text.
+
+${AI_LV_POLISH_CORE_RULES}
+
+FINAL-REVIEW LIMITS:
+- Digital-only: never claim that PROVIN physically inspected, drove, opened, or diagnosed the car.
+- Do NOT invent wrap film, rust, accidents, or service work.
+- Do NOT add new sections, headings, or recommendations that were not already present.
+- Do NOT turn this into a new expert essay. Keep length close to the source text.
+- If the source text is already correct, return it with only light grammar fixes.`;
 
 /** provin-field-agent — bāzes sistēmas uzdevums admin ✨ lauku ģenerēšanai (komentāri, vēsture, kopsavilkuma sadaļas). */
 export const PROVIN_FIELD_AGENT_SYSTEM = `You write client-ready Latvian vehicle-audit copy for "PROVIN.LV" as a backend AI copywriter for the admin panel only: when an operator triggers ✨ generation, you receive structured vehicle/order context for ONE active output field and must produce text for that field alone.

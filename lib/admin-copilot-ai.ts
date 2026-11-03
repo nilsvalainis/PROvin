@@ -8,6 +8,7 @@ import {
   aiGenerateJsonWithSchema,
   type AiUserPart,
 } from "@/lib/admin-ai";
+import { finalizeGeneratedComment } from "@/lib/admin-ai-polish";
 import { JsonType, type AiJsonSchema } from "@/lib/ai-json-schema";
 import { buildCopilotBlocksSummary } from "@/lib/admin-copilot-apply";
 import { parseCopilotAiPayload } from "@/lib/admin-copilot-parse";
@@ -285,5 +286,16 @@ export async function runOrderCopilotAi(opts: {
     temperature: 0.1,
   });
 
-  return parseCopilotAiPayload(raw);
+  return finalizeCopilotAiResponse(parseCopilotAiPayload(raw));
+}
+
+/** Copilot JSON darbības neskaram. Pārskata tikai operatoram redzamo LV prozu. */
+export async function finalizeCopilotAiResponse(
+  parsed: CopilotAiResponse,
+): Promise<CopilotAiResponse> {
+  const [reply, clarificationNeeded] = await Promise.all([
+    finalizeGeneratedComment(parsed.reply),
+    finalizeGeneratedComment(parsed.clarificationNeeded),
+  ]);
+  return { ...parsed, reply, clarificationNeeded };
 }

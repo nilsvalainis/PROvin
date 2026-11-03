@@ -676,12 +676,14 @@ describe("PROVIN AI prompt invariants", () => {
     expect(banners).toMatch(/lv_registration_tenure/);
   });
 
-  it("polish uses Sonnet, not Haiku or Opus", () => {
+  it("manual polish stays Sonnet; automatic final review uses Opus", () => {
     const polish = readRepo("lib/admin-ai-polish.ts");
     expect(polish).toMatch(/CLAUDE_MODEL_SONNET/);
+    expect(polish).toMatch(/CLAUDE_MODEL_OPUS/);
     expect(polish).toMatch(/applyProvinReportCopyVocabulary/);
     expect(polish).not.toMatch(/CLAUDE_MODEL_HAIKU/);
-    expect(polish).not.toMatch(/CLAUDE_MODEL_OPUS/);
+    expect(polish).toMatch(/polishLatvianTextWithAi[\s\S]*CLAUDE_MODEL_SONNET/);
+    expect(polish).toMatch(/finalizeGeneratedComment[\s\S]*CLAUDE_MODEL_OPUS/);
   });
 
   it("Haiku Latvian prose is post-edited by Sonnet grammar polish", () => {
@@ -689,6 +691,17 @@ describe("PROVIN AI prompt invariants", () => {
     expect(ai).toMatch(/polishHaikuLatvianProse/);
     expect(ai).toMatch(/AI_LV_POLISH_SYSTEM/);
     expect(ai).toMatch(/model:\s*CLAUDE_MODEL_SONNET/);
+    expect(ai).toMatch(/opts\.skipLatvianPolish \? raw : polishHaikuLatvianProse/);
+  });
+
+  it("dispatch runs one automatic final Claude review after generation", () => {
+    const dispatch = readRepo("lib/admin-ai-dispatch.ts");
+    expect(dispatch).toMatch(/finalizeGeneratedComment/);
+    expect(dispatch).toMatch(/skipLatvianPolish: true/);
+    expect(readRepo("lib/admin-ai-prompts.ts")).toMatch(/AI_LV_FINAL_REVIEW_SYSTEM/);
+    expect(readRepo("lib/admin-ai-polish.ts")).toMatch(/finalizeGeneratedComment/);
+    expect(readRepo("lib/admin-copilot-ai.ts")).toMatch(/finalizeCopilotAiResponse/);
+    expect(readRepo("lib/admin-ai-listing-peek.ts")).toMatch(/finalizeGeneratedComment/);
   });
 
   it("comment generation can dispatch to Gemini for light tiers", () => {
