@@ -15,7 +15,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
 import { B2bPartnerLogin } from "@/components/b2b/B2bPartnerLogin";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
-import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_TEL, contactEmail } from "@/lib/contact";
+import { contactEmail } from "@/lib/contact";
 import { getB2bHeroSourceItems, type B2bCatalogItem } from "@/lib/b2b-partner-copy";
 import { homeFooterColumnClass } from "@/lib/home-layout";
 import { renderProvinText } from "@/lib/provin-wordmark";
@@ -63,13 +63,6 @@ function B2bHeroContactLinks({ email }: { email: string }) {
         className="text-[#93c5fd] underline-offset-2 transition-colors hover:text-[#bfdbfe] hover:underline"
       >
         {email}
-      </a>
-      {" | "}
-      <a
-        href={`tel:${CONTACT_PHONE_TEL}`}
-        className="text-[#93c5fd] underline-offset-2 transition-colors hover:text-[#bfdbfe] hover:underline"
-      >
-        {CONTACT_PHONE_DISPLAY}
       </a>
     </p>
   );

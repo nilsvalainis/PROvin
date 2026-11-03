@@ -1,5 +1,5 @@
 import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
-import { contactEmail, CONTACT_PHONE_TEL } from "@/lib/contact";
+import { contactEmail } from "@/lib/contact";
 import { IRISS_SOCIAL_DEFAULTS } from "@/lib/iriss-social-defaults";
 import { PUBLIC_SERVICE_OFFERS, serviceOfferUrl } from "@/lib/seo-offers";
 import { publicPageUrl } from "@/lib/seo-public-metadata";
@@ -66,7 +66,6 @@ export function buildOrganizationJsonLd(locale: string, description: string) {
     image: `${origin}${DEFAULT_OG_IMAGE_PATH}`,
     logo: { "@type": "ImageObject", url: `${origin}/icon`, width: 512, height: 512 },
     email: contactEmail(),
-    telephone: CONTACT_PHONE_TEL,
     address: parseLegalPostalAddress(legal.legalAddress),
     areaServed: { "@type": "Country", name: "Latvia" },
     sameAs: sameAs(),
