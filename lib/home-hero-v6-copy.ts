@@ -305,9 +305,14 @@ export function getHomeV6HeroCopy(locale?: string): HomeV6HeroCopy {
   return LV;
 }
 
-/** Hero rāda AUDITS un dīlera datus; MINI tikai, ja atnāk no /pakalpojumi (`?plan=mini`). */
-export function heroV6OptionIds(activeId: Tp5MobileServiceId): Tp5MobileServiceId[] {
+/**
+ * Hero rāda AUDITS un dīlera datus; MINI (vai cita publiska pakete) tikai, ja atnāk no /pakalpojumi
+ * (`?plan=mini`) - un paliek sarakstā arī pēc pārslēgšanās (`keepId`).
+ */
+export function heroV6OptionIds(activeId: Tp5MobileServiceId, keepId?: Tp5MobileServiceId | null): Tp5MobileServiceId[] {
   const ids: Tp5MobileServiceId[] = ["audits", "dealer"];
-  if (!ids.includes(activeId) && isTp5PublicServiceId(activeId)) ids.splice(1, 0, activeId);
+  for (const id of [keepId, activeId]) {
+    if (id && !ids.includes(id) && isTp5PublicServiceId(id)) ids.splice(1, 0, id);
+  }
   return ids;
 }

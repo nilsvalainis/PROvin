@@ -93,6 +93,7 @@ export function ProvinPricingHero({
     if (prefilled) {
       setVin(prefilled);
       setPrefilledVin(prefilled);
+      setPicked(true);
     }
   }, [searchParams]);
 

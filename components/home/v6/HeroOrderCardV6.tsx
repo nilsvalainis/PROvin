@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useId, useState } from "react";
+import { useContext, useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { createPortal } from "react-dom";
 import { useLocale } from "next-intl";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
@@ -85,7 +85,33 @@ export function HeroOrderCardV6({
   const copy = getHomeV6HeroCopy(locale);
   const uiCopy = getTp5UiCopy(locale);
   const vinHighlight = useContext(Tp5VinHighlightContext);
-  const ids = heroV6OptionIds(activeId);
+  const [keepId, setKeepId] = useState<Tp5MobileServiceId | null>(null);
+  useEffect(() => {
+    if (activeId !== "audits" && activeId !== "dealer") setKeepId(activeId);
+  }, [activeId]);
+  const ids = heroV6OptionIds(activeId, keepId);
+  const [isMobile, setIsMobile] = useState(false);
+  const urgentBtnRef = useRef<HTMLButtonElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 900px)");
+    const apply = () => setIsMobile(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+  /** Telefonā pirms paketes izvēles lauki ir savērsti - tos nedrīkst sasniegt ar Tab. */
+  const fieldsHidden = isMobile && !picked;
+  const onOptionsKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (!["ArrowDown", "ArrowUp", "ArrowRight", "ArrowLeft"].includes(e.key)) return;
+    e.preventDefault();
+    const dir = e.key === "ArrowDown" || e.key === "ArrowRight" ? 1 : -1;
+    const next = ids[(ids.indexOf(activeId) + dir + ids.length) % ids.length]!;
+    onSelect(next);
+    window.requestAnimationFrame(() =>
+      (e.currentTarget?.querySelector(`[data-id="${next}"]`) as HTMLButtonElement | null)?.focus(),
+    );
+  };
   const service = getTp5MobileService(activeId, locale);
   const sample = SAMPLE_BY_ID[activeId] ?? null;
   const fast = activeId === "dealer" || activeId === "mini";
@@ -99,11 +125,16 @@ export function HeroOrderCardV6({
 
   useEffect(() => {
     if (!sheetOpen) return;
-    const onKey = (e: KeyboardEvent) => {
+    const btn = urgentBtnRef.current;
+    sheetRef.current?.querySelector<HTMLElement>("a,button")?.focus();
+    const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key === "Escape") setSheetOpen(false);
     };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      btn?.focus();
+    };
   }, [sheetOpen]);
 
   const onUrgentClick = () => {
@@ -113,7 +144,7 @@ export function HeroOrderCardV6({
 
   return (
     <div className={`${styles.card}${picked ? ` ${styles.isPicked}` : ""}${activeId === "dealer" ? ` ${styles.isDealer}` : ""}`}>
-      <div className={styles.options} role="radiogroup" aria-label={uiCopy.packageTabsAria}>
+      <div className={styles.options} role="radiogroup" aria-label={uiCopy.packageTabsAria} onKeyDown={onOptionsKey}>
         {ids.map((id) => {
           const opt = copy.options[id];
           const s = getTp5MobileService(id, locale);
@@ -124,6 +155,8 @@ export function HeroOrderCardV6({
               type="button"
               role="radio"
               aria-checked={on}
+              data-id={id}
+              tabIndex={on ? 0 : -1}
               className={`${styles.option} ${id === "dealer" ? styles.optionDealer : styles.optionMain}${on ? ` ${styles.optionOn}` : ""}`}
               onClick={() => onSelect(id)}
             >
@@ -141,7 +174,7 @@ export function HeroOrderCardV6({
         })}
       </div>
 
-      <div className={styles.expand}>
+      <div className={styles.expand} inert={fieldsHidden || undefined}>
         <div className={styles.expandInner}>
           <label className={styles.field}>
             <span>{copy.vinLabel}</span>
@@ -201,17 +234,23 @@ export function HeroOrderCardV6({
             </span>
             <i className={styles.sep} aria-hidden />
             <button
+              ref={urgentBtnRef}
               type="button"
               className={`${styles.urgentBtn}${urgentOpen ? ` ${styles.urgentOpen}` : ""}`}
-              aria-expanded={urgentOpen}
-              aria-controls={`${uid}-urgent`}
+              aria-expanded={isMobile ? sheetOpen : urgentOpen}
+              aria-haspopup={isMobile ? "dialog" : undefined}
+              aria-controls={isMobile ? undefined : `${uid}-urgent`}
               onClick={onUrgentClick}
             >
               {copy.urgent}
               <i aria-hidden />
             </button>
           </div>
-          <div id={`${uid}-urgent`} className={`${styles.urgentPanel}${urgentOpen ? ` ${styles.urgentPanelOpen}` : ""}`}>
+          <div
+            id={`${uid}-urgent`}
+            className={`${styles.urgentPanel}${urgentOpen ? ` ${styles.urgentPanelOpen}` : ""}`}
+            inert={!urgentOpen || undefined}
+          >
             <div>
               <p>{copy.urgentBody}</p>
               <div className={styles.urgentBtns}>
@@ -229,7 +268,7 @@ export function HeroOrderCardV6({
             </div>
           </div>
 
-      <div className={`${styles.expand} ${styles.expandCta}`}>
+      <div className={`${styles.expand} ${styles.expandCta}`} inert={fieldsHidden || undefined}>
         <div className={styles.expandInner}>
           {globalError ? (
             <p className={tp5Styles.checkoutError} role="alert">
@@ -256,7 +295,7 @@ export function HeroOrderCardV6({
         ? createPortal(
             <>
               <div className={styles.sheetBackdrop} onClick={() => setSheetOpen(false)} aria-hidden />
-              <div className={styles.sheet} role="dialog" aria-modal="true" aria-label={copy.urgent}>
+              <div ref={sheetRef} className={styles.sheet} role="dialog" aria-modal="true" aria-label={copy.urgent}>
                 <i className={styles.sheetHandle} aria-hidden />
                 <p className={styles.sheetTitle}>{copy.urgent}</p>
                 <p className={styles.sheetBody}>{copy.urgentBody}</p>

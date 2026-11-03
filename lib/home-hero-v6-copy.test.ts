@@ -39,6 +39,10 @@ describe("heroV6OptionIds", () => {
     expect(heroV6OptionIds("mini")).toEqual(["audits", "mini", "dealer"]);
   });
 
+  it("keeps MINI listed after switching to another package", () => {
+    expect(heroV6OptionIds("audits", "mini")).toEqual(["audits", "mini", "dealer"]);
+  });
+
   it("never adds a hidden service", () => {
     expect(heroV6OptionIds("koreaUsa")).toEqual(["audits", "dealer"]);
   });
