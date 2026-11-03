@@ -18,6 +18,7 @@ import {
 } from "@/lib/thanks-session";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
+import styles from "./paldies.module.css";
 
 type Props = {
   searchParams: Promise<{ session_id?: string }>;
@@ -38,6 +39,7 @@ export default async function ThanksPage({ searchParams, params }: Props) {
   const sp = await searchParams;
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Thanks" });
+  const steps = t.raw("steps") as { title: string; note: string }[];
   const cookieStore = await cookies();
   const fromQuery = parseThanksCheckoutSessionId(sp.session_id);
   if (fromQuery) {
@@ -57,35 +59,45 @@ export default async function ThanksPage({ searchParams, params }: Props) {
   return (
     <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
       <div className="demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">
-        <div className="mx-auto max-w-lg px-4 pb-16 pt-28 text-center sm:px-8 sm:pt-32">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-provin-accent text-white">
-            <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h1 className="mt-10 text-[32px] font-semibold tracking-tight text-white/[0.96] sm:text-[40px]">{t("title")}</h1>
-          <p className="mx-auto mt-5 max-w-[65ch] text-[17px] font-normal leading-relaxed text-white/70">{t("body")}</p>
+        <div className={styles.wrap}>
+          <svg className={styles.check} viewBox="0 0 80 80" aria-hidden>
+            <circle cx="40" cy="40" r="36" />
+            <path d="M24 41l11 11 21-23" />
+          </svg>
+          <h1 className={styles.title}>{t("title")}</h1>
+          <p className={styles.lead}>{t("body")}</p>
+          <ol className={styles.steps}>
+            {steps.map((step, j) => (
+              <li key={step.title} className={styles.step} style={{ ["--j" as string]: j }}>
+                <i className={styles.dot} aria-hidden>
+                  {j === 0 ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 12.5l4.5 4.5L19 7.5" />
+                    </svg>
+                  ) : null}
+                </i>
+                <b className={styles.stepTitle}>{step.title}</b>
+                {step.note ? <span className={styles.stepNote}>{step.note}</span> : null}
+              </li>
+            ))}
+          </ol>
           {sid && (
-            <p className="mt-8 break-all rounded-2xl border border-white/[0.08] bg-white/[0.04] px-4 py-3 font-mono text-[12px] font-normal text-white/55">
+            <p className={styles.session}>
               {t("sessionLabel")} {sid}
             </p>
           )}
-          {sid && (
-            // PDF lejupielāde (API), ne lapas navigācija.
-            // eslint-disable-next-line @next/next/no-html-link-for-pages
-            <a
-              href="/api/invoice/download"
-              className="mt-6 inline-flex min-h-[44px] items-center justify-center rounded-full bg-provin-accent px-6 text-[17px] font-normal text-white"
-            >
-              {t("downloadInvoice")}
-            </a>
-          )}
-          <Link
-            href="/"
-            className="mt-10 inline-flex min-h-[44px] items-center justify-center rounded-full border border-white/15 bg-white/[0.04] px-6 text-[17px] font-normal text-white/80"
-          >
-            {t("back")}
-          </Link>
+          <div className={styles.actions}>
+            {sid && (
+              // PDF lejupielāde (API), ne lapas navigācija.
+              // eslint-disable-next-line @next/next/no-html-link-for-pages
+              <a href="/api/invoice/download" className={`${styles.btnSolid} provin-press`}>
+                {t("downloadInvoice")}
+              </a>
+            )}
+            <Link href="/" className={`${styles.btn} provin-press`}>
+              {t("back")}
+            </Link>
+          </div>
         </div>
         <Footer />
       </div>

@@ -1,0 +1,153 @@
+.wrap {
+  width: 100%;
+  max-width: 75rem;
+  margin: 0 auto;
+  padding: 1.25rem max(16px, env(safe-area-inset-right, 0px)) 4rem max(16px, env(safe-area-inset-left, 0px));
+}
+@media (min-width: 640px) {
+  .wrap {
+    padding-left: max(24px, env(safe-area-inset-left, 0px));
+    padding-right: max(24px, env(safe-area-inset-right, 0px));
+  }
+}
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+  align-items: start;
+}
+@media (min-width: 901px) {
+  .grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    gap: 72px;
+  }
+  .aside {
+    position: sticky;
+    top: 24px;
+  }
+}
+.aside {
+  min-width: 0;
+}
+.title {
+  font: 800 clamp(32px, 4vw, 52px) / 1.05 Inter, system-ui, sans-serif;
+  letter-spacing: -0.04em;
+  color: #fff;
+  text-wrap: balance;
+}
+.lead {
+  margin-top: 16px;
+  font: 400 16px/1.65 Inter, system-ui, sans-serif;
+  color: #a1a1aa;
+}
+.ctas {
+  display: grid;
+  gap: 10px;
+  margin-top: 28px;
+  justify-items: start;
+}
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 54px;
+  padding: 0 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  font: 600 12px/1.2 Inter, system-ui, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  transition: border-color 0.2s;
+}
+.ghost:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.textLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font: 700 12px/1.2 Inter, system-ui, sans-serif;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #5c9dff;
+  text-decoration: none;
+}
+.textLink svg {
+  width: 15px;
+  height: 15px;
+  transition: transform 0.25s;
+}
+.textLink:hover {
+  color: #fff;
+}
+.textLink:hover svg {
+  transform: translateX(4px);
+}
+.body {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+@media (min-width: 901px) {
+  .body {
+    padding-top: 56px;
+  }
+}
+.card {
+  padding: 22px 20px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  transition: border-color 0.3s, background 0.3s;
+}
+@media (min-width: 640px) {
+  .card {
+    padding: 26px 28px;
+  }
+}
+.card:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+}
+.card h2 {
+  font: 700 21px/1.3 Inter, system-ui, sans-serif;
+  letter-spacing: -0.015em;
+  color: #fff;
+}
+.card p {
+  margin-top: 10px;
+  font: 400 15.5px/1.75 Inter, system-ui, sans-serif;
+  color: #a1a1aa;
+  white-space: pre-line;
+}
+.figure {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  margin: 18px auto 0;
+}
+.pulse {
+  animation: vin-pulse 2.4s ease-in-out infinite;
+  transform-origin: 101px 135px;
+}
+@keyframes vin-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 0.4;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulse {
+    animation: none;
+  }
+}

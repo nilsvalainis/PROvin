@@ -1,9 +1,12 @@
-import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { BlogComments } from "@/components/blog/BlogComments";
 import { BlogPostBody } from "@/components/blog/BlogPostBody";
 import { BlogViewTracker } from "@/components/blog/BlogViewTracker";
-import { DiagnosticScanLine } from "@/components/DiagnosticScanLine";
+import { BlogPostToc } from "@/components/blog/BlogPostToc";
+import { BlogTypeCover } from "@/components/blog/BlogTypeCover";
+import styles from "@/components/blog/blog-post.module.css";
+import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
+import { blogToc } from "@/lib/blog/toc";
 import { Link } from "@/i18n/navigation";
 import type { BlogPost } from "@/lib/blog/types";
 import { b2bDateLocale } from "@/i18n/locales";
@@ -32,84 +35,73 @@ export async function BlogPostView({ post, locale }: Props) {
     image: cover ? `${base}${cover.src}` : undefined,
   });
 
+  const toc = blogToc(content.body);
+  const hasToc = toc.length > 1;
+
   return (
-    <article className="home-body-ink relative scroll-mt-16 bg-transparent px-4 pb-16 pt-10 sm:pb-20 sm:pt-12">
+    <article className="home-body-ink relative scroll-mt-16 bg-transparent px-4 pb-16 pt-10 sm:px-6 sm:pb-20 sm:pt-12">
       <JsonLd data={articleLd} />
       <BlogViewTracker slug={post.slug} />
-      <div className="demo-design-dir__shell relative mx-auto w-full max-w-[min(100%,80rem)] px-1 sm:px-2">
-        <p className="mx-auto max-w-[min(42.5rem,calc(100vw-2rem))]">
-          <Link
-            href="/blogs"
-            className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45 no-underline transition hover:text-provin-accent"
-          >
-            {t("backToList")}
-          </Link>
-        </p>
+      <div className="mx-auto w-full max-w-[75rem]">
+        <Link href="/blogs" className={styles.back}>
+          {t("backToList")}
+        </Link>
 
-        <header className="mx-auto mt-6 max-w-[min(42.5rem,calc(100vw-2rem))] text-center sm:mt-8">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
+        <header>
+          <p className={styles.meta}>
             <span>{post.category}</span>
-            <span className="mx-2 text-white/20">·</span>
             <time dateTime={post.publishedAt}>{formatPostDate(post.publishedAt, locale)}</time>
           </p>
-          <h1 className="mt-3 text-balance text-[1.55rem] font-semibold tracking-tight text-white/[0.96] sm:text-[2rem] lg:text-[2.25rem]">
-            {content.title}
-          </h1>
-          <div className="mx-auto mt-4 w-full max-w-[min(100%,28rem)]">
-            <DiagnosticScanLine variant="rail" motion="alongPingPong" className="w-full" />
-          </div>
+          <h1 className={styles.title}>{content.title}</h1>
           {usingFallback ? <p className="mt-4 text-sm text-white/45">{t("lvOnlyNote")}</p> : null}
         </header>
 
-        {cover ? (
-          <figure className="mx-auto mt-6 max-w-[min(36rem,calc(100vw-2rem))] overflow-hidden rounded-sm border border-white/[0.08] bg-white/[0.03] sm:mt-8">
-            <Image
-              src={cover.src}
-              alt={cover.alt}
-              width={cover.width}
-              height={cover.height}
-              className="aspect-[16/9] h-auto max-h-[12rem] w-full object-cover object-[center_28%] sm:max-h-[14rem]"
-              sizes="(max-width: 680px) 100vw, 36rem"
-              priority
-            />
-            {cover.caption ? (
-              <figcaption className="border-t border-white/[0.06] px-3 py-2 text-left text-[0.7rem] leading-snug text-white/55 sm:px-3.5 sm:text-[0.75rem]">
-                {cover.caption}
-              </figcaption>
+        <BlogTypeCover slug={post.slug} title={content.title} className={styles.cover} />
+
+        <div className={`${styles.grid} ${hasToc ? "" : styles.gridSingle}`}>
+          <BlogPostToc items={toc} label={t("tocLabel")} />
+          <div className={styles.body}>
+            <BlogPostBody blocks={content.body} />
+
+            <div className={styles.cta}>
+              <b>{t("ctaTitle")}</b>
+              <p>{t("ctaBody")}</p>
+              <div className={`${tp5Styles.ctaWrap} sm:!w-auto`}>
+                <Link href="/#home-hero" className={`${tp5Styles.liquidCtaLink} sm:!w-auto sm:px-10`}>
+                  <span className={tp5Styles.liquidCtaShimmer} aria-hidden />
+                  <span className={tp5Styles.liquidCtaLabel}>{t("ctaButton")}</span>
+                </Link>
+              </div>
+            </div>
+
+            {post.tags.length > 0 ? (
+              <ul className="mt-10 flex list-none flex-wrap gap-2">
+                {post.tags.map((tag) => (
+                  <li
+                    key={tag}
+                    className="rounded-full border border-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45"
+                  >
+                    {tag}
+                  </li>
+                ))}
+              </ul>
             ) : null}
-          </figure>
-        ) : null}
 
-        <div className="mt-10 sm:mt-12">
-          <BlogPostBody blocks={content.body} />
+            <BlogComments
+              slug={post.slug}
+              labels={{
+                title: t("commentsTitle"),
+                name: t("commentName"),
+                comment: t("commentBody"),
+                submit: t("commentSubmit"),
+                submitting: t("commentSubmitting"),
+                empty: t("commentsEmpty"),
+                success: t("commentSuccess"),
+                error: t("commentError"),
+              }}
+            />
+          </div>
         </div>
-
-        {post.tags.length > 0 ? (
-          <ul className="mx-auto mt-10 flex max-w-[min(42.5rem,calc(100vw-2rem))] list-none flex-wrap gap-2">
-            {post.tags.map((tag) => (
-              <li
-                key={tag}
-                className="border border-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/45"
-              >
-                {tag}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
-        <BlogComments
-          slug={post.slug}
-          labels={{
-            title: t("commentsTitle"),
-            name: t("commentName"),
-            comment: t("commentBody"),
-            submit: t("commentSubmit"),
-            submitting: t("commentSubmitting"),
-            empty: t("commentsEmpty"),
-            success: t("commentSuccess"),
-            error: t("commentError"),
-          }}
-        />
       </div>
     </article>
   );

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { BlogBlock } from "@/lib/blog/types";
+import { blogHeadingId } from "@/lib/blog/toc";
 import { blogBlockTextHasInlineHtml, sanitizeBlogInlineHtml } from "@/lib/admin-tiptap/blog-inline-html";
 
 function BlogInlineText({ text, className }: { text: string; className?: string }) {
@@ -17,14 +18,16 @@ function BlogInlineText({ text, className }: { text: string; className?: string 
 
 export function BlogPostBody({ blocks }: { blocks: BlogBlock[] }) {
   return (
-    <div className="blog-post-body mx-auto flex w-full max-w-[min(42.5rem,calc(100vw-2rem))] flex-col gap-5 text-[0.9375rem] leading-[1.7] text-[rgb(210_214_222/0.92)] sm:gap-6 sm:text-[1.05rem] sm:leading-[1.75]">
+    <div className="blog-post-body mx-auto flex w-full lg:mx-0 max-w-[min(42.5rem,calc(100vw-2rem))] flex-col gap-5 text-[0.9375rem] leading-[1.7] text-[rgb(210_214_222/0.92)] sm:gap-6 sm:text-[1.05rem] sm:leading-[1.75]">
       {blocks.map((block, i) => {
         const key = `${block.type}-${i}`;
         if (block.type === "h2") {
+          const id = blogHeadingId(blocks.slice(0, i).filter((b) => b.type === "h2").length);
           return (
             <h2
               key={key}
-              className="mt-4 text-balance text-[1.15rem] font-semibold tracking-tight text-white/[0.96] sm:mt-6 sm:text-[1.35rem]"
+              id={id}
+              className="scroll-mt-5 mt-4 text-balance text-[1.15rem] font-semibold tracking-tight text-white/[0.96] sm:mt-6 sm:text-[1.35rem]"
             >
               <BlogInlineText text={block.text} />
             </h2>

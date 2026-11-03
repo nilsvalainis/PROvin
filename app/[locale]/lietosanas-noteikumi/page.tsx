@@ -7,6 +7,8 @@ import { buildPublicPageMetadata } from "@/lib/seo-public-metadata";
 import { Footer } from "@/components/Footer";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
+import { LegalToc } from "@/components/legal/LegalToc";
+import styles from "@/components/legal/legal.module.css";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -26,7 +28,7 @@ function renderInlineBold(text: string): ReactNode {
   return segments.map((seg, i) => {
     if (seg.startsWith("**") && seg.endsWith("**")) {
       return (
-        <strong key={i} className="font-semibold text-white/[0.96]">
+        <strong key={i}>
           {seg.slice(2, -2)}
         </strong>
       );
@@ -55,73 +57,60 @@ export default async function TermsPage({ params }: Props) {
 
   const t = await getTranslations({ locale, namespace: "Legal" });
   const sections = t.raw("termsSections") as LegalSection[];
+  const toc = sections.map((s, index) => {
+    const num = s.title.match(/^(\d+)\./)?.[1];
+    return { id: num ? `terms-section-${num}` : `terms-section-${index}`, title: s.title };
+  });
 
   return (
     <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
     <div className="demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">
-    <article className="mx-auto w-full max-w-[42.5rem] px-4 pb-16 pt-24 sm:px-6 sm:pb-20 sm:pt-28">
-      <h1 className="text-3xl font-semibold tracking-tight text-white/[0.96]">
-        {t("termsTitle")}
-      </h1>
-      <p className="mt-2 text-sm text-white/45">{t("termsUpdated")}</p>
+    <article className={styles.wrap}>
+      <h1 className={styles.title}>{t("termsTitle")}</h1>
+      <p className={styles.date}>{t("termsUpdated")}</p>
 
-      <p className="mt-4 text-base leading-relaxed text-white/70">
-        {t.rich("termsLead", {
-          section11: (chunks) => (
-            <a
-              href="#terms-section-11"
-              className="font-semibold text-provin-accent underline decoration-provin-accent/35 underline-offset-[3px] transition hover:decoration-provin-accent/70"
-            >
-              {chunks}
-            </a>
-          ),
-          note: (chunks) => (
-            <strong className="font-semibold text-white/[0.96]">{chunks}</strong>
-          ),
-        })}
-      </p>
+      <div className={styles.grid}>
+        <LegalToc items={toc} label={t("tocLabel")} />
+        <div className={styles.body}>
+          <p className={styles.lead}>
+            {t.rich("termsLead", {
+              section11: (chunks) => (
+                <a href="#terms-section-11" className={styles.link}>
+                  {chunks}
+                </a>
+              ),
+              note: (chunks) => <strong className="font-semibold text-white">{chunks}</strong>,
+            })}
+          </p>
 
-      <div className="mt-10 space-y-8">
-        {sections.map((s, index) => {
-          const num = s.title.match(/^(\d+)\./)?.[1];
-          const sectionId = num ? `terms-section-${num}` : `terms-section-${index}`;
-
-          return (
-            <section key={s.title} id={sectionId} className="scroll-mt-24">
-              <h2 className="text-lg font-semibold text-white/[0.96]">{s.title}</h2>
+          {sections.map((s, index) => (
+            <section key={s.title} id={toc[index].id} className={styles.section}>
+              <h2>{s.title}</h2>
 
               {s.subsections?.length ? (
-                <div className="mt-4 space-y-4">
-                  {s.withdrawalIntro ? (
-                    <p className="text-sm leading-relaxed text-white/70">{renderInlineBold(s.withdrawalIntro)}</p>
-                  ) : null}
+                <>
+                  {s.withdrawalIntro ? <p className={styles.text}>{renderInlineBold(s.withdrawalIntro)}</p> : null}
                   {s.searchKeywordsLine ? (
-                    <p
-                      className="rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-sm leading-relaxed text-white/55"
-                      translate="no"
-                    >
+                    <p className={styles.note} translate="no">
                       {renderInlineBold(s.searchKeywordsLine)}
                     </p>
                   ) : null}
-                  <div className="space-y-5 border-l-2 border-provin-accent/35 pl-4">
+                  <div className={styles.subs}>
                     {s.subsections.map((sub) => (
                       <div key={sub.heading}>
-                        <h3 className="text-base font-semibold text-white/[0.96]">{sub.heading}</h3>
-                        <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-white/70">{sub.body}</p>
+                        <h3>{sub.heading}</h3>
+                        <p className={styles.text}>{sub.body}</p>
                       </div>
                     ))}
                   </div>
-                </div>
+                </>
               ) : (
-                <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-white/70">
-                  {s.body != null ? renderInlineBold(s.body) : null}
-                </p>
+                <p className={styles.text}>{s.body != null ? renderInlineBold(s.body) : null}</p>
               )}
             </section>
-          );
-        })}
+          ))}
+        </div>
       </div>
-
     </article>
     <Footer />
     </div>

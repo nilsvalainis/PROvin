@@ -32,7 +32,11 @@
     "commentSubmit": "Post",
     "commentSubmitting": "Sending…",
     "commentSuccess": "Comment posted.",
-    "commentError": "Couldn't send. Try again."
+    "commentError": "Couldn't send. Try again.",
+    "tocLabel": "Contents",
+    "ctaTitle": "Before you buy - check the car's history",
+    "ctaBody": "Data from several sources, listing analysis and a consultation in one audit.",
+    "ctaButton": "Order a VIN check"
   },
   "SiteRail": {
     "navAria": "Main sections",

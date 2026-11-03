@@ -7,6 +7,24 @@
     "invoiceAttachedTitle": "Rēķins ir pielikumā e-pastā",
     "invoiceAttachedBody": "Atveriet maksājuma apstiprinājuma e-pastu. Rēķina PDF ir pielikumā. Šī saite šajā ierīcē vairs neder.",
     "invoiceAttachedHome": "Uz sākumu",
-    "back": "Atpakaļ uz sākumu"
+    "back": "Atpakaļ uz sākumu",
+    "steps": [
+      {
+        "title": "Maksājums saņemts",
+        "note": "tagad"
+      },
+      {
+        "title": "Izpēte un analīze",
+        "note": "24-72 h"
+      },
+      {
+        "title": "Audits tavā e-pastā",
+        "note": ""
+      },
+      {
+        "title": "Konsultācija pa tālruni",
+        "note": "ja nepieciešams"
+      }
+    ]
   }
 }

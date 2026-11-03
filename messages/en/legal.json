@@ -193,7 +193,8 @@
         "title": "14. Addendum: data processing agreement (GDPR Art. 28)",
         "body": "14.1. Where the Partner provides personal data of its customer when ordering (for example a name), the Partner is the controller and PROVIN is the processor.\n\n14.2. Subject and purpose: preparing and delivering the report. Duration: the cooperation and retention under 14.8.\n\n14.3. Data types: VIN, plate, listing link, the Partner's customer's name if provided. Data subjects: the Partner's customers.\n\n14.4. PROVIN processes the data only on the Partner's instructions (the order) and ensures that persons with access are bound by confidentiality.\n\n14.5. Security: encrypted connections (HTTPS), access control and signed sessions, access only for authorised persons.\n\n14.6. Sub-processors: as listed in section 6 of the Privacy Policy. PROVIN gives 14 days' notice of a new sub-processor; the Partner may object.\n\n14.7. PROVIN assists the Partner with data subject requests and notifies a personal data breach without undue delay and no later than 48 hours after becoming aware of it.\n\n14.8. After the cooperation ends PROVIN deletes or returns the Partner's customer data, except what must be kept by law (for example accounting records for 5 years).\n\n14.9. On request PROVIN provides the information needed to verify compliance with these obligations."
       }
-    ]
+    ],
+    "tocLabel": "Contents"
   },
   "Cookies": {
     "bannerTitle": "Cookies and privacy",

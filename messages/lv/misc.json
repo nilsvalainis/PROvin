@@ -32,7 +32,11 @@
     "commentSubmit": "Publicēt",
     "commentSubmitting": "Sūta…",
     "commentSuccess": "Komentārs publicēts.",
-    "commentError": "Neizdevās nosūtīt. Pamēģini vēlreiz."
+    "commentError": "Neizdevās nosūtīt. Pamēģini vēlreiz.",
+    "tocLabel": "Saturs",
+    "ctaTitle": "Pirms pērc - pārbaudi auto vēsturi",
+    "ctaBody": "Vairāku avotu dati, sludinājuma analīze un konsultācija vienā auditā.",
+    "ctaButton": "Pasūtīt VIN pārbaudi"
   },
   "SiteRail": {
     "navAria": "Galvenās sadaļas",
