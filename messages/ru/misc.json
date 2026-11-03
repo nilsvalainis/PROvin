@@ -10,7 +10,13 @@
     "checkoutProvinSelectProductName": "PROVIN SELECT\nСтратегическая консультация",
     "checkoutProvinSelectProductDesc": "Личная консультация для решения о покупке",
     "notFoundTitle": "Страница не найдена",
-    "notFoundHome": "Главная PROVIN"
+    "notFoundHome": "Главная PROVIN",
+    "orderBarCta": "Заказать аудит · 99,99 €",
+    "notFoundLead": "Возможно, ссылка изменилась. Начните с одной из этих страниц:",
+    "notFoundHeading": "Страница не найдена.",
+    "notFoundLinkHome": "Главная",
+    "notFoundLinkServices": "Услуги",
+    "notFoundLinkFreeCheck": "Бесплатная проверка VIN"
   },
   "Blogs": {
     "comingSoon": "СКОРО",

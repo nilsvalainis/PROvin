@@ -10,7 +10,13 @@
     "checkoutProvinSelectProductName": "PROVIN SELECT\nStrategic consultation",
     "checkoutProvinSelectProductDesc": "Individual consultation for car purchase decisions",
     "notFoundTitle": "Page not found",
-    "notFoundHome": "PROVIN home"
+    "notFoundHome": "PROVIN home",
+    "orderBarCta": "Order an audit · 99,99 €",
+    "notFoundLead": "The link may have changed. Start from one of these pages:",
+    "notFoundHeading": "This page was not found.",
+    "notFoundLinkHome": "Home",
+    "notFoundLinkServices": "Services",
+    "notFoundLinkFreeCheck": "Free VIN check"
   },
   "Blogs": {
     "comingSoon": "COMING SOON",

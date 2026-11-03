@@ -1,27 +1,19 @@
 "use client";
 
 import type { MouseEvent } from "react";
-import { useId } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { usePathname } from "@/i18n/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { whatsappAppUrl, whatsappWebUrl } from "@/lib/contact";
 import { isAzvinPublicPath } from "@/lib/azvin-public-path";
 import { normalizeSitePath } from "@/lib/site-rail-sections";
+import { CONSENT_STORAGE_KEY, PROVIN_CONSENT_UPDATED_EVENT, parseConsent } from "@/lib/cookie-consent";
 
-function WhatsAppIcon({ gradientId }: { gradientId: string }) {
+function WhatsAppIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="provin-whatsapp-fab__svg" aria-hidden>
-      <defs>
-        <linearGradient id={gradientId} x1="4" y1="4" x2="20" y2="20" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#3DDC84" />
-          <stop offset="55%" stopColor="#25D366" />
-          <stop offset="100%" stopColor="#128C7E" />
-        </linearGradient>
-      </defs>
-      <path
-        fill={`url(#${gradientId})`}
-        d="M19.11 4.89A9.91 9.91 0 0 0 12.06 2a9.99 9.99 0 0 0-8.57 15.14L2 22l5-1.31A10 10 0 1 0 19.11 4.89ZM12.06 20a7.9 7.9 0 0 1-4.03-1.1l-.29-.17-2.96.78.8-2.88-.19-.3A8 8 0 1 1 12.06 20Zm4.4-5.97c-.24-.12-1.42-.7-1.64-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1-.37-1.9-1.18-.7-.62-1.17-1.39-1.3-1.63-.14-.24-.01-.37.1-.49.1-.1.24-.26.36-.39.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.41-.54-.42h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.33.98 2.49c.12.16 1.68 2.56 4.06 3.59.57.24 1.01.39 1.36.5.57.18 1.09.16 1.5.1.46-.07 1.42-.58 1.62-1.14.2-.56.2-1.04.14-1.14-.06-.1-.22-.16-.46-.28Z"
-      />
+    <svg viewBox="0 0 24 24" className="h-[22px] w-[22px]" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M4 20l1.3-4A8 8 0 1 1 8 18.8z" />
+      <path d="M9 9.5c.3 2 1.8 3.7 4 4.6l1.2-1.2 1.8.8c-.2 1.2-1.1 1.8-2.2 1.7-3-.4-5.6-3-6-6-.1-1.1.5-2 1.7-2.2l.8 1.8z" />
     </svg>
   );
 }
@@ -31,17 +23,65 @@ function isMobileHandset(): boolean {
   return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 }
 
-/** Peldošā WhatsApp poga (SmartSupp vietā) — mobilajā atver lietotni. */
+/** Lapas, kur apakšējā pasūtīšanas poga nav vajadzīga (pasūtīšana, paldies, juridiskās). */
+const NO_ORDER_BAR = ["/paldies", "/pasutit", "/lietosanas-noteikumi", "/privatuma-politika", "/apmaksa"];
+
+/**
+ * Telefonā: apakšējā josla «Pasūtīt auditu · 99,99 €» + WhatsApp (balta kontūra).
+ * Datorā: maza, mierīga WhatsApp ikona labajā apakšā. Abi parādās pēc hero, paslēpjas pie kājenes,
+ * telefonā arī ritinot uz leju, un tikai pēc sīkdatņu izvēles (lai nepārklājas ar sīkdatņu kartīti).
+ */
 export function WhatsAppFab() {
   const t = useTranslations("Misc");
   const pathname = usePathname() ?? "";
-  const webHref = whatsappWebUrl();
-  const gradientId = useId().replace(/:/g, "");
   const path = normalizeSitePath(pathname);
+  const webHref = whatsappWebUrl();
+  const [on, setOn] = useState(false);
+  const [consentDone, setConsentDone] = useState(false);
+
+  useEffect(() => {
+    const readConsent = () => {
+      try {
+        setConsentDone(parseConsent(localStorage.getItem(CONSENT_STORAGE_KEY)) !== null);
+      } catch {
+        setConsentDone(true);
+      }
+    };
+    readConsent();
+    window.addEventListener(PROVIN_CONSENT_UPDATED_EVENT, readConsent);
+    return () => window.removeEventListener(PROVIN_CONSENT_UPDATED_EVENT, readConsent);
+  }, []);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let down = false;
+    const update = () => {
+      const y = window.scrollY;
+      if (Math.abs(y - lastY) > 6) {
+        down = y > lastY;
+        lastY = y;
+      }
+      const footer = document.getElementById("kontakti");
+      const nearFooter = footer ? footer.getBoundingClientRect().top < window.innerHeight : false;
+      const mobile = window.innerWidth <= 760;
+      setOn(y > 520 && !nearFooter && (!down || !mobile));
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [pathname]);
+
   if (isAzvinPublicPath(pathname)) return null;
   if (path === "/partneriem" || path.startsWith("/partneriem/")) return null;
 
-  const onClick = (e: MouseEvent<HTMLAnchorElement>) => {
+  const visible = on && consentDone;
+  const showOrder = !NO_ORDER_BAR.some((p) => path === p || path.startsWith(`${p}/`));
+
+  const onWhatsApp = (e: MouseEvent<HTMLAnchorElement>) => {
     if (!isMobileHandset()) return;
     e.preventDefault();
     window.location.href = whatsappAppUrl();
@@ -50,21 +90,38 @@ export function WhatsAppFab() {
     }, 700);
   };
 
-  /* `aside` = landmark (axe "region"); poga pati ir `position: fixed`, tāpēc ietinums izkārtojumu nemaina. */
+  /* `aside` = landmark (axe "region"); elementi ir `position: fixed`, tāpēc ietinums izkārtojumu nemaina. */
   return (
     <aside aria-label={t("whatsappFab")}>
+      <div className={`provin-order-bar${visible ? " is-on" : ""}`} aria-hidden={!visible}>
+        <span className="provin-order-bar__slot" aria-hidden />
+        {showOrder ? (
+          <Link href="/#home-hero" className="provin-order-bar__cta provin-press" tabIndex={visible ? 0 : -1}>
+            {t("orderBarCta")}
+          </Link>
+        ) : null}
+        <a
+          href={webHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onWhatsApp}
+          aria-label={t("whatsappFab")}
+          className="provin-order-bar__wa provin-press"
+          tabIndex={visible ? 0 : -1}
+        >
+          <WhatsAppIcon />
+        </a>
+      </div>
       <a
         href={webHref}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={onClick}
+        onClick={onWhatsApp}
         aria-label={t("whatsappFab")}
-        className="provin-whatsapp-fab"
+        className={`provin-whatsapp-fab2${visible ? " is-on" : ""}`}
+        tabIndex={visible ? 0 : -1}
       >
-        <span className="provin-whatsapp-fab__ring" aria-hidden />
-        <span className="provin-whatsapp-fab__icon">
-          <WhatsAppIcon gradientId={gradientId} />
-        </span>
+        <WhatsAppIcon />
       </a>
     </aside>
   );

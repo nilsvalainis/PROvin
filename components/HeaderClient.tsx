@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { LogIn, Menu, X } from "lucide-react";
+import { createPortal } from "react-dom";
+import { LogIn } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import {
@@ -22,8 +23,11 @@ export function HeaderClient() {
   const normalizedPath = normalizeSitePath(pathname);
   const isProvinSelectPieteikums = normalizedPath === "/provin-select-pieteikums";
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [portalReady, setPortalReady] = useState(false);
+  useEffect(() => setPortalReady(true), []);
   const tHeader = useTranslations("Header");
   const tRail = useTranslations("SiteRail");
+  const tMisc = useTranslations("Misc");
 
   const isHome = normalizedPath === "/" || normalizedPath === "";
   const isPakalpojumi = normalizedPath === "/pakalpojumi";
@@ -105,11 +109,6 @@ export function HeaderClient() {
     ? "text-white/[0.88] hover:text-white"
     : "text-[#1d1d1f]/80 hover:text-[#0066ff]";
 
-  /** Mobilā pilnekrāna izvēļņu panelis — vienots fons ar header režīmu */
-  const mobilePanelBg = headerChromeDark
-    ? "border-white/[0.08] bg-[#07080a]/96 backdrop-blur-md"
-    : "border-black/[0.08] bg-white/95 backdrop-blur-md";
-
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") setMobileMenuOpen(false);
@@ -117,6 +116,18 @@ export function HeaderClient() {
     window.addEventListener("keydown", onEsc);
     return () => window.removeEventListener("keydown", onEsc);
   }, []);
+
+  /** Atvērtai izvēlnei lapa neritinās zem tās */
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.body.classList.add("provin-menu-open");
+    return () => {
+      document.body.style.overflow = prev;
+      document.body.classList.remove("provin-menu-open");
+    };
+  }, [mobileMenuOpen]);
 
   /** Aizver izvēlni navigācijas maiņās */
   useEffect(() => {
@@ -182,12 +193,13 @@ export function HeaderClient() {
               aria-expanded={mobileMenuOpen}
               aria-controls="header-mobile-nav-panel"
               onClick={() => setMobileMenuOpen((o) => !o)}
-              className={`lg:hidden relative z-[52] inline-flex h-11 w-11 shrink-0 items-center justify-center border-0 bg-transparent p-0 outline-none shadow-none transition focus-visible:ring-2 focus-visible:ring-[#0066ff]/45 focus-visible:ring-offset-2 hover:bg-transparent ${
-                headerChromeDark ? "text-white focus-visible:ring-offset-[#050505]" : "text-[#1d1d1f] focus-visible:ring-offset-white"
-              }`}
+              className={`provin-menu-btn lg:hidden relative z-[52] inline-flex h-11 w-11 shrink-0 items-center justify-center border-0 bg-transparent p-0 outline-none shadow-none ${
+                mobileMenuOpen ? "is-open" : ""
+              } ${headerChromeDark ? "text-white" : "text-[#1d1d1f]"}`}
               aria-label={mobileMenuOpen ? tHeader("menuClose") : tHeader("menuOpen")}
             >
-              {mobileMenuOpen ? <X className="h-[22px] w-[22px]" strokeWidth={1.75} /> : <Menu className="h-[22px] w-[22px]" strokeWidth={1.75} />}
+              <i aria-hidden />
+              <i aria-hidden />
             </button>
           ) : null}
 
@@ -208,81 +220,67 @@ export function HeaderClient() {
         </div>
       </div>
 
-      {showHomeNavRail && mobileMenuOpen ? (
-        <div id="header-mobile-nav-panel" className={`relative z-[44] lg:hidden ${mobilePanelBg} border-t`}>
-          <nav aria-label={tRail("navAria")} className="flex flex-col gap-px py-2.5 pr-[max(0.8rem,env(safe-area-inset-right))] pl-[max(0.8rem,env(safe-area-inset-left))] lg:py-3 lg:pl-[max(1rem,env(safe-area-inset-left))] lg:pr-[max(1rem,env(safe-area-inset-right))]">
-            <div className="mb-1 flex gap-2 px-2 py-1.5" role="group" aria-label={tHeader("langGroupAria")}>
-              <Link
-                href={pathname as never}
-                locale="lv"
-                className={`inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-md border text-[0.68rem] font-semibold uppercase tracking-[0.08em] no-underline ${
-                  locale === "lv"
-                    ? "border-[#2563eb] bg-[#2563eb]/16 text-[#93c5fd]"
-                    : headerChromeDark
-                      ? "border-white/12 text-white/80"
-                      : "border-black/12 text-[#1d1d1f]/80"
-                }`}
-              >
-                <span aria-hidden>🇱🇻</span>
-                {tHeader("langLv")}
-              </Link>
-              <Link
-                href={pathname as never}
-                locale="en"
-                className={`inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-md border text-[0.68rem] font-semibold uppercase tracking-[0.08em] no-underline ${
-                  locale === "en"
-                    ? "border-[#2563eb] bg-[#2563eb]/16 text-[#93c5fd]"
-                    : headerChromeDark
-                      ? "border-white/12 text-white/80"
-                      : "border-black/12 text-[#1d1d1f]/80"
-                }`}
-              >
-                <span aria-hidden>🇬🇧</span>
-                {tHeader("langEn")}
-              </Link>
-              <Link
-                href={pathname as never}
-                locale="de"
-                className={`inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-md border text-[0.68rem] font-semibold uppercase tracking-[0.08em] no-underline ${
-                  locale === "de"
-                    ? "border-[#2563eb] bg-[#2563eb]/16 text-[#93c5fd]"
-                    : headerChromeDark
-                      ? "border-white/12 text-white/80"
-                      : "border-black/12 text-[#1d1d1f]/80"
-                }`}
-              >
-                <span aria-hidden>🇩🇪</span>
-                {tHeader("langDe")}
-              </Link>
-              <Link
-                href={pathname as never}
-                locale="ru"
-                className={`inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-md border text-[0.68rem] font-semibold uppercase tracking-[0.08em] no-underline ${
-                  locale === "ru"
-                    ? "border-[#2563eb] bg-[#2563eb]/16 text-[#93c5fd]"
-                    : headerChromeDark
-                      ? "border-white/12 text-white/80"
-                      : "border-black/12 text-[#1d1d1f]/80"
-                }`}
-              >
-                <span aria-hidden>🇷🇺</span>
-                {tHeader("langRu")}
-              </Link>
-            </div>
-            {navSections.filter((s) => s.labelKey !== "b2b").map((s) => (
+      {showHomeNavRail && portalReady ? createPortal(
+        <div
+          id="header-mobile-nav-panel"
+          className={`provin-menu-panel lg:hidden${mobileMenuOpen ? " is-open" : ""}`}
+          aria-hidden={!mobileMenuOpen}
+        >
+          <nav aria-label={tRail("navAria")} className="provin-menu-nav">
+            {navSections.map((s) => (
               <Link
                 key={`mob-${s.labelKey}:${s.href}`}
                 href={s.href}
                 prefetch={false}
+                tabIndex={mobileMenuOpen ? 0 : -1}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`min-h-[2.4rem] shrink-0 content-center px-2 py-2 text-[10px] font-semibold uppercase tracking-[0.16em] no-underline outline-none ring-inset transition focus-visible:bg-white/5 focus-visible:ring-2 focus-visible:ring-[#0066ff]/35 lg:min-h-[3rem] lg:py-2.5 lg:text-[12px] ${navLinkInactive}`}
+                className={normalizeSitePath(s.href) === normalizedPath ? "is-active" : undefined}
                 aria-label={s.labelKey === "b2b" ? tRail("b2bLoginAria") : undefined}
               >
                 {navLabelWithHint(s.labelKey)}
               </Link>
             ))}
           </nav>
-        </div>
+          <div className="provin-menu-langs" role="group" aria-label={tHeader("langGroupAria")}>
+              <Link
+                href={pathname as never}
+                locale="lv"
+                className={`provin-menu-lang${locale === "lv" ? " is-on" : ""}`}
+              >
+                {tHeader("langLv")}
+              </Link>
+              <Link
+                href={pathname as never}
+                locale="en"
+                className={`provin-menu-lang${locale === "en" ? " is-on" : ""}`}
+              >
+                {tHeader("langEn")}
+              </Link>
+              <Link
+                href={pathname as never}
+                locale="ru"
+                className={`provin-menu-lang${locale === "ru" ? " is-on" : ""}`}
+              >
+                {tHeader("langRu")}
+              </Link>
+              <Link
+                href={pathname as never}
+                locale="de"
+                className={`provin-menu-lang${locale === "de" ? " is-on" : ""}`}
+              >
+                {tHeader("langDe")}
+              </Link>
+          </div>
+          <Link
+            href="/#home-hero"
+            tabIndex={mobileMenuOpen ? 0 : -1}
+            onClick={() => setMobileMenuOpen(false)}
+            className="provin-menu-cta provin-press"
+          >
+            {tMisc("orderBarCta")}
+          </Link>
+        </div>,
+        document.body,
       ) : null}
     </header>
   );

@@ -166,7 +166,7 @@ export function CookieConsent() {
 
   return (
     <div
-      className="cookie-consent-panel fixed bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))] left-[max(0.75rem,env(safe-area-inset-left,0px))] z-[100] w-[min(18.5rem,calc(100vw-1.5rem))] rounded-lg border border-white/12 bg-slate-950/88 px-3 py-2.5 shadow-[0_8px_28px_rgba(0,0,0,0.35)] backdrop-blur-md"
+      className="cookie-consent-panel provin-cookie-in fixed bottom-[max(1.25rem,env(safe-area-inset-bottom,0px))] left-[max(1.25rem,env(safe-area-inset-left,0px))] z-[100] w-[min(27.5rem,calc(100vw-1.5rem))] rounded-[18px] border border-white/12 bg-[#14151a]/96 px-[18px] pb-4 pt-[18px] shadow-[0_20px_50px_rgba(0,0,0,0.6)] backdrop-blur-md max-[760px]:left-3 max-[760px]:right-3 max-[760px]:w-auto"
       role="dialog"
       aria-labelledby="cookie-consent-title"
     >
@@ -174,17 +174,17 @@ export function CookieConsent() {
         <div className="min-w-0">
           <h2
             id="cookie-consent-title"
-            className="cookie-consent-panel__title text-[11px] font-semibold leading-tight tracking-tight text-white/90"
+            className="cookie-consent-panel__title text-[14px] font-bold leading-tight text-white"
           >
             {t("bannerTitle")}
           </h2>
-          <p className="cookie-consent-panel__body mt-1.5 text-[10px] leading-snug text-white/55 sm:text-[11px]">
+          <p className="cookie-consent-panel__body mt-1.5 text-[12.5px] leading-[1.55] text-zinc-400">
             {t("bannerText")}
           </p>
-          <p className="mt-1.5 text-[10px] leading-none">
+          <p className="mt-1.5 text-[12.5px] leading-none">
             <Link
               href="/privatuma-politika"
-              className="cookie-consent-panel__link font-medium text-sky-400/95 underline decoration-sky-400/30 underline-offset-2 hover:text-sky-300 hover:decoration-sky-300/50"
+              className="cookie-consent-panel__link font-medium text-zinc-300 underline decoration-white/30 underline-offset-2 hover:text-white"
             >
               {t("privacyLink")}
             </Link>
@@ -197,7 +197,7 @@ export function CookieConsent() {
               onClick={() => setSettingsOpen((open) => !open)}
               aria-expanded={settingsOpen}
               aria-controls="cookie-consent-categories"
-              className="cookie-consent-panel__link font-medium text-sky-400/95 underline decoration-sky-400/30 underline-offset-2 hover:text-sky-300 hover:decoration-sky-300/50"
+              className="cookie-consent-panel__link font-medium text-zinc-300 underline decoration-white/30 underline-offset-2 hover:text-white"
             >
               {t("settings")}
             </button>
@@ -219,21 +219,21 @@ export function CookieConsent() {
                 role="switch"
                 checked={on}
                 onChange={(event) => setOn(event.target.checked)}
-                className="mt-[1px] h-3.5 w-3.5 shrink-0 accent-[var(--color-provin-accent)]"
+                className="mt-[2px] h-4 w-4 shrink-0 accent-[var(--color-provin-accent)]"
               />
-              <span className="min-w-0 text-[10px] leading-snug text-white/70 sm:text-[11px]">
+              <span className="min-w-0 text-[12px] leading-snug text-zinc-400">
                 <span className="font-semibold text-white/85">{t(label)}</span> {t(desc)}
               </span>
             </label>
           ))}
         </fieldset>
         ) : null}
-        <div className="cookie-consent-panel__actions flex flex-col gap-1.5 border-t border-white/[0.08] pt-2">
-          <div className={settingsOpen ? "grid grid-cols-2 gap-1.5" : "grid grid-cols-1"}>
+        <div className="cookie-consent-panel__actions mt-1 grid grid-cols-2 gap-2">
+          <div className={settingsOpen ? "col-span-2 grid grid-cols-2 gap-2" : "contents"}>
           <button
             type="button"
             onClick={onNecessary}
-            className="cookie-consent-panel__btn-secondary w-full rounded-md border border-white/15 bg-white/[0.06] px-2 py-1.5 text-center text-[10px] font-medium leading-tight text-white/75 transition hover:border-white/25 hover:bg-white/[0.1] sm:text-[11px]"
+            className="cookie-consent-panel__btn-secondary provin-press flex min-h-[40px] w-full items-center justify-center rounded-full border border-white/20 px-3 py-1.5 text-center text-[12.5px] font-bold leading-tight text-white transition hover:border-white"
           >
             {t("reject")}
           </button>
@@ -241,7 +241,7 @@ export function CookieConsent() {
           <button
             type="button"
             onClick={onSaveChoice}
-            className="cookie-consent-panel__btn-secondary w-full rounded-md border border-white/15 bg-white/[0.06] px-2 py-1.5 text-center text-[10px] font-medium leading-tight text-white/75 transition hover:border-white/25 hover:bg-white/[0.1] sm:text-[11px]"
+            className="cookie-consent-panel__btn-secondary provin-press flex min-h-[40px] w-full items-center justify-center rounded-full border border-white/20 px-3 py-1.5 text-center text-[12.5px] font-bold leading-tight text-white transition hover:border-white"
           >
             {t("saveChoice")}
           </button>
@@ -250,7 +250,7 @@ export function CookieConsent() {
           <button
             type="button"
             onClick={onAcceptAll}
-            className="w-full rounded-md bg-[var(--color-provin-accent)] px-2 py-1.5 text-center text-[10px] font-semibold leading-tight text-white shadow-sm transition hover:opacity-95 active:opacity-90 sm:text-[11px]"
+            className={`provin-press flex min-h-[40px] w-full items-center justify-center rounded-full bg-white px-3 py-1.5 text-center text-[12.5px] font-bold leading-tight text-[#0a0a0a] transition hover:-translate-y-px ${settingsOpen ? "col-span-2" : ""}`}
           >
             {t("acceptAnalytics")}
           </button>
