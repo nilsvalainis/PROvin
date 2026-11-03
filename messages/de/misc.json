@@ -10,7 +10,13 @@
     "checkoutProvinSelectProductName": "PROVIN SELECT\nStrategische Beratung",
     "checkoutProvinSelectProductDesc": "Individuelle Beratung für die Kaufentscheidung",
     "notFoundTitle": "Seite nicht gefunden",
-    "notFoundHome": "PROVIN Startseite"
+    "notFoundHome": "PROVIN Startseite",
+    "orderBarCta": "Audit bestellen · 99,99 €",
+    "notFoundLead": "Der Link hat sich möglicherweise geändert. Starten Sie auf einer dieser Seiten:",
+    "notFoundHeading": "Diese Seite wurde nicht gefunden.",
+    "notFoundLinkHome": "Startseite",
+    "notFoundLinkServices": "Leistungen",
+    "notFoundLinkFreeCheck": "Kostenlose VIN-Prüfung"
   },
   "Blogs": {
     "comingSoon": "DEMNÄCHST",

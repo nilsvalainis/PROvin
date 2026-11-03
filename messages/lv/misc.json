@@ -10,7 +10,13 @@
     "checkoutProvinSelectProductName": "PROVIN SELECT\nStratēģiskā konsultācija",
     "checkoutProvinSelectProductDesc": "Individuāla konsultācija auto iegādes jautājumos",
     "notFoundTitle": "Lapa nav atrasta",
-    "notFoundHome": "PROVIN sākumlapa"
+    "notFoundHome": "PROVIN sākumlapa",
+    "orderBarCta": "Pasūtīt auditu · 99,99 €",
+    "notFoundLead": "Iespējams, saite ir mainījusies. Sāc no šīm lapām:",
+    "notFoundHeading": "Šī lapa nav atrasta.",
+    "notFoundLinkHome": "Sākums",
+    "notFoundLinkServices": "Pakalpojumi",
+    "notFoundLinkFreeCheck": "Bezmaksas VIN pārbaude"
   },
   "Blogs": {
     "comingSoon": "DRĪZUMĀ",
