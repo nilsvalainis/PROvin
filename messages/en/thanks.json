@@ -7,6 +7,24 @@
     "invoiceAttachedTitle": "The invoice is attached to the email",
     "invoiceAttachedBody": "Open the payment confirmation email. The invoice PDF is attached. This link no longer works on this device.",
     "invoiceAttachedHome": "Back to home",
-    "back": "Back to home"
+    "back": "Back to home",
+    "steps": [
+      {
+        "title": "Payment received",
+        "note": "now"
+      },
+      {
+        "title": "Research and analysis",
+        "note": "24-72 h"
+      },
+      {
+        "title": "Audit in your inbox",
+        "note": ""
+      },
+      {
+        "title": "Phone consultation",
+        "note": "if needed"
+      }
+    ]
   }
 }

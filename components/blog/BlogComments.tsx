@@ -80,7 +80,7 @@ export function BlogComments({ slug, labels }: Props) {
   }
 
   return (
-    <section className="mx-auto mt-14 w-full max-w-[min(42.5rem,calc(100vw-2rem))] border-t border-white/[0.08] pt-10 sm:mt-16 sm:pt-12">
+    <section className="mx-auto mt-14 w-full lg:mx-0 max-w-[min(42.5rem,calc(100vw-2rem))] border-t border-white/[0.08] pt-10 sm:mt-16 sm:pt-12">
       <h2 className="text-[1.05rem] font-semibold tracking-tight text-white/[0.96] sm:text-[1.2rem]">
         {labels.title}
       </h2>

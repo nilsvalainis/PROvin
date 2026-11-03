@@ -32,7 +32,11 @@
     "commentSubmit": "Senden",
     "commentSubmitting": "Wird gesendet…",
     "commentSuccess": "Kommentar veröffentlicht.",
-    "commentError": "Senden fehlgeschlagen. Bitte erneut versuchen."
+    "commentError": "Senden fehlgeschlagen. Bitte erneut versuchen.",
+    "tocLabel": "Inhalt",
+    "ctaTitle": "Vor dem Kauf - Fahrzeughistorie prüfen",
+    "ctaBody": "Daten aus mehreren Quellen, Inseratsanalyse und Beratung in einem Audit.",
+    "ctaButton": "VIN-Prüfung bestellen"
   },
   "SiteRail": {
     "navAria": "Hauptbereiche",

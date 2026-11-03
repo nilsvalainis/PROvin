@@ -3,7 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Footer } from "@/components/Footer";
 import { PageBreadcrumbs } from "@/components/seo/PageBreadcrumbs";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { VinCheckArticle } from "@/components/seo/VinCheckArticle";
+import { VinCheckArticle, VinWindshieldFigure } from "@/components/seo/VinCheckArticle";
 import { faqPageHref, pakalpojumiHref, vinDecoderHref } from "@/lib/paths";
 import { buildPublicPageMetadata } from "@/lib/seo-public-metadata";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
@@ -48,7 +48,7 @@ export default async function VinCheckPage({ params }: Props) {
             { title: t("whatTitle"), body: t("whatBody") },
             { title: t("whyTitle"), body: t("whyBody") },
             { title: t("howTitle"), body: t("howBody") },
-            { title: t("findTitle"), body: t("findBody") },
+            { title: t("findTitle"), body: t("findBody"), figure: <VinWindshieldFigure caption={t("findIllustration")} /> },
             { title: t("historyTitle"), body: t("historyBody") },
             { title: t("vsDecoderTitle"), body: t("vsDecoderBody") },
             { title: t("latviaTitle"), body: t("latviaBody") },

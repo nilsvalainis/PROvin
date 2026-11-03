@@ -193,7 +193,8 @@
         "title": "14. Anhang: Auftragsverarbeitungsvereinbarung (Art. 28 DSGVO)",
         "body": "14.1. Gibt der Partner bei der Bestellung personenbezogene Daten seines Kunden an (zum Beispiel einen Namen), ist der Partner Verantwortlicher und PROVIN Auftragsverarbeiter.\n\n14.2. Gegenstand und Zweck: Erstellung und Lieferung des Berichts. Dauer: Zusammenarbeit und Aufbewahrung gemäß 14.8.\n\n14.3. Datenarten: VIN, Kennzeichen, Inseratslink, Name des Kunden des Partners, falls angegeben. Betroffene: Kunden des Partners.\n\n14.4. PROVIN verarbeitet die Daten nur auf Weisung des Partners (Bestellung) und stellt sicher, dass Personen mit Zugang zur Vertraulichkeit verpflichtet sind.\n\n14.5. Sicherheit: verschlüsselte Verbindungen (HTTPS), Zugriffskontrolle und signierte Sitzungen, Zugriff nur für befugte Personen.\n\n14.6. Unterauftragsverarbeiter: gemäß Abschnitt 6 der Datenschutzerklärung. Über neue Unterauftragsverarbeiter informiert PROVIN 14 Tage vorher; der Partner kann widersprechen.\n\n14.7. PROVIN unterstützt den Partner bei Anfragen betroffener Personen und meldet eine Datenschutzverletzung unverzüglich, spätestens 48 Stunden nach Kenntnis.\n\n14.8. Nach Ende der Zusammenarbeit löscht PROVIN die Kundendaten des Partners oder gibt sie zurück, ausgenommen gesetzlich aufzubewahrende Daten (zum Beispiel Buchhaltungsunterlagen 5 Jahre).\n\n14.9. Auf Anfrage stellt PROVIN die zur Prüfung dieser Pflichten erforderlichen Informationen bereit."
       }
-    ]
+    ],
+    "tocLabel": "Inhalt"
   },
   "Cookies": {
     "bannerTitle": "Cookies und Datenschutz",
