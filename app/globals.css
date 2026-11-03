@@ -2291,3 +2291,27 @@ body.provin-menu-open .cookie-consent-panel {
     animation: none;
   }
 }
+
+/* Blogs E1 */
+.blog-rows.is-js .blog-w {
+  color: rgba(255, 255, 255, 0.25);
+  transition: color 0.4s;
+}
+.blog-rows.is-js .blog-row.is-in .blog-w {
+  color: #fff;
+}
+.blog-row__more svg {
+  transition: transform 0.3s;
+}
+.blog-row:hover .blog-row__more svg {
+  transform: translateX(6px);
+}
+.blog-row:hover .blog-row__title {
+  color: #fff;
+}
+@media (prefers-reduced-motion: reduce) {
+  .blog-rows.is-js .blog-w {
+    color: #fff;
+    transition: none;
+  }
+}
