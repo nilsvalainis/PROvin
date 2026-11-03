@@ -2315,3 +2315,408 @@ body.provin-menu-open .cookie-consent-panel {
     transition: none;
   }
 }
+
+/* ── Pakalpojumi L3 (cenu josla datorā, segmenti telefonā) ── */
+.svc-strip {
+  display: none;
+}
+.svc-seg {
+  display: grid;
+  gap: 3px;
+  margin-top: 28px;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.svc-seg-btn {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  padding: 11px 2px;
+  border-radius: 999px;
+  text-align: center;
+  font: 700 10.5px/1 Inter, system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  color: #a1a1aa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.25s, color 0.25s;
+}
+.svc-seg-btn.is-on {
+  background: #fff;
+  color: #0a0a0a;
+}
+.svc-seg-btn:focus-visible,
+.svc-cell-btn:focus-visible {
+  outline: 2px solid #5c9dff;
+  outline-offset: 2px;
+}
+@media (min-width: 1024px) {
+  .svc-seg {
+    display: none;
+  }
+  .svc-strip {
+    display: grid;
+    margin-top: 48px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+}
+.svc-cell {
+  position: relative;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.25s;
+}
+.svc-cell:last-child {
+  border-right: 0;
+}
+.svc-cell:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.svc-cell.is-on {
+  background: rgba(37, 99, 235, 0.12);
+  box-shadow: inset 0 -2px 0 #2563eb;
+}
+.svc-cell-btn {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  padding: 20px 22px;
+}
+.svc-cell-btn b {
+  font: 700 12px/1.2 Inter, system-ui, sans-serif;
+  letter-spacing: 0.1em;
+  color: #a1a1aa;
+}
+.svc-cell-btn em,
+.svc-cell-gap {
+  display: block;
+  min-height: 20px;
+  font: 800 20px/1 Inter, system-ui, sans-serif;
+  font-style: normal;
+  color: #a1a1aa;
+}
+.svc-cell.is-on .svc-cell-btn b,
+.svc-cell.is-on .svc-cell-btn em {
+  color: #fff;
+}
+.svc-login {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #fff;
+  text-decoration: none;
+  transition: background 0.25s, color 0.25s, border-color 0.25s;
+}
+.svc-cell .svc-login {
+  position: absolute;
+  left: 22px;
+  bottom: 14px;
+}
+.svc-login svg {
+  width: 17px;
+  height: 17px;
+  transition: transform 0.25s;
+}
+.svc-login:hover {
+  background: #fff;
+  color: #0a0a0a;
+  border-color: #fff;
+}
+.svc-login:hover svg {
+  transform: translateX(2px);
+}
+.svc-login.is-big {
+  display: inline-grid;
+  width: 48px;
+  height: 48px;
+}
+.svc-login.is-big svg {
+  width: 22px;
+  height: 22px;
+}
+.svc-panels {
+  max-width: 760px;
+  margin: 32px auto 0;
+  text-align: center;
+}
+@media (min-width: 1024px) {
+  .svc-panels {
+    margin-top: 56px;
+  }
+}
+.svc-panel:not([hidden]) {
+  display: block;
+  animation: svc-in 0.45s ease;
+}
+@keyframes svc-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .svc-panel:not([hidden]) {
+    animation: none;
+  }
+}
+.svc-badge {
+  display: table;
+  margin: 0 auto 8px;
+  font: 800 10px/1 Inter, system-ui, sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #5c9dff;
+}
+.svc-badge.is-new {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #fff;
+}
+.svc-name {
+  font: 800 23px/1.15 Inter, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  color: #f4f4f5;
+  text-wrap: balance;
+}
+@media (min-width: 640px) {
+  .svc-name {
+    font-size: 24px;
+  }
+}
+.svc-price {
+  margin-top: 10px;
+  font: 800 34px/1 Inter, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+@media (min-width: 1024px) {
+  .svc-price {
+    display: none;
+  }
+}
+.svc-goal-label {
+  margin-top: 16px;
+  font: 700 10px/1 Inter, system-ui, sans-serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #71717a;
+}
+.svc-goal {
+  margin: 8px auto 0;
+  font: 400 14px/1.65 Inter, system-ui, sans-serif;
+  color: #a1a1aa;
+  text-wrap: pretty;
+}
+@media (min-width: 640px) {
+  .svc-goal {
+    font-size: 14.5px;
+  }
+}
+.svc-more summary {
+  list-style: none;
+  cursor: pointer;
+  margin-top: 10px;
+  font: 600 13px/1 Inter, system-ui, sans-serif;
+  color: #5c9dff;
+}
+.svc-more summary::-webkit-details-marker {
+  display: none;
+}
+.svc-more[open] summary {
+  display: none;
+}
+.svc-more[open] {
+  animation: svc-in 0.4s ease;
+}
+.svc-fan {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  margin-top: 30px;
+  scroll-margin-top: 6rem;
+}
+.svc-fan-stack {
+  position: relative;
+  width: 150px;
+  height: 134px;
+}
+.svc-fan-stack.n2 {
+  width: 200px;
+}
+.svc-pdf {
+  position: absolute;
+  top: 0;
+  left: 16px;
+  width: 118px;
+  height: 128px;
+  border-radius: 9px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.55);
+  cursor: zoom-in;
+  transform: rotate(-3deg);
+  transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.3s;
+}
+.svc-fan-stack.n2 .p0 {
+  left: 8px;
+  transform: rotate(-6deg);
+}
+.svc-fan-stack.n2 .p1 {
+  left: 74px;
+  top: 6px;
+  transform: rotate(5deg);
+}
+.svc-pdf-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: auto;
+  filter: grayscale(0.5) brightness(0.78) contrast(1.05);
+  transition: filter 0.3s;
+}
+.svc-pdf::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.1), rgba(5, 6, 8, 0) 35%, rgba(5, 6, 8, 0.88));
+  pointer-events: none;
+}
+.svc-pdf em {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 1;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: rgba(5, 6, 8, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  font: 800 9px/1 Inter, system-ui, sans-serif;
+  letter-spacing: 0.12em;
+  font-style: normal;
+  color: #fff;
+}
+.svc-pdf:hover,
+.svc-pdf:focus-visible {
+  transform: rotate(0) translateY(-8px) scale(1.06) !important;
+  z-index: 2;
+}
+.svc-pdf:hover .svc-pdf-img,
+.svc-pdf:focus-visible .svc-pdf-img {
+  filter: none;
+}
+.svc-fan-stack:hover .svc-pdf:not(:hover) {
+  filter: brightness(0.6);
+}
+.svc-pdf.is-soon {
+  cursor: default;
+  display: grid;
+  place-items: center;
+  padding: 10px;
+  background: #0d0e12;
+  text-align: center;
+  font: 500 11px/1.4 Inter, system-ui, sans-serif;
+  color: #71717a;
+}
+.svc-pdf.is-soon::after {
+  display: none;
+}
+.svc-fan-cap {
+  font: 500 12px/1.4 Inter, system-ui, sans-serif;
+  color: #71717a;
+  text-align: center;
+}
+.svc-features {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  margin-top: 28px;
+  text-align: left;
+}
+@media (min-width: 640px) {
+  .svc-features {
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 28px;
+    margin-top: 34px;
+  }
+}
+.svc-features li {
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+.svc-ck {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: #5c9dff;
+}
+.svc-features b {
+  display: block;
+  font: 600 14px/1.35 Inter, system-ui, sans-serif;
+  color: #e4e4e7;
+}
+.svc-features span {
+  display: block;
+  margin-top: 3px;
+  font: 400 12.5px/1.5 Inter, system-ui, sans-serif;
+  color: #8b8b94;
+}
+.svc-cta {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+/* No bloga (Pakalpojumi) */
+.svc-blog {
+  margin-top: 56px;
+  padding-top: 30px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+@media (min-width: 1024px) {
+  .svc-blog {
+    margin-top: 80px;
+  }
+}
+.svc-blog a {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 720px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font: 600 15px/1.4 Inter, system-ui, sans-serif;
+  color: #fff;
+  text-decoration: none;
+}
+@media (min-width: 640px) {
+  .svc-blog a {
+    font-size: 16px;
+  }
+}
+.svc-blog a em {
+  font-style: normal;
+  color: #5c9dff;
+  transition: transform 0.2s;
+}
+.svc-blog a:hover em {
+  transform: translateX(5px);
+}

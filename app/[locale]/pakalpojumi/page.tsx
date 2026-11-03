@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { buildPublicPageMetadata } from "@/lib/seo-public-metadata";
 import { Footer } from "@/components/Footer";
-import { HomeFeatureBreakdown } from "@/components/home/HomeFeatureBreakdown";
-import { SamplesCatalog } from "@/components/home/SamplesCatalog";
+import { ServicesCatalog } from "@/components/services/ServicesCatalog";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { RelatedBlogLinks } from "@/components/seo/RelatedBlogLinks";
 import { PageBreadcrumbs } from "@/components/seo/PageBreadcrumbs";
@@ -53,28 +52,27 @@ export default async function PakalpojumiPage({ params }: Props) {
         />
         <header className="bg-transparent px-4 pt-6 sm:px-6 sm:pt-8">
           <div className={homeContentMaxClass}>
-            <h1 className="max-w-3xl text-balance text-lg font-bold uppercase tracking-[0.14em] text-zinc-100 sm:text-xl">
+            <h1 className="max-w-[51rem] text-balance text-[34px] font-extrabold leading-[1.05] tracking-[-0.04em] text-zinc-100 sm:text-[44px] lg:text-[56px] lg:leading-[1.02]">
               {t("servicesH1")}
             </h1>
-            <p className="mt-3 max-w-3xl text-pretty text-[0.875rem] font-medium leading-[1.6] text-zinc-300 sm:text-[0.9375rem]">
+            <p className="mt-3 max-w-[43.75rem] text-pretty text-[15px] font-normal leading-[1.6] text-zinc-400 sm:mt-[18px] sm:text-[17px]">
               {t("servicesIntro")}
             </p>
-            <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.16em]">
-              <Link href={vinCheckHref()} className="text-provin-accent no-underline transition hover:text-white">
+            <p className="mt-4 flex flex-wrap gap-x-2.5 gap-y-1 text-[12.5px] font-semibold sm:text-[13px]">
+              <Link href={vinCheckHref()} className="text-[#5c9dff] no-underline transition hover:text-white">
                 {tVin("homeCta")}
               </Link>
-              <span className="mx-2 text-white/20" aria-hidden>
+              <span className="text-zinc-600" aria-hidden>
                 ·
               </span>
-              <Link href={faqPageHref()} className="text-white/45 no-underline transition hover:text-provin-accent">
+              <Link href={faqPageHref()} className="text-[#5c9dff] no-underline transition hover:text-white">
                 {tVin("ctaFaq")}
               </Link>
             </p>
           </div>
         </header>
-        <SamplesCatalog />
+        <ServicesCatalog />
         <RelatedBlogLinks />
-        <HomeFeatureBreakdown showHeading />
 
         <div id="site-content" className="min-w-0 bg-transparent pb-0 text-white home-body-ink">
           <section className="demo-design-dir__section bg-transparent pb-0">
