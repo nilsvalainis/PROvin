@@ -1,0 +1,313 @@
+import { isTp5PublicServiceId, type Tp5MobileServiceId } from "@/lib/test-pricing-5-mobile";
+
+/** Sākumlapa K1 v6: hero, «Pilnīgākais pārklājums», «Ne tikai dati», atsauksmes (lv/en/ru/de). */
+export type HomeV6HeroCopy = {
+  leadFirst: string;
+  leadRest: string;
+  readMore: string;
+  rating: string;
+  options: Partial<Record<Tp5MobileServiceId, { name: string; sub: string }>>;
+  vinLabel: string;
+  vinPlaceholder: string;
+  listingLabel: string;
+  listingPlaceholder: string;
+  turnaround: string;
+  turnaroundFast: string;
+  urgent: string;
+  urgentBody: string;
+  call: string;
+  close: string;
+  waText: string;
+  includedLink: string;
+  freeCheck: { title: string; question: string; lead: string; note: string; listing: string; button: string };
+  coverage: {
+    titleAccent: string;
+    titleRest: string;
+    lead: string;
+    cards: { title: string; body: string }[];
+    note: string;
+  };
+  promises: {
+    kicker: string;
+    title: string;
+    items: { title: string; body: string }[];
+  };
+  reviews: {
+    kicker: string;
+    title: string;
+    ratingNote: string;
+    readAll: string;
+    prev: string;
+    next: string;
+  };
+};
+
+const LV: HomeV6HeroCopy = {
+  leadFirst: "Uzzini visu par savu nākamo auto.",
+  leadRest:
+    "Apvienojot plašāko auto vēstures pārklājumu Eiropā ar padziļinātu izpratni par marku specifiku, tirgus viltībām un pārdevēju paņēmieniem, mēs atklājam tehniskos un slēptos riskus, ko citi mēdz noklusēt.",
+  readMore: "Lasīt vairāk",
+  rating: "Google",
+  options: {
+    audits: { name: "PROVIN audits", sub: "Visi avoti, analīze un konsultācija" },
+    mini: { name: "PROVIN MINI", sub: "Latvijas reģistri un sludinājuma analīze" },
+    dealer: { name: "Dīlera dati", sub: "Servisa vēsture un nobraukums" },
+  },
+  vinLabel: "VIN kods vai numurzīme",
+  vinPlaceholder: "Piem. WVWZZZ3CZJE123456 vai AB1234",
+  listingLabel: "Sludinājuma saite",
+  listingPlaceholder: "Ielīmē saiti no ss.lv, mobile.de, autoplius...",
+  turnaround: "Izpilde",
+  turnaroundFast: "24 h",
+  urgent: "Steidzami?",
+  urgentBody: "Pamata datus un īsu komentāru varam sniegt dažu stundu laikā.",
+  call: "Zvanīt",
+  close: "Aizvērt",
+  waText: "Sveiki! Vēlos steidzamu auditu.",
+  includedLink: "Kas iekļauts auditā",
+  freeCheck: {
+    button: "Pārbaudīt bez maksas",
+    title: "Bezmaksas VIN koda pārbaude",
+    question: "Neesi pārliecināts, vai pasūtīt auditu?",
+    lead: "Ievadi VIN un pievieno sludinājuma saiti - mēs novērtēsim, vai auto ir vērts pārbaudīt tālāk.",
+    note: "Saņemsi īsu komentāru par auto un sludinājumu.",
+    listing: "Iesūtīt sludinājumu",
+  },
+  coverage: {
+    titleAccent: "Pilnīgākais",
+    titleRest: "vēstures datu pārklājums Eiropā",
+    lead: "Viss vienā vietā - mēs apkopojam vairākas maksas vēstures atskaites un papildinām tās ar pieredzi, kuru neatradīsi nevienā automātiskajā pārskatā.",
+    cards: [
+      { title: "Oficiālie valstu reģistri", body: "Vēsturi pārbaudām arī ES valstu oficiālajos reģistros. Citi reģioni - pēc pieprasījuma." },
+      { title: "Oficiālo dīleru servisa dati", body: "Detalizēti nobraukuma, apkopju intervālu un remontu dati." },
+      { title: "Standarta vēstures atskaites", body: "carVertical, autoDNA u.c. vienā atskaitē - avoti papildina cits citu." },
+      { title: "Eiropas izsoļu portālu arhīvi", body: "Ieraksti un foto no brīža, kad auto bija bojāts vai pārdots izsolē." },
+      { title: "Latvijas avoti", body: "Apdrošinātāju dati, sludinājuma un tehnisko apskašu vēsture." },
+      { title: "Manuāla datu ieguve", body: "Sarežģītos gadījumos paši sazināmies ar reģistriem un iestādēm." },
+    ],
+    note: "* Dīleru un izsoļu dati pieejami noteiktiem ražotājiem un modeļiem.",
+  },
+  promises: {
+    kicker: "Ko vēl saņem ar auditu",
+    title: "Ne tikai dati - palīdzība izlemt",
+    items: [
+      { title: "Atskaite, kura nekad nebūs tukša", body: "Vienmēr vairāk nekā standarta maksas atskaitē: pārbaude dažādos avotos, riski un ieteikumi." },
+      { title: "Konsultācija pa tālruni", body: "Pēc audita apspriežam datus un palīdzam izlemt par nākamo soli - pirkt, pārbaudīt vai atteikties." },
+      { title: "Individuāla pieeja", body: "Sarežģītās situācijās personīgi sazināmies ar valstu reģistriem un iestādēm. To nedara neviena automātiska atskaite." },
+    ],
+  },
+  reviews: {
+    kicker: "Atsauksmes",
+    title: "Ko saka pircēji",
+    ratingNote: "Google · visas ar 5 zvaigznēm",
+    readAll: "Lasīt visu",
+    prev: "Iepriekšējā",
+    next: "Nākamā",
+  },
+};
+
+const EN: HomeV6HeroCopy = {
+  leadFirst: "Find out everything about your next car.",
+  leadRest:
+    "By combining the widest car history coverage in Europe with in-depth knowledge of each make, market tricks and seller tactics, we uncover the technical and hidden risks that others tend to keep quiet about.",
+  readMore: "Read more",
+  rating: "Google",
+  options: {
+    audits: { name: "PROVIN audit", sub: "All sources, analysis and consultation" },
+    mini: { name: "PROVIN MINI", sub: "Latvian registers and listing analysis" },
+    dealer: { name: "Dealer data", sub: "Service history and mileage" },
+  },
+  vinLabel: "VIN or licence plate",
+  vinPlaceholder: "E.g. WVWZZZ3CZJE123456 or AB1234",
+  listingLabel: "Listing link",
+  listingPlaceholder: "Paste a link from ss.lv, mobile.de, autoplius...",
+  turnaround: "Delivery",
+  turnaroundFast: "24 h",
+  urgent: "Urgent?",
+  urgentBody: "We can provide the basic data and a short comment within a few hours.",
+  call: "Call",
+  close: "Close",
+  waText: "Hello! I would like an urgent audit.",
+  includedLink: "What the audit includes",
+  freeCheck: {
+    button: "Check for free",
+    title: "Free VIN check",
+    question: "Not sure whether to order an audit?",
+    lead: "Enter the VIN and add the listing link - we will tell you whether the car is worth checking further.",
+    note: "You will get a short comment on the car and the listing.",
+    listing: "Send a listing",
+  },
+  coverage: {
+    titleAccent: "The most complete",
+    titleRest: "history data coverage in Europe",
+    lead: "Everything in one place - we combine several paid history reports and add experience you will not find in any automated report.",
+    cards: [
+      { title: "Official national registers", body: "We also check the history in official EU national registers. Other regions on request." },
+      { title: "Official dealer service data", body: "Detailed mileage, service interval and repair data." },
+      { title: "Standard history reports", body: "carVertical, autoDNA and others in one report - the sources complement each other." },
+      { title: "European auction archives", body: "Records and photos from when the car was damaged or sold at auction." },
+      { title: "Latvian sources", body: "Insurer data, listing history and roadworthiness test history." },
+      { title: "Manual data collection", body: "In complex cases we contact registers and authorities ourselves." },
+    ],
+    note: "* Dealer and auction data are available for certain makes and models.",
+  },
+  promises: {
+    kicker: "What else you get with the audit",
+    title: "Not just data - help to decide",
+    items: [
+      { title: "A report that is never empty", body: "Always more than a standard paid report: checks across different sources, risks and recommendations." },
+      { title: "Phone consultation", body: "After the audit we go through the data and help you decide the next step - buy, inspect or walk away." },
+      { title: "Individual approach", body: "In complex cases we personally contact national registers and authorities. No automated report does that." },
+    ],
+  },
+  reviews: {
+    kicker: "Reviews",
+    title: "What buyers say",
+    ratingNote: "Google · all with 5 stars",
+    readAll: "Read all",
+    prev: "Previous",
+    next: "Next",
+  },
+};
+
+const RU: HomeV6HeroCopy = {
+  leadFirst: "Узнайте всё о своём следующем авто.",
+  leadRest:
+    "Сочетая самый широкий охват истории авто в Европе с глубоким знанием особенностей марок, рыночных уловок и приёмов продавцов, мы выявляем технические и скрытые риски, о которых другие предпочитают молчать.",
+  readMore: "Читать далее",
+  rating: "Google",
+  options: {
+    audits: { name: "Аудит PROVIN", sub: "Все источники, анализ и консультация" },
+    mini: { name: "PROVIN MINI", sub: "Регистры Латвии и анализ объявления" },
+    dealer: { name: "Данные дилера", sub: "Сервисная история и пробег" },
+  },
+  vinLabel: "VIN или номерной знак",
+  vinPlaceholder: "Напр. WVWZZZ3CZJE123456 или AB1234",
+  listingLabel: "Ссылка на объявление",
+  listingPlaceholder: "Вставьте ссылку с ss.lv, mobile.de, autoplius...",
+  turnaround: "Срок",
+  turnaroundFast: "24 ч",
+  urgent: "Срочно?",
+  urgentBody: "Базовые данные и короткий комментарий можем дать в течение нескольких часов.",
+  call: "Позвонить",
+  close: "Закрыть",
+  waText: "Здравствуйте! Хочу срочный аудит.",
+  includedLink: "Что входит в аудит",
+  freeCheck: {
+    button: "Проверить бесплатно",
+    title: "Бесплатная проверка VIN",
+    question: "Не уверены, заказывать ли аудит?",
+    lead: "Введите VIN и добавьте ссылку на объявление - мы оценим, стоит ли проверять авто дальше.",
+    note: "Вы получите короткий комментарий об авто и объявлении.",
+    listing: "Отправить объявление",
+  },
+  coverage: {
+    titleAccent: "Самый полный",
+    titleRest: "охват данных об истории в Европе",
+    lead: "Всё в одном месте - мы объединяем несколько платных отчётов об истории и дополняем их опытом, которого нет ни в одном автоматическом отчёте.",
+    cards: [
+      { title: "Официальные государственные регистры", body: "Проверяем историю и в официальных регистрах стран ЕС. Другие регионы - по запросу." },
+      { title: "Сервисные данные официальных дилеров", body: "Подробные данные о пробеге, интервалах обслуживания и ремонтах." },
+      { title: "Стандартные отчёты об истории", body: "carVertical, autoDNA и другие в одном отчёте - источники дополняют друг друга." },
+      { title: "Архивы европейских аукционов", body: "Записи и фото с того момента, когда авто было повреждено или продано на аукционе." },
+      { title: "Источники Латвии", body: "Данные страховщиков, история объявлений и техосмотров." },
+      { title: "Ручной сбор данных", body: "В сложных случаях сами связываемся с регистрами и учреждениями." },
+    ],
+    note: "* Данные дилеров и аукционов доступны для определённых марок и моделей.",
+  },
+  promises: {
+    kicker: "Что ещё вы получаете с аудитом",
+    title: "Не только данные - помощь в решении",
+    items: [
+      { title: "Отчёт, который никогда не будет пустым", body: "Всегда больше, чем в стандартном платном отчёте: проверка в разных источниках, риски и рекомендации." },
+      { title: "Консультация по телефону", body: "После аудита обсуждаем данные и помогаем решить, что дальше - покупать, проверять или отказаться." },
+      { title: "Индивидуальный подход", body: "В сложных ситуациях лично связываемся с государственными регистрами и учреждениями. Этого не делает ни один автоматический отчёт." },
+    ],
+  },
+  reviews: {
+    kicker: "Отзывы",
+    title: "Что говорят покупатели",
+    ratingNote: "Google · все на 5 звёзд",
+    readAll: "Читать полностью",
+    prev: "Предыдущий",
+    next: "Следующий",
+  },
+};
+
+const DE: HomeV6HeroCopy = {
+  leadFirst: "Erfahren Sie alles über Ihr nächstes Auto.",
+  leadRest:
+    "Wir verbinden die umfassendste Fahrzeughistorie in Europa mit fundiertem Wissen über Marken, Markttricks und Verkäufermethoden und decken so technische und versteckte Risiken auf, die andere gern verschweigen.",
+  readMore: "Weiterlesen",
+  rating: "Google",
+  options: {
+    audits: { name: "PROVIN Audit", sub: "Alle Quellen, Analyse und Beratung" },
+    mini: { name: "PROVIN MINI", sub: "Lettische Register und Inseratsanalyse" },
+    dealer: { name: "Händlerdaten", sub: "Servicehistorie und Kilometerstand" },
+  },
+  vinLabel: "FIN oder Kennzeichen",
+  vinPlaceholder: "Z. B. WVWZZZ3CZJE123456 oder AB1234",
+  listingLabel: "Link zum Inserat",
+  listingPlaceholder: "Link von ss.lv, mobile.de, autoplius... einfügen",
+  turnaround: "Bearbeitung",
+  turnaroundFast: "24 Std.",
+  urgent: "Eilig?",
+  urgentBody: "Grunddaten und einen kurzen Kommentar können wir innerhalb weniger Stunden liefern.",
+  call: "Anrufen",
+  close: "Schließen",
+  waText: "Hallo! Ich möchte ein eiliges Audit.",
+  includedLink: "Was im Audit enthalten ist",
+  freeCheck: {
+    button: "Kostenlos prüfen",
+    title: "Kostenlose FIN-Prüfung",
+    question: "Unsicher, ob sich ein Audit lohnt?",
+    lead: "Geben Sie die FIN ein und fügen Sie den Link zum Inserat hinzu - wir sagen Ihnen, ob sich eine weitere Prüfung lohnt.",
+    note: "Sie erhalten einen kurzen Kommentar zum Auto und zum Inserat.",
+    listing: "Inserat senden",
+  },
+  coverage: {
+    titleAccent: "Die umfassendste",
+    titleRest: "Abdeckung von Historiendaten in Europa",
+    lead: "Alles an einem Ort - wir bündeln mehrere kostenpflichtige Historienberichte und ergänzen sie um Erfahrung, die Sie in keinem automatischen Bericht finden.",
+    cards: [
+      { title: "Offizielle nationale Register", body: "Wir prüfen die Historie auch in offiziellen Registern der EU-Staaten. Andere Regionen auf Anfrage." },
+      { title: "Offizielle Händler-Servicedaten", body: "Detaillierte Daten zu Kilometerstand, Wartungsintervallen und Reparaturen." },
+      { title: "Standard-Historienberichte", body: "carVertical, autoDNA u. a. in einem Bericht - die Quellen ergänzen einander." },
+      { title: "Europäische Auktionsarchive", body: "Einträge und Fotos aus der Zeit, als das Auto beschädigt war oder versteigert wurde." },
+      { title: "Lettische Quellen", body: "Versicherungsdaten, Inserats- und TÜV-Historie." },
+      { title: "Manuelle Datenerhebung", body: "In schwierigen Fällen kontaktieren wir Register und Behörden selbst." },
+    ],
+    note: "* Händler- und Auktionsdaten sind für bestimmte Marken und Modelle verfügbar.",
+  },
+  promises: {
+    kicker: "Was Sie zusätzlich mit dem Audit erhalten",
+    title: "Nicht nur Daten - Hilfe bei der Entscheidung",
+    items: [
+      { title: "Ein Bericht, der nie leer ist", body: "Immer mehr als ein Standardbericht: Prüfung in verschiedenen Quellen, Risiken und Empfehlungen." },
+      { title: "Telefonische Beratung", body: "Nach dem Audit besprechen wir die Daten und helfen beim nächsten Schritt - kaufen, prüfen oder absagen." },
+      { title: "Individueller Ansatz", body: "In schwierigen Fällen kontaktieren wir persönlich nationale Register und Behörden. Das macht kein automatischer Bericht." },
+    ],
+  },
+  reviews: {
+    kicker: "Bewertungen",
+    title: "Was Käufer sagen",
+    ratingNote: "Google · alle mit 5 Sternen",
+    readAll: "Ganz lesen",
+    prev: "Vorherige",
+    next: "Nächste",
+  },
+};
+
+export function getHomeV6HeroCopy(locale?: string): HomeV6HeroCopy {
+  if (locale === "en") return EN;
+  if (locale === "ru") return RU;
+  if (locale === "de") return DE;
+  return LV;
+}
+
+/** Hero rāda AUDITS un dīlera datus; MINI tikai, ja atnāk no /pakalpojumi (`?plan=mini`). */
+export function heroV6OptionIds(activeId: Tp5MobileServiceId): Tp5MobileServiceId[] {
+  const ids: Tp5MobileServiceId[] = ["audits", "dealer"];
+  if (!ids.includes(activeId) && isTp5PublicServiceId(activeId)) ids.splice(1, 0, activeId);
+  return ids;
+}

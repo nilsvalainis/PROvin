@@ -4,9 +4,13 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { isAppLocale } from "@/i18n/locales";
 import { Footer } from "@/components/Footer";
-import { HomeFreeToolsSection } from "@/components/home/HomeFreeToolsSection";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
-import { HomeTrustBand } from "@/components/home/HomeTrustBand";
+import { HomeCaseTimeline } from "@/components/home/v6/HomeCaseTimeline";
+import { HomeCoverageV6 } from "@/components/home/v6/HomeCoverageV6";
+import { HomeDealerStory } from "@/components/home/v6/HomeDealerStory";
+import { HomeFreeCheckV6 } from "@/components/home/v6/HomeFreeCheckV6";
+import { HomePromisesV6 } from "@/components/home/v6/HomePromisesV6";
+import { HomeReviewsV6 } from "@/components/home/v6/HomeReviewsV6";
 import { HomeRiskAuditGuideSection } from "@/components/home/HomeRiskAuditGuideSection";
 import { HomeVinSeoSection } from "@/components/home/HomeVinSeoSection";
 import type { VinDecoderLabels } from "@/components/vin-decoder/VinDecoderTool";
@@ -61,8 +65,12 @@ export default async function HomePage({ params }: Props) {
         <HomePricingHero />
 
         <div id="site-content" className="min-w-0 scroll-mt-14 bg-transparent pb-0 text-white home-body-ink">
-          <HomeFreeToolsSection decoderLabels={decoderLabels} home={homePath(locale)} />
-          <HomeTrustBand />
+          <HomeCoverageV6 />
+          <HomeFreeCheckV6 decoderLabels={decoderLabels} home={homePath(locale)} />
+          <HomeDealerStory />
+          <HomeCaseTimeline />
+          <HomePromisesV6 />
+          <HomeReviewsV6 />
           <HomeVinSeoSection />
           <Suspense fallback={null}>
             <HomeRiskAuditGuideSection />
