@@ -58,7 +58,7 @@ export { PROVIN_AI_PROMPT_VERSION };
  *
  * **Grammar polish only (manual ✨):** `AI_LV_POLISH_SYSTEM` - `/api/admin/ai-polish-lv` (`lib/admin-ai-polish.ts`). Must NOT use field-agent rules.
  *
- * **Automatic final review (after generation):** `AI_LV_FINAL_REVIEW_SYSTEM` - `finalizeGeneratedComment` in `lib/admin-ai-polish.ts`. Grammar plus light technical wording; no new vehicle facts.
+ * **Automatic final review (after generation):** `AI_LV_FINAL_REVIEW_SYSTEM` - `finalizeGeneratedComment` in `lib/admin-ai-polish.ts` (Claude Opus `claude-opus-5-5`). Grammar plus light technical wording; no new vehicle facts.
  *
  * Canonical Cursor skills: `.cursor/skills/provin-field-agent/SKILL.md` (base tone/LV), `.cursor/skills/provin-expert-agent/SKILL.md` (domain), `.cursor/skills/provin-lv-polish/SKILL.md` (grammar polish + final review).
  *

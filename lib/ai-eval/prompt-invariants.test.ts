@@ -676,12 +676,14 @@ describe("PROVIN AI prompt invariants", () => {
     expect(banners).toMatch(/lv_registration_tenure/);
   });
 
-  it("polish uses Sonnet, not Haiku or Opus", () => {
+  it("manual polish stays Sonnet; automatic final review uses Opus", () => {
     const polish = readRepo("lib/admin-ai-polish.ts");
     expect(polish).toMatch(/CLAUDE_MODEL_SONNET/);
+    expect(polish).toMatch(/CLAUDE_MODEL_OPUS/);
     expect(polish).toMatch(/applyProvinReportCopyVocabulary/);
     expect(polish).not.toMatch(/CLAUDE_MODEL_HAIKU/);
-    expect(polish).not.toMatch(/CLAUDE_MODEL_OPUS/);
+    expect(polish).toMatch(/polishLatvianTextWithAi[\s\S]*CLAUDE_MODEL_SONNET/);
+    expect(polish).toMatch(/finalizeGeneratedComment[\s\S]*CLAUDE_MODEL_OPUS/);
   });
 
   it("Haiku Latvian prose is post-edited by Sonnet grammar polish", () => {

@@ -5,15 +5,17 @@ vi.mock("server-only", () => ({}));
 const aiGenerateText = vi.fn();
 
 vi.mock("@/lib/admin-ai", () => ({
+  CLAUDE_MODEL_OPUS: "claude-opus-test",
   CLAUDE_MODEL_SONNET: "claude-sonnet-test",
   aiGenerateText: (...args: unknown[]) => aiGenerateText(...args),
 }));
 
 import {
   finalizeGeneratedComment,
+  polishLatvianTextWithAi,
   shouldSkipGeneratedCommentPolish,
 } from "@/lib/admin-ai-polish";
-import { AI_LV_FINAL_REVIEW_SYSTEM } from "@/lib/admin-ai-prompts";
+import { AI_LV_FINAL_REVIEW_SYSTEM, AI_LV_POLISH_SYSTEM } from "@/lib/admin-ai-prompts";
 
 describe("shouldSkipGeneratedCommentPolish", () => {
   it("skips empty text and JSON / schema extracts", () => {
@@ -31,16 +33,27 @@ describe("finalizeGeneratedComment", () => {
     aiGenerateText.mockReset();
   });
 
-  it("runs a Sonnet final review and returns the polished text", async () => {
+  it("runs an Opus final review and returns the polished text", async () => {
     aiGenerateText.mockResolvedValueOnce("Labots komentārs par ķēdi.");
     await expect(finalizeGeneratedComment("Slikts komentars par kedi.")).resolves.toBe(
       "Labots komentārs par ķēdi.",
     );
     expect(aiGenerateText).toHaveBeenCalledWith(
       expect.objectContaining({
-        model: "claude-sonnet-test",
+        model: "claude-opus-test",
         systemInstruction: AI_LV_FINAL_REVIEW_SYSTEM,
         skipLatvianPolish: true,
+      }),
+    );
+  });
+
+  it("keeps the manual grammar button on Sonnet", async () => {
+    aiGenerateText.mockResolvedValueOnce("Gramatika labota.");
+    await expect(polishLatvianTextWithAi("Gramatika labota")).resolves.toBe("Gramatika labota.");
+    expect(aiGenerateText).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: "claude-sonnet-test",
+        systemInstruction: AI_LV_POLISH_SYSTEM,
       }),
     );
   });

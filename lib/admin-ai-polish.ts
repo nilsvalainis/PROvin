@@ -1,6 +1,6 @@
 import "server-only";
 
-import { CLAUDE_MODEL_SONNET, aiGenerateText } from "@/lib/admin-ai";
+import { CLAUDE_MODEL_OPUS, CLAUDE_MODEL_SONNET, aiGenerateText } from "@/lib/admin-ai";
 import { AI_LV_FINAL_REVIEW_SYSTEM, AI_LV_POLISH_SYSTEM } from "@/lib/admin-ai-prompts";
 import { aiErrorMessage } from "@/lib/ai-model-failover";
 import { PROVIN_AI_PROMPT_VERSION } from "@/lib/ai-prompt-version";
@@ -28,12 +28,13 @@ export function shouldSkipGeneratedCommentPolish(raw: string): boolean {
 async function runLatvianPolishPass(
   raw: string,
   systemInstruction: string,
+  model: string,
   budget?: AiRequestBudget,
 ): Promise<string> {
   const text = raw.trim();
   if (!text) throw new Error("empty_text");
   const polished = await aiGenerateText({
-    model: CLAUDE_MODEL_SONNET,
+    model,
     systemInstruction,
     userPrompt: text,
     temperature: 0.2,
@@ -43,13 +44,13 @@ async function runLatvianPolishPass(
   return applyProvinReportCopyVocabulary(polished);
 }
 
-/** Latviešu gramatikas labošana (admin ✨) - Claude Sonnet (Haiku neder LV prozai). */
+/** Latviešu gramatikas labošana (admin ✨) - Claude Sonnet (lētākais LV gramatikai). */
 export async function polishLatvianTextWithAi(raw: string): Promise<string> {
-  return runLatvianPolishPass(raw, AI_LV_POLISH_SYSTEM);
+  return runLatvianPolishPass(raw, AI_LV_POLISH_SYSTEM, CLAUDE_MODEL_SONNET);
 }
 
 /**
- * Pēdējais automātiskais Claude Sonnet pārskats pēc komentāra ģenerēšanas.
+ * Pēdējais automātiskais Claude Opus (`claude-opus-5-5`) pārskats pēc komentāra ģenerēšanas.
  * Kļūmes gadījumā atgriež oriģinālo (jau apmaksāto) tekstu.
  */
 export async function finalizeGeneratedComment(
@@ -64,7 +65,12 @@ export async function finalizeGeneratedComment(
     return raw;
   }
   try {
-    const polished = await runLatvianPolishPass(raw, AI_LV_FINAL_REVIEW_SYSTEM, opts?.budget);
+    const polished = await runLatvianPolishPass(
+      raw,
+      AI_LV_FINAL_REVIEW_SYSTEM,
+      CLAUDE_MODEL_OPUS,
+      opts?.budget,
+    );
     return polished.trim() || raw;
   } catch (e) {
     console.warn(`${LOG_PREFIX} final_review_failed`, {

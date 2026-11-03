@@ -75,9 +75,10 @@ If polish / review fails, keep the pre-polish text and log a warning. Do not los
 | Caller | `lib/admin-ai-polish.ts` (`polishLatvianTextWithAi`, `finalizeGeneratedComment`) |
 | Dispatch choke point | `lib/admin-ai-dispatch.ts` after self-correction |
 | Copilot prose | `finalizeCopilotAiResponse` in `lib/admin-copilot-ai.ts` (`reply`, `clarificationNeeded` only) |
-| Model | `CLAUDE_MODEL_SONNET`, `temperature: 0.2` |
+| Manual model | `CLAUDE_MODEL_SONNET` (`claude-sonnet-5`), `temperature: 0.2` |
+| Automatic model | `CLAUDE_MODEL_OPUS` (`claude-opus-5-5`), `temperature: 0.2` |
 
-Haiku generations that go through dispatch skip the inner `polishHaikuLatvianProse` (`skipLatvianPolish: true`) so the single final review is the only Sonnet pass.
+Haiku generations that go through dispatch skip the inner `polishHaikuLatvianProse` (`skipLatvianPolish: true`) so the single final review is the only Claude pass (Opus).
 
 ## Related skills
 

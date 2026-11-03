@@ -239,7 +239,7 @@ describe("admin-ai-dispatch final Claude review", () => {
     expect(finalizeGeneratedComment).not.toHaveBeenCalled();
   });
 
-  it("skips the inner Haiku polish so the final review is the only Sonnet pass", async () => {
+  it("skips the inner Haiku polish so the final review is the only Claude pass", async () => {
     vi.clearAllMocks();
     finalizeGeneratedComment.mockImplementation(async (text: string) => text);
     await adminGenerateExpertText({

@@ -545,7 +545,7 @@ export async function aiGenerateText(opts: AiTextOptions): Promise<string> {
  * Haiku neder latviešu eksperta prozai (gramatika/stils). Ģenerē lēti, tad Sonnet
  * slīpē tikai īso izejas tekstu, nevis visu pasūtījuma kontekstu.
  * Admin dispatch (`adminGenerate*`) šo soli izlaiž (`skipLatvianPolish`) un dara
- * vienu `finalizeGeneratedComment` pēc ģenerēšanas, lai Haiku netiktu slīpēts divreiz.
+ * vienu Opus `finalizeGeneratedComment` pēc ģenerēšanas, lai Haiku netiktu slīpēts divreiz.
  */
 async function polishHaikuLatvianProse(
   model: string,
