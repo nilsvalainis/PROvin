@@ -1,13 +1,35 @@
 /**
  * Admin dīlera no_data atmaksas paziņojums.
  * B2C Stripe: atmaksa un klienta e-pasts vienā solī (Freimanis / Top Line, 2026-10-25).
+ * B2B: poga arī pie failed / trūkstoša job; tad API saņem override: true.
  */
 
+import type { DealerDataJob } from "@/lib/dealer-data-job-types";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 
 export type DealerRefundActionKind = "stripe" | "wallet" | "credit";
 
 export type DealerRefundEmailError = "no_recipient" | "send_failed";
+
+export type DealerRefundJobView = Pick<DealerDataJob, "status"> & {
+  refund?: unknown;
+};
+
+/** Poga: canRefund, vēl nav atmaksāts, un no_data / failed / job nav. */
+export function shouldShowDealerRefundButton(opts: {
+  canRefund?: boolean;
+  job: DealerRefundJobView | null;
+}): boolean {
+  if (!opts.canRefund) return false;
+  if (opts.job?.refund) return false;
+  if (!opts.job) return true;
+  return opts.job.status === "no_data" || opts.job.status === "failed";
+}
+
+/** API `override: true`, ja statuss nav tīrs no_data (failed vai job nav). */
+export function dealerRefundNeedsOverride(job: DealerRefundJobView | null): boolean {
+  return job == null || job.status !== "no_data";
+}
 
 export function resolveDealerRefundActionKind(opts: {
   sessionId: string;
@@ -26,14 +48,22 @@ export function shouldSendDealerStripeRefundEmail(notifyEmail: unknown): boolean
   return notifyEmail !== false;
 }
 
+export type DealerRefundRequestBody = {
+  sessionId: string;
+  notifyEmail: boolean;
+  override?: true;
+};
+
 /** Galvenā «Atgriezt maksājumu» poga: Stripe vienmēr prasa paziņojumu. */
 export function buildDealerRefundRequestBody(opts: {
   sessionId: string;
   kind: DealerRefundActionKind;
-}): { sessionId: string; notifyEmail: boolean } {
+  override?: boolean;
+}): DealerRefundRequestBody {
   return {
     sessionId: opts.sessionId,
     notifyEmail: opts.kind === "stripe",
+    ...(opts.override ? { override: true as const } : {}),
   };
 }
 
@@ -47,14 +77,46 @@ export function resolveDealerRefundClientEmail(
   return "";
 }
 
-export function dealerRefundConfirmMessage(kind: DealerRefundActionKind): string {
-  if (kind === "wallet") {
-    return "Atgriezt summu partnera atlikumā? Partneris saņems IRISS e-pastu.";
-  }
-  if (kind === "credit") {
-    return "Atgriezt 1 dīlera kredītu partnera kontā? E-pastu sūti atsevišķi ar „Nosūtīt e-pastu”.";
-  }
-  return "Atgriezt maksājumu pilnā apmērā? Darbība ir neatgriezeniska. Klientam tiks nosūtīts e-pasts par atmaksu.";
+const DEALER_REFUND_OVERRIDE_CONFIRM =
+  "Ielases statuss nav «nav datu» (kļūda vai ielase nav palaista). Atmaksa tiks veikta ar override ārpus parastā «nav datu» nosacījuma.";
+
+export function dealerRefundConfirmMessage(
+  kind: DealerRefundActionKind,
+  opts?: { override?: boolean },
+): string {
+  const base =
+    kind === "wallet"
+      ? "Atgriezt summu partnera atlikumā? Partneris saņems IRISS e-pastu."
+      : kind === "credit"
+        ? "Atgriezt 1 dīlera kredītu partnera kontā? E-pastu sūti atsevišķi ar „Nosūtīt e-pastu”."
+        : "Atgriezt maksājumu pilnā apmērā? Darbība ir neatgriezeniska. Klientam tiks nosūtīts e-pasts par atmaksu.";
+  if (!opts?.override) return base;
+  return `${DEALER_REFUND_OVERRIDE_CONFIRM} ${base}`;
+}
+
+/** Viena vieta: confirm teksts + API ķermenis (override tikai failed / bez job). */
+export function planDealerRefund(opts: {
+  sessionId: string;
+  walletRefund?: boolean;
+  job: DealerRefundJobView | null;
+}): {
+  kind: DealerRefundActionKind;
+  override: boolean;
+  confirmMessage: string;
+  requestBody: DealerRefundRequestBody;
+} {
+  const kind = resolveDealerRefundActionKind(opts);
+  const override = dealerRefundNeedsOverride(opts.job);
+  return {
+    kind,
+    override,
+    confirmMessage: dealerRefundConfirmMessage(kind, { override }),
+    requestBody: buildDealerRefundRequestBody({
+      sessionId: opts.sessionId,
+      kind,
+      override,
+    }),
+  };
 }
 
 export function dealerRefundResultNotice(opts: {
