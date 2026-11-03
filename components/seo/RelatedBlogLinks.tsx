@@ -15,24 +15,17 @@ export async function RelatedBlogLinks() {
   if (posts.length === 0) return null;
 
   return (
-    <nav
-      aria-label={t("relatedPostsTitle")}
-      className="home-body-ink bg-transparent px-4 pb-10 sm:px-6 sm:pb-12"
-    >
-      <div className={homeContentMaxClass}>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45">
-          {t("relatedPostsTitle")}
-        </p>
-        <ul className="mt-3 flex flex-col gap-2">
+    <nav aria-label={t("relatedPostsTitle")} className="home-body-ink bg-transparent px-4 pb-12 sm:px-6 sm:pb-16">
+      <div className={`${homeContentMaxClass} svc-blog`}>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zinc-500">{t("relatedPostsTitle")}</p>
+        <ul className="mt-3 flex flex-col">
           {posts.slice(0, 3).map((post) => {
             const { content } = resolveBlogLocale(post, locale);
             return (
               <li key={post.slug}>
-                <Link
-                  href={`/blogs/${post.slug}`}
-                  className="text-sm font-medium text-white/70 no-underline transition hover:text-provin-accent"
-                >
-                  {content.title}
+                <Link href={`/blogs/${post.slug}`}>
+                  <span>{content.title}</span>
+                  <em aria-hidden>→</em>
                 </Link>
               </li>
             );
