@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getCatalogFeatureBreakdownPackages } from "@/lib/home-feature-breakdown";
-import { packagePriceLabel, packageShortLabel } from "./ServicesCatalog";
+import { packagePriceLabel, packageShortLabel } from "@/lib/services-catalog-labels";
 
 describe("ServicesCatalog labels", () => {
   it("reads the price from the CTA text in every locale", () => {

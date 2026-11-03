@@ -20,23 +20,13 @@ import { sampleMobilePage1Src, samplePdfHref } from "@/lib/sample-public-assets"
 import { SAMPLE_REPORTS, sampleReportAnchorId } from "@/lib/samples-catalog";
 import type { Tp5MobileServiceId } from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
+import { packagePriceLabel, packageShortLabel } from "@/lib/services-catalog-labels";
 
 const SAMPLES_ANCHOR_ID = "paraugi";
 const ORDER: HomeFeatureBreakdownPackageId[] = ["audits", "mini", "dealer", "koreaUsa", "partner"];
 const DESKTOP_MQ = "(min-width: 1024px)";
 
 type Sample = { id: string; href: string; anchorId?: string; title: string };
-
-/** Cena no CTA teksta („… 99,99 €” / „… €99.99”), lai tā vienmēr sakristu ar pogu. */
-export function packagePriceLabel(buttonText: string): string | null {
-  const m = buttonText.match(/€\s?\d+[.,]\d{2}|\d+[.,]\d{2}\s?€/);
-  return m ? m[0] : null;
-}
-
-/** Īsais nosaukums segmentiem: „PROVIN AUDITS” -> „AUDITS”. */
-export function packageShortLabel(title: string): string {
-  return title.replace(/^PROVIN\s+/i, "");
-}
 
 function LoginIcon() {
   return (
