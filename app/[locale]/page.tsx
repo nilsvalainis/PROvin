@@ -5,7 +5,6 @@ import { notFound } from "next/navigation";
 import { isAppLocale } from "@/i18n/locales";
 import { Footer } from "@/components/Footer";
 import { HomeFaqSection } from "@/components/home/HomeFaqSection";
-import { HomeCaseTimeline } from "@/components/home/v6/HomeCaseTimeline";
 import { HomeCoverageV6 } from "@/components/home/v6/HomeCoverageV6";
 import { HomeDealerStory } from "@/components/home/v6/HomeDealerStory";
 import { HomeFreeCheckV6 } from "@/components/home/v6/HomeFreeCheckV6";
@@ -68,7 +67,7 @@ export default async function HomePage({ params }: Props) {
           <HomeCoverageV6 />
           <HomeFreeCheckV6 decoderLabels={decoderLabels} home={homePath(locale)} />
           <HomeDealerStory />
-          <HomeCaseTimeline />
+          {/* VW gadījums («No bojājuma Somijā…») paslēpts 04.11 pēc Nila lūguma - pārveidosim un atgriezīsim. */}
           <HomePromisesV6 />
           <HomeReviewsV6 />
           <HomeVinSeoSection />

@@ -1,6 +1,6 @@
 import type { Tp5DesktopHeroFeature } from "@/lib/test-pricing-5-desktop-hero-features";
 import {
-  TP5_AUDITS_SAMPLE_REPORT_HREF,
+  TP5_BUSINESS_SAMPLE_REPORT_HREF,
   TP5_DEALER_SAMPLE_REPORT_HREF,
 } from "@/lib/test-pricing-5-ui-copy";
 
@@ -201,7 +201,7 @@ export const B2B_CATALOG: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
       },
     ],
     foot: "*pieejama noteiktiem ražotājiem.",
-    sampleHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
+    sampleHref: TP5_BUSINESS_SAMPLE_REPORT_HREF,
   },
   dealer: {
     title: "DĪLERA DATI",
@@ -251,7 +251,7 @@ const B2B_CATALOG_EN: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
       },
     ],
     foot: "*available for selected manufacturers.",
-    sampleHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
+    sampleHref: TP5_BUSINESS_SAMPLE_REPORT_HREF,
   },
   dealer: {
     title: "DEALER DATA",
@@ -279,7 +279,7 @@ const B2B_CATALOG_DE: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
       { icon: "list" as const, title: "Datenübersicht" },
     ],
     foot: "*verfügbar für ausgewählte Hersteller.",
-    sampleHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
+    sampleHref: TP5_BUSINESS_SAMPLE_REPORT_HREF,
   },
   dealer: {
     title: "HÄNDLERDATEN",
@@ -307,7 +307,7 @@ const B2B_CATALOG_RU: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
       { icon: "list" as const, title: "Сводка данных" },
     ],
     foot: "*доступно для отдельных производителей.",
-    sampleHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
+    sampleHref: TP5_BUSINESS_SAMPLE_REPORT_HREF,
   },
   dealer: {
     title: "ДАННЫЕ ДИЛЕРА",
