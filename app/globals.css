@@ -3215,3 +3215,222 @@ body.provin-menu-open .cookie-consent-panel {
     animation: none;
   }
 }
+
+/* ── Galvene (makets K1 v6 / L3): caurspīdīga, satura platumā, izvēlne centrā ── */
+:root {
+  --provin-hdr-h: 64px;
+}
+@media (min-width: 1024px) {
+  :root {
+    --provin-hdr-h: 84px;
+  }
+}
+.provin-hdr {
+  padding-top: env(safe-area-inset-top, 0px);
+  background: transparent;
+}
+.provin-hdr--light {
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+/* Lapas fons turpinās zem caurspīdīgās galvenes; saturs paliek savā vietā. */
+.provin-hdr--dark ~ main > .home-page-canvas-root {
+  margin-top: calc(-1 * (var(--provin-hdr-h) + env(safe-area-inset-top, 0px)));
+  padding-top: calc(var(--provin-hdr-h) + env(safe-area-inset-top, 0px));
+}
+/* Lapas tumšais slānis arī sākas no augšas (citādi zem galvenes paliek josla). */
+.provin-hdr--dark ~ main > .home-page-canvas-root > .demo-design-dir {
+  margin-top: calc(-1 * (var(--provin-hdr-h) + env(safe-area-inset-top, 0px)));
+  padding-top: calc(var(--provin-hdr-h) + env(safe-area-inset-top, 0px));
+}
+.provin-hdr-in {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  /* Logo vienā vertikālē ar lapas saturu (75rem + malas). */
+  max-width: calc(75rem + 48px);
+  height: var(--provin-hdr-h);
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+@media (min-width: 1024px) {
+  .provin-hdr-in {
+    padding-left: max(24px, env(safe-area-inset-left, 0px));
+    padding-right: max(24px, env(safe-area-inset-right, 0px));
+  }
+}
+.provin-hdr-logo {
+  flex: none;
+  font: 800 24px/1 Inter, system-ui, sans-serif;
+  letter-spacing: -0.02em;
+  color: #fff;
+  text-decoration: none;
+}
+.provin-hdr-logo b {
+  font-weight: 800;
+  color: #0066ff;
+}
+.provin-hdr--light .provin-hdr-logo {
+  color: #1d1d1f;
+}
+.provin-hdr-nav {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .provin-hdr-nav {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    gap: 34px;
+    white-space: nowrap;
+  }
+}
+@media (min-width: 1024px) and (max-width: 1180px) {
+  .provin-hdr-nav {
+    gap: 22px;
+  }
+}
+.provin-hdr-nav a {
+  font: 600 12.5px/1 Inter, system-ui, sans-serif;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a1a1aa;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.provin-hdr-nav a:hover,
+.provin-hdr-nav a.is-active {
+  color: #fff;
+}
+.provin-hdr--light .provin-hdr-nav a {
+  color: #52525b;
+}
+.provin-hdr--light .provin-hdr-nav a:hover,
+.provin-hdr--light .provin-hdr-nav a.is-active {
+  color: #0a0a0a;
+}
+.provin-hdr-r {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+@media (min-width: 1024px) {
+  .provin-hdr-r {
+    gap: 10px;
+  }
+}
+.provin-hdr-partner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+  font: 600 12px/1 Inter, system-ui, sans-serif;
+  color: #fff;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: box-shadow 0.2s;
+}
+.provin-hdr-partner:hover {
+  box-shadow: inset 0 0 0 1px #fff;
+}
+@media (min-width: 1024px) {
+  .provin-hdr-partner {
+    height: 38px;
+    padding: 0 18px;
+    font-size: 13px;
+  }
+}
+.provin-hdr--light .provin-hdr-partner {
+  color: #0a0a0a;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+}
+.provin-hdr-lang {
+  position: relative;
+  display: none;
+}
+@media (min-width: 1024px) {
+  .provin-hdr-lang {
+    display: inline-flex;
+  }
+}
+.provin-hdr-lang > button {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font: 700 12px/1 Inter, system-ui, sans-serif;
+  letter-spacing: 0.1em;
+  color: #d4d4d8;
+  transition: background 0.2s;
+}
+.provin-hdr-lang > button:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+.provin-hdr-lang > button:focus-visible {
+  outline: 2px solid #5c9dff;
+  outline-offset: 2px;
+}
+.provin-hdr-lang > button i {
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 0.25s;
+}
+.provin-hdr-lang.is-open > button i {
+  transform: rotate(-135deg);
+}
+.provin-hdr--light .provin-hdr-lang > button {
+  color: #27272a;
+}
+.provin-hdr-lang-menu {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 8px);
+  z-index: 70;
+  min-width: 170px;
+  margin-left: -85px;
+  padding: 6px;
+  border-radius: 14px;
+  background: #14151a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+}
+.provin-hdr-lang-menu a {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font: 500 13.5px/1 Inter, system-ui, sans-serif;
+  color: #d4d4d8;
+  text-decoration: none;
+}
+.provin-hdr-lang-menu a b {
+  font: 700 11px/1 Inter, system-ui, sans-serif;
+  letter-spacing: 0.1em;
+  color: #71717a;
+}
+.provin-hdr-lang-menu a:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+.provin-hdr-lang-menu a.is-on {
+  color: #fff;
+}
+.provin-hdr-lang-menu a.is-on b {
+  color: #5c9dff;
+}

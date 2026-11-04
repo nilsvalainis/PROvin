@@ -296,12 +296,6 @@ export function HeroOrderCardV6({
               <span className={tp5Styles.liquidCtaLabel}>{getTp5MobileCtaLabel(service, false)}</span>
             </button>
           </div>
-          {activeId === "dealer" ? (
-            <p className={styles.guaranteeNote}>
-              <ShieldIcon />
-              {copy.guaranteeLong}
-            </p>
-          ) : null}
           {sample ? (
             <p className={styles.links}>
               <a href={sample} target="_blank" rel="noopener noreferrer" onClick={() => recordSampleReportClick()}>

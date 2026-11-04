@@ -8,7 +8,6 @@ export type HomeV6HeroCopy = {
   dealerLeadFirst: string;
   dealerLeadRest: string;
   guaranteeShort: string;
-  guaranteeLong: string;
   samplePill: string;
   includedPill: string;
   readMore: string;
@@ -56,7 +55,6 @@ const LV: HomeV6HeroCopy = {
   dealerLeadRest:
     "Apkopes, remonti un nobraukums no autorizēto servisu sistēmām vienā saprotamā atskaitē - kā standarta vēstures atskaite, tikai ar oficiālā dīlera datiem. Ja datu nav, atmaksājam pilnu summu.",
   guaranteeShort: "100% atmaksa, ja datu nav",
-  guaranteeLong: "100% naudas atmaksas garantija",
   samplePill: "Atskaites piemērs",
   includedPill: "Kas iekļauts",
   readMore: "Lasīt vairāk",
@@ -126,7 +124,6 @@ const EN: HomeV6HeroCopy = {
   dealerLeadRest:
     "Maintenance, repairs and mileage from authorised service systems in one clear report - like a standard history report, but with official dealer data only. If there is no data, we refund the full amount.",
   guaranteeShort: "100% refund if there is no data",
-  guaranteeLong: "100% money-back guarantee",
   samplePill: "Sample report",
   includedPill: "What's included",
   readMore: "Read more",
@@ -196,7 +193,6 @@ const RU: HomeV6HeroCopy = {
   dealerLeadRest:
     "ТО, ремонты и пробег из систем авторизованных сервисов в одном понятном отчёте - как стандартный отчёт об истории, но только с данными официального дилера. Если данных нет, вернём всю сумму.",
   guaranteeShort: "100% возврат, если данных нет",
-  guaranteeLong: "100% гарантия возврата денег",
   samplePill: "Пример отчёта",
   includedPill: "Что входит",
   readMore: "Читать далее",
@@ -266,7 +262,6 @@ const DE: HomeV6HeroCopy = {
   dealerLeadRest:
     "Wartungen, Reparaturen und Kilometerstände aus den Systemen autorisierter Werkstätten in einem klaren Bericht - wie ein Standard-Historienbericht, nur mit offiziellen Händlerdaten. Gibt es keine Daten, erstatten wir den vollen Betrag.",
   guaranteeShort: "100 % Erstattung ohne Daten",
-  guaranteeLong: "100 % Geld-zurück-Garantie",
   samplePill: "Beispielbericht",
   includedPill: "Was enthalten ist",
   readMore: "Weiterlesen",
