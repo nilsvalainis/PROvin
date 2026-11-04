@@ -84,6 +84,9 @@ export const TP5_AUDITS_SAMPLE_REPORT_HREF = "/samples/provin-audits-piemers.pdf
 /** Publiskais DĪLERA DATI atskaites piemērs (`public/samples/…`). */
 export const TP5_DEALER_SAMPLE_REPORT_HREF = "/samples/provin-dilera-dati-piemers.pdf";
 
+/** PROVIN BUSINESS (partneru) atskaites paraugs. */
+export const TP5_BUSINESS_SAMPLE_REPORT_HREF = "/samples/provin-business-piemers.pdf";
+
 /** Tālrunis tipā / tel: — LV lokālais numurs bez +371. */
 export const TP5_TURNAROUND_INFO_PHONE_LOCAL = "29502039";
 export const TP5_TURNAROUND_INFO_PHONE_TEL = "+37129502039";

@@ -2,6 +2,7 @@ import type { Tp5DesktopHeroFeatureIcon } from "@/lib/test-pricing-5-desktop-her
 import { TP5_KOREA_USA_PUBLIC } from "@/lib/test-pricing-5-mobile";
 import {
   TP5_AUDITS_SAMPLE_REPORT_HREF,
+  TP5_BUSINESS_SAMPLE_REPORT_HREF,
   TP5_DEALER_SAMPLE_REPORT_HREF,
   TP5_MINI_SAMPLE_REPORT_HREF,
 } from "@/lib/test-pricing-5-ui-copy";
@@ -324,6 +325,7 @@ const PARTNER_LV: HomeFeatureBreakdownPackage = {
   newBadge: true,
   buttonText: "Partneriem",
   ctaHref: "/partneriem",
+  sampleReportHref: TP5_BUSINESS_SAMPLE_REPORT_HREF,
   goal:
     "Risinājums izstrādāts auto tirdzniecības uzņēmumiem, lai pirms auto iegādes, pieņemšanas komisijā vai maiņas darījumos pilnībā novērstu riskus, kas saistīti ar koriģētu nobraukumu, slēptiem negadījumiem un neatbilstoši ievērotiem apkopes intervāliem.\n\nAr PROVIN BUSINESS audita atskaiti jūs ne tikai aizsargājat uzņēmumu no zaudējumiem iepirkumos, bet arī pasargājat savu reputāciju. Bieži vien iepriekšējie tirgotāji auto vēsturei nav pievērsuši uzmanību, ir apzināti slēpuši defektus vai pat koriģējuši odometra rādījumus. Pieņemot tādu auto savā klāstā vai kā pirmo iemaksu, atbildība gala pircēja priekšā gulstas uz jūsu uzņēmuma pleciem. Veicot pārbaudi pirms katra darījuma, jūs nodrošināt, ka jūsu zīmols tiek saistīts tikai ar pārbaudītiem un uzticamiem auto.\n\nKlientiem šī atskaite sniedz nepārprotamus pierādījumus par auto faktisko vēsturi, un auto tirdzniecības nozarē tā kļūst par kvalitātes standartu, kas uzskatāmi demonstrē uzņēmuma atbildību un godprātību. Tas stiprina uzticēšanos, paaugstina jūsu piedāvājuma vērtību tirgū un atvieglo lēmuma pieņemšanu jebkurā darījuma veidā.",
   items: [
@@ -356,6 +358,7 @@ const PARTNER_EN: HomeFeatureBreakdownPackage = {
   newBadge: true,
   buttonText: "For partners",
   ctaHref: "/partneriem",
+  sampleReportHref: TP5_BUSINESS_SAMPLE_REPORT_HREF,
   goal:
     "Built for used-car dealers, so that before a purchase, trade-in appraisal or exchange deal you fully remove the risks of rolled-back mileage, hidden accidents and service intervals that were not followed properly.\n\nWith a PROVIN BUSINESS audit report you not only protect your company from buying losses, you also protect your reputation. Previous sellers often paid no attention to the car's history, deliberately concealed defects, or even rolled back the odometer reading. When you add such a car to your stock or accept it as a trade-in, the responsibility to the final buyer falls on your company. By checking every deal before it closes, you make sure your brand is associated only with verified, trustworthy cars.\n\nFor customers, this report provides unambiguous proof of the car's actual history, and in the car trade it becomes a standard of quality that visibly demonstrates the company's responsibility and integrity. It strengthens trust, raises the value of your offer in the market and makes the decision easier in any type of deal.",
   items: [
@@ -536,6 +539,7 @@ const PARTNER_DE: HomeFeatureBreakdownPackage = {
   newBadge: true,
   buttonText: "Für Händler",
   ctaHref: "/partneriem",
+  sampleReportHref: TP5_BUSINESS_SAMPLE_REPORT_HREF,
   goal:
     "Für Autohändler, damit Sie vor einem Ankauf, einer Inzahlungnahme oder einem Tausch die Risiken von manipuliertem Kilometerstand, verschwiegenen Unfallschäden und versäumten Wartungsintervallen ausschließen.\n\nMit einem PROVIN BUSINESS-Audit schützen Sie das Unternehmen vor Einkaufsverlusten und zugleich Ihren Ruf. Vorbesitzer haben die Historie oft ignoriert, Mängel bewusst verschwiegen oder den Kilometerstand zurückgedreht. Nehmen Sie ein solches Auto in den Bestand oder in Zahlung, liegt die Verantwortung gegenüber dem Endkunden bei Ihrem Unternehmen. Eine Prüfung vor jedem Abschluss sorgt dafür, dass Ihre Marke nur mit geprüften, vertrauenswürdigen Autos verbunden wird.\n\nFür Kunden ist der Bericht ein klarer Nachweis der tatsächlichen Historie. Im Handel wird er zu einem Qualitätsstandard, der Verantwortung und Sorgfalt sichtbar macht. Das stärkt das Vertrauen, hebt den Wert Ihres Angebots und erleichtert die Entscheidung bei jeder Art von Geschäft.",
   items: [
@@ -693,6 +697,7 @@ const PARTNER_RU: HomeFeatureBreakdownPackage = {
   newBadge: true,
   buttonText: "Для дилеров",
   ctaHref: "/partneriem",
+  sampleReportHref: TP5_BUSINESS_SAMPLE_REPORT_HREF,
   goal:
     "Решение для автодилеров: до закупки, приёма в трейд-ин или обмена убрать риски скрученного пробега, скрытых ДТП и пропущенных интервалов обслуживания.\n\nОтчёт PROVIN BUSINESS защищает компанию от убытков на закупке и одновременно бережёт репутацию. Прежние владельцы часто не следили за историей автомобиля, сознательно скрывали дефекты или даже скручивали пробег. Если такой автомобиль попадает в ваш сток или принимается в трейд-ин, ответственность перед конечным покупателем лежит на вашей компании. Проверка перед каждой сделкой связывает ваш бренд только с проверенными и надёжными машинами.\n\nДля клиента отчёт - убедительное подтверждение фактической истории. В торговле он становится стандартом качества и показывает ответственность компании. Это укрепляет доверие, повышает ценность предложения и упрощает решение в любой сделке.",
   items: [

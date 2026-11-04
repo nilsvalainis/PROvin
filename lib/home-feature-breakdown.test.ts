@@ -84,7 +84,7 @@ describe("pakalpojumi catalog", () => {
     expect(partner.newBadge).toBe(true);
     expect(partner.buttonText).toBe("Partneriem");
     expect(partner.ctaHref).toBe("/partneriem");
-    expect(partner.sampleReportHref).toBeUndefined();
+    expect(partner.sampleReportHref).toBe("/samples/provin-business-piemers.pdf");
     expect(partner.goal).toContain("apkopes intervāliem");
     expect(partner.items).toHaveLength(4);
   });
