@@ -1814,7 +1814,7 @@ button.pd-lv {
   background: rgba(10, 10, 12, 0.72);
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
 }
 .pd-ps-lbin {
   position: relative;
@@ -1863,10 +1863,31 @@ button.pd-lv {
   gap: 8px;
   margin-top: 10px;
 }
+/*
+ * Nils 04.11 (telefons, iOS 18): 3 kolonnās pogas ★ ‹ › × pārklājās ar numuru un bija par mazām pirkstam.
+ * Telefonā 2 kolonnas, pogas bildes apakšā pa visu platumu, 32 px.
+ */
 @media (max-width: 600px) {
   .pd-ps-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .pd-ps-acts {
+    top: auto;
+    right: 6px;
+    bottom: 6px;
+    left: 6px;
+    justify-content: flex-end;
     gap: 6px;
+  }
+  .pd-ps-acts button {
+    width: 32px;
+    height: 32px;
+    font-size: 15px;
+  }
+  .pd-ps-ck {
+    width: 28px;
+    height: 28px;
   }
 }
 

@@ -156,7 +156,7 @@ export function CabinetPhoneMapAndCard({
 }) {
   if (!inPlan && !cardHref) return null;
   return (
-    <div className="mb-3 flex flex-col gap-1" data-cabinet-phone-extras="">
+    <div className="mb-3 flex w-full basis-full flex-col gap-1" data-cabinet-phone-extras="">
       {inPlan ? (
         <div className="flex min-h-11 items-center justify-between gap-3 md:hidden">
           <span className="text-[15px] text-[var(--iriss-ink)]">Rādīt kartē</span>

@@ -707,7 +707,9 @@
 }
 @media (max-width: 700px) {
   .iriss-log-map-fs {
-    padding: 0;
+    /* Nils 04.11 (iOS): rīki un «Aizvērt» ne zem statusa joslas / «salas». */
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    background: #fff;
   }
   .iriss-log-map-fs-card {
     width: 100%;

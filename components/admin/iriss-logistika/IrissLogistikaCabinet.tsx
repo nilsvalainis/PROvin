@@ -373,7 +373,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
             href={order.auctionUrl || order.listingUrl}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex h-8 items-center rounded-full border border-[var(--iriss-line)] px-3 text-[12px] font-semibold"
+            className="inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-full border border-[var(--iriss-line)] px-3 text-[12px] font-semibold"
           >
             {order.source === "private" ? "Sludinājums" : "Atvērt izsolē"}
           </a>

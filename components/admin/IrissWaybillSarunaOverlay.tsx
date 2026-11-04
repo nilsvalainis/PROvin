@@ -151,7 +151,7 @@ export function IrissWaybillSarunaOverlay({
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="absolute top-16 right-4 flex h-[min(600px,calc(100dvh-6rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--iriss-line)] bg-white shadow-[0_20px_60px_rgba(0,0,0,.18)] max-md:top-12 max-md:right-3 max-md:left-3 max-md:w-auto"
+        className="absolute top-16 right-4 flex h-[min(600px,calc(100dvh-6rem))] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-[var(--iriss-line)] bg-white shadow-[0_20px_60px_rgba(0,0,0,.18)] max-md:top-[max(3rem,calc(env(safe-area-inset-top)+8px))] max-md:right-3 max-md:left-3 max-md:w-auto"
       >
         <header className="flex items-start justify-between gap-3 border-b border-[#ececf0] px-4 py-3.5">
           <div className="min-w-0">
