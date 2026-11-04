@@ -9,6 +9,6 @@ describe("public site header position", () => {
     const src = readFileSync(join(ROOT, "components/HeaderClient.tsx"), "utf8");
     expect(src).not.toMatch(/\bfixed\b/);
     expect(src).not.toMatch(/\bsticky\b/);
-    expect(src).toMatch(/<header className=\{`relative z-\[60\] isolate w-full \$\{headerSurface\}`\}>/);
+    expect(src).toMatch(/<header className=\{`provin-hdr relative z-\[60\] isolate w-full /);
   });
 });

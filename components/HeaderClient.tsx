@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { LogIn } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
@@ -16,6 +16,55 @@ import { AzvinAboutNavLink } from "@/components/demo/azvin/AzvinAboutNavLink";
 import { AZVIN_PUBLIC_PATH, isAzvinPublicPath } from "@/lib/azvin-public-path";
 import { B2bLocaleSwitcher } from "@/components/b2b/B2bLocaleSwitcher";
 
+const HEADER_LANGS = [
+  { code: "lv", name: "Latviešu" },
+  { code: "en", name: "English" },
+  { code: "ru", name: "Русский" },
+  { code: "de", name: "Deutsch" },
+] as const;
+
+/** Valodas izvēle «LV ⌄» (makets): datorā; telefonā valodas ir izvēlnes panelī. */
+function HeaderLangMenu({ locale, pathname, label }: { locale: string; pathname: string; label: string }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      if (ref.current && e.target instanceof Node && !ref.current.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  return (
+    <div ref={ref} className={`provin-hdr-lang${open ? " is-open" : ""}`}>
+      <button type="button" aria-haspopup="true" aria-expanded={open} aria-label={label} onClick={() => setOpen((v) => !v)}>
+        {locale.toUpperCase()}
+        <i aria-hidden />
+      </button>
+      <div className="provin-hdr-lang-menu" role="group" aria-label={label} hidden={!open}>
+        {HEADER_LANGS.map((l) => (
+          <Link
+            key={l.code}
+            href={pathname as never}
+            locale={l.code}
+            className={l.code === locale ? "is-on" : undefined}
+            onClick={() => setOpen(false)}
+          >
+            {l.name} <b>{l.code.toUpperCase()}</b>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Mājas navigācijas rindkopas kā `/#…` vai `/biezi-jautajumi`. */
 export function HeaderClient() {
   const pathname = usePathname() ?? "";
@@ -29,25 +78,14 @@ export function HeaderClient() {
   const tRail = useTranslations("SiteRail");
   const tMisc = useTranslations("Misc");
 
-  const isHome = normalizedPath === "/" || normalizedPath === "";
-  const isPakalpojumi = normalizedPath === "/pakalpojumi";
-  const isParMums = normalizedPath === "/par-mums";
-  const isBlogs = normalizedPath === "/blogs" || normalizedPath.startsWith("/blogs/");
-  const isFaqPage = normalizedPath === "/biezi-jautajumi";
-  const isVinCheck = normalizedPath === "/vin-koda-parbaude";
-  /** VIN dekoders: tāda pati galvene un izvēlne kā citām lapām, bet pašam saites izvēlnē nav. */
-  const isVinDecoder = normalizedPath === "/vin-dekoders";
-  const isPartneriem = normalizedPath === "/partneriem" || normalizedPath.startsWith("/partneriem/");
-  /** Tās pašas lapas kā kreisā slide — arī šeit navigācijas saraksts. */
+  /** Pilna navigācija visām publiskajām lapām (makets), izņemot partneru kontu, azvin un iekšējās plūsmas. */
   const showHomeNavRail =
-    isHome ||
-    normalizedPath === "/pasutit" ||
-    isFaqPage ||
-    isVinCheck ||
-    isVinDecoder ||
-    isPakalpojumi ||
-    isParMums ||
-    isBlogs;
+    (!isAzvinPublicPath(pathname) &&
+      !normalizedPath.startsWith("/partneriem/") &&
+      !normalizedPath.startsWith("/provin-select-pieteikums") &&
+      ["/papildinajums", "/view", "/demo", "/dev"].every(
+        (prefix) => normalizedPath !== prefix && !normalizedPath.startsWith(`${prefix}/`),
+      ));
 
   const isAzvinDemo = isAzvinPublicPath(pathname);
   /**
@@ -58,16 +96,6 @@ export function HeaderClient() {
   );
   const isDarkHeaderSurface = isAzvinDemo || isProvinSelectPieteikums || !isLightHeaderRoute;
   const headerChromeDark = isDarkHeaderSurface;
-
-  const headerSurface = isHome
-    ? "border-b border-transparent bg-transparent pt-[env(safe-area-inset-top,0px)] lg:border-white/[0.08] lg:bg-[#07080a]/96 lg:backdrop-blur-md lg:supports-[backdrop-filter]:bg-[#07080a]/92"
-    : isDarkHeaderSurface
-      ? "border-b border-white/[0.08] bg-[#07080a]/96 pt-[env(safe-area-inset-top,0px)] backdrop-blur-md supports-[backdrop-filter]:bg-[#07080a]/92"
-      : "border-b border-black/[0.06] bg-white/85 pt-[env(safe-area-inset-top,0px)] backdrop-blur-xl supports-[backdrop-filter]:bg-white/75";
-
-  const logoClass = headerChromeDark
-    ? "flex min-h-9 min-w-9 shrink-0 items-center text-[23.18px] font-bold tracking-tight text-white transition-colors hover:text-white/90 lg:min-h-0 lg:min-w-0 lg:text-[28.98px]"
-    : "flex min-h-9 min-w-9 shrink-0 items-center text-[23.18px] font-bold tracking-tight text-[#1d1d1f] transition-colors hover:text-provin-accent lg:min-h-0 lg:min-w-0 lg:text-[28.98px]";
 
   const navSections = useMemo(() => buildSiteRailSections(normalizedPath), [normalizedPath]);
 
@@ -82,9 +110,6 @@ export function HeaderClient() {
       : raw;
   };
 
-  const partnerChipClass = headerChromeDark
-    ? "inline-flex h-8 items-center gap-1.5 rounded-full border border-white/18 bg-transparent px-2.5 text-[0.68rem] font-semibold tracking-[0.02em] text-[#93c5fd] no-underline transition hover:border-white/28 hover:text-[#bfdbfe]"
-    : "inline-flex h-8 items-center gap-1.5 rounded-full border border-black/15 bg-transparent px-2.5 text-[0.68rem] font-semibold tracking-[0.02em] text-[#2563eb] no-underline transition hover:border-[#2563eb]/40";
 
   const navLabelWithHint = (labelKey: SiteRailLabelKey) => (
     <span className="inline-flex items-center gap-1">
@@ -93,9 +118,6 @@ export function HeaderClient() {
     </span>
   );
 
-  const navLinkInactive = headerChromeDark
-    ? "text-white/[0.88] hover:text-white"
-    : "text-[#1d1d1f]/80 hover:text-[#0066ff]";
 
   useEffect(() => {
     const onEsc = (e: KeyboardEvent) => {
@@ -122,56 +144,59 @@ export function HeaderClient() {
     setMobileMenuOpen(false);
   }, [pathname]);
 
-  const headerInnerClass =
-    "mx-auto flex min-h-[2.4rem] w-full min-w-0 max-w-none items-center gap-1.5 pl-[max(0.8rem,env(safe-area-inset-left,0px))] pr-[max(0.8rem,env(safe-area-inset-right,0px))] sm:min-h-9 lg:min-h-11 lg:gap-3 lg:pl-[max(1rem,env(safe-area-inset-left,0px))] lg:pr-[max(1rem,env(safe-area-inset-right,0px))]";
+
+  const centerNav = navSections.filter((s) => s.labelKey !== "b2b");
+  const partnerLabel = tRail("b2b");
 
   return (
-    <header className={`relative z-[60] isolate w-full ${headerSurface}`}>
-      <div className={headerInnerClass}>
+    <header className={`provin-hdr relative z-[60] isolate w-full ${headerChromeDark ? "provin-hdr--dark" : "provin-hdr--light"}`}>
+      <div className="provin-hdr-in">
         {isAzvinDemo ? (
-          <Link href={AZVIN_PUBLIC_PATH} className={logoClass} aria-label="AZ.VIN">
-            <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>AZ.</span>
-            <span className="text-provin-accent">VIN</span>
+          <Link href={AZVIN_PUBLIC_PATH} className="provin-hdr-logo" aria-label="AZ.VIN">
+            <span>AZ.</span>
+            <b>VIN</b>
           </Link>
         ) : (
-          <Link href="/" className={logoClass} aria-label="PROVIN">
-            <span className={headerChromeDark ? "text-white" : "text-[#1d1d1f]"}>PRO</span>
-            <span className="text-provin-accent">VIN</span>
+          <Link href="/" className="provin-hdr-logo" aria-label="PROVIN">
+            <span>PRO</span>
+            <b>VIN</b>
           </Link>
         )}
 
-        <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 lg:gap-3">
-          {showHomeNavRail ? (
-            <nav
-              className="relative z-[52] mr-1 ml-auto hidden min-w-0 flex-wrap items-center justify-end gap-x-4 lg:flex xl:gap-x-6"
-              aria-label={tRail("navAria")}
-            >
-              {navSections.map((s) => (
+        {showHomeNavRail ? (
+          <nav className="provin-hdr-nav" aria-label={tRail("navAria")}>
+            {centerNav.map((s) => {
+              const active = normalizeSitePath(s.href) === normalizedPath;
+              return (
                 <Link
                   key={`${s.labelKey}:${s.href}`}
                   href={s.href}
                   prefetch={false}
-                  className={
-                    s.labelKey === "b2b"
-                      ? `relative z-[52] ${partnerChipClass}`
-                      : `whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.18em] no-underline transition-colors ${navLinkInactive}`
-                  }
-                  aria-label={s.labelKey === "b2b" ? tRail("b2bLoginAria") : undefined}
+                  aria-current={active ? "page" : undefined}
+                  className={active ? "is-active" : undefined}
                 >
-                  {navLabelWithHint(s.labelKey)}
+                  {tRail(s.labelKey)}
                 </Link>
-              ))}
-            </nav>
-          ) : null}
+              );
+            })}
+          </nav>
+        ) : null}
+
+        <div className="provin-hdr-r">
+          {isAzvinDemo ? (
+            <>
+              <AzvinAboutNavLink className="relative z-[52] mr-1 hidden whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.18em] no-underline transition-colors sm:inline-flex text-white/[0.88] hover:text-white" />
+              <AzvinLocaleSwitcher dark={headerChromeDark} />
+            </>
+          ) : showHomeNavRail ? (
+            <HeaderLangMenu locale={locale} pathname={pathname} label={tHeader("langGroupAria")} />
+          ) : (
+            <B2bLocaleSwitcher dark={headerChromeDark} compact />
+          )}
 
           {showHomeNavRail ? (
-            <Link
-              href="/partneriem"
-              prefetch={false}
-              className={`relative z-[52] lg:hidden ${partnerChipClass}`}
-              aria-label={tRail("b2bLoginAria")}
-            >
-              {navLabelWithHint("b2b")}
+            <Link href="/partneriem" prefetch={false} className="provin-hdr-partner provin-press" aria-label={tRail("b2bLoginAria")}>
+              {partnerLabel} <span aria-hidden>→</span>
             </Link>
           ) : null}
 
@@ -190,21 +215,6 @@ export function HeaderClient() {
               <i aria-hidden />
             </button>
           ) : null}
-
-          {isAzvinDemo ? (
-            <>
-              <AzvinAboutNavLink
-                className={`relative z-[52] mr-1 hidden whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.18em] no-underline transition-colors sm:inline-flex ${navLinkInactive}`}
-              />
-              <AzvinLocaleSwitcher dark={headerChromeDark} />
-            </>
-          ) : isPartneriem ? (
-            <B2bLocaleSwitcher dark={headerChromeDark} compact />
-          ) : (
-            <div className={showHomeNavRail ? "hidden lg:inline-flex" : "inline-flex"}>
-              <B2bLocaleSwitcher dark={headerChromeDark} compact />
-            </div>
-          )}
         </div>
       </div>
 

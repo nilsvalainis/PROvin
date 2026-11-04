@@ -18,7 +18,7 @@ export async function PageBreadcrumbs({ locale, items }: Props) {
       <JsonLd data={jsonLd} />
       <nav
         aria-label={t("navAria")}
-        className="mx-auto w-full max-w-[80rem] px-[max(1rem,env(safe-area-inset-left,0px))] pt-5 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:pt-6 lg:px-8"
+        className="mx-auto w-full max-w-[calc(75rem+48px)] px-[max(1rem,env(safe-area-inset-left,0px))] pt-5 pr-[max(1rem,env(safe-area-inset-right,0px))] sm:px-6 sm:pt-6"
       >
         <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
           {items.map((item, index) => {

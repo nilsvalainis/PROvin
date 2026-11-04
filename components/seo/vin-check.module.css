@@ -1,6 +1,6 @@
 .wrap {
   width: 100%;
-  max-width: 75rem;
+  max-width: calc(75rem + 48px);
   margin: 0 auto;
   padding: 1.25rem max(16px, env(safe-area-inset-right, 0px)) 4rem max(16px, env(safe-area-inset-left, 0px));
 }
