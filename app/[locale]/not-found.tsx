@@ -1,5 +1,7 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { BlogPageShell } from "@/components/blog/BlogPageShell";
+import { Footer } from "@/components/Footer";
 
 const pill =
   "provin-press inline-flex min-h-[44px] items-center rounded-full border border-white/20 px-[18px] text-[14px] font-bold text-white no-underline transition hover:bg-white hover:text-[#0a0a0a]";
@@ -7,6 +9,7 @@ const pill =
 export default function LocaleNotFound() {
   const t = useTranslations("Misc");
   return (
+    <BlogPageShell>
     <section className="mx-auto flex min-h-[60vh] max-w-2xl flex-col items-center justify-center px-6 py-24 text-center">
       <p
         aria-hidden
@@ -23,10 +26,16 @@ export default function LocaleNotFound() {
         <Link href="/pakalpojumi" className={pill}>
           {t("notFoundLinkServices")}
         </Link>
-        <Link href="/#bezmaksas-novertejums" className={pill}>
+        <Link href="/#bezmaksas-vin" className={pill}>
           {t("notFoundLinkFreeCheck")}
         </Link>
       </div>
     </section>
+      <div id="site-content" className="min-w-0 bg-transparent pb-0 text-white home-body-ink">
+        <section className="demo-design-dir__section bg-transparent pb-0">
+          <Footer />
+        </section>
+      </div>
+    </BlogPageShell>
   );
 }

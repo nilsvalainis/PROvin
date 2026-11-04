@@ -453,6 +453,7 @@
       }
     ],
     "landingTermsLink": "Partner Terms",
-    "heroIncludedLink": "What's included"
+    "heroIncludedLink": "What's included",
+    "loginEmailPlaceholder": "name@company.com"
   }
 }

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { buildPublicPageMetadata } from "@/lib/seo-public-metadata";
 import { BlogIndex } from "@/components/blog/BlogIndex";
+import { PageBreadcrumbs } from "@/components/seo/PageBreadcrumbs";
 import { BlogPageShell } from "@/components/blog/BlogPageShell";
 import { Footer } from "@/components/Footer";
 import { JsonLd } from "@/components/seo/JsonLd";
@@ -29,6 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function BlogsPage({ params }: Props) {
   const { locale } = await params;
   const posts = await listBlogPosts();
+  const tCrumb = await getTranslations({ locale, namespace: "Breadcrumbs" });
   const ld = buildBlogIndexJsonLd(
     locale,
     posts.map((p) => ({ slug: p.slug, title: resolveBlogLocale(p, locale).content.title, publishedAt: p.publishedAt })),
@@ -36,6 +38,13 @@ export default async function BlogsPage({ params }: Props) {
   return (
     <BlogPageShell>
       <JsonLd data={ld} />
+      <PageBreadcrumbs
+        locale={locale}
+        items={[
+          { name: tCrumb("home"), path: "/" },
+          { name: tCrumb("blogs"), path: "/blogs" },
+        ]}
+      />
       <BlogIndex locale={locale} />
       <div id="site-content" className="min-w-0 bg-transparent pb-0 text-white home-body-ink">
         <Footer />

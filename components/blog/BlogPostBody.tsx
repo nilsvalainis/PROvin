@@ -27,7 +27,7 @@ export function BlogPostBody({ blocks }: { blocks: BlogBlock[] }) {
             <h2
               key={key}
               id={id}
-              className="scroll-mt-5 mt-4 text-balance text-[1.15rem] font-semibold tracking-tight text-white/[0.96] sm:mt-6 sm:text-[1.35rem]"
+              className="scroll-mt-5 mt-4 text-[1.25rem] font-bold leading-[1.3] tracking-[-0.015em] text-white sm:mt-6 sm:text-[1.5rem]"
             >
               <BlogInlineText text={block.text} />
             </h2>

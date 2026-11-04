@@ -2815,7 +2815,7 @@ body.provin-menu-open .cookie-consent-panel {
   overflow-x: clip;
 }
 .b2b-v3-col {
-  padding-top: calc(4.5rem + env(safe-area-inset-top, 0px));
+  padding-top: 1.75rem;
 }
 .b2b-h {
   display: grid;
@@ -2996,7 +2996,7 @@ body.provin-menu-open .cookie-consent-panel {
 }
 @media (max-width: 760px) {
   .b2b-v3-col {
-    padding-top: calc(3.6rem + env(safe-area-inset-top, 0px));
+    padding-top: 1.25rem;
   }
   .b2b-h {
     align-content: start;
