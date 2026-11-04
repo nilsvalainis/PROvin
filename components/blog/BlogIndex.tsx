@@ -15,9 +15,9 @@ export async function BlogIndex({ locale }: Props) {
   const posts = await listBlogPosts();
 
   return (
-    <section id="blogs" className="home-body-ink relative scroll-mt-16 bg-transparent px-4 pb-16 pt-10 sm:pb-20 sm:pt-12">
-      <div className="demo-design-dir__shell relative mx-auto w-full max-w-[min(100%,80rem)] px-1 sm:px-2">
-        <header className="mx-auto max-w-[min(42.5rem,calc(100vw-2rem))] text-center">
+    <section id="blogs" className="home-body-ink relative scroll-mt-16 bg-transparent pb-16 pt-10 sm:pb-20 sm:pt-12">
+      <div className="relative mx-auto w-full max-w-[calc(75rem+48px)] px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:px-6">
+        <header className="mx-auto max-w-[56rem] text-center">
           <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#5c9dff]">
             {t("sermonTitle")}
           </p>
@@ -37,7 +37,7 @@ export async function BlogIndex({ locale }: Props) {
         </header>
 
         <BlogRowsFx>
-          <ul className="mx-auto mt-16 flex max-w-[75rem] list-none flex-col gap-16 p-0 sm:mt-24 sm:gap-[110px]">
+          <ul className="mx-auto mt-16 flex list-none flex-col gap-16 p-0 sm:mt-24 sm:gap-[110px]">
             {posts.map((post, i) => {
               const { content } = resolveBlogLocale(post, locale);
               return (

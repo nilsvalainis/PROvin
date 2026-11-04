@@ -147,7 +147,8 @@ export function B2bPartnerLogin() {
             }}
             onInvalid={emailNative.onInvalid}
             onInput={emailNative.onInput}
-            autoComplete="username"
+            placeholder={t("loginEmailPlaceholder")}
+          autoComplete="username"
             inputMode="email"
             autoCapitalize="none"
             autoCorrect="off"
@@ -239,6 +240,7 @@ export function B2bPartnerLogin() {
             setError("");
             setUnverified(false);
           }}
+          placeholder="••••••••"
           autoComplete="current-password"
           enterKeyHint="go"
           aria-label={t("passwordAria")}

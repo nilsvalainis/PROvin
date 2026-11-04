@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
+import inputStyles from "./vin-input.module.css";
 import { isPlausibleListingUrl, isValidPlateNumber, normalizePlateNumber } from "@/lib/order-field-validation";
 import { freeEvalPrefillHref } from "@/lib/free-eval-prefill";
 import { heroPrefillHref, type HeroPrefillPlan } from "@/lib/hero-prefill";
@@ -12,6 +13,10 @@ import { decodeVinModel, type VinModelInfo } from "@/lib/vin-model-codes";
 export type VinDecoderLabels = {
   inputLabel: string;
   inputPlaceholder: string;
+  modeVin: string;
+  modePlate: string;
+  vinPlaceholder: string;
+  platePlaceholder: string;
   submit: string;
   errLength: string;
   errChars: string;
@@ -130,7 +135,6 @@ function producedText(m: VinModelInfo, labels: VinDecoderLabels): string | null 
   return m.produced.to ? `${m.produced.from}-${m.produced.to}` : `${m.produced.from}-${labels.producedOngoing}`;
 }
 
-const PRIMARY_BTN = `${tp5Styles.liquidCta} !w-auto !min-h-[52px] shrink-0 !px-7 !py-0`;
 const GHOST_BTN =
   "inline-flex min-h-[48px] shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/[0.04] px-5 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-white/85 no-underline transition hover:border-white/35 hover:bg-white/[0.08] hover:text-white";
 const CARD = "rounded-[20px] border border-white/[0.09] bg-gradient-to-b from-white/[0.05] to-white/[0.015]";
@@ -179,6 +183,7 @@ const SECTION_TITLE = "text-[12px] font-bold uppercase tracking-[0.14em] text-zi
  */
 export function VinDecoderTool({ locale, labels, home, onAudit, onListing, autoFocus, initialVin, source = "decoder" }: Props) {
   const [value, setValue] = useState(initialVin ?? "");
+  const [mode, setMode] = useState<"vin" | "plate">("vin");
   const [result, setResult] = useState<VinDecodeResult | null>(() => (initialVin ? decodeVin(initialVin) : null));
   const [remote, setRemote] = useState<Remote>({ state: "idle" });
   const [plateError, setPlateError] = useState(false);
@@ -303,35 +308,64 @@ export function VinDecoderTool({ locale, labels, home, onAudit, onListing, autoF
   return (
     <div className="flex flex-col gap-5">
       <form
-        className="flex flex-col gap-2.5 sm:flex-row sm:items-stretch"
+        className={`${inputStyles.box}${mode === "plate" ? ` ${inputStyles.isPlate}` : ""}`}
         onSubmit={(event) => {
           event.preventDefault();
           void submit(value, src);
         }}
       >
-        <label className="block min-w-0 flex-1">
+        <div className={inputStyles.toggle} role="group" aria-label={labels.inputLabel}>
+          <i className={inputStyles.knob} aria-hidden />
+          <button type="button" aria-pressed={mode === "vin"} onClick={() => setMode("vin")}>
+            {labels.modeVin}
+          </button>
+          <button type="button" aria-pressed={mode === "plate"} onClick={() => setMode("plate")}>
+            {labels.modePlate}
+          </button>
+        </div>
+        <label className={inputStyles.field}>
+          <span className={inputStyles.euStrip} aria-hidden>
+            <svg viewBox="0 0 24 24">
+              {Array.from({ length: 12 }, (_, i) => {
+                const a = (i / 12) * Math.PI * 2;
+                return <circle key={i} cx={12 + Math.cos(a) * 8} cy={12 + Math.sin(a) * 8} r={1.3} fill="#ffcc00" />;
+              })}
+            </svg>
+            <b>LV</b>
+          </span>
           <span className="sr-only">{labels.inputLabel}</span>
           <input
             ref={inputRef}
             value={value}
-            onChange={(event) => setValue(event.target.value)}
-            placeholder={labels.inputPlaceholder}
+            onChange={(event) => {
+              const next = event.target.value;
+              setValue(next);
+              const compact = next.replace(/[\s-]/g, "");
+              if (compact.length >= 10) setMode("vin");
+              else if (compact.length > 0 && compact.length <= 7 && /\d/.test(compact) && /[a-z]/i.test(compact)) setMode("plate");
+            }}
+            placeholder={mode === "plate" ? labels.platePlaceholder : labels.vinPlaceholder}
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
             maxLength={24}
             aria-invalid={error ? true : undefined}
             aria-describedby={error ? "vin-decoder-error" : undefined}
-            className={`${tp5Styles.inlineInput} !min-h-[52px] font-mono uppercase tracking-[0.08em] placeholder:font-sans placeholder:normal-case placeholder:tracking-normal`}
+            className={inputStyles.input}
           />
+          <button type="submit" className={inputStyles.go}>
+            {labels.submit} <span aria-hidden>→</span>
+          </button>
         </label>
-        <button type="submit" className={PRIMARY_BTN}>
-          <Primary>{labels.submit}</Primary>
+        <button type="submit" className={`${inputStyles.go} ${inputStyles.goMobile}`}>
+          {labels.submit} <span aria-hidden>→</span>
         </button>
         {showNext ? (
-          <button type="button" onClick={reset} className={`${GHOST_BTN} sm:!min-h-[52px]`}>
-            {labels.newCheck}
-          </button>
+          <div className={inputStyles.under}>
+            <button type="button" onClick={reset} className={inputStyles.newCheck}>
+              {labels.newCheck} ↺
+            </button>
+          </div>
         ) : null}
       </form>
       {error ? (

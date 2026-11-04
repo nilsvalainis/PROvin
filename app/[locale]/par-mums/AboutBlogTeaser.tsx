@@ -10,7 +10,7 @@ export async function AboutBlogTeaser({ locale }: { locale: string }) {
   const posts = (await listBlogPosts()).slice(0, 2);
   if (posts.length === 0) return null;
   return (
-    <section className="mx-auto mt-24 w-full max-w-[75rem] px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:mt-28 lg:px-10">
+    <section className="mx-auto mt-24 w-full max-w-[calc(75rem+48px)] px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:mt-28 sm:px-6">
       <div className="flex items-baseline justify-between">
         <h2 className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-[#5c9dff]">{t("fromBlog")}</h2>
         <Link href="/blogs" className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#5c9dff] no-underline hover:text-white">

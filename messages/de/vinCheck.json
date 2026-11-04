@@ -106,7 +106,11 @@
     "lockedOverlayBody": "Für dieses Auto öffnen wir das im PROVIN Audit - 24-72 Std., mit Beratung.",
     "ctaUnlock": "Mit PROVIN Audit öffnen · 99,99 €",
     "listingInlineLead": "Oder kostenlos:",
-    "lockedOverlayTitle": "Kilometerstand, Unfälle, Servicehistorie, Auktionsfotos"
+    "lockedOverlayTitle": "Kilometerstand, Unfälle, Servicehistorie, Auktionsfotos",
+    "modeVin": "FIN",
+    "modePlate": "Kennzeichen",
+    "vinPlaceholder": "WVWZZZ3CZJE123456",
+    "platePlaceholder": "AB-1234"
   },
   "HomeFreeTools": {
     "title": "Drei Dinge, die Sie",

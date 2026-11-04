@@ -130,7 +130,7 @@ export function AboutB41({ title, lead, social, duelA, duelB, blocks, videoId, v
     s.split(/(\s+)/).map((w, i) => (/\s+/.test(w) ? w : <span key={i} className="about-w">{w}</span>));
 
   return (
-    <div ref={root} className="about-b41 mx-auto w-full max-w-[75rem] px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] lg:px-10">
+    <div ref={root} className="about-b41 mx-auto w-full max-w-[calc(75rem+48px)] px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:px-6">
       <header className="flex flex-col items-center pt-6 text-center sm:pt-8">
         <h1 className="text-[clamp(2.75rem,6vw,4.75rem)] font-extrabold leading-none tracking-[-0.045em] text-white">
           {renderProvinText(title, { proAndSuffixClassName: "text-white" })}

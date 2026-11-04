@@ -37,7 +37,7 @@ export async function B2bPartnerLandingInfo({ locale }: { locale: string }) {
   return (
     <section
       aria-labelledby={SHOW_PACKS ? "b2b-packs-heading" : "b2b-steps-heading"}
-      className={`${homeFooterColumnClass} relative z-[3] pb-12 pt-24 lg:pb-16 lg:pt-28`}
+      className={`${homeFooterColumnClass} relative z-[3] pb-12 pt-2 lg:pb-16 lg:pt-4`}
     >
       <JsonLd data={faqJsonLd} />
 

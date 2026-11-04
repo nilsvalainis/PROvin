@@ -158,7 +158,7 @@ export function BlogComments({ slug, labels }: Props) {
         <button
           type="submit"
           disabled={pending}
-          className="mt-1 inline-flex min-h-11 w-fit items-center justify-center border border-provin-accent/50 bg-provin-accent/15 px-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-provin-accent/25 disabled:opacity-60"
+          className="provin-press mt-1 inline-flex min-h-[46px] w-fit items-center justify-center rounded-full border border-white/20 bg-white/[0.05] px-6 text-[12px] font-semibold uppercase tracking-[0.1em] text-white/90 transition hover:border-white/50 disabled:opacity-60"
         >
           {pending ? labels.submitting : labels.submit}
         </button>

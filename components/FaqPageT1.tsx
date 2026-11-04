@@ -19,7 +19,7 @@ export function FaqPageT1({ title, items, links }: Props) {
 
   return (
     <section id="biezi-jautajumi" className="scroll-mt-16 bg-transparent pb-6 pt-6 sm:pt-8" aria-labelledby="faq-heading">
-      <div className="mx-auto grid w-full max-w-[75rem] gap-7 px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16 lg:px-10">
+      <div className="mx-auto grid w-full max-w-[calc(75rem+48px)] gap-7 px-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] sm:px-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
         <aside className="lg:sticky lg:top-6 lg:self-start">
           <h1 id="faq-heading" className="text-[28px] font-extrabold leading-[1.12] tracking-[-0.03em] text-white [text-wrap:balance] sm:text-[30px]">
             {title}

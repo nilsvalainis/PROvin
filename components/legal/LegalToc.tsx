@@ -41,7 +41,7 @@ export function LegalToc({ items, label }: { items: LegalTocItem[]; label: strin
         <p className={styles.tocLabel}>{label}</p>
         <TocNav items={items} active={active} />
       </div>
-      <details className={`${styles.tocMobile} ${styles.mobileOnly}`}>
+      <details open className={`${styles.tocMobile} ${styles.mobileOnly}`}>
         <summary>
           <span className={styles.tocLabel}>{label}</span>
         </summary>

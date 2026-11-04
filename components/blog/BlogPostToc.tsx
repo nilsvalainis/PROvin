@@ -59,7 +59,7 @@ export function BlogPostToc({ items, label }: { items: BlogTocItem[]; label: str
             <p className={styles.tocLabel}>{label}</p>
             <Nav items={items} active={active} />
           </div>
-          <details className={`${styles.tocMobile} ${styles.mobileOnly}`}>
+          <details open className={`${styles.tocMobile} ${styles.mobileOnly}`}>
             <summary>
               <span className={styles.tocLabel}>{label}</span>
             </summary>

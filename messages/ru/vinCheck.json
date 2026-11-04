@@ -106,7 +106,11 @@
     "lockedOverlayBody": "Откроем для этого авто в аудите PROVIN - 24-72 ч, с консультацией.",
     "ctaUnlock": "Открыть с аудитом PROVIN · 99,99 €",
     "listingInlineLead": "Или бесплатно:",
-    "lockedOverlayTitle": "Пробег, ДТП, сервисная история, фото с аукционов"
+    "lockedOverlayTitle": "Пробег, ДТП, сервисная история, фото с аукционов",
+    "modeVin": "VIN",
+    "modePlate": "Номер",
+    "vinPlaceholder": "WVWZZZ3CZJE123456",
+    "platePlaceholder": "AB-1234"
   },
   "HomeFreeTools": {
     "title": "Три вещи, которые можно сделать",

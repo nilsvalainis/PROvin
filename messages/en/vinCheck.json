@@ -106,7 +106,11 @@
     "lockedOverlayBody": "We open this for your car in the PROVIN audit - 24-72 h, with a consultation.",
     "ctaUnlock": "Unlock with PROVIN audit · €99.99",
     "listingInlineLead": "Or for free:",
-    "lockedOverlayTitle": "Mileage, accidents, service history, auction photos"
+    "lockedOverlayTitle": "Mileage, accidents, service history, auction photos",
+    "modeVin": "VIN",
+    "modePlate": "Plate",
+    "vinPlaceholder": "WVWZZZ3CZJE123456",
+    "platePlaceholder": "AB-1234"
   },
   "HomeFreeTools": {
     "title": "Three things you can do",

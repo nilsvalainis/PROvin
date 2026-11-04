@@ -106,7 +106,11 @@
     "lockedOverlayBody": "Šim auto atvērsim PROVIN auditā - 24-72 h, ar konsultāciju.",
     "ctaUnlock": "Atvērt ar PROVIN auditu · 99,99 €",
     "listingInlineLead": "Vai bez maksas:",
-    "lockedOverlayTitle": "Nobraukums, negadījumi, servisa vēsture, izsoļu foto"
+    "lockedOverlayTitle": "Nobraukums, negadījumi, servisa vēsture, izsoļu foto",
+    "modeVin": "VIN",
+    "modePlate": "Numurzīme",
+    "vinPlaceholder": "WVWZZZ3CZJE123456",
+    "platePlaceholder": "AB-1234"
   },
   "HomeFreeTools": {
     "title": "Trīs lietas, ko vari izdarīt",
