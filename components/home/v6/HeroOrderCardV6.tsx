@@ -45,6 +45,15 @@ function WhatsAppIcon() {
   );
 }
 
+function ShieldIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z" />
+      <path d="M9 12l2 2 4-4" />
+    </svg>
+  );
+}
+
 function PhoneIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -167,6 +176,12 @@ export function HeroOrderCardV6({
                   {id === "dealer" ? <i className={styles.newBadge}>{uiCopy.newBadge}</i> : null}
                 </b>
                 <small>{opt?.sub ?? s.description}</small>
+                {id === "dealer" ? (
+                  <span className={styles.guarantee}>
+                    <ShieldIcon />
+                    {copy.guaranteeShort}
+                  </span>
+                ) : null}
               </span>
               <em>{s.price}</em>
             </button>
@@ -281,6 +296,12 @@ export function HeroOrderCardV6({
               <span className={tp5Styles.liquidCtaLabel}>{getTp5MobileCtaLabel(service, false)}</span>
             </button>
           </div>
+          {activeId === "dealer" ? (
+            <p className={styles.guaranteeNote}>
+              <ShieldIcon />
+              {copy.guaranteeLong}
+            </p>
+          ) : null}
           {sample ? (
             <p className={styles.links}>
               <a href={sample} target="_blank" rel="noopener noreferrer" onClick={() => recordSampleReportClick()}>

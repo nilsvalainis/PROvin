@@ -65,7 +65,6 @@
     "modelHint": "Das Modell stammt aus dem Herstellercode in der FIN. Ein Code kann mehrere Modelle derselben Plattform umfassen, daher werden alle genannt.",
     "classSuffix": "-Klasse",
     "coupeCabrio": "Coupé / Cabrio",
-    "ctaAudit": "Audit für dieses Auto bestellen · 99,99 €",
     "regions": {
       "africa": "Afrika",
       "asia": "Asien",
@@ -98,17 +97,16 @@
     "fromRegistry": "Aus dem lettischen Register",
     "fromVin": "Aus der VIN",
     "badgeDecoded": "VIN entschlüsselt",
-    "nextListingTitle": "Inserat hinzufügen",
-    "nextListingBody": "Link einfügen - wir prüfen Beschreibung, Fotos und Widersprüche kostenlos. {q} wird mitgeschickt.",
     "listingPlaceholder": "Inserat-Link (ss.lv, mobile.de, ...)",
     "listingSubmit": "Senden",
     "listingInvalid": "Bitte den vollständigen Link einfügen, z. B. https://www.mobile.de/...",
-    "nextAuditTitle": "Volle Historie: PROVIN Audit",
-    "nextAuditBody": "Kilometerstand, Unfälle, Servicehistorie, Auktionsfotos und Schwachstellen des Modells. Bericht in 24-72 h.",
     "lockedItems": "Kilometerhistorie|Unfälle und Schäden|Auktionsfotos|Servicehistorie beim Händler|Versicherungsdaten",
-    "lockedSuffix": "- nur im Audit sichtbar",
     "vinSourceLine": "Quellen: VIN-Struktur (ISO 3779), Modellcodes der Hersteller. Nur zur Information.",
-    "newCheck": "Anderes Auto"
+    "newCheck": "Anderes Auto",
+    "lockedOverlayBody": "Für dieses Auto öffnen wir das im PROVIN Audit - 24-72 Std., mit Beratung.",
+    "ctaUnlock": "Mit PROVIN Audit öffnen · 99,99 €",
+    "listingInlineLead": "Oder kostenlos:",
+    "lockedOverlayTitle": "Kilometerstand, Unfälle, Servicehistorie, Auktionsfotos"
   },
   "HomeFreeTools": {
     "title": "Drei Dinge, die Sie",

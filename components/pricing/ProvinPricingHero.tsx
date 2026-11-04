@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Link } from "@/i18n/navigation";
 import { useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
@@ -39,6 +40,29 @@ function HeroSearchParamsSync({ onChange }: { onChange: (params: URLSearchParams
     onChange(new URLSearchParams(searchParams.toString()));
   }, [searchParams, onChange]);
   return null;
+}
+
+/** Telefonā «Atskaites piemērs» ved uz paketes sadaļu (dīlera dati - zemāk šajā lapā). */
+const HERO_SAMPLE_TARGET: Partial<Record<Tp5MobileServiceId, string>> = {
+  audits: "/pakalpojumi#paraugi",
+  mini: "/pakalpojumi#pakalpojums-mini",
+  dealer: "#dilera-dati",
+};
+
+/** Lapas enkurs - parasta saite; cita lapa - next-intl `Link` (valodas prefikss). */
+function PillLink({ href, className, children }: { href: string; className: string; children: ReactNode }) {
+  if (href.startsWith("#")) {
+    return (
+      <a href={href} className={className}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
 }
 
 type Props = {
@@ -80,7 +104,8 @@ export function ProvinPricingHero({
   const [loading, setLoading] = useState(false);
   const [miniConfirm, setMiniConfirm] = useState<MiniCsddModalVariant | null>(null);
   const [emailConfirmPlan, setEmailConfirmPlan] = useState<TestPricingPlanId | null>(null);
-  const heroCopy = getTp5HeroCopy(locale, "audits");
+  const heroCopy = getTp5HeroCopy(locale, activeId);
+  const isDealer = activeId === "dealer";
   const v6 = getHomeV6HeroCopy(locale);
 
   const cancelled = searchParams.get("atcelts") === "1";
@@ -263,7 +288,7 @@ export function ProvinPricingHero({
         <div className={heroStyles.inner}>
           {cancelled ? <p className={`${styles.cancelNote} ${heroStyles.cancel}`}>{uiCopy.cancelNote}</p> : null}
           <div className={heroStyles.copy}>
-            <h1 id={desktopTitleId} className={heroStyles.title}>
+            <h1 key={isDealer ? "dealer" : "audit"} id={desktopTitleId} className={heroStyles.title}>
               {titleWords.map((word, i) => (
                 <span key={`${word}-${i}`} className={heroStyles.word} style={{ "--d": i } as CSSProperties}>
                   {word}{" "}
@@ -274,7 +299,8 @@ export function ProvinPricingHero({
               </em>
             </h1>
             <p className={`${heroStyles.lead}${leadOpen ? ` ${heroStyles.leadOpen}` : ""}`}>
-              {v6.leadFirst} <span className={heroStyles.leadRest}>{v6.leadRest}</span>{" "}
+              {isDealer ? v6.dealerLeadFirst : v6.leadFirst}{" "}
+              <span className={heroStyles.leadRest}>{isDealer ? v6.dealerLeadRest : v6.leadRest}</span>{" "}
               {leadOpen ? null : (
                 <button type="button" className={heroStyles.readMore} onClick={() => setLeadOpen(true)}>
                   {v6.readMore}
@@ -299,10 +325,14 @@ export function ProvinPricingHero({
               onListingUrlChange={setListingUrl}
               onSubmit={submitCheckoutForActive}
             />
-            <a href="#segums" className={heroStyles.incLink}>
-              {v6.includedLink}
-              <i aria-hidden />
-            </a>
+            <div className={heroStyles.pills}>
+              <PillLink href={HERO_SAMPLE_TARGET[activeId] ?? HERO_SAMPLE_TARGET.audits!} className={`${heroStyles.pill} ${heroStyles.pillSample}`}>
+                📄 {v6.samplePill}
+              </PillLink>
+              <PillLink href={isDealer ? "/pakalpojumi#pakalpojums-dealer" : "#segums"} className={heroStyles.pill}>
+                {v6.includedPill} ↓
+              </PillLink>
+            </div>
           </div>
         </div>
       </section>

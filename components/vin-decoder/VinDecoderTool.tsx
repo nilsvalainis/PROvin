@@ -37,23 +37,21 @@ export type VinDecoderLabels = {
   /** Mercedes "-klase" un "kupeja / kabriolets" lokalizācija. */
   classSuffix: string;
   coupeCabrio: string;
-  ctaAudit: string;
   resultKicker: string;
   fromRegistry: string;
   fromVin: string;
   badgeDecoded: string;
   /** "{vin11}" = pirmās 11 VIN zīmes. */
-  nextListingTitle: string;
   /** "{q}" = numurzīme vai VIN. */
-  nextListingBody: string;
   listingPlaceholder: string;
   listingSubmit: string;
   listingInvalid: string;
-  nextAuditTitle: string;
-  nextAuditBody: string;
   /** Slēgtās rindas, atdalītas ar "|". */
   lockedItems: string;
-  lockedSuffix: string;
+  lockedOverlayTitle: string;
+  lockedOverlayBody: string;
+  ctaUnlock: string;
+  listingInlineLead: string;
   vinSourceLine: string;
   newCheck: string;
   regions: Record<VinRegion, string>;
@@ -414,18 +412,47 @@ export function VinDecoderTool({ locale, labels, home, onAudit, onListing, autoF
           ) : null}
 
           {showNext ? (
-            <div className="grid gap-4 border-t border-[#262a36] pt-6 lg:grid-cols-2">
+            <div className="flex flex-col gap-4 border-t border-[#262a36] pt-6">
+              {/* Aizslēgtais priekšskatījums (makets A3): audita lauki izplūduši, virsū viena poga. */}
+              <div className="relative overflow-hidden rounded-2xl border border-[#262a36]">
+                <div aria-hidden className="grid select-none grid-cols-2 gap-3 p-4 opacity-80 blur-[5px] sm:grid-cols-3 sm:p-5">
+                  {locked.concat(locked.slice(0, Math.max(0, 6 - locked.length))).slice(0, 6).map((item, i) => (
+                    <div key={`${item}-${i}`} className="h-[58px] rounded-xl bg-gradient-to-r from-white/[0.14] to-white/[0.05] p-2.5">
+                      <span className="block h-2 w-3/5 rounded bg-white/20" />
+                      <span className="mt-2.5 block h-3 w-4/5 rounded bg-white/30" />
+                    </div>
+                  ))}
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-[#050608]/20 to-[#050608]/80 p-4 text-center">
+                  <div className="flex max-w-[34rem] flex-col items-center gap-2">
+                    <p className="text-balance text-[16px] font-semibold leading-snug text-zinc-50 sm:text-[17px]">
+                      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden className="mr-1.5 inline-block h-4 w-4 -translate-y-px align-middle text-[#93c5fd]">
+                        <rect x="3" y="7" width="10" height="7" rx="1.5" />
+                        <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" />
+                      </svg>
+                      {labels.lockedOverlayTitle}
+                    </p>
+                    <p className="text-[13.5px] leading-relaxed text-zinc-400">{labels.lockedOverlayBody}</p>
+                    <button
+                      type="button"
+                      onClick={() => audit("audits")}
+                      className={`${tp5Styles.liquidCta} mt-1 !min-h-[48px] !w-auto !px-6 !py-0`}
+                    >
+                      <Primary>{labels.ctaUnlock}</Primary>
+                    </button>
+                  </div>
+                </div>
+              </div>
               <form
-                className="flex flex-col gap-3 rounded-2xl border border-[#262a36] bg-[#080a0e]/55 p-5"
+                className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3"
                 onSubmit={(event) => {
                   event.preventDefault();
                   sendListing();
                 }}
               >
-                <p className="text-[17px] font-semibold text-zinc-50">{labels.nextListingTitle}</p>
-                <p className="flex-1 text-[14px] leading-relaxed text-zinc-400">{labels.nextListingBody.replace("{q}", handoff)}</p>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <label className="block min-w-0 flex-1">
+                <span className="text-[13px] text-zinc-400">{labels.listingInlineLead}</span>
+                <div className="flex min-w-0 flex-1 gap-2">
+                  <label className="block min-w-0 flex-1 sm:max-w-[22rem]">
                     <span className="sr-only">{labels.listingPlaceholder}</span>
                     <input
                       type="url"
@@ -442,36 +469,15 @@ export function VinDecoderTool({ locale, labels, home, onAudit, onListing, autoF
                     {labels.listingSubmit}
                   </button>
                 </div>
-                {listingError ? (
-                  <p role="alert" className="text-[0.84rem] text-red-300">
-                    {labels.listingInvalid}
-                  </p>
-                ) : null}
               </form>
-              <div className="flex flex-col gap-3 rounded-2xl border border-[#2563eb]/45 bg-[#080a0e]/55 p-5">
-                <p className="text-[17px] font-semibold text-zinc-50">{labels.nextAuditTitle}</p>
-                <p className="flex-1 text-[14px] leading-relaxed text-zinc-400">{labels.nextAuditBody}</p>
-                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-                  <button type="button" onClick={() => audit("audits")} className={`${tp5Styles.liquidCta} !min-h-[48px] !py-0 sm:!w-auto sm:!px-6`}>
-                    <Primary>{labels.ctaAudit}</Primary>
-                  </button>
-                </div>
-              </div>
+              {listingError ? (
+                <p role="alert" className="-mt-2 text-[0.84rem] text-red-300">
+                  {labels.listingInvalid}
+                </p>
+              ) : null}
             </div>
           ) : null}
 
-          <p className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-zinc-400">
-            {locked.map((item) => (
-              <span key={item} className="inline-flex items-center gap-2">
-                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" aria-hidden className="h-3.5 w-3.5 text-zinc-500">
-                  <rect x="3" y="7" width="10" height="7" rx="1.5" />
-                  <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" />
-                </svg>
-                {item}
-              </span>
-            ))}
-            <span className="text-zinc-500">{labels.lockedSuffix}</span>
-          </p>
           <p className="text-[12.5px] leading-relaxed text-zinc-500">{plateView ? labels.plateSourceLine : labels.vinSourceLine}</p>
         </div>
       ) : null}

@@ -132,8 +132,8 @@ export function formatHomeV6Eur(n: number, locale: string): string {
 const LV: HomeV6Copy = {
   dealer: {
     badge: "Jaunums",
-    kicker: "Oficiālā dīlera dati · 24,99\u00a0€",
-    title: "Servisa vēsture, kas izlasāma kā stāsts",
+    kicker: "Datu atskaite · 24,99\u00a0€",
+    title: "Oficiālā dīlera datu atskaite",
     lead: "Oficiāli fiksētie nobraukuma rādījumi, apkopes un remonti pa gadiem - ar nobraukuma līkni un eļļas maiņas intervāliem.",
     chartNote: "Piemērs · Volkswagen Passat B8 · 2018",
     chartAria: "Nobraukuma līkne pēc oficiālā dīlera ierakstiem",
@@ -141,7 +141,7 @@ const LV: HomeV6Copy = {
     intervalsNorm: "norma 15 000 km",
     withinNorm: "normā",
     overNorm: "+{km} virs normas",
-    guaranteeStrong: "Nav datu - nauda atpakaļ.",
+    guaranteeStrong: "100% naudas atmaksas garantija",
     guaranteeText:
       "Ja oficiālā dīlera datu par auto nav, atmaksājam pilnu summu. Pasūtot pēc tam pilno auditu, 24,99\u00a0€ ieskaitām audita cenā.",
     cta: "Pasūtīt dīlera datus · 24,99\u00a0€",
@@ -243,8 +243,8 @@ const LV: HomeV6Copy = {
 const EN: HomeV6Copy = {
   dealer: {
     badge: "New",
-    kicker: "Official dealer data · €24.99",
-    title: "A service history that reads like a story",
+    kicker: "Data report · €24.99",
+    title: "Official dealer data report",
     lead: "Officially recorded mileage, services and repairs year by year - with a mileage curve and oil change intervals.",
     chartNote: "Example · Volkswagen Passat B8 · 2018",
     chartAria: "Mileage curve from official dealer records",
@@ -252,7 +252,7 @@ const EN: HomeV6Copy = {
     intervalsNorm: "norm 15,000 km",
     withinNorm: "within norm",
     overNorm: "+{km} over norm",
-    guaranteeStrong: "No data - money back.",
+    guaranteeStrong: "100% money-back guarantee",
     guaranteeText:
       "If there is no official dealer data for the car, we refund the full amount. If you then order the full audit, the €24.99 is credited to the audit price.",
     cta: "Order dealer data · €24.99",
@@ -354,8 +354,8 @@ const EN: HomeV6Copy = {
 const RU: HomeV6Copy = {
   dealer: {
     badge: "Новинка",
-    kicker: "Данные официального дилера · 24,99\u00a0€",
-    title: "Сервисная история, которая читается как рассказ",
+    kicker: "Отчёт · 24,99\u00a0€",
+    title: "Отчёт по данным официального дилера",
     lead: "Официально зафиксированные показания пробега, ТО и ремонты по годам - с кривой пробега и интервалами замены масла.",
     chartNote: "Пример · Volkswagen Passat B8 · 2018",
     chartAria: "Кривая пробега по записям официального дилера",
@@ -363,7 +363,7 @@ const RU: HomeV6Copy = {
     intervalsNorm: "норма 15 000 км",
     withinNorm: "в норме",
     overNorm: "+{km} сверх нормы",
-    guaranteeStrong: "Нет данных - вернём деньги.",
+    guaranteeStrong: "100% гарантия возврата денег",
     guaranteeText:
       "Если данных официального дилера по авто нет, вернём полную сумму. Если затем закажете полный аудит, 24,99\u00a0€ засчитаем в его цену.",
     cta: "Заказать данные дилера · 24,99\u00a0€",
@@ -465,8 +465,8 @@ const RU: HomeV6Copy = {
 const DE: HomeV6Copy = {
   dealer: {
     badge: "Neu",
-    kicker: "Offizielle Händlerdaten · 24,99\u00a0€",
-    title: "Eine Servicehistorie, die sich wie eine Geschichte liest",
+    kicker: "Datenbericht · 24,99\u00a0€",
+    title: "Offizieller Händlerdaten-Bericht",
     lead: "Offiziell erfasste Kilometerstände, Wartungen und Reparaturen nach Jahren - mit Kilometerkurve und Ölwechselintervallen.",
     chartNote: "Beispiel · Volkswagen Passat B8 · 2018",
     chartAria: "Kilometerkurve aus offiziellen Händlereinträgen",
@@ -474,7 +474,7 @@ const DE: HomeV6Copy = {
     intervalsNorm: "Norm 15.000 km",
     withinNorm: "in der Norm",
     overNorm: "+{km} über der Norm",
-    guaranteeStrong: "Keine Daten - Geld zurück.",
+    guaranteeStrong: "100 % Geld-zurück-Garantie",
     guaranteeText:
       "Gibt es keine offiziellen Händlerdaten zum Fahrzeug, erstatten wir den vollen Betrag. Bestellen Sie danach das volle Audit, rechnen wir die 24,99\u00a0€ auf den Auditpreis an.",
     cta: "Händlerdaten bestellen · 24,99\u00a0€",
