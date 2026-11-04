@@ -2818,6 +2818,8 @@ body.provin-menu-open .cookie-consent-panel {
   padding-top: 1.75rem;
 }
 .b2b-h {
+  position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-columns: 1fr;
   gap: 32px;
@@ -2934,10 +2936,11 @@ body.provin-menu-open .cookie-consent-panel {
 }
 .b2b-map {
   position: absolute;
+  z-index: -1;
   left: -70px;
   right: -110px;
-  top: -120px;
-  bottom: -120px;
+  top: -210px;
+  bottom: -30px;
   opacity: 0.5;
   -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000 40%, transparent 80%);
   mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000 40%, transparent 80%);
@@ -3013,12 +3016,12 @@ body.provin-menu-open .cookie-consent-panel {
     min-width: 0;
   }
   .b2b-hv {
-    padding-top: 215px;
+    padding-top: 150px;
   }
   .b2b-map {
     left: -16px;
     right: -16px;
-    top: -10px;
+    top: -200px;
     bottom: auto;
     height: 420px;
     -webkit-mask-image: linear-gradient(180deg, transparent, #000 22%, #000 62%, transparent);
