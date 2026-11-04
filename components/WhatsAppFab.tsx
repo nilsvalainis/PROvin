@@ -66,12 +66,23 @@ export function WhatsAppFab() {
       const mobile = window.innerWidth <= 760;
       setOn(y > 520 && !nearFooter && (!down || !mobile));
     };
+    /** Viens aprēķins kadrā: ritinot neizsaucam layout katram scroll notikumam. */
+    let raf = 0;
+    const schedule = () => {
+      if (!raf) {
+        raf = window.requestAnimationFrame(() => {
+          raf = 0;
+          update();
+        });
+      }
+    };
     update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
     return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("resize", schedule);
+      if (raf) window.cancelAnimationFrame(raf);
     };
   }, [pathname]);
 

@@ -55,6 +55,23 @@
 .accent {
   font-style: normal;
   color: #2563eb;
+  /* Mirdzums (makets K1 v6 `.sh`): gaismas vilnis pāri vārdam ik ~5 s. */
+  background: linear-gradient(90deg, #2563eb 0%, #2563eb 40%, #9cc0ff 50%, #2563eb 60%, #2563eb 100%);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: hero-wd 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) forwards, hero-shine 5s ease-in-out 1.4s infinite;
+  animation-delay: calc(var(--d) * 0.09s + 0.1s), 1.4s;
+}
+@keyframes hero-shine {
+  0% {
+    background-position: 100% 0;
+  }
+  60%,
+  100% {
+    background-position: -50% 0;
+  }
 }
 @keyframes hero-wd {
   to {
@@ -96,8 +113,6 @@
   border-radius: 24px;
   background: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
   border: 1px solid rgba(255, 255, 255, 0.12);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
 }
 .options {
   display: grid;
@@ -505,7 +520,7 @@
   .card {
     padding: 16px;
     border-radius: 20px;
-    background: rgba(10, 12, 16, 0.72);
+    background: rgba(10, 12, 16, 0.9);
     border-color: rgba(255, 255, 255, 0.1);
   }
   .option {
@@ -574,7 +589,8 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .word {
+  .word,
+  .accent {
     animation: none;
     opacity: 1;
     transform: none;
