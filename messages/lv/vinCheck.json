@@ -65,7 +65,6 @@
     "modelHint": "Modelis ir pēc ražotāja koda VIN kodā. Viens kods var aptvert vairākus vienas platformas modeļus, tāpēc tie norādīti visi.",
     "classSuffix": "-klase",
     "coupeCabrio": "kupeja / kabriolets",
-    "ctaAudit": "Pasūtīt auditu ar šo auto · 99,99 €",
     "regions": {
       "africa": "Āfrika",
       "asia": "Āzija",
@@ -98,17 +97,16 @@
     "fromRegistry": "No CSDD reģistra",
     "fromVin": "No VIN koda",
     "badgeDecoded": "VIN kods atšifrēts",
-    "nextListingTitle": "Papildini ar sludinājumu",
-    "nextListingBody": "Ielīmē saiti - izvērtēsim aprakstu, foto un pretrunas bez maksas. {q} jau būs pievienots.",
     "listingPlaceholder": "Sludinājuma saite (ss.lv, mobile.de, ...)",
     "listingSubmit": "Iesūtīt",
     "listingInvalid": "Ielīmē pilnu sludinājuma saiti, piemēram, https://www.ss.lv/...",
-    "nextAuditTitle": "Pilna vēsture: PROVIN audits",
-    "nextAuditBody": "Nobraukums, negadījumi, servisa vēsture, izsoļu foto un modeļa vājās vietas. Atskaite 24-72 h laikā.",
     "lockedItems": "Nobraukuma vēsture|Negadījumi un bojājumi|Izsoļu foto|Servisa vēsture pie dīlera|Apdrošinātāju dati",
-    "lockedSuffix": "- redzams tikai auditā",
     "vinSourceLine": "Avoti: VIN koda struktūra (ISO 3779), ražotāja modeļu kodi. Dati ir informatīvi.",
-    "newCheck": "Cits auto"
+    "newCheck": "Cits auto",
+    "lockedOverlayBody": "Šim auto atvērsim PROVIN auditā - 24-72 h, ar konsultāciju.",
+    "ctaUnlock": "Atvērt ar PROVIN auditu · 99,99 €",
+    "listingInlineLead": "Vai bez maksas:",
+    "lockedOverlayTitle": "Nobraukums, negadījumi, servisa vēsture, izsoļu foto"
   },
   "HomeFreeTools": {
     "title": "Trīs lietas, ko vari izdarīt",

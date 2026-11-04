@@ -4,6 +4,13 @@ import { isTp5PublicServiceId, type Tp5MobileServiceId } from "@/lib/test-pricin
 export type HomeV6HeroCopy = {
   leadFirst: string;
   leadRest: string;
+  /** Hero ievads, kad izvēlēti dīlera dati (atsevišķa atskaite, nevis audits). */
+  dealerLeadFirst: string;
+  dealerLeadRest: string;
+  guaranteeShort: string;
+  guaranteeLong: string;
+  samplePill: string;
+  includedPill: string;
   readMore: string;
   rating: string;
   options: Partial<Record<Tp5MobileServiceId, { name: string; sub: string }>>;
@@ -18,7 +25,6 @@ export type HomeV6HeroCopy = {
   call: string;
   close: string;
   waText: string;
-  includedLink: string;
   freeCheck: { title: string; question: string; lead: string; note: string; listing: string; button: string };
   coverage: {
     titleAccent: string;
@@ -46,6 +52,13 @@ const LV: HomeV6HeroCopy = {
   leadFirst: "Uzzini visu par savu nākamo auto.",
   leadRest:
     "Apvienojot plašāko auto vēstures pārklājumu Eiropā ar padziļinātu izpratni par marku specifiku, tirgus viltībām un pārdevēju paņēmieniem, mēs atklājam tehniskos un slēptos riskus, ko citi mēdz noklusēt.",
+  dealerLeadFirst: "Ražotāja oficiālā servisa vēsture pēc VIN koda.",
+  dealerLeadRest:
+    "Apkopes, remonti un nobraukums no autorizēto servisu sistēmām vienā saprotamā atskaitē - kā standarta vēstures atskaite, tikai ar oficiālā dīlera datiem. Ja datu nav, atmaksājam pilnu summu.",
+  guaranteeShort: "100% atmaksa, ja datu nav",
+  guaranteeLong: "100% naudas atmaksas garantija",
+  samplePill: "Atskaites piemērs",
+  includedPill: "Kas iekļauts",
   readMore: "Lasīt vairāk",
   rating: "Google",
   options: {
@@ -64,7 +77,6 @@ const LV: HomeV6HeroCopy = {
   call: "Zvanīt",
   close: "Aizvērt",
   waText: "Sveiki! Vēlos steidzamu auditu.",
-  includedLink: "Kas iekļauts auditā",
   freeCheck: {
     button: "Pārbaudīt bez maksas",
     title: "Bezmaksas VIN koda pārbaude",
@@ -110,6 +122,13 @@ const EN: HomeV6HeroCopy = {
   leadFirst: "Find out everything about your next car.",
   leadRest:
     "By combining the widest car history coverage in Europe with in-depth knowledge of each make, market tricks and seller tactics, we uncover the technical and hidden risks that others tend to keep quiet about.",
+  dealerLeadFirst: "The manufacturer's official service history by VIN.",
+  dealerLeadRest:
+    "Maintenance, repairs and mileage from authorised service systems in one clear report - like a standard history report, but with official dealer data only. If there is no data, we refund the full amount.",
+  guaranteeShort: "100% refund if there is no data",
+  guaranteeLong: "100% money-back guarantee",
+  samplePill: "Sample report",
+  includedPill: "What's included",
   readMore: "Read more",
   rating: "Google",
   options: {
@@ -128,7 +147,6 @@ const EN: HomeV6HeroCopy = {
   call: "Call",
   close: "Close",
   waText: "Hello! I would like an urgent audit.",
-  includedLink: "What the audit includes",
   freeCheck: {
     button: "Check for free",
     title: "Free VIN check",
@@ -174,6 +192,13 @@ const RU: HomeV6HeroCopy = {
   leadFirst: "Узнайте всё о своём следующем авто.",
   leadRest:
     "Сочетая самый широкий охват истории авто в Европе с глубоким знанием особенностей марок, рыночных уловок и приёмов продавцов, мы выявляем технические и скрытые риски, о которых другие предпочитают молчать.",
+  dealerLeadFirst: "Официальная сервисная история производителя по VIN.",
+  dealerLeadRest:
+    "ТО, ремонты и пробег из систем авторизованных сервисов в одном понятном отчёте - как стандартный отчёт об истории, но только с данными официального дилера. Если данных нет, вернём всю сумму.",
+  guaranteeShort: "100% возврат, если данных нет",
+  guaranteeLong: "100% гарантия возврата денег",
+  samplePill: "Пример отчёта",
+  includedPill: "Что входит",
   readMore: "Читать далее",
   rating: "Google",
   options: {
@@ -192,7 +217,6 @@ const RU: HomeV6HeroCopy = {
   call: "Позвонить",
   close: "Закрыть",
   waText: "Здравствуйте! Хочу срочный аудит.",
-  includedLink: "Что входит в аудит",
   freeCheck: {
     button: "Проверить бесплатно",
     title: "Бесплатная проверка VIN",
@@ -238,6 +262,13 @@ const DE: HomeV6HeroCopy = {
   leadFirst: "Erfahren Sie alles über Ihr nächstes Auto.",
   leadRest:
     "Wir verbinden die umfassendste Fahrzeughistorie in Europa mit fundiertem Wissen über Marken, Markttricks und Verkäufermethoden und decken so technische und versteckte Risiken auf, die andere gern verschweigen.",
+  dealerLeadFirst: "Die offizielle Servicehistorie des Herstellers per FIN.",
+  dealerLeadRest:
+    "Wartungen, Reparaturen und Kilometerstände aus den Systemen autorisierter Werkstätten in einem klaren Bericht - wie ein Standard-Historienbericht, nur mit offiziellen Händlerdaten. Gibt es keine Daten, erstatten wir den vollen Betrag.",
+  guaranteeShort: "100 % Erstattung ohne Daten",
+  guaranteeLong: "100 % Geld-zurück-Garantie",
+  samplePill: "Beispielbericht",
+  includedPill: "Was enthalten ist",
   readMore: "Weiterlesen",
   rating: "Google",
   options: {
@@ -256,7 +287,6 @@ const DE: HomeV6HeroCopy = {
   call: "Anrufen",
   close: "Schließen",
   waText: "Hallo! Ich möchte ein eiliges Audit.",
-  includedLink: "Was im Audit enthalten ist",
   freeCheck: {
     button: "Kostenlos prüfen",
     title: "Kostenlose FIN-Prüfung",

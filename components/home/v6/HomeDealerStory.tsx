@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { recordSampleReportClick } from "@/lib/sample-report-click-client";
+import { TP5_DEALER_SAMPLE_REPORT_HREF, getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 import {
   HOME_V6_MILEAGE_POINTS,
   HOME_V6_OIL_INTERVALS,
@@ -153,12 +155,30 @@ export function HomeDealerStory({ className = "" }: { className?: string }) {
                 </div>
               );
             })}
-            <p className={styles.guarantee}>
-              <b>{c.guaranteeStrong}</b> {c.guaranteeText}
-            </p>
-            <Link href="/?plan=dealer#home-hero" className={styles.cta}>
-              {c.cta}
-            </Link>
+            <div className={styles.guarantee}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M12 3l7 3v6c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6z" />
+                <path d="M9 12l2 2 4-4" />
+              </svg>
+              <div>
+                <b>{c.guaranteeStrong}</b>
+                <p>{c.guaranteeText}</p>
+              </div>
+            </div>
+            <div className={styles.actions}>
+              <Link href="/?plan=dealer#home-hero" className={styles.cta}>
+                {c.cta}
+              </Link>
+              <a
+                href={TP5_DEALER_SAMPLE_REPORT_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.sample}
+                onClick={() => recordSampleReportClick()}
+              >
+                📄 {getTp5UiCopy(locale).sampleReportLink}
+              </a>
+            </div>
           </div>
         </div>
       </div>
