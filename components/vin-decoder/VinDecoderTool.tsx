@@ -38,14 +38,11 @@ export type VinDecoderLabels = {
   classSuffix: string;
   coupeCabrio: string;
   ctaAudit: string;
-  ctaMini: string;
   resultKicker: string;
   fromRegistry: string;
   fromVin: string;
   badgeDecoded: string;
   /** "{vin11}" = pirmās 11 VIN zīmes. */
-  compareTitle: string;
-  compareBody: string;
   nextListingTitle: string;
   /** "{q}" = numurzīme vai VIN. */
   nextListingBody: string;
@@ -458,9 +455,6 @@ export function VinDecoderTool({ locale, labels, home, onAudit, onListing, autoF
                   <button type="button" onClick={() => audit("audits")} className={`${tp5Styles.liquidCta} !min-h-[48px] !py-0 sm:!w-auto sm:!px-6`}>
                     <Primary>{labels.ctaAudit}</Primary>
                   </button>
-                  <button type="button" onClick={() => audit("mini")} className={GHOST_BTN}>
-                    {labels.ctaMini}
-                  </button>
                 </div>
               </div>
             </div>
@@ -504,7 +498,6 @@ function PlateBody({ view, labels }: { view: PublicPlateView; labels: VinDecoder
     [labels.rowInspection, view.inspectionValidUntil ? lvDate(view.inspectionValidUntil) : ""],
     [labels.rowVinMasked, view.vinMasked],
   ];
-  const vin11 = view.vinMasked.slice(0, 11);
   return (
     <>
       <Header
@@ -517,22 +510,6 @@ function PlateBody({ view, labels }: { view: PublicPlateView; labels: VinDecoder
         <p className={SECTION_TITLE}>{labels.fromRegistry}</p>
         <Grid rows={rows.filter(([, v]) => v).map(([l, v]) => (l === labels.rowVinMasked ? [l, v, true] : [l, v]))} />
       </div>
-      {vin11 ? (
-        <div className="flex gap-3.5 rounded-[14px] border border-[#5c9dff]/35 bg-[#2563eb]/[0.07] p-4 sm:p-5">
-          <span className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-[#5c9dff]" aria-hidden />
-          <div>
-            <p className="text-[15px] font-semibold text-zinc-50">{labels.compareTitle}</p>
-            <p className="mt-1 text-[14px] leading-relaxed text-zinc-400">
-              {labels.compareBody.split("{vin11}").map((part, i, arr) => (
-                <span key={i}>
-                  {part}
-                  {i < arr.length - 1 ? <span className="font-mono font-semibold tracking-[0.06em] text-zinc-100">{vin11}</span> : null}
-                </span>
-              ))}
-            </p>
-          </div>
-        </div>
-      ) : null}
     </>
   );
 }
