@@ -2,7 +2,7 @@
 
 import { AdminWhatsAppOpenButton } from "@/components/admin/AdminWhatsAppOpenButton";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
-import { CARGO_BUCKET_LV, logisticsCarTitle, logisticsCopyAllCarText, logisticsDriverShareText, moveCargoCar, type CargoPlanState } from "@/lib/iriss-logistics-cargo-plan";
+import { cargoBucketLabel, cargoRouteBuckets, logisticsCarTitle, logisticsCopyAllCarText, logisticsDriverShareText, moveCargoCar, type CargoPlanState } from "@/lib/iriss-logistics-cargo-plan";
 import type { CabinetPickupStage } from "@/lib/iriss-logistics-cabinet";
 import { LOGISTICS_STEP_SHORT_LV, logisticsStepOf } from "@/lib/iriss-logistics-steps";
 import { formatLogisticsAddress, formatLogisticsDate, formatLogisticsEur, type LogisticsOrder } from "@/lib/iriss-logistics-types";
@@ -22,7 +22,7 @@ export function IrissLogistikaCarPopup({ order, plan, stage, onClose, onPlanChan
   const bucket = cargo?.bucket ?? "none";
   const phone = order.pickupSnapshot?.phone || order.sellerContact;
   const copyAll = logisticsCopyAllCarText(order, {
-    cargoLv: CARGO_BUCKET_LV[bucket],
+    cargoLv: cargoBucketLabel(plan, bucket),
     stageLv: LOGISTICS_STEP_SHORT_LV[logisticsStepOf(order.status, stage)],
   });
   const driver = logisticsDriverShareText(order);
@@ -81,12 +81,17 @@ export function IrissLogistikaCarPopup({ order, plan, stage, onClose, onPlanChan
             Kabinets
           </button>
         ) : null}
-        <button type="button" className={`iriss-log-btn-dark ${bucket === "next" ? "" : "opacity-70"}`} onClick={() => onPlanChange(moveCargoCar(plan, order.id, "next"))}>
-          Nākošā krava
-        </button>
-        <button type="button" className={`iriss-log-btn-sec ${bucket === "after" ? "ring-2 ring-[var(--iriss-log-focus)]" : ""}`} onClick={() => onPlanChange(moveCargoCar(plan, order.id, "after"))}>
-          Aiznākošā krava
-        </button>
+        {cargoRouteBuckets(plan).map((b) => (
+          <button
+            key={b}
+            type="button"
+            className={b === "next" ? `iriss-log-btn-dark ${bucket === b ? "" : "opacity-70"}` : `iriss-log-btn-sec ${bucket === b ? "ring-2 ring-[var(--iriss-log-focus)]" : ""}`}
+            onClick={() => onPlanChange(moveCargoCar(plan, order.id, b))}
+          >
+            {cargoBucketLabel(plan, b)}
+            {b === "next" || b === "after" ? " krava" : ""}
+          </button>
+        ))}
         <button
           type="button"
           className="iriss-log-btn-sec"

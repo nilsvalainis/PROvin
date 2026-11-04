@@ -5,7 +5,7 @@
 
 import type { CabinetPickup } from "@/lib/iriss-logistics-cabinet";
 import { LOGISTICS_STEPS, LOGISTICS_STEP_LV, logisticsStepOf, type LogisticsStep } from "@/lib/iriss-logistics-steps";
-import { CARGO_BUCKET_LV, type CargoBucket, type CargoPlanState } from "@/lib/iriss-logistics-cargo-plan";
+import { cargoBucketLabel, type CargoBucket, type CargoPlanState } from "@/lib/iriss-logistics-cargo-plan";
 import { LOGISTICS_ORDER_STATUS_LV, type LogisticsOrder } from "@/lib/iriss-logistics-types";
 
 /** Tie paši 4 soļi kā Loģistikā (Nils 27.10). */
@@ -34,7 +34,7 @@ export function buildAutoparksTransit(
     "id" | "auction" | "pickupAddress" | "pickupRef" | "stockNo" | "pickupDate" | "freeParkingUntil" | "status"
   >,
   pickup: Pick<CabinetPickup, "stage" | "pickupCode" | "pickupDate"> | null,
-  plan: Pick<CargoPlanState, "cars"> | null,
+  plan: (Pick<CargoPlanState, "cars"> & Partial<Pick<CargoPlanState, "cargos">>) | null,
 ): AutoparksTransit {
   const stage = logisticsStepOf(order.status, pickup?.stage);
   const mine = plan?.cars.find((c) => c.carId === order.id);
@@ -52,7 +52,7 @@ export function buildAutoparksTransit(
     stage,
     stageLabel: LOGISTICS_STEP_LV[stage],
     cargo,
-    cargoLabel: CARGO_BUCKET_LV[cargo],
+    cargoLabel: cargoBucketLabel({ cargos: plan?.cargos ?? [] }, cargo),
     cargoPlace: place > 0 ? place : null,
   };
 }

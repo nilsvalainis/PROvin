@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
-import { CARGO_BUCKET_LV, CARGO_BUCKETS, cargoCarMap, logisticsCarTitle, type CargoBucket, type CargoPlanState } from "@/lib/iriss-logistics-cargo-plan";
+import { cargoBucketCssColor, cargoBucketLabel, cargoBuckets, cargoCarMap, logisticsCarTitle, type CargoBucket, type CargoPlanState } from "@/lib/iriss-logistics-cargo-plan";
 import { CABINET_PICKUP_STAGE_LV, CABINET_PICKUP_STAGES, type CabinetPickup, type CabinetPickupStage } from "@/lib/iriss-logistics-cabinet";
 import { formatLogisticsDate } from "@/lib/iriss-logistics-types";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
@@ -65,23 +65,31 @@ function StageSwitch({
   );
 }
 
-function BucketDots({ bucket, onChange }: { bucket: CargoBucket; onChange: (bucket: CargoBucket) => void }) {
+function BucketDots({
+  plan,
+  bucket,
+  onChange,
+}: {
+  plan: Pick<CargoPlanState, "cargos">;
+  bucket: CargoBucket;
+  onChange: (bucket: CargoBucket) => void;
+}) {
   return (
     <div className="iriss-log-bucket-dots" role="radiogroup" aria-label="Krava" onClick={(e) => e.stopPropagation()}>
-      {CARGO_BUCKETS.map((b) => (
+      {cargoBuckets(plan).map((b) => (
         <button
           key={b}
           type="button"
           role="radio"
           aria-checked={bucket === b}
-          aria-label={CARGO_BUCKET_LV[b]}
-          title={CARGO_BUCKET_LV[b]}
+          aria-label={cargoBucketLabel(plan, b)}
+          title={cargoBucketLabel(plan, b)}
           className={bucket === b ? "on" : ""}
           onClick={() => {
             if (bucket !== b) onChange(b);
           }}
         >
-          <span style={{ background: `var(--iriss-log-cargo-${b})` }} />
+          <span style={{ background: cargoBucketCssColor(plan, b) }} />
         </button>
       ))}
     </div>
@@ -255,7 +263,7 @@ export function IrissLogistikaCarsTable({
                   <StageSwitch stage={stage} onChange={(s) => onSetStage(order.id, s)} />
                 </td>
                 <td>
-                  <BucketDots bucket={bucket} onChange={(b) => onSetBucket(order.id, b)} />
+                  <BucketDots plan={plan} bucket={bucket} onChange={(b) => onSetBucket(order.id, b)} />
                 </td>
                 <td className="tabular-nums">
                   {docs.have} / {docs.expected}
@@ -308,8 +316,8 @@ export function IrissLogistikaCarsTable({
                 <StageSwitch full stage={stage} onChange={(s) => onSetStage(order.id, s)} />
               </div>
               <div className="mt-2.5 flex items-center gap-2 text-[12px] text-[var(--iriss-ink-2)]">
-                <BucketDots bucket={bucket} onChange={(b) => onSetBucket(order.id, b)} />
-                <span className="min-w-0 truncate whitespace-nowrap">{CARGO_BUCKET_LV[bucket]}</span>
+                <BucketDots plan={plan} bucket={bucket} onChange={(b) => onSetBucket(order.id, b)} />
+                <span className="min-w-0 truncate whitespace-nowrap">{cargoBucketLabel(plan, bucket)}</span>
                 <span className="ml-auto shrink-0 whitespace-nowrap tabular-nums">Dok. {docs.have}/{docs.expected}</span>
                 {order.source === "manual" ? (
                   <DeleteManual order={order} onDelete={onDeleteManual} />
