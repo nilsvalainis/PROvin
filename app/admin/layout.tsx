@@ -36,6 +36,9 @@ export const viewport: Viewport = {
   colorScheme: "light dark",
   width: "device-width",
   initialScale: 1,
+  // Nils 04.11 (iOS 18): bez šī Safari pietuvina visu lapu, pieskaroties laukam ar burtiem < 16 px, un tā paliek
+  // pietuvināta. iOS pirkstu tuvināšanu (pinch) tas neaizliedz - tikai automātisko tuvināšanu ievadei.
+  maximumScale: 1,
   viewportFit: "cover",
 };
 
