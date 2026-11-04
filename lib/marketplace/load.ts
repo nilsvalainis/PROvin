@@ -30,9 +30,20 @@ import {
 } from "@/lib/marketplace/query-from-scan";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
 import {
+  decideMobileDeActorStart,
+  looksLikeAkamaiAccessDenied,
+  mobileDeActorStartTimes,
+  mobileDeAkamaiPauseMs,
+  mobileDeCircuitAfterDenial,
+  mobileDeMaxActorStartsPerHour,
+  MOBILE_DE_CIRCUIT_OPEN_REASON,
+} from "@/lib/marketplace/mobile-de-guard";
+import {
   readMarketplaceListingsState,
+  readMobileDeCircuit,
   readMarketplaceUsageMonth,
   writeMarketplaceListingsState,
+  writeMobileDeCircuit,
   writeMarketplaceUsageMonth,
 } from "@/lib/marketplace/store";
 import { marketplaceListingExpiresAt, marketplaceListingVehicleId } from "@/lib/marketplace/to-listing-vehicle";
@@ -257,19 +268,37 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
 
   const now = input.now ?? new Date().toISOString();
   const startedAt = now;
+  const nowMs = Date.parse(now);
+  const gateNowMs = Number.isFinite(nowMs) ? nowMs : Date.now();
   const query: MarketplaceQuery = preview.query;
   const collected = [];
   let chargedUsd = 0;
   const notes: string[] = [];
   const apifyRunIds: string[] = [];
   const providerCharges: Array<{ providerId: MarketplaceProviderId; usd: number; items: number }> = [];
+  const circuit = await readMobileDeCircuit();
+  const usageForGate = await readMarketplaceUsageMonth(marketplaceMonthKey(new Date(gateNowMs)));
+  let attemptedSearch = false;
   for (const provider of preview.providers) {
     const estimate = preview.estimates.find((e) => e.providerId === provider.id && e.platform === provider.platform);
     if (!estimate?.configured) {
       notes.push(`${provider.label}: ${estimate?.reason || "nav konfigurēts"}`);
       continue;
     }
+    if (provider.platform === "mobilede") {
+      const decision = decideMobileDeActorStart({
+        nowMs: gateNowMs,
+        pausedUntilMs: Date.parse(circuit.pausedUntil) || 0,
+        recentStartMs: mobileDeActorStartTimes(usageForGate.entries),
+        maxPerHour: mobileDeMaxActorStartsPerHour(),
+      });
+      if (!decision.allowed) {
+        notes.push(decision.reason);
+        continue;
+      }
+    }
     try {
+      attemptedSearch = true;
       const found = await provider.search(query, {
         maxItems: preview.maxItems,
         maxUsd: preview.budget.perRunCapUsd,
@@ -293,9 +322,28 @@ export async function loadMarketplaceForOrder(input: MarketplaceLoadInput): Prom
         chargedUsd: actual,
       });
       if (found.error) notes.push(found.error);
+      if (provider.platform === "mobilede" && found.error && looksLikeAkamaiAccessDenied(found.error)) {
+        const tripped = mobileDeCircuitAfterDenial(Date.now(), found.error, mobileDeAkamaiPauseMs());
+        const saved = await writeMobileDeCircuit(tripped);
+        if (!saved.ok) console.warn("[marketplace] mobile.de Akamai pauzi neizdevās saglabāt");
+        else console.warn("[marketplace] mobile.de Akamai pauze līdz", tripped.pausedUntil);
+        notes.push(MOBILE_DE_CIRCUIT_OPEN_REASON);
+      }
     } catch (e) {
       notes.push(`${provider.label}: ${e instanceof Error ? e.message : "kļūda"}`);
     }
+  }
+
+  if (!attemptedSearch) {
+    return {
+      ok: false,
+      blocked: true,
+      error: notes.join(" ") || MOBILE_DE_CIRCUIT_OPEN_REASON,
+      added: 0,
+      grouped: 0,
+      estimatedUsd: preview.budget.estimatedUsd,
+      remainingMonthlyUsd: preview.budget.remainingMonthlyUsd,
+    };
   }
 
   const grouped = collapseMarketplaceListings(assignMarketplaceGroupIds(collected));

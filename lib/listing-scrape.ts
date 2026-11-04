@@ -1,8 +1,8 @@
 /**
- * Publiska sludinājuma lapa — servera pusē nolasīti kopsavilkuma dati.
+ * Publiska sludinājuma lapa: servera pusē nolasīti kopsavilkuma dati.
  * ss.lv: strukturēta tabula. Citi portāli: virsraksts, apraksts, km/cena/datums no HTML.
+ * *.mobile.de šeit neielādē: Akamai bloķē IP, no kura nāk pieprasījums.
  */
-
 
 export type ListingPriceRow = {
   /** Datums (kā parādās sludinājumā). */
@@ -37,8 +37,14 @@ export type ListingAiSnapshot = ListingMarketSnapshot & {
 
 const SSLV_HOSTS = new Set(["ss.lv", "www.ss.lv", "m.ss.lv"]);
 
+function isMobileDeListingHost(hostname: string): boolean {
+  const host = hostname.trim().toLowerCase().replace(/\.$/, "");
+  return host === "mobile.de" || host.endsWith(".mobile.de");
+}
+
 export function isAllowedListingScrapeHost(hostname: string): boolean {
   const host = hostname.toLowerCase();
+  if (isMobileDeListingHost(host)) return false;
   if (SSLV_HOSTS.has(host)) return true;
   return host.includes(".") && !host.startsWith("localhost");
 }

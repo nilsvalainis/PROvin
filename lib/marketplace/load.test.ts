@@ -4,7 +4,15 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { loadMarketplaceForOrder, MARKETPLACE_RADAR_AUTO_FORBIDDEN, previewMarketplaceLoad } from "@/lib/marketplace/load";
 import { emptyIrissScanRecord } from "@/lib/iriss-scan-types";
-import { readMarketplaceListingsState, readMarketplaceUsageMonth } from "@/lib/marketplace/store";
+import { MOBILE_DE_CIRCUIT_OPEN_REASON } from "@/lib/marketplace/mobile-de-guard";
+import { emptyMarketplaceUsageMonth, marketplaceMonthKey } from "@/lib/marketplace/cost-caps";
+import {
+  readMarketplaceListingsState,
+  readMarketplaceUsageMonth,
+  readMobileDeCircuit,
+  writeMarketplaceUsageMonth,
+  writeMobileDeCircuit,
+} from "@/lib/marketplace/store";
 import type { ListingProvider, MarketplaceRawListing } from "@/lib/marketplace/types";
 
 const RAW: MarketplaceRawListing[] = [
@@ -77,6 +85,7 @@ describe("loadMarketplaceForOrder", () => {
     info.mockRestore();
     delete process.env.ADMIN_IRISS_MARKETPLACE_DIR;
     delete process.env.MARKETPLACE_LOADS_ENABLED;
+    delete process.env.MOBILE_DE_MAX_ACTOR_STARTS_PER_HOUR;
     await rm(dir, { recursive: true, force: true });
   });
 
@@ -342,5 +351,82 @@ describe("loadMarketplaceForOrder", () => {
     });
     expect(implicitRadar.ok).toBe(false);
     expect(implicitRadar.error).toBe("explicit_required");
+  });
+
+  it("does not call mobile.de search while the Akamai circuit is open and writes no run", async () => {
+    await writeMobileDeCircuit({
+      version: 1,
+      pausedUntil: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      trippedAt: new Date().toISOString(),
+      reason: "test",
+    });
+    const search = vi.fn(async () => ({ items: RAW, chargedUsd: 0.01 }));
+    const out = await loadMarketplaceForOrder({
+      orderId: "00000000-0000-4000-8000-000000000001",
+      order,
+      explicit: true,
+      providers: [{ ...mockProvider("mobilede", RAW), search }],
+    });
+    expect(search).not.toHaveBeenCalled();
+    expect(out.ok).toBe(false);
+    expect(out.blocked).toBe(true);
+    expect(out.error).toBe(MOBILE_DE_CIRCUIT_OPEN_REASON);
+    const state = await readMarketplaceListingsState();
+    expect(state.runs).toHaveLength(0);
+  });
+
+  it("opens the circuit after an Akamai denial and skips the next mobile.de start", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      const search = vi.fn(async () => ({
+        items: [],
+        chargedUsd: 0.005,
+        error: "Access Denied Reference #18.1cec1702.1793787682.9ed545de https://errors.edgesuite.net/18.1cec1702.1793787682.9ed545de",
+      }));
+      const provider = { ...mockProvider("mobilede", []), search };
+      const first = await loadMarketplaceForOrder({
+        orderId: "00000000-0000-4000-8000-000000000001",
+        order,
+        explicit: true,
+        providers: [provider],
+      });
+      expect(first.ok).toBe(false);
+      expect(first.error).toContain("edgesuite.net");
+      const circuit = await readMobileDeCircuit();
+      expect(Date.parse(circuit.pausedUntil)).toBeGreaterThan(Date.now());
+      const second = await loadMarketplaceForOrder({
+        orderId: "00000000-0000-4000-8000-000000000001",
+        order,
+        explicit: true,
+        providers: [provider],
+      });
+      expect(second.blocked).toBe(true);
+      expect(second.error).toBe(MOBILE_DE_CIRCUIT_OPEN_REASON);
+      expect(search).toHaveBeenCalledTimes(1);
+    } finally {
+      warn.mockRestore();
+    }
+  });
+
+  it("stops a new mobile.de start after the hourly cap without calling search", async () => {
+    process.env.MOBILE_DE_MAX_ACTOR_STARTS_PER_HOUR = "2";
+    const now = new Date().toISOString();
+    const usage = emptyMarketplaceUsageMonth(marketplaceMonthKey(new Date(now)), 20);
+    usage.entries.push(
+      { runId: "a", orderId: "o", providerId: "apify-mobilede", items: 1, usd: 0.01, monthUsd: 0.01, at: now, trigger: "auto" },
+      { runId: "b", orderId: "o", providerId: "apify-mobilede", items: 1, usd: 0.01, monthUsd: 0.02, at: now, trigger: "auto" },
+    );
+    await writeMarketplaceUsageMonth(usage);
+    const search = vi.fn(async () => ({ items: RAW, chargedUsd: 0.01 }));
+    const out = await loadMarketplaceForOrder({
+      orderId: "00000000-0000-4000-8000-000000000001",
+      order,
+      explicit: true,
+      now,
+      providers: [{ ...mockProvider("mobilede", RAW), search }],
+    });
+    expect(search).not.toHaveBeenCalled();
+    expect(out.blocked).toBe(true);
+    expect(out.error).toContain("mobile.de-pauze:");
   });
 });

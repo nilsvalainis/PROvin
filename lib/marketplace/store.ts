@@ -5,6 +5,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { marketplaceMonthKey, emptyMarketplaceUsageMonth, MARKETPLACE_RUNS_KEEP } from "@/lib/marketplace/cost-caps";
+import { emptyMobileDeCircuit, type MobileDeCircuitFile } from "@/lib/marketplace/mobile-de-guard";
 import { marketplaceListingExpiresAt, marketplaceListingIsExpired, marketplaceListingVehicleId } from "@/lib/marketplace/to-listing-vehicle";
 import {
   emptyMarketplaceAutoCronState,
@@ -28,6 +29,7 @@ import {
 const DEFAULT_RELATIVE_DIR = ".data/iriss-marketplace";
 const LISTINGS_FILENAME = "listings.json";
 const AUTO_CRON_FILENAME = "auto-cron.json";
+const MOBILE_DE_CIRCUIT_FILENAME = "mobile-de-circuit.json";
 
 type ResolvedStorage =
   | { kind: "disabled" }
@@ -350,6 +352,36 @@ export async function writeMarketplaceAutoCronState(
   if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
   try {
     await writeJson(r, AUTO_CRON_FILENAME, JSON.stringify(normalizeMarketplaceAutoCronState(state), null, 2));
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+export function normalizeMobileDeCircuitFile(raw: unknown): MobileDeCircuitFile {
+  const empty = emptyMobileDeCircuit();
+  if (!isObj(raw) || raw.version !== 1) return empty;
+  return {
+    version: 1,
+    pausedUntil: str(raw.pausedUntil, 40),
+    trippedAt: str(raw.trippedAt, 40),
+    reason: str(raw.reason, 180),
+  };
+}
+
+export async function readMobileDeCircuit(): Promise<MobileDeCircuitFile> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return emptyMobileDeCircuit();
+  return normalizeMobileDeCircuitFile(await readJson(r, MOBILE_DE_CIRCUIT_FILENAME));
+}
+
+export async function writeMobileDeCircuit(
+  state: MobileDeCircuitFile,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
+  try {
+    await writeJson(r, MOBILE_DE_CIRCUIT_FILENAME, JSON.stringify(normalizeMobileDeCircuitFile(state)));
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };

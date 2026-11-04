@@ -22,4 +22,15 @@ describe("Nils 31.10: mobile.de bildes tieši no CDN, ne caur m.mobile.de", () =
     expect(mobileDeImageDisplayUrl("https://images.openlane.eu/x.jpg")).toBe("https://images.openlane.eu/x.jpg");
     expect(mobileDeImageDisplayUrl("")).toBe("");
   });
+
+  it("nedod pārlūkam nevienu mobile.de saiti, arī ja yams nav classistatic", () => {
+    expect(mobileDeImageDisplayUrl("https://m.mobile.de/yams-proxy/other.example/a.jpg")).toBe("");
+    expect(mobileDeImageDisplayUrl("https://www.mobile.de/bilder/a.jpg")).toBe("");
+    expect(mobileDeImageDisplayUrl("//m.mobile.de/yams-proxy/img.classistatic.de/api/v1/mo-prod/images/ba/ba59")).toContain(
+      "img.classistatic.de",
+    );
+    expect(mobileDeImageDisplayUrl("//m.mobile.de/yams-proxy/img.classistatic.de/api/v1/mo-prod/images/ba/ba59")).not.toContain(
+      "mobile.de",
+    );
+  });
 });

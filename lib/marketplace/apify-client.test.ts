@@ -340,4 +340,33 @@ describe("marketplace Apify HTTP runner", () => {
     expect(found.apifyRunId).toBe("run-err");
     expect(found.error).toBe("Avota kļūda: mobile.de: Apify failed");
   });
+
+  it("drops proxy fields and refuses a payload that still names the office IP", async () => {
+    let sent: Record<string, unknown> | null = null;
+    let calls = 0;
+    setMarketplaceApifyRunner(async (input) => {
+      calls += 1;
+      sent = input.payload;
+      return { ok: true, items: [], chargedUsd: 0 };
+    });
+    const stripped = await runMarketplaceApifyActor({
+      actorId: "actor",
+      payload: { make: "Volvo", proxyConfiguration: { proxyUrls: ["http://91.135.84.67:8080"] } },
+      maxItems: 10,
+      maxUsd: 1,
+    });
+    expect(stripped.ok).toBe(true);
+    expect(sent).toEqual({ make: "Volvo" });
+    expect(JSON.stringify(sent)).not.toContain("91.135.84.67");
+
+    const blocked = await runMarketplaceApifyActor({
+      actorId: "actor",
+      payload: { startUrls: ["http://91.135.84.67/hook"] },
+      maxItems: 10,
+      maxUsd: 1,
+    });
+    expect(blocked.ok).toBe(false);
+    expect(blocked.error).toBe("office_egress_forbidden");
+    expect(calls).toBe(1);
+  });
 });
