@@ -2934,11 +2934,11 @@ body.provin-menu-open .cookie-consent-panel {
 }
 .b2b-map {
   position: absolute;
-  left: -140px;
-  right: -140px;
-  top: -170px;
-  bottom: -170px;
-  opacity: 0.85;
+  left: -70px;
+  right: -110px;
+  top: -120px;
+  bottom: -120px;
+  opacity: 0.5;
   -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000 40%, transparent 80%);
   mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000 40%, transparent 80%);
   pointer-events: none;
@@ -3002,7 +3002,6 @@ body.provin-menu-open .cookie-consent-panel {
     align-content: start;
   }
   .b2b-ht-cta {
-    order: 3;
     flex-direction: column;
   }
   .b2b-quote-q {
@@ -3213,6 +3212,31 @@ body.provin-menu-open .cookie-consent-panel {
   }
   .b2b-inc i {
     animation: none;
+  }
+}
+
+/* Partneriem: vienas kolonnas skatā piedāvājuma CTA zem ieejas kartītes (Nils 04.11). */
+@media (max-width: 900px) {
+  .b2b-h {
+    row-gap: 0;
+  }
+  .b2b-ht {
+    display: contents;
+  }
+  .b2b-h1 {
+    order: 1;
+  }
+  .b2b-lead {
+    order: 2;
+  }
+  .b2b-hv {
+    order: 3;
+    margin-top: 32px;
+  }
+  .b2b-ht-cta {
+    order: 4;
+    margin-top: 28px;
+    justify-content: center;
   }
 }
 

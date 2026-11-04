@@ -1,22 +1,23 @@
 /* Sākumlapa K1 v6 - hero ar Eiropas karti un pasūtījuma kartīti. */
 .hero {
   position: relative;
-  overflow-x: clip;
+  /* Karte paliek hero robežās - neielien nākamajā sadaļā. */
+  overflow: clip;
   isolation: isolate;
 }
 .map {
   position: absolute;
   z-index: -1;
-  left: 4%;
-  width: 56%;
-  top: 50%;
-  opacity: 0.85;
+  left: 2%;
+  width: 52%;
+  top: 44%;
+  opacity: 0.55;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(90deg, #000 45%, transparent 88%),
-    linear-gradient(180deg, transparent 0, #000 12%, #000 82%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent 85%),
+    linear-gradient(180deg, transparent 0, #000 30%, #000 70%, transparent 100%);
   -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(90deg, #000 45%, transparent 88%),
-    linear-gradient(180deg, transparent 0, #000 12%, #000 82%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000 40%, transparent 85%),
+    linear-gradient(180deg, transparent 0, #000 30%, #000 70%, transparent 100%);
   mask-composite: intersect;
 }
 .inner {
@@ -487,6 +488,7 @@
     right: -18px;
     width: auto;
     top: 170px;
+    opacity: 0.6;
     -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 18%, #000 62%, transparent 92%);
     mask-image: linear-gradient(180deg, transparent 0, #000 18%, #000 62%, transparent 92%);
   }
