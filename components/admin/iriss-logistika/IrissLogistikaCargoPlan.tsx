@@ -24,9 +24,16 @@ import { IrissAddressAutocomplete, type PickedAddress } from "@/components/admin
 import { autoparksSaitesHref } from "@/lib/iriss-car-share";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
 import {
-  CARGO_BUCKET_ADD_LV,
-  CARGO_BUCKET_LV,
-  CARGO_BUCKETS,
+  addCargo,
+  cargoBucketCssColor,
+  cargoBucketLabel,
+  cargoBuckets,
+  cargoRoute,
+  isExtraCargoBucket,
+  removeCargo,
+  renameCargo,
+  type CargoRouteBucket,
+  type ExtraCargoBucket,
   cargoRoutePoints,
   cargoRoutePointsKey,
   carsInCargoBucket,
@@ -69,8 +76,8 @@ type Props = {
   stageLabelByCarId?: Readonly<Record<string, string>>;
   onOpenCabinet?: (id: string) => void;
   /** `base`: tikko mainītais plāns, ko aprēķins izmanto (nevis veco stāvokli). */
-  onRefreshDirections: (bucket: "next" | "after", base?: CargoPlanState) => void;
-  routeUi?: Record<"next" | "after", { busy: boolean; notice: string }>;
+  onRefreshDirections: (bucket: CargoRouteBucket, base?: CargoPlanState) => void;
+  routeUi?: Partial<Record<CargoRouteBucket, { busy: boolean; notice: string }>>;
   /** Pēc šablona pievienošanas, labošanas vai dzēšanas pārlādē sarakstu. */
   onTemplatesChanged?: () => void;
   /** Citu klientu auto ar roku: marka, modelis, adrese no ģeokodētāja. */
@@ -90,14 +97,12 @@ export type ManualCarInput = {
   lng: number;
 };
 
-type BucketLists = Record<CargoBucket, string[]>;
+type BucketLists = Record<string, string[]>;
 
 function bucketListsFromPlan(plan: CargoPlanState, byId: Map<string, LogisticsOrder>): BucketLists {
-  return {
-    next: carsInCargoBucket(plan, "next").filter((c) => byId.has(c.carId)).map((c) => c.carId),
-    after: carsInCargoBucket(plan, "after").filter((c) => byId.has(c.carId)).map((c) => c.carId),
-    none: carsInCargoBucket(plan, "none").filter((c) => byId.has(c.carId)).map((c) => c.carId),
-  };
+  const out: BucketLists = {};
+  for (const b of cargoBuckets(plan)) out[b] = carsInCargoBucket(plan, b).filter((c) => byId.has(c.carId)).map((c) => c.carId);
+  return out;
 }
 
 /**
@@ -120,7 +125,7 @@ function bucketOfId(lists: BucketLists, id: string): CargoBucket | null {
     const b = id.slice("bucket:".length);
     return isCargoBucket(b) ? b : null;
   }
-  for (const bucket of CARGO_BUCKETS) if (lists[bucket].includes(id)) return bucket;
+  for (const [bucket, ids] of Object.entries(lists)) if (ids.includes(id) && isCargoBucket(bucket)) return bucket;
   return null;
 }
 
@@ -150,7 +155,14 @@ export function IrissLogistikaCargoPlan({
   const [dragLists, setDragLists] = useState<BucketLists | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [colorFor, setColorFor] = useState<string | null>(null);
-  const [addressFor, setAddressFor] = useState<{ bucket: "next" | "after"; end: "start" | "end" } | null>(null);
+  const [addressFor, setAddressFor] = useState<{ bucket: CargoRouteBucket; end: "start" | "end" } | null>(null);
+  const moveOptions: MoveOption[] = cargoBuckets(plan).map((b) => ({
+    bucket: b,
+    label: cargoBucketLabel(plan, b),
+    color: cargoBucketCssColor(plan, b),
+  }));
+  /** Nils 04.11 (makets LogKravas 4): papildu kravas nosaukuma labošana. */
+  const [renaming, setRenaming] = useState<{ id: ExtraCargoBucket; name: string } | null>(null);
   const lists = dragLists ?? planLists;
   const [portalReady, setPortalReady] = useState(false);
   useEffect(() => setPortalReady(true), []);
@@ -191,7 +203,9 @@ export function IrissLogistikaCargoPlan({
 
   function moveTo(ids: string[], bucket: CargoBucket, where: "start" | "end") {
     const label =
-      ids.length === 1 ? `${carLabel(ids[0]!)} → ${CARGO_BUCKET_LV[bucket]}${where === "start" ? " (sākumā)" : ""}` : `${ids.length} auto → ${CARGO_BUCKET_LV[bucket]}`;
+      ids.length === 1
+        ? `${carLabel(ids[0]!)} → ${cargoBucketLabel(plan, bucket)}${where === "start" ? " (sākumā)" : ""}`
+        : `${ids.length} auto → ${cargoBucketLabel(plan, bucket)}`;
     change(moveCargoCarsTo(plan, ids, bucket, where), label);
   }
 
@@ -257,7 +271,7 @@ export function IrissLogistikaCargoPlan({
     const index = list.indexOf(activeId);
     const before = planLists[bucket].indexOf(activeId);
     if (bucketOfId(planLists, activeId) === bucket && before === index) return;
-    change(moveCargoCar(plan, activeId, bucket, index), `${carLabel(activeId)} → ${CARGO_BUCKET_LV[bucket]}, ${index + 1}. vieta`);
+    change(moveCargoCar(plan, activeId, bucket, index), `${carLabel(activeId)} → ${cargoBucketLabel(plan, bucket)}, ${index + 1}. vieta`);
   }
 
   const dragOrder = dragId ? byId.get(dragId) : null;
@@ -294,6 +308,7 @@ export function IrissLogistikaCargoPlan({
             </button>
             {bulkMenu && selected.length > 0 ? (
               <MoveMenu
+                options={moveOptions}
                 className="right-0 top-9"
                 onPick={(bucket, where) => {
                   moveTo(selected, bucket, where);
@@ -323,15 +338,17 @@ export function IrissLogistikaCargoPlan({
         onDragEnd={finishDrag}
         onDragCancel={() => finishDrag(null)}
       >
-        {CARGO_BUCKETS.map((bucket) => {
-          const ids = lists[bucket];
-          const cargoBucket = bucket === "none" ? null : bucket;
-          const route = cargoBucket ? plan.routes[cargoBucket] : null;
-          const colorVar = `var(--iriss-log-cargo-${bucket})`;
+        {cargoBuckets(plan).map((bucket) => {
+          const ids = lists[bucket] ?? [];
+          const cargoBucket: CargoRouteBucket | null = bucket === "none" ? null : bucket;
+          const route = cargoBucket ? cargoRoute(plan, cargoBucket) : null;
+          const colorVar = cargoBucketCssColor(plan, bucket);
+          const extra = isExtraCargoBucket(bucket) ? bucket : null;
           const rows = (
             <>
             <BucketList
               bucket={bucket}
+              addLabel={`+ Pievienot: ${cargoBucketLabel(plan, bucket)}`}
               ids={ids}
               dragging={Boolean(dragId)}
               numbered={Boolean(route?.enabled)}
@@ -358,6 +375,7 @@ export function IrissLogistikaCargoPlan({
                     onOpenCabinet={onOpenCabinet ? () => onOpenCabinet(id) : undefined}
                     onToggleMap={() => onPlanChange(setCargoShowOnMap(plan, id, !(car?.showOnMap ?? true)))}
                     onToggleColor={() => setColorFor((cur) => (cur === id ? null : id))}
+                    moveOptions={moveOptions}
                     onPickColor={(next, where) => {
                       moveTo([id], next, where);
                       setColorFor(null);
@@ -379,8 +397,46 @@ export function IrissLogistikaCargoPlan({
             <section key={bucket} className="border-t border-[var(--iriss-log-line)] first:border-t-0">
               <div className="iriss-log-cargo-head">
                 <span className="iriss-log-cargo-dot" style={{ background: colorVar }} />
-                <span className="text-[13px] font-semibold">{CARGO_BUCKET_LV[bucket]}</span>
+                {extra && renaming?.id === extra ? (
+                  <input
+                    className="iriss-log-cargo-rename"
+                    value={renaming.name}
+                    autoFocus
+                    maxLength={40}
+                    aria-label="Kravas nosaukums"
+                    onChange={(e) => setRenaming({ id: extra, name: e.target.value })}
+                    onBlur={() => {
+                      onPlanChange(renameCargo(plan, extra, renaming.name));
+                      setRenaming(null);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                      if (e.key === "Escape") setRenaming(null);
+                    }}
+                  />
+                ) : extra ? (
+                  <button
+                    type="button"
+                    className="text-left text-[13px] font-semibold"
+                    title="Mainīt nosaukumu"
+                    onClick={() => setRenaming({ id: extra, name: cargoBucketLabel(plan, bucket) })}
+                  >
+                    {cargoBucketLabel(plan, bucket)}
+                  </button>
+                ) : (
+                  <span className="text-[13px] font-semibold">{cargoBucketLabel(plan, bucket)}</span>
+                )}
                 <span className="text-[12px] text-[var(--iriss-ink-2)]">{ids.length}</span>
+                {extra && ids.length === 0 ? (
+                  <button
+                    type="button"
+                    className="iriss-log-cargo-pill"
+                    aria-label={`Dzēst kravu ${cargoBucketLabel(plan, bucket)}`}
+                    onClick={() => change(removeCargo(plan, extra), `Dzēsta krava: ${cargoBucketLabel(plan, bucket)}`)}
+                  >
+                    Dzēst
+                  </button>
+                ) : null}
                 {route ? (
                   <span className="ml-auto flex items-center gap-3">
                   <label className="flex items-center gap-2 text-[12px] font-medium">
@@ -425,9 +481,9 @@ export function IrissLogistikaCargoPlan({
                   setAddressFor={setAddressFor}
                   onPlanChange={onPlanChange}
                   onRefreshDirections={(base) => onRefreshDirections(cargoBucket, base)}
-                  busy={routeUi?.[cargoBucket].busy ?? false}
+                  busy={routeUi?.[cargoBucket]?.busy ?? false}
                   onTemplatesChanged={onTemplatesChanged ?? (() => undefined)}
-                  error={routeUi?.[cargoBucket].notice ?? ""}
+                  error={routeUi?.[cargoBucket]?.notice ?? ""}
                 >
                   {rows}
                 </RouteBlock>
@@ -437,6 +493,21 @@ export function IrissLogistikaCargoPlan({
             </section>
           );
         })}
+        {/* Nils 04.11 (makets LogKravas 4): kravas - cik vajag. */}
+        <div className="px-3.5 py-2.5">
+          <button
+            type="button"
+            className="iriss-log-cargo-pill"
+            onClick={() => {
+              const res = addCargo(plan);
+              if (!res.id) return;
+              onPlanChange(res.plan);
+              setRenaming({ id: res.id, name: cargoBucketLabel(res.plan, res.id) });
+            }}
+          >
+            + Jauna krava
+          </button>
+        </div>
         {/* Nils 29.10 «bloks seko peles kursoram»: kravu kolonnai ir backdrop-filter (stikla kartītes), kas
             salauž position:fixed - peldošā kartīte bija ārpus ekrāna. Tāpēc DragOverlay portālā uz <body>. */}
         {portalReady
@@ -446,7 +517,7 @@ export function IrissLogistikaCargoPlan({
                   // .iriss-log-screen - tikai Loģistikas krāsu mainīgie (portālā ārpus saknes tie citādi pazūd).
                   <div className="iriss-log-screen">
                     <div className="iriss-log-cargo-row overlay">
-                      <span className="iriss-log-cargo-dot" style={{ background: `var(--iriss-log-cargo-${dragBucket})` }} />
+                      <span className="iriss-log-cargo-dot" style={{ background: cargoBucketCssColor(plan, dragBucket) }} />
                       <CargoRowText order={dragOrder} />
                     </div>
                   </div>
@@ -462,12 +533,14 @@ export function IrissLogistikaCargoPlan({
 
 function BucketList({
   bucket,
+  addLabel,
   ids,
   dragging,
   numbered,
   renderRow,
 }: {
   bucket: CargoBucket;
+  addLabel: string;
   ids: string[];
   dragging: boolean;
   numbered: boolean;
@@ -480,7 +553,7 @@ function BucketList({
         {ids.map((id, i) => renderRow(id, i))}
         {ids.length === 0 ? (
           <li className={`iriss-log-cargo-drop ${dragging ? "live" : ""}`}>
-            {dragging ? CARGO_BUCKET_ADD_LV[bucket] : "Ievelc auto šeit"}
+            {dragging ? addLabel : "Ievelc auto šeit"}
           </li>
         ) : null}
       </ul>
@@ -568,6 +641,7 @@ function SortableCargoRow({
   onToggleMap,
   onToggleColor,
   onPickColor,
+  moveOptions,
   cardHref,
   stageLabel,
   onOpenCabinet,
@@ -591,6 +665,7 @@ function SortableCargoRow({
   onToggleMap: () => void;
   onToggleColor: () => void;
   onPickColor: (bucket: CargoBucket, where: "start" | "end") => void;
+  moveOptions: MoveOption[];
   onStep: (delta: -1 | 1) => void;
   canUp: boolean;
   canDown: boolean;
@@ -749,7 +824,7 @@ function SortableCargoRow({
           </svg>
         </button>
       </div>
-      {colorOpen ? <MoveMenu className="right-2 top-11" onPick={onPickColor} /> : null}
+      {colorOpen ? <MoveMenu options={moveOptions} className="right-2 top-11" onPick={onPickColor} /> : null}
     </li>
   );
 }
@@ -821,10 +896,20 @@ function ManualCarAdd({ bucket, onAdd }: { bucket: CargoBucket; onAdd: (bucket: 
 }
 
 /** «Uz ▾»: uz jebkuru kravu (beigās) vai kravas sākumā. */
-function MoveMenu({ onPick, className }: { onPick: (bucket: CargoBucket, where: "start" | "end") => void; className: string }) {
+type MoveOption = { bucket: CargoBucket; label: string; color: string };
+
+function MoveMenu({
+  options,
+  onPick,
+  className,
+}: {
+  options: MoveOption[];
+  onPick: (bucket: CargoBucket, where: "start" | "end") => void;
+  className: string;
+}) {
   return (
     <div className={`iriss-log-cargo-menu ${className}`} role="menu">
-      {CARGO_BUCKETS.map((bucket) => (
+      {options.map(({ bucket, label, color }) => (
         <div key={bucket} className="flex items-center gap-1">
           <button
             type="button"
@@ -832,14 +917,14 @@ function MoveMenu({ onPick, className }: { onPick: (bucket: CargoBucket, where: 
             className="flex min-w-0 flex-1 items-center gap-2 rounded-[10px] px-2.5 py-2 text-left text-[13px]"
             onClick={() => onPick(bucket, "end")}
           >
-            <span className="iriss-log-cargo-dot" style={{ background: `var(--iriss-log-cargo-${bucket})` }} />
-            {CARGO_BUCKET_LV[bucket]}
+            <span className="iriss-log-cargo-dot" style={{ background: color }} />
+            {label}
           </button>
           <button
             type="button"
             role="menuitem"
-            title={`${CARGO_BUCKET_LV[bucket]} - sākumā`}
-            aria-label={`${CARGO_BUCKET_LV[bucket]} - sākumā`}
+            title={`${label} - sākumā`}
+            aria-label={`${label} - sākumā`}
             className="rounded-[10px] px-2 py-2 text-[12px] text-[var(--iriss-ink-2)]"
             onClick={() => onPick(bucket, "start")}
           >
@@ -866,13 +951,13 @@ function RouteBlock({
   onTemplatesChanged,
   children,
 }: {
-  bucket: "next" | "after";
+  bucket: CargoRouteBucket;
   plan: CargoPlanState;
   rows: { carId: string }[];
   byId: Map<string, LogisticsOrder>;
   templates: CargoRouteTemplate[];
-  addressFor: { bucket: "next" | "after"; end: "start" | "end" } | null;
-  setAddressFor: (v: { bucket: "next" | "after"; end: "start" | "end" } | null) => void;
+  addressFor: { bucket: CargoRouteBucket; end: "start" | "end" } | null;
+  setAddressFor: (v: { bucket: CargoRouteBucket; end: "start" | "end" } | null) => void;
   onPlanChange: (plan: CargoPlanState) => void;
   onRefreshDirections: (base?: CargoPlanState) => void;
   busy: boolean;
@@ -880,7 +965,7 @@ function RouteBlock({
   onTemplatesChanged: () => void;
   children: ReactNode;
 }) {
-  const route = plan.routes[bucket];
+  const route = cargoRoute(plan, bucket);
   // Tie paši punkti kā pieprasījumā (ar caurbraucamajiem punktiem), lai "novecojis" neiedegas bez iemesla.
   const points = cargoRoutePoints(plan, bucket, [...byId.values()]);
   const mapsUrl = logisticsGoogleMapsDirUrl(points);
@@ -958,14 +1043,14 @@ function RouteBlock({
         ) : (
           <span className="iriss-log-btn-sec opacity-40">Atvērt Google Maps</span>
         )}
-        <DriverLinkButton bucket={bucket} disabled={rows.length === 0} />
+        <DriverLinkButton bucket={bucket} title={cargoBucketLabel(plan, bucket)} disabled={rows.length === 0} />
       </div>
     </div>
   );
 }
 
 /** Tikai lasāma saite šoferim (pieturas, adreses, navigācija). Kopīgo caur iPhone kopīgošanu vai nokopē. */
-function DriverLinkButton({ bucket, disabled }: { bucket: "next" | "after"; disabled: boolean }) {
+function DriverLinkButton({ bucket, title, disabled }: { bucket: CargoRouteBucket; title: string; disabled: boolean }) {
   const [state, setState] = useState<"idle" | "busy" | "copied" | "revoked" | "error">("idle");
 
   async function share() {
@@ -980,7 +1065,6 @@ function DriverLinkButton({ bucket, disabled }: { bucket: "next" | "after"; disa
       const data = (await res.json().catch(() => null)) as { path?: string } | null;
       if (!res.ok || !data?.path) throw new Error("create");
       const url = `${window.location.origin}${data.path}`;
-      const title = bucket === "next" ? "Nākošā krava" : "Aiznākošā krava";
       if (typeof navigator.share === "function") {
         await navigator.share({ title, url }).catch(() => undefined);
         setState("idle");

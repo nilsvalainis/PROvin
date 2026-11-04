@@ -3,29 +3,41 @@
 import type { CabinetPickupStage } from "@/lib/iriss-logistics-cabinet";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
 
+/** Pamata kravas (vienmēr ir). */
 export const CARGO_BUCKETS = ["next", "after", "none"] as const;
-export type CargoBucket = (typeof CARGO_BUCKETS)[number];
+export type BuiltinCargoBucket = (typeof CARGO_BUCKETS)[number];
+/** Nils 04.11 (makets LogKravas 4): papildu kravas «k-xxxx» - cik vajag, ar nosaukumu, krāsu un maršrutu. */
+export type ExtraCargoBucket = `k-${string}`;
+export type CargoBucket = BuiltinCargoBucket | ExtraCargoBucket;
+/** Kravas ar maršrutu (visas, izņemot «Nav kravā»). */
+export type CargoRouteBucket = Exclude<CargoBucket, "none">;
 
-export const CARGO_BUCKET_LV: Record<CargoBucket, string> = {
+export type CargoDef = { id: ExtraCargoBucket; name: string; color: string };
+
+/** Papildu kravu krāsas (atšķiras no Nākošās sarkanās un Aiznākošās pelēkās). */
+export const CARGO_EXTRA_COLORS = ["#1a73e8", "#188038", "#9334e6", "#e37400", "#00838f", "#b0367a", "#795548", "#5c6bc0"] as const;
+export const CARGO_EXTRA_MAX = 12;
+
+export const CARGO_BUCKET_LV: Record<BuiltinCargoBucket, string> = {
   next: "Nākošā krava",
   after: "Aiznākošā krava",
   none: "Nav kravā",
 };
 
-export const CARGO_BUCKET_ADD_LV: Record<CargoBucket, string> = {
+export const CARGO_BUCKET_ADD_LV: Record<BuiltinCargoBucket, string> = {
   next: "+ Pievienot Nākošajai kravai",
   after: "+ Pievienot Aiznākošajai kravai",
   none: "+ Pievienot pie Nav kravā",
 };
 
 /** Fallback, ja CSS mainīgais nav ielasīts. Vienīgais avots UI ir Loģistikas tokeni. */
-export const CARGO_COLOR_FALLBACK: Record<CargoBucket, string> = {
+export const CARGO_COLOR_FALLBACK: Record<BuiltinCargoBucket, string> = {
   next: "#ea4335",
   after: "#5f6368",
   none: "#1d1d1f",
 };
 
-export const CARGO_CSS_VAR: Record<CargoBucket, string> = {
+export const CARGO_CSS_VAR: Record<BuiltinCargoBucket, string> = {
   next: "--krava-next",
   after: "--krava-next2",
   none: "--krava-none",
@@ -84,7 +96,10 @@ export type CargoLatLng = { lat: number; lng: number };
 export type CargoPlanState = {
   version: 1;
   cars: CargoCarState[];
-  routes: { next: CargoRouteState; after: CargoRouteState };
+  /** Papildu kravas secībā (vecajos plānos nav - tad tukšs). */
+  cargos: CargoDef[];
+  /** Maršruts katrai kravai: next, after un papildu kravām pēc id. */
+  routes: Record<CargoRouteBucket, CargoRouteState>;
   updatedAt: string;
 };
 
@@ -101,8 +116,93 @@ export type CargoRouteTemplate = {
 
 export const CARGO_DOC_EXPECTED = 4;
 
-export function isCargoBucket(v: unknown): v is CargoBucket {
+export function isBuiltinCargoBucket(v: unknown): v is BuiltinCargoBucket {
   return v === "next" || v === "after" || v === "none";
+}
+
+export function isExtraCargoBucket(v: unknown): v is ExtraCargoBucket {
+  return typeof v === "string" && /^k-[a-z0-9]{3,16}$/.test(v);
+}
+
+export function isCargoBucket(v: unknown): v is CargoBucket {
+  return isBuiltinCargoBucket(v) || isExtraCargoBucket(v);
+}
+
+/** Visas plāna kravas secībā: Nākošā, Aiznākošā, papildu kravas, Nav kravā. */
+export function cargoBuckets(plan: Pick<CargoPlanState, "cargos">): CargoBucket[] {
+  return ["next", "after", ...(plan.cargos ?? []).map((c) => c.id), "none"];
+}
+
+/** Kravas ar maršrutu (bez «Nav kravā»). */
+export function cargoRouteBuckets(plan: Pick<CargoPlanState, "cargos">): CargoRouteBucket[] {
+  return ["next", "after", ...(plan.cargos ?? []).map((c) => c.id)];
+}
+
+export function cargoDef(plan: Pick<CargoPlanState, "cargos">, bucket: CargoBucket): CargoDef | null {
+  return isExtraCargoBucket(bucket) ? ((plan.cargos ?? []).find((c) => c.id === bucket) ?? null) : null;
+}
+
+export function cargoBucketLabel(plan: Pick<CargoPlanState, "cargos">, bucket: CargoBucket): string {
+  if (isBuiltinCargoBucket(bucket)) return CARGO_BUCKET_LV[bucket];
+  return cargoDef(plan, bucket)?.name || "Krava";
+}
+
+/** Krāsa kartē un sarakstā: pamata kravām - Loģistikas tokeni (fallback), papildu - pašas kravas krāsa. */
+export function cargoBucketColor(plan: Pick<CargoPlanState, "cargos">, bucket: CargoBucket): string {
+  if (isBuiltinCargoBucket(bucket)) return CARGO_COLOR_FALLBACK[bucket];
+  return cargoDef(plan, bucket)?.color || CARGO_EXTRA_COLORS[0];
+}
+
+/** CSS krāsa sarakstam: pamata kravām CSS mainīgais, papildu - pati krāsa. */
+export function cargoBucketCssColor(plan: Pick<CargoPlanState, "cargos">, bucket: CargoBucket): string {
+  if (isBuiltinCargoBucket(bucket)) return `var(--iriss-log-cargo-${bucket})`;
+  return cargoBucketColor(plan, bucket);
+}
+
+export function cargoRoute(plan: Pick<CargoPlanState, "routes">, bucket: CargoRouteBucket): CargoRouteState {
+  return plan.routes[bucket] ?? emptyCargoRoute();
+}
+
+function newCargoId(taken: ReadonlySet<string>): ExtraCargoBucket {
+  for (let i = 0; i < 50; i++) {
+    const id = `k-${Math.random().toString(36).slice(2, 8)}` as ExtraCargoBucket;
+    if (!taken.has(id) && isExtraCargoBucket(id)) return id;
+  }
+  return `k-${Date.now().toString(36)}` as ExtraCargoBucket;
+}
+
+/** «+ Jauna krava»: Krava 3, 4, ... ar nākamo brīvo krāsu. Atgriež plānu un jaunās kravas id. */
+export function addCargo(
+  plan: CargoPlanState,
+  name = "",
+  at = new Date().toISOString(),
+): { plan: CargoPlanState; id: ExtraCargoBucket | null } {
+  const cargos = plan.cargos ?? [];
+  if (cargos.length >= CARGO_EXTRA_MAX) return { plan, id: null };
+  const id = newCargoId(new Set(cargos.map((c) => c.id)));
+  const used = new Set(cargos.map((c) => c.color));
+  const color = CARGO_EXTRA_COLORS.find((c) => !used.has(c)) ?? CARGO_EXTRA_COLORS[cargos.length % CARGO_EXTRA_COLORS.length]!;
+  const def: CargoDef = { id, name: name.trim().slice(0, 40) || `Krava ${cargos.length + 3}`, color };
+  return {
+    plan: { ...plan, cargos: [...cargos, def], routes: { ...plan.routes, [id]: emptyCargoRoute() }, updatedAt: at },
+    id,
+  };
+}
+
+export function renameCargo(plan: CargoPlanState, id: ExtraCargoBucket, name: string, at = new Date().toISOString()): CargoPlanState {
+  const clean = name.trim().slice(0, 40);
+  if (!clean) return plan;
+  return { ...plan, cargos: (plan.cargos ?? []).map((c) => (c.id === id ? { ...c, name: clean } : c)), updatedAt: at };
+}
+
+/** Dzēš papildu kravu; tās auto (ja ir) nonāk «Nav kravā» beigās. */
+export function removeCargo(plan: CargoPlanState, id: ExtraCargoBucket, at = new Date().toISOString()): CargoPlanState {
+  let next: CargoPlanState = { ...plan, cargos: (plan.cargos ?? []).filter((c) => c.id !== id), updatedAt: at };
+  const moved = plan.cars.filter((c) => c.bucket === id).map((c) => c.carId);
+  if (moved.length) next = moveCargoCarsTo({ ...next, cars: plan.cars }, moved, "none", "end", at);
+  const routes = { ...next.routes };
+  delete (routes as Record<string, CargoRouteState>)[id];
+  return { ...next, cargos: (plan.cargos ?? []).filter((c) => c.id !== id), routes, updatedAt: at };
 }
 
 export function isRouteTemplateType(v: unknown): v is RouteTemplateType {
@@ -117,6 +217,7 @@ export function emptyCargoPlan(at = new Date().toISOString()): CargoPlanState {
   return {
     version: 1,
     cars: [],
+    cargos: [],
     routes: { next: emptyCargoRoute(), after: emptyCargoRoute() },
     updatedAt: at,
   };
@@ -188,10 +289,10 @@ export function normalizeCargoPath(raw: unknown): CargoLatLng[] {
 /** Maršruta punkti secībā: sākums, kravas auto ar koordinātēm, beigas. */
 export function cargoRoutePoints(
   plan: CargoPlanState,
-  bucket: Exclude<CargoBucket, "none">,
+  bucket: CargoRouteBucket,
   orders: ReadonlyArray<Pick<LogisticsOrder, "id" | "pickupLat" | "pickupLng">>,
 ): CargoRoutePoint[] {
-  const route = plan.routes[bucket];
+  const route = cargoRoute(plan, bucket);
   const byId = new Map(orders.map((o) => [o.id, o]));
   const stops = carsInCargoBucket(plan, bucket).flatMap((c) => {
     const o = byId.get(c.carId);
@@ -249,20 +350,20 @@ export function insertCargoViaPoints(points: readonly CargoLatLng[], via: readon
   return out;
 }
 
-export function addCargoVia(plan: CargoPlanState, bucket: Exclude<CargoBucket, "none">, p: CargoLatLng, at = new Date().toISOString()): CargoPlanState {
-  const route = plan.routes[bucket];
+export function addCargoVia(plan: CargoPlanState, bucket: CargoRouteBucket, p: CargoLatLng, at = new Date().toISOString()): CargoPlanState {
+  const route = cargoRoute(plan, bucket);
   if ((route.via ?? []).length >= CARGO_VIA_MAX) return plan;
   return { ...plan, routes: { ...plan.routes, [bucket]: { ...route, via: [...(route.via ?? []), { lat: p.lat, lng: p.lng }] } }, updatedAt: at };
 }
 
 export function moveCargoVia(
   plan: CargoPlanState,
-  bucket: Exclude<CargoBucket, "none">,
+  bucket: CargoRouteBucket,
   index: number,
   p: CargoLatLng,
   at = new Date().toISOString(),
 ): CargoPlanState {
-  const route = plan.routes[bucket];
+  const route = cargoRoute(plan, bucket);
   const via = route.via ?? [];
   if (index < 0 || index >= via.length) return plan;
   return {
@@ -272,8 +373,8 @@ export function moveCargoVia(
   };
 }
 
-export function removeCargoVia(plan: CargoPlanState, bucket: Exclude<CargoBucket, "none">, index: number, at = new Date().toISOString()): CargoPlanState {
-  const route = plan.routes[bucket];
+export function removeCargoVia(plan: CargoPlanState, bucket: CargoRouteBucket, index: number, at = new Date().toISOString()): CargoPlanState {
+  const route = cargoRoute(plan, bucket);
   const via = route.via ?? [];
   if (index < 0 || index >= via.length) return plan;
   return { ...plan, routes: { ...plan.routes, [bucket]: { ...route, via: via.filter((_, i) => i !== index) } }, updatedAt: at };
@@ -312,20 +413,38 @@ export function normalizeCargoPlan(raw: unknown): CargoPlanState {
     unique.push(car);
   }
   const routesRaw = row.routes && typeof row.routes === "object" ? (row.routes as Record<string, unknown>) : {};
+  const cargos: CargoDef[] = [];
+  if (Array.isArray(row.cargos)) {
+    for (const c of row.cargos) {
+      if (!c || typeof c !== "object") continue;
+      const r = c as Record<string, unknown>;
+      if (!isExtraCargoBucket(r.id) || cargos.some((x) => x.id === r.id)) continue;
+      const color = typeof r.color === "string" && /^#[0-9a-f]{6}$/i.test(r.color) ? r.color : CARGO_EXTRA_COLORS[cargos.length % CARGO_EXTRA_COLORS.length]!;
+      cargos.push({ id: r.id, name: str(r.name, 40) || `Krava ${cargos.length + 3}`, color });
+      if (cargos.length >= CARGO_EXTRA_MAX) break;
+    }
+  }
+  const known = new Set<string>(cargos.map((c) => c.id));
+  // Auto nezināmā kravā (dzēsta / bojāti dati) - «Nav kravā».
+  const placed = unique.map((c) => (isExtraCargoBucket(c.bucket) && !known.has(c.bucket) ? { ...c, bucket: "none" as const, sort: 10_000 + c.sort } : c));
+  const routes: Record<string, CargoRouteState> = {
+    next: normalizeCargoRoute(routesRaw.next),
+    after: normalizeCargoRoute(routesRaw.after),
+  };
+  for (const c of cargos) routes[c.id] = normalizeCargoRoute(routesRaw[c.id]);
   return {
     version: 1,
-    cars: reindexCargoSort(unique),
-    routes: {
-      next: normalizeCargoRoute(routesRaw.next),
-      after: normalizeCargoRoute(routesRaw.after),
-    },
+    cars: reindexCargoSort(placed),
+    cargos,
+    routes: routes as CargoPlanState["routes"],
     updatedAt: str(row.updatedAt ?? row.updated_at, 40),
   };
 }
 
 export function reindexCargoSort(cars: readonly CargoCarState[]): CargoCarState[] {
   const next: CargoCarState[] = [];
-  for (const bucket of CARGO_BUCKETS) {
+  const buckets = [...CARGO_BUCKETS, ...new Set(cars.map((c) => c.bucket).filter((b) => !isBuiltinCargoBucket(b)))];
+  for (const bucket of buckets) {
     const rows = cars.filter((c) => c.bucket === bucket).sort((a, b) => a.sort - b.sort || a.carId.localeCompare(b.carId));
     rows.forEach((row, i) => next.push({ ...row, sort: i }));
   }
@@ -406,7 +525,8 @@ export function moveCargoCarsTo(
   at = new Date().toISOString(),
 ): CargoPlanState {
   const want = new Set(carIds);
-  const ordered = CARGO_BUCKETS.flatMap((b) => carsInCargoBucket(plan, b)).filter((c) => want.has(c.carId));
+  const allBuckets = [...new Set<CargoBucket>([...cargoBuckets(plan), ...plan.cars.map((c) => c.bucket)])];
+  const ordered = allBuckets.flatMap((b) => carsInCargoBucket(plan, b)).filter((c) => want.has(c.carId));
   if (ordered.length === 0) return plan;
   const others = plan.cars.filter((c) => !want.has(c.carId));
   const target = carsInCargoBucket({ ...plan, cars: others }, bucket);
@@ -429,27 +549,27 @@ export function setCargoShowOnMap(plan: CargoPlanState, carId: string, showOnMap
 
 export function setCargoRouteEnabled(
   plan: CargoPlanState,
-  bucket: Exclude<CargoBucket, "none">,
+  bucket: CargoRouteBucket,
   enabled: boolean,
   at = new Date().toISOString(),
 ): CargoPlanState {
   return {
     ...plan,
-    routes: { ...plan.routes, [bucket]: { ...plan.routes[bucket], enabled } },
+    routes: { ...plan.routes, [bucket]: { ...cargoRoute(plan, bucket), enabled } },
     updatedAt: at,
   };
 }
 
 export function setCargoRouteEndpoint(
   plan: CargoPlanState,
-  bucket: Exclude<CargoBucket, "none">,
+  bucket: CargoRouteBucket,
   end: "start" | "end",
   value: CargoRouteEndpoint | null,
   at = new Date().toISOString(),
 ): CargoPlanState {
   return {
     ...plan,
-    routes: { ...plan.routes, [bucket]: { ...plan.routes[bucket], [end]: value, distanceKm: null, durationMin: null, path: [], pathKey: "" } },
+    routes: { ...plan.routes, [bucket]: { ...cargoRoute(plan, bucket), [end]: value, distanceKm: null, durationMin: null, path: [], pathKey: "" } },
     updatedAt: at,
   };
 }
@@ -496,7 +616,8 @@ export function cargoClusterKey(lat: number, lng: number): string {
   return `${lat.toFixed(4)},${lng.toFixed(4)}`;
 }
 
-export function cargoCssColor(host: Element | null, bucket: CargoBucket): string {
+export function cargoCssColor(host: Element | null, bucket: CargoBucket, plan?: Pick<CargoPlanState, "cargos">): string {
+  if (!isBuiltinCargoBucket(bucket)) return plan ? cargoBucketColor(plan, bucket) : CARGO_EXTRA_COLORS[0];
   if (!host) return CARGO_COLOR_FALLBACK[bucket];
   const raw = getComputedStyle(host).getPropertyValue(CARGO_CSS_VAR[bucket]).trim();
   return raw || CARGO_COLOR_FALLBACK[bucket];

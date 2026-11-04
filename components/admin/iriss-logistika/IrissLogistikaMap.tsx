@@ -16,7 +16,7 @@ import {
   waitForGoogleMapTilesIdle,
   type LogisticsMapCamera,
 } from "@/lib/iriss-logistics-map-print";
-import { cargoCssColor, formatLogisticsPostal, type CargoBucket } from "@/lib/iriss-logistics-cargo-plan";
+import { cargoCssColor, formatLogisticsPostal, type CargoBucket, type CargoRouteBucket } from "@/lib/iriss-logistics-cargo-plan";
 import { clusterIsSameSpot, layoutMapPins, placeMapLabels } from "@/lib/iriss-logistics-map-cluster";
 import type { LogisticsOrder, LogisticsPoint, LogisticsPreviousPointRow } from "@/lib/iriss-logistics-types";
 
@@ -117,14 +117,14 @@ type Props = {
   routePaths?: ReadonlyArray<{
     path: ReadonlyArray<{ lat: number; lng: number }>;
     color: string;
-    bucket?: "next" | "after";
+    bucket?: CargoRouteBucket;
     via?: ReadonlyArray<{ lat: number; lng: number }>;
   }>;
   /**
    * Maršruta maiņa kā Google Maps: pieskāriens līnijai pievieno caurbraucamo punktu,
    * punktu var pavilkt uz citu ceļu, pieskāriens punktam to noņem.
    */
-  onRouteVia?: (bucket: "next" | "after", action: RouteViaAction) => void;
+  onRouteVia?: (bucket: CargoRouteBucket, action: RouteViaAction) => void;
   /** "Rādīt nosaukumus": katram punktam pastāvīga etiķete (marka, modelis, indekss, centrs). */
   showLabels?: boolean;
   routeEnds?: ReadonlyArray<{ lat: number; lng: number; kind: "start" | "end"; type?: string }>;

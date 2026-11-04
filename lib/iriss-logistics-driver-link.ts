@@ -4,13 +4,26 @@
  */
 import { logisticsPrintPlan, type LogisticsPrintRow } from "@/lib/iriss-logistics-map-print";
 import { logisticsGoogleMapsDirUrl } from "@/lib/iriss-logistics-maps-dir";
-import { carsInCargoBucket, type CargoPlanState, type CargoRouteEndpoint } from "@/lib/iriss-logistics-cargo-plan";
+import {
+  cargoBucketLabel,
+  cargoRoute,
+  carsInCargoBucket,
+  isCargoBucket,
+  type CargoPlanState,
+  type CargoRouteBucket,
+  type CargoRouteEndpoint,
+} from "@/lib/iriss-logistics-cargo-plan";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
 
 export const DRIVER_LINK_TTL_DAYS = 14;
 export const DRIVER_LINK_PATH = "/s/marsruts";
 
-export type DriverLinkBucket = "next" | "after";
+export type DriverLinkBucket = CargoRouteBucket;
+
+/** Nākošā, Aiznākošā vai papildu krava (k-...). */
+export function isDriverLinkBucket(v: unknown): v is DriverLinkBucket {
+  return isCargoBucket(v) && v !== "none";
+}
 
 export type DriverLinkRecord = {
   token: string;
@@ -58,7 +71,7 @@ export function buildDriverRouteView(plan: CargoPlanState, orders: readonly Logi
   const mapOrders = orders.filter((o) => inBucket.has(o.id));
   const { rows } = logisticsPrintPlan({ mapOrders, selectedIds: new Set(), routeOrder: ids });
   const byId = new Map(orders.map((o) => [o.id, o]));
-  const route = plan.routes[bucket];
+  const route = cargoRoute(plan, bucket);
   const stops: DriverStop[] = rows.map((r) => {
     const o = byId.get(r.id);
     const navUrl = o?.pickupLat != null && o.pickupLng != null ? driverNavToUrl(o.pickupLat, o.pickupLng) : null;
@@ -73,7 +86,7 @@ export function buildDriverRouteView(plan: CargoPlanState, orders: readonly Logi
     route.end ? { lat: route.end.lat, lng: route.end.lng } : null,
   ].filter((p): p is { lat: number; lng: number } => Boolean(p));
   return {
-    title: bucket === "next" ? "Nākošā krava" : "Aiznākošā krava",
+    title: bucket === "next" || bucket === "after" ? `${cargoBucketLabel(plan, bucket)} krava` : cargoBucketLabel(plan, bucket),
     start: route.start,
     end: route.end,
     distanceKm: route.distanceKm,
