@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { irissLogisticsScopeHeader, logisticsCabinetActorId, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
 import { isLogisticsOrderActive } from "@/lib/iriss-logistics-archive";
-import { CARGO_DOC_EXPECTED, isCargoBucket, normalizeCargoPlan, pickupStageForCargoMove } from "@/lib/iriss-logistics-cargo-plan";
+import { CARGO_DOC_EXPECTED, cargoBuckets, isCargoBucket, normalizeCargoPlan, pickupStageForCargoMove } from "@/lib/iriss-logistics-cargo-plan";
 import { loadCargoPlanForActiveOrders, listRouteTemplates, saveCargoPlanForActiveOrders } from "@/lib/iriss-logistics-cargo-store";
 import { liveCabinetDocuments } from "@/lib/iriss-logistics-cabinet";
 import { listCabinetDocuments, listCabinetPickups, upsertCabinetPickup } from "@/lib/iriss-logistics-cabinet-store";
@@ -91,17 +91,22 @@ export async function PATCH(req: Request) {
   const plan = await loadCargoPlanForActiveOrders();
   const { moveCargoCar, setCargoShowOnMap } = await import("@/lib/iriss-logistics-cargo-plan");
   let next = plan;
-  if (isCargoBucket(row.bucket)) {
-    next = moveCargoCar(next, carId, row.bucket, typeof row.sort === "number" ? row.sort : undefined);
+  // Papildu kravu (k-...) drīkst tikai tad, ja tā plānā eksistē (dzēsta krava -> 400).
+  const bucket = isCargoBucket(row.bucket) ? row.bucket : null;
+  if (bucket && !cargoBuckets(plan).includes(bucket)) {
+    return NextResponse.json({ error: "unknown_cargo" }, { status: 400, headers: irissLogisticsScopeHeader() });
+  }
+  if (bucket) {
+    next = moveCargoCar(next, carId, bucket, typeof row.sort === "number" ? row.sort : undefined);
   }
   if (typeof row.showOnMap === "boolean") {
     next = setCargoShowOnMap(next, carId, row.showOnMap);
   }
   const saved = await saveCargoPlanForActiveOrders(next);
-  if (isCargoBucket(row.bucket)) {
+  if (bucket) {
     const pickups = await listCabinetPickups();
     const current = pickups.find((p) => p.carId === carId)?.stage ?? null;
-    const stage = pickupStageForCargoMove(row.bucket, current);
+    const stage = pickupStageForCargoMove(bucket, current);
     if (stage) {
       await upsertCabinetPickup({
         carId,

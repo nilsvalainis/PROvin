@@ -323,6 +323,24 @@
 .iriss-log-cargo-pill:disabled {
   opacity: 0.4;
 }
+/* Nils 04.11: papildu kravas nosaukums (labo pieskaroties). 16px telefonā - iOS nepietuvina. */
+.iriss-log-cargo-rename {
+  min-width: 0;
+  width: 11rem;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 8px;
+  border: 1px solid var(--iriss-line-strong);
+  background: transparent;
+  color: var(--iriss-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+@media (max-width: 767px) {
+  .iriss-log-cargo-rename {
+    font-size: 16px;
+  }
+}
 .iriss-log-cargo-pill[aria-pressed="true"] {
   box-shadow: inset 0 0 0 1.5px var(--iriss-ink);
 }

@@ -25,9 +25,16 @@ import { StatusFilterChip, StatusFilterChipRow } from "@/components/shared/Statu
 import { filterLogisticsOrdersByView, isLogisticsOrderActive, isLogisticsOrderArchived } from "@/lib/iriss-logistics-archive";
 import { type CabinetPickup, type CabinetPickupStage } from "@/lib/iriss-logistics-cabinet";
 import {
-  CARGO_BUCKET_LV,
   CARGO_COLOR_FALLBACK,
   addCargoVia,
+  cargoBucketColor,
+  cargoBucketLabel,
+  cargoBuckets,
+  cargoRoute,
+  cargoRouteBuckets,
+  isCargoBucket,
+  isExtraCargoBucket,
+  type CargoRouteBucket,
   moveCargoVia,
   removeCargoVia,
   formatCargoDuration,
@@ -96,7 +103,7 @@ const ROUTE_LINE_COLOR = { next: "#1a73e8", after: "#7baaf7" } as const;
 const LIVE_ROUTE_DELAY_MS = 1500;
 const FOCUS_PREF_KEY = "iriss.logistics.mapFocus";
 
-type MapFocus = "all" | "next" | "after";
+type MapFocus = "all" | CargoRouteBucket;
 
 /** Cik ilgi punkts kartē lēkā pēc klikšķa uz rindas vai punkta. */
 const LOGISTICS_BOUNCE_MS = 1600;
@@ -185,10 +192,7 @@ export function IrissLogistikaClient({
     setCabinetOpen(true);
   }, [orders, searchParams]);
   /** Maršruta poga: "Sastāda…" un kļūda tieši pie pogas, nevis lapas augšā. */
-  const [routeUi, setRouteUi] = useState<Record<"next" | "after", { busy: boolean; notice: string }>>({
-    next: { busy: false, notice: "" },
-    after: { busy: false, notice: "" },
-  });
+  const [routeUi, setRouteUi] = useState<Partial<Record<CargoRouteBucket, { busy: boolean; notice: string }>>>({});
   const [autoparkLink, setAutoparkLink] = useState<string | null>(null);
   const mapHandleRef = useRef<IrissLogistikaMapHandle>(null);
   const cameraBeforeFs = useRef<LogisticsMapCamera | null>(null);
@@ -326,15 +330,15 @@ export function IrissLogistikaClient({
   planRef.current = cargoPlan;
   const ordersRef = useRef(orders);
   ordersRef.current = orders;
-  const routeInflight = useRef<Record<"next" | "after", string>>({ next: "", after: "" });
-  const routeFailedKey = useRef<Record<"next" | "after", string>>({ next: "", after: "" });
+  const routeInflight = useRef<Record<string, string>>({});
+  const routeFailedKey = useRef<Record<string, string>>({});
 
   /**
    * Maršruts mūsu kartē: Routes API līnija + km/laiks, saglabāti kravu plānā.
    * `auto`: dzīvais pārrēķins pēc izmaiņām (bez paziņojuma par trūkstošiem punktiem, karte nepārslēdzas).
    * Ja aprēķina laikā kravā kas mainījies, rezultātu neglabājam: nākamo aprēķinu palaiž efekts.
    */
-  async function refreshCargoDirections(bucket: "next" | "after", base: CargoPlanState = planRef.current, opts: { auto?: boolean } = {}) {
+  async function refreshCargoDirections(bucket: CargoRouteBucket, base: CargoPlanState = planRef.current, opts: { auto?: boolean } = {}) {
     const points = cargoRoutePoints(base, bucket, ordersRef.current);
     if (points.length < 2) {
       if (!opts.auto) {
@@ -374,7 +378,7 @@ export function IrissLogistikaClient({
       routes: {
         ...latest.routes,
         [bucket]: {
-          ...latest.routes[bucket],
+          ...cargoRoute(latest, bucket),
           distanceKm: body.distanceKm,
           durationMin: body.durationMin ?? null,
           path: normalizeCargoPath(body.path),
@@ -389,8 +393,8 @@ export function IrissLogistikaClient({
   // līnija pārrēķinās pati ~1,5 s pēc pēdējās izmaiņas (ātra vilkšana = viens aprēķins).
   useEffect(() => {
     const timers: number[] = [];
-    for (const bucket of ["next", "after"] as const) {
-      const route = cargoPlan.routes[bucket];
+    for (const bucket of cargoRouteBuckets(cargoPlan)) {
+      const route = cargoRoute(cargoPlan, bucket);
       if (!route.enabled) continue;
       const points = cargoRoutePoints(cargoPlan, bucket, orders);
       if (points.length < 2) continue;
@@ -415,7 +419,7 @@ export function IrissLogistikaClient({
   useEffect(() => {
     try {
       const v = window.localStorage.getItem(FOCUS_PREF_KEY);
-      if (v === "next" || v === "after") setMapFocus(v);
+      if (v && isCargoBucket(v) && v !== "none") setMapFocus(v);
     } catch {
       // nav krātuves
     }
@@ -574,14 +578,15 @@ export function IrissLogistikaClient({
     }
     return m;
   }, [cargoPlan, orders, cargoPickups, pickupDocCarIds]);
-  const pinColorByCarId = useMemo(
-    () => readinessPinColors(readinessOn, readinessByCarId, cargoByCarId),
-    [readinessByCarId, readinessOn, cargoByCarId],
-  );
+  const pinColorByCarId = useMemo(() => {
+    const m = readinessPinColors(readinessOn, readinessByCarId, cargoByCarId);
+    for (const [id, b] of cargoByCarId) if (isExtraCargoBucket(b) && !m.has(id)) m.set(id, cargoBucketColor(cargoPlan, b));
+    return m;
+  }, [readinessByCarId, readinessOn, cargoByCarId, cargoPlan]);
   const routeNumbers = useMemo(() => {
     const m = new Map<string, number>();
-    for (const bucket of ["next", "after"] as const) {
-      if (!cargoPlan.routes[bucket].enabled) continue;
+    for (const bucket of cargoRouteBuckets(cargoPlan)) {
+      if (!cargoRoute(cargoPlan, bucket).enabled) continue;
       carsInCargoBucket(cargoPlan, bucket).forEach((c, i) => m.set(c.carId, i + 1));
     }
     return m;
@@ -589,20 +594,28 @@ export function IrissLogistikaClient({
   /** Katras ieslēgtās kravas maršruts kartē savā krāsā. */
   /** Reisi, kurus kartē rādīt: viens izvēlētais vai visi ieslēgtie maršruti. */
   const focusBuckets = useMemo(
-    () => (mapFocus === "all" ? (["next", "after"] as const).filter((b) => cargoPlan.routes[b].enabled) : [mapFocus]),
+    () =>
+      mapFocus === "all" || !cargoRouteBuckets(cargoPlan).includes(mapFocus)
+        ? cargoRouteBuckets(cargoPlan).filter((b) => cargoRoute(cargoPlan, b).enabled)
+        : [mapFocus],
     [mapFocus, cargoPlan],
   );
   const routePaths = useMemo(
     () =>
       focusBuckets
-        .filter((b) => cargoPlan.routes[b].enabled && cargoPlan.routes[b].path.length > 1)
-        .map((b) => ({ path: cargoPlan.routes[b].path, color: ROUTE_LINE_COLOR[b], bucket: b, via: cargoPlan.routes[b].via })),
+        .filter((b) => cargoRoute(cargoPlan, b).enabled && cargoRoute(cargoPlan, b).path.length > 1)
+        .map((b) => ({
+          path: cargoRoute(cargoPlan, b).path,
+          color: b === "next" || b === "after" ? ROUTE_LINE_COLOR[b] : cargoBucketColor(cargoPlan, b),
+          bucket: b,
+          via: cargoRoute(cargoPlan, b).via,
+        })),
     [cargoPlan, focusBuckets],
   );
   const routeEnds = useMemo(() => {
     const ends: Array<{ lat: number; lng: number; kind: "start" | "end"; type?: string }> = [];
     for (const b of focusBuckets) {
-      const r = cargoPlan.routes[b];
+      const r = cargoRoute(cargoPlan, b);
       if (!r.enabled) continue;
       if (r.start) ends.push({ lat: r.start.lat, lng: r.start.lng, kind: "start", type: r.start.type });
       if (r.end) ends.push({ lat: r.end.lat, lng: r.end.lng, kind: "end", type: r.end.type });
@@ -615,13 +628,14 @@ export function IrissLogistikaClient({
     [mapFocus, visibleOrders, cargoByCarId],
   );
   const bucketCounts = useMemo(() => {
-    const out = { next: 0, after: 0 };
+    const out: Record<string, number> = { next: 0, after: 0 };
     for (const o of visibleOrders) {
       const b = cargoByCarId.get(o.id);
-      if (b === "next" || b === "after") out[b] += 1;
+      if (b && b !== "none") out[b] = (out[b] ?? 0) + 1;
     }
     return out;
   }, [visibleOrders, cargoByCarId]);
+  const inCargoCount = Object.values(bucketCounts).reduce((a, n) => a + n, 0);
   const popupOrder = orders.find((o) => o.id === popupId) ?? null;
   const popupStage = (cargoPickups.find((p) => p.carId === popupId)?.stage ?? "waiting") as CabinetPickupStage;
 
@@ -648,7 +662,7 @@ export function IrissLogistikaClient({
   const usedCount = (id: string) => orders.filter((o) => o.pickupPointId === id).length;
   /** Drukā tieši ekrāna skatu: izvēlētais reiss (maršruta secībā) vai visi kartes auto pa kravām. */
   const printPlan = useMemo(() => {
-    const routeOrder = (mapFocus === "all" ? (["next", "after", "none"] as const) : [mapFocus]).flatMap((b) =>
+    const routeOrder = (mapFocus === "all" ? cargoBuckets(cargoPlan) : [mapFocus]).flatMap((b) =>
       carsInCargoBucket(cargoPlan, b).map((c) => c.carId),
     );
     const visible = mapOrders.filter((o) => showOnMapIds.has(o.id) || !cargoPlan.cars.some((c) => c.carId === o.id));
@@ -656,7 +670,7 @@ export function IrissLogistikaClient({
       mapOrders: visible,
       selectedIds: selectedSet,
       routeOrder,
-      cargoLabelOf: (id) => CARGO_BUCKET_LV[cargoByCarId.get(id) ?? "none"],
+      cargoLabelOf: (id) => cargoBucketLabel(cargoPlan, cargoByCarId.get(id) ?? "none"),
     });
   }, [mapFocus, cargoPlan, mapOrders, showOnMapIds, selectedSet, cargoByCarId]);
   const printOrders = useMemo(() => {
@@ -666,8 +680,8 @@ export function IrissLogistikaClient({
   const printNumbers = printPlan.numbers;
   const printSheet = useMemo(() => {
     const t = logisticsPrintSheetTitle(new Date(), printPlan.rows.length);
-    const trip = mapFocus === "all" ? "Visi auto" : CARGO_BUCKET_LV[mapFocus];
-    const route = mapFocus === "all" ? null : cargoPlan.routes[mapFocus];
+    const trip = mapFocus === "all" ? "Visi auto" : cargoBucketLabel(cargoPlan, mapFocus);
+    const route = mapFocus === "all" ? null : cargoRoute(cargoPlan, mapFocus);
     const km = route?.enabled && route.distanceKm != null ? ` · ${formatCargoKm(route.distanceKm)}${route.durationMin != null ? `, ${formatCargoDuration(route.durationMin)}` : ""}` : "";
     return { heading: `IRISS Loģistika · ${trip}${km}`, meta: t.meta.replace("atzīmēti punkti", "auto") };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- laiks drukas brīdī
@@ -1061,7 +1075,7 @@ export function IrissLogistikaClient({
                   ) : null}
                 </p>
                 <div className="iriss-log-trip-seg" role="radiogroup" aria-label="Kartē rādīt">
-                  {(["all", "next", "after"] as const).map((f) => (
+                  {(["all", ...cargoRouteBuckets(cargoPlan)] as MapFocus[]).map((f) => (
                     <button
                       key={f}
                       type="button"
@@ -1074,9 +1088,9 @@ export function IrissLogistikaClient({
                         "Visi"
                       ) : (
                         <>
-                          <i style={{ background: CARGO_COLOR_FALLBACK[f] }} />
-                          {f === "next" ? "Nākošā" : "Aiznākošā"}
-                          <b>{bucketCounts[f]}</b>
+                          <i style={{ background: cargoBucketColor(cargoPlan, f) }} />
+                          {cargoBucketLabel(cargoPlan, f)}
+                          <b>{bucketCounts[f] ?? 0}</b>
                         </>
                       )}
                     </button>
@@ -1269,7 +1283,7 @@ export function IrissLogistikaClient({
               <>
                 <span className="iriss-log-desk-strip-n"><i style={{ background: CARGO_COLOR_FALLBACK.next }} /><b>{bucketCounts.next}</b>Nākošā</span>
                 <span className="iriss-log-desk-strip-n"><i style={{ background: CARGO_COLOR_FALLBACK.after }} /><b>{bucketCounts.after}</b>Aiznāk.</span>
-                <span className="iriss-log-desk-strip-n"><i style={{ background: "var(--iriss-ink)" }} /><b>{Math.max(0, visibleOrders.length - bucketCounts.next - bucketCounts.after)}</b>Nav kravā</span>
+                <span className="iriss-log-desk-strip-n"><i style={{ background: "var(--iriss-ink)" }} /><b>{Math.max(0, visibleOrders.length - inCargoCount)}</b>Nav kravā</span>
               </>
             ) : null}
           </div>
