@@ -8,6 +8,7 @@ import {
   toPublicPartner,
   type B2bPartnerRecord,
 } from "@/lib/b2b-partner-account";
+import { emptyB2bPartnerEmbed } from "@/lib/b2b-partner-embed";
 
 const validInput = {
   companyName: "SIA Demo Auto",
@@ -56,7 +57,10 @@ describe("b2b partner account", () => {
       },
       walletPrices: { business: null, dealer_raw: null, dealer_pro: null },
       walletHiddenProducts: ["dealer_raw"],
+      businessEmbed: emptyB2bPartnerEmbed(),
       adminSeenAt: "2026-09-04T00:00:00.000Z",
+      termsVersion: null,
+      termsAcceptedAt: null,
     };
     const publicProfile = toPublicPartner(record);
     expect(publicProfile.walletHiddenProducts).toEqual(["dealer_raw"]);

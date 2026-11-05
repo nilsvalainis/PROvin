@@ -7,6 +7,7 @@ import { isSafeB2bPartnerId, toPublicPartner } from "@/lib/b2b-partner-account";
 import { getB2bPartnerById, markB2bPartnerAdminSeen } from "@/lib/b2b-partner-store";
 import { requireAdminPage } from "@/lib/admin-auth";
 import { AdminB2bPartnerWallet } from "@/components/admin/AdminB2bPartnerWallet";
+import { AdminB2bPartnerEmbed } from "@/components/admin/AdminB2bPartnerEmbed";
 import { readB2bWallet } from "@/lib/b2b-wallet-store";
 import { buildB2bWalletView } from "@/lib/b2b-wallet-view";
 import { loadCreditsForPartners } from "@/lib/b2b-partner-dashboard";
@@ -63,6 +64,7 @@ export default async function AdminPartnerDetailPage({ params }: Props) {
         initialOverrides={record.walletPrices}
         initialHidden={record.walletHiddenProducts}
       />
+      <AdminB2bPartnerEmbed partnerId={partner.id} initial={record.businessEmbed} />
       <AdminB2bPartnerEditForm partner={partner} legacyCredits={legacyCredits} />
     </div>
   );

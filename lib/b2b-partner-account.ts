@@ -6,6 +6,7 @@ import {
   type B2bWalletPriceOverrides,
   type B2bWalletProductId,
 } from "@/lib/b2b-wallet";
+import { emptyB2bPartnerEmbed, parseB2bPartnerEmbed, type B2bPartnerEmbedSettings } from "@/lib/b2b-partner-embed";
 
 export type B2bPartnerStatus = "active" | "disabled";
 
@@ -44,6 +45,8 @@ export type B2bPartnerRecord = {
   walletPrices: B2bWalletPriceOverrides;
   /** Maka kartes, ko admin paslēpis šim partnerim (portālā nerāda, API atsaka). */
   walletHiddenProducts: B2bWalletProductId[];
+  /** PROVIN Business poga partnera vietnē (domēni, logo). Veciem ierakstiem - izslēgta. */
+  businessEmbed: B2bPartnerEmbedSettings;
   /**
    * Kad operators atvēris partneri adminā. `null` = jauns, rāda badge.
    * Veciem ierakstiem parse aizpilda ar createdAt.
@@ -155,6 +158,7 @@ export function toPublicPartner(partner: B2bPartnerRecord): B2bPartnerPublicProf
     prices: partner.prices,
     walletPrices: partner.walletPrices ?? emptyB2bWalletPrices(),
     walletHiddenProducts: partner.walletHiddenProducts ?? [],
+    businessEmbed: partner.businessEmbed ?? emptyB2bPartnerEmbed(),
     termsVersion: partner.termsVersion ?? null,
     termsAcceptedAt: partner.termsAcceptedAt ?? null,
   };
@@ -247,6 +251,7 @@ export function parsePartnerRecord(raw: unknown): B2bPartnerRecord | null {
     prices: parseB2bPartnerPrices(o.prices),
     walletPrices: parseB2bWalletPrices(o.walletPrices),
     walletHiddenProducts: parseB2bWalletHiddenProducts(o.walletHiddenProducts),
+    businessEmbed: parseB2bPartnerEmbed(o.businessEmbed),
     adminSeenAt: parseAdminSeenAt(o, createdAt),
     termsVersion: typeof o.termsVersion === "string" && o.termsVersion.trim() ? clip(o.termsVersion, 32) : null,
     termsAcceptedAt:
