@@ -5,6 +5,7 @@ import { BusinessLinkForm } from "@/components/business-link/BusinessLinkForm";
 import { BusinessPartnerLinkPage } from "@/components/business-link/BusinessPartnerLinkPage";
 import { getB2bPartnerById } from "@/lib/b2b-partner-store";
 import { hasBusinessPartnerCookie } from "@/lib/business-partner-cookie";
+import { recordBusinessPogaEvent } from "@/lib/business-poga-stats-store";
 import { ClientLinkNeutralPage } from "@/components/client-link/ClientLinkNeutralPage";
 import {
   BUSINESS_LINK_AMOUNT_CENTS,
@@ -61,7 +62,10 @@ export default async function BusinessLinkPage({ params }: { params: Promise<{ t
   /** Saite no partnera pogas: PROVIN Business lapa ar partnera logo (GALA-lapa.md). */
   if (record.partnerId) {
     /** Pārsūtīta partnera saite (bez pogas sīkdatnes) neatveras. */
-    if (!hasBusinessPartnerCookie(h.get("cookie"), record.tokenHash)) return <Unavailable />;
+    if (!hasBusinessPartnerCookie(h.get("cookie"), record.tokenHash)) {
+      await recordBusinessPogaEvent({ type: "blocked", partnerId: record.partnerId, reason: "forwarded", vin: record.prefillVin });
+      return <Unavailable />;
+    }
     const partner = await getB2bPartnerById(record.partnerId);
     if (!partner || partner.status !== "active" || !partner.businessEmbed.enabled) return <Unavailable />;
     const legal = getCompanyLegal();

@@ -8,6 +8,7 @@ import {
 } from "@/lib/business-link";
 import { attachBusinessLinkCheckoutSession, readBusinessLinkByToken } from "@/lib/business-link-store";
 import { hasBusinessPartnerCookie } from "@/lib/business-partner-cookie";
+import { recordBusinessPogaEvent } from "@/lib/business-poga-stats-store";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { hashClientLinkToken } from "@/lib/client-link-crypto";
 import { createMetaEventId } from "@/lib/meta-pixel";
@@ -62,6 +63,7 @@ export async function POST(req: Request) {
 
   /** Partnera saite der tikai pārlūkā, kurā nospiesta partnera poga. */
   if (record.partnerId && !hasBusinessPartnerCookie(req.headers.get("cookie"), record.tokenHash)) {
+    await recordBusinessPogaEvent({ type: "blocked", partnerId: record.partnerId, reason: "forwarded", vin: record.prefillVin });
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
@@ -112,6 +114,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "session_failed" }, { status: 500 });
     }
     const attached = await attachBusinessLinkCheckoutSession(record.tokenHash, session.id).catch(() => null);
+    if (record.partnerId) {
+      await recordBusinessPogaEvent({ type: "started", partnerId: record.partnerId, vin: validated.resolved.vin });
+    }
     /** Vienreizējs: iepriekšējo neapmaksāto sesiju slēdzam, lai nevar samaksāt divreiz. */
     if (attached?.ok && attached.previousSessionId) {
       await stripe.checkout.sessions.expire(attached.previousSessionId).catch(() => undefined);
