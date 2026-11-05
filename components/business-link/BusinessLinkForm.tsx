@@ -24,6 +24,7 @@ const fieldError: Record<string, string> = {
   email: "Lauks nav aizpildīts pareizi.",
   vin: "Lūdzu, ievadiet derīgu VIN kodu (17 zīmes) vai valsts numurzīmi (3-6 zīmes).",
   vin_length: VIN_INCOMPLETE_LENGTH_ERROR_LV,
+  vin_locked: "Šī saite ir paredzēta tikai norādītajam auto.",
   listing: "Lūdzu, ievadiet derīgu saiti uz sludinājumu.",
   phone: "Lūdzu, ievadiet tālruņa numuru ar vismaz 8 cipariem.",
   consent: "Lai turpinātu uz apmaksu, atzīmējiet apstiprinājumu (noteikumi, privātuma politika, pilnvarojums un atteikuma tiesības).",
@@ -36,6 +37,8 @@ const fieldError: Record<string, string> = {
 
 export function BusinessLinkForm({ token, view }: { token: string; view: BusinessLinkPublicView }) {
   const [email, setEmail] = useState(view.prefillEmail);
+  /** Ja saitē ir VIN, tas ir fiksēts: šo saiti nevar izmantot citam auto. */
+  const vinLocked = Boolean(view.prefillVin);
   const [vin, setVin] = useState(view.prefillVin);
   const [listingUrl, setListingUrl] = useState("");
   const [phone, setPhone] = useState(view.prefillPhone);
@@ -131,13 +134,19 @@ export function BusinessLinkForm({ token, view }: { token: string; view: Busines
             spellCheck={false}
             placeholder="WBA..."
             value={vin}
-            onChange={(e) => setVin(sanitizeVinInput(e.target.value))}
+            readOnly={vinLocked}
+            aria-readonly={vinLocked}
+            onChange={(e) => {
+              if (!vinLocked) setVin(sanitizeVinInput(e.target.value));
+            }}
             onPaste={(e) => {
               e.preventDefault();
-              setVin(sanitizeVinInput(e.clipboardData.getData("text")));
+              if (!vinLocked) setVin(sanitizeVinInput(e.clipboardData.getData("text")));
             }}
           />
-          <span className="mt-1 block text-[12px] text-[#aeaeb2]">{vinHint}</span>
+          <span className="mt-1 block text-[12px] text-[#aeaeb2]">
+            {vinLocked ? "Saite ir piesaistīta šim auto" : vinHint}
+          </span>
         </label>
         <label className="mt-3 block">
           <span className={labelClass}>Sludinājuma saite (neobligāti)</span>

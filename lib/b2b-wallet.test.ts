@@ -158,27 +158,25 @@ describe("b2b wallet auto refund on missing dealer data", () => {
 describe("b2b wallet prices", () => {
   it("rejects admin prices below the product minimum", () => {
     expect(validateB2bWalletPriceInput({ business: "69,98", dealer_raw: "", dealer_pro: null })).toEqual({
-      ok: false,
-      product: "business",
-      reason: "below_min",
-      minCents: 6999,
+      ok: true,
+      prices: { business: null, dealer_raw: null, dealer_pro: null },
     });
     expect(validateB2bWalletPriceInput({ dealer_raw: "11,98" })).toMatchObject({ ok: false, product: "dealer_raw", reason: "below_min" });
     expect(validateB2bWalletPriceInput({ dealer_raw: "abc" })).toMatchObject({ ok: false, reason: "invalid" });
     expect(validateB2bWalletPriceInput({ business: "69,99", dealer_raw: "11.99 €", dealer_pro: "" })).toEqual({
       ok: true,
-      prices: { business: 6999, dealer_raw: 1199, dealer_pro: null },
+      prices: { business: null, dealer_raw: 1199, dealer_pro: null },
     });
   });
 
   it("locks the default and minimum catalog prices", () => {
-    expect(B2B_WALLET_PRODUCTS.business).toMatchObject({ defaultCents: 7999, minCents: 6999 });
+    expect(B2B_WALLET_PRODUCTS.business).toMatchObject({ defaultCents: 6999, minCents: 6999, fixedPrice: true });
     expect(B2B_WALLET_PRODUCTS.dealer_raw).toMatchObject({ defaultCents: 1999, minCents: 1199 });
     expect(B2B_WALLET_PRODUCTS.dealer_pro).toMatchObject({ defaultCents: 2499, minCents: 1499 });
   });
 
   it("empty override means the default price", () => {
-    expect(resolveB2bWalletPrice("business", null)).toEqual({ product: "business", priceCents: 7999, defaultCents: 7999, discountPct: 0 });
+    expect(resolveB2bWalletPrice("business", null)).toEqual({ product: "business", priceCents: 6999, defaultCents: 6999, discountPct: 0 });
     expect(resolveB2bWalletPrice("dealer_raw", { business: null, dealer_raw: null, dealer_pro: null })).toEqual({
       product: "dealer_raw",
       priceCents: 1999,
@@ -202,8 +200,19 @@ describe("b2b wallet prices", () => {
     expect(resolveB2bWalletPrice("dealer_pro", { business: null, dealer_raw: null, dealer_pro: 1499 }).discountPct).toBe(40);
   });
 
+  it("Business has one price for everyone: stored partner prices are ignored", () => {
+    for (const business of [6999, 7199, 7999, 9999]) {
+      expect(resolveB2bWalletPrice("business", { business, dealer_raw: null, dealer_pro: null })).toEqual({
+        product: "business",
+        priceCents: 6999,
+        defaultCents: 6999,
+        discountPct: 0,
+      });
+    }
+  });
+
   it("computes the discount badge percentage", () => {
-    expect(resolveB2bWalletPrice("business", { business: 7199, dealer_raw: null, dealer_pro: null }).discountPct).toBe(10);
+    expect(resolveB2bWalletPrice("dealer_pro", { business: null, dealer_raw: null, dealer_pro: 2249 }).discountPct).toBe(10);
     expect(b2bWalletDiscountPct(1199, 1599)).toBe(25);
     expect(b2bWalletDiscountPct(7998, 7999)).toBe(1);
     expect(b2bWalletDiscountPct(7999, 7999)).toBe(0);

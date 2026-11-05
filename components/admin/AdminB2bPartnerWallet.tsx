@@ -226,7 +226,7 @@ export function AdminB2bPartnerWallet({
                 <span className={ADMIN_PARTNER_LABEL_CLASS}>{PRODUCT_LABEL[product]} (€)</span>
                 <input
                   className={ADMIN_PARTNER_INPUT_CLASS}
-                  value={prices[product]}
+                  value={spec.fixedPrice ? "" : prices[product]}
                   onChange={(event) => {
                     setPrices((prev) => ({ ...prev, [product]: event.target.value }));
                     setPriceError("");
@@ -234,9 +234,13 @@ export function AdminB2bPartnerWallet({
                   }}
                   placeholder={centsInput(spec.defaultCents)}
                   inputMode="decimal"
+                  readOnly={spec.fixedPrice}
+                  disabled={spec.fixedPrice}
                 />
                 <span className="mt-1 block text-[11px] text-slate-500">
-                  Noklusējums: {formatB2bWalletEuro(spec.defaultCents)} · min. {formatB2bWalletEuro(spec.minCents)}
+                  {spec.fixedPrice
+                    ? `Fiksēta cena visiem: ${formatB2bWalletEuro(spec.defaultCents)}`
+                    : `Noklusējums: ${formatB2bWalletEuro(spec.defaultCents)} · min. ${formatB2bWalletEuro(spec.minCents)}`}
                 </span>
               </label>
             );

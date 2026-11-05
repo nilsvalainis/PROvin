@@ -37,7 +37,7 @@ import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
 import { fulfillManualOrderPayment } from "@/lib/manual-order-fulfill";
 import { isManualOrderPaymentFulfillment } from "@/lib/manual-order-payment";
 import { fulfillOrderUpsellPayment } from "@/lib/order-upsell-fulfill";
-import { businessLinkHashFromStripeMetadata } from "@/lib/business-link";
+import { businessLinkHashFromStripeMetadata, businessLinkPaidVinMismatch } from "@/lib/business-link";
 import { clientLinkHashFromStripeMetadata } from "@/lib/client-link";
 import { consumeBusinessLinkByHash } from "@/lib/business-link-store";
 import { consumeClientLinkByHash } from "@/lib/client-link-store";
@@ -114,7 +114,10 @@ async function fulfillPaidCheckoutSession(
     const businessLinkHash = businessLinkHashFromStripeMetadata(session.metadata);
     if (businessLinkHash) {
       try {
-        await consumeBusinessLinkByHash(businessLinkHash, session.id);
+        const consumed = await consumeBusinessLinkByHash(businessLinkHash, session.id);
+        if (consumed.ok && businessLinkPaidVinMismatch(consumed.record, session.metadata)) {
+          console.error("[stripe webhook] business link VIN mismatch", { sessionId: session.id });
+        }
       } catch (err) {
         console.warn("[stripe webhook] business link consume failed:", err);
       }

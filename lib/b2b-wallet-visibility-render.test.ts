@@ -154,7 +154,8 @@ describe("PROVIN Business product name", () => {
 describe("partner portal wallet card prices", () => {
   it("shows the default catalog prices without a discount badge", () => {
     const html = render([]);
-    expect(html).toContain("79,99 €");
+    expect(html).toContain("69,99 €");
+    expect(html).not.toContain("79,99 €");
     expect(html).toContain("19,99 €");
     expect(html).toContain("24,99 €");
     expect(html).not.toContain("15,99 €");
