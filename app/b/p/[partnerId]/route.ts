@@ -22,6 +22,8 @@ import { hashClientLinkToken, newClientLinkToken } from "@/lib/client-link-crypt
 import { fetchCsddTechDataCounted } from "@/lib/csdd-tech-data-counted";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { checkRateLimit } from "@/lib/rate-limit";
+import type { BusinessPogaBlockReason } from "@/lib/business-poga-stats";
+import { recordBusinessPogaEvent } from "@/lib/business-poga-stats-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,7 +32,17 @@ type Ctx = { params: Promise<{ partnerId: string }> };
 
 const NO_STORE = { "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow", "Referrer-Policy": "no-referrer" };
 
-function closed(req: Request): NextResponse {
+async function closed(
+  req: Request,
+  reason: BusinessPogaBlockReason,
+  partnerId = "",
+  vin = "",
+): Promise<NextResponse> {
+  /** Uzskaite ar savu limitu, lai uzbrukums nevarētu bezgalīgi rakstīt statistikā. */
+  const ip = getClientIpFromRequest(req);
+  if ((await checkRateLimit(`business-poga-stat:${ip}`, 60, 10 * 60 * 1000)).ok) {
+    await recordBusinessPogaEvent({ type: "blocked", partnerId, reason, vin });
+  }
   return NextResponse.redirect(new URL(BUSINESS_LINK_CLOSED_PATH, req.url), { status: 303, headers: NO_STORE });
 }
 
@@ -40,29 +52,31 @@ function closed(req: Request): NextResponse {
  */
 export async function GET(req: Request, ctx: Ctx) {
   const ip = getClientIpFromRequest(req);
-  if (!(await checkRateLimit(`business-partner-click:${ip}`, 30, 10 * 60 * 1000)).ok) return closed(req);
-
   const { partnerId } = await ctx.params;
-  if (!isSafeB2bPartnerId(partnerId)) return closed(req);
-  const partner = await getB2bPartnerById(partnerId);
   const params = parsePartnerClickParams(new URL(req.url).searchParams);
+  const vehicleKey = isValidVin(params.vin) ? params.vin : params.plate;
+  const block = (reason: BusinessPogaBlockReason) => closed(req, reason, partnerId, vehicleKey);
+
+  if (!(await checkRateLimit(`business-partner-click:${ip}`, 30, 10 * 60 * 1000)).ok) return block("rate");
+  if (!isSafeB2bPartnerId(partnerId)) return block("partner");
+  const partner = await getB2bPartnerById(partnerId);
 
   const check = checkPartnerClick({ partner, referer: req.headers.get("referer"), params });
-  if (!check.ok || !partner) return closed(req);
+  if (!check.ok) return block(check.reason);
+  if (!partner) return block("partner");
 
-  if (!(await checkRateLimit(`business-partner-total:${partnerId}`, 300, 60 * 60 * 1000)).ok) return closed(req);
-  const vehicleKey = isValidVin(params.vin) ? params.vin : params.plate;
+  if (!(await checkRateLimit(`business-partner-total:${partnerId}`, 300, 60 * 60 * 1000)).ok) return block("rate");
   if (!(await checkRateLimit(`business-partner-vin:${partnerId}:${vehicleKey}`, 20, 60 * 60 * 1000)).ok) {
-    return closed(req);
+    return block("rate");
   }
 
   /** VIN jābūt sludinājuma lapā. Ja lapu nevar nolasīt, saite netiek izveidota. */
   const listing = await fetchPartnerListingHtml(params.listingUrl, partner.businessEmbed.domains);
   if (!listing.ok) {
     console.warn("[business-partner-link] sludinājumu neizdevās nolasīt", { partnerId, error: listing.error });
-    return closed(req);
+    return block("listing_fetch");
   }
-  if (!listingHtmlHasVehicleId(listing.html, params)) return closed(req);
+  if (!listingHtmlHasVehicleId(listing.html, params)) return block("vehicle_missing");
 
   /** Bilde tikai no partnera domēna vai tāda, kas ir sludinājuma lapā. */
   if (params.car.imageUrl) {
@@ -90,7 +104,8 @@ export async function GET(req: Request, ctx: Ctx) {
   const tokenHash = hashClientLinkToken(token);
   const record = newPartnerBusinessLinkRecord({ tokenHash, partnerId, params, listingVerified: true });
   const stored = await storeBusinessLinkRecord(record);
-  if (!stored.ok) return closed(req);
+  if (!stored.ok) return block("store");
+  await recordBusinessPogaEvent({ type: "click", partnerId, vin: record.prefillVin, title: params.car.title });
 
   const res = NextResponse.redirect(new URL(businessLinkPublicPath(token), req.url), { status: 303, headers: NO_STORE });
   res.cookies.set(businessPartnerCookieName(tokenHash), businessPartnerCookieValue(tokenHash), {
