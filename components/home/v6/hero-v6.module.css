@@ -8,16 +8,30 @@
 .map {
   position: absolute;
   z-index: -1;
-  left: 2%;
+  /* Nila novietojums 05.11 (1440 px): Rīga ~618,709 lapā. */
+  left: calc(50% - 605px);
   width: 52%;
-  top: 8%;
+  top: 302px;
   opacity: 0.55;
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(90deg, #000 40%, transparent 85%),
-    linear-gradient(180deg, transparent 0, #000 30%, #000 70%, transparent 100%);
+  /* Malas izplūst fonā visā perimetrā; apakšā izplūst pirms hero beigām (hero ir overflow: clip). */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 16%, #000 45%, transparent 88%),
+    linear-gradient(
+      180deg,
+      transparent 0,
+      #000 110px,
+      #000 calc(100svh - 84px - 302px - 170px),
+      transparent calc(100svh - 84px - 302px - 24px)
+    );
   -webkit-mask-composite: source-in;
-  mask-image: linear-gradient(90deg, #000 40%, transparent 85%),
-    linear-gradient(180deg, transparent 0, #000 30%, #000 70%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 16%, #000 45%, transparent 88%),
+    linear-gradient(
+      180deg,
+      transparent 0,
+      #000 110px,
+      #000 calc(100svh - 84px - 302px - 170px),
+      transparent calc(100svh - 84px - 302px - 24px)
+    );
   mask-composite: intersect;
 }
 .inner {
@@ -484,13 +498,17 @@
     align-content: start;
   }
   .map {
-    left: -18px;
-    right: -18px;
-    width: auto;
-    top: 36px;
+    /* Nila novietojums 05.11 (390 px): 426 px plata, Rīga ~259,346 lapā. */
+    left: calc(66.4% - 286px);
+    width: 426px;
+    top: 99px;
     opacity: 0.6;
-    -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 18%, #000 62%, transparent 92%);
-    mask-image: linear-gradient(180deg, transparent 0, #000 18%, #000 62%, transparent 92%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14%, #000 86%, transparent 100%),
+      linear-gradient(180deg, transparent 0, #000 18%, #000 62%, transparent 92%);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(90deg, transparent 0, #000 14%, #000 86%, transparent 100%),
+      linear-gradient(180deg, transparent 0, #000 18%, #000 62%, transparent 92%);
+    mask-composite: intersect;
   }
   .title {
     font-size: 40px;

@@ -2937,14 +2937,30 @@ body.provin-menu-open .cookie-consent-panel {
 .b2b-map {
   position: absolute;
   z-index: -1;
-  left: -70px;
-  right: -110px;
-  top: -210px;
-  bottom: -30px;
+  /* Fiksēts izmērs, nevis kartītes augstums: visās Partneriem lapās karte vienādā vietā
+     (Nila novietojums 05.11, 1440 px: Rīga ~767 px no kreisās, ~270 px zem bloka augšas). */
+  left: calc(50% - 309px);
+  top: 42px;
+  width: 530px;
+  height: 585px;
   opacity: 0.5;
-  -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000 40%, transparent 80%);
-  mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, #000 40%, transparent 80%);
+  /* Malas izplūst fonā visā perimetrā. */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 20%, #000 80%, transparent 100%),
+    linear-gradient(180deg, transparent 0, #000 20%, #000 78%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, transparent 0, #000 20%, #000 80%, transparent 100%),
+    linear-gradient(180deg, transparent 0, #000 20%, #000 78%, transparent 100%);
+  mask-composite: intersect;
   pointer-events: none;
+}
+@media (min-width: 901px) {
+  /* Karte pozicionējas pret visu .b2b-h bloku, ne pret kartīti. */
+  .b2b-hv {
+    position: static;
+  }
+  .b2b-card {
+    z-index: 0;
+  }
 }
 .b2b-card {
   position: relative;
@@ -3017,15 +3033,6 @@ body.provin-menu-open .cookie-consent-panel {
   }
   .b2b-hv {
     padding-top: 150px;
-  }
-  .b2b-map {
-    left: -16px;
-    right: -16px;
-    top: -200px;
-    bottom: auto;
-    height: 420px;
-    -webkit-mask-image: linear-gradient(180deg, transparent, #000 22%, #000 62%, transparent);
-    mask-image: linear-gradient(180deg, transparent, #000 22%, #000 62%, transparent);
   }
   .b2b-card {
     padding: 18px;
@@ -3235,6 +3242,19 @@ body.provin-menu-open .cookie-consent-panel {
   .b2b-hv {
     order: 3;
     margin-top: 32px;
+  }
+  .b2b-map {
+    /* Nila novietojums 05.11 (390 px): 426 px plata, Rīga ~255 px no kreisās. */
+    left: calc(67% - 286px);
+    top: -133px;
+    width: 426px;
+    height: 470px;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14%, #000 86%, transparent 100%),
+      linear-gradient(180deg, transparent, #000 22%, #000 62%, transparent);
+    -webkit-mask-composite: source-in;
+    mask-image: linear-gradient(90deg, transparent 0, #000 14%, #000 86%, transparent 100%),
+      linear-gradient(180deg, transparent, #000 22%, #000 62%, transparent);
+    mask-composite: intersect;
   }
   .b2b-ht-cta {
     order: 4;
