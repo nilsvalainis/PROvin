@@ -4,9 +4,12 @@
 import { CSDD_FORM_STRUCTURED_FIELDS, emptyCsddFields, type CsddFormFields } from "@/lib/admin-source-blocks";
 import type { PdfIngestEngine } from "@/lib/pdf-ingest-types";
 import {
+  isImplausibleSmokeOpacity,
+  looksLikeSmokeOpacity,
   normalizeCsddRawText,
   previousInspectionBlockHasData,
   resolvePrevInspectionBlockFromRaw,
+  splitSmokeAndParticleNumber,
   type CsddInspectionDefectRow,
   type CsddOwnerChangeRow,
   type CsddPreviousInspectionBlock,
@@ -232,6 +235,7 @@ function parseAiPrevBlock(raw: unknown): CsddPreviousInspectionBlock | null {
   const ratingLevelRaw = o.ratingLevel;
   const ratingLevel =
     ratingLevelRaw === 1 || ratingLevelRaw === 2 || ratingLevelRaw === 3 ? ratingLevelRaw : null;
+  const emissions = splitSmokeAndParticleNumber(asString(o.smokeCoefficient, 32), asString(o.particleNumber, 32));
   const block: CsddPreviousInspectionBlock = {
     inspectionType: asString(o.inspectionType, 80),
     inspectionDateText: asString(o.inspectionDateText ?? o.inspectionDate, 32),
@@ -239,7 +243,8 @@ function parseAiPrevBlock(raw: unknown): CsddPreviousInspectionBlock | null {
     odometer: asString(o.odometer, 32).replace(/\D/g, "") || asString(o.odometer, 32),
     ratingLabel: asString(o.ratingLabel, 120),
     ratingLevel,
-    smokeCoefficient: asString(o.smokeCoefficient, 32),
+    smokeCoefficient: emissions.smokeCoefficient,
+    ...(emissions.particleNumber ? { particleNumber: emissions.particleNumber } : {}),
     notes: asString(o.notes, 400),
     defects,
   };
@@ -260,13 +265,15 @@ function parseAiTaRow(raw: unknown): CsddTechnicalInspectionRow | null {
   const maxDefectRaw = o.maxDefectLevel;
   const maxDefectLevel =
     maxDefectRaw === 1 || maxDefectRaw === 2 || maxDefectRaw === 3 ? maxDefectRaw : null;
+  const emissions = splitSmokeAndParticleNumber(asString(o.smokeCoefficient, 32), asString(o.particleNumber, 32));
   return {
     date,
     inspectionType: asString(o.inspectionType, 80),
     ratingLabel: asString(o.ratingLabel, 120),
     ratingLevel,
     maxDefectLevel,
-    smokeCoefficient: asString(o.smokeCoefficient, 32),
+    smokeCoefficient: emissions.smokeCoefficient,
+    ...(emissions.particleNumber ? { particleNumber: emissions.particleNumber } : {}),
     notes: asString(o.notes, 400),
     defects,
   };
@@ -307,6 +314,8 @@ function overlayAiScalars(fields: CsddFormFields, payload: Record<string, unknow
   for (const key of scalarKeys) {
     const aiVal = asString(payload[key], key === "makeModel" ? 120 : 200);
     if (!aiVal) continue;
+    /** Daļiņu skaits (>= 50) nav dūmainība. */
+    if (key === "opacityCoefficient" && isImplausibleSmokeOpacity(aiVal)) continue;
     const cur = String(next[key] ?? "").trim();
     if (!cur) next = { ...next, [key]: aiVal };
   }
@@ -380,11 +389,8 @@ export function buildCsddFieldsFromPdfSources(opts: {
   const resolvedPrev = resolvePrevInspectionBlockFromRaw(combined);
   if (previousInspectionBlockHasData(resolvedPrev)) {
     fields = { ...fields, prevInspectionBlock: resolvedPrev };
-    if (resolvedPrev.smokeCoefficient.trim()) {
-      const n = Number.parseFloat(resolvedPrev.smokeCoefficient.replace(",", ".").replace(/[^\d.]+/g, ""));
-      if (Number.isFinite(n) && n > 0 && n < 50) {
-        fields = { ...fields, opacityCoefficient: resolvedPrev.smokeCoefficient };
-      }
+    if (resolvedPrev.smokeCoefficient.trim() && looksLikeSmokeOpacity(resolvedPrev.smokeCoefficient)) {
+      fields = { ...fields, opacityCoefficient: resolvedPrev.smokeCoefficient };
     }
   }
 

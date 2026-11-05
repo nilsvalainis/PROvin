@@ -20,6 +20,8 @@ export type CsddPreviousInspectionBlock = {
   ratingLabel: string;
   ratingLevel: 1 | 2 | 3 | null;
   smokeCoefficient: string;
+  /** „Atgāzu cietās daļiņas (cm⁻³)” - skaits, nekad dūmainība. Nav vecajos melnrakstos. */
+  particleNumber?: string;
   notes: string;
   defects: CsddInspectionDefectRow[];
 };
@@ -32,10 +34,65 @@ export type CsddTechnicalInspectionRow = {
   ratingLevel: 1 | 2 | 3 | null;
   /** Augstākais defekta novērtējums tabulā (1–3). */
   maxDefectLevel: 1 | 2 | 3 | null;
+  /** „Dūmainības koeficients (m⁻¹)” - mazs decimāls (piem. 0.35). */
   smokeCoefficient: string;
+  /** „Atgāzu cietās daļiņas (cm⁻³)” - skaits, nekad dūmainība. Nav vecajos melnrakstos. */
+  particleNumber?: string;
   notes: string;
   defects: CsddInspectionDefectRow[];
 };
+
+function parseEmissionNumber(raw: string): number | null {
+  const cleaned = raw.replace(",", ".").replace(/[^\d.]+/g, "");
+  if (!cleaned) return null;
+  const n = Number.parseFloat(cleaned);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Dūmainība (m⁻¹) ir mazs decimāls (0.01-9.99); atgāzu cietās daļiņas (cm⁻³) ir tūkstošos. */
+export function looksLikeSmokeOpacity(raw: string): boolean {
+  const n = parseEmissionNumber(raw);
+  return n != null && n > 0 && n < 50;
+}
+
+/** Skaitlis >= 50 nevar būt dūmainības koeficients - tas ir daļiņu skaits. */
+export function isImplausibleSmokeOpacity(raw: string): boolean {
+  const n = parseEmissionNumber(raw);
+  return n != null && n >= 50;
+}
+
+/**
+ * Sadala dūmainību un daļiņu skaitu. Ja dūmainības laukā ir daļiņu skaits (vecie melnraksti,
+ * AI kļūda), to pārvieto uz daļiņām (ja tās vēl nav aizpildītas). Glabātos datus nemaina.
+ */
+export function splitSmokeAndParticleNumber(
+  smokeRaw: string | null | undefined,
+  particleRaw: string | null | undefined,
+): { smokeCoefficient: string; particleNumber: string } {
+  let smokeCoefficient = (smokeRaw ?? "").trim();
+  let particleNumber = (particleRaw ?? "").trim();
+  if (smokeCoefficient && isImplausibleSmokeOpacity(smokeCoefficient)) {
+    if (!particleNumber) particleNumber = smokeCoefficient;
+    smokeCoefficient = "";
+  }
+  return { smokeCoefficient, particleNumber };
+}
+
+/** Attēlošanai - dūmainība un daļiņas no TA rindas (arī vecajiem melnrakstiem). */
+export function resolveInspectionEmissions(row: {
+  smokeCoefficient?: string | null;
+  particleNumber?: string | null;
+}): { smokeCoefficient: string; particleNumber: string } {
+  return splitSmokeAndParticleNumber(row.smokeCoefficient, row.particleNumber);
+}
+
+/** „344900” -> „344 900” (tūkstoši ar atstarpi). Ne-skaitlisku tekstu atstāj kā ir. */
+export function formatParticleNumber(raw: string): string {
+  const t = raw.trim();
+  const compact = t.replace(/[\s\u00a0]+/g, "");
+  if (!/^\d+$/.test(compact)) return t;
+  return compact.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
 
 export type CsddOwnerChangeRow = {
   date: string;
@@ -103,6 +160,7 @@ export function previousInspectionBlockHasData(b: CsddPreviousInspectionBlock): 
       b.odometer.trim() ||
       b.ratingLabel.trim() ||
       b.smokeCoefficient.trim() ||
+      (b.particleNumber ?? "").trim() ||
       b.notes.trim() ||
       (b.defects ?? []).some((d) => d.code.trim() || d.description.trim()),
   );
@@ -233,7 +291,7 @@ function parseMetadataIntoBlock(section: string, block: CsddPreviousInspectionBl
     } else if (nk.includes("dumainib")) {
       block.smokeCoefficient = val;
     } else if (nk.includes("cietas") && nk.includes("dalin")) {
-      if (!block.smokeCoefficient.trim()) block.smokeCoefficient = val;
+      if (val) block.particleNumber = val.replace(/\s+/g, "");
       if (!block.notes.trim()) block.notes = `Atgāzu cietās daļiņas: ${val}`;
     } else if (nk.includes("piezim")) {
       block.notes = val;
@@ -380,6 +438,7 @@ function technicalRowToPrevBlock(
     ratingLabel: row.ratingLabel,
     ratingLevel: row.ratingLevel,
     smokeCoefficient: row.smokeCoefficient,
+    ...(row.particleNumber?.trim() ? { particleNumber: row.particleNumber.trim() } : {}),
     notes: row.notes,
     defects: row.defects ?? [],
   };
@@ -458,6 +517,7 @@ export function previousInspectionBlockToRow(
     ratingLevel: block.ratingLevel,
     maxDefectLevel,
     smokeCoefficient: block.smokeCoefficient,
+    ...(block.particleNumber?.trim() ? { particleNumber: block.particleNumber.trim() } : {}),
     notes: block.notes,
     defects: block.defects ?? [],
   };
@@ -608,12 +668,17 @@ function parseInspectionBlock(block: string): CsddTechnicalInspectionRow | null 
   const particleM = block.match(
     /Atgāzu\s+cietās\s+daļiņas(?:\s*\([^)]*\))?\s*:?\s*([0-9][\d\s]*)/i,
   );
-  const smokeCoefficient = (smokeM?.[1] ?? particleM?.[1] ?? "").trim();
+  /** Tikai pirmā rinda - `\s` regex var aizķert nākamās rindas ciparus (defekta kodu). */
+  const particleRaw = (particleM?.[1] ?? "").split("\n")[0]!.trim();
+  const { smokeCoefficient, particleNumber } = splitSmokeAndParticleNumber(
+    smokeM?.[1],
+    particleRaw.replace(/\s+/g, ""),
+  );
 
   const notesM = block.match(/Piezīmes\s*[:.]?\s*([\s\S]*?)(?=\n\s*Kods\s+Novērtējums|\n\s*[\d.]+\s+\d\s+|$)/i);
   let notes = notesM?.[1]?.replace(/\s+/g, " ").trim() ?? "";
-  if (particleM?.[1] && smokeM?.[1] == null && !/cietās\s+daļiņas/i.test(notes)) {
-    notes = [`Atgāzu cietās daļiņas: ${particleM[1].trim()}`, notes].filter(Boolean).join(" ");
+  if (particleRaw && smokeM?.[1] == null && !/cietās\s+daļiņas/i.test(notes)) {
+    notes = [`Atgāzu cietās daļiņas: ${particleRaw}`, notes].filter(Boolean).join(" ");
   }
   if (notes.length > 500) notes = notes.slice(0, 500);
 
@@ -633,6 +698,7 @@ function parseInspectionBlock(block: string): CsddTechnicalInspectionRow | null 
     ratingLevel,
     maxDefectLevel,
     smokeCoefficient,
+    ...(particleNumber ? { particleNumber } : {}),
     notes,
     defects,
   };

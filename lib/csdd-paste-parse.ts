@@ -25,6 +25,8 @@ import {
   previousInspectionBlockHasData,
   extractFirstNextInspectionDateIso,
   findMileageDateForOdometer,
+  isImplausibleSmokeOpacity,
+  looksLikeSmokeOpacity,
 } from "@/lib/csdd-extended-parse";
 import {
   extractRegistryStructuredFields,
@@ -32,11 +34,6 @@ import {
   parseLvRegistryBasics,
 } from "@/lib/client-report-lv-parse";
 
-/** Dūmainība ir mazs decimāls (0.09–9.99); atgāzu daļiņas ir miljonos. */
-function looksLikeSmokeOpacity(raw: string): boolean {
-  const n = Number.parseFloat(raw.replace(",", ".").replace(/[^\d.]+/g, ""));
-  return Number.isFinite(n) && n > 0 && n < 50;
-}
 
 /** Rindas, pēc kurām „Nākamās / Iepriekšējās apskates datums” vairs nedrīkst ņemt. */
 const NEXT_INSPECTION_HEAD_BOUNDARY_RES = [
@@ -223,6 +220,8 @@ export function parseCsddTechnicalFields(
 
   let opacityCoefficient = (st.smokeOpacity ?? basics.smokeOpacity ?? "").trim();
   if (opacityCoefficient) opacityCoefficient = opacityCoefficient.replace(/\s+/g, " ").slice(0, 80);
+  /** Daļiņu skaits (>= 50) nav dūmainība - to rāda „Atgāzu cietās daļiņas”. */
+  if (opacityCoefficient && isImplausibleSmokeOpacity(opacityCoefficient)) opacityCoefficient = "";
 
   let particulateMatter = (st.particulateMatter ?? "").trim();
   if (!particulateMatter) {
