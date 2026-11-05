@@ -54,12 +54,19 @@ const ZONE_LIST_HEADING_RE =
 
 const GROUP_LIST_HEADING_RE = /Deta[ļl]u\s+grupa|Boj[āa]jumu\s+grupas/i;
 
-/** PDF kājene, CarVertical «līdzīgs ieraksts», mūsu kopsavilkuma virsraksts — nav bojājumu grupa. */
-const DAMAGE_META_CUT_RE =
-  /VIN\s*numurs|Ģenerē[sš]anas\s+datums|Derīguma\s+termiņ|"?Boj[āa]jumu"?\s+sadaļas\s+skaidrojums|carVertical|\d+\s+līdzīg[sz]\s+ierakst|līdzīg[sz]\s+ierakst|NEGADĪJUMU\s+VĒSTUR|Fiks[eē]tie\s+incidenti|datu\s+saskaņotība/i;
+/** AutoDNA lapas kājene / galvene (LV, EN, LT) - drošības tīkls, ja tā nav izņemta pirms parsēšanas. */
+const AUTODNA_PAGE_FOOTER_SRC = String.raw`P[āa]rbaudiet\s+zi[ņn]ojuma|QR[\s-]*(?:kod|code)|Check\s+the\s+authenticity|Patikrinkite\s+ataskaitos|Auto\s+V[ēe]stures\s+Atskaite|Vehicle\s+History\s+Report|(?<![0-9a-z])(?=[0-9a-f-]*[a-f])(?:[0-9a-f]-?){24,}(?![0-9a-z])|(?<![A-Za-zĀāČčĒēĢģĪīĶķĻļŅņŠšŪūŽž])(?:Lapa|Page|Puslapis)\s*\d+(?!\d)`;
 
-const DAMAGE_GROUP_STOP_RE =
-  /Boj[āa]jumu\s+zona|Boj[āa]t[āa]s\s+deta[ļl]as|Valsts|Summa|Rezult[āa]ts|Aptuven|VIN\s*numurs|Ģenerē[sš]anas|līdzīg[sz]\s+ierakst|NEGADĪJUMU\s+VĒSTUR|Fiks[eē]tie\s+incidenti|\d{1,2}\.\d{4}|$/i;
+/** PDF kājene, CarVertical «līdzīgs ieraksts», mūsu kopsavilkuma virsraksts — nav bojājumu grupa. */
+const DAMAGE_META_CUT_RE = new RegExp(
+  String.raw`${AUTODNA_PAGE_FOOTER_SRC}|VIN\s*numurs|Ģenerē[sš]anas\s+datums|Derīguma\s+termiņ|"?Boj[āa]jumu"?\s+sadaļas\s+skaidrojums|carVertical|\d+\s+līdzīg[sz]\s+ierakst|līdzīg[sz]\s+ierakst|NEGADĪJUMU\s+VĒSTUR|Fiks[eē]tie\s+incidenti|datu\s+saskaņotība`,
+  "i",
+);
+
+const DAMAGE_GROUP_STOP_RE = new RegExp(
+  String.raw`Boj[āa]jumu\s+zona|Boj[āa]t[āa]s\s+deta[ļl]as|Valsts|Summa|Rezult[āa]ts|Aptuven|VIN\s*numurs|Ģenerē[sš]anas|līdzīg[sz]\s+ierakst|NEGADĪJUMU\s+VĒSTUR|Fiks[eē]tie\s+incidenti|${AUTODNA_PAGE_FOOTER_SRC}|\d{1,2}\.\d{4}|$`,
+  "i",
+);
 
 /** Avota grupas bieži salīmējas bez atdalītāja; pēc daļas/detaļas sākas nākamā. */
 const DAMAGE_GROUP_GLUE_RE = new RegExp(
@@ -283,10 +290,13 @@ function splitLooseLabels(raw: string): string[] {
   return out;
 }
 
+const ZONE_LIST_EXTRACT_RE = new RegExp(
+  String.raw`(?:Boj[āa]jumu\s+zonas?|Boj[āa]t[āa]s\s+(?:deta[ļl]as|zonas)|Boj[āa]t[āa]\s+puse)\s*[:\-–]?\s*([\s\S]{0,800}?)(?=Deta[ļl]u\s+grupa|Boj[āa]jumu\s+grupas|Valsts|Summa|Rezult[āa]ts|Aptuven|${AUTODNA_PAGE_FOOTER_SRC}|\d{1,2}\.\d{4}|$)`,
+  "i",
+);
+
 export function extractZoneListFromBlock(block: string): string {
-  const m = block.match(
-    /(?:Boj[āa]jumu\s+zonas?|Boj[āa]t[āa]s\s+(?:deta[ļl]as|zonas)|Boj[āa]t[āa]\s+puse)\s*[:\-–]?\s*([\s\S]{0,800}?)(?=Deta[ļl]u\s+grupa|Boj[āa]jumu\s+grupas|Valsts|Summa|Rezult[āa]ts|Aptuven|\d{1,2}\.\d{4}|$)/i,
-  );
+  const m = block.match(ZONE_LIST_EXTRACT_RE);
   return clipVendorDamageField(m?.[1] ?? "");
 }
 

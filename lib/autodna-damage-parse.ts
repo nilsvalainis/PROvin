@@ -8,6 +8,7 @@ import type { CarVerticalDamageDetailRow } from "@/lib/carvertical-pdf-parse";
 import { normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { extractGroupListFromBlock, extractZoneListFromBlock } from "@/lib/damage-zones";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
+import { stripAutodnaPageNoise } from "@/lib/autodna-page-noise";
 import { sanitizePdfTextForParsing } from "@/lib/pdf-text-sanitize-for-parse";
 
 const DAMAGE_SECTION_HINT =
@@ -77,7 +78,7 @@ function collectAutodnaDamageStarts(text: string): { index: number; month: strin
 
 /** Parsē visus „zaudējumu apjoms” ierakstus no AutoDNA PDF teksta. */
 export function parseAutodnaDamageEvents(raw: string): LtabIncidentRow[] {
-  const text = sanitizePdfTextForParsing(raw);
+  const text = stripAutodnaPageNoise(sanitizePdfTextForParsing(raw));
   if (!autodnaDamageSectionDetected(text)) return [];
 
   const rows: LtabIncidentRow[] = [];
@@ -106,7 +107,8 @@ export function parseAutodnaDamageEvents(raw: string): LtabIncidentRow[] {
 
 /** AutoDNA „Bojājumu zona” / „Detaļu grupa” — visa saraksta saturs, ne tikai zināmas zonas. */
 export function parseAutodnaDamageDetails(raw: string): CarVerticalDamageDetailRow[] {
-  const text = sanitizePdfTextForParsing(raw);
+  /** Lapas kājene / galvene bloka vidū - bez tās saraksts turpinās nākamajā lapā. */
+  const text = stripAutodnaPageNoise(sanitizePdfTextForParsing(raw));
   if (!autodnaDamageSectionDetected(text)) return [];
 
   const starts = collectAutodnaDamageStarts(text);

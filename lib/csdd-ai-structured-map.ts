@@ -11,9 +11,11 @@ import {
 import type { CsddPdfParseResult } from "@/lib/csdd-pdf-ingest";
 import {
   emptyCsddPreviousInspectionBlock,
+  isImplausibleSmokeOpacity,
   lvDateToIsoFlexible,
   normalizeCsddRawText,
   previousInspectionBlockHasData,
+  splitSmokeAndParticleNumber,
   type CsddInspectionDefectRow,
   type CsddPreviousInspectionBlock,
   type CsddTechnicalInspectionRow,
@@ -95,7 +97,14 @@ export const CSDD_AI_RESPONSE_SCHEMA: AiJsonSchema = {
         odometrs: { type: JsonType.INTEGER },
         vertesanasLimeklis: { type: JsonType.STRING },
         vertesanasSkaitlis: { type: JsonType.INTEGER },
-        dumannibasKoeficients: { type: JsonType.STRING },
+        dumannibasKoeficients: {
+          type: JsonType.STRING,
+          description: "Tikai „Dūmainības koeficients (m-1)”, mazs decimāls (piem. 0.35). Tukšs, ja PDF to nerāda.",
+        },
+        atgazuCietasDalinas: {
+          type: JsonType.STRING,
+          description: "Tikai „Atgāzu cietās daļiņas (cm-3)”, skaits cipariem (piem. 344900). Tukšs, ja PDF to nerāda.",
+        },
         piezimes: { type: JsonType.STRING },
         truukumi: {
           type: JsonType.ARRAY,
@@ -122,7 +131,14 @@ export const CSDD_AI_RESPONSE_SCHEMA: AiJsonSchema = {
           vertesanasLimeklis: { type: JsonType.STRING, description: "Pilns teksts, piem. 2 - Ar mēneša laikā labojamiem" },
           vertesanasSkaitlis: { type: JsonType.INTEGER, description: "1, 2 vai 3" },
           odometrs: { type: JsonType.INTEGER },
-          dumannibasKoeficients: { type: JsonType.STRING },
+          dumannibasKoeficients: {
+            type: JsonType.STRING,
+            description: "Tikai „Dūmainības koeficients (m-1)”, mazs decimāls (piem. 0.35). Tukšs, ja PDF to nerāda.",
+          },
+          atgazuCietasDalinas: {
+            type: JsonType.STRING,
+            description: "Tikai „Atgāzu cietās daļiņas (cm-3)”, skaits cipariem (piem. 344900). Tukšs, ja PDF to nerāda.",
+          },
           piezimes: { type: JsonType.STRING },
           truukumi: {
             type: JsonType.ARRAY,
@@ -160,7 +176,7 @@ CRITICAL RULES:
 - NEVER output "Nav reģistrētu trūkumu vai bojājumu" when the table lists concrete codes.
 - Include inspection with rating 1 or 2 even when many defects — do not skip older years.
 - Dates: DD.MM.YYYY. valsts for mileage: LV or Latvija.
-- Newer diesels may show "Atgāzu cietās daļiņas (cm-3)" instead of "Dūmainības koeficients (m-1)" — copy the numeric value.
+- Each inspection shows EITHER "Dūmainības koeficients (m-1)" (smoke opacity, small decimal like 0.35) OR "Atgāzu cietās daļiņas (cm-3)" (particle count, e.g. 344900). Put smoke opacity ONLY into dumannibasKoeficients and the particle count ONLY into atgazuCietasDalinas (digits only). NEVER put a particle count into dumannibasKoeficients.
 - TCPDF text layer often glues labels to values ("Apskates datums19.05.2026", "8.2.2.3.2Cieto") — still extract correctly.
 - transportlidzeklaVeids: from "Transportlīdzekļa veids". sedvietuSkaits: from "Sēdvietu skaits" when present.`;
 
@@ -182,7 +198,7 @@ MANDATORY:
 1) ieprieksejasApskatesDati — from "Iepriekšējās apskates dati" OR "Detalizētais vērtējums" under current "Pēdējā tehniskā apskate".
 2) tehniskoApskasuVesture — EVERY block in "Tehnisko apskašu vēsture" with header "Apskates datums DD.MM.YYYY".
 
-For each inspection block extract: parbaudesVeids, vertesanasLimeklis, vertesanasSkaitlis, dumannibasKoeficients, piezimes, and ALL truukumi[] rows (kods, vertesanas 1-3, full apraksts text).
+For each inspection block extract: parbaudesVeids, vertesanasLimeklis, vertesanasSkaitlis, dumannibasKoeficients (only "Dūmainības koeficients (m-1)", small decimal), atgazuCietasDalinas (only "Atgāzu cietās daļiņas (cm-3)", particle count digits), piezimes, and ALL truukumi[] rows (kods, vertesanas 1-3, full apraksts text).
 
 Codes may be dotted (5.3.4.) or plain (503, 618). Never skip defects. Never invent "Nav reģistrētu trūkumu" when codes exist.`;
 
@@ -194,6 +210,23 @@ function asString(v: unknown, max = 400): string {
   if (typeof v === "string") return v.trim().slice(0, max);
   if (typeof v === "number" && Number.isFinite(v)) return String(v);
   return "";
+}
+
+/** Dūmainība no AI tikai, ja izskatās pēc m⁻¹ (< 50); citādi tas ir daļiņu skaits. */
+function emissionsFromAiRow(o: Record<string, unknown>): {
+  smokeCoefficient: string;
+  particleNumber: string;
+} {
+  const split = splitSmokeAndParticleNumber(
+    asString(o.dumannibasKoeficients, 32),
+    asString(o.atgazuCietasDalinas, 32),
+  );
+  return { ...split, particleNumber: split.particleNumber.replace(/\s+/g, "") };
+}
+
+function plausibleOpacity(raw: string | null | undefined): string {
+  const t = (raw ?? "").trim();
+  return t && !isImplausibleSmokeOpacity(t) ? t : "";
 }
 
 function asInt(v: unknown): number | null {
@@ -295,13 +328,15 @@ function mapTechnicalInspectionRows(raw: unknown): CsddTechnicalInspectionRow[] 
       }
     }
     void asInt(o.odometrs);
+    const emissions = emissionsFromAiRow(o);
     out.push({
       date,
       inspectionType: asString(o.parbaudesVeids, 80),
       ratingLabel: asString(o.vertesanasLimeklis, 120),
       ratingLevel: ratingLevel ?? maxDefectLevel,
       maxDefectLevel,
-      smokeCoefficient: asString(o.dumannibasKoeficients, 32),
+      smokeCoefficient: emissions.smokeCoefficient,
+      ...(emissions.particleNumber ? { particleNumber: emissions.particleNumber } : {}),
       notes: asString(o.piezimes, 400),
       defects,
     });
@@ -368,6 +403,7 @@ function mapPrevInspectionFromAi(raw: unknown): CsddPreviousInspectionBlock {
   const ratingLevel =
     ratingLevelRaw === 1 || ratingLevelRaw === 2 || ratingLevelRaw === 3 ? ratingLevelRaw : null;
   const odometer = asInt(o.odometrs);
+  const emissions = emissionsFromAiRow(o);
   return {
     inspectionType: asString(o.parbaudesVeids, 80),
     inspectionDateText: dateToLvDisplay(asString(o.datums, 32)),
@@ -375,7 +411,8 @@ function mapPrevInspectionFromAi(raw: unknown): CsddPreviousInspectionBlock {
     odometer: odometer != null ? String(odometer) : "",
     ratingLabel: asString(o.vertesanasLimeklis, 120),
     ratingLevel,
-    smokeCoefficient: asString(o.dumannibasKoeficients, 32),
+    smokeCoefficient: emissions.smokeCoefficient,
+    ...(emissions.particleNumber ? { particleNumber: emissions.particleNumber } : {}),
     notes: asString(o.piezimes, 400),
     defects,
   };
@@ -411,6 +448,7 @@ export function csddFieldsFromStructuredAiPayload(
         ratingLabel: match.ratingLabel,
         ratingLevel: match.ratingLevel,
         smokeCoefficient: match.smokeCoefficient,
+        ...(match.particleNumber ? { particleNumber: match.particleNumber } : {}),
         notes: match.notes,
         defects: match.defects,
       };
@@ -445,7 +483,8 @@ export function csddFieldsFromStructuredAiPayload(
     emissionStandard: asString(pam.emisijuStandarts, 40),
     registrationStatus: asString(pam.registracijasStatuss, 80),
     roadTaxEur: asString(pam.ekspluatacijasNodoklisEur, 32),
-    opacityCoefficient: ta[0]?.smokeCoefficient?.trim() || "",
+    opacityCoefficient: plausibleOpacity(ta[0]?.smokeCoefficient),
+    particulateMatter: ta[0]?.particleNumber?.trim() || "",
     mileageHistory: mileage.length > 0 ? mileage : emptyCsddFields().mileageHistory,
     technicalInspectionHistory: ta,
     prevInspectionBlock,
@@ -510,9 +549,10 @@ export function mergeCsddTaAiIntoFields(
     technicalInspectionHistory,
     prevInspectionBlock,
     opacityCoefficient:
-      fields.opacityCoefficient.trim() ||
-      technicalInspectionHistory[0]?.smokeCoefficient?.trim() ||
-      "",
+      plausibleOpacity(fields.opacityCoefficient) ||
+      plausibleOpacity(technicalInspectionHistory[0]?.smokeCoefficient),
+    particulateMatter:
+      fields.particulateMatter.trim() || technicalInspectionHistory[0]?.particleNumber?.trim() || "",
   };
 }
 

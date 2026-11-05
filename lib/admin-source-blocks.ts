@@ -153,7 +153,11 @@ import type {
   CsddTechnicalInspectionRow,
   CsddInspectionDefectRow,
 } from "@/lib/csdd-extended-parse";
-import { emptyCsddPreviousInspectionBlock, previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
+import {
+  emptyCsddPreviousInspectionBlock,
+  previousInspectionBlockHasData,
+  resolveInspectionEmissions,
+} from "@/lib/csdd-extended-parse";
 
 export { type OutvinDealerReport } from "@/lib/outvin-dealer-types";
 export type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
@@ -905,7 +909,9 @@ export function csddFormToPlainText(f: CsddFormFields): string {
     if (prev.inspectionType.trim()) lines.push(`Pārbaudes veids: ${prev.inspectionType.trim()}`);
     if (prev.odometer.trim()) lines.push(`Odometra rādījums: ${prev.odometer.trim()}`);
     if (prev.ratingLabel.trim()) lines.push(`Novērtējums: ${prev.ratingLabel.trim()}`);
-    if (prev.smokeCoefficient.trim()) lines.push(`Dūmainības koeficients: ${prev.smokeCoefficient.trim()}`);
+    const prevEmissions = resolveInspectionEmissions(prev);
+    if (prevEmissions.smokeCoefficient) lines.push(`Dūmainības koeficients: ${prevEmissions.smokeCoefficient}`);
+    if (prevEmissions.particleNumber) lines.push(`Atgāzu cietās daļiņas: ${prevEmissions.particleNumber}`);
     if (prev.notes.trim()) lines.push(`Piezīmes: ${prev.notes.trim()}`);
     for (const d of prev.defects ?? []) {
       if (!d.code.trim() && !d.description.trim()) continue;
@@ -921,7 +927,9 @@ export function csddFormToPlainText(f: CsddFormFields): string {
           .filter(Boolean)
           .join(" · "),
       );
-      if (row.smokeCoefficient.trim()) lines.push(`Dūmainības koeficients: ${row.smokeCoefficient.trim()}`);
+      const rowEmissions = resolveInspectionEmissions(row);
+      if (rowEmissions.smokeCoefficient) lines.push(`Dūmainības koeficients: ${rowEmissions.smokeCoefficient}`);
+      if (rowEmissions.particleNumber) lines.push(`Atgāzu cietās daļiņas: ${rowEmissions.particleNumber}`);
       if (row.notes.trim()) lines.push(`Piezīmes: ${row.notes.trim()}`);
       for (const d of row.defects ?? []) {
         if (!d.code.trim() && !d.description.trim()) continue;
@@ -2307,6 +2315,12 @@ function parseCsddInspectionWarningStoredRaw(raw: unknown): CsddInspectionWarnin
     .filter((r): r is CsddInspectionWarningRow => r != null);
 }
 
+/** Daļiņu skaits tikai tad, ja saglabāts (vecajiem melnrakstiem lauka nav). */
+function particleNumberStoredField(raw: unknown): { particleNumber?: string } {
+  const v = clipCsddField(raw, 40).trim();
+  return v ? { particleNumber: v } : {};
+}
+
 function parseCsddPreviousInspectionStoredRaw(raw: unknown): CsddPreviousInspectionBlock {
   if (!raw || typeof raw !== "object") return emptyCsddPreviousInspectionBlock();
   const o = raw as Record<string, unknown>;
@@ -2321,6 +2335,7 @@ function parseCsddPreviousInspectionStoredRaw(raw: unknown): CsddPreviousInspect
     ratingLabel: clipCsddField(o.ratingLabel, 200),
     ratingLevel,
     smokeCoefficient: clipCsddField(o.smokeCoefficient, 40),
+    ...particleNumberStoredField(o.particleNumber),
     notes: clipCsddField(o.notes, 2000),
     defects: parseCsddInspectionDefectStoredRaw(o.defects),
   };
@@ -2360,6 +2375,7 @@ function parseCsddTechnicalInspectionStoredRaw(raw: unknown): CsddTechnicalInspe
         ratingLevel,
         maxDefectLevel,
         smokeCoefficient: clipCsddField(o.smokeCoefficient, 40),
+        ...particleNumberStoredField(o.particleNumber),
         notes: clipCsddField(o.notes, 500),
         defects: parseCsddInspectionDefectStoredRaw(o.defects),
       };
