@@ -323,6 +323,8 @@ export type BusinessLinkCheckoutSessionParams = {
   cancel_url: string;
   phone_number_collection: { enabled: false };
   metadata: Record<string, string>;
+  /** Partnera pogas pirkumi: PaymentIntent metadatos, lai adminā tos var atrast ar Stripe meklēšanu. */
+  payment_intent_data?: { metadata: Record<string, string> };
   locale: "lv";
 };
 
@@ -365,6 +367,9 @@ export function buildBusinessLinkCheckoutSessionParams(opts: {
       companyAddress: r.companyAddress,
       partnerRef: opts.partnerRef,
     }),
+    ...(opts.partnerRef && /^ptr_[a-f0-9]{16}$/.test(opts.partnerRef)
+      ? { payment_intent_data: { metadata: { partner_ref: opts.partnerRef, vin: r.vin } } }
+      : {}),
     locale: "lv",
   };
 }
