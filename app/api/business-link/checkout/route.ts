@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     {
       email: str(body.email),
       vin: str(body.vin),
-      listingUrl: str(body.listingUrl),
+      listingUrl: str(body.listingUrl) || record.listingUrl || "",
       phone: str(body.phone),
       companyName: str(body.companyName),
       companyReg: str(body.companyReg),
@@ -94,6 +94,7 @@ export async function POST(req: Request) {
     token,
     tokenHash: record.tokenHash,
     resolved: validated.resolved,
+    partnerRef: record.partnerId,
   });
 
   try {

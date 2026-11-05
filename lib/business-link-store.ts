@@ -122,6 +122,15 @@ export async function createBusinessLink(
   return { ok: true, record };
 }
 
+/** Partnera pogas saite: ieraksts jau sagatavots (`newPartnerBusinessLinkRecord`). */
+export async function storeBusinessLinkRecord(
+  record: BusinessLinkRecord,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!/^[a-f0-9]{64}$/.test(record.tokenHash)) return { ok: false, error: "invalid_token" };
+  if (!(await writeJson(record.tokenHash, record))) return { ok: false, error: "store_failed" };
+  return { ok: true };
+}
+
 /** Atgriež iepriekšējo atvērto Stripe sesiju (ja bija), lai to varētu slēgt. */
 export async function attachBusinessLinkCheckoutSession(
   hash: string,
