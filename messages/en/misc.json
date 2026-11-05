@@ -4,11 +4,11 @@
     "faqBack": "← Back to home",
     "pasutitRedirect": "Redirecting to order form…",
     "checkoutProductName": "PROVIN AUDITS",
-    "checkoutProductDesc": "History check in at least 2 paid sources, listing and risk analysis.",
+    "checkoutProductDesc": "History check across at least 2 paid sources, plus listing and risk analysis.",
     "checkoutConsultationProductName": "PROVIN: strategic consultation",
-    "checkoutConsultationProductDesc": "Individual consultation and market orientation: VIN/listing context, risk view and next steps.",
+    "checkoutConsultationProductDesc": "One-to-one consultation and market guidance: VIN and listing context, risk assessment and next steps.",
     "checkoutProvinSelectProductName": "PROVIN SELECT\nStrategic consultation",
-    "checkoutProvinSelectProductDesc": "Individual consultation for car purchase decisions",
+    "checkoutProvinSelectProductDesc": "One-to-one consultation on buying a car",
     "notFoundTitle": "Page not found",
     "notFoundHome": "PROVIN home",
     "orderBarCta": "Order an audit · 99,99 €",
@@ -24,7 +24,7 @@
     "indexH1": "Blog: buying a used car and VIN checks",
     "readMore": "Read post",
     "backToList": "← All posts",
-    "lvOnlyNote": "Full story is available in Latvian.",
+    "lvOnlyNote": "The full article is available in Latvian.",
     "commentsTitle": "Comments",
     "commentsEmpty": "Quiet so far. Be the first.",
     "commentName": "Name",
@@ -32,7 +32,7 @@
     "commentSubmit": "Post",
     "commentSubmitting": "Sending…",
     "commentSuccess": "Comment posted.",
-    "commentError": "Couldn't send. Try again.",
+    "commentError": "Could not send. Please try again.",
     "tocLabel": "Contents",
     "ctaTitle": "Before you buy - check the car's history",
     "ctaBody": "Data from several sources, listing analysis and a consultation in one audit.",
@@ -46,8 +46,8 @@
     "provinSelect": "Consultation",
     "kasSlapjasAizProvin": "About PROVIN",
     "buj": "FAQ",
-    "b2b": "For dealers",
-    "b2bLoginAria": "For dealers, sign in"
+    "b2b": "For partners",
+    "b2bLoginAria": "For partners, sign in"
   },
   "Breadcrumbs": {
     "navAria": "Breadcrumb",
@@ -57,8 +57,8 @@
     "about": "About PROVIN",
     "blogs": "Blog",
     "vinCheck": "VIN check",
-    "partner": "For dealers",
-    "terms": "Terms of use",
-    "privacy": "Privacy policy"
+    "partner": "For partners",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy"
   }
 }

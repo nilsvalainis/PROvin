@@ -1,18 +1,18 @@
 {
   "RiskAuditGuide": {
     "title": "Check the listing for free",
-    "subtitle": "Send us a listing link and get a short comment on whether this car is worth checking further.",
+    "subtitle": "Send us a link to the listing and get a short comment on whether the car is worth checking further.",
     "triggerCta": "Submit a listing",
-    "pausedBody": "Free listing reviews are temporarily unavailable. Each link is checked manually, so a short queue has built up. Please try later or tomorrow.",
-    "pausedSoftCta": "Need a faster answer? Order PROVIN MINI or PROVIN AUDITS - those run as usual.",
+    "pausedBody": "Free listing reviews are temporarily unavailable. Because we check every link by hand, a short queue has built up. Please try again later or tomorrow.",
+    "pausedSoftCta": "Need an answer sooner? Order PROVIN MINI or PROVIN AUDITS - they are running as usual.",
     "pausedOrderCta": "Order an audit",
     "form": {
       "listingLabel": "Listing link",
       "listingPlaceholder": "https://www.ss.com/msg/lv/… or Mobile.de",
       "vinLabel": "VIN",
-      "vinPlaceholder": "Enter VIN code",
+      "vinPlaceholder": "Enter the VIN",
       "heardLabel": "How did you hear about us?",
-      "heardPlaceholder": "Choose",
+      "heardPlaceholder": "Select",
       "heard": {
         "tiktok": "TikTok",
         "instagram": "Instagram",
@@ -25,9 +25,9 @@
       "emailPlaceholder": "you@email.com",
       "phoneLabel": "Phone",
       "phonePlaceholder": "+371 …",
-      "submit": "Get the review",
+      "submit": "Get a review",
       "submitting": "Sending…",
-      "disclaimer": "* Does not include risk analysis, consultation, or vehicle history checks in databases."
+      "disclaimer": "* Does not include risk analysis, a consultation or vehicle history checks in databases."
     },
     "success": {
       "title": "Thanks! We've received the link.",
@@ -36,14 +36,14 @@
     "errors": {
       "listing": "Paste a valid link to a specific listing.",
       "vin": "Enter a valid VIN or licence plate number (3-6 characters).",
-      "vinLength": "VIN must be 17 characters, check the VIN number",
-      "vinCheckDigit": "The 9th character does not match the ISO 3779 check digit. This is normal for European cars, you can still order.",
-      "heard": "Please say how you heard about us.",
-      "email": "Email address is not valid.",
-      "phone": "Phone number is not valid.",
-      "rateLimited": "A free review has already been requested. We'll reply by email, or order PROVIN AUDITS.",
+      "vinLength": "The VIN must be 17 characters long. Please check it.",
+      "vinCheckDigit": "The check digit (9th character) does not match ISO 3779. This is normal for European cars; you can still order.",
+      "heard": "Please tell us how you heard about us.",
+      "email": "This email address is not valid.",
+      "phone": "This phone number is not valid.",
+      "rateLimited": "A free review has already been requested. We will reply by email, or you can order PROVIN AUDITS.",
       "rateLimitedCta": "Order PROVIN AUDITS",
-      "ipRateLimited": "Several requests were already submitted from this device / network today. Try again tomorrow or order an audit.",
+      "ipRateLimited": "Several requests have already been sent from this device or network today. Try again tomorrow or order an audit.",
       "queuePaused": "Free reviews are temporarily unavailable. Please try later or tomorrow, or order an audit.",
       "generic": "Could not submit. Please try again."
     }

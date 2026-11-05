@@ -14,7 +14,7 @@
     "legalInlinePrefixJuridiska": "Юридическая информация:",
     "legalInlinePrefixPakalpojums": "Поставщик услуги:",
     "serviceProviderDisclosureSummary": "Поставщик услуги",
-    "companyLegalSubject": "Исполнитель (юридически)",
+    "companyLegalSubject": "Юридическое лицо",
     "companyRegNo": "Регистрационный номер",
     "companyLegalAddress": "Юридический адрес",
     "companyIncompleteDev": "Для разработчика: задайте NEXT_PUBLIC_COMPANY_LEGAL_NAME, NEXT_PUBLIC_COMPANY_REG_NO и NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS (.env или хостинг).",

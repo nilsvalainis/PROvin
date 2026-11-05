@@ -5,36 +5,36 @@
     "included": [
       {
         "title": "TAILORED MODEL\nSELECTION",
-        "body": "We will shortlist 3 car brands and models that best fit your needs, budget and maintenance costs. You no longer waste time on unsuitable options."
+        "body": "We will shortlist 3 makes and models that best match your needs, budget and running costs. No more time wasted on unsuitable options."
       },
       {
-        "title": "CURATED LISTING\nSEARCH",
-        "body": "We manually review suitable offers and filter risky listings from the start. You receive only options worth your time."
+        "title": "LISTING FILTER\nAND ANALYSIS",
+        "body": "We review the most suitable offers by hand and weed out risky listings from the start. You receive only the options that are worth a closer look."
       },
       {
         "title": "TECHNICAL RISK\nFORECAST",
-        "body": "We explain model-specific weak points and potential risks in detail. You will know what to focus on during inspection and what future costs to expect."
+        "body": "We explain the weak points and potential risks of the specific model in detail. You will know what to look out for when viewing the car and what costs to expect in the future."
       },
       {
-        "title": "EXPERT NEGOTIATION\nSTRATEGY",
-        "body": "We prepare you for seller negotiations: what to ask, how to notice manipulation and how to discuss price with facts. We support you through the whole buying process."
+        "title": "NEGOTIATION STRATEGY\nAND SUPPORT",
+        "body": "We prepare you for the conversation with the seller: which questions to ask, how to spot manipulation and what to base your price negotiation on. We support you throughout the buying process."
       }
     ],
-    "cardsTrustLine": "5 validated options · Full process support",
-    "cardsVinNote": "VIN checks are not included (performed in PROVIN audit).",
+    "cardsTrustLine": "5 vetted options · Support throughout the process",
+    "cardsVinNote": "VIN checks are not included (they are part of the PROVIN audit).",
     "comparisonScrollCta": "BOOK A CONSULTATION €49.99",
     "ctaPrimary": "BOOK A CONSULTATION",
     "formTitle": "Consultation request",
-    "strategyFormTitle": "Form",
+    "strategyFormTitle": "Questionnaire",
     "formIntro": "Fill in your details and complete payment so we can prepare everything you need for your consultation.",
     "groupTitleCarAria": "Car criteria",
     "groupTitleContact": "Contact",
     "requiredSrOnly": "required field",
-    "budgetPlaceholder": "e.g. 20 000",
+    "budgetPlaceholder": "e.g. 20,000",
     "enginePlaceholder": "e.g. petrol 1.4 TSI",
     "transmissionPlaceholder": "e.g. manual",
     "fieldBrandModel": "Make/model:",
-    "fieldProductionYears": "Model years:",
+    "fieldProductionYears": "Production years:",
     "fieldPlannedBudget": "Planned budget (€):",
     "fieldEngineType": "Engine type:",
     "fieldTransmission": "Transmission:",
@@ -47,13 +47,13 @@
     "phoneLabel": "Phone number",
     "emailLabel": "Email",
     "commentLabel": "Comment (optional)",
-    "commentPlaceholder": "Extra context if you want…",
-    "followupNote": "After submission we will contact you within 48h.",
+    "commentPlaceholder": "Any additional context…",
+    "followupNote": "Once you have sent your request, we will contact you within 48h.",
     "submit": "Book a consultation €49.99",
-    "financingNote": "We can also help evaluate the most suitable financing type, so you make a smart decision not only about the car, but also the purchase approach.",
+    "financingNote": "We can also help you choose the most suitable way to finance the car, so that you make a smart decision not only about the car itself but also about how you buy it.",
     "submitting": "Sending…",
-    "success": "Thank you, request submitted. We will contact you within 48h.",
-    "errorGeneric": "Failed to submit. Please try again or write to info@provin.lv.",
-    "errorSmtp": "Email server is not configured. Contact us at info@provin.lv."
+    "success": "Thank you, your request has been sent. We will be in touch within 48h.",
+    "errorGeneric": "Could not send. Please try again or write to info@provin.lv.",
+    "errorSmtp": "The email server is not configured. Please contact us at info@provin.lv."
   }
 }

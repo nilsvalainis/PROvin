@@ -8,7 +8,7 @@ export type B2bPartnerPlanId = "business" | "dealer";
 
 export const B2B_DNA_SWAP_NOTE = "Atskaite var tikt aizstāta ar citu, reģionam atbilstošāku.";
 const B2B_DNA_SWAP_NOTE_EN =
-  "The report may be substituted with another region-appropriate database.";
+  "This report may be replaced with another that better suits the region.";
 const B2B_DNA_SWAP_NOTE_DE =
   "Der Bericht kann durch eine andere, für die Region passende Datenquelle ersetzt werden.";
 const B2B_DNA_SWAP_NOTE_RU =
@@ -20,7 +20,7 @@ export const B2B_BUSINESS_GOAL =
 const B2B_BUSINESS_GOAL_EN =
   "PROVIN BUSINESS combines data from official dealer networks, carVertical, AutoDNA and European/US registries. In one clear report you get a full mileage timeline, accident history and service records, reducing risk and giving confidence in every deal.";
 const B2B_BUSINESS_GOAL_DE =
-  "PROVIN BUSINESS bündelt Daten aus offiziellen Händlernetzen, carVertical, AutoDNA und europäischen sowie US-Registern. In einem Bericht erhalten Sie die Kilometerchronologie, die Unfallhistorie und Serviceeinträge, senken das Risiko und gewinnen Sicherheit in jedem Geschäft.";
+  "PROVIN BUSINESS bündelt Daten aus offiziellen Händlernetzen, carVertical, AutoDNA und europäischen sowie US-Registern. In einem übersichtlichen Bericht erhalten Sie den vollständigen Kilometerverlauf, die Unfallhistorie und die Serviceeinträge. Das senkt Risiken spürbar und gibt Ihnen Sicherheit bei jedem Geschäft.";
 const B2B_BUSINESS_GOAL_RU =
   "PROVIN BUSINESS собирает данные официальных дилерских сетей, carVertical, AutoDNA и реестров Европы и США. В одном отчёте вы получаете хронологию пробега, историю ДТП и записи обслуживания: меньше риска и больше уверенности в каждой сделке.";
 
@@ -28,7 +28,7 @@ export const B2B_DEALER_GOAL =
   "DĪLERA DATI nodrošina padziļinātu oficiālo servisu ierakstu analīzi tieši no ražotāju datubāzēm. Vienā pārskatāmā atskaitē jūs saņemat pilnu nobraukuma hronoloģiju, veiktos remontus, apkopes un izpildītās kampaņas no oficiālās dīlera servisa vēstures, sniedzot maksimālu pārredzamību un tiešu piekļuvi atbalstīto zīmolu sistēmām.";
 
 const B2B_DEALER_GOAL_EN =
-  "DEALER DATA provides in-depth analysis of official service records directly from manufacturer databases. In one clear report you get a full mileage timeline, repairs, maintenance and executed recall campaigns from the official dealer service history, with maximum transparency and direct access to supported brand systems.";
+  "DEALER DATA provides in-depth analysis of official service records directly from manufacturer databases. In one clear report you get a full mileage timeline, repairs, maintenance and completed recall campaigns from the official dealer service history, with maximum transparency and direct access to supported brand systems.";
 const B2B_DEALER_GOAL_DE =
   "HÄNDLERDATEN liefern die Servicehistorie direkt aus den Herstellerdatenbanken. In einem Bericht sehen Sie Kilometerstände, Reparaturen, Wartungen und durchgeführte Rückrufaktionen, mit direktem Zugang zu den Systemen der unterstützten Marken.";
 const B2B_DEALER_GOAL_RU =
@@ -77,7 +77,7 @@ const B2B_BUSINESS_DESKTOP_FEATURES_DE: Tp5DesktopHeroFeature[] = [
   { label: "Register des Herkunftslandes", icon: "eu-registry" },
   { label: "Auktionsportal-Archiv", icon: "listing-analysis" },
   { label: "Versichererdaten", icon: "consultation" },
-  { label: "Technische Prüfhistorie", icon: "inspection-tips" },
+  { label: "Historie der Hauptuntersuchungen", icon: "inspection-tips" },
   { label: "Internationale Fahrzeughistorie", icon: "international" },
 ];
 const B2B_BUSINESS_DESKTOP_FEATURES_RU: Tp5DesktopHeroFeature[] = [
@@ -116,7 +116,7 @@ const B2B_BUSINESS_HERO_FEATURES_DE = [
   "Register des Herkunftslandes",
   "Auktionsportal-Archiv",
   "Versichererdaten",
-  "Technische Prüfhistorie",
+  "Historie der Hauptuntersuchungen",
   "Datenübersicht",
 ] as const;
 const B2B_BUSINESS_HERO_FEATURES_RU = [
@@ -275,7 +275,7 @@ const B2B_CATALOG_DE: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
       { icon: "globe" as const, title: "Register des Herkunftslandes" },
       { icon: "camera" as const, title: "Auktionsportal-Archiv" },
       { icon: "shield" as const, title: "Versichererdaten" },
-      { icon: "clipboard" as const, title: "Technische Prüfhistorie" },
+      { icon: "clipboard" as const, title: "Historie der Hauptuntersuchungen" },
       { icon: "list" as const, title: "Datenübersicht" },
     ],
     foot: "*verfügbar für ausgewählte Hersteller.",
@@ -306,7 +306,7 @@ const B2B_CATALOG_RU: Record<B2bPartnerPlanId, B2bCatalogPackage> = {
       { icon: "clipboard" as const, title: "История техосмотров" },
       { icon: "list" as const, title: "Сводка данных" },
     ],
-    foot: "*доступно для отдельных производителей.",
+    foot: "* Доступно для отдельных производителей.",
     sampleHref: TP5_BUSINESS_SAMPLE_REPORT_HREF,
   },
   dealer: {

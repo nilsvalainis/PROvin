@@ -1,9 +1,9 @@
 {
   "Meta": {
     "homeIntroTitle": "",
-    "homeIntroBody": "In the used car market, you are playing against people with decades of experience who know this game inside out. PROVIN is your personal advocate, created to level the playing field.\n\nWe combine information from major vehicle history databases with careful listing analysis and model-specific risk assessment. This helps you notice what the seller leaves unsaid and what usually goes unnoticed. We are here so you can make a clear-headed decision and spot risks before they become a serious problem.",
+    "homeIntroBody": "In the used car market you are up against decades of accumulated experience and people who know this game by heart. PROVIN is your personal advocate, built to level the playing field.\n\nWe combine information from all the major vehicle history databases with a careful analysis of every listing and an assessment of model-specific risks. This helps you notice what the seller is keeping quiet about and what usually goes unnoticed. We are here so you can make your decision with a clear head and see the risks before they become a serious problem.",
     "title": "VIN check and car history check in Latvia | PROVIN",
-    "description": "VIN check and car history check before you buy a used car: listing audit, technical risks and a personal consultation. See what the advert does not say.",
+    "description": "VIN check and car history check before you buy a used car: listing audit, technical risks and a personal consultation. What the listing won't tell you.",
     "ogTitle": "VIN check and car history check in Latvia | PROVIN",
     "ogDescription": "VIN check and car history check before you buy a used car: listing audit, technical risks and an expert conclusion.",
     "ogImageAlt": "PROVIN.LV VIN check and vehicle history report",
@@ -20,20 +20,20 @@
     "servicesTitle": "Car history check and VIN audit | PROVIN",
     "servicesDescription": "PROVIN MINI, PROVIN AUDITS and dealer data: VIN check, listing audit and a vehicle history report with clear prices.",
     "servicesH1": "Car history check and VIN audit",
-    "servicesIntro": "Choose how deep a VIN check you need: local history with MINI, a full audit for an imported car, or official dealer service data. Below is what is included, sample reports and how to order.",
-    "aboutTitle": "About PROVIN: vehicle history audit from the trade | PROVIN",
-    "aboutDescription": "What sits behind PROVIN: IRISS experience in the used-car market and why a VIN check alone is not enough.",
+    "servicesIntro": "Choose how in-depth a VIN check you need: local history with MINI, a full audit for an imported car, or official dealer service data. Below you will find what each package includes, sample reports and the order form.",
+    "aboutTitle": "About PROVIN: a car history audit built on hands-on experience | PROVIN",
+    "aboutDescription": "What lies behind PROVIN: IRISS's experience in the used car market and why a VIN check alone is not enough.",
     "blogsTitle": "Blog: buying a used car and listing risks | PROVIN",
-    "blogsDescription": "IRISS | Car Dealer's Diary. Notes from the used-car market, scams and buyer risk before a VIN check.",
+    "blogsDescription": "IRISS | A Car Flipper's Diary. First-hand experience of the used car market, its schemes and the risks buyers face, before a VIN check.",
     "partnerTitle": "PROVIN BUSINESS: VIN checks for car dealers | PROVIN",
     "partnerDescription": "B2B vehicle history audit before you buy or take a car on commission: mileage, hidden accidents and service intervals in one report.",
     "offerMiniName": "PROVIN MINI",
     "offerMiniDesc": "VIN check and listing audit for a car already used in Latvia.",
     "offerAuditsName": "PROVIN AUDITS",
-    "offerAuditsDesc": "Car history check for an import: at least 2 paid history sources, listing audit and technical risk analysis.",
+    "offerAuditsDesc": "Car history check for imported cars: at least 2 paid history sources, listing audit and technical risk analysis.",
     "offerDealerName": "Dealer service data",
     "offerDealerDesc": "Official dealer service history by VIN, without an expert conclusion.",
     "thanksTitle": "Thank you for your order",
-    "thanksDescription": "Order received. A short confirmation after successful Stripe payment."
+    "thanksDescription": "Order received. A short confirmation after successful payment via Stripe."
   }
 }

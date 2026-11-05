@@ -4,30 +4,30 @@
     "lead": "Strategische Beratung",
     "included": [
       {
-        "title": "PASSENDE MODELLE\nAUSWÄHLEN",
-        "body": "Wir stellen 3 Marken und Modelle zusammen, die zu Ihrem Bedarf, Ihrem Budget und den Unterhaltskosten passen. So verlieren Sie keine Zeit mit ungeeigneten Optionen."
+        "title": "INDIVIDUELLE\nMODELLAUSWAHL",
+        "body": "Wir wählen 3 Marken und Modelle aus, die am besten zu Ihrem Bedarf, Ihrem Budget und den Unterhaltskosten passen. So verlieren Sie keine Zeit mehr mit ungeeigneten Angeboten."
       },
       {
-        "title": "GEZIELTE SUCHE\nNACH INSERATEN",
-        "body": "Wir prüfen passende Angebote manuell und sortieren riskante Inserate von Anfang an aus. Sie erhalten nur Fahrzeuge, die Ihre Zeit wert sind."
+        "title": "INSERATSFILTER\nUND ANALYSE",
+        "body": "Wir sichten die passendsten Angebote manuell und sortieren riskante Inserate gleich zu Beginn aus. Sie erhalten nur Fahrzeuge, die eine Besichtigung wert sind."
       },
       {
         "title": "PROGNOSE DER\nTECHNISCHEN RISIKEN",
-        "body": "Wir erklären die Schwachstellen des Modells und mögliche Risiken im Detail. Sie wissen, worauf Sie bei der Besichtigung achten und mit welchen Kosten später zu rechnen ist."
+        "body": "Wir erklären Ihnen ausführlich die Schwachstellen und möglichen Risiken des konkreten Modells. Sie erfahren, worauf Sie bei der Besichtigung achten sollten und mit welchen Kosten Sie künftig rechnen müssen."
       },
       {
-        "title": "VERHANDLUNGS-\nSTRATEGIE",
-        "body": "Wir bereiten Sie auf das Gespräch mit dem Verkäufer vor: was Sie fragen, wie Sie Manipulation erkennen und wie Sie den Preis mit Fakten besprechen. Wir begleiten Sie durch den gesamten Kauf."
+        "title": "VERHANDLUNGSTAKTIK\nUND BEGLEITUNG",
+        "body": "Wir bereiten Sie auf das Gespräch mit dem Verkäufer vor: welche Fragen Sie stellen, wie Sie Manipulationen erkennen und mit welchen Argumenten Sie über den Preis verhandeln. Wir begleiten Sie durch den gesamten Kaufprozess."
       }
     ],
     "cardsTrustLine": "5 geprüfte Optionen · Begleitung im gesamten Prozess",
-    "cardsVinNote": "VIN-Abfragen sind nicht enthalten (das übernimmt das PROVIN-Audit).",
+    "cardsVinNote": "VIN-Prüfungen sind nicht enthalten (sie erfolgen im PROVIN-Audit).",
     "comparisonScrollCta": "BERATUNG BUCHEN 49,99 €",
     "ctaPrimary": "BERATUNG BUCHEN",
     "formTitle": "Beratungsanfrage",
-    "strategyFormTitle": "Formular",
+    "strategyFormTitle": "Fragebogen",
     "formIntro": "Geben Sie Ihre Daten ein und schließen Sie die Zahlung ab, damit wir alles für Ihre Beratung vorbereiten können.",
-    "groupTitleCarAria": "Kriterien zum Fahrzeug",
+    "groupTitleCarAria": "Fahrzeugkriterien",
     "groupTitleContact": "Kontakt",
     "requiredSrOnly": "Pflichtfeld",
     "budgetPlaceholder": "z. B. 20 000",
@@ -38,22 +38,22 @@
     "fieldPlannedBudget": "Geplantes Budget (€):",
     "fieldEngineType": "Motorisierung:",
     "fieldTransmission": "Getriebe:",
-    "fieldMaxMileage": "Maximale Laufleistung:",
+    "fieldMaxMileage": "Maximaler Kilometerstand:",
     "fieldExteriorColors": "Bevorzugte Außenfarben:",
-    "fieldInteriorMaterial": "Innenraum: Farbe / Material:",
-    "fieldRequiredEquipment": "Ausstattung (Pflicht):",
-    "fieldDesiredEquipment": "Ausstattung (Wunsch):",
+    "fieldInteriorMaterial": "Innenraum (Farbe/Material):",
+    "fieldRequiredEquipment": "Pflichtausstattung:",
+    "fieldDesiredEquipment": "Wunschausstattung:",
     "nameLabel": "Name",
     "phoneLabel": "Telefonnummer",
     "emailLabel": "E-Mail",
     "commentLabel": "Kommentar (optional)",
     "commentPlaceholder": "Weiterer Kontext, wenn Sie möchten…",
-    "followupNote": "Nach dem Absenden melden wir uns innerhalb von 48 Stunden.",
+    "followupNote": "Nach dem Absenden melden wir uns innerhalb von 48 Stunden bei Ihnen.",
     "submit": "Beratung buchen 49,99 €",
-    "financingNote": "Auf Wunsch schätzen wir auch die passende Finanzierungsform ein, damit nicht nur das Auto stimmt, sondern auch der Weg zum Kauf.",
+    "financingNote": "Wir helfen Ihnen auch, die passende Finanzierungsform zu finden, damit Sie nicht nur beim Auto, sondern auch beim Kauf selbst eine kluge Entscheidung treffen.",
     "submitting": "Wird gesendet…",
     "success": "Danke, die Anfrage ist eingegangen. Wir melden uns innerhalb von 48 Stunden.",
-    "errorGeneric": "Senden fehlgeschlagen. Bitte erneut versuchen oder an info@provin.lv schreiben.",
+    "errorGeneric": "Senden fehlgeschlagen. Bitte versuchen Sie es erneut oder schreiben Sie an info@provin.lv.",
     "errorSmtp": "Der Mailserver ist nicht konfiguriert. Schreiben Sie uns an info@provin.lv."
   }
 }

@@ -2,24 +2,24 @@
   "Pricing": {
     "workTitle": "WHAT'S INCLUDED IN THE PRICE?",
     "comparisonAuditTitle": "PROVIN AUDITS",
-    "comparisonAuditSubtitle": "A report that goes far beyond raw data",
+    "comparisonAuditSubtitle": "A report that tells you far more",
     "comparisonAuditCta": "Order from €39.99",
     "grid": [
       {
         "title": "FULL HISTORY ANALYSIS",
-        "body": "Official dealer and auction portal archives*, international and local registry data combined into one clear picture. Mileage, accidents and theft records."
+        "body": "Official dealer and auction archives*, international and local register data brought together into one picture. Mileage, accidents and theft."
       },
       {
         "title": "LISTING ANALYSIS",
-        "body": "Expert review of photos and description. Identification of hidden repairs and wear indicators."
+        "body": "Expert review of the photos and description. Spotting hidden repairs and signs of wear."
       },
       {
         "title": "TECHNICAL RISK ANALYSIS",
-        "body": "Assessment of engine, transmission and key systems. Reliability outlook and operating risks."
+        "body": "Assessment of the engine, transmission and other major components. Reliability outlook and running risks."
       },
       {
         "title": "RECOMMENDATIONS AND CONSULTATION",
-        "body": "Conclusion based on data and 10+ years of experience. Individual consultation after the report.",
+        "body": "A conclusion based on data and more than 10 years of experience. A one-to-one consultation after the report.",
         "href": true
       }
     ],
