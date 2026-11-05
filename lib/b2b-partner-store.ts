@@ -2,6 +2,7 @@ import "server-only";
 
 import { randomBytes } from "node:crypto";
 import { createJsonDocStore } from "@/lib/b2b-json-doc-store";
+import { emptyB2bPartnerEmbed, parseB2bPartnerEmbed, type B2bPartnerEmbedSettings } from "@/lib/b2b-partner-embed";
 import {
   emptyB2bPartnerPrices,
   isSafeB2bPartnerId,
@@ -191,6 +192,7 @@ export async function createB2bPartner(
       prices: emptyB2bPartnerPrices(),
       walletPrices: emptyB2bWalletPrices(),
       walletHiddenProducts: [],
+      businessEmbed: emptyB2bPartnerEmbed(),
       adminSeenAt: requireVerify ? null : now,
       termsVersion: opts?.termsVersion ?? null,
       termsAcceptedAt: opts?.termsVersion ? now : null,
@@ -233,6 +235,7 @@ export async function updateB2bPartner(
     prices?: B2bPartnerPriceOverrides;
     walletPrices?: B2bWalletPriceOverrides;
     walletHiddenProducts?: readonly B2bWalletProductId[];
+    businessEmbed?: B2bPartnerEmbedSettings;
   },
 ): Promise<UpdateB2bPartnerResult> {
   return mutatePartners<UpdateB2bPartnerResult>(async (doc) => {
@@ -268,6 +271,7 @@ export async function updateB2bPartner(
       walletHiddenProducts: patch.walletHiddenProducts
         ? parseB2bWalletHiddenProducts(patch.walletHiddenProducts)
         : (prev.walletHiddenProducts ?? []),
+      businessEmbed: patch.businessEmbed ? parseB2bPartnerEmbed(patch.businessEmbed) : prev.businessEmbed,
       passwordHash:
         patch.password != null && patch.password.trim()
           ? hashB2bPartnerPassword(patch.password.trim())
