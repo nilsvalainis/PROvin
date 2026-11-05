@@ -45,6 +45,23 @@ export type BusinessLinkRecord = {
   paidAt?: string;
   paidStripeSessionId?: string;
   lastStripeCheckoutSessionId?: string;
+  /** Partnera pogas saite: kuram partnerim pieder klikšķis (uzskaitei, ne kredītam). */
+  partnerId?: string;
+  /** Partnera sludinājums, no kura nāca klikšķis. */
+  listingUrl?: string;
+  /** Auto dati no partnera pogas (tikai attēlošanai). */
+  car?: BusinessLinkCar;
+  /** false = sludinājumu neizdevās nolasīt, saite izveidota bez VIN pārbaudes lapā. */
+  listingVerified?: boolean;
+};
+
+export type BusinessLinkCar = {
+  title: string;
+  imageUrl: string;
+  year: string;
+  mileageKm: string;
+  fuel: string;
+  gearbox: string;
 };
 
 export type BusinessLinkAdminInput = {
@@ -145,6 +162,39 @@ export function parseBusinessLinkRecord(raw: unknown): BusinessLinkRecord | null
     ...(str("paidAt") ? { paidAt: str("paidAt") } : {}),
     ...(str("paidStripeSessionId") ? { paidStripeSessionId: str("paidStripeSessionId") } : {}),
     ...(str("lastStripeCheckoutSessionId") ? { lastStripeCheckoutSessionId: str("lastStripeCheckoutSessionId") } : {}),
+    ...(/^ptr_[a-f0-9]{16}$/.test(str("partnerId")) ? { partnerId: str("partnerId") } : {}),
+    ...(str("listingUrl") ? { listingUrl: str("listingUrl").slice(0, 500) } : {}),
+    ...(o.car && typeof o.car === "object" ? { car: parseBusinessLinkCar(o.car) } : {}),
+    ...(typeof o.listingVerified === "boolean" ? { listingVerified: o.listingVerified } : {}),
+  };
+}
+
+function clipText(v: unknown, max: number): string {
+  return typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, max) : "";
+}
+
+/** Tikai https attēli. */
+export function safeBusinessLinkImageUrl(raw: unknown): string {
+  if (typeof raw !== "string" || !raw.trim() || raw.length > 600) return "";
+  try {
+    const u = new URL(raw.trim());
+    return u.protocol === "https:" && !u.username && !u.password ? u.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
+export function parseBusinessLinkCar(raw: unknown): BusinessLinkCar {
+  const o = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  const year = clipText(o.year, 4);
+  const km = clipText(o.mileageKm, 12).replace(/[^\d]/g, "");
+  return {
+    title: clipText(o.title, 120),
+    imageUrl: safeBusinessLinkImageUrl(o.imageUrl),
+    year: /^(19|20)\d{2}$/.test(year) ? year : "",
+    mileageKm: km.slice(0, 7),
+    fuel: clipText(o.fuel, 30),
+    gearbox: clipText(o.gearbox, 30),
   };
 }
 
@@ -219,8 +269,11 @@ export function buildBusinessLinkStripeMetadata(opts: {
   companyName?: string;
   companyReg?: string;
   companyAddress?: string;
+  /** Partnera pogas klikšķis: uzskaitei. Ne `partner_id`, lai pasūtījums nekļūst par partnera kredīta pasūtījumu. */
+  partnerRef?: string;
 }): Record<string, string> {
   return {
+    ...(opts.partnerRef && /^ptr_[a-f0-9]{16}$/.test(opts.partnerRef) ? { partner_ref: opts.partnerRef } : {}),
     ...invoiceBuyerMetadata({
       companyName: opts.companyName,
       companyReg: opts.companyReg,
@@ -279,6 +332,7 @@ export function buildBusinessLinkCheckoutSessionParams(opts: {
   token: string;
   tokenHash: string;
   resolved: BusinessLinkSubmitFields;
+  partnerRef?: string;
 }): BusinessLinkCheckoutSessionParams {
   const origin = opts.origin.replace(/\/$/, "");
   const r = opts.resolved;
@@ -309,6 +363,7 @@ export function buildBusinessLinkCheckoutSessionParams(opts: {
       companyName: r.companyName,
       companyReg: r.companyReg,
       companyAddress: r.companyAddress,
+      partnerRef: opts.partnerRef,
     }),
     locale: "lv",
   };
