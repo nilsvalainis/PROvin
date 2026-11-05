@@ -8,13 +8,13 @@ export const B2B_SECONDARY_BUTTON_CLASS =
 type ProductCopyKeys = {
   title: "walletProductBusinessTitle" | "walletProductRawTitle" | "walletProductProTitle";
   desc: "walletProductBusinessDesc" | "walletProductRawDesc" | "walletProductProDesc";
-  tag: "walletProductBusinessTag" | "walletProductRawTag" | "walletProductProTag";
-  /** Atsevišķa „Drīzumā” nozīmīte blakus birkai. */
+  tag?: "walletProductBusinessTag" | "walletProductRawTag" | "walletProductProTag";
+  /** Atsevišķa „Drīzumā” nozīmīte birku rindā. */
   tagSoon?: boolean;
 };
 
 export const B2B_WALLET_PRODUCT_COPY: Record<B2bWalletProductId, ProductCopyKeys> = {
   business: { title: "walletProductBusinessTitle", desc: "walletProductBusinessDesc", tag: "walletProductBusinessTag" },
-  dealer_raw: { title: "walletProductRawTitle", desc: "walletProductRawDesc", tag: "walletProductRawTag", tagSoon: true },
+  dealer_raw: { title: "walletProductRawTitle", desc: "walletProductRawDesc", tagSoon: true },
   dealer_pro: { title: "walletProductProTitle", desc: "walletProductProDesc", tag: "walletProductProTag" },
 };

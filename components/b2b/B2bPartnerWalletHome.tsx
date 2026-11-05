@@ -22,6 +22,7 @@ import {
   b2bWalletInitialReportLangByProduct,
   b2bWalletProductRequiresReportLang,
   b2bWalletProductShowsReportLang,
+  isB2bWalletProductInactive,
   formatB2bWalletEuro,
   type B2bWalletProductId,
   type B2bWalletReportLang,
@@ -99,11 +100,14 @@ function WalletHeader({
   );
 }
 
-/** Tas pats izskats kā „Jaunums” mājas lapas katalogā. */
+/** Tas pats burtiņu stils kā „Jaunums” katalogā; Drīzumā ir oranžs. */
 function SoonBadge() {
   const t = useTranslations("Partner");
   return (
-    <span className={styles.catalogPopularBadgeHeader} style={{ display: "inline-block", margin: 0 }}>
+    <span
+      className={styles.catalogPopularBadgeHeader}
+      style={{ display: "inline-block", margin: 0, color: "rgb(251 191 36)" }}
+    >
       {t("walletSampleSoon")}
     </span>
   );
@@ -117,7 +121,8 @@ function SampleLink({
   reportLang: B2bWalletReportLang | null;
 }) {
   const t = useTranslations("Partner");
-  const url = resolveB2bWalletSampleUrl(product, reportLang);
+  const inactive = isB2bWalletProductInactive(product);
+  const url = inactive ? null : resolveB2bWalletSampleUrl(product, reportLang);
   const langSuffix =
     b2bWalletProductRequiresReportLang(product) && reportLang ? ` (${reportLang.toUpperCase()})` : "";
   const rowClass = "mt-2.5 inline-flex min-h-[22px] items-center gap-1.5 self-start text-[0.74rem] font-semibold";
@@ -163,21 +168,24 @@ function ProductCard({
   const price = view.prices[product];
   const affordable = view.balanceCents >= price.priceCents;
   const refundable = B2B_WALLET_PRODUCTS[product].refundOnNoData;
-  const needsLang = b2bWalletProductRequiresReportLang(product);
+  const inactive = isB2bWalletProductInactive(product);
   const showsLang = b2bWalletProductShowsReportLang(product);
-  const langMissing = needsLang && !reportLang;
-  const buyDisabled = !affordable || langMissing;
+  const langMissing = showsLang && !reportLang;
+  const buyDisabled = inactive || !affordable || langMissing;
 
   return (
     <article
       data-wallet-product={product}
-      className="flex min-w-0 flex-col rounded-[0.9rem] border border-white/10 bg-[rgb(20_20_20/0.72)] p-5 shadow-[0_18px_48px_-28px_rgba(0,0,0,0.8)]"
+      data-wallet-inactive={inactive ? "true" : undefined}
+      className={`flex min-w-0 flex-col rounded-[0.9rem] border border-white/10 bg-[rgb(20_20_20/0.72)] p-5 shadow-[0_18px_48px_-28px_rgba(0,0,0,0.8)]${inactive ? " opacity-50" : ""}`}
     >
       <div className="flex min-h-[1.25rem] items-center gap-2.5">
-        <p className="rounded-md bg-zinc-300/80 px-2 py-[0.3rem] text-[0.66rem] font-semibold leading-none tracking-[0.01em] text-zinc-800">
-          {t(copy.tag)}
-        </p>
-        {copy.tagSoon ? <SoonBadge /> : null}
+        {copy.tag && !inactive ? (
+          <p className="rounded-md bg-zinc-300/80 px-2 py-[0.3rem] text-[0.66rem] font-semibold leading-none tracking-[0.01em] text-zinc-800">
+            {t(copy.tag)}
+          </p>
+        ) : null}
+        {inactive || copy.tagSoon ? <SoonBadge /> : null}
       </div>
       <h2 className="mt-4 text-[1.08rem] font-bold leading-snug tracking-[-0.01em] text-zinc-100">{renderB2bProvinBusinessName(t(copy.title))}</h2>
       <p className="mt-2 text-[0.82rem] leading-relaxed text-zinc-400">{t(copy.desc)}</p>
@@ -190,18 +198,16 @@ function ProductCard({
               className={`${styles.inlineInput} mt-0`}
               value={reportLang ?? ""}
               aria-label={t("walletReportLang")}
-              aria-required={needsLang ? true : undefined}
+              aria-required
               aria-invalid={langMissing ? true : undefined}
               onChange={(event) => {
                 const next = event.target.value;
                 if (next === "lv" || next === "en" || next === "ru" || next === "de") onReportLang(next);
               }}
             >
-              {needsLang ? (
-                <option value="" disabled>
-                  {t("walletReportLangPlaceholder")}
-                </option>
-              ) : null}
+              <option value="" disabled>
+                {t("walletReportLangPlaceholder")}
+              </option>
               {B2B_WALLET_REPORT_LANGS.map((lang) => (
                 <option key={lang} value={lang} data-lang={lang}>
                   {lang.toUpperCase()}
@@ -255,10 +261,13 @@ function ProductCard({
             type="button"
             className={`${styles.liquidCta}${buyDisabled ? " opacity-45" : ""}`}
             disabled={buyDisabled}
-            onClick={onBuy}
+            aria-disabled={buyDisabled ? true : undefined}
+            onClick={inactive ? undefined : onBuy}
           >
             <span className={styles.liquidCtaShimmer} aria-hidden />
-            <span className={styles.liquidCtaLabel}>{affordable ? t("walletBuy") : t("walletInsufficient")}</span>
+            <span className={styles.liquidCtaLabel}>
+              {inactive ? t("walletSampleSoon") : affordable ? t("walletBuy") : t("walletInsufficient")}
+            </span>
           </button>
         </div>
       </div>
@@ -314,9 +323,9 @@ function PurchaseDialog({
   if (!product) return null;
   const price = view.prices[product];
   const isBusiness = product === "business";
-  const needsLang = b2bWalletProductRequiresReportLang(product);
+  const inactive = isB2bWalletProductInactive(product);
   const showsLang = b2bWalletProductShowsReportLang(product);
-  const langMissing = needsLang && !reportLang;
+  const langMissing = showsLang && !reportLang;
 
   const onSubmit = async () => {
     setVinError("");
@@ -336,7 +345,11 @@ function PurchaseDialog({
       setListingError(t("listingError"));
       return;
     }
-    if (needsLang && !reportLang) {
+    if (inactive) {
+      setFormError(t("walletProductInactive"));
+      return;
+    }
+    if (showsLang && !reportLang) {
       setFormError(t("walletReportLangHint"));
       return;
     }
@@ -382,6 +395,10 @@ function PurchaseDialog({
       }
       if (data.error === "product_hidden") {
         setFormError(t("walletProductUnavailable"));
+        return;
+      }
+      if (data.error === "product_inactive") {
+        setFormError(t("walletProductInactive"));
         return;
       }
       if (data.error === "report_lang") {
@@ -678,7 +695,8 @@ export function B2bPartnerWalletHome({
             reportLang={langByProduct[product]}
             onReportLang={(lang) => setLangByProduct((prev) => ({ ...prev, [product]: lang }))}
             onBuy={() => {
-              if (b2bWalletProductRequiresReportLang(product) && !langByProduct[product]) return;
+              if (isB2bWalletProductInactive(product)) return;
+              if (b2bWalletProductShowsReportLang(product) && !langByProduct[product]) return;
               setBuyOk("");
               setBuying(product);
             }}

@@ -21,6 +21,7 @@ import {
   buildB2bWalletOrderNoteParts,
   resolveB2bWalletPurchaseReportLang,
   findB2bWalletTxnByKey,
+  isB2bWalletProductInactive,
   isB2bWalletProductVisible,
   refundKey,
   resolveB2bWalletPrice,
@@ -58,6 +59,7 @@ export type B2bWalletBulkOutcome =
       chargedCents: number;
     }
   | { ok: false; error: "product_hidden"; priceCents: number }
+  | { ok: false; error: "product_inactive"; priceCents: number }
   | { ok: false; error: "insufficient"; balanceCents: number; needCents: number; count: number; priceCents: number };
 
 function walletRow(args: {
@@ -107,6 +109,9 @@ export async function purchaseB2bWalletBulk(args: {
   const priceCents = resolveB2bWalletPrice(product, partner.walletPrices).priceCents;
   if (!isB2bWalletProductVisible(product, partner.walletHiddenProducts)) {
     return { ok: false, error: "product_hidden", priceCents };
+  }
+  if (isB2bWalletProductInactive(product)) {
+    return { ok: false, error: "product_inactive", priceCents };
   }
 
   const already = await findPartnerVinOrdersMap({

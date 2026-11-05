@@ -266,7 +266,7 @@ export function B2bPartnerBulkVin({
         return;
       }
       if (res.status === 403 || data.error === "product_hidden") {
-        setFormError(t("walletProductUnavailable"));
+        setFormError(data.error === "product_inactive" ? t("walletProductInactive") : t("walletProductUnavailable"));
         return;
       }
       if (data.error === "listing") {
