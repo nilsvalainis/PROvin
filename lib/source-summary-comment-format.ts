@@ -514,9 +514,9 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     [/\bautomobiļa\b/g, "automašīnas"],
     [/\bAutomobilis\b/g, "Automašīna"],
     [/\bautomobilis\b/g, "automašīna"],
-    [/labvēlīg\w*\s+signāl\w*(?:\s+datos)?/gi, "labs rādījums datos"],
-    [/labvēlīg\w*\s+faktor\w*/gi, "tas palīdz"],
-    [/dokumentār\w*\s+pierādījum\w*/gi, "dokumenti"],
+    [/labvēlīg\p{L}*\s+signāl\p{L}*(?:\s+datos)?/giu, "labs rādījums datos"],
+    [/labvēlīg\p{L}*\s+faktor\p{L}*/giu, "tas palīdz"],
+    [/dokumentār\p{L}*\s+pierādījum\p{L}*/giu, "dokumenti"],
     [/tuvāk(?:ā|a)\s+laika\s+(?:ieguldījum\w*|rēķin\w*|risk\w*|izmaks\w*|profilaks\w*|naudas\s+punkt\w*|punkt\w*)/gi, "aktuālais mezgls"],
     [/finansiāli\s+nozīmīgāk\w*/gi, "būtisks"],
     [/nākotnes\s+risk\w*/gi, "risks"],
@@ -541,8 +541,36 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     return offset === 0 || /[\n.!?]\s*$/.test(before) ? "Datos" : "datos";
   });
   out = replaceCrankshaftDamperWording(out);
+  out = groupClientNumberThousands(out);
   out = stripInternalClientLeaks(out);
   return stripForbiddenPersonaNouns(out);
+}
+
+/**
+ * Konservatīva tūkstošu grupēšana klienta tekstā: „156042 km” -> „156 042 km”, „1820000 Km” -> „1 820 000 km”,
+ * „8390 €” -> „8 390 €”. Grupē tikai skaitļus tieši pirms km / € / EUR: no 10 000 visiem, 1 000-9 999 tikai
+ * pirms € / EUR (lai „2019 km” u.tml. paliek). Gadus, VIN, datumus, kodus, tālruņus, decimāldaļas un URL neskar.
+ */
+export function groupClientNumberThousands(text: string): string {
+  if (!text) return text;
+  const group = (digits: string) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  const shouldGroup = (digits: string, unit: string) => digits.length >= 5 || unit !== "km";
+  let out = text.replace(/(\d)(\s?)K[mM](?![\p{L}\p{N}])/gu, "$1$2km");
+  // Diapazons „10000-15000 km” - abas puses vienādi.
+  out = out.replace(
+    /(?<![\p{L}\p{N}.,/:_=?&#@%])([1-9]\d{3,})(\s?-\s?)([1-9]\d{3,})(?=[^\S\r\n]{0,2}(km|€|EUR)(?![\p{L}\p{N}]))/gu,
+    (m: string, a: string, dash: string, b: string, unit: string) =>
+      shouldGroup(a.length > b.length ? a : b, unit) ? `${group(a)}${dash}${group(b)}` : m,
+  );
+  return out.replace(
+    /(?<![\p{L}\p{N}.,/:_=?&#@%])([1-9]\d{3,})(?=[^\S\r\n]{0,2}(km|€|EUR)(?![\p{L}\p{N}]))/gu,
+    (m: string, digits: string, unit: string, offset: number, full: string) => {
+      if (!shouldGroup(digits, unit)) return m;
+      // „12 5000 km” / „1 2345 €” - jau daļēji grupēts skaitlis, neaiztiek.
+      if (/\d[\s  ]$/.test(full.slice(Math.max(0, offset - 2), offset))) return m;
+      return group(digits);
+    },
+  );
 }
 
 const DAMPER_CANON = "kloķvārpstas skriemelis (demferis)";

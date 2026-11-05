@@ -315,7 +315,7 @@ export function AdminTirgusSourceBlock({
                   <input
                     type="text"
                     className={`${inp} min-w-0 flex-1`}
-                    placeholder='piem., "€ -3 790"'
+                    placeholder='piem., "-3 790 €"'
                     value={val.priceDrop}
                     disabled={disabled}
                     onChange={(e) => setField("priceDrop", e.target.value)}

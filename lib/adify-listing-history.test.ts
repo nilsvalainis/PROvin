@@ -5,9 +5,13 @@ import {
   adifyHistoryPageLookupUrl,
   applyAdifyHistoryToTirgus,
   extractAdifyHistorySsrPayload,
+  formatAdifyDeltaLabel,
   formatAdifyDurationLabel,
+  formatAdifyPriceLabel,
   formatAdifySignedEur,
+  isSignedEurTextIncrease,
   normalizeAdifyHistoryItems,
+  normalizeSignedEurText,
   parseAdifyHistoryUrl,
 } from "@/lib/adify-listing-history";
 import { fetchAdifyListingHistory } from "@/lib/adify-listing-history-fetch";
@@ -48,7 +52,7 @@ describe("normalizeAdifyHistoryItems — cenas paraugs", () => {
     expect(snap.newestDate).toBe("01.08.2026");
     expect(snap.priceChangeEur).toBe(-3790);
     expect(snap.durationDays).toBe(85);
-    expect(formatAdifySignedEur(snap.priceChangeEur)).toBe("€ -3 790");
+    expect(formatAdifySignedEur(snap.priceChangeEur)).toBe("-3 790 €");
     expect(snap.rows[2]?.delta).toBe(-2299);
     expect(snap.rows[3]?.delta).toBe(-501);
     expect(snap.rows[4]?.delta).toBe(-990);
@@ -60,7 +64,7 @@ describe("normalizeAdifyHistoryItems — cenas paraugs", () => {
     const next = applyAdifyHistoryToTirgus(emptyTirgusFields(), snap);
     expect(next.listedForSale).toBe("85");
     expect(next.listingCreated).toBe("20.05.2026");
-    expect(next.priceDrop).toBe("€ -3 790");
+    expect(next.priceDrop).toBe("-3 790 €");
     expect(next.priceHistory).toHaveLength(6);
   });
 });
@@ -83,7 +87,7 @@ describe("normalizeAdifyHistoryItems — Audi Q7 bcdpnx fixture", () => {
     const next = applyAdifyHistoryToTirgus(createDefaultSourceBlocks().tirgus, snap);
     expect(next.listedForSale).toBe("28");
     expect(next.listingCreated).toBe("16.07.2026");
-    expect(next.priceDrop).toBe("€ -950");
+    expect(next.priceDrop).toBe("-950 €");
   });
 });
 
@@ -299,5 +303,36 @@ describe("adifyChronologicalPriceRows", () => {
     const chrono = adifyChronologicalPriceRows(snap.rows);
     expect(chrono[0]?.price).toBe(90);
     expect(chrono[chrono.length - 1]?.price).toBe(100);
+  });
+});
+
+describe("cenu formāts (€ aiz skaitļa)", () => {
+  it("cena „8 390 €”, nevis „€ 8 390”", () => {
+    expect(formatAdifyPriceLabel(8390)).toBe("8 390 €");
+    expect(formatAdifyPriceLabel(0)).toBe("0 €");
+  });
+
+  it("izmaiņa ar zīmi: kritums „-2 000 €”, pieaugums „+2 000 €”, nulle „0 €”", () => {
+    expect(formatAdifySignedEur(-2000)).toBe("-2 000 €");
+    expect(formatAdifySignedEur(2000)).toBe("+2 000 €");
+    expect(formatAdifySignedEur(0)).toBe("0 €");
+    expect(formatAdifyDeltaLabel(-149)).toBe("-149 €");
+    expect(formatAdifyDeltaLabel(500)).toBe("+500 €");
+  });
+
+  it("vecie saglabātie teksti („€ -3 790”) un AI skaitļi tiek rādīti jaunajā formā, zīme saglabājas", () => {
+    expect(normalizeSignedEurText("€ -3 790")).toBe("-3 790 €");
+    expect(normalizeSignedEurText("€ +2 000")).toBe("+2 000 €");
+    expect(normalizeSignedEurText("€ 0")).toBe("0 €");
+    expect(normalizeSignedEurText("-2000")).toBe("-2 000 €");
+    expect(normalizeSignedEurText("2000")).toBe("2 000 €");
+    expect(normalizeSignedEurText("-2 000,00 EUR")).toBe("-2 000 €");
+    expect(normalizeSignedEurText("nav datu")).toBe("nav datu");
+  });
+
+  it("pieaugumu atpazīst tikai pēc „+”", () => {
+    expect(isSignedEurTextIncrease("€ +2 000")).toBe(true);
+    expect(isSignedEurTextIncrease("-2 000 €")).toBe(false);
+    expect(isSignedEurTextIncrease("2000")).toBe(false);
   });
 });

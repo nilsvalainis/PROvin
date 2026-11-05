@@ -76,6 +76,8 @@ import {
   formatAdifyMileageLabel,
   formatAdifyPriceLabel,
   formatAdifySignedEur,
+  isSignedEurTextIncrease,
+  normalizeSignedEurText,
 } from "@/lib/adify-listing-history";
 import { parseListedForSaleDays } from "@/lib/tirgus-listed-ui";
 import {
@@ -1059,8 +1061,10 @@ function pdfPriceDropDownArrowHtml(): string {
 }
 
 function formatTirgusPriceDropCellHtml(raw: string): string {
-  const t = raw.trim();
+  const t = normalizeSignedEurText(raw);
   if (!t) return escapeHtml(t);
+  // Bultiņa uz leju tikai kritumam - pieaugumam („+2 000 €”) to nerāda.
+  if (isSignedEurTextIncrease(t)) return `<span class="tabular pdf-price-drop-val">${escapeHtml(t)}</span>`;
   return `<span class="pdf-price-drop-wrap"><span class="pdf-price-drop-ico" aria-hidden="true">${pdfPriceDropDownArrowHtml()}</span><span class="tabular pdf-price-drop-val">${escapeHtml(t)}</span></span>`;
 }
 

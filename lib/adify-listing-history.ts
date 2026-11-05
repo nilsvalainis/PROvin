@@ -66,22 +66,45 @@ export function formatAdifyGroupedNumber(n: number): string {
   return `${sign}${grouped}`;
 }
 
-/** Adify kājenes formāts: `€ -3 790` / `€ +500` / `€ 0`. */
+/** Cenas izmaiņa mājas formātā: `-3 790 €` / `+500 €` / `0 €` (kritums vienmēr ar „-”). */
 export function formatAdifySignedEur(n: number): string {
   const rounded = Math.round(n);
-  if (rounded === 0) return "€ 0";
+  if (rounded === 0) return "0 €";
   const sign = rounded > 0 ? "+" : "";
-  return `€ ${sign}${formatAdifyGroupedNumber(rounded)}`;
+  return `${sign}${formatAdifyGroupedNumber(rounded)} €`;
 }
 
 export function formatAdifyPriceLabel(price: number): string {
-  return `€ ${formatAdifyGroupedNumber(price)}`;
+  return `${formatAdifyGroupedNumber(price)} €`;
 }
 
 export function formatAdifyDeltaLabel(delta: number): string | null {
   if (!delta) return null;
   const sign = delta > 0 ? "+" : "";
-  return `${sign}${formatAdifyGroupedNumber(delta)}€`;
+  return `${sign}${formatAdifyGroupedNumber(delta)} €`;
+}
+
+const SIGNED_EUR_TEXT_RE =
+  /^(?:€|EUR)?\s*([+\-\u2212\u2013]?)\s*(\d{1,3}(?:[\s\u00a0\u202f]\d{3})+|\d+)(?:[.,]\d{1,2})?\s*(?:€|EUR|eiro)?$/i;
+
+/**
+ * Saglabātais „Cenas izmaiņas” teksts (arī vecais `€ -3 790` vai AI `-2000`) -> `-3 790 €`.
+ * Zīme saglabājas: bez zīmes paliek bez zīmes. Neparsējamu tekstu atgriež nemainītu.
+ */
+export function normalizeSignedEurText(raw: string): string {
+  const t = raw.trim();
+  const m = t.match(SIGNED_EUR_TEXT_RE);
+  if (!m) return t;
+  const n = Number.parseInt(m[2]!.replace(/[\s\u00a0\u202f]/g, ""), 10);
+  if (!Number.isFinite(n)) return t;
+  if (n === 0) return "0 €";
+  const sign = m[1] === "+" ? "+" : m[1] ? "-" : "";
+  return `${sign}${formatAdifyGroupedNumber(n)} €`;
+}
+
+/** true, ja saglabātais cenas izmaiņas teksts skaidri norāda pieaugumu (sākas ar „+”). */
+export function isSignedEurTextIncrease(raw: string): boolean {
+  return /^\+/.test(normalizeSignedEurText(raw));
 }
 
 export function formatAdifyMileageLabel(km: number | null): string {

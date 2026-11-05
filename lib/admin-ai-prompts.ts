@@ -462,7 +462,7 @@ Return ONLY valid JSON:
 {
   "listedForSale": "string — dienas pārdošanā ss.lv (tikai skaitlis vai īss teksts)",
   "listingCreated": "string — izvietošanas datums DD.MM.YYYY vai teksts no avota",
-  "priceDrop": "string — cenas kritums EUR (tikai skaitlis, bez €), ja zināms",
+  "priceDrop": "string - cenas izmaiņa EUR ar zīmi: kritums ar „-” (piem. „-2000”), pieaugums ar „+”; tikai skaitlis, bez €, ja zināms",
   "comments": "string — komentārs latviešu valodā"
 }
 

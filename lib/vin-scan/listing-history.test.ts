@@ -20,7 +20,7 @@ describe("vinScanParseFromListingHistory", () => {
     });
     expect(parsed.status).toBe("found");
     expect(parsed.listings).toHaveLength(2);
-    expect(parsed.listings?.[0]).toMatchObject({ price: "€ 23 950", odometer: "198 000 km" });
+    expect(parsed.listings?.[0]).toMatchObject({ price: "23 950 €", odometer: "198 000 km" });
     expect(parsed.vehicle?.year).toBe("2013");
     expect(parsed.openUrl).toContain("adify.lv/history?url=");
   });

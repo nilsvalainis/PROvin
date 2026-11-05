@@ -360,7 +360,7 @@ describe("sludinājuma vēstures kartīte", () => {
       id: "listing",
       label: "Sludinājuma vēsture",
       value: "47 dienas",
-      note: "Publicēts: 01.08.2026 · Cenas izmaiņa: € -500",
+      note: "Publicēts: 01.08.2026 · Cenas izmaiņa: -500 €",
       tone: "neutral",
     });
   });
@@ -378,7 +378,7 @@ describe("sludinājuma vēstures kartīte", () => {
     });
     const listing = tiles.find((t) => t.id === "listing");
     expect(listing?.value).toBe("22 dienas");
-    expect(listing?.note).toBe("Publicēts: 22.03.2026 · Cenas izmaiņa: € -149");
+    expect(listing?.note).toBe("Publicēts: 22.03.2026 · Cenas izmaiņa: -149 €");
     expect(listing?.tone).toBe("neutral");
   });
 
@@ -395,7 +395,7 @@ describe("sludinājuma vēstures kartīte", () => {
         ],
       },
     });
-    expect(tiles.find((t) => t.id === "listing")?.note).toContain("€ -500");
+    expect(tiles.find((t) => t.id === "listing")?.note).toContain("-500 €");
     expect(tiles.find((t) => t.id === "listing")?.note).not.toContain("1 000");
   });
 
@@ -488,7 +488,60 @@ describe("sludinājuma vēstures kartīte", () => {
     expect(summary).toContain("Sludinājuma vēsture");
     expect(summary).toContain("47 dienas");
     expect(summary).toContain("Publicēts: 01.08.2026");
-    expect(summary).toContain("Cenas izmaiņa: € -500");
+    expect(summary).toContain("Cenas izmaiņa: -500 €");
     expect(summary).not.toContain("pdf-summary-tile--ok\">\n      <p class=\"pdf-summary-tile__label\">Sludinājuma vēsture");
+  });
+});
+
+describe("tirgus „Cenas izmaiņas (eiro)” rinda PDF", () => {
+  function tirgusHtml(priceDrop: string): string {
+    return buildClientReportDocumentHtml({
+      payload: {
+        sessionId: "cs_test",
+        vin: "WAUZZZ8V1H1033853",
+        created: Date.now(),
+        amountTotal: 7999,
+        currency: "eur",
+        paymentStatus: "paid",
+        listingUrl: null,
+        customerEmail: null,
+        customerPhone: null,
+        customerName: null,
+        contactMethod: null,
+        notes: null,
+        csdd: "",
+        ltab: "",
+        tirgus: "",
+        citi: "",
+        iriss: "",
+        apskatesPlāns: "",
+        tehniskoRiskuAnalize: "",
+        cenasAtbilstiba: "",
+        tirgusForm: { ...emptyTirgusFields(), listedForSale: "47", priceDrop },
+      } as ClientReportPayload,
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+  }
+
+  function priceDropCell(html: string): string {
+    const i = html.indexOf("Cenas izmaiņas (eiro):");
+    expect(i).toBeGreaterThan(-1);
+    return html.slice(i, html.indexOf("</tr>", i));
+  }
+
+  it("kritums: vecais „€ -500” rādās „-500 €” ar bultiņu uz leju", () => {
+    const cell = priceDropCell(tirgusHtml("€ -500"));
+    expect(cell).toContain("-500 €");
+    expect(cell).not.toContain("€ -500");
+    expect(cell).toContain("pdf-price-drop-arrow");
+  });
+
+  it("pieaugums „+2 000 €” netiek rādīts ar krituma bultiņu", () => {
+    const cell = priceDropCell(tirgusHtml("€ +2000"));
+    expect(cell).toContain("+2 000 €");
+    expect(cell).not.toContain("pdf-price-drop-arrow");
   });
 });
