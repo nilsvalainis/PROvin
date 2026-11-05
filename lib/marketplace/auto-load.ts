@@ -21,6 +21,7 @@ import {
   usageSpentUsdByTrigger,
 } from "@/lib/marketplace/cost-caps";
 import { estimateMarketplaceLoad, loadMarketplaceForOrder, type MarketplaceLoadInput } from "@/lib/marketplace/load";
+import { mobileDeAutomationShouldStopSweep } from "@/lib/marketplace/mobile-de-guard";
 import {
   readMarketplaceAutoCronState,
   readMarketplaceListingsState,
@@ -385,6 +386,14 @@ export async function runMarketplaceAutoSweep(deps: MarketplaceAutoSweepDeps): P
       skipped.push({ orderId: row.id, reason: "budžets sasniegts" });
       for (const rest of due.slice(due.indexOf(row) + 1)) {
         skipped.push({ orderId: rest.id, reason: "budžets sasniegts" });
+      }
+      break;
+    } else if (loaded.error && mobileDeAutomationShouldStopSweep(loaded.error)) {
+      status = "skipped";
+      reason = loaded.error;
+      skipped.push({ orderId: row.id, reason: loaded.error });
+      for (const rest of due.slice(due.indexOf(row) + 1)) {
+        skipped.push({ orderId: rest.id, reason: loaded.error });
       }
       break;
     } else {

@@ -457,4 +457,51 @@ describe("marketplace cost-control switches", () => {
     expect(out.items).toEqual([]);
     expect(runner).not.toHaveBeenCalled();
   });
+
+  it("stops later orders when mobile.de returns an Akamai denial", async () => {
+    const loadForOrder = vi.fn(async () => ({
+      ok: false,
+      blocked: true,
+      error: "Access Denied Reference #18.5f1f1602.1793612256.2b847f83 https://errors.edgesuite.net/x",
+      added: 0,
+      grouped: 0,
+      estimatedUsd: 0.05,
+      remainingMonthlyUsd: 20,
+    }));
+    const out = await runMarketplaceAutoSweep(
+      baseDeps({
+        listActiveOrders: async () => [
+          brief({ id: "00000000-0000-4000-8000-000000000001" }),
+          brief({ id: "00000000-0000-4000-8000-000000000002" }),
+        ],
+        loadForOrder,
+      }),
+    );
+    expect(loadForOrder).toHaveBeenCalledTimes(1);
+    expect(out.status).toBe("skipped");
+    expect(out.skipped).toHaveLength(2);
+  });
+
+  it("continues the sweep after a plain Apify failure", async () => {
+    const loadForOrder = vi.fn(async () => ({
+      ok: false,
+      error: "Avota kļūda: mobile.de: Apify failed",
+      added: 0,
+      grouped: 0,
+      estimatedUsd: 0.05,
+      remainingMonthlyUsd: 20,
+    }));
+    const out = await runMarketplaceAutoSweep(
+      baseDeps({
+        listActiveOrders: async () => [
+          brief({ id: "00000000-0000-4000-8000-000000000001" }),
+          brief({ id: "00000000-0000-4000-8000-000000000002" }),
+        ],
+        loadForOrder,
+      }),
+    );
+    expect(loadForOrder).toHaveBeenCalledTimes(2);
+    expect(out.skipped).toHaveLength(2);
+    expect(out.status).toBe("ok");
+  });
 });

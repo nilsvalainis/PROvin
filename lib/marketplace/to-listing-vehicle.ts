@@ -22,6 +22,25 @@ export function marketplaceListingIsExpired(expiresAtIso: string, nowMs = Date.n
   return Number.isFinite(t) && t <= nowMs;
 }
 
+function marketplaceVehiclePhotos(imageUrls: readonly string[] | undefined): {
+  imageUrl: string;
+  thumbUrl?: string;
+  imageUrls?: string[];
+} {
+  const photos = (imageUrls ?? [])
+    .map((raw) => ({
+      full: mobileDeImageDisplayUrl(raw, 1024),
+      thumb: mobileDeImageDisplayUrl(raw, 640),
+    }))
+    .filter((photo) => photo.full);
+  const first = photos[0];
+  return {
+    imageUrl: first?.full ?? "",
+    ...(first ? { thumbUrl: first.thumb } : {}),
+    ...(photos.length > 1 ? { imageUrls: photos.map((photo) => photo.full) } : {}),
+  };
+}
+
 /** Pārvērš saglabāto sludinājumu tajā pašā kartītes formā, ko lieto izsoles. Bildes - avota saites. */
 export function marketplaceListingToVehicle(item: MarketplaceStoredListing): IrissListingVehicle {
   const year = item.year;
@@ -43,9 +62,8 @@ export function marketplaceListingToVehicle(item: MarketplaceStoredListing): Iri
     location: item.sellerName || item.location || item.locationCountry,
     countryCode: item.locationCountry,
     // Nils 31.10: mobile.de bildes tieši no CDN (m.mobile.de bloķē IP); sarakstam mazāka, galerijai lielāka.
-    imageUrl: mobileDeImageDisplayUrl(item.imageUrls?.[0] ?? "", 1024),
-    ...(item.imageUrls?.[0] ? { thumbUrl: mobileDeImageDisplayUrl(item.imageUrls[0], 640) } : {}),
-    ...(item.imageUrls && item.imageUrls.length > 1 ? { imageUrls: item.imageUrls.map((u) => mobileDeImageDisplayUrl(u, 1024)) } : {}),
+    // Tukšas (noraidītas yams) saites kartītē nepaliek, citādi <img src=""> prasa pašu lapu.
+    ...marketplaceVehiclePhotos(item.imageUrls),
     currency: "EUR",
     priceStart: null,
     priceMinimal: null,
