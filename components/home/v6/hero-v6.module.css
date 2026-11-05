@@ -79,6 +79,17 @@
   animation: hero-wd 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) forwards, hero-shine 5s ease-in-out 1.4s infinite;
   animation-delay: calc(var(--d) * 0.09s + 0.1s), 1.4s;
 }
+/* Telefonā virsraksts redzams uzreiz, bez parādīšanās animācijas (ātrāks LCP, Nils 05.11). */
+@media (max-width: 900px) {
+  .word {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  .accent {
+    animation: hero-shine 5s ease-in-out 1.4s infinite;
+  }
+}
 @keyframes hero-shine {
   0% {
     background-position: 100% 0;
