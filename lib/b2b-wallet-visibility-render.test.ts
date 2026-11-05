@@ -152,14 +152,13 @@ describe("PROVIN Business product name", () => {
 });
 
 describe("partner portal wallet card prices", () => {
-  it("shows Business 69,99 against struck 79,99 and dealer defaults without a badge", () => {
+  it("shows the default catalog prices without a discount badge", () => {
     const html = render([]);
-    expect(html).toContain("69,99 €");
-    expect(html).toContain('aria-label="Iepriekšējā cena 79,99 €"');
+    expect(html).toContain("79,99 €");
     expect(html).toContain("19,99 €");
     expect(html).toContain("24,99 €");
     expect(html).not.toContain("15,99 €");
-    expect(html.match(/-\d+%/g)).toEqual(["-13%"]);
+    expect(html).not.toMatch(/-\d+%/);
   });
 
   it("badges a stored partner price against the new default", () => {

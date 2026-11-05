@@ -376,12 +376,12 @@ export function getB2bDnaSwapNote(locale?: string): string {
 }
 
 export const B2B_PARTNER_PRICE: Record<B2bPartnerPlanId, string> = {
-  business: "69,99 €",
+  business: "79,99 €",
   dealer: "19,99 €",
 };
 
 export const B2B_PARTNER_PRICE_CENTS: Record<B2bPartnerPlanId, number> = {
-  business: 6999,
+  business: 7999,
   dealer: 1999,
 };
 
@@ -393,7 +393,7 @@ export type B2bPackOffer = {
 };
 
 export const B2B_BUSINESS_PACKS: readonly B2bPackOffer[] = [
-  { qty: 1, unitCents: 6999 },
+  { qty: 1, unitCents: 7999 },
   { qty: 10, unitCents: 6999 },
 ];
 

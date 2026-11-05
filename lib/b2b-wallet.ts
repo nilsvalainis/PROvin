@@ -22,17 +22,12 @@ export type B2bWalletProductSpec = {
   plan: B2bPartnerPlanId;
   /** Ja dīlera datu nav, summu automātiski atgriež makā. */
   refundOnNoData: boolean;
-  /**
-   * Viena cena visiem: maksā `minCents`, `defaultCents` paliek kā nosvītrotā cena ar atlaidi.
-   * Individuālās cenas netiek piemērotas (Business 69,99 €, nosvītrots 79,99 €).
-   */
-  fixedPrice: boolean;
 };
 
 export const B2B_WALLET_PRODUCTS: Record<B2bWalletProductId, B2bWalletProductSpec> = {
-  business: { id: "business", defaultCents: 7999, minCents: 6999, plan: "business", refundOnNoData: false, fixedPrice: true },
-  dealer_raw: { id: "dealer_raw", defaultCents: 1999, minCents: 1199, plan: "dealer", refundOnNoData: true, fixedPrice: false },
-  dealer_pro: { id: "dealer_pro", defaultCents: 2499, minCents: 1499, plan: "dealer", refundOnNoData: true, fixedPrice: false },
+  business: { id: "business", defaultCents: 7999, minCents: 6999, plan: "business", refundOnNoData: false },
+  dealer_raw: { id: "dealer_raw", defaultCents: 1999, minCents: 1199, plan: "dealer", refundOnNoData: true },
+  dealer_pro: { id: "dealer_pro", defaultCents: 2499, minCents: 1499, plan: "dealer", refundOnNoData: true },
 };
 
 export function isB2bWalletProductId(value: unknown): value is B2bWalletProductId {
@@ -131,11 +126,7 @@ export function resolveB2bWalletPrice(
 ): B2bWalletResolvedPrice {
   const spec = B2B_WALLET_PRODUCTS[product];
   const override = overrides?.[product] ?? null;
-  const priceCents = spec.fixedPrice
-    ? spec.minCents
-    : override != null && override >= spec.minCents
-      ? override
-      : spec.defaultCents;
+  const priceCents = override != null && override >= spec.minCents ? override : spec.defaultCents;
   return {
     product,
     priceCents,
@@ -211,14 +202,14 @@ export type B2bWalletPriceValidation =
   | { ok: true; prices: B2bWalletPriceOverrides }
   | { ok: false; product: B2bWalletProductId; reason: "invalid" | "below_min"; minCents: number };
 
-/** Admin ievade: tukšs = noklusējums; zem minimuma saglabāt nedrīkst; fiksētas cenas produktam ievadi ignorē. */
+/** Admin ievade: tukšs = noklusējums; zem minimuma saglabāt nedrīkst. */
 export function validateB2bWalletPriceInput(
   raw: Partial<Record<B2bWalletProductId, string | number | null | undefined>>,
 ): B2bWalletPriceValidation {
   const prices = emptyB2bWalletPrices();
   for (const product of B2B_WALLET_PRODUCT_IDS) {
     const spec = B2B_WALLET_PRODUCTS[product];
-    const value = spec.fixedPrice ? null : raw[product];
+    const value = raw[product];
     let cents: number | null | "invalid";
     if (value == null) cents = null;
     else if (typeof value === "number") cents = Number.isFinite(value) && value > 0 ? Math.round(value) : "invalid";
