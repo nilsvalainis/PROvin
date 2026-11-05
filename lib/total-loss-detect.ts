@@ -6,6 +6,19 @@
  * „ierakstu nav” u.tml., kas deva viltus „Pilnīgs zaudējums”.
  */
 
+import { CSDD_COMMENT_EUCARIS_PLAIN } from "@/lib/admin-csdd-comment-presets";
+import {
+  CC_VIN_AUCTION_CHECK_PLAIN,
+  isCcVinAuctionCheckComment,
+} from "@/lib/admin-cc-vin-comment-presets";
+import { LTAB_COMMENT_NO_OCTA_CLAIM } from "@/lib/admin-ltab-comment-presets";
+import {
+  LISTING_PHOTO_NO_DEFECTS_LEGACY_TEXT,
+  LISTING_PHOTO_NO_DEFECTS_TEXT,
+} from "@/lib/admin-listing-photo-comment-presets";
+import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
+import { SHARED_SOURCE_COMMENT_TEMPLATES } from "@/lib/admin-source-comment-presets";
+
 const NB = "(?<![\\p{L}\\p{N}])";
 const NA = "(?![\\p{L}\\p{N}])";
 
@@ -34,6 +47,23 @@ export const TOTAL_LOSS_RE = new RegExp(
   ].join("|"),
   "iu",
 );
+
+/** Komentāru brīdinājumam: arī „norakstīts / norakstījums” (kartīti tas neieslēdz). */
+const COMMENT_TOTAL_LOSS_RE = new RegExp(
+  `${TOTAL_LOSS_RE.source}|${NB}norakst(?:īt|ījum)\\p{L}*`,
+  "iu",
+);
+
+const TEMPLATE_PLAIN_SNIPPETS = [
+  CC_VIN_AUCTION_CHECK_PLAIN,
+  LTAB_COMMENT_NO_OCTA_CLAIM,
+  CSDD_COMMENT_EUCARIS_PLAIN,
+  LISTING_PHOTO_NO_DEFECTS_TEXT,
+  LISTING_PHOTO_NO_DEFECTS_LEGACY_TEXT,
+  ...SHARED_SOURCE_COMMENT_TEMPLATES.map((t) => t.text),
+]
+  .map((s) => s.replace(/\s+/g, " ").trim())
+  .filter(Boolean);
 
 const EXPLANATORY_TOTAL_LOSS_RE =
   /var norādīt uz potenciālu pilnīgu zaudēj|automātiski nenozīmē|ieraksti netika atrasti|nav pilnīg/i;
@@ -131,10 +161,10 @@ function isWeakSalvage(matchText: string, text: string, index: number): boolean 
   return !SALVAGE_CONTEXT_RE.test(lineAround(text, index));
 }
 
-function matchTotalLoss(text: string): TotalLossHit | null {
+function matchTotalLoss(text: string, pattern: RegExp = TOTAL_LOSS_RE): TotalLossHit | null {
   const blob = text.replace(/[ \t]+/g, " ").trim();
   if (!blob) return null;
-  const re = new RegExp(TOTAL_LOSS_RE.source, "giu");
+  const re = new RegExp(pattern.source, "giu");
   let m: RegExpExecArray | null;
   while ((m = re.exec(blob)) !== null) {
     const idx = m.index ?? 0;
@@ -190,6 +220,58 @@ export function textIndicatesTotalLoss(text: string): boolean {
  */
 export function detectTotalLossFromPdfInput(input: TotalLossSourceInput): TotalLossHit {
   return matchTotalLoss(structuredLines(input).join("\n")) ?? { found: false, evidence: "" };
+}
+
+/** Plain teksts bez zināmajiem sagatavju teikumiem (CC VIN izsoļu pārbaude, LTAB, CSDD, …). */
+function stripKnownTemplates(htmlOrPlain: string): string {
+  if (!htmlOrPlain.trim()) return "";
+  if (isCcVinAuctionCheckComment(htmlOrPlain)) return "";
+  const plain = adminRichHtmlToPlainText(htmlOrPlain).replace(/\r\n?/g, "\n");
+  const flat = plain.replace(/\s+/g, " ").trim();
+  if (!flat) return "";
+  let changed = false;
+  let out = flat;
+  for (const snippet of TEMPLATE_PLAIN_SNIPPETS) {
+    if (!snippet) continue;
+    if (out === snippet) return "";
+    if (out.includes(snippet)) {
+      out = out.replace(snippet, " ").replace(/\s+/g, " ").trim();
+      changed = true;
+    }
+  }
+  // Bez sagatavēm saglabā rindas (jautājumu / glosārija pārbaude ir pa rindām).
+  return changed ? out : plain.trim();
+}
+
+export type TotalLossCommentField = { label: string; text: string };
+export type TotalLossCommentMention = { label: string; quote: string };
+
+/**
+ * Komentāros (operatora vai AI) minēts pilnīgs zaudējums / norakstījums. Ar tiem pašiem
+ * nolieguma, jautājuma un glosārija filtriem kā strukturētajiem laukiem. Kartīti NEIESLĒDZ:
+ * izmanto tikai pirms PDF brīdinājumam, ja avotu datos tā nav.
+ */
+export function findTotalLossCommentMentions(
+  fields: readonly TotalLossCommentField[] | null | undefined,
+): TotalLossCommentMention[] {
+  const out: TotalLossCommentMention[] = [];
+  for (const f of fields ?? []) {
+    const hit = matchTotalLoss(stripKnownTemplates(f.text ?? ""), COMMENT_TOTAL_LOSS_RE);
+    if (hit) out.push({ label: f.label, quote: hit.evidence });
+  }
+  return out;
+}
+
+/** Komentāru lauki no PDF ievades (ja nav padoti klienta drukātie lauki). */
+export function totalLossCommentFieldsFromInput(input: TotalLossSourceInput): TotalLossCommentField[] {
+  const out: TotalLossCommentField[] = [];
+  for (const b of input.manualVendorBlocks ?? []) {
+    if (b.comments?.trim()) out.push({ label: b.title?.trim() || "Avots", text: b.comments });
+  }
+  if (input.manualLtabBlock?.comments?.trim()) out.push({ label: "LTAB", text: input.manualLtabBlock.comments });
+  if (input.ccVinBlock?.comments?.trim()) out.push({ label: "CC VIN", text: input.ccVinBlock.comments });
+  if (input.asvBlock?.comments?.trim()) out.push({ label: "ASV", text: input.asvBlock.comments });
+  return out;
 }
 
 export function headerMentionsTotalLoss(text: string): boolean {

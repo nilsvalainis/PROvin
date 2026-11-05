@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   detectTotalLossFromPdfInput,
+  findTotalLossCommentMentions,
   headerMentionsTotalLoss,
   textIndicatesTotalLoss,
 } from "@/lib/total-loss-detect";
@@ -67,7 +68,10 @@ describe("detectTotalLossFromPdfInput", () => {
     expect(detectTotalLossFromPdfInput(input).found).toBe(false);
     const incidents = buildPdfReportSummaryTiles(input).find((t) => t.id === "incidents");
     expect(incidents?.value).not.toBe("Pilnīgs zaudējums");
-    expect(checkPrePdfContradictions({ summaryInput: input }).some((f) => f.id === "c8_total_loss")).toBe(false);
+    const flags = checkPrePdfContradictions({ summaryInput: input });
+    expect(flags.some((f) => f.id === "c8_total_loss")).toBe(false);
+    // Bet operators redz brīdinājumu pirms PDF.
+    expect(flags.some((f) => f.id === "c8_total_loss_comment")).toBe(true);
   });
 
   it.each([
@@ -129,5 +133,76 @@ describe("detectTotalLossFromPdfInput", () => {
 
   it("lowercase vge is not a French status", () => {
     expect(textIndicatesTotalLoss("vge")).toBe(false);
+  });
+});
+
+describe("c8_total_loss_comment (comment-only mention warning)", () => {
+  const tileWithoutLoss = [
+    { id: "incidents" as const, label: "Negadījumi un bojājumi", value: "Nav ierakstu", note: "", tone: "ok" as const },
+  ];
+
+  it("warns with field name and quote when only a comment mentions a write-off", () => {
+    const flags = checkPrePdfContradictions({
+      summaryInput: { csddForm: emptyCsddFields() },
+      clientTextFields: [
+        { label: "Tehnisko risku analīze", text: "Automašīna 2019. gadā norakstīta pēc avārijas." },
+        { label: "AutoDNA", text: "Ziņots par pilnīgu zaudējumu." },
+      ],
+    });
+    const warn = flags.filter((f) => f.id === "c8_total_loss_comment");
+    expect(warn).toHaveLength(2);
+    expect(warn.every((f) => f.level === "E")).toBe(true);
+    expect(warn[0].message).toContain("„Tehnisko risku analīze”");
+    expect(warn[0].message).toContain("norakstīta");
+    expect(warn[0].message).toMatch(/avotu datos tas nav - pārbaudi/);
+    expect(warn[0].message).not.toMatch(/[\u2014\u2013]/);
+    expect(warn[1].message).toContain("pilnīgu zaudējumu");
+  });
+
+  it("does not set the tile from comments", () => {
+    const tiles = buildPdfReportSummaryTiles({
+      csddForm: emptyCsddFields(),
+      ccVinBlock: { ...emptyCcVinBlock(), comments: "Automašīna norakstīta 2018. gadā." },
+    });
+    expect(tiles.find((t) => t.id === "incidents")?.value).not.toBe("Pilnīgs zaudējums");
+  });
+
+  it("falls back to source comments when printed fields are not passed", () => {
+    const flags = checkPrePdfContradictions({
+      summaryInput: {
+        csddForm: emptyCsddFields(),
+        ccVinBlock: { ...emptyCcVinBlock(), comments: "Apdrošināšanas total loss 2017" },
+      },
+      tiles: tileWithoutLoss,
+    });
+    expect(flags.some((f) => f.id === "c8_total_loss_comment")).toBe(true);
+  });
+
+  it.each([
+    "Pilnīgs zaudējums nav fiksēts.",
+    "Pilnīga zaudējuma ieraksts netika konstatēts.",
+    "Total loss: No",
+    "Bojājumi Nav pilnīguzaudējumu",
+    "Vai tas ir norakstīts?",
+    "Pilnīgs zaudējums - transportlīdzeklis atzīts par norakstāmu, ja remonts nav pamatots.",
+    "Copart salvage izsole",
+    "Automašīna nav norakstīta.",
+    "Kad remonta izmaksas tuvojas vērtībai, tas var norādīt uz potenciālu pilnīgu zaudējumu.",
+  ])("does not warn for negated / question / glossary text: %s", (text) => {
+    expect(findTotalLossCommentMentions([{ label: "X", text }])).toEqual([]);
+  });
+
+  it("no comment warning when a structured source already has the total loss", () => {
+    const flags = checkPrePdfContradictions({
+      summaryInput: {
+        csddForm: emptyCsddFields(),
+        ccVinBlock: {
+          ...emptyCcVinBlock(),
+          comments: "Ziņots par pilnīgu zaudējumu",
+          titles: [{ date: "2018", note: "Salvage title", region: "US", odometer: "" }],
+        },
+      },
+    });
+    expect(flags.some((f) => f.id === "c8_total_loss_comment")).toBe(false);
   });
 });

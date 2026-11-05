@@ -227,5 +227,6 @@ describe("Grandland W0VZCYHZXN6843259 incident amounts and total loss", () => {
       },
     });
     expect(flags.some((f) => f.id === "c8_total_loss")).toBe(false);
+    expect(flags.some((f) => f.id === "c8_total_loss_comment")).toBe(false);
   });
 });

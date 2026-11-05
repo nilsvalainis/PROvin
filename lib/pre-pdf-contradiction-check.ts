@@ -18,7 +18,12 @@ import {
   collectUnifiedMileageRows,
   prepareUnifiedMileageDisplayRows,
 } from "@/lib/unified-mileage";
-import { detectTotalLossFromPdfInput, headerMentionsTotalLoss } from "@/lib/total-loss-detect";
+import {
+  detectTotalLossFromPdfInput,
+  findTotalLossCommentMentions,
+  headerMentionsTotalLoss,
+  totalLossCommentFieldsFromInput,
+} from "@/lib/total-loss-detect";
 import {
   buildPdfReportSummaryTiles,
   type PdfSummaryInput,
@@ -93,7 +98,7 @@ function mileageRowsFromInput(input: PdfSummaryInput) {
 }
 
 /**
- * C1-C4, C8, C9, C10 un rollback pret galveni. Operatoram rāda pirms PDF.
+ * C1-C4, C8 (arī komentāru brīdinājums), C9, C10 un rollback pret galveni. Operatoram rāda pirms PDF.
  */
 export function checkPrePdfContradictions(input: PrePdfContradictionInput): FactCheckFlag[] {
   const tiles = input.tiles ?? buildPdfReportSummaryTiles(input.summaryInput);
@@ -191,6 +196,20 @@ export function checkPrePdfContradictions(input: PrePdfContradictionInput): Fact
         incidentsTile.value || "Negadījumi",
       ),
     );
+  }
+
+  if (!loss.found) {
+    // Tikai komentārā (operatora / AI) minēts zaudējums: kartīti neieslēdz, bet operators to redz.
+    const commentFields = input.clientTextFields ?? totalLossCommentFieldsFromInput(input.summaryInput);
+    for (const m of findTotalLossCommentMentions(commentFields)) {
+      flags.push(
+        flag(
+          "c8_total_loss_comment",
+          `Komentārā „${m.label}” minēts norakstījums vai pilnīgs zaudējums („${m.quote}”), bet avotu datos tas nav - pārbaudi.`,
+          `${m.label}: ${m.quote}`,
+        ),
+      );
+    }
   }
 
   const changeCount = countVendorOwnershipChangeEvents(input.summaryInput.manualVendorBlocks);
