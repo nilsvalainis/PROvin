@@ -22,7 +22,7 @@ const ROWS = [
   { index: 4, raw: VINS[4], vin: "", kind: "invalid", charCount: 14 },
 ];
 
-const PRICES: Record<string, number> = { business: 7999, dealer_raw: 1999, dealer_pro: 2499 };
+const PRICES: Record<string, number> = { business: 6999, dealer_raw: 1999, dealer_pro: 2499 };
 
 function fakeFetch(original: typeof fetch, balanceCents: number): typeof fetch {
   return async (input, init) => {
