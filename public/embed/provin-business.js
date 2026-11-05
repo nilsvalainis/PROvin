@@ -13,8 +13,10 @@
   "use strict";
   var script = document.currentScript;
   var ORIGIN = "https://www.provin.lv";
+  /** Testiem lokāli; partnera kopija vienmēr ved uz provin.lv. */
   try {
-    if (script && script.src) ORIGIN = new URL(script.src).origin;
+    var src = script && script.src ? new URL(script.src) : null;
+    if (src && /^(localhost|127\.0\.0\.1)$/.test(src.hostname)) ORIGIN = src.origin;
   } catch (e) {}
 
   var CSS =
@@ -83,8 +85,8 @@
     a.href = href;
     a.target = "_blank";
     a.rel = "noopener";
-    /** Domēna pārbaudei PROVIN pusē vajag vismaz partnera origin, arī ja lapai ir stingrāka politika. */
-    a.referrerPolicy = "strict-origin-when-cross-origin";
+    /** PROVIN pusē sludinājuma adrese jāsalīdzina ar pilnu Referer (https -> https). */
+    a.referrerPolicy = "no-referrer-when-downgrade";
     a.setAttribute("aria-label", "PROVIN - " + LABEL + ", 69,99 €");
     if (d.tone === "dark") a.className = "dark";
     a.style.height = num(d.height, 40, 120, 60) + "px";

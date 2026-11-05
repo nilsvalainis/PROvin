@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { BusinessLinkForm } from "@/components/business-link/BusinessLinkForm";
 import { BusinessPartnerLinkPage } from "@/components/business-link/BusinessPartnerLinkPage";
 import { getB2bPartnerById } from "@/lib/b2b-partner-store";
+import { hasBusinessPartnerCookie } from "@/lib/business-partner-cookie";
 import { ClientLinkNeutralPage } from "@/components/client-link/ClientLinkNeutralPage";
 import {
   BUSINESS_LINK_AMOUNT_CENTS,
@@ -55,7 +56,8 @@ export default async function BusinessLinkPage({ params }: { params: Promise<{ t
   const { token: raw } = await params;
   const token = raw?.trim() ?? "";
 
-  const ip = getClientIpFromHeaders(await headers());
+  const h = await headers();
+  const ip = getClientIpFromHeaders(h);
   if (!(await checkRateLimit(`business-link-get:${ip}`, 40, 10 * 60 * 1000)).ok) return <Unavailable />;
   if (!isSafeBusinessLinkToken(token)) return <Unavailable />;
   const hashRl = await checkRateLimit(`business-link-hash:${hashClientLinkToken(token).slice(0, 16)}`, 40, 10 * 60 * 1000);
@@ -66,6 +68,8 @@ export default async function BusinessLinkPage({ params }: { params: Promise<{ t
 
   /** Saite no partnera pogas: PROVIN Business lapa ar partnera logo (GALA-lapa.md). */
   if (record.partnerId) {
+    /** Pārsūtīta partnera saite (bez pogas sīkdatnes) neatveras. */
+    if (!hasBusinessPartnerCookie(h.get("cookie"), record.tokenHash)) return <Unavailable />;
     const partner = await getB2bPartnerById(record.partnerId);
     if (!partner || partner.status !== "active" || !partner.businessEmbed.enabled) return <Unavailable />;
     const legal = getCompanyLegal();
