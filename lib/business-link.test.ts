@@ -6,6 +6,7 @@ import {
   buildBusinessLinkWhatsAppText,
   businessLinkAbsoluteUrl,
   businessLinkHashFromStripeMetadata,
+  businessLinkPaidVinMismatch,
   businessLinkPublicView,
   isBusinessLinkPath,
   isBusinessLinkUsable,
@@ -145,6 +146,36 @@ describe("business link submission", () => {
     const rec = record({ prefillVin: VIN, recipient: "k@b.lv" });
     const r = validateBusinessLinkSubmission(rec, emptyFields, true);
     expect(r).toMatchObject({ ok: true, resolved: { email: "k@b.lv", vin: VIN } });
+  });
+
+  it("link with VIN cannot be used for another car", () => {
+    const rec = record({ prefillVin: VIN });
+    expect(validateBusinessLinkSubmission(rec, { ...emptyFields, email: "a@b.lv", vin: "WBA8E9C50GK644389" }, true)).toEqual({
+      ok: false,
+      error: "vin_locked",
+    });
+    expect(validateBusinessLinkSubmission(rec, { ...emptyFields, email: "a@b.lv", vin: "AB1234" }, true)).toEqual({
+      ok: false,
+      error: "vin_locked",
+    });
+    expect(validateBusinessLinkSubmission(rec, { ...emptyFields, email: "a@b.lv", vin: VIN.toLowerCase() }, true)).toMatchObject({
+      ok: true,
+      resolved: { vin: VIN },
+    });
+  });
+
+  it("link without VIN still accepts the client's VIN", () => {
+    expect(validateBusinessLinkSubmission(record(), { ...emptyFields, email: "a@b.lv", vin: VIN }, true)).toMatchObject({
+      ok: true,
+      resolved: { vin: VIN },
+    });
+  });
+
+  it("flags a paid session whose VIN differs from the locked VIN", () => {
+    expect(businessLinkPaidVinMismatch(record({ prefillVin: VIN }), { vin: VIN })).toBe(false);
+    expect(businessLinkPaidVinMismatch(record({ prefillVin: VIN }), { vin: "WBA8E9C50GK644389" })).toBe(true);
+    expect(businessLinkPaidVinMismatch(record({ prefillVin: VIN }), {})).toBe(true);
+    expect(businessLinkPaidVinMismatch(record(), { vin: "WBA8E9C50GK644389" })).toBe(false);
   });
 
   it("validates optional listing and phone", () => {

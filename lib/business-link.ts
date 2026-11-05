@@ -169,7 +169,7 @@ export type BusinessLinkSubmitFields = {
   companyAddress: string;
 };
 
-export type BusinessLinkSubmitError = "email" | "vin" | "vin_length" | "listing" | "phone" | "consent";
+export type BusinessLinkSubmitError = "email" | "vin" | "vin_length" | "vin_locked" | "listing" | "phone" | "consent";
 
 /** E-pasts un VIN obligāti (bez VIN Business rinda adminā kļūst par paku, nevis VIN darbu). */
 export function validateBusinessLinkSubmission(
@@ -183,7 +183,9 @@ export function validateBusinessLinkSubmission(
   if (!email || !isValidOrderEmail(email)) return { ok: false, error: "email" };
 
   const vinRaw = normalizeVin(fields.vin);
-  const vin = vinRaw || record.prefillVin;
+  /** Saite ar VIN der tikai šim VIN: citu VIN nevar iesniegt. */
+  if (record.prefillVin && vinRaw && vinRaw !== record.prefillVin) return { ok: false, error: "vin_locked" };
+  const vin = record.prefillVin || vinRaw;
   if (!vin || !isValidVinOrPlate(vin)) {
     return { ok: false, error: isIncompleteVinLength(vin) ? "vin_length" : "vin" };
   }
@@ -240,6 +242,15 @@ export function businessLinkHashFromStripeMetadata(metadata: Record<string, stri
   if ((metadata?.fulfillment ?? "").trim() !== BUSINESS_LINK_FULFILLMENT) return null;
   const hash = (metadata?.business_link_hash ?? "").trim().toLowerCase();
   return /^[a-f0-9]{64}$/.test(hash) ? hash : null;
+}
+
+/** Webhook drošības pārbaude: apmaksātais VIN nesakrīt ar saitē fiksēto VIN. */
+export function businessLinkPaidVinMismatch(
+  record: Pick<BusinessLinkRecord, "prefillVin">,
+  metadata: Record<string, string> | null | undefined,
+): boolean {
+  if (!record.prefillVin) return false;
+  return normalizeVin(metadata?.vin ?? "") !== record.prefillVin;
 }
 
 export type BusinessLinkCheckoutSessionParams = {
