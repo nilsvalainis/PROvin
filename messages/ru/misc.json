@@ -8,7 +8,7 @@
     "checkoutConsultationProductName": "PROVIN: стратегическая консультация",
     "checkoutConsultationProductDesc": "Личная консультация и ориентир по рынку: контекст VIN и объявления, оценка рисков и следующие шаги.",
     "checkoutProvinSelectProductName": "PROVIN SELECT\nСтратегическая консультация",
-    "checkoutProvinSelectProductDesc": "Личная консультация для решения о покупке",
+    "checkoutProvinSelectProductDesc": "Личная консультация по вопросам покупки автомобиля",
     "notFoundTitle": "Страница не найдена",
     "notFoundHome": "Главная PROVIN",
     "orderBarCta": "Заказать аудит · 99,99 €",
@@ -21,7 +21,7 @@
   "Blogs": {
     "comingSoon": "СКОРО",
     "sermonTitle": "ПРОПОВЕДЬ БЕЗ АЛТАРЯ",
-    "indexH1": "Блог: покупка авто и проверка VIN",
+    "indexH1": "Блог: покупка подержанного авто и проверка VIN",
     "readMore": "Читать статью",
     "backToList": "← Все статьи",
     "lvOnlyNote": "Полный текст доступен на латышском языке.",
@@ -29,7 +29,7 @@
     "commentsEmpty": "Комментариев пока нет. Будьте первым.",
     "commentName": "Имя",
     "commentBody": "Комментарий",
-    "commentSubmit": "Отправить",
+    "commentSubmit": "Опубликовать",
     "commentSubmitting": "Отправка…",
     "commentSuccess": "Комментарий опубликован.",
     "commentError": "Не удалось отправить. Попробуйте ещё раз.",
@@ -46,8 +46,8 @@
     "provinSelect": "Консультация",
     "kasSlapjasAizProvin": "О PROVIN",
     "buj": "FAQ",
-    "b2b": "Для дилеров",
-    "b2bLoginAria": "Для дилеров: войти"
+    "b2b": "Партнёрам",
+    "b2bLoginAria": "Партнёрам: вход"
   },
   "Breadcrumbs": {
     "navAria": "Навигационная цепочка",
@@ -57,7 +57,7 @@
     "about": "О PROVIN",
     "blogs": "Блог",
     "vinCheck": "Проверка VIN",
-    "partner": "Для дилеров",
+    "partner": "Партнёрам",
     "terms": "Условия использования",
     "privacy": "Политика конфиденциальности"
   }

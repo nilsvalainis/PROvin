@@ -3,13 +3,13 @@
     "title": "Inserat kostenlos prüfen lassen",
     "subtitle": "Senden Sie uns den Link zum Inserat und erhalten Sie einen kurzen Kommentar, ob sich eine weitere Prüfung lohnt.",
     "triggerCta": "Inserat senden",
-    "pausedBody": "Kostenlose Inseratsprüfungen sind vorübergehend nicht verfügbar. Jeden Link prüfen wir manuell, deshalb hat sich eine kurze Warteschlange gebildet. Bitte versuchen Sie es später oder morgen erneut.",
-    "pausedSoftCta": "Sie brauchen schneller eine Antwort? Bestellen Sie PROVIN MINI oder PROVIN AUDITS. Diese laufen wie gewohnt weiter.",
+    "pausedBody": "Kostenlose Inseratseinschätzungen sind vorübergehend nicht verfügbar. Da wir jeden Link manuell prüfen, hat sich eine kleine Warteschlange gebildet. Bitte versuchen Sie es später oder morgen erneut.",
+    "pausedSoftCta": "Sie brauchen schneller eine Antwort? Bestellen Sie PROVIN MINI oder PROVIN AUDITS, beide laufen wie gewohnt.",
     "pausedOrderCta": "Audit bestellen",
     "form": {
       "listingLabel": "Link zum Inserat",
       "listingPlaceholder": "https://www.ss.com/msg/lv/… oder Mobile.de",
-      "vinLabel": "FIN",
+      "vinLabel": "VIN",
       "vinPlaceholder": "VIN eingeben",
       "heardLabel": "Wie haben Sie von uns erfahren?",
       "heardPlaceholder": "Bitte wählen",
@@ -25,7 +25,7 @@
       "emailPlaceholder": "max@beispiel.de",
       "phoneLabel": "Telefon",
       "phonePlaceholder": "+371 …",
-      "submit": "Kostenlose Prüfung anfordern",
+      "submit": "Einschätzung anfordern",
       "submitting": "Wird gesendet…",
       "disclaimer": "* Ohne Risikoanalyse, ohne Beratung und ohne Abfrage der Fahrzeughistorie in Datenbanken."
     },
@@ -35,17 +35,17 @@
     },
     "errors": {
       "listing": "Bitte fügen Sie einen gültigen Link zu einem konkreten Inserat ein.",
-      "vin": "Bitte eine gültige VIN oder ein Kennzeichen eingeben (3-6 Zeichen).",
-      "vinLength": "Die VIN muss 17 Zeichen haben, prüfen Sie die VIN-Nummer",
+      "vin": "Bitte geben Sie eine gültige VIN oder ein Kennzeichen (3-6 Zeichen) ein.",
+      "vinLength": "Die VIN muss 17 Zeichen lang sein. Bitte prüfen Sie die VIN.",
       "vinCheckDigit": "Das 9. Zeichen stimmt nicht mit der ISO-3779-Prüfziffer überein. Bei europäischen Autos ist das normal, Sie können trotzdem bestellen.",
-      "heard": "Bitte angeben, wie Sie von uns erfahren haben.",
+      "heard": "Bitte geben Sie an, wie Sie von uns erfahren haben.",
       "email": "Die E-Mail-Adresse ist ungültig.",
       "phone": "Die Telefonnummer ist ungültig.",
-      "rateLimited": "Eine kostenlose Prüfung wurde bereits angefordert. Wir antworten per E-Mail. Alternativ können Sie PROVIN AUDITS bestellen.",
+      "rateLimited": "Eine kostenlose Einschätzung wurde bereits angefordert. Wir antworten per E-Mail. Alternativ können Sie PROVIN AUDITS bestellen.",
       "rateLimitedCta": "PROVIN AUDITS bestellen",
       "ipRateLimited": "Von diesem Gerät oder Netzwerk wurden heute bereits mehrere Anfragen gesendet. Versuchen Sie es morgen erneut oder bestellen Sie ein Audit.",
-      "queuePaused": "Kostenlose Prüfungen sind vorübergehend nicht verfügbar. Versuchen Sie es später oder morgen erneut, oder bestellen Sie ein Audit.",
-      "generic": "Senden fehlgeschlagen. Bitte erneut versuchen."
+      "queuePaused": "Kostenlose Einschätzungen sind vorübergehend nicht verfügbar. Versuchen Sie es später oder morgen erneut, oder bestellen Sie ein Audit.",
+      "generic": "Senden fehlgeschlagen. Bitte versuchen Sie es erneut."
     }
   }
 }

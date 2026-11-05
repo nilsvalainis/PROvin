@@ -249,19 +249,19 @@ const EN: HomeV6Copy = {
     chartNote: "Example · Volkswagen Passat B8 · 2018",
     chartAria: "Mileage curve from official dealer records",
     intervalsCaption: "Oil change intervals",
-    intervalsNorm: "norm 15,000 km",
-    withinNorm: "within norm",
-    overNorm: "+{km} over norm",
+    intervalsNorm: "recommended: 15,000 km",
+    withinNorm: "within interval",
+    overNorm: "+{km} over interval",
     guaranteeStrong: "100% money-back guarantee",
     guaranteeText:
       "If there is no official dealer data for the car, we refund the full amount. If you then order the full audit, the €24.99 is credited to the audit price.",
     cta: "Order dealer data · €24.99",
   },
   caseStudy: {
-    kicker: "Most striking case · VW",
+    kicker: "Our most striking case · VW",
     title: "From damage in Finland to a sale in Latvia",
     facts: "12+ sources · 8 h of research · 2 days",
-    badges: ["Leasing cancelled", "EKII grant cancelled"],
+    badges: ["Lease cancelled", "EKII grant cancelled"],
     lead: "PROVIN rebuilt the whole history timeline without standard history reports.",
     damageAria: "Damage",
     phases: [
@@ -280,7 +280,7 @@ const EN: HomeV6Copy = {
         },
         {
           title: "Leasing ends",
-          text: "On 5.11.2024 the registry status changes to dealer stock.",
+          text: "On 5 November 2024 the register status changes to dealer stock.",
           status: "Dealer stock",
         },
         {
@@ -291,7 +291,7 @@ const EN: HomeV6Copy = {
       ],
       [
         { title: "The car goes to an auction platform", text: "13 days after the listing.", status: "At auction" },
-        { title: "Use type - private", text: "The car is sold and back on the road.", status: "Private" },
+        { title: "Use type: private", text: "The car is sold and back on the road.", status: "Private" },
         {
           title: "Deregistered due to damage",
           text: "After 9 days. Driving ban. The insurer deregisters the car backdated to the last day of use.",
@@ -302,13 +302,13 @@ const EN: HomeV6Copy = {
           text: "This usually happens when a repair does not pay off and the owner is paid out.",
           status: "Owned by insurer",
         },
-        { title: "Notice of ownership transfer", text: "In the Finnish registry.", status: "Transfer" },
-        { title: "Roadworthiness test expires", text: "No new test is carried out.", status: "No valid test" },
+        { title: "Notice of ownership transfer", text: "In the Finnish register.", status: "Transfer" },
+        { title: "Technical inspection expires", text: "No new inspection is carried out.", status: "No valid inspection" },
       ],
       [
         {
           title: "Listing in Latvia",
-          text: "From 73,500 to ~76,000 km - only +2,755 km in 14 months, the pace dropped by ~90 %.",
+          text: "From 73,500 to ~76,000 km - only +2,755 km in 14 months, the pace dropped by ~90%.",
           status: "For sale, unregistered",
         },
         { title: "Price reduced", text: "-€600", status: "For sale, unregistered" },
@@ -319,13 +319,13 @@ const EN: HomeV6Copy = {
         { title: "Price reduced", text: "-€1,000. Total -€2,600.", status: "For sale, unregistered" },
         {
           title: "First registration in Latvia",
-          text: "For 8 months the car was sold while still unregistered in Latvia.",
+          text: "For 8 months the car was offered for sale without being registered in Latvia.",
           status: "Registered in Latvia",
         },
       ],
       [
         {
-          title: "Order - official dealer data",
+          title: "Order: official dealer data",
           text: "The system automatically raises a red flag. After agreeing with the client we continue as a full audit.",
           status: "Research",
         },
@@ -336,7 +336,7 @@ const EN: HomeV6Copy = {
         },
         {
           title: "Written confirmation from a reliable source",
-          text: "Sold at auction as damaged, airbags deployed. Result: the client cancels the leasing and the EKII grant.",
+          text: "Sold at auction as damaged, airbags deployed. Result: the client cancels the lease and the EKII grant.",
           status: "Confirmed",
         },
       ],
@@ -344,10 +344,10 @@ const EN: HomeV6Copy = {
     panelOdometer: "Odometer",
     panelPrice: "Last known price",
     panelStatus: "Status",
-    legend: ["Report A: no damage", "Report B: damage, extent not stated", "Registry: deregistered"],
+    legend: ["Report A: no damage", "Report B: damage, extent not stated", "Register: deregistered"],
     confirmedStrong: "Confirmed in writing:",
     confirmedText:
-      "sold at auction as damaged, airbags deployed. At the last moment the client cancelled an already arranged leasing and the EKII grant.",
+      "sold at auction as damaged, airbags deployed. At the last moment the client cancelled an already arranged lease and the EKII grant.",
   },
 };
 
@@ -371,9 +371,9 @@ const RU: HomeV6Copy = {
   caseStudy: {
     kicker: "Самый яркий случай · VW",
     title: "От повреждения в Финляндии до продажи в Латвии",
-    facts: "12+ источников · 8 ч проверки · 2 дня",
+    facts: "12+ источников · 8 ч исследования · 2 дня",
     badges: ["Лизинг отменён", "Поддержка EKII отменена"],
-    lead: "PROVIN восстановил всю хронологию истории без стандартных отчётов.",
+    lead: "PROVIN восстановил всю хронологию без стандартных отчётов об истории.",
     damageAria: "Повреждение",
     phases: [
       { title: "Финляндия", subtitle: "Обычная эксплуатация" },
@@ -391,7 +391,7 @@ const RU: HomeV6Copy = {
         },
         {
           title: "Лизинг заканчивается",
-          text: "5.11.2024 в регистре статус - складской запас продавца.",
+          text: "5.11.2024 в реестре статус - складской запас продавца.",
           status: "Склад продавца",
         },
         {
@@ -413,7 +413,7 @@ const RU: HomeV6Copy = {
           text: "Обычно так бывает, когда ремонт невыгоден и владельцу выплачивают деньги.",
           status: "У страховщика",
         },
-        { title: "Уведомление о передаче права собственности", text: "В регистре Финляндии.", status: "Передача" },
+        { title: "Уведомление о передаче права собственности", text: "В реестре Финляндии.", status: "Передача" },
         { title: "Срок техосмотра истекает", text: "Новый техосмотр не проводится.", status: "Без техосмотра" },
       ],
       [
@@ -430,7 +430,7 @@ const RU: HomeV6Copy = {
         { title: "Цена снижена", text: "-1 000 €. Всего -2 600 €.", status: "В продаже, не зарегистрирован" },
         {
           title: "Первая регистрация в Латвии",
-          text: "8 месяцев авто продавали, ещё не зарегистрированным в Латвии.",
+          text: "8 месяцев авто продавали без регистрации в Латвии.",
           status: "Зарегистрирован в Латвии",
         },
       ],
@@ -455,7 +455,7 @@ const RU: HomeV6Copy = {
     panelOdometer: "Одометр",
     panelPrice: "Последняя известная цена",
     panelStatus: "Статус",
-    legend: ["Отчёт A: повреждений нет", "Отчёт B: повреждение, объём не указан", "Регистр: снят с учёта"],
+    legend: ["Отчёт A: повреждений нет", "Отчёт B: повреждение, объём не указан", "Реестр: снят с учёта"],
     confirmedStrong: "Подтверждено письменно:",
     confirmedText:
       "продан на аукционе как повреждённый, сработали подушки безопасности. В последний момент клиент отменил уже оформленный лизинг и поддержку EKII.",
@@ -466,7 +466,7 @@ const DE: HomeV6Copy = {
   dealer: {
     badge: "Neu",
     kicker: "Datenbericht · 24,99\u00a0€",
-    title: "Offizieller Händlerdaten-Bericht",
+    title: "Bericht mit offiziellen Händlerdaten",
     lead: "Offiziell erfasste Kilometerstände, Wartungen und Reparaturen nach Jahren - mit Kilometerkurve und Ölwechselintervallen.",
     chartNote: "Beispiel · Volkswagen Passat B8 · 2018",
     chartAria: "Kilometerkurve aus offiziellen Händlereinträgen",
@@ -480,7 +480,7 @@ const DE: HomeV6Copy = {
     cta: "Händlerdaten bestellen · 24,99\u00a0€",
   },
   caseStudy: {
-    kicker: "Der krasseste Fall · VW",
+    kicker: "Der markanteste Fall · VW",
     title: "Vom Schaden in Finnland bis zum Verkauf in Lettland",
     facts: "12+ Quellen · 8 h Recherche · 2 Tage",
     badges: ["Leasing storniert", "EKII-Förderung storniert"],
@@ -520,12 +520,12 @@ const DE: HomeV6Copy = {
           status: "Fahrverbot",
         },
         {
-          title: "Halter - eine Versicherung",
+          title: "Halter: eine Versicherungsgesellschaft",
           text: "Das passiert meist, wenn sich eine Reparatur nicht lohnt und der Halter ausgezahlt wird.",
           status: "Im Besitz des Versicherers",
         },
         { title: "Mitteilung über Eigentumsübertragung", text: "Im finnischen Register.", status: "Übertragung" },
-        { title: "Hauptuntersuchung läuft ab", text: "Eine neue Prüfung findet nicht statt.", status: "Ohne HU" },
+        { title: "Hauptuntersuchung läuft ab", text: "Eine neue HU erfolgt nicht.", status: "Ohne HU" },
       ],
       [
         {
@@ -541,14 +541,14 @@ const DE: HomeV6Copy = {
         { title: "Preis gesenkt", text: "-1.000 €. Insgesamt -2.600 €.", status: "Im Verkauf, nicht zugelassen" },
         {
           title: "Erstzulassung in Lettland",
-          text: "8 Monate wurde das Auto verkauft, ohne in Lettland zugelassen zu sein.",
+          text: "8 Monate lang wurde das Auto angeboten, ohne in Lettland zugelassen zu sein.",
           status: "In Lettland zugelassen",
         },
       ],
       [
         {
           title: "Bestellung - offizielle Händlerdaten",
-          text: "Das System zeigt automatisch eine rote Flagge. Nach Absprache mit dem Kunden machen wir als volles Audit weiter.",
+          text: "Das System meldet automatisch ein Warnsignal. Nach Absprache mit dem Kunden setzen wir die Prüfung als volles Audit fort.",
           status: "Recherche",
         },
         {

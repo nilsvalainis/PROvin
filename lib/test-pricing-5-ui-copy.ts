@@ -142,8 +142,8 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   checkoutErrorFallback: "Could not start the payment.",
   packageTabsAria: "Choose a package",
   packageAriaSuffix: " package",
-  vinPlaceholder: "Enter VIN code",
-  vinAria: "Enter a VIN code or licence plate number",
+  vinPlaceholder: "Enter the VIN",
+  vinAria: "Enter a VIN or licence plate number",
   listingPlaceholder: "Paste the listing link",
   listingAria: "Paste the listing link",
   featureIconRowAria: "PROVIN audit service benefits",
@@ -166,15 +166,15 @@ const TP5_UI_COPY_EN: Tp5UiCopy = {
   dealerBrandsClose: "Close",
   dealerCoverageFullTitle: "Full service history",
   dealerCoverageFullBody:
-    "Complete official dealership records: dates, mileage, work performed, and service location.",
+    "Complete official dealer records: dates, mileage, work carried out and service location.",
   dealerCoverageWorkshopTitle: "Workshop remarks",
   dealerCoverageWorkshopBody:
     "Recalls, warranty work, and workshop notes. Where a note lines up with the service schedule, that often indicates a service was carried out.",
   dealerCoverageLimitedTitle: "Limited coverage",
   dealerCoverageLimitedBody:
-    "Data is returned in only a share of cases. Results depend on the individual vehicle and manufacturer system availability.",
+    "Data is available in only some cases. Results depend on the individual vehicle and manufacturer system availability.",
   dealerRefundBanner:
-    "100% Refund guarantee.",
+    "100% money-back guarantee.",
   dealerRefundInfoBody:
     "Full refund if no records exist in the dealer database. The service is considered fulfilled if at least one odometer reading is found. Available data volume depends on officially recorded history.",
   dealerRefundInfoAria: "Refund conditions",
@@ -221,7 +221,7 @@ const TP5_UI_COPY_DE: Tp5UiCopy = {
     "Daten liegen nur in einem Teil der Fälle vor. Das hängt vom konkreten Fahrzeug und vom System des Herstellers ab.",
   dealerRefundBanner: "100 % Geld-zurück-Garantie.",
   dealerRefundInfoBody:
-    "Volle Rückerstattung, wenn in der Händlerdatenbank kein Eintrag vorliegt. Die Leistung gilt als erbracht, sobald mindestens ein Kilometerstand gefunden wurde. Der Umfang richtet sich nach der offiziell erfassten Historie.",
+    "Volle Erstattung, wenn in der Händlerdatenbank kein Eintrag vorliegt. Die Leistung gilt als erbracht, sobald mindestens ein Kilometerstand gefunden wurde. Der Umfang richtet sich nach der offiziell erfassten Historie.",
   dealerRefundInfoAria: "Bedingungen der Rückerstattung",
   newBadge: "Neu",
   perReport: "pro Bericht",

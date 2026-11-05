@@ -1,20 +1,20 @@
 {
   "Thanks": {
     "title": "Danke! Zahlung eingegangen",
-    "body": "Ihre Bestellung ist registriert. Sie erhalten in Kürze eine Bestätigung per E-Mail. Wir beginnen mit der Datensammlung und der Analyse.",
+    "body": "Ihre Bestellung ist eingegangen. In Kürze erhalten Sie eine Bestätigung per E-Mail, anschließend beginnt unser Team mit der Datenerhebung und Analyse.",
     "sessionLabel": "Sitzungs-ID:",
     "downloadInvoice": "Rechnung herunterladen (PDF)",
-    "invoiceAttachedTitle": "Die Rechnung liegt der E-Mail bei",
-    "invoiceAttachedBody": "Öffnen Sie die Zahlungsbestätigung. Die Rechnungs-PDF ist angehängt. Dieser Link funktioniert auf diesem Gerät nicht mehr.",
+    "invoiceAttachedTitle": "Die Rechnung finden Sie im Anhang der E-Mail",
+    "invoiceAttachedBody": "Öffnen Sie die E-Mail mit der Zahlungsbestätigung. Die Rechnung ist als PDF angehängt. Dieser Link ist auf diesem Gerät nicht mehr gültig.",
     "invoiceAttachedHome": "Zur Startseite",
     "back": "Zur Startseite",
     "steps": [
       {
-        "title": "Zahlung erhalten",
+        "title": "Zahlung eingegangen",
         "note": "jetzt"
       },
       {
-        "title": "Prüfung und Analyse",
+        "title": "Recherche und Analyse",
         "note": "24-72 Std."
       },
       {

@@ -10,13 +10,13 @@
     "checkoutProvinSelectProductName": "PROVIN SELECT\nStrategische Beratung",
     "checkoutProvinSelectProductDesc": "Individuelle Beratung für die Kaufentscheidung",
     "notFoundTitle": "Seite nicht gefunden",
-    "notFoundHome": "PROVIN Startseite",
+    "notFoundHome": "PROVIN-Startseite",
     "orderBarCta": "Audit bestellen · 99,99 €",
     "notFoundLead": "Der Link hat sich möglicherweise geändert. Starten Sie auf einer dieser Seiten:",
     "notFoundHeading": "Diese Seite wurde nicht gefunden.",
     "notFoundLinkHome": "Startseite",
     "notFoundLinkServices": "Leistungen",
-    "notFoundLinkFreeCheck": "Kostenlose VIN-Prüfung"
+    "notFoundLinkFreeCheck": "Kostenloser VIN-Check"
   },
   "Blogs": {
     "comingSoon": "DEMNÄCHST",
@@ -26,17 +26,17 @@
     "backToList": "← Alle Beiträge",
     "lvOnlyNote": "Der vollständige Text ist auf Lettisch verfügbar.",
     "commentsTitle": "Kommentare",
-    "commentsEmpty": "Noch keine Kommentare. Schreiben Sie den ersten.",
+    "commentsEmpty": "Noch ist es still hier. Schreiben Sie den ersten Kommentar.",
     "commentName": "Name",
     "commentBody": "Kommentar",
-    "commentSubmit": "Senden",
+    "commentSubmit": "Veröffentlichen",
     "commentSubmitting": "Wird gesendet…",
     "commentSuccess": "Kommentar veröffentlicht.",
-    "commentError": "Senden fehlgeschlagen. Bitte erneut versuchen.",
+    "commentError": "Senden fehlgeschlagen. Bitte versuchen Sie es erneut.",
     "tocLabel": "Inhalt",
     "ctaTitle": "Vor dem Kauf - Fahrzeughistorie prüfen",
     "ctaBody": "Daten aus mehreren Quellen, Inseratsanalyse und Beratung in einem Audit.",
-    "ctaButton": "VIN-Prüfung bestellen"
+    "ctaButton": "VIN-Check bestellen"
   },
   "SiteRail": {
     "navAria": "Hauptbereiche",
@@ -46,18 +46,18 @@
     "provinSelect": "Beratung",
     "kasSlapjasAizProvin": "Über PROVIN",
     "buj": "FAQ",
-    "b2b": "Für Händler",
-    "b2bLoginAria": "Für Händler: anmelden"
+    "b2b": "Für Partner",
+    "b2bLoginAria": "Für Partner: Anmeldung"
   },
   "Breadcrumbs": {
-    "navAria": "Brotkrumen",
+    "navAria": "Breadcrumb-Navigation",
     "home": "Start",
     "services": "Leistungen",
     "faq": "FAQ",
     "about": "Über PROVIN",
     "blogs": "Blog",
     "vinCheck": "VIN-Check",
-    "partner": "Für Händler",
+    "partner": "Für Partner",
     "terms": "Nutzungsbedingungen",
     "privacy": "Datenschutzerklärung"
   }

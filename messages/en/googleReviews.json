@@ -8,8 +8,8 @@
     "next": "Next review",
     "kpiRating": "Google rating",
     "kpiCount": "reviews, all 5 ★",
-    "kpiAudits": "audits done",
-    "kpiSources": "data sources in one audit",
+    "kpiAudits": "audits completed",
+    "kpiSources": "data sources per audit",
     "allReviews": "All Google reviews",
     "starsAria": "5 out of 5"
   }

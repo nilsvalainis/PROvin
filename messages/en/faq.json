@@ -2,57 +2,57 @@
   "Faq": {
     "title": "Frequently asked questions (FAQ)",
     "homeEyebrow": "FAQ",
-    "homeSeeAll": "All →",
+    "homeSeeAll": "See all →",
     "items": [
       {
         "id": "what-is-provin-audit",
         "q": "What is a PROVIN audit?",
-        "a": "PROVIN is your consultant and private detective in the car-buying process. We do not simply hand you a dry data printout. We combine information from international paid databases, official dealer service history and European auction photo archives, and add what matters most: listing analysis and model-specific technical risk assessment."
+        "a": "PROVIN is your adviser and private investigator when you buy a car. We don't just hand you a dry data printout. We combine information from international paid databases, official dealer service histories and European auction photo archives, then add what matters most: an analysis of the listing and an assessment of the technical risks of that specific model."
       },
       {
         "id": "vs-standard-pdf",
         "q": "How is PROVIN different from a standard vehicle history report?",
-        "a": "A standard automated report only provides raw system data (often incomplete), which is hard for a buyer to navigate or to spot patterns in. We do not simply forward data: we analyse and compare it. We connect sources, read between the lines of the listing, assess typical weak points of the specific engine and gearbox, and provide a personal phone consultation to walk through every pro and con."
+        "a": "A standard automated report gives you only raw system data (often incomplete), which makes it hard for a buyer to find their way around or spot connections. We don't simply pass the data on: we analyse and cross-check it. We connect the sources, read between the lines of the listing, assess the known weak points of the specific engine and gearbox, and give you a personal phone consultation to talk through all the pros and cons."
       },
       {
         "id": "mini-vs-audits",
         "q": "Which audit should I choose: PROVIN MINI or PROVIN AUDITS?",
-        "a": "PROVIN MINI (€39.99) is intended for cars that have already been used in Latvia for a longer time. It is a consultation and a check of local registers: CSDD data, insurer data, technical inspection (TA) history, listing analysis and in-person viewing tips. MINI does not include paid databases, foreign registers, dealer or auction data.\n\nPROVIN AUDITS (€99.99) is an in-depth investigation for cars imported from abroad. It includes the full MINI package plus at least 2, usually 3 paid history checks (for example carVertical, autoDNA or Cebia), origin-country registers and official dealer system data where available for the specific car, and European auction photo archives, so you can see the real condition and mileage before repairs and import."
+        "a": "PROVIN MINI (€39.99) is designed for cars that have been on the road in Latvia for some time. It combines a consultation with checks of local registers: CSDD data, insurer data, technical inspection (TA) history, listing analysis and tips for viewing the car in person. MINI does not include paid databases, foreign registers, dealer or auction data.\n\nPROVIN AUDITS (€99.99) is an in-depth investigation for cars imported from abroad. It includes everything in MINI plus at least 2, usually 3 paid history checks (for example carVertical, autoDNA or Cebia), origin-country registers and official dealer system data where available for the specific car, as well as European auction photo archives that reveal the car's real condition and mileage before it was repaired and imported."
       },
       {
         "id": "audits-paid-reports",
         "q": "How many paid history checks are included in PROVIN AUDITS?",
-        "a": "Every PROVIN AUDITS includes at least 2, usually 3 paid history checks. A typical set is carVertical, autoDNA and official dealer service data. Dealer data exists only for certain manufacturers, so it is often missing. If a source has no data on your car, we look for records elsewhere, for example Carfax or an origin-country register. We choose the sources based on the car's origin and make to get the most useful data."
+        "a": "Every PROVIN AUDITS order includes at least 2, usually 3 paid history checks. A typical set is carVertical, autoDNA and official dealer service data. Dealer data is available only for certain manufacturers, so it is often missing. If a source has no data on your car, we look for records elsewhere, for example Carfax or the register in the country of origin. We choose the sources ourselves, based on the car's origin and make, to get the most useful data."
       },
       {
         "id": "extra-reports",
         "q": "Can I order additional reports, for example for a car from Italy, the UK or Japan?",
-        "a": "Yes. In some countries (for example Italy, Austria, the UK, Japan, Korea or the UAE) the most useful data is only in specific paid registers. If that is your case, we will tell you which additional report we recommend and what it costs. It is optional and never ordered without your consent and payment; the audit is complete without it too."
+        "a": "Yes. In some countries (for example Italy, Austria, the UK, Japan, Korea or the UAE) the most useful data is held only in specific paid registers. If that applies to your car, we will tell you which additional report we recommend and what it costs. It is optional and is never ordered without your consent and payment; the audit is complete without it."
       },
       {
         "id": "dealer-data",
-        "q": "What is Official dealer service history data?",
-        "a": "A standalone product (€24.99): official dealer or manufacturer service records. This report contains only data from official dealer databases. Delivery within 24 hours. If the official dealer database holds no records, we refund the full amount."
+        "q": "What is official dealer service history data?",
+        "a": "It is a standalone product (€24.99): official dealer or manufacturer service history records. This report contains only data from official dealer databases. Delivery within 24 hours. If the official dealer database holds no records, you get a 100% refund."
       },
       {
         "id": "delivery-time",
-        "q": "How long does the report take?",
-        "a": "Standard turnaround is 24-72 hours after payment is received. Because we check and analyse every car manually, we take care to examine the details thoroughly. As soon as the audit is ready, we email it to you and arrange a short phone consultation."
+        "q": "How long does it take to get the report?",
+        "a": "Standard turnaround is 24-72 hours after payment is received. Because we check and analyse every car by hand, we take the time to examine every detail thoroughly. As soon as the audit is ready, we email it to you and arrange a short phone consultation."
       },
       {
         "id": "what-to-provide",
         "q": "What do I need to provide when ordering?",
-        "a": "You only need the car's VIN or licence plate number, plus your email and phone. If you have a listing link, add it as well: the listing photos and the seller's description give us a lot of valuable material for the analysis."
+        "a": "All you need is the car's VIN or licence plate number, plus your email address and phone number. If you have a link to the listing, be sure to include it: the listing photos and the seller's description give us a great deal of valuable material for our analysis."
       },
       {
         "id": "data-completeness",
         "q": "Is vehicle history data always 100% complete?",
-        "a": "Let's be honest: there is no single \"perfect\" database in the world, and neither honest nor dishonest sellers put everything on paper. Our job is to pull every available thread together and flag contradictions when they appear. A PROVIN audit gives you a major advantage in negotiations and protects you from an obvious lemon, but a physical workshop diagnosis before purchase is always a sensible final step."
+        "a": "Let's be honest: there is no single \"perfect\" database anywhere in the world, and neither honest nor cunning sellers put everything on paper. Our job is to pull together every available thread and point out any contradictions. A PROVIN audit gives you a strong position in negotiations and protects you from an obvious rip-off, but having the car physically inspected at a workshop before you buy is always a sensible final step."
       }
     ],
     "homeTitle": "Frequently asked questions",
-    "homeSub": "No answer? Write to us and we will reply personally.",
+    "homeSub": "Can't find your answer? Write to us and we'll reply personally.",
     "homeAll": "All questions",
-    "homeEmail": "E-mail"
+    "homeEmail": "Email"
   }
 }

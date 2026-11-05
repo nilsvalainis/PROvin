@@ -1,10 +1,10 @@
 {
   "Footer": {
-    "body": "Standard vehicle history reports show only fragments of the past. PROVIN is a manual audit of a used car before you buy: data from several VIN sources, the seller's listing and that model's weak points in one well-founded conclusion.",
+    "body": "Standard vehicle history reports show only fragments of the past. PROVIN is a manual audit of a used car before you buy: data from several VIN sources, the seller's listing and the weak points of that specific model, brought together in one well-founded conclusion.",
     "legalRegionLabel": "Legal information and links",
     "contacts": "Contacts",
     "contactsHint": "Questions? Get in touch.",
-    "emailCta": "Send email",
+    "emailCta": "Send an email",
     "phoneCta": "29502039",
     "phoneAria": "Call 29502039",
     "whatsapp": "WhatsApp",
@@ -14,7 +14,7 @@
     "legalInlinePrefixJuridiska": "Legal details:",
     "legalInlinePrefixPakalpojums": "Service provider:",
     "serviceProviderDisclosureSummary": "Service provider",
-    "companyLegalSubject": "Legal service provider",
+    "companyLegalSubject": "Legal entity",
     "companyRegNo": "Registration number",
     "companyLegalAddress": "Legal address",
     "companyIncompleteDev": "Developer note: set NEXT_PUBLIC_COMPANY_LEGAL_NAME, NEXT_PUBLIC_COMPANY_REG_NO and NEXT_PUBLIC_COMPANY_LEGAL_ADDRESS (.env or hosting).",
@@ -26,7 +26,7 @@
     "navFaq": "FAQ",
     "navAbout": "About PROVIN",
     "navBlog": "Blog",
-    "emailShort": "E-mail",
+    "emailShort": "Email",
     "phoneLabel": "Phone:",
     "pagesLabel": "Pages"
   }
