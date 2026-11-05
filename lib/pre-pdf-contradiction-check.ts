@@ -18,7 +18,12 @@ import {
   collectUnifiedMileageRows,
   prepareUnifiedMileageDisplayRows,
 } from "@/lib/unified-mileage";
-import { detectTotalLossFromPdfInput, headerMentionsTotalLoss } from "@/lib/total-loss-detect";
+import {
+  detectTotalLossFromPdfInput,
+  findTotalLossCommentMentions,
+  headerMentionsTotalLoss,
+  totalLossCommentFieldsFromInput,
+} from "@/lib/total-loss-detect";
 import {
   buildPdfReportSummaryTiles,
   type PdfSummaryInput,
@@ -26,6 +31,7 @@ import {
 } from "@/lib/pdf-report-summary";
 import { countVendorOwnershipChangeEvents } from "@/lib/owner-count-synthesis";
 import type { FactCheckFlag } from "@/lib/unit-facts/types";
+import { checkInternalNoteLeaks, type ClientPrintedTextField } from "@/lib/pre-pdf-internal-note-check";
 import { buildVehicleLifecycleEvents, type LifecycleEvent } from "@/lib/vehicle-lifecycle-timeline";
 
 export type PrePdfContradictionInput = {
@@ -33,6 +39,8 @@ export type PrePdfContradictionInput = {
   tiles?: PdfSummaryTile[];
   overrides?: OdometerAnomalyOverride[] | null;
   lifecycleEvents?: LifecycleEvent[];
+  /** Klienta PDF drukātie teksta lauki (plain): C10 iekšējo piezīmju pārbaudei. */
+  clientTextFields?: readonly ClientPrintedTextField[] | null;
 };
 
 function flag(
@@ -90,7 +98,7 @@ function mileageRowsFromInput(input: PdfSummaryInput) {
 }
 
 /**
- * C1-C4, C8, C9 un rollback pret galveni. Operatoram rāda pirms PDF.
+ * C1-C4, C8 (arī komentāru brīdinājums), C9, C10 un rollback pret galveni. Operatoram rāda pirms PDF.
  */
 export function checkPrePdfContradictions(input: PrePdfContradictionInput): FactCheckFlag[] {
   const tiles = input.tiles ?? buildPdfReportSummaryTiles(input.summaryInput);
@@ -190,6 +198,20 @@ export function checkPrePdfContradictions(input: PrePdfContradictionInput): Fact
     );
   }
 
+  if (!loss.found) {
+    // Tikai komentārā (operatora / AI) minēts zaudējums: kartīti neieslēdz, bet operators to redz.
+    const commentFields = input.clientTextFields ?? totalLossCommentFieldsFromInput(input.summaryInput);
+    for (const m of findTotalLossCommentMentions(commentFields)) {
+      flags.push(
+        flag(
+          "c8_total_loss_comment",
+          `Komentārā „${m.label}” minēts norakstījums vai pilnīgs zaudējums („${m.quote}”), bet avotu datos tas nav - pārbaudi.`,
+          `${m.label}: ${m.quote}`,
+        ),
+      );
+    }
+  }
+
   const changeCount = countVendorOwnershipChangeEvents(input.summaryInput.manualVendorBlocks);
   const lvEvents = (input.summaryInput.csddForm?.ownerRegistrationEvents ?? []).filter(
     (r) => r.date.trim() || r.label.trim(),
@@ -203,6 +225,8 @@ export function checkPrePdfContradictions(input: PrePdfContradictionInput): Fact
       ),
     );
   }
+
+  flags.push(...checkInternalNoteLeaks(input.clientTextFields));
 
   flags.sort((a, b) => (a.level === b.level ? 0 : a.level === "E" ? -1 : 1));
   return flags;
