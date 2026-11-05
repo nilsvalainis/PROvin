@@ -8,6 +8,10 @@ import { getB2bPartnerById, markB2bPartnerAdminSeen } from "@/lib/b2b-partner-st
 import { requireAdminPage } from "@/lib/admin-auth";
 import { AdminB2bPartnerWallet } from "@/components/admin/AdminB2bPartnerWallet";
 import { AdminB2bPartnerEmbed } from "@/components/admin/AdminB2bPartnerEmbed";
+import { AdminBusinessPogaCard } from "@/components/admin/AdminBusinessPogaCard";
+import { parseBusinessPogaPeriod } from "@/lib/business-poga-period";
+import { loadBusinessPogaStats } from "@/lib/business-poga-stats-load";
+import { rigaDate } from "@/lib/vin-check-stats";
 import { listPartnerBusinessSales } from "@/lib/business-partner-sales";
 import { readB2bWallet } from "@/lib/b2b-wallet-store";
 import { buildB2bWalletView } from "@/lib/b2b-wallet-view";
@@ -15,7 +19,10 @@ import { loadCreditsForPartners } from "@/lib/b2b-partner-dashboard";
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ id: string }> };
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
 export async function generateMetadata({ params }: Props) {
   await requireAdminPage();
@@ -24,7 +31,7 @@ export async function generateMetadata({ params }: Props) {
   return { title: partner ? partner.companyName : "Partneris" };
 }
 
-export default async function AdminPartnerDetailPage({ params }: Props) {
+export default async function AdminPartnerDetailPage({ params, searchParams }: Props) {
   await requireAdminPage();
   const { id } = await params;
   if (!isSafeB2bPartnerId(id)) notFound();
@@ -34,6 +41,8 @@ export default async function AdminPartnerDetailPage({ params }: Props) {
     await markB2bPartnerAdminSeen(id);
   }
   const partner = toPublicPartner(record);
+  const pogaPeriod = parseBusinessPogaPeriod((await searchParams) ?? {}, rigaDate());
+  const pogaStats = record.businessEmbed.enabled ? await loadBusinessPogaStats(pogaPeriod, id) : null;
   const [wallet, legacyById, businessSales] = await Promise.all([
     readB2bWallet(id),
     loadCreditsForPartners([{ id, dealerEnabled: true }]),
@@ -66,6 +75,16 @@ export default async function AdminPartnerDetailPage({ params }: Props) {
         initialOverrides={record.walletPrices}
         initialHidden={record.walletHiddenProducts}
       />
+      {pogaStats ? (
+        <div className="mt-6">
+          <AdminBusinessPogaCard
+            view={pogaStats}
+            period={pogaPeriod}
+            basePath={`/admin/partneri/${partner.id}`}
+            partnerLabel={record.businessEmbed.domains[0] ?? partner.companyName}
+          />
+        </div>
+      ) : null}
       <AdminB2bPartnerEmbed partnerId={partner.id} initial={record.businessEmbed} sales={businessSales} />
       <AdminB2bPartnerEditForm partner={partner} legacyCredits={legacyCredits} />
     </div>
