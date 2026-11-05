@@ -1,7 +1,8 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { contactMailtoHref, whatsappWebUrl } from "@/lib/contact";
-import { CompanyLegalOneLine } from "@/components/CompanyLegalOneLine";
+import { LegalReveal, companyLegalLine } from "@/components/LegalReveal";
+import { getCompanyLegal } from "@/lib/company";
 import { FooterWordmarkReveal } from "@/components/FooterWordmarkReveal";
 import { renderProvinText } from "@/lib/provin-wordmark";
 import { homeFooterColumnClass } from "@/lib/home-layout";
@@ -161,9 +162,7 @@ export async function Footer({ variant = "public" }: { variant?: "public" | "b2b
             </p>
             <p className="home-footer-ink">{renderProvinText(t("gdpr", { year }))}</p>
           </div>
-          <div className="[&_p]:mx-0 [&_p]:max-w-none [&_p]:text-left [&_p]:text-[11.5px] [&_p]:leading-relaxed [&_p]:text-zinc-600">
-            <CompanyLegalOneLine omitPrefix variant="pakalpojums" tone="dark" />
-          </div>
+          <LegalReveal line={companyLegalLine(getCompanyLegal(), t("companyRegNo"))} tone="dark" />
         </div>
 
         <FooterWordmarkReveal />

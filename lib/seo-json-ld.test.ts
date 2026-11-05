@@ -20,10 +20,12 @@ describe("seo json-ld", () => {
     });
   });
 
-  it("builds Organization as LocalBusiness with contact and sameAs", () => {
+  it("builds Organization with contact and sameAs, without private legal details", () => {
     const org = buildOrganizationJsonLd("lv", "VIN koda pārbaude");
-    expect(org["@type"]).toEqual(expect.arrayContaining(["Organization", "LocalBusiness"]));
-    expect(org.address).toMatchObject({ "@type": "PostalAddress", addressCountry: "LV" });
+    expect(org["@type"]).toBe("Organization");
+    expect(org).not.toHaveProperty("legalName");
+    expect(org).not.toHaveProperty("address");
+    expect(JSON.stringify(org)).not.toMatch(/Valainis|09118711109|Jana iela/);
     expect(org).not.toHaveProperty("telephone");
     expect(org.email).toBeTruthy();
     expect(org.sameAs.length).toBeGreaterThan(0);

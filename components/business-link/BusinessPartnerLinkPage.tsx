@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { formatClientLinkAmount } from "@/lib/client-link";
 import type { BusinessLinkCar } from "@/lib/business-link";
+import { LegalReveal } from "@/components/LegalReveal";
 import { followStripeCheckoutUrl, trackMetaLead } from "@/lib/meta-pixel";
 import { isValidVin } from "@/lib/order-field-validation";
 
@@ -16,7 +17,8 @@ export type BusinessPartnerPageView = {
   car: BusinessLinkCar;
   partnerName: string;
   partnerLogoOnDarkUrl: string;
-  legal: { brand: string; legalName: string; regNo: string; legalAddress: string; isComplete: boolean };
+  /** Pakalpojuma sniedzēja rekvizīti (paslēpti zem «PROVIN»). */
+  legalLine: string;
 };
 
 const SERVICES: ReadonlyArray<readonly [string, string]> = [
@@ -300,20 +302,14 @@ export function BusinessPartnerLinkPage({ token, view }: { token: string; view: 
             <Lock className="h-3.5 w-3.5" aria-hidden />
             Droša apmaksa ar Stripe
           </p>
-          <address className="mt-6 hidden text-center text-[10px] not-italic leading-relaxed opacity-45 lg:block">
-            {view.legal.brand}
-            {view.legal.isComplete ? ` · ${view.legal.legalName} · Reģ. nr. ${view.legal.regNo} · ${view.legal.legalAddress}` : null}
-          </address>
+          <LegalReveal line={view.legalLine} tone="light" align="center" className="mt-6 hidden lg:block" />
         </form>
       </section>
 
       {/* Telefonā pakalpojumi zem formas */}
       <section className="px-4 pb-6 pt-5 lg:hidden">
         <Services className="" />
-        <address className="mt-6 text-center text-[10px] not-italic leading-relaxed opacity-45">
-          {view.legal.brand}
-          {view.legal.isComplete ? ` · ${view.legal.legalName} · Reģ. nr. ${view.legal.regNo} · ${view.legal.legalAddress}` : null}
-        </address>
+        <LegalReveal line={view.legalLine} tone="dark" align="center" className="mt-6" />
       </section>
     </div>
   );

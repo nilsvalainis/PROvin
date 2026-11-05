@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
+import { LegalReveal, companyLegalLine } from "@/components/LegalReveal";
 import { BusinessLinkForm } from "@/components/business-link/BusinessLinkForm";
 import { BusinessPartnerLinkPage } from "@/components/business-link/BusinessPartnerLinkPage";
 import { getB2bPartnerById } from "@/lib/b2b-partner-store";
@@ -15,7 +16,7 @@ import {
 import { readBusinessLinkByToken } from "@/lib/business-link-store";
 import { getClientIpFromHeaders } from "@/lib/client-ip";
 import { hashClientLinkToken } from "@/lib/client-link-crypto";
-import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
+import { getCompanyLegal } from "@/lib/company";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
@@ -27,19 +28,10 @@ export const metadata: Metadata = {
 };
 
 function LegalFooter() {
-  const legal = getCompanyLegal();
-  const brand = getCompanyPublicBrand();
   return (
-    <address className="mx-auto max-w-[420px] px-4 pb-10 text-center text-[10px] not-italic leading-relaxed text-[#c7c7cc]">
-      <p>{brand}</p>
-      {legal.isComplete ? (
-        <>
-          <p className="mt-0.5">{legal.legalName}</p>
-          <p>Reģ. nr. {legal.regNo}</p>
-          <p>{legal.legalAddress}</p>
-        </>
-      ) : null}
-    </address>
+    <div className="mx-auto max-w-[420px] px-4 pb-10">
+      <LegalReveal line={companyLegalLine(getCompanyLegal())} tone="light" align="center" />
+    </div>
   );
 }
 
@@ -82,7 +74,7 @@ export default async function BusinessLinkPage({ params }: { params: Promise<{ t
           car: record.car ?? parseBusinessLinkCar({}),
           partnerName: partner.businessEmbed.displayName || partner.companyName,
           partnerLogoOnDarkUrl: partner.businessEmbed.logoOnDarkUrl,
-          legal: { brand: getCompanyPublicBrand(), ...legal },
+          legalLine: companyLegalLine(legal),
         }}
       />
     );
