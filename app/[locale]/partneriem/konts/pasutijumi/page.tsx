@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { B2bPartnerArchive } from "@/components/b2b/B2bPartnerArchive";
+import { B2bPartnerBusinessPoga } from "@/components/b2b/B2bPartnerBusinessPoga";
 import { B2bPartnerWalletLedger } from "@/components/b2b/B2bPartnerWalletLedger";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -15,6 +16,7 @@ export default function PartneriemOrdersPage() {
   return (
     <div className="flex flex-col gap-12 sm:gap-14">
       <B2bPartnerArchive />
+      <B2bPartnerBusinessPoga />
       <B2bPartnerWalletLedger />
     </div>
   );

@@ -70,6 +70,8 @@ export type AdminOrderRow = {
   /** Stripe `metadata.fulfillment` (piem. `b2b_pack` = kredītu paka, nav VIN darbs). */
   fulfillment?: string | null;
   partnerId?: string | null;
+  /** PROVIN Business poga partnera vietnē (`metadata.partner_ref`, uzskaitei; nav partnera kredīta pasūtījums). */
+  partnerRef?: string | null;
   packQty?: number | null;
   companyName?: string | null;
   auditPurpose?: "client" | "internal";
@@ -149,6 +151,7 @@ function sessionToAdminOrderRow(s: Stripe.Checkout.Session): AdminOrderRow | nul
     attribution: adminAttributionFromStripeMetadata(s.metadata),
     fulfillment: s.metadata?.fulfillment?.trim() || null,
     partnerId,
+    partnerRef: isSafeB2bPartnerId(s.metadata?.partner_ref?.trim() ?? "") ? s.metadata!.partner_ref!.trim() : null,
     packQty: parseB2bPackQty(s.metadata?.pack_qty),
     companyName: order.companyName,
   };

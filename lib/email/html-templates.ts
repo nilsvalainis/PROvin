@@ -156,6 +156,31 @@ ${cta}
   return shell(inner);
 }
 
+/** PROVIN Business pogas dienas kopsavilkums (info@provin.lv). */
+export function businessPogaDigestHtml(opts: {
+  title: string;
+  alerts: string[];
+  lines: { label: string; value: string }[];
+  adminUrl: string;
+}): string {
+  const rows = opts.lines
+    .map(
+      (l) =>
+        `<tr><td style="padding:8px 0;border-bottom:1px solid #ececec;font-size:14px;color:${MUTED};width:42%;">${esc(l.label)}</td><td style="padding:8px 0;border-bottom:1px solid #ececec;font-size:14px;">${esc(l.value)}</td></tr>`,
+    )
+    .join("");
+  const alerts = opts.alerts
+    .map((a) => `<p style="margin:0 0 8px;padding:10px 12px;border-radius:8px;background:#fef2f2;color:#b91c1c;font-size:14px;">${esc(a)}</p>`)
+    .join("");
+  const inner = `
+<p style="margin:0 0 16px;font-size:20px;font-weight:600;">${esc(opts.title)}</p>
+${alerts}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${rows}</table>
+${ctaButton(opts.adminUrl, "Atvērt statistiku")}
+`;
+  return shell(inner);
+}
+
 /** Nilam: klienta lēmums par IRISS piedāvājumu (tikai admin adrese). */
 export function irissOfferDecisionHtml(opts: {
   title: string;
