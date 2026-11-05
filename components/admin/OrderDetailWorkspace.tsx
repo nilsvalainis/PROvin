@@ -360,6 +360,7 @@ import { AdminPersistenceHealthBanner } from "@/components/admin/AdminPersistenc
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
 import {
   collectFilledFactCheckFields,
+  collectPrePdfClientTextFields,
   factCheckDismissKey,
   openErrorFactCheckFlags,
   parseVehicleYear,
@@ -3639,6 +3640,15 @@ export function OrderDetailWorkspace({
           odometerAnomalyOverrides,
         },
         overrides: odometerAnomalyOverrides,
+        clientTextFields: collectPrePdfClientTextFields({
+          tehniskoRiskuAnalize: cur.tehniskoRiskuAnalize,
+          iriss: cur.iriss,
+          apskatesPlāns: cur.apskatesPlāns,
+          mileageComment: edits.mileage,
+          incidentsComment: edits.internal,
+          sourcesComparisonComment: edits.sourcesComparison,
+          sourceBlocks: cur.sourceBlocks,
+        }),
       });
       for (const flag of openErrorFactCheckFlags(prePdfFlags, factCheckDismissed)) {
         errorItems.push({

@@ -1,9 +1,11 @@
 "use client";
 
 import {
+  formatParticleNumber,
   groupTechnicalInspectionsByYear,
   isoDateToLvDisplay,
   previousInspectionBlockToRow,
+  resolveInspectionEmissions,
   type CsddInspectionDefectRow,
   type CsddPreviousInspectionBlock,
   type CsddTechnicalInspectionRow,
@@ -80,6 +82,7 @@ export function CsddInspectionBlock({
   if (odometer?.trim()) metaParts.push(`${odometer.trim()} km`);
   if (row.ratingLabel) metaParts.push(`Novērtējums ${row.ratingLabel}`);
   const meta = metaParts.filter(Boolean).join(" · ");
+  const emissions = resolveInspectionEmissions(row);
 
   return (
     <div className={historic ? "opacity-90" : ""}>
@@ -92,10 +95,16 @@ export function CsddInspectionBlock({
           {nextInspectionDateText.trim()}
         </p>
       ) : null}
-      {row.smokeCoefficient?.trim() ? (
+      {emissions.smokeCoefficient ? (
         <p className="px-1.5 py-0.5 text-[10px] text-[var(--color-provin-muted)]">
           <span className="text-[var(--color-apple-text)]">Dūmainības koeficients (m⁻¹):</span>{" "}
-          {row.smokeCoefficient.trim()}
+          {emissions.smokeCoefficient}
+        </p>
+      ) : null}
+      {emissions.particleNumber ? (
+        <p className="px-1.5 py-0.5 text-[10px] text-[var(--color-provin-muted)]">
+          <span className="text-[var(--color-apple-text)]">Atgāzu cietās daļiņas (cm⁻³):</span>{" "}
+          {formatParticleNumber(emissions.particleNumber)}
         </p>
       ) : null}
       <DefectTable defects={row.defects ?? []} />

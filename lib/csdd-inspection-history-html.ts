@@ -3,8 +3,10 @@
  */
 
 import {
+  formatParticleNumber,
   groupTechnicalInspectionsByYear,
   previousInspectionBlockToRow,
+  resolveInspectionEmissions,
   type CsddPreviousInspectionBlock,
   type CsddTechnicalInspectionRow,
 } from "@/lib/csdd-extended-parse";
@@ -70,9 +72,16 @@ function buildInspectionInnerHtml(
       `<p class="pdf-csdd-tech-line"><span class="pdf-csdd-tech-bit">Nākamās apskates datums:</span> ${escapeHtml(opts.nextInspectionDateText.trim())}</p>`,
     );
   }
-  if (row.smokeCoefficient?.trim()) {
+  /** Vecajos melnrakstos daļiņu skaits var būt dūmainības laukā - rāda zem pareizās etiķetes. */
+  const emissions = resolveInspectionEmissions(row);
+  if (emissions.smokeCoefficient) {
     extras.push(
-      `<p class="pdf-csdd-tech-line"><span class="pdf-csdd-tech-bit">Dūmainības koeficients (m⁻¹):</span> ${escapeHtml(row.smokeCoefficient.trim())}</p>`,
+      `<p class="pdf-csdd-tech-line"><span class="pdf-csdd-tech-bit">Dūmainības koeficients (m⁻¹):</span> ${escapeHtml(emissions.smokeCoefficient)}</p>`,
+    );
+  }
+  if (emissions.particleNumber) {
+    extras.push(
+      `<p class="pdf-csdd-tech-line"><span class="pdf-csdd-tech-bit">Atgāzu cietās daļiņas (cm⁻³):</span> ${escapeHtml(formatParticleNumber(emissions.particleNumber))}</p>`,
     );
   }
   const extrasHtml = extras.length > 0 ? `<div class="pdf-csdd-ta-extras">${extras.join("")}</div>` : "";

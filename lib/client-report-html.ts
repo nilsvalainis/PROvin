@@ -252,7 +252,12 @@ import {
   buildPreviousInspectionBlockHtml,
   buildTechnicalInspectionHistoryTableHtml,
 } from "@/lib/csdd-inspection-history-html";
-import { emptyCsddPreviousInspectionBlock, isoDateToLvDisplay, previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
+import {
+  emptyCsddPreviousInspectionBlock,
+  isoDateToLvDisplay,
+  previousInspectionBlockHasData,
+  splitSmokeAndParticleNumber,
+} from "@/lib/csdd-extended-parse";
 import { buildOutvinBundleEquipmentPdfHtml, buildOutvinBundlePdfInnerHtml } from "@/lib/outvin-bundle-pdf-html";
 import {
   buildOutvinDealerEquipmentPdfHtml,
@@ -1464,10 +1469,17 @@ export function buildCsddAvotuZoneHtml(
     grossMassKg: form.grossMassKg,
     seatCount: form.seatCount,
   });
+  /** Vecajos melnrakstos daļiņu skaits var būt dūmainības laukā - rāda kā daļiņas, datus nemaina. */
+  const topEmissions = splitSmokeAndParticleNumber(form.opacityCoefficient, form.particulateMatter);
   for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
     // Īpašnieku skaits paliek laika joslā, ne kv tabulā.
     if (key === "ownerCountLatvia") continue;
-    const v = (form[key] as string).trim();
+    const v =
+      key === "opacityCoefficient"
+        ? topEmissions.smokeCoefficient
+        : key === "particulateMatter"
+          ? topEmissions.particleNumber
+          : (form[key] as string).trim();
     if (!v || isPdfEmptyPlaceholder(v)) continue;
     let flag: CsddFieldUiFlag = "none";
     if (key === "particulateMatter") flag = getParticulateMatterUiFlag(v);

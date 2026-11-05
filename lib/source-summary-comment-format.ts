@@ -424,9 +424,39 @@ export function stripUnauthorizedEuroAmounts(text: string): string {
  * Iekšējās noplūdes (QA instrukcija, D1–D25, kartē, PR kodi, HECK/AGR-Kühler,
  * „Dzinēja kods noteikts pēc jaudas…”). Klienta tekstā paliek latvisks fakts.
  */
+const AI_GREETING_OPENER_RE = /^[ \t]*(?:Sveiki|Sveiks|Labdien|Labrīt|Labvakar)[ \t]*[,!][ \t]*/iu;
+const AI_FIRST_PERSON_OPENER_RE =
+  /^[ \t]*Esmu\s+(?:pabeidzis|pabeigusi|rūpīgi|izskatījis|izskatījusi|izanalizējis|izanalizējusi|pārskatījis|pārskatījusi)(?![\p{L}\p{N}])(?:\d\.(?=\s*\p{Ll})|[^\n.!?:])*[.!?:]*[ \t]*/iu;
+/** Operatora norāde kā atsevišķa rinda: „Ignorēt …”, „TODO …”, „Nedrukāt”, „Piezīme sev: …”. */
+const OPERATOR_INSTRUCTION_LINE_RE =
+  /^[ \t]*(?:[-•*][ \t]*)?(?:ignorēt|ignorējiet|ignore|nedrukāt|piezīme sev|TODO|FIXME)(?![\p{L}\p{N}])[^\n]*(?:\n|$)/gimu;
+/** Operatora norāde iekavās: „(ignorēt)”, „[nedrukāt]”, „(piezīme sev: …)”. */
+const OPERATOR_INSTRUCTION_PAREN_RE =
+  /[ \t]*[([](?:ignorēt|ignore|nedrukāt|piezīme sev|TODO|FIXME)(?![\p{L}\p{N}])[^)\]\n]*[)\]]/giu;
+
+/**
+ * AI izejas sākums: nomet sveicienu („Sveiki,” / „Labdien!”) un pirmās personas statusa
+ * teikumu („Esmu pabeidzis analīzi.”) TIKAI pašā sākumā. Ja aiz sveiciena ir fakts tajā pašā
+ * teikumā, fakts paliek (ar lielo sākuma burtu). Operatora norāžu rindas / iekavas izmet.
+ * Lieto tikai ģenerētam tekstam (applyProvinReportCopyVocabulary), nevis operatora laukiem.
+ */
+export function stripAiOpeningAndOperatorInstructions(text: string): string {
+  if (!text) return text;
+  let out = text.replace(OPERATOR_INSTRUCTION_PAREN_RE, "").replace(OPERATOR_INSTRUCTION_LINE_RE, "");
+  for (let i = 0; i < 3; i++) {
+    const before = out;
+    out = out.replace(/^\s+/, "");
+    out = out.replace(AI_GREETING_OPENER_RE, "");
+    out = out.replace(AI_FIRST_PERSON_OPENER_RE, "");
+    if (out === before) break;
+  }
+  if (out !== text) out = out.replace(/^\s+/, "").replace(/^\p{Ll}/u, (c) => c.toUpperCase());
+  return out;
+}
+
 export function stripInternalClientLeaks(text: string): string {
   if (!text) return text;
-  let out = text;
+  let out = stripAiOpeningAndOperatorInstructions(text);
   out = out.replace(/Atzīmē teikumus[^.!\n]*kartē[^.!\n]*[.!]?/gi, "");
   out = out.replace(/Pārraksti tikai tos\.?/gi, "");
   out = out.replace(

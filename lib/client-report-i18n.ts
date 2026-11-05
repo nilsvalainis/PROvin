@@ -122,6 +122,10 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   "Reģistrācijas statuss:": { en: "Registration status:", ru: "Статус регистрации:" },
   "Dūmainības koeficients (m⁻¹):": { en: "Smoke opacity (m⁻¹):", ru: "Коэффициент дымности (м⁻¹):" },
   "Atgāzu cietās daļiņas:": { en: "Exhaust particle count:", ru: "Твёрдые частицы в выхлопе:" },
+  "Atgāzu cietās daļiņas (cm⁻³):": {
+    en: "Exhaust particle count (cm⁻³):",
+    ru: "Твёрдые частицы в выхлопе (см⁻³):",
+  },
   "Iepriekšējās reģistrācijas valsts:": {
     en: "Previous country of registration:",
     ru: "Страна предыдущей регистрации:",
@@ -460,6 +464,7 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "Reģistrācijas statuss:": "Zulassungsstatus:",
   "Dūmainības koeficients (m⁻¹):": "Trübungskoeffizient (m⁻¹):",
   "Atgāzu cietās daļiņas:": "Partikel im Abgas:",
+  "Atgāzu cietās daļiņas (cm⁻³):": "Partikel im Abgas (cm⁻³):",
   "Iepriekšējās reģistrācijas valsts:": "Land der vorherigen Zulassung:",
   "Īpašnieku skaits Latvijā:": "Anzahl der Halter in Lettland:",
   "Tehnisko apskašu vēsture": "Historie der technischen Prüfungen",
