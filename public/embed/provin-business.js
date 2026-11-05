@@ -5,6 +5,8 @@
  *   <div data-provin-business data-partner="ptr_..." data-vin="WAUZZZ..."></div>
  *   <script async src="https://www.provin.lv/embed/provin-business.js"></script>
  *
+ * Ja data-vin nav, VIN meklē publiski redzamajā: sludinājuma adresē (piem. /audi-q5-...-wauzzzfy7h2024825-.../)
+ * un lapas tekstā aiz vārda «VIN». Ja VIN neatrod, poga netiek rādīta.
  * Neobligāti: data-plate (ja VIN nav), data-title, data-img, data-year, data-km, data-fuel, data-gear,
  * data-tone="light|dark", data-height (px), data-radius (px).
  * Poga ir Shadow DOM, tāpēc partnera CSS to nesabojā. Bez VIN un numurzīmes poga netiek rādīta.
@@ -55,14 +57,29 @@
     return isFinite(n) && n >= min && n <= max ? n : def;
   }
 
+  /** 17 zīmes, bez I/O/Q, ar burtiem un cipariem. */
+  function isVin(v) {
+    return /^[A-HJ-NPR-Z0-9]{17}$/.test(v) && /[A-Z]/.test(v) && /\d/.test(v);
+  }
+
+  /** VIN no publiski redzamā: adreses ceļa un lapas teksta aiz «VIN». */
+  function findPublicVin() {
+    var parts = decodeURIComponent(location.pathname).toUpperCase().split(/[^A-Z0-9]+/);
+    for (var i = 0; i < parts.length; i++) if (isVin(parts[i])) return parts[i];
+    var text = (document.body && document.body.innerText) || "";
+    var m = text.toUpperCase().match(/VIN[^A-Z0-9]{0,12}([A-HJ-NPR-Z0-9]{17})(?![A-Z0-9])/);
+    return m && isVin(m[1]) ? m[1] : "";
+  }
+
   function buildHref(d) {
     var partner = (d.partner || "").trim();
     if (!/^ptr_[a-f0-9]{16}$/.test(partner)) return "";
     var vin = (d.vin || "").replace(/\s+/g, "").toUpperCase();
+    if (!isVin(vin) && !d.plate) vin = findPublicVin();
     var plate = (d.plate || "").replace(/[\s-]+/g, "").toUpperCase();
-    if (vin.length !== 17 && !plate) return "";
+    if (!isVin(vin) && !plate) return "";
     var q = new URLSearchParams();
-    if (vin.length === 17) q.set("vin", vin);
+    if (isVin(vin)) q.set("vin", vin);
     else q.set("plate", plate);
     q.set("url", location.href.split("#")[0]);
     ["title", "img", "year", "km", "fuel", "gear"].forEach(function (k) {

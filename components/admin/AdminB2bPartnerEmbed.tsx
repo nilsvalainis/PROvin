@@ -15,7 +15,7 @@ function formatSaleAt(sec: number): string {
 
 function embedSnippet(partnerId: string, tone: B2bPartnerEmbedTone): string {
   return [
-    `<div data-provin-business data-partner="${partnerId}" data-vin="AUTO_VIN"${tone === "dark" ? ' data-tone="dark"' : ""}></div>`,
+    `<div data-provin-business data-partner="${partnerId}"${tone === "dark" ? ' data-tone="dark"' : ""}></div>`,
     `<script async src="https://www.provin.lv/embed/provin-business.js"></script>`,
   ].join("\n");
 }
@@ -160,8 +160,8 @@ export function AdminB2bPartnerEmbed({
       <div className="mt-6 border-t border-slate-200/80 pt-5">
         <h3 className="text-sm font-semibold text-slate-800">Kods partnera vietnei</h3>
         <p className="mt-1 text-xs leading-relaxed text-slate-500">
-          Ievietot auto sludinājuma lapā, vietā, kur jābūt pogai. AUTO_VIN aizstāt ar auto VIN; ja VIN nav, lietot
-          data-plate=&quot;numurzīme&quot;. Neobligāti: data-title, data-img, data-year, data-km, data-fuel, data-gear,
+          Ievietot auto sludinājuma lapā, vietā, kur jābūt pogai. VIN poga atrod pati sludinājuma adresē vai lapas
+          tekstā aiz «VIN» (vai data-vin=&quot;...&quot;). Ja VIN publiski nav, poga netiek rādīta. Neobligāti: data-title, data-img, data-year, data-km, data-fuel, data-gear,
           data-height, data-radius. VIN vai numurzīmei jābūt sludinājuma lapas kodā.
         </p>
         <pre className="mt-3 overflow-x-auto whitespace-pre rounded-xl bg-slate-900 p-3 text-[11px] leading-relaxed text-slate-100">
