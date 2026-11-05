@@ -66,6 +66,30 @@ describe("hidden wallet products cannot be ordered", () => {
     expect(state.updateWallet).toHaveBeenCalledTimes(1);
   });
 
+  it("rejects visible inactive dealer_raw with 403 before touching the wallet", async () => {
+    const { POST } = await import("@/app/api/partner/wallet/purchase/route");
+    const res = await POST(buyRequest("dealer_raw"));
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: "product_inactive" });
+    expect(state.updateWallet).not.toHaveBeenCalled();
+    expect(state.createOrder).not.toHaveBeenCalled();
+  });
+
+  it("purchaseB2bWalletProduct refuses inactive products on its own", async () => {
+    const { purchaseB2bWalletProduct } = await import("@/lib/b2b-wallet-purchase");
+    const result = await purchaseB2bWalletProduct({
+      partner: partner(),
+      product: "dealer_raw",
+      vin: "WVWZZZ1KZAW000001",
+      listingUrl: "",
+      auditPurpose: null,
+      reportLang: null,
+      idempotencyKey: "test_key_inactive",
+    });
+    expect(result).toMatchObject({ ok: false, error: "product_inactive" });
+    expect(state.updateWallet).not.toHaveBeenCalled();
+  });
+
   it("does not reject business without reportLang", async () => {
     state.updateWallet.mockResolvedValueOnce({ ok: false, balanceCents: 0 });
     const { POST } = await import("@/app/api/partner/wallet/purchase/route");

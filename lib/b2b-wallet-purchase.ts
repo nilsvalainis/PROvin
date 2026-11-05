@@ -13,6 +13,7 @@ import {
   attachB2bWalletPurchaseOrder,
   B2B_WALLET_PRODUCTS,
   buildB2bWalletOrderNoteParts,
+  isB2bWalletProductInactive,
   isB2bWalletProductVisible,
   resolveB2bWalletPrice,
   resolveB2bWalletPurchaseReportLang,
@@ -25,6 +26,7 @@ export type B2bWalletPurchaseOutcome =
   | { ok: true; duplicate: boolean; orderId: string | null; balanceCents: number; priceCents: number }
   | { ok: false; error: "insufficient"; balanceCents: number; priceCents: number }
   | { ok: false; error: "product_hidden"; balanceCents: null; priceCents: number }
+  | { ok: false; error: "product_inactive"; balanceCents: null; priceCents: number }
   | { ok: false; error: "queue_failed"; balanceCents: number; priceCents: number };
 
 /**
@@ -47,6 +49,9 @@ export async function purchaseB2bWalletProduct(args: {
   const priceCents = resolveB2bWalletPrice(args.product, args.partner.walletPrices).priceCents;
   if (!isB2bWalletProductVisible(args.product, args.partner.walletHiddenProducts)) {
     return { ok: false, error: "product_hidden", balanceCents: null, priceCents };
+  }
+  if (isB2bWalletProductInactive(args.product)) {
+    return { ok: false, error: "product_inactive", balanceCents: null, priceCents };
   }
 
   const debit = await updateB2bWallet(args.partner.id, (wallet) => {

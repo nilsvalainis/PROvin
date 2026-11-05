@@ -308,6 +308,7 @@
     "walletSampleAria": "Opens the PDF sample in a new tab",
     "walletNoProducts": "No services are currently available for your account. Please contact PROVIN.",
     "walletProductUnavailable": "This service is not available for your account.",
+    "walletProductInactive": "This service will be available soon.",
     "walletDiscountAria": "Discount {pct}%",
     "walletOldPriceAria": "Previous price {amount}",
     "walletLegacyCreditsHeading": "Previously purchased credits",

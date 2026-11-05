@@ -74,13 +74,18 @@ export function resolveB2bWalletPurchaseReportLang(
 }
 
 export function b2bWalletInitialReportLangByProduct(
-  proLang: B2bWalletReportLang | null = null,
+  selected: B2bWalletReportLang | null = null,
 ): Record<B2bWalletProductId, B2bWalletReportLang | null> {
   return {
-    business: B2B_WALLET_DEFAULT_REPORT_LANG,
+    business: selected,
     dealer_raw: null,
-    dealer_pro: proLang,
+    dealer_pro: selected,
   };
+}
+
+/** Katalogā redzams, bet pirkums slēgts (Drīzumā). Nav tas pats, kas admin `hidden`. */
+export function isB2bWalletProductInactive(product: B2bWalletProductId): boolean {
+  return product === "dealer_raw";
 }
 
 /** Individuālās cenas (centi). `null` = noklusējuma cena. */
@@ -164,15 +169,15 @@ export function visibleB2bWalletProducts(hidden: B2bWalletHiddenProducts | null 
   return B2B_WALLET_PRODUCT_IDS.filter((id) => isB2bWalletProductVisible(id, hidden));
 }
 
-/** Lētākā redzamā produkta cena; 0, ja neviens produkts nav redzams. */
+/** Lētākā redzamā un pērkamā produkta cena; 0, ja neviens tāds nav. */
 export function cheapestB2bWalletPriceCents(
   overrides: B2bWalletPriceOverrides | null | undefined,
   hidden?: B2bWalletHiddenProducts | null,
 ): number {
   const prices = resolveB2bWalletPrices(overrides);
-  const visible = visibleB2bWalletProducts(hidden);
-  if (visible.length === 0) return 0;
-  return Math.min(...visible.map((id) => prices[id].priceCents));
+  const purchasable = visibleB2bWalletProducts(hidden).filter((id) => !isB2bWalletProductInactive(id));
+  if (purchasable.length === 0) return 0;
+  return Math.min(...purchasable.map((id) => prices[id].priceCents));
 }
 
 export function canAffordCheapestB2bWalletProduct(

@@ -19,6 +19,7 @@ import {
   cheapestB2bWalletPriceCents,
   emptyB2bWallet,
   formatB2bWalletEuro,
+  isB2bWalletProductInactive,
   isB2bWalletProductVisible,
   isB2bWalletReportLang,
   parseB2bWallet,
@@ -209,14 +210,17 @@ describe("b2b wallet prices", () => {
     expect(b2bWalletDiscountPct(7999, 7999)).toBe(0);
   });
 
-  it("uses the cheapest price for the low balance state", () => {
-    expect(cheapestB2bWalletPriceCents(null)).toBe(1999);
-    expect(canAffordCheapestB2bWalletProduct(1998, null)).toBe(false);
-    expect(canAffordCheapestB2bWalletProduct(1999, null)).toBe(true);
+  it("uses the cheapest purchasable price for the low balance state", () => {
+    expect(isB2bWalletProductInactive("dealer_raw")).toBe(true);
+    expect(isB2bWalletProductInactive("business")).toBe(false);
+    expect(isB2bWalletProductInactive("dealer_pro")).toBe(false);
+    expect(cheapestB2bWalletPriceCents(null)).toBe(2499);
+    expect(canAffordCheapestB2bWalletProduct(2498, null)).toBe(false);
+    expect(canAffordCheapestB2bWalletProduct(2499, null)).toBe(true);
     expect(canAffordCheapestB2bWalletProduct(850, null)).toBe(false);
     expect(canAffordCheapestB2bWalletProduct(0, null)).toBe(false);
     expect(canAffordCheapestB2bWalletProduct(12000, null)).toBe(true);
-    expect(canAffordCheapestB2bWalletProduct(1199, { business: null, dealer_raw: 1199, dealer_pro: null })).toBe(true);
+    expect(canAffordCheapestB2bWalletProduct(1199, { business: null, dealer_raw: 1199, dealer_pro: null })).toBe(false);
   });
 
   it("formats euro amounts with a comma and ASCII minus", () => {
@@ -232,7 +236,7 @@ describe("b2b wallet prices", () => {
     const view = buildB2bWalletView(b, null);
     expect(view.balanceCents).toBe(4500);
     expect(view.txns[0]?.sessionId).toBe("cs_b");
-    expect(view.cheapestCents).toBe(1999);
+    expect(view.cheapestCents).toBe(2499);
     expect(view.products).toEqual(["business", "dealer_raw", "dealer_pro"]);
   });
 
@@ -261,7 +265,7 @@ describe("b2b wallet prices", () => {
     expect(b2bWalletProductRequiresReportLang("business")).toBe(false);
   });
 
-  it("defaults Business to LV, leaves RAW without a language, and requires PRO", () => {
+  it("defaults Business to LV on purchase, leaves RAW without a language, and requires PRO", () => {
     expect(b2bWalletProductReportLangMode("business")).toBe("default_lv");
     expect(b2bWalletProductReportLangMode("dealer_raw")).toBe("none");
     expect(b2bWalletProductReportLangMode("dealer_pro")).toBe("required");
@@ -274,10 +278,14 @@ describe("b2b wallet prices", () => {
     expect(resolveB2bWalletPurchaseReportLang("dealer_pro", null)).toBeNull();
     expect(resolveB2bWalletPurchaseReportLang("dealer_pro", "ru")).toBe("ru");
     expect(b2bWalletInitialReportLangByProduct()).toEqual({
-      business: "lv",
+      business: null,
       dealer_raw: null,
       dealer_pro: null,
     });
-    expect(b2bWalletInitialReportLangByProduct("de").dealer_pro).toBe("de");
+    expect(b2bWalletInitialReportLangByProduct("de")).toEqual({
+      business: "de",
+      dealer_raw: null,
+      dealer_pro: "de",
+    });
   });
 });
