@@ -110,6 +110,28 @@ export function collectFilledFactCheckFields(input: {
   return out;
 }
 
+/**
+ * Visi klienta PDF drukātie teksta lauki pirms PDF C10 pārbaudei: tie paši, ko faktu pārbaude
+ * (AI kopsavilkumi, nobraukuma un negadījumu komentāri, visi avotu komentāri), plus
+ * „Citi avoti” sadaļu nosaukumi, kas PDF drukājas kā apakšvirsraksti.
+ */
+export function collectPrePdfClientTextFields(
+  input: Parameters<typeof collectFilledFactCheckFields>[0],
+): FactCheckFieldText[] {
+  const out = collectFilledFactCheckFields(input);
+  const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
+  for (const [i, section] of blocks.citi_avoti.sections.entries()) {
+    const label = adminRichHtmlToPlainText(section.label ?? "").trim();
+    if (!label) continue;
+    out.push({
+      field: `citi_avoti.label.${i}`,
+      label: `${SOURCE_BLOCK_LABELS.citi_avoti} ${i + 1} (nosaukums)`,
+      text: label,
+    });
+  }
+  return out;
+}
+
 export async function postAdminFactCheck(body: Record<string, unknown>): Promise<FactCheckResult> {
   const res = await fetch("/api/admin/ai/fact-check", {
     method: "POST",

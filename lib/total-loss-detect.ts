@@ -1,36 +1,57 @@
 /**
  * Pilnīgs zaudējums / bojāeja no šī pasūtījuma avotiem. Bez EUR tāmēm klientam.
- * Meklē strukturētos laukos un (ar noliegumu / šablonu filtru) komentāros.
+ * Kartīti „Pilnīgs zaudējums” nosaka TIKAI strukturētie avotu lauki (negadījumu rindas,
+ * vēstures laika līnija, CC VIN zīmoli/tituli/bojājumi, ASV bojājumi, reģistru statusi).
+ * Brīvteksta / AI komentāri kartīti NEIESLĒDZ: tajos bieži ir glosāriji, noliegumi,
+ * „ierakstu nav” u.tml., kas deva viltus „Pilnīgs zaudējums”.
  */
-import { CSDD_COMMENT_EUCARIS_PLAIN } from "@/lib/admin-csdd-comment-presets";
-import {
-  CC_VIN_AUCTION_CHECK_PLAIN,
-  isCcVinAuctionCheckComment,
-} from "@/lib/admin-cc-vin-comment-presets";
-import { LTAB_COMMENT_NO_OCTA_CLAIM } from "@/lib/admin-ltab-comment-presets";
-import {
-  LISTING_PHOTO_NO_DEFECTS_LEGACY_TEXT,
-  LISTING_PHOTO_NO_DEFECTS_TEXT,
-} from "@/lib/admin-listing-photo-comment-presets";
-import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
-import { SHARED_SOURCE_COMMENT_TEMPLATES } from "@/lib/admin-source-comment-presets";
 
-export const TOTAL_LOSS_RE =
-  /pilnīg[uaos]\s+zaudēj|atzīts par bojāeju|reģistrēta bojāeja|total\s*loss|\btotaled\b|\bsalvage\b|ziņots par pilnīgu|record of totaled|apdrošināšanas total loss/i;
+const NB = "(?<![\\p{L}\\p{N}])";
+const NA = "(?![\\p{L}\\p{N}])";
 
-const TEMPLATE_PLAIN_SNIPPETS = [
-  CC_VIN_AUCTION_CHECK_PLAIN,
-  LTAB_COMMENT_NO_OCTA_CLAIM,
-  CSDD_COMMENT_EUCARIS_PLAIN,
-  LISTING_PHOTO_NO_DEFECTS_TEXT,
-  LISTING_PHOTO_NO_DEFECTS_LEGACY_TEXT,
-  ...SHARED_SOURCE_COMMENT_TEMPLATES.map((t) => t.text),
-]
-  .map((s) => s.replace(/\s+/g, " ").trim())
-  .filter(Boolean);
+/**
+ * Pozitīvie atslēgvārdi (LV, EN, EE, DE, FR). `pilnīg… zaudēj` atļauj arī salipušu
+ * formu („pilnīguzaudējumu”), ko dod AutoDNA PDF teksta izvilkums.
+ */
+export const TOTAL_LOSS_RE = new RegExp(
+  [
+    "pilnīg[uaos]\\s*zaudēj",
+    "atzīts par bojāeju",
+    "reģistrēta bojāeja",
+    "total\\s*loss",
+    `${NB}totaled${NA}`,
+    `${NB}salvage${NA}`,
+    "ziņots par pilnīgu",
+    "record of totaled",
+    "apdrošināšanas total loss",
+    "majanduslikus\\s+mõttes\\s+hävinenud",
+    `${NB}hävinenud${NA}`,
+    "totalschaden",
+    "véhicule\\s+gravement\\s+endommagé",
+    `${NB}épave${NA}`,
+    // FR saīsinājums tikai lielajiem burtiem (skat. matchTotalLoss).
+    `${NB}VGE${NA}`,
+  ].join("|"),
+  "iu",
+);
 
 const EXPLANATORY_TOTAL_LOSS_RE =
   /var norādīt uz potenciālu pilnīgu zaudēj|automātiski nenozīmē|ieraksti netika atrasti|nav pilnīg/i;
+
+/** Glosārija / skaidrojuma rinda (carVertical definīcijas), nevis ieraksts. */
+const GLOSSARY_LINE_RE = new RegExp(
+  `${NB}(?:nozīmē|tiek atzīts|var tikt|ir tad, (?:ja|kad)|ja remont\\p{L}*|kad remont\\p{L}*|means|is when|is declared when|definīcij\\p{L}*|skaidrojum\\p{L}*)${NA}`,
+  "iu",
+);
+
+/** Salvage skaitās tikai ar statusa / titula / zīmola / sertifikāta kontekstu. */
+const SALVAGE_CONTEXT_RE = /title|brand|record|certificate|sertifikāt|statuss|status/i;
+
+/** Noliegums PĒC atrastā vārda (tajā pašā teikumā, ~40 zīmes), arī „X: No” / „X: Nē” / „X: 0”. */
+const AFTER_NEGATION_RE = new RegExp(
+  `^[^.!?\\n;]{0,40}?(?:${NB}(?:nav|netika|nebija|nē|none|nein|puudub|ei\\s+ole)${NA}|${NB}not\\s+(?:found|recorded|reported|detected|registered)|:\\s*(?:no|nē|nav|none|nein|ei|0|-)${NA})`,
+  "iu",
+);
 
 export type TotalLossHit = {
   found: boolean;
@@ -41,6 +62,8 @@ export type TotalLossSourceInput = {
   manualVendorBlocks?: Array<{
     title?: string;
     comments?: string;
+    /** Reģistru bloki (MNT EE, Traficom, …): strukturēts statusu teksts. */
+    statusRecords?: string;
     incidentRows?: Array<{ csngDate?: string; lossAmount?: string; incidentNo?: string }>;
     vehicleHistoryTimeline?: Array<{ date?: string; description?: string; country?: string }>;
   }> | null;
@@ -60,108 +83,113 @@ export type TotalLossSourceInput = {
   } | null;
 };
 
-function squish(text: string): string {
-  return text.replace(/\s+/g, " ").trim();
-}
-
-function stripKnownTemplates(htmlOrPlain: string): string {
-  if (!htmlOrPlain.trim()) return "";
-  if (isCcVinAuctionCheckComment(htmlOrPlain)) return "";
-  let plain = squish(adminRichHtmlToPlainText(htmlOrPlain));
-  if (!plain) return "";
-  for (const snippet of TEMPLATE_PLAIN_SNIPPETS) {
-    if (!snippet) continue;
-    if (plain === snippet) return "";
-    if (plain.includes(snippet)) plain = squish(plain.replace(snippet, " "));
-  }
-  return plain;
-}
-
-function isNegatedMatch(text: string, index: number): boolean {
-  const before = text.slice(Math.max(0, index - 80), index);
+function isNegatedBefore(text: string, index: number): boolean {
+  const lineStart = text.lastIndexOf("\n", index - 1) + 1;
+  const before = text.slice(Math.max(lineStart, index - 80), index);
   const window = before.replace(/[.,;:()[\]"'«»]/g, " ");
   return /(?:^|\s)(nav|netika|bez|nenozīmē|potenciāl\w*|vai|iespējam\w*|ne|not|without|no)\s+(?:\S+\s+){0,5}$/i.test(
     `${window} `,
   );
 }
 
-function isExplanatoryMatch(text: string, index: number): boolean {
-  const around = text.slice(Math.max(0, index - 80), index + 90);
-  return EXPLANATORY_TOTAL_LOSS_RE.test(around);
+function isNegatedAfter(text: string, endIndex: number): boolean {
+  return AFTER_NEGATION_RE.test(text.slice(endIndex, endIndex + 60));
+}
+
+function lineAround(text: string, index: number): string {
+  const start = text.lastIndexOf("\n", index) + 1;
+  const endNl = text.indexOf("\n", index);
+  return text.slice(start, endNl < 0 ? text.length : endNl);
+}
+
+function sentenceAround(line: string, index: number): string {
+  let start = 0;
+  for (const m of line.slice(0, index).matchAll(/[.!?]\s+/g)) start = (m.index ?? 0) + m[0].length;
+  const rest = line.slice(index);
+  const endM = rest.match(/[.!?](?:\s|$)/);
+  const end = endM ? index + (endM.index ?? 0) + 1 : line.length;
+  return line.slice(start, end);
+}
+
+/** Jautājums („Vai tas ir norakstīts?”) vai glosārija skaidrojums. */
+function isQuestionOrGlossary(line: string, indexInLine: number): boolean {
+  const sentence = sentenceAround(line, indexInLine).trim();
+  if (/\?\s*$/.test(sentence)) return true;
+  // carVertical BUJ: „… Vai tas ir norakstīts?” tajā pašā rindā.
+  if (/(?:^|[.!?:\-]\s*)(?:vai|is it)\s[^?]{0,80}\?/i.test(line)) return true;
+  if (GLOSSARY_LINE_RE.test(sentence)) return true;
+  // „… atzīts par norakstāmu” bez gada teikumā = definīcija, nevis notikums.
+  if (/atzīts par norakstām/i.test(sentence) && !/(?:19|20)\d{2}/.test(sentence)) return true;
+  return false;
+}
+
+/** „Copart salvage izsole” / „Salvage auction records: 0” = nav statusa. */
+function isWeakSalvage(matchText: string, text: string, index: number): boolean {
+  if (!/^salvage$/i.test(matchText)) return false;
+  const after = text.slice(index + matchText.length, index + matchText.length + 20);
+  if (/^\s*(?:auction|izsol)/i.test(after)) return true;
+  return !SALVAGE_CONTEXT_RE.test(lineAround(text, index));
 }
 
 function matchTotalLoss(text: string): TotalLossHit | null {
-  const blob = squish(text);
+  const blob = text.replace(/[ \t]+/g, " ").trim();
   if (!blob) return null;
-  const re = new RegExp(TOTAL_LOSS_RE.source, "gi");
+  const re = new RegExp(TOTAL_LOSS_RE.source, "giu");
   let m: RegExpExecArray | null;
   while ((m = re.exec(blob)) !== null) {
     const idx = m.index ?? 0;
-    if (isNegatedMatch(blob, idx)) continue;
-    if (isExplanatoryMatch(blob, idx)) continue;
+    const end = idx + m[0].length;
+    const line = lineAround(blob, idx);
+    // „vge” mazajiem burtiem nav FR statuss.
+    if (/^vge$/i.test(m[0]) && m[0] !== "VGE") continue;
+    if (isNegatedBefore(blob, idx)) continue;
+    if (isNegatedAfter(blob, end)) continue;
+    if (EXPLANATORY_TOTAL_LOSS_RE.test(line)) continue;
+    if (isQuestionOrGlossary(line, idx - (blob.lastIndexOf("\n", idx) + 1))) continue;
+    if (isWeakSalvage(m[0], blob, idx)) continue;
     const evidence = blob.slice(Math.max(0, idx - 40), idx + 80).trim();
     return { found: true, evidence };
   }
   return null;
 }
 
-function structuredParts(input: TotalLossSourceInput): string[] {
-  const parts: string[] = [];
+/** Katrs strukturētais ieraksts ir sava rinda, lai noliegumi / konteksts nepārlec uz kaimiņu. */
+function structuredLines(input: TotalLossSourceInput): string[] {
+  const lines: string[] = [];
+  const row = (...cells: Array<string | undefined>) => {
+    const joined = cells
+      .map((c) => (c ?? "").replace(/\s+/g, " ").trim())
+      .filter(Boolean)
+      .join(" ");
+    if (joined) lines.push(joined);
+  };
   for (const b of input.manualVendorBlocks ?? []) {
-    for (const r of b.incidentRows ?? []) {
-      parts.push(r.csngDate ?? "", r.lossAmount ?? "", r.incidentNo ?? "");
-    }
-    for (const t of b.vehicleHistoryTimeline ?? []) {
-      parts.push(t.date ?? "", t.description ?? "", t.country ?? "");
-    }
+    for (const r of b.incidentRows ?? []) row(r.csngDate, r.lossAmount, r.incidentNo);
+    for (const t of b.vehicleHistoryTimeline ?? []) row(t.date, t.description, t.country);
+    for (const line of (b.statusRecords ?? "").split(/\n+/)) row(line);
   }
-  const ltab = input.manualLtabBlock;
-  if (ltab) {
-    for (const r of ltab.rows ?? []) parts.push(r.csngDate ?? "", r.lossAmount ?? "", r.incidentNo ?? "");
-  }
+  for (const r of input.manualLtabBlock?.rows ?? []) row(r.csngDate, r.lossAmount, r.incidentNo);
   const cc = input.ccVinBlock;
   if (cc) {
-    for (const d of cc.damages ?? []) parts.push(d.date ?? "", d.description ?? "", d.region ?? "");
-    for (const r of cc.brands ?? []) parts.push(r.date ?? "", r.label ?? "", r.detail ?? "");
-    for (const r of cc.titles ?? []) parts.push(r.date ?? "", r.note ?? "", r.region ?? "");
+    for (const d of cc.damages ?? []) row(d.date, d.description, d.region);
+    for (const r of cc.brands ?? []) row(r.date, r.label, r.detail);
+    for (const r of cc.titles ?? []) row(r.date, r.note, r.region);
   }
-  const asv = input.asvBlock;
-  if (asv) {
-    for (const d of asv.damages ?? []) parts.push(d.date ?? "", d.description ?? "", d.region ?? "");
-  }
-  return parts.filter(Boolean);
+  for (const d of input.asvBlock?.damages ?? []) row(d.date, d.description, d.region);
+  return lines;
 }
 
-function commentParts(input: TotalLossSourceInput): string[] {
-  const parts: string[] = [];
-  for (const b of input.manualVendorBlocks ?? []) {
-    const stripped = stripKnownTemplates(b.comments ?? "");
-    if (stripped) parts.push(stripped);
-  }
-  const ltab = input.manualLtabBlock;
-  if (ltab) {
-    const stripped = stripKnownTemplates(ltab.comments ?? "");
-    if (stripped) parts.push(stripped);
-  }
-  const cc = input.ccVinBlock;
-  if (cc) {
-    const stripped = stripKnownTemplates(cc.comments ?? "");
-    if (stripped) parts.push(stripped);
-  }
-  const asv = input.asvBlock;
-  if (asv) {
-    const stripped = stripKnownTemplates(asv.comments ?? "");
-    if (stripped) parts.push(stripped);
-  }
-  return parts;
+/** Viena teksta pārbaude ar visiem noliegumu / glosārija filtriem (testiem un diagnostikai). */
+export function textIndicatesTotalLoss(text: string): boolean {
+  return matchTotalLoss(text) != null;
 }
 
+/**
+ * Pilnīgs zaudējums tikai no strukturētiem avotu laukiem. `comments` (operatora vai AI)
+ * netiek skatīti, lai viltus kartīte nerastos no skaidrojumiem / noliegumiem.
+ */
 export function detectTotalLossFromPdfInput(input: TotalLossSourceInput): TotalLossHit {
-  const structured = matchTotalLoss(structuredParts(input).join("\n"));
-  if (structured) return structured;
-  const comments = matchTotalLoss(commentParts(input).join("\n"));
-  if (comments) return comments;
-  return { found: false, evidence: "" };
+  return matchTotalLoss(structuredLines(input).join("\n")) ?? { found: false, evidence: "" };
 }
 
 export function headerMentionsTotalLoss(text: string): boolean {
