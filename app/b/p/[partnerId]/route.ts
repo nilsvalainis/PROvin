@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
+import { embedHostFromUrl, isEmbedHostAllowed } from "@/lib/b2b-partner-embed";
+import {
+  BUSINESS_PARTNER_COOKIE_MAX_AGE_SEC,
+  businessPartnerCookieName,
+  businessPartnerCookieValue,
+} from "@/lib/business-partner-cookie";
 import { getB2bPartnerById } from "@/lib/b2b-partner-store";
 import { businessLinkPublicPath } from "@/lib/business-link";
 import { storeBusinessLinkRecord } from "@/lib/business-link-store";
@@ -42,27 +48,40 @@ export async function GET(req: Request, ctx: Ctx) {
   const check = checkPartnerClick({ partner, referer: req.headers.get("referer"), params });
   if (!check.ok || !partner) return closed(req);
 
+  if (!(await checkRateLimit(`business-partner-total:${partnerId}`, 300, 60 * 60 * 1000)).ok) return closed(req);
   if (!(await checkRateLimit(`business-partner-vin:${partnerId}:${params.vin}`, 20, 60 * 60 * 1000)).ok) {
     return closed(req);
   }
 
-  /** VIN jābūt sludinājuma lapā. Ja lapu nevar nolasīt (tīkls), saite tiek izveidota, bet atzīmēta. */
+  /** VIN jābūt sludinājuma lapā. Ja lapu nevar nolasīt, saite netiek izveidota. */
   const listing = await fetchPartnerListingHtml(params.listingUrl, partner.businessEmbed.domains);
-  if (listing.ok && !listingHtmlHasVin(listing.html, params.vin)) return closed(req);
-  if (!listing.ok && listing.error === "host") return closed(req);
   if (!listing.ok) {
     console.warn("[business-partner-link] sludinājumu neizdevās nolasīt", { partnerId, error: listing.error });
+    return closed(req);
+  }
+  if (!listingHtmlHasVin(listing.html, params.vin)) return closed(req);
+
+  /** Bilde tikai no partnera domēna vai tāda, kas ir sludinājuma lapā. */
+  if (params.car.imageUrl) {
+    const imgHost = embedHostFromUrl(params.car.imageUrl);
+    if (!isEmbedHostAllowed(imgHost, partner.businessEmbed.domains) && !listing.html.includes(imgHost)) {
+      params.car.imageUrl = "";
+    }
   }
 
   const token = newClientLinkToken();
-  const record = newPartnerBusinessLinkRecord({
-    tokenHash: hashClientLinkToken(token),
-    partnerId,
-    params,
-    listingVerified: listing.ok,
-  });
+  const tokenHash = hashClientLinkToken(token);
+  const record = newPartnerBusinessLinkRecord({ tokenHash, partnerId, params, listingVerified: true });
   const stored = await storeBusinessLinkRecord(record);
   if (!stored.ok) return closed(req);
 
-  return NextResponse.redirect(new URL(businessLinkPublicPath(token), req.url), { status: 303, headers: NO_STORE });
+  const res = NextResponse.redirect(new URL(businessLinkPublicPath(token), req.url), { status: 303, headers: NO_STORE });
+  res.cookies.set(businessPartnerCookieName(tokenHash), businessPartnerCookieValue(tokenHash), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: BUSINESS_PARTNER_COOKIE_MAX_AGE_SEC,
+  });
+  return res;
 }

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { embedHostFromUrl, isEmbedHostAllowed } from "@/lib/b2b-partner-embed";
+import { isHttpsListingUrl } from "@/lib/business-partner-link";
 
 const TIMEOUT_MS = 4500;
 const MAX_BYTES = 3 * 1024 * 1024;
@@ -15,7 +16,9 @@ export type ListingFetchResult = { ok: true; html: string } | { ok: false; error
 export async function fetchPartnerListingHtml(url: string, domains: readonly string[]): Promise<ListingFetchResult> {
   let current = url;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
-    if (!isEmbedHostAllowed(embedHostFromUrl(current), domains)) return { ok: false, error: "host" };
+    if (!isHttpsListingUrl(current) || !isEmbedHostAllowed(embedHostFromUrl(current), domains)) {
+      return { ok: false, error: "host" };
+    }
     let res: Response;
     try {
       res = await fetch(current, {
@@ -37,15 +40,19 @@ export async function fetchPartnerListingHtml(url: string, domains: readonly str
     const reader = res.body.getReader();
     const chunks: Uint8Array[] = [];
     let size = 0;
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done || !value) break;
-      size += value.byteLength;
-      chunks.push(value);
-      if (size >= MAX_BYTES) {
-        await reader.cancel().catch(() => undefined);
-        break;
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done || !value) break;
+        size += value.byteLength;
+        chunks.push(value);
+        if (size >= MAX_BYTES) {
+          await reader.cancel().catch(() => undefined);
+          break;
+        }
       }
+    } catch {
+      return { ok: false, error: "network" };
     }
     return { ok: true, html: new TextDecoder().decode(Buffer.concat(chunks)) };
   }

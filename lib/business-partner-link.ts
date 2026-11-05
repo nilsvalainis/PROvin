@@ -53,8 +53,62 @@ export function checkPartnerClick(opts: {
   if (!embed.enabled || embed.domains.length === 0) return { ok: false, reason: "disabled" };
   if (!isEmbedHostAllowed(embedHostFromUrl(opts.referer), embed.domains)) return { ok: false, reason: "referer" };
   if (!isEmbedHostAllowed(embedHostFromUrl(params.listingUrl), embed.domains)) return { ok: false, reason: "listing" };
+  if (!isHttpsListingUrl(params.listingUrl)) return { ok: false, reason: "listing" };
   if (!isValidVin(params.vin)) return { ok: false, reason: "vin" };
+  /** VIN sludinājuma adresē (piem. meklēšana `?s=VIN`) - lapa to atkārtotu un pārbaude būtu bezjēdzīga. */
+  if (listingUrlMentionsVehicle(params.listingUrl, params)) return { ok: false, reason: "listing" };
+  if (!refererMatchesListing(opts.referer, params.listingUrl)) return { ok: false, reason: "referer" };
   return { ok: true };
+}
+
+/** Tikai https un standarta ports. */
+export function isHttpsListingUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    return u.protocol === "https:" && (u.port === "" || u.port === "443") && !u.username && !u.password;
+  } catch {
+    return false;
+  }
+}
+
+function urlPathKey(raw: string): string {
+  try {
+    const u = new URL(raw);
+    return `${u.pathname.replace(/\/+$/, "") || "/"}${u.search}`;
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * Pogas skripts sūta pilnu Referer. Ja Referer satur ceļu, tam jāsakrīt ar sludinājuma adresi.
+ * Ja pārlūks sūta tikai origin (stingra politika), pietiek ar domēnu.
+ */
+export function refererMatchesListing(referer: string | null, listingUrl: string): boolean {
+  if (!referer) return false;
+  const refKey = urlPathKey(referer);
+  if (!refKey || refKey === "/") return true;
+  return refKey === urlPathKey(listingUrl);
+}
+
+export function listingUrlMentionsVehicle(listingUrl: string, params: Pick<PartnerClickParams, "vin">): boolean {
+  let decoded = listingUrl;
+  try {
+    decoded = decodeURIComponent(listingUrl);
+  } catch {
+    /* paliek kā ir */
+  }
+  const up = decoded.toUpperCase();
+  return Boolean(params.vin) && up.includes(normalizeVin(params.vin));
+}
+
+/** HTML bez skriptiem, stiliem un tagiem: tikai redzamais teksts un atribūtu vērtības nav iekšā. */
+export function listingVisibleText(html: string): string {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;|&#160;/gi, " ");
 }
 
 /** VIN jābūt sludinājuma lapas HTML (redzams tekstā vai pogas `data-vin`). */

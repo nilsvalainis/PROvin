@@ -7,6 +7,7 @@ import {
   validateBusinessLinkSubmission,
 } from "@/lib/business-link";
 import { attachBusinessLinkCheckoutSession, readBusinessLinkByToken } from "@/lib/business-link-store";
+import { hasBusinessPartnerCookie } from "@/lib/business-partner-cookie";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { hashClientLinkToken } from "@/lib/client-link-crypto";
 import { createMetaEventId } from "@/lib/meta-pixel";
@@ -59,12 +60,17 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
+  /** Partnera saite der tikai pārlūkā, kurā nospiesta partnera poga. */
+  if (record.partnerId && !hasBusinessPartnerCookie(req.headers.get("cookie"), record.tokenHash)) {
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
+  }
+
   const validated = validateBusinessLinkSubmission(
     record,
     {
       email: str(body.email),
       vin: str(body.vin),
-      listingUrl: str(body.listingUrl) || record.listingUrl || "",
+      listingUrl: record.partnerId ? "" : str(body.listingUrl),
       phone: str(body.phone),
       companyName: str(body.companyName),
       companyReg: str(body.companyReg),
@@ -93,7 +99,7 @@ export async function POST(req: Request) {
     origin,
     token,
     tokenHash: record.tokenHash,
-    resolved: validated.resolved,
+    resolved: record.partnerId ? { ...validated.resolved, listingUrl: record.listingUrl ?? "" } : validated.resolved,
     partnerRef: record.partnerId,
   });
 

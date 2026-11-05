@@ -4,6 +4,7 @@ import { buildBusinessLinkCheckoutSessionParams, parseBusinessLinkRecord } from 
 import {
   checkPartnerClick,
   listingHtmlHasVin,
+  refererMatchesListing,
   newPartnerBusinessLinkRecord,
   parsePartnerClickParams,
 } from "@/lib/business-partner-link";
@@ -89,3 +90,26 @@ describe("partnera pastāvīgā saite", () => {
     expect(p.line_items[0].price_data.unit_amount).toBe(6999);
   });
 });
+
+describe("partnera saites aizsardzība", () => {
+  it("ja Referer ir pilna adrese, tai jāsakrīt ar sludinājumu", () => {
+    expect(checkPartnerClick({ partner, referer: "https://percunbrauc.lv/cars/cita-masina", params: good })).toEqual({
+      ok: false,
+      reason: "referer",
+    });
+    expect(refererMatchesListing("https://www.percunbrauc.lv/cars/audi-q5/", "https://percunbrauc.lv/cars/audi-q5")).toBe(true);
+  });
+
+  it("sludinājuma adrese ar VIN (meklēšanas lapa) neder", () => {
+    const p = params(`vin=${VIN}&url=${encodeURIComponent(`https://percunbrauc.lv/?s=${VIN}`)}`);
+    expect(checkPartnerClick({ partner, referer: "https://percunbrauc.lv/", params: p })).toEqual({ ok: false, reason: "listing" });
+  });
+
+  it("sludinājumam jābūt https un standarta portā", () => {
+    const http = params(`vin=${VIN}&url=${encodeURIComponent("http://percunbrauc.lv/cars/audi-q5")}`);
+    const port = params(`vin=${VIN}&url=${encodeURIComponent("https://percunbrauc.lv:8080/cars/audi-q5")}`);
+    expect(checkPartnerClick({ partner, referer: "https://percunbrauc.lv/", params: http }).ok).toBe(false);
+    expect(checkPartnerClick({ partner, referer: "https://percunbrauc.lv/", params: port }).ok).toBe(false);
+  });
+});
+
