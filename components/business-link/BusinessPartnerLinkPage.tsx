@@ -6,6 +6,7 @@ import { useState, type FormEvent, type ReactNode } from "react";
 import { formatClientLinkAmount } from "@/lib/client-link";
 import type { BusinessLinkCar } from "@/lib/business-link";
 import { followStripeCheckoutUrl, trackMetaLead } from "@/lib/meta-pixel";
+import { isValidVin } from "@/lib/order-field-validation";
 
 /** Apstiprinātais dizains: docs/makets-business-poga/GALA-lapa.md (V4). */
 
@@ -107,6 +108,7 @@ export function BusinessPartnerLinkPage({ token, view }: { token: string; view: 
 
   const amount = formatClientLinkAmount(view.amountCents);
   const meta = carMeta(view.car);
+  const hasVin = isValidVin(view.vin);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -187,10 +189,13 @@ export function BusinessPartnerLinkPage({ token, view }: { token: string; view: 
             <div className="min-w-0">
               <p className="text-[15px] font-bold tracking-[-0.02em] lg:text-[20px]">{view.car.title || "Pārbaudāmais auto"}</p>
               {meta ? <p className="mt-[3px] text-[12px] text-[#a1a1aa] lg:mt-1.5 lg:text-[14px]">{meta}</p> : null}
-              <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55 lg:mt-3 lg:text-[11px]">VIN</p>
+              <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55 lg:mt-3 lg:text-[11px]">{hasVin ? "VIN" : "Numurzīme"}</p>
               <p className="mt-0.5 break-all font-mono text-[13.5px] font-semibold tracking-[0.04em] lg:mt-1.5 lg:text-[18px] lg:tracking-[0.08em]">
                 {view.vin}
               </p>
+              {hasVin ? null : (
+                <p className="mt-1 text-[11px] text-[#a1a1aa] lg:text-[12px]">VIN noteiksim pēc numurzīmes CSDD reģistrā.</p>
+              )}
             </div>
           </div>
 

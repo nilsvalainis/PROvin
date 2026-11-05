@@ -1,6 +1,6 @@
 import { embedHostFromUrl, isEmbedHostAllowed, type B2bPartnerEmbedSettings } from "@/lib/b2b-partner-embed";
 import { parseBusinessLinkCar, type BusinessLinkCar, type BusinessLinkRecord } from "@/lib/business-link";
-import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { isValidPlateNumber, isValidVin, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
 
 /**
  * Partnera pastāvīgā saite `/b/p/{partnerId}?vin=...&url=...`.
@@ -15,6 +15,8 @@ export const BUSINESS_LINK_CLOSED_PATH = "/b/slegta";
 
 export type PartnerClickParams = {
   vin: string;
+  /** LV numurzīme, ja dīleris VIN nenorāda (VIN nosaka caur CSDD). */
+  plate: string;
   listingUrl: string;
   car: BusinessLinkCar;
 };
@@ -29,6 +31,7 @@ export type PartnerClickDenyReason =
 export function parsePartnerClickParams(sp: URLSearchParams): PartnerClickParams {
   return {
     vin: normalizeVin(sp.get("vin") ?? ""),
+    plate: normalizePlateNumber(sp.get("plate") ?? ""),
     listingUrl: (sp.get("url") ?? "").trim().slice(0, 500),
     car: parseBusinessLinkCar({
       title: sp.get("title"),
@@ -54,8 +57,8 @@ export function checkPartnerClick(opts: {
   if (!isEmbedHostAllowed(embedHostFromUrl(opts.referer), embed.domains)) return { ok: false, reason: "referer" };
   if (!isEmbedHostAllowed(embedHostFromUrl(params.listingUrl), embed.domains)) return { ok: false, reason: "listing" };
   if (!isHttpsListingUrl(params.listingUrl)) return { ok: false, reason: "listing" };
-  if (!isValidVin(params.vin)) return { ok: false, reason: "vin" };
-  /** VIN sludinājuma adresē (piem. meklēšana `?s=VIN`) - lapa to atkārtotu un pārbaude būtu bezjēdzīga. */
+  if (!isValidVin(params.vin) && !isValidPlateNumber(params.plate)) return { ok: false, reason: "vin" };
+  /** VIN vai numurzīme sludinājuma adresē (piem. meklēšana `?s=VIN`) - lapa to atkārtotu. */
   if (listingUrlMentionsVehicle(params.listingUrl, params)) return { ok: false, reason: "listing" };
   if (!refererMatchesListing(opts.referer, params.listingUrl)) return { ok: false, reason: "referer" };
   return { ok: true };
@@ -91,7 +94,7 @@ export function refererMatchesListing(referer: string | null, listingUrl: string
   return refKey === urlPathKey(listingUrl);
 }
 
-export function listingUrlMentionsVehicle(listingUrl: string, params: Pick<PartnerClickParams, "vin">): boolean {
+export function listingUrlMentionsVehicle(listingUrl: string, params: Pick<PartnerClickParams, "vin" | "plate">): boolean {
   let decoded = listingUrl;
   try {
     decoded = decodeURIComponent(listingUrl);
@@ -99,7 +102,9 @@ export function listingUrlMentionsVehicle(listingUrl: string, params: Pick<Partn
     /* paliek kā ir */
   }
   const up = decoded.toUpperCase();
-  return Boolean(params.vin) && up.includes(normalizeVin(params.vin));
+  if (params.vin && up.includes(normalizeVin(params.vin))) return true;
+  const plate = normalizePlateNumber(params.plate);
+  return Boolean(plate) && up.replace(/[\s-]/g, "").includes(plate);
 }
 
 /** HTML bez skriptiem, stiliem un tagiem: tikai redzamais teksts un atribūtu vērtības nav iekšā. */
@@ -118,6 +123,21 @@ export function listingHtmlHasVin(html: string, vin: string): boolean {
   return html.toUpperCase().includes(v);
 }
 
+/** Numurzīme sludinājuma redzamajā tekstā kā atsevišķs vārds (starp burtiem un cipariem drīkst būt atstarpe vai defise). */
+export function listingHtmlHasPlate(html: string, plate: string): boolean {
+  const p = normalizePlateNumber(plate);
+  if (!isValidPlateNumber(p)) return false;
+  const m = /^([A-Z]+)(\d+)$/.exec(p);
+  if (!m) return false;
+  const re = new RegExp(`(^|[^A-Z0-9])${m[1]}[\\s\\u00a0-]?${m[2]}([^A-Z0-9]|$)`);
+  return re.test(listingVisibleText(html).toUpperCase());
+}
+
+/** Identifikators, kas jāatrod sludinājumā: VIN, ja dots, citādi numurzīme. */
+export function listingHtmlHasVehicleId(html: string, params: Pick<PartnerClickParams, "vin" | "plate">): boolean {
+  return isValidVin(params.vin) ? listingHtmlHasVin(html, params.vin) : listingHtmlHasPlate(html, params.plate);
+}
+
 export function newPartnerBusinessLinkRecord(opts: {
   tokenHash: string;
   partnerId: string;
@@ -133,7 +153,7 @@ export function newPartnerBusinessLinkRecord(opts: {
     status: "open",
     recipientChannel: "email",
     recipient: "",
-    prefillVin: normalizeVin(opts.params.vin),
+    prefillVin: isValidVin(opts.params.vin) ? normalizeVin(opts.params.vin) : normalizePlateNumber(opts.params.plate),
     partnerId: opts.partnerId,
     listingUrl: opts.params.listingUrl,
     car: opts.params.car,

@@ -3,6 +3,8 @@ import { parseB2bPartnerEmbed } from "@/lib/b2b-partner-embed";
 import { buildBusinessLinkCheckoutSessionParams, parseBusinessLinkRecord } from "@/lib/business-link";
 import {
   checkPartnerClick,
+  listingHtmlHasPlate,
+  listingHtmlHasVehicleId,
   listingHtmlHasVin,
   refererMatchesListing,
   newPartnerBusinessLinkRecord,
@@ -113,3 +115,38 @@ describe("partnera saites aizsardzība", () => {
   });
 });
 
+describe("partnera saite bez VIN (numurzīme)", () => {
+  const url = encodeURIComponent("https://percunbrauc.lv/cars/audi-q5");
+  it("numurzīme der VIN vietā, ja VIN nav dots", () => {
+    const p = parsePartnerClickParams(new URLSearchParams(`plate=oj-2452&url=${url}`));
+    expect(p.plate).toBe("OJ2452");
+    expect(checkPartnerClick({ partner, referer: "https://percunbrauc.lv/", params: p })).toEqual({ ok: true });
+  });
+
+  it("numurzīmei jābūt sludinājuma lapā (ar vai bez defises)", () => {
+    expect(listingHtmlHasPlate("<p>Numurs: OJ-2452</p>", "OJ2452")).toBe(true);
+    expect(listingHtmlHasPlate("<p>OJ 2452</p>", "oj-2452")).toBe(true);
+    expect(listingHtmlHasPlate("<p>Numurs pēc pieprasījuma</p>", "OJ2452")).toBe(false);
+  });
+
+  it("numurzīmi nemeklē HTML atribūtos, stilos vai vārdu vidū", () => {
+    expect(listingHtmlHasPlate('<div class="oj2452"></div><style>.a{color:#OJ2452}</style>', "OJ2452")).toBe(false);
+    expect(listingHtmlHasPlate("<p>XOJ2452Y</p>", "OJ2452")).toBe(false);
+  });
+
+  it("numurzīme sludinājuma adresē neder", () => {
+    const p = parsePartnerClickParams(new URLSearchParams(`plate=OJ2452&url=${encodeURIComponent("https://percunbrauc.lv/?s=OJ-2452")}`));
+    expect(checkPartnerClick({ partner, referer: "https://percunbrauc.lv/", params: p }).ok).toBe(false);
+  });
+
+  it("ja VIN dots, sludinājumā meklē VIN, nevis numurzīmi", () => {
+    expect(listingHtmlHasVehicleId(`<b>${VIN}</b>`, { vin: VIN, plate: "OJ2452" })).toBe(true);
+    expect(listingHtmlHasVehicleId("<b>OJ-2452</b>", { vin: VIN, plate: "OJ2452" })).toBe(false);
+  });
+
+  it("ja VIN nav noteikts, saitē paliek numurzīme (VIN nosaka pēc apmaksas)", () => {
+    const p = parsePartnerClickParams(new URLSearchParams(`plate=OJ-2452&url=${url}`));
+    const rec = newPartnerBusinessLinkRecord({ tokenHash: "b".repeat(64), partnerId: "ptr_0123456789abcdef", params: p, listingVerified: true });
+    expect(rec.prefillVin).toBe("OJ2452");
+  });
+});

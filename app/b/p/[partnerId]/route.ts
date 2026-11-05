@@ -13,12 +13,14 @@ import { fetchPartnerListingHtml } from "@/lib/business-partner-listing-fetch";
 import {
   BUSINESS_LINK_CLOSED_PATH,
   checkPartnerClick,
-  listingHtmlHasVin,
+  listingHtmlHasVehicleId,
   newPartnerBusinessLinkRecord,
   parsePartnerClickParams,
 } from "@/lib/business-partner-link";
 import { getClientIpFromRequest } from "@/lib/client-ip";
 import { hashClientLinkToken, newClientLinkToken } from "@/lib/client-link-crypto";
+import { fetchCsddTechDataCounted } from "@/lib/csdd-tech-data-counted";
+import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -49,7 +51,8 @@ export async function GET(req: Request, ctx: Ctx) {
   if (!check.ok || !partner) return closed(req);
 
   if (!(await checkRateLimit(`business-partner-total:${partnerId}`, 300, 60 * 60 * 1000)).ok) return closed(req);
-  if (!(await checkRateLimit(`business-partner-vin:${partnerId}:${params.vin}`, 20, 60 * 60 * 1000)).ok) {
+  const vehicleKey = isValidVin(params.vin) ? params.vin : params.plate;
+  if (!(await checkRateLimit(`business-partner-vin:${partnerId}:${vehicleKey}`, 20, 60 * 60 * 1000)).ok) {
     return closed(req);
   }
 
@@ -59,13 +62,26 @@ export async function GET(req: Request, ctx: Ctx) {
     console.warn("[business-partner-link] sludinājumu neizdevās nolasīt", { partnerId, error: listing.error });
     return closed(req);
   }
-  if (!listingHtmlHasVin(listing.html, params.vin)) return closed(req);
+  if (!listingHtmlHasVehicleId(listing.html, params)) return closed(req);
 
   /** Bilde tikai no partnera domēna vai tāda, kas ir sludinājuma lapā. */
   if (params.car.imageUrl) {
     const imgHost = embedHostFromUrl(params.car.imageUrl);
     if (!isEmbedHostAllowed(imgHost, partner.businessEmbed.domains) && !listing.html.includes(imgHost)) {
       params.car.imageUrl = "";
+    }
+  }
+
+  /** Dīleris VIN nenorāda: VIN no CSDD pēc numurzīmes. Ja neizdodas, saitē paliek numurzīme (VIN nosaka pēc apmaksas). */
+  if (!isValidVin(params.vin) && (await checkRateLimit(`business-partner-csdd:${partnerId}`, 50, 24 * 60 * 60 * 1000)).ok) {
+    const csdd = await fetchCsddTechDataCounted(params.plate, "checkout", { timeoutMs: 6000 }).catch(() => null);
+    const vin = csdd?.found ? normalizeVin(csdd.data.vin) : "";
+    if (isValidVin(vin)) {
+      params.vin = vin;
+      if (!params.car.title && csdd?.found) {
+        params.car.title = [csdd.data.make, csdd.data.model].filter(Boolean).join(" ").slice(0, 120);
+      }
+      if (!params.car.year && csdd?.found && /^(19|20)\d{2}$/.test(csdd.data.year)) params.car.year = csdd.data.year;
     }
   }
 
