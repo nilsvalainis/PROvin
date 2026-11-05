@@ -1,8 +1,16 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { BusinessLinkForm } from "@/components/business-link/BusinessLinkForm";
+import { BusinessPartnerLinkPage } from "@/components/business-link/BusinessPartnerLinkPage";
+import { getB2bPartnerById } from "@/lib/b2b-partner-store";
 import { ClientLinkNeutralPage } from "@/components/client-link/ClientLinkNeutralPage";
-import { businessLinkPublicView, isBusinessLinkUsable, isSafeBusinessLinkToken } from "@/lib/business-link";
+import {
+  BUSINESS_LINK_AMOUNT_CENTS,
+  businessLinkPublicView,
+  isBusinessLinkUsable,
+  isSafeBusinessLinkToken,
+  parseBusinessLinkCar,
+} from "@/lib/business-link";
 import { readBusinessLinkByToken } from "@/lib/business-link-store";
 import { getClientIpFromHeaders } from "@/lib/client-ip";
 import { hashClientLinkToken } from "@/lib/client-link-crypto";
@@ -55,6 +63,26 @@ export default async function BusinessLinkPage({ params }: { params: Promise<{ t
 
   const record = await readBusinessLinkByToken(token);
   if (!record || !isBusinessLinkUsable(record)) return <Unavailable />;
+
+  /** Saite no partnera pogas: PROVIN Business lapa ar partnera logo (GALA-lapa.md). */
+  if (record.partnerId) {
+    const partner = await getB2bPartnerById(record.partnerId);
+    if (!partner || partner.status !== "active" || !partner.businessEmbed.enabled) return <Unavailable />;
+    const legal = getCompanyLegal();
+    return (
+      <BusinessPartnerLinkPage
+        token={token}
+        view={{
+          amountCents: BUSINESS_LINK_AMOUNT_CENTS,
+          vin: record.prefillVin,
+          car: record.car ?? parseBusinessLinkCar({}),
+          partnerName: partner.businessEmbed.displayName || partner.companyName,
+          partnerLogoOnDarkUrl: partner.businessEmbed.logoOnDarkUrl,
+          legal: { brand: getCompanyPublicBrand(), ...legal },
+        }}
+      />
+    );
+  }
 
   return (
     <>
