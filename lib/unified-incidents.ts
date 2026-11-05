@@ -26,6 +26,7 @@ import { damageDetailRowHasZones, mergeDamageDetailRows, parseDamageDetailsForVe
 import {
   normalizeLossAmountEurDisplay,
   parseLossAmountEurBounds,
+  parseQualifiedLossAmount,
 } from "@/lib/loss-amount-format";
 import { parseMileageDateForSort } from "@/lib/unified-mileage";
 
@@ -228,6 +229,8 @@ function incidentClusterKey(row: UnifiedIncidentRow): string {
 function rowAmountBounds(raw: string): UnifiedIncidentAmountBounds | null {
   const bounds = parseLossAmountEurBounds(raw);
   if (bounds) return bounds;
+  const qualified = parseQualifiedLossAmount(raw);
+  if (qualified) return qualified.bounds;
   const collapsed = raw.replace(/EUR|€/gi, "").replace(/[\s\u00a0\u202f]/g, "").trim();
   if (/^\d+$/.test(collapsed)) {
     const v = Number.parseInt(collapsed, 10);
@@ -247,6 +250,12 @@ function unionAmountBounds(list: UnifiedIncidentAmountBounds[]): UnifiedIncident
 function formatAmountBoundsDisplay(bounds: UnifiedIncidentAmountBounds | null, fallback: string): string {
   if (!bounds) return fallback.trim() || "-";
   if (bounds.lo === bounds.hi) {
+    // „virs 4 000 €” (avotā „>4000.00 €”) - prefiksu nezaudē, ja tā ir vienīgā summa.
+    const fb = fallback.trim();
+    const fbBounds = fb.includes(";") ? null : parseQualifiedLossAmount(fb)?.bounds;
+    if (fbBounds && fbBounds.lo === bounds.lo && fbBounds.hi === bounds.hi) {
+      return normalizeLossAmountEurDisplay(fb) || fb;
+    }
     return normalizeLossAmountEurDisplay(`${bounds.lo} €`) || fallback.trim() || "-";
   }
   return (

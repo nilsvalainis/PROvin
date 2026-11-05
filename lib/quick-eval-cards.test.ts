@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
-import { buildLetterFacts, buildSourceCards, csddCardFacts, formatDateLv, validityTone } from "@/lib/quick-eval-cards";
+import { emptyTirgusFields } from "@/lib/admin-source-blocks";
+import {
+  buildLetterFacts,
+  buildSourceCards,
+  csddCardFacts,
+  formatDateLv,
+  tirgusCardFacts,
+  validityTone,
+} from "@/lib/quick-eval-cards";
 
 const NOW = Date.UTC(2026, 9, 10);
 
@@ -54,5 +62,17 @@ describe("quick-eval-cards", () => {
     expect(f.incidents).toContain("LTAB: nav zaudējumu");
     expect(f.odometer).toContain("150");
     expect(f.photos).toBe("Izsoļu portālu arhīvs: 12 foto");
+  });
+});
+
+describe("tirgusCardFacts cenas izmaiņa", () => {
+  it("vecais „€ -3 790” nekļūst par „€ -3 790 €”", () => {
+    const facts = tirgusCardFacts({ ...emptyTirgusFields(), priceDrop: "€ -3 790" });
+    expect(facts.find((f) => f.label === "Cenas izmaiņas")?.value).toBe("-3 790 €");
+  });
+
+  it("AI skaitlis bez € saņem „ €” un grupējumu", () => {
+    const facts = tirgusCardFacts({ ...emptyTirgusFields(), priceDrop: "-2000" });
+    expect(facts.find((f) => f.label === "Cenas izmaiņas")?.value).toBe("-2 000 €");
   });
 });

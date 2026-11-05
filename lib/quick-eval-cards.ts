@@ -2,6 +2,7 @@
  * Ātrā vērtējuma avotu kartītes: no avotu blokiem izvelk dažus galvenos faktus, statusa krāsu,
  * ielasīšanas datumu un saiti. Tīras funkcijas (testējamas), UI tikai attēlo.
  */
+import { normalizeSignedEurText } from "@/lib/adify-listing-history";
 import type { CsddFormFields, TirgusFormFields, VinRegistryBlockState, WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { SOURCE_BLOCK_EXTERNAL_URL, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 import type { ListingPeekTopicId } from "@/lib/listing-peek-comment-presets";
@@ -171,7 +172,8 @@ export function tirgusCardFacts(t: TirgusFormFields): CardFact[] {
       facts.push({ label: "Izmaiņa", value: `${diff > 0 ? "+" : "-"}${priceFmt(Math.abs(diff))}`, tone: diff < 0 ? "warn" : "ok" });
     }
   } else if (s(t.priceDrop)) {
-    facts.push({ label: "Cenas izmaiņas", value: `${s(t.priceDrop)} €` });
+    const drop = normalizeSignedEurText(s(t.priceDrop));
+    facts.push({ label: "Cenas izmaiņas", value: /€/.test(drop) ? drop : `${drop} €` });
   }
   if (s(t.listingMileageOdometer)) facts.push({ label: "Odometrs sludinājumā", value: `${s(t.listingMileageOdometer)} km` });
   return facts;

@@ -49,6 +49,26 @@ const EXACT: { keys: string[]; out: LangMap }[] = [
     },
   },
   {
+    keys: [
+      "continuously variable",
+      "continuously variable transmission",
+      "continuously variable (cvt)",
+      "continuously variable transmission (cvt)",
+      "cvt",
+      "variators",
+      "variators (cvt)",
+      "вариатор",
+      "stufenlos",
+      "stufenloses getriebe",
+    ],
+    out: {
+      lv: "Variators (CVT)",
+      en: "continuously variable (CVT)",
+      ru: "вариатор (CVT)",
+      de: "stufenloses Getriebe (CVT)",
+    },
+  },
+  {
     keys: ["dual-clutch", "dual clutch", "dct", "dsg", "doppelkupplung", "divsajūgu"],
     out: { lv: "divsajūgu", en: "dual-clutch", ru: "с двумя сцеплениями", de: "Doppelkupplung" },
   },
@@ -89,6 +109,10 @@ const EXACT: { keys: string[]; out: LangMap }[] = [
   {
     keys: ["suv", "sav", "apvidus", "внедорожник", "geländewagen"],
     out: { lv: "apvidus", en: "SUV", ru: "внедорожник", de: "SUV" },
+  },
+  {
+    keys: ["off-road vehicle", "off road vehicle", "offroad vehicle", "apvidus auto"],
+    out: { lv: "Apvidus auto", en: "off-road vehicle", ru: "внедорожник", de: "Geländewagen" },
   },
   {
     keys: ["hatchback", "hečbeks", "хэтчбек"],
@@ -140,7 +164,7 @@ const TOKEN: { re: RegExp; out: LangMap }[] = [
   { re: /\bbeige\b/gi, out: { lv: "bežs", en: "beige", ru: "бежевый", de: "beige" } },
   { re: /\borange\b/gi, out: { lv: "oranžs", en: "orange", ru: "оранжевый", de: "orange" } },
   { re: /\byellow\b/gi, out: { lv: "dzeltens", en: "yellow", ru: "жёлтый", de: "gelb" } },
-  { re: /\b7-speed\b|\b7 speed\b/gi, out: { lv: "7 pakāpju", en: "7-speed", ru: "7-ступенчатая", de: "7-Gang" } },
+  { re: /\b(\d{1,2})[- ]speed\b/gi, out: { lv: "$1 pakāpju", en: "$1-speed", ru: "$1-ступенчатая", de: "$1-Gang" } },
   { re: /\bdual-clutch\b|\bdual clutch\b/gi, out: { lv: "divsajūgu", en: "dual-clutch", ru: "с двумя сцеплениями", de: "Doppelkupplung" } },
   { re: /\bautomatic\b/gi, out: { lv: "automātiskā", en: "automatic", ru: "автоматическая", de: "Automatik" } },
   { re: /\btransmission\b/gi, out: { lv: "ātrumkārba", en: "transmission", ru: "коробка передач", de: "Getriebe" } },
@@ -184,16 +208,33 @@ function looksLikeCode(s: string): boolean {
   return false;
 }
 
+/** Zirgspēku vienība jebkurā reģistrā: „Zs”, „zs”, „ZS”, „PS”, „ps”, „hp”, „HP”, „bhp”. kW netiek skarts. */
+const HORSEPOWER_UNIT_RE = /(?<!\p{L})(?:zs|ps|b?hp)(?!\p{L})/giu;
+
 function localizePower(raw: string, lang: ClientReportLang): string {
   let t = collapse(raw);
-  if (lang === "lv") t = t.replace(/\bhp\b/gi, "ZS").replace(/\bPS\b/g, "ZS");
+  if (lang === "lv") t = t.replace(HORSEPOWER_UNIT_RE, "ZS");
   if (lang === "ru") {
     t = t.replace(/\bKW\b/gi, "кВт").replace(/\bkW\b/g, "кВт");
-    t = t.replace(/\bhp\b/gi, "л.с.").replace(/\bPS\b/g, "л.с.").replace(/\bZS\b/g, "л.с.");
+    t = t.replace(HORSEPOWER_UNIT_RE, "л.с.");
   }
-  if (lang === "de") t = t.replace(/\bhp\b/gi, "PS").replace(/\bZS\b/g, "PS");
-  if (lang === "en") t = t.replace(/\bZS\b/g, "hp").replace(/\bPS\b/g, "hp");
+  if (lang === "de") t = t.replace(HORSEPOWER_UNIT_RE, "PS");
+  if (lang === "en") t = t.replace(HORSEPOWER_UNIT_RE, "hp");
   return t;
+}
+
+/** Laukiem, kuros pustulkojums („Continuously Variable ātrumkārba”) izskatās kā kļūda. */
+const PARTIAL_TRANSLATION_GUARD_FIELDS = new Set<string>(["transmission", "drive", "body", "vehicleType", "fuel"]);
+
+/**
+ * true, ja tulkotajā tekstā palikuši oriģinālie angļu vārdi (≥3 burti, ne saīsinājumi kā CVT/DSG),
+ * t.i. sanācis pustulkojums.
+ */
+function isHalfTranslated(original: string, out: string): boolean {
+  if (out === original) return false;
+  const origWords = new Set((original.match(/(?<!\p{L})[A-Za-z]{3,}(?!\p{L})/gu) ?? []).map((w) => w.toLowerCase()));
+  const outWords = out.match(/(?<!\p{L})[A-Za-z]{3,}(?!\p{L})/gu) ?? [];
+  return outWords.some((w) => w !== w.toUpperCase() && origWords.has(w.toLowerCase()));
 }
 
 function exactHit(raw: string, lang: ClientReportLang): string | null {
@@ -235,15 +276,22 @@ export function translateDealerVehicleValue(
   const exact = exactHit(t, lang);
   if (exact) return exact;
 
+  const guardPartial = lang !== "en" && PARTIAL_TRANSLATION_GUARD_FIELDS.has(String(field));
+
   if (t.includes("(") && t.includes(")")) {
     const inner = t.replace(/^[^(]+\(/, "").replace(/\)\s*$/, "");
     const outer = t.slice(0, t.indexOf("(")).trim();
     const outerT = exactHit(outer, lang) ?? applyTokens(outer, lang);
     const innerT = exactHit(inner, lang) ?? applyTokens(inner, lang);
-    if (outerT && innerT) return `${outerT} (${innerT})`;
+    if (outerT && innerT) {
+      const out = `${outerT} (${innerT})`;
+      // Pustulkojuma vietā labāk oriģināls nekā „Continuously Variable ātrumkārba”.
+      return guardPartial && isHalfTranslated(t, out) ? t : out;
+    }
   }
 
   const tokened = applyTokens(t, lang);
+  if (guardPartial && tokened && isHalfTranslated(t, tokened)) return t;
   return tokened || t;
 }
 

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { normalizeSignedEurText } from "@/lib/adify-listing-history";
 import { adminGenerateJsonText } from "@/lib/admin-ai-dispatch";
 import { AI_TIRGUS_MARKET_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
@@ -55,7 +56,7 @@ export async function generateTirgusMarketWithAi(
 ${marketContext ? `${marketContext}\n\n---\n\n` : ""}${orderContext}
 
 Sagatavo tirgus analīzi: aizpildi laukus „Auto pārdošanā (dienas)”, „Izveidots”, „Cenas izmaiņas (euro)” un komentāru latviešu valodā.
-Ja ss.lv datos ir dienas platformā — izmanto to listedForSale; ja ir cenu vēsture — aprēķini priceDrop kā starpību EUR (tikai skaitlis, bez € simbola).`,
+Ja ss.lv datos ir dienas platformā - izmanto to listedForSale; ja ir cenu vēsture - aprēķini priceDrop kā starpību EUR (jaunākā cena mīnus pirmā; kritums ar „-”, piem. „-2000”; tikai skaitlis, bez € simbola).`,
     {
       operatorNotes: input.operatorNotes,
       existingDraftPlain:
@@ -63,7 +64,9 @@ Ja ss.lv datos ir dienas platformā — izmanto to listedForSale; ja ir cenu vē
         [
           adminRichHtmlToPlainText(existingTirgus.comments).trim(),
           existingTirgus.listedForSale.trim() ? `Dienas: ${existingTirgus.listedForSale}` : "",
-          existingTirgus.priceDrop.trim() ? `Kritums: ${existingTirgus.priceDrop}` : "",
+          existingTirgus.priceDrop.trim()
+            ? `Cenas izmaiņa (kritums ar „-”): ${normalizeSignedEurText(existingTirgus.priceDrop)}`
+            : "",
         ]
           .filter(Boolean)
           .join("\n") ||
@@ -103,7 +106,7 @@ export function applyTirgusMarketAiResult(
     ...prev,
     listedForSale: result.listedForSale || prev.listedForSale,
     listingCreated: result.listingCreated || prev.listingCreated,
-    priceDrop: result.priceDrop || prev.priceDrop,
+    priceDrop: result.priceDrop ? normalizeSignedEurText(result.priceDrop) : prev.priceDrop,
     comments: commentsHtml,
   };
 }

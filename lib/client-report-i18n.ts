@@ -328,7 +328,7 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   },
   "Lūdzam ņemt vērā:": { en: "Please note:", ru: "Просим учесть:" },
   "Ierakstu robežas.": { en: "Limits of the records.", ru: "Границы записей." },
-  "Neiztrūkstošas apkopes.": { en: "Missing services.", ru: "Пропущенные ТО." },
+  "Iztrūkstošas apkopes.": { en: "Missing services.", ru: "Пропущенные ТО." },
   "Vispārīgi apmeklējumi.": { en: "Generic visits.", ru: "Общие визиты." },
   "Secinājums.": { en: "Conclusion.", ru: "Вывод." },
   "Rekomendācija pilnīgai pārbaudei.": {
@@ -607,7 +607,7 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "Svarīga piezīme par apkopes datu interpretāciju": "Wichtiger Hinweis zur Auslegung der Servicedaten",
   "Lūdzam ņemt vērā:": "Bitte beachten:",
   "Ierakstu robežas.": "Grenzen der Einträge.",
-  "Neiztrūkstošas apkopes.": "Fehlende Wartungen.",
+  "Iztrūkstošas apkopes.": "Fehlende Wartungen.",
   "Vispārīgi apmeklējumi.": "Allgemeine Besuche.",
   "Secinājums.": "Schlussfolgerung.",
   "Rekomendācija pilnīgai pārbaudei.": "Empfehlung für eine vollständige Prüfung.",

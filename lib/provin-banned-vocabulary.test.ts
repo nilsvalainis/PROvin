@@ -76,3 +76,44 @@ describe("forbidden persona nouns", () => {
     );
   });
 });
+
+describe("glosārija aizvietošana ar latviešu burtiem (ņ, ā, ē)", () => {
+  it("reālais gadījums: nav „ieplūdes kolektora ieplūdes kolektorsņi (ieplūdes kolektors)”", () => {
+    const out = applyBannedVocabularyReplacements("Ieplūdes kolektora virpuļvārstiņi (swirl flaps) ir bojāti.");
+    expect(out).toBe("Ieplūdes kolektora vārstiņi ir bojāti.");
+    expect(out).not.toMatch(/kolektorsņ|ieplūdes kolektora ieplūdes|virpuļ|swirl/i);
+  });
+
+  it("atsevišķs virpuļvārsts / swirl flaps -> ieplūdes kolektora vārsts, galotne saglabājas", () => {
+    expect(applyBannedVocabularyReplacements("Virpuļvārsti bieži iesprūst.")).toBe(
+      "Ieplūdes kolektora vārsti bieži iesprūst.",
+    );
+    expect(applyBannedVocabularyReplacements("virpuļvārstu (swirl flap) remonts")).toBe(
+      "ieplūdes kolektora vārstu remonts",
+    );
+    expect(applyBannedVocabularyReplacements("Swirl flaps ir zināma kaite.")).toBe(
+      "Ieplūdes kolektora vārsti ir zināma kaite.",
+    );
+  });
+
+  it("injektor- un integritāt- visos locījumos bez pārpalikušas galotnes", () => {
+    expect(applyBannedVocabularyReplacements("Pārbaudiet injektorus un injektorā redzamo.")).toBe(
+      "Pārbaudiet iesmidzinātājus un iesmidzinātājā redzamo.",
+    );
+    expect(applyBannedVocabularyReplacements("Injektori ir oriģināli.")).toBe("Iesmidzinātāji ir oriģināli.");
+    expect(applyBannedVocabularyReplacements("Integritātē nav šaubu.")).toBe("Stāvoklis nav šaubu.");
+  });
+
+  it("persona vārdi ar „ā” galotni pazūd pilnībā", () => {
+    expect(stripForbiddenPersonaNouns("Kā minēts ekspertā atzinumā.")).not.toMatch(/ekspert|\sā\s/);
+    expect(stripForbiddenPersonaNouns("мнение эксперта важно")).toBe("мнение важно");
+  });
+
+  it("detektē kontūrā / buferā / pakā arī pirms pieturzīmes", () => {
+    const codes = (t: string) => [...findBannedVocabularyHits(t), ...findInternalClientTermHits(t)].map((h) => h.code);
+    expect(codes("Bojājums kontūrā.")).toContain("vocabulary_kontura");
+    expect(codes("Skrāpējums buferā.")).toContain("vocabulary_bufers");
+    expect(codes("Viss ir pakā.")).toContain("internal_paka");
+    expect(codes("Tas ir labvēlīgā signālā.")).toContain("vocabulary_labveligs_signals");
+  });
+});

@@ -3,6 +3,7 @@
  * Bez LLM: īpašnieki, nobraukums + forenzika, negadījumi, TA, dīleris (LV),
  * atsaukumi, sludinājums, foto kopsavilkums. Nav EUR remonta tāmes.
  */
+import { normalizeSignedEurText } from "@/lib/adify-listing-history";
 import {
   collectRegistryCountryPeriods,
   countryAtFromPeriods,
@@ -276,7 +277,7 @@ function listingSummaryFrom(blocks: WorkspaceSourceBlocks, listingUrl: string, e
     listing.extraSellerName.trim() ? `Pārdevējs (lauks): ${listing.extraSellerName.trim()}` : "",
     tirgus.listedForSale.trim() ? `Pārdošanā (dienas): ${tirgus.listedForSale.trim()}` : "",
     tirgus.listingCreated.trim() ? `Izveidots: ${tirgus.listingCreated.trim()}` : "",
-    tirgus.priceDrop.trim() ? `Cenas izmaiņas: ${tirgus.priceDrop.trim()}` : "",
+    tirgus.priceDrop.trim() ? `Cenas izmaiņas: ${normalizeSignedEurText(tirgus.priceDrop)}` : "",
     tirgus.listingMileageOdometer.trim()
       ? `Sludinājuma odometrs: ${tirgus.listingMileageOdometer.trim()} ${tirgus.listingMileageDate.trim()} ${tirgus.listingMileageCountry.trim()}`.trim()
       : "",

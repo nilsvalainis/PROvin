@@ -60,7 +60,7 @@ import {
 import { formatPdfOdometerDisplay, isPdfEmptyPlaceholder } from "@/lib/pdf-odometer-display";
 import { detectTotalLossFromPdfInput } from "@/lib/total-loss-detect";
 import { explainMissingOwnerCount } from "@/lib/owner-count-synthesis";
-import { formatAdifySignedEur } from "@/lib/adify-listing-history";
+import { formatAdifySignedEur, normalizeSignedEurText } from "@/lib/adify-listing-history";
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { formatLvDayCount } from "@/lib/lv-day-plural";
 import {
@@ -257,7 +257,7 @@ function listingPublishedDate(form: TirgusFormFields | null | undefined): string
 /** Jaunākā cena mīnus pirmā. `priceDrop` ir jau saglabātais Adify / operatora teksts. */
 function listingPriceChangeLabel(form: TirgusFormFields | null | undefined): string {
   const drop = (form?.priceDrop ?? "").trim();
-  if (!listingTextMissing(drop)) return drop;
+  if (!listingTextMissing(drop)) return normalizeSignedEurText(drop);
   const rows = (form?.priceHistory ?? []).filter(
     (row) => Number.isFinite(row.price) && Boolean(row.date?.trim()),
   );
