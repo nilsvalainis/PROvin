@@ -73,7 +73,8 @@ export async function GET(req: Request, ctx: Ctx) {
   }
 
   /** Dīleris VIN nenorāda: VIN no CSDD pēc numurzīmes. Ja neizdodas, saitē paliek numurzīme (VIN nosaka pēc apmaksas). */
-  if (!isValidVin(params.vin) && (await checkRateLimit(`business-partner-csdd:${partnerId}`, 50, 24 * 60 * 60 * 1000)).ok) {
+  /** B2B partneriem CSDD limita nav (Nila lēmums 05.11.2026). */
+  if (!isValidVin(params.vin)) {
     const csdd = await fetchCsddTechDataCounted(params.plate, "checkout", { timeoutMs: 6000 }).catch(() => null);
     const vin = csdd?.found ? normalizeVin(csdd.data.vin) : "";
     if (isValidVin(vin)) {
