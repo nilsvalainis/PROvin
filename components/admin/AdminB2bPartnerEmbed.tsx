@@ -5,13 +5,31 @@ import { ADMIN_B2B_BTN_SOLID } from "@/components/admin/AdminB2bAction";
 import { ADMIN_PARTNER_INPUT_CLASS, ADMIN_PARTNER_LABEL_CLASS } from "@/lib/admin-b2b-partner-form";
 import type { B2bPartnerEmbedSettings, B2bPartnerEmbedTone } from "@/lib/b2b-partner-embed";
 
+export type AdminPartnerBusinessSale = { id: string; created: number; amountCents: number; vin: string };
+
+function formatSaleAt(sec: number): string {
+  return new Intl.DateTimeFormat("lv-LV", { timeZone: "Europe/Riga", day: "2-digit", month: "2-digit", year: "numeric" }).format(
+    new Date(sec * 1000),
+  );
+}
+
+function embedSnippet(partnerId: string, tone: B2bPartnerEmbedTone): string {
+  return [
+    `<div data-provin-business data-partner="${partnerId}" data-vin="AUTO_VIN"${tone === "dark" ? ' data-tone="dark"' : ""}></div>`,
+    `<script async src="https://www.provin.lv/embed/provin-business.js"></script>`,
+  ].join("\n");
+}
+
 /** PRO admin: PROVIN Business poga partnera vietnē (domēni, logo, tonis). */
 export function AdminB2bPartnerEmbed({
   partnerId,
   initial,
+  sales,
 }: {
   partnerId: string;
   initial: B2bPartnerEmbedSettings;
+  /** null = Stripe uzskaiti neizdevās nolasīt. */
+  sales: AdminPartnerBusinessSale[] | null;
 }) {
   const [enabled, setEnabled] = useState(initial.enabled);
   const [domains, setDomains] = useState(initial.domains.join("\n"));
@@ -138,6 +156,43 @@ export function AdminB2bPartnerEmbed({
       <button type="button" className={`${ADMIN_B2B_BTN_SOLID} mt-4`} disabled={busy} onClick={() => void save()}>
         Saglabāt
       </button>
+
+      <div className="mt-6 border-t border-slate-200/80 pt-5">
+        <h3 className="text-sm font-semibold text-slate-800">Kods partnera vietnei</h3>
+        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+          Ievietot auto sludinājuma lapā, vietā, kur jābūt pogai. AUTO_VIN aizstāt ar auto VIN; ja VIN nav, lietot
+          data-plate=&quot;numurzīme&quot;. Neobligāti: data-title, data-img, data-year, data-km, data-fuel, data-gear,
+          data-height, data-radius. VIN vai numurzīmei jābūt sludinājuma lapas kodā.
+        </p>
+        <pre className="mt-3 overflow-x-auto whitespace-pre rounded-xl bg-slate-900 p-3 text-[11px] leading-relaxed text-slate-100">
+          {embedSnippet(partnerId, buttonTone)}
+        </pre>
+      </div>
+
+      <div className="mt-6 border-t border-slate-200/80 pt-5">
+        <h3 className="text-sm font-semibold text-slate-800">Pirkumi caur pogu</h3>
+        {sales == null ? (
+          <p className="mt-2 text-sm text-slate-500">Neizdevās nolasīt Stripe datus.</p>
+        ) : sales.length === 0 ? (
+          <p className="mt-2 text-sm text-slate-500">Vēl nav pirkumu.</p>
+        ) : (
+          <>
+            <p className="mt-1 text-xs text-slate-500">
+              Kopā: {sales.length} ·{" "}
+              {(sales.reduce((n, x) => n + x.amountCents, 0) / 100).toFixed(2).replace(".", ",")} €
+            </p>
+            <ul className="mt-3 divide-y divide-slate-100 text-sm">
+              {sales.map((x) => (
+                <li key={x.id} className="flex justify-between gap-3 py-2">
+                  <span className="tabular-nums text-slate-500">{formatSaleAt(x.created)}</span>
+                  <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-slate-800">{x.vin || "-"}</span>
+                  <span className="tabular-nums text-slate-800">{(x.amountCents / 100).toFixed(2).replace(".", ",")} €</span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
     </section>
   );
 }

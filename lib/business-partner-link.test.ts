@@ -150,3 +150,27 @@ describe("partnera saite bez VIN (numurzīme)", () => {
     expect(rec.prefillVin).toBe("OJ2452");
   });
 });
+
+describe("partnera pirkumu uzskaite", () => {
+  it("partnera pirkumam partner_ref un VIN ir arī PaymentIntent metadatos", () => {
+    const p = buildBusinessLinkCheckoutSessionParams({
+      origin: "https://provin.lv",
+      token: "t",
+      tokenHash: "a".repeat(64),
+      resolved: { email: "a@b.lv", vin: VIN, listingUrl: "", phone: "", companyName: "", companyReg: "", companyAddress: "" },
+      partnerRef: "ptr_0123456789abcdef",
+    });
+    expect(p.payment_intent_data?.metadata).toEqual({ partner_ref: "ptr_0123456789abcdef", vin: VIN });
+  });
+
+  it("admina /b/ saitei (bez partnera) PaymentIntent metadatu nav", () => {
+    const p = buildBusinessLinkCheckoutSessionParams({
+      origin: "https://provin.lv",
+      token: "t",
+      tokenHash: "a".repeat(64),
+      resolved: { email: "a@b.lv", vin: VIN, listingUrl: "", phone: "", companyName: "", companyReg: "", companyAddress: "" },
+    });
+    expect(p.payment_intent_data).toBeUndefined();
+    expect(p.metadata.partner_ref).toBeUndefined();
+  });
+});
