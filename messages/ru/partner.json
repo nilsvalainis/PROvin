@@ -454,6 +454,21 @@
     ],
     "landingTermsLink": "Условия сотрудничества с партнёрами",
     "heroIncludedLink": "Что включено",
-    "loginEmailPlaceholder": "name@company.lv"
+    "loginEmailPlaceholder": "name@company.lv",
+    "pogaEyebrow": "Кнопка PROVIN на вашем сайте",
+    "pogaTitle": "Выполненные отчёты для ваших клиентов",
+    "pogaMonth": "Месяц",
+    "pogaAllTime": "Всё время",
+    "pogaDone": "Выполнено",
+    "pogaTotal": "Всего",
+    "pogaTotalHint": "за всё время",
+    "pogaDate": "Дата",
+    "pogaCar": "Авто",
+    "pogaVin": "VIN",
+    "pogaStatus": "Статус",
+    "pogaReady": "Отчёт отправлен",
+    "pogaEmpty": "За этот период выполненных отчётов нет.",
+    "pogaPrev": "Предыдущий месяц",
+    "pogaNext": "Следующий месяц"
   }
 }

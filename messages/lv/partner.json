@@ -454,6 +454,21 @@
     ],
     "landingTermsLink": "Partneru sadarbības noteikumi",
     "heroIncludedLink": "Kas iekļauts",
-    "loginEmailPlaceholder": "vards@uznemums.lv"
+    "loginEmailPlaceholder": "vards@uznemums.lv",
+    "pogaEyebrow": "PROVIN poga jūsu vietnē",
+    "pogaTitle": "Izpildītās atskaites jūsu klientiem",
+    "pogaMonth": "Mēnesis",
+    "pogaAllTime": "Viss laiks",
+    "pogaDone": "Izpildītas",
+    "pogaTotal": "Kopā",
+    "pogaTotalHint": "visu laiku",
+    "pogaDate": "Datums",
+    "pogaCar": "Auto",
+    "pogaVin": "VIN",
+    "pogaStatus": "Statuss",
+    "pogaReady": "Atskaite nosūtīta",
+    "pogaEmpty": "Šajā periodā izpildītu atskaišu nav.",
+    "pogaPrev": "Iepriekšējais mēnesis",
+    "pogaNext": "Nākamais mēnesis"
   }
 }

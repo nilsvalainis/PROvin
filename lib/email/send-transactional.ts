@@ -238,6 +238,19 @@ export async function sendAdminAuditSlaWarningEmail(
   }
 }
 
+/** PROVIN Business pogas dienas kopsavilkums. Atgriež false, ja SMTP nav iestatīts. */
+export async function sendAdminBusinessPogaDigestEmail(
+  email: { subject: string; text: string; html: string },
+  to: string,
+): Promise<boolean> {
+  if (!getSmtpTransport()) {
+    console.warn("[email] Business pogas kopsavilkums: SMTP nav iestatīts.");
+    return false;
+  }
+  await sendSmtpMail({ to, subject: email.subject, text: email.text, html: email.html });
+  return true;
+}
+
 /** Nilam par klienta lēmumu IRISS piedāvājumā. Klientam netiek sūtīts nekas. */
 export async function sendAdminIrissOfferDecisionEmail(
   email: { subject: string; title: string; approved: boolean; lines: { label: string; value: string }[]; text: string; url: string },

@@ -454,6 +454,21 @@
     ],
     "landingTermsLink": "Partner Terms",
     "heroIncludedLink": "What's included",
-    "loginEmailPlaceholder": "name@company.com"
+    "loginEmailPlaceholder": "name@company.com",
+    "pogaEyebrow": "PROVIN button on your website",
+    "pogaTitle": "Completed reports for your customers",
+    "pogaMonth": "Month",
+    "pogaAllTime": "All time",
+    "pogaDone": "Completed",
+    "pogaTotal": "Total",
+    "pogaTotalHint": "all time",
+    "pogaDate": "Date",
+    "pogaCar": "Car",
+    "pogaVin": "VIN",
+    "pogaStatus": "Status",
+    "pogaReady": "Report sent",
+    "pogaEmpty": "No completed reports in this period.",
+    "pogaPrev": "Previous month",
+    "pogaNext": "Next month"
   }
 }

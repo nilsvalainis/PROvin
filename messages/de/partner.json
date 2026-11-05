@@ -454,6 +454,21 @@
     ],
     "landingTermsLink": "Partnerbedingungen",
     "heroIncludedLink": "Was enthalten ist",
-    "loginEmailPlaceholder": "name@firma.de"
+    "loginEmailPlaceholder": "name@firma.de",
+    "pogaEyebrow": "PROVIN-Button auf Ihrer Website",
+    "pogaTitle": "Abgeschlossene Berichte für Ihre Kunden",
+    "pogaMonth": "Monat",
+    "pogaAllTime": "Gesamter Zeitraum",
+    "pogaDone": "Abgeschlossen",
+    "pogaTotal": "Gesamt",
+    "pogaTotalHint": "gesamter Zeitraum",
+    "pogaDate": "Datum",
+    "pogaCar": "Fahrzeug",
+    "pogaVin": "VIN",
+    "pogaStatus": "Status",
+    "pogaReady": "Bericht versendet",
+    "pogaEmpty": "In diesem Zeitraum keine abgeschlossenen Berichte.",
+    "pogaPrev": "Vorheriger Monat",
+    "pogaNext": "Nächster Monat"
   }
 }
