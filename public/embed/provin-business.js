@@ -8,7 +8,7 @@
  * Ja data-vin nav, VIN meklē publiski redzamajā: sludinājuma adresē (piem. /audi-q5-...-wauzzzfy7h2024825-.../)
  * un lapas tekstā aiz vārda «VIN». Ja VIN neatrod, poga netiek rādīta.
  * Neobligāti: data-plate (ja VIN nav), data-title, data-img, data-year, data-km, data-fuel, data-gear,
- * data-tone="light|dark", data-height (px), data-radius (px).
+ * data-tone="light|dark", data-height (px), data-height-mobile (px, ekrānam < 576 px), data-radius (px).
  * Poga ir Shadow DOM, tāpēc partnera CSS to nesabojā. Bez VIN un numurzīmes poga netiek rādīta.
  */
 (function () {
@@ -106,7 +106,8 @@
     a.referrerPolicy = "no-referrer-when-downgrade";
     a.setAttribute("aria-label", "PROVIN - " + LABEL + ", 69,99 €");
     if (d.tone === "dark") a.className = "dark";
-    a.style.height = num(d.height, 40, 120, 60) + "px";
+    var hDesk = num(d.height, 40, 120, 60);
+    var hMob = num(d.heightMobile, 36, 120, hDesk);
     a.style.borderRadius = num(d.radius, 0, 40, 0) + "px";
     a.innerHTML =
       '<span class="wm">PRO<b>VIN</b></span>' +
@@ -116,12 +117,39 @@
     root.appendChild(style);
     root.appendChild(a);
 
+    var wm = a.querySelector(".wm"), act = a.querySelector(".act"), price = a.querySelector(".p");
+    function lines() {
+      var lh = parseFloat(getComputedStyle(act).lineHeight) || 16;
+      return Math.round(act.getBoundingClientRect().height / lh);
+    }
+    function setK(k) {
+      wm.style.fontSize = 24 * k + "px";
+      act.style.fontSize = Math.max(11.5, 13 * k) + "px";
+      price.style.fontSize = 17 * k + "px";
+      a.style.gap = (k < 0.85 ? 10 : 14) + "px";
+      a.style.paddingLeft = (k < 0.85 ? 14 : 18) + "px";
+      a.style.paddingRight = (k < 0.85 ? 12 : 16) + "px";
+      act.style.paddingLeft = (k < 0.85 ? 10 : 14) + "px";
+    }
+    /** Viena rinda kā partnera pogas: vispirms mazāks šrifts, divrindu izkārtojums tikai ļoti šaurā vietā. */
     function fit() {
       var w = host.getBoundingClientRect().width;
-      var compact = w > 0 && w < 400;
-      a.classList.toggle("compact", compact);
+      if (!w) return;
+      a.classList.remove("compact");
+      a.style.height = (window.innerWidth < 576 ? hMob : hDesk) + "px";
+      var k = 1;
+      setK(k);
+      while ((lines() > 2 || a.scrollWidth > a.clientWidth + 1) && k > 0.66) {
+        k -= 0.03;
+        setK(k);
+      }
+      if (lines() > 2 || a.scrollWidth > a.clientWidth + 1) {
+        setK(1);
+        a.classList.add("compact");
+      }
     }
     fit();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
     if (window.ResizeObserver) new ResizeObserver(fit).observe(host);
   }
 
