@@ -2459,6 +2459,12 @@ body.provin-menu-open .cookie-consent-panel {
   display: block;
   animation: svc-in 0.45s ease;
 }
+@media (max-width: 900px) {
+  /* Telefonā panelis bez parādīšanās animācijas (ātrāks LCP). */
+  .svc-panel:not([hidden]) {
+    animation: none;
+  }
+}
 @keyframes svc-in {
   from {
     opacity: 0;
