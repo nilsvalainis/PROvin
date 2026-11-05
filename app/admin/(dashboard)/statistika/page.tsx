@@ -4,6 +4,9 @@ import { AdminAdsAttributionCard } from "@/components/admin/AdminAdsAttributionC
 import { AdminHeardAboutCard } from "@/components/admin/AdminHeardAboutCard";
 import { AdminListingPeekConversionCard } from "@/components/admin/AdminListingPeekConversionCard";
 import { AdminVinChecksCard } from "@/components/admin/AdminVinChecksCard";
+import { AdminBusinessPogaCard } from "@/components/admin/AdminBusinessPogaCard";
+import { parseBusinessPogaPeriod } from "@/lib/business-poga-period";
+import { loadBusinessPogaStats } from "@/lib/business-poga-stats-load";
 import { emptyAdVisitDoc } from "@/lib/admin-ad-visits";
 import { readAdSpendRows } from "@/lib/admin-ad-spend-store";
 import { readAdVisitDoc } from "@/lib/admin-ad-visit-store";
@@ -98,19 +101,25 @@ function ToolLink({ href, label, hint }: { href: string; label: string; hint: st
   );
 }
 
-export default async function AdminStatistikaPage() {
+export default async function AdminStatistikaPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireAdminPage();
+  const pogaPeriod = parseBusinessPogaPeriod(await searchParams, rigaDate());
   const embedUrl = getAnalyticsEmbedUrl();
   const dashboardUrl = getAnalyticsDashboardUrl();
   const gaId = getGaMeasurementId();
   const onVercel = isVercelDeployment();
   const sampleClicks = await getSampleReportClickStats();
-  const [peekConversion, statOrders, adSpend, adVisits, vinChecks] = await Promise.all([
+  const [peekConversion, statOrders, adSpend, adVisits, vinChecks, pogaStats] = await Promise.all([
     loadListingPeekConversionStats(),
     loadStatistikaOrders(),
     readAdSpendRows().catch(() => []),
     readAdVisitDoc().catch(() => emptyAdVisitDoc()),
     loadVinChecks(),
+    loadBusinessPogaStats(pogaPeriod),
   ]);
   const heardOrders = statOrders.heard;
   const nowSec = Math.floor(Date.now() / 1000);
@@ -138,6 +147,10 @@ export default async function AdminStatistikaPage() {
 
       <div className="mt-5">
         <AdminVinChecksCard {...vinChecks} />
+      </div>
+
+      <div id="business-poga" className="mt-5 scroll-mt-4">
+        <AdminBusinessPogaCard view={pogaStats} period={pogaPeriod} basePath="/admin/statistika" />
       </div>
 
       <div className="mt-5">
