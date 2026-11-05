@@ -107,6 +107,13 @@ describe("partnera saites aizsardzība", () => {
     expect(checkPartnerClick({ partner, referer: "https://percunbrauc.lv/", params: p })).toEqual({ ok: false, reason: "listing" });
   });
 
+  it("VIN sludinājuma adreses ceļā der (dīleri tā veido adreses)", () => {
+    const listing = `https://www.dzintarzemeauto.lv/lv/auto-katalogs/audi-q5-6-2017-${VIN.toLowerCase()}-diesel-257436km/`;
+    const dza = { status: "active" as const, businessEmbed: parseB2bPartnerEmbed({ enabled: true, domains: ["dzintarzemeauto.lv"] }) };
+    const p = params(`vin=${VIN}&url=${encodeURIComponent(listing)}`);
+    expect(checkPartnerClick({ partner: dza, referer: listing, params: p })).toEqual({ ok: true });
+  });
+
   it("sludinājumam jābūt https un standarta portā", () => {
     const http = params(`vin=${VIN}&url=${encodeURIComponent("http://percunbrauc.lv/cars/audi-q5")}`);
     const port = params(`vin=${VIN}&url=${encodeURIComponent("https://percunbrauc.lv:8080/cars/audi-q5")}`);

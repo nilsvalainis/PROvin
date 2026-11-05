@@ -94,14 +94,23 @@ export function refererMatchesListing(referer: string | null, listingUrl: string
   return refKey === urlPathKey(listingUrl);
 }
 
+/**
+ * VIN vai numurzīme sludinājuma adreses vaicājumā (`?s=VIN`) - meklēšanas lapa to atkārtotu HTML.
+ * Ceļā (`/auto-katalogs/audi-q5-wauzzz...`) VIN der: tā partneri veido sludinājumu adreses.
+ */
 export function listingUrlMentionsVehicle(listingUrl: string, params: Pick<PartnerClickParams, "vin" | "plate">): boolean {
-  let decoded = listingUrl;
+  let query = "";
   try {
-    decoded = decodeURIComponent(listingUrl);
+    query = new URL(listingUrl).search;
+  } catch {
+    return true;
+  }
+  try {
+    query = decodeURIComponent(query);
   } catch {
     /* paliek kā ir */
   }
-  const up = decoded.toUpperCase();
+  const up = query.toUpperCase();
   if (params.vin && up.includes(normalizeVin(params.vin))) return true;
   const plate = normalizePlateNumber(params.plate);
   return Boolean(plate) && up.replace(/[\s-]/g, "").includes(plate);
