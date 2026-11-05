@@ -22,12 +22,15 @@ export type B2bWalletProductSpec = {
   plan: B2bPartnerPlanId;
   /** Ja dīlera datu nav, summu automātiski atgriež makā. */
   refundOnNoData: boolean;
-  /** Viena cena visiem: individuālās cenas netiek piemērotas (Business 69,99 €). */
+  /**
+   * Viena cena visiem: maksā `minCents`, `defaultCents` paliek kā nosvītrotā cena ar atlaidi.
+   * Individuālās cenas netiek piemērotas (Business 69,99 €, nosvītrots 79,99 €).
+   */
   fixedPrice: boolean;
 };
 
 export const B2B_WALLET_PRODUCTS: Record<B2bWalletProductId, B2bWalletProductSpec> = {
-  business: { id: "business", defaultCents: 6999, minCents: 6999, plan: "business", refundOnNoData: false, fixedPrice: true },
+  business: { id: "business", defaultCents: 7999, minCents: 6999, plan: "business", refundOnNoData: false, fixedPrice: true },
   dealer_raw: { id: "dealer_raw", defaultCents: 1999, minCents: 1199, plan: "dealer", refundOnNoData: true, fixedPrice: false },
   dealer_pro: { id: "dealer_pro", defaultCents: 2499, minCents: 1499, plan: "dealer", refundOnNoData: true, fixedPrice: false },
 };
@@ -127,8 +130,12 @@ export function resolveB2bWalletPrice(
   overrides: B2bWalletPriceOverrides | null | undefined,
 ): B2bWalletResolvedPrice {
   const spec = B2B_WALLET_PRODUCTS[product];
-  const override = spec.fixedPrice ? null : (overrides?.[product] ?? null);
-  const priceCents = override != null && override >= spec.minCents ? override : spec.defaultCents;
+  const override = overrides?.[product] ?? null;
+  const priceCents = spec.fixedPrice
+    ? spec.minCents
+    : override != null && override >= spec.minCents
+      ? override
+      : spec.defaultCents;
   return {
     product,
     priceCents,

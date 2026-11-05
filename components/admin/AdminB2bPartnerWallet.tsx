@@ -239,7 +239,7 @@ export function AdminB2bPartnerWallet({
                 />
                 <span className="mt-1 block text-[11px] text-slate-500">
                   {spec.fixedPrice
-                    ? `Fiksēta cena visiem: ${formatB2bWalletEuro(spec.defaultCents)}`
+                    ? `Fiksēta cena visiem: ${formatB2bWalletEuro(spec.minCents)} (nosvītrota ${formatB2bWalletEuro(spec.defaultCents)})`
                     : `Noklusējums: ${formatB2bWalletEuro(spec.defaultCents)} · min. ${formatB2bWalletEuro(spec.minCents)}`}
                 </span>
               </label>
