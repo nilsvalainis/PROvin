@@ -25,6 +25,9 @@ import {
   waybillQueuedText,
   waybillQueuedWaitedMs,
   waybillRequestCancellable,
+  waybillCancelConfirmText,
+  waybillNoProgressMinutes,
+  waybillNoProgressText,
   waybillRequestDismissable,
   waybillStuckStageText,
   type WaybillAivarsReply,
@@ -268,8 +271,12 @@ export type WaybillMobileRequestRow = {
   tone: WaybillMobileChipTone;
   pdfUrl: string;
   canRetry: boolean;
-  /** "Atcelt": tikai Gaida un vēl neviens nav paņēmis. */
+  /** "Atcelt": jebkurā stāvoklī pirms Izdota (Gaida, automātika, Aivars). */
   canCancel: boolean;
+  /** Atcelšanas loga teksts (sāktam darbam - ka CSDD varbūt jau saglabāja). */
+  cancelText: string;
+  /** Darbā bez ziņām > 5 min (minūtes) vai null. */
+  quietMinutes: number | null;
   /** "Dzēst" (tikai paslēpj no saraksta): vecs ieraksts - izrakstīta, kļūda, atcelts, novecojis. */
   canDismiss: boolean;
   errorText: string;
@@ -392,6 +399,9 @@ export function waybillMobileProgress(
       const stuck = waybillStuckStageText(request.stage, request.stageAt ?? "", nowMs);
       return { step: 2, pct: STAGE_PCT[request.stage], text: stuck || WAYBILL_WORKER_STAGE_TEXT[request.stage] };
     }
+    // 07.11: Aivars ar roku soļus neziņo - pēc 5 min bez ziņām godīgi pasaka un ļauj atcelt / atkārtot.
+    const quiet = waybillNoProgressMinutes(request, nowMs);
+    if (quiet != null) return { step: 2, pct: 40, text: waybillNoProgressText(quiet) };
     return { step: 2, pct: 40, text: "Aivars veido pavadzīmi CSDD..." };
   }
   const honest = waybillQueuedText({
@@ -501,8 +511,12 @@ export function waybillMobileRequestRows(
         .join(" · ");
       // «Pārtraukt» darbs (kind=stop) nav jauna pavadzīme: savi vārdi, bez «Izrakstīta» un PDF.
       const isStop = request.kind === "stop";
-      const progress = isStop
-        ? waybillStopProgress(status, request.stopWaybillNo || waybillNo)
+      const quietMinutes = waybillNoProgressMinutes({ ...request, status }, nowMs);
+      const stopProgress = isStop ? waybillStopProgress(status, request.stopWaybillNo || waybillNo) : null;
+      const progress = stopProgress
+        ? quietMinutes != null
+          ? { ...stopProgress, text: waybillNoProgressText(quietMinutes, "stop") }
+          : stopProgress
         : waybillMobileProgress({ ...request, status, waybillNo }, nowMs, {
             autoMode: reply?.autoMode,
             autoStandard: reply?.autoStandard,
@@ -535,8 +549,13 @@ export function waybillMobileRequestRows(
               : WAYBILL_MOBILE_STATUS[status].label,
         tone: stale || writtenOff ? "wait" : WAYBILL_MOBILE_STATUS[status].tone,
         pdfUrl,
-        canRetry: status === "error" || (status === "queued" && (longWait || stale) && !waybillPendingExpired(request, nowMs)),
-        canCancel: waybillRequestCancellable({ status, pickedBy: request.pickedBy }),
+        canRetry:
+          status === "error" ||
+          (status === "in_progress" && quietMinutes != null) ||
+          (status === "queued" && (longWait || stale) && !waybillPendingExpired(request, nowMs)),
+        canCancel: waybillRequestCancellable({ status }) && !stale,
+        cancelText: waybillCancelConfirmText({ status, pickedBy: request.pickedBy, kind: request.kind }),
+        quietMinutes,
         canDismiss: waybillRequestDismissable({ ...request, status }, requests, nowMs),
         errorText: status === "error" ? request.errorReason || reply?.text || "" : "",
         stale,

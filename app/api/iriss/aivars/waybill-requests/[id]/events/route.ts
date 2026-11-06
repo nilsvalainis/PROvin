@@ -30,10 +30,18 @@ export async function POST(req: Request, ctx: Ctx) {
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+    return NextResponse.json({ error: "invalid_json", hint: "Body: JSON { kind, text? }" }, { status: 400 });
   }
   if (body.kind !== "in_progress" && body.kind !== "issued" && body.kind !== "error" && body.kind !== "message") {
-    return NextResponse.json({ error: "invalid_kind" }, { status: 400 });
+    // 07.11 (B762): Aivars saņēma tukšu 400 un minēja tālāk. Tagad atbilde pasaka, kas der.
+    return NextResponse.json(
+      {
+        error: "invalid_kind",
+        allowed: ["in_progress", "issued", "error", "message"],
+        hint: "Pabeigt darbu: POST /:id/result { ok, waybillNo }. Statuss: GET /:id.",
+      },
+      { status: 400 },
+    );
   }
   if (!isWaybillRequestEventKind(body.kind)) {
     return NextResponse.json({ error: "invalid_kind" }, { status: 400 });

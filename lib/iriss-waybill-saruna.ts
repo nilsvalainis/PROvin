@@ -148,7 +148,10 @@ export function prepareSarunaFeed(
   return out;
 }
 
-/** Neizlasītie: pēc last-seen, vai pirmajā reizē pēdējās 7 dienas. */
+/**
+ * Neizlasītie: tikai ziņas (pavadzīme ar PDF), ne statusa rindas un dienu čipi - viena pavadzīme = 1, nevis 2
+ * (audits 26.10: skaitlis auga 24 -> 34 pusstundā). Pēc last-seen, vai pirmajā reizē pēdējās 7 dienas.
+ */
 export function countSarunaUnread(
   items: readonly SarunaFeedItem[],
   seenAt: string | null,
@@ -157,9 +160,24 @@ export function countSarunaUnread(
   const seen = seenAt ? Date.parse(seenAt) : Number.NaN;
   const cutoff = Number.isFinite(seen) ? seen : nowMs - SARUNA_UNREAD_WINDOW_MS;
   return items.filter((item) => {
-    const at = Date.parse(sarunaItemTime(item));
+    if (item.kind !== "message" || item.mine) return false;
+    const at = Date.parse(item.at);
     return Number.isFinite(at) && at > cutoff;
   }).length;
+}
+
+/** Pēdējā izlasīšana šajā ierīcē (localStorage paliek pēc cilnes aizvēršanas; sessionStorage - tikai rezerve). */
+export function sarunaSeenStorage(): Pick<Storage, "getItem" | "setItem"> | null {
+  try {
+    if (typeof localStorage !== "undefined") return localStorage;
+  } catch {
+    /* privātais režīms */
+  }
+  try {
+    return typeof sessionStorage === "undefined" ? null : sessionStorage;
+  } catch {
+    return null;
+  }
 }
 
 export function readSarunaSeenAt(storage?: Pick<Storage, "getItem"> | null): string | null {

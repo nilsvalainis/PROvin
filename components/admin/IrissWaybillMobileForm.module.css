@@ -788,3 +788,22 @@
   letter-spacing: 0;
   text-transform: none;
 }
+/* 07.11: "Atcelt pieprasījumu" / "Atkārtot" darbā esošam - skaidras kontūras pogas, 44 px pieskārienam. */
+.mf .rowActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.mf .rowBtn {
+  display: flex;
+  min-height: 44px;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--hair, rgba(17, 24, 39, 0.08));
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink, #1d1d1f);
+  font-size: 14px;
+  font-weight: 600;
+}

@@ -102,6 +102,7 @@ export function IrissWaybillMobileForm({
   const [otherRep, setOtherRep] = useState(false);
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [askDismiss, setAskDismiss] = useState<WaybillMobileRequestRow | null>(null);
+  const [askCancel, setAskCancel] = useState<WaybillMobileRequestRow | null>(null);
   const patch = (next: Partial<WaybillMobileFormState>) => setForm((prev) => ({ ...prev, ...next }));
 
   // Pirmais brīvais numurs, kamēr lietotājs nav izvēlējies pats.
@@ -442,7 +443,13 @@ export function IrissWaybillMobileForm({
           <p className={styles.empty}>Vēl nav pieprasījumu.</p>
         ) : (
           rows.map((row) => (
-            <WaybillLiveRow key={row.id} row={row} onRetry={onRetry} onCancel={onCancel} onDismiss={onDismiss ? setAskDismiss : undefined} />
+            <WaybillLiveRow
+              key={row.id}
+              row={row}
+              onRetry={onRetry}
+              onCancel={onCancel ? setAskCancel : undefined}
+              onDismiss={onDismiss ? setAskDismiss : undefined}
+            />
           ))
         )}
       </div>
@@ -454,6 +461,19 @@ export function IrissWaybillMobileForm({
       </div>
 
       <IrissWaybillHowItWorks plates={plates.map((p) => p.plate)} />
+
+      {askCancel && onCancel ? (
+        <WaybillCancelDialog
+          title={askCancel.title}
+          text={askCancel.cancelText}
+          onYes={() => {
+            const id = askCancel.id;
+            setAskCancel(null);
+            onCancel(id);
+          }}
+          onNo={() => setAskCancel(null)}
+        />
+      ) : null}
 
       {askDismiss && onDismiss ? (
         <WaybillDismissDialog
@@ -492,9 +512,63 @@ export function IrissWaybillMobileForm({
   );
 }
 
-/** Apstiprinājums pirms "Atcelt" (tikai Gaida, vēl nepaņemts; serveris pārbauda vēlreiz). */
-export function confirmWaybillCancel(title: string): boolean {
-  return window.confirm(`Atcelt pavadzīmes pieprasījumu${title ? ` (${title})` : ""}? Aivars un automātika to vairs neizrakstīs.`);
+/**
+ * "Atcelt" apstiprinājums (07.11: lietotnes logs, ne pārlūka window.confirm). Atceļ TIKAI poga "Jā, atcelt";
+ * fons, Escape un "Nē" - nekas nenotiek. Serveris pārbauda vēlreiz (izdotu neatceļ).
+ */
+export function WaybillCancelDialog({
+  title,
+  text,
+  onYes,
+  onNo,
+}: {
+  title: string;
+  text: string;
+  onYes: () => void;
+  onNo: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onNo();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onNo]);
+  const backdropClose = useModalBackdropClose(onNo);
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#0f172a66] p-4" {...backdropClose}>
+      <div
+        className="w-full max-w-[360px] rounded-2xl border border-[var(--iriss-line)] bg-white p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wb-cancel-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 id="wb-cancel-title" className="m-0 text-[15px] font-semibold text-[var(--iriss-ink)] [overflow-wrap:anywhere]">
+          Atcelt pieprasījumu{title ? ` - ${title}` : ""}?
+        </h3>
+        {text ? <p className="mt-2 text-[13px] leading-snug text-[#5e636e]">{text}</p> : null}
+        <div className="mt-3.5 flex flex-col gap-2">
+          <button
+            type="button"
+            className="min-h-11 rounded-[10px] bg-[var(--iriss-graphite)] text-[12.5px] font-semibold text-white"
+            // Autoparkā `:where(.ap2) button { color: inherit }` pārraksta text-white (sk. "Numurs ir aizņemts" logu).
+            style={{ color: "white" }}
+            onClick={onYes}
+          >
+            Jā, atcelt
+          </button>
+          <button
+            type="button"
+            className="min-h-11 rounded-[10px] border border-[var(--iriss-line)] bg-white text-[12.5px] font-semibold text-[var(--iriss-ink)]"
+            onClick={onNo}
+          >
+            Nē
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -551,7 +625,8 @@ export function WaybillLiveRow({
 }: {
   row: WaybillMobileRequestRow;
   onRetry?: (id: string) => void;
-  onCancel?: (id: string) => void;
+  /** Atver atcelšanas logu (pats neko neatceļ). */
+  onCancel?: (row: WaybillMobileRequestRow) => void;
   /** Atver apstiprinājumu (pats neko nenoņem). */
   onDismiss?: (row: WaybillMobileRequestRow) => void;
 }) {
@@ -575,20 +650,9 @@ export function WaybillLiveRow({
             PDF
           </a>
         ) : null}
-        {row.canRetry && onRetry ? (
+        {row.canRetry && onRetry && !row.canCancel ? (
           <button type="button" className={styles.link} onClick={() => onRetry(row.id)}>
             Atkārtot
-          </button>
-        ) : null}
-        {row.canCancel && onCancel ? (
-          <button
-            type="button"
-            className={styles.link}
-            onClick={() => {
-              if (confirmWaybillCancel(row.title)) onCancel(row.id);
-            }}
-          >
-            Atcelt
           </button>
         ) : null}
         {row.canDismiss && onDismiss ? (
@@ -625,6 +689,18 @@ export function WaybillLiveRow({
           {row.note ? <p className={styles.progNote}>{row.note}</p> : null}
         </>
       )}
+      {row.canCancel && onCancel ? (
+        <div className={styles.rowActions}>
+          <button type="button" className={styles.rowBtn} onClick={() => onCancel(row)}>
+            Atcelt pieprasījumu
+          </button>
+          {row.canRetry && onRetry ? (
+            <button type="button" className={styles.rowBtn} onClick={() => onRetry(row.id)}>
+              Atkārtot
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       <WaybillRowSavePdf row={row} />
     </div>
   );

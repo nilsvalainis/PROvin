@@ -136,6 +136,9 @@ export function IrissWaybillCalendar(props: {
   );
 }
 
+/** Apakšrindas augstums joslā, ja īsas pavadzīmes vienā dienā pārklātos (px). */
+const CAL_ROW_PX = 26;
+
 function IrissWaybillCalendarLanes({
   rows,
   nowMs,
@@ -169,7 +172,7 @@ function IrissWaybillCalendarLanes({
       {cal.lanes.map((lane) => (
         <div key={lane.plate} className="iriss-wb-cal-lane">
           <span className="iriss-wb-cal-plate">{lane.plate}</span>
-          <div className="iriss-wb-cal-track">
+          <div className="iriss-wb-cal-track" style={lane.rows > 1 ? { height: `${8 + lane.rows * CAL_ROW_PX}px` } : undefined}>
             {cal.days.map((d, i) => (
               <span key={d} className="iriss-wb-cal-grid" style={{ left: `${(i / cal.days.length) * 100}%` }} aria-hidden />
             ))}
@@ -179,8 +182,12 @@ function IrissWaybillCalendarLanes({
                 key={seg.id}
                 type="button"
                 className={`iriss-wb-cal-seg ${seg.tone}`}
-                style={{ left: `${seg.leftPct}%`, width: `${seg.widthPct}%` }}
-                title={`${seg.number} · ${seg.brandModel}`}
+                style={{
+                  left: `${seg.leftPct}%`,
+                  width: `${seg.widthPct}%`,
+                  ...(lane.rows > 1 ? { top: `${4 + seg.row * CAL_ROW_PX}px`, bottom: "auto", height: `${CAL_ROW_PX - 4}px` } : {}),
+                }}
+                title={`${seg.number} · ${seg.brandModel}${seg.interrupted ? " · pārtraukta" : ""}`}
                 onClick={() => {
                   const r = byId.get(seg.id);
                   if (r) onOpen(r);
@@ -193,7 +200,7 @@ function IrissWaybillCalendarLanes({
         </div>
       ))}
       <p className="iriss-wb-cal-legend">
-        <span className="dot active" /> derīga <span className="dot soon" /> beidzas 24 h laikā <span className="dot expired" /> beigusies
+        <span className="dot active" /> derīga <span className="dot soon" /> beidzas 24 h laikā <span className="dot expired" /> beigusies vai pārtraukta
       </p>
     </section>
   );

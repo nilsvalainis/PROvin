@@ -31,6 +31,7 @@ import {
   countSarunaUnread,
   prepareSarunaFeed,
   readSarunaSeenAt,
+  sarunaSeenStorage,
   type SarunaFeedItem,
   writeSarunaSeenAt,
 } from "@/lib/iriss-waybill-saruna";
@@ -203,7 +204,7 @@ export function IrissPavadzimesListClient({
   }, []);
 
   useEffect(() => {
-    setSarunaSeenAt(readSarunaSeenAt(typeof sessionStorage === "undefined" ? null : sessionStorage));
+    setSarunaSeenAt(readSarunaSeenAt(sarunaSeenStorage()));
   }, []);
 
   useEffect(() => {
@@ -269,7 +270,7 @@ export function IrissPavadzimesListClient({
     setSarunaOpen(true);
     const iso = new Date(nowMs).toISOString();
     setSarunaSeenAt(iso);
-    writeSarunaSeenAt(iso, typeof sessionStorage === "undefined" ? null : sessionStorage);
+    writeSarunaSeenAt(iso, sarunaSeenStorage());
   };
   const sarunaBtnProps = { open: sarunaOpen, unreadCount: sarunaUnread, onClick: openSaruna };
 

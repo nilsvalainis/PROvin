@@ -6,7 +6,10 @@ import {
   isStaleWaybillRequest,
   waybillAivarsReply,
   waybillChatTimelineNewestFirst,
+  waybillCancelConfirmText,
+  waybillDisplayText,
   waybillRequestCancellable,
+  waybillRequestRetryable,
   type WaybillAivarsReply,
   type WaybillRequest,
   type WaybillRequestEvent,
@@ -27,7 +30,7 @@ import {
   type WaybillPlateState,
 } from "@/lib/iriss-waybill-plates";
 import { IrissWaybillDesktopCreateForm } from "@/components/admin/IrissWaybillDesktopCreateForm";
-import { IrissWaybillMobileForm, confirmWaybillCancel, type WaybillMobileDraft } from "@/components/admin/IrissWaybillMobileForm";
+import { IrissWaybillMobileForm, WaybillCancelDialog, type WaybillMobileDraft } from "@/components/admin/IrissWaybillMobileForm";
 import { IrissWaybillSavePdfButton } from "@/components/admin/IrissWaybillSavePdfButton";
 import { waybillDropboxFileName, waybillPdfDownloadHref } from "@/lib/iriss-waybill-pdf";
 import {
@@ -187,6 +190,11 @@ export function IrissKomandaAivaramChat({
   const [tradeCarsFromAutoparks, setTradeCarsFromAutoparks] = useState(false);
   const [mobileDraft, setMobileDraft] = useState<WaybillMobileDraft | null>(null);
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
+  /** Datora "Atcelt pieprasījumu": lietotnes logs (ne window.confirm). */
+  const [askCancel, setAskCancel] = useState<WaybillRequest | null>(null);
+  /** 07.11: viena iesniegšana = viena atslēga; dubults klikšķis vai atkārtots POST nerada otru pieprasījumu. */
+  const submitKey = useRef<string | null>(null);
+  const submitting = useRef(false);
   const selectedInit = useRef(false);
   const carsLoaded = useRef(false);
   const platesLoaded = useRef(false);
@@ -300,6 +308,10 @@ export function IrissKomandaAivaramChat({
   const selectedOcc = chat.plates.find((row) => row.plate === plate) ?? { plate, busy: false };
 
   async function submit(confirmBusy = false): Promise<boolean> {
+    // Dubults klikšķis tajā pašā mirklī (pirms busy pārzīmē pogu) - otrs nesūta neko.
+    if (submitting.current) return false;
+    submitting.current = true;
+    submitKey.current ??= newWaybillSubmitKey();
     setError(null);
     setBusy(true);
     const mobile = mobilePayload.current;
@@ -310,6 +322,7 @@ export function IrissKomandaAivaramChat({
     if (desktop && !desktop.ok) {
       setError(desktop.error);
       setBusy(false);
+      submitting.current = false;
       return false;
     }
     try {
@@ -318,7 +331,12 @@ export function IrissKomandaAivaramChat({
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
-          { ...(mobile ?? (desktop?.ok ? desktop.payload : {})), confirmBusy, confirmWaybillNo },
+          {
+            ...(mobile ?? (desktop?.ok ? desktop.payload : {})),
+            confirmBusy,
+            confirmWaybillNo,
+            clientRequestId: submitKey.current,
+          },
         ),
       });
       const data = await readChatResponse(res);
@@ -338,12 +356,15 @@ export function IrissKomandaAivaramChat({
       if (!mobile) setComment("");
       setConfirm(null);
       mobilePayload.current = null;
+      // Izdevās: nākamā iesniegšana ir jauns pieprasījums (tīkla kļūdā atslēga paliek - atkārtojums nebūs dublikāts).
+      submitKey.current = null;
       return true;
     } catch {
       setError("Neizdevās nosūtīt.");
       return false;
     } finally {
       setBusy(false);
+      submitting.current = false;
     }
   }
 
@@ -516,7 +537,8 @@ export function IrissKomandaAivaramChat({
                 key={`r-${item.request.id}`}
                 request={item.request}
                 reply={chat.replies.find((row) => row.requestId === item.request.id) ?? waybillAivarsReply(item.request, chat.events)}
-                onCancel={() => void cancel(item.request.id)}
+                onCancel={() => setAskCancel(item.request)}
+                onRetry={() => void retry(item.request.id)}
                 onRetryDropbox={() => void retryDropbox(item.request.id)}
               />
             ) : (
@@ -556,6 +578,18 @@ export function IrissKomandaAivaramChat({
       />
     </section>
     )}
+      {askCancel ? (
+        <WaybillCancelDialog
+          title={askCancel.vehicle.brandModel}
+          text={waybillCancelConfirmText(askCancel)}
+          onYes={() => {
+            const id = askCancel.id;
+            setAskCancel(null);
+            void cancel(id);
+          }}
+          onNo={() => setAskCancel(null)}
+        />
+      ) : null}
       {confirm ? (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#0f172a66] p-4">
           <div className="w-full max-w-[360px] rounded-2xl border border-[var(--iriss-line)] bg-white p-4" role="dialog" aria-modal="true">
@@ -602,6 +636,15 @@ export function IrissKomandaAivaramChat({
   );
 }
 
+/** Iesniegšanas atslēga (nav slepena; tikai dublikātu novēršanai). */
+function newWaybillSubmitKey(): string {
+  const rnd =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID().replace(/-/g, "")
+      : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+  return `wbk_${rnd}`.slice(0, 40);
+}
+
 function statusTone(status: WaybillRequestStatus): string {
   if (status === "issued") return "bg-[#ECFDF3] text-[var(--iriss-ok)]";
   if (status === "error") return "bg-[#FEF3F2] text-[#B42318]";
@@ -614,11 +657,14 @@ function RequestBubble({
   request,
   reply,
   onCancel,
+  onRetry,
   onRetryDropbox,
 }: {
   request: WaybillRequest;
   reply: WaybillAivarsReply;
+  /** Atver atcelšanas logu (pats neko neatceļ). */
   onCancel: () => void;
+  onRetry: () => void;
   onRetryDropbox: () => void;
 }) {
   const hours = requestHours(request);
@@ -687,16 +733,25 @@ function RequestBubble({
             </button>
           </div>
         ) : null}
-        {waybillRequestCancellable(request) ? (
-          <button
-            type="button"
-            onClick={() => {
-              if (confirmWaybillCancel(request.vehicle.brandModel)) onCancel();
-            }}
-            className="mt-1 block text-[12px] font-medium text-[var(--iriss-info)]"
-          >
-            Atcelt
-          </button>
+        {waybillRequestCancellable(request) && !isStaleWaybillRequest(request) ? (
+          <div className="mt-2 flex gap-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="min-h-9 rounded-[10px] border border-[var(--iriss-line)] bg-white px-3 text-[12.5px] font-semibold text-[var(--iriss-ink)]"
+            >
+              Atcelt pieprasījumu
+            </button>
+            {request.status === "in_progress" && waybillRequestRetryable(request) ? (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="min-h-9 rounded-[10px] border border-[var(--iriss-line)] bg-white px-3 text-[12.5px] font-semibold text-[var(--iriss-ink)]"
+              >
+                Atkārtot
+              </button>
+            ) : null}
+          </div>
         ) : null}
       </div>
       <span className="text-[11px] text-[var(--iriss-ink-3)]">{formatHm(request.createdAt)}</span>
@@ -767,7 +822,7 @@ function EventBubble({
     <div className="mr-8">
       <div className="inline-flex items-center gap-2 rounded-2xl bg-[var(--iriss-surface-2)] px-3 py-1.5 text-[12px]">
         <span className="rounded-full bg-white px-2 py-0.5 font-medium">{label}</span>
-        <span className="text-[var(--iriss-ink-2)]">{event.text}</span>
+        <span className="text-[var(--iriss-ink-2)]">{waybillDisplayText(event.text)}</span>
       </div>
       <p className="mt-1 text-[11px] text-[var(--iriss-ink-3)]">{formatHm(event.createdAt)}</p>
     </div>

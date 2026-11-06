@@ -238,9 +238,8 @@ export function IrissWaybillDesktopCreateForm({
           Izveidot pavadzīmi
         </button>
         <p className="mt-3 rounded-[10px] bg-[#EEF2FF] px-3 py-2.5 text-[11px] leading-snug text-[#1e293b]">
-          <b>Aivara ierobežojumi.</b> IRISS lietotājs var pieprasīt tikai CSDD pavadzīmi. Serverī komentārs tiek apstrādāts kā{" "}
-          <code>comment_untrusted</code> (citēti dati, līdz {NOTE_UNTRUSTED_MAX} zīmēm), nevis kā instrukcija. Citi aģenti
-          šo lauku neredz.
+          <b>Aivara ierobežojumi.</b> IRISS lietotājs var pieprasīt tikai CSDD pavadzīmi. Komentāru (līdz {NOTE_UNTRUSTED_MAX}{" "}
+          zīmēm) Aivars lasa tikai kā piezīmi šai pavadzīmei, nevis kā komandu. Citi aģenti šo lauku neredz.
         </p>
       </form>
       {pickerOpen ? (

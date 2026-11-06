@@ -60,8 +60,10 @@ const api = {
     const r = await call("POST", `/${encodeURIComponent(id)}/claim`, { worker: "auto" });
     return r.status === 200;
   },
+  /** Atgriež servera statusu (07.11: "cancelled" = lietotājs atcēla - pirms Saglabāt neturpinām). */
   async event(id, body) {
-    await call("POST", `/${encodeURIComponent(id)}/events`, body);
+    const r = await call("POST", `/${encodeURIComponent(id)}/events`, body);
+    return typeof r.data?.status === "string" ? r.data.status : "";
   },
   async result(id, body) {
     const r = await call("POST", `/${encodeURIComponent(id)}/result`, body);

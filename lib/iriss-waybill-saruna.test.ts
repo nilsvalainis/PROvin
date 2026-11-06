@@ -190,8 +190,9 @@ describe("Saruna feed no pavadzīmēm", () => {
       ],
       NOW,
     );
-    expect(countSarunaUnread(items, null, NOW)).toBe(2);
-    expect(countSarunaUnread(items, "2026-10-26T07:00:00.000Z", NOW)).toBe(2);
+    // Viena pavadzīme = viena neizlasīta (statusa rinda netiek skaitīta).
+    expect(countSarunaUnread(items, null, NOW)).toBe(1);
+    expect(countSarunaUnread(items, "2026-10-26T07:00:00.000Z", NOW)).toBe(1);
     expect(countSarunaUnread(items, "2026-10-26T11:00:00.000Z", NOW)).toBe(0);
   });
 

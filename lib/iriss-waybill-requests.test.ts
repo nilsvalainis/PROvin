@@ -6,6 +6,11 @@ import {
   pendingWaybillRequests,
   waybillPendingExpired,
   waybillRequestCancellable,
+  waybillCancelConfirmText,
+  waybillNoProgressMinutes,
+  waybillRequestRetryable,
+  waybillDisplayText,
+  aivarsWaybillStatusPayload,
   remainingWaybillDays,
   waybillDocForCreator,
   remainingWaybillLabel,
@@ -189,12 +194,41 @@ describe("honest status (cancel, test mode, expiry)", () => {
   const q = (over: Partial<WaybillRequest> = {}) =>
     sample({ createdAt: "2026-10-23T12:00:00.000Z", updatedAt: "2026-10-23T12:00:00.000Z", validUntil: "2026-10-23T13:00:00.000Z", ...over });
 
-  it("cancellable only while queued and unclaimed", () => {
+  it("07.11: cancellable in any state before Izdota (waiting, at the automation, at Aivars)", () => {
     expect(waybillRequestCancellable(q())).toBe(true);
-    expect(waybillRequestCancellable(q({ pickedBy: "aivars" }))).toBe(false);
-    for (const status of ["in_progress", "issued", "error", "cancelled"] as const) {
+    expect(waybillRequestCancellable(q({ status: "in_progress", pickedBy: "aivars" }))).toBe(true);
+    expect(waybillRequestCancellable(q({ status: "in_progress", pickedBy: "auto" }))).toBe(true);
+    for (const status of ["issued", "error", "cancelled"] as const) {
       expect(waybillRequestCancellable(q({ status }))).toBe(false);
     }
+    expect(waybillCancelConfirmText(q())).toBe("Aivars un automātika to vairs neizrakstīs.");
+    expect(waybillCancelConfirmText(q({ status: "in_progress", pickedBy: "aivars" }))).toContain("Darbu jau sāka Aivars");
+    expect(waybillCancelConfirmText(q({ status: "in_progress", pickedBy: "auto" }))).toContain("Darbu jau sāka automātika");
+  });
+
+  it("07.11: no news for > 5 min shows minutes and allows retry; fresh work does not", () => {
+    const at = (minAgo: number) => new Date(nowMs - minAgo * 60_000).toISOString();
+    const quiet = q({ status: "in_progress", pickedBy: "aivars", pickedAt: at(12), updatedAt: at(12) });
+    expect(waybillNoProgressMinutes(quiet, nowMs)).toBe(12);
+    expect(waybillRequestRetryable(quiet, nowMs)).toBe(true);
+    expect(waybillAivarsReply(quiet, [], nowMs).text).toBe("Nav ziņu 12 min. Ja CSDD pavadzīmes vēl nav, vari atcelt vai atkārtot.");
+    const fresh = q({ status: "in_progress", pickedBy: "aivars", pickedAt: at(2), updatedAt: at(2) });
+    expect(waybillNoProgressMinutes(fresh, nowMs)).toBeNull();
+    expect(waybillRequestRetryable(fresh, nowMs)).toBe(false);
+    expect(waybillNoProgressMinutes(q({ updatedAt: at(30) }), nowMs)).toBeNull();
+  });
+
+  it("history shows the CSDD word Pārtraukt, never anulēt (stored text unchanged)", () => {
+    expect(waybillDisplayText("Iepriekšējā pavadzīme P02873 CSDD anulēta.")).toBe("Iepriekšējā pavadzīme P02873 CSDD pārtraukta.");
+    expect(waybillDisplayText("Iepriekšējā P1 anulēta, jauno izraksta Aivars.")).toBe("Iepriekšējā P1 pārtraukta, jauno izraksta Aivars.");
+    expect(waybillDisplayText("Anulēšana neizdevās")).toBe("Pārtraukšana neizdevās");
+    expect(waybillDisplayText("Neko neanulēju")).toBe("Neko neanulēju");
+  });
+
+  it("status for Aivars (GET /:id): cancelled says so, no comment or creator", () => {
+    const payload = aivarsWaybillStatusPayload(q({ status: "cancelled", noteUntrusted: "slepens" }));
+    expect(payload).toMatchObject({ status: "cancelled", cancelled: true });
+    expect(JSON.stringify(payload)).not.toContain("slepens");
   });
 
   it("reply text: test mode, live automation, expired, cancelled and real worker stage", () => {
