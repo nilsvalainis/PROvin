@@ -655,3 +655,18 @@
     left: min(0px, calc((100% - 44px) / 2));
   }
 }
+
+/*
+ * Drošības tīkls visiem admin logiem telefonā (07.11).
+ * Kļūdu klase: `fixed inset-0 flex items-center|items-end` fons ar paneli bez max-height/ritināšanas -
+ * garš saturs iziet ārpus ekrāna, virsraksts un darbību pogas nav sasniedzamas (piem. Lietotāji -> Pievienot personu).
+ * Panelis nekad nav augstāks par fonu (100% = ekrāns mīnus fona atkāpes) un ritinās iekšā.
+ * Jauniem logiem lieto AdminResponsiveModal (components/admin/AdminResponsiveModal.tsx) - tam ir arī tastatūras un safe-area apstrāde.
+ */
+@media (max-width: 767.98px) {
+  .fixed.inset-0:is(.items-end, .items-center) > :is([role="dialog"], div):not([data-admin-responsive-modal]) {
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
