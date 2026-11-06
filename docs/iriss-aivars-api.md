@@ -47,6 +47,19 @@ Required structured fields (validated by the server before the job is queued):
 - `replaceWaybillNo` (j10, 23.10.2026): the plate was busy and the user answered "Jā" to "Vai tiešām pārtraukt iepriekšējo un izveidot jaunu?". Only this waybill (e.g. `P02812`) may be stopped (CSDD "Pārtraukt!"), and only if CSDD still shows exactly it as Derīgs on this plate. Empty = never stop anything.
 - Plate status comes from the CSDD register too (`sync.js` on Hetzner -> `POST /api/iriss/aivars/waybill-plates`), so waybills issued by hand in CSDD make the plate busy in the UI.
 - Jobs with no progress for 24 h (queued / in progress) are stale: they are no longer listed in GET and cannot be claimed. Staff see them in Arhīvs as "Novecojis"; data is not changed.
+- An `in_progress` job is never listed or claimable again (07.11: on 06.11 the same job was claimed twice after 30 min). Stuck jobs time out instead (no event / stage for the limit; limits from Vercel logs 31.10-06.11: longest automation job 203 s, longest successful Aivars job 19 min):
+  - automation silent > 15 min -> back to the queue for Aivars with `handoff` (`checkCsddFirst: true` if the last stage was `saving`/`pdf` or unknown);
+  - Aivars silent > 30 min -> status `error` "Iestrēdzis ... Pārbaudi CSDD"; a later real `result` still wins. Staff "Atkārtot" then queues it for Aivars only, with `handoff.checkCsddFirst: true`;
+  - cancel requested but never confirmed -> `cancelled` with a CSDD check note.
+  Report progress with `events` (any kind) to keep a long job alive.
+
+## Cancel (Atcelt) and double submit
+
+- Staff "Atcelt" on a queued job cancels it at once. On an `in_progress` job it only **requests** a stop: `events` and `claim` responses and `GET /:id` return `cancelRequested: true`.
+- When you see `cancelRequested: true` **before CSDD Saglabāt**: stop, do not save, and confirm with `POST /:id/events { "kind": "cancelled" }` (optional `text`). The job becomes `cancelled`. `cancelled` without a pending cancel request returns 409.
+- If Saglabāt already ran: finish normally with `result { ok: true, waybillNo }`. The server records the waybill (nothing is lost) and marks it `manualAnnulNeeded` ("jāanulē manuāli" - a human ends it in CSDD; agents never click Anulēt).
+- `result { ok: false }` or `/release` after a cancel request -> `cancelled` (never back in the queue).
+- Create POST accepts an idempotency key (header `Idempotency-Key` or body `idempotencyKey`, 8-64 chars `[A-Za-z0-9_-]`). The same key from the same user within 24 h returns the same request (`200`, `duplicate: true`) and creates nothing; the same key for another plate returns 409. One active (queued / in progress) request per plate stays enforced under the lock (409 `pending`).
 
 Aivars on the CSDD side:
 
@@ -88,7 +101,8 @@ All require `Authorization: Bearer <IRISS_AIVARS_API_TOKEN>`.
 | --- | --- | --- |
 | GET | `/api/iriss/aivars/waybill-requests` | Pending `create_waybill` jobs in `requests`; pending `stop_waybill` jobs in `stopRequests` |
 | POST | `/api/iriss/aivars/waybill-requests/:id/claim` | Claim a job |
-| POST | `/api/iriss/aivars/waybill-requests/:id/events` | Status only: `in_progress`, `issued`, `error`, `message` |
+| GET | `/api/iriss/aivars/waybill-requests/:id` | One job: `{ status, pickedBy, cancelRequested, request }` (read only) |
+| POST | `/api/iriss/aivars/waybill-requests/:id/events` | Status only: `in_progress`, `issued`, `error`, `message`, `cancelled` (only after a cancel request). Response has `cancelRequested` |
 | POST | `/api/iriss/aivars/waybill-requests/:id/result` | Finish: `{ ok, waybillNo, pdfBase64?, errorReason? }` |
 | GET / POST | `/api/iriss/aivars/waybill-plates` | CSDD plate snapshot (Hetzner worker): `{ plates: [{ plate, ok, checkedAt, active: [{ waybillNo, validUntil, brandModel }], error }] }` |
 
@@ -113,7 +127,8 @@ With Vercel env `IRISS_WAYBILL_AUTO=1`, standard jobs (see `lib/iriss-waybill-au
 - `POST /:id/release { reason }` (worker only, before Save) puts the job back in the queue as non-automatic and wakes Aivars.
 - `events` / `result` accept `by: "auto"`.
 
-- j47: an automation `result { ok: false, by: "auto" }` is no longer a dead end. Unless the reason is "plate busy in CSDD" (`CSDD aizņem...`, the user must decide on replace), the job goes back to the queue for Aivars (`autoDisabled`), Aivars is woken, and the job carries `handoff: { from: "auto", reason, checkCsddFirst }`. With `checkCsddFirst: true` (error during/after Save) Aivars must first check in CSDD that the waybill was not already created. Release (`/release`) sets the same `handoff` with `checkCsddFirst: false`. A stale `in_progress` job held by the automation also carries `handoff` when it reappears in GET.
+- j47: an automation `result { ok: false, by: "auto" }` is no longer a dead end. Unless the reason is "plate busy in CSDD" (`CSDD aizņem...`, the user must decide on replace), the job goes back to the queue for Aivars (`autoDisabled`), Aivars is woken, and the job carries `handoff: { from: "auto", reason, checkCsddFirst }`. With `checkCsddFirst: true` (error during/after Save) Aivars must first check in CSDD that the waybill was not already created. Release (`/release`) sets the same `handoff` with `checkCsddFirst: false`. An automation job silent for more than 15 min is handed to Aivars the same way (see the stuck rules above).
+- The worker checks `cancelRequested` in every stage response and once more with `GET /:id` right before Saglabāt; on cancel it stops and sends `events { kind: "cancelled", by: "auto" }`.
 - The 15 min cron retries a failed wake (HTTP/network) on the next run; a missing/invalid `IRISS_AIVARS_WAKE_URL` is logged as an error (`aivars_wake_not_configured`).
 
 A busy plate (`confirmBusy`) is never standard: ending an active waybill needs Nils's "jā" through Aivars. The worker never runs stop/cancel scripts.

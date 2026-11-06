@@ -12,7 +12,7 @@ import {
 } from "@/lib/iriss-waybill-auto";
 import { autoWaybillLiveNow, busyWaybillPlatesNow } from "@/lib/iriss-waybill-auto-server";
 import { pendingWaybillRequests } from "@/lib/iriss-waybill-requests";
-import { readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
+import { expireStuckWaybillRequests, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
 import { noteWaybillWorkerHeartbeat } from "@/lib/iriss-ttr-control-store";
 import { knownWaybillNumbers } from "@/lib/iriss-waybill-csdd-plates";
 import { readCsddPlatesDocSafe } from "@/lib/iriss-waybill-csdd-plates-store";
@@ -57,6 +57,10 @@ export async function GET(req: Request) {
     after(() => noteWaybillWorkerHeartbeat(live));
   }
   const nowMs = Date.now();
+  // Iestrēgušie darbi (automātika ik 10 s jautā): nodoti Aivaram / Kļūda / Atcelts - nekad mūžīgi "Izveido".
+  await expireStuckWaybillRequests(nowMs).catch((err) =>
+    console.error("[iriss-waybill] stuck_sweep_failed", err instanceof Error ? err.message : err),
+  );
   const doc = await readWaybillRequestsDoc();
   const pending = pendingWaybillRequests(doc.requests, nowMs);
   const creates = pending.filter((row) => !isWaybillStopRequest(row));

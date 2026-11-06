@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   WAYBILL_REQUEST_STATUS_LABEL,
   isStaleWaybillRequest,
+  newWaybillSubmitKey,
   waybillAivarsReply,
   waybillChatTimelineNewestFirst,
   waybillRequestCancellable,
@@ -27,7 +28,7 @@ import {
   type WaybillPlateState,
 } from "@/lib/iriss-waybill-plates";
 import { IrissWaybillDesktopCreateForm } from "@/components/admin/IrissWaybillDesktopCreateForm";
-import { IrissWaybillMobileForm, confirmWaybillCancel, type WaybillMobileDraft } from "@/components/admin/IrissWaybillMobileForm";
+import { IrissWaybillMobileForm, WaybillCancelDialog, type WaybillMobileDraft } from "@/components/admin/IrissWaybillMobileForm";
 import { IrissWaybillSavePdfButton } from "@/components/admin/IrissWaybillSavePdfButton";
 import { waybillDropboxFileName, waybillPdfDownloadHref } from "@/lib/iriss-waybill-pdf";
 import {
@@ -192,6 +193,8 @@ export function IrissKomandaAivaramChat({
   const platesLoaded = useRef(false);
   /** Telefona formas dati pēdējam sūtījumam (vajag "Tomēr izveidot" logam). */
   const mobilePayload = useRef<WaybillMobilePayload | null>(null);
+  /** Pašreizējās iesniegšanas idempotences atslēga (tukšs = nākamā iesniegšana ir jauna). */
+  const submitKey = useRef("");
 
   useEffect(() => {
     if (!draftVehicle) return;
@@ -302,6 +305,8 @@ export function IrissKomandaAivaramChat({
   async function submit(confirmBusy = false): Promise<boolean> {
     setError(null);
     setBusy(true);
+    // Viena iesniegšana = viena atslēga: dubults klikšķis vai atkārtojums pēc tīkla kļūdas neveido otru pieprasījumu.
+    if (!submitKey.current) submitKey.current = newWaybillSubmitKey();
     const mobile = mobilePayload.current;
     // Pārtraukt drīkst tikai to pavadzīmi, ko lietotājs redzēja logā (ja tā tikmēr mainījusies - serveris jautās vēlreiz).
     const confirmWaybillNo = confirmBusy ? (confirm?.current?.number ?? "") : "";
@@ -316,7 +321,7 @@ export function IrissKomandaAivaramChat({
       const res = await fetch("/api/admin/iriss/waybill-requests", {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Idempotency-Key": submitKey.current },
         body: JSON.stringify(
           { ...(mobile ?? (desktop?.ok ? desktop.payload : {})), confirmBusy, confirmWaybillNo },
         ),
@@ -327,6 +332,8 @@ export function IrissKomandaAivaramChat({
         return false;
       }
       if (isChatError(data) || !isChatOk(data)) {
+        // Serveris atbildēja (pieprasījums nav izveidots): nākamā iesniegšana ir jauna.
+        submitKey.current = "";
         setError(chatErrorMessage(data, "Neizdevās nosūtīt."));
         return false;
       }
@@ -338,6 +345,7 @@ export function IrissKomandaAivaramChat({
       if (!mobile) setComment("");
       setConfirm(null);
       mobilePayload.current = null;
+      submitKey.current = "";
       return true;
     } catch {
       setError("Neizdevās nosūtīt.");
@@ -623,6 +631,7 @@ function RequestBubble({
 }) {
   const hours = requestHours(request);
   const shownPlate = displayDealerPlate(request.vehicle.plate) || request.vehicle.plate;
+  const [askCancel, setAskCancel] = useState(false);
   return (
     <div className="ml-8 flex flex-col items-end gap-1">
       <div className="max-w-[85%] rounded-2xl rounded-br-md bg-[var(--iriss-graphite)] px-3 py-2 text-[12px] text-white">
@@ -690,13 +699,22 @@ function RequestBubble({
         {waybillRequestCancellable(request) ? (
           <button
             type="button"
-            onClick={() => {
-              if (confirmWaybillCancel(request.vehicle.brandModel)) onCancel();
-            }}
-            className="mt-1 block text-[12px] font-medium text-[var(--iriss-info)]"
+            onClick={() => setAskCancel(true)}
+            className="mt-1 block min-h-9 text-[12px] font-medium text-[var(--iriss-info)]"
           >
             Atcelt
           </button>
+        ) : null}
+        {askCancel ? (
+          <WaybillCancelDialog
+            title={request.vehicle.brandModel}
+            inProgress={request.status === "in_progress"}
+            onNo={() => setAskCancel(false)}
+            onYes={() => {
+              setAskCancel(false);
+              onCancel();
+            }}
+          />
         ) : null}
       </div>
       <span className="text-[11px] text-[var(--iriss-ink-3)]">{formatHm(request.createdAt)}</span>

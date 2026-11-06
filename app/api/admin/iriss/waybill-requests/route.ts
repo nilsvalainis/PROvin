@@ -5,21 +5,35 @@ import { loadWaybillPlateOccupancy, waybillAutoContext } from "@/lib/iriss-waybi
 import { parseCreateWaybillInput } from "@/lib/iriss-waybill-create";
 import {
   emptyWaybillRequestsDoc,
+  findWaybillRequestByIdempotencyKey,
+  parseWaybillIdempotencyKey,
   waybillChatPayload,
   waybillDocForCreator,
   waybillDocWithoutOrders,
   waybillRequestWithoutOrder,
   WaybillPendingSamePlateError,
+  type WaybillRequest,
+  type WaybillRequestsDoc,
 } from "@/lib/iriss-waybill-requests";
-import { createWaybillRequest, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
+import {
+  createWaybillRequest,
+  expireStuckWaybillRequests,
+  readWaybillRequestsDoc,
+  WaybillIdempotencyConflictError,
+} from "@/lib/iriss-waybill-requests-store";
 import { readDismissedWaybillIds } from "@/lib/iriss-waybill-dismissed-store";
-import { displayDealerPlate, emptyWaybillPlateStates, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
+import {
+  compactDealerPlate,
+  displayDealerPlate,
+  emptyWaybillPlateStates,
+  type WaybillPlateState,
+} from "@/lib/iriss-waybill-plates";
 import { csddWithdrawnRequestNos, unionWithdrawnNos, withWaybillRequestStates } from "@/lib/iriss-waybill-live-plates";
 import { listWaybillVehicleChips } from "@/lib/iriss-waybill-vehicles";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { waybillTradeCarsWithSource, type WaybillCarsSource, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 import { canSeeWaybillOrders } from "@/lib/iriss-pavadzimes-list";
-import { isWaybillOnlyActor, requireIrissSectionApi, waybillPdfViewer } from "@/lib/staff-auth";
+import { isWaybillOnlyActor, requireIrissSectionApi, waybillPdfViewer, type AdminOrStaffActor } from "@/lib/staff-auth";
 import { withWaybillPdfAccess } from "@/lib/iriss-waybill-pdf";
 
 export const runtime = "nodejs";
@@ -87,6 +101,49 @@ function confirmBusy(body: unknown): boolean {
   return Boolean(body && typeof body === "object" && !Array.isArray(body) && (body as { confirmBusy?: unknown }).confirmBusy === true);
 }
 
+const IDEMPOTENCY_CONFLICT_TEXT = "Šī iesniegšana jau izmantota citam numuram. Atver formu no jauna un mēģini vēlreiz.";
+
+/** Idempotences atslēga: galvene `Idempotency-Key` vai lauks `idempotencyKey` (8-64 zīmes). Tukšs = nav. */
+function idempotencyKeyOf(req: Request, body: unknown): string {
+  const fromBody = body && typeof body === "object" ? (body as { idempotencyKey?: unknown }).idempotencyKey : "";
+  return parseWaybillIdempotencyKey(req.headers.get("idempotency-key")) || parseWaybillIdempotencyKey(fromBody);
+}
+
+/** Atkārtots POST ar to pašu atslēgu: 200 ar jau esošo pieprasījumu (otru neveido, Aivaru nemodina vēlreiz). */
+async function duplicateResponse(
+  request: WaybillRequest,
+  doc: WaybillRequestsDoc,
+  base: PlateOccupancy,
+  actor: AdminOrStaffActor,
+) {
+  const plates = livePlates(base, doc.requests);
+  const auto = await waybillAutoContext(doc, busyFromPlates(plates));
+  const withOrders = canSeeWaybillOrders(actor);
+  return NextResponse.json(
+    {
+      ok: true,
+      duplicate: true,
+      request: withOrders ? request : waybillRequestWithoutOrder(request),
+      ...withWaybillPdfAccess(
+        waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc), Date.now(), auto),
+        waybillPdfViewer(actor),
+      ),
+      autoMode: auto.mode,
+      plates,
+    },
+    NO_STORE,
+  );
+}
+
+/** Iestrēgušie darbi (bez virzības > taimauts) kļūst par Kļūda/Atcelts/nodots Aivaram; kļūda nav fatāla. */
+async function expireStuckSafe(): Promise<void> {
+  try {
+    await expireStuckWaybillRequests();
+  } catch (err) {
+    console.error("[iriss-waybill] stuck_sweep_failed", err instanceof Error ? err.message : err);
+  }
+}
+
 /** Pavadzīme, ko lietotājs apstiprināja pārtraukt (redzēja logā). Tukšs - vecs klients. */
 function confirmedWaybillNo(body: unknown): string {
   const v = body && typeof body === "object" ? (body as { confirmWaybillNo?: unknown }).confirmWaybillNo : "";
@@ -99,6 +156,8 @@ export async function GET(req: Request) {
   // Auto sarakstu lasa tikai pēc pieprasījuma (?cars=1), nevis katrā 5 s atjaunošanā.
   const withCars = new URL(req.url).searchParams.get("cars") === "1";
   try {
+    // UI lasa ik 5 s: iestrēdzis darbs nekad nepaliek mūžīgi "Izveido".
+    await expireStuckSafe();
     const [doc, vehicles, occupancy, tradeCars, dismissedIds] = await Promise.all([
       readWaybillRequestsDoc(),
       loadVehiclesSafe(),
@@ -155,8 +214,18 @@ export async function POST(req: Request) {
   if (!parsed.ok) {
     return NextResponse.json({ error: parsed.error }, { status: 400, ...NO_STORE });
   }
+  const idempotencyKey = idempotencyKeyOf(req, body);
+  const actorCreatedBy = gate.actor.kind === "admin" ? "env-admin" : gate.actor.user.id;
   try {
     const [base, docBefore] = await Promise.all([loadPlateOccupancySafe(), readWaybillRequestsDoc()]);
+    // Tā pati iesniegšana otrreiz (dubults klikšķis, tīkla atkārtojums): to pašu pieprasījumu, nevis 409 "aizņemts".
+    const same = findWaybillRequestByIdempotencyKey(docBefore.requests, actorCreatedBy, idempotencyKey);
+    if (same) {
+      if (compactDealerPlate(same.vehicle.plate) !== compactDealerPlate(parsed.value.plate)) {
+        return NextResponse.json({ error: IDEMPOTENCY_CONFLICT_TEXT }, { status: 409, ...NO_STORE });
+      }
+      return duplicateResponse(same, docBefore, base, gate.actor);
+    }
     const plates = livePlates(base, docBefore.requests);
     const plate = displayDealerPlate(parsed.value.plate);
     const occupancy = plates.find((row) => row.plate === plate);
@@ -175,16 +244,22 @@ export async function POST(req: Request) {
       );
     }
     const actor = gate.actor;
-    const createdBy = actor.kind === "admin" ? "env-admin" : actor.user.id;
+    const createdBy = actorCreatedBy;
     const createdByName = actor.kind === "admin" ? actor.name : actor.user.name;
-    const request = await createWaybillRequest({
+    const created = await createWaybillRequest({
       createdBy,
       createdByName,
       payload: parsed.value,
       plateBusyAtCreate: Boolean(occupancy?.busy),
       // "Vai tiešām pārtraukt iepriekšējo un izveidot jaunu?" -> Jā: pārtraukt drīkst TIKAI šo (tobrīd redzamo) pavadzīmi.
       replaceWaybillNo: occupancy?.busy ? (occupancy.current?.number ?? "") : "",
+      idempotencyKey,
     });
+    if (created.duplicate) {
+      const { duplicate: _dup, ...same } = created;
+      return duplicateResponse(same, await readWaybillRequestsDoc(), base, actor);
+    }
+    const request: WaybillRequest = created;
     const doc = await readWaybillRequestsDoc();
     const classified = classifyWaybillForAuto(request, {
       plateBusyNow: Boolean(occupancy?.busy),
@@ -209,6 +284,9 @@ export async function POST(req: Request) {
       NO_STORE,
     );
   } catch (err) {
+    if (err instanceof WaybillIdempotencyConflictError) {
+      return NextResponse.json({ error: IDEMPOTENCY_CONFLICT_TEXT }, { status: 409, ...NO_STORE });
+    }
     if (err instanceof WaybillPendingSamePlateError) {
       const car = err.pending.vehicle.brandModel.trim();
       return NextResponse.json(

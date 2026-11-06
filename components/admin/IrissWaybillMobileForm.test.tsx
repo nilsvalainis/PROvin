@@ -3,6 +3,7 @@ import {
   IrissWaybillAutoEntry,
   IrissWaybillCarPicker,
   IrissWaybillMobileForm,
+  WaybillCancelDialog,
   WaybillDismissDialog,
   WaybillLiveRow,
 } from "@/components/admin/IrissWaybillMobileForm";
@@ -252,5 +253,17 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     expect(text).toContain("Noņemt no saraksta - AUDI A6 AVANT?");
     expect(text).toContain("Pavadzīme, PDF un Arhīvs paliek nemainīti.");
     expect([...html.matchAll(/<button[^>]*>([^<]+)<\/button>/g)].map((m) => m[1])).toEqual(["Jā", "Nē"]);
+  });
+
+  it("'Atcelt' asks in an app dialog (not window.confirm); in progress it says it stops before the next CSDD step", () => {
+    const queued = renderText(<WaybillCancelDialog title="VW Passat" inProgress={false} onYes={() => undefined} onNo={() => undefined} />);
+    expect(queued).toContain("Atcelt pieprasījumu - VW Passat?");
+    expect(queued).toContain("vairs neizrakstīs");
+    const working = renderText(<WaybillCancelDialog title="VW Passat" inProgress onYes={() => undefined} onNo={() => undefined} />);
+    expect(working).toContain("apstāsies pirms nākamā CSDD soļa");
+    expect(working).toContain("jāanulē manuāli");
+    const html = renderHtml(<WaybillCancelDialog title="VW Passat" inProgress onYes={() => undefined} onNo={() => undefined} />);
+    expect(html).toContain('role="dialog"');
+    expect([...html.matchAll(/<button[^>]*>([^<]+)<\/button>/g)].map((m) => m[1])).toEqual(["Jā, atcelt", "Nē"]);
   });
 });

@@ -72,6 +72,7 @@ export type StaffAuditAction =
   | "waybill_cancelled"
   | "waybill_result"
   | "waybill_handoff_aivars"
+  | "waybill_stuck"
   | "point_viewed"
   | "point_edited"
   | "print"
@@ -135,6 +136,7 @@ export function isStaffAuditAction(value: unknown): value is StaffAuditAction {
     value === "waybill_cancelled" ||
     value === "waybill_result" ||
     value === "waybill_handoff_aivars" ||
+    value === "waybill_stuck" ||
     value === "point_viewed" ||
     value === "point_edited" ||
     value === "print" ||

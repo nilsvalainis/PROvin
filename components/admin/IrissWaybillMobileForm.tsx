@@ -492,9 +492,64 @@ export function IrissWaybillMobileForm({
   );
 }
 
-/** Apstiprinājums pirms "Atcelt" (tikai Gaida, vēl nepaņemts; serveris pārbauda vēlreiz). */
-export function confirmWaybillCancel(title: string): boolean {
-  return window.confirm(`Atcelt pavadzīmes pieprasījumu${title ? ` (${title})` : ""}? Aivars un automātika to vairs neizrakstīs.`);
+/** "Atcelt" apstiprinājuma teksts: Gaida - atceļ uzreiz; Izveido - tikai pieprasījums apstāties pirms nākamā CSDD soļa. */
+export function waybillCancelDialogText(inProgress: boolean): string {
+  return inProgress
+    ? "Pavadzīmi jau izraksta. Tā apstāsies pirms nākamā CSDD soļa. Ja CSDD jau saglabāja - pavadzīme paliks izdota un būs jāanulē manuāli."
+    : "Aivars un automātika to vairs neizrakstīs.";
+}
+
+/**
+ * "Atcelt" apstiprinājums lietotnes logā (agrāk pārlūka window.confirm - vienīgais tāds logs, audits 27.10).
+ * Atceļ TIKAI poga "Jā, atcelt"; fons, Escape un "Nē" - nekas nenotiek. Serveris pārbauda vēlreiz.
+ */
+export function WaybillCancelDialog({
+  title,
+  inProgress,
+  onYes,
+  onNo,
+}: {
+  title: string;
+  inProgress: boolean;
+  onYes: () => void;
+  onNo: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onNo();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onNo]);
+  const backdropClose = useModalBackdropClose(onNo);
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#0f172a66] p-4" {...backdropClose}>
+      <div
+        className="w-full max-w-[360px] rounded-2xl border border-[var(--iriss-line)] bg-white p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wb-cancel-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 id="wb-cancel-title" className="m-0 text-[15px] font-semibold text-[var(--iriss-ink)] [overflow-wrap:anywhere]">
+          Atcelt pieprasījumu{title ? ` - ${title}` : ""}?
+        </h3>
+        <p className="mt-2 text-[13px] leading-snug text-[#5e636e]">{waybillCancelDialogText(inProgress)}</p>
+        <div className="mt-3.5 flex flex-col gap-2">
+          <button type="button" className="h-11 rounded-[10px] bg-[var(--iriss-graphite)] text-[13px] font-semibold text-white" onClick={onYes}>
+            Jā, atcelt
+          </button>
+          <button
+            type="button"
+            className="h-11 rounded-[10px] border border-[var(--iriss-line)] bg-white text-[13px] font-semibold text-[var(--iriss-ink)]"
+            onClick={onNo}
+          >
+            Nē
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -557,6 +612,7 @@ export function WaybillLiveRow({
 }) {
   const { step, pct, text } = row.progress;
   const line = row.line || text;
+  const [askCancel, setAskCancel] = useState(false);
   const bad = row.tone === "bad";
   const done = step === 3 && !bad;
   return (
@@ -581,15 +637,20 @@ export function WaybillLiveRow({
           </button>
         ) : null}
         {row.canCancel && onCancel ? (
-          <button
-            type="button"
-            className={styles.link}
-            onClick={() => {
-              if (confirmWaybillCancel(row.title)) onCancel(row.id);
-            }}
-          >
+          <button type="button" className={styles.link} onClick={() => setAskCancel(true)}>
             Atcelt
           </button>
+        ) : null}
+        {askCancel && onCancel ? (
+          <WaybillCancelDialog
+            title={row.title}
+            inProgress={row.cancelInProgress === true}
+            onNo={() => setAskCancel(false)}
+            onYes={() => {
+              setAskCancel(false);
+              onCancel(row.id);
+            }}
+          />
         ) : null}
         {row.canDismiss && onDismiss ? (
           <button type="button" className={styles.link} onClick={() => onDismiss(row)}>

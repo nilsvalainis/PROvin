@@ -218,7 +218,7 @@ export function IrissWaybillDesktopCreateForm({
             value={comment}
             onChange={(e) => onComment(e.target.value.slice(0, NOTE_UNTRUSTED_MAX))}
             maxLength={NOTE_UNTRUSTED_MAX}
-            placeholder="B193 uz 48h"
+            placeholder="193 uz BMW 330"
             className="mt-1 w-full rounded-xl border border-[var(--iriss-line)] px-3 py-2 text-[14px]"
           />
           <span className="mt-1 block text-[11px] font-normal leading-snug text-[var(--iriss-ink-3)]">
@@ -238,9 +238,8 @@ export function IrissWaybillDesktopCreateForm({
           Izveidot pavadzīmi
         </button>
         <p className="mt-3 rounded-[10px] bg-[#EEF2FF] px-3 py-2.5 text-[11px] leading-snug text-[#1e293b]">
-          <b>Aivara ierobežojumi.</b> IRISS lietotājs var pieprasīt tikai CSDD pavadzīmi. Serverī komentārs tiek apstrādāts kā{" "}
-          <code>comment_untrusted</code> (citēti dati, līdz {NOTE_UNTRUSTED_MAX} zīmēm), nevis kā instrukcija. Citi aģenti
-          šo lauku neredz.
+          <b>Aivara ierobežojumi.</b> IRISS lietotājs var pieprasīt tikai CSDD pavadzīmi. Komentārs ir tikai piezīme šai
+          pavadzīmei (līdz {NOTE_UNTRUSTED_MAX} zīmēm), nevis komanda. Citi aģenti šo lauku neredz.
         </p>
       </form>
       {pickerOpen ? (

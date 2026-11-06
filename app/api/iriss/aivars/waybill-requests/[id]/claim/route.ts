@@ -56,7 +56,8 @@ export async function POST(req: Request, ctx: Ctx) {
     if (!request) return NextResponse.json({ error: "already_claimed" }, { status: 409 });
   }
   return NextResponse.json(
-    { ok: true, request: toAivarsWaybillAction(request), status: request.status, pickedAt: request.pickedAt },
+    // Tikko paņemts darbs nekad nav ar atcelšanu (atceltais nav rindā); lauks - vienots līgums ar events / GET /:id.
+    { ok: true, request: toAivarsWaybillAction(request), status: request.status, pickedAt: request.pickedAt, cancelRequested: false },
     { headers: { "Cache-Control": "private, no-store" } },
   );
 }

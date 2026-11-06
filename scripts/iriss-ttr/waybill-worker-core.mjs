@@ -280,11 +280,31 @@ export async function processJob(job, deps) {
     return { outcome: "not_claimed" };
   }
   marks.claim = deps.now();
-  const stage = (name) => deps.api.event(job.id, { kind: "message", stage: name, by: "auto" }).catch(() => {});
+  /** Ziņo soli; atgriež true, ja lietotājs tikmēr nospieda "Atcelt" (servera atbilde cancelRequested). */
+  const stage = async (name) => {
+    const res = await deps.api.event(job.id, { kind: "message", stage: name, by: "auto" }).catch(() => null);
+    return Boolean(res && res.cancelRequested === true);
+  };
+  /** Svaigs statuss tieši pirms CSDD Saglabāt (GET /:id). Kļūda -> nezināms (false), darbs turpinās kā līdz šim. */
+  const cancelAskedNow = async () => {
+    if (!deps.api.status) return false;
+    const res = await deps.api.status(job.id).catch(() => null);
+    return Boolean(res && res.cancelRequested === true);
+  };
   const plate = String(job.vehicle.plate || "").toUpperCase();
   const replaceNo = job.auto.replace ? String(job.auto.replace.waybillNo).toUpperCase() : "";
   let saveStarted = false;
   let annulDone = false;
+  /**
+   * Lietotājs atcēla (B762 06.11): apstājas PIRMS nākamā CSDD soļa un apstiprina serverim ({kind:"cancelled"}).
+   * Nekad pēc Saglabāt sākuma - tad pabeidz parasti, un serveris atzīmē "jāanulē manuāli".
+   */
+  const stopCancelled = async (where) => {
+    const text = annulDone ? `Iepriekšējā ${replaceNo} jau anulēta; jaunā pavadzīme nav izveidota.` : "";
+    deps.log("cancelled_by_user", { id: job.id, before: where, annulDone });
+    await deps.api.event(job.id, { kind: "cancelled", text, by: "auto" }).catch(() => {});
+    return { outcome: "cancelled", reason: `atcelts pirms: ${where}` };
+  };
   let leased = false;
   /** CSDD darbība (annul/fill/save) sākta: pēc rezultāta numuru sinhronizē vēlreiz. */
   let touchedCsdd = false;
@@ -296,11 +316,11 @@ export async function processJob(job, deps) {
     return res.plates?.[displayPlate(plate)] || [];
   };
   try {
-    await stage("vpn");
+    if (await stage("vpn")) return await stopCancelled("vpn");
     leased = true;
     await deps.vpnLease();
     marks.vpnUp = deps.now();
-    await stage("checking");
+    if (await stage("checking")) return await stopCancelled("checking");
     let active = await syncPlate();
     if (active.length) {
       if (!replaceNo) {
@@ -314,7 +334,7 @@ export async function processJob(job, deps) {
         await deps.api.result(job.id, { ok: false, errorReason: text, by: "auto" }).catch(() => {});
         return { outcome: "plate_busy_other", active: active.map((a) => a.waybillNo) };
       }
-      await stage("annulling");
+      if (await stage("annulling")) return await stopCancelled("annulling");
       touchedCsdd = true;
       const input = { ...scriptInput(job), replaceWaybillNo: replaceNo };
       const annulled = await deps.runScript("annul", input);
@@ -325,7 +345,7 @@ export async function processJob(job, deps) {
       active = await syncPlate();
       if (active.length) throw new Error(`pēc anulēšanas numurs joprojām aizņemts (${active.map((a) => a.waybillNo).join(", ")})`);
     }
-    await stage("filling");
+    if (await stage("filling")) return await stopCancelled("filling");
     const input = scriptInput(job);
     touchedCsdd = true;
     const filled = await deps.runScript("fill", input);
@@ -338,7 +358,9 @@ export async function processJob(job, deps) {
     const verified = verifyFilledFields(job, filled.fields);
     if (!verified.ok) throw new Error(verified.reason);
     marks.filled = deps.now();
-    await stage("saving");
+    // Pēdējā droša vieta apstāties: forma aizpildīta, bet CSDD vēl nav saglabāts.
+    if (await cancelAskedNow()) return await stopCancelled("saving");
+    if (await stage("saving")) return await stopCancelled("saving");
     saveStarted = true;
     const saved = await deps.runScript("save", input);
     if (saved && saved.ok === false && saved.notCreated === true) {

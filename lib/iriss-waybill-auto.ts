@@ -2,7 +2,7 @@
  * Automātiska CSDD pavadzīmes izrakstīšana (Hetzner `iriss-waybill-worker`), divas plūsmas kā telefona formā (PR #504):
  * - "tradeAct": tirdzniecībā pieņemts auto (VIN zināms) -> akts -> "Noformēt pavadzīmi"; tikai laiks + pārstāvis;
  * - "new": jauna pavadzīme ar noklusējuma maršrutu (Tukums, Rīgas iela -> Tukuma CSDD).
- * Laiks: jebkuras veselas stundas 1..2160 (piem. 1 h). Drošība: numurs no saraksta un brīvs, nav cita darba ar šo numuru,
+ * Laiks: jebkuras veselas stundas 1..48 (Nils 27.10, CSDD max; piem. 1 h). Drošība: numurs no saraksta un brīvs, nav cita darba ar šo numuru,
  * termiņš nav beidzies, pirmais mēģinājums, komentārs tukšs vai pēc šablona. Viss pārējais -> Aivars.
  * Serveris nekad nepārtrauc un neanulē aktīvu pavadzīmi: aizņemts numurs vienmēr ir nestandarta.
  * Tā pati pārbaude ir worker pusē (scripts/iriss-ttr/waybill-worker-core.mjs localStandardCheck).

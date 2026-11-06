@@ -8,16 +8,26 @@ import { waybillPushMessage, waybillPushUserKey } from "@/lib/iriss-waybill-push
 import { sanitizeNoteUntrusted, type CreateWaybillInput } from "@/lib/iriss-waybill-create";
 import {
   emptyWaybillRequestsDoc,
-  inProgressIsStale,
+  findWaybillRequestByIdempotencyKey,
   isStaleWaybillRequest,
+  parseWaybillIdempotencyKey,
   parseWaybillRequestsDoc,
   pendingWaybillRequestForPlate,
   pendingWaybillRequests,
+  waybillCancelMode,
   waybillPendingExpired,
   WaybillPendingSamePlateError,
-  waybillRequestCancellable,
+  waybillStageAfterSave,
+  waybillStuckDecision,
   withWaybillLegacyTimeFixes,
+  WAYBILL_CANCEL_AFTER_SAVE_TEXT,
+  WAYBILL_CANCEL_REQUESTED_TEXT,
+  WAYBILL_CANCEL_UNKNOWN_TEXT,
+  WAYBILL_CANCELLED_BEFORE_SAVE_TEXT,
   WAYBILL_HANDOFF_TEXT,
+  WAYBILL_MANUAL_ANNUL_TEXT,
+  WAYBILL_MAX_ISSUE_HOURS,
+  WAYBILL_STUCK_ERROR_TEXT,
   type WaybillWorkerStage,
   type WaybillRequest,
   type WaybillRequestEvent,
@@ -69,6 +79,17 @@ function mutateDoc<R>(
   );
 }
 
+/** Tā pati idempotences atslēga citam numuram: klienta kļūda, otru pieprasījumu neveido (409). */
+export class WaybillIdempotencyConflictError extends Error {
+  constructor() {
+    super("waybill_idempotency_conflict");
+  }
+}
+
+function compactPlate(plate: string): string {
+  return plate.trim().toUpperCase().replace(/[\s-]/g, "");
+}
+
 function newId(prefix: string): string {
   return `${prefix}_${randomBytes(8).toString("hex")}`;
 }
@@ -103,9 +124,12 @@ export async function createWaybillRequest(input: {
   plateBusyAtCreate?: boolean;
   /** Apstiprinātā anulējamā pavadzīme (tikai, ja plateBusyAtCreate). */
   replaceWaybillNo?: string;
-}): Promise<WaybillRequest> {
+  /** Klienta atslēga: atkārtots POST ar to pašu atslēgu (24 h) atgriež esošo pieprasījumu, otru neveido. */
+  idempotencyKey?: string;
+}): Promise<WaybillRequest & { duplicate?: true }> {
   const now = new Date().toISOString();
   const payload = input.payload;
+  const idempotencyKey = parseWaybillIdempotencyKey(input.idempotencyKey);
   const request: WaybillRequest = {
     id: newId("wbr"),
     createdBy: input.createdBy,
@@ -148,8 +172,15 @@ export async function createWaybillRequest(input: {
     dropboxPath: "",
     dropboxError: "",
     dropboxAt: "",
+    ...(idempotencyKey ? { idempotencyKey } : {}),
   };
-  await mutateDoc((doc) => {
+  const existing = await mutateDoc<WaybillRequest | null>((doc) => {
+    // Idempotence (zem slēdzenes): tā pati iesniegšana otrreiz (dubults klikšķis, tīkla atkārtojums) -> tas pats pieprasījums.
+    const same = findWaybillRequestByIdempotencyKey(doc.requests, input.createdBy, idempotencyKey);
+    if (same) {
+      if (compactPlate(same.vehicle.plate) !== compactPlate(request.vehicle.plate)) throw new WaybillIdempotencyConflictError();
+      return { value: same };
+    }
     // Zem tās pašas slēdzenes: divi vienlaicīgi pieprasījumi vienam numuram nevar abi nonākt rindā.
     const pending = pendingWaybillRequestForPlate(doc.requests, request.vehicle.plate);
     if (pending) throw new WaybillPendingSamePlateError(pending);
@@ -162,8 +193,9 @@ export async function createWaybillRequest(input: {
       pdfUrl: "",
       by: input.createdBy,
     });
-    return { value: request, next };
+    return { value: null, next };
   });
+  if (existing) return { ...existing, duplicate: true };
   await recordWaybillAudit({
     userId: input.createdBy,
     action: "waybill_requested",
@@ -288,6 +320,8 @@ export async function retryWaybillRequest(input: {
     // Novecojis "Izveido" (24 h bez virzības) arī drīkst atkārtot; tad tas atkal ir tagadējs.
     if (current.status !== "error" && current.status !== "queued" && !isStaleWaybillRequest(current)) return { value: null };
     const now = new Date().toISOString();
+    // Iestrēdzis darbs (nav zināms, vai CSDD saglabāja): tikai Aivaram, un viņš vispirms pārbauda CSDD (nekādu dublikātu).
+    const check = current.csddCheckNeeded === true;
     const nextReq: WaybillRequest = {
       ...current,
       status: "queued",
@@ -299,6 +333,12 @@ export async function retryWaybillRequest(input: {
       stage: "",
       stageAt: "",
       updatedAt: now,
+      cancelRequestedAt: "",
+      cancelRequestedBy: "",
+      csddCheckNeeded: false,
+      ...(check
+        ? { autoDisabled: true, handoffAt: now, handoffReason: "atkārtots pēc iestrēguša darba", handoffCheckCsdd: true }
+        : {}),
     };
     let next = {
       ...doc,
@@ -331,12 +371,16 @@ export async function listPendingWaybillRequests(nowMs = Date.now()): Promise<Wa
 }
 
 export type CancelWaybillResult =
-  | { ok: true; request: WaybillRequest }
+  | { ok: true; request: WaybillRequest; mode: "cancelled" | "requested" | "already_requested" }
   | { ok: false; reason: "not_found" | "not_pending" };
 
 /**
- * "Atcelt": tikai, ja pieprasījums joprojām Gaida un neviens to nav paņēmis (pārbaude zem slēdzenes).
- * Izdotas/aktīvas pavadzīmes un darbā esošus nekad neaiztiek. Ieraksts paliek (statuss "cancelled").
+ * "Atcelt" (pārbaude zem slēdzenes):
+ * - Gaida, neviens nav paņēmis -> atcelts uzreiz;
+ * - Izveido -> atcelšana PIEPRASĪTA (cancelRequestedAt): automātika/Aivars to redz un apstājas pirms nākamā CSDD soļa,
+ *   tad apstiprina (`events {kind:"cancelled"}`). Ja Saglabāt jau notika un pavadzīme izdota - tā netiek klusi
+ *   pazaudēta: statuss "Izdota" + manualAnnulNeeded (jāanulē manuāli CSDD).
+ * Izdotas pavadzīmes nekad neaiztiek. Ieraksts paliek.
  */
 export async function cancelWaybillRequest(input: {
   id: string;
@@ -347,8 +391,27 @@ export async function cancelWaybillRequest(input: {
   const result = await mutateDoc<CancelWaybillResult>((doc) => {
     const current = doc.requests.find((r) => r.id === input.id);
     if (!current) return { value: { ok: false, reason: "not_found" } };
-    if (!waybillRequestCancellable(current)) return { value: { ok: false, reason: "not_pending" } };
-    const text = `Atcelts${input.actorName ? ` (${input.actorName.slice(0, 60)})` : ""}.`;
+    if (current.status === "in_progress" && current.cancelRequestedAt) {
+      return { value: { ok: true, request: current, mode: "already_requested" } };
+    }
+    const mode = waybillCancelMode(current);
+    if (mode === "none") return { value: { ok: false, reason: "not_pending" } };
+    const who = input.actorName ? ` (${input.actorName.slice(0, 60)})` : "";
+    if (mode === "request") {
+      const afterSave = waybillStageAfterSave(current.stage);
+      const text = `${afterSave ? WAYBILL_CANCEL_AFTER_SAVE_TEXT : WAYBILL_CANCEL_REQUESTED_TEXT}${who}`;
+      const nextReq: WaybillRequest = {
+        ...current,
+        updatedAt: now,
+        lastReplyText: text,
+        cancelRequestedAt: now,
+        cancelRequestedBy: input.actorId.slice(0, 64),
+      };
+      let next = { ...doc, requests: doc.requests.map((r) => (r.id === current.id ? nextReq : r)) };
+      next = pushEvent(next, { requestId: current.id, kind: "message", text, waybillNo: "", pdfUrl: "", by: input.actorId });
+      return { value: { ok: true, request: nextReq, mode: "requested" }, next };
+    }
+    const text = `Atcelts${who}.`;
     const nextReq: WaybillRequest = {
       ...current,
       status: "cancelled",
@@ -366,9 +429,9 @@ export async function cancelWaybillRequest(input: {
       pdfUrl: "",
       by: input.actorId,
     });
-    return { value: { ok: true, request: nextReq }, next };
+    return { value: { ok: true, request: nextReq, mode: "cancelled" }, next };
   });
-  if (result.ok) {
+  if (result.ok && result.mode !== "already_requested") {
     await recordWaybillAudit({
       userId: input.actorId,
       action: "waybill_cancelled",
@@ -377,10 +440,109 @@ export async function cancelWaybillRequest(input: {
         plate: result.request.vehicle.plate,
         brandModel: result.request.vehicle.brandModel,
         createdBy: result.request.createdBy,
+        mode: result.mode,
+        stage: result.request.stage,
       },
     });
   }
   return result;
+}
+
+/** Atcelšanu apstiprina izrakstītājs (automātika / Aivars): apstājās pirms Saglabāt. */
+export type AckWaybillCancelResult =
+  | { ok: true; request: WaybillRequest }
+  | { ok: false; reason: "not_found" | "not_requested" };
+
+export async function ackWaybillCancel(input: { id: string; by: string; text?: string }): Promise<AckWaybillCancelResult> {
+  const now = new Date().toISOString();
+  return mutateDoc<AckWaybillCancelResult>((doc) => {
+    const current = doc.requests.find((r) => r.id === input.id);
+    if (!current) return { value: { ok: false, reason: "not_found" } };
+    // Jau atcelts (piem. iestrēguša taimauts) - apstiprinājums ir drošs, nekas nemainās.
+    if (current.status === "cancelled") return { value: { ok: true, request: current } };
+    if (current.status !== "in_progress" || !current.cancelRequestedAt) return { value: { ok: false, reason: "not_requested" } };
+    const extra = (input.text ?? "").replace(/[\u0000-\u001F\u007F]/g, " ").trim().slice(0, 300);
+    const nextReq: WaybillRequest = {
+      ...current,
+      status: "cancelled",
+      updatedAt: now,
+      lastReplyText: WAYBILL_CANCELLED_BEFORE_SAVE_TEXT,
+      stage: "",
+      stageAt: "",
+      csddCheckNeeded: false,
+    };
+    let next = { ...doc, requests: doc.requests.map((r) => (r.id === current.id ? nextReq : r)) };
+    next = pushEvent(next, {
+      requestId: current.id,
+      kind: "cancelled",
+      text: extra ? `${WAYBILL_CANCELLED_BEFORE_SAVE_TEXT} ${extra}` : WAYBILL_CANCELLED_BEFORE_SAVE_TEXT,
+      waybillNo: "",
+      pdfUrl: "",
+      by: input.by.slice(0, 80),
+    });
+    return { value: { ok: true, request: nextReq }, next };
+  });
+}
+
+/**
+ * Iestrēgušie darbi (Izveido bez virzības ilgāk par taimautu, sk. waybillStuckDecision): automātikas -> Aivaram
+ * (ar CSDD pārbaudi), Aivara -> Kļūda (ar CSDD pārbaudi), ar pieprasītu atcelšanu -> Atcelts (ar CSDD pārbaudi).
+ * Vecus (>24 h) neaiztiek. Ja nekas nav iestrēdzis - neko neraksta. Atgriež izmainītos.
+ */
+export async function expireStuckWaybillRequests(nowMs = Date.now()): Promise<WaybillRequest[]> {
+  const peek = await readWaybillRequestsDoc();
+  if (!peek.requests.some((r) => waybillStuckDecision(r, nowMs).kind !== "none")) return [];
+  const now = new Date(nowMs).toISOString();
+  const changed = await mutateDoc<WaybillRequest[]>((doc) => {
+    const out: WaybillRequest[] = [];
+    let next = doc;
+    for (const current of doc.requests) {
+      const decision = waybillStuckDecision(current, nowMs);
+      if (decision.kind === "none") continue;
+      let nextReq: WaybillRequest;
+      let kind: WaybillRequestEventKind;
+      let text: string;
+      if (decision.kind === "cancel") {
+        text = WAYBILL_CANCEL_UNKNOWN_TEXT;
+        kind = "cancelled";
+        nextReq = { ...current, status: "cancelled", stage: "", stageAt: "", csddCheckNeeded: decision.checkCsddFirst };
+      } else if (decision.kind === "handoff") {
+        const reason = "automātika apklusa darba vidū";
+        text = `Automātika neizrakstīja: ${reason}. ${WAYBILL_HANDOFF_TEXT}`;
+        kind = "message";
+        nextReq = {
+          ...current,
+          status: "queued",
+          pickedBy: "",
+          pickedAt: "",
+          autoDisabled: true,
+          stage: "",
+          stageAt: "",
+          handoffReason: reason,
+          handoffCheckCsdd: decision.checkCsddFirst,
+          handoffAt: now,
+        };
+      } else {
+        text = WAYBILL_STUCK_ERROR_TEXT;
+        kind = "error";
+        nextReq = { ...current, status: "error", errorReason: text, stage: "", stageAt: "", csddCheckNeeded: true };
+      }
+      nextReq = { ...nextReq, updatedAt: now, lastReplyText: text };
+      next = { ...next, requests: next.requests.map((r) => (r.id === current.id ? nextReq : r)) };
+      next = pushEvent(next, { requestId: current.id, kind, text, waybillNo: "", pdfUrl: "", by: "system" });
+      out.push(nextReq);
+    }
+    return out.length ? { value: out, next } : { value: out };
+  });
+  for (const r of changed) {
+    await recordWaybillAudit({
+      userId: r.createdBy,
+      action: "waybill_stuck",
+      target: r.id,
+      meta: { status: r.status, checkCsdd: r.csddCheckNeeded === true || r.handoffCheckCsdd === true },
+    });
+  }
+  return changed;
 }
 
 export async function claimWaybillRequest(
@@ -394,10 +556,12 @@ export async function claimWaybillRequest(
   const claimed = await mutateDoc((doc) => {
     const current = doc.requests.find((r) => r.id === id);
     if (!current) return { value: null };
-    const stale = inProgressIsStale(current, nowMs);
-    if (current.status !== "queued" && !stale) return { value: null };
+    // Tikai Gaida. Darbā esošu otrreiz nedod (06.11: Aivars pēc 30 min to pašu darbu paņēma vēlreiz).
+    if (current.status !== "queued") return { value: null };
     if (isStaleWaybillRequest(current, nowMs)) return { value: null };
     if (waybillPendingExpired(current, nowMs)) return { value: null };
+    // Nils 27.10: maks. 48 h. Vēsturisks ieraksts ar garāku derīgumu netiek izrakstīts.
+    if (current.kind !== "stop" && (current.validHours ?? 0) > WAYBILL_MAX_ISSUE_HOURS) return { value: null };
     if (guard && !guard(current, doc)) return { value: null };
     const nextReq: WaybillRequest = {
       ...current,
@@ -446,6 +610,8 @@ export async function releaseWaybillRequestToAivars(input: {
   const released = await mutateDoc<WaybillRequest | null>((doc) => {
     const current = doc.requests.find((r) => r.id === input.id);
     if (!current || current.status !== "in_progress" || current.pickedBy !== input.by) return { value: null };
+    // Atcelšana pieprasīta: atpakaļ rindā NEliek (Aivars to neizrakstīs) - atcelts (release ir pirms Saglabāt).
+    if (current.cancelRequestedAt) return cancelledInstead(doc, current, input.by, now);
     const nextReq: WaybillRequest = {
       ...current,
       status: "queued",
@@ -471,7 +637,7 @@ export async function releaseWaybillRequestToAivars(input: {
     });
     return { value: nextReq, next };
   });
-  if (released) {
+  if (released && released.status === "queued") {
     await recordWaybillAudit({
       userId: released.createdBy,
       action: "waybill_handoff_aivars",
@@ -499,6 +665,8 @@ export async function handAutoFailureToAivars(input: {
   const handed = await mutateDoc<WaybillRequest | null>((doc) => {
     const current = doc.requests.find((r) => r.id === input.id);
     if (!current || current.status !== "in_progress" || current.pickedBy !== AUTO_PICKED_BY) return { value: null };
+    // Atcelšana pieprasīta: Aivaram nenodod. Ja kļūda Saglabāt laikā/pēc - atcelts ar CSDD pārbaudi.
+    if (current.cancelRequestedAt) return cancelledInstead(doc, current, AUTO_PICKED_BY, now, input.checkCsddFirst);
     const nextReq: WaybillRequest = {
       ...current,
       status: "queued",
@@ -525,7 +693,7 @@ export async function handAutoFailureToAivars(input: {
     });
     return { value: nextReq, next };
   });
-  if (handed) {
+  if (handed && handed.status === "queued") {
     await recordWaybillAudit({
       userId: handed.createdBy,
       action: "waybill_handoff_aivars",
@@ -537,6 +705,29 @@ export async function handAutoFailureToAivars(input: {
 }
 
 const AUTO_PICKED_BY = "auto";
+
+/** Izrakstītājs apstājās/nodeva darbu, kam pieprasīta atcelšana: atcelts (nevis atpakaļ rindā). */
+function cancelledInstead(
+  doc: WaybillRequestsDoc,
+  current: WaybillRequest,
+  by: string,
+  now: string,
+  checkCsdd = false,
+): { value: WaybillRequest; next: WaybillRequestsDoc } {
+  const text = checkCsdd ? WAYBILL_CANCEL_UNKNOWN_TEXT : WAYBILL_CANCELLED_BEFORE_SAVE_TEXT;
+  const nextReq: WaybillRequest = {
+    ...current,
+    status: "cancelled",
+    updatedAt: now,
+    lastReplyText: text,
+    stage: "",
+    stageAt: "",
+    csddCheckNeeded: checkCsdd,
+  };
+  let next = { ...doc, requests: doc.requests.map((r) => (r.id === current.id ? nextReq : r)) };
+  next = pushEvent(next, { requestId: current.id, kind: "cancelled", text, waybillNo: "", pdfUrl: "", by });
+  return { value: nextReq, next };
+}
 
 /** ISO datums, ja derīgs; citādi tukšs (nederīgu vai tukšu vērtību nekad nerakstām pāri). */
 function validIso(v: string | undefined): string {
@@ -575,11 +766,25 @@ export async function appendWaybillRequestEvent(input: {
     if (!current) return { value: null };
     // Atcelts paliek atcelts. Izņēmums: ja CSDD pavadzīme tomēr izdota, patiesība (numurs, PDF) tiek ierakstīta.
     const mapped = statusMap[input.kind] ?? current.status;
-    const status = current.status === "cancelled" && mapped !== "issued" ? "cancelled" : mapped;
+    const cancelAsked = current.status === "in_progress" && Boolean(current.cancelRequestedAt);
+    // Atcelšana pieprasīta un izrakstītājs ziņo kļūdu: atcelts (nevis "Kļūda" ar "Atkārtot"); CSDD pārbaude, ja Saglabāt varēja notikt.
+    const cancelOnError = cancelAsked && mapped === "error";
+    const status = cancelOnError ? "cancelled" : current.status === "cancelled" && mapped !== "issued" ? "cancelled" : mapped;
+    // Izdota, lai gan atcelšana bija pieprasīta / jau atcelts: patiesību ierakstām un skaidri atzīmējam "jāanulē manuāli".
+    const manualAnnul = status === "issued" && (cancelAsked || current.status === "cancelled");
     const working = status === "in_progress";
-    const replyText = (input.text ?? input.errorReason ?? "").trim().slice(0, 2000);
+    const cancelCheck = cancelOnError && (waybillStageAfterSave(current.stage) || current.pickedBy !== AUTO_PICKED_BY);
+    const replyText = manualAnnul
+      ? `${WAYBILL_MANUAL_ANNUL_TEXT}${input.waybillNo?.trim() ? ` (${input.waybillNo.trim().slice(0, 24)})` : ""}`
+      : cancelOnError
+        ? cancelCheck
+          ? WAYBILL_CANCEL_UNKNOWN_TEXT
+          : WAYBILL_CANCELLED_BEFORE_SAVE_TEXT
+        : (input.text ?? input.errorReason ?? "").trim().slice(0, 2000);
     const nextReq: WaybillRequest = {
       ...current,
+      ...(manualAnnul ? { manualAnnulNeeded: true } : {}),
+      ...(cancelOnError ? { csddCheckNeeded: cancelCheck } : {}),
       status,
       updatedAt: now,
       waybillNo: input.waybillNo?.trim() ? input.waybillNo.trim().slice(0, 24) : current.waybillNo,
@@ -597,8 +802,8 @@ export async function appendWaybillRequestEvent(input: {
     let next = { ...doc, requests: doc.requests.map((r) => (r.id === input.id ? nextReq : r)) };
     next = pushEvent(next, {
       requestId: input.id,
-      kind: input.kind,
-      text: (input.text ?? input.errorReason ?? "").slice(0, 2000),
+      kind: cancelOnError ? "cancelled" : input.kind,
+      text: cancelOnError || manualAnnul ? replyText : (input.text ?? input.errorReason ?? "").slice(0, 2000),
       waybillNo: nextReq.waybillNo,
       pdfUrl: nextReq.pdfUrl,
       by,

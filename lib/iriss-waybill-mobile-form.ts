@@ -16,8 +16,15 @@ import { compactDealerPlate, displayDealerPlate, formatRigaDateTimeComma, type W
 import { waybillErrorNeedsCheck } from "@/lib/iriss-waybill-push";
 import { waybillDropboxFileName, waybillPdfDownloadHref } from "@/lib/iriss-waybill-pdf";
 import {
+  WAYBILL_CANCEL_AFTER_SAVE_TEXT,
+  WAYBILL_CANCEL_PENDING_LABEL,
+  WAYBILL_CANCEL_REQUESTED_TEXT,
+  WAYBILL_CANCEL_UNKNOWN_TEXT,
+  WAYBILL_CANCELLED_BEFORE_SAVE_TEXT,
+  WAYBILL_MANUAL_ANNUL_TEXT,
   WAYBILL_STALE_LABEL,
   WAYBILL_WORKER_STAGE_TEXT,
+  waybillStageAfterSave,
   isStaleWaybillRequest,
   waybillPendingExpired,
   waybillWrittenOffAtMs,
@@ -287,6 +294,10 @@ export type WaybillMobileRequestRow = {
   pdfFileName: string;
   /** Dropbox saglabāšanas kļūda (tikai adminam; kolēģim serveris to nesūta). */
   dropboxError: string;
+  /** "Atcelt" darbā esošam: tikai pieprasījums apstāties (apstiprinājuma logam cits teksts). */
+  cancelInProgress?: boolean;
+  /** Izdota pēc atcelšanas pieprasījuma: jāanulē manuāli CSDD. */
+  manualAnnul?: boolean;
 };
 
 export { waybillWrittenOffAtMs };
@@ -370,13 +381,21 @@ export function waybillStopProgress(status: WaybillRequestStatus, waybillNo: str
 
 export function waybillMobileProgress(
   request: Pick<WaybillRequest, "status" | "createdAt" | "updatedAt" | "pickedAt" | "errorReason" | "validUntil" | "waybillNo"> &
-    Partial<Pick<WaybillRequest, "stage" | "stageAt">>,
+    Partial<
+      Pick<WaybillRequest, "stage" | "stageAt" | "cancelRequestedAt" | "csddCheckNeeded" | "lastReplyText" | "manualAnnulNeeded">
+    >,
   nowMs = Date.now(),
   auto: { autoMode?: WaybillAutoMode; autoStandard?: boolean; autoReason?: string } = {},
 ): WaybillMobileProgress {
   if (request.status === "issued") {
     const until = formatRigaDateTimeComma(request.validUntil);
-    const text = [request.waybillNo ? `Nr. ${request.waybillNo}` : "", until ? `derīga līdz ${until}` : ""].filter(Boolean).join(" · ");
+    const text = [
+      request.waybillNo ? `Nr. ${request.waybillNo}` : "",
+      until ? `derīga līdz ${until}` : "",
+      request.manualAnnulNeeded ? WAYBILL_MANUAL_ANNUL_TEXT : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
     return { step: 3, pct: 100, text: text || "Pavadzīme izdota." };
   }
   if (request.status === "error") {
@@ -386,8 +405,19 @@ export function waybillMobileProgress(
       : `Neizdevās${reason ? `: ${reason.replace(/[.\s]+$/, "")}` : ""}. Spied "Atkārtot".`;
     return { step: request.pickedAt ? 2 : 1, pct: request.pickedAt ? 66 : 33, text };
   }
-  if (request.status === "cancelled") return { step: 1, pct: 0, text: "Atcelts." };
+  if (request.status === "cancelled") {
+    const text = request.csddCheckNeeded
+      ? WAYBILL_CANCEL_UNKNOWN_TEXT
+      : request.lastReplyText === WAYBILL_CANCELLED_BEFORE_SAVE_TEXT
+        ? WAYBILL_CANCELLED_BEFORE_SAVE_TEXT
+        : "Atcelts.";
+    return { step: 1, pct: 0, text };
+  }
   if (request.status === "in_progress") {
+    if (request.cancelRequestedAt) {
+      const afterSave = waybillStageAfterSave(request.stage);
+      return { step: 2, pct: request.stage ? STAGE_PCT[request.stage] : 40, text: afterSave ? WAYBILL_CANCEL_AFTER_SAVE_TEXT : WAYBILL_CANCEL_REQUESTED_TEXT };
+    }
     if (request.stage) {
       const stuck = waybillStuckStageText(request.stage, request.stageAt ?? "", nowMs);
       return { step: 2, pct: STAGE_PCT[request.stage], text: stuck || WAYBILL_WORKER_STAGE_TEXT[request.stage] };
@@ -528,7 +558,9 @@ export function waybillMobileRequestRows(
         sub: writtenOff ? offSub : sub,
         label: stale
           ? WAYBILL_STALE_LABEL
-          : isStop
+          : status === "in_progress" && request.cancelRequestedAt
+            ? WAYBILL_CANCEL_PENDING_LABEL
+            : isStop
             ? WAYBILL_STOP_STATUS_LABEL[status]
             : writtenOff
               ? WAYBILL_WRITTEN_OFF_LABEL
@@ -536,7 +568,9 @@ export function waybillMobileRequestRows(
         tone: stale || writtenOff ? "wait" : WAYBILL_MOBILE_STATUS[status].tone,
         pdfUrl,
         canRetry: status === "error" || (status === "queued" && (longWait || stale) && !waybillPendingExpired(request, nowMs)),
-        canCancel: waybillRequestCancellable({ status, pickedBy: request.pickedBy }),
+        canCancel: waybillRequestCancellable({ status, pickedBy: request.pickedBy, cancelRequestedAt: request.cancelRequestedAt }),
+        cancelInProgress: status === "in_progress",
+        manualAnnul: status === "issued" && request.manualAnnulNeeded === true,
         canDismiss: waybillRequestDismissable({ ...request, status }, requests, nowMs),
         errorText: status === "error" ? request.errorReason || reply?.text || "" : "",
         stale,

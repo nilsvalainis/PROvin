@@ -57,6 +57,7 @@ const AUDIT_LABEL: Record<StaffAuditEntry["action"], string> = {
   waybill_cancelled: "atcēla pavadzīmes pieprasījumu",
   waybill_result: "Aivars atgrieza rezultātu",
   waybill_handoff_aivars: "automātika nodeva pavadzīmi Aivaram",
+  waybill_stuck: "pavadzīmes darbs iestrēga (taimauts)",
   point_viewed: "skatīja punktus",
   point_edited: "laboja punktu",
   print: "drukāja karti",

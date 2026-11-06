@@ -189,10 +189,13 @@ describe("honest status (cancel, test mode, expiry)", () => {
   const q = (over: Partial<WaybillRequest> = {}) =>
     sample({ createdAt: "2026-10-23T12:00:00.000Z", updatedAt: "2026-10-23T12:00:00.000Z", validUntil: "2026-10-23T13:00:00.000Z", ...over });
 
-  it("cancellable only while queued and unclaimed", () => {
+  it("cancellable while queued (unclaimed) or in progress (once); never after issued/error/cancelled", () => {
     expect(waybillRequestCancellable(q())).toBe(true);
     expect(waybillRequestCancellable(q({ pickedBy: "aivars" }))).toBe(false);
-    for (const status of ["in_progress", "issued", "error", "cancelled"] as const) {
+    // B762 06.11: iesāktu darbu jāvar atcelt (pieprasījums apstāties); otrreiz pogu nerāda.
+    expect(waybillRequestCancellable(q({ status: "in_progress", pickedBy: "auto" }))).toBe(true);
+    expect(waybillRequestCancellable({ ...q({ status: "in_progress", pickedBy: "auto" }), cancelRequestedAt: "2026-11-06T12:00:00.000Z" })).toBe(false);
+    for (const status of ["issued", "error", "cancelled"] as const) {
       expect(waybillRequestCancellable(q({ status }))).toBe(false);
     }
   });

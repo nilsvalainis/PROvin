@@ -28,7 +28,8 @@ export async function POST(req: Request, ctx: Ctx) {
   }
   const request = await releaseWaybillRequestToAivars({ id, by: AUTO_WAYBILL_WORKER, reason: reason || "kļūda" });
   if (!request) return NextResponse.json({ error: "not_held_by_auto" }, { status: 409 });
-  after(() => wakeAivars(request.id));
+  // Atcelšana bija pieprasīta -> atcelts (nevis rindā): Aivaru nemodina.
+  if (request.status === "queued") after(() => wakeAivars(request.id));
   return NextResponse.json(
     { ok: true, request: toAivarsCreateWaybillAction(request), status: request.status },
     { headers: { "Cache-Control": "private, no-store" } },

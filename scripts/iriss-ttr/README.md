@@ -83,6 +83,9 @@ worker NEKO nedara: bez claim, bez VPN, mēģina nākamajā reizē) -> `claim {w
 - Reālie soļi UI (bez procentiem): `claim` -> `events {kind:"message", stage}`: `vpn`, `filling`, `saving`, `pdf` -> Izdota ar PDF (push pieprasītājam).
 - Kļūda pirms Saglabāt: `message` notikums + `release` -> darbs atpakaļ rindā Aivaram (vairs ne automātikai), serveris pamodina Aivaru.
 - Kļūda Saglabāt laikā/pēc: `result ok:false` "Pārbaudi CSDD" - bez atkārtošanas (nedrīkst izveidot dublikātu).
+- "Atcelt" darbā (07.11, B762): katra soļa atbildē `cancelRequested`; tieši pirms `save.js` vēl `GET /:id`. Ja atcelts -
+  apstājas pirms nākamā CSDD soļa, sūta `events {kind:"cancelled"}`, VPN atbrīvo (`finally`). Pēc Saglabāt sākuma neapstājas:
+  pabeidz, serveris atzīmē "jāanulē manuāli". Izvietošana: jaunais `waybill-worker-core.mjs` + `waybill-worker.mjs` (restart).
 - Logā (`journalctl -u iriss-waybill-worker`) laiki: created -> claim -> vpnUp -> filled -> saved -> pdf -> result.
 
 ### Skriptu līgums (JĀPĀRBAUDA serverī pirms LIVE)

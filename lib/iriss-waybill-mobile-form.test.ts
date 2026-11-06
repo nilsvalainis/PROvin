@@ -429,7 +429,7 @@ describe("live progress", () => {
     expect(row).toMatchObject({ label: "Gaida", canRetry: false, canCancel: true, progress: { text: "Termiņš beidzies - atcel un izveido jaunu" } });
   });
 
-  it("'Atcelt' only while pending and unclaimed; cancelled requests leave the queue", () => {
+  it("'Atcelt' while pending (unclaimed) or in progress; cancelled requests leave the queue", () => {
     const now = Date.parse("2026-10-23T10:05:00.000Z");
     const base = { createdAt: t0, updatedAt: t0, validUntil: "2026-10-25T10:00:00.000Z" };
     const rows = waybillMobileRequestRows(
@@ -445,11 +445,43 @@ describe("live progress", () => {
     );
     expect(rows.map((r) => [r.id, r.canCancel])).toEqual([
       ["wbr_q", true],
-      ["wbr_w", false],
+      ["wbr_w", true],
       ["wbr_i", false],
     ]);
     const [archived] = waybillMobileRequestRows([req({ id: "wbr_c", ...base, status: "cancelled" })], [], 5, { nowMs: now, which: "archive" });
     expect(archived).toMatchObject({ id: "wbr_c", label: "Atcelts", canCancel: false });
+  });
+
+  it("progress states: Atceļ while the stop is pending, Atcelts / jāanulē manuāli afterwards", () => {
+    const now = Date.parse("2026-10-23T10:05:00.000Z");
+    const base = { createdAt: t0, updatedAt: t0, validUntil: "2026-10-25T10:00:00.000Z" };
+    const [asking] = waybillMobileRequestRows(
+      [req({ id: "wbr_w", ...base, status: "in_progress", pickedBy: "auto", pickedAt: t0, stage: "filling", stageAt: t0, cancelRequestedAt: t0 })],
+      [],
+      5,
+      { nowMs: now },
+    );
+    expect(asking).toMatchObject({ label: "Atceļ", canCancel: false, progress: { step: 2 } });
+    expect(asking.line).toContain("Atcelšana pieprasīta");
+    const [saving] = waybillMobileRequestRows(
+      [req({ id: "wbr_s", ...base, status: "in_progress", pickedBy: "auto", pickedAt: t0, stage: "saving", stageAt: t0, cancelRequestedAt: t0 })],
+      [],
+      5,
+      { nowMs: now },
+    );
+    expect(saving.line).toContain("CSDD jau saglabā");
+    const [done] = waybillMobileRequestRows(
+      [req({ id: "wbr_d", ...base, status: "issued", waybillNo: "P02871", manualAnnulNeeded: true })],
+      [],
+      5,
+      { nowMs: now },
+    );
+    expect(done).toMatchObject({ label: "Izdota", manualAnnul: true });
+    expect(done.line).toContain("jāanulē manuāli");
+    expect(waybillMobileProgress(req({ status: "cancelled", csddCheckNeeded: true })).text).toMatch(/Pārbaudi CSDD/);
+    expect(waybillMobileProgress(req({ status: "cancelled", lastReplyText: "Atcelts pirms CSDD saglabāšanas. Pavadzīme nav izveidota." })).text).toBe(
+      "Atcelts pirms CSDD saglabāšanas. Pavadzīme nav izveidota.",
+    );
   });
 
   it("error after save asks to check CSDD before retry", () => {

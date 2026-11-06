@@ -672,3 +672,53 @@ describe("j13: noklusējuma komersanta pārstāvis pēc firmas (worker)", () => 
     expect(localStandardCheck({ ...base, representative: "" }, NOW)).toEqual({ ok: true, company: "iriss", flow: "tradeAct" });
   });
 });
+
+describe("waybill worker: user cancel while in progress (B762 06.11)", () => {
+  /** Servera atbilde uz soli: atcelšana pieprasīta, sākot ar šo soli. */
+  const cancelFrom = (stageName: string) => {
+    let asked = false;
+    return vi.fn(async (_id: string, body: { stage?: string; kind?: string }) => {
+      if (body.stage === stageName) asked = true;
+      return { ok: true, cancelRequested: asked };
+    });
+  };
+
+  it("stops before the next CSDD step, never runs fill/save, confirms the cancel and releases the VPN", async () => {
+    const d = deps();
+    d.api.event = cancelFrom("filling") as unknown as typeof d.api.event;
+    const res = await processJob(autoJob(), d);
+    expect(res.outcome).toBe("cancelled");
+    expect(scriptCalls(d).map((c) => c[0])).toEqual([]);
+    expect(d.api.event).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ kind: "cancelled", by: "auto" }));
+    expect(d.api.result).not.toHaveBeenCalled();
+    expect(d.api.release).not.toHaveBeenCalled();
+    expect(d.vpnRelease).toHaveBeenCalledTimes(1);
+  });
+
+  it("a cancel that arrives while the form is filled is caught right before Save (status check)", async () => {
+    const d = deps();
+    const status = vi.fn(async () => ({ ok: true, status: "in_progress", cancelRequested: true }));
+    (d.api as Record<string, unknown>).status = status;
+    const res = await processJob(autoJob(), d);
+    expect(res.outcome).toBe("cancelled");
+    expect(scriptCalls(d).map((c) => c[0])).toEqual(["fill"]);
+    expect(status).toHaveBeenCalledTimes(1);
+    expect(d.api.result).not.toHaveBeenCalled();
+  });
+
+  it("once Save started it finishes normally (server marks manual annul) - nothing is silently lost", async () => {
+    const d = deps();
+    d.api.event = cancelFrom("pdf") as unknown as typeof d.api.event;
+    const res = await processJob(autoJob(), d);
+    expect(res.outcome).toBe("issued");
+    expect(d.api.result).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ ok: true, waybillNo: "TTR123" }));
+  });
+
+  it("a failing status check (network) does not block the normal flow", async () => {
+    const d = deps();
+    (d.api as Record<string, unknown>).status = vi.fn(async () => {
+      throw new Error("status_http_500");
+    });
+    expect((await processJob(autoJob(), d)).outcome).toBe("issued");
+  });
+});

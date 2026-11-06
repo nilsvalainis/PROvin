@@ -8,6 +8,7 @@ import { NextResponse } from "next/server";
 import { cronSecretGate } from "@/lib/cron-bearer";
 import { runWaybillReminders } from "@/lib/iriss-waybill-reminders";
 import { sweepWaybillRequestsToDropbox } from "@/lib/iriss-waybill-dropbox";
+import { expireStuckWaybillRequests } from "@/lib/iriss-waybill-requests-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,12 +18,17 @@ export async function GET(req: Request) {
   const gate = cronSecretGate(req.headers.get("authorization"));
   if (!gate.ok) return NextResponse.json({ error: gate.error }, { status: gate.status });
   try {
+    // Iestrēgušie darbi kļūst par Kļūda/Atcelts/nodoti Aivaram arī tad, ja neviens lapu neatver un worker nejautā.
+    const stuck = await expireStuckWaybillRequests().catch((e) => {
+      console.error("[cron/iriss-waybill-reminders] stuck sweep failed", e instanceof Error ? e.message : e);
+      return [];
+    });
     const reminders = await runWaybillReminders();
     const dropbox = await sweepWaybillRequestsToDropbox().catch((e) => {
       console.error("[cron/iriss-waybill-reminders] dropbox sweep failed", e instanceof Error ? e.message : e);
       return { tried: 0, saved: 0, failed: 0 };
     });
-    return NextResponse.json({ ...reminders, dropbox });
+    return NextResponse.json({ ...reminders, dropbox, stuck: stuck.length });
   } catch (e) {
     console.error("[cron/iriss-waybill-reminders] failed", e);
     return NextResponse.json({ error: "waybill_reminders_failed" }, { status: 500 });

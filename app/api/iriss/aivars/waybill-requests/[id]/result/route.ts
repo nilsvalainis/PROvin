@@ -71,9 +71,9 @@ export async function POST(req: Request, ctx: Ctx) {
     if (decision.handoff) {
       const handed = await handAutoFailureToAivars({ id, reason: errorReason, checkCsddFirst: decision.checkCsddFirst });
       if (handed) {
-        after(() => wakeAivars(handed.id));
+        if (handed.status === "queued") after(() => wakeAivars(handed.id));
         return NextResponse.json(
-          { ok: true, request: toAivarsCreateWaybillAction(handed), status: handed.status, handedToAivars: true },
+          { ok: true, request: toAivarsCreateWaybillAction(handed), status: handed.status, handedToAivars: handed.status === "queued" },
           { headers: { "Cache-Control": "private, no-store" } },
         );
       }

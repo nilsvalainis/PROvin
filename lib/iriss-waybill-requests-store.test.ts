@@ -95,10 +95,9 @@ describe("cancelWaybillRequest (Atcelt)", () => {
     expect(await claimWaybillRequest("wbr_q", "auto")).toBeNull();
   });
 
-  it("refuses (409) anything claimed, in progress, issued, failed or already cancelled - and changes nothing", async () => {
+  it("refuses (409) anything claimed-but-queued, issued, failed or already cancelled - and changes nothing", async () => {
     const rows = [
       sample({ id: "wbr_claimed", pickedBy: "aivars" }),
-      sample({ id: "wbr_work", status: "in_progress", pickedBy: "auto", pickedAt: now }),
       sample({ id: "wbr_issued", status: "issued", waybillNo: "P02811", pdfUrl: "/x.pdf" }),
       sample({ id: "wbr_err", status: "error" }),
       sample({ id: "wbr_cx", status: "cancelled" }),
@@ -113,10 +112,14 @@ describe("cancelWaybillRequest (Atcelt)", () => {
     expect(mem.audits).toEqual([]);
   });
 
-  it("race: once claimed, a late cancel loses", async () => {
+  it("race: once claimed, a late cancel becomes a stop request (not a silent cancel)", async () => {
     seed([sample({ id: "wbr_r" })]);
     expect(await claimWaybillRequest("wbr_r", "auto")).toMatchObject({ status: "in_progress", stage: "claimed" });
-    expect(await cancelWaybillRequest({ id: "wbr_r", ...actor })).toEqual({ ok: false, reason: "not_pending" });
+    expect(await cancelWaybillRequest({ id: "wbr_r", ...actor })).toMatchObject({
+      ok: true,
+      mode: "requested",
+      request: { status: "in_progress", cancelRequestedBy: "usr_1" },
+    });
   });
 
   it("a late worker event never revives a cancelled request; a real issued result is still recorded", async () => {

@@ -60,8 +60,16 @@ const api = {
     const r = await call("POST", `/${encodeURIComponent(id)}/claim`, { worker: "auto" });
     return r.status === 200;
   },
+  /** Atbilde satur cancelRequested (lietotājs nospieda "Atcelt"). */
   async event(id, body) {
-    await call("POST", `/${encodeURIComponent(id)}/events`, body);
+    const r = await call("POST", `/${encodeURIComponent(id)}/events`, body);
+    return r.data;
+  },
+  /** Viena darba statuss (pirms CSDD Saglabāt: vai nav atcelts). */
+  async status(id) {
+    const r = await call("GET", `/${encodeURIComponent(id)}`);
+    if (r.status !== 200) throw new Error(`status_http_${r.status}`);
+    return r.data;
   },
   async result(id, body) {
     const r = await call("POST", `/${encodeURIComponent(id)}/result`, body);
