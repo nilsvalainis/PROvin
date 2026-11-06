@@ -178,6 +178,70 @@ describe("AdminDealerCheckPage", () => {
     expect(text).toContain(DEALER_CHECK_CSDD_TITLE);
   });
 
+  it("Saglabātās pārbaudes ar 3 no 3 ir zem meklēšanas, ne virs tās", () => {
+    const rows: DealerCheckHistoryEntry[] = [
+      {
+        id: "dc-order-open1",
+        vin: VIN,
+        plate: "LR-4521",
+        template: "dzintarzeme",
+        createdAt: "2026-11-02T10:00:00.000Z",
+        fetchedAt: "2026-11-02T10:00:00.000Z",
+        createdBy: "env-admin",
+        status: "open",
+        orderId: "",
+        chargedCents: 18,
+        hasData: true,
+        autoparksTitle: "",
+      },
+      {
+        id: "dc-order-open2",
+        vin: "WVWZZZ3CZKE012345",
+        plate: "AB-1234",
+        template: "cits",
+        createdAt: "2026-11-03T10:00:00.000Z",
+        fetchedAt: "2026-11-03T10:00:00.000Z",
+        createdBy: "env-admin",
+        status: "open",
+        orderId: "",
+        chargedCents: 0,
+        hasData: true,
+        autoparksTitle: "",
+      },
+      {
+        id: "dc-order-open3",
+        vin: "WF0XXXGCDX1234567",
+        plate: "CD-5678",
+        template: "dzintarzeme",
+        createdAt: "2026-11-04T10:00:00.000Z",
+        fetchedAt: "2026-11-04T10:00:00.000Z",
+        createdBy: "env-admin",
+        status: "open",
+        orderId: "",
+        chargedCents: 18,
+        hasData: true,
+        autoparksTitle: "",
+      },
+    ];
+    const html = renderHtml(<AdminDealerCheckPage initialVin="" initialEntries={rows} />);
+    const text = renderText(<AdminDealerCheckPage initialVin="" initialEntries={rows} />);
+    const historyAt = html.indexOf("data-dealer-check-history");
+    const searchAt = html.indexOf(">Meklēšana<");
+    const templateAt = html.indexOf("Šablons");
+    const emptyAt = html.indexOf(dealerCheckEmptyStateText());
+    expect(historyAt).toBeGreaterThan(-1);
+    expect(searchAt).toBeGreaterThan(-1);
+    expect(templateAt).toBeGreaterThan(-1);
+    expect(historyAt).toBeGreaterThan(searchAt);
+    expect(historyAt).toBeGreaterThan(templateAt);
+    expect(historyAt).toBeGreaterThan(emptyAt);
+    expect(text).toContain("Saglabātās pārbaudes");
+    expect(text).toContain("3 no 3");
+    expect(html).toContain('data-dealer-check-history-row="dc-order-open1"');
+    expect(html).toContain('data-dealer-check-history-row="dc-order-open2"');
+    expect(html).toContain('data-dealer-check-history-row="dc-order-open3"');
+  });
+
   it("CSDD priekšskatījums rāda reģistra laukus, ne 4 lauku stub", () => {
     const text = renderText(<AdminDealerCheckCsddPreview data={sampleCsdd()} />);
     expect(text).toContain(DEALER_CHECK_CSDD_TITLE);
