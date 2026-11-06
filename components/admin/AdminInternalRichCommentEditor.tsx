@@ -445,7 +445,7 @@ export function AdminInternalRichCommentEditor({
     <div className={`provin-rich ${className}`.trim()}>
       {label || headerEnd ? (
         <div className="provin-rich-head mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          {label ? <div className="min-w-0 shrink-0">{label}</div> : null}
+          {label ? <div className="min-w-0 max-w-full">{label}</div> : null}
           {headerEnd ? (
             <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">{headerEnd}</div>
           ) : null}

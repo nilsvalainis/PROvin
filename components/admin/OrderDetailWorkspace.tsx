@@ -6,7 +6,13 @@ import { AdminSaveButton } from "@/components/admin/AdminSaveButton";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
-import { openGeneratedHtmlDocument } from "@/lib/admin-open-window";
+import {
+  PDF_PREPARING_HTML,
+  openGeneratedHtmlDocument,
+  openGeneratedHtmlInPreopened,
+  openWindowSyncThen,
+  type SyncOpenedWindow,
+} from "@/lib/admin-open-window";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { flushSync } from "react-dom";
 import { createPortal } from "react-dom";
@@ -3638,6 +3644,16 @@ export function OrderDetailWorkspace({
     lang?: ClientReportLang;
   }) => {
     if (pdfBusyRef.current) return;
+    // Telefonā (iOS Safari) logs jāatver sinhroni pieskāriena brīdī, citādi pēc `await` to bloķē.
+    let phonePre: SyncOpenedWindow | null = null;
+    if (phoneStack) {
+      phonePre = openWindowSyncThen();
+      if (!phonePre.writeHtml(PDF_PREPARING_HTML)) phonePre = null;
+    }
+    let phonePreUsed = false;
+    const closePhonePre = () => {
+      if (!phonePreUsed) phonePre?.close();
+    };
     if (factCheckPdfSkipRef.current) {
       factCheckPdfSkipRef.current = false;
     } else {
@@ -3696,6 +3712,7 @@ export function OrderDetailWorkspace({
       if (errorItems.length > 0) {
         pendingPrintOptsRef.current = opts;
         setFactCheckPublishItems(errorItems);
+        closePhonePre();
         return;
       }
     }
@@ -4116,7 +4133,8 @@ export function OrderDetailWorkspace({
       : langSuffix
         ? printTitle.replace(/\.pdf$/i, `${langSuffix}.pdf`)
         : printTitle;
-    const opened = openGeneratedHtmlDocument(translatedHtml, printFileTitle.replace(/\.pdf$/i, ".html"));
+    const opened = openGeneratedHtmlInPreopened(phonePre, translatedHtml, printFileTitle.replace(/\.pdf$/i, ".html"));
+    if (opened.window && opened.window === phonePre?.window) phonePreUsed = true;
     if (!opened.opened) {
       alert("Atļauj uznirstošo logu, lai atvērtu druku, vai lejupielādē failu.");
       return;
@@ -4140,6 +4158,7 @@ export function OrderDetailWorkspace({
     }
     bumpPdf(100);
     } finally {
+      closePhonePre();
       pdfTargetRef.current = 100;
       setPdfJob({ key: pdfJobKey, pct: 100 });
       window.setTimeout(() => {
@@ -5058,7 +5077,10 @@ export function OrderDetailWorkspace({
               setMobileSection(sec.id);
               goWizardStep(sec.wizard);
               window.setTimeout(() => {
-                document.getElementById(sec.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                const el = document.getElementById(sec.id);
+                // `display: contents` (Nobraukums) nav kastes - ritinām uz pirmo bērnu.
+                const target = el && getComputedStyle(el).display === "contents" ? el.firstElementChild : el;
+                target?.scrollIntoView({ behavior: "smooth", block: "start" });
               }, 40);
             }}
           />
