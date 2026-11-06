@@ -55,7 +55,7 @@ describe("buildMiniToAuditsRecommendationDraft", () => {
       vin: "WVWZZZ3CZE123456",
       car: "VW Passat",
     });
-    expect(d.subject).toBe("Jūsu PROVIN MINI pasūtījums: VW Passat");
+    expect(d.subject).toBe("PROVIN · Ieteikums: PROVIN AUDITS · VW Passat");
     expect(d.subject).not.toContain(MINI_TO_AUDITS_RECOMMENDATION_LABEL);
     expect(d.emailText).toBe(
       MINI_TO_AUDITS_APPROVED_TEXT.replaceAll("{vards}", "Jāni")
@@ -103,7 +103,7 @@ describe("buildMiniToAuditsRecommendationDraft", () => {
     expect(d.emailText).toContain("Labdien, {vards}!");
     expect(d.emailText).toContain("pasūtījumu ({auto}).");
     expect(d.emailText).toContain(MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER);
-    expect(d.subject).toBe("Jūsu PROVIN MINI pasūtījums");
+    expect(d.subject).toBe("PROVIN · Ieteikums: PROVIN AUDITS");
   });
 
   it("never uses eksperts or unicode dashes", () => {

@@ -120,6 +120,7 @@ export async function POST(req: Request) {
     amountCents: parsed.amountCents,
     url: pay.url,
     customerName: ctx.customerName,
+    vin: ctx.vin || ctx.order?.vin,
   });
   return NextResponse.json({
     url: pay.url,

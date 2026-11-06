@@ -2,7 +2,7 @@ import "server-only";
 
 import { renderTemplateById } from "@/lib/messages/render-template-id";
 import { enrichVarsWithSharedBlocks, resolveMessageSync } from "@/lib/messages/resolve-message";
-import { buildWaReportReadyVars, waReportReadyTemplateId } from "@/lib/messages/template-vars";
+import { buildWaReportReadyVars, reportReadyVinVar, waReportReadyTemplateId } from "@/lib/messages/template-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 import type { ReportReadyProductKind } from "@/lib/email/report-ready-copy";
 
@@ -60,6 +60,7 @@ export function renderWhatsappPrefillText(query: WhatsappPrefillQuery, doc?: Mes
     const vars = enrichVarsWithSharedBlocks(
       {
         summa: (query.summa ?? "").trim() || "24,99 €",
+        vin: reportReadyVinVar(query.vin),
       },
       doc,
     );
@@ -67,7 +68,7 @@ export function renderWhatsappPrefillText(query: WhatsappPrefillQuery, doc?: Mes
   }
 
   if (templateId === "wa.dealer.cancelled") {
-    return resolveMessageSync(templateId, enrichVarsWithSharedBlocks({}, doc), { doc })?.text ?? null;
+    return resolveMessageSync(templateId, enrichVarsWithSharedBlocks({ vin: reportReadyVinVar(query.vin) }, doc), { doc })?.text ?? null;
   }
 
   return resolveMessageSync(templateId, enrichVarsWithSharedBlocks({}, doc), { doc })?.text ?? null;

@@ -17,6 +17,7 @@ import {
 const miniToAuditsTemplateBody = MINI_TO_AUDITS_APPROVED_TEXT
   .replaceAll("{vards}", "{{vards}}")
   .replaceAll("{auto}", "{{auto}}")
+  .replaceAll("({{auto}})", "({{auto}}{{#vin}}, VIN {{vin}}{{/vin}})")
   .replaceAll("{starpiba}", "{{starpiba}}")
   .replaceAll("{maksajuma_saite}", "{{maksajuma_saite}}")
   .replaceAll("{paraksts}", "{{paraksts}}");
@@ -121,7 +122,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     body: [
       "Labdien!",
       "",
-      "Paldies par pasūtījumu. Maksājumu esam saņēmuši.",
+      "Paldies par pasūtījumu{{#vin}} (VIN {{vin}}){{/vin}}. Maksājumu esam saņēmuši.",
       "",
       "Summa: {{summa}}",
       "",
@@ -140,14 +141,14 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     channel: "email",
     group: "Apmaksa",
     title: "Personīgā apmaksas saite",
-    subject: "PROVIN · Apmaksas saite · {{produkts}}",
+    subject: "PROVIN · Apmaksas saite · {{produkts}}{{#vin}} · {{vin}}{{/vin}}",
     body: [
       "Labdien!",
       "",
       "Nosūtām Jūsu personīgo apmaksas saiti.",
       "",
       "Produkts: {{produkts}}",
-      "Summa: {{summa}}",
+      "{{#vin}}VIN: {{vin}}\n{{/vin}}Summa: {{summa}}",
       "Saite derīga līdz: {{derigs_lidz}}",
       "",
       "Pasūtījumu izveidosim, tiklīdz saņemsim apmaksu.",
@@ -156,6 +157,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     ].join("\n"),
     vars: [
       { key: "produkts", label: "Produkts", sample: "PROVIN AUDITS", required: true },
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
       { key: "summa", label: "Summa", sample: "99,99 €", required: true },
       { key: "derigs_lidz", label: "Derīgs līdz", sample: "15. okt. 2026", required: true },
       { key: "maksajuma_saite", label: "Maksājuma saite", sample: "https://buy.stripe.com/…", required: true },
@@ -172,7 +174,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     body: [
       "Labdien!",
       "",
-      "Redzējām, ka nesen sākāt pasūtīt auto vēstures pārbaudi, bet pasūtījums palika nepabeigts. Ja kaut kas nav skaidrs vai vēlaties vispirms konsultēties, atbildiet uz šo e-pastu.",
+      "Redzējām, ka nesen sākāt pasūtīt auto vēstures pārbaudi{{#vin}} (VIN {{vin}}){{/vin}}, bet pasūtījums palika nepabeigts. Ja kaut kas nav skaidrs vai vēlaties vispirms konsultēties, atbildiet uz šo e-pastu.",
       "",
       "Ja pārbaude joprojām ir aktuāla, apmaksu varat pabeigt šeit:",
       "{{maksājuma_saite}}",
@@ -199,7 +201,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     body: [
       "Labdien!",
       "",
-      "Jūsu PROVIN AUDITS atskaite ir gatava.",
+      "Jūsu PROVIN AUDITS atskaite{{#vin}} (VIN {{vin}}){{/vin}} ir gatava.",
       "",
       "Pielikumā atradīsiet:",
       "{{pielikumi}}",
@@ -231,7 +233,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     body: [
       "Labdien!",
       "",
-      "Jūsu PROVIN MINI atskaite ir gatava. Tā pievienota šī e-pasta pielikumā.",
+      "Jūsu PROVIN MINI atskaite{{#vin}} (VIN {{vin}}){{/vin}} ir gatava. Tā pievienota šī e-pasta pielikumā.",
       "",
       "Ja rodas jautājumi, rakstiet uz info@provin.lv. Labprāt palīdzēsim.",
       "",
@@ -259,7 +261,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     body: [
       "Labdien!",
       "",
-      "Jūsu pasūtītie oficiālā dīlera dati ir gatavi.",
+      "Jūsu pasūtītie oficiālā dīlera dati{{#vin}} (VIN {{vin}}){{/vin}} ir gatavi.",
       "",
       "Pielikumā atradīsiet:",
       "{{pielikumi}}",
@@ -290,13 +292,14 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     body: [
       "Labdien!",
       "",
-      "Pielikumā nosūtām Jūsu pasūtītos oficiālā dīlera datus (PDF).",
+      "Pielikumā PDF formātā nosūtām Jūsu pasūtītos oficiālā dīlera datus{{#vin}} (VIN {{vin}}){{/vin}}.",
       "",
       "Ja rodas jautājumi, atbildiet uz šo e-pastu (info@provin.lv).",
       "",
       "{{paraksts}}",
     ].join("\n"),
-    vars: [{ key: "paraksts", label: "Paraksts", sample: defaultSignOffBlock(), required: true }],
+    vars: [
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },{ key: "paraksts", label: "Paraksts", sample: defaultSignOffBlock(), required: true }],
     htmlKind: "dealer_operator",
   },
   {
@@ -340,7 +343,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     body: [
       "Labdien!",
       "",
-      "Diemžēl oficiālā dīlera dati šim auto nav pieejami.",
+      "Diemžēl oficiālā dīlera dati šim auto{{#vin}} (VIN {{vin}}){{/vin}} nav pieejami.",
       "",
       "{{atmaksa_rinda}}",
       "",
@@ -353,6 +356,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "{{paraksts}}",
     ].join("\n"),
     vars: [
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
       { key: "temats", label: "Temats", sample: "PROVIN · Dīlera dati nav pieejami, nauda atgriezta · WVWZZZ1KZAW000123", required: true },
       { key: "atmaksa_rinda", label: "Atmaksa", sample: "Summa: 24,99 € (atgriezīsim uz to pašu karti).", required: true },
       { key: "refund_piezime", label: "Atmaksas piezīme", sample: defaultRefundBankNote() },
@@ -370,7 +374,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     body: [
       "Labdien!",
       "",
-      "Atcēlām Jūsu oficiālā dīlera datu pasūtījumu un atmaksājām {{summa}} pilnā apmērā uz karti, ar kuru maksājāt.",
+      "Atcēlām Jūsu oficiālā dīlera datu pasūtījumu{{#vin}} (VIN {{vin}}){{/vin}} un atmaksājām {{summa}} pilnā apmērā uz karti, ar kuru maksājāt.",
       "",
       "Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.",
       "",
@@ -379,6 +383,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "{{paraksts}}",
     ].join("\n"),
     vars: [
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
       { key: "summa", label: "Summa", sample: "24,99 €", required: true },
       { key: "paraksts", label: "Paraksts", sample: defaultSignOffBlock(), required: true },
     ],
@@ -393,7 +398,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     body: [
       "Labdien!",
       "",
-      "Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera datus. Tajos redzami auto servisa apmeklējumi pie oficiālā dīlera ar nobraukumu, kur dīleris to fiksējis.",
+      "Jūsu PROVIN MINI pasūtījumam{{#vin}} (VIN {{vin}}){{/vin}} varam pievienot oficiālā dīlera datus. Tajos redzami auto servisa apmeklējumi pie oficiālā dīlera ar nobraukumu, kur dīleris to fiksējis.",
       "",
       "Jūsu cena: {{papildus_cena}} (atsevišķi pasūtot: {{kataloga_cena}}).",
       "",
@@ -406,6 +411,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "{{paraksts}}",
     ].join("\n"),
     vars: [
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
       { key: "papildus_cena", label: "Papildu cena", sample: "19,99 €", required: true },
       { key: "kataloga_cena", label: "Kataloga cena", sample: "24,99 €" },
       { key: "maksajuma_saite", label: "Maksājuma saite", sample: "https://buy.stripe.com/…", required: true },
@@ -422,13 +428,13 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     body: [
       "Labdien!",
       "",
-      "Jūsu pasūtījumu varam papildināt līdz pilnai PROVIN AUDITS pārbaudei. Tad redzēsiet visu auto vēsturi, ne tikai dīlera ierakstus.",
+      "Jūsu pasūtījumu{{#vin}} (VIN {{vin}}){{/vin}} varam papildināt līdz pilnai PROVIN AUDITS pārbaudei. Tad redzēsiet visu auto vēsturi, ne tikai dīlera ierakstus.",
       "",
       "Jau samaksāts: {{jau_samaksats}}",
       "Papildu apmaksa: {{papildus_cena}}",
       "Kopā: {{kopa}}",
       "",
-      "Jau ievadītie dati paliek. Pievienosim to, kā vēl trūkst: negadījumu vēsturi, izsoļu fotogrāfijas, sludinājuma un risku analīzi.",
+      "Jau ievadītie dati paliek. Pievienosim to, kas vēl trūkst: negadījumu vēsturi, izsoļu fotogrāfijas, sludinājuma un risku analīzi.",
       "",
       "Apmaksāt: {{maksajuma_saite}}",
       "",
@@ -437,6 +443,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "{{paraksts}}",
     ].join("\n"),
     vars: [
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
       { key: "jau_samaksats", label: "Jau samaksāts", sample: "24,99 €" },
       { key: "papildus_cena", label: "Papildu apmaksa", sample: "75,00 €", required: true },
       { key: "kopa", label: "Kopā", sample: "99,99 €" },
@@ -457,7 +464,8 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
       { key: "auto", label: "Auto", sample: "VW Golf", required: true },
       { key: "starpiba", label: "Starpība", sample: "60,00", required: true },
       { key: "maksajuma_saite", label: "Maksājuma saite", sample: "https://buy.stripe.com/…", required: true },
-      { key: "temats_auto", label: "Temata auto", sample: "VW Golf" },
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
+      { key: "temats_auto", label: "Temats", sample: "PROVIN · Ieteikums: PROVIN AUDITS · VW Golf · WVWZZZ1KZAW000123" },
       { key: "paraksts", label: "Paraksts", sample: defaultSignOffBlock(), required: true },
     ],
     htmlKind: "plain_paragraphs",
@@ -472,7 +480,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     body: [
       "Labdien!",
       "",
-      "Jūsu PROVIN AUDITS atskaite ir gatava.",
+      "Jūsu PROVIN AUDITS atskaite{{#vin}} (VIN {{vin}}){{/vin}} ir gatava.",
       "",
       "{{jautajumu_rinda}}",
       "",
@@ -481,6 +489,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "{{paraksts}}",
     ].join("\n"),
     vars: [
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
       { key: "jautajumu_rinda", label: "Jautājumu rinda", sample: "Ja rodas jautājumi vai vajadzīga papildu konsultācija, rakstiet šeit vai uz info@provin.lv. Labprāt palīdzēsim." },
       { key: "google_atsauksme", label: "Google atsauksme", sample: defaultGoogleReviewBlock() },
       { key: "paraksts", label: "Paraksts", sample: defaultSignOffBlock(), required: true },
@@ -494,7 +503,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     body: [
       "Labdien!",
       "",
-      "Jūsu PROVIN MINI atskaite ir gatava.",
+      "Jūsu PROVIN MINI atskaite{{#vin}} (VIN {{vin}}){{/vin}} ir gatava.",
       "",
       "{{jautajumu_rinda}}",
       "",
@@ -503,6 +512,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "{{paraksts}}",
     ].join("\n"),
     vars: [
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
       { key: "jautajumu_rinda", label: "Jautājumu rinda", sample: "Ja rodas jautājumi, rakstiet šeit vai uz info@provin.lv. Labprāt palīdzēsim." },
       { key: "google_atsauksme", label: "Google atsauksme", sample: defaultGoogleReviewBlock() },
       { key: "paraksts", label: "Paraksts", sample: defaultSignOffBlock(), required: true },
@@ -516,7 +526,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     body: [
       "Labdien!",
       "",
-      "Jūsu pasūtītie oficiālā dīlera dati ir gatavi.",
+      "Jūsu pasūtītie oficiālā dīlera dati{{#vin}} (VIN {{vin}}){{/vin}} ir gatavi.",
       "",
       "{{jautajumu_rinda}}",
       "",
@@ -525,6 +535,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "{{paraksts}}",
     ].join("\n"),
     vars: [
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
       { key: "jautajumu_rinda", label: "Jautājumu rinda", sample: "Ja rodas jautājumi, rakstiet šeit vai uz info@provin.lv. Labprāt palīdzēsim." },
       { key: "google_atsauksme", label: "Google atsauksme", sample: defaultGoogleReviewBlock() },
       { key: "paraksts", label: "Paraksts", sample: defaultSignOffBlock(), required: true },
@@ -554,7 +565,7 @@ Ja rodas jautājumi par ieteikumiem vai vajag palīdzību auto izvēlē, rakstie
     body: [
       "Labdien!",
       "",
-      "Pārbaudījām Jūsu auto. Diemžēl oficiālā dīlera dati par to nav pieejami.",
+      "Pārbaudījām Jūsu auto{{#vin}} (VIN {{vin}}){{/vin}}. Diemžēl oficiālā dīlera dati par to nav pieejami.",
       "",
       "Atmaksājām {{summa}} pilnā apmērā uz karti, ar kuru maksājāt.",
       "",
@@ -567,6 +578,7 @@ Ja rodas jautājumi par ieteikumiem vai vajag palīdzību auto izvēlē, rakstie
       "{{paraksts}}",
     ].join("\n"),
     vars: [
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
       { key: "summa", label: "Summa", sample: "24,99 €", required: true },
       { key: "refund_piezime", label: "Atmaksas piezīme", sample: defaultRefundBankNote() },
       { key: "audits_cta", label: "AUDITS CTA", sample: defaultAuditsCtaBlock() },
@@ -581,7 +593,7 @@ Ja rodas jautājumi par ieteikumiem vai vajag palīdzību auto izvēlē, rakstie
     body: [
       "Labdien!",
       "",
-      "Atcēlām Jūsu oficiālā dīlera datu pasūtījumu un atmaksājām visu summu.",
+      "Atcēlām Jūsu oficiālā dīlera datu pasūtījumu{{#vin}} (VIN {{vin}}){{/vin}} un atmaksājām visu summu.",
       "",
       "Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.",
       "",
@@ -590,6 +602,7 @@ Ja rodas jautājumi par ieteikumiem vai vajag palīdzību auto izvēlē, rakstie
       "{{paraksts}}",
     ].join("\n"),
     vars: [
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
       { key: "paraksts", label: "Paraksts", sample: defaultSignOffBlock(), required: true },
     ],
   },
@@ -601,7 +614,7 @@ Ja rodas jautājumi par ieteikumiem vai vajag palīdzību auto izvēlē, rakstie
     body: [
       "Labdien!",
       "",
-      "Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera datus par {{papildus_cena}}.",
+      "Jūsu PROVIN MINI pasūtījumam{{#vin}} (VIN {{vin}}){{/vin}} varam pievienot oficiālā dīlera datus par {{papildus_cena}}.",
       "",
       "Dati papildinās esošo pasūtījumu.",
       "",
@@ -610,6 +623,7 @@ Ja rodas jautājumi par ieteikumiem vai vajag palīdzību auto izvēlē, rakstie
       "{{paraksts}}",
     ].join("\n"),
     vars: [
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
       { key: "papildus_cena", label: "Cena", sample: "19,99 €", required: true },
       { key: "maksajuma_saite", label: "Saite", sample: "https://buy.stripe.com/…", required: true },
       { key: "paraksts", label: "Paraksts", sample: defaultSignOffBlock(), required: true },
@@ -636,6 +650,7 @@ Ja rodas jautājumi par ieteikumiem vai vajag palīdzību auto izvēlē, rakstie
       "{{paraksts}}",
     ].join("\n"),
     vars: [
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
       {
         key: "lead",
         label: "Ievads",

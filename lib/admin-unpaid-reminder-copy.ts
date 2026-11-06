@@ -10,7 +10,7 @@ export const UNPAID_REMINDER_SUBJECT_TEMPLATE = "PROVIN · Pasūtījums gaida ap
 export const UNPAID_REMINDER_BODY_TEMPLATE = [
   "Labdien!",
   "",
-  "Redzējām, ka nesen sākāt pasūtīt auto vēstures pārbaudi, bet pasūtījums palika nepabeigts. Ja kaut kas nav skaidrs vai vēlaties vispirms konsultēties, atbildiet uz šo e-pastu.",
+  "Redzējām, ka nesen sākāt pasūtīt auto vēstures pārbaudi (VIN {{vin}}), bet pasūtījums palika nepabeigts. Ja kaut kas nav skaidrs vai vēlaties vispirms konsultēties, atbildiet uz šo e-pastu.",
   "",
   "Ja pārbaude joprojām ir aktuāla, apmaksu varat pabeigt šeit:",
   "{{maksājuma_saite}}",
@@ -54,7 +54,7 @@ export function unpaidReminderFallbackCopy(opts: { vin: string; paymentUrl: stri
 } {
   const vars = unpaidReminderTemplateVars(opts);
   const subject = UNPAID_REMINDER_SUBJECT_TEMPLATE.replaceAll("{{vin}}", vars.vin);
-  const text = injectUnpaidReminderPaymentUrl(UNPAID_REMINDER_BODY_TEMPLATE, vars.maksajuma_saite);
+  const text = injectUnpaidReminderPaymentUrl(UNPAID_REMINDER_BODY_TEMPLATE.replaceAll("{{vin}}", vars.vin), vars.maksajuma_saite);
   return { subject, text };
 }
 

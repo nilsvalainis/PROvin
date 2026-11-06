@@ -61,9 +61,15 @@ export function whatsappQuestionsLine(kind: ReportReadyProductKind): string {
   return "Ja rodas jautājumi vai vajadzīga papildu konsultācija, rakstiet šeit vai uz info@provin.lv. Labprāt palīdzēsim.";
 }
 
+/** MINI → AUDITS temats: „PROVIN · Ieteikums: PROVIN AUDITS · VW Golf · VIN”. */
+export function miniToAuditsSubject(car?: string | null, vin?: string | null): string {
+  return provinEmailSubject("Ieteikums: PROVIN AUDITS", { product: (car ?? "").trim() || null, vin });
+}
+
 export function buildWaReportReadyVars(opts: { kind: ReportReadyProductKind; vin?: string | null }): Record<string, string> {
   return {
     jautajumu_rinda: whatsappQuestionsLine(opts.kind),
+    vin: reportReadyVinVar(opts.vin),
   };
 }
 
@@ -123,7 +129,8 @@ export function buildUpsellEmailVars(opts: {
     auto,
     starpiba: charge.replace(/\s*€\s*$/u, "").trim(),
     maksajuma_saite: opts.url,
-    temats_auto: carForSubject ? `Jūsu PROVIN MINI pasūtījums: ${carForSubject}` : "Jūsu PROVIN MINI pasūtījums",
+    vin: reportReadyVinVar(opts.vin),
+    temats_auto: miniToAuditsSubject(carForSubject, opts.vin),
   };
 }
 
@@ -145,15 +152,18 @@ export function buildUpsellWaVars(opts: {
     return {
       papildus_cena: emailVars.papildus_cena ?? "",
       maksajuma_saite: opts.url,
+      vin: reportReadyVinVar(opts.vin),
     };
   }
-  const lead = "Jūsu oficiālā dīlera datu pasūtījumam varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.";
+  const vin = reportReadyVinVar(opts.vin);
+  const lead = `Jūsu oficiālā dīlera datu pasūtījumam${vin ? ` (VIN ${vin})` : ""} varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.`;
   return {
     lead,
     jau_samaksats: formatEurFromCents(opts.priorCents),
     papildus_cena: formatEurFromCents(opts.chargeCents),
     kopa: formatEurFromCents(opts.targetCents),
     maksajuma_saite: opts.url,
+    vin,
   };
 }
 
@@ -174,6 +184,7 @@ export function miniToAuditsVarsFromDraftInput(opts: {
     auto,
     starpiba,
     maksajuma_saite: pay,
-    temats_auto: carForSubject ? `Jūsu PROVIN MINI pasūtījums: ${carForSubject}` : "Jūsu PROVIN MINI pasūtījums",
+    vin: reportReadyVinVar(opts.vin),
+    temats_auto: miniToAuditsSubject(carForSubject, opts.vin),
   };
 }
