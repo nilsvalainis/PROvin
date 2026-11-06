@@ -7,6 +7,8 @@ import path from "path";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { normalizeIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
 import { IRISS_STALE_REVISION, parseExpectedIrissRevision, prepareIrissScanWrite } from "@/lib/iriss-scan-save-safety";
+import { parseIrissCriteriaV1 } from "@/lib/iriss-criteria-types";
+import { keepStoredIrissScanCriteria } from "@/lib/iriss-scan-save-safety";
 import { emptyIrissScanRecord, type IrissScanListOrder, type IrissScanListRow, type IrissScanRecord } from "@/lib/iriss-scan-types";
 import { isMarketplaceVehicleCategory } from "@/lib/marketplace/types";
 
@@ -227,6 +229,10 @@ function normalizeRecord(raw: unknown, id: string): IrissScanRecord | null {
     listingLinkEcarstrade: normalizeLinks(o.listingLinkEcarstrade),
     listingLinksOther: normalizeLinks(o.listingLinksOther),
     ...(o.ecarstradeLinksManual === true ? { ecarstradeLinksManual: true } : {}),
+    ...(() => {
+      const criteria = parseIrissCriteriaV1(o.criteria);
+      return criteria ? { criteria } : {};
+    })(),
   };
 }
 
@@ -412,9 +418,11 @@ export async function writeIrissScan(
   const normalized = normalizeRecord(record, record.id);
   if (!normalized) return { ok: false, error: "invalid_record" };
   const existing = await readIrissScan(record.id);
+  // Vecs klients (bez `criteria`) nedrīkst izdzēst operatora saglabātos kritērijus.
+  const incoming = keepStoredIrissScanCriteria(existing, normalized);
   const prepared = prepareIrissScanWrite(
     existing,
-    normalized,
+    incoming,
     opts?.expectedWorkspaceRevision ?? null,
     new Date().toISOString(),
   );

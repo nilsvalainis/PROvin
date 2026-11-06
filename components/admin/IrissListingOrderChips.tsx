@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, X } from "lucide-react";
-import { IRISS_LISTING_CARD_ACTION_ORDER } from "@/lib/iriss-listing-card-actions";
+import { irissListingCardContext, irissListingCardDetailsLabel } from "@/lib/iriss-listing-card-actions";
 import { listingCriteriaMarks } from "@/lib/iriss-listing-criteria-checks";
 import { listingOrderChipSubtitle, type IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import type { IrissOrderRoomHitSource } from "@/lib/iriss-order-room";
@@ -59,7 +59,7 @@ export function IrissListingOrderChips({
                 }}
                 className="inline-flex h-7 w-fit shrink-0 items-center rounded-full border border-slate-200 bg-white px-2 text-[10px] font-semibold text-slate-700 hover:bg-slate-50"
               >
-                {IRISS_LISTING_CARD_ACTION_ORDER}
+                {irissListingCardDetailsLabel(irissListingCardContext([o.id]))}
               </button>
             ) : null}
           </li>

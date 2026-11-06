@@ -3,7 +3,7 @@
  * LIST datos ir ar prefiksu `scan:` (piem. `scan:<uuid>`). Tas pats sync, tā pati auto kartīte.
  */
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
-import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
+import type { IrissListingOrderBrief, IrissListingOrderCriteria } from "@/lib/iriss-listings-orders";
 import type { IrissScanListRow } from "@/lib/iriss-scan-types";
 
 export const IRISS_SCAN_ORDER_PREFIX = "scan:";
@@ -36,6 +36,48 @@ export function irissScanSourceRows(rows: readonly IrissScanListRow[]) {
   }));
 }
 
+/**
+ * ✓/✕ kartītē tikai Radariem ar saglabātiem strukturētiem kritērijiem (vecajiem - nekas nemainās).
+ * Budžetu neliek: Radara cena ir sludinājuma cena, kartītes budžeta rinda paredzēta klientam ar izmaksām.
+ */
+type BriefSlot = { value?: unknown; source?: unknown } | undefined;
+
+function briefNum(slot: BriefSlot): number | null {
+  return typeof slot?.value === "number" && Number.isFinite(slot.value) ? slot.value : null;
+}
+
+/**
+ * Bez `iriss-criteria-types` importa: šo failu ielādē `iriss-listings-orders` -> eCarsTrade meklēšana,
+ * un taksonomija tur radītu ciklisku importu. Pietiek ar operatora («form») vērtību pārbaudi.
+ */
+function irissScanBriefCriteria(r: IrissScanListRow): IrissListingOrderCriteria | undefined {
+  const f = (r.criteria as { filters?: Array<Record<string, BriefSlot>> } | undefined)?.filters?.[0];
+  if (!f) return undefined;
+  const authored = Object.values(f).some(
+    (slot) =>
+      slot &&
+      typeof slot === "object" &&
+      slot.source === "form" &&
+      (Array.isArray(slot.value) ? slot.value.length > 0 : slot.value != null),
+  );
+  if (!authored) return undefined;
+  const y1 = briefNum(f.yearFrom);
+  const y2 = briefNum(f.yearTo);
+  const km = briefNum(f.mileageTo);
+  return {
+    totalBudget: "",
+    productionYears: y1 != null && y2 != null ? `${y1}-${y2}` : y1 != null ? `no ${y1}` : y2 != null ? String(y2) : "",
+    maxMileage: km != null ? String(km) : "",
+    transmission: r.transmission,
+    bodyType: r.bodyType,
+    driveType: "",
+    preferredColors: "",
+    nonPreferredColors: "",
+    engineType: r.engineType,
+    modelExtension: "",
+  };
+}
+
 /** SCAN rinda → LIST „pasūtījuma” īsā forma (klienta filtram un piesaistei). */
 export function irissScanOrderBrief(r: IrissScanListRow): IrissListingOrderBrief {
   const name = r.brandModel.trim() || "SCAN";
@@ -63,6 +105,10 @@ export function irissScanOrderBrief(r: IrissScanListRow): IrissListingOrderBrief
     listingLinkEcarstrade: filledIrissListingLinks(r.listingLinkEcarstrade),
     listingLinksOther: filledIrissListingLinks(r.listingLinksOther),
     listStatus: "active",
+    ...(() => {
+      const criteria = irissScanBriefCriteria(r);
+      return criteria ? { criteria } : {};
+    })(),
   };
 }
 
