@@ -40,7 +40,8 @@ import {
 } from "@/lib/email/report-ready-copy";
 import { getCachedMessageTemplatesDoc, warmMessageTemplatesCache } from "@/lib/messages/message-runtime";
 import { resolveMessageSync } from "@/lib/messages/resolve-message";
-import { buildReportReadyEmailVars, reportReadyTemplateId } from "@/lib/messages/template-vars";
+import { buildReportReadyEmailVars, reportReadyTemplateId, reportReadyVinVar } from "@/lib/messages/template-vars";
+import { formatEmailAmountEur, provinEmailSubject } from "@/lib/email/email-subject";
 import { buildInvoiceDownloadUrl } from "@/lib/thanks-session";
 
 /** true, ja servera vidē ir gan SMTP_USER, gan SMTP_PASS (Workspace / Gmail app password). */
@@ -420,16 +421,19 @@ export async function sendPaymentConfirmationEmail(opts: {
 
   const origin = getSiteOrigin();
   const invoiceUrl = await buildInvoiceDownloadUrl(origin, opts.sessionId);
+  const currency = (opts.currency ?? "EUR").toUpperCase();
   const amountLine =
     opts.amountTotal != null
-      ? `${opts.amountTotal} ${(opts.currency ?? "EUR").toUpperCase()}`
+      ? currency === "EUR"
+        ? formatEmailAmountEur(opts.amountTotal)
+        : `${opts.amountTotal} ${currency}`
       : "-";
 
   await warmMessageTemplatesCache();
   const doc = getCachedMessageTemplatesDoc();
   const paymentVars = {
     summa: amountLine,
-    vin: opts.vin?.trim() || "-",
+    vin: reportReadyVinVar(opts.vin),
     rekins_saite: invoiceUrl,
   };
   const paymentRendered = resolveMessageSync("email.payment_confirmation", paymentVars, { doc });
@@ -452,7 +456,7 @@ export async function sendPaymentConfirmationEmail(opts: {
       "",
       `Rēķins PDF formātā ir pievienots šim e-pastam. To var lejupielādēt arī šeit: ${invoiceUrl}`,
     ].join("\n");
-  const subject = paymentRendered?.subject ?? "PROVIN: maksājums saņemts, rēķins pielikumā";
+  const subject = paymentRendered?.subject ?? provinEmailSubject("Maksājums saņemts", { vin: opts.vin });
 
   try {
     await sendSmtpMail({
@@ -714,7 +718,7 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
     doc,
     htmlContext: { photoCids: photos.map((p) => listingPeekPhotoCid(p.id)) },
   });
-  const subject = rendered?.subject ?? "PROVIN: īss komentārs par sludinājumu";
+  const subject = rendered?.subject ?? provinEmailSubject("Īss komentārs par sludinājumu");
   const text =
     rendered?.text ??
     [

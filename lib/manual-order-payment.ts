@@ -1,3 +1,4 @@
+import { provinEmailSubject } from "@/lib/email/email-subject";
 /**
  * Stripe apmaksas pieprasījums esošam `manual_order_*`.
  * Pēc apmaksas paliek tas pats id. Jauna pasūtījuma rinda netiek veidota.
@@ -213,7 +214,7 @@ export function buildManualOrderPaymentDraft(opts: {
   ].join("\n");
   const whatsappText = [hello, "", `${name}: ${amount}.`, "", pay, "", sign].join("\n");
   return {
-    subject: `PROVIN.LV: apmaksas saite (${name})`,
+    subject: provinEmailSubject("Apmaksas saite", { product: name }),
     emailText,
     whatsappText,
   };
@@ -232,7 +233,7 @@ export function buildManualOrderPaidEmail(opts: {
   const amount = formatManualOrderPayAmount(opts.amountCents);
   const name = sanitizeManualOrderServiceName(opts.serviceName ?? "");
   return {
-    subject: "PROVIN.LV: apmaksa saņemta",
+    subject: provinEmailSubject("Apmaksa saņemta", { product: name }),
     text: [
       "Labdien!",
       "",

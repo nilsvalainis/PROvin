@@ -12,7 +12,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "PROVIN AUDITS PRO",
+  title: "PROVIN AUDITS",
   robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false, noimageindex: true } },
   referrer: "no-referrer",
 };

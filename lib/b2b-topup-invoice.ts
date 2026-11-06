@@ -41,7 +41,7 @@ export const B2B_TOPUP_INVOICE = {
   pvnNote:
     "PVN nav piemērots (PVN likuma 139.² pants).",
   email: {
-    subject: "PROVIN: rēķins par konta papildināšanu {{summa}}",
+    subject: "PROVIN · Rēķins par konta papildināšanu {{summa}}",
     body: [
       "Sveiki!",
       "",
