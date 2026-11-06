@@ -22,6 +22,10 @@ import { technicalRiskMapSnapshotField } from "@/lib/admin-ai-technical-risk-map
 import { odometerAnomalyOverridesSnapshotField } from "@/lib/odometer-anomaly-classify";
 import type { OdometerAnomalyOverride } from "@/lib/odometer-anomaly-classify";
 import {
+  dealerMajorWorkOverridesSnapshotField,
+  type DealerMajorWorkOverride,
+} from "@/lib/dealer-major-works-override-persist";
+import {
   autoRecordsTrafficLevel,
   ccVinTrafficLevel,
   asvTrafficLevel,
@@ -83,6 +87,8 @@ export type OrderWorkspacePersistBody = {
   technicalRiskMap?: import("@/lib/admin-ai-technical-risk-map-types").TechnicalRiskMap;
   /** Operatora odometra karodziņu apstiprinājums / atcelšana. Nav vecos pasūtījumos. */
   odometerAnomalyOverrides?: OdometerAnomalyOverride[];
+  /** Operatora Lielie darbi labojumi. Nav vecos pasūtījumos. */
+  dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
 };
 
 export type WorkspaceHydrationSource = "local" | "backup" | "server";
@@ -467,6 +473,9 @@ export function coalesceOrderWorkspacePersistBody(
     ...odometerAnomalyOverridesSnapshotField(
       incoming.odometerAnomalyOverrides ?? baseline.odometerAnomalyOverrides,
     ),
+    ...dealerMajorWorkOverridesSnapshotField(
+      incoming.dealerMajorWorkOverrides ?? baseline.dealerMajorWorkOverrides,
+    ),
   };
 }
 
@@ -516,6 +525,7 @@ export function buildOrderDraftWorkspaceBody(
     ...clearedFieldsSnapshotField(safe.clearedFields),
     ...technicalRiskMapSnapshotField(safe.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(safe.odometerAnomalyOverrides),
+    ...dealerMajorWorkOverridesSnapshotField(safe.dealerMajorWorkOverrides),
   };
 }
 
@@ -566,6 +576,7 @@ export function normalizeOrderWorkspacePersistBody(body: OrderWorkspacePersistBo
     ...clearedFieldsSnapshotField(body.clearedFields),
     ...technicalRiskMapSnapshotField(body.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(body.odometerAnomalyOverrides),
+    ...dealerMajorWorkOverridesSnapshotField(body.dealerMajorWorkOverrides),
   };
 }
 
@@ -598,6 +609,7 @@ export function serializeOrderWorkspaceSnapshotFromRef(
     ...clearedFieldsSnapshotField(normalized.clearedFields),
     ...technicalRiskMapSnapshotField(normalized.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(normalized.odometerAnomalyOverrides),
+    ...dealerMajorWorkOverridesSnapshotField(normalized.dealerMajorWorkOverrides),
     savedAt,
     ...(typeof workspaceRevision === "number" && workspaceRevision > 0
       ? { workspaceRevision: Math.floor(workspaceRevision) }
@@ -633,6 +645,7 @@ export function serializeOrderWorkspaceSnapshot(
     ...clearedFieldsSnapshotField(safe.clearedFields),
     ...technicalRiskMapSnapshotField(safe.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(safe.odometerAnomalyOverrides),
+    ...dealerMajorWorkOverridesSnapshotField(safe.dealerMajorWorkOverrides),
     savedAt,
   });
 }
@@ -791,6 +804,7 @@ type HydratedWorkspaceShape = {
   incidentPhotos?: IncidentPhotoMeta[];
   technicalRiskMap?: import("@/lib/admin-ai-technical-risk-map-types").TechnicalRiskMap;
   odometerAnomalyOverrides?: OdometerAnomalyOverride[];
+  dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
 };
 
 function hydratedToPersistBody(h: HydratedWorkspaceShape): OrderWorkspacePersistBody {
@@ -808,6 +822,7 @@ function hydratedToPersistBody(h: HydratedWorkspaceShape): OrderWorkspacePersist
     incidentPhotos: incident.incidentPhotos,
     ...technicalRiskMapSnapshotField(h.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(h.odometerAnomalyOverrides),
+    ...dealerMajorWorkOverridesSnapshotField(h.dealerMajorWorkOverrides),
   };
 }
 
@@ -907,6 +922,7 @@ export function pickOrderWorkspaceHydrationServerFirst<T extends HydratedWorkspa
     incidentPhotos: merged.incidentPhotos,
     ...technicalRiskMapSnapshotField(merged.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(merged.odometerAnomalyOverrides),
+    ...dealerMajorWorkOverridesSnapshotField(merged.dealerMajorWorkOverrides),
   } as T;
 
   const savedAtMs = Math.max(0, ...allPicks.map((p) => p.savedAtMs));

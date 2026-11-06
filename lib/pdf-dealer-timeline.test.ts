@@ -14,6 +14,12 @@ import {
 } from "@/lib/pdf-dealer-timeline";
 import { shouldCondenseDealerPdfRecords } from "@/lib/dealer-product-scope";
 import {
+  BMW_D17_HOOD_DATE,
+  BMW_D17_HOOD_EN,
+  BMW_D17_HOOD_LV,
+  bmwD17HoodServiceRows,
+} from "@/lib/dealer-major-works.prod-corpus.fixture";
+import {
   VOLVO_XC90_CLIMATE_DRAIN_NO_FAULT,
   VOLVO_XC90_QB_BLEED_AND_CHARGE_AIR_HOSE,
   VOLVO_XC90_QB_COOLING,
@@ -195,5 +201,37 @@ describe("Volvo XC90 RAW visit kinds and Lielie darbi", () => {
     expect(htmlEn).toContain("Timing belt");
     expect(htmlEn).toContain("Crankshaft seal");
     expect(htmlEn).not.toContain("Engine");
+  });
+});
+
+describe("BMW D17 Hood is not an engine swap in Lielie darbi", () => {
+  it("LV Dzinēja pārsegs OEM shows Virsbūve / stikls, not Dzinējs", () => {
+    const rows = bmwD17HoodServiceRows(BMW_D17_HOOD_LV);
+    const facts = extractDealerFactsFromServiceWorks(rows);
+    expect(facts.rows.at(-1)?.id).toBe("D17");
+    const summary = buildDealerVisitSummary(rows, facts);
+    expect(summary?.majorWorks.map((w) => w.id)).toEqual(["body_glass"]);
+    expect(summary?.majorWorks[0]?.factId).toBe("D17");
+    const html = buildDealerVisitSummaryHtml(rows, facts) + buildDealerMajorWorksHtml(facts);
+    expect(html).toContain("Virsbūve / stikls");
+    expect(html).toContain(BMW_D17_HOOD_DATE);
+    expect(html).toContain("54 832 km");
+    expect(html).not.toMatch(/<b>Dzinējs<\/b>/);
+    expect(html).not.toMatch(/Dzinējs 12\.05\.2014/);
+  });
+
+  it("original Hood + LV pārsegs and a hide override", () => {
+    const rows = bmwD17HoodServiceRows(BMW_D17_HOOD_LV);
+    const facts = extractDealerFactsFromServiceWorks(rows, [
+      { date: BMW_D17_HOOD_DATE, odometer: "54832", place: "BMW", works: BMW_D17_HOOD_EN },
+    ]);
+    expect(buildDealerVisitSummary(rows, facts)?.majorWorks.map((w) => w.id)).toEqual(["body_glass"]);
+    const hidden = buildDealerMajorWorksHtml(facts, "lv", [{ key: "body_glass@D17", action: "hide" }]);
+    expect(hidden).toBe("");
+    const summaryHidden = buildDealerVisitSummaryHtml(rows, facts, "lv", [
+      { key: "body_glass@D17", action: "hide" },
+    ]);
+    expect(summaryHidden).toContain("Nav fiksēts");
+    expect(summaryHidden).not.toContain("Virsbūve / stikls");
   });
 });

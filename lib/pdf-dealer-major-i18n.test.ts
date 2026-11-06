@@ -18,6 +18,7 @@ import {
 } from "@/lib/pdf-dealer-timeline";
 import {
   BMW_CLUTCH_KIT_TWIN_MASS_PART_LIST,
+  BMW_D17_HOOD_LV,
   BMW_REMAN_GEARBOX_WITH_OIL_LINE,
   BMW_V99966_D15_TWINPOWER_OIL_REPAIR_KIT,
   BMW_WINDSCREEN_CHIP_CHECK,
@@ -26,6 +27,7 @@ import {
   JEEP_LV_DOOR_TRIM_AND_PROPSHAFT,
   JEEP_LV_DOOR_TRIM_PANEL,
   VOLVO_D4_ENGINE_TURBO_WARRANTY,
+  bmwD17HoodServiceRows,
 } from "@/lib/dealer-major-works.prod-corpus.fixture";
 import { VOLVO_XC90_RAW_ROWS } from "@/lib/dealer-major-works.volvo-xc90.fixture";
 import type { AutoRecordsServiceWorkRow } from "@/lib/auto-records-service-works";
@@ -392,6 +394,38 @@ describe("Lielie darbi labels in every PDF language", () => {
     const skipFacts = extractDealerFactsFromServiceWorks(skipRows);
     expect(buildDealerVisitSummary(skipRows, skipFacts)?.majorWorks).toEqual([]);
     expect(buildDealerMajorWorksHtml(skipFacts, lang)).toBe("");
+  });
+});
+
+describe("BMW D17 Hood generated PDF HTML (fixture, not live order)", () => {
+  it("does not label Dzinējs; service history still has Dzinēja pārsegs", () => {
+    const rows = bmwD17HoodServiceRows(BMW_D17_HOOD_LV);
+    const doc = render("WBA3K31080F656545", "BMW 3er", rows, "lv");
+    expect(doc).toContain("Virsbūve / stikls");
+    expect(doc).toContain("12.05.2014");
+    expect(doc).toContain("54 832 km");
+    expect(doc).toContain("Dzinēja pārsegs");
+    expect(doc).not.toMatch(/<b>Dzinējs<\/b>/);
+    expect(doc).not.toMatch(/Dzinējs 12\.05\.2014/);
+  });
+
+  it("manual hide override removes Lielie darbi but keeps the service row", () => {
+    const rows = bmwD17HoodServiceRows(BMW_D17_HOOD_LV);
+    const doc = buildClientReportDocumentHtml({
+      payload: {
+        ...payload("WBA3K31080F656545", "BMW 3er", rows),
+        dealerMajorWorkOverrides: [{ key: "body_glass@D17", action: "hide" }],
+      },
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }),
+      formatBytes: () => "0 B",
+      lang: "lv",
+    });
+    expect(doc).toContain("Dzinēja pārsegs");
+    expect(doc).toContain("Nav fiksēts");
+    expect(doc).not.toContain("<aside class=\"pdf-svc-major\"");
+    expect(doc).not.toMatch(/<b>Dzinējs<\/b>/);
   });
 });
 

@@ -15,6 +15,14 @@ import {
   BMW_REMAN_GEARBOX_WITH_OIL_LINE,
   BMW_RP_REMAN_TRANSFER_BOX,
   BMW_SCHEIBENKLAR_WASHER,
+  BMW_D17_BONNET_EN,
+  BMW_D17_HOOD_DE,
+  BMW_D17_HOOD_EN,
+  BMW_D17_HOOD_GAS_SPRING_EN,
+  BMW_D17_HOOD_GAS_SPRING_LV,
+  BMW_D17_HOOD_LV,
+  BMW_ENGINE_MOUNT_EN,
+  BMW_ENGINE_MOUNT_LV,
   BMW_WINDSCREEN_CHIP_CHECK,
   BMW_WINDSCREEN_REPLACED,
   DE_SIDE_WINDOW_ERNEUERT,
@@ -376,6 +384,47 @@ describe("windscreen and window glass replacement stays in Lielie darbi", () => 
   ])("not glass replacement: %s", (_label, works) => {
     expect(isMajorAssemblyRepairWork(works, "body_glass")).toBe(false);
     expect(hasAnyMajorAssemblyRepair(works)).toBe(false);
+  });
+});
+
+describe("hood / pārsegs is never an engine swap", () => {
+  it.each([
+    ["EN Hood OEM", BMW_D17_HOOD_EN],
+    ["LV Dzinēja pārsegs OEM", BMW_D17_HOOD_LV],
+    ["DE Motorhaube OEM", BMW_D17_HOOD_DE],
+    ["EN Bonnet OEM", BMW_D17_BONNET_EN],
+    ["LV motora pārsegs", "Motora pārsegs (41007290944)"],
+    ["FR capot moteur", "Capot moteur (41007290944)"],
+    ["IT cofano", "Cofano (41007290944)"],
+    ["RU капот", "Капот (41007290944)"],
+    ["combined original+LV", `${BMW_D17_HOOD_EN}\n${BMW_D17_HOOD_LV}`],
+  ])("is not engine: %s", (_label, works) => {
+    expect(isMajorAssemblyRepairWork(works, "engine")).toBe(false);
+    expect(dealerMajorAssembliesInWork(works)).toEqual(["body_glass"]);
+  });
+
+  it.each([
+    ["EN hood gas spring", BMW_D17_HOOD_GAS_SPRING_EN],
+    ["LV gāzes atspere", BMW_D17_HOOD_GAS_SPRING_LV],
+    ["EN engine mount OEM", BMW_ENGINE_MOUNT_EN],
+    ["LV dzinēja spilvens", BMW_ENGINE_MOUNT_LV],
+    ["EN engine cover", "Engine cover (11127501234)"],
+    ["LV vārstu pārsegs", "Vārstu pārsegs (11127501234)"],
+  ])("ancillary is not major: %s", (_label, works) => {
+    expect(isMajorAssemblyRepairWork(works, "engine")).toBe(false);
+    expect(hasAnyMajorAssemblyRepair(works)).toBe(false);
+  });
+
+  it.each([
+    ["EN engine replaced", "Engine replaced"],
+    ["EN engine replacement OEM", "Engine (11007581234) Engine replaced"],
+    ["DE Motor erneuert", "Motor erneuert"],
+    ["LV dzinēja maiņa", "Dzinēja maiņa"],
+    ["RU замена двигателя", "Замена двигателя"],
+    ["FR moteur remplacé", "Moteur remplacé"],
+    ["mixed engine+hood", "Engine replaced.\nHood (41007290944)"],
+  ])("true engine unit repair stays engine: %s", (_label, works) => {
+    expect(isMajorAssemblyRepairWork(works, "engine")).toBe(true);
   });
 });
 
