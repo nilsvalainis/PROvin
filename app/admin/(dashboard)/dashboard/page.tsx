@@ -21,7 +21,8 @@ import { AdminOrdersViewSwitch } from "@/components/admin/AdminOrdersViewSwitch"
 import { listUnpaidAdminOrders, stripeCheckoutSessionDashboardUrl } from "@/lib/admin-unpaid-orders";
 import { AdminOrderVinScanDashboardCards } from "@/components/admin/AdminOrderVinScanDashboardCards";
 import { pickOrderVinScanDashboardCards } from "@/lib/order-vin-scan";
-import { ORDERS_PAGE_SIZE, parseAdminOrdersQuery, queryAdminOrderRows } from "@/lib/admin-orders-page-query";
+import { isMobileUserAgent, parseAdminOrdersQuery, queryAdminOrderRows } from "@/lib/admin-orders-page-query";
+import { headers } from "next/headers";
 import { AdminOrdersSearchBar } from "@/components/admin/AdminOrdersSearchBar";
 import Link from "next/link";
 import { getB2bPartnerByEmail, getB2bPartnerById } from "@/lib/b2b-partner-store";
@@ -62,13 +63,14 @@ export default async function AdminOrdersPage({
       </div>
     );
   }
-  const ordersQuery = parseAdminOrdersQuery(sp);
+  const ordersQuery = parseAdminOrdersQuery(sp, { mobile: isMobileUserAgent((await headers()).get("user-agent")) });
   const [{ rows: allOrders, stripeError }, peeks] = await Promise.all([
     listAdminOrders(),
     listListingPeeks(500).catch(() => [] as Awaited<ReturnType<typeof listListingPeeks>>),
   ]);
   const hiddenByAmount = countAdminOrdersHiddenByAmountFilter(allOrders);
-  const orders = filterAdminOrdersForDashboard(allOrders, showAll);
+  // Meklējot - viss arhīvs, arī zem 10 €.
+  const orders = filterAdminOrdersForDashboard(allOrders, showAll || Boolean(ordersQuery.q));
   const orderIds = orders.map((o) => o.id);
   // „Izpildīts”, krāsa, upsell — no karodziņu indeksa (1 lasījums), nevis 3×N Blob failu.
   const [draftSummaries, { complete: auditCompleteMap, color: auditResultColorMap, upsell: upsellOffers }] = await Promise.all([
@@ -223,7 +225,7 @@ export default async function AdminOrdersPage({
     if (showAll) p.set("show_all", "1");
     if (ordersQuery.q) p.set("q", ordersQuery.q);
     if (ordersQuery.sort === "oldest") p.set("sort", "oldest");
-    p.set("limit", String(ordersQuery.limit + ORDERS_PAGE_SIZE));
+    p.set("limit", String(ordersQuery.limit + ordersQuery.pageSize));
     return `/admin/dashboard?${p.toString()}`;
   })();
   const toolbarEnd = (
@@ -311,7 +313,7 @@ export default async function AdminOrdersPage({
                 prefetch={false}
                 className="rounded-lg border border-[#d2d2d7] bg-white px-4 py-2 text-sm font-medium text-[#1d1d1f] hover:bg-[#f5f5f7]"
               >
-                Ielādēt vēl {Math.min(ORDERS_PAGE_SIZE, paged.doneTotal - paged.doneShown)}
+                Ielādēt vēl {Math.min(ordersQuery.pageSize, paged.doneTotal - paged.doneShown)}
               </Link>
             ) : null}
           </div>
