@@ -86,14 +86,23 @@ export function paymentConfirmationHtml(opts: {
   invoiceUrl: string;
   amountLine: string;
   vin: string;
+  /** C4: EN/RU/DE teksti; bez - latviski. */
+  copy?: { title: string; lead: string; amountLabel: string; invoiceLine: string; cta: string };
 }): string {
+  const c = opts.copy ?? {
+    title: "Paldies par pasūtījumu",
+    lead: "Maksājums ir saņemts. Jūsu pasūtījums tiek apstrādāts.",
+    amountLabel: "Summa",
+    invoiceLine: "Rēķins PDF formātā ir pievienots šim e-pastam. To var lejupielādēt arī šeit.",
+    cta: "Lejupielādēt rēķinu (PDF)",
+  };
   const inner = `
-<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">Paldies par pasūtījumu</p>
-<p style="margin:0 0 20px;color:${MUTED};font-size:15px;">Maksājums ir saņemts. Jūsu pasūtījums tiek apstrādāts.</p>
-<p style="margin:0 0 6px;font-size:14px;"><strong>Summa:</strong> ${esc(opts.amountLine)}</p>
+<p style="margin:0 0 12px;font-size:22px;font-weight:600;letter-spacing:-0.02em;">${esc(c.title)}</p>
+<p style="margin:0 0 20px;color:${MUTED};font-size:15px;">${esc(c.lead)}</p>
+<p style="margin:0 0 6px;font-size:14px;"><strong>${esc(c.amountLabel)}:</strong> ${esc(opts.amountLine)}</p>
 <p style="margin:0 0 24px;font-size:14px;"><strong>VIN:</strong> ${esc(opts.vin)}</p>
-<p style="margin:0 0 24px;font-size:14px;">Rēķins PDF formātā ir pievienots šim e-pastam. To var lejupielādēt arī šeit.</p>
-${ctaButton(opts.invoiceUrl, "Lejupielādēt rēķinu (PDF)")}
+<p style="margin:0 0 24px;font-size:14px;">${esc(c.invoiceLine)}</p>
+${ctaButton(opts.invoiceUrl, c.cta)}
 `;
   return shell(inner);
 }
