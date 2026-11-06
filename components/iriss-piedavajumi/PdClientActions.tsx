@@ -54,7 +54,7 @@ export function PdClientActionsView(p: PdClientActionsViewProps) {
       {p.questions.map((q, i) => (
         <p key={`${q.at}-${i}`} className="whitespace-pre-wrap break-words rounded-xl bg-white px-3 py-2 text-[14px] leading-snug text-[#3a3a3c] shadow-[inset_0_0_0_1px_#e4e4e7]">
           {q.text}
-          <span className="mt-1 block text-[11px] text-[#8e8e93]">{formatOfferDeadlineLv(q.at)}</span>
+          <span className="mt-1 block text-[11px] text-[#6e6e73]">{formatOfferDeadlineLv(q.at)}</span>
         </p>
       ))}
     </div>
@@ -91,7 +91,7 @@ export function PdClientActionsView(p: PdClientActionsViewProps) {
           type="button"
           disabled={p.busy}
           onClick={p.onToggleAsk}
-          className="flex h-11 w-full items-center justify-center text-[14px] font-semibold text-[#9a3412]"
+          className="flex h-11 w-full items-center justify-center text-[14px] font-semibold text-[#1d1d1f] underline underline-offset-4"
         >
           {L.ask}
         </button>
@@ -102,7 +102,7 @@ export function PdClientActionsView(p: PdClientActionsViewProps) {
   const messages = (
     <>
       {p.err ? (
-        <p className="text-center text-[14px] font-medium text-[#b91c1c]" role="alert">
+        <p className="text-center text-[14px] font-medium text-[#1d1d1f]" role="alert">
           {p.err}
         </p>
       ) : null}
@@ -140,13 +140,13 @@ export function PdClientActionsView(p: PdClientActionsViewProps) {
     const approve = p.step === "approve";
     return (
       <div className="space-y-3 rounded-2xl bg-white px-4 py-4 shadow-[inset_0_0_0_1px_#e4e4e7]" data-testid="pd-confirm">
-        <h2 ref={p.confirmRef} tabIndex={-1} className="text-center text-[18px] font-bold text-[#111827] outline-none">
+        <h2 ref={p.confirmRef} tabIndex={-1} className="text-center text-[18px] font-bold text-[#1d1d1f] outline-none">
           {approve ? L.confirmApproveTitle : L.confirmDeclineTitle}
         </h2>
         {p.vehicle || p.price ? (
           <div className="flex items-baseline justify-between gap-3 rounded-xl border border-[#e4e4e7] px-3 py-2.5 text-[14px]">
-            <span className="min-w-0 truncate text-[#111827]">{p.vehicle}</span>
-            {p.price ? <span className="shrink-0 font-bold text-[#111827]">{p.price}</span> : null}
+            <span className="min-w-0 truncate text-[#1d1d1f]">{p.vehicle}</span>
+            {p.price ? <span className="shrink-0 font-bold text-[#1d1d1f]">{p.price}</span> : null}
           </div>
         ) : null}
         {approve && p.needsContact ? (
