@@ -585,9 +585,31 @@ ${ctaButton(opts.resetUrl, cta)}
   return shell(inner);
 }
 
+/** Pogas pēc nolūka (Nils 06.11 C1): tikai skaidri nosauktas rindas „<Nolūks>: https://…”. */
+const EMAIL_INTENT_BUTTONS: Array<{ re: RegExp; label: string }> = [
+  { re: /^apmaksāt$/i, label: "Apmaksāt" },
+  { re: /^pasūtīt(?:\s+provin\s+audits)?$/i, label: "Pasūtīt PROVIN AUDITS" },
+  { re: /^atvērt\s+atskaiti$/i, label: "Atvērt atskaiti" },
+  { re: /^lejupielādēt\s+rēķinu$/i, label: "Lejupielādēt rēķinu" },
+];
+
+function emailIntentButton(line: string): string | null {
+  const m = /^([^:\n]{3,40}):\s*(https?:\/\/\S+)\s*$/.exec(line.trim());
+  if (!m?.[2] || !isValidHttpUrl(m[2])) return null;
+  const intent = EMAIL_INTENT_BUTTONS.find((b) => b.re.test((m[1] ?? "").trim()));
+  return intent ? ctaButton(m[2], intent.label) : null;
+}
+
+function linkifyEscaped(text: string): string {
+  return esc(text)
+    .replace(/(https?:\/\/[^\s<]+)/g, (u) => `<a href="${u}" style="color:${BRAND};">${u}</a>`)
+    .replace(/\n/g, "<br/>");
+}
+
 /**
  * Operatora rediģēts dīlera e-pasts (plain text → rindkopas).
- * Rinda `Pasūtīt: https://…` kļūst par CTA pogu.
+ * Poga tikai rindai „Apmaksāt: / Pasūtīt: / Atvērt atskaiti: / Lejupielādēt rēķinu: https://…”;
+ * cita saite paliek par parastu saiti (agrāk jebkura saite pēdējā rindā kļuva par „Apmaksāt”).
  */
 export function dealerDataOperatorMessageEmailHtml(opts: {
   title?: string | null;
@@ -598,7 +620,6 @@ export function dealerDataOperatorMessageEmailHtml(opts: {
   const title = (opts.title ?? "").trim();
   const b2bClient = opts.b2bClient === true;
   const lang = opts.lang ?? "lv";
-  const orderCta = /^(Pasūtīt|Apmaksāt):\s*(https?:\/\/\S+)\s*$/i;
   const paragraphs = opts.text
     .replace(/\r\n/g, "\n")
     .split(/\n{2,}/)
@@ -606,28 +627,25 @@ export function dealerDataOperatorMessageEmailHtml(opts: {
     .filter(Boolean);
   const body = paragraphs
     .map((block) => {
-      const m = orderCta.exec(block);
-      if (m?.[2] && isValidHttpUrl(m[2])) {
-        const label = /^apmaksāt$/i.test(m[1] ?? "") ? "Apmaksāt" : "Pasūtīt PROVIN AUDITS";
-        return ctaButton(m[2], label);
-      }
+      const button = emailIntentButton(block);
+      if (button) return button;
       const lines = block.split("\n");
       const last = (lines[lines.length - 1] ?? "").trim();
       if (b2bClient && last === "PROVIN" && lines.length >= 2) {
         const head = lines.slice(0, -1).join("\n").trim();
         return `<p style="margin:0;font-size:15px;color:${INK};line-height:1.6;">${esc(head).replace(/\n/g, "<br/>")}<br/><span style="color:${BRAND};font-weight:600;">PROVIN</span></p>`;
       }
-      if (isValidHttpUrl(last) && lines.length === 1) {
-        return ctaButton(last, "Apmaksāt");
-      }
-      if (isValidHttpUrl(last) && lines.length > 1) {
+      // Saite atsevišķā rindā pēc „… apmaksāt šeit:” - tas pats nolūks „Apmaksāt”.
+      const prev = (lines[lines.length - 2] ?? "").trim();
+      const payAfterColon =
+        lines.length > 1 && isValidHttpUrl(last) && /apmaks\p{L}*[^:\n]*:$/iu.test(prev) ? ctaButton(last, "Apmaksāt") : null;
+      const lastButton = lines.length > 1 ? (emailIntentButton(last) ?? payAfterColon) : null;
+      if (lastButton) {
         const head = lines.slice(0, -1).join("\n").trim();
-        const html = esc(head).replace(/\n/g, "<br/>");
-        return `<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${html}</p>
-${ctaButton(last, "Apmaksāt")}`;
+        return `<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${linkifyEscaped(head)}</p>
+${lastButton}`;
       }
-      const html = esc(block).replace(/\n/g, "<br/>");
-      return `<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${html}</p>`;
+      return `<p style="margin:0 0 12px;font-size:15px;color:${INK};line-height:1.6;">${linkifyEscaped(block)}</p>`;
     })
     .join("\n");
   const titleBlock = title
