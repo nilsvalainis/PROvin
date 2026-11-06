@@ -366,6 +366,39 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   "atrasts ieraksts": { en: "record found", ru: "найдена запись" },
   "Dīlera kopsavilkums": { en: "Dealer summary", ru: "Сводка дилера" },
   "Nobraukuma līkne": { en: "Mileage curve", ru: "Кривая пробега" },
+  "precīzs ieraksts": { en: "precise record", ru: "точная запись" },
+  "1 precīzs ieraksts": { en: "1 precise record", ru: "1 точная запись" },
+  "{n} precīzi ieraksti": { en: "{n} precise records", ru: "{n} точных записей" },
+  "1 ieraksts": { en: "1 record", ru: "1 запись" },
+  "{n} ieraksti": { en: "{n} records", ru: "{n} записей" },
+  "NOBRAUKUMS PA GADIEM": { en: "MILEAGE BY YEAR", ru: "ПРОБЕГ ПО ГОДАМ" },
+  "tūkst. km": { en: "thous. km", ru: "тыс. км" },
+  "tūkst. km gadā": { en: "thous. km / year", ru: "тыс. км в год" },
+  nepilns: { en: "partial", ru: "неполный" },
+  "nepārtraukta līnija savieno precīzos ierakstus": {
+    en: "unbroken line connects the precise records",
+    ru: "непрерывная линия соединяет точные записи",
+  },
+  "precīzs gada nobraukums": { en: "precise annual mileage", ru: "точный годовой пробег" },
+  "aptuveni (nav precīzu datu)": { en: "approximate (no precise data)", ru: "примерно (нет точных данных)" },
+  "nepilns gads": { en: "incomplete year", ru: "неполный год" },
+  "Nobraukuma vēsture un nobraukums pa kalendāra gadiem": {
+    en: "Mileage history and mileage by calendar year",
+    ru: "История пробега и пробег по календарным годам",
+  },
+  "Gadu robežās nobraukums interpolēts lineāri starp tuvākajiem precīzajiem ierakstiem. Svītrotie stabiņi: aptuvens vairāku gadu intervāla sadalījums, nevis precīzs gada nobraukums. {y0}: no {d0}; {y1}: līdz {d1} - bez pārrēķina uz pilnu gadu.":
+    {
+      en: "Year-end mileage is linearly interpolated between the nearest precise records. Hatched bars are an approximate split of a multi-year interval, not a precise annual mileage. {y0}: from {d0}; {y1}: until {d1} - not annualized to a full year.",
+      ru: "Пробег на границах года линейно интерполирован между ближайшими точными записями. Штрихованные столбцы - приблизительное деление многолетнего интервала, а не точный годовой пробег. {y0}: с {d0}; {y1}: до {d1} - без пересчёта на полный год.",
+    },
+  "1 ieraksts ar mākslīgu kritumu grafikā nav rādīts - tāpat kā esošajā atskaitē.": {
+    en: "1 record with an artificial drop is not shown on the chart - same as in the existing report.",
+    ru: "1 запись с искусственным падением на графике не показана - как и в существующем отчёте.",
+  },
+  "{n} ieraksti ar mākslīgu kritumu grafikā nav rādīti - tāpat kā esošajā atskaitē.": {
+    en: "{n} records with an artificial drop are not shown on the chart - same as in the existing report.",
+    ru: "{n} записей с искусственным падением на графике не показаны - как и в существующем отчёте.",
+  },
 };
 
 /** Sakārtots pēc garuma (garākais pirmais), lai īsāka frāze nesabojā garāku, kas to satur. */
@@ -637,6 +670,28 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "atrasts ieraksts": "Eintrag gefunden",
   "Dīlera kopsavilkums": "Händlerübersicht",
   "Nobraukuma līkne": "Kilometerstandkurve",
+  "precīzs ieraksts": "präziser Eintrag",
+  "1 precīzs ieraksts": "1 präziser Eintrag",
+  "{n} precīzi ieraksti": "{n} präzise Einträge",
+  "1 ieraksts": "1 Eintrag",
+  "{n} ieraksti": "{n} Einträge",
+  "NOBRAUKUMS PA GADIEM": "LAUFLEISTUNG NACH JAHR",
+  "tūkst. km": "Tsd. km",
+  "tūkst. km gadā": "Tsd. km / Jahr",
+  nepilns: "unvollständig",
+  "nepārtraukta līnija savieno precīzos ierakstus":
+    "ununterbrochene Linie verbindet die präzisen Einträge",
+  "precīzs gada nobraukums": "präzise Jahreslaufleistung",
+  "aptuveni (nav precīzu datu)": "ungefähr (keine präzisen Daten)",
+  "nepilns gads": "unvollständiges Jahr",
+  "Nobraukuma vēsture un nobraukums pa kalendāra gadiem":
+    "Laufleistungshistorie und Laufleistung nach Kalenderjahr",
+  "Gadu robežās nobraukums interpolēts lineāri starp tuvākajiem precīzajiem ierakstiem. Svītrotie stabiņi: aptuvens vairāku gadu intervāla sadalījums, nevis precīzs gada nobraukums. {y0}: no {d0}; {y1}: līdz {d1} - bez pārrēķina uz pilnu gadu.":
+    "Der Jahresgrenzen-km wird linear zwischen den nächsten präzisen Einträgen interpoliert. Schraffierte Balken sind eine ungefähre Aufteilung eines mehrjährigen Intervalls, keine präzise Jahreslaufleistung. {y0}: ab {d0}; {y1}: bis {d1} - ohne Hochrechnung auf ein volles Jahr.",
+  "1 ieraksts ar mākslīgu kritumu grafikā nav rādīts - tāpat kā esošajā atskaitē.":
+    "1 Eintrag mit künstlichem Rückgang wird im Diagramm nicht gezeigt - wie im bestehenden Bericht.",
+  "{n} ieraksti ar mākslīgu kritumu grafikā nav rādīti - tāpat kā esošajā atskaitē.":
+    "{n} Einträge mit künstlichem Rückgang werden im Diagramm nicht gezeigt - wie im bestehenden Bericht.",
 };
 
 export function clientReportStaticKeys(): string[] {
