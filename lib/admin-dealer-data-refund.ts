@@ -59,10 +59,12 @@ export function buildDealerRefundRequestBody(opts: {
   sessionId: string;
   kind: DealerRefundActionKind;
   override?: boolean;
+  /** Stripe: operatora izvēle (noklusējums - sūtīt). */
+  notifyEmail?: boolean;
 }): DealerRefundRequestBody {
   return {
     sessionId: opts.sessionId,
-    notifyEmail: opts.kind === "stripe",
+    notifyEmail: opts.kind === "stripe" && opts.notifyEmail !== false,
     ...(opts.override ? { override: true as const } : {}),
   };
 }
@@ -89,7 +91,7 @@ export function dealerRefundConfirmMessage(
       ? "Atgriezt summu partnera atlikumā? Partneris saņems IRISS e-pastu."
       : kind === "credit"
         ? "Atgriezt 1 dīlera kredītu partnera kontā? E-pastu sūti atsevišķi ar „Nosūtīt e-pastu”."
-        : "Atgriezt maksājumu pilnā apmērā? Darbība ir neatgriezeniska. Klientam tiks nosūtīts e-pasts par atmaksu.";
+        : "Atgriezt maksājumu pilnā apmērā? Darbība ir neatgriezeniska. Nākamajā solī izvēlēsies, vai sūtīt klientam e-pastu.";
   if (!opts?.override) return base;
   return `${DEALER_REFUND_OVERRIDE_CONFIRM} ${base}`;
 }
@@ -125,6 +127,8 @@ export function dealerRefundResultNotice(opts: {
   emailSent?: boolean;
   emailError?: DealerRefundEmailError | string | null;
   error?: string;
+  /** Operators izvēlējās atmaksu bez e-pasta. */
+  emailSkipped?: boolean;
 }): string {
   if (!opts.ok) {
     return `Atmaksa neizdevās: ${opts.error ?? "nezināma kļūda"}`;
@@ -139,6 +143,9 @@ export function dealerRefundResultNotice(opts: {
   }
   if (opts.emailSent) {
     return "Atmaksa veikta. E-pasts nosūtīts klientam.";
+  }
+  if (opts.emailSkipped) {
+    return "Atmaksa veikta bez e-pasta (Tava izvēle).";
   }
   if (opts.emailError === "no_recipient") {
     return "Atmaksa veikta, bet klienta e-pasta nav. Ieraksti adresi un nosūti ar „Nosūtīt e-pastu”.";
@@ -166,4 +173,19 @@ export function dealerRefundEmailSheetHint(opts: {
     return "Atmaksa jau veikta, bet e-pasts nav nosūtīts. Pārbaudi adresi un nospied „Nosūtīt”.";
   }
   return null;
+}
+
+/** C2 (Nils 06.11): atmaksai viens e-pasts - izvēle pēc apstiprinājuma. */
+export const DEALER_REFUND_EMAIL_CHOICE_PROMPT =
+  "E-pasts klientam par atmaksu:\nOK - atmaksāt un nosūtīt e-pastu\nAtcelt - atmaksāt BEZ e-pasta (atmaksa tik un tā tiks veikta)";
+
+/** Brīdinājums pirms otra e-pasta par to pašu atmaksu. */
+export function dealerRefundEmailAlreadySentPrompt(refund: { emailSentAt?: string } | null | undefined): string | null {
+  const at = (refund?.emailSentAt ?? "").trim();
+  if (!at) return null;
+  const d = new Date(at);
+  const when = Number.isNaN(d.getTime())
+    ? at
+    : d.toLocaleString("lv-LV", { timeZone: "Europe/Riga", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  return `E-pasts par šo atmaksu jau nosūtīts (${when}). Sūtīt vēlreiz?`;
 }

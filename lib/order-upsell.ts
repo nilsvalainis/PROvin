@@ -1,3 +1,4 @@
+import { provinEmailSubject } from "@/lib/email/email-subject";
 /**
  * Piepirkums esošam pasūtījumam.
  * Vienīgā B2C atlaide: dīlera dati 24,99 € + 75,00 € = pilnais audits,
@@ -403,7 +404,7 @@ export function buildUpsellDraft(
       sign,
     ].join("\n");
     return {
-      subject: "PROVIN.LV: oficiālā dīlera dati esošajam pasūtījumam",
+      subject: provinEmailSubject("Piedāvājums: oficiālie dīlera dati", { vin: opts.vin }),
       emailText,
       whatsappText,
     };
@@ -449,7 +450,7 @@ export function buildUpsellDraft(
   ].join("\n");
 
   return {
-    subject: "PROVIN.LV: PROVIN AUDITS Jūsu pasūtījumam",
+    subject: provinEmailSubject("Piedāvājums: PROVIN AUDITS", { vin: opts.vin }),
     emailText,
     whatsappText,
   };
@@ -469,7 +470,7 @@ export function buildUpsellPaidEmail(opts: {
   chargeCents: number;
 }): { subject: string; text: string } {
   return {
-    subject: "PROVIN.LV: papildu apmaksa saņemta",
+    subject: provinEmailSubject("Papildu apmaksa saņemta", { vin: opts.vin }),
     text: [
       "Labdien!",
       "",

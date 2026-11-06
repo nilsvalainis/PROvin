@@ -46,6 +46,8 @@ export function AdminManualOrderPaymentPanel({ sessionId }: { sessionId: string 
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** Telefonā saliekams (makets 06.11): pēc noklusējuma tikai kopsavilkuma rinda. */
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -178,9 +180,29 @@ export function AdminManualOrderPaymentPanel({ sessionId }: { sessionId: string 
 
   if (!prefill) return null;
 
+  const mobileSummary = prefill.paid
+    ? `Apmaksāts${prefill.amountCents != null ? ` · ${formatManualOrderPayAmount(prefill.amountCents)}` : ""}`
+    : `${amountText ? `${amountText} €` : "Summa nav"} · ${prefill.checkoutUrl || draft ? "saite izveidota" : "saite nav izveidota"}`;
+
   return (
-    <section className="mb-2 rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2 py-2">
-      <p className="text-[10px] font-medium uppercase tracking-wide text-slate-600">
+    <section
+      className="mb-2 rounded-lg border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-2 py-2"
+      data-mobile-open={mobileOpen ? "true" : "false"}
+    >
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-2 text-left md:hidden"
+        aria-expanded={mobileOpen}
+        onClick={() => setMobileOpen((v) => !v)}
+      >
+        <span className="min-w-0">
+          <span className="block text-[10px] font-medium uppercase tracking-wide text-slate-600">Apmaksas pieprasījums</span>
+          <span className="block text-[12px] text-slate-500">{mobileSummary}</span>
+        </span>
+        <span aria-hidden className={`text-[16px] text-slate-400 transition-transform ${mobileOpen ? "rotate-90" : ""}`}>›</span>
+      </button>
+      <div className={mobileOpen ? "max-md:mt-2" : "max-md:hidden"}>
+      <p className="text-[10px] font-medium uppercase tracking-wide text-slate-600 max-md:hidden">
         Apmaksas pieprasījums
       </p>
       <p className="mt-0.5 text-[11px] text-slate-500">
@@ -314,6 +336,7 @@ export function AdminManualOrderPaymentPanel({ sessionId }: { sessionId: string 
           </div>
         </div>
       ) : null}
+      </div>
     </section>
   );
 }

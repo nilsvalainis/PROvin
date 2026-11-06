@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildDealerRefundRequestBody,
   dealerRefundConfirmMessage,
+  dealerRefundEmailAlreadySentPrompt,
   dealerRefundEmailSheetHint,
   dealerRefundNeedsOverride,
   dealerRefundResultNotice,
@@ -153,9 +154,9 @@ describe("resolveDealerRefundClientEmail", () => {
 });
 
 describe("dealer refund operator copy", () => {
-  it("Stripe apstiprinājums sola e-pastu, ne atsevišķu pogu", () => {
+  it("Stripe apstiprinājums piesaka e-pasta izvēli nākamajā solī, ne atsevišķu pogu", () => {
     const confirm = dealerRefundConfirmMessage("stripe");
-    expect(confirm).toMatch(/e-pasts/i);
+    expect(confirm).toMatch(/e-pastu/i);
     expect(confirm).not.toMatch(/atsevišķi/);
     expect(confirm).not.toMatch(/ja vajag/);
   });
@@ -229,5 +230,47 @@ describe("dealer refund operator copy", () => {
     expect(
       shouldOpenDealerRefundEmailSheet({ kind: "credit", ok: true, emailSent: false }),
     ).toBe(true);
+  });
+});
+
+describe("C2 - viens e-pasts uz atmaksu (06.11)", () => {
+  it("Stripe pieprasījums ievēro operatora izvēli", () => {
+    expect(buildDealerRefundRequestBody({ sessionId: "cs_1", kind: "stripe" }).notifyEmail).toBe(true);
+    expect(buildDealerRefundRequestBody({ sessionId: "cs_1", kind: "stripe", notifyEmail: false }).notifyEmail).toBe(false);
+    expect(buildDealerRefundRequestBody({ sessionId: "manual_order_1", kind: "credit", notifyEmail: true }).notifyEmail).toBe(false);
+  });
+
+  it("izvēle bez e-pasta - skaidrs paziņojums", () => {
+    expect(dealerRefundResultNotice({ kind: "stripe", ok: true, emailSent: false, emailSkipped: true })).toBe(
+      "Atmaksa veikta bez e-pasta (Tava izvēle).",
+    );
+  });
+
+  it("otrs e-pasts par to pašu atmaksu prasa apstiprinājumu", () => {
+    expect(dealerRefundEmailAlreadySentPrompt(null)).toBeNull();
+    expect(dealerRefundEmailAlreadySentPrompt({})).toBeNull();
+    expect(dealerRefundEmailAlreadySentPrompt({ emailSentAt: "2026-11-06T10:15:00.000Z" })).toMatch(
+      /^E-pasts par šo atmaksu jau nosūtīts \(06\.11.*12:15\)\. Sūtīt vēlreiz\?$/,
+    );
+  });
+
+  it("atmaksas ieraksts saglabā emailSentAt arī pēc nolasīšanas (B2B maka aizsardzība)", async () => {
+    const { normalizeDealerDataJob } = await import("@/lib/dealer-data-job-types");
+    const job = normalizeDealerDataJob(
+      {
+        vin: "WVWZZZ3CZME138258",
+        status: "no_data",
+        refund: {
+          at: "2026-11-06T10:00:00.000Z",
+          amountCents: 1999,
+          stripeRefundId: "wallet_x",
+          by: "admin",
+          reason: "r",
+          emailSentAt: "2026-11-06T10:01:00.000Z",
+        },
+      },
+      "cs_1",
+    );
+    expect(job?.refund?.emailSentAt).toBe("2026-11-06T10:01:00.000Z");
   });
 });

@@ -26,6 +26,10 @@ export function AdminMobileTopBar({
   onBack,
   trailing,
   children,
+  wrapTitle = false,
+  monoSubtitle = false,
+  hideWorkspaceSwitch = false,
+  headerExtra,
 }: {
   title: string;
   subtitle?: string;
@@ -33,6 +37,14 @@ export function AdminMobileTopBar({
   onBack?: () => void;
   trailing?: ReactNode;
   children?: ReactNode;
+  /** Garš nosaukums divās rindās, nevis „TESTS GL…”. */
+  wrapTitle?: boolean;
+  /** Apakšvirsraksts (VIN) pilnībā, monospace. */
+  monoSubtitle?: boolean;
+  /** Bez IRISS/PRO slēdža (pasūtījuma lapā - tas ir sarakstā). */
+  hideWorkspaceSwitch?: boolean;
+  /** Rinda zem nosaukuma (rezultāts, produkts, summa). */
+  headerExtra?: ReactNode;
 }) {
   const pathname = usePathname() ?? "";
   const iriss = useAdminShellLayout()?.workspace === "iriss";
@@ -98,20 +110,31 @@ export function AdminMobileTopBar({
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-2">
               <h1
-                className={`min-w-0 truncate font-bold tracking-tight text-[var(--label)] ${
-                  hasBack ? "text-[17px] leading-none" : title.length > 10 ? "text-[28px] leading-none" : "text-[34px] leading-none"
+                className={`min-w-0 font-bold tracking-tight text-[var(--label)] ${
+                  wrapTitle ? "line-clamp-2 break-words" : "truncate"
+                } ${
+                  hasBack ? (wrapTitle ? "text-[17px] leading-tight" : "text-[17px] leading-none") : title.length > 10 ? "text-[28px] leading-none" : "text-[34px] leading-none"
                 }`}
               >
                 {title}
               </h1>
               {hasBack ? null : <AdminWorkspaceSwitch />}
             </div>
-            {subtitle ? <p className="mt-0.5 truncate text-[13px] text-[var(--label-secondary)]">{subtitle}</p> : null}
+            {subtitle ? (
+              <p
+                className={`mt-0.5 text-[13px] text-[var(--label-secondary)] ${
+                  monoSubtitle ? "font-mono tracking-[0.02em] [overflow-wrap:anywhere]" : "truncate"
+                }`}
+              >
+                {subtitle}
+              </p>
+            ) : null}
           </div>
           {trailing ? <div className="flex shrink-0 items-center gap-1.5">{trailing}</div> : null}
         </div>
+        {headerExtra ? <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">{headerExtra}</div> : null}
         {/* QA 29.10: iekšējās lapās pārslēgs otrajā rindā - virsraksts vairs netiek saīsināts līdz «Pa...». */}
-        {hasBack ? (
+        {hasBack && !hideWorkspaceSwitch ? (
           <div className="mt-1.5 flex">
             <AdminWorkspaceSwitch />
           </div>

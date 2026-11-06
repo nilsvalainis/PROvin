@@ -220,6 +220,7 @@ async function fulfillPaidCheckoutSession(
                 amountTotal: payload.amountTotal,
                 currency: payload.currency,
                 vin: payload.vin,
+                lang: session.locale ?? null,
                 invoiceAttachment,
               });
               console.info("[stripe webhook] payment confirmation email sent", { sessionId: session.id, to: email });

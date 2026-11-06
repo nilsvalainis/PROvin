@@ -22,10 +22,10 @@ const miniToAuditsTemplateBody = MINI_TO_AUDITS_APPROVED_TEXT
   .replaceAll("{paraksts}", "{{paraksts}}");
 
 const PARTNER_VERIFY_SUBJECT: Record<string, { signup: string; change: string }> = {
-  lv: { signup: "PROVIN.LV: apstipriniet e-pastu", change: "PROVIN.LV: apstipriniet jauno e-pastu" },
-  en: { signup: "PROVIN.LV: confirm your email", change: "PROVIN.LV: confirm your new email" },
-  de: { signup: "PROVIN.LV: E-Mail bestätigen", change: "PROVIN.LV: neue E-Mail bestätigen" },
-  ru: { signup: "PROVIN.LV: подтвердите адрес почты", change: "PROVIN.LV: подтвердите новый адрес" },
+  lv: { signup: "PROVIN · Apstipriniet e-pastu", change: "PROVIN · Apstipriniet jauno e-pastu" },
+  en: { signup: "PROVIN · Confirm your email", change: "PROVIN · Confirm your new email" },
+  de: { signup: "PROVIN · E-Mail bestätigen", change: "PROVIN · Neue E-Mail bestätigen" },
+  ru: { signup: "PROVIN · Подтвердите адрес почты", change: "PROVIN · Подтвердите новый адрес" },
 };
 
 const PARTNER_VERIFY_BODY: Record<string, { signup: string; change: string }> = {
@@ -55,10 +55,10 @@ const PARTNER_VERIFY_HINT: Record<string, string> = {
 };
 
 const PARTNER_RESET_SUBJECT: Record<string, string> = {
-  lv: "PROVIN.LV: atjaunojiet paroli",
-  en: "PROVIN.LV: reset your password",
-  de: "PROVIN.LV: Passwort zurücksetzen",
-  ru: "PROVIN.LV: сброс пароля",
+  lv: "PROVIN · Atjaunojiet paroli",
+  en: "PROVIN · Reset your password",
+  de: "PROVIN · Passwort zurücksetzen",
+  ru: "PROVIN · Сброс пароля",
 };
 
 const PARTNER_RESET_LEAD: Record<string, string> = {
@@ -117,7 +117,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     channel: "email",
     group: "Apmaksa",
     title: "Maksājums saņemts + rēķins",
-    subject: "PROVIN: maksājums saņemts, rēķins pielikumā",
+    subject: "PROVIN · Maksājums saņemts{{#vin}} · {{vin}}{{/vin}}",
     body: [
       "Labdien!",
       "",
@@ -128,7 +128,8 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "Rēķins PDF formātā ir pievienots šim e-pastam. To var lejupielādēt arī šeit: {{rekins_saite}}",
     ].join("\n"),
     vars: [
-      { key: "summa", label: "Summa", sample: "99,99 EUR", required: true },
+      { key: "summa", label: "Summa", sample: "99,99 €", required: true },
+      { key: "vin", label: "VIN", sample: "WVWZZZ1KZAW000123" },
       { key: "rekins_saite", label: "Rēķina saite", sample: "https://provin.lv/api/invoice/download?session_id=…", required: true },
     ],
     tags: ["auto"],
@@ -139,7 +140,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     channel: "email",
     group: "Apmaksa",
     title: "Personīgā apmaksas saite",
-    subject: "{{produkts}}: Jūsu apmaksas saite",
+    subject: "PROVIN · Apmaksas saite · {{produkts}}",
     body: [
       "Labdien!",
       "",
@@ -166,12 +167,12 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     channel: "email",
     group: "Apmaksa",
     title: "Neapmaksāta pasūtījuma atgādinājums",
-    description: "Personīga vēstule. Sveiciens: Labdien! (bez vārda). Mainīgie: {{vin}}, {{maksājuma_saite}}.",
-    subject: "Par Jūsu auto pārbaudi (VIN {{vin}})",
+    description: "Sveiciens: Labdien! (bez vārda). Bez tālruņa. Mainīgie: {{vin}}, {{maksājuma_saite}}.",
+    subject: "PROVIN · Pasūtījums gaida apmaksu · {{vin}}",
     body: [
       "Labdien!",
       "",
-      "Redzēju, ka nesen sākāt pasūtīt auto vēstures pārbaudi, bet pasūtījums palika nepabeigts. Ja kaut kas nav skaidrs vai vēlaties vispirms konsultēties, droši zvaniet man: +371 29 502 039. Varat arī atbildēt uz šo e-pastu.",
+      "Redzējām, ka nesen sākāt pasūtīt auto vēstures pārbaudi, bet pasūtījums palika nepabeigts. Ja kaut kas nav skaidrs vai vēlaties vispirms konsultēties, atbildiet uz šo e-pastu.",
       "",
       "Ja pārbaude joprojām ir aktuāla, apmaksu varat pabeigt šeit:",
       "{{maksājuma_saite}}",
@@ -179,7 +180,6 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "Paldies, ka izvēlējāties PROVIN.LV, un veiksmi auto izvēlē!",
       "",
       "Ar cieņu,",
-      "Nils V. (IRISS)",
       "PROVIN.LV",
     ].join("\n"),
     vars: [
@@ -195,7 +195,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     group: "Atskaite gatava",
     title: "PROVIN AUDITS",
     description: "Temats iekļauj VIN iekavās, ja tas ir derīgs. Mainīgie: {{vin}}.",
-    subject: "PROVIN AUDITS atskaite ir gatava{{#vin}} ({{vin}}){{/vin}}",
+    subject: "PROVIN · Atskaite gatava · PROVIN AUDITS{{#vin}} · {{vin}}{{/vin}}",
     body: [
       "Labdien!",
       "",
@@ -227,7 +227,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     group: "Atskaite gatava",
     title: "PROVIN MINI",
     description: "Temats iekļauj VIN iekavās, ja tas ir derīgs. Mainīgie: {{vin}}.",
-    subject: "PROVIN MINI atskaite ir gatava{{#vin}} ({{vin}}){{/vin}}",
+    subject: "PROVIN · Atskaite gatava · PROVIN MINI{{#vin}} · {{vin}}{{/vin}}",
     body: [
       "Labdien!",
       "",
@@ -255,7 +255,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     group: "Atskaite gatava",
     title: "Dīlera servisa vēsture",
     description: "Temats iekļauj VIN iekavās, ja tas ir derīgs. Mainīgie: {{vin}}.",
-    subject: "PROVIN: oficiālā dīlera dati ir gatavi{{#vin}} ({{vin}}){{/vin}}",
+    subject: "PROVIN · Atskaite gatava · Oficiālie dīlera dati{{#vin}} · {{vin}}{{/vin}}",
     body: [
       "Labdien!",
       "",
@@ -286,7 +286,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     channel: "email",
     group: "Atskaite gatava",
     title: "Dīlera PDF pielikumā",
-    subject: "PROVIN.LV: oficiālā dīlera dati pielikumā",
+    subject: "PROVIN · Atskaite gatava · Oficiālie dīlera dati{{#vin}} · {{vin}}{{/vin}}",
     body: [
       "Labdien!",
       "",
@@ -304,7 +304,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     channel: "email",
     group: "Ātrie vērtējumi",
     title: "Īss komentārs par sludinājumu",
-    subject: "PROVIN: īss komentārs par sludinājumu",
+    subject: "PROVIN · Īss komentārs par sludinājumu",
     body: [
       "Sveiki!",
       "",
@@ -353,7 +353,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
       "{{paraksts}}",
     ].join("\n"),
     vars: [
-      { key: "temats", label: "Temats", sample: "PROVIN.LV: dīlera dati nav pieejami", required: true },
+      { key: "temats", label: "Temats", sample: "PROVIN · Dīlera dati nav pieejami, nauda atgriezta · WVWZZZ1KZAW000123", required: true },
       { key: "atmaksa_rinda", label: "Atmaksa", sample: "Summa: 24,99 € (atgriezīsim uz to pašu karti).", required: true },
       { key: "refund_piezime", label: "Atmaksas piezīme", sample: defaultRefundBankNote() },
       { key: "audits_cta", label: "AUDITS CTA", sample: defaultAuditsCtaBlock() },
@@ -366,7 +366,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     channel: "email",
     group: "Atmaksa un atcelšana",
     title: "Pasūtījums atcelts",
-    subject: "PROVIN.LV: pasūtījums atcelts un maksājums atgriezts",
+    subject: "PROVIN · Pasūtījums atcelts, nauda atgriezta{{#vin}} · {{vin}}{{/vin}}",
     body: [
       "Labdien!",
       "",
@@ -389,7 +389,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     channel: "email",
     group: "Piedāvājumi",
     title: "MINI → Dīleris",
-    subject: "PROVIN.LV: oficiālā dīlera dati esošajam pasūtījumam",
+    subject: "PROVIN · Piedāvājums: oficiālie dīlera dati{{#vin}} · {{vin}}{{/vin}}",
     body: [
       "Labdien!",
       "",
@@ -418,7 +418,7 @@ export const MESSAGE_TEMPLATE_DEFS: MessageTemplateDef[] = [
     channel: "email",
     group: "Piedāvājumi",
     title: "Dīleris / MINI → AUDITS",
-    subject: "PROVIN.LV: PROVIN AUDITS Jūsu pasūtījumam",
+    subject: "PROVIN · Piedāvājums: PROVIN AUDITS{{#vin}} · {{vin}}{{/vin}}",
     body: [
       "Labdien!",
       "",

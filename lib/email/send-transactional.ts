@@ -15,7 +15,6 @@ import {
   b2bWalletRefundEmailHtml,
   auditCompletedEmailHtml,
   b2bProvinEmailHtml,
-  dealerDataNoDataRefundEmailHtml,
   dealerDataOperatorMessageEmailHtml,
   listingPeekCustomerCommentHtml,
   partnerPasswordResetEmailHtml,
@@ -40,7 +39,9 @@ import {
 } from "@/lib/email/report-ready-copy";
 import { getCachedMessageTemplatesDoc, warmMessageTemplatesCache } from "@/lib/messages/message-runtime";
 import { resolveMessageSync } from "@/lib/messages/resolve-message";
-import { buildReportReadyEmailVars, reportReadyTemplateId } from "@/lib/messages/template-vars";
+import { buildReportReadyEmailVars, reportReadyTemplateId, reportReadyVinVar } from "@/lib/messages/template-vars";
+import { formatEmailAmountEur, provinEmailSubject } from "@/lib/email/email-subject";
+import { dealerRefundEmailCopy, paymentConfirmationCopy, resolveClientEmailLang } from "@/lib/email/client-lang-email-copy";
 import { buildInvoiceDownloadUrl } from "@/lib/thanks-session";
 
 /** true, ja servera vidē ir gan SMTP_USER, gan SMTP_PASS (Workspace / Gmail app password). */
@@ -406,6 +407,8 @@ export async function sendPaymentConfirmationEmail(opts: {
   amountTotal: string | null;
   currency: string | null;
   vin: string | null;
+  /** Klienta valoda (Stripe session.locale); LV - rediģējamā veidne. */
+  lang?: string | null;
   invoiceAttachment?: {
     filename: string;
     content: Buffer;
@@ -420,27 +423,44 @@ export async function sendPaymentConfirmationEmail(opts: {
 
   const origin = getSiteOrigin();
   const invoiceUrl = await buildInvoiceDownloadUrl(origin, opts.sessionId);
+  const currency = (opts.currency ?? "EUR").toUpperCase();
   const amountLine =
     opts.amountTotal != null
-      ? `${opts.amountTotal} ${(opts.currency ?? "EUR").toUpperCase()}`
+      ? currency === "EUR"
+        ? formatEmailAmountEur(opts.amountTotal)
+        : `${opts.amountTotal} ${currency}`
       : "-";
 
+  const emailLang = resolveClientEmailLang(opts.lang);
   await warmMessageTemplatesCache();
-  const doc = getCachedMessageTemplatesDoc();
+  const doc = emailLang === "lv" ? getCachedMessageTemplatesDoc() : null;
+  const foreign = emailLang === "lv" ? null : paymentConfirmationCopy(emailLang, { amountLine, vin: opts.vin, invoiceUrl });
   const paymentVars = {
     summa: amountLine,
-    vin: opts.vin?.trim() || "-",
+    vin: reportReadyVinVar(opts.vin),
     rekins_saite: invoiceUrl,
   };
-  const paymentRendered = resolveMessageSync("email.payment_confirmation", paymentVars, { doc });
+  const paymentRendered = foreign ? null : resolveMessageSync("email.payment_confirmation", paymentVars, { doc });
   const html =
     paymentRendered?.html ??
     paymentConfirmationHtml({
       invoiceUrl,
       amountLine,
       vin: opts.vin?.trim() || "-",
+      ...(foreign
+        ? {
+            copy: {
+              title: foreign.title,
+              lead: foreign.lead,
+              amountLabel: foreign.amountLabel,
+              invoiceLine: foreign.invoiceLine,
+              cta: foreign.cta,
+            },
+          }
+        : {}),
     });
   const text =
+    foreign?.text ??
     paymentRendered?.text ??
     [
       "Labdien!",
@@ -452,7 +472,7 @@ export async function sendPaymentConfirmationEmail(opts: {
       "",
       `Rēķins PDF formātā ir pievienots šim e-pastam. To var lejupielādēt arī šeit: ${invoiceUrl}`,
     ].join("\n");
-  const subject = paymentRendered?.subject ?? "PROVIN: maksājums saņemts, rēķins pielikumā";
+  const subject = foreign?.subject ?? paymentRendered?.subject ?? provinEmailSubject("Maksājums saņemts", { vin: opts.vin });
 
   try {
     await sendSmtpMail({
@@ -714,7 +734,7 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
     doc,
     htmlContext: { photoCids: photos.map((p) => listingPeekPhotoCid(p.id)) },
   });
-  const subject = rendered?.subject ?? "PROVIN: īss komentārs par sludinājumu";
+  const subject = rendered?.subject ?? provinEmailSubject("Īss komentārs par sludinājumu");
   const text =
     rendered?.text ??
     [
@@ -900,26 +920,30 @@ export async function sendDealerDataRefundEmail(opts: {
   vin?: string | null;
   amountEur?: string | null;
   cancelled?: boolean;
+  /** Klienta valoda (Stripe session.locale). */
+  lang?: string | null;
 }): Promise<void> {
-  const subject = opts.cancelled
-    ? "PROVIN.LV: pasūtījums atcelts un maksājums atgriezts"
-    : "PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts";
   const amount = (opts.amountEur ?? "").trim() || "24,99 €";
-  await warmMessageTemplatesCache();
-  const doc = getCachedMessageTemplatesDoc();
-  const text = opts.cancelled
-    ? buildDealerCancelledEmailDraft({ vin: opts.vin, amountEur: amount }, doc).text
-    : buildDealerNoDataEmailDraft({ vin: opts.vin, amountEur: amount, refunded: true }, doc).text;
-
+  const lang = resolveClientEmailLang(opts.lang);
+  let subject: string;
+  let text: string;
+  if (lang === "lv") {
+    await warmMessageTemplatesCache();
+    const doc = getCachedMessageTemplatesDoc();
+    const draft = opts.cancelled
+      ? buildDealerCancelledEmailDraft({ vin: opts.vin, amountEur: amount }, doc)
+      : buildDealerNoDataEmailDraft({ vin: opts.vin, amountEur: amount, refunded: true }, doc);
+    subject = draft.subject;
+    text = draft.text;
+  } else {
+    ({ subject, text } = dealerRefundEmailCopy(lang, { cancelled: opts.cancelled === true, amount, vin: opts.vin }));
+  }
+  // HTML no tā paša teksta (agrāk HTML bija atsevišķs, un rediģētā veidne tajā neparādījās).
   await sendSmtpMail({
     to: opts.to,
     subject,
     text,
-    html: dealerDataNoDataRefundEmailHtml({
-      vin: opts.vin,
-      amountEur: amount,
-      cancelled: opts.cancelled,
-    }),
+    html: dealerDataOperatorMessageEmailHtml({ title: subject, text, lang }),
   });
 }
 
@@ -928,6 +952,7 @@ export async function trySendDealerDataRefundEmail(opts: {
   vin?: string | null;
   amountEur?: string | null;
   cancelled?: boolean;
+  lang?: string | null;
 }): Promise<boolean> {
   if (!isSmtpConfigured()) {
     console.warn("[dealer-data] SMTP nav iestatīts, atmaksas e-pasts nav nosūtīts");

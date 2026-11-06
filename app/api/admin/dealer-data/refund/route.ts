@@ -19,7 +19,7 @@ import { updateB2bCreditWallet } from "@/lib/b2b-partner-credit-store";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
 import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
 import { notifyB2bWalletRefundEmail, refundB2bWalletOrder } from "@/lib/b2b-wallet-refund";
-import { readDealerDataJob, writeDealerDataJob } from "@/lib/dealer-data-job-store";
+import { readDealerDataJob, upsertDealerDataJob, writeDealerDataJob } from "@/lib/dealer-data-job-store";
 import {
   DEALER_REFUND_MAX_CENTS,
   decideDealerRefund,
@@ -27,6 +27,7 @@ import {
 } from "@/lib/dealer-data-job-types";
 import { trySendDealerDataRefundEmail } from "@/lib/email/send-transactional";
 import { getStripe } from "@/lib/stripe";
+import { formatEurFromCents } from "@/lib/order-upsell";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -234,11 +235,18 @@ export async function POST(req: Request) {
       emailSent = await trySendDealerDataRefundEmail({
         to,
         vin: job?.vin ?? draft?.orderEdits?.vin ?? null,
-        amountEur: `${(decision.amountCents / 100).toFixed(2)} €`,
+        amountEur: formatEurFromCents(decision.amountCents),
         cancelled: o.cancelled === true,
+        lang: session.locale ?? null,
       });
       if (!emailSent) emailError = "send_failed";
     }
+  }
+  if (emailSent) {
+    await upsertDealerDataJob(sessionId, {
+      vin: job?.vin ?? "",
+      refund: { ...record, emailSentAt: new Date().toISOString() },
+    });
   }
 
   return NextResponse.json({

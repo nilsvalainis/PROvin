@@ -18,6 +18,8 @@ import {
   type DealerClientEmailKind,
 } from "@/lib/dealer-data-client-email";
 import {
+  DEALER_REFUND_EMAIL_CHOICE_PROMPT,
+  dealerRefundEmailAlreadySentPrompt,
   dealerRefundEmailSheetHint,
   dealerRefundResultNotice,
   planDealerRefund,
@@ -183,6 +185,10 @@ export function AdminDealerDataJobStrip({
     : "lv";
 
   const openMail = (mode: MailSheet["mode"], kind: DealerClientEmailKind) => {
+    if (kind !== "ready") {
+      const again = dealerRefundEmailAlreadySentPrompt(job?.refund);
+      if (again && !window.confirm(again)) return;
+    }
     const lang = kind === "ready" ? resolvedInitialLang : "lv";
     const draft =
       kind === "cancelled"
@@ -246,6 +252,11 @@ export function AdminDealerDataJobStrip({
     if (!window.confirm(plan.confirmMessage)) {
       return;
     }
+    // C2: viens e-pasts - operators izvēlas, vai atmaksa iet ar e-pastu.
+    const requestBody =
+      plan.kind === "stripe"
+        ? { ...plan.requestBody, notifyEmail: window.confirm(DEALER_REFUND_EMAIL_CHOICE_PROMPT) }
+        : plan.requestBody;
     setBusy("refund");
     setNotice(null);
     try {
@@ -253,7 +264,7 @@ export function AdminDealerDataJobStrip({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(plan.requestBody),
+        body: JSON.stringify(requestBody),
       });
       const body = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
@@ -271,9 +282,13 @@ export function AdminDealerDataJobStrip({
           emailSent: body.emailSent,
           emailError: body.emailError,
           error: body.error,
+          emailSkipped: requestBody.notifyEmail === false && plan.kind === "stripe",
         }),
       );
-      if (shouldOpenDealerRefundEmailSheet({ kind: plan.kind, ok, emailSent: body.emailSent })) {
+      if (
+        requestBody.notifyEmail !== false &&
+        shouldOpenDealerRefundEmailSheet({ kind: plan.kind, ok, emailSent: body.emailSent })
+      ) {
         const amount =
           body.job?.refund != null
             ? `${(body.job.refund.amountCents / 100).toFixed(2)} €`

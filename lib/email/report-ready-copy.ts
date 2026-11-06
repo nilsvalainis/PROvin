@@ -1,3 +1,4 @@
+import { provinEmailSubject } from "@/lib/email/email-subject";
 /**
  * Klienta „atskaite gatava” e-pasti: dīleris / MINI / AUDITS.
  * Tīri stringi - der HTML veidnei un testiem.
@@ -63,25 +64,17 @@ export function resolveReportReadyProductKind(args: {
   return "audits";
 }
 
-const REPORT_READY_SUBJECT: Record<ReportReadyProductKind, Record<ClientReportLang, string>> = {
-  dealer: {
-    lv: "PROVIN: oficiālā dīlera dati ir gatavi",
-    en: "PROVIN: your official dealer data is ready",
-    ru: "PROVIN: официальные данные дилера готовы",
-    de: "PROVIN: Ihre offiziellen Händlerdaten sind fertig",
-  },
-  mini: {
-    lv: "PROVIN MINI atskaite ir gatava",
-    en: "Your PROVIN MINI report is ready",
-    ru: "Ваш отчёт PROVIN MINI готов",
-    de: "Ihr PROVIN MINI Bericht ist fertig",
-  },
-  audits: {
-    lv: "PROVIN AUDITS atskaite ir gatava",
-    en: "Your PROVIN AUDITS report is ready",
-    ru: "Ваш отчёт PROVIN AUDITS готов",
-    de: "Ihr PROVIN AUDITS Bericht ist fertig",
-  },
+const REPORT_READY_EVENT: Record<ClientReportLang, string> = {
+  lv: "Atskaite gatava",
+  en: "Report ready",
+  ru: "Отчёт готов",
+  de: "Bericht fertig",
+};
+
+const REPORT_READY_PRODUCT: Record<ReportReadyProductKind, Record<ClientReportLang, string>> = {
+  dealer: { lv: "Oficiālie dīlera dati", en: "Official dealer data", ru: "Официальные данные дилера", de: "Offizielle Händlerdaten" },
+  mini: { lv: "PROVIN MINI", en: "PROVIN MINI", ru: "PROVIN MINI", de: "PROVIN MINI" },
+  audits: { lv: "PROVIN AUDITS", en: "PROVIN AUDITS", ru: "PROVIN AUDITS", de: "PROVIN AUDITS" },
 };
 
 export function buildReportReadySubject(
@@ -89,9 +82,7 @@ export function buildReportReadySubject(
   vin?: string,
   lang: ClientReportLang = "lv",
 ): string {
-  const base = REPORT_READY_SUBJECT[kind][lang];
-  const code = reportReadyVinVar(vin);
-  return code ? `${base} (${code})` : base;
+  return provinEmailSubject(REPORT_READY_EVENT[lang], { product: REPORT_READY_PRODUCT[kind][lang], vin });
 }
 
 const REPORT_READY_GREETING: Record<ClientReportLang, string> = {
@@ -213,6 +204,7 @@ export function buildReportReadyPlainText(
   }
 
   const bullets = REPORT_READY_AUDITS_BULLETS[lang];
+  const lines = files.length > 0 ? files.map((n) => `- ${n}`) : [`- ${bullets[0]}`, `- ${bullets[1]}`];
   return [
     greeting,
     "",
@@ -220,8 +212,7 @@ export function buildReportReadyPlainText(
     "",
     REPORT_READY_ATTACHMENTS_INTRO[lang],
     "",
-    `- ${bullets[0]}`,
-    `- ${bullets[1]}`,
+    ...lines,
     "",
     questionLine,
     "",

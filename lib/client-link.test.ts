@@ -90,7 +90,7 @@ describe("amount and expiry", () => {
 });
 
 describe("admin input and submission", () => {
-  it("defaults to PROVIN AUDITS PRO at 99,99 with email/VIN/listing required", () => {
+  it("defaults to PROVIN AUDITS at 99,99 with email/VIN/listing required", () => {
     const d = defaultClientLinkAdminInput();
     expect(d.productName).toBe(CLIENT_LINK_DEFAULT_PRODUCT);
     expect(d.amountCents).toBe(CLIENT_LINK_DEFAULT_AMOUNT_CENTS);
@@ -238,7 +238,7 @@ describe("public view, stripe and messages", () => {
       expiresAt: "2026-10-16T16:50:00.000Z",
       amountCents: 9999,
     });
-    expect(email.subject).toContain("PROVIN AUDITS PRO");
+    expect(email.subject).toBe("PROVIN · Apmaksas saite · PROVIN AUDITS");
     expect(email.text).toContain(url);
     expect(email.text).not.toMatch(/[\u2012\u2013\u2014\u2015\u2212]/);
   });

@@ -1,5 +1,7 @@
 "use client";
 
+import { useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
+
 import { AdminSaveButton } from "@/components/admin/AdminSaveButton";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -774,6 +776,7 @@ export function OrderDetailWorkspace({
   onSourcesComparisonCommentChange,
   onOrderEditsPatch,
   dashboardSlot,
+  mobileHeaderExtra,
   portfolioPortalDomId,
   portfolioPortalTargetInParent = false,
   serverWorkspaceJson = null,
@@ -794,6 +797,8 @@ export function OrderDetailWorkspace({
   onOrderEditsPatch?: (patch: { vin?: string }) => void;
   /** 0. solis — maksājums, transports, klients, pielikumi, komentārs (vecāka 2×2 režģis). */
   dashboardSlot?: ReactNode;
+  /** Telefonā galvenes otrā rinda (rezultāta krāsa, produkts, summa) - makets 06.11. */
+  mobileHeaderExtra?: ReactNode;
   /** Ja norādīts, „1. Pielikumi” tiek renderēts šajā DOM elementā (kreisās kolonnas augšā). */
   portfolioPortalDomId?: string;
   /** Ja `true`, vecāka komponents jau renderē `<div id={portfolioPortalDomId} />` (bez dublikāta ID). */
@@ -1013,13 +1018,16 @@ export function OrderDetailWorkspace({
     setPortfolioPortalEl(document.getElementById(portfolioPortalDomId));
   }, [portfolioPortalDomId, payload.sessionId]);
 
+  // Telefonā baneri zem pasūtījuma galvenes (makets 06.11), datorā - kā agrāk virs darba virsmas.
+  const isMobileViewport = useAdminMobileViewport();
   useLayoutEffect(() => {
     if (!alertsPortalDomId || typeof document === "undefined") {
       setAlertsPortalEl(null);
       return;
     }
-    setAlertsPortalEl(document.getElementById(alertsPortalDomId));
-  }, [alertsPortalDomId, payload.sessionId]);
+    const mobileSlot = isMobileViewport ? document.getElementById(`${alertsPortalDomId}-m`) : null;
+    setAlertsPortalEl(mobileSlot ?? document.getElementById(alertsPortalDomId));
+  }, [alertsPortalDomId, payload.sessionId, isMobileViewport]);
 
   useAdminScrollLock(portfolioAllFilesModalOpen);
 
@@ -4958,19 +4966,26 @@ export function OrderDetailWorkspace({
           title={payload.customerName?.trim() || "Pasūtījums"}
           subtitle={vinBar || undefined}
           backHref="/admin/dashboard"
-          trailing={
+          wrapTitle
+          monoSubtitle
+          hideWorkspaceSwitch
+          headerExtra={
             <>
-              <AdminMobileSaveStatus
-                saved={workspaceAutosaveStatus !== "error" && (workspaceSaveFlash || workspaceAutosaveStatus === "saved") && !workspaceSaveBusy}
-                busy={workspaceSaveBusy}
-                onSave={() => {
-                  setWorkspaceSaveBusy(true);
-                  void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
-                }}
-              />
-              <AdminMobileRoundBtn name="vairak" label="Darbības" onClick={() => setMobileMore(true)} />
+              {mobileHeaderExtra}
+              {/* Makets 06.11: „Saglabāts” otrajā rindā, lai VIN ietilpst vienā rindā. */}
+              <span className="ml-auto">
+                <AdminMobileSaveStatus
+                  saved={workspaceAutosaveStatus !== "error" && (workspaceSaveFlash || workspaceAutosaveStatus === "saved") && !workspaceSaveBusy}
+                  busy={workspaceSaveBusy}
+                  onSave={() => {
+                    setWorkspaceSaveBusy(true);
+                    void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
+                  }}
+                />
+              </span>
             </>
           }
+          trailing={<AdminMobileRoundBtn name="vairak" label="Darbības" onClick={() => setMobileMore(true)} />}
         >
           <AdminMobileSectionNav
             items={ADMIN_MOBILE_ORDER_SECTIONS.map((s) => ({ id: s.id, label: s.label }))}
@@ -4986,6 +5001,7 @@ export function OrderDetailWorkspace({
             }}
           />
         </AdminMobileTopBar>
+        {alertsPortalDomId ? <div id={`${alertsPortalDomId}-m`} className="min-w-0 px-4 pt-1" /> : null}
         <AdminMobileSheet open={mobileMore} title="Darbības" onClose={() => setMobileMore(false)}>
           <div className="overflow-hidden rounded-[18px] bg-[var(--am-s1)]">
             <button type="button" className="flex h-[50px] w-full items-center px-4 text-[15px]" onClick={() => { setMobileMore(false); handleWhatsAppOpen(); }}>WhatsApp</button>

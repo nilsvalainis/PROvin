@@ -1868,6 +1868,7 @@ function buildAutoRecordsAvotuSubsection(
     vehicle: resolveDealerCoverVehicle(bundle.vehicleInfo, b.outvinReport?.vehicleInfo),
     makeModel,
     serviceWorks: b.serviceWorks ?? [],
+    mileageRows: b.serviceHistory ?? [],
     maskDemoVin,
     lang,
   });
@@ -2796,8 +2797,9 @@ ${clientReportPageChromeCss(running)}
         padding:5px 8px;font-size:9px;font-weight:600;color:#64748b;letter-spacing:0.02em;
       }
       .pdf-dealer-cover{
-        margin:0;padding:16px 16px 14px;border-radius:12px;overflow:hidden;
+        margin:0;padding:18px 20px 16px;border-radius:12px;overflow:hidden;
         background:linear-gradient(180deg,#E8F1FC 0%,#fff 72%);border:1px solid var(--pdf-line);
+        font-family:Inter,-apple-system,"Segoe UI",system-ui,sans-serif;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-dealer-cover__kicker{
@@ -2805,11 +2807,49 @@ ${clientReportPageChromeCss(running)}
         text-transform:uppercase;color:#6e6e73;
       }
       .pdf-dealer-cover__model{
-        margin:8px 0 0;font-size:20px;font-weight:750;letter-spacing:-0.03em;line-height:1.2;color:#0f172a;
+        margin:0;font-size:20px;font-weight:750;letter-spacing:-0.03em;line-height:1.2;color:#0f172a;
       }
-      .pdf-dealer-cover__meta{margin:6px 0 0;font-size:12px;line-height:1.4;color:#475569;}
-      .pdf-dealer-cover-curve{display:block;width:calc(100% + 32px);height:auto;margin:8px -16px 0;}
-      .pdf-dealer-cover .pdf-svc-span{margin:10px 0 0;background:#fff;}
+      .pdf-dealer-cover__meta{margin:4px 0 0;font-size:12px;line-height:1.4;color:#475569;}
+      .pdf-dealer-cover__lbl{
+        margin:12px 0 0;font-size:10.5px;font-weight:650;color:#475569;
+        text-transform:uppercase;letter-spacing:0.06em;
+      }
+      .pdf-dealer-cover-curve{display:block;width:100%;height:auto;margin:10px 0 0;}
+      .pdf-dealer-cover-ax{font-size:10px;fill:#64748b;font-variant-numeric:tabular-nums;}
+      .pdf-dealer-cover-pl{font-size:11px;font-weight:650;fill:#0f172a;}
+      .pdf-dealer-cover-year-heading{font-size:10.5px;font-weight:650;fill:#475569;letter-spacing:0.06em;}
+      .pdf-dealer-cover-year{font-size:8.5px;fill:#64748b;font-variant-numeric:tabular-nums;}
+      .pdf-dealer-cover-partial{font-size:7px;fill:#64748b;}
+      .pdf-dealer-cover-leg{
+        display:flex;flex-wrap:wrap;column-gap:18px;row-gap:8px;align-items:center;
+        margin-top:6px;font-size:11px;color:#64748b;line-height:1.4;
+      }
+      .pdf-dealer-cover-leg span{white-space:nowrap;}
+      .pdf-dealer-cover-leg i{
+        display:inline-block;width:18px;height:2px;margin-right:6px;vertical-align:middle;
+        background:${PDF_BRAND_BLUE_HEX};border-radius:1px;
+      }
+      .pdf-dealer-cover-leg b{
+        display:inline-block;width:8px;height:8px;border-radius:50%;background:${PDF_BRAND_BLUE_HEX};
+        margin-right:6px;vertical-align:middle;box-shadow:0 0 0 2px #fff,0 0 0 3.5px rgba(0,97,210,.25);
+      }
+      .pdf-dealer-cover-bar-key{
+        display:inline-block;width:10px;height:11px;margin-right:6px;vertical-align:-1px;
+        border-radius:2px 2px 0 0;background:${PDF_BRAND_BLUE_HEX};opacity:.78;
+      }
+      .pdf-dealer-cover-bar-key--estimated{
+        opacity:1;border:1px solid #0061d261;
+        background:repeating-linear-gradient(125deg,#0061d259 0 1px,#0061d209 1px 4px);
+      }
+      .pdf-dealer-cover-bar-key--partial{
+        opacity:1;border:1px solid #0061d299;background:#0061d20f;
+      }
+      .pdf-dealer-cover-note{margin-top:8px;font-size:10px;line-height:1.55;color:#78879a;}
+      .pdf-dealer-cover .pdf-svc-span{
+        margin:10px 0 0;background:#fff;border-radius:10px;padding:10px 14px;
+      }
+      .pdf-dealer-cover .pdf-svc-span__pt b{font-size:15px;font-variant-numeric:tabular-nums;}
+      .pdf-dealer-cover .pdf-svc-span__pt i{font-size:11px;}
       .provin-report-doc .pdf-listing-tint--auto24{background:linear-gradient(180deg,#E8F0FA 0%,#fff 42%)!important;}
       .provin-report-doc .pdf-listing-tint--mobilede{background:linear-gradient(180deg,#F3EAF8 0%,#fff 42%)!important;}
       .provin-report-doc .pdf-hub-tint--mileage{background:linear-gradient(180deg,#E8F1FC 0%,#fff 42%)!important;}

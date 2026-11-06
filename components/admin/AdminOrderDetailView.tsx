@@ -735,7 +735,7 @@ export function AdminOrderDetailView({
       className={`admin-order-page provin-pro min-h-screen bg-[var(--color-canvas)] text-[var(--color-apple-text)] transition-[background-color,color] duration-200 ${adminDark ? "dark" : ""}`}
     >
       <AdminVinHandoffBinder vin={mergedVin} />
-      <div className="mx-auto w-full max-w-[min(76.8rem,calc(100vw-1.25rem))] px-3 pt-0 sm:px-5">
+      <div className="mx-auto w-full max-w-[min(76.8rem,calc(100vw-1.25rem))] px-3 pt-0 sm:px-5 max-md:flex max-md:flex-col">
       {/* Telefonā atpakaļ ir mobilajā galvenē ("‹"), tāpēc šī rinda tikai datorā. */}
       <div className="mb-2 flex flex-wrap items-center gap-2 max-md:hidden">
         <AdminCollapsedMenuButton />
@@ -786,7 +786,8 @@ export function AdminOrderDetailView({
         </div>
       ) : null}
 
-      <header className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-[var(--admin-border-subtle)] pb-2 max-md:mb-2 max-md:items-center max-md:px-1">
+      {/* Telefonā šī rinda ir pasūtījuma galvenē (mobileHeaderExtra) - makets 06.11. */}
+      <header className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 border-b border-[var(--admin-border-subtle)] pb-2 max-md:hidden">
         <h1 className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] font-semibold tracking-tight text-[var(--color-apple-text)]">
           {/* Telefonā virsraksts ir mobilajā galvenē; šeit paliek rezultāta krāsa un produkts. */}
           <span className="max-md:sr-only">Pasūtījums</span>
@@ -815,7 +816,11 @@ export function AdminOrderDetailView({
         </p>
       </header>
 
-      {order.isManual && !isPartnerVin ? <AdminManualOrderPaymentPanel sessionId={order.id} /> : null}
+      {order.isManual && !isPartnerVin ? (
+        <div className="max-md:order-last max-md:mt-2">
+          <AdminManualOrderPaymentPanel sessionId={order.id} />
+        </div>
+      ) : null}
 
       {isMiniHighlightAdminOrder({
         checkoutLine: order.checkoutLine,
@@ -839,6 +844,21 @@ export function AdminOrderDetailView({
         }
         onOrderEditsPatch={(patch) => setEdits((prev) => ({ ...prev, ...patch }))}
         dashboardSlot={dashboardSlot}
+        mobileHeaderExtra={
+          <>
+            <AdminAuditResultColorControl sessionId={order.id} initialColor={auditResultColor} />
+            <span className="min-w-0 text-[12px] font-semibold uppercase tracking-wide text-[var(--label)]">
+              {partnerPaidLabel ??
+                paidProductLabel({
+                  checkoutLine: order.checkoutLine,
+                  amountTotalCents: order.amountTotal,
+                })}
+              {isPartnerVin ? null : order.amountTotal != null && order.amountTotal > 0 ? (
+                <span className="ml-1.5 normal-case tabular-nums">· {formatMoneyEur(order.amountTotal, order.currency)}</span>
+              ) : null}
+            </span>
+          </>
+        }
         portfolioPortalDomId={`admin-portfolio-slot-${order.id}`}
         portfolioPortalTargetInParent
         serverWorkspaceJson={serverWorkspaceJson}
