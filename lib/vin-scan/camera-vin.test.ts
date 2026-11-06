@@ -3,6 +3,8 @@ import {
   VIN_SCAN_HISTORY_MAX,
   cameraVinCandidates,
   cameraVinConsensus,
+  cameraVinDecision,
+  cameraVinFieldValue,
   mergeVinScanHistory,
   parseVinScanHistory,
   pickCameraVin,
@@ -78,5 +80,14 @@ describe("VIN vēsture: serveris + pārlūks", () => {
     const c = cameraVinConsensus(["WBA3A5C50CF256551", "1M8GDM9AXKP042788", "WBA3A5C50CF256551"]);
     expect(c?.vin).toBe("WBA3A5C50CF256551");
     expect(c?.frames).toBe(2);
+  });
+
+  it("Nils 06.11: pirmais VIN aizpilda lauku; auto pieņem pēc 2 kadriem, Nofotografēt pēc 1", () => {
+    expect(cameraVinFieldValue(["WBA3A5C50CF256551"])).toBe("WBA3A5C50CF256551");
+    expect(cameraVinDecision(["WBA3A5C50CF256551"], "auto")).toBeNull();
+    expect(cameraVinDecision(["WBA3A5C50CF256551"], "snap")?.vin).toBe("WBA3A5C50CF256551");
+    expect(cameraVinDecision(["WBA3A5C50CF256551"], "barcode")?.vin).toBe("WBA3A5C50CF256551");
+    expect(cameraVinDecision(["WBA3A5C50CF256551", "WBA3A5C50CF256551"], "auto")?.vin).toBe("WBA3A5C50CF256551");
+    expect(cameraVinFieldValue([])).toBeNull();
   });
 });

@@ -3,47 +3,114 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
-import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
-import { cameraVinConsensus, vinScanHistoryInfo } from "@/lib/vin-scan/camera-vin";
+import { normalizeVin } from "@/lib/order-field-validation";
+import {
+  cameraObjectCoverCrop,
+  cameraScanControlState,
+  isCameraBlackFrame,
+  jpegDataUrlToBlob,
+  pickVinFromBarcodeValues,
+} from "@/lib/vin-scan/camera-frame";
+import {
+  cameraVinDecision,
+  cameraVinFieldValue,
+  vinScanHistoryInfo,
+  type CameraScanMode,
+} from "@/lib/vin-scan/camera-vin";
 
 /** Cik reizes pēc kārtas mēģina automātiski, pirms lūdz pietuvināt vai nofotografēt. */
 const AUTO_ATTEMPTS = 12;
 const AUTO_PAUSE_MS = 350;
 /** Viena kadra OCR pieprasījuma griesti; pēc tiem nākamais kadrs (serveris aizņemto worker pārstartē). */
 const FRAME_TIMEOUT_MS = 12_000;
-/** «Nofotografēt»: vairāki kadri pēc kārtas, lai vienotos par rakstzīmēm. */
+/** «Nofotografēt»: vairāki kadri pēc kārtas; pietiek ar 1 derīgu VIN. */
 const SNAP_FRAMES = 3;
-/** Rāmis video elementā (px), tāds pats kā zīmētais. */
-const FRAME_INSET_X = 24;
-const FRAME_H = 88;
+const TO_BLOB_MS = 400;
 
 type OcrResult = { vin: string; checkDigitOk: boolean; alts: string[] };
 
-/** Izgriež rāmja joslu no video (object-cover), ar rezervi augšā un apakšā. */
-function grabFrame(video: HTMLVideoElement, whole: boolean): Promise<Blob | null> {
-  const vw = video.videoWidth;
-  const vh = video.videoHeight;
-  const ew = video.clientWidth;
-  const eh = video.clientHeight;
-  if (!vw || !vh || !ew || !eh) return Promise.resolve(null);
-  const scale = Math.max(ew / vw, eh / vh);
-  const sx0 = (vw - ew / scale) / 2;
-  const sy0 = (vh - eh / scale) / 2;
-  const band = whole ? eh : FRAME_H * 1.6;
-  const x = whole ? 0 : FRAME_INSET_X / 2;
-  const y = (eh - band) / 2;
-  const sx = sx0 + x / scale;
-  const sy = sy0 + Math.max(0, y) / scale;
-  const sw = (ew - 2 * x) / scale;
-  const sh = Math.min(eh, band) / scale;
-  const out = Math.min(1600, Math.max(1000, sw));
+function releaseCanvas(canvas: HTMLCanvasElement) {
+  canvas.width = 0;
+  canvas.height = 0;
+}
+
+function canvasToJpegBlob(canvas: HTMLCanvasElement): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    let done = false;
+    const finish = (b: Blob | null) => {
+      if (done) return;
+      done = true;
+      resolve(b && b.size > 32 ? b : null);
+    };
+    const fallback = () => {
+      try {
+        finish(jpegDataUrlToBlob(canvas.toDataURL("image/jpeg", 0.88)));
+      } catch {
+        finish(null);
+      }
+    };
+    const timer = window.setTimeout(fallback, TO_BLOB_MS);
+    try {
+      canvas.toBlob((b) => {
+        window.clearTimeout(timer);
+        if (b && b.size > 32) finish(b);
+        else fallback();
+      }, "image/jpeg", 0.88);
+    } catch {
+      window.clearTimeout(timer);
+      fallback();
+    }
+  });
+}
+
+function waitForVideoFrame(video: HTMLVideoElement): Promise<void> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+    const rvfc = (
+      video as HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number }
+    ).requestVideoFrameCallback;
+    if (typeof rvfc === "function") {
+      rvfc.call(video, done);
+      window.setTimeout(done, 280);
+      return;
+    }
+    requestAnimationFrame(() => requestAnimationFrame(done));
+  });
+}
+
+/** Izgriež rāmja joslu no video (object-cover). iOS: toBlob noildze → toDataURL; melnu kadru nesūta. */
+async function grabFrame(video: HTMLVideoElement, whole: boolean): Promise<Blob | null> {
+  if (video.readyState < 2) await waitForVideoFrame(video);
+  const crop = cameraObjectCoverCrop({
+    videoWidth: video.videoWidth,
+    videoHeight: video.videoHeight,
+    elementWidth: video.clientWidth || video.getBoundingClientRect().width,
+    elementHeight: video.clientHeight || video.getBoundingClientRect().height,
+    whole,
+  });
+  if (!crop) return null;
+  const out = Math.min(1600, Math.max(1000, crop.sw));
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(out);
-  canvas.height = Math.round((sh / sw) * out);
+  canvas.height = Math.max(1, Math.round((crop.sh / crop.sw) * out));
   const ctx = canvas.getContext("2d");
-  if (!ctx) return Promise.resolve(null);
-  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-  return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/jpeg", 0.88));
+  if (!ctx) {
+    releaseCanvas(canvas);
+    return null;
+  }
+  ctx.drawImage(video, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, canvas.width, canvas.height);
+  if (isCameraBlackFrame(ctx, canvas.width, canvas.height)) {
+    releaseCanvas(canvas);
+    return null;
+  }
+  const blob = await canvasToJpegBlob(canvas);
+  releaseCanvas(canvas);
+  return blob;
 }
 
 async function postFrame(blob: Blob, signal: AbortSignal): Promise<OcrResult | null> {
@@ -71,8 +138,62 @@ async function postFrame(blob: Blob, signal: AbortSignal): Promise<OcrResult | n
   }
 }
 
+async function blobAsJpeg(blob: Blob): Promise<Blob | null> {
+  if (blob.type === "image/jpeg" && blob.size > 500) return blob;
+  try {
+    const bmp = await createImageBitmap(blob);
+    const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bmp.width * scale));
+    canvas.height = Math.max(1, Math.round(bmp.height * scale));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      bmp.close();
+      releaseCanvas(canvas);
+      return blob.size > 500 ? blob : null;
+    }
+    ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    bmp.close();
+    const jpeg = await canvasToJpegBlob(canvas);
+    releaseCanvas(canvas);
+    return jpeg;
+  } catch {
+    return blob.size > 500 ? blob : null;
+  }
+}
+
+type BarcodeDetectorLike = new (opts?: { formats?: string[] }) => {
+  detect: (source: ImageBitmapSource) => Promise<Array<{ rawValue?: string }>>;
+};
+
+async function detectBarcodeVin(video: HTMLVideoElement): Promise<string | null> {
+  const BD = (globalThis as { BarcodeDetector?: BarcodeDetectorLike & { getSupportedFormats?: () => Promise<string[]> } }).BarcodeDetector;
+  if (!BD) return null;
+  try {
+    let formats = ["code_128", "code_39", "qr_code", "data_matrix", "pdf417"];
+    if (typeof BD.getSupportedFormats === "function") {
+      const supported = await BD.getSupportedFormats();
+      formats = formats.filter((f) => supported.includes(f));
+    }
+    if (formats.length === 0) return null;
+    const codes = await new BD({ formats }).detect(video);
+    return pickVinFromBarcodeValues(codes.map((c) => c.rawValue ?? ""));
+  } catch {
+    return null;
+  }
+}
+
 function streamLive(stream: MediaStream | null): boolean {
   return Boolean(stream?.getVideoTracks().some((t) => t.readyState === "live"));
+}
+
+function prepareVideoEl(el: HTMLVideoElement) {
+  el.muted = true;
+  el.playsInline = true;
+  el.setAttribute("muted", "");
+  el.setAttribute("playsinline", "");
+  el.setAttribute("webkit-playsinline", "");
+  el.setAttribute("autoplay", "");
 }
 
 export function AdminMobileVinCameraSheet({
@@ -85,6 +206,7 @@ export function AdminMobileVinCameraSheet({
   onVin: (vin: string) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const nativeInputRef = useRef<HTMLInputElement | null>(null);
   const [err, setErr] = useState("");
   const [manual, setManual] = useState("");
   const [status, setStatus] = useState<"idle" | "reading" | "found" | "miss">("idle");
@@ -98,12 +220,17 @@ export function AdminMobileVinCameraSheet({
   const scanRef = useRef<AbortController | null>(null);
 
   // Nils 01.11: kamera var būt gatava pirms video elements parādās logā - piesaista, tiklīdz tas ir.
+  // Nils 27.10 (IRISS skeneris): React neieliek muted/playsinline DOM - bez tiem iOS 18 canvas ir melns.
   const attachVideo = useCallback((el: HTMLVideoElement | null) => {
     videoRef.current = el;
+    if (!el) return;
+    prepareVideoEl(el);
     const stream = streamRef.current;
-    if (el && stream && el.srcObject !== stream) {
+    if (stream && el.srcObject !== stream) {
       el.srcObject = stream;
-      void el.play().catch(() => undefined);
+      const start = () => void el.play().catch(() => undefined);
+      if (el.readyState >= 1) start();
+      else el.addEventListener("loadedmetadata", start, { once: true });
     }
   }, []);
 
@@ -127,8 +254,11 @@ export function AdminMobileVinCameraSheet({
         streamRef.current = stream;
         const el = videoRef.current;
         if (el) {
+          prepareVideoEl(el);
           el.srcObject = stream;
-          await el.play().catch(() => undefined);
+          const start = () => void el.play().catch(() => undefined);
+          if (el.readyState >= 1) start();
+          else el.addEventListener("loadedmetadata", start, { once: true });
         }
         setReady(true);
       } catch {
@@ -144,8 +274,8 @@ export function AdminMobileVinCameraSheet({
     };
   }, [open, cameraKey]);
 
-  /** Kadri pēc kārtas; VIN pieņem tikai, kad vismaz 2 kadri vienojas par katru rakstzīmi. */
-  const scan = useCallback(async (frames: number, whole: boolean, pauseMs: number) => {
+  /** Kadri pēc kārtas. Auto pieņem pēc 2 kadriem; Nofotografēt - pēc 1. Lauks aizpildās ar pirmo VIN. */
+  const scan = useCallback(async (frames: number, whole: boolean, pauseMs: number, mode: CameraScanMode) => {
     scanRef.current?.abort();
     const ac = new AbortController();
     scanRef.current = ac;
@@ -153,18 +283,39 @@ export function AdminMobileVinCameraSheet({
     setProgress(0);
     const picks: string[] = [];
     let last: OcrResult | null = null;
+    let sawFrame = false;
     for (let i = 0; i < frames && !ac.signal.aborted; i++) {
       setProgress(i + 1);
       const video = videoRef.current;
       if (video && video.paused) await video.play().catch(() => undefined);
+      if (video) {
+        const barcode = await detectBarcodeVin(video);
+        if (ac.signal.aborted) return;
+        if (barcode) {
+          picks.push(barcode);
+          last = { vin: barcode, checkDigitOk: true, alts: [] };
+          const field = cameraVinFieldValue(picks);
+          if (field) setManual(field);
+          const decided = cameraVinDecision(picks, "barcode");
+          if (decided) {
+            setFound({ vin: decided.vin, checkDigitOk: decided.checkDigitOk, alts: [] });
+            setManual(decided.vin);
+            setStatus("found");
+            return;
+          }
+        }
+      }
       const blob = video ? await grabFrame(video, whole).catch(() => null) : null;
       if (blob) {
+        sawFrame = true;
         const r = await postFrame(blob, ac.signal);
         if (ac.signal.aborted) return;
         if (r?.vin) {
           last = r;
           picks.push(r.vin);
-          const c = cameraVinConsensus(picks);
+          const field = cameraVinFieldValue(picks);
+          if (field) setManual(field);
+          const c = cameraVinDecision(picks, mode);
           if (c) {
             setFound({ vin: c.vin, checkDigitOk: c.checkDigitOk, alts: r.alts.filter((a) => a !== c.vin) });
             setManual(c.vin);
@@ -176,35 +327,63 @@ export function AdminMobileVinCameraSheet({
       if (pauseMs > 0) await new Promise((res) => setTimeout(res, pauseMs));
     }
     if (ac.signal.aborted) return;
-    // Nav vienošanās: labāko minējumu ieliek laukā pārbaudei, bet kā «pārbaudi rakstzīmes».
-    const guess = cameraVinConsensus(picks, 1);
+    const guess = cameraVinFieldValue(picks);
     if (guess && last) {
-      setFound({ vin: guess.vin, checkDigitOk: false, alts: [...new Set([...picks, ...last.alts])].filter((a) => a !== guess.vin).slice(0, 3) });
-      setManual(guess.vin);
+      setFound({
+        vin: guess,
+        checkDigitOk: false,
+        alts: [...new Set([...picks, ...last.alts])].filter((a) => a !== guess).slice(0, 3),
+      });
+      setManual(guess);
       setStatus("found");
-    } else {
-      setStatus("miss");
+      return;
     }
+    setStatus("miss");
+    if (mode === "snap" && !sawFrame) nativeInputRef.current?.click();
   }, []);
 
   // Automātiska nolasīšana: kadrs pēc kadra, līdz kadri vienojas par VIN vai beidzas mēģinājumi.
   useEffect(() => {
     if (!open || !ready) return;
-    void scan(AUTO_ATTEMPTS, false, AUTO_PAUSE_MS);
+    void scan(AUTO_ATTEMPTS, false, AUTO_PAUSE_MS, "auto");
     return () => scanRef.current?.abort();
   }, [open, ready, round, scan]);
 
   function snapWhole() {
-    void scan(SNAP_FRAMES, true, 150);
+    void scan(SNAP_FRAMES, true, 150, "snap");
   }
 
   function rescan() {
     setFound(null);
+    setManual("");
     // Ja kamera apstājusies (iOS pēc fona, cits logs), startē no jauna; citādi tikai jauna kārta.
     if (!streamLive(streamRef.current)) setCameraKey((n) => n + 1);
     else setRound((n) => n + 1);
   }
 
+  async function onNativePhoto(file: File) {
+    scanRef.current?.abort();
+    const jpeg = await blobAsJpeg(file);
+    if (!jpeg) {
+      setStatus("miss");
+      return;
+    }
+    setStatus("reading");
+    setProgress(1);
+    const ac = new AbortController();
+    scanRef.current = ac;
+    const r = await postFrame(jpeg, ac.signal);
+    if (ac.signal.aborted) return;
+    if (r?.vin) {
+      setFound(r);
+      setManual(r.vin);
+      setStatus("found");
+    } else {
+      setStatus("miss");
+    }
+  }
+
+  const controls = cameraScanControlState({ ready, status, vin: manual });
   const statusText =
     status === "reading"
       ? `Nolasa VIN… ${progress > 0 ? `(${progress})` : ""}`.trim()
@@ -233,13 +412,13 @@ export function AdminMobileVinCameraSheet({
           <button
             type="button"
             className="am-press flex h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-[var(--am-s2)] text-[14px] font-semibold text-[var(--am-ink)] disabled:opacity-40"
-            disabled={!ready || status === "reading"}
+            disabled={!controls.photoEnabled}
             onClick={snapWhole}
           >
             <AdminMobileIcon name="kamera" className="h-4 w-4" />
             Nofotografēt
           </button>
-          {status === "found" || status === "miss" ? (
+          {controls.showRescan ? (
             <button
               type="button"
               className="am-press flex h-10 flex-1 items-center justify-center rounded-full bg-[var(--am-s2)] text-[14px] font-semibold text-[var(--am-ink)]"
@@ -280,12 +459,26 @@ export function AdminMobileVinCameraSheet({
       <button
         type="button"
         className="am-press mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[var(--am-ink)] text-[15px] font-semibold text-[var(--am-s1)] disabled:opacity-40"
-        disabled={!isValidVin(normalizeVin(manual))}
+        disabled={!controls.useVinEnabled}
         onClick={() => onVin(normalizeVin(manual))}
       >
         <AdminMobileIcon name="atzime" className="h-4 w-4" />
         Izmantot VIN
       </button>
+      <input
+        ref={nativeInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        aria-hidden
+        tabIndex={-1}
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) void onNativePhoto(file);
+        }}
+      />
     </AdminMobileSheet>
   );
 }

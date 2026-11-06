@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_image" }, { status: 400 });
   }
   try {
-    const pick = await ocrVinFromCameraFrame(buf);
+    const pick = await ocrVinFromCameraFrame(buf, req.signal);
     return NextResponse.json({ vin: pick?.vin ?? "", checkDigitOk: pick?.checkDigitOk ?? false, alts: pick?.alts ?? [] });
   } catch {
     return NextResponse.json({ error: "ocr_failed" }, { status: 502 });
