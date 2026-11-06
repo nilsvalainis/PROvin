@@ -551,6 +551,21 @@ function collectCitiAvotiPdfSources(
   return out;
 }
 
+/** CSDD ierakstu skaits - viens un tas pats avotu sarakstā un CSDD sadaļas virsrakstā. */
+function csddPdfRecordCount(f: CsddFormFields | null | undefined): number {
+  return (
+    (f?.technicalInspectionHistory ?? []).filter((r) => r.date.trim()).length +
+    (f?.ownerRegistrationEvents ?? []).filter((e) => e.date.trim()).length +
+    (f?.mileageHistory ?? []).filter((r) => r.date.trim() && r.odometer.trim()).length
+  );
+}
+
+/** Dīlera ierakstu skaits = vizītes (viena vizīte ir gan darbu, gan nobraukuma rindā). */
+function dealerPdfRecordCount(ar: Pick<AutoRecordsBlockState, "serviceHistory" | "serviceWorks">): number {
+  const visits = (ar.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable).length;
+  return visits > 0 ? visits : (ar.serviceHistory ?? []).filter(autoRecordsRowHasData).length;
+}
+
 /** Tikai payload datu apkopošana PDF drukai - bez AI izsaukumiem un bez DB tiešās piekļuves. */
 function computeProvinPdfSourcesUsedCounts(
   p: ClientReportPayload,
@@ -558,7 +573,7 @@ function computeProvinPdfSourcesUsedCounts(
 ): { n1: number; n2: number; n3: number } {
   const L = SOURCE_BLOCK_LABELS;
   let n1 = 0;
-  if (payloadCsddHasData(p, vis)) n1++;
+  // CSDD skaitām vienreiz (publiskais reģistrs, n2) - agrāk arī šeit, un „Kopā” bija par 1 lielāks nekā avotu saraksts.
   if (vis.autodna && vendorPdfBlockHasData(getVendorPdfBlock(p, L.autodna))) n1++;
   if (vis.carvertical && vendorPdfBlockHasData(getVendorPdfBlock(p, L.carvertical))) n1++;
   if (payloadAutoRecordsHasData(p, vis)) n1++;
@@ -591,13 +606,7 @@ function collectPdfCheckedSources(
   const out: { label: string; count: number }[] = [];
   if (payloadCsddHasData(p, vis)) {
     const f = p.csddForm;
-    out.push({
-      label: L.csdd,
-      count:
-        (f?.technicalInspectionHistory ?? []).filter((r) => r.date.trim()).length +
-        (f?.ownerRegistrationEvents ?? []).filter((e) => e.date.trim()).length +
-        (f?.mileageHistory ?? []).filter((r) => r.date.trim() && r.odometer.trim()).length,
-    });
+    out.push({ label: L.csdd, count: csddPdfRecordCount(f) });
   }
   for (const title of [L.autodna, L.carvertical, L.tjekbil, L.mnt_ee, L.lkf_ee, L.carinfo, L.traficom_fi] as const) {
     const b = getVendorPdfBlock(p, title);
@@ -607,12 +616,7 @@ function collectPdfCheckedSources(
   }
   if (payloadAutoRecordsHasData(p, vis)) {
     const ar = resolvedDealerBlock(p);
-    out.push({
-      label: PDF_SOURCE_DEALER_TITLE,
-      count:
-        (ar.serviceHistory ?? []).filter(autoRecordsRowHasData).length +
-        (ar.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable).length,
-    });
+    out.push({ label: PDF_SOURCE_DEALER_TITLE, count: dealerPdfRecordCount(ar) });
   }
   if (payloadCcVinHasData(p, vis)) {
     out.push({ label: CC_VIN_PDF_SOURCE_LABEL, count: countCcVinRecords(p.ccVinBlock) });
@@ -1453,9 +1457,7 @@ export function buildCsddAvotuZoneHtml(
 ): string {
   if (!csddFormHasContent(form) && !sparkHtml) return "";
 
-  const csddRecords =
-    (form.technicalInspectionHistory ?? []).filter((r) => r.date.trim()).length +
-    (form.ownerRegistrationEvents ?? []).filter((e) => e.date.trim()).length;
+  const csddRecords = csddPdfRecordCount(form);
   const head = sectionHeadBrand(
     csddSectionIconHtml(),
     PDF_SUB_CSDD,
@@ -1922,9 +1924,7 @@ function buildAutoRecordsAvotuSubsection(
     return "";
   }
 
-  const recordCount =
-    (b.serviceHistory ?? []).filter(autoRecordsRowHasData).length +
-    (b.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable).length;
+  const recordCount = dealerPdfRecordCount(b);
   const head = sectionHeadBrand(
     dealerSectionIconHtml(makeModel),
     PDF_SOURCE_DEALER_TITLE,
