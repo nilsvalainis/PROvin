@@ -54,7 +54,7 @@ export function IrissListingSourceExtras({
           href={web}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center whitespace-nowrap rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-600"
+          className="inline-flex items-center whitespace-nowrap rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-600 max-md:min-h-10 max-md:px-3"
           onClick={(e) => e.stopPropagation()}
         >
           Web
@@ -63,7 +63,7 @@ export function IrissListingSourceExtras({
       {copyId ? (
         <button
           type="button"
-          className="inline-flex items-center whitespace-nowrap rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-600"
+          className="inline-flex items-center whitespace-nowrap rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-600 max-md:min-h-10 max-md:px-3"
           onClick={(e) => {
             e.stopPropagation();
             void navigator.clipboard?.writeText(copyId).then(

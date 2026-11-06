@@ -1097,7 +1097,7 @@ export function IrissLogistikaClient({
                   ))}
                 </div>
                 <div className="flex flex-wrap items-center justify-end gap-1.5">
-                  <label className="mr-1 inline-flex cursor-pointer items-center gap-2 text-[12px] font-semibold">
+                  <label className="mr-1 inline-flex cursor-pointer items-center gap-2 text-[12px] font-semibold max-md:min-h-11">
                     <button
                       type="button"
                       role="switch"
@@ -1107,7 +1107,7 @@ export function IrissLogistikaClient({
                     />
                     Nosaukumi
                   </label>
-                  <label className="mr-1 inline-flex cursor-pointer items-center gap-2 text-[12px] font-semibold" title="Divpusējai drukai: 2. lapa tiek apgriezta, lai pēc lapas apgriešanas tā nav otrādi">
+                  <label className="mr-1 inline-flex cursor-pointer items-center gap-2 text-[12px] font-semibold max-md:min-h-11" title="Divpusējai drukai: 2. lapa tiek apgriezta, lai pēc lapas apgriešanas tā nav otrādi">
                     <button
                       type="button"
                       role="switch"
@@ -1120,16 +1120,16 @@ export function IrissLogistikaClient({
                   <button
                     type="button"
                     onClick={() => void printCurrentMap()}
-                    className="rounded-full border border-[var(--iriss-line)] px-2.5 py-1 text-[12px] font-semibold"
+                    className="rounded-full border border-[var(--iriss-line)] px-2.5 py-1 text-[12px] font-semibold max-md:min-h-11 max-md:px-3.5"
                   >
                     Drukāt
                   </button>
                   {mapFullscreen ? (
-                    <button type="button" aria-label="Aizvērt" onClick={() => closeMapFullscreen()} className="rounded-full border border-[var(--iriss-line)] px-2 py-1 text-[12px] font-semibold">
+                    <button type="button" aria-label="Aizvērt" onClick={() => closeMapFullscreen()} className="rounded-full border border-[var(--iriss-line)] px-2 py-1 text-[12px] font-semibold max-md:min-h-11 max-md:min-w-11">
                       X
                     </button>
                   ) : (
-                    <button type="button" onClick={() => openMapFullscreen()} className="iriss-log-fs-btn rounded-full border border-[var(--iriss-line)] px-2.5 py-1 text-[12px] font-semibold">
+                    <button type="button" onClick={() => openMapFullscreen()} className="iriss-log-fs-btn rounded-full border border-[var(--iriss-line)] px-2.5 py-1 text-[12px] font-semibold max-md:min-h-11 max-md:px-3.5">
                       Pilnekrāns
                     </button>
                   )}
