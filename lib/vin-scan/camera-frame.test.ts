@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { SITE_PERMISSIONS_POLICY } from "@/lib/csp";
 import {
   CAMERA_OCR_VARIANT_ORDER,
+  CAMERA_SHEET_FRESH,
   cameraObjectCoverCrop,
   cameraOcrStopAfterPick,
   cameraScanControlState,
@@ -83,6 +84,13 @@ describe("VIN SCAN kameras pogas un OCR secība", () => {
     expect(filled.photoEnabled).toBe(true);
     expect(filled.useVinEnabled).toBe(true);
     expect(cameraScanControlState({ ready: false, status: "idle", vin: "" }).photoEnabled).toBe(false);
+  });
+
+  it("atkārtoti atverot: nav aktīvu pogu ar iepriekšējo VIN un nav «Skenēt vēlreiz»", () => {
+    const fresh = cameraScanControlState(CAMERA_SHEET_FRESH);
+    expect(fresh).toEqual({ photoEnabled: false, useVinEnabled: false, showRescan: false });
+    // Pirms labojuma laukā palika iepriekšējais VIN - tad «Izmantot VIN» bija aktīva jau pirms kameras.
+    expect(cameraScanControlState({ ...CAMERA_SHEET_FRESH, vin: "WBA3A5C51CF256551" }).useVinEnabled).toBe(true);
   });
 
   it("inversija ir pirmā, un pēc pirmā VIN tālākos variantus neturpinā", () => {

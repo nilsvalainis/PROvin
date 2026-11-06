@@ -196,6 +196,11 @@ export function cabinetActorHidesSums(query: Pick<CabinetAccessQuery, "userId" |
   return query.roles.includes("logistika") || query.roles.includes("serviss");
 }
 
+/** Loģistika/Serviss (hideSums): auto cena nav redzama nevienā atbildē - arī pēc PATCH/POST, ne tikai sarakstā. */
+export function maskOrderSums<T extends { priceEur: number | null }>(order: T, hideSums: boolean): T {
+  return hideSums ? { ...order, priceEur: null } : order;
+}
+
 export function buildCabinetAccessView(
   query: Omit<CabinetAccessQuery, "section" | "docType">,
   rules: readonly CabinetAccessRule[],

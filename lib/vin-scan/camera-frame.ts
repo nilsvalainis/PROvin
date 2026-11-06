@@ -109,6 +109,9 @@ export function cameraOcrStopAfterPick(hasVin: boolean): boolean {
   return hasVin;
 }
 
+/** VIN SCAN loga stāvoklis katrā atvēršanā: kamera vēl nav gatava, lauks tukšs. */
+export const CAMERA_SHEET_FRESH = { ready: false, status: "idle", vin: "" } as const;
+
 export function cameraScanControlState(args: {
   ready: boolean;
   status: "idle" | "reading" | "found" | "miss";

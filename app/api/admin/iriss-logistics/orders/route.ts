@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { logisticsCabinetWriteForbidden, requireIrissLogisticsApi, irissLogisticsScopeHeader } from "@/lib/iriss-logistics-access";
+import { cabinetActorHidesSums, maskOrderSums } from "@/lib/iriss-logistics-cabinet-access";
+import { logisticsCabinetAccessQuery, logisticsCabinetWriteForbidden, requireIrissLogisticsApi, irissLogisticsScopeHeader } from "@/lib/iriss-logistics-access";
 import { autoparksActor } from "@/lib/iriss-autoparks-access";
 import { upsertLogisticsOrder } from "@/lib/iriss-logistics-store";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
@@ -23,6 +24,7 @@ export async function POST(req: Request) {
   }
   const raw = body as Partial<LogisticsOrder> & { toAutoparks?: unknown };
   const { toAutoparks, ...input } = raw;
+  const hideSums = cabinetActorHidesSums(logisticsCabinetAccessQuery(gate.actor, ""));
   const order = await upsertLogisticsOrder(input);
   // Nils 27.10: «+ Nopirkts» = auto uzreiz Autoparkā ar statusu «Ceļā» (Loģistika ir tā posms). Kļūda neaptur pirkumu.
   let autoparksCarId = "";
@@ -35,5 +37,5 @@ export async function POST(req: Request) {
       console.error("[iriss-logistics/orders] autoparks", e instanceof Error ? e.message : e);
     }
   }
-  return NextResponse.json({ ok: true, order, autoparksCarId }, { headers: irissLogisticsScopeHeader() });
+  return NextResponse.json({ ok: true, order: maskOrderSums(order, hideSums), autoparksCarId }, { headers: irissLogisticsScopeHeader() });
 }
