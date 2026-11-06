@@ -236,7 +236,7 @@ describe("CSDD particle number vs smoke opacity - render", () => {
       opacityCoefficient: "0.35",
     });
     expect(html).toContain(SMOKE_LABEL);
-    expect(html).toContain("0.35");
+    expect(html).toContain("0,35");
   });
 
   it("translates the particle label for EN/RU/DE reports", () => {

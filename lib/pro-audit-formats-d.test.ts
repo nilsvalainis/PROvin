@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createDefaultSourceBlocks, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
+import { createDefaultSourceBlocks, emptyCsddFields, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
+import { buildCsddAvotuZoneHtml } from "@/lib/client-report-html";
+import { buildOutvinDealerReportPdfInnerHtml } from "@/lib/outvin-dealer-pdf-html";
+import { emptyOutvinDealerReport } from "@/lib/outvin-dealer-types";
 import { buildCanonicalFacts } from "@/lib/canonical-facts-sheet";
 import { checkCommentContradictions } from "@/lib/comment-contradiction-check";
 import {
@@ -125,5 +128,31 @@ describe("faktu pārbaude - īpašnieku maiņas nav īpašnieku skaits", () => {
       facts: facts(),
     });
     expect(flags.some((x) => x.kind === "owner_count")).toBe(true);
+  });
+});
+
+describe("PRO audits 06.11 - prodā atrastās papildu vietas", () => {
+  it("CSDD faktu kartītē dūmainība ar komatu", () => {
+    const f = { ...emptyCsddFields(), makeModel: "Mercedes-Benz GLE", opacityCoefficient: "0.35" };
+    const html = buildCsddAvotuZoneHtml(f, "", undefined, {});
+    expect(html).toContain("0,35");
+    expect(html).not.toContain("0.35");
+  });
+
+  it("dīlera kartītē jauda paliek „180 kW”, ne „180 KW”", () => {
+    const report = emptyOutvinDealerReport();
+    report.vehicleInfo.model = "GLE 300 d";
+    report.vehicleInfo.power = "180 KW (245 PS)";
+    const html = buildOutvinDealerReportPdfInnerHtml(report);
+    expect(html).toContain("180 kW (245 ZS)");
+    expect(html).not.toContain("180 KW");
+  });
+
+  it("Igaunijas reģistrācijas apliecības termini latviski", () => {
+    expect(translateTextLv("Registreerimistunnistuse väljastamine", "et")).toBe(
+      "reģistrācijas apliecības izsniegšana",
+    );
+    expect(translateTextLv("Eestis registreerimine", "et")).toBe("reģistrācija Igaunijā");
+    expect(translateTextLv("Registreerimistunnistus EN009660", "et")).toBe("reģistrācijas apliecība EN009660");
   });
 });
