@@ -8,7 +8,7 @@ import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import type { IrissAuctionLogoKey } from "@/lib/iriss-auction-logos";
 import { isHttpUrlForOpen } from "@/lib/iriss-listing-links";
 import { labelIrissListingLinkRows } from "@/lib/iriss-listing-link-lists";
-import { IRISS_LISTING_CARD_ACTION_ORDER } from "@/lib/iriss-listing-card-actions";
+import { irissListingCardContext, irissListingCardDetailsLabel } from "@/lib/iriss-listing-card-actions";
 import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import { formatIrissEurWhole } from "@/lib/iriss-price-format";
 import { IRISS_PASUTIJUMS_LIST_STATUS_LV } from "@/lib/iriss-pasutijumi-types";
@@ -109,7 +109,7 @@ function OrderPreviewBody({ order }: { order: IrissListingOrderBrief }) {
         href={order.id.startsWith("scan:") ? `/admin/iriss/scan/${encodeURIComponent(order.id.slice(5))}` : `/admin/iriss/pasutijumi/${encodeURIComponent(order.id)}`}
         className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--iriss-graphite)] px-5 text-[13px] font-semibold text-[var(--iriss-on-graphite)]"
       >
-        {order.id.startsWith("scan:") ? "Atvērt SCAN" : "Atvērt pasūtījumu"}
+        {order.id.startsWith("scan:") ? "Atvērt Radaru" : "Atvērt pasūtījumu"}
       </Link>
     </article>
   );
@@ -143,7 +143,8 @@ export function IrissListingOrderPreview({
       <div className="relative z-[61] max-h-[88vh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border border-[var(--iriss-line)] bg-[var(--iriss-surface-2)] p-3 pb-[max(16px,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl sm:p-4">
         <div className="mb-3 flex items-center gap-2">
           <h2 id="iriss-order-preview-title" className="text-[17px] font-bold text-[var(--iriss-ink)]">
-            {IRISS_LISTING_CARD_ACTION_ORDER}{orders.length > 1 ? ` (${orders.length})` : ""}
+            {irissListingCardDetailsLabel(irissListingCardContext(orders.map((o) => o.id)))}
+            {orders.length > 1 ? ` (${orders.length})` : ""}
           </h2>
           <span className="grow" />
           <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-lg border border-[var(--iriss-line)] bg-white text-lg" aria-label="Aizvērt">

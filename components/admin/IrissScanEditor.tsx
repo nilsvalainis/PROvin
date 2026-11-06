@@ -9,6 +9,8 @@ import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { IrissMarketplaceLoadPanel } from "@/components/admin/IrissMarketplaceLoadPanel";
 import { IrissOverflowItem, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
+import { IrissScanCriteriaCard } from "@/components/admin/IrissScanCriteriaCard";
+import { applyIrissScanSpecTextEdit, irissScanHasStructuredCriteria } from "@/lib/iriss-scan-criteria";
 import { IrissScanFinds } from "@/components/admin/IrissScanFinds";
 import { IrissScanLinksDrawer } from "@/components/admin/IrissScanLinksDrawer";
 import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChangesGuard";
@@ -298,6 +300,9 @@ export function IrissScanEditor({
         </div>
       ) : null}
 
+      {/* Audits 07.11: kritēriji strukturētos laukos (kā pasūtījumam), nevis Radara nosaukumā. */}
+      <IrissScanCriteriaCard rec={rec} onChange={(next) => patchRecord(next)} />
+
       <section className="mb-4 overflow-hidden rounded-3xl bg-[var(--s1)] p-3 shadow-[var(--sh)]">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-[13px] font-semibold uppercase tracking-[0.04em] text-[var(--ink2)]">Avoti un filtri</h2>
@@ -392,13 +397,11 @@ export function IrissScanEditor({
       </section>
 
       <details className="mb-4 overflow-hidden rounded-3xl bg-[var(--s1)] shadow-[var(--sh)]">
-        <summary className="cursor-pointer px-3 py-3 text-[13px] font-semibold text-[var(--ink)]">Kritēriji un ielāde</summary>
+        <summary className="cursor-pointer px-3 py-3 text-[13px] font-semibold text-[var(--ink)]">Papildu teksts un ielāde</summary>
         <div className="space-y-3 border-t border-[var(--hair)] px-3 pb-3 pt-2">
           {(
             [
-              ["productionYears", "Gadi", "2020-2026"],
               ["engineType", "Dzinējs", "Dīzelis līdz 2.0, no 110 kW"],
-              ["transmission", "Kārba", "Manuālā"],
               ["bodyType", "Virsbūve", "Furgons H2L4"],
             ] as const
           ).map(([key, label, placeholder]) => (
@@ -409,7 +412,12 @@ export function IrissScanEditor({
                 className="min-w-0 flex-1 bg-transparent py-2.5 text-[15px] text-[var(--ink)] outline-none placeholder:text-[var(--ink3)]"
                 value={rec[key]}
                 placeholder={placeholder}
-                onChange={(e) => patchRecord({ [key]: e.target.value } as Pick<IrissScanRecord, typeof key>)}
+                onChange={(e) =>
+                  // Ar strukturētiem kritērijiem teksts sinhronizē arī shēmu (degviela/virsbūve).
+                  irissScanHasStructuredCriteria(rec)
+                    ? patchRecord(applyIrissScanSpecTextEdit(rec, key, e.target.value))
+                    : patchRecord({ [key]: e.target.value } as Pick<IrissScanRecord, typeof key>)
+                }
                 aria-label={label}
               />
             </label>

@@ -1,16 +1,20 @@
 "use client";
 
 import { IrissAnchoredPopover } from "@/components/admin/IrissAnchoredPopover";
-import { ClipboardList, FilePlus2, MoreHorizontal, Plus } from "lucide-react";
+import { ClipboardList, FilePlus2, MoreHorizontal, Plus, Warehouse } from "lucide-react";
+import Link from "next/link";
 import { useRef, useState } from "react";
 import {
   IRISS_LISTING_CARD_ACTION_BTN_CLASS,
   IRISS_LISTING_CARD_ACTION_ICON_CLASS,
   IRISS_LISTING_CARD_ACTION_MENU_BTN_CLASS,
   IRISS_LISTING_CARD_ACTION_OFFER,
-  IRISS_LISTING_CARD_ACTION_ORDER,
   IRISS_LISTING_CARD_ACTION_ORDER_MENU,
+  IRISS_LISTING_CARD_ACTION_SALON,
   IRISS_LISTING_CARD_ACTIONS_ROW_CLASS,
+  irissListingCardDetailsLabel,
+  irissListingSalonHref,
+  type IrissListingCardContext,
 } from "@/lib/iriss-listing-card-actions";
 import type { IrissListingVehicle } from "@/lib/iriss-listings-types";
 
@@ -20,13 +24,18 @@ export function IrissListingCardActions({
   onCreateRadar,
   onCreateOffer,
   previewDisabled = false,
+  context = "order",
 }: {
   v: IrissListingVehicle;
   onPreviewDetails?: (v: IrissListingVehicle) => void;
   onCreateRadar?: (v: IrissListingVehicle) => void | Promise<void>;
   onCreateOffer?: (v: IrissListingVehicle) => void | Promise<void>;
   previewDisabled?: boolean;
+  /** «radar» - Radaram nav klienta: «Meklējuma detaļas» + «Pievienot salonam». */
+  context?: IrissListingCardContext;
 }) {
+  const detailsLabel = irissListingCardDetailsLabel(context);
+  const radar = context === "radar";
   const [radarBusy, setRadarBusy] = useState(false);
   const [offerBusy, setOfferBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -50,7 +59,7 @@ export function IrissListingCardActions({
           type="button"
           disabled={previewDisabled}
           className={IRISS_LISTING_CARD_ACTION_BTN_CLASS}
-          title={IRISS_LISTING_CARD_ACTION_ORDER}
+          title={detailsLabel}
           onClick={(e) => {
             e.stopPropagation();
             if (previewDisabled) return;
@@ -58,7 +67,7 @@ export function IrissListingCardActions({
           }}
         >
           <ClipboardList className={IRISS_LISTING_CARD_ACTION_ICON_CLASS} aria-hidden strokeWidth={1.5} />
-          {IRISS_LISTING_CARD_ACTION_ORDER}
+          {detailsLabel}
         </button>
       ) : null}
       {onCreateOffer ? (
@@ -75,6 +84,18 @@ export function IrissListingCardActions({
           <FilePlus2 className={IRISS_LISTING_CARD_ACTION_ICON_CLASS} aria-hidden strokeWidth={1.5} />
           {offerBusy ? "Veido…" : IRISS_LISTING_CARD_ACTION_OFFER}
         </button>
+      ) : null}
+      {radar ? (
+        <Link
+          href={irissListingSalonHref(v)}
+          className={IRISS_LISTING_CARD_ACTION_BTN_CLASS}
+          title="Atver Loģistikā «Nopirkts» ar šī auto datiem. Ieraksts tiek izveidots tikai pēc «Saglabāt ierakstu»."
+          onClick={(e) => e.stopPropagation()}
+          data-iriss-listing-salon
+        >
+          <Warehouse className={IRISS_LISTING_CARD_ACTION_ICON_CLASS} aria-hidden strokeWidth={1.5} />
+          {IRISS_LISTING_CARD_ACTION_SALON}
+        </Link>
       ) : null}
       {onCreateRadar ? (
         <div className="relative shrink-0">

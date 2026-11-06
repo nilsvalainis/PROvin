@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, ClipboardList, Download, EyeOff, ExternalLink, FilePlus2, RotateCcw, Star, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ClipboardList, Download, EyeOff, ExternalLink, FilePlus2, RotateCcw, Star, Warehouse, X } from "lucide-react";
 import Link from "next/link";
 import { useListingVinOcr, type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
@@ -18,6 +18,12 @@ import { formatListingPowerKwLabel } from "@/lib/engine-power-kw";
 import { listingDisplayImageUrl } from "@/lib/iriss-listing-image";
 import { listingYearLabel } from "@/lib/iriss-listings-list-view";
 import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
+import {
+  IRISS_LISTING_CARD_ACTION_SALON,
+  irissListingCardContext,
+  irissListingCardDetailsLabel,
+  irissListingSalonHref,
+} from "@/lib/iriss-listing-card-actions";
 import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
 import type { IrissMobilePlatform } from "@/lib/iriss-listings-mobile-platform";
 import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
@@ -114,6 +120,7 @@ export function IrissListDrawer({
   const powerKwLabel = formatListingPowerKwLabel(v.powerKw);
   const reassigned = Boolean(prefs.orderOv[v.id]?.length);
   const assignValue = linked.length === 1 ? linked[0]!.id : "";
+  const drawerContext = irissListingCardContext(linked.map((o) => o.id));
   const assignChoices = orders.filter((o) => isIrissPasutijumsWorkingStatus(o.listStatus) || linked.some((l) => l.id === o.id));
   const priceHistory = realListingPriceHistory(v.priceHistory);
   const auctionTypeLabel = listingAuctionTypeLabel(v.auctionType);
@@ -588,8 +595,18 @@ export function IrissListDrawer({
         {linked.length && onPreviewOrder ? (
           <button type="button" className={`${btn2} min-w-0 whitespace-nowrap`} onClick={() => onPreviewOrder(linked[0]!)}>
             <ClipboardList className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="truncate">Pasūtījuma detaļas</span>
+            <span className="truncate">{irissListingCardDetailsLabel(drawerContext)}</span>
           </button>
+        ) : null}
+        {drawerContext === "radar" ? (
+          <Link
+            href={irissListingSalonHref(v)}
+            className={`${btn2} min-w-0 whitespace-nowrap`}
+            title="Atver Loģistikā «Nopirkts» ar šī auto datiem. Ieraksts tiek izveidots tikai pēc «Saglabāt ierakstu»."
+          >
+            <Warehouse className="h-4 w-4 shrink-0" aria-hidden />
+            <span className="truncate">{IRISS_LISTING_CARD_ACTION_SALON}</span>
+          </Link>
         ) : null}
         {sourceHref ? (
           <IrissListingSourceOpen v={v} mobile={mobile ?? null} className={`${btn2} min-w-0 whitespace-nowrap`}>

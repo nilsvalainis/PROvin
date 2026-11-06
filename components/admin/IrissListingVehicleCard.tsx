@@ -9,6 +9,7 @@ import { IrissListTaxBadge } from "@/components/admin/IrissListTaxBadge";
 import { useListingVinOcr, type ListingVinOcrPatch } from "@/hooks/useListingVinOcr";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import { IrissListingCardActions } from "@/components/admin/IrissListingCardActions";
+import { irissListingCardContext } from "@/lib/iriss-listing-card-actions";
 import { IrissListingOrderChips } from "@/components/admin/IrissListingOrderChips";
 import { IrissListingSourceExtras, IrissListingSourceOpen } from "@/components/admin/IrissListingSourceOpen";
 import { LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-panel";
@@ -361,11 +362,12 @@ export function IrissListingVehicleCard({
           ) : null}
         </div>
         <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
-          {/* «Pasūtījuma detaļas» ir darbību rindā; šeit tikai klients un ✓/✕ pa prasībām. */}
+          {/* «Pasūtījuma detaļas» (Radaram «Meklējuma detaļas») ir darbību rindā; šeit tikai klients un ✓/✕ pa prasībām. */}
           <IrissListingOrderChips orders={linked} vehicle={v} />
           <IrissListingCardActions
             v={v}
             previewDisabled={linked.length === 0}
+            context={irissListingCardContext(linked.map((o) => o.id))}
             onPreviewDetails={() => {
               if (linked.length === 0) return;
               if (onPreviewLinked) onPreviewLinked(linked);

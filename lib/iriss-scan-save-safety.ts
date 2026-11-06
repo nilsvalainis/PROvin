@@ -53,6 +53,7 @@ export function mergeIrissScanRecords(server: IrissScanRecord, local: IrissScanR
     listingLinkAuto1: mergeScanLinks(local.listingLinkAuto1, server.listingLinkAuto1),
     listingLinkEcarstrade: mergeScanLinks(local.listingLinkEcarstrade, server.listingLinkEcarstrade),
     listingLinksOther: mergeScanLinks(local.listingLinksOther, server.listingLinksOther),
+    ...(local.criteria ?? server.criteria ? { criteria: local.criteria ?? server.criteria } : {}),
   };
 }
 
@@ -80,4 +81,13 @@ export function prepareIrissScanWrite(
       workspaceRevision: nextIrissScanWorkspaceRevision(existingRev),
     },
   };
+}
+
+/**
+ * Ieraksts bez `criteria` (vecs klients / cron) saglabātos kritērijus nedzēš.
+ * Ja `criteria` atsūtīts (arī ar notīrītiem laukiem) - tas ir operatora lēmums un paliek.
+ */
+export function keepStoredIrissScanCriteria(existing: IrissScanRecord | null, incoming: IrissScanRecord): IrissScanRecord {
+  if (incoming.criteria || !existing?.criteria) return incoming;
+  return { ...incoming, criteria: existing.criteria };
 }

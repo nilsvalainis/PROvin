@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LogisticsAuction, LogisticsOrder, LogisticsPoint } from "@/lib/iriss-logistics-types";
 import { LOGISTICS_AUCTIONS } from "@/lib/iriss-logistics-types";
 import { formatLogisticsEur, formatLogisticsKm } from "@/lib/iriss-logistics-types";
+import { useSearchParams } from "next/navigation";
+import { irissLogistikaPurchasePrefill } from "@/lib/iriss-listing-card-actions";
 
 type Parsed = {
   ok?: boolean;
@@ -26,7 +28,18 @@ type Props = {
   onPreviewCoords: (lat: number, lng: number) => void;
 };
 
-export function IrissLogistikaNewPurchase({ open, points, onClose, onCreated, onPreviewCoords }: Props) {
+export function IrissLogistikaNewPurchase({ open: openProp, points, onClose: onCloseProp, onCreated, onPreviewCoords }: Props) {
+  // Sludinājumi/Radars «Pievienot salonam» (`?nopirkts=1&...`): logs atveras ar auto datiem; saglabā tikai operators.
+  const searchParams = useSearchParams();
+  const prefillKey = searchParams.toString();
+  const [prefillClosedFor, setPrefillClosedFor] = useState("");
+  const prefill = useMemo(() => irissLogistikaPurchasePrefill(new URLSearchParams(prefillKey)), [prefillKey]);
+  const prefillOpen = Boolean(prefill) && prefillClosedFor !== prefillKey;
+  const open = openProp || prefillOpen;
+  const onClose = useCallback(() => {
+    setPrefillClosedFor(prefillKey);
+    onCloseProp();
+  }, [prefillKey, onCloseProp]);
   const [source, setSource] = useState<"auction" | "private">("private");
   const [auction, setAuction] = useState<LogisticsAuction>("cits");
   const [link, setLink] = useState("");
@@ -45,6 +58,17 @@ export function IrissLogistikaNewPurchase({ open, points, onClose, onCreated, on
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const geoTimer = useRef<number>(0);
+
+  useEffect(() => {
+    if (!open || !prefill) return;
+    setSource(prefill.source);
+    setAuction((LOGISTICS_AUCTIONS as readonly string[]).includes(prefill.auction) ? (prefill.auction as LogisticsAuction) : "cits");
+    if (prefill.link) setLink(prefill.link);
+    if (prefill.make) setMake(prefill.make);
+    if (prefill.model) setModel(prefill.model);
+    if (prefill.vin) setVin(prefill.vin);
+    if (prefill.km) setKm(prefill.km);
+  }, [open, prefill]);
 
   useEffect(() => {
     if (!open) return;
@@ -169,6 +193,7 @@ export function IrissLogistikaNewPurchase({ open, points, onClose, onCreated, on
         setBusy(false);
         return;
       }
+      setPrefillClosedFor(prefillKey);
       onCreated(body.order);
     } catch {
       setErr("Neizdevās saglabāt.");
