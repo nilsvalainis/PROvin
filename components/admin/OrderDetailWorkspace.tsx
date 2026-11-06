@@ -79,6 +79,7 @@ import { collectWorkspaceRecordDates } from "@/lib/csdd-first-registration-guard
 import { syncListingAnalysisPhotoGroupsAndFlat } from "@/lib/listing-analysis-photo-types";
 import { syncAutoRecordsPhotoGroupsAndFlat } from "@/lib/auto-records-photo-types";
 import {
+  sourceBlockPhotoMaxForKey,
   syncSourceBlockPhotoGroupsAndFlat,
   type SourceBlockPhotoGroup,
 } from "@/lib/source-block-photo-types";
@@ -1966,7 +1967,7 @@ export function OrderDetailWorkspace({
       nextGroups: SourceBlockPhotoGroup[],
       sectionIndex?: number,
     ) => {
-      const synced = syncSourceBlockPhotoGroupsAndFlat(nextGroups);
+      const synced = syncSourceBlockPhotoGroupsAndFlat(nextGroups, sourceBlockPhotoMaxForKey(key));
       workspaceDirtyRef.current = true;
       flushSync(() => {
         setWs((prev) => {
