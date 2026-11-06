@@ -469,15 +469,47 @@ export function AdminMobileSectionNav({
   );
 }
 
+export type AdminMobileDockStatus = { text: string; tone?: "info" | "ok" | "error"; busy?: boolean };
+
 export function AdminMobileActionDock({
   actions,
   more,
+  status = null,
+  onDismissStatus,
 }: {
   actions: { id: string; label: string; icon: AdminMobileIconName; onClick?: () => void; href?: string; disabled?: boolean }[];
   more?: () => void;
+  /** Īss stāvoklis virs doka (FLASH MAX progress, VIN SCAN, „nokopēts”), lai darbība nav „klusa”. */
+  status?: AdminMobileDockStatus | null;
+  onDismissStatus?: () => void;
 }) {
+  const tone = status?.tone ?? "info";
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[30] flex items-end justify-center gap-2 px-3 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 md:hidden">
+      {status ? (
+        <div
+          role="status"
+          aria-live="polite"
+          data-admin-dock-status={tone}
+          className={`pointer-events-auto absolute inset-x-3 bottom-[calc(100%-4px)] flex items-start gap-2 rounded-2xl px-3 py-2 text-[13px] leading-snug shadow-[var(--am-glass-shadow)] ${
+            tone === "error"
+              ? "bg-[#fdecec] text-[#b42318]"
+              : tone === "ok"
+                ? "bg-[#e8f5e9] text-[#1b5e20]"
+                : "am-glass text-[var(--am-ink)]"
+          }`}
+        >
+          {status.busy ? (
+            <span className="mt-[3px] inline-block h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />
+          ) : null}
+          <span className="min-w-0 flex-1 whitespace-pre-line">{status.text}</span>
+          {onDismissStatus && !status.busy ? (
+            <button type="button" aria-label="Aizvērt paziņojumu" onClick={onDismissStatus} className="-mr-1 shrink-0 px-1 text-[15px] leading-none opacity-60">
+              ×
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       <nav className="am-glass pointer-events-auto flex h-[62px] min-w-0 flex-1 items-stretch rounded-full px-1.5">
         {actions.map((a) => {
           const inner = (
@@ -495,7 +527,7 @@ export function AdminMobileActionDock({
             );
           }
           return (
-            <button key={a.id} type="button" disabled={a.disabled} onClick={a.onClick} className={cls}>
+            <button key={a.id} type="button" aria-label={a.label} disabled={a.disabled} onClick={a.onClick} className={cls}>
               {inner}
             </button>
           );

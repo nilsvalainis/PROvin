@@ -419,7 +419,7 @@ export function formatFlashMaxNotice(results: FlashMaxJobResult[]): string {
   const skipped = results.filter((r) => r.status === "skipped").length;
   const failed = results.filter((r) => r.status === "error");
   if (ok === 0 && failed.length === 0) {
-    return `FLASH MAX: nav ko ģenerēt (${skipped} izlaisti — vispirms aizpildi avotu tabulas).`;
+    return `FLASH MAX: nav ko ģenerēt (${skipped} izlaisti - vispirms aizpildi avotu tabulas).`;
   }
   if (failed.length === 0) {
     return `FLASH MAX: sagatavoti ${ok} lauki${skipped ? `, ${skipped} izlaisti` : ""}.`;
