@@ -24,6 +24,7 @@ export function B2bPartnerHero({
   panel,
   hideContact = false,
   widePanel = false,
+  mapPage,
 }: {
   afterContact?: ReactNode;
   /** Login by default; invite register (or invalid-token copy) replaces the aside. */
@@ -31,6 +32,8 @@ export function B2bPartnerHero({
   /** Apakšlapām (reģistrācija, parole): bez piedāvājuma CTA un „Kas iekļauts”. */
   hideContact?: boolean;
   widePanel?: boolean;
+  /** Kartes novietojums datorā katrai apakšlapai (Nila novietojums 07.11). */
+  mapPage?: "registracija" | "parole" | "apstiprinat";
 }) {
   const t = useTranslations("Partner");
   const locale = useLocale();
@@ -61,7 +64,7 @@ export function B2bPartnerHero({
             </div>
 
             <div className="b2b-hv">
-              <div className="b2b-map">
+              <div className={`b2b-map${mapPage ? ` is-${mapPage}` : ""}`}>
                 <EuropeDotMap />
               </div>
               <div className="b2b-card">

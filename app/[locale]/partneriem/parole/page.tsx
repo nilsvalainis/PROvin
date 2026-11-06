@@ -27,7 +27,7 @@ export default async function PartnerPasswordResetPage({ searchParams }: Props) 
   return (
     <div className={`home-page-canvas-root ${productHeroStyles.demoRoot} ${tp5Styles.homePageCanvas}`}>
       <div className="home-hero-pricing-unified demo-design-dir flex min-h-0 min-w-0 flex-col bg-transparent text-zinc-100">
-        <B2bPartnerHero hideContact widePanel panel={<B2bPartnerResetPassword token={token} />} />
+        <B2bPartnerHero hideContact widePanel mapPage="parole" panel={<B2bPartnerResetPassword token={token} />} />
       </div>
     </div>
   );
