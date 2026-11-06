@@ -14,7 +14,7 @@ describe("apakšējās joslas žetona kontrasts", () => {
       /\.admin-ios-theme \.admin-m :is\(p, span[^)]*\):not\(:where\(\.am-badge\)\) \{\s*color: inherit;/,
     );
     expect(read("app/admin/admin-ios-theme.css")).toMatch(
-      /:is\(p, span[^)]*\):not\(:where\(\.am-badge(?:, \.am-icon)?\)\) \{\s*color: #000000;/,
+      /:is\(p, span[^)]*\):not\(:where\(\.am-badge(?:, \.am-[a-z-]+)*\)\) \{\s*color: #000000;/,
     );
   });
 

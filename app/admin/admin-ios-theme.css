@@ -76,8 +76,8 @@ body:has(.admin-ios-theme) {
   color: #000000;
 }
 
-/* Žetons (.am-badge) un ikona (.am-icon, krāsa = currentColor) - sava krāsa uz tumša fona (agrāk melns uz #1c1c1e). */
-.admin-ios-theme:not(:has(.admin-m[data-section="iriss"])) :is(p, span, h1, h2, h3, h4, h5, h6, label, small, li, dt, dd):not(:where(.am-badge, .am-icon)) {
+/* Žetons (.am-badge), ikona (.am-icon, krāsa = currentColor) un čipa skaitlis (.am-chip-count, manto čipa krāsu) - sava krāsa uz tumša fona. */
+.admin-ios-theme:not(:has(.admin-m[data-section="iriss"])) :is(p, span, h1, h2, h3, h4, h5, h6, label, small, li, dt, dd):not(:where(.am-badge, .am-icon, .am-chip-count)) {
   color: #000000;
 }
 

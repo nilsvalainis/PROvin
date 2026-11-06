@@ -235,7 +235,7 @@ export function AdminMobileChips({
           >
             {it.label}
             {it.count != null ? (
-              <span className="tabular-nums opacity-60">{it.count}</span>
+              <span className="am-chip-count tabular-nums opacity-60">{it.count}</span>
             ) : null}
           </button>
         );
