@@ -2964,6 +2964,31 @@ body.provin-menu-open .cookie-consent-panel {
   .b2b-hv {
     position: static;
   }
+  /* Nila novietojums 07.11 (1440 px): katrai lapai savs izmērs, Rīga ~764 px no kreisās, ~430 px lapā. */
+  .b2b-map {
+    left: calc(50% - 334px);
+    top: 36px;
+    width: 557px;
+    height: 615px;
+  }
+  .b2b-map.is-registracija {
+    left: calc(50% - 255px);
+    top: 126px;
+    width: 448px;
+    height: 494px;
+  }
+  .b2b-map.is-parole {
+    left: calc(50% - 353px);
+    top: 63px;
+    width: 589px;
+    height: 650px;
+  }
+  .b2b-map.is-apstiprinat {
+    left: calc(50% - 306px);
+    top: 91px;
+    width: 525px;
+    height: 579px;
+  }
   .b2b-card {
     z-index: 0;
   }

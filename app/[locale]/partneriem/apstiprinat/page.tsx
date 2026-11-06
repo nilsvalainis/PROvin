@@ -31,6 +31,7 @@ export default async function PartnerVerifyEmailPage({ searchParams }: Props) {
         <B2bPartnerHero
           hideContact
           widePanel
+          mapPage="apstiprinat"
           panel={
             <div className="flex w-full flex-col gap-3">
               <p className="text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-[#93c5fd]">

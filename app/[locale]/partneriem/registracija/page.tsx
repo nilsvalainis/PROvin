@@ -34,6 +34,7 @@ export default async function PartnerInviteRegisterPage({ searchParams }: Props)
         <B2bPartnerHero
           hideContact
           widePanel
+          mapPage="registracija"
           panel={
             invite ? (
               <B2bPartnerInviteRegister token={invite.token} />
