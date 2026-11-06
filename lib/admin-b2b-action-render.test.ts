@@ -56,4 +56,41 @@ describe("B2B admin action chrome", () => {
     expect(html).not.toContain("—");
     expect(html).not.toContain("–");
   });
+
+  it("disables refresh/approve/reject only while busy, not after an approved decision", () => {
+    const view = {
+      kind: "partner" as const,
+      id: "ptr_0123456789abcdef",
+      input: FIXTURE_GOOD_INPUT,
+      report: buildCompanyVerifyReport(FIXTURE_GOOD_INPUT, fixtureSourcesGood()),
+      decision: "approved" as const,
+      decidedAt: "2026-11-06T08:01:00.000Z",
+      cached: true,
+    };
+    const idle = renderToStaticMarkup(
+      createElement(AdminB2bCompanyVerifySummary, {
+        view,
+        busy: false,
+        onRefresh: () => undefined,
+        onDecision: () => undefined,
+      }),
+    );
+    expect(idle).toContain("Apstiprināts");
+    expect(idle).toContain("Atsvaidzināt");
+    expect(idle).toContain("Apstiprināt");
+    expect(idle).toContain("Noraidīt");
+    expect(idle.includes('disabled=""') || /(?:^|\s)disabled(?:\s|>)/.test(idle)).toBe(false);
+
+    const busy = renderToStaticMarkup(
+      createElement(AdminB2bCompanyVerifySummary, {
+        view,
+        busy: true,
+        error: "Pārbaudes pieprasījums noildza. Mēģini vēlreiz.",
+        onRefresh: () => undefined,
+        onDecision: () => undefined,
+      }),
+    );
+    expect((busy.match(/disabled=""/g) ?? []).length).toBeGreaterThanOrEqual(3);
+    expect(busy).toContain("Pārbaudes pieprasījums noildza. Mēģini vēlreiz.");
+  });
 });

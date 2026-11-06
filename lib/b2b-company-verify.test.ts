@@ -146,6 +146,28 @@ describe("source parsers and fetch timeouts", () => {
     expect(sources.urOfficers.officers[0]?.name).toContain("Bērziņš");
     expect(sources.vies.record?.valid).toBe(true);
   });
+
+  it("starts officer lookup in parallel when the registration number is already known", async () => {
+    const started: string[] = [];
+    const pending = fetchCompanyVerifySources(FIXTURE_GOOD_INPUT, async (url) => {
+      const kind = url.includes("e665114a") ? "officers" : url.includes("vies") ? "vies" : "company";
+      started.push(kind);
+      await new Promise((r) => setTimeout(r, 40));
+      const body =
+        kind === "officers"
+          ? FIXTURE_UR_DATASTORE_OFFICERS
+          : kind === "vies"
+            ? FIXTURE_VIES_HTTP
+            : FIXTURE_UR_DATASTORE_COMPANY;
+      return new Response(JSON.stringify(body), { status: 200 });
+    });
+    const deadline = Date.now() + 200;
+    while (started.length < 3 && Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 5));
+    }
+    expect([...started].sort()).toEqual(["company", "officers", "vies"]);
+    await pending;
+  });
 });
 
 describe("cache document", () => {
