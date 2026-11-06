@@ -19,7 +19,7 @@ import { updateB2bCreditWallet } from "@/lib/b2b-partner-credit-store";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
 import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
 import { notifyB2bWalletRefundEmail, refundB2bWalletOrder } from "@/lib/b2b-wallet-refund";
-import { readDealerDataJob, writeDealerDataJob } from "@/lib/dealer-data-job-store";
+import { readDealerDataJob, upsertDealerDataJob, writeDealerDataJob } from "@/lib/dealer-data-job-store";
 import {
   DEALER_REFUND_MAX_CENTS,
   decideDealerRefund,
@@ -239,6 +239,12 @@ export async function POST(req: Request) {
       });
       if (!emailSent) emailError = "send_failed";
     }
+  }
+  if (emailSent) {
+    await upsertDealerDataJob(sessionId, {
+      vin: job?.vin ?? "",
+      refund: { ...record, emailSentAt: new Date().toISOString() },
+    });
   }
 
   return NextResponse.json({

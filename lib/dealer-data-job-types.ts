@@ -353,6 +353,14 @@ function asStr(v: unknown, max = 200): string {
 }
 
 function normalizeRefund(raw: unknown): DealerRefundRecord | null {
+  const rec = normalizeRefundCore(raw);
+  if (!rec) return null;
+  // emailSentAt jāsaglabā arī nolasot - citādi „viens e-pasts uz atmaksu” aizsardzība nestrādā.
+  const sentAt = asStr((raw as Record<string, unknown>).emailSentAt, 40);
+  return sentAt ? { ...rec, emailSentAt: sentAt } : rec;
+}
+
+function normalizeRefundCore(raw: unknown): DealerRefundRecord | null {
   if (!raw || typeof raw !== "object") return null;
   const o = raw as Record<string, unknown>;
   const stripeRefundId = asStr(o.stripeRefundId, 80);
