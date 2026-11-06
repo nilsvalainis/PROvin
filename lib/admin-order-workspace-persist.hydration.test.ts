@@ -127,6 +127,31 @@ describe("coalesceOrderWorkspacePersistBody", () => {
     ]);
     expect(coalesceOrderWorkspacePersistBody(bodyWithAutodnaComment("AutoDNA"), bodyWithAutodnaComment("AutoDNA")).odometerAnomalyOverrides).toBeUndefined();
   });
+
+  it("keeps baseline dealer major-work overrides when incoming omits the field, and honors an empty clear", () => {
+    const baseline: OrderWorkspacePersistBody = {
+      ...bodyWithAutodnaComment("AutoDNA"),
+      dealerMajorWorkOverrides: [{ key: "engine@D17", action: "hide" }],
+    };
+    const omitted = coalesceOrderWorkspacePersistBody(bodyWithAutodnaComment("AutoDNA"), baseline);
+    expect(omitted.dealerMajorWorkOverrides).toEqual([{ key: "engine@D17", action: "hide" }]);
+    const cleared = coalesceOrderWorkspacePersistBody(
+      { ...bodyWithAutodnaComment("AutoDNA"), dealerMajorWorkOverrides: [] },
+      baseline,
+    );
+    expect(cleared.dealerMajorWorkOverrides).toEqual([]);
+    const incoming: OrderWorkspacePersistBody = {
+      ...bodyWithAutodnaComment("AutoDNA"),
+      dealerMajorWorkOverrides: [{ key: "engine@D17", action: "set", assemblyId: "body_glass" }],
+    };
+    expect(coalesceOrderWorkspacePersistBody(incoming, baseline).dealerMajorWorkOverrides).toEqual([
+      { key: "engine@D17", action: "set", assemblyId: "body_glass" },
+    ]);
+    expect(
+      coalesceOrderWorkspacePersistBody(bodyWithAutodnaComment("AutoDNA"), bodyWithAutodnaComment("AutoDNA"))
+        .dealerMajorWorkOverrides,
+    ).toBeUndefined();
+  });
 });
 
 describe("pickOrderWorkspaceHydrationServerFirst", () => {

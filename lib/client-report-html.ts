@@ -430,6 +430,8 @@ export type ClientReportPayload = {
   mileageComment?: string | null;
   /** Operatora apstiprinājums / atcelšana nobraukuma anomālijām (nav veco pasūtījumu datu pārraksts). */
   odometerAnomalyOverrides?: import("@/lib/odometer-anomaly-classify").OdometerAnomalyOverride[] | null;
+  /** Operatora Lielie darbi labojumi. Nav veco pasūtījumu pārraksts. */
+  dealerMajorWorkOverrides?: import("@/lib/dealer-major-works-override-persist").DealerMajorWorkOverride[] | null;
 };
 
 export type ClientReportPortfolioRow = { name: string; size: number };
@@ -1840,6 +1842,7 @@ function buildAutoRecordsAvotuSubsection(
   productScope?: DealerProductScopeArgs,
   maskDemoVin = false,
   lang: ClientReportLang = "lv",
+  dealerMajorWorkOverrides?: import("@/lib/dealer-major-works-override-persist").DealerMajorWorkOverride[] | null,
 ): string {
   if (!vis.auto_records) return "";
   if ((!b || !autoRecordsBlockHasContent(b)) && !sparkHtml) return "";
@@ -1874,14 +1877,22 @@ function buildAutoRecordsAvotuSubsection(
   });
   const hasCover = coverHtml.length > 0;
   const condenseRecords = shouldCondenseDealerPdfRecords(productScope ?? {});
-  const dealerFacts = extractDealerFactsFromServiceWorks(b.serviceWorks ?? []);
+  const dealerFacts = extractDealerFactsFromServiceWorks(
+    b.serviceWorks ?? [],
+    b.oneautoIngest?.serviceTimelineOriginal,
+  );
   const serviceWorksTable = buildAutoRecordsServiceWorksTableHtml(b.serviceWorks ?? [], hasCover, {
     condenseRecords,
     extraMileageRows: condenseRecords ? [] : dealerExtraMileageRows(b),
     lang,
   });
-  const summaryHtml = buildDealerVisitSummaryHtml(b.serviceWorks ?? [], dealerFacts, lang);
-  const majorHtml = buildDealerMajorWorksHtml(dealerFacts, lang);
+  const summaryHtml = buildDealerVisitSummaryHtml(
+    b.serviceWorks ?? [],
+    dealerFacts,
+    lang,
+    dealerMajorWorkOverrides,
+  );
+  const majorHtml = buildDealerMajorWorksHtml(dealerFacts, lang, dealerMajorWorkOverrides);
   const serviceHistoryNotes = (b.serviceHistoryNotes ?? "").trim();
   const serviceHistoryBox = serviceHistoryNotes
     ? pdfReportCommentBox(serviceHistoryNotes, PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL)
@@ -2279,6 +2290,7 @@ function buildAvotuDatiSectionHtml(
     dealerPdfProductScope(p),
     p.isDemo === true,
     lang,
+    p.dealerMajorWorkOverrides,
   );
   const ccVin = buildCcVinAvotuSubsection(p.ccVinBlock ?? null, vis, ccVinPhotoDataUrls, spark("intl"));
   const asv = buildAsvAvotuSubsection(p.asvBlock ?? null, vis, asvPhotoDataUrls, spark("asv"));

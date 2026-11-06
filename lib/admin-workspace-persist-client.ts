@@ -441,6 +441,9 @@ export function workspacePersistFromDraftWorkspace(
     ...(w.odometerAnomalyOverrides != null
       ? { odometerAnomalyOverrides: w.odometerAnomalyOverrides }
       : {}),
+    ...(w.dealerMajorWorkOverrides != null
+      ? { dealerMajorWorkOverrides: w.dealerMajorWorkOverrides }
+      : {}),
   });
   const h = hydrateWorkspaceFromStorage(json);
   if (!h) return null;
@@ -461,6 +464,9 @@ export function workspacePersistFromDraftWorkspace(
     ...(h.technicalRiskMap ? { technicalRiskMap: h.technicalRiskMap } : {}),
     ...(h.odometerAnomalyOverrides != null
       ? { odometerAnomalyOverrides: h.odometerAnomalyOverrides }
+      : {}),
+    ...(h.dealerMajorWorkOverrides != null
+      ? { dealerMajorWorkOverrides: h.dealerMajorWorkOverrides }
       : {}),
   };
 }

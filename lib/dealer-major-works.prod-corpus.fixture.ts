@@ -77,3 +77,47 @@ export const BMW_WINDSCREEN_CHIP_CHECK = "Windscreen chip check. Steinschlagprü
 export const DE_STONE_CHIP_REPAIR = "Windschutzscheibe Steinschlagreparatur";
 export const EN_STONE_CHIP_REPAIR = "Stone chip repair windscreen";
 export const DE_WIPER_BLADES = "Scheibenwischer erneuert";
+
+/**
+ * BMW F30 D17 12.05.2014 54 832 km: kapote ar OEM numuru.
+ * Oriģināls Hood, LV tulkojums Dzinēja pārsegs. Nav dzinēja maiņa.
+ * VIN WBA3K31080F656545 (fixtures; live pasūtījuma datus nemaina).
+ */
+export const BMW_D17_HOOD_DATE = "12.05.2014";
+export const BMW_D17_HOOD_ODOMETER = "54832";
+export const BMW_D17_HOOD_PART_NO = "41007290944";
+export const BMW_D17_HOOD_EN = "Hood (41007290944)";
+export const BMW_D17_HOOD_LV = "Dzinēja pārsegs (41007290944)";
+export const BMW_D17_HOOD_DE = "Motorhaube (41007290944)";
+export const BMW_D17_BONNET_EN = "Bonnet (41007290944)";
+export const BMW_D17_HOOD_GAS_SPRING_EN = "Hood gas spring check";
+export const BMW_D17_HOOD_GAS_SPRING_LV = "Motora pārsega gāzes atsperu pārbaude";
+export const BMW_ENGINE_MOUNT_EN = "Engine mount (22116751234)";
+export const BMW_ENGINE_MOUNT_LV = "Dzinēja spilvens (22116751234)";
+
+export function bmwD17HoodServiceRows(works = BMW_D17_HOOD_LV): {
+  date: string;
+  odometer: string;
+  location: string;
+  works: string;
+}[] {
+  const earlier = Array.from({ length: 16 }, (_, i) => {
+    const month = (i % 12) + 1;
+    const year = 2010 + Math.floor(i / 12);
+    return {
+      date: `01.${String(month).padStart(2, "0")}.${year}`,
+      odometer: String(10_000 + i * 2_000),
+      location: "BMW",
+      works: "Engine oil service",
+    };
+  });
+  return [
+    ...earlier,
+    {
+      date: BMW_D17_HOOD_DATE,
+      odometer: BMW_D17_HOOD_ODOMETER,
+      location: "BMW",
+      works,
+    },
+  ];
+}

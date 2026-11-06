@@ -109,6 +109,11 @@ import {
   parseOdometerAnomalyOverrides,
   type OdometerAnomalyOverride,
 } from "@/lib/odometer-anomaly-classify";
+import {
+  dealerMajorWorkOverridesSnapshotField,
+  parseDealerMajorWorkOverrides,
+  type DealerMajorWorkOverride,
+} from "@/lib/dealer-major-works-override-persist";
 import type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
 import {
   autoRecordsRowHasData,
@@ -2884,6 +2889,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
   clearedFields?: Record<string, number>;
   technicalRiskMap?: TechnicalRiskMap;
   odometerAnomalyOverrides?: OdometerAnomalyOverride[];
+  dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
 } | null {
   if (!raw) return null;
   try {
@@ -2941,6 +2947,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
       })(),
       ...technicalRiskMapSnapshotField(parseTechnicalRiskMap(p.technicalRiskMap)),
       ...odometerAnomalyOverridesSnapshotField(parseOdometerAnomalyOverrides(p.odometerAnomalyOverrides)),
+      ...dealerMajorWorkOverridesSnapshotField(parseDealerMajorWorkOverrides(p.dealerMajorWorkOverrides)),
     };
   } catch {
     return null;

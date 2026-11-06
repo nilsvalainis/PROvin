@@ -30,6 +30,14 @@ export type DealerMajorAssemblySpec = {
   label: string;
 };
 
+export type DealerMajorWorkHit = {
+  id: string;
+  label: string;
+  factId: string;
+  date: string;
+  km: string;
+};
+
 /** Kārtība PDF kopsavilkumā. Etiķetes ir LV atslēgas `client-report-i18n`. */
 export const MAJOR_ASSEMBLY_SPECS: readonly DealerMajorAssemblySpec[] = [
   { id: "engine", label: "Dzinējs" },
@@ -68,7 +76,7 @@ const ASSEMBLY_RE: Record<DealerMajorAssemblyId, RegExp> = {
     /divmasu|spararat|dual[\s-]?mass|twin\s+mass|flywheel|zweimassen|schwungrad|маховик|vliegwiel|svanghjul|volant\s+bimasse|volano\s+bimassa/u,
   turbo: /\bturbo(?:charger|lader|compresseur)?\b|турбокомпрессор|turbokompresor/u,
   body_glass:
-    /vejstikl|stikla\s+main|loga\s+stikl|bamper|sparn|durvju|kraso|parkras|body\s+repair|windscreen|windshield|window\s+glass|side\s+window|door\s+(?:window|glass)|bumper|fender|lackier|karosser|(?:windschutz|seiten|heck|front)?scheibe(?!n(?:klar|wasch|wisch))|pare[- ]brise|parabrezza|parabrisas|кузов|бампер|крыл|(?:лобов|боков)\p{L}*\s+стекл/u,
+    /vejstikl|stikla\s+main|loga\s+stikl|bamper|sparn|durvju|kraso|parkras|body\s+repair|windscreen|windshield|window\s+glass|side\s+window|door\s+(?:window|glass)|bumper|fender|lackier|karosser|(?:windschutz|seiten|heck|front)?scheibe(?!n(?:klar|wasch|wisch))|pare[- ]brise|parabrezza|parabrisas|кузов|бампер|крыл|(?:лобов|боков)\p{L}*\s+стекл|\bhood\b|\bbonnet\b|motorhaube|\bkapote\b|(?:dzineja|motora)\s+parsegs|\bcapot(?:\s+moteur)?\b|\bcofano\b|капот|engine\s+hood/u,
 };
 
 const AXLE_DIFF_CONTEXT_RE =
@@ -141,7 +149,20 @@ const MINOR_PART_RE =
   /schlauch|hose|bleed|dicht(?:ung|ring)?|sealing\s+ring|simmerring|kurbelwell|crankshaft|drive\s+shaft|antriebswelle|fuel\s+line|kraftstoffleitung|connector|cooling\s+system|kuhlsystem|ladeluft|charge\s+air|zahnriemen|timing\s+belt|drain\s+hose|klima|climate\s+unit|ohne\s+befund|park\s+acc|oil\s+line|olleitung/u;
 
 const ENGINE_NOT_THE_UNIT_RE =
-  /motorleistung|motorol|olleckage|\bmotoren\b|schlauch|hose|dicht|seal|simmerring|kurbelwell|crankshaft|zahnriemen|timing\s+belt|cooling|kuhlsystem|ladeluft|charge\s+air|fuel\s+line|connector|sun\s*roof|dachkaset|schiebedach|upholstery|sitz|software|upgrade|downloading|ersatzwagen|courtesy/u;
+  /motorleistung|motorol|olleckage|\bmotoren\b|schlauch|hose|dicht|seal|simmerring|kurbelwell|crankshaft|zahnriemen|timing\s+belt|cooling|kuhlsystem|ladeluft|charge\s+air|fuel\s+line|connector|sun\s*roof|dachkaset|schiebedach|upholstery|sitz|software|upgrade|downloading|ersatzwagen|courtesy|\bhood\b|\bbonnet\b|motorhaube|\bkapote\b|(?:dzineja|motora)\s+parsegs|engine\s+mounts?|motorlager|motortrager|(?:dzineja|motora)\s+spilven|valve\s+cover|ventildeckel|engine\s+cover/u;
+
+/** Kapote / dzinēja pārsegs / Motorhaube - virsbūves panelis, ne dzinēja agregāts. Folded NFKD. */
+const HOOD_PANEL_RE =
+  /\bhood\b|\bbonnet\b|motorhaube|\bkapote\b|(?:dzineja|motora)\s+parsegs|\bcapot(?:\s+moteur)?\b|\bcofano\b|капот|engine\s+hood/u;
+
+const HOOD_GAS_SPRING_RE =
+  /gas\s+(?:pressure\s+)?springs?|gazes\s+atsper|gasfeder|motorhauben[- ]?gas/u;
+
+const ENGINE_MOUNT_RE =
+  /engine\s+mounts?|motorlager|motortrager|motoraufhang|engine\s+support|(?:dzineja|motora)\s+spilven|engine\s+bracket|подушк\p{L}*.{0,16}двигател|двигател\p{L}*.{0,16}подушк/u;
+
+const ENGINE_COVER_NOT_UNIT_RE =
+  /valve\s+cover|ventildeckel|varstu\s+parsegs|engine\s+cover|motorabdeckung|dekorativ\p{L}*\s+parsegs/u;
 
 const ENGINE_UNIT_REPLACE_RE =
   /(?:\bengine\b|dzinej\p{L}*|двигател\p{L}*|\bmoteur\b|\bmotore\b|\bmotor\b)(?:\s+and\s+turbo(?:charger|lader)?|\s+und\s+turbolader)?\s+(?:replac|erneuer|getauscht|ersetzt|nomain|maina|wechsel|remplac|sostituit|sustitu|reemplaz)|(?:replac\p{L}*|erneuer\p{L}*|замена|nomain|remplac\p{L}*|sostituit\p{L}*|sustitu\p{L}*|reemplaz\p{L}*)\s+(?:the\s+|du\s+|de\s+(?:l[ae]\s+)?|del\s+|della\s+|el\s+)?(?:engine|dzinej|двигател|moteur|motore|\bmotor\b)|motorwechsel|motorersatz|motortausch|(?:^|[^\p{L}])motor\s+(?:erneuert|getauscht|ersetzt|ausgewechselt)|замена\s+двигател|капитальн\p{L}*\s+ремонт\s+двигател/u;
@@ -241,6 +262,26 @@ function isChargeAirMinor(folded: string): boolean {
   return CHARGE_AIR_MINOR_RE.test(folded);
 }
 
+function isHoodPanelWork(folded: string): boolean {
+  HOOD_PANEL_RE.lastIndex = 0;
+  return HOOD_PANEL_RE.test(folded);
+}
+
+function isHoodGasSpringWork(folded: string): boolean {
+  if (!isHoodPanelWork(folded)) return false;
+  HOOD_GAS_SPRING_RE.lastIndex = 0;
+  return HOOD_GAS_SPRING_RE.test(folded);
+}
+
+/** Eļļa, spilveni, kapote, vārstu pārsegs - nav dzinēja / bloka nomaiņa. */
+function isEngineAncillaryNotUnit(folded: string): boolean {
+  ENGINE_MOUNT_RE.lastIndex = 0;
+  if (ENGINE_MOUNT_RE.test(folded)) return true;
+  ENGINE_COVER_NOT_UNIT_RE.lastIndex = 0;
+  if (ENGINE_COVER_NOT_UNIT_RE.test(folded)) return true;
+  return isHoodPanelWork(folded);
+}
+
 function mentionsAssembly(folded: string, assembly: DealerMajorAssemblyId): boolean {
   if (assembly === "turbo" && isTurboOilProduct(folded)) return false;
   if (
@@ -248,9 +289,14 @@ function mentionsAssembly(folded: string, assembly: DealerMajorAssemblyId): bool
     (isWasherFluid(folded) ||
       isInteriorTrim(folded) ||
       isWiperNotGlass(folded) ||
-      isGlassChipCheckNotReplacement(folded))
+      isGlassChipCheckNotReplacement(folded) ||
+      isHoodGasSpringWork(folded))
   ) {
     return false;
+  }
+  if (assembly === "engine" && isEngineAncillaryNotUnit(folded)) {
+    ENGINE_UNIT_REPLACE_RE.lastIndex = 0;
+    if (!ENGINE_UNIT_REPLACE_RE.test(folded)) return false;
   }
   if (assembly === "gearbox" && PROPSHAFT_NOT_GEARBOX_RE.test(folded)) return false;
   if (assembly === "clutch") {
@@ -336,6 +382,7 @@ function isEngineUnitReplacement(folded: string): boolean {
   if (isTurboOilProduct(folded) && !ENGINE_UNIT_REPLACE_RE.test(folded)) return false;
   ENGINE_UNIT_REPLACE_RE.lastIndex = 0;
   if (ENGINE_UNIT_REPLACE_RE.test(folded)) return true;
+  if (isEngineAncillaryNotUnit(folded)) return false;
   if (!mentionsAssembly(folded, "engine")) return false;
   if (isRemanOrExchange(folded) || isMajorPartListLine(folded, "engine")) {
     ENGINE_NOT_THE_UNIT_RE.lastIndex = 0;

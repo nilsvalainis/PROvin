@@ -183,6 +183,10 @@ import {
   odometerAnomalyOverridesSnapshotField,
   type OdometerAnomalyOverride,
 } from "@/lib/odometer-anomaly-classify";
+import {
+  dealerMajorWorkOverridesSnapshotField,
+  type DealerMajorWorkOverride,
+} from "@/lib/dealer-major-works-override-persist";
 import { AdminOdometerAnomalyPanel } from "@/components/admin/AdminOdometerAnomalyPanel";
 import { AdminManualBannersEditor } from "@/components/admin/AdminManualBannersEditor";
 import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
@@ -435,6 +439,7 @@ type WorkspacePersist = {
   clearedFields?: Record<string, number>;
   technicalRiskMap?: TechnicalRiskMap;
   odometerAnomalyOverrides?: OdometerAnomalyOverride[];
+  dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
 };
 
 const EMPTY_WORKSPACE: WorkspacePersist = {
@@ -583,6 +588,7 @@ function workspaceToPersistBody(ws: WorkspacePersist): OrderWorkspacePersistBody
   ...clearedFieldsSnapshotField(ws.clearedFields),
   ...technicalRiskMapSnapshotField(ws.technicalRiskMap),
   ...odometerAnomalyOverridesSnapshotField(ws.odometerAnomalyOverrides),
+  ...dealerMajorWorkOverridesSnapshotField(ws.dealerMajorWorkOverrides),
   };
 }
 
@@ -980,6 +986,7 @@ export function OrderDetailWorkspace({
   }, [factCheckDismissed, payload.sessionId]);
 
   const odometerAnomalyOverrides = ws.odometerAnomalyOverrides ?? [];
+  const dealerMajorWorkOverrides = ws.dealerMajorWorkOverrides ?? [];
   const wsStateRef = useRef(ws);
   wsStateRef.current = ws;
   const orderEditsRef = useRef({
@@ -1164,6 +1171,7 @@ export function OrderDetailWorkspace({
     ...clearedFieldsSnapshotField(normalized.clearedFields),
     ...technicalRiskMapSnapshotField(normalized.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(normalized.odometerAnomalyOverrides),
+    ...dealerMajorWorkOverridesSnapshotField(normalized.dealerMajorWorkOverrides),
     };
     wsPersistRef.current = next;
     lastGoodPersistBodyRef.current = normalized;
@@ -1238,6 +1246,7 @@ export function OrderDetailWorkspace({
         ...clearedFieldsSnapshotField(body.clearedFields),
         ...technicalRiskMapSnapshotField(body.technicalRiskMap),
         ...odometerAnomalyOverridesSnapshotField(body.odometerAnomalyOverrides),
+        ...dealerMajorWorkOverridesSnapshotField(body.dealerMajorWorkOverrides),
         };
         wsStateRef.current = wsPersistRef.current;
       }
@@ -2602,6 +2611,7 @@ export function OrderDetailWorkspace({
       ...clearedFieldsSnapshotField(chosen.clearedFields),
       ...technicalRiskMapSnapshotField(chosen.technicalRiskMap),
       ...odometerAnomalyOverridesSnapshotField(chosen.odometerAnomalyOverrides),
+      ...dealerMajorWorkOverridesSnapshotField(chosen.dealerMajorWorkOverrides),
       };
 
       workspaceDebugLog("hydrate_source", {
@@ -2634,6 +2644,7 @@ export function OrderDetailWorkspace({
       ...clearedFieldsSnapshotField(chosen.clearedFields),
       ...technicalRiskMapSnapshotField(chosen.technicalRiskMap),
       ...odometerAnomalyOverridesSnapshotField(chosen.odometerAnomalyOverrides),
+      ...dealerMajorWorkOverridesSnapshotField(chosen.dealerMajorWorkOverrides),
       };
       wsPersistRef.current = hydratedWs;
       wsStateRef.current = hydratedWs;
@@ -4019,6 +4030,7 @@ export function OrderDetailWorkspace({
       incidentPhotoGroups: isolate ? [] : wsPersistRef.current.incidentPhotoGroups,
       incidentPhotos: isolate ? [] : wsPersistRef.current.incidentPhotos,
       odometerAnomalyOverrides,
+      dealerMajorWorkOverrides,
     };
 
     let finalPayload = reportPayload;
@@ -5570,6 +5582,8 @@ export function OrderDetailWorkspace({
               dealerPdfProgressPct={pdfJob?.pct ?? null}
               techRiskText={ws.tehniskoRiskuAnalize ?? ""}
               techRiskMap={ws.technicalRiskMap ?? null}
+              dealerMajorWorkOverrides={dealerMajorWorkOverrides}
+              onDealerMajorWorkOverridesChange={(next) => updateWs({ dealerMajorWorkOverrides: next })}
             />
           </div>
         ) : null}

@@ -71,6 +71,9 @@ function buildServerWorkspaceJson(draft: OrderDraftState | null): string | null 
     ...(w.odometerAnomalyOverrides != null
       ? { odometerAnomalyOverrides: w.odometerAnomalyOverrides }
       : {}),
+    ...(w.dealerMajorWorkOverrides != null
+      ? { dealerMajorWorkOverrides: w.dealerMajorWorkOverrides }
+      : {}),
     workspaceRevision: draft.workspaceRevision ?? 0,
     workspaceChecksum: draft.workspaceChecksum ?? null,
     savedAt: draft.workspaceSavedAt ?? draft.updatedAt,
@@ -95,6 +98,9 @@ function buildServerWorkspaceJson(draft: OrderDraftState | null): string | null 
     ...(hydrated.technicalRiskMap ? { technicalRiskMap: hydrated.technicalRiskMap } : {}),
     ...(hydrated.odometerAnomalyOverrides != null
       ? { odometerAnomalyOverrides: hydrated.odometerAnomalyOverrides }
+      : {}),
+    ...(hydrated.dealerMajorWorkOverrides != null
+      ? { dealerMajorWorkOverrides: hydrated.dealerMajorWorkOverrides }
       : {}),
     workspaceRevision: draft.workspaceRevision ?? 0,
     workspaceChecksum: draft.workspaceChecksum ?? null,
