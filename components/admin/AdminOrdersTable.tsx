@@ -219,7 +219,7 @@ function parseAmountInputToCents(raw: string): number | null | undefined {
 /** Manuālā pasūtījuma “Laiks” - skats + labošana (datetime-local). */
 function ManualOrderDateCell({ id, created }: { id: string; created: number }) {
   const router = useRouter();
-  const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short" });
+  const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Riga" });
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(() => unixToDatetimeLocalValue(created));
   const [saving, setSaving] = useState(false);
@@ -711,7 +711,7 @@ export function AdminOrdersTable({
 }) {
   void consultationList;
   const router = useRouter();
-  const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short" });
+  const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Riga" });
   const [completeOverride, setCompleteOverride] = useState<Record<string, boolean>>({});
   const [colorOverride, setColorOverride] = useState<Record<string, AuditResultColor | null>>({});
   const [colorFilter, setColorFilter] = useState<AuditResultColor | "all" | "none">("all");
