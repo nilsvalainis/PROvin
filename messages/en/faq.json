@@ -16,8 +16,8 @@
       },
       {
         "id": "mini-vs-audits",
-        "q": "Which audit should I choose: PROVIN MINI or PROVIN AUDITS?",
-        "a": "PROVIN MINI (€39.99) is designed for cars that have been on the road in Latvia for some time. It combines a consultation with checks of local registers: CSDD data, insurer data, technical inspection (TA) history, listing analysis and tips for viewing the car in person. MINI does not include paid databases, foreign registers, dealer or auction data.\n\nPROVIN AUDITS (€99.99) is an in-depth investigation for cars imported from abroad. It includes everything in MINI plus at least 2, usually 3 paid history checks (for example carVertical, autoDNA or Cebia), origin-country registers and official dealer system data where available for the specific car, as well as European auction photo archives that reveal the car's real condition and mileage before it was repaired and imported."
+        "q": "What does PROVIN AUDITS include?",
+        "a": "PROVIN AUDITS (€99.99) is an in-depth investigation of a car, especially one imported from abroad. It includes Latvian sources (CSDD data, insurer data, technical inspection history, listing analysis) plus at least 2, usually 3 paid history checks (for example carVertical, autoDNA or Cebia), origin-country registers and official dealer system data where available for the specific car, as well as European auction photo archives that reveal the car's real condition and mileage before it was repaired and imported.\n\nAfter the audit we go through the result by phone and give advice for the in-person inspection."
       },
       {
         "id": "audits-paid-reports",

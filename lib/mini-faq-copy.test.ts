@@ -21,20 +21,14 @@ function faqItem(locale: (typeof LOCALES)[number], id: string) {
 }
 
 describe("FAQ mini-vs-audits", () => {
-  it("describes MINI as a local-register consultation and adds origin registers to AUDITS", () => {
-    const lv = faqItem("lv", "mini-vs-audits").a;
-    expect(lv).toContain(
-      "PROVIN MINI (39,99 €) ir paredzēts automašīnām, kas jau ilgāku laiku tiek ekspluatētas Latvijā.",
-    );
-    expect(lv).toContain("vietējo reģistru pārbaude");
-    expect(lv).toContain("MINI neietver maksas datubāzes, ārvalstu reģistrus, dīleru un izsoļu datus.");
-    expect(lv).toContain("izcelsmes valsts reģistri");
-    expect(lv.toLowerCase()).not.toContain("eksperts");
-    expect(lv).not.toMatch(/[\u2013\u2014]/);
-
-    const en = faqItem("en", "mini-vs-audits").a;
-    expect(en).toContain("origin-country registers");
-    expect(en).toContain("does not include paid databases");
+  it("describes AUDITS without MINI while MINI is hidden, with origin registers", () => {
+    for (const locale of LOCALES) {
+      const item = faqItem(locale, "mini-vs-audits");
+      expect(`${item.q}${item.a}`).not.toContain("MINI");
+      expect(item.a).not.toMatch(/[\u2013\u2014]/);
+    }
+    expect(faqItem("lv", "mini-vs-audits").a).toContain("izcelsmes valsts reģistri");
+    expect(faqItem("en", "mini-vs-audits").a).toContain("origin-country registers");
     expect(faqItem("de", "mini-vs-audits").a).toContain("Register des Herkunftslandes");
     expect(faqItem("ru", "mini-vs-audits").a).toContain("реестры страны происхождения");
   });

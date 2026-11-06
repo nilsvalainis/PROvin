@@ -31,7 +31,7 @@ describe("seo json-ld", () => {
     expect(org.sameAs.length).toBeGreaterThan(0);
   });
 
-  it("emits priced Service offers for the three public plans", () => {
+  it("emits priced Service offers for the public plans (MINI hidden)", () => {
     const list = buildServiceOffersJsonLd(
       "lv",
       { mini: "MINI", audits: "AUDITS", dealer: "DĪLERIS" },
@@ -39,7 +39,7 @@ describe("seo json-ld", () => {
     );
     expect(list.itemListElement).toHaveLength(PUBLIC_SERVICE_OFFERS.length);
     const prices = list.itemListElement.map((row) => row.item.offers.price);
-    expect(prices).toEqual(["39.99", "99.99", "24.99"]);
+    expect(prices).toEqual(["99.99", "24.99"]);
   });
 
   it("builds FAQPage and breadcrumbs without locale-less URLs", () => {

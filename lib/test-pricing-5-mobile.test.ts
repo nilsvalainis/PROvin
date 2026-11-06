@@ -50,7 +50,8 @@ describe("test-pricing-5 mobile three-tier model", () => {
     expect(TP5_KOREA_USA_PUBLIC).toBe(false);
     expect(isTp5PublicServiceId("koreaUsa")).toBe(false);
     expect(isTp5PublicServiceId("dealer")).toBe(true);
-    expect(getTp5HeroTabServices("koreaUsa").map((s) => s.id)).toEqual(["mini", "audits", "dealer"]);
+    expect(isTp5PublicServiceId("mini")).toBe(false);
+    expect(getTp5HeroTabServices("koreaUsa").map((s) => s.id)).toEqual(["audits", "dealer"]);
     expect(getTp5MobileService("koreaUsa").title).toBe("ASV UN KOREJA");
   });
 
