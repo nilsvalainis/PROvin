@@ -300,7 +300,7 @@ export async function sendAdminNewPartnerNotificationEmail(payload: AdminNewPart
   const to = getAdminNewPartnerNotifyEmail();
   const subject = `PROVIN: jauns B2B partneris ${payload.companyName}`;
   const text = [
-    "Reģistrējies jauns B2B partneris. Partnerim piešķirtas noklusējuma cenas. Individuālās cenas vari iestatīt admin panelī.",
+    "Reģistrējies jauns B2B partneris. Cenas ņemtas no ielūguma; tukšie lauki paliek kataloga noklusējums.",
     "",
     `Uzņēmums: ${payload.companyName}`,
     `Reģistrācijas numurs: ${payload.companyReg}`,
@@ -314,7 +314,7 @@ export async function sendAdminNewPartnerNotificationEmail(payload: AdminNewPart
   ].join("\n");
   const html = adminNewPartnerHtml({
     adminUrl: payload.adminUrl,
-    lead: "Reģistrējies jauns B2B partneris. Partnerim piešķirtas noklusējuma cenas. Individuālās cenas vari iestatīt admin panelī.",
+    lead: "Reģistrējies jauns B2B partneris. Cenas ņemtas no ielūguma; tukšie lauki paliek kataloga noklusējums.",
     ctaLabel: "Atvērt admin paneli",
     lines: [
       { label: "Uzņēmums", value: payload.companyName },

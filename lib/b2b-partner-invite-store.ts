@@ -3,10 +3,12 @@ import "server-only";
 import { createJsonDocStore } from "@/lib/b2b-json-doc-store";
 import {
   B2B_INVITE_TTL_MS,
+  emptyB2bInvitePricing,
   isB2bInviteOpen,
   isSafeB2bInviteToken,
   newB2bInviteToken,
   parseB2bInviteRecord,
+  type B2bInvitePricing,
   type B2bPartnerInviteRecord,
 } from "@/lib/b2b-partner-invite";
 
@@ -81,7 +83,8 @@ export async function listOpenB2bInvites(): Promise<B2bPartnerInviteRecord[]> {
   return doc.invites.filter((row) => isB2bInviteOpen(row));
 }
 
-export async function createB2bInvite(): Promise<B2bPartnerInviteRecord> {
+export async function createB2bInvite(pricing?: B2bInvitePricing): Promise<B2bPartnerInviteRecord> {
+  const safe = pricing ?? emptyB2bInvitePricing();
   return mutateInvites(async (doc) => {
     const now = Date.now();
     const record: B2bPartnerInviteRecord = {
@@ -90,6 +93,8 @@ export async function createB2bInvite(): Promise<B2bPartnerInviteRecord> {
       expiresAt: new Date(now + B2B_INVITE_TTL_MS).toISOString(),
       usedAt: null,
       usedPartnerId: null,
+      walletPrices: safe.walletPrices,
+      prices: safe.prices,
     };
     return { value: record, next: { ...doc, invites: [...doc.invites, record] } };
   });
