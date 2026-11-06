@@ -36,12 +36,37 @@ describe("PDF dīlera sadaļas vāks", () => {
     expect(html).toContain("135 kW (184 ZS)");
     expect(html).toContain("31 400 km");
     expect(html).toContain("142 220 km");
-    expect(html).toContain("2 vizītes");
+    expect(html).toContain("2 ieraksti");
+    expect(html).not.toContain("vizītes");
+    expect(html).not.toMatch(/vidēji/i);
     expect(html).toContain("pdf-dealer-cover-curve");
+    expect(html).toContain("pdf-dealer-cover-curve-path");
+    expect(html).toContain("NOBRAUKUMS PA GADIEM");
     expect(html).not.toContain("pdf-svc-span__bar");
     expect(html).not.toContain("Pirmais ieraksts");
     expect(html).not.toContain("\u2014");
     expect(html).not.toContain("\u2013");
+  });
+
+  it("does not draw a line for a single precise record", () => {
+    const vehicle = emptyOutvinVehicleInfo();
+    vehicle.model = "BMW X1";
+    const html = buildDealerSectionCoverHtml({
+      vehicle,
+      serviceWorks: [
+        {
+          date: "12.03.2024",
+          odometer: "142220",
+          location: "BMW",
+          works: "Apkope",
+        },
+      ],
+    });
+    expect(html).toContain("1 precīzs ieraksts");
+    expect(html).toContain("pdf-dealer-cover-curve");
+    expect(html).not.toContain("pdf-dealer-cover-curve-path");
+    expect(html).not.toContain("NOBRAUKUMS PA GADIEM");
+    expect(html).not.toMatch(/vidēji/i);
   });
 
   it("masks demo VIN last 6 characters on the dealer cover", () => {
