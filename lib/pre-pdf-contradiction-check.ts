@@ -32,6 +32,7 @@ import {
 import { countVendorOwnershipChangeEvents } from "@/lib/owner-count-synthesis";
 import type { FactCheckFlag } from "@/lib/unit-facts/types";
 import { checkInternalNoteLeaks, type ClientPrintedTextField } from "@/lib/pre-pdf-internal-note-check";
+import { checkAiCommentLint } from "@/lib/pre-pdf-ai-lint";
 import { buildVehicleLifecycleEvents, type LifecycleEvent } from "@/lib/vehicle-lifecycle-timeline";
 
 export type PrePdfContradictionInput = {
@@ -227,6 +228,12 @@ export function checkPrePdfContradictions(input: PrePdfContradictionInput): Fact
   }
 
   flags.push(...checkInternalNoteLeaks(input.clientTextFields));
+  flags.push(
+    ...checkAiCommentLint(input.clientTextFields, {
+      totalLossFound: loss.found,
+      isBev: /elektr|electric|\bBEV\b/i.test(input.summaryInput.csddForm?.fuelType ?? ""),
+    }),
+  );
 
   flags.sort((a, b) => (a.level === b.level ? 0 : a.level === "E" ? -1 : 1));
   return flags;
