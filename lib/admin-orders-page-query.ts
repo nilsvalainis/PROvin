@@ -8,18 +8,33 @@ import { partitionAdminOrdersActiveFirst } from "@/lib/admin-audit-deadline-comp
 export const ORDERS_PAGE_SIZE = 50;
 export type AdminOrdersSort = "newest" | "oldest";
 
-export type AdminOrdersQuery = { q: string; sort: AdminOrdersSort; limit: number };
+/** Telefonā (Nils 06.11): sākumā tikai neizpildītie, izpildītos rāda pa 5. */
+export const ORDERS_MOBILE_PAGE_SIZE = 5;
 
-export function parseAdminOrdersQuery(sp: Record<string, string | string[] | undefined> | undefined): AdminOrdersQuery {
+export type AdminOrdersQuery = { q: string; sort: AdminOrdersSort; limit: number; pageSize: number };
+
+/** Telefona pārlūks pēc User-Agent (iPhone, Android, „Mobi”). Planšetes paliek kā dators. */
+export function isMobileUserAgent(ua: string | null | undefined): boolean {
+  return /iPhone|iPod|Android.+Mobile|Mobi/i.test(ua ?? "");
+}
+
+export function parseAdminOrdersQuery(
+  sp: Record<string, string | string[] | undefined> | undefined,
+  opts?: { mobile?: boolean },
+): AdminOrdersQuery {
   const one = (k: string) => {
     const v = sp?.[k];
     return (Array.isArray(v) ? v[0] : v) ?? "";
   };
   const q = one("q").trim().slice(0, 100);
   const sort: AdminOrdersSort = one("sort") === "oldest" ? "oldest" : "newest";
+  const pageSize = opts?.mobile ? ORDERS_MOBILE_PAGE_SIZE : ORDERS_PAGE_SIZE;
+  const initial = opts?.mobile ? 0 : ORDERS_PAGE_SIZE;
   const n = Number.parseInt(one("limit"), 10);
-  const limit = Number.isFinite(n) && n > 0 ? Math.min(5000, Math.ceil(n / ORDERS_PAGE_SIZE) * ORDERS_PAGE_SIZE) : ORDERS_PAGE_SIZE;
-  return { q, sort, limit };
+  let limit = Number.isFinite(n) && n > 0 ? Math.min(5000, Math.ceil(n / pageSize) * pageSize) : initial;
+  // Meklēšana: rāda atrastos arī no arhīva, ne tikai neizpildītos.
+  if (q && limit < ORDERS_PAGE_SIZE) limit = ORDERS_PAGE_SIZE;
+  return { q, sort, limit, pageSize };
 }
 
 /** Bez reģistra un diakritikas („Škoda” = „skoda”, „Jānis” = „janis”). */
