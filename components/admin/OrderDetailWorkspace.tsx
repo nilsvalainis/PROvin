@@ -4969,20 +4969,23 @@ export function OrderDetailWorkspace({
           wrapTitle
           monoSubtitle
           hideWorkspaceSwitch
-          headerExtra={mobileHeaderExtra}
-          trailing={
+          headerExtra={
             <>
-              <AdminMobileSaveStatus
-                saved={workspaceAutosaveStatus !== "error" && (workspaceSaveFlash || workspaceAutosaveStatus === "saved") && !workspaceSaveBusy}
-                busy={workspaceSaveBusy}
-                onSave={() => {
-                  setWorkspaceSaveBusy(true);
-                  void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
-                }}
-              />
-              <AdminMobileRoundBtn name="vairak" label="Darbības" onClick={() => setMobileMore(true)} />
+              {mobileHeaderExtra}
+              {/* Makets 06.11: „Saglabāts” otrajā rindā, lai VIN ietilpst vienā rindā. */}
+              <span className="ml-auto">
+                <AdminMobileSaveStatus
+                  saved={workspaceAutosaveStatus !== "error" && (workspaceSaveFlash || workspaceAutosaveStatus === "saved") && !workspaceSaveBusy}
+                  busy={workspaceSaveBusy}
+                  onSave={() => {
+                    setWorkspaceSaveBusy(true);
+                    void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
+                  }}
+                />
+              </span>
             </>
           }
+          trailing={<AdminMobileRoundBtn name="vairak" label="Darbības" onClick={() => setMobileMore(true)} />}
         >
           <AdminMobileSectionNav
             items={ADMIN_MOBILE_ORDER_SECTIONS.map((s) => ({ id: s.id, label: s.label }))}
