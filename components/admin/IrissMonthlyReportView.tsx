@@ -220,7 +220,7 @@ export function IrissMonthlyReportView({
             role="dialog"
             aria-modal="true"
             aria-labelledby="iriss-report-about-title"
-            className="w-full max-w-md rounded-3xl bg-[var(--s1)] p-5 shadow-[var(--gsh)]"
+            className="w-full max-w-md rounded-3xl bg-[var(--s1)] p-5 shadow-[var(--gsh)] max-h-[calc(100dvh-1.5rem-env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="iriss-report-about-title" className="text-[16px] font-semibold text-[var(--ink)]">

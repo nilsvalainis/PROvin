@@ -7,6 +7,8 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    // Aizsardzība: testi nekad neraksta produkcijas Blob (sk. failu).
+    setupFiles: ["lib/test-setup-no-prod-blob.ts"],
     include: ["lib/**/*.test.ts", "lib/**/*.test.tsx", "components/**/*.test.tsx"],
   },
   resolve: {

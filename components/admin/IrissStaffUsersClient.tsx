@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminResponsiveModal } from "@/components/admin/AdminResponsiveModal";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { IrissCabinetAccessPanel } from "@/components/admin/IrissCabinetAccessPanel";
 import { IrissDisclosure } from "@/components/admin/iriss-ui/IrissUi";
@@ -383,73 +384,72 @@ export function IrissStaffUsersClient() {
         </aside>
       </div>
 
-      {modal ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0f172a66] p-4">
-          <div className="w-full max-w-md rounded-[24px] bg-white p-5 shadow-xl">
-            <div className="mb-4 flex items-start justify-between">
-              <h2 className="text-[18px] font-semibold">Pievienot personu</h2>
-              <button type="button" onClick={() => setModal(false)} className="text-[var(--iriss-ink-2)]" aria-label="Aizvērt">
-                ×
-              </button>
-            </div>
-            <label className="mb-3 block text-[13px]">
-              Vārds, uzvārds
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-[var(--iriss-line)] px-3 py-2.5 text-[16px]"
-              />
-            </label>
-            <label className="mb-3 block text-[13px]">
-              E-pasts
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-[var(--iriss-line)] px-3 py-2.5 text-[16px]"
-              />
-            </label>
-            <p className="mb-2 text-[13px] font-medium">Sadaļas</p>
-            <ul className="mb-3 divide-y divide-[#F3F4F6] rounded-2xl border border-[var(--iriss-line)]">
-              {IRISS_SECTION_CATALOG.map((row) => {
-                const on = inviteSections.includes(row.id);
-                return (
-                  <Fragment key={row.id}>
-                    <AutoparksGroupHeader id={row.id} className="px-3 py-2.5 text-[14px] font-medium" />
-                    <li className={`flex items-center justify-between py-2.5 pr-3 ${isAutoparksV2Section(row.id) ? "pl-8" : "pl-3"}`}>
-                      <label className="flex flex-1 items-center gap-2 text-[14px]">
-                        <input type="checkbox" checked={on} onChange={() => toggleInvite(row.id)} />
-                        {sectionRowLabel(row.id, row.label)}
-                      </label>
-                      {on && inviteSections[0] === row.id ? (
-                        <span className="text-[12px] text-[var(--iriss-info)]">sākuma lapa</span>
-                      ) : null}
-                    </li>
-                  </Fragment>
-                );
-              })}
-            </ul>
-            <p className="text-[12px] leading-relaxed text-[var(--iriss-ink-2)]">
-              Persona saņem vienreizēju uzaicinājuma saiti (derīga 24 h), pēc tam iestata paroli un 2FA. Uzaicinājums tiek
-              nosūtīts tikai pēc šīs apstiprināšanas.
-            </p>
-            {error ? <p className="mt-2 text-[13px] text-[#B42318]">{error}</p> : null}
-            <div className="mt-5 flex justify-end gap-2">
-              <button type="button" onClick={() => setModal(false)} className="rounded-full px-4 py-2 text-[13px]">
-                Atcelt
-              </button>
-              <button
-                type="button"
-                disabled={busy || inviteSections.length === 0}
-                onClick={() => void invite()}
-                className="rounded-full bg-[var(--iriss-graphite)] px-4 py-2 text-[13px] font-medium text-white"
-              >
-                Izveidot uzaicinājumu
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <AdminResponsiveModal
+        open={modal}
+        title="Pievienot personu"
+        onClose={() => setModal(false)}
+        footer={
+          <>
+            <button type="button" onClick={() => setModal(false)} className="min-h-11 rounded-full px-4 py-2 text-[14px]">
+              Atcelt
+            </button>
+            <button
+              type="button"
+              disabled={busy || inviteSections.length === 0}
+              onClick={() => void invite()}
+              className="min-h-11 rounded-full bg-[var(--iriss-graphite)] px-4 py-2 text-[14px] font-medium text-white disabled:opacity-50"
+            >
+              Izveidot uzaicinājumu
+            </button>
+          </>
+        }
+      >
+        <label className="mb-3 block text-[13px]">
+          Vārds, uzvārds
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoComplete="name"
+            className="mt-1 w-full rounded-xl border border-[var(--iriss-line)] px-3 py-2.5 text-[16px]"
+          />
+        </label>
+        <label className="mb-3 block text-[13px]">
+          E-pasts
+          <input
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-[var(--iriss-line)] px-3 py-2.5 text-[16px]"
+          />
+        </label>
+        <p className="mb-2 text-[13px] font-medium">Sadaļas</p>
+        <ul className="mb-3 divide-y divide-[#F3F4F6] rounded-2xl border border-[var(--iriss-line)]">
+          {IRISS_SECTION_CATALOG.map((row) => {
+            const on = inviteSections.includes(row.id);
+            return (
+              <Fragment key={row.id}>
+                <AutoparksGroupHeader id={row.id} className="px-3 py-2.5 text-[14px] font-medium" />
+                <li className={`flex items-center justify-between pr-3 ${isAutoparksV2Section(row.id) ? "pl-8" : "pl-3"}`}>
+                  <label className="flex min-h-11 flex-1 items-center gap-3 py-2 text-[14px]">
+                    <input type="checkbox" className="h-5 w-5 shrink-0" checked={on} onChange={() => toggleInvite(row.id)} />
+                    {sectionRowLabel(row.id, row.label)}
+                  </label>
+                  {on && inviteSections[0] === row.id ? (
+                    <span className="text-[12px] text-[var(--iriss-info)]">sākuma lapa</span>
+                  ) : null}
+                </li>
+              </Fragment>
+            );
+          })}
+        </ul>
+        <p className="text-[12px] leading-relaxed text-[var(--iriss-ink-2)]">
+          Persona saņem vienreizēju uzaicinājuma saiti (derīga 24 h), pēc tam iestata paroli un 2FA. Uzaicinājums tiek
+          nosūtīts tikai pēc šīs apstiprināšanas.
+        </p>
+        {error ? <p className="mt-2 text-[13px] text-[#B42318]">{error}</p> : null}
+      </AdminResponsiveModal>
     </div>
   );
 }
@@ -566,7 +566,7 @@ function UserDetailCard({
             type="button"
             disabled={busy || !dirty || draftSections.length === 0}
             onClick={onSave}
-            className="rounded-full bg-[#EEF2FF] px-3 py-1.5 text-[12px] font-medium text-[var(--iriss-info)] disabled:opacity-40"
+            className="min-h-11 rounded-full bg-[#EEF2FF] px-3 py-1.5 text-[12px] font-medium text-[var(--iriss-info)] disabled:opacity-40 sm:min-h-0"
           >
             Saglabāt
           </button>
@@ -586,9 +586,9 @@ function UserDetailCard({
               return (
                 <Fragment key={row.id}>
                   <AutoparksGroupHeader id={row.id} className="py-2 text-[14px] font-medium" />
-                  <li className={`flex items-center justify-between py-2 ${isAutoparksV2Section(row.id) ? "pl-5" : ""}`}>
-                    <label className="flex flex-1 items-center gap-2 text-[14px]">
-                      <input type="checkbox" checked={on} onChange={() => onToggle(row.id)} />
+                  <li className={`flex items-center justify-between ${isAutoparksV2Section(row.id) ? "pl-5" : ""}`}>
+                    <label className="flex min-h-11 flex-1 items-center gap-3 py-2 text-[14px]">
+                      <input type="checkbox" className="h-5 w-5 shrink-0" checked={on} onChange={() => onToggle(row.id)} />
                       {sectionRowLabel(row.id, row.label)}
                     </label>
                     {home ? (
@@ -606,6 +606,18 @@ function UserDetailCard({
             dati un šofera personas dati šīm sadaļām netiek rādīti, ja tas nav atļauts. Izmaiņas stājas spēkā nākamajā
             pieprasījumā; atvērtās sesijas redz jauno sarakstu.
           </p>
+          {dirty ? (
+            <div className="sticky bottom-[calc(var(--admin-tabbar-h,0px)+max(0.75rem,env(safe-area-inset-bottom)))] z-10 mt-3 xl:hidden">
+              <button
+                type="button"
+                disabled={busy || draftSections.length === 0}
+                onClick={onSave}
+                className="min-h-11 w-full rounded-full bg-[var(--iriss-graphite)] px-4 py-2.5 text-[14px] font-medium text-white shadow-lg disabled:opacity-50"
+              >
+                {busy ? "Saglabā…" : "Saglabāt izmaiņas"}
+              </button>
+            </div>
+          ) : null}
         </>
       )}
 
