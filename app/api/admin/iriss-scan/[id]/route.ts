@@ -3,6 +3,7 @@ import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { deleteIrissScan, isSafeIrissScanId, readIrissScan, writeIrissScan } from "@/lib/iriss-scan-store";
 import { coerceIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
 import { IRISS_STALE_REVISION, parseExpectedIrissRevision } from "@/lib/iriss-scan-save-safety";
+import { sanitizeIrissScanCriteria } from "@/lib/iriss-scan-criteria";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
 import { isMarketplaceVehicleCategory } from "@/lib/marketplace/types";
 
@@ -41,6 +42,10 @@ function parseBodyRecord(id: string, body: unknown): IrissScanRecord | null {
     listingLinkEcarstrade: links(o, "listingLinkEcarstrade"),
     listingLinksOther: links(o, "listingLinksOther"),
     ...(o.ecarstradeLinksManual === true ? { ecarstradeLinksManual: true } : {}),
+    ...(() => {
+      const criteria = sanitizeIrissScanCriteria(o.criteria);
+      return criteria ? { criteria } : {};
+    })(),
   };
 }
 

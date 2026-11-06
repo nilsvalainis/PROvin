@@ -81,6 +81,7 @@ import {
   newIrissCommunicationEvent,
   timelineFromPasutijums,
   type IrissCommFilter,
+  type IrissCommunicationEvent,
 } from "@/lib/iriss-communication-timeline";
 import { type IrissCommTypeFilter } from "@/lib/iriss-order-comm-view";
 import { hitMatchesIrissPriceFilter, irissPriceChipFilterLabel, irissPriceHistoryRows, latestIrissPriceChip, type IrissPriceChipFilter } from "@/lib/iriss-listing-price-chips";
@@ -572,6 +573,7 @@ function replyHistoryRows(offers: IrissOfferRecord[], links: IrissOfferClientLin
 
 /** Stabili noklusējumi (nevis `= []` katrā renderī). */
 const EMPTY_OFFER_LINKS: IrissOfferClientLinkAdminView[] = [];
+const EMPTY_PD_EVENTS: IrissCommunicationEvent[] = [];
 const EMPTY_HIT_STATUS: Record<string, IrissListingHitStatus> = {};
 const EMPTY_DUPLICATES: Record<string, IrissVinDuplicateLink[]> = {};
 
@@ -934,6 +936,7 @@ export function IrissOrderRoom({
   onOrderRestored,
   onDeleteOrder,
   initialOfferLinks = EMPTY_OFFER_LINKS,
+  pdClientEvents = EMPTY_PD_EVENTS,
   initialHitStatus = EMPTY_HIT_STATUS,
   duplicatesByListing = EMPTY_DUPLICATES,
   initialTab = "overview",
@@ -987,6 +990,8 @@ export function IrissOrderRoom({
   onOrderRestored: (record: IrissPasutijumsRecord) => void;
   onDeleteOrder: () => void;
   initialOfferLinks?: IrissOfferClientLinkAdminView[];
+  /** Piedāvājumu sadaļas klienta jautājumi/noraidījumi laika joslai (tikai lasīšanai). */
+  pdClientEvents?: IrissCommunicationEvent[];
   initialHitStatus?: Record<string, IrissListingHitStatus>;
   duplicatesByListing?: Record<string, IrissVinDuplicateLink[]>;
   initialTab?: IrissOrderRoomTab;
@@ -1186,7 +1191,7 @@ export function IrissOrderRoom({
     hasVin: Boolean(rec.vin.trim()),
     listStatus: rec.listStatus,
   });
-  const commTimeline = timelineFromPasutijums(rec, offerLinks);
+  const commTimeline = timelineFromPasutijums(rec, offerLinks, pdClientEvents);
   const commCount = commTimeline.length || irissOrderRoomCommunicationCount((rec.statusHistory ?? []).length, Boolean(rec.notes.trim()));
   const generatedDocs = sortGeneratedDocumentsNewestFirst(rec.generatedDocuments ?? []);
   const latestContract = [...generatedDocs].filter((d) => d.kind === "contract").sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null;

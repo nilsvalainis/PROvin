@@ -3,7 +3,6 @@
  * LIST datos ir ar prefiksu `scan:` (piem. `scan:<uuid>`). Tas pats sync, tā pati auto kartīte.
  */
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
-import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import type { IrissScanListRow } from "@/lib/iriss-scan-types";
 
 export const IRISS_SCAN_ORDER_PREFIX = "scan:";
@@ -34,36 +33,6 @@ export function irissScanSourceRows(rows: readonly IrissScanListRow[]) {
     listingLinkEcarstrade: r.listingLinkEcarstrade,
     listingLinksOther: r.listingLinksOther,
   }));
-}
-
-/** SCAN rinda → LIST „pasūtījuma” īsā forma (klienta filtram un piesaistei). */
-export function irissScanOrderBrief(r: IrissScanListRow): IrissListingOrderBrief {
-  const name = r.brandModel.trim() || "SCAN";
-  return {
-    id: irissScanOrderId(r.id),
-    clientName: name,
-    brandModel: name,
-    productionYears: "",
-    powerKwLabel: "",
-    brief: "SCAN",
-    budgetRaw: "",
-    budget: null,
-    preferredColors: "",
-    phone: "",
-    email: "",
-    engineType: "",
-    transmission: "",
-    equipmentRequired: "",
-    equipmentDesired: "",
-    notes: "",
-    listingLinkMobile: filledIrissListingLinks(r.listingLinkMobile),
-    listingLinkAutobid: filledIrissListingLinks(r.listingLinkAutobid),
-    listingLinkOpenline: filledIrissListingLinks(r.listingLinkOpenline),
-    listingLinkAuto1: filledIrissListingLinks(r.listingLinkAuto1),
-    listingLinkEcarstrade: filledIrissListingLinks(r.listingLinkEcarstrade),
-    listingLinksOther: filledIrissListingLinks(r.listingLinksOther),
-    listStatus: "active",
-  };
 }
 
 /**

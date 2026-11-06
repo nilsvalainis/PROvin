@@ -25,6 +25,7 @@ import { IrissOrderRoom, IrissOrderStepCards } from "@/components/admin/IrissOrd
 import { IRISS_ORDER_STEPS } from "@/lib/iriss-order-steps";
 import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChangesGuard";
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
+import type { IrissCommunicationEvent } from "@/lib/iriss-communication-timeline";
 import { IRISS_OFFER_LINK_NEEDS_DEADLINE, offerClientLinkDeadlineReady, pickReusableOfferClientLink } from "@/lib/iriss-offer-form-link";
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
 import { coerceIrissDuplicatesByListing, coerceIrissHitStatusMap, coerceIrissOrderRoomTab } from "@/lib/iriss-order-room-match-props";
@@ -313,6 +314,7 @@ async function buildAttachmentFingerprint(att: IrissOfferAttachment): Promise<st
 const EMPTY_ROOM_HITS: IrissOrderRoomHit[] = [];
 const EMPTY_IDS: string[] = [];
 const EMPTY_OFFER_LINKS: IrissOfferClientLinkAdminView[] = [];
+const EMPTY_PD_EVENTS: IrissCommunicationEvent[] = [];
 const EMPTY_HIT_STATUS: Record<string, IrissListingHitStatus> = {};
 const EMPTY_DUPLICATES: Record<string, IrissVinDuplicateLink[]> = {};
 
@@ -327,6 +329,7 @@ export function IrissPasutijumsEditor({
   dismissedHitIds = EMPTY_IDS,
   listingsCache = "off",
   initialOfferLinks = EMPTY_OFFER_LINKS,
+  pdClientEvents = EMPTY_PD_EVENTS,
   initialHitStatus = EMPTY_HIT_STATUS,
   duplicatesByListing = EMPTY_DUPLICATES,
   initialRoomTab = "overview",
@@ -345,6 +348,8 @@ export function IrissPasutijumsEditor({
   dismissedHitIds?: string[];
   listingsCache?: "on" | "off";
   initialOfferLinks?: IrissOfferClientLinkAdminView[];
+  /** Piedāvājumu sadaļas klienta jautājumi/noraidījumi laika joslai (tikai lasīšanai). */
+  pdClientEvents?: IrissCommunicationEvent[];
   initialHitStatus?: Record<string, IrissListingHitStatus>;
   duplicatesByListing?: Record<string, IrissVinDuplicateLink[]>;
   initialRoomTab?: IrissOrderRoomTab;
@@ -2236,6 +2241,7 @@ export function IrissPasutijumsEditor({
           onRestore={() => void restoreDeleted()}
           onOrderRestored={(record) => setRec(withAutoEcarstradeLinks(record))}
           initialOfferLinks={initialOfferLinks}
+          pdClientEvents={pdClientEvents}
           onDeleteOrder={() => {
             setOfferOpen(false);
             setDeleteConfirmOpen(true);

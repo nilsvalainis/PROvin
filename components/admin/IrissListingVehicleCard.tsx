@@ -33,6 +33,7 @@ import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import { listingCostsFor, type IrissListPrefs } from "@/lib/iriss-listings-operator-prefs";
 import { listingTaxCostArgs, listingTaxResolved } from "@/lib/iriss-listings-vat";
 import type { IrissListingVehicle } from "@/lib/iriss-listings-types";
+import { irissListingDetailsLabel } from "@/lib/iriss-listing-card-actions";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
 import { IrissVinDuplicateMark } from "@/components/admin/IrissVinDuplicateMark";
 
@@ -366,6 +367,7 @@ export function IrissListingVehicleCard({
           <IrissListingCardActions
             v={v}
             previewDisabled={linked.length === 0}
+            detailsLabel={irissListingDetailsLabel(linked.map((o) => o.id))}
             onPreviewDetails={() => {
               if (linked.length === 0) return;
               if (onPreviewLinked) onPreviewLinked(linked);

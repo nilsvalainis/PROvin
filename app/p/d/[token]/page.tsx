@@ -40,7 +40,8 @@ export default async function IrissPiedavajumsPublicPage({ params }: { params: P
   const base = `/p/d/${token}/foto`;
   return (
     <PdClientView view={view} mode="link" token={token} photoSrc={(n, s) => `${base}/${n}${s === "full" ? "?s=full" : ""}`}>
-      {view.state === "approved" ? null : <PdApproveForm token={token} needsContact={view.needsContact} />}
+      {/* Atvērts: Apstiprināt / Noraidīt / Uzdot jautājumu. Apstiprināts: vēl var uzdot jautājumu. Noraidīts: tikai statuss. */}
+      <PdApproveForm token={token} needsContact={view.needsContact} state={view.state} questions={view.questions} />
     </PdClientView>
   );
 }

@@ -1,3 +1,4 @@
+import type { IrissCriteriaV1 } from "@/lib/iriss-criteria-types";
 import type { MarketplaceVehicleCategory } from "@/lib/marketplace/types";
 
 export type IrissScanVehicleCategory = MarketplaceVehicleCategory | "";
@@ -31,6 +32,12 @@ export type IrissScanRecord = {
   listingLinksOther: string[];
   /** Operators ir rediģējis eCarsTrade saites. Fona ģenerēšana tās nepapildina. */
   ecarstradeLinksManual?: boolean;
+  /**
+   * Meklēšanas kritēriji reālos laukos (tā pati shēma kā pasūtījumam).
+   * Vecie JSON bez lauka paliek bez tā; lasot kritēriji tiek nolasīti no laukiem un nosaukuma
+   * (`readIrissScanCriteria`), bet netiek ierakstīti atpakaļ.
+   */
+  criteria?: IrissCriteriaV1;
 };
 
 export type IrissScanListRow = IrissScanRecord;

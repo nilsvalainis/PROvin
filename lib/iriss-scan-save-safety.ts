@@ -53,6 +53,7 @@ export function mergeIrissScanRecords(server: IrissScanRecord, local: IrissScanR
     listingLinkAuto1: mergeScanLinks(local.listingLinkAuto1, server.listingLinkAuto1),
     listingLinkEcarstrade: mergeScanLinks(local.listingLinkEcarstrade, server.listingLinkEcarstrade),
     listingLinksOther: mergeScanLinks(local.listingLinksOther, server.listingLinksOther),
+    ...(local.criteria ?? server.criteria ? { criteria: local.criteria ?? server.criteria } : {}),
   };
 }
 
@@ -78,6 +79,8 @@ export function prepareIrissScanWrite(
       createdAt: existing?.createdAt ?? incoming.createdAt ?? nowIso,
       updatedAt: nowIso,
       workspaceRevision: nextIrissScanWorkspaceRevision(existingRev),
+      // Rakstītājs bez kritērijiem (piem. vecs klients, saišu ģenerēšana) neizdzēš saglabātos kritērijus.
+      ...(incoming.criteria ?? existing?.criteria ? { criteria: incoming.criteria ?? existing?.criteria } : {}),
     },
   };
 }

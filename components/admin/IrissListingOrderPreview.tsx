@@ -8,7 +8,7 @@ import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import type { IrissAuctionLogoKey } from "@/lib/iriss-auction-logos";
 import { isHttpUrlForOpen } from "@/lib/iriss-listing-links";
 import { labelIrissListingLinkRows } from "@/lib/iriss-listing-link-lists";
-import { IRISS_LISTING_CARD_ACTION_ORDER } from "@/lib/iriss-listing-card-actions";
+import { irissListingDetailsLabel } from "@/lib/iriss-listing-card-actions";
 import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import { formatIrissEurWhole } from "@/lib/iriss-price-format";
 import { IRISS_PASUTIJUMS_LIST_STATUS_LV } from "@/lib/iriss-pasutijumi-types";
@@ -51,6 +51,29 @@ function OrderPreviewBody({ order }: { order: IrissListingOrderBrief }) {
     { label: "Cita", hrefs: order.listingLinksOther },
   ]).filter((x) => isHttpUrlForOpen(x.href));
   const engine = [order.engineType, order.powerKwLabel].filter(Boolean).join(" · ");
+  // Radaram (SCAN) nav klienta: kontaktu, krāsas un aprīkojuma lauku nav, bet ir kritēriji.
+  const radar = order.id.startsWith("scan:");
+  if (radar) {
+    return (
+      <article className="space-y-3 rounded-xl border border-[var(--iriss-line)] bg-white p-3">
+        <h3 className="text-[15px] font-semibold text-[var(--color-apple-text)]">{order.brandModel}</h3>
+        <dl className="grid gap-2.5 sm:grid-cols-2">
+          <Field label="Gadi" value={order.productionYears} />
+          <Field label="Cena līdz" value={fmtBudget(order.budget, order.budgetRaw)} />
+          <Field label="Nobraukums līdz" value={order.criteria?.maxMileage ? `${order.criteria.maxMileage} km` : ""} />
+          <Field label="Degviela" value={engine} />
+          <Field label="Ātrumkārba" value={order.transmission} />
+          <Field label="Virsbūve" value={order.criteria?.bodyType ?? ""} />
+        </dl>
+        <Link
+          href={`/admin/iriss/scan/${encodeURIComponent(order.id.slice(5))}`}
+          className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--iriss-graphite)] px-5 text-[13px] font-semibold text-[var(--iriss-on-graphite)]"
+        >
+          Atvērt radaru
+        </Link>
+      </article>
+    );
+  }
   return (
     <article className="space-y-3 rounded-xl border border-[var(--iriss-line)] bg-white p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -106,10 +129,10 @@ function OrderPreviewBody({ order }: { order: IrissListingOrderBrief }) {
         )}
       </div>
       <Link
-        href={order.id.startsWith("scan:") ? `/admin/iriss/scan/${encodeURIComponent(order.id.slice(5))}` : `/admin/iriss/pasutijumi/${encodeURIComponent(order.id)}`}
+        href={`/admin/iriss/pasutijumi/${encodeURIComponent(order.id)}`}
         className="inline-flex h-11 items-center justify-center rounded-full bg-[var(--iriss-graphite)] px-5 text-[13px] font-semibold text-[var(--iriss-on-graphite)]"
       >
-        {order.id.startsWith("scan:") ? "Atvērt SCAN" : "Atvērt pasūtījumu"}
+        Atvērt pasūtījumu
       </Link>
     </article>
   );
@@ -143,7 +166,7 @@ export function IrissListingOrderPreview({
       <div className="relative z-[61] max-h-[88vh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-2xl border border-[var(--iriss-line)] bg-[var(--iriss-surface-2)] p-3 pb-[max(16px,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl sm:p-4">
         <div className="mb-3 flex items-center gap-2">
           <h2 id="iriss-order-preview-title" className="text-[17px] font-bold text-[var(--iriss-ink)]">
-            {IRISS_LISTING_CARD_ACTION_ORDER}{orders.length > 1 ? ` (${orders.length})` : ""}
+            {irissListingDetailsLabel(orders.map((o) => o.id))}{orders.length > 1 ? ` (${orders.length})` : ""}
           </h2>
           <span className="grow" />
           <button type="button" onClick={onClose} className="grid h-11 w-11 place-items-center rounded-lg border border-[var(--iriss-line)] bg-white text-lg" aria-label="Aizvērt">

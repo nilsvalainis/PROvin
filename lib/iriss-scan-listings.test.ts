@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildIrissListingSources } from "@/lib/iriss-listings-sources";
-import { irissScanOrderBrief, irissScanSourceRows, vehicleInListingDataset } from "@/lib/iriss-scan-listings";
+import { irissScanSourceRows, vehicleInListingDataset } from "@/lib/iriss-scan-listings";
+import { irissScanOrderBrief } from "@/lib/iriss-scan-order-brief";
 import { emptyIrissScanRecord } from "@/lib/iriss-scan-types";
 
 describe("iriss scan listings", () => {

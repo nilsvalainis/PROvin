@@ -8,7 +8,8 @@ import { prepareIrissListingMatchWorkspace } from "@/lib/iriss-listing-match-sto
 import { gateListingVehiclesForView, isEcarstradeNoPriceNoBid } from "@/lib/iriss-listing-order-gate";
 import { irissListingOrderBrief, listingVehicleOrderIds } from "@/lib/iriss-listings-orders";
 import { listIrissPasutijumi, readIrissListingOrderOv } from "@/lib/iriss-pasutijumi-store";
-import { irissScanOrderBrief, vehicleInListingDataset, type IrissListingDataset } from "@/lib/iriss-scan-listings";
+import { vehicleInListingDataset, type IrissListingDataset } from "@/lib/iriss-scan-listings";
+import { irissScanOrderBrief } from "@/lib/iriss-scan-order-brief";
 import { listIrissScan } from "@/lib/iriss-scan-store";
 import type { IrissListingVehicle } from "@/lib/iriss-listings-types";
 

@@ -12,6 +12,7 @@ import {
   type IrissAdvanceDraft,
 } from "@/lib/iriss-advance";
 import { formatIrissOfferLinkStamp, type IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
+import { irissPdNumberLabel, type IrissPdListRow } from "@/lib/iriss-piedavajumi-types";
 import {
   displayIrissPasutijumsListStatusLabel,
   type IrissGeneratedDocument,
@@ -187,6 +188,8 @@ export function deriveIrissCommunicationTimeline(input: {
   advance?: IrissAdvanceDraft;
   storedEvents?: IrissCommunicationEvent[];
   offerLinks?: IrissOfferClientLinkAdminView[];
+  /** Citur glabāti notikumi (piem. Piedāvājumu sadaļas klienta ziņas). Rāda kā atvasinātus. */
+  derivedEvents?: IrissCommunicationEvent[];
 }): IrissCommTimelineItem[] {
   const out: IrissCommTimelineItem[] = [];
   const seen = new Set<string>();
@@ -197,6 +200,7 @@ export function deriveIrissCommunicationTimeline(input: {
   };
 
   for (const ev of input.storedEvents ?? []) push(ev, false);
+  for (const ev of input.derivedEvents ?? []) push(ev, true);
 
   noteLines(input.notes).forEach((line, index) => {
     const stamped = line.match(/^(\d{2}\.\d{2}\s+\d{2}:\d{2})\s+([\s\S]+)$/);
@@ -366,9 +370,32 @@ export function newIrissCommunicationEvent(
   };
 }
 
+/**
+ * Piedāvājumu sadaļas (PD) klienta ziņas -> pasūtījuma laika josla (tikai atvasinājums, pasūtījumā netiek rakstīts).
+ * Jautājums un noraidījums no publiskās saites `/p/d/<token>`.
+ */
+export function irissPdClientCommunicationEvents(rows: readonly Pick<IrissPdListRow, "id" | "number" | "title" | "clientMessages">[]): IrissCommunicationEvent[] {
+  const out: IrissCommunicationEvent[] = [];
+  for (const row of rows) {
+    const label = [irissPdNumberLabel(row.number), row.title.trim()].filter(Boolean).join(" · ");
+    for (const m of row.clientMessages ?? []) {
+      out.push({
+        id: `pd-${row.id}-${m.kind}-${m.at}`,
+        at: m.at,
+        kind: "offer",
+        title: m.kind === "question" ? `Klienta jautājums (${label})` : `Klients noraidīja piedāvājumu (${label})`,
+        ...(m.text ? { body: m.text } : {}),
+        status: m.kind === "question" ? "answered" : "logged",
+      });
+    }
+  }
+  return out;
+}
+
 export function timelineFromPasutijums(
   rec: IrissPasutijumsRecord,
   offerLinks: IrissOfferClientLinkAdminView[] = [],
+  pdClientEvents: IrissCommunicationEvent[] = [],
 ): IrissCommTimelineItem[] {
   return deriveIrissCommunicationTimeline({
     notes: rec.notes,
@@ -379,5 +406,6 @@ export function timelineFromPasutijums(
     advance: rec.advance,
     storedEvents: rec.communicationEvents,
     offerLinks,
+    derivedEvents: pdClientEvents,
   });
 }

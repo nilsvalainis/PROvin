@@ -199,9 +199,17 @@ export async function readIrissPdByToken(token: string): Promise<IrissPiedavajum
   return rec && rec.linkToken === token ? rec : null;
 }
 
-export type IrissPdClaimedDecision = { decision: "approve"; decidedAt: string; contactName: string; contactPhone: string };
+export type IrissPdClaimedDecision = { decision: "approve" | "decline"; decidedAt: string; contactName: string; contactPhone: string };
 
-/** Pirmais apstiprinājums uzvar (Blob allowOverwrite: false / lokāli "wx"). */
+/** Uzvarējušais lēmums (apstiprināt vai noraidīt) vai null, ja lēmuma vēl nav / nav nolasāms. */
+export async function readIrissPdDecisionClaim(id: string): Promise<"approve" | "decline" | null> {
+  if (!isSafeIrissPdId(id)) return null;
+  const raw = await readJson(`${DIR}decisions/${id}.json`);
+  const d = raw && typeof raw === "object" ? (raw as { decision?: unknown }).decision : null;
+  return d === "approve" || d === "decline" ? d : null;
+}
+
+/** Pirmais lēmums (apstiprināt vai noraidīt) uzvar (Blob allowOverwrite: false / lokāli "wx"). */
 export async function claimIrissPdDecision(
   id: string,
   doc: IrissPdClaimedDecision,

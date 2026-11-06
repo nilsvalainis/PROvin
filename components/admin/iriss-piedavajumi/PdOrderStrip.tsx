@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
-import { formatIrissPdPrice, irissPdRowEffectiveStatus } from "@/lib/iriss-piedavajumi";
+import { formatIrissPdPrice, irissPdLastClientQuestion, irissPdRowEffectiveStatus } from "@/lib/iriss-piedavajumi";
 import { irissPdNumberLabel, type IrissPdListRow } from "@/lib/iriss-piedavajumi-types";
 
 /**
@@ -22,6 +22,15 @@ export function PdOrderStrip({ rows, nowMs }: { rows: IrissPdListRow[]; nowMs: n
             <PdStatusChip status={irissPdRowEffectiveStatus(r, nowMs)} />
           </Link>
         ))}
+        {rows.map((r) => {
+          // Klienta pēdējais jautājums no saites - uzreiz redzams pasūtījumā (pilnā vēsture - Komunikācija).
+          const q = irissPdLastClientQuestion(r);
+          return q ? (
+            <p key={`${r.id}-q`} className="pd-el" style={{ margin: "4px 0 0", fontSize: 13 }} data-pd-order-question="">
+              <b style={{ fontWeight: 600 }}>Jautājums ({irissPdNumberLabel(r.number)}):</b> {q.text}
+            </p>
+          ) : null;
+        })}
       </div>
     </div>
   );

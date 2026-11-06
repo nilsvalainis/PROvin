@@ -965,6 +965,20 @@ export function PiedavajumsDetail({
               </Link>
             </div>
           ) : null}
+          {rec.clientMessages.length ? (
+            <div style={{ marginTop: 10 }} data-pd-client-messages="">
+              <div className="pd-h3" style={{ marginBottom: 6 }}>Klienta ziņas</div>
+              {[...rec.clientMessages].reverse().map((m, i) => (
+                <div key={`${m.at}-${i}`} className="pd-kv" style={{ alignItems: "flex-start" }}>
+                  <span>{m.kind === "question" ? "Jautājums" : "Noraidīja"}</span>
+                  <span style={{ whiteSpace: "pre-wrap", textAlign: "right" }}>
+                    {m.text || "Bez iemesla"}
+                    <small style={{ display: "block", opacity: 0.7 }}>{stamp(m.at)}</small>
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : null}
           <div className="pd-tl" style={{ marginTop: 10 }}>
             {[...rec.history].reverse().map((h, i) => (
               <div key={`${h.at}-${i}`}>

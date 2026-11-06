@@ -21,6 +21,7 @@ import {
 } from "@/lib/iriss-listings-ecarstrade-search";
 import { buildMarketplaceSearchUrl } from "@/lib/marketplace/search-urls";
 import { marketplaceQueryFromScan } from "@/lib/marketplace/query-from-scan";
+import { irissScanStoredSearchFields } from "@/lib/iriss-scan-criteria";
 import type { IrissScanFilterPlatform, IrissScanLinkKey } from "@/lib/iriss-scan-sources";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
 import type { MarketplacePlatform } from "@/lib/marketplace/types";
@@ -80,6 +81,19 @@ export function irissScanSearchFilter(fields: OrderSearchFields) {
 }
 
 export function scanOrderSearchFields(rec: IrissScanRecord): OrderSearchFields {
+  // Saglabātie kritēriji (reālie lauki) uzvar; vecam ierakstam paliek līdzšinējā teksta loģika.
+  const stored = irissScanStoredSearchFields(rec);
+  if (stored) {
+    return {
+      brandModel: stored.brandModel,
+      productionYears: stored.productionYears,
+      maxMileage: stored.maxMileage,
+      totalBudget: stored.totalBudget,
+      engineType: stored.engineType,
+      transmission: stored.transmission,
+      bodyType: stored.bodyType,
+    };
+  }
   const fields: OrderSearchFields = {
     brandModel: rec.brandModel,
     productionYears: rec.productionYears,
@@ -121,12 +135,25 @@ function marketplaceUrl(platform: MarketplacePlatform, rec: IrissScanRecord, fie
   });
   const kw = parseEnginePowerKwFromText(fields.engineType ?? "", { bareNumberIsKw: true });
   if (kw != null && q.powerFromKw == null) q.powerFromKw = kw;
+  const stored = irissScanStoredSearchFields(rec);
+  if (stored) {
+    q.powerFromKw = stored.kwFrom;
+    q.powerToKw = stored.kwTo;
+  }
   if (!q.make.trim()) return null;
   return buildMarketplaceSearchUrl(platform, q);
 }
 
-function auctionUrl(platform: IrissAuctionSearchPlatform, fields: OrderSearchFields): string | null {
+function auctionUrl(
+  platform: IrissAuctionSearchPlatform,
+  fields: OrderSearchFields,
+  kw: { kwFrom: number | null; kwTo: number | null } | null = null,
+): string | null {
   const filter = irissScanSearchFilter(fields);
+  if (kw) {
+    filter.powerFromKw = kw.kwFrom;
+    filter.powerToKw = kw.kwTo;
+  }
   if (platform === "auto1") return auto1SearchUrl(filter);
   if (platform === "openline") return openlaneSearchUrl(filter);
   if (platform === "autobid") return autobidSearchUrl(filter);
@@ -152,7 +179,7 @@ export function applyGeneratedScanSourceFilter(
     const key: IrissScanLinkKey = platform === "mobilede" ? "listingLinkMobile" : "listingLinksOther";
     return { record: appendLink(rec, key, url), url };
   }
-  const url = auctionUrl(platform, fields) ?? listingPlatformSearchUrl(platform, fields);
+  const url = auctionUrl(platform, fields, irissScanStoredSearchFields(rec)) ?? listingPlatformSearchUrl(platform, fields);
   if (!url) return { record: rec, url: null };
   return { record: appendLink(rec, AUCTION_LINK_KEY[platform], url), url };
 }

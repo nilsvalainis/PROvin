@@ -11,6 +11,7 @@ import {
   formatIrissPdPrice,
   irissPdDeleteConfirm,
   irissPdRowEffectiveStatus,
+  irissPdLastClientQuestion,
   sortIrissPdRows,
   type IrissPdListFilter,
 } from "@/lib/iriss-piedavajumi";
@@ -266,6 +267,7 @@ export function PiedavajumiList({
                   <span>{row.validUntil ? formatOfferValidUntilLv(row.validUntil) : "-"}</span>
                   <span>
                     <PdStatusChip status={status} />
+                    {irissPdLastClientQuestion(row) ? <span className="pd-chip" title={irissPdLastClientQuestion(row)?.text}>Jautājums</span> : null}
                   </span>
                   <span>
                     <RowAction
@@ -289,7 +291,10 @@ export function PiedavajumiList({
               return (
                 <div className="pd-mc" key={row.id} data-status={status}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <PdStatusChip status={status} />
+                    <span>
+                      <PdStatusChip status={status} />
+                      {irissPdLastClientQuestion(row) ? <span className="pd-chip" title={irissPdLastClientQuestion(row)?.text}>Jautājums</span> : null}
+                    </span>
                     <span className="pd-src">{IRISS_PD_SOURCE_LV[row.source]}</span>
                   </div>
                   <Link className="row" href={`/admin/iriss/piedavajumi/${row.id}`}>

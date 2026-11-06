@@ -6,6 +6,7 @@ import os from "node:os";
 import path from "path";
 import { deepSanitizeDraftStrings, sanitizeDraftTextForStorage } from "@/lib/admin-draft-sanitize";
 import { normalizeIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
+import { sanitizeIrissScanCriteria } from "@/lib/iriss-scan-criteria";
 import { IRISS_STALE_REVISION, parseExpectedIrissRevision, prepareIrissScanWrite } from "@/lib/iriss-scan-save-safety";
 import { emptyIrissScanRecord, type IrissScanListOrder, type IrissScanListRow, type IrissScanRecord } from "@/lib/iriss-scan-types";
 import { isMarketplaceVehicleCategory } from "@/lib/marketplace/types";
@@ -227,6 +228,11 @@ function normalizeRecord(raw: unknown, id: string): IrissScanRecord | null {
     listingLinkEcarstrade: normalizeLinks(o.listingLinkEcarstrade),
     listingLinksOther: normalizeLinks(o.listingLinksOther),
     ...(o.ecarstradeLinksManual === true ? { ecarstradeLinksManual: true } : {}),
+    // Tikai derīga V1 shēma; vecs JSON bez lauka paliek bez tā.
+    ...(() => {
+      const criteria = sanitizeIrissScanCriteria(o.criteria);
+      return criteria ? { criteria } : {};
+    })(),
   };
 }
 

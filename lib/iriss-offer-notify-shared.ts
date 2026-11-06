@@ -18,10 +18,19 @@ export type IrissOfferNotifyFacts = {
   clientLastName: string;
   total: string;
   deadlineAt: string;
+  /** Admin ceļš paziņojuma saitei (piem. Piedāvājumu sadaļas ieraksts). Tukšs - pasūtījums pēc `orderId`. */
+  adminPath?: string;
 };
 
 export function irissOfferOrderAdminPath(orderId: string): string {
   return `/admin/iriss/pasutijumi/${encodeURIComponent(orderId)}`;
+}
+
+/** Paziņojuma saite: dotais admin ceļš (tikai `/admin/...`) vai pasūtījums. */
+export function irissOfferNotifyAdminPath(f: Pick<IrissOfferNotifyFacts, "orderId" | "adminPath">): string {
+  const p = (f.adminPath ?? "").trim();
+  if (p.startsWith("/admin/") && !p.includes("//")) return p;
+  return irissOfferOrderAdminPath(f.orderId);
 }
 
 /** "Jānis B." - vārds + uzvārda pirmais burts. */
@@ -37,40 +46,40 @@ function vehicleLabel(f: Pick<IrissOfferNotifyFacts, "vehicle">): string {
 }
 
 export function irissOfferDecisionPushMessage(
-  f: Pick<IrissOfferNotifyFacts, "orderId" | "offerId" | "vehicle" | "vin">,
+  f: Pick<IrissOfferNotifyFacts, "orderId" | "offerId" | "vehicle" | "vin" | "adminPath">,
   decision: "approve" | "decline",
 ): AdminPushMessage {
   const vin = pushVinTail(f.vin);
   return {
     title: decision === "approve" ? "Piedāvājums apstiprināts" : "Piedāvājums noraidīts",
     body: `${vehicleLabel(f)}${vin ? ` · ${vin}` : ""}`,
-    url: irissOfferOrderAdminPath(f.orderId),
+    url: irissOfferNotifyAdminPath(f),
     tag: `offer-${f.offerId}`,
     audience: "iriss",
   };
 }
 
 export function irissOfferQuestionPushMessage(
-  f: Pick<IrissOfferNotifyFacts, "orderId" | "offerId" | "vehicle" | "vin">,
+  f: Pick<IrissOfferNotifyFacts, "orderId" | "offerId" | "vehicle" | "vin" | "adminPath">,
 ): AdminPushMessage {
   const vin = pushVinTail(f.vin);
   return {
     title: "Jautājums par piedāvājumu",
     body: `${vehicleLabel(f)}${vin ? ` · ${vin}` : ""}`,
-    url: irissOfferOrderAdminPath(f.orderId),
+    url: irissOfferNotifyAdminPath(f),
     tag: `offer-${f.offerId}`,
     audience: "iriss",
   };
 }
 
 export function irissOfferExpiredPushMessage(
-  f: Pick<IrissOfferNotifyFacts, "orderId" | "offerId" | "vehicle" | "vin">,
+  f: Pick<IrissOfferNotifyFacts, "orderId" | "offerId" | "vehicle" | "vin" | "adminPath">,
 ): AdminPushMessage {
   const vin = pushVinTail(f.vin);
   return {
     title: "Piedāvājuma termiņš beidzies",
     body: `${vehicleLabel(f)}${vin ? ` · ${vin}` : ""} - bez atbildes`,
-    url: irissOfferOrderAdminPath(f.orderId),
+    url: irissOfferNotifyAdminPath(f),
     tag: `offer-${f.offerId}`,
     audience: "iriss",
   };
@@ -97,7 +106,7 @@ export function buildIrissOfferDecisionEmail(
   const vehicle = vehicleLabel(f);
   const title = `${approved ? "Piedāvājums apstiprināts" : "Piedāvājums noraidīts"}: ${vehicle}`;
   const vin = pushVinTail(f.vin);
-  const url = `${origin.replace(/\/$/, "")}${irissOfferOrderAdminPath(f.orderId)}`;
+  const url = `${origin.replace(/\/$/, "")}${irissOfferNotifyAdminPath(f)}`;
   const lines = [
     { label: "Lēmums", value: decisionLabel },
     { label: "Laiks", value: formatOfferDeadlineLv(decidedAt) },
@@ -123,7 +132,7 @@ export function buildIrissOfferQuestionEmail(f: IrissOfferNotifyFacts, question:
   const vehicle = vehicleLabel(f);
   const title = `Jautājums par piedāvājumu: ${vehicle}`;
   const vin = pushVinTail(f.vin);
-  const url = `${origin.replace(/\/$/, "")}${irissOfferOrderAdminPath(f.orderId)}`;
+  const url = `${origin.replace(/\/$/, "")}${irissOfferNotifyAdminPath(f)}`;
   const lines = [
     { label: "Klients", value: irissOfferClientShortName(f.clientFirstName, f.clientLastName) },
     { label: "Auto", value: `${vehicle}${vin ? ` · VIN ${vin}` : ""}` },

@@ -12,7 +12,9 @@ import {
   emptyIrissPdVehicle,
   IRISS_PD_BLOCK_IDS,
   IRISS_PD_BLOCK_LV,
+  IRISS_PD_CLIENT_MESSAGE_MAX,
   IRISS_PD_MAX_CHECK_ITEMS,
+  IRISS_PD_MAX_CLIENT_QUESTIONS,
   IRISS_PD_MAX_HIGHLIGHTS,
   IRISS_PD_MAX_HISTORY,
   IRISS_PD_MAX_PHOTOS,
@@ -31,6 +33,7 @@ import {
   type IrissPdBlockId,
   type IrissPdCheckItem,
   type IrissPdClient,
+  type IrissPdClientMessage,
   type IrissPdContent,
   type IrissPdHistoryEntry,
   type IrissPdListRow,
@@ -155,6 +158,37 @@ export function normalizeIrissPdContent(raw: unknown): IrissPdContent {
   };
 }
 
+/** Klienta ziņas teksts: bez vadības simboliem, rindas saglabātas, max 400 zīmes. */
+export function cleanIrissPdClientText(raw: unknown): string {
+  if (typeof raw !== "string") return "";
+  return raw
+    .replace(/\r\n?/g, "\n")
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u0008\u000b-\u001f\u007f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, "")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+    .slice(0, IRISS_PD_CLIENT_MESSAGE_MAX);
+}
+
+const CLIENT_MESSAGES_MAX = IRISS_PD_MAX_CLIENT_QUESTIONS + 2;
+const LIST_ROW_CLIENT_MESSAGES = 5;
+
+function normalizeClientMessages(raw: unknown, limit = CLIENT_MESSAGES_MAX): IrissPdClientMessage[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .flatMap((m) => {
+      if (!m || typeof m !== "object") return [];
+      const o = m as Record<string, unknown>;
+      const at = clean(o.at, 40);
+      const kind: IrissPdClientMessage["kind"] | null = o.kind === "question" || o.kind === "decline" ? o.kind : null;
+      const t = cleanIrissPdClientText(o.text);
+      if (!at || !kind || (kind === "question" && !t)) return [];
+      return [{ at, kind, text: t } satisfies IrissPdClientMessage];
+    })
+    .slice(-limit);
+}
+
 function normalizeHistory(raw: unknown): IrissPdHistoryEntry[] {
   if (!Array.isArray(raw)) return [];
   return raw
@@ -207,6 +241,7 @@ export function normalizeIrissPiedavajums(raw: unknown): IrissPiedavajums | null
     approvedOrderId: isSafeIrissPdId(approvedOrderId) ? approvedOrderId : "",
     basedOnId: isSafeIrissPdId(basedOnId) ? basedOnId : "",
     history: normalizeHistory(o.history),
+    clientMessages: normalizeClientMessages(o.clientMessages),
   };
 }
 
@@ -439,6 +474,76 @@ export function applyIrissPdAction(
   return { ok: true, record: appendIrissPdHistory({ ...base, status: "approved", decidedAt: ctx.at }, { at: ctx.at, by: ctx.by, text: "Apstiprināts" }) };
 }
 
+/* ---------------- Klienta atbilde saitē (Noraidīt / Uzdot jautājumu) ---------------- */
+
+export type IrissPdClientResult =
+  | { ok: true; record: IrissPiedavajums; changed: boolean }
+  | { ok: false; error: "closed" | "approved" | "text" | "limit" };
+
+/** Vai klienta noraidījums ir ierakstīts (atšķir no admina «Atzīmēt noraidītu»). */
+export function irissPdClientDeclined(rec: Pick<IrissPiedavajums, "status" | "clientMessages">): boolean {
+  return rec.status === "declined" && rec.clientMessages.some((m) => m.kind === "decline");
+}
+
+/**
+ * Klients noraida piedāvājumu: Nosūtīts (termiņā) -> Noraidīts. Iemesls neobligāts (max 400).
+ * Atkārtots noraidījums - bez izmaiņām. Apstiprinātu vai slēgtu nevar noraidīt.
+ */
+export function applyIrissPdClientDecline(
+  rec: IrissPiedavajums,
+  ctx: { at: string; nowMs: number; reason?: unknown },
+): IrissPdClientResult {
+  if (irissPdClientDeclined(rec)) return { ok: true, record: rec, changed: false };
+  if (rec.status === "approved") return { ok: false, error: "approved" };
+  if (rec.status !== "sent" || isIrissPdDeadlinePassed(rec, ctx.nowMs)) return { ok: false, error: "closed" };
+  const reason = cleanIrissPdClientText(ctx.reason);
+  const next: IrissPiedavajums = {
+    ...rec,
+    status: "declined",
+    decidedAt: ctx.at,
+    updatedAt: ctx.at,
+    clientMessages: [...rec.clientMessages, { at: ctx.at, kind: "decline" as const, text: reason }].slice(-CLIENT_MESSAGES_MAX),
+  };
+  const historyText = reason ? `Klients noraidīja piedāvājumu. Iemesls: ${reason}` : "Klients noraidīja piedāvājumu";
+  return { ok: true, record: appendIrissPdHistory(next, { at: ctx.at, by: IRISS_PD_CLIENT_ACTOR, text: historyText }), changed: true };
+}
+
+/**
+ * Klienta jautājums: atļauts atvērtam (Nosūtīts, termiņā) vai jau apstiprinātam piedāvājumam.
+ * Statuss nemainās; jautājums parādās adminā (vēsture, saraksts, pasūtījuma laika josla).
+ */
+export function applyIrissPdClientQuestion(
+  rec: IrissPiedavajums,
+  ctx: { at: string; nowMs: number; text: unknown },
+): IrissPdClientResult {
+  const open = rec.status === "sent" && !isIrissPdDeadlinePassed(rec, ctx.nowMs);
+  if (!open && rec.status !== "approved") return { ok: false, error: "closed" };
+  const question = cleanIrissPdClientText(ctx.text);
+  if (question.length < 3) return { ok: false, error: "text" };
+  if (rec.clientMessages.filter((m) => m.kind === "question").length >= IRISS_PD_MAX_CLIENT_QUESTIONS) {
+    return { ok: false, error: "limit" };
+  }
+  const next: IrissPiedavajums = {
+    ...rec,
+    updatedAt: ctx.at,
+    clientMessages: [...rec.clientMessages, { at: ctx.at, kind: "question" as const, text: question }].slice(-CLIENT_MESSAGES_MAX),
+  };
+  return {
+    ok: true,
+    record: appendIrissPdHistory(next, { at: ctx.at, by: IRISS_PD_CLIENT_ACTOR, text: `Klienta jautājums: ${question}` }),
+    changed: true,
+  };
+}
+
+/** Pēdējais klienta jautājums (sarakstam un pasūtījuma joslai). */
+export function irissPdLastClientQuestion(row: Pick<IrissPdListRow, "clientMessages">): IrissPdClientMessage | null {
+  for (let i = row.clientMessages.length - 1; i >= 0; i -= 1) {
+    const m = row.clientMessages[i]!;
+    if (m.kind === "question") return m;
+  }
+  return null;
+}
+
 /** «Izveidot jaunu uz šī bāzes»: no beigušā vai noraidītā. Termiņš tukšs - jāievada no jauna. */
 export function canRebaseIrissPd(status: IrissPdStatus): boolean {
   return status === "expired" || status === "declined";
@@ -461,6 +566,7 @@ export function rebaseIrissPd(
     approvedOrderId: "",
     basedOnId: base.id,
     history: [],
+    clientMessages: [],
     vehicle: { ...base.vehicle },
     client: { ...base.client },
     photos: base.photos.map((p) => ({ ...p })),
@@ -514,6 +620,7 @@ export function irissPdToListRow(rec: IrissPiedavajums): IrissPdListRow {
     approvedOrderId: rec.approvedOrderId,
     cover: rec.photos[0] ?? null,
     updatedAt: rec.updatedAt,
+    clientMessages: rec.clientMessages.slice(-LIST_ROW_CLIENT_MESSAGES),
   };
 }
 
@@ -539,6 +646,7 @@ export function normalizeIrissPdListRow(raw: unknown): IrissPdListRow | null {
     approvedOrderId: isSafeIrissPdId(o.approvedOrderId) ? o.approvedOrderId : "",
     cover,
     updatedAt: clean(o.updatedAt, 40),
+    clientMessages: normalizeClientMessages(o.clientMessages, LIST_ROW_CLIENT_MESSAGES),
   };
 }
 
@@ -641,8 +749,8 @@ export function irissPdBlockVisible(vis: IrissPdVisibility, id: IrissPdBlockId, 
 export type IrissPdPublicFact = { label: string; value: string };
 
 export type IrissPdPublicView = {
-  /** open - var apstiprināt; approved - jau apstiprināts; closed - nav pieejams (nav vai beidzies). */
-  state: "open" | "approved" | "closed";
+  /** open - var apstiprināt; approved - jau apstiprināts; declined - klients noraidīja; closed - nav pieejams (nav vai beidzies). */
+  state: "open" | "approved" | "declined" | "closed";
   title: string;
   price: string;
   /** PVN režīms pie cenas («PVN atskaitāms» / «Ar PVN (marža)»); tukšs, ja nav zināms. */
@@ -657,6 +765,8 @@ export type IrissPdPublicView = {
   needsContact: boolean;
   /** j75: Aprīkojums, Kopsavilkums, Novērtējums (tikai ieslēgtās sadaļas un ieķeksētās rindas). */
   content: IrissPdPublicContent | null;
+  /** Klienta paša uzdotie jautājumi (tikai viņa teksts, bez admina datiem). */
+  questions: { at: string; text: string }[];
 };
 
 export type IrissPdPublicContent = {
@@ -744,7 +854,13 @@ export function irissPdDeleteConfirm(label: string): string {
 export function buildIrissPdPublicView(rec: IrissPiedavajums, mode: IrissPdViewMode, nowMs: number): IrissPdPublicView {
   const expired = isIrissPdDeadlinePassed(rec, nowMs);
   const state: IrissPdPublicView["state"] =
-    rec.status === "approved" ? "approved" : rec.status === "sent" && !expired ? "open" : "closed";
+    rec.status === "approved"
+      ? "approved"
+      : rec.status === "sent" && !expired
+        ? "open"
+        : irissPdClientDeclined(rec)
+          ? "declined"
+          : "closed";
   const blocks: IrissPdPublicView["blocks"] = {};
   const a = rec.auto1;
   if (a) {
@@ -778,6 +894,7 @@ export function buildIrissPdPublicView(rec: IrissPiedavajums, mode: IrissPdViewM
     auto1,
     needsContact: !rec.client.name.trim() && !rec.client.orderId,
     content: buildIrissPdPublicContent(rec.content),
+    questions: rec.clientMessages.filter((m) => m.kind === "question").map((m) => ({ at: m.at, text: m.text })),
   };
 }
 

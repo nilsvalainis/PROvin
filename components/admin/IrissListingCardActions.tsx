@@ -20,12 +20,15 @@ export function IrissListingCardActions({
   onCreateRadar,
   onCreateOffer,
   previewDisabled = false,
+  detailsLabel = IRISS_LISTING_CARD_ACTION_ORDER,
 }: {
   v: IrissListingVehicle;
   onPreviewDetails?: (v: IrissListingVehicle) => void;
   onCreateRadar?: (v: IrissListingVehicle) => void | Promise<void>;
   onCreateOffer?: (v: IrissListingVehicle) => void | Promise<void>;
   previewDisabled?: boolean;
+  /** «Pasūtījuma detaļas» vai, radaram, «Radara detaļas». */
+  detailsLabel?: string;
 }) {
   const [radarBusy, setRadarBusy] = useState(false);
   const [offerBusy, setOfferBusy] = useState(false);
@@ -50,7 +53,7 @@ export function IrissListingCardActions({
           type="button"
           disabled={previewDisabled}
           className={IRISS_LISTING_CARD_ACTION_BTN_CLASS}
-          title={IRISS_LISTING_CARD_ACTION_ORDER}
+          title={detailsLabel}
           onClick={(e) => {
             e.stopPropagation();
             if (previewDisabled) return;
@@ -58,7 +61,7 @@ export function IrissListingCardActions({
           }}
         >
           <ClipboardList className={IRISS_LISTING_CARD_ACTION_ICON_CLASS} aria-hidden strokeWidth={1.5} />
-          {IRISS_LISTING_CARD_ACTION_ORDER}
+          {detailsLabel}
         </button>
       ) : null}
       {onCreateOffer ? (

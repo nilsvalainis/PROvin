@@ -1,6 +1,17 @@
 /** LIST kartītes darbības: viena rinda, vienāds augstums, neitrālas ikonas. */
 
 export const IRISS_LISTING_CARD_ACTION_ORDER = "Pasūtījuma detaļas" as const;
+/**
+ * Radara (SCAN) ierakstam klienta un pasūtījuma nav - «Pasūtījuma detaļas» tur ir nepareizi.
+ * Pagaidu neitrāls nosaukums; galīgo vārdu (piem. «Meklējuma detaļas») izvēlas Nils.
+ */
+export const IRISS_LISTING_CARD_ACTION_RADAR_DETAILS = "Radara detaļas" as const;
+
+/** Detaļu pogas teksts pēc piesaistītajiem ierakstiem: tikai radari -> «Radara detaļas». */
+export function irissListingDetailsLabel(orderIds: readonly string[]): string {
+  if (orderIds.length > 0 && orderIds.every((id) => id.startsWith("scan:"))) return IRISS_LISTING_CARD_ACTION_RADAR_DETAILS;
+  return IRISS_LISTING_CARD_ACTION_ORDER;
+}
 /** Paliek kā palīga etiķete; kartītē pogu nerāda. */
 export const IRISS_LISTING_CARD_ACTION_RADAR = "Pievienot radaram" as const;
 /** Nils 29.10: veido piedāvājumu Piedāvājumu sadaļā (agrāk «Nosūtīt klientam» veidoja jaunu pasūtījumu). */

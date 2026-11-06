@@ -180,6 +180,12 @@ export function defaultIrissPdContent(legacy = false): IrissPdContent {
 
 export type IrissPdHistoryEntry = { at: string; by: string; text: string };
 
+/** Klienta ziņa no publiskās saites: jautājums vai noraidījums (ar neobligātu iemeslu). */
+export type IrissPdClientMessage = { at: string; kind: "question" | "decline"; text: string };
+export const IRISS_PD_CLIENT_MESSAGE_MAX = 400;
+/** Cik klienta jautājumu pieņem vienam piedāvājumam (pārējos - pa tālruni/e-pastu). */
+export const IRISS_PD_MAX_CLIENT_QUESTIONS = 20;
+
 export type IrissPiedavajums = {
   id: string;
   /** Secīgs numurs (PD-0001). */
@@ -227,6 +233,8 @@ export type IrissPiedavajums = {
   /** No kura (beigušā/noraidītā) piedāvājuma veidots. */
   basedOnId: string;
   history: IrissPdHistoryEntry[];
+  /** Klienta jautājumi un noraidījums no saites. Vecie JSON bez lauka = []. */
+  clientMessages: IrissPdClientMessage[];
 };
 
 export type IrissPdListRow = {
@@ -246,6 +254,8 @@ export type IrissPdListRow = {
   approvedOrderId: string;
   cover: IrissPdPhoto | null;
   updatedAt: string;
+  /** Pēdējās klienta ziņas (pasūtījuma laika joslai un sarakstam). Vecā indeksā nav = []. */
+  clientMessages: IrissPdClientMessage[];
 };
 
 export const IRISS_PD_MAX_PHOTOS = 60;
@@ -331,6 +341,7 @@ export function emptyIrissPiedavajums(id: string, nowIso: string): IrissPiedavaj
     approvedOrderId: "",
     basedOnId: "",
     history: [],
+    clientMessages: [],
   };
 }
 

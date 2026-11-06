@@ -3,6 +3,7 @@ import "@/components/iriss-piedavajumi/piedavajumi.css";
 import { IrissPasutijumsEditor } from "@/components/admin/IrissPasutijumsEditor";
 import { PdOrderStrip } from "@/components/admin/iriss-piedavajumi/PdOrderStrip";
 import { listIrissPdRowsForOrder } from "@/lib/iriss-piedavajumi-store";
+import { irissPdClientCommunicationEvents } from "@/lib/iriss-communication-timeline";
 import {
   getIrissListingsStorageState,
   readIrissListingsDismissed,
@@ -78,6 +79,7 @@ export default async function IrissPasutijumsDetailPage({
         dismissedHitIds={dismissedHitIds}
         listingsCache={storage.enabled ? "on" : "off"}
         initialOfferLinks={offerLinks}
+        pdClientEvents={irissPdClientCommunicationEvents(pdRows)}
         initialHitStatus={coerceIrissHitStatusMap(roomMatch?.hitStatus)}
         duplicatesByListing={coerceIrissDuplicatesByListing(roomMatch?.duplicates)}
         initialRoomTab={initialRoomTab}

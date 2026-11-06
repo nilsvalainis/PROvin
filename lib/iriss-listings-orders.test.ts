@@ -15,7 +15,7 @@ import {
   serializeListingOrderFilter,
   vehicleMatchesOrderFilter,
 } from "@/lib/iriss-listings-orders";
-import { irissScanOrderBrief } from "@/lib/iriss-scan-listings";
+import { irissScanOrderBrief } from "@/lib/iriss-scan-order-brief";
 import { emptyIrissScanRecord } from "@/lib/iriss-scan-types";
 
 function order(partial: Partial<ReturnType<typeof emptyIrissPasutijums>> & { id: string }) {

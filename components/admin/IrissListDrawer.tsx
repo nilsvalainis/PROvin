@@ -24,6 +24,7 @@ import { countryFlagLabel } from "@/lib/iriss-listings-country-flag";
 import { listingCostsFor, type IrissListPrefs, type ListingTaxOverride } from "@/lib/iriss-listings-operator-prefs";
 import { listingTaxCostArgs, listingTaxFlagReason, listingTaxLabel, listingTaxResolved, taxFromVehicle } from "@/lib/iriss-listings-vat";
 import type { IrissListingVehicle } from "@/lib/iriss-listings-types";
+import { irissListingDetailsLabel } from "@/lib/iriss-listing-card-actions";
 import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
 import { formatIrissEurCents, formatIrissEurWhole } from "@/lib/iriss-price-format";
 import { IRISS_PD_STATUS_LV, irissPdNumberLabel, type IrissPdListRow } from "@/lib/iriss-piedavajumi-types";
@@ -588,7 +589,7 @@ export function IrissListDrawer({
         {linked.length && onPreviewOrder ? (
           <button type="button" className={`${btn2} min-w-0 whitespace-nowrap`} onClick={() => onPreviewOrder(linked[0]!)}>
             <ClipboardList className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="truncate">Pasūtījuma detaļas</span>
+            <span className="truncate">{irissListingDetailsLabel(linked.map((o) => o.id))}</span>
           </button>
         ) : null}
         {sourceHref ? (
