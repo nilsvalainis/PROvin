@@ -626,7 +626,7 @@ describe("Vēstures kopsavilkums", () => {
         },
       ],
       manualLtabBlock: {
-        rows: [{ csngDate: "16.05.2016", lossAmount: "1 521.14 €", incidentNo: "Latvija" }],
+        rows: [{ csngDate: "16.05.2016", lossAmount: "1 521,14 €", incidentNo: "Latvija" }],
         comments: "",
       },
     });

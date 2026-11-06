@@ -68,6 +68,11 @@ const ET_TERMS: Record<string, string> = {
   "võõrandamisest teatamine": "paziņojums par atsavināšanu",
   "majanduslikus mõttes hävinenud": "ekonomiski neizdevīgi remontēt (norakstīts)",
   liiklusõnnetus: "ceļu satiksmes negadījums",
+  "registreerimistunnistuse vahetus": "reģistrācijas apliecības maiņa",
+  "reg.tunnistuse vahetus": "reģistrācijas apliecības maiņa",
+  "reg. tunnistuse vahetus": "reģistrācijas apliecības maiņa",
+  "omaniku vahetus": "īpašnieka maiņa",
+  "esmane registreerimine": "pirmā reģistrācija",
   // statusi
   "kehtiv": "spēkā esošs",
   "registrist kustutatud": "izslēgts no reģistra",

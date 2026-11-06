@@ -96,7 +96,7 @@ import { buildOilIntervalSeriesForBlock } from "@/lib/oil-change-interval-chart"
 import { oilChangeIntervalPdfBlockCss } from "@/lib/oil-change-interval-pdf-styles";
 import { buildOilChangeIntervalPdfHtml } from "@/lib/oil-change-intervals";
 import { buildPdfFactCardHtml, buildPdfKvPairHtml, collectRegistryFactCardRows } from "@/lib/pdf-fact-card";
-import { capitalizeFactValue } from "@/lib/vin-sources/translate-lv";
+import { capitalizeFactValue, translateTextLv } from "@/lib/vin-sources/translate-lv";
 import { formatPdfReportMakeModel, resolvePdfReportMakeModel } from "@/lib/pdf-report-vehicle-identity";
 import {
   buildDealerSectionCoverHtml,
@@ -2014,9 +2014,16 @@ function buildVendorAvotuSubsection(
   if (b.title === L.traficom_fi && !vis.traficom_fi) return "";
   const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
   const omitOwners = b.title === L.carinfo;
-  const owners = omitOwners ? "" : (b.ownersSummary ?? "").trim();
-  const status = (b.statusRecords ?? "").trim();
-  const notes = (b.autoNotes ?? "").trim();
+  // Igaunijas reģistru teksti vecajos melnrakstos var būt netulkoti - tulko drukāšanas brīdī.
+  const etText = (v: string | undefined) => {
+    const t = (v ?? "").trim();
+    return b.title === L.mnt_ee || b.title === L.lkf_ee
+      ? t.split("\n").map((line) => translateTextLv(line, "et") || line).join("\n")
+      : t;
+  };
+  const owners = omitOwners ? "" : etText(b.ownersSummary);
+  const status = etText(b.statusRecords);
+  const notes = etText(b.autoNotes);
   const hasComments = commentBlock.trim().length > 0;
   const photosHtml = buildSourcePhotoGroupsPdfHtml(
     b.photoGroups,

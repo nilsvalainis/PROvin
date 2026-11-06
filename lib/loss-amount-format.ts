@@ -154,7 +154,7 @@ export function normalizeLossAmountEurDisplay(raw: string): string {
       const centsMatch = trimmed.replace(/EUR|€/gi, "").trim().match(/[.,](\d{1,2})\s*$/);
       if (centsMatch) {
         const cents = centsMatch[1]!.padEnd(2, "0").slice(0, 2);
-        return `${formatEurGrouped(bounds.lo)}.${cents} €`;
+        return `${formatEurGrouped(bounds.lo)},${cents} €`;
       }
       return `${formatEurGrouped(bounds.lo)} €`;
     }
