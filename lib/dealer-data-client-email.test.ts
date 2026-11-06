@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   B2B_DEALER_READY_SUBJECT,
+  dealerReadySubject,
   buildDealerCancelledEmailDraft,
   buildDealerNoDataEmailDraft,
   buildDealerReadyEmailDraft,
@@ -25,7 +26,7 @@ describe("dealer-data-client-email drafts", () => {
       refunded: true,
     });
     expect(d.kind).toBe("no_data");
-    expect(d.subject).toMatch(/atgriezts/i);
+    expect(d.subject).toMatch(/atgriezt/i);
     expect(d.text).not.toMatch(/\(VIN\s/i);
     expect(d.text).toContain("24,99 €");
     expect(d.text).toMatch(/atcelta rezervētā summa/);
@@ -37,7 +38,7 @@ describe("dealer-data-client-email drafts", () => {
 
   it("builds no_data draft without claiming refund completed", () => {
     const d = buildDealerNoDataEmailDraft({ vin: "WDB1400511A032828", refunded: false });
-    expect(d.subject).not.toMatch(/atgriezts/i);
+    expect(d.subject).not.toMatch(/atgriezt/i);
     expect(d.text).toMatch(/atgriezīsim/i);
     expect(d.text).toContain("PROVIN AUDITS");
   });
@@ -49,7 +50,7 @@ describe("dealer-data-client-email drafts", () => {
 
   it("keeps the retail dealer-ready template unchanged", () => {
     const d = buildDealerReadyEmailDraft({ vin: "WVWZZZ3CZME138258" });
-    expect(d.subject).toBe("PROVIN.LV: oficiālā dīlera dati pielikumā");
+    expect(d.subject).toBe("PROVIN · Atskaite gatava · Oficiālie dīlera dati · WVWZZZ3CZME138258");
     expect(d.text).toContain("Nils");
     expect(d.text).toContain("PROVIN.LV");
     expect(d.text).toContain("info@provin.lv");
@@ -99,7 +100,7 @@ describe("B2B dealer-ready email", () => {
       });
       const greeting = SIGN_OFF_GREETING_BY_LANG[lang];
       expect(d.kind).toBe("ready");
-      expect(d.subject).toBe(B2B_DEALER_READY_SUBJECT[lang]);
+      expect(d.subject).toBe(dealerReadySubject(lang, "WVWZZZ3CZME138258"));
       expect(d.subject).not.toContain("PROVIN.LV");
       expect(d.subject).not.toContain(".LV");
       expect(d.subject).not.toMatch(/IRISS/i);
@@ -127,10 +128,10 @@ describe("B2B dealer-ready email", () => {
       expect(d.text).toContain("Nils");
       expect(d.text).toContain("PROVIN.LV");
       if (lang === "lv") {
-        expect(d.subject).toBe("PROVIN.LV: oficiālā dīlera dati pielikumā");
+        expect(d.subject).toBe("PROVIN · Atskaite gatava · Oficiālie dīlera dati · WVWZZZ3CZME138258");
       } else {
-        expect(d.subject).not.toBe("PROVIN.LV: oficiālā dīlera dati pielikumā");
-        expect(d.subject).toContain("PROVIN.LV");
+        expect(d.subject).not.toBe("PROVIN · Atskaite gatava · Oficiālie dīlera dati · WVWZZZ3CZME138258");
+        expect(d.subject).toMatch(/^PROVIN · .+ · WVWZZZ3CZME138258$/);
       }
     }
   });

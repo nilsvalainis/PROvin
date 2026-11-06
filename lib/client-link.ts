@@ -1,3 +1,4 @@
+import { provinEmailSubject } from "@/lib/email/email-subject";
 import { canonicalizeListingUrl, isIncompleteVinLength, isPlausibleListingUrl, isValidOrderEmail, isValidOrderPhone, isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
 import { formatEurFromCents } from "@/lib/order-upsell";
 import { renderTemplateById } from "@/lib/messages/render-template-id";
@@ -7,7 +8,7 @@ const TOKEN_RE = /^[A-Za-z0-9_-]{20,32}$/;
 
 export const CLIENT_LINK_PATH_PREFIX = "/s";
 export const CLIENT_LINK_FULFILLMENT = "client_link";
-export const CLIENT_LINK_DEFAULT_PRODUCT = "PROVIN AUDITS PRO";
+export const CLIENT_LINK_DEFAULT_PRODUCT = "PROVIN AUDITS";
 export const CLIENT_LINK_DEFAULT_AMOUNT_CENTS = 9999;
 export const CLIENT_LINK_DEFAULT_VALIDITY_HOURS = 48;
 export const CLIENT_LINK_VALIDITY_HOURS = [1, 6, 12, 24, 48, 72, 168] as const;
@@ -331,7 +332,7 @@ export function buildClientLinkEmailCopy(
     return { subject: rendered.subject, text: rendered.text };
   }
   return {
-    subject: `${opts.productName}: Jūsu apmaksas saite`,
+    subject: provinEmailSubject("Apmaksas saite", { product: opts.productName }),
     text: [
       "Labdien!",
       "",

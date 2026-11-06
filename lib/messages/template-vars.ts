@@ -1,3 +1,4 @@
+import { provinEmailSubject } from "@/lib/email/email-subject";
 import { formatEurFromCents, type OrderUpsellKind } from "@/lib/order-upsell";
 import { DEALER_CATALOG_CENTS, MINI_DEALER_ADDON_CENTS } from "@/lib/order-upsell";
 import {
@@ -36,9 +37,10 @@ export function buildReportReadyEmailVars(opts: {
 }): Record<string, string> {
   const files = opts.attachmentLines.filter((n) => n.trim());
   let pielikumi = "";
-  if (opts.kind === "audits") {
+  // 06.11 (Nils "jā"): AUDITS arī rāda reāli pievienotos failus, ne fiksētu tekstu.
+  if (opts.kind === "audits" && files.length === 0) {
     pielikumi = ["", "- Kopsavilkuma PDF atskaiti", "- Papildu materiālus un pielikumus"].join("\n");
-  } else if (opts.kind === "dealer" && files.length > 0) {
+  } else if ((opts.kind === "dealer" || opts.kind === "audits") && files.length > 0) {
     pielikumi = ["", ...files.map((n) => `- ${n}`)].join("\n");
   }
   const vars: Record<string, string> = {
@@ -73,9 +75,10 @@ export function buildDealerNoDataVars(opts: {
   const summa = amountLineDefault(opts.amountEur);
   const refunded = opts.refunded === true;
   return {
-    temats: refunded
-      ? "PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts"
-      : "PROVIN.LV: dīlera dati nav pieejami",
+    temats: provinEmailSubject(refunded ? "Dīlera dati nav pieejami, nauda atgriezta" : "Dīlera dati nav pieejami", {
+      vin: opts.vin,
+    }),
+    vin: reportReadyVinVar(opts.vin),
     atmaksa_rinda: refunded
       ? `Summa: ${summa} (veikta pilnā apmērā uz to pašu maksājumu karti).`
       : `Summa: ${summa} (atgriezīsim pilnā apmērā uz to pašu maksājumu karti).`,
@@ -100,6 +103,7 @@ export function buildUpsellEmailVars(opts: {
       papildus_cena: charge,
       kataloga_cena: formatEurFromCents(DEALER_CATALOG_CENTS),
       maksajuma_saite: opts.url,
+      vin: reportReadyVinVar(opts.vin),
     };
   }
   if (opts.kind === "dealer_to_audit") {
@@ -108,6 +112,7 @@ export function buildUpsellEmailVars(opts: {
       papildus_cena: charge,
       kopa: total,
       maksajuma_saite: opts.url,
+      vin: reportReadyVinVar(opts.vin),
     };
   }
   const vards = latvianVocativeFirstName(opts.customerName) || MINI_TO_AUDITS_NAME_PLACEHOLDER;

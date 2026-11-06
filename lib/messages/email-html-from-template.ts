@@ -74,7 +74,9 @@ export function messageHtmlFromTemplate(
     });
   }
   if (kind === "dealer_operator") {
-    return dealerDataOperatorMessageEmailHtml({ title: subject ?? null, text: plainText });
+    // Virsrakstā bez „PROVIN · ” (zīmols jau ir galvenē) un bez VIN astes.
+    const title = (subject ?? "").replace(/^PROVIN\s·\s/u, "").replace(/\s·\s[A-HJ-NPR-Z0-9]{17}$/u, "").trim();
+    return dealerDataOperatorMessageEmailHtml({ title: title || null, text: plainText });
   }
   if (shouldUseRichEmailHtml(plainText)) {
     const inner = adminRichHtmlToEmailBodyInner(plainText);

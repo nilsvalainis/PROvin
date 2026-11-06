@@ -13,7 +13,8 @@ import {
 } from "@/lib/b2b-wallet";
 import { b2bClientMessageSignOff, clientMessageSignOff } from "@/lib/email/report-ready-copy";
 import { resolveMessageSync } from "@/lib/messages/resolve-message";
-import { buildDealerNoDataVars } from "@/lib/messages/template-vars";
+import { buildDealerNoDataVars, reportReadyVinVar } from "@/lib/messages/template-vars";
+import { provinEmailSubject } from "@/lib/email/email-subject";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
 import { DEALER_NO_DATA_AUDIT_CTA_URL } from "@/lib/messages/shared-blocks";
@@ -64,7 +65,7 @@ export function buildDealerNoDataEmailDraft(
   }
 
   const varsFallback = buildDealerNoDataVars({ vin: opts.vin, amountEur: opts.amountEur, refunded });
-  const subject = varsFallback.temats ?? "PROVIN.LV: dīlera dati nav pieejami";
+  const subject = varsFallback.temats ?? provinEmailSubject("Dīlera dati nav pieejami", { vin: opts.vin });
   const text = [
     "Labdien!",
     "",
@@ -86,7 +87,7 @@ export function buildDealerCancelledEmailDraft(
   templatesDoc?: MessageTemplatesDoc | null,
 ): DealerClientEmailDraft {
   const id = "email.dealer.cancelled";
-  const vars = { summa: amountLine(opts.amountEur) };
+  const vars = { summa: amountLine(opts.amountEur), vin: reportReadyVinVar(opts.vin) };
   const rendered = resolveMessageSync(id, vars, { doc: templatesDoc });
   if (rendered?.subject && rendered.text) {
     return { kind: "cancelled", subject: rendered.subject, text: rendered.text };
@@ -94,7 +95,7 @@ export function buildDealerCancelledEmailDraft(
   const amount = amountLine(opts.amountEur);
   return {
     kind: "cancelled",
-    subject: "PROVIN.LV: pasūtījums atcelts un maksājums atgriezts",
+    subject: provinEmailSubject("Pasūtījums atcelts, nauda atgriezta", { vin: opts.vin }),
     text: [
       "Labdien!",
       "",
@@ -109,11 +110,24 @@ export function buildDealerCancelledEmailDraft(
   };
 }
 
+/** Tēmas notikums + produkts katrā valodā; pilno tēmu veido provinEmailSubject (PROVIN · … · VIN). */
+const DEALER_READY_SUBJECT_PARTS: Record<B2bWalletReportLang, { event: string; product: string }> = {
+  lv: { event: "Atskaite gatava", product: "Oficiālie dīlera dati" },
+  en: { event: "Report ready", product: "Official dealer data" },
+  de: { event: "Bericht fertig", product: "Offizielle Händlerdaten" },
+  ru: { event: "Отчёт готов", product: "Официальные данные дилера" },
+};
+
+export function dealerReadySubject(lang: B2bWalletReportLang, vin?: string | null): string {
+  const p = DEALER_READY_SUBJECT_PARTS[lang];
+  return provinEmailSubject(p.event, { product: p.product, vin });
+}
+
 export const B2B_DEALER_READY_SUBJECT: Record<B2bWalletReportLang, string> = {
-  lv: "PROVIN: oficiālā dīlera dati pielikumā",
-  en: "PROVIN: official dealer data attached",
-  de: "PROVIN: offizielle Händlerdaten im Anhang",
-  ru: "PROVIN: данные официального дилера во вложении",
+  lv: dealerReadySubject("lv"),
+  en: dealerReadySubject("en"),
+  de: dealerReadySubject("de"),
+  ru: dealerReadySubject("ru"),
 };
 
 const B2B_DEALER_READY_BODY: Record<B2bWalletReportLang, readonly string[]> = {
@@ -148,12 +162,7 @@ const B2B_DEALER_READY_BODY: Record<B2bWalletReportLang, readonly string[]> = {
 };
 
 /** Mazumtirdzniecības klientam (.LV zīmols) - lietots, kad klients izvēlējies EN/RU/DE. */
-export const DEALER_READY_SUBJECT: Record<B2bWalletReportLang, string> = {
-  lv: "PROVIN.LV: oficiālā dīlera dati pielikumā",
-  en: "PROVIN.LV: official dealer data attached",
-  de: "PROVIN.LV: offizielle Händlerdaten im Anhang",
-  ru: "PROVIN.LV: данные официального дилера во вложении",
-};
+export const DEALER_READY_SUBJECT: Record<B2bWalletReportLang, string> = B2B_DEALER_READY_SUBJECT;
 
 const DEALER_READY_BODY: Record<B2bWalletReportLang, readonly string[]> = {
   lv: [
@@ -215,17 +224,18 @@ export function isB2bDealerReadyEmailOrder(args: {
 function buildDealerReadyEmailDraftForLang(
   lang: B2bWalletReportLang,
   b2bClient: boolean,
+  vin?: string | null,
 ): DealerClientEmailDraft {
   if (b2bClient) {
     return {
       kind: "ready",
-      subject: B2B_DEALER_READY_SUBJECT[lang],
+      subject: dealerReadySubject(lang, vin),
       text: [...B2B_DEALER_READY_BODY[lang], "", b2bClientMessageSignOff(lang)].join("\n"),
     };
   }
   return {
     kind: "ready",
-    subject: DEALER_READY_SUBJECT[lang],
+    subject: dealerReadySubject(lang, vin),
     text: [...DEALER_READY_BODY[lang], "", clientMessageSignOff(lang)].join("\n"),
   };
 }
@@ -242,16 +252,16 @@ export function buildDealerReadyEmailDraft(
   });
   /** Editējamais LV šablons der tikai, kad nav nedz B2B zīmola, nedz cita valoda. */
   if (b2bClient || lang !== B2B_WALLET_DEFAULT_REPORT_LANG) {
-    return buildDealerReadyEmailDraftForLang(lang, b2bClient);
+    return buildDealerReadyEmailDraftForLang(lang, b2bClient, opts.vin);
   }
   const id = "email.dealer.ready_pdf";
-  const rendered = resolveMessageSync(id, {}, { doc: templatesDoc });
+  const rendered = resolveMessageSync(id, { vin: reportReadyVinVar(opts.vin) }, { doc: templatesDoc });
   if (rendered?.subject && rendered.text) {
     return { kind: "ready", subject: rendered.subject, text: rendered.text };
   }
   return {
     kind: "ready",
-    subject: "PROVIN.LV: oficiālā dīlera dati pielikumā",
+    subject: dealerReadySubject("lv", opts.vin),
     text: [
       `Labdien!`,
       "",

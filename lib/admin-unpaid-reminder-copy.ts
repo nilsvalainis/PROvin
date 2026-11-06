@@ -1,16 +1,16 @@
 /**
- * Neapmaksātā pasūtījuma atgādinājuma teksts (apstiprinātais v3).
- * Personīga vēstule, bez zīmola HTML šablona.
+ * Neapmaksātā pasūtījuma atgādinājuma teksts (v4, 06.11: bez tālruņa un IRISS, PROVIN tēma).
+ * Vienkāršs teksts, bez zīmola HTML šablona.
  */
 
 export const UNPAID_REMINDER_TEMPLATE_ID = "email.unpaid_reminder";
 
-export const UNPAID_REMINDER_SUBJECT_TEMPLATE = "Par Jūsu auto pārbaudi (VIN {{vin}})";
+export const UNPAID_REMINDER_SUBJECT_TEMPLATE = "PROVIN · Pasūtījums gaida apmaksu · {{vin}}";
 
 export const UNPAID_REMINDER_BODY_TEMPLATE = [
   "Labdien!",
   "",
-  "Redzēju, ka nesen sākāt pasūtīt auto vēstures pārbaudi, bet pasūtījums palika nepabeigts. Ja kaut kas nav skaidrs vai vēlaties vispirms konsultēties, droši zvaniet man: +371 29 502 039. Varat arī atbildēt uz šo e-pastu.",
+  "Redzējām, ka nesen sākāt pasūtīt auto vēstures pārbaudi, bet pasūtījums palika nepabeigts. Ja kaut kas nav skaidrs vai vēlaties vispirms konsultēties, atbildiet uz šo e-pastu.",
   "",
   "Ja pārbaude joprojām ir aktuāla, apmaksu varat pabeigt šeit:",
   "{{maksājuma_saite}}",
@@ -18,7 +18,6 @@ export const UNPAID_REMINDER_BODY_TEMPLATE = [
   "Paldies, ka izvēlējāties PROVIN.LV, un veiksmi auto izvēlē!",
   "",
   "Ar cieņu,",
-  "Nils V. (IRISS)",
   "PROVIN.LV",
 ].join("\n");
 

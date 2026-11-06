@@ -11,7 +11,7 @@ export const B2B_WALLET_REFUND_EMAIL_PRODUCT: Record<"business" | "dealer_raw" |
 };
 
 export const B2B_WALLET_REFUND_EMAIL = {
-  subject: "PROVIN: dati VIN {{vin}} nav pieejami, {{summa}} atgriezti kontā",
+  subject: "PROVIN · Dati nav pieejami, {{summa}} atgriezti kontā · {{vin}}",
   body: [
     "Sveiki!",
     "",
