@@ -5,6 +5,7 @@ import { useAdminIsPhone } from "@/lib/use-admin-is-phone";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { Maximize2, Minimize2 } from "lucide-react";
 import { TRAFFIC_HEADER_STRIP_CLASS, type TrafficFillLevel } from "@/lib/admin-block-traffic-status";
+import { ADMIN_OPEN_BLOCK_EVENT } from "@/lib/admin-mobile-ds";
 
 function accordionStorageKey(sessionId: string, blockId: string) {
   return `provin-admin-ui-accordion-v1-${sessionId}-${blockId}`;
@@ -136,6 +137,17 @@ export function AdminCollapsibleShell({
 
   const toggle = useCallback(() => setCollapsed((c) => !c), []);
 
+  /** Telefona doks / izvēlne var atvērt šo bloku (piem. VIN SCAN, maksas avots). */
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const id = (e as CustomEvent<{ blockId?: string }>).detail?.blockId;
+      if (id !== blockId) return;
+      setCollapsed(false);
+    };
+    document.addEventListener(ADMIN_OPEN_BLOCK_EVENT, onOpen);
+    return () => document.removeEventListener(ADMIN_OPEN_BLOCK_EVENT, onOpen);
+  }, [blockId]);
+
   useEffect(() => {
     if (collapseLocked) return;
     const show = !collapsed || fullscreen;
@@ -166,6 +178,7 @@ export function AdminCollapsibleShell({
   if (collapseLocked) {
     return (
       <div
+        data-admin-block={blockId}
         className={`provin-card overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] ${strip} ${fullscreenShellClass} ${className}`}
       >
         <div
@@ -191,6 +204,7 @@ export function AdminCollapsibleShell({
 
   return (
     <div
+      data-admin-block={blockId}
       className={`provin-card overflow-hidden rounded-xl border-0 bg-transparent shadow-[0_2px_22px_rgba(15,23,42,0.055)] ${strip} ${fullscreenShellClass} ${className}`}
     >
       <div

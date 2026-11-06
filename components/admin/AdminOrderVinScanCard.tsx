@@ -9,7 +9,12 @@ import { AdminProvinLucide } from "@/components/admin/AdminProvinLucide";
 import { AdminUserscriptUpdateHint } from "@/components/admin/AdminUserscriptUpdateHint";
 import { AdminVinScanBrowserFetchHandoff } from "@/components/admin/AdminVinScanBrowserFetchHandoff";
 import { SOURCE_BLOCK_ADMIN_TITLE_SIZE_CLASS } from "@/lib/admin-source-blocks";
-import { ADMIN_MOBILE_VIN_SCAN_EVENT } from "@/lib/admin-mobile-ds";
+import {
+  ADMIN_MOBILE_VIN_SCAN_EVENT,
+  ADMIN_MOBILE_VIN_SCAN_STATE_EVENT,
+  requestOpenAdminBlock,
+  type AdminMobileVinScanState,
+} from "@/lib/admin-mobile-ds";
 import { ORDER_VIN_SCAN_STUCK_MS } from "@/lib/order-vin-scan-run-decision";
 import { browserImportErrorLv, parseVinScanBrowserEventDetail } from "@/lib/vin-scan/browser-fetch";
 import {
@@ -191,8 +196,8 @@ export function AdminOrderVinScanCard({
     return [...main, ...none];
   }, [summary]);
 
-  const startScan = useCallback(async (sourceId?: string) => {
-    if (busy || !vin.trim()) return;
+  const startScan = useCallback(async (sourceId?: string): Promise<OrderVinScanRecord | null> => {
+    if (busy || !vin.trim()) return null;
     setBusy(true);
     try {
       const res = await fetch("/api/admin/order-vin-scan", {
@@ -207,22 +212,42 @@ export function AdminOrderVinScanCard({
           ...(sourceId ? { sourceId } : {}),
         }),
       });
-      if (!res.ok) return;
+      if (!res.ok) return null;
       const json = (await res.json()) as { vinScan?: unknown };
       const next = parseOrderVinScanRecord(json.vinScan);
       if (next) setRecord(next);
+      return next;
+    } catch {
+      return null;
     } finally {
       setBusy(false);
     }
   }, [busy, listingUrl, sessionId, vin]);
 
   useEffect(() => {
+    const emit = (detail: AdminMobileVinScanState) => {
+      try {
+        document.dispatchEvent(new CustomEvent(ADMIN_MOBILE_VIN_SCAN_STATE_EVENT, { detail }));
+      } catch {
+        /* ignore */
+      }
+    };
     const onMobileScan = () => {
-      void startScan();
+      if (busy) return;
+      // Telefonā kartīte ir sakļauta - atveram un parādām, lai redz progresu.
+      requestOpenAdminBlock("vin-scan-avoti");
+      window.setTimeout(() => {
+        document.querySelector('[data-admin-block="vin-scan-avoti"]')?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 60);
+      emit({ phase: "running" });
+      void startScan().then((next) => {
+        const s = buildOrderVinScanSummary(next);
+        emit(s ? { phase: "done", found: s.found, total: next?.indicators.length ?? 0 } : { phase: "error" });
+      });
     };
     document.addEventListener(ADMIN_MOBILE_VIN_SCAN_EVENT, onMobileScan);
     return () => document.removeEventListener(ADMIN_MOBILE_VIN_SCAN_EVENT, onMobileScan);
-  }, [startScan]);
+  }, [busy, startScan]);
 
   const runAction = (row: OrderVinScanSourceRow) => {
     if (!record) return;
