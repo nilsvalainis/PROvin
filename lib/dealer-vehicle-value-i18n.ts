@@ -213,9 +213,11 @@ const HORSEPOWER_UNIT_RE = /(?<!\p{L})(?:zs|ps|b?hp)(?!\p{L})/giu;
 
 function localizePower(raw: string, lang: ClientReportLang): string {
   let t = collapse(raw);
+  // „180 KW” / „180 kw” - SI vienība vienmēr „kW” (krieviski tālāk „кВт”).
+  t = t.replace(/(?<!\p{L})kw(?!\p{L})/giu, "kW");
   if (lang === "lv") t = t.replace(HORSEPOWER_UNIT_RE, "ZS");
   if (lang === "ru") {
-    t = t.replace(/\bKW\b/gi, "кВт").replace(/\bkW\b/g, "кВт");
+    t = t.replace(/(?<!\p{L})kW(?!\p{L})/gu, "кВт");
     t = t.replace(HORSEPOWER_UNIT_RE, "л.с.");
   }
   if (lang === "de") t = t.replace(HORSEPOWER_UNIT_RE, "PS");

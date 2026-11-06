@@ -107,7 +107,7 @@ const COUNTRY_STEMS: Array<[string, string]> = [
 
 const NO_RECALL_RE =
   /\bnav\s+(fiksēt|reģistrēt|konstatēt|atrast|zinām)\w*.{0,40}(?:atsaukum|kampaņ)|(?:atsaukum|kampaņ)\w*.{0,30}\bnav\b/i;
-const OWNER_COUNT_RE = /(\d{1,2})\s+īpašniek/gi;
+const OWNER_COUNT_RE = /(\d{1,2})\s+īpašniek(?!(?:u|a)\s+maiņ)/gi;
 const OWNER_CHANGE_RE = /(\d{1,2})\s+īpašnieku\s+maiņ/gi;
 const FIRST_REG_LV_RE = /pirmā\s+reģistrācija.{0,40}latvij/i;
 const FIRST_REG_DE_RE = /pirmā\s+reģistrācija.{0,40}vācij|izcelsmes\s+valst.{0,20}vācij/i;

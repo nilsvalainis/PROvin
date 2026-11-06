@@ -194,7 +194,8 @@ describe("CSDD particle number vs smoke opacity - render", () => {
 
   it.each(["0.01", "0.35"])("real smoke opacity %s still renders as smoke", (stored) => {
     const html = buildTechnicalInspectionHistoryTableHtml([taRow({ smokeCoefficient: stored })]);
-    expect(emissionLineValue(html, SMOKE_LABEL)).toBe(stored);
+    // Drukā ar decimālkomatu („0,35”), saglabātā vērtība nemainās.
+    expect(emissionLineValue(html, SMOKE_LABEL)).toBe(stored.replace(".", ","));
     expect(html).not.toContain(PARTICLE_LABEL);
   });
 

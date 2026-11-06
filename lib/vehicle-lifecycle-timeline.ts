@@ -35,6 +35,7 @@ import {
 import { parseDotOrIsoDateToMs } from "@/lib/clean-date-str";
 import { countryLabelToIso2, normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { lifecycleDealerVisitTitle } from "@/lib/vendor-service-history";
+import { capitalizeRegistryEvent, translateTextLv } from "@/lib/vin-sources/translate-lv";
 import {
   aggregateUnifiedIncidents,
   collectUnifiedIncidentDamageDetails,
@@ -649,13 +650,18 @@ function collectFactEvents(input: LifecycleInput): LifecycleEvent[] {
 
   for (const b of input.manualVendorBlocks ?? []) {
     const informational = vendorTimelineIsInformational(b.title);
+    const estonian = b.title === SOURCE_BLOCK_LABELS.mnt_ee || b.title === SOURCE_BLOCK_LABELS.lkf_ee;
     for (const t of b.vehicleHistoryTimeline ?? []) {
       if (t.includeInPdf === false) continue;
       if (!t.date.trim() && !t.description.trim()) continue;
+      // Vecajos melnrakstos Igaunijas notikumi var būt netulkoti („Majanduslikus mõttes hävinenud”).
+      const description = estonian
+        ? capitalizeRegistryEvent(translateTextLv(t.description, "et")) || t.description
+        : t.description;
       const kind = informational
-        ? classifyInformationalVendorTimelineKind(t.description)
-        : classifyVendorTimelineKind(t.description);
-      const { title, detail, body } = vendorTimelineTitleAndDetail(t.description, kind);
+        ? classifyInformationalVendorTimelineKind(description)
+        : classifyVendorTimelineKind(description);
+      const { title, detail, body } = vendorTimelineTitleAndDetail(description, kind);
       const failedInspection =
         kind === "inspection" && /neizturēt|ikke godkendt|omsyn|betinget/i.test(`${title} ${detail} ${body ?? ""} ${t.description}`);
       out.push(

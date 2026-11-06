@@ -28,7 +28,7 @@ describe("aggregateUnifiedIncidents", () => {
       }),
       row({
         date: "16.06.2021",
-        lossAmount: "2 778.22 €",
+        lossAmount: "2 778,22 €",
         sourceLabel: "LTAB",
         sourceOrder: 1,
         sortableTime: Date.UTC(2021, 5, 16),
@@ -52,14 +52,14 @@ describe("aggregateUnifiedIncidents", () => {
       },
       {
         sourceLabel: "LTAB",
-        displayAmount: "2 778.22 €",
+        displayAmount: "2 778,22 €",
         amountEur: 2778,
         amountBounds: { lo: 2778, hi: 2778 },
         rowCount: 1,
       },
     ]);
     expect(formatIncidentSourceValuationsLine(agg.clusters[0]!)).toBe(
-      "AutoDNA 2 800 € · LTAB 2 778.22 €",
+      "AutoDNA 2 800 € · LTAB 2 778,22 €",
     );
   });
 
@@ -280,10 +280,10 @@ describe("aggregateUnifiedIncidents", () => {
   });
 });
 
-describe("aptuvena summa („>4000.00 €”) negadījumu kopā", () => {
-  it("vienīgā avota summa paliek „virs 4 000 €”, nevis neapstrādāts „>4000.00 €” vai precīzs „4 000 €”", () => {
+describe("aptuvena summa („>4000,00 €”) negadījumu kopā", () => {
+  it("vienīgā avota summa paliek „virs 4 000 €”, nevis neapstrādāts „>4000,00 €” vai precīzs „4 000 €”", () => {
     const agg = aggregateUnifiedIncidents([
-      row({ date: "16.06.2021", lossAmount: ">4000.00 €", sourceLabel: "CarVertical", sourceOrder: 0 }),
+      row({ date: "16.06.2021", lossAmount: ">4000,00 €", sourceLabel: "CarVertical", sourceOrder: 0 }),
     ]);
     expect(agg.clusters).toHaveLength(1);
     expect(agg.clusters[0]?.displayAmount).toBe("virs 4 000 €");
@@ -421,7 +421,7 @@ Aptuvenā iepriekš gūto bojājumu vērtība
       }),
       row({
         date: "01.11.2023",
-        lossAmount: "2 516.91 €",
+        lossAmount: "2 516,91 €",
         sourceLabel: "LTAB",
         sortableTime: t,
         sourceOrder: 2,

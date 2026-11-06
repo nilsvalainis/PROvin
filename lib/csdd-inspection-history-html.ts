@@ -57,13 +57,26 @@ function buildDefectTableHtml(defects: CsddInspectionDefectRow[], historic: bool
 </table>`;
 }
 
+/** „145254” → „145 254”; jau grupētu vai ne-skaitlisku vērtību atstāj. */
+export function formatInspectionOdometer(raw: string): string {
+  const t = raw.trim().replace(/\s*km$/i, "");
+  if (!/^\d+$/.test(t)) return t;
+  return t.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
+/** Dūmainība ar decimālkomatu: „0.35” → „0,35”. */
+export function formatSmokeCoefficient(raw: string): string {
+  const t = raw.trim();
+  return /^\d+\.\d+$/.test(t) ? t.replace(".", ",") : t;
+}
+
 function buildInspectionInnerHtml(
   row: CsddTechnicalInspectionRow,
   historic: boolean,
   opts?: { odometer?: string; nextInspectionDateText?: string },
 ): string {
   const metaParts = [row.date, row.inspectionType];
-  if (opts?.odometer?.trim()) metaParts.push(`${opts.odometer.trim()} km`);
+  if (opts?.odometer?.trim()) metaParts.push(`${formatInspectionOdometer(opts.odometer)} km`);
   if (row.ratingLabel.trim()) metaParts.push(`Novērtējums ${row.ratingLabel.trim()}`);
   const meta = escapeHtml(metaParts.filter(Boolean).join(" · "));
   const extras: string[] = [];
@@ -76,7 +89,7 @@ function buildInspectionInnerHtml(
   const emissions = resolveInspectionEmissions(row);
   if (emissions.smokeCoefficient) {
     extras.push(
-      `<p class="pdf-csdd-tech-line"><span class="pdf-csdd-tech-bit">Dūmainības koeficients (m⁻¹):</span> ${escapeHtml(emissions.smokeCoefficient)}</p>`,
+      `<p class="pdf-csdd-tech-line"><span class="pdf-csdd-tech-bit">Dūmainības koeficients (m⁻¹):</span> ${escapeHtml(formatSmokeCoefficient(emissions.smokeCoefficient))}</p>`,
     );
   }
   if (emissions.particleNumber) {
