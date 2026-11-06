@@ -1,17 +1,23 @@
 import { describe, expect, it } from "vitest";
 import {
+  LISTING_HISTORY_MAX_PHOTOS,
   SOURCE_BLOCK_MAX_PHOTOS,
+  SOURCE_BLOCK_PHOTO_WORKSPACE_MAX,
   syncedSourceBlockPhotos,
   emptySourceBlockPhotoGroup,
   isSourceBlockPhotoId,
   mergeSourceBlockPhotoGroups,
   normalizeSourceBlockPhotoGroups,
+  sourceBlockPhotoMaxForKey,
   sourceBlockPhotosHaveContent,
 } from "@/lib/source-block-photo-types";
 
 describe("source-block photo types", () => {
-  it("keeps a 50-photo cap and accepts generated group ids", () => {
+  it("keeps a 50-photo cap for other avoti and 100 for listing history", () => {
     expect(SOURCE_BLOCK_MAX_PHOTOS).toBe(50);
+    expect(LISTING_HISTORY_MAX_PHOTOS).toBe(100);
+    expect(sourceBlockPhotoMaxForKey("tirgus")).toBe(LISTING_HISTORY_MAX_PHOTOS);
+    expect(SOURCE_BLOCK_PHOTO_WORKSPACE_MAX).toBeGreaterThan(SOURCE_BLOCK_MAX_PHOTOS * 12);
     const group = emptySourceBlockPhotoGroup();
     expect(group.id.startsWith("sbp_phg_")).toBe(true);
     expect(isSourceBlockPhotoId("sbp_ph_0123456789abcdef01234567")).toBe(true);

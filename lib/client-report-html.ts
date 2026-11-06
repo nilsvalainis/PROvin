@@ -107,7 +107,10 @@ import { normalizeAutoRecordsPhotoGroups } from "@/lib/auto-records-photo-types"
 import { normalizeCcVinPhotoGroups } from "@/lib/cc-vin-photo-types";
 import { normalizeAsvPhotoGroups } from "@/lib/asv-photo-types";
 import { normalizeIncidentPhotoGroups } from "@/lib/incident-photo-types";
-import { normalizeSourceBlockPhotoGroups } from "@/lib/source-block-photo-types";
+import {
+  normalizeListingHistoryPhotoGroups,
+  normalizeSourceBlockPhotoGroups,
+} from "@/lib/source-block-photo-types";
 import { buildCcVinPdfInnerHtml, CC_VIN_PDF_CSS } from "@/lib/cc-vin-pdf-html";
 import { buildAsvPdfInnerHtml, ASV_PDF_CSS } from "@/lib/asv-pdf-html";
 import {
@@ -1700,7 +1703,7 @@ function buildTirgusListingHistoryBodyHtml(
       f.photoGroups,
       f.photos,
       photoDataUrls,
-      normalizeSourceBlockPhotoGroups,
+      normalizeListingHistoryPhotoGroups,
     );
     if (photosHtml) parts.push(photosHtml);
     const tirgusCommentBox = pdfReportCommentBox(f.comments ?? "");

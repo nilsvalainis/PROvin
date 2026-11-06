@@ -20,6 +20,7 @@ import {
   flattenSourceBlockPhotoGroups,
   isSourceBlockPhotoId,
   normalizeSourceBlockPhotoGroups,
+  sourceBlockPhotoMaxForKey,
 } from "@/lib/source-block-photo-types";
 
 export const SOURCE_BLOCK_PHOTO_MAX_BYTES = 320 * 1024;
@@ -72,10 +73,14 @@ function shouldSkipEphemeralFs(): boolean {
   return process.env.VERCEL === "1" && (normalized === tmp || normalized.startsWith(`${tmp}${path.sep}`));
 }
 
-function collectFromBlock(keep: Set<string>, block: { photos?: unknown; photoGroups?: unknown } | undefined): void {
+function collectFromBlock(
+  keep: Set<string>,
+  block: { photos?: unknown; photoGroups?: unknown } | undefined,
+  max?: number,
+): void {
   if (!block) return;
-  const groups = normalizeSourceBlockPhotoGroups(block.photoGroups, block.photos);
-  for (const ph of flattenSourceBlockPhotoGroups(groups)) keep.add(ph.id);
+  const groups = normalizeSourceBlockPhotoGroups(block.photoGroups, block.photos, max);
+  for (const ph of flattenSourceBlockPhotoGroups(groups, max)) keep.add(ph.id);
 }
 
 export function collectSourceBlockPhotoIdsFromWorkspace(
@@ -86,7 +91,7 @@ export function collectSourceBlockPhotoIdsFromWorkspace(
   if (!raw || typeof raw !== "object") return keep;
   const blocks = raw as Record<string, { photos?: unknown; photoGroups?: unknown; sections?: unknown }>;
   for (const key of PHOTO_BLOCK_KEYS) {
-    collectFromBlock(keep, blocks[key]);
+    collectFromBlock(keep, blocks[key], sourceBlockPhotoMaxForKey(key));
   }
   const citi = blocks.citi_avoti;
   if (Array.isArray(citi?.sections)) {
