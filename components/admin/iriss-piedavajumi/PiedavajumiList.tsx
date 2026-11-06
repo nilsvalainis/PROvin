@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
-import { PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
+import { PdQuestionTag, PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
 import { deleteIrissPdRequest, usePdCopyLink, usePdRebase } from "@/components/admin/iriss-piedavajumi/pd-actions";
 import {
   countIrissPdByStatus,
@@ -264,8 +264,9 @@ export function PiedavajumiList({
                   <Source row={row} />
                   <b>{formatIrissPdPrice(row.price) || "-"}</b>
                   <span>{row.validUntil ? formatOfferValidUntilLv(row.validUntil) : "-"}</span>
-                  <span>
+                  <span className="pd-chips">
                     <PdStatusChip status={status} />
+                    <PdQuestionTag count={row.openQuestions} />
                   </span>
                   <span>
                     <RowAction
@@ -289,7 +290,10 @@ export function PiedavajumiList({
               return (
                 <div className="pd-mc" key={row.id} data-status={status}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <PdStatusChip status={status} />
+                    <span className="pd-chips">
+                      <PdStatusChip status={status} />
+                      <PdQuestionTag count={row.openQuestions} />
+                    </span>
                     <span className="pd-src">{IRISS_PD_SOURCE_LV[row.source]}</span>
                   </div>
                   <Link className="row" href={`/admin/iriss/piedavajumi/${row.id}`}>

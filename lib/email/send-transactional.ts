@@ -254,28 +254,28 @@ export async function sendAdminBusinessPogaDigestEmail(
 
 /** Nilam par klienta lēmumu IRISS piedāvājumā. Klientam netiek sūtīts nekas. */
 export async function sendAdminIrissOfferDecisionEmail(
-  email: { subject: string; title: string; approved: boolean; lines: { label: string; value: string }[]; text: string; url: string },
+  email: { subject: string; title: string; approved: boolean; lines: { label: string; value: string }[]; text: string; url: string; ctaLabel?: string },
   adminTo: string,
 ): Promise<boolean> {
   if (!getSmtpTransport()) {
     console.warn("[email] IRISS piedāvājuma lēmums: SMTP nav iestatīts, e-pasts netika nosūtīts.");
     return false;
   }
-  const html = irissOfferDecisionHtml({ title: email.title, approved: email.approved, lines: email.lines, adminUrl: email.url });
+  const html = irissOfferDecisionHtml({ title: email.title, approved: email.approved, lines: email.lines, adminUrl: email.url, ctaLabel: email.ctaLabel });
   await sendSmtpMail({ to: adminTo, subject: email.subject, text: email.text, html });
   return true;
 }
 
 /** Nilam par klienta jautājumu IRISS piedāvājuma publiskajā saitē. Klientam netiek sūtīts nekas. */
 export async function sendAdminIrissOfferQuestionEmail(
-  email: { subject: string; title: string; question: string; lines: { label: string; value: string }[]; text: string; url: string },
+  email: { subject: string; title: string; question: string; lines: { label: string; value: string }[]; text: string; url: string; ctaLabel?: string },
   adminTo: string,
 ): Promise<boolean> {
   if (!getSmtpTransport()) {
     console.warn("[email] IRISS piedāvājuma jautājums: SMTP nav iestatīts, e-pasts netika nosūtīts.");
     return false;
   }
-  const html = irissOfferQuestionHtml({ title: email.title, question: email.question, lines: email.lines, adminUrl: email.url });
+  const html = irissOfferQuestionHtml({ title: email.title, question: email.question, lines: email.lines, adminUrl: email.url, ctaLabel: email.ctaLabel });
   await sendSmtpMail({ to: adminTo, subject: email.subject, text: email.text, html });
   return true;
 }

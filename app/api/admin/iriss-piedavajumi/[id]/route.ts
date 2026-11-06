@@ -11,7 +11,16 @@ import { importIrissPdFromAutoparks, importIrissPdFromLink } from "@/lib/iriss-p
 import { irissPdFillEmpty, irissPdFillFromAutoparks, applyIrissPdImportData, type IrissPdImport } from "@/lib/iriss-piedavajumi-import";
 import { irissPdLinkErrorLv } from "@/lib/iriss-piedavajumi-sources";
 import { runIrissPdApprovalEffects } from "@/lib/iriss-piedavajumi-approve";
-import { claimIrissPdDecision, deleteIrissPd, newIrissPdToken, readIrissPd, readIrissPdFresh, writeIrissPd } from "@/lib/iriss-piedavajumi-store";
+import { applyIrissPdAdminNote } from "@/lib/iriss-piedavajumi-messages";
+import {
+  claimIrissPdDecision,
+  clearIrissPdDecision,
+  deleteIrissPd,
+  newIrissPdToken,
+  readIrissPd,
+  readIrissPdFresh,
+  writeIrissPd,
+} from "@/lib/iriss-piedavajumi-store";
 import { isSafeIrissPdId } from "@/lib/iriss-piedavajumi-types";
 import { requireAdminOnlyApi } from "@/lib/staff-auth";
 
@@ -61,6 +70,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
 
 /**
  * POST { action } - send | revert | decline | approve (ar roku, piem. klients apstiprināja pa tālruni)
+ * | reopen (noraidīto atkal dara pieejamu klientam) | note { text } (iekšēja piezīme pie klienta ziņām)
  * | create-order (apstiprinātam, ja pasūtījums automātiski neizveidojās).
  */
 export async function POST(req: Request, { params }: Ctx) {
@@ -68,7 +78,7 @@ export async function POST(req: Request, { params }: Ctx) {
   if (!gate.ok) return gate.response;
   const { id } = await params;
   if (!isSafeIrissPdId(id)) return fail(400, "invalid");
-  let body: { action?: unknown; kind?: unknown; carId?: unknown; url?: unknown; manual?: unknown };
+  let body: { action?: unknown; kind?: unknown; carId?: unknown; url?: unknown; manual?: unknown; text?: unknown };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -123,7 +133,15 @@ export async function POST(req: Request, { params }: Ctx) {
     return NextResponse.json({ ok: true, record: next }, { headers: noStore });
   }
 
-  if (!["send", "revert", "decline", "approve"].includes(action)) return fail(400, "invalid_action");
+  if (action === "note") {
+    // Nils 07.11: atbilde uz klienta jautājumu ir tikai iekšēja piezīme - klientam nekas netiek sūtīts.
+    const res = applyIrissPdAdminNote(rec, body.text, { at, by, id: crypto.randomUUID() });
+    if (!res.ok) return fail(400, "empty", "Ieraksti piezīmi.");
+    if (!(await writeIrissPd(res.record))) return fail(500, "write_failed", "Neizdevās saglabāt.");
+    return NextResponse.json({ ok: true, record: res.record }, { headers: noStore });
+  }
+
+  if (!["send", "revert", "decline", "approve", "reopen"].includes(action)) return fail(400, "invalid_action");
   const res = applyIrissPdAction(rec, action as IrissPdAction, { by, at, nowMs, newToken: newIrissPdToken });
   if (!res.ok) return fail(409, "rejected", res.error);
   let next = res.record;
@@ -132,6 +150,10 @@ export async function POST(req: Request, { params }: Ctx) {
     if (!claim) return fail(500, "write_failed", "Neizdevās saglabāt.");
     if (!claim.won) return fail(409, "rejected", "Klients jau atbildēja - pārlādē lapu.");
     next = await runIrissPdApprovalEffects(next, { at, by });
+  }
+  if (action === "reopen") {
+    // Klienta (vai admina) noraidījums atcelts: lēmuma fails jānoņem, citādi klients nevarētu apstiprināt.
+    await clearIrissPdDecision(id);
   }
   if (!(await writeIrissPd(next))) return fail(500, "write_failed", "Neizdevās saglabāt.");
   return NextResponse.json({ ok: true, record: next }, { headers: noStore });

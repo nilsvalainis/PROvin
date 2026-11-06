@@ -42,6 +42,7 @@ import {
   type IrissPdVisibility,
   type IrissPiedavajums,
 } from "@/lib/iriss-piedavajumi-types";
+import { irissPdOpenQuestionCount, irissPdPublicQuestions, normalizeIrissPdMessages } from "@/lib/iriss-piedavajumi-messages";
 import { formatIrissEurWhole, parsePriceLike } from "@/lib/iriss-price-format";
 import { formatOfferValidUntilLv, normalizeOfferValidUntil, rigaLocalToUtcIso } from "@/lib/iriss-offer-valid-until";
 
@@ -207,6 +208,8 @@ export function normalizeIrissPiedavajums(raw: unknown): IrissPiedavajums | null
     approvedOrderId: isSafeIrissPdId(approvedOrderId) ? approvedOrderId : "",
     basedOnId: isSafeIrissPdId(basedOnId) ? basedOnId : "",
     history: normalizeHistory(o.history),
+    messages: normalizeIrissPdMessages(o.messages),
+    declinedByClient: o.declinedByClient === true && o.status === "declined",
   };
 }
 
@@ -385,18 +388,20 @@ export function photoKey(p: IrissPdPhoto): string {
 
 /* ---------------- Darbības ---------------- */
 
-export type IrissPdAction = "send" | "revert" | "decline" | "approve";
+export type IrissPdAction = "send" | "revert" | "decline" | "approve" | "reopen";
 
 export const IRISS_PD_ACTION_LV: Record<IrissPdAction, string> = {
   send: "Nosūtīt klientam",
   revert: "Atsaukt uz melnrakstu",
   decline: "Atzīmēt noraidītu",
   approve: "Atzīmēt apstiprinātu",
+  reopen: "Atjaunot (klientam atkal pieejams)",
 };
 
 export function irissPdAvailableActions(status: IrissPdStatus): IrissPdAction[] {
   if (status === "requested" || status === "draft") return ["send", "decline", "approve"];
   if (status === "sent") return ["revert", "decline", "approve"];
+  if (status === "declined") return ["reopen"];
   return [];
 }
 
@@ -434,7 +439,22 @@ export function applyIrissPdAction(
     return { ok: true, record: appendIrissPdHistory({ ...base, status: "draft" }, { at: ctx.at, by: ctx.by, text: "Atsaukts uz melnrakstu (saite klientam nav pieejama)" }) };
   }
   if (action === "decline") {
-    return { ok: true, record: appendIrissPdHistory({ ...base, status: "declined", decidedAt: ctx.at }, { at: ctx.at, by: ctx.by, text: "Atzīmēts kā noraidīts" }) };
+    return {
+      ok: true,
+      record: appendIrissPdHistory({ ...base, status: "declined", declinedByClient: false, decidedAt: ctx.at }, { at: ctx.at, by: ctx.by, text: "Atzīmēts kā noraidīts" }),
+    };
+  }
+  if (action === "reopen") {
+    // Nils 07.11: noraidīto var atjaunot - saite atkal ļauj apstiprināt (tas pats tokens, ja bija).
+    const blockers = irissPdSendBlockers(rec, ctx.nowMs);
+    if (blockers.length) return { ok: false, error: blockers.join(" ") };
+    return {
+      ok: true,
+      record: appendIrissPdHistory(
+        { ...base, status: "sent", declinedByClient: false, decidedAt: "", linkToken: rec.linkToken || ctx.newToken() },
+        { at: ctx.at, by: ctx.by, text: `Atjaunots - klientam atkal pieejams (līdz ${formatOfferValidUntilLv(rec.validUntil)})` },
+      ),
+    };
   }
   return { ok: true, record: appendIrissPdHistory({ ...base, status: "approved", decidedAt: ctx.at }, { at: ctx.at, by: ctx.by, text: "Apstiprināts" }) };
 }
@@ -461,6 +481,8 @@ export function rebaseIrissPd(
     approvedOrderId: "",
     basedOnId: base.id,
     history: [],
+    messages: [],
+    declinedByClient: false,
     vehicle: { ...base.vehicle },
     client: { ...base.client },
     photos: base.photos.map((p) => ({ ...p })),
@@ -514,6 +536,7 @@ export function irissPdToListRow(rec: IrissPiedavajums): IrissPdListRow {
     approvedOrderId: rec.approvedOrderId,
     cover: rec.photos[0] ?? null,
     updatedAt: rec.updatedAt,
+    openQuestions: irissPdOpenQuestionCount(rec.messages),
   };
 }
 
@@ -539,6 +562,7 @@ export function normalizeIrissPdListRow(raw: unknown): IrissPdListRow | null {
     approvedOrderId: isSafeIrissPdId(o.approvedOrderId) ? o.approvedOrderId : "",
     cover,
     updatedAt: clean(o.updatedAt, 40),
+    openQuestions: typeof o.openQuestions === "number" && Number.isFinite(o.openQuestions) ? Math.max(0, Math.min(999, Math.floor(o.openQuestions))) : 0,
   };
 }
 
@@ -641,8 +665,11 @@ export function irissPdBlockVisible(vis: IrissPdVisibility, id: IrissPdBlockId, 
 export type IrissPdPublicFact = { label: string; value: string };
 
 export type IrissPdPublicView = {
-  /** open - var apstiprināt; approved - jau apstiprināts; closed - nav pieejams (nav vai beidzies). */
-  state: "open" | "approved" | "closed";
+  /**
+   * open - var apstiprināt/noraidīt; approved - jau apstiprināts; declined - klients noraidīja saitē
+   * (redz noraidīto stāvokli, apstiprināt nevar); closed - nav pieejams (nav, beidzies vai admins noraidīja).
+   */
+  state: "open" | "approved" | "declined" | "closed";
   title: string;
   price: string;
   /** PVN režīms pie cenas («PVN atskaitāms» / «Ar PVN (marža)»); tukšs, ja nav zināms. */
@@ -657,6 +684,8 @@ export type IrissPdPublicView = {
   needsContact: boolean;
   /** j75: Aprīkojums, Kopsavilkums, Novērtējums (tikai ieslēgtās sadaļas un ieķeksētās rindas). */
   content: IrissPdPublicContent | null;
+  /** Klienta paša jautājumi (pēdējie). Admina piezīmes šeit nekad nenonāk. */
+  questions: { at: string; text: string }[];
 };
 
 export type IrissPdPublicContent = {
@@ -744,7 +773,13 @@ export function irissPdDeleteConfirm(label: string): string {
 export function buildIrissPdPublicView(rec: IrissPiedavajums, mode: IrissPdViewMode, nowMs: number): IrissPdPublicView {
   const expired = isIrissPdDeadlinePassed(rec, nowMs);
   const state: IrissPdPublicView["state"] =
-    rec.status === "approved" ? "approved" : rec.status === "sent" && !expired ? "open" : "closed";
+    rec.status === "approved"
+      ? "approved"
+      : rec.status === "declined" && rec.declinedByClient
+        ? "declined"
+        : rec.status === "sent" && !expired
+          ? "open"
+          : "closed";
   const blocks: IrissPdPublicView["blocks"] = {};
   const a = rec.auto1;
   if (a) {
@@ -778,6 +813,7 @@ export function buildIrissPdPublicView(rec: IrissPiedavajums, mode: IrissPdViewM
     auto1,
     needsContact: !rec.client.name.trim() && !rec.client.orderId,
     content: buildIrissPdPublicContent(rec.content),
+    questions: mode === "link" ? irissPdPublicQuestions(rec.messages) : [],
   };
 }
 
