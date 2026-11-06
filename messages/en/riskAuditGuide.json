@@ -4,7 +4,7 @@
     "subtitle": "Send us a link to the listing and get a short comment on whether the car is worth checking further.",
     "triggerCta": "Submit a listing",
     "pausedBody": "Free listing reviews are temporarily unavailable. Because we check every link by hand, a short queue has built up. Please try again later or tomorrow.",
-    "pausedSoftCta": "Need an answer sooner? Order PROVIN MINI or PROVIN AUDITS - they are running as usual.",
+    "pausedSoftCta": "Need an answer sooner? Order PROVIN AUDITS or dealer data - they are running as usual.",
     "pausedOrderCta": "Order an audit",
     "form": {
       "listingLabel": "Listing link",

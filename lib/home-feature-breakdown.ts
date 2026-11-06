@@ -1,5 +1,5 @@
 import type { Tp5DesktopHeroFeatureIcon } from "@/lib/test-pricing-5-desktop-hero-features";
-import { TP5_KOREA_USA_PUBLIC } from "@/lib/test-pricing-5-mobile";
+import { TP5_KOREA_USA_PUBLIC, TP5_MINI_PUBLIC } from "@/lib/test-pricing-5-mobile";
 import {
   TP5_AUDITS_SAMPLE_REPORT_HREF,
   TP5_BUSINESS_SAMPLE_REPORT_HREF,
@@ -82,7 +82,7 @@ const AUDITS_LV: HomeFeatureBreakdownPackage = {
   badge: "Populārākā izvēle",
   buttonText: "PASŪTĪT PROVIN AUDITU 99,99 €",
   goal:
-    "Padziļināta izpēte no ārvalstīm ievestiem auto. Apvieno PROVIN MINI ar vismaz 2, parasti 3 maksas vēstures pārbaudēm (piemēram, carVertical, autoDNA, oficiālā dīlera dati), izsoļu foto arhīviem un risku analīzi, sniedzot padziļinātu vēstures, nobraukuma un risku izvērtējumu.",
+    "Padziļināta izpēte no ārvalstīm ievestiem auto. Apvieno Latvijas reģistrus un sludinājuma analīzi ar vismaz 2, parasti 3 maksas vēstures pārbaudēm (piemēram, carVertical, autoDNA, oficiālā dīlera dati), izsoļu foto arhīviem un risku analīzi, sniedzot padziļinātu vēstures, nobraukuma un risku izvērtējumu.",
   items: [
     {
       title: "Starptautiska vēstures pārbaude",
@@ -257,7 +257,7 @@ const AUDITS_EN: HomeFeatureBreakdownPackage = {
   badge: "Most popular choice",
   buttonText: "ORDER PROVIN AUDITS €99.99",
   goal:
-    "An in-depth investigation of cars imported from abroad. Combines PROVIN MINI with at least 2, usually 3 paid history checks (for example carVertical, autoDNA, official dealer data), auction photo archives and risk analysis, delivering an in-depth history, mileage and risk assessment.",
+    "An in-depth investigation of cars imported from abroad. Combines Latvian registers and listing analysis with at least 2, usually 3 paid history checks (for example carVertical, autoDNA, official dealer data), auction photo archives and risk analysis, delivering an in-depth history, mileage and risk assessment.",
   items: [
     {
       title: "International history check",
@@ -512,7 +512,7 @@ const AUDITS_DE: HomeFeatureBreakdownPackage = {
   badge: "Beliebteste Wahl",
   buttonText: "PROVIN AUDITS BESTELLEN 99,99 €",
   goal:
-    "Eine vertiefte Prüfung für aus dem Ausland importierte Autos. Verbindet PROVIN MINI mit mindestens 2, in der Regel 3 kostenpflichtigen Historienprüfungen (zum Beispiel carVertical, autoDNA, offizielle Händlerdaten), Auktionsfotoarchiven und Risikoanalyse und liefert eine vertiefte Bewertung von Historie, Laufleistung und Risiken.",
+    "Eine vertiefte Prüfung für aus dem Ausland importierte Autos. Verbindet lettische Register und Inseratsanalyse mit mindestens 2, in der Regel 3 kostenpflichtigen Historienprüfungen (zum Beispiel carVertical, autoDNA, offizielle Händlerdaten), Auktionsfotoarchiven und Risikoanalyse und liefert eine vertiefte Bewertung von Historie, Laufleistung und Risiken.",
   items: [
     {
       title: "Internationale Fahrzeughistorie",
@@ -711,7 +711,7 @@ const AUDITS_RU: HomeFeatureBreakdownPackage = {
   badge: "Самый популярный выбор",
   buttonText: "ЗАКАЗАТЬ PROVIN AUDITS 99,99 €",
   goal:
-    "Углублённая проверка машин, ввезённых из-за рубежа. Соединяет PROVIN MINI с не менее чем 2, обычно 3 платными проверками истории (например, carVertical, autoDNA, данные официального дилера), фотоархивами аукционов и анализом рисков и даёт глубокую оценку истории, пробега и рисков.",
+    "Углублённая проверка машин, ввезённых из-за рубежа. Соединяет латвийские реестры и анализ объявления с не менее чем 2, обычно 3 платными проверками истории (например, carVertical, autoDNA, данные официального дилера), фотоархивами аукционов и анализом рисков и даёт глубокую оценку истории, пробега и рисков.",
   items: [
     {
       title: "Международная проверка истории",
@@ -899,7 +899,9 @@ export function getHomeFeatureBreakdownPackages(locale?: string): HomeFeatureBre
         : locale === "ru"
           ? HOME_FEATURE_BREAKDOWN_PACKAGES_RU
           : HOME_FEATURE_BREAKDOWN_PACKAGES;
-  return all.filter((pkg) => pkg.id !== "koreaUsa" || TP5_KOREA_USA_PUBLIC);
+  return all.filter(
+    (pkg) => (pkg.id !== "koreaUsa" || TP5_KOREA_USA_PUBLIC) && (pkg.id !== "mini" || TP5_MINI_PUBLIC),
+  );
 }
 
 /** Alias for catalog page clarity. */

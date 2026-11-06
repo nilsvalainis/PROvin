@@ -15,12 +15,13 @@ import { buildSiteRailSections, siteRailActiveFromHash, siteRailRouteActiveIndex
 describe("home-hero-plan", () => {
   it("keeps hero tabs within the catalog deep-link cap", () => {
     expect(HERO_CHECKOUT_TAB_IDS.length).toBeLessThanOrEqual(HERO_CHECKOUT_TAB_MAX);
-    expect(HERO_CHECKOUT_TAB_IDS).toEqual(["mini", "audits", "dealer"]);
+    expect(HERO_CHECKOUT_TAB_IDS).toEqual(["audits", "dealer"]);
   });
 
   it("parses plan query aliases", () => {
     expect(parseHeroPlanParam("dealer")).toBe("dealer");
     expect(parseHeroPlanParam("audit")).toBe("audits");
+    expect(parseHeroPlanParam("mini")).toBeNull();
     expect(parseHeroPlanParam("koreaUsa")).toBeNull();
     expect(parseHeroPlanParam("asv")).toBeNull();
     expect(parseHeroPlanParam("nope")).toBeNull();
@@ -32,9 +33,9 @@ describe("home-hero-plan", () => {
 });
 
 describe("pakalpojumi catalog", () => {
-  it("exposes catalog cards including dealer and partners (koreaUsa temporarily hidden)", () => {
+  it("exposes catalog cards including dealer and partners (MINI and koreaUsa temporarily hidden)", () => {
     const pkgs = getCatalogFeatureBreakdownPackages();
-    expect(pkgs.map((p) => p.id)).toEqual(["audits", "mini", "dealer", "partner"]);
+    expect(pkgs.map((p) => p.id)).toEqual(["audits", "dealer", "partner"]);
     const dealer = pkgs.find((p) => p.id === "dealer")!;
     expect(dealer.title).toBe("DĪLERA DATI");
     expect(dealer.items).toHaveLength(4);
@@ -53,19 +54,8 @@ describe("pakalpojumi catalog", () => {
       if (locale === "ru") expect(locCampaign.description).toContain("выполненные отзывные кампании");
     }
     expect(dealer.sampleReportHref).toContain("dilera");
-    const mini = pkgs.find((p) => p.id === "mini")!;
-    expect(mini.sampleReportHref).toContain("provin-mini-piemers");
-    const registers = mini.items.find((item) => item.icon === "eu-registry")!;
-    expect(registers.title).toBe("Latvijas reģistri & TA vēsture");
-    expect(registers.description).toContain("Latvijas publisko reģistru");
-    expect(registers.description).not.toContain("Eiropas");
-    expect(registers.description.toLowerCase()).not.toContain("eksperts");
-    expect(`${registers.title}${registers.description}`).not.toMatch(/[\u2013\u2014]/);
-    for (const locale of ["en", "de", "ru"] as const) {
-      const locMini = getHomeFeatureBreakdownPackages(locale).find((pkg) => pkg.id === "mini")!;
-      const locRegisters = locMini.items.find((item) => item.icon === "eu-registry")!;
-      expect(locRegisters.description).not.toMatch(/Europ|Европ/i);
-      expect(locRegisters.title.toLowerCase()).not.toContain("eksperts");
+    for (const locale of ["lv", "en", "de", "ru"] as const) {
+      expect(getHomeFeatureBreakdownPackages(locale).find((pkg) => pkg.id === "mini")).toBeUndefined();
     }
     const audits = pkgs.find((p) => p.id === "audits")!;
     expect(audits.goal).toContain("vismaz 2, parasti 3 maksas vēstures pārbaudēm");
@@ -93,7 +83,6 @@ describe("pakalpojumi catalog", () => {
     const pkgs = getCatalogFeatureBreakdownPackages();
     expect(pkgs.map((p) => catalogPackageAnchorId(p.id))).toEqual([
       "pakalpojums-audits",
-      "pakalpojums-mini",
       "pakalpojums-dealer",
       "pakalpojums-partner",
     ]);

@@ -4,7 +4,7 @@
     "subtitle": "Senden Sie uns den Link zum Inserat und erhalten Sie einen kurzen Kommentar, ob sich eine weitere Prüfung lohnt.",
     "triggerCta": "Inserat senden",
     "pausedBody": "Kostenlose Inseratseinschätzungen sind vorübergehend nicht verfügbar. Da wir jeden Link manuell prüfen, hat sich eine kleine Warteschlange gebildet. Bitte versuchen Sie es später oder morgen erneut.",
-    "pausedSoftCta": "Sie brauchen schneller eine Antwort? Bestellen Sie PROVIN MINI oder PROVIN AUDITS, beide laufen wie gewohnt.",
+    "pausedSoftCta": "Sie brauchen schneller eine Antwort? Bestellen Sie PROVIN AUDITS oder Händlerdaten, beide laufen wie gewohnt.",
     "pausedOrderCta": "Audit bestellen",
     "form": {
       "listingLabel": "Link zum Inserat",

@@ -35,12 +35,9 @@ describe("heroV6OptionIds", () => {
     expect(heroV6OptionIds("dealer")).toEqual(["audits", "dealer"]);
   });
 
-  it("adds MINI only when it was chosen on /pakalpojumi", () => {
-    expect(heroV6OptionIds("mini")).toEqual(["audits", "mini", "dealer"]);
-  });
-
-  it("keeps MINI listed after switching to another package", () => {
-    expect(heroV6OptionIds("audits", "mini")).toEqual(["audits", "mini", "dealer"]);
+  it("does not show MINI while it is hidden from the public site", () => {
+    expect(heroV6OptionIds("mini")).toEqual(["audits", "dealer"]);
+    expect(heroV6OptionIds("audits", "mini")).toEqual(["audits", "dealer"]);
   });
 
   it("never adds a hidden service", () => {

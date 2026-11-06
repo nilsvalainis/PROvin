@@ -16,8 +16,8 @@
       },
       {
         "id": "mini-vs-audits",
-        "q": "Kuru auditu izvēlēties: PROVIN MINI vai PROVIN AUDITS?",
-        "a": "PROVIN MINI (39,99 €) ir paredzēts automašīnām, kas jau ilgāku laiku tiek ekspluatētas Latvijā. Tā ir konsultācija un vietējo reģistru pārbaude: CSDD dati, apdrošinātāju dati, tehnisko apskašu (TA) vēsture, sludinājuma analīze un ieteikumi klātienes apskatei. MINI neietver maksas datubāzes, ārvalstu reģistrus, dīleru un izsoļu datus.\n\nPROVIN AUDITS (99,99 €) ir padziļināta izpēte no ārvalstīm ievestiem auto. Tajā ietilpst visa MINI pakete + vismaz 2, parasti 3 maksas vēstures pārbaudes (piemēram, carVertical, autoDNA vai Cebia), izcelsmes valsts reģistri un oficiālo dīleru sistēmas dati, ja tie konkrētajam auto ir pieejami, kā arī Eiropas izsoļu foto arhīvi, ļaujot atklāt reālo auto stāvokli un nobraukumu pirms remonta un importa."
+        "q": "Ko ietver PROVIN AUDITS?",
+        "a": "PROVIN AUDITS (99,99 €) ir padziļināta auto izpēte, īpaši no ārvalstīm ievestiem auto. Tajā ietilpst Latvijas avoti (CSDD dati, apdrošinātāju dati, tehnisko apskašu vēsture, sludinājuma analīze) un vismaz 2, parasti 3 maksas vēstures pārbaudes (piemēram, carVertical, autoDNA vai Cebia), izcelsmes valsts reģistri un oficiālo dīleru sistēmas dati, ja tie konkrētajam auto ir pieejami, kā arī Eiropas izsoļu foto arhīvi, ļaujot atklāt reālo auto stāvokli un nobraukumu pirms remonta un importa.\n\nPēc audita apspriežam rezultātu pa tālruni un dodam ieteikumus klātienes apskatei."
       },
       {
         "id": "audits-paid-reports",
