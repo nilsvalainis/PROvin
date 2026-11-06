@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   adminB2bInvitePriceError,
@@ -7,12 +9,12 @@ import {
   emptyB2bInvitePricing,
   isB2bInviteOpen,
   isSafeB2bInviteToken,
-  newB2bInviteToken,
   parseB2bInviteRecord,
   partnerPricingFromInvite,
   toAdminB2bInviteJson,
   validateB2bInvitePricingInput,
 } from "@/lib/b2b-partner-invite";
+import { newB2bInviteToken } from "@/lib/b2b-partner-invite-token";
 
 const TOKEN = "inv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 
@@ -174,5 +176,26 @@ describe("B2B invite price security", () => {
     expect(lines.find((line) => line.id === "business")?.display).toBe("69,99 €");
     expect(lines.find((line) => line.id === "dealer_raw")?.display).toBe("noklusējums (19,99 €)");
     expect(lines.find((line) => line.id === "business1")?.display).toBe("noklusējums (79,99 €)");
+  });
+});
+
+describe("B2B invite client boundary", () => {
+  const root = process.cwd();
+  const read = (rel: string) => readFileSync(path.join(root, rel), "utf8");
+
+  it("keeps node:crypto off the client invite panel import", () => {
+    const shared = read("lib/b2b-partner-invite.ts");
+    expect(shared).not.toMatch(/from\s+["']node:crypto["']/);
+    expect(shared).not.toMatch(/from\s+["']crypto["']/);
+    expect(shared).not.toMatch(/import\s+["']server-only["']/);
+    expect(shared).not.toMatch(/b2b-partner-invite-token/);
+
+    const panel = read("components/admin/AdminB2bInvitePanel.tsx");
+    expect(panel).toMatch(/from ["']@\/lib\/b2b-partner-invite["']/);
+    expect(panel).not.toMatch(/b2b-partner-invite-token|node:crypto|server-only/);
+
+    const token = read("lib/b2b-partner-invite-token.ts");
+    expect(token).toMatch(/import\s+["']server-only["']/);
+    expect(token).toMatch(/from\s+["']node:crypto["']/);
   });
 });

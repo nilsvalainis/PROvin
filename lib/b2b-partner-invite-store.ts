@@ -6,11 +6,11 @@ import {
   emptyB2bInvitePricing,
   isB2bInviteOpen,
   isSafeB2bInviteToken,
-  newB2bInviteToken,
   parseB2bInviteRecord,
   type B2bInvitePricing,
   type B2bPartnerInviteRecord,
 } from "@/lib/b2b-partner-invite";
+import { newB2bInviteToken } from "@/lib/b2b-partner-invite-token";
 
 const DOC_KEY = "invites";
 
