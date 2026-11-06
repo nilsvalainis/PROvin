@@ -169,11 +169,18 @@ export async function fetchCompanyVerifySources(
   fetchImpl: CompanyVerifyFetch = fetch,
   timeoutMs = COMPANY_VERIFY_TIMEOUT_MS,
 ): Promise<CompanyVerifySources> {
-  const [urCompany, vies] = await Promise.all([
-    fetchUrCompany(input, fetchImpl, timeoutMs),
-    fetchViesVat(input, fetchImpl, timeoutMs),
-  ]);
-  const officerReg = urCompany.record?.regcode || input.companyReg;
-  const urOfficers = await fetchUrOfficers(officerReg, fetchImpl, timeoutMs);
+  const knownReg = digitsOnlyReg(input.companyReg);
+  const urCompanyP = fetchUrCompany(input, fetchImpl, timeoutMs);
+  const viesP = fetchViesVat(input, fetchImpl, timeoutMs);
+  if (knownReg.length >= 8) {
+    const [urCompany, vies, urOfficers] = await Promise.all([
+      urCompanyP,
+      viesP,
+      fetchUrOfficers(input.companyReg, fetchImpl, timeoutMs),
+    ]);
+    return { urCompany, urOfficers, vies };
+  }
+  const [urCompany, vies] = await Promise.all([urCompanyP, viesP]);
+  const urOfficers = await fetchUrOfficers(urCompany.record?.regcode || input.companyReg, fetchImpl, timeoutMs);
   return { urCompany, urOfficers, vies };
 }
