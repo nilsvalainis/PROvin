@@ -102,10 +102,46 @@ const AUDITS_LV: HomeFeatureBreakdownPackage = {
       icon: "autodna",
     },
     {
-      title: "Oficiālo dīleru un izsoļu portālu arhīvs*",
+      title: "Oficiālo dīleru servisa dati*",
       description:
-        "Dati no autorizētajiem servisiem un vēsturisko izsoļu portālu arhīviem, ieskaitot sākotnējos bojājumu attēlus pirms remonta. *Pieejami noteiktiem ražotājiem un modeļiem.",
+        "Detalizēti nobraukuma, apkopju intervālu un remontu dati no autorizētajiem servisiem. *Pieejami noteiktiem ražotājiem un modeļiem.",
       icon: "dealer-data",
+    },
+    {
+      title: "Eiropas izsoļu portālu arhīvi*",
+      description:
+        "Ieraksti un foto no brīža, kad auto bija bojāts vai pārdots izsolē, ieskaitot bojājumu attēlus pirms remonta. *Pieejami noteiktiem ražotājiem un modeļiem.",
+      icon: "auction",
+    },
+    {
+      title: "Oficiālie valstu reģistri",
+      description:
+        "Vēsturi pārbaudām arī ES valstu oficiālajos reģistros. Citi reģioni - pēc pieprasījuma.",
+      icon: "eu-registry",
+    },
+    {
+      title: "Latvijas avoti",
+      description:
+        "Apdrošinātāju dati, sludinājuma analīze un tehnisko apskašu vēsture.",
+      icon: "listing-analysis",
+    },
+    {
+      title: "Padziļināta analīze un riski",
+      description:
+        "Izvērtējam nobraukumu, bojājumus un pretrunas starp avotiem un dodam norādes klātienes apskatei.",
+      icon: "inspection-tips",
+    },
+    {
+      title: "Konsultācija pa tālruni",
+      description:
+        "Pēc audita apspriežam datus un palīdzam izlemt par nākamo soli - pirkt, pārbaudīt vai atteikties.",
+      icon: "consultation",
+    },
+    {
+      title: "Individuāla pieeja",
+      description:
+        "Sarežģītās situācijās personīgi sazināmies ar valstu reģistriem un iestādēm. To nedara neviena automātiska atskaite.",
+      icon: "international",
     },
   ],
   sampleReportHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
@@ -241,10 +277,46 @@ const AUDITS_EN: HomeFeatureBreakdownPackage = {
       icon: "autodna",
     },
     {
-      title: "Official dealer & auction portal archive*",
+      title: "Official dealer service data*",
       description:
-        "Data from authorised service centres and historical auction portal archives, including original damage photos before repairs. *Available for certain manufacturers and models.",
+        "Detailed mileage, service interval and repair data from authorised service centres. *Available for certain manufacturers and models.",
       icon: "dealer-data",
+    },
+    {
+      title: "European auction portal archives*",
+      description:
+        "Records and photos from the time the car was damaged or sold at auction, including damage photos before repair. *Available for certain manufacturers and models.",
+      icon: "auction",
+    },
+    {
+      title: "Official national registers",
+      description:
+        "We also check the history in official registers of EU countries. Other regions on request.",
+      icon: "eu-registry",
+    },
+    {
+      title: "Latvian sources",
+      description:
+        "Insurer data, listing analysis and roadworthiness inspection history.",
+      icon: "listing-analysis",
+    },
+    {
+      title: "In-depth analysis and risks",
+      description:
+        "We assess mileage, damage and contradictions between sources and give pointers for the in-person inspection.",
+      icon: "inspection-tips",
+    },
+    {
+      title: "Phone consultation",
+      description:
+        "After the audit we go through the data and help you decide on the next step - buy, inspect further or walk away.",
+      icon: "consultation",
+    },
+    {
+      title: "Individual approach",
+      description:
+        "In complex cases we personally contact national registers and authorities. No automated report does this.",
+      icon: "international",
     },
   ],
   sampleReportHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
@@ -460,10 +532,46 @@ const AUDITS_DE: HomeFeatureBreakdownPackage = {
       icon: "autodna",
     },
     {
-      title: "Archiv offizieller Händler und Auktionsportale*",
+      title: "Offizielle Händler-Servicedaten*",
       description:
-        "Daten autorisierter Werkstätten und historischer Auktionsportale, einschließlich der ursprünglichen Schadensfotos vor der Reparatur. *Verfügbar für bestimmte Hersteller und Modelle.",
+        "Detaillierte Daten zu Kilometerstand, Wartungsintervallen und Reparaturen aus autorisierten Werkstätten. *Verfügbar für bestimmte Hersteller und Modelle.",
       icon: "dealer-data",
+    },
+    {
+      title: "Archive europäischer Auktionsportale*",
+      description:
+        "Einträge und Fotos aus der Zeit, als das Auto beschädigt war oder versteigert wurde, einschließlich Schadensfotos vor der Reparatur. *Verfügbar für bestimmte Hersteller und Modelle.",
+      icon: "auction",
+    },
+    {
+      title: "Offizielle staatliche Register",
+      description:
+        "Wir prüfen die Historie auch in offiziellen Registern der EU-Länder. Andere Regionen auf Anfrage.",
+      icon: "eu-registry",
+    },
+    {
+      title: "Lettische Quellen",
+      description:
+        "Versicherungsdaten, Inseratsanalyse und Historie der technischen Prüfungen.",
+      icon: "listing-analysis",
+    },
+    {
+      title: "Vertiefte Analyse und Risiken",
+      description:
+        "Wir bewerten Laufleistung, Schäden und Widersprüche zwischen den Quellen und geben Hinweise für die Besichtigung vor Ort.",
+      icon: "inspection-tips",
+    },
+    {
+      title: "Telefonische Beratung",
+      description:
+        "Nach dem Audit besprechen wir die Daten und helfen beim nächsten Schritt - kaufen, weiter prüfen oder verzichten.",
+      icon: "consultation",
+    },
+    {
+      title: "Individuelle Betreuung",
+      description:
+        "In schwierigen Fällen wenden wir uns persönlich an staatliche Register und Behörden. Das macht kein automatischer Bericht.",
+      icon: "international",
     },
   ],
   sampleReportHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
@@ -621,9 +729,46 @@ const AUDITS_RU: HomeFeatureBreakdownPackage = {
       icon: "autodna",
     },
     {
-      title: "Архив официальных дилеров и аукционных порталов*",
-      description: "Данные авторизованных сервисов и исторических аукционов, включая исходные фото повреждений до ремонта. *Доступны для некоторых производителей и моделей.",
+      title: "Данные официальных дилеров*",
+      description:
+        "Подробные данные о пробеге, интервалах обслуживания и ремонтах из авторизованных сервисов. *Доступны для некоторых производителей и моделей.",
       icon: "dealer-data",
+    },
+    {
+      title: "Архивы европейских аукционов*",
+      description:
+        "Записи и фото с того момента, когда машина была повреждена или продавалась на аукционе, включая фото повреждений до ремонта. *Доступны для некоторых производителей и моделей.",
+      icon: "auction",
+    },
+    {
+      title: "Официальные государственные реестры",
+      description:
+        "Проверяем историю и в официальных реестрах стран ЕС. Другие регионы - по запросу.",
+      icon: "eu-registry",
+    },
+    {
+      title: "Латвийские источники",
+      description:
+        "Данные страховщиков, анализ объявления и история техосмотров.",
+      icon: "listing-analysis",
+    },
+    {
+      title: "Глубокий анализ и риски",
+      description:
+        "Оцениваем пробег, повреждения и противоречия между источниками и даём подсказки для личного осмотра.",
+      icon: "inspection-tips",
+    },
+    {
+      title: "Консультация по телефону",
+      description:
+        "После аудита обсуждаем данные и помогаем решить, что делать дальше - покупать, проверять дальше или отказаться.",
+      icon: "consultation",
+    },
+    {
+      title: "Индивидуальный подход",
+      description:
+        "В сложных случаях лично связываемся с государственными реестрами и учреждениями. Этого не делает ни один автоматический отчёт.",
+      icon: "international",
     },
   ],
   sampleReportHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
