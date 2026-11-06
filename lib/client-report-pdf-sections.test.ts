@@ -2349,6 +2349,37 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     expect(doc).not.toContain("getCompanyLegal");
   });
 
+  it("listing-history archive photos keep all 68 unique scenes in Sludinājuma vēsture", () => {
+    const ids = Array.from({ length: 68 }, (_, i) => `sbp_ph_${i.toString(16).padStart(24, "0")}`);
+    const dataUrls = new Map(ids.map((id) => [id, `data:image/jpeg;base64,${id.slice(-8)}`] as const));
+    const doc = buildClientReportDocumentHtml({
+      payload: minimalPayload({
+        tirgusForm: {
+          ...emptyTirgusFields(),
+          comments: "Arhīva fotogrāfijas",
+          photoGroups: [
+            { id: "sbp_phg_000000000000000000000001", title: "CarVertical 01.2022", photos: ids.slice(0, 29).map((id) => ({ id })) },
+            { id: "sbp_phg_000000000000000000000002", title: "AutoDNA 03.01.2022", photos: ids.slice(29, 62).map((id) => ({ id })) },
+            { id: "sbp_phg_000000000000000000000003", title: "AutoDNA 05.01.2022", photos: ids.slice(62).map((id) => ({ id })) },
+          ],
+          photos: ids.map((id) => ({ id })),
+        },
+        pdfVisibility: mergePdfVisibility({ sludinajums: true }),
+      }),
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+      sourceBlockPhotoDataUrls: dataUrls,
+    });
+    expect(doc).toContain("pdf-listing-history-frame");
+    expect(doc).toContain("Sludinājuma vēsture");
+    expect(doc).toContain("CarVertical 01.2022");
+    expect(doc).toContain("AutoDNA 03.01.2022");
+    expect(doc).toContain("AutoDNA 05.01.2022");
+    expect((doc.match(/class="pdf-listing-photo-img"/g) ?? []).length).toBe(68);
+  });
+
   it("listing analysis photos render in two-column grid under Fotogrāfiju analīze", () => {
     const dataUrls = new Map<string, string>([
       ["la_ph_aabbccddeeff001122334455", "data:image/jpeg;base64,/9j/4AAQ"],

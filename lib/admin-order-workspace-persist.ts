@@ -45,6 +45,7 @@ import { mergeAsvPhotoGroups, syncAsvPhotoGroupsAndFlat } from "@/lib/asv-photo-
 import type { CcVinBlockState } from "@/lib/cc-vin-report";
 import type { AsvBlockState } from "@/lib/asv-report";
 import {
+  LISTING_HISTORY_MAX_PHOTOS,
   mergeSourceBlockPhotoGroups,
   syncSourceBlockPhotoGroupsAndFlat,
   type SourceBlockPhotoGroup,
@@ -264,9 +265,17 @@ function withMergedSourceBlockPhotos<T extends { photos?: SourceBlockPhotoMeta[]
   picked: T,
   incoming: T,
   baseline: T,
+  max?: number,
 ): T {
   const synced = syncSourceBlockPhotoGroupsAndFlat(
-    mergeSourceBlockPhotoGroups(incoming.photoGroups, incoming.photos, baseline.photoGroups, baseline.photos),
+    mergeSourceBlockPhotoGroups(
+      incoming.photoGroups,
+      incoming.photos,
+      baseline.photoGroups,
+      baseline.photos,
+      max,
+    ),
+    max,
   );
   return { ...picked, photoGroups: synced.photoGroups, photos: synced.photos };
 }
@@ -398,6 +407,7 @@ export function coalesceOrderWorkspacePersistBody(
           pickRicherSourceBlock("tirgus", incomingBlocks.tirgus, baselineBlocks.tirgus),
           incomingBlocks.tirgus,
           baselineBlocks.tirgus,
+          LISTING_HISTORY_MAX_PHOTOS,
         ),
     citi_avoti: wiped.has("citi_avoti")
       ? incomingBlocks.citi_avoti

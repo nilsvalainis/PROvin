@@ -90,7 +90,9 @@ import {
 import type { ListingAnalysisPhotoGroup, ListingAnalysisPhotoMeta } from "@/lib/listing-analysis-photo-types";
 import {
   flattenSourceBlockPhotoGroups,
+  LISTING_HISTORY_MAX_PHOTOS,
   sourceBlockPhotosHaveContent,
+  syncedListingHistoryPhotos,
   syncedSourceBlockPhotos,
   type SourceBlockPhotoGroup,
   type SourceBlockPhotoMeta,
@@ -1507,8 +1509,8 @@ function parseListingAnalysisRaw(raw: Record<string, unknown>): ListingAnalysisB
 
 export function collectWorkspaceSourceBlockPhotoIds(blocks: WorkspaceSourceBlocks): string[] {
   const ids: string[] = [];
-  const take = (b?: { photoGroups?: SourceBlockPhotoGroup[] | null }) => {
-    for (const p of flattenSourceBlockPhotoGroups(b?.photoGroups)) ids.push(p.id);
+  const take = (b?: { photoGroups?: SourceBlockPhotoGroup[] | null }, max?: number) => {
+    for (const p of flattenSourceBlockPhotoGroups(b?.photoGroups, max)) ids.push(p.id);
   };
   take(blocks.csdd);
   take(blocks.autodna);
@@ -1520,7 +1522,7 @@ export function collectWorkspaceSourceBlockPhotoIds(blocks: WorkspaceSourceBlock
   take(blocks.carinfo);
   take(blocks.traficom_fi);
   take(blocks.ltab);
-  take(blocks.tirgus);
+  take(blocks.tirgus, LISTING_HISTORY_MAX_PHOTOS);
   for (const section of blocks.citi_avoti.sections ?? []) take(section);
   return ids;
 }
@@ -2548,7 +2550,7 @@ function parseTirgusBlockRaw(raw: Record<string, unknown>): TirgusFormFields {
       listingMileageOdometer: clip(raw.listingMileageOdometer).slice(0, 40),
       listingMileageDate: clip(raw.listingMileageDate).slice(0, 40),
       listingMileageCountry: clip(raw.listingMileageCountry).slice(0, 120),
-      ...syncedSourceBlockPhotos(raw),
+      ...syncedListingHistoryPhotos(raw),
     };
   }
   if ("rows" in raw || "comments" in raw) {
@@ -2696,7 +2698,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
       listingMileageOdometer: wsStr(blocks.tirgus?.listingMileageOdometer).slice(0, 40),
       listingMileageDate: wsStr(blocks.tirgus?.listingMileageDate).slice(0, 40),
       listingMileageCountry: wsStr(blocks.tirgus?.listingMileageCountry).slice(0, 120),
-      ...syncedSourceBlockPhotos(blocks.tirgus ?? {}),
+      ...syncedListingHistoryPhotos(blocks.tirgus ?? {}),
     },
     citi_avoti: {
       sections: (blocks.citi_avoti?.sections ?? d.citi_avoti.sections).map(repairCitiSection),

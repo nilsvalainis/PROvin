@@ -56,6 +56,8 @@ type Props = {
   /** Slēpt CheckCar.vin ūdenszīmi pirms augšupielādes (noklusējums: izslēgts). */
   hidePhotoWatermarks?: boolean;
   onHidePhotoWatermarksChange?: (next: boolean) => void;
+  /** Avota atslēga source-block-photo API (piem. tirgus = sludinājuma vēsture). */
+  uploadBlockKey?: string;
 };
 
 const IMAGE_FILE_RE = /\.(jpe?g|png|webp|gif|heic|heif|avif|bmp|tiff?)$/i;
@@ -289,6 +291,7 @@ export function AdminListingAnalysisPhotos({
   headerActions,
   hidePhotoWatermarks,
   onHidePhotoWatermarksChange,
+  uploadBlockKey,
 }: Props) {
   const baseInputId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -464,6 +467,7 @@ export function AdminListingAnalysisPhotos({
         fd.set("sessionId", sessionId);
         fd.set("currentCount", String(currentTotal + uploaded.length));
         fd.set("hideWatermarks", hideWatermarks ? "1" : "0");
+        if (uploadBlockKey) fd.set("blockKey", uploadBlockKey);
         fd.set("file", jpeg);
         let data: { ok?: boolean; id?: string; error?: string; detail?: string } = {};
         let httpOk = false;
