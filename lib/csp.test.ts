@@ -3,6 +3,7 @@ import {
   ADMIN_HTML_DOCUMENT_CSP,
   SITE_CSP_ENFORCED,
   SITE_CSP_REPORT_ONLY,
+  SITE_PERMISSIONS_POLICY,
   adminHtmlDocumentHeaders,
   summarizeCspReport,
 } from "@/lib/csp";
@@ -39,6 +40,10 @@ describe("CSP policies", () => {
     expect(SITE_CSP_ENFORCED).toBe("frame-ancestors 'self'; base-uri 'self'; object-src 'none'");
     expect(SITE_CSP_ENFORCED).not.toContain("script-src");
     expect(SITE_CSP_REPORT_ONLY).not.toContain("upgrade-insecure-requests");
+  });
+
+  it("Permissions-Policy atļauj kameru šajā izcelsmē (VIN SCAN / skeneris)", () => {
+    expect(SITE_PERMISSIONS_POLICY).toBe("camera=(self), microphone=(), geolocation=(), interest-cohort=()");
   });
 
   it("summarizes CSP reports without path/query", () => {

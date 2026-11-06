@@ -90,6 +90,18 @@ export function cameraVinConsensus(picks: readonly string[], minAgree = 2): Came
   return { vin, checkDigitOk: hasIso3779CheckDigit(vin), agree, frames: group.length };
 }
 
+/** Auto: 2 kadri. Nofotografēt un svītrkods: pietiek ar 1 derīgu 17 zīmju VIN. */
+export type CameraScanMode = "auto" | "snap" | "barcode";
+
+export function cameraVinDecision(picks: readonly string[], mode: CameraScanMode): CameraVinConsensus | null {
+  return cameraVinConsensus(picks, mode === "auto" ? 2 : 1);
+}
+
+/** Pirmais derīgais VIN laukā, lai «Izmantot VIN» nebūtu pelēks, kamēr auto vēl gaida 2. kadru. */
+export function cameraVinFieldValue(picks: readonly string[]): string | null {
+  return cameraVinConsensus(picks, 1)?.vin ?? null;
+}
+
 export const VIN_SCAN_HISTORY_KEY = "provin-vin-scan-history-v1";
 export const VIN_SCAN_HISTORY_MAX = 15;
 
