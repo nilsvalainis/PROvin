@@ -1,5 +1,5 @@
 import { provinEmailSubject } from "@/lib/email/email-subject";
-import { canonicalizeListingUrl, isIncompleteVinLength, isPlausibleListingUrl, isValidOrderEmail, isValidOrderPhone, isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
+import { canonicalizeListingUrl, isIncompleteVinLength, isPlausibleListingUrl, isValidOrderEmail, isValidOrderPhone, isValidVin, isValidVinOrPlate, normalizeVin } from "@/lib/order-field-validation";
 import { formatEurFromCents } from "@/lib/order-upsell";
 import { renderTemplateById } from "@/lib/messages/render-template-id";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
@@ -289,12 +289,25 @@ export function validateClientLinkSubmission(
   };
 }
 
-export function buildClientLinkWhatsAppText(opts: { url: string; productName: string; expiresAt: string; amountCents: number }): string {
+/** Derīgs 17 zīmju VIN klienta tekstam vai tukšs. */
+function clientVin(vin?: string | null): string {
+  const v = normalizeVin((vin ?? "").trim());
+  return isValidVin(v) ? v : "";
+}
+
+export function buildClientLinkWhatsAppText(opts: {
+  url: string;
+  productName: string;
+  expiresAt: string;
+  amountCents: number;
+  vin?: string | null;
+}): string {
   const until = formatClientLinkExpiryLong(opts.expiresAt);
+  const vin = clientVin(opts.vin);
   return [
     "Sveiki!",
     "",
-    `Jūsu personīgā ${opts.productName} saite (${formatClientLinkAmount(opts.amountCents)}, derīga līdz ${until}):`,
+    `Jūsu personīgā ${opts.productName} saite${vin ? ` (VIN ${vin})` : ""} - ${formatClientLinkAmount(opts.amountCents)}, derīga līdz ${until}:`,
     "",
     opts.url,
     "",
@@ -313,15 +326,17 @@ export function buildClientLinkWhatsAppUrl(phone: string, text: string): string 
 }
 
 export function buildClientLinkEmailCopy(
-  opts: { url: string; productName: string; expiresAt: string; amountCents: number },
+  opts: { url: string; productName: string; expiresAt: string; amountCents: number; vin?: string | null },
   templatesDoc?: MessageTemplatesDoc | null,
 ): { subject: string; text: string } {
   const until = formatClientLinkExpiryLong(opts.expiresAt);
   const amount = formatClientLinkAmount(opts.amountCents);
+  const vin = clientVin(opts.vin);
   const rendered = renderTemplateById(
     "email.client_link",
     {
       produkts: opts.productName,
+      vin,
       summa: amount,
       derigs_lidz: until,
       maksajuma_saite: opts.url,
@@ -332,13 +347,14 @@ export function buildClientLinkEmailCopy(
     return { subject: rendered.subject, text: rendered.text };
   }
   return {
-    subject: provinEmailSubject("Apmaksas saite", { product: opts.productName }),
+    subject: provinEmailSubject("Apmaksas saite", { product: opts.productName, vin }),
     text: [
       "Labdien!",
       "",
       "Nosūtām Jūsu personīgo apmaksas saiti.",
       "",
       `Produkts: ${opts.productName}`,
+      ...(vin ? [`VIN: ${vin}`] : []),
       `Summa: ${amount}`,
       `Saite derīga līdz: ${until}`,
       "",

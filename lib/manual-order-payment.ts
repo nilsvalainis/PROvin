@@ -5,6 +5,7 @@ import { provinEmailSubject } from "@/lib/email/email-subject";
  */
 
 import { clientMessageSignOff } from "@/lib/email/report-ready-copy";
+import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { formatEurFromCents } from "@/lib/order-upsell";
 
 export const MANUAL_ORDER_PAYMENT_FULFILLMENT = "manual_order_payment";
@@ -193,6 +194,7 @@ export function buildManualOrderPaymentDraft(opts: {
   amountCents: number;
   url: string;
   customerName?: string | null;
+  vin?: string | null;
 }): ManualOrderPaymentDraft {
   const amount = formatManualOrderPayAmount(opts.amountCents);
   const name = sanitizeManualOrderServiceName(opts.serviceName);
@@ -200,21 +202,24 @@ export function buildManualOrderPaymentDraft(opts: {
   const hello = greetingName ? `Labdien, ${greetingName.split(/\s+/)[0]}!` : "Labdien!";
   const pay = `Apmaksāt: ${opts.url}`;
   const sign = clientMessageSignOff();
+  const vinNorm = normalizeVin((opts.vin ?? "").trim());
+  const vin = isValidVin(vinNorm) ? vinNorm : "";
   const emailText = [
     hello,
     "",
     "Nosūtām apmaksas saiti par Jūsu pasūtījumu.",
     "",
     `Pakalpojums: ${name}`,
+    ...(vin ? [`VIN: ${vin}`] : []),
     `Summa: ${amount}`,
     "",
     pay,
     "",
     sign,
   ].join("\n");
-  const whatsappText = [hello, "", `${name}: ${amount}.`, "", pay, "", sign].join("\n");
+  const whatsappText = [hello, "", `${name}${vin ? ` (VIN ${vin})` : ""}: ${amount}.`, "", pay, "", sign].join("\n");
   return {
-    subject: provinEmailSubject("Apmaksas saite", { product: name }),
+    subject: provinEmailSubject("Apmaksas saite", { product: name, vin }),
     emailText,
     whatsappText,
   };

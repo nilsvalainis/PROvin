@@ -213,6 +213,7 @@ export function AdminClientLinkButton({ variant = "toolbar" }: { variant?: "tool
       productName,
       expiresAt,
       amountCents: parseEurToCents(amountText) ?? CLIENT_LINK_DEFAULT_AMOUNT_CENTS,
+      vin: prefillVin,
     });
     const phone = channel === "whatsapp" ? recipient : "";
     window.open(buildClientLinkWhatsAppUrl(phone, text), "_blank", "noopener,noreferrer");

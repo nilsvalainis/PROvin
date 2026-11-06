@@ -69,7 +69,7 @@ export function buildDealerNoDataEmailDraft(
   const text = [
     "Labdien!",
     "",
-    "Diemžēl oficiālā dīlera dati šim auto nav pieejami.",
+    `Diemžēl oficiālā dīlera dati šim auto${varsFallback.vin ? ` (VIN ${varsFallback.vin})` : ""} nav pieejami.`,
     "",
     varsFallback.atmaksa_rinda,
     "",

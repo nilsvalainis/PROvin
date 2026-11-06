@@ -12,7 +12,7 @@ import {
 import { defaultSignOffBlock } from "@/lib/messages/shared-blocks";
 import { renderTemplateById } from "@/lib/messages/render-template-id";
 import { MINI_TO_AUDITS_MESSAGE_TEMPLATE_ID } from "@/lib/messages/template-aliases";
-import { miniToAuditsVarsFromDraftInput } from "@/lib/messages/template-vars";
+import { miniToAuditsSubject, miniToAuditsVarsFromDraftInput, reportReadyVinVar } from "@/lib/messages/template-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
 
 export const MINI_TO_AUDITS_RECOMMENDATION_LABEL = "MINI → AUDITS ieteikums";
@@ -88,15 +88,15 @@ export function buildMiniToAuditsRecommendationDraft(
   const auto = (opts.car ?? "").trim().replace(/\s+/g, " ") || MINI_TO_AUDITS_CAR_PLACEHOLDER;
   const pay = (opts.paymentUrl ?? "").trim() || MINI_TO_AUDITS_PAYMENT_LINK_PLACEHOLDER;
   const starpiba = amountWithoutEuro(opts.differencePrice);
-  const text = MINI_TO_AUDITS_APPROVED_TEXT.replaceAll("{vards}", vards)
+  const vin = reportReadyVinVar(opts.vin);
+  const text = MINI_TO_AUDITS_APPROVED_TEXT.replaceAll("({auto})", `({auto}${vin ? `, VIN ${vin}` : ""})`)
+    .replaceAll("{vards}", vards)
     .replaceAll("{auto}", auto)
     .replaceAll("{starpiba}", starpiba)
     .replaceAll("{maksajuma_saite}", pay)
     .replaceAll(MINI_TO_AUDITS_SIGN_OFF_PLACEHOLDER, defaultSignOffBlock());
   const carForSubject = (opts.car ?? "").trim().replace(/\s+/g, " ");
-  const subject = carForSubject
-    ? `Jūsu PROVIN MINI pasūtījums: ${carForSubject}`
-    : "Jūsu PROVIN MINI pasūtījums";
+  const subject = miniToAuditsSubject(carForSubject, opts.vin);
 
   return {
     subject,
