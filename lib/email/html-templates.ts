@@ -196,6 +196,7 @@ export function irissOfferDecisionHtml(opts: {
   approved: boolean;
   lines: { label: string; value: string }[];
   adminUrl: string;
+  ctaLabel?: string;
 }): string {
   const rows = opts.lines
     .map((l, i) => {
@@ -207,7 +208,7 @@ export function irissOfferDecisionHtml(opts: {
   const inner = `
 <p style="margin:0 0 20px;font-size:20px;font-weight:600;">${esc(opts.title)}</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${rows}</table>
-${ctaButton(opts.adminUrl, "Atvērt pasūtījumu")}
+${ctaButton(opts.adminUrl, opts.ctaLabel || "Atvērt pasūtījumu")}
 `;
   return shell(inner);
 }
@@ -218,6 +219,7 @@ export function irissOfferQuestionHtml(opts: {
   question: string;
   lines: { label: string; value: string }[];
   adminUrl: string;
+  ctaLabel?: string;
 }): string {
   const rows = opts.lines
     .map(
@@ -229,7 +231,7 @@ export function irissOfferQuestionHtml(opts: {
 <p style="margin:0 0 20px;font-size:20px;font-weight:600;">${esc(opts.title)}</p>
 <p style="margin:0 0 16px;padding:12px 14px;border-radius:8px;background:#f4f4f5;font-size:15px;line-height:1.5;white-space:pre-wrap;">${esc(opts.question)}</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">${rows}</table>
-${ctaButton(opts.adminUrl, "Atvērt pasūtījumu")}
+${ctaButton(opts.adminUrl, opts.ctaLabel || "Atvērt pasūtījumu")}
 `;
   return shell(inner);
 }

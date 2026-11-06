@@ -23,6 +23,8 @@ import { PdAuto1Blocks, PdToggles, type PdToggleTarget } from "@/components/iris
 import { PdStatusChip } from "@/components/iriss-piedavajumi/PdStatusChip";
 import { copyText, deleteIrissPdRequest, irissPdAbsoluteLink, usePdRebase } from "@/components/admin/iriss-piedavajumi/pd-actions";
 import { PdImportPanel } from "@/components/admin/iriss-piedavajumi/PdImportPanel";
+import { PdClientMessages } from "@/components/admin/iriss-piedavajumi/PdClientMessages";
+import { irissPdOpenQuestionCount } from "@/lib/iriss-piedavajumi-messages";
 import {
   canRebaseIrissPd,
   irissPdDeleteConfirm,
@@ -445,6 +447,7 @@ export function PiedavajumsDetail({
   async function act(action: IrissPdAction | "create-order" | "fill-from-stock") {
     if (action === "decline" && !window.confirm("Atzīmēt piedāvājumu kā noraidītu?")) return;
     if (action === "approve" && !window.confirm("Atzīmēt kā apstiprinātu? Tiks izveidots/rezervēts Pasūtījums.")) return;
+    if (action === "reopen" && !window.confirm("Atjaunot piedāvājumu? Klients saitē atkal varēs apstiprināt vai noraidīt.")) return;
     if (dirty && !(await save())) return;
     setBusy(action);
     setErr("");
@@ -549,7 +552,7 @@ export function PiedavajumsDetail({
             >
               Priekšskatījums
             </button>
-            {rec.linkToken && (rec.status === "sent" || rec.status === "approved") ? (
+            {rec.linkToken && (rec.status === "sent" || rec.status === "approved" || (rec.status === "declined" && rec.declinedByClient)) ? (
               <button type="button" className="pd-btn" onClick={() => void copyLink()}>
                 Kopēt saiti
               </button>
@@ -905,6 +908,18 @@ export function PiedavajumsDetail({
           </Card>
         ) : null}
 
+        <Card
+          id="pd-client-messages"
+          title="Klienta ziņas"
+          sub={
+            irissPdOpenQuestionCount(rec.messages) > 0
+              ? "Ir neatbildēts jautājums · atbilde ir iekšēja piezīme"
+              : "Jautājumi un noraidījuma iemesls no klienta saites"
+          }
+        >
+          <PdClientMessages id={rec.id} messages={rec.messages} onRecord={(r) => applyRecord(r as IrissPiedavajums)} />
+        </Card>
+
         <Card title="Statuss un vēsture" sub="Klienta lēmums, PDF un saistītie ieraksti">
           <div className="pd-acts" style={{ marginBottom: 12 }}>
             {actions.includes("revert") ? (
@@ -922,6 +937,11 @@ export function PiedavajumsDetail({
                 Atzīmēt noraidītu
               </button>
             ) : null}
+            {actions.includes("reopen") ? (
+              <button type="button" className="pd-btn" disabled={busy !== ""} onClick={() => void act("reopen")}>
+                Atjaunot (klientam atkal pieejams)
+              </button>
+            ) : null}
             {rec.status === "approved" && !rec.approvedOrderId ? (
               <button type="button" className="pd-btn" disabled={busy !== ""} onClick={() => void act("create-order")}>
                 Izveidot pasūtījumu
@@ -935,7 +955,7 @@ export function PiedavajumsDetail({
             <Link className="pd-btn" href={`/admin/iriss/piedavajumi/${rec.id}/pdf`}>
               PDF
             </Link>
-            {rec.linkToken && (rec.status === "sent" || rec.status === "approved") ? (
+            {rec.linkToken && (rec.status === "sent" || rec.status === "approved" || (rec.status === "declined" && rec.declinedByClient)) ? (
               <a className="pd-btn" href={irissPdPublicPath(rec.linkToken)} target="_blank" rel="noreferrer">
                 Klienta skats
               </a>

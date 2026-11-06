@@ -66,7 +66,9 @@ describe("j75 Piedāvājuma redaktors (makets 01-redaktors)", () => {
     expect(html).not.toContain('role="dialog"');
     expect(html).not.toContain("<details");
     // Vizuālais / Tehniskais / Papildu piezīme - vienkārši teksta lauki.
-    expect(html.match(/<textarea/g)?.length).toBe(4);
+    expect(html.match(/<textarea(?![^>]*id="pd-msg-note")/g)?.length).toBe(4);
+    // Nils 07.11: «Klienta ziņas» - viens iekšējas piezīmes lauks.
+    expect(html.match(/id="pd-msg-note"/g)?.length).toBe(1);
   });
 
   it("Kopsavilkums: 2 kolonnas ar šabloniem; Novērtējums: fakti + pievienot", () => {

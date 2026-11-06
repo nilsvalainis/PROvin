@@ -180,6 +180,19 @@ export function defaultIrissPdContent(legacy = false): IrissPdContent {
 
 export type IrissPdHistoryEntry = { at: string; by: string; text: string };
 
+/**
+ * Nils 07.11: klienta ziņas publiskajā saitē (jautājums, noraidījuma iemesls) un admina iekšējās piezīmes/atbildes.
+ * Admina piezīme klientam NETIEK sūtīta un saitē nav redzama (atbildi Nils sūta pats).
+ */
+export const IRISS_PD_MESSAGE_KINDS = ["question", "decline", "note"] as const;
+export type IrissPdMessageKind = (typeof IRISS_PD_MESSAGE_KINDS)[number];
+export type IrissPdMessage = { id: string; at: string; from: "client" | "admin"; kind: IrissPdMessageKind; by: string; text: string };
+
+export const IRISS_PD_MAX_MESSAGES = 100;
+export const IRISS_PD_QUESTION_MAX = 1000;
+export const IRISS_PD_DECLINE_REASON_MAX = 500;
+export const IRISS_PD_NOTE_MAX = 2000;
+
 export type IrissPiedavajums = {
   id: string;
   /** Secīgs numurs (PD-0001). */
@@ -227,6 +240,10 @@ export type IrissPiedavajums = {
   /** No kura (beigušā/noraidītā) piedāvājuma veidots. */
   basedOnId: string;
   history: IrissPdHistoryEntry[];
+  /** Klienta jautājumi / noraidījuma iemesls + admina iekšējās piezīmes (vecākā pirmā). */
+  messages: IrissPdMessage[];
+  /** «Noraidīts» ar klienta pogu saitē (nevis admina atzīmi) - tad saitē rāda noraidīto stāvokli. */
+  declinedByClient: boolean;
 };
 
 export type IrissPdListRow = {
@@ -246,6 +263,8 @@ export type IrissPdListRow = {
   approvedOrderId: string;
   cover: IrissPdPhoto | null;
   updatedAt: string;
+  /** Klienta jautājumi bez admina piezīmes pēc tiem (sarakstā - zīme «Jautājums»). */
+  openQuestions: number;
 };
 
 export const IRISS_PD_MAX_PHOTOS = 60;
@@ -331,8 +350,42 @@ export function emptyIrissPiedavajums(id: string, nowIso: string): IrissPiedavaj
     approvedOrderId: "",
     basedOnId: "",
     history: [],
+    messages: [],
+    declinedByClient: false,
   };
 }
+
+/** Klienta teksti piedāvājuma saitē (publiskā lapa nelieto `messages/**` - tāpat kā `/p/`). */
+export const IRISS_PD_CLIENT_LV = {
+  approve: "Apstiprināt",
+  decline: "Noraidīt",
+  ask: "Uzdot jautājumu",
+  askLabel: "Jūsu jautājums",
+  askPlaceholder: "Piemēram, par komplektāciju, piegādi vai apskati",
+  askSend: "Nosūtīt jautājumu",
+  askSent: "Jautājums nosūtīts. Atbildēsim tuvākajā laikā.",
+  askDuplicate: "Šis jautājums jau ir nosūtīts.",
+  askEmpty: "Ierakstiet jautājumu.",
+  yourQuestions: "Jūsu jautājumi",
+  confirmApproveTitle: "Apstiprināt piedāvājumu?",
+  confirmApproveNote: "Pēc apstiprināšanas auto tiks rezervēts, un mēs sazināsimies ar Jums.",
+  confirmApprove: "Jā, apstiprinu",
+  confirmDeclineTitle: "Noraidīt piedāvājumu?",
+  confirmDeclineNote: "Pēc noraidīšanas piedāvājumu vairs nevarēs apstiprināt.",
+  reasonLabel: "Iemesls (nav obligāti)",
+  reasonPlaceholder: "Piemēram, cena, nobraukums vai cits auto",
+  confirmDecline: "Jā, noraidu",
+  cancel: "Atcelt",
+  sending: "Sūta...",
+  contactRequired: "Ievadiet vārdu un tālruni.",
+  approvedTitle: "Piedāvājums apstiprināts",
+  approvedNote: "Sazināsimies ar Jums",
+  declinedTitle: "Piedāvājums noraidīts",
+  declinedNote: "Paldies par atbildi. Ja pārdomājat, uzdodiet jautājumu vai sazinieties ar mums.",
+  closed: "Piedāvājums vairs nav spēkā.",
+  tooMany: "Pārāk daudz mēģinājumu. Mēģiniet vēlāk.",
+  sendFailed: "Neizdevās nosūtīt. Mēģiniet vēlreiz.",
+} as const;
 
 /** Klienta saite: `/p/d/<token>` (zem esošā /p ceļa - tā pati noindex/no-store apstrāde). */
 export function irissPdPublicPath(token: string): string {

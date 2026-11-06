@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { IrissOfferPublicUnavailable } from "@/components/iriss-offer-public/IrissOfferPublicUnavailable";
-import { PdApproveForm } from "@/components/iriss-piedavajumi/PdApproveForm";
+import { PdClientActions } from "@/components/iriss-piedavajumi/PdClientActions";
 import { PdClientView } from "@/components/iriss-piedavajumi/PdClientView";
 import { getClientIpFromHeaders } from "@/lib/client-ip";
 import { IRISS_OFFER_PUBLIC_BRAND, IRISS_OFFER_PUBLIC_LABELS } from "@/lib/iriss-offer-client-link";
@@ -40,7 +40,14 @@ export default async function IrissPiedavajumsPublicPage({ params }: { params: P
   const base = `/p/d/${token}/foto`;
   return (
     <PdClientView view={view} mode="link" token={token} photoSrc={(n, s) => `${base}/${n}${s === "full" ? "?s=full" : ""}`}>
-      {view.state === "approved" ? null : <PdApproveForm token={token} needsContact={view.needsContact} />}
+      <PdClientActions
+        token={token}
+        needsContact={view.needsContact}
+        initialState={view.state}
+        initialQuestions={view.questions}
+        vehicle={view.title}
+        price={view.price}
+      />
     </PdClientView>
   );
 }

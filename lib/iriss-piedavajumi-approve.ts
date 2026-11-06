@@ -10,7 +10,8 @@ import "server-only";
  */
 
 import { appendIrissStatusHistory, isIrissRecordDeleted } from "@/lib/iriss-pasutijumi-audit-fields";
-import { notifyIrissOfferDecision } from "@/lib/iriss-offer-notify";
+import { notifyIrissOfferDecision, notifyIrissOfferQuestion } from "@/lib/iriss-offer-notify";
+import type { IrissOfferNotifyFacts } from "@/lib/iriss-offer-notify-shared";
 import { irissWorkspaceRevision } from "@/lib/iriss-pasutijumi-save-safety";
 import { createIrissPasutijums, readIrissPasutijums, writeIrissPasutijums } from "@/lib/iriss-pasutijumi-store";
 import { emptyIrissPasutijums } from "@/lib/iriss-pasutijumi-types";
@@ -129,25 +130,46 @@ async function reserveSourceCar(rec: IrissPiedavajums, opts: { at: string; by: s
   return rec;
 }
 
+/** Paziņojuma fakti (bez klienta kontaktiem pushā - tos nerāda bloķētajā ekrānā). */
+export function irissPdNotifyFacts(rec: IrissPiedavajums, contactName = "", opts: { pdLink?: boolean; reason?: string } = {}): IrissOfferNotifyFacts {
+  const { first, last } = splitIrissPdClientName(rec.client.name || contactName);
+  return {
+    orderId: rec.approvedOrderId || rec.client.orderId || "",
+    offerId: rec.id,
+    vehicle: `${irissPdNumberLabel(rec.number)} · ${rec.vehicle.title}`,
+    vin: rec.vehicle.vin,
+    clientFirstName: first,
+    clientLastName: last,
+    total: formatIrissPdPrice(rec.price),
+    deadlineAt: "",
+    ...(opts.pdLink ? { adminPath: irissPdAdminPath(rec.id) } : {}),
+    ...(opts.reason ? { reason: opts.reason } : {}),
+  };
+}
+
 /** Nilam e-pasts + push (tas pats kanāls kā pasūtījumu piedāvājumiem). Saite ved uz izveidoto pasūtījumu. */
 export async function notifyIrissPdApproved(rec: IrissPiedavajums, contactName = ""): Promise<void> {
-  const { first, last } = splitIrissPdClientName(rec.client.name || contactName);
   try {
-    await notifyIrissOfferDecision(
-      {
-        orderId: rec.approvedOrderId || rec.client.orderId || "",
-        offerId: rec.id,
-        vehicle: `${irissPdNumberLabel(rec.number)} · ${rec.vehicle.title}`,
-        vin: rec.vehicle.vin,
-        clientFirstName: first,
-        clientLastName: last,
-        total: formatIrissPdPrice(rec.price),
-        deadlineAt: "",
-      },
-      "approve",
-      rec.decidedAt || new Date().toISOString(),
-    );
+    await notifyIrissOfferDecision(irissPdNotifyFacts(rec, contactName), "approve", rec.decidedAt || new Date().toISOString());
   } catch (e) {
     console.error("[iriss-piedavajumi] notify", e instanceof Error ? e.message : e);
+  }
+}
+
+/** Klients noraidīja saitē: Nilam e-pasts (ar iemeslu) + push; saite uz piedāvājumu. */
+export async function notifyIrissPdDeclined(rec: IrissPiedavajums, reason: string): Promise<void> {
+  try {
+    await notifyIrissOfferDecision(irissPdNotifyFacts(rec, "", { pdLink: true, reason }), "decline", rec.decidedAt || new Date().toISOString());
+  } catch (e) {
+    console.error("[iriss-piedavajumi] notify decline", e instanceof Error ? e.message : e);
+  }
+}
+
+/** Klienta jautājums saitē: Nilam e-pasts (ar jautājumu) + push; saite uz piedāvājumu. Klientam nekas netiek sūtīts. */
+export async function notifyIrissPdQuestion(rec: IrissPiedavajums, question: string): Promise<void> {
+  try {
+    await notifyIrissOfferQuestion(irissPdNotifyFacts(rec, "", { pdLink: true }), question);
+  } catch (e) {
+    console.error("[iriss-piedavajumi] notify question", e instanceof Error ? e.message : e);
   }
 }

@@ -199,9 +199,9 @@ export async function readIrissPdByToken(token: string): Promise<IrissPiedavajum
   return rec && rec.linkToken === token ? rec : null;
 }
 
-export type IrissPdClaimedDecision = { decision: "approve"; decidedAt: string; contactName: string; contactPhone: string };
+export type IrissPdClaimedDecision = { decision: "approve" | "decline"; decidedAt: string; contactName: string; contactPhone: string };
 
-/** Pirmais apstiprinājums uzvar (Blob allowOverwrite: false / lokāli "wx"). */
+/** Pirmais lēmums (apstiprināt vai noraidīt) uzvar (Blob allowOverwrite: false / lokāli "wx"). */
 export async function claimIrissPdDecision(
   id: string,
   doc: IrissPdClaimedDecision,
@@ -211,6 +211,20 @@ export async function claimIrissPdDecision(
   if (res === "ok") return { won: true };
   if (res === "exists") return { won: false };
   return null;
+}
+
+/** Kurš lēmums uzvarēja (null - nav vai nevar nolasīt). */
+export async function readIrissPdDecision(id: string): Promise<"approve" | "decline" | null> {
+  if (!isSafeIrissPdId(id)) return null;
+  const raw = await readJson(`${DIR}decisions/${id}.json`);
+  const d = raw && typeof raw === "object" ? (raw as { decision?: unknown }).decision : null;
+  return d === "approve" || d === "decline" ? d : null;
+}
+
+/** Admins atjauno noraidīto: lēmuma fails jānoņem, lai klients atkal var atbildēt. */
+export async function clearIrissPdDecision(id: string): Promise<void> {
+  if (!isSafeIrissPdId(id)) return;
+  await deleteJson(`${DIR}decisions/${id}.json`);
 }
 
 /**
