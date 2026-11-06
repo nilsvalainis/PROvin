@@ -1,4 +1,3 @@
-import { randomBytes } from "node:crypto";
 import {
   emptyB2bPartnerPrices,
   euroTextToCents,
@@ -61,10 +60,6 @@ export function emptyB2bInvitePricing(): B2bInvitePricing {
 
 export function isSafeB2bInviteToken(token: string): boolean {
   return /^inv_[a-f0-9]{32}$/.test(token.trim());
-}
-
-export function newB2bInviteToken(): string {
-  return `inv_${randomBytes(16).toString("hex")}`;
 }
 
 export function parseB2bInviteRecord(raw: unknown): B2bPartnerInviteRecord | null {
