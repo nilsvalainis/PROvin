@@ -8,6 +8,7 @@ import { useAdminShellLayout } from "@/components/admin/AdminShellLayoutContext"
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminMobileColorScheme } from "@/components/admin/useAdminMobileViewport";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
+import { useVisualViewportHeight } from "@/lib/use-visual-viewport-height";
 import { adminChromeDataset } from "@/lib/admin-chrome-attrs";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
 import type { AdminMobileIconName } from "@/lib/admin-mobile-ds";
@@ -384,6 +385,8 @@ export function AdminMobileSheet({
   const theme = useAdminMobileColorScheme();
   const layoutWorkspace = useAdminShellLayout()?.workspace ?? "pro";
   useAdminScrollLock(open);
+  // Ar atvērtu tastatūru 85vh paliek zem tās - ierobežojam ar redzamo logu.
+  const vvh = useVisualViewportHeight(open);
   useEffect(() => {
     if (open) setShown(true);
   }, [open]);
@@ -412,6 +415,7 @@ export function AdminMobileSheet({
         className={`${opaque ? "admin-sheet-opaque" : "am-glass"} admin-sheet-panel flex max-h-[85vh] flex-col rounded-t-[36px] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 ${
           open ? "" : "admin-sheet-out"
         }`}
+        style={vvh ? { maxHeight: `${Math.round(Math.min(vvh * 0.85, vvh - 8))}px` } : undefined}
       >
         <div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-[var(--am-fill2)]" aria-hidden />
         <div className="mb-3 flex shrink-0 items-start justify-between gap-3">

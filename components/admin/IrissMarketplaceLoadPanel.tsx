@@ -383,7 +383,7 @@ export function IrissMarketplaceLoadPanel({
           <div
             role="dialog"
             aria-modal="true"
-            className="w-full max-w-md rounded-[22px] bg-[var(--s1)] p-4 shadow-[var(--gsh)]"
+            className="w-full max-w-md rounded-[22px] bg-[var(--s1)] p-4 shadow-[var(--gsh)] max-h-[calc(100dvh-1.5rem-env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain"
           >
             <p className="text-[15px] font-semibold text-[var(--ink)]">Apstiprināt ielādi</p>
             {estimate?.querySummary?.length ? (
