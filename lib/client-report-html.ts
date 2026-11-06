@@ -251,6 +251,7 @@ import { buildOwnerRegistrationTimelineHtml } from "@/lib/csdd-history-charts";
 import {
   buildPreviousInspectionBlockHtml,
   buildTechnicalInspectionHistoryTableHtml,
+  formatSmokeCoefficient,
 } from "@/lib/csdd-inspection-history-html";
 import {
   emptyCsddPreviousInspectionBlock,
@@ -1476,7 +1477,7 @@ export function buildCsddAvotuZoneHtml(
     if (key === "ownerCountLatvia") continue;
     const v =
       key === "opacityCoefficient"
-        ? topEmissions.smokeCoefficient
+        ? formatSmokeCoefficient(topEmissions.smokeCoefficient)
         : key === "particulateMatter"
           ? topEmissions.particleNumber
           : (form[key] as string).trim();

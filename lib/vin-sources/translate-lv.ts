@@ -72,6 +72,9 @@ const ET_TERMS: Record<string, string> = {
   "reg.tunnistuse vahetus": "reģistrācijas apliecības maiņa",
   "reg. tunnistuse vahetus": "reģistrācijas apliecības maiņa",
   "omaniku vahetus": "īpašnieka maiņa",
+  "registreerimistunnistuse väljastamine": "reģistrācijas apliecības izsniegšana",
+  "eestis registreerimine": "reģistrācija Igaunijā",
+  registreerimistunnistus: "reģistrācijas apliecība",
   "esmane registreerimine": "pirmā reģistrācija",
   // statusi
   "kehtiv": "spēkā esošs",
