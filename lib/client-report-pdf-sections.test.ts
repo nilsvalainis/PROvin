@@ -2265,10 +2265,11 @@ describe("CITI AVOTI and Outvin PDF labels", () => {
     });
     const wrap = doc.match(/pdf-provin-sources-wrap[\s\S]*?<\/table>/)?.[0] ?? "";
     expect(wrap).toContain("Maksas vēstures atskaites");
-    expect(wrap).toMatch(/Maksas vēstures atskaites<\/td><td>6<\/td>/);
+    // CSDD skaitās vienreiz - publiskajās datubāzēs (agrāk arī maksas rindā).
+    expect(wrap).toMatch(/Maksas vēstures atskaites<\/td><td>5<\/td>/);
     expect(wrap).toMatch(/Publiskas Eiropas datubāzes<\/td><td>3<\/td>/);
     expect(wrap).toMatch(/Citi avoti<\/td><td>3<\/td>/);
-    expect(wrap).toMatch(/Kopā<\/strong><\/td><td><strong>12<\/strong>/);
+    expect(wrap).toMatch(/Kopā<\/strong><\/td><td><strong>11<\/strong>/);
     expect(wrap).not.toMatch(/Kopā<\/strong><\/td><td><strong>9<\/strong>/);
   });
 

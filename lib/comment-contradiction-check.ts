@@ -65,6 +65,20 @@ const NO_ACCIDENT_RE =
 /** „Nav bojājumu / atlīdzību / zaudējumu” - j26: plašāks par `NO_ACCIDENT_RE`. */
 const NO_DAMAGE_RE =
   /\bnav\b.{0,50}(?:negadījum|csng|avārij|bojāj|atlīdz|zaudējum)|\bnav\s+(?:fiksēt|reģistrēt|konstatēt|zinām)\w*.{0,40}(?:negadījum|csng|avārij|bojāj|atlīdz|zaudējum)|(?:negadījum|avārij|csng|bojāj|atlīdz|zaudējum)\w*.{0,30}\bnav\b|bez\s+(?:negadījum|bojāj|avārij)\w*/i;
+/** Lauki, kas apkopo visus avotus (ne viena avota komentārs). */
+const CROSS_SOURCE_FIELDS = new Set(["summary", "technical_risks", "inspection", "incidents"]);
+const LV_COUNT_WORDS: Record<string, number> = {
+  viens: 1, divi: 2, trīs: 3, četri: 4, pieci: 5, seši: 6, septiņi: 7, astoņi: 8, deviņi: 9, desmit: 10,
+};
+const INCIDENT_TOTAL_RE = new RegExp(
+  `(?<![\\p{L}\\p{N}])(\\d{1,2}|${Object.keys(LV_COUNT_WORDS).join("|")})\\s+(?:bojājumu|negadījumu)(?:\\s*(?:/|un|vai)\\s*(?:bojājumu|negadījumu))?\\s+ierakst`,
+  "giu",
+);
+function parseLvCountWord(raw: string): number | null {
+  const t = raw.toLocaleLowerCase("lv");
+  if (/^\d+$/.test(t)) return Number(t);
+  return LV_COUNT_WORDS[t] ?? null;
+}
 /** Pilnīga zaudējuma / norakstīšanas statuss - nav bojājuma noliegums. */
 const TOTAL_LOSS_STATUS_RE = /pilnīg\p{L}*\s+zaudējum\p{L}*|total\s+loss/giu;
 /** Teikums par to, ka nav SUMMAS (ne bojājuma) - nav pretruna bojājumiem bez summas. */
@@ -483,8 +497,22 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
         id: "no_damage_claim",
         kind: "no_damage_claim",
         level: "E",
-        message: `Teksts saka, ka bojājumu / negadījumu nav, bet lapā ir ${damageTotal} bojājuma ieraksts(-i) (arī bez summas). Min tos ar avotu un datumu.`,
+        message: `Teksts saka, ka bojājumu / negadījumu nav, bet atskaitē ir ${facts.reportIncidentCount > 0 ? facts.reportIncidentCount : damageTotal} bojājumu ieraksts(-i) (arī bez summas). Min tos ar avotu un datumu.`,
         sentence: bad,
+      });
+    }
+  }
+  // 3a') Kopējais negadījumu skaits kopsavilkumā/riskos/apskatē = kopsavilkuma kartītei (nesummēt avotus).
+  if (facts.reportIncidentCount > 0 && field && CROSS_SOURCE_FIELDS.has(field)) {
+    for (const m of text.matchAll(INCIDENT_TOTAL_RE)) {
+      const n = parseLvCountWord(m[1]!);
+      if (n == null || n <= facts.reportIncidentCount) continue;
+      push({
+        id: `incident_total_${n}`,
+        kind: "incident_count",
+        level: "E",
+        message: `Teksts saka ${n} bojājumu/negadījumu ierakstus, atskaites kopsavilkumā: ${facts.reportIncidentCount}. Avotu rindas nesummē - viens notikums var būt vairākos avotos.`,
+        sentence: sentences.find((x) => x.includes(m[0])) ?? m[0],
       });
     }
   }
@@ -725,8 +753,11 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
     km: parseSpacedInt(row[2] ?? "0"),
     source: row[3]!.trim(),
   }));
-  const incidentCount = Number(sheet.match(/Negadījumi \/ zaudējumi:\s*(\d+)/)?.[1] ?? 0);
-  const damageTotal = Number(sheet.match(/Bojājumi \(visi avoti[^)]*\):\s*(\d+)/)?.[1] ?? 0);
+  const incidentCount = Number(sheet.match(/Negadījumi \/ zaudējumi(?: pa avotiem)?:\s*(\d+)/)?.[1] ?? 0);
+  const damageTotal = Number(
+    sheet.match(/(?:Bojājumi \(visi avoti[^)]*\)|Bojājumu avotu ieraksti \([^)]*\)):\s*(\d+)/)?.[1] ?? 0,
+  );
+  const reportIncidentCount = Number(sheet.match(/Negadījumi atskaitē \([^)]*\):\s*(\d+)/)?.[1] ?? 0);
   const recallLine = sheet.match(/Atsaukumi \/ kampaņu kodi datos:\s*([^\n]+)/)?.[1] ?? "";
   const recallCodes = /nav fiksētu/i.test(recallLine)
     ? []
@@ -767,6 +798,7 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
       sourceOrder: i,
       sourceLabel: `rinda ${i + 1}`,
     })),
+    reportIncidentCount,
     damageEvidence: {
       rows: [],
       total: damageTotal,

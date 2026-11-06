@@ -11,7 +11,7 @@ import {
   type RegistryCountryPeriod,
 } from "@/lib/registry-country-periods";
 import { collectEngineOilChangeRows } from "@/lib/oil-change-intervals";
-import { collectDamageEvidence, type DamageEvidence } from "@/lib/damage-evidence";
+import { computeReportIncidentCount, collectDamageEvidence, type DamageEvidence } from "@/lib/damage-evidence";
 import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banners";
 import {
   ODOMETER_REPLACEMENT_RE,
@@ -182,6 +182,8 @@ export type CanonicalFacts = {
   carverticalMileageWarning: boolean;
   maxRollbackDropKm: number;
   incidents: UnifiedIncidentRow[];
+  /** Negadījumu skaits, ko rāda atskaites kopsavilkuma kartīte (apvienoti notikumi, ne avotu rindas). */
+  reportIncidentCount: number;
   /** Visi bojājumu pierādījumi, arī bez summas (izsoles, reģistru izņemšana bojājuma dēļ). */
   damageEvidence: DamageEvidence;
   /** Automātisko brīdinājumu (sarkano/dzelteno baneru) teksti, kas nonāk atskaitē. */
@@ -371,12 +373,14 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
   const firstReg = firstRegFromCsdd(csdd);
   const firstRegDate = firstReg.date;
 
-  const incidents = collectUnifiedIncidentRows({
+  const incidentPdfInput = {
     manualVendorBlocks: toPdfManualVendorBlocks(blocks),
     manualLtabBlock: toPdfLtabManualBlock(blocks.ltab),
     ccVinBlock: blocks.cc_vin,
     asvBlock: blocks.asv,
-  });
+  };
+  const incidents = collectUnifiedIncidentRows(incidentPdfInput);
+  const reportIncidentCount = computeReportIncidentCount(incidentPdfInput).count;
 
   const ta = analyzeTechnicalInspectionCoverage({ csdd, sourceBlocks: blocks });
   const dealer = extractDealerFacts({ oneauto: blocks.oneauto, autoRecords: blocks.auto_records });
@@ -441,6 +445,7 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     maxRollbackDropKm: rollbacks.reduce((m, r) => Math.max(m, r.minDropKm), 0),
     incidents,
     damageEvidence: collectDamageEvidence(blocks),
+    reportIncidentCount,
     alertBannerTexts: computeProvinAlertBannersFromWorkspace(blocks).map((b) => b.text.trim()).filter(Boolean),
     ta,
     dealerRowsLv,
@@ -555,7 +560,10 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
     for (const p of facts.countryPeriods) lines.push(`- ${formatRegistryCountryPeriodLine(p)}`);
   }
 
-  lines.push(`Negadījumi / zaudējumi: ${facts.incidents.length} rindas`);
+  lines.push(
+    `Negadījumi atskaitē (kopsavilkuma kartīte): ${facts.reportIncidentCount} - tekstā lieto TIKAI šo skaitu; avotu rindas nesummēt (viens notikums var būt vairākos avotos)`,
+  );
+  lines.push(`Negadījumi / zaudējumi pa avotiem: ${facts.incidents.length} rindas`);
   for (const r of facts.incidents.slice(0, 8)) {
     lines.push(
       `- ${r.date || "datums nav"} | ${r.lossAmount || "summa nav"} | ${r.country || ""} | ${r.sourceLabel}`.trim(),
@@ -564,7 +572,7 @@ export function formatCanonicalFactsSheet(facts: CanonicalFacts, synth?: OwnerCo
   if (facts.incidents.length > 8) lines.push(`- … vēl ${facts.incidents.length - 8}`);
   if (facts.damageEvidence.total > 0) {
     lines.push(
-      `Bojājumi (visi avoti, arī bez summas): ${facts.damageEvidence.total} - bojājumi IR fiksēti; aizliegts rakstīt, ka bojājumu nav`,
+      `Bojājumu avotu ieraksti (arī bez summas): ${facts.damageEvidence.total} - bojājumi IR fiksēti; aizliegts rakstīt, ka bojājumu nav; skaitu tekstā ņem no rindas „Negadījumi atskaitē”`,
     );
     for (const r of facts.damageEvidence.rows.slice(0, 8)) {
       lines.push(`- ${r.date} | ${r.descriptionLv} | ${r.amount || "summa nav"} | ${r.sourceLabel}`);

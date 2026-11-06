@@ -21,6 +21,11 @@ import { asvDamageRowHasData, type AsvBlockState } from "@/lib/asv-report";
 import { orderHasDealerBodyOrGlassWork } from "@/lib/admin-ai-dealer-incident-link";
 import { auctionDamageLv } from "@/lib/vin-scan/damage-labels-lv";
 import { normalizeLossAmountEurDisplay } from "@/lib/loss-amount-format";
+import {
+  aggregateUnifiedIncidents,
+  collectUnifiedIncidentDamageDetails,
+  collectUnifiedIncidentRows,
+} from "@/lib/unified-incidents";
 
 export type DamageEvidenceRow = {
   date: string;
@@ -159,4 +164,27 @@ export function countPdfDamageEvidence(input: {
   n += (input.ccVinBlock?.damages ?? []).filter(ccVinDamageRowHasData).length;
   n += (input.asvBlock?.damages ?? []).filter(asvDamageRowHasData).length;
   return n;
+}
+
+/**
+ * Viens negadījumu skaits visai atskaitei - tieši tas, ko rāda kopsavilkuma kartīte
+ * („N bojājumu ieraksti”): apvienotie notikumi; ja to nav - bojājumu ieraksti bez summas.
+ * AI faktu lapa un faktu pārbaude lieto šo pašu skaitli, nevis avotu rindu summu.
+ */
+export function computeReportIncidentCount(input: {
+  manualVendorBlocks?: ClientManualVendorBlockPdf[] | null;
+  manualLtabBlock?: ClientManualLtabBlockPdf | null;
+  ccVinBlock?: CcVinBlockState | null;
+  asvBlock?: AsvBlockState | null;
+}): { count: number; uniqueCount: number; sourceRowCount: number } {
+  const rows = collectUnifiedIncidentRows({
+    manualVendorBlocks: input.manualVendorBlocks ?? null,
+    manualLtabBlock: input.manualLtabBlock ?? null,
+    ccVinBlock: input.ccVinBlock ?? null,
+    asvBlock: input.asvBlock ?? null,
+  });
+  const agg = aggregateUnifiedIncidents(rows, collectUnifiedIncidentDamageDetails(input.manualVendorBlocks ?? null));
+  const uniqueCount = agg.uniqueCount;
+  const count = uniqueCount > 0 ? uniqueCount : countPdfDamageEvidence(input);
+  return { count, uniqueCount, sourceRowCount: rows.length };
 }

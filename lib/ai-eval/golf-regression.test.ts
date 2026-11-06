@@ -49,7 +49,8 @@ describe("Golf GTE - PR1 bojājumu pierādījumi (1, 10)", () => {
   it("faktu lapā sadaļa „Bojājumi (visi avoti)” ar izsoli un FIN izņemšanu; PDF tabula nemainās", () => {
     expect(facts.incidents).toHaveLength(0);
     expect(facts.damageEvidence.total).toBeGreaterThanOrEqual(2);
-    expect(facts.sheet).toMatch(/Bojājumi \(visi avoti, arī bez summas\): \d+/);
+    expect(facts.sheet).toMatch(/Bojājumu avotu ieraksti \(arī bez summas\): \d+/);
+    expect(facts.sheet).toMatch(/Negadījumi atskaitē \(kopsavilkuma kartīte\): [1-9]/);
     expect(facts.sheet).toMatch(/02\.04\.2024 \| .+ \| summa nav \| Izsoļu portālu arhīvs/);
     expect(facts.sheet).toMatch(/18\.03\.2024 \| Noņemts no reģistra bojājuma dēļ \| summa nav/);
   });
