@@ -93,6 +93,11 @@ function confirmedWaybillNo(body: unknown): string {
   return typeof v === "string" ? v.trim().toUpperCase().slice(0, 12) : "";
 }
 
+function clientRequestIdOf(body: unknown): string {
+  const v = body && typeof body === "object" ? (body as { clientRequestId?: unknown }).clientRequestId : "";
+  return typeof v === "string" ? v : "";
+}
+
 export async function GET(req: Request) {
   const gate = await requireIrissSectionApi("pavadzimes");
   if (!gate.ok) return gate.response;
@@ -184,6 +189,8 @@ export async function POST(req: Request) {
       plateBusyAtCreate: Boolean(occupancy?.busy),
       // "Vai tiešām pārtraukt iepriekšējo un izveidot jaunu?" -> Jā: pārtraukt drīkst TIKAI šo (tobrīd redzamo) pavadzīmi.
       replaceWaybillNo: occupancy?.busy ? (occupancy.current?.number ?? "") : "",
+      // 07.11: dubults klikšķis / atkārtots POST ar to pašu atslēgu atgriež to pašu pieprasījumu.
+      clientRequestId: clientRequestIdOf(body),
     });
     const doc = await readWaybillRequestsDoc();
     const classified = classifyWaybillForAuto(request, {

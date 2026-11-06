@@ -100,7 +100,7 @@ describe("Saruna C: ikona, badge, nav pastāvīgās slejas", () => {
         }}
       />,
     );
-    expect(html).toContain('data-saruna-badge="2"');
+    expect(html).toContain('data-saruna-badge="1"');
     expect(html).toContain("#FF3B30");
     expect(html).not.toContain('data-saruna-overlay="open"');
   });

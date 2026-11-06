@@ -296,6 +296,26 @@ describe("waybill worker (scripts/iriss-ttr)", () => {
     expect(resolveWorkerScript("fill")).toBe("refill.js");
   });
 
+  it("07.11: a job cancelled by the user stops before CSDD Save; VPN is released, no result is sent", async () => {
+    const d = deps();
+    d.api.event = vi.fn(async (_id: string, body: { stage?: string }) => (body.stage === "saving" ? "cancelled" : "in_progress")) as never;
+    const res = await processJob(autoJob(), d);
+    expect(res.outcome).toBe("cancelled");
+    expect(scriptCalls(d).map((c) => c[0])).toEqual(["fill"]);
+    expect(d.api.result).not.toHaveBeenCalled();
+    expect(d.vpnRelease).toHaveBeenCalled();
+    const texts = (d.api.event as unknown as { mock: { calls: Array<[string, { text?: string }]> } }).mock.calls.map((c) => c[1].text ?? "");
+    expect(texts).toContain("Atcelts. Pavadzīme NAV izveidota.");
+  });
+
+  it("07.11: cancelled already before the form - no CSDD script runs at all", async () => {
+    const d = deps();
+    d.api.event = vi.fn(async (_id: string, body: { stage?: string }) => (body.stage === "filling" ? "cancelled" : "")) as never;
+    const res = await processJob(autoJob(), d);
+    expect(res.outcome).toBe("cancelled");
+    expect(scriptCalls(d)).toEqual([]);
+  });
+
   it("a busy-plate job (confirmBusy) is skipped: no claim, no VPN, no scripts", async () => {
     for (const job of [
       autoJob({ plateBusyAtCreate: true }),

@@ -109,14 +109,14 @@ export async function POST(req: Request, ctx: Ctx) {
     }
   }
   if (body.action === "cancel") {
-    // Tikai Gaida un vēl nepaņemts; izdotas/aktīvas pavadzīmes un darbā esošus nekad neaiztiek (409).
+    // 07.11: jebkurā stāvoklī pirms Izdota (Gaida, automātika, Aivars); izdotas pavadzīmes nekad neaiztiek (409).
     try {
       const result = await cancelWaybillRequest({ id, actorId, actorName });
       if (!result.ok) {
         return result.reason === "not_found"
           ? NextResponse.json({ error: "Pieprasījums nav atrasts." }, { status: 404, ...NO_STORE })
           : NextResponse.json(
-              { error: "Atcelt var tikai pieprasījumu, ko vēl neviens nav sācis." },
+              { error: "Atcelt var tikai pieprasījumu, kas vēl nav izdots. Izdotu pavadzīmi pārtrauc ar «Pārtraukt»." },
               { status: 409, ...NO_STORE },
             );
       }

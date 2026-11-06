@@ -2,11 +2,12 @@ import { NextResponse, after } from "next/server";
 import { irissAivarsApiTokenConfigured, verifyIrissAivarsApiToken } from "@/lib/iriss-aivars-api-token";
 import { toAivarsCreateWaybillAction, toAivarsWaybillAction } from "@/lib/iriss-waybill-create";
 import { isWaybillStopRequest } from "@/lib/iriss-waybill-stop";
-import { completeWaybillRequest, handAutoFailureToAivars } from "@/lib/iriss-waybill-requests-store";
+import { completeWaybillRequest, handAutoFailureToAivars, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
 import { autoFailureHandoff } from "@/lib/iriss-waybill-requests";
 import { wakeAivars } from "@/lib/iriss-aivars-wake";
 import { uploadIrissPavadzime } from "@/lib/iriss-pavadzimes-store";
 import { ensureWaybillRequestInDropbox } from "@/lib/iriss-waybill-dropbox";
+import { waybillDropboxFileName } from "@/lib/iriss-waybill-pdf";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,10 +43,19 @@ export async function POST(req: Request, ctx: Ctx) {
   const ok = body.ok === true;
   let pdfUrl = typeof body.pdfUrl === "string" ? body.pdfUrl.trim() : "";
   const waybillNo = typeof body.waybillNo === "string" ? body.waybillNo.trim() : "";
-  if (ok && typeof body.pdfBase64 === "string" && body.pdfBase64.trim()) {
+  const current = (await readWaybillRequestsDoc()).requests.find((row) => row.id === id) ?? null;
+  // 07.11 (B762): tas pats rezultāts otrreiz - PDF vēlreiz neglabā (completeWaybillRequest arī neraksta notikumu).
+  const alreadyIssued =
+    ok && current?.status === "issued" && (!waybillNo || waybillNo.toUpperCase() === current.waybillNo.toUpperCase());
+  if (ok && !alreadyIssued && typeof body.pdfBase64 === "string" && body.pdfBase64.trim()) {
     try {
       const bytes = Buffer.from(body.pdfBase64.trim(), "base64");
+      // Vienāds nosaukums visām (arī tirdzniecības akta) pavadzīmēm: P0xxxx_MARKA_MODELIS_NUMURS.pdf.
+      const named = current
+        ? waybillDropboxFileName({ waybillNo, brandModel: current.vehicle.brandModel, plate: current.vehicle.plate })
+        : "";
       const fileName =
+        named ||
         (typeof body.fileName === "string" && body.fileName.trim().endsWith(".pdf")
           ? body.fileName.trim()
           : `${waybillNo || "pavadzime"}.pdf`);

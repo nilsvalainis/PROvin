@@ -14,6 +14,10 @@ export type WaybillCalendarSegment = {
   leftPct: number;
   widthPct: number;
   tone: WaybillCalendarTone;
+  /** Pārtraukta (CSDD «Pārtraukt» vai aizstāta ar jaunāku tam pašam numuram): josla beidzas tajā brīdī. */
+  interrupted: boolean;
+  /** Apakšrinda joslā (0 = augšējā), lai īsas pavadzīmes vienā dienā neuzklājas viena uz otras. */
+  row: number;
 };
 
 export type WaybillCalendar = {
@@ -23,8 +27,30 @@ export type WaybillCalendar = {
   endMs: number;
   /** Šobrīd kā % no loga (vertikālā līnija). */
   nowPct: number;
-  lanes: Array<{ plate: string; segments: WaybillCalendarSegment[] }>;
+  lanes: Array<{ plate: string; segments: WaybillCalendarSegment[]; rows: number }>;
 };
+
+/**
+ * Teksts ("VW ARTEON") prasa ~9 % no 7 dienu loga; tik tuvu esošas joslas liek nākamajā apakšrindā.
+ * Tīri vizuāli - laiki nemainās.
+ */
+const LABEL_MIN_PCT = 9;
+
+function packRows(segments: WaybillCalendarSegment[]): { segments: WaybillCalendarSegment[]; rows: number } {
+  const ends: number[] = [];
+  const packed = segments.map((seg) => {
+    const right = seg.leftPct + Math.max(seg.widthPct, LABEL_MIN_PCT);
+    let row = ends.findIndex((end) => end <= seg.leftPct);
+    if (row === -1) {
+      row = ends.length;
+      ends.push(right);
+    } else {
+      ends[row] = right;
+    }
+    return { ...seg, row };
+  });
+  return { segments: packed, rows: Math.max(1, ends.length) };
+}
 
 const DAY = 86_400_000;
 const SOON_MS = 24 * 3_600_000;
@@ -56,14 +82,31 @@ export function buildWaybillCalendar(
   const span = endMs - startMs;
   const lanes = new Map<string, WaybillCalendarSegment[]>();
   const issuedByNumber = new Map(rows.map((r) => [r.number.trim().toUpperCase(), Date.parse(r.issuedAt)] as const));
+  /**
+   * 07.11: CSDD vienam numuram ļauj tikai vienu derīgu pavadzīmi - ja tam pašam numuram vēlāk izdota cita, iepriekšējā
+   * tajā brīdī pārtraukta (arī, ja indeksā vēl nav atzīmes "interrupted"). Agrāk tā kalendārā turpinājās oranža.
+   */
+  const nextIssueOnPlate = (r: (typeof rows)[number]): number | null => {
+    const own = Date.parse(r.issuedAt);
+    if (!Number.isFinite(own)) return null;
+    let next: number | null = null;
+    for (const o of rows) {
+      if (o.id === r.id || plateKey(o.plate) !== plateKey(r.plate)) continue;
+      const t = Date.parse(o.issuedAt);
+      if (Number.isFinite(t) && t > own && (next == null || t < next)) next = t;
+    }
+    return next;
+  };
   for (const r of rows) {
     const validUntil = Date.parse(r.validUntil);
     if (!Number.isFinite(validUntil)) continue;
-    const interrupted = r.lifecycle === "interrupted";
+    const replacedAt = nextIssueOnPlate(r);
+    const replaced = replacedAt != null && replacedAt < validUntil;
+    const interrupted = r.lifecycle === "interrupted" || replaced;
     const successorIssued = r.supersededBy ? issuedByNumber.get(r.supersededBy.trim().toUpperCase()) : undefined;
-    const until = interrupted
-      ? Math.min(validUntil, successorIssued != null && Number.isFinite(successorIssued) ? successorIssued : nowMs)
-      : validUntil;
+    const stopAt =
+      successorIssued != null && Number.isFinite(successorIssued) ? successorIssued : replaced ? (replacedAt as number) : nowMs;
+    const until = interrupted ? Math.min(validUntil, stopAt) : validUntil;
     const issued = Date.parse(r.issuedAt);
     const from = Math.max(Number.isFinite(issued) ? issued : until - SOON_MS, startMs);
     const to = Math.min(until, endMs);
@@ -78,6 +121,8 @@ export function buildWaybillCalendar(
       leftPct: ((from - startMs) / span) * 100,
       widthPct: Math.max(1.5, ((to - from) / span) * 100),
       tone,
+      interrupted,
+      row: 0,
     };
     lanes.set(plate, [...(lanes.get(plate) ?? []), seg]);
   }
@@ -88,7 +133,7 @@ export function buildWaybillCalendar(
     nowPct: Math.min(100, Math.max(0, ((nowMs - startMs) / span) * 100)),
     lanes: [...lanes.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([plate, segments]) => ({ plate, segments: segments.sort((x, y) => x.leftPct - y.leftPct) })),
+      .map(([plate, segments]) => ({ plate, ...packRows(segments.sort((x, y) => x.leftPct - y.leftPct)) })),
   };
 }
 

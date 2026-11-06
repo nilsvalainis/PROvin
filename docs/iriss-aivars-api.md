@@ -39,7 +39,7 @@ Required structured fields (validated by the server before the job is queued):
 - plate: one of `B193-7`, `B762-7`, `B192-7` (stored compact, e.g. `B7627`)
 - `brandModel`
 - VIN optional. If present it must be a 17-char ISO VIN.
-- `validHours` integer 1-48 (default 48; Nils 27.10: max 48 h). Server sets `validFrom = now` and `validUntil = now + N h` (Europe/Riga clock for operators, ISO UTC in the job).
+- `validHours` integer 1-48 (Nils 27.10, final 07.11: max 48 h; the server rejects 0 or >48 with 400). Phone and desktop forms: 1 / 12 / 48 h or "Cits" 1-48. Server sets `validFrom = now` and `validUntil = now + N h` (Europe/Riga clock for operators, ISO UTC in the job).
 - `routeFrom` / `routeTo` default to `Tukums, Rīgas iela` -> `Tukuma CSDD`. On the phone form staff can pick "Cits" and type an address (max 80 chars: letters, digits, `. , - / ( )`); the server validates it and sends it in `routeFrom` / `routeTo`. Number check (numuru salīdzināšana) defaults to CSDD Tukuma; another place may be written in `comment_untrusted`.
 - Comment only: if the form has no car but `comment_untrusted` looks like `193 uz BMW 330`, the server takes the plate (allowlist only) and `brandModel` (safe chars only) from it as data. `brandModel` is always filled when a job is queued.
 
@@ -87,12 +87,26 @@ All require `Authorization: Bearer <IRISS_AIVARS_API_TOKEN>`.
 | Method | Path | Purpose |
 | --- | --- | --- |
 | GET | `/api/iriss/aivars/waybill-requests` | Pending `create_waybill` jobs in `requests`; pending `stop_waybill` jobs in `stopRequests` |
+| GET | `/api/iriss/aivars/waybill-requests/:id` (also `/:id/status`) | One job: `{ status, cancelled, pickedBy, waybillNo, updatedAt, next, request }` (read only) |
 | POST | `/api/iriss/aivars/waybill-requests/:id/claim` | Claim a job |
 | POST | `/api/iriss/aivars/waybill-requests/:id/events` | Status only: `in_progress`, `issued`, `error`, `message` |
 | POST | `/api/iriss/aivars/waybill-requests/:id/result` | Finish: `{ ok, waybillNo, pdfBase64?, errorReason? }` |
 | GET / POST | `/api/iriss/aivars/waybill-plates` | CSDD plate snapshot (Hetzner worker): `{ plates: [{ plate, ok, checkedAt, active: [{ waybillNo, validUntil, brandModel }], error }] }` |
 
 Staff IRISS users never call this API. Pavadzīmes users submit a structured form to `/api/admin/iriss/waybill-requests`; that queues `create_waybill` immediately (no admin approval). A busy trading number (our index or the CSDD snapshot) without `confirmBusy: true` returns 409 with `current`; with `confirmBusy` the client also sends `confirmWaybillNo` (the number shown in the dialog) - if CSDD now shows another number, 409 again.
+
+## Status, cancel and idempotency (07.11, after B762)
+
+On 06.11 a B762 job sat in "Izveido" for 76 min: CSDD issued P02876 after 22 min, but the result came ~50 min later because the API had no status read (Aivars got 404), returned bare 400 for unknown event kinds, and 409 for re-claiming his own job. Now:
+
+- `GET /:id` (or `/:id/status`) returns the job status. Check it before CSDD «Saglabāt» and whenever unsure. `cancelled: true` = the user pressed "Atcelt pieprasījumu": do not issue. If CSDD already saved it, still send `result { ok: true, waybillNo }` - the server records the truth (status becomes Izdota).
+- Staff can cancel a job in any state before Izdota (queued, at the automation, at Aivars). A cancelled job is never listed in GET and cannot be claimed.
+- `claim` of a job you already hold (`in_progress`, same picker) returns 200 with the job. Other refusals return 409 with `status` / `cancelled` / `next`.
+- `events` with an unknown `kind` returns 400 with `allowed` and a `hint`.
+- `result` twice with the same `waybillNo` is a no-op (no second event, push or PDF).
+- Staff "Atkārtot" on a job with no news for > 5 min puts it back in the queue for Aivars with `handoff.checkCsddFirst: true` - check CSDD first that it was not already created.
+- Staff form POST carries `clientRequestId`; the same key (same user, same plate, 24 h) returns the same request instead of a second one.
+- The Hetzner worker reads the status returned by its stage events and stops before «Saglabāt» when the job was cancelled (`VAJAG RELEJA DEPLOY` for `scripts/iriss-ttr/waybill-worker*.mjs`).
 
 ## Wake (push instead of polling)
 

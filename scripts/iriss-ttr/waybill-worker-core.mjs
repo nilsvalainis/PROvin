@@ -280,7 +280,13 @@ export async function processJob(job, deps) {
     return { outcome: "not_claimed" };
   }
   marks.claim = deps.now();
-  const stage = (name) => deps.api.event(job.id, { kind: "message", stage: name, by: "auto" }).catch(() => {});
+  const stage = (name) => deps.api.event(job.id, { kind: "message", stage: name, by: "auto" }).catch(() => "");
+  /** 07.11: lietotājs darbu atcēla (Atcelt pieprasījumu) - pirms CSDD Saglabāt neturpinām. */
+  const cancelledError = () => {
+    const err = new Error("lietotājs atcēla pieprasījumu");
+    err.cancelled = true;
+    return err;
+  };
   const plate = String(job.vehicle.plate || "").toUpperCase();
   const replaceNo = job.auto.replace ? String(job.auto.replace.waybillNo).toUpperCase() : "";
   let saveStarted = false;
@@ -321,11 +327,11 @@ export async function processJob(job, deps) {
       if (!annulled?.ok) throw new Error(`${replaceNo} anulēt neizdevās: ${annulled?.error || "kļūda"}`);
       annulDone = true;
       marks.annulled = deps.now();
-      await deps.api.event(job.id, { kind: "message", text: `Iepriekšējā pavadzīme ${replaceNo} CSDD anulēta.`, by: "auto" }).catch(() => {});
+      await deps.api.event(job.id, { kind: "message", text: `Iepriekšējā pavadzīme ${replaceNo} CSDD pārtraukta.`, by: "auto" }).catch(() => {});
       active = await syncPlate();
       if (active.length) throw new Error(`pēc anulēšanas numurs joprojām aizņemts (${active.map((a) => a.waybillNo).join(", ")})`);
     }
-    await stage("filling");
+    if ((await stage("filling")) === "cancelled") throw cancelledError();
     const input = scriptInput(job);
     touchedCsdd = true;
     const filled = await deps.runScript("fill", input);
@@ -338,7 +344,7 @@ export async function processJob(job, deps) {
     const verified = verifyFilledFields(job, filled.fields);
     if (!verified.ok) throw new Error(verified.reason);
     marks.filled = deps.now();
-    await stage("saving");
+    if ((await stage("saving")) === "cancelled") throw cancelledError();
     saveStarted = true;
     const saved = await deps.runScript("save", input);
     if (saved && saved.ok === false && saved.notCreated === true) {
@@ -360,6 +366,12 @@ export async function processJob(job, deps) {
   } catch (err) {
     const reason = (err instanceof Error ? err.message : String(err)).slice(0, 200);
     deps.log("job_failed", { id: job.id, reason, saveStarted, annulDone, ...formatTimings(marks) });
+    if (err && err.cancelled && !saveStarted) {
+      // Atcelts: neko vairs nesūta (statuss jau "cancelled"); VPN atbrīvo finally.
+      const text = annulDone ? `Atcelts. Iepriekšējā ${replaceNo} CSDD jau pārtraukta, jaunā NAV izveidota.` : "Atcelts. Pavadzīme NAV izveidota.";
+      await deps.api.event(job.id, { kind: "message", text, by: "auto" }).catch(() => {});
+      return { outcome: "cancelled" };
+    }
     if (saveStarted && err && err.notCreated) {
       await deps.api
         .result(job.id, { ok: false, errorReason: `Automātika: ${reason}. Pavadzīme NAV izveidota.`, by: "auto" })
@@ -372,7 +384,7 @@ export async function processJob(job, deps) {
         .catch(() => {});
       return { outcome: "error_after_save", reason };
     }
-    const prefix = annulDone ? `Iepriekšējā ${replaceNo} anulēta, jauno izraksta Aivars. ` : "";
+    const prefix = annulDone ? `Iepriekšējā ${replaceNo} pārtraukta, jauno izraksta Aivars. ` : "";
     await deps.api.event(job.id, { kind: "message", text: `${prefix}Automātikas kļūda: ${reason}`, by: "auto" }).catch(() => {});
     await deps.api.release(job.id, `${prefix}${reason}`.slice(0, 200)).catch(() => {});
     return { outcome: "released", reason };

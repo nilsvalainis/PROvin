@@ -31,6 +31,9 @@ const {
   queueWaybillStop,
   readWaybillRequestsDoc,
   listPendingWaybillRequests,
+  createWaybillRequest,
+  retryWaybillRequest,
+  findWaybillByClientRequestId,
 } = await import("@/lib/iriss-waybill-requests-store");
 
 const future = new Date(Date.now() + 3_600_000).toISOString();
@@ -95,10 +98,24 @@ describe("cancelWaybillRequest (Atcelt)", () => {
     expect(await claimWaybillRequest("wbr_q", "auto")).toBeNull();
   });
 
-  it("refuses (409) anything claimed, in progress, issued, failed or already cancelled - and changes nothing", async () => {
-    const rows = [
-      sample({ id: "wbr_claimed", pickedBy: "aivars" }),
+  it("07.11 (B762): cancels also a job already at the automation or at Aivars, with an honest text", async () => {
+    seed([
       sample({ id: "wbr_work", status: "in_progress", pickedBy: "auto", pickedAt: now }),
+      sample({ id: "wbr_aiv", status: "in_progress", pickedBy: "aivars", pickedAt: now, vehicle: { brandModel: "VW ARTEON", vin: "", plate: "B762-7", orderId: "" } }),
+    ]);
+    for (const id of ["wbr_work", "wbr_aiv"]) {
+      const res = await cancelWaybillRequest({ id, ...actor });
+      expect(res).toMatchObject({ ok: true, request: { id, status: "cancelled" } });
+      if (res.ok) expect(res.request.lastReplyText).toContain("Ja CSDD pavadzīme jau saglabāta, tā parādīsies kā Izdota");
+    }
+    // Atcelto vairs neņem ne automātika, ne Aivars (arī ne "savu" claim).
+    expect(await claimWaybillRequest("wbr_aiv")).toBeNull();
+    expect(await claimWaybillRequest("wbr_work", "auto")).toBeNull();
+    expect(await listPendingWaybillRequests()).toEqual([]);
+  });
+
+  it("refuses (409) issued, failed or already cancelled - and changes nothing", async () => {
+    const rows = [
       sample({ id: "wbr_issued", status: "issued", waybillNo: "P02811", pdfUrl: "/x.pdf" }),
       sample({ id: "wbr_err", status: "error" }),
       sample({ id: "wbr_cx", status: "cancelled" }),
@@ -113,9 +130,10 @@ describe("cancelWaybillRequest (Atcelt)", () => {
     expect(mem.audits).toEqual([]);
   });
 
-  it("race: once claimed, a late cancel loses", async () => {
+  it("race: once issued, a late cancel loses", async () => {
     seed([sample({ id: "wbr_r" })]);
     expect(await claimWaybillRequest("wbr_r", "auto")).toMatchObject({ status: "in_progress", stage: "claimed" });
+    await completeWaybillRequest({ id: "wbr_r", ok: true, waybillNo: "P02900", by: "auto" });
     expect(await cancelWaybillRequest({ id: "wbr_r", ...actor })).toEqual({ ok: false, reason: "not_pending" });
   });
 
@@ -302,5 +320,69 @@ describe("queueWaybillStop (Pārtraukt)", () => {
     expect(saveCsddPlatesReport).toHaveBeenCalledWith([
       expect.objectContaining({ plate: "B193-7", ok: true, active: [] }),
     ]);
+  });
+});
+
+describe("07.11 (B762): idempotence and stuck jobs", () => {
+  const payload = {
+    vin: "",
+    plate: "B7627",
+    brandModel: "VW ARTEON",
+    orderId: "",
+    routeFrom: "Tukums, Rīgas iela",
+    routeTo: "Tukuma CSDD",
+    validDays: 1,
+    validHours: 12,
+    validFrom: now,
+    validUntil: future,
+    noteUntrusted: "",
+    tradeAct: false,
+    representative: "",
+  };
+
+  it("the same submit key twice returns the same request (no second job, no 409)", async () => {
+    seed([]);
+    const a = await createWaybillRequest({ createdBy: "usr_1", createdByName: "Nils", payload, clientRequestId: "wbk_abcdef123456" });
+    const b = await createWaybillRequest({ createdBy: "usr_1", createdByName: "Nils", payload, clientRequestId: "wbk_abcdef123456" });
+    expect(b.id).toBe(a.id);
+    const doc = await readWaybillRequestsDoc();
+    expect(doc.requests).toHaveLength(1);
+    expect(mem.audits.filter((x) => x.action === "waybill_requested")).toHaveLength(1);
+    // Cits lietotājs ar to pašu atslēgu nesaņem svešu pieprasījumu (bet numurs ir aizņemts ar gaidošo -> kļūda).
+    expect(findWaybillByClientRequestId(doc.requests, "usr_2", "wbk_abcdef123456", "B7627")).toBeNull();
+    await expect(createWaybillRequest({ createdBy: "usr_2", createdByName: "Toms", payload, clientRequestId: "wbk_abcdef123456" })).rejects.toThrow(
+      "waybill_pending_same_plate",
+    );
+  });
+
+  it("Aivars claiming his own job again gets the job (200), not 409; others still cannot", async () => {
+    seed([sample({ id: "wbr_c" })]);
+    const first = await claimWaybillRequest("wbr_c");
+    expect(first).toMatchObject({ status: "in_progress", pickedBy: "aivars" });
+    const events = (await readWaybillRequestsDoc()).events.length;
+    expect(await claimWaybillRequest("wbr_c")).toMatchObject({ id: "wbr_c", status: "in_progress" });
+    expect((await readWaybillRequestsDoc()).events.length).toBe(events);
+    expect(await claimWaybillRequest("wbr_c", "auto")).toBeNull();
+  });
+
+  it("the same result twice records one event and one waybill", async () => {
+    seed([sample({ id: "wbr_d", status: "in_progress", pickedBy: "aivars", pickedAt: now })]);
+    await completeWaybillRequest({ id: "wbr_d", ok: true, waybillNo: "P02876" });
+    const n = (await readWaybillRequestsDoc()).events.length;
+    expect(await completeWaybillRequest({ id: "wbr_d", ok: true, waybillNo: "P02876" })).toMatchObject({ status: "issued", waybillNo: "P02876" });
+    expect((await readWaybillRequestsDoc()).events.length).toBe(n);
+  });
+
+  it("a job with no news for > 5 min can be retried: back to Aivars, check CSDD first", async () => {
+    const old = new Date(Date.now() - 7 * 60_000).toISOString();
+    seed([
+      sample({ id: "wbr_quiet", createdAt: old, status: "in_progress", pickedBy: "auto", pickedAt: old, updatedAt: old, stage: "filling", stageAt: old }),
+      sample({ id: "wbr_fresh", status: "in_progress", pickedBy: "aivars", pickedAt: now, updatedAt: now }),
+    ]);
+    const res = await retryWaybillRequest({ id: "wbr_quiet", ...actor });
+    expect(res).toMatchObject({ status: "queued", pickedBy: "", autoDisabled: true, handoffCheckCsdd: true });
+    expect(res?.lastReplyText).toContain("vispirms pārbauda CSDD");
+    // Svaigu darbu (ziņas < 5 min) atkārtot nedrīkst - Aivars vēl strādā.
+    expect(await retryWaybillRequest({ id: "wbr_fresh", ...actor })).toBeNull();
   });
 });

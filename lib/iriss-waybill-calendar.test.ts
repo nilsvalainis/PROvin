@@ -37,6 +37,40 @@ describe("pavadzīmju kalendārs", () => {
     expect(cal.nowPct).toBeLessThan(10);
   });
 
+  it("07.11: vēlāk tam pašam numuram izdota pavadzīme pārtrauc iepriekšējo - pelēka, beidzas tajā brīdī", () => {
+    // B762 06.11: P02868 (48 h) aizstāta ar P02872, tā ar P02873, tā ar P02876 vienā pēcpusdienā.
+    const cal = buildWaybillCalendar(
+      [
+        row("p68", "B762-7", now - 26 * H, now + 22 * H),
+        row("p72", "B762-7", now + 2 * H, now + 14 * H),
+        row("p73", "B762-7", now + 2.4 * H, now + 14.4 * H),
+        row("p76", "B762-7", now + 3 * H, now + 15 * H),
+      ],
+      now + 4 * H,
+    );
+    const segs = cal.lanes[0]!.segments;
+    const byId = Object.fromEntries(segs.map((x) => [x.id, x]));
+    expect(byId.p68).toMatchObject({ tone: "expired", interrupted: true });
+    expect(byId.p72).toMatchObject({ tone: "expired", interrupted: true });
+    expect(byId.p76).toMatchObject({ tone: "soon", interrupted: false });
+    // P02868 josla beidzas, kad izdota P02872 (ne sākotnējās beigās nākamajā dienā).
+    expect(byId.p68!.leftPct + byId.p68!.widthPct).toBeCloseTo(byId.p72!.leftPct, 5);
+  });
+
+  it("07.11: īsas pavadzīmes vienā dienā neuzklājas - katra savā apakšrindā", () => {
+    const cal = buildWaybillCalendar(
+      [row("x1", "B193-7", now, now + H), row("x2", "B193-7", now + 1.2 * H, now + 2 * H), row("x3", "B193-7", now + 60 * H, now + 61 * H)],
+      now - H,
+    );
+    const lane = cal.lanes[0]!;
+    expect(lane.rows).toBe(2);
+    expect(lane.segments.map((x) => [x.id, x.row])).toEqual([
+      ["x1", 0],
+      ["x2", 1],
+      ["x3", 0],
+    ]);
+  });
+
   it("vēsture pēc VIN: tikai šis auto, jaunākā augšā", () => {
     const rows = [
       row("1", "BA1", now - 100 * H, now - 50 * H, "WBA3A5C50CF256551"),

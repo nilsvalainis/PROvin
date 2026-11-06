@@ -9,7 +9,8 @@ import {
   plateTakenByOtherRequest,
 } from "@/lib/iriss-waybill-auto";
 import { busyWaybillPlatesNow } from "@/lib/iriss-waybill-auto-server";
-import { claimWaybillRequest } from "@/lib/iriss-waybill-requests-store";
+import { claimWaybillRequest, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
+import { aivarsWaybillStatusPayload } from "@/lib/iriss-waybill-requests";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,7 +54,12 @@ export async function POST(req: Request, ctx: Ctx) {
     if (!request) return NextResponse.json({ error: "not_standard_or_claimed" }, { status: 409 });
   } else {
     request = await claimWaybillRequest(id);
-    if (!request) return NextResponse.json({ error: "already_claimed" }, { status: 409 });
+    if (!request) {
+      // 07.11 (B762): pasaka, kāpēc nē (atcelts / izdots / cits ņēma), lai Aivars neminē.
+      const current = (await readWaybillRequestsDoc()).requests.find((row) => row.id === id);
+      if (!current) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json({ error: "already_claimed", ...aivarsWaybillStatusPayload(current) }, { status: 409 });
+    }
   }
   return NextResponse.json(
     { ok: true, request: toAivarsWaybillAction(request), status: request.status, pickedAt: request.pickedAt },

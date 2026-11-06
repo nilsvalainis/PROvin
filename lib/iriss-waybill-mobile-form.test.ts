@@ -429,7 +429,7 @@ describe("live progress", () => {
     expect(row).toMatchObject({ label: "Gaida", canRetry: false, canCancel: true, progress: { text: "Termiņš beidzies - atcel un izveido jaunu" } });
   });
 
-  it("'Atcelt' only while pending and unclaimed; cancelled requests leave the queue", () => {
+  it("'Atcelt' before Izdota (also in progress); cancelled requests leave the queue", () => {
     const now = Date.parse("2026-10-23T10:05:00.000Z");
     const base = { createdAt: t0, updatedAt: t0, validUntil: "2026-10-25T10:00:00.000Z" };
     const rows = waybillMobileRequestRows(
@@ -443,11 +443,13 @@ describe("live progress", () => {
       5,
       { nowMs: now },
     );
+    // 07.11 (B762): arī darbā esošu (automātika / Aivars) var atcelt; izdotu - nē.
     expect(rows.map((r) => [r.id, r.canCancel])).toEqual([
       ["wbr_q", true],
-      ["wbr_w", false],
+      ["wbr_w", true],
       ["wbr_i", false],
     ]);
+    expect(rows.find((r) => r.id === "wbr_w")?.cancelText).toContain("Darbu jau sāka automātika");
     const [archived] = waybillMobileRequestRows([req({ id: "wbr_c", ...base, status: "cancelled" })], [], 5, { nowMs: now, which: "archive" });
     expect(archived).toMatchObject({ id: "wbr_c", label: "Atcelts", canCancel: false });
   });

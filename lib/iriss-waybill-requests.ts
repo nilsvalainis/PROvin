@@ -146,6 +146,11 @@ export type WaybillRequest = {
   handoffReason?: string;
   handoffCheckCsdd?: boolean;
   handoffAt?: string;
+  /**
+   * 07.11 (B762): vienas iesniegšanas atslēga no pārlūka. Dubults klikšķis / atkārtots POST pēc tīkla kļūdas ar to
+   * pašu atslēgu atgriež jau izveidoto pieprasījumu, nevis otru (sk. createWaybillRequest).
+   */
+  clientRequestId?: string;
 };
 
 export type WaybillRequestsDoc = {
@@ -194,6 +199,8 @@ export function parseWaybillRequest(raw: unknown): WaybillRequest | null {
   if (!/^wbr_[a-z0-9]+$/i.test(id) || !createdAt) return null;
   const status = isWaybillRequestStatus(o.status) ? o.status : "queued";
   const validDays = typeof o.validDays === "number" && o.validDays > 0 && o.validDays <= 90 ? Math.round(o.validDays) : null;
+  // Jaunus pieprasījumus serveris pieņem tikai 1-48 h (WAYBILL_VALID_MAX_HOURS, Nils 07.11). Lasot vecos ierakstus
+  // robeža ir plašāka, lai agrāk saglabāti dati nepazustu (tie netiek mainīti).
   const validHours =
     typeof o.validHours === "number" && o.validHours >= 1 && o.validHours <= 2160 ? Math.round(o.validHours) : null;
   return {
@@ -236,7 +243,13 @@ export function parseWaybillRequest(raw: unknown): WaybillRequest | null {
     handoffReason: str(o.handoffReason, 300),
     handoffCheckCsdd: o.handoffCheckCsdd === true,
     handoffAt: str(o.handoffAt, 40),
+    clientRequestId: parseWaybillClientRequestId(o.clientRequestId),
   };
+}
+
+/** Iesniegšanas atslēga: 8-64 zīmes [A-Za-z0-9_-]; citādi tukšs (vecs klients - bez dublikātu atslēgas). */
+export function parseWaybillClientRequestId(value: unknown): string {
+  return typeof value === "string" && /^[A-Za-z0-9_-]{8,64}$/.test(value.trim()) ? value.trim() : "";
 }
 
 /**
@@ -300,6 +313,8 @@ export function waybillChatTimeline(doc: WaybillRequestsDoc): WaybillChatItem[] 
   for (const event of doc.events) {
     const request = byId.get(event.requestId);
     if (!request) continue;
+    // Automātikas soļu ziņas bez teksta (tikai stage) sarunā nav jārāda - audits: 5 tukši "message" pirms "Izdota".
+    if (event.kind === "message" && !event.text.trim()) continue;
     items.push({ type: "event", event, request });
   }
   items.sort((a, b) => {
@@ -333,9 +348,72 @@ export function inProgressIsStale(req: WaybillRequest, nowMs = Date.now()): bool
   return Number.isFinite(t) && nowMs - t > WAYBILL_IN_PROGRESS_STALE_MS;
 }
 
-/** "Atcelt" drīkst tikai pieprasījumam, ko neviens vēl nav paņēmis (Gaida, bez pickedBy). */
-export function waybillRequestCancellable(req: Pick<WaybillRequest, "status" | "pickedBy">): boolean {
-  return req.status === "queued" && !req.pickedBy;
+/**
+ * "Atcelt" (07.11, B762): jebkurā stāvoklī pirms "Izdota" - Gaida, pie automātikas vai pie Aivara.
+ * Izdotas, kļūdainas un jau atceltas neaiztiek. Ja darbs jau bija sākts un CSDD paspēja saglabāt, rezultāts
+ * tomēr tiek ierakstīts kā Izdota (sk. appendWaybillRequestEvent) - patiesība nepazūd.
+ */
+export function waybillRequestCancellable(req: Pick<WaybillRequest, "status">): boolean {
+  return req.status === "queued" || req.status === "in_progress";
+}
+
+/** Atcelšanas loga teksts: gaidošam - vienkārši; sāktam - godīgi, ka CSDD varbūt jau saglabāja. */
+export function waybillCancelConfirmText(req: Pick<WaybillRequest, "status" | "pickedBy" | "kind">): string {
+  const stop = req.kind === "stop";
+  if (req.status !== "in_progress") {
+    return stop ? "Aivars šo pavadzīmi CSDD nepārtrauks." : "Aivars un automātika to vairs neizrakstīs.";
+  }
+  const who = req.pickedBy === "auto" ? "automātika" : "Aivars";
+  return stop
+    ? `Darbu jau sāka ${who}. Ja CSDD pavadzīme jau pārtraukta, to redzēsi kā Pārtraukta.`
+    : `Darbu jau sāka ${who}. Ja CSDD pavadzīmi jau paspēja saglabāt, tā parādīsies kā Izdota - tad to var pārtraukt.`;
+}
+
+/** 07.11: cik ilgi darbā bez jebkādas ziņas, lai lietotājs redz "Nav ziņu" un var atcelt vai atkārtot. */
+export const WAYBILL_NO_PROGRESS_MS = 5 * 60 * 1000;
+
+/** Pēdējā virzība darbam (jebkurš notikums maina updatedAt; automātikas solis - stageAt). */
+function lastProgressMs(req: Pick<WaybillRequest, "updatedAt" | "pickedAt" | "createdAt"> & Partial<Pick<WaybillRequest, "stageAt">>): number {
+  const times = [req.updatedAt, req.pickedAt, req.stageAt ?? "", req.createdAt].map((v) => Date.parse(v || "")).filter(Number.isFinite);
+  return times.length ? Math.max(...times) : NaN;
+}
+
+/**
+ * Darbā (Izveido / Pārtrauc), bet bez ziņām ilgāk par WAYBILL_NO_PROGRESS_MS: minūtes kopš pēdējās virzības.
+ * null = nav darbā vai vēl nav iestrēdzis. Dati netiek mainīti.
+ */
+export function waybillNoProgressMinutes(
+  req: Pick<WaybillRequest, "status" | "updatedAt" | "pickedAt" | "createdAt"> & Partial<Pick<WaybillRequest, "stageAt">>,
+  nowMs = Date.now(),
+): number | null {
+  if (req.status !== "in_progress") return null;
+  const t = lastProgressMs(req);
+  if (!Number.isFinite(t) || nowMs - t <= WAYBILL_NO_PROGRESS_MS) return null;
+  return Math.floor((nowMs - t) / 60_000);
+}
+
+/** Teksts iestrēgušam darbam (bez izdomātiem iemesliem). */
+export function waybillNoProgressText(minutes: number, kind?: WaybillRequest["kind"]): string {
+  return kind === "stop"
+    ? `Nav ziņu ${minutes} min. Pārbaudi CSDD; vari atcelt vai atkārtot.`
+    : `Nav ziņu ${minutes} min. Ja CSDD pavadzīmes vēl nav, vari atcelt vai atkārtot.`;
+}
+
+/** "Atkārtot": kļūda, iestrēdzis darbs vai ilgi gaidošs (ne beidzies termiņš). */
+export function waybillRequestRetryable(
+  req: Pick<WaybillRequest, "status" | "updatedAt" | "pickedAt" | "createdAt" | "validUntil"> & Partial<Pick<WaybillRequest, "stageAt">>,
+  nowMs = Date.now(),
+): boolean {
+  if (req.status === "error") return true;
+  if (req.status === "in_progress") return waybillNoProgressMinutes(req, nowMs) != null;
+  return false;
+}
+
+/** CSDD vārds: sistēma drīkst tikai «Pārtraukt» - vecie teksti ar "anulēta" tiek rādīti kā "pārtraukta" (dati nemainās). */
+export function waybillDisplayText(text: string): string {
+  return text
+    .replace(/\banulēšan/gi, (m) => (m[0] === "A" ? "Pārtraukšan" : "pārtraukšan"))
+    .replace(/\banulēt/gi, (m) => (m[0] === "A" ? "Pārtraukt" : "pārtraukt"));
 }
 
 /** Vēl gaida, bet pieprasītais derīguma beigu laiks jau pagājis: tādu vairs neizraksta (ne automātika, ne Aivars). */
@@ -592,11 +670,16 @@ export function waybillAivarsReply(
     request.status === "in_progress" && request.stage
       ? waybillStuckStageText(request.stage, request.stageAt, nowMs) || WAYBILL_WORKER_STAGE_TEXT[request.stage]
       : "";
+  // 07.11: darbā, bet bez ziņām > 5 min - godīgi pasaka un piedāvā atcelt / atkārtot (Aivaram nav soļu ziņu).
+  const quietMin = request.stage ? null : waybillNoProgressMinutes(request, nowMs);
+  const quietText = quietMin != null ? waybillNoProgressText(quietMin, request.kind) : "";
   const text = stale
     ? "Novecojis: vairāk nekā 24 h bez virzības. Ja vajag, izveido no jauna."
     : request.status === "cancelled"
       ? WAYBILL_CANCELLED_TEXT
-      : (queuedHonest || stageText || request.lastReplyText || last?.text || request.errorReason || queuedFallback).trim();
+      : waybillDisplayText(
+          (queuedHonest || stageText || quietText || request.lastReplyText || last?.text || request.errorReason || queuedFallback).trim(),
+        );
   return {
     requestId: request.id,
     status: request.status,
@@ -651,5 +734,36 @@ export function waybillChatPayload(doc: WaybillRequestsDoc, nowMs = Date.now(), 
     events: doc.events,
     timeline: waybillChatTimeline(doc),
     replies: doc.requests.map((request) => waybillAivarsReply(request, doc.events, nowMs, auto)),
+  };
+}
+
+/** Statuss Aivaram / automātikai (GET /api/iriss/aivars/waybill-requests/:id). Bez komentāra un pieprasītāja. */
+export function aivarsWaybillStatusPayload(request: WaybillRequest): {
+  id: string;
+  status: WaybillRequestStatus;
+  cancelled: boolean;
+  pickedBy: string;
+  waybillNo: string;
+  updatedAt: string;
+  next: string;
+} {
+  const next =
+    request.status === "cancelled"
+      ? "Atcelts: neizraksti. Ja CSDD jau saglabāji - POST /:id/result { ok: true, waybillNo }."
+      : request.status === "issued"
+        ? "Pabeigts: neko vairs nesūti."
+        : request.status === "queued"
+          ? "POST /:id/claim"
+          : request.status === "in_progress"
+            ? "Pēc CSDD: POST /:id/result { ok, waybillNo, pdfBase64? }."
+            : "Kļūda: gaida lietotāja Atkārtot.";
+  return {
+    id: request.id,
+    status: request.status,
+    cancelled: request.status === "cancelled",
+    pickedBy: request.pickedBy,
+    waybillNo: request.waybillNo,
+    updatedAt: request.updatedAt,
+    next,
   };
 }
