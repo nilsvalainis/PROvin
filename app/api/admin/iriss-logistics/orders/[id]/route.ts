@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { cabinetActorHidesSums } from "@/lib/iriss-logistics-cabinet-access";
+import { cabinetActorHidesSums, maskOrderSums } from "@/lib/iriss-logistics-cabinet-access";
 import { logisticsCabinetAccessQuery, logisticsCabinetWriteForbidden, requireIrissLogisticsApi, irissLogisticsScopeHeader } from "@/lib/iriss-logistics-access";
 import { getLogisticsOrder, removeManualLogisticsOrder, setLogisticsOrderArchiveState, upsertLogisticsOrder } from "@/lib/iriss-logistics-store";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
@@ -17,7 +17,7 @@ export async function GET(_req: Request, ctx: Ctx) {
   if (!order) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
   const hideSums = cabinetActorHidesSums(logisticsCabinetAccessQuery(gate.actor, id));
   return NextResponse.json(
-    { ok: true, order: hideSums ? { ...order, priceEur: null } : order },
+    { ok: true, order: maskOrderSums(order, hideSums) },
     { headers: irissLogisticsScopeHeader() },
   );
 }
@@ -38,15 +38,16 @@ export async function PATCH(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400, headers: irissLogisticsScopeHeader() });
   }
   const row = body as Record<string, unknown>;
+  const hideSums = cabinetActorHidesSums(logisticsCabinetAccessQuery(gate.actor, id));
   if (row.action === "wake" || row.action === "picked_up" || row.action === "delivered" || row.action === "archive") {
     const order = await setLogisticsOrderArchiveState(id, row.action);
     if (!order) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
-    return NextResponse.json({ ok: true, order }, { headers: irissLogisticsScopeHeader() });
+    return NextResponse.json({ ok: true, order: maskOrderSums(order, hideSums) }, { headers: irissLogisticsScopeHeader() });
   }
   const existing = await getLogisticsOrder(id);
   if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
   const order = await upsertLogisticsOrder({ ...(row as Partial<LogisticsOrder>), id });
-  return NextResponse.json({ ok: true, order }, { headers: irissLogisticsScopeHeader() });
+  return NextResponse.json({ ok: true, order: maskOrderSums(order, hideSums) }, { headers: irissLogisticsScopeHeader() });
 }
 
 /** Tikai ar roku ievadītie citu klientu auto (source = manual). */

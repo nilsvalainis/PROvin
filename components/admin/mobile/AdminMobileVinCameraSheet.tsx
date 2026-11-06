@@ -5,6 +5,7 @@ import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
 import { normalizeVin } from "@/lib/order-field-validation";
 import {
+  CAMERA_SHEET_FRESH,
   cameraObjectCoverCrop,
   cameraScanControlState,
   isCameraBlackFrame,
@@ -237,10 +238,12 @@ export function AdminMobileVinCameraSheet({
   useEffect(() => {
     if (!open) return;
     let stop = false;
+    // Nakts 07.11: katra atvēršana sākas tukša - iepriekšējā auto VIN nepaliek laukā ar aktīvu «Izmantot VIN».
     setErr("");
-    setReady(false);
+    setReady(CAMERA_SHEET_FRESH.ready);
     setFound(null);
-    setStatus("idle");
+    setStatus(CAMERA_SHEET_FRESH.status);
+    setManual(CAMERA_SHEET_FRESH.vin);
     void (async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -263,10 +266,13 @@ export function AdminMobileVinCameraSheet({
         setReady(true);
       } catch {
         setErr("Kamera nav pieejama. Ievadi VIN zemāk.");
+        setStatus("idle");
       }
     })();
     return () => {
       stop = true;
+      // Citādi nākamajā atvēršanā auto skenēšana sākas ar veco «gatavs» pirms kameras un iesprūst «Nolasa VIN… (1)».
+      setReady(false);
       scanRef.current?.abort();
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
