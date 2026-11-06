@@ -5,6 +5,7 @@ import { buildOutvinDealerReportPdfInnerHtml } from "@/lib/outvin-dealer-pdf-htm
 import { emptyOutvinDealerReport } from "@/lib/outvin-dealer-types";
 import { buildCanonicalFacts } from "@/lib/canonical-facts-sheet";
 import { checkCommentContradictions } from "@/lib/comment-contradiction-check";
+import { checkInternalNoteLeaks } from "@/lib/pre-pdf-internal-note-check";
 import {
   buildPreviousInspectionBlockHtml,
   formatInspectionOdometer,
@@ -154,5 +155,65 @@ describe("PRO audits 06.11 - prodā atrastās papildu vietas", () => {
     );
     expect(translateTextLv("Eestis registreerimine", "et")).toBe("reģistrācija Igaunijā");
     expect(translateTextLv("Registreerimistunnistus EN009660", "et")).toBe("reģistrācijas apliecība EN009660");
+  });
+});
+
+describe("faktu pārbaude - pilnīga zaudējuma statuss nav bojājumu noliegums (XC90 TESTS 06.11)", () => {
+  function factsWithDamage() {
+    const base = buildCanonicalFacts({ sourceBlocks: createDefaultSourceBlocks() });
+    const incidents = [
+      { date: "05.2015", lossAmount: "2 001 - 2 500 €", country: "Beļģija", sortableTime: 1, sourceOrder: 1, sourceLabel: "CarVertical" },
+    ];
+    return {
+      ...base,
+      incidents,
+      damageEvidence: {
+        rows: [{ date: "05.2015", descriptionLv: "Bojājuma ieraksts", amount: "2 001 - 2 500 €", sourceLabel: "CarVertical" }],
+        total: 1,
+        withoutAmountCount: 0,
+        hasDealerBodyOrGlassWork: false,
+      },
+    } as ReturnType<typeof buildCanonicalFacts>;
+  }
+
+  it("„Zādzības vai pilnīga zaudējuma ierakstu šajā avotā nav” nav kļūda", () => {
+    const f = factsWithDamage();
+    expect(f.damageEvidence?.total ?? 0).toBeGreaterThan(0);
+    const flags = checkCommentContradictions({
+      text: "Avotā fiksēts viens bojājums 2015. gadā. Zādzības vai pilnīga zaudējuma ierakstu šajā avotā nav.",
+      field: "carvertical",
+      facts: f,
+    });
+    expect(flags.filter((x) => x.kind === "no_damage_claim")).toEqual([]);
+  });
+
+  it("„bojājumu nav” joprojām ir kļūda", () => {
+    const flags = checkCommentContradictions({
+      text: "Bojājumu ierakstu šajā avotā nav.",
+      field: "carvertical",
+      facts: factsWithDamage(),
+    });
+    expect(flags.some((x) => x.kind === "no_damage_claim")).toBe(true);
+  });
+});
+
+describe("c10 - viens brīdinājums laukam (XC90 TESTS 06.11 logā bija 3)", () => {
+  it("vairāki trāpījumi vienā rindā dod vienu karodziņu, dažādas rindas - atsevišķus", () => {
+    const one = checkInternalNoteLeaks([
+      { label: "Kopsavilkums", text: "Lorem Ipsum bloks ignorēt. Aiz maksas - nav pirkts." },
+    ]);
+    expect(one).toHaveLength(1);
+    expect(one[0]!.message).toContain("„Kopsavilkums”");
+    const two = checkInternalNoteLeaks([{ label: "Riski", text: "Sveiki,\nEsmu pabeidzis analīzi." }]);
+    expect(two).toHaveLength(2);
+  });
+
+  it("katram laukam savs karodziņš", () => {
+    const flags = checkInternalNoteLeaks([
+      { label: "AutoDNA", text: "TODO pārbaudīt" },
+      { label: "Kopsavilkums", text: "Lorem ipsum" },
+      { label: "CSDD", text: "Viss kārtībā." },
+    ]);
+    expect(flags.map((f) => f.sentence.split(":")[0])).toEqual(["AutoDNA", "Kopsavilkums"]);
   });
 });
