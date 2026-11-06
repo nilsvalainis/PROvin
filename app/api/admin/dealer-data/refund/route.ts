@@ -27,6 +27,7 @@ import {
 } from "@/lib/dealer-data-job-types";
 import { trySendDealerDataRefundEmail } from "@/lib/email/send-transactional";
 import { getStripe } from "@/lib/stripe";
+import { formatEurFromCents } from "@/lib/order-upsell";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -234,8 +235,9 @@ export async function POST(req: Request) {
       emailSent = await trySendDealerDataRefundEmail({
         to,
         vin: job?.vin ?? draft?.orderEdits?.vin ?? null,
-        amountEur: `${(decision.amountCents / 100).toFixed(2)} €`,
+        amountEur: formatEurFromCents(decision.amountCents),
         cancelled: o.cancelled === true,
+        lang: session.locale ?? null,
       });
       if (!emailSent) emailError = "send_failed";
     }
