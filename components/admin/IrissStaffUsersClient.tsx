@@ -35,6 +35,9 @@ function uniqueSectionLabels(ids: readonly IrissSection[]): string[] {
   return [...new Set(ids.map((id) => IRISS_SECTION_LABELS[id]))];
 }
 
+/** Zem `xl` (1280 px) sānu kartītes nav - tiesības atveras logā. */
+const DETAIL_SHEET_MEDIA = "(max-width: 1279.98px)";
+
 type SessionRow = { id: string; createdAt: string; lastSeenAt: string; ip: string; device: string };
 type DirectoryUser = (StaffUserPublic & { envAdmin?: false }) | (EnvAdminPublic & { envAdmin: true });
 
@@ -103,6 +106,7 @@ export function IrissStaffUsersClient() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [modal, setModal] = useState(false);
+  const [detailSheet, setDetailSheet] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [inviteSections, setInviteSections] = useState<IrissSection[]>(["logistika"]);
@@ -220,6 +224,7 @@ export function IrissStaffUsersClient() {
         setResetLink({ email: selected.email, url: data.inviteUrl, emailed: Boolean(data.emailed) });
       }
       if (action === "delete") {
+        setDetailSheet(false);
         setSelectedId(null);
         setResetLink(null);
       }
@@ -279,7 +284,10 @@ export function IrissStaffUsersClient() {
                   <li key={user.id}>
                     <button
                       type="button"
-                      onClick={() => setSelectedId(user.id)}
+                      onClick={() => {
+                        setSelectedId(user.id);
+                        if (window.matchMedia(DETAIL_SHEET_MEDIA).matches) setDetailSheet(true);
+                      }}
                       className={`flex w-full items-center gap-3 border-l-2 px-4 py-3 text-left ${
                         active ? "border-[var(--iriss-info)] bg-[#F8FAFF]" : "border-transparent"
                       }`}
@@ -318,24 +326,6 @@ export function IrissStaffUsersClient() {
                 );
               })}
             </ul>
-          </section>
-
-          <section className="rounded-[22px] border border-[var(--iriss-line)] bg-white p-4 shadow-sm xl:hidden">
-            {selected ? <UserDetailCard
-              selected={selected}
-              draftSections={draftSections}
-              sessions={sessions}
-              totp={totp}
-              totpCode={totpCode}
-              setTotpCode={setTotpCode}
-              busy={busy}
-              dirty={Boolean(dirty)}
-              error={error}
-              resetLink={resetLink}
-              onToggle={toggleDraft}
-              onSave={() => void act("set_sections", { sections: draftSections })}
-              onAct={act}
-            /> : null}
           </section>
 
           <IrissDisclosure title="Darbību žurnāls" count={`${audit.length} ieraksti`}>
@@ -383,6 +373,53 @@ export function IrissStaffUsersClient() {
           <IrissCabinetAccessPanel users={users} />
         </aside>
       </div>
+
+      {/* Telefonā/planšetē tiesību kartīte atveras logā - citādi tā ir zem visa saraksta (prod 213 rindas, ~13 000 px). */}
+      <AdminResponsiveModal
+        open={detailSheet && Boolean(selected)}
+        onClose={() => setDetailSheet(false)}
+        title={selected?.name ?? ""}
+        footer={
+          selected && !selected.envAdmin ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setDetailSheet(false)}
+                className="min-h-11 rounded-full px-4 py-2 text-[14px]"
+              >
+                Aizvērt
+              </button>
+              <button
+                type="button"
+                disabled={busy || !dirty || draftSections.length === 0}
+                onClick={() => void act("set_sections", { sections: draftSections })}
+                className="min-h-11 rounded-full bg-[var(--iriss-graphite)] px-5 py-2 text-[14px] font-medium text-white disabled:opacity-40"
+              >
+                {busy ? "Saglabā…" : "Saglabāt"}
+              </button>
+            </>
+          ) : undefined
+        }
+      >
+        {selected ? (
+          <UserDetailCard
+            bare
+            selected={selected}
+            draftSections={draftSections}
+            sessions={sessions}
+            totp={totp}
+            totpCode={totpCode}
+            setTotpCode={setTotpCode}
+            busy={busy}
+            dirty={Boolean(dirty)}
+            error={error}
+            resetLink={resetLink}
+            onToggle={toggleDraft}
+            onSave={() => void act("set_sections", { sections: draftSections })}
+            onAct={act}
+          />
+        ) : null}
+      </AdminResponsiveModal>
 
       <AdminResponsiveModal
         open={modal}
@@ -534,7 +571,10 @@ function UserDetailCard({
   onToggle,
   onSave,
   onAct,
+  bare = false,
 }: {
+  /** Logā: bez kartītes rāmja un galvenes (vārds un Saglabāt ir loga galvenē/kājenē). */
+  bare?: boolean;
   selected: DirectoryUser;
   draftSections: IrissSection[];
   sessions: SessionRow[];
@@ -549,8 +589,12 @@ function UserDetailCard({
   onSave: () => void;
   onAct: (action: string, extra?: Record<string, unknown>) => void;
 }) {
+  const Wrapper = bare ? "div" : "section";
   return (
-    <section className="rounded-[22px] border border-[var(--iriss-line)] bg-white p-4 shadow-sm">
+    <Wrapper className={bare ? "" : "rounded-[22px] border border-[var(--iriss-line)] bg-white p-4 shadow-sm"}>
+      {bare ? (
+        <p className="-mt-1 text-[12px] text-[var(--iriss-ink-2)]">{selected.email || "env administrators"}</p>
+      ) : (
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <span className="grid h-10 w-10 place-items-center rounded-full bg-[#EEF2FF] text-[13px] font-semibold text-[var(--iriss-info)]">
@@ -572,6 +616,7 @@ function UserDetailCard({
           </button>
         ) : null}
       </div>
+      )}
 
       {selected.envAdmin ? (
         <p className="mt-4 text-[13px] text-[var(--iriss-ink-2)]">Visas sadaļas (administrators). Nila env pieteikšanās paliek nemainīta.</p>
@@ -606,7 +651,7 @@ function UserDetailCard({
             dati un šofera personas dati šīm sadaļām netiek rādīti, ja tas nav atļauts. Izmaiņas stājas spēkā nākamajā
             pieprasījumā; atvērtās sesijas redz jauno sarakstu.
           </p>
-          {dirty ? (
+          {dirty && !bare ? (
             <div className="sticky bottom-[calc(var(--admin-tabbar-h,0px)+max(0.75rem,env(safe-area-inset-bottom)))] z-10 mt-3 xl:hidden">
               <button
                 type="button"
@@ -655,6 +700,6 @@ function UserDetailCard({
           </button>
         </div>
       ) : null}
-    </section>
+    </Wrapper>
   );
 }

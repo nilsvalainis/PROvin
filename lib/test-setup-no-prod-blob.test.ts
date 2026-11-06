@@ -6,3 +6,11 @@ describe("testu vide bez produkcijas Blob", () => {
     expect(process.env.BLOB_READ_WRITE_TOKEN).toBeUndefined();
   });
 });
+
+describe("testu vide bez citām prod blakusefektu atslēgām", () => {
+  it("Redis, pasta un maksājumu atslēgas nav pieejamas testiem", () => {
+    for (const key of ["UPSTASH_REDIS_REST_TOKEN", "SMTP_PASS", "STRIPE_SECRET_KEY", "KV_REST_API_TOKEN"]) {
+      expect(process.env[key], key).toBeUndefined();
+    }
+  });
+});

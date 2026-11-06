@@ -412,7 +412,7 @@ export function AdminMobileSheet({
         }}
       />
       <div
-        className={`${opaque ? "admin-sheet-opaque" : "am-glass"} admin-sheet-panel flex max-h-[85vh] flex-col rounded-t-[36px] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 ${
+        className={`${opaque ? "admin-sheet-opaque" : "am-glass"} admin-sheet-panel flex max-h-[85dvh] flex-col rounded-t-[36px] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 ${
           open ? "" : "admin-sheet-out"
         }`}
         style={vvh ? { maxHeight: `${Math.round(Math.min(vvh * 0.85, vvh - 8))}px` } : undefined}
