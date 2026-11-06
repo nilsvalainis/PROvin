@@ -31,7 +31,7 @@ export function AdminDealerCheckHistory({
   busy: boolean;
 }) {
   return (
-    <section className="mb-3.5 rounded-2xl border border-[#e5e5ea] bg-white p-4 sm:p-5" data-dealer-check-history>
+    <section className="mt-3.5 rounded-2xl border border-[#e5e5ea] bg-white p-4 sm:p-5" data-dealer-check-history>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <h2 className="text-[12px] font-semibold uppercase tracking-[0.5px] text-[#3a3a3c]">Saglabātās pārbaudes</h2>
         <span className="text-[12px] text-[#6e6e73]">

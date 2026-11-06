@@ -465,17 +465,6 @@ export function AdminDealerCheckPage({
       <h1 className="text-[23px] font-semibold tracking-tight text-[#111] sm:text-[26px]">Dīlera datu pārbaude</h1>
       <p className="mb-5 mt-1 text-[13.5px] text-[#6e6e73]">Iekšējā · bez klienta pasūtījuma · ADMIN</p>
 
-      <AdminDealerCheckHistory
-        entries={filteredEntries}
-        total={entries.length}
-        filter={filter}
-        onFilter={setFilter}
-        onOpen={(id) => void onOpen(id)}
-        onDelete={(id) => void onDelete(id)}
-        onExport={onExport}
-        busy={busy}
-      />
-
       <section className="mb-3.5 rounded-2xl border border-[#e5e5ea] bg-white p-4 sm:p-5">
         <h2 className="mb-3 flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.5px] text-[#3a3a3c]">
           Šablons - kam paredzēts
@@ -641,6 +630,17 @@ export function AdminDealerCheckPage({
           busy={busy}
         />
       )}
+
+      <AdminDealerCheckHistory
+        entries={filteredEntries}
+        total={entries.length}
+        filter={filter}
+        onFilter={setFilter}
+        onOpen={(id) => void onOpen(id)}
+        onDelete={(id) => void onDelete(id)}
+        onExport={onExport}
+        busy={busy}
+      />
     </div>
   );
 }
