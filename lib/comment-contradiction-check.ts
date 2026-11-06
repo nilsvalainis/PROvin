@@ -65,6 +65,8 @@ const NO_ACCIDENT_RE =
 /** „Nav bojājumu / atlīdzību / zaudējumu” - j26: plašāks par `NO_ACCIDENT_RE`. */
 const NO_DAMAGE_RE =
   /\bnav\b.{0,50}(?:negadījum|csng|avārij|bojāj|atlīdz|zaudējum)|\bnav\s+(?:fiksēt|reģistrēt|konstatēt|zinām)\w*.{0,40}(?:negadījum|csng|avārij|bojāj|atlīdz|zaudējum)|(?:negadījum|avārij|csng|bojāj|atlīdz|zaudējum)\w*.{0,30}\bnav\b|bez\s+(?:negadījum|bojāj|avārij)\w*/i;
+/** Pilnīga zaudējuma / norakstīšanas statuss - nav bojājuma noliegums. */
+const TOTAL_LOSS_STATUS_RE = /pilnīg\p{L}*\s+zaudējum\p{L}*|total\s+loss/giu;
 /** Teikums par to, ka nav SUMMAS (ne bojājuma) - nav pretruna bojājumiem bez summas. */
 const AMOUNT_ONLY_RE = /summ|\beur\b|€|apmēr|izmaks/i;
 /** Neskaidrība („nav zināms, vai…”) - nav apgalvojums, ka bojājumu nav. */
@@ -469,7 +471,8 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
   if (damageTotal > 0) {
     const bad = sentences.find(
       (s) =>
-        NO_DAMAGE_RE.test(s) &&
+        // „Zādzības vai pilnīga zaudējuma ierakstu nav” runā par statusu, ne par bojājumiem.
+        NO_DAMAGE_RE.test(s.replace(TOTAL_LOSS_STATUS_RE, " ")) &&
         !trueLocalClaim(s) &&
         !AMOUNT_ONLY_RE.test(s) &&
         !DAMAGE_UNCERTAIN_RE.test(s) &&

@@ -46,7 +46,7 @@ export const INTERNAL_NOTE_PATTERNS: readonly InternalNotePattern[] = [
   { id: "ai_greeting", re: /(?:^|\n)[ \t]*(?:sveiki|sveiks|labdien)[ \t]*[,!]/iu },
 ];
 
-export type InternalNoteHit = { patternId: string; quote: string };
+export type InternalNoteHit = { patternId: string; quote: string; line: number };
 
 function quoteAround(text: string, index: number, length: number): string {
   const lineStart = text.lastIndexOf("\n", index - 1) + 1;
@@ -68,7 +68,9 @@ export function findInternalNoteHits(plain: string): InternalNoteHit[] {
     if (!m) continue;
     // Neskaitām sākuma atdalītāju (jaunu rindu / iekavu) kā daļu no citāta.
     const lead = m[0].length - m[0].replace(/^[\s\n(\[•*:-]+/, "").length;
-    hits.push({ patternId: p.id, quote: quoteAround(text, m.index + lead, m[0].length - lead) });
+    const at = m.index + lead;
+    const line = (text.slice(0, at).match(/\n/g) ?? []).length;
+    hits.push({ patternId: p.id, quote: quoteAround(text, at, m[0].length - lead), line });
   }
   return hits;
 }
@@ -76,13 +78,17 @@ export function findInternalNoteHits(plain: string): InternalNoteHit[] {
 export type ClientPrintedTextField = { label: string; text: string };
 
 /**
- * `c10_internal_note` (E): katram laukam un šablonam viens karodziņš ar lauka nosaukumu un citātu.
+ * `c10_internal_note` (E): katrai lauka rindai ar trāpījumu viens karodziņš ar lauka nosaukumu un citātu.
  * `text` jābūt jau plain (pēc HTML -> teksts).
  */
 export function checkInternalNoteLeaks(fields: readonly ClientPrintedTextField[] | null | undefined): FactCheckFlag[] {
   const flags: FactCheckFlag[] = [];
   for (const f of fields ?? []) {
+    // Viens karodziņš katrai rindai: „Lorem… ignorēt… nav pirkts” vienā rindā agrāk deva 3 gandrīz vienādus ierakstus.
+    const seenLines = new Set<number>();
     for (const hit of findInternalNoteHits(f.text)) {
+      if (seenLines.has(hit.line)) continue;
+      seenLines.add(hit.line);
       flags.push({
         id: "c10_internal_note",
         kind: "leak_phrase",
