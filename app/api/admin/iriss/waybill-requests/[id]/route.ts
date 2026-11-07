@@ -3,8 +3,10 @@ import { wakeAivars } from "@/lib/iriss-aivars-wake";
 import {
   waybillAivarsReply,
   waybillChatPayload,
+  waybillDocForViewer,
   waybillDocWithoutOrders,
   waybillRequestDismissable,
+  waybillRequestVisibleTo,
   waybillRequestWithoutOrder,
 } from "@/lib/iriss-waybill-requests";
 import { dismissWaybillRequestForActor } from "@/lib/iriss-waybill-dismissed-store";
@@ -29,7 +31,10 @@ export async function GET(_req: Request, ctx: Ctx) {
   try {
     const doc = await readWaybillRequestsDoc();
     const request = doc.requests.find((row) => row.id === id);
-    if (!request) return NextResponse.json({ error: "Pieprasījums nav atrasts." }, { status: 404, ...NO_STORE });
+    // Partneris citu pieprasījumu "neredz" - tāda pati atbilde kā neesošam.
+    if (!request || !waybillRequestVisibleTo(request, waybillPdfViewer(gate.actor))) {
+      return NextResponse.json({ error: "Pieprasījums nav atrasts." }, { status: 404, ...NO_STORE });
+    }
     const events = doc.events.filter((event) => event.requestId === id);
     return NextResponse.json(
       {
@@ -62,6 +67,18 @@ export async function POST(req: Request, ctx: Ctx) {
   }
   const actor = gate.actor;
   const viewer = waybillPdfViewer(actor);
+  if (viewer.waybillOnly) {
+    // Partneris drīkst atcelt / atkārtot / paslēpt tikai savu pieprasījumu (sarakstā viņš redz tikai savus).
+    try {
+      const own = (await readWaybillRequestsDoc()).requests.find((row) => row.id === id);
+      if (!own || !waybillRequestVisibleTo(own, viewer)) {
+        return NextResponse.json({ error: "Pieprasījums nav atrasts." }, { status: 404, ...NO_STORE });
+      }
+    } catch (err) {
+      console.error("[iriss-waybill] owner_check_failed", err instanceof Error ? err.message : err);
+      return NextResponse.json({ error: "Neizdevās ielādēt pieprasījumu." }, { status: 500, ...NO_STORE });
+    }
+  }
   if (body.action === "dropbox") {
     // "Saglabāt Dropbox vēlreiz": tikai admins / darbinieks ar pilnu pavadzīmju piekļuvi (ne kolēģis).
     if (isWaybillOnlyActor(actor)) return waybillOnlyForbidden();
@@ -128,7 +145,10 @@ export async function POST(req: Request, ctx: Ctx) {
           ok: true,
           request: withOrders ? result.request : waybillRequestWithoutOrder(result.request),
           reply: waybillAivarsReply(result.request, doc.events),
-          ...withWaybillPdfAccess(waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc), Date.now(), auto), viewer),
+          ...withWaybillPdfAccess(
+            waybillChatPayload(withOrders ? waybillDocForViewer(doc, viewer) : waybillDocWithoutOrders(waybillDocForViewer(doc, viewer)), Date.now(), auto),
+            viewer,
+          ),
           autoMode: auto.mode,
         },
         NO_STORE,
@@ -148,7 +168,10 @@ export async function POST(req: Request, ctx: Ctx) {
       ok: true,
       request: withOrders ? request : waybillRequestWithoutOrder(request),
       reply: waybillAivarsReply(request, doc.events),
-      ...withWaybillPdfAccess(waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc)), viewer),
+      ...withWaybillPdfAccess(
+        waybillChatPayload(withOrders ? waybillDocForViewer(doc, viewer) : waybillDocWithoutOrders(waybillDocForViewer(doc, viewer))),
+        viewer,
+      ),
     }, NO_STORE);
   } catch (err) {
     console.error("[iriss-waybill] retry_failed", err instanceof Error ? err.message : err);
