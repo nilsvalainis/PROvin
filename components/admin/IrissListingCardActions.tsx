@@ -18,6 +18,10 @@ import {
 } from "@/lib/iriss-listing-card-actions";
 import type { IrissListingVehicle } from "@/lib/iriss-listings-types";
 
+/** Konteinera vaicājums: rinda šaurāka par 20rem -> pogas pa vienai rindā pilnā platumā. */
+const NARROW_ROW = "@max-xs:flex-wrap";
+const NARROW_BTN = "@max-xs:basis-full @max-xs:flex-row @max-xs:gap-1.5 @max-xs:text-[12px]";
+
 export function IrissListingCardActions({
   v,
   onPreviewDetails,
@@ -53,12 +57,14 @@ export function IrissListingCardActions({
   if (!onPreviewDetails && !onCreateRadar && !onCreateOffer) return null;
 
   return (
-    <div className={IRISS_LISTING_CARD_ACTIONS_ROW_CLASS} data-iriss-listing-card-actions>
+    // Šaurā kolonnā (~1024 px ar sānjoslu rinda ir ~130 px) pogas iet katra savā rindā, nevis saspiežas.
+    <div className="@container w-full min-w-0">
+    <div className={`${IRISS_LISTING_CARD_ACTIONS_ROW_CLASS} ${NARROW_ROW}`} data-iriss-listing-card-actions>
       {onPreviewDetails ? (
         <button
           type="button"
           disabled={previewDisabled}
-          className={IRISS_LISTING_CARD_ACTION_BTN_CLASS}
+          className={`${IRISS_LISTING_CARD_ACTION_BTN_CLASS} ${NARROW_BTN}`}
           title={detailsLabel}
           onClick={(e) => {
             e.stopPropagation();
@@ -74,7 +80,7 @@ export function IrissListingCardActions({
         <button
           type="button"
           disabled={offerBusy}
-          className={IRISS_LISTING_CARD_ACTION_BTN_CLASS}
+          className={`${IRISS_LISTING_CARD_ACTION_BTN_CLASS} ${NARROW_BTN}`}
           title={IRISS_LISTING_CARD_ACTION_OFFER}
           onClick={(e) => {
             e.stopPropagation();
@@ -88,7 +94,7 @@ export function IrissListingCardActions({
       {radar ? (
         <Link
           href={irissListingSalonHref(v)}
-          className={IRISS_LISTING_CARD_ACTION_BTN_CLASS}
+          className={`${IRISS_LISTING_CARD_ACTION_BTN_CLASS} ${NARROW_BTN}`}
           title="Atver Loģistikā «Nopirkts» ar šī auto datiem. Ieraksts tiek izveidots tikai pēc «Saglabāt ierakstu»."
           onClick={(e) => e.stopPropagation()}
           data-iriss-listing-salon
@@ -140,6 +146,7 @@ export function IrissListingCardActions({
           </IrissAnchoredPopover>
         </div>
       ) : null}
+    </div>
     </div>
   );
 }
