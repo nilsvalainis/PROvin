@@ -6,33 +6,40 @@ import { formatOfferDeadlineLv } from "@/lib/iriss-offer-valid-until";
 import { irissPdOpenQuestionCount } from "@/lib/iriss-piedavajumi-messages";
 import { IRISS_PD_NOTE_MAX, type IrissPdMessage } from "@/lib/iriss-piedavajumi-types";
 
-const KIND_LV: Record<IrissPdMessage["kind"], string> = {
-  question: "Klienta jautājums",
-  decline: "Klients noraidīja",
-  note: "Piezīme (iekšēja)",
-};
+function kindLabel(m: IrissPdMessage): string {
+  if (m.kind === "question") return "Klienta jautājums";
+  if (m.kind === "decline") return "Klients noraidīja";
+  return m.public ? "Atbilde (redzama klientam saitē)" : "Piezīme (iekšēja)";
+}
 
 /**
- * Nils 07.11: klienta ziņas no saites (jautājumi, noraidījuma iemesls) + admina atbilde kā iekšēja piezīme.
- * Klientam nekas automātiski netiek sūtīts - atbildi var nokopēt un nosūtīt pats (WhatsApp / e-pasts).
+ * Nils 07.11: klienta ziņas no saites (jautājumi, noraidījuma iemesls) + admina atbilde.
+ * Atbilde pēc noklusējuma iekšēja; ar atzīmi «Rādīt klientam saitē» klients to redz, atverot saiti.
+ * Klientam nekas automātiski netiek sūtīts (ne e-pasts, ne ziņa).
  */
 export function PdClientMessagesView({
   messages,
   draft,
+  showClient,
   busy,
   err,
   onDraft,
+  onShowClient,
   onSave,
   onCopy,
+  onToggleVisible,
   copiedId,
 }: {
   messages: readonly IrissPdMessage[];
   draft: string;
+  showClient: boolean;
   busy: boolean;
   err: string;
   onDraft?: (v: string) => void;
+  onShowClient?: (v: boolean) => void;
   onSave?: () => void;
   onCopy?: (m: IrissPdMessage) => void;
+  onToggleVisible?: (m: IrissPdMessage) => void;
   copiedId?: string;
 }) {
   const open = irissPdOpenQuestionCount(messages);
@@ -41,19 +48,28 @@ export function PdClientMessagesView({
       {messages.length === 0 ? <p className="pd-hint">Klients vēl nav rakstījis.</p> : null}
       {open > 0 ? <p className="pd-msg-open">Neatbildēti jautājumi: {open}</p> : null}
       {[...messages].reverse().map((m) => (
-        <div key={m.id} className={`pd-msg ${m.from === "admin" ? "admin" : "client"} k-${m.kind}`}>
+        <div key={m.id} className={`pd-msg ${m.from === "admin" ? "admin" : "client"} k-${m.kind}${m.public ? " pub" : ""}`}>
           <div className="pd-msg-h">
-            <b>{KIND_LV[m.kind]}</b>
+            <b>{kindLabel(m)}</b>
             <small>
               {m.from === "admin" && m.by ? `${m.by} · ` : ""}
               {formatOfferDeadlineLv(m.at)}
             </small>
           </div>
           {m.text ? <p className="pd-msg-t">{m.text}</p> : <p className="pd-msg-t pd-mu">Bez iemesla</p>}
-          {m.from === "admin" && onCopy ? (
-            <button type="button" className="pd-btn s" onClick={() => onCopy(m)}>
-              {copiedId === m.id ? "Nokopēts" : "Kopēt tekstu"}
-            </button>
+          {m.from === "admin" ? (
+            <div className="pd-acts">
+              {onToggleVisible ? (
+                <button type="button" className="pd-btn s" disabled={busy} onClick={() => onToggleVisible(m)}>
+                  {m.public ? "Paslēpt no klienta" : "Rādīt klientam saitē"}
+                </button>
+              ) : null}
+              {onCopy ? (
+                <button type="button" className="pd-btn s" onClick={() => onCopy(m)}>
+                  {copiedId === m.id ? "Nokopēts" : "Kopēt tekstu"}
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
       ))}
@@ -61,7 +77,15 @@ export function PdClientMessagesView({
         <label htmlFor="pd-msg-note">Atbilde / piezīme</label>
         <textarea id="pd-msg-note" maxLength={IRISS_PD_NOTE_MAX} value={draft} onChange={(e) => onDraft?.(e.target.value)} />
       </div>
-      <p className="pd-hint">Tikai iekšēji - klientam netiek sūtīta un saitē nav redzama. Atbildi klientam nosūti pats.</p>
+      <label className="pd-msg-pub" htmlFor="pd-msg-public">
+        <input id="pd-msg-public" type="checkbox" checked={showClient} onChange={(e) => onShowClient?.(e.target.checked)} />
+        Rādīt klientam saitē
+      </label>
+      <p className="pd-hint">
+        {showClient
+          ? "Klients redzēs atbildi, atverot savu piedāvājuma saiti. E-pasts vai ziņa netiek sūtīta - saiti vari nosūtīt pats."
+          : "Tikai iekšēji - klientam netiek sūtīta un saitē nav redzama. Atbildi klientam nosūti pats."}
+      </p>
       {err ? (
         <p className="pd-err" role="alert">
           {err}
@@ -69,7 +93,7 @@ export function PdClientMessagesView({
       ) : null}
       <div className="pd-acts" style={{ marginTop: 8 }}>
         <button type="button" className="pd-btn p" disabled={busy || !draft.trim()} onClick={onSave}>
-          {busy ? "Saglabā..." : "Saglabāt piezīmi"}
+          {busy ? "Saglabā..." : showClient ? "Saglabāt un rādīt klientam" : "Saglabāt piezīmi"}
         </button>
       </div>
     </div>
@@ -86,12 +110,13 @@ export function PdClientMessages({
   onRecord: (rec: unknown) => void;
 }) {
   const [draft, setDraft] = useState("");
+  const [showClient, setShowClient] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [copiedId, setCopiedId] = useState("");
 
-  async function save() {
-    if (busy || !draft.trim()) return;
+  async function post(payload: Record<string, unknown>): Promise<boolean> {
+    if (busy) return false;
     setBusy(true);
     setErr("");
     try {
@@ -99,16 +124,25 @@ export function PdClientMessages({
         method: "POST",
         credentials: "include",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "note", text: draft }),
+        body: JSON.stringify(payload),
       });
       const data = (await res.json().catch(() => ({}))) as { ok?: boolean; record?: unknown; message?: string };
       if (!data.ok || !data.record) throw new Error(data.message || "Neizdevās saglabāt.");
-      setDraft("");
       onRecord(data.record);
+      return true;
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Neizdevās saglabāt.");
+      return false;
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function save() {
+    if (!draft.trim()) return;
+    if (await post({ action: "note", text: draft, public: showClient })) {
+      setDraft("");
+      setShowClient(false);
     }
   }
 
@@ -116,11 +150,17 @@ export function PdClientMessages({
     <PdClientMessagesView
       messages={messages}
       draft={draft}
+      showClient={showClient}
       busy={busy}
       err={err}
       onDraft={setDraft}
+      onShowClient={setShowClient}
       onSave={() => void save()}
       copiedId={copiedId}
+      onToggleVisible={(m) => {
+        if (!m.public && !window.confirm("Rādīt šo atbildi klientam piedāvājuma saitē?")) return;
+        void post({ action: "note-visibility", messageId: m.id, public: !m.public });
+      }}
       onCopy={(m) =>
         void copyText(m.text).then((ok) => {
           if (ok) setCopiedId(m.id);

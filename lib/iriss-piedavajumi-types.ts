@@ -186,7 +186,16 @@ export type IrissPdHistoryEntry = { at: string; by: string; text: string };
  */
 export const IRISS_PD_MESSAGE_KINDS = ["question", "decline", "note"] as const;
 export type IrissPdMessageKind = (typeof IRISS_PD_MESSAGE_KINDS)[number];
-export type IrissPdMessage = { id: string; at: string; from: "client" | "admin"; kind: IrissPdMessageKind; by: string; text: string };
+export type IrissPdMessage = {
+  id: string;
+  at: string;
+  from: "client" | "admin";
+  kind: IrissPdMessageKind;
+  by: string;
+  text: string;
+  /** Nils 07.11: admina atbilde redzama klientam saitē (tikai ar atzīmi «Rādīt klientam saitē»; e-pasts netiek sūtīts). */
+  public?: boolean;
+};
 
 export const IRISS_PD_MAX_MESSAGES = 100;
 export const IRISS_PD_QUESTION_MAX = 1000;
@@ -367,6 +376,8 @@ export const IRISS_PD_CLIENT_LV = {
   askDuplicate: "Šis jautājums jau ir nosūtīts.",
   askEmpty: "Ierakstiet jautājumu.",
   yourQuestions: "Jūsu jautājumi",
+  thread: "Jautājumi un atbildes",
+  reply: "Dzintarzeme Auto atbilde",
   confirmApproveTitle: "Apstiprināt piedāvājumu?",
   confirmApproveNote: "Pēc apstiprināšanas auto tiks rezervēts, un mēs sazināsimies ar Jums.",
   confirmApprove: "Jā, apstiprinu",

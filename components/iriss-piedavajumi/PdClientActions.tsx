@@ -12,7 +12,7 @@ import { IRISS_PD_CLIENT_LV as L, IRISS_PD_DECLINE_REASON_MAX, IRISS_PD_QUESTION
 
 export type PdClientState = "open" | "approved" | "declined";
 export type PdClientStep = "idle" | "approve" | "decline";
-export type PdQuestion = { at: string; text: string };
+export type PdQuestion = { at: string; text: string; from?: "client" | "admin" };
 
 const btn = "inline-flex h-12 min-h-12 flex-1 items-center justify-center rounded-xl px-3 text-[15px] font-semibold disabled:opacity-50";
 const btnPrimary = `${btn} bg-[#F26522] text-white`;
@@ -48,15 +48,32 @@ export type PdClientActionsViewProps = {
 
 /** Tīrs skats (bez efektiem) - testējams ar react-dom/server. */
 export function PdClientActionsView(p: PdClientActionsViewProps) {
+  const hasReply = p.questions.some((q) => q.from === "admin");
   const questions = p.questions.length ? (
     <div className="space-y-2" data-testid="pd-questions">
-      <p className="text-[12px] font-medium text-[#6e6e73]">{L.yourQuestions}</p>
-      {p.questions.map((q, i) => (
-        <p key={`${q.at}-${i}`} className="whitespace-pre-wrap break-words rounded-xl bg-white px-3 py-2 text-[14px] leading-snug text-[#3a3a3c] shadow-[inset_0_0_0_1px_#e4e4e7]">
-          {q.text}
-          <span className="mt-1 block text-[11px] text-[#6e6e73]">{formatOfferDeadlineLv(q.at)}</span>
-        </p>
-      ))}
+      <p className="text-[12px] font-medium text-[#6e6e73]">{hasReply ? L.thread : L.yourQuestions}</p>
+      {p.questions.map((q, i) =>
+        q.from === "admin" ? (
+          <p
+            key={`${q.at}-${i}`}
+            data-from="admin"
+            className="ml-6 whitespace-pre-wrap break-words rounded-xl bg-[#ecfdf3] px-3 py-2 text-[14px] leading-snug text-[#1d1d1f]"
+          >
+            <span className="mb-1 block text-[11px] font-semibold text-[#047857]">{L.reply}</span>
+            {q.text}
+            <span className="mt-1 block text-[11px] text-[#6e6e73]">{formatOfferDeadlineLv(q.at)}</span>
+          </p>
+        ) : (
+          <p
+            key={`${q.at}-${i}`}
+            data-from="client"
+            className="mr-6 whitespace-pre-wrap break-words rounded-xl bg-white px-3 py-2 text-[14px] leading-snug text-[#3a3a3c] shadow-[inset_0_0_0_1px_#e4e4e7]"
+          >
+            {q.text}
+            <span className="mt-1 block text-[11px] text-[#6e6e73]">{formatOfferDeadlineLv(q.at)}</span>
+          </p>
+        ),
+      )}
     </div>
   ) : null;
 

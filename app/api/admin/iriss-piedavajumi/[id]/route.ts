@@ -11,7 +11,7 @@ import { importIrissPdFromAutoparks, importIrissPdFromLink } from "@/lib/iriss-p
 import { irissPdFillEmpty, irissPdFillFromAutoparks, applyIrissPdImportData, type IrissPdImport } from "@/lib/iriss-piedavajumi-import";
 import { irissPdLinkErrorLv } from "@/lib/iriss-piedavajumi-sources";
 import { runIrissPdApprovalEffects } from "@/lib/iriss-piedavajumi-approve";
-import { applyIrissPdAdminNote } from "@/lib/iriss-piedavajumi-messages";
+import { applyIrissPdAdminNote, setIrissPdNoteVisibility } from "@/lib/iriss-piedavajumi-messages";
 import {
   claimIrissPdDecision,
   clearIrissPdDecision,
@@ -78,7 +78,7 @@ export async function POST(req: Request, { params }: Ctx) {
   if (!gate.ok) return gate.response;
   const { id } = await params;
   if (!isSafeIrissPdId(id)) return fail(400, "invalid");
-  let body: { action?: unknown; kind?: unknown; carId?: unknown; url?: unknown; manual?: unknown; text?: unknown };
+  let body: { action?: unknown; kind?: unknown; carId?: unknown; url?: unknown; manual?: unknown; text?: unknown; public?: unknown; messageId?: unknown };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -135,9 +135,17 @@ export async function POST(req: Request, { params }: Ctx) {
 
   if (action === "note") {
     // Nils 07.11: atbilde uz klienta jautājumu ir tikai iekšēja piezīme - klientam nekas netiek sūtīts.
-    const res = applyIrissPdAdminNote(rec, body.text, { at, by, id: crypto.randomUUID() });
+    const res = applyIrissPdAdminNote(rec, body.text, { at, by, id: crypto.randomUUID(), public: body.public === true });
     if (!res.ok) return fail(400, "empty", "Ieraksti piezīmi.");
     if (!(await writeIrissPd(res.record))) return fail(500, "write_failed", "Neizdevās saglabāt.");
+    return NextResponse.json({ ok: true, record: res.record }, { headers: noStore });
+  }
+
+  if (action === "note-visibility") {
+    // Nils 07.11: «Rādīt klientam saitē» esošai atbildei (ziņa klientam netiek sūtīta).
+    const res = setIrissPdNoteVisibility(rec, body.messageId, body.public === true, { at, by });
+    if (!res.ok) return fail(404, "not_found", "Atbilde nav atrasta.");
+    if (res.record !== rec && !(await writeIrissPd(res.record))) return fail(500, "write_failed", "Neizdevās saglabāt.");
     return NextResponse.json({ ok: true, record: res.record }, { headers: noStore });
   }
 

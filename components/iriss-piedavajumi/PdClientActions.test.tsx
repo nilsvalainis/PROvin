@@ -87,7 +87,7 @@ describe("Admins: klienta ziņas", () => {
   ];
 
   it("rāda jautājumus, noraidījumu un iekšējās piezīmes; atbilde nav ziņa klientam", () => {
-    const text = renderText(<PdClientMessagesView messages={msgs} draft="" busy={false} err="" onCopy={() => undefined} />);
+    const text = renderText(<PdClientMessagesView messages={msgs} draft="" showClient={false} busy={false} err="" onCopy={() => undefined} />);
     expect(text).toContain("Klienta jautājums");
     expect(text).toContain("Kad var apskatīt? &lt;b&gt;x&lt;/b&gt;");
     expect(text).toContain("Klients noraidīja");
@@ -95,14 +95,40 @@ describe("Admins: klienta ziņas", () => {
     expect(text).toContain("Piezīme (iekšēja)");
     expect(text).toContain("klientam netiek sūtīta");
     expect(text).not.toContain("Neatbildēti jautājumi");
-    expect(renderHtml(<PdClientMessagesView messages={msgs} draft="" busy={false} err="" />)).not.toContain("<b>x</b>");
+    expect(renderHtml(<PdClientMessagesView messages={msgs} draft="" showClient={false} busy={false} err="" />)).not.toContain("<b>x</b>");
   });
 
   it("neatbildēts jautājums: atzīme detaļā un sarakstā", () => {
     const open = [msgs[0]!];
-    expect(renderText(<PdClientMessagesView messages={open} draft="" busy={false} err="" />)).toContain("Neatbildēti jautājumi: 1");
+    expect(renderText(<PdClientMessagesView messages={open} draft="" showClient={false} busy={false} err="" />)).toContain("Neatbildēti jautājumi: 1");
     expect(renderText(<PdQuestionTag count={1} />)).toBe("Jautājums");
     expect(renderText(<PdQuestionTag count={3} />)).toBe("Jautājumi: 3");
     expect(renderHtml(<PdQuestionTag count={0} />)).toBe("");
   });
+
+  it("atzīme «Rādīt klientam saitē»: publiskā atbilde marķēta, poga Paslēpt; iekšējai - Rādīt", () => {
+    const pub: IrissPdMessage = { id: "m4", at: "2026-11-07T02:00:00.000Z", from: "admin", kind: "note", by: "Nils", text: "Jā, ir ziemas riepas", public: true };
+    const text = renderText(<PdClientMessagesView messages={[msgs[1]!, pub]} draft="Sveiki" showClient busy={false} err="" onToggleVisible={() => undefined} />);
+    expect(text).toContain("Atbilde (redzama klientam saitē)");
+    expect(text).toContain("Paslēpt no klienta");
+    expect(text).toContain("Rādīt klientam saitē");
+    expect(text).toContain("Saglabāt un rādīt klientam");
+    expect(text).toContain("E-pasts vai ziņa netiek sūtīta");
+    expect(renderHtml(<PdClientMessagesView messages={[]} draft="" showClient={false} busy={false} err="" />)).not.toContain("checked");
+  });
 });
+
+describe("Klienta saite: atbildes zem jautājumiem", () => {
+  it("rāda tikai publiskās atbildes ar «Dzintarzeme Auto atbilde», bez admina vārda", () => {
+    const qs = [
+      { at: "2026-11-07T01:00:00.000Z", text: "Vai ir ziemas riepas?", from: "client" as const },
+      { at: "2026-11-07T02:00:00.000Z", text: "Jā, ir <b>ziemas</b> riepas", from: "admin" as const },
+    ];
+    const text = renderText(<PdClientActionsView {...base} questions={qs} />);
+    expect(text).toContain("Jautājumi un atbildes");
+    expect(text).toContain("Dzintarzeme Auto atbilde");
+    expect(renderHtml(<PdClientActionsView {...base} questions={qs} />)).not.toContain("<b>ziemas</b>");
+    expect(renderText(<PdClientActionsView {...base} questions={[qs[0]!]} />)).toContain("Jūsu jautājumi");
+  });
+});
+

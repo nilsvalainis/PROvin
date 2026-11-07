@@ -231,4 +231,40 @@ describe("PD saite: noraidīt, jautājums, atjaunot", () => {
     expect(t.lib.buildIrissPdPublicView(rec, "link", Date.parse(AT)).state).toBe("closed");
     expect((await t.send({ token: t.token, action: "question", text: "Vai vēl pieejams?" })).status).toBe(410);
   });
+
+  it("atbilde ar «Rādīt klientam saitē»: klients redz saitē (bez admina vārda), paziņojums netiek sūtīts; var paslēpt", async () => {
+    const t = await setup();
+    await t.send({ token: t.token, action: "question", text: "Vai ir ziemas riepas?" });
+    await t.runAfter();
+    await t.adminPost({ action: "note", text: "Iekšēji: pajautāt Aivaram" });
+    const pub = await t.adminPost({ action: "note", text: "Jā, komplektā ir ziemas riepas.", public: true });
+    expect(pub.status).toBe(200);
+    let view = t.lib.buildIrissPdPublicView(await t.read(), "link", Date.parse(AT));
+    expect(view.questions).toEqual([
+      { at: AT, text: "Vai ir ziemas riepas?", from: "client" },
+      { at: AT, text: "Jā, komplektā ir ziemas riepas.", from: "admin" },
+    ]);
+    expect(JSON.stringify(view)).not.toContain("Aivaram");
+    expect(JSON.stringify(view)).not.toContain("Nils");
+    await t.runAfter();
+    expect(calls.question).toHaveLength(1);
+    expect(calls.decision).toHaveLength(0);
+
+    // Klienta jautājuma atbildē (POST) arī redzama atbilde.
+    const res = await t.send({ token: t.token, action: "question", text: "Paldies! Un servisa grāmata?" });
+    expect((res.data.questions as Array<{ from: string }>).map((q) => q.from)).toEqual(["client", "admin", "client"]);
+
+    const msgId = (await t.read()).messages.find((m) => m.public)!.id;
+    const hidden = await t.adminPost({ action: "note-visibility", messageId: msgId, public: false });
+    expect(hidden.status).toBe(200);
+    view = t.lib.buildIrissPdPublicView(await t.read(), "link", Date.parse(AT));
+    expect(view.questions.every((q) => q.from === "client")).toBe(true);
+    expect((await t.read()).history.at(-1)?.text).toBe("Atbilde paslēpta no klienta saites");
+
+    // Klienta jautājumu nevar padarīt par «atbildi»; nezināms id - 404.
+    const clientId = (await t.read()).messages.find((m) => m.from === "client")!.id;
+    expect((await t.adminPost({ action: "note-visibility", messageId: clientId, public: true })).status).toBe(404);
+    expect((await t.adminPost({ action: "note-visibility", messageId: "nav", public: true })).status).toBe(404);
+  });
 });
+

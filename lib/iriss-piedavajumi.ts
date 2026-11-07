@@ -685,7 +685,7 @@ export type IrissPdPublicView = {
   /** j75: Aprīkojums, Kopsavilkums, Novērtējums (tikai ieslēgtās sadaļas un ieķeksētās rindas). */
   content: IrissPdPublicContent | null;
   /** Klienta paša jautājumi (pēdējie). Admina piezīmes šeit nekad nenonāk. */
-  questions: { at: string; text: string }[];
+  questions: { at: string; text: string; from: "client" | "admin" }[];
 };
 
 export type IrissPdPublicContent = {
