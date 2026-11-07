@@ -62,7 +62,9 @@ export function normalizeIrissPdMessages(raw: unknown): IrissPdMessage[] {
       // Noraidījums var būt bez iemesla; jautājums un piezīme - ne.
       if (!text && kind !== "decline") return [];
       const by = typeof o.by === "string" ? o.by.replace(/\s+/g, " ").trim().slice(0, 80) : "";
-      return [{ id, at, from, kind, by, text }];
+      const msg: IrissPdMessage = { id, at, from, kind, by, text };
+      if (from === "admin" && kind === "note" && o.public === true) msg.public = true;
+      return [msg];
     })
     .slice(-IRISS_PD_MAX_MESSAGES);
 }
@@ -101,12 +103,17 @@ export function isIrissPdDuplicateQuestion(messages: readonly IrissPdMessage[], 
   });
 }
 
-/** Klienta jautājumi saitē (tikai paša klienta teksts; admina piezīmes nekad). */
-export function irissPdPublicQuestions(messages: readonly IrissPdMessage[]): { at: string; text: string }[] {
+export type IrissPdPublicThreadItem = { at: string; text: string; from: "client" | "admin" };
+
+/**
+ * Klientam saitē: paša jautājumi + admina atbildes, kas atzīmētas «Rādīt klientam saitē».
+ * Iekšējās piezīmes un admina vārds nekad. Pēdējie ieraksti hronoloģiski.
+ */
+export function irissPdPublicQuestions(messages: readonly IrissPdMessage[]): IrissPdPublicThreadItem[] {
   return messages
-    .filter((m) => m.from === "client" && m.kind === "question")
-    .slice(-IRISS_PD_PUBLIC_QUESTIONS)
-    .map((m) => ({ at: m.at, text: m.text }));
+    .filter((m) => (m.from === "client" && m.kind === "question") || (m.from === "admin" && m.kind === "note" && m.public === true))
+    .slice(-IRISS_PD_PUBLIC_QUESTIONS * 2)
+    .map((m) => ({ at: m.at, text: m.text, from: m.from }));
 }
 
 export type IrissPdMessageCtx = { at: string; by: string; id: string };
@@ -141,15 +148,38 @@ export function applyIrissPdClientQuestion(
   return { ok: true, record: next, text };
 }
 
-/** Admina atbilde / iekšēja piezīme. Klientam netiek sūtīta un saitē nav redzama. */
+/**
+ * Admina atbilde. Pēc noklusējuma iekšēja; ar `public` - redzama klientam saitē (e-pasts/ziņa netiek sūtīta).
+ */
 export function applyIrissPdAdminNote(
   rec: IrissPiedavajums,
   textRaw: unknown,
-  ctx: IrissPdMessageCtx,
+  ctx: IrissPdMessageCtx & { public?: boolean },
 ): { ok: true; record: IrissPiedavajums } | { ok: false; error: "empty" } {
   const text = cleanIrissPdMessageText(textRaw, IRISS_PD_NOTE_MAX);
   if (!text) return { ok: false, error: "empty" };
-  let next = appendMessage({ ...rec, updatedAt: ctx.at }, { id: ctx.id, at: ctx.at, from: "admin", kind: "note", by: ctx.by, text });
-  next = appendHistory(next, ctx.at, ctx.by, "Piezīme pie klienta ziņām (iekšēja)");
+  const msg: IrissPdMessage = { id: ctx.id, at: ctx.at, from: "admin", kind: "note", by: ctx.by, text };
+  if (ctx.public) msg.public = true;
+  let next = appendMessage({ ...rec, updatedAt: ctx.at }, msg);
+  next = appendHistory(next, ctx.at, ctx.by, ctx.public ? "Atbilde klientam (redzama saitē)" : "Piezīme pie klienta ziņām (iekšēja)");
+  return { ok: true, record: next };
+}
+
+/** Esošai admina atbildei ieslēdz/izslēdz «Rādīt klientam saitē». */
+export function setIrissPdNoteVisibility(
+  rec: IrissPiedavajums,
+  messageId: unknown,
+  visible: boolean,
+  ctx: { at: string; by: string },
+): { ok: true; record: IrissPiedavajums } | { ok: false; error: "not_found" } {
+  const i = rec.messages.findIndex((m) => m.id === messageId && m.from === "admin" && m.kind === "note");
+  if (i < 0) return { ok: false, error: "not_found" };
+  const cur = rec.messages[i]!;
+  if (Boolean(cur.public) === visible) return { ok: true, record: rec };
+  const { public: _drop, ...rest } = cur;
+  void _drop;
+  const updated: IrissPdMessage = visible ? { ...rest, public: true } : rest;
+  const messages = rec.messages.map((m, j) => (j === i ? updated : m));
+  const next = appendHistory({ ...rec, messages, updatedAt: ctx.at }, ctx.at, ctx.by, visible ? "Atbilde parādīta klientam saitē" : "Atbilde paslēpta no klienta saites");
   return { ok: true, record: next };
 }

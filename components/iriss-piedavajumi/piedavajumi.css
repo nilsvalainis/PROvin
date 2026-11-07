@@ -153,6 +153,9 @@
 .pd-msg-t { margin: 4px 0 6px; font-size: 13.5px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .pd-msg.k-decline .pd-msg-h b { color: #c4281c; }
 .pd-msg-open { margin: 0; font-size: 12.5px; font-weight: 600; color: #9a3412; }
+.pd-msg.pub { border-color: #a7dcb8; background: #f1fbf4; }
+.pd-msg-pub { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 13px; font-weight: 500; }
+.pd-msg-pub input { width: 18px; height: 18px; accent-color: var(--iriss-brand, #f26522); }
 
 .pd-src {
   display: inline-block;

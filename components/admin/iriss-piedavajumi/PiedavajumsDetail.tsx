@@ -913,7 +913,7 @@ export function PiedavajumsDetail({
           title="Klienta ziņas"
           sub={
             irissPdOpenQuestionCount(rec.messages) > 0
-              ? "Ir neatbildēts jautājums · atbilde ir iekšēja piezīme"
+              ? "Ir neatbildēts jautājums · atbildi vari rādīt klientam saitē"
               : "Jautājumi un noraidījuma iemesls no klienta saites"
           }
         >
