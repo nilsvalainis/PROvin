@@ -7,6 +7,7 @@ import {
   emptyWaybillRequestsDoc,
   waybillChatPayload,
   waybillDocForCreator,
+  waybillDocForViewer,
   waybillDocWithoutOrders,
   waybillRequestWithoutOrder,
   WaybillPendingSamePlateError,
@@ -202,12 +203,13 @@ export async function POST(req: Request) {
     // Standarta darbu ņem automātika tikai īstajā režīmā; testa režīmā vai nestandarta - uzreiz pamodina Aivaru.
     if (!(auto.mode === "live" && classified.standard)) after(() => wakeAivars(request.id));
     const withOrders = canSeeWaybillOrders(actor);
+    const visibleDoc = waybillDocForViewer(doc, waybillPdfViewer(actor));
     return NextResponse.json(
       {
         ok: true,
         request: withOrders ? request : waybillRequestWithoutOrder(request),
         ...withWaybillPdfAccess(
-          waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc), Date.now(), auto),
+          waybillChatPayload(withOrders ? visibleDoc : waybillDocWithoutOrders(visibleDoc), Date.now(), auto),
           waybillPdfViewer(actor),
         ),
         autoMode: auto.mode,

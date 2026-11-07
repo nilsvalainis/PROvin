@@ -13,6 +13,8 @@ const state = vi.hoisted(() => ({
   uploads: 0,
   historyReads: 0,
   vinHistoryReads: 0,
+  cancels: [] as string[],
+  pdfReads: [] as string[],
 }));
 
 vi.mock("@/lib/admin-auth", () => ({
@@ -43,11 +45,30 @@ const request = {
   status: "queued",
 } as unknown as WaybillRequest;
 
+/** Cita kolēģa pieprasījums (Dzintarzemes auto) - partnerim tas nav jāredz ne sarakstā, ne atbildēs. */
+const otherRequest = {
+  id: "req_other",
+  createdBy: "usr_cits_kolegis",
+  createdByName: "Toms",
+  vehicle: { brandModel: "PORSCHE CAYENNE", vin: "WP1ZZZ9YZLDA00001", plate: "ZZ9999", orderId: "" },
+  status: "in_progress",
+} as unknown as WaybillRequest;
+
 vi.mock("@/lib/iriss-waybill-requests-store", () => ({
-  readWaybillRequestsDoc: async () => ({ version: 1, updatedAt: "", requests: [request], events: [] }),
+  readWaybillRequestsDoc: async () => ({ version: 1, updatedAt: "", requests: [request, otherRequest], events: [] }),
   createWaybillRequest: async () => request,
-  retryWaybillRequest: async () => request,
-  cancelWaybillRequest: async () => ({ ok: true, request }),
+  retryWaybillRequest: async (input: { id: string }) => {
+    state.cancels.push(`retry:${input.id}`);
+    return input.id === otherRequest.id ? otherRequest : request;
+  },
+  cancelWaybillRequest: async (input: { id: string }) => {
+    state.cancels.push(`cancel:${input.id}`);
+    return { ok: true, request: input.id === otherRequest.id ? otherRequest : request };
+  },
+}));
+vi.mock("@/lib/iriss-pavadzimes-list", async (orig) => ({
+  ...(await orig<typeof import("@/lib/iriss-pavadzimes-list")>()),
+  loadIrissPavadzimesActiveCardData: async () => ({ rows: [{ id: "p02815" }], plates: [] }),
 }));
 vi.mock("@/lib/iriss-waybill-vehicles", () => ({
   listWaybillVehicleChips: async () => [{ chip: "BMW", brandModel: "BMW 540d", vin: "WBA00000000000001", plate: "AB1234", orderId: "ord_secret" }],
@@ -60,6 +81,10 @@ vi.mock("@/lib/iriss-pavadzimes-store", () => ({
     return { id: "x" };
   },
   restoreIrissPavadzimeSnapshot: async () => null,
+  readIrissPavadzimePdf: async (id: string) => {
+    state.pdfReads.push(id);
+    return { fileName: `${id}.pdf`, bytes: new Uint8Array([37, 80, 68, 70]) };
+  },
 }));
 vi.mock("@/lib/iriss-pasutijumi-store", () => ({
   listIrissPasutijumi: async () => [],
@@ -144,6 +169,48 @@ describe("staff API pēc dzīvajām sadaļām", () => {
     asStaff(["pavadzimes", "pasutijumi"]);
     const withOrders = JSON.stringify(await (await GET(new Request("https://www.provin.lv/api/admin/iriss/waybill-requests"))).json());
     expect(withOrders).toContain("ord_secret");
+  });
+
+  it("partneris neredz, neatceļ un neatkārto cita kolēģa pieprasījumu; atbildēs tikai savi", async () => {
+    asStaff(["pavadzimes"]);
+    state.cancels = [];
+    const byId = await import("@/app/api/admin/iriss/waybill-requests/[id]/route");
+    const other = { params: Promise.resolve({ id: "req_other" }) };
+    expect((await byId.GET(new Request("https://www.provin.lv/x"), other)).status).toBe(404);
+    for (const action of ["cancel", "retry", "dismiss"]) {
+      const res = await byId.POST(new Request("https://www.provin.lv/x", { method: "POST", body: JSON.stringify({ action }) }), other);
+      expect(res.status, action).toBe(404);
+    }
+    expect(state.cancels).toEqual([]);
+
+    // Savu var; atbildē nav cita kolēģa auto.
+    const own = await byId.POST(new Request("https://www.provin.lv/x", { method: "POST", body: JSON.stringify({ action: "cancel" }) }), {
+      params: Promise.resolve({ id: "req_1" }),
+    });
+    expect(own.status).toBe(200);
+    const ownJson = JSON.stringify(await own.json());
+    expect(ownJson).toContain("WBA00000000000001");
+    expect(ownJson).not.toContain("ZZ9999");
+    expect(ownJson).not.toContain("WP1ZZZ9YZLDA00001");
+
+    // Darbinieks ar Pavadzīmēm + citu sadaļu redz un drīkst visus.
+    asStaff(["pavadzimes", "logistika"]);
+    expect((await byId.GET(new Request("https://www.provin.lv/x"), other)).status).toBe(200);
+    const res = await byId.POST(new Request("https://www.provin.lv/x", { method: "POST", body: JSON.stringify({ action: "cancel" }) }), other);
+    expect(res.status).toBe(200);
+    expect(JSON.stringify(await res.json())).toContain("ZZ9999");
+  });
+
+  it("partneris lejupielādē tikai aktīvās pavadzīmes PDF, ne arhīvu pēc secīga numura", async () => {
+    asStaff(["pavadzimes"]);
+    state.pdfReads = [];
+    const { GET } = await import("@/app/api/admin/iriss-pavadzimes/[id]/pdf/route");
+    const pdf = (id: string) => GET(new Request("https://www.provin.lv/x"), { params: Promise.resolve({ id }) });
+    expect((await pdf("p02790")).status).toBe(404);
+    expect(state.pdfReads).toEqual([]);
+    expect((await pdf("p02815")).status).toBe(200);
+    asStaff(["pavadzimes", "logistika"]);
+    expect((await pdf("p02790")).status).toBe(200);
   });
 
   it("VIN vēsture (PRO pasūtījumi un klienti) ir tikai administratoram, arī darbiniekam ar VIN pārbaudi", async () => {

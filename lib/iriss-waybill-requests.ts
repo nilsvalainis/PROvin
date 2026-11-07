@@ -719,6 +719,26 @@ export function waybillDocForCreator(doc: WaybillRequestsDoc, creatorId: string)
   return { ...doc, requests, events: doc.events.filter((e) => ids.has(e.requestId)) };
 }
 
+/**
+ * Partneris ("tikai Pavadzīmes") jebkurā atbildē (saraksts, izveide, atcelšana, atkārtošana) redz tikai savus
+ * pieprasījumus; pārējie ar sadaļu Pavadzīmes - visus. Nakts tests 07.11: cancel/retry/izveides atbildes
+ * partnerim atgrieza visu rindu (citu numurzīmes, VIN).
+ */
+export function waybillDocForViewer(
+  doc: WaybillRequestsDoc,
+  viewer: { actorId: string; waybillOnly: boolean },
+): WaybillRequestsDoc {
+  return viewer.waybillOnly ? waybillDocForCreator(doc, viewer.actorId) : doc;
+}
+
+/** Vai šis lietotājs drīkst atvērt / atcelt / atkārtot konkrēto pieprasījumu (partneris - tikai savu). */
+export function waybillRequestVisibleTo(
+  request: Pick<WaybillRequest, "createdBy">,
+  viewer: { actorId: string; waybillOnly: boolean },
+): boolean {
+  return !viewer.waybillOnly || (Boolean(viewer.actorId) && request.createdBy === viewer.actorId);
+}
+
 export function waybillDocWithoutOrders(doc: WaybillRequestsDoc): WaybillRequestsDoc {
   return { ...doc, requests: doc.requests.map(waybillRequestWithoutOrder) };
 }
