@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import type { FaqItem } from "@/components/FaqClient";
+import { LinkedVinCheckText } from "@/components/seo/VinCheckTextLink";
 
 type Props = {
   title: string;
@@ -15,6 +17,7 @@ type Props = {
  * Atbildes vienmēr ir DOM (FAQPage shēmai un meklētājiem), aizvērtas tikai vizuāli.
  */
 export function FaqPageT1({ title, items, links }: Props) {
+  const locale = useLocale();
   const [open, setOpen] = useState<string | null>(null);
 
   return (
@@ -55,7 +58,9 @@ export function FaqPageT1({ title, items, links }: Props) {
                 </button>
                 <div id={panelId} role="region" className="provin-faq-panel">
                   <div>
-                    <p className="whitespace-pre-line px-5 pb-4 pr-11 text-[14px] leading-[1.6] text-zinc-400">{item.a}</p>
+                    <p className="whitespace-pre-line px-5 pb-4 pr-11 text-[14px] leading-[1.6] text-zinc-400">
+                      <LinkedVinCheckText text={item.a} locale={locale} />
+                    </p>
                   </div>
                 </div>
               </div>

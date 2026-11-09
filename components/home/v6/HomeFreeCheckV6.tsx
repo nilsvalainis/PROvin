@@ -2,6 +2,7 @@
 
 import { useLocale } from "next-intl";
 import { VinDecoderTool, type VinDecoderLabels } from "@/components/vin-decoder/VinDecoderTool";
+import { LinkedVinCheckText, VIN_CHECK_INHERIT_LINK_CLASS } from "@/components/seo/VinCheckTextLink";
 import { getHomeV6HeroCopy } from "@/lib/home-hero-v6-copy";
 import { FREE_EVAL_PREFILL_EVENT, type FreeEvalPrefillDetail } from "@/lib/free-eval-prefill";
 import { requestHeroPrefill } from "@/lib/hero-prefill";
@@ -28,7 +29,7 @@ export function HomeFreeCheckV6({ decoderLabels, home }: { decoderLabels: VinDec
     <section id="bezmaksas-vin" className={`${styles.section} ${styles.freeCheck}`} aria-labelledby="bezmaksas-vin-h">
       <div className={styles.wrap}>
         <h2 id="bezmaksas-vin-h" className={`${styles.h2} ${styles.center}`}>
-          {c.title}
+          <LinkedVinCheckText text={c.title} locale={locale} className={VIN_CHECK_INHERIT_LINK_CLASS} />
         </h2>
         <p className={`${styles.lead} ${styles.center}`}>
           <b className={styles.leadQ}>{c.question}</b> {c.lead}

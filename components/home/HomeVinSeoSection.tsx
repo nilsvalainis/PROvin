@@ -1,6 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { FreeEvalHashLink } from "@/components/home/FreeEvalHashLink";
+import { VinCheckTextLink } from "@/components/seo/VinCheckTextLink";
 import { listBlogPosts, resolveBlogLocale } from "@/lib/blog/posts";
 import { faqPageHref, pakalpojumiHref, vinCheckHref } from "@/lib/paths";
 
@@ -46,6 +47,7 @@ export async function HomeVinSeoSection() {
             </h2>
             <p className="mt-5 max-w-[60ch] text-pretty text-[1.05rem] leading-[1.65] text-zinc-300 sm:text-lg">
               {t.rich("homeBody", {
+                vinPage: (chunks) => <VinCheckTextLink>{chunks}</VinCheckTextLink>,
                 freeEval: (chunks) => (
                   <FreeEvalHashLink className="text-[#5c9dff] underline decoration-[#5c9dff]/40 underline-offset-[3px] transition hover:text-white">
                     {chunks}
@@ -55,14 +57,7 @@ export async function HomeVinSeoSection() {
             </p>
             <p className="mt-4 max-w-[60ch] text-pretty text-[1.05rem] leading-[1.65] text-zinc-300 sm:text-lg">
               {t.rich("homeMore", {
-                vinPage: (chunks) => (
-                  <Link
-                    href={vinCheckHref()}
-                    className="text-[#5c9dff] underline decoration-[#5c9dff]/40 underline-offset-[3px] transition hover:text-white"
-                  >
-                    {chunks}
-                  </Link>
-                ),
+                vinPage: (chunks) => <VinCheckTextLink>{chunks}</VinCheckTextLink>,
               })}
             </p>
           </div>

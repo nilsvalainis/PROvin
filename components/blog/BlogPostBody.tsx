@@ -2,8 +2,17 @@ import Image from "next/image";
 import type { BlogBlock } from "@/lib/blog/types";
 import { blogHeadingId } from "@/lib/blog/toc";
 import { blogBlockTextHasInlineHtml, sanitizeBlogInlineHtml } from "@/lib/admin-tiptap/blog-inline-html";
+import { LinkedVinCheckText } from "@/components/seo/VinCheckTextLink";
 
-function BlogInlineText({ text, className }: { text: string; className?: string }) {
+function BlogInlineText({
+  text,
+  locale,
+  className,
+}: {
+  text: string;
+  locale: string;
+  className?: string;
+}) {
   if (blogBlockTextHasInlineHtml(text)) {
     const safe = sanitizeBlogInlineHtml(text);
     return (
@@ -13,10 +22,14 @@ function BlogInlineText({ text, className }: { text: string; className?: string 
       />
     );
   }
-  return <span className={className}>{text}</span>;
+  return (
+    <span className={className}>
+      <LinkedVinCheckText text={text} locale={locale} />
+    </span>
+  );
 }
 
-export function BlogPostBody({ blocks }: { blocks: BlogBlock[] }) {
+export function BlogPostBody({ blocks, locale }: { blocks: BlogBlock[]; locale: string }) {
   return (
     <div className="blog-post-body mx-auto flex w-full lg:mx-0 max-w-[min(42.5rem,calc(100vw-2rem))] flex-col gap-5 text-[0.9375rem] leading-[1.7] text-[rgb(210_214_222/0.92)] sm:gap-6 sm:text-[1.05rem] sm:leading-[1.75]">
       {blocks.map((block, i) => {
@@ -29,7 +42,7 @@ export function BlogPostBody({ blocks }: { blocks: BlogBlock[] }) {
               id={id}
               className="scroll-mt-5 mt-4 text-[1.25rem] font-bold leading-[1.3] tracking-[-0.015em] text-white sm:mt-6 sm:text-[1.5rem]"
             >
-              <BlogInlineText text={block.text} />
+              <BlogInlineText text={block.text} locale={locale} />
             </h2>
           );
         }
@@ -39,7 +52,7 @@ export function BlogPostBody({ blocks }: { blocks: BlogBlock[] }) {
               key={key}
               className="border-l-2 border-provin-accent/80 bg-white/[0.04] px-4 py-3 text-[0.95em] leading-snug text-white/[0.92] sm:px-5 sm:py-4"
             >
-              <BlogInlineText text={block.text} />
+              <BlogInlineText text={block.text} locale={locale} />
             </aside>
           );
         }
@@ -86,7 +99,7 @@ export function BlogPostBody({ blocks }: { blocks: BlogBlock[] }) {
         }
         return (
           <p key={key} className="text-pretty">
-            <BlogInlineText text={block.text} />
+            <BlogInlineText text={block.text} locale={locale} />
           </p>
         );
       })}

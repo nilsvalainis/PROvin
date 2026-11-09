@@ -10,6 +10,7 @@ import { buildServiceOffersJsonLd } from "@/lib/seo-json-ld";
 import { homeContentMaxClass } from "@/lib/home-layout";
 import { faqPageHref, vinCheckHref } from "@/lib/paths";
 import { Link } from "@/i18n/navigation";
+import { VinCheckTextLink } from "@/components/seo/VinCheckTextLink";
 import productHeroStyles from "@/app/[locale]/demo/page.module.css";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 
@@ -56,7 +57,9 @@ export default async function PakalpojumiPage({ params }: Props) {
               {t("servicesH1")}
             </h1>
             <p className="mt-3 max-w-[43.75rem] text-pretty text-[15px] font-normal leading-[1.6] text-zinc-400 sm:mt-[18px] sm:text-[17px]">
-              {t("servicesIntro")}
+              {t.rich("servicesIntro", {
+                vinPage: (chunks) => <VinCheckTextLink>{chunks}</VinCheckTextLink>,
+              })}
             </p>
             <p className="mt-4 flex flex-wrap gap-x-2.5 gap-y-1 text-[12.5px] font-semibold sm:text-[13px]">
               <Link href={vinCheckHref()} className="text-[#5c9dff] no-underline transition hover:text-white">
