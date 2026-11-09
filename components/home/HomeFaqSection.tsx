@@ -2,6 +2,7 @@ import { Minus, Plus } from "lucide-react";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import type { FaqItem } from "@/components/FaqClient";
 import { JsonLd } from "@/components/seo/JsonLd";
+import { LinkedVinCheckText } from "@/components/seo/VinCheckTextLink";
 import { Link } from "@/i18n/navigation";
 import { contactMailtoHref, whatsappWebUrl } from "@/lib/contact";
 import { faqPageHref } from "@/lib/paths";
@@ -60,7 +61,9 @@ export async function HomeFaqSection() {
                   <Minus className="hidden h-4 w-4 group-open:block" strokeWidth={2} />
                 </span>
               </summary>
-              <p className="whitespace-pre-line px-5 pb-5 pl-[3.75rem] text-[14px] leading-relaxed text-zinc-300 sm:px-6 sm:pl-[4.25rem]">{item.a}</p>
+              <p className="whitespace-pre-line px-5 pb-5 pl-[3.75rem] text-[14px] leading-relaxed text-zinc-300 sm:px-6 sm:pl-[4.25rem]">
+                <LinkedVinCheckText text={item.a} locale={locale} />
+              </p>
             </details>
           ))}
         </div>
