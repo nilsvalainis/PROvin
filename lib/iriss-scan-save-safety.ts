@@ -54,6 +54,7 @@ export function mergeIrissScanRecords(server: IrissScanRecord, local: IrissScanR
     listingLinkEcarstrade: mergeScanLinks(local.listingLinkEcarstrade, server.listingLinkEcarstrade),
     listingLinksOther: mergeScanLinks(local.listingLinksOther, server.listingLinksOther),
     ...(local.criteria ?? server.criteria ? { criteria: local.criteria ?? server.criteria } : {}),
+    ...(local.nameManual || server.nameManual ? { nameManual: true } : {}),
   };
 }
 

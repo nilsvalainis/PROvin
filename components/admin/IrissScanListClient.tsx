@@ -13,6 +13,7 @@ import { AdminMobileRoundBtn, AdminMobileSearchField, AdminMobileTopBar } from "
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
 import { irissScanFindBucket, type IrissScanFindCard } from "@/lib/iriss-scan-finds";
 import { orderIrissScanListRows } from "@/lib/iriss-scan-list-order";
+import { irissScanDisplayName } from "@/lib/iriss-scan-name";
 import {
   countIrissScanLinks,
   formatIrissScanLastRead,
@@ -201,7 +202,7 @@ export function IrissScanListClient({
               <li key={row.id}>
                 <Link
                   href={`/admin/iriss/scan/${encodeURIComponent(row.id)}`}
-                  aria-label={`Atvērt radaru: ${formatIrissScanTitle(row.brandModel) || row.vin || "ieraksts"}`}
+                  aria-label={`Atvērt radaru: ${formatIrissScanTitle(irissScanDisplayName(row)) || row.vin || "ieraksts"}`}
                   className={`iriss-scan-row flex min-h-[64px] items-center gap-3 rounded-2xl bg-[var(--s1)] px-4 py-3 shadow-[var(--sh)] transition hover:bg-[var(--s2)] ${
                     active ? "ring-1 ring-[var(--ink)]/10" : ""
                   }`}
@@ -210,7 +211,7 @@ export function IrissScanListClient({
                   <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 items-start gap-1.5">
                       {row.pinnedAt ? <Pin className="mt-1 h-3 w-3 shrink-0 fill-current text-[var(--ink3)]" aria-label="Piesprausts" /> : null}
-                      <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-[var(--ink)]">{formatIrissScanTitle(row.brandModel)}</p>
+                      <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-[var(--ink)]">{formatIrissScanTitle(irissScanDisplayName(row))}</p>
                     </div>
                     {/* Bez izsoļu logo (Nils 21.10): viena klusa rinda ar avotu skaitu un pēdējo nolasīšanu. */}
                     <p className="mt-1 truncate text-[12.5px] text-[var(--ink3)]" title={sourceText || "Nav saišu"}>

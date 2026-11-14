@@ -21,7 +21,9 @@ import type { IrissListingOrderBrief } from "@/lib/iriss-listings-orders";
 import {
   IRISS_LISTING_CARD_ACTION_SALON,
   irissListingCardContext,
+  irissListingBudgetLabel,
   irissListingCardDetailsLabel,
+  irissListingLinkedSectionTitle,
   irissListingSalonHref,
 } from "@/lib/iriss-listing-card-actions";
 import { isIrissPasutijumsWorkingStatus } from "@/lib/iriss-pasutijumi-types";
@@ -376,12 +378,12 @@ export function IrissListDrawer({
             priceMissing={bid0 == null}
             priceLabel={listingCardPriceLabel(v)}
           />
-          {bid0 == null ? <p className="mt-2 text-[12.5px] text-[var(--iriss-ink-2)]">{budget != null ? `Klienta budžets ${eur(budget)}. ` : ""}Cenas vēl nav.</p> : null}
+          {bid0 == null ? <p className="mt-2 text-[12.5px] text-[var(--iriss-ink-2)]">{budget != null ? `${irissListingBudgetLabel(drawerContext)} ${eur(budget)}. ` : ""}Cenas vēl nav.</p> : null}
         </section>
 
-        {/* Klients un pasūtījums. */}
+        {/* Klients un pasūtījums (Radaram - meklējums, bez klienta). */}
         <section className={card}>
-          <h3 className={h3}>Klients un pasūtījums</h3>
+          <h3 className={h3}>{irissListingLinkedSectionTitle(drawerContext)}</h3>
           {linked.length ? <IrissListingOrderChips orders={linked} onPreview={onPreviewOrder} /> : <p className="text-[13px] text-[var(--iriss-ink-2)]">Nav piesaistīts pasūtījumam.</p>}
           <label className="mt-3 block text-[12px] font-semibold text-[var(--iriss-ink-2)]">
             Piesaistīt citam pasūtījumam
@@ -563,7 +565,7 @@ export function IrissListDrawer({
                   <dd className="border-t border-[var(--iriss-line)] pt-1 font-bold">{eur(listingFinalPrice(tax, bid, extras))}</dd>
                   {budget != null ? (
                     <>
-                      <dt className="text-[var(--iriss-ink-2)]">Klienta budžets</dt>
+                      <dt className="text-[var(--iriss-ink-2)]">{irissListingBudgetLabel(drawerContext)}</dt>
                       <dd className={listingFinalPrice(tax, bid, extras) <= budget ? "font-semibold text-[var(--iriss-ok)]" : "font-semibold text-[var(--iriss-bad)]"}>{eur(budget)}</dd>
                     </>
                   ) : null}
