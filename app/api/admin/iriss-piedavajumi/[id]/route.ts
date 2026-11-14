@@ -11,7 +11,7 @@ import { importIrissPdFromAutoparks, importIrissPdFromLink } from "@/lib/iriss-p
 import { irissPdFillEmpty, irissPdFillFromAutoparks, applyIrissPdImportData, type IrissPdImport } from "@/lib/iriss-piedavajumi-import";
 import { irissPdLinkErrorLv } from "@/lib/iriss-piedavajumi-sources";
 import { runIrissPdApprovalEffects } from "@/lib/iriss-piedavajumi-approve";
-import { applyIrissPdAdminNote, setIrissPdNoteVisibility } from "@/lib/iriss-piedavajumi-messages";
+import { applyIrissPdAdminNote, setIrissPdNoteVisibility, setIrissPdQuestionAnswered } from "@/lib/iriss-piedavajumi-messages";
 import {
   claimIrissPdDecision,
   clearIrissPdDecision,
@@ -71,6 +71,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
 /**
  * POST { action } - send | revert | decline | approve (ar roku, piem. klients apstiprināja pa tālruni)
  * | reopen (noraidīto atkal dara pieejamu klientam) | note { text } (iekšēja piezīme pie klienta ziņām)
+ * | question-answered { messageId, answered } (klienta jautājums atbildēts / atkal neatbildēts)
  * | create-order (apstiprinātam, ja pasūtījums automātiski neizveidojās).
  */
 export async function POST(req: Request, { params }: Ctx) {
@@ -78,7 +79,17 @@ export async function POST(req: Request, { params }: Ctx) {
   if (!gate.ok) return gate.response;
   const { id } = await params;
   if (!isSafeIrissPdId(id)) return fail(400, "invalid");
-  let body: { action?: unknown; kind?: unknown; carId?: unknown; url?: unknown; manual?: unknown; text?: unknown; public?: unknown; messageId?: unknown };
+  let body: {
+    action?: unknown;
+    kind?: unknown;
+    carId?: unknown;
+    url?: unknown;
+    manual?: unknown;
+    text?: unknown;
+    public?: unknown;
+    messageId?: unknown;
+    answered?: unknown;
+  };
   try {
     body = (await req.json()) as typeof body;
   } catch {
@@ -145,6 +156,15 @@ export async function POST(req: Request, { params }: Ctx) {
     // Nils 07.11: «Rādīt klientam saitē» esošai atbildei (ziņa klientam netiek sūtīta).
     const res = setIrissPdNoteVisibility(rec, body.messageId, body.public === true, { at, by });
     if (!res.ok) return fail(404, "not_found", "Atbilde nav atrasta.");
+    if (res.record !== rec && !(await writeIrissPd(res.record))) return fail(500, "write_failed", "Neizdevās saglabāt.");
+    return NextResponse.json({ ok: true, record: res.record }, { headers: noStore });
+  }
+
+  if (action === "question-answered") {
+    // Nils 14.11: «Atzīmēt kā atbildētu» / «Atjaunot kā neatbildētu» (klientam nekas netiek sūtīts).
+    if (typeof body.answered !== "boolean") return fail(400, "invalid");
+    const res = setIrissPdQuestionAnswered(rec, body.messageId, body.answered, { at, by });
+    if (!res.ok) return fail(404, "not_found", "Jautājums nav atrasts.");
     if (res.record !== rec && !(await writeIrissPd(res.record))) return fail(500, "write_failed", "Neizdevās saglabāt.");
     return NextResponse.json({ ok: true, record: res.record }, { headers: noStore });
   }

@@ -195,6 +195,11 @@ export type IrissPdMessage = {
   text: string;
   /** Nils 07.11: admina atbilde redzama klientam saitē (tikai ar atzīmi «Rādīt klientam saitē»; e-pasts netiek sūtīts). */
   public?: boolean;
+  /** Nils 14.11: klienta jautājums atzīmēts kā atbildēts (ar pogu vai atbildot). Bez lauka - vecais noteikums. */
+  answeredAt?: string;
+  answeredBy?: string;
+  /** Nils 14.11: «Atjaunot kā neatbildētu» - jautājums atkal atvērts, arī ja pēc tā ir admina atbilde. */
+  reopenedAt?: string;
 };
 
 export const IRISS_PD_MAX_MESSAGES = 100;
@@ -272,7 +277,7 @@ export type IrissPdListRow = {
   approvedOrderId: string;
   cover: IrissPdPhoto | null;
   updatedAt: string;
-  /** Klienta jautājumi bez admina piezīmes pēc tiem (sarakstā - zīme «Jautājums»). */
+  /** Neatbildēti klienta jautājumi (sarakstā - zīme «Jautājums»). */
   openQuestions: number;
 };
 
