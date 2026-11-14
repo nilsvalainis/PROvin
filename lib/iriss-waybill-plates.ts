@@ -42,6 +42,8 @@ export type WaybillPlateState = {
     /** j47: izraksta Aivars ar roku (nodots no automātikas, nestandarta, B192, atkārtots vai Aivars jau darbā). */
     manual?: boolean;
   };
+  /** Klienta pusē: stāvoklis vēl nav ielādēts no servera (rāda "…", nevis "brīvs"). Serveris to nesūta. */
+  loading?: boolean;
 };
 
 export type WaybillWithdrawnRow = {
@@ -72,6 +74,27 @@ export function isAllowlistedWaybillPlate(raw: string): raw is IrissDealerPlate 
 
 export function emptyWaybillPlateStates(): WaybillPlateState[] {
   return IRISS_DEALER_PLATES.map((plate) => ({ plate, busy: false }));
+}
+
+/** Formas sākuma stāvoklis līdz pirmajai servera atbildei: neviens numurs netiek saukts par brīvu. */
+export function loadingWaybillPlateStates(): WaybillPlateState[] {
+  return IRISS_DEALER_PLATES.map((plate) => ({ plate, busy: false, loading: true }));
+}
+
+export type WaybillPlateChipTone = "loading" | "pending" | "busy" | "free";
+
+/**
+ * Numura pogas mazais statuss formā (Nils 14.11): ielādes laikā "…", ja numuram jau ir pieprasījums rindā
+ * vai darbā - "gaida Aivaru" (lai neveido otru), citādi "aizņemts" / "brīvs".
+ */
+export function waybillPlateChip(row: Pick<WaybillPlateState, "busy" | "issuing" | "loading">): {
+  tone: WaybillPlateChipTone;
+  label: string;
+} {
+  if (row.loading) return { tone: "loading", label: "…" };
+  if (row.issuing) return { tone: "pending", label: "gaida Aivaru" };
+  if (row.busy) return { tone: "busy", label: "aizņemts" };
+  return { tone: "free", label: "brīvs" };
 }
 
 /**

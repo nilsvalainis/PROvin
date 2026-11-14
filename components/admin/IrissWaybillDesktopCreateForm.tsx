@@ -21,7 +21,7 @@ import {
   type WaybillMobileCar,
   type WaybillMobileFormState,
 } from "@/lib/iriss-waybill-mobile-form";
-import { dealerPlateMeta, displayDealerPlate, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
+import { dealerPlateMeta, displayDealerPlate, waybillPlateChip, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
 import { dzintarzemeAcceptedCars, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 
 /**
@@ -114,6 +114,7 @@ export function IrissWaybillDesktopCreateForm({
         <div className="mb-2 flex gap-1.5 md:hidden">
           {plates.map((row) => {
             const on = plate === row.plate;
+            const chip = waybillPlateChip(row);
             return (
               <button
                 key={row.plate}
@@ -127,10 +128,16 @@ export function IrissWaybillDesktopCreateForm({
                 {row.plate}
                 <small
                   className={`mt-0.5 block text-[10px] font-medium ${
-                    on ? "text-white/70" : row.busy ? "text-[#b45309]" : "text-[var(--iriss-ok)]"
+                    on
+                      ? "text-white/70"
+                      : chip.tone === "free"
+                        ? "text-[var(--iriss-ok)]"
+                        : chip.tone === "loading"
+                          ? "text-[var(--iriss-ink-2)]"
+                          : "text-[#b45309]"
                   }`}
                 >
-                  {row.busy ? "aizņemts" : "brīvs"}
+                  {chip.label}
                 </small>
               </button>
             );
@@ -145,6 +152,7 @@ export function IrissWaybillDesktopCreateForm({
                 number={row.plate}
                 selected={plate === row.plate}
                 busy={row.busy}
+                status={row.loading ? "loading" : row.issuing ? "pending" : undefined}
                 owner={meta.owner}
                 bottomText={meta.bottomText}
                 busyUntil={row.current?.validUntil ? formatWaybillExpiryDdMmHm(row.current.validUntil) : ""}

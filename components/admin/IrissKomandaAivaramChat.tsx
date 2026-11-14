@@ -25,6 +25,7 @@ import {
   IRISS_DEALER_PLATES,
   displayDealerPlate,
   emptyWaybillPlateStates,
+  loadingWaybillPlateStates,
   formatRigaDateTimeComma,
   type WaybillPlateCurrent,
   type WaybillPlateState,
@@ -70,7 +71,7 @@ const emptyChat = (): WaybillChatState => ({
   timeline: [],
   replies: [],
   vehicles: [],
-  plates: emptyWaybillPlateStates(),
+  plates: loadingWaybillPlateStates(),
 });
 
 function withReplies(partial: Partial<WaybillChatState>): WaybillChatState {

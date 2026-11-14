@@ -30,11 +30,12 @@ export type LvDealerPlateProps = {
   bottomText: string;
   owner?: string;
   busyUntil?: string;
+  /** "loading" - stāvoklis vēl nav ielādēts ("…"); "pending" - numuram jau ir pieprasījums ("Gaida Aivaru"). */
+  status?: "loading" | "pending";
   onClick?: () => void;
 };
 
-function plateAria(number: string, busy: boolean, selected: boolean): string {
-  const state = busy ? "aizņemts" : "brīvs";
+function plateAria(number: string, state: string, selected: boolean): string {
   return selected
     ? `Tirdzniecības numurs ${number}, ${state}, izvēlēts`
     : `Tirdzniecības numurs ${number}, ${state}`;
@@ -111,16 +112,28 @@ export function LvDealerPlate({
   bottomText,
   owner,
   busyUntil,
+  status,
   onClick,
 }: LvDealerPlateProps) {
   const hideBottom = size === "sm";
-  const chipLabel = busy ? (busyUntil ? `Aizņemts · līdz ${busyUntil}` : "Aizņemts") : "Brīvs";
+  const chipLabel =
+    status === "loading"
+      ? "…"
+      : status === "pending"
+        ? "Gaida Aivaru"
+        : busy
+          ? busyUntil
+            ? `Aizņemts · līdz ${busyUntil}`
+            : "Aizņemts"
+          : "Brīvs";
+  const ariaState = status === "loading" ? "ielādē" : status === "pending" ? "gaida Aivaru" : busy ? "aizņemts" : "brīvs";
+  const warm = status === "pending" || (busy && status !== "loading");
   return (
     <button
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      aria-label={plateAria(number, busy, selected)}
+      aria-label={plateAria(number, ariaState, selected)}
       className={`flex min-h-11 w-full min-w-0 flex-col items-center text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-2 ${
         size === "sm" ? "max-w-[132px]" : "max-w-[300px] sm:max-w-none"
       }`}
@@ -137,13 +150,13 @@ export function LvDealerPlate({
       </span>
       <span
         className={`mt-1.5 inline-flex items-center gap-[7px] rounded-full px-2.5 py-1 text-[13px] font-medium text-[#374151] ${
-          busy ? "bg-[#FFFBEB]" : "bg-[#F0FDF4]"
+          status === "loading" ? "bg-[var(--iriss-surface-2)]" : warm ? "bg-[#FFFBEB]" : "bg-[#F0FDF4]"
         }`}
       >
         <i
           aria-hidden
           className="inline-block h-2 w-2 rounded-full"
-          style={{ backgroundColor: busy ? "#D97706" : "#16A34A" }}
+          style={{ backgroundColor: status === "loading" ? "var(--iriss-ink-2)" : warm ? "#D97706" : "#16A34A" }}
         />
         {chipLabel}
       </span>

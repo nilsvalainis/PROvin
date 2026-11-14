@@ -75,6 +75,9 @@
 .mf .pick small.free {
   color: #067647;
 }
+.mf .pick small.loading {
+  color: var(--ink2, #5e636e);
+}
 .mf .pick.on small {
   color: var(--chip-active-fg, #fff);
   opacity: 0.75;
