@@ -33,9 +33,17 @@ vi.mock("next/server", async (orig) => {
   const mod = await orig<typeof import("next/server")>();
   return { ...mod, after: (fn: () => unknown) => void calls.after.push(fn) };
 });
-vi.mock("@/lib/staff-auth", () => ({
-  requireAdminOnlyApi: async () => ({ ok: true, actor: { kind: "admin", name: "Nils" } }),
-}));
+const gate = vi.hoisted(() => ({ as: "admin" as "admin" | "staff" | "none" }));
+vi.mock("@/lib/staff-auth", async () => {
+  const { NextResponse } = await import("next/server");
+  return {
+    requireAdminOnlyApi: async () => {
+      if (gate.as === "admin") return { ok: true, actor: { kind: "admin", name: "Nils" } };
+      if (gate.as === "none") return { ok: false, response: NextResponse.json({ error: "unauthorized" }, { status: 401 }) };
+      return { ok: false, response: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
+    },
+  };
+});
 
 import { emptyIrissPiedavajums, type IrissPiedavajums } from "@/lib/iriss-piedavajumi-types";
 
@@ -51,6 +59,7 @@ describe("PD saite: noraidīt, jautājums, atjaunot", () => {
     calls.decision.length = 0;
     calls.question.length = 0;
     calls.after.length = 0;
+    gate.as = "admin";
     vi.resetModules();
     vi.unstubAllEnvs();
     vi.useRealTimers();
@@ -265,6 +274,74 @@ describe("PD saite: noraidīt, jautājums, atjaunot", () => {
     const clientId = (await t.read()).messages.find((m) => m.from === "client")!.id;
     expect((await t.adminPost({ action: "note-visibility", messageId: clientId, public: true })).status).toBe(404);
     expect((await t.adminPost({ action: "note-visibility", messageId: "nav", public: true })).status).toBe(404);
+  });
+
+  it("«Atzīmēt kā atbildētu»: answeredAt + answeredBy, zīme sarakstā pazūd, klientam nekas netiek sūtīts; var atjaunot", async () => {
+    const t = await setup();
+    await t.send({ token: t.token, action: "question", text: "Kad var apskatīt?" });
+    await t.send({ token: t.token, action: "question", text: "Vai cena galīgā?" });
+    await t.runAfter();
+    expect((await t.store.listIrissPdRows())[0]?.openQuestions).toBe(2);
+    const [q1, q2] = (await t.read()).messages;
+
+    const marked = await t.adminPost({ action: "question-answered", messageId: q1!.id, answered: true });
+    expect(marked.status).toBe(200);
+    expect((await t.read()).messages.find((m) => m.id === q1!.id)).toMatchObject({ answeredAt: AT, answeredBy: "Nils" });
+    expect((await t.store.listIrissPdRows())[0]?.openQuestions).toBe(1);
+
+    await t.adminPost({ action: "question-answered", messageId: q2!.id, answered: true });
+    expect((await t.store.listIrissPdRows())[0]?.openQuestions).toBe(0);
+    expect((await t.read()).history.at(-1)?.text).toContain("Jautājums atzīmēts kā atbildēts");
+    // Klienta saitē nav ne atzīmes, ne admina vārda; paziņojumi netiek sūtīti.
+    expect(JSON.stringify(t.lib.buildIrissPdPublicView(await t.read(), "link", Date.parse(AT)))).not.toContain("Nils");
+    await t.runAfter();
+    expect(calls.question).toHaveLength(2);
+    expect(calls.decision).toHaveLength(0);
+
+    // Atkārtota atzīmēšana - bez izmaiņām.
+    const before = await t.read();
+    await t.adminPost({ action: "question-answered", messageId: q2!.id, answered: true });
+    expect((await t.read()).history).toHaveLength(before.history.length);
+
+    const reopened = await t.adminPost({ action: "question-answered", messageId: q1!.id, answered: false });
+    expect(reopened.status).toBe(200);
+    expect((await t.read()).messages.find((m) => m.id === q1!.id)?.answeredAt).toBeUndefined();
+    expect((await t.store.listIrissPdRows())[0]?.openQuestions).toBe(1);
+
+    // Ne klienta jautājums vai nezināms id - 404; bez «answered» - 400.
+    await t.adminPost({ action: "note", text: "Iekšēji" });
+    const noteId = (await t.read()).messages.find((m) => m.from === "admin")!.id;
+    expect((await t.adminPost({ action: "question-answered", messageId: noteId, answered: true })).status).toBe(404);
+    expect((await t.adminPost({ action: "question-answered", messageId: "nav", answered: true })).status).toBe(404);
+    expect((await t.adminPost({ action: "question-answered", messageId: q1!.id })).status).toBe(400);
+  });
+
+  it("atbilde caur «Atbilde / piezīme» (arī «Rādīt klientam saitē») automātiski atzīmē jautājumus kā atbildētus", async () => {
+    const t = await setup();
+    await t.send({ token: t.token, action: "question", text: "Vai ir ziemas riepas?" });
+    await t.adminPost({ action: "note", text: "Jā, ir.", public: true });
+    const q = (await t.read()).messages.find((m) => m.from === "client")!;
+    expect(q).toMatchObject({ answeredAt: AT, answeredBy: "Nils" });
+    expect((await t.store.listIrissPdRows())[0]?.openQuestions).toBe(0);
+
+    // Atjaunots kā neatbildēts paliek atvērts, kaut pēc tā ir atbilde; nākamā atbilde to atkal atzīmē.
+    await t.adminPost({ action: "question-answered", messageId: q.id, answered: false });
+    expect((await t.store.listIrissPdRows())[0]?.openQuestions).toBe(1);
+    await t.adminPost({ action: "note", text: "Atbildēju pa tālruni" });
+    expect((await t.store.listIrissPdRows())[0]?.openQuestions).toBe(0);
+  });
+
+  it("autorizācija: darbiniekam 403, anonīmam 401, nekas netiek ierakstīts", async () => {
+    const t = await setup();
+    await t.send({ token: t.token, action: "question", text: "Kad var apskatīt?" });
+    const q = (await t.read()).messages[0]!;
+    gate.as = "staff";
+    expect((await t.adminPost({ action: "question-answered", messageId: q.id, answered: true })).status).toBe(403);
+    gate.as = "none";
+    expect((await t.adminPost({ action: "question-answered", messageId: q.id, answered: true })).status).toBe(401);
+    gate.as = "admin";
+    expect((await t.read()).messages[0]!.answeredAt).toBeUndefined();
+    expect((await t.store.listIrissPdRows())[0]?.openQuestions).toBe(1);
   });
 });
 

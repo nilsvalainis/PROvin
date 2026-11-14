@@ -41,6 +41,12 @@ export function cleanIrissPdMessageText(v: unknown, max: number): string {
     .trim();
 }
 
+function cleanIsoAt(v: unknown): string {
+  if (typeof v !== "string") return "";
+  const t = v.trim().slice(0, 40);
+  return t && Number.isFinite(Date.parse(t)) ? t : "";
+}
+
 function maxFor(kind: IrissPdMessageKind): number {
   if (kind === "question") return IRISS_PD_QUESTION_MAX;
   if (kind === "decline") return IRISS_PD_DECLINE_REASON_MAX;
@@ -64,6 +70,16 @@ export function normalizeIrissPdMessages(raw: unknown): IrissPdMessage[] {
       const by = typeof o.by === "string" ? o.by.replace(/\s+/g, " ").trim().slice(0, 80) : "";
       const msg: IrissPdMessage = { id, at, from, kind, by, text };
       if (from === "admin" && kind === "note" && o.public === true) msg.public = true;
+      if (from === "client" && kind === "question") {
+        const answeredAt = cleanIsoAt(o.answeredAt);
+        const reopenedAt = cleanIsoAt(o.reopenedAt);
+        if (answeredAt) {
+          msg.answeredAt = answeredAt;
+          msg.answeredBy = typeof o.answeredBy === "string" ? o.answeredBy.replace(/\s+/g, " ").trim().slice(0, 80) : "";
+        } else if (reopenedAt) {
+          msg.reopenedAt = reopenedAt;
+        }
+      }
       return [msg];
     })
     .slice(-IRISS_PD_MAX_MESSAGES);
@@ -82,14 +98,73 @@ function snippet(text: string, max = 160): string {
   return one.length > max ? `${one.slice(0, max - 1)}…` : one;
 }
 
-/** Klienta jautājumi, uz kuriem pēc tam nav admina piezīmes (sarakstā - zīme). */
+export type IrissPdQuestionAnswer = { at: string; by: string };
+
+/**
+ * Nils 14.11: kad klienta jautājums atbildēts.
+ * - `answeredAt` - atzīmēts ar pogu «Atzīmēt kā atbildētu» vai atbildot caur «Atbilde / piezīme».
+ * - `reopenedAt` - «Atjaunot kā neatbildētu»: atvērts, arī ja pēc tā ir admina atbilde.
+ * - Vecie ieraksti bez abiem laukiem: kā līdz šim - atbildēts, ja pēc jautājuma ir admina ziņa (laiks un vārds no tās).
+ * Ne jautājumam - null.
+ */
+export function irissPdQuestionAnswer(messages: readonly IrissPdMessage[], index: number): IrissPdQuestionAnswer | null {
+  const m = messages[index];
+  if (!m || m.from !== "client" || m.kind !== "question") return null;
+  if (m.answeredAt) return { at: m.answeredAt, by: m.answeredBy ?? "" };
+  if (m.reopenedAt) return null;
+  for (let i = index + 1; i < messages.length; i++) {
+    const a = messages[i]!;
+    if (a.from === "admin") return { at: a.at, by: a.by };
+  }
+  return null;
+}
+
+/** Neatbildēti klienta jautājumi (sarakstā - zīme). */
 export function irissPdOpenQuestionCount(messages: readonly IrissPdMessage[]): number {
   let n = 0;
-  for (const m of messages) {
-    if (m.from === "admin") n = 0;
-    else if (m.kind === "question") n += 1;
-  }
+  messages.forEach((m, i) => {
+    if (m.from === "client" && m.kind === "question" && !irissPdQuestionAnswer(messages, i)) n += 1;
+  });
   return n;
+}
+
+function markAnswered(m: IrissPdMessage, ctx: { at: string; by: string }): IrissPdMessage {
+  const { reopenedAt: _r, ...rest } = m;
+  void _r;
+  return { ...rest, answeredAt: ctx.at, answeredBy: ctx.by };
+}
+
+/** Visus neatbildētos jautājumus atzīmē kā atbildētus (admina atbilde caur «Atbilde / piezīme»). */
+function markOpenQuestionsAnswered(messages: readonly IrissPdMessage[], ctx: { at: string; by: string }): IrissPdMessage[] {
+  return messages.map((m, i) => (m.from === "client" && m.kind === "question" && !irissPdQuestionAnswer(messages, i) ? markAnswered(m, ctx) : m));
+}
+
+/**
+ * Nils 14.11: «Atzīmēt kā atbildētu» / «Atjaunot kā neatbildētu» klienta jautājumam. Klientam nekas netiek sūtīts.
+ * Ja stāvoklis jau tāds - ieraksts nemainās.
+ */
+export function setIrissPdQuestionAnswered(
+  rec: IrissPiedavajums,
+  messageId: unknown,
+  answered: boolean,
+  ctx: { at: string; by: string },
+): { ok: true; record: IrissPiedavajums } | { ok: false; error: "not_found" } {
+  const i = rec.messages.findIndex((m) => m.id === messageId && m.from === "client" && m.kind === "question");
+  if (i < 0) return { ok: false, error: "not_found" };
+  if (Boolean(irissPdQuestionAnswer(rec.messages, i)) === answered) return { ok: true, record: rec };
+  const cur = rec.messages[i]!;
+  let updated: IrissPdMessage;
+  if (answered) {
+    updated = markAnswered(cur, ctx);
+  } else {
+    const { answeredAt: _a, answeredBy: _b, ...rest } = cur;
+    void _a;
+    void _b;
+    updated = { ...rest, reopenedAt: ctx.at };
+  }
+  const messages = rec.messages.map((m, j) => (j === i ? updated : m));
+  const text = answered ? `Jautājums atzīmēts kā atbildēts: ${snippet(cur.text, 80)}` : `Jautājums atjaunots kā neatbildēts: ${snippet(cur.text, 80)}`;
+  return { ok: true, record: appendHistory({ ...rec, messages, updatedAt: ctx.at }, ctx.at, ctx.by, text) };
 }
 
 const fold = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
@@ -160,7 +235,9 @@ export function applyIrissPdAdminNote(
   if (!text) return { ok: false, error: "empty" };
   const msg: IrissPdMessage = { id: ctx.id, at: ctx.at, from: "admin", kind: "note", by: ctx.by, text };
   if (ctx.public) msg.public = true;
-  let next = appendMessage({ ...rec, updatedAt: ctx.at }, msg);
+  // Nils 14.11: atbilde atzīmē visus neatbildētos jautājumus kā atbildētus.
+  const answered = markOpenQuestionsAnswered(rec.messages, { at: ctx.at, by: ctx.by });
+  let next = appendMessage({ ...rec, messages: answered, updatedAt: ctx.at }, msg);
   next = appendHistory(next, ctx.at, ctx.by, ctx.public ? "Atbilde klientam (redzama saitē)" : "Piezīme pie klienta ziņām (iekšēja)");
   return { ok: true, record: next };
 }
