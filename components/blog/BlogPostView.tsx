@@ -14,6 +14,7 @@ import { resolveBlogLocale } from "@/lib/blog/posts";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildBlogPostingJsonLd } from "@/lib/seo-json-ld";
 import { getPublicSiteOrigin } from "@/lib/site-url";
+import { VinCheckTextLink } from "@/components/seo/VinCheckTextLink";
 
 type Props = {
   post: BlogPost;
@@ -22,6 +23,7 @@ type Props = {
 
 export async function BlogPostView({ post, locale }: Props) {
   const t = await getTranslations("Blogs");
+  const tCrumb = await getTranslations("Breadcrumbs");
   const { content, usingFallback } = resolveBlogLocale(post, locale);
   const base = getPublicSiteOrigin().replace(/\/$/, "");
   const cover = post.coverImage;
@@ -43,9 +45,12 @@ export async function BlogPostView({ post, locale }: Props) {
       <JsonLd data={articleLd} />
       <BlogViewTracker slug={post.slug} />
       <div className="mx-auto w-full max-w-[75rem]">
-        <Link href="/blogs" className={styles.back}>
-          {t("backToList")}
-        </Link>
+        <p className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <Link href="/blogs" className={styles.back}>
+            {t("backToList")}
+          </Link>
+          <VinCheckTextLink className={styles.back}>{tCrumb("vinCheck")}</VinCheckTextLink>
+        </p>
 
         <header>
           <p className={styles.meta}>
@@ -61,7 +66,7 @@ export async function BlogPostView({ post, locale }: Props) {
         <div className={`${styles.grid} ${hasToc ? "" : styles.gridSingle}`}>
           <BlogPostToc items={toc} label={t("tocLabel")} />
           <div className={styles.body}>
-            <BlogPostBody blocks={content.body} />
+            <BlogPostBody blocks={content.body} locale={locale} />
 
             <div className={styles.cta}>
               <b>{t("ctaTitle")}</b>
