@@ -20,7 +20,7 @@ describe("IRISS editor default array/object props", () => {
     expect(scanEditor).toMatch(/const EMPTY_FINDS:\s*IrissScanFindCard\[\]\s*=\s*\[\]/);
     expect(scanEditor).toMatch(/finds\s*=\s*EMPTY_FINDS/);
     expect(scanEditor).not.toMatch(/finds\s*=\s*\[\]/);
-    expect(scanEditor).toMatch(/busy \|\| persistId/);
+    // «Saglabāts» tikai saglabātam radaram - uzvedības tests: lib/iriss-scan-name.test.tsx.
     expect(scanEditor).toMatch(/persistId && formatIrissScanLastRead/);
 
     const scanList = readFileSync(new URL("../components/admin/IrissScanListClient.tsx", import.meta.url), "utf8");

@@ -90,6 +90,14 @@ describe("Radara darbības bez klienta", () => {
     expect(raw).toContain('aria-label="Nosaukums"');
   });
 
+  it("«Saglabāts» rāda tikai saglabātam radaram; jaunam nesaglabātam nav, «Kopīgot saiti» atspējota", () => {
+    expect(renderText(createElement(IrissScanEditor, { initialRecord: rec }))).toContain("Saglabāts");
+    const draft = renderText(createElement(IrissScanEditor, { initialRecord: rec, unsavedDraft: true }));
+    expect(draft).not.toContain("Saglabāts");
+    const draftHtml = renderHtml(createElement(IrissScanEditor, { initialRecord: rec, unsavedDraft: true }));
+    expect(draftHtml).toMatch(/<button[^>]*disabled=""[^>]*>Kopīgot saiti<\/button>/);
+  });
+
   it("«Kopīgot saiti» kopē admin saiti uz ierakstu; nesaglabātam saites nav", () => {
     expect(irissScanShareHref("https://provin.lv/", "abc-1")).toBe("https://provin.lv/admin/iriss/scan/abc-1");
     expect(irissScanShareHref("https://provin.lv", "")).toBe("");
