@@ -23,6 +23,14 @@ import { irissScanFilterTableRows } from "@/lib/iriss-scan-filter-table";
 import type { IrissScanFindCard } from "@/lib/iriss-scan-finds";
 import { irissScanFindBucket } from "@/lib/iriss-scan-finds";
 import { formatIrissScanLastRead, formatIrissScanNewHitsLabel, formatIrissScanTitle } from "@/lib/iriss-scan-list-view";
+import {
+  applyIrissScanAutoName,
+  applyIrissScanNameEdit,
+  IRISS_SCAN_NAME_LABEL,
+  IRISS_SCAN_SHARE_COPIED,
+  irissScanDisplayName,
+  irissScanShareHref,
+} from "@/lib/iriss-scan-name";
 import { applyGeneratedScanSourceFilter } from "@/lib/iriss-scan-platform-search";
 import { IRISS_STALE_REVISION, irissScanWorkspaceRevision, mergeIrissScanRecords } from "@/lib/iriss-scan-save-safety";
 import type { IrissScanLinkKey } from "@/lib/iriss-scan-sources";
@@ -60,6 +68,7 @@ export function IrissScanEditor({
   const [busy, setBusy] = useState(false);
   const [dirty, setDirty] = useState(Boolean(unsavedDraft && irissScanHasOperatorContent(initialRecord)));
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [shareMsg, setShareMsg] = useState<string | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [linksOpen, setLinksOpen] = useState(false);
   const [conflict, setConflict] = useState<{ server: IrissScanRecord } | null>(null);
@@ -221,6 +230,22 @@ export function IrissScanEditor({
     patchRecord({ pinnedAt: next });
   }
 
+  /** Radaram nav klienta un publiskas saites: kopē admin saiti uz šo ierakstu. */
+  async function copyShareLink() {
+    const href = irissScanShareHref(window.location.origin, persistedIdRef.current);
+    if (!href) {
+      setShareMsg("Vispirms saglabā radaru.");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(href);
+      setShareMsg(IRISS_SCAN_SHARE_COPIED);
+    } catch {
+      setShareMsg("Neizdevās nokopēt saiti.");
+    }
+    window.setTimeout(() => setShareMsg(null), 2500);
+  }
+
   const deleteConfirmBackdropClose = useModalBackdropClose(() => setDeleteOpen(false));
 
   return (
@@ -242,10 +267,15 @@ export function IrissScanEditor({
             rows={1}
             data-bare
             className="w-full resize-none overflow-hidden bg-transparent text-[20px] font-semibold leading-[1.25] tracking-tight text-[var(--ink)] outline-none placeholder:text-[var(--ink3)] md:text-[22px]"
-            placeholder="Marka modelis"
-            aria-label="Marka modelis"
+            placeholder={IRISS_SCAN_NAME_LABEL}
+            aria-label={IRISS_SCAN_NAME_LABEL}
             value={rec.brandModel}
-            onChange={(e) => patchRecord({ brandModel: e.target.value })}
+            onChange={(e) => {
+              // Ar roku rakstīts nosaukums - automātika no markas + modeļa to vairs nepārraksta.
+              setRec((r) => applyIrissScanNameEdit(r, e.target.value));
+              setDirty(true);
+              setSaveMsg(null);
+            }}
           />
           <input
             data-bare
@@ -266,11 +296,29 @@ export function IrissScanEditor({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {/* Jaunam radaram, kas vēl nav saglabāts, "Saglabāts" maldinātu. */}
-          {busy || persistId ? (
+          {busy || (persistId && !dirty) ? (
             <span className="iriss-ok-chip inline-flex items-center rounded-full bg-[var(--s1)] px-3.5 text-[12px] text-[var(--ink2)] shadow-[var(--sh)]" aria-live="polite">
               {busy ? "Saglabā..." : "Saglabāts"}
             </span>
           ) : null}
+          {/* Radaram nav klienta: tikai «Saglabāt» un «Kopīgot saiti» (nekāda «Nosūtīt klientam»). */}
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void save()}
+            className="inline-flex h-[34px] shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-[var(--chip-active-bg)] px-4 text-[13px] font-semibold text-[var(--chip-active-fg)] disabled:opacity-40"
+          >
+            Saglabāt
+          </button>
+          <button
+            type="button"
+            disabled={!persistId}
+            title={persistId ? "Kopē saiti uz šo radara ierakstu" : "Vispirms saglabā radaru"}
+            onClick={() => void copyShareLink()}
+            className="inline-flex h-[34px] shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-[var(--s2)] px-4 text-[13px] font-semibold text-[var(--ink)] disabled:opacity-40"
+          >
+            Kopīgot saiti
+          </button>
           <IrissOverflowMenu label="Darbības">
             <IrissOverflowItem onClick={() => void togglePin()}>
               {rec.pinnedAt ? "Atspraust" : "Piespraust"}
@@ -289,6 +337,12 @@ export function IrissScanEditor({
         </div>
       </header>
 
+      {shareMsg ? (
+        <p className="mb-2 text-right text-[12px] font-medium text-[var(--ink2)]" role="status" aria-live="polite">
+          {shareMsg}
+        </p>
+      ) : null}
+
       {conflict ? (
         <div className="mb-3">
           <AdminWorkspaceRevisionConflictBanner
@@ -301,7 +355,7 @@ export function IrissScanEditor({
       ) : null}
 
       {/* Audits 07.11: kritēriji strukturētos laukos (kā pasūtījumam), nevis Radara nosaukumā. */}
-      <IrissScanCriteriaCard rec={rec} onChange={(next) => patchRecord(next)} />
+      <IrissScanCriteriaCard rec={rec} onChange={(next) => patchRecord(applyIrissScanAutoName(rec, next))} />
 
       <section className="mb-4 overflow-hidden rounded-3xl bg-[var(--s1)] p-3 shadow-[var(--sh)]">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -585,7 +639,7 @@ export function IrissScanEditor({
       ) : null}
 
       {rec.pinnedAt ? <Pin className="sr-only" aria-label="Piesprausts" /> : null}
-      <span className="sr-only">{formatIrissScanTitle(rec.brandModel)}</span>
+      <span className="sr-only">{formatIrissScanTitle(irissScanDisplayName(rec))}</span>
     </div>
   );
 }

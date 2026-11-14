@@ -38,6 +38,15 @@ export function irissListingCardDetailsLabel(ctx: IrissListingCardContext): stri
   return ctx === "radar" ? IRISS_LISTING_CARD_ACTION_SEARCH : IRISS_LISTING_CARD_ACTION_ORDER;
 }
 
+/** Nils 14.11: Radaram nav klienta - sānu panelī bez «Klients»/«Klienta budžets» tekstiem. */
+export function irissListingLinkedSectionTitle(ctx: IrissListingCardContext): string {
+  return ctx === "radar" ? "Radara meklējums" : "Klients un pasūtījums";
+}
+
+export function irissListingBudgetLabel(ctx: IrissListingCardContext): string {
+  return ctx === "radar" ? "Meklējuma cenas robeža" : "Klienta budžets";
+}
+
 const LOGISTICS_AUCTION_BY_PLATFORM: Record<string, string> = {
   autobid: "Autobid",
   auto1: "Auto1",

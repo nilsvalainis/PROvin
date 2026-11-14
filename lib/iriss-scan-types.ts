@@ -32,6 +32,8 @@ export type IrissScanRecord = {
   listingLinksOther: string[];
   /** Operators ir rediģējis eCarsTrade saites. Fona ģenerēšana tās nepapildina. */
   ecarstradeLinksManual?: boolean;
+  /** Operators «Nosaukumu» rakstījis ar roku - automātika no markas + modeļa to nepārraksta. */
+  nameManual?: boolean;
   /**
    * Strukturētie meklējuma kritēriji (tā pati shēma kā pasūtījumam). Vecajos JSON nav -
    * tad kritērijus lasa no teksta laukiem (sk. `lib/iriss-scan-criteria.ts`). «Cena» = sludinājuma cena.
