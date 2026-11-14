@@ -39,3 +39,29 @@ describe("pavadzīmes push paziņojums", () => {
     expect(waybillPushMessage({ status: "queued" }, { ...after, status: "in_progress" })).toBeNull();
   });
 });
+
+describe("14.11: atcelta, bet CSDD varbūt saglabāja", () => {
+  it("atcelta pavadzīme tomēr izdota - sava ziņa, iet arī Nilam", async () => {
+    const { waybillPushIsMaybeSaved, waybillPushRecipients } = await import("@/lib/iriss-waybill-push");
+    const msg = waybillPushMessage({ status: "cancelled" }, after);
+    expect(msg?.title).toBe("Atcelta pavadzīme tomēr izdota");
+    expect(waybillPushIsMaybeSaved({ status: "cancelled" }, after)).toBe(true);
+    expect(waybillPushIsMaybeSaved({ status: "in_progress" }, after)).toBe(false);
+    expect(waybillPushRecipients("usr_7", true)).toEqual(["staff:usr_7", "admin"]);
+    expect(waybillPushRecipients("usr_7", false)).toEqual(["staff:usr_7"]);
+  });
+  it("kļūda 'Pārbaudi CSDD' iet arī Nilam, parasta kļūda - nē", async () => {
+    const { waybillPushIsMaybeSaved } = await import("@/lib/iriss-waybill-push");
+    expect(waybillPushIsMaybeSaved({ status: "in_progress" }, { status: "error", errorReason: "Pārbaudi CSDD, vai izveidota." })).toBe(true);
+    expect(waybillPushIsMaybeSaved({ status: "in_progress" }, { status: "error", errorReason: "CSDD nav pieejams" })).toBe(false);
+  });
+  it("atcelšana CSDD saglabāšanas solī - ziņa; gaidošam vai citā solī - nē", async () => {
+    const { waybillCancelMaybeSavedMessage } = await import("@/lib/iriss-waybill-push");
+    const v = after.vehicle;
+    expect(waybillCancelMaybeSavedMessage({ id: "wbr_1", status: "in_progress", stage: "saving", vehicle: v })?.title).toBe(
+      "Atcelta, bet varbūt jau saglabāta",
+    );
+    expect(waybillCancelMaybeSavedMessage({ id: "wbr_1", status: "in_progress", stage: "filling", vehicle: v })).toBeNull();
+    expect(waybillCancelMaybeSavedMessage({ id: "wbr_1", status: "queued", stage: "", vehicle: v })).toBeNull();
+  });
+});

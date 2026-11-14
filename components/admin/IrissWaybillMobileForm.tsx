@@ -35,7 +35,13 @@ import {
   type WaybillMobilePayload,
   type WaybillMobileRequestRow,
 } from "@/lib/iriss-waybill-mobile-form";
-import { IRISS_DEALER_PLATES, displayDealerPlate, formatRigaDateTimeComma, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
+import {
+  IRISS_DEALER_PLATES,
+  displayDealerPlate,
+  formatRigaDateTimeComma,
+  waybillPlateChip,
+  type WaybillPlateState,
+} from "@/lib/iriss-waybill-plates";
 import { isStaleWaybillRequest, type WaybillAivarsReply, type WaybillRequest } from "@/lib/iriss-waybill-requests";
 import { dzintarzemeAcceptedCars, filterWaybillTradeCars, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 
@@ -244,7 +250,14 @@ export function IrissWaybillMobileForm({
                   }}
                 >
                   {row.plate}
-                  <small className={row.busy ? styles.busy : styles.free}>{row.busy ? "aizņemts" : "brīvs"}</small>
+                  {(() => {
+                    const chip = waybillPlateChip(row);
+                    return (
+                      <small className={chip.tone === "free" ? styles.free : chip.tone === "loading" ? styles.loading : styles.busy}>
+                        {chip.label}
+                      </small>
+                    );
+                  })()}
                 </button>
               );
             })}

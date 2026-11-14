@@ -139,3 +139,22 @@ describe("j47: nodots Aivaram - cron pamodina vēlreiz", () => {
     ]);
   });
 });
+
+describe("14.11: varbūt jau saglabāta - pieprasītājam un Nilam", () => {
+  const at = (s: string) => Date.parse(s);
+  it("iestrēga CSDD saglabāšanas solī ilgāk par 4 min - viena ziņa katram, atkārtoti nesūta", () => {
+    const r = req({ status: "in_progress", stage: "saving", stageAt: "2026-10-22T10:00:00.000Z", createdBy: "u1" });
+    expect(dueWaybillReminders([r], {}, at("2026-10-22T10:03:00.000Z"))).toEqual([]);
+    const due = dueWaybillReminders([r], {}, at("2026-10-22T10:06:00.000Z"));
+    expect(due.map((d) => d.userKey)).toEqual(["staff:u1", "admin"]);
+    expect(due.every((d) => d.kind === "maybesaved" && d.message.title === "Pārbaudi pavadzīmi")).toBe(true);
+    const sent = Object.fromEntries(due.map((d) => [d.key, "x"]));
+    expect(dueWaybillReminders([r], sent, at("2026-10-22T10:30:00.000Z"))).toEqual([]);
+  });
+  it("Nila paša pieprasījums - tikai viena ziņa; citā solī (aizpilda) - nekas", () => {
+    const own = req({ status: "in_progress", stage: "pdf", stageAt: "2026-10-22T10:00:00.000Z", createdBy: "env-admin" });
+    expect(dueWaybillReminders([own], {}, at("2026-10-22T10:10:00.000Z")).map((d) => d.userKey)).toEqual(["admin"]);
+    const filling = req({ status: "in_progress", stage: "filling", stageAt: "2026-10-22T10:00:00.000Z" });
+    expect(dueWaybillReminders([filling], {}, at("2026-10-22T10:30:00.000Z"))).toEqual([]);
+  });
+});

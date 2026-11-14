@@ -4,7 +4,13 @@ import { randomBytes } from "node:crypto";
 import { createJsonDocStore } from "@/lib/b2b-json-doc-store";
 import { appendStaffAudit } from "@/lib/staff-store";
 import { sendAdminPush } from "@/lib/admin-push";
-import { waybillPushMessage, waybillPushUserKey } from "@/lib/iriss-waybill-push";
+import type { AdminPushMessage } from "@/lib/admin-push-shared";
+import {
+  waybillCancelMaybeSavedMessage,
+  waybillPushIsMaybeSaved,
+  waybillPushMessage,
+  waybillPushRecipients,
+} from "@/lib/iriss-waybill-push";
 import { sanitizeNoteUntrusted, type CreateWaybillInput } from "@/lib/iriss-waybill-create";
 import {
   emptyWaybillRequestsDoc,
@@ -390,7 +396,7 @@ export async function cancelWaybillRequest(input: {
   actorName: string;
 }): Promise<CancelWaybillResult> {
   const now = new Date().toISOString();
-  const result = await mutateDoc<CancelWaybillResult>((doc) => {
+  const result = await mutateDoc<CancelWaybillResult & { maybeSaved?: AdminPushMessage | null }>((doc) => {
     const current = doc.requests.find((r) => r.id === input.id);
     if (!current) return { value: { ok: false, reason: "not_found" } };
     if (!waybillRequestCancellable(current)) return { value: { ok: false, reason: "not_pending" } };
@@ -416,8 +422,19 @@ export async function cancelWaybillRequest(input: {
       pdfUrl: "",
       by: input.actorId,
     });
-    return { value: { ok: true, request: nextReq }, next };
+    return { value: { ok: true, request: nextReq, maybeSaved: waybillCancelMaybeSavedMessage(current) }, next };
   });
+  const maybeSaved = result.ok ? result.maybeSaved : null;
+  if (result.ok) delete result.maybeSaved;
+  if (result.ok && maybeSaved) {
+    for (const userKey of waybillPushRecipients(result.request.createdBy, true)) {
+      try {
+        await sendAdminPush(maybeSaved, userKey);
+      } catch (err) {
+        console.error("[iriss-waybill] push_failed", err instanceof Error ? err.message : err);
+      }
+    }
+  }
   if (result.ok) {
     await recordWaybillAudit({
       userId: input.actorId,
@@ -668,10 +685,12 @@ export async function appendWaybillRequestEvent(input: {
 async function notifyWaybillRequester(before: WaybillRequest, after: WaybillRequest): Promise<void> {
   const msg = waybillPushMessage(before, after);
   if (!msg) return;
-  try {
-    await sendAdminPush(msg, waybillPushUserKey(after.createdBy));
-  } catch (err) {
-    console.error("[iriss-waybill] push_failed", err instanceof Error ? err.message : err);
+  for (const userKey of waybillPushRecipients(after.createdBy, waybillPushIsMaybeSaved(before, after))) {
+    try {
+      await sendAdminPush(msg, userKey);
+    } catch (err) {
+      console.error("[iriss-waybill] push_failed", err instanceof Error ? err.message : err);
+    }
   }
 }
 

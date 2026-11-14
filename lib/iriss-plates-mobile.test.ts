@@ -7,7 +7,7 @@ const desktop = readFileSync(new URL("../components/admin/IrissWaybillDesktopCre
 describe("CSDD pavadzīmes numura izvēle", () => {
   it("telefonā rāda kompaktās pilles (pirms #382), nevis zīmētās numurzīmes", () => {
     expect(desktop).toContain('<div className="mb-2 flex gap-1.5 md:hidden">');
-    expect(desktop).toMatch(/row\.busy \? "aizņemts" : "brīvs"/);
+    expect(desktop).toMatch(/waybillPlateChip\(row\)/);
     expect(desktop).toMatch(/aria-pressed=\{on\}/);
   });
 

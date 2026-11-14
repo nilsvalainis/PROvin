@@ -117,12 +117,12 @@ describe("calendar v2 (phone cards)", () => {
       row("live", "B762-7", "2026-10-24T04:30:00.000Z"),
     ];
     expect(waybillExpiredByDay(rows, now)).toEqual([
-      { day: "21.10.2026", items: [{ id: "x", plate: "B192-7", brandModel: "Auto x", time: "18:00" }] },
+      { day: "21.10.2026", items: [{ id: "x", plate: "B192-7", brandModel: "Auto x", time: "18:00", interrupted: false }] },
       {
         day: "19.10.2026",
         items: [
-          { id: "y", plate: "B193-7", brandModel: "Auto y", time: "09:15" },
-          { id: "z", plate: "B762-7", brandModel: "Auto z", time: "07:30" },
+          { id: "y", plate: "B193-7", brandModel: "Auto y", time: "09:15", interrupted: false },
+          { id: "z", plate: "B762-7", brandModel: "Auto z", time: "07:30", interrupted: false },
         ],
       },
     ]);
@@ -144,5 +144,34 @@ describe("kalendārs: pārtrauktā pavadzīme", () => {
     expect(seg?.tone).toBe("expired");
     // Sākotnēji 12 h (7,1% no 7 dienām); pārtraukta pēc 1,5 h - tikai minimālais platums.
     expect(seg?.widthPct ?? 100).toBeLessThan((12 / 168) * 100);
+  });
+});
+
+describe("telefona saraksts: pārtrauktās pavadzīmes", () => {
+  const now = Date.parse("2026-10-26T20:00:00.000Z");
+  const base = { brandModel: "Auto", vin: "" };
+  it("aizstāta ar jaunāku tam pašam numuram - redzama kā pārtraukta pēcteča izdošanas laikā", () => {
+    const rows = [
+      { ...base, id: "1", number: "P02830", plate: "B193-7", issuedAt: "2026-10-26T11:48:00.000Z", validUntil: "2026-10-27T11:48:00.000Z" },
+      { ...base, id: "2", number: "P02831", plate: "B193-7", issuedAt: "2026-10-26T13:18:00.000Z", validUntil: "2026-10-28T13:18:00.000Z" },
+    ];
+    const out = waybillExpiredByDay(rows, now);
+    expect(out).toEqual([{ day: "26.10.2026", items: [{ id: "1", plate: "B193-7", brandModel: "Auto", time: "15:18", interrupted: true }] }]);
+  });
+  it("pārtraukta (lifecycle) ar zināmu pēcteci - pēcteča laiks; bez pēcteča - bez laika", () => {
+    const rows = [
+      { ...base, id: "a", number: "P1", plate: "B762-7", issuedAt: "2026-10-26T08:00:00.000Z", validUntil: "2026-10-27T08:00:00.000Z", lifecycle: "interrupted", supersededBy: "P9" },
+      { ...base, id: "s", number: "P9", plate: "B192-7", issuedAt: "2026-10-26T09:00:00.000Z", validUntil: "2026-10-28T09:00:00.000Z" },
+      { ...base, id: "b", number: "P2", plate: "B193-7", issuedAt: "2026-10-25T08:00:00.000Z", validUntil: "2026-10-27T08:00:00.000Z", lifecycle: "interrupted" },
+    ];
+    const items = waybillExpiredByDay(rows, now).flatMap((g) => g.items);
+    expect(items).toEqual([
+      { id: "a", plate: "B762-7", brandModel: "Auto", time: "11:00", interrupted: true },
+      { id: "b", plate: "B193-7", brandModel: "Auto", time: "", interrupted: true },
+    ]);
+  });
+  it("derīga, nepārtraukta pavadzīme sarakstā neparādās", () => {
+    const rows = [{ ...base, id: "x", number: "P3", plate: "B193-7", issuedAt: "2026-10-26T08:00:00.000Z", validUntil: "2026-10-27T08:00:00.000Z" }];
+    expect(waybillExpiredByDay(rows, now)).toEqual([]);
   });
 });

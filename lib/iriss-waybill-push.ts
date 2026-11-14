@@ -7,6 +7,7 @@ import { AUTO_WAYBILL_GRACE_MS } from "@/lib/iriss-waybill-auto";
 import { waybillEndsLabel } from "@/lib/iriss-waybill-calendar";
 import { compactDealerPlate, displayDealerPlate, formatRigaDateTimeComma } from "@/lib/iriss-waybill-plates";
 import {
+  WAYBILL_AUTO_STUCK_MS,
   inProgressIsStale,
   isStaleWaybillRequest,
   waybillPendingExpired,
@@ -26,6 +27,45 @@ export function waybillPushUserKey(createdBy: string): string {
   return createdBy === "env-admin" ? "admin" : `staff:${createdBy}`;
 }
 
+/** Automātikas soļi pēc CSDD "Saglabāt" nospiešanas: pavadzīme CSDD var jau būt izveidota. */
+export function waybillStageMaybeSaved(stage: string | undefined): boolean {
+  return stage === "saving" || stage === "pdf";
+}
+
+/**
+ * 14.11 (Nils): "varbūt jau saglabāta" gadījumos ziņa iet pieprasītājam UN Nilam (admin) - viena katram.
+ * Citos gadījumos tikai pieprasītājam.
+ */
+export function waybillPushRecipients(createdBy: string, maybeSaved: boolean): string[] {
+  const own = waybillPushUserKey(createdBy);
+  return maybeSaved && own !== "admin" ? [own, "admin"] : [own];
+}
+
+/** Ziņa ir par "iespējams, CSDD jau ir" gadījumu (sūta arī Nilam). */
+export function waybillPushIsMaybeSaved(
+  before: Pick<WaybillRequest, "status">,
+  after: Pick<WaybillRequest, "status" | "errorReason">,
+): boolean {
+  if (after.status === "issued" && before.status === "cancelled") return true;
+  return after.status === "error" && before.status !== "error" && waybillErrorNeedsCheck(after.errorReason.trim().slice(0, 120));
+}
+
+/** Atcelts, kad automātika jau bija pie "Saglabā CSDD" vai PDF - CSDD pavadzīme var jau būt. */
+export function waybillCancelMaybeSavedMessage(
+  current: Pick<WaybillRequest, "id" | "status" | "stage" | "vehicle">,
+): AdminPushMessage | null {
+  if (current.status !== "in_progress" || !waybillStageMaybeSaved(current.stage)) return null;
+  const car = current.vehicle.brandModel.trim() || "Auto";
+  const plate = displayDealerPlate(current.vehicle.plate) || current.vehicle.plate;
+  return {
+    url: WAYBILL_PUSH_URL,
+    tag: `waybill-${current.id}`,
+    audience: "iriss",
+    title: "Atcelta, bet varbūt jau saglabāta",
+    body: `${[car, plate].filter(Boolean).join(" · ")}: atcelts CSDD saglabāšanas brīdī. Pārbaudi CSDD - ja pavadzīme ir, to pārtrauc.`,
+  };
+}
+
 /** Ziņa tikai, kad statuss tikko kļuva par Izdota vai Kļūda. */
 export function waybillPushMessage(
   before: Pick<WaybillRequest, "status">,
@@ -37,6 +77,13 @@ export function waybillPushMessage(
   const plate = displayDealerPlate(after.vehicle.plate) || after.vehicle.plate;
   const head = [car, plate].filter(Boolean).join(" · ");
   const base = { url: WAYBILL_PUSH_URL, tag: `waybill-${after.id}`, audience: "iriss" as const };
+  if (changed("issued") && before.status === "cancelled" && after.kind !== "stop") {
+    return {
+      ...base,
+      title: "Atcelta pavadzīme tomēr izdota",
+      body: `${head}: CSDD paspēja saglabāt pirms atcelšanas. Ja nevajag - pārtrauc to.`,
+    };
+  }
   if (changed("issued") && after.kind === "stop") {
     return { ...base, title: "Pavadzīme pārtraukta", body: `${head}. Numurs atbrīvots.` };
   }
@@ -69,7 +116,7 @@ export const WAYBILL_PUSH_LONG_WAIT_MS = 15 * 60 * 1000;
 /** PN-EXPIRED sūta tikai svaigi beigušām (pēc ilgāka pārtraukuma vecas ziņas vairs nesūta). */
 export const WAYBILL_PUSH_EXPIRED_WINDOW_MS = 6 * 60 * 60 * 1000;
 
-export type WaybillReminderKind = "soon" | "expired" | "longwait";
+export type WaybillReminderKind = "soon" | "expired" | "longwait" | "maybesaved";
 
 export type WaybillReminder = {
   /** Dedupe atslēga (viena ziņa katram gadījumam). */
@@ -115,6 +162,29 @@ export function dueWaybillReminders(
         push("soon", `soon:${r.id}`, "Pavadzīme drīz beigsies", `${plate} · ${car}: beidzas ${waybillEndsLabel(until, nowMs)}. Pagarini, ja vajag.`);
       } else if (until <= nowMs && nowMs - until <= WAYBILL_PUSH_EXPIRED_WINDOW_MS) {
         push("expired", `expired:${r.id}`, "Pavadzīme beigusies", `${plate} · ${car}: vairs nav derīga. Numurs atkal ir brīvs.`);
+      }
+      continue;
+    }
+    // 14.11: automātika iestrēga pēc CSDD "Saglabāt" (nav ziņojusi ilgāk par WAYBILL_AUTO_STUCK_MS) - pieprasītājam un Nilam.
+    if (r.status === "in_progress" && waybillStageMaybeSaved(r.stage)) {
+      const at = Date.parse(r.stageAt);
+      if (Number.isFinite(at) && nowMs - at > WAYBILL_AUTO_STUCK_MS) {
+        for (const userKey of waybillPushRecipients(r.createdBy, true)) {
+          const key = `maybesaved:${r.id}:${r.stageAt}:${userKey}`;
+          if (!sent[key]) {
+            out.push({
+              key,
+              kind: "maybesaved",
+              requestId: r.id,
+              userKey,
+              message: {
+                ...base,
+                title: "Pārbaudi pavadzīmi",
+                body: `${car} · ${plate}: automātika apstājās CSDD saglabāšanas solī. Iespējams, pavadzīme jau ir - pārbaudi, pirms atkārto.`,
+              },
+            });
+          }
+        }
       }
       continue;
     }

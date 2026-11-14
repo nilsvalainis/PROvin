@@ -169,6 +169,8 @@ type CardRow = Pick<IrissPavadzimeRecord, "id" | "number" | "brandModel" | "plat
   archived?: boolean;
   /** "interrupted" = pārtraukta (aizstāta) - vairs nav aktīva, lai gan termiņš vēl nav beidzies. */
   lifecycle?: string;
+  /** Pēcteča CSDD numurs (ja zināms) - pārtraukšanas brīdis = pēcteča izdošana. */
+  supersededBy?: string;
 };
 
 const RIGA_DT = new Intl.DateTimeFormat("en-GB", {
@@ -237,19 +239,52 @@ export function waybillPlateCards(rows: readonly CardRow[], plates: readonly str
   });
 }
 
-/** Beigušās pēdējās `days` dienās, pa dienām (jaunākā augšā). */
+/**
+ * Beigušās pēdējās `days` dienās, pa dienām (jaunākā augšā).
+ * 14.11 (Nils): arī pārtrauktās (CSDD «Pārtraukt» vai aizstātas ar jaunāku tam pašam numuram) - ar atzīmi
+ * `interrupted`, lai telefonā tās rāda pelēkas. Agrāk pārtraukta pavadzīme ar vēl nebeigušos termiņu pazuda no saraksta.
+ */
 export function waybillExpiredByDay(
   rows: readonly CardRow[],
   nowMs: number,
   days = 7,
-): Array<{ day: string; items: Array<{ id: string; plate: string; brandModel: string; time: string }> }> {
+): Array<{ day: string; items: Array<{ id: string; plate: string; brandModel: string; time: string; interrupted: boolean }> }> {
   const from = nowMs - days * DAY;
+  const nextIssueOnPlate = (r: CardRow): number | null => {
+    const own = Date.parse(r.issuedAt);
+    if (!Number.isFinite(own)) return null;
+    let next: number | null = null;
+    for (const o of rows) {
+      if (o.id === r.id || plateKey(o.plate) !== plateKey(r.plate)) continue;
+      const t = Date.parse(o.issuedAt);
+      if (Number.isFinite(t) && t > own && t <= nowMs && (next == null || t < next)) next = t;
+    }
+    return next;
+  };
   const ended = rows
-    .map((r) => ({ r, until: Date.parse(r.validUntil) }))
-    .filter((x) => Number.isFinite(x.until) && x.until <= nowMs && x.until > from)
+    .map((r) => {
+      const validUntil = Date.parse(r.validUntil);
+      if (!Number.isFinite(validUntil)) return null;
+      const replacedAt = nextIssueOnPlate(r);
+      const replaced = replacedAt != null && replacedAt < validUntil;
+      const flagged = r.lifecycle === "interrupted" && validUntil > nowMs;
+      if (replaced) return { r, until: replacedAt as number, interrupted: true, timeKnown: true };
+      // Pārtraukta, bet brīdis nav zināms - liekam pie izdošanas dienas (nevis "tagad", kas katru minūti mainītos).
+      if (flagged) {
+        const successor = r.supersededBy
+          ? rows.find((o) => o.number.trim().toUpperCase() === r.supersededBy!.trim().toUpperCase())
+          : undefined;
+        const succIssued = successor ? Date.parse(successor.issuedAt) : NaN;
+        if (Number.isFinite(succIssued) && succIssued <= nowMs) return { r, until: succIssued, interrupted: true, timeKnown: true };
+        const issued = Date.parse(r.issuedAt);
+        return Number.isFinite(issued) ? { r, until: issued, interrupted: true, timeKnown: false } : null;
+      }
+      return { r, until: validUntil, interrupted: false, timeKnown: true };
+    })
+    .filter((x): x is { r: CardRow; until: number; interrupted: boolean; timeKnown: boolean } => x != null && x.until <= nowMs && x.until > from)
     .sort((a, b) => b.until - a.until);
-  const out: Array<{ day: string; items: Array<{ id: string; plate: string; brandModel: string; time: string }> }> = [];
-  for (const { r, until } of ended) {
+  const out: Array<{ day: string; items: Array<{ id: string; plate: string; brandModel: string; time: string; interrupted: boolean }> }> = [];
+  for (const { r, until, interrupted, timeKnown } of ended) {
     const p = rigaParts(until);
     const day = `${p.d}.${p.m}.${p.y}`;
     let group = out.find((g) => g.day === day);
@@ -257,7 +292,7 @@ export function waybillExpiredByDay(
       group = { day, items: [] };
       out.push(group);
     }
-    group.items.push({ id: r.id, plate: r.plate, brandModel: r.brandModel, time: p.hm });
+    group.items.push({ id: r.id, plate: r.plate, brandModel: r.brandModel, time: timeKnown ? p.hm : "", interrupted });
   }
   return out;
 }

@@ -86,7 +86,7 @@ export function IrissWaybillCalendarCards({
       })}
       {ended.length ? (
         <>
-          <p className="px-1 pb-1.5 pt-4 text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--ink2,#6b7080)]">Beigušās (pēdējās 7 dienas)</p>
+          <p className="px-1 pb-1.5 pt-4 text-[12px] font-bold uppercase tracking-[0.06em] text-[var(--ink2,#6b7080)]">Beigušās un pārtrauktās (pēdējās 7 dienas)</p>
           <div className="overflow-hidden rounded-[14px] bg-[var(--s1,#fff)]">
             {ended.map((group) => (
               <div key={group.day}>
@@ -100,10 +100,20 @@ export function IrissWaybillCalendarCards({
                         onClick={() => row && onOpen(row)}
                         className="flex min-h-14 w-full items-center gap-2.5 !rounded-none px-3.5 py-2.5 text-left"
                       >
-                        <SmallPlate plate={item.plate} />
+                        <span className={item.interrupted ? "opacity-50 grayscale" : undefined}>
+                          <SmallPlate plate={item.plate} />
+                        </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-[14px] font-semibold text-[var(--ink,#0b0c10)]">{item.brandModel || "Auto"}</span>
-                          <span className="block text-[13px] text-[var(--ink2,#5e636e)]">beidzās {item.time}</span>
+                          <span
+                            className={`block truncate text-[14px] font-semibold ${
+                              item.interrupted ? "text-[var(--iriss-ink-2)]" : "text-[var(--ink,#0b0c10)]"
+                            }`}
+                          >
+                            {item.brandModel || "Auto"}
+                          </span>
+                          <span className="block text-[13px] text-[var(--ink2,#5e636e)]">
+                            {item.interrupted ? (item.time ? `pārtraukta ${item.time}` : "pārtraukta") : `beidzās ${item.time}`}
+                          </span>
                         </span>
                       </button>
                     </div>
