@@ -138,7 +138,10 @@
 .card {
   padding: 22px;
   border-radius: 24px;
-  background: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
+  /* Tumšs pamats zem stikla gradienta: karte (07.11 zem kartītes) nedrīkst spīdēt cauri. */
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02)),
+    rgba(10, 12, 16, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 .options {
