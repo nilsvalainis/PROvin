@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildBlogIndexJsonLd,
   buildBreadcrumbJsonLd,
   buildFaqPageJsonLd,
   buildOrganizationJsonLd,
@@ -40,6 +41,20 @@ describe("seo json-ld", () => {
     expect(list.itemListElement).toHaveLength(PUBLIC_SERVICE_OFFERS.length);
     const prices = list.itemListElement.map((row) => row.item.offers.price);
     expect(prices).toEqual(["99.99", "24.99"]);
+  });
+
+  it("blog index json-ld can point a thin locale at the indexable article", () => {
+    const ld = buildBlogIndexJsonLd("en", [
+      {
+        slug: "ka-pirkt-lietotu-auto-bez-tabu",
+        title: "How to buy",
+        publishedAt: "2026-09-13",
+        urlLocale: "lv",
+      },
+    ]);
+    const url = ld.blogPost[0]?.url ?? "";
+    expect(url).toContain("/lv/blogs/ka-pirkt-lietotu-auto-bez-tabu");
+    expect(url).not.toContain("/en/blogs/");
   });
 
   it("builds FAQPage and breadcrumbs without locale-less URLs", () => {

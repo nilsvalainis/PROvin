@@ -23,6 +23,7 @@ import {
   type Tp5UiCopy,
 } from "@/lib/test-pricing-5-ui-copy";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
+import { publicAnchorRel } from "@/lib/seo-crawl-links";
 import { sanitizeVinInput } from "@/lib/order-field-validation";
 import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 import { Tp5DealerRefundTip } from "@/components/test-pricing-5/Tp5DealerRefundTip";
@@ -273,7 +274,7 @@ function TurnaroundAndCta({
           <a
             href={sampleReportHref}
             target="_blank"
-            rel="noopener noreferrer"
+            rel={publicAnchorRel(sampleReportHref, "noopener noreferrer")}
             className={styles.sampleReportLink}
             onClick={() => recordSampleReportClick()}
           >

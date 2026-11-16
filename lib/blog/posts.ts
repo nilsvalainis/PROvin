@@ -57,4 +57,9 @@ export function blogPostHref(slug: string): string {
   return `/blogs/${normalizeBlogSlug(slug)}`;
 }
 
+/** Lokāle, uz kuru drīkst vest no indeksējamas lapas. Īsais EN/DE/RU paliek pie LV kanona. */
+export function blogLinkLocale(post: BlogPost, pageLocale: string): string {
+  return isBlogLocaleIndexable(post, pageLocale) ? pageLocale : routing.defaultLocale;
+}
+
 export { normalizeBlogSlug };

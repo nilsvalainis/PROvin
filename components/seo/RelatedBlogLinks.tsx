@@ -1,6 +1,6 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { listBlogPosts, resolveBlogLocale } from "@/lib/blog/posts";
+import { blogLinkLocale, listBlogPosts, resolveBlogLocale } from "@/lib/blog/posts";
 import { homeContentMaxClass } from "@/lib/home-layout";
 
 export async function RelatedBlogLinks() {
@@ -23,7 +23,7 @@ export async function RelatedBlogLinks() {
             const { content } = resolveBlogLocale(post, locale);
             return (
               <li key={post.slug}>
-                <Link href={`/blogs/${post.slug}`}>
+                <Link href={`/blogs/${post.slug}`} locale={blogLinkLocale(post, locale)}>
                   <span>{content.title}</span>
                   <em aria-hidden>→</em>
                 </Link>

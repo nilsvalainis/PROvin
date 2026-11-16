@@ -1978,17 +1978,23 @@ html[data-site-theme="light"] .provin-google-reviews-cta:hover {
   border-radius: 9999px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
-.provin-menu-langs a {
+.provin-menu-langs a,
+.provin-menu-langs button {
   padding: 10px 16px;
+  border: 0;
   border-radius: 9999px;
+  background: transparent;
+  font-family: inherit;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #a1a1aa;
   text-decoration: none;
+  cursor: pointer;
 }
-.provin-menu-langs a.is-on {
+.provin-menu-langs a.is-on,
+.provin-menu-langs button.is-on {
   background: #fff;
   color: #0a0a0a;
 }
@@ -3488,27 +3494,37 @@ body.provin-menu-open .cookie-consent-panel {
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
 }
-.provin-hdr-lang-menu a {
+.provin-hdr-lang-menu a,
+.provin-hdr-lang-menu button {
   display: flex;
   justify-content: space-between;
+  width: 100%;
   padding: 10px 12px;
+  border: 0;
   border-radius: 10px;
+  background: transparent;
   font: 500 13.5px/1 Inter, system-ui, sans-serif;
   color: #d4d4d8;
+  text-align: left;
   text-decoration: none;
+  cursor: pointer;
 }
-.provin-hdr-lang-menu a b {
+.provin-hdr-lang-menu a b,
+.provin-hdr-lang-menu button b {
   font: 700 11px/1 Inter, system-ui, sans-serif;
   letter-spacing: 0.1em;
   color: #71717a;
 }
-.provin-hdr-lang-menu a:hover {
+.provin-hdr-lang-menu a:hover,
+.provin-hdr-lang-menu button:hover {
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
 }
-.provin-hdr-lang-menu a.is-on {
+.provin-hdr-lang-menu a.is-on,
+.provin-hdr-lang-menu button.is-on {
   color: #fff;
 }
-.provin-hdr-lang-menu a.is-on b {
+.provin-hdr-lang-menu a.is-on b,
+.provin-hdr-lang-menu button.is-on b {
   color: #5c9dff;
 }

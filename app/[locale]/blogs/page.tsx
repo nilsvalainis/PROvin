@@ -7,7 +7,7 @@ import { BlogPageShell } from "@/components/blog/BlogPageShell";
 import { Footer } from "@/components/Footer";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildBlogIndexJsonLd } from "@/lib/seo-json-ld";
-import { listBlogPosts, resolveBlogLocale } from "@/lib/blog/posts";
+import { blogLinkLocale, listBlogPosts, resolveBlogLocale } from "@/lib/blog/posts";
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -33,7 +33,12 @@ export default async function BlogsPage({ params }: Props) {
   const tCrumb = await getTranslations({ locale, namespace: "Breadcrumbs" });
   const ld = buildBlogIndexJsonLd(
     locale,
-    posts.map((p) => ({ slug: p.slug, title: resolveBlogLocale(p, locale).content.title, publishedAt: p.publishedAt })),
+    posts.map((p) => ({
+      slug: p.slug,
+      title: resolveBlogLocale(p, locale).content.title,
+      publishedAt: p.publishedAt,
+      urlLocale: blogLinkLocale(p, locale),
+    })),
   );
   return (
     <BlogPageShell>

@@ -20,6 +20,7 @@ import {
   getTp5UiCopy,
 } from "@/lib/test-pricing-5-ui-copy";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
+import { publicAnchorRel } from "@/lib/seo-crawl-links";
 
 function SampleReportPdfIcon() {
   return (
@@ -296,7 +297,7 @@ export function B2bPartnerPricingCard({
         <a
           href={sampleHref}
           target="_blank"
-          rel="noopener noreferrer"
+          rel={publicAnchorRel(sampleHref, "noopener noreferrer")}
           className={styles.sampleReportLink}
           onClick={() => recordSampleReportClick()}
         >

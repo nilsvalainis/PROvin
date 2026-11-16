@@ -17,6 +17,7 @@ import { homeHeroCheckoutHref } from "@/lib/home-hero-plan";
 import { renderProvinText } from "@/lib/provin-wordmark";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
 import { sampleMobilePage1Src, samplePdfHref } from "@/lib/sample-public-assets";
+import { publicAnchorRel } from "@/lib/seo-crawl-links";
 import { SAMPLE_REPORTS, sampleReportAnchorId } from "@/lib/samples-catalog";
 import type { Tp5MobileServiceId } from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
@@ -217,7 +218,7 @@ export function ServicesCatalog() {
                             id={s.anchorId}
                             href={samplePdfHref(s.href)}
                             target="_blank"
-                            rel="noopener noreferrer"
+                            rel={publicAnchorRel(samplePdfHref(s.href), "noopener noreferrer")}
                             className={`svc-pdf p${i}`}
                             aria-label={`${uiCopy.sampleReportPreviewLabel}: ${s.title} - ${t("enlargeLabel")}`}
                             onClick={(e) => onSampleClick(e, s)}
@@ -265,7 +266,7 @@ export function ServicesCatalog() {
                     </Link>
                   ) : (
                     <div className={`${tp5Styles.ctaWrap} w-full sm:w-auto sm:min-w-[20rem]`}>
-                      <Link href={checkoutHref} className={tp5Styles.liquidCtaLink}>
+                      <Link href={checkoutHref} rel={publicAnchorRel(checkoutHref)} className={tp5Styles.liquidCtaLink}>
                         <span className={tp5Styles.liquidCtaShimmer} aria-hidden />
                         <span className={tp5Styles.liquidCtaLabel}>{pkg.buttonText}</span>
                       </Link>

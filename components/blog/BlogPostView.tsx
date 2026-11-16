@@ -10,7 +10,7 @@ import { blogToc } from "@/lib/blog/toc";
 import { Link } from "@/i18n/navigation";
 import type { BlogPost } from "@/lib/blog/types";
 import { b2bDateLocale } from "@/i18n/locales";
-import { resolveBlogLocale } from "@/lib/blog/posts";
+import { blogLinkLocale, resolveBlogLocale } from "@/lib/blog/posts";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { buildBlogPostingJsonLd } from "@/lib/seo-json-ld";
 import { getPublicSiteOrigin } from "@/lib/site-url";
@@ -26,7 +26,7 @@ export async function BlogPostView({ post, locale }: Props) {
   const base = getPublicSiteOrigin().replace(/\/$/, "");
   const cover = post.coverImage;
   const articleLd = buildBlogPostingJsonLd({
-    locale,
+    locale: blogLinkLocale(post, locale),
     slug: post.slug,
     title: content.title,
     description: content.socialExcerpt ?? content.excerpt,

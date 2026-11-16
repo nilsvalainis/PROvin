@@ -8,6 +8,7 @@ import { Tp5VinHighlightContext } from "@/components/test-pricing-5/Tp5MobilePri
 import { getHomeV6HeroCopy, heroV6OptionIds } from "@/lib/home-hero-v6-copy";
 import { sanitizeVinInput } from "@/lib/order-field-validation";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
+import { publicAnchorRel } from "@/lib/seo-crawl-links";
 import type { Tp5InlineFieldErrors } from "@/lib/test-pricing-5-inline-checkout";
 import {
   getTp5MobileCtaLabel,
@@ -298,7 +299,7 @@ export function HeroOrderCardV6({
           </div>
           {sample ? (
             <p className={styles.links}>
-              <a href={sample} target="_blank" rel="noopener noreferrer" onClick={() => recordSampleReportClick()}>
+              <a href={sample} target="_blank" rel={publicAnchorRel(sample, "noopener noreferrer")} onClick={() => recordSampleReportClick()}>
                 📄 {uiCopy.sampleReportLink}
               </a>
             </p>
