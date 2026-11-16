@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { LogIn } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { Link, usePathname } from "@/i18n/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import { blogSlugFromPublicPath, isCrawlableBlogLocale } from "@/lib/blog/crawlable-locales";
 import {
   buildSiteRailSections,
   normalizeSitePath,
@@ -22,6 +23,49 @@ const HEADER_LANGS = [
   { code: "ru", name: "Русский" },
   { code: "de", name: "Deutsch" },
 ] as const;
+
+type HeaderLangCode = (typeof HEADER_LANGS)[number]["code"];
+
+/**
+ * Valodas slēdzis. Bloga ierakstam, kura mērķa lokāle ir noindex, nav `<a href>`:
+ * pārlūks pārslēdz lokāli, rāpuļi no indeksējamas lapas šo URL neatrod.
+ */
+function HeaderLocaleChoice({
+  code,
+  pathname,
+  className,
+  onNavigate,
+  children,
+}: {
+  code: HeaderLangCode;
+  pathname: string;
+  className?: string;
+  onNavigate?: () => void;
+  children: ReactNode;
+}) {
+  const router = useRouter();
+  const slug = blogSlugFromPublicPath(pathname);
+  const crawlable = slug == null || isCrawlableBlogLocale(slug, code);
+  if (crawlable) {
+    return (
+      <Link href={pathname as never} locale={code} className={className} onClick={onNavigate}>
+        {children}
+      </Link>
+    );
+  }
+  return (
+    <button
+      type="button"
+      className={className}
+      onClick={() => {
+        onNavigate?.();
+        router.replace(pathname as never, { locale: code });
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
 /** Valodas izvēle «LV ⌄» (makets): datorā; telefonā valodas ir izvēlnes panelī. */
 function HeaderLangMenu({ locale, pathname, label }: { locale: string; pathname: string; label: string }) {
@@ -50,15 +94,15 @@ function HeaderLangMenu({ locale, pathname, label }: { locale: string; pathname:
       </button>
       <div className="provin-hdr-lang-menu" role="group" aria-label={label} hidden={!open}>
         {HEADER_LANGS.map((l) => (
-          <Link
+          <HeaderLocaleChoice
             key={l.code}
-            href={pathname as never}
-            locale={l.code}
+            code={l.code}
+            pathname={pathname}
             className={l.code === locale ? "is-on" : undefined}
-            onClick={() => setOpen(false)}
+            onNavigate={() => setOpen(false)}
           >
             {l.name} <b>{l.code.toUpperCase()}</b>
-          </Link>
+          </HeaderLocaleChoice>
         ))}
       </div>
     </div>
@@ -240,34 +284,18 @@ export function HeaderClient() {
             ))}
           </nav>
           <div className="provin-menu-langs" role="group" aria-label={tHeader("langGroupAria")}>
-              <Link
-                href={pathname as never}
-                locale="lv"
-                className={`provin-menu-lang${locale === "lv" ? " is-on" : ""}`}
-              >
+              <HeaderLocaleChoice code="lv" pathname={pathname} className={`provin-menu-lang${locale === "lv" ? " is-on" : ""}`}>
                 {tHeader("langLv")}
-              </Link>
-              <Link
-                href={pathname as never}
-                locale="en"
-                className={`provin-menu-lang${locale === "en" ? " is-on" : ""}`}
-              >
+              </HeaderLocaleChoice>
+              <HeaderLocaleChoice code="en" pathname={pathname} className={`provin-menu-lang${locale === "en" ? " is-on" : ""}`}>
                 {tHeader("langEn")}
-              </Link>
-              <Link
-                href={pathname as never}
-                locale="ru"
-                className={`provin-menu-lang${locale === "ru" ? " is-on" : ""}`}
-              >
+              </HeaderLocaleChoice>
+              <HeaderLocaleChoice code="ru" pathname={pathname} className={`provin-menu-lang${locale === "ru" ? " is-on" : ""}`}>
                 {tHeader("langRu")}
-              </Link>
-              <Link
-                href={pathname as never}
-                locale="de"
-                className={`provin-menu-lang${locale === "de" ? " is-on" : ""}`}
-              >
+              </HeaderLocaleChoice>
+              <HeaderLocaleChoice code="de" pathname={pathname} className={`provin-menu-lang${locale === "de" ? " is-on" : ""}`}>
                 {tHeader("langDe")}
-              </Link>
+              </HeaderLocaleChoice>
           </div>
           <Link
             href="/#home-hero"

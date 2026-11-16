@@ -4,7 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { BlogTypeCover } from "@/components/blog/BlogTypeCover";
 import { BlogRowsFx } from "@/components/blog/BlogRowsFx";
 import { b2bDateLocale } from "@/i18n/locales";
-import { blogPostHref, listBlogPosts, resolveBlogLocale } from "@/lib/blog/posts";
+import { blogLinkLocale, blogPostHref, listBlogPosts, resolveBlogLocale } from "@/lib/blog/posts";
 
 type Props = { locale: string };
 
@@ -45,6 +45,7 @@ export async function BlogIndex({ locale }: Props) {
                   <article>
                     <Link
                       href={blogPostHref(post.slug)}
+                      locale={blogLinkLocale(post, locale)}
                       className={`blog-row grid items-center gap-[22px] text-inherit no-underline [perspective:1200px] lg:gap-16 ${
                         i % 2 ? "lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]" : "lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]"
                       }`}

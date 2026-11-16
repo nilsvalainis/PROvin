@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { isCrawlableBlogLocale } from "@/lib/blog/crawlable-locales";
 import { parsePrefixedPath, PUBLIC_LOCALES, type PublicLocale } from "@/i18n/locales";
 import { routing } from "@/i18n/routing";
 import { getPublicSiteOrigin } from "@/lib/site-url";
@@ -69,12 +70,20 @@ export const GSC_REDIRECTING_INDEX_URLS = [
 ] as const;
 
 /**
- * GSC 02.11.2026: «Excluded by noindex» (4). PDF un `?plan=` paliek noindex, ārpus sitemap.
- * `/de/partneriem` un `/ru/partneriem` dzīvajā ir `index, follow` (GSC ieraksts novecojis).
+ * GSC «Excluded by noindex». Šie URL paliek noindex un nedrīkst būt sitemap.xml (ne loc, ne hreflang).
+ * `/de/partneriem` un `/ru/partneriem` nav sarakstā: dzīvajā tie ir `index, follow` (GSC ieraksts novecojis).
  */
 export const GSC_NOINDEX_SITEMAP_BLOCKLIST = [
-  "https://www.provin.lv/samples/provin-audits-piemers.pdf",
+  "https://www.provin.lv/en?plan=mini",
+  "https://www.provin.lv/lv?plan=mini",
+  "https://www.provin.lv/lv?plan=dealer",
   "https://www.provin.lv/lv?plan=audits",
+  "https://www.provin.lv/en/blogs/ka-pirkt-lietotu-auto-bez-tabu",
+  "https://www.provin.lv/de/blogs/ka-pirkt-lietotu-auto-bez-tabu",
+  "https://www.provin.lv/ru/blogs/ka-pirkt-lietotu-auto-bez-tabu",
+  "https://www.provin.lv/samples/provin-dilera-dati-piemers.pdf",
+  "https://www.provin.lv/samples/provin-audits-bmw-525-e61-v2.pdf",
+  "https://www.provin.lv/samples/provin-audits-piemers.pdf",
 ] as const;
 
 /** Absolūts URL, ko drīkst likt sitemap.xml / hreflang (HTTPS www, lokale, bez `?` un `/` beigās). */
@@ -92,7 +101,11 @@ export function isCanonicalSitemapHref(url: string): boolean {
   const { locale, rest } = parsePrefixedPath(parsed.pathname);
   if (!locale) return false;
   const path = rest === "/" ? "" : rest;
-  if (path.startsWith("/blogs/") && path !== "/blogs") return true;
+  if (path.startsWith("/blogs/") && path !== "/blogs") {
+    const slug = path.slice("/blogs/".length);
+    if (!slug || slug.includes("/")) return false;
+    return isCrawlableBlogLocale(slug, locale);
+  }
   return isIndexablePublicPage(locale, path);
 }
 

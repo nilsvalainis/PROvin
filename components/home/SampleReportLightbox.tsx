@@ -5,6 +5,7 @@ import { useEffect, useId, useState } from "react";
 import { createPortal } from "react-dom";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
+import { publicAnchorRel } from "@/lib/seo-crawl-links";
 
 type Props = {
   open: boolean;
@@ -74,7 +75,7 @@ export function SampleReportLightbox({
             <a
               href={href}
               target="_blank"
-              rel="noopener noreferrer"
+              rel={publicAnchorRel(href, "noopener noreferrer")}
               className="rounded-md px-2 py-1 text-[0.75rem] font-medium text-[#60a5fa] hover:underline"
               onClick={() => recordSampleReportClick()}
             >

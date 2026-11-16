@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from "next-intl";
 import tp5Styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import { Link } from "@/i18n/navigation";
 import { homeHeroCheckoutHref } from "@/lib/home-hero-plan";
+import { publicAnchorRel } from "@/lib/seo-crawl-links";
 import {
   isPlausibleListingUrl,
   isValidOrderEmail,
@@ -242,6 +243,7 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
                   <div className="mt-7 flex justify-center">
                     <Link
                       href={orderHref}
+                      rel={publicAnchorRel(orderHref)}
                       onClick={() => safeTrack("risk_guide_paused_order_clicked")}
                       className="group inline-flex min-h-[48px] items-center gap-3 rounded-full border border-white/[0.14] bg-white/[0.03] px-5 text-[12px] font-semibold uppercase tracking-[0.12em] text-white/75 transition hover:border-white/30 hover:bg-white/[0.06] hover:text-white"
                     >
@@ -392,6 +394,7 @@ export function HomeRiskAuditGuide({ queuePaused = false }: { queuePaused?: bool
                               {rateLimited ? (
                                 <Link
                                   href={orderHref}
+                                  rel={publicAnchorRel(orderHref)}
                                   onClick={() => safeTrack("risk_guide_audits_clicked")}
                                   className="mt-3 inline-flex min-h-[40px] items-center gap-2 text-[12px] font-medium uppercase tracking-[0.1em] text-white/55 transition hover:text-white"
                                 >

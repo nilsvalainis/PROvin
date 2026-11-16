@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useLocale } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
+import { publicAnchorRel } from "@/lib/seo-crawl-links";
 import { TP5_DEALER_SAMPLE_REPORT_HREF, getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 import {
   HOME_V6_MILEAGE_POINTS,
@@ -166,13 +167,13 @@ export function HomeDealerStory({ className = "" }: { className?: string }) {
               </div>
             </div>
             <div className={styles.actions}>
-              <Link href="/?plan=dealer#home-hero" className={styles.cta}>
+              <Link href="/?plan=dealer#home-hero" rel={publicAnchorRel("/?plan=dealer#home-hero")} className={styles.cta}>
                 {c.cta}
               </Link>
               <a
                 href={TP5_DEALER_SAMPLE_REPORT_HREF}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel={publicAnchorRel(TP5_DEALER_SAMPLE_REPORT_HREF, "noopener noreferrer")}
                 className={styles.sample}
                 onClick={() => recordSampleReportClick()}
               >

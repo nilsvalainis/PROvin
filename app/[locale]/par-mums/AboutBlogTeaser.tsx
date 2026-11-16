@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { BlogTypeCover } from "@/components/blog/BlogTypeCover";
 import { b2bDateLocale } from "@/i18n/locales";
-import { blogPostHref, listBlogPosts, resolveBlogLocale } from "@/lib/blog/posts";
+import { blogLinkLocale, blogPostHref, listBlogPosts, resolveBlogLocale } from "@/lib/blog/posts";
 
 /** Par PROVIN beigās: 2 jaunākie bloga ieraksti (iekšējās saites SEO). */
 export async function AboutBlogTeaser({ locale }: { locale: string }) {
@@ -25,7 +25,7 @@ export async function AboutBlogTeaser({ locale }: { locale: string }) {
             ? post.publishedAt
             : d.toLocaleDateString(b2bDateLocale(locale), { year: "numeric", month: "long", day: "numeric" });
           return (
-            <Link key={post.slug} href={blogPostHref(post.slug)} className="blog-mini block text-inherit no-underline">
+            <Link key={post.slug} href={blogPostHref(post.slug)} locale={blogLinkLocale(post, locale)} className="blog-mini block text-inherit no-underline">
               <BlogTypeCover slug={post.slug} title={content.title} className="!aspect-[16/7]" />
               <p className="mt-4 flex gap-3.5 text-[11px] font-extrabold uppercase tracking-[0.16em]">
                 <span className="text-[#5c9dff]">{post.category}</span>

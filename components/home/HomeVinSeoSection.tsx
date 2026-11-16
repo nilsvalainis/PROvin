@@ -1,7 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { FreeEvalHashLink } from "@/components/home/FreeEvalHashLink";
-import { listBlogPosts, resolveBlogLocale } from "@/lib/blog/posts";
+import { blogLinkLocale, listBlogPosts, resolveBlogLocale } from "@/lib/blog/posts";
 import { faqPageHref, pakalpojumiHref, vinCheckHref } from "@/lib/paths";
 
 function Arrow() {
@@ -90,6 +90,7 @@ export async function HomeVinSeoSection() {
                   <Link
                     key={post.slug}
                     href={`/blogs/${post.slug}`}
+                    locale={blogLinkLocale(post, locale)}
                     className="group flex flex-col gap-4 rounded-[20px] border border-white/[0.09] bg-gradient-to-b from-white/[0.05] to-white/[0.015] p-6 no-underline transition hover:border-white/20 sm:p-8"
                   >
                     <span className="text-[12px] font-semibold uppercase tracking-[0.16em] text-zinc-400">{t("blogKicker")}</span>

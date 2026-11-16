@@ -124,6 +124,28 @@ describe("sitemap contains only indexable canonical URLs", () => {
     }
   });
 
+  it("keeps indexable de/ru partner pages and omits the GSC noindex set", async () => {
+    const previous = process.env.NEXT_PUBLIC_SITE_URL;
+    process.env.NEXT_PUBLIC_SITE_URL = "https://www.provin.lv";
+    try {
+      const entries = await sitemap();
+      const listed = entries.flatMap((entry) =>
+        [entry.url, ...Object.values(entry.alternates?.languages ?? {})].filter(
+          (url): url is string => typeof url === "string" && url.length > 0,
+        ),
+      );
+      expect(listed).toContain("https://www.provin.lv/de/partneriem");
+      expect(listed).toContain("https://www.provin.lv/ru/partneriem");
+      expect(listed).toContain("https://www.provin.lv/lv/blogs/ka-pirkt-lietotu-auto-bez-tabu");
+      for (const url of GSC_NOINDEX_SITEMAP_BLOCKLIST) {
+        expect(listed, url).not.toContain(url);
+      }
+    } finally {
+      if (previous == null) delete process.env.NEXT_PUBLIC_SITE_URL;
+      else process.env.NEXT_PUBLIC_SITE_URL = previous;
+    }
+  });
+
   it("omits thin blog locales that render noindex", async () => {
     const entries = await sitemap();
     const blogLocs = entries

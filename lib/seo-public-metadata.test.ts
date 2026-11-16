@@ -36,6 +36,21 @@ describe("seo-public-metadata", () => {
     expect(meta.robots).toEqual({ index: true, follow: true });
   });
 
+  it("home canonical is the clean locale URL without a plan query", () => {
+    for (const locale of ["lv", "en", "de", "ru"]) {
+      const meta = buildPublicPageMetadata({
+        locale,
+        path: "",
+        title: "t",
+        description: "d",
+      });
+      const canonical = String(meta.alternates?.canonical);
+      expect(canonical).toBe(publicPageUrl(locale, ""));
+      expect(canonical).not.toMatch(/[?#]/);
+      expect(meta.robots).toEqual({ index: true, follow: true });
+    }
+  });
+
   it("uses the shared indexability gate for robots so sitemap cannot drift", () => {
     const indexed = buildPublicPageMetadata({
       locale: "de",
