@@ -1308,6 +1308,8 @@ html:not([data-site-theme="light"]) .home-service-comparison-select-col {
   --admin-nav-bg: rgba(9, 9, 11, 0.92);
   --admin-footer-bg: rgba(9, 9, 11, 0.92);
   --admin-border-subtle: rgba(63, 63, 70, 0.95);
+  /* Portāls uz body: bez šī teksts manto lapas tumšo krāsu uz tumšā fona (Sūtīt atskaiti). */
+  color: var(--color-apple-text);
 }
 
 /* Peldošā WhatsApp — stikla virsma, PROVIN tumšā tēma (gaišā: site-theme-light.css). */

@@ -155,6 +155,7 @@ export function emptyCcVinBlock(): CcVinBlockState {
     aiContextRaw: "",
     photos: [],
     photoGroups: [],
+    hidePhotoWatermarks: false,
     thecarapiRecords: [],
   };
 }

@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import {
+  sendReportAttachmentDisplay,
+  sendReportAttachmentSizeLabel,
+  type SendReportAttachmentInput,
+} from "@/lib/admin-send-report-attachments";
 import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
 
 export type SendReportKind = "audits" | "business" | "dealer" | "asv";
@@ -14,6 +19,9 @@ export const SEND_REPORT_KIND_LV: Record<SendReportKind, string> = {
 };
 
 const LANG_LV: Record<ClientReportLang, string> = { lv: "Latviešu", en: "Angļu", ru: "Krievu", de: "Vācu" };
+
+const SECONDARY_BTN =
+  "rounded-lg border border-[var(--admin-border-subtle)] px-3 py-2 text-[13px] font-semibold text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] disabled:opacity-50";
 
 export type SendReportPrepared = { pdfPathname: string; downloadUrl: string; filename: string; bytes: number };
 export type SendReportResult = {
@@ -48,7 +56,7 @@ export function AdminSendReportDialog({
   email: string;
   defaultKind: SendReportKind;
   b2b: boolean;
-  attachments: ReadonlyArray<{ id: string; name: string; size: number }>;
+  attachments: ReadonlyArray<SendReportAttachmentInput>;
   whatsappHref: string | null;
   prepare: (kind: SendReportKind, lang: ClientReportLang) => Promise<SendReportPrepared>;
   send: (input: {
@@ -101,7 +109,7 @@ export function AdminSendReportDialog({
     };
   }, [undoLeft]);
 
-  if (!open || typeof document === "undefined") return null;
+  if (!open) return null;
 
   const langSelectable = kind === "dealer" || b2b;
   const effLang: ClientReportLang = langSelectable ? lang : "lv";
@@ -155,11 +163,11 @@ export function AdminSendReportDialog({
     `rounded-lg border px-2.5 py-1.5 text-[12px] font-medium ${
       on ? "border-[#1d1d1f] bg-[#1d1d1f] text-white" : "border-[var(--admin-border-subtle)] text-[var(--color-apple-text)]"
     }`;
-  const mb = (n: number) => `${(n / (1024 * 1024)).toFixed(1).replace(".", ",")} MB`;
+  const preparedSize = sendReportAttachmentSizeLabel(prepared?.bytes);
 
-  return createPortal(
+  const dialog = (
     <div
-      className={`admin-order-page fixed inset-0 z-[95] flex items-center justify-center bg-black/45 p-3 ${dark ? "dark" : ""}`}
+      className={`admin-order-page fixed inset-0 z-[95] flex items-center justify-center bg-black/45 p-3 text-[var(--color-apple-text)] ${dark ? "dark" : ""}`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="send-report-title"
@@ -168,7 +176,7 @@ export function AdminSendReportDialog({
       }}
     >
       <div
-        className="flex max-h-[min(92vh,760px)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] shadow-xl"
+        className="flex max-h-[min(92vh,760px)] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-apple-text)] shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="shrink-0 border-b border-[var(--admin-border-subtle)] px-4 pb-3 pt-4">
@@ -193,7 +201,7 @@ export function AdminSendReportDialog({
               <p className="flex items-center gap-2 text-[12px]">
                 {undone ? "Atzīme «Izpildīts» atsaukta." : "Pasūtījums atzīmēts «Izpildīts»."}
                 {!undone && undoLeft > 0 ? (
-                  <button type="button" className="rounded-lg border border-[var(--admin-border-subtle)] px-2 py-1 font-semibold" onClick={() => void doUndo()}>
+                  <button type="button" className={`${SECONDARY_BTN} px-2 py-1`} onClick={() => void doUndo()}>
                     Atsaukt ({undoLeft})
                   </button>
                 ) : null}
@@ -205,7 +213,7 @@ export function AdminSendReportDialog({
                   WhatsApp: atskaite nosūtīta
                 </a>
               ) : null}
-              <button type="button" className="rounded-lg border border-[var(--admin-border-subtle)] px-3 py-2 text-[13px] font-semibold" onClick={onClose}>
+              <button type="button" className={SECONDARY_BTN} onClick={onClose}>
                 Aizvērt
               </button>
             </div>
@@ -238,7 +246,7 @@ export function AdminSendReportDialog({
                 <label className="block">
                   <span className={label}>Valoda (atskaite un e-pasts)</span>
                   <select
-                    className="mt-1.5 block w-full rounded-lg border border-[var(--admin-border-subtle)] bg-transparent px-2.5 py-2 text-[13px]"
+                    className="mt-1.5 block w-full rounded-lg border border-[var(--admin-border-subtle)] bg-transparent px-2.5 py-2 text-[13px] text-[var(--color-apple-text)]"
                     value={lang}
                     disabled={busy}
                     onChange={(e) => {
@@ -258,35 +266,52 @@ export function AdminSendReportDialog({
               <div>
                 <p className={label}>Pielikumi</p>
                 {attachments.length ? (
-                  <ul className="mt-1.5 space-y-1">
-                    {attachments.map((a) => (
-                      <li key={a.id}>
-                        <label className="flex items-center gap-2 text-[13px]">
-                          <input
-                            type="checkbox"
-                            disabled={busy}
-                            checked={picked.has(a.id)}
-                            onChange={(e) =>
-                              setPicked((cur) => {
-                                const n = new Set(cur);
-                                if (e.target.checked) n.add(a.id);
-                                else n.delete(a.id);
-                                return n;
-                              })
-                            }
-                          />
-                          <span className="min-w-0 flex-1 truncate">{a.name}</span>
-                          <span className="shrink-0 text-[11px] text-[var(--color-provin-muted)]">{mb(a.size)}</span>
-                        </label>
-                      </li>
-                    ))}
+                  <ul className="mt-1.5 space-y-1" aria-label="Pielikumi">
+                    {attachments.map((a) => {
+                      const row = sendReportAttachmentDisplay(a);
+                      return (
+                        <li key={a.id}>
+                          <label className="flex items-center gap-2 text-[13px] text-[var(--color-apple-text)]">
+                            <input
+                              type="checkbox"
+                              disabled={busy}
+                              checked={picked.has(a.id)}
+                              onChange={(e) =>
+                                setPicked((cur) => {
+                                  const n = new Set(cur);
+                                  if (e.target.checked) n.add(a.id);
+                                  else n.delete(a.id);
+                                  return n;
+                                })
+                              }
+                            />
+                            <span className="min-w-0 flex-1">
+                              <span
+                                className="block truncate font-medium text-[var(--color-apple-text)]"
+                                title={row.title}
+                              >
+                                {row.name}
+                              </span>
+                              {row.kind ? (
+                                <span className="block truncate text-[11px] text-[var(--color-provin-muted)]">
+                                  {row.kind}
+                                </span>
+                              ) : null}
+                            </span>
+                            {row.sizeLabel ? (
+                              <span className="shrink-0 text-[11px] text-[var(--color-provin-muted)]">{row.sizeLabel}</span>
+                            ) : null}
+                          </label>
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : (
                   <p className="mt-1 text-[12px] text-[var(--color-provin-muted)]">Tikai atskaites PDF (pielikumu nav).</p>
                 )}
               </div>
 
-              <div className="space-y-1.5 text-[13px]">
+              <div className="space-y-1.5 text-[13px] text-[var(--color-apple-text)]">
                 <label className="flex items-center gap-2">
                   <input type="checkbox" disabled={busy || b2b} checked={google && !b2b} onChange={(e) => setGoogle(e.target.checked)} />
                   Lūgt Google atsauksmi
@@ -302,8 +327,9 @@ export function AdminSendReportDialog({
               </div>
 
               {prepared ? (
-                <p className="rounded-lg border border-[var(--admin-border-subtle)] px-3 py-2 text-[12px]" data-send-report="ready">
-                  PDF gatavs: {prepared.filename} · {mb(prepared.bytes)} ·{" "}
+                <p className="rounded-lg border border-[var(--admin-border-subtle)] px-3 py-2 text-[12px] text-[var(--color-apple-text)]" data-send-report="ready">
+                  PDF gatavs: {prepared.filename}
+                  {preparedSize ? ` · ${preparedSize}` : ""} ·{" "}
                   <a href={prepared.downloadUrl} target="_blank" rel="noopener noreferrer" className="font-semibold underline">
                     Skatīt PDF
                   </a>
@@ -313,7 +339,7 @@ export function AdminSendReportDialog({
             </div>
 
             <div className="flex shrink-0 justify-end gap-2 border-t border-[var(--admin-border-subtle)] px-4 py-3">
-              <button type="button" disabled={busy} className="rounded-lg border border-[var(--admin-border-subtle)] px-3 py-2 text-[13px] font-semibold" onClick={onClose}>
+              <button type="button" disabled={busy} className={SECONDARY_BTN} onClick={onClose}>
                 Atcelt
               </button>
               {prepared ? (
@@ -339,7 +365,9 @@ export function AdminSendReportDialog({
           </>
         )}
       </div>
-    </div>,
-    document.body,
+    </div>
   );
+
+  if (typeof document === "undefined") return dialog;
+  return createPortal(dialog, document.body);
 }
