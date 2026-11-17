@@ -41,6 +41,24 @@ describe("parseThecarapiHistory", () => {
     expect(refs.map((ref) => `${ref.site}:${ref.id}`)).toEqual(["openlane:OL-55", "auto1:A1-100"]);
   });
 
+  it("skaitlisks auction_id (reālā atbilde) dod izsoles ID un detaļu ref", () => {
+    const json = {
+      auctions: [
+        {
+          site_name: "auto1",
+          auction_id: 1326383403,
+          mileage: 226760,
+          public_price_eur: 11379,
+          last_seen_at: "2026-10-09T15:41:18.230176",
+          detail_path: "/api/auction/auto1/1326383403",
+        },
+      ],
+    };
+    const { parse, refs } = parseThecarapiHistory({ json });
+    expect(refs).toEqual([{ site: "auto1", id: "1326383403", active: false }]);
+    expect(parse.auctions?.[0]?.lot).toBe("1326383403");
+  });
+
   it("tukšs saraksts ir none", () => {
     const { parse, refs } = parseThecarapiHistory({ json: fixture("history-empty.json") });
     expect(parse.status).toBe("none");

@@ -58,10 +58,11 @@ export function thecarapiArchiveInputs(vin: string, records: readonly ThecarapiA
     seen.add(key);
     const date = record.photoDate || record.date;
     if (!date) continue;
-    const make = fieldValue(record, ["make", "brand"]);
-    const model = fieldValue(record, ["model"]);
+    const make = fieldValue(record, ["make", "brand", "clean_make"]);
+    const model = fieldValue(record, ["model_display", "model", "clean_model"]);
     const year = fieldValue(record, ["year"]);
     const title = [make, model, year].filter(Boolean).join(" ");
+    const firstRegistration = fieldValue(record, ["date_first_registration", "first_registration"]).slice(0, 10);
     out.push({
       vin,
       date,
@@ -69,6 +70,7 @@ export function thecarapiArchiveInputs(vin: string, records: readonly ThecarapiA
       km: kmOf(record),
       model: title || record.venue || undefined,
       country: fieldValue(record, ["country"]) || undefined,
+      firstRegistration: /^\d{4}-\d{2}-\d{2}$/.test(firstRegistration) ? firstRegistration : undefined,
       auctionId,
       platform,
       venue: record.venue || undefined,
