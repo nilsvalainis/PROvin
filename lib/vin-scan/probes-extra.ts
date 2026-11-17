@@ -12,7 +12,7 @@ import {
   vwGroupRecallCheckUrl,
 } from "@/lib/vin-scan/catalog";
 import { fetchAuctionVinLots } from "@/lib/vin-scan/auction-vin-providers";
-import { thecarapiArchiveInputs } from "@/lib/thecarapi-archive";
+import { markThecarapiArchived, thecarapiArchiveInputs } from "@/lib/thecarapi-archive";
 import { storeThecarapiGallery } from "@/lib/thecarapi-photos";
 import { addVinObservations } from "@/lib/vin-memory-store";
 import { readThecarapiVinCacheRaw, writeThecarapiVinCache } from "@/lib/vin-scan/store";
@@ -368,15 +368,25 @@ export async function probeThecarapi(ctx: VinScanContext): Promise<VinScanIndica
     const result = await fetchThecarapiVinWithDetails(ctx.vin);
     if (result.records.length > 0) {
       const gallery = await storeThecarapiGallery({ vin: ctx.vin, records: result.records });
-      await addVinObservations(thecarapiArchiveInputs(ctx.vin, gallery.records)).catch(() => undefined);
+      let records = gallery.records;
+      const marked = markThecarapiArchived(records);
+      const inputs = thecarapiArchiveInputs(ctx.vin, marked);
+      if (inputs.length > 0) {
+        try {
+          await addVinObservations(inputs);
+          records = marked;
+        } catch {
+          records = gallery.records;
+        }
+      }
       const previous = await readThecarapiVinCacheRaw(ctx.vin).catch(() => null);
       if (previous) {
         await writeThecarapiVinCache(ctx.vin, result.parse, {
           httpStatus: previous.httpStatus,
           etag: previous.etag,
           refs: previous.refs,
-          records: gallery.records,
-          recordsComplete: true,
+          records,
+          recordsComplete: result.recordsComplete,
           cachedAt: previous.cachedAt,
         }).catch(() => undefined);
       }

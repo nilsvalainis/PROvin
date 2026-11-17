@@ -29,6 +29,7 @@ import {
   thecarapiUsageMonth,
   type ThecarapiEnv,
 } from "@/lib/vin-scan/thecarapi-flags";
+import { thecarapiRecordKey, type ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 import {
   readThecarapiDetailCache,
   readThecarapiDetailCacheRaw,
@@ -42,8 +43,6 @@ import {
   writeThecarapiMonthlyUsage,
   writeThecarapiVinCache,
 } from "@/lib/vin-scan/store";
-import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
-import { thecarapiRecordKey } from "@/lib/vin-scan/thecarapi-fields";
 import type { VinScanParse } from "@/lib/vin-scan/types";
 
 export {
@@ -505,6 +504,30 @@ export async function fetchThecarapiAuctionImages(
   return { byKey, billable };
 }
 
+function thecarapiCacheHasDetail(
+  records: readonly ThecarapiAdminRecord[],
+  refs: readonly ThecarapiAuctionRef[],
+): boolean {
+  if (refs.length === 0 || records.length === 0) return false;
+  return refs.some((ref) =>
+    records.some(
+      (record) =>
+        record.site === ref.site &&
+        record.id === ref.id &&
+        record.rawDetail != null &&
+        typeof record.rawDetail === "object",
+    ),
+  );
+}
+
+function thecarapiDetailStored(
+  rawByKey: Readonly<Record<string, unknown>>,
+  refs: readonly ThecarapiAuctionRef[],
+): boolean {
+  if (refs.length === 0) return false;
+  return refs.some((ref) => rawByKey[thecarapiRecordKey(ref.site, ref.id)] != null);
+}
+
 export async function fetchThecarapiVinWithDetails(
   vin: string,
   deps: ThecarapiDeps = {},
@@ -513,7 +536,7 @@ export async function fetchThecarapiVinWithDetails(
   if (history.parse.status !== "found" || history.refs.length === 0) {
     return { ...history, detailsBillable: false };
   }
-  if (!deps.skipCache && history.recordsComplete && history.records.length > 0) {
+  if (!deps.skipCache && history.recordsComplete && thecarapiCacheHasDetail(history.records, history.refs)) {
     return { ...history, detailsBillable: false };
   }
   if (history.fromCache && !history.rawJson && history.records.length === 0) {
@@ -542,14 +565,14 @@ export async function fetchThecarapiVinWithDetails(
       etag: history.etag || previous?.etag,
       refs: history.refs,
       records,
-      recordsComplete: true,
+      recordsComplete: thecarapiDetailStored(details.rawByKey, history.refs),
     }).catch(() => undefined);
   }
   return {
     ...history,
     parse: mergeThecarapiDetails(history.parse, details.details),
     records,
-    recordsComplete: true,
+    recordsComplete: thecarapiDetailStored(details.rawByKey, history.refs),
     billable: history.billable || details.billable || images.billable,
     detailsBillable: details.billable || images.billable,
   };

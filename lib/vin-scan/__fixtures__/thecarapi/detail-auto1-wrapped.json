@@ -1,23 +1,245 @@
 {
   "success": true,
-  "contract_version": "1",
-  "request_id": "req-test-1",
-  "server_time": "2026-11-17T15:00:00Z",
-  "data_updated_at": "2026-11-17T14:00:00Z",
+  "contract_version": "2026-10-05",
+  "data_updated_at": "2026-10-09T18:00:00Z",
+  "request_id": "req-auto1-1326383403",
+  "server_time": "2026-10-09T18:01:00Z",
   "auction": {
+    "id": 1326383403,
     "site_name": "auto1",
-    "auction_id": "A1-200",
-    "details_pending": false,
-    "is_active": false,
-    "seller": "AUTO1 GmbH",
-    "gearbox": "automātiskā",
-    "ImageUrls": ["https://img-pa.auto1.com/img/w-main.jpg"],
-    "DamageImageUrls": ["https://img-pa.auto1.com/img/w-damage.jpg"],
-    "ServiceImageUrls": ["https://img-pa.auto1.com/img/w-service.jpg"],
-    "ImageVaultImages": [{ "Url": "https://img-pa.auto1.com/img/w-vault.jpg" }],
-    "subAreaImages": [
-      { "image_index": 1, "source": "https://img-pa.auto1.com/img/w-sub.jpg", "status": "ok" }
+    "ImageUrls": [
+      {
+        "url": "https://img-pa.auto1.com/img/main-1.jpg",
+        "image_index": 0,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-2.jpg",
+        "image_index": 1,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-3.jpg",
+        "image_index": 2,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-4.jpg",
+        "image_index": 3,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-5.jpg",
+        "image_index": 4,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-6.jpg",
+        "image_index": 5,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-7.jpg",
+        "image_index": 6,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-8.jpg",
+        "image_index": 7,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-9.jpg",
+        "image_index": 8,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-10.jpg",
+        "image_index": 9,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-11.jpg",
+        "image_index": 10,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-12.jpg",
+        "image_index": 11,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-13.jpg",
+        "image_index": 12,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-14.jpg",
+        "image_index": 13,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-15.jpg",
+        "image_index": 14,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-16.jpg",
+        "image_index": 15,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-17.jpg",
+        "image_index": 16,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-18.jpg",
+        "image_index": 17,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-19.jpg",
+        "image_index": 18,
+        "image_source": "auto1",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-20.jpg",
+        "image_index": 19,
+        "image_source": "auto1",
+        "image_status": "ok"
+      }
     ],
-    "wrapped_only_field": "keep-me-too"
+    "DamageImageUrls": [
+      {
+        "url": "https://img-pa.auto1.com/img/damage-1.jpg",
+        "image_index": 0,
+        "image_source": "damage",
+        "image_status": "ready"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/damage-2.jpg",
+        "image_index": 1,
+        "image_source": "damage",
+        "image_status": "ready"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/main-1.jpg",
+        "image_index": 9,
+        "image_source": "damage",
+        "image_status": "duplicate"
+      }
+    ],
+    "ServiceImageUrls": [
+      {
+        "url": "https://img-pa.auto1.com/img/service-1.jpg",
+        "image_index": 0,
+        "image_source": "service",
+        "image_status": "ok"
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/service-2.jpg",
+        "image_index": 1,
+        "image_source": "service",
+        "image_status": "ok"
+      },
+      {
+        "url": "http://img-pa.auto1.com/img/service-insecure.jpg",
+        "image_index": 8,
+        "image_source": "service",
+        "image_status": "http"
+      }
+    ],
+    "ImageVaultImages": [
+      {
+        "url": "https://img-pa.auto1.com/img/vault-1.jpg",
+        "image_index": 0,
+        "image_source": "vault",
+        "image_status": "stored"
+      },
+      {
+        "image_url": "https://img-pa.auto1.com/img/vault-alt.jpg",
+        "image_index": 4,
+        "image_source": "vault",
+        "image_status": "alt-key"
+      }
+    ],
+    "images": [
+      {
+        "url": "https://img-pa.auto1.com/img/gallery-1.jpg",
+        "image_index": 0,
+        "image_source": "gallery",
+        "image_status": "ok"
+      }
+    ],
+    "inspection": {
+      "images": [
+        {
+          "url": "https://img-pa.auto1.com/img/nested-1.jpg",
+          "image_index": 0,
+          "image_source": "nested",
+          "image_status": "ok"
+        }
+      ]
+    },
+    "subAreaImages": [
+      {
+        "url": "https://img-pa.auto1.com/img/sub-1.jpg",
+        "image_index": 0,
+        "image_source": "subarea",
+        "image_status": "hidden"
+      }
+    ],
+    "mileage": 77387,
+    "current_final": 12268,
+    "start": 10000,
+    "seller": "AUTO1 GmbH",
+    "location": "Berlin",
+    "city": "Berlin",
+    "country": "DE",
+    "make": "BMW",
+    "model": "X3",
+    "year": 2020,
+    "vin": "WBA6X310305V99966",
+    "archived": false,
+    "equipment": [
+      "Navigācija",
+      "LED"
+    ],
+    "damages": [
+      {
+        "zone": "Priekšējais bamperis",
+        "note": "skrāpējums",
+        "severity": "light"
+      },
+      {
+        "zone": "Kreisās durvis",
+        "note": "iespiedums"
+      }
+    ],
+    "service": {
+      "note": "Eļļa mainīta 2026-09",
+      "workshop": "AUTO1 serviss"
+    },
+    "portal_mystery": "keep-zone"
   }
 }

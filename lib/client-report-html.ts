@@ -122,6 +122,12 @@ import {
 } from "@/lib/cc-vin-report";
 import { thecarapiPdfGroupTitle } from "@/lib/vin-scan/thecarapi-fields";
 import {
+  buildThecarapiPdfGalleryHtml,
+  collectPdfPhotoKeys,
+  selectThecarapiPdfPhotos,
+  THECARAPI_PDF_GALLERY_MAX,
+} from "@/lib/thecarapi-pdf";
+import {
   ASV_PDF_SOURCE_LABEL,
   ASV_PDF_TITLE,
   asvBlockHasContent,
@@ -1969,20 +1975,30 @@ function buildCcVinAvotuSubsection(
   vis: PdfVisibilitySettings,
   photoDataUrls?: Map<string, string>,
   sparkHtml = "",
+  externalPhotoKeys?: ReadonlySet<string>,
 ): string {
   if (!vis.cc_vin) return "";
   if ((!b || !ccVinBlockHasContent(b)) && !sparkHtml) return "";
   const inner = b && ccVinBlockHasContent(b) ? buildCcVinPdfInnerHtml(b) : "";
+  const tcIds = new Set((b?.thecarapiRecords ?? []).flatMap((record) => record.photos.map((photo) => photo.id)));
+  const otherGroups = (b?.photoGroups ?? []).map((group) => ({
+    ...group,
+    title: thecarapiPdfGroupTitle(group.title),
+    photos: group.photos.filter((photo) => !tcIds.has(photo.id)),
+  }));
+  const usedKeys = collectPdfPhotoKeys(otherGroups);
+  for (const key of externalPhotoKeys ?? []) usedKeys.add(key);
+  const tcPhotos = selectThecarapiPdfPhotos(b?.thecarapiRecords, {
+    usedKeys,
+    max: THECARAPI_PDF_GALLERY_MAX,
+  });
   const photosHtml = b
-    ? buildSourcePhotoGroupsPdfHtml(
-        (b.photoGroups ?? []).map((group) => ({
-          ...group,
-          title: thecarapiPdfGroupTitle(group.title),
-        })),
-        b.photos,
-        photoDataUrls,
-        normalizeCcVinPhotoGroups,
-      )
+    ? [
+        buildSourcePhotoGroupsPdfHtml(otherGroups, b.photos, photoDataUrls, normalizeCcVinPhotoGroups),
+        buildThecarapiPdfGalleryHtml(tcPhotos, photoDataUrls),
+      ]
+        .filter(Boolean)
+        .join("")
     : "";
   const comments = (b?.comments ?? "").trim();
   if (!inner && !photosHtml && !comments && !sparkHtml) return "";
@@ -2301,7 +2317,19 @@ function buildAvotuDatiSectionHtml(
     lang,
     p.dealerMajorWorkOverrides,
   );
-  const ccVin = buildCcVinAvotuSubsection(p.ccVinBlock ?? null, vis, ccVinPhotoDataUrls, spark("intl"));
+  const ccVin = buildCcVinAvotuSubsection(
+    p.ccVinBlock ?? null,
+    vis,
+    ccVinPhotoDataUrls,
+    spark("intl"),
+    collectPdfPhotoKeys([
+      ...(p.autoRecordsBlock?.photoGroups ?? []),
+      ...(p.asvBlock?.photoGroups ?? []),
+      ...(p.listingAnalysis?.photoGroups ?? []),
+      ...(p.manualVendorBlocks ?? []).flatMap((block) => block.photoGroups ?? []),
+      ...(p.citiAvoti?.sections ?? []).flatMap((section) => section.photoGroups ?? []),
+    ]),
+  );
   const asv = buildAsvAvotuSubsection(p.asvBlock ?? null, vis, asvPhotoDataUrls, spark("asv"));
   const tjekbil = vendorHtml(SOURCE_BLOCK_LABELS.tjekbil);
   const mntEe = vendorHtml(SOURCE_BLOCK_LABELS.mnt_ee);

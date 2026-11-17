@@ -157,7 +157,7 @@ function cleanFields(raw: unknown): VinMemoryField[] {
       label: cleanShort(row.label, 200) || key,
       value: typeof row.value === "string" ? row.value.slice(0, 2000) : "",
     });
-    if (out.length >= 200) break;
+    if (out.length >= 800) break;
   }
   return out;
 }
@@ -180,7 +180,7 @@ function cleanPhotos(raw: unknown): VinMemoryPhoto[] {
     const contentHash = cleanShort(row.contentHash, 80);
     if (contentHash) photo.contentHash = contentHash;
     out.push(photo);
-    if (out.length >= 40) break;
+    if (out.length >= 100) break;
   }
   return out;
 }

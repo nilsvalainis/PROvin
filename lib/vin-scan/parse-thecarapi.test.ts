@@ -51,7 +51,7 @@ describe("parseThecarapiHistory", () => {
 
 describe("parseThecarapiDetail", () => {
   it("atver reālo ietinumu {auction} un lasa visus bilžu laukus", () => {
-    const detail = parseThecarapiDetail(fixture("detail-auto1-wrapped.json"));
+    const detail = parseThecarapiDetail(fixture("detail-auto1-envelope-simple.json"));
     expect(detail.site).toBe("auto1");
     expect(detail.id).toBe("A1-200");
     expect(detail.pending).toBe(false);
