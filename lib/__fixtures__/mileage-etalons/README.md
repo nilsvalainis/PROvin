@@ -53,7 +53,7 @@ Momentuzņēmums nav pareizā atbilde. Mainot nobraukuma loģiku, katra atšķir
 
 | Klase | Lietas |
 |---|---|
-| A. Mēneša datums kā 1. datums (carVertical, AutoDNA) | 650i `WBAYM9C55DDW20079`, 120d `WBAUD91050PA62588`, X5 `WBAFF41030L065449`, 120d xDrive `WBA1B51010J842587` (CV 01.07.2023 167 422 pret dīleri 05.02.2024 159 891 - josla uz dīlera), 318d `WBA8X11080BH25532`, 525 `WBAMX31050C524401`, A3 `WAUZZZ8V1H1033853`, Galaxy 2017 |
+| A. Mēneša datums kā 1. datums (carVertical, AutoDNA). **carVertical labots 17.11:** tā rādījumi ir mēneša precizitātē un mēnesī kārtoti pēc km - pazuda 6 viltus kritumi (A3, 318d, 525, 320d, 650i x2), jaunu nav. Atlikušie: AutoDNA mēneša datumi, CV pret dīleri dažādos mēnešos (120d xDrive, X5) - sk. B | 650i `WBAYM9C55DDW20079`, 120d `WBAUD91050PA62588`, X5 `WBAFF41030L065449`, 120d xDrive `WBA1B51010J842587` (CV 01.07.2023 167 422 pret dīleri 05.02.2024 159 891 - josla uz dīlera), 318d `WBA8X11080BH25532`, 525 `WBAMX31050C524401`, A3 `WAUZZZ8V1H1033853`, Galaxy 2017 |
 | B. Vainots pareizais punkts, nevis kļūdainais | 320d `WBAUY11040F045354`: dīleris 22.09.2011 22 997, nākamajā dienā 12 397, CV 10.2011 12 347 - josla uz 12 397 (pareizā); 320d `WBA3K31080F656545` (90 000 pirmajā ierakstā) |
 | C. Faktu lapa pretrunā ar klasifikāciju | 650i, 120d, 316 `WBA3D91080J411190`, 318d, 525 `WBAMX31050C524401`, 525 `WBAPX51050CU09550` |
 | D. Novecojis dokuments / sludinājums kā kritums | Audi A6 Allroad (izsoļu arhīvs, ss.lv noapaļots), 640i `WBALW3C59CC891863` (izsoļu arhīvs atkārto 81 116 un 93 593) |

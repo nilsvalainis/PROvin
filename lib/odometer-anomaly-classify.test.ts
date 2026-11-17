@@ -73,7 +73,7 @@ describe("classifyOdometerAnomalies", () => {
     expect(hasActiveRollbackAnomaly(rows)).toBe(false);
   });
 
-  it("marks same-month 01.MM drop as date precision", () => {
+  it("same-month 01.MM reading is placed by km - no drop, no flag (17.11 etalons)", () => {
     const rows = [
       row({
         date: "01.03.2020",
@@ -92,8 +92,8 @@ describe("classifyOdometerAnomalies", () => {
       }),
     ];
     expect(looksArtificialMonthDay(rows[0]!)).toBe(true);
-    const out = classifyOdometerAnomalies(rows);
-    expect(out.map((a) => a.class)).toEqual(["date_precision"]);
+    // Mēneša rādījuma vieta mēnesī nav zināma - kārtojot pēc km, kritums nerodas.
+    expect(classifyOdometerAnomalies(rows)).toEqual([]);
     expect(hasActiveRollbackAnomaly(rows)).toBe(false);
   });
 

@@ -5,13 +5,12 @@
   "CarVertical": 15
  },
  "rindasSavaktas": 47,
- "rindasTabula": 29,
+ "rindasTabula": 28,
  "tabula": [
-  "01.08.2022 | 11 | Vācija | CarVertical",
+  "01.08.2022 | 11 | Vācija | CarVertical | mēnesis",
   "12.08.2022 | 9 | Vācija | OFICIĀLĀ DĪLERA DATI",
-  "01.09.2022 | 2373 | Vācija | CarVertical",
   "02.09.2022 | 1929 | Vācija | OFICIĀLĀ DĪLERA DATI",
-  "05.09.2022 | 2379 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "05.09.2022 | 2379 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "09.09.2022 | 2788 | Vācija | OFICIĀLĀ DĪLERA DATI",
   "16.09.2022 | 3379 | Vācija | OFICIĀLĀ DĪLERA DATI",
   "23.09.2022 | 3747 | Vācija | OFICIĀLĀ DĪLERA DATI",

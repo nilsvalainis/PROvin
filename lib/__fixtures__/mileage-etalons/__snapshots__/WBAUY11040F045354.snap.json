@@ -7,24 +7,23 @@
   "ss.lv": 1
  },
  "rindasSavaktas": 105,
- "rindasTabula": 65,
+ "rindasTabula": 63,
  "tabula": [
-  "01.03.2011 | 11 | Nezināmā | CarVertical",
+  "01.03.2011 | 11 | Nezināmā | CarVertical | mēnesis",
   "22.09.2011 | 22997 | Vācija | OFICIĀLĀ DĪLERA DATI",
   "23.09.2011 | 12397 | Vācija | OFICIĀLĀ DĪLERA DATI | ANOMĀLIJA",
-  "01.10.2011 | 12347 | Vācija | CarVertical",
+  "01.10.2011 | 12347 | Vācija | CarVertical | mēnesis",
   "21.11.2011 | 12500 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "19.03.2012 | 19906 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
-  "01.08.2012 | 21377 | Vācija | CarVertical",
+  "01.08.2012 | 21377 | Vācija | CarVertical | mēnesis",
   "16.08.2012 | 27740 | Vācija | OFICIĀLĀ DĪLERA DATI",
   "25.10.2012 | 33206 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "12.04.2013 | 41414 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "18.05.2013 | 44002 | Vācija | OFICIĀLĀ DĪLERA DATI",
   "10.07.2013 | 45941 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "08.11.2013 | 51498 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
-  "01.03.2014 | 57884 | Vācija | CarVertical",
-  "03.03.2014 | 56768 | Vācija | OFICIĀLĀ DĪLERA DATI | nav grafikā, ievades kļūda",
-  "25.03.2014 | 57934 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "03.03.2014 | 56768 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "25.03.2014 | 57934 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "08.04.2014 | 58570 | Vācija | OFICIĀLĀ DĪLERA DATI",
   "08.05.2014 | 60322 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "04.11.2014 | 72338 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
@@ -47,9 +46,8 @@
   "03.07.2019 | 159634 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "08.11.2019 | 165160 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "04.12.2019 | 166204 | Vācija | OFICIĀLĀ DĪLERA DATI",
-  "01.06.2020 | 172456 | Vācija | CarVertical",
   "04.06.2020 | 172282 | Vācija | CSDD + OFICIĀLĀ DĪLERA DATI",
-  "11.06.2020 | 172569 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "11.06.2020 | 172569 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "01.10.2020 | 178447 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "05.10.2020 | 178543 | Vācija | OFICIĀLĀ DĪLERA DATI",
   "16.03.2021 | 184461 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
@@ -70,29 +68,26 @@
   "20.04.2026 | 254024 | Vācija | OFICIĀLĀ DĪLERA DATI",
   "28.04.2026 | 256413 | Vācija | OFICIĀLĀ DĪLERA DATI",
   "15.05.2026 | 257124 | Vācija | OFICIĀLĀ DĪLERA DATI",
-  "09.06.2026 | 257204 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
-  "26.06.2026 | 257132 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "09.06.2026 | 257204 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "26.06.2026 | 257132 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "12.08.2026 | 257609 | Latvija | CarVertical + CSDD",
   "25.08.2026 | 258 000 | Latvija | ss.lv"
  ],
  "sarkanaJosla": true,
  "klases": [
-  "rollback: 22.09.2011 22997 -> 23.09.2011 12397 (kritums 10600) [23.09.2011 | 12397 | OFICIĀLĀ DĪLERA DATI]",
-  "typo_outlier: 01.03.2014 57884 -> 03.03.2014 56768 (kritums 1116) [03.03.2014 | 56768 | OFICIĀLĀ DĪLERA DATI]"
+  "rollback: 22.09.2011 22997 -> 23.09.2011 12397 (kritums 10600) [23.09.2011 | 12397 | OFICIĀLĀ DĪLERA DATI]"
  ],
  "kritumsBezNilaLemumiem": true,
  "nilaLemumi": [],
  "klasesPecNilaLemumiem": [
-  "rollback: 23.09.2011 12397",
-  "typo_outlier: 03.03.2014 56768"
+  "rollback: 23.09.2011 12397"
  ],
  "faktuLapa": {
   "odometerAnomaly": true,
   "carverticalMileageWarning": false,
   "maxRollbackDropKm": 10600,
   "rollbacks": [
-   "22.09.2011 22997 -> 23.09.2011 12397",
-   "01.03.2014 57884 -> 03.03.2014 56768"
+   "22.09.2011 22997 -> 23.09.2011 12397"
   ],
   "suspectedEntryErrors": [],
   "implausibleReadings": [],

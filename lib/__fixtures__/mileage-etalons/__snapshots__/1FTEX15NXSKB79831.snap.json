@@ -9,7 +9,7 @@
   "CARFAX": 12
  },
  "rindasSavaktas": 47,
- "rindasTabula": 22,
+ "rindasTabula": 23,
  "tabula": [
   "22.08.1995 | 882 | ASV | AutoDNA + CITI AVOTI - CARFAX + CARFAX + CarVertical",
   "05.11.2003 | 12875 | ASV | CITI AVOTI - CARFAX + CARFAX",
@@ -21,7 +21,8 @@
   "29.07.2014 | 128134 | ASV | CITI AVOTI - CARFAX + CARFAX",
   "14.08.2015 | 132848 | ASV | CITI AVOTI - CARFAX + CARFAX",
   "14.06.2016 | 138381 | ASV | CITI AVOTI - CARFAX + CARFAX",
-  "04.09.2019 | 165246 | ASV | AutoDNA + CITI AVOTI - CARFAX + CARFAX + CarVertical",
+  "30.08.2019 | 165245 | ASV | CITI AVOTI - CARFAX + CARFAX + CarVertical",
+  "04.09.2019 | 165246 | ASV | AutoDNA",
   "11.05.2022 | 337323 | ASV | AutoDNA + CITI AVOTI - CARFAX + CARFAX",
   "17.10.2022 | 337322 | Igaunija | CSDD",
   "24.11.2022 | 337418 | Igaunija | CSDD + MNT.EE - Igaunijas reģistrs",
@@ -29,7 +30,7 @@
   "30.05.2024 | 339645 | Igaunija | CSDD + MNT.EE - Igaunijas reģistrs",
   "25.06.2024 | 339854 | Igaunija | CSDD + MNT.EE - Igaunijas reģistrs",
   "10.07.2025 | 340543 | Igaunija | CSDD + MNT.EE - Igaunijas reģistrs",
-  "01.12.2025 | 339738 | Igaunija | CarVertical",
+  "01.12.2025 | 339738 | Igaunija | CarVertical | mēnesis",
   "05.03.2026 | 72348 | Latvija | CarVertical + CSDD + AutoDNA | ANOMĀLIJA",
   "10.09.2026 | 74973 | Latvija | CSDD",
   "10.09.2026 | 74968 | Latvija | CarVertical + CSDD"
