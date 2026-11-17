@@ -60,6 +60,15 @@ describe("TheCarApi lauki", () => {
     expect(thecarapiPhotoDate({ last_seen_at: "2024-03-15", data_updated_at: "2026-10-09T18:00:00Z" })).toBe("2024-03-15");
     expect(thecarapiPhotoDate({ first_seen: "2026-10-09", data_updated_at: "2026-10-01" })).toBe("2026-10-09");
     expect(thecarapiPhotoDate({ data_updated_at: "2026-10-09T18:00:00Z" })).toBe("2026-10-09");
+    expect(
+      thecarapiPhotoDate({
+        auction_end_at: "2026-10-09T16:00:00Z",
+        batch_start_date: "2026-10-01",
+        last_changed_at: "2026-10-08T12:00:00Z",
+        first_seen: "2026-09-01",
+      }),
+    ).toBe("2026-10-09");
+    expect(thecarapiPhotoDate({ batch_start_date: "2026-10-01", last_changed_at: "2026-10-08" })).toBe("2026-10-01");
   });
 
   it("AUTO1 aploksne auction savāc visus bilžu laukus un data_updated_at rezervi", () => {
@@ -95,6 +104,51 @@ describe("TheCarApi lauki", () => {
     expect(raw).toContain("service-insecure.jpg");
     expect(raw).toContain("data_updated_at");
     expect(raw).toContain("contract_version");
+  });
+
+  it("reālā AUTO1 detaļa lasa auction.images un car_identification", () => {
+    const json = fixture("detail-auto1-live-shape.json");
+    const history = {
+      auctions: [
+        {
+          site_name: "auto1",
+          auction_id: "1326383403",
+          detail_path: "/api/auction/auto1/1326383403",
+          mileage: 77387,
+          first_seen: "2026-09-01",
+          archived: false,
+          archived_at: null,
+        },
+      ],
+    };
+    const [row] = buildThecarapiAdminRecords({ historyJson: history, detailJson: json });
+    expect(row?.id).toBe("1326383403");
+    expect(row?.photoDate).toBe("2026-10-09");
+    for (const url of [
+      "https://img-pa.auto1.com/img/live-1.jpg",
+      "https://img-pa.auto1.com/img/live-2.jpg",
+      "https://img-pa.auto1.com/img/cid-1.jpg",
+      "https://img-pa.auto1.com/img/cid-vault.jpg",
+      "https://img-pa.auto1.com/img/cid-damage.jpg",
+      "https://img-pa.auto1.com/img/cid-service.jpg",
+      "https://img-pa.auto1.com/img/cid-doc.jpg",
+      "https://img-pa.auto1.com/img/cid-video.mp4",
+      "https://img-pa.auto1.com/img/thumb.jpg",
+      "https://img-pa.auto1.com/img/vault-main.jpg",
+      "https://img-pa.auto1.com/img/zone-1.jpg",
+    ]) {
+      expect(row?.photoUrls).toContain(url);
+    }
+    expect(row?.photoUrls.some((url) => url.includes("/auction-photo/"))).toBe(false);
+    const raw = JSON.stringify(row?.raw);
+    expect(raw).toContain("car_identification");
+    expect(raw).toContain("ImageUrls");
+    expect(raw).toContain("live-1.jpg");
+    expect(row?.fields.some((field) => field.key === "Auto1Details.kw" && field.value === "140")).toBe(true);
+    expect(row?.fields.some((field) => field.key === "Auto1Details.originalEngine" && field.value === "jā")).toBe(true);
+    expect(row?.fields.some((field) => field.key === "DamagesV3[0].zone" && field.value === "Priekšējais bamperis")).toBe(true);
+    expect(row?.fields.some((field) => field.key === "DatEquipmentGroupsTranslated" && field.value.includes("Navigācija"))).toBe(true);
+    expect(row?.rawDetail && typeof row.rawDetail === "object").toBe(true);
   });
 
   it("nezināma atslēga paliek, http saite netiek lejupielādēta", () => {

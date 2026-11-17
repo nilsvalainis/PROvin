@@ -270,7 +270,7 @@ export const THECARAPI_VIN_NONE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 export const THECARAPI_DETAIL_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 export const THECARAPI_DETAIL_ACTIVE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
-export type ThecarapiVinCacheRef = { site: string; id: string; active: boolean };
+export type ThecarapiVinCacheRef = { site: string; id: string; active: boolean; detailPath?: string };
 
 export type ThecarapiVinCache = {
   vin: string;
@@ -344,11 +344,13 @@ export function asThecarapiVinCache(raw: unknown, nowMs = Date.now(), allowExpir
     ? o.refs
         .map((item) => {
           if (!item || typeof item !== "object") return null;
-          const rec = item as { site?: unknown; id?: unknown; active?: unknown };
+          const rec = item as { site?: unknown; id?: unknown; active?: unknown; detailPath?: unknown };
           const site = typeof rec.site === "string" ? rec.site : "";
           const id = typeof rec.id === "string" ? rec.id : "";
           if (!site || !id) return null;
-          return { site, id, active: rec.active === true };
+          const detailPath =
+            typeof rec.detailPath === "string" && rec.detailPath.startsWith("/api/auction/") ? rec.detailPath : "";
+          return { site, id, active: rec.active === true, ...(detailPath ? { detailPath } : {}) };
         })
         .filter((item): item is ThecarapiVinCacheRef => Boolean(item))
     : undefined;

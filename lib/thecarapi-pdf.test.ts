@@ -4,7 +4,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { buildCcVinPdfInnerHtml } from "@/lib/cc-vin-pdf-html";
-import { emptyCcVinBlock } from "@/lib/cc-vin-report";
+import { countCcVinPdfVisibleRecords, countCcVinRecords, emptyCcVinBlock } from "@/lib/cc-vin-report";
+import { buildClientReportDocumentHtml, type ClientReportPayload } from "@/lib/client-report-html";
 import {
   buildThecarapiPdfGalleryHtml,
   buildThecarapiRecordsPdfHtml,
@@ -111,5 +112,45 @@ describe("TheCarApi PDF bloks WBA6X310305V99966", () => {
     expect(html).toContain("2026-10-09");
     expect(html).toContain(urls.get(kept[0]!.id));
     expect(html).not.toContain("TheCarApi");
+  });
+
+  it("PDF virsraksta skaits ir redzamās rindas, ne nobraukums", () => {
+    const block = emptyCcVinBlock();
+    block.sales = [{ date: "09.10.2026", venue: "AUTO1", odometer: "77 387", price: "12 268", status: "Izsole" }];
+    block.mileage = [{ date: "09.10.2026", odometer: "77387", country: "" }];
+    expect(countCcVinRecords(block)).toBe(2);
+    expect(countCcVinPdfVisibleRecords(block)).toBe(1);
+    const html = buildClientReportDocumentHtml({
+      payload: {
+        sessionId: "manual_order_test",
+        vin: "WBA6X310305V99966",
+        created: Date.now(),
+        amountTotal: 7999,
+        currency: "eur",
+        paymentStatus: "paid",
+        listingUrl: null,
+        customerEmail: null,
+        customerPhone: null,
+        customerName: null,
+        contactMethod: null,
+        notes: null,
+        csdd: "",
+        ltab: "",
+        tirgus: "",
+        citi: "",
+        iriss: "",
+        apskatesPlāns: "",
+        tehniskoRiskuAnalize: "",
+        cenasAtbilstiba: "",
+        ccVinBlock: block,
+      } as ClientReportPayload,
+      portfolio: [],
+      pdfInsights: [],
+      dateFmt: new Intl.DateTimeFormat("lv-LV"),
+      formatBytes: () => "0 B",
+    });
+    expect(html).toContain("1 ieraksts");
+    expect(html).not.toContain("2 ieraksti");
+    expect(html).toContain("AUTO1");
   });
 });

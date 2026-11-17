@@ -12,6 +12,7 @@ import { emptyVinScanPlates } from "@/lib/vin-scan/plates";
 import { fetchThecarapiVinHistory, fetchThecarapiVinWithDetails, thecarapiMonthlyCap } from "@/lib/vin-scan/thecarapi-api";
 import { buildThecarapiAdminRecords, parseThecarapiHistory } from "@/lib/vin-scan/parse-thecarapi";
 import { writeThecarapiVinCache } from "@/lib/vin-scan/store";
+import { readVinMemory } from "@/lib/vin-memory-store";
 import { vinScanPipelineSourceIds } from "@/lib/vin-scan/catalog";
 import type { ThecarapiDeps } from "@/lib/vin-scan/thecarapi-api";
 
@@ -370,6 +371,101 @@ describe("fetchThecarapiVinWithDetails", () => {
     await fetchThecarapiVinWithDetails(`${vin.slice(0, 16)}4`, { ...again.deps, env: deps.env });
     const detailCalls = again.calls.filter((call) => call.url.includes("/api/auction/"));
     expect(detailCalls).toEqual([]);
+  });
+
+  it("history kešs bez detail izsauc detail_path un apvieno auction.images", async () => {
+    const live = JSON.parse(
+      readFileSync(path.join(process.cwd(), "lib/vin-scan/__fixtures__/thecarapi/detail-auto1-live-shape.json"), "utf8"),
+    ) as { auction: { id: number } };
+    const lot = "1326383507";
+    live.auction.id = Number(lot);
+    const history = {
+      auctions: [
+        {
+          site_name: "auto1",
+          auction_id: lot,
+          detail_path: `/api/auction/auto1/${lot}`,
+          mileage: 77387,
+          first_seen: "2026-09-01",
+          archived: false,
+          archived_at: null,
+        },
+      ],
+    };
+    const vin = "WBA6X310305V99968";
+    const parsed = parseThecarapiHistory({ json: history });
+    await writeThecarapiVinCache(vin, parsed.parse, {
+      refs: parsed.refs,
+      records: buildThecarapiAdminRecords({ historyJson: history }),
+      recordsComplete: true,
+    });
+    const { deps, calls } = scripted([jsonResponse(200, live), jsonResponse(200, { images: [] })]);
+    const result = await fetchThecarapiVinWithDetails(vin, deps);
+    expect(calls.map((call) => call.url)).toEqual([
+      `https://api.thecarapi.com/api/auction/auto1/${lot}`,
+      `https://api.thecarapi.com/api/auction-images/auto1/${lot}`,
+    ]);
+    const row = result.records.find((item) => item.id === lot);
+    expect(result.recordsComplete).toBe(true);
+    expect(JSON.stringify(row?.raw)).toContain("car_identification");
+    expect(JSON.stringify(row?.raw)).toContain("live-1.jpg");
+    expect(row?.photoUrls).toContain("https://img-pa.auto1.com/img/cid-doc.jpg");
+    expect(row?.photoUrls.some((url) => url.includes("/auction-photo/"))).toBe(false);
+    expect(row?.photoDate).toBe("2026-10-09");
+    expect(row?.fields.some((field) => field.key === "Auto1Details.kw" && field.value === "140")).toBe(true);
+    const again = scripted([]);
+    await fetchThecarapiVinWithDetails(vin, { ...again.deps, env: deps.env });
+    expect(again.calls).toEqual([]);
+  });
+
+  it("admin ceļš saglabā arhīvā ar archived_at un bildes datumu", async () => {
+    vi.stubEnv("ADMIN_ORDER_DRAFT_DIR", dir);
+    const live = JSON.parse(
+      readFileSync(path.join(process.cwd(), "lib/vin-scan/__fixtures__/thecarapi/detail-auto1-live-shape.json"), "utf8"),
+    ) as { auction: { id: number } };
+    const lot = "1326383508";
+    live.auction.id = Number(lot);
+    const history = {
+      auctions: [
+        {
+          site_name: "auto1",
+          auction_id: lot,
+          detail_path: `/api/auction/auto1/${lot}`,
+          mileage: 77387,
+          first_seen: "2026-09-01",
+        },
+      ],
+    };
+    const vin = "WBA6X310305V99969";
+    const { deps, calls } = scripted([
+      jsonResponse(200, history),
+      jsonResponse(200, live),
+      jsonResponse(200, { images: [] }),
+    ]);
+    const result = await fetchThecarapiCcVinMerge({
+      vin,
+      deps,
+      fetchJpegs: async (urls) => ({
+        ok: urls.slice(0, 2).map((url, index) => ({
+          ok: true as const,
+          url,
+          jpeg: Buffer.from(`jpeg-${index}`),
+          contentHash: `hash-${lot}-${index}`,
+        })),
+        failed: [],
+      }),
+      writeJpeg: async () => undefined,
+    });
+    expect(calls[0]?.url).toBe(`https://api.thecarapi.com/api/vin/${vin}/history`);
+    expect(calls[1]?.url).toBe(`https://api.thecarapi.com/api/auction/auto1/${lot}`);
+    const row = result.records.find((item) => item.id === lot);
+    expect(row?.fields[0]).toMatchObject({ label: "Arhīvā", value: "jā" });
+    expect(row?.fields.some((field) => field.key === "archived_at" && field.value.startsWith("20"))).toBe(true);
+    expect(row?.photos[0]?.date).toBe("2026-10-09");
+    const memory = await readVinMemory(vin);
+    expect(memory?.observations[0]?.archivedAt).toMatch(/^20/);
+    expect(memory?.observations[0]?.photos?.[0]?.date).toBe("2026-10-09");
+    expect(memory?.observations[0]?.auctionId).toBe(lot);
   });
 
   it("pēc ielādes liek bildes pasūtījuma galerijā un arhīva sesijā", async () => {

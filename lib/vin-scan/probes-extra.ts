@@ -14,6 +14,7 @@ import {
 import { fetchAuctionVinLots } from "@/lib/vin-scan/auction-vin-providers";
 import { markThecarapiArchived, thecarapiArchiveInputs } from "@/lib/thecarapi-archive";
 import { storeThecarapiGallery } from "@/lib/thecarapi-photos";
+import { forgetArchiveCountsCache } from "@/lib/vin-memory-auction-store";
 import { addVinObservations } from "@/lib/vin-memory-store";
 import { readThecarapiVinCacheRaw, writeThecarapiVinCache } from "@/lib/vin-scan/store";
 import { fetchThecarapiVinWithDetails } from "@/lib/vin-scan/thecarapi-api";
@@ -370,12 +371,15 @@ export async function probeThecarapi(ctx: VinScanContext): Promise<VinScanIndica
     if (result.records.length > 0) {
       const gallery = await storeThecarapiGallery({ vin: ctx.vin, records: result.records });
       let records = gallery.records;
-      const marked = markThecarapiArchived(records);
+      const marked = markThecarapiArchived(records, new Date().toISOString());
       const inputs = thecarapiArchiveInputs(ctx.vin, marked);
       if (inputs.length > 0) {
         try {
-          await addVinObservations(inputs);
-          records = marked;
+          const written = await addVinObservations(inputs);
+          if (written.ok) {
+            records = marked;
+            if (written.added > 0 || written.updated > 0) await forgetArchiveCountsCache().catch(() => undefined);
+          }
         } catch {
           records = gallery.records;
         }

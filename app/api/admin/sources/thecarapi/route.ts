@@ -10,6 +10,7 @@ import { getAdminSession } from "@/lib/admin-auth";
 import { normalizeCcVinBlock } from "@/lib/cc-vin-report";
 import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { fetchThecarapiCcVinMerge, thecarapiAdminStatus } from "@/lib/thecarapi-cc-vin";
+import { thecarapiJsonHasDetail } from "@/lib/vin-scan/thecarapi-fields";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -88,10 +89,14 @@ export async function POST(req: Request) {
         { status: 502 },
       );
     }
+    const cacheHasDetail =
+      result.records.length > 0 &&
+      result.records.every((record) => !record.id || thecarapiJsonHasDetail(record.rawDetail) || thecarapiJsonHasDetail(record.raw));
     return NextResponse.json({
       ok: true,
       vin,
       summary: result.parse.summary,
+      cacheHasDetail,
       parse: { status: result.parse.status, summary: result.parse.summary, detail: result.parse.detail || "" },
       block: result.block,
       fromCache: result.fromCache,
