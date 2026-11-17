@@ -23,7 +23,7 @@ export async function runVinScanCanaryWithAlert(nowMs = Date.now()) {
   for (const row of VIN_SCAN_CANARY_VINS) {
     const started = Date.now();
     try {
-      const indicators = await runVinScan({ vin: row.vin, sourceIds });
+      const indicators = await runVinScan({ vin: row.vin, sourceIds, ignoreBreaker: true });
       const statuses: Record<string, string> = {};
       for (const item of indicators) statuses[item.id] = item.status || "missing";
       runs.push({ vin: row.vin, statVinRecord: row.statVinRecord, expectFound: row.expectFound, statuses });

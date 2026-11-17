@@ -10,6 +10,9 @@ import { withVinScanRelayDedupe } from "@/lib/vin-scan/listings-page-relay";
 import { vinScanSourceTimeoutMs } from "@/lib/vin-scan/source-timeouts";
 import { thecarapiVinScanEnabled } from "@/lib/vin-scan/thecarapi-flags";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator } from "@/lib/vin-scan/types";
+import { readSourceHealth } from "@/lib/source-health-store";
+import { emptySourceHealthDoc, type SourceHealthDoc } from "@/lib/source-health";
+import { vinScanBreakerState, vinScanBreakerSummary } from "@/lib/vin-scan/source-health-outcomes";
 
 function timeoutMsFor(id: VinScanSourceId): number {
   return vinScanSourceTimeoutMs(id);
@@ -39,7 +42,31 @@ export type RunVinScanInput = {
   plates?: VinScanPlates;
   listingUrl?: string;
   sourceIds?: readonly string[];
+  /** true: izsauc arī avotus ar atvērtu circuit breaker (force skenējums, ikdienas canary). */
+  ignoreBreaker?: boolean;
+  /** Testiem: avotu veselības lasītājs. Noklusējums - `readSourceHealth`. */
+  readHealth?: () => Promise<SourceHealthDoc>;
+  /** Testiem: pašreizējais laiks ms. */
+  nowMs?: number;
 };
+
+const HEALTH_READ_TIMEOUT_MS = 3_000;
+
+/** Viens veselības nolasījums uz skenējumu. Kļūda vai noildze - tukšs dokuments (breaker neko neatslēdz). */
+async function readHealthBestEffort(read: () => Promise<SourceHealthDoc>): Promise<SourceHealthDoc> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const timeout = new Promise<SourceHealthDoc>((resolve) => {
+      timer = setTimeout(() => resolve(emptySourceHealthDoc()), HEALTH_READ_TIMEOUT_MS);
+    });
+    const doc = await Promise.race([Promise.resolve().then(read), timeout]);
+    return doc && typeof doc === "object" && doc.sources && typeof doc.sources === "object" ? doc : emptySourceHealthDoc();
+  } catch {
+    return emptySourceHealthDoc();
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 /** Visi avoti paralēli. Viena zonde, kas krīt, kļūst par unknown un neaptur pārējās. */
 function isRunnableVinScanSourceId(id: string): id is VinScanSourceId {
@@ -62,6 +89,11 @@ export async function runVinScan(
     ? input.sourceIds.filter((id): id is VinScanSourceId => isRunnableVinScanSourceId(id))
     : freeVinScanSourceIds();
   const wanted = VIN_SCAN_CATALOG.filter((item) => ids.includes(item.id));
+  const nowMs = input.nowMs ?? Date.now();
+  const needsHealth = !input.ignoreBreaker && wanted.some((item) => item.id !== "vin_decode");
+  const health = needsHealth
+    ? await readHealthBestEffort(input.readHealth ?? readSourceHealth)
+    : emptySourceHealthDoc();
   return withVinScanRelayDedupe(async () => {
   const rows = await Promise.all(
     wanted.map(async (item) => {
@@ -79,6 +111,13 @@ export async function runVinScan(
       };
       const missing = sourceNeedsInput(item.id, ctx);
       if (missing) return finish(missing);
+      const breaker = item.id === "vin_decode" ? null : vinScanBreakerState(health.sources[item.id], nowMs);
+      if (breaker) {
+        return finish({
+          ...buildVinScanIndicator(item.id, ctx.vin, { status: "unknown", summary: vinScanBreakerSummary(breaker) }, ctx.plates),
+          breakerOpen: true,
+        });
+      }
       const probe = vinScanProbeFor(item.id);
       if (!probe) {
         return finish(buildVinScanIndicator(item.id, ctx.vin, { status: "unknown", summary: "Zonde nav pieejama" }, ctx.plates));

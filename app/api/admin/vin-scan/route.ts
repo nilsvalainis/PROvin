@@ -4,8 +4,8 @@ import { recordSourceOutcomes } from "@/lib/source-health-store";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { fetchCsddTechDataCounted } from "@/lib/csdd-tech-data-counted";
 import { canonicalizeListingUrl, isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
-import { defaultVinScanSourceIds, VIN_SCAN_TTL_MS } from "@/lib/vin-scan/catalog";
-import { vinScanStatusIsCacheable } from "@/lib/vin-scan/health";
+import { defaultVinScanSourceIds } from "@/lib/vin-scan/catalog";
+import { pickReusableVinScanRows, stampVinScanRowById, stampVinScanRows } from "@/lib/vin-scan/source-ttl";
 import { mergeVinScanIndicators } from "@/lib/order-vin-scan";
 import {
   hasAnyVinScanPlate,
@@ -85,6 +85,13 @@ export async function POST(req: Request) {
         ...(httpStatus != null ? { httpStatus } : {}),
       },
     });
+    if (applied.ok) {
+      // Importētā rinda ir svaiga; pārējās patur savu vecumu (momentuzņēmuma scannedAt nemainās).
+      applied.snapshot = {
+        ...applied.snapshot,
+        indicators: stampVinScanRowById(applied.snapshot.indicators, sourceId, new Date().toISOString()),
+      };
+    }
     if (!applied.ok) {
       logVinScanBrowserImport({
         route: "vin-scan",
@@ -173,15 +180,20 @@ export async function POST(req: Request) {
   }
 
   const requested = sanitizeVinScanSourceIds(body.sources) ?? defaultVinScanSourceIds();
-  const prev = isValidVin(vin) ? await readVinScanSnapshot(vin).catch(() => null) : null;
-  const prevAge = prev ? Date.now() - Date.parse(prev.scannedAt) : Number.POSITIVE_INFINITY;
-  const prevUsable = Boolean(prev && prev.vin === vin && Number.isFinite(prevAge) && prevAge < VIN_SCAN_TTL_MS);
-  const cachedIds = new Set(
-    (prevUsable && !force ? prev!.indicators : []).filter((row) => vinScanStatusIsCacheable(row.status)).map((row) => row.id),
-  );
+  const prevRaw = isValidVin(vin) ? await readVinScanSnapshot(vin).catch(() => null) : null;
+  const prev = prevRaw && prevRaw.vin === vin ? prevRaw : null;
+  const nowMs = Date.now();
+  // Katra rinda pēc sava avota TTL (reģistri 7 d / 3 d, izsoļu arhīvi 30 d, sludinājumi 12 h).
+  const reusable = prev ? pickReusableVinScanRows(prev.indicators, prev.scannedAt, nowMs, force) : [];
+  const cachedIds = new Set(reusable.map((row) => row.id));
   const toScan = requested.filter((id) => !cachedIds.has(id));
-  const scanned = toScan.length ? await runVinScan({ vin, plates, listingUrl, sourceIds: toScan }) : [];
-  const base = prev && prev.vin === vin ? prev.indicators : [];
+  const scanned = stampVinScanRows(
+    toScan.length ? await runVinScan({ vin, plates, listingUrl, sourceIds: toScan, ignoreBreaker: force }) : [],
+    new Date(nowMs).toISOString(),
+    true,
+  );
+  // Vecās rindas patur savu laiku, citādi jaunais momentuzņēmuma scannedAt tās padarītu "svaigas".
+  const base = prev ? stampVinScanRows(prev.indicators, prev.scannedAt) : [];
   const indicators = applyFinlandLinkToIndicators(
     preferBrowserArchiveImport(base, mergeVinScanIndicators(base, scanned)),
     plates,
