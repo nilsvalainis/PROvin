@@ -123,3 +123,31 @@ describe("probeCarinfo releja super-search", () => {
     expect(row.summary).toContain("Sharan");
   });
 });
+
+describe("probeCarinfo rāda releja īsto iemeslu", () => {
+  afterEach(() => {
+    scanFetch.mockReset();
+    applyVinScanRelayIfBlocked.mockReset();
+    applyCarinfoSuperSearchHttp.mockReset();
+  });
+
+  it("releja dienas limits redzams rindā, nevis tikai „bloķē”", async () => {
+    scanFetch.mockResolvedValue({ status: 403, text: BLOCKED, cookie: "" });
+    const limited = { status: 403, text: BLOCKED, cookie: "", challengeReason: "Releja dienas limits VIN SCAN" };
+    applyVinScanRelayIfBlocked.mockResolvedValue(limited);
+    applyCarinfoSuperSearchHttp.mockResolvedValue(limited);
+    const row = await probeCarinfo(ctx());
+    expect(row.status).toBe("blocked");
+    expect(row.summary).toContain("Releja dienas limits");
+  });
+
+  it("bez releja iemesla paliek parastais teksts", async () => {
+    scanFetch.mockResolvedValue({ status: 403, text: BLOCKED, cookie: "" });
+    const plain = { status: 403, text: BLOCKED, cookie: "" };
+    applyVinScanRelayIfBlocked.mockResolvedValue(plain);
+    applyCarinfoSuperSearchHttp.mockResolvedValue(plain);
+    const row = await probeCarinfo(ctx());
+    expect(row.status).toBe("blocked");
+    expect(row.summary).toMatch(/bloķē serveri/);
+  });
+});

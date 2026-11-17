@@ -14,7 +14,7 @@ import {
 export const ORDER_VIN_SCAN_PHOTO_IMPORT_MAX = AUCTION_PHOTO_PER_LOT_MAX;
 
 const HOST_OK =
-  /(^|\.)(copart\.com|copart\.fi|iaai\.com|stat\.vin|bidfax\.(info|net)|poctra\.com|autoastat\.com|bid\.cars|cloudfront\.net|import-motor\.com|auto1\.com|openlane\.eu|openlane\.com|ecarstrade\.com|autorola\.com|bca\.com|encar\.com)$/i;
+  /(^|\.)(copart\.com|copart\.fi|iaai\.com|stat\.vin|bidfax\.(info|net)|poctra\.com|autoastat\.com|bid\.cars|cloudfront\.net|import-motor\.com|auto1\.com|openlane\.eu|openlane\.com|ecarstrade\.com|autorola\.com|bca\.com|encar\.com|plc\.auction|checkcar\.vin)$/i;
 
 const PRIVATE_HOST =
   /^(localhost|127\.|10\.|192\.168\.|169\.254\.|0\.|::1$|\[::1\])|^(172\.(1[6-9]|2\d|3[01])\.)/i;
