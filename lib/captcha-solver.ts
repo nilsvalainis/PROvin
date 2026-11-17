@@ -1,7 +1,7 @@
 /**
  * CapSolver (https://docs.capsolver.com) - reCAPTCHA, Turnstile un Cloudflare Challenge.
  * Atslēga: CAPSOLVER_API_KEY.
- * Cloudflare Challenge un lkf.ee reCAPTCHA v2: sticky proxy (CAPSOLVER_PROXY vai FIXIE_URL),
+ * Cloudflare Challenge un lkf.ee reCAPTCHA v2: sticky proxy (VIN_PROXY_URL, CAPSOLVER_PROXY vai FIXIE_URL),
  * tokens jāsūta no tā paša IP.
  * mnt.ee reCAPTCHA v3: pēc noklusējuma ProxyLess (Fixie datacenter neder V3); HTTP no Vercel.
  * Ja mnt.ee noraida standarta žetonu, viens mēģinājums ar M1 (CAPSOLVER_MNT_V3_M1=0 izslēdz).
@@ -323,9 +323,7 @@ export function cloudflareChallengeTaskQueue(
     });
   };
 
-  const raws = [task.proxy, process.env.CAPSOLVER_PROXY, process.env.FIXIE_URL]
-    .map((s) => (s ?? "").trim())
-    .filter(Boolean);
+  const raws = [(task.proxy ?? "").trim(), ...stickyProxyEnvRaws()].filter(Boolean);
   const identities: CapsolverProxyParts[] = [];
   const idKeys = new Set<string>();
   const addParts = (raw: string) => {
@@ -381,10 +379,66 @@ export async function resolveCapsolverProxyIpv4(host: string): Promise<string[]>
   }
 }
 
+/**
+ * Sticky proxy env secībā: VIN_PROXY_URL (mūsu Hetzner CONNECT proxy), CAPSOLVER_PROXY, FIXIE_URL.
+ * Tukšās vērtības izlaiž.
+ */
+export const STICKY_PROXY_ENV_KEYS = ["VIN_PROXY_URL", "CAPSOLVER_PROXY", "FIXIE_URL"] as const;
+
+function stickyProxyEnvRaws(env: Record<string, string | undefined> = process.env): string[] {
+  return STICKY_PROXY_ENV_KEYS.map((key) => (env[key] ?? "").trim()).filter(Boolean);
+}
+
 export function getCaptchaSolverProxy(): string {
-  const direct = capsolverProxyFromUrl(process.env.CAPSOLVER_PROXY ?? "");
-  if (direct) return direct;
-  return capsolverProxyFromUrl(process.env.FIXIE_URL ?? "") ?? "";
+  for (const raw of stickyProxyEnvRaws()) {
+    const normalized = capsolverProxyFromUrl(raw);
+    if (normalized) return normalized;
+  }
+  return "";
+}
+
+function escapeRegExp(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Visas formas, kurās konfigurētais proxy (ar paroli) var parādīties ārējā tekstā. */
+function proxySecretVariants(env: Record<string, string | undefined>): string[] {
+  const out = new Set<string>();
+  for (const raw of stickyProxyEnvRaws(env)) {
+    out.add(raw);
+    const parts = parseCapsolverProxy(raw);
+    if (!parts) continue;
+    for (const v of [
+      capsolverProxyFromUrl(raw),
+      capsolverProxySchemeColonForm(parts),
+      capsolverProxyColonForm(raw),
+    ]) {
+      if (v) out.add(v);
+    }
+    if (parts.user && parts.pass) {
+      out.add(`${parts.user}:${parts.pass}`);
+      out.add(`${encodeURIComponent(parts.user)}:${encodeURIComponent(parts.pass)}`);
+    }
+    if (parts.pass.length >= 6) {
+      out.add(parts.pass);
+      out.add(encodeURIComponent(parts.pass));
+    }
+  }
+  // Garākās vispirms, lai daļēja aizvietošana nesabojā pilnās formas.
+  return [...out].filter((v) => v.length >= 4).sort((a, b) => b.length - a.length);
+}
+
+/**
+ * Noņem proxy piekļuves datus no ārēja teksta (risinātāja errorDescription, tīkla kļūdas):
+ * `//user:pass@` -> `//***@` un konfigurēto proxy vērtību (URL un colon formas) -> `***`.
+ */
+export function redactProxySecrets(text: string, env: Record<string, string | undefined> = process.env): string {
+  if (!text) return text;
+  let out = text.replace(/\/\/[^\s/@]+@/g, "//***@");
+  for (const secret of proxySecretVariants(env)) {
+    out = out.replace(new RegExp(escapeRegExp(secret), "g"), "***");
+  }
+  return out;
 }
 
 /** CapSolver proxy (URL vai colon) -> http(s)://user:pass@host:port undici ProxyAgent. */
@@ -394,7 +448,7 @@ export function httpProxyUrlFromCapsolver(proxy: string): string | null {
   return normalized;
 }
 
-/** HTTP fetch caur to pašu sticky proxy, ar kuru CapSolver risina captcha (FIXIE_URL). */
+/** HTTP fetch caur to pašu sticky proxy, ar kuru CapSolver risina captcha (VIN_PROXY_URL / CAPSOLVER_PROXY / FIXIE_URL). */
 export function vinStickyHttpProxyUrl(): string | undefined {
   return httpProxyUrlFromCapsolver(getCaptchaSolverProxy()) || undefined;
 }
@@ -504,7 +558,7 @@ export function parseCaptchaCreateTask(raw: unknown, label = "CapSolver"): { tas
   const taskId =
     typeof o.taskId === "string" ? o.taskId.trim() : typeof o.taskId === "number" ? String(o.taskId) : "";
   if (errorId !== 0 || !taskId) {
-    const desc = String(o.errorDescription || o.errorCode || "createTask neizdevās").slice(0, 200);
+    const desc = redactProxySecrets(String(o.errorDescription || o.errorCode || "createTask neizdevās")).slice(0, 200);
     return { reason: `${label}: ${desc}` };
   }
   return { taskId };
@@ -515,7 +569,7 @@ export function parseCaptchaTaskResult(raw: unknown, label = "CapSolver"): Captc
   const o = raw as Record<string, unknown>;
   const errorId = Number(o.errorId ?? 0);
   if (errorId !== 0) {
-    const desc = String(o.errorDescription || o.errorCode || "uzdevums neizdevās").slice(0, 200);
+    const desc = redactProxySecrets(String(o.errorDescription || o.errorCode || "uzdevums neizdevās")).slice(0, 200);
     return { ok: false, reason: `${label}: ${desc}` };
   }
   const status = String(o.status ?? "");
@@ -616,7 +670,7 @@ function pollStatusLabel(raw: unknown): string {
   if (!raw || typeof raw !== "object") return "tukša_atbilde";
   const o = raw as Record<string, unknown>;
   if (Number(o.errorId ?? 0) !== 0) {
-    return String(o.errorDescription || o.errorCode || "kļūda").slice(0, 80);
+    return redactProxySecrets(String(o.errorDescription || o.errorCode || "kļūda")).slice(0, 80);
   }
   return String(o.status ?? "").trim() || "nav";
 }
@@ -652,7 +706,7 @@ async function capsolverPostJson(
     return { json, httpStatus };
   } catch (e) {
     if (isAbortLike(e)) return { networkReason: `${endpoint}: tīkla noildze` };
-    const msg = e instanceof Error ? e.message.slice(0, 160) : "kļūda";
+    const msg = e instanceof Error ? redactProxySecrets(e.message).slice(0, 160) : "kļūda";
     return { networkReason: `${endpoint}: tīkls (${msg})` };
   } finally {
     clearTimeout(timer);
@@ -661,12 +715,12 @@ async function capsolverPostJson(
 
 function labeledSolveResult(result: CaptchaSolveResult, sourceLabel?: string): CaptchaSolveResult {
   if (result.ok) return result;
-  return { ok: false, reason: prefixCaptchaSourceReason(result.reason, sourceLabel) };
+  return { ok: false, reason: redactProxySecrets(prefixCaptchaSourceReason(result.reason, sourceLabel)) };
 }
 
 async function extraCapsolverProxyHosts(task: CloudflareChallengeTask, deps: SolveDeps): Promise<string[]> {
   if (deps.resolveProxyIps === null) return [];
-  const raw = (task.proxy || process.env.CAPSOLVER_PROXY || process.env.FIXIE_URL || "").trim();
+  const raw = (task.proxy?.trim() || stickyProxyEnvRaws()[0] || "").trim();
   const parts = parseCapsolverProxy(raw);
   if (!parts || isIpv4Host(parts.host)) return [];
   const resolve =
@@ -680,7 +734,7 @@ export async function solveCaptcha(task: CaptchaTask, deps: SolveDeps = {}): Pro
     const queue = cloudflareChallengeTaskQueue(task, extraHosts);
     if (queue.length === 0) {
       return labeledSolveResult(
-        { ok: false, reason: "Cloudflare Challenge vajag CAPSOLVER_PROXY vai FIXIE_URL" },
+        { ok: false, reason: "Cloudflare Challenge vajag VIN_PROXY_URL, CAPSOLVER_PROXY vai FIXIE_URL" },
         deps.sourceLabel,
       );
     }
@@ -801,14 +855,14 @@ async function solveCaptchaOnce(task: CaptchaTask, deps: SolveDeps = {}): Promis
       providerLabel,
     });
     if (!proxied && attempt < maxAttempts) {
-      console.warn("[capsolver] ProxyLess poll noildze, atkārtoju createTask", lastReason);
+      console.warn("[capsolver] ProxyLess poll noildze, atkārtoju createTask", redactProxySecrets(lastReason));
       await sleep(1500);
       continue;
     }
-    console.warn("[capsolver]", lastReason);
+    console.warn("[capsolver]", redactProxySecrets(lastReason));
     return labeledSolveResult({ ok: false, reason: lastReason }, label);
   }
-  console.warn("[capsolver]", lastReason);
+  console.warn("[capsolver]", redactProxySecrets(lastReason));
   return labeledSolveResult({ ok: false, reason: lastReason }, label);
 }
 
