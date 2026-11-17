@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   adminPushVinScanCanaryMessage,
+  canaryStreakFailures,
   decideCanaryAlert,
   evaluateVinScanCanary,
   VIN_SCAN_CANARY_ALERT_REPEAT_MS,
@@ -77,5 +78,45 @@ describe("push dedupe", () => {
     expect(m.url.startsWith("/admin")).toBe(true);
     expect(m.audience).toBe("pro");
     expect(m.body).not.toContain("WBA5R1C0XLFH42873");
+  });
+});
+
+describe("VIN SCAN kanārijputns: DK atvērtie API un kļūdu sērijas", () => {
+  const ids = ["vin_decode", "stat_vin", "tjekbil", "esyn"];
+  const dk = (tjekbil: string, esyn: string): VinScanCanaryRun => ({
+    vin: "WVWZZZ7NZEV015204",
+    statVinRecord: false,
+    expectFound: ["tjekbil", "esyn"],
+    statuses: { vin_decode: "found", stat_vin: "browser_only", tjekbil, esyn },
+  });
+
+  it("DK VIN atrasts abos - zaļš", () => {
+    expect(evaluateVinScanCanary([dk("found", "found")], ids)).toEqual([]);
+  });
+
+  it("DK VIN pēkšņi none (API formāts mainījies) ir kļūme", () => {
+    expect(evaluateVinScanCanary([dk("none", "found")], ids).map((f) => `${f.sourceId}:${f.status}`)).toEqual([
+      "tjekbil:none",
+    ]);
+  });
+
+  it("citam VIN tjekbil none nav kļūme", () => {
+    const run: VinScanCanaryRun = {
+      vin: "YV1DZ5251B2146640",
+      statVinRecord: false,
+      statuses: { vin_decode: "found", stat_vin: "none", tjekbil: "none", esyn: "none" },
+    };
+    expect(evaluateVinScanCanary([run], ids)).toEqual([]);
+  });
+
+  it("mnt.ee 3 kļūdas pēc kārtas reālos skenējumos ir kļūme un nonāk push tekstā", () => {
+    const failures = canaryStreakFailures([
+      { id: "mnt_ee", streak: 56 },
+      { id: "not_a_vin_scan_source", streak: 9 },
+    ]);
+    expect(failures.map((f) => f.sourceId)).toEqual(["mnt_ee"]);
+    const msg = adminPushVinScanCanaryMessage(failures);
+    expect(msg.body).toMatch(/Igaunija|mnt/i);
+    expect(decideCanaryAlert(failures, {}, NOW).send).toBe(true);
   });
 });
