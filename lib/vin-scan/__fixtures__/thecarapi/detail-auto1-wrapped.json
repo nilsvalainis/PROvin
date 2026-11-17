@@ -208,6 +208,38 @@
         "image_source": "subarea",
         "image_status": "hidden"
       }
-    ]
+    ],
+    "mileage": 77387,
+    "current_final": 12268,
+    "start": 10000,
+    "seller": "AUTO1 GmbH",
+    "location": "Berlin",
+    "city": "Berlin",
+    "country": "DE",
+    "make": "BMW",
+    "model": "X3",
+    "year": 2020,
+    "vin": "WBA6X310305V99966",
+    "archived": false,
+    "equipment": [
+      "Navigācija",
+      "LED"
+    ],
+    "damages": [
+      {
+        "zone": "Priekšējais bamperis",
+        "note": "skrāpējums",
+        "severity": "light"
+      },
+      {
+        "zone": "Kreisās durvis",
+        "note": "iespiedums"
+      }
+    ],
+    "service": {
+      "note": "Eļļa mainīta 2026-09",
+      "workshop": "AUTO1 serviss"
+    },
+    "portal_mystery": "keep-zone"
   }
 }

@@ -147,7 +147,14 @@ export function thecarapiAbsoluteUrl(baseUrl: string, detailPath: string, site: 
 }
 
 function stampOf(row: Record<string, unknown>): string {
-  return isoDay(row.last_seen_at) || isoDay(row.first_seen_at) || isoDay(row.date) || isoDay(row.data_updated_at);
+  return (
+    isoDay(row.last_seen_at) ||
+    isoDay(row.first_seen_at) ||
+    isoDay(row.last_seen) ||
+    isoDay(row.first_seen) ||
+    isoDay(row.date) ||
+    isoDay(row.data_updated_at)
+  );
 }
 
 function pendingFlag(raw: unknown, depth: number): boolean {

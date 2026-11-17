@@ -6,6 +6,7 @@
  * netiek drukātas - tās jau ir citās sadaļās vai nesniedz informāciju.
  */
 
+import { buildThecarapiRecordsPdfHtml } from "@/lib/thecarapi-pdf";
 import {
   CC_VIN_SUBTITLES,
   CC_VIN_UNIFIED_INCIDENT_CHECK_LABELS,
@@ -154,6 +155,9 @@ export function buildCcVinPdfInnerHtml(b: CcVinBlockState | null | undefined): s
     );
   }
 
+  const thecarapiHtml = buildThecarapiRecordsPdfHtml(b.thecarapiRecords);
+  if (thecarapiHtml) parts.push(thecarapiHtml);
+
   return parts.join("\n");
 }
 
@@ -172,4 +176,9 @@ export const CC_VIN_PDF_CSS = `
       .pdf-ccvin-flag-label{flex:1 1 auto;color:#0f172a;font-weight:600}
       .pdf-ccvin-flag-value{flex:0 0 auto;color:#B91C1C;font-weight:600;text-align:right}
       .pdf-ccvin-facts{margin:0 0 4px;font-size:var(--pdf-fs-label);color:#86868b;line-height:1.5}
+      .pdf-tc-lot{margin:0 0 12px}
+      .pdf-tc-kv{width:100%;margin:0 0 8px}
+      .pdf-tc-kv th{width:42%;text-align:left;font-weight:600;color:#86868b;vertical-align:top;padding:3px 8px 3px 0}
+      .pdf-tc-kv td{vertical-align:top;padding:3px 0}
+      .pdf-tc-zone{margin:4px 0 2px;font-size:var(--pdf-fs-label);font-weight:600;color:#0f172a}
 `;

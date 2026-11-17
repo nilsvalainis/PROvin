@@ -58,6 +58,7 @@ describe("TheCarApi lauki", () => {
     expect(thecarapiPhotoDate({ first_seen_at: "2024-03-12T10:00:00Z", last_seen_at: "2024-03-15T18:00:00Z" })).toBe("2024-03-12");
     expect(thecarapiPhotoDate({ last_seen_at: "2024-03-15T18:00:00Z" })).toBe("2024-03-15");
     expect(thecarapiPhotoDate({ last_seen_at: "2024-03-15", data_updated_at: "2026-10-09T18:00:00Z" })).toBe("2024-03-15");
+    expect(thecarapiPhotoDate({ first_seen: "2026-10-09", data_updated_at: "2026-10-01" })).toBe("2026-10-09");
     expect(thecarapiPhotoDate({ data_updated_at: "2026-10-09T18:00:00Z" })).toBe("2026-10-09");
   });
 

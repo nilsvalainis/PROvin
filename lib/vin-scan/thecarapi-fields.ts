@@ -51,7 +51,11 @@ export const THECARAPI_FIELD_LABELS: Record<string, string> = {
   first_seen_at: "Pirmoreiz redzēts",
   last_seen_at: "Pēdējo reizi redzēts",
   is_active: "Aktīva izsole",
-  archived: "Arhīvā",
+  archived: "Avota arhīvā",
+  current_final: "Noslēguma cena",
+  start: "Sākuma cena",
+  first_seen: "Pirmoreiz redzēts",
+  last_seen: "Pēdējo reizi redzēts",
   detail_path: "Detaļu ceļš",
   auction_date: "Izsoles datums",
   date: "Datums",
@@ -228,7 +232,13 @@ export function thecarapiPhotoDate(row: Record<string, unknown>): string {
     const day = isoDay(row[key]);
     if (day) return day;
   }
-  return isoDay(row.first_seen_at) || isoDay(row.last_seen_at) || isoDay(row.data_updated_at);
+  return (
+    isoDay(row.first_seen_at) ||
+    isoDay(row.last_seen_at) ||
+    isoDay(row.first_seen) ||
+    isoDay(row.last_seen) ||
+    isoDay(row.data_updated_at)
+  );
 }
 
 function pushHttps(raw: string, out: string[], seen: Set<string>): void {
