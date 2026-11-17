@@ -1,0 +1,834 @@
+{
+ "vin": "WAUZZZ4G8DN015599",
+ "label": "Audi A6 Allroad: daudz neatbilstību starp avotiem, izsoļu arhīvs",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 196, saglabāts 2026-10-13; nolasīts 17.11.2026, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": "https://ss.com/",
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "AUDI A6 ALLROAD QUATTRO",
+   "registrationNumber": "",
+   "firstRegistration": "",
+   "firstRegistrationLatvia": "",
+   "nextInspectionDate": "",
+   "prevInspectionDate": "",
+   "engineDisplacementCm3": "2967",
+   "enginePowerKw": "150",
+   "fuelType": "",
+   "emissionStandard": "Euro 5 F",
+   "vehicleType": "",
+   "grossMassKg": "2505",
+   "curbMassKg": "1930",
+   "seatCount": "",
+   "roadTaxEur": "",
+   "registrationStatus": "nav reģistrēts",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "",
+   "ownerCountLatvia": "",
+   "vin": "",
+   "modelYear": "",
+   "color": "",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "",
+   "cocType": "",
+   "cocApprovalNumber": "",
+   "cocVariant": "",
+   "cocVersion": "",
+   "insuranceValidUntil": "",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "",
+    "inspectionDateText": "",
+    "nextInspectionDateText": "",
+    "odometer": "310717",
+    "ratingLabel": "",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "23.05.2024",
+     "odometer": "267020",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.04.2022",
+     "odometer": "216060",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.03.2020",
+     "odometer": "170984",
+     "country": "Vācija"
+    }
+   ]
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "01.07.2022",
+     "odometer": "207000",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2019",
+     "odometer": "146500",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.02.2025",
+     "lossAmount": "6 500 - 7 000 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.07.2022",
+     "lossAmount": "800 - 900 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.12.2021",
+     "lossAmount": "2 200 - 2 400 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.08.2020",
+     "lossAmount": "3 500 - 3 750 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.09.2019",
+     "lossAmount": "1 400 - 1 500 €"
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.04.2026",
+     "odometer": "310000",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2025",
+     "odometer": "305663",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2022",
+     "odometer": "207000",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2021",
+     "odometer": "146500",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2012",
+     "odometer": "14",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.09.2019",
+     "lossAmount": "1 001 - 1 500 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.08.2020",
+     "lossAmount": "751 - 1 000 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.09.2020",
+     "lossAmount": "3 501 - 4 000 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.12.2021",
+     "lossAmount": "2 001 - 2 500 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.07.2022",
+     "lossAmount": "751 - 1 000 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.02.2025",
+     "lossAmount": "6 501 - 7 000 €"
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "02.08.2018",
+     "odometer": "143127",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.01.2018",
+     "odometer": "129158",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.05.2017",
+     "odometer": "111228",
+     "country": "Vācija"
+    },
+    {
+     "date": "26.01.2017",
+     "odometer": "103802",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.05.2016",
+     "odometer": "82797",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.02.2016",
+     "odometer": "77669",
+     "country": "Vācija"
+    },
+    {
+     "date": "09.04.2015",
+     "odometer": "51328",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.03.2014",
+     "odometer": "25258",
+     "country": "Vācija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "02.08.2018",
+     "odometer": "143127",
+     "location": "Vācija",
+     "works": "Servisa apmeklējums"
+    },
+    {
+     "date": "22.01.2018",
+     "odometer": "129158",
+     "location": "Vācija",
+     "works": "Servisa apmeklējums"
+    },
+    {
+     "date": "15.05.2017",
+     "odometer": "111228",
+     "location": "Vācija",
+     "works": "Servisa apmeklējums"
+    },
+    {
+     "date": "26.01.2017",
+     "odometer": "103802",
+     "location": "Vācija",
+     "works": "Servisa apmeklējums"
+    },
+    {
+     "date": "02.05.2016",
+     "odometer": "82797",
+     "location": "Vācija",
+     "works": "Servisa apmeklējums"
+    },
+    {
+     "date": "25.02.2016",
+     "odometer": "77669",
+     "location": "Vācija",
+     "works": "Servisa apmeklējums"
+    },
+    {
+     "date": "09.04.2015",
+     "odometer": "51328",
+     "location": "Vācija",
+     "works": "Servisa apmeklējums"
+    },
+    {
+     "date": "19.03.2014",
+     "odometer": "25258",
+     "location": "Vācija",
+     "works": "Servisa apmeklējums"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": []
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "AUDI A6",
+     "modelSeries": "C7",
+     "vinCode": "WAUZZZ4G8DN015599",
+     "vehicleType": "",
+     "transmission": "S-Tronic, G1D - 7-speed automatic transmission for four-wheel drive",
+     "steeringSide": "LHD",
+     "engineCode": "CLAA",
+     "engineNumber": "",
+     "body": "",
+     "drive": "QUATTRO",
+     "power": "150 kW (201 ZS / 204 PS)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "4G0/4G8",
+     "productionDate": "",
+     "firstRegistration": "01.11.2012",
+     "warrantyStartDate": "",
+     "countryRegion": "Vācija",
+     "color": "",
+     "colorCode": "",
+     "interior": "N5W",
+     "interiorCode": "N5W",
+     "fuel": "D",
+     "displacement": "3.0TDI"
+    },
+    "accidentCheck": "",
+    "stolenCheck": ""
+   }
+  },
+  "cc_vin": {
+   "reportDate": "22.09.2026",
+   "attentionMarks": "3/12",
+   "ownersCount": "",
+   "checks": [
+    {
+     "label": "Odometra ieraksti",
+     "status": "310 000 km",
+     "severity": "alert"
+    },
+    {
+     "label": "Fiksētie bojājumi",
+     "status": "4 bojājumi",
+     "severity": "alert"
+    },
+    {
+     "label": "Negadījumi",
+     "status": "6 problēmas",
+     "severity": "alert"
+    },
+    {
+     "label": "Norakstīšanas ieraksti",
+     "status": "Nav atrastu problēmu",
+     "severity": "ok"
+    },
+    {
+     "label": "Zādzību ieraksti",
+     "status": "Nav atrastu problēmu",
+     "severity": "ok"
+    },
+    {
+     "label": "Ķīlas, aresta un eksporta ieraksti",
+     "status": "Nav atrastu problēmu",
+     "severity": "ok"
+    },
+    {
+     "label": "Servisa ieraksti",
+     "status": "Nav atrastu problēmu",
+     "severity": "ok"
+    },
+    {
+     "label": "Citas īpašumtiesību atzīmes",
+     "status": "Nav atrastu problēmu",
+     "severity": "ok"
+    },
+    {
+     "label": "Reģistrācijas ieraksti",
+     "status": "Nav ierakstu",
+     "severity": "ok"
+    },
+    {
+     "label": "Pārdošanas vēsture",
+     "status": "1 ieraksts",
+     "severity": "ok"
+    },
+    {
+     "label": "Īpašnieku skaits",
+     "status": "Nav atrastu problēmu",
+     "severity": "ok"
+    },
+    {
+     "label": "Izmantots kā taksometrs",
+     "status": "Nav ierakstu",
+     "severity": "ok"
+    }
+   ],
+   "mileage": [
+    {
+     "date": "01.05.2026",
+     "odometer": "310000",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2022",
+     "odometer": "207000",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2021",
+     "odometer": "146500",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2020",
+     "odometer": "146500",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2020",
+     "odometer": "146500",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2019",
+     "odometer": "146500",
+     "country": "Vācija"
+    }
+   ],
+   "damages": [
+    {
+     "date": "01.02.2025",
+     "region": "Vācija",
+     "amount": "7 080 €",
+     "description": "Negadījums"
+    },
+    {
+     "date": "01.07.2022",
+     "region": "Vācija",
+     "amount": "879 €",
+     "description": "Negadījums, Rear Right, Rear Left"
+    },
+    {
+     "date": "01.07.2022",
+     "region": "",
+     "amount": "",
+     "description": "Rear Left"
+    },
+    {
+     "date": "01.07.2022",
+     "region": "",
+     "amount": "",
+     "description": "Rear Right"
+    },
+    {
+     "date": "01.07.2022",
+     "region": "Vācija",
+     "amount": "879 €",
+     "description": "Negadījums"
+    },
+    {
+     "date": "01.12.2021",
+     "region": "Vācija",
+     "amount": "2 460 €",
+     "description": "Negadījums, Priekšpuses bojājums"
+    },
+    {
+     "date": "01.12.2021",
+     "region": "",
+     "amount": "",
+     "description": "Priekšpuses bojājums"
+    },
+    {
+     "date": "01.12.2021",
+     "region": "Vācija",
+     "amount": "2 460 €",
+     "description": "Negadījums"
+    },
+    {
+     "date": "01.09.2020",
+     "region": "Vācija",
+     "amount": "3 770 €",
+     "description": "Negadījums"
+    },
+    {
+     "date": "01.08.2020",
+     "region": "Vācija",
+     "amount": "883 €",
+     "description": "Negadījums, Priekšpuses bojājums"
+    },
+    {
+     "date": "01.08.2020",
+     "region": "",
+     "amount": "",
+     "description": "Priekšpuses bojājums"
+    },
+    {
+     "date": "01.08.2020",
+     "region": "Vācija",
+     "amount": "883 €",
+     "description": "Negadījums"
+    },
+    {
+     "date": "01.09.2019",
+     "region": "Vācija",
+     "amount": "1 480 €",
+     "description": "Negadījums, Priekšpuses bojājums"
+    },
+    {
+     "date": "01.09.2019",
+     "region": "",
+     "amount": "",
+     "description": "Priekšpuses bojājums"
+    },
+    {
+     "date": "01.09.2019",
+     "region": "Vācija",
+     "amount": "1 480 €",
+     "description": "Negadījums"
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "01.05.2026",
+     "venue": "AUTOBID",
+     "odometer": "309 000",
+     "price": "5 240 €",
+     "status": "Pārdots"
+    },
+    {
+     "date": "01.05.2026",
+     "venue": "AUTOBID",
+     "odometer": "310 000",
+     "price": "5 240 €",
+     "status": "Pārdots"
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "",
+    "fetchedAt": "",
+    "lastCostUsd": "",
+    "status": "unknown",
+    "summary": ""
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "17",
+   "listingCreated": "05.09.2026",
+   "priceDrop": "€ 0",
+   "priceHistory": [
+    {
+     "date": "05.09.2026",
+     "price": 11500,
+     "mileage": 309000,
+     "year": 2012,
+     "delta": 0
+    }
+   ],
+   "listingMileageOdometer": "309 000",
+   "listingMileageDate": "05.09.2026",
+   "listingMileageCountry": "Latvija"
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "comments": "",
+     "label": ""
+    }
+   ]
+  }
+ }
+}
