@@ -72,6 +72,9 @@ describe("tjekbil-map", () => {
     expect(isCustomsInspection(toldsyn)).toBe(true);
     expect(isFailedMot(toldsyn)).toBe(false);
     expect(isFailedMot({ kategori: "Periodisk syn", synsresultat: "Kan ikke godkendes" })).toBe(true);
+    expect(isFailedMot({ kategori: "Periodisk syn", synsresultat: "Ikke godkendt" })).toBe(true);
+    expect(isFailedMot({ kategori: "Periodisk syn", synsresultat: "Godkendt" })).toBe(false);
+    expect(isFailedMot({ kategori: "Periodisk syn", synsresultat: "Betinget godkendt" })).toBe(false);
   });
 
   it("fills timeline, mileage and import without counting insurance as owners", () => {

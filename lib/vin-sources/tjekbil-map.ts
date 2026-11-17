@@ -77,6 +77,8 @@ export function isFailedMot(r: TjekbilInspection): boolean {
   if (isCustomsInspection(r)) return false;
   const result = str(r.synsresultat).trim();
   if (!result) return false;
+  // „Ikke godkendt” satur vārdu „godkendt”, tāpēc noliegums jāpārbauda pirms tā.
+  if (/\bikke\s+godkendt/i.test(result)) return true;
   if (/godkendt/i.test(result)) return false;
   return /ikke|omsyn|kan ikke|betinget/i.test(result);
 }
