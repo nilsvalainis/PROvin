@@ -192,22 +192,23 @@ export function parseVegvesen(status: number, text: string): VinScanParse {
   };
 }
 
+/** NICB VINCheck negatīvā atbilde (nav zagts / nav total loss). */
+export const NICB_CLEAN_RE =
+  /no records|not found|clean record|no match|is not listed|not listed as stolen|no theft records|does not appear|has not been reported|not been reported as (stolen|a theft)/i;
+
 export function parseNicbHtml(html: string, vin: string): VinScanParse {
   const text = html.replace(/<[^>]+>/g, " ");
   const upperVin = vin.trim().toUpperCase();
   const hasVin = Boolean(upperVin) && text.toUpperCase().includes(upperVin);
+  // Tīrā NICB lapa satur gan VIN, gan vārdu „stolen” („not listed as stolen”). Negatīvo frāzi jāpārbauda pirmo.
+  if (NICB_CLEAN_RE.test(text)) {
+    return { status: "none", summary: "NICB sarakstā nav" };
+  }
   if (/stolen/i.test(text) && hasVin) {
     return { status: "found", summary: "NICB: iespējams zagts", flags: { stolen: true } };
   }
   if (/total loss|salvage/i.test(text) && hasVin) {
     return { status: "found", summary: "NICB: total loss / salvage ieraksts" };
-  }
-  if (
-    /no records|not found|clean record|no match|is not listed|not listed as stolen|no theft records|does not appear/i.test(
-      text,
-    )
-  ) {
-    return { status: "none", summary: "NICB sarakstā nav" };
   }
   if (/recaptcha|i['’]m not a robot|hcaptcha/i.test(text) && !hasVin) {
     return { status: "unknown", summary: "NICB captcha netika apieta - atver pārlūkā" };
@@ -369,10 +370,10 @@ export function parseAuctionArchive(status: number, html: string, vin: string, l
 export function parseOemRecallHtml(status: number, html: string, vin: string, brand: string): VinScanParse {
   if (status >= 400) return { status: "unknown", summary: `${brand} atsaukumi HTTP ${status}` };
   const text = html.replace(/<[^>]+>/g, " ");
-  if (/no recall|0 recall|recalls?:?\s*none|nav atsauk/i.test(text)) {
+  if (/no recall|(?<!\d)0\s*(?:open\s+)?recalls?|recalls?:?\s*none|nav atsauk/i.test(text)) {
     return { status: "none", summary: `${brand}: atsaukumu nav`, flags: { recallCount: 0 } };
   }
-  const count = /(\d+)\s*recalls?/i.exec(text);
+  const count = /(\d+)\s*(?:open\s+|safety\s+)?recalls?/i.exec(text);
   const n = count ? Number(count[1]) : NaN;
   if (Number.isFinite(n) && n > 0) {
     return { status: "found", summary: `${brand}: ${n} atsaukumi`, flags: { recallCount: n } };

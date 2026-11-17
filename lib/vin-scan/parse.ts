@@ -208,7 +208,8 @@ export function parseCarpassRecalls(status: number, text: string): VinScanParse 
   if (success) {
     return { status: "none", summary: result ? `Atsaukumu nav. ${result}` : "Atsaukumu nav", detail: result };
   }
-  if (result) return { status: "none", summary: result };
+  // success:false ar citu tekstu ir kļūda (CSRF, sesija, limits), nevis „atsaukumu nav”.
+  if (result) return { status: "unknown", summary: `Car-Pass: ${result.slice(0, 160)}` };
   return { status: "unknown", summary: "Car-Pass neatgrieza rezultātu" };
 }
 
