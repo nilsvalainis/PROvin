@@ -160,7 +160,7 @@ export async function startLtabLookup(
   }
 }
 
-function orderCarFromCsdd(csdd: CsddFormFields, plate: string, orderVin: string) {
+export function orderCarFromCsdd(csdd: CsddFormFields, plate: string, orderVin: string) {
   const reg = csdd.registry?.data;
   const [makeFromForm, ...modelParts] = (csdd.makeModel ?? "").trim().split(/\s+/);
   return {
