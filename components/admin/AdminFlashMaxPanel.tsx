@@ -99,7 +99,10 @@ function JobRow({
           onChange={(e) => onToggle(job.id, e.target.checked)}
         />
         <span className="min-w-0 flex-1">
-          <span className={`block truncate font-medium text-[var(--color-apple-text)] ${touch ? "text-[15px]" : "text-[10px]"}`}>
+          {/* Telefonā garš nosaukums pāriet 2 rindās (bija nogriezts: "Oficiālā dīlera k..."). */}
+          <span
+            className={`block font-medium text-[var(--color-apple-text)] ${touch ? "line-clamp-2 text-[15px] leading-tight" : "truncate text-[10px]"}`}
+          >
             {job.label}
           </span>
           {unavailable ? (

@@ -10,6 +10,7 @@ import { openWindowSyncThen } from "@/lib/admin-open-window";
 import { normalizeWhatsAppPhoneDigits, telHrefForPhone, whatsAppChatUrl } from "@/lib/admin-whatsapp-phone";
 import {
   ADMIN_CALL_BTN_CLASS,
+  ADMIN_WHATSAPP_BAR_BTN_CLASS,
   ADMIN_WHATSAPP_COMPACT_BTN_CLASS,
   ADMIN_WHATSAPP_LABELED_BTN_CLASS,
   ADMIN_WHATSAPP_LABELED_DISABLED_CLASS,
@@ -165,25 +166,28 @@ export function AdminWhatsAppIconButton({
   disabled,
   title,
   onClick,
+  labeled,
 }: {
   disabled?: boolean;
   title: string;
   onClick?: () => void;
+  /** Ar tekstu "WhatsApp" (augšējā josla). Bez tā - kvadrātveida ikona. */
+  labeled?: boolean;
 }) {
+  const cls = labeled ? ADMIN_WHATSAPP_BAR_BTN_CLASS : ADMIN_WHATSAPP_ICON_BTN_CLASS;
+  const icon = <WhatsAppIcon className={labeled ? "h-4 w-4" : "h-3.5 w-3.5"} />;
   if (disabled) {
     return (
-      <span
-        className={`${ADMIN_WHATSAPP_ICON_BTN_CLASS} cursor-not-allowed opacity-50`}
-        title={title}
-        aria-hidden
-      >
-        <WhatsAppIcon className="h-3.5 w-3.5" />
+      <span className={`${cls} cursor-not-allowed opacity-50`} title={title} aria-hidden>
+        {icon}
+        {labeled ? "WhatsApp" : null}
       </span>
     );
   }
   return (
-    <button type="button" onClick={onClick} className={ADMIN_WHATSAPP_ICON_BTN_CLASS} title={title} aria-label={title}>
-      <WhatsAppIcon className="h-3.5 w-3.5" />
+    <button type="button" onClick={onClick} className={cls} title={title} aria-label={title}>
+      {icon}
+      {labeled ? "WhatsApp" : null}
     </button>
   );
 }

@@ -5305,11 +5305,13 @@ export function OrderDetailWorkspace({
               ) : null}
               {whatsappPhoneDigits ? (
                 <AdminWhatsAppIconButton
+                  labeled
                   title={`WhatsApp: ${payload.customerPhone ?? ""}`}
                   onClick={handleWhatsAppOpen}
                 />
               ) : (
                 <AdminWhatsAppIconButton
+                  labeled
                   disabled
                   title="Nav klienta tālruņa WhatsApp atvēršanai"
                 />
