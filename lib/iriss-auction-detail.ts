@@ -21,6 +21,8 @@ export type IrissRelayAuctionDetail = {
   tables: string[][][];
   lists: Array<{ heading: string; items: string[] }>;
   photos: string[];
+  /** Auto1 krāsas shēmas čipi: [zona (front/left/right/roof/rear), teksts ("110 μm" / "N/A ...")]. Dublikāti ir īsti. */
+  paint?: Array<[string, string]>;
   text?: string;
   jsonFields: Array<[string, string]>;
   item: Record<string, unknown> | null;
@@ -421,6 +423,7 @@ export function mapRelayDetailResponse(
       tables: Array.isArray(d.tables) ? (d.tables as string[][][]) : [],
       lists: Array.isArray(d.lists) ? (d.lists as Array<{ heading: string; items: string[] }>).filter((l) => l && Array.isArray(l.items)) : [],
       photos: Array.isArray(d.photos) ? d.photos.filter((u): u is string => typeof u === "string") : [],
+      paint: pairs(d.paint).slice(0, 60),
       jsonFields: pairs(d.jsonFields),
       item: d.item && typeof d.item === "object" ? (d.item as Rec) : null,
     },

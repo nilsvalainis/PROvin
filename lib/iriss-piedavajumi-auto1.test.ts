@@ -167,3 +167,41 @@ describe("Auto1 krāsas kartes zonas", () => {
     expect(parseIrissPdDamageTable([[["Foo", "Bar"], ["1", "2"]]])).toEqual([]);
   });
 });
+
+describe("krāsas mērījumi no Auto1 shēmas (JD14299, 17.11)", () => {
+  /** Īstā lapā nolasītie čipi: zona no data-testid, vērtības ar grieķu μ, dublikāti ir īsti. */
+  const PAINT: Array<[string, string]> = [
+    ["front", "140 μm"],
+    ["left", "110 μm"],
+    ["left", "110 μm"],
+    ["left", "120 μm"],
+    ["left", "130 μm"],
+    ["right", "270 μm"],
+    ["right", "110 μm"],
+    ["right", "110 μm"],
+    ["right", "110 μm"],
+    ["roof", "N/A Material not measurable"],
+    ["rear", "N/A Material not measurable"],
+  ];
+
+  it("katrs mērījums nonāk savā zonā, N/A zonas paliek tukšas", () => {
+    const b = irissPdAuto1BlocksFromDetail({ ...DETAIL, paint: PAINT });
+    const z = Object.fromEntries(b.paint!.zones.map((x) => [x.id, x.readings]));
+    expect(z.front).toEqual([140]);
+    expect(z.left).toEqual([110, 110, 120, 130]);
+    expect(z.right).toEqual([270, 110, 110, 110]);
+    expect(z.roof).toEqual([]);
+    expect(z.rear).toEqual([]);
+    expect(b.paint!.unassigned).toEqual([]);
+  });
+
+  it("bojājuma apraksts «Thickness: ≥250µm & <500µm» nav mērījums", () => {
+    const b = irissPdAuto1BlocksFromDetail({
+      ...DETAIL,
+      fields: [["Front right fender", "Thickness: ≥250µm & <500µm"]],
+      tables: [],
+      text: "",
+    });
+    expect(b.paint?.zones.flatMap((x) => x.readings) ?? []).toEqual([]);
+  });
+});

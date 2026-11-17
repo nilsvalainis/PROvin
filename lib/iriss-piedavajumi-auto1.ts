@@ -232,7 +232,10 @@ export function irissPdPaintZoneOf(part: string): IrissPdPaintZoneId | null {
 const UM_RE = /(\d{2,4})\s*(?:µm|μm|um|mikr)/i;
 
 function umOf(raw: string): number | null {
-  const m = clean(raw).match(UM_RE);
+  const t = clean(raw);
+  // «Thickness: ≥250µm & <500µm» ir bojājuma (Repaint) apraksts, nevis mērījums.
+  if (/[≥≤<>]|thickness/i.test(t)) return null;
+  const m = t.match(UM_RE);
   if (!m) return null;
   const n = Number(m[1]);
   return n >= 20 && n <= 3000 ? n : null;
@@ -244,7 +247,18 @@ function parsePaint(detail: IrissRelayAuctionDetail, damage: IrissPdDamageRow[])
     IRISS_PD_PAINT_ZONES.map((id) => [id, { id, readings: [], warning: false }]),
   );
   let assigned = 0;
-  for (const [label, value] of detail.fields ?? []) {
+  // Releja nolasītie shēmas čipi (zona no Auto1 data-testid) ir precīzākais avots; ja tie ir, citus neizmanto.
+  const SCHEMA_ZONE: Record<string, IrissPdPaintZoneId> = { front: "front", left: "left", right: "right", roof: "roof", rear: "rear", back: "rear" };
+  for (const [z, value] of detail.paint ?? []) {
+    const zone = SCHEMA_ZONE[z.toLowerCase()];
+    const um = umOf(value);
+    if (zone && um != null) {
+      zones.get(zone)!.readings.push(um);
+      assigned += 1;
+    }
+  }
+  const fromSchema = assigned > 0;
+  for (const [label, value] of fromSchema ? [] : detail.fields ?? []) {
     const um = umOf(value);
     const zone = um != null ? irissPdPaintZoneOf(label) : null;
     if (um != null && zone) {
@@ -253,7 +267,7 @@ function parsePaint(detail: IrissRelayAuctionDetail, damage: IrissPdDamageRow[])
     }
   }
   const groups = new Map<string, { zone: IrissPdPaintZoneId | null; um: number | null }>();
-  for (const [p, v] of detail.jsonFields ?? []) {
+  for (const [p, v] of fromSchema ? [] : detail.jsonFields ?? []) {
     if (!/paint|thickness|layer|coating/i.test(p)) continue;
     const m = p.match(/^(.*\[\d+\])\.([^.]+)$/);
     if (!m) continue;

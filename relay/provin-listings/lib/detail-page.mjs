@@ -158,9 +158,14 @@ export function mergeDetailExtracts(extracts) {
   const photos = [];
   let title = "";
   let text = "";
+  let paint = [];
   for (const e of extracts) {
     if (!e) continue;
     if (!title && e.title) title = clean(e.title);
+    // Mērījumi: dublikāti ir īsti (vairāki 110 µm vienā sānā), tāpēc ņem pilnāko sarakstu, nevis apvieno.
+    if (Array.isArray(e.paint) && e.paint.length > paint.length) {
+      paint = e.paint.filter((p) => Array.isArray(p) && typeof p[0] === "string" && typeof p[1] === "string").map((p) => [clean(p[0]), clean(p[1])]);
+    }
     for (const [l, v] of e.fields ?? []) {
       const k = `${clean(l).toLowerCase()}|${clean(v).toLowerCase()}`;
       if (fieldSeen.has(k) || fields.length >= MAX_FIELDS) continue;
@@ -190,7 +195,7 @@ export function mergeDetailExtracts(extracts) {
     photos.push(...(e.photos ?? []));
     if (e.text && e.text.length > text.length) text = e.text;
   }
-  return { title, fields, tables, lists, photos, text: text.slice(0, 40_000) };
+  return { title, fields, tables, lists, photos, paint, text: text.slice(0, 40_000) };
 }
 
 /**
@@ -292,9 +297,27 @@ export function extractDetailDom() {
     const m = (el.getAttribute("style") || "").match(/url\(["']?([^"')]+)/);
     if (m) addImg(m[1], 0);
   });
+  // Auto1 «Vehicle condition» shēma: mērījumi ir čipi virs zīmējuma (nav «etiķete: vērtība»), zonu dod data-testid
+  // `vehicle-condition-widget-<zona>-pt`. Lapā ir divas shēmas (dators / telefons) - ņem to, kurā ir vairāk.
+  const paintOf = (root) => {
+    const out = [];
+    root.querySelectorAll('[data-testid^="vehicle-condition-widget-"][data-testid$="-pt"]').forEach((el) => {
+      const zone = el.getAttribute("data-testid").slice("vehicle-condition-widget-".length, -3).toLowerCase();
+      const value = txt(el).slice(0, 60);
+      if (/^[a-z]{3,10}$/.test(zone) && value) out.push([zone, value]);
+    });
+    return out;
+  };
+  let paint = [];
+  const schemas = document.querySelectorAll('[class*="carSchema"]');
+  (schemas.length ? [...schemas] : [document]).forEach((root) => {
+    const p = paintOf(root);
+    if (p.length > paint.length) paint = p;
+  });
   const h1 = document.querySelector("h1");
   return {
     title: txt(h1) || clean(document.title),
+    paint: paint.slice(0, 60),
     fields: fields.slice(0, 600),
     tables: tables.slice(0, 12),
     lists: lists.slice(0, 24),
@@ -352,7 +375,17 @@ export async function fetchAuctionDetail(page, platform, url, opts = {}) {
       if (e && e.fields.length >= 8) break;
       await sleep(1_500);
     }
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight)).catch(() => undefined);
+    // Auto1 «Vehicle condition» ielādējas tikai tad, kad sadaļa nonāk ekrānā: ritina pa soļiem, ne uzreiz uz apakšu.
+    await page
+      .evaluate(async () => {
+        const total = Math.min(document.documentElement.scrollHeight, 30_000);
+        for (let y = 0; y < total; y += 700) {
+          window.scrollTo(0, y);
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        window.scrollTo(0, document.body.scrollHeight);
+      })
+      .catch(() => undefined);
     await sleep(1_200);
     await grab();
     for (const re of cfg.tabTexts) {
@@ -418,6 +451,7 @@ export async function fetchAuctionDetail(page, platform, url, opts = {}) {
         tables: merged.tables,
         lists: merged.lists,
         photos,
+        paint: merged.paint,
         text: merged.text,
         jsonFields: detailObj ? flattenJsonFields(detailObj) : [],
         item,
