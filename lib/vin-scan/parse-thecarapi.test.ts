@@ -55,7 +55,9 @@ describe("parseThecarapiHistory", () => {
       ],
     };
     const { parse, refs } = parseThecarapiHistory({ json });
-    expect(refs).toEqual([{ site: "auto1", id: "1326383403", active: false }]);
+    expect(refs).toEqual([
+      { site: "auto1", id: "1326383403", active: false, detailPath: "/api/auction/auto1/1326383403" },
+    ]);
     expect(parse.auctions?.[0]?.lot).toBe("1326383403");
   });
 
