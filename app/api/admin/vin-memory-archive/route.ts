@@ -5,7 +5,8 @@ import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { kmRollback, latestKm, isMemoryVin } from "@/lib/vin-memory";
 import { deleteVinMemory, readVinMemory } from "@/lib/vin-memory-store";
 import { ingestProgress, stateForTick } from "@/lib/vin-memory-auction";
-import { deleteAuctionIngestLedger, forgetArchiveCountsCache, readAuctionIngestState, readVinMemoryArchiveCounts } from "@/lib/vin-memory-auction-store";
+import { deleteAuctionIngestLedger, forgetArchiveCountsCache, readAuctionIngestState, readLotVinQueue, readVinMemoryArchiveCounts } from "@/lib/vin-memory-auction-store";
+import { lotVinProgress } from "@/lib/vin-memory-lot-vins";
 import { runVinMemoryAuctionIngest } from "@/lib/vin-memory-auction-ingest";
 
 export const runtime = "nodejs";
@@ -25,7 +26,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Šādu VIN atmiņā neliek (nav īsts VIN)." }, { status: 400 });
   }
   const now = new Date();
-  const [counts, stored] = await Promise.all([readVinMemoryArchiveCounts({ now }), readAuctionIngestState()]);
+  const [counts, stored, lotQueue] = await Promise.all([readVinMemoryArchiveCounts({ now }), readAuctionIngestState(), readLotVinQueue(now)]);
   const state = stateForTick(stored, now);
   const entry = vin ? await readVinMemory(vin) : null;
   const observations = entry?.observations ?? [];
@@ -34,6 +35,7 @@ export async function GET(req: Request) {
       counts,
       recent: counts?.recent ?? [],
       progress: ingestProgress(state),
+      lotVins: lotVinProgress(lotQueue),
       passDay: state.passDay,
       completedDay: state.completedDay,
       updatedAt: stored?.updatedAt ?? null,
