@@ -149,3 +149,13 @@ test("cf_clearance profilā izsauc otru navigāciju un tad atdod izsoles HTML", 
   assert.equal(out.status, 200);
   assert.match(out.html, /50558298/);
 });
+
+test("gala URL pēc novirzes paliek atļautajos hostos", async () => {
+  const { vinScanFinalUrlAllowed } = await import("./vinscan-page.mjs");
+  assert.equal(vinScanFinalUrlAllowed("https://stat.vin/cars/WBA5R1C0XLFH42873"), true);
+  assert.equal(vinScanFinalUrlAllowed(""), true);
+  assert.equal(vinScanFinalUrlAllowed("http://127.0.0.1:8787/listings/health"), false);
+  assert.equal(vinScanFinalUrlAllowed("https://evil.example/x"), false);
+  assert.equal(vinScanFinalUrlAllowed("http://stat.vin/cars/x"), false);
+  assert.equal(vinScanFinalUrlAllowed("https://stat.vin.evil.com/"), false);
+});

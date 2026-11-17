@@ -166,6 +166,8 @@ export type LogisticsOrder = {
   archived: boolean;
   archivedAt: string;
   previousStatus: LogisticsOrderStatus | "";
+  /** "other_company": atvests citam SIA, ar mums nav saistīts (arhīvā ar atzīmi "Cita SIA"). */
+  archiveReason?: "other_company";
   statusNote: string;
   nextAction: string;
   sellerContact: string;

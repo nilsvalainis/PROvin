@@ -71,6 +71,13 @@ function asAuctionRecord(row: Record<string, unknown>): Record<string, unknown> 
   return next;
 }
 
+/** Reālā detaļu atbilde ir ietīta: `{ auction, success, request_id, ... }`. Atver iekšējo lotu. */
+export function thecarapiAuctionBody(raw: unknown): Record<string, unknown> | null {
+  const rec = asRecord(raw);
+  if (!rec) return null;
+  return asAuctionRecord(rec);
+}
+
 function rowsOf(json: unknown): Record<string, unknown>[] {
   const root = unwrap(json);
   const list = root.auctions ?? root.records ?? root.items ?? root.results ?? root.details;

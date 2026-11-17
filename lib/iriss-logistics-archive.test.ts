@@ -5,7 +5,9 @@ import {
   filterLogisticsOrdersByView,
   isLogisticsOrderActive,
   isLogisticsOrderArchived,
+  isLogisticsOrderOtherCompany,
   markLogisticsOrderDelivered,
+  markLogisticsOrderOtherCompany,
   markLogisticsOrderPickedUp,
   wakeLogisticsOrder,
 } from "@/lib/iriss-logistics-archive";
@@ -124,5 +126,23 @@ describe("IRISS Loģistika arhīvs", () => {
     const archived = markLogisticsOrderDelivered(order({ id: "lo-3", pickupDate: "2026-10-21" }));
     const rows = filterLogisticsOrdersByView([due, later, archived], "due", "2026-10-20");
     expect(rows.map((o) => o.id)).toEqual(["lo-1"]);
+  });
+});
+
+describe("Cita SIA (Nils 17.11)", () => {
+  it("aizved uz arhīvu ar atzīmi, un pamodinot atzīme pazūd", () => {
+    const gone = markLogisticsOrderOtherCompany(order({ status: "ready", archived: false }), "2026-11-17T10:00:00Z");
+    expect(isLogisticsOrderArchived(gone)).toBe(true);
+    expect(isLogisticsOrderOtherCompany(gone)).toBe(true);
+    expect(filterLogisticsOrdersByView([gone], "active")).toHaveLength(0);
+    expect(filterLogisticsOrdersByView([gone], "archive")).toHaveLength(1);
+    const back = wakeLogisticsOrder(gone);
+    expect(back.status).toBe("ready");
+    expect(isLogisticsOrderOtherCompany(back)).toBe(false);
+    expect(back.archiveReason).toBeUndefined();
+  });
+
+  it("parastais arhīvs nav Cita SIA", () => {
+    expect(isLogisticsOrderOtherCompany(markLogisticsOrderDelivered(order({ status: "ready", archived: false })))).toBe(false);
   });
 });

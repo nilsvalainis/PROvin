@@ -22,6 +22,8 @@ import { SortableContext, arrayMove, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from "@dnd-kit/utilities";
 import { IrissAddressAutocomplete, type PickedAddress } from "@/components/admin/iriss-logistika/IrissAddressAutocomplete";
 import { autoparksSaitesHref } from "@/lib/iriss-car-share";
+import { isLogisticsOrderOtherCompany, LOGISTICS_OTHER_COMPANY_LV } from "@/lib/iriss-logistics-archive";
+import { CARGO_EXIT_KINDS, CARGO_EXIT_LV, cargoExitConfirmText, type CargoExitKind } from "@/lib/iriss-logistics-cargo-exit";
 import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctionLogo";
 import {
   addCargo,
@@ -86,6 +88,8 @@ type Props = {
   readinessOn?: boolean;
   onToggleReadiness?: () => void;
   readinessByCarId?: ReadonlyMap<string, ReadinessKind>;
+  /** «Uz ▾» apakšā: Uz Autoparku / Dzēst (cita SIA). Abi auto aizved uz Loģistikas arhīvu. */
+  onExitCars?: (ids: string[], kind: CargoExitKind) => void;
 };
 
 export type ManualCarInput = {
@@ -148,6 +152,7 @@ export function IrissLogistikaCargoPlan({
   readinessOn = false,
   onToggleReadiness,
   readinessByCarId,
+  onExitCars,
 }: Props) {
   const byId = useMemo(() => new Map(orders.map((o) => [o.id, o])), [orders]);
   const planLists = useMemo(() => bucketListsFromPlan(plan, byId), [plan, byId]);
@@ -207,6 +212,12 @@ export function IrissLogistikaCargoPlan({
         ? `${carLabel(ids[0]!)} → ${cargoBucketLabel(plan, bucket)}${where === "start" ? " (sākumā)" : ""}`
         : `${ids.length} auto → ${cargoBucketLabel(plan, bucket)}`;
     change(moveCargoCarsTo(plan, ids, bucket, where), label);
+  }
+
+  function exitCars(ids: string[], kind: CargoExitKind) {
+    if (!onExitCars || ids.length === 0) return;
+    if (!window.confirm(cargoExitConfirmText(kind, ids.map(carLabel)))) return;
+    onExitCars(ids, kind);
   }
 
   function toggleSelected(id: string) {
@@ -304,7 +315,7 @@ export function IrissLogistikaCargoPlan({
           <span className="text-[12.5px] font-semibold">{selected.length} auto</span>
           <span className="relative ml-auto">
             <button type="button" className="iriss-log-cargo-pill" disabled={selected.length === 0} onClick={() => setBulkMenu((v) => !v)}>
-              Uz kravu ▾
+              Uz ▾
             </button>
             {bulkMenu && selected.length > 0 ? (
               <MoveMenu
@@ -314,6 +325,15 @@ export function IrissLogistikaCargoPlan({
                   moveTo(selected, bucket, where);
                   endSelect();
                 }}
+                onExit={
+                  onExitCars
+                    ? (kind) => {
+                        setBulkMenu(false);
+                        exitCars(selected, kind);
+                        endSelect();
+                      }
+                    : undefined
+                }
               />
             ) : null}
           </span>
@@ -380,6 +400,14 @@ export function IrissLogistikaCargoPlan({
                       moveTo([id], next, where);
                       setColorFor(null);
                     }}
+                    onExit={
+                      onExitCars
+                        ? (kind) => {
+                            setColorFor(null);
+                            exitCars([id], kind);
+                          }
+                        : undefined
+                    }
                     onStep={(delta) => change(moveCargoCarBy(plan, id, delta), `${carLabel(id)} ${delta < 0 ? "↑" : "↓"}`)}
                     canUp={i > 0}
                     canDown={i < ids.length - 1}
@@ -427,6 +455,18 @@ export function IrissLogistikaCargoPlan({
                   <span className="text-[13px] font-semibold">{cargoBucketLabel(plan, bucket)}</span>
                 )}
                 <span className="text-[12px] text-[var(--iriss-ink-2)]">{ids.length}</span>
+                {selectMode && ids.length > 0 ? (
+                  <button
+                    type="button"
+                    className="iriss-log-cargo-pill"
+                    onClick={() => {
+                      const all = ids.every((x) => selected.includes(x));
+                      setSelected((cur) => (all ? cur.filter((x) => !ids.includes(x)) : [...cur, ...ids.filter((x) => !cur.includes(x))]));
+                    }}
+                  >
+                    {ids.every((x) => selected.includes(x)) ? "Noņemt visu" : "Atzīmēt visu"}
+                  </button>
+                ) : null}
                 {extra && ids.length === 0 ? (
                   <button
                     type="button"
@@ -641,6 +681,7 @@ function SortableCargoRow({
   onToggleMap,
   onToggleColor,
   onPickColor,
+  onExit,
   moveOptions,
   cardHref,
   stageLabel,
@@ -665,6 +706,7 @@ function SortableCargoRow({
   onToggleMap: () => void;
   onToggleColor: () => void;
   onPickColor: (bucket: CargoBucket, where: "start" | "end") => void;
+  onExit?: (kind: CargoExitKind) => void;
   moveOptions: MoveOption[];
   onStep: (delta: -1 | 1) => void;
   canUp: boolean;
@@ -722,6 +764,7 @@ function SortableCargoRow({
           <span className="iriss-log-cargo-dot" style={{ background: colorVar }} />
         </button>
         <CargoRowText order={order} />
+        {isLogisticsOrderOtherCompany(order) ? <span className="iriss-log-cargo-archive-tag">{LOGISTICS_OTHER_COMPANY_LV}</span> : null}
         {/* Nils 02.11 (makets LogKravas): ↑ ↓ un «Uz ▾» bez vilkšanas (telefonā vilkšana nav ērta). */}
         <span className="iriss-log-cargo-move" {...stopDragStart}>
           <button
@@ -824,7 +867,7 @@ function SortableCargoRow({
           </svg>
         </button>
       </div>
-      {colorOpen ? <MoveMenu options={moveOptions} className="right-2 top-11" onPick={onPickColor} /> : null}
+      {colorOpen ? <MoveMenu options={moveOptions} className="right-2 top-11" onPick={onPickColor} onExit={onExit} /> : null}
     </li>
   );
 }
@@ -898,13 +941,16 @@ function ManualCarAdd({ bucket, onAdd }: { bucket: CargoBucket; onAdd: (bucket: 
 /** «Uz ▾»: uz jebkuru kravu (beigās) vai kravas sākumā. */
 type MoveOption = { bucket: CargoBucket; label: string; color: string };
 
-function MoveMenu({
+export function MoveMenu({
   options,
   onPick,
+  onExit,
   className,
 }: {
   options: MoveOption[];
   onPick: (bucket: CargoBucket, where: "start" | "end") => void;
+  /** Auto aiziet no Loģistikas (uz Autoparku vai arhīvā kā cita SIA). */
+  onExit?: (kind: CargoExitKind) => void;
   className: string;
 }) {
   return (
@@ -932,7 +978,39 @@ function MoveMenu({
           </button>
         </div>
       ))}
+      {onExit ? (
+        <>
+          <div className="iriss-log-cargo-menu-sep" role="separator" />
+          {CARGO_EXIT_KINDS.map((kind) => (
+            <button
+              key={kind}
+              type="button"
+              role="menuitem"
+              className={`iriss-log-cargo-menu-exit ${kind === "other_company" ? "danger" : ""}`}
+              onClick={() => onExit(kind)}
+            >
+              <ExitIcon kind={kind} />
+              {CARGO_EXIT_LV[kind]}
+            </button>
+          ))}
+        </>
+      ) : null}
     </div>
+  );
+}
+
+function ExitIcon({ kind }: { kind: CargoExitKind }) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {kind === "autoparks" ? (
+        <>
+          <rect x="4" y="4" width="16" height="16" rx="4" />
+          <path d="M10 16V8h3a2.5 2.5 0 0 1 0 5h-3" />
+        </>
+      ) : (
+        <path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12" />
+      )}
+    </svg>
   );
 }
 

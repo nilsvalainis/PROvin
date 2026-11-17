@@ -52,6 +52,13 @@ export function validVinScanPageUrl(raw) {
   }
 }
 
+/** Pēc Chrome novirzēm gala lapai jāpaliek atļautajos hostos (citādi HTML no svešas vai iekšējas adreses). */
+export function vinScanFinalUrlAllowed(finalUrl) {
+  const raw = String(finalUrl ?? "").trim();
+  if (!raw) return true;
+  return validVinScanPageUrl(raw) !== "";
+}
+
 function looksLikeVehicle(html) {
   const raw = String(html ?? "");
   const sale = /sale history/i.test(raw) && /\b(copart|iaai)\b/i.test(raw);

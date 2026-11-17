@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { cabinetActorHidesSums, maskOrderSums } from "@/lib/iriss-logistics-cabinet-access";
+import { cabinetActorHidesSums, maskOrderSums, sanitizeHiddenSumsPatch } from "@/lib/iriss-logistics-cabinet-access";
 import { logisticsCabinetAccessQuery, logisticsCabinetWriteForbidden, requireIrissLogisticsApi, irissLogisticsScopeHeader } from "@/lib/iriss-logistics-access";
 import { getLogisticsOrder, removeManualLogisticsOrder, setLogisticsOrderArchiveState, upsertLogisticsOrder } from "@/lib/iriss-logistics-store";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
@@ -39,14 +39,25 @@ export async function PATCH(req: Request, ctx: Ctx) {
   }
   const row = body as Record<string, unknown>;
   const hideSums = cabinetActorHidesSums(logisticsCabinetAccessQuery(gate.actor, id));
-  if (row.action === "wake" || row.action === "picked_up" || row.action === "delivered" || row.action === "archive") {
+  if (row.action === "wake" || row.action === "picked_up" || row.action === "delivered" || row.action === "archive" || row.action === "other_company") {
     const order = await setLogisticsOrderArchiveState(id, row.action);
     if (!order) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
     return NextResponse.json({ ok: true, order: maskOrderSums(order, hideSums) }, { headers: irissLogisticsScopeHeader() });
   }
   const existing = await getLogisticsOrder(id);
   if (!existing) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
-  const order = await upsertLogisticsOrder({ ...(row as Partial<LogisticsOrder>), id });
+  let patch: Record<string, unknown> = row;
+  if (hideSums) {
+    const clean = sanitizeHiddenSumsPatch(row, existing);
+    if (!clean.ok) {
+      return NextResponse.json(
+        { error: "hidden_sums_in_text", field: clean.field, message: "Šajā laukā ir summas, ko jūs neredzat - to var labot admins." },
+        { status: 409, headers: irissLogisticsScopeHeader() },
+      );
+    }
+    patch = clean.patch;
+  }
+  const order = await upsertLogisticsOrder({ ...(patch as Partial<LogisticsOrder>), id });
   return NextResponse.json({ ok: true, order: maskOrderSums(order, hideSums) }, { headers: irissLogisticsScopeHeader() });
 }
 

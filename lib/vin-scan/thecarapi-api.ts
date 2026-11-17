@@ -16,6 +16,7 @@ import {
   thecarapiPayloadPending,
   type ThecarapiAuctionRef,
   type ThecarapiDetailParsed,
+  thecarapiAuctionBody,
 } from "@/lib/vin-scan/parse-thecarapi";
 import {
   THECARAPI_DISABLED_SUMMARY,
@@ -442,8 +443,8 @@ function detailBody(json: unknown, detail: ThecarapiDetailParsed): unknown {
   const list = root.auctions ?? root.items ?? root.results ?? root.details;
   if (!Array.isArray(list)) return json;
   const hit = list.find((item) => {
-    if (!item || typeof item !== "object") return false;
-    const row = item as { auction_id?: unknown; id?: unknown; site_name?: unknown; site?: unknown };
+    const row = thecarapiAuctionBody(item);
+    if (!row) return false;
     const id = String(row.auction_id ?? row.id ?? "");
     const site = String(row.site_name ?? row.site ?? "").toLowerCase();
     return id === detail.id && (!detail.site || !site || site === detail.site);

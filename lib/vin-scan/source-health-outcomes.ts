@@ -8,7 +8,7 @@ import { vinScanNeedsBrowser } from "@/lib/vin-scan/types";
 
 const SCAN_ERR = new Set(["Avots neatbildēja laikā", "Avotu neizdevās nolasīt"]);
 const FAIL_RE =
-  /http \d{3}|pieprasījumu limits|captcha|neatbildēja laikā|neizdevās nolasīt|zonde nav pieejama|capsolver|invalid task|websitekey|cloudflare|bloķē/i;
+  /http \d{3}|pieprasījumu limits|captcha|neatbildēja laikā|neizdevās nolasīt|zonde nav pieejama|capsolver|invalid task|websitekey|cloudflare|bloķē|relej|ielase neizdevās|fetch failed|noildz/i;
 
 export function isVinScanHealthFailure(status: string, summary = ""): boolean {
   if (status === "timeout" || status === "blocked") return true;

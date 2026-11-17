@@ -115,6 +115,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
   const [uploading, setUploading] = useState<CabinetSectionId | null>(null);
   const [pickupCode, setPickupCode] = useState(order.pickupRef);
   const [note, setNote] = useState(order.notes);
+  const [noteError, setNoteError] = useState("");
   const [parkingUntil, setParkingUntil] = useState(order.freeParkingUntil);
   const [pickupDate, setPickupDate] = useState(order.pickupDate);
   const [transportCost, setTransportCost] = useState(formatTransportCostInput(order.transportCostEur));
@@ -239,7 +240,13 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     });
-    const body = (await res.json()) as { order?: LogisticsOrder };
+    const body = (await res.json()) as { order?: LogisticsOrder; error?: string; message?: string };
+    if (res.status === 409 && body.error === "hidden_sums_in_text") {
+      // Piezīmē ir summas, ko šī loma neredz: neko nerakstām, atgriežam iepriekšējo tekstu.
+      setNote(order.notes);
+      setNoteError(body.message || "Šajā laukā ir summas, ko jūs neredzat - to var labot admins.");
+      return undefined;
+    }
     if (body.order) onOrderUpdated(body.order);
     return body.order;
   }
@@ -526,7 +533,10 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
         <textarea
           value={note}
           disabled={!access.write}
-          onChange={(e) => setNote(e.target.value)}
+          onChange={(e) => {
+            setNote(e.target.value);
+            setNoteError("");
+          }}
           onBlur={() => {
             if (!access.write || note.trim() === (order.notes || "").trim()) return;
             void saveOrderFields({ notes: note });
@@ -534,6 +544,11 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
           rows={2}
           className="mt-1 w-full rounded-xl border border-[var(--iriss-line)] px-2 py-2 text-[13px]"
         />
+        {noteError ? (
+          <span role="alert" className="mt-1 block text-[11px] text-[var(--iriss-danger,#b42318)]">
+            {noteError}
+          </span>
+        ) : null}
       </label>
 
       {/* Vienota "Dokumenti" sadaļa: visi dokumentu veidi vienuviet, grupēti ar maziem virsrakstiem. */}

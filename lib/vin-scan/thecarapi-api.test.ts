@@ -24,6 +24,9 @@ const empty = JSON.parse(
 const detailAuto1 = JSON.parse(
   readFileSync(path.join(process.cwd(), "lib/vin-scan/__fixtures__/thecarapi/detail-auto1.json"), "utf8"),
 ) as unknown;
+const detailAuto1Wrapped = JSON.parse(
+  readFileSync(path.join(process.cwd(), "lib/vin-scan/__fixtures__/thecarapi/detail-auto1-envelope-simple.json"), "utf8"),
+) as unknown;
 const imagesAuto1 = JSON.parse(
   readFileSync(path.join(process.cwd(), "lib/vin-scan/__fixtures__/thecarapi/images-auto1.json"), "utf8"),
 ) as unknown;
@@ -334,6 +337,39 @@ describe("fetchThecarapiVinWithDetails", () => {
     const result = await fetchThecarapiVinWithDetails(vin, deps);
     expect(calls[0]?.url).toBe(`https://api.thecarapi.com/api/auction/auto1/${lot}`);
     expect(result.records.find((item) => item.id === lot)?.fields.some((field) => field.value === "Priekšējais bamperis")).toBe(true);
+  });
+
+  it("viena lota ietītā detaļa nonāk ierakstā un tiek kešota", async () => {
+    const base = (hit as { auctions: Record<string, unknown>[] }).auctions[1];
+    const single = { auctions: [{ ...base, auction_id: "A1-200", detail_path: "/api/auction/auto1/A1-200" }] };
+    const { deps, calls } = scripted([
+      jsonResponse(200, single),
+      jsonResponse(200, detailAuto1Wrapped),
+      jsonResponse(200, { images: [] }),
+    ]);
+    const vin = "WBA5R1C00LFH42883";
+    const result = await fetchThecarapiVinWithDetails(vin, { ...deps, skipCache: true });
+    expect(calls.map((call) => call.url)).toEqual([
+      `https://api.thecarapi.com/api/vin/${vin}/history`,
+      "https://api.thecarapi.com/api/auction/auto1/A1-200",
+      "https://api.thecarapi.com/api/auction-images/auto1/A1-200",
+    ]);
+    const auto1 = result.records.find((row) => row.id === "A1-200");
+    expect(auto1?.fields.some((field) => field.key === "wrapped_only_field" && field.value === "keep-me-too")).toBe(true);
+    expect(auto1?.photoUrls).toEqual(
+      expect.arrayContaining([
+        "https://img-pa.auto1.com/img/w-main.jpg",
+        "https://img-pa.auto1.com/img/w-damage.jpg",
+        "https://img-pa.auto1.com/img/w-service.jpg",
+        "https://img-pa.auto1.com/img/w-vault.jpg",
+        "https://img-pa.auto1.com/img/w-sub.jpg",
+      ]),
+    );
+
+    const again = scripted([jsonResponse(200, single)]);
+    await fetchThecarapiVinWithDetails(`${vin.slice(0, 16)}4`, { ...again.deps, env: deps.env });
+    const detailCalls = again.calls.filter((call) => call.url.includes("/api/auction/"));
+    expect(detailCalls).toEqual([]);
   });
 
   it("pēc ielādes liek bildes pasūtījuma galerijā un arhīva sesijā", async () => {

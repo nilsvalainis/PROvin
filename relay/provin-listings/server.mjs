@@ -45,7 +45,7 @@ import {
   tokensEqual,
   vncViewerPath,
 } from "./lib/novnc.mjs";
-import { shouldReadPublic } from "./lib/policy.mjs";
+import { envPositiveInt, shouldReadPublic } from "./lib/policy.mjs";
 import { auto1 } from "./lib/platforms/auto1.mjs";
 import { autobid } from "./lib/platforms/autobid.mjs";
 import { ecarstrade } from "./lib/platforms/ecarstrade.mjs";
@@ -56,22 +56,19 @@ import { listingsFetchKey, listingsUrlLog } from "./lib/urls.mjs";
 import { fetchAuctionDetail, validDetailUrl } from "./lib/detail-page.mjs";
 import { createVinScanLanes, vinScanPageHost, vinScanProfileName } from "./lib/vinscan-lanes.mjs";
 import { fetchCarinfoSuperSearchHttp, validCarinfoSuperSearchUrl } from "./lib/vinscan-http.mjs";
-import { fetchVinScanPageHtml, validVinScanPageUrl } from "./lib/vinscan-page.mjs";
+import { fetchVinScanPageHtml, validVinScanPageUrl, vinScanFinalUrlAllowed } from "./lib/vinscan-page.mjs";
 
 const HOST = process.env.LISTINGS_RELAY_HOST || "127.0.0.1";
 const PORT = Number(process.env.LISTINGS_RELAY_PORT || 8789);
 const TOKEN = (process.env.LISTINGS_RELAY_TOKEN ?? "").trim();
 const STATE_FILE = process.env.LISTINGS_STATE_FILE || "/var/lib/provin-listings/state.json";
-const MAX_PAGES = Math.max(1, Number(process.env.LISTINGS_MAX_PAGES || 5));
-const MAX_FETCHES_PER_DAY = Math.max(1, Number(process.env.LISTINGS_MAX_FETCHES_PER_DAY || 300));
+const MAX_PAGES = envPositiveInt(process.env.LISTINGS_MAX_PAGES, 5);
+const MAX_FETCHES_PER_DAY = envPositiveInt(process.env.LISTINGS_MAX_FETCHES_PER_DAY, 300);
 const inflightFetches = new Map();
-const VINSCAN_MAX_FETCHES_PER_DAY = Math.max(
-  1,
-  Number(process.env.LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY || 400),
-);
-const MAX_QUEUE = Math.max(1, Number(process.env.LISTINGS_MAX_QUEUE || 40));
-const DETAIL_MAX_FETCHES_PER_DAY = Math.max(1, Number(process.env.LISTINGS_DETAIL_MAX_FETCHES_PER_DAY || 60));
-const VINSCAN_CONCURRENCY = Math.max(1, Math.min(3, Number(process.env.LISTINGS_VINSCAN_CONCURRENCY || 2)));
+const VINSCAN_MAX_FETCHES_PER_DAY = envPositiveInt(process.env.LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY, 400);
+const MAX_QUEUE = envPositiveInt(process.env.LISTINGS_MAX_QUEUE, 40);
+const DETAIL_MAX_FETCHES_PER_DAY = envPositiveInt(process.env.LISTINGS_DETAIL_MAX_FETCHES_PER_DAY, 60);
+const VINSCAN_CONCURRENCY = envPositiveInt(process.env.LISTINGS_VINSCAN_CONCURRENCY, 2, 3);
 const vinScanLanes = createVinScanLanes({ limit: VINSCAN_CONCURRENCY });
 const MANUAL_LOGIN_MINUTES = Math.max(1, Number(process.env.LISTINGS_MANUAL_LOGIN_MINUTES || 15));
 const OPENLANE_PUBLIC_FALLBACK = /^(1|true|yes)$/i.test(process.env.OPENLANE_ALLOW_PUBLIC_FALLBACK ?? "");
@@ -387,6 +384,10 @@ const server = createServer(async (req, res) => {
         }
       });
       log(`vinscan page HTTP ${out.status} ${out.elapsedMs} ms ${out.finalUrl ? listingsUrlLog(out.finalUrl) : ""}`);
+      if (!vinScanFinalUrlAllowed(out.finalUrl)) {
+        log("vinscan page: novirze ārpus atļautajiem hostiem, HTML neatdod");
+        return sendJson(res, 502, { ok: false, error: "novirze ārpus atļautajiem hostiem" });
+      }
       return sendJson(res, 200, out);
     } catch (e) {
       const note = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "nezināma kļūda";

@@ -12,6 +12,16 @@ export function envToken(raw, fallback) {
 }
 
 /**
+ * Pozitīvs vesels skaitlis no env. Komentārs, teksts vai 0 dod noklusējumu, nevis NaN
+ * (`n >= NaN` vienmēr ir false, un dienas limits pazustu).
+ */
+export function envPositiveInt(raw, fallback, max = Number.MAX_SAFE_INTEGER) {
+  const n = Number(envToken(raw, ""));
+  if (!Number.isFinite(n) || n < 1) return fallback;
+  return Math.min(Math.floor(n), max);
+}
+
+/**
  * Publiskie dati, ja auto-login neizdodas. Autobid vienmēr, Openlane ja
  * OPENLANE_ALLOW_PUBLIC_FALLBACK. `error` (ne tikai login_required) arī lasa publiski.
  */
