@@ -37,6 +37,29 @@ function record(id: string, site = "auto1"): ThecarapiAdminRecord {
 }
 
 describe("thecarapiArchiveInputs", () => {
+  it("reālie lauki: clean_make, model_display, pirmā reģistrācija", () => {
+    const real: ThecarapiAdminRecord = {
+      ...record("1326383403"),
+      fields: [
+        { key: "mileage", label: "Nobraukums", value: "226760" },
+        { key: "public_price_eur", label: "Cena EUR", value: "11379" },
+        { key: "clean_make", label: "clean_make", value: "BMW" },
+        { key: "clean_model", label: "clean_model", value: "2-Series" },
+        { key: "model_display", label: "model_display", value: "2er 220d Gran Tourer Sport Line" },
+        { key: "date_first_registration", label: "date_first_registration", value: "2022-11-23T01:00:00" },
+      ],
+    };
+    const [obs] = thecarapiArchiveInputs("WBA6X310305V99966", [real]);
+    expect(obs).toMatchObject({
+      auctionId: "1326383403",
+      source: "auto1",
+      km: 226760,
+      model: "BMW 2er 220d Gran Tourer Sport Line",
+      firstRegistration: "2022-11-23",
+    });
+  });
+
+
   it("liek AUTO1 arhīvā un dedupē to pašu izsoles ID", () => {
     const inputs = thecarapiArchiveInputs(VIN, [record("A-9"), record("A-9"), record("B-1", "bca")]);
     expect(inputs.map((row) => `${row.platform}:${row.auctionId}`)).toEqual(["auto1:A-9", "bca:B-1"]);
