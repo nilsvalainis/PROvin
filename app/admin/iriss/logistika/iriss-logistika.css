@@ -357,19 +357,34 @@
 }
 /*
  * Nils 02.11: pogas nedrīkst saspiest auto nosaukumu.
- * Ar peli - parādās, kad pele virs rindas (pārsedz posma ikonu un aci). Bez peles (telefons) - tikai «Kārtot» režīmā.
+ * Ar peli - parādās, kad pele virs rindas, pa kreisi no posma ikonas un acs (tās paliek klikšķināmas).
+ * Bez peles (telefons) - tikai «Kārtot» režīmā.
  */
 .iriss-log-cargo-row {
   position: relative;
+}
+.iriss-log-cargo-move-anchor {
+  display: contents;
 }
 @media (hover: hover) and (pointer: fine) {
   .iriss-log-cargo-sortbtn {
     display: none;
   }
+  /* Nulles platuma enkurs rindā: panelis beidzas tieši pirms čipa / posma ikonas. -10px atceļ rindas gap. */
+  .iriss-log-cargo-move-anchor {
+    position: relative;
+    display: block;
+    width: 0;
+    height: 0;
+    flex-shrink: 0;
+    align-self: center;
+    margin-left: -10px;
+  }
   .iriss-log-cargo-move {
     position: absolute;
     top: 50%;
-    right: 8px;
+    right: 4px;
+    white-space: nowrap;
     z-index: 2;
     padding: 3px;
     border-radius: 10px;
