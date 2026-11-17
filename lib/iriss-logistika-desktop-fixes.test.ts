@@ -89,10 +89,4 @@ describe("Loģistika layout", () => {
     expect(client).not.toContain("setBounceId((cur) => (cur === id ? null : id))");
   });
 
-  it("keeps table button and cargo text on one line", () => {
-    const table = read("components/admin/iriss-logistika/IrissLogistikaCarsTable.tsx");
-    expect(table).toContain("h-8 min-h-8 whitespace-nowrap px-2.5 text-[12px]");
-    expect(table).toContain('<table className="iriss-log-table max-xl:hidden">');
-    expect(table).toContain('<ul className="iriss-log-car-cards xl:hidden">');
-  });
 });

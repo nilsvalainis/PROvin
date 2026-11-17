@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { IrissLogistikaCargoPlan } from "@/components/admin/iriss-logistika/IrissLogistikaCargoPlan";
+import { IrissLogistikaCargoPlan, MoveMenu } from "@/components/admin/iriss-logistika/IrissLogistikaCargoPlan";
 import { emptyCargoPlan, ensureCargoCars, moveCargoCar } from "@/lib/iriss-logistics-cargo-plan";
 import type { ReadinessKind } from "@/lib/iriss-logistics-readiness";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
@@ -167,5 +167,40 @@ describe("Kravu rinda - posma žetons (aizstāj tabulu «Visi auto»)", () => {
   it("bez kabineta atvēršanas (piem., drukai) žetonu nav", () => {
     const html = renderHtml(<IrissLogistikaCargoPlan {...base} stageLabelByCarId={{ a: "Gaida" }} />);
     expect(html).not.toContain("iriss-log-stage-chip");
+  });
+});
+
+describe("«Uz ▾» izvēlne - Autoparks un Dzēst (cita SIA)", () => {
+  const options = [{ bucket: "next" as const, label: "Nākošā krava", color: "#f00" }];
+
+  it("ar onExit apakšā rāda abas darbības", () => {
+    const text = renderText(<MoveMenu options={options} className="" onPick={() => undefined} onExit={() => undefined} />);
+    expect(text).toContain("Nākošā krava");
+    expect(text).toContain("Uz Autoparku");
+    expect(text).toContain("Dzēst (cita SIA)");
+  });
+
+  it("bez onExit (piem., tikai lasīšana) darbību nav", () => {
+    const text = renderText(<MoveMenu options={options} className="" onPick={() => undefined} />);
+    expect(text).not.toContain("Uz Autoparku");
+    expect(text).not.toContain("Dzēst");
+  });
+
+  it("arhīvā Cita SIA auto rindā redzama atzīme", () => {
+    const gone = { ...orders[0]!, status: "archived" as const, archived: true, archiveReason: "other_company" as const };
+    const text = renderText(
+      <IrissLogistikaCargoPlan
+        orders={[gone]}
+        plan={ensureCargoCars(emptyCargoPlan(), [gone.id])}
+        templates={[]}
+        bounceId={null}
+        hoverId={null}
+        onPlanChange={() => undefined}
+        onRowClick={() => undefined}
+        onRowHover={() => undefined}
+        onRefreshDirections={() => undefined}
+      />,
+    );
+    expect(text).toContain("Cita SIA");
   });
 });

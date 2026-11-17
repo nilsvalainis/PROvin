@@ -39,7 +39,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
   }
   const row = body as Record<string, unknown>;
   const hideSums = cabinetActorHidesSums(logisticsCabinetAccessQuery(gate.actor, id));
-  if (row.action === "wake" || row.action === "picked_up" || row.action === "delivered" || row.action === "archive") {
+  if (row.action === "wake" || row.action === "picked_up" || row.action === "delivered" || row.action === "archive" || row.action === "other_company") {
     const order = await setLogisticsOrderArchiveState(id, row.action);
     if (!order) return NextResponse.json({ error: "not_found" }, { status: 404, headers: irissLogisticsScopeHeader() });
     return NextResponse.json({ ok: true, order: maskOrderSums(order, hideSums) }, { headers: irissLogisticsScopeHeader() });
