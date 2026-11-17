@@ -45,6 +45,7 @@ import {
   probeVinDecode,
 } from "@/lib/vin-scan/probes-extra";
 import { probeCzRsv, probeDvsaMot } from "@/lib/vin-scan/probes-cz-uk";
+import { probeEuSafetyGate } from "@/lib/vin-scan/probes-eu-recalls";
 import { isPlausibleListingUrl } from "@/lib/order-field-validation";
 import {
   CARINFO_SUPER_SEARCH_DIRECT_MS,
@@ -367,6 +368,7 @@ const PROBES: Record<VinScanSourceId, (ctx: VinScanContext) => Promise<VinScanIn
   poctra: probePoctra,
   cz_rsv: probeCzRsv,
   dvsa_mot: probeDvsaMot,
+  eu_safety_gate: probeEuSafetyGate,
 };
 
 export function vinScanProbeFor(id: string): ((ctx: VinScanContext) => Promise<VinScanIndicator> | VinScanIndicator) | null {

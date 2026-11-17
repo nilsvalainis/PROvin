@@ -36,7 +36,7 @@ describe("vin scan open URLs", () => {
     expect(catalog.length).toBe(VIN_SCAN_CATALOG.length);
     expect(VIN_SCAN_BROWSER_CATALOG.length).toBeGreaterThan(0);
     expect(VIN_SCAN_BROWSER_CATALOG.length).toBeLessThan(VIN_SCAN_CATALOG.length);
-    const formOnly = new Set(["traficom", "regitra", "rdw", "dvsa_mot"]);
+    const formOnly = new Set(["traficom", "regitra", "rdw", "dvsa_mot", "eu_safety_gate"]);
     for (const item of catalog) {
       const url = item.openUrl(VIN);
       expect(url).toMatch(/^https:\/\//);

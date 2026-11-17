@@ -1,0 +1,82 @@
+{
+ "_meta": {
+  "status": 200,
+  "source": "GET https://ec.europa.eu/safety-gate-alerts/public/api/notification/10119264?language=lv",
+  "fetched": "2026-11-17",
+  "note": "Apgriezts: bez foto, pasākumiem, reaģējošām valstīm un tulkojumu versijām."
+ },
+ "body": {
+  "id": 10119264,
+  "reference": "SR/02935/26",
+  "country": {
+   "key": "DE",
+   "name": "Germany"
+  },
+  "publicationDate": "2026-10-23T09:42:37.293Z",
+  "product": {
+   "id": 10319060,
+   "productCategory": {
+    "key": "product.category.motor.vehicles",
+    "name": "MOTOR_VEHICLES"
+   },
+   "nameSpecific": "Caddy, Golf Sportsvan, Golf Variant 7, Tiguan, Tiguan Allspace, Touran",
+   "brands": [
+    {
+     "brand": "Volkswagen (VW)"
+    }
+   ],
+   "versions": [
+    {
+     "id": 10319060,
+     "language": {
+      "key": "LV",
+      "name": "latviešu valoda"
+     },
+     "name": "Vieglais automobilis",
+     "description": "Vieglais automobilis.",
+     "packageDescription": null,
+     "productCategoryOther": null
+    }
+   ],
+   "barcodes": [
+    {
+     "barcode": "48VS"
+    }
+   ],
+   "batchNumbers": [
+    {
+     "batchNumber": "04.09.2013 - 01.07.2024"
+    }
+   ],
+   "modelTypes": [
+    {
+     "modelType": "1T, 5N, AUV, 2K"
+    },
+    {
+     "modelType": "e1*2001/116*0211*, e1*2001/116*0450*, e1*2007/46*0627*, e1*2001/116*0252*"
+    }
+   ]
+  },
+  "risk": {
+   "id": 10022462,
+   "riskType": [
+    {
+     "key": "riskType.injuries",
+     "name": "INJURIES"
+    }
+   ],
+   "versions": [
+    {
+     "id": 10022462,
+     "language": {
+      "key": "LV",
+      "name": "latviešu valoda"
+     },
+     "riskDescription": "Mitruma iekļūšana var izraisīt stūres statņa skrūves koroziju, kas var izraisīt skrūves lūzumu un stūres spējas zudumu, palielinot negadījumu risku.",
+     "legalProvision": "Ražojums neatbilst Regulai par mehānisko transportlīdzekļu un to piekabju, kā arī tādiem transportlīdzekļiem paredzētu sistēmu, sastāvdaļu un atsevišķu tehnisku vienību apstiprināšanu un tirgus uzraudzību.",
+     "riskTypeOther": null
+    }
+   ]
+  }
+ }
+}

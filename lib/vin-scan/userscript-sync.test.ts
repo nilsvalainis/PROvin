@@ -83,7 +83,7 @@ describe("userscript sync with VIN scan catalog", () => {
     for (const item of VIN_SCAN_BROWSER_CATALOG) {
       expect(src).toMatch(new RegExp(`${item.id}:\\s*"https://`));
     }
-    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(36);
+    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(37);
     expect(VIN_SCAN_SOURCE_IDS).toContain("joj_copart_iaai");
     expect(VIN_SCAN_SOURCE_IDS).toContain("thecarapi_eu");
     expect(VIN_SCAN_BROWSER_IDS).not.toContain("joj_copart_iaai");
