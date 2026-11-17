@@ -278,14 +278,14 @@ export function AdminOrderVinScanCard({
       } catch {
         /* ignore */
       }
-      window.open(row.openUrl, "provin-vin-scan");
+      if (/^https:\/\//i.test(row.openUrl)) window.open(row.openUrl, "provin-vin-scan");
       return;
     }
     if (row.action === "retry") {
       void startScan(row.id);
       return;
     }
-    if (row.openUrl) window.open(row.openUrl, "_blank", "noopener,noreferrer");
+    if (row.openUrl && /^https:\/\//i.test(row.openUrl)) window.open(row.openUrl, "_blank", "noopener,noreferrer");
   };
 
   const rowLabel = (row: OrderVinScanSourceRow) =>

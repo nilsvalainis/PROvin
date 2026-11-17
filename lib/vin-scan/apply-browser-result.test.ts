@@ -149,3 +149,27 @@ describe("atsevišķā VIN SCAN pārlūka rezultāts", () => {
     expect(route).not.toMatch(/purchaseCarVerticalReport|carvertical/i);
   });
 });
+
+describe("atsevišķā rīka pageUrl pārbaude", () => {
+  const catalog = `https://stat.vin/cars/${VIN}`;
+  const cases: [string, string][] = [
+    ["javascript:", "javascript:alert(1)"],
+    ["http:", `http://stat.vin/cars/${VIN}`],
+    ["svešs saimnieks", `https://evil.example/cars/${VIN}`],
+    ["apakšdomēns", `https://en.stat.vin/cars/${VIN}`],
+  ];
+  for (const [name, pageUrl] of cases) {
+    it(`${name}: saglabātā openUrl ir droša`, () => {
+      const applied = applyVinScanBrowserResultToSnapshot({
+        snapshot: null,
+        vin: VIN,
+        browserResult: { id: "stat_vin", html: STAT_HTML, pageUrl, httpStatus: 200 },
+        now: "2026-11-17T10:00:00.000Z",
+      });
+      expect(applied.ok).toBe(true);
+      if (!applied.ok) return;
+      const row = applied.snapshot.indicators.find((r) => r.id === "stat_vin");
+      expect(row?.openUrl).toBe(name === "apakšdomēns" ? pageUrl : catalog);
+    });
+  }
+});

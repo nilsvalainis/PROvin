@@ -710,7 +710,13 @@ export async function fetchIrissRelayHealth(cfg: IrissRelayConfig, opts: { fetch
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 8_000);
   try {
-    const res = await fetchImpl(`${cfg.baseUrl}/health`, { method: "GET", signal: controller.signal, cache: "no-store" });
+    // Bez Bearer relejs atdod tikai { ok: true }; detaļām (sesijas, skaitītāji) vajag tokenu.
+    const res = await fetchImpl(`${cfg.baseUrl}/health`, {
+      method: "GET",
+      headers: { authorization: `Bearer ${cfg.token}` },
+      signal: controller.signal,
+      cache: "no-store",
+    });
     if (!res.ok) return { reachable: false, note: `Releja health HTTP ${res.status}.`, checkedAt, platforms: {}, manualLogin: null };
     return mapRelayHealth(await res.json(), checkedAt);
   } catch (e) {

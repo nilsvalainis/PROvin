@@ -18,10 +18,43 @@ const HEADERS: Record<string, string> = {
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
 };
 
+/** Katram tjekbil.dk pieprasījumam (ieskaitot ķermeņa nolasīšanu) ir 10 s limits. */
+export const TJEKBIL_FETCH_TIMEOUT_MS = 10_000;
+
+/**
+ * GET ar abort pēc `TJEKBIL_FETCH_TIMEOUT_MS`. Noildzes gadījumā met `Error("timeout")`,
+ * ko VIN SCAN `failed()` pārvērš statusā `timeout`.
+ */
+async function fetchTextWithTimeout(url: string): Promise<{ ok: boolean; status: number; text: string }> {
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, TJEKBIL_FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { headers: HEADERS, cache: "no-store", signal: controller.signal });
+    const text = await res.text();
+    return { ok: res.ok, status: res.status, text };
+  } catch (e) {
+    if (timedOut) throw new Error("timeout");
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function getJson<T>(url: string): Promise<{ status: number; data: T | null }> {
-  const res = await fetch(url, { headers: HEADERS, cache: "no-store" });
+  let res: { ok: boolean; status: number; text: string };
+  try {
+    res = await fetchTextWithTimeout(url);
+  } catch (e) {
+    // Papildu daļas nav obligātas: noildze = kā trūkstoša daļa.
+    if (e instanceof Error && e.message === "timeout") return { status: 0, data: null };
+    throw e;
+  }
   if (!res.ok) return { status: res.status, data: null };
-  const text = await res.text();
+  const text = res.text;
   if (!text.trim()) return { status: res.status, data: null };
   try {
     return { status: res.status, data: JSON.parse(text) as T };
@@ -38,8 +71,8 @@ export function tjekbilDmrUrl(vin: string): string {
 export function fetchTjekbilDmrRaw(vin: string): Promise<{ status: number; text: string }> {
   const url = tjekbilDmrUrl(vin);
   return dedupeAsync(`tjekbil-dmr:${url}`, async () => {
-    const res = await fetch(url, { headers: HEADERS, cache: "no-store" });
-    return { status: res.status, text: await res.text() };
+    const res = await fetchTextWithTimeout(url);
+    return { status: res.status, text: res.text };
   });
 }
 
