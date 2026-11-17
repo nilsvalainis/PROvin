@@ -1,0 +1,65 @@
+{
+ "label": "BMW 525: CSDD 2, AutoDNA 3, carVertical 15, dīleris 17, citi 1; negadījumi 2",
+ "rindasPaAvotiem": {
+  "CSDD": 2,
+  "OFICIĀLĀ DĪLERA DATI": 17,
+  "AutoDNA": 3,
+  "CarVertical": 15,
+  "CITI AVOTI": 1
+ },
+ "rindasSavaktas": 38,
+ "rindasTabula": 31,
+ "tabula": [
+  "01.02.2011 | 1 | Vācija | CarVertical",
+  "07.02.2011 | 1 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "01.10.2011 | 30495 | Vācija | CarVertical",
+  "11.10.2011 | 30695 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "01.02.2012 | 43784 | Vācija | CarVertical",
+  "14.02.2012 | 43984 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "01.10.2012 | 72921 | Vācija | CarVertical",
+  "01.10.2012 | 70404 | Vācija | CarVertical",
+  "10.10.2012 | 70604 | Vācija | OFICIĀLĀ DĪLERA DATI | nav grafikā, ievades kļūda",
+  "29.10.2012 | 73121 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "20.11.2012 | 74692 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "01.10.2013 | 109352 | Vācija | CarVertical",
+  "21.10.2013 | 109852 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "01.02.2014 | 119894 | Vācija | CarVertical",
+  "14.02.2014 | 120394 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "01.07.2014 | 128227 | Vācija | CarVertical",
+  "02.07.2014 | 128727 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "01.09.2014 | 138360 | Vācija | CarVertical",
+  "23.09.2014 | 138860 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "24.09.2014 | 138861 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "01.04.2015 | 138422 | Vācija | CarVertical",
+  "09.04.2015 | 138922 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "01.09.2016 | 161290 | Vācija | CarVertical",
+  "06.09.2016 | 161790 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "01.04.2017 | 170885 | Vācija | CarVertical",
+  "18.04.2017 | 171385 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "01.08.2024 | 301126 | Vācija | CarVertical",
+  "28.08.2024 | 301626 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "20.12.2024 | 301738 | Latvija | CarVertical + AutoDNA + CSDD",
+  "19.12.2025 | 334594 | Latvija | CarVertical + CSDD + AutoDNA",
+  "19.08.2026 | 348551 | Latvija | CITI AVOTI"
+ ],
+ "sarkanaJosla": false,
+ "klases": [
+  "typo_outlier: 01.10.2012 72921 -> 10.10.2012 70604 (kritums 2317) [10.10.2012 | 70604 | OFICIĀLĀ DĪLERA DATI]"
+ ],
+ "kritumsBezNilaLemumiem": false,
+ "nilaLemumi": [],
+ "klasesPecNilaLemumiem": [
+  "typo_outlier: 10.10.2012 70604"
+ ],
+ "faktuLapa": {
+  "odometerAnomaly": false,
+  "carverticalMileageWarning": false,
+  "maxRollbackDropKm": 2317,
+  "rollbacks": [
+   "01.10.2012 72921 -> 10.10.2012 70604"
+  ],
+  "suspectedEntryErrors": [],
+  "implausibleReadings": [],
+  "latestKm": 348551
+ }
+}

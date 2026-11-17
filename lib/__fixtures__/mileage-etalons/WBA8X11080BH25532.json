@@ -1,0 +1,878 @@
+{
+ "vin": "WBA8X11080BH25532",
+ "label": "BMW 318D: CSDD 20, AutoDNA 6, carVertical 19, dīleris 25; negadījumi 0",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 241, saglabāts 2026-08-28; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW 318D",
+   "registrationNumber": "NN2049",
+   "firstRegistration": "2018-11-15",
+   "nextInspectionDate": "2027-06-07",
+   "prevInspectionDate": "2025-06-07",
+   "engineDisplacementCm3": "1995",
+   "enginePowerKw": "100",
+   "fuelType": "",
+   "emissionStandard": "",
+   "grossMassKg": "2210",
+   "curbMassKg": "1715",
+   "roadTaxEur": "93,00",
+   "registrationStatus": "Uzskaitē",
+   "opacityCoefficient": "0.03",
+   "particulateMatter": "116 700",
+   "previousRegistrationCountry": "BEĻĢIJA",
+   "ownerCountLatvia": "3",
+   "technicalInspectionHistory": [
+    {
+     "date": "07.06.2025",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "05.06.2024",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.24",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "07.06.2023",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.03",
+     "notes": "",
+     "defects": []
+    }
+   ],
+   "ownerRegistrationEvents": [
+    {
+     "date": "05.06.2023",
+     "label": "Pirmā reģistrācija Latvijā"
+    },
+    {
+     "date": "09.06.2023",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "06.07.2026",
+     "label": "Īpašnieka maiņa"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "pamatpārbaude",
+    "inspectionDateText": "07.06.2025",
+    "nextInspectionDateText": "",
+    "odometer": "241717",
+    "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "07.06.2025",
+     "odometer": "241717",
+     "country": "Latvija"
+    },
+    {
+     "date": "05.06.2024",
+     "odometer": "215927",
+     "country": "Latvija"
+    },
+    {
+     "date": "07.06.2023",
+     "odometer": "204735",
+     "country": "Latvija"
+    },
+    {
+     "date": "09.05.2023",
+     "odometer": "204655",
+     "country": "Beļģija"
+    },
+    {
+     "date": "02.03.2023",
+     "odometer": "204645",
+     "country": "Beļģija"
+    },
+    {
+     "date": "03.11.2022",
+     "odometer": "191833",
+     "country": "Beļģija"
+    },
+    {
+     "date": "24.07.2022",
+     "odometer": "179201",
+     "country": "Beļģija"
+    },
+    {
+     "date": "19.04.2022",
+     "odometer": "165399",
+     "country": "Beļģija"
+    },
+    {
+     "date": "08.02.2022",
+     "odometer": "156297",
+     "country": "Beļģija"
+    },
+    {
+     "date": "08.12.2021",
+     "odometer": "146091",
+     "country": "Beļģija"
+    },
+    {
+     "date": "18.08.2021",
+     "odometer": "133499",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.06.2021",
+     "odometer": "123858",
+     "country": "Beļģija"
+    },
+    {
+     "date": "24.02.2021",
+     "odometer": "118794",
+     "country": "Beļģija"
+    },
+    {
+     "date": "29.11.2020",
+     "odometer": "111202",
+     "country": "Beļģija"
+    },
+    {
+     "date": "03.09.2020",
+     "odometer": "99953",
+     "country": "Beļģija"
+    },
+    {
+     "date": "22.05.2020",
+     "odometer": "82866",
+     "country": "Beļģija"
+    },
+    {
+     "date": "06.03.2020",
+     "odometer": "79158",
+     "country": "Beļģija"
+    },
+    {
+     "date": "24.12.2019",
+     "odometer": "60966",
+     "country": "Beļģija"
+    },
+    {
+     "date": "29.04.2019",
+     "odometer": "22294",
+     "country": "Beļģija"
+    },
+    {
+     "date": "08.01.2019",
+     "odometer": "2178",
+     "country": "Beļģija"
+    }
+   ]
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "07.06.2025",
+     "odometer": "241717",
+     "country": "Latvija"
+    },
+    {
+     "date": "05.06.2024",
+     "odometer": "215927",
+     "country": "Latvija"
+    },
+    {
+     "date": "07.06.2023",
+     "odometer": "204735",
+     "country": "Latvija"
+    },
+    {
+     "date": "05.06.2023",
+     "odometer": "204735",
+     "country": "Latvija"
+    },
+    {
+     "date": "16.03.2023",
+     "odometer": "204645",
+     "country": "Beļģija"
+    },
+    {
+     "date": "14.03.2023",
+     "odometer": "204646",
+     "country": "Beļģija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.06.2025",
+     "odometer": "241717",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.01.2025",
+     "odometer": "234642",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.07.2024",
+     "odometer": "217066",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.06.2024",
+     "odometer": "215927",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.06.2023",
+     "odometer": "204735",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.03.2023",
+     "odometer": "204396",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.10.2022",
+     "odometer": "187413",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.09.2022",
+     "odometer": "185032",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.01.2022",
+     "odometer": "153894",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.12.2021",
+     "odometer": "148395",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.05.2021",
+     "odometer": "123269",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.01.2021",
+     "odometer": "114119",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.11.2020",
+     "odometer": "110153",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.07.2020",
+     "odometer": "93827",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.01.2020",
+     "odometer": "69051",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.12.2019",
+     "odometer": "64864",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.11.2019",
+     "odometer": "60865",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.06.2019",
+     "odometer": "28914",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.11.2018",
+     "odometer": "2",
+     "country": "Beļģija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "23.01.2025",
+     "odometer": "234892",
+     "country": "Latvija"
+    },
+    {
+     "date": "26.07.2024",
+     "odometer": "217316",
+     "country": "Latvija"
+    },
+    {
+     "date": "04.10.2022",
+     "odometer": "187663",
+     "country": "Beļģija"
+    },
+    {
+     "date": "13.09.2022",
+     "odometer": "185282",
+     "country": "Beļģija"
+    },
+    {
+     "date": "08.02.2022",
+     "odometer": "156297",
+     "country": "Beļģija"
+    },
+    {
+     "date": "29.01.2022",
+     "odometer": "154144",
+     "country": "Beļģija"
+    },
+    {
+     "date": "21.12.2021",
+     "odometer": "148645",
+     "country": "Beļģija"
+    },
+    {
+     "date": "26.11.2021",
+     "odometer": "144781",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.11.2021",
+     "odometer": "141899",
+     "country": "Beļģija"
+    },
+    {
+     "date": "26.05.2021",
+     "odometer": "124441",
+     "country": "Beļģija"
+    },
+    {
+     "date": "12.05.2021",
+     "odometer": "123519",
+     "country": "Beļģija"
+    },
+    {
+     "date": "19.01.2021",
+     "odometer": "115604",
+     "country": "Beļģija"
+    },
+    {
+     "date": "08.01.2021",
+     "odometer": "114369",
+     "country": "Beļģija"
+    },
+    {
+     "date": "17.11.2020",
+     "odometer": "110403",
+     "country": "Beļģija"
+    },
+    {
+     "date": "04.08.2020",
+     "odometer": "94529",
+     "country": "Beļģija"
+    },
+    {
+     "date": "30.07.2020",
+     "odometer": "93927",
+     "country": "Beļģija"
+    },
+    {
+     "date": "06.03.2020",
+     "odometer": "79158",
+     "country": "Beļģija"
+    },
+    {
+     "date": "03.03.2020",
+     "odometer": "78554",
+     "country": "Beļģija"
+    },
+    {
+     "date": "20.02.2020",
+     "odometer": "76113",
+     "country": "Beļģija"
+    },
+    {
+     "date": "21.01.2020",
+     "odometer": "69151",
+     "country": "Beļģija"
+    },
+    {
+     "date": "23.12.2019",
+     "odometer": "64964",
+     "country": "Beļģija"
+    },
+    {
+     "date": "28.11.2019",
+     "odometer": "60965",
+     "country": "Beļģija"
+    },
+    {
+     "date": "19.06.2019",
+     "odometer": "31972",
+     "country": "Beļģija"
+    },
+    {
+     "date": "03.06.2019",
+     "odometer": "29014",
+     "country": "Beļģija"
+    },
+    {
+     "date": "28.11.2018",
+     "odometer": "2",
+     "country": "Beļģija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "23.01.2025",
+     "odometer": "234892",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "26.07.2024",
+     "odometer": "217316",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "04.10.2022",
+     "odometer": "187663",
+     "location": "Louyet Mons , Mons-Cuesmes",
+     "works": "Motoreļļa, Degvielas filtrs, Gaisa filtrs, Tehniskā pārbaude servisā, Salona filtrs"
+    },
+    {
+     "date": "13.09.2022",
+     "odometer": "185282",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "08.02.2022",
+     "odometer": "156297",
+     "location": "Louyet Sambreville , Sambreville",
+     "works": "Motoreļļa, Salona filtrs"
+    },
+    {
+     "date": "29.01.2022",
+     "odometer": "154144",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "21.12.2021",
+     "odometer": "148645",
+     "location": "Louyet Charleroi , Charleroi",
+     "works": "Priekšējās bremzes, Bremžu šķidrums, Aizmugurējās bremzes"
+    },
+    {
+     "date": "26.11.2021",
+     "odometer": "144781",
+     "location": "Louyet Charleroi , Charleroi",
+     "works": "Bremžu šķidrums"
+    },
+    {
+     "date": "01.11.2021",
+     "odometer": "141899",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "26.05.2021",
+     "odometer": "124441",
+     "location": "Louyet Sambreville , Sambreville",
+     "works": "Motoreļļa, Degvielas filtrs, Tehniskā pārbaude servisā, Gaisa filtrs, Salona filtrs"
+    },
+    {
+     "date": "12.05.2021",
+     "odometer": "123519",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "19.01.2021",
+     "odometer": "115604",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "08.01.2021",
+     "odometer": "114369",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "17.11.2020",
+     "odometer": "110403",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "04.08.2020",
+     "odometer": "94529",
+     "location": "Louyet Sambreville , Sambreville",
+     "works": "Motoreļļa, Salona filtrs"
+    },
+    {
+     "date": "30.07.2020",
+     "odometer": "93927",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "06.03.2020",
+     "odometer": "79158",
+     "location": "Louyet La Louvière , La Louvière",
+     "works": "Priekšējās bremzes, Aizmugurējās bremzes"
+    },
+    {
+     "date": "03.03.2020",
+     "odometer": "78554",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "20.02.2020",
+     "odometer": "76113",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "21.01.2020",
+     "odometer": "69151",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "23.12.2019",
+     "odometer": "64964",
+     "location": "Louyet Sambreville , Sambreville",
+     "works": "Motoreļļa, Degvielas filtrs, Gaisa filtrs, Tehniskā pārbaude servisā, Salona filtrs"
+    },
+    {
+     "date": "28.11.2019",
+     "odometer": "60965",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "19.06.2019",
+     "odometer": "31972",
+     "location": "Louyet Sambreville , Sambreville",
+     "works": "Motoreļļa, Salona filtrs"
+    },
+    {
+     "date": "03.06.2019",
+     "odometer": "29014",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "28.11.2018",
+     "odometer": "2",
+     "location": "Gregoir Puurs nv, Puurs",
+     "works": "Pirmspiegādes apskate"
+    }
+   ],
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "BMW F34",
+     "modelSeries": "F34",
+     "vinCode": "WBA8X11080BH25532",
+     "vehicleType": "8X21",
+     "transmission": "AUT",
+     "steeringSide": "LL",
+     "engineCode": "B47O",
+     "engineNumber": "63005500",
+     "body": "SAT",
+     "drive": "HECK",
+     "power": "110 kW (148 ZS / 150 PS)",
+     "integrationLevel": "F020-18-11-520",
+     "currentILevel": "F020-19-11-538",
+     "developmentCode": "F34",
+     "modelCode": "8X21",
+     "productionDate": "06.11.2018",
+     "firstRegistration": "28.11.2018",
+     "warrantyStartDate": "15.11.2018",
+     "countryRegion": "EUR",
+     "color": "Glacier Silver Metallic (S0A83)",
+     "colorCode": "0A83",
+     "interior": "Sensatec/black (SKCSW)",
+     "interiorCode": "KCSW"
+    }
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "certificate": {
+    "issuedAt": "27.08.2026 23:18:16",
+    "vehicleLine": "Transportlīdzeklis BMW 318D, izlaiduma gads 2018. Valsts numura zīme NN2049.",
+    "makeModel": "BMW 318D",
+    "year": "2018",
+    "plate": "NN2049",
+    "accidentCount": "0",
+    "insuredFrom": "08.06.2023",
+    "insuredTo": "04.07.2027",
+    "insuredDays": "1117",
+    "claims": [],
+    "footerNote": "Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas."
+   }
+  },
+  "tirgus": {
+   "listedForSale": "111",
+   "listingCreated": "08.05.2026",
+   "priceDrop": "€ -1 000",
+   "priceHistory": [
+    {
+     "date": "21.06.2026",
+     "price": 12900,
+     "mileage": 261022,
+     "year": 2018,
+     "delta": -1000
+    },
+    {
+     "date": "29.05.2026",
+     "price": 13900,
+     "mileage": 261022,
+     "year": 2018,
+     "delta": 0
+    },
+    {
+     "date": "08.05.2026",
+     "price": 13900,
+     "mileage": 261022,
+     "year": 2018,
+     "delta": 0
+    }
+   ],
+   "listingMileageOdometer": "261 022",
+   "listingMileageDate": "08.05.2026",
+   "listingMileageCountry": "Latvija"
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,918 @@
+{
+ "vin": "WBA5R1C0XLFH42873",
+ "label": "BMW 330I: CSDD 4, AutoDNA 5, carVertical 14, dīleris 11, ASV 2, citi 6; negadījumi 9",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 208, saglabāts 2026-10-14; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW 330I",
+   "registrationNumber": "NX1447",
+   "firstRegistration": "2020-07-01",
+   "nextInspectionDate": "2027-09-23",
+   "prevInspectionDate": "2025-09-23",
+   "engineDisplacementCm3": "1998",
+   "enginePowerKw": "185",
+   "fuelType": "Benzīns",
+   "emissionStandard": "",
+   "vehicleType": "",
+   "grossMassKg": "2080",
+   "curbMassKg": "1628",
+   "seatCount": "",
+   "roadTaxEur": "291,00",
+   "registrationStatus": "Noņemts no uzskaites, atļauts piedalīties ceļu satiksmē līdz 06.06.2026",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "VĀCIJA",
+   "ownerCountLatvia": "4",
+   "vin": "",
+   "modelYear": "",
+   "color": "",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "",
+   "cocType": "",
+   "cocApprovalNumber": "",
+   "cocVariant": "",
+   "cocVersion": "",
+   "insuranceValidUntil": "",
+   "technicalInspectionHistory": [
+    {
+     "date": "23.09.2025",
+     "inspectionType": "Pamatpārbaude",
+     "ratingLabel": "2 - Ar mēneša laikā labojamiem defektiem",
+     "ratingLevel": 2,
+     "maxDefectLevel": 2,
+     "smokeCoefficient": "",
+     "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+     "defects": [
+      {
+       "code": "5.2.2.",
+       "rating": "2",
+       "description": "Plaisa riteņa diskā."
+      }
+     ]
+    },
+    {
+     "date": "23.08.2025",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "2 - Ar mēneša laikā labojamiem defektiem",
+     "ratingLevel": 2,
+     "maxDefectLevel": 2,
+     "smokeCoefficient": "",
+     "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+     "defects": [
+      {
+       "code": "8.2.1.1.",
+       "rating": "2",
+       "description": "Mēraparātu panelī kļūmes (bojājuma) indikators norāda uz kļūmi (bojājumu) izplūdes emisiju kontroles sistēmas darbībā."
+      },
+      {
+       "code": "4.12.",
+       "rating": "2",
+       "description": "Neobligāto lukturu (papildu gaismas ierīču) neatļauta uzstādīšana."
+      },
+      {
+       "code": "5.2.2.",
+       "rating": "2",
+       "description": "Plaisa riteņa diskā."
+      },
+      {
+       "code": "4.3.1.",
+       "rating": "2",
+       "description": "Pārklājums uz S3 kategorijas (papildus) bremžu luktura."
+      }
+     ]
+    },
+    {
+     "date": "23.08.2024",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā. Bremžu papildus signālluktura (S3) pārklājums jālikvidē līdz nākamai pamatpārbaudei!",
+     "defects": []
+    }
+   ],
+   "ownerRegistrationEvents": [
+    {
+     "date": "23.08.2024",
+     "label": "Pirmā reģistrācija Latvijā"
+    },
+    {
+     "date": "27.09.2024",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "27.01.2025",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "05.05.2026",
+     "label": "Īpašnieka maiņa"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "Pamatpārbaude",
+    "inspectionDateText": "23.09.2025",
+    "nextInspectionDateText": "23.10.2025",
+    "odometer": "79069",
+    "ratingLabel": "2 - Ar mēneša laikā labojamiem defektiem",
+    "ratingLevel": 2,
+    "smokeCoefficient": "",
+    "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+    "defects": [
+     {
+      "code": "5.2.2.",
+      "rating": "2",
+      "description": "Plaisa riteņa diskā."
+     }
+    ]
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "23.09.2025",
+     "odometer": "79095",
+     "country": "Latvija"
+    },
+    {
+     "date": "23.09.2025",
+     "odometer": "79069",
+     "country": "Latvija"
+    },
+    {
+     "date": "23.08.2025",
+     "odometer": "76225",
+     "country": "Latvija"
+    },
+    {
+     "date": "23.08.2024",
+     "odometer": "52931",
+     "country": "Latvija"
+    }
+   ]
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "23.09.2025",
+     "odometer": "79095",
+     "country": "Latvija"
+    },
+    {
+     "date": "23.09.2025",
+     "odometer": "79069",
+     "country": "Latvija"
+    },
+    {
+     "date": "23.08.2025",
+     "odometer": "76225",
+     "country": "Latvija"
+    },
+    {
+     "date": "23.08.2024",
+     "odometer": "52931",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.12.2022",
+     "odometer": "35500",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "ASV",
+     "csngDate": "01.06.2020",
+     "lossAmount": "33 095 €"
+    },
+    {
+     "incidentNo": "Lietuva",
+     "csngDate": "01.11.2020",
+     "lossAmount": "21 000 - 22 000 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.11.2022",
+     "lossAmount": "27 000 - 28 000 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.12.2022",
+     "lossAmount": "700 - 800 €"
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.06.2026",
+     "odometer": "88120",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.04.2026",
+     "odometer": "86509",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.09.2025",
+     "odometer": "79069",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2025",
+     "odometer": "76225",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.05.2025",
+     "odometer": "68782",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2024",
+     "odometer": "58164",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2024",
+     "odometer": "52931",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.09.2023",
+     "odometer": "39627",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2022",
+     "odometer": "35500",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2022",
+     "odometer": "32486",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2020",
+     "odometer": "20477",
+     "country": "ASV"
+    },
+    {
+     "date": "01.12.2019",
+     "odometer": "6870",
+     "country": "ASV"
+    },
+    {
+     "date": "01.11.2019",
+     "odometer": "5646",
+     "country": "ASV"
+    },
+    {
+     "date": "01.09.2019",
+     "odometer": "12",
+     "country": "ASV"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "ASV",
+     "csngDate": "01.03.2020",
+     "lossAmount": "Nezināms"
+    },
+    {
+     "incidentNo": "ASV",
+     "csngDate": "01.05.2020",
+     "lossAmount": "Nezināms"
+    },
+    {
+     "incidentNo": "ASV",
+     "csngDate": "01.08.2020",
+     "lossAmount": "Nezināms"
+    },
+    {
+     "incidentNo": "Lietuva",
+     "csngDate": "01.11.2020",
+     "lossAmount": "20 001 - 22 500 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.11.2022",
+     "lossAmount": "25 001 - 27 500 €"
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "02.04.2026",
+     "odometer": "86575",
+     "country": "Latvija"
+    },
+    {
+     "date": "29.05.2025",
+     "odometer": "68848",
+     "country": "Latvija"
+    },
+    {
+     "date": "23.09.2023",
+     "odometer": "39693",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.06.2022",
+     "odometer": "32552",
+     "country": "Vācija"
+    },
+    {
+     "date": "18.11.2019",
+     "odometer": "5676",
+     "country": "ASV"
+    },
+    {
+     "date": "15.11.2019",
+     "odometer": "5662",
+     "country": "ASV"
+    },
+    {
+     "date": "15.11.2019",
+     "odometer": "5660",
+     "country": "ASV"
+    },
+    {
+     "date": "26.09.2019",
+     "odometer": "364",
+     "country": "ASV"
+    },
+    {
+     "date": "17.09.2019",
+     "odometer": "14",
+     "country": "ASV"
+    },
+    {
+     "date": "12.09.2019",
+     "odometer": "12",
+     "country": "ASV"
+    },
+    {
+     "date": "12.09.2019",
+     "odometer": "11",
+     "country": "ASV"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "",
+     "odometer": "",
+     "location": "",
+     "works": ""
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": []
+   },
+   "outvin": {
+    "precheckAt": "2026-07-13T21:36:40.824Z",
+    "vin": "WBA5R1C0XLFH42873",
+    "capabilitySlots": [
+     {
+      "id": "service_1",
+      "historyType": 1,
+      "titleLv": "Oficiālā servisa un nobraukuma vēsture (Type 1)",
+      "creditCost": 1,
+      "status": "available",
+      "category": "service_history"
+     },
+     {
+      "id": "carfax_2",
+      "historyType": 2,
+      "titleLv": "ASV / Carfax vēsture (Type 2)",
+      "creditCost": 1,
+      "status": "disabled",
+      "statusReason": "Eiropas VIN — ASV Carfax (Type 2) parasti nav pieejams",
+      "category": "us_carfax"
+     }
+    ],
+    "purchases": [],
+    "vehicleInfo": {
+     "model": "",
+     "modelSeries": "",
+     "vinCode": "",
+     "vehicleType": "",
+     "transmission": "",
+     "steeringSide": "",
+     "engineCode": "",
+     "engineNumber": "",
+     "body": "",
+     "drive": "",
+     "power": "",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "",
+     "colorCode": "",
+     "interior": "",
+     "interiorCode": "",
+     "fuel": "",
+     "displacement": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "330I",
+     "modelSeries": "G20",
+     "vinCode": "WBA5R1C0XLFH42873",
+     "vehicleType": "5R13",
+     "transmission": "Automatic",
+     "steeringSide": "",
+     "engineCode": "B46D",
+     "engineNumber": "",
+     "body": "",
+     "drive": "",
+     "power": "",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "Black 2 (L0668)",
+     "colorCode": "",
+     "interior": "KCSW (PKCSW)",
+     "interiorCode": "",
+     "fuel": "",
+     "displacement": ""
+    }
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "2026-10-14T21:10:29.000Z",
+   "attentionMarks": "1/8",
+   "ownersCount": "",
+   "productUsed": "vhr_lite",
+   "reportId": "oneautoapi.713770471051",
+   "lastCostUsd": "$0.55",
+   "lastFetchedVin": "WBA5R1C0XLFH42873",
+   "fetchedAt": "2026-10-14T21:15:29.749Z",
+   "checks": [
+    {
+     "label": "Salvage (norakstīts)",
+     "status": "atrasts ieraksts",
+     "severity": "alert"
+    },
+    {
+     "label": "Rebuilt (atjaunots title)",
+     "status": "nav ieraksta",
+     "severity": "ok"
+    },
+    {
+     "label": "Flood (plūdi)",
+     "status": "nav ieraksta",
+     "severity": "ok"
+    },
+    {
+     "label": "Zādzība",
+     "status": "nav ieraksta",
+     "severity": "ok"
+    },
+    {
+     "label": "Ķīla",
+     "status": "nav ieraksta",
+     "severity": "ok"
+    },
+    {
+     "label": "Apdrošināšanas total loss",
+     "status": "nav ieraksta",
+     "severity": "ok"
+    },
+    {
+     "label": "Eksports",
+     "status": "nav ieraksta",
+     "severity": "ok"
+    },
+    {
+     "label": "Aizturēšana (impound)",
+     "status": "nav ieraksta",
+     "severity": "ok"
+    }
+   ],
+   "mileage": [
+    {
+     "date": "15.11.2019",
+     "odometer": "5660",
+     "country": "ASV, CA"
+    },
+    {
+     "date": "20.11.2019",
+     "odometer": "5660",
+     "country": "ASV, CA"
+    }
+   ],
+   "damages": [
+    {
+     "date": "11.08.2020",
+     "region": "Fontana CA",
+     "amount": "",
+     "description": "Front end; None"
+    }
+   ],
+   "brands": [
+    {
+     "date": "11.08.2020",
+     "label": "Salvage certificate",
+     "detail": "Front end; None"
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "11.08.2020",
+     "venue": "Fontana CA",
+     "odometer": "",
+     "price": "",
+     "status": "Salvage certificate"
+    },
+    {
+     "date": "15.11.2019",
+     "venue": "Bmw Of Murrieta",
+     "odometer": "5660",
+     "price": "35 550 €",
+     "status": "sale"
+    },
+    {
+     "date": "20.11.2019",
+     "venue": "Bmw Of Murrieta",
+     "odometer": "5660",
+     "price": "35 550 €",
+     "status": "sale"
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "35",
+   "listingCreated": "09.06.2026",
+   "priceDrop": "NAV",
+   "priceHistory": [],
+   "listingMileageOdometer": "",
+   "listingMileageDate": "",
+   "listingMileageCountry": ""
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "11.08.2020",
+       "odometer": "49890",
+       "country": "ASV"
+      },
+      {
+       "date": "28.05.2020",
+       "odometer": "20477",
+       "country": "ASV"
+      },
+      {
+       "date": "20.03.2020",
+       "odometer": "6870",
+       "country": "ASV"
+      },
+      {
+       "date": "20.12.2019",
+       "odometer": "6870",
+       "country": "ASV"
+      },
+      {
+       "date": "20.11.2019",
+       "odometer": "5660",
+       "country": "ASV"
+      },
+      {
+       "date": "19.09.2019",
+       "odometer": "16",
+       "country": "ASV"
+      },
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "ASV",
+       "csngDate": "28.05.2020",
+       "lossAmount": "Salvage / Total Loss"
+      },
+      {
+       "incidentNo": "ASV",
+       "csngDate": "11.08.2020",
+       "lossAmount": "Salvage / Total Loss"
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

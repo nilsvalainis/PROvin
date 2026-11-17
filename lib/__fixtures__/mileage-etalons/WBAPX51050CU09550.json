@@ -1,0 +1,1710 @@
+{
+ "vin": "WBAPX51050CU09550",
+ "label": "BMW 525: CSDD 6, carVertical 34, dīleris 64, citi 10; negadījumi 2",
+ "source": "prod pasūtījuma melnraksts (manual), revīzija 859, saglabāts 2026-10-19; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW 525",
+   "registrationNumber": "",
+   "firstRegistration": "",
+   "nextInspectionDate": "",
+   "prevInspectionDate": "",
+   "engineDisplacementCm3": "2993",
+   "enginePowerKw": "145",
+   "fuelType": "Dīzeļdegviela",
+   "emissionStandard": "Euro 4",
+   "vehicleType": "",
+   "grossMassKg": "2290",
+   "curbMassKg": "1765",
+   "seatCount": "",
+   "roadTaxEur": "",
+   "registrationStatus": "nav reģistrēts",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "VĀCIJA",
+   "ownerCountLatvia": "0",
+   "vin": "",
+   "modelYear": "",
+   "color": "",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "",
+   "cocType": "",
+   "cocApprovalNumber": "",
+   "cocVariant": "",
+   "cocVersion": "",
+   "insuranceValidUntil": "",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "",
+    "inspectionDateText": "",
+    "nextInspectionDateText": "",
+    "odometer": "305048",
+    "ratingLabel": "",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "29.07.2026",
+     "odometer": "305048",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2025",
+     "odometer": "289683",
+     "country": "Vācija"
+    },
+    {
+     "date": "26.07.2023",
+     "odometer": "259085",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.07.2021",
+     "odometer": "221482",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.07.2021",
+     "odometer": "221482",
+     "country": "Vācija"
+    },
+    {
+     "date": "29.07.2019",
+     "odometer": "197247",
+     "country": "Vācija"
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "0",
+   "listingCreated": "15.08.2026",
+   "priceDrop": "NAV",
+   "priceHistory": [],
+   "listingMileageOdometer": "305048",
+   "listingMileageDate": "",
+   "listingMileageCountry": ""
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.01.2014",
+     "lossAmount": "900 - 1 000 €"
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.05.2026",
+     "odometer": "303116",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2026",
+     "odometer": "300621",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2025",
+     "odometer": "295671",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2025",
+     "odometer": "294640",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2022",
+     "odometer": "234784",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2021",
+     "odometer": "222828",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2021",
+     "odometer": "220695",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2019",
+     "odometer": "198333",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2019",
+     "odometer": "196665",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2018",
+     "odometer": "183920",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2018",
+     "odometer": "180883",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2016",
+     "odometer": "160718",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2016",
+     "odometer": "154291",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2016",
+     "odometer": "152170",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2015",
+     "odometer": "140577",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2015",
+     "odometer": "135501",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2014",
+     "odometer": "119975",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2014",
+     "odometer": "115374",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2014",
+     "odometer": "111354",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2013",
+     "odometer": "102696",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2013",
+     "odometer": "86617",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2013",
+     "odometer": "85387",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2012",
+     "odometer": "81973",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2012",
+     "odometer": "67726",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2012",
+     "odometer": "59715",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2011",
+     "odometer": "50864",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2011",
+     "odometer": "48829",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2011",
+     "odometer": "46487",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2010",
+     "odometer": "39025",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2010",
+     "odometer": "29965",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2010",
+     "odometer": "26741",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2009",
+     "odometer": "23405",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2009",
+     "odometer": "19365",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2008",
+     "odometer": "15",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.01.2014",
+     "lossAmount": "751 - 1 000 €"
+    }
+   ]
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "12.05.2026",
+     "odometer": "303938",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.05.2026",
+     "odometer": "303616",
+     "country": "Vācija"
+    },
+    {
+     "date": "07.05.2026",
+     "odometer": "303616",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.04.2026",
+     "odometer": "301672",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2026",
+     "odometer": "301121",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.10.2025",
+     "odometer": "296171",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.06.2022",
+     "odometer": "235284",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.08.2021",
+     "odometer": "223328",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.06.2021",
+     "odometer": "221195",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.09.2019",
+     "odometer": "198833",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.07.2019",
+     "odometer": "197165",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.08.2018",
+     "odometer": "184420",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.06.2018",
+     "odometer": "181383",
+     "country": "Vācija"
+    },
+    {
+     "date": "21.06.2018",
+     "odometer": "181383",
+     "country": "Vācija"
+    },
+    {
+     "date": "21.11.2016",
+     "odometer": "161218",
+     "country": "Vācija"
+    },
+    {
+     "date": "21.11.2016",
+     "odometer": "161206",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.11.2016",
+     "odometer": "161206",
+     "country": "Vācija"
+    },
+    {
+     "date": "29.07.2016",
+     "odometer": "154791",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.06.2016",
+     "odometer": "152670",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.10.2015",
+     "odometer": "141103",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.10.2015",
+     "odometer": "141077",
+     "country": "Vācija"
+    },
+    {
+     "date": "03.07.2015",
+     "odometer": "136001",
+     "country": "Vācija"
+    },
+    {
+     "date": "03.07.2015",
+     "odometer": "135992",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.10.2014",
+     "odometer": "120475",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.10.2014",
+     "odometer": "120452",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.09.2014",
+     "odometer": "118003",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.06.2014",
+     "odometer": "115874",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.04.2014",
+     "odometer": "112907",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.04.2014",
+     "odometer": "112907",
+     "country": "Vācija"
+    },
+    {
+     "date": "07.04.2014",
+     "odometer": "111854",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.03.2014",
+     "odometer": "111854",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.10.2013",
+     "odometer": "103196",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.10.2013",
+     "odometer": "103196",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.07.2013",
+     "odometer": "95204",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.07.2013",
+     "odometer": "93133",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.06.2013",
+     "odometer": "93133",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.05.2013",
+     "odometer": "86817",
+     "country": "Vācija"
+    },
+    {
+     "date": "26.02.2013",
+     "odometer": "86817",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.01.2013",
+     "odometer": "85587",
+     "country": "Vācija"
+    },
+    {
+     "date": "09.01.2013",
+     "odometer": "85587",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.11.2012",
+     "odometer": "82173",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.07.2012",
+     "odometer": "72315",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.05.2012",
+     "odometer": "67926",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.02.2012",
+     "odometer": "59448",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.01.2012",
+     "odometer": "60755",
+     "country": "Vācija"
+    },
+    {
+     "date": "26.01.2012",
+     "odometer": "60755",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.01.2012",
+     "odometer": "59915",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.12.2011",
+     "odometer": "59915",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.12.2011",
+     "odometer": "59448",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.11.2011",
+     "odometer": "57047",
+     "country": "Vācija"
+    },
+    {
+     "date": "31.10.2011",
+     "odometer": "51064",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2011",
+     "odometer": "51064",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.05.2011",
+     "odometer": "49650",
+     "country": ""
+    },
+    {
+     "date": "22.05.2011",
+     "odometer": "49650",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.05.2011",
+     "odometer": "49224",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.05.2011",
+     "odometer": "49029",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.05.2011",
+     "odometer": "49024",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.03.2011",
+     "odometer": "46687",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.10.2010",
+     "odometer": "39225",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.04.2010",
+     "odometer": "30165",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.03.2010",
+     "odometer": "26941",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.03.2010",
+     "odometer": "26941",
+     "country": "Vācija"
+    },
+    {
+     "date": "31.10.2009",
+     "odometer": "23605",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.08.2009",
+     "odometer": "19565",
+     "country": "Vācija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "12.05.2026",
+     "odometer": "303938",
+     "location": "",
+     "works": "DVD Road Map Europe Professional atjaunināšana (65902456886)\nCIC map Europe Premium atjaunināšanas kods (65902406560)"
+    },
+    {
+     "date": "12.05.2026",
+     "odometer": "303616",
+     "location": "Vācija",
+     "works": "Bremžu šķidrums (FT999900000)\nDiagnostika: pneimatiskās piekares defekts (nosēžas), aizmugures atsperu korozija un plaisas, korodējis kompresors, ELV stūres slēdzenes defekts"
+    },
+    {
+     "date": "16.04.2026",
+     "odometer": "301672",
+     "location": "",
+     "works": "Eļļas filtra elements (11428513377)\nSalona mikrofiltrs ar aktīvo ogli (64319171858)\nLogu mazgāšanas šķidrums (FT999904074)\nAbu priekšējo riteņu balansēšana (FTT36)\nAbu aizmugurējo riteņu balansēšana (FTT37)\nCastrol Magnatec Prof. MP 5W-30 LL04 (FT999900000)\nLogu tīrītāja slotiņa (61627198552)"
+    },
+    {
+     "date": "01.04.2026",
+     "odometer": "301123",
+     "location": "Vācija",
+     "works": "Regulārā apkope\nMotoreļļas un eļļas filtra maiņa (Aral Super Tronic K 5W-30, 7, 5 l)\nSalona ogles filtra maiņa (2 gab.), transportlīdzekļa pārbaude\nDzesēšanas šķidruma pārbaude (-35 °C), kļūdu atmiņas nolasīšana un dzēšana\nRadiatora restes emblēmas maiņa.\nTurētājs (51438183314)"
+    },
+    {
+     "date": "30.10.2025",
+     "odometer": "296171",
+     "location": "",
+     "works": "Longlife spuldze (63217160935)\nGriestu apšuvuma balsts (51447030475)"
+    },
+    {
+     "date": "01.07.2025",
+     "odometer": "289683",
+     "location": "Vācija",
+     "works": "DEKRA tehniskā apskate: fiksēts bojāts pusass putekļu sarga stiprinājums, stūres mehānisma brīvkustība, nevienmērīga stāvbremze"
+    },
+    {
+     "date": "27.01.2023",
+     "odometer": "249272",
+     "location": "Vācija",
+     "works": "Remonts\nSiksnas piedziņas pārbaude\nKondicioniera siksnas maiņa.\nKloķvārpstas skriemeļa maiņa"
+    },
+    {
+     "date": "13.06.2022",
+     "odometer": "235284",
+     "location": "BMW Mobiler Service Einsatzleitzentrale, München",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "05.08.2021",
+     "odometer": "223328",
+     "location": "",
+     "works": "Riepu utilizācija (FT999900005)\nGumijas ventilis (36121116326)\nCIC map Europe Premium atjaunināšanas kods (65902350592)\nAtsvari (FT999990111)\nGoodyear Eagle NCT 5 Asymmetric ROF (85452535108)"
+    },
+    {
+     "date": "05.07.2021",
+     "odometer": "221482",
+     "location": "Vācija",
+     "works": "Regulārā apkope\nMotoreļļas maiņa\nSalona mikrofiltra maiņa\nGaisa filtra maiņa\nDegvielas filtra maiņa, transportlīdzekļa pārbaude\nBremžu šķidruma maiņa\nPriekšējo bremžu apkalpošana"
+    },
+    {
+     "date": "28.06.2021",
+     "odometer": "221195",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "20.05.2020",
+     "odometer": "208192",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Regulārā apkope\nMotoreļļas maiņa\nSalona mikrofiltra maiņa\nGaisa filtra maiņa\nDegvielas filtra maiņa, transportlīdzekļa pārbaude\nBremžu šķidruma maiņa\nAizmugurējo bremžu apkalpošana"
+    },
+    {
+     "date": "05.09.2019",
+     "odometer": "198833",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams, Kontaktu smērviela"
+    },
+    {
+     "date": "27.07.2019",
+     "odometer": "197165",
+     "location": "BMW Mobiler Service Einsatzleitzentrale, München",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "20.08.2018",
+     "odometer": "184420",
+     "location": "B&K Deutschland GmbH, Melle",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "22.06.2018",
+     "odometer": "181383",
+     "location": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+     "works": "Eļļas filtra elements (11428513377)\nGaisa filtra elements (13712247444)\nDegvielas filtra kasetne (13327811227)\nSalona mikrofiltrs ar aktīvo ogli (64319171858)\nLogu mazgāšanas šķidrums (FT999904074)\nNavigācijas karšu atjaunināšana (DVD Road Map Europe Professional)\nFunkcionālā pārbaude (FTT2)\nCastrol Magnatec Prof. MP 5W-30 LL04 (FT999900000)\nSīkdetaļas (FTT2)"
+    },
+    {
+     "date": "23.05.2018",
+     "odometer": "180614",
+     "location": "Vācija",
+     "works": "Regulārā apkope\nMotoreļļas maiņa\nSalona mikrofiltra maiņa\nGaisa filtra maiņa, transportlīdzekļa pārbaude\nBremžu šķidruma maiņa\nPriekšējo bremžu apkalpošana"
+    },
+    {
+     "date": "03.07.2017",
+     "odometer": "167921",
+     "location": "Vācija",
+     "works": "Regulārā apkope\nMotoreļļas maiņa\nSalona mikrofiltra maiņa\nGaisa filtra maiņa\nDegvielas filtra maiņa, transportlīdzekļa pārbaude\nBremžu šķidruma maiņa\nAizmugurējo bremžu apkalpošana"
+    },
+    {
+     "date": "21.11.2016",
+     "odometer": "161218",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Akumulatora pozitīvās spailes vāciņš (61139290787)\nDetalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "30.08.2016",
+     "odometer": "157927",
+     "location": "Vācija",
+     "works": "Regulārā apkope\nMotoreļļas maiņa\nSalona mikrofiltra maiņa\nGaisa filtra maiņa, transportlīdzekļa pārbaude\nBremžu šķidruma maiņa\nPriekšējo bremžu apkalpošana"
+    },
+    {
+     "date": "29.07.2016",
+     "odometer": "154791",
+     "location": "",
+     "works": "Logu mazgāšanas šķidrums (FT999904074)\nAizmugurējā stikla atvēršanas poga ar mikroslēdzi (61319218995)"
+    },
+    {
+     "date": "13.06.2016",
+     "odometer": "152670",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "14.10.2015",
+     "odometer": "141103",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Regulārā apkope\nMotoreļļas maiņa\nSalona mikrofiltra maiņa\nGaisa filtra maiņa\nDegvielas filtra maiņa, transportlīdzekļa pārbaude\nStiklu mazgāšanas šķidrums\nBremžu šķidruma maiņa\nBremžu tīrītājs, PLASTILUBE\nBremžu kluču komplekts\nBremžu kluču nodiluma sensors, Clip\nBremžu disks (ventilēts), Inner hex bolt, Spuldze\nAizmugurējo bremžu apkalpošana\nPriekšējo riteņu balansēšana\nAizmugurējo riteņu balansēšana\nLogu tīrītāju slotiņu komplekts, Logu tīrītāja slotiņa\nWipershaft pivot\nFunktionssicherung"
+    },
+    {
+     "date": "03.07.2015",
+     "odometer": "136001",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Bremžu šķidrums\nAbu priekšējo riteņu balansēšana (FTT36)\nAbu aizmugurējo riteņu balansēšana (FTT37)"
+    },
+    {
+     "date": "23.10.2014",
+     "odometer": "120475",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Eļļas filtra komplekts\nSalona filtrs (ar aktivēto ogli)\nStiklu mazgāšanas šķidrums, Logu tīrītāja slotiņa\nPriekšējo riteņu balansēšana\nAizmugurējo riteņu balansēšana, Castrol Magnatec Prof. MP 5W-30 LL04\nRiepu remonta komplekts (71100415035)\nZiemas riteņu komplekts ar vieglmetāla diskiem (36110304114)"
+    },
+    {
+     "date": "04.09.2014",
+     "odometer": "118003",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Detaļas (holder) maiņa"
+    },
+    {
+     "date": "30.06.2014",
+     "odometer": "115874",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Spuldzes maiņa\nGriestu apšuvuma atbalsta remonts"
+    },
+    {
+     "date": "23.04.2014",
+     "odometer": "112907",
+     "location": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+     "works": "Repair kit, plug\nBagāžnieka vāka eņģu kabeļu komplekta remonts\nSpraudņu remonts\nRepair cable set, hinge\nRear lid (61119231820)\nWith stops (61119241656)"
+    },
+    {
+     "date": "07.04.2014",
+     "odometer": "111854",
+     "location": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+     "works": "Balansēšanas atsvari\nRiepu utilizācija\nRiepas ventilis, Goodyear Eagle NCT 5 Asymmetric ROF\nGEWICHTE (FT999990111)\nENTSORGUNG REIFEN (FT999900005)\nRubber valve (36121116326)\nEn. code CIC map Europe Premium update (65902350592)"
+    },
+    {
+     "date": "23.10.2013",
+     "odometer": "",
+     "location": "Vācija",
+     "works": "Regulārā apkope\nMotoreļļas maiņa\nSalona mikrofiltra maiņa\nGaisa filtra maiņa, transportlīdzekļa pārbaude\nBremžu šķidruma maiņa"
+    },
+    {
+     "date": "14.10.2013",
+     "odometer": "103196",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Priekšējo riteņu balansēšana\nAizmugurējo riteņu balansēšana"
+    },
+    {
+     "date": "02.07.2013",
+     "odometer": "95204",
+     "location": "",
+     "works": ""
+    },
+    {
+     "date": "02.07.2013",
+     "odometer": "93133",
+     "location": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+     "works": "Bremžu šķidrums\nKondicionētāja dzesētājviela, Kondicionētāja kompresora smērviela\nBremžu tīrītājs\nBremžu kluču komplekts\nBremžu kluču nodiluma sensors, Clip\nService-Ersatzwagen, OS-W 5114, 114i 4. Juni 2013 (FTT8)\nCooling agent (83190143177)\nLubricant refrigeration compressor (83190143174)"
+    },
+    {
+     "date": "16.05.2013",
+     "odometer": "86817",
+     "location": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+     "works": "Abu priekšējo riteņu balansēšana (FTT36) Abu aizmugurējo riteņu balansēšana (FTT37) Gāzes amortizators (51247178273)"
+    },
+    {
+     "date": "10.01.2013",
+     "odometer": "85587",
+     "location": "",
+     "works": ""
+    },
+    {
+     "date": "12.11.2012",
+     "odometer": "82173",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Stiklu mazgāšanas šķidrums\nSīkie remontdarbi"
+    },
+    {
+     "date": "27.07.2012",
+     "odometer": "60755",
+     "location": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+     "works": "Motoreļļas maiņa\nSalona mikrofiltra maiņa\nGaisa filtra maiņa\nStiklu mazgāšanas šķidrums, Rear window key button with micro switch\nSCHEIBENKLAR (FT999904074)\nPriekšējo un aizmugurējo bremžu apkalpošana"
+    },
+    {
+     "date": "12.07.2012",
+     "odometer": "72315",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Akumulatora termināļa vāciņa maiņa"
+    },
+    {
+     "date": "23.05.2012",
+     "odometer": "67926",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Bremžu tīrītājs, PLASTILUBE\nBremžu kluču komplekts\nBremžu kluču nodiluma sensors\nBremžu disks (ventilēts), Inner hex bolt\nEC CIC card Europe 2012 Update\nLogu tīrītāju slotiņu komplekts"
+    },
+    {
+     "date": "23.02.2012",
+     "odometer": "59448",
+     "location": "",
+     "works": ""
+    },
+    {
+     "date": "02.01.2012",
+     "odometer": "59915",
+     "location": "",
+     "works": ""
+    },
+    {
+     "date": "11.11.2011",
+     "odometer": "57047",
+     "location": "",
+     "works": ""
+    },
+    {
+     "date": "31.10.2011",
+     "odometer": "51064",
+     "location": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+     "works": "Vējstikla mazgāšanas šķidrums (FT999904074) Balansēšanas atsvari (FT999990111) Riepu utilizācija (FT999900005) Gumijas ventilis (36121116326) Continental WinterContact TS 790 (85452535629)"
+    },
+    {
+     "date": "23.05.2011",
+     "odometer": "49650",
+     "location": "",
+     "works": ""
+    },
+    {
+     "date": "20.05.2011",
+     "odometer": "49224",
+     "location": "",
+     "works": ""
+    },
+    {
+     "date": "13.05.2011",
+     "odometer": "49029",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "25.03.2011",
+     "odometer": "46687",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "04.10.2010",
+     "odometer": "39225",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Aizmugurējo riteņu balansēšana\nPriekšējo riteņu balansēšana\nChannel cover, exterior, door, front left, Cap\nService-Ersatzwagen OS-W 5045, 04.-06.10.102 Tage"
+    },
+    {
+     "date": "30.04.2010",
+     "odometer": "30165",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Priekšējo riteņu balansēšana\nAizmugurējo riteņu balansēšana"
+    },
+    {
+     "date": "10.03.2010",
+     "odometer": "26941",
+     "location": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+     "works": "AC CIC card Europe 2010 Update (65902159303)"
+    },
+    {
+     "date": "31.10.2009",
+     "odometer": "23605",
+     "location": "B&K Deutschland GmbH, Osnabrück",
+     "works": "Complete alloy wheel winter\nTyre mobility set"
+    },
+    {
+     "date": "14.08.2009",
+     "odometer": "19565",
+     "location": "Niederlassung Bonn BMW AG, Bonn",
+     "works": "Motoreļļas maiņa\nSalona mikrofiltra maiņa\nDegvielas filtra maiņa\nGaisa filtra ieliktņa maiņa, transportlīdzekļa pārbaude\nREMAN CIC, Condenser air conditioning with drier, Rain - Light - Solar sensor"
+    },
+    {
+     "date": "28.07.2008",
+     "odometer": "",
+     "location": "Vācija",
+     "works": "Nodošanas pārbaude pirms pirmās reģistrācijas (Übergabedurchsicht)"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "12.05.2026",
+      "odometer": "303938",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "12.05.2026",
+      "odometer": "303616",
+      "place": "FERCHAU GmbH, Sutthauser Straße 285, 49080 Osnabrück, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "07.05.2026",
+      "odometer": "303616",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "16.04.2026",
+      "odometer": "301672",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "01.04.2026",
+      "odometer": "301121",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "30.10.2025",
+      "odometer": "296171",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.06.2022",
+      "odometer": "235284",
+      "place": "BMW Group Campus Freimann, Lilienthalallee 26, 80939 Munich, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "05.08.2021",
+      "odometer": "223328",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "28.06.2021",
+      "odometer": "221195",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "05.09.2019",
+      "odometer": "198833",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "27.07.2019",
+      "odometer": "197165",
+      "place": "BMW Group Campus Freimann, Lilienthalallee 26, 80939 Munich, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "20.08.2018",
+      "odometer": "184420",
+      "place": "Johann-Uttinger-Straße, Johann-Uttinger-Straße, 49324 Melle, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "22.06.2018",
+      "odometer": "181383",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "21.06.2018",
+      "odometer": "181383",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Update DVD Road Map Europe Professional (65902456886)\nEn. code CIC map Europe Premium update (65902406560)"
+     },
+     {
+      "date": "21.11.2016",
+      "odometer": "161206",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "21.11.2016",
+      "odometer": "161218",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "29.07.2016",
+      "odometer": "154791",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.06.2016",
+      "odometer": "152670",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "14.10.2015",
+      "odometer": "141103",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "SCHEIBENKLAR (FT999904074)\nBREMSENREINIGER (FT999900004)\nBrake pads asbestos-free (34116794916)\nBrake pad wear sensor\nBrake disc\nVentilated (34116864906)\nBeide Vorderräder auswuchten (FTT36)\nBeide Hinterräder auswuchten (FTT37)\nSet of wiper blades (61610431438)\nWiper blade (61627198552)\nWipershaft pivot (61627209167)\nPLASTILUBE (FT992294071)\nFunktionssicherung (FTT2)\nRepair kit\nFront left (34356789492)\nClip (34116757253)\nInner hex bolt (34211161806)\nBulb (07119906503)"
+     },
+     {
+      "date": "14.10.2015",
+      "odometer": "141077",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "03.07.2015",
+      "odometer": "135992",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "03.07.2015",
+      "odometer": "136001",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "BREMSFLÜSSIGKEIT (FT999900000)"
+     },
+     {
+      "date": "23.10.2014",
+      "odometer": "120452",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "23.10.2014",
+      "odometer": "120475",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Set oil-filter element (11428513377)\nSCHEIBENKLAR (FT999904074)\nBeide Vorderräder auswuchten (FTT36)\nBeide Hinterräder auswuchten (FTT37)\nCastrol Magnatec Prof. MP 5W-30 LL04 (FT999900000)\nMicrofilter/activated Carbon container (64319171858)\nWiper blade (61627198552)"
+     },
+     {
+      "date": "04.09.2014",
+      "odometer": "118003",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Holder (51438183314)"
+     },
+     {
+      "date": "30.06.2014",
+      "odometer": "115874",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Longlife bulb (63217160935)\nHead lining support (51447030475)"
+     },
+     {
+      "date": "23.04.2014",
+      "odometer": "112907",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "22.04.2014",
+      "odometer": "112907",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Repair kit, plug\nRepair cable set, hinge\nRear lid (61119231820)\nWith stops (61119241656)"
+     },
+     {
+      "date": "07.04.2014",
+      "odometer": "111854",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "28.03.2014",
+      "odometer": "111854",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "GEWICHTE (FT999990111)\nENTSORGUNG REIFEN (FT999900005)\nRubber valve (36121116326)\nEn. code CIC map Europe Premium update (65902350592)\nGoodyear Eagle NCT 5 Asymmetric ROF (85452535108)"
+     },
+     {
+      "date": "14.10.2013",
+      "odometer": "103196",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Beide Vorderräder auswuchten (FTT36)\nBeide Hinterräder auswuchten (FTT37)"
+     },
+     {
+      "date": "02.07.2013",
+      "odometer": "93133",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "BREMSFLÜSSIGKEIT (FT999900000)\nBREMSENREINIGER (FT999900004)\nBrake pads asbestos-free (34216763043)\nBrake pad wear sensor (34356789494)\nRepair kit\nClip (34216758059)"
+     },
+     {
+      "date": "02.07.2013",
+      "odometer": "95204",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "04.06.2013",
+      "odometer": "93133",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Cooling agent (83190143177)\nLubricant refrigeration compressor (83190143174)\nService-Ersatzwagen, OS-W 5114, 114i 4. Juni 2013 (FTT8)"
+     },
+     {
+      "date": "16.05.2013",
+      "odometer": "86817",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Beide Vorderräder auswuchten (FTT36)\nBeide Hinterräder auswuchten (FTT37)\nGas pressurized spring (51247178273)"
+     },
+     {
+      "date": "26.02.2013",
+      "odometer": "86817",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Set oil-filter element (11428513377)\nCastrol Magnatec Prof. MP 5W-30 LL04 (FT999900000)\nAir filter element (13712247444)\nFuel filter cartridge (13327811227)\nMicrofilter/activated Carbon container (64319171858)\nKleinteile (FTT2)"
+     },
+     {
+      "date": "10.01.2013",
+      "odometer": "85587",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "12.11.2012",
+      "odometer": "82173",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "SCHEIBENKLAR (FT999904074)\nFunktionssicherung (FTT2)"
+     },
+     {
+      "date": "12.07.2012",
+      "odometer": "72315",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Cover positive battery terminal (61139290787)"
+     },
+     {
+      "date": "23.05.2012",
+      "odometer": "67926",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "BREMSENREINIGER (FT999900004)\nBrake pads asbestos-free (34116794918)\nBrake pad wear sensor\nBrake disc\nVentilated (34116792221)\nEC CIC card Europe 2012 Update (65902218712)\nPLASTILUBE (FT992294071)\nRepair kit\nFront left (34356789492)\nInner hex bolt (34211161806)\nSet of wiper blades (61610431438)"
+     },
+     {
+      "date": "23.02.2012",
+      "odometer": "59448",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "27.01.2012",
+      "odometer": "60755",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "SCHEIBENKLAR (FT999904074)\nRear window key button with micro switch (61319218995)"
+     },
+     {
+      "date": "02.01.2012",
+      "odometer": "59915",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "11.11.2011",
+      "odometer": "57047",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "31.10.2011",
+      "odometer": "51064",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "SCHEIBENKLAR (FT999904074)\nGEWICHTE (FT999990111)\nENTSORGUNG REIFEN (FT999900005)\nRubber valve (36121116326)\nContinental WinterContact TS 790 (85452535629)"
+     },
+     {
+      "date": "01.07.2011",
+      "odometer": "51064",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "MOTOROEL FORMULA SLXSAE 0W-30 LL04 (FT99990000005)\nSet oil-filter element (11427788460)\nBREMSFLÜSSIGKEIT (FT99990000011)\nFunktionssicherung (FTT2)\nMicrofilter/activated Carbon container (64319171858)\nWiper blade (61627198552)"
+     },
+     {
+      "date": "23.05.2011",
+      "odometer": "49650",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "20.05.2011",
+      "odometer": "49224",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.05.2011",
+      "odometer": "49024",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.05.2011",
+      "odometer": "49029",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "25.03.2011",
+      "odometer": "46687",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "04.10.2010",
+      "odometer": "39225",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Channel cover, exterior, door\nFront left (51217135161)\nCap (51161949793)\nBeide Hinterräder auswuchten (FTT37)\nBeide Vorderräder auswuchten (FTT36)\nService-Ersatzwagen OS-W 5045, 04. 10 2 Tage (FTT8)"
+     },
+     {
+      "date": "30.04.2010",
+      "odometer": "30165",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Beide Vorderräder auswuchten (FTT36)\nBeide Hinterräder auswuchten (FTT37)"
+     },
+     {
+      "date": "10.03.2010",
+      "odometer": "26941",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "08.03.2010",
+      "odometer": "26941",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "AC CIC card Europe 2010 Update (65902159303)"
+     },
+     {
+      "date": "31.10.2009",
+      "odometer": "23605",
+      "place": "D.velop AG - Office Space, Sutthauser Straße 287, 49080 Osnabrück, Germany",
+      "works": "Complete alloy wheel winter (36110304114)\nTyre mobility set (71100415035)"
+     },
+     {
+      "date": "14.08.2009",
+      "odometer": "19565",
+      "place": "BMW Bonn, Vorgebirgsstraße 95, 53119 Bonn, Germany",
+      "works": "REMAN CIC (65129199608)\nCondenser air conditioning with drier (64509122827)\nRain - Light - Solar sensor (61359201989)"
+     }
+    ]
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "BMW 5 Touring (E61) 525 d",
+     "modelSeries": "5. sērija (E60/E61)",
+     "vinCode": "WBAPX51050CU09550",
+     "vehicleType": "PX61",
+     "transmission": "Manual Transmission (GS6-53DZ)",
+     "steeringSide": "LL",
+     "engineCode": "M57 D30 (306D3)",
+     "engineNumber": "23956863",
+     "body": "TOU",
+     "drive": "HECK",
+     "power": "145 kW (197 ZS)",
+     "integrationLevel": "E060-08-03-550",
+     "currentILevel": "E060-16-11-500",
+     "developmentCode": "E61",
+     "modelCode": "PX61",
+     "productionDate": "02.06.2008",
+     "firstRegistration": "29.07.2008",
+     "warrantyStartDate": "25.07.2008",
+     "countryRegion": "EUR",
+     "color": "black-sapphire metallic",
+     "colorCode": "0475",
+     "interior": "LEDER DAKOTA/NATURBRAUN (LCNG)",
+     "interiorCode": "LCNG",
+     "fuel": "Diesel",
+     "displacement": ""
+    }
+   }
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "",
+    "fetchedAt": "",
+    "lastCostUsd": "",
+    "status": "unknown",
+    "summary": ""
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "certificate": {
+    "issuedAt": "",
+    "vehicleLine": "",
+    "makeModel": "",
+    "year": "",
+    "plate": "",
+    "accidentCount": "0",
+    "insuredFrom": "",
+    "insuredTo": "",
+    "insuredDays": "",
+    "claims": [],
+    "footerNote": ""
+   }
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "29.07.2026",
+       "odometer": "305048",
+       "country": "Latvija"
+      },
+      {
+       "date": "12.05.2026",
+       "odometer": "303616",
+       "country": "Vācija"
+      },
+      {
+       "date": "01.04.2026",
+       "odometer": "301123",
+       "country": "Vācija"
+      },
+      {
+       "date": "27.01.2023",
+       "odometer": "249272",
+       "country": "Vācija"
+      },
+      {
+       "date": "20.05.2020",
+       "odometer": "208192",
+       "country": "Vācija"
+      },
+      {
+       "date": "23.05.2018",
+       "odometer": "180614",
+       "country": "Vācija"
+      },
+      {
+       "date": "03.07.2017",
+       "odometer": "167921",
+       "country": "Vācija"
+      },
+      {
+       "date": "30.08.2016",
+       "odometer": "157927",
+       "country": "Vācija"
+      },
+      {
+       "date": "01.07.2011",
+       "odometer": "51064",
+       "country": "Vācija"
+      },
+      {
+       "date": "12.01.2009",
+       "odometer": "19565",
+       "country": "Vācija"
+      },
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      },
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": "CITI DOKUMENTI"
+    }
+   ]
+  }
+ }
+}

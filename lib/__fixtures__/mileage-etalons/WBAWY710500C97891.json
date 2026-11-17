@@ -1,0 +1,1336 @@
+{
+ "vin": "WBAWY710500C97891",
+ "label": "BMW X3 XDRIVE35D: CSDD 6, AutoDNA 1, carVertical 25, dīleris 42; negadījumi 2",
+ "source": "prod pasūtījuma melnraksts (manual), revīzija 57, saglabāts 2026-10-02; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW X3 XDRIVE35D",
+   "registrationNumber": "",
+   "firstRegistration": "",
+   "nextInspectionDate": "",
+   "prevInspectionDate": "",
+   "engineDisplacementCm3": "2993",
+   "enginePowerKw": "230",
+   "fuelType": "",
+   "emissionStandard": "Euro 6 T",
+   "vehicleType": "",
+   "grossMassKg": "2440",
+   "curbMassKg": "1935",
+   "seatCount": "",
+   "roadTaxEur": "",
+   "registrationStatus": "nav reģistrēts",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "",
+   "ownerCountLatvia": "",
+   "vin": "",
+   "modelYear": "",
+   "color": "",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "",
+   "cocType": "",
+   "cocApprovalNumber": "",
+   "cocVariant": "",
+   "cocVersion": "",
+   "insuranceValidUntil": "",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "",
+    "inspectionDateText": "",
+    "nextInspectionDateText": "",
+    "odometer": "217092",
+    "ratingLabel": "",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "02.10.2026",
+     "odometer": "217092",
+     "country": "Latvija"
+    },
+    {
+     "date": "26.02.2026",
+     "odometer": "207702",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.11.2025",
+     "odometer": "205385",
+     "country": "Vācija"
+    },
+    {
+     "date": "29.09.2023",
+     "odometer": "177155",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.07.2021",
+     "odometer": "148876",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.07.2019",
+     "odometer": "106631",
+     "country": "Vācija"
+    }
+   ]
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "01.04.2019",
+     "odometer": "103500",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.04.2019",
+     "lossAmount": "1 600 - 1 700 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.04.2019",
+     "country": "",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "103500",
+     "includeInPdf": true
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.07.2026",
+     "odometer": "213547",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2026",
+     "odometer": "207692",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2024",
+     "odometer": "190349",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2024",
+     "odometer": "183965",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2024",
+     "odometer": "181864",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2023",
+     "odometer": "169082",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2021",
+     "odometer": "148043",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2020",
+     "odometer": "137345",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2020",
+     "odometer": "135699",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2020",
+     "odometer": "128841",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2019",
+     "odometer": "115609",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2019",
+     "odometer": "105574",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2019",
+     "odometer": "103500",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2018",
+     "odometer": "95584",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2018",
+     "odometer": "91511",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2018",
+     "odometer": "73079",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2017",
+     "odometer": "69004",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2017",
+     "odometer": "64603",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2017",
+     "odometer": "58976",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2016",
+     "odometer": "46563",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2016",
+     "odometer": "37476",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2016",
+     "odometer": "34815",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2015",
+     "odometer": "24891",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2015",
+     "odometer": "10669",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2014",
+     "odometer": "17",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.04.2019",
+     "lossAmount": "1 501 - 2 000 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.01.2026",
+     "country": "",
+     "description": "Šajā PDF atskaitē ir iekļauti transportlīdzekļa vēstures svarīgākie dati. Lai iegūtu jaunāko un detalizētāko informāciju, ieskaties digitālajā “carVertical” atskaitē, kas ir pieejama mūsu mājaslapā",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.06.2014",
+     "country": "",
+     "description": "Ražots",
+     "includeInPdf": true
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "13.07.2026",
+     "odometer": "215516",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2026",
+     "odometer": "214047",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.03.2026",
+     "odometer": "208192",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.10.2024",
+     "odometer": "190849",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.05.2024",
+     "odometer": "184465",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.03.2024",
+     "odometer": "182364",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.01.2023",
+     "odometer": "169582",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2021",
+     "odometer": "148543",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.11.2020",
+     "odometer": "137845",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.10.2020",
+     "odometer": "136199",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.08.2020",
+     "odometer": "129341",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.12.2019",
+     "odometer": "116109",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.07.2019",
+     "odometer": "106631",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2019",
+     "odometer": "106074",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.11.2018",
+     "odometer": "95784",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.10.2018",
+     "odometer": "93618",
+     "country": "Vācija"
+    },
+    {
+     "date": "29.09.2018",
+     "odometer": "91711",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.03.2018",
+     "odometer": "76305",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.03.2018",
+     "odometer": "75050",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.01.2018",
+     "odometer": "73279",
+     "country": "Vācija"
+    },
+    {
+     "date": "29.11.2017",
+     "odometer": "69204",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.11.2017",
+     "odometer": "68720",
+     "country": "Vācija"
+    },
+    {
+     "date": "18.10.2017",
+     "odometer": "66893",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.09.2017",
+     "odometer": "64803",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.07.2017",
+     "odometer": "61793",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.07.2017",
+     "odometer": "61111",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.07.2017",
+     "odometer": "60823",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.06.2017",
+     "odometer": "59176",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.10.2016",
+     "odometer": "48588",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.10.2016",
+     "odometer": "48582",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.10.2016",
+     "odometer": "46895",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.10.2016",
+     "odometer": "46763",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.05.2016",
+     "odometer": "37676",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.05.2016",
+     "odometer": "37671",
+     "country": "Vācija"
+    },
+    {
+     "date": "21.03.2016",
+     "odometer": "35721",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.03.2016",
+     "odometer": "35015",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.03.2016",
+     "odometer": "35011",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.10.2015",
+     "odometer": "26523",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.10.2015",
+     "odometer": "25091",
+     "country": "Vācija"
+    },
+    {
+     "date": "21.01.2015",
+     "odometer": "11217",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.01.2015",
+     "odometer": "10869",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.07.2014",
+     "odometer": "0",
+     "country": "Vācija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "13.07.2026",
+     "odometer": "215516",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "01.07.2026",
+     "odometer": "214047",
+     "location": "Autohaus Kösseine, Fikentscherstraße 22, 95615 Marktredwitz, Germany",
+     "works": "Aizmugurējās bremzes. Standarta apjoms."
+    },
+    {
+     "date": "02.03.2026",
+     "odometer": "208192",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "16.10.2024",
+     "odometer": "190849",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "02.05.2024",
+     "odometer": "184465",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "15.03.2024",
+     "odometer": "182364",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "12.01.2023",
+     "odometer": "169582",
+     "location": "Autohaus Kösseine, Fikentscherstraße 22, 95615 Marktredwitz, Germany",
+     "works": "Dzinēja eļļa.\nGaisa filtra elements.\nStandarta apjoms."
+    },
+    {
+     "date": "01.07.2021",
+     "odometer": "148543",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "23.11.2020",
+     "odometer": "137845",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "13.10.2020",
+     "odometer": "136199",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "10.08.2020",
+     "odometer": "129341",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "06.12.2019",
+     "odometer": "116109",
+     "location": "Autohaus Kösseine, Fikentscherstraße 22, 95615 Marktredwitz, Germany",
+     "works": "Dzinēja eļļa. Standarta apjoms."
+    },
+    {
+     "date": "10.07.2019",
+     "odometer": "106631",
+     "location": "Autohaus Zeitlos GmbH, Klönnestraße 85, 44143 Dortmund, Germany",
+     "works": "Bremžu šķidrums DOT4.\nBremžu šķidruma serviss.\nZema viskozitāte (83130143435)\nTÜV maksa no 12.\n2019 (FT99999998001)"
+    },
+    {
+     "date": "01.07.2019",
+     "odometer": "106074",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "20.11.2018",
+     "odometer": "95784",
+     "location": "Autopark Kronach, Weinbergstraße 2, 96328 Küps, Germany",
+     "works": "Aizmugurējās bremzes."
+    },
+    {
+     "date": "11.10.2018",
+     "odometer": "93618",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "29.09.2018",
+     "odometer": "91711",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "14.03.2018",
+     "odometer": "76305",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "14.03.2018",
+     "odometer": "75050",
+     "location": "Autohaus Zeitlos GmbH, Klönnestraße 85, 44143 Dortmund, Germany",
+     "works": "Apkope"
+    },
+    {
+     "date": "24.01.2018",
+     "odometer": "73279",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "29.11.2017",
+     "odometer": "69204",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "14.11.2017",
+     "odometer": "68720",
+     "location": "Autohaus Zeitlos GmbH, Klönnestraße 85, 44143 Dortmund, Germany",
+     "works": "Granulāts PNW-TKR-00000017 (FT99999999746)\nAntifrīzs (83192218347)\nMaiņas auto izmaksas no 14.\n2017 (FT0000158)"
+    },
+    {
+     "date": "18.10.2017",
+     "odometer": "66893",
+     "location": "BMW dealership J.B. LELL GmbH Wunsiedel, Luisenburgstraße 45, 95632 Wunsiedel, Germany",
+     "works": "Apkope"
+    },
+    {
+     "date": "22.09.2017",
+     "odometer": "64803",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "27.07.2017",
+     "odometer": "61793",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "13.07.2017",
+     "odometer": "61111",
+     "location": "BMW Rhein Hochfranken | BMW dealer, Schneebergstraße 5, 95032 Hof, Germany",
+     "works": "Bremžu šķidruma serviss. Valsts tehniskā apskate."
+    },
+    {
+     "date": "05.07.2017",
+     "odometer": "60823",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "02.06.2017",
+     "odometer": "59176",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "20.10.2016",
+     "odometer": "48588",
+     "location": "BMW dealership J.B. LELL GmbH Wunsiedel, Luisenburgstraße 45, 95632 Wunsiedel, Germany",
+     "works": "Dzinēja eļļa.\nDegvielas filtrs.\nGaisa filtra elements.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nTransportlīdzekļa pārbaude.\n51 91 2 216 745 (FT999988880)\nIsofix stiprinājuma pastiprinājums (41002697433)\nFilca līmlentes komplekts (52202697913)\nStandarta apjoms."
+    },
+    {
+     "date": "06.10.2016",
+     "odometer": "46895",
+     "location": "BMW dealership J.B. LELL GmbH Wunsiedel, Luisenburgstraße 45, 95632 Wunsiedel, Germany",
+     "works": "Balansēšanas svars (FT99990000713)"
+    },
+    {
+     "date": "05.10.2016",
+     "odometer": "46763",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "02.05.2016",
+     "odometer": "37676",
+     "location": "BMW dealership J.B. LELL GmbH Wunsiedel, Luisenburgstraße 45, 95632 Wunsiedel, Germany",
+     "works": "Bremžu kluči bez azbesta (34106859182)\nBremžu disks.\nBremžu kluču nodiluma sensors.\nBremžu tīrītājs (FT99990000708)\nVentilējams (34106879122)\nSkava (34106790927)\nRemonta komplekts.\nIekšējā sešstūra skrūve (34211161806)\nPriekšējais kreisais (34356790303)\nPriekšējās bremzes. Standarta apjoms."
+    },
+    {
+     "date": "21.03.2016",
+     "odometer": "35721",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "10.03.2016",
+     "odometer": "35015",
+     "location": "BMW dealership J.B. LELL GmbH Wunsiedel, Luisenburgstraße 45, 95632 Wunsiedel, Germany",
+     "works": "Vējstikla mazgāšanas šķidruma koncentrāts (83122298528)\nBremžu kluči bez azbesta (34216796741)\nBremžu kluču sensors.\nBremžu tīrītājs (FT99990000708)\nRemonta komplekts.\nAizmugurējais (34356790304)\nAizmugurējās bremzes. Standarta apjoms."
+    },
+    {
+     "date": "27.10.2015",
+     "odometer": "26523",
+     "location": "BMW dealership J.B. LELL GmbH Wunsiedel, Luisenburgstraße 45, 95632 Wunsiedel, Germany",
+     "works": "Fiksēts sānu logs.\nMelns\nAizmugurējais kreisais (51357205601)\nFiksētā sānu loga rāmis.\nKreisais (51357205603)\nStikla remonta komplekts, aukstā līme.\n1 Stunda (83192289285)"
+    },
+    {
+     "date": "02.10.2015",
+     "odometer": "25091",
+     "location": "BMW Rhein Hochfranken | BMW dealer, Schneebergstraße 5, 95032 Hof, Germany",
+     "works": "Dzinēja eļļa.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nStandarta apjoms."
+    },
+    {
+     "date": "21.01.2015",
+     "odometer": "11217",
+     "location": "Autohaus Zeitlos GmbH, Klönnestraße 85, 44143 Dortmund, Germany",
+     "works": "Apkope"
+    },
+    {
+     "date": "14.01.2015",
+     "odometer": "10869",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "25.07.2014",
+     "odometer": "0",
+     "location": "Autohaus Zeitlos GmbH, Klönnestraße 85, 44143 Dortmund, Germany",
+     "works": "Auto mazgāšana (FT999999994)\nKrāsas aerosols, Felgensilber met.\nMelns matēts aerosols (51911900346)\nLogu mazgāšanas tabletes bez antifrīza (83120447957)\nVējstikla tīrīšanas koncentrāts (83122159814)"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "13.07.2026",
+      "odometer": "215516",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "01.07.2026",
+      "odometer": "214047",
+      "place": "Autohaus Kösseine, Fikentscherstraße 22, 95615 Marktredwitz, Germany",
+      "works": "Rear Brake.\nStandard scope."
+     },
+     {
+      "date": "02.03.2026",
+      "odometer": "208192",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "16.10.2024",
+      "odometer": "190849",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "02.05.2024",
+      "odometer": "184465",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "15.03.2024",
+      "odometer": "182364",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "12.01.2023",
+      "odometer": "169582",
+      "place": "Autohaus Kösseine, Fikentscherstraße 22, 95615 Marktredwitz, Germany",
+      "works": "Engine oil.\nAir filter element.\nStandard scope."
+     },
+     {
+      "date": "01.07.2021",
+      "odometer": "148543",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "23.11.2020",
+      "odometer": "137845",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.10.2020",
+      "odometer": "136199",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "10.08.2020",
+      "odometer": "129341",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "06.12.2019",
+      "odometer": "116109",
+      "place": "Autohaus Kösseine, Fikentscherstraße 22, 95615 Marktredwitz, Germany",
+      "works": "Engine oil.\nStandard scope."
+     },
+     {
+      "date": "10.07.2019",
+      "odometer": "106631",
+      "place": "Autohaus Zeitlos GmbH, Klönnestraße 85, 44143 Dortmund, Germany",
+      "works": "Brake fluid DOT4\nBrake fluid service.\nLow viscosity (83130143435)\nTÜV Gebühr vom 12. 2019 (FT99999998001)"
+     },
+     {
+      "date": "01.07.2019",
+      "odometer": "106074",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "20.11.2018",
+      "odometer": "95784",
+      "place": "Autopark Kronach, Weinbergstraße 2, 96328 Küps, Germany",
+      "works": "Rear Brake."
+     },
+     {
+      "date": "11.10.2018",
+      "odometer": "93618",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "29.09.2018",
+      "odometer": "91711",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "14.03.2018",
+      "odometer": "75050",
+      "place": "Autohaus Zeitlos GmbH, Klönnestraße 85, 44143 Dortmund, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "14.03.2018",
+      "odometer": "76305",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "24.01.2018",
+      "odometer": "73279",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "29.11.2017",
+      "odometer": "69204",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "14.11.2017",
+      "odometer": "68720",
+      "place": "Autohaus Zeitlos GmbH, Klönnestraße 85, 44143 Dortmund, Germany",
+      "works": "Granulat PNW-TKR-00000017 (FT99999999746)\nAnti-freeze (83192218347)\nKosten für Leihfahrzeug v om 14. 2017 (FT0000158)"
+     },
+     {
+      "date": "18.10.2017",
+      "odometer": "66893",
+      "place": "BMW dealership J.B. LELL GmbH Wunsiedel, Luisenburgstraße 45, 95632 Wunsiedel, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "22.09.2017",
+      "odometer": "64803",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "27.07.2017",
+      "odometer": "61793",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.07.2017",
+      "odometer": "61111",
+      "place": "BMW Rhein Hochfranken | BMW dealer, Schneebergstraße 5, 95032 Hof, Germany",
+      "works": "Brake fluid service.\nStatutory vehicle inspection."
+     },
+     {
+      "date": "05.07.2017",
+      "odometer": "60823",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "02.06.2017",
+      "odometer": "59176",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "20.10.2016",
+      "odometer": "48588",
+      "place": "BMW dealership J.B. LELL GmbH Wunsiedel, Luisenburgstraße 45, 95632 Wunsiedel, Germany",
+      "works": "51 91 2 216 745 (FT999988880)\nReinforcement for holder of Isofix (41002697433)\nSet felt strip adhesive (52202697913)"
+     },
+     {
+      "date": "20.10.2016",
+      "odometer": "48582",
+      "place": "BMW dealership J.B. LELL GmbH Wunsiedel, Luisenburgstraße 45, 95632 Wunsiedel, Germany",
+      "works": "Engine oil.\nVehicle check.\nFuel filter.\nAir filter element.\nMicrofilter (consider further additional job(s) if appropriate)\nStandard scope."
+     },
+     {
+      "date": "06.10.2016",
+      "odometer": "46895",
+      "place": "BMW dealership J.B. LELL GmbH Wunsiedel, Luisenburgstraße 45, 95632 Wunsiedel, Germany",
+      "works": "WUCHTGEWICHT (FT99990000713)"
+     },
+     {
+      "date": "05.10.2016",
+      "odometer": "46763",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "02.05.2016",
+      "odometer": "37671",
+      "place": "BMW dealership J.B. LELL GmbH Wunsiedel, Luisenburgstraße 45, 95632 Wunsiedel, Germany",
+      "works": "Front Brake.\nStandard scope."
+     },
+     {
+      "date": "02.05.2016",
+      "odometer": "37676",
+      "place": "BMW dealership J.B. LELL GmbH Wunsiedel, Luisenburgstraße 45, 95632 Wunsiedel, Germany",
+      "works": "Brake pads asbestos-free (34106859182)\nBrake disc\nBrake pad wear sensor\nVentilated (34106879122)\nBR.\nREINIGER (FT99990000708)\nClip (34106790927)\nRepair kit\nInner hex bolt (34211161806)\nFront left (34356790303)"
+     },
+     {
+      "date": "21.03.2016",
+      "odometer": "35721",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "10.03.2016",
+      "odometer": "35011",
+      "place": "BMW dealership J.B. LELL GmbH Wunsiedel, Luisenburgstraße 45, 95632 Wunsiedel, Germany",
+      "works": "Rear Brake.\nStandard scope."
+     },
+     {
+      "date": "10.03.2016",
+      "odometer": "35015",
+      "place": "BMW dealership J.B. LELL GmbH Wunsiedel, Luisenburgstraße 45, 95632 Wunsiedel, Germany",
+      "works": "Windshield washer antifreeze (83122298528)\nBrake pads asbestos-free (34216796741)\nBrake-pad sensor\nBR.\nREINIGER (FT99990000708)\nRepair kit\nRear (34356790304)"
+     },
+     {
+      "date": "27.10.2015",
+      "odometer": "26523",
+      "place": "BMW dealership J.B. LELL GmbH Wunsiedel, Luisenburgstraße 45, 95632 Wunsiedel, Germany",
+      "works": "Side window fixed\nBlack rear left (51357205601)\nFrame for fixed side window\nLeft (51357205603)\nRepair kit, window glass, cold\n1 Hour (83192289285)"
+     },
+     {
+      "date": "02.10.2015",
+      "odometer": "25091",
+      "place": "BMW Rhein Hochfranken | BMW dealer, Schneebergstraße 5, 95032 Hof, Germany",
+      "works": "Engine oil.\nMicrofilter (consider further additional job(s) if appropriate)\nStandard scope."
+     },
+     {
+      "date": "21.01.2015",
+      "odometer": "11217",
+      "place": "Autohaus Zeitlos GmbH, Klönnestraße 85, 44143 Dortmund, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "14.01.2015",
+      "odometer": "10869",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "25.07.2014",
+      "odometer": "0",
+      "place": "Autohaus Zeitlos GmbH, Klönnestraße 85, 44143 Dortmund, Germany",
+      "works": "WAGENWÄSCHE (FT999999994)\nPaint spray, Felgensilber met.\nSpray schwarz matt (51911900346)\nWindow cleaner tablets w/out antifreeze (83120447957)\nWindshield cleaner concentrate (83122159814)"
+     }
+    ]
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "BMW X3 (F25) xDrive 35 d",
+     "modelSeries": "X3 (F25)",
+     "vinCode": "WBAWY710500C97891",
+     "vehicleType": "DŽIPS",
+     "transmission": "Automatic Transmission (GA8HP-70Z)",
+     "steeringSide": "LHD (automašīna ar stūri kreisajā pusē)",
+     "engineCode": "N57 D30 B",
+     "engineNumber": "",
+     "body": "SUV",
+     "drive": "All-wheel Drive",
+     "power": "230 kW (313 ZS)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "X3 F25",
+     "productionDate": "2014",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "Vācija",
+     "color": "ALPINWEISS III",
+     "colorCode": "300",
+     "interior": "LEDER NEVADA/SCHWARZ (LUSW)",
+     "interiorCode": "SLUSW",
+     "fuel": "Diesel",
+     "displacement": "3000"
+    }
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "",
+    "fetchedAt": "",
+    "lastCostUsd": "",
+    "status": "unknown",
+    "summary": ""
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "",
+   "listingCreated": "",
+   "priceDrop": "",
+   "priceHistory": [],
+   "listingMileageOdometer": "",
+   "listingMileageDate": "",
+   "listingMileageCountry": ""
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

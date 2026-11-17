@@ -1,0 +1,1175 @@
+{
+ "vin": "JTEBZ29J500168234",
+ "label": "TOYOTA LAND CRUISER: CSDD 20, AutoDNA 23, carVertical 25; negadījumi 6",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 182, saglabāts 2026-08-10; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "TOYOTA LAND CRUISER",
+   "registrationNumber": "KU553",
+   "firstRegistration": "2008-03-20",
+   "nextInspectionDate": "2027-05-27",
+   "prevInspectionDate": "2026-05-27",
+   "engineDisplacementCm3": "2982",
+   "enginePowerKw": "127",
+   "fuelType": "Dīzeļdegviela",
+   "emissionStandard": "Euro 4",
+   "grossMassKg": "2850",
+   "curbMassKg": "2035",
+   "roadTaxEur": "195,00",
+   "registrationStatus": "Uzskaitē",
+   "opacityCoefficient": "0.63",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "LATVIJA",
+   "ownerCountLatvia": "11",
+   "technicalInspectionHistory": [
+    {
+     "date": "21.05.2026",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "2 - Ar mēneša laikā labojamiem defektiem",
+     "ratingLevel": 2,
+     "maxDefectLevel": 2,
+     "smokeCoefficient": "0.63",
+     "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+     "defects": [
+      {
+       "code": "6.1.2.",
+       "rating": "2",
+       "description": "Bojāts izplūdes sistēmas klusinātājs."
+      },
+      {
+       "code": "4.2.1.",
+       "rating": "2",
+       "description": "Nedeg kreisais priekšējais gabarītlukturis."
+      },
+      {
+       "code": "6.1.1.",
+       "rating": "2",
+       "description": "Nesošās konstrukcijas stiprību ietekmējošs korozijas bojājums. Virsbūves grīda. Vidū kreisā puse."
+      },
+      {
+       "code": "8.4.1.",
+       "rating": "1",
+       "description": "Neveidojot piles, sūcas eļļa no motora (transmisijas)."
+      },
+      {
+       "code": "5.3.3.",
+       "rating": "1",
+       "description": "Priekšējais tilts. Funkcionalitāti neietekmējošas balstrāmja deformācijas vai virspusēja korozija."
+      },
+      {
+       "code": "6.1.1.",
+       "rating": "1",
+       "description": "Virspusēja rāmja vai nesošā elementa korozija."
+      }
+     ]
+    },
+    {
+     "date": "03.06.2025",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "1.54",
+     "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+     "defects": [
+      {
+       "code": "8.4.1.",
+       "rating": "1",
+       "description": "Neveidojot piles, sūcas eļļa no motora (transmisijas)."
+      },
+      {
+       "code": "5.3.3.",
+       "rating": "1",
+       "description": "Priekšējais tilts. Funkcionalitāti neietekmējošas balstiekārtas sviru deformācijas vai virspusēja korozija."
+      },
+      {
+       "code": "5.3.3.",
+       "rating": "1",
+       "description": "Priekšējais tilts. Funkcionalitāti neietekmējošas balstrāmja deformācijas vai virspusēja korozija."
+      },
+      {
+       "code": "6.1.1.",
+       "rating": "1",
+       "description": "Virspusēja rāmja vai nesošā elementa korozija."
+      }
+     ]
+    },
+    {
+     "date": "07.06.2024",
+     "inspectionType": "atkārtota pārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": [
+      {
+       "code": "5.3.3.",
+       "rating": "1",
+       "description": "Priekšējais tilts. Funkcionalitāti neietekmējošas balstiekārtas sviru deformācijas vai virspusēja korozija."
+      },
+      {
+       "code": "6.1.1.",
+       "rating": "1",
+       "description": "Virspusēja rāmja vai nesošā elementa korozija."
+      }
+     ]
+    },
+    {
+     "date": "09.05.2024",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "2 - Ar mēneša laikā labojamiem defektiem",
+     "ratingLevel": 2,
+     "maxDefectLevel": 2,
+     "smokeCoefficient": "0.64",
+     "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+     "defects": [
+      {
+       "code": "6.1.1.",
+       "rating": "2",
+       "description": "Nesošās konstrukcijas stiprību ietekmējošs korozijas bojājums. Iekšējais spārns. Priekšā kreisā puse."
+      },
+      {
+       "code": "2.1.3.",
+       "rating": "2",
+       "description": "Priekšējais tilts. Palielināta kreisā ārējā stūres šarnīra brīvkustība."
+      },
+      {
+       "code": "8.4.1.",
+       "rating": "2",
+       "description": "Pil eļļa no motora (transmisijas)."
+      },
+      {
+       "code": "5.3.3.",
+       "rating": "1",
+       "description": "Priekšējais tilts. Funkcionalitāti neietekmējošas balstiekārtas sviru deformācijas vai virspusēja korozija."
+      },
+      {
+       "code": "6.1.1.",
+       "rating": "1",
+       "description": "Virspusēja rāmja vai nesošā elementa korozija."
+      }
+     ]
+    },
+    {
+     "date": "19.05.2023",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "0.75",
+     "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+     "defects": [
+      {
+       "code": "1.1.11.",
+       "rating": "1",
+       "description": "Bremžu pārvada cauruļvadu korozija sākuma stadijā."
+      },
+      {
+       "code": "6.1.1.",
+       "rating": "1",
+       "description": "Nesošās konstrukcijas stiprību neietekmējošs korozijas bojājums. Kreisais slieksnis."
+      },
+      {
+       "code": "8.4.1.",
+       "rating": "1",
+       "description": "Neveidojot piles, sūcas eļļa no motora (transmisijas)."
+      },
+      {
+       "code": "6.1.1.",
+       "rating": "1",
+       "description": "Virspusēja rāmja vai nesošā elementa korozija."
+      }
+     ]
+    },
+    {
+     "date": "11.06.2022",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "0.89",
+     "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+     "defects": [
+      {
+       "code": "8.4.1.",
+       "rating": "1",
+       "description": "Neveidojot piles, sūcas eļļa no motora (transmisijas)."
+      },
+      {
+       "code": "6.1.1.",
+       "rating": "1",
+       "description": "Virspusēja rāmja vai nesošā elementa korozija."
+      }
+     ]
+    },
+    {
+     "date": "09.06.2021",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "0.51",
+     "notes": "",
+     "defects": [
+      {
+       "code": "0.2.",
+       "rating": "1",
+       "description": "Transportlīdzekļa identifikācijas/šasijas/sērijas numura salasāmību neietekmējoši bojājumi."
+      },
+      {
+       "code": "6.1.1.",
+       "rating": "1",
+       "description": "Virspusēja rāmja vai nesošā elementa korozija."
+      }
+     ]
+    },
+    {
+     "date": "07.08.2020",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "1.42",
+     "notes": "",
+     "defects": [
+      {
+       "code": "0.2.",
+       "rating": "1",
+       "description": "Bojāts iekaltais transportlīdzekļa identifikācijas/šasijas/sērijas numurs."
+      },
+      {
+       "code": "1.1.11.",
+       "rating": "1",
+       "description": "Bremžu pārvada cauruļvadu korozija sākuma stadijā."
+      },
+      {
+       "code": "1.2.1.",
+       "rating": "1",
+       "description": "Nevienmērīgs bremzēšanas spēku pieaugums."
+      },
+      {
+       "code": "6.2.1.",
+       "rating": "1",
+       "description": "Virsbūves stiprību un citus satiksmes dalībniekus neapdraudoši korozijas bojājumi"
+      },
+      {
+       "code": "6.1.1.",
+       "rating": "1",
+       "description": "Virspusēja rāmja vai nesošā elementa korozija."
+      }
+     ]
+    },
+    {
+     "date": "18.07.2018",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": [
+      {
+       "code": "3.2.",
+       "rating": "1",
+       "description": "Redzamību vai izturību būtiski neietekmējoši stiklojuma bojājumi."
+      },
+      {
+       "code": "6.1.1.",
+       "rating": "1",
+       "description": "Virspusēja rāmja vai nesošā elementa korozija."
+      }
+     ]
+    },
+    {
+     "date": "13.06.2018",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "2 - Ar mēneša laikā labojamiem defektiem",
+     "ratingLevel": 2,
+     "maxDefectLevel": 2,
+     "smokeCoefficient": "1.17",
+     "notes": "",
+     "defects": [
+      {
+       "code": "5.3.2.",
+       "rating": "2",
+       "description": "2.tilts. Palielināta brīvkustība kreisā amortizatora augšējā stiprinājumā (buksē)."
+      },
+      {
+       "code": "5.3.2.",
+       "rating": "2",
+       "description": "2.tilts. Palielināta brīvkustība labā amortizatora augšējā stiprinājumā (buksē)."
+      },
+      {
+       "code": "6.1.1.",
+       "rating": "1",
+       "description": "Virspusēja rāmja vai nesošā elementa korozija."
+      },
+      {
+       "code": "3.2.",
+       "rating": "1",
+       "description": "Ārpus transportlīdzekļa vadītāja redzamības lauka esošā stiklojuma izturību būtiski neietekmējoši bojājumi."
+      }
+     ]
+    },
+    {
+     "date": "03.07.2017",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "1.00",
+     "notes": "",
+     "defects": [
+      {
+       "code": "206",
+       "rating": "1",
+       "description": "Nedeg viens no vairākiem numura zīmes apgaismojuma lukturiem."
+      },
+      {
+       "code": "504",
+       "rating": "1",
+       "description": "Nelieli riepas (riepu) bojājumi."
+      },
+      {
+       "code": "601",
+       "rating": "1",
+       "description": "Nesošās konstrukcijas stiprību neietekmējoši korozijas bojājumi."
+      }
+     ]
+    },
+    {
+     "date": "06.06.2016",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "1.04",
+     "notes": "",
+     "defects": [
+      {
+       "code": "102",
+       "rating": "1",
+       "description": "Nelieli numura zīmes bojājumi."
+      }
+     ]
+    },
+    {
+     "date": "13.05.2015",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "1.06",
+     "notes": "627. Plaisa augšā, labajā pusē.",
+     "defects": [
+      {
+       "code": "204",
+       "rating": "1",
+       "description": "Labais priekšējais miglas lukturis nav atbilstoši noregulēts."
+      },
+      {
+       "code": "418",
+       "rating": "1",
+       "description": "Neliela bremžu cauruļvadu korozija."
+      },
+      {
+       "code": "102",
+       "rating": "1",
+       "description": "Nelieli numura zīmes bojājumi."
+      },
+      {
+       "code": "627",
+       "rating": "1",
+       "description": "Nelieli priekšējā stikla (vējstikla) bojājumi."
+      }
+     ]
+    },
+    {
+     "date": "08.05.2014",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "0.55",
+     "notes": "",
+     "defects": [
+      {
+       "code": "407",
+       "rating": "1",
+       "description": "Nevienmērīga stāvbremzes darbība."
+      }
+     ]
+    },
+    {
+     "date": "19.04.2013",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "1.30",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "24.04.2012",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.67",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "30.03.2011",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "0.66",
+     "notes": "",
+     "defects": [
+      {
+       "code": "504",
+       "rating": "1",
+       "description": "Nelieli riepas (riepu) bojājumi."
+      }
+     ]
+    },
+    {
+     "date": "25.03.2010",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.57",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "24.03.2009",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": []
+    }
+   ],
+   "ownerRegistrationEvents": [
+    {
+     "date": "20.03.2008",
+     "label": "Pirmā reģistrācija Latvijā"
+    },
+    {
+     "date": "20.03.2008",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "20.03.2008",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "13.08.2010",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "25.08.2010",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "09.01.2017",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "11.01.2017",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "16.07.2019",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "09.09.2020",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "09.09.2020",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "03.02.2025",
+     "label": "Īpašnieka maiņa"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "Atkārtota pārbaude",
+    "inspectionDateText": "27.05.2026",
+    "nextInspectionDateText": "",
+    "odometer": "323313",
+    "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+    "ratingLevel": 1,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": [
+     {
+      "code": "5.3.3.",
+      "rating": "1",
+      "description": "Priekšējais tilts. Funkcionalitāti neietekmējošas balstrāmja deformācijas vai virspusēja korozija."
+     },
+     {
+      "code": "6.1.1.",
+      "rating": "1",
+      "description": "Virspusēja rāmja vai nesošā elementa korozija."
+     },
+     {
+      "code": "6.2.3.",
+      "rating": "1",
+      "description": "Apgrūtināta motora pārsega atvēršana vai aizvēršana."
+     },
+     {
+      "code": "8.4.1.",
+      "rating": "1",
+      "description": "Neveidojot piles, sūcas eļļa no motora (transmisijas)."
+     }
+    ]
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "27.05.2026",
+     "odometer": "323313",
+     "country": "Latvija"
+    },
+    {
+     "date": "21.05.2026",
+     "odometer": "323293",
+     "country": "Latvija"
+    },
+    {
+     "date": "03.06.2025",
+     "odometer": "314444",
+     "country": "Latvija"
+    },
+    {
+     "date": "07.06.2024",
+     "odometer": "300421",
+     "country": "Latvija"
+    },
+    {
+     "date": "09.05.2024",
+     "odometer": "300205",
+     "country": "Latvija"
+    },
+    {
+     "date": "19.05.2023",
+     "odometer": "289451",
+     "country": "Latvija"
+    },
+    {
+     "date": "11.06.2022",
+     "odometer": "277323",
+     "country": "Latvija"
+    },
+    {
+     "date": "09.06.2021",
+     "odometer": "261525",
+     "country": "Latvija"
+    },
+    {
+     "date": "07.08.2020",
+     "odometer": "251692",
+     "country": "Latvija"
+    },
+    {
+     "date": "18.07.2018",
+     "odometer": "232670",
+     "country": "Latvija"
+    },
+    {
+     "date": "13.06.2018",
+     "odometer": "229800",
+     "country": "Latvija"
+    },
+    {
+     "date": "03.07.2017",
+     "odometer": "214130",
+     "country": "Latvija"
+    },
+    {
+     "date": "06.06.2016",
+     "odometer": "195860",
+     "country": "Latvija"
+    },
+    {
+     "date": "13.05.2015",
+     "odometer": "174663",
+     "country": "Latvija"
+    },
+    {
+     "date": "08.05.2014",
+     "odometer": "157842",
+     "country": "Latvija"
+    },
+    {
+     "date": "19.04.2013",
+     "odometer": "131380",
+     "country": "Latvija"
+    },
+    {
+     "date": "24.04.2012",
+     "odometer": "108954",
+     "country": "Latvija"
+    },
+    {
+     "date": "30.03.2011",
+     "odometer": "79281",
+     "country": "Latvija"
+    },
+    {
+     "date": "25.03.2010",
+     "odometer": "55876",
+     "country": "Latvija"
+    },
+    {
+     "date": "24.03.2009",
+     "odometer": "27998",
+     "country": "Latvija"
+    }
+   ]
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "27.05.2026",
+     "odometer": "323313",
+     "country": "Latvija"
+    },
+    {
+     "date": "21.05.2026",
+     "odometer": "323293",
+     "country": "Latvija"
+    },
+    {
+     "date": "03.06.2025",
+     "odometer": "314444",
+     "country": "Latvija"
+    },
+    {
+     "date": "07.06.2024",
+     "odometer": "300421",
+     "country": "Latvija"
+    },
+    {
+     "date": "09.05.2024",
+     "odometer": "300205",
+     "country": "Latvija"
+    },
+    {
+     "date": "19.05.2023",
+     "odometer": "289451",
+     "country": "Latvija"
+    },
+    {
+     "date": "11.06.2022",
+     "odometer": "277323",
+     "country": "Latvija"
+    },
+    {
+     "date": "09.09.2020",
+     "odometer": "251737",
+     "country": "Latvija"
+    },
+    {
+     "date": "07.08.2020",
+     "odometer": "251692",
+     "country": "Latvija"
+    },
+    {
+     "date": "18.07.2018",
+     "odometer": "232670",
+     "country": "Latvija"
+    },
+    {
+     "date": "13.06.2018",
+     "odometer": "229800",
+     "country": "Latvija"
+    },
+    {
+     "date": "03.07.2017",
+     "odometer": "214130",
+     "country": "Latvija"
+    },
+    {
+     "date": "06.06.2016",
+     "odometer": "195860",
+     "country": "Latvija"
+    },
+    {
+     "date": "13.05.2015",
+     "odometer": "174663",
+     "country": "Latvija"
+    },
+    {
+     "date": "08.05.2014",
+     "odometer": "157842",
+     "country": "Latvija"
+    },
+    {
+     "date": "19.04.2013",
+     "odometer": "131380",
+     "country": "Latvija"
+    },
+    {
+     "date": "30.03.2011",
+     "odometer": "79281",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2010",
+     "odometer": "62000",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.05.2010",
+     "odometer": "59966",
+     "country": "Latvija"
+    },
+    {
+     "date": "25.03.2010",
+     "odometer": "55876",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2009",
+     "odometer": "45391",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.04.2009",
+     "odometer": "30151",
+     "country": "Latvija"
+    },
+    {
+     "date": "24.03.2009",
+     "odometer": "27998",
+     "country": "Latvija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.12.2012",
+     "lossAmount": "800 - 900 €"
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.05.2026",
+     "odometer": "323293",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.06.2025",
+     "odometer": "314444",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2024",
+     "odometer": "311160",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2024",
+     "odometer": "306331",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.05.2024",
+     "odometer": "300205",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.05.2023",
+     "odometer": "289451",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.06.2021",
+     "odometer": "261525",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2020",
+     "odometer": "251543",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.03.2020",
+     "odometer": "251524",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2018",
+     "odometer": "232670",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.06.2018",
+     "odometer": "229800",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2017",
+     "odometer": "214130",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.06.2016",
+     "odometer": "195860",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.05.2015",
+     "odometer": "174663",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.05.2014",
+     "odometer": "157842",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.04.2013",
+     "odometer": "131380",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.04.2012",
+     "odometer": "108954",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.03.2011",
+     "odometer": "79281",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2010",
+     "odometer": "61950",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.05.2010",
+     "odometer": "59917",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.03.2010",
+     "odometer": "55807",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2009",
+     "odometer": "45341",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.04.2009",
+     "odometer": "30101",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.03.2009",
+     "odometer": "27998",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.09.2008",
+     "odometer": "17312",
+     "country": "Latvija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.01.2010",
+     "lossAmount": "Nezināms"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.03.2010",
+     "lossAmount": "501 - 750 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.12.2012",
+     "lossAmount": "1 501 - 2 000 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.12.2012",
+     "lossAmount": "1 001 - 1 500 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.06.2016",
+     "lossAmount": "751 - 1 000 €"
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "",
+     "odometer": "",
+     "location": "",
+     "works": ""
+    }
+   ],
+   "oneautoIngest": {}
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "20.06.2016",
+     "lossAmount": "Dati nav pieejami"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "05.12.2012",
+     "lossAmount": "Dati nav pieejami"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "08.01.2010",
+     "lossAmount": "Dati nav pieejami"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "29.03.2010",
+     "lossAmount": "Dati nav pieejami"
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "110",
+   "listingCreated": "22.04.2026",
+   "priceDrop": "-2010",
+   "priceHistory": [],
+   "listingMileageOdometer": "",
+   "listingMileageDate": "",
+   "listingMileageCountry": ""
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

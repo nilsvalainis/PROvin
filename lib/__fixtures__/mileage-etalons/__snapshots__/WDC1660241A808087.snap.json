@@ -1,0 +1,47 @@
+{
+ "label": "MERCEDES BENZ GLE 350 D 4MATIC: CSDD 8, AutoDNA 18, carVertical 16, dīleris 10; negadījumi 9",
+ "rindasPaAvotiem": {
+  "CSDD": 8,
+  "OFICIĀLĀ DĪLERA DATI": 10,
+  "AutoDNA": 18,
+  "CarVertical": 16
+ },
+ "rindasSavaktas": 52,
+ "rindasTabula": 20,
+ "tabula": [
+  "01.08.2016 | 8 | Latvija | CarVertical",
+  "22.08.2016 | 8 | Latvija | CSDD",
+  "01.09.2016 | 1328 | Latvija | AutoDNA + CarVertical",
+  "17.08.2017 | 10936 | Latvija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "16.08.2018 | 20727 | Latvija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "20.08.2018 | 20956 | Latvija | CSDD + AutoDNA",
+  "13.08.2019 | 30905 | Latvija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "17.08.2020 | 38999 | Latvija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "20.08.2020 | 39230 | Latvija | CSDD + AutoDNA",
+  "30.08.2021 | 51209 | Latvija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "08.09.2021 | 52001 | Latvija | CSDD + AutoDNA",
+  "09.07.2022 | 72348 | Latvija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "27.09.2022 | 79670 | Latvija | CarVertical + CSDD + AutoDNA",
+  "13.04.2023 | 94555 | Latvija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "11.10.2023 | 108856 | Latvija | CarVertical + CSDD + AutoDNA",
+  "11.01.2024 | 115638 | Latvija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "28.10.2024 | 136281 | Latvija | CarVertical + CSDD + AutoDNA",
+  "03.12.2024 | 138670 | Latvija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "24.09.2025 | 160484 | Latvija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "05.11.2025 | 163781 | Latvija | CarVertical + CSDD + AutoDNA"
+ ],
+ "sarkanaJosla": false,
+ "klases": [],
+ "kritumsBezNilaLemumiem": false,
+ "nilaLemumi": [],
+ "klasesPecNilaLemumiem": [],
+ "faktuLapa": {
+  "odometerAnomaly": false,
+  "carverticalMileageWarning": false,
+  "maxRollbackDropKm": 0,
+  "rollbacks": [],
+  "suspectedEntryErrors": [],
+  "implausibleReadings": [],
+  "latestKm": 163781
+ }
+}

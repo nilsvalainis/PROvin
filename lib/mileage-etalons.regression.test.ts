@@ -18,7 +18,7 @@ import {
 } from "@/lib/unified-mileage";
 
 /**
- * Nobraukuma etalona kopa (Nils 17.11): 11 īstas lietas no pabeigtiem auditiem (ieejas dati no pasūtījumu melnrakstiem,
+ * Nobraukuma etalona kopa (Nils 17.11): 41 īsta lieta no pabeigtiem auditiem (ieejas dati no pasūtījumu melnrakstiem,
  * bez komentāriem, foto un personas datiem). Tests nofiksē, KO SISTĒMA DARA TAGAD - tabulas rindas, anomālijas,
  * klases, sarkano joslu un AI faktu lapas laukus. Tas nav apgalvojums, ka rezultāts ir pareizs: zināmās kļūdas ir
  * aprakstītas `lib/__fixtures__/mileage-etalons/README.md`. Mainot nobraukuma loģiku, snapshot atšķirības jāizskata pa vienai.
@@ -100,8 +100,8 @@ function snapshotOf(fx: Fixture) {
 describe("nobraukuma etalona kopa: pašreizējais rezultāts", () => {
   const files = readdirSync(DIR).filter((f) => f.endsWith(".json")).sort();
 
-  it("kopā ir 11 lietas", () => {
-    expect(files.length).toBe(11);
+  it("kopā ir 41 lieta", () => {
+    expect(files.length).toBe(41);
   });
 
   for (const file of files) {
