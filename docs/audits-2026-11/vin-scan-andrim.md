@@ -4,7 +4,7 @@ Nils 17.11: manuālos darbus dara Andris, nevis Nils. Kods jau ir `main` (sk. `d
 Atslēgas un paroles tikai 1Password. Vercel env pievieno `Production` vidē, pēc tam redeploy no `main` HEAD.
 Pēc katra punkta ieraksti vienu rindu `docs/komandu-zinojumi.md` (kas izdarīts, pārbaudes rezultāts).
 
-## 1. Šodien: releja deploy (provin-listings)
+## 1. Šodien: releja deploy (provin-listings) - IZDARĪTS 17.11 (Andris)
 
 Kāpēc: #965 (dienas limits nekad nav NaN, gala URL pārbaude pēc novirzes) un #976 (`/listings/health` bez tokena rāda tikai `{ok:true}`).
 
@@ -26,7 +26,7 @@ Kāpēc: #963 aizver drošības caurumu (sveša lapa varēja ieslēgt CarVertica
    - viens VIN SCAN ar stat.vin pārlūka ielasi strādā;
    - CarVertical pirkuma poga ved līdz 3-D Secure kā līdz šim.
 
-## 3. Fixie aizstāšana ar savu proxy (mnt.ee, lkf.ee, nummerplade, Car-Pass, AucHistory)
+## 3. Fixie aizstāšana ar savu proxy (mnt.ee, lkf.ee, nummerplade, Car-Pass, AucHistory) - IZDARĪTS 17.11 (Andris), Fixie abonements vēl aktīvs
 
 Kāpēc: Fixie limits izsmelts, mnt.ee nestrādā kopš 07.11. Kods (#971) jau gaida env `VIN_PROXY_URL` un, ja proxy krīt, vienreiz mēģina tieši.
 
