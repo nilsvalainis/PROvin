@@ -27,7 +27,14 @@ export type ScanHttpResult = {
   finalUrl?: string;
   /** CapSolver neapgāja Cloudflare; zonde drīkst to pateikt, nevis parsēt challenge HTML. */
   challengeReason?: string;
+  /** Lapā ir reCAPTCHA/Turnstile, kas netika atrisināta (nav pieprasīts vai neizdevās). */
+  captchaReason?: string;
+  /** Tikai ar `captcha: "solve"`: atrisinātais žetons, kas zondei jāiesniedz formā. */
+  captchaToken?: string;
+  captchaKind?: ScanCaptchaKind;
 };
+
+export type ScanCaptchaKind = "recaptcha_v2" | "turnstile";
 
 const DEFAULT_TIMEOUT_MS = 12_000;
 
@@ -47,6 +54,16 @@ function solverBudgetMs(localTimeoutMs: number, startedAt: number, now = Date.no
   const remain = Math.min(localRemain, outerRemain);
   if (remain <= 0) return 0;
   return capsolverTimeoutMs(remain, 0);
+}
+
+/**
+ * CapSolver budžets ārējam izsaucējam (piem. lkf.ee): VIN SCAN avota termiņa iekšienē
+ * atlikušais laiks mīnus rezerve, ārpus VIN SCAN (apmaksāts pasūtījums) - `fallbackMs`.
+ */
+export function vinScanSolverBudgetMs(fallbackMs: number, now = Date.now()): number {
+  const slot = vinScanDeadline.getStore();
+  if (!slot) return fallbackMs;
+  return capsolverTimeoutMs(slot.deadlineMs - now, 0);
 }
 
 function solverCallOpts(localTimeoutMs: number, startedAt: number, sourceLabel: string): { timeoutMs: number; sourceLabel: string } | null {
@@ -69,6 +86,20 @@ function turnstileSiteKey(html: string): string {
   return html.match(/data-sitekey="([^"]+)"[^>]*turnstile|turnstile[^>]*data-sitekey="([^"]+)"/i)?.[1]?.trim()
     || html.match(/challenges\.cloudflare\.com\/turnstile[^"]*["']\s*,\s*\{[^}]*sitekey:\s*['"]([^'"]+)/i)?.[1]?.trim()
     || "";
+}
+
+function detectCaptcha(html: string): { kind: ScanCaptchaKind; siteKey: string } | null {
+  const recaptchaKey = recaptchaSiteKey(html);
+  if (recaptchaKey && /recaptcha|hcaptcha|i['’]m not a robot|\bcaptcha\b/i.test(html)) {
+    return { kind: "recaptcha_v2", siteKey: recaptchaKey };
+  }
+  const tsKey = turnstileSiteKey(html);
+  if (tsKey && /turnstile/i.test(html)) return { kind: "turnstile", siteKey: tsKey };
+  return null;
+}
+
+function captchaLabel(kind: ScanCaptchaKind): string {
+  return kind === "turnstile" ? "Turnstile" : "reCAPTCHA";
 }
 
 export async function scanFetch(
@@ -137,8 +168,10 @@ async function bypassCloudflare(
 }
 
 /**
- * HTTP ielase ar CapSolver: Cloudflare Challenge, reCAPTCHA v2 un Turnstile.
- * Operators neapstiprina captcha. Ja risinātāja nav, atgriež lapu kā ir (zonde interpretē).
+ * HTTP ielase ar Cloudflare Challenge apiešanu (cf_clearance sīkdatnes tiek izmantotas).
+ * reCAPTCHA v2 / Turnstile risina TIKAI ar `captcha: "solve"` un tad atgriež `captchaToken`,
+ * ko zondei pašai jāiesniedz formā. Bez tā lapa ar captcha atgriežas ar `captchaReason`
+ * un CapSolver netiek saukts (žetons bez formas iesniegšanas ir tikai izmaksas).
  */
 export async function scanFetchSmart(
   url: string,
@@ -151,6 +184,7 @@ export async function scanFetchSmart(
     solveUrl?: string;
     sourceLabel?: string;
     userAgent?: string;
+    captcha?: "solve";
   } = {},
 ): Promise<ScanHttpResult> {
   const timeoutMs = init.timeoutMs ?? 20_000;
@@ -213,50 +247,32 @@ export async function scanFetchSmart(
     return merged;
   }
 
-  const recaptchaKey = recaptchaSiteKey(first.text);
-  const looksCaptcha = /recaptcha|hcaptcha|i['’]m not a robot|\bcaptcha\b/i.test(first.text);
-  const recaptchaBudget = solverCallOpts(timeoutMs, startedAt, sourceLabel);
-  if (looksCaptcha && recaptchaKey && hasCaptchaSolverKey() && recaptchaBudget) {
-    const capProxy = getCaptchaSolverProxy();
-    const solved = await solveCaptcha(
-      {
-        kind: "recaptcha_v2",
-        websiteURL: init.solveUrl || url,
-        websiteKey: recaptchaKey,
-        proxy: capProxy || undefined,
-      },
-      recaptchaBudget,
-    );
-    if (solved.ok) {
-      return {
-        status: first.status,
-        text: first.text,
-        cookie: mergeCookieHeader(cookie, cookiesRecordToHeader(solved.cookies)),
-        ua: solved.userAgent || ua,
-        finalUrl: first.finalUrl,
-      };
-    }
+  const page: ScanHttpResult = { status: first.status, text: first.text, cookie, ua, proxyUrl, finalUrl: first.finalUrl };
+  const captcha = detectCaptcha(first.text);
+  if (!captcha) return page;
+  const label = captchaLabel(captcha.kind);
+  if (init.captcha !== "solve") {
+    return { ...page, captchaReason: `lapa prasa ${label}, automātiski to nerisinām` };
   }
-
-  const tsKey = turnstileSiteKey(first.text);
-  const turnstileBudget = solverCallOpts(timeoutMs, startedAt, sourceLabel);
-  if (/turnstile/i.test(first.text) && tsKey && hasCaptchaSolverKey() && turnstileBudget) {
-    const solved = await solveCaptcha(
-      { kind: "turnstile", websiteURL: init.solveUrl || url, websiteKey: tsKey },
-      turnstileBudget,
-    );
-    if (solved.ok) {
-      return {
-        status: first.status,
-        text: first.text,
-        cookie: mergeCookieHeader(cookie, cookiesRecordToHeader(solved.cookies)),
-        ua: solved.userAgent || ua,
-        finalUrl: first.finalUrl,
-      };
-    }
-  }
-
-  return { status: first.status, text: first.text, cookie, ua, proxyUrl, finalUrl: first.finalUrl };
+  if (!hasCaptchaSolverKey()) return { ...page, captchaReason: `${label}: nav CAPSOLVER_API_KEY` };
+  const budget = solverCallOpts(timeoutMs, startedAt, sourceLabel);
+  if (!budget) return { ...page, captchaReason: `${label}: CapSolver izlaists, avota laiks ir beidzies` };
+  const capProxy = captcha.kind === "recaptcha_v2" ? getCaptchaSolverProxy() : "";
+  const solved = await solveCaptcha(
+    captcha.kind === "recaptcha_v2"
+      ? { kind: "recaptcha_v2", websiteURL: init.solveUrl || url, websiteKey: captcha.siteKey, proxy: capProxy || undefined }
+      : { kind: "turnstile", websiteURL: init.solveUrl || url, websiteKey: captcha.siteKey },
+    budget,
+  );
+  if (!solved.ok) return { ...page, captchaReason: `${label}: ${solved.reason}` };
+  if (!solved.token) return { ...page, captchaReason: `${label}: CapSolver atgrieza tukšu žetonu` };
+  return {
+    ...page,
+    cookie: mergeCookieHeader(cookie, cookiesRecordToHeader(solved.cookies)),
+    ua: solved.userAgent || ua,
+    captchaToken: solved.token,
+    captchaKind: captcha.kind,
+  };
 }
 
 export function scanChallengeReason(res: {
@@ -281,9 +297,7 @@ export async function solveScanRecaptcha(websiteURL: string, websiteKey: string,
   { ok: true; token: string; cookie: string; ua: string } | { ok: false; reason: string }
 > {
   if (!hasCaptchaSolverKey()) return { ok: false, reason: `${sourceLabel}: nav CAPSOLVER_API_KEY` };
-  const slot = vinScanDeadline.getStore();
-  const remain = slot ? slot.deadlineMs - Date.now() : 90_000;
-  const budget = capsolverTimeoutMs(remain, 0);
+  const budget = vinScanSolverBudgetMs(capsolverTimeoutMs(90_000, 0));
   if (budget < CAPSOLVER_MIN_TIMEOUT_MS) return { ok: false, reason: `${sourceLabel}: CapSolver izlaists, avota laiks ir beidzies` };
   const capProxy = getCaptchaSolverProxy();
   const solved = await solveCaptcha(
