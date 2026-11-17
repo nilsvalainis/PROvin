@@ -103,10 +103,12 @@ describe("j75 klienta skats: Stāvoklis un Kopsavilkums no jaunajiem datiem", ()
       visual: "Buktes, skrāpējumi.",
     };
     const text = renderText(<PdClientView view={buildIrissPdPublicView(r, "link", NOW)} mode="link" photoSrc={() => ""} />);
-    expect(text).toContain("Aprīkojums Xenon lukturi");
-    expect(text).toContain("Stāvoklis Otrs riteņu komplekts Vizuālais novērtējums. Buktes, skrāpējumi.");
-    expect(text).toContain("Cenā iekļauts Pilna pirmspārdošanas sagatavošana");
-    expect(text).toContain("Cenā nav iekļauts CSDD reģistrācija");
+    // Nils 17.11: Stāvoklis un Kopsavilkums augšā (kartītēs ar ✓), aprīkojuma izcēlumi apakšā izvēršamajā sadaļā.
+    expect(text).toContain("Stāvoklis ✓ Otrs riteņu komplekts Vizuālais novērtējums. Buktes, skrāpējumi.");
+    expect(text).toContain("Cenā iekļauts ✓ Pilna pirmspārdošanas sagatavošana");
+    expect(text).toContain("Cenā nav iekļauts - CSDD reģistrācija");
+    expect(text).toContain("Xenon lukturi");
+    expect(text.indexOf("Xenon lukturi")).toBeGreaterThan(text.indexOf("Kopsavilkums"));
     expect(text).not.toContain("2 atslēgas");
     expect(text).not.toContain("Garantija 3 mēn.");
   });

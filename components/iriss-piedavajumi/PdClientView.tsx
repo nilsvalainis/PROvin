@@ -10,7 +10,7 @@ import {
 } from "@/components/iriss-offer-public/IrissOfferPublicChrome";
 import { IrissOfferPublicGallery, type IrissOfferPublicGalleryUrlMap } from "@/components/iriss-offer-public/IrissOfferPublicGallery";
 import { PdClientContent } from "@/components/iriss-piedavajumi/PdClientContent";
-import { PdOfferExtraSections } from "@/components/iriss-piedavajumi/PdOfferExtraSections";
+import { PdOfferBottomSections, PdOfferExtraSections } from "@/components/iriss-piedavajumi/PdOfferExtraSections";
 import { IRISS_OFFER_PUBLIC_LABELS } from "@/lib/iriss-offer-client-link";
 import { irissPdFactValue, irissPdSubtitle, type IrissPdPublicView, type IrissPdViewMode } from "@/lib/iriss-piedavajumi";
 
@@ -31,7 +31,8 @@ export function pdGalleryUrlMap(
 /**
  * Klienta skats (`/p/d/<token>` un admina preview). Tā pati vizuālā bāze kā `/p/` IrissOfferPublic.
  * Auto1 ir datu avots: papildu kartītes tikai tad, kad ir ko rādīt.
- * j75: starp Parametriem un Auto1 - Aprīkojums / Stāvoklis / Kopsavilkums (`PdClientContent`).
+ * Secība (Nils 17.11): Parametri, Stāvoklis, Kopsavilkums, krāsas karte, tehniskie dati, bojājumi, Servisa dati;
+ * pašā apakšā izvēršami «Aprīkojums · Tehniskā apskate» un «Dati pēc VIN».
  */
 export function PdClientView({
   view,
@@ -122,7 +123,14 @@ export function PdClientView({
 
       <PdClientContent content={view.content} />
 
-      {view.auto1 ? <PdOfferExtraSections blocks={view.auto1} show={view.blocks} expandAll={mode === "pdf"} /> : null}
+      {view.auto1 ? <PdOfferExtraSections blocks={view.auto1} show={view.blocks} /> : null}
+
+      <PdOfferBottomSections
+        blocks={view.auto1}
+        show={view.blocks}
+        highlights={view.content?.highlights ?? []}
+        expandAll={mode === "pdf"}
+      />
 
       {showHiddenNote ? (
         <p className="mt-3 text-center text-[11px] leading-relaxed text-[#a1a1aa]">

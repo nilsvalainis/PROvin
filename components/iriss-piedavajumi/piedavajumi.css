@@ -903,6 +903,18 @@ button.pd-lv {
 .pd-wa {
   color: #f5a623;
 }
+/* Krāsas kartes mērījumi: x no CSS mainīgā, lai telefonā tos varētu pārbīdīt (sk. PdPaintMap SLOTS). */
+.pd-pm .pd-lv-slot {
+  left: var(--x);
+}
+@media (max-width: 520px) {
+  .pd-pm .pd-lv-slot {
+    left: var(--x-sm, var(--x));
+  }
+  .pd-pm .pd-lv-wide {
+    display: none;
+  }
+}
 .pd-pm-cap {
   font-size: 10.5px;
   color: var(--ink3);
