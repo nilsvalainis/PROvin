@@ -26,6 +26,9 @@ describe("VIN SCAN izsoļu foto URL", () => {
   it("laiž cauri tikai https izsoļu hostus", () => {
     expect(isAllowedVinScanAuctionPhotoUrl("https://cs.copart.com/lot/a.jpg")).toBe(true);
     expect(isAllowedVinScanAuctionPhotoUrl("https://vis.iaai.com/image.jpg")).toBe(true);
+    expect(isAllowedVinScanAuctionPhotoUrl("https://img.plc.auction/lot/a.jpg")).toBe(true);
+    expect(isAllowedVinScanAuctionPhotoUrl("https://checkcar.vin/photos/a.jpg")).toBe(true);
+    expect(isAllowedVinScanAuctionPhotoUrl("https://plc.auction.evil.com/a.jpg")).toBe(false);
     expect(isAllowedVinScanAuctionPhotoUrl("https://cars2.import-motor.com/copart/a.webp")).toBe(true);
     expect(isAllowedVinScanAuctionPhotoUrl("https://www.copart.fi/photo/a.jpg")).toBe(true);
     expect(
