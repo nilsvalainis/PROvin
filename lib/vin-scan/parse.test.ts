@@ -34,6 +34,7 @@ import {
   vehicleFromPlcTitle,
 } from "@/lib/vin-scan/parse";
 import { capsolverMayStart, capsolverTimeoutMs, vinScanSourceTimeoutMs } from "@/lib/vin-scan/source-timeouts";
+import { MNT_RELAY_TIMEOUT_MS } from "@/lib/vin-sources/mnt-relay";
 import { countVinScanStatuses, formatVinScanCountLine, vinScanCountBreakdown } from "@/lib/vin-scan/types";
 
 const DK_VIN = "VF12RFL1H49621453";
@@ -389,16 +390,33 @@ describe("countVinScanStatuses", () => {
 });
 
 describe("vinScanSourceTimeoutMs", () => {
-  it("izsoļu avotiem (Chrome relejs) ir garāks timeouts nekā 14 s noklusējumam", () => {
-    expect(vinScanSourceTimeoutMs("stat_vin")).toBe(100_000);
-    expect(vinScanSourceTimeoutMs("bid_cars")).toBe(100_000);
-    expect(vinScanSourceTimeoutMs("plc_auction")).toBe(100_000);
-    expect(vinScanSourceTimeoutMs("checkcar_vin")).toBe(100_000);
-    expect(vinScanSourceTimeoutMs("bidfax")).toBe(100_000);
-    expect(vinScanSourceTimeoutMs("poctra")).toBe(100_000);
-    expect(vinScanSourceTimeoutMs("lt_itpr")).toBe(90_000);
+  it("pārlūka avoti (zonde bez tīkla) krīt uz 14 s noklusējumu", () => {
+    for (const id of ["stat_vin", "bid_cars", "plc_auction", "checkcar_vin", "bidfax", "poctra", "nicb", "lt_itpr"] as const) {
+      expect(vinScanSourceTimeoutMs(id)).toBe(14_000);
+    }
     expect(vinScanSourceTimeoutMs("vin_decode")).toBe(14_000);
     expect(vinScanSourceTimeoutMs("thecarapi_eu")).toBe(15_000);
+  });
+
+  it("esyn un dsb (2-3 secīgi pieprasījumi) saņem 25 s", () => {
+    expect(vinScanSourceTimeoutMs("esyn")).toBe(25_000);
+    expect(vinScanSourceTimeoutMs("dsb")).toBe(25_000);
+  });
+
+  it("mnt_ee ārējais limits ir lielāks par releja limitu, lai redz releja iemeslu", () => {
+    expect(vinScanSourceTimeoutMs("mnt_ee")).toBe(105_000);
+    expect(vinScanSourceTimeoutMs("mnt_ee")).toBeGreaterThan(MNT_RELAY_TIMEOUT_MS);
+  });
+
+  it("captcha un lēnie avoti paliek savos limitos", () => {
+    expect(vinScanSourceTimeoutMs("carpass")).toBe(90_000);
+    expect(vinScanSourceTimeoutMs("lkf_ee")).toBe(90_000);
+    expect(vinScanSourceTimeoutMs("regitra")).toBe(45_000);
+  });
+
+  it("neviens avots nepārsniedz maršruta maxDuration 300 s ar rezervi", () => {
+    const max = Math.max(...VIN_SCAN_SOURCE_IDS.map((id) => vinScanSourceTimeoutMs(id)));
+    expect(max).toBeLessThanOrEqual(120_000);
   });
 
   it("CapSolver budžets ir ārējais timeouts mīnus 8 s, un zem 4 s nesāk", () => {

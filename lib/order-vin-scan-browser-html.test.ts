@@ -5,6 +5,7 @@ import {
   ORDER_VIN_SCAN_BROWSER_HTML_MAX,
   applyBrowserArchiveHtml,
   preferBrowserArchiveImport,
+  safeBrowserImportOpenUrl,
 } from "@/lib/order-vin-scan-browser-html";
 
 const VIN = "WBA5R1C0XLFH42873";
@@ -345,5 +346,47 @@ describe("pārlūka arhīva HTML imports", () => {
       vin: VIN,
     });
     expect(applied).toEqual({ ok: false, error: "unsupported" });
+  });
+});
+
+describe("safeBrowserImportOpenUrl (klienta pageUrl -> openUrl)", () => {
+  const catalog = `https://stat.vin/cars/${VIN}`;
+
+  it("patur https saiti uz avota saimnieku un tā apakšdomēnu", () => {
+    expect(safeBrowserImportOpenUrl("stat_vin", `https://stat.vin/cars/${VIN}?tab=1`, VIN)).toBe(
+      `https://stat.vin/cars/${VIN}?tab=1`,
+    );
+    expect(safeBrowserImportOpenUrl("stat_vin", `https://en.stat.vin/cars/${VIN}`, VIN)).toBe(
+      `https://en.stat.vin/cars/${VIN}`,
+    );
+    // Katalogā www.nicb.org: bez www un apakšdomēns arī der.
+    expect(safeBrowserImportOpenUrl("nicb", "https://nicb.org/vincheck", VIN)).toBe("https://nicb.org/vincheck");
+  });
+
+  it("javascript:, http: un svešs saimnieks krīt uz kataloga saiti", () => {
+    expect(safeBrowserImportOpenUrl("stat_vin", "javascript:alert(1)", VIN)).toBe(catalog);
+    expect(safeBrowserImportOpenUrl("stat_vin", `http://stat.vin/cars/${VIN}`, VIN)).toBe(catalog);
+    expect(safeBrowserImportOpenUrl("stat_vin", `https://evil.example/cars/${VIN}`, VIN)).toBe(catalog);
+    expect(safeBrowserImportOpenUrl("stat_vin", `https://stat.vin.evil.example/cars/${VIN}`, VIN)).toBe(catalog);
+    expect(safeBrowserImportOpenUrl("stat_vin", `https://evilstat.vin/cars/${VIN}`, VIN)).toBe(catalog);
+    expect(safeBrowserImportOpenUrl("stat_vin", "nav saite", VIN)).toBe(catalog);
+    expect(safeBrowserImportOpenUrl("stat_vin", "", VIN)).toBe(catalog);
+  });
+
+  it("imports saglabā kataloga saiti, ja klients sūta svešu vai javascript: pageUrl", () => {
+    for (const pageUrl of ["javascript:alert(document.cookie)", `http://stat.vin/cars/${VIN}`, `https://evil.example/cars/${VIN}`]) {
+      const applied = applyBrowserArchiveHtml({ record: record([]), id: "stat_vin", html: STAT_HTML, pageUrl, vin: VIN });
+      expect(applied.ok, pageUrl).toBe(true);
+      if (!applied.ok) continue;
+      expect(applied.record.indicators[0]?.openUrl, pageUrl).toBe(catalog);
+    }
+  });
+
+  it("imports saglabā derīgu apakšdomēna pageUrl", () => {
+    const pageUrl = `https://en.stat.vin/cars/${VIN}`;
+    const applied = applyBrowserArchiveHtml({ record: record([]), id: "stat_vin", html: STAT_HTML, pageUrl, vin: VIN });
+    expect(applied.ok).toBe(true);
+    if (!applied.ok) return;
+    expect(applied.record.indicators[0]?.openUrl).toBe(pageUrl);
   });
 });
