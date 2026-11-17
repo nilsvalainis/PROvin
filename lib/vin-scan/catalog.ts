@@ -5,7 +5,7 @@
 
 import { carinfoSwedenVinUrl } from "@/lib/vin-sources/carinfo-search";
 import { thecarapiVinScanEnabled } from "@/lib/vin-scan/thecarapi-flags";
-import { type VinScanPlateKind, type VinScanPlates, emptyVinScanPlates } from "@/lib/vin-scan/plates";
+import { type VinScanPlateKind, type VinScanPlates, emptyVinScanPlates, normalizeScanPlate } from "@/lib/vin-scan/plates";
 
 export const VIN_SCAN_SOURCE_IDS = [
   "vin_decode",
@@ -42,6 +42,8 @@ export const VIN_SCAN_SOURCE_IDS = [
   "plc_auction",
   "bidfax",
   "poctra",
+  "cz_rsv",
+  "dvsa_mot",
 ] as const;
 
 export type VinScanSourceId = (typeof VIN_SCAN_SOURCE_IDS)[number];
@@ -429,6 +431,27 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     hint: "Izsoles foto arhīvs",
     needs: ["vin"],
     openUrl: (vin) => poctraSearchUrl(vin),
+  },
+  {
+    id: "cz_rsv",
+    label: "Datová kostka RSV",
+    country: "CZ",
+    hint: "Čehijas reģistrs (MD ČR): pirmā reģistrācija, īpašnieku skaits, apskate. Vajag CZ_RSV_API_KEY",
+    needs: ["vin"],
+    // Publiskā lapa ir SPA; VIN saitē nodod operatoram, meklēšanu lapā var nākties palaist ar roku.
+    openUrl: (vin) => `https://dataovozidlech.cz/vyhledavani?vin=${vinQuery(vin)}`,
+  },
+  {
+    id: "dvsa_mot",
+    label: "UK MOT (DVSA)",
+    country: "UK",
+    hint: "DVSA MOT vēsture: apskates, odometrs, defekti. Vajag UK numuru un DVSA API atslēgas",
+    needs: ["uk"],
+    openUrl: (vin, plates) => {
+      void vin;
+      const reg = plates?.uk ? encodeURIComponent(normalizeScanPlate(plates.uk)) : "";
+      return reg ? `https://www.check-mot.service.gov.uk/results?registration=${reg}` : "https://www.gov.uk/check-mot-history";
+    },
   },
 ];
 

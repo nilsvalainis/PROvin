@@ -1,0 +1,28 @@
+{
+  "_meta": {
+    "source": "DOKUMENTĀCIJAS PIEMĒRS, nav reāla API atbilde: documentation.history.mot.api.gov.uk, bulk-file-formats piemērs (SE38GUW). Atstāta piemēra apskate ar defektiem.",
+    "status": 200
+  },
+  "body": {
+    "registration": "SE38GUW",
+    "firstUsedDate": "2003-03-27",
+    "motTests": [
+      {
+        "completedDate": "2015-03-11 11:41:11",
+        "motTestNumber": 971577565522,
+        "dataSource": "dvsa",
+        "expiryDate": "2016-03-10",
+        "regMarkTimeOfTest": "SE38XUW",
+        "testResult": "PASSED",
+        "odometerValue": "133230",
+        "odometerUnit": "mi",
+        "odometerResultType": "OK",
+        "defects": [
+          { "dangerous": false, "text": "", "type": "ADVISORY" },
+          { "dangerous": false, "text": "lens scuffed", "type": "ADVISORY" }
+        ]
+      }
+    ],
+    "dataSource": "dvsa"
+  }
+}

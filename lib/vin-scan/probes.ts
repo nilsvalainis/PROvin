@@ -44,6 +44,7 @@ import {
   probeVegvesen,
   probeVinDecode,
 } from "@/lib/vin-scan/probes-extra";
+import { probeCzRsv, probeDvsaMot } from "@/lib/vin-scan/probes-cz-uk";
 import { isPlausibleListingUrl } from "@/lib/order-field-validation";
 import {
   CARINFO_SUPER_SEARCH_DIRECT_MS,
@@ -347,6 +348,8 @@ const PROBES: Record<VinScanSourceId, (ctx: VinScanContext) => Promise<VinScanIn
   plc_auction: probePlcAuction,
   bidfax: probeBidfax,
   poctra: probePoctra,
+  cz_rsv: probeCzRsv,
+  dvsa_mot: probeDvsaMot,
 };
 
 export function vinScanProbeFor(id: string): ((ctx: VinScanContext) => Promise<VinScanIndicator> | VinScanIndicator) | null {
