@@ -21,3 +21,16 @@ test("public fallback also runs when auto-login returns error", () => {
   assert.equal(shouldReadPublic("ecarstrade", "error", false), true);
 });
 
+
+test("envPositiveInt: systemd komentārs, teksts un 0 dod noklusējumu, nevis NaN", async () => {
+  const { envPositiveInt } = await import("./policy.mjs");
+  assert.equal(envPositiveInt("400 # dienas limits", 7), 400);
+  assert.equal(envPositiveInt("abc", 400), 400);
+  assert.equal(envPositiveInt("", 400), 400);
+  assert.equal(envPositiveInt(undefined, 400), 400);
+  assert.equal(envPositiveInt("0", 400), 400);
+  assert.equal(envPositiveInt("-5", 400), 400);
+  assert.equal(envPositiveInt("12.7", 400), 12);
+  assert.equal(envPositiveInt("9", 2, 3), 3);
+  assert.ok(Number.isFinite(envPositiveInt("400 # komentārs", 1)));
+});
