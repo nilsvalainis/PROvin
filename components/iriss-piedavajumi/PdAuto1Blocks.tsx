@@ -9,6 +9,7 @@ import {
   type IrissPdAuto1Blocks,
   type IrissPdKv,
 } from "@/lib/iriss-piedavajumi-auto1";
+import { irissPdDisplayValue } from "@/lib/iriss-piedavajumi-display";
 import { IRISS_PD_BLOCK_IDS, IRISS_PD_BLOCK_LV, type IrissPdBlockId, type IrissPdToggle, type IrissPdVisibility } from "@/lib/iriss-piedavajumi-types";
 
 export type PdToggleTarget = IrissPdBlockId | "group";
@@ -55,7 +56,7 @@ function Kv({ rows }: { rows: IrissPdKv[] }) {
       {rows.map((r) => (
         <div key={r.label}>
           <span>{r.label}:</span>
-          {r.value}
+          {irissPdDisplayValue(r.value)}
         </div>
       ))}
     </div>
@@ -104,7 +105,7 @@ function EquipmentBlock({ b, limit }: { b: IrissPdAuto1Blocks; limit?: number })
               {b.service.map((r) => (
                 <div key={r.label}>
                   {r.label}
-                  <b>{r.value}</b>
+                  <b>{irissPdDisplayValue(r.value)}</b>
                 </div>
               ))}
             </div>
@@ -117,7 +118,7 @@ function EquipmentBlock({ b, limit }: { b: IrissPdAuto1Blocks; limit?: number })
               {b.inspection.map((r) => (
                 <div key={r.label}>
                   {r.label}
-                  <b>{r.value}</b>
+                  <b>{irissPdDisplayValue(r.value)}</b>
                 </div>
               ))}
             </div>
