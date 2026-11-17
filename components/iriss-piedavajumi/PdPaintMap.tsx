@@ -1,7 +1,7 @@
 "use client";
 
 import "@/components/iriss-piedavajumi/piedavajumi.css";
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import {
   IRISS_PD_PAINT_ZONE_LV,
   IRISS_PD_REPAINT_UM,
@@ -10,75 +10,44 @@ import {
 } from "@/lib/iriss-piedavajumi-auto1";
 
 /**
- * Auto1 «Exterior» kompozīcija (Nils 17.11: "identisks noformējums"):
- * centrā auto no augšas (priekša pa kreisi), malās priekšas un aizmugures skats,
- * labās puses profils uzklāts virs augšējās malas (riteņi uz āru), kreisās puses - virs apakšējās.
- * Katram mērījumam punkts + etiķete. viewBox 600×400; karte tur to pašu proporciju (aspect-ratio).
+ * Krāsas karte (makets apstiprināts 17.11): PROVIN audita atskaites auto (`damage-car-top.jpg`), pagriezts
+ * horizontāli - priekšpuse pa kreisi, labā puse augšā, kreisā apakšā (kā Auto1 «Exterior»).
+ * Koordinātes laukumā 780×640 (bilde 780×520 ar 60 malu augšā un apakšā).
  */
-const VIEW_W = 600;
-const VIEW_H = 400;
-/** Redzamais laukums (y 14-394): bez tukšas joslas virs labās puses profila. */
-const VIEW_Y0 = 14;
-const VIEW_SHOWN_H = 380;
+const CAR_SRC = "/brand/damage-car-top-east.jpg";
+const W = 780;
+const H = 640;
+const IMG_TOP = 60;
+const IMG_H = 520;
 
-/** Auto no augšas (y 124-276). Stikli nav zona. */
-const TOP_FRONT = "M112 130 Q92 136 90 164 L90 236 Q92 264 112 270 L212 276 Q200 200 212 124 Z";
-const TOP_ROOF = "M252 138 L378 138 Q386 200 378 262 L252 262 Q244 200 252 138 Z";
-const TOP_REAR = "M416 124 L488 130 Q508 136 510 164 L510 236 Q508 264 488 270 L416 276 Q426 200 416 124 Z";
-const TOP_GLASS =
-  "M212 124 L252 138 Q244 200 252 262 L212 276 Q200 200 212 124 Z M378 138 L416 124 Q426 200 416 276 L378 262 Q386 200 378 138 Z";
-const TOP_LINES = "M104 160 Q150 152 204 146 M104 240 Q150 248 204 254 M426 150 Q470 152 500 160 M426 250 Q470 248 500 240";
-
-/** Priekšas un aizmugures skats (vertikāli, malās) - daļa no attiecīgās zonas. */
-const END_FRONT = "M32 136 H52 Q62 136 62 146 V254 Q62 264 52 264 H32 Q22 264 22 254 V146 Q22 136 32 136 Z M22 150 H14 V172 H22 M22 228 H14 V250 H22";
-const END_FRONT_LINES = "M42 150 V250 M30 182 H54 M30 218 H54";
-const END_REAR = "M548 136 H568 Q578 136 578 146 V254 Q578 264 568 264 H548 Q538 264 538 254 V146 Q538 136 548 136 Z M578 150 H586 V172 H578 M578 228 H586 V250 H578";
-const END_REAR_LINES = "M558 150 V250 M546 182 H570 M546 218 H570";
-
-/** Sāna profils (kreisā puse, priekša pa kreisi, y 256-374). Labā puse = tas pats, apgriezts ap y=200. */
-const SIDE_BODY =
-  "M112 352 L110 334 Q112 322 130 318 L196 306 Q236 270 288 258 L370 256 Q404 258 440 288 L476 296 Q492 300 492 318 L492 350 L472 352 A26 26 0 0 0 420 352 L190 352 A26 26 0 0 0 138 352 Z";
-const SIDE_WINDOWS = "M214 306 Q246 276 288 266 L326 265 L326 306 Z M334 265 L368 264 Q394 268 420 300 L334 306 Z";
-const SIDE_LINES = "M330 265 V350 M210 308 V348 M430 300 V348 M136 322 Q150 318 166 318";
-const WHEELS: Array<[number, number]> = [
-  [164, 352],
-  [446, 352],
-];
-const FLIP = `matrix(1 0 0 -1 0 ${VIEW_H})`;
-
-/** Zonu nosaukumi (viewBox koordinātēs). */
-const LABEL_AT: Record<IrissPdPaintZoneId, [number, number]> = {
-  right: [300, 30],
-  front: [150, 176],
-  roof: [315, 176],
-  rear: [462, 176],
-  left: [300, 378],
+type Zone = {
+  /** Zonas nosaukuma etiķete. */
+  label: [number, number];
+  /** Iezīmētais laukums: x1, y1, x2, y2. */
+  area: [number, number, number, number];
 };
 
-/**
- * Mērījumu punkti: [x datorā, punkta y, etiķetes y, x telefonā?]. Sānos telefonā tikai 2 (pārējie tabulā).
- * Sānos etiķete virs punkta, augšskatā zem punkta (kā Auto1).
- */
-type Slot = [number, number, number, number?];
-const SLOTS: Record<IrissPdPaintZoneId, Slot[]> = {
-  right: [[200, 82, 64, 200], [275, 82, 64, 355], [355, 82, 64], [430, 82, 64]],
-  front: [[150, 194, 216], [150, 216, 238]],
-  roof: [[315, 194, 216], [315, 216, 238]],
-  rear: [[462, 194, 216], [462, 216, 238]],
-  left: [[200, 320, 302, 200], [275, 320, 302, 355], [355, 320, 302], [430, 320, 302]],
+const ZONES: Record<IrissPdPaintZoneId, Zone> = {
+  front: { label: [121, 250], area: [42, 180, 200, 460] },
+  roof: { label: [395, 250], area: [275, 225, 515, 415] },
+  rear: { label: [672, 250], area: [610, 180, 735, 460] },
+  right: { label: [390, 28], area: [70, 155, 700, 225] },
+  left: { label: [390, 612], area: [70, 415, 700, 485] },
 };
-const PHONE_SIDE_LIMIT = 2;
 
-/**
- * Nils 17.11: pašreizējais siluets nav pieņemams. Zīmējums paslēpts, līdz jaunais makets ir apstiprināts;
- * klients redz mērījumu tabulu. Kods paliek, lai jauno zīmējumu varētu ielikt tajā pašā vietā.
- */
-const SHOW_DRAWING: boolean = false;
+/** Sānos līdz 4 mērījumiem (punkts uz virsbūves, etiķete ārpusē), augšskatā 1 (etiķete zem punkta). */
+const SIDE_X = [150, 320, 470, 620];
+const SIDE: Record<"left" | "right", { dot: number; chip: number }> = {
+  right: { dot: 192, chip: 122 },
+  left: { dot: 450, chip: 522 },
+};
+const TOP_DOT_Y = 290;
+const TOP_CHIP_Y = 324;
 
 const ZONE_ORDER: IrissPdPaintZoneId[] = ["front", "roof", "rear", "left", "right"];
 
-const pctX = (x: number) => `${(x / VIEW_W) * 100}%`;
-const pctY = (y: number) => `${((y - VIEW_Y0) / VIEW_SHOWN_H) * 100}%`;
+const px = (x: number) => `${(x / W) * 100}%`;
+const py = (y: number) => `${(y / H) * 100}%`;
 
 function isRepaint(n: number): boolean {
   return n >= IRISS_PD_REPAINT_UM;
@@ -92,102 +61,74 @@ function um(n: number): string {
 export function PdPaintMap({ paint, compact = false }: { paint: NonNullable<IrissPdAuto1Blocks["paint"]>; compact?: boolean }) {
   const first = paint.zones.find((z) => z.warning)?.id ?? null;
   const [sel, setSel] = useState<IrissPdPaintZoneId | null>(first);
-  const zoneById = new Map(paint.zones.map((z) => [z.id, z]));
-  const fill = (id: IrissPdPaintZoneId) => {
-    if (sel === id) return "#e8f2fc";
-    return zoneById.get(id)?.readings.some(isRepaint) ? "#fff4e5" : "#ffffff";
-  };
-  const stroke = (id: IrissPdPaintZoneId) => (sel === id ? "#1f6fc4" : "#d1d1d6");
-  const sw = (id: IrissPdPaintZoneId) => (sel === id ? 1.6 : 1.2);
-  const detail = (id: IrissPdPaintZoneId) => (sel === id ? "#7baaf7" : "#d1d1d6");
   const pick = (id: IrissPdPaintZoneId) => setSel((cur) => (cur === id ? null : id));
-  // Tabulā tikai zonas, kurām ir mērījums vai bojājums (tukšas rindas ar "-" klientam neko nedod).
+  const zoneById = new Map(paint.zones.map((z) => [z.id, z]));
+  // Tabulā tikai zonas ar mērījumu, bojājumu vai «nav mērāms».
   const tableZones = ZONE_ORDER.map((id) => zoneById.get(id)).filter(
-    (z): z is NonNullable<typeof z> => Boolean(z) && (z!.readings.length > 0 || z!.warning),
-  );
-
-  const side = (id: "left" | "right") => (
-    <g transform={id === "right" ? FLIP : undefined}>
-      <path d={SIDE_BODY} fill={fill(id)} stroke={stroke(id)} strokeWidth={sw(id)} />
-      <path d={SIDE_WINDOWS} fill="none" stroke={detail(id)} strokeWidth={1} />
-      <path d={SIDE_LINES} fill="none" stroke={detail(id)} strokeWidth={1} />
-      {WHEELS.map(([cx, cy]) => (
-        <g key={cx}>
-          <circle cx={cx} cy={cy} r={22} fill="#ffffff" stroke={stroke(id)} strokeWidth={sw(id)} />
-          <circle cx={cx} cy={cy} r={14} fill="none" stroke={detail(id)} strokeWidth={1} />
-        </g>
-      ))}
-    </g>
+    (z): z is NonNullable<typeof z> => Boolean(z) && (z!.readings.length > 0 || z!.warning || Boolean(z!.notMeasurable)),
   );
 
   return (
     <div>
-      {SHOW_DRAWING && !compact ? <p className="pd-mu" style={{ fontSize: 11.5, margin: "0 0 6px" }}>Izvēlies zonu, lai uzzinātu vairāk par stāvokli:</p> : null}
-      {SHOW_DRAWING ? (
-      <div className="pd-pm pd-pm-a1" style={{ height: "auto", aspectRatio: `${VIEW_W} / ${VIEW_SHOWN_H}` }}>
-        <span className="ttl pd-lv-wide">Ārpuse</span>
-        <svg viewBox={`0 ${VIEW_Y0} ${VIEW_W} ${VIEW_SHOWN_H}`} aria-hidden="true">
-          <g strokeLinejoin="round" strokeLinecap="round">
-            {/* Augšskats un malu skati (zem sānu profiliem) */}
-            <path d={END_FRONT} fill={fill("front")} stroke={stroke("front")} strokeWidth={sw("front")} />
-            <path d={END_FRONT_LINES} fill="none" stroke={detail("front")} strokeWidth={1} />
-            <path d={END_REAR} fill={fill("rear")} stroke={stroke("rear")} strokeWidth={sw("rear")} />
-            <path d={END_REAR_LINES} fill="none" stroke={detail("rear")} strokeWidth={1} />
-            <path d={TOP_FRONT} fill={fill("front")} stroke={stroke("front")} strokeWidth={sw("front")} />
-            <path d={TOP_ROOF} fill={fill("roof")} stroke={stroke("roof")} strokeWidth={sw("roof")} />
-            <path d={TOP_REAR} fill={fill("rear")} stroke={stroke("rear")} strokeWidth={sw("rear")} />
-            <path d={TOP_GLASS} fill="#ffffff" stroke="#d1d1d6" strokeWidth={1.2} />
-            <path d={TOP_LINES} fill="none" stroke="#e5e5ea" strokeWidth={1} />
-            {/* Sānu profili virs augšskata malām; izvēlētais zīmēts pēdējais */}
-            {sel === "right" ? side("left") : side("right")}
-            {sel === "right" ? side("right") : side("left")}
-          </g>
-        </svg>
+      {!compact ? <p className="pd-mu" style={{ fontSize: 11.5, margin: "0 0 6px" }}>Izvēlies zonu, lai uzzinātu vairāk par stāvokli:</p> : null}
+      <div className={`pd-pm pd-pm-car${compact ? " compact" : ""}`} style={{ height: "auto", aspectRatio: `${W} / ${H}` }}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- tā pati bilde kā audita atskaitē, bez optimizācijas */}
+        <img src={CAR_SRC} alt="" aria-hidden="true" className="pd-pm-img" style={{ top: py(IMG_TOP), height: py(IMG_H) }} />
+        {ZONE_ORDER.map((id) => {
+          const [x1, y1, x2, y2] = ZONES[id].area;
+          return (
+            <span
+              key={`a-${id}`}
+              className={`pd-pm-area${sel === id ? " sel" : ""}`}
+              style={{ left: px(x1), top: py(y1), width: px(x2 - x1), height: py(y2 - y1) }}
+              aria-hidden="true"
+            />
+          );
+        })}
         {paint.zones.map((z) => {
-          const [lx, ly] = LABEL_AT[z.id];
-          const slots = SLOTS[z.id];
+          const [lx, ly] = ZONES[z.id].label;
+          const on = sel === z.id;
           const isSide = z.id === "left" || z.id === "right";
+          const points = isSide
+            ? z.readings.slice(0, SIDE_X.length).map((n, i) => ({ n, x: SIDE_X[i]!, dot: SIDE[z.id as "left" | "right"].dot, chip: SIDE[z.id as "left" | "right"].chip }))
+            : z.readings.slice(0, 1).map((n) => ({ n, x: lx, dot: TOP_DOT_Y, chip: TOP_CHIP_Y }));
           return (
             <span key={z.id}>
               <button
                 type="button"
-                className={`pd-lv pd-lv-zone${sel === z.id ? " sel" : ""}`}
-                style={{ left: pctX(lx), top: pctY(ly) }}
+                className={`pd-lv pd-lv-zone${on ? " sel" : ""}`}
+                style={{ left: px(lx), top: py(ly) }}
                 onClick={() => pick(z.id)}
-                aria-pressed={sel === z.id}
+                aria-pressed={on}
               >
                 {IRISS_PD_PAINT_ZONE_LV[z.id]}
                 {z.warning ? <span className="pd-wa"> ▲</span> : null}
               </button>
-              {z.readings.slice(0, slots.length).map((n, i) => {
-                const [x, dotY, chipY, xPhone] = slots[i]!;
-                // Telefonā: sānos 2, augšskatā 1 mērījums (citādi pārklājas); visi ir tabulā.
-                const wide = i >= (isSide ? PHONE_SIDE_LIMIT : 1) ? " pd-lv-wide" : "";
-                const pos = { "--x": pctX(x), "--x-sm": pctX(xPhone ?? x) } as CSSProperties;
-                // Augšskatā punkts tikai pirmajam mērījumam (otrais ir zem tā kā saraksts).
-                const dot = isSide || i === 0;
-                return (
-                  <span key={i}>
-                    {dot ? <i className={`pd-pm-dot pd-lv-slot${wide}`} style={{ ...pos, top: pctY(dotY) }} aria-hidden="true" /> : null}
-                    <span
-                      className={`pd-lv pd-lv-slot${wide}${sel === z.id ? " sel" : ""}`}
-                      style={{ ...pos, top: pctY(chipY), fontSize: compact ? 9 : undefined, fontWeight: isRepaint(n) ? 700 : undefined }}
-                    >
-                      {um(n)}
-                    </span>
+              {points.map((p, i) => (
+                <span key={i}>
+                  <i className="pd-pm-dot" style={{ left: px(p.x), top: py(p.dot) }} aria-hidden="true" />
+                  <span className={`pd-lv${on ? " sel" : ""}`} style={{ left: px(p.x), top: py(p.chip), fontWeight: isRepaint(p.n) ? 700 : undefined }}>
+                    {um(p.n)}
                   </span>
-                );
-              })}
+                </span>
+              ))}
+              {!isSide && z.readings.length === 0 && z.notMeasurable ? (
+                <span>
+                  <i className="pd-pm-dot" style={{ left: px(lx), top: py(TOP_DOT_Y) }} aria-hidden="true" />
+                  <span className={`pd-lv pd-lv-na${on ? " sel" : ""}`} style={{ left: px(lx), top: py(TOP_CHIP_Y) }}>
+                    nav mērāms
+                  </span>
+                </span>
+              ) : null}
             </span>
           );
         })}
       </div>
-      ) : null}
       <div className="pd-pm-cap">
         Krāsas biezums µm · ◐ pārkrāsots (≥{IRISS_PD_REPAINT_UM} µm) · <span className="pd-wa">▲</span> zonā atrasti bojājumi (buktes, skrāpējumi u.c.)
       </div>
-      {/* Visi mērījumi tabulā: kartē ietilpst tikai daļa. */}
-      <table className={`${SHOW_DRAWING ? "mt-2.5" : "mt-1"} w-full border-collapse text-left text-[12.5px] leading-snug`} data-paint-table="">
+      {/* Visi mērījumi tabulā: kartē sānos ietilpst 4, augšskatā 1. */}
+      <table className="mt-2.5 w-full border-collapse text-left text-[12.5px] leading-snug" data-paint-table="">
         <thead>
           <tr className="text-[10.5px] uppercase tracking-[0.06em] text-[#6e6e73]">
             <th className="border-b border-[#e4e4e7] py-1.5 pr-2 font-semibold">Zona</th>
@@ -208,6 +149,8 @@ export function PdPaintMap({ paint, compact = false }: { paint: NonNullable<Iris
                       </span>
                     ))}
                   </span>
+                ) : z.notMeasurable ? (
+                  <span className="text-[#6e6e73]">nav mērāms (materiāls)</span>
                 ) : (
                   <span className="text-[#a1a1aa]">-</span>
                 )}

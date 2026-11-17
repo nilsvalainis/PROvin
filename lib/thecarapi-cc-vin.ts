@@ -8,7 +8,7 @@ import { applyCcVinParsedReport } from "@/lib/cc-vin-report-apply";
 import { emptyCcVinBlock, normalizeCcVinBlock, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
 import { vinScanAuctionsToCcVinParsed } from "@/lib/order-vin-scan";
-import { thecarapiArchiveInputs } from "@/lib/thecarapi-archive";
+import { markThecarapiArchived, thecarapiArchiveInputs } from "@/lib/thecarapi-archive";
 import { storeThecarapiGallery, type ThecarapiGalleryFetch, type ThecarapiGalleryWrite } from "@/lib/thecarapi-photos";
 import { addVinObservations } from "@/lib/vin-memory-store";
 import { readThecarapiVinCache, readThecarapiVinCacheRaw, writeThecarapiVinCache } from "@/lib/vin-scan/store";
@@ -118,16 +118,26 @@ export async function fetchThecarapiCcVinMerge(opts: {
     writeJpeg: opts.writeJpeg,
   });
   const previous = await readThecarapiVinCacheRaw(opts.vin).catch(() => null);
-  if (gallery.records.length > 0) {
-    await addVinObservations(thecarapiArchiveInputs(opts.vin, gallery.records)).catch(() => undefined);
+  let records = gallery.records;
+  if (records.length > 0) {
+    const marked = markThecarapiArchived(records);
+    const inputs = thecarapiArchiveInputs(opts.vin, marked);
+    if (inputs.length > 0) {
+      try {
+        await addVinObservations(inputs);
+        records = marked;
+      } catch {
+        records = gallery.records;
+      }
+    }
   }
-  if (previous && gallery.records.length > 0) {
+  if (previous && records.length > 0) {
     await writeThecarapiVinCache(opts.vin, result.parse, {
       httpStatus: previous.httpStatus,
       etag: previous.etag,
       refs: previous.refs,
-      records: gallery.records,
-      recordsComplete: true,
+      records,
+      recordsComplete: result.recordsComplete,
       cachedAt: previous.cachedAt,
     }).catch(() => undefined);
   }
@@ -141,7 +151,7 @@ export async function fetchThecarapiCcVinMerge(opts: {
       aiContextRaw: [block.aiContextRaw.trim(), result.parse.detail.trim()].filter(Boolean).join("\n\n").slice(0, 20_000),
     };
   }
-  block = { ...block, thecarapiRecords: gallery.records };
+  block = { ...block, thecarapiRecords: records };
   if (gallery.groups.length > 0) {
     const synced = syncCcVinPhotoGroupsAndFlat([...(block.photoGroups ?? []), ...gallery.groups]);
     block = { ...block, photoGroups: synced.photoGroups, photos: synced.photos };
@@ -155,6 +165,6 @@ export async function fetchThecarapiCcVinMerge(opts: {
     used: snap.used,
     cap: snap.cap,
     httpStatus: result.httpStatus,
-    records: gallery.records,
+    records,
   };
 }

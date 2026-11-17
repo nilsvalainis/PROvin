@@ -27,6 +27,17 @@ function kmOf(record: ThecarapiAdminRecord): number | null {
   return Number.isFinite(n) && n > 0 && n < 5_000_000 ? Math.round(n) : null;
 }
 
+/** Pēc saglabāšanas VIN atmiņā lauks rāda, ka ieraksts ir mūsu arhīvā. */
+export function markThecarapiArchived(records: readonly ThecarapiAdminRecord[]): ThecarapiAdminRecord[] {
+  return records.map((record) => {
+    if (record.fields.some((field) => field.key === "provin_archive")) return record;
+    return {
+      ...record,
+      fields: [{ key: "provin_archive", label: "Arhīvā", value: "jā" }, ...record.fields],
+    };
+  });
+}
+
 export function thecarapiArchiveInputs(vin: string, records: readonly ThecarapiAdminRecord[]): VinObservationInput[] {
   const out: VinObservationInput[] = [];
   const seen = new Set<string>();

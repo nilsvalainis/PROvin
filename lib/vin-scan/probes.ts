@@ -138,7 +138,10 @@ export async function probeNummerplade(ctx: VinScanContext): Promise<VinScanIndi
     });
     const challenge = scanChallengeReason(page);
     if (challenge) return done("nummerplade", ctx, { status: "unknown", summary: `nummerplade.net: ${challenge}` });
-    const htmlParsed = parseNummerpladeHtml(page.status, page.text, ctx.vin);
+    // Captcha lapā var būt VIN un vārds "nummerplade", tāpēc to neparsējam kā rezultātu.
+    const htmlParsed = page.captchaReason
+      ? { status: "unknown" as const, summary: `nummerplade.net: ${page.captchaReason}` }
+      : parseNummerpladeHtml(page.status, page.text, ctx.vin);
     if (htmlParsed.status === "found" || htmlParsed.status === "none") {
       return done("nummerplade", ctx, { ...htmlParsed, openUrl: resultUrl });
     }
@@ -221,7 +224,10 @@ export async function probeCarpass(ctx: VinScanContext): Promise<VinScanIndicato
     const challenge = scanChallengeReason(page);
     if (challenge) return done("carpass", ctx, { status: "unknown", summary: `Car-Pass: ${challenge}` });
     const csrf = parseCarpassCsrf(page.text);
-    if (!csrf) return done("carpass", ctx, { status: "unknown", summary: "Car-Pass neatgrieza drošības žetonu" });
+    if (!csrf) {
+      const summary = page.captchaReason ? `Car-Pass: ${page.captchaReason}` : "Car-Pass neatgrieza drošības žetonu";
+      return done("carpass", ctx, { status: "unknown", summary });
+    }
     const body = new URLSearchParams({ vin: ctx.vin, _csrf: csrf }).toString();
     const res = await scanFetch("https://public.car-pass.be/recalls", {
       method: "POST",
@@ -239,7 +245,11 @@ export async function probeCarpass(ctx: VinScanContext): Promise<VinScanIndicato
     });
     const postChallenge = scanChallengeReason(res);
     if (postChallenge) return done("carpass", ctx, { status: "unknown", summary: `Car-Pass: ${postChallenge}` });
-    return done("carpass", ctx, parseCarpassRecalls(res.status, res.text));
+    const parsed = parseCarpassRecalls(res.status, res.text);
+    if (parsed.status === "unknown" && page.captchaReason) {
+      return done("carpass", ctx, { status: "unknown", summary: `Car-Pass: ${page.captchaReason}` });
+    }
+    return done("carpass", ctx, parsed);
   } catch (e) {
     return failed("carpass", ctx, e);
   }

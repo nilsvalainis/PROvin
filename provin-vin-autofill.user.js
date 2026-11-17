@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.25.0
+// @version      1.26.0
 // @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -9,7 +9,6 @@
 // @match        http://127.0.0.1:*/admin*
 // @match        https://provin.lv/admin*
 // @match        https://www.provin.lv/admin*
-// @match        https://*.vercel.app/admin*
 // @match        https://www.carvertical.com/*
 // @match        https://carvertical.com/*
 // @match        https://www.auto-records.com/*
@@ -111,10 +110,15 @@
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.25.0";
+  const SCRIPT_VERSION = "1.26.0";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
+  /* Admin tilts tikai PROVIN admin lapā. Ceļš „/admin” svešā vietnē (piem. cits *.vercel.app) nedrīkst
+     saņemt GM_xmlhttpRequest ar operatora sīkdatnēm, skenēšanas HTML vai CarVertical pirkuma karogu. */
+  const IS_PROVIN_ADMIN =
+    ["provin.lv", "localhost", "127.0.0.1"].indexOf(window.location.hostname.replace(/^www\./, "")) !== -1 &&
+    /^\/admin(?:\/|$)/.test(path);
   function stampUserscriptVersion() {
     try {
       if (document.documentElement.getAttribute("data-provin-userscript") !== SCRIPT_VERSION) {
@@ -125,7 +129,7 @@
     }
   }
   stampUserscriptVersion();
-  if (path.includes("/admin")) {
+  if (IS_PROVIN_ADMIN) {
     /* React 19 noņem visus <html> atribūtus, kad saknes singletonu iegūst no jauna; tad admin rāda „nav aktīvs”. */
     try {
       new MutationObserver(stampUserscriptVersion).observe(document.documentElement, {
@@ -162,7 +166,7 @@
   const GM_CV_PURCHASE_RESULT = "provin_cv_purchase_result";
 
   /* ---------- Admin: saglabāt hand-off pirms jaunas cilnes ---------- */
-  if (path.includes("/admin")) {
+  if (IS_PROVIN_ADMIN) {
     document.addEventListener(
       "click",
       function (ev) {
@@ -217,7 +221,7 @@
           }
         }
         try {
-          if ((a.dataset.provinCarverticalPurchase || "").trim() === "1") {
+          if ((a.dataset.provinCarverticalPurchase || "").trim() === "1" && ev.isTrusted) {
             GM_setValue(GM_CV_PURCHASE, "1");
             if (vin) GM_setValue(GM_CV_PURCHASE_VIN, vin);
             GM_deleteValue(GM_CV_PURCHASE_RESULT);
@@ -290,7 +294,7 @@
         return;
       }
       const h = parsed.hostname.replace(/^www\./i, "").toLowerCase();
-      if (h !== "tirgusdati.lv" && h !== "adify.lv") {
+      if (parsed.protocol !== "https:" || (h !== "tirgusdati.lv" && h !== "adify.lv")) {
         reply({ ok: false, error: "host_not_allowed" });
         return;
       }
@@ -805,13 +809,9 @@
   }
 
   function carVerticalPurchaseFlagSet() {
+    /* Tikai karogs no PROVIN admin klikšķa. URL parametru ?provin_purchase=1 var ielikt jebkura saite. */
     try {
-      if (String(GM_getValue(GM_CV_PURCHASE, "") || "") === "1") return true;
-    } catch {
-      /* ignore */
-    }
-    try {
-      return new URLSearchParams(window.location.search).get("provin_purchase") === "1";
+      return String(GM_getValue(GM_CV_PURCHASE, "") || "") === "1";
     } catch {
       return false;
     }

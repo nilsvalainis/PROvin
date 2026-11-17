@@ -1,0 +1,11 @@
+{
+  "_meta": {
+    "url": "https://findsynsrapport.esyn.dk/webapi/v1/chassis/YV1DZ5251B2146640",
+    "status": 404,
+    "fetchedAt": "2026-11-17",
+    "note": "Reāla atbilde; personas dati izņemti ar scripts/vin-scan-refresh-fixtures.mjs"
+  },
+  "body": {
+    "error": "Resultatet findes ikke"
+  }
+}

@@ -765,7 +765,9 @@ function SortableCargoRow({
         </button>
         <CargoRowText order={order} />
         {isLogisticsOrderOtherCompany(order) ? <span className="iriss-log-cargo-archive-tag">{LOGISTICS_OTHER_COMPANY_LV}</span> : null}
-        {/* Nils 02.11 (makets LogKravas): ↑ ↓ un «Uz ▾» bez vilkšanas (telefonā vilkšana nav ērta). */}
+        {/* Nils 02.11 (makets LogKravas): ↑ ↓ un «Uz ▾» bez vilkšanas (telefonā vilkšana nav ērta).
+            Enkurs: ar peli panelis parādās pa kreisi no posma ikonas un acs, tās nepārsedz (Nils 17.11). */}
+        <span className="iriss-log-cargo-move-anchor">
         <span className="iriss-log-cargo-move" {...stopDragStart}>
           <button
             type="button"
@@ -801,6 +803,7 @@ function SortableCargoRow({
           >
             Uz ▾
           </button>
+        </span>
         </span>
         {readiness ? (
           <span className={`iriss-log-ready-chip ${readiness}`} data-readiness={readiness}>

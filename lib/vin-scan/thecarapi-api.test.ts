@@ -10,6 +10,8 @@ import { isFreeVinScanSourceId } from "@/lib/vin-scan/free-sources";
 import { probeThecarapi } from "@/lib/vin-scan/probes-extra";
 import { emptyVinScanPlates } from "@/lib/vin-scan/plates";
 import { fetchThecarapiVinHistory, fetchThecarapiVinWithDetails, thecarapiMonthlyCap } from "@/lib/vin-scan/thecarapi-api";
+import { buildThecarapiAdminRecords, parseThecarapiHistory } from "@/lib/vin-scan/parse-thecarapi";
+import { writeThecarapiVinCache } from "@/lib/vin-scan/store";
 import { vinScanPipelineSourceIds } from "@/lib/vin-scan/catalog";
 import type { ThecarapiDeps } from "@/lib/vin-scan/thecarapi-api";
 
@@ -21,6 +23,9 @@ const empty = JSON.parse(
 ) as unknown;
 const detailAuto1 = JSON.parse(
   readFileSync(path.join(process.cwd(), "lib/vin-scan/__fixtures__/thecarapi/detail-auto1.json"), "utf8"),
+) as unknown;
+const detailAuto1Wrapped = JSON.parse(
+  readFileSync(path.join(process.cwd(), "lib/vin-scan/__fixtures__/thecarapi/detail-auto1-envelope-simple.json"), "utf8"),
 ) as unknown;
 const imagesAuto1 = JSON.parse(
   readFileSync(path.join(process.cwd(), "lib/vin-scan/__fixtures__/thecarapi/images-auto1.json"), "utf8"),
@@ -257,6 +262,114 @@ describe("fetchThecarapiVinWithDetails", () => {
     expect(again.calls).toEqual([]);
     expect(cached.recordsComplete).toBe(true);
     expect(cached.records.find((row) => row.id === "A1-100")?.photoUrls).toContain("https://img-pa.auto1.com/img/extra.jpg");
+  });
+
+  it("pēc history izsauc AUTO1 detail aploksni un apvieno bojājumus ar bildēm", async () => {
+    const wrapped = JSON.parse(
+      readFileSync(path.join(process.cwd(), "lib/vin-scan/__fixtures__/thecarapi/detail-auto1-wrapped.json"), "utf8"),
+    ) as unknown;
+    const history = {
+      auctions: [
+        {
+          site_name: "auto1",
+          auction_id: "1326383403",
+          mileage: 77387,
+          current_final: 12268,
+          start: 10000,
+          first_seen: "2026-10-09",
+          seller: "AUTO1 GmbH",
+          location: "Berlin",
+          archived: false,
+        },
+      ],
+    };
+    const vin = "WBA6X310305V99966";
+    const { deps, calls } = scripted([
+      jsonResponse(200, history),
+      jsonResponse(200, wrapped),
+      jsonResponse(200, { images: [] }),
+    ]);
+    const result = await fetchThecarapiVinWithDetails(vin, deps);
+    expect(calls.map((call) => call.url)).toEqual([
+      `https://api.thecarapi.com/api/vin/${vin}/history`,
+      "https://api.thecarapi.com/api/auction/auto1/1326383403",
+      "https://api.thecarapi.com/api/auction-images/auto1/1326383403",
+    ]);
+    const row = result.records.find((item) => item.id === "1326383403");
+    expect(result.recordsComplete).toBe(true);
+    expect(row?.rawDetail).toBeTruthy();
+    expect(row?.photoUrls).toHaveLength(29);
+    expect(row?.photoDate).toBe("2026-10-09");
+    expect(row?.fields.some((field) => field.key === "damages[0].zone" && field.value === "Priekšējais bamperis")).toBe(true);
+    expect(row?.fields.some((field) => field.key === "equipment" && field.value.includes("Navigācija"))).toBe(true);
+    const again = scripted([]);
+    const cached = await fetchThecarapiVinWithDetails(vin, { ...again.deps, env: deps.env });
+    expect(again.calls).toEqual([]);
+    expect(cached.records.find((item) => item.id === "1326383403")?.photoUrls).toHaveLength(29);
+  });
+
+  it("neizlaiž detail, ja kešā ir tikai history un recordsComplete", async () => {
+    const wrapped = JSON.parse(
+      readFileSync(path.join(process.cwd(), "lib/vin-scan/__fixtures__/thecarapi/detail-auto1-wrapped.json"), "utf8"),
+    ) as unknown;
+    const history = {
+      auctions: [
+        {
+          site_name: "auto1",
+          auction_id: "1326383403",
+          mileage: 50000,
+          first_seen: "2026-10-09",
+        },
+      ],
+    };
+    const vin = "WBA6X310305V99967";
+    const lot = "1326383499";
+    history.auctions[0]!.auction_id = lot;
+    const detail = wrapped as { auction?: { id?: number } };
+    if (detail.auction) detail.auction.id = Number(lot);
+    const parsed = parseThecarapiHistory({ json: history });
+    await writeThecarapiVinCache(vin, parsed.parse, {
+      refs: parsed.refs,
+      records: buildThecarapiAdminRecords({ historyJson: history }),
+      recordsComplete: true,
+    });
+    const { deps, calls } = scripted([jsonResponse(200, detail), jsonResponse(200, { images: [] })]);
+    const result = await fetchThecarapiVinWithDetails(vin, deps);
+    expect(calls[0]?.url).toBe(`https://api.thecarapi.com/api/auction/auto1/${lot}`);
+    expect(result.records.find((item) => item.id === lot)?.fields.some((field) => field.value === "Priekšējais bamperis")).toBe(true);
+  });
+
+  it("viena lota ietītā detaļa nonāk ierakstā un tiek kešota", async () => {
+    const base = (hit as { auctions: Record<string, unknown>[] }).auctions[1];
+    const single = { auctions: [{ ...base, auction_id: "A1-200", detail_path: "/api/auction/auto1/A1-200" }] };
+    const { deps, calls } = scripted([
+      jsonResponse(200, single),
+      jsonResponse(200, detailAuto1Wrapped),
+      jsonResponse(200, { images: [] }),
+    ]);
+    const vin = "WBA5R1C00LFH42883";
+    const result = await fetchThecarapiVinWithDetails(vin, { ...deps, skipCache: true });
+    expect(calls.map((call) => call.url)).toEqual([
+      `https://api.thecarapi.com/api/vin/${vin}/history`,
+      "https://api.thecarapi.com/api/auction/auto1/A1-200",
+      "https://api.thecarapi.com/api/auction-images/auto1/A1-200",
+    ]);
+    const auto1 = result.records.find((row) => row.id === "A1-200");
+    expect(auto1?.fields.some((field) => field.key === "wrapped_only_field" && field.value === "keep-me-too")).toBe(true);
+    expect(auto1?.photoUrls).toEqual(
+      expect.arrayContaining([
+        "https://img-pa.auto1.com/img/w-main.jpg",
+        "https://img-pa.auto1.com/img/w-damage.jpg",
+        "https://img-pa.auto1.com/img/w-service.jpg",
+        "https://img-pa.auto1.com/img/w-vault.jpg",
+        "https://img-pa.auto1.com/img/w-sub.jpg",
+      ]),
+    );
+
+    const again = scripted([jsonResponse(200, single)]);
+    await fetchThecarapiVinWithDetails(`${vin.slice(0, 16)}4`, { ...again.deps, env: deps.env });
+    const detailCalls = again.calls.filter((call) => call.url.includes("/api/auction/"));
+    expect(detailCalls).toEqual([]);
   });
 
   it("pēc ielādes liek bildes pasūtījuma galerijā un arhīva sesijā", async () => {

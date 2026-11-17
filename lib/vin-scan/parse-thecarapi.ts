@@ -6,9 +6,9 @@
 import { isAllowedVinScanAuctionPhotoUrl } from "@/lib/order-vin-scan-photos";
 import {
   mergeThecarapiRaw,
-  thecarapiAllUrls,
   thecarapiDownloadUrls,
   thecarapiFieldsOf,
+  thecarapiImageUrls,
   thecarapiPhotoCaption,
   thecarapiPhotoDate,
   thecarapiRecordKey,
@@ -59,15 +59,42 @@ function unwrap(json: unknown): Record<string, unknown> {
   return root;
 }
 
+function asAuctionRecord(row: Record<string, unknown>): Record<string, unknown> {
+  const inner = asRecord(row.auction);
+  if (!inner) return row;
+  const next: Record<string, unknown> = { ...inner };
+  for (const key of ["contract_version", "data_updated_at", "request_id", "server_time", "success"]) {
+    if (row[key] != null && next[key] == null) next[key] = row[key];
+  }
+  if (!next.site_name && !next.site && row.site_name) next.site_name = row.site_name;
+  if (!next.site_name && !next.site && row.site) next.site = row.site;
+  return next;
+}
+
+/** Reālā detaļu atbilde ir ietīta: `{ auction, success, request_id, ... }`. Atver iekšējo lotu. */
+export function thecarapiAuctionBody(raw: unknown): Record<string, unknown> | null {
+  const rec = asRecord(raw);
+  if (!rec) return null;
+  return asAuctionRecord(rec);
+}
+
 function rowsOf(json: unknown): Record<string, unknown>[] {
   const root = unwrap(json);
   const list = root.auctions ?? root.records ?? root.items ?? root.results ?? root.details;
-  if (!Array.isArray(list)) return [];
-  return list.filter((row): row is Record<string, unknown> => Boolean(asRecord(row)));
+  if (Array.isArray(list)) {
+    return list
+      .map((item) => asRecord(item))
+      .filter((row): row is Record<string, unknown> => Boolean(row))
+      .map(asAuctionRecord);
+  }
+  if (asRecord(root.auction)) return [asAuctionRecord(root)];
+  return [];
 }
 
 function text(raw: unknown): string {
-  return typeof raw === "string" ? raw.trim() : "";
+  if (typeof raw === "string") return raw.trim();
+  if (typeof raw === "number" && Number.isFinite(raw)) return String(Math.trunc(raw));
+  return "";
 }
 
 function asNumber(raw: unknown): number | null {
@@ -127,7 +154,14 @@ export function thecarapiAbsoluteUrl(baseUrl: string, detailPath: string, site: 
 }
 
 function stampOf(row: Record<string, unknown>): string {
-  return isoDay(row.last_seen_at) || isoDay(row.first_seen_at) || isoDay(row.date);
+  return (
+    isoDay(row.last_seen_at) ||
+    isoDay(row.first_seen_at) ||
+    isoDay(row.last_seen) ||
+    isoDay(row.first_seen) ||
+    isoDay(row.date) ||
+    isoDay(row.data_updated_at)
+  );
 }
 
 function pendingFlag(raw: unknown, depth: number): boolean {
@@ -218,32 +252,12 @@ export function parseThecarapiHistory(input: {
   };
 }
 
-function urlList(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [];
-  const out: string[] = [];
-  for (const item of raw) {
-    if (typeof item === "string") out.push(item.trim());
-    else {
-      const rec = asRecord(item);
-      const url = text(rec?.url ?? rec?.Url ?? rec?.href);
-      if (url) out.push(url);
-    }
-  }
-  return out;
-}
-
 export function parseThecarapiDetail(json: unknown): ThecarapiDetailParsed {
-  const row = asRecord(json) ?? {};
-  const site = siteSlug(row.site_name ?? row.site);
-  const id = auctionId(row.auction_id ?? row.id);
+  const row = asAuctionRecord(asRecord(json) ?? {});
+  const site = siteSlug(row.site_name ?? row.site ?? row.platform);
+  const id = auctionId(row.auction_id ?? row.id ?? row.auctionId);
   const pending = thecarapiPayloadPending(200, json);
-  const urls = [
-    ...urlList(row.DamageImageUrls),
-    ...urlList(row.damage_image_urls),
-    ...urlList(row.gallery),
-    ...urlList(row.images),
-    ...urlList(row.photos),
-  ];
+  const urls = thecarapiImageUrls(row);
   const seen = new Set<string>();
   const photoUrls: string[] = [];
   for (const url of urls) {
@@ -288,8 +302,8 @@ export function buildThecarapiAdminRecords(input: {
   const details = thecarapiDetailRows(input.detailJson);
   const detailByKey = new Map<string, Record<string, unknown>>();
   for (const row of details) {
-    const site = siteSlug(row.site_name ?? row.site);
-    const id = auctionId(row.auction_id ?? row.id);
+    const site = siteSlug(row.site_name ?? row.site ?? row.platform);
+    const id = auctionId(row.auction_id ?? row.id ?? row.auctionId);
     if (site && id) detailByKey.set(thecarapiRecordKey(site, id), row);
   }
   const historyRows = rowsOf(input.historyJson);
@@ -308,7 +322,7 @@ export function buildThecarapiAdminRecords(input: {
     const merged = mergeThecarapiRaw(history, detail, images);
     const photoDate = thecarapiPhotoDate(merged);
     const venue = thecarapiSiteLabel(site || text(row.site_name));
-    const urls = thecarapiDownloadUrls(thecarapiAllUrls(history, detail, images, merged), isAllowedVinScanAuctionPhotoUrl);
+    const urls = thecarapiDownloadUrls(thecarapiImageUrls(history, detail, images, merged), isAllowedVinScanAuctionPhotoUrl);
     out.push({
       site,
       id,

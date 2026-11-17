@@ -22,7 +22,8 @@ export const IRISS_PD_PAINT_ZONE_LV: Record<IrissPdPaintZoneId, string> = {
 /** Pārkrāsots, ja slānis ≥ 250 µm (Auto1 «Repaint: Thickness ≥250µm»). */
 export const IRISS_PD_REPAINT_UM = 250;
 
-export type IrissPdPaintZone = { id: IrissPdPaintZoneId; readings: number[]; warning: boolean };
+/** `notMeasurable`: Auto1 zonai rāda «N/A Material not measurable» (piem. plastmasas jumts vai bagāžnieka vāks). */
+export type IrissPdPaintZone = { id: IrissPdPaintZoneId; readings: number[]; warning: boolean; notMeasurable?: boolean };
 
 export type IrissPdDamageRow = {
   area: "exterior" | "interior" | "other";
@@ -251,6 +252,7 @@ function parsePaint(detail: IrissRelayAuctionDetail, damage: IrissPdDamageRow[])
   const SCHEMA_ZONE: Record<string, IrissPdPaintZoneId> = { front: "front", left: "left", right: "right", roof: "roof", rear: "rear", back: "rear" };
   for (const [z, value] of detail.paint ?? []) {
     const zone = SCHEMA_ZONE[z.toLowerCase()];
+    if (zone && /^n\/?a\b|not measurable|nicht messbar/i.test(value.trim())) zones.get(zone)!.notMeasurable = true;
     const um = umOf(value);
     if (zone && um != null) {
       zones.get(zone)!.readings.push(um);
@@ -303,7 +305,8 @@ function parsePaint(detail: IrissRelayAuctionDetail, damage: IrissPdDamageRow[])
     }
   }
   const list = [...zones.values()];
-  if (assigned === 0 && unassigned.length === 0 && !list.some((z) => z.warning)) return null;
+  for (const z of list) if (z.readings.length) delete z.notMeasurable;
+  if (assigned === 0 && unassigned.length === 0 && !list.some((z) => z.warning || z.notMeasurable)) return null;
   return { zones: list, unassigned };
 }
 
@@ -394,6 +397,113 @@ export function irissPdDamageSummary(rows: readonly IrissPdDamageRow[]): Array<{
   return [...by.entries()].map(([area, v]) => ({ area, ...v }));
 }
 
+/** Auto1 bojājumu veidi latviski (nezināmu atstāj kā ir). */
+const DAMAGE_KIND_LV: Record<string, string> = {
+  scratch: "Skrāpējumi",
+  scratches: "Skrāpējumi",
+  dent: "Iespiedumi",
+  dents: "Iespiedumi",
+  repaint: "Pārkrāsojums",
+  stonechip: "Akmens šķembas",
+  stonechips: "Akmens šķembas",
+  chip: "Akmens šķembas",
+  crack: "Plaisa",
+  cracks: "Plaisa",
+  dirty: "Netīrs",
+  stain: "Traipi",
+  stains: "Traipi",
+  worn: "Nodilis",
+  wear: "Nodilums",
+  hole: "Caurums",
+  burn: "Apdegums",
+  rust: "Rūsa",
+  tear: "Plīsums",
+  torn: "Plīsums",
+  missing: "Trūkst",
+  broken: "Salauzts",
+  warninglight: "Kļūdas indikators",
+};
+
+/** Biežākās Auto1 detaļas latviski (bez skaita iekavās); nezināmu atstāj kā ir. */
+const PART_LV: Record<string, string> = {
+  hood: "Motora pārsegs",
+  bonnet: "Motora pārsegs",
+  roof: "Jumts",
+  frontbumper: "Priekšējais buferis",
+  rearbumper: "Aizmugurējais buferis",
+  tailgate: "Bagāžnieka vāks",
+  trunklid: "Bagāžnieka vāks",
+  windshield: "Vējstikls",
+  frontleftdoor: "Priekšējās kreisās durvis",
+  frontrightdoor: "Priekšējās labās durvis",
+  rearleftdoor: "Aizmugurējās kreisās durvis",
+  rearrightdoor: "Aizmugurējās labās durvis",
+  frontleftfender: "Priekšējais kreisais spārns",
+  frontrightfender: "Priekšējais labais spārns",
+  rearleftfender: "Aizmugurējais kreisais spārns",
+  rearrightfender: "Aizmugurējais labais spārns",
+  rearleftsidepanel: "Aizmugurējais kreisais spārns",
+  rearrightsidepanel: "Aizmugurējais labais spārns",
+  leftmirror: "Kreisais spogulis",
+  rightmirror: "Labais spogulis",
+  leftsill: "Kreisais slieksnis",
+  rightsill: "Labais slieksnis",
+  frontleftrim: "Priekšējais kreisais disks",
+  frontrightrim: "Priekšējais labais disks",
+  rearleftrim: "Aizmugurējais kreisais disks",
+  rearrightrim: "Aizmugurējais labais disks",
+  driverseat: "Vadītāja sēdeklis",
+  passengerseat: "Pasažiera sēdeklis",
+  rearseat: "Aizmugurējais sēdeklis",
+  rearseats: "Aizmugurējie sēdekļi",
+  dashboard: "Panelis",
+  steeringwheel: "Stūre",
+  headliner: "Griesti",
+  carpet: "Paklājs",
+  floor: "Grīda",
+  trunk: "Bagāžnieks",
+};
+
+export function irissPdDamageKindLv(kind: string): string {
+  const k = clean(kind);
+  return DAMAGE_KIND_LV[norm(k)] ?? k;
+}
+
+/** "Hood (4), Front right door (1)" -> ["Motora pārsegs (4)", "Priekšējās labās durvis (1)"]. */
+export function irissPdDamagePartsLv(parts: string): string[] {
+  return clean(parts)
+    .split(/,(?![^(]*\))/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .map((p) => {
+      const m = /^(.*?)\s*(\(\d+\))?$/.exec(p)!;
+      const name = m[1]!.trim();
+      return `${PART_LV[norm(name)] ?? name}${m[2] ? ` ${m[2]}` : ""}`;
+    });
+}
+
+export type IrissPdDamageTableRow = { kind: string; count: number; parts: string[] };
+
+/** Bojājumu kopsavilkums tabulai: grupas pēc zonas (Ārpuse/Salons/Cits), rindas pēc veida (skaits, kur). */
+export function irissPdDamageTable(
+  rows: readonly IrissPdDamageRow[],
+): Array<{ area: IrissPdDamageRow["area"]; rows: IrissPdDamageTableRow[] }> {
+  const areas = new Map<IrissPdDamageRow["area"], Map<string, IrissPdDamageTableRow>>();
+  for (const r of rows) {
+    const raw = r.damage.split(",")[0]!.trim() || r.description || "-";
+    const kind = irissPdDamageKindLv(raw);
+    const byKind = areas.get(r.area) ?? new Map<string, IrissPdDamageTableRow>();
+    const cur = byKind.get(kind) ?? { kind, count: 0, parts: [] };
+    const q = Number.parseInt(r.quantity, 10);
+    cur.count += Number.isFinite(q) && q > 0 ? q : 1;
+    for (const p of irissPdDamagePartsLv(r.parts)) if (!cur.parts.includes(p)) cur.parts.push(p);
+    byKind.set(kind, cur);
+    areas.set(r.area, byKind);
+  }
+  const order: IrissPdDamageRow["area"][] = ["exterior", "interior", "other"];
+  return order.filter((a) => areas.has(a)).map((area) => ({ area, rows: [...areas.get(area)!.values()] }));
+}
+
 /* ---- Normalizēšana lasot (JSON krātuve) ---- */
 
 function str(v: unknown, max = 400): string {
@@ -418,7 +528,7 @@ export function normalizeIrissPdAuto1Blocks(raw: unknown): IrissPdAuto1Blocks | 
     const zones = IRISS_PD_PAINT_ZONES.map((id) => {
       const z = zonesRaw.find((x) => x && typeof x === "object" && (x as IrissPdPaintZone).id === id) as IrissPdPaintZone | undefined;
       const readings = Array.isArray(z?.readings) ? z!.readings.filter((n) => typeof n === "number" && Number.isFinite(n)).slice(0, 12) : [];
-      return { id, readings, warning: z?.warning === true };
+      return { id, readings, warning: z?.warning === true, ...(z?.notMeasurable === true && readings.length === 0 ? { notMeasurable: true } : {}) };
     });
     const unassigned = Array.isArray(p.unassigned) ? p.unassigned.filter((n): n is number => typeof n === "number" && Number.isFinite(n)).slice(0, 40) : [];
     paint = { zones, unassigned };

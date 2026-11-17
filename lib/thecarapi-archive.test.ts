@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { thecarapiArchiveInputs } from "@/lib/thecarapi-archive";
+import { markThecarapiArchived, thecarapiArchiveInputs } from "@/lib/thecarapi-archive";
 import { mergeObservations } from "@/lib/vin-memory";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 
@@ -49,5 +49,14 @@ describe("thecarapiArchiveInputs", () => {
     expect(again.updated).toBe(0);
     expect(merged.table[VIN].observations[0].raw).toEqual({ auction_id: "A-9", mystery: "keep" });
     expect(merged.table[VIN].observations[0].photos?.[0]?.caption).toContain("2026-10-31");
+  });
+
+  it("pēc saglabāšanas rāda Arhīvā: jā", () => {
+    const marked = markThecarapiArchived([record("A-9")]);
+    expect(marked[0]?.fields[0]).toEqual({ key: "provin_archive", label: "Arhīvā", value: "jā" });
+    const inputs = thecarapiArchiveInputs(VIN, marked);
+    const savedFields = inputs[0]?.fields;
+    expect(Array.isArray(savedFields) ? savedFields[0] : null).toMatchObject({ label: "Arhīvā", value: "jā" });
+    expect(markThecarapiArchived(marked)[0]?.fields.filter((field) => field.key === "provin_archive")).toHaveLength(1);
   });
 });

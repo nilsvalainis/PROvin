@@ -1,5 +1,5 @@
 /**
- * VIN SCAN persistents: Blob vai lokāls `.data/vin-scans`. Kešs pēc VIN, TTL 12 h.
+ * VIN SCAN persistents: Blob vai lokāls `.data/vin-scans`. Kešs pēc VIN, TTL pa avotiem (source-ttl.ts).
  */
 import "server-only";
 
@@ -8,8 +8,7 @@ import os from "os";
 import path from "path";
 import { get, put } from "@vercel/blob";
 
-import { VIN_SCAN_TTL_MS } from "@/lib/vin-scan/catalog";
-import { vinScanIndicatorsAreCacheable } from "@/lib/vin-scan/health";
+import { vinScanIndicatorsFresh } from "@/lib/vin-scan/source-ttl";
 import type { JojNameDict } from "@/lib/vin-scan/joj-labels";
 import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
 import { normalizeThecarapiAdminRecords, type ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
@@ -148,11 +147,9 @@ function asSnapshot(raw: unknown): VinScanSnapshot | null {
   return { vin, plates, scannedAt: o.scannedAt, indicators: o.indicators as VinScanIndicator[] };
 }
 
-export function vinScanSnapshotFresh(snapshot: VinScanSnapshot, ttlMs = VIN_SCAN_TTL_MS): boolean {
-  const t = Date.parse(snapshot.scannedAt);
-  if (!Number.isFinite(t)) return false;
-  if (Date.now() - t >= ttlMs) return false;
-  return vinScanIndicatorsAreCacheable(snapshot.indicators);
+/** Svaigs pēc katras rindas TTL (`lib/vin-scan/source-ttl.ts`), nevis viena 12 h robeža. */
+export function vinScanSnapshotFresh(snapshot: VinScanSnapshot, nowMs = Date.now()): boolean {
+  return vinScanIndicatorsFresh(snapshot.indicators, snapshot.scannedAt, nowMs);
 }
 
 export async function readVinScanSnapshot(vin: string): Promise<VinScanSnapshot | null> {

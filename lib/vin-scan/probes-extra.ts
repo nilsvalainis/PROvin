@@ -12,7 +12,7 @@ import {
   vwGroupRecallCheckUrl,
 } from "@/lib/vin-scan/catalog";
 import { fetchAuctionVinLots } from "@/lib/vin-scan/auction-vin-providers";
-import { thecarapiArchiveInputs } from "@/lib/thecarapi-archive";
+import { markThecarapiArchived, thecarapiArchiveInputs } from "@/lib/thecarapi-archive";
 import { storeThecarapiGallery } from "@/lib/thecarapi-photos";
 import { addVinObservations } from "@/lib/vin-memory-store";
 import { readThecarapiVinCacheRaw, writeThecarapiVinCache } from "@/lib/vin-scan/store";
@@ -300,6 +300,7 @@ export async function probeOemRecall(ctx: VinScanContext, brand: OemRecallBrand)
   }
   try {
     const page = await scanFetchSmart(oemUrl, { timeoutMs: 20_000, sourceLabel: meta.label });
+    if (page.captchaReason) return done(meta.id, ctx, { status: "unknown", summary: `${meta.label}: ${page.captchaReason}` });
     return done(meta.id, ctx, parseOemRecallHtml(page.status, page.text, ctx.vin, meta.label));
   } catch (e) {
     return failed(meta.id, ctx, e);
@@ -368,15 +369,25 @@ export async function probeThecarapi(ctx: VinScanContext): Promise<VinScanIndica
     const result = await fetchThecarapiVinWithDetails(ctx.vin);
     if (result.records.length > 0) {
       const gallery = await storeThecarapiGallery({ vin: ctx.vin, records: result.records });
-      await addVinObservations(thecarapiArchiveInputs(ctx.vin, gallery.records)).catch(() => undefined);
+      let records = gallery.records;
+      const marked = markThecarapiArchived(records);
+      const inputs = thecarapiArchiveInputs(ctx.vin, marked);
+      if (inputs.length > 0) {
+        try {
+          await addVinObservations(inputs);
+          records = marked;
+        } catch {
+          records = gallery.records;
+        }
+      }
       const previous = await readThecarapiVinCacheRaw(ctx.vin).catch(() => null);
       if (previous) {
         await writeThecarapiVinCache(ctx.vin, result.parse, {
           httpStatus: previous.httpStatus,
           etag: previous.etag,
           refs: previous.refs,
-          records: gallery.records,
-          recordsComplete: true,
+          records,
+          recordsComplete: result.recordsComplete,
           cachedAt: previous.cachedAt,
         }).catch(() => undefined);
       }
@@ -400,26 +411,28 @@ export async function probeBidCars(ctx: VinScanContext): Promise<VinScanIndicato
 export async function probeAuchistory(ctx: VinScanContext): Promise<VinScanIndicator> {
   const url = `https://auchistory.com/?s=${encodeURIComponent(ctx.vin)}`;
   try {
+    // scanFetchSmart pats reCAPTCHA nerisina; vienīgais CapSolver izsaukums ir zemāk, un žetons iet POST formā.
     const page = await scanFetchSmart(url, { timeoutMs: 25_000, solveUrl: "https://auchistory.com/", sourceLabel: "AucHistory" });
     const key = scanCaptchaTokenPlaceholder(page.text);
     let html = page.text;
     if (key?.kind === "recaptcha_v2") {
       const solved = await solveScanRecaptcha("https://auchistory.com/", key.siteKey, "AucHistory");
-      if (solved.ok) {
-        const posted = await scanFetch("https://auchistory.com/", {
-          method: "POST",
-          headers: {
-            "content-type": "application/x-www-form-urlencoded",
-            origin: "https://auchistory.com",
-            referer: url,
-            "user-agent": solved.ua,
-          },
-          body: new URLSearchParams({ vin: ctx.vin, "g-recaptcha-response": solved.token }).toString(),
-          cookie: mergeCookieHeader(page.cookie, solved.cookie),
-          timeoutMs: 25_000,
-        });
-        html = posted.text;
+      if (!solved.ok) {
+        return done("auchistory", ctx, { status: "unknown", summary: `AucHistory: reCAPTCHA neizdevās atrisināt (${solved.reason})` });
       }
+      const posted = await scanFetch("https://auchistory.com/", {
+        method: "POST",
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
+          origin: "https://auchistory.com",
+          referer: url,
+          "user-agent": solved.ua,
+        },
+        body: new URLSearchParams({ vin: ctx.vin, "g-recaptcha-response": solved.token }).toString(),
+        cookie: mergeCookieHeader(page.cookie, solved.cookie),
+        timeoutMs: 25_000,
+      });
+      html = posted.text;
     }
     const text = extractPageFromHtml(html).text;
     const r = classifyBrowserProbe("auchistory", text, ctx.vin);

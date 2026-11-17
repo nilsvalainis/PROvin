@@ -622,6 +622,17 @@ describe("relay health merge", () => {
     expect(ok.reachable).toBe(true);
     expect(ok.platforms.openlane?.session).toBe("ok");
   });
+
+  it("fetchIrissRelayHealth sūta Bearer tokenu, jo bez tā relejs atdod tikai { ok: true }", async () => {
+    let auth = "";
+    await fetchIrissRelayHealth(cfg, {
+      fetchImpl: async (_url, init) => {
+        auth = new Headers(init?.headers).get("authorization") ?? "";
+        return jsonResponse(200, { platforms: {} });
+      },
+    });
+    expect(auth).toBe(`Bearer ${cfg.token}`);
+  });
 });
 
 describe("relay login client", () => {

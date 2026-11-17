@@ -16,6 +16,7 @@ const AdminVinScanResultCards = dynamic(
 import { isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { VIN_SCAN_CATALOG, resolveVinScanOpenUrl } from "@/lib/vin-scan/catalog";
 import { freeVinScanSourceIds } from "@/lib/vin-scan/free-sources";
+import { vinScanScanPhases } from "@/lib/vin-scan/progressive";
 import { applyFinlandLink } from "@/lib/vin-scan/finland-link";
 import { hasAnyVinScanPlate, type VinScanPlates } from "@/lib/vin-scan/plates";
 import {
@@ -412,7 +413,7 @@ export function AdminVinScanPanel({
   const linkBtn =
     "rounded-md border border-slate-300 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:border-slate-600";
 
-  async function scanServer(opts: { force?: boolean; sources?: string[] } = {}) {
+  async function scanServer(opts: { force?: boolean; sources?: string[] } = {}): Promise<boolean> {
     const res = await fetch("/api/admin/vin-scan", {
       method: "POST",
       credentials: "include",
@@ -433,7 +434,7 @@ export function AdminVinScanPanel({
     } | null;
     if (!res.ok || !data || !Array.isArray(data.indicators)) {
       setError(res.status === 401 ? "Nav admin sesijas" : "Servera skenēšana neizdevās");
-      return;
+      return false;
     }
     if (typeof data.scannedAt === "string") setScannedAt(data.scannedAt);
     const next = rowsFromIndicators(data.indicators, clean, plates, listing);
@@ -446,6 +447,7 @@ export function AdminVinScanPanel({
     } catch {
       /* ignore */
     }
+    return true;
   }
 
   async function scan(force = false) {
@@ -454,7 +456,14 @@ export function AdminVinScanPanel({
     setError("");
     setScannedAt(new Date().toISOString());
     try {
-      await scanServer({ force });
+      // Ar VIN: vispirms ātrie avoti (rezultāti redzami pēc dažām sekundēm), tad lēnie. Viens pēc otra, ne paralēli.
+      const phases = valid ? vinScanScanPhases() : null;
+      if (phases && phases.fast.length > 0 && phases.slow.length > 0) {
+        const ok = await scanServer({ force, sources: phases.fast });
+        if (ok) await scanServer({ force, sources: phases.slow });
+      } else {
+        await scanServer({ force });
+      }
     } catch {
       setError("Servera skenēšana neizdevās");
     } finally {

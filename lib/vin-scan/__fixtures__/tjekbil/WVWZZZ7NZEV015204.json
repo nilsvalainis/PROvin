@@ -1,0 +1,533 @@
+{
+  "_meta": {
+    "url": "https://www.tjekbil.dk/api/v3/dmr/vin/WVWZZZ7NZEV015204",
+    "status": 200,
+    "fetchedAt": "2026-11-17",
+    "note": "Reāla atbilde; personas dati izņemti ar scripts/vin-scan-refresh-fixtures.mjs"
+  },
+  "body": {
+    "basic": {
+      "regNr": "CM53865",
+      "stelNr": "WVWZZZ7NZEV015204",
+      "status": "Afmeldt",
+      "statusDato": "2026-08-12T15:56:05+02:00",
+      "foersteRegistreringDato": "2013-12-18T00:00:00+01:00",
+      "bilLeaset": false,
+      "leasingGyldigFra": "2019-02-01T00:00:00+01:00",
+      "leasingGyldigTil": "2019-10-21T00:00:00+02:00",
+      "leasingPeriode": "01-02-2019 til 21-10-2019",
+      "foersteRegistreringDatoFormateret": "18. december 2013",
+      "koeretoejArtNavn": "Personbil",
+      "koeretoejAnvendelseNavn": "Privat personkørsel",
+      "totalVaegt": 2530,
+      "egenVaegt": null,
+      "vogntogVaegt": 4805,
+      "koereklarVaegtMinimum": 1855,
+      "tekniskTotalVaegt": 2530,
+      "paahaengVognTotalVaegt": null,
+      "akselAntal": 2,
+      "siddepladserMinimum": 7,
+      "tilkoblingsmulighed": true,
+      "tilkoblingsvaegtUdenBremser": 750,
+      "tilkoblingsvaegtMedBremser": 2200,
+      "ncapTest": false,
+      "koeretoejstand": "Middel",
+      "maerkeTypeNavn": "VOLKSWAGEN",
+      "modelTypeNavn": "SHARAN",
+      "modelTypeNavnPure": "SHARAN",
+      "maerkeTypeNavnPure": "VW",
+      "variantTypeNavn": "CFGCX0AC",
+      "farveTypeNavn": null,
+      "typeGodkendelsesNummer": null,
+      "modelAar": "-",
+      "karrosseriTypeNavn": "MPV",
+      "motorSlagVolumen": 1968,
+      "motorStoerrelse": 2,
+      "motorStoersteEffekt": 130,
+      "motorHestekraefter": 177,
+      "motorKmPerLiter": 16.9,
+      "motorKilometerstand": 198,
+      "motorElektriskForbrug": null,
+      "drivkraftTypeNavn": "Diesel",
+      "koeretoejUdstyrSamling": [
+        "ESP (Elektronisk Stabiliserings Program)",
+        "Memory-sæder for",
+        "Selealarm",
+        "Trinløst gear",
+        "Multifunktionsrat",
+        "Xenon lys",
+        "3 el. flere sæderækker",
+        "Metallak",
+        "Ruskind/alcantara",
+        "Ratbetjent gear",
+        "Turbo",
+        "Radio",
+        "ABS bremser",
+        "Airbags",
+        "Kurvelys",
+        "Parkeringskontrol for",
+        "Original tyverialarm",
+        "Navigationssystem",
+        "3- eller 4-zone klima",
+        "Parkeringskontrol bag",
+        "Bakkamera",
+        "Elektrisk lukning af døre"
+      ],
+      "motorMaerkning": null,
+      "maksimumHastighed": null,
+      "motorCylinderAntal": 4,
+      "antalDoere": 4,
+      "faelgDaek": "205/60 R16",
+      "sporviddenForrest": null,
+      "sporviddenBagest": null,
+      "stelNummerAnbringelse": "I motorrum",
+      "passagerAntal": null,
+      "traekkendeAksler": "1",
+      "akselAfstand": null,
+      "stoersteAkselTryk": null,
+      "miljoeOplysningCO2Udslip": null,
+      "miljoeOplysningEmissionCO": null,
+      "miljoeOplysningEmissionHCPlusNOX": null,
+      "miljoeOplysningEmissionNOX": null,
+      "miljoeOplysningPartikelFilter": true,
+      "miljoeOplysningRoegtaethed": null,
+      "miljoeOplysningRoegtaethedOmdrejningstal": null,
+      "miljoeOplysningPartikler": null,
+      "motorKoerselStoej": 71,
+      "motorStandStoej": 72,
+      "motorStandStoejOmdrejningstal": 2375,
+      "normTypeNavn": "Euro V",
+      "adressePostNummer": null,
+      "adressePostNummerBy": null,
+      "koeretoejId": 9000000002522614,
+      "sekundaerStatus": "Afmeldt",
+      "sekundaerStatusDato": "2026-09-15T11:50:54+02:00",
+      "tilladelser": "Synsfri Sammenkobling (udstedt af Virksomhed)",
+      "permissions": [
+        {
+          "datoGyldigFra": "2026-09-15T11:50:54+02:00",
+          "kommentar": "Virksomhed",
+          "typeNavn": "Synsfri Sammenkobling"
+        }
+      ],
+      "leasingHistory": [
+        {
+          "leasingGyldigFra": "2017-12-18T00:00:00+01:00",
+          "leasingGyldigTil": "2018-02-01T00:00:00+01:00"
+        },
+        {
+          "leasingGyldigFra": "2018-02-01T00:00:00+01:00",
+          "leasingGyldigTil": "2019-02-01T00:00:00+01:00"
+        },
+        {
+          "leasingGyldigFra": "2019-02-01T00:00:00+01:00",
+          "leasingGyldigTil": "2019-10-21T00:00:00+02:00"
+        }
+      ],
+      "statusHistory": [],
+      "udstyrSamling": [
+        {
+          "antal": 1,
+          "typeNavn": "ESP (Elektronisk Stabiliserings Program)",
+          "typeNummer": "717"
+        },
+        {
+          "antal": 1,
+          "typeNavn": "Memory-sæder for",
+          "typeNummer": "9919"
+        },
+        {
+          "antal": 7,
+          "typeNavn": "selealarm",
+          "typeNummer": "6028"
+        },
+        {
+          "antal": 1,
+          "typeNavn": "trinløst gear",
+          "typeNummer": "731"
+        },
+        {
+          "antal": 1,
+          "typeNavn": "multifunktionsrat",
+          "typeNummer": "404"
+        },
+        {
+          "antal": 1,
+          "typeNavn": "xenon lys",
+          "typeNummer": "9022"
+        },
+        {
+          "antal": 1,
+          "typeNavn": "3 el. flere sæderækker",
+          "typeNummer": "9021"
+        },
+        {
+          "antal": 1,
+          "typeNavn": "Metallak",
+          "typeNummer": "9010"
+        },
+        {
+          "antal": 1,
+          "typeNavn": "ruskind/alcantara",
+          "typeNummer": "9918"
+        },
+        {
+          "antal": 1,
+          "typeNavn": "Ratbetjent gear",
+          "typeNummer": "401"
+        },
+        {
+          "antal": 1,
+          "typeNavn": "turbo",
+          "typeNummer": "712"
+        },
+        {
+          "antal": 1,
+          "typeNavn": "radio",
+          "typeNummer": "6029"
+        },
+        {
+          "antal": 1,
+          "typeNavn": "ABS bremser",
+          "typeNummer": "506"
+        },
+        {
+          "antal": 12,
+          "typeNavn": "Airbags",
+          "typeNummer": "9901"
+        },
+        {
+          "antal": 1,
+          "typeNavn": "kurvelys",
+          "typeNummer": "9024"
+        }
+      ],
+      "typeGodkendelseNummer": "e1*2007/46*0401",
+      "euVariant": null,
+      "euVersion": null,
+      "typegodkendtKategori": "M1",
+      "fabrikant": null,
+      "maerkeTypeNummer": "10279",
+      "modelTypeNummer": "10279122",
+      "variantTypeNummer": "7000035430",
+      "typeTypeNavn": "7N",
+      "typeTypeNummer": "69999999990045505",
+      "motorInnovativTeknik": false,
+      "motorInnovativTeknikAntal": null,
+      "oplysningOprettetUdFra": "Registreringssyn"
+    },
+    "extended": {
+      "carId": "9000000002522614",
+      "date": "2026-08-14T11:14:05.6914346+02:00",
+      "taxes": {
+        "opkraevedeAfgifter": [],
+        "afgiftDetaljer": []
+      },
+      "insurance": {
+        "selskab": "GF-FORSIKRING A/S",
+        "status": "Ophørt",
+        "oprettet": "12-08-2026",
+        "historik": [
+          {
+            "selskab": "GF-FORSIKRING A/S",
+            "status": "Ophørt",
+            "oprettet": "12-08-2026",
+            "historik": []
+          },
+          {
+            "selskab": "GF-FORSIKRING A/S",
+            "status": "Aktiv",
+            "oprettet": "11-11-2025",
+            "historik": []
+          },
+          {
+            "selskab": "Codan Forsikring for Alm. Brand Forsikring A/S",
+            "status": "Ophørt",
+            "oprettet": "11-11-2025",
+            "historik": []
+          },
+          {
+            "selskab": "GF-FORSIKRING A/S",
+            "status": "Ophørt",
+            "oprettet": "11-11-2025",
+            "historik": []
+          },
+          {
+            "selskab": "Codan Forsikring A/S",
+            "status": "Aktiv",
+            "oprettet": "16-06-2023",
+            "historik": []
+          },
+          {
+            "selskab": "GF-FORSIKRING A/S",
+            "status": "Ophørt",
+            "oprettet": "16-06-2023",
+            "historik": []
+          },
+          {
+            "selskab": "Codan Forsikring for Alm. Brand Forsikring A/S",
+            "status": "Ophørt",
+            "oprettet": "16-06-2023",
+            "historik": []
+          },
+          {
+            "selskab": "GF-FORSIKRING A/S",
+            "status": "Aktiv",
+            "oprettet": "11-11-2019",
+            "historik": []
+          },
+          {
+            "selskab": "Alm. Brand",
+            "status": "Ophørt",
+            "oprettet": "10-10-2019",
+            "historik": []
+          },
+          {
+            "selskab": "Alm. Brand",
+            "status": "Aktiv",
+            "oprettet": "01-02-2019",
+            "historik": []
+          },
+          {
+            "selskab": "Alm. Brand",
+            "status": "Ophørt",
+            "oprettet": "01-02-2019",
+            "historik": []
+          },
+          {
+            "selskab": "Alm. Brand",
+            "status": "Aktiv",
+            "oprettet": "01-02-2018",
+            "historik": []
+          },
+          {
+            "selskab": "KØBSTÆDERNES FORS.",
+            "status": "Ophørt",
+            "oprettet": "01-02-2018",
+            "historik": []
+          },
+          {
+            "selskab": "KØBSTÆDERNES FORS.",
+            "status": "Aktiv",
+            "oprettet": "18-12-2017",
+            "historik": []
+          }
+        ]
+      },
+      "general": {
+        "typeGodkendelsesNummer": "e1*2007/46*0401",
+        "stelNummer": "WVWZZZ7NZEV015204",
+        "maerke": "VOLKSWAGEN",
+        "model": "SHARAN",
+        "variant": "CFGCX0AC",
+        "koeretoejArt": "Personbil",
+        "regNr": "CM53865",
+        "firstRegDate": "2013-12-18T00:00:00",
+        "koeretoejAnvendelse": "Privat personkørsel",
+        "status": "Afmeldt",
+        "statusDato": "2026-08-12T00:00:00",
+        "kid": 9000000002522614,
+        "farve": null,
+        "standEfterImport": "Middel",
+        "modelAar": null,
+        "ncapTest": false,
+        "type": "7N",
+        "automatgear": true,
+        "hoejrestyring": false,
+        "turbo": true,
+        "laederSkindSaede": true,
+        "massageSaede": false,
+        "memorySaede": true,
+        "sportKomfortSaede": false,
+        "ventilationISaede": false,
+        "antalAirbags": 8,
+        "koeretoejMotorKilometerstand": null,
+        "sekundaerStatus": "Afmeldt (har fået fjernet en gyldig registrering)",
+        "sekundaerStatusDato": "2026-08-12T00:00:00",
+        "koeretoejUdstyrSamling": [
+          "ESP (Elektronisk Stabiliserings Program)",
+          "ABS bremser",
+          "Airbags",
+          "Radio",
+          "Selealarm",
+          "Automatgear",
+          "Integreret barnesæde",
+          "Læder/skindsæder",
+          "Memory-sæder for",
+          "Multifunktionsrat",
+          "Turbo"
+        ],
+        "blockedStatus": false,
+        "blockedDescription": "",
+        "kmDisplay": null
+      },
+      "leasing": {
+        "bilenErLeaset": false,
+        "leasingStart": null,
+        "leasingEnd": null,
+        "veteran": false
+      },
+      "techical": {
+        "totalVaegt": 2530,
+        "egenVaegt": null,
+        "koereklarVaegtMinimum": 1855,
+        "tekniskTotalVaegt": 2530,
+        "vogntogVaegt": 4805,
+        "paahaengVognTotalVaegt": null,
+        "akselAntal": 2,
+        "siddepladserMinimum": null,
+        "tilkoblingsmulighed": true,
+        "tilkoblingsvaegtUdenBremser": 750,
+        "tilkoblingsvaegtMedBremser": 2200,
+        "karrosseriTypeNavn": "MPV",
+        "motorSlagVolumen": 1968,
+        "motorStoersteEffekt": 130,
+        "motorKmPerLiter": 16.9,
+        "motorElektriskForbrug": null,
+        "motorElektriskForbrugMaalt": null,
+        "motorBraendstofForbrugMaalt": null,
+        "batteriKapacitet": null,
+        "elektriskRaekkevidde": null,
+        "maalenorm": null,
+        "drivkraftTypeNavn": "Diesel",
+        "pluginHybrid": false,
+        "motorMaerkning": null,
+        "maksimumHastighed": null,
+        "motorCylinderAntal": 4,
+        "antalDoere": 4,
+        "faelgDaek": "205/60 R16",
+        "sporviddenForrest": null,
+        "sporviddenBagest": null,
+        "stelNummerAnbringelse": "I motorrum",
+        "passagerAntal": null,
+        "traekkendeAksler": "1",
+        "akselAfstand": null,
+        "stoersteAkselTryk": null,
+        "miljoeOplysningCO2Udslip": null,
+        "miljoeOplysningEmissionCO": null,
+        "miljoeOplysningEmissionHCPlusNOX": null,
+        "miljoeOplysningEmissionNOX": null,
+        "miljoeOplysningPartikelFilter": true,
+        "miljoeOplysningRoegtaethed": null,
+        "miljoeOplysningRoegtaethedOmdrejningstal": null,
+        "miljoeOplysningPartikler": null,
+        "motorKoerselStoej": 71,
+        "motorStandStoej": 72,
+        "motorStandStoejOmdrejningstal": null,
+        "normTypeNavn": "Euro V",
+        "miljoeEftermonteretPartikelFilter": false,
+        "measuredKmPerLiter": 16.9
+      },
+      "inspection": {
+        "naesteSyn": null,
+        "sidsteSyn": "2026-01-28T00:00:00",
+        "sidsteSynResultat": "Godkendt",
+        "sidsteSynType": "PeriodiskSyn"
+      },
+      "hideOwner": false
+    },
+    "inspectionData": {
+      "carId": "9000000002522614",
+      "rapporter": [
+        {
+          "remoteId": 37104887,
+          "firma": "Dekra Bilsyn",
+          "cvr": "28519516",
+          "postNr": 4800,
+          "synstype": "Første syn",
+          "regNr": "CM53865",
+          "synsresultat": "Godkendt",
+          "synsdato": "28-01-2026",
+          "slutTime": "14",
+          "slutMinut": "22",
+          "kategori": "Periodisk syn",
+          "kmstand": 188528,
+          "fejl": []
+        },
+        {
+          "remoteId": 32809001,
+          "firma": "Applus Danmark A/S",
+          "cvr": "28312725",
+          "postNr": 4800,
+          "synstype": "Første syn",
+          "regNr": "CM53865",
+          "synsresultat": "Godkendt",
+          "synsdato": "23-01-2024",
+          "slutTime": "10",
+          "slutMinut": "48",
+          "kategori": "Periodisk syn",
+          "kmstand": 153497,
+          "fejl": []
+        },
+        {
+          "remoteId": 28969293,
+          "firma": "Dekra Bilsyn",
+          "cvr": "28519516",
+          "postNr": 4800,
+          "synstype": "Første syn",
+          "regNr": "CM53865",
+          "synsresultat": "Godkendt",
+          "synsdato": "02-02-2022",
+          "slutTime": "13",
+          "slutMinut": "27",
+          "kategori": "Periodisk syn",
+          "kmstand": 119000,
+          "fejl": []
+        },
+        {
+          "remoteId": 25178220,
+          "firma": "Applus Danmark A/S",
+          "cvr": "28312725",
+          "postNr": 4800,
+          "synstype": "Første syn",
+          "regNr": "CM53865",
+          "synsresultat": "Godkendt",
+          "synsdato": "16-01-2020",
+          "slutTime": "15",
+          "slutMinut": "0",
+          "kategori": "Periodisk syn",
+          "kmstand": 87000,
+          "fejl": []
+        },
+        {
+          "remoteId": 21528364,
+          "firma": "LK Invest, Kolding ApS ",
+          "cvr": "32841910",
+          "postNr": 6000,
+          "synstype": "Første syn",
+          "regNr": "",
+          "synsresultat": "Godkendt",
+          "synsdato": "18-12-2017",
+          "slutTime": "16",
+          "slutMinut": "6",
+          "kategori": "Registreringssyn",
+          "kmstand": 29000,
+          "fejl": []
+        },
+        {
+          "remoteId": 21528370,
+          "firma": "LK Invest, Kolding ApS ",
+          "cvr": "32841910",
+          "postNr": 6000,
+          "synstype": "Første syn",
+          "regNr": "",
+          "synsresultat": "Middel",
+          "synsdato": "18-12-2017",
+          "slutTime": "16",
+          "slutMinut": "5",
+          "kategori": "Toldsyn import",
+          "kmstand": 29000,
+          "fejl": []
+        }
+      ],
+      "mistaenkeligtKmStand": false,
+      "senesteRegNr": "CM53865"
+    },
+    "debtData": {
+      "carId": "9000000002522614",
+      "laaneDokumenter": [],
+      "konkurs": null
+    },
+    "lookupLimitReached": false
+  }
+}

@@ -22,7 +22,7 @@
  *   DISPLAY                     Xvfb displejs (systemd): :98, jo :99 jau lieto provin-mnt
  *
  * API (viss zem /listings, prefiksu Caddy nenoņem):
- *   GET  /listings/health                 bez auth: sesiju stāvoklis, rinda, dienas skaitītāji
+ *   GET  /listings/health                 bez auth: tikai { ok: true }; ar Bearer: sesiju stāvoklis, rinda, dienas skaitītāji
  *   POST /listings/fetch                  {platform, sourceUrl, orderId, maxPages?}
  *   POST /listings/page                   {url}  VIN SCAN izsoļu HTML (stat.vin, bid.cars, …)
  *   POST /listings/http                   {url}  car.info super-search JSON (plain HTTP, ne Chrome)
@@ -45,6 +45,7 @@ import {
   tokensEqual,
   vncViewerPath,
 } from "./lib/novnc.mjs";
+import { bearerTokenMatches, healthResponseBody } from "./lib/health-auth.mjs";
 import { envPositiveInt, shouldReadPublic } from "./lib/policy.mjs";
 import { auto1 } from "./lib/platforms/auto1.mjs";
 import { autobid } from "./lib/platforms/autobid.mjs";
@@ -89,12 +90,7 @@ function log(msg) {
 }
 
 function bearerOk(req) {
-  const header = req.headers.authorization ?? "";
-  const given = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
-  if (given.length !== TOKEN.length) return false;
-  let diff = 0;
-  for (let i = 0; i < TOKEN.length; i++) diff |= given.charCodeAt(i) ^ TOKEN.charCodeAt(i);
-  return diff === 0;
+  return bearerTokenMatches(req.headers.authorization, TOKEN);
 }
 
 function sendJson(res, status, body) {
@@ -318,11 +314,9 @@ const server = createServer(async (req, res) => {
   }
 
   if (path === "/health" && req.method === "GET") {
-    const profiles = Object.fromEntries(await Promise.all(PLATFORMS.map(async (p) => [p, await profileExists(p)])));
-    return sendJson(
-      res,
-      200,
-      state.healthView({
+    const body = await healthResponseBody(bearerOk(req), async () => {
+      const profiles = Object.fromEntries(await Promise.all(PLATFORMS.map(async (p) => [p, await profileExists(p)])));
+      return state.healthView({
         profiles,
         credentials: Object.fromEntries(PLATFORMS.map((p) => [p, platforms[p].hasCredentials()])),
         queue: { length: browserQueue.queueLength, current: browserQueue.current },
@@ -331,8 +325,9 @@ const server = createServer(async (req, res) => {
           ? { platform: manual.platform, startedAt: manual.startedAt, vncReady: manual.vncReady }
           : null,
         display: process.env.DISPLAY ?? "",
-      }),
-    );
+      });
+    });
+    return sendJson(res, 200, body);
   }
 
   if (req.method !== "POST") return sendJson(res, 405, { ok: false, error: "tikai POST" });

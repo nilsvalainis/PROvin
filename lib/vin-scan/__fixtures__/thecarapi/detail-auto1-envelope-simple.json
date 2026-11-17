@@ -1,0 +1,23 @@
+{
+  "success": true,
+  "contract_version": "1",
+  "request_id": "req-test-1",
+  "server_time": "2026-11-17T15:00:00Z",
+  "data_updated_at": "2026-11-17T14:00:00Z",
+  "auction": {
+    "site_name": "auto1",
+    "auction_id": "A1-200",
+    "details_pending": false,
+    "is_active": false,
+    "seller": "AUTO1 GmbH",
+    "gearbox": "automātiskā",
+    "ImageUrls": ["https://img-pa.auto1.com/img/w-main.jpg"],
+    "DamageImageUrls": ["https://img-pa.auto1.com/img/w-damage.jpg"],
+    "ServiceImageUrls": ["https://img-pa.auto1.com/img/w-service.jpg"],
+    "ImageVaultImages": [{ "Url": "https://img-pa.auto1.com/img/w-vault.jpg" }],
+    "subAreaImages": [
+      { "image_index": 1, "source": "https://img-pa.auto1.com/img/w-sub.jpg", "status": "ok" }
+    ],
+    "wrapped_only_field": "keep-me-too"
+  }
+}

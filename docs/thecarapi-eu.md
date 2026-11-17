@@ -24,13 +24,15 @@ Ja vēsture un detaļas dod dažādas vērtības tai pašai atslēgai, detaļa p
 
 ## Bildes
 
-`DamageImageUrls`, galerija un auction-images nonāk tajā pašā galerijā, kur citas izsoļu bildes:
+`ImageUrls`, `DamageImageUrls`, `ServiceImageUrls`, `ImageVaultImages`, `images` (arī ligzdotas), `subAreaImages` un auction-images nonāk tajā pašā galerijā, kur citas izsoļu bildes. Atbilde ar vienu objektu `{ auction, data_updated_at, ... }` tiek attīta. Katras bildes `image_index`, `image_source` un `image_status` paliek laukos un raw.
 
 - pasūtījuma avots «Izsoļu portālu arhīvs» (`cc_vin` foto grupas, sesija ir pasūtījuma sessionId);
 - Izsoļu arhīva lapa, sesija `tc` + VIN, ceļš `cc-vin-photos/{session}/{photoId}.jpg`;
 - admin skatās arhīva bildi caur `GET /api/admin/sources/thecarapi/photo`.
 
-Datums pie bildes: izsoles datums (`auction_date`, `sale_date`, `end_date`, `start_date`, `date`), ja tāda nav, tad `first_seen_at`, citādi `last_seen_at`. Paraksts adminā: `TheCarApi · platforma · datums`. Klienta PDF no virsraksta noņem `TheCarApi ·`, jo PDF nedrīkst rādīt ārējā pakalpojuma nosaukumu. Dedup ir pēc URL un satura hash. `http://` saites paliek laukos un raw, bet netiek lejupielādētas.
+Datums pie bildes: izsoles datums (`auction_date`, `sale_date`, `end_date`, `start_date`, `date`), ja tāda nav, tad `first_seen_at` / `first_seen`, citādi `last_seen_at` / `last_seen`, un ja to nav, tad `data_updated_at`.
+
+Klienta PDF izsoļu sadaļā katram ierakstam ir grupas: pamatdati, cenas, nobraukums, datumi, bojājumi pa zonām, aprīkojums, serviss, bildes un «Citi dati». Nezināmie lauki netiek izmesti. Galerijā bildēm ir datums. Tā pati bilde (URL vai satura hash) no cita avota PDF netiek drukāta otrreiz. Galerijas griesti nav zem 100. PDF virsrakstā nav TheCarApi. Paraksts adminā: `TheCarApi · platforma · datums`. Klienta PDF no virsraksta noņem `TheCarApi ·`, jo PDF nedrīkst rādīt ārējā pakalpojuma nosaukumu. Dedup ir pēc URL un satura hash. `http://` saites paliek laukos un raw, bet netiek lejupielādētas.
 
 ## Testi
 

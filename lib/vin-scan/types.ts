@@ -105,6 +105,10 @@ export type VinScanIndicator = {
   auctions?: VinScanAuction[];
   listings?: VinScanListing[];
   jojFacts?: JojCcVinFacts;
+  /** Kad šī rinda skenēta (ISO). Nav - momentuzņēmuma `scannedAt`. */
+  scannedAt?: string;
+  /** Avots izlaists, jo pēc kārtas daudz kļūdu (circuit breaker). Netiek ierakstīts avotu veselībā. */
+  breakerOpen?: boolean;
 };
 
 export type VinScanParse = {
