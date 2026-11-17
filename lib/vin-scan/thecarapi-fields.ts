@@ -73,10 +73,22 @@ export const THECARAPI_FIELD_LABELS: Record<string, string> = {
   description: "Apraksts",
   DamageImageUrls: "Bojājumu bildes",
   damage_image_urls: "Bojājumu bildes",
+  ImageUrls: "Bildes",
+  image_urls: "Bildes",
+  ServiceImageUrls: "Servisa bildes",
+  service_image_urls: "Servisa bildes",
+  ImageVaultImages: "Bildes arhīvs",
+  image_vault_images: "Bildes arhīvs",
+  subAreaImages: "Zonas bildes",
+  sub_area_images: "Zonas bildes",
   gallery: "Galerija",
   images: "Bildes",
   photos: "Bildes",
   auction_images: "Izsoles bildes",
+  image_index: "Bildes indekss",
+  image_source: "Bildes avots",
+  image_status: "Bildes statuss",
+  data_updated_at: "Dati atjaunoti",
   url: "Saite",
   equipment: "Aprīkojums",
   Equipment: "Aprīkojums",
@@ -97,9 +109,33 @@ export const THECARAPI_FIELD_LABELS: Record<string, string> = {
 };
 
 const AUCTION_DATE_KEYS = ["auction_date", "sale_date", "end_date", "start_date", "date", "auctionDate"] as const;
+const IMAGE_COLLECTION_KEYS = new Set([
+  "DamageImageUrls",
+  "damage_image_urls",
+  "ImageUrls",
+  "image_urls",
+  "imageUrls",
+  "ServiceImageUrls",
+  "service_image_urls",
+  "ImageVaultImages",
+  "image_vault_images",
+  "subAreaImages",
+  "sub_area_images",
+  "gallery",
+  "images",
+  "photos",
+  "auction_images",
+  "AuctionImages",
+]);
+
 const PHOTO_URL_KEYS = [
   "DamageImageUrls",
   "damage_image_urls",
+  "ImageUrls",
+  "image_urls",
+  "ServiceImageUrls",
+  "ImageVaultImages",
+  "subAreaImages",
   "gallery",
   "images",
   "photos",
@@ -109,6 +145,9 @@ const PHOTO_URL_KEYS = [
   "url",
   "Url",
   "href",
+  "src",
+  "image_url",
+  "imageUrl",
 ];
 
 function asRecord(raw: unknown): Record<string, unknown> | null {
@@ -189,7 +228,39 @@ export function thecarapiPhotoDate(row: Record<string, unknown>): string {
     const day = isoDay(row[key]);
     if (day) return day;
   }
-  return isoDay(row.first_seen_at) || isoDay(row.last_seen_at);
+  return isoDay(row.first_seen_at) || isoDay(row.last_seen_at) || isoDay(row.data_updated_at);
+}
+
+function pushHttps(raw: string, out: string[], seen: Set<string>): void {
+  const url = raw.trim();
+  if (!/^https?:\/\//i.test(url) || seen.has(url)) return;
+  seen.add(url);
+  out.push(url);
+}
+
+function collectNamedImageUrls(raw: unknown, out: string[], seen: Set<string>, depth: number, inImage: boolean): void {
+  if (depth > 10 || raw == null) return;
+  if (typeof raw === "string") {
+    if (inImage) pushHttps(raw, out, seen);
+    return;
+  }
+  if (Array.isArray(raw)) {
+    for (const item of raw) collectNamedImageUrls(item, out, seen, depth + 1, inImage);
+    return;
+  }
+  const rec = asRecord(raw);
+  if (!rec) return;
+  for (const [key, value] of Object.entries(rec)) {
+    collectNamedImageUrls(value, out, seen, depth + 1, inImage || IMAGE_COLLECTION_KEYS.has(key));
+  }
+}
+
+/** Bildes no ImageUrls, DamageImageUrls, ServiceImageUrls, ImageVaultImages, images un subAreaImages, arī ligzdotas. */
+export function thecarapiImageUrls(...parts: unknown[]): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const part of parts) collectNamedImageUrls(part, out, seen, 0, false);
+  return out;
 }
 
 function pushUrl(raw: unknown, out: string[], seen: Set<string>): void {

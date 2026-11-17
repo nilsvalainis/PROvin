@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { isAllowedVinScanAuctionPhotoUrl } from "@/lib/order-vin-scan-photos";
-import { buildThecarapiAdminRecords } from "@/lib/vin-scan/parse-thecarapi";
+import { buildThecarapiAdminRecords, parseThecarapiDetail } from "@/lib/vin-scan/parse-thecarapi";
 import {
   thecarapiDownloadUrls,
   thecarapiFieldsOf,
@@ -51,12 +51,49 @@ describe("TheCarApi lauki", () => {
     expect(auto1?.photoUrls.some((url) => url.startsWith("http://"))).toBe(false);
   });
 
-  it("bildes datums ir izsoles datums, citādi first_seen_at, tad last_seen_at", () => {
+  it("bildes datums ir izsoles datums, citādi first_seen_at, tad last_seen_at, tad data_updated_at", () => {
     expect(thecarapiPhotoDate({ auction_date: "2024-06-02", first_seen_at: "2024-06-01", last_seen_at: "2024-06-03" })).toBe(
       "2024-06-02",
     );
     expect(thecarapiPhotoDate({ first_seen_at: "2024-03-12T10:00:00Z", last_seen_at: "2024-03-15T18:00:00Z" })).toBe("2024-03-12");
     expect(thecarapiPhotoDate({ last_seen_at: "2024-03-15T18:00:00Z" })).toBe("2024-03-15");
+    expect(thecarapiPhotoDate({ last_seen_at: "2024-03-15", data_updated_at: "2026-10-09T18:00:00Z" })).toBe("2024-03-15");
+    expect(thecarapiPhotoDate({ data_updated_at: "2026-10-09T18:00:00Z" })).toBe("2026-10-09");
+  });
+
+  it("AUTO1 aploksne auction savāc visus bilžu laukus un data_updated_at rezervi", () => {
+    const json = fixture("detail-auto1-wrapped.json");
+    const detail = parseThecarapiDetail(json);
+    expect(detail.site).toBe("auto1");
+    expect(detail.id).toBe("1326383403");
+    expect(detail.photoUrls).toHaveLength(29);
+
+    const [row] = buildThecarapiAdminRecords({ historyJson: null, detailJson: json });
+    expect(row?.photoUrls).toHaveLength(29);
+    for (const name of ["main-1", "damage-1", "service-1", "vault-1", "vault-alt", "gallery-1", "nested-1", "sub-1"]) {
+      expect(row?.photoUrls).toContain(`https://img-pa.auto1.com/img/${name}.jpg`);
+    }
+    expect(row?.photoUrls.some((url) => url.startsWith("http://"))).toBe(false);
+    expect(row?.photoUrls.filter((url) => url.endsWith("/main-1.jpg"))).toHaveLength(1);
+    expect(row?.photoDate).toBe("2026-10-09");
+    expect(row?.fields.find((field) => field.key === "ImageUrls[0].image_index")).toMatchObject({
+      label: "Bildes indekss",
+      value: "0",
+    });
+    expect(row?.fields.find((field) => field.key === "ServiceImageUrls[0].image_source")).toMatchObject({
+      label: "Bildes avots",
+      value: "service",
+    });
+    expect(row?.fields.find((field) => field.key === "subAreaImages[0].image_status")).toMatchObject({
+      label: "Bildes statuss",
+      value: "hidden",
+    });
+    expect(row?.fields.find((field) => field.key === "inspection.images[0].image_source")?.value).toBe("nested");
+    expect(row?.fields.find((field) => field.key === "ImageVaultImages[1].image_status")?.value).toBe("alt-key");
+    const raw = JSON.stringify(row?.raw);
+    expect(raw).toContain("service-insecure.jpg");
+    expect(raw).toContain("data_updated_at");
+    expect(raw).toContain("contract_version");
   });
 
   it("nezināma atslēga paliek, http saite netiek lejupielādēta", () => {
