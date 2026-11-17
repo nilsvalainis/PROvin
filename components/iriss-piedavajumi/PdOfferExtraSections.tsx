@@ -11,8 +11,9 @@ import { PdPaintMap } from "@/components/iriss-piedavajumi/PdPaintMap";
 import {
   IRISS_PD_DAMAGE_AREA_LV,
   irissPdAuto1BlockCount,
-  irissPdDamageSummary,
+  irissPdDamageTable,
   type IrissPdAuto1Blocks,
+  type IrissPdDamageRow,
   type IrissPdKv,
 } from "@/lib/iriss-piedavajumi-auto1";
 import { irissPdDisplayValue } from "@/lib/iriss-piedavajumi-display";
@@ -32,6 +33,38 @@ function KvRows({ rows }: { rows: readonly IrissPdKv[] }) {
         <IrissOfferPublicKvRow key={r.label} label={r.label} value={irissPdDisplayValue(r.value)} />
       ))}
     </div>
+  );
+}
+
+/** Bojājumi tabulā (makets 17.11): grupas Ārpuse/Salons, rindā veids, skaits un detaļas. */
+function DamageTable({ rows }: { rows: readonly IrissPdDamageRow[] }) {
+  const groups = irissPdDamageTable(rows);
+  return (
+    <table className="w-full border-collapse text-left text-[13px] leading-snug" data-damage-table="">
+      <thead>
+        <tr className="text-[10.5px] uppercase tracking-[0.06em] text-[#6e6e73]">
+          <th className="border-b border-[#e4e4e7] py-1.5 pr-2 font-semibold">Bojājums</th>
+          <th className="border-b border-[#e4e4e7] py-1.5 pr-3 text-right font-semibold">Skaits</th>
+          <th className="border-b border-[#e4e4e7] py-1.5 font-semibold">Kur</th>
+        </tr>
+      </thead>
+      {groups.map((g) => (
+        <tbody key={g.area}>
+          <tr>
+            <th colSpan={3} className="pb-1 pt-3 text-[11px] font-bold uppercase tracking-[0.08em] text-[#52525b]">
+              {IRISS_PD_DAMAGE_AREA_LV[g.area]}
+            </th>
+          </tr>
+          {g.rows.map((r) => (
+            <tr key={r.kind} className="align-top">
+              <td className="border-b border-[#f3f4f6] py-1.5 pr-2 font-semibold text-[#111827]">{r.kind}</td>
+              <td className="border-b border-[#f3f4f6] py-1.5 pr-3 text-right tabular-nums text-[#111827]">{r.count}</td>
+              <td className="border-b border-[#f3f4f6] py-1.5 text-[12.5px] text-[#52525b]">{r.parts.length ? r.parts.join(", ") : "-"}</td>
+            </tr>
+          ))}
+        </tbody>
+      ))}
+    </table>
   );
 }
 
@@ -130,25 +163,7 @@ export function PdOfferExtraSections({
       {ids.includes("damage") ? (
         <section className={irissOfferPublicCardClass()} data-block="damage">
           <IrissOfferPublicSectionTitle>{IRISS_PD_BLOCK_LV.damage}</IrissOfferPublicSectionTitle>
-          {irissPdDamageSummary(blocks.damage).map((s) => (
-            <IrissOfferPublicKvRow
-              key={s.area}
-              label={`${IRISS_PD_DAMAGE_AREA_LV[s.area]} · ${s.kinds.join(" / ")}`}
-              value={String(s.total)}
-            />
-          ))}
-          <div className="mt-2 space-y-2">
-            {blocks.damage.map((r, i) => (
-              <div key={i} className="rounded-xl border border-[#e4e4e7] bg-[#fafafa] p-2.5 text-[13px] leading-snug">
-                <b className="block text-[10px] font-medium text-[#52525b]">
-                  {IRISS_PD_DAMAGE_AREA_LV[r.area]}
-                  {r.damage ? ` · ${r.damage}` : ""}
-                </b>
-                <span className="mt-1 block font-semibold text-[#111827]">{r.parts || r.description || r.severity || "-"}</span>
-                {r.description && r.parts ? <span className="mt-0.5 block text-[12px] text-[#52525b]">{r.description}</span> : null}
-              </div>
-            ))}
-          </div>
+          <DamageTable rows={blocks.damage} />
         </section>
       ) : null}
 

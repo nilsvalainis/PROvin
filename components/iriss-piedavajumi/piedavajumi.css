@@ -903,51 +903,72 @@ button.pd-lv {
 .pd-wa {
   color: #f5a623;
 }
-/* Auto1 stila karte: mērījuma punkts, pelēkas zonu etiķetes, lielāks teksts datorā. */
-.pd-pm-a1 .pd-pm-dot {
+/* Krāsas karte ar audita atskaites auto (makets 17.11): bilde, iezīmētā zona, punkti, mērījumi. */
+.pd-pm-car {
+  border-radius: 12px;
+}
+.pd-pm-car .pd-pm-img {
   position: absolute;
-  width: 5px;
-  height: 5px;
+  left: 0;
+  width: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+.pd-pm-car .pd-pm-area {
+  position: absolute;
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  pointer-events: none;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.pd-pm-car .pd-pm-area.sel {
+  background: rgba(31, 111, 196, 0.16);
+  border-color: #1f6fc4;
+}
+.pd-pm-car .pd-pm-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: #3a3a3c;
+  background: #1d1d1f;
+  box-shadow: 0 0 0 1.5px #fff;
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
-.pd-pm-a1 .pd-lv {
+.pd-pm-car .pd-lv {
   color: #1d1d1f;
   border-color: #d1d1d6;
-  border-radius: 4px;
+  border-radius: 6px;
+  font-size: 10px;
+  padding: 1px 4px;
+  font-variant-numeric: tabular-nums;
 }
-.pd-pm-a1 .pd-lv.sel {
+.pd-pm-car .pd-lv.sel {
   color: #1f6fc4;
   border-color: #1f6fc4;
 }
-.pd-pm-a1 button.pd-lv-zone {
-  color: #8e8e93;
-  font-weight: 500;
+.pd-pm-car .pd-lv-na {
+  color: #6e6e73;
 }
-.pd-pm-a1 button.pd-lv-zone.sel {
+.pd-pm.pd-pm-car button.pd-lv-zone {
+  color: #6e6e73;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.pd-pm.pd-pm-car button.pd-lv-zone.sel {
   color: #1f6fc4;
+  border-color: #1f6fc4;
 }
 @media (min-width: 768px) {
-  .pd-pm-a1 .pd-lv {
+  .pd-pm-car .pd-lv {
     font-size: 12.5px;
-    padding: 2px 6px;
+    padding: 2px 7px;
   }
-  .pd-pm-a1 button.pd-lv-zone {
+  .pd-pm.pd-pm-car button.pd-lv-zone {
     font-size: 13.5px;
-  }
-}
-/* Krāsas kartes mērījumi: x no CSS mainīgā, lai telefonā tos varētu pārbīdīt (sk. PdPaintMap SLOTS). */
-.pd-pm .pd-lv-slot {
-  left: var(--x);
-}
-@media (max-width: 520px) {
-  .pd-pm .pd-lv-slot {
-    left: var(--x-sm, var(--x));
-  }
-  .pd-pm .pd-lv-wide {
-    display: none;
+    padding: 3px 11px;
   }
 }
 .pd-pm-cap {

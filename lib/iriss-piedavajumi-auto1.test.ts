@@ -4,7 +4,9 @@ import {
   irissPdAuto1BlockCount,
   irissPdAuto1BlocksFromDetail,
   irissPdAuto1FieldCount,
+  irissPdDamagePartsLv,
   irissPdDamageSummary,
+  irissPdDamageTable,
   irissPdPaintZoneOf,
   normalizeIrissPdAuto1Blocks,
   parseIrissPdDamageTable,
@@ -103,6 +105,14 @@ describe("Auto1 bloki no detaļu lapas", () => {
     ]);
   });
 
+  it("bojājumu kopsavilkums tabulai: latviski veidi, skaits, detaļas", () => {
+    expect(irissPdDamageTable(b.damage).map((g) => g.area)).toEqual(["exterior", "interior"]);
+    const ext = irissPdDamageTable(b.damage)[0]!.rows;
+    expect(ext.find((r) => r.kind === "Iespiedumi")).toEqual({ kind: "Iespiedumi", count: 3, parts: ["Aizmugurējais kreisais spārns (2)", "Priekšējās labās durvis (1)"] });
+    expect(ext.map((r) => r.kind)).toContain("Pārkrāsojums");
+    expect(irissPdDamagePartsLv("Hood (4), Unknown part (2)")).toEqual(["Motora pārsegs (4)", "Unknown part (2)"]);
+  });
+
   it("bojājumu tabula: apvienotās šūnas (zona, bojājums) tiek pārnestas", () => {
     expect(b.damage).toHaveLength(6);
     expect(b.damage[1]).toEqual({ area: "exterior", damage: "Dent", severity: "Width: ≥5mm & <20mm", description: "Paint damage", quantity: "1", parts: "Front right door (1)" });
@@ -193,6 +203,11 @@ describe("krāsas mērījumi no Auto1 shēmas (JD14299, 17.11)", () => {
     expect(z.roof).toEqual([]);
     expect(z.rear).toEqual([]);
     expect(b.paint!.unassigned).toEqual([]);
+    const na = Object.fromEntries(b.paint!.zones.map((x) => [x.id, x.notMeasurable === true]));
+    expect(na).toMatchObject({ roof: true, rear: true, front: false });
+    // Saglabājas pēc JSON krātuves normalizēšanas.
+    const again = normalizeIrissPdAuto1Blocks(JSON.parse(JSON.stringify(b)));
+    expect(again?.paint?.zones.find((x) => x.id === "roof")?.notMeasurable).toBe(true);
   });
 
   it("bojājuma apraksts «Thickness: ≥250µm & <500µm» nav mērījums", () => {
