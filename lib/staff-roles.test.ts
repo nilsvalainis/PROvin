@@ -11,6 +11,8 @@ import {
   sectionForAdminApiPath,
   sectionForAdminPagePath,
   staffHomePath,
+  staffNavSections,
+  staffTabbarItems,
   type AccessActor,
 } from "@/lib/staff-roles";
 
@@ -57,6 +59,12 @@ describe("IRISS section path access (deny by default)", () => {
     expect(staffHomePath(both.sections)).toBe("/admin/iriss");
     expect(actorHomePath(both)).toBe("/admin/iriss");
     expect(staffHomePath(waybills.sections)).toBe("/admin/iriss");
+    expect(actorHomePath(waybills)).toBe("/admin/iriss");
+    // Partneris (tikai Pavadzīmes): vienīgā lapa ir IRISS sākums ar pavadzīmju logrīku.
+    expect(decideAdminPageAccess("/admin/iriss", waybills)).toBe("allow");
+    expect(decideAdminPageAccess("/admin/iriss/pavadzimes", waybills)).toBe("forbidden");
+    expect(decideAdminApiAccess("/api/admin/iriss/waybill-requests", waybills)).toBe("allow");
+    expect(decideAdminApiAccess("/api/admin/iriss/vpn", waybills)).toBe("forbidden");
     expect(actorHomePath({ kind: "admin" })).toBe("/admin/iriss");
   });
 
@@ -92,7 +100,8 @@ describe("IRISS section path access (deny by default)", () => {
   });
 
   it("gives Pavadzīmes-only staff zero access to other IRISS agents and sections", () => {
-    expect(decideAdminPageAccess("/admin/iriss/pavadzimes", waybills)).toBe("allow");
+    // Partnerim vienīgā lapa ir IRISS sākums (pavadzīmju logrīks + forma); pavadzīmju API atļauts.
+    expect(decideAdminPageAccess("/admin/iriss/pavadzimes", waybills)).toBe("forbidden");
     expect(decideAdminPageAccess("/admin/iriss", waybills)).toBe("allow");
     for (const row of IRISS_SECTION_CATALOG) {
       if (row.id === "pavadzimes") continue;
@@ -107,6 +116,9 @@ describe("IRISS section path access (deny by default)", () => {
     }
     const otherAgentApis = [
       "/api/admin/vin-scan",
+      "/api/admin/dealer-check",
+      "/api/admin/dealer-check/pdf",
+      "/api/admin/vin-memory-archive",
       "/api/admin/vin-sources/fetch",
       "/api/admin/vin-history",
       "/api/admin/outvin/purchase",
@@ -123,6 +135,8 @@ describe("IRISS section path access (deny by default)", () => {
       expect(decideAdminApiAccess(api, waybills), api).toBe("forbidden");
     }
     expect(decideAdminPageAccess("/admin/vin-scan", waybills)).toBe("forbidden");
+    expect(decideAdminPageAccess("/admin/dilera-dati", waybills)).toBe("forbidden");
+    expect(decideAdminPageAccess("/admin/izsolu-arhivs", waybills)).toBe("forbidden");
     expect(decideAdminPageAccess("/admin/iriss/iestatijumi", waybills)).toBe("forbidden");
     expect(decideAdminPageAccess("/admin/dashboard", waybills)).toBe("forbidden");
   });
@@ -141,5 +155,52 @@ describe("IRISS section path access (deny by default)", () => {
     expect(decideAdminApiAccess("/api/admin/iriss-logistics/documents/x", shop)).toBe("allow");
     expect(decideAdminPageAccess("/admin/iriss/pasutijumi", book)).toBe("forbidden");
     expect(decideAdminPageAccess("/admin/iriss/pavadzimes", shop)).toBe("forbidden");
+  });
+});
+
+describe("staffTabbarItems (D: josla tikai pēc tiesībām)", () => {
+  it("partnerim (tikai Pavadzīmes) joslas nav", () => {
+    expect(staffTabbarItems(["pavadzimes"], true)).toEqual([]);
+  });
+
+  it("tikai Loģistika: Sākums, Loģistika, Iziet - bez Autoparks un Pavadzīmēm", () => {
+    expect(staffTabbarItems(["logistika"], true).map((i) => i.label)).toEqual(["Sākums", "Loģistika", "Iziet"]);
+  });
+
+  it("Pavadzīmes + Serviss: Autoparks ir, Loģistikas nav", () => {
+    const labels = staffTabbarItems(["pavadzimes", "ap_serviss", "ap_summas"], true).map((i) => i.label);
+    expect(labels).toEqual(["Sākums", "Pavadzīmes", "Autoparks", "Iziet"]);
+    expect(labels).not.toContain("Loģistika");
+    expect(labels).not.toContain("Pasūtījumi");
+  });
+
+  it("bez v2 karoga Autoparks cilnes nav, arī ja ir ap_*", () => {
+    expect(staffTabbarItems(["pavadzimes", "ap_serviss"], false).map((i) => i.label)).toEqual([
+      "Sākums",
+      "Pavadzīmes",
+      "Iziet",
+    ]);
+  });
+});
+
+describe("staffTabbarItems: daudz sadaļu (audits 26.10: 11 punkti joslā)", () => {
+  it("Sākums + 3 sadaļas + Vairāk; Iziet nav joslā; Loģistika/Grāmatvede/Serviss vienreiz", () => {
+    const items = staffTabbarItems(
+      ["pasutijumi", "sludinajumi", "radars", "logistika", "gramatvede", "serviss", "pavadzimes", "vin", "ap_serviss"],
+      true,
+    );
+    expect(items.map((i) => i.label)).toEqual(["Sākums", "Pasūtījumi", "Sludinājumi", "Radars", "Vairāk"]);
+    const more = items.at(-1);
+    expect(more?.kind).toBe("more");
+    const rest = more?.kind === "more" ? more.sections.map((s) => s.href) : [];
+    expect(new Set(rest).size).toBe(rest.length);
+    expect(rest).toContain("/admin/iriss/pavadzimes");
+    expect(rest.filter((h) => h === "/admin/iriss/logistika")).toHaveLength(1);
+  });
+});
+
+describe("Mēneša atskaite izvēlnē paslēpta", () => {
+  it("darbinieka navigācijā nav, tiesība paliek", () => {
+    expect(staffNavSections(["pasutijumi", "atskaite", "pavadzimes"], true)).toEqual(["pasutijumi", "pavadzimes"]);
   });
 });

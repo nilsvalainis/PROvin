@@ -103,10 +103,10 @@ Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas.`;
     const cert = extractLtabCertificate(LTAB_TEXT)!;
     const rows = ltabCertificateToIncidentRows(cert);
     expect(rows).toEqual([
-      { csngDate: "16.06.2021", lossAmount: "2 778.22 €", incidentNo: "Latvija" },
-      { csngDate: "20.10.2020", lossAmount: "1 599.00 €", incidentNo: "Latvija" },
+      { csngDate: "16.06.2021", lossAmount: "2 778,22 €", incidentNo: "Latvija" },
+      { csngDate: "20.10.2020", lossAmount: "1 599,00 €", incidentNo: "Latvija" },
     ]);
-    expect(formatLtabCertificateAmountEur("2778.22")).toBe("2 778.22 €");
+    expect(formatLtabCertificateAmountEur("2778.22")).toBe("2 778,22 €");
   });
 
   it("Copilot darbība ieliek izziņu un rindas LTAB blokā", () => {
@@ -119,7 +119,7 @@ Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas.`;
     expect(ltab.certificate?.plate).toBe("OB5401");
     expect(ltab.rows.filter((r) => r.csngDate.trim())).toHaveLength(2);
     expect(ltab.rows[0]?.incidentNo).toBe("Latvija");
-    expect(ltab.rows[0]?.lossAmount).toContain("778.22");
+    expect(ltab.rows[0]?.lossAmount).toContain("778,22");
     expect(ltab.rows[0]?.csngDate).toBe("16.06.2021");
   });
 
@@ -158,10 +158,10 @@ Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas.`;
     expect(html).toContain("pdf-listing-price-history-foot");
     expect(html).toContain("AUDI A6 AVANT");
     expect(html).toContain("Cietušais");
-    expect(html).toContain("2 778.22 €");
+    expect(html).toContain("2 778,22 €");
     expect(html).toContain("16.06.2021 07:40");
     expect(html).toContain("Kopā:");
-    expect(html).toContain("4 377.22 €");
+    expect(html).toContain("4 377,22 €");
     expect(html).toContain("Negadījumi:");
     expect(html).toContain("OCTA informācijas sistēmas");
   });
@@ -251,7 +251,7 @@ describe("LTAB izziņa — reāls pdf-parse teksts", () => {
       amount: "1599.00",
     });
     expect(sumLtabCertificateAmountCents(cert!.claims)).toBe(437722);
-    expect(formatLtabCentsAsEur(437722)).toBe("4 377.22 €");
+    expect(formatLtabCentsAsEur(437722)).toBe("4 377,22 €");
   });
 
   it("saglabā Atbildīgs rindu bez summas", () => {
@@ -277,8 +277,8 @@ describe("LTAB izziņa — reāls pdf-parse teksts", () => {
     const rows = ltabCertificateToIncidentRows(cert);
     expect(rows).toEqual([
       { csngDate: "31.05.2025", lossAmount: "", incidentNo: "Latvija" },
-      { csngDate: "01.11.2023", lossAmount: "2 516.91 €", incidentNo: "Latvija" },
-      { csngDate: "21.09.2023", lossAmount: "1 313.32 €", incidentNo: "Latvija" },
+      { csngDate: "01.11.2023", lossAmount: "2 516,91 €", incidentNo: "Latvija" },
+      { csngDate: "21.09.2023", lossAmount: "1 313,32 €", incidentNo: "Latvija" },
     ]);
   });
 

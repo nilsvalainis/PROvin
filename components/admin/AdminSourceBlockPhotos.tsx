@@ -14,6 +14,8 @@ export function AdminSourceBlockPhotos({
   onCommit,
   hidePhotoWatermarks,
   onHidePhotoWatermarksChange,
+  maxPhotos = SOURCE_BLOCK_MAX_PHOTOS,
+  blockKey,
 }: {
   sessionId: string;
   photoGroups: SourceBlockPhotoGroup[];
@@ -21,6 +23,9 @@ export function AdminSourceBlockPhotos({
   onCommit: (next: SourceBlockPhotoGroup[]) => void;
   hidePhotoWatermarks?: boolean;
   onHidePhotoWatermarksChange?: (next: boolean) => void;
+  maxPhotos?: number;
+  /** Avota atslēga (piem. tirgus) - API izvēlas griestu. */
+  blockKey?: string;
 }) {
   return (
     <AdminListingAnalysisPhotos
@@ -29,7 +34,8 @@ export function AdminSourceBlockPhotos({
       disabled={disabled}
       onPhotoGroupsStructuralCommit={onCommit}
       apiBasePath="/api/admin/source-block-photo"
-      maxPhotos={SOURCE_BLOCK_MAX_PHOTOS}
+      maxPhotos={maxPhotos}
+      uploadBlockKey={blockKey}
       emptyGroup={emptySourceBlockPhotoGroup}
       sectionTitle="Fotogrāfijas (PDF)"
       hidePhotoWatermarks={hidePhotoWatermarks}

@@ -6,6 +6,7 @@ export async function trySendStaffInviteEmail(opts: {
   to: string;
   name: string;
   inviteUrl: string;
+  kind?: "invite" | "reset";
 }): Promise<boolean> {
   if (!isSmtpConfigured()) {
     console.warn("[iriss-staff] SMTP nav iestatīts, uzaicinājums nav nosūtīts");

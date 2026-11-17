@@ -8,6 +8,11 @@ import {
   getAnthropicApiKeyFromEnv,
   resolveAiAdminModel,
 } from "@/lib/admin-ai";
+import { finalizeGeneratedComment } from "@/lib/admin-ai-polish";
+import {
+  AiIncompleteCommentError,
+  isAiIncompleteCommentError,
+} from "@/lib/admin-ai-incomplete";
 import {
   geminiGenerateExpertText,
   geminiGenerateJsonText,
@@ -62,7 +67,10 @@ type GenerateOpts = {
   qualityField?: CommentQualityOptions["field"];
   budget?: AiRequestBudget;
   stream?: AiTextStream;
-  /** Claude Haiku: izlaist Sonnet LV slīpēšanu (JSON izeja). */
+  /**
+   * Izlaist pēdējo Claude LV pārskatu (JSON / shēmas izeja).
+   * Iekšējā Haiku slīpēšana arī tiek izlaista: dispatch dara vienu kopīgu finišu.
+   */
   skipLatvianPolish?: boolean;
 };
 
@@ -159,9 +167,24 @@ ${priorText}
 Uzraksti PILNU īsāku versiju. Saglabā visus faktus, datumus, km un secinājumus. Izmet atkārtošanos un vispārīgus teikumus. NEPIEVIENO jaunus faktus. Ja sākotnējā promptā ir OPERATORA KOMANDAS, to tēmas NEDRĪKST izmest.`;
 }
 
+/**
+ * j26 kritiskās pārbaudes: drīkst izraisīt VIENU papildu izsaukumu, bet TIKAI ar Gemini
+ * (Nils 24.10). Ja izvēlēts Claude līmenis, labojums iet uz `gemini-flash`; bez Gemini
+ * atslēgas atkārtojuma nav (paliek karodziņš).
+ */
+export const GEMINI_ONLY_RETRY_CODES: ReadonlySet<string> = new Set([
+  "canonical_no_damage_claim",
+  "canonical_negated_fact",
+]);
+
 function canCheapCorrect(opts: GenerateOpts): boolean {
   if (isGeminiAdminTier(opts.modelTier)) return true;
   return Boolean(getGeminiApiKeyFromEnv());
+}
+
+async function finalizeAdminGeneratedComment(opts: GenerateOpts, text: string): Promise<string> {
+  if (opts.skipLatvianPolish) return text;
+  return finalizeGeneratedComment(text, { budget: opts.budget });
 }
 
 async function withSelfCorrection(
@@ -175,14 +198,30 @@ async function withSelfCorrection(
     systemInstruction: appendLengthRulesV2ToSystem(opts.systemInstruction, opts.qualityField),
     budget: opts.budget ?? createAiRequestBudget(routeBudgetMs),
   };
+  const finish = (text: string) => finalizeAdminGeneratedComment(withBudget, text);
+  try {
+    return finish(await runSelfCorrection(withBudget, generateOnce, lengthV2));
+  } catch (e) {
+    if (isAiIncompleteCommentError(e) && e.partialText.trim()) {
+      throw new AiIncompleteCommentError(await finish(e.partialText), e.reason);
+    }
+    throw e;
+  }
+}
+
+async function runSelfCorrection(
+  withBudget: GenerateOpts,
+  generateOnce: (opts: GenerateOpts) => Promise<string>,
+  lengthV2: boolean,
+): Promise<string> {
   const raw = await generateOnce(withBudget);
-  const field = opts.qualityField ?? "generic";
+  const field = withBudget.qualityField ?? "generic";
   const allIssues = evaluateExpertCommentQuality(raw, {
     field,
-    wrapPresentInContext: mentionsVehicleWrapInOrderFacts(opts.userPrompt),
-    winterSaltRustRequiredInContext: winterSaltRustRequiredInPrompt(opts.userPrompt),
-    winterSaltTailgateMaterial: winterSaltTailgateMaterialFromPrompt(opts.userPrompt) ?? undefined,
-    sourcePrompt: opts.userPrompt,
+    wrapPresentInContext: mentionsVehicleWrapInOrderFacts(withBudget.userPrompt),
+    winterSaltRustRequiredInContext: winterSaltRustRequiredInPrompt(withBudget.userPrompt),
+    winterSaltTailgateMaterial: winterSaltTailgateMaterialFromPrompt(withBudget.userPrompt) ?? undefined,
+    sourcePrompt: withBudget.userPrompt,
   });
   const critical = allIssues.filter(
     (i) =>
@@ -193,10 +232,10 @@ async function withSelfCorrection(
   );
   const skipLegacyCheapLength =
     CHEAP_LENGTH_SKIP_FIELDS.has(field) &&
-    parseCommentBreadthFromPrompt(opts.userPrompt) !== "compact" &&
+    parseCommentBreadthFromPrompt(withBudget.userPrompt) !== "compact" &&
     !lengthV2;
   const cheap =
-    commentLengthLimitsWaived(opts.userPrompt) || skipLegacyCheapLength
+    commentLengthLimitsWaived(withBudget.userPrompt) || skipLegacyCheapLength
       ? []
       : allIssues.filter(
           (i) =>
@@ -213,6 +252,27 @@ async function withSelfCorrection(
     return raw;
   }
 
+  const geminiOnly = critical.length > 0 && critical.every((i) => GEMINI_ONLY_RETRY_CODES.has(i.code));
+  if (geminiOnly && !isGeminiAdminTier(withBudget.modelTier)) {
+    if (!canCheapCorrect(withBudget)) {
+      console.warn("[admin-ai-dispatch] gemini_only_retry_skipped_no_gemini", {
+        field,
+        codes: critical.map((i) => i.code),
+      });
+      return raw;
+    }
+    console.warn("[admin-ai-dispatch] gemini_only_retry", { field, codes: critical.map((i) => i.code) });
+    try {
+      return await generateOnce({
+        ...withBudget,
+        modelTier: "gemini-flash",
+        userPrompt: buildSelfCorrectionPrompt(withBudget.userPrompt, raw, [...critical, ...cheap]),
+      });
+    } catch {
+      return raw;
+    }
+  }
+
   if (critical.length > 0) {
     console.warn("[admin-ai-dispatch] self_correction_retry", {
       field,
@@ -221,7 +281,7 @@ async function withSelfCorrection(
     try {
       return await generateOnce({
         ...withBudget,
-        userPrompt: buildSelfCorrectionPrompt(opts.userPrompt, raw, [...critical, ...cheap]),
+        userPrompt: buildSelfCorrectionPrompt(withBudget.userPrompt, raw, [...critical, ...cheap]),
       });
     } catch {
       return raw;
@@ -241,7 +301,7 @@ async function withSelfCorrection(
     return await generateOnce({
       ...withBudget,
       modelTier: "gemini-flash",
-      userPrompt: buildCheapLengthCorrectionPrompt(opts.userPrompt, raw, cheap),
+      userPrompt: buildCheapLengthCorrectionPrompt(withBudget.userPrompt, raw, cheap),
     });
   } catch {
     return raw;
@@ -268,6 +328,7 @@ async function generateExpertTextOnce(opts: GenerateOpts): Promise<string> {
     maxTokens: opts.maxTokens,
     budget: opts.budget,
     stream: opts.stream,
+    skipLatvianPolish: true,
   });
 }
 
@@ -294,6 +355,7 @@ async function generateTextWithVocabularyOnce(opts: GenerateOpts): Promise<strin
     maxTokens: opts.maxTokens,
     budget: opts.budget,
     stream: opts.stream,
+    skipLatvianPolish: true,
   });
 }
 
@@ -321,7 +383,7 @@ async function generateTextWithWebSearchOnce(opts: GenerateOpts): Promise<string
     maxSearches: opts.maxSearches,
     budget: opts.budget,
     stream: opts.stream,
-    skipLatvianPolish: opts.skipLatvianPolish,
+    skipLatvianPolish: true,
   });
 }
 

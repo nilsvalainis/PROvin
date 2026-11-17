@@ -57,6 +57,16 @@ const MILEAGE_ORIGIN_LV: Record<number, string> = {
   30: "Pirmā reģistrācija",
 };
 
+/**
+ * tjekbil mileagelogs `origin`: 10/20/30 ir valsts reģistri. 0 ir tjekbil.dk lietotāja ievade
+ * (piem. 86 km 2026-11-13), 40 un citi nav dokumentēti (piem. 2000 km 2019. gadā pēc 83 000 km).
+ * Neoficiālie rādījumi radīja viltus „Odometra pretrunu”, tāpēc nobraukumā ņemam tikai reģistrus.
+ */
+export function isOfficialTjekbilMileageOrigin(origin: unknown): boolean {
+  const n = num(origin);
+  return n != null && n in MILEAGE_ORIGIN_LV;
+}
+
 export function isCustomsInspection(r: TjekbilInspection): boolean {
   return /toldsyn/i.test(`${str(r.kategori)} ${str(r.synstype)}`);
 }
@@ -276,6 +286,7 @@ export function buildTjekbilMileage(logs: TjekbilMileageLog[], inspections: Tjek
   const rows: VinSourceMileageRow[] = [];
   for (const log of logs) {
     if (log.isHidden === true) continue;
+    if (!isOfficialTjekbilMileageOrigin(log.origin)) continue;
     const km = num(log.mileage);
     const date = isoDay(log.mileageAt);
     if (km == null || !date) continue;
@@ -283,7 +294,7 @@ export function buildTjekbilMileage(logs: TjekbilMileageLog[], inspections: Tjek
       date,
       odometer: String(km),
       country: DK_COUNTRY_LV,
-      origin: MILEAGE_ORIGIN_LV[num(log.origin) ?? -1] ?? "DMR",
+      origin: MILEAGE_ORIGIN_LV[num(log.origin) ?? -1],
     });
   }
   for (const r of inspections) {
@@ -292,7 +303,7 @@ export function buildTjekbilMileage(logs: TjekbilMileageLog[], inspections: Tjek
     if (!km || !date) continue;
     const origin = isCustomsInspection(r)
       ? "Færdselsstyrelsen (muitas apskate)"
-      : `Færdselsstyrelsen (synsrapport) — ${translateTermLv(str(r.synsresultat), "da") || str(r.synsresultat)}`;
+      : `Færdselsstyrelsen (synsrapport) - ${translateTermLv(str(r.synsresultat), "da") || str(r.synsresultat)}`;
     rows.push({ date, odometer: km, country: DK_COUNTRY_LV, origin });
   }
 
@@ -325,7 +336,7 @@ export function buildTjekbilIncidents(dmr: TjekbilDmrResponse, inspections: Tjek
       date: isoDay(r.synsdato),
       amount: "",
       country: DK_COUNTRY_LV,
-      note: `Apskate nav izturēta (${translateTermLv(str(r.synsresultat), "da")})${faultText ? ` — ${translateTextLv(faultText, "da")}` : ""}`,
+      note: `Apskate nav izturēta (${translateTermLv(str(r.synsresultat), "da")})${faultText ? ` - ${translateTextLv(faultText, "da")}` : ""}`,
     });
   }
 
@@ -335,7 +346,7 @@ export function buildTjekbilIncidents(dmr: TjekbilDmrResponse, inspections: Tjek
       date: isoDay(d.dato ?? d.date),
       amount: str(d.beloeb ?? d.amount),
       country: DK_COUNTRY_LV,
-      note: `Ķīla / parāds (Bilbogen)${str(d.kreditor ?? d.creditor) ? ` — ${str(d.kreditor ?? d.creditor)}` : ""}`,
+      note: `Ķīla / parāds (Bilbogen)${str(d.kreditor ?? d.creditor) ? ` - ${str(d.kreditor ?? d.creditor)}` : ""}`,
     });
   }
   return rows;

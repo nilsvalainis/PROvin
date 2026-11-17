@@ -29,8 +29,11 @@ async function pushRegistration(): Promise<ServiceWorkerRegistration> {
   return navigator.serviceWorker.ready;
 }
 
-/** Paziņojumi šajā ierīcē: jauni pasūtījumi, ātrie, termiņi, rīta kopsavilkums. */
-export function AdminPushToggle() {
+/**
+ * Paziņojumi šajā ierīcē: jauni pasūtījumi, ātrie, termiņi, rīta kopsavilkums.
+ * hint: cits paskaidrojums (piem. pavadzīmju lapā - par izrakstītām pavadzīmēm).
+ */
+export function AdminPushToggle({ hint }: { hint?: string } = {}) {
   const [state, setState] = useState<State>("loading");
   const [publicKey, setPublicKey] = useState("");
   const [note, setNote] = useState("");
@@ -118,9 +121,11 @@ export function AdminPushToggle() {
         ? "Paziņojumi serverī vēl nav ieslēgti."
         : state === "denied"
           ? "Paziņojumi ir aizliegti. Ieslēdz tos iPhone Iestatījumos pie šīs lietotnes."
-          : state === "on"
-            ? "Jauni pasūtījumi, ātrie, termiņi un rīta kopsavilkums."
-            : "Saņem ziņu par jauniem pasūtījumiem un termiņiem.";
+          : hint
+            ? hint
+            : state === "on"
+              ? "Jauni pasūtījumi, ātrie, termiņi un rīta kopsavilkums."
+              : "Saņem ziņu par jauniem pasūtījumiem un termiņiem.";
 
   return (
     <section aria-label="Paziņojumi" className="overflow-hidden rounded-[14px] bg-[var(--surface,#fff)] px-4 py-3 shadow-[var(--am-card-shadow)]">

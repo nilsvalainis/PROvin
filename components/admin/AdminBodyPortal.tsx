@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 
 export function AdminBodyPortal({ children }: { children: ReactNode }) {
@@ -42,6 +43,7 @@ export function AdminAnchoredSheet({
     return () => mq.removeEventListener("change", sync);
   }, [open]);
   useAdminScrollLock(open && narrow);
+  const backdropClose = useModalBackdropClose(onClose);
   if (!open) return null;
   return (
     <>
@@ -51,7 +53,7 @@ export function AdminAnchoredSheet({
             type="button"
             aria-label={closeLabel}
             className="fixed inset-0 z-30 bg-black/38"
-            onClick={onClose}
+            {...backdropClose}
           />
           <div className={mobileClassName}>{children()}</div>
         </div>

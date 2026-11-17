@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { listingExtrasI, LV_VAT_RATE } from "@/lib/iriss-listings-cost";
 import {
   AUTOBID_BRAND_ID_TO_NAME,
   resolveEcarstradeMake,
@@ -24,6 +25,9 @@ import {
   widenExactSearchBounds,
 } from "@/lib/iriss-listings-ecarstrade-search";
 import { planEcarstradeSearchUrls } from "@/lib/iriss-scan-ecarstrade-links";
+
+/** Noklusējuma izmaksas, Margin formula kā `listingMaxBid` (I × 1,21). */
+const searchBound = (budget: number) => Math.round(budget - listingExtrasI() * (1 + LV_VAT_RATE));
 
 describe("eCarsTrade search mapper", () => {
   it("resolves Volvo XC60 to mark 68 / model 1866", () => {
@@ -264,17 +268,18 @@ describe("eCarsTrade search mapper", () => {
     expect(filled.yearFrom).toBe(2018);
     expect(filled.yearTo).toBe(2022);
     expect(filled.mileageTo).toBe(150000);
-    expect(filled.priceTo).toBe(28000);
+    expect(filled.priceTo).toBe(searchBound(28000));
     expect(filled.drives).toEqual(["awd"]);
-    expect(filled.colors).toEqual(["Black", "Grey"]);
-    expect(filled.excludeColors).toEqual(["Yellow"]);
+    // Nils 30.10: krāsas (vēlamās un nevēlamās) filtrā neņem.
+    expect(filled.colors).toEqual([]);
+    expect(filled.excludeColors).toEqual([]);
     expect(filled.vat).toEqual(["reclaimable"]);
     const url = ecarstradeSearchUrl(filled)!;
     expect(url).not.toContain("year_from=");
     expect(url).not.toContain("mileage_to=");
-    expect(url).toContain("price_to=28000");
+    expect(url).toContain(`price_to=${searchBound(28000)}`);
     expect(url).toContain("iriss_drive=awd");
-    expect(url).toContain("iriss_exclude_color=Yellow");
+    expect(url).not.toContain("iriss_exclude_color=");
     expect(url).toContain("vat[]=reclaimable");
   });
 
@@ -297,7 +302,7 @@ describe("eCarsTrade search mapper", () => {
     expect(params.get("year_from")).toBeNull();
     expect(params.get("year_to")).toBeNull();
     expect(params.get("mileage_to")).toBeNull();
-    expect(params.get("price_to")).toBe("26000");
+    expect(params.get("price_to")).toBe(String(searchBound(26000)));
     expect(params.get("fuel[]")).toBe("Petrol");
     expect(params.get("gearbox[]")).toBe("Manual");
     const dieselAuction = parseListingSearchUrl(

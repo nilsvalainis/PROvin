@@ -72,7 +72,7 @@ export function mntRelayToResult(vin: string, body: MntRelayResponse): VinSource
   if (!d || !d.found) return emptyVinSourceResult("mnt_ee", vin, "VIN nav Igaunijas transportlīdzekļu reģistrā");
 
   const page = d.page ?? { text: "", tables: d.tables ?? [], pairs: d.pairs ?? [] };
-  const base = parseMntExtract(vin, page);
+  const base = parseMntExtract(vin, page, { resultConfirmed: true });
 
   const mileage: VinSourceMileageRow[] = (d.mileage ?? [])
     .filter((m) => m.date && Number.isFinite(m.odometerKm))

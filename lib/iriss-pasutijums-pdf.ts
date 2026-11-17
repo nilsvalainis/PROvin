@@ -32,8 +32,9 @@ import {
   irissContractSignerName,
 } from "@/lib/iriss-contract-party";
 import { irissOfferCustomPdfBlocks, irissOfferPdfShows } from "@/lib/iriss-offer-blocks";
-import { formatOfferValidUntilLv, normalizeOfferValidUntil } from "@/lib/iriss-offer-valid-until";
+import { formatOfferDeadlineLv, formatOfferValidUntilLv, normalizeOfferValidUntil } from "@/lib/iriss-offer-valid-until";
 import { irissOfferImagesOmittedNotice } from "@/lib/iriss-offer-share";
+import { formatIrissOfferPublicFuel, formatIrissOfferPublicTransmission } from "@/lib/iriss-offer-public-display";
 import { parsePriceLike } from "@/lib/iriss-price-format";
 import { applyProvinHumanDashes } from "@/lib/source-summary-comment-format";
 import {
@@ -377,11 +378,16 @@ function drawOfferColonLineWithIcon(ctx: Ctx, line: string, size: number, x: num
   let dx = 0;
   let mw = maxW;
   if (p.kind === "kv") {
+    // Visas rindas vienā kolonnā - arī tās, kurām nav ikonas (Jauda, Krāsa).
+    dx = 18;
+    mw = maxW - dx;
     const kind = matchOfferLineIcon(p.label);
     if (kind) {
-      dx = 18;
-      mw = maxW - dx;
-      drawOfferMiniIcon(ctx.page, kind, x + 1, ctx.y - size * 0.32, 14, PREMIUM_ORANGE);
+      // Ikonas augša = drawOfferMiniIcon(baselineY) - 0.88 * izmērs; centrē pret šīs rindas lielo burtu vidu
+      // (agrāk ikona bija par vienu rindu zemāk: 1. rindai nav, pēdējā paliek viena).
+      const iconSize = 14;
+      const iconTop = ctx.y - size * 0.64 + iconSize / 2;
+      drawOfferMiniIcon(ctx.page, kind, x + 1, iconTop + iconSize * 0.88, iconSize, PREMIUM_ORANGE);
     }
   }
   drawColonLabeledLine(ctx, line, size, x + dx, mw);
@@ -922,7 +928,7 @@ function drawKopaHighlightBand(ctx: Ctx, boxX: number, boxW: number, totalPrice:
 async function drawOfferPdfHero(ctx: Ctx, offer: IrissOfferRecord): Promise<void> {
   const rawTitle = val(offer.brandModel) ?? val(offer.title) ?? "Piedāvājums";
   const heroTitle = rawTitle.toLocaleUpperCase("lv-LV");
-  const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date());
+  const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long", timeZone: "Europe/Riga" }).format(new Date());
   const sublines = ["Piedāvājums", dateStr];
   ensureSpace(ctx, 120);
   const hctx = {
@@ -954,11 +960,12 @@ const PAGE1_TITLE_H = 22;
 
 function formatPasutijumsDocDate(record: IrissPasutijumsRecord): string {
   const raw = (record.orderDate || record.createdAt || "").trim();
-  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw);
+  // Tikai datums (YYYY-MM-DD) - kā ievadīts; pilns ISO laiks (createdAt, UTC) - Rīgas datums (ap pusnakti citāds).
+  const iso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
   if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
   const d = raw ? new Date(raw) : new Date();
   if (!Number.isNaN(d.getTime())) {
-    return new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(d);
+    return new Intl.DateTimeFormat("lv-LV", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Riga" }).format(d);
   }
   return raw;
 }
@@ -1437,7 +1444,7 @@ export async function buildIrissPasutijumiListPdfBytes(records: IrissPasutijumsR
   const ctx = await createPdfCtx();
   ctx.offerLogo = await dzLoadOfferLogoPack(ctx.pdfDoc);
 
-  const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long" }).format(new Date());
+  const dateStr = new Intl.DateTimeFormat("lv-LV", { dateStyle: "long", timeZone: "Europe/Riga" }).format(new Date());
   const countLabel =
     active.length === 1 ? "1 aktīvs pasūtījums" : `${active.length} aktīvie pasūtījumi`;
   const hctx = {
@@ -1530,10 +1537,21 @@ export async function buildIrissOfferPdfBytes(
   if (val(offer.brandModel)) offerLines.push(`Marka, modelis: ${val(offer.brandModel)}`);
   if (firstRegistration) offerLines.push(`Pirmā reģistrācija: ${firstRegistration}`);
   if (odometer) offerLines.push(`Odometra rādījums: ${odometer}`);
-  if (val(offer.transmission)) offerLines.push(`Transmisija: ${val(offer.transmission)}`);
+  const vehicleBlock = offer.blocks?.find((b) => b.kind === "vehicle");
+  // Redaktora bloka vērtība (ja ir) - tā pati, ko rāda redaktors un publiskā saite; citādi piedāvājuma lauks.
+  const vehicleValue = (id: "transmission" | "fuel" | "powerKw" | "color"): string | null =>
+    val(vehicleBlock?.rows?.find((r) => r.id === id)?.value ?? "") ?? val(offer[id]);
+  const transmission = vehicleValue("transmission");
+  const fuel = vehicleValue("fuel");
+  const powerKw = vehicleValue("powerKw");
+  const color = vehicleValue("color");
+  if (transmission) offerLines.push(`Transmisija: ${formatIrissOfferPublicTransmission(transmission)}`);
+  if (fuel) offerLines.push(`Degviela: ${formatIrissOfferPublicFuel(fuel)}`);
+  if (powerKw) offerLines.push(`Jauda: ${/^\d+([.,]\d+)?$/.test(powerKw) ? `${powerKw} kW` : powerKw}`);
+  if (color) offerLines.push(`Krāsa: ${color}`);
   if (val(offer.location)) offerLines.push(`Atrašanās vieta: ${val(offer.location)}`);
   if (offer.blocks?.length) {
-    const vehicle = offer.blocks.find((b) => b.kind === "vehicle");
+    const vehicle = vehicleBlock;
     for (const row of vehicle?.rows ?? []) {
       const known = ["brandModel", "firstRegistration", "odometerReading", "fuel", "transmission", "powerKw", "color"];
       if (!known.includes(row.id) && row.label.trim() && row.value.trim()) {
@@ -1575,7 +1593,7 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (irissOfferPdfShows(offer, "warranty") && specialNotes) {
+  if (irissOfferPdfShows(offer, "specialNotes") && specialNotes) {
     drawIosCard(
       ctx,
       "Īpašas atzīmes",
@@ -1584,7 +1602,7 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (irissOfferPdfShows(offer, "assessment") && visual && parseScoreOutOf10(visual) !== null) {
+  if (irissOfferPdfShows(offer, "visualAssessment") && visual && parseScoreOutOf10(visual) !== null) {
     drawIosCard(
       ctx,
       "Vizuālais novērtējums",
@@ -1593,7 +1611,7 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (irissOfferPdfShows(offer, "assessment") && visual) {
+  if (irissOfferPdfShows(offer, "visualAssessment") && visual) {
     drawIosCard(
       ctx,
       "Detalizēts apraksts (vizuālais)",
@@ -1602,7 +1620,7 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (irissOfferPdfShows(offer, "assessment") && technical && parseScoreOutOf10(technical) !== null) {
+  if (irissOfferPdfShows(offer, "technicalAssessment") && technical && parseScoreOutOf10(technical) !== null) {
     drawIosCard(
       ctx,
       "Tehniskais novērtējums",
@@ -1611,7 +1629,7 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (irissOfferPdfShows(offer, "assessment") && technical) {
+  if (irissOfferPdfShows(offer, "technicalAssessment") && technical) {
     drawIosCard(
       ctx,
       "Detalizēts apraksts (tehniskais)",
@@ -1630,10 +1648,14 @@ export async function buildIrissOfferPdfBytes(
   const totalPrice = parseMoney(carPrice ?? "") + parseMoney(deliveryPrice ?? "") + parseMoney(commissionFee ?? "");
   const offerValidDays = val(offer.offerValidDays);
   const offerValidUntil = normalizeOfferValidUntil(offer.validUntil);
+  // Precīzs termiņš (T4): "dd.mm.gggg hh:mm" Rīgas laikā; vecie piedāvājumi - tikai datums, kā līdz šim.
+  const offerDeadlineLabel = formatOfferDeadlineLv(offer.validUntilAt ?? "");
   const pricingPlainLines: string[] = [];
-  if (carPrice) pricingPlainLines.push(`Automašīnas cena: ${carPrice}`);
-  if (deliveryPrice) pricingPlainLines.push(`Piegādes cena: ${deliveryPrice}`);
-  if (commissionFee) pricingPlainLines.push(`Komisijas maksa: ${commissionFee}`);
+  // Tikai skaitlis ("21500") - tāpat kā "Kopā" (21 500 €); brīvs teksts paliek kā ievadīts.
+  const priceText = (v: string) => (/^\d+([.,]\d+)?$/.test(v.replace(/\s/g, "")) ? fmtMoneyEurLv(parseMoney(v)) : v);
+  if (carPrice) pricingPlainLines.push(`Automašīnas cena: ${priceText(carPrice)}`);
+  if (deliveryPrice) pricingPlainLines.push(`Piegādes cena: ${priceText(deliveryPrice)}`);
+  if (commissionFee) pricingPlainLines.push(`Komisijas maksa: ${priceText(commissionFee)}`);
   const hasPricing = pricingPlainLines.length > 0 || totalPrice > 0;
 
   if (irissOfferPdfShows(offer, "pricing") && hasPricing) {
@@ -1792,9 +1814,11 @@ export async function buildIrissOfferPdfBytes(
     );
   }
 
-  if (offerValidUntil || offerValidDays) {
+  if (offerDeadlineLabel || offerValidUntil || offerValidDays) {
     ensureSpace(ctx, lineHeight(11) + 20);
-    const validity = offerValidUntil
+    const validity = offerDeadlineLabel
+      ? `Piedāvājums spēkā līdz: ${offerDeadlineLabel}`
+      : offerValidUntil
       ? `Piedāvājums spēkā līdz: ${formatOfferValidUntilLv(offerValidUntil)}`
       : `Piedāvājums spēkā (dienas): ${offerValidDays}`;
     drawParagraph(ctx, validity, 10, INK, ctx.fontBold, {

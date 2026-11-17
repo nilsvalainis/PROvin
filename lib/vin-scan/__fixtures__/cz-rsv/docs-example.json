@@ -1,0 +1,33 @@
+{
+  "_meta": {
+    "source": "DOKUMENTĀCIJAS PIEMĒRS, nav reāla API atbilde: RSV_Verejna_API_DK_v1_0.pdf (MD ČR, 21.01.2025), 6.-7. lpp. Atlasīti galvenie lauki.",
+    "url": "https://api.dataovozidlech.cz/api/vehicletechnicaldata/v2?vin=TMBEFF654V7529422",
+    "status": 200
+  },
+  "body": {
+    "Status": 1,
+    "Data": {
+      "DatumPrvniRegistrace": "1997-03-21T00:00:00",
+      "DatumPrvniRegistraceVCr": "1997-03-21T00:00:00",
+      "VozidloDruh": "OSOBNÍ AUTOMOBIL",
+      "Kategorie": "M1",
+      "TovarniZnacka": "ŠKODA",
+      "Typ": "ŠKODA FELICIA COMBI GLXI TMBEFF654 / EFF654",
+      "Varianta": "GLXI",
+      "VIN": "TMBEFF654V7529422",
+      "ObchodniOznaceni": "FELICIA COMBI",
+      "MotorTyp": "781.136 M",
+      "MotorMaxVykon": "50 / 5000",
+      "Palivo": "BA 95 B",
+      "MotorZdvihObjem": 1289,
+      "VozidloKaroserieBarva": "ČERVENÁ-TMAVÁ",
+      "ZarazeniVozidla": "RSV",
+      "PravidelnaTechnickaProhlidkaDo": "2013-12-06T00:00:00",
+      "EvidencniProhlidkaDne": "2007-04-02T00:00:00",
+      "HistorickeVozidloProhlidkaDne": null,
+      "StatusNazev": "PROVOZOVANÉ",
+      "PocetVlastniku": 1,
+      "PocetProvozovatelu": 4
+    }
+  }
+}

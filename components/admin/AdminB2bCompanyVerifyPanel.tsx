@@ -14,6 +14,12 @@ import {
   type CompanyVerifyTone,
   type CompanyVerifyView,
 } from "@/lib/b2b-company-verify";
+import {
+  companyVerifyDecisionError,
+  companyVerifyLoadError,
+  requestCompanyVerify,
+  runCompanyVerifyPanelAction,
+} from "@/lib/b2b-company-verify-client";
 
 const TONE_CLASS: Record<CompanyVerifyTone, string> = {
   green: "border-emerald-200 bg-emerald-50 text-emerald-900",
@@ -62,7 +68,7 @@ export function AdminB2bCompanyVerifySummary({
         </div>
         <div className="flex flex-wrap gap-1.5">
           {onRefresh ? (
-            <button type="button" className={ADMIN_B2B_BTN} disabled={busy} onClick={onRefresh}>
+            <button type="button" className={ADMIN_B2B_BTN} disabled={busy} aria-busy={busy} onClick={onRefresh}>
               <AdminB2bActionLabel>Atsvaidzināt</AdminB2bActionLabel>
             </button>
           ) : null}
@@ -71,7 +77,8 @@ export function AdminB2bCompanyVerifySummary({
               <button
                 type="button"
                 className={ADMIN_B2B_BTN_SOLID}
-                disabled={busy || view.decision === "approved"}
+                disabled={busy}
+                aria-busy={busy}
                 onClick={() => onDecision("approved")}
               >
                 <AdminB2bActionLabel>Apstiprināt</AdminB2bActionLabel>
@@ -79,7 +86,8 @@ export function AdminB2bCompanyVerifySummary({
               <button
                 type="button"
                 className={ADMIN_B2B_BTN}
-                disabled={busy || view.decision === "rejected"}
+                disabled={busy}
+                aria-busy={busy}
                 onClick={() => onDecision("rejected")}
               >
                 <AdminB2bActionLabel>Noraidīt</AdminB2bActionLabel>
@@ -125,30 +133,13 @@ export function AdminB2bCompanyVerifyPanel({
   const [error, setError] = useState("");
 
   const load = async (refresh = false) => {
-    setBusy(true);
-    setError("");
-    try {
-      const res = refresh
-        ? await fetch("/api/admin/company-verify", {
-            method: "POST",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ kind, id, refresh: true }),
-          })
-        : await fetch(`/api/admin/company-verify?kind=${encodeURIComponent(kind)}&id=${encodeURIComponent(id)}`, {
-            credentials: "include",
-          });
-      const data = (await res.json().catch(() => ({}))) as CompanyVerifyView & { error?: string };
-      if (!res.ok || !data.report) {
-        setError("Pārbaudi neizdevās ielādēt.");
-        return;
-      }
-      setView(data);
-    } catch {
-      setError("Pārbaudi neizdevās ielādēt.");
-    } finally {
-      setBusy(false);
-    }
+    await runCompanyVerifyPanelAction({
+      request: () => requestCompanyVerify({ kind, id, refresh }),
+      setBusy,
+      setError,
+      onView: setView,
+      unexpectedError: companyVerifyLoadError,
+    });
   };
 
   useEffect(() => {
@@ -158,28 +149,19 @@ export function AdminB2bCompanyVerifyPanel({
   }, [kind, id]);
 
   const decide = async (decision: CompanyVerifyDecision) => {
-    setBusy(true);
-    setError("");
-    try {
-      const res = await fetch("/api/admin/company-verify", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind, id, decision }),
-      });
-      const data = (await res.json().catch(() => ({}))) as CompanyVerifyView & { error?: string };
-      if (!res.ok || !data.report) {
-        setError("Lēmumu neizdevās saglabāt.");
-        return;
-      }
-      setView(data);
-      onDecision?.(data.decision);
-      if (kind === "partner") router.refresh();
-    } catch {
-      setError("Lēmumu neizdevās saglabāt.");
-    } finally {
-      setBusy(false);
-    }
+    let applied = false;
+    await runCompanyVerifyPanelAction({
+      request: () => requestCompanyVerify({ kind, id, decision }),
+      setBusy,
+      setError,
+      onView: (next) => {
+        applied = true;
+        setView(next);
+        onDecision?.(next.decision);
+      },
+      unexpectedError: companyVerifyDecisionError,
+    });
+    if (applied && kind === "partner") router.refresh();
   };
 
   if (!view) {

@@ -1,5 +1,6 @@
 /**
- * Starptautiskās vēstures avots (admin: „CC.VIN”) - strukturētie lauki, normalizācija un LV vārdnīcas.
+ * Starptautiskās vēstures avots (admin: „Izsoļu portālu arhīvs”, internal id: cc_vin) -
+ * strukturētie lauki, normalizācija un LV vārdnīcas.
  *
  * Klienta PDF šo avotu sauc tikai par „IZSOĻU PORTĀLU ARHĪVS”: ne sadaļā, ne tabulās, ne leģendā
  * nedrīkst parādīties ārējā pakalpojuma nosaukums. Specifikācijas šeit netiek dublētas - akcents ir
@@ -9,11 +10,12 @@
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 import type { CcVinPhotoGroup, CcVinPhotoMeta } from "@/lib/cc-vin-photo-types";
+import { normalizeThecarapiAdminRecords, type ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 import { normalizeCcVinPhotoGroups, syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
 import { convertAmountTextToEur, displayUsdAsEur } from "@/lib/currency-eur-convert";
 
 /** Admin bloka nosaukums (tikai admin panelis). */
-export const CC_VIN_ADMIN_LABEL = "CC.VIN";
+export const CC_VIN_ADMIN_LABEL = "Izsoļu portālu arhīvs";
 
 /** Klienta PDF sadaļas nosaukums - bez atsauces uz ārējo pakalpojumu. */
 export const CC_VIN_PDF_TITLE = "IZSOĻU PORTĀLU ARHĪVS";
@@ -107,6 +109,8 @@ export type CcVinBlockState = {
   /** Slēpt CheckCar.vin ūdenszīmi pirms foto saglabāšanas (noklusējums: izslēgts). */
   hidePhotoWatermarks?: boolean;
   pdfChecklist?: CcVinPdfChecklist;
+  /** TheCarApi pilnie ieraksti. Admin un klienta PDF. */
+  thecarapiRecords?: ThecarapiAdminRecord[];
 };
 
 /** Lokāls dublikāts (bez `admin-source-blocks` importa - tas pats importē šo moduli). */
@@ -151,6 +155,8 @@ export function emptyCcVinBlock(): CcVinBlockState {
     aiContextRaw: "",
     photos: [],
     photoGroups: [],
+    hidePhotoWatermarks: false,
+    thecarapiRecords: [],
   };
 }
 
@@ -177,7 +183,7 @@ export function ccVinSaleRowHasData(r: CcVinSaleRow | null | undefined): boolean
 }
 
 /**
- * Jau saglabāta CC.VIN summa → EUR attēlojums. Ja valūta jau ir eiro vai nav atpazīstama,
+ * Jau saglabāta Izsoļu portālu arhīva summa → EUR attēlojums. Ja valūta jau ir eiro vai nav atpazīstama,
  * atstāj tekstu kā ir. Vecākiem blokiem, kas vēl glabā „3 989 USD”, pārrēķins notiek šeit.
  */
 export function ccVinAmountToEurDisplay(raw: string): string {
@@ -187,7 +193,27 @@ export function ccVinAmountToEurDisplay(raw: string): string {
   return conversion?.display ?? t;
 }
 
-/** Cik faktu ierakstu ir blokā (PDF sadaļas galvenes plāksnītei). */
+/**
+ * Cik ierakstu PDF sadaļa tiešām izdrukā.
+ * Nobraukums ir nobraukuma sadaļā. Bojājums ar summu ir negadījumu tabulā.
+ * TheCarApi lots skaitās, ja tam ir lauki vai bildes.
+ */
+export function countCcVinPdfVisibleRecords(b: CcVinBlockState | null | undefined): number {
+  if (!b) return 0;
+  const lots = (b.thecarapiRecords ?? []).filter(
+    (record) => record.fields.some((field) => field.value.trim()) || record.photos.length > 0 || record.photoUrls.length > 0,
+  ).length;
+  return (
+    (b.damages ?? []).filter((row) => ccVinDamageRowHasData(row) && !row.amount.trim()).length +
+    (b.insurance ?? []).filter(ccVinRecordRowHasData).length +
+    (b.brands ?? []).filter(ccVinRecordRowHasData).length +
+    (b.titles ?? []).filter(ccVinTitleRowHasData).length +
+    (b.sales ?? []).filter(ccVinSaleRowHasData).length +
+    lots
+  );
+}
+
+/** Cik faktu ierakstu ir blokā (arī tie, kas PDF izsoļu sadaļā netiek drukāti). */
 export function countCcVinRecords(b: CcVinBlockState | null | undefined): number {
   if (!b) return 0;
   return (
@@ -209,10 +235,11 @@ export function ccVinBlockHasContent(b: CcVinBlockState | null | undefined): boo
   if (countCcVinRecords(b) > 0) return true;
   if ((b.checks ?? []).some(ccVinCheckRowHasData)) return true;
   if ((b.photoGroups ?? []).some((g) => (g.photos ?? []).length > 0)) return true;
+  if ((b.thecarapiRecords ?? []).some((record) => record.fields.length > 0 || record.photos.length > 0)) return true;
   return Boolean(b.comments.trim() || b.reportDate.trim() || b.attentionMarks.trim());
 }
 
-/** Jebkurš aizpildīts CC.VIN lauks, izņemot komentāru (noklusējuma sagatave neskaitās). */
+/** Jebkurš aizpildīts Izsoļu portālu arhīva lauks (internal id: cc_vin), izņemot komentāru (noklusējuma sagatave neskaitās). */
 export function ccVinBlockHasOperatorData(b: CcVinBlockState | null | undefined): boolean {
   if (!b) return false;
   if (ccVinBlockHasContent({ ...b, comments: "" })) return true;
@@ -333,6 +360,7 @@ export function normalizeCcVinBlock(raw: unknown): CcVinBlockState {
     aiContextRaw: str(o.aiContextRaw, 200000),
     photos: synced.photos,
     photoGroups: synced.photoGroups,
+    thecarapiRecords: normalizeThecarapiAdminRecords(o.thecarapiRecords),
     hidePhotoWatermarks: o.hidePhotoWatermarks === true,
     ...("pdfChecklist" in o ? { pdfChecklist: normalizeChecklist(o.pdfChecklist) } : {}),
   };

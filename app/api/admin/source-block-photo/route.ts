@@ -21,7 +21,10 @@ import {
   isSafeOrderDraftSessionId,
   readOrderDraft,
 } from "@/lib/admin-order-draft-store";
-import { SOURCE_BLOCK_MAX_PHOTOS } from "@/lib/source-block-photo-types";
+import {
+  SOURCE_BLOCK_PHOTO_WORKSPACE_MAX,
+  sourceBlockPhotoMaxForKey,
+} from "@/lib/source-block-photo-types";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 
 export const maxDuration = 60;
@@ -91,6 +94,8 @@ export async function POST(req: Request) {
     const file = form.get("file");
     const countRaw = String(form.get("currentCount") ?? "").trim();
     const clientCount = Number.parseInt(countRaw, 10);
+    const blockKey = String(form.get("blockKey") ?? "").trim();
+    const perBlockMax = sourceBlockPhotoMaxForKey(blockKey);
 
     if (!sessionId || !isSafeOrderDraftSessionId(sessionId)) {
       return NextResponse.json({ error: "invalid_session" }, { status: 400 });
@@ -104,7 +109,7 @@ export async function POST(req: Request) {
 
     const persisted = await persistedPhotoCount(sessionId);
     const blockCount = Number.isFinite(clientCount) && clientCount >= 0 ? clientCount : 0;
-    if (blockCount >= SOURCE_BLOCK_MAX_PHOTOS || persisted >= SOURCE_BLOCK_MAX_PHOTOS * 12) {
+    if (blockCount >= perBlockMax || persisted >= SOURCE_BLOCK_PHOTO_WORKSPACE_MAX) {
       return NextResponse.json({ error: "photo_limit" }, { status: 400 });
     }
 

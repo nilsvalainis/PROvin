@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { Loader2, MessageSquarePlus } from "lucide-react";
 
 import { AdminAiGenerateButton } from "@/components/admin/AdminAiGenerateButton";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { aiAdminButtonOrder } from "@/lib/ai-admin-field-defaults";
 import { aiAdminModelTierLabel, type AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 
@@ -84,6 +85,8 @@ export function AdminAiGenerateWithPrefill({
     void onGenerate(trimmed, pendingTier);
   };
 
+  const backdropClose = useModalBackdropClose(close);
+
   return (
     <>
       <div className="inline-flex flex-wrap items-center gap-1">
@@ -110,13 +113,13 @@ export function AdminAiGenerateWithPrefill({
         <div
           className="fixed inset-0 z-[120] flex items-end justify-center bg-black/40 p-3 sm:items-center"
           role="presentation"
-          onClick={close}
+          {...backdropClose}
         >
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby={titleId}
-            className="w-full max-w-lg rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] p-4 shadow-2xl"
+            className="w-full max-w-lg rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] p-4 shadow-2xl max-h-[calc(100dvh-1.5rem-env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-2 flex items-start gap-2">

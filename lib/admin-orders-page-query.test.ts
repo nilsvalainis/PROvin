@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseAdminOrdersQuery, queryAdminOrderRows } from "@/lib/admin-orders-page-query";
+import { isMobileUserAgent, parseAdminOrdersQuery, queryAdminOrderRows } from "@/lib/admin-orders-page-query";
 
 const mk = (i: number, extra: Record<string, unknown> = {}) => ({
   id: `cs_${i}`,
@@ -37,5 +37,31 @@ describe("admin orders page query", () => {
   it("oldest sort", () => {
     const r = queryAdminOrderRows(rows, parseAdminOrdersQuery({ sort: "oldest" }));
     expect(r.rows[2]!.id).toBe("cs_0");
+  });
+});
+
+describe("telefons: neizpildītie + pa 5 (Nils 06.11)", () => {
+  it("sākumā izpildīto nav, poga pievieno 5, meklēšana rāda arhīvu", () => {
+    const rows = Array.from({ length: 30 }, (_, i) => ({
+      id: `cs_${i}`,
+      created: 1000 + i,
+      auditComplete: i >= 3,
+      vin: i === 20 ? "WDC1671191A002835" : null,
+    }));
+    const first = queryAdminOrderRows(rows as never, parseAdminOrdersQuery({}, { mobile: true }));
+    expect(first.activeCount).toBe(3);
+    expect(first.doneShown).toBe(0);
+    expect(queryAdminOrderRows(rows as never, parseAdminOrdersQuery({ limit: "5" }, { mobile: true })).doneShown).toBe(5);
+    expect(parseAdminOrdersQuery({ limit: "7" }, { mobile: true }).limit).toBe(10);
+    const found = queryAdminOrderRows(rows as never, parseAdminOrdersQuery({ q: "WDC1671191A002835" }, { mobile: true }));
+    expect(found.rows.map((r) => r.id)).toEqual(["cs_20"]);
+    expect(parseAdminOrdersQuery({}).limit).toBe(50);
+  });
+
+  it("User-Agent: iPhone un Android telefons ir mobilais, iPad nav", () => {
+    expect(isMobileUserAgent("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Mobile/15E148")).toBe(true);
+    expect(isMobileUserAgent("Mozilla/5.0 (Linux; Android 14; Pixel 8) Mobile Safari/537.36")).toBe(true);
+    expect(isMobileUserAgent("Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X)")).toBe(false);
+    expect(isMobileUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)")).toBe(false);
   });
 });

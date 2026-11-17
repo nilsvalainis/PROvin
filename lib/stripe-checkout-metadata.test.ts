@@ -94,6 +94,7 @@ describe("stripe checkout / webhook call sites", () => {
       "app/api/checkout/test-pricing/route.ts",
       "app/api/client-link/checkout/route.ts",
       "lib/order-upsell-checkout.ts",
+      "lib/manual-order-checkout.ts",
       "app/api/checkout/partner/topup/route.ts",
     ];
     for (const rel of files) {

@@ -16,7 +16,7 @@ describe("B2B wallet refund email template", () => {
       atlikums: "80,01 €",
       produkts: B2B_WALLET_REFUND_EMAIL_PRODUCT.dealer_raw,
     });
-    expect(rendered.subject).toBe("PROVIN: dati VIN WVWZZZ3HZHE703058 nav pieejami, 19,99 € atgriezti kontā");
+    expect(rendered.subject).toBe("PROVIN · Dati nav pieejami, 19,99 € atgriezti kontā · WVWZZZ3HZHE703058");
     expect(rendered.text).toContain("Dīlera dati RAW");
     expect(rendered.text).toContain("80,01 €");
     expect(rendered.text).toContain("Ar cieņu,\nPROVIN");

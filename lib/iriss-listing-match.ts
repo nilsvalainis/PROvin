@@ -193,6 +193,8 @@ export function discoverListingOrderMatches(
       listingLinkAuto1: o.listingLinkAuto1,
       listingLinkEcarstrade: o.listingLinkEcarstrade,
       listingLinksOther: o.listingLinksOther,
+      totalBudget: o.totalBudget,
+      criteria: o.criteria ?? null,
     })),
   );
   const brandById = new Map(active.map((o) => [o.id, o.brandModel ?? ""]));

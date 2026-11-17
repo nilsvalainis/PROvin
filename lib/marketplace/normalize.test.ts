@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeMarketplaceListing, normalizeMarketplaceListings } from "@/lib/marketplace/normalize";
 
 describe("normalizeMarketplaceListing", () => {
-  it("keeps normalized fields and drops photos, description and seller contacts", () => {
+  it("keeps normalized fields and photo links (Nils 31.10), drops description and seller contacts", () => {
     const item = normalizeMarketplaceListing(
       "mobilede",
       "apify-mobilede",
@@ -43,7 +43,8 @@ describe("normalizeMarketplaceListing", () => {
       locationCountry: "DE",
     });
     expect(item?.sellerName).toBe("Hans");
-    expect(JSON.stringify(item)).not.toMatch(/1\.Hand|Scheckheft|example\.com\/a|111|a@b\.de/);
+    expect(item?.imageUrls).toEqual(["https://example.com/a.jpg"]);
+    expect(JSON.stringify(item)).not.toMatch(/1\.Hand|Scheckheft|111|a@b\.de/);
   });
 
   it("dedupes the same external id in one source", () => {

@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 
 /** Desktop: centrēts modālais logs. Mobilajā: pilnekrāna lapa. */
 export function B2bPartnerDialog({
@@ -38,6 +39,8 @@ export function B2bPartnerDialog({
     };
   }, [open]);
 
+  const backdropClose = useModalBackdropClose(onClose);
+
   if (!open || typeof document === "undefined") return null;
 
   return createPortal(
@@ -47,7 +50,7 @@ export function B2bPartnerDialog({
         aria-label={closeLabel}
         tabIndex={-1}
         className="absolute inset-0 bg-black/70 backdrop-blur-[2px]"
-        onClick={onClose}
+        {...backdropClose}
       />
       <div
         ref={panelRef}

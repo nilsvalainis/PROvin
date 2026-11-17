@@ -4,6 +4,7 @@ import { generateDzintarzemeTamePdfBytes } from "@/lib/dzintarzeme-tame-pdf";
 import { parseDzintarzemeTameBody } from "@/lib/dzintarzeme-tame-calculator";
 import { parseIrissAdvanceAmount } from "@/lib/iriss-advance";
 import { generatedDocumentResponseHeader } from "@/lib/iriss-generated-documents";
+import { irissOrderRoomRef } from "@/lib/iriss-order-room";
 import { readIrissTameCommissionSettings } from "@/lib/iriss-tame-commission-store";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
 import { isSafeIrissPasutijumsId, readIrissPasutijums, storeIrissGeneratedPdf } from "@/lib/iriss-pasutijumi-store";
@@ -30,8 +31,14 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   if (!parsed.ok) return NextResponse.json({ error: parsed.error }, { status: 400 });
 
   const rates = await readIrissTameCommissionSettings();
+  const extra = body as { year?: unknown; mileageKm?: unknown };
   const bytes = await generateDzintarzemeTamePdfBytes(parsed.value, rates, {
     advancePaidEur: parseIrissAdvanceAmount(rec.advance?.amount ?? ""),
+    docNo: irissOrderRoomRef(rec.id),
+    clientName: [rec.clientFirstName, rec.clientLastName].map((x) => (x ?? "").trim()).filter(Boolean).join(" "),
+    phone: rec.phone ?? "",
+    year: typeof extra.year === "string" ? extra.year.slice(0, 8) : "",
+    mileageKm: typeof extra.mileageKm === "string" ? extra.mileageKm.slice(0, 16) : "",
   });
   const pdfCache = "no-store, no-cache, must-revalidate, max-age=0, private" satisfies string;
   const date = new Date().toISOString().slice(0, 10);

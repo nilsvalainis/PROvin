@@ -95,30 +95,31 @@ describe("iriss pasūtījumi eCarsTrade link backfill", () => {
     });
     const next = replaceEcarstradeLinksOnPasutijums(row);
     expect(next.record.clientFirstName).toBe("Anna");
-    expect(next.record.listingLinkEcarstrade).toHaveLength(1);
-    expect(next.record.listingLinkEcarstrade[0]).toContain("fuel[]=Diesel");
-    expect(next.record.listingLinkEcarstrade[0]).toContain("model[]=1866");
-    expect(next.record.listingLinkEcarstrade[0]).not.toContain("year_from=2019");
-    expect(next.record.listingLinkEcarstrade[0]).not.toContain("mileage_to=140000");
-    expect(next.record.listingLinkEcarstrade[0]).not.toContain("price_to=26000");
-    expect(next.record.listingLinkEcarstrade[0]).not.toContain("gearbox[]=");
-    expect(next.record.listingLinkEcarstrade[0]).not.toContain("iriss_drive=awd");
+    // Nils 30.10: esošās saites paliek, jaunā tiek pievienota blakus.
+    expect(next.record.listingLinkEcarstrade).toHaveLength(3);
+    expect(next.record.listingLinkEcarstrade.slice(0, 2)).toEqual(["https://ecarstrade.com/search?mark[]=68", "https://ecarstrade.com/search?mark[]=68&mark[]=7"]);
+    const added = next.record.listingLinkEcarstrade[2]!;
+    expect(added).toContain("fuel[]=Diesel");
+    expect(added).toContain("model[]=1866");
+    expect(added).not.toContain("year_from=2019");
+    expect(added).not.toContain("mileage_to=140000");
+    expect(added).not.toContain("price_to=26000");
+    expect(added).not.toContain("gearbox[]=");
+    expect(added).not.toContain("iriss_drive=awd");
   });
 
-  it("replace clears form-derived ET when the order has no auction links", () => {
+  it("bez citām izsoles saitēm nekas netiek ģenerēts un esošā saite paliek (Nils 30.10)", () => {
     const row = rec({
       brandModel: "Skoda Octavia",
       listingLinkEcarstrade: ["https://ecarstrade.com/search?mark[]=61&model[]=1460"],
     });
     const next = replaceEcarstradeLinksOnPasutijums(row);
-    expect(next.preview.changed).toBe(true);
     expect(next.preview.generated).toEqual([]);
-    expect(next.record.listingLinkEcarstrade).toEqual([""]);
+    expect(next.record.listingLinkEcarstrade).toEqual(["https://ecarstrade.com/search?mark[]=61&model[]=1460"]);
     expect(next.record.clientFirstName).toBe("Anna");
-    expect(next.record.ecarstradeLinksManual).toBe(true);
   });
 
-  it("does not restore deleted eCarsTrade rows on later autosave/backfill", () => {
+  it("Nils 30.10: saglabāšana pasūtījumam saites nekad nepievieno (arī ja eCarsTrade tukšs)", () => {
     const row = rec({
       brandModel: "Volvo XC60",
       listingLinkAuto1: [
@@ -127,20 +128,6 @@ describe("iriss pasūtījumi eCarsTrade link backfill", () => {
       listingLinkOpenline: ["https://www.openlane.eu/en/findcar?makes=volvo&models=xc60&yearFrom=2018&fuels=diesel"],
       listingLinkEcarstrade: [""],
     });
-    const seeded = withAutoEcarstradeLinks(row);
-    const kept = seeded.listingLinkEcarstrade[0] ?? "";
-    expect(kept).toContain("ecarstrade.com/search");
-    const afterDelete = withAutoEcarstradeLinks({
-      ...seeded,
-      listingLinkEcarstrade: [kept],
-      ecarstradeLinksManual: true,
-    });
-    expect(afterDelete.listingLinkEcarstrade).toEqual([kept]);
-    const emptied = withAutoEcarstradeLinks({
-      ...seeded,
-      listingLinkEcarstrade: [""],
-      ecarstradeLinksManual: true,
-    });
-    expect(emptied.listingLinkEcarstrade).toEqual([""]);
+    expect(withAutoEcarstradeLinks(row)).toBe(row);
   });
 });

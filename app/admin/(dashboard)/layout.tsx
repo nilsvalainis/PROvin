@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { IrissStaffAppShell } from "@/components/admin/IrissStaffAppShell";
+import { autoparksV2StaffEnabled } from "@/lib/iriss-autoparks-v2-flag";
 import { PostPaymentLegalBanner } from "@/components/admin/PostPaymentLegalBanner";
 import { needsUrgentCompanyLegalOnAdmin } from "@/lib/admin-orders";
 import { getRequestOrigin } from "@/lib/request-origin";
@@ -29,7 +30,7 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
     if (!path.startsWith("/admin/vin-scan") || !staffHasSection(actor.user, "vin")) {
       redirect(staffActorHomePath(actor));
     }
-    return <IrissStaffAppShell name={actor.user.name} sections={actor.user.sections}>{children}</IrissStaffAppShell>;
+    return <IrissStaffAppShell name={actor.user.name} sections={actor.user.sections} autoparksV2Visible={autoparksV2StaffEnabled()}>{children}</IrissStaffAppShell>;
   }
 
   const origin = await getRequestOrigin();

@@ -1,6 +1,6 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
-import { SITE_CSP_ENFORCED, SITE_CSP_REPORT_ONLY } from "./lib/csp";
+import { SITE_CSP_ENFORCED, SITE_CSP_REPORT_ONLY, SITE_PERMISSIONS_POLICY } from "./lib/csp";
 import { IRISS_LISTING_IMAGE_HOST_SUFFIXES } from "./lib/iriss-listing-image";
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
@@ -15,7 +15,7 @@ const securityHeaders: { key: string; value: string }[] = [
   },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), interest-cohort=()",
+    value: SITE_PERMISSIONS_POLICY,
   },
   {
     key: "Content-Security-Policy",
@@ -44,6 +44,7 @@ const nextConfig: NextConfig = {
   /** Neiekļaut Webpack: stealth spraudņiem ir dinamiski require (clone-deep u.c.). */
   serverExternalPackages: [
     "pdf-parse",
+    "@sparticuz/chromium",
     "pdfjs-dist",
     "playwright",
     "playwright-core",
@@ -57,7 +58,11 @@ const nextConfig: NextConfig = {
   ],
   /** pdfjs / tesseract worker faili tiek ielādēti pēc ceļa, tāpēc Next izsekošana tos neatrod automātiski. */
   outputFileTracingIncludes: {
+    // Dzintarzeme Auto logo PDF failos lasa no diska (fs.readFile) - bez šī produkcijā PDF bija bez logo (#729).
+    "/**": ["./public/brands/dzintarzeme-auto-logo.png"],
     "/api/admin/**": ["./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"],
+    // Servera PDF (Chromium Vercel vidē): bināros failus lasa pēc ceļa no bin/.
+    "/api/admin/report-pdf": ["./node_modules/@sparticuz/chromium/bin/**", "./public/fonts/report-inter/**"],
     "/api/admin/iriss-listings/vin-ocr": [
       "./node_modules/tesseract.js/dist/**",
       "./node_modules/tesseract.js/src/worker-script/**",
@@ -72,6 +77,8 @@ const nextConfig: NextConfig = {
     ],
   },
   reactStrictMode: true,
+  /** Nerādīt `X-Powered-By: Next.js` (audits 2026-10-27). */
+  poweredByHeader: false,
   images: {
     remotePatterns: IRISS_LISTING_IMAGE_HOST_SUFFIXES.flatMap((suffix) => [
       { protocol: "https" as const, hostname: suffix },
@@ -213,6 +220,14 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: "/b/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "private, no-store" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
+      {
         source: "/p",
         headers: [
           { key: "X-Robots-Tag", value: "noindex, nofollow" },
@@ -227,6 +242,33 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "private, no-store" },
           { key: "Referrer-Policy", value: "no-referrer" },
         ],
+      },
+      {
+        source: "/a",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "private, no-store" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
+      {
+        source: "/a/:path*",
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "private, no-store" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
+      {
+        source: "/a/:token/foto",
+        headers: [{ key: "Cache-Control", value: "private, max-age=3600" }],
+      },
+      {
+        /** Bilžu baiti (ne lapas HTML) - ļauj pārlūka privātu kešu, lai swipe/prefetch nav katru
+         * reizi jauns pieprasījums; maršruts pats uzstāda to pašu Cache-Control, šis tikai pārklāj
+         * plašāko `/p/:path*` noteikumu (j49, Nils 2026-10-24). */
+        source: "/p/:token/photo/:attachmentId",
+        headers: [{ key: "Cache-Control", value: "private, max-age=86400, immutable" }],
       },
       {
         source: "/b2b-demo",

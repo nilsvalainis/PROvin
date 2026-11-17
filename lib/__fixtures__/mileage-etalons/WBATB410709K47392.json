@@ -1,0 +1,760 @@
+{
+ "vin": "WBATB410709K47392",
+ "label": "BMW X7: AutoDNA 3, carVertical 15, dīleris 34; negadījumi 8",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 248, saglabāts 2026-08-24; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW X7",
+   "registrationNumber": "",
+   "firstRegistration": "",
+   "nextInspectionDate": "",
+   "prevInspectionDate": "",
+   "engineDisplacementCm3": "",
+   "enginePowerKw": "",
+   "fuelType": "",
+   "emissionStandard": "",
+   "grossMassKg": "",
+   "curbMassKg": "",
+   "roadTaxEur": "",
+   "registrationStatus": "",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "",
+   "ownerCountLatvia": "",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "",
+    "inspectionDateText": "",
+    "nextInspectionDateText": "",
+    "odometer": "",
+    "ratingLabel": "",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": []
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "13.05.2025",
+     "odometer": "88190",
+     "country": "Lietuva"
+    },
+    {
+     "date": "05.06.2023",
+     "odometer": "19766",
+     "country": "Lietuva"
+    },
+    {
+     "date": "01.02.2023",
+     "odometer": "19656",
+     "country": "Spānija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Lietuva",
+     "csngDate": "01.04.2026",
+     "lossAmount": "1 100 - 1 200 €"
+    },
+    {
+     "incidentNo": "Lietuva",
+     "csngDate": "01.08.2024",
+     "lossAmount": "1 100 - 1 200 €"
+    },
+    {
+     "incidentNo": "Spānija",
+     "csngDate": "01.02.2023",
+     "lossAmount": "2 400 - 2 600 €"
+    },
+    {
+     "incidentNo": "Spānija",
+     "csngDate": "01.05.2022",
+     "lossAmount": "300 - 400 €"
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.06.2026",
+     "odometer": "140310",
+     "country": "Lietuva"
+    },
+    {
+     "date": "01.05.2026",
+     "odometer": "140276",
+     "country": "Lietuva"
+    },
+    {
+     "date": "01.01.2026",
+     "odometer": "122478",
+     "country": "Lietuva"
+    },
+    {
+     "date": "01.12.2025",
+     "odometer": "116670",
+     "country": "Lietuva"
+    },
+    {
+     "date": "01.07.2025",
+     "odometer": "98879",
+     "country": "Lietuva"
+    },
+    {
+     "date": "01.01.2025",
+     "odometer": "65039",
+     "country": "Lietuva"
+    },
+    {
+     "date": "01.11.2024",
+     "odometer": "60241",
+     "country": "Lietuva"
+    },
+    {
+     "date": "01.05.2024",
+     "odometer": "44537",
+     "country": "Lietuva"
+    },
+    {
+     "date": "01.01.2024",
+     "odometer": "35324",
+     "country": "Lietuva"
+    },
+    {
+     "date": "01.09.2023",
+     "odometer": "28424",
+     "country": "Lietuva"
+    },
+    {
+     "date": "01.06.2023",
+     "odometer": "19793",
+     "country": "Lietuva"
+    },
+    {
+     "date": "01.01.2023",
+     "odometer": "4400",
+     "country": "Spānija"
+    },
+    {
+     "date": "01.11.2022",
+     "odometer": "1413",
+     "country": "Spānija"
+    },
+    {
+     "date": "01.05.2022",
+     "odometer": "24",
+     "country": "Spānija"
+    },
+    {
+     "date": "01.02.2022",
+     "odometer": "1",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Spānija",
+     "csngDate": "01.05.2022",
+     "lossAmount": "251 - 500 €"
+    },
+    {
+     "incidentNo": "Spānija",
+     "csngDate": "01.02.2023",
+     "lossAmount": "2 001 - 2 500 €"
+    },
+    {
+     "incidentNo": "Lietuva",
+     "csngDate": "01.08.2024",
+     "lossAmount": "1 001 - 1 500 €"
+    },
+    {
+     "incidentNo": "Lietuva",
+     "csngDate": "01.04.2026",
+     "lossAmount": "1 001 - 1 500 €"
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "22.06.2026",
+     "odometer": "140560",
+     "country": "Lietuva"
+    },
+    {
+     "date": "28.05.2026",
+     "odometer": "140548",
+     "country": "Lietuva"
+    },
+    {
+     "date": "15.05.2026",
+     "odometer": "140526",
+     "country": "Lietuva"
+    },
+    {
+     "date": "09.02.2026",
+     "odometer": "125859",
+     "country": "Lietuva"
+    },
+    {
+     "date": "21.01.2026",
+     "odometer": "122728",
+     "country": "Lietuva"
+    },
+    {
+     "date": "22.12.2025",
+     "odometer": "117840",
+     "country": "Lietuva"
+    },
+    {
+     "date": "08.12.2025",
+     "odometer": "116920",
+     "country": "Lietuva"
+    },
+    {
+     "date": "07.11.2025",
+     "odometer": "111621",
+     "country": "Lietuva"
+    },
+    {
+     "date": "09.10.2025",
+     "odometer": "109121",
+     "country": "Lietuva"
+    },
+    {
+     "date": "11.08.2025",
+     "odometer": "101247",
+     "country": "Lietuva"
+    },
+    {
+     "date": "21.07.2025",
+     "odometer": "99667",
+     "country": "Lietuva"
+    },
+    {
+     "date": "14.07.2025",
+     "odometer": "99473",
+     "country": "Lietuva"
+    },
+    {
+     "date": "04.07.2025",
+     "odometer": "99000",
+     "country": "Lietuva"
+    },
+    {
+     "date": "03.07.2025",
+     "odometer": "98979",
+     "country": "Lietuva"
+    },
+    {
+     "date": "29.05.2025",
+     "odometer": "92336",
+     "country": "Lietuva"
+    },
+    {
+     "date": "14.05.2025",
+     "odometer": "88251",
+     "country": "Lietuva"
+    },
+    {
+     "date": "10.03.2025",
+     "odometer": "74094",
+     "country": "Lietuva"
+    },
+    {
+     "date": "22.01.2025",
+     "odometer": "65139",
+     "country": "Lietuva"
+    },
+    {
+     "date": "08.11.2024",
+     "odometer": "60440",
+     "country": "Lietuva"
+    },
+    {
+     "date": "05.11.2024",
+     "odometer": "60341",
+     "country": "Lietuva"
+    },
+    {
+     "date": "16.05.2024",
+     "odometer": "45886",
+     "country": "Lietuva"
+    },
+    {
+     "date": "04.05.2024",
+     "odometer": "44637",
+     "country": "Lietuva"
+    },
+    {
+     "date": "15.03.2024",
+     "odometer": "37780",
+     "country": "Lietuva"
+    },
+    {
+     "date": "20.01.2024",
+     "odometer": "35424",
+     "country": "Lietuva"
+    },
+    {
+     "date": "22.09.2023",
+     "odometer": "28524",
+     "country": "Lietuva"
+    },
+    {
+     "date": "22.08.2023",
+     "odometer": "25670",
+     "country": "Lietuva"
+    },
+    {
+     "date": "25.07.2023",
+     "odometer": "24428",
+     "country": "Lietuva"
+    },
+    {
+     "date": "11.07.2023",
+     "odometer": "23639",
+     "country": "Lietuva"
+    },
+    {
+     "date": "19.06.2023",
+     "odometer": "21091",
+     "country": "Lietuva"
+    },
+    {
+     "date": "17.06.2023",
+     "odometer": "20779",
+     "country": "Lietuva"
+    },
+    {
+     "date": "06.06.2023",
+     "odometer": "19893",
+     "country": "Lietuva"
+    },
+    {
+     "date": "24.06.2022",
+     "odometer": "1438",
+     "country": "Spānija"
+    },
+    {
+     "date": "03.05.2022",
+     "odometer": "24",
+     "country": "Spānija"
+    },
+    {
+     "date": "07.02.2022",
+     "odometer": "1",
+     "country": "Vācija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "22.06.2026",
+     "odometer": "140560",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "28.05.2026",
+     "odometer": "140548",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "15.05.2026",
+     "odometer": "140526",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "09.02.2026",
+     "odometer": "125859",
+     "location": "Inchcape Auto UAB - Vilnius, Vilnius",
+     "works": "Motoreļļa, Salona filtrs, Standarta apkopes apjoms"
+    },
+    {
+     "date": "21.01.2026",
+     "odometer": "122728",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "22.12.2025",
+     "odometer": "117840",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "08.12.2025",
+     "odometer": "116920",
+     "location": "Inchcape Auto UAB - Vilnius, Vilnius",
+     "works": "Standarta apkopes apjoms, Priekšējās bremzes, Aizmugurējās bremzes"
+    },
+    {
+     "date": "07.11.2025",
+     "odometer": "111621",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "09.10.2025",
+     "odometer": "109121",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "11.08.2025",
+     "odometer": "101247",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "21.07.2025",
+     "odometer": "99667",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "14.07.2025",
+     "odometer": "99473",
+     "location": "Inchcape Auto UAB - Vilnius, Vilnius",
+     "works": "Standarta apkopes apjoms, Motoreļļa, Tehniskā pārbaude servisā, Degvielas filtrs, Gaisa filtrs, Salona filtrs"
+    },
+    {
+     "date": "04.07.2025",
+     "odometer": "99000",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "03.07.2025",
+     "odometer": "98979",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "29.05.2025",
+     "odometer": "92336",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "14.05.2025",
+     "odometer": "88251",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "10.03.2025",
+     "odometer": "74094",
+     "location": "Krasta Auto UAB - Vilnius, Vilnius",
+     "works": "Standarta apkopes apjoms, Motoreļļa, Salona filtrs"
+    },
+    {
+     "date": "22.01.2025",
+     "odometer": "65139",
+     "location": "Krasta Auto UAB - Vilnius, Vilnius",
+     "works": "Standarta apkopes apjoms, Priekšējās bremzes"
+    },
+    {
+     "date": "08.11.2024",
+     "odometer": "60440",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "05.11.2024",
+     "odometer": "60341",
+     "location": "Krasta Auto UAB - Vilnius, Vilnius",
+     "works": "Standarta apkopes apjoms, Aizmugurējās bremzes, Bremžu šķidrums, Motora pārsega gāzes atsperu pārbaude"
+    },
+    {
+     "date": "16.05.2024",
+     "odometer": "45886",
+     "location": "Krasta Auto UAB - Vilnius, Vilnius",
+     "works": "Standarta apkopes apjoms, Motoreļļa, Tehniskā pārbaude servisā, Degvielas filtrs, Gaisa filtrs, Salona filtrs"
+    },
+    {
+     "date": "04.05.2024",
+     "odometer": "44637",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "15.03.2024",
+     "odometer": "37780",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "20.01.2024",
+     "odometer": "35424",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "22.09.2023",
+     "odometer": "28524",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "22.08.2023",
+     "odometer": "25670",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "25.07.2023",
+     "odometer": "24428",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "11.07.2023",
+     "odometer": "23639",
+     "location": "Krasta Auto UAB. , Vilnius",
+     "works": "Motoreļļa, Salona filtrs"
+    },
+    {
+     "date": "19.06.2023",
+     "odometer": "21091",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "17.06.2023",
+     "odometer": "20779",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "06.06.2023",
+     "odometer": "19893",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "24.06.2022",
+     "odometer": "1438",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "03.05.2022",
+     "odometer": "24",
+     "location": "Bergé Automotive Logistics, Santander",
+     "works": "Pirmspiegādes apskate"
+    },
+    {
+     "date": "07.02.2022",
+     "odometer": "1",
+     "location": "Niederlassung Düsseldorf Filiale Rath BMW AG, Düsseldorf",
+     "works": "RP Audio uztvērēja modulis"
+    }
+   ],
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "BMW G07",
+     "modelSeries": "X7 (G07)",
+     "vinCode": "WBATB410709K47392",
+     "vehicleType": "TB41",
+     "transmission": "AUT",
+     "steeringSide": "LL",
+     "engineCode": "B57R",
+     "engineNumber": "62986587",
+     "body": "SAV",
+     "drive": "ALLR",
+     "power": "250 kW",
+     "integrationLevel": "S18A-21-07-568",
+     "currentILevel": "S18A-25-07-562",
+     "developmentCode": "G07",
+     "modelCode": "TB41",
+     "productionDate": "16.11.2021",
+     "firstRegistration": "10.05.2022",
+     "warrantyStartDate": "19.05.2022",
+     "countryRegion": "ECE",
+     "color": "black-sapphire metallic",
+     "colorCode": "0475",
+     "interior": "Leather Vernasca cognac",
+     "interiorCode": "MCRI"
+    }
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "",
+   "listingCreated": "",
+   "priceDrop": "",
+   "priceHistory": [],
+   "listingMileageOdometer": "",
+   "listingMileageDate": "",
+   "listingMileageCountry": ""
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": "REGITRA"
+    }
+   ]
+  }
+ }
+}

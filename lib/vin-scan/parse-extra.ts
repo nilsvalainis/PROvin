@@ -91,6 +91,31 @@ export function parseNhtsaRecalls(status: number, text: string): VinScanParse {
   };
 }
 
+/** RDW datums: `YYYYMMDD` vai `YYYY-MM-DD[T...]` -> ISO diena; citādi null. */
+function rdwIsoDay(raw: string): string | null {
+  const t = raw.trim();
+  const compact = /^(\d{4})(\d{2})(\d{2})$/.exec(t);
+  if (compact) return `${compact[1]}-${compact[2]}-${compact[3]}`;
+  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(t);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  return null;
+}
+
+/** RDW datums attēlošanai: `DD.MM.YYYY`; neatpazītu atstāj kā ir. */
+function rdwDisplayDay(raw: string): string {
+  const iso = rdwIsoDay(raw);
+  if (!iso) return raw.trim();
+  return `${iso.slice(8, 10)}.${iso.slice(5, 7)}.${iso.slice(0, 4)}`;
+}
+
+/**
+ * Faktiskās apskates datums (ne termiņš). `vervaldatum_keuring` ir derīguma BEIGAS nākotnē,
+ * tāpēc to nobraukuma datēšanai neizmanto.
+ */
+function rdwKeuringActualDate(row: Record<string, unknown>): string {
+  return str(row.meld_datum_door_keuringsinstantie) || str(row.datum_keuring);
+}
+
 export function parseRdwOpenData(parts: {
   vehicle: unknown;
   keuring: unknown;
@@ -106,27 +131,33 @@ export function parseRdwOpenData(parts: {
   const apk = str(v.vervaldatum_apk);
   const nap = str(v.tellerstandoordeel) || str(v.nap_aanduiding);
   const mileageRaw = str(v.tellerstand);
+  const lastOdoYear = str(v.jaar_laatste_registratie_tellerstand);
   const keuring = asArray(parts.keuring).map(asRecord);
   const recalls = asArray(parts.recalls).map(asRecord);
   const bits = [
     [make, model].filter(Boolean).join(" "),
     year,
     plate,
-    apk ? `APK līdz ${apk}` : "",
+    apk ? `APK līdz ${rdwDisplayDay(apk)}` : "",
     nap ? `NAP: ${nap}` : "",
     mileageRaw ? kmLv(mileageRaw) : "",
   ].filter(Boolean);
-  const mileage =
-    mileageRaw && apk
-      ? [{ date: apk.length === 8 ? `${apk.slice(0, 4)}-${apk.slice(4, 6)}-${apk.slice(6, 8)}` : apk, odometer: kmLv(mileageRaw) }]
-      : [];
+  /**
+   * `vervaldatum_apk` ir APK derīguma beigas (nākotnē), nevis rādījuma datums. RDW m9d7-ebf2 dod tikai
+   * pēdējās rādījuma reģistrācijas GADU (`jaar_laatste_registratie_tellerstand`), tāpēc rindu datējam
+   * ar `${gads}-01-01`: ISO formāts, ko saprot rollback detektors un kārtošana, un 1. janvāris ir
+   * agrākais iespējamais datums tajā gadā, lai neizskatītos jaunāks par citiem tā paša gada rādījumiem.
+   * Bez gada rindu neveidojam; nobraukums paliek kopsavilkumā.
+   */
+  const mileage: { date: string; odometer: string }[] =
+    mileageRaw && /^\d{4}$/.test(lastOdoYear) ? [{ date: `${lastOdoYear}-01-01`, odometer: kmLv(mileageRaw) }] : [];
   const keuringLines = keuring.slice(0, 6).map((row) => {
-    const d = str(row.vervaldatum_keuring) || str(row.datum_keuring);
+    const d = rdwKeuringActualDate(row) || str(row.vervaldatum_keuring);
     const kms = str(row.tellerstand);
-    return [d, kms ? kmLv(kms) : ""].filter(Boolean).join(" · ");
+    return [d ? rdwDisplayDay(d) : "", kms ? kmLv(kms) : ""].filter(Boolean).join(" · ");
   });
   for (const row of keuring) {
-    const d = str(row.vervaldatum_keuring) || str(row.datum_keuring);
+    const d = rdwIsoDay(rdwKeuringActualDate(row));
     const kms = str(row.tellerstand);
     if (d && kms) mileage.push({ date: d, odometer: kmLv(kms) });
   }
@@ -137,9 +168,9 @@ export function parseRdwOpenData(parts: {
     vehicle: make || model || year ? { make, model, year } : undefined,
     mileage,
     inspections: keuring.map((row) => {
-      const d = str(row.vervaldatum_keuring) || str(row.datum_keuring);
+      const raw = rdwKeuringActualDate(row) || str(row.vervaldatum_keuring);
       const kms = str(row.tellerstand);
-      return { date: d, odometer: kms ? kmLv(kms) : "" };
+      return { date: rdwIsoDay(raw) ?? raw, odometer: kms ? kmLv(kms) : "" };
     }).filter((row) => row.date || row.odometer),
     recalls: recalls
       .map((row) => ({ title: str(row.referentiecode) || str(row.referentie) || "Atsaukums", date: str(row.datum) }))
@@ -192,22 +223,23 @@ export function parseVegvesen(status: number, text: string): VinScanParse {
   };
 }
 
+/** NICB VINCheck negatīvā atbilde (nav zagts / nav total loss). */
+export const NICB_CLEAN_RE =
+  /no records|not found|clean record|no match|is not listed|not listed as stolen|no theft records|does not appear|has not been reported|not been reported as (stolen|a theft)/i;
+
 export function parseNicbHtml(html: string, vin: string): VinScanParse {
   const text = html.replace(/<[^>]+>/g, " ");
   const upperVin = vin.trim().toUpperCase();
   const hasVin = Boolean(upperVin) && text.toUpperCase().includes(upperVin);
+  // Tīrā NICB lapa satur gan VIN, gan vārdu „stolen” („not listed as stolen”). Negatīvo frāzi jāpārbauda pirmo.
+  if (NICB_CLEAN_RE.test(text)) {
+    return { status: "none", summary: "NICB sarakstā nav" };
+  }
   if (/stolen/i.test(text) && hasVin) {
     return { status: "found", summary: "NICB: iespējams zagts", flags: { stolen: true } };
   }
   if (/total loss|salvage/i.test(text) && hasVin) {
     return { status: "found", summary: "NICB: total loss / salvage ieraksts" };
-  }
-  if (
-    /no records|not found|clean record|no match|is not listed|not listed as stolen|no theft records|does not appear/i.test(
-      text,
-    )
-  ) {
-    return { status: "none", summary: "NICB sarakstā nav" };
   }
   if (/recaptcha|i['’]m not a robot|hcaptcha/i.test(text) && !hasVin) {
     return { status: "unknown", summary: "NICB captcha netika apieta - atver pārlūkā" };
@@ -369,10 +401,10 @@ export function parseAuctionArchive(status: number, html: string, vin: string, l
 export function parseOemRecallHtml(status: number, html: string, vin: string, brand: string): VinScanParse {
   if (status >= 400) return { status: "unknown", summary: `${brand} atsaukumi HTTP ${status}` };
   const text = html.replace(/<[^>]+>/g, " ");
-  if (/no recall|0 recall|recalls?:?\s*none|nav atsauk/i.test(text)) {
+  if (/no recall|(?<!\d)0\s*(?:open\s+)?recalls?|recalls?:?\s*none|nav atsauk/i.test(text)) {
     return { status: "none", summary: `${brand}: atsaukumu nav`, flags: { recallCount: 0 } };
   }
-  const count = /(\d+)\s*recalls?/i.exec(text);
+  const count = /(\d+)\s*(?:open\s+|safety\s+)?recalls?/i.exec(text);
   const n = count ? Number(count[1]) : NaN;
   if (Number.isFinite(n) && n > 0) {
     return { status: "found", summary: `${brand}: ${n} atsaukumi`, flags: { recallCount: n } };

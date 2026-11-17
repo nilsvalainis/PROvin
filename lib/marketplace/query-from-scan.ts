@@ -6,6 +6,7 @@
 import { parseEnginePowerKwFromText } from "@/lib/engine-power-kw";
 import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { mapEngineCc } from "@/lib/iriss-listings-ecarstrade-criteria";
+import { irissScanCriteriaBounds, irissScanStoredCriteria } from "@/lib/iriss-scan-criteria";
 import { irissScanOrderId } from "@/lib/iriss-scan-listings";
 import type { IrissScanRecord } from "@/lib/iriss-scan-types";
 import {
@@ -41,6 +42,8 @@ export function marketplaceOrderCriteriaFromScan(rec: IrissScanRecord): Marketpl
     engineType: rec.engineType,
     transmission: rec.transmission,
     bodyType: rec.bodyType,
+    // Strukturētie kritēriji (ja operators tos saglabājis) - tie paši, ko pasūtījums lieto.
+    criteria: irissScanStoredCriteria(rec),
   };
 }
 
@@ -182,6 +185,12 @@ export function marketplaceQueryFromScan(rec: IrissScanRecord): MarketplaceQuery
   }
   if (rec.vehicleCategory && isMarketplaceVehicleCategory(rec.vehicleCategory)) {
     q.vehicleCategory = rec.vehicleCategory;
+  }
+  // Radara «Cena» = sludinājuma cena (salonam nav klienta budžeta ar izmaksām) - bez «budžets mīnus 2 000 €».
+  const bounds = irissScanCriteriaBounds(rec);
+  if (bounds && (bounds.priceFrom != null || bounds.priceTo != null)) {
+    q.priceFrom = bounds.priceFrom;
+    q.priceTo = bounds.priceTo;
   }
   return q;
 }

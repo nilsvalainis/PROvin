@@ -49,9 +49,12 @@ function shouldUploadDailySnapshotToBlob(): boolean {
   return envFlag("ADMIN_DRAFT_DAILY_BACKUP_TO_BLOB", false);
 }
 
-/** Noklusējums: false — izvairās no list+get pa visiem order draft Blob failiem. */
+/**
+ * Noklusējums: true - PRO pasūtījumi (darba vietas, manuālie, Stripe apmaksu indekss, rēķinu skaitītājs,
+ * upsell) un partneru kredīti iet dienas backupā. Izslēgt tikai apzināti ar `=0`.
+ */
 export function shouldIncludeOrderDraftsFromBlob(): boolean {
-  return envFlag("ADMIN_DRAFT_DAILY_BACKUP_INCLUDE_ORDER_BLOB", false);
+  return envFlag("ADMIN_DRAFT_DAILY_BACKUP_INCLUDE_ORDER_BLOB", true);
 }
 
 /** Noklusējums: true — IRISS pasūtījumi, SCAN un pavadzīmes Blob iet dienas backupā. */

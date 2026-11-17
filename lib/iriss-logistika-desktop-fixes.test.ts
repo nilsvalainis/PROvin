@@ -60,7 +60,8 @@ describe("Kravu plāns", () => {
   it("drags the whole card with mouse and touch, drops at an exact position", () => {
     expect(plan).toContain("useSensor(MouseSensor, { activationConstraint: { distance: 5 } })");
     expect(plan).toContain("useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } })");
-    expect(plan).toContain("onPlanChange(moveCargoCar(plan, activeId, bucket, index))");
+    // Nils 02.11: nomešana iet caur change() ar «Atsaukt».
+    expect(plan).toContain("change(moveCargoCar(plan, activeId, bucket, index)");
     expect(plan).toContain("onDragCancel={() => finishDrag(null)}");
     expect(plan).toMatch(/className=\{`iriss-log-cargo-row[^`]*`\}\s*\{\.\.\.attributes\}\s*\{\.\.\.listeners\}/);
   });
@@ -77,11 +78,10 @@ describe("Kravu plāns", () => {
 describe("Loģistika layout", () => {
   const client = read("components/admin/iriss-logistika/IrissLogistikaClient.tsx");
 
-  it("spreads the Visi auto table across both columns on desktop", () => {
-    expect(client).toContain('<div className="min-w-0 lg:col-span-2 lg:row-start-2">');
-    // Telefonā kravu plāns ir pirms auto saraksta.
-    expect(client.indexOf("<IrissLogistikaCargoPlan")).toBeLessThan(client.indexOf("<IrissLogistikaCarsTable"));
-    expect(client).toContain('className="space-y-3 lg:col-start-2 lg:row-start-1"');
+  it("has one car list: the cargo plan (Visi auto table removed, makets 26.10)", () => {
+    expect(client).not.toContain("<IrissLogistikaCarsTable");
+    expect(client).toContain("stageLabelByCarId={stageLabelByCarId}");
+    expect(client).toContain('className="iriss-log-cargo-col space-y-3 lg:col-start-2 lg:row-start-1"');
   });
 
   it("row click bounces the pin briefly instead of keeping it pressed", () => {
@@ -89,10 +89,4 @@ describe("Loģistika layout", () => {
     expect(client).not.toContain("setBounceId((cur) => (cur === id ? null : id))");
   });
 
-  it("keeps table button and cargo text on one line", () => {
-    const table = read("components/admin/iriss-logistika/IrissLogistikaCarsTable.tsx");
-    expect(table).toContain("h-8 min-h-8 whitespace-nowrap px-2.5 text-[12px]");
-    expect(table).toContain('<table className="iriss-log-table max-xl:hidden">');
-    expect(table).toContain('<ul className="iriss-log-car-cards xl:hidden">');
-  });
 });

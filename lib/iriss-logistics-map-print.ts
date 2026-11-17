@@ -9,7 +9,8 @@ export const LOGISTICS_PRINT_AFTER_IDLE_MS = 400;
 export const LOGISTICS_PRINT_IDLE_TIMEOUT_MS = 5000;
 export const LOGISTICS_PRINT_PAGE_CSS = "@page { size: A4 landscape; margin: 10mm; }";
 export const LOGISTICS_PRINT_MAP_WIDTH_MM = 277;
-export const LOGISTICS_PRINT_MAP_HEIGHT_MM = 170;
+/** Nils 31.10: karte pa visu 1. lapu (190 mm drukājamais augstums, 4 mm rezerve). */
+export const LOGISTICS_PRINT_MAP_HEIGHT_MM = 186;
 
 export type LogisticsMapCamera = {
   lat: number;
@@ -87,8 +88,21 @@ export function logisticsPrintLegendRows(orders: LogisticsOrder[]): LogisticsPri
 }
 
 export function logisticsPrintSheetTitle(now = new Date(), count = 0): { heading: string; meta: string } {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const stamp = `${pad(now.getDate())}.${pad(now.getMonth() + 1)}.${now.getFullYear()} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  // Vienmēr Rīgas laiks: serveris (UTC) un pārlūks citādi atšķiras par 2-3 h (React #418).
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Riga",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })
+      .formatToParts(now)
+      .map((p) => [p.type, p.value]),
+  );
+  const stamp = `${parts.day}.${parts.month}.${parts.year} ${parts.hour}:${parts.minute}`;
   return {
     heading: "IRISS · Loģistika - karte",
     meta: `${stamp} · ${count} atzīmēti punkti`,
@@ -271,25 +285,23 @@ export function logisticsPrintPlan(input: {
   return { rows, numbers };
 }
 
+/** Drukas bloka konteiners tieši zem <body> (Nils 31.10). */
+export const LOGISTICS_PRINT_HOST_CLASS = "iriss-log-print-host";
+
 /**
- * Drukas brīdī paslēpj visu, kas nav drukas bloks (katra priekšteča brāļus līdz <body>), lai karte un
- * saraksts plūst normāli uz 2 lapām. Atgriež funkciju, kas visu atjauno.
+ * Nils 31.10: drukas brīdī karti un sarakstu pārceļ tieši zem <body> (admin čaula, sānu izvēlne, fons un
+ * datora pilnekrāna kartes izkārtojums drukā vairs nepiedalās - tie paslēpti ar CSS). Pēc drukas elements
+ * atgriežas tieši tajā pašā vietā. Atgriež funkciju, kas visu atjauno.
  */
 export function isolateElementForPrint(el: HTMLElement): () => void {
-  const hidden: Array<{ node: HTMLElement; prev: string }> = [];
-  let cur: HTMLElement | null = el;
-  while (cur && cur !== document.body) {
-    const parent: HTMLElement | null = cur.parentElement;
-    if (!parent) break;
-    for (const sib of Array.from(parent.children)) {
-      if (sib === cur || !(sib instanceof HTMLElement)) continue;
-      if (sib.tagName === "SCRIPT" || sib.tagName === "STYLE" || sib.tagName === "LINK") continue;
-      hidden.push({ node: sib, prev: sib.style.display });
-      sib.style.display = "none";
-    }
-    cur = parent;
-  }
+  const parent = el.parentElement;
+  const next = el.nextSibling;
+  const host = document.createElement("div");
+  host.className = LOGISTICS_PRINT_HOST_CLASS;
+  document.body.appendChild(host);
+  host.appendChild(el);
   return () => {
-    for (const h of hidden) h.node.style.display = h.prev;
+    if (parent) parent.insertBefore(el, next && next.parentNode === parent ? next : null);
+    host.remove();
   };
 }

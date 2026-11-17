@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   MNT_CAPTCHA_REJECTED_MESSAGE,
+  MNT_FORM_ONLY_MESSAGE,
   mntCaptchaRejectedMessage,
   parseLkfExtract,
   parseMntExtract,
@@ -24,6 +25,7 @@ import {
   parseMntAjaxSource,
   splitCombinedSetCookieHeader,
 } from "@/lib/vin-sources/html-extract";
+import { parseVinSourceScan } from "@/lib/vin-scan/parse";
 
 /** Reāla eteenindus.mnt.ee HTTP 200 formas lapa (2026-10-06): Cloudflare Bot Management JS bāka katrā lapā. */
 const MNT_OK_PAGE_WITH_CF_BEACON = `<!DOCTYPE html><html><head><title>Sõiduki taustakontroll</title></head><body>
@@ -192,6 +194,47 @@ describe("parseMntExtract", () => {
     });
     expect(fail.found).toBe(false);
     expect(fail.message).toContain("reCAPTCHA");
+  });
+
+  /** Reāla eteenindus.mnt.ee formas lapa (2026-10-25), ko pārlūka rezerve atgrieza bez rezultāta (Somijas ID.4). */
+  const MNT_FORM_ONLY_PAGE = {
+    text: [
+      "Sõiduki taustakontroll",
+      "Otsing Eesti registris oleva või pärast 16.04.2010 kustutatud sõiduki registreerimismärgi ja/või VIN-koodi järgi – otsingu tulemusena kuvatakse sõiduki andmed, piirangud ja kasutusajalugu.",
+      "Eesti registris oleva kasutatud sõiduki tausta kontrollimisel enne selle soetamist soovitame kasutada otsingut sõiduki registreerimismärgi ja VIN-koodi järgi. Kui andmed ei kuulu samale sõidukile, siis annab päring vastuse „Sisestatud andmetega sõidukit registris ei ole!“ Otsing enne 16.04.2010 Eesti registrist kustutatud sõiduki VIN-koodi järgi.",
+      "Registreerimismärk",
+      "VIN-kood",
+      "OTSIN",
+      "Transpordiamet Valge 4 11413 Tallinn",
+    ].join("\n"),
+    tables: [
+      { headers: [], rows: [["Registreerimismärk", ""], ["VIN-kood", ""], ["OTSIN"]] },
+      { headers: [], rows: [["Registreerimismärk", ""], ["VIN-kood", ""]] },
+    ],
+    pairs: [
+      {
+        label: "registreerimismärgi ja/või VIN-koodi",
+        value: "ast 16.04.2010 kustutatud sõiduki registreerimismärgi ja/või VIN-koodi järgi",
+      },
+    ],
+  };
+
+  it("tikai meklēšanas formu neuzskata par atradumu (nav 'Atrasts' / 'Izslēgts no reģistra')", () => {
+    const res = parseMntExtract("WVGZZZE2ZNP009103", MNT_FORM_ONLY_PAGE);
+    expect(res.found).toBe(false);
+    expect(res.message).toBe(MNT_FORM_ONLY_MESSAGE);
+    expect(res.notes).toEqual([]);
+    expect(parseVinSourceScan(res).status).toBe("unknown");
+  });
+
+  it("releja apstiprinātu rezultātu bez VIN tekstā neatmet", () => {
+    const res = parseMntExtract(
+      "WVGZZZE2ZNP009103",
+      { text: "", tables: [], pairs: [{ label: "Kasutusotstarve", value: "Takso" }] },
+      { resultConfirmed: true },
+    );
+    expect(res.found).toBe(true);
+    expect(res.statusRecords).not.toBe("");
   });
 
   it("nobraukuma tabulu uzskata par atrastu", () => {

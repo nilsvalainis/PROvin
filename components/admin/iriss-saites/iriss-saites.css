@@ -1,0 +1,209 @@
+/* IRISS Saites (makets A, 26.10). Mobilais pirmais. 0 horizontāla overflow. */
+.iriss-saite {
+  --saite-ink: #111111;
+  --saite-muted: #6e6e73;
+  --saite-line: rgba(60, 60, 67, 0.18);
+  --saite-chip: #f2f2f7;
+  --saite-ok-bg: #e8f0ff;
+  --saite-ok: #0a60d6;
+  --saite-sent-bg: #e3f6e8;
+  --saite-sent: #1f7a37;
+  --saite-acc: #007aff;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  color: var(--saite-ink);
+}
+.iriss-saite * {
+  box-sizing: border-box;
+}
+.iriss-saite-sec {
+  margin: 0;
+  padding: 10px 2px 7px;
+  color: #3a3a3c;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+.iriss-saite-card {
+  margin: 0 0 14px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.iriss-saite-card.fr {
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.08),
+    0 10px 28px rgba(0, 0, 0, 0.1);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  backdrop-filter: blur(22px) saturate(170%);
+}
+.iriss-saite-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px 14px;
+  color: inherit;
+  text-decoration: none;
+  position: relative;
+}
+.iriss-saite-row + .iriss-saite-row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 60px;
+  height: 0.5px;
+  background: var(--saite-line);
+}
+.iriss-saite-ic {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: #fff;
+}
+.iriss-saite-ic.logistika {
+  background: linear-gradient(180deg, #4a95f5, #2f7fe6);
+}
+.iriss-saite-ic.autoparks {
+  background: linear-gradient(180deg, #48484c, #2c2c2e);
+}
+.iriss-saite-ic.pasutijums {
+  background: linear-gradient(180deg, #5d616b, #45484f);
+}
+.iriss-saite-tx {
+  flex: 1;
+  min-width: 0;
+}
+.iriss-saite-tx b {
+  display: block;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.iriss-saite-tx span {
+  display: block;
+  overflow: hidden;
+  color: var(--saite-muted);
+  font-size: 13.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.iriss-saite-chev {
+  flex: none;
+  color: #c7c7cc;
+}
+.iriss-saite-st {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 13px 14px 4px;
+}
+.iriss-saite-st b {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.iriss-saite-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 100%;
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.iriss-saite-chip.ok {
+  background: var(--saite-ok-bg);
+  color: var(--saite-ok);
+}
+.iriss-saite-chip.sent {
+  background: var(--saite-sent-bg);
+  color: var(--saite-sent);
+}
+.iriss-saite-chip.np {
+  background: var(--saite-chip);
+  color: #3a3a3c;
+}
+.iriss-saite-badge {
+  padding: 6px 14px 0;
+}
+.iriss-saite-url {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  margin: 8px 14px;
+  border-radius: 14px;
+  background: var(--saite-chip);
+  padding: 10px 12px;
+  color: #3a3a3c;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13.5px;
+}
+.iriss-saite-url span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.iriss-saite-url svg {
+  flex: none;
+  color: #8e8e93;
+}
+.iriss-saite-note {
+  margin: 0;
+  padding: 2px 14px 10px;
+  color: var(--saite-muted);
+  font-size: 12.5px;
+  overflow-wrap: anywhere;
+}
+.iriss-saite-acts {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px 14px 14px;
+}
+.iriss-saite-btn {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--saite-chip);
+  color: var(--saite-acc);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.iriss-saite-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+@media (min-width: 768px) {
+  .iriss-saite-sec {
+    padding-left: 4px;
+  }
+}

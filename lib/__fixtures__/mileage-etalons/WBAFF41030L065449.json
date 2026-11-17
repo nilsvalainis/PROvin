@@ -1,0 +1,917 @@
+{
+ "vin": "WBAFF41030L065449",
+ "label": "BMW X5 3.0d 2007: ievades kļūda",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 59, saglabāts 2026-10-19; nolasīts 17.11.2026, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW X5",
+   "registrationNumber": "LJ767",
+   "firstRegistration": "2007-10-31",
+   "firstRegistrationLatvia": "",
+   "nextInspectionDate": "2027-05-20",
+   "prevInspectionDate": "2026-06-26",
+   "engineDisplacementCm3": "2993",
+   "enginePowerKw": "173",
+   "fuelType": "Dīzeļdegviela",
+   "emissionStandard": "Euro 4",
+   "vehicleType": "Vieglais plašlietojuma (M1G)",
+   "grossMassKg": "2740",
+   "curbMassKg": "2150",
+   "seatCount": "",
+   "roadTaxEur": "255,00",
+   "registrationStatus": "Uzskaitē",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "",
+   "ownerCountLatvia": "",
+   "vin": "WBAFF41030L065449",
+   "modelYear": "2007",
+   "color": "Pelēka",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "M1G",
+   "cocType": "X70",
+   "cocApprovalNumber": "e1*2001/116*0420*02",
+   "cocVariant": "FF41",
+   "cocVersion": "AB",
+   "insuranceValidUntil": "2027-06-26",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "Atļauja piedalīties ceļu satiksmē bez kontroles veikšanas, ja derīga ārvalstī izsniegtā atļauja piedalīties ceļu satiksm",
+    "inspectionDateText": "26.06.2026",
+    "nextInspectionDateText": "",
+    "odometer": "277681",
+    "ratingLabel": "**",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "26.06.2026",
+     "odometer": "277681",
+     "country": "Latvija"
+    }
+   ],
+   "registry": {
+    "nr1": "WBAFF41030L065449",
+    "fetchedAt": "2026-10-14T12:15:31.083Z",
+    "data": {
+     "registrationNumber": "LJ767",
+     "vin": "WBAFF41030L065449",
+     "make": "BMW",
+     "model": "X5",
+     "year": "2007",
+     "fuel": "Dīzeļdegviela",
+     "powerKw": "173",
+     "electricPowerKw": "",
+     "electricPowerKw2": "",
+     "displacementCm3": "2993",
+     "firstRegistrationIso": "2007-10-31",
+     "color": "Pelēka",
+     "vehicleKind": "Vieglais plašlietojuma",
+     "cocCategory": "M1G",
+     "cocType": "X70",
+     "cocApprovalNumber": "e1*2001/116*0420*02",
+     "cocVariant": "FF41",
+     "cocVersion": "AB",
+     "grossMassKg": "2740",
+     "curbMassKg": "2150",
+     "insuranceEndIso": "2027-06-26",
+     "inspectionValidUntilIso": "2027-05-20"
+    }
+   }
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "26.06.2026",
+     "odometer": "277681",
+     "country": "Latvija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "26.06.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "odometer": "277681",
+     "includeInPdf": false
+    },
+    {
+     "date": "31.10.2007",
+     "country": "",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.06.2026",
+     "odometer": "277681",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.05.2026",
+     "odometer": "279560",
+     "country": "Itālija"
+    },
+    {
+     "date": "01.10.2023",
+     "odometer": "244368",
+     "country": "Itālija"
+    },
+    {
+     "date": "01.10.2017",
+     "odometer": "193939",
+     "country": "Itālija"
+    },
+    {
+     "date": "01.06.2014",
+     "odometer": "148507",
+     "country": "Itālija"
+    },
+    {
+     "date": "01.11.2013",
+     "odometer": "140315",
+     "country": "Itālija"
+    },
+    {
+     "date": "01.08.2013",
+     "odometer": "136211",
+     "country": "Itālija"
+    },
+    {
+     "date": "01.03.2013",
+     "odometer": "131864",
+     "country": "Itālija"
+    },
+    {
+     "date": "01.12.2012",
+     "odometer": "128074",
+     "country": "Itālija"
+    },
+    {
+     "date": "01.06.2012",
+     "odometer": "124915",
+     "country": "Itālija"
+    },
+    {
+     "date": "01.03.2012",
+     "odometer": "119569",
+     "country": "Itālija"
+    },
+    {
+     "date": "01.12.2011",
+     "odometer": "112391",
+     "country": "Itālija"
+    },
+    {
+     "date": "01.08.2010",
+     "odometer": "90259",
+     "country": "Itālija"
+    },
+    {
+     "date": "01.05.2010",
+     "odometer": "83615",
+     "country": "Itālija"
+    },
+    {
+     "date": "01.09.2007",
+     "odometer": "14",
+     "country": "Itālija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.09.2007",
+     "country": "",
+     "description": "Ražots",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2007",
+     "country": "Itālija",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.06.2019",
+     "country": "Itālija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.05.2026",
+     "country": "Itālija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.05.2026",
+     "country": "Itālija",
+     "description": "Noņemts no uzskaites",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.06.2026",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.06.2026",
+     "country": "Latvija",
+     "description": "Reģistrēts",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.06.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-10-14T12:15:02.824Z"
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-10-14T12:15:11.475Z"
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-10-14T12:15:31.082Z"
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-10-14T12:15:01.126Z"
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "28.10.2023",
+     "odometer": "244423",
+     "country": "Itālija"
+    },
+    {
+     "date": "18.10.2017",
+     "odometer": "193994",
+     "country": "Itālija"
+    },
+    {
+     "date": "17.06.2014",
+     "odometer": "148562",
+     "country": "Itālija"
+    },
+    {
+     "date": "29.11.2013",
+     "odometer": "140370",
+     "country": "Itālija"
+    },
+    {
+     "date": "28.08.2013",
+     "odometer": "136266",
+     "country": "Itālija"
+    },
+    {
+     "date": "13.03.2013",
+     "odometer": "131919",
+     "country": "Itālija"
+    },
+    {
+     "date": "04.12.2012",
+     "odometer": "128129",
+     "country": "Itālija"
+    },
+    {
+     "date": "27.06.2012",
+     "odometer": "124970",
+     "country": "Itālija"
+    },
+    {
+     "date": "21.03.2012",
+     "odometer": "119624",
+     "country": "Itālija"
+    },
+    {
+     "date": "01.12.2011",
+     "odometer": "112446",
+     "country": "Itālija"
+    },
+    {
+     "date": "17.08.2010",
+     "odometer": "90281",
+     "country": "Itālija"
+    },
+    {
+     "date": "13.05.2010",
+     "odometer": "83637",
+     "country": "Itālija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "28.10.2023",
+     "odometer": "244423",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "18.10.2017",
+     "odometer": "193994",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "17.06.2014",
+     "odometer": "148562",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "29.11.2013",
+     "odometer": "140370",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "28.08.2013",
+     "odometer": "136266",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "13.03.2013",
+     "odometer": "131919",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "04.12.2012",
+     "odometer": "128129",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "27.06.2012",
+     "odometer": "124970",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "21.03.2012",
+     "odometer": "119624",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "01.12.2011",
+     "odometer": "112446",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "17.08.2010",
+     "odometer": "90281",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "13.05.2010",
+     "odometer": "83637",
+     "location": "",
+     "works": "Apkope"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "28.10.2023",
+      "odometer": "244423",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "18.10.2017",
+      "odometer": "193994",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "17.06.2014",
+      "odometer": "148562",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "29.11.2013",
+      "odometer": "140370",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "28.08.2013",
+      "odometer": "136266",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.03.2013",
+      "odometer": "131919",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "04.12.2012",
+      "odometer": "128129",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "27.06.2012",
+      "odometer": "124970",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "21.03.2012",
+      "odometer": "119624",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "01.12.2011",
+      "odometer": "112446",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "17.08.2010",
+      "odometer": "90281",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.05.2010",
+      "odometer": "83637",
+      "place": "",
+      "works": "Service"
+     }
+    ]
+   },
+   "outvin": {
+    "precheckAt": null,
+    "vin": "WBAFF41030L065449",
+    "capabilitySlots": [],
+    "purchases": [],
+    "vehicleInfo": {
+     "model": "BMW X5 (E70) xDrive 30 d",
+     "modelSeries": "X5 (E70)",
+     "vinCode": "WBAFF41030L065449",
+     "vehicleType": "",
+     "transmission": "Automatic Transmission (GA6HP-26Z)",
+     "steeringSide": "",
+     "engineCode": "M57 D30 (306D3)",
+     "engineNumber": "",
+     "body": "SUV",
+     "drive": "All-wheel Drive",
+     "power": "173 kW (235 hp)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "2007",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "TITANSILBER METALLIC",
+     "colorCode": "354",
+     "interior": "LEDER NEVADA/SCHWARZ (LUSW)",
+     "interiorCode": "",
+     "fuel": "Diesel",
+     "displacement": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "BMW X5 (E70) xDrive 30 d",
+     "modelSeries": "X5 (E70)",
+     "vinCode": "WBAFF41030L065449",
+     "vehicleType": "Off-road vehicle (SUV)",
+     "transmission": "Automatic Transmission (GA6HP-26Z)",
+     "steeringSide": "LHD (left-hand drive)",
+     "engineCode": "M57 D30 (306D3)",
+     "engineNumber": "",
+     "body": "SUV",
+     "drive": "All-wheel Drive",
+     "power": "173 kW (235 hp)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "2007",
+     "firstRegistration": "01.10.2007",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "TITANSILBER METALLIC",
+     "colorCode": "354",
+     "interior": "LEDER NEVADA/SCHWARZ (LUSW)",
+     "interiorCode": "SLUSW",
+     "fuel": "Diesel",
+     "displacement": "3.0 l"
+    },
+    "accidentCheck": "",
+    "stolenCheck": ""
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "",
+    "fetchedAt": "",
+    "lastCostUsd": "",
+    "status": "unknown",
+    "summary": ""
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "",
+   "listingCreated": "",
+   "priceDrop": "",
+   "priceHistory": [],
+   "listingMileageOdometer": "",
+   "listingMileageDate": "",
+   "listingMileageCountry": ""
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "comments": "",
+     "label": ""
+    }
+   ]
+  }
+ }
+}

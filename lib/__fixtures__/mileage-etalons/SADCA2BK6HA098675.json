@@ -1,0 +1,944 @@
+{
+ "vin": "SADCA2BK6HA098675",
+ "label": "JAGUAR F-PACE: CSDD 2, AutoDNA 14, carVertical 13, dīleris 8, reģistri 6; negadījumi 0",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 244, saglabāts 2026-09-20; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "JAGUAR F-PACE",
+   "registrationNumber": "OG4791",
+   "firstRegistration": "2017-01-05",
+   "nextInspectionDate": "2027-02-26",
+   "prevInspectionDate": "2025-02-06",
+   "engineDisplacementCm3": "2993",
+   "enginePowerKw": "221",
+   "fuelType": "",
+   "emissionStandard": "Euro 6 W",
+   "grossMassKg": "2570",
+   "curbMassKg": "2111",
+   "roadTaxEur": "159,00",
+   "registrationStatus": "Noņemts no uzskaites, atļauts piedalīties ceļu satiksmē līdz 15.10.2025",
+   "opacityCoefficient": "",
+   "particulateMatter": "2800",
+   "previousRegistrationCountry": "DĀNIJA",
+   "ownerCountLatvia": "3",
+   "technicalInspectionHistory": [
+    {
+     "date": "06.02.2025",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "9300",
+     "notes": "Atgāzu cietās daļiņas: 9300",
+     "defects": []
+    }
+   ],
+   "ownerRegistrationEvents": [
+    {
+     "date": "05.02.2025",
+     "label": "Pirmā reģistrācija Latvijā"
+    },
+    {
+     "date": "10.03.2025",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "01.08.2025",
+     "label": "Īpašnieka maiņa"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "Pamatpārbaude",
+    "inspectionDateText": "26.02.2026",
+    "nextInspectionDateText": "",
+    "odometer": "216076",
+    "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+    "ratingLevel": 1,
+    "smokeCoefficient": "2 800",
+    "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+    "defects": [
+     {
+      "code": "1.1.14.",
+      "rating": "1",
+      "description": "2.tilts. Sašaurināta bremžu diska darba virsmas funkcionējošā daļa kreisajā pusē."
+     },
+     {
+      "code": "1.1.14.",
+      "rating": "1",
+      "description": "2.tilts. Sašaurināta bremžu diska darba virsmas funkcionējošā daļa labajā pusē."
+     }
+    ]
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "26.02.2026",
+     "odometer": "216076",
+     "country": "Latvija"
+    },
+    {
+     "date": "06.02.2025",
+     "odometer": "215117",
+     "country": "Latvija"
+    }
+   ]
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "26.02.2026",
+     "odometer": "216076",
+     "country": "Latvija"
+    },
+    {
+     "date": "06.02.2025",
+     "odometer": "215117",
+     "country": "Latvija"
+    },
+    {
+     "date": "16.10.2024",
+     "odometer": "214992",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.08.2023",
+     "odometer": "179148",
+     "country": "Dānija"
+    },
+    {
+     "date": "22.11.2022",
+     "odometer": "151000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.09.2022",
+     "odometer": "148380",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.10.2021",
+     "odometer": "122990",
+     "country": "Dānija"
+    },
+    {
+     "date": "18.12.2020",
+     "odometer": "96000",
+     "country": "Dānija"
+    },
+    {
+     "date": "14.12.2020",
+     "odometer": "96000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.11.2020",
+     "odometer": "93236",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.10.2019",
+     "odometer": "68976",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.12.2018",
+     "odometer": "49456",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.12.2017",
+     "odometer": "26034",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.12.2016",
+     "odometer": "17",
+     "country": "Dānija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.02.2026",
+     "odometer": "216076",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2025",
+     "odometer": "215900",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.02.2025",
+     "odometer": "215117",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2024",
+     "odometer": "214992",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.08.2023",
+     "odometer": "179048",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.11.2022",
+     "odometer": "151000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.09.2022",
+     "odometer": "148280",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.10.2021",
+     "odometer": "122890",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.11.2020",
+     "odometer": "93196",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.10.2019",
+     "odometer": "68936",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.04.2018",
+     "odometer": "49416",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.12.2017",
+     "odometer": "25994",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.12.2016",
+     "odometer": "17",
+     "country": "Dānija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "2024-10-16",
+     "odometer": "214992",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Færdselsstyrelsen (muitas apskate); Færdselsstyrelsen (synsrapport) — izturēta"
+    },
+    {
+     "date": "2024-10-16",
+     "odometer": "214000",
+     "country": "Dānija",
+     "origin": "Motorstyrelsen (nodokļu reģistrs)"
+    },
+    {
+     "date": "2022-11-22",
+     "odometer": "151000",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Motorstyrelsen (nodokļu reģistrs); Færdselsstyrelsen (synsrapport) — izturēta"
+    },
+    {
+     "date": "2020-12-18",
+     "odometer": "96000",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Færdselsstyrelsen (synsrapport) — izturēta"
+    },
+    {
+     "date": "2020-12-14",
+     "odometer": "96000",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Færdselsstyrelsen (synsrapport) — jāveic atkārtota apskate"
+    },
+    {
+     "date": "2017-01-05",
+     "odometer": "0",
+     "country": "Dānija",
+     "origin": "Pirmā reģistrācija"
+    }
+   ],
+   "incidents": [
+    {
+     "date": "2020-12-14",
+     "amount": "",
+     "country": "Dānija",
+     "note": "Apskate nav izturēta (jāveic atkārtota apskate) — Gener, udstødning: Gener, udstødning, Motor med kompressionstænding, Emissionskontroludstyr monteret af fabrikanten mangler eller er tydeligvis defekt. - Væsentlig fejl"
+    }
+   ],
+   "timeline": [
+    {
+     "date": "2024-10-16",
+     "odometer": "214992",
+     "country": "Dānija",
+     "event": "Muitas apskate (imports): Stāvoklis vidējs · Applus Danmark A/S"
+    },
+    {
+     "date": "2024-10-16",
+     "odometer": "214992",
+     "country": "Dānija",
+     "event": "Reģistrācijas apskate: Izturēta · Applus Danmark A/S"
+    },
+    {
+     "date": "2024-10-14",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: GF-FORSIKRING A/S, beigusies"
+    },
+    {
+     "date": "2024-10-14",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Reģistrācijas statuss: Noņemts no uzskaites"
+    },
+    {
+     "date": "2022-11-22",
+     "odometer": "151000",
+     "country": "Dānija",
+     "event": "Periodiskā apskate: Izturēta · FDM Test & Bilsyn"
+    },
+    {
+     "date": "2020-12-18",
+     "odometer": "96000",
+     "country": "Dānija",
+     "event": "Periodiskā apskate: Izturēta · FDM Test & Bilsyn"
+    },
+    {
+     "date": "2020-12-14",
+     "odometer": "96000",
+     "country": "Dānija",
+     "event": "Periodiskā apskate: Jāveic atkārtota apskate · FDM Test & Bilsyn"
+    },
+    {
+     "date": "2017-01-05",
+     "odometer": "",
+     "country": "",
+     "event": "Pirmā reģistrācija"
+    },
+    {
+     "date": "2017-01-05",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: GF-FORSIKRING A/S, aktīva"
+    },
+    {
+     "date": "2017-01-05",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRYG FORSIKRING A/S, aktīva"
+    },
+    {
+     "date": "2017-01-05",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRYG FORSIKRING A/S, beigusies"
+    }
+   ],
+   "ownersSummary": "Dānijas īpašnieku skaits: 2 (pēc reģistrācijas darbībām Dānijā, ne pēc OCTA).",
+   "fetchedAt": "2026-09-20T10:23:56.012Z"
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "16.08.2023",
+     "odometer": "179148",
+     "country": "Dānija"
+    },
+    {
+     "date": "29.09.2022",
+     "odometer": "148380",
+     "country": "Dānija"
+    },
+    {
+     "date": "26.10.2021",
+     "odometer": "122990",
+     "country": "Dānija"
+    },
+    {
+     "date": "24.11.2020",
+     "odometer": "93236",
+     "country": "Dānija"
+    },
+    {
+     "date": "24.10.2019",
+     "odometer": "68976",
+     "country": "Dānija"
+    },
+    {
+     "date": "04.12.2018",
+     "odometer": "49456",
+     "country": "Dānija"
+    },
+    {
+     "date": "12.12.2017",
+     "odometer": "26034",
+     "country": "Dānija"
+    },
+    {
+     "date": "19.12.2016",
+     "odometer": "17",
+     "country": "Dānija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "16.08.2023",
+     "odometer": "179148",
+     "location": "British MotorGroup Land Rover København A/S, Dynamovej 12A, 2860 Søborg, Denmark",
+     "works": "Regulārā apkope\nEļļas un eļļas filtru maiņa\nBremžu šķidruma maiņa\nDzinēja dzesēšanas šķidruma maiņa\nElastīgo bremžušļūteņu nomaiņa, Renewal of ancillary drive belt\nAizmugurējo bremžu nomaiņa, AdBlue papildināšana\nElastīgo bremžu šļūteņu nomaiņa\nCeliņsiksnas maiņa\nPapildu piedziņas siksnas nomaiņa"
+    },
+    {
+     "date": "29.09.2022",
+     "odometer": "148380",
+     "location": "British MotorGroup Land Rover København A/S, Dynamovej 12A, 2860 Søborg, Denmark",
+     "works": "Regulārā apkope\nEļļas un eļļas filtru maiņa\nSalona gaisa filtra maiņa\nDzinēja gaisa filtra maiņa"
+    },
+    {
+     "date": "26.10.2021",
+     "odometer": "122990",
+     "location": "British MotorGroup Land Rover København A/S, Dynamovej 12A, 2860 Søborg, Denmark",
+     "works": "Regulārā apkope\nEļļas un eļļas filtru maiņa\nSalona filtra maiņa."
+    },
+    {
+     "date": "24.11.2020",
+     "odometer": "93236",
+     "location": "British MotorGroup Land Rover København A/S, Dynamovej 12A, 2860 Søborg, Denmark",
+     "works": "Regulārā apkope\nEļļas un eļļas filtru maiņa\nSalona gaisa filtra maiņa\nDzinēja gaisa filtra maiņa\nGaisa kondicionēšanas apkope"
+    },
+    {
+     "date": "24.10.2019",
+     "odometer": "68976",
+     "location": "British MotorGroup Land Rover København A/S, Dynamovej 12A, 2860 Søborg, Denmark",
+     "works": "Regulārā apkope\nEļļas un eļļas filtru maiņa\nSalona filtra maiņa.\nBremžu šķidruma maiņa"
+    },
+    {
+     "date": "04.12.2018",
+     "odometer": "49456",
+     "location": "British MotorGroup Land Rover København A/S, Dynamovej 12A, 2860 Søborg, Denmark",
+     "works": "Regulārā apkope\nEļļas un eļļas filtru maiņa\nSalona gaisa filtra maiņa\nDzinēja gaisa filtra maiņa\nDegvielas filtra maiņa."
+    },
+    {
+     "date": "12.12.2017",
+     "odometer": "26034",
+     "location": "British MotorGroup Land Rover København A/S, Dynamovej 12A, 2860 Søborg, Denmark",
+     "works": "Regulārā apkope\nEļļas un eļļas filtru maiņa"
+    },
+    {
+     "date": "19.12.2016",
+     "odometer": "17",
+     "location": "Terminalen Aarhus Nord, Ravnsøvej 9, 8240 Risskov, Denmark",
+     "works": "Pirms-pārdošanas pārbaude.\nPirms piegādes sagatavošana"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "16.08.2023",
+      "odometer": "179148",
+      "place": "British MotorGroup Land Rover København A/S, Dynamovej 12A, 2860 Søborg, Denmark",
+      "works": "Renewal of Oil and Oil Filter.\nRenewal of Engine Coolant.\nRenewal of Brake Fluid.\nRenewal of Flexible Brake Hoses.\nRenewal of Rear Brakes.\nRenewal of Cam Belt.\nRenewal of Ancillary Drive Belt.\n182000 Km / 84 months service.\nRenewal of Pollen Filter.\nAdBlue Top-up (Diesel exhaust fluid)"
+     },
+     {
+      "date": "29.09.2022",
+      "odometer": "148380",
+      "place": "British MotorGroup Land Rover København A/S, Dynamovej 12A, 2860 Søborg, Denmark",
+      "works": "Renewal of Oil and Oil Filter.\n156000 Km / 72 months service.\nRenewal of Pollen Filter.\nRenewal of Engine Air Filter.\nRenewal of Fuel Filter.\nAdBlue Top-up (Diesel exhaust fluid)"
+     },
+     {
+      "date": "26.10.2021",
+      "odometer": "122990",
+      "place": "British MotorGroup Land Rover København A/S, Dynamovej 12A, 2860 Søborg, Denmark",
+      "works": "Renewal of Oil and Oil Filter.\n130000 Km / 60 months service.\nRenewal of Pollen Filter."
+     },
+     {
+      "date": "24.11.2020",
+      "odometer": "93236",
+      "place": "British MotorGroup Land Rover København A/S, Dynamovej 12A, 2860 Søborg, Denmark",
+      "works": "Renewal of Oil and Oil Filter.\n104000 Km / 48 months service.\nRenewal of Pollen Filter.\nRenewal of Engine Air Filter.\nRenewal of Fuel Filter.\nAir Conditioning Service."
+     },
+     {
+      "date": "24.10.2019",
+      "odometer": "68976",
+      "place": "British MotorGroup Land Rover København A/S, Dynamovej 12A, 2860 Søborg, Denmark",
+      "works": "Renewal of Oil and Oil Filter.\nRenewal of Brake Fluid.\n78000 Km / 36 months service.\nRenewal of Pollen Filter."
+     },
+     {
+      "date": "04.12.2018",
+      "odometer": "49456",
+      "place": "British MotorGroup Land Rover København A/S, Dynamovej 12A, 2860 Søborg, Denmark",
+      "works": "Renewal of Oil and Oil Filter.\n52000 Km / 24 months service.\nRenewal of Pollen Filter.\nRenewal of Engine Air Filter.\nRenewal of Fuel Filter."
+     },
+     {
+      "date": "12.12.2017",
+      "odometer": "26034",
+      "place": "British MotorGroup Land Rover København A/S, Dynamovej 12A, 2860 Søborg, Denmark",
+      "works": "Renewal of Oil and Oil Filter.\n26000 Km / 12 months service.\nRenewal of Pollen Filter."
+     },
+     {
+      "date": "19.12.2016",
+      "odometer": "17",
+      "place": "Terminalen Aarhus Nord, Ravnsøvej 9, 8240 Risskov, Denmark",
+      "works": "Pre-Delivery Inspection."
+     }
+    ]
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "F-Pace",
+     "modelSeries": "F-PACE - X761",
+     "vinCode": "SADCA2BK6HA098675",
+     "vehicleType": "Universālis",
+     "transmission": "Automātiskā ātrumkārba (8 Speed Auto Trans ZF 8HP70 4WD)",
+     "steeringSide": "LHD (automašīna ar stūri kreisajā pusē)",
+     "engineCode": "200AZ",
+     "engineNumber": "",
+     "body": "SUV",
+     "drive": "Pilnpiedziņa",
+     "power": "228 kW (306 ZS / 310 PS)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "761AB Prestige",
+     "productionDate": "01.11.2016",
+     "firstRegistration": "01.01.2017",
+     "warrantyStartDate": "27.12.2016",
+     "countryRegion": "Dānija",
+     "color": "Tempest grey (1AR)",
+     "colorCode": "1AR",
+     "interior": "Taurus Leather (033AS)",
+     "interiorCode": "033AS",
+     "fuel": "Dīzelis",
+     "displacement": "3 l"
+    }
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "12.11.2024",
+     "venue": "Dānija",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "certificate": {
+    "issuedAt": "20.09.2026 13:57:47",
+    "vehicleLine": "Transportlīdzeklis JAGUAR F-PACE, izlaiduma gads 2017. Valsts numura zīme OG4791.",
+    "makeModel": "JAGUAR F-PACE",
+    "year": "2017",
+    "plate": "OG4791",
+    "accidentCount": "0",
+    "insuredFrom": "07.03.2025",
+    "insuredTo": "04.11.2025",
+    "insuredDays": "154",
+    "claims": [],
+    "footerNote": "Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas."
+   }
+  },
+  "tirgus": {
+   "listedForSale": "340",
+   "listingCreated": "14.10.2025",
+   "priceDrop": "€ -3 000",
+   "priceHistory": [
+    {
+     "date": "10.09.2026",
+     "price": 14950,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": 0
+    },
+    {
+     "date": "20.08.2026",
+     "price": 14950,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": 0
+    },
+    {
+     "date": "29.07.2026",
+     "price": 14950,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": 0
+    },
+    {
+     "date": "08.07.2026",
+     "price": 14950,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": 0
+    },
+    {
+     "date": "17.06.2026",
+     "price": 14950,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": 0
+    },
+    {
+     "date": "03.06.2026",
+     "price": 14950,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": -550
+    },
+    {
+     "date": "27.05.2026",
+     "price": 15500,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": 0
+    },
+    {
+     "date": "06.05.2026",
+     "price": 15500,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": 0
+    },
+    {
+     "date": "25.04.2026",
+     "price": 15500,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": 0
+    },
+    {
+     "date": "27.03.2026",
+     "price": 15500,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": 0
+    },
+    {
+     "date": "13.03.2026",
+     "price": 15500,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": 0
+    },
+    {
+     "date": "27.02.2026",
+     "price": 15500,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": -600
+    },
+    {
+     "date": "03.02.2026",
+     "price": 16100,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": 0
+    },
+    {
+     "date": "19.01.2026",
+     "price": 16100,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": 0
+    },
+    {
+     "date": "05.01.2026",
+     "price": 16100,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": -500
+    },
+    {
+     "date": "17.12.2025",
+     "price": 16600,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": 0
+    },
+    {
+     "date": "26.11.2025",
+     "price": 16600,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": 0
+    },
+    {
+     "date": "12.11.2025",
+     "price": 16600,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": -1350
+    },
+    {
+     "date": "28.10.2025",
+     "price": 17950,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": 0
+    },
+    {
+     "date": "14.10.2025",
+     "price": 17950,
+     "mileage": 216000,
+     "year": 2017,
+     "delta": 0
+    }
+   ],
+   "listingMileageOdometer": "216 000",
+   "listingMileageDate": "14.10.2025",
+   "listingMileageCountry": "Latvija"
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

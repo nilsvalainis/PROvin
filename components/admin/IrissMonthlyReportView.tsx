@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AdminCollapsedMenuButton } from "@/components/admin/AdminCollapsedMenuButton";
 import { IrissOverflowItem, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
 import { AdminMobileTopBar } from "@/components/admin/mobile/AdminMobileChrome";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { formatYearMonthKey, shiftYearMonth } from "@/lib/admin-riga-calendar";
 import { formatIrissMonthlyReportCsv, type IrissMonthlyReport } from "@/lib/iriss-monthly-report";
 import {
@@ -54,6 +55,8 @@ export function IrissMonthlyReportView({
       (lastAboutFrom.current === "mobile" ? mobileAboutTriggerRef : desktopAboutTriggerRef).current?.focus();
     });
   }
+
+  const aboutBackdropClose = useModalBackdropClose(closeAbout);
 
   useEffect(() => {
     if (!aboutOpen) return;
@@ -210,14 +213,14 @@ export function IrissMonthlyReportView({
       {aboutOpen ? (
         <div
           className="fixed inset-0 z-[140] flex items-end justify-center bg-black/40 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
-          onClick={closeAbout}
+          {...aboutBackdropClose}
           role="presentation"
         >
           <div
             role="dialog"
             aria-modal="true"
             aria-labelledby="iriss-report-about-title"
-            className="w-full max-w-md rounded-3xl bg-[var(--s1)] p-5 shadow-[var(--gsh)]"
+            className="w-full max-w-md rounded-3xl bg-[var(--s1)] p-5 shadow-[var(--gsh)] max-h-[calc(100dvh-1.5rem-env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="iriss-report-about-title" className="text-[16px] font-semibold text-[var(--ink)]">

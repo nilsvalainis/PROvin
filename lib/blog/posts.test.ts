@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { getAllBlogSlugs, getBlogPost, isBlogLocaleIndexable, listBlogPosts } from "@/lib/blog/posts";
+import { isCrawlableBlogLocale } from "@/lib/blog/crawlable-locales";
+import { blogLinkLocale, getAllBlogSlugs, getBlogPost, isBlogLocaleIndexable, listBlogPosts } from "@/lib/blog/posts";
+import { PUBLIC_LOCALES } from "@/i18n/locales";
 
 describe("blog posts", () => {
   beforeEach(() => {
@@ -29,5 +31,19 @@ describe("blog posts", () => {
     expect(isBlogLocaleIndexable(buying!, "en")).toBe(false);
     expect(isBlogLocaleIndexable(buying!, "de")).toBe(false);
     expect(isBlogLocaleIndexable(buying!, "ru")).toBe(false);
+    expect(blogLinkLocale(buying!, "en")).toBe("lv");
+    expect(blogLinkLocale(buying!, "lv")).toBe("lv");
+  });
+
+  it("crawlable blog locales match the noindex gate for every stored post", async () => {
+    const posts = await listBlogPosts();
+    expect(posts.length).toBeGreaterThan(0);
+    for (const post of posts) {
+      for (const locale of PUBLIC_LOCALES) {
+        expect(isCrawlableBlogLocale(post.slug, locale), `${post.slug} ${locale}`).toBe(
+          isBlogLocaleIndexable(post, locale),
+        );
+      }
+    }
   });
 });

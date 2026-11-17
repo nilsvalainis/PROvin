@@ -1,0 +1,11 @@
+[Unit]
+Description=CSDD reģistrs: 03:30 Europe/Riga, atkārtojumi ik 20 min līdz 05:50 (run.sh izlaiž, ja jau izdarīts)
+
+[Timer]
+OnCalendar=*-*-* 03:30,50:00 Europe/Riga
+OnCalendar=*-*-* 04,05:10,30,50:00 Europe/Riga
+Persistent=false
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

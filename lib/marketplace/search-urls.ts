@@ -51,6 +51,37 @@ function mobileDeMakeId(make: string): string | null {
   return null;
 }
 
+/**
+ * mobile.de modeļu ID (ms=marka;modelis) - no Nila manuāli veidotajiem filtriem (30.10 rezerves kopija).
+ * Tikai viennozīmīgi modeļi; BMW / Mercedes ID atkarīgi no dzinēja - tos neliek (paliek tikai marka).
+ */
+const MOBILE_DE_MODEL_ID: Record<string, Record<string, string>> = {
+  "1900": { a6: "10", q5: "32" },
+  "9000": { kuga: "49" },
+  "11600": { ix35: "12", ioniq: "40" },
+  "13200": { sportage: "25" },
+  "18700": { "qashqai+2": "50", qashqai2: "50" },
+  "22900": { superb: "12", kodiaq: "19" },
+  "23600": { vitara: "20" },
+  "24100": { landcruiser: "19" },
+  "25100": { v60: "16", s60: "28", xc90: "37", xc60: "40" },
+  "25200": { golf: "14", touareg: "36", tiguan: "54", tiguanallspace: "66", sharan: "30" },
+  "3500": { x3: "48", x5: "49" },
+};
+
+export function mobileDeModelId(makeId: string, model: string): string | null {
+  const map = MOBILE_DE_MODEL_ID[makeId];
+  if (!map) return null;
+  const key = fold(model).replace(/[\s-]+/g, "");
+  if (!key) return null;
+  if (map[key]) return map[key]!;
+  // «Golf 7», «XC60 D4», «Tiguan Allspace» - garākā atbilstošā atslēga no sākuma.
+  const hit = Object.keys(map)
+    .filter((k) => key.startsWith(k))
+    .sort((a, b) => b.length - a.length)[0];
+  return hit ? map[hit]! : null;
+}
+
 export function marketplaceSearchMake(make: string): string {
   const t = fold(make).replace(/\s+/g, "");
   if (t === "mercedes" || t === "mercedes-benz" || t === "mercedesbenz") return "Mercedes-Benz";
@@ -80,6 +111,16 @@ export function marketplaceVehicleCategory(q: MarketplaceQuery): MarketplaceVehi
 
 export function marketplaceHasAirConditioning(q: MarketplaceQuery): boolean {
   return q.features.some((f) => /air.?cond|klima|ac\b/i.test(f));
+}
+
+/** Nils 30.10: vairākas izvēles («diesel, petrol») -> katra vērtība atsevišķi, bez dublikātiem. */
+function mapList(raw: string, map: (one: string) => string): string[] {
+  const out: string[] = [];
+  for (const one of raw.split(",")) {
+    const v = one.trim() ? map(one) : "";
+    if (v && !out.includes(v)) out.push(v);
+  }
+  return out;
 }
 
 function mobileFuel(raw: string): string {
@@ -196,7 +237,8 @@ export function buildMobileDeSearchUrl(q: MarketplaceQuery, sortNewest = false):
   url.searchParams.set("st", "DEALER");
   const makeId = mobileDeMakeId(q.make);
   if (makeId) {
-    url.searchParams.set("ms", makeId);
+    const modelId = mobileDeModelId(makeId, q.model);
+    url.searchParams.set("ms", modelId ? `${makeId};${modelId}` : makeId);
   } else if (q.make.trim()) {
     url.searchParams.set("make", marketplaceSearchMake(q.make));
     if (model) url.searchParams.set("model", model);
@@ -212,13 +254,11 @@ export function buildMobileDeSearchUrl(q: MarketplaceQuery, sortNewest = false):
   if (cc) url.searchParams.set("cc", cc);
   const power = colonRange(q.powerFromKw, q.powerToKw);
   if (power) url.searchParams.set("pw", power);
-  const fuel = mobileFuel(q.fuel);
-  if (fuel) url.searchParams.set("ft", fuel);
+  for (const fuel of mapList(q.fuel, mobileFuel)) url.searchParams.append("ft", fuel);
   const gear = mobileGear(q.gearbox);
   if (gear) url.searchParams.set("tr", gear);
   if (category !== "van") {
-    const body = mobileUrlBody(q.body);
-    if (body) url.searchParams.set("c", body);
+    for (const body of mapList(q.body, mobileUrlBody)) url.searchParams.append("c", body);
   }
   const drive = mobileDrive(q.drive);
   if (drive) url.searchParams.set("dr", drive);
@@ -278,12 +318,12 @@ export function buildAutoscout24SearchUrl(q: MarketplaceQuery, sortNewest = fals
   if (q.powerFromKw != null) url.searchParams.set("powerfrom", String(q.powerFromKw));
   if (q.powerToKw != null) url.searchParams.set("powerto", String(q.powerToKw));
   if (q.powerFromKw != null || q.powerToKw != null) url.searchParams.set("powertype", "kw");
-  const fuel = as24Fuel(q.fuel);
+  const fuel = mapList(q.fuel, as24Fuel).join(",");
   if (fuel) url.searchParams.set("fuel", fuel);
   const gear = as24Gear(q.gearbox);
   if (gear) url.searchParams.set("gear", gear);
   if (category !== "van") {
-    const body = as24Body(q.body);
+    const body = mapList(q.body, as24Body).join(",");
     if (body) url.searchParams.set("body", body);
   }
   if (marketplaceHasAirConditioning(q)) url.searchParams.set("eq", "5");
@@ -322,11 +362,11 @@ function mobileDeActorInput(q: MarketplaceQuery, maxResults: number, sortNewest:
   const gear = mobileGear(q.gearbox);
   if (gear) input.transmission = [gear];
   if (category !== "van") {
-    const body = mobileActorBody(q.body);
-    if (body) input.bodyType = [body];
+    const bodies = mapList(q.body, mobileActorBody);
+    if (bodies.length > 0) input.bodyType = bodies;
   }
-  const fuel = mobileFuel(q.fuel);
-  if (fuel) input.fuelType = [fuel];
+  const fuels = mapList(q.fuel, mobileFuel);
+  if (fuels.length > 0) input.fuelType = fuels;
   if (marketplaceHasAirConditioning(q)) input.features = ["AIR_CONDITIONING"];
   if (sortNewest) input.sort = "newest";
   // Schema has no country field. customFilters keeps only DE rows after scrape.
@@ -350,4 +390,13 @@ export function marketplaceActorSearchInput(
     };
   }
   return mobileDeActorInput(q, maxResults, sortNewest);
+}
+
+/**
+ * Nils 30.10: pasūtījuma mobile.de filtrs pēc pogas «Izveidot» - marka/modelis, gadi, km, cena (no 55 % līdz budžets mīnus 2 000 €),
+ * degviela, kārba, virsbūve, tilpums/jauda, pilnpiedziņa; bez aprīkojuma un krāsām,
+ * tirgotāji, bez bojājumiem, jaunākie augšā.
+ */
+export function buildMobileDeOrderSearchUrl(q: MarketplaceQuery): string {
+  return buildMobileDeSearchUrl({ ...q, features: [] }, true);
 }

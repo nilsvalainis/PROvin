@@ -1,0 +1,1357 @@
+{
+ "vin": "WAUZZZ8V1H1033853",
+ "label": "AUDI A3 LIMOUSINE: CSDD 23, AutoDNA 28, carVertical 11, dīleris 5; negadījumi 2",
+ "source": "prod pasūtījuma melnraksts (manual), revīzija 48, saglabāts 2026-11-02; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "AUDI A3 LIMOUSINE",
+   "registrationNumber": "NE6693",
+   "firstRegistration": "2016-12-05",
+   "firstRegistrationLatvia": "2021-12-06",
+   "nextInspectionDate": "2027-02-03",
+   "prevInspectionDate": "2026-02-03",
+   "engineDisplacementCm3": "1598",
+   "enginePowerKw": "81",
+   "fuelType": "Dīzeļdegviela",
+   "emissionStandard": "Euro 6 W",
+   "vehicleType": "Vieglais pasažieru (M1)",
+   "grossMassKg": "1830",
+   "curbMassKg": "1355",
+   "seatCount": "5",
+   "roadTaxEur": "54,00",
+   "registrationStatus": "Uzskaitē",
+   "opacityCoefficient": "0.05",
+   "particulateMatter": "2 300",
+   "previousRegistrationCountry": "VĀCIJA",
+   "ownerCountLatvia": "2",
+   "vin": "WAUZZZ8V1H1033853",
+   "modelYear": "2016",
+   "color": "Melna",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "M1",
+   "cocType": "8V",
+   "cocApprovalNumber": "e1*2007/46*0607*21",
+   "cocVariant": "LCXXBF1",
+   "cocVersion": "FM6FM62S027P8V427MMEM1K1",
+   "insuranceValidUntil": "2027-04-06",
+   "technicalInspectionHistory": [
+    {
+     "date": "03.02.2026",
+     "inspectionType": "",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "27.01.2025",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "3400",
+     "notes": "Atgāzu cietās daļiņas: 3400",
+     "defects": []
+    },
+    {
+     "date": "14.01.2024",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.01",
+     "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+     "defects": []
+    },
+    {
+     "date": "23.12.2022",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.01",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "08.12.2021",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.05",
+     "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+     "defects": []
+    }
+   ],
+   "ownerRegistrationEvents": [
+    {
+     "date": "06.12.2021",
+     "label": "Pirmā reģistrācija Latvijā"
+    },
+    {
+     "date": "07.06.2023",
+     "label": "Īpašnieka maiņa"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "Pamatpārbaude",
+    "inspectionDateText": "03.02.2026",
+    "nextInspectionDateText": "",
+    "odometer": "199235",
+    "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+    "ratingLevel": null,
+    "smokeCoefficient": "2 300",
+    "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "03.02.2026",
+     "odometer": "199235",
+     "country": "Latvija"
+    },
+    {
+     "date": "27.01.2025",
+     "odometer": "179766",
+     "country": "Latvija"
+    },
+    {
+     "date": "14.01.2024",
+     "odometer": "163364",
+     "country": "Latvija"
+    },
+    {
+     "date": "23.12.2022",
+     "odometer": "149040",
+     "country": "Latvija"
+    },
+    {
+     "date": "08.12.2021",
+     "odometer": "138668",
+     "country": "Latvija"
+    },
+    {
+     "date": "08.11.2021",
+     "odometer": "138585",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "29.10.2021",
+     "odometer": "138585",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "20.10.2021",
+     "odometer": "138585",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "12.05.2021",
+     "odometer": "129157",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "20.10.2020",
+     "odometer": "118527",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "12.03.2020",
+     "odometer": "107889",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "16.10.2019",
+     "odometer": "95813",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "15.10.2019",
+     "odometer": "95810",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.07.2019",
+     "odometer": "85219",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "30.04.2019",
+     "odometer": "81249",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "18.12.2018",
+     "odometer": "69977",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "24.07.2018",
+     "odometer": "56498",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "23.04.2018",
+     "odometer": "48571",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "24.01.2018",
+     "odometer": "38477",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "10.10.2017",
+     "odometer": "28770",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "17.03.2017",
+     "odometer": "9166",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "18.01.2017",
+     "odometer": "11",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "05.12.2016",
+     "odometer": "10",
+     "country": "Nīderlande"
+    }
+   ],
+   "registry": {
+    "nr1": "WAUZZZ8V1H1033853",
+    "fetchedAt": "2026-11-02T12:33:23.391Z",
+    "data": {
+     "registrationNumber": "NE6693",
+     "vin": "WAUZZZ8V1H1033853",
+     "make": "AUDI",
+     "model": "A3 LIMOUSINE",
+     "year": "2016",
+     "fuel": "Dīzeļdegviela",
+     "powerKw": "81",
+     "electricPowerKw": "",
+     "electricPowerKw2": "",
+     "displacementCm3": "1598",
+     "firstRegistrationIso": "2016-12-05",
+     "color": "Melna",
+     "vehicleKind": "Vieglais pasažieru",
+     "cocCategory": "M1",
+     "cocType": "8V",
+     "cocApprovalNumber": "e1*2007/46*0607*21",
+     "cocVariant": "LCXXBF1",
+     "cocVersion": "FM6FM62S027P8V427MMEM1K1",
+     "grossMassKg": "1830",
+     "curbMassKg": "1355",
+     "insuranceEndIso": "2027-04-06",
+     "inspectionValidUntilIso": "2027-02-03"
+    }
+   }
+  },
+  "tirgus": {
+   "listedForSale": "176",
+   "listingCreated": "10.05.2026",
+   "priceDrop": "€ -500",
+   "priceHistory": [
+    {
+     "date": "03.08.2026",
+     "price": 9500,
+     "mileage": 205000,
+     "year": 2016,
+     "delta": 0
+    },
+    {
+     "date": "02.07.2026",
+     "price": 9500,
+     "mileage": null,
+     "year": 2016,
+     "delta": -300
+    },
+    {
+     "date": "02.06.2026",
+     "price": 9800,
+     "mileage": null,
+     "year": 2016,
+     "delta": -200
+    },
+    {
+     "date": "10.05.2026",
+     "price": 10000,
+     "mileage": null,
+     "year": 2016,
+     "delta": 0
+    }
+   ],
+   "listingMileageOdometer": "205 000",
+   "listingMileageDate": "10.05.2026",
+   "listingMileageCountry": "Latvija"
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "03.02.2026",
+     "odometer": "199235",
+     "country": "Latvija"
+    },
+    {
+     "date": "27.01.2025",
+     "odometer": "179766",
+     "country": "Latvija"
+    },
+    {
+     "date": "14.01.2024",
+     "odometer": "163364",
+     "country": "Latvija"
+    },
+    {
+     "date": "23.12.2022",
+     "odometer": "149040",
+     "country": "Latvija"
+    },
+    {
+     "date": "08.12.2021",
+     "odometer": "138668",
+     "country": "Latvija"
+    },
+    {
+     "date": "06.12.2021",
+     "odometer": "138668",
+     "country": "Latvija"
+    },
+    {
+     "date": "27.10.2021",
+     "odometer": "138585",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "26.10.2021",
+     "odometer": "138585",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "25.10.2021",
+     "odometer": "138585",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "11.05.2021",
+     "odometer": "129157",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "20.10.2020",
+     "odometer": "118546",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "11.03.2020",
+     "odometer": "107889",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.03.2020",
+     "odometer": "107250",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "16.10.2019",
+     "odometer": "95810",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "05.10.2019",
+     "odometer": "94613",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "17.06.2019",
+     "odometer": "85219",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "30.04.2019",
+     "odometer": "81249",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.04.2019",
+     "odometer": "81249",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "18.12.2018",
+     "odometer": "69977",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "24.07.2018",
+     "odometer": "56498",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.07.2018",
+     "odometer": "56498",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "23.04.2018",
+     "odometer": "48571",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "10.10.2017",
+     "odometer": "28770",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.10.2017",
+     "odometer": "30000",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "06.04.2017",
+     "odometer": "10659",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "17.03.2017",
+     "odometer": "9166",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "18.01.2017",
+     "odometer": "11",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.12.2016",
+     "odometer": "14",
+     "country": "Nīderlande"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "11.2024",
+     "lossAmount": "2 200 - 2 400 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "03.02.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "199235",
+     "includeInPdf": false
+    },
+    {
+     "date": "27.01.2025",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "179766",
+     "includeInPdf": false
+    },
+    {
+     "date": "14.01.2024",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "163364",
+     "includeInPdf": false
+    },
+    {
+     "date": "23.12.2022",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "149040",
+     "includeInPdf": false
+    },
+    {
+     "date": "08.12.2021",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "138668",
+     "includeInPdf": false
+    },
+    {
+     "date": "06.12.2021",
+     "country": "Latvija",
+     "description": "Transportlīdzeklis reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "06.12.2021",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "odometer": "138668",
+     "includeInPdf": false
+    },
+    {
+     "date": "08.11.2021",
+     "country": "Nīderlande",
+     "description": "Transportlīdzekļa noņemšana no uzskaites",
+     "includeInPdf": false
+    },
+    {
+     "date": "29.10.2021",
+     "country": "Nīderlande",
+     "description": "Ziņots jaunais īpašnieks",
+     "includeInPdf": false
+    },
+    {
+     "date": "27.10.2021",
+     "country": "Nīderlande",
+     "description": "Pārdošanā piedāvātais transportlīdzeklis",
+     "odometer": "138585",
+     "includeInPdf": false
+    },
+    {
+     "date": "26.10.2021",
+     "country": "Nīderlande",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "138585",
+     "includeInPdf": false
+    },
+    {
+     "date": "25.10.2021",
+     "country": "Nīderlande",
+     "description": "Automašīna tiek piedāvāta pārdošanai",
+     "odometer": "138585",
+     "includeInPdf": false
+    },
+    {
+     "date": "25.10.2021",
+     "country": "Vācija",
+     "description": "Pārdošanā piedāvātais transportlīdzeklis",
+     "odometer": "138585",
+     "includeInPdf": false
+    },
+    {
+     "date": "20.10.2021",
+     "country": "Nīderlande",
+     "description": "Ziņots jaunais īpašnieks",
+     "includeInPdf": false
+    },
+    {
+     "date": "11.05.2021",
+     "country": "Nīderlande",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "129157",
+     "includeInPdf": false
+    },
+    {
+     "date": "20.10.2020",
+     "country": "Nīderlande",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "20.10.2020",
+     "country": "Nīderlande",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "118546",
+     "includeInPdf": false
+    },
+    {
+     "date": "11.03.2020",
+     "country": "Nīderlande",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "107889",
+     "includeInPdf": false
+    },
+    {
+     "date": "16.10.2019",
+     "country": "Nīderlande",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "16.10.2019",
+     "country": "Nīderlande",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "95810",
+     "includeInPdf": false
+    },
+    {
+     "date": "05.10.2019",
+     "country": "Nīderlande",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "94613",
+     "includeInPdf": false
+    },
+    {
+     "date": "17.06.2019",
+     "country": "Nīderlande",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "85219",
+     "includeInPdf": false
+    },
+    {
+     "date": "30.04.2019",
+     "country": "Nīderlande",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "81249",
+     "includeInPdf": false
+    },
+    {
+     "date": "18.12.2018",
+     "country": "Nīderlande",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "69977",
+     "includeInPdf": false
+    },
+    {
+     "date": "24.07.2018",
+     "country": "Nīderlande",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "56498",
+     "includeInPdf": false
+    },
+    {
+     "date": "23.04.2018",
+     "country": "Nīderlande",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "48571",
+     "includeInPdf": false
+    },
+    {
+     "date": "10.10.2017",
+     "country": "Nīderlande",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "28770",
+     "includeInPdf": false
+    },
+    {
+     "date": "06.04.2017",
+     "country": "Nīderlande",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "10659",
+     "includeInPdf": false
+    },
+    {
+     "date": "17.03.2017",
+     "country": "Nīderlande",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "9166",
+     "includeInPdf": false
+    },
+    {
+     "date": "18.01.2017",
+     "country": "Nīderlande",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "11",
+     "includeInPdf": false
+    },
+    {
+     "date": "05.12.2016",
+     "country": "Nīderlande",
+     "description": "Transportlīdzeklis reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "05.12.2016",
+     "country": "",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    },
+    {
+     "date": "05.12.2016",
+     "country": "Nīderlande",
+     "description": "Ziņots jaunais īpašnieks",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.02.2026",
+     "odometer": "199235",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.01.2025",
+     "odometer": "179766",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.01.2024",
+     "odometer": "163364",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.12.2022",
+     "odometer": "149040",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2022",
+     "odometer": "147834",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.12.2021",
+     "odometer": "138668",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.03.2020",
+     "odometer": "107084",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.04.2019",
+     "odometer": "81183",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.07.2018",
+     "odometer": "56432",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.10.2017",
+     "odometer": "29934",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.12.2016",
+     "odometer": "14",
+     "country": "Nīderlande"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "11.2024",
+     "lossAmount": "2 001 - 2 500 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.11.2016",
+     "country": "",
+     "description": "Ražots",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2016",
+     "country": "Nīderlande",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2016",
+     "country": "Nīderlande",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2021",
+     "country": "Baltkrievija",
+     "description": "Izlikts pārdošanā Balstoties uz sludinājuma datiem, šis spēkrats ir ticis izlikts pārdošanā. Reizēm valsts, kurā ir publicēts sludinājums, var atšķirties no transportlīdzekļa patiesās atrašanās vietas",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2021",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2021",
+     "country": "Latvija",
+     "description": "Reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2021",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.08.2022",
+     "country": "Latvija",
+     "description": "Izlikts pārdošanā Balstoties uz sludinājuma datiem, šis spēkrats ir ticis izlikts pārdošanā. Reizēm valsts, kurā ir publicēts sludinājums, var atšķirties no transportlīdzekļa patiesās atrašanās vietas",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2022",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.06.2023",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.01.2024",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2024",
+     "country": "Latvija",
+     "description": "Fiksēts novērtējums",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.01.2025",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "06.03.2020",
+     "odometer": "107250",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "30.04.2019",
+     "odometer": "81249",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "24.07.2018",
+     "odometer": "56498",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "10.10.2017",
+     "odometer": "30000",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "02.12.2016",
+     "odometer": "14",
+     "country": "Nīderlande"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "06.03.2020",
+     "odometer": "107250",
+     "location": "Vallei Auto Groep, Galileistraat 27, 3902 HR Veenendaal, Netherlands",
+     "works": "Apkope ar eļļas maiņu (elastīgais intervāls)\nBremžu šķidruma maiņa"
+    },
+    {
+     "date": "30.04.2019",
+     "odometer": "81249",
+     "location": "Vallei Auto Groep, Galileistraat 27, 3902 HR Veenendaal, Netherlands",
+     "works": "Apkope ar eļļas maiņu (elastīgais intervāls)\nDīzeļdegvielas filtrs\nGaisa filtra elements"
+    },
+    {
+     "date": "24.07.2018",
+     "odometer": "56498",
+     "location": "Vallei Auto Groep, Galileistraat 27, 3902 HR Veenendaal, Netherlands",
+     "works": "Apkope ar eļļas maiņu (elastīgais intervāls)\nSalona putekļu un ziedputekšņu filtrs"
+    },
+    {
+     "date": "10.10.2017",
+     "odometer": "30000",
+     "location": "Vallei Auto Groep, Galileistraat 27, 3902 HR Veenendaal, Netherlands",
+     "works": "Apkope ar eļļas maiņu (elastīgais intervāls)"
+    },
+    {
+     "date": "02.12.2016",
+     "odometer": "14",
+     "location": "Vallei Auto Groep, Galileistraat 27, 3902 HR Veenendaal, Netherlands",
+     "works": "Pirmsnodošanas pārbaude"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "02.12.2016",
+      "odometer": "14",
+      "place": "Vallei Auto Groep, Galileistraat 27, 3902 HR Veenendaal, Netherlands",
+      "works": "Delivery inspection"
+     },
+     {
+      "date": "10.10.2017",
+      "odometer": "30000",
+      "place": "Vallei Auto Groep, Galileistraat 27, 3902 HR Veenendaal, Netherlands",
+      "works": "Inspection with Oil change (flexible)"
+     },
+     {
+      "date": "24.07.2018",
+      "odometer": "56498",
+      "place": "Vallei Auto Groep, Galileistraat 27, 3902 HR Veenendaal, Netherlands",
+      "works": "Inspection with Oil change (flexible)\nDust and pollen filter"
+     },
+     {
+      "date": "30.04.2019",
+      "odometer": "81249",
+      "place": "Vallei Auto Groep, Galileistraat 27, 3902 HR Veenendaal, Netherlands",
+      "works": "Inspection with Oil change (flexible)\nDiesel fuel filter\nAir cleaner element"
+     },
+     {
+      "date": "06.03.2020",
+      "odometer": "107250",
+      "place": "Vallei Auto Groep, Galileistraat 27, 3902 HR Veenendaal, Netherlands",
+      "works": "Inspection with Oil change (flexible)\nBrake fluid service"
+     }
+    ]
+   },
+   "outvin": {
+    "precheckAt": null,
+    "vin": "WAUZZZ8V1H1033853",
+    "capabilitySlots": [],
+    "purchases": [],
+    "vehicleInfo": {
+     "model": "Audi A3 1.6 TDI",
+     "modelSeries": "A3",
+     "vinCode": "WAUZZZ8V1H1033853",
+     "vehicleType": "",
+     "transmission": "RSK",
+     "steeringSide": "",
+     "engineCode": "CXXB",
+     "engineNumber": "",
+     "body": "Saloon",
+     "drive": "Front-Wheel Drive",
+     "power": "",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "2016",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "Brilliant black",
+     "colorCode": "A2",
+     "interior": "(MI)",
+     "interiorCode": "",
+     "fuel": "Diesel",
+     "displacement": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "Audi A3 1.6 TDI",
+     "modelSeries": "A3",
+     "vinCode": "WAUZZZ8V1H1033853",
+     "vehicleType": "Sedan",
+     "transmission": "RSK",
+     "steeringSide": "LHD (left-hand drive)",
+     "engineCode": "CXXB",
+     "engineNumber": "",
+     "body": "Saloon",
+     "drive": "Front-Wheel Drive",
+     "power": "81 kW (109 HP / 110 PS)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "2016",
+     "firstRegistration": "12.2016",
+     "warrantyStartDate": "",
+     "countryRegion": "Netherlands",
+     "color": "Brilliant black",
+     "colorCode": "A2",
+     "interior": "(MI)",
+     "interiorCode": "",
+     "fuel": "Diesel",
+     "displacement": "1.6 l"
+    }
+   }
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "",
+    "fetchedAt": "",
+    "lastCostUsd": "",
+    "status": "unknown",
+    "summary": ""
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "certificate": {
+    "issuedAt": "02.11.2026 14:34:29",
+    "vehicleLine": "Transportlīdzeklis AUDI A3 LIMOUSINE, izlaiduma gads 2016. Valsts numura zīme NE6693.",
+    "makeModel": "AUDI A3 LIMOUSINE",
+    "year": "2016",
+    "plate": "NE6693",
+    "accidentCount": "0",
+    "insuredFrom": "06.12.2021",
+    "insuredTo": "06.04.2027",
+    "insuredDays": "1919",
+    "claims": [],
+    "footerNote": "Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas."
+   }
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

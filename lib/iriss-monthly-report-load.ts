@@ -34,7 +34,7 @@ export async function loadIrissMonthlyReport(year: number, month: number): Promi
   try {
     const rows = await listIrissPasutijumi();
     const records = (
-      await Promise.all(rows.map((row) => readIrissPasutijums(row.id)))
+      await Promise.all(rows.map((row) => readIrissPasutijums(row.id, { allowCache: true })))
     ).filter((rec): rec is NonNullable<typeof rec> => Boolean(rec));
     return {
       report: buildIrissMonthlyReport(records, year, month),

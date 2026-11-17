@@ -10,6 +10,7 @@ import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
 import { buildProvinDilerisPdfFilename } from "@/lib/audit-report-pdf-filename";
 import { parsePartnerCompanyFromNotes, parsePartnerIdFromNotes } from "@/lib/b2b-partner-orders";
+import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
 import { isB2bDealerReadyEmailOrder } from "@/lib/dealer-data-client-email";
 import { trySendDealerDataOperatorEmail, type ReportReadyMailAttachment } from "@/lib/email/send-transactional";
 import { isValidOrderEmail, isValidVin, normalizeVin } from "@/lib/order-field-validation";
@@ -79,7 +80,11 @@ export async function POST(req: Request) {
   const draftVin = draft?.orderEdits?.vin?.trim() ?? "";
   const vinRaw = (order.vin ?? "").trim() || draftVin;
   const vin = vinRaw && isValidVin(vinRaw) ? normalizeVin(vinRaw) : "";
-  const filename = buildProvinDilerisPdfFilename(vin || null);
+  const langRaw = String(form.get("lang") ?? "").trim().toLowerCase();
+  const lang: ClientReportLang = (CLIENT_REPORT_LANGS as readonly string[]).includes(langRaw)
+    ? (langRaw as ClientReportLang)
+    : "lv";
+  const filename = buildProvinDilerisPdfFilename(vin || null, lang);
 
   const buf = Buffer.from(await pdfEntry.arrayBuffer());
   const attachments: ReportReadyMailAttachment[] = [
@@ -99,6 +104,7 @@ export async function POST(req: Request) {
     text,
     attachments,
     b2bClient,
+    lang,
   });
   if (!emailSent) {
     return NextResponse.json({ error: "email_failed", to }, { status: 502 });

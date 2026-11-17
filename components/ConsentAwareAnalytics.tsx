@@ -18,7 +18,8 @@ function readAnalyticsAllowed(): boolean {
   if (typeof window === "undefined") return false;
   try {
     const raw = localStorage.getItem(CONSENT_STORAGE_KEY);
-    return parseConsent(raw)?.analytics === true;
+    // Meta un TikTok pikseļi = reklāmas kategorija (GA vada Consent Mode signāli).
+    return parseConsent(raw)?.ads === true;
   } catch {
     return false;
   }

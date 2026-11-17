@@ -1,7 +1,11 @@
 "use client";
 
+import { formatRigaIsoShort } from "@/lib/riga-datetime";
 import { ADMIN_PRO_TONE } from "@/lib/admin-pro-tones";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
+import { buildProvinDilerisPdfFilename } from "@/lib/audit-report-pdf-filename";
+import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
 
 import {
   whatsappPrefillDealerNoDataRefunded,
@@ -13,6 +17,15 @@ import {
   buildDealerReadyEmailDraft,
   type DealerClientEmailKind,
 } from "@/lib/dealer-data-client-email";
+import {
+  DEALER_REFUND_EMAIL_CHOICE_PROMPT,
+  dealerRefundEmailAlreadySentPrompt,
+  dealerRefundEmailSheetHint,
+  dealerRefundResultNotice,
+  planDealerRefund,
+  shouldOpenDealerRefundEmailSheet,
+  shouldShowDealerRefundButton,
+} from "@/lib/admin-dealer-data-refund";
 import {
   DEALER_DATA_RETRY_NO_RECHARGE_HINT,
   dealerDataRetryButtonLabel,
@@ -26,7 +39,9 @@ import { AdminOrderUpsellPanel } from "@/components/admin/AdminOrderUpsellPanel"
 
 /**
  * Automātiskās dīlera datu ielases statuss pēc apmaksas + klienta saziņa.
- * WA un e-pasts vienmēr redzami; atmaksa tikai Stripe cs_* + no_data.
+ * WA un e-pasts vienmēr redzami; atmaksa pie no_data, failed vai bez job
+ * (canRefund: Stripe cs_* vai B2B partner_id=). Bez no_data sūta override.
+ * B2C Stripe «Atgriezt maksājumu»: atmaksa un klienta e-pasts vienā solī.
  */
 
 type Props = {
@@ -68,13 +83,13 @@ function formatRefund(job: DealerDataJob): string {
   if (!job.refund) return "";
   if (job.refund.kind === "wallet") {
     const eur = (job.refund.amountCents / 100).toFixed(2).replace(".", ",");
-    return `Atgriezts partnera kontā ${eur} € · ${job.refund.at.slice(0, 16).replace("T", " ")}`;
+    return `Atgriezts partnera kontā ${eur} € · ${formatRigaIsoShort(job.refund.at)}`;
   }
   if (job.refund.kind === "credit" || job.refund.stripeRefundId.startsWith("credit_")) {
-    return `Kredīts atgriezts · ${job.refund.at.slice(0, 16).replace("T", " ")}`;
+    return `Kredīts atgriezts · ${formatRigaIsoShort(job.refund.at)}`;
   }
   const eur = (job.refund.amountCents / 100).toFixed(2).replace(".", ",");
-  return `Atmaksāts ${eur} € · ${job.refund.at.slice(0, 16).replace("T", " ")}`;
+  return `Atmaksāts ${eur} € · ${formatRigaIsoShort(job.refund.at)}`;
 }
 
 function refundAmountEur(job: DealerDataJob | null): string | null {
@@ -114,9 +129,11 @@ export function AdminDealerDataJobStrip({
   const [busy, setBusy] = useState<null | "run" | "refund" | "email" | "pdf">(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [sheet, setSheet] = useState<MailSheet | null>(null);
+  const [sheetHint, setSheetHint] = useState<string | null>(null);
   const [mailTo, setMailTo] = useState("");
   const [mailSubject, setMailSubject] = useState("");
   const [mailText, setMailText] = useState("");
+  const [mailLang, setMailLang] = useState<ClientReportLang>("lv");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
 
@@ -161,12 +178,23 @@ export function AdminDealerDataJobStrip({
 
   const vin = job?.vin || orderVin;
 
+  const resolvedInitialLang: ClientReportLang = (CLIENT_REPORT_LANGS as readonly string[]).includes(
+    (reportLang ?? "").trim().toLowerCase(),
+  )
+    ? ((reportLang ?? "").trim().toLowerCase() as ClientReportLang)
+    : "lv";
+
   const openMail = (mode: MailSheet["mode"], kind: DealerClientEmailKind) => {
+    if (kind !== "ready") {
+      const again = dealerRefundEmailAlreadySentPrompt(job?.refund);
+      if (again && !window.confirm(again)) return;
+    }
+    const lang = kind === "ready" ? resolvedInitialLang : "lv";
     const draft =
       kind === "cancelled"
         ? buildDealerCancelledEmailDraft({ vin, amountEur: refundAmountEur(job) })
         : kind === "ready"
-          ? buildDealerReadyEmailDraft({ vin, b2bClient, lang: reportLang, walletProduct })
+          ? buildDealerReadyEmailDraft({ vin, b2bClient, lang, walletProduct })
           : buildDealerNoDataEmailDraft({
               vin,
               amountEur: refundAmountEur(job),
@@ -175,9 +203,20 @@ export function AdminDealerDataJobStrip({
     setMailTo((customerEmail ?? "").trim());
     setMailSubject(draft.subject);
     setMailText(draft.text);
+    setMailLang(lang);
     setPdfFile(null);
     setSheet({ mode, kind });
+    setSheetHint(null);
     setNotice(null);
+  };
+
+  const changeMailLang = (lang: ClientReportLang) => {
+    setMailLang(lang);
+    if (sheet?.kind === "ready") {
+      const draft = buildDealerReadyEmailDraft({ vin, b2bClient, lang, walletProduct });
+      setMailSubject(draft.subject);
+      setMailText(draft.text);
+    }
   };
 
   const rerun = async (force: boolean) => {
@@ -208,19 +247,16 @@ export function AdminDealerDataJobStrip({
   };
 
   const refund = async () => {
-    if (!editable || busy || !job || !canRefund) return;
-    const isCredit = sessionId.startsWith("manual_order_") && !walletRefund;
-    if (
-      !window.confirm(
-        walletRefund
-          ? "Atgriezt summu partnera atlikumā? Partneris saņems IRISS e-pastu."
-          : isCredit
-            ? "Atgriezt 1 dīlera kredītu partnera kontā? E-pastu sūti atsevišķi ar „Nosūtīt e-pastu”."
-            : "Atgriezt maksājumu pilnā apmērā? Darbība ir neatgriezeniska. E-pastu sūti atsevišķi ar „Nosūtīt e-pastu”.",
-      )
-    ) {
+    if (!editable || busy || !canRefund) return;
+    const plan = planDealerRefund({ sessionId, walletRefund, job });
+    if (!window.confirm(plan.confirmMessage)) {
       return;
     }
+    // C2: viens e-pasts - operators izvēlas, vai atmaksa iet ar e-pastu.
+    const requestBody =
+      plan.kind === "stripe"
+        ? { ...plan.requestBody, notifyEmail: window.confirm(DEALER_REFUND_EMAIL_CHOICE_PROMPT) }
+        : plan.requestBody;
     setBusy("refund");
     setNotice(null);
     try {
@@ -228,27 +264,31 @@ export function AdminDealerDataJobStrip({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionId, notifyEmail: false }),
+        body: JSON.stringify(requestBody),
       });
       const body = (await res.json().catch(() => ({}))) as {
         ok?: boolean;
         error?: string;
         emailSent?: boolean;
+        emailError?: string;
         job?: DealerDataJob | null;
       };
       if (body.job) setJob(body.job);
+      const ok = Boolean(body.ok);
       setNotice(
-        body.ok
-          ? walletRefund
-            ? body.emailSent
-              ? "Summa atgriezta partnera atlikumā. IRISS e-pasts nosūtīts."
-              : "Summa atgriezta partnera atlikumā. E-pastu nesanāca nosūtīt, mēģini pogu vēlreiz."
-            : isCredit
-              ? "Kredīts atgriezts partnera kontā. Nosūti e-pastu ar „Nosūtīt e-pastu”, ja vajag."
-              : "Atmaksa veikta. Nosūti e-pastu ar „Nosūtīt e-pastu”, ja vajag."
-          : `Atmaksa neizdevās: ${body.error ?? "nezināma kļūda"}`,
+        dealerRefundResultNotice({
+          kind: plan.kind,
+          ok,
+          emailSent: body.emailSent,
+          emailError: body.emailError,
+          error: body.error,
+          emailSkipped: requestBody.notifyEmail === false && plan.kind === "stripe",
+        }),
       );
-      if (body.ok) {
+      if (
+        requestBody.notifyEmail !== false &&
+        shouldOpenDealerRefundEmailSheet({ kind: plan.kind, ok, emailSent: body.emailSent })
+      ) {
         const amount =
           body.job?.refund != null
             ? `${(body.job.refund.amountCents / 100).toFixed(2)} €`
@@ -263,6 +303,7 @@ export function AdminDealerDataJobStrip({
         setMailText(draft.text);
         setPdfFile(null);
         setSheet({ mode: "message", kind: "no_data" });
+        setSheetHint(dealerRefundEmailSheetHint({ kind: plan.kind, emailSent: body.emailSent }));
       }
     } catch {
       setNotice("Neizdevās sazināties ar serveri.");
@@ -308,6 +349,7 @@ export function AdminDealerDataJobStrip({
         fd.append("customerEmail", to);
         fd.append("subject", mailSubject.trim());
         fd.append("text", mailText.trim());
+        fd.append("lang", mailLang);
         fd.append("reportPdf", pdfFile, pdfFile.name || "dealer.pdf");
         const res = await fetch("/api/admin/dealer-data/send-pdf", {
           method: "POST",
@@ -374,10 +416,12 @@ export function AdminDealerDataJobStrip({
     return "Nosūtīt e-pastu (nav datu)";
   }, [sheet]);
 
+  const sheetBackdropClose = useModalBackdropClose(() => setSheet(null), busy === null);
+
   if (!loaded) return null;
 
   const refunded = Boolean(job?.refund);
-  const showRefund = Boolean(job && job.status === "no_data" && !refunded && canRefund);
+  const showRefund = shouldShowDealerRefundButton({ canRefund, job });
 
   return (
     <section className="mb-2 rounded-lg border border-slate-200/90 bg-white px-2 py-2">
@@ -510,9 +554,7 @@ export function AdminDealerDataJobStrip({
           role="dialog"
           aria-modal="true"
           aria-label={sheetTitle}
-          onClick={() => {
-            if (busy === null) setSheet(null);
-          }}
+          {...sheetBackdropClose}
         >
           <div
             className="max-h-[min(92vh,640px)] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 shadow-xl"
@@ -530,7 +572,8 @@ export function AdminDealerDataJobStrip({
               </button>
             </div>
             <p className="mt-1 text-[11px] leading-snug text-[var(--color-provin-muted)]">
-              Tekstu vari papildināt vai labot pirms sūtīšanas. Atmaksa šajā dialogā nenotiek.
+              {sheetHint ??
+                "Tekstu vari papildināt vai labot pirms sūtīšanas. Atmaksa šajā dialogā nenotiek."}
             </p>
 
             <label className="mt-3 block text-[10px] font-medium text-slate-500">Klienta e-pasts</label>
@@ -541,6 +584,23 @@ export function AdminDealerDataJobStrip({
               onChange={(e) => setMailTo(e.target.value)}
               disabled={busy !== null}
             />
+
+            {sheet.kind === "ready" ? (
+              <>
+                <label className="mt-2 block text-[10px] font-medium text-slate-500">E-pasta valoda</label>
+                <select
+                  className="mt-0.5 w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12px]"
+                  value={mailLang}
+                  onChange={(e) => changeMailLang(e.target.value as ClientReportLang)}
+                  disabled={busy !== null}
+                >
+                  <option value="lv">Latviešu (LV)</option>
+                  <option value="en">English (EN)</option>
+                  <option value="ru">Русский (RU)</option>
+                  <option value="de">Deutsch (DE)</option>
+                </select>
+              </>
+            ) : null}
 
             <label className="mt-2 block text-[10px] font-medium text-slate-500">Temats</label>
             <input
@@ -570,7 +630,8 @@ export function AdminDealerDataJobStrip({
                   onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
                 />
                 <p className="mt-1 text-[10px] text-[var(--color-provin-muted)]">
-                  1) „Ģenerēt dīlera PDF” - Drukāt - Saglabāt kā PDF. 2) Izvēlies failu šeit. 3) Nosūti.
+                  1) „Ģenerēt dīlera PDF” - Drukāt - Saglabāt kā PDF. 2) Izvēlies failu šeit. 3) Nosūti. Nosūtīts kā{" "}
+                  <span className="font-mono">{buildProvinDilerisPdfFilename(vin, mailLang)}</span>.
                 </p>
                 {pdfPreviewUrl ? (
                   <div className="mt-2">

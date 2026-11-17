@@ -14,7 +14,8 @@ import {
   type AiSourceCommentBlockKey,
   type AiSourceCommentTargetField,
 } from "@/lib/admin-source-comment-blocks";
-import { SOURCE_BLOCK_LABELS, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import { aiSourceBlockLabel, type WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import { buildEngineOilChangeListForPrompt } from "@/lib/engine-oil-prompt-list";
 import { keepSourceCommentAfterExpansionStrip } from "@/lib/source-summary-comment-format";
 import { extractVehicleReportFingerprint } from "@/lib/admin-vehicle-report-fingerprint";
 import {
@@ -78,7 +79,7 @@ function isOfficialDealerBlock(blockKey: AiSourceCommentBlockKey): boolean {
 
 export async function generateSourceCommentWithAi(input: AiSourceCommentInput): Promise<string> {
   const blockLabel =
-    input.blockKey === "oneauto" ? "OFICIĀLĀ DĪLERA DATI" : SOURCE_BLOCK_LABELS[input.blockKey];
+    input.blockKey === "oneauto" ? "OFICIĀLĀ DĪLERA DATI" : aiSourceBlockLabel(input.blockKey);
   const targetField = input.targetField ?? "comments";
   const focusDataText = sourceBlockPlainTextForAi(
     input.blockKey,
@@ -153,8 +154,8 @@ export async function generateSourceCommentWithAi(input: AiSourceCommentInput): 
   const includeOilIntervalRole = isDealerComments && Boolean(input.includeOilIntervalSummary);
   const oilRoleHint = includeOilIntervalRole
     ? isolateDealer
-      ? `\n\nPAPILDU LOMA ŠAJĀ PAŠĀ LAUKĀ (tikai automātiskās API ielases reizē): pievieno vienu papildu lomu ar virsrakstu „<strong>Eļļas maiņas intervāli</strong><br>”, kur izskaidro eļļas maiņas biežumu un novirzi no ražotāja intervāla. Pirmā teikuma formāts: „Ražotāja intervāls: X XXX km / Y mēn.” šim motora kodam (vai „nav droši zināms”). Rēķini TIKAI no oficiālā dīlera tabulas. Citus avotus ignorē. Ja datu nav vai ir pārāk maz - tā arī saki, neizdomā maiņas. Bez EUR šajā lomā.`
-      : `\n\nPAPILDU LOMA ŠAJĀ PAŠĀ LAUKĀ (tikai automātiskās API ielases reizē): pievieno vienu papildu lomu ar virsrakstu „<strong>Eļļas maiņas intervāli</strong><br>”, kur izskaidro eļļas maiņas biežumu un novirzi no ražotāja intervāla. Pirmā teikuma formāts: „Ražotāja intervāls: X XXX km / Y mēn.” šim motora kodam (vai „nav droši zināms”). Izmanto VISUS iegūtos datus (dīlera tabula, AutoDNA/CarVertical/RAW, nobraukuma/motorstundu profils, OEM intervāls). Ja datu nav vai ir pārāk maz - tā arī saki, neizdomā maiņas. Bez EUR šajā lomā.`
+      ? `\n\nPAPILDU LOMA ŠAJĀ PAŠĀ LAUKĀ (tikai automātiskās API ielases reizē): pievieno vienu papildu lomu ar virsrakstu tieši „<strong>Eļļas maiņas intervāli</strong><br>” (bez papildinājumiem virsrakstā; nākamā rinda sākas ar „Ražotāja intervāls:”), kur izskaidro eļļas maiņas biežumu un novirzi no ražotāja intervāla. Pirmā teikuma formāts: „Ražotāja intervāls: X XXX km / Y mēn.” šim motora kodam (vai „nav droši zināms”). Rēķini TIKAI no oficiālā dīlera tabulas. Citus avotus ignorē. Ja datu nav vai ir pārāk maz - tā arī saki, neizdomā maiņas. Bez EUR šajā lomā.`
+      : `\n\nPAPILDU LOMA ŠAJĀ PAŠĀ LAUKĀ (tikai automātiskās API ielases reizē): pievieno vienu papildu lomu ar virsrakstu tieši „<strong>Eļļas maiņas intervāli</strong><br>” (bez papildinājumiem virsrakstā; nākamā rinda sākas ar „Ražotāja intervāls:”), kur izskaidro eļļas maiņas biežumu un novirzi no ražotāja intervāla. Pirmā teikuma formāts: „Ražotāja intervāls: X XXX km / Y mēn.” šim motora kodam (vai „nav droši zināms”). Izmanto VISUS iegūtos datus (dīlera tabula, AutoDNA/CarVertical/RAW, nobraukuma/motorstundu profils, OEM intervāls). Ja datu nav vai ir pārāk maz - tā arī saki, neizdomā maiņas. Bez EUR šajā lomā.`
     : "";
 
   const isolateBanner = isolateDealer ? `${DEALER_ISOLATED_COMMENT_DIRECTIVE}\n\n` : "";
@@ -176,6 +177,8 @@ ${focusDataText || "(dīlera tabulā nav atsevišķu rindu - rēķini no pārēj
 === Identifikācija šim motoram (OEM intervālam) ===
 ${oilIdentityBlock || "(dzinēja kods / marka šajos datos nav fiksēti)"}
 
+${buildEngineOilChangeListForPrompt(input.sourceBlocks)}
+
 Sagatavo lauku „Eļļas maiņas intervāli” klienta PDF.
 Uzdevums: ĪSI un PRECĪZI izrēķini un izanalizē ŠĪ auto eļļas maiņas intervālus ${
           isolateDealer
@@ -183,8 +186,8 @@ Uzdevums: ĪSI un PRECĪZI izrēķini un izanalizē ŠĪ auto eļļas maiņas in
             : "no VISIEM iegūtajiem datiem (dīlera servisa tabula, AutoDNA/CarVertical/RAW servisa teksti, nobraukuma līkne, motorstundu / pilsētas-šosejas profils, ražotāja intervāls no konteksta vai agregātu pakas)."
         }
 PIRMĀ teikuma formāts (obligāti, lai PDF krāsotu pret OEM):
-Ražotāja intervāls: [km] km / [mēneši] mēn. ([motora kods], fiksēts vai Longlife/CBS maksimums)
-Piemēram N47 Longlife: 30 000 km / 24 mēn. Mainīgs CBS: 10 000 līdz 25 000 km / 12 mēn. Ja kods/intervāls nav drošs: „Ražotāja intervāls: nav droši zināms”. NEIZDOMĀ 15 000 km pēc noklusējuma.
+Ražotāja intervāls: [km] km / [mēneši] mēn. ([motora kods])
+„fiksēts” / „Longlife” / „CBS” drīkst rakstīt TIKAI, ja tas ir dīlera datos vai agregātu pakā ŠIM motora kodam. Ja kods/intervāls nav drošs: „Ražotāja intervāls: nav droši zināms”. NEIZDOMĀ 15 000 km pēc noklusējuma.
 Jāatbild tālāk:
 - cik bieži eļļa ir mainīta (datumi un/vai km starp secīgām eļļas maiņām);
 - kā dīlera soļi izskatās pret ražotāja intervālu (īsāks, atbilst, dīlera datos garāks);
@@ -193,7 +196,7 @@ PDF krāsas (zaļa = dīlera solis iekļaujas OEM, neitrāls pelēks = dīlera d
 Ja eļļas maiņu ierakstu nav vai to ir par maz - tā arī saki; NEIZDOMĀ apkopes.
 Ja oficiālajā dīlerī ir robs pret ražotāja intervālu vai dīlera solis datos ir garāks par OEM: tas ir fakta iztrūkums datos, ne pierādījums, ka eļļa nav mainīta. Apkope var būt ārpus dīlera - jālūdz pārdevēja rēķins/apliecinājums. To pašu NESAUC par pirkuma risku un NEAPGALVO, ka intervāls ir pārkāpts.
 Neiekļauj remonta/apkopes EUR. Neatkārto pilnu nobraukuma eseju un neatkārto „Servisa vēsture” žurnālu vārds vārdā — šeit ir TIKAI intervālu analīze.
-Garums: 2–4 īsas rindkopas. Virsraksts savā rindā, tad rindkopa. Bez *, **.`,
+Garums: 2–4 īsas rindkopas. Bez virsraksta pirms pirmās rindas: teksts sākas tieši ar „Ražotāja intervāls:”. Pārējām rindkopām virsraksts savā rindā, tad rindkopa. Bez *, **.`,
         {
           operatorNotes: input.operatorNotes,
           existingDraftPlain: input.existingDraftPlain,
@@ -316,3 +319,4 @@ ${
 }
 
 export { isAiSourceCommentBlockKey } from "@/lib/admin-source-comment-blocks";
+

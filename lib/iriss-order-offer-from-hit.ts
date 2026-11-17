@@ -80,7 +80,7 @@ export function irissOfferSeedFromHit(hit: IrissOrderRoomHit): IrissOfferFromHit
     engineDisplacement: "",
     color: hit.color,
     bodyTypeOffer: hit.bodyType,
-    doorCount: "",
+    doorCount: hit.doorCount ?? "",
     emissionClass: "",
     originCountry: hit.countryCode || "",
     auctionPlatform: IRISS_LISTING_PLATFORM_LABEL[hit.platform] ?? hit.platform,

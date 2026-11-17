@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { LegalReveal, companyLegalLine } from "@/components/LegalReveal";
 import { headers } from "next/headers";
 import { ClientLinkForm } from "@/components/client-link/ClientLinkForm";
 import { ClientLinkNeutralPage } from "@/components/client-link/ClientLinkNeutralPage";
@@ -10,31 +11,22 @@ import {
 } from "@/lib/client-link";
 import { readClientLinkByToken } from "@/lib/client-link-store";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
+import { getCompanyLegal } from "@/lib/company";
 import { getClientIpFromHeaders } from "@/lib/client-ip";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export const metadata: Metadata = {
-  title: "PROVIN AUDITS PRO",
+  title: "PROVIN AUDITS",
   robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false, noimageindex: true } },
 };
 
 function ClientLegalFooter() {
-  const legal = getCompanyLegal();
-  const brand = getCompanyPublicBrand();
   return (
-    <address className="mx-auto max-w-[420px] px-4 pb-10 text-center text-[10px] not-italic leading-relaxed text-[#c7c7cc]">
-      <p>{brand}</p>
-      {legal.isComplete ? (
-        <>
-          <p className="mt-0.5">{legal.legalName}</p>
-          <p>Reģ. nr. {legal.regNo}</p>
-          <p>{legal.legalAddress}</p>
-        </>
-      ) : null}
-    </address>
+    <div className="mx-auto max-w-[420px] px-4 pb-10">
+      <LegalReveal line={companyLegalLine(getCompanyLegal())} tone="light" align="center" />
+    </div>
   );
 }
 

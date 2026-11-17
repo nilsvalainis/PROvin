@@ -1,0 +1,1950 @@
+{
+ "vin": "WBAFW31060C941862",
+ "label": "BMW 525: CSDD 15, AutoDNA 14, carVertical 34, dīleris 32; negadījumi 6",
+ "source": "prod pasūtījuma melnraksts (manual), revīzija 22, saglabāts 2026-11-17; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW 525",
+   "registrationNumber": "KT3683",
+   "firstRegistration": "2011-04-29",
+   "firstRegistrationLatvia": "2012-03-12",
+   "nextInspectionDate": "2027-03-16",
+   "prevInspectionDate": "2026-03-14",
+   "engineDisplacementCm3": "2993",
+   "enginePowerKw": "150",
+   "fuelType": "Dīzeļdegviela",
+   "emissionStandard": "Euro 5 A",
+   "vehicleType": "Vieglais pasažieru (M1)",
+   "grossMassKg": "2315",
+   "curbMassKg": "1780",
+   "seatCount": "5",
+   "roadTaxEur": "159,00",
+   "registrationStatus": "Noņemts no uzskaites, atļauts piedalīties ceļu satiksmē līdz 20.07.2026",
+   "opacityCoefficient": "0.04",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "VĀCIJA",
+   "ownerCountLatvia": "7",
+   "vin": "WBAFW31060C941862",
+   "modelYear": "2011",
+   "color": "Tumši pelēka",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "M1",
+   "cocType": "5L",
+   "cocApprovalNumber": "e1*2007/46*0363*04",
+   "cocVariant": "FW31",
+   "cocVersion": "5B",
+   "insuranceValidUntil": "",
+   "technicalInspectionHistory": [
+    {
+     "date": "14.03.2026",
+     "inspectionType": "",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "20.03.2025",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.02",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "13.03.2024",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.01",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "06.03.2023",
+     "inspectionType": "atkārtota pārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": [
+      {
+       "code": "8.4.1.",
+       "rating": "1",
+       "description": "Neveidojot piles, sūcas eļļa no motora (transmisijas)."
+      }
+     ]
+    },
+    {
+     "date": "02.02.2023",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "2 - Ar mēneša laikā labojamiem defektiem",
+     "ratingLevel": 2,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "0.04",
+     "notes": "",
+     "defects": [
+      {
+       "code": "8.4.1.",
+       "rating": "1",
+       "description": "Neveidojot piles, sūcas eļļa no motora (transmisijas)."
+      }
+     ]
+    },
+    {
+     "date": "12.01.2022",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "0.04",
+     "notes": "",
+     "defects": [
+      {
+       "code": "8.4.1.",
+       "rating": "1",
+       "description": "Neveidojot piles, sūcas eļļa no motora (transmisijas)."
+      }
+     ]
+    },
+    {
+     "date": "17.12.2020",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.42",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "22.07.2019",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.53",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "12.07.2018",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.04",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "09.06.2017",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.01",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "19.05.2016",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.02",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "27.04.2015",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.19",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "16.04.2014",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.01",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "18.03.2013",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.01",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "12.03.2012",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": []
+    }
+   ],
+   "ownerRegistrationEvents": [
+    {
+     "date": "12.03.2012",
+     "label": "Pirmā reģistrācija Latvijā"
+    },
+    {
+     "date": "15.08.2012",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "07.08.2013",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "28.08.2015",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "14.08.2018",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "16.12.2021",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "08.07.2025",
+     "label": "Īpašnieka maiņa"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "Pamatpārbaude",
+    "inspectionDateText": "14.03.2026",
+    "nextInspectionDateText": "",
+    "odometer": "201708",
+    "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+    "ratingLevel": null,
+    "smokeCoefficient": "0.04",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "14.03.2026",
+     "odometer": "201708",
+     "country": "Latvija"
+    },
+    {
+     "date": "20.03.2025",
+     "odometer": "188341",
+     "country": "Latvija"
+    },
+    {
+     "date": "13.03.2024",
+     "odometer": "183186",
+     "country": "Latvija"
+    },
+    {
+     "date": "06.03.2023",
+     "odometer": "177867",
+     "country": "Latvija"
+    },
+    {
+     "date": "02.02.2023",
+     "odometer": "177534",
+     "country": "Latvija"
+    },
+    {
+     "date": "12.01.2022",
+     "odometer": "170747",
+     "country": "Latvija"
+    },
+    {
+     "date": "17.12.2020",
+     "odometer": "162172",
+     "country": "Latvija"
+    },
+    {
+     "date": "22.07.2019",
+     "odometer": "152143",
+     "country": "Latvija"
+    },
+    {
+     "date": "12.07.2018",
+     "odometer": "142366",
+     "country": "Latvija"
+    },
+    {
+     "date": "09.06.2017",
+     "odometer": "133361",
+     "country": "Latvija"
+    },
+    {
+     "date": "19.05.2016",
+     "odometer": "105272",
+     "country": "Latvija"
+    },
+    {
+     "date": "27.04.2015",
+     "odometer": "84501",
+     "country": "Latvija"
+    },
+    {
+     "date": "16.04.2014",
+     "odometer": "64789",
+     "country": "Latvija"
+    },
+    {
+     "date": "18.03.2013",
+     "odometer": "37658",
+     "country": "Latvija"
+    },
+    {
+     "date": "12.03.2012",
+     "odometer": "19198",
+     "country": "Latvija"
+    }
+   ],
+   "registry": {
+    "nr1": "WBAFW31060C941862",
+    "fetchedAt": "2026-11-17T09:45:51.592Z",
+    "data": {
+     "registrationNumber": "KT3683",
+     "vin": "WBAFW31060C941862",
+     "make": "BMW",
+     "model": "525",
+     "year": "2011",
+     "fuel": "Dīzeļdegviela",
+     "powerKw": "150",
+     "electricPowerKw": "",
+     "electricPowerKw2": "",
+     "displacementCm3": "2993",
+     "firstRegistrationIso": "2011-04-29",
+     "color": "Tumši pelēka",
+     "vehicleKind": "Vieglais pasažieru",
+     "cocCategory": "M1",
+     "cocType": "5L",
+     "cocApprovalNumber": "e1*2007/46*0363*04",
+     "cocVariant": "FW31",
+     "cocVersion": "5B",
+     "grossMassKg": "2315",
+     "curbMassKg": "1780",
+     "insuranceEndIso": "",
+     "inspectionValidUntilIso": "2027-03-16"
+    }
+   }
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "14.03.2026",
+     "odometer": "201708",
+     "country": "Latvija"
+    },
+    {
+     "date": "20.03.2025",
+     "odometer": "188341",
+     "country": "Latvija"
+    },
+    {
+     "date": "13.03.2024",
+     "odometer": "183186",
+     "country": "Latvija"
+    },
+    {
+     "date": "06.03.2023",
+     "odometer": "177867",
+     "country": "Latvija"
+    },
+    {
+     "date": "02.02.2023",
+     "odometer": "177534",
+     "country": "Latvija"
+    },
+    {
+     "date": "12.01.2022",
+     "odometer": "170747",
+     "country": "Latvija"
+    },
+    {
+     "date": "17.12.2020",
+     "odometer": "162172",
+     "country": "Latvija"
+    },
+    {
+     "date": "22.07.2019",
+     "odometer": "152143",
+     "country": "Latvija"
+    },
+    {
+     "date": "12.07.2018",
+     "odometer": "142366",
+     "country": "Latvija"
+    },
+    {
+     "date": "09.06.2017",
+     "odometer": "133361",
+     "country": "Latvija"
+    },
+    {
+     "date": "19.05.2016",
+     "odometer": "105272",
+     "country": "Latvija"
+    },
+    {
+     "date": "27.04.2015",
+     "odometer": "84501",
+     "country": "Latvija"
+    },
+    {
+     "date": "16.04.2014",
+     "odometer": "64789",
+     "country": "Latvija"
+    },
+    {
+     "date": "18.03.2013",
+     "odometer": "37658",
+     "country": "Latvija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "04.2016",
+     "lossAmount": "1 200 - 1 300 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "12.2011",
+     "lossAmount": "600 - 700 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "15.07.2026",
+     "country": "Latvija",
+     "description": "Transportlīdzekļa noņemšana no uzskaites",
+     "includeInPdf": true
+    },
+    {
+     "date": "14.03.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "201708",
+     "includeInPdf": false
+    },
+    {
+     "date": "20.03.2025",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "188341",
+     "includeInPdf": false
+    },
+    {
+     "date": "13.03.2024",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "183186",
+     "includeInPdf": false
+    },
+    {
+     "date": "06.03.2023",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja ar piezīmi",
+     "odometer": "177867",
+     "includeInPdf": false
+    },
+    {
+     "date": "02.02.2023",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Neizgāja",
+     "odometer": "177534",
+     "includeInPdf": false
+    },
+    {
+     "date": "12.01.2022",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja ar piezīmi",
+     "odometer": "170747",
+     "includeInPdf": false
+    },
+    {
+     "date": "17.12.2020",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "162172",
+     "includeInPdf": false
+    },
+    {
+     "date": "22.07.2019",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "152143",
+     "includeInPdf": false
+    },
+    {
+     "date": "12.07.2018",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "142366",
+     "includeInPdf": false
+    },
+    {
+     "date": "09.06.2017",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "133361",
+     "includeInPdf": false
+    },
+    {
+     "date": "19.05.2016",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "105272",
+     "includeInPdf": false
+    },
+    {
+     "date": "27.04.2015",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "odometer": "84501",
+     "includeInPdf": false
+    },
+    {
+     "date": "16.04.2014",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "odometer": "64789",
+     "includeInPdf": false
+    },
+    {
+     "date": "18.03.2013",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "odometer": "37658",
+     "includeInPdf": false
+    },
+    {
+     "date": "29.04.2011",
+     "country": "",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.08.2026",
+     "odometer": "208421",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.03.2026",
+     "odometer": "201708",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2025",
+     "odometer": "195559",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2025",
+     "odometer": "190000",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.03.2025",
+     "odometer": "188341",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.03.2024",
+     "odometer": "183186",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2023",
+     "odometer": "179603",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.03.2023",
+     "odometer": "177867",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.02.2023",
+     "odometer": "177534",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2022",
+     "odometer": "174509",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.01.2022",
+     "odometer": "170747",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.06.2021",
+     "odometer": "164806",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.12.2020",
+     "odometer": "162172",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.09.2019",
+     "odometer": "153934",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2019",
+     "odometer": "151460",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.02.2019",
+     "odometer": "146892",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2018",
+     "odometer": "144443",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2018",
+     "odometer": "142366",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.06.2017",
+     "odometer": "133361",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2016",
+     "odometer": "110973",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.06.2016",
+     "odometer": "106212",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.05.2016",
+     "odometer": "103877",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.05.2015",
+     "odometer": "85981",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.04.2015",
+     "odometer": "84100",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.02.2015",
+     "odometer": "80896",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2014",
+     "odometer": "74734",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.04.2014",
+     "odometer": "63940",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2013",
+     "odometer": "54339",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2013",
+     "odometer": "47483",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.03.2013",
+     "odometer": "37658",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2012",
+     "odometer": "25185",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.09.2012",
+     "odometer": "23164",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.03.2012",
+     "odometer": "19198",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.04.2011",
+     "odometer": "13",
+     "country": ""
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "12.2011",
+     "lossAmount": "501 - 750 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "02.2012",
+     "lossAmount": "251 - 500 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "02.2013",
+     "lossAmount": "501 - 750 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "04.2016",
+     "lossAmount": "1 001 - 1 500 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.04.2011",
+     "country": "",
+     "description": "Ražots",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.04.2011",
+     "country": "",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2011",
+     "country": "Vācija",
+     "description": "Fiksēts novērtējums",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.12.2011",
+     "country": "Vācija",
+     "description": "Izlikts pārdošanā Balstoties uz sludinājuma datiem, šis spēkrats ir ticis izlikts pārdošanā. Reizēm valsts, kurā ir publicēts sludinājums, var atšķirties no transportlīdzekļa patiesās atrašanās vietas",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.02.2012",
+     "country": "Vācija",
+     "description": "Fiksēts novērtējums",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.03.2012",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.03.2012",
+     "country": "Latvija",
+     "description": "Reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2012",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.08.2012",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.02.2013",
+     "country": "Latvija",
+     "description": "Fiksēts bojājumsMēs atradām ierakstu, kas liecina, kašis transportlīdzeklis ir bojāts. Ieskaties sadaļā \"Bojājumi\", lai uzzinātu vairāk",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2013",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.07.2013",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.04.2014",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.04.2015",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.04.2016",
+     "country": "Latvija",
+     "description": "Fiksēts novērtējums",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.04.2016",
+     "country": "Latvija",
+     "description": "Fiksēts bojājumsMēs atradām ierakstu, kas liecina, kašis transportlīdzeklis ir bojāts. Ieskaties sadaļā \"Bojājumi\", lai uzzinātu vairāk",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.05.2016",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.06.2017",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.07.2018",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.07.2019",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2020",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2021",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.01.2022",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2023",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2023",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2024",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2025",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.07.2025",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.03.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "fetchedAt": "2026-11-17T09:45:44.915Z"
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "fetchedAt": "2026-11-17T09:45:51.591Z"
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "fetchedAt": "2026-11-17T09:45:43.914Z"
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "fetchedAt": "2026-11-17T09:45:44.968Z"
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "23.10.2025",
+     "odometer": "195809",
+     "country": ""
+    },
+    {
+     "date": "23.07.2025",
+     "odometer": "190250",
+     "country": ""
+    },
+    {
+     "date": "17.07.2025",
+     "odometer": "189913",
+     "country": ""
+    },
+    {
+     "date": "17.06.2025",
+     "odometer": "189014",
+     "country": "Latvija"
+    },
+    {
+     "date": "10.08.2023",
+     "odometer": "179853",
+     "country": ""
+    },
+    {
+     "date": "21.07.2022",
+     "odometer": "174759",
+     "country": ""
+    },
+    {
+     "date": "28.06.2021",
+     "odometer": "165056",
+     "country": "Latvija"
+    },
+    {
+     "date": "27.09.2019",
+     "odometer": "154184",
+     "country": ""
+    },
+    {
+     "date": "09.07.2019",
+     "odometer": "151884",
+     "country": "Latvija"
+    },
+    {
+     "date": "02.07.2019",
+     "odometer": "151710",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.02.2019",
+     "odometer": "147142",
+     "country": ""
+    },
+    {
+     "date": "09.10.2018",
+     "odometer": "144688",
+     "country": ""
+    },
+    {
+     "date": "16.08.2016",
+     "odometer": "111223",
+     "country": ""
+    },
+    {
+     "date": "03.06.2016",
+     "odometer": "106462",
+     "country": "Latvija"
+    },
+    {
+     "date": "11.05.2016",
+     "odometer": "104368",
+     "country": "Latvija"
+    },
+    {
+     "date": "06.05.2016",
+     "odometer": "104127",
+     "country": ""
+    },
+    {
+     "date": "25.05.2015",
+     "odometer": "86081",
+     "country": ""
+    },
+    {
+     "date": "21.04.2015",
+     "odometer": "84200",
+     "country": ""
+    },
+    {
+     "date": "18.02.2015",
+     "odometer": "80996",
+     "country": ""
+    },
+    {
+     "date": "14.10.2014",
+     "odometer": "75370",
+     "country": ""
+    },
+    {
+     "date": "06.10.2014",
+     "odometer": "74834",
+     "country": ""
+    },
+    {
+     "date": "02.04.2014",
+     "odometer": "64040",
+     "country": ""
+    },
+    {
+     "date": "30.10.2013",
+     "odometer": "54439",
+     "country": ""
+    },
+    {
+     "date": "13.09.2013",
+     "odometer": "51053",
+     "country": ""
+    },
+    {
+     "date": "19.07.2013",
+     "odometer": "47583",
+     "country": ""
+    },
+    {
+     "date": "29.04.2013",
+     "odometer": "41315",
+     "country": ""
+    },
+    {
+     "date": "19.04.2013",
+     "odometer": "40288",
+     "country": ""
+    },
+    {
+     "date": "18.04.2013",
+     "odometer": "40237",
+     "country": ""
+    },
+    {
+     "date": "07.11.2012",
+     "odometer": "26680",
+     "country": ""
+    },
+    {
+     "date": "19.10.2012",
+     "odometer": "25419",
+     "country": ""
+    },
+    {
+     "date": "18.10.2012",
+     "odometer": "25285",
+     "country": ""
+    },
+    {
+     "date": "24.09.2012",
+     "odometer": "23264",
+     "country": ""
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "23.10.2025",
+     "odometer": "195809",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "23.07.2025",
+     "odometer": "190250",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "17.07.2025",
+     "odometer": "189913",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "17.06.2025",
+     "odometer": "189014",
+     "location": "Bavarian Motors - BMW Serviss Berģi, Rīgas-Siguldas šoseja 2, Garkalne, LV-1024, Latvia",
+     "works": "Dzinēja eļļa.\nGaisa filtrs.\nDegvielas filtrs.\nSalona filtrs (izvērtēt papildu darbu nepieciešamību)\nBremžu šķidruma maiņa.\nTransportlīdzekļa pārbaude.\nStandarta darbu apjoms."
+    },
+    {
+     "date": "10.08.2023",
+     "odometer": "179853",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "21.07.2022",
+     "odometer": "174759",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "28.06.2021",
+     "odometer": "165056",
+     "location": "BYD Latvija, Skanstes iela 4a, Riga, LV-1013, Latvia",
+     "works": "Dzinēja eļļa.\nSalona filtrs (izvērtēt papildu darbu nepieciešamību)\nBremžu šķidruma maiņa.\nTransportlīdzekļa pārbaude."
+    },
+    {
+     "date": "27.09.2019",
+     "odometer": "154184",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "09.07.2019",
+     "odometer": "151884",
+     "location": "BYD Latvija, Skanstes iela 4a, Riga, LV-1013, Latvia",
+     "works": "Priekšējās bremzes."
+    },
+    {
+     "date": "02.07.2019",
+     "odometer": "151710",
+     "location": "BYD Latvija, Skanstes iela 4a, Riga, LV-1013, Latvia",
+     "works": "Bremžu šķidruma maiņa.\nAizmugurējās bremzes.\nValsts tehniskā apskate."
+    },
+    {
+     "date": "01.02.2019",
+     "odometer": "147142",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "09.10.2018",
+     "odometer": "144688",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "16.08.2016",
+     "odometer": "111223",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "03.06.2016",
+     "odometer": "106462",
+     "location": "BYD Latvija, Skanstes iela 4a, Riga, LV-1013, Latvia",
+     "works": "Aizmugurējās bremzes. Standarta darbu apjoms."
+    },
+    {
+     "date": "11.05.2016",
+     "odometer": "104368",
+     "location": "BYD Latvija, Skanstes iela 4a, Riga, LV-1013, Latvia",
+     "works": "Dzinēja eļļa.\nDegvielas filtrs.\nGaisa filtrs.\nSalona filtrs (izvērtēt papildu darbu nepieciešamību)\nTransportlīdzekļa pārbaude.\nValsts tehniskā apskate.\nStandarta darbu apjoms."
+    },
+    {
+     "date": "06.05.2016",
+     "odometer": "104127",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "25.05.2015",
+     "odometer": "86081",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "21.04.2015",
+     "odometer": "84200",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "18.02.2015",
+     "odometer": "80996",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "14.10.2014",
+     "odometer": "75370",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "06.10.2014",
+     "odometer": "74834",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "02.04.2014",
+     "odometer": "64040",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "30.10.2013",
+     "odometer": "54439",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "13.09.2013",
+     "odometer": "51053",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "19.07.2013",
+     "odometer": "47583",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "29.04.2013",
+     "odometer": "41315",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "19.04.2013",
+     "odometer": "40288",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "18.04.2013",
+     "odometer": "40237",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "07.11.2012",
+     "odometer": "26680",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "19.10.2012",
+     "odometer": "25419",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "18.10.2012",
+     "odometer": "25285",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "24.09.2012",
+     "odometer": "23264",
+     "location": "",
+     "works": "Apkope"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "23.10.2025",
+      "odometer": "195809",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "23.07.2025",
+      "odometer": "190250",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "17.07.2025",
+      "odometer": "189913",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "17.06.2025",
+      "odometer": "189014",
+      "place": "Bavarian Motors - BMW Serviss Berģi, Rīgas-Siguldas šoseja 2, Garkalne, LV-1024, Latvia",
+      "works": "Engine oil.\nBrake fluid service.\nVehicle check.\nStandard scope.\nAir filter element.\nFuel filter.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "10.08.2023",
+      "odometer": "179853",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "21.07.2022",
+      "odometer": "174759",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "28.06.2021",
+      "odometer": "165056",
+      "place": "BYD Latvija, Skanstes iela 4a, Riga, LV-1013, Latvia",
+      "works": "Engine oil.\nBrake fluid service.\nVehicle check.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "27.09.2019",
+      "odometer": "154184",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "09.07.2019",
+      "odometer": "151884",
+      "place": "BYD Latvija, Skanstes iela 4a, Riga, LV-1013, Latvia",
+      "works": "Front Brake."
+     },
+     {
+      "date": "02.07.2019",
+      "odometer": "151710",
+      "place": "BYD Latvija, Skanstes iela 4a, Riga, LV-1013, Latvia",
+      "works": "Brake fluid service.\nRear Brake.\nStatutory vehicle inspection."
+     },
+     {
+      "date": "01.02.2019",
+      "odometer": "147142",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "09.10.2018",
+      "odometer": "144688",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "16.08.2016",
+      "odometer": "111223",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "03.06.2016",
+      "odometer": "106462",
+      "place": "BYD Latvija, Skanstes iela 4a, Riga, LV-1013, Latvia",
+      "works": "Rear Brake.\nStandard scope."
+     },
+     {
+      "date": "11.05.2016",
+      "odometer": "104368",
+      "place": "BYD Latvija, Skanstes iela 4a, Riga, LV-1013, Latvia",
+      "works": "Engine oil.\nStatutory vehicle inspection.\nVehicle check.\nFuel filter.\nAir filter element.\nMicrofilter (consider further additional job(s) if appropriate)\nStandard scope."
+     },
+     {
+      "date": "06.05.2016",
+      "odometer": "104127",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "25.05.2015",
+      "odometer": "86081",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "21.04.2015",
+      "odometer": "84200",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "18.02.2015",
+      "odometer": "80996",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "14.10.2014",
+      "odometer": "75370",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "06.10.2014",
+      "odometer": "74834",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "02.04.2014",
+      "odometer": "64040",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "30.10.2013",
+      "odometer": "54439",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.09.2013",
+      "odometer": "51053",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "19.07.2013",
+      "odometer": "47583",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "29.04.2013",
+      "odometer": "41315",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "19.04.2013",
+      "odometer": "40288",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "18.04.2013",
+      "odometer": "40237",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "07.11.2012",
+      "odometer": "26680",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "19.10.2012",
+      "odometer": "25419",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "18.10.2012",
+      "odometer": "25285",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "24.09.2012",
+      "odometer": "23264",
+      "place": "",
+      "works": "Service"
+     }
+    ]
+   },
+   "outvin": {
+    "precheckAt": null,
+    "vin": "WBAFW31060C941862",
+    "capabilitySlots": [],
+    "purchases": [],
+    "vehicleInfo": {
+     "model": "BMW 5 (F10) 525 d",
+     "modelSeries": "5 (F10)",
+     "vinCode": "WBAFW31060C941862",
+     "vehicleType": "",
+     "transmission": "Automatic Transmission (GA8HP-45Z)",
+     "steeringSide": "",
+     "engineCode": "N57 D30 A",
+     "engineNumber": "",
+     "body": "Saloon",
+     "drive": "Rear-Wheel Drive",
+     "power": "150 kW (204 hp)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "2011",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "Sophistograu Brillanteffekt metallic",
+     "colorCode": "A90",
+     "interior": "Leder \"Dakota/veneto-beige\" (PLCDF)",
+     "interiorCode": "",
+     "fuel": "Diesel",
+     "displacement": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "BMW 5 (F10) 525 d",
+     "modelSeries": "5 (F10)",
+     "vinCode": "WBAFW31060C941862",
+     "vehicleType": "Sedan",
+     "transmission": "Automatic Transmission (GA8HP-45Z)",
+     "steeringSide": "LHD (left-hand drive)",
+     "engineCode": "N57 D30 A",
+     "engineNumber": "",
+     "body": "Saloon",
+     "drive": "Rear-Wheel Drive",
+     "power": "150 kW (204 hp)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "2011",
+     "firstRegistration": "04.2011",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "Sophistograu Brillanteffekt metallic",
+     "colorCode": "A90",
+     "interior": "Leder \"Dakota/veneto-beige\" (PLCDF)",
+     "interiorCode": "",
+     "fuel": "Diesel",
+     "displacement": "3000"
+    }
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "",
+    "fetchedAt": "",
+    "lastCostUsd": "",
+    "status": "unknown",
+    "summary": ""
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "05.04.2016",
+     "lossAmount": "1 436,79 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "25.02.2013",
+     "lossAmount": "519,36 €"
+    }
+   ],
+   "certificate": {
+    "issuedAt": "17.11.2026 16:18:42",
+    "vehicleLine": "Transportlīdzeklis BMW 525, izlaiduma gads 2011. Valsts numura zīme KT3683.",
+    "makeModel": "BMW 525",
+    "year": "2011",
+    "plate": "KT3683",
+    "accidentCount": "2",
+    "insuredFrom": "09.03.2012",
+    "insuredTo": "18.07.2026",
+    "insuredDays": "5176",
+    "claims": [
+     {
+      "date": "05.04.2016",
+      "time": "17:20",
+      "status": "Cietušais",
+      "amount": "1436.79"
+     },
+     {
+      "date": "25.02.2013",
+      "time": "14:35",
+      "status": "Cietušais",
+      "amount": "519.36"
+     }
+    ],
+    "footerNote": "Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas."
+   }
+  },
+  "tirgus": {
+   "listedForSale": "",
+   "listingCreated": "",
+   "priceDrop": "",
+   "priceHistory": [],
+   "listingMileageOdometer": "",
+   "listingMileageDate": "",
+   "listingMileageCountry": ""
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

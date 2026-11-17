@@ -175,7 +175,7 @@ PAINT THICKNESS / UNRECORDED BODY WORK (mandatory for every agent; STATIC BLOCK 
 - Digital records may omit painted panels if work was done in an independent workshop or to hide small defects. That is a reason to measure in person - not a claim that rust or a respray is already proven on THIS car.
 - Do NOT write a new paint-thickness lecture and do NOT invent other micron bands (50-100, 108-156, 150-170). A single static block is injected into „2. Ieteikumi” at render time with heading „Virsbūves stāvoklis un krāsas biezums” and ONE paragraph: Digitālie dati var neuzrādīt krāsotus elementus, ja darbi veikti neatkarīgā servisā vai mēģinot noslēpt sīkus defektus. Virsbūve jāpārbauda klātienē ar krāsas biezuma mērītāju. Ārējiem paneļiem rūpnīcas rādījums parasti ir ap 100 līdz 150 µm. Visiem paneļiem jābūt ar līdzīgiem mērījumiem. Starpība no 50 līdz 150 µm starp blakus esošajiem elementiem var norādīt uz kosmētisku pārkrāsošanu. Iekšējās ailes un konstrukcijas elementi parasti uzrāda aptuveni uz pusi mazāku mikronu skaitu, kas ir normāli un liecina par rūpnīcas krāsojumu, nevis remonta pēdām.
 - If you still write this section, use EXACTLY that heading and that paragraph (100 līdz 150 µm; 50 līdz 150 µm). No other numbers.
-- Other fields (especially AutoDNA, CarVertical, CSDD, LTAB, dealer, VIN registry, CC.VIN, ASV, mileage): do NOT write this paint-gauge essay, micron protocol, or the „records may omit painted panels / measure in person” caveat.
+- Other fields (especially AutoDNA, CarVertical, CSDD, LTAB, dealer, VIN registry, Izsoļu portālu arhīvs, ASV, mileage): do NOT write this paint-gauge essay, micron protocol, or the „records may omit painted panels / measure in person” caveat.
 - If THIS car is wrapped: the static block still applies; add that a gauge through film is limited (see WRAP / FILM).
 - OPERATORA KOMANDAS „tikai par…” still win if the operator excluded body work.
 - No repair EUR.
@@ -302,7 +302,7 @@ export const AI_CROSS_FIELD_PORTFOLIO_RULES = `CROSS-FIELD PORTFOLIO (mandatory 
  * Avotu lauki (CSDD, AutoDNA, CarVertical, LTAB, dīlera dati u.c.) konstatē faktus.
  * Interpretācija un ieteikumi pieder tikai norādītajiem laukiem.
  */
-export const AI_SOURCE_FIELDS_FACTS_ONLY_RULES = `SOURCE FIELDS = FACTS ONLY (mandatory — every per-source comment window: CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS / dealer, VIN registry / Dānijas reģistri, CC.VIN, ASV, seller portrait, photos, listing photo analysis):
+export const AI_SOURCE_FIELDS_FACTS_ONLY_RULES = `SOURCE FIELDS = FACTS ONLY (mandatory — every per-source comment window: CSDD, AutoDNA, CarVertical, LTAB, AUTO RECORDS / dealer, VIN registry / Dānijas reģistri, Izsoļu portālu arhīvs, ASV, seller portrait, photos, listing photo analysis):
 - State ONLY what THIS source recorded (date, km, amount, zone, code, name, status). After the fact, STOP. Do not add a second sentence that explains, hedges, or expands the fact.
 - FORBIDDEN in source fields (these are sentence expansions, not facts): „ierakstu trūkums neizslēdz…”, „varētu būt novērsti bez apdrošinātāju starpniecības”, „notikuši pirms importa”, „Digitālie dati var neuzrādīt krāsotus elementus”, krāsas biezuma mērītājs / mikroni / „virsbūves stāvokļa pārbaude klātienē”, invented headings such as „Datu specifika”. That material belongs ONLY in summary fields.
 - EXPANSIONS AND ADDED SENTENCES are allowed ONLY in summary sections: „3. Kopsavilkums”, „NOBRAUKUMA VĒSTURES KOMENTĀRS”, „NEGADĪJUMU VĒSTURES KOPSAVILKUMS”. „1. Tehnisko risku analīze” analyses THIS car’s aggregates; „2. Ieteikumi” is the inspection checklist (including paint gauge). Neither of those jobs may be copied into a source comment.
@@ -424,9 +424,39 @@ export function stripUnauthorizedEuroAmounts(text: string): string {
  * Iekšējās noplūdes (QA instrukcija, D1–D25, kartē, PR kodi, HECK/AGR-Kühler,
  * „Dzinēja kods noteikts pēc jaudas…”). Klienta tekstā paliek latvisks fakts.
  */
+const AI_GREETING_OPENER_RE = /^[ \t]*(?:Sveiki|Sveiks|Labdien|Labrīt|Labvakar)[ \t]*[,!][ \t]*/iu;
+const AI_FIRST_PERSON_OPENER_RE =
+  /^[ \t]*Esmu\s+(?:pabeidzis|pabeigusi|rūpīgi|izskatījis|izskatījusi|izanalizējis|izanalizējusi|pārskatījis|pārskatījusi)(?![\p{L}\p{N}])(?:\d\.(?=\s*\p{Ll})|[^\n.!?:])*[.!?:]*[ \t]*/iu;
+/** Operatora norāde kā atsevišķa rinda: „Ignorēt …”, „TODO …”, „Nedrukāt”, „Piezīme sev: …”. */
+const OPERATOR_INSTRUCTION_LINE_RE =
+  /^[ \t]*(?:[-•*][ \t]*)?(?:ignorēt|ignorējiet|ignore|nedrukāt|piezīme sev|TODO|FIXME)(?![\p{L}\p{N}])[^\n]*(?:\n|$)/gimu;
+/** Operatora norāde iekavās: „(ignorēt)”, „[nedrukāt]”, „(piezīme sev: …)”. */
+const OPERATOR_INSTRUCTION_PAREN_RE =
+  /[ \t]*[([](?:ignorēt|ignore|nedrukāt|piezīme sev|TODO|FIXME)(?![\p{L}\p{N}])[^)\]\n]*[)\]]/giu;
+
+/**
+ * AI izejas sākums: nomet sveicienu („Sveiki,” / „Labdien!”) un pirmās personas statusa
+ * teikumu („Esmu pabeidzis analīzi.”) TIKAI pašā sākumā. Ja aiz sveiciena ir fakts tajā pašā
+ * teikumā, fakts paliek (ar lielo sākuma burtu). Operatora norāžu rindas / iekavas izmet.
+ * Lieto tikai ģenerētam tekstam (applyProvinReportCopyVocabulary), nevis operatora laukiem.
+ */
+export function stripAiOpeningAndOperatorInstructions(text: string): string {
+  if (!text) return text;
+  let out = text.replace(OPERATOR_INSTRUCTION_PAREN_RE, "").replace(OPERATOR_INSTRUCTION_LINE_RE, "");
+  for (let i = 0; i < 3; i++) {
+    const before = out;
+    out = out.replace(/^\s+/, "");
+    out = out.replace(AI_GREETING_OPENER_RE, "");
+    out = out.replace(AI_FIRST_PERSON_OPENER_RE, "");
+    if (out === before) break;
+  }
+  if (out !== text) out = out.replace(/^\s+/, "").replace(/^\p{Ll}/u, (c) => c.toUpperCase());
+  return out;
+}
+
 export function stripInternalClientLeaks(text: string): string {
   if (!text) return text;
-  let out = text;
+  let out = stripAiOpeningAndOperatorInstructions(text);
   out = out.replace(/Atzīmē teikumus[^.!\n]*kartē[^.!\n]*[.!]?/gi, "");
   out = out.replace(/Pārraksti tikai tos\.?/gi, "");
   out = out.replace(
@@ -484,9 +514,9 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     [/\bautomobiļa\b/g, "automašīnas"],
     [/\bAutomobilis\b/g, "Automašīna"],
     [/\bautomobilis\b/g, "automašīna"],
-    [/labvēlīg\w*\s+signāl\w*(?:\s+datos)?/gi, "labs rādījums datos"],
-    [/labvēlīg\w*\s+faktor\w*/gi, "tas palīdz"],
-    [/dokumentār\w*\s+pierādījum\w*/gi, "dokumenti"],
+    [/labvēlīg\p{L}*\s+signāl\p{L}*(?:\s+datos)?/giu, "labs rādījums datos"],
+    [/labvēlīg\p{L}*\s+faktor\p{L}*/giu, "tas palīdz"],
+    [/dokumentār\p{L}*\s+pierādījum\p{L}*/giu, "dokumenti"],
     [/tuvāk(?:ā|a)\s+laika\s+(?:ieguldījum\w*|rēķin\w*|risk\w*|izmaks\w*|profilaks\w*|naudas\s+punkt\w*|punkt\w*)/gi, "aktuālais mezgls"],
     [/finansiāli\s+nozīmīgāk\w*/gi, "būtisks"],
     [/nākotnes\s+risk\w*/gi, "risks"],
@@ -511,8 +541,36 @@ export function applyProvinReportCopyVocabulary(text: string): string {
     return offset === 0 || /[\n.!?]\s*$/.test(before) ? "Datos" : "datos";
   });
   out = replaceCrankshaftDamperWording(out);
+  out = groupClientNumberThousands(out);
   out = stripInternalClientLeaks(out);
   return stripForbiddenPersonaNouns(out);
+}
+
+/**
+ * Konservatīva tūkstošu grupēšana klienta tekstā: „156042 km” -> „156 042 km”, „1820000 Km” -> „1 820 000 km”,
+ * „8390 €” -> „8 390 €”. Grupē tikai skaitļus tieši pirms km / € / EUR: no 10 000 visiem, 1 000-9 999 tikai
+ * pirms € / EUR (lai „2019 km” u.tml. paliek). Gadus, VIN, datumus, kodus, tālruņus, decimāldaļas un URL neskar.
+ */
+export function groupClientNumberThousands(text: string): string {
+  if (!text) return text;
+  const group = (digits: string) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  const shouldGroup = (digits: string, unit: string) => digits.length >= 5 || unit !== "km";
+  let out = text.replace(/(\d)(\s?)K[mM](?![\p{L}\p{N}])/gu, "$1$2km");
+  // Diapazons „10000-15000 km” - abas puses vienādi.
+  out = out.replace(
+    /(?<![\p{L}\p{N}.,/:_=?&#@%])([1-9]\d{3,})(\s?-\s?)([1-9]\d{3,})(?=[^\S\r\n]{0,2}(km|€|EUR)(?![\p{L}\p{N}]))/gu,
+    (m: string, a: string, dash: string, b: string, unit: string) =>
+      shouldGroup(a.length > b.length ? a : b, unit) ? `${group(a)}${dash}${group(b)}` : m,
+  );
+  return out.replace(
+    /(?<![\p{L}\p{N}.,/:_=?&#@%])([1-9]\d{3,})(?=[^\S\r\n]{0,2}(km|€|EUR)(?![\p{L}\p{N}]))/gu,
+    (m: string, digits: string, unit: string, offset: number, full: string) => {
+      if (!shouldGroup(digits, unit)) return m;
+      // „12 5000 km” / „1 2345 €” - jau daļēji grupēts skaitlis, neaiztiek.
+      if (/\d[\s  ]$/.test(full.slice(Math.max(0, offset - 2), offset))) return m;
+      return group(digits);
+    },
+  );
 }
 
 const DAMPER_CANON = "kloķvārpstas skriemelis (demferis)";
@@ -598,6 +656,8 @@ export function splitDealerCommentRoleHeadings(raw: string): string {
         else if (before === "\n") prefix = "\n";
         else prefix = "\n\n";
       }
+      // Mazais burts aiz virsraksta = garāka virsraksta turpinājums („… intervāli un faktiskā vēsture”).
+      if (/^\p{Ll}/u.test(after)) return `${prefix}${match}`;
       const suffix = after === "\n" || after === "" ? "" : "\n";
       return `${prefix}${heading}${suffix}`;
     });
@@ -656,8 +716,14 @@ function convertExpertBlockToHeadingBody(block: string): string {
   if (lines.length === 0) return "";
 
   if (lines.length >= 2 && looksLikeHeadingLine(lines[0]!)) {
-    const heading = lines[0]!.replace(/[.!?]\s*$/, "");
-    return `${heading}\n${lines.slice(1).join(" ")}`;
+    let headingLines = 1;
+    // Virsraksts pārnests divās rindās: 2. rinda bez punkta un sākas ar mazo burtu.
+    if (lines.length >= 3 && /^\p{Ll}/u.test(lines[1]!) && looksLikeHeadingLine(lines[1]!)) {
+      const joined = `${lines[0]} ${lines[1]}`;
+      if (joined.length <= 90 && !/[.!?]/.test(maskLatvianOrdinalDots(lines[1]!))) headingLines = 2;
+    }
+    const heading = lines.slice(0, headingLines).join(" ").replace(/[.!?]\s*$/, "");
+    return `${heading}\n${lines.slice(headingLines).join(" ")}`;
   }
 
   return lines.map(lineToHeadingBody).join("\n\n");
@@ -974,7 +1040,7 @@ Paraugs D — BEV, bez auto tūres ievada:
 Iekšdedzes ķēdes, turbīnas, DPF un eļļas noplūdes šim eksemplāram neeksistē. Galvenā uzmanība ir akumulatoram, jaudas elektronikai un balstiekārtai.
 
 Augstsprieguma akumulators (SOH)
-Pie 137 000 km būtiskākais risks ir akumulatora stāvoklis. Rūpnīcas garantija parasti ir 8 gadi vai 160 000 km, tāpēc šis auto tuvojas limitam. SOH diagnostika autorizētā servisā pirms pirkuma ir ieteicama."`;
+Pie 137 000 km būtiskākais risks ir akumulatora stāvoklis. Rūpnīcas garantija parasti ir 8 gadi vai 160 000 km, tāpēc šis auto var tuvoties limitam. SOH diagnostika autorizētā servisā pirms pirkuma ir ieteicama."`;
 
 /** Elektroauto (BEV) un plug-in hibrīdu (PHEV) pārbaude — obligāti, kad konteksts to norāda. */
 export const AI_EV_BEV_FORENSICS_RULES = `ELECTRIC & PLUG-IN FORENSICS (mandatory when context indicates full electric (BEV), „elektriskais”, „elektro”, PHEV / plug-in hybrid, or an unmistakably electric model/generation — skip for pure petrol/diesel ICE unless only mild hybrid with no plug):

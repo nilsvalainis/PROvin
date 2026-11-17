@@ -1,0 +1,483 @@
+{
+ "vin": "VF1JK1HC647031151",
+ "label": "RENAULT ESPACE: CSDD 34, AutoDNA 2, carVertical 12, dīleris 14; negadījumi 0",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 248, saglabāts 2026-08-11; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "RENAULT ESPACE",
+   "registrationNumber": "ON9604",
+   "firstRegistration": "2012-04-12",
+   "nextInspectionDate": "2027-06-18",
+   "prevInspectionDate": "2026-06-11",
+   "engineDisplacementCm3": "1995",
+   "enginePowerKw": "96",
+   "fuelType": "Dīzeļdegviela",
+   "emissionStandard": "Euro 5 B",
+   "grossMassKg": "2620",
+   "curbMassKg": "2006",
+   "roadTaxEur": "159,00",
+   "registrationStatus": "Noņemts no uzskaites, atļauts piedalīties ceļu satiksmē līdz 14.06.2026",
+   "opacityCoefficient": "0.39",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "Beļģija",
+   "ownerCountLatvia": "1",
+   "technicalInspectionHistory": [
+    {
+     "date": "11.06.2026",
+     "inspectionType": "Pamatpārbaude",
+     "ratingLabel": "2 - Ar mēneša laikā labojamiem defektiem",
+     "ratingLevel": 2,
+     "maxDefectLevel": 2,
+     "smokeCoefficient": "0.39",
+     "notes": "",
+     "defects": [
+      {
+       "code": "1.1.14.",
+       "rating": "1",
+       "description": "2.tilts. Bremzēšanas īpašības neietekmējoši bremžu disku korozijas bojājumi."
+      },
+      {
+       "code": "5.2.3.",
+       "rating": "1",
+       "description": "Nelieli vietēji vai virspusēji riepas bojājumi."
+      },
+      {
+       "code": "4.3.1.",
+       "rating": "2",
+       "description": "Nedeg S3 kategorijas (papildus) bremžu lukturis."
+      },
+      {
+       "code": "5.3.4.",
+       "rating": "2",
+       "description": "Priekšējais tilts. Palielināta brīvkustība balstiekārtas šarnīrā. Kreisais apakšējais šarnīrs."
+      }
+     ]
+    }
+   ],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "Pamatpārbaude",
+    "inspectionDateText": "11.06.2026",
+    "nextInspectionDateText": "13.07.2026",
+    "odometer": "270406",
+    "ratingLabel": "2 - Ar mēneša laikā labojamiem defektiem",
+    "ratingLevel": 2,
+    "smokeCoefficient": "0.39",
+    "notes": "",
+    "defects": [
+     {
+      "code": "1.1.14.",
+      "rating": "1",
+      "description": "2.tilts. Bremzēšanas īpašības neietekmējoši bremžu disku korozijas bojājumi."
+     },
+     {
+      "code": "5.2.3.",
+      "rating": "1",
+      "description": "Nelieli vietēji vai virspusēji riepas bojājumi."
+     },
+     {
+      "code": "4.3.1.",
+      "rating": "2",
+      "description": "Nedeg S3 kategorijas (papildus) bremžu lukturis."
+     },
+     {
+      "code": "5.3.4.",
+      "rating": "2",
+      "description": "Priekšējais tilts. Palielināta brīvkustība balstiekārtas šarnīrā. Kreisais apakšējais šarnīrs."
+     }
+    ]
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "18.06.2026",
+     "odometer": "270425",
+     "country": "Latvija"
+    },
+    {
+     "date": "11.06.2026",
+     "odometer": "270406",
+     "country": "Latvija"
+    },
+    {
+     "date": "20.03.2026",
+     "odometer": "270329",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.07.2025",
+     "odometer": "263935",
+     "country": "Beļģija"
+    },
+    {
+     "date": "17.12.2024",
+     "odometer": "257240",
+     "country": "Beļģija"
+    },
+    {
+     "date": "02.07.2024",
+     "odometer": "250614",
+     "country": "Beļģija"
+    },
+    {
+     "date": "22.12.2023",
+     "odometer": "241744",
+     "country": "Beļģija"
+    },
+    {
+     "date": "21.06.2023",
+     "odometer": "231160",
+     "country": "Beļģija"
+    },
+    {
+     "date": "13.12.2022",
+     "odometer": "223253",
+     "country": "Beļģija"
+    },
+    {
+     "date": "11.10.2022",
+     "odometer": "221145",
+     "country": "Beļģija"
+    },
+    {
+     "date": "15.07.2022",
+     "odometer": "215197",
+     "country": "Beļģija"
+    },
+    {
+     "date": "11.03.2022",
+     "odometer": "210740",
+     "country": "Beļģija"
+    },
+    {
+     "date": "23.12.2021",
+     "odometer": "208289",
+     "country": "Beļģija"
+    },
+    {
+     "date": "27.07.2021",
+     "odometer": "200548",
+     "country": "Beļģija"
+    },
+    {
+     "date": "05.01.2021",
+     "odometer": "186721",
+     "country": "Beļģija"
+    },
+    {
+     "date": "09.09.2020",
+     "odometer": "182377",
+     "country": "Beļģija"
+    },
+    {
+     "date": "22.05.2020",
+     "odometer": "175914",
+     "country": "Beļģija"
+    },
+    {
+     "date": "12.04.2019",
+     "odometer": "148819",
+     "country": "Beļģija"
+    },
+    {
+     "date": "29.11.2018",
+     "odometer": "141718",
+     "country": "Beļģija"
+    },
+    {
+     "date": "17.07.2018",
+     "odometer": "135536",
+     "country": "Beļģija"
+    },
+    {
+     "date": "25.01.2018",
+     "odometer": "123005",
+     "country": "Beļģija"
+    },
+    {
+     "date": "08.03.2017",
+     "odometer": "100582",
+     "country": "Beļģija"
+    },
+    {
+     "date": "29.09.2016",
+     "odometer": "92692",
+     "country": "Beļģija"
+    },
+    {
+     "date": "13.04.2016",
+     "odometer": "89066",
+     "country": "Beļģija"
+    },
+    {
+     "date": "11.02.2016",
+     "odometer": "86829",
+     "country": "Beļģija"
+    },
+    {
+     "date": "21.10.2015",
+     "odometer": "78996",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.04.2015",
+     "odometer": "60856",
+     "country": "Beļģija"
+    },
+    {
+     "date": "22.10.2014",
+     "odometer": "50759",
+     "country": "Beļģija"
+    },
+    {
+     "date": "25.06.2014",
+     "odometer": "42740",
+     "country": "Beļģija"
+    },
+    {
+     "date": "02.04.2014",
+     "odometer": "38600",
+     "country": "Beļģija"
+    },
+    {
+     "date": "11.12.2013",
+     "odometer": "31897",
+     "country": "Beļģija"
+    },
+    {
+     "date": "28.03.2013",
+     "odometer": "16043",
+     "country": "Beļģija"
+    },
+    {
+     "date": "29.10.2012",
+     "odometer": "10505",
+     "country": "Beļģija"
+    },
+    {
+     "date": "19.07.2012",
+     "odometer": "3711",
+     "country": "Beļģija"
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "53",
+   "listingCreated": "19.06.2026",
+   "priceDrop": "NAV"
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "18.06.2026",
+     "odometer": "270425",
+     "country": "Latvija"
+    },
+    {
+     "date": "11.06.2026",
+     "odometer": "270406",
+     "country": "Latvija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.07.2025",
+     "odometer": "264183",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.06.2023",
+     "odometer": "229877",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.10.2022",
+     "odometer": "220645",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.09.2022",
+     "odometer": "218986",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.07.2022",
+     "odometer": "214697",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.03.2022",
+     "odometer": "209962",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.11.2021",
+     "odometer": "206578",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.06.2021",
+     "odometer": "195388",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.01.2018",
+     "odometer": "122505",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.03.2017",
+     "odometer": "100082",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.09.2016",
+     "odometer": "92462",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.09.2014",
+     "odometer": "49184",
+     "country": "Beļģija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "21.06.2023",
+     "odometer": "231160",
+     "country": "Beļģija"
+    },
+    {
+     "date": "07.06.2023",
+     "odometer": "230377",
+     "country": "Beļģija"
+    },
+    {
+     "date": "11.10.2022",
+     "odometer": "221145",
+     "country": "Beļģija"
+    },
+    {
+     "date": "02.09.2022",
+     "odometer": "219486",
+     "country": "Beļģija"
+    },
+    {
+     "date": "15.07.2022",
+     "odometer": "215197",
+     "country": "Beļģija"
+    },
+    {
+     "date": "11.03.2022",
+     "odometer": "210740",
+     "country": "Beļģija"
+    },
+    {
+     "date": "03.03.2022",
+     "odometer": "210462",
+     "country": "Beļģija"
+    },
+    {
+     "date": "09.11.2021",
+     "odometer": "207078",
+     "country": "Beļģija"
+    },
+    {
+     "date": "23.06.2021",
+     "odometer": "195888",
+     "country": "Beļģija"
+    },
+    {
+     "date": "25.01.2018",
+     "odometer": "123005",
+     "country": "Beļģija"
+    },
+    {
+     "date": "08.03.2017",
+     "odometer": "100582",
+     "country": "Beļģija"
+    },
+    {
+     "date": "28.09.2016",
+     "odometer": "92662",
+     "country": "Beļģija"
+    },
+    {
+     "date": "13.09.2014",
+     "odometer": "49384",
+     "country": "Beļģija"
+    },
+    {
+     "date": "12.09.2014",
+     "odometer": "49384",
+     "country": "Beļģija"
+    }
+   ],
+   "outvinReport": {
+    "vehicleInfo": {
+     "vinCode": "VF1JK1HC647031151",
+     "series": "",
+     "typeCode": "",
+     "steeringSide": "",
+     "interior": "",
+     "model": "",
+     "generation": "",
+     "engineCode": "M9R 96KW",
+     "color": "",
+     "transmission": ""
+    }
+   }
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": "CAR-PASS"
+    }
+   ]
+  }
+ }
+}

@@ -60,6 +60,8 @@ export type StaffAuditAction =
   | "invite_accepted"
   | "access_revoked"
   | "access_restored"
+  | "password_reset"
+  | "user_deleted"
   | "sessions_revoked"
   | "totp_enabled"
   | "totp_disabled"
@@ -67,7 +69,9 @@ export type StaffAuditAction =
   | "waybill_requested"
   | "waybill_retry"
   | "waybill_claimed"
+  | "waybill_cancelled"
   | "waybill_result"
+  | "waybill_handoff_aivars"
   | "point_viewed"
   | "point_edited"
   | "print"
@@ -119,6 +123,8 @@ export function isStaffAuditAction(value: unknown): value is StaffAuditAction {
     value === "invite_accepted" ||
     value === "access_revoked" ||
     value === "access_restored" ||
+    value === "password_reset" ||
+    value === "user_deleted" ||
     value === "sessions_revoked" ||
     value === "totp_enabled" ||
     value === "totp_disabled" ||
@@ -126,7 +132,9 @@ export function isStaffAuditAction(value: unknown): value is StaffAuditAction {
     value === "waybill_requested" ||
     value === "waybill_retry" ||
     value === "waybill_claimed" ||
+    value === "waybill_cancelled" ||
     value === "waybill_result" ||
+    value === "waybill_handoff_aivars" ||
     value === "point_viewed" ||
     value === "point_edited" ||
     value === "print" ||

@@ -42,4 +42,33 @@ describe("translateDealerVehicleValue", () => {
       expect(LONG_DASHES.test(out), lang).toBe(false);
     }
   });
+
+  it("zirgspēku vienību jebkurā reģistrā („102 Zs”) LV raksta „ZS”, kW neskar", () => {
+    expect(translateDealerVehicleValue("power", "102 Zs", "lv")).toBe("102 ZS");
+    expect(translateDealerVehicleValue("power", "75 kW (102 zs)", "lv")).toBe("75 kW (102 ZS)");
+    expect(translateDealerVehicleValue("power", "110 kW / 150 PS", "lv")).toBe("110 kW / 150 ZS");
+    expect(translateDealerVehicleValue("power", "250 kW / 340 HP", "lv")).toBe("250 kW / 340 ZS");
+    expect(translateDealerVehicleValue("power", "102 Zs", "en")).toBe("102 hp");
+    expect(translateDealerVehicleValue("power", "102 Zs", "de")).toBe("102 PS");
+    expect(translateDealerVehicleValue("power", "75 kW", "lv")).toBe("75 kW");
+  });
+
+  it("variators (CVT), apvidus auto un N pakāpju automātiskā", () => {
+    expect(translateDealerVehicleValue("transmission", "Continuously Variable", "lv")).toBe("Variators (CVT)");
+    expect(translateDealerVehicleValue("transmission", "Continuously Variable Transmission", "lv")).toBe(
+      "Variators (CVT)",
+    );
+    expect(translateDealerVehicleValue("transmission", "CVT", "lv")).toBe("Variators (CVT)");
+    expect(translateDealerVehicleValue("vehicleType", "Off-road vehicle", "lv")).toBe("Apvidus auto");
+    expect(translateDealerVehicleValue("transmission", "9-speed automatic", "lv")).toBe("9 pakāpju automātiskā");
+    expect(translateDealerVehicleValue("transmission", "6 speed automatic transmission", "lv")).toBe(
+      "6 pakāpju automātiskā ātrumkārba",
+    );
+  });
+
+  it("kārbai nekad neatgriež pustulkojumu („Continuously Variable ātrumkārba”)", () => {
+    expect(translateDealerVehicleValue("transmission", "Sequential Transmission", "lv")).toBe("Sequential Transmission");
+    expect(translateDealerVehicleValue("transmission", "8-speed Steptronic", "lv")).toBe("8-speed Steptronic");
+    expect(translateDealerVehicleValue("transmission", "automatic transmission", "lv")).toBe("automātiskā ātrumkārba");
+  });
 });

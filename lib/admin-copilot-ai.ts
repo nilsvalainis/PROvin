@@ -8,6 +8,7 @@ import {
   aiGenerateJsonWithSchema,
   type AiUserPart,
 } from "@/lib/admin-ai";
+import { finalizeGeneratedComment } from "@/lib/admin-ai-polish";
 import { JsonType, type AiJsonSchema } from "@/lib/ai-json-schema";
 import { buildCopilotBlocksSummary } from "@/lib/admin-copilot-apply";
 import { parseCopilotAiPayload } from "@/lib/admin-copilot-parse";
@@ -39,7 +40,7 @@ What PROVIN typically extracts from these reports (do this for each matching PDF
 - LTAB / OCTA → ltab: insurance accident rows only (date + EUR + country). Leftover significant facts → append_raw on ltab.
 - Auto Records / ODOMETER CHECK → auto_records: mileage rows + set_service_history when service journal present
 - Official dealer / factory printout (BMW dealer portal export with MODEL SERIES … UPHOLSTERY CODE, „Specifications & Options”, „Key Read History”, „Repair History”; auto-records.com „VEHICLE INFORMATION”) → auto_records: set_dealer_vehicle_info (primary field source), Key Read History rows → upsert_mileage only (never upsert_service_work for CBS due-date snapshots), Repair/Service History visits → upsert_service_work (location = dealer/workshop name, works = the parts in Latvian without part numbers). Do NOT also set_service_history when upsert_service_work rows exist. Odometer values printed as „188,858 mi / 303,938 km” → ALWAYS store kilometres (convert miles × 1.609344 when km is missing).
-- CheckCar.vin / checkcar.vin / cc.vin „Vehicle history report” (Report ID, Attention marks, Source: Checkcar.vin) → ALWAYS cc_vin when enabled: odometer/mileage rows + Accident records / damages (date + country + repair/claim cost). NEVER dump CheckCar.vin into citi_avoti. If CURRENT TABLES already show cc_vin mileage/incidents, do not duplicate those rows. Service/repair visits in the same PDF („Services records”, Services #N, WORK PERFORMED) → upsert_service_work on auto_records when that source is enabled. Leftover significant facts → append_raw on cc_vin.
+- CheckCar.vin / checkcar.vin „Vehicle history report” (Report ID, Attention marks, Source: Checkcar.vin) → ALWAYS cc_vin when enabled: odometer/mileage rows + Accident records / damages (date + country + repair/claim cost). NEVER dump CheckCar.vin into citi_avoti. If CURRENT TABLES already show cc_vin mileage/incidents, do not duplicate those rows. Service/repair visits in the same PDF („Services records”, Services #N, WORK PERFORMED) → upsert_service_work on auto_records when that source is enabled. Leftover significant facts → append_raw on cc_vin.
 - Other foreign reports (not CheckCar.vin / AutoDNA / CarVertical / dealer) → citi_avoti (first section): mileage + incidents when present; leftover facts → append_raw on citi_avoti
 - tjekbil.dk / DMR (Denmark) → tjekbil: odometer log, owners/registration summary, taxi/leasing/status, short Latvian notes (stolen, commercial use, export, km rollback)
 - Finnik / RDW (Netherlands) → finnik: ONLY Kilometerstand gerapporteerd as mileage. Never Vermoedelijke kilometerstand and never Auto te koop as official km. Timeline: owners, APK as Tehniskā apskate with no defect text, dated Geëxporteerd only. Taxi only if the field is Ja or Nee. No prices, BPM, market stats, catalog price. The local parser already does this; do not add duplicate rows.
@@ -49,7 +50,7 @@ What PROVIN typically extracts from these reports (do this for each matching PDF
 - Traficom / Finnish Transport Register (Finland, „Vehicle information — Source: Transport Register”, footer „Finnish Transport and Communications Agency”) → traficom_fi: Owner(s) + Owner history → ownersSummary (owner count + owner-change dates; operator/holder rows are not owners). Vehicle status, next inspection period, tax status, restrictions → statusRecords. Use history + decommissioning (especially "Deregistrated due to a damage") → autoNotes. If the extract publishes odometer/inspection km with a date, emit upsert_mileage (country Somija). If it publishes accident/damage/claim dates, emit incidents. Never invent km or crash dates that the dump does not show. The local parser already extracts owners/status/use; do not duplicate those from a paste it already handled.
 
 Sources (must match exactly):
-- csdd is handled by dedicated CSDD PDF import when enabled — no JSON actions for csdd
+- csdd is handled by dedicated CSDD PDF import when enabled. No JSON actions for csdd. That import runs on the server before you, and it fills empty CSDD fields (owner count, previous country, inspections, mileage, and the other mapped fields) only when a CSDD PDF is attached in THIS message. If this message has no PDF, do not claim any field was filled and do not say that chat cannot import CSDD. Reply in Latvian that this message has no PDF and the file must be attached again. If CURRENT TABLES already show CSDD values, describe those.
 - autodna | carvertical | ltab | auto_records | cc_vin | citi_avoti | tjekbil | finnik | mnt_ee | lkf_ee | carinfo | traficom_fi
 
 Actions:
@@ -285,5 +286,16 @@ export async function runOrderCopilotAi(opts: {
     temperature: 0.1,
   });
 
-  return parseCopilotAiPayload(raw);
+  return finalizeCopilotAiResponse(parseCopilotAiPayload(raw));
+}
+
+/** Copilot JSON darbības neskaram. Pārskata tikai operatoram redzamo LV prozu. */
+export async function finalizeCopilotAiResponse(
+  parsed: CopilotAiResponse,
+): Promise<CopilotAiResponse> {
+  const [reply, clarificationNeeded] = await Promise.all([
+    finalizeGeneratedComment(parsed.reply),
+    finalizeGeneratedComment(parsed.clarificationNeeded),
+  ]);
+  return { ...parsed, reply, clarificationNeeded };
 }

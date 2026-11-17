@@ -1,10 +1,13 @@
 import type { IrissPavadzimeLifecycle } from "@/lib/iriss-pavadzimes-types";
+import type { CsddPlatesDoc } from "@/lib/iriss-waybill-csdd-plates";
+import { waybillWithdrawn } from "@/lib/iriss-waybill-plates";
 
 type LifecycleInput = {
   number: string;
   plate: string;
   issuedAt: string;
   validUntil: string;
+  archived?: boolean;
 };
 
 export type WaybillLifecycleInfo = {
@@ -22,9 +25,15 @@ function ts(iso: string): number {
  * - „pārtraukta”, ja tam pašam tirdzniecības nr. izdota jaunāka pavadzīme, pirms šīs termiņš beidzās
  *   (piem. P02787 B193-7 derīga līdz 14.10 15:59, bet P02788 B193-7 izdota 14.10 13:41);
  * - „beigusies”, ja termiņš pagājis;
+ * - „pārtraukta” arī tad, ja termiņš vēl nav pagājis, bet PDF ir Arhīvā vai CSDD to vairs nerāda kā aktīvu
+ *   (j66: P02813/P02818 pēc CSDD «Pārtraukt»);
  * - „derīga” citādi.
  */
-export function computeWaybillLifecycles<T extends LifecycleInput>(rows: readonly T[], now = new Date()): Map<T, WaybillLifecycleInfo> {
+export function computeWaybillLifecycles<T extends LifecycleInput>(
+  rows: readonly T[],
+  now = new Date(),
+  csdd?: CsddPlatesDoc | null,
+): Map<T, WaybillLifecycleInfo> {
   const nowMs = now.getTime();
   const byPlate = new Map<string, T[]>();
   for (const row of rows) {
@@ -53,8 +62,10 @@ export function computeWaybillLifecycles<T extends LifecycleInput>(rows: readonl
       out.set(row, { lifecycle: "interrupted", supersededBy: next.number });
     } else if (!until) {
       out.set(row, { lifecycle: "unknown" });
+    } else if (until < nowMs) {
+      out.set(row, { lifecycle: "expired" });
     } else {
-      out.set(row, { lifecycle: until < nowMs ? "expired" : "active" });
+      out.set(row, { lifecycle: waybillWithdrawn(row, csdd) ? "interrupted" : "active" });
     }
   }
   return out;

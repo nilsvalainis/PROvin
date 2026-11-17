@@ -33,10 +33,47 @@ export type TraficomParsedReport = {
 const HEADER_JUNK =
   /^(Vehicle information|Source:\s*Transport Register|Finnish Transport and Communications Agency|PO Box 320, 00059 TRAFICOM.*)$/i;
 
+/** Traficom virsraksti, kurus PDF teksts mēdz salīmēt ar nākamo vārdu („RestrictionsPeriodic…”). */
+const TRAFICOM_SECTION_HEADS = [
+  "Restrictions",
+  "Tax status",
+  "Pending data",
+  "Decommissioning history",
+  "Basic information",
+  "Engine details",
+  "Use history",
+  "Insurance history",
+  "Owner history",
+];
+const GLUED_HEAD_RE = new RegExp(`(^|\\n)(${TRAFICOM_SECTION_HEADS.join("|")})(?=[A-Z])`, "g");
+
+/** Rinda turpinās nākamajā (atvērta iekava vai beidzas ar „a”/„due to”/„of”…). */
+function lineContinues(line: string, next: string): boolean {
+  if (!/^[a-z)]/.test(next)) return false;
+  const opens = (line.match(/\(/g) ?? []).length;
+  const closes = (line.match(/\)/g) ?? []).length;
+  return opens > closes || /\b(?:a|an|the|due to|of|to|and)$/i.test(line);
+}
+
+/** j26: salīmēto virsrakstu atdalīšana + pārnesto rindu savienošana. */
+function joinContinuationLines(lines: string[]): string[] {
+  const out: string[] = [];
+  for (const line of lines) {
+    const prev = out[out.length - 1];
+    if (prev != null && lineContinues(prev, line)) {
+      out[out.length - 1] = `${prev} ${line}`;
+    } else {
+      out.push(line);
+    }
+  }
+  return out;
+}
+
 function linesOf(text: string): string[] {
-  return text
+  const split = text
     .replace(/\u00a0/g, " ")
     .replace(/\r/g, "")
+    .replace(GLUED_HEAD_RE, "$1$2\n")
     .split("\n")
     .map((line) => line.replace(/[ \t]+/g, " ").trim())
     .filter(
@@ -46,6 +83,7 @@ function linesOf(text: string): string[] {
         !/^\d{1,2}\.\d{1,2}\.\d{4}\s+\d{1,2}:\d{2}$/.test(line) &&
         !HEADER_JUNK.test(line),
     );
+  return joinContinuationLines(split);
 }
 
 export function looksLikeTraficomReport(text: string): boolean {
@@ -188,7 +226,8 @@ function decommissionReasonLv(raw: string): string {
   const t = raw.trim();
   if (/deregistrated due to a damage|due to a damage/i.test(t)) return "bojājuma dēļ";
   if (/export/i.test(t)) return "eksports";
-  return t;
+  if (/temporar/i.test(t)) return "īslaicīgi";
+  return t ? `${t} ${TRAFICOM_UNTRANSLATED_SUFFIX}` : t;
 }
 
 function parseDecommissioningHistory(lines: string[]): DecommissionRow[] {
@@ -324,9 +363,55 @@ const RESTRICTION_LV: Array<{ re: RegExp; lv: string; redFlag: boolean }> = [
     lv: "Tehniskā apskate nav nokārtota / apstiprināta.",
     redFlag: true,
   },
+  {
+    re: /vehicle decommissioning\s*\(\s*deregistrated due to a damage\s*\)/i,
+    lv: "Auto noņemts no reģistra bojājuma dēļ.",
+    redFlag: true,
+  },
+  { re: /temporary decommissioning|temporarily decommissioned/i, lv: "Auto īslaicīgi noņemts no reģistra.", redFlag: true },
+  { re: /vehicle decommissioning\s*\(\s*export/i, lv: "Auto noņemts no reģistra (eksports).", redFlag: false },
   { re: /vehicle decommissioning/i, lv: "Auto noņemts no reģistra.", redFlag: true },
   { re: /prohibition of driving or use/i, lv: "Transportlīdzeklim noteikts braukšanas / lietošanas aizliegums.", redFlag: true },
+  { re: /^export\b/i, lv: "Eksports.", redFlag: false },
 ];
+
+/** Nodokļu statusa rindas LV; nezināmas - angliski ar „(oriģināls)” (Nils 24.10). */
+const TAX_STATUS_LV: Array<{ re: RegExp; lv: string }> = [
+  { re: /^no unpaid vehicle tax$/i, lv: "nav nesamaksāta transportlīdzekļa nodokļa" },
+  { re: /^no unpaid additional tax$/i, lv: "nav nesamaksāta papildu (dīzeļa) nodokļa" },
+  { re: /^unpaid vehicle tax/i, lv: "ir nesamaksāts transportlīdzekļa nodoklis" },
+  { re: /^unpaid additional tax/i, lv: "ir nesamaksāts papildu (dīzeļa) nodoklis" },
+];
+
+export const TRAFICOM_UNTRANSLATED_SUFFIX = "(oriģināls)";
+
+const DRIVING_POWER_LV: Record<string, string> = {
+  petrol: "benzīns",
+  diesel: "dīzelis",
+  electricity: "elektrība",
+  gas: "gāze",
+  hydrogen: "ūdeņradis",
+  ethanol: "etanols",
+};
+
+function drivingPowerLv(raw: string): string {
+  const parts = raw.split("/").map((p) => DRIVING_POWER_LV[p.trim().toLowerCase()]);
+  if (parts.every(Boolean)) {
+    const lv = parts.join(" / ");
+    return lv.charAt(0).toUpperCase() + lv.slice(1);
+  }
+  return `${raw} ${TRAFICOM_UNTRANSLATED_SUFFIX}`;
+}
+
+function pendingDataLv(raw: string): string {
+  if (/notification of transfer entry/i.test(raw)) return "reģistrā ir paziņojums par īpašuma maiņu";
+  return `${raw} ${TRAFICOM_UNTRANSLATED_SUFFIX}`;
+}
+
+function restrictionLv(raw: string): string {
+  const known = RESTRICTION_LV.find((r) => r.re.test(raw));
+  return known ? known.lv : `${raw} ${TRAFICOM_UNTRANSLATED_SUFFIX}`;
+}
 
 export function parseTraficomReport(text: string): TraficomParsedReport | null {
   if (!looksLikeTraficomReport(text)) return null;
@@ -346,8 +431,9 @@ export function parseTraficomReport(text: string): TraficomParsedReport | null {
   const transferDate = findLabelValue(lines, /^Date of transfer\b/i);
   const pendingData = findLabelValue(lines, /^Pending data\b/i);
 
-  const taxStatusLines = sectionLines(lines, /^Tax status\b/i, /^(Restrictions|Pending data|Basic information)\b/i);
-  const restrictionLines = sectionLines(lines, /^Restrictions\b/i, /^(Pending data|Basic information|Tax details)\b/i);
+  // j26: beigu virsraksts bez `\b` (PDF tekstā var būt salīmēts ar nākamo vārdu).
+  const taxStatusLines = sectionLines(lines, /^Tax status\b/i, /^(Restrictions|Pending data|Basic information)/i);
+  const restrictionLines = sectionLines(lines, /^Restrictions/i, /^(Pending data|Basic information|Tax details)/i);
 
   const ownerHistory = parseOwnerHistory(lines);
   const currentOwner = parseCurrentOwner(lines);
@@ -386,17 +472,24 @@ export function parseTraficomReport(text: string): TraficomParsedReport | null {
     statusLines.push(
       /decommission/i.test(vehicleStatus)
         ? "Statuss: noņemts no reģistra (Decommissioned)."
-        : `Statuss: ${vehicleStatus}`,
+        : /^in traffic$/i.test(vehicleStatus.trim())
+          ? "Statuss: reģistrēts, satiksmē."
+          : `Statuss: ${vehicleStatus} ${TRAFICOM_UNTRANSLATED_SUFFIX}`,
     );
   }
   if (nextInspectionPeriod) statusLines.push(`Nākamā tehniskā apskate: ${nextInspectionPeriod}`);
-  if (drivingPower) statusLines.push(`Dzinēja veids: ${drivingPower}`);
+  if (drivingPower) statusLines.push(`Dzinēja veids: ${drivingPowerLv(drivingPower)}`);
   for (const raw of taxStatusLines) {
-    if (/^no unpaid/i.test(raw)) {
-      statusLines.push(`Nodokļu statuss: nav nesamaksāta nodokļa (${raw}).`);
-    } else if (raw) {
-      statusLines.push(`Nodokļu statuss: ${raw}`);
-    }
+    if (!raw) continue;
+    const known = TAX_STATUS_LV.find((t) => t.re.test(raw));
+    statusLines.push(`Nodokļu statuss: ${known ? `${known.lv}.` : `${raw} ${TRAFICOM_UNTRANSLATED_SUFFIX}`}`);
+  }
+  for (const raw of restrictionLines) {
+    if (raw) statusLines.push(`Ierobežojumi: ${restrictionLv(raw)}`);
+  }
+  for (const row of decommission) {
+    const period = row.end ? `${dateFi(row.start)} - ${dateFi(row.end)}` : `no ${dateFi(row.start)}`;
+    statusLines.push(`Izņemšana no uzskaites (${period}): ${decommissionReasonLv(row.reason)}.`);
   }
   if (insuranceHistory.length > 0) {
     statusLines.push(`Apdrošinātāju vēsture Somijā: ${insuranceHistory.length} ieraksti avotā.`);
@@ -411,8 +504,7 @@ export function parseTraficomReport(text: string): TraficomParsedReport | null {
     autoNotesSet.add("Transportlīdzeklim noteikts braukšanas / lietošanas aizliegums.");
   }
   for (const raw of restrictionLines) {
-    const known = RESTRICTION_LV.find((r) => r.re.test(raw));
-    autoNotesSet.add(known ? known.lv : raw);
+    if (raw) autoNotesSet.add(restrictionLv(raw));
   }
   const autoNotesLines: string[] = [...autoNotesSet].filter(Boolean);
   for (const row of decommission) {
@@ -420,7 +512,7 @@ export function parseTraficomReport(text: string): TraficomParsedReport | null {
     const period = row.end ? `${dateFi(row.start)} - ${dateFi(row.end)}` : `${dateFi(row.start)} -`;
     autoNotesLines.push(`Noņemts no reģistra (${period}): ${reason}.`);
   }
-  if (pendingData) autoNotesLines.push(`Neapstiprināti dati: ${pendingData}.`);
+  if (pendingData) autoNotesLines.push(`Neapstiprināti dati: ${pendingDataLv(pendingData)}.`);
   const autoNotes = autoNotesLines
     .map((l) => sanitizeVinRegistryClientLine(l))
     .filter(Boolean)
@@ -431,10 +523,13 @@ export function parseTraficomReport(text: string): TraficomParsedReport | null {
   const timeline: VinRegistryTimelineRow[] = [];
   if (dateOfEntryIntoService) {
     const d = dateFi(dateOfEntryIntoService);
+    // j26: Traficom dod pirmās lietošanas datumu JEBKURĀ valstī - valsti neizdomājam.
+    // Somija tikai tad, ja datums sakrīt ar „First registration in Finland”.
+    const fiFirst = firstRegistrationInFinland ? dateFi(firstRegistrationInFinland) : "";
     timeline.push({
       date: d,
       odometer: kmByDate.get(d) ?? "",
-      country: FI,
+      country: fiFirst && fiFirst === d ? FI : "",
       event: "Nodošana ekspluatācijā",
     });
   }

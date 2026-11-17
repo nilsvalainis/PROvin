@@ -95,6 +95,22 @@ export function openGeneratedHtmlDocument(
   return { window: null, opened: false };
 }
 
+/** Telefona logs, kas atvērts uzreiz pēc pieskāriena (iOS Safari bloķē logus pēc `await`). */
+export const PDF_PREPARING_HTML =
+  '<!doctype html><html lang="lv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Gatavo PDF…</title></head><body style="margin:0;display:grid;place-items:center;min-height:100vh;font:16px/1.4 -apple-system,system-ui,sans-serif;color:#3a3a3c;background:#f2f2f7"><p>Gatavo PDF…</p></body></html>';
+
+/** Ieraksta gatavo HTML jau atvērtā logā; ja logs pa to laiku aizvērts - parastais ceļš. */
+export function openGeneratedHtmlInPreopened(
+  pre: SyncOpenedWindow | null,
+  html: string,
+  filename = "provin-report.html",
+): { window: Window | null; opened: boolean } {
+  if (pre?.window && !pre.window.closed && pre.writeHtml(html)) {
+    return { window: pre.window, opened: true };
+  }
+  return openGeneratedHtmlDocument(html, filename);
+}
+
 /** Jau gatavs Blob/URL (PDF) - atver vai lejupielādē, bez `location.assign`. */
 export function openGeneratedFileUrl(url: string, filename = "document.pdf"): boolean {
   const popup = typeof window === "undefined" ? null : window.open(url, "_blank");

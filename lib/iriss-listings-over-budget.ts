@@ -1,5 +1,6 @@
 import { listingBidPrice, listingExtrasI, listingFinalPrice, type ListingCostParts, type ListingPriceFields, type ListingTaxKind } from "@/lib/iriss-listings-cost";
 import { listingTaxResolved } from "@/lib/iriss-listings-vat";
+import { isMarketplacePlatform } from "@/lib/marketplace/types";
 
 export const DEFAULT_OVER_BUDGET_THRESHOLD_EUR = 2000;
 
@@ -34,15 +35,20 @@ export function parseOverBudgetThreshold(raw: unknown, fallback = DEFAULT_OVER_B
   return Math.min(50_000, Math.round(n));
 }
 
+/** Nils 31.10: mobile.de / AutoScout24 cenas ir kaulējamas - «Slēpt virs budžeta» tiem nepiemēro. */
+export function listingBudgetFilterApplies(v: { platform?: string }): boolean {
+  return !isMarketplacePlatform(v.platform ?? "");
+}
+
 export function listingIsOverBudgetHidden(
-  v: ListingCardTotalVehicle,
+  v: ListingCardTotalVehicle & { platform?: string },
   extras: ListingCostParts,
   taxOv: { kind: ListingTaxKind; rate?: number | null } | undefined,
   budget: number | null,
   hide: boolean,
   thresholdEur: number,
 ): boolean {
-  if (!hide) return false;
+  if (!hide || !listingBudgetFilterApplies(v)) return false;
   return listingExceedsBudgetBy(listingCardTotal(v, extras, taxOv), budget, thresholdEur);
 }
 
@@ -51,11 +57,11 @@ export function listingIsOverBudgetHidden(
  * Kartītē paliek karogs „nav cenas”, kad filtrs ir izslēgts.
  */
 export function listingExcludedForMissingPrice(
-  v: ListingCardTotalVehicle,
+  v: ListingCardTotalVehicle & { platform?: string },
   budget: number | null,
   hide: boolean,
 ): boolean {
-  if (!hide) return false;
+  if (!hide || !listingBudgetFilterApplies(v)) return false;
   if (budget == null || budget <= 0) return false;
   return listingBidPrice(v) == null;
 }

@@ -26,6 +26,12 @@ export const ADMIN_HTML_DOCUMENT_CSP = [
  */
 export const SITE_CSP_ENFORCED = ["frame-ancestors 'self'", "base-uri 'self'", "object-src 'none'"].join("; ");
 
+/**
+ * VIN SCAN un IRISS skenerim vajag getUserMedia. `camera=()` bloķē arī pašu lapu
+ * pārlūkos, kas ievēro Permissions-Policy (Chrome); iOS Safari to bieži ignorē.
+ */
+export const SITE_PERMISSIONS_POLICY = "camera=(self), microphone=(), geolocation=(), interest-cohort=()";
+
 /** `next dev` (React Refresh) lieto `eval`; produkcijā bez tā, lai atskaites rāda, vai kas to prasa. */
 const SCRIPT_UNSAFE_EVAL = process.env.NODE_ENV === "production" ? [] : ["'unsafe-eval'"];
 

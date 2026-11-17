@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useHoldAdminOverlayCover } from "@/lib/admin-overlay-cover";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { BookText, X } from "lucide-react";
@@ -62,6 +63,7 @@ export function AdminCommonPhrasesDrawer({
 
   useAdminScrollLock(open);
   useHoldAdminOverlayCover(open);
+  const backdropClose = useModalBackdropClose(onClose);
 
   if (!open) return null;
 
@@ -71,7 +73,7 @@ export function AdminCommonPhrasesDrawer({
         type="button"
         className="fixed inset-0 z-[55] bg-black/30"
         aria-label="Aizvērt frāzes"
-        onClick={onClose}
+        {...backdropClose}
       />
       <aside
         className="fixed right-0 top-0 z-[56] flex h-full w-full max-w-sm flex-col border-l border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] shadow-2xl"

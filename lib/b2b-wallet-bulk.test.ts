@@ -166,15 +166,15 @@ describe("POST /api/partner/wallet/bulk", () => {
   );
 
   it("charges the partner's custom price per VIN and marks each order", async () => {
-    state.prices = { business: null, dealer_raw: 1500, dealer_pro: null };
-    const { status, body } = await post(bulkRequest("dealer_raw", [{ vin: VIN_A }, { vin: VIN_B }]));
+    state.prices = { business: null, dealer_raw: null, dealer_pro: 1500 };
+    const { status, body } = await post(bulkRequest("dealer_pro", [{ vin: VIN_A }, { vin: VIN_B }]));
     expect(status).toBe(200);
     expect(body).toMatchObject({ ok: true, priceCents: 1500, chargedCents: 3000, balanceCents: 7000 });
     expect((body.accepted as unknown[]).length).toBe(2);
     const notes = state.createOrder.mock.calls.map((call) => (call[0] as { extraNoteParts: string[] }).extraNoteParts);
-    expect(notes.every((parts) => parts.includes("wallet_cents=1500") && parts.includes("wallet_product=dealer_raw"))).toBe(true);
+    expect(notes.every((parts) => parts.includes("wallet_cents=1500") && parts.includes("wallet_product=dealer_pro"))).toBe(true);
     expect(state.followups.mock.calls[0]![0]).toHaveLength(2);
-    expect((state.followups.mock.calls[0]![0] as { dealerOnlyRaw: boolean }[])[0]!.dealerOnlyRaw).toBe(true);
+    expect((state.followups.mock.calls[0]![0] as { dealerOnlyRaw: boolean }[])[0]!.dealerOnlyRaw).toBe(false);
   });
 
   it("defaults business report language to lv when the client omits it", async () => {
@@ -186,8 +186,8 @@ describe("POST /api/partner/wallet/bulk", () => {
     expect(parts).toContain("wallet_product=business");
   });
 
-  it("ignores a language on dealer_raw", async () => {
-    const { status } = await post(
+  it("rejects inactive dealer_raw with 403 before touching the wallet", async () => {
+    const { status, body } = await post(
       new Request("http://localhost/api/partner/wallet/bulk", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Idempotency-Key": "bulk_key_rawlang" },
@@ -198,10 +198,10 @@ describe("POST /api/partner/wallet/bulk", () => {
         }),
       }),
     );
-    expect(status).toBe(200);
-    const parts = (state.createOrder.mock.calls[0]![0] as { extraNoteParts: string[] }).extraNoteParts;
-    expect(parts).toContain("wallet_product=dealer_raw");
-    expect(parts.join(" ")).not.toContain("report_lang=");
+    expect(status).toBe(403);
+    expect(body).toEqual({ error: "product_inactive" });
+    expect(state.writes).toBe(0);
+    expect(state.createOrder).not.toHaveBeenCalled();
   });
 
   it("rejects dealer_pro without reportLang", async () => {
@@ -225,27 +225,27 @@ describe("POST /api/partner/wallet/bulk", () => {
 
   it("refunds a VIN whose order could not be queued and keeps the rest", async () => {
     state.failVins = new Set([VIN_B]);
-    const { status, body } = await post(bulkRequest("dealer_raw", [{ vin: VIN_A }, { vin: VIN_B }]));
+    const { status, body } = await post(bulkRequest("dealer_pro", [{ vin: VIN_A }, { vin: VIN_B }]));
     expect(status).toBe(200);
     expect(body.failed).toEqual([{ vin: VIN_B, error: "queue_failed", refunded: true }]);
     expect((body.accepted as { vin: string }[]).map((row) => row.vin)).toEqual([VIN_A]);
-    expect(body).toMatchObject({ chargedCents: 1999, balanceCents: 10_000 - 1999 });
+    expect(body).toMatchObject({ chargedCents: 2499, balanceCents: 10_000 - 2499 });
     expect(state.wallet.txns.filter((txn) => txn.kind === "refund")).toHaveLength(1);
   });
 
   it("skips VINs already ordered unless the partner asked to reorder", async () => {
     state.already = new Map([[VIN_A, { id: "ord_old", created: 1, reportReady: true }]]);
-    const skip = await post(bulkRequest("dealer_raw", [{ vin: VIN_A }, { vin: VIN_B }], "bulk_key_0002"));
-    expect(skip.body).toMatchObject({ skipped: [VIN_A], chargedCents: 1999 });
+    const skip = await post(bulkRequest("dealer_pro", [{ vin: VIN_A }, { vin: VIN_B }], "bulk_key_0002"));
+    expect(skip.body).toMatchObject({ skipped: [VIN_A], chargedCents: 2499 });
 
-    const reorder = await post(bulkRequest("dealer_raw", [{ vin: VIN_A, reorder: true }], "bulk_key_0003"));
-    expect(reorder.body).toMatchObject({ skipped: [], chargedCents: 1999 });
+    const reorder = await post(bulkRequest("dealer_pro", [{ vin: VIN_A, reorder: true }], "bulk_key_0003"));
+    expect(reorder.body).toMatchObject({ skipped: [], chargedCents: 2499 });
   });
 
   it("replaying the same request does not charge again", async () => {
-    const first = await post(bulkRequest("dealer_raw", [{ vin: VIN_A }, { vin: VIN_B }]));
+    const first = await post(bulkRequest("dealer_pro", [{ vin: VIN_A }, { vin: VIN_B }]));
     const balance = state.wallet.balanceCents;
-    const again = await post(bulkRequest("dealer_raw", [{ vin: VIN_A }, { vin: VIN_B }]));
+    const again = await post(bulkRequest("dealer_pro", [{ vin: VIN_A }, { vin: VIN_B }]));
     expect(state.wallet.balanceCents).toBe(balance);
     expect(state.createOrder).toHaveBeenCalledTimes(2);
     expect((again.body.accepted as { orderId: string; duplicate: boolean }[]).map((row) => row.duplicate)).toEqual([
@@ -267,13 +267,13 @@ describe("POST /api/partner/wallet/bulk", () => {
   });
 
   it("rejects duplicate VINs, missing audit purpose and a missing idempotency key", async () => {
-    expect((await post(bulkRequest("dealer_raw", [{ vin: VIN_A }, { vin: VIN_A }]))).body).toEqual({
+    expect((await post(bulkRequest("dealer_pro", [{ vin: VIN_A }, { vin: VIN_A }]))).body).toEqual({
       error: "duplicate_vin",
     });
     expect(
       (await post(bulkRequest("business", [{ vin: VIN_C, auditPurpose: "" }]))).body,
     ).toEqual({ error: "audit_purpose" });
-    expect((await post(bulkRequest("dealer_raw", [{ vin: VIN_A }], ""))).status).toBe(400);
+    expect((await post(bulkRequest("dealer_pro", [{ vin: VIN_A }], ""))).status).toBe(400);
     expect(state.writes).toBe(0);
   });
 });

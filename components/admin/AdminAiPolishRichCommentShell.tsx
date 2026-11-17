@@ -30,6 +30,8 @@ type Props = {
   label?: ReactNode;
   /** Ģenerēšanas pogas virsraksta rindā. */
   actions?: ReactNode;
+  /** Lietotājs var vilkt stūri un palielināt lauka augstumu (noklusējuma augstums nemainās). */
+  resizable?: boolean;
 };
 
 export function AdminAiPolishRichCommentShell({
@@ -42,6 +44,7 @@ export function AdminAiPolishRichCommentShell({
   "aria-label": ariaLabel,
   label,
   actions,
+  resizable,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -149,6 +152,7 @@ export function AdminAiPolishRichCommentShell({
         label={label}
         headerEnd={actions}
         toolbarEnd={toolbarEnd}
+        resizable={resizable}
       />
       {error ? (
         <p className="mt-0.5 truncate text-[9px] text-amber-800/90" title="Projektā nepieciešams ANTHROPIC_API_KEY.">

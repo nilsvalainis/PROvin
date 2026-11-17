@@ -8,7 +8,8 @@ const PUBLIC_PAGES = new Set(["login/page.tsx", "uzaicinajums/[token]/page.tsx"]
 function isPageAuthGuard(line: string): boolean {
   return /await require(?:Admin|Logistics)Page\(\)/.test(line)
     || /await requireIrissSectionPage\(/.test(line)
-    || /await getAdminOrStaffActor\(\)/.test(line);
+    || /await getAdminOrStaffActor\(\)/.test(line)
+    || /await getAutoparksV2PageActor\(\)/.test(line);
 }
 
 function listPages(dir: string): string[] {

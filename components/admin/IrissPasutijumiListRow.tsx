@@ -1,11 +1,14 @@
 "use client";
 
+import type { IrissOfferListBadge } from "@/lib/iriss-offer-deadline-ui";
 import { ChevronDown, GripVertical, MessageCircle, Phone, Pin, Trash2 } from "lucide-react";
 import { motion, Reorder, useDragControls } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { memo, useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent } from "react";
+import { IrissAnchoredPopover } from "@/components/admin/IrissAnchoredPopover";
 import { IrissOverflowItem, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
+import { IrissPasutijumiStatusMenuItems } from "@/components/admin/IrissPasutijumiStatusMenu";
 import { buildListingPlatformChips } from "@/lib/iriss-listing-links";
 import {
   formatIrissExpiredOfferLabel,
@@ -17,15 +20,13 @@ import {
   irissListMailtoHref,
   irissListShowCallAction,
   irissListShowEmailAction,
+  irissListCriteriaRows,
   irissPhoneWhatsAppDigits,
 } from "@/lib/iriss-pasutijumi-list-view";
 import { whatsAppChatUrl } from "@/lib/admin-whatsapp-phone";
 import { irissPhoneTelHref } from "@/lib/iriss-pasutijumi-list-row";
 import {
-  canonicalIrissPasutijumsListStatus,
   displayIrissPasutijumsListStatusLabel,
-  IRISS_PASUTIJUMS_PICKER_STATUSES,
-  IRISS_PASUTIJUMS_PICKER_STATUS_LV,
   type IrissPasutijumsListRow,
   type IrissPasutijumsListStatus,
 } from "@/lib/iriss-pasutijumi-types";
@@ -43,6 +44,14 @@ const MOVE_CANCEL_LONG_PRESS_PX = 10;
 const SWIPE_AXIS_MIN = 14;
 const SWIPE_AXIS_BIAS = 8;
 
+/** Nils 28.10: neitrāli (bez zaļā/sarkanā/zilā), atšķiras tikai teksts; apstiprināts - treknāks. */
+const OFFER_BADGE_CLASS: Record<IrissOfferListBadge["tone"], string> = {
+  approved: "border border-[var(--ink)] text-[var(--ink)]",
+  declined: "border border-[var(--hair)] text-[var(--ink2)]",
+  expired: "border border-[var(--hair)] text-[var(--ink2)]",
+  time: "border border-[var(--hair)] text-[var(--ink2)]",
+};
+
 export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
   row,
   newHits,
@@ -50,14 +59,16 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
   onAskDelete,
   onSetStatus,
   onRestore,
-  onAskStatus,
   actionBusy,
   registerSwipeCloser,
   closeOtherSwipes,
   narrowSwipeViewport,
   dragReorderEnabled,
+  offerBadge = null,
 }: {
   row: IrissPasutijumsListRow;
+  /** Jaunākā piedāvājuma saite: Apstiprināts / Noraidīts / Beidzies / atlicis (T4). */
+  offerBadge?: IrissOfferListBadge | null;
   newHits: number;
   onPin: (id: string) => void;
   onAskDelete: (id: string) => void;
@@ -77,8 +88,8 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
   const longPressTimerRef = useRef<number | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
+  const [criteriaOpen, setCriteriaOpen] = useState(false);
   const statusBtnRef = useRef<HTMLButtonElement>(null);
-  const statusMenuRef = useRef<HTMLDivElement>(null);
   const chips = buildListingPlatformChips({
     listingLinkMobile: row.listingLinkMobile,
     listingLinkAutobid: row.listingLinkAutobid,
@@ -86,6 +97,8 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
     listingLinkAuto1: row.listingLinkAuto1,
     listingLinkEcarstrade: row.listingLinkEcarstrade,
     listingLinksOther: row.listingLinksOther,
+    totalBudget: row.totalBudget,
+    brandModel: row.brandModel,
   });
   const specBrief = formatIrissListSpecBrief(row);
   const isPinned = Boolean(row.pinnedAt);
@@ -94,6 +107,7 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
   const client = formatIrissListClientLine(row);
   const telHref = irissPhoneTelHref(row.phone);
   const waDigits = irissPhoneWhatsAppDigits(row.phone);
+  const criteria = irissListCriteriaRows(row);
   const mailHref = irissListMailtoHref(row.email);
   const showCall = irissListShowCallAction(narrowSwipeViewport) && Boolean(telHref);
   const showEmail = irissListShowEmailAction(row.email);
@@ -172,39 +186,18 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
     return () => registerSwipeCloser(row.id, null);
   }, [closeSwipe, registerSwipeCloser, row.id]);
 
-  useEffect(() => {
-    if (!statusMenuOpen) return;
-    const onDoc = (e: Event) => {
-      const t = e.target;
-      if (!(t instanceof Node)) {
-        setStatusMenuOpen(false);
-        return;
-      }
-      if (statusBtnRef.current?.contains(t) || statusMenuRef.current?.contains(t)) return;
-      setStatusMenuOpen(false);
-    };
-    const timer = window.setTimeout(() => {
-      document.addEventListener("pointerdown", onDoc, true);
-    }, 0);
-    return () => {
-      window.clearTimeout(timer);
-      document.removeEventListener("pointerdown", onDoc, true);
-    };
-  }, [statusMenuOpen]);
-
-  const toggleStatusMenu = (e: MouseEvent) => {
+  const toggleStatusMenu = (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (narrowSwipeViewport && onAskStatus) {
-      onAskStatus(row.id);
-      return;
-    }
+    statusBtnRef.current = e.currentTarget;
     setStatusMenuOpen((v) => !v);
   };
 
   const statusBtn = (
     <button
-      ref={statusBtnRef}
+      ref={(node) => {
+        if (node?.offsetParent) statusBtnRef.current = node;
+      }}
       type="button"
       disabled={statusBusy}
       onClick={toggleStatusMenu}
@@ -235,23 +228,24 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
       aria-label="Atvērt WhatsApp"
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
-      className="relative z-10 inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--ink)] hover:bg-[var(--fill)]"
+      className="relative z-10 hidden h-11 w-11 items-center justify-center rounded-full text-[var(--ink)] hover:bg-[var(--fill)] md:inline-flex"
     >
       <MessageCircle className="h-4 w-4" aria-hidden />
     </a>
   ) : (
-    <span className="inline-flex h-11 w-11" aria-hidden />
+    <span className="hidden h-11 w-11 md:inline-flex" aria-hidden />
   );
 
+  // Nils 28.10: datorā zvana ikonas nav; telefonā - poga "Zvanīt" zem kartītes.
   const callBtn = showCall && telHref ? (
     <a
       href={telHref}
-      aria-label="Zvanīt"
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
-      className="relative z-10 inline-flex h-11 w-11 items-center justify-center rounded-full text-[var(--ink)] hover:bg-[var(--fill)] md:hidden"
+      className="pointer-events-auto relative z-10 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-[var(--hair)] bg-[var(--s1)] text-[13.5px] font-semibold text-[var(--ink)]"
     >
       <Phone className="h-4 w-4" aria-hidden />
+      Zvanīt
     </a>
   ) : null;
 
@@ -272,6 +266,61 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
         </IrissOverflowItem>
       )}
     </IrissOverflowMenu>
+  );
+
+  /** Telefonā (Nils 28.10): Zvanīt, WhatsApp un Kritēriji - lielas pogas; kritēriji atveras turpat. */
+  const actBtn =
+    "pointer-events-auto relative z-10 inline-flex min-h-11 items-center justify-center rounded-xl border border-[var(--hair)] bg-[var(--s1)] text-[13.5px] font-semibold text-[var(--ink)]";
+  const mobileActions = (
+    <span className="mt-2 block md:hidden">
+      <span className="grid grid-cols-3 gap-2">
+        {callBtn ?? <span />}
+        {waDigits ? (
+          <a
+            href={whatsAppChatUrl(waDigits)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+            className={actBtn}
+          >
+            WhatsApp
+          </a>
+        ) : (
+          <span />
+        )}
+        <button
+          type="button"
+          aria-expanded={criteriaOpen}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setCriteriaOpen((v) => !v);
+          }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className={`${actBtn} ${criteriaOpen ? "!bg-[var(--ink)] !text-[var(--onink,#fff)]" : ""}`}
+          // Admin pogu stili noņem rāmi - rāmis tieši (390 px pārbaude 28.10).
+          // `border: 0 !important` pārspēj inline border - rāmis ar box-shadow (QA 29.10).
+          style={{ boxShadow: `inset 0 0 0 1px ${criteriaOpen ? "var(--ink)" : "var(--hair)"}` }}
+        >
+          Kritēriji
+        </button>
+      </span>
+      {criteriaOpen ? (
+        <span className="pointer-events-auto relative z-10 mt-2 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 border-t border-[var(--hair)] pt-2 text-[13.5px]">
+          {criteria.length === 0 ? (
+            <span className="col-span-2 text-[var(--ink2)]">Kritēriji nav aizpildīti</span>
+          ) : (
+            criteria.map((c) => (
+              <span key={c.label} className="contents">
+                <span className="text-[var(--ink2)]">{c.label}</span>
+                <b className="min-w-0 break-words font-semibold text-[var(--ink)]">{c.value}</b>
+              </span>
+            ))
+          )}
+        </span>
+      ) : null}
+    </span>
   );
 
   const frontInner = (
@@ -315,10 +364,16 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
             {budget !== "-" ? <span className="shrink-0">· {budget}</span> : null}
           </span>
           <span className="mt-1.5 flex min-w-0 flex-col items-start gap-1 md:hidden">
-            {newHitsLabel}
+            {/* QA 29.10: telefonā bez jauniem sludinājumiem nerāda lieku «-» rindu. */}
+            {newHits > 0 ? newHitsLabel : null}
             {nextStep ? <span className="min-w-0 text-[12px] leading-snug text-[var(--ink2)] max-md:line-clamp-2">{nextStep}</span> : null}
           </span>
-          {row.hasExpiredOffer ? (
+          {mobileActions}
+          {offerBadge ? (
+            <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold tabular-nums ${OFFER_BADGE_CLASS[offerBadge.tone]}`}>
+              {offerBadge.label}
+            </span>
+          ) : row.hasExpiredOffer ? (
             <span className="iriss-pas-expired mt-1 inline-flex rounded-full border border-[var(--hair)] px-2 py-0.5 text-[10px] font-semibold text-[var(--ink2)]">
               {formatIrissExpiredOfferLabel(row.latestOfferValidUntil)}
             </span>
@@ -334,8 +389,7 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
           {nextStep ? <span className="block truncate text-[13px] text-[var(--ink2)]">{nextStep}</span> : <span className="text-[var(--ink3)]">-</span>}
         </span>
       </div>
-      <div className="relative z-10 flex shrink-0 items-center gap-0.5">
-        {callBtn}
+      <div className="relative z-10 flex shrink-0 items-center gap-0.5 max-md:self-start">
         {whatsAppBtn}
         <span className="hidden md:inline-flex">{statusBtn}</span>
         {moreMenu}
@@ -343,35 +397,25 @@ export const IrissPasutijumiListRow = memo(function IrissPasutijumiListRow({
     </div>
   );
 
-  const statusMenu = statusMenuOpen ? (
-    <div
-      ref={statusMenuRef}
-      role="menu"
-      className="iriss-ov-menu absolute right-3 top-[3.1rem] z-50 min-w-[8.5rem] overflow-hidden rounded-2xl bg-[var(--s1)] py-1 shadow-[var(--gsh)] md:right-16"
-      onPointerDown={(e) => e.stopPropagation()}
-      onClick={(e) => e.stopPropagation()}
+  const statusMenu = (
+    <IrissAnchoredPopover
+      open={statusMenuOpen}
+      onClose={() => setStatusMenuOpen(false)}
+      anchorRef={statusBtnRef}
+      align="end"
+      minWidth={136}
+      estimatedHeight={168}
     >
-      {IRISS_PASUTIJUMS_PICKER_STATUSES.map((s) => (
-        <button
-          key={s}
-          type="button"
-          role="menuitem"
-          disabled={statusBusy}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setStatusMenuOpen(false);
-            onSetStatus(row.id, s);
-          }}
-          className={`flex min-h-10 w-full px-3.5 text-left text-[14px] font-medium ${
-            canonicalIrissPasutijumsListStatus(curStatus) === s ? "bg-[var(--fill)] text-[var(--ink)]" : "text-[var(--ink)] hover:bg-[var(--fill)]"
-          }`}
-        >
-          {IRISS_PASUTIJUMS_PICKER_STATUS_LV[s]}
-        </button>
-      ))}
-    </div>
-  ) : null;
+      <IrissPasutijumiStatusMenuItems
+        currentStatus={curStatus}
+        busy={statusBusy}
+        onPick={(s) => {
+          setStatusMenuOpen(false);
+          onSetStatus(row.id, s);
+        }}
+      />
+    </IrissAnchoredPopover>
+  );
 
   const cardInner = (
     <div

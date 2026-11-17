@@ -4,6 +4,7 @@
 
 import { extractClaimRowsForPdfInsight, type ClaimTableRow } from "@/lib/claim-rows-parse";
 import { normalizePdfExtractedText } from "@/lib/pdf-text-normalize";
+import { pdfjsWorkerSrc } from "@/lib/pdfjs-worker-src";
 
 export { normalizePdfExtractedText };
 
@@ -139,7 +140,7 @@ function extractHighlights(text: string): string[] {
 
 export async function extractPdfTextLayer(buffer: ArrayBuffer): Promise<string> {
   const pdfjs = await import("pdfjs-dist");
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerSrc(pdfjs.version);
 
   const pdf = await pdfjs.getDocument({ data: buffer, useSystemFonts: true }).promise;
   const parts: string[] = [];
@@ -161,7 +162,7 @@ export async function extractPdfTextLayer(buffer: ArrayBuffer): Promise<string> 
 
 async function extractPdfTextWithOptionalOcr(buffer: ArrayBuffer): Promise<{ text: string; ocrPages: number }> {
   const pdfjs = await import("pdfjs-dist");
-  pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerSrc(pdfjs.version);
 
   const pdf = await pdfjs.getDocument({ data: buffer, useSystemFonts: true }).promise;
   let text = await extractPdfTextLayer(buffer);

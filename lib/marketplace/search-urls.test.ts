@@ -63,7 +63,7 @@ describe("marketplace search URLs", () => {
     const url = buildMobileDeSearchUrl(volvoQuery());
     const parsed = new URL(url);
     expect(url).toContain("suchen.mobile.de/fahrzeuge/search.html");
-    expect(parsed.searchParams.get("ms")).toBe("25100");
+    expect(parsed.searchParams.get("ms")).toBe("25100;40");
     expect(url).not.toContain("XC60");
     expect(url).toMatch(/fr=2018%3A2021|fr=2018:2021/);
     expect(url).toContain("p=");
@@ -186,7 +186,7 @@ describe("marketplace search URLs", () => {
     expect(marketplaceModelSearchToken("A6 C7 BI-TURBO Sline")).toBe("A6");
     const q = audiA6Query();
     const mobileUrl = new URL(buildMobileDeSearchUrl(q));
-    expect(mobileUrl.searchParams.get("ms")).toBe("1900");
+    expect(mobileUrl.searchParams.get("ms")).toBe("1900;10");
     expect(mobileUrl.toString()).not.toMatch(/C7|BI-TURBO|Sline/i);
     const as24 = buildAutoscout24SearchUrl(q);
     expect(as24).toContain("autoscout24.de/lst/audi/a6");

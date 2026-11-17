@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { IrissListingVehicle } from "@/lib/iriss-listings-types";
+import { mobileDeImageDisplayUrl } from "@/lib/marketplace/image-url";
 import type { MarketplaceStoredListing } from "@/lib/marketplace/types";
 
 export function marketplaceListingVehicleId(platform: MarketplaceStoredListing["platform"], externalId: string): string {
@@ -21,7 +22,26 @@ export function marketplaceListingIsExpired(expiresAtIso: string, nowMs = Date.n
   return Number.isFinite(t) && t <= nowMs;
 }
 
-/** Pārvērš saglabāto sludinājumu tajā pašā kartītes formā, ko lieto izsoles. Foto nav. */
+function marketplaceVehiclePhotos(imageUrls: readonly string[] | undefined): {
+  imageUrl: string;
+  thumbUrl?: string;
+  imageUrls?: string[];
+} {
+  const photos = (imageUrls ?? [])
+    .map((raw) => ({
+      full: mobileDeImageDisplayUrl(raw, 1024),
+      thumb: mobileDeImageDisplayUrl(raw, 640),
+    }))
+    .filter((photo) => photo.full);
+  const first = photos[0];
+  return {
+    imageUrl: first?.full ?? "",
+    ...(first ? { thumbUrl: first.thumb } : {}),
+    ...(photos.length > 1 ? { imageUrls: photos.map((photo) => photo.full) } : {}),
+  };
+}
+
+/** Pārvērš saglabāto sludinājumu tajā pašā kartītes formā, ko lieto izsoles. Bildes - avota saites. */
 export function marketplaceListingToVehicle(item: MarketplaceStoredListing): IrissListingVehicle {
   const year = item.year;
   return {
@@ -41,7 +61,9 @@ export function marketplaceListingToVehicle(item: MarketplaceStoredListing): Iri
     powerKw: item.powerKw,
     location: item.sellerName || item.location || item.locationCountry,
     countryCode: item.locationCountry,
-    imageUrl: "",
+    // Nils 31.10: mobile.de bildes tieši no CDN (m.mobile.de bloķē IP); sarakstam mazāka, galerijai lielāka.
+    // Tukšas (noraidītas yams) saites kartītē nepaliek, citādi <img src=""> prasa pašu lapu.
+    ...marketplaceVehiclePhotos(item.imageUrls),
     currency: "EUR",
     priceStart: null,
     priceMinimal: null,

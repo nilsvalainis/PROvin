@@ -1,0 +1,706 @@
+{
+ "vin": "TMBJH9NP9H7561596",
+ "label": "ŠKODA SUPERB: CSDD 8, AutoDNA 20, carVertical 17, citi 11; negadījumi 4",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 205, saglabāts 2026-09-09; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "ŠKODA SUPERB",
+   "registrationNumber": "JF7979",
+   "firstRegistration": "2017-08-04",
+   "nextInspectionDate": "2026-12-02",
+   "prevInspectionDate": "2025-11-30",
+   "engineDisplacementCm3": "1968",
+   "enginePowerKw": "110",
+   "fuelType": "Dīzeļdegviela",
+   "emissionStandard": "Euro 6 W",
+   "grossMassKg": "2109",
+   "curbMassKg": "1617",
+   "roadTaxEur": "93,00",
+   "registrationStatus": "Uzskaitē",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "",
+   "ownerCountLatvia": "",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "Atkārtota pārbaude",
+    "inspectionDateText": "30.11.2025",
+    "nextInspectionDateText": "",
+    "odometer": "275181",
+    "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "30.11.2025",
+     "odometer": "275181",
+     "country": "Latvija"
+    },
+    {
+     "date": "03.11.2025",
+     "odometer": "270970",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.11.2024",
+     "odometer": "245236",
+     "country": "Latvija"
+    },
+    {
+     "date": "26.10.2024",
+     "odometer": "244935",
+     "country": "Latvija"
+    },
+    {
+     "date": "23.10.2023",
+     "odometer": "223342",
+     "country": "Latvija"
+    },
+    {
+     "date": "27.10.2022",
+     "odometer": "207739",
+     "country": "Latvija"
+    },
+    {
+     "date": "26.10.2021",
+     "odometer": "195748",
+     "country": "Latvija"
+    },
+    {
+     "date": "28.09.2020",
+     "odometer": "181345",
+     "country": "Latvija"
+    }
+   ]
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "30.11.2025",
+     "odometer": "275181",
+     "country": "Latvija"
+    },
+    {
+     "date": "03.11.2025",
+     "odometer": "270970",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.11.2024",
+     "odometer": "245236",
+     "country": "Latvija"
+    },
+    {
+     "date": "26.10.2024",
+     "odometer": "244935",
+     "country": "Latvija"
+    },
+    {
+     "date": "23.10.2023",
+     "odometer": "223342",
+     "country": "Latvija"
+    },
+    {
+     "date": "27.10.2022",
+     "odometer": "207739",
+     "country": "Latvija"
+    },
+    {
+     "date": "26.10.2021",
+     "odometer": "195748",
+     "country": "Latvija"
+    },
+    {
+     "date": "28.09.2020",
+     "odometer": "181345",
+     "country": "Latvija"
+    },
+    {
+     "date": "11.05.2020",
+     "odometer": "253760",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.05.2020",
+     "odometer": "253756",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.01.2020",
+     "odometer": "238196",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.10.2019",
+     "odometer": "213413",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.05.2019",
+     "odometer": "181849",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "11.04.2019",
+     "odometer": "167300",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.02.2019",
+     "odometer": "152268",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.11.2018",
+     "odometer": "126000",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.08.2018",
+     "odometer": "100000",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.05.2018",
+     "odometer": "71625",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "05.04.2018",
+     "odometer": "64710",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.12.2017",
+     "odometer": "35921",
+     "country": "Zviedrija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.04.2026",
+     "lossAmount": "1 300 - 1 400 €"
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.11.2025",
+     "odometer": "270970",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2024",
+     "odometer": "244935",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2023",
+     "odometer": "223342",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2022",
+     "odometer": "207739",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.06.2022",
+     "odometer": "201017",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2021",
+     "odometer": "195748",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.09.2020",
+     "odometer": "181345",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.05.2020",
+     "odometer": "253673",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.01.2020",
+     "odometer": "238113",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.10.2019",
+     "odometer": "213330",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.05.2019",
+     "odometer": "181766",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.02.2019",
+     "odometer": "152185",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.11.2018",
+     "odometer": "125917",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.08.2018",
+     "odometer": "99917",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.05.2018",
+     "odometer": "71592",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.12.2017",
+     "odometer": "35888",
+     "country": "Zviedrija"
+    },
+    {
+     "date": "01.05.2017",
+     "odometer": "19",
+     "country": "Zviedrija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.03.2023",
+     "lossAmount": "501 - 750 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.09.2023",
+     "lossAmount": "1 001 - 1 500 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.04.2026",
+     "lossAmount": "1 001 - 1 500 €"
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "",
+     "odometer": "",
+     "location": "",
+     "works": ""
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": []
+   },
+   "outvin": {
+    "precheckAt": "2026-06-29T12:03:33.348Z",
+    "vin": "TMBJH9NP9H7561596",
+    "capabilitySlots": [
+     {
+      "id": "service_1",
+      "historyType": 1,
+      "titleLv": "Oficiālā servisa un nobraukuma vēsture (Type 1)",
+      "creditCost": 1,
+      "status": "available",
+      "category": "service_history"
+     },
+     {
+      "id": "carfax_2",
+      "historyType": 2,
+      "titleLv": "ASV / Carfax vēsture (Type 2)",
+      "creditCost": 1,
+      "status": "disabled",
+      "statusReason": "Eiropas VIN — ASV Carfax (Type 2) parasti nav pieejams",
+      "category": "us_carfax"
+     }
+    ],
+    "purchases": [],
+    "vehicleInfo": {
+     "model": "",
+     "modelSeries": "",
+     "vinCode": "",
+     "vehicleType": "",
+     "transmission": "",
+     "steeringSide": "",
+     "engineCode": "",
+     "engineNumber": "",
+     "body": "",
+     "drive": "",
+     "power": "",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "",
+     "colorCode": "",
+     "interior": "",
+     "interiorCode": "",
+     "fuel": "",
+     "displacement": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "",
+     "modelSeries": "",
+     "vinCode": "TMBJH9NP9H7561596",
+     "vehicleType": "",
+     "transmission": "",
+     "steeringSide": "",
+     "engineCode": "",
+     "engineNumber": "",
+     "body": "",
+     "drive": "",
+     "power": "",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "",
+     "colorCode": "",
+     "interior": "",
+     "interiorCode": "",
+     "fuel": "",
+     "displacement": ""
+    }
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "08.09.2023",
+     "lossAmount": "1 243 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "31.03.2023",
+     "lossAmount": "561 €"
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "",
+   "listingCreated": "",
+   "priceDrop": "",
+   "priceHistory": [],
+   "listingMileageOdometer": "",
+   "listingMileageDate": "",
+   "listingMileageCountry": ""
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "11.05.2020",
+       "odometer": "253760",
+       "country": "Zviedrija"
+      },
+      {
+       "date": "20.01.2020",
+       "odometer": "238200",
+       "country": "Zviedrija"
+      },
+      {
+       "date": "02.10.2019",
+       "odometer": "213410",
+       "country": "Zviedrija"
+      },
+      {
+       "date": "23.05.2019",
+       "odometer": "181850",
+       "country": "Zviedrija"
+      },
+      {
+       "date": "11.04.2019",
+       "odometer": "167300",
+       "country": "Zviedrija"
+      },
+      {
+       "date": "05.02.2019",
+       "odometer": "152270",
+       "country": "Zviedrija"
+      },
+      {
+       "date": "02.11.2018",
+       "odometer": "126000",
+       "country": "Zviedrija"
+      },
+      {
+       "date": "01.08.2018",
+       "odometer": "100000",
+       "country": "Zviedrija"
+      },
+      {
+       "date": "02.05.2018",
+       "odometer": "71630",
+       "country": "Zviedrija"
+      },
+      {
+       "date": "05.04.2018",
+       "odometer": "64710",
+       "country": "Zviedrija"
+      },
+      {
+       "date": "14.12.2017",
+       "odometer": "35920",
+       "country": "Zviedrija"
+      },
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "Zviedrija",
+       "csngDate": "01.00.0000",
+       "lossAmount": "Dati nav pieejami"
+      }
+     ],
+     "label": "ZVIEDRIJAS OFICIĀLAIS REĢISTRS"
+    }
+   ]
+  }
+ }
+}

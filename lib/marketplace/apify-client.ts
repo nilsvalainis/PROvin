@@ -1,10 +1,11 @@
-/** Apify klients. Bez APIFY_TOKEN un bez MARKETPLACE_LOADS_ENABLED=true nedrīkst veikt tīkla izsaukumu. */
+/** Apify klients. Bez APIFY_TOKEN tīkla izsaukuma nav. MARKETPLACE_LOADS_ENABLED=false izslēdz. Tukšs slēdzis ir ieslēgts. */
 
 import {
   MARKETPLACE_APIFY_START_USD,
   marketplaceLoadsEnabled,
   marketplacePerRunUsdCap,
 } from "@/lib/marketplace/cost-caps";
+import { actorPayloadContainsOfficeEgress, MOBILE_DE_OFFICE_EGRESS_ERROR } from "@/lib/marketplace/mobile-de-guard";
 import type { MarketplaceLimits } from "@/lib/marketplace/types";
 
 export const MARKETPLACE_APIFY_MOBILEDE_ACTOR_DEFAULT = "blackfalcondata~mobile-de-scraper";
@@ -48,6 +49,8 @@ function sanitizeActorInput(payload: Record<string, unknown>): Record<string, un
   const out: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(payload)) {
     if (FORBIDDEN_INPUT_KEY.test(key)) continue;
+    // Proxy lauks būtu veids, kā Apify izlaist caur biroja IP. Aktors paliek uz Apify IP.
+    if (/proxy/i.test(key)) continue;
     out[key] = value;
   }
   return out;
@@ -204,6 +207,7 @@ export function marketplaceApifyErrorLv(error?: string): string {
   if (code === "token_missing") return "nav APIFY_TOKEN";
   if (code === "actor_not_configured") return "nav aktora identifikatora";
   if (code === "loads_disabled") return "ielāde izslēgta (izmaksu kontrole)";
+  if (code === MOBILE_DE_OFFICE_EGRESS_ERROR) return "ievade satur biroja IP 91.135.84.67, izsaukums apturēts";
   if (code === "apify_timeout" || code === "apify_timed-out") return "Apify taimauts";
   if (code.startsWith("apify_http_")) return `Apify HTTP ${code.slice("apify_http_".length)}`;
   if (code.startsWith("apify_")) return `Apify ${code.slice(6)}`;
@@ -338,10 +342,14 @@ export async function runMarketplaceApifyActor(input: {
   const token = readApifyToken();
   if (!token) return { ok: false, items: [], chargedUsd: 0, error: "token_missing" };
   if (!input.actorId.trim()) return { ok: false, items: [], chargedUsd: 0, error: "actor_not_configured" };
+  const payload = sanitizeActorInput(input.payload);
+  if (actorPayloadContainsOfficeEgress(payload)) {
+    return { ok: false, items: [], chargedUsd: 0, error: MOBILE_DE_OFFICE_EGRESS_ERROR };
+  }
   const args = {
     actorId: input.actorId,
     token,
-    payload: sanitizeActorInput(input.payload),
+    payload,
     maxItems: input.maxItems,
     maxUsd: input.maxUsd,
     ...(input.usdPerThousand != null ? { usdPerThousand: input.usdPerThousand } : {}),

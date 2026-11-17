@@ -43,6 +43,7 @@ export async function POST(req: Request) {
     productName: record.productName,
     expiresAt: record.expiresAt,
     amountCents: record.amountCents,
+    vin: record.prefillVin,
   });
   const sent = await trySendDealerDataOperatorEmail({ to, subject: copy.subject, text: copy.text });
   if (!sent) {

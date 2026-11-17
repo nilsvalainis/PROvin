@@ -1,25 +1,24 @@
 /**
- * Neapmaksātā pasūtījuma atgādinājuma teksts (apstiprinātais v3).
- * Personīga vēstule, bez zīmola HTML šablona.
+ * Neapmaksātā pasūtījuma atgādinājuma teksts (v4, 06.11: bez tālruņa un IRISS, PROVIN tēma).
+ * Vienkāršs teksts, bez zīmola HTML šablona.
  */
 
 export const UNPAID_REMINDER_TEMPLATE_ID = "email.unpaid_reminder";
 
-export const UNPAID_REMINDER_SUBJECT_TEMPLATE = "Par Jūsu auto pārbaudi (VIN {{vin}})";
+export const UNPAID_REMINDER_SUBJECT_TEMPLATE = "PROVIN · Pasūtījums gaida apmaksu · {{vin}}";
 
 export const UNPAID_REMINDER_BODY_TEMPLATE = [
   "Labdien!",
   "",
-  "Redzēju, ka nesen sākāt pasūtīt auto vēstures pārbaudi, bet pasūtījums palika nepabeigts. Ja kaut kas nav skaidrs vai vēlaties vispirms konsultēties, droši zvaniet man: +371 29 502 039. Varat arī atbildēt uz šo e-pastu.",
+  "Redzējām, ka nesen sākāt pasūtīt auto vēstures pārbaudi (VIN {{vin}}), bet pasūtījums palika nepabeigts. Ja kaut kas nav skaidrs vai vēlaties vispirms konsultēties, atbildiet uz šo e-pastu.",
   "",
   "Ja pārbaude joprojām ir aktuāla, apmaksu varat pabeigt šeit:",
   "{{maksājuma_saite}}",
   "",
-  "Paldies, ka izvēlējāties Provin.lv, un veiksmi auto izvēlē!",
+  "Paldies, ka izvēlējāties PROVIN.LV, un veiksmi auto izvēlē!",
   "",
   "Ar cieņu,",
-  "Nils V. (IRISS)",
-  "Provin.lv",
+  "PROVIN.LV",
 ].join("\n");
 
 const PAYMENT_URL_PLACEHOLDERS = ["{{maksājuma_saite}}", "{{maksajuma_saite}}"] as const;
@@ -55,7 +54,7 @@ export function unpaidReminderFallbackCopy(opts: { vin: string; paymentUrl: stri
 } {
   const vars = unpaidReminderTemplateVars(opts);
   const subject = UNPAID_REMINDER_SUBJECT_TEMPLATE.replaceAll("{{vin}}", vars.vin);
-  const text = injectUnpaidReminderPaymentUrl(UNPAID_REMINDER_BODY_TEMPLATE, vars.maksajuma_saite);
+  const text = injectUnpaidReminderPaymentUrl(UNPAID_REMINDER_BODY_TEMPLATE.replaceAll("{{vin}}", vars.vin), vars.maksajuma_saite);
   return { subject, text };
 }
 

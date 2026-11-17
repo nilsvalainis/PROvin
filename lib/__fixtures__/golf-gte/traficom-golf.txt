@@ -1,0 +1,66 @@
+Vehicle information
+Source: Transport Register
+22.10.2026 10:12
+Page 1/5
+
+The vehicle is under a prohibition of driving or use.
+
+Vehicle identification number (VIN)
+WVWZZZAUZJW******
+
+Vehicle status
+Decommissioned
+
+Next inspection period
+10.1.2024–10.3.2025
+
+Tax status
+No unpaid vehicle tax
+RestrictionsPeriodic inspection not performed/approved
+Vehicle decommissioning (Deregistrated due to a
+damage)
+
+Pending data
+There is a notification of transfer entry for the vehicle
+
+Basic information
+Make
+Volkswagen, VW
+Commercial name
+GOLF GTE 1.4 TSI PLUG-IN HYBRID
+Vehicle category
+M1 / Car
+Registration number
+ABC-123
+Date of entry into service
+14.7.2017
+First registration in Finland
+10.1.2020
+
+Owners and holders
+Owner(s)
+Starting from
+3.5.2024
+Owner(s)
+Vakuutusyhtiö Esimerkki Oy
+
+Owner history
+Period
+Name
+Ownership Type
+10.1.2020-1.6.2022 Autokauppa Esimerkki Oy First owner
+1.6.2022-3.5.2024 Virtanen Matti First owner
+
+Engine details
+Driving power
+Petrol/Electricity
+
+Use history
+Use
+Start date
+Private 10.1.2020
+
+Decommissioning history
+Reason for decommissioning
+Time period
+Deregistrated due to a damage 18.3.2024-

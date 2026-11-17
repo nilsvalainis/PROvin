@@ -2,7 +2,7 @@ import { NextResponse, after } from "next/server";
 import { recordSourceOutcomes } from "@/lib/source-health-store";
 
 import { requireIrissSectionApi } from "@/lib/staff-auth";
-import { fetchCsddTechData } from "@/lib/csdd-tech-data";
+import { fetchCsddTechDataCounted } from "@/lib/csdd-tech-data-counted";
 import { isValidVinOrPlate, normalizePlateNumber, normalizeVin } from "@/lib/order-field-validation";
 
 export const runtime = "nodejs";
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_nr1" }, { status: 400 });
   }
 
-  const snapshot = await fetchCsddTechData(nr1);
+  const snapshot = await fetchCsddTechDataCounted(nr1, "admin");
   const csddOk = snapshot.found || /nav atrast|nav reģistr|not found/i.test(snapshot.message);
   after(() => recordSourceOutcomes([{ id: "csdd", ok: csddOk, msg: snapshot.message }]));
   return NextResponse.json(snapshot);

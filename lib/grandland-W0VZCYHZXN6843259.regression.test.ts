@@ -1,6 +1,6 @@
 /**
  * Grandland W0VZCYHZXN6843259 - negadījuma summas un "Pilnīgs zaudējums" kļūda (18.10.2026).
- * Nav vidējo (3 950 / ~2 850), nav izdomātas 01. dienas, CC VIN šablons nav total loss.
+ * Nav vidējo (3 950 / ~2 850), nav izdomātas 01. dienas, Izsoļu portālu arhīva šablons nav total loss.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -172,14 +172,22 @@ describe("Grandland W0VZCYHZXN6843259 incident amounts and total loss", () => {
         ],
       }).found,
     ).toBe(false);
+    // Komentāri (operatora / AI) kartīti vairs neieslēdz; tikai strukturētie lauki.
     expect(
       detectTotalLossFromPdfInput({
         manualVendorBlocks: [{ comments: "Ziņots par pilnīgu zaudējumu" }],
       }).found,
+    ).toBe(false);
+    expect(
+      detectTotalLossFromPdfInput({
+        manualVendorBlocks: [
+          { vehicleHistoryTimeline: [{ date: "2019", description: "Ziņots par pilnīgu zaudējumu" }] },
+        ],
+      }).found,
     ).toBe(true);
     expect(
       detectTotalLossFromPdfInput({
-        manualVendorBlocks: [{ comments: "Record of totaled vehicle, salvage title 2018" }],
+        ccVinBlock: { titles: [{ date: "2018", note: "Record of totaled vehicle, salvage title", region: "US" }] },
       }).found,
     ).toBe(true);
     expect(
@@ -219,5 +227,6 @@ describe("Grandland W0VZCYHZXN6843259 incident amounts and total loss", () => {
       },
     });
     expect(flags.some((f) => f.id === "c8_total_loss")).toBe(false);
+    expect(flags.some((f) => f.id === "c8_total_loss_comment")).toBe(false);
   });
 });

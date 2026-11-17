@@ -1,3 +1,4 @@
+import { provinEmailSubject } from "@/lib/email/email-subject";
 /**
  * Piepirkums esošam pasūtījumam.
  * Vienīgā B2C atlaide: dīlera dati 24,99 € + 75,00 € = pilnais audits,
@@ -15,6 +16,7 @@ import {
   MINI_TO_AUDITS_RECOMMENDATION_LABEL,
 } from "@/lib/email/mini-to-audits-recommendation";
 import { clientMessageSignOff } from "@/lib/email/report-ready-copy";
+import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { renderTemplateById } from "@/lib/messages/render-template-id";
 import { buildUpsellEmailVars, buildUpsellWaVars } from "@/lib/messages/template-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
@@ -360,6 +362,8 @@ export function buildUpsellDraft(
   const total = formatEurFromCents(opts.targetCents);
   const pay = `Apmaksāt: ${opts.url}`;
   const ttl = "Saite ir derīga 30 dienas.";
+  const vinNorm = normalizeVin((opts.vin ?? "").trim());
+  const vinPart = isValidVin(vinNorm) ? ` (VIN ${vinNorm})` : "";
   const sign = clientMessageSignOff();
 
   if (opts.kind === "mini_to_audit") {
@@ -379,7 +383,7 @@ export function buildUpsellDraft(
     const emailText = [
       "Labdien!",
       "",
-      "Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera datus. Tajos redzami auto servisa apmeklējumi pie oficiālā dīlera ar nobraukumu, kur dīleris to fiksējis.",
+      `Jūsu PROVIN MINI pasūtījumam${vinPart} varam pievienot oficiālā dīlera datus. Tajos redzami auto servisa apmeklējumi pie oficiālā dīlera ar nobraukumu, kur dīleris to fiksējis.`,
       "",
       `Jūsu cena: ${charge} (atsevišķi pasūtot: ${formatEurFromCents(DEALER_CATALOG_CENTS)}).`,
       "",
@@ -394,7 +398,7 @@ export function buildUpsellDraft(
     const whatsappText = [
       "Labdien!",
       "",
-      `Jūsu PROVIN MINI pasūtījumam varam pievienot oficiālā dīlera datus par ${charge}.`,
+      `Jūsu PROVIN MINI pasūtījumam${vinPart} varam pievienot oficiālā dīlera datus par ${charge}.`,
       "",
       "Dati papildinās esošo pasūtījumu.",
       "",
@@ -403,16 +407,16 @@ export function buildUpsellDraft(
       sign,
     ].join("\n");
     return {
-      subject: "PROVIN.LV: oficiālā dīlera dati esošajam pasūtījumam",
+      subject: provinEmailSubject("Piedāvājums: oficiālie dīlera dati", { vin: opts.vin }),
       emailText,
       whatsappText,
     };
   }
 
   const emailLead =
-    "Jūsu pasūtījumu varam papildināt līdz pilnai PROVIN AUDITS pārbaudei. Tad redzēsiet visu auto vēsturi, ne tikai dīlera ierakstus.";
+    `Jūsu pasūtījumu${vinPart} varam papildināt līdz pilnai PROVIN AUDITS pārbaudei. Tad redzēsiet visu auto vēsturi, ne tikai dīlera ierakstus.`;
   const waLead =
-    "Jūsu oficiālā dīlera datu pasūtījumam varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.";
+    `Jūsu oficiālā dīlera datu pasūtījumam${vinPart} varam sagatavot pilno PROVIN AUDITS tajā pašā pasūtījumā.`;
 
   const emailText = [
     "Labdien!",
@@ -423,7 +427,7 @@ export function buildUpsellDraft(
     `Papildu apmaksa: ${charge}`,
     `Kopā: ${total}`,
     "",
-    "Jau ievadītie dati paliek. Pievienosim to, kā vēl trūkst: negadījumu vēsturi, izsoļu fotogrāfijas, sludinājuma un risku analīzi.",
+    "Jau ievadītie dati paliek. Pievienosim to, kas vēl trūkst: negadījumu vēsturi, izsoļu fotogrāfijas, sludinājuma un risku analīzi.",
     "",
     pay,
     "",
@@ -449,7 +453,7 @@ export function buildUpsellDraft(
   ].join("\n");
 
   return {
-    subject: "PROVIN.LV: PROVIN AUDITS Jūsu pasūtījumam",
+    subject: provinEmailSubject("Piedāvājums: PROVIN AUDITS", { vin: opts.vin }),
     emailText,
     whatsappText,
   };
@@ -469,7 +473,7 @@ export function buildUpsellPaidEmail(opts: {
   chargeCents: number;
 }): { subject: string; text: string } {
   return {
-    subject: "PROVIN.LV: papildu apmaksa saņemta",
+    subject: provinEmailSubject("Papildu apmaksa saņemta", { vin: opts.vin }),
     text: [
       "Labdien!",
       "",

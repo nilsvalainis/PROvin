@@ -63,7 +63,7 @@ export function inferSlotAvailability(
     if (region === "europe") {
       return {
         status: "disabled",
-        reason: "Eiropas VIN — ASV Carfax (Type 2) parasti nav pieejams",
+        reason: "Eiropas VIN - ASV Carfax (Type 2) parasti nav pieejams",
       };
     }
   }

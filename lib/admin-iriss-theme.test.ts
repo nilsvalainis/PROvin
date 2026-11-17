@@ -40,7 +40,7 @@ describe("IRISS 00-tema tokens", () => {
     expect(css).toMatch(/--s2:\s*#f4f5f8/i);
     expect(css).toMatch(/--ink:\s*#0b0c10/i);
     expect(css).toMatch(/--ink2:\s*#5e636e/i);
-    expect(css).toMatch(/--ink3:\s*#9a9faa/i);
+    expect(css).toMatch(/--ink3:\s*#63686f/i); // j68: AA kontrasts (bija #9a9faa)
     expect(css).toMatch(/--acc:\s*#3d5bd9/i);
     expect(css).toMatch(/--acc-soft:\s*rgba\(61,\s*91,\s*217,\s*0\.12\)/);
     expect(css).toMatch(/--news-bg:\s*var\(--ink\)/);

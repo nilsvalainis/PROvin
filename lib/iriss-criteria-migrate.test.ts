@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { listingExtrasI, LV_VAT_RATE } from "@/lib/iriss-listings-cost";
 import { ECARSTRADE_BODY, ECARSTRADE_FUEL, ECARSTRADE_GEARBOX } from "@/lib/iriss-listings-ecarstrade-search";
 import { emptyIrissCriteriaFilter, irissCriteriaMandatoryGaps, parseIrissCriteriaV1 } from "@/lib/iriss-criteria-types";
 import { attachIrissCriteria, migrateIrissCriteria, readIrissCriteria, retainStoredIrissCriteria } from "@/lib/iriss-criteria-migrate";
 import { filterToSearchFilter, readSharedOrderCriteria } from "@/lib/iriss-criteria-shared";
 import { filterToSearchFilter as filterToSearchFilterFromMatch } from "@/lib/iriss-listings-search-filter";
+
+/** Noklusējuma izmaksas, Margin formula kā `listingMaxBid` (I × 1,21). */
+const searchBound = (budget: number) => Math.round(budget - listingExtrasI() * (1 + LV_VAT_RATE));
 
 describe("migrateIrissCriteria", () => {
   it("builds one default filter from the existing order text and links", () => {
@@ -109,6 +113,19 @@ describe("migrateIrissCriteria", () => {
     expect(filter.kwFrom.value).toBe(110);
     expect(filter.fuel.value).toEqual([]);
     expect(filter.make.value.length).toBeGreaterThan(0);
+  });
+
+  it("reads the Jauda range from the stored powerKw text before the engine line", () => {
+    const pair = migrateIrissCriteria({ powerKw: "110-140", engineType: "2.0 TDI 150 kW" }).filters[0]!;
+    expect([pair.kwFrom.value, pair.kwTo.value]).toEqual([110, 140]);
+    const from = migrateIrissCriteria({ powerKw: "no 100" }).filters[0]!;
+    expect([from.kwFrom.value, from.kwTo.value]).toEqual([100, null]);
+    const to = migrateIrissCriteria({ powerKw: "150" }).filters[0]!;
+    expect([to.kwFrom.value, to.kwTo.value]).toEqual([null, 150]);
+    const text = migrateIrissCriteria({ powerKw: "110 kW" }).filters[0]!;
+    expect(text.kwFrom.value).toBe(110);
+    const none = migrateIrissCriteria({ powerKw: "", engineType: "150 ZS" }).filters[0]!;
+    expect(none.kwFrom.value).toBe(110);
   });
 
   it("does not replace a valid stored criteria document", () => {
@@ -258,7 +275,7 @@ describe("shared adapter", () => {
     expect(search.bodies).toEqual([ECARSTRADE_BODY.suv]);
     expect(search.drives).toEqual(["awd"]);
     expect(search.yearFrom).toBe(2018);
-    expect(search.priceTo).toBe(20000);
+    expect(search.priceTo).toBe(searchBound(20000));
     expect(search.vat).toEqual(["reclaimable"]);
     expect(search.modelName).toBe("");
     expect(search.colors).toEqual([]);

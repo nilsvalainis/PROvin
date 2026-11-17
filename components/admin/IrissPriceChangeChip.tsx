@@ -21,12 +21,12 @@ export function IrissPriceChangeChip({ chip }: { chip: IrissPriceChip }) {
 export function IrissPriceHistoryPanel({ rows }: { rows: readonly IrissPriceHistoryRow[] }) {
   if (rows.length === 0) return null;
   return (
-    <div className="mt-2 rounded-xl border border-[#e5e7eb] bg-[#fafafa] px-3 py-2">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[#6b7280]">Cenas izmaiņas</p>
+    <div className="mt-2 rounded-xl border border-[var(--iriss-line)] bg-[#fafafa] px-3 py-2">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.6px] text-[var(--iriss-ink-2)]">Cenas izmaiņas</p>
       <ul className="mt-1 space-y-1">
         {rows.slice(-6).map((row) => (
           <li key={`${row.at}-${row.from}-${row.to}`} className="flex justify-between gap-2 text-[11px]">
-            <span className="text-[#6b7280]">{row.stamp}</span>
+            <span className="text-[var(--iriss-ink-2)]">{row.stamp}</span>
             <span className={row.direction === "down" ? "font-semibold text-emerald-700" : "font-semibold text-amber-800"}>
               {listingFmtEur(row.to)} {row.direction === "down" ? "↓" : "↑"}
               {listingFmtEur(Math.abs(row.delta))}

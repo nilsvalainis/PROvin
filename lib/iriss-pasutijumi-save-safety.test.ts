@@ -239,3 +239,21 @@ describe("irissPasutijumsHasOperatorContent", () => {
     expect(irissPasutijumsHasOperatorContent(rec("a", { listingLinkEcarstrade: ["https://ecarstrade.com/search"] }))).toBe(true);
   });
 });
+
+describe("retainIrissOfferDeadlines", () => {
+  it("keeps an offer deadline when a save does not carry it, but lets it change", async () => {
+    const { retainIrissOfferDeadlines } = await import("@/lib/iriss-pasutijumi-save-safety");
+    const { emptyIrissOfferRecord, emptyIrissPasutijums } = await import("@/lib/iriss-pasutijumi-types");
+    const at = "2026-10-26T16:00:00.000Z";
+    const existing = emptyIrissPasutijums("11111111-1111-4111-8111-111111111111", at);
+    const offer = emptyIrissOfferRecord("22222222-2222-4222-8222-222222222222", at, "Piedāvājums 1");
+    existing.offers = [{ ...offer, validUntilAt: at }];
+    const stale = { ...existing, offers: [{ ...offer, color: "Zila" }] };
+    expect(retainIrissOfferDeadlines(existing, stale).offers[0]).toMatchObject({ color: "Zila", validUntilAt: at });
+    const moved = { ...existing, offers: [{ ...offer, validUntilAt: "2026-10-28T16:00:00.000Z" }] };
+    expect(retainIrissOfferDeadlines(existing, moved).offers[0]?.validUntilAt).toBe("2026-10-28T16:00:00.000Z");
+    const noDeadlines = { ...existing, offers: [offer] };
+    expect(retainIrissOfferDeadlines(noDeadlines, stale)).toBe(stale);
+    expect(retainIrissOfferDeadlines(null, stale)).toBe(stale);
+  });
+});

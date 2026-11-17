@@ -4,6 +4,8 @@ import { filledIrissListingLinks } from "@/lib/iriss-listing-link-lists";
 import { isSingleVehicleListingUrl } from "@/lib/iriss-listings-ecarstrade-criteria";
 import { cleanHttpUrl, detectIrissListingPlatform } from "@/lib/iriss-listings-platform";
 import { enrichListingSearchUrl } from "@/lib/iriss-listings-search-filter";
+import { listingUrlWithSearchPriceBounds } from "@/lib/iriss-listings-fresh-price";
+import { orderSearchPriceBounds, type MarketplaceOrderCriteria } from "@/lib/marketplace/query-from-order";
 import { isIrissMarketplaceListingPlatform, type IrissListingPlatform } from "@/lib/iriss-listings-types";
 import { isIrissPasutijumsWorkingStatus, type IrissPasutijumsListRow } from "@/lib/iriss-pasutijumi-types";
 
@@ -86,16 +88,28 @@ type SourceRow = Pick<IrissPasutijumsListRow, "id" | "brandModel" | "listStatus"
   listingLinkAuto1?: unknown;
   listingLinkEcarstrade?: unknown;
   listingLinksOther?: unknown;
+  /** Budžets / kritēriji: saites cenas robežas rēķina no jauna (glabātās saites cenas neņem). */
+  totalBudget?: string;
+  criteria?: MarketplaceOrderCriteria["criteria"];
 };
 
 /**
  * Avoti no darba statusiem (aktīvs, meklē, piedāvāts, rezervēts). Ņem visas Autobid / Openlane / Auto1 / eCarsTrade
  * (un „Citi”, ja hosts ir izsole) saites. Identisks URL starp pasūtījumiem paliek viena nolasīšana.
  * mobile.de / AutoScout24 šeit neiekļaujam: maksas avoti tikai ar pogu Ielādēt.
+ * Cenas parametrus saitē aizstāj ar svaigām robežām no budžeta (`orderSearchPriceBounds`).
  */
 export function buildIrissListingSources(rows: SourceRow[]): IrissListingSource[] {
   const out: IrissListingSource[] = [];
   const seen = new Set<string>();
+  const boundsCache = new Map<string, { from: number | null; to: number | null }>();
+  const boundsFor = (row: SourceRow) => {
+    const hit = boundsCache.get(row.id);
+    if (hit) return hit;
+    const bounds = orderSearchPriceBounds({ brandModel: row.brandModel, totalBudget: row.totalBudget ?? "", criteria: row.criteria ?? null });
+    boundsCache.set(row.id, bounds);
+    return bounds;
+  };
   const push = (row: SourceRow, platform: IrissListingPlatform | null, raw: string) => {
     if (!platform || isIrissMarketplaceListingPlatform(platform)) return;
     const cleaned = cleanHttpUrl(raw);
@@ -106,7 +120,8 @@ export function buildIrissListingSources(rows: SourceRow[]): IrissListingSource[
     /** Saite nepareizajā laukā (piem. Autobid URL Openlane laukā): uzticamies hostam. */
     const effective = detected ?? platform;
     const brand = row.brandModel.trim();
-    const sourceUrl = enrichListingSearchUrl(effective, cleaned, brand);
+    const enriched = enrichListingSearchUrl(effective, cleaned, brand);
+    const sourceUrl = listingUrlWithSearchPriceBounds(enriched, boundsFor(row));
     const key = `${row.id}|${sourceUrl}`;
     if (seen.has(key)) return;
     seen.add(key);

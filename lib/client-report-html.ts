@@ -3,6 +3,7 @@
  * Nobraukuma sadaļā: divi līknes grafiki (maksas vs bezmaksas/publiski avoti) un tabula.
  */
 
+import { applyClientReportDynamicTranslations } from "@/lib/client-report-dynamic-i18n";
 import type { PdfPortfolioFileInsight } from "@/lib/admin-portfolio-pdf-analysis";
 import {
   applyClientReportStaticTranslations,
@@ -75,6 +76,8 @@ import {
   formatAdifyMileageLabel,
   formatAdifyPriceLabel,
   formatAdifySignedEur,
+  isSignedEurTextIncrease,
+  normalizeSignedEurText,
 } from "@/lib/adify-listing-history";
 import { parseListedForSaleDays } from "@/lib/tirgus-listed-ui";
 import {
@@ -93,7 +96,7 @@ import { buildOilIntervalSeriesForBlock } from "@/lib/oil-change-interval-chart"
 import { oilChangeIntervalPdfBlockCss } from "@/lib/oil-change-interval-pdf-styles";
 import { buildOilChangeIntervalPdfHtml } from "@/lib/oil-change-intervals";
 import { buildPdfFactCardHtml, buildPdfKvPairHtml, collectRegistryFactCardRows } from "@/lib/pdf-fact-card";
-import { capitalizeFactValue } from "@/lib/vin-sources/translate-lv";
+import { capitalizeFactValue, translateTextLv } from "@/lib/vin-sources/translate-lv";
 import { formatPdfReportMakeModel, resolvePdfReportMakeModel } from "@/lib/pdf-report-vehicle-identity";
 import {
   buildDealerSectionCoverHtml,
@@ -104,16 +107,26 @@ import { normalizeAutoRecordsPhotoGroups } from "@/lib/auto-records-photo-types"
 import { normalizeCcVinPhotoGroups } from "@/lib/cc-vin-photo-types";
 import { normalizeAsvPhotoGroups } from "@/lib/asv-photo-types";
 import { normalizeIncidentPhotoGroups } from "@/lib/incident-photo-types";
-import { normalizeSourceBlockPhotoGroups } from "@/lib/source-block-photo-types";
+import {
+  normalizeListingHistoryPhotoGroups,
+  normalizeSourceBlockPhotoGroups,
+} from "@/lib/source-block-photo-types";
 import { buildCcVinPdfInnerHtml, CC_VIN_PDF_CSS } from "@/lib/cc-vin-pdf-html";
 import { buildAsvPdfInnerHtml, ASV_PDF_CSS } from "@/lib/asv-pdf-html";
 import {
   CC_VIN_PDF_SOURCE_LABEL,
   CC_VIN_PDF_TITLE,
   ccVinBlockHasContent,
-  countCcVinRecords,
+  countCcVinPdfVisibleRecords,
   type CcVinBlockState,
 } from "@/lib/cc-vin-report";
+import { thecarapiPdfGroupTitle } from "@/lib/vin-scan/thecarapi-fields";
+import {
+  buildThecarapiPdfGalleryHtml,
+  collectPdfPhotoKeys,
+  selectThecarapiPdfPhotos,
+  THECARAPI_PDF_GALLERY_MAX,
+} from "@/lib/thecarapi-pdf";
 import {
   ASV_PDF_SOURCE_LABEL,
   ASV_PDF_TITLE,
@@ -195,8 +208,11 @@ import {
 import {
   collectUnifiedMileageRows,
   analyzeUnifiedMileageAnomalies,
+  collectImplausibleMileageReadings,
   prepareUnifiedMileageDisplayRows,
+  resolveCsddUndatedOdometer,
   type CollectUnifiedMileageOptions,
+  type CsddUndatedOdometer,
   type UnifiedMileageDisplayRow,
   type UnifiedMileageRow,
   type UnifiedMileageSourcePayload,
@@ -245,8 +261,14 @@ import { buildOwnerRegistrationTimelineHtml } from "@/lib/csdd-history-charts";
 import {
   buildPreviousInspectionBlockHtml,
   buildTechnicalInspectionHistoryTableHtml,
+  formatSmokeCoefficient,
 } from "@/lib/csdd-inspection-history-html";
-import { emptyCsddPreviousInspectionBlock, isoDateToLvDisplay, previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
+import {
+  emptyCsddPreviousInspectionBlock,
+  isoDateToLvDisplay,
+  previousInspectionBlockHasData,
+  splitSmokeAndParticleNumber,
+} from "@/lib/csdd-extended-parse";
 import { buildOutvinBundleEquipmentPdfHtml, buildOutvinBundlePdfInnerHtml } from "@/lib/outvin-bundle-pdf-html";
 import {
   buildOutvinDealerEquipmentPdfHtml,
@@ -288,6 +310,32 @@ function vendorTitlesOmittedForPdf(vis: PdfVisibilitySettings): Set<string> {
   if (!vis.traficom_fi) s.add(L.traficom_fi);
   if (!vis.citi_avoti) s.add(L.citi_avoti);
   return s;
+}
+
+/**
+ * FABLE 25.10: PDF kopsavilkums, vēstures laikjosla un negadījumu tabula agrāk lasīja visu payload - MINI / ASV PDF
+ * rādīja paslēpto (cenā neiekļauto) avotu datus. Šeit paslēptie avoti tiek izņemti, pirms tos lasa šīs zonas.
+ */
+export function payloadForPdfVisibility(
+  p: ClientReportPayload,
+  vis: PdfVisibilitySettings,
+  opts: { keepCsdd?: boolean } = {},
+): ClientReportPayload {
+  const omit = vendorTitlesOmittedForPdf(vis);
+  const dealer = dealerPdfVisible(p, vis);
+  return {
+    ...p,
+    csddForm: vis.csdd || opts.keepCsdd ? p.csddForm : null,
+    autoRecordsBlock: dealer ? p.autoRecordsBlock : null,
+    oneautoBlock: dealer ? p.oneautoBlock : null,
+    ccVinBlock: vis.cc_vin ? p.ccVinBlock : null,
+    asvBlock: vis.asv ? p.asvBlock : null,
+    manualVendorBlocks: p.manualVendorBlocks ? p.manualVendorBlocks.filter((b) => !omit.has(b.title)) : p.manualVendorBlocks,
+    manualLtabBlock: vis.ltab ? p.manualLtabBlock : null,
+    citiAvoti: vis.citi_avoti ? p.citiAvoti : null,
+    tirgusForm: vis.sludinajums ? p.tirgusForm : null,
+    listingUrl: vis.sludinajums ? p.listingUrl : null,
+  };
 }
 
 function collectPdfMileageSparkContext(
@@ -389,6 +437,8 @@ export type ClientReportPayload = {
   mileageComment?: string | null;
   /** Operatora apstiprinājums / atcelšana nobraukuma anomālijām (nav veco pasūtījumu datu pārraksts). */
   odometerAnomalyOverrides?: import("@/lib/odometer-anomaly-classify").OdometerAnomalyOverride[] | null;
+  /** Operatora Lielie darbi labojumi. Nav veco pasūtījumu pārraksts. */
+  dealerMajorWorkOverrides?: import("@/lib/dealer-major-works-override-persist").DealerMajorWorkOverride[] | null;
 };
 
 export type ClientReportPortfolioRow = { name: string; size: number };
@@ -513,6 +563,21 @@ function collectCitiAvotiPdfSources(
   return out;
 }
 
+/** CSDD ierakstu skaits - viens un tas pats avotu sarakstā un CSDD sadaļas virsrakstā. */
+function csddPdfRecordCount(f: CsddFormFields | null | undefined): number {
+  return (
+    (f?.technicalInspectionHistory ?? []).filter((r) => r.date.trim()).length +
+    (f?.ownerRegistrationEvents ?? []).filter((e) => e.date.trim()).length +
+    (f?.mileageHistory ?? []).filter((r) => r.date.trim() && r.odometer.trim()).length
+  );
+}
+
+/** Dīlera ierakstu skaits = vizītes (viena vizīte ir gan darbu, gan nobraukuma rindā). */
+function dealerPdfRecordCount(ar: Pick<AutoRecordsBlockState, "serviceHistory" | "serviceWorks">): number {
+  const visits = (ar.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable).length;
+  return visits > 0 ? visits : (ar.serviceHistory ?? []).filter(autoRecordsRowHasData).length;
+}
+
 /** Tikai payload datu apkopošana PDF drukai - bez AI izsaukumiem un bez DB tiešās piekļuves. */
 function computeProvinPdfSourcesUsedCounts(
   p: ClientReportPayload,
@@ -520,7 +585,7 @@ function computeProvinPdfSourcesUsedCounts(
 ): { n1: number; n2: number; n3: number } {
   const L = SOURCE_BLOCK_LABELS;
   let n1 = 0;
-  if (payloadCsddHasData(p, vis)) n1++;
+  // CSDD skaitām vienreiz (publiskais reģistrs, n2) - agrāk arī šeit, un „Kopā” bija par 1 lielāks nekā avotu saraksts.
   if (vis.autodna && vendorPdfBlockHasData(getVendorPdfBlock(p, L.autodna))) n1++;
   if (vis.carvertical && vendorPdfBlockHasData(getVendorPdfBlock(p, L.carvertical))) n1++;
   if (payloadAutoRecordsHasData(p, vis)) n1++;
@@ -553,13 +618,7 @@ function collectPdfCheckedSources(
   const out: { label: string; count: number }[] = [];
   if (payloadCsddHasData(p, vis)) {
     const f = p.csddForm;
-    out.push({
-      label: L.csdd,
-      count:
-        (f?.technicalInspectionHistory ?? []).filter((r) => r.date.trim()).length +
-        (f?.ownerRegistrationEvents ?? []).filter((e) => e.date.trim()).length +
-        (f?.mileageHistory ?? []).filter((r) => r.date.trim() && r.odometer.trim()).length,
-    });
+    out.push({ label: L.csdd, count: csddPdfRecordCount(f) });
   }
   for (const title of [L.autodna, L.carvertical, L.tjekbil, L.mnt_ee, L.lkf_ee, L.carinfo, L.traficom_fi] as const) {
     const b = getVendorPdfBlock(p, title);
@@ -569,15 +628,10 @@ function collectPdfCheckedSources(
   }
   if (payloadAutoRecordsHasData(p, vis)) {
     const ar = resolvedDealerBlock(p);
-    out.push({
-      label: PDF_SOURCE_DEALER_TITLE,
-      count:
-        (ar.serviceHistory ?? []).filter(autoRecordsRowHasData).length +
-        (ar.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable).length,
-    });
+    out.push({ label: PDF_SOURCE_DEALER_TITLE, count: dealerPdfRecordCount(ar) });
   }
   if (payloadCcVinHasData(p, vis)) {
-    out.push({ label: CC_VIN_PDF_SOURCE_LABEL, count: countCcVinRecords(p.ccVinBlock) });
+    out.push({ label: CC_VIN_PDF_SOURCE_LABEL, count: countCcVinPdfVisibleRecords(p.ccVinBlock) });
   }
   if (payloadAsvHasData(p, vis)) {
     out.push({ label: ASV_PDF_SOURCE_LABEL, count: countAsvRecords(p.asvBlock) });
@@ -1024,8 +1078,10 @@ function pdfPriceDropDownArrowHtml(): string {
 }
 
 function formatTirgusPriceDropCellHtml(raw: string): string {
-  const t = raw.trim();
+  const t = normalizeSignedEurText(raw);
   if (!t) return escapeHtml(t);
+  // Bultiņa uz leju tikai kritumam - pieaugumam („+2 000 €”) to nerāda.
+  if (isSignedEurTextIncrease(t)) return `<span class="tabular pdf-price-drop-val">${escapeHtml(t)}</span>`;
   return `<span class="pdf-price-drop-wrap"><span class="pdf-price-drop-ico" aria-hidden="true">${pdfPriceDropDownArrowHtml()}</span><span class="tabular pdf-price-drop-val">${escapeHtml(t)}</span></span>`;
 }
 
@@ -1155,8 +1211,29 @@ function buildUnifiedMileageTableRowHtml(
   return `<tr class="${rowClass}"><td class="pdf-mileage-cell-date">${escapeHtml(r.date)}</td>${odoTd}${srcTd}<td class="pdf-mileage-cell-flag">${flagCell}</td></tr>`;
 }
 
+/** Zemsvītras piezīme CSDD rādījumam bez datuma (BMW makets, Nils apstiprināja 24.10). */
+export const PDF_MILEAGE_APPROX_DATE_NOTE =
+  "* Datums aptuvens - CSDD rādījums bez datuma, pielīdzināts sludinājuma pirmās publicēšanas mēnesim. Grafikā šis punkts netiek attēlots un kritumu aprēķinā netiek izmantots.";
+export const PDF_MILEAGE_UNKNOWN_DATE_NOTE =
+  "* CSDD rādījums bez datuma, datums nav zināms. Grafikā šis punkts netiek attēlots un kritumu aprēķinā netiek izmantots.";
+
+/** Tabulas rinda CSDD rādījumam bez datuma - tikai PDF tabulā, nekad grafikā vai anomāliju aprēķinā. */
+type PdfApproxMileageRow = { kind: "approx"; u: CsddUndatedOdometer };
+type PdfMileageTableRow = UnifiedMileageDisplayRow | PdfApproxMileageRow;
+
+function isPdfApproxMileageRow(r: PdfMileageTableRow): r is PdfApproxMileageRow {
+  return (r as PdfApproxMileageRow).kind === "approx";
+}
+
+function buildApproxMileageTableRowHtml(u: CsddUndatedOdometer): string {
+  const dateLabel = u.approxMonth ? `aptuveni ${u.approxMonth}*` : "datums nav zināms*";
+  const odoEscaped = escapeHtml(formatPdfOdometerDisplay(String(u.km)));
+  const srcTd = `<td class="pdf-mileage-cell-src"><span class="pdf-mileage-cell-src-inner">${buildPdfMileageSourceDotsHtml([PDF_SUB_CSDD])}</span></td>`;
+  return `<tr class="pdf-mileage-history-row pdf-mileage-history-row--approx"><td class="pdf-mileage-cell-date">${escapeHtml(dateLabel)}</td><td class="tabular pdf-mileage-cell-odo"><span class="pdf-mileage-odo-value">${odoEscaped}</span></td>${srcTd}<td class="pdf-mileage-cell-flag">${buildPdfCountryFlagCellHtml("Latvija")}</td></tr>`;
+}
+
 function buildMileageHistoryTableHtml(
-  rows: UnifiedMileageDisplayRow[],
+  rows: PdfMileageTableRow[],
   anomalyBySourceOrder: Map<number, boolean>,
   staleDocumentSourceOrders: Set<number>,
 ): string {
@@ -1164,7 +1241,11 @@ function buildMileageHistoryTableHtml(
   const colgroup = `<colgroup><col class="pdf-mileage-col-date" /><col class="pdf-mileage-col-odo" /><col class="pdf-mileage-col-src" /><col class="pdf-mileage-col-flag" /></colgroup>`;
   const head = `<tr><th class="pdf-mileage-th-date" scope="col">Datums</th><th class="pdf-mileage-th-odo" scope="col">Odometrs (km)</th><th class="pdf-mileage-th-src" scope="col">Avots</th><th class="pdf-mileage-th-flag" scope="col">Valsts</th></tr>`;
   const body = rows
-    .map((r) => buildUnifiedMileageTableRowHtml(r, anomalyBySourceOrder, staleDocumentSourceOrders))
+    .map((r) =>
+      isPdfApproxMileageRow(r)
+        ? buildApproxMileageTableRowHtml(r.u)
+        : buildUnifiedMileageTableRowHtml(r, anomalyBySourceOrder, staleDocumentSourceOrders),
+    )
     .join("\n");
   return `<div class="pdf-mileage-history-table-wrap"><table class="pdf-mileage-history-table pdf-mileage-history-table--mileage-rows" role="table">${colgroup}<thead>${head}</thead><tbody>${body}</tbody></table></div>`;
 }
@@ -1173,20 +1254,18 @@ export function buildUnifiedMileageTableHtml(
   p: UnifiedMileageSourcePayload & { mileageComment?: string | null },
   mileageOpts?: CollectUnifiedMileageOptions,
 ): string {
-  const collected = collectUnifiedMileageRows(
-    {
-      csddForm: p.csddForm,
-      autoRecordsBlock: p.autoRecordsBlock,
-      oneautoBlock: p.oneautoBlock ?? null,
-      ccVinBlock: p.ccVinBlock ?? null,
-      asvBlock: p.asvBlock ?? null,
-      manualVendorBlocks: p.manualVendorBlocks,
-      citiAvotiBlock: "citiAvoti" in p ? (p as ClientReportPayload).citiAvoti ?? null : p.citiAvotiBlock ?? null,
-      tirgusForm: p.tirgusForm ?? ("tirgusForm" in p ? (p as ClientReportPayload).tirgusForm ?? null : null),
-      listingUrl: "listingUrl" in p ? (p as ClientReportPayload).listingUrl ?? null : p.listingUrl ?? null,
-    },
-    mileageOpts,
-  );
+  const collectPayload: UnifiedMileageSourcePayload = {
+    csddForm: p.csddForm,
+    autoRecordsBlock: p.autoRecordsBlock,
+    oneautoBlock: p.oneautoBlock ?? null,
+    ccVinBlock: p.ccVinBlock ?? null,
+    asvBlock: p.asvBlock ?? null,
+    manualVendorBlocks: p.manualVendorBlocks,
+    citiAvotiBlock: "citiAvoti" in p ? (p as ClientReportPayload).citiAvoti ?? null : p.citiAvotiBlock ?? null,
+    tirgusForm: p.tirgusForm ?? ("tirgusForm" in p ? (p as ClientReportPayload).tirgusForm ?? null : null),
+    listingUrl: "listingUrl" in p ? (p as ClientReportPayload).listingUrl ?? null : p.listingUrl ?? null,
+  };
+  const collected = collectUnifiedMileageRows(collectPayload, mileageOpts);
   if (collected.length === 0) {
     const commentBlock = pdfReportCommentBox(p.mileageComment ?? "", PDF_MILEAGE_HISTORY_COMMENT_LABEL);
     if (!commentBlock) return "";
@@ -1206,7 +1285,17 @@ export function buildUnifiedMileageTableHtml(
     return a.sourceOrder - b.sourceOrder;
   });
 
-  const display = rows;
+  const csddUndated = mileageOpts?.omitCsddMileage || mileageOpts?.omitCsddUndatedRow
+    ? null
+    : resolveCsddUndatedOdometer({ csddForm: p.csddForm, tirgusForm: p.tirgusForm ?? null });
+  const display: PdfMileageTableRow[] = [...rows];
+  if (csddUndated) {
+    const approxRow: PdfApproxMileageRow = { kind: "approx", u: csddUndated };
+    // Jaunākie augšā; bez mēneša - pašā augšā (pašreizējais sludinājuma rādījums).
+    const t = csddUndated.approxTime;
+    const idx = t == null ? 0 : display.findIndex((r) => !isPdfApproxMileageRow(r) && r.sortableTime < t);
+    display.splice(idx < 0 ? display.length : idx, 0, approxRow);
+  }
   const chartHtml = buildUnifiedMileageChartWrapHtml(mileageRows, anomalyBySourceOrder, {
     compact: true,
     chartExcludeSourceOrders,
@@ -1233,7 +1322,21 @@ export function buildUnifiedMileageTableHtml(
   const head = sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE");
   const commentHtml = pdfReportCommentBox(p.mileageComment ?? "", PDF_MILEAGE_HISTORY_COMMENT_LABEL);
 
-  const body = `${chartHtml}${dualTables}${sourceCountHtml}${staleNoteHtml}${commentHtml}`;
+  const approxNoteHtml = csddUndated
+    ? `<p class="pdf-mileage-smart-note pdf-mileage-approx-note">${escapeHtml(
+        csddUndated.approxMonth ? PDF_MILEAGE_APPROX_DATE_NOTE : PDF_MILEAGE_UNKNOWN_DATE_NOTE,
+      )}</p>`
+    : "";
+
+  const implausible = mileageOpts?.showImplausibleNote ? collectImplausibleMileageReadings(collectPayload, mileageOpts) : [];
+  const implausibleNoteHtml =
+    implausible.length > 0
+      ? `<p class="pdf-mileage-smart-note"><span class="pdf-mileage-smart-note__ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("yellow")}</span>${escapeHtml(
+          `Izlaists neticams rādījums: ${implausible.map((r) => `${formatPdfOdometerDisplay(r.odometer)} km, ${r.date}, ${r.sourceLabel}`).join("; ")}. Ievades kļūda - PDF un AI to neņem vērā.`,
+        )}</p>`
+      : "";
+
+  const body = `${chartHtml}${dualTables}${approxNoteHtml}${implausibleNoteHtml}${sourceCountHtml}${staleNoteHtml}${commentHtml}`;
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-hub-tint--mileage" role="region">${head}<div class="pdf-unified-mileage-zone__body">${body}</div></div>`;
 }
 
@@ -1366,9 +1469,7 @@ export function buildCsddAvotuZoneHtml(
 ): string {
   if (!csddFormHasContent(form) && !sparkHtml) return "";
 
-  const csddRecords =
-    (form.technicalInspectionHistory ?? []).filter((r) => r.date.trim()).length +
-    (form.ownerRegistrationEvents ?? []).filter((e) => e.date.trim()).length;
+  const csddRecords = csddPdfRecordCount(form);
   const head = sectionHeadBrand(
     csddSectionIconHtml(),
     PDF_SUB_CSDD,
@@ -1383,10 +1484,17 @@ export function buildCsddAvotuZoneHtml(
     grossMassKg: form.grossMassKg,
     seatCount: form.seatCount,
   });
+  /** Vecajos melnrakstos daļiņu skaits var būt dūmainības laukā - rāda kā daļiņas, datus nemaina. */
+  const topEmissions = splitSmokeAndParticleNumber(form.opacityCoefficient, form.particulateMatter);
   for (const { key, label } of CSDD_FORM_STRUCTURED_FIELDS) {
     // Īpašnieku skaits paliek laika joslā, ne kv tabulā.
     if (key === "ownerCountLatvia") continue;
-    const v = (form[key] as string).trim();
+    const v =
+      key === "opacityCoefficient"
+        ? formatSmokeCoefficient(topEmissions.smokeCoefficient)
+        : key === "particulateMatter"
+          ? topEmissions.particleNumber
+          : (form[key] as string).trim();
     if (!v || isPdfEmptyPlaceholder(v)) continue;
     let flag: CsddFieldUiFlag = "none";
     if (key === "particulateMatter") flag = getParticulateMatterUiFlag(v);
@@ -1604,7 +1712,7 @@ function buildTirgusListingHistoryBodyHtml(
       f.photoGroups,
       f.photos,
       photoDataUrls,
-      normalizeSourceBlockPhotoGroups,
+      normalizeListingHistoryPhotoGroups,
     );
     if (photosHtml) parts.push(photosHtml);
     const tirgusCommentBox = pdfReportCommentBox(f.comments ?? "");
@@ -1741,6 +1849,7 @@ function buildAutoRecordsAvotuSubsection(
   productScope?: DealerProductScopeArgs,
   maskDemoVin = false,
   lang: ClientReportLang = "lv",
+  dealerMajorWorkOverrides?: import("@/lib/dealer-major-works-override-persist").DealerMajorWorkOverride[] | null,
 ): string {
   if (!vis.auto_records) return "";
   if ((!b || !autoRecordsBlockHasContent(b)) && !sparkHtml) return "";
@@ -1769,19 +1878,28 @@ function buildAutoRecordsAvotuSubsection(
     vehicle: resolveDealerCoverVehicle(bundle.vehicleInfo, b.outvinReport?.vehicleInfo),
     makeModel,
     serviceWorks: b.serviceWorks ?? [],
+    mileageRows: b.serviceHistory ?? [],
     maskDemoVin,
     lang,
   });
   const hasCover = coverHtml.length > 0;
   const condenseRecords = shouldCondenseDealerPdfRecords(productScope ?? {});
-  const dealerFacts = extractDealerFactsFromServiceWorks(b.serviceWorks ?? []);
+  const dealerFacts = extractDealerFactsFromServiceWorks(
+    b.serviceWorks ?? [],
+    b.oneautoIngest?.serviceTimelineOriginal,
+  );
   const serviceWorksTable = buildAutoRecordsServiceWorksTableHtml(b.serviceWorks ?? [], hasCover, {
     condenseRecords,
     extraMileageRows: condenseRecords ? [] : dealerExtraMileageRows(b),
     lang,
   });
-  const summaryHtml = buildDealerVisitSummaryHtml(b.serviceWorks ?? [], dealerFacts, lang);
-  const majorHtml = buildDealerMajorWorksHtml(dealerFacts, lang);
+  const summaryHtml = buildDealerVisitSummaryHtml(
+    b.serviceWorks ?? [],
+    dealerFacts,
+    lang,
+    dealerMajorWorkOverrides,
+  );
+  const majorHtml = buildDealerMajorWorksHtml(dealerFacts, lang, dealerMajorWorkOverrides);
   const serviceHistoryNotes = (b.serviceHistoryNotes ?? "").trim();
   const serviceHistoryBox = serviceHistoryNotes
     ? pdfReportCommentBox(serviceHistoryNotes, PDF_AUTO_RECORDS_SERVICE_HISTORY_LABEL)
@@ -1828,9 +1946,7 @@ function buildAutoRecordsAvotuSubsection(
     return "";
   }
 
-  const recordCount =
-    (b.serviceHistory ?? []).filter(autoRecordsRowHasData).length +
-    (b.serviceWorks ?? []).filter(autoRecordsServiceWorkRowIsPrintable).length;
+  const recordCount = dealerPdfRecordCount(b);
   const head = sectionHeadBrand(
     dealerSectionIconHtml(makeModel),
     PDF_SOURCE_DEALER_TITLE,
@@ -1859,19 +1975,37 @@ function buildCcVinAvotuSubsection(
   vis: PdfVisibilitySettings,
   photoDataUrls?: Map<string, string>,
   sparkHtml = "",
+  externalPhotoKeys?: ReadonlySet<string>,
 ): string {
   if (!vis.cc_vin) return "";
   if ((!b || !ccVinBlockHasContent(b)) && !sparkHtml) return "";
   const inner = b && ccVinBlockHasContent(b) ? buildCcVinPdfInnerHtml(b) : "";
+  const tcIds = new Set((b?.thecarapiRecords ?? []).flatMap((record) => record.photos.map((photo) => photo.id)));
+  const otherGroups = (b?.photoGroups ?? []).map((group) => ({
+    ...group,
+    title: thecarapiPdfGroupTitle(group.title),
+    photos: group.photos.filter((photo) => !tcIds.has(photo.id)),
+  }));
+  const usedKeys = collectPdfPhotoKeys(otherGroups);
+  for (const key of externalPhotoKeys ?? []) usedKeys.add(key);
+  const tcPhotos = selectThecarapiPdfPhotos(b?.thecarapiRecords, {
+    usedKeys,
+    max: THECARAPI_PDF_GALLERY_MAX,
+  });
   const photosHtml = b
-    ? buildSourcePhotoGroupsPdfHtml(b.photoGroups, b.photos, photoDataUrls, normalizeCcVinPhotoGroups)
+    ? [
+        buildSourcePhotoGroupsPdfHtml(otherGroups, b.photos, photoDataUrls, normalizeCcVinPhotoGroups),
+        buildThecarapiPdfGalleryHtml(tcPhotos, photoDataUrls),
+      ]
+        .filter(Boolean)
+        .join("")
     : "";
   const comments = (b?.comments ?? "").trim();
   if (!inner && !photosHtml && !comments && !sparkHtml) return "";
   const head = sectionHeadBrand(
     sectionIconPdfHtml("globe"),
     CC_VIN_PDF_TITLE,
-    sourceRecordCountBadgeHtml(b ? countCcVinRecords(b) : 0),
+    sourceRecordCountBadgeHtml(b ? countCcVinPdfVisibleRecords(b) : 0),
   );
   const bodyParts = [sparkHtml, inner, photosHtml, comments ? pdfAvotuCommentIsland(comments) : ""].filter(
     Boolean,
@@ -1921,9 +2055,16 @@ function buildVendorAvotuSubsection(
   if (b.title === L.traficom_fi && !vis.traficom_fi) return "";
   const commentBlock = mergePdfChecklistAndComments(b.pdfChecklist, b.comments);
   const omitOwners = b.title === L.carinfo;
-  const owners = omitOwners ? "" : (b.ownersSummary ?? "").trim();
-  const status = (b.statusRecords ?? "").trim();
-  const notes = (b.autoNotes ?? "").trim();
+  // Igaunijas reģistru teksti vecajos melnrakstos var būt netulkoti - tulko drukāšanas brīdī.
+  const etText = (v: string | undefined) => {
+    const t = (v ?? "").trim();
+    return b.title === L.mnt_ee || b.title === L.lkf_ee
+      ? t.split("\n").map((line) => translateTextLv(line, "et") || line).join("\n")
+      : t;
+  };
+  const owners = omitOwners ? "" : etText(b.ownersSummary);
+  const status = etText(b.statusRecords);
+  const notes = etText(b.autoNotes);
   const hasComments = commentBlock.trim().length > 0;
   const photosHtml = buildSourcePhotoGroupsPdfHtml(
     b.photoGroups,
@@ -2174,8 +2315,21 @@ function buildAvotuDatiSectionHtml(
     dealerPdfProductScope(p),
     p.isDemo === true,
     lang,
+    p.dealerMajorWorkOverrides,
   );
-  const ccVin = buildCcVinAvotuSubsection(p.ccVinBlock ?? null, vis, ccVinPhotoDataUrls, spark("intl"));
+  const ccVin = buildCcVinAvotuSubsection(
+    p.ccVinBlock ?? null,
+    vis,
+    ccVinPhotoDataUrls,
+    spark("intl"),
+    collectPdfPhotoKeys([
+      ...(p.autoRecordsBlock?.photoGroups ?? []),
+      ...(p.asvBlock?.photoGroups ?? []),
+      ...(p.listingAnalysis?.photoGroups ?? []),
+      ...(p.manualVendorBlocks ?? []).flatMap((block) => block.photoGroups ?? []),
+      ...(p.citiAvoti?.sections ?? []).flatMap((section) => section.photoGroups ?? []),
+    ]),
+  );
   const asv = buildAsvAvotuSubsection(p.asvBlock ?? null, vis, asvPhotoDataUrls, spark("asv"));
   const tjekbil = vendorHtml(SOURCE_BLOCK_LABELS.tjekbil);
   const mntEe = vendorHtml(SOURCE_BLOCK_LABELS.mnt_ee);
@@ -2692,8 +2846,9 @@ ${clientReportPageChromeCss(running)}
         padding:5px 8px;font-size:9px;font-weight:600;color:#64748b;letter-spacing:0.02em;
       }
       .pdf-dealer-cover{
-        margin:0;padding:16px 16px 14px;border-radius:12px;overflow:hidden;
+        margin:0;padding:18px 20px 16px;border-radius:12px;overflow:hidden;
         background:linear-gradient(180deg,#E8F1FC 0%,#fff 72%);border:1px solid var(--pdf-line);
+        font-family:Inter,-apple-system,"Segoe UI",system-ui,sans-serif;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
       .pdf-dealer-cover__kicker{
@@ -2701,11 +2856,49 @@ ${clientReportPageChromeCss(running)}
         text-transform:uppercase;color:#6e6e73;
       }
       .pdf-dealer-cover__model{
-        margin:8px 0 0;font-size:20px;font-weight:750;letter-spacing:-0.03em;line-height:1.2;color:#0f172a;
+        margin:0;font-size:20px;font-weight:750;letter-spacing:-0.03em;line-height:1.2;color:#0f172a;
       }
-      .pdf-dealer-cover__meta{margin:6px 0 0;font-size:12px;line-height:1.4;color:#475569;}
-      .pdf-dealer-cover-curve{display:block;width:calc(100% + 32px);height:auto;margin:8px -16px 0;}
-      .pdf-dealer-cover .pdf-svc-span{margin:10px 0 0;background:#fff;}
+      .pdf-dealer-cover__meta{margin:4px 0 0;font-size:12px;line-height:1.4;color:#475569;}
+      .pdf-dealer-cover__lbl{
+        margin:12px 0 0;font-size:10.5px;font-weight:650;color:#475569;
+        text-transform:uppercase;letter-spacing:0.06em;
+      }
+      .pdf-dealer-cover-curve{display:block;width:100%;height:auto;margin:10px 0 0;}
+      .pdf-dealer-cover-ax{font-size:10px;fill:#64748b;font-variant-numeric:tabular-nums;}
+      .pdf-dealer-cover-pl{font-size:11px;font-weight:650;fill:#0f172a;}
+      .pdf-dealer-cover-year-heading{font-size:10.5px;font-weight:650;fill:#475569;letter-spacing:0.06em;}
+      .pdf-dealer-cover-year{font-size:8.5px;fill:#64748b;font-variant-numeric:tabular-nums;}
+      .pdf-dealer-cover-partial{font-size:7px;fill:#64748b;}
+      .pdf-dealer-cover-leg{
+        display:flex;flex-wrap:wrap;column-gap:18px;row-gap:8px;align-items:center;
+        margin-top:6px;font-size:11px;color:#64748b;line-height:1.4;
+      }
+      .pdf-dealer-cover-leg span{white-space:nowrap;}
+      .pdf-dealer-cover-leg i{
+        display:inline-block;width:18px;height:2px;margin-right:6px;vertical-align:middle;
+        background:${PDF_BRAND_BLUE_HEX};border-radius:1px;
+      }
+      .pdf-dealer-cover-leg b{
+        display:inline-block;width:8px;height:8px;border-radius:50%;background:${PDF_BRAND_BLUE_HEX};
+        margin-right:6px;vertical-align:middle;box-shadow:0 0 0 2px #fff,0 0 0 3.5px rgba(0,97,210,.25);
+      }
+      .pdf-dealer-cover-bar-key{
+        display:inline-block;width:10px;height:11px;margin-right:6px;vertical-align:-1px;
+        border-radius:2px 2px 0 0;background:${PDF_BRAND_BLUE_HEX};opacity:.78;
+      }
+      .pdf-dealer-cover-bar-key--estimated{
+        opacity:1;border:1px solid #0061d261;
+        background:repeating-linear-gradient(125deg,#0061d259 0 1px,#0061d209 1px 4px);
+      }
+      .pdf-dealer-cover-bar-key--partial{
+        opacity:1;border:1px solid #0061d299;background:#0061d20f;
+      }
+      .pdf-dealer-cover-note{margin-top:8px;font-size:10px;line-height:1.55;color:#78879a;}
+      .pdf-dealer-cover .pdf-svc-span{
+        margin:10px 0 0;background:#fff;border-radius:10px;padding:10px 14px;
+      }
+      .pdf-dealer-cover .pdf-svc-span__pt b{font-size:15px;font-variant-numeric:tabular-nums;}
+      .pdf-dealer-cover .pdf-svc-span__pt i{font-size:11px;}
       .provin-report-doc .pdf-listing-tint--auto24{background:linear-gradient(180deg,#E8F0FA 0%,#fff 42%)!important;}
       .provin-report-doc .pdf-listing-tint--mobilede{background:linear-gradient(180deg,#F3EAF8 0%,#fff 42%)!important;}
       .provin-report-doc .pdf-hub-tint--mileage{background:linear-gradient(180deg,#E8F1FC 0%,#fff 42%)!important;}
@@ -2864,6 +3057,12 @@ ${clientReportPageChromeCss(running)}
         background:#f9fafb!important;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
+      .pdf-mileage-history-table tbody tr.pdf-mileage-history-row--approx td{
+        background:#f0faf2!important;color:#3a3a3c;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-mileage-history-row--approx td.pdf-mileage-cell-date{font-style:italic;}
+      .pdf-mileage-approx-note{font-style:normal;}
       .pdf-mileage-history-row--anomaly td{
         background:#FFF1F2!important;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
@@ -3509,41 +3708,45 @@ export function buildClientReportDocumentHtml(args: {
     }
   }
 
+  // Kopsavilkums, laikjosla, negadījumi: tikai PDF iekļautie avoti (CSDD identitātei kopsavilkumā paliek).
+  const pVis = dealerOnly ? p : payloadForPdfVisibility(p, vis, { keepCsdd: true });
+  const pVisTimeline = dealerOnly ? p : payloadForPdfVisibility(p, vis);
+
   // Viena kartīšu valoda kopsavilkumā: manuālās (admin) → automātiskie brīdinājumi → informatīvās.
   const summaryBannerTiles = vis.alerts
     ? buildPdfSummaryBannerTiles({
-        manualBanners: mergeProvinManualBanners(p.manualBanners),
+        manualBanners: mergeProvinManualBanners(pVis.manualBanners),
         alertBanners: filterAlertBannersForPdf(
           computeProvinAlertBannersFromPayloadSlice({
-            csddForm: p.csddForm,
-            autoRecordsBlock: p.autoRecordsBlock ?? null,
-            oneautoBlock: p.oneautoBlock ?? null,
-            ccVinBlock: p.ccVinBlock ?? null,
-            asvBlock: p.asvBlock ?? null,
-            manualVendorBlocks: p.manualVendorBlocks ?? null,
-            citiAvotiBlock: p.citiAvoti ?? null,
-            manualLtabBlock: p.manualLtabBlock ?? null,
-            tirgusForm: p.tirgusForm ?? null,
-            listingUrl: p.listingUrl ?? null,
+            csddForm: pVis.csddForm,
+            autoRecordsBlock: pVis.autoRecordsBlock ?? null,
+            oneautoBlock: pVis.oneautoBlock ?? null,
+            ccVinBlock: pVis.ccVinBlock ?? null,
+            asvBlock: pVis.asvBlock ?? null,
+            manualVendorBlocks: pVis.manualVendorBlocks ?? null,
+            citiAvotiBlock: pVis.citiAvoti ?? null,
+            manualLtabBlock: pVis.manualLtabBlock ?? null,
+            tirgusForm: pVis.tirgusForm ?? null,
+            listingUrl: pVis.listingUrl ?? null,
           }),
-          p.pdfBannerInclude,
+          pVis.pdfBannerInclude,
         ),
         infoBanners: filterInfoBannersForPdf(
           computeProvinInfoBannersFromPayloadSlice({
-            csddForm: p.csddForm,
-            autoRecordsBlock: p.autoRecordsBlock ?? null,
-            oneautoBlock: p.oneautoBlock ?? null,
-            ccVinBlock: p.ccVinBlock ?? null,
-            asvBlock: p.asvBlock ?? null,
-            manualVendorBlocks: p.manualVendorBlocks ?? null,
-            manualLtabBlock: p.manualLtabBlock ?? null,
-            citiAvotiBlock: p.citiAvoti ?? null,
+            csddForm: pVis.csddForm,
+            autoRecordsBlock: pVis.autoRecordsBlock ?? null,
+            oneautoBlock: pVis.oneautoBlock ?? null,
+            ccVinBlock: pVis.ccVinBlock ?? null,
+            asvBlock: pVis.asvBlock ?? null,
+            manualVendorBlocks: pVis.manualVendorBlocks ?? null,
+            manualLtabBlock: pVis.manualLtabBlock ?? null,
+            citiAvotiBlock: pVis.citiAvoti ?? null,
           }),
-          p.pdfBannerInclude,
+          pVis.pdfBannerInclude,
         ),
       })
     : [];
-  if (!dealerOnly) lines.push(buildPdfReportSummaryHtml(p, summaryBannerTiles));
+  if (!dealerOnly) lines.push(buildPdfReportSummaryHtml(pVis, summaryBannerTiles));
   const coverPhotoHtml = buildPdfCoverPhotoHtml(p, listingAnalysisPhotoDataUrls);
   if (coverPhotoHtml) lines.push(coverPhotoHtml);
 
@@ -3561,7 +3764,7 @@ export function buildClientReportDocumentHtml(args: {
   if (provinSourcesStrip) lines.push(provinSourcesStrip);
 
   if (!dealerOnly) {
-    const lifecycleHtml = buildPdfLifecycleTimelineHtml(p);
+    const lifecycleHtml = buildPdfLifecycleTimelineHtml(pVisTimeline);
     if (lifecycleHtml) lines.push(lifecycleHtml);
 
     const mileageOpts: CollectUnifiedMileageOptions = {
@@ -3580,7 +3783,7 @@ export function buildClientReportDocumentHtml(args: {
 
     const unifiedIncidentsHtml = buildUnifiedIncidentsTableHtml(
       {
-        ...p,
+        ...pVis,
         internalComment: vis.incidentsSummary ? p.internalComment : "",
         incidentPhotoGroups: vis.incidentPhotos ? p.incidentPhotoGroups : [],
         incidentPhotos: vis.incidentPhotos ? p.incidentPhotos : [],
@@ -3666,6 +3869,6 @@ export function buildClientReportDocumentHtml(args: {
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
 <title>${escapeHtml(docTitle)}</title><style>${runningCss}${inkCss}</style></head><body class="provin-report-doc">${chrome.join("\n")}${lines.join("\n")}${reportFontGuardScript()}</body></html>`;
-  const translated = applyClientReportStaticTranslations(html, lang);
+  const translated = applyClientReportDynamicTranslations(applyClientReportStaticTranslations(html, lang), lang);
   return b2bInternational ? applyB2bInternationalReportChrome(translated) : translated;
 }

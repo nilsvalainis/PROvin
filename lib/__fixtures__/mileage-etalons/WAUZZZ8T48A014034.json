@@ -1,0 +1,1234 @@
+{
+ "vin": "WAUZZZ8T48A014034",
+ "label": "Audi A5 2008: CSDD 12 rādījumi, AutoDNA 13",
+ "source": "prod pasūtījuma melnraksts (manual), revīzija 104, saglabāts 2026-11-08; nolasīts 17.11.2026, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "AUDI A5",
+   "registrationNumber": "LM1863",
+   "firstRegistration": "2007-11-28",
+   "firstRegistrationLatvia": "2018-08-29",
+   "nextInspectionDate": "2026-11-26",
+   "prevInspectionDate": "2025-11-26",
+   "engineDisplacementCm3": "2698",
+   "enginePowerKw": "140",
+   "fuelType": "Dīzeļdegviela",
+   "emissionStandard": "",
+   "vehicleType": "Vieglais pasažieru (M1)",
+   "grossMassKg": "2075",
+   "curbMassKg": "1650",
+   "seatCount": "4",
+   "roadTaxEur": "",
+   "registrationStatus": "Uzskaitē",
+   "opacityCoefficient": "1.61",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "BEĻĢIJA",
+   "ownerCountLatvia": "4",
+   "vin": "WAUZZZ8T48A014034",
+   "modelYear": "2007",
+   "color": "Melna",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "M1",
+   "cocType": "B8",
+   "cocApprovalNumber": "e1*2001/116*0430",
+   "cocVariant": "CCAMAF1",
+   "cocVersion": "FAVW0000R8T60",
+   "insuranceValidUntil": "2026-11-18",
+   "technicalInspectionHistory": [
+    {
+     "date": "26.11.2025",
+     "inspectionType": "",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "28.10.2025",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "2 - Ar mēneša laikā labojamiem defektiem",
+     "ratingLevel": 2,
+     "maxDefectLevel": 2,
+     "smokeCoefficient": "1.61",
+     "notes": "",
+     "defects": [
+      {
+       "code": "4.1.5.",
+       "rating": "2",
+       "description": "Gaismas kūļa noliekuma automātiskās korekcijas sistēmas kļūmes (bojājuma) indikators norāda uz kļūmi (bojājumu) sistēmas darbībā."
+      },
+      {
+       "code": "4.5.1.",
+       "rating": "2",
+       "description": "Nedeg kreisais pakaļējais miglas lukturis."
+      },
+      {
+       "code": "4.1.2.",
+       "rating": "2",
+       "description": "Labā tuvās gaismas luktura gaismas kūļa noliekums attiecībā pret horizontālu ceļa virsmu par zemu un neiekļaujas pieļaujamajā intervālā."
+      },
+      {
+       "code": "4.1.2.",
+       "rating": "2",
+       "description": "Kreisā tuvās gaismas luktura gaismas kūļa noliekums attiecībā pret horizontālu ceļa virsmu par zemu un neiekļaujas pieļaujamajā intervālā. 5.3.3.12. tilts. Funkcionalitāti neietekmējošas balstrāmja deformācijas vai virspusēja korozija."
+      },
+      {
+       "code": "6.1.1.",
+       "rating": "1",
+       "description": "Virspusēja rāmja vai nesošā elementa korozija."
+      }
+     ]
+    },
+    {
+     "date": "22.10.2024",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.85",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "16.10.2023",
+     "inspectionType": "atkārtota pārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": [
+      {
+       "code": "4.5.1.",
+       "rating": "1",
+       "description": "Nelieli bojājumi kreisajā priekšējā miglas lukturī."
+      },
+      {
+       "code": "4.5.1.",
+       "rating": "1",
+       "description": "Nelieli bojājumi labajā priekšējā miglas lukturī."
+      },
+      {
+       "code": "5.3.3.",
+       "rating": "1",
+       "description": "Priekšējais tilts. Sīki bojājumi balstiekārtas sviru sailentblokos."
+      }
+     ]
+    },
+    {
+     "date": "14.09.2023",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "2 - Ar mēneša laikā labojamiem defektiem",
+     "ratingLevel": 2,
+     "maxDefectLevel": 2,
+     "smokeCoefficient": "0.89",
+     "notes": "4.1.5. Bojāts aizm. devējs.",
+     "defects": [
+      {
+       "code": "4.1.2.",
+       "rating": "2",
+       "description": "Kreisā tuvās gaismas luktura gaismas kūļa noliekums attiecībā pret horizontālu ceļa virsmu par zemu un neiekļaujas pieļaujamajā intervālā."
+      },
+      {
+       "code": "4.3.1.",
+       "rating": "2",
+       "description": "Nedeg vairāk kā viena trešdaļa kvēlspuldžu vai diožu labajā bremžu lukturī."
+      },
+      {
+       "code": "4.1.5.",
+       "rating": "2",
+       "description": "Nedarbojas galveno lukturu automātiskās korekcijas ierīce."
+      },
+      {
+       "code": "4.1.2.",
+       "rating": "2",
+       "description": "Labā tuvās gaismas luktura gaismas kūļa noliekums attiecībā pret horizontālu ceļa virsmu par zemu un neiekļaujas pieļaujamajā intervālā. 5.3.3.12. tilts. Funkcionalitāti neietekmējošas balstrāmja deformācijas vai virspusēja korozija."
+      },
+      {
+       "code": "4.5.1.",
+       "rating": "1",
+       "description": "Nelieli bojājumi kreisajā priekšējā miglas lukturī."
+      },
+      {
+       "code": "4.5.1.",
+       "rating": "1",
+       "description": "Nelieli bojājumi labajā priekšējā miglas lukturī."
+      },
+      {
+       "code": "5.3.3.",
+       "rating": "1",
+       "description": "Priekšējais tilts. Sīki bojājumi balstiekārtas sviru sailentblokos."
+      }
+     ]
+    },
+    {
+     "date": "05.09.2022",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "0.83",
+     "notes": "",
+     "defects": [
+      {
+       "code": "8.4.1.",
+       "rating": "1",
+       "description": "Neveidojot piles, sūcas eļļa no motora (transmisijas)."
+      }
+     ]
+    },
+    {
+     "date": "26.08.2021",
+     "inspectionType": "atkārtota pārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "24.08.2021",
+     "inspectionType": "atkārtota pārbaude",
+     "ratingLabel": "2 - Ar mēneša laikā labojamiem defektiem",
+     "ratingLevel": 2,
+     "maxDefectLevel": 2,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": [
+      {
+       "code": "5.3.4.",
+       "rating": "2",
+       "description": "Priekšējais tilts. Palielināta brīvkustība balstiekārtasšarnīrā. Kreisā puse. Augšā pakaļējais šarnīrs."
+      }
+     ]
+    },
+    {
+     "date": "10.08.2021",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "2 - Ar mēneša laikā labojamiem defektiem",
+     "ratingLevel": 2,
+     "maxDefectLevel": 2,
+     "smokeCoefficient": "0.28",
+     "notes": "",
+     "defects": [
+      {
+       "code": "5.3.4.",
+       "rating": "2",
+       "description": "Priekšējais tilts. Palielināta brīvkustība balstiekārtasšarnīrā. Kreisā puse. Augšā pakaļējais šarnīrs."
+      }
+     ]
+    },
+    {
+     "date": "05.08.2020",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.05",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "23.07.2019",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": [
+      {
+       "code": "3.2.",
+       "rating": "1",
+       "description": "Redzamību vai izturību būtiski neietekmējoši stiklojuma bojājumi."
+      }
+     ]
+    },
+    {
+     "date": "29.08.2018",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "0.67",
+     "notes": "Nenozīmīga eļļas noplūde no motora (transmisijas).",
+     "defects": [
+      {
+       "code": "3.2.",
+       "rating": "1",
+       "description": "Redzamību vai izturību būtiski neietekmējoši stiklojuma bojājumi."
+      }
+     ]
+    }
+   ],
+   "ownerRegistrationEvents": [
+    {
+     "date": "29.08.2018",
+     "label": "Pirmā reģistrācija Latvijā"
+    },
+    {
+     "date": "09.03.2020",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "21.07.2025",
+     "label": "Īpašnieka maiņa"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "pamatpārbaude",
+    "inspectionDateText": "28.10.2025",
+    "nextInspectionDateText": "",
+    "odometer": "328025",
+    "ratingLabel": "2 - Ar mēneša laikā labojamiem defektiem",
+    "ratingLevel": 2,
+    "smokeCoefficient": "1.61",
+    "notes": "",
+    "defects": [
+     {
+      "code": "4.1.5.",
+      "rating": "2",
+      "description": "Gaismas kūļa noliekuma automātiskās korekcijas sistēmas kļūmes (bojājuma) indikators norāda uz kļūmi (bojājumu) sistēmas darbībā."
+     },
+     {
+      "code": "4.5.1.",
+      "rating": "2",
+      "description": "Nedeg kreisais pakaļējais miglas lukturis."
+     },
+     {
+      "code": "4.1.2.",
+      "rating": "2",
+      "description": "Labā tuvās gaismas luktura gaismas kūļa noliekums attiecībā pret horizontālu ceļa virsmu par zemu un neiekļaujas pieļaujamajā intervālā."
+     },
+     {
+      "code": "4.1.2.",
+      "rating": "2",
+      "description": "Kreisā tuvās gaismas luktura gaismas kūļa noliekums attiecībā pret horizontālu ceļa virsmu par zemu un neiekļaujas pieļaujamajā intervālā. 5.3.3.12. tilts. Funkcionalitāti neietekmējošas balstrāmja deformācijas vai virspusēja korozija."
+     },
+     {
+      "code": "6.1.1.",
+      "rating": "1",
+      "description": "Virspusēja rāmja vai nesošā elementa korozija."
+     }
+    ]
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "26.11.2025",
+     "odometer": "329092",
+     "country": "Latvija"
+    },
+    {
+     "date": "28.10.2025",
+     "odometer": "328025",
+     "country": "Latvija"
+    },
+    {
+     "date": "22.10.2024",
+     "odometer": "313836",
+     "country": "Latvija"
+    },
+    {
+     "date": "16.10.2023",
+     "odometer": "300132",
+     "country": "Latvija"
+    },
+    {
+     "date": "14.09.2023",
+     "odometer": "298957",
+     "country": "Latvija"
+    },
+    {
+     "date": "05.09.2022",
+     "odometer": "283519",
+     "country": "Latvija"
+    },
+    {
+     "date": "26.08.2021",
+     "odometer": "265219",
+     "country": "Latvija"
+    },
+    {
+     "date": "24.08.2021",
+     "odometer": "265058",
+     "country": "Latvija"
+    },
+    {
+     "date": "10.08.2021",
+     "odometer": "264319",
+     "country": "Latvija"
+    },
+    {
+     "date": "05.08.2020",
+     "odometer": "238286",
+     "country": "Latvija"
+    },
+    {
+     "date": "23.07.2019",
+     "odometer": "218108",
+     "country": "Latvija"
+    },
+    {
+     "date": "29.08.2018",
+     "odometer": "198230",
+     "country": "Latvija"
+    }
+   ],
+   "registry": {
+    "nr1": "WAUZZZ8T48A014034",
+    "fetchedAt": "2026-11-08T17:42:36.825Z",
+    "data": {
+     "registrationNumber": "LM1863",
+     "vin": "WAUZZZ8T48A014034",
+     "make": "AUDI",
+     "model": "A5",
+     "year": "2007",
+     "fuel": "Dīzeļdegviela",
+     "powerKw": "140",
+     "electricPowerKw": "",
+     "electricPowerKw2": "",
+     "displacementCm3": "2698",
+     "firstRegistrationIso": "2007-11-28",
+     "color": "Melna",
+     "vehicleKind": "Vieglais pasažieru",
+     "cocCategory": "M1",
+     "cocType": "B8",
+     "cocApprovalNumber": "e1*2001/116*0430",
+     "cocVariant": "CCAMAF1",
+     "cocVersion": "FAVW0000R8T60",
+     "grossMassKg": "2075",
+     "curbMassKg": "1650",
+     "insuranceEndIso": "2026-11-18",
+     "inspectionValidUntilIso": "2026-11-26"
+    }
+   }
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "26.11.2025",
+     "odometer": "329092",
+     "country": "Latvija"
+    },
+    {
+     "date": "28.10.2025",
+     "odometer": "328025",
+     "country": "Latvija"
+    },
+    {
+     "date": "22.10.2024",
+     "odometer": "313836",
+     "country": "Latvija"
+    },
+    {
+     "date": "16.10.2023",
+     "odometer": "300132",
+     "country": "Latvija"
+    },
+    {
+     "date": "14.09.2023",
+     "odometer": "298957",
+     "country": "Latvija"
+    },
+    {
+     "date": "05.09.2022",
+     "odometer": "283519",
+     "country": "Latvija"
+    },
+    {
+     "date": "26.08.2021",
+     "odometer": "265219",
+     "country": "Latvija"
+    },
+    {
+     "date": "24.08.2021",
+     "odometer": "265219",
+     "country": "Latvija"
+    },
+    {
+     "date": "10.08.2021",
+     "odometer": "265219",
+     "country": "Latvija"
+    },
+    {
+     "date": "05.08.2020",
+     "odometer": "238286",
+     "country": "Latvija"
+    },
+    {
+     "date": "23.07.2019",
+     "odometer": "218108",
+     "country": "Latvija"
+    },
+    {
+     "date": "29.08.2018",
+     "odometer": "198230",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.11.2010",
+     "odometer": "99500",
+     "country": "Beļģija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Beļģija",
+     "csngDate": "11.2010",
+     "lossAmount": "1 300 - 1 400 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "26.11.2025",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja ar piezīmi",
+     "odometer": "329092",
+     "includeInPdf": false
+    },
+    {
+     "date": "28.10.2025",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Neizgāja",
+     "odometer": "328025",
+     "includeInPdf": false
+    },
+    {
+     "date": "22.10.2024",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja ar piezīmi",
+     "odometer": "313836",
+     "includeInPdf": false
+    },
+    {
+     "date": "16.10.2023",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja ar piezīmi",
+     "odometer": "300132",
+     "includeInPdf": false
+    },
+    {
+     "date": "14.09.2023",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Neizgāja",
+     "odometer": "298957",
+     "includeInPdf": false
+    },
+    {
+     "date": "05.09.2022",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja ar piezīmi",
+     "odometer": "283519",
+     "includeInPdf": false
+    },
+    {
+     "date": "26.08.2021",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "265219",
+     "includeInPdf": false
+    },
+    {
+     "date": "24.08.2021",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Neizgāja",
+     "odometer": "265219",
+     "includeInPdf": false
+    },
+    {
+     "date": "10.08.2021",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Neizgāja",
+     "odometer": "265219",
+     "includeInPdf": false
+    },
+    {
+     "date": "05.08.2020",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "238286",
+     "includeInPdf": false
+    },
+    {
+     "date": "23.07.2019",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "218108",
+     "includeInPdf": false
+    },
+    {
+     "date": "29.08.2018",
+     "country": "Latvija",
+     "description": "Transportlīdzeklis reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "29.08.2018",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "odometer": "198230",
+     "includeInPdf": false
+    },
+    {
+     "date": "29.08.2018",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "198230",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2010",
+     "country": "",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "99500",
+     "includeInPdf": false
+    },
+    {
+     "date": "28.11.2007",
+     "country": "Beļģija",
+     "description": "Transportlīdzeklis reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "28.11.2007",
+     "country": "",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    },
+    {
+     "date": "09.10.2007",
+     "country": "Beļģija",
+     "description": "Automašīnas iepriekšreģistrēts",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.10.2025",
+     "odometer": "328025",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2024",
+     "odometer": "313836",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2024",
+     "odometer": "311875",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2023",
+     "odometer": "300132",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.09.2023",
+     "odometer": "298957",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.09.2022",
+     "odometer": "283519",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2021",
+     "odometer": "264319",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.01.2021",
+     "odometer": "245875",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2020",
+     "odometer": "238286",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2019",
+     "odometer": "218108",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2018",
+     "odometer": "198230",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.11.2010",
+     "odometer": "99500",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.10.2007",
+     "odometer": "18",
+     "country": ""
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Beļģija",
+     "csngDate": "11.2010",
+     "lossAmount": "1 001 - 1 500 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "09.2026",
+     "lossAmount": "2 001 - 2 500 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.10.2007",
+     "country": "",
+     "description": "Ražots",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2007",
+     "country": "",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2010",
+     "country": "Beļģija",
+     "description": "Fiksēts novērtējums",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.08.2018",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.08.2018",
+     "country": "Latvija",
+     "description": "Reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.08.2018",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.07.2019",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2020",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.08.2020",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.01.2021",
+     "country": "Latvija",
+     "description": "Izlikts pārdošanā Balstoties uz sludinājuma datiem, šis spēkrats ir ticis izlikts pārdošanā. Reizēm valsts, kurā ir publicēts sludinājums, var atšķirties no transportlīdzekļa patiesās atrašanās vietas",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.08.2021",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.09.2022",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.09.2023",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2023",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2024",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.07.2025",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2025",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2025",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-11-08T15:33:10.072Z"
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-11-08T15:34:21.152Z"
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-11-08T15:34:34.807Z"
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-11-08T15:33:36.628Z"
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "",
+     "odometer": "",
+     "location": "",
+     "works": ""
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": []
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "A5",
+     "modelSeries": "B8",
+     "vinCode": "WAUZZZ8T48A014034",
+     "vehicleType": "KUPEJA",
+     "transmission": "automatic transmission (tiptronic)",
+     "steeringSide": "LHD (left-hand drive)",
+     "engineCode": "CAMA",
+     "engineNumber": "",
+     "body": "KUPEJA",
+     "drive": "Front-wheel drive",
+     "power": "140KW (190HP)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "2007",
+     "firstRegistration": "28.11.2007",
+     "warrantyStartDate": "",
+     "countryRegion": "Germany",
+     "color": "black",
+     "colorCode": "",
+     "interior": "",
+     "interiorCode": "",
+     "fuel": "diesel",
+     "displacement": "2698"
+    },
+    "accidentCheck": "",
+    "stolenCheck": ""
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "",
+    "fetchedAt": "",
+    "lastCostUsd": "",
+    "status": "unknown",
+    "summary": ""
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "26.09.2026",
+     "lossAmount": "2 077,20 €"
+    }
+   ],
+   "certificate": {
+    "issuedAt": "08.11.2026 16:57:09",
+    "vehicleLine": "Transportlīdzeklis AUDI A5, izlaiduma gads 2007. Valsts numura zīme LM1863.",
+    "makeModel": "AUDI A5",
+    "year": "2007",
+    "plate": "LM1863",
+    "accidentCount": "1",
+    "insuredFrom": "29.08.2018",
+    "insuredTo": "18.11.2026",
+    "insuredDays": "2996",
+    "claims": [
+     {
+      "date": "26.09.2026",
+      "time": "02:05",
+      "status": "Cietušais",
+      "amount": "2077.20"
+     }
+    ],
+    "footerNote": "Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas."
+   }
+  },
+  "tirgus": {
+   "listedForSale": "1",
+   "listingCreated": "08.11.2026",
+   "priceDrop": "0 €",
+   "priceHistory": [
+    {
+     "date": "08.11.2026",
+     "price": 2500,
+     "mileage": 334920,
+     "year": 2007,
+     "delta": 0
+    }
+   ],
+   "listingMileageOdometer": "334 920",
+   "listingMileageDate": "08.11.2026",
+   "listingMileageCountry": "Latvija"
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "comments": "",
+     "label": ""
+    }
+   ]
+  }
+ }
+}

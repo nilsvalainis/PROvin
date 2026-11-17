@@ -44,7 +44,7 @@ describe("b2b partner prices", () => {
     expect(getB2bBusinessHeroFeatures("de")[0]).toBe("Offizielle Händlerdaten*");
     expect(getB2bCatalog("lv").dealer.title).toBe("DĪLERA DATI");
     expect(getB2bCatalog("lv").dealer.goal).toContain("izpildītās kampaņas");
-    expect(getB2bCatalog("en").dealer.goal).toContain("executed recall campaigns");
+    expect(getB2bCatalog("en").dealer.goal).toContain("completed recall campaigns");
     expect(getB2bCatalog("de").dealer.goal).toContain("durchgeführte Rückrufaktionen");
     expect(getB2bCatalog("ru").dealer.goal).toContain("выполненные отзывные кампании");
     expect(getB2bCatalog("lv").dealer.goal).not.toMatch(/aktīvo kampaņ/i);

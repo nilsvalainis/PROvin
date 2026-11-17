@@ -1,0 +1,10 @@
+[Unit]
+Description=CSDD tirdzniecības reģistra nolasījums -> PROVIN Autoparks (tikai lasīšana)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/csdd-registrs/run.sh
+TimeoutStartSec=25min
+Nice=10

@@ -39,10 +39,12 @@ import {
   probeRegitra,
   probeJojCopartIaai,
   probeStatVin,
+  probeThecarapi,
   probeTraficom,
   probeVegvesen,
   probeVinDecode,
 } from "@/lib/vin-scan/probes-extra";
+import { probeCzRsv, probeDvsaMot } from "@/lib/vin-scan/probes-cz-uk";
 import { isPlausibleListingUrl } from "@/lib/order-field-validation";
 import {
   CARINFO_SUPER_SEARCH_DIRECT_MS,
@@ -136,7 +138,10 @@ export async function probeNummerplade(ctx: VinScanContext): Promise<VinScanIndi
     });
     const challenge = scanChallengeReason(page);
     if (challenge) return done("nummerplade", ctx, { status: "unknown", summary: `nummerplade.net: ${challenge}` });
-    const htmlParsed = parseNummerpladeHtml(page.status, page.text, ctx.vin);
+    // Captcha lapā var būt VIN un vārds "nummerplade", tāpēc to neparsējam kā rezultātu.
+    const htmlParsed = page.captchaReason
+      ? { status: "unknown" as const, summary: `nummerplade.net: ${page.captchaReason}` }
+      : parseNummerpladeHtml(page.status, page.text, ctx.vin);
     if (htmlParsed.status === "found" || htmlParsed.status === "none") {
       return done("nummerplade", ctx, { ...htmlParsed, openUrl: resultUrl });
     }
@@ -219,7 +224,10 @@ export async function probeCarpass(ctx: VinScanContext): Promise<VinScanIndicato
     const challenge = scanChallengeReason(page);
     if (challenge) return done("carpass", ctx, { status: "unknown", summary: `Car-Pass: ${challenge}` });
     const csrf = parseCarpassCsrf(page.text);
-    if (!csrf) return done("carpass", ctx, { status: "unknown", summary: "Car-Pass neatgrieza drošības žetonu" });
+    if (!csrf) {
+      const summary = page.captchaReason ? `Car-Pass: ${page.captchaReason}` : "Car-Pass neatgrieza drošības žetonu";
+      return done("carpass", ctx, { status: "unknown", summary });
+    }
     const body = new URLSearchParams({ vin: ctx.vin, _csrf: csrf }).toString();
     const res = await scanFetch("https://public.car-pass.be/recalls", {
       method: "POST",
@@ -237,7 +245,11 @@ export async function probeCarpass(ctx: VinScanContext): Promise<VinScanIndicato
     });
     const postChallenge = scanChallengeReason(res);
     if (postChallenge) return done("carpass", ctx, { status: "unknown", summary: `Car-Pass: ${postChallenge}` });
-    return done("carpass", ctx, parseCarpassRecalls(res.status, res.text));
+    const parsed = parseCarpassRecalls(res.status, res.text);
+    if (parsed.status === "unknown" && page.captchaReason) {
+      return done("carpass", ctx, { status: "unknown", summary: `Car-Pass: ${page.captchaReason}` });
+    }
+    return done("carpass", ctx, parsed);
   } catch (e) {
     return failed("carpass", ctx, e);
   }
@@ -254,7 +266,8 @@ export async function probeCsdd(ctx: VinScanContext): Promise<VinScanIndicator> 
 
 export async function probeMntEe(ctx: VinScanContext): Promise<VinScanIndicator> {
   try {
-    return done("mnt_ee", ctx, parseVinSourceScan(await fetchVinSource("mnt_ee", ctx.vin, ctx.plates.lv)));
+    // mnt.ee `regMark` ir Igaunijas numurs. LV numurs tur nav derīgs un var sabojāt meklējumu, tāpēc tikai VIN.
+    return done("mnt_ee", ctx, parseVinSourceScan(await fetchVinSource("mnt_ee", ctx.vin)));
   } catch (e) {
     return failed("mnt_ee", ctx, e);
   }
@@ -273,6 +286,8 @@ export async function probeCarinfo(ctx: VinScanContext): Promise<VinScanIndicato
     // Vercel tiešais fetch bieži ir 403. VIN HTML lapa tad iet caur Chrome releju.
     // Super-search ir JSON. Chrome page.goto to saņem kā 403 un gaida ~52 s, divas reizes
     // pārsniedz 90 s budžetu un DK/NO/FI VIN lapas vairs netiek vaļā. JSON iet pa plain HTTP.
+    // Releja īstais iemesls (dienas limits, rinda pilna, tokens), lai operators neredz tikai „bloķē”.
+    let relayReason = "";
     const parsed = await runCarinfoLookup(ctx.vin, ctx.plates.se, async (url) => {
       const superSearch = isCarinfoSuperSearchUrl(url);
       let direct: { status: number; text: string; cookie: string };
@@ -298,12 +313,17 @@ export async function probeCarinfo(ctx: VinScanContext): Promise<VinScanIndicato
       const relayed = superSearch
         ? await applyCarinfoSuperSearchHttp(url, direct, { timeoutMs: CARINFO_SUPER_SEARCH_RELAY_MS })
         : await applyVinScanRelayIfBlocked(url, direct);
+      const reason = String((relayed as { challengeReason?: string }).challengeReason ?? "").trim();
+      if (reason) relayReason = reason;
       const relayDiffers = relayed.status !== direct.status || relayed.text !== direct.text;
       if (relayed.text && relayDiffers && !carinfoResponseBlocked(relayed.status, relayed.text)) {
         return { status: relayed.status, text: relayed.text };
       }
       return { status: direct.status, text: direct.text };
     });
+    if (parsed.status === "blocked" && relayReason) {
+      return done("carinfo", ctx, { ...parsed, summary: `car.info: ${relayReason}`.slice(0, 240) });
+    }
     return done("carinfo", ctx, parsed);
   } catch (e) {
     return failed("carinfo", ctx, e);
@@ -337,6 +357,7 @@ const PROBES: Record<VinScanSourceId, (ctx: VinScanContext) => Promise<VinScanIn
   lt_itpr: probeLtPolice,
   stat_vin: probeStatVin,
   joj_copart_iaai: probeJojCopartIaai,
+  thecarapi_eu: probeThecarapi,
   bid_cars: probeBidCars,
   auchistory: probeAuchistory,
   carfax_eu: probeCarfaxEu,
@@ -344,6 +365,8 @@ const PROBES: Record<VinScanSourceId, (ctx: VinScanContext) => Promise<VinScanIn
   plc_auction: probePlcAuction,
   bidfax: probeBidfax,
   poctra: probePoctra,
+  cz_rsv: probeCzRsv,
+  dvsa_mot: probeDvsaMot,
 };
 
 export function vinScanProbeFor(id: string): ((ctx: VinScanContext) => Promise<VinScanIndicator> | VinScanIndicator) | null {

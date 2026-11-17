@@ -19,7 +19,9 @@ export function autoparksHidesSums(actor: AdminOrStaffActor): boolean {
 }
 
 function stripCar<T extends AutoparksCar>(car: T): T {
-  return { ...car, purchasePriceEur: null, salePriceEur: null };
+  const out = { ...car, purchasePriceEur: null, salePriceEur: null };
+  if ("listPriceEur" in car) out.listPriceEur = null;
+  return out;
 }
 
 function stripWork(w: AutoparksWorkItem): AutoparksWorkItem {

@@ -1,0 +1,124 @@
+import { describe, expect, it } from "vitest";
+import { normalizeAutoparksCar } from "@/lib/iriss-autoparks";
+import { emptyAutoparksV2State, normalizeAutoparksV2State } from "@/lib/iriss-autoparks-v2";
+import {
+  AUTOPARKS_V2_DEFAULT_SORT,
+  autoparksV2ListRows,
+  autoparksV2OwnerCounts,
+  filterAutoparksV2Rows,
+  flattenAutoparksV2Rows,
+  groupAutoparksV2Rows,
+  sortAutoparksV2Rows,
+} from "@/lib/iriss-autoparks-v2-list";
+
+const cars = [
+  { id: "a", make: "Volkswagen", model: "Passat Variant", vin: "WVWZZZ3CZKE012345", status: "in_service", statusChangedAt: "2026-10-20", purchasePriceEur: 9850 },
+  { id: "b", make: "Škoda", model: "Octavia Combi", vin: "TMBJJ7NE5ML998877", status: "in_service", owner: "DZA", statusChangedAt: "2026-10-22" },
+  { id: "c", make: "BMW", model: "320d Touring", vin: "WBA8E1C5XGA123456", status: "in_transit" },
+  { id: "d", make: "Audi", model: "A6", vin: "WAUZZZ4G6JN445566", status: "sold", archivedAt: "2026-10-01" },
+].map((c) => normalizeAutoparksCar(c)!);
+
+const rows = autoparksV2ListRows(cars, emptyAutoparksV2State());
+
+describe("Tirdzniecībā pieņemtie (Nils 27.10)", () => {
+  it("filtrs rāda tikai auto ar CSDD tirdzniecības aktu, kas nav noņemti", () => {
+    const withReg = [
+      { id: "t1", make: "Audi", model: "SQ5", vin: "WAUZZZ8R7EA126875", status: "for_sale", registry: { tradeActNo: "GDZ00218" } },
+      { id: "t2", make: "BMW", model: "X5", vin: "WBA00000000000001", status: "for_sale", registry: { tradeActNo: "GDZ00219", removedAt: "2026-10-20" } },
+      { id: "t3", make: "Opel", model: "Astra", vin: "W0L00000000000002", status: "for_sale" },
+    ].map((c) => normalizeAutoparksCar(c)!);
+    const r = autoparksV2ListRows(withReg, emptyAutoparksV2State());
+    expect(filterAutoparksV2Rows(r, { owner: "all", inTradeOnly: true }).map((x) => x.id)).toEqual(["t1"]);
+    expect(filterAutoparksV2Rows(r, { owner: "all" }).map((x) => x.id)).toEqual(["t1", "t2", "t3"]);
+  });
+});
+
+describe("Autoparks v2 saraksts", () => {
+  it("noklusējuma kārtošana visiem profiliem - Iegāde: jaunākie (Nils 27.10)", () => {
+    expect(AUTOPARKS_V2_DEFAULT_SORT).toBe("date_desc");
+  });
+
+  it("bez tiesības «summas» rindā nav summas; īpašnieks tikai filtram; VIN pilns", () => {
+    expect(Object.keys(rows[0]!).sort()).toEqual([
+      "archived",
+      "clientOrder",
+      "color",
+      "hasPhoto",
+      "id",
+      "inTrade",
+      "make",
+      "owner",
+      "purchaseDate",
+      "purchasePriceEur",
+      "status",
+      "statusChangedAt",
+      "title",
+      "vatMode",
+      "vin",
+      "year",
+    ]);
+    expect(rows.every((r) => r.purchasePriceEur === null)).toBe(true);
+    // Bez tiesības «Iegāde» PVN režīms netiek sūtīts.
+    expect(rows.every((r) => r.vatMode === "")).toBe(true);
+    expect(rows[0]!.vin).toBe("WVWZZZ3CZKE012345");
+  });
+
+  it("kārtošana (Nils 27.10): marka A-Z, iegādes datums, summa; bez vērtības - beigās", () => {
+    const v2 = normalizeAutoparksV2State({
+      cars: {
+        a: { purchase: { purchaseDate: "2026-09-01" } },
+        c: { purchase: { purchaseDate: "2026-10-15", purchasePriceEur: 21500 } },
+      },
+    });
+    const withSums = autoparksV2ListRows(cars, v2, { sums: true }).filter((r) => !r.archived);
+    expect(sortAutoparksV2Rows(withSums, "make").map((r) => r.id)).toEqual(["c", "b", "a"]);
+    expect(sortAutoparksV2Rows(withSums, "date_desc").map((r) => r.id)).toEqual(["c", "a", "b"]);
+    expect(sortAutoparksV2Rows(withSums, "date_asc").map((r) => r.id)).toEqual(["a", "c", "b"]);
+    expect(sortAutoparksV2Rows(withSums, "sum_desc").map((r) => r.id)).toEqual(["c", "a", "b"]);
+    expect(sortAutoparksV2Rows(withSums, "sum_asc").map((r) => r.id)).toEqual(["a", "c", "b"]);
+    expect(withSums.find((r) => r.id === "a")!.purchasePriceEur).toBe(9850);
+  });
+
+  it("sadaļas pēc statusa procesa secībā, jaunākā maiņa augšā", () => {
+    const g = groupAutoparksV2Rows(filterAutoparksV2Rows(rows, { owner: "all" }));
+    expect(g.map((s) => [s.status, s.rows.map((r) => r.id)])).toEqual([
+      ["in_transit", ["c"]],
+      ["in_service", ["b", "a"]],
+    ]);
+  });
+
+  it("plakans saraksts (m01): tā pati secība, bez sadaļām", () => {
+    expect(flattenAutoparksV2Rows(filterAutoparksV2Rows(rows, { owner: "all" })).map((r) => r.id)).toEqual(["c", "b", "a"]);
+  });
+
+  it("īpašnieka filtrs, arhīvs, meklēšana pēc markas/modeļa/VIN daļas", () => {
+    expect(filterAutoparksV2Rows(rows, { owner: "DZA" }).map((r) => r.id)).toEqual(["b"]);
+    expect(filterAutoparksV2Rows(rows, { owner: "archive" }).map((r) => r.id)).toEqual(["d"]);
+    expect(filterAutoparksV2Rows(rows, { owner: "all", query: "passat ke012" }).map((r) => r.id)).toEqual(["a"]);
+    expect(filterAutoparksV2Rows(rows, { owner: "all", query: "škoda" }).map((r) => r.id)).toEqual(["b"]);
+    expect(autoparksV2OwnerCounts(rows)).toEqual({ all: 3, IRISS: 2, DZA: 1 });
+  });
+
+  it("meklēšana ignorē atstarpes markā un modelī («E 350» un «E350»)", () => {
+    const found = [
+      { id: "e1", make: "Mercedes-Benz", model: "E350", vin: "WDDHF5GB7AA111111", status: "for_sale" },
+      { id: "e2", make: "Mercedes-Benz", model: "E 350", vin: "WDDHF5GB7AA222222", status: "for_sale" },
+      { id: "e3", make: "Mercedes-Benz", model: "E 350", vin: "WDDHF5GB7AA333333", status: "for_sale" },
+      { id: "x", make: "BMW", model: "320d", vin: "WBA000000000000099", status: "for_sale" },
+    ].map((c) => normalizeAutoparksCar(c)!);
+    const listed = autoparksV2ListRows(found, emptyAutoparksV2State());
+    const multi = listed.map((row) => (row.id === "e3" ? { ...row, title: "Mercedes-Benz E  350" } : row));
+    for (const query of ["E 350", "E350", "E  350", "e350"]) {
+      expect(filterAutoparksV2Rows(multi, { owner: "all", query }).map((row) => row.id).sort()).toEqual(["e1", "e2", "e3"]);
+    }
+    expect(filterAutoparksV2Rows(multi, { owner: "all", query: "e350 222222" }).map((row) => row.id)).toEqual(["e2"]);
+    expect(filterAutoparksV2Rows(multi, { owner: "all", query: "320d" }).map((row) => row.id)).toEqual(["x"]);
+  });
+
+  it("J29 C: sarakstā redzama v2 labotā marka/modelis/VIN", () => {
+    const v2 = normalizeAutoparksV2State({ cars: { c: { fields: { make: "BMW", model: "220d Gran Tourer", vin: "WBA2A1234A1234567" } } } });
+    const r = autoparksV2ListRows(cars, v2).find((x) => x.id === "c")!;
+    expect(r.title).toBe("BMW 220d Gran Tourer");
+    expect(r.vin).toBe("WBA2A1234A1234567");
+  });
+});

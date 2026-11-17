@@ -71,7 +71,9 @@ describe("IRISS listings toolbar", () => {
   it("keeps grid specs, source labels and mobile order chips readable", () => {
     expect(specGrid).toContain('layout === "grid"');
     expect(specGrid).toContain("gap-x-4");
-    expect(specGrid).toContain("whitespace-nowrap");
+    // Vērtības aplaužas šūnā (nevis uzklājas kaimiņam planšetē); skaitļi ar nbsp paliek kopā.
+    expect(specGrid).toContain("break-words");
+    expect(specGrid).not.toContain("whitespace-nowrap");
     expect(card).toContain("LISTING_PLATFORM_LABEL");
     expect(card).not.toContain('ecarstrade: "ECARSTRADE"');
     expect(card).toContain("flex-nowrap items-center justify-end");

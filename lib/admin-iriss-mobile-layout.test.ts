@@ -35,7 +35,8 @@ describe("IRISS mobile safe-area layout", () => {
 
   it("pins the tab dock to the screen edge with IRISS safe-area math", () => {
     expect(ADMIN_MOBILE_TABBAR_DOCK_WRAPPER).toMatch(/admin-m-tabbar-dock/);
-    expect(ADMIN_MOBILE_TABBAR_DOCK_WRAPPER).toMatch(/gap-\[12pt\]/);
+    expect(ADMIN_MOBILE_TABBAR_DOCK_WRAPPER).not.toMatch(/gap-\[12pt\]/);
+    expect(ADMIN_MOBILE_TABBAR_DOCK_WRAPPER).toMatch(/justify-center/);
     expect(ADMIN_MOBILE_TABBAR_DOCK_WRAPPER).not.toMatch(/inset-x-0/);
     expect(IRISS_MOBILE_TAB_BOTTOM_CSS).toBe("max(8px, calc(env(safe-area-inset-bottom, 0px) - 20px))");
     expect(IRISS_MOBILE_TABBAR_H_CSS).toContain("62px");

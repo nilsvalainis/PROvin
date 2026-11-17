@@ -1,0 +1,44 @@
+{
+ "label": "Audi A5 2008: CSDD 12 rādījumi, AutoDNA 13",
+ "rindasPaAvotiem": {
+  "CSDD": 12,
+  "AutoDNA": 13,
+  "CarVertical": 13,
+  "ss.lv": 1
+ },
+ "rindasSavaktas": 39,
+ "rindasTabula": 17,
+ "tabula": [
+  "01.10.2007 | 18 | Nezināmā | CarVertical",
+  "01.11.2010 | 99500 | Beļģija | AutoDNA + CarVertical",
+  "29.08.2018 | 198230 | Latvija | CarVertical + CSDD + AutoDNA",
+  "23.07.2019 | 218108 | Latvija | CarVertical + CSDD + AutoDNA",
+  "05.08.2020 | 238286 | Latvija | CarVertical + CSDD + AutoDNA",
+  "01.01.2021 | 245875 | Latvija | CarVertical",
+  "10.08.2021 | 264319 | Latvija | CarVertical + CSDD",
+  "24.08.2021 | 265058 | Latvija | CSDD",
+  "26.08.2021 | 265219 | Latvija | AutoDNA + CSDD",
+  "05.09.2022 | 283519 | Latvija | CarVertical + CSDD + AutoDNA",
+  "14.09.2023 | 298957 | Latvija | CarVertical + CSDD + AutoDNA",
+  "16.10.2023 | 300132 | Latvija | CarVertical + CSDD + AutoDNA",
+  "01.08.2024 | 311875 | Latvija | CarVertical",
+  "22.10.2024 | 313836 | Latvija | CarVertical + CSDD + AutoDNA",
+  "28.10.2025 | 328025 | Latvija | CarVertical + CSDD + AutoDNA",
+  "26.11.2025 | 329092 | Latvija | CSDD + AutoDNA",
+  "08.11.2026 | 334 920 | Latvija | ss.lv"
+ ],
+ "sarkanaJosla": false,
+ "klases": [],
+ "kritumsBezNilaLemumiem": false,
+ "nilaLemumi": [],
+ "klasesPecNilaLemumiem": [],
+ "faktuLapa": {
+  "odometerAnomaly": false,
+  "carverticalMileageWarning": false,
+  "maxRollbackDropKm": 0,
+  "rollbacks": [],
+  "suspectedEntryErrors": [],
+  "implausibleReadings": [],
+  "latestKm": 334920
+ }
+}

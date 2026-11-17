@@ -5,8 +5,8 @@ import { useCallback, useState } from "react";
 import { Loader2, Plus } from "lucide-react";
 
 /**
- * Izveido tukšu manuālo pasūtījumu (pasūtījumiem, kas neienāk caur tiešsaistes formu).
- * Summa un Laiks pēc tam labojami tieši sarakstā.
+ * Izveido tukšu manuālo pasūtījumu (pasūtījumiem, kas neienāk caur tiešsaistes formu)
+ * un uzreiz to atver.
  */
 export function AdminCreateManualOrderButton({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
@@ -18,9 +18,15 @@ export function AdminCreateManualOrderButton({ compact = false }: { compact?: bo
     setError(null);
     try {
       const res = await fetch("/api/admin/manual-orders", { method: "POST" });
-      const data = (await res.json().catch(() => ({}))) as { error?: unknown };
+      const data = (await res.json().catch(() => ({}))) as { error?: unknown; record?: { id?: unknown } };
       if (!res.ok) {
         setError(typeof data.error === "string" ? data.error : "Neizdevās izveidot pasūtījumu");
+        return;
+      }
+      // Jauno pasūtījumu atver uzreiz (agrāk tas palika neredzams - saraksts datorā neatjaunojās).
+      const id = typeof data.record?.id === "string" ? data.record.id : "";
+      if (id) {
+        router.push(`/admin/orders/${encodeURIComponent(id)}`);
         return;
       }
       router.refresh();

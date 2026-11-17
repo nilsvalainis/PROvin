@@ -55,6 +55,12 @@ describe("buildOneautoProductResult", () => {
     expect(result).toMatchObject({ ok: false, error: "service_not_enabled", httpStatus: 403 });
   });
 
+  it("HTTP 206 nav ok un nav no-data, arī ja payload saka no data", () => {
+    const payload = { success: false, error: NO_DATA_MSG };
+    const result = buildOneautoProductResult({ ok: true, status: 206, payload });
+    expect(result).toMatchObject({ ok: false, error: "http_206", httpStatus: 206 });
+  });
+
   it("pending 202 nav no-data", () => {
     const result = buildOneautoProductResult({
       ok: true,

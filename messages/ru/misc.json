@@ -4,16 +4,24 @@
     "faqBack": "← На главную",
     "pasutitRedirect": "Переход к форме заказа…",
     "checkoutProductName": "PROVIN AUDITS",
-    "checkoutProductDesc": "Полная проверка истории автомобиля в платных базах, разбор объявления и анализ рисков.",
+    "checkoutProductDesc": "Проверка истории минимум в 2 платных источниках, разбор объявления и анализ рисков.",
     "checkoutConsultationProductName": "PROVIN: стратегическая консультация",
     "checkoutConsultationProductDesc": "Личная консультация и ориентир по рынку: контекст VIN и объявления, оценка рисков и следующие шаги.",
     "checkoutProvinSelectProductName": "PROVIN SELECT\nСтратегическая консультация",
-    "checkoutProvinSelectProductDesc": "Личная консультация для решения о покупке"
+    "checkoutProvinSelectProductDesc": "Личная консультация по вопросам покупки автомобиля",
+    "notFoundTitle": "Страница не найдена",
+    "notFoundHome": "Главная PROVIN",
+    "orderBarCta": "Заказать аудит · 99,99 €",
+    "notFoundLead": "Возможно, ссылка изменилась. Начните с одной из этих страниц:",
+    "notFoundHeading": "Страница не найдена.",
+    "notFoundLinkHome": "Главная",
+    "notFoundLinkServices": "Услуги",
+    "notFoundLinkFreeCheck": "Бесплатная проверка VIN"
   },
   "Blogs": {
     "comingSoon": "СКОРО",
     "sermonTitle": "ПРОПОВЕДЬ БЕЗ АЛТАРЯ",
-    "indexH1": "Блог: покупка авто и проверка VIN",
+    "indexH1": "Блог: покупка подержанного авто и проверка VIN",
     "readMore": "Читать статью",
     "backToList": "← Все статьи",
     "lvOnlyNote": "Полный текст доступен на латышском языке.",
@@ -21,10 +29,14 @@
     "commentsEmpty": "Комментариев пока нет. Будьте первым.",
     "commentName": "Имя",
     "commentBody": "Комментарий",
-    "commentSubmit": "Отправить",
+    "commentSubmit": "Опубликовать",
     "commentSubmitting": "Отправка…",
     "commentSuccess": "Комментарий опубликован.",
-    "commentError": "Не удалось отправить. Попробуйте ещё раз."
+    "commentError": "Не удалось отправить. Попробуйте ещё раз.",
+    "tocLabel": "Содержание",
+    "ctaTitle": "Перед покупкой - проверьте историю авто",
+    "ctaBody": "Данные из нескольких источников, анализ объявления и консультация в одном аудите.",
+    "ctaButton": "Заказать проверку VIN"
   },
   "SiteRail": {
     "navAria": "Основные разделы",
@@ -34,8 +46,8 @@
     "provinSelect": "Консультация",
     "kasSlapjasAizProvin": "О PROVIN",
     "buj": "FAQ",
-    "b2b": "Для дилеров",
-    "b2bLoginAria": "Для дилеров: войти"
+    "b2b": "Партнёрам",
+    "b2bLoginAria": "Партнёрам: вход"
   },
   "Breadcrumbs": {
     "navAria": "Навигационная цепочка",
@@ -45,6 +57,8 @@
     "about": "О PROVIN",
     "blogs": "Блог",
     "vinCheck": "Проверка VIN",
-    "partner": "Для дилеров"
+    "partner": "Партнёрам",
+    "terms": "Условия использования",
+    "privacy": "Политика конфиденциальности"
   }
 }

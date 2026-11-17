@@ -1,5 +1,6 @@
 import { after, NextResponse } from "next/server";
 import { verifyDropboxWebhookSignature } from "@/lib/dropbox-webhook-signature";
+import { runAutoparksDropboxSync } from "@/lib/iriss-autoparks-dropbox-sync";
 import { runIrissPavadzimesDropboxSync } from "@/lib/iriss-pavadzimes-store";
 
 export const runtime = "nodejs";
@@ -39,6 +40,13 @@ export async function POST(req: Request) {
       await runIrissPavadzimesDropboxSync();
     } catch (e) {
       console.error("[dropbox-pavadzimes webhook sync]", e instanceof Error ? e.message : e);
+    }
+    // Tas pats Dropbox app webhook: Autoparks /STOCK izmaiņas (kursors, tikai jaunās izmaiņas).
+    try {
+      const r = await runAutoparksDropboxSync();
+      if (!r.ok && r.error !== "dropbox_not_configured") console.error("[dropbox autoparks webhook sync]", r.error);
+    } catch (e) {
+      console.error("[dropbox autoparks webhook sync]", e instanceof Error ? e.message : e);
     }
   });
 

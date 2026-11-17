@@ -420,6 +420,64 @@ Veikta tehniskā apskate
   });
 });
 
+describe("CarVertical bojājumi no servera pdf-parse teksta (FABLE 25.10)", () => {
+  const CV_TEXT_UNKNOWN = [
+    "Bojājumu ieraksti",
+    "Bojājumi",
+    '"Bojājumu" sadaļas skaidrojums',
+    "Aptuvenā iepriekšgūto bojājumu vērtība",
+    "Ja transportlīdzeklim ir fiksēti bojājumi, tad remontdarbu izmaksas ir aprēķinātas.",
+    "12.2024.Somija",
+    "Fiksētie bojājumi",
+    "Bojātās detaļas",
+    "Fiksēti bojājumi, taču nav atzīmētas bojātās detaļas",
+    "Aptuvenā iepriekšgūto bojājumu vērtība",
+    "Nezināms",
+    "Augstākā cena28500 €",
+    "Vidējā cena23145 €",
+  ].join("\n");
+
+  it("bojājumu ar „Nezināms” vērtību saglabā, tirgus cenu neņem kā summu, skaidrojumu neskaita", () => {
+    expect(extractCarverticalReport(CV_TEXT_UNKNOWN).incidents).toEqual([
+      { csngDate: "12.2024", lossAmount: "Dati nav pieejami", incidentNo: "Somija" },
+    ]);
+  });
+
+  it("salīmētā etiķete „iepriekšgūto” ar summu (Škoda CV)", () => {
+    const text = [
+      "Bojājumu ieraksti",
+      "03.2023.Latvija",
+      "Fiksētie bojājumi",
+      "Bojātās detaļas",
+      "Ārpuse / Nav norādīts",
+      "Aptuvenā iepriekšgūto bojājumu vērtība",
+      "501 € – 750 €",
+    ].join("\n");
+    expect(extractCarverticalReport(text).incidents).toEqual([
+      { csngDate: "03.2023", lossAmount: "501 - 750 €", incidentNo: "Latvija" },
+    ]);
+  });
+
+  it("AI payload: bojājums bez summas ar valsti paliek, bez valsts - nē", () => {
+    const extract = parseVendorPdfAgentPayload(
+      JSON.stringify({
+        vendor: "carvertical",
+        mileage: [],
+        incidents: [
+          { date: "12.2024", amountRaw: "", currency: "", country: "Somija" },
+          { date: "01.2020", amountRaw: "Nezināms", currency: "", country: "" },
+        ],
+        countryTimeline: [],
+        vehicleInfo: {},
+      }),
+      "carvertical",
+    );
+    expect(extract.incidents).toEqual([
+      { csngDate: "12.2024", lossAmount: "Dati nav pieejami", incidentNo: "Somija" },
+    ]);
+  });
+});
+
 describe("AI payload → extract", () => {
   it("pārrēķina summu no norādītās valūtas un normalizē datumus", () => {
     const extract = parseVendorPdfAgentPayload(

@@ -4,7 +4,6 @@ const SLOW_SOURCES = new Set<VinScanSourceId>([
   "mnt_ee",
   "lkf_ee",
   "carinfo",
-  "nicb",
   "auchistory",
   "regitra",
   "traficom",
@@ -14,31 +13,43 @@ const SLOW_SOURCES = new Set<VinScanSourceId>([
 const SLOW_TIMEOUT_MS = 45_000;
 const DEFAULT_TIMEOUT_MS = 14_000;
 const CAPTCHA_TIMEOUT_MS = 90_000;
-/** Hetzner Chrome `/listings/page`: palaišana + Cloudflare izaicinājuma gaidīšana un atkārtojums. */
+/**
+ * Hetzner Chrome `/listings/page`: palaišana + Cloudflare izaicinājuma gaidīšana un atkārtojums.
+ * Pašlaik neviens VIN SCAN avots to neizmanto (izsoļu avoti ir tikai pārlūkā); atstāts releja klientiem.
+ */
 export const VIN_SCAN_RELAY_PAGE_TIMEOUT_MS = 100_000;
 
-const RELAY_PAGE_SOURCES = new Set<VinScanSourceId>([
-  "stat_vin",
-  "bid_cars",
-  "checkcar_vin",
-  "plc_auction",
-  "bidfax",
-  "poctra",
-]);
+/**
+ * esyn un dsb veic 2-3 secīgus HTTP pieprasījumus (katrs līdz 12 s), tāpēc 14 s nepietiek.
+ */
+const MULTI_STEP_TIMEOUT_MS = 25_000;
+const MULTI_STEP_SOURCES = new Set<VinScanSourceId>(["esyn", "dsb"]);
 
+/**
+ * mnt_ee iet caur releju ar `MNT_RELAY_TIMEOUT_MS` (100 s). Ārējam limitam jābūt lielākam,
+ * lai operators redz releja īsto iemeslu, nevis "Avots neatbildēja laikā".
+ */
+const MNT_EE_TIMEOUT_MS = 105_000;
+
+const THECARAPI_TIMEOUT_MS = 15_000;
+const THECARAPI_SOURCES = new Set<VinScanSourceId>(["thecarapi_eu"]);
+
+/**
+ * stat_vin, bid_cars, checkcar_vin, plc_auction, bidfax, poctra, nicb un lt_itpr tagad ir tikai
+ * pārlūka avoti: zonde atgriež `browser_only` uzreiz bez tīkla, tāpēc tiem pietiek ar noklusējumu.
+ */
 const CAPTCHA_SOURCES = new Set<VinScanSourceId>([
   "lkf_ee",
   "carinfo",
-  "nicb",
   "auchistory",
-  "mnt_ee",
   "nummerplade",
-  "lt_itpr",
   "carpass",
 ]);
 
 export function vinScanSourceTimeoutMs(id: VinScanSourceId): number {
-  if (RELAY_PAGE_SOURCES.has(id)) return VIN_SCAN_RELAY_PAGE_TIMEOUT_MS;
+  if (THECARAPI_SOURCES.has(id)) return THECARAPI_TIMEOUT_MS;
+  if (id === "mnt_ee") return MNT_EE_TIMEOUT_MS;
+  if (MULTI_STEP_SOURCES.has(id)) return MULTI_STEP_TIMEOUT_MS;
   if (CAPTCHA_SOURCES.has(id)) return CAPTCHA_TIMEOUT_MS;
   if (SLOW_SOURCES.has(id)) return SLOW_TIMEOUT_MS;
   return DEFAULT_TIMEOUT_MS;

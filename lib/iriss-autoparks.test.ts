@@ -8,9 +8,13 @@ import {
   autoparksListRows,
   autoparksRoom,
   autoparksStatusCounts,
+  AUTOPARKS_STATUS_LV,
   autoparksWorkTotal,
   formatAutoparksEur,
+  normalizeAutoparksCar,
   normalizeAutoparksState,
+  sortAutoparksRows,
+  type AutoparksCar,
 } from "@/lib/iriss-autoparks";
 import { parseAutoparksCarInput } from "@/lib/iriss-autoparks-input";
 import { decideAdminPageAccess } from "@/lib/staff-roles";
@@ -25,6 +29,7 @@ const car = {
   status: "in_service",
   createdAt: "2026-10-10T08:00:00.000Z",
   arrivedAt: "2026-10-11",
+  archivedAt: "",
 };
 
 describe("Autoparks dati", () => {
@@ -54,6 +59,7 @@ describe("Autoparks dati", () => {
 
   it("counts statuses, days in park and work totals", () => {
     expect(autoparksStatusCounts([{ status: "in_service" }, { status: "sold" }, { status: "in_service" }])).toEqual({
+      in_transit: 0,
       prep_waiting: 0,
       in_service: 2,
       for_sale: 0,
@@ -76,6 +82,15 @@ describe("Autoparks dati", () => {
   it("opens the stage that matches the car status", () => {
     expect(autoparksDefaultStage("prep_waiting")).toBe("service");
     expect(autoparksDefaultStage("reserved")).toBe("sale");
+  });
+
+  it("Nils 27.10: vecais «Pasūtījums» -> atzīme «Pasūtījums»; posms pēc Loģistikas saites", () => {
+    const withOrder = normalizeAutoparksCar({ id: "x", status: "ordered", orderId: "lo-1" });
+    expect(withOrder?.status).toBe("in_transit");
+    expect(withOrder?.clientOrder).toBe(true);
+    expect(normalizeAutoparksCar({ id: "y", status: "ordered" })?.status).toBe("prep_waiting");
+    expect(normalizeAutoparksCar({ id: "z", status: "for_sale" })?.clientOrder).toBeUndefined();
+    expect(AUTOPARKS_STATUS_LV.prep_waiting).toBe("Noliktavā");
   });
 
   it("ignores prices from users who cannot see sums", () => {
@@ -105,5 +120,33 @@ describe("Autoparks piekļuve", () => {
       const guards = src.match(/logisticsCabinetWriteForbidden\(gate\.actor\)/g) ?? [];
       expect(guards.length, file).toBeGreaterThanOrEqual(writes.length);
     }
+  });
+});
+
+
+describe("Autoparks kārtošana un arhīvs", () => {
+  const mk = (id: string, make: string, model: string, arrivedAt: string, extra: Partial<AutoparksCar> = {}) =>
+    ({ ...car, id, make, model, arrivedAt, ...extra }) as AutoparksCar;
+  const rows = [
+    mk("a", "Volvo", "XC60", "2026-10-01"),
+    mk("b", "Škoda", "Superb", "2026-10-15"),
+    mk("c", "BMW", "530d", "2026-09-20"),
+    mk("d", "Audi", "A4", "2026-10-10"),
+  ];
+
+  it("jaunākie, vecākie, alfabēts un marka", () => {
+    expect(sortAutoparksRows(rows, "newest").map((r) => r.id)).toEqual(["b", "d", "a", "c"]);
+    expect(sortAutoparksRows(rows, "oldest").map((r) => r.id)).toEqual(["c", "a", "d", "b"]);
+    expect(sortAutoparksRows(rows, "alpha").map((r) => r.make)).toEqual(["Audi", "BMW", "Škoda", "Volvo"]);
+    expect(sortAutoparksRows(rows, "make").map((r) => r.make)).toEqual(["Audi", "BMW", "Škoda", "Volvo"]);
+  });
+
+  it("arhīvā esošie netiek skaitīti statusos", () => {
+    const counts = autoparksStatusCounts([
+      { status: "sold", archivedAt: "" },
+      { status: "sold", archivedAt: "2026-10-20T00:00:00Z" },
+    ]);
+    expect(counts.sold).toBe(1);
+    expect(normalizeAutoparksCar({ id: "x", status: "sold" })?.archivedAt).toBe("");
   });
 });

@@ -1,18 +1,21 @@
 import "server-only";
+import { correctedSubject } from "@/lib/client-report-sends-core";
 
 import nodemailer from "nodemailer";
 import type { SendMailOptions, Transporter } from "nodemailer";
 
 type Attachment = NonNullable<SendMailOptions["attachments"]>[number];
+import type { ClientReportLang } from "@/lib/client-report-i18n";
 import { getB2bMailFromAddress, getMailFromAddress, getMailReplyTo, getSiteOrigin } from "@/lib/email/mail-config";
 import {
   adminAuditSlaWarningHtml,
   adminNewOrderHtml,
   adminNewPartnerHtml,
+  irissOfferDecisionHtml,
+  irissOfferQuestionHtml,
   b2bWalletRefundEmailHtml,
   auditCompletedEmailHtml,
   b2bProvinEmailHtml,
-  dealerDataNoDataRefundEmailHtml,
   dealerDataOperatorMessageEmailHtml,
   listingPeekCustomerCommentHtml,
   partnerPasswordResetEmailHtml,
@@ -37,7 +40,9 @@ import {
 } from "@/lib/email/report-ready-copy";
 import { getCachedMessageTemplatesDoc, warmMessageTemplatesCache } from "@/lib/messages/message-runtime";
 import { resolveMessageSync } from "@/lib/messages/resolve-message";
-import { buildReportReadyEmailVars, reportReadyTemplateId } from "@/lib/messages/template-vars";
+import { buildReportReadyEmailVars, reportReadyTemplateId, reportReadyVinVar } from "@/lib/messages/template-vars";
+import { formatEmailAmountEur, provinEmailSubject } from "@/lib/email/email-subject";
+import { dealerRefundEmailCopy, paymentConfirmationCopy, resolveClientEmailLang } from "@/lib/email/client-lang-email-copy";
 import { buildInvoiceDownloadUrl } from "@/lib/thanks-session";
 
 /** true, ja servera vidē ir gan SMTP_USER, gan SMTP_PASS (Workspace / Gmail app password). */
@@ -235,6 +240,47 @@ export async function sendAdminAuditSlaWarningEmail(
   }
 }
 
+/** PROVIN Business pogas dienas kopsavilkums. Atgriež false, ja SMTP nav iestatīts. */
+export async function sendAdminBusinessPogaDigestEmail(
+  email: { subject: string; text: string; html: string },
+  to: string,
+): Promise<boolean> {
+  if (!getSmtpTransport()) {
+    console.warn("[email] Business pogas kopsavilkums: SMTP nav iestatīts.");
+    return false;
+  }
+  await sendSmtpMail({ to, subject: email.subject, text: email.text, html: email.html });
+  return true;
+}
+
+/** Nilam par klienta lēmumu IRISS piedāvājumā. Klientam netiek sūtīts nekas. */
+export async function sendAdminIrissOfferDecisionEmail(
+  email: { subject: string; title: string; approved: boolean; lines: { label: string; value: string }[]; text: string; url: string; ctaLabel?: string },
+  adminTo: string,
+): Promise<boolean> {
+  if (!getSmtpTransport()) {
+    console.warn("[email] IRISS piedāvājuma lēmums: SMTP nav iestatīts, e-pasts netika nosūtīts.");
+    return false;
+  }
+  const html = irissOfferDecisionHtml({ title: email.title, approved: email.approved, lines: email.lines, adminUrl: email.url, ctaLabel: email.ctaLabel });
+  await sendSmtpMail({ to: adminTo, subject: email.subject, text: email.text, html });
+  return true;
+}
+
+/** Nilam par klienta jautājumu IRISS piedāvājuma publiskajā saitē. Klientam netiek sūtīts nekas. */
+export async function sendAdminIrissOfferQuestionEmail(
+  email: { subject: string; title: string; question: string; lines: { label: string; value: string }[]; text: string; url: string; ctaLabel?: string },
+  adminTo: string,
+): Promise<boolean> {
+  if (!getSmtpTransport()) {
+    console.warn("[email] IRISS piedāvājuma jautājums: SMTP nav iestatīts, e-pasts netika nosūtīts.");
+    return false;
+  }
+  const html = irissOfferQuestionHtml({ title: email.title, question: email.question, lines: email.lines, adminUrl: email.url, ctaLabel: email.ctaLabel });
+  await sendSmtpMail({ to: adminTo, subject: email.subject, text: email.text, html });
+  return true;
+}
+
 export type AdminNewPartnerEmailPayload = {
   partnerId: string;
   companyName: string;
@@ -256,7 +302,7 @@ export async function sendAdminNewPartnerNotificationEmail(payload: AdminNewPart
   const to = getAdminNewPartnerNotifyEmail();
   const subject = `PROVIN: jauns B2B partneris ${payload.companyName}`;
   const text = [
-    "Reģistrējies jauns B2B partneris. Partnerim piešķirtas noklusējuma cenas. Individuālās cenas vari iestatīt admin panelī.",
+    "Reģistrējies jauns B2B partneris. Cenas ņemtas no ielūguma; tukšie lauki paliek kataloga noklusējums.",
     "",
     `Uzņēmums: ${payload.companyName}`,
     `Reģistrācijas numurs: ${payload.companyReg}`,
@@ -270,7 +316,7 @@ export async function sendAdminNewPartnerNotificationEmail(payload: AdminNewPart
   ].join("\n");
   const html = adminNewPartnerHtml({
     adminUrl: payload.adminUrl,
-    lead: "Reģistrējies jauns B2B partneris. Partnerim piešķirtas noklusējuma cenas. Individuālās cenas vari iestatīt admin panelī.",
+    lead: "Reģistrējies jauns B2B partneris. Cenas ņemtas no ielūguma; tukšie lauki paliek kataloga noklusējums.",
     ctaLabel: "Atvērt admin paneli",
     lines: [
       { label: "Uzņēmums", value: payload.companyName },
@@ -362,6 +408,8 @@ export async function sendPaymentConfirmationEmail(opts: {
   amountTotal: string | null;
   currency: string | null;
   vin: string | null;
+  /** Klienta valoda (Stripe session.locale); LV - rediģējamā veidne. */
+  lang?: string | null;
   invoiceAttachment?: {
     filename: string;
     content: Buffer;
@@ -376,27 +424,44 @@ export async function sendPaymentConfirmationEmail(opts: {
 
   const origin = getSiteOrigin();
   const invoiceUrl = await buildInvoiceDownloadUrl(origin, opts.sessionId);
+  const currency = (opts.currency ?? "EUR").toUpperCase();
   const amountLine =
     opts.amountTotal != null
-      ? `${opts.amountTotal} ${(opts.currency ?? "EUR").toUpperCase()}`
+      ? currency === "EUR"
+        ? formatEmailAmountEur(opts.amountTotal)
+        : `${opts.amountTotal} ${currency}`
       : "-";
 
+  const emailLang = resolveClientEmailLang(opts.lang);
   await warmMessageTemplatesCache();
-  const doc = getCachedMessageTemplatesDoc();
+  const doc = emailLang === "lv" ? getCachedMessageTemplatesDoc() : null;
+  const foreign = emailLang === "lv" ? null : paymentConfirmationCopy(emailLang, { amountLine, vin: opts.vin, invoiceUrl });
   const paymentVars = {
     summa: amountLine,
-    vin: opts.vin?.trim() || "-",
+    vin: reportReadyVinVar(opts.vin),
     rekins_saite: invoiceUrl,
   };
-  const paymentRendered = resolveMessageSync("email.payment_confirmation", paymentVars, { doc });
+  const paymentRendered = foreign ? null : resolveMessageSync("email.payment_confirmation", paymentVars, { doc });
   const html =
     paymentRendered?.html ??
     paymentConfirmationHtml({
       invoiceUrl,
       amountLine,
       vin: opts.vin?.trim() || "-",
+      ...(foreign
+        ? {
+            copy: {
+              title: foreign.title,
+              lead: foreign.lead,
+              amountLabel: foreign.amountLabel,
+              invoiceLine: foreign.invoiceLine,
+              cta: foreign.cta,
+            },
+          }
+        : {}),
     });
   const text =
+    foreign?.text ??
     paymentRendered?.text ??
     [
       "Labdien!",
@@ -408,7 +473,7 @@ export async function sendPaymentConfirmationEmail(opts: {
       "",
       `Rēķins PDF formātā ir pievienots šim e-pastam. To var lejupielādēt arī šeit: ${invoiceUrl}`,
     ].join("\n");
-  const subject = paymentRendered?.subject ?? "PROVIN: maksājums saņemts, rēķins pielikumā";
+  const subject = foreign?.subject ?? paymentRendered?.subject ?? provinEmailSubject("Maksājums saņemts", { vin: opts.vin });
 
   try {
     await sendSmtpMail({
@@ -462,6 +527,10 @@ export async function sendReportReadyEmail(opts: {
   productKind?: ReportReadyProductKind;
   includeGoogleReview?: boolean;
   b2bClient?: boolean;
+  /** Klienta/partnera izvēlētā atskaites valoda - noklusējums "lv". */
+  lang?: ClientReportLang;
+  /** Atkārtots sūtījums pēc labojumiem: tēmā "· labota" (Nils 17.11, G9). */
+  corrected?: boolean;
 }): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
@@ -482,9 +551,12 @@ export async function sendReportReadyEmail(opts: {
   const carVin = hasRealVin ? normalizeVin(rawVin) : "";
   const productKind = opts.productKind ?? "audits";
   const b2bClient = opts.b2bClient === true;
+  const lang = opts.lang ?? "lv";
   const includeGoogleReview = opts.includeGoogleReview === true && !b2bClient;
+  /** Editējamie šabloni ir latviski; cita valoda vienmēr iet pāri tiem, tāpat kā B2B zīmols. */
+  const useEditableTemplates = !b2bClient && lang === "lv";
   await warmMessageTemplatesCache();
-  const doc = b2bClient ? null : getCachedMessageTemplatesDoc();
+  const doc = useEditableTemplates ? getCachedMessageTemplatesDoc() : null;
   const attachmentLines = deduped.map((a) => a.filename);
   const vars = buildReportReadyEmailVars({
     kind: productKind,
@@ -493,12 +565,12 @@ export async function sendReportReadyEmail(opts: {
     includeGoogleReview,
   });
   const templateId = reportReadyTemplateId(productKind);
-  const rendered = b2bClient
-    ? null
-    : resolveMessageSync(templateId, vars, {
+  const rendered = useEditableTemplates
+    ? resolveMessageSync(templateId, vars, {
         doc,
         htmlContext: { attachmentLines },
-      });
+      })
+    : null;
   const html =
     rendered?.html ??
     auditCompletedEmailHtml({
@@ -507,6 +579,7 @@ export async function sendReportReadyEmail(opts: {
       productKind,
       includeGoogleReview,
       b2bClient,
+      lang,
     });
   const text =
     rendered?.text ??
@@ -517,10 +590,12 @@ export async function sendReportReadyEmail(opts: {
         attachmentLines,
         includeGoogleReview,
         b2bClient,
+        lang,
       },
       doc,
     );
-  const subject = rendered?.subject ?? buildReportReadySubject(productKind, carVin);
+  const baseSubject = rendered?.subject ?? buildReportReadySubject(productKind, carVin, lang);
+  const subject = opts.corrected ? correctedSubject(baseSubject, lang) : baseSubject;
 
   try {
     await sendSmtpMail({
@@ -663,7 +738,7 @@ export async function sendListingPeekCustomerCommentEmail(opts: {
     doc,
     htmlContext: { photoCids: photos.map((p) => listingPeekPhotoCid(p.id)) },
   });
-  const subject = rendered?.subject ?? "PROVIN: īss komentārs par sludinājumu";
+  const subject = rendered?.subject ?? provinEmailSubject("Īss komentārs par sludinājumu");
   const text =
     rendered?.text ??
     [
@@ -740,7 +815,7 @@ export async function sendPartnerVerifyEmail(opts: {
   const purposeKey = change ? "change" : "signup";
   const templateId = `email.partner_verify.${purposeKey}`;
   const vars = { temats: subject, lead, verify_url: opts.verifyUrl, hint };
-  const rendered = resolveMessageSync(templateId, vars, { doc });
+  const rendered = resolveMessageSync(templateId, vars, { doc, htmlContext: { locale: loc } });
   const text = rendered?.text ?? [lead, "", opts.verifyUrl, "", hint].join("\n");
   const html =
     rendered?.html ??
@@ -805,7 +880,7 @@ export async function sendPartnerPasswordResetEmail(opts: {
   const doc = getCachedMessageTemplatesDoc();
   const templateId = "email.partner_password_reset";
   const vars = { temats: subject, lead, reset_url: opts.resetUrl, hint };
-  const rendered = resolveMessageSync(templateId, vars, { doc });
+  const rendered = resolveMessageSync(templateId, vars, { doc, htmlContext: { locale: loc } });
   const text = rendered?.text ?? [lead, "", opts.resetUrl, "", hint].join("\n");
   const html =
     rendered?.html ??
@@ -841,34 +916,38 @@ export async function trySendPartnerPasswordResetEmail(opts: {
 }
 
 /**
- * Dīlera datu atmaksas paziņojums klientam. Sūta operators no admin, nevis
- * automātika: naudas atgriešanu vienmēr apstiprina cilvēks.
+ * Dīlera datu atmaksas paziņojums klientam. Sūta operators no admin
+ * (B2C Stripe: atmaksa + e-pasts vienā solī). Naudas atgriešanu apstiprina cilvēks.
  */
 export async function sendDealerDataRefundEmail(opts: {
   to: string;
   vin?: string | null;
   amountEur?: string | null;
   cancelled?: boolean;
+  /** Klienta valoda (Stripe session.locale). */
+  lang?: string | null;
 }): Promise<void> {
-  const subject = opts.cancelled
-    ? "PROVIN.LV: pasūtījums atcelts un maksājums atgriezts"
-    : "PROVIN.LV: dīlera dati nav pieejami, maksājums atgriezts";
   const amount = (opts.amountEur ?? "").trim() || "24,99 €";
-  await warmMessageTemplatesCache();
-  const doc = getCachedMessageTemplatesDoc();
-  const text = opts.cancelled
-    ? buildDealerCancelledEmailDraft({ vin: opts.vin, amountEur: amount }, doc).text
-    : buildDealerNoDataEmailDraft({ vin: opts.vin, amountEur: amount, refunded: true }, doc).text;
-
+  const lang = resolveClientEmailLang(opts.lang);
+  let subject: string;
+  let text: string;
+  if (lang === "lv") {
+    await warmMessageTemplatesCache();
+    const doc = getCachedMessageTemplatesDoc();
+    const draft = opts.cancelled
+      ? buildDealerCancelledEmailDraft({ vin: opts.vin, amountEur: amount }, doc)
+      : buildDealerNoDataEmailDraft({ vin: opts.vin, amountEur: amount, refunded: true }, doc);
+    subject = draft.subject;
+    text = draft.text;
+  } else {
+    ({ subject, text } = dealerRefundEmailCopy(lang, { cancelled: opts.cancelled === true, amount, vin: opts.vin }));
+  }
+  // HTML no tā paša teksta (agrāk HTML bija atsevišķs, un rediģētā veidne tajā neparādījās).
   await sendSmtpMail({
     to: opts.to,
     subject,
     text,
-    html: dealerDataNoDataRefundEmailHtml({
-      vin: opts.vin,
-      amountEur: amount,
-      cancelled: opts.cancelled,
-    }),
+    html: dealerDataOperatorMessageEmailHtml({ title: subject, text, lang }),
   });
 }
 
@@ -877,6 +956,7 @@ export async function trySendDealerDataRefundEmail(opts: {
   vin?: string | null;
   amountEur?: string | null;
   cancelled?: boolean;
+  lang?: string | null;
 }): Promise<boolean> {
   if (!isSmtpConfigured()) {
     console.warn("[dealer-data] SMTP nav iestatīts, atmaksas e-pasts nav nosūtīts");
@@ -934,6 +1014,7 @@ export async function sendDealerDataOperatorEmail(opts: {
   text: string;
   attachments?: ReportReadyMailAttachment[];
   b2bClient?: boolean;
+  lang?: ClientReportLang;
 }): Promise<void> {
   const subject = opts.subject.trim().slice(0, 180);
   const text = opts.text.trim();
@@ -942,11 +1023,12 @@ export async function sendDealerDataOperatorEmail(opts: {
   }
   const attachments = dedupeAttachmentFilenames(opts.attachments ?? []);
   const b2bClient = opts.b2bClient === true;
+  const lang = opts.lang ?? "lv";
   await sendSmtpMail({
     to: opts.to,
     subject,
     text,
-    html: dealerDataOperatorMessageEmailHtml({ text, b2bClient }),
+    html: dealerDataOperatorMessageEmailHtml({ text, b2bClient, lang }),
     ...(b2bClient ? { from: getB2bMailFromAddress() } : {}),
     ...(attachments.length > 0
       ? {
@@ -966,6 +1048,7 @@ export async function trySendDealerDataOperatorEmail(opts: {
   text: string;
   attachments?: ReportReadyMailAttachment[];
   b2bClient?: boolean;
+  lang?: ClientReportLang;
 }): Promise<boolean> {
   if (!isSmtpConfigured()) {
     console.warn("[dealer-data] SMTP nav iestatīts, operatora e-pasts nav nosūtīts");
@@ -1078,13 +1161,17 @@ export async function sendStaffInviteEmail(opts: {
   to: string;
   name: string;
   inviteUrl: string;
+  kind?: "invite" | "reset";
 }): Promise<void> {
   const name = opts.name.trim() || "kolēģi";
-  const subject = "IRISS: uzaicinājums iestatīt pieeju";
+  const reset = opts.kind === "reset";
+  const subject = reset ? "IRISS: atiestati paroli" : "IRISS: uzaicinājums iestatīt pieeju";
   const text = [
     `Sveiki, ${name}.`,
     "",
-    "Nils uzaicināja tevi uz IRISS. Saite derīga 24 stundas un darbojas vienu reizi.",
+    reset
+      ? "Nils atiestatīja tavu IRISS paroli. Saite derīga 24 stundas un darbojas vienu reizi."
+      : "Nils uzaicināja tevi uz IRISS. Saite derīga 24 stundas un darbojas vienu reizi.",
     opts.inviteUrl,
     "",
     "Ja tu to neprasīji, ignorē šo vēstuli.",
@@ -1093,7 +1180,7 @@ export async function sendStaffInviteEmail(opts: {
     to: opts.to,
     subject,
     text,
-    html: staffInviteEmailHtml({ name, inviteUrl: opts.inviteUrl }),
+    html: staffInviteEmailHtml({ name, inviteUrl: opts.inviteUrl, kind: opts.kind }),
   });
 }
 

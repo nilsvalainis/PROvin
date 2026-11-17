@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   VIN_SCAN_CATALOG,
@@ -34,6 +34,7 @@ import {
   vehicleFromPlcTitle,
 } from "@/lib/vin-scan/parse";
 import { capsolverMayStart, capsolverTimeoutMs, vinScanSourceTimeoutMs } from "@/lib/vin-scan/source-timeouts";
+import { MNT_RELAY_TIMEOUT_MS } from "@/lib/vin-sources/mnt-relay";
 import { countVinScanStatuses, formatVinScanCountLine, vinScanCountBreakdown } from "@/lib/vin-scan/types";
 
 const DK_VIN = "VF12RFL1H49621453";
@@ -55,8 +56,9 @@ describe("vin scan catalog", () => {
     expect(VIN_SCAN_SOURCE_IDS).toContain("listing_history");
     expect(VIN_SCAN_SOURCE_IDS).toContain("lt_itpr");
     expect(VIN_SCAN_SOURCE_IDS).toContain("joj_copart_iaai");
-    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(33);
-    expect(VIN_SCAN_CATALOG).toHaveLength(33);
+    expect(VIN_SCAN_SOURCE_IDS).toContain("thecarapi_eu");
+    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(36);
+    expect(VIN_SCAN_CATALOG).toHaveLength(36);
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "traficom")?.needs).toEqual(["vin"]);
     expect(traficomVehicleInfoUrl("WBA5R1C0XLFH42873")).toBe(
       "https://www.traficom.fi/fi/autoilijat/ajoneuvon-osto-ja-myynti/tarkista-ajoneuvon-tiedot",
@@ -83,11 +85,19 @@ describe("vin scan catalog", () => {
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "nummerplade")?.openUrl("WVWZZZ7NZEV015204")).toContain(
       "/stelnummer/wvwzzz7nzev015204.html",
     );
+    vi.stubEnv("THECARAPI_API_KEY", "");
+    vi.stubEnv("THECARAPI_VIN_SCAN_ENABLED", "");
     expect(defaultVinScanSourceIds()).toEqual(vinScanPipelineSourceIds());
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "vegvesen")?.disabled).toBe(true);
+    expect(VIN_SCAN_CATALOG.find((s) => s.id === "thecarapi_eu")).toMatchObject({
+      label: "EU izsoles (TheCarApi)",
+      country: "EU",
+      hint: "AUTO1/Openlane/BCA/Autorola arhīvs",
+    });
     expect(vinScanPipelineSourceIds()).toEqual(
-      VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai" && id !== "vegvesen"),
+      VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai" && id !== "thecarapi_eu" && id !== "vegvesen"),
     );
+    expect(vinScanPipelineSourceIds()).not.toContain("thecarapi_eu");
     expect(vinScanPipelineSourceIds()).not.toContain("vegvesen");
     expect(vinScanFastSourceIds()).toEqual(vinScanPipelineSourceIds());
     for (const removed of VIN_SCAN_REMOVED_IDS) {
@@ -97,7 +107,7 @@ describe("vin scan catalog", () => {
 
   it("katram servera avotam ir VIN meklēšanas URL", () => {
     const vin = "WBA5R1C0XLFH42873";
-    const formOnly = new Set(["traficom", "regitra", "rdw"]);
+    const formOnly = new Set(["traficom", "regitra", "rdw", "dvsa_mot"]);
     for (const item of VIN_SCAN_CATALOG) {
       const url = item.openUrl(vin);
       expect(url).toMatch(/^https:\/\//);
@@ -380,15 +390,33 @@ describe("countVinScanStatuses", () => {
 });
 
 describe("vinScanSourceTimeoutMs", () => {
-  it("izsoļu avotiem (Chrome relejs) ir garāks timeouts nekā 14 s noklusējumam", () => {
-    expect(vinScanSourceTimeoutMs("stat_vin")).toBe(100_000);
-    expect(vinScanSourceTimeoutMs("bid_cars")).toBe(100_000);
-    expect(vinScanSourceTimeoutMs("plc_auction")).toBe(100_000);
-    expect(vinScanSourceTimeoutMs("checkcar_vin")).toBe(100_000);
-    expect(vinScanSourceTimeoutMs("bidfax")).toBe(100_000);
-    expect(vinScanSourceTimeoutMs("poctra")).toBe(100_000);
-    expect(vinScanSourceTimeoutMs("lt_itpr")).toBe(90_000);
+  it("pārlūka avoti (zonde bez tīkla) krīt uz 14 s noklusējumu", () => {
+    for (const id of ["stat_vin", "bid_cars", "plc_auction", "checkcar_vin", "bidfax", "poctra", "nicb", "lt_itpr"] as const) {
+      expect(vinScanSourceTimeoutMs(id)).toBe(14_000);
+    }
     expect(vinScanSourceTimeoutMs("vin_decode")).toBe(14_000);
+    expect(vinScanSourceTimeoutMs("thecarapi_eu")).toBe(15_000);
+  });
+
+  it("esyn un dsb (2-3 secīgi pieprasījumi) saņem 25 s", () => {
+    expect(vinScanSourceTimeoutMs("esyn")).toBe(25_000);
+    expect(vinScanSourceTimeoutMs("dsb")).toBe(25_000);
+  });
+
+  it("mnt_ee ārējais limits ir lielāks par releja limitu, lai redz releja iemeslu", () => {
+    expect(vinScanSourceTimeoutMs("mnt_ee")).toBe(105_000);
+    expect(vinScanSourceTimeoutMs("mnt_ee")).toBeGreaterThan(MNT_RELAY_TIMEOUT_MS);
+  });
+
+  it("captcha un lēnie avoti paliek savos limitos", () => {
+    expect(vinScanSourceTimeoutMs("carpass")).toBe(90_000);
+    expect(vinScanSourceTimeoutMs("lkf_ee")).toBe(90_000);
+    expect(vinScanSourceTimeoutMs("regitra")).toBe(45_000);
+  });
+
+  it("neviens avots nepārsniedz maršruta maxDuration 300 s ar rezervi", () => {
+    const max = Math.max(...VIN_SCAN_SOURCE_IDS.map((id) => vinScanSourceTimeoutMs(id)));
+    expect(max).toBeLessThanOrEqual(120_000);
   });
 
   it("CapSolver budžets ir ārējais timeouts mīnus 8 s, un zem 4 s nesāk", () => {

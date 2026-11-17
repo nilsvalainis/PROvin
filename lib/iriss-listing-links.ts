@@ -1,6 +1,8 @@
 import type { CSSProperties } from "react";
 import type { IrissAuctionLogoKey } from "@/lib/iriss-auction-logos";
 import { coerceIrissListingLinkList } from "@/lib/iriss-listing-link-lists";
+import { listingUrlWithSearchPriceBounds } from "@/lib/iriss-listings-fresh-price";
+import { orderSearchPriceBounds, type MarketplaceOrderCriteria } from "@/lib/marketplace/query-from-order";
 
 /** Droša saite — atvērt tikai http(s). */
 export function isHttpUrlForOpen(s: string): boolean {
@@ -50,6 +52,10 @@ export type IrissListingLinksInput = {
   listingLinkAuto1: IrissListingLinkField;
   listingLinkEcarstrade: IrissListingLinkField;
   listingLinksOther: IrissListingLinkField;
+  /** Ja ir budžets: saites cenas robežas atverot rēķina no jauna (glabātā saite netiek mainīta). */
+  totalBudget?: string | null;
+  criteria?: MarketplaceOrderCriteria["criteria"];
+  brandModel?: string | null;
 };
 
 /** Pietiek visām rindām vienā avotā (skat. `IRISS_LISTING_LINKS_PER_SOURCE_MAX`). */
@@ -68,10 +74,15 @@ export function buildListingPlatformChips(
   max = IRISS_LISTING_PLATFORM_CHIPS_MAX,
 ): ListingPlatformChipDisplay[] {
   const out: ListingPlatformChipDisplay[] = [];
+  const bounds =
+    src.totalBudget || src.criteria
+      ? orderSearchPriceBounds({ brandModel: src.brandModel ?? "", totalBudget: src.totalBudget ?? "", criteria: src.criteria ?? null })
+      : { from: null, to: null };
   const push = (href: string, key: ListingPlatformChipKey) => {
     if (out.length >= max) return;
-    const t = href.trim();
-    if (!t || !isHttpUrlForOpen(t)) return;
+    const raw = href.trim();
+    if (!raw || !isHttpUrlForOpen(raw)) return;
+    const t = listingUrlWithSearchPriceBounds(raw, bounds);
     const c = LISTING_PLATFORM_CHIPS[key];
     out.push({
       href: t,

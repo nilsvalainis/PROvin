@@ -3,6 +3,8 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { isLogisticsOrderArchived } from "@/lib/iriss-logistics-archive";
 import {
+  logisticsDefaultBox,
+  logisticsDefaultPadding,
   logisticsMapFitKey,
   logisticsOrderMapLabel,
   logisticsPreviousPointLabel,
@@ -14,8 +16,8 @@ import {
   waitForGoogleMapTilesIdle,
   type LogisticsMapCamera,
 } from "@/lib/iriss-logistics-map-print";
-import { cargoCssColor, formatLogisticsPostal, type CargoBucket } from "@/lib/iriss-logistics-cargo-plan";
-import { clusterIsSameSpot, layoutMapPins, resolveLabelOverlaps } from "@/lib/iriss-logistics-map-cluster";
+import { cargoCssColor, formatLogisticsPostal, type CargoBucket, type CargoRouteBucket } from "@/lib/iriss-logistics-cargo-plan";
+import { clusterIsSameSpot, layoutMapPins, placeMapLabels } from "@/lib/iriss-logistics-map-cluster";
 import type { LogisticsOrder, LogisticsPoint, LogisticsPreviousPointRow } from "@/lib/iriss-logistics-types";
 
 type Gmaps = typeof google.maps;
@@ -111,14 +113,31 @@ type Props = {
   hoverCarId?: string | null;
   statusByCarId?: ReadonlyMap<string, string>;
   routeNumbers?: ReadonlyMap<string, number>;
-  /** Maršruti, kas zīmēti tieši mūsu kartē (katrai kravai sava krāsa). */
-  routePaths?: ReadonlyArray<{ path: ReadonlyArray<{ lat: number; lng: number }>; color: string }>;
+  /** Maršruti, kas zīmēti tieši mūsu kartē (katrai kravai sava krāsa), ar starppunktiem (via). */
+  routePaths?: ReadonlyArray<{
+    path: ReadonlyArray<{ lat: number; lng: number }>;
+    color: string;
+    bucket?: CargoRouteBucket;
+    via?: ReadonlyArray<{ lat: number; lng: number }>;
+  }>;
+  /**
+   * Maršruta maiņa kā Google Maps: pieskāriens līnijai pievieno caurbraucamo punktu,
+   * punktu var pavilkt uz citu ceļu, pieskāriens punktam to noņem.
+   */
+  onRouteVia?: (bucket: CargoRouteBucket, action: RouteViaAction) => void;
   /** "Rādīt nosaukumus": katram punktam pastāvīga etiķete (marka, modelis, indekss, centrs). */
   showLabels?: boolean;
   routeEnds?: ReadonlyArray<{ lat: number; lng: number; kind: "start" | "end"; type?: string }>;
   pinVariant?: "default" | "cargo";
   onHoverCar?: (id: string | null) => void;
+  /** Gatavības krāsa (tikai Nākošā krava ar ieslēgtu «Gatavība») pārraksta viļņa krāsu. */
+  pinColorByCarId?: ReadonlyMap<string, string>;
 };
+
+export type RouteViaAction =
+  | { type: "add"; p: { lat: number; lng: number } }
+  | { type: "move"; index: number; p: { lat: number; lng: number } }
+  | { type: "remove"; index: number };
 
 export type IrissLogistikaMapHandle = {
   snapshotView: () => LogisticsMapCamera | null;
@@ -149,10 +168,12 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
     statusByCarId,
     routeNumbers,
     routePaths,
+    onRouteVia,
     showLabels = false,
     routeEnds,
     pinVariant = "default",
     onHoverCar,
+    pinColorByCarId,
   },
   ref,
 ) {
@@ -161,6 +182,8 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
   const overlaysRef = useRef<google.maps.OverlayView[]>([]);
   const markersRef = useRef<google.maps.Marker[]>([]);
   const linesRef = useRef<Array<{ setMap: (map: google.maps.Map | null) => void }>>([]);
+  const onRouteViaRef = useRef(onRouteVia);
+  onRouteViaRef.current = onRouteVia;
   const lastPtsRef = useRef<MapPoint[]>([]);
   /** Kamera (fitBounds) tikai pirmajā ielādē vai kad mainās punktu kopa. Hover un izcēlums skatu neaiztiek. */
   const lastFitKeyRef = useRef<string | null>(null);
@@ -288,7 +311,7 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
       const layer = makeCargoLayerOverlay({
         map,
         pts,
-        colorOf: (p) => PIN_COLOR[p.cargo ?? "none"],
+        colorOf: (p) => pinColorByCarId?.get(p.id) ?? PIN_COLOR[p.cargo ?? "none"],
         activeIds: new Set([bounceCarId, hoverCarId].filter((x): x is string => Boolean(x))),
         onSelect,
         onHover: onHoverCar,
@@ -304,11 +327,53 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
         bounds.extend({ lat: end.lat, lng: end.lng });
       }
       const PolylineCtor = (google.maps as unknown as { Polyline: new (opts: Record<string, unknown>) => { setMap: (map: google.maps.Map | null) => void } }).Polyline;
+      const editable = !lockView && Boolean(onRouteViaRef.current);
+      type ClickEv = { latLng?: { lat: () => number; lng: () => number } | null };
+      type Listenable = { addListener: (ev: string, fn: (e: ClickEv) => void) => void };
+      const listen = (target: unknown, ev: string, fn: (e: ClickEv) => void) =>
+        (google.maps.event as unknown as { addListener: (o: unknown, ev: string, fn: (e: ClickEv) => void) => void }).addListener(target, ev, fn);
+      const latLngOf = (ll: ClickEv["latLng"]) => (ll ? { lat: ll.lat(), lng: ll.lng() } : null);
       for (const r of routePaths ?? []) {
         if (r.path.length < 2) continue;
-        // Kā Google Maps: zila līnija ar tumšāku apmali.
-        linesRef.current.push(new PolylineCtor({ map, path: r.path, strokeColor: ROUTE_LINE_BORDER, strokeOpacity: 1, strokeWeight: 5, zIndex: 1 }));
-        linesRef.current.push(new PolylineCtor({ map, path: r.path, strokeColor: r.color, strokeOpacity: 1, strokeWeight: 3, zIndex: 2 }));
+        const bucket = r.bucket;
+        const canEdit = editable && Boolean(bucket);
+        // Kā Google Maps: zila līnija ar tumšāku apmali. Pieskāriens līnijai pievieno caurbraucamo punktu.
+        const lines = [
+          new PolylineCtor({ map, path: r.path, strokeColor: ROUTE_LINE_BORDER, strokeOpacity: 1, strokeWeight: 5, zIndex: 1, clickable: canEdit }),
+          new PolylineCtor({ map, path: r.path, strokeColor: r.color, strokeOpacity: 1, strokeWeight: 3, zIndex: 2, clickable: canEdit }),
+        ];
+        for (const line of lines) {
+          linesRef.current.push(line);
+          if (!canEdit || !bucket) continue;
+          listen(line, "click", (e) => {
+            const p = latLngOf(e.latLng);
+            if (p) onRouteViaRef.current?.(bucket, { type: "add", p });
+          });
+        }
+        if (!canEdit || !bucket) continue;
+        (r.via ?? []).forEach((v, index) => {
+          const marker = new google.maps.Marker({
+            map,
+            position: { lat: v.lat, lng: v.lng },
+            draggable: true,
+            zIndex: 1000,
+            title: "Velc, lai maršruts iet pa citu ceļu. Pieskaries, lai noņemtu.",
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 7,
+              fillColor: "#ffffff",
+              fillOpacity: 1,
+              strokeColor: r.color,
+              strokeWeight: 3,
+            },
+          });
+          (marker as unknown as Listenable).addListener("dragend", (e) => {
+            const p = latLngOf(e.latLng);
+            if (p) onRouteViaRef.current?.(bucket, { type: "move", index, p });
+          });
+          marker.addListener("click", () => onRouteViaRef.current?.(bucket, { type: "remove", index }));
+          markersRef.current.push(marker);
+        });
       }
     } else {
     for (const p of pts) {
@@ -356,11 +421,13 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
       if (focus) {
         map.panTo(focus);
         if ((map.getZoom() ?? 7) < 9) map.setZoom(10);
-      } else if (pts.length === 1) {
-        map.setCenter({ lat: pts[0]!.lat, lng: pts[0]!.lng });
-        map.setZoom(9);
-      } else if (pts.length > 1) {
-        map.fitBounds(bounds, 36);
+      } else {
+        // Noklusējuma skats (Nils 27.10): visa Vācija + auto ārpus tās; paneļi neaizsedz.
+        const box = logisticsDefaultBox(pts);
+        const frame = new google.maps.LatLngBounds();
+        frame.extend({ lat: box.south, lng: box.west });
+        frame.extend({ lat: box.north, lng: box.east });
+        map.fitBounds(frame, logisticsDefaultPadding(hostRef.current?.clientWidth ?? 0));
       }
     }
     map.setOptions({
@@ -390,6 +457,7 @@ export const IrissLogistikaMap = forwardRef<IrissLogistikaMapHandle, Props>(func
     routeEnds,
     pinVariant,
     onHoverCar,
+    pinColorByCarId,
   ]);
 
   return (
@@ -440,30 +508,49 @@ function pinLabelHtml(members: MapPoint[]): string {
 /** Google Maps maršruta līnijas apmale (zem zilās līnijas). */
 const ROUTE_LINE_BORDER = "#1558b0";
 
-/** Nosaukumu kartītes vienu zem otras, ja tās citādi pārklātos (mēra pēc ievietošanas DOM). */
+/**
+ * Nosaukumu kartītes: nepārklāj citas kartītes un citu auto lāses (mēra pēc ievietošanas DOM).
+ * Kartīte pārbīdās uz tuvāko brīvo vietu; ja tuvumā tādas nav, tā paslēpjas un parādās, kad pele ir virs lāses.
+ */
 function spreadLabels(root: HTMLElement) {
   const labels = [...root.querySelectorAll<HTMLElement>(".iriss-log-pin-label")];
-  if (labels.length < 2) return;
+  if (labels.length === 0) return;
+  const pins = [...root.querySelectorAll<SVGElement>(".iriss-log-tear-svg")];
   const base = root.getBoundingClientRect();
+  const box = (r: DOMRect) => ({ x: r.left - base.left, y: r.top - base.top, w: r.width, h: r.height });
+  const obstacles = pins.map((pin) => box(pin.getBoundingClientRect()));
   const boxes = labels.map((l) => {
     l.style.transform = "";
-    const r = l.getBoundingClientRect();
-    return { x: r.left - base.left, y: r.top - base.top, w: r.width, h: r.height };
+    l.classList.remove("shifted", "crowded");
+    return box(l.getBoundingClientRect());
   });
-  const dy = resolveLabelOverlaps(boxes);
+  const own = labels.map((l) => {
+    const svg = l.parentElement?.querySelector<SVGElement>(".iriss-log-tear-svg");
+    const k = svg ? pins.indexOf(svg) : -1;
+    return k >= 0 ? k : null;
+  });
+  const dy = placeMapLabels(boxes, obstacles, own);
   labels.forEach((l, i) => {
-    if (!dy[i]) return;
-    l.style.transform = `translateY(calc(-50% + ${dy[i]}px))`;
+    const d = dy[i];
+    if (d === null || d === undefined) {
+      l.classList.add("crowded");
+      return;
+    }
+    if (!d) return;
+    l.style.transform = `translateY(calc(-50% + ${d}px))`;
     l.classList.add("shifted");
   });
 }
 
-/** Kartes lāšu krāsas: Nākošā krava sarkana, Aiznākošā melna, pārējie pelēki (sakrīt ar kravu plāna punktiem). */
+/** Kravu vilnis (Nils 24.10): Nākošā sarkana, Aiznākošā tumši pelēka (ne oranža), Gaida melna. Sakrīt ar kravu plāna punktiem. */
 export const PIN_COLOR: Record<CargoBucket, string> = {
   next: "#ea4335",
-  after: "#1d1d1f",
-  none: "#9aa0a6",
+  after: "#5f6368",
+  none: "#1d1d1f",
 };
+
+/** Grupas lāse ar dažādām krāsām: neitrāli pelēka, lai nesajauc ar Aiznākošo. */
+const MIXED_GROUP_COLOR = "#9aa0a6";
 
 /** Google stila lāse. `text` aplī (pieturas numurs) vai balts punkts. */
 function teardropSvg(color: string, text: string, small: boolean): string {
@@ -557,7 +644,7 @@ function makeCargoLayerOverlay(input: {
         const members = item.members.map((m) => m.p);
         const key = members.map((m) => m.id).sort().join("|");
         const colors = new Set(members.map((m) => input.colorOf(m)));
-        const color = colors.size === 1 ? [...colors][0]! : "#5f6368";
+        const color = colors.size === 1 ? [...colors][0]! : MIXED_GROUP_COLOR;
         const active = members.some((m) => input.activeIds.has(m.id));
         el.className = `iriss-log-tear group${active ? " active" : ""}`;
         const names = members.slice(0, 4).map((m) => `<b>${escapeHtml(pinTitle(m))}</b>`).join("");

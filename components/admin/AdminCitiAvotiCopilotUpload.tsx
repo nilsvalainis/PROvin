@@ -53,7 +53,7 @@ export function AdminCitiAvotiCopilotUpload({
         fd.set("sessionId", sessionId);
         fd.set(
           "message",
-          `Izvelc datus no PDF un aizpildi CITI AVOTI sadaļu „${sectionLabel}”. Avots vienmēr citi_avoti, ne AutoDNA / CarVertical / CC.VIN.`,
+          `Izvelc datus no PDF un aizpildi CITI AVOTI sadaļu „${sectionLabel}”. Avots vienmēr citi_avoti, ne AutoDNA / CarVertical / Izsoļu portālu arhīvs.`,
         );
         fd.set("applyMode", "auto");
         fd.set("sourceBlocks", JSON.stringify(getSourceBlocks()));

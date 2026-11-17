@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
+import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
 import {
   collectAttachmentsFromFormData,
   collectAttachmentsFromJsonBase64,
@@ -15,6 +16,15 @@ import { canNotifyClientOrder } from "@/lib/admin-notify-client-eligibility";
 import { isValidOrderEmail, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { resolveReportReadyProductKind } from "@/lib/email/report-ready-copy";
 import { isB2bInternationalClientReport } from "@/lib/b2b-pdf-brand";
+import { del, get } from "@vercel/blob";
+import { isReportPdfPathname, reportPdfPathPrefix } from "@/lib/report-pdf-constants";
+import { readClientReportSends, recordClientReportSend } from "@/lib/client-report-sends";
+import { dropboxReportFilename } from "@/lib/client-report-sends-core";
+import { getDropboxClient } from "@/lib/dropbox-client";
+import { saveFileToProvOrderFolder } from "@/lib/ltab-dropbox";
+import { orderCarFromCsdd } from "@/lib/ltab-auto";
+import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
+import { setAuditDeadlineComplete } from "@/lib/admin-audit-complete-store";
 
 /** Stripe metadata var būt tukšs; VIN bieži ir tikai admina melnrakstā (`orderEdits.vin`). */
 function resolveVinForNotify(sessionVin: string | null | undefined, draftVin: string | undefined): string {
@@ -32,6 +42,11 @@ export const maxDuration = 60;
 
 function totalAttachmentBytes(list: ReportReadyMailAttachment[]): number {
   return list.reduce((s, a) => s + a.content.length, 0);
+}
+
+function parseReportLang(raw: unknown): ClientReportLang {
+  const v = typeof raw === "string" ? raw.trim().toLowerCase() : "";
+  return (CLIENT_REPORT_LANGS as readonly string[]).includes(v) ? (v as ClientReportLang) : "lv";
 }
 
 function mapParseError(e: unknown): NextResponse | null {
@@ -89,9 +104,14 @@ export async function POST(req: Request) {
   let sessionId = "";
   let bodyCustomerEmail = "";
   let includeGoogleReview = false;
+  let reportLang: ClientReportLang = "lv";
   let multipartForm: FormData | null = null;
   let jsonAttachmentsBase64: unknown = undefined;
   let jsonBlobAttachments: { url: string; filename?: string }[] | undefined;
+  /** "Sūtīt atskaiti" (2. posms): serverī izveidotais PDF (`/api/admin/report-pdf`). */
+  let serverPdfPathname = "";
+  let markComplete = false;
+  let saveDropbox = true;
 
   try {
     if (contentType.includes("multipart/form-data")) {
@@ -101,6 +121,7 @@ export async function POST(req: Request) {
       includeGoogleReview =
         String(multipartForm.get("includeGoogleReview") ?? "").trim() === "1" ||
         String(multipartForm.get("includeGoogleReview") ?? "").trim() === "true";
+      reportLang = parseReportLang(multipartForm.get("lang"));
     } else {
       let body: unknown;
       try {
@@ -115,7 +136,11 @@ export async function POST(req: Request) {
       sessionId = typeof b.sessionId === "string" ? b.sessionId.trim() : "";
       bodyCustomerEmail = typeof b.customerEmail === "string" ? b.customerEmail.trim() : "";
       includeGoogleReview = b.includeGoogleReview === true || b.includeGoogleReview === "1";
+      reportLang = parseReportLang(b.lang);
       jsonAttachmentsBase64 = b.attachmentsBase64;
+      serverPdfPathname = typeof b.serverPdfPathname === "string" ? b.serverPdfPathname.trim() : "";
+      markComplete = b.markComplete === true;
+      saveDropbox = b.saveDropbox !== false;
       if (Array.isArray(b.blobAttachments) && b.blobAttachments.length > 0) {
         if (b.blobAttachments.length > MAX_NOTIFY_FILES) {
           return NextResponse.json({ error: "too_many_attachments", message: "Pārāk daudz failu." }, { status: 400 });
@@ -211,6 +236,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "invalid_body", message: "Neizdevās apstrādāt pielikumus." }, { status: 400 });
   }
 
+  let serverPdf: ReportReadyMailAttachment | null = null;
+  if (serverPdfPathname) {
+    if (!isReportPdfPathname(sessionId, serverPdfPathname, ".pdf")) {
+      return NextResponse.json({ error: "invalid_server_pdf", message: "Nederīgs servera PDF ceļš." }, { status: 400 });
+    }
+    const res = await get(serverPdfPathname, { access: "private", useCache: false }).catch(() => null);
+    if (!res || res.statusCode !== 200 || !res.stream) {
+      return NextResponse.json({ error: "server_pdf_not_found", message: "Servera PDF nav atrasts - izveido to vēlreiz." }, { status: 404 });
+    }
+    serverPdf = {
+      filename: serverPdfPathname.slice(reportPdfPathPrefix(sessionId).length).replace(/^\d+-/, ""),
+      content: Buffer.from(await new Response(res.stream).arrayBuffer()),
+      contentType: "application/pdf",
+    };
+    // Atskaite vienmēr pirmā; ja tāda paša nosaukuma fails ir arī pielikumos, to neliek divreiz.
+    manualAttachments = [serverPdf, ...manualAttachments.filter((a) => a.filename !== serverPdf!.filename)];
+  }
+
   const to = toCandidate;
   if (!to) {
     return NextResponse.json({ error: "no_customer_email" }, { status: 400 });
@@ -260,6 +303,8 @@ export async function POST(req: Request) {
   const blobUrlsForCleanup =
     jsonBlobAttachments?.map((x) => x.url.trim()).filter(Boolean) ?? [];
 
+  const previousSends = serverPdf ? await readClientReportSends(sessionId) : [];
+
   try {
     await sendReportReadyEmail({
       to,
@@ -275,6 +320,8 @@ export async function POST(req: Request) {
         partnerId: order.partnerId,
         partnerCompanyName: order.companyName,
       }),
+      lang: reportLang,
+      corrected: previousSends.length > 0,
     });
     try {
       const stored = await persistClientReportFromNotify(sessionId, manualAttachments);
@@ -294,11 +341,51 @@ export async function POST(req: Request) {
     void deleteNotifyBlobUrls(blobUrlsForCleanup, blobRw);
   }
 
+  let serverSend: { version: number; dropboxPath?: string; dropboxError?: string; completedAt?: string | null } | undefined;
+  if (serverPdf) {
+    serverSend = { version: previousSends.length + 1 };
+    const bytes = new Uint8Array(serverPdf.content);
+    let dropboxPath: string | undefined;
+    const client = getDropboxClient();
+    if (!saveDropbox) {
+      serverSend.dropboxError = "izslēgts";
+    } else if (!client) {
+      serverSend.dropboxError = "Dropbox nav konfigurēts";
+    } else {
+      try {
+        const csdd = mergeSourceBlocksWithDefaults(draft?.workspace?.sourceBlocks ?? {}).csdd;
+        const car = orderCarFromCsdd(csdd, "", notifyVin);
+        const saved = await saveFileToProvOrderFolder(client, car, dropboxReportFilename(serverSend.version, serverPdf.filename), bytes);
+        dropboxPath = saved.path;
+        serverSend.dropboxPath = saved.path;
+      } catch (e) {
+        console.error("[api/admin/notify-report-ready] dropbox", e instanceof Error ? e.message.slice(0, 200) : e);
+        serverSend.dropboxError = "PDF neizdevās saglabāt Dropbox";
+      }
+    }
+    try {
+      const rec = await recordClientReportSend(
+        sessionId,
+        { sentAt: new Date().toISOString(), to, filename: serverPdf.filename, lang: reportLang, bytes: bytes.byteLength, ...(dropboxPath ? { dropboxPath } : {}) },
+        bytes,
+      );
+      serverSend.version = rec.version;
+    } catch (e) {
+      console.error("[api/admin/notify-report-ready] send log", e);
+    }
+    await del(serverPdfPathname).catch(() => undefined);
+    if (markComplete) {
+      const done = await setAuditDeadlineComplete(sessionId, true);
+      serverSend.completedAt = done.ok ? done.completedAt : null;
+    }
+  }
+
   console.info("[api/admin/notify-report-ready] sent", {
     sessionId,
     sentTo: to,
     sentToSource,
+    reportLang,
   });
 
-  return NextResponse.json({ ok: true, sentTo: to, sentToSource });
+  return NextResponse.json({ ok: true, sentTo: to, sentToSource, ...(serverSend ? { serverSend } : {}) });
 }

@@ -179,6 +179,8 @@ function noteLines(notes: string): string[] {
 
 export function deriveIrissCommunicationTimeline(input: {
   notes: string;
+  /** Pasūtījuma izveides laiks - piezīmēm bez laika, ja statusu vēstures vēl nav (agrāk 1970-01-01 = "01.01 03:00"). */
+  createdAt?: string;
   statusHistory?: IrissStatusHistoryEntry[];
   offers?: IrissOfferRecord[];
   generatedDocuments?: IrissGeneratedDocument[];
@@ -201,10 +203,9 @@ export function deriveIrissCommunicationTimeline(input: {
     push(
       {
         id: `note-${index}`,
-        at: input.statusHistory?.[0]?.at || "1970-01-01T00:00:00.000Z",
+        at: input.statusHistory?.[0]?.at || input.createdAt || "1970-01-01T00:00:00.000Z",
         kind: "note",
         title: stamped?.[2] ?? line,
-        body: stamped ? undefined : line,
         status: "note",
       },
       true,
@@ -371,6 +372,7 @@ export function timelineFromPasutijums(
 ): IrissCommTimelineItem[] {
   return deriveIrissCommunicationTimeline({
     notes: rec.notes,
+    createdAt: rec.createdAt,
     statusHistory: rec.statusHistory,
     offers: rec.offers,
     generatedDocuments: rec.generatedDocuments,

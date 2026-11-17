@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AdminClientOrdersChip } from "@/components/admin/AdminClientOrdersChip";
+import { AdminBusinessLinkButton } from "@/components/admin/AdminBusinessLinkButton";
 import { AdminClientLinkButton } from "@/components/admin/AdminClientLinkButton";
 import { AdminCreateManualOrderButton } from "@/components/admin/AdminCreateManualOrderButton";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useTransition, type MouseEvent, type ReactNode } from "react";
@@ -218,7 +219,7 @@ function parseAmountInputToCents(raw: string): number | null | undefined {
 /** Manuālā pasūtījuma “Laiks” - skats + labošana (datetime-local). */
 function ManualOrderDateCell({ id, created }: { id: string; created: number }) {
   const router = useRouter();
-  const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short" });
+  const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Riga" });
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(() => unixToDatetimeLocalValue(created));
   const [saving, setSaving] = useState(false);
@@ -553,6 +554,7 @@ function AdminOrdersMobileChrome({
           <AdminMobileIcon name="uzPrieksu" className="h-4 w-4 text-[var(--label-secondary)]" />
         </Link>
         <AdminClientLinkButton variant="sheet" />
+        <AdminBusinessLinkButton variant="sheet" />
         <button
           type="button"
           onClick={() => {
@@ -709,7 +711,7 @@ export function AdminOrdersTable({
 }) {
   void consultationList;
   const router = useRouter();
-  const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short" });
+  const dateFmt = new Intl.DateTimeFormat("lv-LV", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Riga" });
   const [completeOverride, setCompleteOverride] = useState<Record<string, boolean>>({});
   const [colorOverride, setColorOverride] = useState<Record<string, AuditResultColor | null>>({});
   const [colorFilter, setColorFilter] = useState<AuditResultColor | "all" | "none">("all");

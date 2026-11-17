@@ -39,15 +39,18 @@ describe("iriss order search and offers layout", () => {
   it("opens hit cards on the auction URL and portals the overflow menu", () => {
     const card = readFileSync("components/admin/IrissOrderRoomHitCard.tsx", "utf8");
     const menu = readFileSync("components/admin/IrissOverflowMenu.tsx", "utf8");
+    const popover = readFileSync("components/admin/IrissAnchoredPopover.tsx", "utf8");
     expect(card).toContain("target=\"_blank\"");
     expect(card).toContain("rel=\"noopener\"");
     expect(card).toContain("window.open(auctionUrl, \"_blank\", \"noopener\")");
     expect(card).toContain("stopPropagation");
     expect(card).toContain("data-iriss-no-card-nav");
     expect(card).not.toMatch(/sticky top-0/);
-    expect(menu).toContain("createPortal");
+    expect(menu).toContain("IrissAnchoredPopover");
     expect(menu).toContain("iriss-ov-menu-portal");
-    expect(menu).toContain("document.body");
     expect(menu).not.toMatch(/\u2014|\u2013/);
+    expect(popover).toContain("createPortal");
+    expect(popover).toContain("document.body");
+    expect(popover).toContain("iriss-ov-menu-portal");
   });
 });

@@ -23,13 +23,14 @@ import { asvBlockHasContent } from "@/lib/asv-report";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
 import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
 import { orderHasDealerBodyOrGlassWork } from "@/lib/admin-ai-dealer-incident-link";
+import { collectDamageEvidence } from "@/lib/damage-evidence";
 
 function hasAnyIncidentTableRows(blocks: WorkspaceSourceBlocks): boolean {
   for (const key of ["autodna", "carvertical"] as const) {
     const incidents = blocks[key]?.incidents;
     if (Array.isArray(incidents) && incidents.some(ltabRowHasData)) return true;
   }
-  for (const key of ["tjekbil", "mnt_ee", "lkf_ee", "carinfo"] as const) {
+  for (const key of ["tjekbil", "finnik", "mnt_ee", "lkf_ee", "carinfo", "traficom_fi"] as const) {
     const incidents = blocks[key]?.incidents;
     if (Array.isArray(incidents) && incidents.some(vinRegistryIncidentRowHasData)) return true;
   }
@@ -39,7 +40,7 @@ function hasAnyIncidentTableRows(blocks: WorkspaceSourceBlocks): boolean {
   return Array.isArray(rows) && rows.some(ltabRowHasData);
 }
 
-/** Vai pasūtījumā ir negadījumu dati AI ģenerēšanai. */
+/** Vai pasūtījumā ir negadījumu dati AI ģenerēšanai (arī bez zaudējumu summas). */
 export function orderHasIncidentDataForAi(sourceBlocks: WorkspaceSourceBlocks): boolean {
   const blocks = mergeSourceBlocksWithDefaults(sourceBlocks);
   if (
@@ -52,6 +53,7 @@ export function orderHasIncidentDataForAi(sourceBlocks: WorkspaceSourceBlocks): 
   ) {
     return true;
   }
+  if (collectDamageEvidence(blocks).total > 0) return true;
   return hasAnyIncidentTableRows(blocks) || orderHasDealerBodyOrGlassWork(blocks);
 }
 

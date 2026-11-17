@@ -16,7 +16,7 @@ export type VinScanHealthVin = {
 export const VIN_SCAN_HEALTH_VINS: readonly VinScanHealthVin[] = [
   { vin: "YV1DZ5251B2146640", make: "Volvo", note: "XC60 SE, tukšais skenējums" },
   { vin: "YV1PZ68TCL1106362", make: "Volvo", note: "dīlera PDF" },
-  { vin: "WBA5R1C0XLFH42873", make: "BMW", note: "CC-VIN" },
+  { vin: "WBA5R1C0XLFH42873", make: "BMW", note: "Izsoļu portālu arhīvs" },
   { vin: "WBA5K71050G295219", make: "BMW", note: "535" },
   { vin: "TMBLD9NS7J8038392", make: "Škoda", note: "Kodiaq carVertical" },
   { vin: "WBAVT11010KW00321", make: "BMW", note: "e91" },

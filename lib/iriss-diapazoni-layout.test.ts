@@ -18,7 +18,8 @@ describe("IRISS DIAPAZONI mockup v2", () => {
 
   it("embeds the ranges block in both spec editors", () => {
     expect(sources["components/admin/IrissOrderRoom.tsx"]).toContain("IrissSpecDiapazoniBlock");
-    expect(sources["components/admin/IrissPasutijumsEditor.tsx"]).toContain("IrissSpecDiapazoniBlock");
+    // Nils 31.10: jaunais pasūtījums lieto tās pašas soļu kartītes (IrissOrderStepCards ar diapazoniem).
+    expect(sources["components/admin/IrissPasutijumsEditor.tsx"]).toContain("IrissOrderStepCards");
     expect(sources["components/admin/IrissSpecDiapazoniBlock.tsx"]).toContain("DIAPAZONI");
     expect(sources["components/admin/IrissSpecDiapazoniBlock.tsx"]).toContain('label="Gadi"');
     expect(sources["components/admin/IrissSpecDiapazoniBlock.tsx"]).toContain('label="Cena"');
@@ -35,9 +36,8 @@ describe("IRISS DIAPAZONI mockup v2", () => {
     expect(query).toContain("Vēl vajag vienu no: nobraukums līdz, tilpums vai jauda.");
     expect(query).not.toContain('yearFrom: "gads no"');
     const panel = sources["components/admin/IrissMarketplaceLoadPanel.tsx"];
-    expect(panel).toContain("tikai jauniem sludinājumiem");
-    expect(panel).toContain("Poga Ielādēt -");
-    expect(panel).toContain("manuāla ielāde tagad");
+    expect(panel).toContain("mobile.de ielādējas automātiski katru dienu 9:00 (izņemot svētdienas)");
+    expect(panel).toContain("ar pogu Ielādēt");
     expect(panel).toContain("Ielāde izslēgta (izmaksu kontrole)");
     expect(panel).toContain("mēneša kopsumma");
     expect(panel).toContain("Izmaksu pieņēmumi");

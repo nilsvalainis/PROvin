@@ -54,6 +54,7 @@ function normalizeRow(raw: unknown): AdminOrderRow | null {
     isManual: o.isManual === true,
     fulfillment: typeof o.fulfillment === "string" && o.fulfillment.trim() ? o.fulfillment.trim() : null,
     partnerId: typeof o.partnerId === "string" && o.partnerId.trim() ? o.partnerId.trim() : null,
+    partnerRef: typeof o.partnerRef === "string" && /^ptr_[a-f0-9]{16}$/.test(o.partnerRef.trim()) ? o.partnerRef.trim() : null,
     packQty: typeof o.packQty === "number" && Number.isFinite(o.packQty) && o.packQty > 0 ? Math.trunc(o.packQty) : null,
     companyName: typeof o.companyName === "string" && o.companyName.trim() ? o.companyName.trim() : null,
   };

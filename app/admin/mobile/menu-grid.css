@@ -1,0 +1,414 @@
+/* Telefona sākuma režģis (IRISS un PRO 3.0): ikonas un logrīki, kārtošana ar ilgu nospiedienu. */
+.admin-ios-theme .menu-home {
+  padding-bottom: 12px;
+}
+
+.admin-ios-theme .menu-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-auto-rows: 96px;
+  grid-auto-flow: row dense;
+  gap: 20px 6px;
+  padding: 26px 18px 0;
+}
+
+.admin-ios-theme .menu-tile {
+  position: relative;
+  min-width: 0;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.admin-ios-theme .menu-tile-link {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  text-decoration: none;
+  color: var(--label, #1d1d1f) !important;
+}
+
+/* Pieskārta sadaļa atveras: uzreiz redzams, ka pieskāriens pieņemts (j23). */
+.admin-ios-theme .menu-tile.is-pending .menu-tile-link {
+  opacity: 0.55;
+}
+
+/* Ikona */
+.admin-ios-theme .menu-app .menu-tile-link {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.admin-ios-theme .menu-app-icon {
+  display: flex;
+  height: 58px;
+  width: 58px;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  border-radius: 15px;
+  color: #ffffff !important;
+  background: var(--menu-tone, #1d1d1f);
+  box-shadow:
+    0 1px 1px rgba(0, 0, 0, 0.04),
+    0 4px 12px rgba(0, 0, 0, 0.07);
+}
+/* Variants A (Nils 27.10): baltas flīzes ar krāsainu līniju (--menu-ink), tāda pati kā Maps un Dzintarzeme. */
+.admin-ios-theme .menu-app-icon.is-light,
+.admin-ios-theme .menu-app-icon.is-pad {
+  background: #ffffff;
+  color: var(--menu-ink, #1d1d1f) !important;
+  box-shadow:
+    inset 0 0 0 1px #e5e5ea,
+    0 1px 2px rgba(22, 23, 26, 0.06);
+}
+.admin-ios-theme .menu-app-icon.is-bleed {
+  padding: 0;
+  overflow: hidden;
+  background: #006225;
+  color: #ffffff !important;
+}
+/* CSDD logo ir plats: viss logo redzams uz tā paša zaļā fona (agrāk cover nogrieza malas). */
+.admin-ios-theme .menu-app-icon.is-bleed img {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+}
+.admin-ios-theme .menu-app-icon.is-pad img {
+  height: 50px;
+  width: 50px;
+  object-fit: contain;
+}
+.admin-ios-theme .menu-app-label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+.admin-ios-theme .menu-badge {
+  position: absolute;
+  top: -2px;
+  right: calc(50% - 36px);
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 11px;
+  border: 2px solid #dcdce2;
+  background: #1c1c1e;
+  color: #ffffff !important;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+}
+
+/* Logrīks */
+.admin-ios-theme .menu-widget .menu-tile-link {
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 24px;
+  border: 0.5px solid rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 24px rgba(40, 50, 90, 0.1);
+  padding: 13px 14px;
+}
+.admin-ios-theme .menu-widget-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--menu-tone) !important;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.admin-ios-theme .menu-widget-body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 2px;
+}
+.admin-ios-theme .mw-big {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.admin-ios-theme .mw-num {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+.admin-ios-theme .mw-label,
+.admin-ios-theme .mw-sub,
+.admin-ios-theme .mw-muted {
+  color: var(--label-secondary, #545a66) !important;
+  font-size: 12.5px;
+}
+.admin-ios-theme .mw-warn,
+.admin-ios-theme .mw-warn-line {
+  color: #c2410c !important;
+  font-weight: 600;
+}
+.admin-ios-theme .mw-warn-line {
+  font-size: 12.5px;
+}
+.admin-ios-theme .mw-ok {
+  color: #15803d !important;
+}
+.admin-ios-theme .mw-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+.admin-ios-theme .mw-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+.admin-ios-theme .mw-plate {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-weight: 700;
+}
+.admin-ios-theme .mw-row-val {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--label-secondary, #545a66) !important;
+}
+.admin-ios-theme .mw-row-busy .mw-row-val {
+  color: #c2410c !important;
+  font-weight: 600;
+}
+.admin-ios-theme .mw-more {
+  color: var(--label-secondary, #545a66) !important;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Kārtošana (kā iOS: viss viegli trīc, − noņem, izmēra poga maina S/M/L) */
+.admin-ios-theme .menu-grid.is-editing .menu-tile {
+  animation: menu-wiggle 0.3s ease-in-out infinite alternate;
+  touch-action: none;
+}
+@keyframes menu-wiggle {
+  from {
+    transform: rotate(-1.3deg);
+  }
+  to {
+    transform: rotate(1.3deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-ios-theme .menu-grid.is-editing .menu-tile {
+    animation: none;
+  }
+}
+.admin-ios-theme .menu-grid .menu-tile.is-dragging {
+  z-index: 3;
+  animation: none;
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+.admin-ios-theme .menu-remove {
+  position: absolute;
+  top: -7px;
+  left: -5px;
+  z-index: 4;
+  height: 26px;
+  width: 26px;
+  border-radius: 13px;
+  border: 2px solid var(--am-bg, #eef0f5);
+  background: #6e6e73;
+  color: #ffffff !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.admin-ios-theme .menu-app .menu-remove {
+  left: calc(50% - 37px);
+}
+.admin-ios-theme .menu-size {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  z-index: 4;
+  min-width: 34px;
+  height: 26px;
+  border-radius: 999px;
+  border: 0;
+  background: rgba(29, 29, 31, 0.86);
+  color: #ffffff !important;
+  font-size: 12px;
+  font-weight: 700;
+}
+.admin-ios-theme .menu-edit-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 16px 12px;
+}
+.admin-ios-theme .menu-edit-btn {
+  min-height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--label, #1d1d1f) !important;
+}
+.admin-ios-theme .menu-edit-btn:disabled {
+  opacity: 0.4;
+}
+.admin-ios-theme .menu-edit-done {
+  background: #1a73e8;
+  color: #ffffff !important;
+}
+.admin-ios-theme .menu-edit-hint {
+  color: var(--label-secondary, #545a66) !important;
+  font-size: 13px;
+}
+.admin-ios-theme .menu-hint {
+  margin: 16px 16px 0;
+  text-align: center;
+  color: var(--label-secondary, #8e8e93) !important;
+  font-size: 12px;
+}
+
+/* Pievienošanas lapa (render notiek portālā uz document.body, bez .admin-ios-theme priekšteča - sk. AdminMobileSheet/AdminBodyPortal, tāpēc šīs kārtulas ir pašpietiekamas, ne ligzdotas). */
+.menu-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.menu-gallery-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 14px;
+  background: var(--fill-secondary, #f2f2f7);
+  padding: 8px 10px;
+}
+.menu-gallery-icon {
+  display: flex;
+  height: 44px;
+  width: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 11px;
+  color: #ffffff !important;
+  background: var(--menu-tone, #1d1d1f);
+  box-shadow: none;
+}
+.menu-gallery-icon.is-light,
+.menu-gallery-icon.is-pad {
+  background: #ffffff;
+  color: var(--menu-ink, #1d1d1f) !important;
+  box-shadow: inset 0 0 0 1px #e3e3e6;
+}
+.menu-gallery-icon.is-bleed {
+  background: #006225;
+  color: #ffffff !important;
+  box-shadow: none;
+}
+.menu-gallery-icon.is-bleed img {
+  height: 100%;
+  width: 100%;
+  object-fit: contain;
+}
+.menu-gallery-icon.is-pad img {
+  height: 32px;
+  width: 32px;
+  object-fit: contain;
+}
+.menu-gallery-text {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+.menu-gallery-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--label, #1d1d1f);
+}
+.menu-gallery-kind {
+  color: var(--label-secondary, #6e6e73) !important;
+  font-size: 12px;
+}
+.menu-gallery-sizes {
+  display: flex;
+  gap: 4px;
+}
+.menu-gallery-size {
+  min-height: 44px;
+  min-width: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: #1a73e8;
+  padding: 0 10px;
+  color: #ffffff !important;
+  font-size: 13px;
+  font-weight: 700;
+}
+.menu-gallery-empty {
+  padding: 12px;
+  text-align: center;
+  color: var(--label-secondary, #6e6e73) !important;
+}
+
+/* v11d-fix: karte float, pāreja #e4e4ea -> #cfcfd6. */
+.admin-ios-theme .iriss-mobile-menu-home,
+.admin-ios-theme .pro-mobile-menu-home.menu-gradient-bg {
+  min-height: 100dvh;
+  background-color: #cfcfd6;
+  background-image:
+    linear-gradient(180deg, rgba(228, 228, 234, 0.12) 0%, rgba(228, 228, 234, 0.42) 38%, #e4e4ea 58%, #cfcfd6 100%),
+    url("/admin/menu/map-bg.svg");
+  background-repeat: no-repeat, no-repeat;
+  background-size: 100% 100%, 170% 70%;
+  background-position: center top, 42% 0;
+}
+
+/* Brīdinājums: logrīks sarkanā tonī, ja ir kavētie; ikonai sarkans gredzens. */
+.admin-ios-theme .menu-widget.menu-alert .menu-tile-link {
+  border-color: rgba(255, 59, 48, 0.55);
+  background: color-mix(in srgb, #ffffff 86%, #ff3b30 14%);
+  box-shadow: 0 8px 24px rgba(200, 30, 30, 0.14);
+}
+.admin-ios-theme .menu-widget.menu-alert .menu-widget-head {
+  color: #c81e1e !important;
+}
+.admin-ios-theme .menu-app.menu-alert .menu-app-icon {
+  box-shadow:
+    0 0 0 3px #ffffff,
+    0 0 0 5px #ff3b30;
+}
+
+/* Logrīks, kas samazināts līdz ikonai: izmēra poga ikonas apakšējā stūrī, nevis virs nosaukuma. */
+.admin-ios-theme .menu-app .menu-size {
+  top: 46px;
+  right: calc(50% - 44px);
+  bottom: auto;
+  min-width: 0;
+  height: 22px;
+  padding: 0 7px;
+  font-size: 10.5px;
+}

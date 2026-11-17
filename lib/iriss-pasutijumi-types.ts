@@ -22,6 +22,8 @@ export type IrissOfferAttachment = {
   thumbDataUrl?: string;
   thumbBlobPath?: string;
   thumbUrl?: string;
+  /** Dropbox faila id (/STOCK). Saglabājot serveris bildi ielādē Blob; Dropbox netiek mainīts. */
+  dropboxId?: string;
 };
 
 /** Maks. attēlu / pielikumu skaits vienā piedāvājumā (JSON PATCH ~12 MB ierobežojums). */
@@ -101,6 +103,10 @@ export type IrissOfferRecord = {
   offerValidDays: string;
   /** Derīgs līdz (YYYY-MM-DD, Europe/Riga dienas beigas). Tukšs vecajos JSON. */
   validUntil: string;
+  /** Precīzs termiņš UTC ISO (ievade Rīgas laikā). Vienīgais termiņa avots taimerim un lēmumam. Vecajos JSON nav. */
+  validUntilAt?: string;
+  /** No kurienes veidots: "autoparks:<id>" | "logistics:<id>". Vecajos JSON nav. */
+  sourceRef?: string;
   attachments: IrissOfferAttachment[];
   /** Vāka foto id. Tukšs: pirmais attēls. */
   coverAttachmentId?: string;
@@ -187,6 +193,9 @@ export type IrissDzintarzemeTameDraft = {
   /** Ja tukšs, tāmes PDF / lauki izmanto pasūtījuma `brandModel`. */
   tameBrandModel: string;
   tameVin: string;
+  /** Tāmes forma (Nils 28.10): auto gads un nobraukums. */
+  tameYearStr?: string;
+  tameMileageStr?: string;
   tameAutoPriceStr: string;
   tameApplyVatAuto: boolean;
   tameCommissionVariant: IrissDzintarzemeTameCommissionVariant;
@@ -207,6 +216,8 @@ export function defaultIrissDzintarzemeTameDraft(): IrissDzintarzemeTameDraft {
   return {
     tameBrandModel: "",
     tameVin: "",
+    tameYearStr: "",
+    tameMileageStr: "",
     tameAutoPriceStr: "",
     tameApplyVatAuto: false,
     tameCommissionVariant: "A",
@@ -254,6 +265,8 @@ export function normalizeIrissDzintarzemeTameDraft(raw: unknown): IrissDzintarze
   return {
     tameBrandModel: clipStr(o.tameBrandModel, 400),
     tameVin: clipStr(o.tameVin, 32),
+    tameYearStr: clipStr(o.tameYearStr, 8),
+    tameMileageStr: clipStr(o.tameMileageStr, 16),
     tameAutoPriceStr: clipStr(o.tameAutoPriceStr, 32),
     tameApplyVatAuto: Boolean(o.tameApplyVatAuto),
     tameCommissionVariant: variant,
@@ -327,6 +340,14 @@ export type IrissPasutijumsRecord = {
   /** Jauda (kW) specifikācijā, ne tikai no teksta. */
   powerKw: string;
   damageTolerance: string;
+  /** Nils 28.10 (jaunā forma): "all" = budžetā viss ar piegādi, "car" = tikai auto; tukšs vecajos JSON. */
+  budgetIncludes?: string;
+  /** Durvju skaits (piem., "5"); tukšs vecajos JSON. */
+  doors?: string;
+  /** Izsolēm: maks. pieļaujamās remonta izmaksas, € (teksts); tukšs vecajos JSON. */
+  maxRepairCostEur?: string;
+  /** "dealer" = tikai dīleri, "any" = arī privāti; tukšs vecajos JSON. */
+  sellerType?: string;
   preferredCountries: string;
   /** Klienta finansējuma % no kopējā budžeta (0 = nav izvēlēts). */
   clientFinancingPercent: number;
@@ -526,6 +547,10 @@ export function emptyIrissPasutijums(id: string, nowIso: string): IrissPasutijum
     interiorFinish: "",
     powerKw: "",
     damageTolerance: "",
+    budgetIncludes: "",
+    doors: "",
+    maxRepairCostEur: "",
+    sellerType: "",
     preferredCountries: "",
     clientFinancingPercent: 0,
     dealLeasingOrCredit: false,

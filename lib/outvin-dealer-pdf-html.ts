@@ -40,7 +40,8 @@ function vehicleInfoTable(
       v = translateDealerVehicleValue(key, v, lang);
     }
     const label = translateClientReportStatic(labelLv || labelEn, lang);
-    rows.push({ k: label, v: capitalizeFactValue(v) });
+    // Jaudai vienība „kW” paliek ar mazo burtu (capitalize to padarītu par „KW”).
+    rows.push({ k: label, v: key === "power" ? v : capitalizeFactValue(v) });
   }
   const table = buildPdfKvPairHtml(rows);
   if (!table) return "";

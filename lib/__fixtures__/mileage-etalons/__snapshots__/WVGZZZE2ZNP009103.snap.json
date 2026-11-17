@@ -1,0 +1,39 @@
+{
+ "label": "VW ID.4 GTX 220 KW: CSDD 1, AutoDNA 2, carVertical 2, dīleris 2, reģistri 3, citi 1; negadījumi 1",
+ "rindasPaAvotiem": {
+  "CSDD": 1,
+  "OFICIĀLĀ DĪLERA DATI": 2,
+  "AutoDNA": 2,
+  "CarVertical": 2,
+  "SOMIJAS REĢISTRI": 3,
+  "CITI AVOTI - REKKARI": 1,
+  "REKKARI": 1,
+  "ss.lv": 1
+ },
+ "rindasSavaktas": 13,
+ "rindasTabula": 8,
+ "tabula": [
+  "01.11.2021 | 5 | Somija | AutoDNA",
+  "01.11.2021 | 5 | Somija | CarVertical",
+  "02.11.2021 | 5 | Somija | OFICIĀLĀ DĪLERA DATI",
+  "02.11.2021 | 5 | Somija | SOMIJAS REĢISTRI",
+  "25.10.2023 | 49469 | Somija | AutoDNA + OFICIĀLĀ DĪLERA DATI + SOMIJAS REĢISTRI + CarVertical",
+  "12.11.2024 | 73500 | Somija | SOMIJAS REĢISTRI + CITI AVOTI - REKKARI + REKKARI",
+  "05.01.2026 | 76 255 | Latvija | ss.lv",
+  "27.09.2026 | 76237 | Latvija | CSDD"
+ ],
+ "sarkanaJosla": false,
+ "klases": [],
+ "kritumsBezNilaLemumiem": false,
+ "nilaLemumi": [],
+ "klasesPecNilaLemumiem": [],
+ "faktuLapa": {
+  "odometerAnomaly": false,
+  "carverticalMileageWarning": false,
+  "maxRollbackDropKm": 0,
+  "rollbacks": [],
+  "suspectedEntryErrors": [],
+  "implausibleReadings": [],
+  "latestKm": 76237
+ }
+}

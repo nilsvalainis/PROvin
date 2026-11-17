@@ -5,22 +5,74 @@
 
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
+/** CP1252 (WinAnsi) papildu simboli virs ASCII / Latin-1, ko Helvetica var iekodēt. */
+const WINANSI_EXTRA = new Set(
+  "\u20ac\u201a\u0192\u201e\u2026\u2020\u2021\u02c6\u2030\u0160\u2039\u0152\u017d\u2018\u2019\u201c\u201d\u2022\u2013\u2014\u02dc\u2122\u0161\u203a\u0153\u017e\u0178",
+);
+
+/** Biežākie simboli no admin tekstiem, kurus WinAnsi nevar iekodēt (pdf-lib met kļūdu un PDF netiek izveidots). */
+const WINANSI_FALLBACK: Record<string, string> = {
+  "\u2248": "~",
+  "\u2192": "->",
+  "\u2190": "<-",
+  "\u2191": "^",
+  "\u2193": "v",
+  "\u2194": "<->",
+  "\u21d2": "=>",
+  "\u2264": "<=",
+  "\u2265": ">=",
+  "\u2260": "!=",
+  "\u2212": "-",
+  "\u2011": "-",
+  "\u2010": "-",
+  "\u2713": "+",
+  "\u2714": "+",
+  "\u2705": "+",
+  "\u2717": "x",
+  "\u2718": "x",
+  "\u274c": "x",
+  "\u26a0": "!",
+  "\u2605": "*",
+  "\u2606": "*",
+  "\u0141": "L",
+  "\u0142": "l",
+  "\u00a0": " ",
+  "\u202f": " ",
+  "\u2009": " ",
+};
+
+function isWinAnsiChar(ch: string): boolean {
+  const c = ch.codePointAt(0) ?? 0;
+  if (c === 0x0a || c === 0x09) return true;
+  if (c >= 0x20 && c <= 0x7e) return true;
+  if (c >= 0xa0 && c <= 0xff) return true;
+  return WINANSI_EXTRA.has(ch);
+}
+
 export function toWinAnsiSafeText(text: string): string {
-  return text
-    .replace(/[Āā]/g, "a")
-    .replace(/[Čč]/g, "c")
-    .replace(/[Ēē]/g, "e")
-    .replace(/[Ģģ]/g, "g")
-    .replace(/[Īī]/g, "i")
-    .replace(/[Ķķ]/g, "k")
-    .replace(/[Ļļ]/g, "l")
-    .replace(/[Ņņ]/g, "n")
-    .replace(/[Šš]/g, "s")
-    .replace(/[Ūū]/g, "u")
-    .replace(/[Žž]/g, "z")
+  const mapped = text
+    .replace(/[Āā]/g, (m) => (m === "Ā" ? "A" : "a"))
+    .replace(/[Čč]/g, (m) => (m === "Č" ? "C" : "c"))
+    .replace(/[Ēē]/g, (m) => (m === "Ē" ? "E" : "e"))
+    .replace(/[Ģģ]/g, (m) => (m === "Ģ" ? "G" : "g"))
+    .replace(/[Īī]/g, (m) => (m === "Ī" ? "I" : "i"))
+    .replace(/[Ķķ]/g, (m) => (m === "Ķ" ? "K" : "k"))
+    .replace(/[Ļļ]/g, (m) => (m === "Ļ" ? "L" : "l"))
+    .replace(/[Ņņ]/g, (m) => (m === "Ņ" ? "N" : "n"))
+    .replace(/[Ūū]/g, (m) => (m === "Ū" ? "U" : "u"))
     .replace(/[“”„]/g, "\"")
-    .replace(/[’]/g, "'")
-    .replace(/[--]/g, "-");
+    .replace(/[’]/g, "'");
+  let out = "";
+  for (const ch of mapped) {
+    if (isWinAnsiChar(ch)) out += ch;
+    else if (WINANSI_FALLBACK[ch] !== undefined) out += WINANSI_FALLBACK[ch];
+    else {
+      // Diakritika no citām valodām (ą, ő, ...) - bāzes burts; pārējais (karogi, emoji) - izlaist.
+      const base = ch.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      if (base && [...base].every(isWinAnsiChar)) out += base;
+    }
+  }
+  return out;
 }
 
 function wrapPdfTextLine(text: string, maxWidth: number, widthOfText: (value: string) => number): string[] {

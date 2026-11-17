@@ -1,0 +1,17 @@
+{
+  "name": "provin-ltab-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PROVIN LTAB relejs: services.ltab.lv OCTA zaudējumu izziņa pēc LV numurzīmes ar latvija.lv Smart-ID (Hetzner, Xvfb).",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check server.mjs && node --check lib/jobs.mjs && node --check lib/ltab-flow.mjs && node --check lib/ltab-page.mjs"
+  },
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}

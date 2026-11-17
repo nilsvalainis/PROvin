@@ -10,7 +10,7 @@ import {
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
 import { hasCaptchaSolverKey } from "@/lib/captcha-solver";
 import { applyCsddTechDataToBlock, csddTechSeedNeeded } from "@/lib/csdd-tech-data-apply";
-import { fetchCsddTechData } from "@/lib/csdd-tech-data";
+import { fetchCsddTechDataCounted } from "@/lib/csdd-tech-data-counted";
 import { fetchListingPriceHistory } from "@/lib/listing-price-history";
 import { formatListingSnapshotForPasteField } from "@/lib/listing-scrape";
 import { fetchListingAiSnapshot } from "@/lib/listing-scrape-server";
@@ -111,7 +111,7 @@ export async function computeFreeSourceSeed(
           Promise.all([fetchListingPriceHistory(listingUrl), fetchListingAiSnapshot(listingUrl).catch(() => null)]),
         )
       : Promise.resolve(null),
-    doCsdd ? settle("csdd", fetchCsddTechData(csddNr)) : Promise.resolve(null),
+    doCsdd ? settle("csdd", fetchCsddTechDataCounted(csddNr, "admin")) : Promise.resolve(null),
     nordicVin ? runNordic(nordicVin, need) : Promise.resolve(null),
   ]);
 

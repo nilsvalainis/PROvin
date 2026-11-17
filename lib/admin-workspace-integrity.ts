@@ -29,6 +29,9 @@ function toPersistBody(workspace: OrderDraftWorkspaceBody | OrderWorkspacePersis
     ...(w.odometerAnomalyOverrides != null
       ? { odometerAnomalyOverrides: w.odometerAnomalyOverrides }
       : {}),
+    ...(w.dealerMajorWorkOverrides != null
+      ? { dealerMajorWorkOverrides: w.dealerMajorWorkOverrides }
+      : {}),
   });
 }
 
@@ -51,6 +54,9 @@ export function stableWorkspaceChecksum(
     ...(normalized.technicalRiskMap ? { technicalRiskMap: normalized.technicalRiskMap } : {}),
     ...(normalized.odometerAnomalyOverrides != null
       ? { odometerAnomalyOverrides: normalized.odometerAnomalyOverrides }
+      : {}),
+    ...(normalized.dealerMajorWorkOverrides != null
+      ? { dealerMajorWorkOverrides: normalized.dealerMajorWorkOverrides }
       : {}),
   });
   let h = 5381;

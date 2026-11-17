@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { irissAivarsApiTokenConfigured, verifyIrissAivarsApiToken } from "@/lib/iriss-aivars-api-token";
 import { toAivarsCreateWaybillAction } from "@/lib/iriss-waybill-create";
-import { isWaybillRequestEventKind } from "@/lib/iriss-waybill-requests";
+import { isWaybillRequestEventKind, isWaybillWorkerStage } from "@/lib/iriss-waybill-requests";
 import { appendWaybillRequestEvent } from "@/lib/iriss-waybill-requests-store";
+import { ensureWaybillRequestInDropbox } from "@/lib/iriss-waybill-dropbox";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,14 +18,30 @@ export async function POST(req: Request, ctx: Ctx) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const { id } = await ctx.params;
-  let body: { kind?: unknown; text?: unknown; waybillNo?: unknown; pdfUrl?: unknown; errorReason?: unknown };
+  let body: {
+    kind?: unknown;
+    text?: unknown;
+    waybillNo?: unknown;
+    pdfUrl?: unknown;
+    errorReason?: unknown;
+    by?: unknown;
+    stage?: unknown;
+  };
   try {
     body = (await req.json()) as typeof body;
   } catch {
-    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+    return NextResponse.json({ error: "invalid_json", hint: "Body: JSON { kind, text? }" }, { status: 400 });
   }
   if (body.kind !== "in_progress" && body.kind !== "issued" && body.kind !== "error" && body.kind !== "message") {
-    return NextResponse.json({ error: "invalid_kind" }, { status: 400 });
+    // 07.11 (B762): Aivars saņēma tukšu 400 un minēja tālāk. Tagad atbilde pasaka, kas der.
+    return NextResponse.json(
+      {
+        error: "invalid_kind",
+        allowed: ["in_progress", "issued", "error", "message"],
+        hint: "Pabeigt darbu: POST /:id/result { ok, waybillNo }. Statuss: GET /:id.",
+      },
+      { status: 400 },
+    );
   }
   if (!isWaybillRequestEventKind(body.kind)) {
     return NextResponse.json({ error: "invalid_kind" }, { status: 400 });
@@ -36,9 +53,13 @@ export async function POST(req: Request, ctx: Ctx) {
     waybillNo: typeof body.waybillNo === "string" ? body.waybillNo : "",
     pdfUrl: typeof body.pdfUrl === "string" ? body.pdfUrl : "",
     errorReason: typeof body.errorReason === "string" ? body.errorReason : "",
-    by: "aivars",
+    by: body.by === "auto" ? "auto" : "aivars",
+    // Automātikas solis (VPN, forma, Saglabāt, PDF): UI rāda tikai šos reālos soļus.
+    stage: isWaybillWorkerStage(body.stage) ? body.stage : undefined,
   });
   if (!request) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  // Izdota (arī Aivara ar roku): PDF -> Dropbox /Pavadzīmes_IRISS; kļūdu cron mēģina vēlreiz.
+  if (request.status === "issued" && !request.dropboxPath) after(() => ensureWaybillRequestInDropbox(request.id));
   return NextResponse.json(
     { ok: true, request: toAivarsCreateWaybillAction(request), status: request.status },
     { headers: { "Cache-Control": "private, no-store" } },

@@ -3,6 +3,10 @@ import type { IrissGeneratedDocument, IrissGoogleContactStatus, IrissPasutijumsR
 
 type ServerOwnedSlice = {
   workspaceRevision?: number;
+  listStatus?: string;
+  statusChangedAt?: string;
+  statusHistory?: unknown[];
+  inactiveReason?: string;
   generatedDocuments?: IrissGeneratedDocument[];
   googleContactResourceName?: string;
   googleContactStatus?: IrissGoogleContactStatus;
@@ -18,6 +22,20 @@ export function mergeServerOwnedIrissFields<T extends ServerOwnedSlice>(local: T
     workspaceRevision: server.workspaceRevision ?? local.workspaceRevision,
     generatedDocuments: mergeGeneratedDocuments(local.generatedDocuments, server.generatedDocuments),
   };
+  // Statusu var mainīt arī serveris (klients apstiprina piedāvājumu → «Rezervēts»). Atvērtā cilne
+  // to nezināja un rādīja «Aktīvs», kamēr serverī jau «Rezervēts». Pārņem, ja servera maiņa jaunāka.
+  const serverStatusMs = server.statusChangedAt ? Date.parse(server.statusChangedAt) : NaN;
+  const localStatusMs = local.statusChangedAt ? Date.parse(local.statusChangedAt) : NaN;
+  if (
+    server.listStatus &&
+    Number.isFinite(serverStatusMs) &&
+    (!Number.isFinite(localStatusMs) || serverStatusMs > localStatusMs)
+  ) {
+    next.listStatus = server.listStatus;
+    next.statusChangedAt = server.statusChangedAt;
+    if (server.statusHistory) next.statusHistory = server.statusHistory;
+    if (server.inactiveReason !== undefined) next.inactiveReason = server.inactiveReason;
+  }
   if (server.googleContactResourceName) next.googleContactResourceName = server.googleContactResourceName;
   else if (local.googleContactResourceName) next.googleContactResourceName = local.googleContactResourceName;
   if (server.googleContactStatus) next.googleContactStatus = server.googleContactStatus;

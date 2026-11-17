@@ -11,27 +11,47 @@ import { orderHasIncidentDataForAi } from "@/lib/admin-ai-data-availability";
 import { orderHasDealerBodyOrGlassWork } from "@/lib/admin-ai-dealer-incident-link";
 import { adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { ADMIN_INCIDENTS_SUMMARY_LABEL } from "@/lib/admin-workspace-field-labels";
+import { collectDamageEvidence } from "@/lib/damage-evidence";
+import {
+  mergeSourceBlocksWithDefaults,
+  toPdfLtabManualBlock,
+  toPdfManualVendorBlocks,
+} from "@/lib/admin-source-blocks";
+import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
 
 export async function generateIncidentsSummaryWithAi(input: AiOrderContextInput): Promise<string> {
   const hasIncidents = orderHasIncidentDataForAi(input.sourceBlocks);
   const hasDealerBodyWork = orderHasDealerBodyOrGlassWork(input.sourceBlocks);
+  const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
+  const pricedIncidentCount = collectUnifiedIncidentRows({
+    manualVendorBlocks: toPdfManualVendorBlocks(blocks),
+    manualLtabBlock: toPdfLtabManualBlock(blocks.ltab),
+    ccVinBlock: blocks.cc_vin,
+    asvBlock: blocks.asv,
+  }).length;
+  const damageEvidence = collectDamageEvidence(blocks);
 
   const orderContext = await buildAiCommentGenerationContext(
     { ...input, internalComment: undefined },
     "summary",
   );
 
-  const noIncidentHint = hasIncidents
-    ? hasDealerBodyWork
-      ? `
+  const noIncidentHint =
+    pricedIncidentCount > 0
+      ? hasDealerBodyWork
+        ? `
 
 SVARĪGI: Lasi OFICIĀLĀ DĪLERA DATU stikla / virsbūves / elementu remontus. Ja „Dīlera remonta un negadījumu sasaiste” atzīmē SASAISTĪTS, raksti vienu notikumu (datums + avots + dīlera darbs), ne divus nesaistītus stāstus.`
-      : ""
-    : hasDealerBodyWork
-      ? `
+        : ""
+      : damageEvidence.total > 0
+        ? `
+
+SVARĪGI: Apdrošināšanas / negadījumu tabulās nav ieraksta ar fiksētu zaudējumu summu, BET ir ${damageEvidence.total} bojājuma/negadījuma ieraksts(-i) bez summas (izsoles, reģistru atzīmes vai cits avots, sk. kanoniskās lapas sadaļu „Bojājumi”). Min KATRU šādu ierakstu ar avotu un datumu. AIZLIEGTS rakstīt, ka bojājumu vai negadījumu nav - tie IR fiksēti, tikai bez EUR summas.`
+        : hasDealerBodyWork
+          ? `
 
 SVARĪGI: Apdrošināšanas / negadījumu tabulās nav fiksētu izmaksu, BET oficiālā dīlera datos IR stikla / virsbūves / elementu remonts. Min dīlera faktu (datums, km, darbs) un skaidri saki, ka atbilstoša negadījuma ieraksta nav. Neizdomā avāriju vai summu.`
-      : `
+          : `
 
 SVARĪGI: Avotos nav fiksētu negadījumu vai apdrošināšanas izmaksu ierakstu. Sagatavo īsu, profesionālu kopsavilkumu, kurā:
 - Salīdzini avotus (piemin konkrētos avotus, kas tika pārbaudīti)

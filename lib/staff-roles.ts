@@ -4,6 +4,8 @@
  * Vienam lietotājam var būt vairākas sadaļas (piem. Loģistika + Pavadzīmes).
  * Loģistika: `/admin/iriss/logistika` un API `/api/admin/iriss/logistika*` plus `/api/admin/iriss-logistics*`.
  * Autoparks (`/admin/iriss/autoparks`) ir tām pašām lomām (Loģistika, Grāmatvede, Serviss), API zem `/api/admin/iriss-logistics/autoparks`.
+ * Autoparks v2 (`/admin/iriss/autoparks-v2`): sava sadaļa ar 6 apakštiesībām `ap_*`, katrai kategorijai savs API ceļš.
+ * Vēsture (`/api/admin/iriss-autoparks-v2/vesture`) nav kartē - tikai administrators.
  */
 
 /** Legacy lauks saglabātajos JSON (pirms vairākām sadaļām). */
@@ -23,9 +25,108 @@ export const IRISS_SECTIONS = [
   "pavadzimes",
   "vin",
   "atskaite",
+  "ap_pamatdati",
+  "ap_iegade",
+  "ap_serviss",
+  "ap_izdevumi",
+  "ap_cenu_lapa",
+  "ap_summas",
 ] as const;
 
 export type IrissSection = (typeof IRISS_SECTIONS)[number];
+
+export const AUTOPARKS_V2_PAGE_PREFIX = "/admin/iriss/autoparks-v2";
+export const AUTOPARKS_V2_API_PREFIX = "/api/admin/iriss-autoparks-v2";
+
+/** Autoparka v2 apakštiesības (deny-by-default: katra jāatzīmē atsevišķi). */
+export const AUTOPARKS_V2_SECTIONS = [
+  "ap_pamatdati",
+  "ap_iegade",
+  "ap_serviss",
+  "ap_izdevumi",
+  "ap_cenu_lapa",
+  "ap_summas",
+] as const satisfies readonly IrissSection[];
+
+export type AutoparksV2Section = (typeof AUTOPARKS_V2_SECTIONS)[number];
+
+/** Īsie nosaukumi ķeksīšiem zem virsraksta "Autoparks". */
+export const AUTOPARKS_V2_SECTION_SHORT_LABELS: Record<AutoparksV2Section, string> = {
+  ap_pamatdati: "Pamatdati",
+  ap_iegade: "Iegādes dokumenti",
+  ap_serviss: "Serviss",
+  ap_izdevumi: "Citi izdevumi",
+  ap_cenu_lapa: "Cenu lapa",
+  ap_summas: "Summas",
+};
+
+export function isAutoparksV2Section(value: unknown): value is AutoparksV2Section {
+  return typeof value === "string" && (AUTOPARKS_V2_SECTIONS as readonly string[]).includes(value);
+}
+
+/**
+ * Darbinieka navigācijas sadaļas: Autoparka apakštiesības nav atsevišķi punkti. Kamēr v2 nav ieslēgts
+ * darbiniekiem, tās navigācijā neparādās vispār; pēc tam - viens punkts (pirmā `ap_*` ar lapu).
+ */
+/** Sadaļas ar tiesībām, bet bez punkta izvēlnē (Mēneša atskaite - Nils 26.10: pagaidām nelieto; lapa paliek). */
+export const IRISS_NAV_HIDDEN_SECTIONS: readonly IrissSection[] = ["atskaite"];
+
+export function staffNavSections(sections: readonly IrissSection[], autoparksV2Visible: boolean): IrissSection[] {
+  const out: IrissSection[] = [];
+  let apAdded = false;
+  for (const id of sections) {
+    if (IRISS_NAV_HIDDEN_SECTIONS.includes(id)) continue;
+    if (!isAutoparksV2Section(id)) {
+      out.push(id);
+      continue;
+    }
+    if (!autoparksV2Visible || apAdded || id === "ap_summas") continue;
+    out.push(id);
+    apAdded = true;
+  }
+  return out;
+}
+
+export const STAFF_TABBAR_HOME_HREF = "/admin/iriss" as const;
+
+export type StaffTabbarItem =
+  | { kind: "home"; href: typeof STAFF_TABBAR_HOME_HREF; label: "Sākums" }
+  | { kind: "section"; id: IrissSection; href: string; label: string }
+  | { kind: "logout"; label: "Iziet" }
+  /** Pārējās sadaļas un Iziet - lapā no apakšas (audits 26.10: 11 punkti joslā, nogriezti nosaukumi). */
+  | { kind: "more"; label: "Vairāk"; sections: Array<{ id: IrissSection; href: string; label: string }> };
+
+/** Joslā redzamo sadaļu skaits; ja vairāk, pārējās un Iziet ir zem «Vairāk». */
+export const STAFF_TABBAR_MAX_SECTIONS = 3;
+
+/**
+ * Telefonā apakšējā josla: tikai piešķirtās sadaļas (ne visiem vienāds ikonu komplekts).
+ * Partnerim (tikai Pavadzīmes) joslas nav. Autoparks ir viens punkts, ja ir kāda `ap_*` ar lapu.
+ */
+export function staffTabbarItems(
+  sections: readonly IrissSection[],
+  autoparksV2Visible: boolean,
+): StaffTabbarItem[] {
+  if (isWaybillOnlyStaff(sections)) return [];
+  const links: Array<{ id: IrissSection; href: string; label: string }> = [];
+  const hrefs = new Set<string>();
+  for (const id of staffNavSections(sections, autoparksV2Visible)) {
+    const href = irissSectionMeta(id).pagePrefixes[0];
+    // Vairākas sadaļas ved uz vienu lapu (Loģistika, Grāmatvede, Serviss) - joslā vienreiz.
+    if (!href || hrefs.has(href)) continue;
+    hrefs.add(href);
+    links.push({ id, href, label: IRISS_SECTION_LABELS[id] });
+  }
+  const items: StaffTabbarItem[] = [{ kind: "home", href: STAFF_TABBAR_HOME_HREF, label: "Sākums" }];
+  if (links.length <= STAFF_TABBAR_MAX_SECTIONS) {
+    for (const l of links) items.push({ kind: "section", ...l });
+    items.push({ kind: "logout", label: "Iziet" });
+    return items;
+  }
+  for (const l of links.slice(0, STAFF_TABBAR_MAX_SECTIONS)) items.push({ kind: "section", ...l });
+  items.push({ kind: "more", label: "Vairāk", sections: links.slice(STAFF_TABBAR_MAX_SECTIONS) });
+  return items;
+}
 
 export type IrissSectionMeta = {
   id: IrissSection;
@@ -34,6 +135,10 @@ export type IrissSectionMeta = {
   apiPrefixes: readonly string[];
 };
 
+/**
+ * Centrālā karte lapa/API -> sadaļa. Darbiniekam atļauts TIKAI tas, kas šeit piekārtots viņa sadaļām;
+ * viss pārējais (arī jauns route, kas nav kartē) ir aizliegts (middleware + lapu/route vārti).
+ */
 export const IRISS_SECTION_CATALOG: readonly IrissSectionMeta[] = [
   {
     id: "pasutijumi",
@@ -84,7 +189,6 @@ export const IRISS_SECTION_CATALOG: readonly IrissSectionMeta[] = [
     apiPrefixes: [
       "/api/admin/vin-scan",
       "/api/admin/vin-sources",
-      "/api/admin/vin-history",
       "/api/admin/outvin",
       "/api/admin/csdd-tech-data",
     ],
@@ -93,6 +197,43 @@ export const IRISS_SECTION_CATALOG: readonly IrissSectionMeta[] = [
     id: "atskaite",
     label: "Mēneša atskaite",
     pagePrefixes: ["/admin/iriss/atskaite"],
+    apiPrefixes: [],
+  },
+  {
+    id: "ap_pamatdati",
+    label: "Autoparks - Pamatdati",
+    pagePrefixes: [AUTOPARKS_V2_PAGE_PREFIX],
+    apiPrefixes: [`${AUTOPARKS_V2_API_PREFIX}/pamatdati`],
+  },
+  {
+    id: "ap_iegade",
+    label: "Autoparks - Iegādes dokumenti",
+    pagePrefixes: [AUTOPARKS_V2_PAGE_PREFIX],
+    apiPrefixes: [`${AUTOPARKS_V2_API_PREFIX}/iegade`],
+  },
+  {
+    id: "ap_serviss",
+    label: "Autoparks - Serviss",
+    pagePrefixes: [AUTOPARKS_V2_PAGE_PREFIX],
+    apiPrefixes: [`${AUTOPARKS_V2_API_PREFIX}/serviss`],
+  },
+  {
+    id: "ap_izdevumi",
+    label: "Autoparks - Citi izdevumi",
+    pagePrefixes: [AUTOPARKS_V2_PAGE_PREFIX],
+    apiPrefixes: [`${AUTOPARKS_V2_API_PREFIX}/izdevumi`],
+  },
+  {
+    id: "ap_cenu_lapa",
+    label: "Autoparks - Cenu lapa",
+    pagePrefixes: [AUTOPARKS_V2_PAGE_PREFIX],
+    apiPrefixes: [`${AUTOPARKS_V2_API_PREFIX}/cenu-lapa`],
+  },
+  {
+    // Tikai papildina citas Autoparka tiesības (summas JSON atbildēs); pati neatver ne lapu, ne API.
+    id: "ap_summas",
+    label: "Autoparks - Summas",
+    pagePrefixes: [],
     apiPrefixes: [],
   },
 ] as const;
@@ -107,6 +248,12 @@ export const IRISS_SECTION_LABELS: Record<IrissSection, string> = {
   pavadzimes: "Pavadzīmes",
   vin: "VIN pārbaude",
   atskaite: "Mēneša atskaite",
+  ap_pamatdati: "Autoparks",
+  ap_iegade: "Autoparks",
+  ap_serviss: "Autoparks",
+  ap_izdevumi: "Autoparks",
+  ap_cenu_lapa: "Autoparks",
+  ap_summas: "Autoparks",
 };
 
 export type AccessActor =
@@ -167,6 +314,28 @@ export function staffHasSection(
 
 export function irissSectionMeta(id: IrissSection): IrissSectionMeta {
   return IRISS_SECTION_CATALOG.find((row) => row.id === id)!;
+}
+
+/**
+ * Partnera skats: darbiniekam ir TIKAI sadaļa Pavadzīmes. Sākumā tikai pavadzīmju logrīks, poga
+ * "Izveidot pavadzīmi", Arhīvs un Iziet - bez navigācijas. Ja atzīmē vēl kādu sadaļu, atgriežas parastā navigācija.
+ */
+export function isWaybillOnlyStaff(sections: readonly IrissSection[] | null | undefined): boolean {
+  return Array.isArray(sections) && sections.length === 1 && sections[0] === "pavadzimes";
+}
+
+/**
+ * Partnerim (tikai Pavadzīmes) arī pavadzīmju API ir šaurāks: bez PDF augšupielādes un izmaiņu vēstures
+ * (atjaunošanas) - viņa sākumskatā tādu darbību nav. Pilno sarakstu (`GET /api/admin/iriss-pavadzimes` bez
+ * `?active=1`) aizliedz pats route (vaicājuma parametrs middleware nav redzams).
+ */
+export const WAYBILL_ONLY_STAFF_DENIED_API_PREFIXES: readonly string[] = [
+  "/api/admin/iriss-pavadzimes/upload",
+  "/api/admin/change-history",
+];
+
+export function isWaybillOnlyStaffDeniedApiPath(pathname: string): boolean {
+  return WAYBILL_ONLY_STAFF_DENIED_API_PREFIXES.some((prefix) => pathMatchesPrefix(pathname, prefix));
 }
 
 export function staffHomePath(sections: readonly IrissSection[]): string {
@@ -247,6 +416,8 @@ export function decideAdminPageAccess(pathname: string, actor: AccessActor): Pag
   if (actor.kind === "admin") return "allow";
   if (actor.kind !== "staff") return "forbidden";
   if (isStaffIrissHomePath(pathname)) return actor.sections.length > 0 ? "allow" : "forbidden";
+  // Partnerim (tikai Pavadzīmes) vienīgā lapa ir IRISS sākums; pavadzīmju API paliek atļauts.
+  if (isWaybillOnlyStaff(actor.sections)) return "forbidden";
   if (actor.sections.some((id) => irissSectionMeta(id).pagePrefixes.some((prefix) => pathMatchesPrefix(pathname, prefix)))) {
     return "allow";
   }
@@ -259,6 +430,7 @@ export function decideAdminApiAccess(pathname: string, actor: AccessActor): ApiA
   if (actor.kind === "admin") return "allow";
   if (actor.kind !== "staff") return "forbidden";
   if (isStaffSessionApiPath(pathname)) return "allow";
+  if (isWaybillOnlyStaff(actor.sections) && isWaybillOnlyStaffDeniedApiPath(pathname)) return "forbidden";
   if (isSharedStaffHistoryApiPath(pathname)) {
     return actor.sections.some((s) => s === "pavadzimes" || s === "pasutijumi" || s === "sludinajumi")
       ? "allow"

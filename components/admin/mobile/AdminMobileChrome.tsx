@@ -5,8 +5,10 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
 import { useAdminShellLayout } from "@/components/admin/AdminShellLayoutContext";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminMobileColorScheme } from "@/components/admin/useAdminMobileViewport";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
+import { useVisualViewportHeight } from "@/lib/use-visual-viewport-height";
 import { adminChromeDataset } from "@/lib/admin-chrome-attrs";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
 import type { AdminMobileIconName } from "@/lib/admin-mobile-ds";
@@ -25,6 +27,10 @@ export function AdminMobileTopBar({
   onBack,
   trailing,
   children,
+  wrapTitle = false,
+  monoSubtitle = false,
+  hideWorkspaceSwitch = false,
+  headerExtra,
 }: {
   title: string;
   subtitle?: string;
@@ -32,6 +38,14 @@ export function AdminMobileTopBar({
   onBack?: () => void;
   trailing?: ReactNode;
   children?: ReactNode;
+  /** Garš nosaukums divās rindās, nevis „TESTS GL…”. */
+  wrapTitle?: boolean;
+  /** Apakšvirsraksts (VIN) pilnībā, monospace. */
+  monoSubtitle?: boolean;
+  /** Bez IRISS/PRO slēdža (pasūtījuma lapā - tas ir sarakstā). */
+  hideWorkspaceSwitch?: boolean;
+  /** Rinda zem nosaukuma (rezultāts, produkts, summa). */
+  headerExtra?: ReactNode;
 }) {
   const pathname = usePathname() ?? "";
   const iriss = useAdminShellLayout()?.workspace === "iriss";
@@ -62,12 +76,18 @@ export function AdminMobileTopBar({
               >
                 {title}
               </h1>
-              <AdminWorkspaceSwitch />
+              {hasBack ? null : <AdminWorkspaceSwitch />}
             </div>
             {subtitle ? <p className="mt-0.5 truncate text-[13px] text-[var(--label-secondary)]">{subtitle}</p> : null}
           </div>
           {trailing ? <div className="flex shrink-0 items-center gap-1.5">{trailing}</div> : null}
         </div>
+        {/* QA 29.10: iekšējās lapās pārslēgs zem virsraksta - nosaukums netiek saīsināts līdz «To...». */}
+        {hasBack ? (
+          <div className="flex">
+            <AdminWorkspaceSwitch />
+          </div>
+        ) : null}
         {children ? <div className="flex flex-col gap-2">{children}</div> : null}
         <IrissPavadzimesMobileBar embedded />
       </header>
@@ -91,18 +111,35 @@ export function AdminMobileTopBar({
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 items-center gap-2">
               <h1
-                className={`min-w-0 truncate font-bold tracking-tight text-[var(--label)] ${
-                  hasBack ? "text-[17px] leading-none" : title.length > 10 ? "text-[28px] leading-none" : "text-[34px] leading-none"
+                className={`min-w-0 font-bold tracking-tight text-[var(--label)] ${
+                  wrapTitle ? "line-clamp-2 break-words" : "truncate"
+                } ${
+                  hasBack ? (wrapTitle ? "text-[17px] leading-tight" : "text-[17px] leading-none") : title.length > 10 ? "text-[28px] leading-none" : "text-[34px] leading-none"
                 }`}
               >
                 {title}
               </h1>
-              <AdminWorkspaceSwitch />
+              {hasBack ? null : <AdminWorkspaceSwitch />}
             </div>
-            {subtitle ? <p className="mt-0.5 truncate text-[13px] text-[var(--label-secondary)]">{subtitle}</p> : null}
+            {subtitle ? (
+              <p
+                className={`mt-0.5 text-[13px] text-[var(--label-secondary)] ${
+                  monoSubtitle ? "font-mono tracking-[0.02em] [overflow-wrap:anywhere]" : "truncate"
+                }`}
+              >
+                {subtitle}
+              </p>
+            ) : null}
           </div>
           {trailing ? <div className="flex shrink-0 items-center gap-1.5">{trailing}</div> : null}
         </div>
+        {headerExtra ? <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">{headerExtra}</div> : null}
+        {/* QA 29.10: iekšējās lapās pārslēgs otrajā rindā - virsraksts vairs netiek saīsināts līdz «Pa...». */}
+        {hasBack && !hideWorkspaceSwitch ? (
+          <div className="mt-1.5 flex">
+            <AdminWorkspaceSwitch />
+          </div>
+        ) : null}
       </header>
       {children ? <div className="am-topbar-expand px-4 md:hidden">{children}</div> : null}
     </>
@@ -188,7 +225,7 @@ export function AdminMobileSaveStatus({
       type="button"
       onClick={saved ? undefined : onSave}
       disabled={busy || saved}
-      className="inline-flex h-[26px] items-center gap-1 rounded-full bg-[var(--am-fill)] px-2 text-[12px] font-medium text-[var(--am-ink2)]"
+      className="am-hit inline-flex h-[26px] items-center gap-1 rounded-full bg-[var(--am-fill)] px-2 text-[12px] font-medium text-[var(--am-ink2)]"
     >
       <AdminMobileIcon name={saved ? "saglabats" : "navSaglabats"} className={`h-3.5 w-3.5 ${busy ? "animate-spin" : ""}`} />
       {label}
@@ -222,7 +259,7 @@ export function AdminMobileChips({
           >
             {it.label}
             {it.count != null ? (
-              <span className="tabular-nums opacity-60">{it.count}</span>
+              <span className="am-chip-count tabular-nums opacity-60">{it.count}</span>
             ) : null}
           </button>
         );
@@ -331,6 +368,7 @@ export function AdminMobileSheet({
   children,
   action,
   opaque = false,
+  zIndex,
 }: {
   open: boolean;
   title: string;
@@ -340,11 +378,15 @@ export function AdminMobileSheet({
   action?: ReactNode;
   /** Solid card (LIMITI). Default glass stays for other sheets. */
   opaque?: boolean;
+  /** Virs cita fiksēta dialoga (piem. piedāvājuma redaktors z-120). Noklusējums - no CSS (50). */
+  zIndex?: number;
 }) {
   const [shown, setShown] = useState(open);
   const theme = useAdminMobileColorScheme();
   const layoutWorkspace = useAdminShellLayout()?.workspace ?? "pro";
   useAdminScrollLock(open);
+  // Ar atvērtu tastatūru 85vh paliek zem tās - ierobežojam ar redzamo logu.
+  const vvh = useVisualViewportHeight(open);
   useEffect(() => {
     if (open) setShown(true);
   }, [open]);
@@ -356,35 +398,39 @@ export function AdminMobileSheet({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+  const scrimClose = useModalBackdropClose(onClose);
   if (!shown) return null;
   const panel = (
-    <div className="admin-m admin-sheet-root md:hidden" role="dialog" aria-modal="true" aria-label={title} data-open={open ? "true" : "false"} {...adminChromeDataset(layoutWorkspace, theme)}>
+    <div className="admin-m admin-sheet-root md:hidden" role="dialog" aria-modal="true" aria-label={title} data-open={open ? "true" : "false"} style={zIndex != null ? { zIndex } : undefined} {...adminChromeDataset(layoutWorkspace, theme)}>
       <button
         type="button"
         aria-label="Aizvērt"
         className="admin-sheet-scrim"
-        onClick={onClose}
+        {...scrimClose}
         onTransitionEnd={() => {
           if (!open) setShown(false);
         }}
       />
       <div
-        className={`${opaque ? "admin-sheet-opaque" : "am-glass"} admin-sheet-panel rounded-t-[36px] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 ${
+        className={`${opaque ? "admin-sheet-opaque" : "am-glass"} admin-sheet-panel flex max-h-[85dvh] flex-col rounded-t-[36px] px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 ${
           open ? "" : "admin-sheet-out"
         }`}
+        style={vvh ? { maxHeight: `${Math.round(Math.min(vvh * 0.85, vvh - 8))}px` } : undefined}
       >
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--am-fill2)]" aria-hidden />
-        <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-[var(--am-fill2)]" aria-hidden />
+        <div className="mb-3 flex shrink-0 items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-[19px] font-bold text-[var(--am-ink)]">{title}</h2>
             {subtitle ? <p className="mt-0.5 text-[13px] text-[var(--am-ink2)]">{subtitle}</p> : null}
           </div>
-          <button type="button" aria-label="Aizvērt" onClick={onClose} className="am-press grid h-11 w-11 place-items-center rounded-full bg-[var(--am-fill)]">
+          <button type="button" aria-label="Aizvērt" onClick={onClose} className="am-press grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[var(--am-fill)]">
             <AdminMobileIcon name="aizvert" className="h-4 w-4" />
           </button>
         </div>
-        {children}
-        {action}
+        <div className="min-h-0 overflow-y-auto overscroll-contain">
+          {children}
+          {action}
+        </div>
       </div>
     </div>
   );
@@ -423,15 +469,47 @@ export function AdminMobileSectionNav({
   );
 }
 
+export type AdminMobileDockStatus = { text: string; tone?: "info" | "ok" | "error"; busy?: boolean };
+
 export function AdminMobileActionDock({
   actions,
   more,
+  status = null,
+  onDismissStatus,
 }: {
   actions: { id: string; label: string; icon: AdminMobileIconName; onClick?: () => void; href?: string; disabled?: boolean }[];
   more?: () => void;
+  /** Īss stāvoklis virs doka (FLASH MAX progress, VIN SCAN, „nokopēts”), lai darbība nav „klusa”. */
+  status?: AdminMobileDockStatus | null;
+  onDismissStatus?: () => void;
 }) {
+  const tone = status?.tone ?? "info";
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[30] flex items-end justify-center gap-2 px-3 pb-[max(10px,env(safe-area-inset-bottom))] pt-2 md:hidden">
+      {status ? (
+        <div
+          role="status"
+          aria-live="polite"
+          data-admin-dock-status={tone}
+          className={`pointer-events-auto absolute inset-x-3 bottom-[calc(100%-4px)] flex items-start gap-2 rounded-2xl px-3 py-2 text-[13px] leading-snug shadow-[var(--am-glass-shadow)] ${
+            tone === "error"
+              ? "bg-[#fdecec] text-[#b42318]"
+              : tone === "ok"
+                ? "bg-[#e8f5e9] text-[#1b5e20]"
+                : "am-glass text-[var(--am-ink)]"
+          }`}
+        >
+          {status.busy ? (
+            <span className="mt-[3px] inline-block h-3 w-3 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />
+          ) : null}
+          <span className="min-w-0 flex-1 whitespace-pre-line">{status.text}</span>
+          {onDismissStatus && !status.busy ? (
+            <button type="button" aria-label="Aizvērt paziņojumu" onClick={onDismissStatus} className="-mr-1 shrink-0 px-1 text-[15px] leading-none opacity-60">
+              ×
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       <nav className="am-glass pointer-events-auto flex h-[62px] min-w-0 flex-1 items-stretch rounded-full px-1.5">
         {actions.map((a) => {
           const inner = (
@@ -449,7 +527,7 @@ export function AdminMobileActionDock({
             );
           }
           return (
-            <button key={a.id} type="button" disabled={a.disabled} onClick={a.onClick} className={cls}>
+            <button key={a.id} type="button" aria-label={a.label} disabled={a.disabled} onClick={a.onClick} className={cls}>
               {inner}
             </button>
           );

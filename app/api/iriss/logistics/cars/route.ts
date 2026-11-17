@@ -8,7 +8,7 @@ import {
   irissLogisticsUploadTokenConfigured,
   verifyIrissLogisticsUploadToken,
 } from "@/lib/iriss-logistics-upload-token";
-import { upsertLogisticsOrderByVin } from "@/lib/iriss-logistics-store";
+import { applyTransportInvoiceAutofill, upsertLogisticsOrderByVin } from "@/lib/iriss-logistics-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -134,6 +134,9 @@ export async function POST(req: Request) {
         docType: type,
         detail: result.duplicate ? "duplicate" : "created",
       });
+      if (!result.duplicate && type === "transport_invoice") {
+        await applyTransportInvoiceAutofill(order.id, bytes, fileName).catch(() => null);
+      }
     }
 
     return NextResponse.json(

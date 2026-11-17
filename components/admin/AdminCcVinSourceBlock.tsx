@@ -1,16 +1,18 @@
 "use client";
 
 /**
- * Starptautiskās vēstures avots (admin: „CC.VIN”).
+ * Starptautiskās vēstures avots (admin: „Izsoļu portālu arhīvs”, internal id: cc_vin).
  *
  * Struktūra un noformējums seko pārējiem avotu blokiem: PDF augšupielāde → tabulas → fotogrāfijas →
- * komentārs → AI konteksts. Specifikācijas šeit netiek dublētas — akcents ir uz sarkanajiem karogiem.
+ * komentārs → AI konteksts. Specifikācijas šeit netiek dublētas - akcents ir uz sarkanajiem karogiem.
  */
 
 import { AdminAutoGrowTextarea } from "@/components/admin/AdminAutoGrowTextarea";
 import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminCcVinPhotoProbeButton } from "@/components/admin/AdminCcVinPhotoProbeButton";
+import { AdminThecarapiIngestBar } from "@/components/admin/AdminThecarapiIngestBar";
+import { AdminThecarapiRecords } from "@/components/admin/AdminThecarapiRecords";
 import { useAdminVinHandoff } from "@/components/admin/AdminVinHandoffContext";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { AdminClearOdometerButton } from "@/components/admin/AdminClearOdometerButton";
@@ -286,6 +288,15 @@ export function AdminCcVinSourceBlock({
               applyPatchedBlocks={applyPatchedBlocks}
             />
           ) : null}
+
+          <AdminThecarapiIngestBar
+            orderVin={handoffVin}
+            sessionId={sessionId}
+            editable={editable}
+            value={value}
+            onChange={onChange}
+          />
+          <AdminThecarapiRecords vin={handoffVin} records={value.thecarapiRecords ?? []} />
 
           <div className="mb-1 flex flex-wrap items-end gap-2">
             {headerField("Atskaites datums", "reportDate", "13.07.2026")}

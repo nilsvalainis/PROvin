@@ -1,0 +1,1842 @@
+{
+ "vin": "WBAUD91050PA62588",
+ "label": "BMW 120d (EE): 68 dīlera rindas, 42 carVertical",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 169, saglabāts 2026-10-18; nolasīts 17.11.2026, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": "https://ss.com/",
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW 120",
+   "registrationNumber": "",
+   "firstRegistration": "",
+   "firstRegistrationLatvia": "",
+   "nextInspectionDate": "",
+   "prevInspectionDate": "",
+   "engineDisplacementCm3": "1995",
+   "enginePowerKw": "130",
+   "fuelType": "",
+   "emissionStandard": "Euro 5 A",
+   "vehicleType": "",
+   "grossMassKg": "1880",
+   "curbMassKg": "1450",
+   "seatCount": "",
+   "roadTaxEur": "",
+   "registrationStatus": "nav reģistrēts",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "Vācija",
+   "ownerCountLatvia": "",
+   "vin": "",
+   "modelYear": "",
+   "color": "",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "",
+   "cocType": "",
+   "cocApprovalNumber": "",
+   "cocVariant": "",
+   "cocVersion": "",
+   "insuranceValidUntil": "",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "",
+    "inspectionDateText": "",
+    "nextInspectionDateText": "",
+    "odometer": "27950",
+    "ratingLabel": "",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "01.09.2026",
+     "odometer": "27950",
+     "country": "Latvija"
+    },
+    {
+     "date": "11.12.2025",
+     "odometer": "23267",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.04.2023",
+     "odometer": "22863",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.04.2021",
+     "odometer": "21978",
+     "country": "Vācija"
+    },
+    {
+     "date": "07.05.2019",
+     "odometer": "20565",
+     "country": "Vācija"
+    }
+   ]
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "01.06.2026",
+     "odometer": "25592",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.06.2026",
+     "lossAmount": "11 000 - 12 000 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.06.2026",
+     "country": "",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "25592",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.06.2026",
+     "odometer": "25592",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2025",
+     "odometer": "23242",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2023",
+     "odometer": "22966",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2023",
+     "odometer": "22837",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2023",
+     "odometer": "22769",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2022",
+     "odometer": "22677",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2022",
+     "odometer": "22446",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2021",
+     "odometer": "22257",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2021",
+     "odometer": "22165",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2021",
+     "odometer": "21953",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2020",
+     "odometer": "21683",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2020",
+     "odometer": "21442",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2020",
+     "odometer": "21388",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2019",
+     "odometer": "21281",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2019",
+     "odometer": "20968",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2019",
+     "odometer": "20539",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2018",
+     "odometer": "20014",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2018",
+     "odometer": "19375",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2017",
+     "odometer": "18978",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2017",
+     "odometer": "18511",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2017",
+     "odometer": "18096",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2016",
+     "odometer": "17916",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2016",
+     "odometer": "17775",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2016",
+     "odometer": "17207",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2015",
+     "odometer": "16549",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2015",
+     "odometer": "16109",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2015",
+     "odometer": "15686",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2014",
+     "odometer": "15428",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2014",
+     "odometer": "15152",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2014",
+     "odometer": "14487",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2013",
+     "odometer": "14030",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2013",
+     "odometer": "12152",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2013",
+     "odometer": "13412",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2013",
+     "odometer": "12989",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2012",
+     "odometer": "12405",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2012",
+     "odometer": "11190",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2011",
+     "odometer": "10858",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2011",
+     "odometer": "10429",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2011",
+     "odometer": "9616",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2010",
+     "odometer": "6219",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2010",
+     "odometer": "817",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2010",
+     "odometer": "8",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.06.2026",
+     "lossAmount": "11 001 - 12 000 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.11.2009",
+     "country": "Vācija",
+     "description": "Ražots",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.06.2026",
+     "country": "Vācija",
+     "description": "Fiksēts bojājums",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.06.2026",
+     "country": "Vācija",
+     "description": "Izlikts pārdošanā",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "10.12.2025",
+     "odometer": "23267",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.09.2023",
+     "odometer": "22998",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.09.2023",
+     "odometer": "22991",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.09.2023",
+     "odometer": "22991",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.04.2023",
+     "odometer": "22862",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.04.2023",
+     "odometer": "22862",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2023",
+     "odometer": "22794",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.11.2022",
+     "odometer": "22702",
+     "country": "Vācija"
+    },
+    {
+     "date": "03.11.2022",
+     "odometer": "22702",
+     "country": "Vācija"
+    },
+    {
+     "date": "29.04.2022",
+     "odometer": "22471",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.11.2021",
+     "odometer": "22282",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.09.2021",
+     "odometer": "22195",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.09.2021",
+     "odometer": "22195",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.09.2021",
+     "odometer": "22190",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.04.2021",
+     "odometer": "21978",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.04.2021",
+     "odometer": "21978",
+     "country": "Vācija"
+    },
+    {
+     "date": "26.10.2020",
+     "odometer": "21708",
+     "country": "Vācija"
+    },
+    {
+     "date": "26.05.2020",
+     "odometer": "21467",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.02.2020",
+     "odometer": "21418",
+     "country": "Vācija"
+    },
+    {
+     "date": "18.02.2020",
+     "odometer": "21413",
+     "country": "Vācija"
+    },
+    {
+     "date": "17.12.2019",
+     "odometer": "21306",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.11.2019",
+     "odometer": "21240",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.09.2019",
+     "odometer": "21059",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.08.2019",
+     "odometer": "20993",
+     "country": "Vācija"
+    },
+    {
+     "date": "07.05.2019",
+     "odometer": "20564",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.05.2019",
+     "odometer": "20564",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.11.2018",
+     "odometer": "20039",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.04.2018",
+     "odometer": "19400",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.10.2017",
+     "odometer": "19003",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.09.2017",
+     "odometer": "18885",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.09.2017",
+     "odometer": "18849",
+     "country": "Vācija"
+    },
+    {
+     "date": "26.06.2017",
+     "odometer": "18536",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.05.2017",
+     "odometer": "18422",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.01.2017",
+     "odometer": "18121",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.12.2016",
+     "odometer": "17941",
+     "country": "Vācija"
+    },
+    {
+     "date": "31.10.2016",
+     "odometer": "17800",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.04.2016",
+     "odometer": "17232",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.04.2016",
+     "odometer": "17232",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.10.2015",
+     "odometer": "16574",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.10.2015",
+     "odometer": "16530",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2015",
+     "odometer": "16530",
+     "country": "Vācija"
+    },
+    {
+     "date": "21.09.2015",
+     "odometer": "16499",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.07.2015",
+     "odometer": "16134",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.04.2015",
+     "odometer": "15900",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.02.2015",
+     "odometer": "15711",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.11.2014",
+     "odometer": "15453",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2014",
+     "odometer": "15177",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.04.2014",
+     "odometer": "14512",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.12.2013",
+     "odometer": "14063",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.12.2013",
+     "odometer": "14055",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.10.2013",
+     "odometer": "12177",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2013",
+     "odometer": "13437",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.04.2013",
+     "odometer": "13014",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.11.2012",
+     "odometer": "12430",
+     "country": "Vācija"
+    },
+    {
+     "date": "21.03.2012",
+     "odometer": "11215",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.12.2011",
+     "odometer": "10883",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.10.2011",
+     "odometer": "10454",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.05.2011",
+     "odometer": "9622",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.12.2010",
+     "odometer": "6225",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.11.2010",
+     "odometer": "6225",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.11.2010",
+     "odometer": "7206",
+     "country": "Vācija"
+    },
+    {
+     "date": "29.10.2010",
+     "odometer": "6225",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.10.2010",
+     "odometer": "5195",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.10.2010",
+     "odometer": "818",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.09.2010",
+     "odometer": "818",
+     "country": "Vācija"
+    },
+    {
+     "date": "03.09.2010",
+     "odometer": "513",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.08.2010",
+     "odometer": "8",
+     "country": "Vācija"
+    },
+    {
+     "date": "09.11.2009",
+     "odometer": "0",
+     "country": "Vācija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "10.12.2025",
+     "odometer": "23267",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Valsts tehniskā apskate.\nStandarta apjoms."
+    },
+    {
+     "date": "25.09.2023",
+     "odometer": "22998",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "BMW dzinēja eļļa LL04 5W30 (83212405948)\nZemas viskozitātes eļļa (83132184843)\nEļļas filtra elements (11427807177)\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nBremžu šķidruma serviss.\nKartera aizbāznis (11137535106)\nServiss"
+    },
+    {
+     "date": "06.04.2023",
+     "odometer": "22862",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Pirmās palīdzības aptieciņa DIN13164:2022 (FT082440101)\nValsts tehniskā apskate."
+    },
+    {
+     "date": "01.02.2023",
+     "odometer": "22794",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Oriģinālais BMW AGM akumulators (61217555719)"
+    },
+    {
+     "date": "04.11.2022",
+     "odometer": "22702",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "29.04.2022",
+     "odometer": "22471",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Logu mazgāšanas šķidrums 1L (FT999924090)"
+    },
+    {
+     "date": "08.11.2021",
+     "odometer": "22282",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Logu mazgāšanas šķidrums 1L (FT999924090)"
+    },
+    {
+     "date": "16.09.2021",
+     "odometer": "22195",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "BMW dzinēja eļļa LL04 5W30 (83212405948)\nZemas viskozitātes eļļa (83132184843)\nEļļas filtra elements (11427807177)\nDegvielas filtra kasetne (13327811227)\nGaisa filtra elements (13717797465)\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nBremžu šķidruma serviss.\nTransportlīdzekļa pārbaude.\nKartera aizbāznis (11137535106)\nMontāžas tīrītājs (47111905105)\nBlīvgredzens (47111312874)"
+    },
+    {
+     "date": "10.09.2021",
+     "odometer": "22190",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "20.04.2021",
+     "odometer": "21978",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Atgāzu pārbaude.\nValsts tehniskā apskate.\nServiss"
+    },
+    {
+     "date": "26.10.2020",
+     "odometer": "21708",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "26.05.2020",
+     "odometer": "21467",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "19.02.2020",
+     "odometer": "21418",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Oriģinālais BMW AGM akumulators (61217555719)"
+    },
+    {
+     "date": "18.02.2020",
+     "odometer": "21413",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "17.12.2019",
+     "odometer": "21306",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "14.11.2019",
+     "odometer": "21240",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Motoreļļa Longlife-04 (FT998877668)\nLogu mazgāšanas šķidrums 1L (FT999924090)"
+    },
+    {
+     "date": "13.09.2019",
+     "odometer": "21059",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Motoreļļa Longlife-04 (FT998877668)\nEļļas filtra elements (11427807177)\nBremžu šķidrums DOT 4 (FT998894001)\nKartera aizbāznis (11137535106)\nMontāžas tīrītājs (47111905105)\nBlīvgredzens (47111312874)"
+    },
+    {
+     "date": "20.08.2019",
+     "odometer": "20993",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "07.05.2019",
+     "odometer": "20564",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "02.11.2018",
+     "odometer": "20039",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Logu mazgāšanas šķidrums 1L (FT831224090)"
+    },
+    {
+     "date": "06.04.2018",
+     "odometer": "19400",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "27.10.2017",
+     "odometer": "19003",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "12.09.2017",
+     "odometer": "18885",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Dzinēja eļļa.\nDegvielas filtrs.\nGaisa filtra elements.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nBremžu šķidruma serviss.\nTransportlīdzekļa pārbaude."
+    },
+    {
+     "date": "04.09.2017",
+     "odometer": "18849",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "26.06.2017",
+     "odometer": "18536",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Valsts tehniskā apskate."
+    },
+    {
+     "date": "11.05.2017",
+     "odometer": "18422",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "30.01.2017",
+     "odometer": "18121",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Oriģinālais BMW AGM akumulators (61217555719)"
+    },
+    {
+     "date": "06.12.2016",
+     "odometer": "17941",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "31.10.2016",
+     "odometer": "17800",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Logu mazgāšanas šķidrums ar antifrīzu (FT999994028)\nHANKOOK WINTER I*CEPT EVO195/55R16 87V HANKOOK (FT880856332)"
+    },
+    {
+     "date": "20.04.2016",
+     "odometer": "17232",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Logu mazgāšanas šķidrums ar antifrīzu (FT999994028)\nServiss"
+    },
+    {
+     "date": "28.10.2015",
+     "odometer": "16574",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "02.10.2015",
+     "odometer": "16530",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Motoreļļa Longlife-04 (FT998877668)\nEļļas filtra elements (11427807177)\nMikrofiltrs/aktīvās ogles filtrs (64319313519)\nBremžu šķidrums DOT 4 (FT998894001)\nMontāžas tīrītājs (47111905105)\nSmērviela/blīvmasa (47111905110)\nServiss"
+    },
+    {
+     "date": "21.09.2015",
+     "odometer": "16499",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "22.07.2015",
+     "odometer": "16134",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "24.04.2015",
+     "odometer": "15900",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "13.02.2015",
+     "odometer": "15711",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Oriģinālais BMW AGM akumulators (61217555719)"
+    },
+    {
+     "date": "15.11.2014",
+     "odometer": "15453",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "01.10.2014",
+     "odometer": "15177",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Skrūve (47413037592)\nVibrāciju slāpētājs (18307809695)\nIzpūtēja skava (18308506992)"
+    },
+    {
+     "date": "28.04.2014",
+     "odometer": "14512",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "10.12.2013",
+     "odometer": "14063",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Motoreļļa 05W-30 Longlife-04 (FT998877668)\nEļļas filtra elements (11427807177)\nMikrofiltrs/aktīvās ogles filtrs (64319313519)\nGaisa filtra elements (13717797465)\nDegvielas filtra kasetne (13327811227)\nMontāžas tīrītājs (47111905105)\nSmērviela/blīvmasa (47111905110)\nŠļūtenes skava (47112908590)"
+    },
+    {
+     "date": "04.12.2013",
+     "odometer": "14055",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "10.10.2013",
+     "odometer": "12177",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Bremžu šķidrums DOT 4 (FT998894001)\nLogu mazgāšanas šķidrums (FT999994028)"
+    },
+    {
+     "date": "01.08.2013",
+     "odometer": "13437",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "19.04.2013",
+     "odometer": "13014",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "05.11.2012",
+     "odometer": "12430",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Logu mazgāšanas šķidrums ar antifrīzu (FT999994028)"
+    },
+    {
+     "date": "21.03.2012",
+     "odometer": "11215",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "06.12.2011",
+     "odometer": "10883",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Sintētiskā motoreļļa (FT99887766827)\nEļļas filtra elements (11427807177)\nMikrofiltrs/aktīvās ogles filtrs (64319142115)\nMontāžas tīrītājs (47111905105)\nSmērviela/blīvmasa (47111905110)"
+    },
+    {
+     "date": "13.10.2011",
+     "odometer": "10454",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Bremžu šķidrums DOT 4 (FT998894001)"
+    },
+    {
+     "date": "05.05.2011",
+     "odometer": "9622",
+     "location": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+     "works": "Stūres kolonnas apdares panelis\nApakšējais (61316950263)\nTorx skrūve (61318380482)\nStūres kolonnas slēdžu bloks (61319123043)"
+    },
+    {
+     "date": "20.12.2010",
+     "odometer": "6225",
+     "location": "Ahg Autohandelsgesellschaft mbH, BMW, BMW Motorrad und MG Vertragshändler, MINI Partner, Karlsruher Straße 69, 75179 Pforzheim, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "10.11.2010",
+     "odometer": "7206",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "15.10.2010",
+     "odometer": "5195",
+     "location": "Automobilzentrum Rhein-Neckar GmbH, Wiesenstraße 76, 68519 Viernheim, Germany",
+     "works": "Serviss"
+    },
+    {
+     "date": "15.10.2010",
+     "odometer": "818",
+     "location": "Automobilzentrum Rhein-Neckar GmbH, Wiesenstraße 76, 68519 Viernheim, Germany",
+     "works": "Lietots riteņu komplekts (FT3636)\nServiss"
+    },
+    {
+     "date": "03.09.2010",
+     "odometer": "513",
+     "location": "Automobilzentrum Rhein-Neckar GmbH, Wiesenstraße 76, 68519 Viernheim, Germany",
+     "works": "Ceļu karte Dach reģionam SD (65902147980)\nNavigācija Portable Plus (65902155989)\nUzstādīšanas komplekts\nNavigācija Portable (65902158728)"
+    },
+    {
+     "date": "30.08.2010",
+     "odometer": "8",
+     "location": "Automobilzentrum Rhein-Neckar GmbH, Wiesenstraße 76, 68519 Viernheim, Germany",
+     "works": "Zaļā emisiju uzlīme (FT1803)\nDrošības veste (FT908110006)"
+    },
+    {
+     "date": "09.11.2009",
+     "odometer": "0",
+     "location": "Ahg Autohandelsgesellschaft mbH, BMW, BMW Motorrad und MG Vertragshändler, MINI Partner, Karlsruher Straße 69, 75179 Pforzheim, Germany",
+     "works": "Transportlīdzekļa tīrīšana (FT9894902)"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "10.12.2025",
+      "odometer": "23267",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Statutory vehicle inspection.\nStandard scope."
+     },
+     {
+      "date": "25.09.2023",
+      "odometer": "22998",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Set oil-filter element (11427807177)\nBMW Engine Oil LL04 5W30 (83212405948)\nBrake fluid DOT4 LV\nScrew plug (11137535106)\nLow viscosity (83132184843)\nMicrofilter/activated Carbon container (64319313519)"
+     },
+     {
+      "date": "25.09.2023",
+      "odometer": "22991",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Engine oil.\nBrake fluid service.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "23.09.2023",
+      "odometer": "22991",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "06.04.2023",
+      "odometer": "22862",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Verbandstasche 1 Teilig DIN13164:2022 (FT082440101)"
+     },
+     {
+      "date": "05.04.2023",
+      "odometer": "22862",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Statutory vehicle inspection."
+     },
+     {
+      "date": "01.02.2023",
+      "odometer": "22794",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Original BMW AGM-battery (61217555719)"
+     },
+     {
+      "date": "04.11.2022",
+      "odometer": "22702",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "03.11.2022",
+      "odometer": "22702",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "29.04.2022",
+      "odometer": "22471",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Scheibenklar 1L (FT999924090)"
+     },
+     {
+      "date": "08.11.2021",
+      "odometer": "22282",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Scheibenklar 1L (FT999924090)"
+     },
+     {
+      "date": "16.09.2021",
+      "odometer": "22195",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Set oil-filter element (11427807177)\nBMW Engine Oil LL04 5W30 (83212405948)\nBrake fluid DOT4 LV\nScrew plug (11137535106)\nMontagereiniger (47111905105)\nDichtring (47111312874)\nLow viscosity (83132184843)\nFuel filter cartridge (13327811227)\nAir filter element (13717797465)\nMicrofilter/activated Carbon container (64319313519)"
+     },
+     {
+      "date": "15.09.2021",
+      "odometer": "22195",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Engine oil.\nBrake fluid service.\nVehicle check.\nFuel filter.\nAir filter element.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "10.09.2021",
+      "odometer": "22190",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "20.04.2021",
+      "odometer": "21978",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Statutory vehicle inspection.\nStatutory emissions test."
+     },
+     {
+      "date": "19.04.2021",
+      "odometer": "21978",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "26.10.2020",
+      "odometer": "21708",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "26.05.2020",
+      "odometer": "21467",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "19.02.2020",
+      "odometer": "21418",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Original BMW AGM-battery (61217555719)"
+     },
+     {
+      "date": "18.02.2020",
+      "odometer": "21413",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "17.12.2019",
+      "odometer": "21306",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "14.11.2019",
+      "odometer": "21240",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Scheibenklar 1L (FT999924090)\nMotorenöl Longlife-04 (FT998877668)"
+     },
+     {
+      "date": "13.09.2019",
+      "odometer": "21059",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Set oil-filter element (11427807177)\nBremsflüssigkeit DOT 4 (FT998894001)\nScrew plug (11137535106)\nMotorenöl Longlife-04 (FT998877668)\nMontagereiniger (47111905105)\nDichtring (47111312874)"
+     },
+     {
+      "date": "20.08.2019",
+      "odometer": "20993",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "07.05.2019",
+      "odometer": "20564",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "06.05.2019",
+      "odometer": "20564",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "02.11.2018",
+      "odometer": "20039",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Scheibenklar 1L (FT831224090)"
+     },
+     {
+      "date": "06.04.2018",
+      "odometer": "19400",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "27.10.2017",
+      "odometer": "19003",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "12.09.2017",
+      "odometer": "18885",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Engine oil.\nBrake fluid service.\nVehicle check.\nFuel filter.\nAir filter element.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "04.09.2017",
+      "odometer": "18849",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "26.06.2017",
+      "odometer": "18536",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Statutory vehicle inspection."
+     },
+     {
+      "date": "11.05.2017",
+      "odometer": "18422",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "30.01.2017",
+      "odometer": "18121",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Original BMW AGM-battery (61217555719)"
+     },
+     {
+      "date": "06.12.2016",
+      "odometer": "17941",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "31.10.2016",
+      "odometer": "17800",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "SCHEIBENKLAR mit Frostschutz (FT999994028)\nHANKOOK WINTER I*CEPT EVO195/55R16 87V HANKOOK (FT880856332)"
+     },
+     {
+      "date": "20.04.2016",
+      "odometer": "17232",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "SCHEIBENKLAR mit Frostschutz (FT999994028)"
+     },
+     {
+      "date": "19.04.2016",
+      "odometer": "17232",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "28.10.2015",
+      "odometer": "16574",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "02.10.2015",
+      "odometer": "16530",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Set oil-filter element (11427807177)\nBremsflüssigkeit DOT 4 (FT998894001)\nMontagereiniger (47111905105)\nSchmiermittel/Dichtmasse (47111905110)\nMotorenöl Longlife-04 (FT998877668)\nMicrofilter/activated Carbon container (64319313519)"
+     },
+     {
+      "date": "01.10.2015",
+      "odometer": "16530",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "21.09.2015",
+      "odometer": "16499",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "22.07.2015",
+      "odometer": "16134",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "24.04.2015",
+      "odometer": "15900",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "13.02.2015",
+      "odometer": "15711",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Original BMW AGM-battery (61217555719)"
+     },
+     {
+      "date": "15.11.2014",
+      "odometer": "15453",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "01.10.2014",
+      "odometer": "15177",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Schraube (47413037592)\nVibration absorber (18307809695)\nMuffler clamp (18308506992)"
+     },
+     {
+      "date": "28.04.2014",
+      "odometer": "14512",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "10.12.2013",
+      "odometer": "140063",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Set oil-filter element (11427807177)\nMontagereiniger (47111905105)\nSchmiermittel/Dichtmasse (47111905110)\nMotorenöl 05W-30 Longlife-04 (FT998877668)\nMicrofilter/activated Carbon container (64319313519)\nAir filter element (13717797465)\nSchlauchschelle (47112908590)\nFuel filter cartridge (13327811227)"
+     },
+     {
+      "date": "04.12.2013",
+      "odometer": "14055",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "10.10.2013",
+      "odometer": "12177",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "BREMSFLÜSSIGKEIT DOT 4 (FT998894001)\nSCHEIBENKLAR (FT999994028)"
+     },
+     {
+      "date": "01.08.2013",
+      "odometer": "13437",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "19.04.2013",
+      "odometer": "13014",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "05.11.2012",
+      "odometer": "12430",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "SCHEIBENKLAR MIT FROSTSCHUTZ (FT999994028)"
+     },
+     {
+      "date": "21.03.2012",
+      "odometer": "11215",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "06.12.2011",
+      "odometer": "10883",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Set oil-filter element (11427807177)\nMONTAGEREINIGER (47111905105)\nSCHMIERMITTEL/DICHTMASSE (47111905110)\nMOTORENÖL SYNTH (FT99887766827)\nMicrofilter/activated Carbon container (64319142115)"
+     },
+     {
+      "date": "13.10.2011",
+      "odometer": "10454",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "BREMSFLÜSSIGKEIT DOT 4 (FT998894001)"
+     },
+     {
+      "date": "05.05.2011",
+      "odometer": "9622",
+      "place": "Autocenter Stockach GmbH, Meßkircher Straße 19, 78333 Stockach, Germany",
+      "works": "Trim panel, steering column\nBottom (61316950263)\nTorx bolt (61318380482)\nSwitch cluster steering column (61319123043)"
+     },
+     {
+      "date": "20.12.2010",
+      "odometer": "6225",
+      "place": "Ahg Autohandelsgesellschaft mbH, BMW, BMW Motorrad und MG Vertragshändler, MINI Partner, Karlsruher Straße 69, 75179 Pforzheim, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "12.11.2010",
+      "odometer": "6225",
+      "place": "Ahg Autohandelsgesellschaft mbH, BMW, BMW Motorrad und MG Vertragshändler, MINI Partner, Karlsruher Straße 69, 75179 Pforzheim, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "10.11.2010",
+      "odometer": "7206",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "29.10.2010",
+      "odometer": "6225",
+      "place": "Automobilzentrum Rhein-Neckar GmbH, Wiesenstraße 76, 68519 Viernheim, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "15.10.2010",
+      "odometer": "5195",
+      "place": "Automobilzentrum Rhein-Neckar GmbH, Wiesenstraße 76, 68519 Viernheim, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "15.10.2010",
+      "odometer": "818",
+      "place": "Automobilzentrum Rhein-Neckar GmbH, Wiesenstraße 76, 68519 Viernheim, Germany",
+      "works": "Gebrauchter Radsatz (FT3636)"
+     },
+     {
+      "date": "10.09.2010",
+      "odometer": "818",
+      "place": "Automobilzentrum Rhein-Neckar GmbH, Wiesenstraße 76, 68519 Viernheim, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "03.09.2010",
+      "odometer": "513",
+      "place": "Automobilzentrum Rhein-Neckar GmbH, Wiesenstraße 76, 68519 Viernheim, Germany",
+      "works": "Roadmap Dach Region SD (65902147980)\nNavigation Portable Plus (65902155989)\nInstallation kit\nNavigation Portable (65902158728)"
+     },
+     {
+      "date": "30.08.2010",
+      "odometer": "8",
+      "place": "Automobilzentrum Rhein-Neckar GmbH, Wiesenstraße 76, 68519 Viernheim, Germany",
+      "works": "Feinstaubplakette grün (FT1803)\nWARNWESTE (FT908110006)"
+     },
+     {
+      "date": "09.11.2009",
+      "odometer": "0",
+      "place": "Ahg Autohandelsgesellschaft mbH, BMW, BMW Motorrad und MG Vertragshändler, MINI Partner, Karlsruher Straße 69, 75179 Pforzheim, Germany",
+      "works": "Fahrzeug reinigen (FT9894902)"
+     }
+    ]
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "BMW 1 (E87) 120 d",
+     "modelSeries": "1 (E87)",
+     "vinCode": "WBAUD91050PA62588",
+     "vehicleType": "UD91",
+     "transmission": "Automatic Transmission (GA6HP-19Z)",
+     "steeringSide": "LHD (automašīna ar stūri kreisajā pusē)",
+     "engineCode": "N47 D20 A",
+     "engineNumber": "030506180",
+     "body": "Hatchback",
+     "drive": "Rear-Wheel Drive",
+     "power": "130 kW (177 ZS)",
+     "integrationLevel": "E89X-11-03-502",
+     "currentILevel": "E89X-11-03-502",
+     "developmentCode": "E87",
+     "modelCode": "UD01",
+     "productionDate": "03.11.2009",
+     "firstRegistration": "",
+     "warrantyStartDate": "10.11.2009",
+     "countryRegion": "DE",
+     "color": "space-grey metallic (S0A52)",
+     "colorCode": "A52",
+     "interior": "Fabric/Sensatec 'Flashpoint/black/blue' (SGCNL)",
+     "interiorCode": "GCNL",
+     "fuel": "Diesel",
+     "displacement": "2 l"
+    },
+    "accidentCheck": "",
+    "stolenCheck": ""
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "",
+    "fetchedAt": "",
+    "lastCostUsd": "",
+    "status": "unknown",
+    "summary": ""
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "27",
+   "listingCreated": "02.09.2026",
+   "priceDrop": "€ 0",
+   "priceHistory": [
+    {
+     "date": "23.09.2026",
+     "price": 8900,
+     "mileage": 27952,
+     "year": 2010,
+     "delta": 0
+    },
+    {
+     "date": "18.09.2026",
+     "price": 8900,
+     "mileage": 27952,
+     "year": 2010,
+     "delta": 0
+    },
+    {
+     "date": "02.09.2026",
+     "price": 8900,
+     "mileage": 27952,
+     "year": 2010,
+     "delta": 0
+    }
+   ],
+   "listingMileageOdometer": "27 952",
+   "listingMileageDate": "02.09.2026",
+   "listingMileageCountry": "Latvija"
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "comments": "",
+     "label": ""
+    }
+   ]
+  }
+ }
+}

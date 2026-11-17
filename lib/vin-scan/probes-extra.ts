@@ -12,6 +12,13 @@ import {
   vwGroupRecallCheckUrl,
 } from "@/lib/vin-scan/catalog";
 import { fetchAuctionVinLots } from "@/lib/vin-scan/auction-vin-providers";
+import { markThecarapiArchived, thecarapiArchiveInputs } from "@/lib/thecarapi-archive";
+import { storeThecarapiGallery } from "@/lib/thecarapi-photos";
+import { forgetArchiveCountsCache } from "@/lib/vin-memory-auction-store";
+import { addVinObservations } from "@/lib/vin-memory-store";
+import { readThecarapiVinCacheRaw, writeThecarapiVinCache } from "@/lib/vin-scan/store";
+import { fetchThecarapiVinWithDetails } from "@/lib/vin-scan/thecarapi-api";
+import { thecarapiVinScanEnabled, THECARAPI_DISABLED_SUMMARY } from "@/lib/vin-scan/thecarapi-flags";
 import { statVinBrowserLane } from "@/lib/vin-scan/stat-vin-browser";
 import { scanCaptchaTokenPlaceholder, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
 import { fetchBiluppgifterApi } from "@/lib/vin-scan/biluppgifter-api";
@@ -294,6 +301,7 @@ export async function probeOemRecall(ctx: VinScanContext, brand: OemRecallBrand)
   }
   try {
     const page = await scanFetchSmart(oemUrl, { timeoutMs: 20_000, sourceLabel: meta.label });
+    if (page.captchaReason) return done(meta.id, ctx, { status: "unknown", summary: `${meta.label}: ${page.captchaReason}` });
     return done(meta.id, ctx, parseOemRecallHtml(page.status, page.text, ctx.vin, meta.label));
   } catch (e) {
     return failed(meta.id, ctx, e);
@@ -354,6 +362,46 @@ export async function probeJojCopartIaai(ctx: VinScanContext): Promise<VinScanIn
   }
 }
 
+export async function probeThecarapi(ctx: VinScanContext): Promise<VinScanIndicator> {
+  if (!thecarapiVinScanEnabled()) {
+    return done("thecarapi_eu", ctx, { status: "skipped", summary: THECARAPI_DISABLED_SUMMARY });
+  }
+  try {
+    const result = await fetchThecarapiVinWithDetails(ctx.vin);
+    if (result.records.length > 0) {
+      const gallery = await storeThecarapiGallery({ vin: ctx.vin, records: result.records });
+      let records = gallery.records;
+      const marked = markThecarapiArchived(records, new Date().toISOString());
+      const inputs = thecarapiArchiveInputs(ctx.vin, marked);
+      if (inputs.length > 0) {
+        try {
+          const written = await addVinObservations(inputs);
+          if (written.ok) {
+            records = marked;
+            if (written.added > 0 || written.updated > 0) await forgetArchiveCountsCache().catch(() => undefined);
+          }
+        } catch {
+          records = gallery.records;
+        }
+      }
+      const previous = await readThecarapiVinCacheRaw(ctx.vin).catch(() => null);
+      if (previous) {
+        await writeThecarapiVinCache(ctx.vin, result.parse, {
+          httpStatus: previous.httpStatus,
+          etag: previous.etag,
+          refs: previous.refs,
+          records,
+          recordsComplete: result.recordsComplete,
+          cachedAt: previous.cachedAt,
+        }).catch(() => undefined);
+      }
+    }
+    return done("thecarapi_eu", ctx, result.parse);
+  } catch (e) {
+    return failed("thecarapi_eu", ctx, e);
+  }
+}
+
 export async function probeStatVin(ctx: VinScanContext): Promise<VinScanIndicator> {
   const url = `https://stat.vin/cars/${encodeURIComponent(ctx.vin)}`;
   // Datucentra IP (relejs, Fixie, Vercel) saņem HTTP 403 Code 007. Dati nāk no pārlūka.
@@ -367,26 +415,28 @@ export async function probeBidCars(ctx: VinScanContext): Promise<VinScanIndicato
 export async function probeAuchistory(ctx: VinScanContext): Promise<VinScanIndicator> {
   const url = `https://auchistory.com/?s=${encodeURIComponent(ctx.vin)}`;
   try {
+    // scanFetchSmart pats reCAPTCHA nerisina; vienīgais CapSolver izsaukums ir zemāk, un žetons iet POST formā.
     const page = await scanFetchSmart(url, { timeoutMs: 25_000, solveUrl: "https://auchistory.com/", sourceLabel: "AucHistory" });
     const key = scanCaptchaTokenPlaceholder(page.text);
     let html = page.text;
     if (key?.kind === "recaptcha_v2") {
       const solved = await solveScanRecaptcha("https://auchistory.com/", key.siteKey, "AucHistory");
-      if (solved.ok) {
-        const posted = await scanFetch("https://auchistory.com/", {
-          method: "POST",
-          headers: {
-            "content-type": "application/x-www-form-urlencoded",
-            origin: "https://auchistory.com",
-            referer: url,
-            "user-agent": solved.ua,
-          },
-          body: new URLSearchParams({ vin: ctx.vin, "g-recaptcha-response": solved.token }).toString(),
-          cookie: mergeCookieHeader(page.cookie, solved.cookie),
-          timeoutMs: 25_000,
-        });
-        html = posted.text;
+      if (!solved.ok) {
+        return done("auchistory", ctx, { status: "unknown", summary: `AucHistory: reCAPTCHA neizdevās atrisināt (${solved.reason})` });
       }
+      const posted = await scanFetch("https://auchistory.com/", {
+        method: "POST",
+        headers: {
+          "content-type": "application/x-www-form-urlencoded",
+          origin: "https://auchistory.com",
+          referer: url,
+          "user-agent": solved.ua,
+        },
+        body: new URLSearchParams({ vin: ctx.vin, "g-recaptcha-response": solved.token }).toString(),
+        cookie: mergeCookieHeader(page.cookie, solved.cookie),
+        timeoutMs: 25_000,
+      });
+      html = posted.text;
     }
     const text = extractPageFromHtml(html).text;
     const r = classifyBrowserProbe("auchistory", text, ctx.vin);

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   applyProvinReportCopyVocabulary,
+  groupClientNumberThousands,
+  DEALER_COMMENT_ROLE_HEADINGS,
   dropTechnicalRisksSectionTitle,
   finalizeProvinExpertAiComment,
   normalizeExpertSourcePdfComment,
@@ -29,7 +31,7 @@ describe("applyProvinReportCopyVocabulary", () => {
   });
 
   it("rewrites pie X km and Statuss paid/unpaid", () => {
-    expect(applyProvinReportCopyVocabulary("Darbs pie 120000 km.")).toBe("Darbs ar nobraukumu 120000 km.");
+    expect(applyProvinReportCopyVocabulary("Darbs pie 120000 km.")).toBe("Darbs ar nobraukumu 120 000 km.");
     expect(applyProvinReportCopyVocabulary("pie šī nobraukuma bieži")).toBe("ar šo nobraukumu bieži");
     expect(applyProvinReportCopyVocabulary("Statuss paid")).toBe("Statuss: apmaksāts");
     expect(applyProvinReportCopyVocabulary("Statuss unpaid")).toBe("Statuss: nav apmaksāts");
@@ -214,6 +216,44 @@ describe("splitDealerCommentRoleHeadings", () => {
     expect(out).not.toMatch(/^Eļļas maiņas intervāli$/m);
   });
 
+  it("keeps a longer model heading whole (BMW: Eļļas maiņas intervāli un faktiskā vēsture)", () => {
+    const raw =
+      "<strong>Eļļas maiņas intervāli un faktiskā vēsture</strong><br>Ražotāja intervāls: 30 000 km / 24 mēn. Dīlera datos maiņas notikušas ik pēc 20 000 līdz 28 000 km.";
+    const out = toExpertHeadingBodyPlain(raw);
+    expect(out).toBe(
+      "Eļļas maiņas intervāli un faktiskā vēsture\nRažotāja intervāls: 30 000 km / 24 mēn. Dīlera datos maiņas notikušas ik pēc 20 000 līdz 28 000 km.",
+    );
+    expect(out).not.toMatch(/^un faktiskā vēsture/m);
+  });
+
+  it("keeps every dealer role heading whole when the model extends it", () => {
+    for (const heading of DEALER_COMMENT_ROLE_HEADINGS) {
+      const longHeading = `${heading} pēc 2020. gada`;
+      const raw = `Ievada teikums par auto. ${longHeading}\nPirmais teikums par šo lomu.`;
+      const out = toExpertHeadingBodyPlain(raw);
+      expect(out).toContain(`${longHeading}\nPirmais teikums par šo lomu.`);
+      expect(out).not.toMatch(new RegExp(`^${heading}$`, "m"));
+    }
+  });
+
+  it("still splits a known heading glued before an uppercase sentence", () => {
+    const raw = "Dīlera dati ir pilni. Eļļas maiņas intervāli Ražotāja intervāls: 30 000 km / 24 mēn.";
+    expect(toExpertHeadingBodyPlain(raw)).toBe(
+      "Dīlera dati ir pilni.\n\nEļļas maiņas intervāli\nRažotāja intervāls: 30 000 km / 24 mēn.",
+    );
+  });
+
+  it("joins a heading wrapped onto two lines, but not a normal body line", () => {
+    const wrapped = "Eļļas maiņas intervāli\nun faktiskā vēsture\nRažotāja intervāls: 30 000 km / 24 mēn.";
+    expect(toExpertHeadingBodyPlain(wrapped, { splitDealerRoleHeadings: false })).toBe(
+      "Eļļas maiņas intervāli un faktiskā vēsture\nRažotāja intervāls: 30 000 km / 24 mēn.",
+    );
+    const body = "Pirmā reģistrācija\ndatos redzama 2016. gadā.\nOtrā rinda.";
+    expect(toExpertHeadingBodyPlain(body, { splitDealerRoleHeadings: false })).toBe(
+      "Pirmā reģistrācija\ndatos redzama 2016. gadā. Otrā rinda.",
+    );
+  });
+
   it("skips dealer role headings for the technical-risks field", () => {
     const raw =
       "Sadales ķēde\nPilsētas režīmā jāskatās eļļas maiņas intervāliem. Klātienē klausies startu.";
@@ -288,5 +328,31 @@ describe("finalizeProvinExpertAiComment", () => {
     expect(finalizeProvinExpertAiComment("operatora norādes šajā auditā. Ķēde ir aizmugurē.")).not.toMatch(
       /operatora norād|šajā auditā/i,
     );
+  });
+});
+
+describe("tūkstošu grupēšana klienta tekstā", () => {
+  it("grupē lielus km un € skaitļus no AI / tulkotā teksta un „Km” -> „km”", () => {
+    expect(applyProvinReportCopyVocabulary("Pēdējais nobraukums 156042 km, Vācijā 1820000 Km.")).toBe(
+      "Pēdējais nobraukums 156 042 km, Vācijā 1 820 000 km.",
+    );
+    expect(applyProvinReportCopyVocabulary("Cena 8390 € un tirgū 12500 EUR.")).toBe(
+      "Cena 8 390 € un tirgū 12 500 EUR.",
+    );
+    expect(groupClientNumberThousands("Diapazons 10000-15000 km")).toBe("Diapazons 10 000-15 000 km");
+  });
+
+  it("neaiztiek gadus, VIN, datumus, tālruņus, decimāldaļas, URL un jau grupētus skaitļus", () => {
+    const keep = [
+      "2019. gadā nobraukums 2019 km",
+      "VIN WBA3A5C50CF256789",
+      "Datums 12.03.2019, kods P0420",
+      "Tālrunis +371 26123456",
+      "Summa 1234,56 €",
+      "https://www.ss.lv/?price=15000€",
+      "Nobraukums 156 042 km",
+      "Modelis 3000 GT",
+    ];
+    for (const t of keep) expect(groupClientNumberThousands(t), t).toBe(t);
   });
 });

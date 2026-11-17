@@ -1,0 +1,13 @@
+{
+  "name": "csdd-registrs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CSDD tirdzniecības reģistra ikdienas nolasījums (tikai lasīšana) -> PROVIN Autoparks. Hetzner, bez AI.",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "check": "node --check read-registry.mjs && node --check lib/readonly-guard.mjs && node --check lib/parse-registry.mjs"
+  }
+}

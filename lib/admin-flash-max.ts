@@ -357,14 +357,31 @@ export function expandFlashMaxRunJobs(
   return out;
 }
 
-export type FlashMaxSkipReason = "no_source_data" | "no_mileage_data" | "no_oil_data";
+export type FlashMaxSkipReason = "no_source_data" | "no_mileage_data" | "no_oil_data" | "no_listing_data";
+
+/**
+ * Sludinājuma sadaļas (17.11): bez ievades serveris atbild ar kļūdu (missing_seller_input / missing_listing_paste),
+ * tāpēc tukšās izlaiž jau šeit - "izlaists", nevis "kļūda".
+ * - Pārdevējs: vajag pārdevēja vārdu vai iekopētu sludinājuma tekstu.
+ * - Sludinājuma konteksts: vajag iekopētu sludinājuma tekstu.
+ * - Foto: neizlaiž nekad - serveris bez foto raksta no sludinājuma saites un pārējiem datiem (kā līdz šim).
+ */
+function listingFlashMaxSkip(job: FlashMaxListingJob, sourceBlocks: WorkspaceSourceBlocks): FlashMaxSkipReason | null {
+  const listing = sourceBlocks.listing_analysis;
+  const paste = (listing?.listingPasteRaw ?? "").trim();
+  if (job.id === "seller") {
+    return paste || (listing?.extraSellerName ?? "").trim() ? null : "no_listing_data";
+  }
+  if (job.id === "listing_sales") return paste ? null : "no_listing_data";
+  return null;
+}
 
 export function shouldSkipFlashMaxJob(
   job: FlashMaxJob,
   sourceBlocks: WorkspaceSourceBlocks,
   opts?: { citiAvotiSectionIndex?: number },
 ): FlashMaxSkipReason | null {
-  if (job.kind === "listing") return null;
+  if (job.kind === "listing") return listingFlashMaxSkip(job, sourceBlocks);
   if (job.kind === "source") {
     if (job.blockKey === "citi_avoti" && opts?.citiAvotiSectionIndex != null) {
       const section = sourceBlocks.citi_avoti.sections?.[opts.citiAvotiSectionIndex];
@@ -391,9 +408,40 @@ export function shouldSkipFlashMaxJob(
   return null;
 }
 
+/**
+ * Izvēlnes rindas bez datiem (id -> iemesls). Šīs rindas logā ir izķeksētas un nav spiežamas (Nils 17.11:
+ * "FLASH MAX pašam jāatpazīst, kuri lauki ir aizpildīti"). Izvēlnes id var būt arī "citi_avoti:N".
+ */
+export function flashMaxUnavailableMenuJobs(
+  menuJobs: readonly FlashMaxJob[],
+  sourceBlocks: WorkspaceSourceBlocks | null | undefined,
+): Record<string, FlashMaxSkipReason> {
+  if (!sourceBlocks) return {};
+  const out: Record<string, FlashMaxSkipReason> = {};
+  for (const job of menuJobs) {
+    const section = parseCitiAvotiFlashMaxJobId(job.id);
+    const reason = shouldSkipFlashMaxJob(job, sourceBlocks, section != null ? { citiAvotiSectionIndex: section } : undefined);
+    if (reason) out[job.id] = reason;
+  }
+  return out;
+}
+
+/** Izvēle bez rindām, kurām nav datu (platumi un modeļi paliek). */
+export function flashMaxSelectionWithData(
+  selection: FlashMaxSelection,
+  unavailable: Readonly<Record<string, FlashMaxSkipReason>>,
+): FlashMaxSelection {
+  const selectedIds = selection.selectedIds.filter((id) => !unavailable[id]);
+  return selectedIds.length === selection.selectedIds.length ? selection : { ...selection, selectedIds };
+}
+
 export function isFlashMaxEmptyDataError(error: string): boolean {
   const t = error.toLowerCase();
   return (
+    t.includes("missing_seller_input") ||
+    t.includes("missing_listing_paste") ||
+    // Klienta pusē kods jau ir pārvērsts tekstā (lib/admin-ai-client-errors.ts).
+    t.includes("ievadi papildus nosaukumu vai sludinājuma aprakstu") ||
     t.includes("empty_source_data") ||
     t.includes("empty_mileage_data") ||
     t.includes("trūkst avota datu") ||
@@ -404,6 +452,7 @@ export function isFlashMaxEmptyDataError(error: string): boolean {
 export function formatFlashMaxSkipLabel(reason: FlashMaxSkipReason): string {
   if (reason === "no_mileage_data") return "nav nobraukuma datu";
   if (reason === "no_oil_data") return "nav eļļas intervāla datu";
+  if (reason === "no_listing_data") return "nav sludinājuma datu";
   return "nav avota datu";
 }
 
@@ -419,7 +468,7 @@ export function formatFlashMaxNotice(results: FlashMaxJobResult[]): string {
   const skipped = results.filter((r) => r.status === "skipped").length;
   const failed = results.filter((r) => r.status === "error");
   if (ok === 0 && failed.length === 0) {
-    return `FLASH MAX: nav ko ģenerēt (${skipped} izlaisti — vispirms aizpildi avotu tabulas).`;
+    return `FLASH MAX: nav ko ģenerēt (${skipped} izlaisti - vispirms aizpildi avotu tabulas).`;
   }
   if (failed.length === 0) {
     return `FLASH MAX: sagatavoti ${ok} lauki${skipped ? `, ${skipped} izlaisti` : ""}.`;

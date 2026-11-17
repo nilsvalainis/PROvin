@@ -15,7 +15,7 @@ const src = Object.fromEntries(
 describe("Loģistika iPhone platums", () => {
   it("telefonā režģis ir viena kolonna, kas nav platāka par ekrānu", () => {
     expect(src.logistika).toContain(
-      "grid grid-cols-[minmax(0,1fr)] items-start gap-3 max-md:px-4 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]",
+      "grid grid-cols-[minmax(0,1fr)] items-start gap-3 max-md:px-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(22rem,1fr)]",
     );
     expect(src.logistika).toContain("grid grid-cols-[minmax(0,1fr)] gap-3 max-md:px-4 lg:grid-cols-[minmax(16rem,22rem)_1fr]");
   });
@@ -32,7 +32,7 @@ describe("Loģistika iPhone platums", () => {
 
   it("Iestatījumi - Lietotāji saraksts nepaplašina lapu ar gariem e-pastiem", () => {
     expect(src.staffUsers).toContain("grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-[minmax(0,1fr)_320px]");
-    expect(src.staffUsers).toContain('<span className="min-w-0 text-[#111827] [overflow-wrap:anywhere]">');
+    expect(src.staffUsers).toContain('<span className="min-w-0 text-[var(--iriss-ink)] [overflow-wrap:anywhere]">');
   });
 
   it("telefonā Auto kabinets pēc pieskāriena rindai tiek aizritināts redzamā zonā", () => {

@@ -9,6 +9,7 @@ import { formatIrissOrderPowerKwLabel } from "@/lib/engine-power-kw";
 import { retainStoredIrissCriteria } from "@/lib/iriss-criteria-migrate";
 import { parseIrissCriteriaV1 } from "@/lib/iriss-criteria-types";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
+import { emptyIrissListingMarks, parseIrissListingMarks, type IrissListingMarks } from "@/lib/iriss-listing-marks";
 import { parseIrissListingOrderOv, type IrissListingOrderOv } from "@/lib/iriss-listing-order-ov";
 import {
   generatedDocumentBlobPath,
@@ -24,9 +25,12 @@ import { normalizeIrissAdvanceDraft } from "@/lib/iriss-advance";
 import { parseIrissDealWorkflowStatus } from "@/lib/iriss-order-overview-view";
 import { normalizeIrissCommunicationEvents } from "@/lib/iriss-communication-timeline";
 import { normalizeIrissOfferBlocks } from "@/lib/iriss-offer-blocks";
+import { normalizeOfferValidUntilAt } from "@/lib/iriss-offer-valid-until";
+import { isSafeDropboxFileId, offerSourceRefString, parseOfferSourceRef } from "@/lib/iriss-stock-photos";
 import { irissOrderPhotoAlbumOfferId, normalizeIrissOrderPhotoAlbum } from "@/lib/iriss-order-photos";
 import { migrateIrissSpecSelectLabels } from "@/lib/iriss-order-spec-selects";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
+import { primeListingSearchCostsFromStore } from "@/lib/iriss-listings-search-costs-store";
 import {
   isIrissRecordDeleted,
   markIrissRecordDeleted,
@@ -40,6 +44,7 @@ import {
   nextIrissWorkspaceRevision,
   parseExpectedIrissRevision,
   prepareIrissPasutijumsConcurrentWrite,
+  retainIrissOfferDeadlines,
 } from "@/lib/iriss-pasutijumi-save-safety";
 import {
   emptyIrissPasutijums,
@@ -410,14 +415,16 @@ function normalizeOfferAttachments(raw: unknown): IrissOfferAttachment[] {
       const thumbUrl = sanitizeDraftTextForStorage(typeof o.thumbUrl === "string" ? o.thumbUrl : "", 800);
       const sizeRaw = typeof o.size === "number" ? o.size : Number.parseInt(String(o.size ?? "0"), 10);
       const size = Number.isFinite(sizeRaw) ? Math.max(0, Math.min(sizeRaw, 10_000_000)) : 0;
+      const dropboxId = isSafeDropboxFileId(o.dropboxId) ? o.dropboxId : "";
       if (!id || !name) return null;
-      if (!dataUrl && !blobPath && !blobUrl) return null;
+      if (!dataUrl && !blobPath && !blobUrl && !dropboxId) return null;
       return {
         id,
         name,
         mimeType,
         size,
         dataUrl,
+        ...(dropboxId ? { dropboxId } : {}),
         ...(blobPath ? { blobPath } : {}),
         ...(blobUrl ? { blobUrl } : {}),
         ...(thumbDataUrl ? { thumbDataUrl } : {}),
@@ -492,6 +499,10 @@ function normalizeOffers(raw: unknown): IrissOfferRecord[] {
         createdAt,
         updatedAt,
       };
+      const validUntilAt = normalizeOfferValidUntilAt(o.validUntilAt);
+      if (validUntilAt) offer.validUntilAt = validUntilAt;
+      const sourceRef = parseOfferSourceRef(o.sourceRef);
+      if (sourceRef) offer.sourceRef = offerSourceRefString(sourceRef);
       const blocks = normalizeIrissOfferBlocks(o.blocks);
       if (blocks) offer.blocks = blocks;
       return offer;
@@ -544,6 +555,10 @@ function normalizeRecord(raw: unknown, id: string): IrissPasutijumsRecord | null
     interiorFinish: sanitizeDraftTextForStorage(str("interiorFinish"), 400),
     powerKw: sanitizeDraftTextForStorage(str("powerKw"), 80),
     damageTolerance: sanitizeDraftTextForStorage(str("damageTolerance"), 200),
+    budgetIncludes: sanitizeDraftTextForStorage(str("budgetIncludes"), 16),
+    doors: sanitizeDraftTextForStorage(str("doors"), 16),
+    maxRepairCostEur: sanitizeDraftTextForStorage(str("maxRepairCostEur"), 40),
+    sellerType: sanitizeDraftTextForStorage(str("sellerType"), 16),
     preferredCountries: sanitizeDraftTextForStorage(str("preferredCountries"), 200),
     clientFinancingPercent: (() => {
       const raw = o.clientFinancingPercent;
@@ -692,7 +707,7 @@ async function rebuildListRowsFromRecords(r: Extract<ResolvedStorage, { kind: "b
   if (r.kind === "blob") {
     const ids = await listBlobIds(r.prefix, r.token);
     for (const id of ids) {
-      const rec = await readIrissPasutijums(id);
+      const rec = await readIrissPasutijums(id, { allowCache: true });
       if (rec) rows.push(rowFromRecord(rec));
     }
   } else {
@@ -800,12 +815,21 @@ export async function listIrissPasutijumi(opts?: { includeDeleted?: boolean }): 
   return opts?.includeDeleted ? cloned : cloned.filter((row) => !isIrissRecordDeleted(row));
 }
 
-export async function readIrissPasutijums(id: string): Promise<IrissPasutijumsRecord | null> {
+/**
+ * Viena pasūtījuma lasīšana. Noklusēti svaigi no Blob: atmiņas kešs ir katrai serverless instancei
+ * savs, un lapa /pasutijumi/{id} un PATCH API strādā dažādās instancēs - ar kešu redaktors līdz
+ * 5 min pēc labojuma ielādēja veco versiju, un rakstīšana salīdzināja ar novecojušu `existing`.
+ * `allowCache` tikai masveida lasītājiem (saraksta pārbūve, atskaites, rezerves kopija).
+ */
+export async function readIrissPasutijums(
+  id: string,
+  opts?: { allowCache?: boolean },
+): Promise<IrissPasutijumsRecord | null> {
   const r = resolveStorage();
   if (r.kind === "disabled" || !isSafeIrissPasutijumsId(id)) return null;
 
   if (r.kind === "blob") {
-    if (BLOB_RECORD_CACHE_TTL_MS > 0) {
+    if (opts?.allowCache === true && BLOB_RECORD_CACHE_TTL_MS > 0) {
       const cached = blobRecordCache.get(id);
       if (cached && cached.expiresAt > Date.now()) {
         return cached.record ? cloneRecord(cached.record) : null;
@@ -895,6 +919,7 @@ async function persistOneOfferImage(
   orderId: string,
   offerId: string,
   att: IrissOfferAttachment,
+  dropboxBytes?: Map<string, Buffer>,
 ): Promise<IrissOfferAttachment> {
   const fullReady = Boolean(att.blobPath) && !att.dataUrl;
   if (fullReady && !att.mimeType.startsWith("image/")) return att;
@@ -903,6 +928,17 @@ async function persistOneOfferImage(
   }
 
   let next = att;
+  // /STOCK bilde: Dropbox -> Blob tikai saglabājot. Formas starpniekadrese (thumbUrl) vairs nav vajadzīga.
+  const fromDropbox = att.dropboxId && !att.dataUrl && !att.blobPath ? dropboxBytes?.get(att.dropboxId) : undefined;
+  if (fromDropbox) {
+    const pathname = fullOfferImagePath(r, orderId, offerId, att.id);
+    const stored = await putOfferBytes(r, pathname, fromDropbox, "image/jpeg");
+    if (stored) {
+      next = { ...att, mimeType: "image/jpeg", size: fromDropbox.length, dataUrl: "", blobPath: stored.path };
+      delete next.thumbUrl;
+      if (stored.url) next.blobUrl = stored.url;
+    }
+  }
   if (!att.dataUrl && !att.blobPath && att.blobUrl && /^https?:\/\//i.test(att.blobUrl)) {
     const remote = await fetchRemoteOfferImage(att.blobUrl);
     if (remote) {
@@ -937,11 +973,13 @@ async function persistOneOfferImage(
     thumbBytes = parsedThumb?.bytes ?? null;
   }
   if (!thumbBytes) {
-    const full = await readIrissOfferAttachmentBytes({
-      dataUrl: next.dataUrl || att.dataUrl,
-      blobPath: next.blobPath,
-      mimeType: next.mimeType,
-    });
+    const full = fromDropbox
+      ? { bytes: fromDropbox }
+      : await readIrissOfferAttachmentBytes({
+          dataUrl: next.dataUrl || att.dataUrl,
+          blobPath: next.blobPath,
+          mimeType: next.mimeType,
+        });
     if (full) thumbBytes = await renderIrissOfferThumbJpeg(full.bytes);
   }
   if (!thumbBytes) return next;
@@ -974,6 +1012,20 @@ async function persistPhotoAlbum(
   return { album: { ...album, attachments }, changed };
 }
 
+/** Neielādētās /STOCK bildes (tikai no piedāvājuma avota mapes). */
+async function prefetchDropboxOfferImages(offer: IrissOfferRecord): Promise<Map<string, Buffer> | undefined> {
+  const pending = offer.attachments.filter((a) => a.dropboxId && !a.dataUrl && !a.blobPath).map((a) => a.dropboxId!);
+  const ref = parseOfferSourceRef(offer.sourceRef);
+  if (pending.length === 0 || !ref) return undefined;
+  try {
+    const { fetchOfferSourcePhotosForSave } = await import("@/lib/iriss-offer-source");
+    return await fetchOfferSourcePhotosForSave(ref, pending);
+  } catch (e) {
+    console.error("[iriss-offer] dropbox photos", e instanceof Error ? e.message : e);
+    return undefined;
+  }
+}
+
 async function persistOfferImages(
   r: Extract<ResolvedStorage, { kind: "blob" | "fs" }>,
   record: IrissPasutijumsRecord,
@@ -983,8 +1035,9 @@ async function persistOfferImages(
   for (const offer of record.offers) {
     const attachments = [];
     let offerChanged = false;
+    const dropboxBytes = await prefetchDropboxOfferImages(offer);
     for (const att of offer.attachments) {
-      const next = await persistOneOfferImage(r, record.id, offer.id, att);
+      const next = await persistOneOfferImage(r, record.id, offer.id, att, dropboxBytes);
       if (next !== att) offerChanged = true;
       attachments.push(next);
     }
@@ -1147,6 +1200,7 @@ export async function writeIrissPasutijums(
     if (!prepared.ok) {
       return { ok: false, error: IRISS_STALE_REVISION, stale: true, record: prepared.record };
     }
+    await primeListingSearchCostsFromStore();
     const sanitized = withAutoEcarstradeLinks(prepared.record);
     const createdAt = existing?.createdAt ?? sanitized.createdAt ?? updatedAt;
     const incomingDeletedAt = typeof record.deletedAt === "string" ? record.deletedAt : undefined;
@@ -1168,6 +1222,8 @@ export async function writeIrissPasutijums(
     out = await persistOfferImages(r, out);
     out = retainStoredIrissCriteria(existing, out);
     out = retainGoogleContactFields(existing, out);
+    out = retainIrissOmittedFields(existing, record, out);
+    out = retainIrissOfferDeadlines(existing, out);
     out = {
       ...out,
       generatedDocuments: mergeGeneratedDocuments(out.generatedDocuments, existing?.generatedDocuments),
@@ -1351,6 +1407,50 @@ export async function writeIrissListingOrderOv(
   }
 }
 
+/* ---------- Sludinājumu piezīmes un favorīti (Nils 29.10: serverī, nevis tikai pārlūkā) ---------- */
+
+const LISTING_MARKS_FILENAME = "_listing-marks.json";
+
+export async function readIrissListingMarks(): Promise<IrissListingMarks> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return emptyIrissListingMarks();
+  if (r.kind === "blob") {
+    const raw = await readJsonFromBlob(`${r.prefix}${LISTING_MARKS_FILENAME}`, r.token);
+    return parseIrissListingMarks(raw);
+  }
+  try {
+    const txt = await fs.readFile(path.join(r.dir, LISTING_MARKS_FILENAME), "utf8");
+    return parseIrissListingMarks(JSON.parse(txt) as unknown);
+  } catch {
+    return emptyIrissListingMarks();
+  }
+}
+
+export async function writeIrissListingMarks(marks: IrissListingMarks): Promise<{ ok: true } | { ok: false; error: string }> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
+  const body = JSON.stringify(parseIrissListingMarks(marks));
+  try {
+    if (r.kind === "blob") {
+      await put(`${r.prefix}${LISTING_MARKS_FILENAME}`, body, {
+        access: "private",
+        token: r.token,
+        contentType: "application/json; charset=utf-8",
+        addRandomSuffix: false,
+        allowOverwrite: true,
+      });
+      return { ok: true };
+    }
+    await fs.mkdir(r.dir, { recursive: true });
+    const fp = path.join(r.dir, LISTING_MARKS_FILENAME);
+    await fs.writeFile(`${fp}.tmp`, body, "utf8");
+    await fs.rename(`${fp}.tmp`, fp);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 function normalizeListOrderIdList(raw: unknown): string[] {
   if (!Array.isArray(raw)) return [];
   const out: string[] = [];
@@ -1507,4 +1607,24 @@ export async function restoreIrissPasutijums(id: string): Promise<{ ok: true; re
   const w = await writeIrissPasutijums(next, { expectedWorkspaceRevision: irissWorkspaceRevision(existing) });
   if (!w.ok) return { ok: false, error: w.error };
   return { ok: true, record: w.record };
+}
+
+/**
+ * Nils 29.10: ja pieprasījumā lauka nav vispār (vecs klients / cits rakstītājs), saglabāšana to nedrīkst izdzēst.
+ * Tukšs/notīrīts lauks nāk ar atslēgu un tiek saglabāts kā notīrīts.
+ */
+const IRISS_RETAIN_WHEN_OMITTED = ["advance", "communicationEvents", "inspectionPhotos", "documentPhotos"] as const;
+
+export function retainIrissOmittedFields(
+  existing: IrissPasutijumsRecord | null,
+  incoming: Partial<IrissPasutijumsRecord>,
+  out: IrissPasutijumsRecord,
+): IrissPasutijumsRecord {
+  if (!existing) return out;
+  let next = out;
+  for (const key of IRISS_RETAIN_WHEN_OMITTED) {
+    if (key in incoming) continue;
+    if (existing[key] !== undefined) next = { ...next, [key]: existing[key] } as IrissPasutijumsRecord;
+  }
+  return next;
 }

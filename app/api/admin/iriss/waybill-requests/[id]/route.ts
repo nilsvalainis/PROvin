@@ -1,7 +1,21 @@
-import { NextResponse } from "next/server";
-import { waybillAivarsReply, waybillChatPayload } from "@/lib/iriss-waybill-requests";
-import { readWaybillRequestsDoc, retryWaybillRequest } from "@/lib/iriss-waybill-requests-store";
-import { requireIrissSectionApi } from "@/lib/staff-auth";
+import { NextResponse, after } from "next/server";
+import { wakeAivars } from "@/lib/iriss-aivars-wake";
+import {
+  waybillAivarsReply,
+  waybillChatPayload,
+  waybillDocForViewer,
+  waybillDocWithoutOrders,
+  waybillRequestDismissable,
+  waybillRequestVisibleTo,
+  waybillRequestWithoutOrder,
+} from "@/lib/iriss-waybill-requests";
+import { dismissWaybillRequestForActor } from "@/lib/iriss-waybill-dismissed-store";
+import { cancelWaybillRequest, readWaybillRequestsDoc, retryWaybillRequest } from "@/lib/iriss-waybill-requests-store";
+import { waybillAutoContext } from "@/lib/iriss-waybill-auto-server";
+import { canSeeWaybillOrders } from "@/lib/iriss-pavadzimes-list";
+import { isWaybillOnlyActor, requireIrissSectionApi, waybillOnlyForbidden, waybillPdfViewer } from "@/lib/staff-auth";
+import { withWaybillPdfAccess } from "@/lib/iriss-waybill-pdf";
+import { ensureWaybillRequestInDropbox } from "@/lib/iriss-waybill-dropbox";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,10 +31,19 @@ export async function GET(_req: Request, ctx: Ctx) {
   try {
     const doc = await readWaybillRequestsDoc();
     const request = doc.requests.find((row) => row.id === id);
-    if (!request) return NextResponse.json({ error: "Nav atrasts." }, { status: 404, ...NO_STORE });
+    // Partneris citu pieprasījumu "neredz" - tāda pati atbilde kā neesošam.
+    if (!request || !waybillRequestVisibleTo(request, waybillPdfViewer(gate.actor))) {
+      return NextResponse.json({ error: "Pieprasījums nav atrasts." }, { status: 404, ...NO_STORE });
+    }
     const events = doc.events.filter((event) => event.requestId === id);
     return NextResponse.json(
-      { ok: true, request, events, reply: waybillAivarsReply(request, events) },
+      {
+        ok: true,
+        request: canSeeWaybillOrders(gate.actor) ? request : waybillRequestWithoutOrder(request),
+        events,
+        reply: withWaybillPdfAccess({ requests: [request], replies: [waybillAivarsReply(request, events)] }, waybillPdfViewer(gate.actor))
+          .replies[0],
+      },
       NO_STORE,
     );
   } catch (err) {
@@ -37,23 +60,118 @@ export async function POST(req: Request, ctx: Ctx) {
   try {
     body = (await req.json()) as { action?: string };
   } catch {
-    return NextResponse.json({ error: "Nederīgs pieprasījums" }, { status: 400, ...NO_STORE });
+    return NextResponse.json({ error: "Nederīgs pieprasījums." }, { status: 400, ...NO_STORE });
   }
-  if (body.action !== "retry") {
-    return NextResponse.json({ error: "Nederīga darbība" }, { status: 400, ...NO_STORE });
+  if (body.action !== "retry" && body.action !== "cancel" && body.action !== "dropbox" && body.action !== "dismiss") {
+    return NextResponse.json({ error: "Nederīga darbība." }, { status: 400, ...NO_STORE });
   }
   const actor = gate.actor;
+  const viewer = waybillPdfViewer(actor);
+  if (viewer.waybillOnly) {
+    // Partneris drīkst atcelt / atkārtot / paslēpt tikai savu pieprasījumu (sarakstā viņš redz tikai savus).
+    try {
+      const own = (await readWaybillRequestsDoc()).requests.find((row) => row.id === id);
+      if (!own || !waybillRequestVisibleTo(own, viewer)) {
+        return NextResponse.json({ error: "Pieprasījums nav atrasts." }, { status: 404, ...NO_STORE });
+      }
+    } catch (err) {
+      console.error("[iriss-waybill] owner_check_failed", err instanceof Error ? err.message : err);
+      return NextResponse.json({ error: "Neizdevās ielādēt pieprasījumu." }, { status: 500, ...NO_STORE });
+    }
+  }
+  if (body.action === "dropbox") {
+    // "Saglabāt Dropbox vēlreiz": tikai admins / darbinieks ar pilnu pavadzīmju piekļuvi (ne kolēģis).
+    if (isWaybillOnlyActor(actor)) return waybillOnlyForbidden();
+    try {
+      const result = await ensureWaybillRequestInDropbox(id);
+      if (!result) return NextResponse.json({ error: "Tikai izdotai pavadzīmei." }, { status: 409, ...NO_STORE });
+      const doc = await readWaybillRequestsDoc();
+      const auto = await waybillAutoContext(doc);
+      const withOrders = canSeeWaybillOrders(actor);
+      return NextResponse.json(
+        {
+          ok: result.ok,
+          dropboxPath: result.ok ? result.path : "",
+          error: result.ok ? "" : result.error,
+          ...withWaybillPdfAccess(waybillChatPayload(withOrders ? doc : waybillDocWithoutOrders(doc), Date.now(), auto), viewer),
+          autoMode: auto.mode,
+        },
+        { status: result.ok ? 200 : 502, ...NO_STORE },
+      );
+    } catch (err) {
+      console.error("[iriss-waybill] dropbox_retry_failed", err instanceof Error ? err.message : err);
+      return NextResponse.json({ error: "Neizdevās saglabāt Dropbox." }, { status: 500, ...NO_STORE });
+    }
+  }
   const actorId = actor.kind === "admin" ? "env-admin" : actor.user.id;
   const actorName = actor.kind === "admin" ? actor.name : actor.user.name;
+  if (body.action === "dismiss") {
+    // "Dzēst" (j22): tikai paslēpj vecu ierakstu šī lietotāja sarakstā. Rindu, PDF, Dropbox un Arhīvu neaiztiek;
+        // derīgu izdotu vai darbā esošu pavadzīmi nepaslēpj (un nekad nepārtrauc CSDD).
+    try {
+      const doc = await readWaybillRequestsDoc();
+      const request = doc.requests.find((row) => row.id === id);
+      if (!request) return NextResponse.json({ error: "Pieprasījums nav atrasts." }, { status: 404, ...NO_STORE });
+      if (!waybillRequestDismissable(request, doc.requests)) {
+        return NextResponse.json(
+          { error: "Dzēst var tikai vecu ierakstu. Derīga vai darbā esoša pavadzīme paliek sarakstā." },
+          { status: 409, ...NO_STORE },
+        );
+      }
+      const dismissedIds = await dismissWaybillRequestForActor(actorId, id);
+      return NextResponse.json({ ok: true, dismissedIds }, NO_STORE);
+    } catch (err) {
+      console.error("[iriss-waybill] dismiss_failed", err instanceof Error ? err.message : err);
+      return NextResponse.json({ error: "Neizdevās noņemt ierakstu." }, { status: 500, ...NO_STORE });
+    }
+  }
+  if (body.action === "cancel") {
+    // 07.11: jebkurā stāvoklī pirms Izdota (Gaida, automātika, Aivars); izdotas pavadzīmes nekad neaiztiek (409).
+    try {
+      const result = await cancelWaybillRequest({ id, actorId, actorName });
+      if (!result.ok) {
+        return result.reason === "not_found"
+          ? NextResponse.json({ error: "Pieprasījums nav atrasts." }, { status: 404, ...NO_STORE })
+          : NextResponse.json(
+              { error: "Atcelt var tikai pieprasījumu, kas vēl nav izdots. Izdotu pavadzīmi pārtrauc ar «Pārtraukt»." },
+              { status: 409, ...NO_STORE },
+            );
+      }
+      const doc = await readWaybillRequestsDoc();
+      const auto = await waybillAutoContext(doc);
+      const withOrders = canSeeWaybillOrders(actor);
+      return NextResponse.json(
+        {
+          ok: true,
+          request: withOrders ? result.request : waybillRequestWithoutOrder(result.request),
+          reply: waybillAivarsReply(result.request, doc.events),
+          ...withWaybillPdfAccess(
+            waybillChatPayload(withOrders ? waybillDocForViewer(doc, viewer) : waybillDocWithoutOrders(waybillDocForViewer(doc, viewer)), Date.now(), auto),
+            viewer,
+          ),
+          autoMode: auto.mode,
+        },
+        NO_STORE,
+      );
+    } catch (err) {
+      console.error("[iriss-waybill] cancel_failed", err instanceof Error ? err.message : err);
+      return NextResponse.json({ error: "Neizdevās atcelt pieprasījumu." }, { status: 500, ...NO_STORE });
+    }
+  }
   try {
     const request = await retryWaybillRequest({ id, actorId, actorName });
-    if (!request) return NextResponse.json({ error: "Nevar atkārtot šo pieprasījumu." }, { status: 409, ...NO_STORE });
+    if (!request) return NextResponse.json({ error: "Šo pieprasījumu nevar atkārtot." }, { status: 409, ...NO_STORE });
+    after(() => wakeAivars(request.id));
     const doc = await readWaybillRequestsDoc();
+    const withOrders = canSeeWaybillOrders(actor);
     return NextResponse.json({
       ok: true,
-      request,
+      request: withOrders ? request : waybillRequestWithoutOrder(request),
       reply: waybillAivarsReply(request, doc.events),
-      ...waybillChatPayload(doc),
+      ...withWaybillPdfAccess(
+        waybillChatPayload(withOrders ? waybillDocForViewer(doc, viewer) : waybillDocWithoutOrders(waybillDocForViewer(doc, viewer))),
+        viewer,
+      ),
     }, NO_STORE);
   } catch (err) {
     console.error("[iriss-waybill] retry_failed", err instanceof Error ? err.message : err);

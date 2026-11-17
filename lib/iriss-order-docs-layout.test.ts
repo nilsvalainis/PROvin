@@ -17,6 +17,7 @@ describe("iriss order documents and limits layout", () => {
     expect(album).toContain("Pievienot failus");
     expect(album).toContain("Kopēt uz piedāvājumu");
     expect(sorter).toContain("Vāks");
+    expect(sidebar).not.toContain("<IrissLimitsSidebarCard />");
     expect(sidebar).toContain("IrissLimitsSidebarCard");
     expect(sidebar).toContain("IrissPavadzimesSidebarCard");
     expect(card).toContain("LIMITI");

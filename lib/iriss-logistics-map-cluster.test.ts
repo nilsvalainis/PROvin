@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clusterIsSameSpot, clusterPixelPoints, clusterRingGradient } from "@/lib/iriss-logistics-map-cluster";
+import { clusterIsSameSpot, clusterPixelPoints, clusterRingGradient, placeMapLabels } from "@/lib/iriss-logistics-map-cluster";
 
 describe("clusterPixelPoints", () => {
   it("keeps distant points apart and merges close ones", () => {
@@ -105,5 +105,32 @@ describe("nosaukumu kartīšu pārklāšanās", () => {
     expect(dy[1]).toBe(23);
     expect(dy[2]).toBe(51);
     expect(dy[3]).toBe(0);
+  });
+});
+
+describe("placeMapLabels: kartītes nepārklāj citas kartītes un citu auto lāses", () => {
+  const L = (x: number, y: number) => ({ x, y, w: 100, h: 20 });
+  const P = (x: number, y: number) => ({ x, y, w: 20, h: 28 });
+
+  it("brīvā vietā kartīte paliek uz vietas", () => {
+    expect(placeMapLabels([L(0, 0)], [P(-25, -5)], [0])).toEqual([0]);
+  });
+
+  it("divas kartītes vienā vietā: otrā pārbīdās tuvākajā brīvajā vietā", () => {
+    const r = placeMapLabels([L(0, 0), L(10, 5)], [], [null, null]);
+    expect(r[0]).toBe(0);
+    expect(Math.abs(r[1]!)).toBeGreaterThanOrEqual(15);
+    expect(Math.abs(r[1]!)).toBeLessThanOrEqual(30);
+  });
+
+  it("citas lāse traucē: kartīte pārbīdās, savu lāsi neskaita", () => {
+    const r = placeMapLabels([L(0, 0)], [P(-25, -5), P(40, 0)], [0]);
+    expect(r[0]).not.toBe(0);
+    expect(r[0]).not.toBeNull();
+  });
+
+  it("ja tuvumā nav vietas, kartīte paslēpjas (null)", () => {
+    const wall = Array.from({ length: 12 }, (_, k) => P(30, -150 + k * 26));
+    expect(placeMapLabels([L(0, 0)], wall, [null], { maxShift: 40 })).toEqual([null]);
   });
 });

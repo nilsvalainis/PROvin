@@ -25,6 +25,18 @@ describe("VIN SCAN avotu veselības iznākumi", () => {
     expect(isVinScanHealthFailure("browser_only", "Regitra: tikai pārlūkā")).toBe(false);
   });
 
+  it("releja un tīkla kļūdas ir kļūme (mnt.ee 07.11 klusā dīkstāve)", () => {
+    expect(isVinScanHealthFailure("unknown", "mnt.ee relejs: error: net::ERR_TUNNEL_CONNECTION_FAILED")).toBe(true);
+    expect(isVinScanHealthFailure("unknown", "Neizdevās sasniegt mnt.ee releju")).toBe(true);
+    expect(isVinScanHealthFailure("unknown", "mnt.ee relejs noildza")).toBe(true);
+    expect(isVinScanHealthFailure("unknown", "mnt.ee relejs noraidīja tokenu")).toBe(true);
+    expect(isVinScanHealthFailure("unknown", "lkf.ee HTTP ielase neizdevās (fetch failed)")).toBe(true);
+    expect(isVinScanHealthFailure("skipped", "mnt.ee relejs nav konfigurēts")).toBe(false);
+    expect(
+      vinScanSourceHealthOutcomes([{ id: "mnt_ee", status: "unknown", summary: "mnt.ee relejs: error: tunnel" }]),
+    ).toEqual([{ id: "mnt_ee", ok: false, msg: "mnt.ee relejs: error: tunnel" }]);
+  });
+
   it("ieraksta tikai atbildes un bloķējumus", () => {
     const out = vinScanSourceHealthOutcomes([
       { id: "stat_vin", status: "found", summary: "Copart 2025, 20 foto" },

@@ -30,7 +30,7 @@ export async function buildConsultationQuickPdfForWhatsApp(
     const ltab = ltabBlockToPlainText(blocks.ltab).trim();
     if (ltab) parts.push(ltab);
     const iet = adminRichHtmlToPlainText(slot.ieteikumiApskatei).trim();
-    if (iet) parts.push(`Ieteikumi klatienei apskatei:\n${iet}`);
+    if (iet) parts.push(`Ieteikumi klatienes apskatei:\n${iet}`);
     const cena = adminRichHtmlToPlainText(slot.cenasAtbilstiba).trim();
     if (cena) parts.push(`Cenas atbilstiba:\n${cena}`);
     const kop = adminRichHtmlToPlainText(slot.kopsavilkums).trim();
@@ -48,7 +48,7 @@ export async function buildConsultationQuickPdfForWhatsApp(
       `Klients: ${(order.customerName ?? "-").trim() || "-"}`,
       `Talrunis: ${(order.customerPhone ?? "-").trim() || "-"}`,
       `E-pasts: ${(order.customerEmail ?? "-").trim() || "-"}`,
-      `Izveidots: ${new Date().toLocaleString("lv-LV")}`,
+      `Generets: ${new Date().toLocaleString("lv-LV", { timeZone: "Europe/Riga" })}`,
     ],
     sections,
     filename: buildProvinSelectConsultationPdfFilename(order.sessionId),

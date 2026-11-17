@@ -15,7 +15,7 @@ describe("report-ready product emails", () => {
 
   it("builds dealer subject without a consumer discount", () => {
     expect(buildReportReadySubject("dealer", "WAUZZZF44LA062962")).toBe(
-      "PROVIN: oficiālā dīlera dati ir gatavi",
+      "PROVIN · Atskaite gatava · Oficiālie dīlera dati · WAUZZZF44LA062962",
     );
     const text = buildReportReadyPlainText({
       kind: "dealer",
@@ -35,7 +35,7 @@ describe("report-ready product emails", () => {
   });
 
   it("builds mini and audits bodies", () => {
-    expect(buildReportReadySubject("mini", "ABC")).toBe("PROVIN MINI atskaite ir gatava");
+    expect(buildReportReadySubject("mini", "ABC")).toBe("PROVIN · Atskaite gatava · PROVIN MINI");
     expect(buildReportReadyPlainText({ kind: "mini", vin: "ABC", attachmentLines: [] })).toContain(
       "PROVIN MINI atskaite",
     );
@@ -132,5 +132,58 @@ describe("report-ready product emails", () => {
     expect(on).toContain("https://g.page/r/CamRaT51IPQ_EBM/review");
     expect(on).toContain("Nils");
     expect(on.indexOf("g.page")).toBeLessThan(on.indexOf("Nils"));
+  });
+
+  it("omits VIN parentheses when the VIN is missing or invalid", () => {
+    expect(buildReportReadySubject("dealer")).toBe("PROVIN · Atskaite gatava · Oficiālie dīlera dati");
+    expect(buildReportReadySubject("dealer", "")).toBe("PROVIN · Atskaite gatava · Oficiālie dīlera dati");
+    expect(buildReportReadySubject("dealer", "ABC")).toBe("PROVIN · Atskaite gatava · Oficiālie dīlera dati");
+    expect(buildReportReadySubject("mini", "ABC")).toBe("PROVIN · Atskaite gatava · PROVIN MINI");
+    expect(buildReportReadySubject("audits", "  ")).toBe("PROVIN · Atskaite gatava · PROVIN AUDITS");
+  });
+
+  it("sends the dealer ready subject and body in the client's chosen language", () => {
+    expect(buildReportReadySubject("dealer", "WAUZZZF44LA062962", "en")).toBe(
+      "PROVIN · Report ready · Official dealer data · WAUZZZF44LA062962",
+    );
+    expect(buildReportReadySubject("dealer", "WAUZZZF44LA062962", "ru")).toBe(
+      "PROVIN · Отчёт готов · Официальные данные дилера · WAUZZZF44LA062962",
+    );
+    expect(buildReportReadySubject("dealer", "WAUZZZF44LA062962", "de")).toBe(
+      "PROVIN · Bericht fertig · Offizielle Händlerdaten · WAUZZZF44LA062962",
+    );
+
+    const textEn = buildReportReadyPlainText({
+      kind: "dealer",
+      vin: "WAUZZZF44LA062962",
+      attachmentLines: ["OFICIALA_DILERA_DATI_EN.pdf"],
+      lang: "en",
+    });
+    expect(textEn).toContain("Hello!");
+    expect(textEn).toContain("The official dealer data you ordered is ready.");
+    expect(textEn).toContain("You will find attached:");
+    expect(textEn).toContain("OFICIALA_DILERA_DATI_EN.pdf");
+    expect(textEn).toContain("Best regards,");
+    expect(textEn).toContain("Nils");
+    expect(textEn).not.toContain("Labdien!");
+    expect(textEn).not.toMatch(/[–—]/);
+
+    const htmlDe = auditCompletedEmailHtml({
+      carVin: "WAUZZZF44LA062962",
+      attachmentLines: ["OFICIALA_DILERA_DATI_DE.pdf"],
+      productKind: "dealer",
+      lang: "de",
+    });
+    expect(htmlDe).toContain('<html lang="de">');
+    expect(htmlDe).toContain("Guten Tag!");
+    expect(htmlDe).toContain("Diese E-Mail wurde automatisch gesendet.");
+    expect(htmlDe).not.toContain("Šis e-pasts nosūtīts automātiski.");
+
+    const textRuMini = buildReportReadyPlainText({ kind: "mini", vin: "ABC", attachmentLines: [], lang: "ru" });
+    expect(textRuMini).toContain("Здравствуйте!");
+    expect(textRuMini).toContain("Ваш отчёт PROVIN MINI готов");
+
+    const textDeAudits = buildReportReadyPlainText({ kind: "audits", vin: "ABC", attachmentLines: [], lang: "de" });
+    expect(textDeAudits).toContain("Zusammenfassenden PDF-Bericht");
   });
 });

@@ -21,8 +21,13 @@ export function isConsentCookieGranted(raw: string | null | undefined): boolean 
 }
 
 export type ConsentState = {
-  /** Analītika, UTM, klikšķa ID un pirmās / pēdējās lapas saglabāšana */
+  /** Analītika: Google Analytics (`analytics_storage`). */
   analytics: boolean;
+  /**
+   * Reklāma: Google Ads signāli, Meta un TikTok pikseļi, Meta CAPI, mārketinga avots (`provin_attr`: UTM,
+   * klikšķa ID) un tā piesaiste pasūtījumam. Vecā ierakstā (tikai `analytics`) = `analytics`.
+   */
+  ads: boolean;
   updatedAt: string;
 };
 
@@ -31,7 +36,7 @@ export function parseConsent(raw: string | null): ConsentState | null {
   try {
     const o = JSON.parse(raw) as Partial<ConsentState>;
     if (typeof o.analytics !== "boolean" || typeof o.updatedAt !== "string") return null;
-    return { analytics: o.analytics, updatedAt: o.updatedAt };
+    return { analytics: o.analytics, ads: typeof o.ads === "boolean" ? o.ads : o.analytics, updatedAt: o.updatedAt };
   } catch {
     return null;
   }

@@ -1,5 +1,6 @@
 "use client";
 
+import { irissOfferListBadge, type IrissOfferLinkSummaryEntry } from "@/lib/iriss-offer-deadline-ui";
 import { ChevronDown, Search } from "lucide-react";
 import { Reorder } from "framer-motion";
 import Link from "next/link";
@@ -9,6 +10,7 @@ import { AdminIrissOrdersExportButton } from "@/components/admin/AdminIrissOrder
 import { IrissGoogleContactsBackfillButton } from "@/components/admin/IrissGoogleContactsBackfillButton";
 import { IrissOverflowItem, IrissOverflowLabel, IrissOverflowMenu } from "@/components/admin/IrissOverflowMenu";
 import { IrissPasutijumiListRow } from "@/components/admin/IrissPasutijumiListRow";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import {
   IRISS_ORDER_SORT_EVENT,
   IRISS_ORDER_SORT_KEY,
@@ -20,6 +22,7 @@ import {
   irissListRowPowerKwLabel,
   irissPasutijumsToListRow,
 } from "@/lib/iriss-pasutijumi-list-row";
+import { parseIrissOrderBudget } from "@/lib/iriss-listings-orders";
 import { IRISS_LIST_SORT_LABEL } from "@/lib/iriss-pasutijumi-list-view";
 import { IRISS_ORDERS_LIST_PAGE, irissNextWindowLimit, irissWindowSlice } from "@/lib/iriss-list-window";
 import {
@@ -78,11 +81,9 @@ function useNarrowIrissSwipeViewport(): boolean {
   );
 }
 
+/** Kārtošanai budžeta augšējā robeža (`12000-15000` → 15000). */
 function budgetToNumber(v: string): number {
-  const m = v.replace(",", ".").match(/-?\d+(?:\.\d+)?/g);
-  if (!m || m.length === 0) return Number.NaN;
-  const parsed = Number.parseFloat(m.join(""));
-  return Number.isFinite(parsed) ? parsed : Number.NaN;
+  return parseIrissOrderBudget(v) ?? Number.NaN;
 }
 
 function sortCore(rows: IrissPasutijumsListRow[], mode: SortMode): IrissPasutijumsListRow[] {
@@ -184,11 +185,19 @@ export function IrissPasutijumiListClient({
   rows,
   initialListOrder,
   newHitsByOrder = {},
+  offerSummary = {},
 }: {
   rows: IrissPasutijumsListRow[];
   initialListOrder: IrissPasutijumiListOrder | null;
   newHitsByOrder?: Record<string, number>;
+  /** orderId -> jaunākā piedāvājuma saites stāvoklis (offer-links/summary.json). */
+  offerSummary?: Record<string, IrissOfferLinkSummaryEntry>;
 }) {
+  const [badgeNow, setBadgeNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = window.setInterval(() => setBadgeNow(Date.now()), 60_000);
+    return () => window.clearInterval(t);
+  }, []);
   const [localRows, setLocalRows] = useState<IrissPasutijumsListRow[]>(rows);
   const [sortMode, setSortMode] = useState<SortMode>("created_desc");
   const [searchQuery, setSearchQuery] = useState("");
@@ -211,8 +220,8 @@ export function IrissPasutijumiListClient({
   });
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
-  const [ectBusy, setEctBusy] = useState(false);
-  const [ectMsg, setEctMsg] = useState<string | null>(null);
+  const [rowError, setRowError] = useState<string | null>(null);
+  const ectMsg: string | null = null;
   const [statusFilter, setStatusFilter] = useState<IrissListStatusFilterState>(() => readIrissListStatusFilter());
   const [trashOn, setTrashOn] = useState(() => readIrissListTrashFilter());
   const [listLimit, setListLimit] = useState(IRISS_ORDERS_LIST_PAGE);
@@ -454,21 +463,36 @@ export function IrissPasutijumiListClient({
 
   const patchRow = useCallback(async (id: string, mutator: (record: IrissPasutijumsRecord) => IrissPasutijumsRecord) => {
     setActionBusy(id);
+    setRowError(null);
     try {
-      const getRes = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}`, { credentials: "include" });
-      if (!getRes.ok) return;
-      const getData = (await getRes.json()) as { record?: IrissPasutijumsRecord };
-      if (!getData?.record) return;
-      const nextRecord = mutator(getData.record);
-      const patchRes = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}`, {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nextRecord),
-      });
-      if (!patchRes.ok) return;
-      const patchData = (await patchRes.json()) as { record?: IrissPasutijumsRecord };
-      if (!patchData?.record) return;
+      // Nils 30.10 («statuss pārlec atpakaļ»): kļūda vairs netiek noklusēta; konfliktā (409 - pasūtījums atvērts citur)
+      // svaigi nolasa un mēģina vēlreiz, lai izmaiņa netiktu pazaudēta.
+      let patchData: { record?: IrissPasutijumsRecord } | null = null;
+      for (let attempt = 0; attempt < 2 && !patchData; attempt++) {
+        const getRes = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}`, { credentials: "include", cache: "no-store" });
+        const getData = getRes.ok ? ((await getRes.json()) as { record?: IrissPasutijumsRecord }) : null;
+        if (!getData?.record) {
+          setRowError("Neizdevās nolasīt pasūtījumu - izmaiņa netika saglabāta.");
+          return;
+        }
+        const nextRecord = mutator(getData.record);
+        const patchRes = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(id)}`, {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...nextRecord, expectedWorkspaceRevision: getData.record.workspaceRevision ?? 0 }),
+        });
+        if (patchRes.status === 409) continue;
+        if (!patchRes.ok) {
+          setRowError(`Neizdevās saglabāt (${patchRes.status}) - izmaiņa netika saglabāta.`);
+          return;
+        }
+        patchData = (await patchRes.json()) as { record?: IrissPasutijumsRecord };
+      }
+      if (!patchData?.record) {
+        setRowError("Pasūtījums tikko mainīts citur - atver to un pārbaudi statusu.");
+        return;
+      }
       const nextRow = irissPasutijumsToListRow(patchData.record);
       setLocalRows((prev) => prev.map((r) => (r.id === id ? nextRow : r)));
       setListOrder((prev) => {
@@ -559,37 +583,6 @@ export function IrissPasutijumiListClient({
     });
   }, [schedulePersistListOrder]);
 
-  async function appendEcarstradeLinks() {
-    if (ectBusy) return;
-    setEctBusy(true);
-    setEctMsg(null);
-    try {
-      const res = await fetch("/api/admin/iriss-pasutijumi/ecarstrade-links", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ apply: true, replace: true }),
-      });
-      const data = (await res.json()) as {
-        error?: string;
-        updatedCount?: number;
-        saved?: IrissPasutijumsListRow[];
-      };
-      if (!res.ok) {
-        setEctMsg(data.error === "store_disabled" ? "Krātuve nav pieejama" : "eCarsTrade saišu atjaunošana neizdevās");
-        return;
-      }
-      if (data.saved?.length) {
-        const byId = new Map(data.saved.map((r) => [r.id, r]));
-        setLocalRows((prev) => prev.map((row) => (byId.has(row.id) ? { ...row, ...byId.get(row.id)! } : row)));
-      }
-      const updated = data.updatedCount ?? data.saved?.length ?? 0;
-      setEctMsg(updated === 0 ? "eCarsTrade saites jau ir aktuālas" : `Aizstātas eCarsTrade saites: ${updated} pasūtījumi`);
-    } finally {
-      setEctBusy(false);
-    }
-  }
-
   const onReorderUnpinned = useCallback((ids: string[]) => {
     setListOrder((prev) => {
       const next = { ...prev, unpinnedOrder: ids };
@@ -613,6 +606,7 @@ export function IrissPasutijumiListClient({
       closeOtherSwipes={closeOtherSwipes}
       narrowSwipeViewport={narrowSwipeViewport}
       dragReorderEnabled={dragReorderEnabled}
+      offerBadge={irissOfferListBadge(offerSummary[row.id], badgeNow)}
     />
   );
 
@@ -671,9 +665,6 @@ export function IrissPasutijumiListClient({
   const toolbarMenu = (
     <IrissOverflowMenu label="Vairāk">
       <IrissOverflowLabel>Saraksts</IrissOverflowLabel>
-      <IrissOverflowItem disabled={ectBusy} onClick={() => void appendEcarstradeLinks()}>
-        {ectBusy ? "Atjauno eCarsTrade saites…" : "Atjaunot eCarsTrade saites"}
-      </IrissOverflowItem>
       <IrissOverflowItem href="/admin/iriss/atskaite">Mēneša atskaite</IrissOverflowItem>
       <IrissOverflowLabel>Eksports</IrissOverflowLabel>
       <AdminIrissOrdersExportButton menu />
@@ -681,6 +672,8 @@ export function IrissPasutijumiListClient({
       <IrissGoogleContactsBackfillButton menu />
     </IrissOverflowMenu>
   );
+
+  const deleteConfirmBackdropClose = useModalBackdropClose(() => setDeleteTargetId(null), !actionBusy);
 
   return (
     <div className="iriss-pasutijumi-view">
@@ -733,7 +726,8 @@ export function IrissPasutijumiListClient({
           {toolbarMenu}
           <Link
             href="/admin/iriss/pasutijumi/new"
-            className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-[var(--chip-active-bg)] px-4 text-[14px] font-semibold text-[var(--chip-active-fg)]"
+            className="inline-flex h-[38px] shrink-0 items-center gap-1.5 rounded-full bg-[var(--iriss-graphite)] px-4 text-[13px] font-semibold text-[var(--iriss-on-graphite)]"
+            style={{ fontWeight: 600 }}
           >
             + Jauns pasūtījums
           </Link>
@@ -771,15 +765,7 @@ export function IrissPasutijumiListClient({
         onClose={() => setMoreSheetOpen(false)}
       >
         <div className="overflow-hidden rounded-xl bg-[var(--s1)]">
-          <button
-            type="button"
-            onClick={() => void appendEcarstradeLinks()}
-            disabled={ectBusy}
-            className="flex min-h-12 w-full items-center px-4 text-left text-[17px] disabled:opacity-40"
-          >
-            {ectBusy ? "eCarsTrade…" : "Atjaunot eCarsTrade saites"}
-          </button>
-          <Link href="/admin/iriss/atskaite" className="flex min-h-12 items-center border-t border-[var(--hair)] px-4 text-[17px] text-[var(--ink)]">
+          <Link href="/admin/iriss/atskaite" className="flex min-h-12 items-center px-4 text-[17px] text-[var(--ink)]">
             Mēneša atskaite
           </Link>
           <div className="border-t border-[var(--hair)] px-4 py-2">
@@ -817,7 +803,7 @@ export function IrissPasutijumiListClient({
         <span>Budžets</span>
         <span>Jaunie</span>
         <span>Nākamā darbība</span>
-        <span className="text-right">WhatsApp · statuss</span>
+        <span className="text-right">Statuss</span>
       </div>
 
       <div className="flex flex-col gap-2 max-md:px-4">
@@ -855,10 +841,18 @@ export function IrissPasutijumiListClient({
         {listWindow.hasMore ? <div ref={listSentinelRef} className="h-px w-full" aria-hidden /> : null}
       </div>
 
+      {rowError ? (
+        <div role="alert" className="fixed inset-x-3 bottom-24 z-[70] mx-auto flex max-w-lg items-center gap-3 rounded-[14px] bg-[var(--iriss-bad-soft)] px-4 py-3 text-[13px] font-semibold text-[var(--iriss-bad)] shadow-[0_8px_24px_rgba(0,0,0,.12)] md:bottom-6">
+          <span className="min-w-0 flex-1">{rowError}</span>
+          <button type="button" className="shrink-0 underline underline-offset-2" onClick={() => setRowError(null)}>
+            Aizvērt
+          </button>
+        </div>
+      ) : null}
       {deleteTargetId ? (
         <div
           className="fixed inset-0 z-[110] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
-          onClick={() => !actionBusy && setDeleteTargetId(null)}
+          {...deleteConfirmBackdropClose}
           role="presentation"
         >
           <div
@@ -868,7 +862,7 @@ export function IrissPasutijumiListClient({
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-base font-semibold text-[var(--ink)]">
-              Vai tiešām vēlaties neatgriezeniski dzēst šo pasūtījumu?
+              Pārvietot pasūtījumu uz Miskasti? To var atjaunot sadaļā Miskaste.
             </h2>
             <div className="mt-5 flex flex-wrap justify-end gap-2">
               <button

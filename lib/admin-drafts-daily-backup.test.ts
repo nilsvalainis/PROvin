@@ -31,3 +31,20 @@ describe("admin drafts daily backup", () => {
     expect(src).toContain("iriss-pavadzimes-blob");
   });
 });
+
+describe("backup cron vārti", () => {
+  it("pieņem Vercel CRON_SECRET un ADMIN_DRAFT_BACKUP_CRON_SECRET, citus atraida", async () => {
+    vi.resetModules();
+    vi.doMock("@/lib/admin-drafts-daily-backup", () => ({ runDailyAdminDraftBackup: async () => ({ ok: true }) }));
+    const { GET } = await import("@/app/api/cron/admin-drafts-daily-backup/route");
+    vi.stubEnv("CRON_SECRET", "vercel-cron");
+    vi.stubEnv("ADMIN_DRAFT_BACKUP_CRON_SECRET", "manual");
+    const call = (auth: string) =>
+      GET(new Request("http://x/api/cron/admin-drafts-daily-backup", { headers: { authorization: auth } }));
+    expect((await call("Bearer nope")).status).toBe(403);
+    expect((await call("Bearer vercel-cron")).status).toBe(200);
+    expect((await call("Bearer manual")).status).toBe(200);
+    vi.unstubAllEnvs();
+    vi.doUnmock("@/lib/admin-drafts-daily-backup");
+  });
+});

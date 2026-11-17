@@ -7,10 +7,12 @@ type Props = {
   devPrefill?: { username: string; password: string } | null;
   /** Pēc veiksmīgas pierakstīšanās (validē serverī). */
   postLoginPath?: string;
+  /** No uzaicinājuma saites (?email=), ja nav devPrefill. */
+  emailPrefill?: string | null;
 };
 
-export function LoginForm({ devPrefill = null, postLoginPath = "/admin" }: Props) {
-  const [username, setUsername] = useState(devPrefill?.username ?? "");
+export function LoginForm({ devPrefill = null, postLoginPath = "/admin", emailPrefill = null }: Props) {
+  const [username, setUsername] = useState(devPrefill?.username ?? emailPrefill ?? "");
   const [password, setPassword] = useState(devPrefill?.password ?? "");
   const [totp, setTotp] = useState("");
   const [challenge, setChallenge] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export function LoginForm({ devPrefill = null, postLoginPath = "/admin" }: Props
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, totp, challenge }),
+        body: JSON.stringify({ username: username.trim(), password, totp, challenge }),
       });
       const data = (await res.json()) as {
         error?: string;
@@ -60,13 +62,17 @@ export function LoginForm({ devPrefill = null, postLoginPath = "/admin" }: Props
     <form onSubmit={onSubmit} className="space-y-5">
       <div>
         <label htmlFor="admin-username" className="mb-2 block text-sm font-medium text-[var(--color-apple-text)]">
-          Lietotājvārds
+          E-pasts vai lietotājvārds
         </label>
         <input
           id="admin-username"
           name="username"
           type="text"
           autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          inputMode="email"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-[16px] text-[var(--color-apple-text)] shadow-sm outline-none ring-0 transition focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25"

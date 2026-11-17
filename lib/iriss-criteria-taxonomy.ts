@@ -316,11 +316,11 @@ function confirmedFuelCode(raw: string, platform: AuctionPlatform | undefined): 
 }
 
 function hasDieselWord(s: string): boolean {
-  return /\bdiesel\b|\bdizel|\bgazole\b|\bgasoil\b|\bgasolio\b|\bgasoleo\b|\btdi\b|\bcdi\b|\bdci\b|\bhdi\b|\bcrdi\b|\btdci\b/.test(s);
+  return /\bdiesel\b|\bdiisel\b|\bdizel|\bgazole\b|\bgasoil\b|\bgasolio\b|\bgasoleo\b|\btdi\b|\bcdi\b|\bdci\b|\bhdi\b|\bcrdi\b|\btdci\b/.test(s);
 }
 
 function hasPetrolWord(s: string): boolean {
-  return /\bpetrol\b|\bgasoline\b|\bbenzin|\bessence\b|\bsans plomb\b|\bunleaded\b|\botto\b|\btfsi\b|\btsi\b|\bfsi\b|\bgdi\b|\bpb95\b|\bsp95\b|\bsuperbenzin\b/.test(s);
+  return /\bpetrol\b|\bgasoline\b|\bbenzin|\bbensiin\b|\bessence\b|\bsans plomb\b|\bunleaded\b|\botto\b|\btfsi\b|\btsi\b|\bfsi\b|\bgdi\b|\bpb95\b|\bsp95\b|\bsuperbenzin\b/.test(s);
 }
 
 function hasElectricWord(s: string): boolean {
@@ -476,12 +476,15 @@ export function normalizeGearbox(raw: string, platform?: AuctionPlatform | strin
     return gearHit(raw, "automatic", "high", { sub: "amt" });
   }
 
-  const manual = /\bschalt|\bmanual\b|\bmanuell\b|\bmanuala\b|\bmehan|\bstick\b|\bhandgeschakeld\b|\bhandbak\b|\bboite manuelle\b|\bhandmatig\b|\bschaltgetriebe\b/.test(s);
+  const manual = /\bschalt|\bmanual\b|\bmanuell\b|\bmanuala\b|\bmanuaal\b|\bmehan|\bstick\b|\bhandgeschakeld\b|\bhandbak\b|\bboite manuelle\b|\bhandmatig\b|\bschaltgetriebe\b/.test(s);
   const automatic = /\bautomat|\bautomaat\b|\bautomats\b|\bauto\b/.test(s);
   if (manual && automatic) return gearTodo(raw, "TODO: vienā vērtībā ir gan manuālā, gan automātiskā kārba");
   if (manual) return gearHit(raw, "manual", "high");
   if (/\bautomat|\bautomaat\b/.test(s)) return gearHit(raw, "automatic", "high", { note: AUTO_NO_SUB });
   if (s === "auto") return gearHit(raw, "automatic", "medium", { note: "auto kā saīsinājums. Apakštips nav zināms." });
+  // Pasūtījumu formā raksta saīsinājumus (audits 27.10: «AT» pret izsoles «Automaat» Sludinājumos rādīja ✕).
+  if (s === "at" || s === "akpp" || s === "a t") return gearHit(raw, "automatic", "medium", { note: "AT kā saīsinājums. Apakštips nav zināms." });
+  if (s === "mt" || s === "m t") return gearHit(raw, "manual", "medium");
 
   if (digitsOnly(trimmed) || looksLikeCodePair(trimmed)) {
     return gearTodo(raw, `TODO: kārbas kods ${trimmed} nav kartēts`);

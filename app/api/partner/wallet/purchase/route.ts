@@ -4,6 +4,7 @@ import { isPartnerAuditPurpose } from "@/lib/b2b-partner-orders";
 import {
   b2bWalletProductRequiresReportLang,
   isB2bWalletProductId,
+  isB2bWalletProductInactive,
   isB2bWalletProductVisible,
   isB2bWalletReportLang,
   resolveB2bWalletPurchaseReportLang,
@@ -46,6 +47,9 @@ export async function POST(req: Request) {
   if (!isB2bWalletProductVisible(product, partner.walletHiddenProducts)) {
     return NextResponse.json({ error: "product_hidden" }, { status: 403 });
   }
+  if (isB2bWalletProductInactive(product)) {
+    return NextResponse.json({ error: "product_inactive" }, { status: 403 });
+  }
 
   const vin = typeof raw.vin === "string" ? normalizeVin(raw.vin) : "";
   if (!vin || !isValidVin(vin)) return NextResponse.json({ error: "vin" }, { status: 400 });
@@ -86,7 +90,12 @@ export async function POST(req: Request) {
   });
 
   if (!result.ok) {
-    const status = result.error === "insufficient" ? 402 : result.error === "product_hidden" ? 403 : 500;
+    const status =
+      result.error === "insufficient"
+        ? 402
+        : result.error === "product_hidden" || result.error === "product_inactive"
+          ? 403
+          : 500;
     return NextResponse.json(
       { error: result.error, balanceCents: result.balanceCents, priceCents: result.priceCents },
       { status },

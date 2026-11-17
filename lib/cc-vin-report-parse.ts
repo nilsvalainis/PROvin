@@ -1,5 +1,5 @@
 /**
- * Starptautiskās vēstures atskaites (admin: „CC.VIN”) PDF teksta parseris.
+ * Starptautiskās vēstures atskaites (admin: „Izsoļu portālu arhīvs”, internal id: cc_vin) PDF teksta parseris.
  *
  * Nolasa tikai vēstures faktus: odometru, bojājumus, apdrošinātāju / norakstīšanas ierakstus,
  * īpašumtiesību atzīmes (total loss, salvage, junk), title ierakstus un izsoļu pārdošanas.
@@ -311,7 +311,7 @@ function formatKmDisplay(raw: string): string {
 }
 
 /**
- * Summu attēlojums CC.VIN tabulās - nav-EUR valūtas automātiski pārrēķina uz EUR
+ * Summu attēlojums Izsoļu portālu arhīva tabulās - nav-EUR valūtas automātiski pārrēķina uz EUR
  * (tāpat kā AutoDNA/CarVertical), lai avota valūta nekad neparādās klientam neizmainīta.
  * Pārrēķina audita ieraksts (ja `notes` padots) nonāk operatora paziņojumos pēc PDF augšupielādes.
  */

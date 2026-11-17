@@ -48,6 +48,8 @@ export type OrderDraftWorkspaceBody = {
   technicalRiskMap?: import("@/lib/admin-ai-technical-risk-map-types").TechnicalRiskMap;
   /** Operatora odometra karodziņu apstiprinājums / atcelšana. Nav vecos pasūtījumos. */
   odometerAnomalyOverrides?: import("@/lib/odometer-anomaly-classify").OdometerAnomalyOverride[];
+  /** Operatora Lielie darbi labojumi. Nav vecos pasūtījumos; servisa rindas nemaina. */
+  dealerMajorWorkOverrides?: import("@/lib/dealer-major-works-override-persist").DealerMajorWorkOverride[];
 };
 
 export type OrderDraftState = {

@@ -98,7 +98,7 @@ export function formatLtabCentsAsEur(cents: number): string {
   const whole = Math.floor(abs / 100);
   const frac = String(abs % 100).padStart(2, "0");
   const grouped = whole.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-  return `${sign}${grouped}.${frac} €`;
+  return `${sign}${grouped},${frac} €`;
 }
 
 export function formatLtabClaimWhen(c: Pick<LtabCertificateClaim, "date" | "time">): string {
@@ -130,7 +130,7 @@ export function looksLikeLtabCertificate(text: string): boolean {
   return false;
 }
 
-/** Summa ar centiem: „2778.22” → „2 778.22 €”. */
+/** Summa ar centiem: „2778.22” → „2 778,22 €”. */
 export function formatLtabCertificateAmountEur(raw: string): string {
   const t = raw.replace(/EUR|€/gi, "").trim();
   if (!t) return "";
@@ -140,7 +140,7 @@ export function formatLtabCertificateAmountEur(raw: string): string {
     if (Number.isNaN(whole)) return `${t} €`;
     const cents = m[2]!.padEnd(2, "0").slice(0, 2);
     const grouped = whole.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-    return `${grouped}.${cents} €`;
+    return `${grouped},${cents} €`;
   }
   const digits = t.replace(/[^\d]/g, "");
   if (!digits) return t;

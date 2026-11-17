@@ -1,7 +1,10 @@
 import "server-only";
 
 import { get, put } from "@vercel/blob";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { putBlobBodyIfMatch } from "@/lib/blob-if-match-put";
+import { BlobReadFailedError, isNodeNotFoundError, readPrivateBlobText } from "@/lib/blob-read";
+import { compareAndSwap, ConditionalWriteConflict } from "@/lib/conditional-write";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -9,6 +12,7 @@ import { readFileSync } from "node:fs";
 import {
   archiveLogisticsOrder,
   isLogisticsOrderActive,
+  markLogisticsOrderOtherCompany,
   wakeLogisticsOrder,
 } from "@/lib/iriss-logistics-archive";
 import {
@@ -25,6 +29,8 @@ import {
 } from "@/lib/iriss-logistics-auction-sources";
 import { previousLogisticsPoints } from "@/lib/iriss-logistics-previous-points";
 import { seedLogisticsFromPunkti, type LogisticsPunktiJson } from "@/lib/iriss-logistics-seed";
+import { shouldAutofillTransportCost } from "@/lib/iriss-logistics-transport-invoice-amount";
+import { parseTransportInvoicePdf } from "@/lib/iriss-logistics-transport-invoice-pdf";
 import {
   IRISS_LOGISTICS_WORKSPACE,
   isLogisticsAuction,
@@ -53,6 +59,29 @@ const SOURCES_FILE = LOGISTICS_AUCTION_SOURCES_FILE;
 const GEOCODE_FILE = "geocode-cache.json";
 const USAGE_FILE_PREFIX = "maps-usage-";
 const SEED_META_FILE = "seed-meta.json";
+const PICKUP_DATE_FIX_META_FILE = "pickup-date-fix-v1.json";
+
+/**
+ * Seed importam (skat. seedLogisticsFromPunkti) regex izvilka pirmo DD.MM.YYYY datumu no brīvā teksta
+ * "termins" lauka neatkarīgi no konteksta - dažiem auto tas sagrābj pirkuma datumu ("Nopirkts ..."),
+ * dokumenta nosūtīšanas datumu ("PuA izsūtīts ...") vai citu nesaistītu datumu, nevis reālu pickup datumu.
+ * Katrs ieraksts pārbaudīts pret "termins" tekstu - datumam nav nekādas saistības ar reālu/apstiprinātu
+ * savākšanu. Vienreizējs, VIN+vērtību-precīzi norobežots labojums - nekas cits netiek skarts.
+ */
+const KNOWN_BAD_PICKUP_DATES: ReadonlyArray<{ vin: string; wrongDate: string }> = [
+  // "Nopirkts 17.10.2026, 5 990 € apmaksāts 19.10; savākšanas datumu var izvēlēties, kad auto atvests uz punktu"
+  { vin: "YV1DZ8256D2439274", wrongDate: "2026-10-17" },
+  // "Nopirkts 17.10.2026, 11 970,81 €; ...; saņemšanas apliecība būs pēc apmaksas"
+  { vin: "WDB9061331N534460", wrongDate: "2026-10-17" },
+  // "Nopirkts 14.10.2026, 10 449,23 €; apmaksāts, saņemšanas dokuments Autobid pastkastē kopš 16.10"
+  { vin: "WAUZZZ8K0FA036715", wrongDate: "2026-10-14" },
+  // "Nopirkts 12.10.2026, rēķins P.RE.2483632; savākšanas diena vēl nav saskaņota"
+  { vin: "HEBEUEHNE20261001", wrongDate: "2026-10-12" },
+  // "PuA izsūtīts 08.10.2026; pēc 14 dienām (no 22.10) papildu maksa" - PuA = pilnvara, nav pickup datums
+  { vin: "WBY11CF060CM04850", wrongDate: "2026-10-08" },
+  // "PuA izsūtīts 01.10.2026; 14 dienas beidzās 15.10, papildu maksa jau var rēķināties"
+  { vin: "YV1RS694062550360", wrongDate: "2026-10-01" },
+];
 
 type ResolvedStorage =
   | { kind: "disabled"; reason: "explicit_off" | "vercel_without_blob_token" }
@@ -61,6 +90,7 @@ type ResolvedStorage =
 
 let resolvedMemo: ResolvedStorage | null = null;
 const quotaLocks = new Map<string, Promise<unknown>>();
+const fsWriteLocks = new Map<string, Promise<unknown>>();
 
 function isNonVercelServerlessRuntime(): boolean {
   return Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY);
@@ -287,10 +317,13 @@ function normalizeOrder(raw: unknown): LogisticsOrder | null {
     pickupDate: str(raw.pickupDate, 40),
     stockNo: str(raw.stockNo ?? raw.stock_no ?? raw.lotNo ?? raw.lot_no, 80),
     freeParkingUntil: parseLogisticsIsoDate(raw.freeParkingUntil ?? raw.free_parking_until) || str(raw.freeParkingUntil, 40),
+    transportCostEur: numOrNull(raw.transportCostEur ?? raw.transport_cost_eur),
+    transportCostAuto: (raw.transportCostAuto ?? raw.transport_cost_auto) === true,
     status,
     archived,
     archivedAt: str(raw.archivedAt, 40),
     previousStatus: isLogisticsOrderStatus(raw.previousStatus) ? raw.previousStatus : "",
+    ...(archived && raw.archiveReason === "other_company" ? { archiveReason: "other_company" as const } : {}),
     statusNote: str(raw.statusNote, 240),
     nextAction: str(raw.nextAction, 240),
     sellerContact: str(raw.sellerContact, 240),
@@ -349,6 +382,26 @@ async function ensureSeeded(r: Exclude<ResolvedStorage, { kind: "disabled" }>): 
   });
 }
 
+async function ensurePickupDateFix(r: Exclude<ResolvedStorage, { kind: "disabled" }>): Promise<void> {
+  const meta = await readJson(r, PICKUP_DATE_FIX_META_FILE);
+  if (isObj(meta) && meta.done === true) return;
+  const raw = await readJson(r, ORDERS_FILE);
+  const items = isObj(raw) && Array.isArray(raw.items) ? raw.items : [];
+  let changed = 0;
+  const next = items.map((item) => {
+    if (!isObj(item)) return item;
+    const vin = typeof item.vin === "string" ? item.vin.toUpperCase() : "";
+    const bad = KNOWN_BAD_PICKUP_DATES.find((b) => b.vin === vin && item.pickupDate === b.wrongDate);
+    if (!bad) return item;
+    changed += 1;
+    return { ...item, pickupDate: "" };
+  });
+  if (changed > 0) {
+    await writeJson(r, ORDERS_FILE, { version: 1, items: next });
+  }
+  await writeJson(r, PICKUP_DATE_FIX_META_FILE, { done: true, at: new Date().toISOString(), changed });
+}
+
 export async function listLogisticsPoints(): Promise<LogisticsPoint[]> {
   const r = resolveStorage();
   if (r.kind === "disabled") return [];
@@ -368,6 +421,7 @@ export async function listLogisticsOrders(): Promise<LogisticsOrder[]> {
   const r = resolveStorage();
   if (r.kind === "disabled") return [];
   await ensureSeeded(r);
+  await ensurePickupDateFix(r);
   const raw = await readJson(r, ORDERS_FILE);
   const items = isObj(raw) && Array.isArray(raw.items) ? raw.items : [];
   return items.map(normalizeOrder).filter((p): p is LogisticsOrder => p !== null);
@@ -498,6 +552,8 @@ export async function upsertLogisticsOrder(patch: Partial<LogisticsOrder> & { id
     pickupDate: "",
     stockNo: "",
     freeParkingUntil: "",
+    transportCostEur: null,
+    transportCostAuto: false,
     status: "organize_pickup",
     archived: false,
     archivedAt: "",
@@ -558,7 +614,7 @@ export async function removeManualLogisticsOrder(id: string): Promise<"removed" 
 
 export async function setLogisticsOrderArchiveState(
   id: string,
-  action: "picked_up" | "delivered" | "archive" | "wake",
+  action: "picked_up" | "delivered" | "archive" | "wake" | "other_company",
 ): Promise<LogisticsOrder | null> {
   const items = await listLogisticsOrders();
   const prev = items.find((p) => p.id === id);
@@ -567,7 +623,9 @@ export async function setLogisticsOrderArchiveState(
   const next =
     action === "wake"
       ? wakeLogisticsOrder(prev, now)
-      : archiveLogisticsOrder(prev, action === "archive" ? "archived" : action, now);
+      : action === "other_company"
+        ? markLogisticsOrderOtherCompany(prev, now)
+        : archiveLogisticsOrder(prev, action === "archive" ? "archived" : action, now);
   await writeLogisticsOrders(items.map((p) => (p.id === id ? next : p)));
   return next;
 }
@@ -575,6 +633,20 @@ export async function setLogisticsOrderArchiveState(
 export async function countActiveLogisticsOrders(): Promise<number> {
   const orders = await listLogisticsOrders();
   return orders.filter(isLogisticsOrderActive).length;
+}
+
+/**
+ * Pēc Auto1 Transport Invoice PDF augšupielādes mēģina nolasīt kopsummu un ielikt
+ * "Pašizmaksas transports" laukā - tikai, ja lauks vēl tukšs vai iepriekš bija auto-aizpildīts
+ * (lietotāja ar roku ievadītu vērtību nekad nepārraksta).
+ */
+export async function applyTransportInvoiceAutofill(orderId: string, bytes: Buffer, fileName: string): Promise<LogisticsOrder | null> {
+  const order = await getLogisticsOrder(orderId);
+  if (!order || !shouldAutofillTransportCost(order)) return null;
+  const arrayBuffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
+  const result = await parseTransportInvoicePdf(arrayBuffer, fileName);
+  if (!result.ok) return null;
+  return upsertLogisticsOrder({ id: orderId, transportCostEur: result.amountEur, transportCostAuto: true });
 }
 
 export async function listPreviousLogisticsPoints(nowMs = Date.now()): Promise<LogisticsPreviousPointRow[]> {
@@ -764,6 +836,79 @@ export async function writeLogisticsJsonFile(filename: string, body: unknown): P
   const r = resolveStorage();
   if (r.kind === "disabled") throw new Error("store_disabled");
   await writeJson(r, filename, body);
+}
+
+/**
+ * Lasīt-pārbaudīt-rakstīt (compare-and-swap) vienam JSON failam: Blob ar `ifMatch`, mapē ar satura hash.
+ * Lasīšanas kļūda tiek izmesta (nevis uzskatīta par tukšu), lai paralēli ievadīti dati netiktu pārrakstīti.
+ * `mutate` atgriež `next: undefined`, ja nekas nav jāraksta.
+ */
+export async function mutateLogisticsJsonFile<R>(
+  filename: string,
+  mutate: (current: unknown | null) => { next?: unknown; result: R } | Promise<{ next?: unknown; result: R }>,
+  maxAttempts = 8,
+): Promise<R> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") throw new Error("store_disabled");
+  const hash = (t: string) => createHash("sha256").update(t).digest("hex");
+  const parse = (text: string): unknown => {
+    try {
+      return JSON.parse(text) as unknown;
+    } catch (err) {
+      throw new BlobReadFailedError(err instanceof Error ? err.message : "json_parse_failed");
+    }
+  };
+  const fp = r.kind === "fs" ? path.join(r.dir, filename) : "";
+  const readFsText = async (): Promise<string | null> => {
+    try {
+      return await fs.readFile(fp, "utf8");
+    } catch (err) {
+      if (isNodeNotFoundError(err)) return null;
+      throw err;
+    }
+  };
+  return compareAndSwap<unknown, R>({
+    read: async () => {
+      if (r.kind === "blob") {
+        const snap = await readPrivateBlobText({ pathname: `${r.prefix}${filename}`, token: r.token });
+        if (snap.state === "missing") return { value: null, etag: null };
+        return { value: parse(snap.text), etag: snap.etag };
+      }
+      const text = await readFsText();
+      return text == null ? { value: null, etag: null } : { value: parse(text), etag: hash(text) };
+    },
+    write: async (next, etag) => {
+      const text = JSON.stringify(next, null, 2);
+      if (r.kind === "blob") {
+        await putBlobBodyIfMatch({
+          pathname: `${r.prefix}${filename}`,
+          body: text,
+          token: r.token,
+          etag,
+          seen: etag != null,
+          contentType: "application/json; charset=utf-8",
+        });
+        return;
+      }
+      // Lokālā mape: pārbaude + pārsaukšana zem procesa slēdzenes (vairāku procesu gadījums nav vajadzīgs).
+      const prev = fsWriteLocks.get(fp) ?? Promise.resolve();
+      const run = prev.catch(() => undefined).then(async () => {
+        const current = await readFsText();
+        if ((current == null ? null : hash(current)) !== etag) throw new ConditionalWriteConflict();
+        await fs.mkdir(path.dirname(fp), { recursive: true });
+        const tmp = `${fp}.${process.pid}.${randomUUID()}.tmp`;
+        await fs.writeFile(tmp, text, "utf8");
+        await fs.rename(tmp, fp);
+      });
+      fsWriteLocks.set(fp, run);
+      await run;
+    },
+    update: async (current) => {
+      const d = await mutate(current);
+      return d.next === undefined ? { result: d.result } : { next: d.next, result: d.result };
+    },
+    maxAttempts,
+  });
 }
 
 export async function putLogisticsBinaryFile(

@@ -136,6 +136,7 @@ export async function buildInvoicePdfBytes(order: InvoiceOrderPayload): Promise<
   const dateFmt = new Intl.DateTimeFormat("lv-LV", {
     dateStyle: "long",
     timeStyle: "short",
+    timeZone: "Europe/Riga",
   });
   const invoiceDate = dateFmt.format(new Date(order.created * 1000));
 

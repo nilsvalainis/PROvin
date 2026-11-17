@@ -133,7 +133,7 @@ describe("order upsell quotes", () => {
       chargeCents: 6000,
       targetCents: 9999,
     });
-    expect(draft.subject).toBe("Jūsu PROVIN MINI pasūtījums: VW Passat");
+    expect(draft.subject).toBe("PROVIN · Ieteikums: PROVIN AUDITS · VW Passat");
     expect(draft.emailText).toContain("Labdien, Anna!");
     expect(draft.emailText).toContain("Paldies par PROVIN MINI pasūtījumu (VW Passat).");
     expect(draft.emailText).not.toMatch(/\(VIN\s/i);

@@ -24,7 +24,7 @@ describe("B2B top-up invoice", () => {
       rekins: "IRS-2026-0003",
       uznemums: "SIA Salons",
     });
-    expect(rendered.subject).toBe("PROVIN: rēķins par konta papildināšanu 100,00 €");
+    expect(rendered.subject).toBe("PROVIN · Rēķins par konta papildināšanu 100,00 €");
     expect(rendered.text).toContain("250,00 €");
     expect(rendered.text).toContain("IRS-2026-0003");
     expect(rendered.text).toContain("Ar cieņu,\nPROVIN");

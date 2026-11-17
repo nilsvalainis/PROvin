@@ -1,19 +1,32 @@
 /** IRISS Autoparks: mūsu auto pēc atvešanas. Pozīcija = auto istaba ar posmiem, failiem, piezīmēm un tāmi. */
 
-export const AUTOPARKS_STATUSES = ["prep_waiting", "in_service", "for_sale", "reserved", "sold"] as const;
+import { normalizeAutoparksRegistry, type AutoparksRegistry } from "@/lib/iriss-autoparks-registry";
+
+/**
+ * Nils 27.10: viens auto ceļš - Ceļā -> Noliktavā -> Servisā -> Pārdošanā -> Rezervēts -> Pārdots.
+ * «Pasūtījums» vairs nav statuss: tā ir atzīme «Pasūtījums» (`clientOrder`) pie jebkura statusa.
+ */
+export const AUTOPARKS_STATUSES = ["in_transit", "prep_waiting", "in_service", "for_sale", "reserved", "sold"] as const;
 export type AutoparksStatus = (typeof AUTOPARKS_STATUSES)[number];
 
 export const AUTOPARKS_STATUS_LV: Record<AutoparksStatus, string> = {
-  prep_waiting: "Gaida sagatavošanu",
+  in_transit: "Ceļā",
+  prep_waiting: "Noliktavā",
   in_service: "Servisā",
   for_sale: "Pārdošanā",
   reserved: "Rezervēts",
   sold: "Pārdots",
 };
 
+/** Posmi, no kuriem piedāvājuma apstiprinājums auto pārslēdz uz «Rezervēts» (tālākos nepazemina). */
+export function autoparksStatusReservable(status: AutoparksStatus): boolean {
+  return status === "in_transit" || status === "prep_waiting" || status === "in_service" || status === "for_sale";
+}
+
 /** Īsie nosaukumi segmentiem un čipiem telefonā. */
 export const AUTOPARKS_STATUS_SHORT_LV: Record<AutoparksStatus, string> = {
-  prep_waiting: "Gaida",
+  in_transit: "Ceļā",
+  prep_waiting: "Noliktavā",
   in_service: "Servisā",
   for_sale: "Pārdošanā",
   reserved: "Rezervēts",
@@ -49,6 +62,24 @@ export const AUTOPARKS_FILE_KIND_LV: Record<AutoparksFileKind, string> = {
   other: "Dokuments",
 };
 
+/** Kuras firmas auto: SIA ĪRISS (noklusējums) vai SIA DZINTARZEME AUTO. */
+export const AUTOPARKS_OWNERS = ["IRISS", "DZA"] as const;
+export type AutoparksOwner = (typeof AUTOPARKS_OWNERS)[number];
+
+export const AUTOPARKS_OWNER_LV: Record<AutoparksOwner, string> = {
+  IRISS: "SIA ĪRISS",
+  DZA: "SIA DZINTARZEME AUTO",
+};
+
+export function isAutoparksOwner(v: unknown): v is AutoparksOwner {
+  return typeof v === "string" && (AUTOPARKS_OWNERS as readonly string[]).includes(v);
+}
+
+/** Efektīvais īpašnieks: vecajos ierakstos lauka nav -> IRISS (glabātie dati netiek pārrakstīti). */
+export function autoparksOwner(car: { owner?: unknown }): AutoparksOwner {
+  return isAutoparksOwner(car.owner) ? car.owner : "IRISS";
+}
+
 export type AutoparksCar = {
   id: string;
   orderId: string;
@@ -65,8 +96,26 @@ export type AutoparksCar = {
   purchasePriceEur: number | null;
   salePriceEur: number | null;
   arrivedAt: string;
+  /** Pēc "Pārdots": pārvietots uz arhīvu (sarakstā vairs nav, var atjaunot). Tukšs = aktīvs. */
+  archivedAt: string;
+  /** Īpašnieks. Vecajos ierakstos lauka nav (= IRISS, sk. `autoparksOwner`). */
+  owner?: AutoparksOwner;
+  /** «Pasūtījums» (agrāk statuss «Pasūtījums», Nils 27.10). Tikai, ja true. */
+  clientOrder?: true;
+  /** Dropbox /STOCK mapes id (`id:...`); nav/tukšs = vēl nav sasaistīts. Vecos ierakstos lauka nav. */
+  dropboxFolderId?: string;
+  /** Pēdējais zināmais mapes ceļš (tikai informācijai; avots ir id). */
+  dropboxFolderPath?: string;
   createdAt: string;
   updatedAt: string;
+  /** Cenu lapai: nosaukums, ko Nils ieraksta (tukšs = marka + modelis). Vecos ierakstos lauka nav. */
+  displayName?: string;
+  /** Cenu lapai: aprīkojuma rinda, piem. "ACC DISTRONIC / LANE ASSIST". */
+  equipmentLine?: string;
+  /** Cenu lapai: cena, ko Nils ievada. Slēpj tāpat kā citas summas. */
+  listPriceEur?: number | null;
+  /** CSDD tirdzniecības reģistra dati (imports pēc VIN + Nila labojumi). */
+  registry?: AutoparksRegistry;
 };
 
 export type AutoparksFile = {
@@ -78,7 +127,13 @@ export type AutoparksFile = {
   fileName: string;
   contentType: string;
   size: number;
+  /** Vecie faili: Vercel Blob ceļš. Jaunie faili glabājas Dropbox (`dropboxId`), tad tukšs. */
   blobPath: string;
+  /** Dropbox faila id (`id:...`) un ceļš augšupielādes brīdī. Vecos ierakstos lauku nav. */
+  dropboxId?: string;
+  dropboxPath?: string;
+  /** Mazs JPEG sīktēls (~30 KB) Blob krātuvē bildēm; nav = nav sīktēla. */
+  thumbBlobPath?: string;
   sha256: string;
   /** Telefonā nobildēts un pārvērsts PDF. */
   scanned: boolean;
@@ -135,6 +190,8 @@ export type AutoparksRoom = {
 
 /** Saraksta rinda: auto + skaiti, lai sarakstā nav jālādē visa istaba. */
 export type AutoparksListRow = AutoparksCar & {
+  /** Vienmēr aizpildīts (vecajiem ierakstiem IRISS). */
+  owner: AutoparksOwner;
   fileCount: number;
   stageFileCounts: Record<AutoparksStage, number>;
   noteCount: number;
@@ -188,14 +245,25 @@ export function normalizeAutoparksCar(raw: unknown): AutoparksCar | null {
     plate: str(raw.plate, 16).toUpperCase(),
     color: str(raw.color, 40),
     mileageKm: numOrNull(raw.mileageKm),
-    status: isAutoparksStatus(raw.status) ? raw.status : "prep_waiting",
+    // Vecais statuss «Pasūtījums» -> atzīme «Pasūtījums»; posms: ar Loģistikas ierakstu «Ceļā», citādi «Noliktavā».
+    status: isAutoparksStatus(raw.status) ? raw.status : raw.status === "ordered" ? (str(raw.orderId, 80) ? "in_transit" : "prep_waiting") : "prep_waiting",
     statusChangedAt: str(raw.statusChangedAt, 40),
     location: str(raw.location, 120),
     purchasePriceEur: numOrNull(raw.purchasePriceEur),
     salePriceEur: numOrNull(raw.salePriceEur),
     arrivedAt: str(raw.arrivedAt, 40),
+    archivedAt: str(raw.archivedAt, 40),
     createdAt: str(raw.createdAt, 40),
     updatedAt: str(raw.updatedAt, 40),
+    ...(isAutoparksOwner(raw.owner) ? { owner: raw.owner } : {}),
+    ...(raw.clientOrder === true || raw.status === "ordered" ? { clientOrder: true as const } : {}),
+    ...(typeof raw.dropboxFolderId === "string" && raw.dropboxFolderId ? { dropboxFolderId: str(raw.dropboxFolderId, 120) } : {}),
+    ...(typeof raw.dropboxFolderPath === "string" && raw.dropboxFolderPath ? { dropboxFolderPath: str(raw.dropboxFolderPath, 400) } : {}),
+    // Jaunie lauki tikai, ja ierakstā tie jau ir - vecie ieraksti paliek tādi paši.
+    ...(typeof raw.displayName === "string" ? { displayName: str(raw.displayName, 160) } : {}),
+    ...(typeof raw.equipmentLine === "string" ? { equipmentLine: str(raw.equipmentLine, 300) } : {}),
+    ...("listPriceEur" in raw ? { listPriceEur: numOrNull(raw.listPriceEur) } : {}),
+    ...(isObj(raw.registry) ? { registry: normalizeAutoparksRegistry(raw.registry) } : {}),
   };
 }
 
@@ -221,6 +289,9 @@ export function normalizeAutoparksFile(raw: unknown): AutoparksFile | null {
     uploadedByName: str(raw.uploadedByName, 80),
     createdAt: str(raw.createdAt, 40),
     deletedAt: str(raw.deletedAt, 40),
+    ...(typeof raw.dropboxId === "string" && raw.dropboxId ? { dropboxId: str(raw.dropboxId, 120) } : {}),
+    ...(typeof raw.dropboxPath === "string" && raw.dropboxPath ? { dropboxPath: str(raw.dropboxPath, 600) } : {}),
+    ...(typeof raw.thumbBlobPath === "string" && raw.thumbBlobPath ? { thumbBlobPath: str(raw.thumbBlobPath, 400) } : {}),
   };
 }
 
@@ -301,6 +372,7 @@ export function autoparksListRows(state: AutoparksState): AutoparksListRow[] {
     for (const f of own) stageFileCounts[f.stage] += 1;
     return {
       ...car,
+      owner: autoparksOwner(car),
       fileCount: own.length,
       stageFileCounts,
       noteCount: state.notes.filter((n) => n.carId === car.id).length,
@@ -314,7 +386,7 @@ export function autoparksRoom(state: AutoparksState, carId: string): AutoparksRo
   if (!car) return null;
   const byNewest = (a: { createdAt: string }, b: { createdAt: string }) => b.createdAt.localeCompare(a.createdAt);
   return {
-    car,
+    car: { ...car, owner: autoparksOwner(car) },
     files: liveAutoparksFiles(state.files).filter((f) => f.carId === carId).sort(byNewest),
     notes: state.notes.filter((n) => n.carId === carId).sort(byNewest),
     work: state.work.filter((w) => w.carId === carId).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
@@ -329,10 +401,63 @@ export function autoparksDaysInPark(car: Pick<AutoparksCar, "arrivedAt" | "creat
   return Math.max(0, Math.floor((now.getTime() - from) / 86_400_000));
 }
 
-export function autoparksStatusCounts(cars: ReadonlyArray<Pick<AutoparksCar, "status">>): Record<AutoparksStatus, number> {
-  const out = { prep_waiting: 0, in_service: 0, for_sale: 0, reserved: 0, sold: 0 } as Record<AutoparksStatus, number>;
-  for (const c of cars) out[c.status] += 1;
+/** Saraksta filtrs pēc īpašnieka (API `?owner=IRISS|DZA`); nederīga vērtība = visi. */
+export function filterAutoparksByOwner<T extends { owner?: unknown }>(rows: readonly T[], owner: unknown): T[] {
+  if (!isAutoparksOwner(owner)) return [...rows];
+  return rows.filter((r) => autoparksOwner(r) === owner);
+}
+
+/** Skaiti pa statusiem (arhīvā esošie netiek skaitīti). */
+export function autoparksStatusCounts(cars: ReadonlyArray<Pick<AutoparksCar, "status"> & { archivedAt?: string }>): Record<AutoparksStatus, number> {
+  const out = { in_transit: 0, prep_waiting: 0, in_service: 0, for_sale: 0, reserved: 0, sold: 0 } as Record<AutoparksStatus, number>;
+  for (const c of cars) if (!c.archivedAt) out[c.status] += 1;
   return out;
+}
+
+export const AUTOPARKS_SORTS = ["status", "newest", "oldest", "alpha", "make"] as const;
+export type AutoparksSort = (typeof AUTOPARKS_SORTS)[number];
+export const AUTOPARKS_SORT_LV: Record<AutoparksSort, string> = {
+  status: "Pēc statusa",
+  newest: "Jaunākie",
+  oldest: "Vecākie",
+  alpha: "Pēc alfabēta",
+  make: "Pēc markas",
+};
+
+export function isAutoparksSort(v: unknown): v is AutoparksSort {
+  return typeof v === "string" && (AUTOPARKS_SORTS as readonly string[]).includes(v);
+}
+
+type SortableCar = Pick<AutoparksCar, "make" | "model" | "year" | "status" | "statusChangedAt" | "arrivedAt" | "createdAt">;
+
+/** Kad auto ienāca parkā (atvests vai pievienots). */
+function arrivedKey(c: SortableCar): string {
+  return c.arrivedAt || c.createdAt;
+}
+
+/**
+ * Saraksta kārtošana. "Pēc alfabēta" = pilns nosaukums (marka + modelis), "Pēc markas" = marka,
+ * markas iekšienē jaunākie augšā. Latviešu burti (Š, Ž) kārtojas pareizi.
+ */
+export function sortAutoparksRows<T extends SortableCar>(rows: readonly T[], mode: AutoparksSort): T[] {
+  const coll = new Intl.Collator("lv", { sensitivity: "base", numeric: true });
+  const title = (c: T) => `${c.make} ${c.model}`.trim();
+  const statusOrder = new Map(AUTOPARKS_STATUSES.map((s, i) => [s, i]));
+  const list = [...rows];
+  switch (mode) {
+    case "newest":
+      return list.sort((a, b) => arrivedKey(b).localeCompare(arrivedKey(a)));
+    case "oldest":
+      return list.sort((a, b) => arrivedKey(a).localeCompare(arrivedKey(b)));
+    case "alpha":
+      return list.sort((a, b) => coll.compare(title(a), title(b)) || coll.compare(a.year, b.year));
+    case "make":
+      return list.sort((a, b) => coll.compare(a.make, b.make) || arrivedKey(b).localeCompare(arrivedKey(a)));
+    default:
+      return list.sort(
+        (a, b) => statusOrder.get(a.status)! - statusOrder.get(b.status)! || b.statusChangedAt.localeCompare(a.statusChangedAt),
+      );
+  }
 }
 
 export function autoparksWorkTotal(work: ReadonlyArray<Pick<AutoparksWorkItem, "qty" | "priceEur">>): number {
@@ -384,6 +509,7 @@ export function autoparksBundleName(car: Pick<AutoparksCar, "make" | "model" | "
 
 /** Ieteicamais posms jaunam failam pēc auto statusa. */
 export function autoparksDefaultStage(status: AutoparksStatus): AutoparksStage {
+  if (status === "in_transit") return "transport";
   if (status === "prep_waiting" || status === "in_service") return "service";
   if (status === "for_sale" || status === "reserved" || status === "sold") return "sale";
   return "purchase";

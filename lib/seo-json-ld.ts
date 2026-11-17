@@ -1,5 +1,5 @@
-import { getCompanyLegal, getCompanyPublicBrand } from "@/lib/company";
-import { contactEmail, CONTACT_PHONE_TEL } from "@/lib/contact";
+import { getCompanyPublicBrand } from "@/lib/company";
+import { contactEmail } from "@/lib/contact";
 import { IRISS_SOCIAL_DEFAULTS } from "@/lib/iriss-social-defaults";
 import { PUBLIC_SERVICE_OFFERS, serviceOfferUrl } from "@/lib/seo-offers";
 import { publicPageUrl } from "@/lib/seo-public-metadata";
@@ -52,22 +52,19 @@ function sameAs(): string[] {
   return [IRISS_SOCIAL_DEFAULTS.tiktok, IRISS_SOCIAL_DEFAULTS.youtube, IRISS_SOCIAL_DEFAULTS.instagram];
 }
 
+/** Bez juridiskā nosaukuma un adreses: pakalpojuma sniedzēja privātie dati publiski nav redzami (Nils 05.11.2026). */
 export function buildOrganizationJsonLd(locale: string, description: string) {
-  const legal = getCompanyLegal();
   const brand = getCompanyPublicBrand();
   const origin = siteOrigin();
   return {
-    "@type": ["Organization", "ProfessionalService", "LocalBusiness"],
+    "@type": "Organization",
     "@id": organizationId(),
     name: brand,
-    legalName: legal.legalName,
     url: publicPageUrl(locale),
     description,
     image: `${origin}${DEFAULT_OG_IMAGE_PATH}`,
     logo: { "@type": "ImageObject", url: `${origin}/icon`, width: 512, height: 512 },
     email: contactEmail(),
-    telephone: CONTACT_PHONE_TEL,
-    address: parseLegalPostalAddress(legal.legalAddress),
     areaServed: { "@type": "Country", name: "Latvia" },
     sameAs: sameAs(),
     priceRange: "24,99 €-99,99 €",
@@ -191,5 +188,25 @@ export function buildBlogPostingJsonLd(args: {
       logo: { "@type": "ImageObject", url: `${origin}/icon`, width: 512, height: 512 },
     },
     image: args.image ? [args.image] : [`${origin}${DEFAULT_OG_IMAGE_PATH}`],
+  };
+}
+
+/** Bloga saraksta lapa: `Blog` ar ierakstu sarakstu (papildinājums 03.11). */
+export function buildBlogIndexJsonLd(
+  locale: string,
+  posts: { slug: string; title: string; publishedAt: string; urlLocale?: string }[],
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    url: publicPageUrl(locale, "/blogs"),
+    inLanguage: jsonLdLanguage(locale),
+    publisher: { "@type": "Organization", "@id": organizationId(), name: getCompanyPublicBrand() },
+    blogPost: posts.map((p) => ({
+      "@type": "BlogPosting",
+      headline: p.title,
+      url: publicPageUrl(p.urlLocale ?? locale, `/blogs/${p.slug}`),
+      datePublished: `${p.publishedAt}T12:00:00.000Z`,
+    })),
   };
 }

@@ -1,17 +1,16 @@
 import { NextResponse } from "next/server";
 import { runDailyAdminDraftBackup } from "@/lib/admin-drafts-daily-backup";
-import { bearerMatchesAnySecret } from "@/lib/cron-bearer";
+import { cronSecretGate } from "@/lib/cron-bearer";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
-function isAuthorized(req: Request): { ok: true } | { ok: false; status: number; error: string } {
-  const expected = process.env.ADMIN_DRAFT_BACKUP_CRON_SECRET?.trim() ?? "";
-  if (!expected) return { ok: false, status: 503, error: "missing_cron_secret" };
-  const auth = req.headers.get("authorization")?.trim() ?? "";
-  if (!auth) return { ok: false, status: 401, error: "missing_authorization" };
-  if (!bearerMatchesAnySecret(auth, [expected])) return { ok: false, status: 403, error: "forbidden" };
-  return { ok: true };
+/** Vercel Cron sūta `CRON_SECRET`; manuāli/ārējie izsaukumi var lietot `ADMIN_DRAFT_BACKUP_CRON_SECRET`. */
+function isAuthorized(req: Request) {
+  return cronSecretGate(req.headers.get("authorization"), [
+    process.env.CRON_SECRET,
+    process.env.ADMIN_DRAFT_BACKUP_CRON_SECRET,
+  ]);
 }
 
 export async function GET(req: Request) {

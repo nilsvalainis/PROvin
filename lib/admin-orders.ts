@@ -7,8 +7,13 @@ import {
   getManualOrder,
   isManualOrderId,
   listManualOrders,
+  manualOrderListPaymentStatus,
   type ManualOrderRecord,
 } from "@/lib/admin-manual-orders";
+import {
+  isManualOrderPaymentFulfillment,
+  MANUAL_ORDER_PAYMENT_FULFILLMENT,
+} from "@/lib/manual-order-payment";
 import {
   getCachedCheckoutSessionDetail,
   getCachedPaidCheckoutSessions,
@@ -65,6 +70,8 @@ export type AdminOrderRow = {
   /** Stripe `metadata.fulfillment` (piem. `b2b_pack` = kredītu paka, nav VIN darbs). */
   fulfillment?: string | null;
   partnerId?: string | null;
+  /** PROVIN Business poga partnera vietnē (`metadata.partner_ref`, uzskaitei; nav partnera kredīta pasūtījums). */
+  partnerRef?: string | null;
   packQty?: number | null;
   companyName?: string | null;
   auditPurpose?: "client" | "internal";
@@ -108,13 +115,12 @@ const STRIPE_CHECKOUT_PAGE_SIZE = 100;
 const STRIPE_CHECKOUT_MAX_PAGES = 80;
 
 function manualOrderToAdminOrderRow(rec: ManualOrderRecord): AdminOrderRow {
-  const partnerVin = Boolean(rec.partnerId || rec.companyName);
   return {
     id: rec.id,
     created: rec.created,
     amountTotal: rec.amountTotal,
     currency: rec.currency,
-    paymentStatus: partnerVin ? "paid" : "unpaid",
+    paymentStatus: manualOrderListPaymentStatus(rec),
     customerEmail: null,
     vin: null,
     checkoutLine: rec.checkoutLine ?? "audit",
@@ -128,6 +134,7 @@ function manualOrderToAdminOrderRow(rec: ManualOrderRecord): AdminOrderRow {
 function sessionToAdminOrderRow(s: Stripe.Checkout.Session): AdminOrderRow | null {
   if (s.payment_status !== "paid") return null;
   if (isOrderUpsellFulfillment(s.metadata?.fulfillment, s.metadata?.upgrade_of)) return null;
+  if (isManualOrderPaymentFulfillment(s.metadata?.fulfillment)) return null;
   const order = getOrderFieldsFromSession(s);
   const partnerRaw = s.metadata?.partner_id?.trim() ?? "";
   const partnerId = isSafeB2bPartnerId(partnerRaw) ? partnerRaw : null;
@@ -144,6 +151,7 @@ function sessionToAdminOrderRow(s: Stripe.Checkout.Session): AdminOrderRow | nul
     attribution: adminAttributionFromStripeMetadata(s.metadata),
     fulfillment: s.metadata?.fulfillment?.trim() || null,
     partnerId,
+    partnerRef: isSafeB2bPartnerId(s.metadata?.partner_ref?.trim() ?? "") ? s.metadata!.partner_ref!.trim() : null,
     packQty: parseB2bPackQty(s.metadata?.pack_qty),
     companyName: order.companyName,
   };
@@ -200,7 +208,9 @@ async function resolvePaidCheckoutSessions(): Promise<AdminOrderRow[]> {
         /* test / non-next runtime */
       }
     }
-    return index.rows.filter((r) => r.fulfillment !== "order_upsell");
+    return index.rows.filter(
+      (r) => r.fulfillment !== "order_upsell" && r.fulfillment !== MANUAL_ORDER_PAYMENT_FULFILLMENT,
+    );
   }
   return refreshStripePaidIndexFromStripe();
 }
@@ -345,6 +355,9 @@ async function fetchCheckoutSessionDetailUncached(sessionId: string): Promise<Ad
     const consultDemo = isDemoOrdersEnabled() ? getDemoConsultationDetail(sessionId) : null;
     if (consultDemo) return consultDemo;
     if (demo && isDemoOrdersEnabled()) return demo as AdminOrderDetail;
+    return null;
+  }
+  if (isManualOrderPaymentFulfillment(session.metadata?.fulfillment)) {
     return null;
   }
   if (session.payment_status !== "paid") {

@@ -3,7 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   WAYBILL_REQUEST_STATUS_LABEL,
+  isStaleWaybillRequest,
   waybillAivarsReply,
+  waybillChatTimelineNewestFirst,
+  waybillCancelConfirmText,
+  waybillDisplayText,
+  waybillRequestCancellable,
+  waybillRequestRetryable,
   type WaybillAivarsReply,
   type WaybillRequest,
   type WaybillRequestEvent,
@@ -12,27 +18,41 @@ import {
 import {
   DEFAULT_WAYBILL_ROUTE_FROM,
   DEFAULT_WAYBILL_ROUTE_TO,
-  DEFAULT_WAYBILL_VALID_HOURS,
-  NOTE_UNTRUSTED_MAX,
   WAYBILL_VALID_MAX_HOURS,
   waybillHoursBetween,
 } from "@/lib/iriss-waybill-create";
 import {
   IRISS_DEALER_PLATES,
-  dealerPlateMeta,
   displayDealerPlate,
   emptyWaybillPlateStates,
+  loadingWaybillPlateStates,
   formatRigaDateTimeComma,
   type WaybillPlateCurrent,
   type WaybillPlateState,
 } from "@/lib/iriss-waybill-plates";
-import { formatWaybillExpiryDdMmHm } from "@/lib/iriss-pavadzimes-countdown";
-import { LvDealerPlate } from "@/components/admin/LvDealerPlate";
+import { IrissWaybillDesktopCreateForm } from "@/components/admin/IrissWaybillDesktopCreateForm";
+import { IrissWaybillMobileForm, WaybillCancelDialog, type WaybillMobileDraft } from "@/components/admin/IrissWaybillMobileForm";
+import { IrissWaybillSavePdfButton } from "@/components/admin/IrissWaybillSavePdfButton";
+import { waybillDropboxFileName, waybillPdfDownloadHref } from "@/lib/iriss-waybill-pdf";
+import {
+  WAYBILL_FORM_DEFAULT_HOURS,
+  buildWaybillDesktopPayload,
+  initialWaybillMobileForm,
+  parseWaybillCustomHours,
+  waybillAutoEntryValues,
+  type WaybillMobileFormState,
+  type WaybillMobilePayload,
+} from "@/lib/iriss-waybill-mobile-form";
+import { publishWaybillPlates } from "@/lib/iriss-waybill-live-plates";
+import type { WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 import type { WaybillVehicleChip } from "@/lib/iriss-waybill-vehicles";
 
 type TimelineItem =
   | { type: "request"; request: WaybillRequest }
   | { type: "event"; event: WaybillRequestEvent; request: WaybillRequest };
+
+/** Statusa atjaunošana neizdevās (serveris neatbild): rādītais statuss var būt novecojis (j16). */
+export const WAYBILL_STATUS_STALE_TEXT = "Statusu nevar atjaunot - serveris neatbild. Rādītais statuss var būt novecojis, mēģinu vēlreiz.";
 
 export type WaybillChatState = {
   requests: WaybillRequest[];
@@ -41,6 +61,8 @@ export type WaybillChatState = {
   replies: WaybillAivarsReply[];
   vehicles: WaybillVehicleChip[];
   plates: WaybillPlateState[];
+  /** "Dzēst" paslēptie šim lietotājam (tikai GET; citas atbildes to nesūta). */
+  dismissedIds?: string[];
 };
 
 const emptyChat = (): WaybillChatState => ({
@@ -49,7 +71,7 @@ const emptyChat = (): WaybillChatState => ({
   timeline: [],
   replies: [],
   vehicles: [],
-  plates: emptyWaybillPlateStates(),
+  plates: loadingWaybillPlateStates(),
 });
 
 function withReplies(partial: Partial<WaybillChatState>): WaybillChatState {
@@ -64,6 +86,7 @@ function withReplies(partial: Partial<WaybillChatState>): WaybillChatState {
       : requests.map((request) => waybillAivarsReply(request, events)),
     vehicles: Array.isArray(partial.vehicles) ? partial.vehicles : [],
     plates: Array.isArray(partial.plates) && partial.plates.length ? partial.plates : emptyWaybillPlateStates(),
+    ...(Array.isArray(partial.dismissedIds) ? { dismissedIds: partial.dismissedIds.filter((id) => typeof id === "string") } : {}),
   };
 }
 
@@ -117,6 +140,12 @@ async function readChatResponse(res: Response): Promise<ChatResponse> {
   return withReplies(data);
 }
 
+function tradeCarsFrom(data: unknown): { cars: WaybillTradeCar[]; fromAutoparks: boolean } | null {
+  if (!data || typeof data !== "object") return null;
+  const { tradeCars: list, tradeCarsSource } = data as { tradeCars?: unknown; tradeCarsSource?: unknown };
+  return Array.isArray(list) ? { cars: list as WaybillTradeCar[], fromAutoparks: tradeCarsSource === "autoparks" } : null;
+}
+
 function firstFreePlate(plates: WaybillPlateState[]): string {
   return plates.find((row) => !row.busy)?.plate || IRISS_DEALER_PLATES[0];
 }
@@ -129,100 +158,259 @@ function requestHours(request: WaybillRequest): number {
 export function IrissKomandaAivaramChat({
   draftVehicle,
   onDraftConsumed,
+  onOpenArchive,
+  plateInGauges = false,
+  compact = false,
+  requirePlateChoice = false,
+  layout = "stack",
 }: {
   draftVehicle: WaybillVehicleChip | null;
   onDraftConsumed: () => void;
+  /** Telefonā: "Visas pavadzīmes Arhīvā ›". */
+  onOpenArchive?: () => void;
+  /** Telefonā numuru izvēlas apļos virs formas (Nils 27.10). */
+  plateInGauges?: boolean;
+  /** Tikai forma (arī datorā), bez datora čata bloka - Autoparka auto kartītes logam (Nils 27.10). */
+  compact?: boolean;
+  /** Numurs vienmēr jāizvēlas pašam (nav noklusējuma). */
+  requirePlateChoice?: boolean;
+  /** Datora Pavadzīmju lapa: forma horizontālā kartītē (IrissWaybillMobileForm layout="row"). */
+  layout?: "stack" | "row";
 }) {
   const [chat, setChat] = useState<WaybillChatState>(emptyChat);
   const [plate, setPlate] = useState<string>(IRISS_DEALER_PLATES[0]);
-  const [brandModel, setBrandModel] = useState("");
-  const [vin, setVin] = useState("");
-  const [validHours, setValidHours] = useState(String(DEFAULT_WAYBILL_VALID_HOURS));
+  const [auto, setAuto] = useState<WaybillMobileFormState>(() => initialWaybillMobileForm(IRISS_DEALER_PLATES[0]));
+  /** null = "Cits" (brīvs stundu skaits). Izvēles tās pašas kā telefonā: 1, 12, 48 h, Cits. */
+  const [hoursPreset, setHoursPreset] = useState<number | null>(WAYBILL_FORM_DEFAULT_HOURS);
+  const [hoursOther, setHoursOther] = useState("");
   const [comment, setComment] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirm, setConfirm] = useState<{ plate: string; current?: WaybillPlateCurrent } | null>(null);
-  const scroller = useRef<HTMLDivElement>(null);
+  const [tradeCars, setTradeCars] = useState<WaybillTradeCar[] | null>(null);
+  const [tradeCarsFromAutoparks, setTradeCarsFromAutoparks] = useState(false);
+  const [mobileDraft, setMobileDraft] = useState<WaybillMobileDraft | null>(null);
+  const [dismissedIds, setDismissedIds] = useState<string[]>([]);
+  /** Datora "Atcelt pieprasījumu": lietotnes logs (ne window.confirm). */
+  const [askCancel, setAskCancel] = useState<WaybillRequest | null>(null);
+  /** 07.11: viena iesniegšana = viena atslēga; dubults klikšķis vai atkārtots POST nerada otru pieprasījumu. */
+  const submitKey = useRef<string | null>(null);
+  const submitting = useRef(false);
   const selectedInit = useRef(false);
+  const carsLoaded = useRef(false);
+  const platesLoaded = useRef(false);
+  /** Telefona formas dati pēdējam sūtījumam (vajag "Tomēr izveidot" logam). */
+  const mobilePayload = useRef<WaybillMobilePayload | null>(null);
 
   useEffect(() => {
     if (!draftVehicle) return;
     const nextPlate = displayDealerPlate(draftVehicle.plate);
     if (nextPlate) setPlate(nextPlate);
-    setBrandModel(draftVehicle.brandModel);
-    setVin(draftVehicle.vin);
+    const known = tradeCars?.find((c) => Boolean(draftVehicle.vin) && c.vin === draftVehicle.vin);
+    setAuto((prev) => ({
+      ...prev,
+      plate: nextPlate || prev.plate,
+      plateTouched: Boolean(nextPlate) || prev.plateTouched,
+      car: draftVehicle.brandModel
+        ? {
+            id: known?.id ?? "",
+            brandModel: draftVehicle.brandModel,
+            vin: draftVehicle.vin,
+            accepted: known?.accepted === true,
+            owner: known?.owner,
+          }
+        : prev.car,
+      manual: false,
+      autoChoice: draftVehicle.brandModel ? "list" : prev.autoChoice,
+    }));
+    setMobileDraft({ nonce: Date.now(), brandModel: draftVehicle.brandModel, vin: draftVehicle.vin, plate: nextPlate || "" });
     onDraftConsumed();
+    // tradeCars apzināti nav atkarībās: melnrakstu piemēro vienreiz.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftVehicle, onDraftConsumed]);
 
-  const load = async () => {
+  const load = async (withCars = false) => {
     try {
-      const res = await fetch("/api/admin/iriss/waybill-requests", { credentials: "include", cache: "no-store" });
+      const url = withCars ? "/api/admin/iriss/waybill-requests?cars=1" : "/api/admin/iriss/waybill-requests";
+      const res = await fetch(url, { credentials: "include", cache: "no-store" });
+      const raw = res.clone();
       const data = await readChatResponse(res);
+      if (withCars) {
+        const cars = tradeCarsFrom(await raw.json().catch(() => null));
+        if (cars) {
+          carsLoaded.current = true;
+          setTradeCars(cars.cars);
+          setTradeCarsFromAutoparks(cars.fromAutoparks);
+        }
+      }
       if (isChatBusy(data)) return;
       if (isChatError(data) || !isChatOk(data)) {
         const message = chatErrorMessage(data, "Neizdevās ielādēt rindu.");
         setChat((prev) => {
-          if (!prev.requests.length && !prev.timeline.length) {
-            setError((current) => current ?? message);
-          }
+          // j16: ja rinda jau redzama, nekad klusi nerāda veco statusu kā aktuālu.
+          setError((current) => current ?? (prev.requests.length || prev.timeline.length ? WAYBILL_STATUS_STALE_TEXT : message));
           return prev;
         });
         return;
       }
+      setError((current) => (current === WAYBILL_STATUS_STALE_TEXT ? null : current));
+      platesLoaded.current = true;
       setChat(data);
+      if (data.dismissedIds) setDismissedIds(data.dismissedIds);
       if (!selectedInit.current) {
         selectedInit.current = true;
         setPlate((current) => displayDealerPlate(current) || firstFreePlate(data.plates));
       }
     } catch {
-      setError((prev) => prev ?? "Neizdevās ielādēt rindu.");
+      setChat((prev) => {
+        setError((current) => current ?? (prev.requests.length || prev.timeline.length ? WAYBILL_STATUS_STALE_TEXT : "Neizdevās ielādēt rindu."));
+        return prev;
+      });
     }
   };
 
+  // Dzīvais statuss bez atjaunošanas: kamēr kaut kas ir darbā - ik 3 s, citādi ik 10 s (paslēptā cilnē nelādē).
+  const working = chat.requests.some((r) => (r.status === "queued" || r.status === "in_progress") && !isStaleWaybillRequest(r));
   useEffect(() => {
-    void load();
-    const t = window.setInterval(() => void load(), 5000);
-    return () => window.clearInterval(t);
+    void load(true);
   }, []);
-
   useEffect(() => {
-    scroller.current?.scrollTo({ top: scroller.current.scrollHeight });
-  }, [chat.timeline.length]);
+    const t = window.setInterval(() => {
+      if (document.visibilityState === "visible") void load();
+    }, working ? 3000 : 10_000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearInterval(t);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [working]);
 
+  // j25: apļi (IrissWaybillGauges) rāda to pašu numuru stāvokli, ko pogas - uzreiz pēc katras ielādes.
+  // Noklusējuma "visi brīvi" pirms pirmās ielādes netiek sūtīts.
+  useEffect(() => {
+    if (platesLoaded.current) publishWaybillPlates(chat.plates);
+  }, [chat.plates]);
+
+  // Jaunākais augšā: saraksts vienmēr sākas augšā (agrāk ritināja uz apakšu, kur bija vecākais).
+  const timeline = useMemo(() => waybillChatTimelineNewestFirst(chat.timeline), [chat.timeline]);
+
+  // Novecojušie (24 h bez virzības) nav "darbā" - tie ir Arhīvā.
   const inFlight = useMemo(
-    () => chat.requests.filter((r) => r.status === "queued" || r.status === "in_progress").length,
+    () => chat.requests.filter((r) => (r.status === "queued" || r.status === "in_progress") && !isStaleWaybillRequest(r)).length,
     [chat.requests],
   );
 
-  const hoursNum = Number.parseInt(validHours, 10);
-  const hoursSafe = Number.isInteger(hoursNum) && hoursNum >= 1 ? Math.min(WAYBILL_VALID_MAX_HOURS, hoursNum) : DEFAULT_WAYBILL_VALID_HOURS;
-  const untilHint = formatRigaDateTimeComma(new Date(Date.now() + hoursSafe * 3_600_000).toISOString());
+  const hoursChosen = hoursPreset ?? parseWaybillCustomHours(hoursOther);
+  const untilHint = hoursChosen ? formatRigaDateTimeComma(new Date(Date.now() + hoursChosen * 3_600_000).toISOString()) : "";
+  const { brandModel } = waybillAutoEntryValues(auto);
   const selectedOcc = chat.plates.find((row) => row.plate === plate) ?? { plate, busy: false };
 
-  async function submit(confirmBusy = false) {
+  async function submit(confirmBusy = false): Promise<boolean> {
+    // Dubults klikšķis tajā pašā mirklī (pirms busy pārzīmē pogu) - otrs nesūta neko.
+    if (submitting.current) return false;
+    submitting.current = true;
+    submitKey.current ??= newWaybillSubmitKey();
     setError(null);
     setBusy(true);
+    const mobile = mobilePayload.current;
+    // Pārtraukt drīkst tikai to pavadzīmi, ko lietotājs redzēja logā (ja tā tikmēr mainījusies - serveris jautās vēlreiz).
+    const confirmWaybillNo = confirmBusy ? (confirm?.current?.number ?? "") : "";
+    // Datorā tas pats pieprasījums kā telefonā: tirdzniecībā pieņemtam auto - akts + pārstāvis, bez maršruta.
+    const desktop = mobile ? null : buildWaybillDesktopPayload(auto, { plate, hoursPreset, hoursOther, comment });
+    if (desktop && !desktop.ok) {
+      setError(desktop.error);
+      setBusy(false);
+      submitting.current = false;
+      return false;
+    }
     try {
       const res = await fetch("/api/admin/iriss/waybill-requests", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plate,
-          brandModel,
-          vin,
-          validHours: hoursSafe,
-          comment_untrusted: comment,
-          confirmBusy,
-        }),
+        body: JSON.stringify(
+          {
+            ...(mobile ?? (desktop?.ok ? desktop.payload : {})),
+            confirmBusy,
+            confirmWaybillNo,
+            clientRequestId: submitKey.current,
+          },
+        ),
       });
       const data = await readChatResponse(res);
       if (isChatBusy(data)) {
-        setConfirm({ plate: data.plate || plate, current: data.current });
-        return;
+        setConfirm({ plate: data.plate || mobile?.plate || plate, current: data.current });
+        return false;
       }
       if (isChatError(data) || !isChatOk(data)) {
         setError(chatErrorMessage(data, "Neizdevās nosūtīt."));
+        return false;
+      }
+      setChat((prev) => ({
+        ...withReplies(data),
+        vehicles: data.vehicles.length ? data.vehicles : prev.vehicles,
+        plates: data.plates.length ? data.plates : prev.plates,
+      }));
+      if (!mobile) setComment("");
+      setConfirm(null);
+      mobilePayload.current = null;
+      // Izdevās: nākamā iesniegšana ir jauns pieprasījums (tīkla kļūdā atslēga paliek - atkārtojums nebūs dublikāts).
+      submitKey.current = null;
+      return true;
+    } catch {
+      setError("Neizdevās nosūtīt.");
+      return false;
+    } finally {
+      setBusy(false);
+      submitting.current = false;
+    }
+  }
+
+  /** Telefona forma: aizņemtam numuram vispirms tas pats apstiprinājuma logs. */
+  async function submitMobile(payload: WaybillMobilePayload): Promise<boolean> {
+    mobilePayload.current = payload;
+    const occ = chat.plates.find((row) => row.plate === displayDealerPlate(payload.plate));
+    if (occ?.busy) {
+      setConfirm({ plate: occ.plate, current: occ.current });
+      return false;
+    }
+    return submit(false);
+  }
+
+  function onSubmitForm() {
+    mobilePayload.current = null;
+    if (!brandModel) {
+      setError("Izvēlies auto no saraksta vai ieraksti marku, modeli.");
+      return;
+    }
+    if (!hoursChosen) {
+      setError(`Ieraksti derīgumu: no 1 līdz ${WAYBILL_VALID_MAX_HOURS} h.`);
+      return;
+    }
+    // j16: pārtraukšanu apstiprina TIKAI poga "Jā" logā (Enter formā, kamēr logs atvērts, neko nesūta).
+    if (confirm) return;
+    if (selectedOcc.busy) {
+      setConfirm({ plate: selectedOcc.plate, current: selectedOcc.current });
+      return;
+    }
+    void submit(false);
+  }
+
+  async function cancel(id: string) {
+    try {
+      const res = await fetch(`/api/admin/iriss/waybill-requests/${encodeURIComponent(id)}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "cancel" }),
+      });
+      const data = await readChatResponse(res);
+      if (isChatBusy(data) || isChatError(data) || !isChatOk(data)) {
+        setError(chatErrorMessage(data, "Neizdevās atcelt."));
+        void load();
         return;
       }
       setChat((prev) => ({
@@ -230,21 +418,29 @@ export function IrissKomandaAivaramChat({
         vehicles: data.vehicles.length ? data.vehicles : prev.vehicles,
         plates: data.plates.length ? data.plates : prev.plates,
       }));
-      setComment("");
-      setConfirm(null);
     } catch {
-      setError("Neizdevās nosūtīt.");
-    } finally {
-      setBusy(false);
+      setError("Neizdevās atcelt.");
     }
   }
 
-  function onSubmitForm() {
-    if (selectedOcc.busy && !confirm) {
-      setConfirm({ plate: selectedOcc.plate, current: selectedOcc.current });
-      return;
+  /** "Dzēst" (pēc "Jā"): serveris tikai paslēpj vecu ierakstu šim lietotājam; pavadzīmi neaiztiek. */
+  async function dismiss(id: string) {
+    try {
+      const res = await fetch(`/api/admin/iriss/waybill-requests/${encodeURIComponent(id)}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "dismiss" }),
+      });
+      const json = (await res.json().catch(() => null)) as { dismissedIds?: unknown; error?: string } | null;
+      if (!res.ok || !Array.isArray(json?.dismissedIds)) {
+        setError(json?.error || "Neizdevās noņemt ierakstu.");
+        return;
+      }
+      setDismissedIds(json.dismissedIds.filter((v): v is string => typeof v === "string"));
+    } catch {
+      setError("Neizdevās noņemt ierakstu.");
     }
-    void submit(Boolean(confirm));
   }
 
   async function retry(id: string) {
@@ -270,33 +466,81 @@ export function IrissKomandaAivaramChat({
     }
   }
 
+  /** Admins: "Saglabāt Dropbox vēlreiz" pēc kļūdas (serveris kolēģim to aizliedz). */
+  async function retryDropbox(id: string) {
+    try {
+      const res = await fetch(`/api/admin/iriss/waybill-requests/${encodeURIComponent(id)}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "dropbox" }),
+      });
+      const json = (await res.json().catch(() => null)) as (Partial<WaybillChatState> & { error?: string }) | null;
+      if (json && Array.isArray(json.requests)) {
+        setChat((prev) => ({ ...withReplies(json), vehicles: prev.vehicles, plates: prev.plates }));
+      }
+      if (!res.ok) setError(json?.error ? `Dropbox: ${json.error}` : "Neizdevās saglabāt Dropbox.");
+    } catch {
+      setError("Neizdevās saglabāt Dropbox.");
+    }
+  }
+
   return (
-    <section className="flex min-h-[28rem] flex-col overflow-hidden rounded-[22px] border border-[#E5E7EB] bg-white shadow-sm">
+    <>
+    <div className={compact ? "" : "md:hidden"}>
+      <IrissWaybillMobileForm
+        plates={chat.plates}
+        tradeCars={tradeCars}
+        tradeCarsFromAutoparks={tradeCarsFromAutoparks}
+        requests={chat.requests}
+        replies={chat.replies}
+        busy={busy}
+        error={confirm ? null : error}
+        draft={mobileDraft}
+        onSubmit={submitMobile}
+        onRetry={(id) => void retry(id)}
+        onCancel={(id) => void cancel(id)}
+        dismissedIds={dismissedIds}
+        onDismiss={(id) => void dismiss(id)}
+        onPickerOpen={() => {
+          if (!carsLoaded.current) void load(true);
+        }}
+        onOpenArchive={onOpenArchive}
+        plateInGauges={plateInGauges}
+        layout={layout}
+        requirePlateChoice={requirePlateChoice}
+      />
+    </div>
+    {compact ? null : (
+    <section className="flex min-h-[28rem] flex-col overflow-hidden rounded-[22px] border border-[var(--iriss-line)] bg-white shadow-sm max-md:hidden">
       <header className="flex items-start justify-between gap-3 px-4 py-3">
         <div className="flex items-center gap-2">
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-[#111827] text-[12px] font-semibold text-white">
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-[var(--iriss-graphite)] text-[12px] font-semibold text-white">
             A
           </span>
           <div>
             <p className="text-[15px] font-semibold">CSDD pavadzīme</p>
-            <p className="text-[12px] text-[#067647]">Aivars izveido tikai pavadzīmes</p>
+            <p className="text-[12px] text-[var(--iriss-ok)]">Aivars izveido tikai pavadzīmes</p>
           </div>
         </div>
-        <span className="text-[12px] text-[#9aa3b2]">{inFlight} darbā</span>
+        <span className="text-[12px] text-[var(--iriss-ink-3)]">{inFlight} darbā</span>
       </header>
 
-      <div ref={scroller} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-3">
-        {chat.timeline.length === 0 ? (
-          <p className="py-8 text-center text-[13px] text-[#9aa3b2]">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 pb-3">
+        {timeline.length === 0 ? (
+          <p className="py-8 text-center text-[13px] text-[var(--iriss-ink-3)]">
             Izvēlies numuru, marku un stundas. Aivars saņem tikai šīs pavadzīmes datus.
           </p>
         ) : (
-          chat.timeline.map((item) =>
+          timeline.map((item) =>
             item.type === "request" ? (
               <RequestBubble
                 key={`r-${item.request.id}`}
                 request={item.request}
                 reply={chat.replies.find((row) => row.requestId === item.request.id) ?? waybillAivarsReply(item.request, chat.events)}
+                onCancel={() => setAskCancel(item.request)}
+                onRetry={() => void retry(item.request.id)}
+                onRetryDropbox={() => void retryDropbox(item.request.id)}
               />
             ) : (
               <EventBubble
@@ -310,217 +554,208 @@ export function IrissKomandaAivaramChat({
         )}
       </div>
 
-      <form
-        className="border-t border-[#F3F4F6] px-3 py-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          onSubmitForm();
+      <IrissWaybillDesktopCreateForm
+        plates={chat.plates}
+        plate={plate}
+        onPlate={setPlate}
+        auto={auto}
+        onAuto={setAuto}
+        tradeCars={tradeCars}
+        tradeCarsFromAutoparks={tradeCarsFromAutoparks}
+        onNeedCars={() => {
+          if (!carsLoaded.current) void load(true);
         }}
-      >
-        <p className="mb-1 text-[11px] font-medium text-[#6b7280]">Numurs</p>
-        {/* Telefonā - kompaktās pilles (pirms #382); zīmētās numurzīmes tikai no md. */}
-        <div className="mb-2 flex gap-1.5 md:hidden">
-          {chat.plates.map((row) => {
-            const on = plate === row.plate;
-            return (
-              <button
-                key={row.plate}
-                type="button"
-                aria-pressed={on}
-                onClick={() => setPlate(row.plate)}
-                className={`min-h-11 min-w-0 flex-1 rounded-full px-2 py-1.5 text-[12px] font-semibold ${
-                  on ? "bg-[#111827] text-white" : "bg-[#F3F4F6] text-[#111827]"
-                }`}
-              >
-                {row.plate}
-                <small
-                  className={`mt-0.5 block text-[10px] font-medium ${
-                    on ? "text-white/70" : row.busy ? "text-[#b45309]" : "text-[#067647]"
-                  }`}
-                >
-                  {row.busy ? "aizņemts" : "brīvs"}
-                </small>
-              </button>
-            );
-          })}
-        </div>
-        <div className="mb-2 hidden md:flex md:flex-row md:items-start md:gap-3.5">
-          {chat.plates.map((row) => {
-            const meta = dealerPlateMeta(row.plate);
-            return (
-              <LvDealerPlate
-                key={row.plate}
-                number={row.plate}
-                selected={plate === row.plate}
-                busy={row.busy}
-                owner={meta.owner}
-                bottomText={meta.bottomText}
-                busyUntil={row.current?.validUntil ? formatWaybillExpiryDdMmHm(row.current.validUntil) : ""}
-                onClick={() => setPlate(row.plate)}
-              />
-            );
-          })}
-        </div>
-        <label className="mb-2 block text-[11px] font-medium text-[#6b7280]">
-          Marka, modelis
-          <input
-            value={brandModel}
-            onChange={(e) => setBrandModel(e.target.value)}
-            required
-            maxLength={120}
-            className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
-          />
-        </label>
-        <label className="mb-2 block text-[11px] font-medium text-[#6b7280]">
-          VIN <span className="font-normal">(nav obligāts)</span>
-          <input
-            value={vin}
-            onChange={(e) => setVin(e.target.value)}
-            autoComplete="off"
-            spellCheck={false}
-            maxLength={17}
-            placeholder="17 zīmes"
-            className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 font-mono text-[14px]"
-          />
-          <span className="mt-1 block text-[11px] font-normal leading-snug text-[#9aa3b2]">
-            Ja ievadīts VIN, Aivars meklē auto starp tirdzniecībā pieņemtajiem. Ja neatrod, izraksta pavadzīmi ar
-            sākumpunktu; beigu punkts pēc noklusējuma ir Tukuma CSDD.
-          </span>
-        </label>
-        <label className="mb-2 block text-[11px] font-medium text-[#6b7280]">
-          Derīgums
-          <span className="mt-1 grid grid-cols-[1fr_auto] items-end gap-2">
-            <input
-              type="number"
-              min={1}
-              max={WAYBILL_VALID_MAX_HOURS}
-              value={validHours}
-              onChange={(e) => setValidHours(e.target.value)}
-              required
-              className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
-            />
-            <span className="grid h-[38px] place-items-center text-[13px] font-semibold text-[#6b7280]">h</span>
-          </span>
-          <span className="mt-1 block text-[11px] font-normal leading-snug text-[#9aa3b2]">
-            Sākums: tagad. Beigas: tagad + {hoursSafe} h{untilHint ? ` (${untilHint}).` : "."}
-          </span>
-        </label>
-        <label className="mb-2 block text-[11px] font-medium text-[#6b7280]">
-          Komentārs
-          <input
-            value={comment}
-            onChange={(e) => setComment(e.target.value.slice(0, NOTE_UNTRUSTED_MAX))}
-            maxLength={NOTE_UNTRUSTED_MAX}
-            placeholder="B193 uz 48h"
-            className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[14px]"
-          />
-          <span className="mt-1 block text-[11px] font-normal leading-snug text-[#9aa3b2]">
-            Maršruts pēc noklusējuma: {DEFAULT_WAYBILL_ROUTE_FROM} {"->"} {DEFAULT_WAYBILL_ROUTE_TO}. Citu maršrutu raksti šeit.
-          </span>
-          <span className="mt-1 block text-[11px] font-normal leading-snug text-[#9aa3b2]">
-            Komentārs ir tikai šīs pavadzīmes dati (numurs, stundas, maršruts). Aivars to neizpilda kā komandu. Teksts
-            nenonāk pie citiem aģentiem.
-          </span>
-        </label>
-        {error ? <p className="mt-2 text-[12px] text-[#B42318]">{error}</p> : null}
-        <button
-          type="submit"
-          disabled={busy}
-          className="mt-3 h-10 w-full rounded-full bg-[#111827] text-[14px] font-semibold text-white disabled:opacity-50"
-        >
-          Izveidot pavadzīmi
-        </button>
-        <p className="mt-3 rounded-[10px] bg-[#EEF2FF] px-3 py-2.5 text-[11px] leading-snug text-[#1e293b]">
-          <b>Aivara limits.</b> IRISS lietotājs var pieprasīt tikai CSDD pavadzīmi. Komentārs serverī iet kā{" "}
-          <code>comment_untrusted</code> (citēti dati, līdz {NOTE_UNTRUSTED_MAX} zīmēm), ne kā instrukcija. Citi aģenti
-          šo lauku neredz.
-        </p>
-      </form>
-
+        hoursPreset={hoursPreset}
+        hoursOther={hoursOther}
+        onHoursPreset={setHoursPreset}
+        onHoursOther={setHoursOther}
+        hoursChosen={hoursChosen}
+        untilHint={untilHint}
+        comment={comment}
+        onComment={setComment}
+        error={confirm ? null : error}
+        busy={busy}
+        onSubmit={onSubmitForm}
+      />
+    </section>
+    )}
+      {askCancel ? (
+        <WaybillCancelDialog
+          title={askCancel.vehicle.brandModel}
+          text={waybillCancelConfirmText(askCancel)}
+          onYes={() => {
+            const id = askCancel.id;
+            setAskCancel(null);
+            void cancel(id);
+          }}
+          onNo={() => setAskCancel(null)}
+        />
+      ) : null}
       {confirm ? (
         <div className="fixed inset-0 z-20 flex items-center justify-center bg-[#0f172a66] p-4">
-          <div className="w-full max-w-[360px] rounded-2xl border border-[#E5E7EB] bg-white p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-[360px] rounded-2xl border border-[var(--iriss-line)] bg-white p-4" role="dialog" aria-modal="true">
             <h3 className="m-0 text-[15px] font-semibold">Numurs ir aizņemts</h3>
             <p className="mt-2.5 rounded-[10px] bg-[#FEF3F2] px-3 py-2.5 text-[13px] leading-snug text-[#7a271a]">
-              {confirm.plate} jau ir uz aktīvas pavadzīmes
+              Numuram {confirm.plate} jau ir aktīva pavadzīme
               {confirm.current?.number ? ` ${confirm.current.number}` : ""}
               {confirm.current?.brandModel || confirm.current?.validUntil
                 ? ` (${[confirm.current.brandModel, confirm.current.validUntil ? `līdz ${formatRigaDateTimeComma(confirm.current.validUntil)}` : ""]
                     .filter(Boolean)
                     .join(", ")})`
                 : ""}
-              . Jauna pavadzīme pārtrauks esošo.
+              .
             </p>
-            <p className="mt-2 text-[13px] leading-snug text-[#374151]">
-              Apstiprini tikai tad, ja tiešām vajag jaunu pavadzīmi šim numuram.
+            <p className="mt-2 text-[13px] font-semibold leading-snug text-[var(--iriss-ink)]">
+              Vai tiešām pārtraukt iepriekšējo un izveidot jaunu?
             </p>
             <div className="mt-3.5 flex flex-col gap-2">
               <button
                 type="button"
-                className="h-10 rounded-[10px] bg-[#111827] text-[12.5px] font-semibold text-white"
+                className="h-10 rounded-[10px] bg-[var(--iriss-graphite)] text-[12.5px] font-semibold text-white disabled:opacity-60"
+                // Autoparkā `:where(.ap2) button { color: inherit }` pārraksta text-white - «Jā» nebija redzams (Nils 28.10).
+                style={{ color: "white" }}
                 onClick={() => void submit(true)}
                 disabled={busy}
               >
-                Tomēr izveidot
+                Jā
               </button>
               <button
                 type="button"
-                className="h-10 rounded-[10px] border border-[#E5E7EB] bg-white text-[12.5px] font-semibold text-[#111827]"
-                onClick={() => setConfirm(null)}
+                className="h-10 rounded-[10px] border border-[var(--iriss-line)] bg-white text-[12.5px] font-semibold text-[var(--iriss-ink)]"
+                onClick={() => {
+                  setConfirm(null);
+                  mobilePayload.current = null;
+                }}
               >
-                Atcelt
+                Nē
               </button>
             </div>
           </div>
         </div>
       ) : null}
-    </section>
+    </>
   );
 }
 
-function statusTone(status: WaybillRequestStatus): string {
-  if (status === "issued") return "bg-[#ECFDF3] text-[#067647]";
-  if (status === "error") return "bg-[#FEF3F2] text-[#B42318]";
-  if (status === "in_progress") return "bg-[#EEF2FF] text-[#3d5bd9]";
-  return "bg-[#F3F4F6] text-[#4b5563]";
+/** Iesniegšanas atslēga (nav slepena; tikai dublikātu novēršanai). */
+function newWaybillSubmitKey(): string {
+  const rnd =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID().replace(/-/g, "")
+      : `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+  return `wbk_${rnd}`.slice(0, 40);
 }
 
-function RequestBubble({ request, reply }: { request: WaybillRequest; reply: WaybillAivarsReply }) {
+function statusTone(status: WaybillRequestStatus): string {
+  if (status === "issued") return "bg-[#ECFDF3] text-[var(--iriss-ok)]";
+  if (status === "error") return "bg-[#FEF3F2] text-[#B42318]";
+  if (status === "in_progress") return "bg-[#EEF2FF] text-[var(--iriss-info)]";
+  if (status === "cancelled") return "bg-[var(--iriss-surface-2)] text-[var(--iriss-ink-2)]";
+  return "bg-[var(--iriss-surface-2)] text-[var(--iriss-ink-2)]";
+}
+
+function RequestBubble({
+  request,
+  reply,
+  onCancel,
+  onRetry,
+  onRetryDropbox,
+}: {
+  request: WaybillRequest;
+  reply: WaybillAivarsReply;
+  /** Atver atcelšanas logu (pats neko neatceļ). */
+  onCancel: () => void;
+  onRetry: () => void;
+  onRetryDropbox: () => void;
+}) {
   const hours = requestHours(request);
   const shownPlate = displayDealerPlate(request.vehicle.plate) || request.vehicle.plate;
   return (
     <div className="ml-8 flex flex-col items-end gap-1">
-      <div className="max-w-[85%] rounded-2xl rounded-br-md bg-[#111827] px-3 py-2 text-[12px] text-white">
-        <p className="text-[10px] uppercase tracking-[0.12em] text-white/70">Pavadzīme</p>
+      <div className="max-w-[85%] rounded-2xl rounded-br-md bg-[var(--iriss-graphite)] px-3 py-2 text-[12px] text-white">
+        <p className="text-[10px] uppercase tracking-[0.12em] text-white/70">
+          {request.kind === "stop" ? "Pārtraukt" : "Pavadzīme"}
+        </p>
         <p className="font-semibold">{request.vehicle.brandModel || "Auto"}</p>
+        {request.kind === "stop" && request.stopWaybillNo ? (
+          <p className="font-mono text-[11px] text-white/80">Nr. {request.stopWaybillNo}</p>
+        ) : null}
         {request.vehicle.vin ? <p className="font-mono text-[11px] text-white/80">{request.vehicle.vin}</p> : null}
         <p>
           {shownPlate}
           {hours ? ` · ${hours} h` : ""}
         </p>
-        <p>
-          {request.routeFrom || DEFAULT_WAYBILL_ROUTE_FROM} {"->"} {request.routeTo || DEFAULT_WAYBILL_ROUTE_TO}
-        </p>
+        {request.tradeAct ? (
+          <p>No tirdzniecības akta · {request.representative}</p>
+        ) : (
+          <p>
+            {request.routeFrom || DEFAULT_WAYBILL_ROUTE_FROM} {"->"} {request.routeTo || DEFAULT_WAYBILL_ROUTE_TO}
+          </p>
+        )}
         {request.noteUntrusted ? <p className="mt-1 text-white/80">Komentārs: {request.noteUntrusted}</p> : null}
       </div>
-      <div className="max-w-[85%] rounded-2xl border border-[#E5E7EB] bg-white px-3 py-2 text-left">
+      <div className="max-w-[85%] rounded-2xl border border-[var(--iriss-line)] bg-white px-3 py-2 text-left">
         <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusTone(reply.status)}`}>
           {reply.statusLabel}
         </span>
-        {reply.text ? <p className="mt-1 text-[13px] text-[#111827]">{reply.text}</p> : null}
-        {reply.waybillNo ? <p className="mt-1 font-mono text-[12px] text-[#067647]">{reply.waybillNo}</p> : null}
+        {reply.text ? <p className="mt-1 text-[13px] text-[var(--iriss-ink)]">{reply.text}</p> : null}
+        {reply.waybillNo ? <p className="mt-1 font-mono text-[12px] text-[var(--iriss-ok)]">{reply.waybillNo}</p> : null}
         {reply.pdfUrl ? (
           <a
             href={reply.pdfUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 inline-block text-[12px] font-medium text-[#3d5bd9]"
+            className="mt-1 inline-block text-[12px] font-medium text-[var(--iriss-info)]"
           >
             Atvērt pavadzīmi
           </a>
         ) : null}
+        {reply.status === "issued" && reply.canSavePdf ? (
+          <IrissWaybillSavePdfButton
+            href={waybillPdfDownloadHref(request.id)}
+            fileName={
+              waybillDropboxFileName({
+                waybillNo: reply.waybillNo,
+                brandModel: request.vehicle.brandModel,
+                plate: request.vehicle.plate,
+              }) || `${reply.waybillNo || "pavadzime"}.pdf`
+            }
+            className="mt-2 flex min-h-9 w-full items-center justify-center rounded-[10px] bg-[var(--iriss-surface-2)] px-3 text-[12.5px] font-semibold text-[var(--iriss-ink)] disabled:opacity-60"
+          />
+        ) : null}
+        {reply.status === "issued" && reply.dropboxPath ? (
+          <p className="mt-1 text-[11px] text-[var(--iriss-ok)]">Saglabāta Dropbox: {reply.dropboxPath}</p>
+        ) : null}
+        {reply.status === "issued" && !reply.dropboxPath && reply.dropboxError ? (
+          <div className="mt-1 text-[11px] text-[#B42318]">
+            <p>Dropbox nav saglabāts: {reply.dropboxError}</p>
+            <button type="button" onClick={onRetryDropbox} className="mt-0.5 font-medium text-[var(--iriss-info)]">
+              Saglabāt Dropbox vēlreiz
+            </button>
+          </div>
+        ) : null}
+        {waybillRequestCancellable(request) && !isStaleWaybillRequest(request) ? (
+          <div className="mt-2 flex gap-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="min-h-9 rounded-[10px] border border-[var(--iriss-line)] bg-white px-3 text-[12.5px] font-semibold text-[var(--iriss-ink)]"
+            >
+              Atcelt pieprasījumu
+            </button>
+            {request.status === "in_progress" && waybillRequestRetryable(request) ? (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="min-h-9 rounded-[10px] border border-[var(--iriss-line)] bg-white px-3 text-[12.5px] font-semibold text-[var(--iriss-ink)]"
+              >
+                Atkārtot
+              </button>
+            ) : null}
+          </div>
+        ) : null}
       </div>
-      <span className="text-[11px] text-[#9aa3b2]">{formatHm(request.createdAt)}</span>
+      <span className="text-[11px] text-[var(--iriss-ink-3)]">{formatHm(request.createdAt)}</span>
     </div>
   );
 }
@@ -537,57 +772,60 @@ function EventBubble({
   if (event.kind === "issued" && (event.waybillNo || event.pdfUrl)) {
     return (
       <div className="mr-8 space-y-1">
-        <div className="inline-flex items-center gap-2 rounded-2xl bg-[#F3F4F6] px-3 py-1.5 text-[12px]">
-          <span className="rounded-full bg-[#ECFDF3] px-2 py-0.5 font-medium text-[#067647]">
+        <div className="inline-flex items-center gap-2 rounded-2xl bg-[var(--iriss-surface-2)] px-3 py-1.5 text-[12px]">
+          <span className="rounded-full bg-[#ECFDF3] px-2 py-0.5 font-medium text-[var(--iriss-ok)]">
             Izdota {event.waybillNo || request.waybillNo}
           </span>
         </div>
         {event.pdfUrl ? (
-          <div className="flex max-w-[85%] items-center justify-between gap-2 rounded-2xl border border-[#E5E7EB] bg-white px-3 py-2">
+          <div className="flex max-w-[85%] items-center justify-between gap-2 rounded-2xl border border-[var(--iriss-line)] bg-white px-3 py-2">
             <div>
               <p className="text-[13px] font-medium">{event.waybillNo || "Pavadzīme"}.pdf</p>
-              <p className="text-[11px] text-[#9aa3b2]">Atvērt izdoto pavadzīmi</p>
+              <p className="text-[11px] text-[var(--iriss-ink-3)]">Atvērt izdoto pavadzīmi</p>
             </div>
             <a
               href={event.pdfUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="rounded-full bg-[#F3F4F6] px-3 py-1.5 text-[12px] font-medium"
+              className="rounded-full bg-[var(--iriss-surface-2)] px-3 py-1.5 text-[12px] font-medium"
             >
               Atvērt
             </a>
           </div>
         ) : null}
-        <p className="text-[11px] text-[#9aa3b2]">{formatHm(event.createdAt)}</p>
+        <p className="text-[11px] text-[var(--iriss-ink-3)]">{formatHm(event.createdAt)}</p>
       </div>
     );
   }
   if (event.kind === "error") {
     return (
-      <div className="mr-8 max-w-[85%] rounded-2xl border border-[#E5E7EB] bg-white px-3 py-2">
+      <div className="mr-8 max-w-[85%] rounded-2xl border border-[var(--iriss-line)] bg-white px-3 py-2">
         <span className="rounded-full bg-[#FEF3F2] px-2 py-0.5 text-[11px] font-medium text-[#B42318]">Kļūda</span>
         <p className="mt-1 text-[13px]">{event.text || request.errorReason || "Neizdevās izveidot."}</p>
         <div className="mt-2 flex gap-2">
-          <button type="button" onClick={onRetry} className="rounded-full bg-[#111827] px-3 py-1.5 text-[12px] text-white">
+          <button type="button" onClick={onRetry} className="rounded-full bg-[var(--iriss-graphite)] px-3 py-1.5 text-[12px] text-white" style={{ color: "white" }}>
             Atkārtot
           </button>
         </div>
       </div>
     );
   }
+  // «Pārtraukt» darbs nav jauna pavadzīme - savi vārdi (agrāk rādīja «Izveido»).
   const label =
     event.kind === "in_progress"
-      ? "Izveido"
+      ? request.kind === "stop"
+        ? "Pārtrauc"
+        : "Izveido"
       : event.kind === "received"
         ? "Saņemts"
         : WAYBILL_REQUEST_STATUS_LABEL[request.status];
   return (
     <div className="mr-8">
-      <div className="inline-flex items-center gap-2 rounded-2xl bg-[#F3F4F6] px-3 py-1.5 text-[12px]">
+      <div className="inline-flex items-center gap-2 rounded-2xl bg-[var(--iriss-surface-2)] px-3 py-1.5 text-[12px]">
         <span className="rounded-full bg-white px-2 py-0.5 font-medium">{label}</span>
-        <span className="text-[#6b7280]">{event.text}</span>
+        <span className="text-[var(--iriss-ink-2)]">{waybillDisplayText(event.text)}</span>
       </div>
-      <p className="mt-1 text-[11px] text-[#9aa3b2]">{formatHm(event.createdAt)}</p>
+      <p className="mt-1 text-[11px] text-[var(--iriss-ink-3)]">{formatHm(event.createdAt)}</p>
     </div>
   );
 }

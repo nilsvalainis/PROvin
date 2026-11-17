@@ -57,6 +57,64 @@ describe("NHTSA atsaukumi un RDW", () => {
     expect(parsed.flags?.recallCount).toBe(1);
     expect(parsed.flags?.registrationCountry).toBe("NL");
   });
+
+  /** Reāla m9d7-ebf2 rindas forma (lauki kā RDW Open Data atbildē, vērtības izdomātas). */
+  const rdwVehicleRow = {
+    kenteken: "G123BB",
+    voertuigsoort: "Personenauto",
+    merk: "VOLKSWAGEN",
+    handelsbenaming: "GOLF",
+    vervaldatum_apk: "20270315",
+    datum_tenaamstelling: "20210610",
+    datum_eerste_toelating: "20120101",
+    datum_eerste_tenaamstelling_in_nederland: "20120101",
+    tellerstandoordeel: "Logisch",
+    code_toelichting_tellerstandoordeel: "00",
+    tenaamstellen_mogelijk: "Ja",
+    vervaldatum_apk_dt: "2027-03-15T00:00:00.000",
+    datum_eerste_toelating_dt: "2012-01-01T00:00:00.000",
+  };
+
+  it("nobraukuma rinda datēta ar pēdējās reģistrācijas gadu, nevis APK beigām", () => {
+    const parsed = parseRdwOpenData({
+      vehicle: [{ ...rdwVehicleRow, tellerstand: "145000", jaar_laatste_registratie_tellerstand: "2024" }],
+      keuring: [],
+      recalls: [],
+    });
+    expect(parsed.mileage).toEqual([{ date: "2024-01-01", odometer: expect.stringMatching(/^145.000 km$/) }]);
+    expect(parsed.mileage?.some((m) => m.date.startsWith("2027"))).toBe(false);
+  });
+
+  it("bez jaar_laatste_registratie_tellerstand nav nobraukuma rindas, bet km paliek kopsavilkumā", () => {
+    const parsed = parseRdwOpenData({
+      vehicle: [{ ...rdwVehicleRow, tellerstand: "145000" }],
+      keuring: [],
+      recalls: [],
+    });
+    expect(parsed.mileage).toEqual([]);
+    expect(parsed.summary).toMatch(/145.000 km/);
+    expect(parsed.summary).toContain("APK līdz 15.03.2027");
+  });
+
+  it("apskates rindas rāda DD.MM.YYYY un nobraukumu datē ar faktisko apskates datumu", () => {
+    const parsed = parseRdwOpenData({
+      vehicle: [rdwVehicleRow],
+      keuring: [
+        {
+          kenteken: "G123BB",
+          meld_datum_door_keuringsinstantie: "20240312",
+          vervaldatum_keuring: "20250312",
+          tellerstand: "132000",
+        },
+        { kenteken: "G123BB", vervaldatum_keuring: "20230301" },
+      ],
+      recalls: [],
+    });
+    expect(parsed.detail).toContain("12.03.2024");
+    expect(parsed.detail).toContain("01.03.2023");
+    expect(parsed.detail).not.toMatch(/\b20240312\b/);
+    expect(parsed.mileage).toEqual([{ date: "2024-03-12", odometer: expect.stringMatching(/^132.000 km$/) }]);
+  });
 });
 
 describe("Traficom", () => {

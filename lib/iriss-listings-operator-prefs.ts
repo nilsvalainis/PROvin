@@ -5,7 +5,7 @@
  * Pilni auto dati, raw, foto un vēsture paliek servera Blob (vai IndexedDB, ja kādreiz vajadzēs kešu).
  */
 
-import { DEFAULT_LISTING_COSTS, type ListingCostParts, type ListingTaxKind } from "@/lib/iriss-listings-cost";
+import { DEFAULT_LISTING_COSTS, LEGACY_DEFAULT_UNPLANNED, type ListingCostParts, type ListingTaxKind } from "@/lib/iriss-listings-cost";
 import { DEFAULT_OVER_BUDGET_THRESHOLD_EUR, parseOverBudgetThreshold } from "@/lib/iriss-listings-over-budget";
 import {
   LISTING_SORT_STORAGE_KEY,
@@ -272,7 +272,8 @@ export function parseIrissListPrefs(raw: string | null): IrissListPrefs {
         fee: n(costs.fee, base.costs.fee),
         transport: n(costs.transport, base.costs.transport),
         commission: n(costs.commission, base.costs.commission),
-        unplanned: n(costs.unplanned, base.costs.unplanned),
+        // Vecais noklusējums 1000 -> jaunais 500 (Nils 30.10); citas vērtības paliek.
+        unplanned: ((u) => (u === LEGACY_DEFAULT_UNPLANNED ? DEFAULT_LISTING_COSTS.unplanned : u))(n(costs.unplanned, base.costs.unplanned)),
       },
       fav: idList(o.fav),
       hidden: idList(o.hidden),

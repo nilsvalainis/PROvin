@@ -50,8 +50,22 @@ export function renderTemplateString(template: string, vars: Record<string, stri
   return out.replace(/\0BLOCK_START\0|\0BLOCK_END\0/g, "").trimEnd();
 }
 
+/**
+ * Stale Blob overrides still use `Tema ({{vin}})`. Rewrite to a conditional
+ * block so a missing VIN does not leave empty `()`.
+ */
+export function normalizeVinParenthesesInSubject(subject: string): string {
+  return subject.replace(/\s*\(\s*\{\{\s*vin\s*\}\}\s*\)/gi, "{{#vin}} ({{vin}}){{/vin}}");
+}
+
+/** Last-resort cleanup if any leftover empty parentheses survive interpolation. */
+export function stripEmptySubjectParentheses(subject: string): string {
+  return subject.replace(/\s*\(\s*\)/g, "").replace(/[ \t]{2,}/g, " ").trim();
+}
+
 export function renderTemplateSubject(subject: string, vars: Record<string, string>): string {
-  return renderTemplateString(subject, vars).trim();
+  const normalized = normalizeVinParenthesesInSubject(subject);
+  return stripEmptySubjectParentheses(renderTemplateString(normalized, vars));
 }
 
 export type TemplateValidationResult =

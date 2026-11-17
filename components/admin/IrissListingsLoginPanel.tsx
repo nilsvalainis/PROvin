@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { IrissAuctionLogo } from "@/components/admin/IrissAuctionLogo";
 import type { IrissListingPlatform } from "@/lib/iriss-listings-types";
@@ -145,12 +146,12 @@ function IrissListingsLoginDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [platform]);
 
+  const backdropClose = useModalBackdropClose(() => void cancel(), !busy);
+
   return (
     <div
       className="fixed inset-0 z-[140] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
-      onClick={() => {
-        if (!busy) void cancel();
-      }}
+      {...backdropClose}
       role="presentation"
     >
       <div
@@ -160,7 +161,7 @@ function IrissListingsLoginDialog({
         className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex flex-wrap items-start justify-between gap-2 border-b border-[#E5E7EB] px-4 py-3">
+        <div className="flex flex-wrap items-start justify-between gap-2 border-b border-[var(--iriss-line)] px-4 py-3">
           <div>
             <h2 id="iriss-login-title" className="inline-flex items-center gap-2 text-[15px] font-semibold text-[var(--color-apple-text)]">
               Ielogoties
@@ -201,7 +202,7 @@ function IrissListingsLoginDialog({
           )}
         </div>
 
-        <div className="space-y-2 border-t border-[#E5E7EB] px-4 py-3">
+        <div className="space-y-2 border-t border-[var(--iriss-line)] px-4 py-3">
           <p className={`text-[12px] ${ok ? "text-emerald-800" : "text-[var(--color-provin-muted)]"}`}>{msg}</p>
           <div className="flex flex-wrap items-center gap-2">
             <button

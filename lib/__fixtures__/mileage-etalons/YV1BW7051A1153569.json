@@ -1,0 +1,698 @@
+{
+ "vin": "YV1BW7051A1153569",
+ "label": "Volvo V70 2010: 3 valstis, kritumi",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 95, saglabāts 2026-10-30; nolasīts 17.11.2026, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": "https://ss.com/",
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "VOLVO V70",
+   "registrationNumber": "OK5922",
+   "firstRegistration": "2010-03-09",
+   "firstRegistrationLatvia": "2026-03-04",
+   "nextInspectionDate": "2027-03-05",
+   "prevInspectionDate": "2026-03-04",
+   "engineDisplacementCm3": "2400",
+   "enginePowerKw": "151",
+   "fuelType": "Dīzeļdegviela",
+   "emissionStandard": "Euro 5 A",
+   "vehicleType": "Vieglais plašlietojuma (M1)",
+   "grossMassKg": "2300",
+   "curbMassKg": "1679",
+   "seatCount": "",
+   "roadTaxEur": "159,00",
+   "registrationStatus": "Uzskaitē",
+   "opacityCoefficient": "1.01",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "Vācija",
+   "ownerCountLatvia": "",
+   "vin": "YV1BW7051A1153569",
+   "modelYear": "2010",
+   "color": "Pelēka",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "M1",
+   "cocType": "B",
+   "cocApprovalNumber": "e9*2001/116*0065*08",
+   "cocVariant": "BW70",
+   "cocVersion": "BW7051??",
+   "insuranceValidUntil": "2027-01-26",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "Pamatpārbaude",
+    "inspectionDateText": "04.03.2026",
+    "nextInspectionDateText": "",
+    "odometer": "390911",
+    "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+    "ratingLevel": 1,
+    "smokeCoefficient": "1.01",
+    "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+    "defects": [
+     {
+      "code": "3.2.",
+      "rating": "1",
+      "description": "Redzamību vai izturību būtiski neietekmējoši stiklojuma bojājumi."
+     },
+     {
+      "code": "6.1.2.",
+      "rating": "1",
+      "description": "Nedaudz bojāts vai nav viens no vairākiem elastīgajiem izplūdes sistēmas cauruļu stiprinājumiem."
+     },
+     {
+      "code": "5.3.3.",
+      "rating": "1",
+      "description": "2.tilts. Sīki bojājumi balstiekārtas sviru sailentblokos."
+     }
+    ]
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "04.03.2026",
+     "odometer": "390911",
+     "country": "Latvija"
+    },
+    {
+     "date": "19.06.2024",
+     "odometer": "380408",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.04.2022",
+     "odometer": "323918",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.04.2020",
+     "odometer": "294184",
+     "country": "Vācija"
+    }
+   ],
+   "registry": {
+    "nr1": "YV1BW7051A1153569",
+    "fetchedAt": "2026-10-27T20:07:25.783Z",
+    "data": {
+     "registrationNumber": "OK5922",
+     "vin": "YV1BW7051A1153569",
+     "make": "VOLVO",
+     "model": "V70",
+     "year": "2010",
+     "fuel": "Dīzeļdegviela",
+     "powerKw": "151",
+     "electricPowerKw": "",
+     "electricPowerKw2": "",
+     "displacementCm3": "2400",
+     "firstRegistrationIso": "2010-03-09",
+     "color": "Pelēka",
+     "vehicleKind": "Vieglais plašlietojuma",
+     "cocCategory": "M1",
+     "cocType": "B",
+     "cocApprovalNumber": "e9*2001/116*0065*08",
+     "cocVariant": "BW70",
+     "cocVersion": "BW7051??",
+     "grossMassKg": "2300",
+     "curbMassKg": "1679",
+     "insuranceEndIso": "2027-01-26",
+     "inspectionValidUntilIso": "2027-03-05"
+    }
+   }
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "04.03.2026",
+     "odometer": "390911",
+     "country": "Latvija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "04.03.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja ar piezīmi",
+     "odometer": "390911",
+     "includeInPdf": false
+    },
+    {
+     "date": "09.03.2010",
+     "country": "",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.03.2026",
+     "odometer": "390911",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.02.2010",
+     "odometer": "11",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.02.2010",
+     "country": "",
+     "description": "Ražots",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2010",
+     "country": "",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2026",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2026",
+     "country": "Latvija",
+     "description": "Reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2026",
+     "country": "Latvija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:27.10.2026līdz:26.01.2027 VIN numurs:YV1BW7051A1153569Ģenerēšanas datums:29.10.2026Derīguma termiņšbeidzas28.11.2026 Šajā PDF atskaitē ir iekļauti transportlīdzekļa vēstures svarīgākie dati. Lai iegūtu jaunāko un detalizētāko informāciju, ieskaties digitāla",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-10-27T20:06:58.223Z"
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-10-27T20:07:07.374Z"
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-10-27T20:07:25.781Z"
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-10-27T20:06:56.927Z"
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "",
+     "odometer": "",
+     "location": "",
+     "works": ""
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": []
+   },
+   "outvin": {
+    "precheckAt": null,
+    "vin": "YV1BW7051A1153569",
+    "capabilitySlots": [],
+    "purchases": [],
+    "vehicleInfo": {
+     "model": "",
+     "modelSeries": "",
+     "vinCode": "",
+     "vehicleType": "",
+     "transmission": "",
+     "steeringSide": "",
+     "engineCode": "",
+     "engineNumber": "",
+     "body": "",
+     "drive": "",
+     "power": "",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "Sweden",
+     "color": "",
+     "colorCode": "",
+     "interior": "",
+     "interiorCode": "",
+     "fuel": "",
+     "displacement": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "V70",
+     "modelSeries": "3.Generation",
+     "vinCode": "YV1BW7051A1153569",
+     "vehicleType": "",
+     "transmission": "Manual 6-speed FWD",
+     "steeringSide": "LHD (left-hand drive)",
+     "engineCode": "D5244T10",
+     "engineNumber": "",
+     "body": "",
+     "drive": "",
+     "power": "151 kW (202 hp / 205 PS)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "Y285",
+     "productionDate": "02.2010",
+     "firstRegistration": "03.2010",
+     "warrantyStartDate": "",
+     "countryRegion": "Sweden",
+     "color": "grey",
+     "colorCode": "1167",
+     "interior": "Standard Leather Dynamic",
+     "interiorCode": "101R",
+     "fuel": "diesel",
+     "displacement": "2,4 l"
+    },
+    "accidentCheck": "",
+    "stolenCheck": ""
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "",
+    "fetchedAt": "",
+    "lastCostUsd": "",
+    "status": "unknown",
+    "summary": ""
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "certificate": {
+    "issuedAt": "29.10.2026 19:15:39",
+    "vehicleLine": "Transportlīdzeklis VOLVO V70, izlaiduma gads 2010. Valsts numura zīme OK5922.",
+    "makeModel": "VOLVO V70",
+    "year": "2010",
+    "plate": "OK5922",
+    "accidentCount": "0",
+    "insuredFrom": "27.02.2026",
+    "insuredTo": "26.01.2027",
+    "insuredDays": "334",
+    "claims": [],
+    "footerNote": "Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas."
+   }
+  },
+  "tirgus": {
+   "listedForSale": "8",
+   "listingCreated": "19.10.2026",
+   "priceDrop": "€ 0",
+   "priceHistory": [
+    {
+     "date": "19.10.2026",
+     "price": 4300,
+     "mileage": null,
+     "year": 2010,
+     "delta": 0
+    }
+   ],
+   "listingMileageOdometer": "",
+   "listingMileageDate": "19.10.2026",
+   "listingMileageCountry": "Latvija"
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "comments": "",
+     "label": ""
+    }
+   ]
+  }
+ }
+}

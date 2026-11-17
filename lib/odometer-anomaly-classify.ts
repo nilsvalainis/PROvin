@@ -3,6 +3,7 @@
  * Grafika vizuāli nemaina. Nav maksas modeļa.
  */
 import {
+  ISOLATED_MILEAGE_DROP_MAX_RECOVERY_MS,
   UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM,
   analyzeUnifiedMileageAnomalies,
   isIsolatedMileageDrop,
@@ -79,10 +80,24 @@ function sameCalendarMonthMs(a: number, b: number): boolean {
   return da.getUTCFullYear() === db.getUTCFullYear() && da.getUTCMonth() === db.getUTCMonth();
 }
 
-function laterPointsStayBelow(pts: { km: number }[], fromIndex: number, peakKm: number): boolean {
+/**
+ * „Atgūšanās” = maksimums atkal sasniegts tajā pašā logā kā izolētai ievades kļūdai (183 d).
+ * Pēc attīšanas auto brauc tālāk un pēc gadiem pārsniedz veco maksimumu - tas kritumu neatceļ
+ * (Škoda TMBJH9NP9H7561596: SE 253 760 km 05.2020 → LV 181 345 km 09.2020 → 275 181 km 2025).
+ */
+function laterPointsStayBelow(
+  pts: { km: number; row: Pick<UnifiedMileageRow, "sortableTime"> }[],
+  fromIndex: number,
+  peakKm: number,
+): boolean {
+  const dropTime = pts[fromIndex]?.row.sortableTime;
   const later = pts.slice(fromIndex + 1);
   if (later.length === 0) return true;
-  const recovered = later.some((p) => p.km >= peakKm);
+  const recovered = later.some((p) => {
+    if (p.km < peakKm) return false;
+    if (dropTime == null || !Number.isFinite(dropTime) || !Number.isFinite(p.row.sortableTime)) return true;
+    return p.row.sortableTime - dropTime <= ISOLATED_MILEAGE_DROP_MAX_RECOVERY_MS;
+  });
   return !recovered;
 }
 
@@ -96,6 +111,9 @@ export function classifyOdometerAnomalies(rows: UnifiedMileageRow[]): Classified
   for (const r of sorted) {
     const km = parseOdometerKm(r.odometer);
     if (km == null) continue;
+    // Novecojuša dokumenta atkārtojums nav salīdzināšanas punkts (kā grafikā), citādi nākamais
+    // rādījums tiek mērīts pret to, nevis pret īsto iepriekšējo maksimumu, un kritums pazūd.
+    if (analysis.staleDocumentSourceOrders.has(r.sourceOrder)) continue;
     pts.push({ row: r, km });
   }
 

@@ -7,6 +7,11 @@ import {
   getOrderDraftBlobConfig,
   getOrderDraftStorageDir,
 } from "@/lib/admin-order-draft-store";
+import {
+  isManualOrderStripePaid,
+  normalizeManualOrderPaymentFields,
+  type ManualOrderPaymentFields,
+} from "@/lib/manual-order-payment";
 
 /**
  * Manuālie pasūtījumi — admin panelī izveidoti ieraksti pasūtījumiem, kas neienāk
@@ -21,9 +26,9 @@ const MANUAL_ORDERS_INDEX_FILENAME = "manual_orders_index.json";
 
 export type ManualOrderRecord = {
   id: string;
-  /** Unix sekundes — “Laiks” (labojams). */
+  /** Unix sekundes - “Laiks” (labojams). */
   created: number;
-  /** Centi — “Summa” (labojama; `null` = vēl nav noteikta). */
+  /** Centi - “Summa” (labojama; `null` = vēl nav noteikta). */
   amountTotal: number | null;
   currency: string;
   updatedAt: string;
@@ -32,7 +37,7 @@ export type ManualOrderRecord = {
   companyName?: string | null;
   checkoutLine?: "business" | "dealer";
   auditPurpose?: "client" | "internal";
-};
+} & ManualOrderPaymentFields;
 
 type ManualOrdersIndexDoc = {
   version: 1;
@@ -71,16 +76,22 @@ function normalizeRecord(raw: unknown): ManualOrderRecord | null {
   const companyName = typeof o.companyName === "string" && o.companyName.trim() ? o.companyName.trim() : null;
   const checkoutLine = o.checkoutLine === "business" || o.checkoutLine === "dealer" ? o.checkoutLine : undefined;
   const auditPurpose = o.auditPurpose === "client" || o.auditPurpose === "internal" ? o.auditPurpose : undefined;
+  const payment = normalizeManualOrderPaymentFields({ ...o, amountTotal });
   return {
     id,
     created,
-    amountTotal,
+    amountTotal: payment.amountTotal,
     currency,
     updatedAt,
     ...(partnerId ? { partnerId } : {}),
     ...(companyName ? { companyName } : {}),
     ...(checkoutLine ? { checkoutLine } : {}),
     ...(auditPurpose ? { auditPurpose } : {}),
+    ...(payment.paidAt ? { paidAt: payment.paidAt } : {}),
+    ...(payment.paidStripeSessionId ? { paidStripeSessionId: payment.paidStripeSessionId } : {}),
+    ...(payment.stripeCheckoutSessionId ? { stripeCheckoutSessionId: payment.stripeCheckoutSessionId } : {}),
+    ...(payment.stripeCheckoutUrl ? { stripeCheckoutUrl: payment.stripeCheckoutUrl } : {}),
+    ...(payment.serviceName ? { serviceName: payment.serviceName } : {}),
   };
 }
 
@@ -243,9 +254,32 @@ export async function createManualOrder(
   return { ok: true, record };
 }
 
+export type ManualOrderWritePatch = {
+  created?: number;
+  amountTotal?: number | null;
+  paidAt?: string | null;
+  paidStripeSessionId?: string | null;
+  stripeCheckoutSessionId?: string | null;
+  stripeCheckoutUrl?: string | null;
+  serviceName?: string | null;
+};
+
+function applyOptionalText(
+  next: ManualOrderRecord,
+  key: "paidAt" | "paidStripeSessionId" | "stripeCheckoutSessionId" | "stripeCheckoutUrl" | "serviceName",
+  value: string | null | undefined,
+) {
+  if (value === undefined) return;
+  if (value && value.trim()) {
+    next[key] = value.trim();
+    return;
+  }
+  delete next[key];
+}
+
 export async function updateManualOrder(
   id: string,
-  patch: { created?: number; amountTotal?: number | null },
+  patch: ManualOrderWritePatch,
 ): Promise<{ ok: true; record: ManualOrderRecord } | { ok: false; error: string }> {
   if (!isManualOrderId(id)) return { ok: false, error: "invalid_id" };
   const idx = await readManualOrdersIndex();
@@ -268,6 +302,11 @@ export async function updateManualOrder(
       return { ok: false, error: "invalid_amount" };
     }
   }
+  applyOptionalText(next, "paidAt", patch.paidAt);
+  applyOptionalText(next, "paidStripeSessionId", patch.paidStripeSessionId);
+  applyOptionalText(next, "stripeCheckoutSessionId", patch.stripeCheckoutSessionId);
+  applyOptionalText(next, "stripeCheckoutUrl", patch.stripeCheckoutUrl);
+  applyOptionalText(next, "serviceName", patch.serviceName);
 
   const doc: ManualOrdersIndexDoc = {
     version: 1,
@@ -277,6 +316,16 @@ export async function updateManualOrder(
   const res = await writeManualOrdersIndex(doc);
   if (!res.ok) return res;
   return { ok: true, record: next };
+}
+
+export function isPartnerCreditManualOrder(rec: Pick<ManualOrderRecord, "partnerId" | "companyName">): boolean {
+  return Boolean((rec.partnerId ?? "").trim() || (rec.companyName ?? "").trim());
+}
+
+export function manualOrderListPaymentStatus(
+  rec: Pick<ManualOrderRecord, "partnerId" | "companyName" | "paidAt" | "paidStripeSessionId">,
+): "paid" | "unpaid" {
+  return isPartnerCreditManualOrder(rec) || isManualOrderStripePaid(rec) ? "paid" : "unpaid";
 }
 
 export async function deleteManualOrder(

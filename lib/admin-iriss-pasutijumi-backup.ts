@@ -27,7 +27,7 @@ async function collectIrissDraftRecords(): Promise<Map<string, IrissPasutijumsRe
   const map = new Map<string, IrissPasutijumsRecord>();
   const rows = await listIrissPasutijumi({ includeDeleted: true });
   for (const row of rows) {
-    const rec = await readIrissPasutijums(row.id);
+    const rec = await readIrissPasutijums(row.id, { allowCache: true });
     if (!rec) continue;
     map.set(`${row.id}.json`, await hydrateIrissPasutijumsImages(rec));
   }

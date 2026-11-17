@@ -30,6 +30,8 @@ import {
 } from "@/lib/iriss-listings-aggregate-store";
 import { readIrissListingsLatestViewWithMarketplace } from "@/lib/marketplace/view";
 import { listIrissPasutijumi } from "@/lib/iriss-pasutijumi-store";
+import { primeListingSearchCostsFromStore } from "@/lib/iriss-listings-search-costs-store";
+import { currentListingSearchCosts } from "@/lib/iriss-listings-search-costs";
 import { isIrissPasutijumsWorkingStatus, type IrissPasutijumsListStatus } from "@/lib/iriss-pasutijumi-types";
 
 export async function loadIrissListingMatchState(): Promise<IrissListingMatchState> {
@@ -48,6 +50,7 @@ export async function refreshIrissListingMatches(input?: {
 }): Promise<IrissListingMatchState> {
   const storage = getIrissListingsStorageState();
   if (!storage.enabled) return emptyIrissListingMatchState();
+  await primeListingSearchCostsFromStore();
   const now = input?.now ?? new Date().toISOString();
   const vehicles =
     input?.vehicles ??
@@ -121,6 +124,7 @@ function workspaceCacheKey(
       h = Math.imul(h, 16777619);
     }
   };
+  mix(JSON.stringify(currentListingSearchCosts()));
   mix(String(vehicles.length));
   for (const vehicle of vehicles) mix(`|${vehicle.id}:${vehicle.change ?? ""}:${vehicle.priceCurrent ?? ""}`);
   mix("#");
@@ -138,6 +142,7 @@ export async function prepareIrissListingMatchWorkspace(
   vehicles: readonly IrissListingMatchVehicle[],
   orders: readonly IrissListingMatchOrder[],
 ): Promise<IrissListingMatchWorkspace> {
+  await primeListingSearchCostsFromStore();
   const key = workspaceCacheKey(vehicles, orders);
   if (workspaceCache && workspaceCacheFresh(workspaceCache, key)) return workspaceCache.value;
   if (workspaceInflight?.key === key) return workspaceInflight.promise;

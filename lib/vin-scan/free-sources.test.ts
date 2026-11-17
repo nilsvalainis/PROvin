@@ -19,6 +19,7 @@ describe("free VIN SCAN avoti", () => {
   it("automātiskais saraksts ir kataloga avoti bez maksas pirkumiem un JoJ $0.50", () => {
     const free = freeVinScanSourceIds();
     expect(free).not.toContain("joj_copart_iaai");
+    expect(free).not.toContain("thecarapi_eu");
     expect(free).not.toContain("speckr");
     expect(free).toEqual(VIN_SCAN_SOURCE_IDS.filter((id) => !isPaidVinScanSourceId(id) && id !== "vegvesen"));
     expect(free).not.toContain("vegvesen");
@@ -26,6 +27,8 @@ describe("free VIN SCAN avoti", () => {
     expect(free).toContain("stat_vin");
     expect(free).toContain("csdd");
     expect(isMeteredVinScanSourceId("joj_copart_iaai")).toBe(true);
+    expect(isMeteredVinScanSourceId("thecarapi_eu")).toBe(true);
+    expect(isFreeVinScanSourceId("thecarapi_eu")).toBe(false);
     expect(isMeteredVinScanSourceId("stat_vin")).toBe(false);
     for (const id of VIN_SCAN_PAID_SOURCE_IDS) {
       expect(free).not.toContain(id);
@@ -63,6 +66,7 @@ describe("free VIN SCAN avoti", () => {
     expect(vinScanAutoSourceIds({})).toEqual(free);
     expect(vinScanAutoSourceIds({ sourceIds: ["csdd"] })).toEqual(["csdd"]);
     expect(vinScanAutoSourceIds({ sourceIds: ["joj_copart_iaai"] })).toEqual(free);
+    expect(vinScanAutoSourceIds({ sourceIds: ["thecarapi_eu"] })).toEqual(free);
     expect(vinScanAutoSourceIds({ sourceIds: ["speckr", "csdd"] })).toEqual(["csdd"]);
     expect(vinScanAutoSourceIds({ sourceIds: ["carvertical"] })).toEqual(free);
   });

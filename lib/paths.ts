@@ -33,9 +33,14 @@ export function parMumsHref(): string {
   return "/par-mums";
 }
 
-/** VIN koda pārbaudes skaidrojums — `Link`-drošs ceļš. */
+/** VIN koda pārbaudes skaidrojums - `Link`-drošs ceļš. */
 export function vinCheckHref(): string {
   return "/vin-koda-parbaude";
+}
+
+/** Bezmaksas VIN dekoders - `Link`-drošs ceļš. */
+export function vinDecoderHref(): string {
+  return "/vin-dekoders";
 }
 
 /** Bezmaksas VIN / sludinājuma novērtējuma sadaļa sākumlapā. */

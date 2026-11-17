@@ -12,10 +12,10 @@ import {
 import type { IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 
 const dialogBtn =
-  "inline-flex h-10 min-h-10 items-center justify-center rounded-[10px] border border-[#e5e7eb] bg-white px-3 text-[12.5px] font-semibold text-[#111827] shadow-[0_1px_2px_#0000000d] transition hover:bg-[#f9fafb] disabled:opacity-40";
+  "inline-flex h-10 min-h-10 items-center justify-center rounded-[10px] border border-[var(--iriss-line)] bg-white px-3 text-[12.5px] font-semibold text-[var(--iriss-ink)] shadow-[0_1px_2px_#0000000d] transition hover:bg-[var(--iriss-surface-2)] disabled:opacity-40";
 
 const dialogBtnPrimary =
-  "inline-flex h-10 min-h-10 items-center justify-center rounded-[10px] border border-[#2563eb] bg-[#2563eb] px-3 text-[12.5px] font-semibold text-white shadow-[0_1px_2px_#0000000d] transition hover:brightness-105 disabled:opacity-40";
+  "inline-flex h-10 min-h-10 items-center justify-center rounded-[10px] border border-[var(--iriss-info)] bg-[var(--iriss-info)] px-3 text-[12.5px] font-semibold text-white shadow-[0_1px_2px_#0000000d] transition hover:brightness-105 disabled:opacity-40";
 
 export function IrissUnsavedChangesGuard({
   dirty,
@@ -111,9 +111,9 @@ export function IrissUnsavedChangesGuard({
         role="dialog"
         aria-modal="true"
         aria-labelledby="iriss-unsaved-title"
-        className="w-full max-w-sm rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-xl"
+        className="w-full max-w-sm rounded-2xl border border-[var(--iriss-line)] bg-white p-4 shadow-xl"
       >
-        <p id="iriss-unsaved-title" className="text-[15px] font-semibold text-[#111827]">
+        <p id="iriss-unsaved-title" className="text-[15px] font-semibold text-[var(--iriss-ink)]">
           {IRISS_UNSAVED_CHANGES_TITLE}
         </p>
         <div className="mt-4 flex flex-col gap-2">

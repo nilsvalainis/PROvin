@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
-import { PUBLIC_LOCALES, type PublicLocale } from "@/i18n/locales";
+import { isCrawlableBlogLocale } from "@/lib/blog/crawlable-locales";
+import { parsePrefixedPath, PUBLIC_LOCALES, type PublicLocale } from "@/i18n/locales";
 import { routing } from "@/i18n/routing";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 
@@ -14,6 +15,7 @@ export const INDEXABLE_PUBLIC_PATHS: {
 }[] = [
   { path: "", changeFrequency: "weekly", priority: 1 },
   { path: "/vin-koda-parbaude", changeFrequency: "monthly", priority: 0.9 },
+  { path: "/vin-dekoders", changeFrequency: "monthly", priority: 0.7 },
   { path: "/pakalpojumi", changeFrequency: "weekly", priority: 0.85 },
   { path: "/biezi-jautajumi", changeFrequency: "monthly", priority: 0.8 },
   { path: "/par-mums", changeFrequency: "monthly", priority: 0.75 },
@@ -21,6 +23,7 @@ export const INDEXABLE_PUBLIC_PATHS: {
   { path: "/partneriem", changeFrequency: "monthly", priority: 0.6 },
   { path: "/privatuma-politika", changeFrequency: "yearly", priority: 0.4 },
   { path: "/lietosanas-noteikumi", changeFrequency: "yearly", priority: 0.4 },
+  { path: "/partneriem/noteikumi", changeFrequency: "yearly", priority: 0.3 },
 ];
 
 /**
@@ -43,7 +46,67 @@ export const NEVER_INDEX_PUBLIC_PATHS = [
 
 export function normalizePublicPath(path: string): string {
   if (!path || path === "/") return "";
-  return path.startsWith("/") ? path : `/${path}`;
+  const withSlash = path.startsWith("/") ? path : `/${path}`;
+  return withSlash.replace(/\/+$/, "");
+}
+
+/**
+ * GSC 02.11.2026: «Page with redirect» (12). Sitemap un kanoniskās saites tās neemitē.
+ * Apex / HTTP / bez `/lv` / trailing slash / `/paraugi` paliek 308 uz www + lokali.
+ */
+export const GSC_REDIRECTING_INDEX_URLS = [
+  "https://provin.lv/",
+  "https://www.provin.lv/",
+  "http://www.provin.lv/",
+  "http://provin.lv/",
+  "https://www.provin.lv/biezi-jautajumi",
+  "https://www.provin.lv/lv/paraugi",
+  "https://www.provin.lv/pakalpojumi",
+  "https://www.provin.lv/en/",
+  "https://www.provin.lv/par-mums",
+  "https://www.provin.lv/lietosanas-noteikumi",
+  "https://www.provin.lv/privatuma-politika",
+  "https://www.provin.lv/lv/",
+] as const;
+
+/**
+ * GSC «Excluded by noindex». Šie URL paliek noindex un nedrīkst būt sitemap.xml (ne loc, ne hreflang).
+ * `/de/partneriem` un `/ru/partneriem` nav sarakstā: dzīvajā tie ir `index, follow` (GSC ieraksts novecojis).
+ */
+export const GSC_NOINDEX_SITEMAP_BLOCKLIST = [
+  "https://www.provin.lv/en?plan=mini",
+  "https://www.provin.lv/lv?plan=mini",
+  "https://www.provin.lv/lv?plan=dealer",
+  "https://www.provin.lv/lv?plan=audits",
+  "https://www.provin.lv/en/blogs/ka-pirkt-lietotu-auto-bez-tabu",
+  "https://www.provin.lv/de/blogs/ka-pirkt-lietotu-auto-bez-tabu",
+  "https://www.provin.lv/ru/blogs/ka-pirkt-lietotu-auto-bez-tabu",
+  "https://www.provin.lv/samples/provin-dilera-dati-piemers.pdf",
+  "https://www.provin.lv/samples/provin-audits-bmw-525-e61-v2.pdf",
+  "https://www.provin.lv/samples/provin-audits-piemers.pdf",
+] as const;
+
+/** Absolūts URL, ko drīkst likt sitemap.xml / hreflang (HTTPS www, lokale, bez `?` un `/` beigās). */
+export function isCanonicalSitemapHref(url: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  if (parsed.search || parsed.hash) return false;
+  if (parsed.pathname.length > 1 && parsed.pathname.endsWith("/")) return false;
+  const origin = getPublicSiteOrigin().replace(/\/$/, "");
+  if (parsed.origin !== origin) return false;
+  const { locale, rest } = parsePrefixedPath(parsed.pathname);
+  if (!locale) return false;
+  const path = rest === "/" ? "" : rest;
+  if (path.startsWith("/blogs/") && path !== "/blogs") {
+    const slug = path.slice("/blogs/".length);
+    if (!slug || slug.includes("/")) return false;
+    return isCrawlableBlogLocale(slug, locale);
+  }
+  return isIndexablePublicPage(locale, path);
 }
 
 function matchesNeverIndexPath(path: string): boolean {

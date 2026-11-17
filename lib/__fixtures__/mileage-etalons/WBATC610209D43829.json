@@ -1,0 +1,368 @@
+{
+ "vin": "WBATC610209D43829",
+ "label": "BMW X6 XDRIVE40D: CSDD 4, AutoDNA 4, carVertical 13, dīleris 10, citi 1; negadījumi 4",
+ "source": "prod pasūtījuma melnraksts (manual), revīzija 79, saglabāts 2026-07-24; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW X6 XDRIVE40D",
+   "registrationNumber": "ON9877",
+   "firstRegistration": "2021-04-22",
+   "nextInspectionDate": "2027-04-01",
+   "prevInspectionDate": "2023-03-28",
+   "engineDisplacementCm3": "2993",
+   "enginePowerKw": "250",
+   "fuelType": "Dīzeļdegviela",
+   "emissionStandard": "Euro 6 AP",
+   "grossMassKg": "2950",
+   "curbMassKg": "2290",
+   "roadTaxEur": "147,00",
+   "registrationStatus": "Noņemts no uzskaites, atļauts piedalīties ceļu satiksmē līdz 16.06.2026",
+   "opacityCoefficient": "",
+   "particulateMatter": "7 300",
+   "previousRegistrationCountry": "Vācija",
+   "ownerCountLatvia": "1",
+   "technicalInspectionHistory": [
+    {
+     "date": "28.03.2023",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": []
+    }
+   ],
+   "ownerRegistrationEvents": [
+    {
+     "date": "22.12.2021",
+     "label": "Pirmā reģistrācija Latvijā"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "Pamatpārbaude",
+    "inspectionDateText": "01.04.2025",
+    "nextInspectionDateText": "",
+    "odometer": "40042",
+    "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "01.04.2025",
+     "odometer": "40042",
+     "country": "Latvija"
+    },
+    {
+     "date": "28.03.2023",
+     "odometer": "16162",
+     "country": "Latvija"
+    },
+    {
+     "date": "27.12.2021",
+     "odometer": "9385",
+     "country": "Latvija"
+    },
+    {
+     "date": "08.04.2021",
+     "odometer": "12",
+     "country": "Ungārija"
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "38",
+   "listingCreated": "15.06.2026",
+   "priceDrop": "-1 000"
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "01.04.2025",
+     "odometer": "40042",
+     "country": "Latvija"
+    },
+    {
+     "date": "28.03.2023",
+     "odometer": "16162",
+     "country": "Latvija"
+    },
+    {
+     "date": "22.12.2021",
+     "odometer": "9385",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.06.2021",
+     "odometer": "2948",
+     "country": "Ungārija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Ungārija",
+     "csngDate": "01.06.2021",
+     "lossAmount": "2 300 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.04.2025",
+     "lossAmount": "500 - 600 €"
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.06.2026",
+     "odometer": "65178",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.02.2026",
+     "odometer": "60228",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.12.2025",
+     "odometer": "55472",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.09.2025",
+     "odometer": "47838",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2025",
+     "odometer": "45556",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.04.2025",
+     "odometer": "40042",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2024",
+     "odometer": "26967",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2023",
+     "odometer": "18464",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.03.2023",
+     "odometer": "16162",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2022",
+     "odometer": "12878",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.12.2021",
+     "odometer": "9385",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2021",
+     "odometer": "2948",
+     "country": "Ungārija"
+    },
+    {
+     "date": "01.11.2020",
+     "odometer": "12",
+     "country": "Ungārija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Ungārija",
+     "csngDate": "01.06.2021",
+     "lossAmount": "2 001 - 2 500 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.04.2025",
+     "lossAmount": "501 - 750 €"
+    }
+   ]
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "16.02.2026",
+     "odometer": "60250",
+     "country": "Latvija"
+    },
+    {
+     "date": "03.12.2025",
+     "odometer": "55494",
+     "country": "Latvija"
+    },
+    {
+     "date": "02.09.2025",
+     "odometer": "47860",
+     "country": "Latvija"
+    },
+    {
+     "date": "07.07.2025",
+     "odometer": "45578",
+     "country": "Latvija"
+    },
+    {
+     "date": "19.07.2024",
+     "odometer": "26989",
+     "country": "Latvija"
+    },
+    {
+     "date": "18.07.2023",
+     "odometer": "18486",
+     "country": "Latvija"
+    },
+    {
+     "date": "08.07.2022",
+     "odometer": "12900",
+     "country": "Spānija"
+    },
+    {
+     "date": "29.06.2021",
+     "odometer": "2948",
+     "country": "Ungārija"
+    },
+    {
+     "date": "10.11.2020",
+     "odometer": "12",
+     "country": "Ungārija"
+    },
+    {
+     "date": "05.11.2020",
+     "odometer": "12",
+     "country": "Ungārija"
+    }
+   ],
+   "outvin": {
+    "precheckAt": "2026-07-22T12:27:00.449Z",
+    "vin": "WBATC610209D43829",
+    "capabilitySlots": [
+     {
+      "id": "service_1",
+      "historyType": 1,
+      "titleLv": "Oficiālā servisa un nobraukuma vēsture (Type 1)",
+      "creditCost": 1,
+      "status": "available",
+      "category": "service_history"
+     },
+     {
+      "id": "carfax_2",
+      "historyType": 2,
+      "titleLv": "ASV / Carfax vēsture (Type 2)",
+      "creditCost": 1,
+      "status": "disabled",
+      "statusReason": "Eiropas VIN — ASV Carfax (Type 2) parasti nav pieejams",
+      "category": "us_carfax"
+     }
+    ],
+    "purchases": [],
+    "vehicleInfo": {
+     "vinCode": "",
+     "series": "",
+     "typeCode": "",
+     "steeringSide": "",
+     "interior": "",
+     "model": "",
+     "generation": "",
+     "engineCode": "",
+     "color": "",
+     "transmission": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "vinCode": "WBATC610209D43829",
+     "series": "",
+     "typeCode": "",
+     "steeringSide": "",
+     "interior": "Leather Merino black (VASW)",
+     "model": "",
+     "generation": "",
+     "engineCode": "",
+     "color": "Alpinweiss 3 (0300)",
+     "transmission": ""
+    }
+   }
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "01.12.2021",
+       "odometer": "9380",
+       "country": "Vācija"
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": "CITS"
+    }
+   ]
+  }
+ }
+}

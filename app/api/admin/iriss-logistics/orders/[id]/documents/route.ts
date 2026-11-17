@@ -4,6 +4,7 @@ import { irissLogisticsScopeHeader, logisticsCabinetAccessQuery, logisticsCabine
 import { evaluateCabinetAccess } from "@/lib/iriss-logistics-cabinet-access";
 import { isCabinetDocType, isCabinetSectionId } from "@/lib/iriss-logistics-cabinet";
 import { appendCabinetAudit, listCabinetAccessRules, upsertCabinetDocument } from "@/lib/iriss-logistics-cabinet-store";
+import { applyTransportInvoiceAutofill } from "@/lib/iriss-logistics-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -92,8 +93,12 @@ export async function POST(req: Request, ctx: Ctx) {
       docType: type,
       detail: result.duplicate ? "duplicate" : "created",
     });
+    const order =
+      !result.duplicate && type === "transport_invoice" && bytes
+        ? await applyTransportInvoiceAutofill(id, bytes, fileName).catch(() => null)
+        : null;
     return NextResponse.json(
-      { ok: true, duplicate: result.duplicate, document: result.document },
+      { ok: true, duplicate: result.duplicate, document: result.document, ...(order ? { order } : {}) },
       { status: result.duplicate ? 200 : 201, headers: irissLogisticsScopeHeader() },
     );
   } catch (e) {

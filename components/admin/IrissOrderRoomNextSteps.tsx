@@ -37,7 +37,7 @@ export function IrissOrderRoomNextSteps({
         <button
           type="button"
           onClick={() => onOpenSearch?.()}
-          className="inline-flex h-9 shrink-0 items-center rounded-full bg-[var(--chip-active-bg)] px-3.5 text-[13px] font-semibold text-[var(--chip-active-fg)]"
+          className="inline-flex h-9 shrink-0 items-center rounded-full bg-[var(--iriss-graphite)] px-3.5 text-[13px] font-semibold text-[var(--iriss-on-graphite)]"
         >
           Atvērt Meklētāju
         </button>

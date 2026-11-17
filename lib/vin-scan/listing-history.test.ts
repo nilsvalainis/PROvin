@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { vinScanStatusIsCacheable } from "@/lib/vin-scan/health";
 import { vinScanParseFromListingHistory } from "@/lib/vin-scan/listing-history";
 
 describe("vinScanParseFromListingHistory", () => {
@@ -20,7 +21,7 @@ describe("vinScanParseFromListingHistory", () => {
     });
     expect(parsed.status).toBe("found");
     expect(parsed.listings).toHaveLength(2);
-    expect(parsed.listings?.[0]).toMatchObject({ price: "€ 23 950", odometer: "198 000 km" });
+    expect(parsed.listings?.[0]).toMatchObject({ price: "23 950 €", odometer: "198 000 km" });
     expect(parsed.vehicle?.year).toBe("2013");
     expect(parsed.openUrl).toContain("adify.lv/history?url=");
   });
@@ -39,4 +40,39 @@ describe("vinScanParseFromListingHistory", () => {
       }).status,
     ).toBe("none");
   });
+
+  const empty = (message: string, blocked?: boolean) => ({
+    found: false,
+    ...(blocked ? { blocked: true } : {}),
+    message,
+    rows: [],
+    durationDays: 0,
+    oldestDate: "",
+    newestDate: "",
+    priceChangeEur: 0,
+    listingUrl: null,
+  });
+
+  it.each([
+    "Adify pieprasījums noildza",
+    "Neizdevās ielādēt Adify vēsturi",
+    "Adify neatbildēja (HTTP 502)",
+    "Adify ierobežo pieprasījumus (mēģini pēc 30 s)",
+    "Meklētais objekts netika atrasts · Tirgus Dati: Tirgus Dati / Adify bloķēja pieprasījumu (Cloudflare)",
+  ])("kļūda nav „Nav” un netiek kešota: %s", (message) => {
+    const parsed = vinScanParseFromListingHistory(empty(message));
+    expect(parsed.status).toBe("unknown");
+    expect(vinScanStatusIsCacheable(parsed.status)).toBe(false);
+  });
+
+  it("bloķēts avots ir blocked", () => {
+    expect(vinScanParseFromListingHistory(empty("Adify bloķē serveri", true)).status).toBe("blocked");
+  });
+
+  it.each(["Meklētais objekts netika atrasts", "Šim sludinājumam Tirgus Dati vēl nav vēstures", ""])(
+    "īsta tukša vēsture paliek none: %s",
+    (message) => {
+      expect(vinScanParseFromListingHistory(empty(message)).status).toBe("none");
+    },
+  );
 });

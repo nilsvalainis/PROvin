@@ -77,7 +77,7 @@
   background: #fff;
 }
 
-.admin-ios-theme [data-iriss-order-room="1"] :is(input, textarea, select):not(.iriss-status-pill) {
+.admin-ios-theme [data-iriss-order-room="1"] :is(input, textarea, select):not(.iriss-status-pill):not(.iriss-offer-block-toggle):not(.iriss-offer-section-switch) {
   border-radius: 10px !important;
   border: 1px solid #e5e7eb !important;
   background: #fff !important;
@@ -85,7 +85,7 @@
   box-shadow: none !important;
 }
 
-.admin-ios-theme [data-iriss-order-room="1"] :is(input, textarea, select):not(.iriss-status-pill):focus-visible {
+.admin-ios-theme [data-iriss-order-room="1"] :is(input, textarea, select):not(.iriss-status-pill):not(.iriss-offer-block-toggle):not(.iriss-offer-section-switch):focus-visible {
   border-color: #6366f1 !important;
   box-shadow: 0 0 0 3px rgb(99 102 241 / 0.2) !important;
 }
@@ -421,7 +421,8 @@
     text-align: right;
     font-size: 13px !important;
     font-weight: 700;
-    min-height: 36px !important;
+    /* j68: pieskāriena mērķis >= 44 px (bija 36 px). */
+    min-height: 44px !important;
     padding-top: 4px !important;
     padding-bottom: 4px !important;
   }
@@ -494,8 +495,8 @@
     flex: none !important;
     width: 100%;
     max-width: none;
-    height: 36px;
-    min-height: 36px !important;
+    height: 44px;
+    min-height: 44px !important;
     padding-left: 8px !important;
     padding-right: 8px !important;
     border-radius: 10px !important;
@@ -511,7 +512,7 @@
   .iriss-range-unit {
     display: inline;
     font-size: 12px;
-    color: var(--ink3, #9a9faa) !important;
+    color: var(--ink3, #63686f) !important;
     font-weight: 400;
   }
 
@@ -809,5 +810,296 @@
   .iriss-route-loading-bar::after {
     animation: none;
     width: 100%;
+  }
+}
+
+/* Pavadzīmju termiņu kalendārs (josla katram tranzīta numuram). */
+.iriss-wb-cal {
+  border-radius: 18px;
+  background: var(--s1, #fff);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  padding: 12px;
+}
+.iriss-wb-cal-head,
+.iriss-wb-cal-lane {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.iriss-wb-cal-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  color: #6e6e73;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.iriss-wb-cal-days .today {
+  color: #1a73e8;
+}
+.iriss-wb-cal-lane {
+  margin-top: 8px;
+}
+.iriss-wb-cal-plate {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+.iriss-wb-cal-track {
+  position: relative;
+  height: 34px;
+  border-radius: 10px;
+  background: #f5f5f7;
+}
+.iriss-wb-cal-grid {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(0, 0, 0, 0.06);
+}
+.iriss-wb-cal-now {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  border-radius: 2px;
+  background: #ff3b30;
+  z-index: 2;
+}
+.iriss-wb-cal-seg {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 7px;
+  padding: 0 6px;
+  color: #fff !important;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.iriss-wb-cal-seg span {
+  color: inherit !important;
+}
+.iriss-wb-cal-seg.active {
+  background: #3d5bd9;
+}
+.iriss-wb-cal-seg.soon {
+  background: #f97316;
+}
+.iriss-wb-cal-seg.expired {
+  background: #aeaeb2;
+}
+.iriss-wb-cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  color: #6e6e73;
+  font-size: 11.5px;
+}
+.iriss-wb-cal-legend .dot {
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+.iriss-wb-cal-legend .dot.active {
+  background: #3d5bd9;
+}
+.iriss-wb-cal-legend .dot.soon {
+  background: #f97316;
+}
+.iriss-wb-cal-legend .dot.expired {
+  background: #aeaeb2;
+}
+.iriss-wb-pdf {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.iriss-wb-pdf-page {
+  max-width: 100%;
+  border-radius: 6px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
+}
+
+/* j61: piedāvājuma Pamatinfo - auto lauks zaļgans, tukšs ar svītrotu apmali (pārspēj pasūtījuma istabas lauku kārtulu). */
+input[data-offer-field="auto"],
+.admin-ios-theme [data-iriss-order-room="1"] input:not(.iriss-status-pill):not(.iriss-offer-block-toggle):not(.iriss-offer-section-switch)[data-offer-field="auto"] {
+  background: #f3fbf5 !important;
+  border-color: #bfe8cb !important;
+}
+
+input[data-offer-field="empty"],
+.admin-ios-theme [data-iriss-order-room="1"] input:not(.iriss-status-pill):not(.iriss-offer-block-toggle):not(.iriss-offer-section-switch)[data-offer-field="empty"] {
+  background: #fbfbfc !important;
+  border-style: dashed !important;
+  border-color: #d4d4d8 !important;
+}
+
+/*
+ * j68: pasūtījuma istaba telefonā - pieskāriena mērķi >= 44 px (Fable F9: 75 mērķi <44 px:
+ * cilnes, Zvanīt/WA, statusa pille, ET saites, avansa pogas). Slēdžiem (role=switch) izmērs nemainās.
+ */
+@media (max-width: 767px) {
+  [data-iriss-order-room="1"] :is(button, select, [role="tab"]):not([role="switch"]) {
+    min-height: 44px;
+  }
+  [data-iriss-order-room="1"] button.am-press,
+  [data-iriss-order-room="1"] button[aria-label="Noņemt saiti"] {
+    min-width: 44px;
+  }
+  [data-iriss-order-room="1"] label:has(> input:is([type="checkbox"], [type="radio"])) {
+    min-height: 44px;
+  }
+}
+
+/* 28.10: telefonā diapazona ievades lauki nedrīkst būt platāki par savu šūnu (bija 193 px 100 px vietā, vērtības iziet ārā). */
+@media (max-width: 767px) {
+  .iriss-spec-fields .iriss-range-field .iriss-range-input-wrap > input {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+}
+
+/* Pārskats v3 (Nils 28.10): tāmes forma bez zilajām virsrakstu joslām - kā pārējie soļi. */
+#iriss-room-tame .iriss-section-heading {
+  background: none !important;
+  padding: 0 !important;
+  margin: 18px 0 8px !important;
+  border: 0 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  color: #4a4a4f !important;
+}
+
+/* Pārskats v3: galvenes statuss - zaļš Aktīvs/Rezervēts, pelēks pārējie (bija melns). */
+.admin-ios-theme [data-iriss-order-room="1"] select.iriss-status-pill[data-status="active"],
+.admin-ios-theme [data-iriss-order-room="1"] select.iriss-status-pill[data-status="reserved"] {
+  border-color: #b7e2c5 !important;
+  background-color: #e8f5ec !important;
+  color: #14532d !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2314532d' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important;
+}
+.admin-ios-theme [data-iriss-order-room="1"] select.iriss-status-pill[data-status="completed"],
+.admin-ios-theme [data-iriss-order-room="1"] select.iriss-status-pill[data-status="inactive"] {
+  border-color: #d1d1d6 !important;
+  background-color: #f2f2f7 !important;
+  color: #3a3a3c !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%233a3a3c' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") !important;
+}
+
+/* Pārskats v3: visi sadaļu virsraksti pasūtījumā bez zilās joslas (Statuss, Klients, Platformas, Finansējums). */
+.admin-ios-theme [data-iriss-order-room="1"] .iriss-section-heading {
+  background: none !important;
+  padding: 0 !important;
+  margin: 0 0 10px !important;
+  border: 0 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  color: var(--iriss-ink-2) !important;
+}
+
+/* ===== QA 29.10 ===== */
+/* Telefonā admin-mobile.css pogām noņem rāmjus (border: 0 !important) - čipi izskatījās pēc teksta. Rāmis ar box-shadow. */
+.admin-ios-theme .admin-m [data-iriss-order-room="1"] button:is([class*="rounded-full"], [class*="rounded-lg"])[class*="border"]:not([aria-pressed="true"]):not([class*="bg-[var(--iriss-graphite)]"]):not([class*="bg-[#dcfce7]"]):not([class*="border-dashed"]) {
+  box-shadow: inset 0 0 0 1px var(--iriss-line-strong, #d1d1d6) !important;
+}
+.admin-ios-theme .admin-m [data-iriss-order-room="1"] button:is([class*="rounded-full"], [class*="rounded-lg"])[class*="border"][aria-pressed="true"] {
+  box-shadow: inset 0 0 0 1.5px var(--iriss-ink, #1c1c1e) !important;
+}
+.admin-ios-theme .admin-m [data-iriss-order-room="1"] button[class*="border-dashed"] {
+  box-shadow: none !important;
+  outline: 1px dashed var(--iriss-line-strong, #c7c7cc);
+  outline-offset: -1px;
+}
+/* Diapazona lauki ar mērvienību (cm³, kW, km): teksts nedrīkst uzklāties mērvienībai. */
+.iriss-range-input-wrap:has(.iriss-range-unit) > input,
+.iriss-spec-fields .iriss-range-field .iriss-range-input-wrap > input.iriss-range-input-has-unit {
+  padding-right: 36px !important;
+}
+/* Tāme: cenas/km/% laukos teksts nesaskaras ar mērvienību (€ km %). */
+#iriss-room-tame span.relative > input {
+  padding-right: 30px !important;
+}
+
+/* Nils 29.10 «salāgo»: datorā visu pārbūvēto sadaļu virsraksti 22px/700, istabas cilnes kā Autoparka kabinetā (13/600). */
+@media (min-width: 900px) {
+  .admin-ios-theme .admin-m h1.iriss-list-title,
+  .admin-ios-theme h1.iriss-list-title.iriss-list-title {
+    font-size: 22px !important;
+    font-weight: 700 !important;
+  }
+  .admin-ios-theme [data-iriss-order-room="1"] .iriss-order-tabs [role="tab"] {
+    font-weight: 600 !important;
+  }
+  .admin-ios-theme [data-iriss-order-room="1"] .iriss-order-tabs [role="tab"][aria-selected="true"] {
+    background: var(--iriss-graphite) !important;
+    color: var(--iriss-on-graphite) !important;
+  }
+}
+
+/* Nils 30.10 (makets «Meklēšanas filtri»): saites pa avotiem filtru kartītē. */
+.iriss-filter-links-row {
+  padding: 9px 0;
+  border-top: 1px solid var(--iriss-line);
+}
+.iriss-filter-links-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.iriss-filter-links-head {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+}
+.iriss-filter-links-src {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--iriss-ink);
+}
+.iriss-filter-links-url {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  color: var(--iriss-ink-2);
+}
+.iriss-filter-links-url.is-empty {
+  color: var(--iriss-ink-3, #8e8e93);
+}
+.iriss-filter-links-count {
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--iriss-line);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--iriss-ink);
+  white-space: nowrap;
+}
+@media (max-width: 639px) {
+  .iriss-filter-links-head {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+  .iriss-filter-links-url {
+    display: none;
   }
 }

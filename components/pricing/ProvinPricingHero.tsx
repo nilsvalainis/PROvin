@@ -1,19 +1,18 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useRef, useState, type SyntheticEvent } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { Link } from "@/i18n/navigation";
 import { useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
-import { HeroVisual } from "@/components/HeroVisual";
-import { Tp5DesktopFeatureIconRow } from "@/components/test-pricing-5/Tp5DesktopFeatureIconRow";
+import { EuropeDotMap } from "@/components/EuropeDotMap";
+import { HeroOrderCardV6 } from "@/components/home/v6/HeroOrderCardV6";
+import heroStyles from "@/components/home/v6/hero-v6.module.css";
 import { Tp5CheckoutEmailModal, Tp5MiniConfirmModal } from "@/components/test-pricing-5/Tp5MiniConfirmModal";
-import { Tp5MobilePricingCard } from "@/components/test-pricing-5/Tp5MobilePricingCard";
+import { Tp5VinHighlightContext } from "@/components/test-pricing-5/Tp5MobilePricingCard";
+import { getHomeV6HeroCopy } from "@/lib/home-hero-v6-copy";
 import { getTp5HeroCopy } from "@/lib/test-pricing-5-hero-copy";
-import {
-  getTp5HeroSwipeOrder,
-  TP5_MOBILE_CHECKOUT_PLAN,
-  type Tp5MobileServiceId,
-} from "@/lib/test-pricing-5-mobile";
+import { TP5_MOBILE_CHECKOUT_PLAN, type Tp5MobileServiceId } from "@/lib/test-pricing-5-mobile";
 import { getTp5UiCopy } from "@/lib/test-pricing-5-ui-copy";
 import {
   validateTp5InlineFields,
@@ -26,9 +25,9 @@ import {
 } from "@/lib/mini-csdd-eligibility";
 import { normalizeVin } from "@/lib/order-field-validation";
 import type { TestPricingPlanId } from "@/lib/test-pricing-plans";
-import { useTierSwipe } from "@/lib/use-test-pricing-tier-swipe";
 import { parseHeroPlanParam } from "@/lib/home-hero-plan";
 import { publicOrderVinFromQuery, PUBLIC_ORDER_VIN_QUERY } from "@/lib/public-order-vin-prefill";
+import { HERO_PREFILL_EVENT, type HeroPrefillDetail } from "@/lib/hero-prefill";
 import { followStripeCheckoutUrl, trackMetaLead } from "@/lib/meta-pixel";
 
 /**
@@ -43,6 +42,29 @@ function HeroSearchParamsSync({ onChange }: { onChange: (params: URLSearchParams
   return null;
 }
 
+/** Telefonā «Atskaites piemērs» ved uz paketes sadaļu (dīlera dati - zemāk šajā lapā). */
+const HERO_SAMPLE_TARGET: Partial<Record<Tp5MobileServiceId, string>> = {
+  audits: "/pakalpojumi#paraugi",
+  mini: "/pakalpojumi#pakalpojums-mini",
+  dealer: "#dilera-dati",
+};
+
+/** Lapas enkurs - parasta saite; cita lapa - next-intl `Link` (valodas prefikss). */
+function PillLink({ href, className, children }: { href: string; className: string; children: ReactNode }) {
+  if (href.startsWith("#")) {
+    return (
+      <a href={href} className={className}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
+  );
+}
+
 type Props = {
   checkoutSource: string;
   sectionId?: string;
@@ -53,14 +75,16 @@ type Props = {
 export function ProvinPricingHero({
   checkoutSource,
   sectionId = "provin-pricing-hero",
-  mobileTitleId = "provin-pricing-hero-title",
+  mobileTitleId: _mobileTitleId = "provin-pricing-hero-title",
   desktopTitleId = "provin-pricing-hero-title-desktop",
 }: Props) {
   const locale = useLocale();
   const uiCopy = getTp5UiCopy(locale);
   const [searchParams, setSearchParams] = useState<URLSearchParams>(() => new URLSearchParams());
-  const [mobileActiveId, setMobileActiveId] = useState<Tp5MobileServiceId>("audits");
-  const [desktopActiveId, setDesktopActiveId] = useState<Tp5MobileServiceId>("audits");
+  const [activeId, setActiveId] = useState<Tp5MobileServiceId>("audits");
+  /** Telefonā pasūtījuma lauki atveras pēc paketes izvēles. */
+  const [picked, setPicked] = useState(false);
+  const [leadOpen, setLeadOpen] = useState(false);
   const planParamApplied = useRef(false);
   const onSearchParams = useCallback((params: URLSearchParams) => {
     setSearchParams(params);
@@ -69,8 +93,8 @@ export function ProvinPricingHero({
     planParamApplied.current = true;
     const plan = parseHeroPlanParam(params.get("plan") ?? params.get("tab"));
     if (plan) {
-      setMobileActiveId(plan);
-      setDesktopActiveId(plan);
+      setActiveId(plan);
+      setPicked(true);
     }
   }, []);
   const [vin, setVin] = useState("");
@@ -80,32 +104,43 @@ export function ProvinPricingHero({
   const [loading, setLoading] = useState(false);
   const [miniConfirm, setMiniConfirm] = useState<MiniCsddModalVariant | null>(null);
   const [emailConfirmPlan, setEmailConfirmPlan] = useState<TestPricingPlanId | null>(null);
-  const mobileHeroCopy = getTp5HeroCopy(locale, mobileActiveId);
-  const desktopHeroCopy = getTp5HeroCopy(locale, desktopActiveId);
-
-  const mobileSwipeOrder = getTp5HeroSwipeOrder(mobileActiveId);
-  const desktopSwipeOrder = getTp5HeroSwipeOrder(desktopActiveId);
-
-  const {
-    onSwipeAreaTouchStart: onMobileSwipeStart,
-    onSwipeAreaTouchMove: onMobileSwipeMove,
-    onSwipeAreaTouchEnd: onMobileSwipeEnd,
-    onSwipeAreaTouchCancel: onMobileSwipeCancel,
-  } = useTierSwipe(mobileActiveId, setMobileActiveId, mobileSwipeOrder);
-
-  const {
-    onSwipeAreaTouchStart: onDesktopSwipeStart,
-    onSwipeAreaTouchMove: onDesktopSwipeMove,
-    onSwipeAreaTouchEnd: onDesktopSwipeEnd,
-    onSwipeAreaTouchCancel: onDesktopSwipeCancel,
-  } = useTierSwipe(desktopActiveId, setDesktopActiveId, desktopSwipeOrder);
+  const heroCopy = getTp5HeroCopy(locale, activeId);
+  const isDealer = activeId === "dealer";
+  const v6 = getHomeV6HeroCopy(locale);
 
   const cancelled = searchParams.get("atcelts") === "1";
 
+  /** VIN / numurzīme, kas ielikta no bezmaksas pārbaudes: lauks nomirgo zaļš un paliek zaļš, līdz to maina. */
+  const [prefilledVin, setPrefilledVin] = useState("");
+
   useEffect(() => {
     const prefilled = publicOrderVinFromQuery(searchParams.get(PUBLIC_ORDER_VIN_QUERY));
-    if (prefilled) setVin(prefilled);
+    if (prefilled) {
+      setVin(prefilled);
+      setPrefilledVin(prefilled);
+      setPicked(true);
+    }
   }, [searchParams]);
+
+  useEffect(() => {
+    function onPrefill(event: Event) {
+      const detail = (event as CustomEvent<HeroPrefillDetail>).detail;
+      const value = publicOrderVinFromQuery(detail?.vin);
+      if (!value) return;
+      setErrors({});
+      setGlobalError(null);
+      setVin(value);
+      if (detail.listingUrl) setListingUrl(detail.listingUrl);
+      if (detail.plan) setActiveId(detail.plan);
+      setPicked(true);
+      // Notīra un ieliek no jauna, lai animācija atkārtojas arī ar to pašu VIN.
+      setPrefilledVin("");
+      window.requestAnimationFrame(() => setPrefilledVin(value));
+    }
+    window.addEventListener(HERO_PREFILL_EVENT, onPrefill);
+    return () => window.removeEventListener(HERO_PREFILL_EVENT, onPrefill);
+  }, []);
+  const vinHighlight = Boolean(prefilledVin) && vin === prefilledVin;
 
   const submitCheckout = useCallback(
     async (planId: TestPricingPlanId, customerEmail?: string) => {
@@ -195,13 +230,14 @@ export function ProvinPricingHero({
     [listingUrl, locale, lookupMiniConfirmVariant, vin],
   );
 
-  const submitMobileCheckout = useCallback(() => {
-    void requestServiceCheckout(mobileActiveId);
-  }, [mobileActiveId, requestServiceCheckout]);
+  const submitCheckoutForActive = useCallback(() => {
+    void requestServiceCheckout(activeId);
+  }, [activeId, requestServiceCheckout]);
 
-  const submitDesktopCheckout = useCallback(() => {
-    void requestServiceCheckout(desktopActiveId);
-  }, [desktopActiveId, requestServiceCheckout]);
+  const selectService = useCallback((id: Tp5MobileServiceId) => {
+    setActiveId(id);
+    setPicked(true);
+  }, []);
 
   const closeMiniConfirm = useCallback(() => {
     setMiniConfirm(null);
@@ -222,8 +258,7 @@ export function ProvinPricingHero({
   const switchToAuditsCheckout = useCallback(
     (email: string) => {
       setMiniConfirm(null);
-      setMobileActiveId("audits");
-      setDesktopActiveId("audits");
+      setActiveId("audits");
       void submitCheckout(TP5_MOBILE_CHECKOUT_PLAN.audits, email);
     },
     [submitCheckout],
@@ -238,92 +273,68 @@ export function ProvinPricingHero({
     [emailConfirmPlan, submitCheckout],
   );
 
-  const stopSwipePropagation = (event: SyntheticEvent) => {
-    event.stopPropagation();
-  };
+  const titleWords = heroCopy.titlePrefix.trim().split(/\s+/);
 
   return (
+    <Tp5VinHighlightContext.Provider value={vinHighlight}>
     <div className={styles.heroPricingShell}>
       <Suspense fallback={null}>
         <HeroSearchParamsSync onChange={onSearchParams} />
       </Suspense>
-      <section id={sectionId} className={styles.heroSurface} aria-labelledby={mobileTitleId}>
-        <div className={styles.heroAmbientGlow} aria-hidden />
-        <div className={styles.heroBackdrop} aria-hidden>
-          <HeroVisual />
+      <section id={sectionId} className={heroStyles.hero} aria-labelledby={desktopTitleId}>
+        <div className={heroStyles.map} aria-hidden>
+          <EuropeDotMap />
         </div>
-        <div className={styles.heroScrim} aria-hidden />
-
-      <div className={styles.heroInnerMobile}>
-        {cancelled ? <p className={styles.cancelNote}>{uiCopy.cancelNote}</p> : null}
-
-        {/* Mobilajā skatā redzama virsraksta nav: H1 tikai ekrāna lasītājam. Desktop `heroInnerMobile`
-            ir `display:none`, tāpēc katrā skatā pieejams tieši viens H1. */}
-        <h1 id={mobileTitleId} className="sr-only">
-          {mobileHeroCopy.titlePrefix}
-          {mobileHeroCopy.titleAccent}
-        </h1>
-
-        <div className={styles.stage}>
-          <Tp5MobilePricingCard
-            layout="mobile"
-            activeServiceId={mobileActiveId}
-            setActiveServiceId={setMobileActiveId}
-            vin={vin}
-            listingUrl={listingUrl}
-            errors={errors}
-            globalError={globalError}
-            loading={loading}
-            onVinChange={setVin}
-            onListingUrlChange={setListingUrl}
-            onSubmit={submitMobileCheckout}
-            onSwipeAreaTouchStart={onMobileSwipeStart}
-            onSwipeAreaTouchMove={onMobileSwipeMove}
-            onSwipeAreaTouchEnd={onMobileSwipeEnd}
-            onSwipeAreaTouchCancel={onMobileSwipeCancel}
-            stopSwipePropagation={stopSwipePropagation}
-          />
+        <div className={heroStyles.inner}>
+          {cancelled ? <p className={`${styles.cancelNote} ${heroStyles.cancel}`}>{uiCopy.cancelNote}</p> : null}
+          <div className={heroStyles.copy}>
+            <h1 key={isDealer ? "dealer" : "audit"} id={desktopTitleId} className={heroStyles.title}>
+              {titleWords.map((word, i) => (
+                <span key={`${word}-${i}`} className={heroStyles.word} style={{ "--d": i } as CSSProperties}>
+                  {word}{" "}
+                </span>
+              ))}
+              <em className={`${heroStyles.word} ${heroStyles.accent}`} style={{ "--d": titleWords.length } as CSSProperties}>
+                {heroCopy.titleAccent}
+              </em>
+            </h1>
+            <p className={`${heroStyles.lead}${leadOpen ? ` ${heroStyles.leadOpen}` : ""}`}>
+              {isDealer ? v6.dealerLeadFirst : v6.leadFirst}{" "}
+              <span className={heroStyles.leadRest}>{isDealer ? v6.dealerLeadRest : v6.leadRest}</span>{" "}
+              {leadOpen ? null : (
+                <button type="button" className={heroStyles.readMore} onClick={() => setLeadOpen(true)}>
+                  {v6.readMore}
+                </button>
+              )}
+            </p>
+            <p className={heroStyles.rating}>
+              <i aria-hidden>★</i> <b>5,0</b> {v6.rating}
+            </p>
+          </div>
+          <div className={heroStyles.cardCol}>
+            <HeroOrderCardV6
+              activeId={activeId}
+              onSelect={selectService}
+              picked={picked}
+              vin={vin}
+              listingUrl={listingUrl}
+              errors={errors}
+              globalError={globalError}
+              loading={loading}
+              onVinChange={setVin}
+              onListingUrlChange={setListingUrl}
+              onSubmit={submitCheckoutForActive}
+            />
+            <div className={heroStyles.pills}>
+              <PillLink href={HERO_SAMPLE_TARGET[activeId] ?? HERO_SAMPLE_TARGET.audits!} className={`${heroStyles.pill} ${heroStyles.pillSample}`}>
+                📄 {v6.samplePill}
+              </PillLink>
+              <PillLink href={isDealer ? "/pakalpojumi#pakalpojums-dealer" : "#segums"} className={heroStyles.pill}>
+                {v6.includedPill} ↓
+              </PillLink>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div className={styles.heroInnerDesktop}>
-        {cancelled ? (
-          <p className={`${styles.cancelNote} ${styles.cancelNoteDesktop}`}>{uiCopy.cancelNote}</p>
-        ) : null}
-
-        <header className={styles.heroCopyDesktop}>
-          <h1 id={desktopTitleId} className={styles.heroTitleDesktop}>
-            {desktopHeroCopy.titlePrefix}
-            <span className={`${styles.heroTitleAccent} text-[#2563EB]`}>
-              {desktopHeroCopy.titleAccent}
-            </span>
-          </h1>
-          <Tp5DesktopFeatureIconRow activeServiceId={desktopActiveId} />
-        </header>
-
-        <div className={`${styles.stage} ${styles.heroStageDesktop}`}>
-          <Tp5MobilePricingCard
-            activeServiceId={desktopActiveId}
-            setActiveServiceId={setDesktopActiveId}
-            vin={vin}
-            listingUrl={listingUrl}
-            errors={errors}
-            globalError={globalError}
-            loading={loading}
-            onVinChange={setVin}
-            onListingUrlChange={setListingUrl}
-            onSubmit={submitDesktopCheckout}
-            onSwipeAreaTouchStart={onDesktopSwipeStart}
-            onSwipeAreaTouchMove={onDesktopSwipeMove}
-            onSwipeAreaTouchEnd={onDesktopSwipeEnd}
-            onSwipeAreaTouchCancel={onDesktopSwipeCancel}
-            stopSwipePropagation={stopSwipePropagation}
-            tabLayoutGroupId="tp5-tabs-desktop"
-            tabPillLayoutId="tp5-tab-pill-desktop"
-            tierMetaDescClassName={styles.tierMetaDesc}
-          />
-        </div>
-      </div>
       </section>
       <Tp5MiniConfirmModal
         open={miniConfirm !== null}
@@ -340,5 +351,6 @@ export function ProvinPricingHero({
         onClose={closeEmailConfirm}
       />
     </div>
+    </Tp5VinHighlightContext.Provider>
   );
 }

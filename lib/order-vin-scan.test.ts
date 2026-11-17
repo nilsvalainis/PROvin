@@ -102,6 +102,25 @@ describe("pasūtījuma VIN SCAN ieraksts", () => {
     });
     const jojSum = buildOrderVinScanSummary(jojRec);
     expect(jojSum?.rows[0]).toMatchObject({ id: "joj_copart_iaai", action: "import_auction", canImportAuction: true });
+    const euRec = parseOrderVinScanRecord({
+      at: "2026-10-14T09:00:00.000Z",
+      vin: "WBA5R1C0XLFH42873",
+      status: "done",
+      indicators: [
+        indicator({
+          id: "thecarapi_eu",
+          label: "EU izsoles (TheCarApi)",
+          status: "found",
+          summary: "Openlane 2024",
+          auctions: [{ date: "2024-06-02", venue: "Openlane", price: "9 100 EUR", odometer: "190 100 km" }],
+        }),
+      ],
+    });
+    expect(buildOrderVinScanSummary(euRec)?.rows[0]).toMatchObject({
+      id: "thecarapi_eu",
+      action: "import_auction",
+      canImportAuction: true,
+    });
     expect(sum?.rows[0]?.id).toBe("stat_vin");
     expect(sum?.noneRows.map((r) => r.id).sort()).toEqual(["regitra", "tjekbil"]);
     expect(orderVinScanCompactHint(sum)).toContain("Copart 2025, 20 foto");

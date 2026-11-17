@@ -46,6 +46,33 @@ describe("classifyOdometerAnomalies", () => {
     expect(hasActiveRollbackAnomaly(rows)).toBe(true);
   });
 
+  it("attīšana paliek rollback, arī ja pēc gadiem nobraukums pārsniedz veco maksimumu (Škoda SE → LV)", () => {
+    const rows = [
+      row({ date: "01.05.2019", odometer: "181849", sourceLabel: "AutoDNA", sourceOrder: 0, sortableTime: Date.UTC(2019, 4, 1), country: "Zviedrija" }),
+      row({ date: "11.05.2020", odometer: "253760", sourceLabel: "AutoDNA", sourceOrder: 1, sortableTime: Date.UTC(2020, 4, 11), country: "Zviedrija" }),
+      row({ date: "28.09.2020", odometer: "181345", sourceLabel: "CSDD", sourceOrder: 2, sortableTime: Date.UTC(2020, 8, 28) }),
+      row({ date: "26.10.2021", odometer: "195748", sourceLabel: "CSDD", sourceOrder: 3, sortableTime: Date.UTC(2021, 9, 26) }),
+      row({ date: "01.11.2024", odometer: "245236", sourceLabel: "CSDD", sourceOrder: 4, sortableTime: Date.UTC(2024, 10, 1) }),
+      row({ date: "30.11.2025", odometer: "275181", sourceLabel: "CSDD", sourceOrder: 5, sortableTime: Date.UTC(2025, 10, 30) }),
+    ];
+    const out = classifyOdometerAnomalies(rows);
+    expect(out.map((a) => a.class)).toEqual(["rollback"]);
+    // 181 345 (≈ SE 05.2019 181 849) ir „novecojis dokuments”; kritums redzams pret nākamo LV rādījumu.
+    expect(out[0]?.fromKm).toBe(253760);
+    expect(out[0]?.toKm).toBe(195748);
+    expect(hasActiveRollbackAnomaly(rows)).toBe(true);
+  });
+
+  it("kritums, kas atgūts dažu mēnešu laikā ar vairākiem rādījumiem, nav rollback", () => {
+    const rows = [
+      row({ date: "01.01.2020", odometer: "100000", sourceLabel: "CSDD", sourceOrder: 0, sortableTime: Date.UTC(2020, 0, 1) }),
+      row({ date: "01.03.2020", odometer: "82000", sourceLabel: "CSDD", sourceOrder: 1, sortableTime: Date.UTC(2020, 2, 1) }),
+      row({ date: "01.04.2020", odometer: "83000", sourceLabel: "CSDD", sourceOrder: 2, sortableTime: Date.UTC(2020, 3, 1) }),
+      row({ date: "01.06.2020", odometer: "104000", sourceLabel: "CSDD", sourceOrder: 3, sortableTime: Date.UTC(2020, 5, 1) }),
+    ];
+    expect(hasActiveRollbackAnomaly(rows)).toBe(false);
+  });
+
   it("marks same-month 01.MM drop as date precision", () => {
     const rows = [
       row({

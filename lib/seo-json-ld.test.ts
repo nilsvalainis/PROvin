@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildBlogIndexJsonLd,
   buildBreadcrumbJsonLd,
   buildFaqPageJsonLd,
   buildOrganizationJsonLd,
@@ -20,15 +21,18 @@ describe("seo json-ld", () => {
     });
   });
 
-  it("builds Organization as LocalBusiness with contact and sameAs", () => {
+  it("builds Organization with contact and sameAs, without private legal details", () => {
     const org = buildOrganizationJsonLd("lv", "VIN koda pārbaude");
-    expect(org["@type"]).toEqual(expect.arrayContaining(["Organization", "LocalBusiness"]));
-    expect(org.address).toMatchObject({ "@type": "PostalAddress", addressCountry: "LV" });
-    expect(org.telephone).toMatch(/371/);
+    expect(org["@type"]).toBe("Organization");
+    expect(org).not.toHaveProperty("legalName");
+    expect(org).not.toHaveProperty("address");
+    expect(JSON.stringify(org)).not.toMatch(/Valainis|09118711109|Jana iela/);
+    expect(org).not.toHaveProperty("telephone");
+    expect(org.email).toBeTruthy();
     expect(org.sameAs.length).toBeGreaterThan(0);
   });
 
-  it("emits priced Service offers for the three public plans", () => {
+  it("emits priced Service offers for the public plans (MINI hidden)", () => {
     const list = buildServiceOffersJsonLd(
       "lv",
       { mini: "MINI", audits: "AUDITS", dealer: "DĪLERIS" },
@@ -36,7 +40,21 @@ describe("seo json-ld", () => {
     );
     expect(list.itemListElement).toHaveLength(PUBLIC_SERVICE_OFFERS.length);
     const prices = list.itemListElement.map((row) => row.item.offers.price);
-    expect(prices).toEqual(["39.99", "99.99", "24.99"]);
+    expect(prices).toEqual(["99.99", "24.99"]);
+  });
+
+  it("blog index json-ld can point a thin locale at the indexable article", () => {
+    const ld = buildBlogIndexJsonLd("en", [
+      {
+        slug: "ka-pirkt-lietotu-auto-bez-tabu",
+        title: "How to buy",
+        publishedAt: "2026-09-13",
+        urlLocale: "lv",
+      },
+    ]);
+    const url = ld.blogPost[0]?.url ?? "";
+    expect(url).toContain("/lv/blogs/ka-pirkt-lietotu-auto-bez-tabu");
+    expect(url).not.toContain("/en/blogs/");
   });
 
   it("builds FAQPage and breadcrumbs without locale-less URLs", () => {

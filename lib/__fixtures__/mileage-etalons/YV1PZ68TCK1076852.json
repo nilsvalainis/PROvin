@@ -1,0 +1,845 @@
+{
+ "vin": "YV1PZ68TCK1076852",
+ "label": "Volvo V90 CC: 4 valstis, reģistru dati",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 36, saglabāts 2026-10-31; nolasīts 17.11.2026, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": "https://ss.lv/",
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "VOLVO V90 CROSS COUNTRY",
+   "registrationNumber": "",
+   "firstRegistration": "",
+   "firstRegistrationLatvia": "",
+   "nextInspectionDate": "",
+   "prevInspectionDate": "",
+   "engineDisplacementCm3": "1969",
+   "enginePowerKw": "173",
+   "fuelType": "",
+   "emissionStandard": "Euro 6 BG",
+   "vehicleType": "",
+   "grossMassKg": "2440",
+   "curbMassKg": "1882",
+   "seatCount": "",
+   "roadTaxEur": "",
+   "registrationStatus": "nav reģistrēts",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "",
+   "ownerCountLatvia": "",
+   "vin": "",
+   "modelYear": "",
+   "color": "",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "",
+   "cocType": "",
+   "cocApprovalNumber": "",
+   "cocVariant": "",
+   "cocVersion": "",
+   "insuranceValidUntil": "",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "",
+    "inspectionDateText": "",
+    "nextInspectionDateText": "",
+    "odometer": "225399",
+    "ratingLabel": "",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": []
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "02.03.2026",
+     "odometer": "219659",
+     "country": "Dānija"
+    },
+    {
+     "date": "05.04.2024",
+     "odometer": "150044",
+     "country": "Dānija"
+    },
+    {
+     "date": "29.02.2024",
+     "odometer": "147000",
+     "country": "Dānija"
+    },
+    {
+     "date": "18.02.2022",
+     "odometer": "75000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.01.2020",
+     "odometer": "24000",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.2020",
+     "lossAmount": "300 - 400 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "02.03.2026",
+     "country": "Dānija",
+     "description": "Veikta periodiska tehniskā apskate: Izgāja",
+     "odometer": "219659",
+     "includeInPdf": false
+    },
+    {
+     "date": "05.04.2024",
+     "country": "Dānija",
+     "description": "Veikta periodiska tehniskā apskate: Izgāja",
+     "odometer": "150044",
+     "includeInPdf": false
+    },
+    {
+     "date": "29.02.2024",
+     "country": "Dānija",
+     "description": "Veikta periodiska tehniskā apskate: Īslaicīgi neizdevās",
+     "odometer": "147000",
+     "includeInPdf": false
+    },
+    {
+     "date": "18.02.2022",
+     "country": "Dānija",
+     "description": "Veikta papildus tehniskā apskate",
+     "odometer": "75000",
+     "includeInPdf": false
+    },
+    {
+     "date": "18.02.2022",
+     "country": "Dānija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "75000",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.01.2020",
+     "country": "",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "24000",
+     "includeInPdf": false
+    },
+    {
+     "date": "16.11.2018",
+     "country": "",
+     "description": "Ziņots par pirmo reģistrāciju",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.03.2026",
+     "odometer": "219000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.04.2024",
+     "odometer": "150000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.02.2024",
+     "odometer": "147000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.02.2022",
+     "odometer": "75000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.01.2020",
+     "odometer": "24000",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2018",
+     "odometer": "11",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "Dati nav pieejami",
+     "lossAmount": "251 - 500 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.10.2018",
+     "country": "",
+     "description": "Ražots",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2018",
+     "country": "",
+     "description": "Reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2022",
+     "country": "Dānija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2024",
+     "country": "Dānija",
+     "description": "Nenokārtoja tehnisko apskatiŠim transportlīdzeklim ir fiksēta nenokārtota apskate. Tas var būt noticis neizietu",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.04.2024",
+     "country": "Dānija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2026",
+     "country": "Dānija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.04.2026",
+     "country": "Dānija",
+     "description": "Noņemts no uzskaites",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "2026-03-02",
+     "odometer": "219659",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Færdselsstyrelsen (synsrapport) — izturēta"
+    },
+    {
+     "date": "2026-03-02",
+     "odometer": "219000",
+     "country": "Dānija",
+     "origin": "Motorstyrelsen (nodokļu reģistrs)"
+    },
+    {
+     "date": "2024-04-05",
+     "odometer": "150044",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Færdselsstyrelsen (synsrapport) — izturēta"
+    },
+    {
+     "date": "2024-04-05",
+     "odometer": "150000",
+     "country": "Dānija",
+     "origin": "Motorstyrelsen (nodokļu reģistrs)"
+    },
+    {
+     "date": "2024-02-29",
+     "odometer": "147000",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Motorstyrelsen (nodokļu reģistrs); Færdselsstyrelsen (synsrapport) — jāveic atkārtota apskate"
+    },
+    {
+     "date": "2022-02-18",
+     "odometer": "75000",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Færdselsstyrelsen (synsrapport) — izturēta; Færdselsstyrelsen (muitas apskate)"
+    },
+    {
+     "date": "2018-11-16",
+     "odometer": "0",
+     "country": "Dānija",
+     "origin": "Pirmā reģistrācija"
+    }
+   ],
+   "incidents": [
+    {
+     "date": "2024-02-29",
+     "amount": "",
+     "country": "Dānija",
+     "note": "Apskate nav izturēta (jāveic atkārtota apskate) — Aksler, og affjedring: Aksler, og affjedring, Fjedre og stabilisator, Aksler, og affjedring, Fjederkomponent er beskadiget eller har brud.,  , højre, 1. aksel, Væsentlig fejl"
+    }
+   ],
+   "timeline": [
+    {
+     "date": "2026-04-28",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings beidzas"
+    },
+    {
+     "date": "2026-04-27",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Alm. Brand, beigusies"
+    },
+    {
+     "date": "2026-04-27",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Reģistrācijas statuss: Noņemts no uzskaites"
+    },
+    {
+     "date": "2026-03-02",
+     "odometer": "219659",
+     "country": "Dānija",
+     "event": "Periodiskā apskate: Izturēta · Applus Danmark A/S"
+    },
+    {
+     "date": "2025-02-28",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings sākas"
+    },
+    {
+     "date": "2025-02-28",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings beidzas"
+    },
+    {
+     "date": "2025-02-28",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Alm. Brand, aktīva"
+    },
+    {
+     "date": "2025-02-28",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Alm. Brand, beigusies"
+    },
+    {
+     "date": "2024-04-05",
+     "odometer": "150044",
+     "country": "Dānija",
+     "event": "Periodiskā apskate: Izturēta · Dekra Bilsyn"
+    },
+    {
+     "date": "2024-02-29",
+     "odometer": "147000",
+     "country": "Dānija",
+     "event": "Periodiskā apskate: Jāveic atkārtota apskate · Dekra Bilsyn"
+    },
+    {
+     "date": "2023-03-01",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings beidzas"
+    },
+    {
+     "date": "2023-03-01",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings sākas"
+    },
+    {
+     "date": "2023-03-01",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Alm. Brand, aktīva"
+    },
+    {
+     "date": "2023-03-01",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Alm. Brand, beigusies"
+    },
+    {
+     "date": "2022-03-01",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings sākas"
+    },
+    {
+     "date": "2022-03-01",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Alm. Brand, aktīva"
+    },
+    {
+     "date": "2022-02-18",
+     "odometer": "75000",
+     "country": "Dānija",
+     "event": "Reģistrācijas apskate: Izturēta · Dekra Bilsyn"
+    },
+    {
+     "date": "2022-02-18",
+     "odometer": "75000",
+     "country": "Dānija",
+     "event": "Muitas apskate (imports): Stāvoklis vidējs · Dekra Bilsyn"
+    },
+    {
+     "date": "2018-11-16",
+     "odometer": "",
+     "country": "",
+     "event": "Pirmā reģistrācija"
+    }
+   ],
+   "ownersSummary": "Īpašnieku skaits Dānijā: 2.",
+   "statusRecords": "Izmantošanas veids: Privāti\nDegviela: Dīzelis\nJauda / piedziņa: 235 HK (173 kW) · Pilnpiedziņa\nĀtrumkārba: Automāts (nav CVT)\nLīzings: 28.02.2025 - 28.02.2025 (3 periodi)\nReģistrācijas statuss: Noņemts no uzskaites (27.04.2026)\nStāvoklis pēc importa: Vidējs\nPēdējā apskate: 02.03.2026, Izturēta\nPašreizējā OCTA: Alm. Brand (Beigusies)",
+   "fetchedAt": "2026-10-29T08:11:20.730Z"
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-10-29T08:11:31.473Z"
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-10-29T08:11:42.434Z"
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-10-31T11:02:59.129Z"
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "",
+     "odometer": "",
+     "location": "",
+     "works": ""
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": []
+   },
+   "outvin": {
+    "precheckAt": null,
+    "vin": "YV1PZ68TCK1076852",
+    "capabilitySlots": [],
+    "purchases": [],
+    "vehicleInfo": {
+     "model": "",
+     "modelSeries": "",
+     "vinCode": "",
+     "vehicleType": "",
+     "transmission": "",
+     "steeringSide": "",
+     "engineCode": "",
+     "engineNumber": "",
+     "body": "",
+     "drive": "",
+     "power": "",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "Sweden",
+     "color": "",
+     "colorCode": "",
+     "interior": "",
+     "interiorCode": "",
+     "fuel": "",
+     "displacement": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "V90",
+     "modelSeries": "V90 Cross Country",
+     "vinCode": "YV1PZ68TCK1076852",
+     "vehicleType": "V543 V90CC",
+     "transmission": "8-speed automatic, AWD (TG-81SC)",
+     "steeringSide": "LHD (left-hand drive)",
+     "engineCode": "D4204T23",
+     "engineNumber": "",
+     "body": "Estate",
+     "drive": "All-wheel drive",
+     "power": "173 kW (232 HP / 235 PS)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "V543",
+     "productionDate": "2018",
+     "firstRegistration": "11.2018",
+     "warrantyStartDate": "",
+     "countryRegion": "Sweden",
+     "color": "Onyx Black",
+     "colorCode": "1107",
+     "interior": "Leather Agnes (Charcoal)",
+     "interiorCode": "1019",
+     "fuel": "Diesel",
+     "displacement": "2.0 l"
+    },
+    "accidentCheck": "",
+    "stolenCheck": ""
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "",
+    "fetchedAt": "",
+    "lastCostUsd": "",
+    "status": "unknown",
+    "summary": ""
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "21",
+   "listingCreated": "08.10.2026",
+   "priceDrop": "€ 0",
+   "priceHistory": [
+    {
+     "date": "08.10.2026",
+     "price": 20990,
+     "mileage": 225070,
+     "year": 2018,
+     "delta": 0
+    }
+   ],
+   "listingMileageOdometer": "225 070",
+   "listingMileageDate": "08.10.2026",
+   "listingMileageCountry": "Latvija"
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "comments": "",
+     "label": ""
+    }
+   ]
+  }
+ }
+}

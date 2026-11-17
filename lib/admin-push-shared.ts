@@ -80,3 +80,19 @@ export function adminPushMorningMessage(c: { open: number; urgent: number; overd
 export function safeAdminPushUrl(url: string): string {
   return /^\/admin(\/|$)/.test(url) && !url.startsWith("//") ? url : "/admin";
 }
+
+/** Neapmaksātie pasūtījumi gaida Nila lēmumu (atgādinājumu klientam sūta tikai Nils pats). */
+export function adminPushUnpaidOrdersMessage(p: { count: number; vin: string | null }): AdminPushMessage {
+  const vin = pushVinTail(p.vin);
+  const body =
+    p.count === 1
+      ? `1 neapmaksāts pasūtījums${vin ? ` · VIN ${vin}` : ""} - vai sūtīt atgādinājumu?`
+      : `${p.count} neapmaksāti pasūtījumi - vai sūtīt atgādinājumus?`;
+  return {
+    title: "Neapmaksāti pasūtījumi",
+    body,
+    url: "/admin/dashboard?view=unpaid",
+    tag: "unpaid-orders",
+    audience: "pro",
+  };
+}

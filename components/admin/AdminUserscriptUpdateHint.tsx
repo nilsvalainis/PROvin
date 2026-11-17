@@ -20,7 +20,16 @@ export function AdminUserscriptUpdateHint({
   const [version, setVersion] = useState<string | null>(null);
   const [settled, setSettled] = useState(false);
 
-  useEffect(() => watchProvinUserscript(setVersion, () => setSettled(true)), []);
+  useEffect(
+    () =>
+      watchProvinUserscript(
+        (next) => {
+          setVersion((prev) => (prev === next ? prev : next));
+        },
+        () => setSettled(true),
+      ),
+    [],
+  );
 
   const min = vinScanUserscriptMinLabel();
   const box = `admin-userscript-hint mb-2 hidden rounded-md border border-amber-700/30 bg-amber-500/10 px-2 py-1 text-[11px] leading-snug text-[var(--color-apple-text)] md:block ${className}`;

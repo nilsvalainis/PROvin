@@ -191,3 +191,31 @@ export function formatAdminMobileHoursLabel(remainingMs: number): string {
   const h = Math.max(1, Math.round(remainingMs / (60 * 60 * 1000)));
   return `${h} h`;
 }
+
+/** Atver (izvērš) admin bloku pēc `blockId` un ritina līdz tam (telefonā bloki sākumā sakļauti). */
+export const ADMIN_OPEN_BLOCK_EVENT = "provin-admin-open-block";
+
+export function requestOpenAdminBlock(blockId: string): void {
+  if (typeof document === "undefined") return;
+  try {
+    document.dispatchEvent(new CustomEvent(ADMIN_OPEN_BLOCK_EVENT, { detail: { blockId } }));
+  } catch {
+    /* ignore */
+  }
+}
+
+/** VIN SCAN kartīte ziņo dokam par skenēšanas stāvokli (telefonā redzams statuss). */
+export const ADMIN_MOBILE_VIN_SCAN_STATE_EVENT = "provin-admin-mobile-vin-scan-state";
+
+export type AdminMobileVinScanState =
+  | { phase: "running" }
+  | { phase: "done"; found: number; total: number }
+  | { phase: "error" };
+
+/** Telefona maksas avotu poga -> bloks, kurā ir īstā „Ielādēt” poga. */
+export const ADMIN_MOBILE_PAID_SOURCE_BLOCK: Record<"oneauto" | "asv" | "joj" | "speckr", string> = {
+  oneauto: "auto-records",
+  speckr: "auto-records",
+  asv: "asv",
+  joj: "asv",
+};

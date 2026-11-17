@@ -70,7 +70,7 @@ describe("assembleListingPeekCustomerComment", () => {
     expect(comment).not.toContain("1. ");
     expect(comment).toContain("Sākotnējie dati norāda uz augstu odometra rādījumu ticamību");
     expect(comment).toContain(". Automašīnas negadījumu vēsturi nepieciešams padziļināti pārbaudīt");
-    expect(comment).toContain(". Šim modelim ir zināmas nianses");
+    expect(comment).toContain(". Šim modeļim ir zināmas nianses");
     expect(comment).toContain(". Pārdevējam ir salīdzinoši laba reputācija");
     expect(comment).toContain(". Virspusēji izvērtējot sludinājuma fotogrāfijas, būtiski vizuālie defekti netika novēroti.");
     expect(comment).toContain(". Ja auto ir apkopts pie oficiālā dīlera");
@@ -273,14 +273,35 @@ describe("LISTING_PEEK_TOPICS", () => {
     expect(listingPeekPhraseById("odometer-tehniska-pase")).toBe(
       "Šim auto datus no ārvalstu reģistriem iegūt var būt grūti. Pirms pasūtījuma palūdziet pārdevējam ārvalsts reģistrācijas apliecības (tehniskās pases) foto, kurā redzams reģistrācijas numurs. Tas var palīdzēt iegūt vairāk vēstures datu.",
     );
+    expect(LISTING_PEEK_TOPICS.find((t) => t.id === "odometer")?.phrases.find((p) => p.id === "odometer-japeta")?.label).toBe(
+      "Jāpēta",
+    );
+    expect(LISTING_PEEK_TOPICS.find((t) => t.id === "incidents")?.phrases.find((p) => p.id === "incidents-pazimes")?.label).toBe(
+      "Pazīmes",
+    );
+    expect(LISTING_PEEK_TOPICS.find((t) => t.id === "technical")?.phrases.find((p) => p.id === "technical-nianses")?.label).toBe(
+      "Nianses",
+    );
+    expect(LISTING_PEEK_TOPICS.find((t) => t.id === "seller")?.phrases.find((p) => p.id === "seller-jautajumi")?.label).toBe(
+      "Jautājumi",
+    );
+    expect(listingPeekPhraseById("odometer-japeta")).toBe(
+      "Latvijā fiksētie nobraukuma rādījumi ir secīgi un loģiski, taču auto uz Latviju ievests jau ar ievērojamu nobraukumu, un tā pirmo dzīves posmu ārvalstīs mūsu sākotnējā pārbaude neaptver. Odometra atbilstību šobrīd nav iespējams pilnvērtīgi apstiprināt, tāpēc pilnīgai pārliecībai nobraukuma hronoloģija jāsalīdzina ar starptautiskajiem un dīleru reģistriem.",
+    );
     expect(listingPeekPhraseById("incidents-nav-redzams")).toBe(
       "Sākotnēji bojājumu pazīmes negadījumu vēsturē nav redzamas.",
+    );
+    expect(listingPeekPhraseById("incidents-pazimes")).toBe(
+      "Pieejamā informācija liecina par iespējamu dalību negadījumā, tāpēc būtiski noskaidrot fiksēto bojājumu raksturu un aprēķināto zaudējumu apmēru. Jāņem vērā arī, ka par auto laiku ārvalstīs negadījumu datus atklāj tikai padziļināta pārbaude.",
     );
     expect(listingPeekPhraseById("technical-merens")).toBe(
       "Konceptuāli šis modelis ir uzticams, taču daudz ko noteiks konkrētā auto stāvoklis, vēsture un objektīvs novērtējums klātienē, jo, kā jau visiem auto, arī šim ir savas vājās vietas.",
     );
     expect(listingPeekPhraseById("technical-nianses")).toBe(
-      "Šim modelim ir zināmas nianses, kurām jāpievērš uzmanība gan apskatot auto klātienē, gan turpmākajā ekspluatācijā.",
+      "Šim modeļim ir zināmas nianses, kurām jāpievērš uzmanība gan apskatot auto klātienē, gan turpmākajā ekspluatācijā. Tehniskās apskates vēsturē ir pazīmes, kas norāda uz vietām, kuras klātienē vērts apskatīt rūpīgāk.",
+    );
+    expect(listingPeekPhraseById("seller-jautajumi")).toBe(
+      "Auto pārdošanā ir jau ilgstoši, un cena ir būtiski samazināta. Uzmanību pievērš arī pārdevēja darbības stils, kas rada papildu jautājumus.",
     );
     expect(listingPeekPhraseById("technical-problematisks")).toBe(
       "Šim modelim ir zināmi riski, kas noteikti jāņem vērā gan pirms pirkuma, gan pēc tā.",
@@ -288,6 +309,28 @@ describe("LISTING_PEEK_TOPICS", () => {
     expect(LISTING_PEEK_COMMENT_CLOSER).toBe(
       "Šis ir sākotnējs, virspusējs vērtējums. PROVIN AUDITS dod pilnu ainu: nobraukuma hronoloģiju, negadījumu datus, dīleru vēsturi un šī modeļa tehniskos riskus. Tas palīdz pieņemt pārdomātu lēmumu un iegūt argumentus cenas sarunām.",
     );
+  });
+
+  it("keeps previously sent letters with the old chip texts in their topic fields", () => {
+    const oldOdometer =
+      "Odometra rādījuma atbilstību šobrīd nav iespējams pilnvērtīgi apstiprināt, tāpēc pilnīgai pārliecībai nobraukuma hronoloģija ir jāsalīdzina ar starptautiskajiem un dīleru reģistriem.";
+    const oldIncidents =
+      "Pieejamā informācija liecina par iespējamu dalību negadījumā, tāpēc būtiski noskaidrot fiksēto bojājumu raksturu un aprēķināto zaudējumu apmēru.";
+    const oldTechnical =
+      "Šim modelim ir zināmas nianses, kurām jāpievērš uzmanība gan apskatot auto klātienē, gan turpmākajā ekspluatācijā.";
+    const oldSeller = "Uzmanību pievērš arī pārdevēja darbības stils, kas rada papildu jautājumus.";
+    const parsed = parseListingPeekCustomerComment(
+      `${oldOdometer} ${oldIncidents} ${oldTechnical} ${oldSeller}\n\n${LISTING_PEEK_COMMENT_CLOSER}`,
+    );
+    expect(parsed.closer).toBe(true);
+    expect(parsed.lines.odometer).toBe(oldOdometer);
+    expect(parsed.lines.incidents).toBe(oldIncidents);
+    expect(parsed.lines.technical).toBe(oldTechnical);
+    expect(parsed.lines.seller).toBe(oldSeller);
+    expect(parsed.lines.odometer).not.toBe(listingPeekPhraseById("odometer-japeta"));
+    expect(parsed.lines.incidents).not.toBe(listingPeekPhraseById("incidents-pazimes"));
+    expect(parsed.lines.technical).not.toBe(listingPeekPhraseById("technical-nianses"));
+    expect(parsed.lines.seller).not.toBe(listingPeekPhraseById("seller-jautajumi"));
   });
 
   it("still recognizes a previously sent letter with the legacy closer", () => {

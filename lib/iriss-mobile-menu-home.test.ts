@@ -35,10 +35,12 @@ describe("IRISS mobile menu home and workspace switch", () => {
     expect(src.sidebar).toContain('label: L.irissMenu');
   });
 
-  it("docks a search button next to the tab bar; IRISS/PRO switch lives in Vairāk", () => {
-    expect(src.shell).toContain("<AdminMobileSearchButton />");
+  it("puts Meklēt in the C-capsule; IRISS/PRO switch lives in Vairāk", () => {
+    expect(src.shell).not.toContain("<AdminMobileSearchButton />");
     expect(src.shell).not.toContain("AdminMobileWorkspaceSwitch");
-    expect(src.search).toContain("export function AdminMobileSearchButton");
+    expect(src.sidebar).toContain('aria-label="Meklēt"');
+    expect(src.sidebar).toContain('aria-label="Sākums"');
+    expect(src.sidebar).toContain('aria-label="Vairāk"');
     expect(src.sidebar).toContain('aria-label="Darba zona"');
     expect(src.sidebar).toContain('onClick={() => writeWsCookie("pro")}');
   });
@@ -50,5 +52,33 @@ describe("IRISS mobile menu home and workspace switch", () => {
     expect(src.strip).toContain("statusLabel");
     expect(src.strip).not.toContain("formatIrissWaybillChip");
     expect(src.strip).not.toMatch(/item\.number/);
+  });
+
+  it("sākuma hero ir bez Visas / Karte saitēm un ar float apļiem", () => {
+    expect(src.menu).toContain('chrome="float"');
+    expect(src.menu).toContain("IrissHomeLogisticsPins");
+    expect(src.menu).not.toMatch(/<IrissWaybillGauges \/>/);
+  });
+});
+
+describe("v11d-fix pret #614", () => {
+  it("kapsula ir 3 ikonas, stikla kartītes, krāsainas ikonas, karte uz #cfcfd6", () => {
+    const gaugesCss = readFileSync(new URL("../components/admin/IrissWaybillGauges.module.css", import.meta.url), "utf8");
+    const pinsCss = readFileSync(new URL("../components/admin/IrissHomeLogisticsPins.module.css", import.meta.url), "utf8");
+    const menuCss = readFileSync(new URL("../app/admin/mobile/menu-grid.css", import.meta.url), "utf8");
+    const shellCss = readFileSync(new URL("../app/admin/admin-mobile.css", import.meta.url), "utf8");
+    expect(src.sidebar).toContain("CapsuleGlyph");
+    expect(src.sidebar).not.toContain("const irissTabs");
+    expect(gaugesCss).toContain("rgba(255, 255, 255, 0.86)");
+    expect(gaugesCss).toContain("blur(22px)");
+    const floatCar = gaugesCss.match(/\.wg\.float \.car\s*\{[^}]+\}/)?.[0] ?? "";
+    expect(floatCar).toContain("line-clamp: 2");
+    expect(floatCar).toContain("overflow: hidden");
+    expect(floatCar).not.toContain("overflow: visible");
+    expect(pinsCss).toContain("rgba(255, 255, 255, 0.86)");
+    expect(pinsCss).not.toMatch(/\.detail\s*\{/);
+    expect(menuCss).toContain("#cfcfd6");
+    expect(menuCss).toContain("var(--menu-tone");
+    expect(shellCss).toContain(".am-capsule");
   });
 });

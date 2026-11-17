@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import {
   irissMobilePlateBusyCount,
   irissMobilePlateStripItems,
+  irissMobilePlateStripItemsFromPlates,
   type IrissMobilePlateStripItem,
 } from "@/lib/iriss-mobile-plate-strip";
 import type { IrissPavadzimeListRow } from "@/lib/iriss-pavadzimes-types";
+import type { WaybillPlateState } from "@/lib/iriss-waybill-plates";
 
-export function useIrissWaybillPlateStrip(enabled: boolean): {
+/** `refreshKey`: mainot to, saraksts ielādējas no jauna (piem. atgriežoties lietotnē). */
+export function useIrissWaybillPlateStrip(enabled: boolean, refreshKey = 0): {
   items: IrissMobilePlateStripItem[];
   loaded: boolean;
   busyCount: number;
@@ -21,8 +24,12 @@ export function useIrissWaybillPlateStrip(enabled: boolean): {
     let cancelled = false;
     void fetch("/api/admin/iriss-pavadzimes?active=1", { credentials: "include", cache: "no-store" })
       .then(async (res) => {
-        const json = (await res.json().catch(() => null)) as { rows?: IrissPavadzimeListRow[] } | null;
+        const json = (await res.json().catch(() => null)) as { rows?: IrissPavadzimeListRow[]; plates?: WaybillPlateState[] } | null;
         if (cancelled) return;
+        if (res.ok && Array.isArray(json?.plates) && json.plates.length) {
+          setItems(irissMobilePlateStripItemsFromPlates(json.plates));
+          return;
+        }
         const rows = res.ok && Array.isArray(json?.rows) ? json.rows : [];
         setItems(
           irissMobilePlateStripItems(
@@ -32,6 +39,7 @@ export function useIrissWaybillPlateStrip(enabled: boolean): {
               issuedAt: row.issuedAt,
               number: row.number ?? "",
               brandModel: row.brandModel,
+              archived: row.archived,
             })),
           ),
         );
@@ -45,7 +53,7 @@ export function useIrissWaybillPlateStrip(enabled: boolean): {
     return () => {
       cancelled = true;
     };
-  }, [enabled]);
+  }, [enabled, refreshKey]);
 
   return { items, loaded, busyCount: irissMobilePlateBusyCount(items) };
 }

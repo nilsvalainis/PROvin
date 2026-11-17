@@ -88,6 +88,7 @@ Visi ceļi zem `/listings`. `POST` prasa `Authorization: Bearer <LISTINGS_RELAY_
 | GET | `/listings/vnc/:token/...` | noVNC (īslaicīgs tokens ceļā, bez Bearer; tikai kamēr login atvērts) |
 | POST | `/listings/fetch` | `{platform, sourceUrl, orderId, maxPages?, needPriceIds?}` -> `{ok, status, note, items[], raw, pagesFetched, pageCount, orderId, elapsedMs}`. ET: future_api 404/tukšs = `ok 0 (truly empty)` bez `/search` gaidīšanas. Tas pats URL rindā tiek lasīts vienreiz. |
 | POST | `/listings/page` | `{url}` VIN SCAN izsole + Adify / Tirgus Dati / ss.lv (stat.vin, bid.cars, checkcar.vin, bidfax.info, poctra.com, plc.auction, adify.lv, tirgusdati.lv, ss.lv, ss.com, city24.lv) -> `{ok, status, finalUrl, html, elapsedMs}`. Īsts Chrome, profils `vinscan`. Caddy `/listings/*` jau der. Dienas limits atsevišķs: `LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY` (noklusējums 400). |
+| POST | `/listings/detail` | j56: `{platform: auto1\|openlane, url}` viena auto detaļu lapa ar ielogoto profilu -> `{ok, status (ok\|login_required\|blocked\|not_found\|error), note, detail{title, fields[[etiķete,vērtība]], tables, lists, photos[] izsoles secībā, jsonFields, item}, elapsedMs}`. Neapstrādāts JSON/HTML un konta lauki netiek atdoti. Dienas limits `LISTINGS_DETAIL_MAX_FETCHES_PER_DAY` (noklusējums 60). |
 | POST | `/listings/session/check` | `{platform}` -> sesijas pārbaude + auto-login, ja ir paroles |
 | POST | `/listings/login/:platform` | atver redzamu Chrome + atgriež `vncToken` adminam |
 | POST | `/listings/login/:platform/close` | aizver manuālo login un atgriež `{loggedIn, session}` |
@@ -192,3 +193,28 @@ curl -s http://127.0.0.1:8789/listings/health
 ```
 
 Openlane no Mac / datu centra bez īsta Chrome dod Cloudflare 403; tas ir normāli, lokāli pārbaudi tikai Autobid.
+
+## j56 detaļu lapa `/listings/detail` (Auto1, Openlane)
+
+Faili: `lib/detail-page.mjs` (DOM/JSON izvilkums, foto secība, sanitizācija), `lib/detail-platforms.mjs` (hosti, ciļņu nosaukumi),
+`lib/detail-page.test.mjs`. `server.mjs`: tikai jauns `/detail` maršruts (tā pati rinda, profils un `ensureSession` kā `/fetch`).
+Esošie `/fetch`, `/page`, `/http`, login netiek mainīti. Jaunu env nav (Vercel lieto tos pašus `IRISS_LISTINGS_RELAY_URL` / `_TOKEN`).
+Kamēr relejs nav izvietots, Vercel saņem 404 "nezināms ceļš" un "No saites" paliek pie IRISS sarakstu datiem (A).
+
+Izvietošana (tikai kods, ar rezerves kopiju un atgriešanu):
+
+```bash
+# 1. rezerves kopija uz servera
+ssh root@37.27.149.106 'tar -C /opt/provin-listings --exclude node_modules -czf /root/provin-listings-backup-$(date +%Y%m%d-%H%M).tgz . && ls -la /root/provin-listings-backup-*.tgz | tail -1'
+# 2. kods (no repo saknes) + restart tikai provin-listings
+tar -C relay/provin-listings --exclude node_modules --exclude .git -czf - . \
+| ssh root@37.27.149.106 'rm -rf /tmp/provin-listings-src && mkdir -p /tmp/provin-listings-src && tar -C /tmp/provin-listings-src -xzf - && tar -C /tmp/provin-listings-src --exclude node_modules --exclude .git -cf - . | tar -C /opt/provin-listings -xf - && chown -R provin-listings:provin-listings /opt/provin-listings && systemctl restart provin-listings'
+# 3. smoke: serviss, health, esošais saraksts un VIN SCAN, jaunais /detail
+ssh root@37.27.149.106 'systemctl is-active provin-listings; curl -s http://127.0.0.1:8789/listings/health | head -c 300; T=$(grep ^LISTINGS_RELAY_TOKEN= /etc/provin-listings.env | cut -d= -f2-); \
+ curl -s -m 90 -H "Authorization: Bearer $T" -H "content-type: application/json" -d "{\"url\":\"https://stat.vin/cars/WDD1173421N570488\"}" http://127.0.0.1:8789/listings/page | head -c 200; echo; \
+ curl -s -m 150 -H "Authorization: Bearer $T" -H "content-type: application/json" -d "{\"platform\":\"auto1\",\"url\":\"https://www.auto1.com/en/app/merchant/car/<STOCK>\"}" http://127.0.0.1:8789/listings/detail | head -c 600'
+# 4. ja kaut kas salūzt: atgriešana no rezerves
+ssh root@37.27.149.106 'B=$(ls -t /root/provin-listings-backup-*.tgz | head -1); find /opt/provin-listings -mindepth 1 -maxdepth 1 ! -name node_modules -exec rm -rf {} + && tar -C /opt/provin-listings -xzf "$B" && chown -R provin-listings:provin-listings /opt/provin-listings && systemctl restart provin-listings && systemctl is-active provin-listings'
+```
+
+Saraksta pārbaudei pēc restarta: IRISS Sludinājumi > "Nolasīt tagad" vienam pasūtījumam (vai `/listings/health` `lastFetchStatus` pēc nākamā cron).

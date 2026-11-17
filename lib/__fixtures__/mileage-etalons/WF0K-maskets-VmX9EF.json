@@ -1,0 +1,1023 @@
+{
+ "vin": "WF0KXXXXXXXXXXXXX",
+ "label": "FORD GALAXY: CSDD 2, AutoDNA 19, carVertical 16, dīleris 11, reģistri 7, citi 8; negadījumi 0",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 489, saglabāts 2026-09-16; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "FORD GALAXY",
+   "registrationNumber": "",
+   "firstRegistration": "2016-04-25",
+   "nextInspectionDate": "2026-10-02",
+   "prevInspectionDate": "2025-10-02",
+   "engineDisplacementCm3": "1997",
+   "enginePowerKw": "132",
+   "fuelType": "Dīzeļdegviela",
+   "emissionStandard": "Euro 6 W",
+   "grossMassKg": "2600",
+   "curbMassKg": "1797",
+   "roadTaxEur": "132,00",
+   "registrationStatus": "Noņemts no uzskaites, atļauts piedalīties ceļu satiksmē līdz 10.05.2026",
+   "opacityCoefficient": "0.09",
+   "particulateMatter": "0",
+   "previousRegistrationCountry": "DĀNIJA(ES)",
+   "ownerCountLatvia": "2",
+   "technicalInspectionHistory": [
+    {
+     "date": "24.09.2024",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "0.09",
+     "notes": "",
+     "defects": [
+      {
+       "code": "3.2.",
+       "rating": "1",
+       "description": "Redzamību vai izturību būtiski neietekmējoši stiklojuma bojājumi."
+      }
+     ]
+    }
+   ],
+   "ownerRegistrationEvents": [
+    {
+     "date": "08.08.2024",
+     "label": "Pirmā reģistrācija Latvijā"
+    },
+    {
+     "date": "04.08.2025",
+     "label": "Īpašnieka maiņa"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "Pamatpārbaude",
+    "inspectionDateText": "02.10.2025",
+    "nextInspectionDateText": "",
+    "odometer": "200596",
+    "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+    "ratingLevel": 1,
+    "smokeCoefficient": "",
+    "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+    "defects": [
+     {
+      "code": "3.2.",
+      "rating": "1",
+      "description": "Redzamību vai izturību būtiski neietekmējoši stiklojuma bojājumi."
+     },
+     {
+      "code": "8.4.1.",
+      "rating": "1",
+      "description": "Neveidojot piles, sūcas eļļa no motora (transmisijas)."
+     }
+    ]
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "02.10.2025",
+     "odometer": "200596",
+     "country": "Latvija"
+    },
+    {
+     "date": "24.09.2024",
+     "odometer": "196158",
+     "country": "Latvija"
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "70",
+   "listingCreated": "08.05.2026",
+   "priceDrop": "+2000",
+   "priceHistory": [],
+   "listingMileageOdometer": "",
+   "listingMileageDate": "",
+   "listingMileageCountry": ""
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "02.10.2025",
+     "odometer": "200596",
+     "country": "Latvija"
+    },
+    {
+     "date": "24.09.2024",
+     "odometer": "196158",
+     "country": "Latvija"
+    },
+    {
+     "date": "20.04.2022",
+     "odometer": "529000",
+     "country": "Dānija"
+    },
+    {
+     "date": "16.04.2021",
+     "odometer": "452000",
+     "country": "Dānija"
+    },
+    {
+     "date": "17.03.2020",
+     "odometer": "385000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.10.2019",
+     "odometer": "353000",
+     "country": "Dānija"
+    },
+    {
+     "date": "13.05.2019",
+     "odometer": "311000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.02.2019",
+     "odometer": "292300",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.11.2018",
+     "odometer": "272390",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.09.2018",
+     "odometer": "256867",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.07.2018",
+     "odometer": "240678",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.05.2018",
+     "odometer": "226855",
+     "country": "Dānija"
+    },
+    {
+     "date": "13.04.2018",
+     "odometer": "217000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.03.2018",
+     "odometer": "209995",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.11.2017",
+     "odometer": "180150",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.05.2017",
+     "odometer": "121100",
+     "country": "Dānija"
+    },
+    {
+     "date": "19.04.2017",
+     "odometer": "114000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.02.2017",
+     "odometer": "91794",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.10.2016",
+     "odometer": "56378",
+     "country": "Dānija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.10.2025",
+     "odometer": "200596",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.09.2024",
+     "odometer": "195623",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.04.2022",
+     "odometer": "529000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.04.2021",
+     "odometer": "452000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.03.2020",
+     "odometer": "385000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.10.2019",
+     "odometer": "352500",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.05.2019",
+     "odometer": "311000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.02.2019",
+     "odometer": "291800",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.09.2018",
+     "odometer": "256367",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.05.2018",
+     "odometer": "226355",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.03.2018",
+     "odometer": "209495",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.11.2017",
+     "odometer": "179650",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.05.2017",
+     "odometer": "120600",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.02.2017",
+     "odometer": "91594",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.10.2016",
+     "odometer": "56178",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.04.2016",
+     "odometer": "10",
+     "country": "Dānija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "01.10.2019",
+     "odometer": "353000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.02.2019",
+     "odometer": "292300",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.11.2018",
+     "odometer": "272390",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.09.2018",
+     "odometer": "256867",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.07.2018",
+     "odometer": "240678",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.05.2018",
+     "odometer": "226855",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.03.2018",
+     "odometer": "209995",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.11.2017",
+     "odometer": "180150",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.02.2017",
+     "odometer": "121100",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.02.2017",
+     "odometer": "91794",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.10.2016",
+     "odometer": "56378",
+     "country": "Dānija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "01.10.2019",
+     "odometer": "353000",
+     "location": "",
+     "works": "Regulārā apkope\nTransmisijas eļļas maiņa\nEļļas maiņa\nSalona gaisa filtra maiņa\nEļļas un eļļas filtru maiņa\nDegvielas filtra maiņa\nDzinēja gaisa filtra maiņa\nDzinēja dzesēšanasšķidruma maiņa\nDzinēja dzesēšanas šķidruma maiņa\nCeliņsiksnas maiņa\nPriekšējo tīrītāju slotiņu nomaiņa\nAizmugurējo logu slotiņas nomaiņa"
+    },
+    {
+     "date": "01.02.2019",
+     "odometer": "292300",
+     "location": "",
+     "works": "Regulārā apkope: Eļļas un eļļas filtru maiņa, Virsbūves pārbaude"
+    },
+    {
+     "date": "01.11.2018",
+     "odometer": "272390",
+     "location": "",
+     "works": "Eļļas un eļļas filtru maiņa"
+    },
+    {
+     "date": "01.09.2018",
+     "odometer": "256867",
+     "location": "",
+     "works": "Regulārā apkope\nSalona gaisa filtra maiņa\nEļļas un eļļas filtru maiņa"
+    },
+    {
+     "date": "01.07.2018",
+     "odometer": "240678",
+     "location": "",
+     "works": "Regulārā apkope\nTransmisijas eļļas maiņa\nSalona gaisa filtra maiņa\nEļļas un eļļas filtru maiņa\nDegvielas filtra maiņa\nDzinēja gaisa filtra maiņa"
+    },
+    {
+     "date": "01.05.2018",
+     "odometer": "226855",
+     "location": "",
+     "works": "Regulārā apkope"
+    },
+    {
+     "date": "01.03.2018",
+     "odometer": "209995",
+     "location": "",
+     "works": "Regulārā apkope\nSalona gaisa filtra maiņa\nEļļas un eļļas filtru maiņa, Virsbūves pārbaude"
+    },
+    {
+     "date": "01.11.2017",
+     "odometer": "180150",
+     "location": "",
+     "works": "Regulārā apkope\nTransmisijas eļļas maiņa\nSalona gaisa filtra maiņa\nEļļas un eļļas filtru maiņa\nDegvielas filtra maiņa\nDzinēja gaisa filtra maiņa\nCeliņsiksnas maiņa\nPapildu piedziņas siksnas nomaiņa\nPriekšējo tīrītāju slotiņu nomaiņa"
+    },
+    {
+     "date": "01.05.2017",
+     "odometer": "121100",
+     "location": "",
+     "works": "Regulārā apkope\nTransmisijas eļļas maiņa, Virsbūves pārbaude\nSalona gaisa filtra maiņa\nEļļas un eļļas filtru maiņa\nDegvielas filtra maiņa\nDzinēja gaisa filtra maiņa"
+    },
+    {
+     "date": "01.02.2017",
+     "odometer": "91794",
+     "location": "",
+     "works": "Regulārā apkope\nSalona gaisa filtra maiņa\nEļļas un eļļas filtru maiņa\nPriekšējo tīrītāju slotiņu nomaiņa"
+    },
+    {
+     "date": "01.10.2016",
+     "odometer": "56378",
+     "location": "",
+     "works": "Regulārā apkope\nTransmisijas eļļas maiņa\nSalona gaisa filtra maiņa\nEļļas un eļļas filtru maiņa\nDegvielas filtra maiņa\nDzinēja gaisa filtra maiņa"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": []
+   },
+   "outvin": {
+    "precheckAt": "2026-07-16T14:45:47.025Z",
+    "vin": "WF0KXXWPCKGR87200",
+    "capabilitySlots": [
+     {
+      "id": "service_1",
+      "historyType": 1,
+      "titleLv": "Oficiālā servisa un nobraukuma vēsture (Type 1)",
+      "creditCost": 1,
+      "status": "available",
+      "category": "service_history"
+     },
+     {
+      "id": "carfax_2",
+      "historyType": 2,
+      "titleLv": "ASV / Carfax vēsture (Type 2)",
+      "creditCost": 1,
+      "status": "disabled",
+      "statusReason": "Eiropas VIN — ASV Carfax (Type 2) parasti nav pieejams",
+      "category": "us_carfax"
+     }
+    ],
+    "purchases": [],
+    "vehicleInfo": {
+     "model": "",
+     "modelSeries": "",
+     "vinCode": "",
+     "vehicleType": "",
+     "transmission": "",
+     "steeringSide": "",
+     "engineCode": "",
+     "engineNumber": "",
+     "body": "",
+     "drive": "",
+     "power": "",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "",
+     "colorCode": "",
+     "interior": "",
+     "interiorCode": "",
+     "fuel": "",
+     "displacement": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "Ford Galaxy",
+     "modelSeries": "3.Generation",
+     "vinCode": "WF0KXXXXXXXXXXXXX",
+     "vehicleType": "Minivens",
+     "transmission": "PUSAUTOMĀTS (POWERSHIFT, 6 pārnesumi)",
+     "steeringSide": "STŪRE KREISAJĀ PUSĒ",
+     "engineCode": "TDCI (TURBO DIESEL COMMON RAIL INJECTION)",
+     "engineNumber": "",
+     "body": "Minivens",
+     "drive": "FWD",
+     "power": "132 kW (177 ZS / 179 PS)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "01.02.2016",
+     "firstRegistration": "25.04.2016",
+     "warrantyStartDate": "25.04.2016",
+     "countryRegion": "Spānija",
+     "color": "ABSOLUTE BLACK",
+     "colorCode": "",
+     "interior": "",
+     "interiorCode": "",
+     "fuel": "",
+     "displacement": ""
+    }
+   }
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "2022-04-20",
+     "odometer": "529000",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Motorstyrelsen (nodokļu reģistrs); Færdselsstyrelsen (synsrapport) — Betinget godkendt"
+    },
+    {
+     "date": "2021-04-16",
+     "odometer": "452000",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Færdselsstyrelsen (synsrapport) — izturēta"
+    },
+    {
+     "date": "2020-03-17",
+     "odometer": "385000",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Færdselsstyrelsen (synsrapport) — izturēta"
+    },
+    {
+     "date": "2019-05-13",
+     "odometer": "311000",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Færdselsstyrelsen (synsrapport) — izturēta"
+    },
+    {
+     "date": "2018-04-13",
+     "odometer": "217000",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Færdselsstyrelsen (synsrapport) — izturēta"
+    },
+    {
+     "date": "2017-04-19",
+     "odometer": "114000",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Færdselsstyrelsen (synsrapport) — izturēta"
+    },
+    {
+     "date": "2016-04-25",
+     "odometer": "0",
+     "country": "Dānija",
+     "origin": "Pirmā reģistrācija"
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "2023-03-10",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: KØBSTÆDERNES FORS., beigusies"
+    },
+    {
+     "date": "2023-03-10",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Reģistrācijas statuss: noņemts no uzskaites"
+    },
+    {
+     "date": "2022-05-01",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: KØBSTÆDERNES FORS., aktīva"
+    },
+    {
+     "date": "2022-05-01",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Alm. Brand, beigusies"
+    },
+    {
+     "date": "2022-04-20",
+     "odometer": "529000",
+     "country": "Dānija",
+     "event": "periodiskā apskate: Betinget godkendt · Bilsyn Bramming ApS"
+    },
+    {
+     "date": "2021-04-16",
+     "odometer": "452000",
+     "country": "Dānija",
+     "event": "periodiskā apskate: izturēta · Bilsyn Bramming ApS"
+    },
+    {
+     "date": "2020-03-17",
+     "odometer": "385000",
+     "country": "Dānija",
+     "event": "periodiskā apskate: izturēta · Bilsyn Bramming ApS"
+    },
+    {
+     "date": "2019-05-13",
+     "odometer": "311000",
+     "country": "Dānija",
+     "event": "periodiskā apskate: izturēta · Bilsyn Bramming ApS"
+    },
+    {
+     "date": "2019-05-03",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Alm. Brand, aktīva"
+    },
+    {
+     "date": "2019-05-03",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Alm. Brand, beigusies"
+    },
+    {
+     "date": "2019-05-02",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Alm. Brand, aktīva"
+    },
+    {
+     "date": "2019-05-02",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Alm. Brand, beigusies"
+    },
+    {
+     "date": "2018-04-13",
+     "odometer": "217000",
+     "country": "Dānija",
+     "event": "periodiskā apskate: izturēta · Bilsyn Bramming ApS"
+    },
+    {
+     "date": "2017-08-28",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Alm. Brand, aktīva"
+    },
+    {
+     "date": "2017-08-28",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRAFIK, beigusies"
+    },
+    {
+     "date": "2017-04-19",
+     "odometer": "114000",
+     "country": "Dānija",
+     "event": "periodiskā apskate: izturēta · Synshallen Esbjerg ApS"
+    },
+    {
+     "date": "2016-04-25",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Pirmā reģistrācija"
+    },
+    {
+     "date": "2016-04-25",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRAFIK, aktīva"
+    }
+   ],
+   "ownersSummary": "",
+   "fetchedAt": "2026-08-31T12:04:26.710Z"
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "certificate": {
+    "issuedAt": "16.07.2026 17:57:24",
+    "vehicleLine": "Transportlīdzeklis FORD GALAXY, izlaiduma gads 2016.",
+    "makeModel": "FORD GALAXY",
+    "year": "2016",
+    "plate": "OM8066",
+    "accidentCount": "0",
+    "insuredFrom": "02.08.2025",
+    "insuredTo": "01.06.2026",
+    "insuredDays": "304",
+    "claims": [],
+    "footerNote": "Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas."
+   }
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "20.04.2022",
+       "odometer": "529000",
+       "country": "Dānija"
+      },
+      {
+       "date": "16.04.2021",
+       "odometer": "452000",
+       "country": "Dānija"
+      },
+      {
+       "date": "17.03.2020",
+       "odometer": "385000",
+       "country": "Dānija"
+      },
+      {
+       "date": "13.05.2019",
+       "odometer": "311000",
+       "country": "Dānija"
+      },
+      {
+       "date": "13.04.2018",
+       "odometer": "217000",
+       "country": "Dānija"
+      },
+      {
+       "date": "19.04.2017",
+       "odometer": "114000",
+       "country": "Dānija"
+      },
+      {
+       "date": "25.04.2016",
+       "odometer": "0",
+       "country": "Dānija"
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": "DĀNIJAS NACIONĀLO REĢISTRU DATI"
+    },
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "Dānija",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": "NUMMERPLADE (Dānija)"
+    },
+    {
+     "serviceHistory": [
+      {
+       "date": "20.04.2022",
+       "odometer": "529000",
+       "country": "Dānija"
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": "DĀNIJAS TRANSPORTA PĀRVALDE"
+    }
+   ]
+  }
+ }
+}

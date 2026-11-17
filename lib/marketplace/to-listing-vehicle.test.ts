@@ -27,6 +27,34 @@ const item: MarketplaceStoredListing = {
 };
 
 describe("marketplaceListingToVehicle", () => {
+  it("mobile.de bildes kartītē nāk tieši no img.classistatic.de (Nils 31.10)", () => {
+    const v = marketplaceListingToVehicle({
+      ...item,
+      imageUrls: [
+        "https://m.mobile.de/yams-proxy/img.classistatic.de/api/v1/mo-prod/images/ba/ba59",
+        "https://m.mobile.de/yams-proxy/img.classistatic.de/api/v1/mo-prod/images/e5/e5fd",
+      ],
+    });
+    expect(v.imageUrl).toBe("https://img.classistatic.de/api/v1/mo-prod/images/ba/ba59?rule=mo-1024.jpg");
+    expect(v.thumbUrl).toBe("https://img.classistatic.de/api/v1/mo-prod/images/ba/ba59?rule=mo-640.jpg");
+    expect(v.imageUrls).toHaveLength(2);
+    expect(v.imageUrls?.every((u) => u.startsWith("https://img.classistatic.de/"))).toBe(true);
+    expect(v.imageUrls?.some((u) => u.includes("mobile.de"))).toBe(false);
+  });
+
+  it("izmet mobile.de bildi, kuru nevar pārlikt uz CDN, lai pārlūks to neprasa", () => {
+    const v = marketplaceListingToVehicle({
+      ...item,
+      imageUrls: [
+        "https://m.mobile.de/yams-proxy/not-cdn.example/a.jpg",
+        "https://img.classistatic.de/api/v1/mo-prod/images/ba/ba59",
+      ],
+    });
+    expect(v.imageUrl).toBe("https://img.classistatic.de/api/v1/mo-prod/images/ba/ba59?rule=mo-1024.jpg");
+    expect(v.imageUrl).not.toContain("mobile.de");
+    expect(v.imageUrls).toBeUndefined();
+  });
+
   it("reuses the IRISS listing card shape without photos", () => {
     const v = marketplaceListingToVehicle(item);
     expect(v.platform).toBe("mobilede");

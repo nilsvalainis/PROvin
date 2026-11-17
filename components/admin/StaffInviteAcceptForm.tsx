@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-export function StaffInviteAcceptForm({ token }: { token: string }) {
+export function StaffInviteAcceptForm({ token, email }: { token: string; email: string }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
@@ -34,7 +34,7 @@ export function StaffInviteAcceptForm({ token }: { token: string }) {
     return (
       <p className="text-sm text-[#4b5563]">
         Parole iestatīta. Tagad vari{" "}
-        <Link className="text-[#3d5bd9] underline" href="/admin/login">
+        <Link className="text-[#3d5bd9] underline" href={`/admin/login?email=${encodeURIComponent(email)}`}>
           pieteikties
         </Link>{" "}
         ar e-pastu.
@@ -44,10 +44,26 @@ export function StaffInviteAcceptForm({ token }: { token: string }) {
 
   return (
     <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
+      {/* Paroļu pārvaldniekiem (iOS/Chrome): saglabā paroli kopā ar e-pastu. */}
+      <input
+        type="email"
+        name="username"
+        autoComplete="username"
+        value={email}
+        readOnly
+        tabIndex={-1}
+        aria-hidden="true"
+        className="sr-only"
+      />
       <label className="block text-sm">
         Jauna parole (vismaz 12 zīmes)
         <input
           type="password"
+          name="new-password"
+          autoComplete="new-password"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           minLength={12}

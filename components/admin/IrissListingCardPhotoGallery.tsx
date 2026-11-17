@@ -56,7 +56,7 @@ export function IrissListingCardPhotoGallery({
   const heroSrc = listingDisplayImageUrl({
     url: currentPhoto,
     thumbUrl: idx === 0 ? thumbUrl : undefined,
-    maxWidth: compactMobile ? 320 : 480,
+    maxWidth: compactMobile ? 720 : 480,
   });
   const overflow = listingThumbOverflowLabel(photos.length);
 
@@ -110,7 +110,8 @@ export function IrissListingCardPhotoGallery({
   return (
     <div className="w-full shrink-0 space-y-1.5 sm:w-[300px]">
       <div
-        className={`relative w-full overflow-hidden rounded-none border-0 sm:h-[200px] sm:rounded-lg sm:border sm:border-slate-200/90 ${compactMobile ? "h-[160px]" : "h-[220px]"}`}
+        // Nils 29.10: telefonā bilde netiek apgriezta - visa bilde 4:3 (izsoļu foto proporcija).
+        className="relative aspect-[4/3] w-full overflow-hidden rounded-none border-0 bg-[var(--iriss-surface-2)] max-sm:[&_img]:object-contain sm:aspect-auto sm:h-[200px] sm:rounded-lg sm:border sm:border-slate-200/90"
         style={{ touchAction: "manipulation" }}
         onTouchStart={onPhotoTouchStart}
         onTouchEnd={onPhotoTouchEnd}

@@ -1,7 +1,8 @@
 import type { Tp5DesktopHeroFeatureIcon } from "@/lib/test-pricing-5-desktop-hero-features";
-import { TP5_KOREA_USA_PUBLIC } from "@/lib/test-pricing-5-mobile";
+import { TP5_KOREA_USA_PUBLIC, TP5_MINI_PUBLIC } from "@/lib/test-pricing-5-mobile";
 import {
   TP5_AUDITS_SAMPLE_REPORT_HREF,
+  TP5_BUSINESS_SAMPLE_REPORT_HREF,
   TP5_DEALER_SAMPLE_REPORT_HREF,
   TP5_MINI_SAMPLE_REPORT_HREF,
 } from "@/lib/test-pricing-5-ui-copy";
@@ -81,7 +82,7 @@ const AUDITS_LV: HomeFeatureBreakdownPackage = {
   badge: "Populārākā izvēle",
   buttonText: "PASŪTĪT PROVIN AUDITU 99,99 €",
   goal:
-    "Maksimāla drošība un pilnīga izpēte no ārvalstīm ievestiem auto. Apvieno PROVIN MINI un starptautisko maksas datubāzu pārskatus, oficiālo dīleru sistēmu informāciju un izsoļu foto arhīvus, sniedzot padziļinātu vēstures, nobraukuma un risku analīzi.",
+    "Padziļināta izpēte no ārvalstīm ievestiem auto. Apvieno Latvijas reģistrus un sludinājuma analīzi ar vismaz 2, parasti 3 maksas vēstures pārbaudēm (piemēram, carVertical, autoDNA, oficiālā dīlera dati), izsoļu foto arhīviem un risku analīzi, sniedzot padziļinātu vēstures, nobraukuma un risku izvērtējumu.",
   items: [
     {
       title: "Starptautiska vēstures pārbaude",
@@ -91,20 +92,56 @@ const AUDITS_LV: HomeFeatureBreakdownPackage = {
     {
       title: "carVertical integrācija",
       description:
-        "Lai nodrošinātu konkrētajam reģionam atbilstošākos datus, atskaite var tikt aizstāta ar CARFAX vai citu specializētu datubāzi.",
+        "Viena no pamata maksas pārbaudēm. Ja konkrētajam reģionam tā nav piemērota, to aizstājam ar CARFAX vai citu specializētu datubāzi.",
       icon: "carvertical",
     },
     {
       title: "autoDNA integrācija",
       description:
-        "Lai nodrošinātu konkrētajam reģionam atbilstošākos datus, atskaite var tikt aizstāta ar CEBIA vai citu specializētu datubāzi.",
+        "Viena no pamata maksas pārbaudēm. Ja autoDNA datu nav, pārbaudām ierakstus citur (piem. CEBIA, CARFAX vai izcelsmes valsts reģistrā).",
       icon: "autodna",
     },
     {
-      title: "Oficiālo dīleru un izsoļu portālu arhīvs*",
+      title: "Oficiālo dīleru servisa dati*",
       description:
-        "Dati no autorizētajiem servisiem un vēsturisko izsoļu portālu arhīviem, ieskaitot sākotnējos bojājumu attēlus pirms auto remonta.",
+        "Detalizēti nobraukuma, apkopju intervālu un remontu dati no autorizētajiem servisiem. *Pieejami noteiktiem ražotājiem un modeļiem.",
       icon: "dealer-data",
+    },
+    {
+      title: "Eiropas izsoļu portālu arhīvi*",
+      description:
+        "Ieraksti un foto no brīža, kad auto bija bojāts vai pārdots izsolē, ieskaitot bojājumu attēlus pirms remonta. *Pieejami noteiktiem ražotājiem un modeļiem.",
+      icon: "auction",
+    },
+    {
+      title: "Oficiālie valstu reģistri",
+      description:
+        "Vēsturi pārbaudām arī ES valstu oficiālajos reģistros. Citi reģioni - pēc pieprasījuma.",
+      icon: "eu-registry",
+    },
+    {
+      title: "Latvijas avoti",
+      description:
+        "Apdrošinātāju dati, sludinājuma analīze un tehnisko apskašu vēsture.",
+      icon: "listing-analysis",
+    },
+    {
+      title: "Padziļināta analīze un riski",
+      description:
+        "Izvērtējam nobraukumu, bojājumus un pretrunas starp avotiem un dodam norādes klātienes apskatei.",
+      icon: "inspection-tips",
+    },
+    {
+      title: "Konsultācija pa tālruni",
+      description:
+        "Pēc audita apspriežam datus un palīdzam izlemt par nākamo soli - pirkt, pārbaudīt vai atteikties.",
+      icon: "consultation",
+    },
+    {
+      title: "Individuāla pieeja",
+      description:
+        "Sarežģītās situācijās personīgi sazināmies ar valstu reģistriem un iestādēm. To nedara neviena automātiska atskaite.",
+      icon: "international",
     },
   ],
   sampleReportHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
@@ -220,7 +257,7 @@ const AUDITS_EN: HomeFeatureBreakdownPackage = {
   badge: "Most popular choice",
   buttonText: "ORDER PROVIN AUDITS €99.99",
   goal:
-    "Maximum confidence and a complete investigation of cars imported from abroad. Combines PROVIN MINI with international paid database reports, official dealer system data and auction photo archives, delivering in-depth history, mileage and risk analysis.",
+    "An in-depth investigation of cars imported from abroad. Combines Latvian registers and listing analysis with at least 2, usually 3 paid history checks (for example carVertical, autoDNA, official dealer data), auction photo archives and risk analysis, delivering an in-depth history, mileage and risk assessment.",
   items: [
     {
       title: "International history check",
@@ -230,20 +267,56 @@ const AUDITS_EN: HomeFeatureBreakdownPackage = {
     {
       title: "carVertical integration",
       description:
-        "To ensure the most relevant data for the specific region, the report may be substituted with CARFAX or another specialised database.",
+        "One of the base paid checks. If it does not suit the specific region, we replace it with CARFAX or another specialised database.",
       icon: "carvertical",
     },
     {
       title: "autoDNA integration",
       description:
-        "To ensure the most relevant data for the specific region, the report may be substituted with CEBIA or another specialised database.",
+        "One of the base paid checks. If autoDNA has no data, we check for records elsewhere (e.g. CEBIA, CARFAX or an origin-country register).",
       icon: "autodna",
     },
     {
-      title: "Official dealer & auction portal archive*",
+      title: "Official dealer service data*",
       description:
-        "Data from authorised service centres and historical auction portal archives, including original damage photos before repairs.",
+        "Detailed mileage, service interval and repair data from authorised service centres. *Available for certain manufacturers and models.",
       icon: "dealer-data",
+    },
+    {
+      title: "European auction portal archives*",
+      description:
+        "Records and photos from the time the car was damaged or sold at auction, including damage photos before repair. *Available for certain manufacturers and models.",
+      icon: "auction",
+    },
+    {
+      title: "Official national registers",
+      description:
+        "We also check the history in official registers of EU countries. Other regions on request.",
+      icon: "eu-registry",
+    },
+    {
+      title: "Latvian sources",
+      description:
+        "Insurer data, listing analysis and roadworthiness inspection history.",
+      icon: "listing-analysis",
+    },
+    {
+      title: "In-depth analysis and risks",
+      description:
+        "We assess mileage, damage and contradictions between sources and give pointers for the in-person inspection.",
+      icon: "inspection-tips",
+    },
+    {
+      title: "Phone consultation",
+      description:
+        "After the audit we go through the data and help you decide on the next step - buy, inspect further or walk away.",
+      icon: "consultation",
+    },
+    {
+      title: "Individual approach",
+      description:
+        "In complex cases we personally contact national registers and authorities. No automated report does this.",
+      icon: "international",
     },
   ],
   sampleReportHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
@@ -324,6 +397,7 @@ const PARTNER_LV: HomeFeatureBreakdownPackage = {
   newBadge: true,
   buttonText: "Partneriem",
   ctaHref: "/partneriem",
+  sampleReportHref: TP5_BUSINESS_SAMPLE_REPORT_HREF,
   goal:
     "Risinājums izstrādāts auto tirdzniecības uzņēmumiem, lai pirms auto iegādes, pieņemšanas komisijā vai maiņas darījumos pilnībā novērstu riskus, kas saistīti ar koriģētu nobraukumu, slēptiem negadījumiem un neatbilstoši ievērotiem apkopes intervāliem.\n\nAr PROVIN BUSINESS audita atskaiti jūs ne tikai aizsargājat uzņēmumu no zaudējumiem iepirkumos, bet arī pasargājat savu reputāciju. Bieži vien iepriekšējie tirgotāji auto vēsturei nav pievērsuši uzmanību, ir apzināti slēpuši defektus vai pat koriģējuši odometra rādījumus. Pieņemot tādu auto savā klāstā vai kā pirmo iemaksu, atbildība gala pircēja priekšā gulstas uz jūsu uzņēmuma pleciem. Veicot pārbaudi pirms katra darījuma, jūs nodrošināt, ka jūsu zīmols tiek saistīts tikai ar pārbaudītiem un uzticamiem auto.\n\nKlientiem šī atskaite sniedz nepārprotamus pierādījumus par auto faktisko vēsturi, un auto tirdzniecības nozarē tā kļūst par kvalitātes standartu, kas uzskatāmi demonstrē uzņēmuma atbildību un godprātību. Tas stiprina uzticēšanos, paaugstina jūsu piedāvājuma vērtību tirgū un atvieglo lēmuma pieņemšanu jebkurā darījuma veidā.",
   items: [
@@ -356,6 +430,7 @@ const PARTNER_EN: HomeFeatureBreakdownPackage = {
   newBadge: true,
   buttonText: "For partners",
   ctaHref: "/partneriem",
+  sampleReportHref: TP5_BUSINESS_SAMPLE_REPORT_HREF,
   goal:
     "Built for used-car dealers, so that before a purchase, trade-in appraisal or exchange deal you fully remove the risks of rolled-back mileage, hidden accidents and service intervals that were not followed properly.\n\nWith a PROVIN BUSINESS audit report you not only protect your company from buying losses, you also protect your reputation. Previous sellers often paid no attention to the car's history, deliberately concealed defects, or even rolled back the odometer reading. When you add such a car to your stock or accept it as a trade-in, the responsibility to the final buyer falls on your company. By checking every deal before it closes, you make sure your brand is associated only with verified, trustworthy cars.\n\nFor customers, this report provides unambiguous proof of the car's actual history, and in the car trade it becomes a standard of quality that visibly demonstrates the company's responsibility and integrity. It strengthens trust, raises the value of your offer in the market and makes the decision easier in any type of deal.",
   items: [
@@ -437,7 +512,7 @@ const AUDITS_DE: HomeFeatureBreakdownPackage = {
   badge: "Beliebteste Wahl",
   buttonText: "PROVIN AUDITS BESTELLEN 99,99 €",
   goal:
-    "Maximale Sicherheit und eine vollständige Prüfung für aus dem Ausland importierte Autos. Verbindet PROVIN MINI mit internationalen kostenpflichtigen Datenbanken, Daten offizieller Händlersysteme und Auktionsfotoarchiven und liefert eine vertiefte Analyse von Historie, Laufleistung und Risiken.",
+    "Eine vertiefte Prüfung für aus dem Ausland importierte Autos. Verbindet lettische Register und Inseratsanalyse mit mindestens 2, in der Regel 3 kostenpflichtigen Historienprüfungen (zum Beispiel carVertical, autoDNA, offizielle Händlerdaten), Auktionsfotoarchiven und Risikoanalyse und liefert eine vertiefte Bewertung von Historie, Laufleistung und Risiken.",
   items: [
     {
       title: "Internationale Fahrzeughistorie",
@@ -447,20 +522,56 @@ const AUDITS_DE: HomeFeatureBreakdownPackage = {
     {
       title: "carVertical-Anbindung",
       description:
-        "Damit die Daten zur Region passen, kann der Bericht durch CARFAX oder eine andere spezialisierte Datenbank ersetzt werden.",
+        "Eine der kostenpflichtigen Basisprüfungen. Passt sie nicht zur Region, ersetzen wir sie durch CARFAX oder eine andere spezialisierte Datenbank.",
       icon: "carvertical",
     },
     {
       title: "autoDNA-Anbindung",
       description:
-        "Damit die Daten zur Region passen, kann der Bericht durch CEBIA oder eine andere spezialisierte Datenbank ersetzt werden.",
+        "Eine der kostenpflichtigen Basisprüfungen. Hat autoDNA keine Daten, suchen wir anderswo (z. B. CEBIA, CARFAX oder Register des Herkunftslandes).",
       icon: "autodna",
     },
     {
-      title: "Archiv offizieller Händler und Auktionsportale*",
+      title: "Offizielle Händler-Servicedaten*",
       description:
-        "Daten autorisierter Werkstätten und historischer Auktionsportale, einschließlich der ursprünglichen Schadensfotos vor der Reparatur.",
+        "Detaillierte Daten zu Kilometerstand, Wartungsintervallen und Reparaturen aus autorisierten Werkstätten. *Verfügbar für bestimmte Hersteller und Modelle.",
       icon: "dealer-data",
+    },
+    {
+      title: "Archive europäischer Auktionsportale*",
+      description:
+        "Einträge und Fotos aus der Zeit, als das Auto beschädigt war oder versteigert wurde, einschließlich Schadensfotos vor der Reparatur. *Verfügbar für bestimmte Hersteller und Modelle.",
+      icon: "auction",
+    },
+    {
+      title: "Offizielle staatliche Register",
+      description:
+        "Wir prüfen die Historie auch in offiziellen Registern der EU-Länder. Andere Regionen auf Anfrage.",
+      icon: "eu-registry",
+    },
+    {
+      title: "Lettische Quellen",
+      description:
+        "Versicherungsdaten, Inseratsanalyse und Historie der technischen Prüfungen.",
+      icon: "listing-analysis",
+    },
+    {
+      title: "Vertiefte Analyse und Risiken",
+      description:
+        "Wir bewerten Laufleistung, Schäden und Widersprüche zwischen den Quellen und geben Hinweise für die Besichtigung vor Ort.",
+      icon: "inspection-tips",
+    },
+    {
+      title: "Telefonische Beratung",
+      description:
+        "Nach dem Audit besprechen wir die Daten und helfen beim nächsten Schritt - kaufen, weiter prüfen oder verzichten.",
+      icon: "consultation",
+    },
+    {
+      title: "Individuelle Betreuung",
+      description:
+        "In schwierigen Fällen wenden wir uns persönlich an staatliche Register und Behörden. Das macht kein automatischer Bericht.",
+      icon: "international",
     },
   ],
   sampleReportHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
@@ -536,6 +647,7 @@ const PARTNER_DE: HomeFeatureBreakdownPackage = {
   newBadge: true,
   buttonText: "Für Händler",
   ctaHref: "/partneriem",
+  sampleReportHref: TP5_BUSINESS_SAMPLE_REPORT_HREF,
   goal:
     "Für Autohändler, damit Sie vor einem Ankauf, einer Inzahlungnahme oder einem Tausch die Risiken von manipuliertem Kilometerstand, verschwiegenen Unfallschäden und versäumten Wartungsintervallen ausschließen.\n\nMit einem PROVIN BUSINESS-Audit schützen Sie das Unternehmen vor Einkaufsverlusten und zugleich Ihren Ruf. Vorbesitzer haben die Historie oft ignoriert, Mängel bewusst verschwiegen oder den Kilometerstand zurückgedreht. Nehmen Sie ein solches Auto in den Bestand oder in Zahlung, liegt die Verantwortung gegenüber dem Endkunden bei Ihrem Unternehmen. Eine Prüfung vor jedem Abschluss sorgt dafür, dass Ihre Marke nur mit geprüften, vertrauenswürdigen Autos verbunden wird.\n\nFür Kunden ist der Bericht ein klarer Nachweis der tatsächlichen Historie. Im Handel wird er zu einem Qualitätsstandard, der Verantwortung und Sorgfalt sichtbar macht. Das stärkt das Vertrauen, hebt den Wert Ihres Angebots und erleichtert die Entscheidung bei jeder Art von Geschäft.",
   items: [
@@ -599,7 +711,7 @@ const AUDITS_RU: HomeFeatureBreakdownPackage = {
   badge: "Самый популярный выбор",
   buttonText: "ЗАКАЗАТЬ PROVIN AUDITS 99,99 €",
   goal:
-    "Максимальная ясность и полная проверка для машин, ввезённых из-за рубежа. Соединяет PROVIN MINI с международными платными базами, данными официальных дилерских систем и фотоархивами аукционов и даёт глубокий разбор истории, пробега и рисков.",
+    "Углублённая проверка машин, ввезённых из-за рубежа. Соединяет латвийские реестры и анализ объявления с не менее чем 2, обычно 3 платными проверками истории (например, carVertical, autoDNA, данные официального дилера), фотоархивами аукционов и анализом рисков и даёт глубокую оценку истории, пробега и рисков.",
   items: [
     {
       title: "Международная проверка истории",
@@ -608,18 +720,55 @@ const AUDITS_RU: HomeFeatureBreakdownPackage = {
     },
     {
       title: "Интеграция carVertical",
-      description: "Чтобы данные соответствовали региону, отчёт может быть заменён на CARFAX или другую специализированную базу.",
+      description: "Одна из базовых платных проверок. Если она не подходит для региона, заменяем её на CARFAX или другую специализированную базу.",
       icon: "carvertical",
     },
     {
       title: "Интеграция autoDNA",
-      description: "Чтобы данные соответствовали региону, отчёт может быть заменён на CEBIA или другую специализированную базу.",
+      description: "Одна из базовых платных проверок. Если в autoDNA нет данных, ищем записи в другом месте (например, CEBIA, CARFAX или реестр страны происхождения).",
       icon: "autodna",
     },
     {
-      title: "Архив официальных дилеров и аукционных порталов*",
-      description: "Данные авторизованных сервисов и исторических аукционов, включая исходные фото повреждений до ремонта.",
+      title: "Данные официальных дилеров*",
+      description:
+        "Подробные данные о пробеге, интервалах обслуживания и ремонтах из авторизованных сервисов. *Доступны для некоторых производителей и моделей.",
       icon: "dealer-data",
+    },
+    {
+      title: "Архивы европейских аукционов*",
+      description:
+        "Записи и фото с того момента, когда машина была повреждена или продавалась на аукционе, включая фото повреждений до ремонта. *Доступны для некоторых производителей и моделей.",
+      icon: "auction",
+    },
+    {
+      title: "Официальные государственные реестры",
+      description:
+        "Проверяем историю и в официальных реестрах стран ЕС. Другие регионы - по запросу.",
+      icon: "eu-registry",
+    },
+    {
+      title: "Латвийские источники",
+      description:
+        "Данные страховщиков, анализ объявления и история техосмотров.",
+      icon: "listing-analysis",
+    },
+    {
+      title: "Глубокий анализ и риски",
+      description:
+        "Оцениваем пробег, повреждения и противоречия между источниками и даём подсказки для личного осмотра.",
+      icon: "inspection-tips",
+    },
+    {
+      title: "Консультация по телефону",
+      description:
+        "После аудита обсуждаем данные и помогаем решить, что делать дальше - покупать, проверять дальше или отказаться.",
+      icon: "consultation",
+    },
+    {
+      title: "Индивидуальный подход",
+      description:
+        "В сложных случаях лично связываемся с государственными реестрами и учреждениями. Этого не делает ни один автоматический отчёт.",
+      icon: "international",
     },
   ],
   sampleReportHref: TP5_AUDITS_SAMPLE_REPORT_HREF,
@@ -693,6 +842,7 @@ const PARTNER_RU: HomeFeatureBreakdownPackage = {
   newBadge: true,
   buttonText: "Для дилеров",
   ctaHref: "/partneriem",
+  sampleReportHref: TP5_BUSINESS_SAMPLE_REPORT_HREF,
   goal:
     "Решение для автодилеров: до закупки, приёма в трейд-ин или обмена убрать риски скрученного пробега, скрытых ДТП и пропущенных интервалов обслуживания.\n\nОтчёт PROVIN BUSINESS защищает компанию от убытков на закупке и одновременно бережёт репутацию. Прежние владельцы часто не следили за историей автомобиля, сознательно скрывали дефекты или даже скручивали пробег. Если такой автомобиль попадает в ваш сток или принимается в трейд-ин, ответственность перед конечным покупателем лежит на вашей компании. Проверка перед каждой сделкой связывает ваш бренд только с проверенными и надёжными машинами.\n\nДля клиента отчёт - убедительное подтверждение фактической истории. В торговле он становится стандартом качества и показывает ответственность компании. Это укрепляет доверие, повышает ценность предложения и упрощает решение в любой сделке.",
   items: [
@@ -749,7 +899,9 @@ export function getHomeFeatureBreakdownPackages(locale?: string): HomeFeatureBre
         : locale === "ru"
           ? HOME_FEATURE_BREAKDOWN_PACKAGES_RU
           : HOME_FEATURE_BREAKDOWN_PACKAGES;
-  return all.filter((pkg) => pkg.id !== "koreaUsa" || TP5_KOREA_USA_PUBLIC);
+  return all.filter(
+    (pkg) => (pkg.id !== "koreaUsa" || TP5_KOREA_USA_PUBLIC) && (pkg.id !== "mini" || TP5_MINI_PUBLIC),
+  );
 }
 
 /** Alias for catalog page clarity. */

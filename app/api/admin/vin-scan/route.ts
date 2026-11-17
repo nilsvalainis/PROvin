@@ -2,10 +2,10 @@ import { NextResponse, after } from "next/server";
 import { recordSourceOutcomes } from "@/lib/source-health-store";
 
 import { requireIrissSectionApi } from "@/lib/staff-auth";
-import { fetchCsddTechData } from "@/lib/csdd-tech-data";
+import { fetchCsddTechDataCounted } from "@/lib/csdd-tech-data-counted";
 import { canonicalizeListingUrl, isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
-import { defaultVinScanSourceIds, VIN_SCAN_TTL_MS } from "@/lib/vin-scan/catalog";
-import { vinScanStatusIsCacheable } from "@/lib/vin-scan/health";
+import { defaultVinScanSourceIds } from "@/lib/vin-scan/catalog";
+import { pickReusableVinScanRows, stampVinScanRowById, stampVinScanRows } from "@/lib/vin-scan/source-ttl";
 import { mergeVinScanIndicators } from "@/lib/order-vin-scan";
 import {
   hasAnyVinScanPlate,
@@ -19,7 +19,15 @@ import { preferBrowserArchiveImport } from "@/lib/order-vin-scan-browser-html";
 import { runVinScan, sanitizeVinScanSourceIds } from "@/lib/vin-scan/run";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
 import { vinScanSourceHealthOutcomes } from "@/lib/vin-scan/source-health-outcomes";
-import { listVinScanHistory, readVinScanSnapshot, vinScanSnapshotFresh, writeVinScanSnapshot } from "@/lib/vin-scan/store";
+import { overlayVinScanBrowserImports } from "@/lib/vin-scan/browser-import-overlay";
+import {
+  listVinScanHistory,
+  readVinScanBrowserImports,
+  readVinScanSnapshot,
+  vinScanSnapshotFresh,
+  writeVinScanBrowserImport,
+  writeVinScanSnapshot,
+} from "@/lib/vin-scan/store";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -85,6 +93,14 @@ export async function POST(req: Request) {
         ...(httpStatus != null ? { httpStatus } : {}),
       },
     });
+    const importedAt = new Date().toISOString();
+    if (applied.ok) {
+      // Importētā rinda ir svaiga; pārējās patur savu vecumu (momentuzņēmuma scannedAt nemainās).
+      applied.snapshot = {
+        ...applied.snapshot,
+        indicators: stampVinScanRowById(applied.snapshot.indicators, sourceId, importedAt),
+      };
+    }
     if (!applied.ok) {
       logVinScanBrowserImport({
         route: "vin-scan",
@@ -96,6 +112,19 @@ export async function POST(req: Request) {
         html,
       });
       return NextResponse.json({ error: applied.error }, { status: 400 });
+    }
+    // Vispirms savā atslēgā: momentuzņēmumu var pārrakstīt skenēšana, kas vēl rit, vai paralēls cita avota imports.
+    const importedRow = applied.snapshot.indicators.find((row) => row.id === sourceId);
+    if (importedRow) {
+      await writeVinScanBrowserImport(vin, importedRow, importedAt).catch((err) => {
+        console.warn(
+          JSON.stringify({
+            vinScanStore: true,
+            event: "browser_import_write_failed",
+            msg: err instanceof Error ? err.message : "write_failed",
+          }),
+        );
+      });
     }
     try {
       await writeVinScanSnapshot(applied.snapshot);
@@ -168,25 +197,36 @@ export async function POST(req: Request) {
   }
 
   if (!isValidVin(vin) && isValidScanPlate("lv", plates.lv)) {
-    const csdd = await fetchCsddTechData(plates.lv).catch(() => null);
+    const csdd = await fetchCsddTechDataCounted(plates.lv, "admin").catch(() => null);
     if (csdd?.found && isValidVin(csdd.data.vin)) vin = normalizeVin(csdd.data.vin);
   }
 
   const requested = sanitizeVinScanSourceIds(body.sources) ?? defaultVinScanSourceIds();
-  const prev = isValidVin(vin) ? await readVinScanSnapshot(vin).catch(() => null) : null;
-  const prevAge = prev ? Date.now() - Date.parse(prev.scannedAt) : Number.POSITIVE_INFINITY;
-  const prevUsable = Boolean(prev && prev.vin === vin && Number.isFinite(prevAge) && prevAge < VIN_SCAN_TTL_MS);
-  const cachedIds = new Set(
-    (prevUsable && !force ? prev!.indicators : []).filter((row) => vinScanStatusIsCacheable(row.status)).map((row) => row.id),
-  );
+  const prevRaw = isValidVin(vin) ? await readVinScanSnapshot(vin).catch(() => null) : null;
+  const prev = prevRaw && prevRaw.vin === vin ? prevRaw : null;
+  const nowMs = Date.now();
+  // Katra rinda pēc sava avota TTL (reģistri 7 d / 3 d, izsoļu arhīvi 30 d, sludinājumi 12 h).
+  const reusable = prev ? pickReusableVinScanRows(prev.indicators, prev.scannedAt, nowMs, force) : [];
+  const cachedIds = new Set(reusable.map((row) => row.id));
   const toScan = requested.filter((id) => !cachedIds.has(id));
-  const scanned = toScan.length ? await runVinScan({ vin, plates, listingUrl, sourceIds: toScan }) : [];
-  const base = prev && prev.vin === vin ? prev.indicators : [];
+  const scanned = stampVinScanRows(
+    toScan.length ? await runVinScan({ vin, plates, listingUrl, sourceIds: toScan, ignoreBreaker: force }) : [],
+    new Date(nowMs).toISOString(),
+    true,
+  );
+  // Vecās rindas patur savu laiku, citādi jaunais momentuzņēmuma scannedAt tās padarītu "svaigas".
+  const base = prev ? stampVinScanRows(prev.indicators, prev.scannedAt) : [];
+  const scannedAt = scanned.length ? new Date().toISOString() : prev?.scannedAt || new Date().toISOString();
+  // Skenēšana ilgst līdz ~105 s; pa to laiku saglabātie pārlūka importi nav `prev`, tāpēc tos pārlasa tieši pirms rakstīšanas.
+  const lateImports = isValidVin(vin) && scanned.length ? await readVinScanBrowserImports(vin).catch(() => []) : [];
   const indicators = applyFinlandLinkToIndicators(
-    preferBrowserArchiveImport(base, mergeVinScanIndicators(base, scanned)),
+    overlayVinScanBrowserImports(
+      preferBrowserArchiveImport(base, mergeVinScanIndicators(base, scanned)),
+      scannedAt,
+      lateImports,
+    ),
     plates,
   );
-  const scannedAt = scanned.length ? new Date().toISOString() : prev?.scannedAt || new Date().toISOString();
   after(() => recordSourceOutcomes(vinScanSourceHealthOutcomes(scanned)));
   if (isValidVin(vin) && scanned.length) {
     await writeVinScanSnapshot({ vin, plates, scannedAt, indicators }).catch((err) => {

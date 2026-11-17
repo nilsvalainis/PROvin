@@ -9,11 +9,14 @@ import { isSafeB2bInviteToken } from "@/lib/b2b-partner-invite";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "PROVIN partneru reģistrācija",
-  robots: { index: false, follow: false },
-  appleWebApp: { capable: true, title: "PROVIN", statusBarStyle: "black-translucent" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Partner");
+  return {
+    title: t("metaRegisterTitle"),
+    robots: { index: false, follow: false },
+    appleWebApp: { capable: true, title: "PROVIN", statusBarStyle: "black-translucent" },
+  };
+}
 
 type Props = {
   searchParams: Promise<{ token?: string | string[] }>;
@@ -31,6 +34,7 @@ export default async function PartnerInviteRegisterPage({ searchParams }: Props)
         <B2bPartnerHero
           hideContact
           widePanel
+          mapPage="registracija"
           panel={
             invite ? (
               <B2bPartnerInviteRegister token={invite.token} />

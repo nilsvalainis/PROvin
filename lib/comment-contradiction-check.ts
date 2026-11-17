@@ -2,11 +2,13 @@
  * Deterministiska pretrunu pārbaude pret KANONISKAJIEM FAKTIEM un starp laukiem.
  * Tekstu nemaina; tikai karodziņi adminam (E/W). Nav maksas modeļa.
  */
+import type { RegistryCountryPeriod } from "@/lib/registry-country-periods";
 import {
   CANONICAL_FACTS_HEADER,
   LARGE_ODOMETER_DROP_KM,
-  hasRollbackOrMileageWarning,
+  SUSPECTED_ENTRY_ERROR_LINE_PREFIX,
   isMileageRelatedCommentField,
+  rollbackMentionRequired,
   type CanonicalFacts,
 } from "@/lib/canonical-facts-sheet";
 import { formatForensicsInt } from "@/lib/admin-ai-mileage-forensics";
@@ -27,7 +29,32 @@ export type ContradictionCheckInput = {
   /** Ielādētie avoti: OE VIN Lookup / dīleris / CSDD degviela un dzinējs. */
   sourceBlocks?: import("@/lib/admin-source-blocks").WorkspaceSourceBlocks;
   vin?: string | null;
+  /** Avota komentāram: fokusa avota nosaukums (piem. „CSDD”, „AutoDNA”). */
+  focusSourceLabel?: string | null;
+  /** Fokusa avota datu teksts (km skaitļi `csdd_foreign_mileage` pārbaudei). */
+  focusSourceText?: string | null;
 };
+
+const ROLLBACK_CONTEXT_RE = /kritum|korekcij|samazin|atgriez|atpakaļgait|rollback|griezt/i;
+
+/** Visi km lieluma skaitļi tekstā („179 862”, „179862”, „179.862”). */
+export function extractKmLikeNumbers(text: string): number[] {
+  const out: number[] = [];
+  for (const m of (text ?? "").matchAll(/(?<![\d.,])(\d{1,3}(?:[ \u00a0\u202f.]\d{3})+|\d{4,7})(?![\d,]|\.\d)/g)) {
+    const n = Number(m[1]!.replace(/[^\d]/g, ""));
+    if (n >= 1_000) out.push(n);
+  }
+  return out;
+}
+
+function mentionsKm(text: string, km: number): boolean {
+  return extractKmLikeNumbers(text).includes(km);
+}
+
+function isCsddFocus(field: string, focus?: string | null): boolean {
+  if ((focus ?? "").trim().toLowerCase() === "csdd") return true;
+  return field.toLowerCase().split(":")[0] === "csdd";
+}
 
 const ROLLBACK_MENTION_RE =
   /odometr|kritum|atpakaļgait|rollback|neatbilstīb.{0,40}nobrauk|nobraukum.{0,40}neatbilst|korekcij|anomāl/i;
@@ -35,9 +62,68 @@ const MINIMISING_RE =
   /nelielas?\s+nobīd|niecīg\w*\s+(?:nobīd|atšķir|kritum)|minimāl\w*\s+(?:nobīd|atšķir)|sīkas?\s+atšķir|neliels\s+kritums/i;
 const NO_ACCIDENT_RE =
   /\bnav\s+(fiksēt|reģistrēt|konstatēt|zinām)\w*.{0,40}(?:negadījum|csng|avārij)|(?:negadījum|avārij|csng)\w*.{0,30}\bnav\b/i;
+/** „Nav bojājumu / atlīdzību / zaudējumu” - j26: plašāks par `NO_ACCIDENT_RE`. */
+const NO_DAMAGE_RE =
+  /\bnav\b.{0,50}(?:negadījum|csng|avārij|bojāj|atlīdz|zaudējum)|\bnav\s+(?:fiksēt|reģistrēt|konstatēt|zinām)\w*.{0,40}(?:negadījum|csng|avārij|bojāj|atlīdz|zaudējum)|(?:negadījum|avārij|csng|bojāj|atlīdz|zaudējum)\w*.{0,30}\bnav\b|bez\s+(?:negadījum|bojāj|avārij)\w*/i;
+/** Lauki, kas apkopo visus avotus (ne viena avota komentārs). */
+const CROSS_SOURCE_FIELDS = new Set(["summary", "technical_risks", "inspection", "incidents"]);
+const LV_COUNT_WORDS: Record<string, number> = {
+  viens: 1, divi: 2, trīs: 3, četri: 4, pieci: 5, seši: 6, septiņi: 7, astoņi: 8, deviņi: 9, desmit: 10,
+};
+const INCIDENT_TOTAL_RE = new RegExp(
+  `(?<![\\p{L}\\p{N}])(\\d{1,2}|${Object.keys(LV_COUNT_WORDS).join("|")})\\s+(?:bojājumu|negadījumu)(?:\\s*(?:/|un|vai)\\s*(?:bojājumu|negadījumu))?\\s+ierakst`,
+  "giu",
+);
+function parseLvCountWord(raw: string): number | null {
+  const t = raw.toLocaleLowerCase("lv");
+  if (/^\d+$/.test(t)) return Number(t);
+  return LV_COUNT_WORDS[t] ?? null;
+}
+/** Pilnīga zaudējuma / norakstīšanas statuss - nav bojājuma noliegums. */
+const TOTAL_LOSS_STATUS_RE = /pilnīg\p{L}*\s+zaudējum\p{L}*|total\s+loss/giu;
+/** Teikums par to, ka nav SUMMAS (ne bojājuma) - nav pretruna bojājumiem bez summas. */
+const AMOUNT_ONLY_RE = /summ|\beur\b|€|apmēr|izmaks/i;
+/** Neskaidrība („nav zināms, vai…”) - nav apgalvojums, ka bojājumu nav. */
+const DAMAGE_UNCERTAIN_RE = /nav\s+(?:zināms|skaidrs|informācij\w*)\W{0,3}(?:\s+\S+){0,3}\s+vai\b/i;
+/** Teikums pats apgalvo bojājumu (piem. „izsolē fiksēti bojājumi…, LTAB atlīdzības nav”). */
+const DAMAGE_POSITIVE_RE =
+  /bojājum\w*\s+(?:ir\s+)?(?:fiksēt|reģistrēt|konstatēt|norādīt)|(?<!nav\s)(?<!nav\s\S{1,12}\s)(?:fiksēt|reģistrēt|konstatēt|norādīt)\w*\s+(?:\S+\s+)?bojāj|bojājuma\s+dēļ/i;
+/** j26: dīlera skaitu etiķete -> teksta atpazīšana (LV). */
+const DEALER_COUNT_TEXT_RE: Array<{ label: RegExp; re: string }> = [
+  { label: /^dzinēja eļļas maiņas$/i, re: "(?:dzinēja|motor)\\p{L}*\\s+eļļ\\p{L}*|eļļas\\s+maiņ\\p{L}*" },
+  { label: /^kārbas eļļas maiņas$/i, re: "(?:kārb|dsg|pārnesumkārb)\\p{L}*\\s+(?:eļļ|apkop|šķidr)\\p{L}*" },
+];
+
+function dealerCountMentionSource(label: string): string {
+  const known = DEALER_COUNT_TEXT_RE.find((d) => d.label.test(label.trim()));
+  if (known) return known.re;
+  return label
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => `${w.slice(0, Math.max(4, w.length - 2)).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\p{L}*`)
+    .join("\\s+");
+}
+
+/** „nav (nevienas) X” / „X nav” / „bez X” tuvu komponentam. */
+function negatesDealerComponent(sentence: string, mention: string): boolean {
+  const before = new RegExp(`(?:\\bnav\\b|nevien\\p{L}*|netika|\\bbez\\b)(?:\\s+\\S+){0,4}?\\s+(?:${mention})`, "iu");
+  const after = new RegExp(`(?:${mention})(?:\\s+\\S+){0,3}?\\s+(?:nav|netika)\\b`, "iu");
+  return before.test(sentence) || after.test(sentence);
+}
+
+const COUNTRY_STAY_RE = /posm|ekspluatācij|ekspluatēt|lietot|atradās|reģistrēt|izmantot/i;
+const COUNTRY_STEMS: Array<[string, string]> = [
+  ["zviedrij", "Zviedrija"],
+  ["somij", "Somija"],
+  ["dānij", "Dānija"],
+  ["igaunij", "Igaunija"],
+  ["nīderland", "Nīderlande"],
+];
+
 const NO_RECALL_RE =
   /\bnav\s+(fiksēt|reģistrēt|konstatēt|atrast|zinām)\w*.{0,40}(?:atsaukum|kampaņ)|(?:atsaukum|kampaņ)\w*.{0,30}\bnav\b/i;
-const OWNER_COUNT_RE = /(\d{1,2})\s+īpašniek/gi;
+const OWNER_COUNT_RE = /(\d{1,2})\s+īpašniek(?!(?:u|a)\s+maiņ)/gi;
 const OWNER_CHANGE_RE = /(\d{1,2})\s+īpašnieku\s+maiņ/gi;
 const FIRST_REG_LV_RE = /pirmā\s+reģistrācija.{0,40}latvij/i;
 const FIRST_REG_DE_RE = /pirmā\s+reģistrācija.{0,40}vācij|izcelsmes\s+valst.{0,20}vācij/i;
@@ -146,6 +232,30 @@ function flagKey(f: FactCheckFlag): string {
   return `${f.id}|${f.sentence}`;
 }
 
+/** Teikums runā tikai par Latvijas reģistriem (CSDD / CSNg / LTAB / „vietēji”), ne par visiem avotiem. */
+const LOCAL_REGISTRY_SCOPE_RE = /\bcsdd\b|\bcsng\b|\bltab\b|vietēj|latvijas\s+(?:reģistr|apdrošin|policij)/i;
+const ALL_SOURCES_SCOPE_RE = /vis(?:os|i|ām)\s+(?:avot|reģistr|datu)|nevienā\s+avot|ārvalst|ārzem|starptautisk|neatkarīg/i;
+
+function isLocalRegistryScopedSentence(sentence: string): boolean {
+  return LOCAL_REGISTRY_SCOPE_RE.test(sentence) && !ALL_SOURCES_SCOPE_RE.test(sentence);
+}
+
+function isLocalIncidentSource(sourceLabel: string, country: string): boolean {
+  return /\b(?:ltab|csdd|csng)\b/i.test(sourceLabel) || /^(?:lv|latvija)$/i.test(country.trim());
+}
+
+/** „N īpašnieki ārvalstīs / pirms ievešanas”, kur N = kopā - LV. */
+function isForeignOwnerShareMention(
+  sentences: string[],
+  n: number,
+  total: number,
+  latviaOwners: number | null | undefined,
+): boolean {
+  if (latviaOwners == null || total - latviaOwners !== n) return false;
+  const re = new RegExp(`\\b${n}\\s+īpašniek`, "i");
+  return sentences.some((s) => re.test(s) && /ārvalst|ārzem|pirms\s+(?:ievešan|import)|ārpus\s+latvij/i.test(s));
+}
+
 function firstMatchingSentence(sentences: string[], re: RegExp): string {
   return sentences.find((s) => re.test(s)) ?? sentences[0] ?? "";
 }
@@ -173,8 +283,8 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
     }
   }
 
-  // 1) Odometra kritums / CarVertical brīdinājums jāpiemin.
-  if (hasRollbackOrMileageWarning(facts) && isMileageRelatedCommentField(field)) {
+  // 1) Odometra kritums / CarVertical brīdinājums jāpiemin (tikai laukos, kur tas ir vietā).
+  if (rollbackMentionRequired(field, facts, input.focusSourceLabel)) {
     if (!ROLLBACK_MENTION_RE.test(text)) {
       const drop = facts.maxRollbackDropKm;
       push({
@@ -185,13 +295,105 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
         sentence: firstMatchingSentence(sentences, /nobrauk|odometr|km/i) || sentences[0]!,
       });
     }
-    if (facts.maxRollbackDropKm >= LARGE_ODOMETER_DROP_KM && MINIMISING_RE.test(text)) {
+  }
+  if (
+    isMileageRelatedCommentField(field) &&
+    facts.maxRollbackDropKm >= LARGE_ODOMETER_DROP_KM &&
+    MINIMISING_RE.test(text)
+  ) {
+    push({
+      id: "rollback_minimised",
+      kind: "rollback_minimised",
+      level: "E",
+      message: `Kritums ${formatForensicsInt(facts.maxRollbackDropKm)} km nav „nelielas nobīdes”.`,
+      sentence: firstMatchingSentence(sentences, MINIMISING_RE),
+    });
+  }
+
+  // 1b) Izolēta ievades kļūda nav korekcija un nav jāatkārto vairākos laukos (tikai karodziņš).
+  for (const e of facts.suspectedEntryErrors ?? []) {
+    const kmSentences = sentences.filter((s) => mentionsKm(s, e.km));
+    if (kmSentences.length === 0) continue;
+    const asRollback = kmSentences.find((s) => ROLLBACK_CONTEXT_RE.test(s));
+    const isMileageField = field.toLowerCase() === "mileage";
+    const repeatedElsewhere = (input.otherFieldTexts ?? []).some(
+      (o) => o.field !== field && mentionsKm(o.text, e.km),
+    );
+    if (asRollback || !isMileageField || repeatedElsewhere) {
       push({
-        id: "rollback_minimised",
-        kind: "rollback_minimised",
-        level: "E",
-        message: `Kritums ${formatForensicsInt(facts.maxRollbackDropKm)} km nav „nelielas nobīdes”.`,
-        sentence: firstMatchingSentence(sentences, MINIMISING_RE),
+        id: "entry_error_as_rollback",
+        kind: "entry_error_as_rollback",
+        level: "W",
+        message: asRollback
+          ? `${formatForensicsInt(e.km)} km (${e.date}, ${e.source}) ir izolēta ievades kļūda, ne odometra kritums vai korekcija.`
+          : `${formatForensicsInt(e.km)} km (${e.date}) ir izolēta ievades kļūda: drīkst vienu neitrālu teikumu tikai nobraukuma laukā.`,
+        sentence: asRollback ?? kmSentences[0]!,
+      });
+    }
+  }
+
+  // 1d) j26: neticams rādījums (piem. 100 km) nav korekcija / kritums. Tikai karodziņš.
+  for (const r of facts.implausibleReadings ?? []) {
+    const km = r.odometer.replace(/\D/g, "");
+    if (!km) continue;
+    const kmRe = new RegExp(`(?<!\\d)(?<!\\d[\\s.,])${km}\\s*km\\b`, "i");
+    const bad = sentences.find((s) => kmRe.test(s) && ROLLBACK_CONTEXT_RE.test(s));
+    if (!bad) continue;
+    push({
+      id: "entry_error_as_rollback",
+      kind: "entry_error_as_rollback",
+      level: "W",
+      message: `${km} km (${r.date}, ${r.sourceLabel}) ir neticams ievades ieraksts, ne odometra korekcija vai kritums.`,
+      sentence: bad,
+    });
+  }
+
+  // 1e) j26: „posms {valsts}” gadā, kas neietilpst šīs valsts posmā (no reģistru laika līnijas).
+  const periods = facts.countryPeriods ?? [];
+  if (periods.length > 0) {
+    for (const sentence of sentences) {
+      if (!COUNTRY_STAY_RE.test(sentence)) continue;
+      const years = [...sentence.matchAll(/\b((?:19|20)\d{2})\b/g)].map((m) => Number(m[1]));
+      if (years.length === 0) continue;
+      for (const [stem, country] of COUNTRY_STEMS) {
+        if (!new RegExp(stem, "iu").test(sentence)) continue;
+        const own = periods.filter((p) => p.country === country);
+        if (own.length === 0) continue;
+        const covered = (y: number) =>
+          own.some((p) => {
+            const fromY = new Date(p.from).getUTCFullYear();
+            const toY = p.to == null ? 9999 : new Date(p.to).getUTCFullYear();
+            return y >= fromY && y <= toY;
+          });
+        const outside = years.filter((y) => !covered(y));
+        if (outside.length === 0) continue;
+        push({
+          id: "country_period_mismatch",
+          kind: "country_period_mismatch",
+          level: "W",
+          message: `${country}: ${outside.join(", ")}. gads neietilpst valsts posmā pēc reģistru laika līnijas (${own
+            .map((p) => `${p.fromLabel} - ${p.toLabel}`)
+            .join("; ")}).`,
+          sentence,
+        });
+      }
+    }
+  }
+
+  // 1c) CSDD komentārā tikai CSDD km (cita avota rādījums nav CSDD fakts). Tikai karodziņš.
+  const focusText = input.focusSourceText ?? (input.sourceBlocks && isCsddFocus(field, input.focusSourceLabel)
+    ? csddKmHaystack(input.sourceBlocks)
+    : null);
+  if (focusText != null && isCsddFocus(field, input.focusSourceLabel)) {
+    const csddKms = new Set(extractKmLikeNumbers(focusText));
+    for (const km of kmNumbers(text)) {
+      if (csddKms.has(km)) continue;
+      push({
+        id: `csdd_foreign_mileage_${km}`,
+        kind: "csdd_foreign_mileage",
+        level: "W",
+        message: `${formatForensicsInt(km)} km nav CSDD datos - CSDD komentārā tikai CSDD rādījumi.`,
+        sentence: sentences.find((s) => mentionsKm(s, km)) ?? sentences[0]!,
       });
     }
   }
@@ -202,6 +404,8 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
   if (facts.owners.totalCount > 0) {
     for (const n of ownerMentions) {
       if (n !== facts.owners.totalCount && (facts.owners.latviaOwners == null || n !== facts.owners.latviaOwners)) {
+        // FABLE v3: „7 īpašnieki ārvalstu posmā” = kopā 11 - LV 4 - patiess, ne kļūda.
+        if (isForeignOwnerShareMention(sentences, n, facts.owners.totalCount, facts.owners.latviaOwners)) continue;
         push({
           id: "owner_count",
           kind: "owner_count",
@@ -261,13 +465,73 @@ export function checkCommentContradictions(input: ContradictionCheckInput): Fact
   }
 
   // 3) Nav negadījumu / nav atsaukumu pret lapu.
-  if (facts.incidents.length > 0 && NO_ACCIDENT_RE.test(text) && !/neizslēdz|bez\s+fizisk/i.test(text)) {
+  // FABLE v3: „CSDD / vietēju CSNg ierakstu nav” ir patiess, ja visi ieraksti ir no ārvalstu avotiem.
+  const localIncidentRows =
+    facts.incidents.filter((r) => isLocalIncidentSource(r.sourceLabel, r.country)).length +
+    (facts.damageEvidence?.rows ?? []).filter((r) => isLocalIncidentSource(r.sourceLabel, "")).length;
+  const trueLocalClaim = (s: string) => localIncidentRows === 0 && isLocalRegistryScopedSentence(s);
+  const noAccidentSentence = sentences.find((s) => NO_ACCIDENT_RE.test(s) && !trueLocalClaim(s));
+  if (facts.incidents.length > 0 && noAccidentSentence && !/neizslēdz|bez\s+fizisk/i.test(text)) {
     push({
       id: "no_accidents_claim",
       kind: "no_accidents_claim",
       level: "E",
       message: `Teksts saka, ka negadījumu nav, bet lapā ir ${facts.incidents.length} rinda(-s).`,
-      sentence: firstMatchingSentence(sentences, NO_ACCIDENT_RE),
+      sentence: noAccidentSentence,
+    });
+  }
+  // 3b) j26: bojājumi IR (arī bez summas) - „nav bojājumu/atlīdzību” ir kļūda; „neizslēdz” neattaisno.
+  const damageTotal = facts.damageEvidence?.total ?? 0;
+  if (damageTotal > 0) {
+    const bad = sentences.find(
+      (s) =>
+        // „Zādzības vai pilnīga zaudējuma ierakstu nav” runā par statusu, ne par bojājumiem.
+        NO_DAMAGE_RE.test(s.replace(TOTAL_LOSS_STATUS_RE, " ")) &&
+        !trueLocalClaim(s) &&
+        !AMOUNT_ONLY_RE.test(s) &&
+        !DAMAGE_UNCERTAIN_RE.test(s) &&
+        !DAMAGE_POSITIVE_RE.test(s),
+    );
+    if (bad) {
+      push({
+        id: "no_damage_claim",
+        kind: "no_damage_claim",
+        level: "E",
+        message: `Teksts saka, ka bojājumu / negadījumu nav, bet atskaitē ir ${facts.reportIncidentCount > 0 ? facts.reportIncidentCount : damageTotal} bojājumu ieraksts(-i) (arī bez summas). Min tos ar avotu un datumu.`,
+        sentence: bad,
+      });
+    }
+  }
+  // 3a') Kopējais negadījumu skaits kopsavilkumā/riskos/apskatē = kopsavilkuma kartītei (nesummēt avotus).
+  if (facts.reportIncidentCount > 0 && field && CROSS_SOURCE_FIELDS.has(field)) {
+    for (const m of text.matchAll(INCIDENT_TOTAL_RE)) {
+      const n = parseLvCountWord(m[1]!);
+      if (n == null || n <= facts.reportIncidentCount) continue;
+      push({
+        id: `incident_total_${n}`,
+        kind: "incident_count",
+        level: "E",
+        message: `Teksts saka ${n} bojājumu/negadījumu ierakstus, atskaites kopsavilkumā: ${facts.reportIncidentCount}. Avotu rindas nesummē - viens notikums var būt vairākos avotos.`,
+        sentence: sentences.find((x) => x.includes(m[0])) ?? m[0],
+      });
+    }
+  }
+  // 3c) j26: „nav nevienas kārbas apkopes”, bet dīlera skaitos ir > 0.
+  for (const c of facts.dealerComponentCounts ?? []) {
+    if (c.dates.length === 0) continue;
+    const mention = dealerCountMentionSource(c.label);
+    const bad = sentences.find(
+      (s) => negatesDealerComponent(s, mention) && !DAMAGE_UNCERTAIN_RE.test(s),
+    );
+    if (!bad) continue;
+    // Teikums ar periodu („pēc 2021”) var būt patiess - tikai karodziņš.
+    const periodScoped = /\b(?:pēc|kopš|līdz|no)\s+(?:\d{1,2}\.\d{1,2}\.)?(?:19|20)\d{2}/i.test(bad);
+    push({
+      id: "negated_fact",
+      kind: "negated_fact",
+      level: periodScoped ? "W" : "E",
+      message: `Teksts saka, ka „${c.label.toLowerCase()}” nav, bet dīlera datos ir ${c.dates.length} (${c.dates.join(", ")}).`,
+      sentence: bad,
     });
   }
   if (facts.recallCodes.length > 0 && NO_RECALL_RE.test(text) && !/jāpārbauda|izpild/i.test(text)) {
@@ -436,6 +700,15 @@ const EMPTY_TA = {
 /**
  * Izvelk kanonisko lapu no ✨ user prompta (P12). Bez maksas.
  */
+function csddKmHaystack(blocks: import("@/lib/admin-source-blocks").WorkspaceSourceBlocks): string {
+  const csdd = blocks.csdd;
+  if (!csdd) return "";
+  return [
+    ...(csdd.mileageHistory ?? []).map((r) => r.odometer),
+    JSON.stringify(csdd),
+  ].join("\n");
+}
+
 export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts | null {
   const t = prompt ?? "";
   const re = new RegExp(
@@ -454,14 +727,16 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
   const countryIso = firstRegLine.match(/\(([A-Z]{2})\)/)?.[1] ?? "";
   const latestKmRaw = sheet.match(/Jaunākais rādījums:\s*([\d\s]+)\s*km/)?.[1];
   const rollbacks = [...sheet.matchAll(
-    /- Kritums:\s+(\S+)\s+([\d\s]+?)\s+km\s+[→-]\s+(\S+)\s+([\d\s]+?)\s+km;\s+minimums\s+([\d\s]+?)\s+km/g,
+    /- Kritums:\s+(\S+)\s+([\d\s]+?)\s+km(?:\s+\(([^)\n]*)\))?\s+[→-]\s+(\S+)\s+([\d\s]+?)\s+km(?:\s+\(([^)\n]*)\))?;\s+minimums\s+([\d\s]+?)\s+km/g,
   )].map((row) => {
-    const minDropKm = parseSpacedInt(row[5] ?? "0");
+    const minDropKm = parseSpacedInt(row[7] ?? "0");
     return {
       fromDate: row[1] ?? "",
-      toDate: row[3] ?? "",
+      toDate: row[4] ?? "",
       fromKm: parseSpacedInt(row[2] ?? "0"),
-      toKm: parseSpacedInt(row[4] ?? "0"),
+      toKm: parseSpacedInt(row[5] ?? "0"),
+      fromSource: row[3] ?? "",
+      toSource: row[6] ?? "",
       gapDays: 0,
       minDropKm,
       previousKmPerDay: null,
@@ -470,7 +745,19 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
       maxDropKm: minDropKm,
     };
   });
-  const incidentCount = Number(sheet.match(/Negadījumi \/ zaudējumi:\s*(\d+)/)?.[1] ?? 0);
+  const suspectedPrefix = SUSPECTED_ENTRY_ERROR_LINE_PREFIX.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const suspectedEntryErrors = [...sheet.matchAll(
+    new RegExp(`- ${suspectedPrefix}:\\s*([^,\\n]+),\\s*([\\d\\s]+?)\\s*km,\\s*([^\\n]+)`, "g"),
+  )].map((row) => ({
+    date: row[1]!.trim(),
+    km: parseSpacedInt(row[2] ?? "0"),
+    source: row[3]!.trim(),
+  }));
+  const incidentCount = Number(sheet.match(/Negadījumi \/ zaudējumi(?: pa avotiem)?:\s*(\d+)/)?.[1] ?? 0);
+  const damageTotal = Number(
+    sheet.match(/(?:Bojājumi \(visi avoti[^)]*\)|Bojājumu avotu ieraksti \([^)]*\)):\s*(\d+)/)?.[1] ?? 0,
+  );
+  const reportIncidentCount = Number(sheet.match(/Negadījumi atskaitē \([^)]*\):\s*(\d+)/)?.[1] ?? 0);
   const recallLine = sheet.match(/Atsaukumi \/ kampaņu kodi datos:\s*([^\n]+)/)?.[1] ?? "";
   const recallCodes = /nav fiksētu/i.test(recallLine)
     ? []
@@ -498,6 +785,8 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
     },
     latestKm: latestKmRaw ? parseSpacedInt(latestKmRaw) : null,
     rollbacks,
+    suspectedEntryErrors,
+    csddUndatedOdometer: null,
     odometerAnomaly: /Forenzikas karogs[^:\n]*:\s*JĀ/i.test(sheet),
     carverticalMileageWarning: /CarVertical nobraukuma brīdinājums:\s*JĀ/i.test(sheet),
     maxRollbackDropKm,
@@ -509,6 +798,27 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
       sourceOrder: i,
       sourceLabel: `rinda ${i + 1}`,
     })),
+    reportIncidentCount,
+    damageEvidence: {
+      rows: [],
+      total: damageTotal,
+      withoutAmountCount: 0,
+      hasDealerBodyOrGlassWork: false,
+    },
+    alertBannerTexts: [],
+    dealerComponentCounts: parseDealerComponentCountsFromSheet(sheet),
+    implausibleReadings: [...sheet.matchAll(/- Izlaists neticams rādījums[^:\n]*:\s*([^,\n]+),\s*(\d+)\s*km,\s*([^\n]+)/g)].map(
+      (m, i) => ({
+        date: m[1]!.trim(),
+        odometer: m[2]!,
+        country: "",
+        sourceLabel: m[3]!.trim(),
+        sourceOrder: i,
+        sortableTime: 0,
+      }),
+    ),
+    countryPeriods: parseCountryPeriodsFromSheet(sheet),
+    registryStatusLines: [],
     ta: EMPTY_TA,
     dealerRowsLv: "",
     dealerCampaigns: [],
@@ -520,4 +830,36 @@ export function extractCanonicalFactsFromPrompt(prompt: string): CanonicalFacts 
     sheet,
   };
   return facts;
+}
+
+/** „Dīlera darbu skaiti” rindas no faktu lapas teksta. */
+export function parseDealerComponentCountsFromSheet(sheet: string): Array<{ label: string; dates: string[] }> {
+  const head = sheet.indexOf("Dīlera darbu skaiti");
+  if (head < 0) return [];
+  const out: Array<{ label: string; dates: string[] }> = [];
+  for (const line of sheet.slice(head).split("\n").slice(1)) {
+    const m = line.match(/^- ([^:]+):\s*(\d+)\s*\(([^)]*)\)/);
+    if (!m) break;
+    out.push({ label: m[1]!.trim(), dates: m[3]!.split(",").map((d) => d.trim()).filter(Boolean) });
+  }
+  return out;
+}
+
+/** „Valstu posmi” rindas no faktu lapas teksta. */
+export function parseCountryPeriodsFromSheet(sheet: string): RegistryCountryPeriod[] {
+  const head = sheet.indexOf("Valstu posmi");
+  if (head < 0) return [];
+  const toMs = (label: string): number | null => {
+    const m = label.match(/^(\d{2})\.(\d{4})$/);
+    return m ? Date.UTC(Number(m[2]), Number(m[1]) - 1, 1) : null;
+  };
+  const out: RegistryCountryPeriod[] = [];
+  for (const line of sheet.slice(head).split("\n").slice(1)) {
+    const m = line.match(/^- (\d{2}\.\d{4}) - (\d{2}\.\d{4}|\.\.\.) (\S+) \(([^)]*)\)/);
+    if (!m) break;
+    const from = toMs(m[1]!);
+    if (from == null) continue;
+    out.push({ country: m[3]!, from, to: toMs(m[2]!), fromLabel: m[1]!, toLabel: m[2]!, basis: m[4]! });
+  }
+  return out;
 }

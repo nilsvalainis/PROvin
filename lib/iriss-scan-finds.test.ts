@@ -48,4 +48,37 @@ describe("iriss scan finds", () => {
     expect(cards[0]?.spec).toContain("168 000 km");
     expect(cards[0]?.spec).toContain("kW");
   });
+  it("Radara «Jauni» ietver arī saišu auto bez atbilstības ieraksta (36 h logs), bez pazudušajiem", () => {
+    const now = Date.parse("2026-10-27T01:00:00Z");
+    const cards = buildIrissScanFindCards({
+      vehicles: [
+        { id: "fresh", title: "Lexus RX", orderIds: ["scan:s1"], firstSeenAt: "2026-10-26T17:57:00Z" },
+        { id: "old", title: "Toyota", orderIds: ["scan:s1"], firstSeenAt: "2026-10-20T09:00:00Z" },
+        { id: "gone", title: "Lexus NX", orderIds: ["scan:s1"], firstSeenAt: "2026-10-26T17:57:00Z", change: "gone" },
+        { id: "saved", title: "Lexus UX", orderIds: ["scan:s1"], firstSeenAt: "2026-10-26T17:57:00Z" },
+        { id: "client", title: "Volvo", orderIds: ["o1"], firstSeenAt: "2026-10-26T17:57:00Z" },
+      ],
+      entries: [{ orderId: "scan:s1", listingId: "saved", status: "interesants", matchedAt: "2026-10-26T18:00:00Z" }],
+      nowMs: now,
+    });
+    expect(cards.map((c) => [c.listingId, c.bucket])).toEqual([
+      ["saved", "saved"],
+      ["fresh", "new"],
+    ]);
+  });
+
+  it("bez nowMs - tikai atbilstību ieraksti (kā agrāk)", () => {
+    const cards = buildIrissScanFindCards({
+      vehicles: [{ id: "fresh", orderIds: ["scan:s1"], firstSeenAt: "2026-10-26T17:57:00Z" }],
+      entries: [],
+    });
+    expect(cards).toEqual([]);
+  });
+  it("eCarsTrade bez solījuma rāda aplēsi, nevis «Nav cenas»", () => {
+    const cards = buildIrissScanFindCards({
+      vehicles: [{ id: "et", platform: "ecarstrade", orderIds: ["scan:s1"], priceCurrent: null, priceEstimate: 14300 }],
+      entries: [{ orderId: "scan:s1", listingId: "et", status: "jauns", matchedAt: "2026-10-26T18:00:00Z" }],
+    });
+    expect(cards[0]?.priceLabel).toBe("14 300 €");
+  });
 });

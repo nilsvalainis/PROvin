@@ -1,0 +1,625 @@
+{
+ "vin": "WBAMX31050C524401",
+ "label": "BMW 525: CSDD 2, AutoDNA 3, carVertical 15, dīleris 17, citi 1; negadījumi 2",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 167, saglabāts 2026-08-24; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW 525",
+   "registrationNumber": "NY8515",
+   "firstRegistration": "2011-02-17",
+   "nextInspectionDate": "2027-01-08",
+   "prevInspectionDate": "2025-12-19",
+   "engineDisplacementCm3": "2993",
+   "enginePowerKw": "150",
+   "fuelType": "",
+   "emissionStandard": "Euro 5 A",
+   "grossMassKg": "2415",
+   "curbMassKg": "1840",
+   "roadTaxEur": "159,00",
+   "registrationStatus": "Uzskaitē",
+   "opacityCoefficient": "0.06",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "VĀCIJA",
+   "ownerCountLatvia": "1",
+   "technicalInspectionHistory": [
+    {
+     "date": "20.12.2024",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "0.05",
+     "notes": "",
+     "defects": [
+      {
+       "code": "6.1.1.",
+       "rating": "1",
+       "description": "Virspusēja rāmja vai nesošā elementa korozija."
+      }
+     ]
+    }
+   ],
+   "ownerRegistrationEvents": [
+    {
+     "date": "19.12.2024",
+     "label": "Pirmā reģistrācija"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "Pamatpārbaude",
+    "inspectionDateText": "19.12.2025",
+    "nextInspectionDateText": "",
+    "odometer": "334594",
+    "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+    "ratingLevel": 1,
+    "smokeCoefficient": "0.06",
+    "notes": "",
+    "defects": [
+     {
+      "code": "6.1.1.",
+      "rating": "1",
+      "description": "Virspusēja rāmja vai nesošā elementa korozija."
+     }
+    ]
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "19.12.2025",
+     "odometer": "334594",
+     "country": "Latvija"
+    },
+    {
+     "date": "20.12.2024",
+     "odometer": "301738",
+     "country": "Latvija"
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "2",
+   "listingCreated": "19.08.2026",
+   "priceDrop": "0",
+   "priceHistory": [],
+   "listingMileageOdometer": "",
+   "listingMileageDate": "",
+   "listingMileageCountry": ""
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "19.12.2025",
+     "odometer": "334594",
+     "country": "Latvija"
+    },
+    {
+     "date": "20.12.2024",
+     "odometer": "301738",
+     "country": "Latvija"
+    },
+    {
+     "date": "19.12.2024",
+     "odometer": "301738",
+     "country": "Latvija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.05.2013",
+     "lossAmount": "100 - 200 €"
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.12.2025",
+     "odometer": "334594",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.12.2024",
+     "odometer": "301738",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2024",
+     "odometer": "301126",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2017",
+     "odometer": "170885",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2016",
+     "odometer": "161290",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2015",
+     "odometer": "138422",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2014",
+     "odometer": "138360",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2014",
+     "odometer": "128227",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2014",
+     "odometer": "119894",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2013",
+     "odometer": "109352",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2012",
+     "odometer": "72921",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2012",
+     "odometer": "70404",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2012",
+     "odometer": "43784",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2011",
+     "odometer": "30495",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2011",
+     "odometer": "1",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.05.2013",
+     "lossAmount": "101 - 250 €"
+    }
+   ]
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "28.08.2024",
+     "odometer": "301626",
+     "country": "Vācija"
+    },
+    {
+     "date": "17.08.2024",
+     "odometer": "301626",
+     "country": "Vācija"
+    },
+    {
+     "date": "18.04.2017",
+     "odometer": "171385",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.09.2016",
+     "odometer": "161790",
+     "country": "Vācija"
+    },
+    {
+     "date": "09.04.2015",
+     "odometer": "138922",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.04.2015",
+     "odometer": "138922",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.09.2014",
+     "odometer": "138861",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.09.2014",
+     "odometer": "138860",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.07.2014",
+     "odometer": "128727",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.02.2014",
+     "odometer": "120394",
+     "country": "Vācija"
+    },
+    {
+     "date": "21.10.2013",
+     "odometer": "109852",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.11.2012",
+     "odometer": "74692",
+     "country": "Vācija"
+    },
+    {
+     "date": "29.10.2012",
+     "odometer": "73121",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.10.2012",
+     "odometer": "70604",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.02.2012",
+     "odometer": "43984",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.10.2011",
+     "odometer": "30695",
+     "country": "Vācija"
+    },
+    {
+     "date": "07.02.2011",
+     "odometer": "1",
+     "country": "Vācija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "28.08.2024",
+     "odometer": "301626",
+     "location": "Dīlera ID:",
+     "works": "detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "17.08.2024",
+     "odometer": "301626",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "18.04.2017",
+     "odometer": "171395",
+     "location": "Alfred Wahl GmbH & Co. KG, Korbach",
+     "works": "Pneumatic spring, aizmugurē"
+    },
+    {
+     "date": "18.04.2017",
+     "odometer": "171385",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "06.09.2016",
+     "odometer": "161790",
+     "location": "Alfred Wahl GmbH & Co. KG, Korbach",
+     "works": "Air intake tube left"
+    },
+    {
+     "date": "09.04.2015",
+     "odometer": "138922",
+     "location": "Team Pilz GmbH, Bad König",
+     "works": "detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "08.04.2015",
+     "odometer": "138922",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "24.09.2014",
+     "odometer": "138861",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "23.09.2014",
+     "odometer": "138860",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "02.07.2014",
+     "odometer": "128727",
+     "location": "Niederlassung Dortmund BMW AG, Dortmund",
+     "works": "Stiklu mazgāšanas šķidrums (ziemas), Pārbaude saskaņā ar Vācijas ceļu satiksmes noteikumu § 29, Virsbūves mazgāšana"
+    },
+    {
+     "date": "14.02.2014",
+     "odometer": "120396",
+     "location": "Niederlassung Dortmund BMW AG, Dortmund",
+     "works": "Stiklu mazgāšanas šķidrums (ziemas), Bremžu kluču komplekts, Bremžu kluču nodiluma sensors (aizmugurē), Bremžu kluču pasta, Akumulators, Virsbūves mazgāšana"
+    },
+    {
+     "date": "14.02.2014",
+     "odometer": "120394",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "21.10.2013",
+     "odometer": "109857",
+     "location": "Niederlassung Dortmund BMW AG, Dortmund",
+     "works": "Eļļas filtra komplekts, Motoreļļa SAE 5W-30 Longlife, Salona filtrs (ar aktivēto ogli), Salona filtra korpusa tīrītājs, Virsbūves mazgāšana"
+    },
+    {
+     "date": "21.10.2013",
+     "odometer": "109852",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "20.11.2012",
+     "odometer": "74697",
+     "location": "Niederlassung Dortmund BMW AG, Dortmund",
+     "works": "Eļļas filtra komplekts, Motoreļļa SAE 5W-30 Longlife, Bremžu kluču komplekts, Bremžu kluču nodiluma sensors (priekšā kreisajā pusē), Bremžu kluču pasta, Salona filtrs (ar aktivēto ogli), Bremžu kluču nodiluma sensors (aizmugurē), Bremžu šķidrums DOT4 LV, zema viskozitāte, Gaisa filtrs, Šļūtenes skava, Degvielas filtrs, Stiklu mazgāšanas šķidrums (ziemas), Virsbūves mazgāšana, Logu tīrītāju slotiņu komplekts, Logu tīrītāja slotiņa"
+    },
+    {
+     "date": "20.11.2012",
+     "odometer": "74692",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "29.10.2012",
+     "odometer": "73121",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "10.10.2012",
+     "odometer": "70604",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "14.02.2012",
+     "odometer": "43986",
+     "location": "Niederlassung Dortmund BMW AG, Dortmund",
+     "works": "Eļļas filtra komplekts, Motoreļļa SAE 5W-30 Longlife, Salona filtrs (ar aktivēto ogli), Bremžu kluču komplekts, Bremžu kluču nodiluma sensors (aizmugurē), Bremžu kluču pasta, Bremžu disks (viegls, ventilēts), Iekšējā sešstūra skrūve, Logu tīrītāju sistēmas šļūtenes remonta komplekts, Aizmugurējā loga tīrītāja šļūtene, Instant glue, Stiklu mazgāšanas šķidrums (ziemas), Virsbūves mazgāšana"
+    },
+    {
+     "date": "14.02.2012",
+     "odometer": "43984",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "11.10.2011",
+     "odometer": "30695",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "07.02.2011",
+     "odometer": "1",
+     "location": "Niederlassung Essen BMW AG, Essen",
+     "works": "detalizēts darbu saraksts atskaitē nav pieejams"
+    }
+   ],
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "BMW F11",
+     "modelSeries": "F11",
+     "vinCode": "WBAMX31050C524401",
+     "vehicleType": "MX31",
+     "transmission": "AUTOMATIC",
+     "steeringSide": "LL",
+     "engineCode": "N57",
+     "engineNumber": "33107700",
+     "body": "TOU",
+     "drive": "HECK",
+     "power": "150 kW (201 ZS / 204 PS)",
+     "integrationLevel": "F010-10-09-525",
+     "currentILevel": "F010-10-09-525",
+     "developmentCode": "F11",
+     "modelCode": "MX31",
+     "productionDate": "20.01.2011",
+     "firstRegistration": "17.02.2011",
+     "warrantyStartDate": "17.02.2011",
+     "countryRegion": "ECE",
+     "color": "alpinweiss 3",
+     "colorCode": "0300",
+     "interior": "Leather \"Dakota\"/schwarz",
+     "interiorCode": "LCSW"
+    }
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "certificate": {
+    "issuedAt": "21.08.2026 10:49:22",
+    "vehicleLine": "Transportlīdzeklis BMW 525, izlaiduma gads 2011. Valsts numura zīme NY8515.",
+    "makeModel": "BMW 525",
+    "year": "2011",
+    "plate": "NY8515",
+    "accidentCount": "0",
+    "insuredFrom": "19.12.2024",
+    "insuredTo": "28.08.2026",
+    "insuredDays": "614",
+    "claims": [],
+    "footerNote": "Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas."
+   }
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "19.08.2026",
+       "odometer": "348551",
+       "country": "Latvija"
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

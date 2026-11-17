@@ -14,12 +14,14 @@ const DA_TERMS: Record<string, string> = {
   // apskates
   godkendt: "izturēta",
   "godkendt med frist": "izturēta ar termiņu trūkumu novēršanai",
+  "betinget godkendt": "nosacīti izturēta",
   "kan godkendes efter omsyn hos (om)synsvirksomhed": "jāveic atkārtota apskate",
   "kan ikke godkendes": "nav izturēta",
   omsyn: "atkārtota apskate",
   "første syn": "pirmā apskate",
   "periodisk syn": "periodiskā apskate",
   "registreringssyn": "reģistrācijas apskate",
+  "registreringssyn uden ændring": "reģistrācijas apskate bez izmaiņām",
   toldsyn: "muitas apskate",
   "toldsyn import": "muitas apskate (imports)",
   periodisksyn: "periodiskā apskate",
@@ -63,6 +65,19 @@ const DA_TERMS: Record<string, string> = {
 };
 
 const ET_TERMS: Record<string, string> = {
+  // frāzes (garākā sakritība uzvar pār atsevišķiem vārdiem, piem. „korras”)
+  "tehniliselt korras": "tehniski kārtībā",
+  "võõrandamisest teatamine": "paziņojums par atsavināšanu",
+  "majanduslikus mõttes hävinenud": "ekonomiski neizdevīgi remontēt (norakstīts)",
+  liiklusõnnetus: "ceļu satiksmes negadījums",
+  "registreerimistunnistuse vahetus": "reģistrācijas apliecības maiņa",
+  "reg.tunnistuse vahetus": "reģistrācijas apliecības maiņa",
+  "reg. tunnistuse vahetus": "reģistrācijas apliecības maiņa",
+  "omaniku vahetus": "īpašnieka maiņa",
+  "registreerimistunnistuse väljastamine": "reģistrācijas apliecības izsniegšana",
+  "eestis registreerimine": "reģistrācija Igaunijā",
+  registreerimistunnistus: "reģistrācijas apliecība",
+  "esmane registreerimine": "pirmā reģistrācija",
   // statusi
   "kehtiv": "spēkā esošs",
   "registrist kustutatud": "izslēgts no reģistra",
@@ -132,14 +147,33 @@ export function translateTextLv(value: string, lang: "da" | "et"): string {
   const exact = translateTermLv(raw, lang);
   if (exact !== raw) return exact;
 
+  const { re, byKey } = textTermMatcher(lang);
+  return raw.replace(re, (m) => byKey.get(m.toLocaleLowerCase().replace(/\s+/g, " ")) ?? m);
+}
+
+const textTermMatchers = new Map<"da" | "et", { re: RegExp; byKey: Map<string, string> }>();
+
+/**
+ * Viena regulārā izteiksme visiem terminiem: garākie pirmie (frāze pirms atsevišķa vārda),
+ * Unicode robežas (\b nestrādā pirms/pēc „õ”, „ü”, „ø”), viena caurlaide - jau iztulkotais
+ * latviskais teksts netiek tulkots vēlreiz.
+ */
+function textTermMatcher(lang: "da" | "et"): { re: RegExp; byKey: Map<string, string> } {
+  const cached = textTermMatchers.get(lang);
+  if (cached) return cached;
   const dict = lang === "da" ? DA_TERMS : ET_TERMS;
-  let out = raw;
+  const byKey = new Map<string, string>();
   for (const [term, lv] of Object.entries(dict)) {
     if (term.length < 4) continue;
-    const re = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "gi");
-    out = out.replace(re, lv);
+    byKey.set(term.toLocaleLowerCase(), lv);
   }
-  return out;
+  const alternation = [...byKey.keys()]
+    .sort((a, b) => b.length - a.length)
+    .map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+"))
+    .join("|");
+  const built = { re: new RegExp(`(?<![\\p{L}\\p{N}])(?:${alternation})(?![\\p{L}\\p{N}])`, "giu"), byKey };
+  textTermMatchers.set(lang, built);
+  return built;
 }
 
 /** Termini, kas norāda uz komerciālu / intensīvu ekspluatāciju (TAXI u.tml.). */

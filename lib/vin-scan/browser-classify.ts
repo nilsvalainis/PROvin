@@ -4,6 +4,7 @@
  */
 import type { VinScanBrowserId } from "@/lib/vin-scan/catalog";
 import { classifyCheckcarVinText, classifyPlcAuction } from "@/lib/vin-scan/parse";
+import { NICB_CLEAN_RE } from "@/lib/vin-scan/parse-extra";
 import { classifyStatVinText } from "@/lib/vin-scan/parse-stat-vin";
 import { classifyPoliceWanted } from "@/lib/vin-scan/wanted";
 import type { VinScanStatus } from "@/lib/vin-scan/types";
@@ -87,8 +88,8 @@ export function classifyBrowserProbe(id: VinScanBrowserId | string, text: string
     case "poctra":
       return classifyAuction(text, vin, "Poctra: nav izsoles ieraksta", "Poctra: ir izsoles ieraksts");
     case "nicb":
+      if (NICB_CLEAN_RE.test(text)) return { status: "none", summary: "NICB sarakstā nav" };
       if (/stolen/i.test(text) && hasVin(text, vin)) return { status: "found", summary: "NICB: iespējams zagts" };
-      if (/no records|not found|clean record|is not listed/i.test(text)) return { status: "none", summary: "NICB sarakstā nav" };
       return null;
     default:
       return null;

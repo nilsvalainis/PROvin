@@ -1,0 +1,812 @@
+/*
+ * Pavadzīmes forma telefonā (makets mockups/pavadzimes-mob, Nils 22.10).
+ * Tikai IRISS tēmas tokeni (gaišais/tumšais). Selektori ar 2 klasēm, lai pārspētu admin-ios-theme.
+ */
+.mf {
+  min-width: 0;
+  max-width: 100%;
+  color: var(--ink, #0b0c10);
+}
+.mf .card {
+  border-radius: 14px;
+  background: var(--s1, #fff);
+  padding: 14px;
+}
+.mf .group + .group {
+  margin-top: 14px;
+}
+.mf .label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ink, #0b0c10);
+  font-size: 13px;
+  font-weight: 600;
+}
+.mf .opt {
+  color: var(--ink2, #5e636e);
+  font-weight: 400;
+}
+.mf .seg3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.mf .seg2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+.mf .hours {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.mf .pick {
+  display: flex;
+  min-height: 44px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--fill, rgba(116, 120, 138, 0.11));
+  color: var(--ink, #0b0c10);
+  font-size: 14px;
+  font-weight: 600;
+  touch-action: manipulation;
+}
+.mf .plateBtn {
+  min-height: 52px;
+}
+/* Izvēlēts: tēmas aktīvās pogas tokeni (gaišajā tumša, tumšajā gaiša - labi redzams abos). */
+.mf .pick.on {
+  background: var(--chip-active-bg, #0b0c10);
+  color: var(--chip-active-fg, #fff);
+}
+.mf .pick small {
+  color: var(--ink2, #5e636e);
+  font-size: 11px;
+  font-weight: 500;
+}
+.mf .pick small.busy {
+  color: var(--warn, #a86400);
+}
+.mf .pick small.free {
+  color: #067647;
+}
+.mf .pick small.loading {
+  color: var(--ink2, #5e636e);
+}
+.mf .pick.on small {
+  color: var(--chip-active-fg, #fff);
+  opacity: 0.75;
+}
+.mf .select {
+  display: flex;
+  width: 100%;
+  min-height: 56px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--hair, rgba(17, 24, 39, 0.08));
+  border-radius: 10px;
+  background: var(--s1, #fff);
+  padding: 8px 12px;
+  color: var(--ink, #0b0c10);
+  text-align: left;
+}
+.mf .selectMain {
+  min-width: 0;
+  flex: 1;
+}
+.mf .selectTitle {
+  display: block;
+  overflow: hidden;
+  color: var(--ink, #0b0c10);
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mf .selectTitle.placeholder {
+  color: var(--ink3, #63686f);
+  font-weight: 500;
+}
+.mf .selectSub {
+  display: block;
+  margin-top: 1px;
+  overflow: hidden;
+  color: var(--ink2, #5e636e);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mf .mono {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.mf .chev {
+  flex: none;
+  color: var(--ink3, #63686f);
+}
+.mf .input {
+  width: 100%;
+  height: 48px;
+  padding: 0 12px;
+  font-size: 16px;
+}
+.mf .sub {
+  margin-top: 8px;
+}
+.mf .error {
+  margin-top: 10px;
+  overflow-wrap: anywhere;
+  color: var(--bad, #c2362b);
+  font-size: 13px;
+}
+/* Dizains v0.3: viena galvenā poga skatā - IRISS oranžā (kā IrissButton variant="primary"). */
+.mf .primary {
+  width: 100%;
+  height: 50px;
+  margin-top: 16px;
+  border: 0;
+  border-radius: var(--iriss-r-md, 14px);
+  background: var(--iriss-brand, #f26522);
+  color: var(--iriss-on-brand, #fff);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  box-shadow: 0 1px 2px rgba(217, 84, 26, 0.35);
+}
+.mf .primary:hover:not(:disabled) {
+  background: var(--iriss-brand-deep, #d9541a);
+}
+.mf .primary:disabled {
+  opacity: 0.5;
+}
+.mf .secTitle {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 18px 4px 6px;
+  color: var(--ink2, #8e8e93);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.mf .secTitle .count {
+  color: var(--ink2, #8e8e93);
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+}
+.mf .secNote {
+  margin-top: -2px;
+  padding: 0 4px 6px;
+  color: var(--ink2, #5e636e);
+  font-size: 12px;
+}
+.mf .list {
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--s1, #fff);
+}
+.mf .req {
+  min-height: 52px;
+  padding: 10px 12px;
+}
+.mf .reqTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.mf .req + .req {
+  border-top: 0.5px solid var(--hair, rgba(17, 24, 39, 0.08));
+}
+.mf .reqMain {
+  min-width: 0;
+  flex: 1;
+}
+.mf .reqTitle {
+  overflow: hidden;
+  color: var(--ink, #0b0c10);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Apakšteksts drīkst lauzties (piem. "Izrakstīta ... · numurs ... atkal ir brīvs"), lai nekas netiktu nogriezts. */
+.mf .reqSub {
+  color: var(--ink2, #5e636e);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.mf .chip {
+  flex: none;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.mf .chip.ok {
+  background: var(--ok-bg, #ecfdf3);
+  color: #067647;
+}
+.mf .chip.wip {
+  background: var(--acc-soft, rgba(61, 91, 217, 0.12));
+  color: var(--acc, #3d5bd9);
+}
+.mf .chip.bad {
+  background: var(--bad-soft, rgba(192, 57, 43, 0.12));
+  color: var(--bad, #c2362b);
+}
+/* Gaida - oranža (makets ~/pz-mob-v2). */
+.mf .chip.wait {
+  background: #fff4e5;
+  color: #b45309;
+}
+.mf .link {
+  display: inline-flex;
+  min-height: 44px;
+  flex: none;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  padding: 0 2px;
+  color: var(--acc, #3d5bd9);
+  font-size: 13px;
+  font-weight: 600;
+}
+.mf .quiet {
+  border-radius: 10px;
+  background: var(--fill, rgba(116, 120, 138, 0.11));
+  padding: 10px 12px;
+  color: var(--ink2, #5e636e);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.mf .quiet + .quiet {
+  margin-top: 6px;
+}
+.mf .empty {
+  padding: 14px 12px;
+  color: var(--ink2, #5e636e);
+  font-size: 13px;
+}
+
+/* v2 (makets ~/pz-mob-v2): birkas, adrese, "derīga līdz". */
+.mf .tag {
+  display: inline-block;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: var(--fill, rgba(116, 120, 138, 0.11));
+  padding: 2px 8px;
+  color: var(--ink2, #5e636e);
+  font-size: 11px;
+  font-weight: 600;
+}
+.mf .tag.tagOk,
+.picker .tag.tagOk {
+  background: var(--ok-bg, #ecfdf3);
+  color: #067647;
+}
+.mf .tag.tagAcc,
+.picker .tag.tagAcc {
+  background: var(--acc-soft, rgba(61, 91, 217, 0.12));
+  color: var(--acc, #3d5bd9);
+}
+
+/* B192-7 (Dzintarzeme Auto): birka pie "Auto" etiķetes, paskaidrojums zem lauka, tukšais stāvoklis. */
+.mf .labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.mf .labelRow .label {
+  margin-bottom: 0;
+}
+.mf .ownerTag {
+  color: var(--acc, #3d5bd9);
+  font-size: 12px;
+  font-weight: 600;
+}
+.mf .help {
+  margin-top: 6px;
+  color: var(--ink2, #5e636e);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+.mf .carEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-radius: 10px;
+  background: var(--fill, rgba(116, 120, 138, 0.11));
+  padding: 20px 16px;
+  text-align: center;
+}
+.mf .carEmptyIcon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  margin-bottom: 8px;
+  border-radius: 999px;
+  background: var(--s1, #fff);
+  color: var(--ink2, #5e636e);
+}
+.mf .carEmpty h4 {
+  color: var(--ink, #0b0c10);
+  font-size: 15px;
+  font-weight: 700;
+}
+.mf .carEmpty p {
+  margin-top: 4px;
+  color: var(--ink2, #5e636e);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.mf .manualBtn {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 12px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: var(--s1, #fff);
+  color: var(--ink, #0b0c10);
+  font-size: 14px;
+  font-weight: 600;
+  touch-action: manipulation;
+}
+.mf .addr {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  border-radius: 10px;
+  background: var(--fill, rgba(116, 120, 138, 0.11));
+  padding: 11px 12px;
+  font-size: 14px;
+}
+.mf .pin {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--s1, #fff);
+}
+.mf .pin i {
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #c8102e;
+}
+.mf .until {
+  margin-top: 8px;
+  color: var(--ink2, #5e636e);
+  font-size: 13px;
+}
+.mf .until b {
+  color: var(--ink, #0b0c10);
+}
+
+/* Dzīvais statuss: josla, 3 soļi, procenti. */
+.mf .reqDone {
+  background: var(--ok-bg, #ecfdf3);
+}
+.mf .prog {
+  height: 6px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--fill, rgba(116, 120, 138, 0.11));
+}
+.mf .prog span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--acc, #3d5bd9);
+  transition: width 0.6s ease;
+}
+.mf .prog.progOk span {
+  background: #16a34a;
+}
+.mf .prog.progBad span {
+  background: var(--bad, #c2362b);
+}
+/* admin-mobile.css liek li krāsu "inherit" - soļu krāsām vajag !important. */
+.mf .steps {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+  color: var(--ink3, #63686f);
+  font-size: 11.5px;
+  font-weight: 600;
+  list-style: none;
+}
+.mf .steps .stepDone {
+  color: #067647 !important;
+}
+.mf .steps .stepNow {
+  color: var(--acc, #3d5bd9) !important;
+}
+.mf .steps .stepBad {
+  color: var(--bad, #c2362b) !important;
+}
+.mf .steps > li {
+  color: var(--ink3, #63686f) !important;
+}
+.mf .progText {
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+  color: var(--ink2, #5e636e);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+.mf .progText.progTextBad {
+  color: var(--bad, #c2362b);
+}
+.mf .progNote {
+  margin-top: 2px;
+  color: #067647;
+  font-size: 12px;
+}
+.mf .archiveLink {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  margin: 2px auto 0;
+  padding: 0 12px;
+  color: var(--ink2, #5e636e);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* "Kā tas strādā" (v3): aizverams bloks ar īsiem soļiem; dizains v0.3 (grafīts, bez zilā). */
+.mf .how {
+  margin-top: 18px;
+  border-radius: 16px;
+  background: var(--iriss-surface, #fff);
+  padding: 0 16px;
+}
+.mf .howSummary {
+  display: flex;
+  min-height: 56px;
+  cursor: pointer;
+  list-style: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+}
+.mf .howSummary::-webkit-details-marker {
+  display: none;
+}
+.mf .howTitle {
+  display: block;
+  color: var(--iriss-ink, #1c1c1e);
+  font-size: 16px;
+  font-weight: 700;
+}
+.mf .howLead {
+  display: block;
+  margin-top: 2px;
+  color: var(--iriss-ink-2, #4a4a4f);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.mf .howChevron {
+  flex: none;
+  color: var(--iriss-ink-3, #8e8e93);
+  transition: transform 0.2s ease;
+}
+.mf .how[open] .howChevron {
+  transform: rotate(90deg);
+}
+.mf .howSteps {
+  list-style: none;
+  border-top: 0.5px solid var(--iriss-line, #e5e5ea);
+  padding: 6px 0 4px;
+}
+.mf .howSteps > li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
+}
+.mf .howSteps p {
+  color: var(--iriss-ink-2, #4a4a4f);
+  font-size: 15px;
+  line-height: 1.45;
+}
+.mf .howSteps b {
+  color: var(--iriss-ink, #1c1c1e);
+  font-weight: 700;
+}
+/*
+ * Nils 27.10: cipari apļos nebija redzami - admin-ios-theme `:is(span, ...)` krāso tekstu melnu.
+ * Tāpēc divu klašu selektors + !important baltajam ciparam.
+ */
+.mf .howSteps .num {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--iriss-graphite, #1b1c20);
+  color: #ffffff !important;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+.mf .howSteps > li {
+  align-items: center;
+}
+/* «Jāzina» - atsevišķa tumšāka piezīmes kartīte. */
+/* Atstarpe zem «Jāzina» - blokam pašam (pēdējā bērna margin «izkrita» ārā, Nils 27.10). */
+.mf .how[open] {
+  padding-bottom: 16px;
+}
+.mf .howNote {
+  margin: 4px 0 0;
+  border-radius: 14px;
+  background: var(--iriss-surface-3, #e5e5ea);
+  padding: 12px 14px;
+}
+.mf .howNote .howKnowTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 8px;
+  color: var(--iriss-ink, #1c1c1e) !important;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.mf .howNote .howKnow {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mf .howNote .howKnow > li {
+  position: relative;
+  padding-left: 14px;
+  color: var(--iriss-ink-2, #4a4a4f);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.mf .howNote .howKnow > li + li {
+  margin-top: 8px;
+}
+.mf .howNote .howKnow > li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.6em;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--iriss-ink-3, #8e8e93);
+}
+@media (prefers-reduced-motion: reduce) {
+  .mf .howChevron {
+    transition: none;
+  }
+}
+
+/* Izvēles logs (AdminMobileSheet saturs). */
+.picker {
+  color: var(--ink, #0b0c10);
+}
+.picker .search {
+  width: 100%;
+  height: 44px;
+  margin-bottom: 10px;
+  padding: 0 12px;
+  font-size: 16px;
+}
+/*
+ * Garš saraksts ritinās pats sevī: lapa ir position:absolute bez augstuma, un ritināšanas bloķētājs
+ * html/body liek touch-action:none. Bez sava ritināšanas konteinera iOS Safari sarakstu nekustina.
+ */
+.picker .list {
+  max-height: calc(100vh - 230px);
+  max-height: calc(100dvh - 230px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  border-radius: 14px;
+  background: var(--s1, #fff);
+}
+.picker .row {
+  display: flex;
+  width: 100%;
+  min-height: 60px;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  padding: 8px 14px;
+  color: var(--ink, #0b0c10);
+  text-align: left;
+}
+.picker .row + .row {
+  border-top: 0.5px solid var(--hair, rgba(17, 24, 39, 0.08));
+}
+.picker .rowMain {
+  min-width: 0;
+  flex: 1;
+}
+.picker .rowTitle {
+  display: block;
+  color: var(--ink, #0b0c10);
+  font-size: 15px;
+  font-weight: 600;
+}
+.picker .rowSub {
+  display: block;
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--ink2, #5e636e);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.picker .mono {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.picker .tag {
+  flex: none;
+  border-radius: 999px;
+  background: var(--fill, rgba(116, 120, 138, 0.11));
+  padding: 2px 8px;
+  color: var(--ink2, #5e636e);
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.picker .check {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--ink3, #63686f);
+  font-size: 13px;
+}
+.picker .row.on .check {
+  background: var(--chip-active-bg, #0b0c10);
+  color: var(--chip-active-fg, #fff);
+}
+.picker .manual .rowTitle {
+  font-weight: 500;
+}
+.picker .empty {
+  padding: 14px;
+  color: var(--ink2, #5e636e);
+  font-size: 13px;
+}
+
+/*
+ * admin-mobile.css telefonā visām pogām liek 999px un border 0 !important.
+ * Makets (Nils 22.10): formas pogas 10 px, auto laukam plāns rāmis. Augstāka specifiskums tikai šeit.
+ */
+.mf .card .pick,
+.mf .card .select,
+.mf .card .primary {
+  border-radius: 10px;
+}
+.mf .card .select {
+  border: 1px solid var(--hair, rgba(17, 24, 39, 0.08)) !important;
+}
+.mf .list .link {
+  border-radius: 8px;
+}
+/* "Saglabāt PDF" (tikai Izdota): plakana, pilna platuma poga zem statusa; 44 px pieskārienam. */
+.mf .savePdf {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 10px;
+  background: var(--fill, rgba(116, 120, 138, 0.11));
+  color: var(--ink, #1d1d1f);
+  font-size: 14px;
+  font-weight: 600;
+}
+.mf .savePdf:disabled {
+  opacity: 0.6;
+}
+.mf .dropboxErr {
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  color: var(--bad, #c2362b);
+  font-size: 12px;
+}
+
+/* ---- Datora Pavadzīmju lapa (layout="row", makets A) ---- */
+.mf.row .card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 16px 20px;
+  border-radius: var(--iriss-r-lg, 20px);
+  background: var(--iriss-surface, #fff);
+  padding: 20px 22px;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(22, 23, 26, 0.06);
+}
+.mf.row .rowTitle {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--iriss-ink, #1c1c1e);
+  font-size: 18px;
+  font-weight: 700;
+}
+.mf.row .group,
+.mf.row .group + .group {
+  min-width: 0;
+  flex: 1 1 220px;
+  margin-top: 0;
+}
+.mf.row .label {
+  color: var(--iriss-ink-2, #4a4a4f);
+}
+.mf.row .error {
+  flex-basis: 100%;
+}
+.mf.row .primary {
+  width: auto;
+  flex: 0 0 auto;
+  align-self: flex-end;
+  margin-top: 0;
+  padding: 0 24px;
+}
+.mf.row .live {
+  margin-top: 20px;
+  border-radius: var(--iriss-r-lg, 20px);
+  background: var(--iriss-surface, #fff);
+  padding: 6px 22px 14px;
+  box-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(22, 23, 26, 0.06);
+}
+.mf.row .live .secTitle {
+  color: var(--iriss-ink, #1c1c1e);
+  font-size: 18px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+/* 07.11: "Atcelt pieprasījumu" / "Atkārtot" darbā esošam - skaidras kontūras pogas, 44 px pieskārienam. */
+.mf .rowActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.mf .rowBtn {
+  display: flex;
+  min-height: 44px;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--hair, rgba(17, 24, 39, 0.08));
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink, #1d1d1f);
+  font-size: 14px;
+  font-weight: 600;
+}

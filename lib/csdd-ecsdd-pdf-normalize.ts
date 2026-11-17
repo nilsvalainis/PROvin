@@ -6,6 +6,9 @@
 
 const GLUED_LABELS = [
   "Iepriekšējās reģistrācijas valsts",
+  "Iepriekšējā reģistrācijas valsts",
+  "Īpašnieku skaits Latvijā",
+  "Īpašnieku skaits",
   "Reģistrācijas numurs",
   "Marka Modelis",
   "Pilna masa (kg)",
@@ -62,7 +65,8 @@ function splitGluedMileageAndFooters(text: string): string {
   return text
     .replace(/(\d{2}\.\d{2}\.\d{4})(?=\d{4,7}\s*[---])/g, "$1\n")
     .replace(/(\d{2}\.\d{2}\.\d{4})(\d{1,2}\s*\/\s*\d+)/g, "$1\n$2")
-    .replace(/(\d{2}\/\d{2}\/\d{4})(\d+\s+(?:ī|i)pa[sš]niek)/gi, "$1 $2");
+    .replace(/(\d{2}\/\d{2}\/\d{4})(\d+\s*(?:ī|i)pa[sš]niek)/gi, "$1 $2")
+    .replace(/(\d)((?:ī|i)pa[sš]niek)/gi, "$1 $2");
 }
 
 function tidyHtmlEntities(text: string): string {

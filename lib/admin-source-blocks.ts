@@ -65,6 +65,7 @@ import type { AutoRecordsPhotoGroup, AutoRecordsPhotoMeta } from "@/lib/auto-rec
 import { incidentPhotosFromUnknown, type IncidentPhotoGroup, type IncidentPhotoMeta } from "@/lib/incident-photo-types";
 import {
   CC_VIN_ADMIN_LABEL,
+  CC_VIN_PDF_SOURCE_LABEL,
   ccVinBlockHasContent,
   ccVinBlockToPlainText,
   emptyCcVinBlock,
@@ -89,7 +90,9 @@ import {
 import type { ListingAnalysisPhotoGroup, ListingAnalysisPhotoMeta } from "@/lib/listing-analysis-photo-types";
 import {
   flattenSourceBlockPhotoGroups,
+  LISTING_HISTORY_MAX_PHOTOS,
   sourceBlockPhotosHaveContent,
+  syncedListingHistoryPhotos,
   syncedSourceBlockPhotos,
   type SourceBlockPhotoGroup,
   type SourceBlockPhotoMeta,
@@ -106,6 +109,11 @@ import {
   parseOdometerAnomalyOverrides,
   type OdometerAnomalyOverride,
 } from "@/lib/odometer-anomaly-classify";
+import {
+  dealerMajorWorkOverridesSnapshotField,
+  parseDealerMajorWorkOverrides,
+  type DealerMajorWorkOverride,
+} from "@/lib/dealer-major-works-override-persist";
 import type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
 import {
   autoRecordsRowHasData,
@@ -152,7 +160,11 @@ import type {
   CsddTechnicalInspectionRow,
   CsddInspectionDefectRow,
 } from "@/lib/csdd-extended-parse";
-import { emptyCsddPreviousInspectionBlock, previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
+import {
+  emptyCsddPreviousInspectionBlock,
+  previousInspectionBlockHasData,
+  resolveInspectionEmissions,
+} from "@/lib/csdd-extended-parse";
 
 export { type OutvinDealerReport } from "@/lib/outvin-dealer-types";
 export type { AutoRecordsServiceRow } from "./auto-records-paste-parse";
@@ -224,6 +236,14 @@ export const SOURCE_BLOCK_LABELS: Record<SourceBlockKey, string> = {
   citi_avoti: "CITI AVOTI",
   listing_analysis: "Sludinājuma analīze",
 };
+
+/**
+ * Avotu nosaukumi ✨ kontekstā: admin „Izsoļu portālu arhīvs” (internal id: cc_vin) modelim ir
+ * „IZSOĻU PORTĀLU ARHĪVS” (kā PDF). Admin UI paliek SOURCE_BLOCK_LABELS.
+ */
+export function aiSourceBlockLabel(key: SourceBlockKey): string {
+  return key === "cc_vin" ? CC_VIN_PDF_SOURCE_LABEL : SOURCE_BLOCK_LABELS[key];
+}
 
 /** Ātrās saites avotiem — tikai admin panelis (ne PDF). */
 /** Telefonā īsāki avotu nosaukumi, lai galvene ietilpst vienā rindā (Nils 21.10). PDF un dators nemainās. */
@@ -598,6 +618,7 @@ export function emptyTirgusFields(): TirgusFormFields {
     listingMileageCountry: "",
     photos: [],
     photoGroups: [],
+    hidePhotoWatermarks: false,
   };
 }
 
@@ -723,6 +744,7 @@ export function emptyCsddFields(): CsddFormFields {
     pdfChecklist: undefined,
     photos: [],
     photoGroups: [],
+    hidePhotoWatermarks: false,
   };
 }
 
@@ -896,7 +918,9 @@ export function csddFormToPlainText(f: CsddFormFields): string {
     if (prev.inspectionType.trim()) lines.push(`Pārbaudes veids: ${prev.inspectionType.trim()}`);
     if (prev.odometer.trim()) lines.push(`Odometra rādījums: ${prev.odometer.trim()}`);
     if (prev.ratingLabel.trim()) lines.push(`Novērtējums: ${prev.ratingLabel.trim()}`);
-    if (prev.smokeCoefficient.trim()) lines.push(`Dūmainības koeficients: ${prev.smokeCoefficient.trim()}`);
+    const prevEmissions = resolveInspectionEmissions(prev);
+    if (prevEmissions.smokeCoefficient) lines.push(`Dūmainības koeficients: ${prevEmissions.smokeCoefficient}`);
+    if (prevEmissions.particleNumber) lines.push(`Atgāzu cietās daļiņas: ${prevEmissions.particleNumber}`);
     if (prev.notes.trim()) lines.push(`Piezīmes: ${prev.notes.trim()}`);
     for (const d of prev.defects ?? []) {
       if (!d.code.trim() && !d.description.trim()) continue;
@@ -912,7 +936,9 @@ export function csddFormToPlainText(f: CsddFormFields): string {
           .filter(Boolean)
           .join(" · "),
       );
-      if (row.smokeCoefficient.trim()) lines.push(`Dūmainības koeficients: ${row.smokeCoefficient.trim()}`);
+      const rowEmissions = resolveInspectionEmissions(row);
+      if (rowEmissions.smokeCoefficient) lines.push(`Dūmainības koeficients: ${rowEmissions.smokeCoefficient}`);
+      if (rowEmissions.particleNumber) lines.push(`Atgāzu cietās daļiņas: ${rowEmissions.particleNumber}`);
       if (row.notes.trim()) lines.push(`Piezīmes: ${row.notes.trim()}`);
       for (const d of row.defects ?? []) {
         if (!d.code.trim() && !d.description.trim()) continue;
@@ -1184,6 +1210,7 @@ export function emptyAutoRecordsBlock(): AutoRecordsBlockState {
     oilChangeIntervalNotes: "",
     photos: [],
     photoGroups: [],
+    hidePhotoWatermarks: false,
     aiContextRaw: "",
     oneautoIngest: emptyOneautoIngest(),
   };
@@ -1194,7 +1221,15 @@ export function emptyLtabRow(): LtabIncidentRow {
 }
 
 export function emptyLtabBlock(): LtabBlockState {
-  return { rows: [emptyLtabRow()], comments: "", pdfImportRaw: "", aiContextRaw: "", photos: [], photoGroups: [] };
+  return {
+    rows: [emptyLtabRow()],
+    comments: "",
+    pdfImportRaw: "",
+    aiContextRaw: "",
+    photos: [],
+    photoGroups: [],
+    hidePhotoWatermarks: false,
+  };
 }
 
 export function emptyVendorAvotuBlock(): VendorAvotuBlockState {
@@ -1205,6 +1240,7 @@ export function emptyVendorAvotuBlock(): VendorAvotuBlockState {
     aiContextRaw: "",
     photos: [],
     photoGroups: [],
+    hidePhotoWatermarks: false,
   };
 }
 
@@ -1239,6 +1275,7 @@ export function emptyVinRegistryBlock(): VinRegistryBlockState {
     aiContextRaw: "",
     photos: [],
     photoGroups: [],
+    hidePhotoWatermarks: false,
   };
 }
 
@@ -1409,6 +1446,7 @@ export function emptyListingAnalysisBlock(): ListingAnalysisBlockState {
     photoAnalysis: "",
     photos: [],
     photoGroups: [],
+    hidePhotoWatermarks: false,
     extraSellerName: "",
     listingPasteRaw: "",
     listingSalesContext: "",
@@ -1490,8 +1528,8 @@ function parseListingAnalysisRaw(raw: Record<string, unknown>): ListingAnalysisB
 
 export function collectWorkspaceSourceBlockPhotoIds(blocks: WorkspaceSourceBlocks): string[] {
   const ids: string[] = [];
-  const take = (b?: { photoGroups?: SourceBlockPhotoGroup[] | null }) => {
-    for (const p of flattenSourceBlockPhotoGroups(b?.photoGroups)) ids.push(p.id);
+  const take = (b?: { photoGroups?: SourceBlockPhotoGroup[] | null }, max?: number) => {
+    for (const p of flattenSourceBlockPhotoGroups(b?.photoGroups, max)) ids.push(p.id);
   };
   take(blocks.csdd);
   take(blocks.autodna);
@@ -1503,7 +1541,7 @@ export function collectWorkspaceSourceBlockPhotoIds(blocks: WorkspaceSourceBlock
   take(blocks.carinfo);
   take(blocks.traficom_fi);
   take(blocks.ltab);
-  take(blocks.tirgus);
+  take(blocks.tirgus, LISTING_HISTORY_MAX_PHOTOS);
   for (const section of blocks.citi_avoti.sections ?? []) take(section);
   return ids;
 }
@@ -2298,6 +2336,12 @@ function parseCsddInspectionWarningStoredRaw(raw: unknown): CsddInspectionWarnin
     .filter((r): r is CsddInspectionWarningRow => r != null);
 }
 
+/** Daļiņu skaits tikai tad, ja saglabāts (vecajiem melnrakstiem lauka nav). */
+function particleNumberStoredField(raw: unknown): { particleNumber?: string } {
+  const v = clipCsddField(raw, 40).trim();
+  return v ? { particleNumber: v } : {};
+}
+
 function parseCsddPreviousInspectionStoredRaw(raw: unknown): CsddPreviousInspectionBlock {
   if (!raw || typeof raw !== "object") return emptyCsddPreviousInspectionBlock();
   const o = raw as Record<string, unknown>;
@@ -2312,6 +2356,7 @@ function parseCsddPreviousInspectionStoredRaw(raw: unknown): CsddPreviousInspect
     ratingLabel: clipCsddField(o.ratingLabel, 200),
     ratingLevel,
     smokeCoefficient: clipCsddField(o.smokeCoefficient, 40),
+    ...particleNumberStoredField(o.particleNumber),
     notes: clipCsddField(o.notes, 2000),
     defects: parseCsddInspectionDefectStoredRaw(o.defects),
   };
@@ -2351,6 +2396,7 @@ function parseCsddTechnicalInspectionStoredRaw(raw: unknown): CsddTechnicalInspe
         ratingLevel,
         maxDefectLevel,
         smokeCoefficient: clipCsddField(o.smokeCoefficient, 40),
+        ...particleNumberStoredField(o.particleNumber),
         notes: clipCsddField(o.notes, 500),
         defects: parseCsddInspectionDefectStoredRaw(o.defects),
       };
@@ -2523,7 +2569,7 @@ function parseTirgusBlockRaw(raw: Record<string, unknown>): TirgusFormFields {
       listingMileageOdometer: clip(raw.listingMileageOdometer).slice(0, 40),
       listingMileageDate: clip(raw.listingMileageDate).slice(0, 40),
       listingMileageCountry: clip(raw.listingMileageCountry).slice(0, 120),
-      ...syncedSourceBlockPhotos(raw),
+      ...syncedListingHistoryPhotos(raw),
     };
   }
   if ("rows" in raw || "comments" in raw) {
@@ -2671,7 +2717,7 @@ export function repairWorkspaceSourceBlocks(blocks: WorkspaceSourceBlocks): Work
       listingMileageOdometer: wsStr(blocks.tirgus?.listingMileageOdometer).slice(0, 40),
       listingMileageDate: wsStr(blocks.tirgus?.listingMileageDate).slice(0, 40),
       listingMileageCountry: wsStr(blocks.tirgus?.listingMileageCountry).slice(0, 120),
-      ...syncedSourceBlockPhotos(blocks.tirgus ?? {}),
+      ...syncedListingHistoryPhotos(blocks.tirgus ?? {}),
     },
     citi_avoti: {
       sections: (blocks.citi_avoti?.sections ?? d.citi_avoti.sections).map(repairCitiSection),
@@ -2857,6 +2903,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
   clearedFields?: Record<string, number>;
   technicalRiskMap?: TechnicalRiskMap;
   odometerAnomalyOverrides?: OdometerAnomalyOverride[];
+  dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
 } | null {
   if (!raw) return null;
   try {
@@ -2914,6 +2961,7 @@ export function hydrateWorkspaceFromStorage(raw: string | null): {
       })(),
       ...technicalRiskMapSnapshotField(parseTechnicalRiskMap(p.technicalRiskMap)),
       ...odometerAnomalyOverridesSnapshotField(parseOdometerAnomalyOverrides(p.odometerAnomalyOverrides)),
+      ...dealerMajorWorkOverridesSnapshotField(parseDealerMajorWorkOverrides(p.dealerMajorWorkOverrides)),
     };
   } catch {
     return null;

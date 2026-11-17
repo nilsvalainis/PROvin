@@ -1,3 +1,4 @@
+import { formatYmdLv } from "@/lib/date-ymd-lv";
 import { adminRichHtmlToPdfSafeHtml, adminRichHtmlToPlainText } from "@/lib/admin-rich-comment-html";
 import { escapeHtml as esc } from "@/lib/html-escape";
 import { DZINTARZEME_AUTO_LOGO_PUBLIC_PATH } from "@/lib/dzintarzeme-logo";
@@ -470,7 +471,7 @@ export function buildIrissPasutijumsPrintHtml(
     rowIf(labels.kvLastName, record.clientLastName) +
     rowIf(labels.kvPhone, record.phone) +
     rowIf(labels.kvEmail, record.email) +
-    rowIf(labels.kvOrderDate, record.orderDate);
+    rowIf(labels.kvOrderDate, formatYmdLv(record.orderDate));
   const clientTable = wrapTable(clientRows);
 
   const pamat = infoGrid4(

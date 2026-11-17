@@ -26,6 +26,7 @@ export function appendAiOperatorNotesSection(
         "PIRMS rakstīšanas saskaiti KATRU atsevišķo tēmu / norādi / jautājumu / nosaukto mezglu no teksta zemāk. Katrai jābūt izejā. Izlaist kaut vienu = kļūda.",
         "JA operators nosauc konkrētu avotu („tikai CSDD”, „AutoDNA”, „oficiālais dīleris”) — tās rindkopas raksti TIKAI tajā avotā. Citos laukos tas ir konteksts, ne atkārtota rindkopa.",
         "JA operators saka „tikai par…”, „raksti tikai…”, „neraksti par…”, „nepapildi”, „bez …” — raksti TIKAI to. Bez liekām rindām un bez noklusējuma lauka esejas.",
+        "IEKŠĒJĀS NORĀDES („ignorēt”, „nav pirkts”, „aiz maksas”, „nedrukāt”, „piezīme sev”, TODO, ???) ir instrukcijas TEV, nevis klienta teksts: izpildi tās klusām un NEKAD nekopē izejā. Nesāc ar sveicienu („Sveiki,”, „Labdien,”) vai „Esmu pabeidzis / izskatījis…”.",
         "Drīksti pārkārtot PROVIN stilā (virsraksts savā rindā, tad rindkopa). NEDRĪKSTI izmest faktus, datumus, km, nosaukumus, secinājumus.",
         "Ja ielīmējums ir garš: rakstzīmju un rindkopu griesti NEATTIECAS. Nesaīsini būtiski. Izstāsti visu, ko operators gribēja klientam pateikt.",
         "",

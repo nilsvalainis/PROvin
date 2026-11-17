@@ -2,6 +2,7 @@
  * Deterministic quality checks for PROVIN expert AI comments (no API calls).
  * Used by golden fixtures and as a regression harness when prompts change.
  */
+import { LISTING_PHOTO_NO_DEFECTS_TEXT } from "@/lib/admin-listing-photo-comment-presets";
 import {
   findBannedVocabularyHits,
   findForbiddenPersonaNounHits,
@@ -182,6 +183,27 @@ export function evaluateExpertCommentQuality(
     issues.push({
       code: "vocabulary_automobilis",
       message: 'Nedrīkst lietot „automobīlis” — izmanto „automašīna”',
+    });
+  }
+
+  if (photoTemplateMismatch(t)) {
+    issues.push({
+      code: "photo_template_mismatch",
+      message: "Foto bez būtiskiem defektiem - lieto tieši apstiprināto tekstu (poga „Nav vizuālo defektu”)",
+    });
+  }
+
+  if (findHeadingFragments(t).length > 0) {
+    issues.push({
+      code: "heading_fragment",
+      message: "Virsraksta rinda sākas ar mazo burtu - virsraksts pārgriezts",
+    });
+  }
+
+  if (/\bUSD\b|\$\s?\d/.test(t)) {
+    issues.push({
+      code: "usd_currency",
+      message: "Klienta tekstā tikai EUR - USD / $ summas neraksta",
     });
   }
 
@@ -492,18 +514,28 @@ export function evaluateExpertCommentQuality(
     const facts = extractCanonicalFactsFromPrompt(opts.sourcePrompt);
     if (facts) {
       const factField = field === "source_dealer" ? "source" : field;
+      const focus = extractSourceFocusFromPrompt(opts.sourcePrompt);
       for (const flag of checkCommentContradictions({
         text: t,
         field: factField,
         facts,
+        focusSourceLabel: focus.label,
+        focusSourceText: focus.text,
       })) {
-        if (flag.level !== "E") continue;
+        if (flag.level !== "E") {
+          // Tikai karodziņš (bez maksas atkārtojuma): kods bez „canonical_” prefiksa.
+          if (EVAL_ONLY_FACT_FLAG_KINDS.has(flag.kind) && !issues.some((i) => i.code === flag.kind)) {
+            issues.push({ code: flag.kind, message: flag.message });
+          }
+          continue;
+        }
         issues.push({
           code: `canonical_${flag.kind}`,
           message: flag.message,
         });
       }
     }
+    issues.push(...unsourcedClaimIssues(t, opts.sourcePrompt));
     if (mentionsVehicleWrap(t) && !mentionsVehicleWrapInOrderFacts(opts.sourcePrompt)) {
       issues.push({
         code: "wrap_film_invented",
@@ -529,6 +561,66 @@ export function evaluateExpertCommentQuality(
   );
 
   return issues;
+}
+
+/** Faktu lapas W karodziņi, kurus eval rāda kā problēmu (nekad neiedarbina atkārtojumu). */
+const EVAL_ONLY_FACT_FLAG_KINDS = new Set([
+  "entry_error_as_rollback",
+  "csdd_foreign_mileage",
+  "country_period_mismatch",
+  "negated_fact",
+]);
+
+/** j26: tikai karodziņi (bez maksas atkārtojuma) - apgalvojumi bez avota un salīmēti vārdi. */
+const WARRANTY_CLAIM_RE = /garantij\p{L}*.{0,60}(?:\d+\s*(?:gad|mēn|km|tūkst)|\d{1,2}\.\d{1,2}\.\d{4}|līdz\s+\d{4})/iu;
+const WARRANTY_SOURCE_RE = /garantij|warranty|garantie|gwarancj/i;
+const OIL_POLICY_CLAIM_RE = /longlife|long\s*life|\bcbs\b|fiksēt\p{L}*\s+(?:intervāl|apkop)/iu;
+const OIL_POLICY_SOURCE_RE = /longlife|long\s*life|\bcbs\b|fixed\s+service|flexible\s+service|fiksēt\p{L}*\s+intervāl/iu;
+
+export function unsourcedClaimIssues(text: string, sourcePrompt: string): CommentQualityIssue[] {
+  const out: CommentQualityIssue[] = [];
+  if (WARRANTY_CLAIM_RE.test(text) && !WARRANTY_SOURCE_RE.test(sourcePrompt)) {
+    out.push({ code: "unsourced_warranty", message: "Garantijas termiņš/km nav avotos - jāraksta „garantijas statuss jāpārbauda pie dīlera”." });
+  }
+  if (OIL_POLICY_CLAIM_RE.test(text) && !OIL_POLICY_SOURCE_RE.test(sourcePrompt)) {
+    out.push({ code: "unsourced_oil_policy", message: "Longlife / fiksēts / CBS nav dīlera datos vai agregātu pakā." });
+  }
+  return out;
+}
+
+const PHOTO_NO_DEFECTS_CLAIM_RE =
+  /(?:būtisk\p{L}*\s+)?vizuāl\p{L}*\s+defekt\p{L}*\s+netika\s+(?:novērot|fiksēt|konstatēt)|netika\s+(?:novērot|fiksēt|konstatēt)\p{L}*\s+būtisk\p{L}*\s+vizuāl/iu;
+
+/**
+ * Foto „bez būtiskiem defektiem” jābūt tieši Nila tekstam (poga / ✨ bez modeļa).
+ * Pārfrāzēta versija = `photo_template_mismatch` (tikai eval).
+ */
+export function photoTemplateMismatch(text: string): boolean {
+  const t = (text ?? "").replace(/\s+/g, " ").trim();
+  if (!PHOTO_NO_DEFECTS_CLAIM_RE.test(t)) return false;
+  return !t.includes(LISTING_PHOTO_NO_DEFECTS_TEXT);
+}
+
+/** Virsraksta rinda, kas sākas ar mazo burtu (pārgriezts garāks virsraksts). */
+export function findHeadingFragments(text: string): string[] {
+  const out: string[] = [];
+  for (const block of (text ?? "").split(/\n\s*\n/)) {
+    const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (lines.length < 2) continue;
+    for (const line of lines.slice(0, 2)) {
+      if (line.length > 90 || /[.!?:]$/.test(line)) continue;
+      if (/^\p{Ll}/u.test(line)) out.push(line);
+    }
+  }
+  return out;
+}
+
+/** Avota komentāra prompts: fokusa avota nosaukums un tā datu bloks. */
+export function extractSourceFocusFromPrompt(prompt: string): { label: string | null; text: string | null } {
+  const label = prompt.match(/^Avota sadaļa \(fokuss\):\s*(.+)$/m)?.[1]?.trim() ?? null;
+  const text =
+    prompt.match(/=== Konkrētā avota „[^”\n]*” dati[^\n]*===\n([\s\S]*?)\n\nSagatavo komentāru/)?.[1] ?? null;
+  return { label, text };
 }
 
 export function assertExpertCommentQuality(

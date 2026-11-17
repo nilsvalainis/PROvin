@@ -86,12 +86,11 @@ describe("B2B criteria stays derived in memory", () => {
     expect(edited.criteria?.filters[0]?.fuel.value).toEqual([]);
   });
 
-  it("uses the same criteria form in IRISS and the B2B demo", () => {
+  it("B2B demo keeps the shared criteria form; IRISS new order uses the step cards (Nils 31.10)", () => {
     const iriss = readFileSync("components/admin/IrissPasutijumsEditor.tsx", "utf8");
     const demo = readFileSync("components/b2b-demo/B2bDemoOrdersClient.tsx", "utf8");
-    expect(iriss).toContain('from "@/components/shared/SharedOrderCriteriaForm"');
     expect(demo).toContain('from "@/components/shared/SharedOrderCriteriaForm"');
-    expect(iriss).toContain("<SharedOrderCriteriaForm ");
     expect(demo).toContain("<SharedOrderCriteriaForm ");
+    expect(iriss).toContain("<IrissOrderStepCards");
   });
 });

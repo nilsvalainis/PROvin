@@ -47,6 +47,32 @@ Odometra rādījumu ieraksti
   it("returns no CarVertical equipment when Funkciju saraksts is missing", () => {
     expect(parseCarverticalFunctionList("Odometra rādījumu ieraksti\n10.2025. 254 827 km")).toEqual([]);
   });
+
+  it("servera PDF teksts ar salīmētām kolonnām: kods + EN apraksts, LV rindas izlaiž (VW ID.4 CarVertical 26.09.2026)", () => {
+    const text = [
+      "Funkciju saraksts",
+      "Informācija saņemta no ražotāja",
+      "0AGFront stabilizer0BCRear stabilizer",
+      "Priekšējais stabilizators uzlabotai vadāmībaiIekļauts aizmugurējais stabilizators",
+      "VIN numurs:WVGZZZE2ZNP009103Ģenerēšanas datums:26.09.2026Derīguma termiņšbeidzas26.10.2026",
+      "0HZVehicle class differentiation 5XD0NBNameplate set in basic style",
+      "0YLWeight range 11 installation control only, no requirement",
+      "forecast",
+      "1EXSpecial identification plate for EC for M1 passenger vehicle",
+      "1KBDrum brakes in rear1LCDisk brakes in front",
+      "Trumuļu bremzes aizmugurēPriekšā ir disku bremzes.",
+      "3CXNet partition5F1Armrest for left front seat",
+      "KK2Refrigerant R744",
+      "Odometra rādījumu ieraksti",
+      "9ZZShould not be read",
+    ].join("\n");
+    const rows = parseCarverticalFunctionList(text);
+    expect(rows.map((r) => r.code)).toEqual(["0AG", "0BC", "0HZ", "0NB", "0YL", "1EX", "1KB", "1LC", "3CX", "5F1", "KK2"]);
+    expect(rows.find((r) => r.code === "0HZ")?.description).toBe("Vehicle class differentiation 5XD");
+    expect(rows.find((r) => r.code === "1EX")?.description).toBe("Special identification plate for EC for M1 passenger vehicle");
+    expect(rows.find((r) => r.code === "KK2")?.description).toBe("Refrigerant R744");
+    expect(rows.some((r) => /[āēīūčģķļņšž]/i.test(r.description))).toBe(false);
+  });
 });
 
 describe("parseFactoryEquipmentPaste", () => {

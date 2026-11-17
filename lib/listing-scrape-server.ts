@@ -11,6 +11,7 @@ import {
   type ListingAiSnapshot,
   type ListingMarketSnapshot,
 } from "@/lib/listing-scrape";
+import { isMobileDeAkamaiHost, MOBILE_DE_DIRECT_FETCH_NOTE } from "@/lib/marketplace/mobile-de-guard";
 
 async function fetchListingPageHtml(listingUrl: string): Promise<
   | { ok: true; html: string; url: string; host: string }
@@ -28,6 +29,13 @@ async function fetchListingPageHtml(listingUrl: string): Promise<
 
   const url = u.toString();
   const host = u.hostname.replace(/^www\./i, "").toLowerCase();
+
+  if (isMobileDeAkamaiHost(u.hostname)) {
+    return {
+      ok: false,
+      snapshot: failedListingSnapshot({ host, url, note: MOBILE_DE_DIRECT_FETCH_NOTE }),
+    };
+  }
 
   if (u.protocol !== "http:" && u.protocol !== "https:") {
     return {

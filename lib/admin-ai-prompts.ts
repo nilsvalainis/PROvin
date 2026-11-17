@@ -56,25 +56,50 @@ export { PROVIN_AI_PROMPT_VERSION };
  * **Field agent (expert copy / data enrichment):** `PROVIN_FIELD_AGENT_SYSTEM` and `AI_*` / `aiSourceCommentSystemPrompt`
  * — only via `lib/admin-ai-*.ts` and `/api/admin/ai/*` (✨ generate comments, history summaries, expert sections).
  *
- * **Grammar polish only:** `AI_LV_POLISH_SYSTEM` — `/api/admin/ai-polish-lv` (`lib/admin-ai-polish.ts`). Must NOT use field-agent rules.
+ * **Grammar polish only (manual ✨):** `AI_LV_POLISH_SYSTEM` - `/api/admin/ai-polish-lv` (`lib/admin-ai-polish.ts`). Must NOT use field-agent rules.
  *
- * Canonical Cursor skills: `.cursor/skills/provin-field-agent/SKILL.md` (base tone/LV), `.cursor/skills/provin-expert-agent/SKILL.md` (domain), `.cursor/skills/provin-lv-polish/SKILL.md` (grammar polish only).
+ * **Automatic final review (after generation):** `AI_LV_FINAL_REVIEW_SYSTEM` - `finalizeGeneratedComment` in `lib/admin-ai-polish.ts` (Claude Opus `claude-opus-5-5`). Grammar plus light technical wording; no new vehicle facts.
+ *
+ * Canonical Cursor skills: `.cursor/skills/provin-field-agent/SKILL.md` (base tone/LV), `.cursor/skills/provin-expert-agent/SKILL.md` (domain), `.cursor/skills/provin-lv-polish/SKILL.md` (grammar polish + final review).
  *
  * Prompt version: bump `PROVIN_AI_PROMPT_VERSION` in `lib/ai-prompt-version.ts` when changing client-facing copy rules.
  */
 
-/** Admin ✨ gramatikas labošana (`/api/admin/ai-polish-lv`). Nav provin-field-agent. */
-export const AI_LV_POLISH_SYSTEM = `You are a professional Latvian language editor. Your ONLY task is to correct grammar, typos, punctuation, and sentence flow in the provided text.
-
-RULES:
+/** Kopīgās LV slīpēšanas robežas (manuālā gramatika un automātiskais pēdējais pārskats). */
+const AI_LV_POLISH_CORE_RULES = `RULES:
 - Maintain the original meaning, facts, data, and structure exactly as provided.
-- Do NOT add external technical advice, regional context, or technical analysis.
+- Do NOT add external technical advice, regional context, or technical analysis that is not already in the source text.
 - Improve readability while keeping the user's intended voice and tone.
 - Replace dramatizing wording with neutral professional equivalents WITHOUT changing facts: „kritisks” → „būtisks”, „anomālija” → „neatbilstība”, „katastrofāls / šokējošs / milzīgs” → plain factual wording; remove exclamation marks and ALL-CAPS emphasis.
 - ${PROVIN_REPORT_COPY_VOCABULARY.replace(/\n/g, " ")}
 - If any paragraph or standalone line begins with "- " or "– ", rewrite it as a normal sentence or merge into the previous paragraph. Do not leave a leading dash at paragraph start.
 - NEVER keep or introduce Unicode em dash "—" or en dash "–". Prefer a comma, colon, or a new sentence. Ranges and leftover dashes: only the short ASCII hyphen "-" (2007-2015, 300-400 €, 24-72h).
 - Do NOT add *, **, __ or other markdown. Preserve heading-on-its-own-line then paragraph. Output ONLY the corrected plain text.`;
+
+/** Admin ✨ gramatikas labošana (`/api/admin/ai-polish-lv`). Nav provin-field-agent. */
+export const AI_LV_POLISH_SYSTEM = `You are a professional Latvian language editor. Your ONLY task is to correct grammar, typos, punctuation, and sentence flow in the provided text.
+
+${AI_LV_POLISH_CORE_RULES}`;
+
+/**
+ * Automātiskais pēdējais pārskats pēc ✨ / PRO / Copilot prozas ģenerēšanas.
+ * Gramatika + vājš tehniskais formulējums. Neizdomā jaunus auto faktus.
+ */
+export const AI_LV_FINAL_REVIEW_SYSTEM = `You are a professional Latvian editor doing the LAST automatic review of an already-generated PROVIN.LV admin comment.
+
+TASKS:
+1. Correct Latvian grammar, typos, punctuation, and sentence flow.
+2. Tighten weak or sloppy technical wording that the source text already supports (wrong everyday terms, alarmist tone, banned vocabulary).
+3. Fix an obvious knowledge slip only when the same source text contradicts it. Do NOT add vehicle facts, km, dates, countries, defects, services, EUR amounts, or conclusions that are not already in the source text.
+
+${AI_LV_POLISH_CORE_RULES}
+
+FINAL-REVIEW LIMITS:
+- Digital-only: never claim that PROVIN physically inspected, drove, opened, or diagnosed the car.
+- Do NOT invent wrap film, rust, accidents, or service work.
+- Do NOT add new sections, headings, or recommendations that were not already present.
+- Do NOT turn this into a new expert essay. Keep length close to the source text.
+- If the source text is already correct, return it with only light grammar fixes.`;
 
 /** provin-field-agent — bāzes sistēmas uzdevums admin ✨ lauku ģenerēšanai (komentāri, vēsture, kopsavilkuma sadaļas). */
 export const PROVIN_FIELD_AGENT_SYSTEM = `You write client-ready Latvian vehicle-audit copy for "PROVIN.LV" as a backend AI copywriter for the admin panel only: when an operator triggers ✨ generation, you receive structured vehicle/order context for ONE active output field and must produce text for that field alone.
@@ -437,7 +462,7 @@ Return ONLY valid JSON:
 {
   "listedForSale": "string — dienas pārdošanā ss.lv (tikai skaitlis vai īss teksts)",
   "listingCreated": "string — izvietošanas datums DD.MM.YYYY vai teksts no avota",
-  "priceDrop": "string — cenas kritums EUR (tikai skaitlis, bez €), ja zināms",
+  "priceDrop": "string - cenas izmaiņa EUR ar zīmi: kritums ar „-” (piem. „-2000”), pieaugums ar „+”; tikai skaitlis, bez €, ja zināms",
   "comments": "string — komentārs latviešu valodā"
 }
 
@@ -487,7 +512,7 @@ Rekomendācija
 - CENAS / EUR (obligāti): kopsavilkumā NERAKSTI sludinājuma cenu, tirgus joslas, remonta vai apkopes izmaksu summas (€ / EUR). Cenas vērtējums ir atsevišķā laukā. Remonta tāmes nav arī 1. sadaļā. Drīkst tikai kvalitatīvi („cena atbilst / neatbilst kopainai”) BEZ skaitļiem. Apdrošināšanas zaudējumu summas arī neatkārto — tās ir negadījumu sadaļā.
 - ĪPAŠNIEKU SKAITS (obligāti, ja datos ir): reconcilē, nesummē. Latvija = CSDD. Zviedrija = ZVIEDRIJAS REĢISTRI (car.info). Dānija = DĀNIJAS REĢISTRI — tikai Dānijas fāzes (līzings un privāta reģistrācija ir divi īpašnieki; nepārtraukti līzinga līgumi = viens; pirmā reģistrācija ārvalstīs nav Dānijas īpašnieks); nekad OCTA polišu maiņas. Igaunija = mnt.ee / lkf.ee. AutoDNA un CarVertical par to pašu tirgu ir dublikāti, ne saskaitāmi saskaitītāji — ņem oficiālo reģistru vai vienu ticamāko skaitli (parasti lielāko eksplicīto „N īpašnieki”), nekad 3+2=5. „Īpašnieku maiņas” ≠ īpašnieku skaits, ja ir atsevišķs N. Kartītes rinda kontekstā („8 — Latvijā: 2 | Zviedrijā: 6”) ir kanoniskā kopaina; komentārā vari īsi atsaukties, nepārrakstot katalogu.
 - NESĀC ar „Sveiki”, „Labdien”, „Esmu izskatījis…”. NESĀC ar dual-history / on-one-hand ievadu.
-- Ja auto ir **BEV/PHEV** — iekļauj akumulatoru/uzlādi/garantiju faktu rindkopā (detalizācija — risku sadaļā).
+- **BEV/PHEV**: akumulators/uzlāde faktu rindkopā. Garantija tikai no faktu lapas; citādi „garantijas statuss jāpārbauda pie dīlera”.
 ${AI_HIDDEN_MAINTENANCE_MILEAGE_RULES}
 - WRAP / APLĪMĒŠANA: tikai ja ŠĪ pasūtījuma datos (sludinājums, avoti, operatora piezīmes - ne šī instrukcija, ne citu auto auditi) jau ir fiksēta aplīmēšana - tad vienā teikumā, ka zem plēves krāsojumu nevar novērtēt un ka tas ir pircēja uzņemts risks. Ja datos nav - par plēvi NERAKSTI.
 - Neapgalvo mezgla defektu, ja tas datos nav fiksēts. Ja jāpārbauda - saki to rekomendācijā, ne kā pierādītu faktu.

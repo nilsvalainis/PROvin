@@ -1,8 +1,18 @@
 "use client";
 
+import { useAdminMobileViewport } from "@/components/admin/useAdminMobileViewport";
+
+import { AdminSaveButton } from "@/components/admin/AdminSaveButton";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { openGeneratedHtmlDocument } from "@/lib/admin-open-window";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
+import {
+  PDF_PREPARING_HTML,
+  openGeneratedHtmlDocument,
+  openGeneratedHtmlInPreopened,
+  openWindowSyncThen,
+  type SyncOpenedWindow,
+} from "@/lib/admin-open-window";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { flushSync } from "react-dom";
 import { createPortal } from "react-dom";
@@ -28,7 +38,15 @@ import { AdminListingCoverPhoto } from "@/components/admin/AdminListingCoverPhot
 import { AdminCitiAvotiSourceBlock } from "@/components/admin/AdminCitiAvotiSourceBlock";
 import { AdminOrderVinScanCard } from "@/components/admin/AdminOrderVinScanCard";
 import { useAdminIsPhone } from "@/lib/use-admin-is-phone";
-import { ADMIN_MOBILE_ORDER_SECTIONS, type AdminMobileOrderSectionId } from "@/lib/admin-mobile-ds";
+import { useLiveElementById } from "@/lib/use-live-element-by-id";
+import {
+  ADMIN_MOBILE_ORDER_SECTIONS,
+  ADMIN_MOBILE_PAID_SOURCE_BLOCK,
+  requestOpenAdminBlock,
+  type AdminMobileOrderSectionId,
+} from "@/lib/admin-mobile-ds";
+import { copyTextToClipboard } from "@/components/admin/AdminClipboardButton";
+import type { AdminMobileDockStatus } from "@/components/admin/mobile/AdminMobileChrome";
 import {
   AdminMobileRoundBtn,
   AdminMobileSaveStatus,
@@ -77,6 +95,7 @@ import { collectWorkspaceRecordDates } from "@/lib/csdd-first-registration-guard
 import { syncListingAnalysisPhotoGroupsAndFlat } from "@/lib/listing-analysis-photo-types";
 import { syncAutoRecordsPhotoGroupsAndFlat } from "@/lib/auto-records-photo-types";
 import {
+  sourceBlockPhotoMaxForKey,
   syncSourceBlockPhotoGroupsAndFlat,
   type SourceBlockPhotoGroup,
 } from "@/lib/source-block-photo-types";
@@ -116,8 +135,10 @@ import {
   bumpWorkspaceSaveGeneration,
   fetchCanonicalWorkspace,
   isWorkspaceRevisionConflict,
+  noteKnownServerWorkspace,
   persistWorkspaceSafeMerge,
   persistWorkspaceState,
+  serverWorkspaceChecksumFromJson,
   WORKSPACE_SAVE_FAILED_LABEL,
   workspacePersistFromDraftWorkspace,
 } from "@/lib/admin-workspace-persist-client";
@@ -176,6 +197,10 @@ import {
   odometerAnomalyOverridesSnapshotField,
   type OdometerAnomalyOverride,
 } from "@/lib/odometer-anomaly-classify";
+import {
+  dealerMajorWorkOverridesSnapshotField,
+  type DealerMajorWorkOverride,
+} from "@/lib/dealer-major-works-override-persist";
 import { AdminOdometerAnomalyPanel } from "@/components/admin/AdminOdometerAnomalyPanel";
 import { AdminManualBannersEditor } from "@/components/admin/AdminManualBannersEditor";
 import { AdminProvinAlertBanners } from "@/components/admin/AdminProvinAlertBanners";
@@ -234,6 +259,7 @@ import { AdminAiFieldError } from "@/components/admin/AdminAiFieldError";
 import {
   commentsNeedPowertrainRegenerate,
   POWERTRAIN_REGENERATE_PROMPT_LV,
+  stampDealerCommentBlock,
   stampGeneratedAgainstOnBlocks,
 } from "@/lib/comment-powertrain-guard";
 import {
@@ -247,6 +273,15 @@ import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWi
 import { AdminFlashMaxButton } from "@/components/admin/AdminFlashMaxButton";
 import { AdminOrderMobileDock } from "@/components/admin/AdminOrderMobileDock";
 import { AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
+import { renderReportPdfOnServer, type ServerReportPdfResult } from "@/lib/report-pdf-client";
+import {
+  AdminSendReportDialog,
+  type SendReportKind,
+  type SendReportPrepared,
+  type SendReportResult,
+} from "@/components/admin/AdminSendReportDialog";
+import { postAdminAuditComplete } from "@/lib/admin-audit-complete-client";
+import { isDealerHighlightAdminOrder } from "@/lib/admin-customer-identity";
 import { AdminOrderStickyActionRail } from "@/components/admin/AdminOrderStickyActionRail";
 import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
 import {
@@ -323,13 +358,12 @@ import {
   parseAdminAiResponse,
   readGeneratedAdminAiText,
 } from "@/lib/admin-ai-client-errors";
-import { generateAdminAiText } from "@/lib/admin-ai-stream-client";
+import { generateAdminAiText, generateAdminAiTextWithNetworkRetry } from "@/lib/admin-ai-stream-client";
 import {
   technicalRiskMapSnapshotField,
   type TechnicalRiskMap,
 } from "@/lib/admin-ai-technical-risk-map-types";
 import {
-  defaultFlashMaxSelection,
   expandFlashMaxRunJobs,
   flashMaxJobBreadth,
   flashMaxJobTier,
@@ -355,6 +389,7 @@ import { AdminPersistenceHealthBanner } from "@/components/admin/AdminPersistenc
 import type { VehicleAIExtraction, VehicleAiExtractionMeta } from "@/lib/vehicle-ai-extraction-types";
 import {
   collectFilledFactCheckFields,
+  collectPrePdfClientTextFields,
   factCheckDismissKey,
   openErrorFactCheckFlags,
   parseVehicleYear,
@@ -426,6 +461,7 @@ type WorkspacePersist = {
   clearedFields?: Record<string, number>;
   technicalRiskMap?: TechnicalRiskMap;
   odometerAnomalyOverrides?: OdometerAnomalyOverride[];
+  dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
 };
 
 const EMPTY_WORKSPACE: WorkspacePersist = {
@@ -477,7 +513,8 @@ const workspaceSectionTitle = `font-medium uppercase tracking-wide text-[var(--c
 const workspaceSectionShell =
   "rounded-xl bg-[var(--admin-surface-elevated)] p-2 shadow-sm ring-1 ring-[var(--admin-border-subtle)]";
 
-const WIZARD_SUMMARY_STEP = 12;
+/** Cilne "Kopsavilkums" (wizardStepsUi pēdējā). 17.11: bija 12 = "Sludinājums", tāpēc poga un FLASH MAX beigas atvēra nepareizo cilni. */
+const WIZARD_SUMMARY_STEP = 13;
 
 const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
   empty: "bg-zinc-400",
@@ -574,6 +611,7 @@ function workspaceToPersistBody(ws: WorkspacePersist): OrderWorkspacePersistBody
   ...clearedFieldsSnapshotField(ws.clearedFields),
   ...technicalRiskMapSnapshotField(ws.technicalRiskMap),
   ...odometerAnomalyOverridesSnapshotField(ws.odometerAnomalyOverrides),
+  ...dealerMajorWorkOverridesSnapshotField(ws.dealerMajorWorkOverrides),
   };
 }
 
@@ -767,6 +805,7 @@ export function OrderDetailWorkspace({
   onSourcesComparisonCommentChange,
   onOrderEditsPatch,
   dashboardSlot,
+  mobileHeaderExtra,
   portfolioPortalDomId,
   portfolioPortalTargetInParent = false,
   serverWorkspaceJson = null,
@@ -787,6 +826,8 @@ export function OrderDetailWorkspace({
   onOrderEditsPatch?: (patch: { vin?: string }) => void;
   /** 0. solis — maksājums, transports, klients, pielikumi, komentārs (vecāka 2×2 režģis). */
   dashboardSlot?: ReactNode;
+  /** Telefonā galvenes otrā rinda (rezultāta krāsa, produkts, summa) - makets 06.11. */
+  mobileHeaderExtra?: ReactNode;
   /** Ja norādīts, „1. Pielikumi” tiek renderēts šajā DOM elementā (kreisās kolonnas augšā). */
   portfolioPortalDomId?: string;
   /** Ja `true`, vecāka komponents jau renderē `<div id={portfolioPortalDomId} />` (bez dublikāta ID). */
@@ -805,10 +846,10 @@ export function OrderDetailWorkspace({
     () =>
       commentsNeedPowertrainRegenerate({
         sourceBlocks: ws.sourceBlocks,
-        commentTexts: [
-          ws.tehniskoRiskuAnalize,
-          ws.iriss,
-          (ws.sourceBlocks.auto_records?.comments as string | undefined) ?? "",
+        comments: [
+          { field: "technical_risks", text: ws.tehniskoRiskuAnalize },
+          { field: "summary", text: ws.iriss },
+          { field: "dealer_comment", text: (ws.sourceBlocks.auto_records?.comments as string | undefined) ?? "" },
         ],
         vin: payload.vin,
       }),
@@ -838,12 +879,23 @@ export function OrderDetailWorkspace({
   const [wizardStep, setWizardStep] = useState(0);
   const phoneStack = useAdminIsPhone();
   const [mobileMore, setMobileMore] = useState(false);
+  /** Telefons: FLASH MAX izvēles atvēršana no „Darbības” un īss paziņojums virs doka. */
+  const [mobileFlashRequest, setMobileFlashRequest] = useState(0);
+  const [mobileNotice, setMobileNotice] = useState<AdminMobileDockStatus | null>(null);
+  const mobileNoticeTimer = useRef<number | null>(null);
+  const showMobileNotice = useCallback((next: AdminMobileDockStatus | null, ms = 0) => {
+    if (mobileNoticeTimer.current) window.clearTimeout(mobileNoticeTimer.current);
+    mobileNoticeTimer.current = null;
+    setMobileNotice(next);
+    if (next && ms > 0) mobileNoticeTimer.current = window.setTimeout(() => setMobileNotice(null), ms);
+  }, []);
   const [mobileSection, setMobileSection] = useState<AdminMobileOrderSectionId>(ADMIN_MOBILE_ORDER_SECTIONS[0].id);
   const [phrasesOpen, setPhrasesOpen] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [copilotBusy, setCopilotBusy] = useState(false);
   const [vinBarCopyFlash, setVinBarCopyFlash] = useState(false);
-  const [portfolioPortalEl, setPortfolioPortalEl] = useState<HTMLElement | null>(null);
+  // 17.11: mērķis seko līdzi lapai - sk. lib/use-live-element-by-id.ts ("Pielikumi" tikai pēc pārlādes).
+  const portfolioPortalEl = useLiveElementById(portfolioPortalDomId, payload.sessionId);
   const [alertsPortalEl, setAlertsPortalEl] = useState<HTMLElement | null>(null);
   const bannerCards = useAdminBannerCardsHidden();
   const [portfolioAllFilesModalOpen, setPortfolioAllFilesModalOpen] = useState(false);
@@ -852,6 +904,7 @@ export function OrderDetailWorkspace({
   const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
   const [pdfLangUnlocked, setPdfLangUnlocked] = useState(false);
   const [notifyIncludeGoogleReview, setNotifyIncludeGoogleReview] = useState(false);
+  const [notifyLang, setNotifyLang] = useState<ClientReportLang>("lv");
   const [notifyPhase, setNotifyPhase] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [notifyErr, setNotifyErr] = useState<string | null>(null);
   const [notifyLastSentTo, setNotifyLastSentTo] = useState<string | null>(null);
@@ -921,6 +974,8 @@ export function OrderDetailWorkspace({
         asvOnly?: boolean;
         businessBrand?: boolean;
         lang?: ClientReportLang;
+        serverPdf?: boolean;
+        onServerPdf?: (r: ServerReportPdfResult | null, err?: string) => void;
       }
     | undefined
   >(undefined);
@@ -967,6 +1022,7 @@ export function OrderDetailWorkspace({
   }, [factCheckDismissed, payload.sessionId]);
 
   const odometerAnomalyOverrides = ws.odometerAnomalyOverrides ?? [];
+  const dealerMajorWorkOverrides = ws.dealerMajorWorkOverrides ?? [];
   const wsStateRef = useRef(ws);
   wsStateRef.current = ws;
   const orderEditsRef = useRef({
@@ -997,21 +1053,17 @@ export function OrderDetailWorkspace({
 
   const narrowPortfolioLayout = Boolean(portfolioPortalDomId);
 
-  useLayoutEffect(() => {
-    if (!portfolioPortalDomId || typeof document === "undefined") {
-      setPortfolioPortalEl(null);
-      return;
-    }
-    setPortfolioPortalEl(document.getElementById(portfolioPortalDomId));
-  }, [portfolioPortalDomId, payload.sessionId]);
 
+  // Telefonā baneri zem pasūtījuma galvenes (makets 06.11), datorā - kā agrāk virs darba virsmas.
+  const isMobileViewport = useAdminMobileViewport();
   useLayoutEffect(() => {
     if (!alertsPortalDomId || typeof document === "undefined") {
       setAlertsPortalEl(null);
       return;
     }
-    setAlertsPortalEl(document.getElementById(alertsPortalDomId));
-  }, [alertsPortalDomId, payload.sessionId]);
+    const mobileSlot = isMobileViewport ? document.getElementById(`${alertsPortalDomId}-m`) : null;
+    setAlertsPortalEl(mobileSlot ?? document.getElementById(alertsPortalDomId));
+  }, [alertsPortalDomId, payload.sessionId, isMobileViewport]);
 
   useAdminScrollLock(portfolioAllFilesModalOpen);
 
@@ -1148,6 +1200,7 @@ export function OrderDetailWorkspace({
     ...clearedFieldsSnapshotField(normalized.clearedFields),
     ...technicalRiskMapSnapshotField(normalized.technicalRiskMap),
     ...odometerAnomalyOverridesSnapshotField(normalized.odometerAnomalyOverrides),
+    ...dealerMajorWorkOverridesSnapshotField(normalized.dealerMajorWorkOverrides),
     };
     wsPersistRef.current = next;
     lastGoodPersistBodyRef.current = normalized;
@@ -1222,6 +1275,7 @@ export function OrderDetailWorkspace({
         ...clearedFieldsSnapshotField(body.clearedFields),
         ...technicalRiskMapSnapshotField(body.technicalRiskMap),
         ...odometerAnomalyOverridesSnapshotField(body.odometerAnomalyOverrides),
+        ...dealerMajorWorkOverridesSnapshotField(body.dealerMajorWorkOverrides),
         };
         wsStateRef.current = wsPersistRef.current;
       }
@@ -1489,7 +1543,7 @@ export function OrderDetailWorkspace({
         (text) =>
           updateWs({
             tehniskoRiskuAnalize: aiExpertSourceCommentToRichHtml(text),
-            sourceBlocks: stampGeneratedAgainstOnBlocks(cur.sourceBlocks, payload.vin),
+            sourceBlocks: stampGeneratedAgainstOnBlocks(wsStateRef.current.sourceBlocks, payload.vin, "technical_risks"),
             ...technicalRiskMapSnapshotField(
               generated.technicalRiskMap
                 ? {
@@ -1562,7 +1616,11 @@ export function OrderDetailWorkspace({
       );
       const applied = applyGeneratedAdminAiText(
         generated,
-        (text) => setIrissSummary(aiExpertSourceCommentToRichHtml(text)),
+        (text) =>
+          updateWs({
+            iriss: aiExpertSourceCommentToRichHtml(text),
+            sourceBlocks: stampGeneratedAgainstOnBlocks(wsStateRef.current.sourceBlocks, payload.vin, "summary"),
+          }),
         setAiSummaryErr,
       );
       if (applied && generated.text) void runFactCheck("summary", generated.text);
@@ -1571,7 +1629,7 @@ export function OrderDetailWorkspace({
     } finally {
       setAiSummaryBusy(false);
     }
-  }, [buildAiOrderPayload, aiSummaryBusy, payload.aiAllowed, runFactCheck, setIrissSummary]);
+  }, [buildAiOrderPayload, aiSummaryBusy, payload.aiAllowed, payload.vin, runFactCheck, updateWs]);
 
   const runAiIncidentsSummary = useCallback(async (operatorNotes = "", modelTier: AiAdminModelTier = AI_ADMIN_FIELD_DEFAULT_TIER.incidents) => {
     if (!payload.aiAllowed || aiIncidentsSummaryBusy) return;
@@ -1955,7 +2013,7 @@ export function OrderDetailWorkspace({
       nextGroups: SourceBlockPhotoGroup[],
       sectionIndex?: number,
     ) => {
-      const synced = syncSourceBlockPhotoGroupsAndFlat(nextGroups);
+      const synced = syncSourceBlockPhotoGroupsAndFlat(nextGroups, sourceBlockPhotoMaxForKey(key));
       workspaceDirtyRef.current = true;
       flushSync(() => {
         setWs((prev) => {
@@ -2129,10 +2187,16 @@ export function OrderDetailWorkspace({
             (text) => {
               const html = aiExpertSourceCommentToRichHtml(text);
               const prevBlock = wsStateRef.current.sourceBlocks[blockKey];
-              const nextBlock = applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
-                citiAvotiSectionIndex,
+              const nextBlock = stampDealerCommentBlock(
+                blockKey,
                 targetField,
-              });
+                applySourceBlockGeneratedComment(blockKey, prevBlock, html, {
+                  citiAvotiSectionIndex,
+                  targetField,
+                }),
+                wsStateRef.current.sourceBlocks,
+                payload.vin,
+              );
               updateSourceBlock(blockKey, nextBlock);
             },
             (error) => setAiSourceCommentErr((prev) => ({ ...prev, [busyKey]: error })),
@@ -2154,7 +2218,7 @@ export function OrderDetailWorkspace({
         setAiSourceCommentBusy(cleared);
       }
     },
-    [buildAiOrderPayload, orderDraftPersistenceEnabled, payload.aiAllowed, persistFullWorkspaceRef, runFactCheck, updateSourceBlock],
+    [buildAiOrderPayload, orderDraftPersistenceEnabled, payload.aiAllowed, payload.vin, persistFullWorkspaceRef, runFactCheck, updateSourceBlock],
   );
 
   const runFlashMax = useCallback(async (selection: FlashMaxSelection) => {
@@ -2241,7 +2305,7 @@ export function OrderDetailWorkspace({
         };
 
         try {
-          const generated = await generateAdminAiText(
+          const generated = await generateAdminAiTextWithNetworkRetry(
             endpoint,
             body,
             `AI: neizdevās ģenerēt (${job.runLabel})`,
@@ -2262,14 +2326,20 @@ export function OrderDetailWorkspace({
               (text) => {
                 const html = aiExpertSourceCommentToRichHtml(text);
                 if (job.kind === "source") {
-                  const nextBlock = applySourceBlockGeneratedComment(
+                  const nextBlock = stampDealerCommentBlock(
                     job.blockKey,
-                    wsStateRef.current.sourceBlocks[job.blockKey],
-                    html,
-                    {
-                      targetField: job.targetField,
-                      citiAvotiSectionIndex: job.citiAvotiSectionIndex,
-                    },
+                    job.targetField,
+                    applySourceBlockGeneratedComment(
+                      job.blockKey,
+                      wsStateRef.current.sourceBlocks[job.blockKey],
+                      html,
+                      {
+                        targetField: job.targetField,
+                        citiAvotiSectionIndex: job.citiAvotiSectionIndex,
+                      },
+                    ),
+                    wsStateRef.current.sourceBlocks,
+                    payload.vin,
                   );
                   updateSourceBlock(job.blockKey, nextBlock);
                   return;
@@ -2314,6 +2384,11 @@ export function OrderDetailWorkspace({
                 if (job.id === "technical_risks") {
                   updateWs({
                     tehniskoRiskuAnalize: html,
+                    sourceBlocks: stampGeneratedAgainstOnBlocks(
+                      wsStateRef.current.sourceBlocks,
+                      payload.vin,
+                      "technical_risks",
+                    ),
                     ...technicalRiskMapSnapshotField(
                       generated.technicalRiskMap
                         ? {
@@ -2333,7 +2408,10 @@ export function OrderDetailWorkspace({
                   updateWs({ apskatesPlāns: html });
                   return;
                 }
-                updateWs({ iriss: html });
+                updateWs({
+                  iriss: html,
+                  sourceBlocks: stampGeneratedAgainstOnBlocks(wsStateRef.current.sourceBlocks, payload.vin, "summary"),
+                });
               },
               (error) => setFlashMaxErr(`${job.runLabel}: ${error}`),
             );
@@ -2381,6 +2459,7 @@ export function OrderDetailWorkspace({
   }, [
     buildAiOrderPayload,
     flashMaxBusy,
+    payload.vin,
     onInternalCommentChange,
     onMileageCommentChange,
     onSourcesComparisonCommentChange,
@@ -2543,6 +2622,7 @@ export function OrderDetailWorkspace({
 
       const chosen = resolved.hydrated;
       workspaceRevisionRef.current = resolved.workspaceRevision;
+      noteKnownServerWorkspace(payload.sessionId, serverWorkspaceChecksumFromJson(serverWorkspaceJson), resolved.workspaceRevision);
 
       const body: OrderWorkspacePersistBody = {
         sourceBlocks: chosen.sourceBlocks,
@@ -2560,6 +2640,7 @@ export function OrderDetailWorkspace({
       ...clearedFieldsSnapshotField(chosen.clearedFields),
       ...technicalRiskMapSnapshotField(chosen.technicalRiskMap),
       ...odometerAnomalyOverridesSnapshotField(chosen.odometerAnomalyOverrides),
+      ...dealerMajorWorkOverridesSnapshotField(chosen.dealerMajorWorkOverrides),
       };
 
       workspaceDebugLog("hydrate_source", {
@@ -2592,6 +2673,7 @@ export function OrderDetailWorkspace({
       ...clearedFieldsSnapshotField(chosen.clearedFields),
       ...technicalRiskMapSnapshotField(chosen.technicalRiskMap),
       ...odometerAnomalyOverridesSnapshotField(chosen.odometerAnomalyOverrides),
+      ...dealerMajorWorkOverridesSnapshotField(chosen.dealerMajorWorkOverrides),
       };
       wsPersistRef.current = hydratedWs;
       wsStateRef.current = hydratedWs;
@@ -3120,6 +3202,7 @@ export function OrderDetailWorkspace({
     setNotifyExtraPdfSaveMsg(null);
     setNotifyExtraPdfSaveOk(false);
     setNotifyIncludeGoogleReview(false);
+    setNotifyLang("lv");
     if (notifyReportPdfExtraRef.current) notifyReportPdfExtraRef.current.value = "";
     setNotifyDialogOpen(true);
   }, []);
@@ -3181,6 +3264,7 @@ export function OrderDetailWorkspace({
       const auditName = buildProvinAuditPdfFilename(payload.vin, {
         checkoutLine: payload.checkoutLine,
         amountTotalCents: payload.amountTotal,
+        lang: notifyLang,
       });
       const extraReport =
         extraRaw && extraRaw.size > 0
@@ -3218,12 +3302,14 @@ export function OrderDetailWorkspace({
             uploads,
             extraAuditPdf: extraReport,
             includeGoogleReview: notifyIncludeGoogleReview,
+            lang: notifyLang,
           })
         : await (async () => {
             const fd = new FormData();
             fd.append("sessionId", payload.sessionId);
             fd.append("customerEmail", email);
             if (notifyIncludeGoogleReview) fd.append("includeGoogleReview", "1");
+            if (notifyLang !== "lv") fd.append("lang", notifyLang);
             if (extraReport) {
               fd.append("reportPdf", extraReport);
             }
@@ -3268,6 +3354,7 @@ export function OrderDetailWorkspace({
     portfolio,
     portfolioBytes,
     notifyIncludeGoogleReview,
+    notifyLang,
   ]);
 
   const onPickFiles = async (files: FileList | File[] | null) => {
@@ -3562,8 +3649,21 @@ export function OrderDetailWorkspace({
     asvOnly?: boolean;
     businessBrand?: boolean;
     lang?: ClientReportLang;
+    /** "Sūtīt atskaiti": tas pats HTML, PDF top serverī ar Chromium; rezultāts nonāk `onServerPdf`. */
+    serverPdf?: boolean;
+    onServerPdf?: (r: ServerReportPdfResult | null, err?: string) => void;
   }) => {
     if (pdfBusyRef.current) return;
+    // Telefonā (iOS Safari) logs jāatver sinhroni pieskāriena brīdī, citādi pēc `await` to bloķē.
+    let phonePre: SyncOpenedWindow | null = null;
+    if (phoneStack) {
+      phonePre = openWindowSyncThen();
+      if (!phonePre.writeHtml(PDF_PREPARING_HTML)) phonePre = null;
+    }
+    let phonePreUsed = false;
+    const closePhonePre = () => {
+      if (!phonePreUsed) phonePre?.close();
+    };
     if (factCheckPdfSkipRef.current) {
       factCheckPdfSkipRef.current = false;
     } else {
@@ -3602,6 +3702,15 @@ export function OrderDetailWorkspace({
           odometerAnomalyOverrides,
         },
         overrides: odometerAnomalyOverrides,
+        clientTextFields: collectPrePdfClientTextFields({
+          tehniskoRiskuAnalize: cur.tehniskoRiskuAnalize,
+          iriss: cur.iriss,
+          apskatesPlāns: cur.apskatesPlāns,
+          mileageComment: edits.mileage,
+          incidentsComment: edits.internal,
+          sourcesComparisonComment: edits.sourcesComparison,
+          sourceBlocks: cur.sourceBlocks,
+        }),
       });
       for (const flag of openErrorFactCheckFlags(prePdfFlags, factCheckDismissed)) {
         errorItems.push({
@@ -3613,6 +3722,7 @@ export function OrderDetailWorkspace({
       if (errorItems.length > 0) {
         pendingPrintOptsRef.current = opts;
         setFactCheckPublishItems(errorItems);
+        closePhonePre();
         return;
       }
     }
@@ -3625,7 +3735,9 @@ export function OrderDetailWorkspace({
             ? "business"
             : opts?.printInk
               ? "ink"
-              : "pdf",
+              : opts?.serverPdf
+                ? "server"
+                : "pdf",
       opts?.lang && opts.lang !== "lv" ? opts.lang : "",
     ]
       .filter(Boolean)
@@ -3963,6 +4075,7 @@ export function OrderDetailWorkspace({
       incidentPhotoGroups: isolate ? [] : wsPersistRef.current.incidentPhotoGroups,
       incidentPhotos: isolate ? [] : wsPersistRef.current.incidentPhotos,
       odometerAnomalyOverrides,
+      dealerMajorWorkOverrides,
     };
 
     let finalPayload = reportPayload;
@@ -4032,7 +4145,18 @@ export function OrderDetailWorkspace({
       : langSuffix
         ? printTitle.replace(/\.pdf$/i, `${langSuffix}.pdf`)
         : printTitle;
-    const opened = openGeneratedHtmlDocument(translatedHtml, printFileTitle.replace(/\.pdf$/i, ".html"));
+    if (opts?.serverPdf) {
+      try {
+        const r = await renderReportPdfOnServer({ sessionId: payload.sessionId, html: translatedHtml, filename: printFileTitle });
+        bumpPdf(100);
+        opts.onServerPdf?.(r);
+      } catch (e) {
+        opts.onServerPdf?.(null, `Servera PDF neizdevās: ${e instanceof Error ? e.message : "kļūda"}`);
+      }
+      return;
+    }
+    const opened = openGeneratedHtmlInPreopened(phonePre, translatedHtml, printFileTitle.replace(/\.pdf$/i, ".html"));
+    if (opened.window && opened.window === phonePre?.window) phonePreUsed = true;
     if (!opened.opened) {
       alert("Atļauj uznirstošo logu, lai atvērtu druku, vai lejupielādē failu.");
       return;
@@ -4056,6 +4180,7 @@ export function OrderDetailWorkspace({
     }
     bumpPdf(100);
     } finally {
+      closePhonePre();
       pdfTargetRef.current = 100;
       setPdfJob({ key: pdfJobKey, pct: 100 });
       window.setTimeout(() => {
@@ -4335,6 +4460,15 @@ export function OrderDetailWorkspace({
             ) : null}
             <button
               type="button"
+              onClick={() => setSendReportOpen(true)}
+              className={adminProBtn("client")}
+              title="Atskaites PDF serverī, Skatīt PDF, sūtīšana ar versiju, kopija Dropbox /_PROv/"
+            >
+              <Send className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />
+              Sūtīt atskaiti
+            </button>
+            <button
+              type="button"
               onClick={openNotifyClientDialog}
               disabled={notifyPhase === "loading"}
               className={adminProBtn("client")}
@@ -4503,12 +4637,13 @@ export function OrderDetailWorkspace({
     </section>
   );
 
+  const portfolioAllFilesModalBackdropClose = useModalBackdropClose(() => setPortfolioAllFilesModalOpen(false));
   const portfolioAllFilesModal =
     portfolioAllFilesModalOpen && portfolio.length > 0 ? (
       <div
         className={`admin-order-page fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-3 ${adminDark ? "dark" : ""}`}
         role="presentation"
-        onClick={() => setPortfolioAllFilesModalOpen(false)}
+        {...portfolioAllFilesModalBackdropClose}
       >
         <div
           role="dialog"
@@ -4550,6 +4685,7 @@ export function OrderDetailWorkspace({
       </div>
     ) : null;
 
+  // Ja portāla mērķa lapā nav (piem. telefonā sakļauta karte "Klients"), sadaļu rāda iekļauti lapā - kā līdz šim.
   const showPortfolioInline = !portfolioPortalDomId || !portfolioPortalEl;
   const showPortfolioPortal = Boolean(portfolioPortalDomId && portfolioPortalEl);
 
@@ -4610,9 +4746,127 @@ export function OrderDetailWorkspace({
   });
 
   const handleWhatsAppOpen = useCallback(() => {
-    if (!whatsappPhoneDigits) return;
+    if (!whatsappPhoneDigits) {
+      showMobileNotice({ text: "Klienta tālrunis nav norādīts - WhatsApp nevar atvērt.", tone: "error" }, 5000);
+      return;
+    }
     openWhatsAppChat(whatsappPhoneDigits, whatsappPrefill);
-  }, [whatsappPhoneDigits, whatsappPrefill]);
+  }, [showMobileNotice, whatsappPhoneDigits, whatsappPrefill]);
+
+  /** Telefona izvēlne: maksas avota īstā poga ir sakļautā blokā - atveram to un spiežam to pašu pogu. */
+  const runMobilePaidLoad = useCallback(
+    async (key: keyof typeof ADMIN_MOBILE_PAID_SOURCE_BLOCK, label: string) => {
+      const find = () =>
+        document.querySelector<HTMLButtonElement>(`.admin-paid-load[data-admin-paid="${key}"]`);
+      const blockId = ADMIN_MOBILE_PAID_SOURCE_BLOCK[key];
+      requestOpenAdminBlock(blockId);
+      let btn = find();
+      for (let i = 0; !btn && i < 40; i += 1) {
+        await new Promise((r) => window.setTimeout(r, 100));
+        btn = find();
+      }
+      document.querySelector(`[data-admin-block="${blockId}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (!btn) {
+        showMobileNotice({ text: `${label}: šim pasūtījumam ielāde nav pieejama.`, tone: "error" }, 6000);
+        return;
+      }
+      if (btn.disabled) {
+        showMobileNotice({ text: `${label}: ielāde šobrīd nav iespējama (nav VIN, jau ielādē vai nav tiesību).`, tone: "error" }, 6000);
+        return;
+      }
+      btn.click();
+      showMobileNotice({ text: `${label}: ielāde sākta. Rezultāts parādīsies blokā.`, tone: "info" }, 6000);
+    },
+    [showMobileNotice],
+  );
+
+  /* ---- "Sūtīt atskaiti" (2. posms, Nils 17.11): PDF serverī, versijas, Dropbox, «Izpildīts» ---- */
+  const [sendReportOpen, setSendReportOpen] = useState(false);
+  const sendReportDefaultKind: SendReportKind = isDealerHighlightAdminOrder({
+    checkoutLine: payload.checkoutLine,
+    amountTotalCents: payload.amountTotal,
+  })
+    ? "dealer"
+    : b2bClientOrder
+      ? "business"
+      : "audits";
+
+  const prepareSendReportPdf = (kind: SendReportKind, lang: ClientReportLang): Promise<SendReportPrepared> =>
+    new Promise((resolve, reject) => {
+      if (pdfBusyRef.current) {
+        reject(new Error("PDF jau tiek veidots - pagaidi."));
+        return;
+      }
+      let settled = false;
+      const opts = {
+        dealerOnly: kind === "dealer",
+        asvOnly: kind === "asv",
+        businessBrand: kind === "business",
+        lang,
+        serverPdf: true,
+        onServerPdf: (r: ServerReportPdfResult | null, err?: string) => {
+          settled = true;
+          if (r) resolve({ pdfPathname: r.pdfPathname, downloadUrl: r.downloadUrl, filename: r.filename, bytes: r.bytes });
+          else reject(new Error(err || "PDF netika izveidots."));
+        },
+      };
+      void openPrintReport(opts)
+        .then(() => {
+          // Faktu pārbaudes logs: rezultāts nāks pēc «Turpināt tik un tā» vai «Atpakaļ».
+          if (!settled && pendingPrintOptsRef.current !== opts) reject(new Error("PDF netika izveidots."));
+        })
+        .catch((e: unknown) => {
+          if (!settled) reject(e instanceof Error ? e : new Error("PDF netika izveidots."));
+        });
+    });
+
+  const sendPreparedReport = async (input: {
+    prepared: SendReportPrepared;
+    lang: ClientReportLang;
+    attachmentIds: string[];
+    includeGoogleReview: boolean;
+    markComplete: boolean;
+    saveDropbox: boolean;
+  }): Promise<SendReportResult> => {
+    if (!canNotifyClientOrder(payload, payload.customerEmail)) throw new Error(notifyClientBlockedMessage(payload));
+    const email = (payload.customerEmail ?? "").trim();
+    if (!email || !isValidOrderEmail(email)) throw new Error("Nepieciešams derīgs klienta e-pasts (sadaļā «Klienta dati»).");
+    const uploads: NotifyPortfolioUploadItem[] = [];
+    for (const p of portfolio.filter((x) => input.attachmentIds.includes(x.id))) {
+      const blob = await fetch(p.blobUrl).then((r) => r.blob());
+      const mime = fileMimeForPortfolio(p, blob);
+      if (!NOTIFY_ALLOWED_MIME.has(mime)) throw new Error(`Neatbalstīts faila veids: «${p.name}». Atļauti PDF un JPEG/PNG/WEBP/GIF.`);
+      uploads.push({ buffer: await blob.arrayBuffer(), name: p.name, mime, lastModified: Date.now() });
+    }
+    const { res, data } = await postNotifyReportReadyViaBlob({
+      sessionId: payload.sessionId,
+      customerEmail: email,
+      uploads,
+      includeGoogleReview: input.includeGoogleReview,
+      lang: input.lang,
+      serverPdfPathname: input.prepared.pdfPathname,
+      markComplete: input.markComplete,
+      saveDropbox: input.saveDropbox,
+    });
+    if (!res.ok) {
+      const msg = [data.message, data.detail].filter((x) => typeof x === "string" && x).join(" - ");
+      throw new Error(msg || (typeof data.error === "string" ? data.error : "Neizdevās nosūtīt"));
+    }
+    const ss = (data.serverSend ?? {}) as Partial<SendReportResult>;
+    return {
+      sentTo: typeof data.sentTo === "string" ? data.sentTo : email,
+      version: typeof ss.version === "number" ? ss.version : 1,
+      ...(typeof ss.dropboxPath === "string" ? { dropboxPath: ss.dropboxPath } : {}),
+      ...(typeof ss.dropboxError === "string" ? { dropboxError: ss.dropboxError } : {}),
+      completedAt: typeof ss.completedAt === "string" ? ss.completedAt : null,
+    };
+  };
+
+  const sendReportWhatsappHref = whatsappPhoneDigits
+    ? `https://wa.me/${whatsappPhoneDigits}?text=${encodeURIComponent(
+        `Labdien! PROVIN atskaite${payload.vin ? ` (${payload.vin})` : ""} ir nosūtīta uz Jūsu e-pastu.`,
+      )}`
+    : null;
 
   const autoIngestChips = useMemo(
     () => autoIngestChipsByBlock(payload.autoIngest),
@@ -4627,6 +4881,22 @@ export function OrderDetailWorkspace({
       {portfolioAllFilesModal != null && typeof document !== "undefined"
         ? createPortal(portfolioAllFilesModal, document.body)
         : null}
+
+      <AdminSendReportDialog
+        open={sendReportOpen}
+        onClose={() => setSendReportOpen(false)}
+        dark={adminDark}
+        email={(payload.customerEmail ?? "").trim()}
+        defaultKind={sendReportDefaultKind}
+        b2b={b2bClientOrder}
+        attachments={portfolio.map((p) => ({ id: p.id, name: p.name, size: p.size, mime: p.mime }))}
+        whatsappHref={sendReportWhatsappHref}
+        prepare={prepareSendReportPdf}
+        send={sendPreparedReport}
+        undoComplete={async () => {
+          if (!(await postAdminAuditComplete(payload.sessionId, false))) throw new Error("undo_failed");
+        }}
+      />
 
       {notifyDialogOpen && typeof document !== "undefined"
         ? createPortal(
@@ -4750,11 +5020,26 @@ export function OrderDetailWorkspace({
 
                   <div className="mt-3 border-t border-[var(--admin-border-subtle)] pt-3">
                     <label className="mb-1 block text-[10px] font-medium text-[var(--color-provin-muted)]">
+                      E-pasta valoda
+                    </label>
+                    <select
+                      className="mb-3 w-full rounded-md border border-[var(--admin-border-subtle)] bg-[var(--admin-surface)] px-2 py-1.5 text-[12px] text-[var(--color-apple-text)]"
+                      value={notifyLang}
+                      disabled={notifyPhase === "loading"}
+                      onChange={(e) => setNotifyLang(e.target.value as ClientReportLang)}
+                    >
+                      <option value="lv">Latviešu (LV)</option>
+                      <option value="en">English (EN)</option>
+                      <option value="ru">Русский (RU)</option>
+                      <option value="de">Deutsch (DE)</option>
+                    </select>
+                    <label className="mb-1 block text-[10px] font-medium text-[var(--color-provin-muted)]">
                       Papildu audita PDF (ja nav portfelī) - nosūtīts kā{" "}
                       <span className="font-mono">
                         {buildProvinAuditPdfFilename(payload.vin, {
                           checkoutLine: payload.checkoutLine,
                           amountTotalCents: payload.amountTotal,
+                          lang: notifyLang,
                         })}
                       </span>
                     </label>
@@ -4775,6 +5060,7 @@ export function OrderDetailWorkspace({
                         const name = buildProvinAuditPdfFilename(payload.vin, {
                           checkoutLine: payload.checkoutLine,
                           amountTotalCents: payload.amountTotal,
+                          lang: notifyLang,
                         });
                         setNotifyExtraPdfMeta({
                           name,
@@ -4893,19 +5179,30 @@ export function OrderDetailWorkspace({
           title={payload.customerName?.trim() || "Pasūtījums"}
           subtitle={vinBar || undefined}
           backHref="/admin/dashboard"
-          trailing={
+          wrapTitle
+          monoSubtitle
+          hideWorkspaceSwitch
+          headerExtra={
             <>
-              <AdminMobileSaveStatus
-                saved={workspaceAutosaveStatus !== "error" && (workspaceSaveFlash || workspaceAutosaveStatus === "saved") && !workspaceSaveBusy}
-                busy={workspaceSaveBusy}
-                onSave={() => {
-                  setWorkspaceSaveBusy(true);
-                  void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
-                }}
-              />
-              <AdminMobileRoundBtn name="vairak" label="Darbības" onClick={() => setMobileMore(true)} />
+              {mobileHeaderExtra}
+              {/* Makets 06.11: „Saglabāts” otrajā rindā, lai VIN ietilpst vienā rindā. */}
+              <span className="ml-auto">
+                <AdminMobileSaveStatus
+                  saved={
+                    (workspaceAutosaveStatus === "idle" || workspaceAutosaveStatus === "saved" || workspaceSaveFlash) &&
+                    workspaceAutosaveStatus !== "error" &&
+                    !workspaceSaveBusy
+                  }
+                  busy={workspaceSaveBusy || workspaceAutosaveStatus === "saving"}
+                  onSave={() => {
+                    setWorkspaceSaveBusy(true);
+                    void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
+                  }}
+                />
+              </span>
             </>
           }
+          trailing={<AdminMobileRoundBtn name="vairak" label="Darbības" onClick={() => setMobileMore(true)} />}
         >
           <AdminMobileSectionNav
             items={ADMIN_MOBILE_ORDER_SECTIONS.map((s) => ({ id: s.id, label: s.label }))}
@@ -4916,22 +5213,45 @@ export function OrderDetailWorkspace({
               setMobileSection(sec.id);
               goWizardStep(sec.wizard);
               window.setTimeout(() => {
-                document.getElementById(sec.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                const el = document.getElementById(sec.id);
+                // `display: contents` (Nobraukums) nav kastes - ritinām uz pirmo bērnu.
+                const target = el && getComputedStyle(el).display === "contents" ? el.firstElementChild : el;
+                target?.scrollIntoView({ behavior: "smooth", block: "start" });
               }, 40);
             }}
           />
         </AdminMobileTopBar>
+        {alertsPortalDomId ? <div id={`${alertsPortalDomId}-m`} className="min-w-0 px-4 pt-1" /> : null}
         <AdminMobileSheet open={mobileMore} title="Darbības" onClose={() => setMobileMore(false)}>
           <div className="overflow-hidden rounded-[18px] bg-[var(--am-s1)]">
             <button type="button" className="flex h-[50px] w-full items-center px-4 text-[15px]" onClick={() => { setMobileMore(false); handleWhatsAppOpen(); }}>WhatsApp</button>
-            <button type="button" className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]" onClick={() => { setMobileMore(false); void navigator.clipboard.writeText(plateBar); }}>Kopēt reģ. numuru</button>
+            <button
+              type="button"
+              className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]"
+              onClick={() => {
+                setMobileMore(false);
+                const plate = plateBar.trim();
+                if (!plate) {
+                  showMobileNotice({ text: "Reģ. numurs nav zināms.", tone: "error" }, 4000);
+                  return;
+                }
+                void copyTextToClipboard(plate).then((ok) =>
+                  showMobileNotice(
+                    ok ? { text: `Reģ. numurs nokopēts: ${plate}`, tone: "ok" } : { text: "Neizdevās nokopēt.", tone: "error" },
+                    3000,
+                  ),
+                );
+              }}
+            >
+              Kopēt reģ. numuru
+            </button>
             <button type="button" className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]" onClick={() => { setMobileMore(false); setPhrasesOpen(false); setCopilotOpen(true); }}>Copilot</button>
             <button type="button" className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]" onClick={() => { setMobileMore(false); setCopilotOpen(false); setPhrasesOpen(true); }}>Biežās frāzes</button>
-            <button type="button" className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]" onClick={() => { setMobileMore(false); void runFlashMax(defaultFlashMaxSelection()); }}>FLASH MAX</button>
+            <button type="button" className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]" disabled={!payload.aiAllowed} onClick={() => { setMobileMore(false); setMobileFlashRequest((n) => n + 1); }}>FLASH MAX</button>
             <button type="button" className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-[15px]" onClick={() => { setMobileMore(false); goWizardStep(WIZARD_SUMMARY_STEP); }}>Pāriet uz kopsavilkumu</button>
           </div>
           <p className="mt-4 px-1 text-[12px] font-semibold uppercase tracking-[0.045em] text-[var(--am-ink3)]">Maksas avoti</p>
-          <p className="mt-1 mb-2 text-[13px] text-[var(--am-ink2)]">3 maksas avoti ir izvēlnē ⋯. Ielāde prasa apstiprinājumu un nekad nesākas pati.</p>
+          <p className="mt-1 mb-2 text-[13px] text-[var(--am-ink2)]">Ielāde maksā un prasa apstiprinājumu. Pati nekad nesākas.</p>
           <div className="overflow-hidden rounded-[18px] bg-[var(--am-s1)]">
             {[
               { key: "oneauto", label: "OneAuto / dīlera dati" },
@@ -4944,9 +5264,9 @@ export function OrderDetailWorkspace({
                 type="button"
                 className="flex h-[50px] w-full items-center border-t border-[var(--am-hair)] px-4 text-left text-[15px] first:border-t-0"
                 onClick={() => {
-                  if (!window.confirm(`Ielādēt ${src.label}? Maksas avots prasa apstiprinājumu.`)) return;
+                  if (!window.confirm(`Ielādēt ${src.label}? Tas ir maksas avots.`)) return;
                   setMobileMore(false);
-                  document.querySelector<HTMLButtonElement>(`.admin-paid-load[data-admin-paid="${src.key}"]`)?.click();
+                  void runMobilePaidLoad(src.key as keyof typeof ADMIN_MOBILE_PAID_SOURCE_BLOCK, src.label);
                 }}
               >
                 {src.label}
@@ -4982,43 +5302,26 @@ export function OrderDetailWorkspace({
           >
             <MessageSquare className="h-3.5 w-3.5" aria-hidden />
           </button>
-          <button
-            type="button"
-            disabled={!workspaceHydrated || workspaceSaveBusy}
-            className={`inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border px-2 text-[10px] font-semibold shadow-sm transition disabled:opacity-50 max-md:hidden ${
+          <AdminSaveButton
+            size="sm"
+            shortcut
+            className="max-md:hidden"
+            disabled={!workspaceHydrated}
+            state={
               workspaceSaveBusy
-                ? "border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-provin-muted)]"
-                : workspaceAutosaveStatus === "error"
-                  ? "border-amber-400/80 bg-amber-50 text-amber-950 hover:bg-amber-100 dark:border-amber-600/50 dark:bg-amber-950/40 dark:text-amber-100"
-                  : workspaceSaveFlash || workspaceAutosaveStatus === "saved"
-                    ? orderDraftPersistenceEnabled && !workspaceSaveServerOk
-                      ? "border-amber-400/80 bg-amber-50 text-amber-950 hover:bg-amber-100 dark:border-amber-600/50 dark:bg-amber-950/40 dark:text-amber-100"
-                      : "provin-save-saved border-[#1d1d1f] bg-[var(--admin-surface-elevated)] text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:border-zinc-300 dark:hover:bg-white/[0.06]"
-                    : "border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
-            }`}
-            title="Saglabāt avotu datus (papildus automātiskajam saglabājumam) - lokāli un serverī"
-            aria-label={
-              workspaceSaveBusy
-                ? "Saglabā"
-                : workspaceAutosaveStatus === "error"
-                  ? WORKSPACE_SAVE_FAILED_LABEL
-                  : workspaceSaveFlash || workspaceAutosaveStatus === "saved"
-                    ? orderDraftPersistenceEnabled && !workspaceSaveServerOk
-                      ? WORKSPACE_SAVE_FAILED_LABEL
-                      : "Saglabāt. Saglabāts"
-                    : "Saglabāt avotu datus"
+                ? "saving"
+                : workspaceAutosaveStatus === "error" ||
+                    (workspaceSaveFlash && orderDraftPersistenceEnabled && !workspaceSaveServerOk)
+                  ? "error"
+                  : workspaceSaveFlash
+                    ? "saved"
+                    : "idle"
             }
-            onClick={() => {
+            onSave={() => {
               setWorkspaceSaveBusy(true);
               void persistWorkspaceSnapshot().finally(() => setWorkspaceSaveBusy(false));
             }}
-          >
-            {workspaceSaveBusy
-              ? "Saglabā…"
-              : workspaceAutosaveStatus === "error"
-                ? WORKSPACE_SAVE_FAILED_LABEL
-                : "Saglabāt"}
-          </button>
+          />
           {workspaceAutosaveStatus === "error" ? (
             <span className="max-w-[14rem] text-[11px] font-bold leading-tight text-red-800 dark:text-red-200" role="alert">
               {WORKSPACE_SAVE_FAILED_LABEL}
@@ -5139,17 +5442,17 @@ export function OrderDetailWorkspace({
                   ss.lv
                 </a>
               ) : null}
-              {whatsappPhoneDigits ? (
-                <AdminWhatsAppIconButton
-                  title={`WhatsApp: ${payload.customerPhone ?? ""}`}
-                  onClick={handleWhatsAppOpen}
-                />
-              ) : (
-                <AdminWhatsAppIconButton
-                  disabled
-                  title="Nav klienta tālruņa WhatsApp atvēršanai"
-                />
-              )}
+              {/* No lg platuma WhatsApp ir labajā sānu joslā tieši blakus; šī ikona tur palika zem tās (17.11). */}
+              <span className="inline-flex lg:hidden">
+                {whatsappPhoneDigits ? (
+                  <AdminWhatsAppIconButton
+                    title={`WhatsApp: ${payload.customerPhone ?? ""}`}
+                    onClick={handleWhatsAppOpen}
+                  />
+                ) : (
+                  <AdminWhatsAppIconButton disabled title="Nav klienta tālruņa WhatsApp atvēršanai" />
+                )}
+              </span>
               {vinBarCopyFlash ? (
                 <span className="text-[8px] font-semibold text-emerald-600 dark:text-emerald-400" role="status">
                   OK
@@ -5202,6 +5505,7 @@ export function OrderDetailWorkspace({
         prepareDraftBusy={prepareDraftBusy}
         flashMaxBusy={flashMaxBusy}
         onFlashMax={(selection) => void runFlashMax(selection)}
+        sourceBlocks={ws.sourceBlocks}
         copilotOpen={copilotOpen}
         copilotBusy={copilotBusy}
         onOpenCopilot={() => {
@@ -5251,6 +5555,12 @@ export function OrderDetailWorkspace({
           window.setTimeout(() => setVinBarCopyFlash(false), 600);
         }}
         onMore={() => setMobileMore(true)}
+        flashRequest={mobileFlashRequest}
+        flashMaxPhase={flashMaxPhase}
+        flashMaxNotice={flashMaxNotice}
+        flashMaxErr={flashMaxErr}
+        notice={mobileNotice}
+        onDismissNotice={() => showMobileNotice(null)}
       />
 
       <AdminOrderStickyActionRail
@@ -5387,6 +5697,7 @@ export function OrderDetailWorkspace({
                 onPdfIncludeMileageTableChange={(next) => onPdfVisibilityChange({ csddMileageTable: next })}
                 sessionId={payload.sessionId}
                 orderVin={payload.vin ?? ""}
+                ecsddAuto
                 aiComment={aiCommentSlot("csdd")}
                 photosPersistenceEnabled={orderDraftPersistenceEnabled}
                 onPhotoGroupsStructuralCommit={(next) =>
@@ -5402,6 +5713,8 @@ export function OrderDetailWorkspace({
                 onChange={(next) => updateSourceBlock("ltab", next)}
                 trafficFillLevel={traffic.ltab}
                 sessionId={payload.sessionId}
+                ltabAuto
+                orderVin={payload.vin ?? ""}
                 pdfInclude={pdfVisibility.ltab}
                 onPdfIncludeChange={(next) => onPdfVisibilityChange({ ltab: next })}
                 aiComment={aiCommentSlot("ltab")}
@@ -5503,6 +5816,8 @@ export function OrderDetailWorkspace({
               dealerPdfProgressPct={pdfJob?.pct ?? null}
               techRiskText={ws.tehniskoRiskuAnalize ?? ""}
               techRiskMap={ws.technicalRiskMap ?? null}
+              dealerMajorWorkOverrides={dealerMajorWorkOverrides}
+              onDealerMajorWorkOverridesChange={(next) => updateWs({ dealerMajorWorkOverrides: next })}
             />
           </div>
         ) : null}
@@ -6187,6 +6502,7 @@ export function OrderDetailWorkspace({
             <AdminFactCheckPublishConfirm
               items={factCheckPublishItems}
               onBack={() => {
+                pendingPrintOptsRef.current?.onServerPdf?.(null, "Atcelts faktu pārbaudē.");
                 pendingPrintOptsRef.current = undefined;
                 setFactCheckPublishItems(null);
               }}

@@ -36,13 +36,25 @@ export function archiveLogisticsOrder(
   };
 }
 
+/** Atvests citam SIA, ar mums nav saistīts: uz arhīvu ar atzīmi "Cita SIA" (var pamodināt). */
+export const LOGISTICS_OTHER_COMPANY_LV = "Cita SIA";
+
+export function markLogisticsOrderOtherCompany(order: LogisticsOrder, at = new Date().toISOString()): LogisticsOrder {
+  return { ...archiveLogisticsOrder(order, "archived", at), archiveReason: "other_company" };
+}
+
+export function isLogisticsOrderOtherCompany(order: Pick<LogisticsOrder, "archived" | "status" | "archiveReason">): boolean {
+  return order.archiveReason === "other_company" && isLogisticsOrderArchived(order);
+}
+
 /** Atgriež auto no arhīva uz aktīvo sarakstu. */
 export function wakeLogisticsOrder(order: LogisticsOrder, at = new Date().toISOString()): LogisticsOrder {
   const candidate = order.previousStatus;
   const nextStatus: LogisticsOrderStatus =
     candidate && !isLogisticsArchivedStatus(candidate) ? candidate : LOGISTICS_WAKE_DEFAULT_STATUS;
+  const { archiveReason: _reason, ...rest } = order;
   return {
-    ...order,
+    ...rest,
     status: nextStatus,
     archived: false,
     archivedAt: "",
@@ -71,7 +83,10 @@ export function filterLogisticsOrdersByView(
     return active.filter((o) => pickupIsToday(o.pickupDate, todayIso) || /šodien|jādara/i.test(o.nextAction));
   }
   if (view === "due") {
-    return active.filter((o) => pickupIsDueSoon(o.pickupDate, todayIso));
+    // «Termiņš» (Nils 27.10): savākšana šodien līdz 3 dienām, arī ar «šodien/jādara» nākamajā darbībā.
+    return active.filter(
+      (o) => pickupIsDueSoon(o.pickupDate, todayIso) || pickupIsToday(o.pickupDate, todayIso) || /šodien|jādara/i.test(o.nextAction),
+    );
   }
   if (view === "trips") return active;
   return active;

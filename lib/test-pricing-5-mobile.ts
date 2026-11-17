@@ -40,9 +40,16 @@ export type Tp5MobileServiceId = "mini" | "audits" | "dealer" | "koreaUsa";
  */
 export const TP5_KOREA_USA_PUBLIC = false;
 
+/**
+ * PROVIN MINI paslēpts no publiskās vietnes (hero, pakalpojumi, ?plan=mini), kamēr to pārstrādā (06.11.2026).
+ * Definīcijas, Stripe un admin paliek; `true` atjauno.
+ */
+export const TP5_MINI_PUBLIC = false;
+
 /** Whether a hero/catalog tier should appear on the public site right now. */
 export function isTp5PublicServiceId(id: Tp5MobileServiceId): boolean {
   if (id === "koreaUsa") return TP5_KOREA_USA_PUBLIC;
+  if (id === "mini") return TP5_MINI_PUBLIC;
   return true;
 }
 

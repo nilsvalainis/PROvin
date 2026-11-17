@@ -143,7 +143,7 @@ Tā kā nav dokumentu par veiktajām dzinēja eļļas maiņām un ir fiksēts ie
 ```
 Avotu salīdzinājums un secinājumi
 Digitālajos reģistros šai automašīnai nav fiksētu apdrošināšanas gadījumu vai bojājumu atlīdzību ierakstu.
-Pārbaudīti tika CarVertical, AutoDNA, LTAB, CC.VIN (izsoles) un oficiālā dīlera servisa dati, un neviens no tiem neuzrādīja informāciju par negadījumiem visā 18 gadus ilgajā ekspluatācijas periodā Itālijā un Latvijā.
+Pārbaudīti tika CarVertical, AutoDNA, LTAB, Izsoļu portālu arhīvs (izsoles) un oficiālā dīlera servisa dati, un neviens no tiem neuzrādīja informāciju par negadījumiem visā 18 gadus ilgajā ekspluatācijas periodā Itālijā un Latvijā.
 Ko tas nozīmē pircējam
 Lai gan pieejamie avoti nesatur brīdinājumus par avārijām, tas pilnībā neizslēdz iespējamus virsbūves remontdarbus pagātnē. Bojājumi, kas novērsti bez apdrošinātāju iesaistes vai neatkarīgos servisos, bieži
 

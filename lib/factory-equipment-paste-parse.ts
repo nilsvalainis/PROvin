@@ -121,6 +121,8 @@ export function parseCarverticalFunctionList(text: string): OutvinEquipmentLine[
     slice.push(line);
   }
 
+  const glued = parseCvGluedPrColumns(slice);
+
   const out: OutvinEquipmentLine[] = [];
   const seen = new Set<string>();
   for (let i = 0; i < slice.length; i++) {
@@ -145,7 +147,40 @@ export function parseCarverticalFunctionList(text: string): OutvinEquipmentLine[
     if (!desc) continue;
     pushLine(out, seen, line, desc);
   }
-  return uniqueByCode(out);
+  const lineBased = uniqueByCode(out);
+  return glued.length > lineBased.length ? glued : lineBased;
+}
+
+/** VW PR kods: 3 zīmes, vismaz viens cipars (0AG, 1X1, KK2, EA0). */
+const CV_GLUED_PR_CODE_RE = /^(?=[0-9A-Z]*[0-9])[0-9A-Z]{3}$/;
+
+/**
+ * Servera PDF teksts (pdf-parse) salīmē divas kolonnas un kodu ar EN aprakstu:
+ * `0AGFront stabilizer0BCRear stabilizer`. Kods sākas rindas sākumā vai tieši pēc
+ * ne-atstarpes zīmes, un tam seko lielais + mazais burts. LV tulkojuma rindas izlaiž.
+ */
+function parseCvGluedPrColumns(slice: string[]): OutvinEquipmentLine[] {
+  const out: OutvinEquipmentLine[] = [];
+  const seen = new Set<string>();
+  for (const line of slice) {
+    if (looksTranslatedScript(line)) continue;
+    const starts: number[] = [];
+    for (let i = 0; i + 4 < line.length; i++) {
+      if (i > 0 && /\s/.test(line[i - 1]!)) continue;
+      if (!CV_GLUED_PR_CODE_RE.test(line.slice(i, i + 3))) continue;
+      if (!/[A-Z]/.test(line[i + 3]!) || !/[a-z]/.test(line[i + 4]!)) continue;
+      starts.push(i);
+      i += 2;
+    }
+    for (let k = 0; k < starts.length; k++) {
+      const from = starts[k]!;
+      const code = line.slice(from, from + 3);
+      const desc = line.slice(from + 3, starts[k + 1] ?? line.length).trim();
+      if (STOP_CODES.has(code) || desc.length < 3) continue;
+      pushLine(out, seen, code, desc);
+    }
+  }
+  return out;
 }
 
 /** VW: kods savā rindā, tad EN, tad LV. */

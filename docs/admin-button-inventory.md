@@ -35,7 +35,7 @@ Pēdējā pārbaude pret kodu `components/admin` + `app/admin`. Atkārtotas „+
 | Noklusējumi / Notīrīt / Tikai kopsavilkums / Atcelt | Flash Max dialogs | Atlasa, kurus laukus ģenerēt | Pirms ģenerēšanas |
 | Pārbaudīt faktus / Labot / Ignorēt / Apstiprināt / Atcelt / ? / Atpakaļ | Fact-check | Validē komentāru pret avotiem | Pirms nosūtīšanas klientam |
 | Ielasīt vēlreiz | Dīlera ielase | Palaiž OEM ielasi vēlreiz | Jaunas ielases vai kļūda |
-| Atgriezt maksājumu | Dīlera ielase, Stripe `cs_*` | Stripe atmaksa uz karti | B2C, datu nav |
+| Atgriezt maksājumu | Dīlera ielase, Stripe `cs_*` | Stripe atmaksa uz karti + klienta e-pasts | B2C, datu nav |
 | Datu nav, atmaksa uz atlikumu (B2B) | Dīlera ielase, maka pasūtījums | Atgriež eiro partnera atlikumā + IRISS e-pasts | B2B RAW/PRO, datu nav |
 | Atgriezt kredītu (B2B) | Dīlera ielase, vecie kredīti | Atgriež 1 dīlera kredītu | Tikai mantotie kredīti |
 | WhatsApp: nav datu / WhatsApp: atcelts | Dīlera ielase | Kopē WA tekstu | Klienta saziņa |

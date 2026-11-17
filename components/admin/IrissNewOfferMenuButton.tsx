@@ -2,6 +2,7 @@
 
 import { Plus } from "lucide-react";
 import Link from "next/link";
+import { IRISS_PD_NEW_PATH } from "@/lib/iriss-pd-entry";
 
 type Props = {
   compact?: boolean;
@@ -10,7 +11,7 @@ type Props = {
 export function IrissNewOfferMenuButton({ compact = false }: Props) {
   return (
     <Link
-      href="/admin/iriss/pasutijumi/new?newOffer=1&noClientPdf=1"
+      href={IRISS_PD_NEW_PATH}
       className={
         compact
           ? "inline-flex min-h-[38px] items-center gap-1.5 rounded-lg border-0 bg-transparent px-3 py-1.5 text-[12px] font-semibold uppercase tracking-[0.06em] text-black shadow-none transition"

@@ -115,6 +115,13 @@ export function formatIrissExpiredOfferLabel(validUntil: string | null | undefin
 export function formatIrissListPhoneText(phone: string | null | undefined): string {
   const t = (phone ?? "").trim();
   if (!t || t === "-" || t === "\u2014" || t === "\u2013") return "";
+  // Nils 28.10 (makets): Latvijas numuri vienotā formā "+371 29 796 840"; citi - kā ievadīti.
+  const digits = t.replace(/[\s()-]/g, "");
+  const m = digits.match(/^(?:\+?371|00371)?([26]\d{7})$/);
+  if (m) {
+    const n = m[1]!;
+    return `+371 ${n.slice(0, 2)} ${n.slice(2, 5)} ${n.slice(5)}`;
+  }
   return t;
 }
 
@@ -150,5 +157,47 @@ export function formatIrissListLinksLabel(count: number): string {
 export function irissListBudgetText(budget: string | null | undefined): string {
   const t = (budget ?? "").trim();
   if (!t || t === "\u2014" || t === "\u2013") return "-";
+  // Tikai skaitlis ("40000", "40 000", "40000.00") -> "40 000 €" (Nils 28.10); teksts paliek kā ievadīts.
+  const plain = t.replace(/\s|€|eur/gi, "").replace(",", ".");
+  if (/^\d+(\.\d+)?$/.test(plain)) {
+    const n = Math.round(Number(plain));
+    return `${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ")} €`;
+  }
   return t;
+}
+
+/** Telefonā "Kritēriji" (Nils 28.10): operatīva kritēriju apskate sarakstā; tukšās rindas izlaiž. */
+export function irissListCriteriaRows(
+  row: Pick<
+    IrissPasutijumsListRow,
+    | "productionYears"
+    | "maxMileage"
+    | "engineType"
+    | "transmission"
+    | "driveType"
+    | "bodyType"
+    | "seatCount"
+    | "preferredColors"
+    | "nonPreferredColors"
+    | "interiorFinish"
+  >,
+): Array<{ label: string; value: string }> {
+  const clean = (v: string | null | undefined) => {
+    const t = (v ?? "").trim();
+    return t === "-" || t === "\u2014" || t === "\u2013" ? "" : t;
+  };
+  const join = (...xs: string[]) => xs.map(clean).filter(Boolean).join(" · ");
+  const colors = [clean(row.preferredColors), clean(row.nonPreferredColors) ? `ne ${clean(row.nonPreferredColors)}` : ""]
+    .filter(Boolean)
+    .join(" · ");
+  const rows: Array<[string, string]> = [
+    ["Gadi", clean(row.productionYears)],
+    ["Nobraukums", formatIrissListKm(row.maxMileage)],
+    ["Degviela · kārba", join(row.engineType, row.transmission)],
+    ["Piedziņa", clean(row.driveType)],
+    ["Virsbūve · sēdvietas", join(row.bodyType, row.seatCount)],
+    ["Krāsas", colors],
+    ["Salons", clean(row.interiorFinish)],
+  ];
+  return rows.filter(([, v]) => v).map(([label, value]) => ({ label, value }));
 }

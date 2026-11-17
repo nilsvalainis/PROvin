@@ -13,6 +13,7 @@ import { AdminMobileRoundBtn, AdminMobileSearchField, AdminMobileTopBar } from "
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
 import { irissScanFindBucket, type IrissScanFindCard } from "@/lib/iriss-scan-finds";
 import { orderIrissScanListRows } from "@/lib/iriss-scan-list-order";
+import { irissScanDisplayName } from "@/lib/iriss-scan-name";
 import {
   countIrissScanLinks,
   formatIrissScanLastRead,
@@ -45,6 +46,7 @@ export function IrissScanListClient({
   initialListOrder,
   newHitsByScan = EMPTY_HITS_BY_SCAN,
   finds = EMPTY_FINDS,
+  lastReadAt = "",
   selectedRecord = null,
   unsavedDraft = false,
   mode = "list",
@@ -53,6 +55,8 @@ export function IrissScanListClient({
   initialListOrder: IrissScanListOrder | null;
   newHitsByScan?: Record<string, number>;
   finds?: IrissScanFindCard[];
+  /** Pēdējā sludinājumu nolasīšana (sinhronizācija). */
+  lastReadAt?: string;
   selectedRecord?: IrissScanRecord | null;
   unsavedDraft?: boolean;
   mode?: "list" | "edit";
@@ -198,7 +202,7 @@ export function IrissScanListClient({
               <li key={row.id}>
                 <Link
                   href={`/admin/iriss/scan/${encodeURIComponent(row.id)}`}
-                  aria-label={`Atvērt radaru: ${formatIrissScanTitle(row.brandModel) || row.vin || "ieraksts"}`}
+                  aria-label={`Atvērt radaru: ${formatIrissScanTitle(irissScanDisplayName(row)) || row.vin || "ieraksts"}`}
                   className={`iriss-scan-row flex min-h-[64px] items-center gap-3 rounded-2xl bg-[var(--s1)] px-4 py-3 shadow-[var(--sh)] transition hover:bg-[var(--s2)] ${
                     active ? "ring-1 ring-[var(--ink)]/10" : ""
                   }`}
@@ -207,7 +211,7 @@ export function IrissScanListClient({
                   <div className="min-w-0 flex-1">
                     <div className="flex min-w-0 items-start gap-1.5">
                       {row.pinnedAt ? <Pin className="mt-1 h-3 w-3 shrink-0 fill-current text-[var(--ink3)]" aria-label="Piesprausts" /> : null}
-                      <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-[var(--ink)]">{formatIrissScanTitle(row.brandModel)}</p>
+                      <p className="line-clamp-2 text-[15px] font-semibold leading-snug text-[var(--ink)]">{formatIrissScanTitle(irissScanDisplayName(row))}</p>
                     </div>
                     {/* Bez izsoļu logo (Nils 21.10): viena klusa rinda ar avotu skaitu un pēdējo nolasīšanu. */}
                     <p className="mt-1 truncate text-[12.5px] text-[var(--ink3)]" title={sourceText || "Nav saišu"}>
@@ -276,7 +280,7 @@ export function IrissScanListClient({
               title="Atjaunot eCarsTrade saites no Auto1 / Openlane / Autobid / Mobile filtriem"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${ectBusy ? "animate-spin" : ""}`} aria-hidden />
-              {ectBusy ? "ET..." : "Atjaunot ET"}
+              {ectBusy ? "Atjauno..." : "Atjaunot eCarsTrade"}
             </button>
             <Link
               href="/admin/iriss/scan/new"
@@ -314,6 +318,7 @@ export function IrissScanListClient({
               showBack={mode === "edit" && !desktop}
               newHits={irissScanNewHitsFor(editorRecord.id, hitsByScan)}
               finds={editorFinds}
+              lastReadAt={lastReadAt}
               onRecordChange={onEditorRecordChange}
               onDeleted={onEditorDeleted}
             />

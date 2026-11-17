@@ -34,8 +34,12 @@ import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { autoImportQuickEvalForPaidOrder } from "@/lib/quick-eval-service";
 import { enqueueDealerDataJob, runDealerDataJob } from "@/lib/dealer-data-job";
 import { isDealerDataAutoFetchOrder } from "@/lib/dealer-data-job-types";
+import { fulfillManualOrderPayment } from "@/lib/manual-order-fulfill";
+import { isManualOrderPaymentFulfillment } from "@/lib/manual-order-payment";
 import { fulfillOrderUpsellPayment } from "@/lib/order-upsell-fulfill";
+import { businessLinkHashFromStripeMetadata, businessLinkPaidVinMismatch } from "@/lib/business-link";
 import { clientLinkHashFromStripeMetadata } from "@/lib/client-link";
+import { consumeBusinessLinkByHash } from "@/lib/business-link-store";
 import { consumeClientLinkByHash } from "@/lib/client-link-store";
 import { notifyMetaPurchaseFromStripeSession } from "@/lib/meta-capi";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
@@ -86,6 +90,12 @@ async function fulfillPaidCheckoutSession(
       return "done";
     }
 
+    if (isManualOrderPaymentFulfillment(session.metadata?.fulfillment)) {
+      await fulfillManualOrderPayment(session);
+      await completeStripeEvent(fulfillDedupeKey(thinSession.id));
+      return "done";
+    }
+
     try {
       await upsertPaidCheckoutSessionFromStripe(session);
     } catch (err) {
@@ -98,6 +108,18 @@ async function fulfillPaidCheckoutSession(
         await consumeClientLinkByHash(clientLinkHash, session.id);
       } catch (err) {
         console.warn("[stripe webhook] client link consume failed:", err);
+      }
+    }
+
+    const businessLinkHash = businessLinkHashFromStripeMetadata(session.metadata);
+    if (businessLinkHash) {
+      try {
+        const consumed = await consumeBusinessLinkByHash(businessLinkHash, session.id);
+        if (consumed.ok && businessLinkPaidVinMismatch(consumed.record, session.metadata)) {
+          console.error("[stripe webhook] business link VIN mismatch", { sessionId: session.id });
+        }
+      } catch (err) {
+        console.warn("[stripe webhook] business link consume failed:", err);
       }
     }
 
@@ -198,6 +220,7 @@ async function fulfillPaidCheckoutSession(
                 amountTotal: payload.amountTotal,
                 currency: payload.currency,
                 vin: payload.vin,
+                lang: session.locale ?? null,
                 invoiceAttachment,
               });
               console.info("[stripe webhook] payment confirmation email sent", { sessionId: session.id, to: email });

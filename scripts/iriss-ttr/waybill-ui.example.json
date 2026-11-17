@@ -1,0 +1,14 @@
+{
+  "_piezime": "CSDD TTR (ows.csdd.gov.lv:7775). Soļus dara waybill-adapter.cjs; šeit tikai adrese, laiks un pieslēgšanās mainīgo nosaukumi. Paroles šeit NELIEC: ĪRISS no CSDD_TTR_ENV_FILE (vai /root/iriss-ttr/.env, /root/iriss-ttr/creds), DZA no CSDD_TTR_ENV_FILE_DZA (vai /root/iriss-ttr/creds-autoapkope-dza). browserUrl atstāj tukšu: savs pārlūks, srv.js sesija netiek aiztikta.",
+  "startUrl": "https://ows.csdd.gov.lv:7775/",
+  "browserUrl": "",
+  "ignoreTls": true,
+  "timeoutMs": 90000,
+  "userVar": "CSDD_USER",
+  "passVar": "CSDD_PASS",
+  "selectors": {
+    "user": "#vards",
+    "pass": "#parole",
+    "loginButton": "button[name=submit]"
+  }
+}

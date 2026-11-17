@@ -1,0 +1,1116 @@
+{
+ "vin": "WBAGW41050BP49719",
+ "label": "BMW 840D XDRIVE: CSDD 4, AutoDNA 1, carVertical 18, dīleris 48, reģistri 1; negadījumi 0",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 240, saglabāts 2026-09-01; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW 840D XDRIVE",
+   "registrationNumber": "KF7771",
+   "firstRegistration": "2020-03-04",
+   "nextInspectionDate": "2027-12-23",
+   "prevInspectionDate": "2026-04-23",
+   "engineDisplacementCm3": "2993",
+   "enginePowerKw": "235",
+   "fuelType": "",
+   "emissionStandard": "Euro 6 DG",
+   "grossMassKg": "2560",
+   "curbMassKg": "2000",
+   "roadTaxEur": "159,00",
+   "registrationStatus": "Uzskaitē",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "",
+   "ownerCountLatvia": "1",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [
+    {
+     "date": "23.04.2026",
+     "label": "Pirmā reģistrācija"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "Atļauja piedalīties ceļu satiksmē bez kontroles veikšanas, ja derīga ārvalstī izsniegtā atļauja piedalīties ceļu satiksm",
+    "inspectionDateText": "23.04.2026",
+    "nextInspectionDateText": "",
+    "odometer": "110016",
+    "ratingLabel": "**",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "23.04.2026",
+     "odometer": "110016",
+     "country": "Latvija"
+    },
+    {
+     "date": "23.12.2025",
+     "odometer": "108886",
+     "country": "Igaunija"
+    },
+    {
+     "date": "22.12.2025",
+     "odometer": "108841",
+     "country": "Igaunija"
+    },
+    {
+     "date": "28.04.2023",
+     "odometer": "64482",
+     "country": "Vācija"
+    }
+   ]
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "23.04.2026",
+     "odometer": "110016",
+     "country": "Latvija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.04.2026",
+     "odometer": "110016",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.03.2026",
+     "odometer": "109945",
+     "country": "Igaunija"
+    },
+    {
+     "date": "01.01.2026",
+     "odometer": "108944",
+     "country": "Igaunija"
+    },
+    {
+     "date": "01.10.2025",
+     "odometer": "105612",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2025",
+     "odometer": "99396",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2024",
+     "odometer": "87256",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2024",
+     "odometer": "80523",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2023",
+     "odometer": "76126",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2023",
+     "odometer": "67728",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2023",
+     "odometer": "63504",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2022",
+     "odometer": "53206",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2022",
+     "odometer": "39855",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2022",
+     "odometer": "32558",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2021",
+     "odometer": "19877",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2021",
+     "odometer": "15341",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2021",
+     "odometer": "13469",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2020",
+     "odometer": "4",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2019",
+     "odometer": "2",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "23.12.2025",
+     "odometer": "108886",
+     "country": "Igaunija",
+     "origin": "Tehnoülevaatuse odomeetri näit"
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "05.01.2026",
+     "odometer": "108999",
+     "country": "Igaunija"
+    },
+    {
+     "date": "23.10.2025",
+     "odometer": "106476",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.10.2025",
+     "odometer": "106056",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.10.2025",
+     "odometer": "105667",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.06.2025",
+     "odometer": "99481",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.06.2025",
+     "odometer": "99421",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.06.2025",
+     "odometer": "99418",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2024",
+     "odometer": "88308",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.09.2024",
+     "odometer": "87278",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.03.2024",
+     "odometer": "81115",
+     "country": "Vācija"
+    },
+    {
+     "date": "21.03.2024",
+     "odometer": "80645",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.03.2024",
+     "odometer": "80545",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.11.2023",
+     "odometer": "76148",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.10.2023",
+     "odometer": "74361",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.09.2023",
+     "odometer": "73215",
+     "country": "Vācija"
+    },
+    {
+     "date": "18.09.2023",
+     "odometer": "73165",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.08.2023",
+     "odometer": "73215",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.08.2023",
+     "odometer": "71406",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.08.2023",
+     "odometer": "71405",
+     "country": "Vācija"
+    },
+    {
+     "date": "21.08.2023",
+     "odometer": "71411",
+     "country": "Vācija"
+    },
+    {
+     "date": "18.08.2023",
+     "odometer": "71204",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.08.2023",
+     "odometer": "70769",
+     "country": "Vācija"
+    },
+    {
+     "date": "26.07.2023",
+     "odometer": "69707",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.06.2023",
+     "odometer": "67750",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.05.2023",
+     "odometer": "66037",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.05.2023",
+     "odometer": "64870",
+     "country": "Vācija"
+    },
+    {
+     "date": "26.04.2023",
+     "odometer": "64482",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.04.2023",
+     "odometer": "64482",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.03.2023",
+     "odometer": "64416",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.02.2023",
+     "odometer": "64416",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.02.2023",
+     "odometer": "64415",
+     "country": "Vācija"
+    },
+    {
+     "date": "17.02.2023",
+     "odometer": "63526",
+     "country": "Vācija"
+    },
+    {
+     "date": "21.09.2022",
+     "odometer": "54536",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.09.2022",
+     "odometer": "53228",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.06.2022",
+     "odometer": "40381",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.05.2022",
+     "odometer": "39877",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.02.2022",
+     "odometer": "35315",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.02.2022",
+     "odometer": "34997",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.01.2022",
+     "odometer": "32580",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.07.2021",
+     "odometer": "19896",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.03.2021",
+     "odometer": "15362",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.01.2021",
+     "odometer": "13578",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.01.2021",
+     "odometer": "13491",
+     "country": "Vācija"
+    },
+    {
+     "date": "09.03.2020",
+     "odometer": "4",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.02.2020",
+     "odometer": "4",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.01.2020",
+     "odometer": "4",
+     "country": "Vācija"
+    },
+    {
+     "date": "17.10.2019",
+     "odometer": "4",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.09.2019",
+     "odometer": "2",
+     "country": "Vācija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "05.01.2026",
+     "odometer": "108999",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "23.10.2025",
+     "odometer": "106476",
+     "location": "Niederlassung Essen , Essen",
+     "works": "Motoreļļa, Tehniskā pārbaude servisā\nDegvielas filtrs\nGaisa filtrs\nSalona filtrs\nEļļas filtra komplekts\nSalona filtrs (ar aktivēto ogli)\nStandarta apkopes apjoms"
+    },
+    {
+     "date": "15.10.2025",
+     "odometer": "106056",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "08.10.2025",
+     "odometer": "106056",
+     "location": "Dīlera ID: 00027-1",
+     "works": "Logu pacēlājs bez motora, aizmugurē kreisajā pusē"
+    },
+    {
+     "date": "08.10.2025",
+     "odometer": "105667",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "24.06.2025",
+     "odometer": "99481",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "23.06.2025",
+     "odometer": "99481",
+     "location": "Dīlera ID: 00027-1",
+     "works": "Logu pacēlājs bez motora, aizmugurē labajā pusē"
+    },
+    {
+     "date": "23.06.2025",
+     "odometer": "99421",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "23.06.2025",
+     "odometer": "99418",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "01.10.2024",
+     "odometer": "88308",
+     "location": "Niederlassung Essen , Essen",
+     "works": "Motoreļļa\nSalona filtrs\nEļļas filtra komplekts\nSalona filtrs (ar aktivēto ogli)\nBremžu šķidrums\nBremžu šķidrums DOT4 LV, zema viskozitāte\nStandarta apkopes apjoms"
+    },
+    {
+     "date": "25.09.2024",
+     "odometer": "87278",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "28.03.2024",
+     "odometer": "81115",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "21.03.2024",
+     "odometer": "80645",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "19.03.2024",
+     "odometer": "80545",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "14.11.2023",
+     "odometer": "76148",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "11.10.2023",
+     "odometer": "74361",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "19.09.2023",
+     "odometer": "73215",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "18.09.2023",
+     "odometer": "73165",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "25.08.2023",
+     "odometer": "73215",
+     "location": "Niederlassung Essen BMW AG, Essen",
+     "works": "Universal joint, Blīve, Plakanā blīve, Seškanšu skrūve, Seškanšu uzgrieznis ar apkakli, Torx skrūve, Seškanšu uzgrieznis ar flanci"
+    },
+    {
+     "date": "24.08.2023",
+     "odometer": "71406",
+     "location": "Niederlassung Essen , Essen",
+     "works": "Motoreļļa\nGaisa filtrs, Tehniskā pārbaude servisā\nSalona filtrs\nEļļas filtra komplekts\nSalona filtrs (ar aktivēto ogli)\nAkumulators"
+    },
+    {
+     "date": "24.08.2023",
+     "odometer": "71405",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "21.08.2023",
+     "odometer": "71411",
+     "location": "Niederlassung Essen BMW AG, Essen",
+     "works": "Maiņas auto, Izplūdes gāzu dzesētājs, Tērauda blīve, Isa skrūve ar buksi, Torx skrūve"
+    },
+    {
+     "date": "18.08.2023",
+     "odometer": "71204",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "10.08.2023",
+     "odometer": "70769",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "26.07.2023",
+     "odometer": "69707",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "15.06.2023",
+     "odometer": "69707",
+     "location": "Autohaus Erwin Schmidt GmbH & Co. KG, Lünen",
+     "works": "Door trim panel left, Skrūve ar ovālu galvu un paplāksni, Accent strip, kreisajā pusē, Skava, Atsperu uzgrieznis, Skaļruņa apdare (kreisā), Skava ar blīvgredzenu, Izplešanās uzgrieznis, Skrūve ar cilindrisku galvu"
+    },
+    {
+     "date": "15.06.2023",
+     "odometer": "67750",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "22.05.2023",
+     "odometer": "66037",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "08.05.2023",
+     "odometer": "64870",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "26.04.2023",
+     "odometer": "64498",
+     "location": "Autohaus Erwin Schmidt GmbH & Co. KG, Soest",
+     "works": "Dīzeļdzinēja izplūdes gāzu šķidrums AdBlue\nBremžu kluču pasta\nBremžu kluču nodiluma sensors (priekšā)\nBremžu kluču komplekts\nBremžu tīrītājs (bez acetona)\nBremžu disks (viegls\nBremžu kluču nodiluma sensors (aizmugurē), Motorenöl Longlife-04 Castrol Edge 5W-30 M, Logu tīrīšanas līdzeklis, koncentrāts\nVentilēts, labajā pusē), Iekšējā sešstūra skrūve\nVentilēts, kreisajā pusē), Torx skrūve ar paplāksni"
+    },
+    {
+     "date": "26.04.2023",
+     "odometer": "64482",
+     "location": "Autohaus Erwin Schmidt GmbH&Co. KG , Soest",
+     "works": "Priekšējās bremzes, Aizmugurējās bremzes"
+    },
+    {
+     "date": "25.04.2023",
+     "odometer": "64482",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "13.03.2023",
+     "odometer": "64416",
+     "location": "Autohaus Erwin Schmidt GmbH & Co. KG, Soest",
+     "works": "Ausgleichsgewicht, Michelin Pilot Sport 3 ZP, Vējstikls, infrared CBDAS/HUD rain sen\nLoga stikla remonta komplekts"
+    },
+    {
+     "date": "27.02.2023",
+     "odometer": "64416",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "27.02.2023",
+     "odometer": "64415",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "17.02.2023",
+     "odometer": "63526",
+     "location": "Procar Automobile GmbH, Sprockhövel",
+     "works": "Michelin Pilot Sport 3 ZP"
+    },
+    {
+     "date": "21.09.2022",
+     "odometer": "54536",
+     "location": "Niederlassung Dortmund , Dortmund",
+     "works": "Motoreļļa\nDegvielas filtrs\nSalona filtrs\nEļļas filtra komplekts\nSalona filtrs (ar aktivēto ogli), Servisa mazgāšana (kostenlos)\nBremžu šķidrums\nBremžu šķidrums DOT4 LV, zema viskozitāte\nAkumulators"
+    },
+    {
+     "date": "14.09.2022",
+     "odometer": "53228",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "14.06.2022",
+     "odometer": "40382",
+     "location": "Niederlassung Dortmund BMW AG, Dortmund",
+     "works": "Stiklu mazgāšanas šķidrums (ziemas)\nVirsbūves mazgāšana"
+    },
+    {
+     "date": "14.06.2022",
+     "odometer": "40381",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "25.05.2022",
+     "odometer": "39877",
+     "location": "Niederlassung Dortmund BMW AG, Dortmund",
+     "works": "Virsbūves mazgāšana"
+    },
+    {
+     "date": "28.02.2022",
+     "odometer": "35322",
+     "location": "Niederlassung Dortmund BMW AG, Dortmund",
+     "works": "Ersatzfahrzeug (24 Stunden) Mietzeitraum\nCentrālās konsoles vadības paneļa remonta komplekts\nPārnesumu pārslēga sviras roktura remonta komplekts, Pašbloķējošs seškanšu uzgrieznis, Virsbūves mazgāšana"
+    },
+    {
+     "date": "28.02.2022",
+     "odometer": "35315",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "25.02.2022",
+     "odometer": "34997",
+     "location": "Niederlassung Dortmund BMW AG, Dortmund",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "27.01.2022",
+     "odometer": "32585",
+     "location": "Niederlassung Dortmund BMW AG, Dortmund",
+     "works": "Eļļas piemaksa (Service Inclusive)\nBMW motoreļļa LL04 0W\nSalona filtrs (ar aktivēto ogli)\nGaisa filtrs\nEļļas filtra komplekts\nStiklu mazgāšanas šķidrums (ziemas), Virsbūves mazgāšana"
+    },
+    {
+     "date": "27.01.2022",
+     "odometer": "32580",
+     "location": "Niederlassung Dortmund , Dortmund",
+     "works": "Motoreļļa\nGaisa filtrs, Tehniskā pārbaude servisā\nSalona filtrs"
+    },
+    {
+     "date": "12.07.2021",
+     "odometer": "19899",
+     "location": "Niederlassung Dortmund BMW AG, Dortmund",
+     "works": "Maiņas auto, Virsbūves mazgāšana"
+    },
+    {
+     "date": "12.07.2021",
+     "odometer": "19896",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "19.03.2021",
+     "odometer": "15363",
+     "location": "Niederlassung Dortmund BMW AG, Dortmund",
+     "works": "Eļļas piemaksa (Service Inclusive)\nBMW motoreļļa LL04 0W\nSalona filtrs (ar aktivēto ogli)\nEļļas filtra komplekts\nStiklu mazgāšanas šķidrums (ziemas)\nAkumulators, Virsbūves mazgāšana\nService Inclusive 07US BMW/M pievienošana"
+    },
+    {
+     "date": "19.03.2021",
+     "odometer": "15362",
+     "location": "Niederlassung Dortmund , Dortmund",
+     "works": "Motoreļļa\nSalona filtrs"
+    },
+    {
+     "date": "19.01.2021",
+     "odometer": "13582",
+     "location": "Niederlassung Dortmund BMW AG, Dortmund",
+     "works": "Virsbūves mazgāšana\nMaiņas auto, M badge"
+    },
+    {
+     "date": "19.01.2021",
+     "odometer": "13578",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "11.01.2021",
+     "odometer": "13491",
+     "location": "Niederlassung Dortmund BMW AG, Dortmund",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "09.03.2020",
+     "odometer": "4",
+     "location": "B&K GmbH, Winsen/Luhe",
+     "works": "BMW baby racer III"
+    },
+    {
+     "date": "14.02.2020",
+     "odometer": "4",
+     "location": "B&K GmbH, Winsen/Luhe",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "14.01.2020",
+     "odometer": "4",
+     "location": "B&K GmbH, Winsen/Luhe",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "17.10.2019",
+     "odometer": "4",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "06.09.2019",
+     "odometer": "2",
+     "location": "B&K GmbH&Co. KG, Winsen/Luhe",
+     "works": "Pirmspiegādes apskate"
+    }
+   ],
+   "oneautoIngest": {},
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "BMW G16",
+     "modelSeries": "G16",
+     "vinCode": "WBAGW41050BP49719",
+     "vehicleType": "GW41",
+     "transmission": "AUT",
+     "steeringSide": "LL",
+     "engineCode": "B57T",
+     "engineNumber": "69205771",
+     "body": "COU",
+     "drive": "ALLR",
+     "power": "235 kW",
+     "integrationLevel": "S18A-19-07-530",
+     "currentILevel": "S18A-23-03-550",
+     "developmentCode": "G16",
+     "modelCode": "GW41",
+     "productionDate": "25.07.2019",
+     "firstRegistration": "22.01.2020",
+     "warrantyStartDate": "04.03.2020",
+     "countryRegion": "ECE",
+     "color": "black-sapphire metallic",
+     "colorCode": "0475",
+     "interior": "Indi.leather extended/Fiona r",
+     "interiorCode": "VAHZ",
+     "fuel": "",
+     "displacement": ""
+    }
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "127",
+   "listingCreated": "26.04.2026",
+   "priceDrop": "€ -9 990",
+   "priceHistory": [
+    {
+     "date": "27.08.2026",
+     "price": 50000,
+     "mileage": 110000,
+     "year": 2020,
+     "delta": -2990
+    },
+    {
+     "date": "20.08.2026",
+     "price": 52990,
+     "mileage": 110000,
+     "year": 2020,
+     "delta": 0
+    },
+    {
+     "date": "14.08.2026",
+     "price": 52990,
+     "mileage": 110000,
+     "year": 2020,
+     "delta": 0
+    },
+    {
+     "date": "10.08.2026",
+     "price": 52990,
+     "mileage": 110000,
+     "year": 2020,
+     "delta": 0
+    },
+    {
+     "date": "01.08.2026",
+     "price": 52990,
+     "mileage": 110000,
+     "year": 2020,
+     "delta": 0
+    },
+    {
+     "date": "28.07.2026",
+     "price": 52990,
+     "mileage": 110000,
+     "year": 2020,
+     "delta": 0
+    },
+    {
+     "date": "24.07.2026",
+     "price": 52990,
+     "mileage": 110000,
+     "year": 2020,
+     "delta": 0
+    },
+    {
+     "date": "17.07.2026",
+     "price": 52990,
+     "mileage": 110000,
+     "year": 2020,
+     "delta": 0
+    },
+    {
+     "date": "10.07.2026",
+     "price": 52990,
+     "mileage": 110000,
+     "year": 2020,
+     "delta": 0
+    },
+    {
+     "date": "03.07.2026",
+     "price": 52990,
+     "mileage": 110000,
+     "year": 2020,
+     "delta": -7000
+    },
+    {
+     "date": "22.05.2026",
+     "price": 59990,
+     "mileage": 110000,
+     "year": 2020,
+     "delta": 0
+    },
+    {
+     "date": "10.05.2026",
+     "price": 59990,
+     "mileage": 110000,
+     "year": 2020,
+     "delta": 0
+    },
+    {
+     "date": "26.04.2026",
+     "price": 59990,
+     "mileage": 110000,
+     "year": 2020,
+     "delta": 0
+    }
+   ],
+   "listingMileageOdometer": "110 000",
+   "listingMileageDate": "26.04.2026",
+   "listingMileageCountry": "Latvija"
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

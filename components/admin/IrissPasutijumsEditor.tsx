@@ -1,30 +1,43 @@
 "use client";
 
-import { ArrowLeft, FileDown, Loader2, Paperclip, Phone, Plus, Save, Trash2, X } from "lucide-react";
+import { AdminSaveButton, useSaveMessageState } from "@/components/admin/AdminSaveButton";
+import { ArrowLeft, FileDown, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
-import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { AdminWorkspaceRevisionConflictBanner } from "@/components/admin/AdminWorkspaceRevisionConflictBanner";
-import { DzintarzemeTameSection } from "@/components/admin/DzintarzemeTameSection";
-import { IrissGoogleContactStatusRow } from "@/components/admin/IrissGoogleContactStatusRow";
-import { IrissListingPlatformChipsRow, IrissListingPlatformsFields } from "@/components/admin/IrissListingPlatformsSection";
-import { IrissOfferBlocksEditor } from "@/components/admin/IrissOfferBlocksEditor";
-import { IrissOfferImageSorter } from "@/components/admin/IrissOfferImageSorter";
-import { IrissOrderRoom } from "@/components/admin/IrissOrderRoom";
+import { IrissListingPlatformChipsRow } from "@/components/admin/IrissListingPlatformsSection";
+import { IrissOfferForm } from "@/components/admin/IrissOfferForm";
+import {
+  OFFER_SOURCE_LABEL_LV,
+  offerSourceRefString,
+  parseOfferSourceRef,
+  pendingDropboxPhotoCount,
+} from "@/lib/iriss-stock-photos";
+import { IrissOfferClientPicker, type IrissOfferClientChoice } from "@/components/admin/IrissOfferClientPicker";
+import { IrissOfferSourceSheet } from "@/components/admin/IrissOfferSourceSheet";
+import { irissPdNewHref } from "@/lib/iriss-pd-entry";
+import { irissHitAuctionUrl } from "@/lib/iriss-order-search-view";
+import { IrissOrderRoom, IrissOrderStepCards } from "@/components/admin/IrissOrderRoom";
+import { IRISS_ORDER_STEPS } from "@/lib/iriss-order-steps";
 import { IrissUnsavedChangesGuard } from "@/components/admin/IrissUnsavedChangesGuard";
-import { IrissSectionHeading } from "@/components/admin/IrissSectionHeading";
-import { IrissOrderSectionSaveButton } from "@/components/admin/IrissOrderSectionSaveButton";
-import { IrissInternalNoteField } from "@/components/admin/IrissInternalNoteField";
-import { IrissSpecChoiceSelect } from "@/components/admin/IrissSpecChoiceSelect";
-import { IrissSpecDiapazoniBlock } from "@/components/admin/IrissSpecDiapazoniBlock";
-import { SharedOrderCriteriaForm } from "@/components/shared/SharedOrderCriteriaForm";
 import type { IrissOfferClientLinkAdminView } from "@/lib/iriss-offer-client-link";
+import { IRISS_OFFER_LINK_NEEDS_DEADLINE, offerClientLinkDeadlineReady, pickReusableOfferClientLink } from "@/lib/iriss-offer-form-link";
 import type { IrissListingHitStatus } from "@/lib/iriss-listing-match-client";
 import { coerceIrissDuplicatesByListing, coerceIrissHitStatusMap, coerceIrissOrderRoomTab } from "@/lib/iriss-order-room-match-props";
-import { IrissOfferFieldTag } from "@/components/admin/IrissOfferFieldTag";
+import {
+  OFFER_AUTO_FIELD_KEYS,
+  OFFER_UNSAVED_CLOSE_CONFIRM,
+  isOfferDraftSyncedWithRecord,
+  newOfferDraft,
+  offerDraftHasOperatorInput,
+  offerDraftFromRecord,
+  offerRecordFromDraft,
+  type OfferDraft,
+} from "@/lib/iriss-offer-draft";
 import { irissSaveWirePayload, mergeServerAttachmentStorage } from "@/lib/iriss-pasutijumi-autosave-wire";
 import { attachmentsFromAuctionPhotoUrls, auctionPhotoUrlsFromHit } from "@/lib/iriss-auction-offer-photos";
 import {
@@ -34,31 +47,27 @@ import {
 } from "@/lib/iriss-generated-documents";
 import { irissOfferSeedFromHit } from "@/lib/iriss-order-offer-from-hit";
 import { appendIrissOrderRoomNote, type IrissOrderRoomHit, type IrissOrderRoomTab } from "@/lib/iriss-order-room";
+import { irissAuctionListingFieldMap, type IrissAuctionListingRaw } from "@/lib/iriss-auction-listing-field-map";
+import { IRISS_LISTING_PLATFORM_LABEL } from "@/lib/iriss-listings-platform";
+import { IRISS_AUCTION_LINK_LABEL, offerLinkErrorNote, parseIrissAuctionLink } from "@/lib/iriss-auction-link";
+import type { IrissAuctionDetailExtras } from "@/lib/iriss-auction-detail";
 import { mergeServerOwnedIrissFields } from "@/lib/iriss-server-owned-fields";
+import {
+  irissDraftFieldLabel,
+  takeIrissDraftHandoff,
+  writeIrissDraftHandoff,
+} from "@/lib/iriss-pasutijumi-draft-handoff";
 import type { IrissVinDuplicateLink } from "@/lib/iriss-vin-duplicates";
-import { pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
+import { adoptServerMergedFields, pickRecordAfterOrderSave, type IrissOrderSaveResult } from "@/lib/iriss-order-section-save";
 import { withAutoEcarstradeLinks } from "@/lib/iriss-pasutijumi-ecarstrade-links";
 import {
   applyIrissOrderRangeEdit,
   applyIrissOrderSpecTextEdit,
-  irissOrderRangeErrorFor,
-  irissOrderRangeView,
   isIrissOrderSpecTextKey,
   syncIrissOrderRangesFromLegacy,
   type IrissOrderRangeField,
   type IrissOrderSpecTextKey,
 } from "@/lib/iriss-order-range-fields";
-import {
-  IRISS_BODY_SELECT_OPTIONS,
-  IRISS_FUEL_SELECT_OPTIONS,
-  IRISS_GEARBOX_SELECT_OPTIONS,
-  bodySelectValue,
-  fuelSelectValue,
-  gearboxSelectValue,
-  persistBodySelect,
-  persistFuelSelect,
-  persistGearboxSelect,
-} from "@/lib/iriss-order-spec-selects";
 import {
   appendIrissStatusHistory,
   applyIrissFieldEdit,
@@ -67,6 +76,7 @@ import {
   setIrissInactiveReason,
 } from "@/lib/iriss-pasutijumi-audit-fields";
 import {
+  IRISS_EMPTY_NEW_ORDER_MSG,
   IRISS_STALE_REVISION,
   irissPasutijumsHasOperatorContent,
   irissWorkspaceRevision,
@@ -74,22 +84,25 @@ import {
   planSilentAutosave,
 } from "@/lib/iriss-pasutijumi-save-safety";
 import { inspectIrissPhone } from "@/lib/iriss-phone-normalize";
+import { createIrissPdFromListing, irissPdHref } from "@/lib/iriss-pd-from-listing-client";
+import {
+  clearIrissOrderBackup,
+  formatIrissBackupTime,
+  irissAutosaveRetryDelayMs,
+  irissAutosaveShouldRetry,
+  irissOrderBackupDiffers,
+  readIrissOrderBackup,
+  writeIrissOrderBackup,
+  type IrissOrderBackup,
+} from "@/lib/iriss-order-save-status";
 import {
   buildIrissOfferClientShareBody,
   buildIrissOfferShareSubject,
   irissOfferImagesOmittedNotice,
 } from "@/lib/iriss-offer-share";
-import { irissPriceFormatWarning, parsePriceLike } from "@/lib/iriss-price-format";
 import { irissVinWarning } from "@/lib/iriss-vin-check";
 import {
-  defaultIrissDzintarzemeTameDraft,
-  IRISS_DEAL_DETAIL_OPTIONS,
   IRISS_MAX_OFFER_ATTACHMENTS,
-  canonicalIrissPasutijumsListStatus,
-  displayIrissPasutijumsListStatusLabel,
-  IRISS_PASUTIJUMS_PICKER_STATUSES,
-  IRISS_PASUTIJUMS_PICKER_STATUS_LV,
-  parseIrissPasutijumsListStatus,
   type IrissGeneratedDocument,
   type IrissOfferAttachment,
   type IrissOfferRecord,
@@ -98,17 +111,16 @@ import {
 } from "@/lib/iriss-pasutijumi-types";
 import {
   LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS,
+  buildListingPlatformChips,
   LISTING_PLATFORM_CHIPS_SCROLL_ROW_CLASS,
 } from "@/lib/iriss-listing-links";
 import { fileToCompressedOfferAttachment } from "@/lib/iriss-offer-image-compress";
-import type { IrissOfferBlock } from "@/lib/iriss-offer-blocks";
 import type { IrissOrderPhotoAlbumId } from "@/lib/iriss-order-photos";
 import {
-  defaultOfferValidUntilYmd,
   deriveOfferValidUntil,
   formatOfferValidUntilLv,
   isIrissOfferExpired,
-  normalizeOfferValidUntil,
+  offerValidUntilYmdFromAt,
 } from "@/lib/iriss-offer-valid-until";
 import { patchJsonWithUploadProgress, type JsonPatchResult } from "@/lib/iriss-json-patch-upload";
 import {
@@ -122,15 +134,12 @@ const toolbarBtnBase =
   "h-12 w-12 shadow-md hover:opacity-95 " +
   "sm:h-11 sm:min-h-[44px] sm:w-auto sm:rounded-full sm:gap-1.5 sm:px-4 sm:shadow-sm sm:hover:opacity-100 sm:active:scale-100";
 
-const fieldClass =
-  "min-h-[44px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[16px] text-[var(--color-apple-text)] shadow-sm outline-none transition focus:border-[var(--color-provin-accent)] focus:ring-2 focus:ring-[var(--color-provin-accent)]/25 sm:text-[15px]";
 
-const textareaClass = `${fieldClass} min-h-[100px] resize-y py-2.5 leading-snug`;
 
-const offerPChipButtonClass = `${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} cursor-pointer select-none`;
+/** P1/P2/+ telefonā: pieskāriena mērķis vismaz 44x44 (bāzes čips ir logo platumā - "+" bija 11 px). */
+const offerPChipButtonClass = `${LISTING_PLATFORM_CHIP_ANCHOR_BASE_CLASS} min-h-11 min-w-11 cursor-pointer select-none rounded-full px-3`;
 
-const offerDialogMainBtnClass =
-  "inline-flex min-h-[44px] min-w-[116px] items-center justify-center rounded-full border border-slate-200 bg-white px-4 text-[13px] font-semibold text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50";
+
 
 function parseRecordFromPatchResponse(data: unknown): IrissPasutijumsRecord | null {
   if (typeof data !== "object" || data === null) return null;
@@ -154,6 +163,9 @@ function formatPatchFailureMessage(
   }
   if (status === 504 || status === 502) {
     return `Kļūda ${status}: servera noildze vai starpniekservera kļūda.`;
+  }
+  if (status === 400 && data && typeof data === "object" && (data as { error?: unknown }).error === "empty_record") {
+    return IRISS_EMPTY_NEW_ORDER_MSG;
   }
   const parts: string[] = [`Kļūda ${status}`];
   if (data && typeof data === "object") {
@@ -217,158 +229,64 @@ async function downloadPdfBlobFromResponse(
   }, revokeMs);
 }
 
-type OfferDraft = {
-  id: string;
-  title: string;
-  brandModel: string;
-  vin: string;
-  year: string;
-  mileage: string;
-  priceGermany: string;
-  comment: string;
-  firstRegistration: string;
-  odometerReading: string;
-  transmission: string;
-  location: string;
-  hasFullServiceHistory: boolean;
-  hasFactoryPaint: boolean;
-  hasNoRustBody: boolean;
-  hasSecondWheelSet: boolean;
-  specialNotes: string;
-  visualAssessment: string;
-  technicalAssessment: string;
-  summary: string;
-  carPrice: string;
-  deliveryPrice: string;
-  commissionFee: string;
-  offerValidDays: string;
-  validUntil: string;
-  attachments: IrissOfferAttachment[];
-  coverAttachmentId: string;
-  createdAt: string;
-  fuel: string;
-  driveType: string;
-  powerKw: string;
-  engineDisplacement: string;
-  color: string;
-  bodyTypeOffer: string;
-  doorCount: string;
-  emissionClass: string;
-  originCountry: string;
-  auctionPlatform: string;
-  auctionStockNumber: string;
-  auctionEndAt: string;
-  vatStatus: string;
-  damageGrade: string;
-  equipmentHighlights: string;
-  estimatedTotalPrice: string;
-  keyCount: string;
-  blocks?: IrissOfferBlock[];
-};
-
-const OFFER_AUTO_FIELD_KEYS = [
-  "brandModel",
-  "vin",
-  "firstRegistration",
-  "odometerReading",
-  "fuel",
-  "transmission",
-  "driveType",
-  "powerKw",
-  "bodyTypeOffer",
-  "color",
-  "originCountry",
-  "location",
-  "auctionPlatform",
-  "auctionStockNumber",
-  "auctionEndAt",
-  "vatStatus",
-  "carPrice",
-  "estimatedTotalPrice",
-] as const;
-
-function offerDraftVehicleExtras(): Pick<
-  OfferDraft,
-  | "fuel"
-  | "driveType"
-  | "powerKw"
-  | "engineDisplacement"
-  | "color"
-  | "bodyTypeOffer"
-  | "doorCount"
-  | "emissionClass"
-  | "originCountry"
-  | "auctionPlatform"
-  | "auctionStockNumber"
-  | "auctionEndAt"
-  | "vatStatus"
-  | "damageGrade"
-  | "equipmentHighlights"
-  | "estimatedTotalPrice"
-  | "keyCount"
-> {
-  return {
-    fuel: "",
-    driveType: "",
-    powerKw: "",
-    engineDisplacement: "",
-    color: "",
-    bodyTypeOffer: "",
-    doorCount: "",
-    emissionClass: "",
-    originCountry: "",
-    auctionPlatform: "",
-    auctionStockNumber: "",
-    auctionEndAt: "",
-    vatStatus: "",
-    damageGrade: "",
-    equipmentHighlights: "",
-    estimatedTotalPrice: "",
-    keyCount: "",
-  };
+/** Esošais Gemini tulkojuma ceļš (translate-damage); kļūdas gadījumā tukšs. */
+async function translateDamageLv(text: string): Promise<string> {
+  try {
+    const res = await fetch("/api/admin/iriss-offer-seed/translate-damage", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    const data = res.ok ? ((await res.json().catch(() => ({}))) as { lv?: string }) : null;
+    return data?.lv?.trim() ?? "";
+  } catch {
+    return "";
+  }
 }
 
-function newOfferDraft(nextNumber: number): OfferDraft {
-  const now = new Date().toISOString();
-  return {
-    id: crypto.randomUUID(),
-    title: `Piedāvājums ${nextNumber}`,
-    brandModel: "",
-    vin: "",
-    year: "",
-    mileage: "",
-    priceGermany: "",
+type OfferSeedStatus = { loading: boolean; note: string; sourceLabel: string; linkUrl?: string };
+
+/** Piedāvājuma lauki + foto (izsoles secībā) no izsoles hit; kopīgs "Sagatavot piedāvājumu" un "No saites" ceļam. */
+function offerSeedPatchFromHit(hit: IrissOrderRoomHit): { fields: Partial<OfferDraft>; auto: Set<string>; damageText: string } {
+  const seed = irissOfferSeedFromHit(hit);
+  const auto = new Set<string>();
+  for (const key of OFFER_AUTO_FIELD_KEYS) {
+    const v = seed[key as keyof typeof seed];
+    if (typeof v === "string" && v.trim()) auto.add(key);
+  }
+  if (seed.doorCount.trim()) auto.add("doorCount");
+  const fields: Partial<OfferDraft> = {
+    ...seed,
+    odometerReading: seed.odometerReading || seed.mileage,
     comment: "",
-    firstRegistration: "",
-    odometerReading: "",
-    transmission: "",
-    location: "",
-    hasFullServiceHistory: false,
-    hasFactoryPaint: false,
-    hasNoRustBody: false,
-    hasSecondWheelSet: false,
-    specialNotes: "",
-    visualAssessment: "",
-    technicalAssessment: "",
-    summary: "",
-    carPrice: "",
-    deliveryPrice: "",
-    commissionFee: "",
-    offerValidDays: "",
-    validUntil: defaultOfferValidUntilYmd(Date.parse(now) || Date.now()),
-    attachments: [],
-    coverAttachmentId: "",
-    createdAt: now,
-    ...offerDraftVehicleExtras(),
+    attachments: attachmentsFromAuctionPhotoUrls(auctionPhotoUrlsFromHit(hit)),
   };
+  const damageText =
+    irissAuctionListingFieldMap(hit.platform)?.freeText(hit as unknown as IrissAuctionListingRaw).visualDamageText?.trim() ?? "";
+  return { fields, auto, damageText };
 }
 
-function formatPriceLike(value: number): string {
-  if (!Number.isFinite(value) || value <= 0) return "";
-  return value
-    .toFixed(2)
-    .replace(/\.00$/, "")
-    .replace(".", ",");
+/** Lauki, kurus lietotājs jau sāka rakstīt (nav tukši), netiek pārrakstīti. Izsoles foto nāk pirms paša pievienotajiem. */
+function mergeOfferSeedIntoDraft(
+  d: OfferDraft,
+  fields: Partial<OfferDraft>,
+  auto: ReadonlySet<string>,
+  /** Iepriekš auto-aizpildīti un vēl neaiztikti lauki: precīzāki dati (detaļu lapa) tos var aizstāt. */
+  overwrite: ReadonlySet<string> = new Set(),
+): { draft: OfferDraft; auto: Set<string> } {
+  const next: OfferDraft = { ...d };
+  const filled = new Set<string>();
+  for (const [key, value] of Object.entries(fields) as Array<[keyof OfferDraft, OfferDraft[keyof OfferDraft]]>) {
+    if (key === "attachments") continue;
+    const cur = d[key];
+    if (typeof value !== "string" || typeof cur !== "string") continue;
+    if (!value.trim() || (cur.trim() && !overwrite.has(key))) continue;
+    (next as Record<string, unknown>)[key] = value;
+    if (auto.has(key)) filled.add(key);
+  }
+  if (fields.attachments?.length) next.attachments = [...fields.attachments, ...d.attachments].slice(0, IRISS_MAX_OFFER_ATTACHMENTS);
+  return { draft: next, auto: filled };
 }
 
 function attachmentNameSizeKey(name: string, size: number): string {
@@ -389,109 +307,7 @@ async function buildAttachmentFingerprint(att: IrissOfferAttachment): Promise<st
   return `${key}|${digest}`;
 }
 
-function isOfferDraftSyncedWithRecord(draft: OfferDraft, offer: IrissOfferRecord | null): boolean {
-  if (!offer) return false;
-  if (draft.id !== offer.id) return false;
-  if (draft.title !== offer.title) return false;
-  if (draft.brandModel !== offer.brandModel) return false;
-  if ((draft.vin ?? "") !== (offer.vin ?? "")) return false;
-  if (draft.year !== offer.year) return false;
-  if (draft.mileage !== offer.mileage) return false;
-  if (draft.priceGermany !== offer.priceGermany) return false;
-  if (draft.comment !== offer.comment) return false;
-  if (draft.firstRegistration !== (offer.firstRegistration ?? "")) return false;
-  if (draft.odometerReading !== (offer.odometerReading ?? "")) return false;
-  if (draft.transmission !== (offer.transmission ?? "")) return false;
-  if (draft.location !== (offer.location ?? "")) return false;
-  if (draft.hasFullServiceHistory !== Boolean(offer.hasFullServiceHistory)) return false;
-  if (draft.hasFactoryPaint !== Boolean(offer.hasFactoryPaint)) return false;
-  if (draft.hasNoRustBody !== Boolean(offer.hasNoRustBody)) return false;
-  if (draft.hasSecondWheelSet !== Boolean(offer.hasSecondWheelSet)) return false;
-  if (draft.specialNotes !== (offer.specialNotes ?? "")) return false;
-  if (draft.visualAssessment !== (offer.visualAssessment ?? "")) return false;
-  if (draft.technicalAssessment !== (offer.technicalAssessment ?? "")) return false;
-  if (draft.summary !== (offer.summary ?? "")) return false;
-  if (draft.carPrice !== (offer.carPrice ?? "")) return false;
-  if (draft.deliveryPrice !== (offer.deliveryPrice ?? "")) return false;
-  if (draft.commissionFee !== (offer.commissionFee ?? "")) return false;
-  if (draft.offerValidDays !== (offer.offerValidDays ?? "")) return false;
-  if (deriveOfferValidUntil(draft) !== deriveOfferValidUntil(offer)) return false;
-  if ((draft.coverAttachmentId || "") !== (offer.coverAttachmentId || "")) return false;
-  if (JSON.stringify(draft.blocks ?? null) !== JSON.stringify(offer.blocks ?? null)) return false;
-  if (draft.attachments.length !== offer.attachments.length) return false;
-  for (let i = 0; i < draft.attachments.length; i += 1) {
-    const a = draft.attachments[i];
-    const b = offer.attachments[i];
-    if (!b) return false;
-    if (a.id !== b.id || a.name !== b.name || a.mimeType !== b.mimeType || a.size !== b.size || a.dataUrl !== b.dataUrl) {
-      return false;
-    }
-  }
-  return true;
-}
 
-function WhatsAppGlyphIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden>
-      <path
-        fill="currentColor"
-        d="M12.04 2C6.55 2 2.1 6.45 2.1 11.94c0 1.93.55 3.81 1.59 5.43L2 22l4.8-1.61a9.9 9.9 0 0 0 5.24 1.5h.01c5.49 0 9.95-4.45 9.95-9.95A9.96 9.96 0 0 0 12.04 2Zm0 18.1h-.01a8.1 8.1 0 0 1-4.13-1.13l-.3-.18-2.85.95.95-2.78-.19-.29a8.1 8.1 0 0 1-1.25-4.33c0-4.49 3.65-8.14 8.14-8.14a8.1 8.1 0 0 1 5.76 2.38 8.08 8.08 0 0 1 2.38 5.76c0 4.48-3.65 8.13-8.14 8.13Zm4.46-6.06c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.95-1.22a7.34 7.34 0 0 1-1.35-1.67c-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.58.18 1.11.15 1.53.09.47-.07 1.43-.58 1.63-1.13.2-.56.2-1.04.14-1.13-.06-.1-.22-.16-.46-.28Z"
-      />
-    </svg>
-  );
-}
-
-function BlockTitle({ children }: { children: React.ReactNode }) {
-  return <IrissSectionHeading>{children}</IrissSectionHeading>;
-}
-
-function LabeledInput({
-  label,
-  wrapperClassName,
-  ...rest
-}: { label: string; wrapperClassName?: string } & React.InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <label className={`block min-w-0${wrapperClassName ? ` ${wrapperClassName}` : ""}`}>
-      <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">{label}</span>
-      <input className={fieldClass} {...rest} />
-    </label>
-  );
-}
-
-function LabeledTextarea({
-  label,
-  ...rest
-}: { label: string } & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return (
-    <label className="block min-w-0">
-      <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">{label}</span>
-      <textarea className={textareaClass} {...rest} />
-    </label>
-  );
-}
-
-function LabeledOfferRichCommentField({
-  label,
-  value,
-  onHtmlChange,
-}: {
-  label: string;
-  value: string;
-  onHtmlChange: (html: string) => void;
-}) {
-  return (
-    <div className="block min-w-0">
-      <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">{label}</span>
-      <AdminAiPolishRichCommentShell
-        compact
-        toolbar="simple"
-        value={value}
-        onChange={onHtmlChange}
-        aria-label={label}
-      />
-    </div>
-  );
-}
 
 /** Noklusējumi ārpus komponentes: `= []` katrā renderī ir jauns masīvs, un efekts ar [roomHits] tad griežas bez gala. */
 const EMPTY_ROOM_HITS: IrissOrderRoomHit[] = [];
@@ -505,6 +321,7 @@ export function IrissPasutijumsEditor({
   autoOpenNewOffer = false,
   autoOpenOfferId = "",
   forceNoClientPdf = false,
+  seedFrom = "",
   unsavedDraft = false,
   roomHits = EMPTY_ROOM_HITS,
   dismissedHitIds = EMPTY_IDS,
@@ -514,11 +331,14 @@ export function IrissPasutijumsEditor({
   duplicatesByListing = EMPTY_DUPLICATES,
   initialRoomTab = "overview",
   googleContactsConfigured: googleContactsConfiguredInitial = false,
+  pdEntry = false,
 }: {
   initialRecord: IrissPasutijumsRecord;
   autoOpenNewOffer?: boolean;
   autoOpenOfferId?: string;
   forceNoClientPdf?: boolean;
+  /** "autoparks:<id>" | "logistics:<id>": jaunais piedāvājums ar auto datiem un /STOCK bildēm. */
+  seedFrom?: string;
   unsavedDraft?: boolean;
   /** Jau nolasītie Meklētāja auto šim pasūtījumam. Tukšs jaunam melnrakstam. */
   roomHits?: IrissOrderRoomHit[];
@@ -529,24 +349,38 @@ export function IrissPasutijumsEditor({
   duplicatesByListing?: Record<string, IrissVinDuplicateLink[]>;
   initialRoomTab?: IrissOrderRoomTab;
   googleContactsConfigured?: boolean;
+  /** Administrators: jauni piedāvājumi tikai PD sadaļā (Nils 27.10, viena sistēma). Darbinieks - esošā forma. */
+  pdEntry?: boolean;
 }) {
   const router = useRouter();
   const [rec, setRec] = useState<IrissPasutijumsRecord>(() => withAutoEcarstradeLinks(initialRecord));
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const saveFailed = Boolean(saveMsg && /neizdev|kļūd/i.test(saveMsg));
   const [busy, setBusy] = useState(false);
   const [offerOpen, setOfferOpen] = useState(false);
+  /** "Klients ▾" jaunam piedāvājumam (tikai jaunā, vēl nesaglabātā pasūtījumā). */
+  const [offerClient, setOfferClient] = useState<IrissOfferClientChoice>(null);
+  /** Klienta kabinetā: auto izvēle Autoparks | Loģistika | Tukšs pirms formas. */
+  const [offerSourceSheetOpen, setOfferSourceSheetOpen] = useState(false);
   const [offerAutoFields, setOfferAutoFields] = useState<ReadonlySet<string>>(() => new Set());
+  const [offerSeedStatus, setOfferSeedStatus] = useState<OfferSeedStatus | null>(null);
   const [offerBusy, setOfferBusy] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [offerDeleteConfirmOpen, setOfferDeleteConfirmOpen] = useState(false);
   const [offerDeleteBusy, setOfferDeleteBusy] = useState(false);
+  const offerDeleteBackdropClose = useModalBackdropClose(() => setOfferDeleteConfirmOpen(false), !offerDeleteBusy);
+  const deleteBackdropClose = useModalBackdropClose(() => setDeleteConfirmOpen(false), !deleteBusy);
   const [orderPdfBusy, setOrderPdfBusy] = useState(false);
   const [offerPdfBusy, setOfferPdfBusy] = useState(false);
   const [offerPdfNotice, setOfferPdfNotice] = useState<string | null>(null);
   const [offerPdfAllowWithoutImages, setOfferPdfAllowWithoutImages] = useState(false);
   const [offerWhatsappBusy, setOfferWhatsappBusy] = useState(false);
   const [offerDraft, setOfferDraft] = useState<OfferDraft>(() => newOfferDraft(1));
+  const offerAutoFieldsRef = useRef(offerAutoFields);
+  offerAutoFieldsRef.current = offerAutoFields;
+  const offerDraftRef = useRef(offerDraft);
+  offerDraftRef.current = offerDraft;
   const autoOpenOfferDone = useRef(false);
   const lastSavedSnapshot = useRef(JSON.stringify(withAutoEcarstradeLinks(initialRecord)));
   const recRef = useRef(rec);
@@ -554,7 +388,16 @@ export function IrissPasutijumsEditor({
   const autosaveTimer = useRef<number | null>(null);
   const autosaveInFlight = useRef(false);
   const autosaveQueued = useRef(false);
+  const saveRef = useRef<(opts?: { silent?: boolean }) => Promise<SaveResult>>(async () => ({ ok: false, error: "init" }));
+  const retryTimer = useRef<number | null>(null);
+  const retryAttempt = useRef(0);
+  const [autoSaving, setAutoSaving] = useState(0);
+  const [autoSaveError, setAutoSaveError] = useState<string | null>(null);
+  const [offline, setOffline] = useState(false);
+  const [backupOffer, setBackupOffer] = useState<IrissOrderBackup | null>(null);
+  const backupPending = useRef(true);
   const persistedIdRef = useRef(unsavedDraft ? "" : initialRecord.id);
+  const draftHandoffPending = useRef(false);
   const imagesHydrating = useRef(irissRecordNeedsOfferImageHydration(initialRecord));
   const [imagesReady, setImagesReady] = useState(!imagesHydrating.current);
 
@@ -598,7 +441,7 @@ export function IrissPasutijumsEditor({
     );
   }, []);
 
-  const save = useCallback(
+  const saveRaw = useCallback(
     async (opts?: {
       redirectToList?: boolean;
       silent?: boolean;
@@ -622,6 +465,13 @@ export function IrissPasutijumsEditor({
         autosaveQueued.current = true;
         return { ok: false, error: "Ielādē attēlus." };
       }
+      const persistId = persistedIdRef.current;
+      const isCreate = !persistId;
+      // FABLE v3: tukšs jauns pasūtījums - serveris atbild 400 empty_record; neko nesūta un nerāda tehnisku kļūdu.
+      if (isCreate && !irissPasutijumsHasOperatorContent(payload)) {
+        if (!silent) setSaveMsg(IRISS_EMPTY_NEW_ORDER_MSG);
+        return { ok: false, error: "empty_record" };
+      }
       if (!silent) {
         setBusy(true);
         const required = irissRequiredFieldWarnings(payload);
@@ -629,8 +479,6 @@ export function IrissPasutijumsEditor({
       }
       if (silent) autosaveInFlight.current = true;
 
-      const persistId = persistedIdRef.current;
-      const isCreate = !persistId;
       const url = isCreate
         ? "/api/admin/iriss-pasutijumi"
         : `/api/admin/iriss-pasutijumi/${encodeURIComponent(payload.id)}`;
@@ -647,7 +495,10 @@ export function IrissPasutijumsEditor({
         }
         if (!silent) {
           setRec((current) => {
-            const picked = pickRecordAfterOrderSave(current, payload, record);
+            const picked =
+              JSON.stringify(current) !== JSON.stringify(payload)
+                ? adoptServerMergedFields(current, payload, record, ["offers"])
+                : pickRecordAfterOrderSave(current, payload, record);
             const merged = mergeServerAttachmentStorage(mergeServerOwnedIrissFields(picked, record), record);
             lastSavedSnapshot.current = JSON.stringify(merged);
             return merged;
@@ -655,12 +506,13 @@ export function IrissPasutijumsEditor({
         } else {
           setRec((current) => {
             const concurrent = JSON.stringify(current) !== JSON.stringify(payload);
-            const merged = mergeServerAttachmentStorage(
-              mergeServerOwnedIrissFields(concurrent ? current : payload, record),
-              record,
-            );
+            const base = adoptServerMergedFields(concurrent ? current : payload, payload, record, ["offers"]);
+            const merged = mergeServerAttachmentStorage(mergeServerOwnedIrissFields(base, record), record);
             lastSavedSnapshot.current = JSON.stringify(
-              mergeServerAttachmentStorage(mergeServerOwnedIrissFields(payload, record), record),
+              mergeServerAttachmentStorage(
+                mergeServerOwnedIrissFields(adoptServerMergedFields(payload, payload, record, ["offers"]), record),
+                record,
+              ),
             );
             return merged;
           });
@@ -720,6 +572,7 @@ export function IrissPasutijumsEditor({
           return { ok: false, error: err };
         }
         const record = parseRecordFromPatchResponse(data);
+        if (isCreate && (record?.id || payload.id)) draftHandoffPending.current = true;
         if (isCreate && record?.id && record.id !== payload.id) {
           router.replace(`/admin/iriss/pasutijumi/${encodeURIComponent(record.id)}`);
         } else if (isCreate && persistId === "" && payload.id) {
@@ -737,7 +590,7 @@ export function IrissPasutijumsEditor({
           if (autosaveQueued.current) {
             autosaveQueued.current = false;
             window.setTimeout(() => {
-              void save({ silent: true });
+              void saveRef.current({ silent: true });
             }, 0);
           }
         }
@@ -745,6 +598,41 @@ export function IrissPasutijumsEditor({
     },
     [router],
   );
+
+  // Drošā saglabāšana (Nils 29.10): patiesais stāvoklis galvenē + automātiska atkārtošana, ja neizdodas.
+  const save = useCallback(
+    async (opts?: Parameters<typeof saveRaw>[0]): Promise<SaveResult> => {
+      const silent = opts?.silent === true;
+      if (silent) setAutoSaving((n) => n + 1);
+      let result: SaveResult;
+      try {
+        result = await saveRaw(opts);
+      } finally {
+        if (silent) setAutoSaving((n) => Math.max(0, n - 1));
+      }
+      if (retryTimer.current) {
+        window.clearTimeout(retryTimer.current);
+        retryTimer.current = null;
+      }
+      if (result.ok) {
+        retryAttempt.current = 0;
+        setAutoSaveError(null);
+      } else if (irissAutosaveShouldRetry(result.error)) {
+        setAutoSaveError(result.error);
+        // Pēc ~8 mēģinājumiem (~6 min) pārstāj; stāvoklis paliek sarkans, poga ļauj mēģināt vēlreiz.
+        if (retryAttempt.current >= 8) return result;
+        const delay = irissAutosaveRetryDelayMs(retryAttempt.current);
+        retryAttempt.current += 1;
+        retryTimer.current = window.setTimeout(() => {
+          retryTimer.current = null;
+          void saveRef.current({ silent: true });
+        }, delay);
+      }
+      return result;
+    },
+    [saveRaw],
+  );
+  saveRef.current = save;
 
   const saveCurrentPage = useCallback(async (): Promise<SaveResult> => {
     setPdfRetryBar(null);
@@ -848,7 +736,7 @@ export function IrissPasutijumsEditor({
           if (autosaveQueued.current) {
             autosaveQueued.current = false;
             window.setTimeout(() => {
-              void save({ silent: true });
+              void saveRef.current({ silent: true });
             }, 0);
           }
         }
@@ -877,6 +765,150 @@ export function IrissPasutijumsEditor({
       if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
     };
   }, [rec, save, imagesReady]);
+
+  // Bez interneta: rāda stāvokli; kad savienojums atgriežas, saglabā uzreiz.
+  useEffect(() => {
+    setOffline(typeof navigator !== "undefined" && navigator.onLine === false);
+    const goOffline = () => setOffline(true);
+    const goOnline = () => {
+      setOffline(false);
+      if (JSON.stringify(recRef.current) !== lastSavedSnapshot.current) void saveRef.current({ silent: true });
+    };
+    window.addEventListener("offline", goOffline);
+    window.addEventListener("online", goOnline);
+    return () => {
+      window.removeEventListener("offline", goOffline);
+      window.removeEventListener("online", goOnline);
+      if (retryTimer.current) window.clearTimeout(retryTimer.current);
+    };
+  }, []);
+
+  // Rezerves kopija pārlūkā: ja iepriekšējā reizē izmaiņas nepaspēja aiziet uz serveri, piedāvā atjaunot.
+  useEffect(() => {
+    const id = persistedIdRef.current;
+    if (!id) {
+      backupPending.current = false;
+      return;
+    }
+    let storage: Storage | null = null;
+    try {
+      storage = window.localStorage;
+    } catch {
+      storage = null;
+    }
+    const backup = storage ? readIrissOrderBackup(storage, id, new Date()) : null;
+    if (backup && irissOrderBackupDiffers(backup.rec, withAutoEcarstradeLinks(initialRecord))) {
+      setBackupOffer(backup);
+    } else {
+      backupPending.current = false;
+      if (storage) clearIrissOrderBackup(storage, id);
+    }
+    // Tikai atverot ierakstu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const id = persistedIdRef.current;
+    if (!id || backupPending.current) return;
+    let storage: Storage;
+    try {
+      storage = window.localStorage;
+    } catch {
+      return;
+    }
+    if (!dirty) {
+      clearIrissOrderBackup(storage, id);
+      return;
+    }
+    const t = window.setTimeout(() => writeIrissOrderBackup(storage, recRef.current, new Date()), 400);
+    return () => window.clearTimeout(t);
+  }, [rec, dirty]);
+
+  const restoreBackup = useCallback(() => {
+    if (!backupOffer) return;
+    const merged = withAutoEcarstradeLinks(mergeIrissPasutijumsRecords(recRef.current, backupOffer.rec));
+    backupPending.current = false;
+    setBackupOffer(null);
+    setRec(merged);
+    recRef.current = merged;
+    setSaveMsg("Izmaiņas atjaunotas no rezerves kopijas - saglabājas.");
+  }, [backupOffer]);
+
+  const dismissBackup = useCallback(() => {
+    backupPending.current = false;
+    setBackupOffer(null);
+    try {
+      clearIrissOrderBackup(window.localStorage, persistedIdRef.current);
+    } catch {
+      /* nav krātuves */
+    }
+  }, []);
+
+  // Jauns pasūtījums → /pasutijumi/{id} ir cita lapa: redaktors tiek uzstādīts no jauna.
+  // Nesaglabātais teksts un fokuss tiek nodots jaunajam redaktoram, citādi «Toyota» paliek «To».
+  useLayoutEffect(() => {
+    if (!unsavedDraft) return;
+    return () => {
+      const id = persistedIdRef.current;
+      if (!draftHandoffPending.current || !id) return;
+      const active = document.activeElement;
+      const field =
+        active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement ? active : null;
+      let selectionStart: number | null = null;
+      let selectionEnd: number | null = null;
+      try {
+        selectionStart = field?.selectionStart ?? null;
+        selectionEnd = field?.selectionEnd ?? null;
+      } catch {
+        /* type=date u.c. bez selection */
+      }
+      const label = irissDraftFieldLabel(field);
+      writeIrissDraftHandoff(
+        window.sessionStorage,
+        id,
+        recRef.current,
+        label ? { label, selectionStart, selectionEnd } : null,
+        Date.now(),
+      );
+    };
+  }, [unsavedDraft]);
+
+  useLayoutEffect(() => {
+    if (unsavedDraft) return;
+    const handoff = takeIrissDraftHandoff<IrissPasutijumsRecord>(window.sessionStorage, initialRecord.id, Date.now());
+    if (!handoff) return;
+    const server = recRef.current;
+    const merged = withAutoEcarstradeLinks(
+      mergeServerAttachmentStorage(mergeServerOwnedIrissFields(handoff.rec, server), server),
+    );
+    merged.workspaceRevision = Math.max(
+      irissWorkspaceRevision(server),
+      irissWorkspaceRevision(handoff.rec),
+    );
+    if (JSON.stringify(merged) !== JSON.stringify(server)) {
+      setRec(merged);
+      recRef.current = merged;
+    }
+    const focus = handoff.focus;
+    if (!focus) return;
+    const raf = window.requestAnimationFrame(() => {
+      const target = Array.from(document.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("input, textarea")).find(
+        (el) => !el.disabled && irissDraftFieldLabel(el) === focus.label,
+      );
+      if (!target || document.activeElement !== document.body) return;
+      target.focus({ preventScroll: false });
+      try {
+        if (focus.selectionStart !== null && focus.selectionEnd !== null) {
+          target.setSelectionRange(focus.selectionStart, focus.selectionEnd);
+        }
+      } catch {
+        /* lauks bez selection */
+      }
+    });
+    return () => window.cancelAnimationFrame(raf);
+    // Tikai uzstādīšanas brīdī.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const readListingLink = useCallback(
     async (sourceUrl: string) => {
@@ -943,6 +975,26 @@ export function IrissPasutijumsEditor({
           generatedDocuments,
           ...(typeof workspaceRevision === "number" ? { workspaceRevision } : {}),
         });
+      } catch {
+        lastSavedSnapshot.current = JSON.stringify(next);
+      }
+      return next;
+    });
+  }, []);
+
+  /** "Pagarināt" saites joslā: serveris jau saglabāja jauno termiņu - pārņem to bez konflikta. */
+  const ingestOfferDeadline = useCallback((offerId: string, validUntilAt: string, workspaceRevision?: number | null) => {
+    const apply = (r: IrissPasutijumsRecord): IrissPasutijumsRecord => ({
+      ...r,
+      offers: r.offers.map((o) =>
+        o.id === offerId ? { ...o, validUntilAt, validUntil: offerValidUntilYmdFromAt(validUntilAt) } : o,
+      ),
+      ...(typeof workspaceRevision === "number" ? { workspaceRevision } : {}),
+    });
+    setRec((r) => {
+      const next = apply(r);
+      try {
+        lastSavedSnapshot.current = JSON.stringify(apply(JSON.parse(lastSavedSnapshot.current) as IrissPasutijumsRecord));
       } catch {
         lastSavedSnapshot.current = JSON.stringify(next);
       }
@@ -1019,9 +1071,37 @@ export function IrissPasutijumsEditor({
 
   const openCreateOffer = useCallback(() => {
     setOfferAutoFields(new Set());
+    setOfferSeedStatus(null);
     setOfferDraft(newOfferDraft(rec.offers.length + 1));
     setOfferOpen(true);
   }, [rec.offers.length]);
+
+  // Viena piedāvājumu sistēma (Nils 27.10): saglabātā pasūtījumā administrators veido piedāvājumu PD,
+  // klients un pasūtījums piesaistās automātiski. Vecie piedāvājumi šeit paliek lasāmi un nosūtāmi.
+  const pdNew = pdEntry && !unsavedDraft;
+  const createOfferEntry = useCallback(() => {
+    if (pdNew) router.push(irissPdNewHref({ orderId: rec.id }));
+    else openCreateOffer();
+  }, [pdNew, router, rec.id, openCreateOffer]);
+
+  // Nils 29.10: piedāvājums no Meklētāja atbilstības - tieši no sludinājuma datiem, šī pasūtījuma klientam.
+  const hitOfferBusy = useRef(false);
+  const prepareOfferFromHit = useCallback(
+    async (hit: IrissOrderRoomHit) => {
+      if (hitOfferBusy.current) return;
+      hitOfferBusy.current = true;
+      const name = [rec.clientFirstName, rec.clientLastName].map((x) => x.trim()).filter(Boolean).join(" ");
+      const res = await createIrissPdFromListing(hit.id, { name, phone: rec.phone, email: rec.email, orderId: rec.id });
+      hitOfferBusy.current = false;
+      if (res.ok) {
+        router.push(irissPdHref(res.id));
+        return;
+      }
+      // Sludinājums vairs nav kopā (piem. pazudis) - kā agrāk, no izsoles saites.
+      router.push(irissPdNewHref({ link: irissHitAuctionUrl(hit), orderId: rec.id }));
+    },
+    [rec.clientFirstName, rec.clientLastName, rec.phone, rec.email, rec.id, router],
+  );
 
   const retryGoogleContact = useCallback(async () => {
     if (!persistedIdRef.current) return;
@@ -1055,81 +1135,217 @@ export function IrissPasutijumsEditor({
     }
   }, [rec.id]);
 
+  /** Bojājumu teksts (AUTO1/OPENLANE) vienmēr jātulko latviski (Gemini) - fonā, nekavējot loga atvēršanu. */
+  const translateOfferDamage = useCallback((draftId: string, text: string, status: OfferSeedStatus) => {
+    setOfferSeedStatus({ ...status, loading: true, note: "tulko bojājumu aprakstu" });
+    void (async () => {
+      try {
+        const res = await fetch("/api/admin/iriss-offer-seed/translate-damage", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text }),
+        });
+        const data = res.ok ? ((await res.json().catch(() => ({}))) as { lv?: string }) : null;
+        const lv = data?.lv?.trim() ?? "";
+        if (lv) {
+          setOfferDraft((d) => {
+            if (d.id !== draftId) return d;
+            const patch: { damageGrade?: string; visualAssessment?: string } = {};
+            // Manuāli rakstītu tekstu nepārrakstam - lietotājs varēja sākt rakstīt tulkošanas brīdī.
+            if (!d.damageGrade.trim()) patch.damageGrade = lv;
+            if (!d.visualAssessment.trim()) patch.visualAssessment = lv;
+            return Object.keys(patch).length > 0 ? { ...d, ...patch } : d;
+          });
+          setOfferSeedStatus({ ...status, loading: false, note: "" });
+        } else {
+          setOfferSeedStatus(status.linkUrl ? { ...status, loading: false, note: "" } : null);
+        }
+      } catch {
+        setOfferSeedStatus(status.linkUrl ? { ...status, loading: false, note: "" } : null);
+      }
+    })();
+  }, []);
+
   const openCreateOfferFromHit = useCallback(
     (hit: IrissOrderRoomHit) => {
-      const seed = irissOfferSeedFromHit(hit);
-      const draft = newOfferDraft(rec.offers.length + 1);
-      const auto = new Set<string>();
-      for (const key of OFFER_AUTO_FIELD_KEYS) {
-        const v = seed[key as keyof typeof seed];
-        if (typeof v === "string" && v.trim()) auto.add(key);
-      }
+      const { fields, auto, damageText } = offerSeedPatchFromHit(hit);
+      const nextDraft: OfferDraft = { ...newOfferDraft(rec.offers.length + 1), ...fields };
       setOfferAutoFields(auto);
-      setOfferDraft({
-        ...draft,
-        ...seed,
-        year: seed.year,
-        mileage: seed.mileage,
-        priceGermany: seed.priceGermany,
-        odometerReading: seed.odometerReading || seed.mileage,
-        comment: "",
-        attachments: attachmentsFromAuctionPhotoUrls(auctionPhotoUrlsFromHit(hit)),
-      });
+      setOfferSeedStatus(null);
+      setOfferDraft(nextDraft);
       setOfferOpen(true);
+      if (damageText) {
+        const sourceLabel = IRISS_LISTING_PLATFORM_LABEL[hit.platform] ?? hit.platform;
+        translateOfferDamage(nextDraft.id, damageText, { loading: true, note: "", sourceLabel });
+      }
+    },
+    [rec.offers.length, translateOfferDamage],
+  );
+
+  /**
+   * j56 "No saites": logs atveras uzreiz tukšs. 1) IRISS sarakstu hit (ātri, A), 2) releja detaļu lapa (B):
+   * papildlauki + pilns foto komplekts izsoles secībā. Lietotāja ierakstītais netiek pārrakstīts.
+   */
+  const openCreateOfferFromLink = useCallback(
+    (url: string) => {
+      const link = parseIrissAuctionLink(url);
+      if (!link) return;
+      const draft = newOfferDraft(rec.offers.length + 1);
+      const status: OfferSeedStatus = { loading: true, note: "", sourceLabel: IRISS_AUCTION_LINK_LABEL[link.platform], linkUrl: link.url };
+      setOfferAutoFields(new Set());
+      setOfferDraft(draft);
+      setOfferSeedStatus(status);
+      setOfferOpen(true);
+      const stillOpen = () => offerDraftRef.current.id === draft.id;
+      const post = async (mode: "listing" | "detail") => {
+        const res = await fetch("/api/admin/iriss-offer-seed/from-link", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: link.url, mode }),
+        });
+        const data = (await res.json().catch(() => ({}))) as {
+          hit?: IrissOrderRoomHit;
+          extras?: IrissAuctionDetailExtras;
+          error?: string;
+          note?: string;
+        };
+        return res.ok && data.hit ? data : { ...data, hit: undefined };
+      };
+      const applyHit = (hit: IrissOrderRoomHit, replacePhotoIds: readonly string[] | null) => {
+        const { fields, auto, damageText } = offerSeedPatchFromHit(hit);
+        const cur = offerDraftRef.current;
+        // Foto: ja lietotājs saraksta foto nav aiztikis, detaļu lapas pilnais komplekts tos aizstāj.
+        const untouched = replacePhotoIds != null && cur.attachments.map((a) => a.id).join("|") === replacePhotoIds.join("|");
+        const base = untouched ? { ...cur, attachments: [] } : cur;
+        const photosForMerge = replacePhotoIds && !untouched ? { ...fields, attachments: [] } : fields;
+        const overwrite = replacePhotoIds ? offerAutoFieldsRef.current : new Set<string>();
+        const merged = mergeOfferSeedIntoDraft(base, photosForMerge, auto, overwrite);
+        setOfferDraft((d) =>
+          d.id === draft.id ? mergeOfferSeedIntoDraft(untouched ? { ...d, attachments: [] } : d, photosForMerge, auto, overwrite).draft : d,
+        );
+        setOfferAutoFields((prev) => new Set([...prev, ...merged.auto]));
+        return { damageText, photoIds: merged.draft.attachments.map((a) => a.id) };
+      };
+      void (async () => {
+        let listingPhotoIds: string[] | null = null;
+        let damageText = "";
+        try {
+          const listed = await post("listing");
+          if (!stillOpen()) return;
+          if (listed.hit) {
+            const r = applyHit(listed.hit, null);
+            listingPhotoIds = r.photoIds;
+            damageText = r.damageText;
+          }
+          setOfferSeedStatus({ ...status, note: "lasa izsoles lapu" });
+          const detail = await post("detail");
+          if (!stillOpen()) return;
+          if (detail.hit) {
+            const r = applyHit(detail.hit, listingPhotoIds);
+            damageText = r.damageText || damageText;
+            const ex = detail.extras;
+            if (ex) {
+              const extraFields: Partial<OfferDraft> = {
+                keyCount: ex.keyCount,
+                emissionClass: ex.emissionClass,
+                engineDisplacement: ex.engineDisplacement,
+                equipmentHighlights: ex.equipmentHighlights,
+                technicalAssessment: ex.technicalFacts,
+              };
+              const extraAuto = new Set(["keyCount", "emissionClass", "engineDisplacement"]);
+              const merged = mergeOfferSeedIntoDraft(offerDraftRef.current, extraFields, extraAuto);
+              setOfferDraft((d) =>
+                d.id === draft.id
+                  ? {
+                      ...mergeOfferSeedIntoDraft(d, extraFields, extraAuto).draft,
+                      hasFullServiceHistory: d.hasFullServiceHistory || ex.hasFullServiceHistory,
+                    }
+                  : d,
+              );
+              setOfferAutoFields((prev) => new Set([...prev, ...merged.auto]));
+              if (ex.technicalIssueText.trim()) {
+                void translateDamageLv(ex.technicalIssueText).then((lv) => {
+                  if (!lv) return;
+                  setOfferDraft((d) => {
+                    if (d.id !== draft.id || d.technicalAssessment.includes(lv)) return d;
+                    const prev = d.technicalAssessment.trim();
+                    return { ...d, technicalAssessment: prev ? `${prev}. ${lv}` : lv };
+                  });
+                });
+              }
+            }
+          } else if (!listed.hit) {
+            setOfferSeedStatus({ ...status, loading: false, note: offerLinkErrorNote(detail.error, detail.note) });
+            return;
+          }
+          if (damageText) translateOfferDamage(draft.id, damageText, status);
+          else setOfferSeedStatus({ ...status, loading: false, note: "" });
+        } catch {
+          setOfferSeedStatus({ ...status, loading: false, note: "Neizdevās ielādēt auto datus - aizpildi ar roku." });
+        }
+      })();
+    },
+    [rec.offers.length, translateOfferDamage],
+  );
+
+  /** Forma atveras uzreiz; auto lauki un /STOCK bildes ielādējas tajā (bez starplapas). */
+  const openCreateOfferFromSource = useCallback(
+    (from: string) => {
+      const ref = parseOfferSourceRef(from);
+      if (!ref) return;
+      const draft = { ...newOfferDraft(rec.offers.length + 1), sourceRef: offerSourceRefString(ref) };
+      const sourceLabel = OFFER_SOURCE_LABEL_LV[ref.kind];
+      setOfferAutoFields(new Set());
+      setOfferDraft(draft);
+      setOfferSeedStatus({ loading: true, note: "", sourceLabel });
+      setOfferOpen(true);
+      void (async () => {
+        try {
+          const res = await fetch(`/api/admin/iriss-offer-seed?from=${encodeURIComponent(from)}`, { credentials: "include" });
+          if (!res.ok) {
+            setOfferSeedStatus({ loading: false, note: "Auto dati nav atrasti - aizpildi ar roku.", sourceLabel });
+            return;
+          }
+          const seed = (await res.json()) as {
+            fields?: Partial<OfferDraft>;
+            autoFields?: string[];
+            attachments?: IrissOfferAttachment[];
+            photosNote?: string;
+          };
+          setOfferDraft((d) =>
+            d.id === draft.id
+              ? {
+                  ...d,
+                  ...(seed.fields ?? {}),
+                  attachments: [...(seed.attachments ?? []), ...d.attachments].slice(0, IRISS_MAX_OFFER_ATTACHMENTS),
+                }
+              : d,
+          );
+          setOfferAutoFields(new Set(seed.autoFields ?? []));
+          setOfferSeedStatus({ loading: false, note: seed.photosNote ?? "", sourceLabel });
+        } catch {
+          setOfferSeedStatus({ loading: false, note: "Neizdevās ielādēt auto datus - aizpildi ar roku.", sourceLabel });
+        }
+      })();
     },
     [rec.offers.length],
   );
 
-  const openEditOffer = useCallback((offer: IrissOfferRecord) => {
-    setOfferDraft({
-      id: offer.id,
-      title: offer.title,
-      brandModel: offer.brandModel,
-      vin: offer.vin ?? "",
-      year: offer.year,
-      mileage: offer.mileage,
-      priceGermany: offer.priceGermany,
-      comment: offer.comment,
-      firstRegistration: offer.firstRegistration ?? offer.year ?? "",
-      odometerReading: offer.odometerReading ?? offer.mileage ?? "",
-      transmission: offer.transmission ?? "",
-      location: offer.location ?? "",
-      hasFullServiceHistory: Boolean(offer.hasFullServiceHistory),
-      hasFactoryPaint: Boolean(offer.hasFactoryPaint),
-      hasNoRustBody: Boolean(offer.hasNoRustBody),
-      hasSecondWheelSet: Boolean(offer.hasSecondWheelSet),
-      specialNotes: offer.specialNotes ?? "",
-      visualAssessment: offer.visualAssessment ?? "",
-      technicalAssessment: offer.technicalAssessment ?? "",
-      summary: offer.summary ?? "",
-      carPrice: offer.carPrice ?? offer.priceGermany ?? "",
-      deliveryPrice: offer.deliveryPrice ?? "",
-      commissionFee: offer.commissionFee ?? "",
-      offerValidDays: offer.offerValidDays ?? "",
-      validUntil: deriveOfferValidUntil(offer),
-      attachments: offer.attachments,
-      coverAttachmentId: offer.coverAttachmentId ?? "",
-      createdAt: offer.createdAt || new Date().toISOString(),
-      fuel: offer.fuel ?? "",
-      driveType: offer.driveType ?? "",
-      powerKw: offer.powerKw ?? "",
-      engineDisplacement: offer.engineDisplacement ?? "",
-      color: offer.color ?? "",
-      bodyTypeOffer: offer.bodyTypeOffer ?? "",
-      doorCount: offer.doorCount ?? "",
-      emissionClass: offer.emissionClass ?? "",
-      originCountry: offer.originCountry ?? "",
-      auctionPlatform: offer.auctionPlatform ?? "",
-      auctionStockNumber: offer.auctionStockNumber ?? "",
-      auctionEndAt: offer.auctionEndAt ?? "",
-      vatStatus: offer.vatStatus ?? "",
-      damageGrade: offer.damageGrade ?? "",
-      equipmentHighlights: offer.equipmentHighlights ?? "",
-      estimatedTotalPrice: offer.estimatedTotalPrice ?? "",
-      keyCount: offer.keyCount ?? "",
-      ...(offer.blocks?.length ? { blocks: offer.blocks } : {}),
+  const onOfferAutoFieldEdited = useCallback((key: string) => {
+    setOfferAutoFields((prev) => {
+      if (!prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
     });
+  }, []);
+
+  const openEditOffer = useCallback((offer: IrissOfferRecord) => {
+    setOfferDraft(offerDraftFromRecord(offer));
     setOfferAutoFields(new Set());
+    setOfferSeedStatus(null);
     setOfferOpen(true);
   }, []);
 
@@ -1137,6 +1353,8 @@ export function IrissPasutijumsEditor({
     if (autoOpenOfferDone.current) return;
     if (autoOpenOfferId) {
       const existing = rec.offers.find((o) => o.id === autoOpenOfferId);
+      // Gaida sīktēlus, citādi režģis atveras ar tukšām bildēm.
+      if (existing && !imagesReady) return;
       if (existing) {
         autoOpenOfferDone.current = true;
         openEditOffer(existing);
@@ -1145,8 +1363,9 @@ export function IrissPasutijumsEditor({
     }
     if (!autoOpenNewOffer) return;
     autoOpenOfferDone.current = true;
-    openCreateOffer();
-  }, [autoOpenNewOffer, autoOpenOfferId, openCreateOffer, openEditOffer, rec.offers]);
+    if (seedFrom) openCreateOfferFromSource(seedFrom);
+    else openCreateOffer();
+  }, [autoOpenNewOffer, autoOpenOfferId, imagesReady, openCreateOffer, openCreateOfferFromSource, openEditOffer, rec.offers, seedFrom]);
 
   const offerAttachmentCount = offerDraft.attachments.length;
   const onOfferFilesPick = useCallback(
@@ -1249,60 +1468,7 @@ export function IrissPasutijumsEditor({
     ): Promise<{ offer: IrissOfferRecord | null; error?: string }> => {
       const now = new Date().toISOString();
       const cleanedTitle = offerDraft.title.trim() || `Piedāvājums ${rec.offers.length + 1}`;
-      const offerOut: IrissOfferRecord = {
-        id: offerDraft.id,
-        title: cleanedTitle,
-        brandModel: offerDraft.brandModel,
-        vin: offerDraft.vin,
-        year: offerDraft.firstRegistration || offerDraft.year,
-        mileage: offerDraft.odometerReading || offerDraft.mileage,
-        priceGermany: offerDraft.carPrice || offerDraft.priceGermany,
-        comment:
-          offerDraft.summary ||
-          offerDraft.visualAssessment ||
-          offerDraft.technicalAssessment ||
-          offerDraft.specialNotes ||
-          offerDraft.comment,
-        firstRegistration: offerDraft.firstRegistration,
-        odometerReading: offerDraft.odometerReading,
-        transmission: offerDraft.transmission,
-        location: offerDraft.location,
-        fuel: offerDraft.fuel,
-        driveType: offerDraft.driveType,
-        powerKw: offerDraft.powerKw,
-        engineDisplacement: offerDraft.engineDisplacement,
-        color: offerDraft.color,
-        bodyTypeOffer: offerDraft.bodyTypeOffer,
-        doorCount: offerDraft.doorCount,
-        emissionClass: offerDraft.emissionClass,
-        originCountry: offerDraft.originCountry,
-        auctionPlatform: offerDraft.auctionPlatform,
-        auctionStockNumber: offerDraft.auctionStockNumber,
-        auctionEndAt: offerDraft.auctionEndAt,
-        vatStatus: offerDraft.vatStatus,
-        damageGrade: offerDraft.damageGrade,
-        equipmentHighlights: offerDraft.equipmentHighlights,
-        estimatedTotalPrice: offerDraft.estimatedTotalPrice,
-        keyCount: offerDraft.keyCount,
-        hasFullServiceHistory: offerDraft.hasFullServiceHistory,
-        hasFactoryPaint: offerDraft.hasFactoryPaint,
-        hasNoRustBody: offerDraft.hasNoRustBody,
-        hasSecondWheelSet: offerDraft.hasSecondWheelSet,
-        specialNotes: offerDraft.specialNotes,
-        visualAssessment: offerDraft.visualAssessment,
-        technicalAssessment: offerDraft.technicalAssessment,
-        summary: offerDraft.summary,
-        carPrice: offerDraft.carPrice,
-        deliveryPrice: offerDraft.deliveryPrice,
-        commissionFee: offerDraft.commissionFee,
-        offerValidDays: offerDraft.offerValidDays,
-        validUntil: normalizeOfferValidUntil(offerDraft.validUntil),
-        attachments: offerDraft.attachments,
-        ...(offerDraft.coverAttachmentId ? { coverAttachmentId: offerDraft.coverAttachmentId } : {}),
-        ...(offerDraft.blocks?.length ? { blocks: offerDraft.blocks } : {}),
-        createdAt: offerDraft.createdAt || now,
-        updatedAt: now,
-      };
+      const offerOut: IrissOfferRecord = offerRecordFromDraft(offerDraft, { title: cleanedTitle, nowIso: now });
       const exists = rec.offers.some((o) => o.id === offerOut.id);
       const nextOffers = exists ? rec.offers.map((o) => (o.id === offerOut.id ? offerOut : o)) : [...rec.offers, offerOut];
       const renumbered = nextOffers.map((o, idx) => ({ ...o, title: `Piedāvājums ${idx + 1}` }));
@@ -1386,32 +1552,19 @@ export function IrissPasutijumsEditor({
   }, [offerDraft.id, rec, save]);
 
   const shellCard = useMemo(
-    () => "rounded-xl border border-[#E5E7EB] bg-white p-4 shadow-sm sm:p-5",
+    () => "rounded-xl border border-[var(--iriss-line)] bg-white p-4 shadow-sm sm:p-5",
     [],
   );
 
   const phoneInspect = useMemo(() => inspectIrissPhone(rec.phone), [rec.phone]);
   const normalizedPhone = phoneInspect.hrefValue;
   const orderVinWarning = useMemo(() => irissVinWarning(rec.vin), [rec.vin]);
-  const specRanges = irissOrderRangeView(rec);
-  const offerVinWarning = useMemo(() => irissVinWarning(offerDraft.vin), [offerDraft.vin]);
-  const carPriceWarning = useMemo(() => irissPriceFormatWarning(offerDraft.carPrice), [offerDraft.carPrice]);
-  const deliveryPriceWarning = useMemo(() => irissPriceFormatWarning(offerDraft.deliveryPrice), [offerDraft.deliveryPrice]);
-  const commissionWarning = useMemo(() => irissPriceFormatWarning(offerDraft.commissionFee), [offerDraft.commissionFee]);
-
   const triggerCall = useCallback(() => {
     if (!normalizedPhone) return;
     if (phoneInspect.appliedLvPrefix && normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
     window.location.href = `tel:${normalizedPhone}`;
   }, [normalizedPhone, patch, phoneInspect.appliedLvPrefix, rec.phone]);
 
-  const triggerWhatsapp = useCallback(() => {
-    if (!normalizedPhone) return;
-    if (phoneInspect.appliedLvPrefix && normalizedPhone !== rec.phone.trim()) patch("phone", normalizedPhone);
-    const digits = normalizedPhone.replace(/[^\d]/g, "");
-    if (!digits) return;
-    window.open(`https://wa.me/${digits}`, "_blank", "noopener,noreferrer");
-  }, [normalizedPhone, patch, phoneInspect.appliedLvPrefix, rec.phone]);
 
   const openWhatsappText = useCallback(
     (text: string) => {
@@ -1490,6 +1643,9 @@ export function IrissPasutijumsEditor({
     [forceNoClientPdf, generateOfferPdfBlob],
   );
 
+  // Vienotā poga: pēc veiksmīga saglabājuma ~2 s zaļš ķeksis, kļūdai sarkans.
+  const pageSaveState = useSaveMessageState(saveMsg, busy || orderPdfBusy);
+  const offerSaveState = useSaveMessageState(saveMsg, offerBusy);
   const persistedOfferRecord = useMemo(() => rec.offers.find((o) => o.id === offerDraft.id) ?? null, [rec.offers, offerDraft.id]);
   const offerPersistedInRecord = Boolean(persistedOfferRecord);
   const offerShareWhatsAppEnabled = Boolean(normalizedPhone);
@@ -1497,17 +1653,41 @@ export function IrissPasutijumsEditor({
     () => isOfferDraftSyncedWithRecord(offerDraft, persistedOfferRecord),
     [offerDraft, persistedOfferRecord],
   );
-  const offerTotalPrice = useMemo(
-    () =>
-      formatPriceLike(
-        parsePriceLike(offerDraft.carPrice) +
-          parsePriceLike(offerDraft.deliveryPrice) +
-          parsePriceLike(offerDraft.commissionFee),
-      ),
-    [offerDraft.carPrice, offerDraft.commissionFee, offerDraft.deliveryPrice],
-  );
+  /** Ar izvēlētu klientu: piedāvājums tiek pievienots klienta pasūtījumam, šis tukšais netiek veidots. */
+  const addOfferToClientOrder = useCallback(async (client: NonNullable<IrissOfferClientChoice>): Promise<null> => {
+    setOfferBusy(true);
+    try {
+      const offerOut = offerRecordFromDraft(offerDraft, { title: offerDraft.title, nowIso: new Date().toISOString() });
+      const wire = irissSaveWirePayload({ ...rec, offers: [offerOut] }).offers[0] ?? offerOut;
+      const res = await fetch(`/api/admin/iriss-pasutijumi/${encodeURIComponent(client.orderId)}/offers`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offer: wire }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { offerId?: string; error?: string };
+      if (!res.ok || !data.offerId) {
+        setSaveMsg(res.status === 404 ? "Klienta pasūtījums nav atrasts." : "Saglabāšana neizdevās.");
+        return null;
+      }
+      setDirty(false);
+      setSaveMsg(`Saglabāts klienta pasūtījumā: ${client.name}`);
+      router.replace(
+        `/admin/iriss/pasutijumi/${encodeURIComponent(client.orderId)}?offer=${encodeURIComponent(data.offerId)}`,
+      );
+      return null;
+    } catch {
+      setSaveMsg("Tīkla kļūda.");
+      return null;
+    } finally {
+      setOfferBusy(false);
+    }
+  }, [offerDraft, rec, router]);
 
-  const persistOffer = useCallback(async (reason: "save" | "pdf" | "whatsapp"): Promise<IrissOfferRecord | null> => {
+  const offerClientPickable = unsavedDraft && !persistedIdRef.current && !persistedOfferRecord;
+
+  const persistOffer = useCallback(async (reason: "save" | "pdf" | "whatsapp" | "link"): Promise<IrissOfferRecord | null> => {
+    if (offerClient && offerClientPickable) return addOfferToClientOrder(offerClient);
     if (offerReadyForPdfActions && persistedOfferRecord) {
       if (reason === "save") setSaveMsg("Saglabāts.");
       return persistedOfferRecord;
@@ -1530,7 +1710,7 @@ export function IrissPasutijumsEditor({
     } finally {
       setOfferBusy(false);
     }
-  }, [commitOfferDraftToRecord, offerReadyForPdfActions, persistedOfferRecord]);
+  }, [addOfferToClientOrder, commitOfferDraftToRecord, offerClient, offerClientPickable, offerReadyForPdfActions, persistedOfferRecord]);
 
   const openOfferPdfInNewTab = useCallback(async (omitImages = false) => {
     setOfferPdfBusy(true);
@@ -1563,6 +1743,61 @@ export function IrissPasutijumsEditor({
       setOfferPdfBusy(false);
     }
   }, [forceNoClientPdf, generateOfferPdfBlob, persistOffer]);
+
+  // j61 kājene "Links": saglabā, tad nokopē esošo aktīvo klienta saiti vai izveido jaunu (termiņš obligāts).
+  const [offerLinkBusy, setOfferLinkBusy] = useState(false);
+  const [offerLinkNotice, setOfferLinkNotice] = useState<{ text: string; url: string } | null>(null);
+  const openOfferClientLink = useCallback(async () => {
+    setOfferLinkBusy(true);
+    setOfferLinkNotice(null);
+    try {
+      const offerOut = await persistOffer("link");
+      const orderId = persistedIdRef.current;
+      if (!offerOut || !orderId) return;
+      const base = `/api/admin/iriss-pasutijumi/${encodeURIComponent(orderId)}`;
+      let path = "";
+      const listRes = await fetch(`${base}/client-links`, { credentials: "include", cache: "no-store" });
+      if (listRes.ok) {
+        const data = (await listRes.json().catch(() => ({}))) as { links?: IrissOfferClientLinkAdminView[] };
+        path = pickReusableOfferClientLink(Array.isArray(data.links) ? data.links : [], offerOut.id)?.path ?? "";
+      }
+      if (!path) {
+        if (!offerClientLinkDeadlineReady(offerOut.validUntilAt, Date.now())) {
+          setOfferLinkNotice({ text: IRISS_OFFER_LINK_NEEDS_DEADLINE, url: "" });
+          return;
+        }
+        const res = await fetch(`${base}/offer/${encodeURIComponent(offerOut.id)}/client-link`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "create", expiresInDays: null }),
+        });
+        const data = (await res.json().catch(() => ({}))) as { error?: string; link?: IrissOfferClientLinkAdminView };
+        if (!res.ok || !data.link?.path) {
+          setOfferLinkNotice({
+            text: data.error === "save_first" ? "Vispirms saglabājiet pasūtījumu un piedāvājumu." : "Saiti neizdevās izveidot.",
+            url: "",
+          });
+          return;
+        }
+        path = data.link.path;
+      }
+      const url = `${window.location.origin}${path}`;
+      // Pēc await pārlūks (īpaši iOS) var kopēšanu noraidīt vai atstāt karājamies - tad paliek poga "Kopēt".
+      const copied = await Promise.race([
+        navigator.clipboard?.writeText(url).then(
+          () => true,
+          () => false,
+        ) ?? Promise.resolve(false),
+        new Promise<boolean>((resolve) => window.setTimeout(() => resolve(false), 1500)),
+      ]);
+      setOfferLinkNotice({ text: copied ? "Klienta saite nokopēta" : "Klienta saite gatava", url });
+    } catch {
+      setOfferLinkNotice({ text: "Tīkla kļūda - saiti neizdevās iegūt.", url: "" });
+    } finally {
+      setOfferLinkBusy(false);
+    }
+  }, [persistOffer]);
 
   const openOfferShareWhatsApp = useCallback(async () => {
     if (!normalizedPhone) return;
@@ -1630,7 +1865,7 @@ export function IrissPasutijumsEditor({
     <div
       className={
         unsavedDraft
-          ? "mx-auto w-full max-w-[1200px] bg-white px-3 pb-8 max-md:px-0 max-md:pb-28 sm:px-6 lg:px-10"
+          ? "mx-auto w-full max-w-[1200px] bg-[#f4f5f7] px-3 pb-8 max-md:px-0 max-md:pb-28 sm:px-6 lg:px-10"
           : "mx-auto w-full min-w-0 max-w-[1280px] overflow-x-hidden bg-[#f4f5f7] px-3 pb-4 max-md:px-0 max-md:pb-28 sm:px-4 lg:px-5"
       }
     >
@@ -1638,7 +1873,7 @@ export function IrissPasutijumsEditor({
       {unsavedDraft ? (
       <>
       <AdminDashboardHeaderWithMenu
-        mobileTitle={rec.brandModel.trim() || "Pasūtījums"}
+        mobileTitle={rec.brandModel.trim() || "Jauns pasūtījums"}
         mobileBackHref="/admin/iriss/pasutijumi"
       >
         <div className="flex flex-col gap-2">
@@ -1658,7 +1893,7 @@ export function IrissPasutijumsEditor({
               </p>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <h1 className="text-[1.35rem] font-semibold leading-tight tracking-tight text-[var(--color-apple-text)] sm:text-[1.5rem]">
-                  Pasūtījums
+                  Jauns pasūtījums
                 </h1>
                 {rec.offers.map((offer, idx) => (
                   <button
@@ -1705,7 +1940,7 @@ export function IrissPasutijumsEditor({
               ))}
               <button
                 type="button"
-                onClick={openCreateOffer}
+                onClick={createOfferEntry}
                 className={offerPChipButtonClass}
                 style={{ backgroundColor: "#e5e5ea", color: "#3a3a3c", border: "1px solid #d1d1d6" }}
                 title="Jauns piedāvājums"
@@ -1715,17 +1950,12 @@ export function IrissPasutijumsEditor({
               </button>
             </div>
             <div className="hidden shrink-0 flex-nowrap items-center justify-end gap-1 sm:flex-wrap sm:gap-2 md:flex">
-              <button
-                type="button"
-                disabled={busy || orderPdfBusy}
-                title="Saglabāt"
-                aria-label={busy || orderPdfBusy ? "Saglabā" : "Saglabāt"}
-                onClick={saveCurrentPage}
-                className={`${toolbarBtnBase} border border-[var(--color-provin-accent)] bg-transparent text-[var(--color-provin-accent)] shadow-sm hover:bg-[var(--color-provin-accent)]/10 sm:hover:bg-[var(--color-provin-accent)]/10`}
-              >
-                <Save className="h-6 w-6 shrink-0 sm:h-4 sm:w-4" strokeWidth={2.25} aria-hidden />
-                <span className="hidden text-[13px] font-semibold sm:inline">{busy || orderPdfBusy ? "Saglabā…" : "Saglabāt"}</span>
-              </button>
+              <AdminSaveButton
+                onSave={saveCurrentPage}
+                state={pageSaveState}
+                label="Izveidot pasūtījumu"
+                shortcut
+              />
               <button
                 type="button"
                 disabled={orderPdfBusy}
@@ -1740,8 +1970,8 @@ export function IrissPasutijumsEditor({
             </div>
           </div>
         </div>
-        {saveMsg ? (
-          <p className="mt-2 text-[12px] font-medium text-[var(--color-provin-muted)]" role="status">
+        {saveMsg && saveMsg !== "Saglabāts." ? (
+          <p className={`mt-2 text-[12px] font-medium ${saveFailed ? "text-[#c81e1e]" : "text-[var(--color-provin-muted)]"}`} role="status">
             {saveMsg}
           </p>
         ) : null}
@@ -1792,7 +2022,7 @@ export function IrissPasutijumsEditor({
         ))}
         <button
           type="button"
-          onClick={openCreateOffer}
+          onClick={createOfferEntry}
           className={offerPChipButtonClass}
           style={{ backgroundColor: "#e5e5ea", color: "#3a3a3c", border: "1px solid #d1d1d6" }}
           title="Jauns piedāvājums"
@@ -1829,299 +2059,59 @@ export function IrissPasutijumsEditor({
       ) : null}
 
       <div className="mt-3 space-y-4 sm:mt-4 sm:space-y-5">
-        <section className={shellCard}>
-          <IrissListingPlatformChipsRow rec={rec} />
-        </section>
+        {/* Bez saitēm rinda neko nerāda - bez tukšas kartītes (FABLE 25.10). */}
+        {buildListingPlatformChips(rec).length > 0 ? (
+          <section className={shellCard}>
+            <IrissListingPlatformChipsRow rec={rec} />
+          </section>
+        ) : null}
 
-        <section className={shellCard}>
-          <BlockTitle>Transportlīdzekļa specifikācija</BlockTitle>
-          <div className="iriss-mobile-kv iriss-spec-fields">
-            <div className="iriss-spec-top">
-              <label className="block min-w-0">
-                <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Statuss</span>
-                <select
-                  className={fieldClass}
-                  value={canonicalIrissPasutijumsListStatus(rec.listStatus)}
-                  onChange={(e) => setListStatus(parseIrissPasutijumsListStatus(e.target.value))}
-                  aria-label="Pasūtījuma statuss"
-                >
-                  {IRISS_PASUTIJUMS_PICKER_STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {IRISS_PASUTIJUMS_PICKER_STATUS_LV[s]}
-                    </option>
-                  ))}
-                </select>
-                {rec.listStatus === "inactive" ? (
-                  <input
-                    className={`${fieldClass} mt-1.5`}
-                    value={rec.inactiveReason ?? ""}
-                    onChange={(e) => setRec((r) => withAutoEcarstradeLinks(setIrissInactiveReason(r, e.target.value)))}
-                    placeholder="Iemesls (neobligāti)"
-                    aria-label="Neaktīvs iemesls"
-                  />
-                ) : null}
-                {(rec.statusHistory ?? []).length > 0 ? (
-                  <ol className="mt-1.5 space-y-0.5">
-                    {[...(rec.statusHistory ?? [])].slice(-6).reverse().map((h) => (
-                      <li key={`${h.at}-${h.from}-${h.to}`} className="text-[11px] text-[var(--color-provin-muted)]">
-                        {h.at.slice(0, 16).replace("T", " ")}: {displayIrissPasutijumsListStatusLabel(h.from)} →{" "}
-                        {displayIrissPasutijumsListStatusLabel(h.to)}
-                        {h.reason ? ` (${h.reason})` : ""}
-                      </li>
-                    ))}
-                  </ol>
-                ) : null}
-              </label>
-              <LabeledInput
-                label="Marka / modelis"
-                value={rec.brandModel}
-                onChange={(e) => patch("brandModel", e.target.value)}
-              />
-              <LabeledInput
-                label="Modeļa paplašinājums"
-                value={rec.modelExtension}
-                placeholder="piem., S-line"
-                onChange={(e) => patch("modelExtension", e.target.value)}
-              />
-            </div>
-            <IrissSpecDiapazoniBlock
-              ranges={specRanges}
-              onPatchRange={patchRange}
-              rangeError={(pair) => irissOrderRangeErrorFor(rec, pair)}
-              inputClassName={fieldClass}
-            />
-            <div className="iriss-spec-rest">
-              <IrissSpecChoiceSelect
-                label="Degviela"
-                value={fuelSelectValue(rec.engineType)}
-                options={IRISS_FUEL_SELECT_OPTIONS}
-                selectClassName={fieldClass}
-                labelClassName="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]"
-                onChange={(value) => patch("engineType", persistFuelSelect(value, rec.engineType))}
-              />
-              <IrissSpecChoiceSelect
-                label="Ātrumkārba"
-                value={gearboxSelectValue(rec.transmission)}
-                options={IRISS_GEARBOX_SELECT_OPTIONS}
-                selectClassName={fieldClass}
-                labelClassName="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]"
-                onChange={(value) => patch("transmission", persistGearboxSelect(value, rec.transmission))}
-              />
-              <IrissSpecChoiceSelect
-                label="Virsbūves tips"
-                value={bodySelectValue(rec.bodyType)}
-                options={IRISS_BODY_SELECT_OPTIONS}
-                selectClassName={fieldClass}
-                labelClassName="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]"
-                onChange={(value) => patch("bodyType", persistBodySelect(value, rec.bodyType))}
-              />
-              <LabeledInput
-                label="Piedziņas tips"
-                value={rec.driveType}
-                onChange={(e) => patch("driveType", e.target.value)}
-                placeholder="piem., priekšējā, 4x4"
-              />
-              <LabeledInput
-                label="Sēdvietu skaits"
-                value={rec.seatCount}
-                onChange={(e) => patch("seatCount", e.target.value)}
-                placeholder="piem., 5"
-              />
-              <LabeledInput
-                label="Vēlamās krāsas"
-                value={rec.preferredColors}
-                onChange={(e) => patch("preferredColors", e.target.value)}
-              />
-              <LabeledInput
-                label="Nevēlamās krāsas"
-                value={rec.nonPreferredColors}
-                onChange={(e) => patch("nonPreferredColors", e.target.value)}
-              />
-              <LabeledInput
-                wrapperClassName="iriss-spec-full"
-                label="Salona apdare"
-                value={rec.interiorFinish}
-                onChange={(e) => patch("interiorFinish", e.target.value)}
-              />
-              <div className="iriss-spec-full">
-                <IrissSectionHeading>Darījuma detaļas</IrissSectionHeading>
-                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                  {IRISS_DEAL_DETAIL_OPTIONS.map((opt) => (
-                    <label key={opt.key} className="inline-flex items-center gap-2 text-[12px] text-[var(--color-apple-text)]">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(rec[opt.key])}
-                        onChange={(e) => patch(opt.key, e.target.checked)}
-                      />
-                      {opt.label}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-          <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
-        </section>
-
-        <SharedOrderCriteriaForm source={rec} />
-
-        <section className={shellCard}>
-          <BlockTitle>Aprīkojums</BlockTitle>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <LabeledTextarea
-              label="Obligātās prasības"
-              value={rec.equipmentRequired}
-              onChange={(e) => patch("equipmentRequired", e.target.value)}
-            />
-            <IrissInternalNoteField
-              label="Piezīmes aģentam"
-              value={rec.agentNotes}
-              onChange={(value) => patch("agentNotes", value)}
-              className={textareaClass}
-              labelClassName="text-[11px] font-medium text-[var(--color-provin-muted)]"
-            />
-            <div className="sm:col-span-2">
-              <LabeledTextarea
-                label="Vēlamās prasības"
-                value={rec.equipmentDesired}
-                onChange={(e) => patch("equipmentDesired", e.target.value)}
-              />
-            </div>
-          </div>
-          <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
-        </section>
-
-        <section className={shellCard}>
-          <BlockTitle>Piezīmes</BlockTitle>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <LabeledTextarea label="Piezīmes" value={rec.notes} onChange={(e) => patch("notes", e.target.value)} />
-            <IrissInternalNoteField
-              label="Piezīmes (iekšējās)"
-              value={rec.internalNotes}
-              onChange={(value) => patch("internalNotes", value)}
-              className={textareaClass}
-              labelClassName="text-[11px] font-medium text-[var(--color-provin-muted)]"
-            />
-          </div>
-          <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
-        </section>
-
-        <section className={shellCard}>
-          <BlockTitle>Klienta dati</BlockTitle>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <LabeledInput
-              label="Vārds, uzvārds"
-              value={[rec.clientFirstName, rec.clientLastName].filter(Boolean).join(" ").trim()}
-              onChange={(e) => {
-                const normalized = e.target.value.replace(/\s+/g, " ").trim();
-                if (!normalized) {
-                  patchRecord({ clientFirstName: "", clientLastName: "" });
-                  return;
-                }
-                const [first, ...rest] = normalized.split(" ");
-                patchRecord({ clientFirstName: first ?? "", clientLastName: rest.join(" ") });
-              }}
-              autoComplete="name"
-            />
-            <label className="block min-w-0">
-              <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Tālrunis</span>
-              <div className="flex min-w-0 items-center gap-1.5">
-                <input
-                  className={`${fieldClass} min-w-0 flex-1`}
-                  value={rec.phone}
-                  onChange={(e) => patch("phone", e.target.value)}
-                  inputMode="tel"
-                  autoComplete="tel"
-                />
-                <button
-                  type="button"
-                  onClick={triggerCall}
-                  disabled={!normalizedPhone}
-                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-200/90 bg-white text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 aria-disabled:pointer-events-none aria-disabled:opacity-35"
-                  title="Zvanīt"
-                  aria-label="Zvanīt"
-                >
-                  <Phone className="h-5 w-5" strokeWidth={2.2} aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  onClick={triggerWhatsapp}
-                  disabled={!normalizedPhone}
-                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-emerald-200/80 bg-emerald-50 text-emerald-700 shadow-sm transition hover:bg-emerald-100/70 aria-disabled:pointer-events-none aria-disabled:opacity-35"
-                  title="Atvērt WhatsApp"
-                  aria-label="Atvērt WhatsApp"
-                >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 fill-current" aria-hidden>
-                    <path d="M12.04 2C6.55 2 2.1 6.45 2.1 11.94c0 1.93.55 3.81 1.59 5.43L2 22l4.8-1.61a9.9 9.9 0 0 0 5.24 1.5h.01c5.49 0 9.95-4.45 9.95-9.95A9.96 9.96 0 0 0 12.04 2Zm0 18.1h-.01a8.1 8.1 0 0 1-4.13-1.13l-.3-.18-2.85.95.95-2.78-.19-.29a8.1 8.1 0 0 1-1.25-4.33c0-4.49 3.65-8.14 8.14-8.14a8.1 8.1 0 0 1 5.76 2.38 8.08 8.08 0 0 1 2.38 5.76c0 4.48-3.65 8.13-8.14 8.13Zm4.46-6.06c-.24-.12-1.43-.7-1.65-.78-.22-.08-.38-.12-.54.12-.16.24-.62.78-.76.94-.14.16-.28.18-.52.06-.24-.12-1.02-.38-1.95-1.22a7.34 7.34 0 0 1-1.35-1.67c-.14-.24-.01-.37.11-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.69 2.58 4.1 3.62.57.25 1.02.4 1.37.51.58.18 1.11.15 1.53.09.47-.07 1.43-.58 1.63-1.13.2-.56.2-1.04.14-1.13-.06-.1-.22-.16-.46-.28Z" />
-                  </svg>
-                </button>
-              </div>
-              {phoneInspect.warning ? <p className="mt-1 text-[11px] text-amber-800">{phoneInspect.warning}</p> : null}
-            </label>
-            <LabeledInput
-              label="E-pasts"
-              value={rec.email}
-              onChange={(e) => patch("email", e.target.value)}
-              inputMode="email"
-              autoComplete="email"
-            />
-            <LabeledInput
-              label="Pasūtījuma datums"
-              type="date"
-              value={rec.orderDate}
-              onChange={(e) => patch("orderDate", e.target.value)}
-            />
-          </div>
-          <IrissGoogleContactStatusRow
+        {/* Nils 31.10 (makets «Jauns pasūtījums v2»): tie paši 6 soļi kā atvērtā pasūtījumā; tāme, avanss un dokumenti - pēc izveides. */}
+        <nav aria-label="Soļi" className="flex flex-wrap gap-1.5 max-md:px-3">
+          {IRISS_ORDER_STEPS.map((step, i) => (
+            <a
+              key={step.id}
+              href={i === IRISS_ORDER_STEPS.length - 1 ? "#iriss-room-client" : `#iriss-step-${step.id}`}
+              className="inline-flex min-h-[32px] items-center rounded-full bg-white px-3 text-[12.5px] font-semibold text-[var(--iriss-ink)] shadow-[inset_0_0_0_1px_var(--iriss-line-strong)]"
+            >
+              {i + 1} {step.title}
+            </a>
+          ))}
+        </nav>
+        <div className="space-y-3">
+          <IrissOrderStepCards
+            draft
             rec={rec}
-            configured={googleContactsConfigured}
-            busy={googleContactBusy}
-            onRetry={() => void retryGoogleContact()}
-            buttonClass="inline-flex h-10 min-h-10 items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 text-[12.5px] font-semibold text-[var(--color-provin-accent)] shadow-sm"
-          />
-          <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
-        </section>
-
-        <section className={shellCard}>
-          <BlockTitle>Sludinājumu platformas (saites)</BlockTitle>
-          <IrissListingPlatformsFields
-            rec={rec}
-            onPatch={patchRecord}
+            onPatch={patch}
+            onPatchRange={patchRange}
+            onPatchRecord={patchRecord}
+            onInactiveReason={(value) => setRec((r) => withAutoEcarstradeLinks(setIrissInactiveReason(r, value)))}
             onReadLink={(url) => void readListingLink(url)}
             readingUrl={readingListingUrl}
             readCountByUrl={listingReadByUrl}
+            phoneWarning={phoneInspect.warning}
+            googleContactsConfigured={googleContactsConfigured}
+            googleContactBusy={googleContactBusy}
+            onRetryGoogleContact={() => void retryGoogleContact()}
           />
-          <IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />
-        </section>
-
-        <DzintarzemeTameSection
-          orderId={rec.id}
-          shellCard={shellCard}
-          draft={rec.dzintarzemeTameDraft ?? defaultIrissDzintarzemeTameDraft()}
-          orderBrandModel={rec.brandModel}
-          onDraftChange={(next) => patchRecord({ dzintarzemeTameDraft: next })}
-          onGeneratedDocument={ingestGeneratedDocument}
-          sectionSave={<IrissOrderSectionSaveButton disabled={busy || orderPdfBusy} onSave={saveCurrentPage} />}
-        />
+        </div>
 
         <section className={`${shellCard} border-red-100/80 bg-red-50/20`}>
           <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
             <button
               type="button"
-              onClick={openCreateOffer}
+              onClick={createOfferEntry}
               className="inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 sm:w-auto"
             >
               <Plus className="h-4 w-4" aria-hidden />
               Izveidot piedāvājumu
             </button>
-            <button
-              type="button"
-              disabled={busy || orderPdfBusy}
-              onClick={saveCurrentPage}
-              className="inline-flex min-h-[44px] w-full shrink-0 items-center justify-center rounded-full border border-[var(--color-provin-accent)] bg-transparent px-4 text-[13px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-[var(--color-provin-accent)]/8 disabled:opacity-50 sm:w-auto"
-            >
-              {busy || orderPdfBusy ? "Saglabā…" : "Saglabāt"}
-            </button>
+            <AdminSaveButton
+              onSave={saveCurrentPage}
+              state={pageSaveState}
+              label="Izveidot pasūtījumu"
+              className="min-h-[44px] w-full sm:w-auto"
+            />
             <button
               type="button"
               disabled={busy || deleteBusy}
@@ -2149,19 +2139,17 @@ export function IrissPasutijumsEditor({
         </button>
         <button
           type="button"
-          onClick={openCreateOffer}
-          className="flex h-[50px] flex-1 items-center justify-center rounded-full bg-[#111827] text-[15px] font-semibold text-white"
+          onClick={createOfferEntry}
+          className="flex h-[50px] flex-1 items-center justify-center rounded-full bg-[var(--iriss-graphite)] text-[15px] font-semibold text-white"
         >
           Piedāvājums
         </button>
-        <button
-          type="button"
-          disabled={busy || orderPdfBusy}
-          onClick={saveCurrentPage}
-          className="flex h-[50px] flex-1 items-center justify-center rounded-full bg-[var(--color-provin-accent)] text-[15px] font-semibold text-white"
-        >
-          {busy || orderPdfBusy ? "Saglabā…" : "Saglabāt"}
-        </button>
+        <AdminSaveButton
+          onSave={saveCurrentPage}
+          state={pageSaveState}
+          label="Izveidot"
+          className="!h-[50px] flex-1 text-[15px]"
+        />
       </div>
       </>
       ) : (
@@ -2185,6 +2173,7 @@ export function IrissPasutijumsEditor({
           vinWarning={orderVinWarning}
           canCall={Boolean(normalizedPhone)}
           canEmail={Boolean(rec.email.trim())}
+          saveState={{ dirty, saving: busy || autoSaving > 0, error: autoSaveError, offline }}
           conflict={
             revisionConflict ? (
               <AdminWorkspaceRevisionConflictBanner
@@ -2194,6 +2183,29 @@ export function IrissPasutijumsEditor({
                 onSafeMerge={mergeConflict}
                 layout="room"
               />
+            ) : backupOffer ? (
+              <div
+                role="status"
+                className="flex flex-wrap items-center gap-2 rounded-[14px] bg-[var(--iriss-surface)] px-3 py-2.5 text-[13px] text-[var(--iriss-ink)] shadow-[inset_0_0_0_1px_var(--iriss-warn)]"
+              >
+                <span className="min-w-0 flex-1">
+                  Atrastas nesaglabātas izmaiņas ({formatIrissBackupTime(backupOffer.at)}), kas neaizgāja uz serveri.
+                </span>
+                <button
+                  type="button"
+                  onClick={restoreBackup}
+                  className="inline-flex h-9 items-center rounded-full bg-[var(--iriss-graphite)] px-4 text-[13px] font-semibold text-[var(--iriss-on-graphite)]"
+                >
+                  Atjaunot
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissBackup}
+                  className="inline-flex h-9 items-center rounded-[12px] bg-[var(--iriss-surface)] px-3 text-[13px] font-semibold text-[var(--iriss-ink)] shadow-[inset_0_0_0_1px_var(--iriss-line-strong)]"
+                >
+                  Atmest
+                </button>
+              </div>
             ) : null
           }
           deleted={isIrissRecordDeleted(rec)}
@@ -2210,13 +2222,14 @@ export function IrissPasutijumsEditor({
           onCall={triggerCall}
           onWhatsappText={openWhatsappText}
           onAppendNote={appendRoomNote}
-          onCreateOffer={openCreateOffer}
+          onCreateOffer={pdNew ? createOfferEntry : () => setOfferSourceSheetOpen(true)}
           onEditOffer={openEditOffer}
-          onPrepareOffer={openCreateOfferFromHit}
+          onPrepareOffer={pdNew ? (hit) => void prepareOfferFromHit(hit) : openCreateOfferFromHit}
           googleContactsConfigured={googleContactsConfigured}
           googleContactBusy={googleContactBusy}
           onRetryGoogleContact={() => void retryGoogleContact()}
           onGeneratedDocument={ingestGeneratedDocument}
+          onOfferDeadlineExtended={ingestOfferDeadline}
           onOpenOfferPdf={(offerId, omitImages) => void openOfferPdfForId(offerId, omitImages)}
           onAlbumFiles={(album, files) => void onAlbumFiles(album, files)}
           albumBusy={albumFileBusy}
@@ -2231,452 +2244,67 @@ export function IrissPasutijumsEditor({
       )}
 
       {offerOpen ? (
-        <div
-          className="fixed inset-0 z-[120] flex items-end justify-center overscroll-y-contain bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
-          onClick={() => !offerBusy && !offerFilePrepare && setOfferOpen(false)}
-          role="presentation"
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="iriss-offer-dialog-title"
-            data-iriss-order-room="1"
-            className="flex max-h-[min(92dvh,920px)] w-full max-w-6xl flex-col overflow-hidden rounded-[22px] border border-[#e5e7eb] bg-white shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-200/80 px-4 py-3 sm:px-5">
-              <div className="min-w-0 flex-1 pr-2">
-                <h2
-                  id="iriss-offer-dialog-title"
-                  className="truncate text-base font-semibold text-[var(--color-apple-text)]"
-                >
-                  {offerDraft.title}
-                </h2>
-                {offerAutoFields.size > 0 ? (
-                  <p className="mt-0.5 text-[11px] text-[var(--color-provin-muted)]">Sagatavots no izsoles ieraksta</p>
-                ) : null}
-                {isIrissOfferExpired(offerDraft) ? (
-                  <p className="mt-0.5 text-[12px] font-semibold text-red-700">Piedāvājums beidzies</p>
-                ) : null}
-              </div>
-              <button
-                type="button"
-                disabled={offerBusy || !!offerFilePrepare}
-                aria-label="Aizvērt"
-                title="Aizvērt"
-                onClick={() => setOfferOpen(false)}
-                className="inline-flex h-10 min-h-10 w-10 min-w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-[var(--color-apple-text)] shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
-              >
-                <X className="h-5 w-5 shrink-0" strokeWidth={2.25} aria-hidden />
-              </button>
-            </div>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 [-webkit-overflow-scrolling:touch] pb-4 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
-              <div className="grid min-w-0 grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1.3fr)_minmax(260px,1fr)]">
-              <div className="min-w-0 space-y-3">
-              <div className="rounded-xl border border-slate-200/90 bg-white p-3">
-                <IrissSectionHeading>Transportlīdzeklis</IrissSectionHeading>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {(
-                    [
-                      ["brandModel", "Marka, modelis", (v: string) => ({ brandModel: v })],
-                      ["vin", "VIN", (v: string) => ({ vin: v.toUpperCase() })],
-                      ["firstRegistration", "Pirmā reģistrācija", (v: string) => ({ firstRegistration: v, year: v })],
-                      ["odometerReading", "Nobraukums", (v: string) => ({ odometerReading: v, mileage: v })],
-                      ["fuel", "Degviela", (v: string) => ({ fuel: v })],
-                      ["transmission", "Ātrumkārba", (v: string) => ({ transmission: v })],
-                      ["driveType", "Piedziņa", (v: string) => ({ driveType: v })],
-                      ["powerKw", "Jauda", (v: string) => ({ powerKw: v })],
-                      ["engineDisplacement", "Dzinēja tilpums", (v: string) => ({ engineDisplacement: v })],
-                      ["bodyTypeOffer", "Virsbūve", (v: string) => ({ bodyTypeOffer: v })],
-                      ["color", "Krāsa", (v: string) => ({ color: v })],
-                      ["doorCount", "Durvis / vietas", (v: string) => ({ doorCount: v })],
-                      ["emissionClass", "Emisijas klase", (v: string) => ({ emissionClass: v })],
-                      ["originCountry", "Izcelsmes valsts", (v: string) => ({ originCountry: v })],
-                      ["location", "Atrašanās vieta", (v: string) => ({ location: v })],
-                    ] as const
-                  ).map(([key, label, patch]) => (
-                    <label key={key} className="block min-w-0">
-                      <span className="mb-1 flex items-center text-[11px] font-medium text-[var(--color-provin-muted)]">
-                        {label}
-                        <IrissOfferFieldTag source={offerAutoFields.has(key) ? "auto" : "manual"} />
-                      </span>
-                      <input
-                        className={fieldClass}
-                        value={offerDraft[key]}
-                        onChange={(e) => setOfferDraft((d) => ({ ...d, ...patch(e.target.value) }))}
-                        autoComplete="off"
-                      />
-                      {key === "vin" && offerVinWarning ? (
-                        <p className="mt-1 text-[11px] text-amber-800">{offerVinWarning}</p>
-                      ) : null}
-                    </label>
-                  ))}
-                </div>
-                <IrissSectionHeading className="mt-4">Izsole</IrissSectionHeading>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {(
-                    [
-                      ["auctionPlatform", "Platforma", (v: string) => ({ auctionPlatform: v })],
-                      ["auctionStockNumber", "Lot / stock nr.", (v: string) => ({ auctionStockNumber: v })],
-                      ["auctionEndAt", "Izsoles beigas", (v: string) => ({ auctionEndAt: v })],
-                      ["vatStatus", "PVN statuss", (v: string) => ({ vatStatus: v })],
-                      ["carPrice", "Izsoles cena", (v: string) => ({ carPrice: v, priceGermany: v })],
-                      ["estimatedTotalPrice", "Aplēstā kopsumma", (v: string) => ({ estimatedTotalPrice: v })],
-                    ] as const
-                  ).map(([key, label, patch]) => (
-                    <label key={key} className="block min-w-0">
-                      <span className="mb-1 flex items-center text-[11px] font-medium text-[var(--color-provin-muted)]">
-                        {label}
-                        <IrissOfferFieldTag source={offerAutoFields.has(key) ? "auto" : "manual"} />
-                      </span>
-                      <input
-                        className={fieldClass}
-                        value={offerDraft[key]}
-                        onChange={(e) => setOfferDraft((d) => ({ ...d, ...patch(e.target.value) }))}
-                        autoComplete="off"
-                      />
-                    </label>
-                  ))}
-                </div>
-              </div>
+        <IrissOfferForm
+          orderId={persistedIdRef.current}
+          savedPendingPhotos={persistedOfferRecord ? pendingDropboxPhotoCount(persistedOfferRecord.attachments) : 0}
+          draft={offerDraft}
+          setDraft={setOfferDraft}
+          autoFields={offerAutoFields}
+          busy={offerBusy}
+          filePrepare={offerFilePrepare}
+          deleteBusy={offerDeleteBusy}
+          pdfBusy={offerPdfBusy}
+          whatsappBusy={offerWhatsappBusy}
+          readyForPdfActions={offerReadyForPdfActions}
+          shareWhatsAppEnabled={offerShareWhatsAppEnabled}
+          saveState={offerSaveState}
+          pdfNotice={offerPdfNotice}
+          pdfAllowWithoutImages={offerPdfAllowWithoutImages}
+          onClose={() => {
+            // FABLE v3: «×» ar nesaglabātām izmaiņām klusi zaudēja ievadīto (cenas u.c.).
+            const unsaved = persistedOfferRecord ? !offerReadyForPdfActions : offerDraftHasOperatorInput(offerDraft);
+            if (unsaved && !offerBusy && !window.confirm(OFFER_UNSAVED_CLOSE_CONFIRM)) return;
+            setOfferOpen(false);
+            setOfferLinkNotice(null);
+          }}
+          onDelete={() => setOfferDeleteConfirmOpen(true)}
+          onSave={() => void persistOffer("save")}
+          onPdf={(allowWithoutImages) => void openOfferPdfInNewTab(allowWithoutImages)}
+          onWhatsApp={openOfferShareWhatsApp}
+          onFilesPick={(files) => void onOfferFilesPick(files)}
+          onAutoFieldEdited={onOfferAutoFieldEdited}
+          seedStatus={offerSeedStatus}
+          onLink={() => void openOfferClientLink()}
+          linkBusy={offerLinkBusy}
+          linkNotice={offerLinkNotice}
+          onLinkNoticeClose={() => setOfferLinkNotice(null)}
+          headerSlot={
+            offerClientPickable ? (
+              <IrissOfferClientPicker value={offerClient} onChange={setOfferClient} disabled={offerBusy} />
+            ) : (
+              <IrissOfferClientPicker
+                value={null}
+                onChange={() => {}}
+                lockedName={`${rec.clientFirstName} ${rec.clientLastName}`.replace(/\s+/g, " ").trim()}
+              />
+            )
+          }
+        />
+      ) : null}
 
-              <div className="mt-3 rounded-xl border border-slate-200/90 bg-white p-3">
-                <IrissSectionHeading>Novērtējums klientam</IrissSectionHeading>
-                <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <LabeledInput
-                    label="Bojājumu pakāpe"
-                    value={offerDraft.damageGrade}
-                    onChange={(e) => setOfferDraft((d) => ({ ...d, damageGrade: e.target.value }))}
-                  />
-                  <LabeledInput
-                    label="Atslēgu skaits"
-                    value={offerDraft.keyCount}
-                    onChange={(e) => setOfferDraft((d) => ({ ...d, keyCount: e.target.value }))}
-                  />
-                  <div className="sm:col-span-2">
-                    <LabeledInput
-                      label="Aprīkojuma izcēlumi"
-                      value={offerDraft.equipmentHighlights}
-                      onChange={(e) => setOfferDraft((d) => ({ ...d, equipmentHighlights: e.target.value }))}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-                  <label className="inline-flex items-center gap-2 text-[12px] text-[var(--color-apple-text)]">
-                    <input
-                      type="checkbox"
-                      checked={offerDraft.hasFullServiceHistory}
-                      onChange={(e) => setOfferDraft((d) => ({ ...d, hasFullServiceHistory: e.target.checked }))}
-                    />
-                    Pilna servisa vēsture
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-[12px] text-[var(--color-apple-text)]">
-                    <input
-                      type="checkbox"
-                      checked={offerDraft.hasFactoryPaint}
-                      onChange={(e) => setOfferDraft((d) => ({ ...d, hasFactoryPaint: e.target.checked }))}
-                    />
-                    Rūpnīcas krāsojums
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-[12px] text-[var(--color-apple-text)]">
-                    <input
-                      type="checkbox"
-                      checked={offerDraft.hasNoRustBody}
-                      onChange={(e) => setOfferDraft((d) => ({ ...d, hasNoRustBody: e.target.checked }))}
-                    />
-                    Virsbūve bez rūsas
-                  </label>
-                  <label className="inline-flex items-center gap-2 text-[12px] text-[var(--color-apple-text)]">
-                    <input
-                      type="checkbox"
-                      checked={offerDraft.hasSecondWheelSet}
-                      onChange={(e) => setOfferDraft((d) => ({ ...d, hasSecondWheelSet: e.target.checked }))}
-                    />
-                    Otrs riteņu komplekts
-                  </label>
-                </div>
-                <div className="mt-3">
-                  <LabeledOfferRichCommentField
-                    label="Īpašas atzīmes"
-                    value={offerDraft.specialNotes}
-                    onHtmlChange={(next) => setOfferDraft((d) => ({ ...d, specialNotes: next }))}
-                  />
-                </div>
-                <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <LabeledOfferRichCommentField
-                    label="Vizuālais novērtējums"
-                    value={offerDraft.visualAssessment}
-                    onHtmlChange={(next) => setOfferDraft((d) => ({ ...d, visualAssessment: next }))}
-                  />
-                  <LabeledOfferRichCommentField
-                    label="Tehniskais novērtējums"
-                    value={offerDraft.technicalAssessment}
-                    onHtmlChange={(next) => setOfferDraft((d) => ({ ...d, technicalAssessment: next }))}
-                  />
-                </div>
-                <div className="mt-3">
-                  <LabeledOfferRichCommentField
-                    label="Kopsavilkums"
-                    value={offerDraft.summary}
-                    onHtmlChange={(next) => setOfferDraft((d) => ({ ...d, summary: next, comment: next }))}
-                  />
-                </div>
-              </div>
-
-              <div className="mt-3 rounded-xl border border-slate-200/90 bg-white p-3">
-                <IrissSectionHeading>Cenas</IrissSectionHeading>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <label className="block min-w-0">
-                    <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Automašīnas cena</span>
-                    <input
-                      className={fieldClass}
-                      value={offerDraft.carPrice}
-                      inputMode="decimal"
-                      onChange={(e) => setOfferDraft((d) => ({ ...d, carPrice: e.target.value, priceGermany: e.target.value }))}
-                    />
-                    {carPriceWarning ? <p className="mt-1 text-[11px] text-amber-800">{carPriceWarning}</p> : null}
-                  </label>
-                  <label className="block min-w-0">
-                    <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Piegādes cena</span>
-                    <input
-                      className={fieldClass}
-                      value={offerDraft.deliveryPrice}
-                      inputMode="decimal"
-                      onChange={(e) => setOfferDraft((d) => ({ ...d, deliveryPrice: e.target.value }))}
-                    />
-                    {deliveryPriceWarning ? <p className="mt-1 text-[11px] text-amber-800">{deliveryPriceWarning}</p> : null}
-                  </label>
-                  <label className="block min-w-0">
-                    <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Komisijas maksa</span>
-                    <input
-                      className={fieldClass}
-                      value={offerDraft.commissionFee}
-                      inputMode="decimal"
-                      onChange={(e) => setOfferDraft((d) => ({ ...d, commissionFee: e.target.value }))}
-                    />
-                    {commissionWarning ? <p className="mt-1 text-[11px] text-amber-800">{commissionWarning}</p> : null}
-                  </label>
-                  <LabeledInput label="Kopā" value={offerTotalPrice} readOnly />
-                  <div className="sm:col-span-2">
-                    <LabeledInput
-                      label="Piedāvājums spēkā līdz"
-                      type="date"
-                      value={offerDraft.validUntil}
-                      onChange={(e) =>
-                        setOfferDraft((d) => ({
-                          ...d,
-                          validUntil: normalizeOfferValidUntil(e.target.value),
-                          offerValidDays: d.offerValidDays,
-                        }))
-                      }
-                    />
-                    {isIrissOfferExpired(offerDraft) ? (
-                      <p className="text-[12px] font-semibold text-red-700">Piedāvājums beidzies</p>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-              <div className="mt-3">
-                <IrissOfferBlocksEditor
-                  offer={{
-                    id: offerDraft.id,
-                    title: offerDraft.title,
-                    brandModel: offerDraft.brandModel,
-                    vin: offerDraft.vin,
-                    year: offerDraft.year,
-                    mileage: offerDraft.mileage,
-                    priceGermany: offerDraft.priceGermany,
-                    comment: offerDraft.comment,
-                    firstRegistration: offerDraft.firstRegistration,
-                    odometerReading: offerDraft.odometerReading,
-                    transmission: offerDraft.transmission,
-                    location: offerDraft.location,
-                    fuel: offerDraft.fuel,
-                    driveType: offerDraft.driveType,
-                    powerKw: offerDraft.powerKw,
-                    engineDisplacement: offerDraft.engineDisplacement,
-                    color: offerDraft.color,
-                    bodyTypeOffer: offerDraft.bodyTypeOffer,
-                    doorCount: offerDraft.doorCount,
-                    emissionClass: offerDraft.emissionClass,
-                    originCountry: offerDraft.originCountry,
-                    auctionPlatform: offerDraft.auctionPlatform,
-                    auctionStockNumber: offerDraft.auctionStockNumber,
-                    auctionEndAt: offerDraft.auctionEndAt,
-                    vatStatus: offerDraft.vatStatus,
-                    damageGrade: offerDraft.damageGrade,
-                    equipmentHighlights: offerDraft.equipmentHighlights,
-                    estimatedTotalPrice: offerDraft.estimatedTotalPrice,
-                    keyCount: offerDraft.keyCount,
-                    hasFullServiceHistory: offerDraft.hasFullServiceHistory,
-                    hasFactoryPaint: offerDraft.hasFactoryPaint,
-                    hasNoRustBody: offerDraft.hasNoRustBody,
-                    hasSecondWheelSet: offerDraft.hasSecondWheelSet,
-                    specialNotes: offerDraft.specialNotes,
-                    visualAssessment: offerDraft.visualAssessment,
-                    technicalAssessment: offerDraft.technicalAssessment,
-                    summary: offerDraft.summary,
-                    carPrice: offerDraft.carPrice,
-                    deliveryPrice: offerDraft.deliveryPrice,
-                    commissionFee: offerDraft.commissionFee,
-                    offerValidDays: offerDraft.offerValidDays,
-                    validUntil: offerDraft.validUntil,
-                    attachments: offerDraft.attachments,
-                    ...(offerDraft.coverAttachmentId ? { coverAttachmentId: offerDraft.coverAttachmentId } : {}),
-                    ...(offerDraft.blocks?.length ? { blocks: offerDraft.blocks } : {}),
-                    createdAt: offerDraft.createdAt,
-                    updatedAt: offerDraft.createdAt,
-                  }}
-                  onChange={(next) =>
-                    setOfferDraft((d) => ({
-                      ...d,
-                      brandModel: next.brandModel,
-                      firstRegistration: next.firstRegistration,
-                      year: next.year,
-                      odometerReading: next.odometerReading,
-                      mileage: next.mileage,
-                      fuel: next.fuel,
-                      transmission: next.transmission,
-                      powerKw: next.powerKw,
-                      color: next.color,
-                      specialNotes: next.specialNotes,
-                      carPrice: next.carPrice,
-                      priceGermany: next.priceGermany,
-                      ...(next.blocks?.length ? { blocks: next.blocks } : {}),
-                    }))
-                  }
-                />
-              </div>
-              </div>
-              <div className="min-w-0 rounded-xl border border-[#e5e7eb] bg-white p-3">
-                <IrissSectionHeading>
-                  Bildes · {offerDraft.attachments.length}/{IRISS_MAX_OFFER_ATTACHMENTS}
-                </IrissSectionHeading>
-              <div className="rounded-xl border border-dashed border-[#cbd5e1] bg-slate-50/50 p-3 select-none">
-                <label
-                  className={`inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-slate-50 ${offerFilePrepare || offerDraft.attachments.length >= IRISS_MAX_OFFER_ATTACHMENTS ? "pointer-events-none opacity-50" : "cursor-pointer"}`}
-                >
-                  <Paperclip className="h-4 w-4" aria-hidden />
-                  Pievienot failus
-                  <input
-                    type="file"
-                    multiple
-                    disabled={!!offerFilePrepare || offerDraft.attachments.length >= IRISS_MAX_OFFER_ATTACHMENTS}
-                    className="hidden"
-                    onChange={(e) => {
-                      void onOfferFilesPick(e.target.files);
-                      e.currentTarget.value = "";
-                    }}
-                  />
-                </label>
-                {offerFilePrepare ? (
-                  <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3" role="status" aria-live="polite">
-                    <div className="flex items-center gap-2">
-                      <Loader2 className="h-5 w-5 shrink-0 animate-spin text-[var(--color-provin-accent)]" aria-hidden />
-                      <span className="text-[12px] font-medium text-[var(--color-apple-text)]">{offerFilePrepare.label}</span>
-                    </div>
-                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                      <div
-                        className="h-full rounded-full bg-[var(--color-provin-accent)] transition-[width] duration-150"
-                        style={{ width: `${offerFilePrepare.pct}%` }}
-                      />
-                    </div>
-                    <p className="mt-1 text-[11px] tabular-nums text-slate-500">{offerFilePrepare.pct}%</p>
-                  </div>
-                ) : null}
-                <p className="mt-2 text-[10px] font-medium text-slate-500">
-                  Līdz {IRISS_MAX_OFFER_ATTACHMENTS} attēliem ({offerDraft.attachments.length}/{IRISS_MAX_OFFER_ATTACHMENTS}).
-                </p>
-                <IrissOfferImageSorter
-                  attachments={offerDraft.attachments}
-                  coverId={offerDraft.coverAttachmentId}
-                  disabled={!!offerFilePrepare}
-                  onChange={(next) =>
-                    setOfferDraft((d) => ({
-                      ...d,
-                      attachments: next.attachments,
-                      coverAttachmentId: next.coverId,
-                    }))
-                  }
-                />
-              </div>
-              </div>
-              </div>
-            </div>
-            <div className="shrink-0 border-t border-slate-200/80 bg-white px-4 py-3 sm:px-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <button
-                  type="button"
-                  disabled={offerBusy || !!offerFilePrepare || offerDeleteBusy}
-                  onClick={() => setOfferDeleteConfirmOpen(true)}
-                  className={`${offerDialogMainBtnClass} sm:self-start`}
-                >
-                  Dzēst
-                </button>
-                <div className="flex flex-wrap items-center justify-end gap-2 sm:min-w-0 sm:flex-1">
-                  <button
-                    type="button"
-                    disabled={offerBusy || !!offerFilePrepare}
-                    onClick={() => setOfferOpen(false)}
-                    className={offerDialogMainBtnClass}
-                  >
-                    Atcelt
-                  </button>
-                  {offerReadyForPdfActions ? (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={offerBusy || !!offerFilePrepare || offerPdfBusy || offerWhatsappBusy}
-                        onClick={() => void openOfferPdfInNewTab()}
-                        className={offerDialogMainBtnClass}
-                      >
-                        {offerPdfBusy ? "PDF..." : "PDF"}
-                      </button>
-                      {offerShareWhatsAppEnabled ? (
-                        <button
-                          type="button"
-                          disabled={offerBusy || !!offerFilePrepare || offerPdfBusy || offerWhatsappBusy}
-                          onClick={openOfferShareWhatsApp}
-                          title="Sūtīt WhatsApp klientam"
-                          aria-label="Sūtīt WhatsApp klientam"
-                          className="inline-flex h-11 min-h-[44px] w-11 min-w-[44px] shrink-0 items-center justify-center rounded-full border border-emerald-500/35 bg-[#25D366] text-white shadow-sm transition hover:brightness-105 active:scale-[0.98] disabled:opacity-40"
-                        >
-                          <WhatsAppGlyphIcon className="h-5 w-5" />
-                        </button>
-                      ) : null}
-                    </div>
-                  ) : null}
-                  <button
-                    type="button"
-                    disabled={offerBusy || !!offerFilePrepare || offerPdfBusy || offerWhatsappBusy}
-                    onClick={() => void persistOffer("save")}
-                    className={offerDialogMainBtnClass}
-                  >
-                    {offerBusy ? "Saglabā..." : "Saglabāt"}
-                  </button>
-                </div>
-              </div>
-              {offerPdfNotice ? (
-                <div
-                  className="mt-3 rounded-lg border border-amber-200 bg-amber-50/90 px-3 py-2 text-[12px] leading-snug text-amber-950"
-                  role="status"
-                >
-                  <p>{offerPdfNotice}</p>
-                  {offerPdfAllowWithoutImages ? (
-                    <button
-                      type="button"
-                      disabled={offerBusy || !!offerFilePrepare || offerPdfBusy || offerWhatsappBusy}
-                      onClick={() => void openOfferPdfInNewTab(true)}
-                      className="mt-1.5 inline-flex min-h-9 items-center rounded-full border border-amber-300/90 bg-white px-3 text-[12px] font-semibold text-[var(--color-provin-accent)] shadow-sm transition hover:bg-amber-50 disabled:opacity-40"
-                    >
-                      PDF bez attēliem
-                    </button>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
+      {offerSourceSheetOpen ? (
+        <IrissOfferSourceSheet
+          onClose={() => setOfferSourceSheetOpen(false)}
+          onOpenLink={(url) => {
+            setOfferSourceSheetOpen(false);
+            openCreateOfferFromLink(url);
+          }}
+          onOpen={(from) => {
+            setOfferSourceSheetOpen(false);
+            if (from) openCreateOfferFromSource(from);
+            else openCreateOffer();
+          }}
+        />
       ) : null}
 
       {pdfRetryBar ? (
@@ -2705,7 +2333,7 @@ export function IrissPasutijumsEditor({
       {offerDeleteConfirmOpen ? (
         <div
           className="fixed inset-0 z-[138] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
-          onClick={() => !offerDeleteBusy && setOfferDeleteConfirmOpen(false)}
+          {...offerDeleteBackdropClose}
           role="presentation"
         >
           <div
@@ -2744,7 +2372,7 @@ export function IrissPasutijumsEditor({
       {deleteConfirmOpen ? (
         <div
           className="fixed inset-0 z-[130] flex items-end justify-center bg-black/45 p-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:p-6"
-          onClick={() => !deleteBusy && setDeleteConfirmOpen(false)}
+          {...deleteBackdropClose}
           role="presentation"
         >
           <div
@@ -2754,7 +2382,7 @@ export function IrissPasutijumsEditor({
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-base font-semibold text-[var(--color-apple-text)]">
-              Vai tiešām vēlaties neatgriezeniski dzēst šo pasūtījumu?
+              Pārvietot pasūtījumu uz Miskasti? To var atjaunot sadaļā Miskaste.
             </h2>
             <div className="mt-5 flex flex-wrap justify-end gap-2">
               <button

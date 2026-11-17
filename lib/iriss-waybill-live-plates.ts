@@ -1,0 +1,205 @@
+/**
+ * Numuru stāvoklis apļiem UN numura pogām (viens kopīgs selektors, j25).
+ * Incidents 23.10: P02816 (B193-7, tradeAct) izdota, poga rādīja "aizņemts", bet aplis "brīvs" -
+ * aplis datus ielādēja tikai vienreiz un nezināja par izdoto pieprasījumu, kamēr tas vēl nebija indeksā/CSDD momentuzņēmumā.
+ * Tāpēc: indekss + CSDD (mergeCsddPlateStates) + pieprasījumu rinda (izdotās vēl derīgās un "izdod...").
+ */
+
+import { mergeCsddPlateStates, type CsddPlatesDoc } from "@/lib/iriss-waybill-csdd-plates";
+import {
+  compactDealerPlate,
+  csddRefutesWaybill,
+  waybillPlateOccupancy,
+  withdrawnWaybillNos,
+  type OccupancyRow,
+  type WaybillPlateState,
+} from "@/lib/iriss-waybill-plates";
+import {
+  isStaleWaybillRequest,
+  waybillPendingExpired,
+  waybillWrittenOffAtMs,
+  type WaybillRequest,
+} from "@/lib/iriss-waybill-requests";
+
+export type WaybillLiveRequest = Pick<
+  WaybillRequest,
+  "id" | "status" | "createdAt" | "updatedAt" | "validUntil" | "waybillNo" | "vehicle"
+> &
+  Partial<Pick<WaybillRequest, "validFrom">> &
+  Partial<Pick<WaybillRequest, "pickedBy" | "autoDisabled" | "attempts" | "plateBusyAtCreate" | "handoffAt" | "kind">>;
+
+/**
+ * j47: pieprasījumu izraksta Aivars ar roku (ne automātika). Bez servera konteksta (testa režīms, numura aizņemtība)
+ * - tikai pazīmes pašā pieprasījumā; pārējie paliek "izdod...".
+ */
+export function waybillRequestIsManual(r: WaybillLiveRequest): boolean {
+  if (r.status === "in_progress") return Boolean(r.pickedBy) && r.pickedBy !== "auto";
+  if (r.status !== "queued") return false;
+  return (
+    r.autoDisabled === true ||
+    Boolean(r.handoffAt) ||
+    (r.attempts ?? 1) > 1 ||
+    r.plateBusyAtCreate === true ||
+    compactDealerPlate(r.vehicle.plate) === "B1927"
+  );
+}
+
+function ms(iso: string | undefined): number {
+  const t = Date.parse(iso ?? "");
+  return Number.isFinite(t) ? t : Number.NaN;
+}
+
+/** Izdota, vēl derīga (nav beigusies, nav aizstāta, nav atsauktā indeksā) pieprasījuma pavadzīme. */
+function liveIssuedFor(
+  plate: string,
+  requests: readonly WaybillLiveRequest[],
+  nowMs: number,
+  withdrawnNos?: ReadonlySet<string>,
+): WaybillLiveRequest | null {
+  const want = compactDealerPlate(plate);
+  let best: WaybillLiveRequest | null = null;
+  for (const r of requests) {
+    if (r.status !== "issued" || compactDealerPlate(r.vehicle.plate) !== want) continue;
+    const no = r.waybillNo.trim().toUpperCase();
+    if (no && withdrawnNos?.has(no)) continue;
+    const until = ms(r.validUntil);
+    if (!Number.isFinite(until) || until <= nowMs) continue;
+    if (waybillWrittenOffAtMs(r, requests, nowMs) != null) continue;
+    if (!best || until > ms(best.validUntil)) best = r;
+  }
+  return best;
+}
+
+/** Jaunākais pieprasījums šim numuram, ko CSDD vēl izdod (Gaida / Izveido, ne novecojis, termiņš nav beidzies). */
+function issuingFor(plate: string, requests: readonly WaybillLiveRequest[], nowMs: number): WaybillLiveRequest | null {
+  const want = compactDealerPlate(plate);
+  let best: WaybillLiveRequest | null = null;
+  for (const r of requests) {
+    if (r.status !== "queued" && r.status !== "in_progress") continue;
+    // «Pārtraukt» neizdod jaunu pavadzīmi - numurs paliek aizņemts ar esošo, aplis nerāda «Aivars izraksta».
+    if (r.kind === "stop") continue;
+    if (compactDealerPlate(r.vehicle.plate) !== want) continue;
+    if (isStaleWaybillRequest(r, nowMs) || waybillPendingExpired(r, nowMs)) continue;
+    if (!best || r.createdAt > best.createdAt) best = r;
+  }
+  return best;
+}
+
+/**
+ * Izdotie pieprasījumi, kurus CSDD jau atsaucis (piem. «Pārtraukt»), arī ja PDF vēl nav indeksā (Dropbox kavējas).
+ * Izdošanas laiks = CSDD validFrom (rezultātā), citādi updatedAt (vēlāks - drošāk: vajag jaunāku CSDD nolasījumu).
+ */
+export function csddWithdrawnRequestNos(
+  requests: readonly WaybillLiveRequest[],
+  csdd: CsddPlatesDoc | null | undefined,
+): ReadonlySet<string> {
+  const out = new Set<string>();
+  if (!csdd) return out;
+  for (const r of requests) {
+    if (r.status !== "issued") continue;
+    const no = r.waybillNo.trim().toUpperCase();
+    if (!no) continue;
+    const issuedAt = r.validFrom?.trim() || r.updatedAt;
+    if (csddRefutesWaybill(csdd, { plate: r.vehicle.plate, number: no, issuedAt })) out.add(no);
+  }
+  return out;
+}
+
+/** Indeksa + rindas atsauktie numuri kopā. */
+export function unionWithdrawnNos(...sets: ReadonlyArray<ReadonlySet<string> | undefined>): ReadonlySet<string> {
+  const out = new Set<string>();
+  for (const set of sets) for (const no of set ?? []) out.add(no);
+  return out;
+}
+
+/**
+ * Pieprasījumu rinda papildina numuru stāvokli: izdota derīga pavadzīme padara numuru aizņemtu
+ * (arī, ja Dropbox indekss / CSDD momentuzņēmums to vēl neredz), izņemot ja tas pats nr. indeksā ir atsaukts.
+ * "Brīvs" nekad nepārraksta "aizņemts".
+ */
+export function withWaybillRequestStates(
+  states: readonly WaybillPlateState[],
+  requests: readonly WaybillLiveRequest[],
+  nowMs = Date.now(),
+  withdrawnNos?: ReadonlySet<string>,
+): WaybillPlateState[] {
+  return states.map((state) => {
+    let next: WaybillPlateState = { plate: state.plate, busy: state.busy, ...(state.current ? { current: state.current } : {}) };
+    const issued = liveIssuedFor(state.plate, requests, nowMs, withdrawnNos);
+    if (issued) {
+      const no = issued.waybillNo.trim().toUpperCase();
+      const cur = state.current;
+      const same = Boolean(no && cur?.number && cur.number.toUpperCase() === no);
+      if (same && cur) {
+        next = { ...next, busy: true, current: { ...cur, brandModel: cur.brandModel || issued.vehicle.brandModel.trim() } };
+      } else if (!state.busy || !cur || !(ms(cur.validUntil) >= ms(issued.validUntil))) {
+        next = {
+          ...next,
+          busy: true,
+          current: { number: no, brandModel: issued.vehicle.brandModel.trim(), validUntil: issued.validUntil },
+        };
+      }
+    }
+    const issuing = issuingFor(state.plate, requests, nowMs);
+    if (issuing) {
+      next.issuing = {
+        brandModel: issuing.vehicle.brandModel.trim(),
+        ...(waybillRequestIsManual(issuing) ? { manual: true } : {}),
+      };
+    }
+    return next;
+  });
+}
+
+/**
+ * Pilna ķēde, ko rāda apļi un numura pogas: indekss + CSDD + pieprasījumi.
+ * Atsauktā indeksa pavadzīme (Arhīvs / CSDD atsaucis) overlay slāņos paliek brīva.
+ */
+export function composeWaybillPlateStates(
+  rows: readonly OccupancyRow[],
+  csdd: CsddPlatesDoc | null = null,
+  requests: readonly WaybillLiveRequest[] = [],
+  now = new Date(),
+): WaybillPlateState[] {
+  const withdrawn = unionWithdrawnNos(withdrawnWaybillNos(rows, csdd), csddWithdrawnRequestNos(requests, csdd));
+  const nowMs = now.getTime();
+  return withWaybillRequestStates(
+    mergeCsddPlateStates(waybillPlateOccupancy([...rows], now, csdd), csdd, nowMs, withdrawn),
+    requests,
+    nowMs,
+    withdrawn,
+  );
+}
+
+/** Pārlūkā: pavadzīmju forma (ik 3-10 s) paziņo jaunāko numuru stāvokli, apļi to uzreiz parāda. */
+export const WAYBILL_PLATES_EVENT = "iriss:waybill-plates";
+
+export function publishWaybillPlates(plates: readonly WaybillPlateState[]): void {
+  if (typeof window === "undefined" || !plates.length) return;
+  window.dispatchEvent(new CustomEvent<readonly WaybillPlateState[]>(WAYBILL_PLATES_EVENT, { detail: plates }));
+}
+
+/**
+ * Nils 27.10: numuru izvēlas apļos (viena rinda ar statusu), formai sava «Numurs» rinda vairs nav.
+ * Aplis -> forma: WAYBILL_SELECT_PLATE_EVENT; forma -> apļi: WAYBILL_FORM_PLATE_EVENT (izvēlētais numurs).
+ */
+export const WAYBILL_SELECT_PLATE_EVENT = "iriss:waybill-select-plate";
+export const WAYBILL_FORM_PLATE_EVENT = "iriss:waybill-form-plate";
+
+let lastFormPlate = "";
+
+/** Pēdējais formas numurs (apļiem, kas parādās pēc formas). */
+export function lastWaybillFormPlate(): string {
+  return lastFormPlate;
+}
+
+export function selectWaybillPlate(plate: string): void {
+  if (typeof window === "undefined" || !plate) return;
+  window.dispatchEvent(new CustomEvent<string>(WAYBILL_SELECT_PLATE_EVENT, { detail: plate }));
+}
+
+export function publishWaybillFormPlate(plate: string): void {
+  lastFormPlate = plate;
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<string>(WAYBILL_FORM_PLATE_EVENT, { detail: plate }));
+}

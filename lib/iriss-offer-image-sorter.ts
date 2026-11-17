@@ -121,11 +121,29 @@ export function offerImageGridSrc(att: {
   if (thumbData.startsWith("data:image")) return thumbData;
   const thumbUrl = att.thumbUrl ?? "";
   if (/^https?:\/\//i.test(thumbUrl)) return thumbUrl;
+  // /STOCK bilde pirms saglabāšanas: admin starpniekmaršruts (tā pati izcelsme).
+  if (thumbUrl.startsWith("/api/admin/iriss-offer-seed/photo?")) return thumbUrl;
   const dataUrl = att.dataUrl ?? "";
   if (dataUrl.startsWith("data:image")) return dataUrl;
   const blobUrl = att.blobUrl ?? "";
   if (/^https?:\/\//i.test(blobUrl)) return blobUrl;
   return "";
+}
+
+/** Pilnais attēls skatam (Lightbox): oriģināls, ja ir; citādi sīktēls. */
+export function offerImageFullSrc(att: {
+  thumbDataUrl?: string;
+  dataUrl?: string;
+  thumbUrl?: string;
+  blobUrl?: string;
+}): string {
+  const dataUrl = att.dataUrl ?? "";
+  if (dataUrl.startsWith("data:image")) return dataUrl;
+  const blobUrl = att.blobUrl ?? "";
+  if (/^https?:\/\//i.test(blobUrl)) return blobUrl;
+  const thumbUrl = att.thumbUrl ?? "";
+  if (thumbUrl.startsWith("/api/admin/iriss-offer-seed/photo?")) return thumbUrl.replace(/([?&])s=thumb\b/, "$1s=full");
+  return offerImageGridSrc(att);
 }
 
 export function offerImageDeleteToast(count: number): string {

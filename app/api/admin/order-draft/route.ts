@@ -25,6 +25,10 @@ import {
   odometerAnomalyOverridesSnapshotField,
   parseOdometerAnomalyOverrides,
 } from "@/lib/odometer-anomaly-classify";
+import {
+  dealerMajorWorkOverridesSnapshotField,
+  parseDealerMajorWorkOverrides,
+} from "@/lib/dealer-major-works-override-persist";
 
 export const maxDuration = 300;
 export const runtime = "nodejs";
@@ -179,6 +183,7 @@ function parseWorkspaceBody(v: unknown): OrderDraftWorkspaceBody | undefined {
     ...clearedFieldsSnapshotField(o.clearedFields),
     ...technicalRiskMapSnapshotField(parseTechnicalRiskMap(o.technicalRiskMap)),
     ...odometerAnomalyOverridesSnapshotField(parseOdometerAnomalyOverrides(o.odometerAnomalyOverrides)),
+    ...dealerMajorWorkOverridesSnapshotField(parseDealerMajorWorkOverrides(o.dealerMajorWorkOverrides)),
   };
 }
 

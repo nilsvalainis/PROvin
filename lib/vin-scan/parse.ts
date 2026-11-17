@@ -21,7 +21,9 @@ function kmLv(n: number): string {
 const ESYN_CONCLUSION_LV: Record<string, string> = {
   GOD: "izturēta",
   OOM: "nav izturēta",
-  BET: "nosacīti",
+  BET: "nosacīti izturēta",
+  // Toldsyn (muitas apskate) vērtējums „Middel”: nav MOT verdikts, bet auto stāvokļa atzīme.
+  MID: "muitas apskate - stāvoklis vidējs",
 };
 
 export function parseTjekbilProbe(status: number, text: string): VinScanParse {
@@ -208,7 +210,8 @@ export function parseCarpassRecalls(status: number, text: string): VinScanParse 
   if (success) {
     return { status: "none", summary: result ? `Atsaukumu nav. ${result}` : "Atsaukumu nav", detail: result };
   }
-  if (result) return { status: "none", summary: result };
+  // success:false ar citu tekstu ir kļūda (CSRF, sesija, limits), nevis „atsaukumu nav”.
+  if (result) return { status: "unknown", summary: `Car-Pass: ${result.slice(0, 160)}` };
   return { status: "unknown", summary: "Car-Pass neatgrieza rezultātu" };
 }
 

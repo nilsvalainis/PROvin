@@ -9,7 +9,8 @@ import { listingBrandModelLabel } from "@/lib/iriss-listing-search-fields";
 import { defaultOfferValidUntilYmd } from "@/lib/iriss-offer-valid-until";
 import { emptyIrissOfferRecord, emptyIrissPasutijums, type IrissOfferRecord, type IrissPasutijumsRecord } from "@/lib/iriss-pasutijumi-types";
 import type { IrissListingPlatform, IrissListingVehicle } from "@/lib/iriss-listings-types";
-import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { isPlausibleListingVin } from "@/lib/iriss-listings-extract";
+import { normalizeVin } from "@/lib/order-field-validation";
 
 export type IrissListingOrderSeedInput = Pick<
   IrissListingVehicle,
@@ -28,7 +29,7 @@ function listingLinkField(platform: IrissListingPlatform): keyof Pick<
 
 export function irissListingVin(raw: string | undefined): string {
   const v = normalizeVin(raw ?? "");
-  return isValidVin(v) ? v : "";
+  return isPlausibleListingVin(v) ? v : "";
 }
 
 export function irissPasutijumsSeedFromListing(

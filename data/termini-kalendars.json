@@ -1,0 +1,10 @@
+{
+  "_apraksts": "PVN (VID) un CSDD termiņu kalendārs. Dienas cron /api/cron/termini-atgadinajumi sūta push Nilam 7, 3 un 1 dienu pirms termiņa. monthly: katru mēnesi dienā 'day'. yearly: katru gadu 'month'/'day'. once: viens datums 'date' (GGGG-MM-DD). kind: pvn | vid | csdd | cits. Bez personas kodiem, paroļu un karšu datiem.",
+  "monthly": [
+    { "id": "pvn-deklaracija", "kind": "pvn", "day": 20, "title": "PVN deklarācija par iepriekšējo mēnesi (VID EDS)" },
+    { "id": "pvn-es-kopsavilkums", "kind": "pvn", "day": 20, "title": "ES PVN kopsavilkuma ziņojums (VID EDS), ja bija ES darījumi" },
+    { "id": "pvn-samaksa", "kind": "pvn", "day": 23, "title": "PVN samaksa budžetā" }
+  ],
+  "yearly": [],
+  "once": []
+}

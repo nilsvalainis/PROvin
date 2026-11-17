@@ -60,12 +60,12 @@ const LANG_SWITCH = 'data-lang="de"';
 const t = lvPartner.Partner;
 
 describe("partner portal hides admin-hidden wallet cards", () => {
-  it("shows all three cards with samples and an empty required PRO language selector", () => {
+  it("shows all three cards; RAW is visible but inactive, Business language matches PRO", () => {
     const html = render([]);
     expect(textOf(html)).toContain(t.walletProductBusinessTitle);
     expect(html).toContain(t.walletProductRawTitle);
     expect(html).toContain(t.walletProductProTitle);
-    expect(html).toContain(RAW_SAMPLE);
+    expect(html).not.toContain(RAW_SAMPLE);
     expect(html).not.toContain(PRO_SAMPLE);
     expect(html).toContain(t.walletReportLangPlaceholder);
     expect(html).toContain(t.walletReportLangHint);
@@ -75,15 +75,24 @@ describe("partner portal hides admin-hidden wallet cards", () => {
     const business = articleHtml(html, "business");
     const raw = articleHtml(html, "dealer_raw");
     const pro = articleHtml(html, "dealer_pro");
-    expect(business).toContain('value="lv"');
+    expect(business).toContain(t.walletReportLangPlaceholder);
+    expect(business).toContain(t.walletReportLangHint);
     expect(business).toContain(LANG_SWITCH);
-    expect(business).not.toContain(t.walletReportLangPlaceholder);
-    expect(business).not.toContain(t.walletReportLangHint);
+    expect(business).toContain('value=""');
+    expect(business).toContain("aria-required");
     expect(raw).not.toContain(t.walletReportLang);
     expect(raw).not.toContain(LANG_SWITCH);
+    expect(raw).not.toContain(t.walletProductRawTag);
+    expect(raw).toContain(t.walletSampleSoon);
+    expect(raw).toContain('data-wallet-inactive="true"');
+    expect(raw).toContain("opacity-50");
+    expect(raw).toContain('aria-disabled="true"');
+    expect(raw).not.toContain(t.walletBuy);
+    expect(raw).not.toContain(t.walletInsufficient);
     expect(pro).toContain(t.walletReportLangPlaceholder);
     expect(pro).toContain(t.walletReportLangHint);
     expect(pro).toContain('value=""');
+    expect(pro).toContain("aria-required");
   });
 
   it("shows the matching PRO sample after a language is chosen", () => {
@@ -99,7 +108,8 @@ describe("partner portal hides admin-hidden wallet cards", () => {
     expect(articleHtml(html, "dealer_pro")).toBe("");
     expect(html).not.toContain(PRO_SAMPLE);
     expect(html).toContain(t.walletProductRawTitle);
-    expect(html).toContain(RAW_SAMPLE);
+    expect(html).not.toContain(RAW_SAMPLE);
+    expect(articleHtml(html, "dealer_raw")).toContain(t.walletSampleSoon);
     expect(html).toContain("md:grid-cols-2");
     expect(articleHtml(html, "business")).toContain(LANG_SWITCH);
     expect(articleHtml(html, "dealer_raw")).not.toContain(LANG_SWITCH);

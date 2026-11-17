@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { listingExtrasI, LV_VAT_RATE } from "@/lib/iriss-listings-cost";
 import { emptyIrissCriteria, emptyIrissCriteriaFilter, irissCriteriaValue } from "@/lib/iriss-criteria-types";
 import {
   MARKETPLACE_EXTRA_RANGE_MESSAGE,
@@ -7,11 +8,25 @@ import {
   marketplaceMissingExtraRangeMessage,
   marketplaceMissingFieldsMessage,
   marketplaceOrderHasFetchBounds,
+  marketplacePriceBoundsFromBudget,
   marketplaceQueryFromOrder,
   marketplaceStrictMissingFields,
   marketplaceTooBroadSkipReason,
   marketplaceVehicleMatchesOrder,
 } from "@/lib/marketplace/query-from-order";
+
+/** Noklusējuma izmaksas, Margin formula kā `listingMaxBid` (I × 1,21). */
+const searchBound = (budget: number) => Math.round(budget - listingExtrasI() * (1 + LV_VAT_RATE));
+
+describe("Nils 31.10: mobile.de cenas griesti no budžeta", () => {
+  it("budžets mīnus 2 000 €: 5 000 -> 3 000, 15 000 -> 13 000, 20 000 -> 18 000", () => {
+    expect(marketplacePriceBoundsFromBudget({ from: null, to: 5000 }).to).toBe(3000);
+    expect(marketplacePriceBoundsFromBudget({ from: null, to: 15000 }).to).toBe(13000);
+    expect(marketplacePriceBoundsFromBudget({ from: 10000, to: 20000 }).to).toBe(18000);
+    expect(marketplacePriceBoundsFromBudget({ from: null, to: 15000 }).from).toBe(8300);
+    expect(marketplacePriceBoundsFromBudget({ from: null, to: 1500 })).toEqual({ from: null, to: null });
+  });
+});
 
 describe("marketplaceQueryFromOrder", () => {
   it("reads make/model/years/km/price/fuel/gearbox from the order form", () => {
@@ -28,7 +43,9 @@ describe("marketplaceQueryFromOrder", () => {
     expect(q.yearFrom).toBe(2018);
     expect(q.yearTo).toBe(2020);
     expect(q.mileageTo).toBe(140000);
-    expect(q.priceTo).toBe(22000);
+    // Nils 31.10: budžets - 2 000 €; no 55 %.
+    expect(q.priceTo).toBe(20000);
+    expect(q.priceFrom).toBe(12100);
     expect(q.fuel).toMatch(/dīzel|diesel/i);
     expect(q.gearbox).toMatch(/autom|automatic/i);
     expect(q.vehicleCategory).toBe("car");
@@ -74,7 +91,7 @@ describe("marketplaceQueryFromOrder", () => {
       yearFrom: 2017,
       yearTo: 2019,
       mileageTo: 160000,
-      priceTo: 25000,
+      priceTo: 23000,
       fuel: "diesel",
       gearbox: "automatic",
     });
@@ -183,7 +200,8 @@ describe("marketplaceVehicleMatchesOrder", () => {
       maxMileage: "150000",
       totalBudget: "25000",
     };
-    expect(marketplaceOrderHasFetchBounds(loose)).toBe(false);
+    // Nils 30.10: cena no = 55 % no budžeta, tāpēc šim pasūtījumam robežas jau ir.
+    expect(marketplaceOrderHasFetchBounds(loose)).toBe(true);
     expect(
       marketplaceVehicleMatchesOrder(
         {
@@ -196,5 +214,14 @@ describe("marketplaceVehicleMatchesOrder", () => {
         loose,
       ),
     ).toBe(true);
+  });
+});
+
+describe("Meklēšanas valstis (Nils 28.10)", () => {
+  it("vienmēr Vācija, Nīderlande, Beļģija - arī ja vecajā pasūtījumā ierakstīts cits", async () => {
+    const { buildAutoscout24SearchUrl } = await import("@/lib/marketplace/search-urls");
+    const q = marketplaceQueryFromOrder({ brandModel: "Volvo XC60", totalBudget: "20000", productionYears: "2015", preferredCountries: "LT" });
+    expect(q.countries).toEqual(["DE", "NL", "BE"]);
+    expect(new URL(buildAutoscout24SearchUrl(q)).searchParams.get("cy")).toBe("D,NL,B");
   });
 });

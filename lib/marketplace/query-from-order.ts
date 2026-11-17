@@ -5,6 +5,9 @@ import {
   gearboxesMatchGroups,
 } from "@/lib/iriss-criteria-listing-match";
 import { migrateIrissCriteria } from "@/lib/iriss-criteria-migrate";
+import { listingSearchPriceBounds } from "@/lib/iriss-listings-cost";
+import { currentListingSearchCosts } from "@/lib/iriss-listings-search-costs";
+import { parseIrissOrderBoundRange } from "@/lib/iriss-listings-orders";
 import type { IrissCriteriaFilter, IrissCriteriaV1 } from "@/lib/iriss-criteria-types";
 import {
   emptyMarketplaceQuery,
@@ -16,6 +19,8 @@ import {
 
 export type MarketplaceOrderCriteria = {
   brandModel?: string;
+  clientFirstName?: string;
+  clientLastName?: string;
   productionYears?: string;
   maxMileage?: string;
   totalBudget?: string;
@@ -27,6 +32,14 @@ export type MarketplaceOrderCriteria = {
   preferredCountries?: string;
   criteria?: IrissCriteriaV1 | null;
 };
+
+/** Tirgus vaicājuma saraksta lauks («diesel, petrol») -> vērtības. */
+export function marketplaceQueryList(raw: string): string[] {
+  return raw
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
 
 function digits(raw: string | undefined, max = 12): number | null {
   const n = Number.parseInt(String(raw ?? "").replace(/[^\d]/g, ""), 10);
@@ -42,18 +55,18 @@ function effectiveFilter(order: MarketplaceOrderCriteria): IrissCriteriaFilter {
   return firstEnabledFormFilter(order.criteria) ?? migrateIrissCriteria(order).filters[0]!;
 }
 
+/** Nils 30.10: vairākas izvēles - visas grupas (komatu saraksts), nevis tikai pirmā. */
 function fuelLabel(filter: IrissCriteriaFilter, fallback: string): string {
   const groups = filter.fuel.value.map((f) => f.group);
-  if (groups.includes("diesel")) return "diesel";
-  if (groups.includes("petrol")) return "petrol";
-  if (groups.includes("hybrid")) return "hybrid";
-  if (groups.includes("electric")) return "electric";
-  if (groups.includes("gas")) return "gas";
+  const known = (["diesel", "petrol", "hybrid", "electric", "gas"] as const).filter((g) => groups.includes(g));
+  if (known.length > 0) return known.join(", ");
   return fallback.trim();
 }
 
 function gearboxLabel(filter: IrissCriteriaFilter, fallback: string): string {
   const groups = filter.gearbox.value.map((g) => g.group);
+  // Abas kārbas = jebkura (bez kārbas filtra).
+  if (groups.includes("automatic") && groups.includes("manual")) return "";
   if (groups.includes("automatic")) return "automatic";
   if (groups.includes("manual")) return "manual";
   return fallback.trim();
@@ -70,6 +83,50 @@ function splitBrandModel(brandModel: string): { make: string; model: string } {
   return { make: parts[0]!, model: parts.slice(1).join(" ") };
 }
 
+function orderSearchPriceBoundsFromFilter(
+  order: MarketplaceOrderCriteria,
+  filter: IrissCriteriaFilter,
+): { from: number | null; to: number | null } {
+  const budget =
+    filter.budgetFrom.value != null || filter.budgetTo.value != null
+      ? { from: filter.budgetFrom.value, to: filter.budgetTo.value }
+      : parseIrissOrderBoundRange(order.totalBudget ?? "");
+  return listingSearchPriceBounds(budget, currentListingSearchCosts());
+}
+
+/**
+ * Sludinājuma cenas robežas pasūtījumam (budžets mīnus LIST izmaksas), rēķinātas tagad.
+ * Tās pašas, ko tirgus vaicājums; saglabātajām saitēm tās uzliek nolasīšanas brīdī.
+ */
+export function orderSearchPriceBounds(order: MarketplaceOrderCriteria): { from: number | null; to: number | null } {
+  return orderSearchPriceBoundsFromFilter(order, effectiveFilter(order));
+}
+
+/**
+ * Nils 31.10: mobile.de / AutoScout24 griesti = budžets mīnus 2 000 € (izdevumi mazāki nekā izsolē):
+ * 5 000 -> 3 000, 15 000 -> 13 000, 20 000 -> 18 000. Apakšā - 55 % no budžeta (kā līdz šim).
+ */
+export const MARKETPLACE_PRICE_RESERVE_EUR = 2000;
+export const MARKETPLACE_PRICE_FROM_SHARE = 0.55;
+
+export function marketplacePriceBoundsFromBudget(budget: { from: number | null; to: number | null }): { from: number | null; to: number | null } {
+  const ok = (n: number | null | undefined): n is number => n != null && Number.isFinite(n) && n > 0;
+  const top = ok(budget.to) ? budget.to : ok(budget.from) ? budget.from : null;
+  if (top == null) return { from: null, to: null };
+  const round100 = (n: number) => Math.round(n / 100) * 100;
+  const to = Math.max(0, round100(top - MARKETPLACE_PRICE_RESERVE_EUR));
+  if (to <= 0) return { from: null, to: null };
+  return { from: Math.min(round100(top * MARKETPLACE_PRICE_FROM_SHARE), to), to };
+}
+
+function orderMarketplacePriceBounds(order: MarketplaceOrderCriteria, filter: IrissCriteriaFilter): { from: number | null; to: number | null } {
+  const budget =
+    filter.budgetFrom.value != null || filter.budgetTo.value != null
+      ? { from: filter.budgetFrom.value, to: filter.budgetTo.value }
+      : parseIrissOrderBoundRange(order.totalBudget ?? "");
+  return marketplacePriceBoundsFromBudget(budget);
+}
+
 /** Pasūtījuma forma / IrissCriteriaV1 -> vienots tirgus vaicājums. */
 export function marketplaceQueryFromOrder(order: MarketplaceOrderCriteria): MarketplaceQuery {
   const filter = effectiveFilter(order);
@@ -81,22 +138,28 @@ export function marketplaceQueryFromOrder(order: MarketplaceOrderCriteria): Mark
   q.yearTo = filter.yearTo.value;
   q.mileageFrom = filter.mileageFrom.value;
   q.mileageTo = filter.mileageTo.value ?? digits(order.maxMileage);
-  q.priceFrom = filter.budgetFrom.value;
-  q.priceTo = filter.budgetTo.value ?? digits(order.totalBudget, 7);
+  const price = orderMarketplacePriceBounds(order, filter);
+  q.priceFrom = price.from;
+  q.priceTo = price.to;
   q.fuel = fuelLabel(filter, order.engineType ?? "");
   q.gearbox = gearboxLabel(filter, order.transmission ?? "");
   q.powerFromKw = filter.kwFrom.value;
   q.powerToKw = filter.kwTo.value ?? digits(order.powerKw);
   q.displacementFromCc = filter.ccFrom.value;
   q.displacementToCc = filter.ccTo.value;
-  q.body = (filter.bodyTypes.value[0] ?? order.bodyType ?? "").trim();
-  q.drive = (filter.drive.value[0] ?? order.driveType ?? "").trim();
-  q.countries = filter.countries.value.length ? [...filter.countries.value] : [];
-  if (!q.countries.length && (order.preferredCountries ?? "").trim()) {
-    q.countries = order.preferredCountries!.split(/[,;/]+/).map((s) => s.trim()).filter(Boolean).slice(0, 8);
-  }
+  q.body = (filter.bodyTypes.value.length > 0 ? filter.bodyTypes.value.join(", ") : (order.bodyType ?? "")).trim();
+  // mobile.de pārdevēji piedziņu bieži nenorāda - filtrā tikai pilnpiedziņa (citādi pazustu derīgi auto).
+  // Ja atzīmēta arī cita piedziņa - bez piedziņas filtra.
+  const drives = filter.drive.value;
+  const drive = (drives.length > 0 ? drives.join(", ") : (order.driveType ?? "")).trim();
+  q.drive = drives.length > 0 ? (drives.every((d) => d === "awd") ? "awd" : "") : /awd|4x4|4wd|pilnpiedzi|quattro|xdrive|4matic|4motion|allrad/i.test(drive) ? "awd" : "";
+  // Nils 28.10: pasūtījumos meklējam Vācijā, Nīderlandē un Beļģijā; vecais lauks «Valstis» paliek datos, bet netiek izmantots.
+  q.countries = [...IRISS_ORDER_SEARCH_COUNTRIES];
   return q;
 }
+
+/** Pasūtījumu meklēšanas valstis (AutoScout24): Vācija, Nīderlande, Beļģija. */
+export const IRISS_ORDER_SEARCH_COUNTRIES = ["DE", "NL", "BE"] as const;
 
 export const MARKETPLACE_STRICT_FIELD_LABELS = {
   make: "marka",
@@ -255,13 +318,13 @@ export function marketplaceVehicleMatchesQuery(v: MarketplaceMatchVehicle, q: Ma
   if (!inRange(vehiclePrice(v), q.priceFrom, q.priceTo)) return false;
   if (!inRange(vehiclePower(v), q.powerFromKw, q.powerToKw)) return false;
   if (!inRange(v.displacementCc ?? null, q.displacementFromCc, q.displacementToCc)) return false;
-  if (q.fuel && (v.fuel ?? "").trim() && !fuelsMatchGroups(v.fuel ?? "", [q.fuel])) {
+  if (q.fuel && (v.fuel ?? "").trim() && !fuelsMatchGroups(v.fuel ?? "", marketplaceQueryList(q.fuel))) {
     return false;
   }
-  if (q.gearbox && (v.transmission ?? "").trim() && !gearboxesMatchGroups(v.transmission ?? "", [q.gearbox])) {
+  if (q.gearbox && (v.transmission ?? "").trim() && !gearboxesMatchGroups(v.transmission ?? "", marketplaceQueryList(q.gearbox))) {
     return false;
   }
-  if (q.body && (v.bodyType ?? "").trim() && !bodiesMatchGroups(`${v.bodyType ?? ""} ${hay}`, [q.body])) {
+  if (q.body && (v.bodyType ?? "").trim() && !bodiesMatchGroups(`${v.bodyType ?? ""} ${hay}`, marketplaceQueryList(q.body))) {
     return false;
   }
   if (q.drive && ((v.driveType ?? "").trim() || hay.trim()) && !drivesMatchGroups(`${v.driveType ?? ""} ${hay}`, [q.drive])) {

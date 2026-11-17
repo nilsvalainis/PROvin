@@ -1,6 +1,8 @@
 /**
  * IRISS VIN mīkstā pārbaude: 17 zīmes, bez I/O/Q, ISO 3779 kontrolcipars.
  * Tukšs lauks nav kļūda. Brīdinājums nebloķē saglabāšanu.
+ * Kontrolcipars (9. zīme) ir obligāts tikai Ziemeļamerikas izgatavotājiem (WMI 1. zīme "1"-"5" -
+ * ASV, Kanāda, Meksika); citur (Eiropa, Āzija u.c.) tas nav standartizēts, tāpēc brīdinājumu nerāda.
  */
 
 const VIN_TRANSLIT: Record<string, number> = {
@@ -50,6 +52,12 @@ export function irissVinCheckDigitOk(vin: string): boolean {
   return v[8] === expect;
 }
 
+/** Vai VIN 1. zīme (WMI) ir Ziemeļamerikas diapazonā ("1"-"5": ASV, Kanāda, Meksika). */
+export function isNorthAmericanVin(vin: string): boolean {
+  const v = normalizeIrissVin(vin);
+  return /^[1-5]/.test(v);
+}
+
 /** Mīksts brīdinājums. `null` = tukšs vai derīgs. */
 export function irissVinWarning(raw: string): string | null {
   const v = normalizeIrissVin(raw);
@@ -57,6 +65,6 @@ export function irissVinWarning(raw: string): string | null {
   if (v.length !== 17) return "VIN parasti ir 17 rakstzīmes.";
   if (/[IOQ]/.test(v)) return "VIN nedrīkst saturēt I, O vai Q.";
   if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(v)) return "VIN satur nederīgas rakstzīmes.";
-  if (!irissVinCheckDigitOk(v)) return "VIN kontrolcipars nesakrīt. Pārbaudi pārrakstīšanu.";
+  if (isNorthAmericanVin(v) && !irissVinCheckDigitOk(v)) return "VIN kontrolcipars nesakrīt. Pārbaudi pārrakstīšanu.";
   return null;
 }

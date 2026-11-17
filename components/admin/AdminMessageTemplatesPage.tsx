@@ -1,5 +1,6 @@
 "use client";
 
+import { AdminSaveButton, useSaveMessageState } from "@/components/admin/AdminSaveButton";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AdminProvinTiptapEditor,
@@ -45,6 +46,7 @@ export function AdminMessageTemplatesPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const templateSaveState = useSaveMessageState(status, busy);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [historyPreviewTs, setHistoryPreviewTs] = useState<number | null>(null);
 
@@ -344,14 +346,13 @@ export function AdminMessageTemplatesPage() {
                 ))}
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  disabled={busy || !validation.ok}
-                  onClick={() => void save()}
-                  className="rounded-[10px] bg-[#0a84ff] px-4 py-2 text-[13px] font-medium text-white disabled:opacity-50"
-                >
-                  Saglabāt
-                </button>
+                <AdminSaveButton
+                  onSave={() => void save()}
+                  state={templateSaveState}
+                  disabled={!validation.ok}
+                  dirty
+                  shortcut
+                />
                 <button
                   type="button"
                   disabled={busy || selected.channel !== "email"}

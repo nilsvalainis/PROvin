@@ -95,6 +95,9 @@ function mergeOffer(local: IrissOfferRecord, server: IrissOfferRecord): IrissOff
     commissionFee: preferFilledString(local.commissionFee, server.commissionFee),
     offerValidDays: preferFilledString(local.offerValidDays, server.offerValidDays),
     validUntil: preferFilledString(local.validUntil, server.validUntil),
+    ...(local.validUntilAt || server.validUntilAt
+      ? { validUntilAt: preferFilledString(local.validUntilAt ?? "", server.validUntilAt ?? "") }
+      : {}),
     coverAttachmentId: preferFilledString(local.coverAttachmentId ?? "", server.coverAttachmentId ?? "") || undefined,
     attachments,
     createdAt: preferFilledString(local.createdAt, server.createdAt),
@@ -119,6 +122,10 @@ const STRING_KEYS = [
   "bodyType",
   "driveType",
   "seatCount",
+  "budgetIncludes",
+  "doors",
+  "maxRepairCostEur",
+  "sellerType",
   "maxMileage",
   "preferredColors",
   "nonPreferredColors",
@@ -383,6 +390,9 @@ export function planSilentAutosave(inFlight: boolean, imagesHydrating = false): 
   return { startNow: true, queue: false };
 }
 
+/** Tukšs jauns pasūtījums: bez «kļūd» - saglabāšanas poga nekļūst sarkana «Mēģināt vēlreiz» (FABLE v3). */
+export const IRISS_EMPTY_NEW_ORDER_MSG = "Nav ko saglabāt: ieraksti marku / modeli vai klienta vārdu.";
+
 export function irissPasutijumsHasOperatorContent(rec: IrissPasutijumsRecord): boolean {
   const text = [
     rec.clientFirstName,
@@ -416,4 +426,25 @@ export function irissPasutijumsHasOperatorContent(rec: IrissPasutijumsRecord): b
     ...rec.listingLinksOther,
   ].some((s) => s.trim());
   return links;
+}
+
+/**
+ * Precīzais termiņš (validUntilAt) netiek noņemts ar saglabāšanu, kas to nezina
+ * (piem., vecā pārlūka cilne). Termiņu var tikai mainīt, ne izdzēst.
+ */
+export function retainIrissOfferDeadlines(
+  existing: IrissPasutijumsRecord | null,
+  next: IrissPasutijumsRecord,
+): IrissPasutijumsRecord {
+  if (!existing) return next;
+  const before = new Map(existing.offers.filter((o) => o.validUntilAt).map((o) => [o.id, o.validUntilAt!]));
+  if (before.size === 0) return next;
+  let changed = false;
+  const offers = next.offers.map((o) => {
+    const kept = before.get(o.id);
+    if (!kept || o.validUntilAt) return o;
+    changed = true;
+    return { ...o, validUntilAt: kept };
+  });
+  return changed ? { ...next, offers } : next;
 }

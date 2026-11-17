@@ -100,6 +100,10 @@ function buildLegacyUserPrompt(input: AiOrderContextInput, identificationBrief: 
   const vehicleHint = [makeModel, fuel, identity.engineCode].filter(Boolean).join(", ");
   const powertrainBlock = powertrainIdentityPromptBlock(identity);
   const verifiedFacts = unitFactsPromptBlock(input, identificationBrief);
+  // j26: v1 (noklusējums, ja TECH_RISK_V2 != "1") saņem to pašu dīlera faktu brīfu kā v2.
+  const dealerFactsBrief = buildDealerFactsBrief(
+    extractDealerFacts({ oneauto: blocks.oneauto, autoRecords: blocks.auto_records }),
+  );
   return appendAiOperatorNotesSection(
     `Pasūtījuma ID: ${input.sessionId}
 ${vehicleHint ? `Identificētais auto (CSDD): ${vehicleHint}` : ""}
@@ -107,6 +111,7 @@ ${vehicleHint ? `Identificētais auto (CSDD): ${vehicleHint}` : ""}
 ${identificationBrief}
 ${powertrainBlock ? `\n${powertrainBlock}\n` : ""}
 ${verifiedFacts ? `\n${verifiedFacts}\n` : ""}
+${dealerFactsBrief.trim() ? `\n${dealerFactsBrief}\n` : ""}
 ${orderContext}
 
 ---

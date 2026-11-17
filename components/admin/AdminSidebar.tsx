@@ -1,14 +1,15 @@
 "use client";
 
 import {
+  Archive,
   BarChart3,
   Building2,
-  CalendarRange,
   Car,
   ChevronsLeft,
   ChevronsRight,
   Cog,
   Euro,
+  Factory,
   FileText,
   Handshake,
   Home,
@@ -22,6 +23,7 @@ import {
   Search,
   Settings,
   Sun,
+  Tag,
   Truck,
   Wallet,
   Warehouse,
@@ -47,7 +49,7 @@ import {
 import { ADMIN_MOBILE_TABBAR_DOCK_NAV } from "@/lib/admin-mobile-shell";
 import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
-import { AdminMobileCountBadge, AdminMobileSheet, AdminMobileTabPill } from "@/components/admin/mobile/AdminMobileChrome";
+import { AdminMobileCountBadge, AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
 import type { AdminMobileIconName } from "@/lib/admin-mobile-ds";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 import { useAdminMobileColorScheme } from "@/components/admin/useAdminMobileViewport";
@@ -73,10 +75,13 @@ export const ADMIN_NAV_LABELS = {
   orders: "Pasūtījumi",
   morning: "Rīta kopsavilkums",
   vinScan: "VIN pārbaude",
+  auctionArchive: "Izsoļu portālu arhīvs",
+  dealerCheck: "Dīlera dati",
   fast: "Ātrie vērtējumi",
   irissMenu: "Sākums",
   irissHome: "Pasūtījumi",
   irissNew: "Jauns pasūtījums",
+  irissOffers: "Piedāvājumi",
   irissScan: "Radars",
   irissLogistics: "Loģistika",
   irissAutoparks: "Autoparks",
@@ -108,6 +113,19 @@ const PRO_MENU: Item = { href: "/admin/pro", label: "Sākums", icon: Home, match
 const MORNING: Item = { href: "/admin/kopsavilkums", label: L.morning, icon: Sun, match: starts("/admin/kopsavilkums") };
 const FAST: Item = { href: "/admin/atras-vertesanas", label: L.fast, icon: Zap, badge: "fast", match: starts("/admin/atras-vertesanas") };
 const VIN: Item = { href: "/admin/vin-scan", label: L.vinScan, icon: ScanLine, match: starts("/admin/vin-scan") };
+/** Tikai PRO administratora izvēlne. IRISS darbinieku sarakstā šīs lapas nav. */
+const AUCTION_ARCHIVE: Item = {
+  href: "/admin/izsolu-arhivs",
+  label: L.auctionArchive,
+  icon: Archive,
+  match: starts("/admin/izsolu-arhivs"),
+};
+const DEALER_CHECK: Item = {
+  href: "/admin/dilera-dati",
+  label: L.dealerCheck,
+  icon: Factory,
+  match: starts("/admin/dilera-dati"),
+};
 const PARTNERI: Item = { href: "/admin/partneri", label: L.partners, icon: Handshake, badge: "partners", match: starts("/admin/partneri") };
 const DEMO_DILERI: Item = { href: "/admin/b2b-demo", label: L.demoDealers, icon: Building2, match: starts("/admin/b2b-demo") };
 const IZMAKSAS: Item = { href: "/admin/izmaksas", label: L.costs, icon: Wallet, match: starts("/admin/izmaksas") };
@@ -119,26 +137,27 @@ const I_MENU: Item = {
   match: (p) => p === "/admin/iriss" || p === "/admin/iriss/",
 };
 const I_HOME: Item = { href: "/admin/iriss/pasutijumi", label: L.irissHome, icon: Car, plus: true, match: starts("/admin/iriss/pasutijumi") };
+/** j70: tikai Admin (AdminSidebar darbiniekiem netiek rādīts). Q13 badge vēl atvērts - nav pievienots. */
+const I_PIEDAVAJUMI: Item = { href: "/admin/iriss/piedavajumi", label: L.irissOffers, icon: Tag, match: starts("/admin/iriss/piedavajumi") };
 const I_SCAN: Item = { href: "/admin/iriss/scan", label: L.irissScan, icon: Radar, match: starts("/admin/iriss/scan") };
 const I_LOGISTICS: Item = {
   href: "/admin/iriss/logistika",
   label: L.irissLogistics,
   icon: Truck,
-  badge: "irissLogistics",
   match: starts("/admin/iriss/logistika"),
 };
 const I_AUTOPARKS: Item = { href: "/admin/iriss/autoparks", label: L.irissAutoparks, icon: Warehouse, match: starts("/admin/iriss/autoparks") };
 const I_WAYBILLS: Item = { href: "/admin/iriss/pavadzimes", label: L.irissWaybills, icon: FileText, match: starts("/admin/iriss/pavadzimes") };
-const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: L.irissList, icon: List, badge: "irissMatches", match: starts("/admin/iriss/sludinajumi") };
-const I_REPORT: Item = { href: "/admin/iriss/atskaite", label: L.irissReport, icon: CalendarRange, match: starts("/admin/iriss/atskaite") };
+/** IRISS izvēlnē skaitļu nav (Nils 26.10: "99+" traucē) - jaunumi redzami pašā sadaļā. Mēneša atskaite izvēlnē paslēpta, lapa paliek. */
+const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: L.irissList, icon: List, match: starts("/admin/iriss/sludinajumi") };
 const I_SETTINGS: Item = { href: "/admin/iriss/iestatijumi", label: L.irissSettings, icon: Settings, match: starts("/admin/iriss/iestatijumi") };
 
 /** Tā pati VIN pārbaudes lapa arī IRISS izvēlnē (dublēts ieraksts). */
 const I_VIN: Item = { ...VIN, label: L.vinScan };
 
 export const ADMIN_NAV_GROUPS: Group[] = [
-  { title: L.groupPro, items: [MORNING, SAKUMS, VIN, FAST] },
-  { title: L.groupIriss, items: [I_MENU, I_HOME, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_REPORT, I_WAYBILLS, I_SETTINGS] },
+  { title: L.groupPro, items: [MORNING, SAKUMS, VIN, AUCTION_ARCHIVE, DEALER_CHECK, FAST] },
+  { title: L.groupIriss, items: [I_MENU, I_HOME, I_PIEDAVAJUMI, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_WAYBILLS, I_SETTINGS] },
   {
     title: L.groupWeb,
     items: [
@@ -170,7 +189,7 @@ const WS_GROUPS: Record<AdminWorkspace, Group[]> = {
   pro: ADMIN_NAV_GROUPS.filter((g) => g.title !== L.groupIriss),
   /** IRISS: Pārvaldība starp Iestatījumi un Pavadzīmes (sānjoslas kartītes). */
   iriss: [
-    { title: L.groupIriss, items: [I_MENU, I_HOME, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_REPORT, I_WAYBILLS, I_SETTINGS] },
+    { title: L.groupIriss, items: [I_MENU, I_HOME, I_PIEDAVAJUMI, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_WAYBILLS, I_SETTINGS] },
     { title: L.groupOps, items: [I_IZMAKSAS] },
   ],
 };
@@ -203,10 +222,10 @@ export function useAdminWorkspace(): AdminWorkspace {
 function WorkspaceSwitch({ ws }: { ws: AdminWorkspace }) {
   const seg = (on: boolean) =>
     `admin-nav-link flex h-7 flex-1 items-center justify-center rounded-md text-[12px] font-semibold tracking-wide transition ${
-      on ? "bg-white text-[var(--color-apple-text)] shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-[#8e8e93] hover:text-[var(--color-apple-text)]"
+      on ? "bg-white text-[var(--color-apple-text)] shadow-[0_1px_2px_rgba(0,0,0,0.08)]" : "text-[#636366] hover:text-[var(--color-apple-text)]"
     }`;
   return (
-    <div className="flex gap-0.5 rounded-lg bg-[#f2f2f7] p-0.5" role="tablist" aria-label="Darba zona">
+    <div className="flex gap-0.5 rounded-lg bg-[#f2f2f7] p-0.5" role="group" aria-label="Darba zona">
       <Link href="/admin/dashboard" onClick={() => writeWsCookie("pro")} className={seg(ws === "pro")} aria-current={ws === "pro" ? "page" : undefined}>
         PRO
       </Link>
@@ -535,7 +554,6 @@ export function AdminSidebar({
           </div>
         ))}
         {ws === "iriss" && !collapsed ? <IrissPavadzimesSidebarCard limit={IRISS_SIDEBAR_WAYBILL_LIMIT} /> : null}
-        {ws === "iriss" && !collapsed ? <IrissLimitsSidebarCard /> : null}
       </nav>
       <div className={`shrink-0 border-t border-[#e5e5ea] p-2.5 ${collapsed ? "flex justify-center" : ""}`}>
         <button
@@ -552,22 +570,37 @@ export function AdminSidebar({
   );
 }
 
-const MOBILE_TAB_ICON: Record<string, AdminMobileIconName> = {
-  "/admin/pro": "atzime",
-  "/admin/dashboard": "pasutijumi",
-  "/admin/vin-scan": "vinParbaude",
-  "/admin/atras-vertesanas": "atrie",
-  "/admin/iriss": "atzime",
-  "/admin/iriss/pasutijumi": "pasutijumi",
-  "/admin/iriss/sludinajumi": "sludinajums",
-  "/admin/iriss/scan": "radars",
-  "/admin/iriss/logistika": "logistika",
-};
+function CapsuleGlyph({ name }: { name: "sakums" | "vairak" | "meklet" }) {
+  if (name === "sakums") {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden>
+        <path d="M4 10.5 12 4l8 6.5V20h-5v-6H9v6H4z" />
+      </svg>
+    );
+  }
+  if (name === "vairak") {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden>
+        <rect x="4" y="4" width="6.5" height="6.5" rx="2" />
+        <rect x="13.5" y="4" width="6.5" height="6.5" rx="2" />
+        <rect x="4" y="13.5" width="6.5" height="6.5" rx="2" />
+        <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="2" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16 16 4 4" />
+    </svg>
+  );
+}
 
 const MORE_ROW_ICON: Record<string, AdminMobileIconName> = {
   "/admin/kopsavilkums": "rits",
   "/admin/dashboard": "pasutijumi",
   "/admin/vin-scan": "vinParbaude",
+  "/admin/izsolu-arhivs": "vinParbaude",
   "/admin/atras-vertesanas": "atrie",
   "/admin/commission-invoice": "rekini",
   "/admin/partneri": "partneri",
@@ -578,6 +611,7 @@ const MORE_ROW_ICON: Record<string, AdminMobileIconName> = {
   "/admin/teksti": "komentars",
   "/admin/iriss": "atzime",
   "/admin/iriss/pasutijumi": "pasutijumi",
+  "/admin/iriss/piedavajumi": "pdf",
   "/admin/iriss/sludinajumi": "sludinajums",
   "/admin/iriss/scan": "radars",
   "/admin/iriss/logistika": "logistika",
@@ -589,7 +623,7 @@ const MORE_ROW_ICON: Record<string, AdminMobileIconName> = {
   "/admin/iriss/izmaksas": "rekini",
 };
 
-/** Mobilā apakšējā cilņu josla: 4 iPhone cilnes + atsevišķa meklēšana. PRO/IRISS centrs ir „Vairāk”. */
+/** Mobilā apakšējā josla: peldoša C kapsula ar 3 ikonām (Sākums, Vairāk, Meklēt). */
 export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: AdminWorkspace } = {}) {
   const pathname = usePathname() || "";
   const workspaceFromPath = useAdminWorkspace();
@@ -602,7 +636,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
   useAdminScrollLock(more || limitsOpen);
 
   /**
-   * Cilne, uz kuru lietotājs tikko pieskārās. Pille un atzīme pārvietojas uzreiz, kamēr serveris gatavo lapu.
+   * Cilne, uz kuru lietotājs tikko pieskārās. Atzīme pārvietojas uzreiz, kamēr serveris gatavo lapu.
    * Agrāk te bija view transition ap router.push: animācija sākās pirms navigācijas, tās laikā lapa
    * nereaģēja uz pieskārieniem, un saturs nomainījās vēlāk zem pirksta (Nils 21.10: "atveras cita sadaļa").
    */
@@ -618,61 +652,45 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
     return () => window.removeEventListener("keydown", onKey);
   }, [more]);
 
-  const irissTabs: Item[] = [I_MENU, I_HOME, { ...I_LIST, label: "Sludinājumi" }];
-  const proTabs: Item[] = [PRO_MENU, { ...SAKUMS, label: "Pasūtījumi" }, { ...VIN, label: "VIN" }];
-  const tabs: Item[] = workspace === "iriss" ? irissTabs : proTabs;
-  const tabHrefs = new Set(tabs.map((t) => t.href));
+  const home = workspace === "iriss" ? I_MENU : PRO_MENU;
+  const tabHrefs = new Set([home.href]);
   const shownPath = pendingHref ?? pathname;
-  const inTabs = tabs.some((t) => t.match(shownPath));
   const moreGroups = WS_GROUPS[workspace].map((g) => ({
     ...g,
     items: g.items.filter((it) => !tabHrefs.has(it.href)),
   })).filter((g) => g.items.length > 0);
   const moreBadge = moreGroups.reduce((sum, g) => sum + g.items.reduce((s, it) => s + (it.badge ? badges[it.badge] : 0), 0), 0);
+  const onHome = home.match(shownPath) && !more;
 
   const tabClass = (on: boolean) =>
-    `admin-nav-link relative z-[1] flex min-w-0 flex-1 flex-col items-center justify-center gap-[2px] px-1 py-0.5 text-[10px] font-medium ${
-      on ? "font-semibold text-[var(--am-ink)]" : "text-[var(--am-ink2)]"
+    `admin-nav-link relative z-[1] flex h-11 w-11 min-h-11 min-w-11 items-center justify-center rounded-full ${
+      on ? "bg-black/[0.06] text-[#1c1c1e]" : "text-[#8e8e93]"
     }`;
-
-  const selectedTabIndex = tabs.findIndex((t) => t.match(shownPath));
-  const pillIndex = more || selectedTabIndex < 0 ? tabs.length : selectedTabIndex;
-  const tabCount = tabs.length + 1;
 
   return (
     <>
       <nav className={ADMIN_MOBILE_TABBAR_DOCK_NAV} aria-label="Galvenā izvēlne">
-          <AdminMobileTabPill index={pillIndex} count={tabCount} />
-          {tabs.map((t) => {
-            const on = t.match(shownPath) && !more;
-            const n = t.badge ? badges[t.badge] : 0;
-            const icon = MOBILE_TAB_ICON[t.href] ?? "pasutijumi";
-            return (
-              <Link
-                key={t.href}
-                href={t.href}
-                aria-current={on ? "page" : undefined}
-                className={tabClass(on)}
-                onClick={(e) => {
-                  if (isModifiedClick(e)) return;
-                  setMore(false);
-                  setPendingHref(t.href);
-                }}
-              >
-                <span className="relative">
-                  <AdminMobileIcon name={icon} className="h-5 w-5" />
-                  {n > 0 ? <AdminMobileCountBadge n={n} floating /> : null}
-                </span>
-                <span className="max-w-full whitespace-nowrap leading-none">{t.label}</span>
-              </Link>
-            );
-          })}
-          <button type="button" onClick={() => setMore((v) => !v)} className={tabClass(!inTabs || more)} aria-expanded={more} aria-label="Vairāk">
+          <Link
+            href={home.href}
+            aria-label="Sākums"
+            aria-current={onHome ? "page" : undefined}
+            className={tabClass(onHome)}
+            onClick={(e) => {
+              if (isModifiedClick(e)) return;
+              setMore(false);
+              setPendingHref(home.href);
+            }}
+          >
+            <CapsuleGlyph name="sakums" />
+          </Link>
+          <button type="button" onClick={() => setMore((v) => !v)} className={tabClass(more)} aria-expanded={more} aria-label="Vairāk">
             <span className="relative">
-              <AdminMobileIcon name="vairak" className="h-5 w-5" />
+              <CapsuleGlyph name="vairak" />
               {moreBadge > 0 ? <AdminMobileCountBadge n={moreBadge} floating /> : null}
             </span>
-            <span className="whitespace-nowrap leading-none">Vairāk</span>
+          </button>
+          <button type="button" onClick={() => requestAdminGlobalSearch()} className={tabClass(false)} aria-label="Meklēt">
+            <CapsuleGlyph name="meklet" />
           </button>
       </nav>
       {more ? (
@@ -687,7 +705,7 @@ export function AdminMobileTabBar({ workspace: workspaceProp }: { workspace?: Ad
             <div className="am-overlay relative z-[20] flex min-h-0 flex-1 flex-col bg-[var(--bg)] pb-[calc(64px+16px+env(safe-area-inset-bottom,0px))]">
               <header className="am-topbar px-4 pb-3 pt-[max(10px,env(safe-area-inset-top))]">
                 <h1 className="text-[34px] font-bold leading-none tracking-tight text-[var(--label)]">Vairāk</h1>
-                <div className="relative mt-3 flex h-11 rounded-full bg-[var(--am-fill)] p-0.5" role="tablist" aria-label="Darba zona">
+                <div className="relative mt-3 flex h-11 rounded-full bg-[var(--am-fill)] p-0.5" role="group" aria-label="Darba zona">
                   <span
                     aria-hidden
                     className="pointer-events-none absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-full bg-[var(--am-s1)] shadow-sm"

@@ -13,6 +13,7 @@ import {
   ADMIN_MOBILE_PTR_RUBBER,
   ADMIN_MOBILE_PTR_THRESHOLD_PX,
   adminMobilePtrLabel,
+  shouldArmPullToRefresh,
 } from "@/lib/admin-mobile-shell";
 
 type Props = {
@@ -81,6 +82,10 @@ export function AdminShellMainWithMobilePull({ isDetailScreen, pullToRefresh, no
       if (scrollerTop() > ADMIN_MOBILE_PTR_IDLE_PX) return;
       const t = e.touches[0];
       if (!t) return;
+      // j37: pieskāriens pogai/saitei/laukam (piem. numura slēdzis, pavadzīmes ikona izvēlnē)
+      // nedrīkst sākt PTR vilkšanu - citādi neliela pirksta svārstība pārvieto saturu zem
+      // pirksta, un pieskāriens netrāpa vai pat izsauc router.refresh() ("lapa pārlādējas").
+      if (!shouldArmPullToRefresh(t.target as Element | null)) return;
       startYRef.current = t.clientY;
       startXRef.current = t.clientX;
       pullActiveRef.current = true;

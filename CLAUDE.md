@@ -1,0 +1,70 @@
+# PROVIN komanda (kopīgie noteikumi visiem aģentiem)
+
+Šie noteikumi attiecas uz katru Claude sesiju un katru aģentu no `.claude/agents/`.
+Sīkāki projekta noteikumi ir `.cursor/rules/*.mdc` (tie ir saistoši arī Claude) un `.cursor/skills/*/SKILL.md`.
+
+## Resursu sadale (OBLIGĀTI)
+
+Katrs Claude aģents pirms jebkura uzdevuma izlasa un stingri ievēro `docs/resursu-sadale.md` (Nila rīkojums 22.10.2026). Īsumā:
+- Sarežģīti darbi (maksājumi, drošība, arhitektūra) - tikai Claude Opus. Ja limits beidzies, gaidām.
+- Parasti labojumi ar testiem - Claude Max.
+- Grok 4.6 - tikai, ja darbs ir steidzams, ir precīza specifikācija un pirms merge to pārbauda Claude.
+- Teksti, dokumentācija, konfigurācija - Cursor grok-4.6.
+- Sonnet un Opus Cursorā maksā papildus - tikai ar Nila "jā".
+- Darbs ilgāks par 1 h vai vairāk par 25 failiem: vispirms novērtējums Nilam (caur Grok Andri / `docs/komandu-zinojumi.md`) un gaidi lēmumu.
+- Dropbox: augšupielāde un lejupielāde VIENMĒR caur Dropbox API/konektoru, nekad caur pārlūku. Pēc augšupielādes failus pārbaudi, saskaitot tos caur API.
+- Valoda: visas atbildes Nilam TIKAI latviešu valodā.
+- Komanda: visi aģenti strādā kā viena komanda un drīkst sazināties tieši (sk. `docs/komanda.md`), bez Andra starpniecības, bet Andrim vienmēr jābūt lietas kursā - svarīgām ziņām pievieno "Ziņai: Andris".
+- Bez liekām ziņām: neraksti paziņojumus "izdarīšu / pateikšu vēlāk" - vienkārši izdari un ziņo tikai, kad gatavs vai kad vajadzīgs Nila lēmums.
+
+## Valoda un teksts
+
+- Atbildi Nilam latviski.
+- UI, e-pastos, klientu tekstā un commit ziņās tikai īsā defise `-`. Nekad `—` vai `–` (`.cursor/rules/no-em-dash.mdc`, tests to pārbauda).
+- Admin UI teksti ir latviski un hardkodēti; publiskā vietne caur `messages/**` (lv/en paritāte).
+
+## Drošība
+
+- Nekad neizdrukā atslēgas, tokenus vai paroles.
+- Nemaini Vercel env, nedzēs atslēgas, neveido piekļuves datus. To dara Nils pats; pasaki, kas jāpievieno.
+- Neaiztiec vecos datus (pasūtījumus, JSON krātuves ierakstus), ja Nils to tieši nelūdz.
+- Neskenē disku ārpus projekta mapes.
+- Ziņas klientiem, partneriem vai publiski ieraksti: tikai melnraksts, sūta Nils (ja vien viņš tieši nepalūdz nosūtīt).
+
+## Darba plūsma kodā
+
+- Katrs darbs = jauns zars no `origin/main`, PR uz `main`, squash merge, tad pārbaudi, ka Vercel production deploy ir success (`.cursor/rules/git-branch-pr-merge.mdc`).
+- Pirms PR: `npx tsc --noEmit` un attiecīgie `npx vitest run ...` testi zaļi.
+- Testi pārbauda uzvedību, nevis avota tekstu (`.cursor/rules/tests-behavior-first.mdc`).
+- Atskaitē vienmēr: PR nr., squash commit uz `main`, Vercel production statuss, kas nav pārbaudīts.
+- Ja mainīts `relay/` vai `provin-listings`: atskaites beigās raksti `VAJAG RELEJA DEPLOY`.
+
+## Komanda
+
+Claude puses vadītājs ir **Kārlis** (`.claude/agents/karlis.md`), kas atskaitās Grok Andrim, pārējie ir nozaru aģenti. Kā ar tiem strādāt: `docs/claude-komanda.md`.
+
+# Papildu noteikumi (Grok/Claude sadalījums, 22.10)
+
+## Valoda
+- Nilam tikai latviski; Claude rezultātus tulko latviski. Tikai īsā defise "-". Nelieto "eksperts", "čomi". Attālumi km. Cenas "4,50 €".
+
+## Drošība un ārējie darbi
+- Ārējie e-pasti/ziņas tikai melnraksti; sūta Nils ar "sūti". Firmas pasts no sia-iriss@inbox.lv; Lainei/Taivo no nils.valainis@gmail.com; iestādēm Dzintarzemes vārdā no dzintarzeme-auto@inbox.lv.
+- Paroles tikai 1Password. Nekad nelikt paroles, personas kodus, kartes Claude projektos.
+- Apify, reklāmu budžeti, CSDD Saglabāt/Anulēt - tikai ar Nila jā.
+
+## Produkts
+- Galvene nekad nav sticky. Nemainīt vecos pasūtījumus. Neaiztikt PDF atskaites dizainu, Grandland, Panamera. Copart izslēgts. Google Maps tikai bezmaksas līmenī. stat.vin manuāli.
+- UI izmaiņām vajag maketu + Nila "jā" (atjaunošanām nē). Plakanas pogas, Inter, bez AI attēliem.
+
+## Darba plūsma
+- Plānotais darbs: backup zars, rebase, zaļš CI, squash merge, Vercel READY + provin.lv/lv 200 (B2B: demo.provin.lv 200).
+- Paralēli Cursor/Claude: atvērtajos PR nav kopīgu failu; sapludina pa vienam; redeploy tikai no main HEAD.
+- Mobilie labojumi (390px) - Claude. Opus tikai, bez maksas kredītiem.
+- Taupīt tokenus; naktī ziņas tikai kritiskas.
+
+## Komanda
+- Claude pusē vadītājs: Kārlis (piesprausta Code sesija "Kārlis").
+- Grok pusē: Andris (galvenais), Aivars, PVN atguvējs, EKII, Klientu atbalsts, Google, Sociālie tīkli, Labā Roka, Fricis, PROVIN ADMINS (atskaišu aizpilde), IRISS (pasts/izsoles).
+- Claude pusē: koda darbi (iriss, provin-admins kods, iriss-b2b, dizaineris, koda-parbauditajs), mārketings (marketinga-specialists).
+- Apmaiņa: docs/komandu-zinojumi.md (viena rinda par svarīgu darbu); lasīt sesijas sākumā.

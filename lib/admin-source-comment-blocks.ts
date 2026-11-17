@@ -14,7 +14,7 @@ import {
   csddFormToPlainText,
   ltabBlockToPlainText,
   mergeSourceBlocksWithDefaults,
-  SOURCE_BLOCK_LABELS,
+  aiSourceBlockLabel,
   type SourceBlockKey,
   tirgusFormToPlainText,
   vendorAvotuBlockToPlainText,
@@ -284,7 +284,7 @@ export function buildPreviouslyGeneratedSourceCommentsContext(
     if (currentBlockKey != null && key === currentBlockKey) continue;
     const plain = adminRichHtmlToPlainText(sourceBlockCommentsPlain(key, blocks)).trim();
     if (!plain) continue;
-    parts.push(`### ${SOURCE_BLOCK_LABELS[key]}\n${plain}`);
+    parts.push(`### ${aiSourceBlockLabel(key)}\n${plain}`);
   }
 
   if (currentBlockKey !== "auto_records" || targetField !== "comments") {

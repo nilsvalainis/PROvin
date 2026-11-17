@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { useLenis } from "lenis/react";
 import { Link } from "@/i18n/navigation";
+import { FREE_EVAL_PREFILL_EVENT, type FreeEvalPrefillDetail } from "@/lib/free-eval-prefill";
 import { FREE_EVAL_SECTION_ID, freeEvalHref } from "@/lib/paths";
 
 function prefersReducedMotion(): boolean {
@@ -32,6 +33,8 @@ export function FreeEvalHashLink({
         const el = document.getElementById(FREE_EVAL_SECTION_ID);
         if (!el) return;
         e.preventDefault();
+        // Atver formu (sākumlapā tā ir paslēpta līdz atvēršanai).
+        window.dispatchEvent(new CustomEvent<FreeEvalPrefillDetail>(FREE_EVAL_PREFILL_EVENT, { detail: { listingUrl: "" } }));
         const reduce = prefersReducedMotion();
         const headerOffset = parseFloat(window.getComputedStyle(el).scrollMarginTop) || 76;
         if (lenis) {

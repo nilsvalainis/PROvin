@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
+import { primeListingSearchCostsFromStore } from "@/lib/iriss-listings-search-costs-store";
 import { parseIrissPasutijumsListingLinks } from "@/lib/iriss-listing-link-lists";
 import {
   appendEcarstradeLinksToPasutijums,
@@ -65,6 +66,7 @@ function summarize(previews: ReturnType<typeof previewEcarstradeLinksForPasutiju
 export async function GET(req: Request) {
   const gate = await requireIrissSectionApi("pasutijumi");
   if (!gate.ok) return gate.response;
+  await primeListingSearchCostsFromStore();
   if (!isIrissPasutijumiStoreEnabled()) return NextResponse.json({ error: "store_disabled" }, { status: 503 });
 
   const id = new URL(req.url).searchParams.get("id")?.trim() ?? "";
@@ -87,6 +89,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const gate = await requireIrissSectionApi("pasutijumi");
   if (!gate.ok) return gate.response;
+  await primeListingSearchCostsFromStore();
   if (!isIrissPasutijumiStoreEnabled()) return NextResponse.json({ error: "store_disabled" }, { status: 503 });
 
   let body: Record<string, unknown> = {};
@@ -98,7 +101,11 @@ export async function POST(req: Request) {
   }
 
   const apply = body.apply !== false;
-  const replace = body.replace === true;
+  // Nils 30.10: masveida aizstāšana (visiem pasūtījumiem) izslēgta - saites maina tikai pats.
+  if (body.replace === true || body.apply === true) {
+    return NextResponse.json({ error: "disabled", message: "Masveida eCarsTrade saišu maiņa ir izslēgta - saites maina tikai pasūtījumā ar «Izveidot»." }, { status: 410 });
+  }
+  const replace = false;
   const applyLinks = replace ? replaceEcarstradeLinksOnPasutijums : appendEcarstradeLinksToPasutijums;
   const id = typeof body.id === "string" ? body.id.trim() : "";
   const draft = recordFromBody(body.record);

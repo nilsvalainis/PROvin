@@ -62,6 +62,7 @@ const TITLE = {
   lkf: SOURCE_BLOCK_LABELS.lkf_ee,
   traficomFi: SOURCE_BLOCK_LABELS.traficom_fi,
   citi: SOURCE_BLOCK_LABELS.citi_avoti,
+  ccVin: SOURCE_BLOCK_LABELS.cc_vin,
 } as const;
 
 function parsePositiveCount(raw: string): number | null {
@@ -372,9 +373,9 @@ export function synthesizeOwnerCountsFromPdfInput(input: {
   if (ccCount != null) {
     const country = inferOwnerCountry(
       [input.ccVinBlock?.ownersCount, input.ccVinBlock?.comments].filter(Boolean).join("\n"),
-      "cc.vin",
+      TITLE.ccVin,
     );
-    pushCandidate(candidates, country, ccCount, "cc.vin", 2);
+    pushCandidate(candidates, country, ccCount, TITLE.ccVin, 2);
   }
   const asvCount = extractExplicitOwnerCount(input.asvBlock?.ownersCount ?? "");
   if (asvCount != null) {
@@ -442,9 +443,9 @@ export function synthesizeOwnerCountsFromBlocks(blocks: WorkspaceSourceBlocks): 
   if (ccCount != null) {
     pushCandidate(
       candidates,
-      inferOwnerCountry([cc.ownersCount, cc.comments].join("\n"), "cc.vin"),
+      inferOwnerCountry([cc.ownersCount, cc.comments].join("\n"), TITLE.ccVin),
       ccCount,
-      "cc.vin",
+      TITLE.ccVin,
       2,
     );
   }

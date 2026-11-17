@@ -16,6 +16,7 @@ const AdminVinScanResultCards = dynamic(
 import { isPlausibleListingUrl, isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { VIN_SCAN_CATALOG, resolveVinScanOpenUrl } from "@/lib/vin-scan/catalog";
 import { freeVinScanSourceIds } from "@/lib/vin-scan/free-sources";
+import { vinScanScanPhases } from "@/lib/vin-scan/progressive";
 import { applyFinlandLink } from "@/lib/vin-scan/finland-link";
 import { hasAnyVinScanPlate, type VinScanPlates } from "@/lib/vin-scan/plates";
 import {
@@ -397,16 +398,22 @@ export function AdminVinScanPanel({
     return next;
   }, [byId, plates]);
 
-  const rows = CATALOG.map((item) => displayById[item.id]).filter((row): row is ScanRow => Boolean(row));
+  const tiles = useMemo(() => {
+    const extra = VIN_SCAN_CATALOG.find((item) => item.id === "thecarapi_eu");
+    if (!extra || !displayById[extra.id] || CATALOG.some((item) => item.id === extra.id)) return CATALOG;
+    return [...CATALOG, extra];
+  }, [displayById]);
+
+  const rows = tiles.map((item) => displayById[item.id]).filter((row): row is ScanRow => Boolean(row));
   const facts = rows.length > 0 ? buildVinScanFacts(rows) : null;
   const countLine = rows.length > 0 ? formatVinScanCountLine(vinScanCountBreakdown(rows)) : "";
-  const unknownIds = CATALOG.filter((item) => displayById[item.id]?.status === "unknown").map((item) => item.id);
+  const unknownIds = tiles.filter((item) => displayById[item.id]?.status === "unknown").map((item) => item.id);
   const canRetry = !busy && unknownIds.length > 0;
   const nordicLinks = valid ? nordicVinSearchLinks(clean) : [];
   const linkBtn =
     "rounded-md border border-slate-300 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:border-slate-600";
 
-  async function scanServer(opts: { force?: boolean; sources?: string[] } = {}) {
+  async function scanServer(opts: { force?: boolean; sources?: string[] } = {}): Promise<boolean> {
     const res = await fetch("/api/admin/vin-scan", {
       method: "POST",
       credentials: "include",
@@ -427,7 +434,7 @@ export function AdminVinScanPanel({
     } | null;
     if (!res.ok || !data || !Array.isArray(data.indicators)) {
       setError(res.status === 401 ? "Nav admin sesijas" : "Servera skenēšana neizdevās");
-      return;
+      return false;
     }
     if (typeof data.scannedAt === "string") setScannedAt(data.scannedAt);
     const next = rowsFromIndicators(data.indicators, clean, plates, listing);
@@ -440,6 +447,7 @@ export function AdminVinScanPanel({
     } catch {
       /* ignore */
     }
+    return true;
   }
 
   async function scan(force = false) {
@@ -448,7 +456,14 @@ export function AdminVinScanPanel({
     setError("");
     setScannedAt(new Date().toISOString());
     try {
-      await scanServer({ force });
+      // Ar VIN: vispirms ātrie avoti (rezultāti redzami pēc dažām sekundēm), tad lēnie. Viens pēc otra, ne paralēli.
+      const phases = valid ? vinScanScanPhases() : null;
+      if (phases && phases.fast.length > 0 && phases.slow.length > 0) {
+        const ok = await scanServer({ force, sources: phases.fast });
+        if (ok) await scanServer({ force, sources: phases.slow });
+      } else {
+        await scanServer({ force });
+      }
     } catch {
       setError("Servera skenēšana neizdevās");
     } finally {
@@ -550,7 +565,7 @@ export function AdminVinScanPanel({
     onSnapshot?.({
       scannedAt,
       busy,
-      rows: CATALOG.map((item) => {
+          rows: tiles.map((item) => {
         const row = displayById[item.id];
         return {
           id: item.id,
@@ -572,7 +587,7 @@ export function AdminVinScanPanel({
         };
       }),
     });
-  }, [displayById, scannedAt, busy, clean, onSnapshot, plates, listing]);
+  }, [displayById, scannedAt, busy, clean, onSnapshot, plates, listing, tiles]);
 
   return (
     <section
@@ -666,7 +681,7 @@ export function AdminVinScanPanel({
       {error ? <p className="px-2.5 pb-2 text-[10px] text-rose-600 dark:text-rose-300">{error}</p> : null}
       {copyNote ? <p className="px-2.5 pb-1 text-[10px] text-[var(--color-provin-muted)]">{copyNote}</p> : null}
       <ul className="grid grid-cols-2 gap-1 px-2 py-2 sm:grid-cols-4">
-        {CATALOG.map((item) => {
+        {tiles.map((item) => {
           const row = displayById[item.id];
           const status = busy && !row ? "checking" : busy && row?.status === "unknown" ? "checking" : (row?.status ?? (busy ? "checking" : "idle"));
           const active = openId === item.id;

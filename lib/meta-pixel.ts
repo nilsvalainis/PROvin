@@ -43,7 +43,8 @@ export function readStoredAnalyticsConsent(
 ): boolean {
   if (!storage) return false;
   try {
-    return parseConsent(storage.getItem(CONSENT_STORAGE_KEY))?.analytics === true;
+    // Meta ir reklāmas kategorija (sīkdatņu joslas "Reklāma"); vecais ieraksts = analytics.
+    return parseConsent(storage.getItem(CONSENT_STORAGE_KEY))?.ads === true;
   } catch {
     return false;
   }

@@ -2,28 +2,28 @@
   "Pricing": {
     "workTitle": "WAS IST IM PREIS ENTHALTEN?",
     "comparisonAuditTitle": "PROVIN AUDITS",
-    "comparisonAuditSubtitle": "Ein Bericht, der weit über Rohdaten hinausgeht",
+    "comparisonAuditSubtitle": "Ein Bericht, der deutlich mehr zeigt",
     "comparisonAuditCta": "Bestellen ab 39,99 €",
     "grid": [
       {
-        "title": "KOMPLETTE FAHRZEUGHISTORIE",
-        "body": "Archive offizieller Händler und Auktionsportale*, internationale und lokale Registerdaten in einem klaren Bild: Laufleistung, Unfallschäden und Diebstahlmeldungen."
+        "title": "VOLLSTÄNDIGE HISTORIENANALYSE",
+        "body": "Synthese aus Archiven offizieller Händler und Auktionsportale* sowie internationalen und lokalen Registern: Kilometerstand, Unfälle und Diebstahl."
       },
       {
         "title": "INSERATSPRÜFUNG",
-        "body": "Fachliche Auswertung von Fotos und Beschreibung. Hinweise auf verdeckte Reparaturen und Verschleiß."
+        "body": "Fachliche Auswertung von Fotos und Beschreibung. Wir erkennen Hinweise auf verdeckte Reparaturen und Verschleiß."
       },
       {
-        "title": "ANALYSE DER TECHNISCHEN RISIKEN",
-        "body": "Bewertung von Motor, Getriebe und zentralen Systemen. Zuverlässigkeit und Betriebsrisiken des konkreten Modells."
+        "title": "TECHNISCHE RISIKOANALYSE",
+        "body": "Bewertung von Motor, Getriebe und Aggregaten. Zuverlässigkeitsprognose und Betriebsrisiken."
       },
       {
         "title": "EMPFEHLUNGEN UND BERATUNG",
-        "body": "Ein klares Fazit aus den Daten und mehr als 10 Jahren Erfahrung. Persönliche Beratung nach dem Bericht.",
+        "body": "Ein Fazit auf Basis der Daten und unserer mehr als 10-jährigen Erfahrung. Persönliche Beratung nach dem Bericht.",
         "href": true
       }
     ],
     "irissLink": "WER STEHT HINTER PROVIN?",
-    "autoRecordsFootnote": "* Daten aus offiziellen Händlersystemen und Auktionsarchiven sind für ausgewählte Hersteller und Modelle verfügbar"
+    "autoRecordsFootnote": "* Daten aus offiziellen Händlersystemen und Auktionsarchiven sind für bestimmte Hersteller und Modelle verfügbar"
   }
 }

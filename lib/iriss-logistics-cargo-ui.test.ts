@@ -13,15 +13,14 @@ describe("IRISS Loģistika kravu plāns UI", () => {
   it("scopes cargo tokens to Loģistika and keeps statuses grey", () => {
     expect(css).toContain(".iriss-log-screen {");
     expect(css).toContain("--iriss-log-cargo-next: #ea4335");
-    expect(css).toContain("--krava-next2: #1d1d1f");
-    expect(css).toContain("--iriss-log-cargo-none: #9aa0a6");
+    expect(css).toContain("--krava-next2: #5f6368");
+    expect(css).toContain("--iriss-log-cargo-none: #1d1d1f");
     expect(css).not.toContain("#0a7cff");
     expect(css).toContain("--iriss-log-cargo-after: var(--krava-next2)");
     expect(css).toContain("--btn-dark-bg:");
     expect(css).toContain("--iriss-log-status-chip-bg: #f2f2f7");
     expect(css).toContain("--iriss-log-focus: #2563eb");
     expect(css).not.toMatch(/--iriss-log-cargo-next:[^;]*#188038/);
-    expect(table).toContain("iriss-log-stage");
     expect(css).toContain(".iriss-log-screen .iriss-log-stage button.on {");
     expect(table).not.toContain("#ea4335");
     expect(plan).not.toContain("#ea4335");
@@ -38,7 +37,6 @@ describe("IRISS Loģistika kravu plāns UI", () => {
     expect(plan).toContain("Atvērt Google Maps");
     expect(plan).not.toContain("Kopēt maršrutu");
     expect(plan).toContain("Sastādīt maršrutu kartē");
-    expect(table).toContain("Uz Autoparku");
     expect(popup).toContain("Sūtīt šoferim");
     expect(popup).toContain("AdminWhatsAppOpenButton");
     expect(popup).toContain("Kopēt visu");

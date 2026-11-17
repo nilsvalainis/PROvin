@@ -1,6 +1,8 @@
+import { AdminPushToggle } from "@/components/admin/AdminPushToggle";
 import { IrissPasutijumiListClient } from "@/components/admin/IrissPasutijumiListClient";
 import { AdminIrissOrdersExportButton } from "@/components/admin/AdminIrissOrdersExportButton";
 import { loadIrissListingMatchState } from "@/lib/iriss-listing-match-store";
+import { readIrissOfferLinkSummary } from "@/lib/iriss-offer-client-link-store";
 import { countIrissNewHitsByOrder } from "@/lib/iriss-pasutijumi-list-view";
 import {
   getIrissPasutijumiStorageState,
@@ -12,20 +14,24 @@ import { requireIrissSectionPage } from "@/lib/staff-auth";
 export const dynamic = "force-dynamic";
 
 export default async function IrissPasutijumiListPage() {
-  await requireIrissSectionPage("pasutijumi");
+  const actor = await requireIrissSectionPage("pasutijumi");
+  const isAdmin = actor.kind === "admin";
   const storage = getIrissPasutijumiStorageState();
   const storeEnabled = storage.enabled;
   let rows = [] as Awaited<ReturnType<typeof listIrissPasutijumi>>;
   let initialListOrder = null as Awaited<ReturnType<typeof readIrissListOrder>>;
   let loadError: string | null = null;
   let newHitsByOrder: Record<string, number> = {};
+  let offerSummary: Awaited<ReturnType<typeof readIrissOfferLinkSummary>> = {};
   if (storeEnabled) {
     try {
-      const [listed, order, match] = await Promise.all([
+      const [listed, order, match, summary] = await Promise.all([
         listIrissPasutijumi({ includeDeleted: true }),
         readIrissListOrder(),
         loadIrissListingMatchState().catch(() => null),
+        readIrissOfferLinkSummary().catch(() => ({})),
       ]);
+      offerSummary = summary;
       rows = listed;
       initialListOrder = order;
       if (match) newHitsByOrder = countIrissNewHitsByOrder(match.entries);
@@ -67,7 +73,13 @@ export default async function IrissPasutijumiListPage() {
       ) : null}
 
       {storeEnabled && !loadError ? (
-        <IrissPasutijumiListClient rows={rows} initialListOrder={initialListOrder} newHitsByOrder={newHitsByOrder} />
+        <IrissPasutijumiListClient rows={rows} initialListOrder={initialListOrder} newHitsByOrder={newHitsByOrder} offerSummary={offerSummary} />
+      ) : null}
+
+      {isAdmin ? (
+        <div className="mx-auto mt-6 w-full max-w-xl px-3 sm:px-0">
+          <AdminPushToggle hint="Paziņojums telefonā, kad klients apstiprina vai noraida piedāvājumu vai termiņš beidzas bez atbildes." />
+        </div>
       ) : null}
 
       {storeEnabled && rows.length === 0 && !loadError ? (

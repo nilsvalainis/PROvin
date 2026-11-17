@@ -114,7 +114,7 @@ describe("parseJojSearchVin", () => {
     });
     expect(r.auctions?.[0]?.price?.replace(/\s/g, " ")).toBe("56 500 USD");
     expect(r.auctions?.[0]?.title).toContain("lots 94166665");
-    expect(r.auctions?.[0]?.title).toContain("Side / Front End");
+    expect(r.auctions?.[0]?.title).toContain("sāns / priekšpuse");
     expect(r.auctions?.[0]?.title).toMatch(/28.?218 km/);
     expect(r.auctions?.[1]).toMatchObject({ venue: "IAAI", date: "2026-03-11" });
     expect(r.media?.photoUrls?.[0]).toContain("import-motor.com");
@@ -159,7 +159,7 @@ describe("parseJojSearchVin", () => {
     expect(parse.detail).toContain("Odometrs:");
     expect(parse.detail).toContain("faktiskais");
     expect(parse.detail).toContain("Bojājums (galvenais): Sāns");
-    expect(parse.detail).toContain("Bojājums (papildu): Front End");
+    expect(parse.detail).toContain("Bojājums (papildu): priekšpuse");
     expect(parse.detail).toContain("Stāvoklis: brauc");
     expect(parse.detail).toContain("Drošības spilveni: Deployed");
     expect(parse.detail).toContain("Atslēgas: jā");

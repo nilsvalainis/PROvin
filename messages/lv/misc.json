@@ -4,11 +4,19 @@
     "faqBack": "← Atpakaļ uz sākumu",
     "pasutitRedirect": "Pāradresē uz pasūtījuma formu…",
     "checkoutProductName": "PROVIN AUDITS",
-    "checkoutProductDesc": "Pilna vēstures pārbaude maksas datubāzēs, sludinājuma un risku analīze.",
+    "checkoutProductDesc": "Vēstures pārbaude vismaz 2 maksas avotos, sludinājuma un risku analīze.",
     "checkoutConsultationProductName": "PROVIN: stratēģiskā konsultācija",
     "checkoutConsultationProductDesc": "Individuāla konsultācija un tirgus orientācija: VIN/sludinājuma konteksts, risku skatījums un nākamie soļi.",
     "checkoutProvinSelectProductName": "PROVIN SELECT\nStratēģiskā konsultācija",
-    "checkoutProvinSelectProductDesc": "Individuāla konsultācija auto iegādes jautājumos"
+    "checkoutProvinSelectProductDesc": "Individuāla konsultācija auto iegādes jautājumos",
+    "notFoundTitle": "Lapa nav atrasta",
+    "notFoundHome": "PROVIN sākumlapa",
+    "orderBarCta": "Pasūtīt auditu · 99,99 €",
+    "notFoundLead": "Iespējams, saite ir mainījusies. Sāc no šīm lapām:",
+    "notFoundHeading": "Šī lapa nav atrasta.",
+    "notFoundLinkHome": "Sākums",
+    "notFoundLinkServices": "Pakalpojumi",
+    "notFoundLinkFreeCheck": "Bezmaksas VIN pārbaude"
   },
   "Blogs": {
     "comingSoon": "DRĪZUMĀ",
@@ -24,7 +32,11 @@
     "commentSubmit": "Publicēt",
     "commentSubmitting": "Sūta…",
     "commentSuccess": "Komentārs publicēts.",
-    "commentError": "Neizdevās nosūtīt. Pamēģini vēlreiz."
+    "commentError": "Neizdevās nosūtīt. Pamēģini vēlreiz.",
+    "tocLabel": "Saturs",
+    "ctaTitle": "Pirms pērc - pārbaudi auto vēsturi",
+    "ctaBody": "Vairāku avotu dati, sludinājuma analīze un konsultācija vienā auditā.",
+    "ctaButton": "Pasūtīt VIN pārbaudi"
   },
   "SiteRail": {
     "navAria": "Galvenās sadaļas",
@@ -45,6 +57,8 @@
     "about": "Par PROVIN",
     "blogs": "Blogs",
     "vinCheck": "VIN koda pārbaude",
-    "partner": "Partneriem"
+    "partner": "Partneriem",
+    "terms": "Lietošanas noteikumi",
+    "privacy": "Privātuma politika"
   }
 }

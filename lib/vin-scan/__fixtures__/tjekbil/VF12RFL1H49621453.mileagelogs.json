@@ -1,0 +1,172 @@
+{
+  "_meta": {
+    "url": "https://www.tjekbil.dk/api/v3/vehicles/mileagelogs?dmrId=9000000000487315",
+    "status": 200,
+    "fetchedAt": "2026-11-17",
+    "note": "Reāla atbilde; personas dati izņemti ar scripts/vin-scan-refresh-fixtures.mjs"
+  },
+  "body": [
+    {
+      "mileage": 86,
+      "mileageAt": "2026-11-13T16:50:03",
+      "origin": 0,
+      "logId": 38846050,
+      "reportId": 41557,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 385000,
+      "mileageAt": "2026-03-23T00:00:00",
+      "origin": 40,
+      "logId": 32520779,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 385537,
+      "mileageAt": "2025-08-22T15:45:00",
+      "origin": 10,
+      "logId": 28615816,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 385000,
+      "mileageAt": "2025-08-22T00:00:00",
+      "origin": 20,
+      "logId": 28650850,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 385292,
+      "mileageAt": "2025-08-20T13:21:00",
+      "origin": 10,
+      "logId": 28568768,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 358000,
+      "mileageAt": "2025-03-27T00:00:00",
+      "origin": 40,
+      "logId": 27688194,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 358886,
+      "mileageAt": "2023-10-11T10:19:00",
+      "origin": 10,
+      "logId": 45851,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 358000,
+      "mileageAt": "2023-10-11T00:00:00",
+      "origin": 20,
+      "logId": 45838,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 358874,
+      "mileageAt": "2023-10-10T11:27:00",
+      "origin": 10,
+      "logId": 45854,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 320000,
+      "mileageAt": "2022-02-02T12:13:00",
+      "origin": 10,
+      "logId": 45855,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 320000,
+      "mileageAt": "2022-01-27T10:46:00",
+      "origin": 10,
+      "logId": 45859,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 271000,
+      "mileageAt": "2020-02-03T07:33:00",
+      "origin": 10,
+      "logId": 45860,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 2000,
+      "mileageAt": "2019-04-17T00:00:00",
+      "origin": 40,
+      "logId": 27688195,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 2000,
+      "mileageAt": "2019-04-15T00:00:00",
+      "origin": 40,
+      "logId": 38104673,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 83000,
+      "mileageAt": "2018-02-21T13:08:00",
+      "origin": 10,
+      "logId": 45861,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 171000,
+      "mileageAt": "2017-08-24T06:08:00",
+      "origin": 10,
+      "logId": 45862,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 171000,
+      "mileageAt": "2017-08-19T06:50:00",
+      "origin": 10,
+      "logId": 45865,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    },
+    {
+      "mileage": 0,
+      "mileageAt": "2013-08-28T00:00:00",
+      "origin": 30,
+      "logId": 45839,
+      "reportId": null,
+      "dmrId": 9000000000487315,
+      "isHidden": false
+    }
+  ]
+}

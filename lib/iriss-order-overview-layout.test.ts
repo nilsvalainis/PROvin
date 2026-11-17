@@ -11,14 +11,15 @@ describe("iriss order overview layout", () => {
     expect(room).toContain("iriss-parskats-view");
     expect(room).not.toMatch(/iriss-parskats-view[^\n]*bg-\[var\(--bg-base\)\]/);
     expect(clientCard).toContain("Klienta dati");
-    expect(room).not.toContain("Klienta kontakti");
-    expect(room).toContain("Avanss un darījums");
-    expect(room).toContain("Atzīmēt avansu saņemtu");
-    expect(room).toContain("Darījuma statuss");
-    expect(room).toContain("IrissOrderClientDataCard");
+    // Nils 28.10: Pārskats pa soļiem, klienta kontakti - 8. (pēdējais) solis.
+    expect(room).toContain("IRISS_ORDER_STEPS");
+    expect(room).toContain("Finansējums, avanss un depozīts");
+    // Pārskats v3 (Nils 28.10): avanss un finansējums vienā blokā, klients dublēts labajā pusē.
+    expect(room).toContain("IrissAdvanceSection");
+    expect(room).toContain("Darījums");
+    expect(room).toContain("Klienta kontakti");
     expect(room).toContain("Modeļa paplašinājums");
-    expect(room).toContain("Piezīmes aģentam");
-    expect(room).toContain("Piezīmes (iekšējās)");
+    expect(room).toContain("Iekšējās piezīmes · aģentam un komandai");
     expect(room).toContain("Degviela");
     expect(room).not.toContain("VIN (ja zināms)");
     expect(room).not.toContain("InlineField");
@@ -31,10 +32,10 @@ describe("iriss order overview layout", () => {
     expect(room).not.toMatch(/sticky top-0/);
     expect(room).not.toMatch(/\u2014|\u2013/);
     const editor = readFileSync("components/admin/IrissPasutijumsEditor.tsx", "utf8");
-    expect(editor).toContain("Modeļa paplašinājums");
-    expect(editor).toContain("Piezīmes aģentam");
-    expect(editor).toContain("Piezīmes (iekšējās)");
-    expect(editor).toContain('label="Modeļa paplašinājums"');
+    // Nils 31.10 (makets «Jauns pasūtījums v2»): jaunam pasūtījumam tie paši soļi kā atvērtam.
+    expect(editor).toContain("<IrissOrderStepCards");
+    expect(editor).toContain("Jauns pasūtījums");
+    expect(editor).not.toContain("SharedOrderCriteriaForm");
     expect(editor).not.toContain("VIN (ja zināms)");
 
     const css = readFileSync("app/admin/iriss/iriss-admin.css", "utf8");

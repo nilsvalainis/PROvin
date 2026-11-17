@@ -21,3 +21,20 @@ describe("PRO sākuma paziņojumi", () => {
     expect(s.dealers).toEqual({ count: 1, overdue: 0, nextDeadlineFromUnix: nowS - 5 * h });
   });
 });
+
+describe("šodienas ieņēmumi (Rīgas diena)", () => {
+  it("skaita tikai šodienas maksājumus, arī izpildītos un B2B pakas", () => {
+    const now = Date.UTC(2026, 9, 22, 10, 0, 0); // 13:00 Rīgā
+    const sec = (iso: string) => Date.parse(iso) / 1000;
+    const s = summarizeProHome(
+      [
+        { created: sec("2026-10-22T06:00:00Z"), amountTotalCents: 3900, auditComplete: true },
+        { created: sec("2026-10-21T21:30:00Z"), amountTotalCents: 7999, isB2bPack: true }, // 00:30 Rīgā, jau šodien
+        { created: sec("2026-10-21T20:30:00Z"), amountTotalCents: 5000 }, // 23:30 Rīgā vakar
+        { created: sec("2026-10-22T08:00:00Z"), amountTotalCents: null },
+      ],
+      now,
+    );
+    expect(s.today).toEqual({ revenueCents: 11899, count: 2 });
+  });
+});

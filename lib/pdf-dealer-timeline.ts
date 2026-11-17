@@ -17,7 +17,12 @@ import {
   isMajorAssemblyRepairWork,
   isRoutineMaintenanceWork,
   MAJOR_ASSEMBLY_SPECS,
+  type DealerMajorWorkHit,
 } from "@/lib/dealer-major-works";
+import {
+  applyDealerMajorWorkOverrides,
+  type DealerMajorWorkOverride,
+} from "@/lib/dealer-major-works-overrides";
 import {
   translateClientReportNone,
   translateClientReportStatic,
@@ -47,13 +52,7 @@ export type DealerVisitGap = {
   km: number | null;
 };
 
-export type DealerMajorWorkHit = {
-  id: string;
-  label: string;
-  factId: string;
-  date: string;
-  km: string;
-};
+export type { DealerMajorWorkHit };
 
 export type DealerVisitSummary = {
   visitCount: number;
@@ -213,7 +212,7 @@ function factSearchText(fact: DealerFact): string {
   return [fact.works, fact.worksOriginal, fact.worksLv].filter(Boolean).join("\n");
 }
 
-function majorWorkHits(facts: DealerFacts): DealerMajorWorkHit[] {
+function automaticMajorWorkHits(facts: DealerFacts): DealerMajorWorkHit[] {
   const out: DealerMajorWorkHit[] = [];
   const seen = new Set<string>();
   for (const spec of MAJOR_ASSEMBLY_SPECS) {
@@ -234,9 +233,17 @@ function majorWorkHits(facts: DealerFacts): DealerMajorWorkHit[] {
   return out;
 }
 
+export function collectDealerMajorWorkHits(
+  facts: DealerFacts,
+  overrides?: readonly DealerMajorWorkOverride[] | null,
+): DealerMajorWorkHit[] {
+  return applyDealerMajorWorkOverrides(automaticMajorWorkHits(facts), overrides);
+}
+
 export function buildDealerVisitSummary(
   rows: readonly AutoRecordsServiceWorkRow[],
   facts?: DealerFacts | null,
+  overrides?: readonly DealerMajorWorkOverride[] | null,
 ): DealerVisitSummary | null {
   if (rows.length === 0) return null;
   const chrono = chronoRows(rows);
@@ -250,7 +257,7 @@ export function buildDealerVisitSummary(
     lastKm: formatServiceWorkOdometer(last.odometer),
     longestGap: longestGap(chrono),
     campaignsDone: resolvedFacts.rows.some((r) => r.kind === "campaign"),
-    majorWorks: majorWorkHits(resolvedFacts),
+    majorWorks: collectDealerMajorWorkHits(resolvedFacts, overrides),
   };
 }
 
@@ -265,8 +272,9 @@ export function buildDealerVisitSummaryHtml(
   rows: readonly AutoRecordsServiceWorkRow[],
   facts?: DealerFacts | null,
   lang: ClientReportLang = "lv",
+  overrides?: readonly DealerMajorWorkOverride[] | null,
 ): string {
-  const summary = buildDealerVisitSummary(rows, facts);
+  const summary = buildDealerVisitSummary(rows, facts, overrides);
   if (!summary) return "";
   const t = (lv: string) => translateClientReportStatic(lv, lang);
   const none = translateClientReportNone(lang);
@@ -296,8 +304,12 @@ export function buildDealerVisitSummaryHtml(
   </div>`;
 }
 
-export function buildDealerMajorWorksHtml(facts: DealerFacts, lang: ClientReportLang = "lv"): string {
-  const hits = majorWorkHits(facts);
+export function buildDealerMajorWorksHtml(
+  facts: DealerFacts,
+  lang: ClientReportLang = "lv",
+  overrides?: readonly DealerMajorWorkOverride[] | null,
+): string {
+  const hits = collectDealerMajorWorkHits(facts, overrides);
   if (hits.length === 0) return "";
   const t = (lv: string) => translateClientReportStatic(lv, lang);
   const items = hits

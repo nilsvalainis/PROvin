@@ -92,6 +92,20 @@ describe("fetchAutobidSource", () => {
     expect(r.note).toContain("ECONNRESET");
   });
 
+  it("starts at startPage and does not rewind to page 1", async () => {
+    const { impl, calls } = fetchMock((url) => {
+      const page = Number(new URL(url).searchParams.get("currentPage") ?? "1");
+      return { status: 200, body: pageHtml([page], 8) };
+    });
+    const r = await fetchAutobidSource(SRC, { ...opts, maxPages: 2, startPage: 5, fetchImpl: impl });
+    expect(r.status).toBe("ok");
+    expect(r.pagesFetched).toBe(2);
+    expect(r.vehicles.map((v) => v.externalId)).toEqual(["5", "6"]);
+    expect(calls).toHaveLength(2);
+    expect(calls[0]).toContain("currentPage=5");
+    expect(calls[1]).toContain("currentPage=6");
+  });
+
   it("unwraps fetch failed to the cause code", async () => {
     const err = new TypeError("fetch failed");
     (err as TypeError & { cause?: unknown }).cause = Object.assign(new Error("getaddrinfo"), { code: "ENOTFOUND" });

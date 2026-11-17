@@ -1,6 +1,7 @@
 import "server-only";
 
 import { adminGenerateJsonText } from "@/lib/admin-ai-dispatch";
+import { finalizeGeneratedComment } from "@/lib/admin-ai-polish";
 import { AI_LISTING_PEEK_COMMENT_SYSTEM } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
@@ -90,13 +91,14 @@ export async function generateListingPeekCommentWithAi(input: {
   }
 
   const closer = parsed.closer;
-  const text = stripListingPeekCommentLeadingGreeting(
+  const assembled = stripListingPeekCommentLeadingGreeting(
     finalizeProvinExpertAiComment(
       stripListingPeekMarkdown(
         parsed.letter?.trim() || assembleListingPeekCustomerComment({ closer, lines }),
       ),
     ),
   ).trim();
+  const text = (await finalizeGeneratedComment(assembled)).trim();
   if (!text) throw new Error("ai_invalid_json");
   return {
     closer,

@@ -1,8 +1,23 @@
 import { parseHidePhotoWatermarks } from "@/lib/admin-photo-watermark";
 import { appendMissingFlatPhotos } from "@/lib/photo-group-legacy-recover";
 
-/** Avotu sadaļu fotogrāfijas — vizuālie pierādījumi PDF (līdz 50 gab. vienā blokā). */
+/** Avotu sadaļu fotogrāfijas - vizuālie pierādījumi PDF (līdz 50 gab. vienā blokā). */
 export const SOURCE_BLOCK_MAX_PHOTOS = 50;
+
+/**
+ * «Sludinājuma vēsture» (tirgus) arhīva foto - atsevišķs griests.
+ * CarVertical + AutoDNA grupas bieži pārsniedz 50 unikālas ainas; citi avotu
+ * bloki (CSDD, LTAB, vendor) paliek pie SOURCE_BLOCK_MAX_PHOTOS.
+ */
+export const LISTING_HISTORY_MAX_PHOTOS = 100;
+
+/** Darba zonas kopējais avotu-foto griests: 12×50 plus 50 papildus sludinājuma vēsturei. */
+export const SOURCE_BLOCK_PHOTO_WORKSPACE_MAX =
+  SOURCE_BLOCK_MAX_PHOTOS * 12 + (LISTING_HISTORY_MAX_PHOTOS - SOURCE_BLOCK_MAX_PHOTOS);
+
+export function sourceBlockPhotoMaxForKey(blockKey: string | null | undefined): number {
+  return blockKey === "tirgus" ? LISTING_HISTORY_MAX_PHOTOS : SOURCE_BLOCK_MAX_PHOTOS;
+}
 
 export type SourceBlockPhotoMeta = {
   id: string;
@@ -43,7 +58,10 @@ export function emptySourceBlockPhotoGroup(): SourceBlockPhotoGroup {
   return { id: makeSourceBlockPhotoGroupId(), title: "", photos: [] };
 }
 
-export function normalizeSourceBlockPhotos(raw: unknown): SourceBlockPhotoMeta[] {
+export function normalizeSourceBlockPhotos(
+  raw: unknown,
+  max = SOURCE_BLOCK_MAX_PHOTOS,
+): SourceBlockPhotoMeta[] {
   if (!Array.isArray(raw)) return [];
   const out: SourceBlockPhotoMeta[] = [];
   for (const item of raw) {
@@ -52,7 +70,7 @@ export function normalizeSourceBlockPhotos(raw: unknown): SourceBlockPhotoMeta[]
     if (!isSourceBlockPhotoId(id)) continue;
     if (out.some((p) => p.id === id)) continue;
     out.push({ id });
-    if (out.length >= SOURCE_BLOCK_MAX_PHOTOS) break;
+    if (out.length >= max) break;
   }
   return out;
 }
@@ -61,11 +79,14 @@ function trimPhotoGroupTitle(raw: unknown): string {
   return typeof raw === "string" ? raw.trim().slice(0, 120) : "";
 }
 
-function enforcePhotoGroupLimit(groups: SourceBlockPhotoGroup[]): SourceBlockPhotoGroup[] {
+function enforcePhotoGroupLimit(
+  groups: SourceBlockPhotoGroup[],
+  max = SOURCE_BLOCK_MAX_PHOTOS,
+): SourceBlockPhotoGroup[] {
   const out: SourceBlockPhotoGroup[] = [];
   let total = 0;
   for (const group of groups) {
-    const remaining = SOURCE_BLOCK_MAX_PHOTOS - total;
+    const remaining = max - total;
     if (remaining <= 0) break;
     const photos = group.photos.slice(0, remaining);
     total += photos.length;
@@ -75,8 +96,12 @@ function enforcePhotoGroupLimit(groups: SourceBlockPhotoGroup[]): SourceBlockPho
   return out;
 }
 
-/** Normalizē grupas; ja nav grupu, bet ir plakanais `photos` — viena grupa bez virsraksta. */
-export function normalizeSourceBlockPhotoGroups(rawGroups: unknown, legacyPhotos?: unknown): SourceBlockPhotoGroup[] {
+/** Normalizē grupas; ja nav grupu, bet ir plakanais `photos` - viena grupa bez virsraksta. */
+export function normalizeSourceBlockPhotoGroups(
+  rawGroups: unknown,
+  legacyPhotos?: unknown,
+  max = SOURCE_BLOCK_MAX_PHOTOS,
+): SourceBlockPhotoGroup[] {
   if (Array.isArray(rawGroups) && rawGroups.length > 0) {
     const out: SourceBlockPhotoGroup[] = [];
     for (const item of rawGroups) {
@@ -87,22 +112,34 @@ export function normalizeSourceBlockPhotoGroups(rawGroups: unknown, legacyPhotos
           ? o.id.trim()
           : makeSourceBlockPhotoGroupId();
       const title = trimPhotoGroupTitle(o.title);
-      const photos = normalizeSourceBlockPhotos(o.photos);
+      const photos = normalizeSourceBlockPhotos(o.photos, max);
       if (photos.length === 0 && !title) continue;
       out.push({ id, title, photos });
     }
     if (out.length > 0) {
-      return enforcePhotoGroupLimit(appendMissingFlatPhotos(out, normalizeSourceBlockPhotos(legacyPhotos)));
+      return enforcePhotoGroupLimit(
+        appendMissingFlatPhotos(out, normalizeSourceBlockPhotos(legacyPhotos, max)),
+        max,
+      );
     }
   }
 
-  const flat = normalizeSourceBlockPhotos(legacyPhotos);
+  const flat = normalizeSourceBlockPhotos(legacyPhotos, max);
   if (flat.length === 0) return [];
   return [{ id: makeSourceBlockPhotoGroupId(), title: "", photos: flat }];
 }
 
+/** «Sludinājuma vēsture» PDF / persist - tas pats formāts, 100 gab. griests. */
+export function normalizeListingHistoryPhotoGroups(
+  rawGroups: unknown,
+  legacyPhotos?: unknown,
+): SourceBlockPhotoGroup[] {
+  return normalizeSourceBlockPhotoGroups(rawGroups, legacyPhotos, LISTING_HISTORY_MAX_PHOTOS);
+}
+
 export function flattenSourceBlockPhotoGroups(
   groups: SourceBlockPhotoGroup[] | null | undefined,
+  max = SOURCE_BLOCK_MAX_PHOTOS,
 ): SourceBlockPhotoMeta[] {
   const out: SourceBlockPhotoMeta[] = [];
   const seen = new Set<string>();
@@ -111,14 +148,17 @@ export function flattenSourceBlockPhotoGroups(
       if (!photo?.id || seen.has(photo.id)) continue;
       seen.add(photo.id);
       out.push({ id: photo.id });
-      if (out.length >= SOURCE_BLOCK_MAX_PHOTOS) return out;
+      if (out.length >= max) return out;
     }
   }
   return out;
 }
 
-export function countSourceBlockPhotos(groups: SourceBlockPhotoGroup[] | null | undefined): number {
-  return flattenSourceBlockPhotoGroups(groups).length;
+export function countSourceBlockPhotos(
+  groups: SourceBlockPhotoGroup[] | null | undefined,
+  max = SOURCE_BLOCK_MAX_PHOTOS,
+): number {
+  return flattenSourceBlockPhotoGroups(groups, max).length;
 }
 
 export function sourceBlockPhotosHaveContent(block: {
@@ -126,44 +166,65 @@ export function sourceBlockPhotosHaveContent(block: {
   photos?: SourceBlockPhotoMeta[] | null;
 } | null | undefined): boolean {
   if (!block) return false;
-  return countSourceBlockPhotos(normalizeSourceBlockPhotoGroups(block.photoGroups, block.photos)) > 0;
+  return (
+    countSourceBlockPhotos(
+      normalizeSourceBlockPhotoGroups(block.photoGroups, block.photos, LISTING_HISTORY_MAX_PHOTOS),
+      LISTING_HISTORY_MAX_PHOTOS,
+    ) > 0
+  );
 }
 
-/** Apvieno grupas — garāks kopējais foto skaits uzvar; vienāds skaits → ienākošā struktūra. */
+/** Apvieno grupas - garāks kopējais foto skaits uzvar; vienāds skaits → ienākošā struktūra. */
 export function mergeSourceBlockPhotoGroups(
   incomingGroups: SourceBlockPhotoGroup[] | null | undefined,
   incomingLegacyPhotos: SourceBlockPhotoMeta[] | null | undefined,
   baselineGroups: SourceBlockPhotoGroup[] | null | undefined,
   baselineLegacyPhotos: SourceBlockPhotoMeta[] | null | undefined,
+  max = SOURCE_BLOCK_MAX_PHOTOS,
 ): SourceBlockPhotoGroup[] {
-  const a = normalizeSourceBlockPhotoGroups(incomingGroups, incomingLegacyPhotos);
-  const b = normalizeSourceBlockPhotoGroups(baselineGroups, baselineLegacyPhotos);
-  const aCount = countSourceBlockPhotos(a);
-  const bCount = countSourceBlockPhotos(b);
+  const a = normalizeSourceBlockPhotoGroups(incomingGroups, incomingLegacyPhotos, max);
+  const b = normalizeSourceBlockPhotoGroups(baselineGroups, baselineLegacyPhotos, max);
+  const aCount = countSourceBlockPhotos(a, max);
+  const bCount = countSourceBlockPhotos(b, max);
   if (aCount > bCount) return a;
   if (bCount > aCount) return b;
   return a;
 }
 
-export function syncSourceBlockPhotoGroupsAndFlat(groups: SourceBlockPhotoGroup[]): {
+export function syncSourceBlockPhotoGroupsAndFlat(
+  groups: SourceBlockPhotoGroup[],
+  max = SOURCE_BLOCK_MAX_PHOTOS,
+): {
   photoGroups: SourceBlockPhotoGroup[];
   photos: SourceBlockPhotoMeta[];
 } {
-  const photoGroups = enforcePhotoGroupLimit(groups);
-  return { photoGroups, photos: flattenSourceBlockPhotoGroups(photoGroups) };
+  const photoGroups = enforcePhotoGroupLimit(groups, max);
+  return { photoGroups, photos: flattenSourceBlockPhotoGroups(photoGroups, max) };
 }
 
-export function syncedSourceBlockPhotos(block: {
-  photos?: unknown;
-  photoGroups?: unknown;
-  hidePhotoWatermarks?: unknown;
-}): {
+export function syncedSourceBlockPhotos(
+  block: {
+    photos?: unknown;
+    photoGroups?: unknown;
+    hidePhotoWatermarks?: unknown;
+  },
+  max = SOURCE_BLOCK_MAX_PHOTOS,
+): {
   photos: SourceBlockPhotoMeta[];
   photoGroups: SourceBlockPhotoGroup[];
   hidePhotoWatermarks: boolean;
 } {
   const synced = syncSourceBlockPhotoGroupsAndFlat(
-    normalizeSourceBlockPhotoGroups(block.photoGroups, block.photos),
+    normalizeSourceBlockPhotoGroups(block.photoGroups, block.photos, max),
+    max,
   );
   return { ...synced, hidePhotoWatermarks: parseHidePhotoWatermarks(block) };
+}
+
+export function syncedListingHistoryPhotos(block: {
+  photos?: unknown;
+  photoGroups?: unknown;
+  hidePhotoWatermarks?: unknown;
+}): ReturnType<typeof syncedSourceBlockPhotos> {
+  return syncedSourceBlockPhotos(block, LISTING_HISTORY_MAX_PHOTOS);
 }

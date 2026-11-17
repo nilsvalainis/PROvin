@@ -33,7 +33,7 @@ const TP5_HERO_COPY_LV: Tp5HeroCopy = {
 const TP5_HERO_COPY_EN: Tp5HeroCopy = {
   titlePrefix: "VIN check and car history ",
   titleAccent: "audit",
-  subheadLead: "Know everything about your next car.",
+  subheadLead: "Find out everything about your next car.",
   subheadAccent:
     "We combine a VIN check, vehicle history data and listing analysis into a single, easy-to-read audit.",
 };

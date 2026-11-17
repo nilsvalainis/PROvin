@@ -1,6 +1,6 @@
 "use client";
 
-import { type SyntheticEvent, type TouchEvent } from "react";
+import { createContext, type SyntheticEvent, type TouchEvent, useContext, useId } from "react";
 import { useLocale } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
 import type { Tp5InlineFieldErrors } from "@/lib/test-pricing-5-inline-checkout";
@@ -23,6 +23,7 @@ import {
   type Tp5UiCopy,
 } from "@/lib/test-pricing-5-ui-copy";
 import { recordSampleReportClick } from "@/lib/sample-report-click-client";
+import { publicAnchorRel } from "@/lib/seo-crawl-links";
 import { sanitizeVinInput } from "@/lib/order-field-validation";
 import { Tp5DealerBrandsTip } from "@/components/test-pricing-5/Tp5DealerBrandsTip";
 import { Tp5DealerRefundTip } from "@/components/test-pricing-5/Tp5DealerRefundTip";
@@ -152,7 +153,10 @@ function PackTitle({ title }: { title: string }) {
   return <>{title}</>;
 }
 
-function CheckoutFields({
+/** HERO: VIN ielikts no bezmaksas pārbaudes - lauks nomirgo zaļš (`inlineInputPrefilled`). */
+export const Tp5VinHighlightContext = createContext(false);
+
+export function CheckoutFields({
   vin,
   listingUrl,
   errors,
@@ -171,6 +175,11 @@ function CheckoutFields({
   stopSwipePropagation?: (event: SyntheticEvent) => void;
   className?: string;
 }) {
+  // a11y (FABLE v3): kļūda piesaistīta laukam - ekrāna lasītājs to nolasa; vairākas kartītes lapā -> useId.
+  const errId = useId();
+  const vinErrId = `${errId}-vin`;
+  const vinHighlight = useContext(Tp5VinHighlightContext);
+  const listingErrId = `${errId}-listing`;
   return (
     <div
       className={className ?? styles.inlineFields}
@@ -182,7 +191,7 @@ function CheckoutFields({
       <input
         type="text"
         name="vin"
-        className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : ""}`}
+        className={`${styles.inlineInput} ${errors.vin ? styles.inlineInputError : vinHighlight ? styles.inlineInputPrefilled : ""}`}
         value={vin}
         onChange={(event) => onVinChange(sanitizeVinInput(event.target.value))}
         onPaste={(event) => {
@@ -191,11 +200,17 @@ function CheckoutFields({
         }}
         placeholder={uiCopy.vinPlaceholder}
         aria-label={uiCopy.vinAria}
+        aria-invalid={errors.vin ? true : undefined}
+        aria-describedby={errors.vin ? vinErrId : undefined}
         autoComplete="off"
         spellCheck={false}
         inputMode="text"
       />
-      {errors.vin ? <p className={styles.inlineFieldError}>{errors.vin}</p> : null}
+      {errors.vin ? (
+        <p id={vinErrId} className={styles.inlineFieldError}>
+          {errors.vin}
+        </p>
+      ) : null}
       <input
         type="url"
         name="listingUrl"
@@ -204,10 +219,16 @@ function CheckoutFields({
         onChange={(event) => onListingUrlChange(event.target.value)}
         placeholder={uiCopy.listingPlaceholder}
         aria-label={uiCopy.listingAria}
+        aria-invalid={errors.listingUrl ? true : undefined}
+        aria-describedby={errors.listingUrl ? listingErrId : undefined}
         autoComplete="url"
         inputMode="url"
       />
-      {errors.listingUrl ? <p className={styles.inlineFieldError}>{errors.listingUrl}</p> : null}
+      {errors.listingUrl ? (
+        <p id={listingErrId} className={styles.inlineFieldError}>
+          {errors.listingUrl}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -240,7 +261,11 @@ function TurnaroundAndCta({
       </p>
 
       <div className={styles.ctaWrap}>
-        {globalError ? <p className={styles.checkoutError}>{globalError}</p> : null}
+        {globalError ? (
+          <p className={styles.checkoutError} role="alert">
+            {globalError}
+          </p>
+        ) : null}
         <button type="button" className={styles.liquidCta} onClick={onSubmit} disabled={loading}>
           <span className={styles.liquidCtaShimmer} aria-hidden />
           <span className={styles.liquidCtaLabel}>{ctaLabel}</span>
@@ -249,7 +274,7 @@ function TurnaroundAndCta({
           <a
             href={sampleReportHref}
             target="_blank"
-            rel="noopener noreferrer"
+            rel={publicAnchorRel(sampleReportHref, "noopener noreferrer")}
             className={styles.sampleReportLink}
             onClick={() => recordSampleReportClick()}
           >

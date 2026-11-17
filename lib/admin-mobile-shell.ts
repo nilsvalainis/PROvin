@@ -21,12 +21,12 @@ export const IRISS_MOBILE_TAB_BOTTOM_CSS =
 export const IRISS_MOBILE_TABBAR_H_CSS =
   "calc(62px + max(8px, calc(env(safe-area-inset-bottom, 0px) - 20px)) + 16px)" as const;
 
-/** iOS 26: stikla kapsula + atsevišķa meklēšanas poga. z-index: tab bar 30. Pozīcija: .admin-m-tabbar-dock. */
+/** v11d-fix: centrēta C kapsula (Sākums, Vairāk, Meklēt). z-index: tab bar 30. */
 export const ADMIN_MOBILE_TABBAR_DOCK_WRAPPER =
-  "admin-m-tabbar-dock pointer-events-none fixed z-[30] flex items-center justify-center gap-[12pt] md:hidden";
+  "admin-m-tabbar-dock pointer-events-none fixed z-[30] flex items-center justify-center md:hidden";
 
 export const ADMIN_MOBILE_TABBAR_DOCK_NAV =
-  "am-glass pointer-events-auto relative flex h-[62px] min-w-0 flex-1 items-stretch gap-0 rounded-full px-1.5";
+  "am-capsule pointer-events-auto relative flex h-[56px] w-[200px] items-center justify-around rounded-full px-1.5";
 
 export const ADMIN_MOBILE_Z = {
   content: 0,
@@ -102,4 +102,20 @@ export const PRO_MOBILE_BACK_PATHS = [
 export function proMobileNeedsBack(pathname: string): boolean {
   const p = pathname.replace(/\/+$/, "") || "/";
   return (PRO_MOBILE_BACK_PATHS as readonly string[]).includes(p);
+}
+
+/** Pogas, saites un lauki - pieskāriens tiem nekad nedrīkst sākt PTR vilkšanu (j37). */
+export const PTR_INTERACTIVE_SELECTOR = 'button, a[href], input, textarea, select, [role="button"], [contenteditable="true"]';
+
+type ClosestCapable = { closest(selector: string): unknown };
+
+/**
+ * j37: tuvu lapas augšai (kur PTR drīkst sākties) pieskāriens pogai/saitei/laukam gandrīz vienmēr
+ * nes nelielu pirksta svārstību - tas tika tulkots par vilkšanu, bīdīja saturu zem pirksta
+ * (pieskāriens netrāpīja) un, ja svārstība bija lielāka, izsauca router.refresh() ("lapa pārlādējas").
+ * PTR drīkst sākties tikai uz tukša/satura apgabala, nekad uz interaktīva elementa.
+ */
+export function shouldArmPullToRefresh(target: ClosestCapable | null): boolean {
+  if (!target) return true;
+  return target.closest(PTR_INTERACTIVE_SELECTOR) == null;
 }

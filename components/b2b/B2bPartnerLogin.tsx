@@ -1,10 +1,8 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useId, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import styles from "@/components/test-pricing-5/test-pricing-5.module.css";
-import { B2B_SECONDARY_BUTTON_CLASS } from "@/components/b2b/b2b-partner-ui";
-import { B2bPartnerQuoteDialog } from "@/components/b2b/B2bPartnerQuoteDialog";
 import { B2bTurnstile, partnerLoginNeedsTurnstile } from "@/components/b2b/B2bTurnstile";
 import { useRouter } from "@/i18n/navigation";
 import { localizedEmailInputProps } from "@/lib/email-input-validity";
@@ -26,9 +24,9 @@ export function B2bPartnerLogin() {
   const [resendBusy, setResendBusy] = useState(false);
   const [resendOk, setResendOk] = useState(false);
   const [forgot, setForgot] = useState(false);
+  const passwordId = useId();
   const [forgotBusy, setForgotBusy] = useState(false);
   const [forgotSent, setForgotSent] = useState(false);
-  const [quoteOpen, setQuoteOpen] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileReset, setTurnstileReset] = useState(0);
   const onTurnstileToken = useCallback((token: string | null) => {
@@ -149,7 +147,8 @@ export function B2bPartnerLogin() {
             }}
             onInvalid={emailNative.onInvalid}
             onInput={emailNative.onInput}
-            autoComplete="username"
+            placeholder={t("loginEmailPlaceholder")}
+          autoComplete="username"
             inputMode="email"
             autoCapitalize="none"
             autoCorrect="off"
@@ -181,7 +180,6 @@ export function B2bPartnerLogin() {
   }
 
   return (
-    <>
     <form
       className="flex w-full flex-col gap-4"
       onSubmit={(event) => {
@@ -190,7 +188,7 @@ export function B2bPartnerLogin() {
       }}
     >
       <label className="block min-w-0">
-        <span className="mb-1.5 block text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-zinc-500">
+        <span className="mb-1.5 block text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500">
           {t("loginEmail")}
         </span>
         <input
@@ -214,11 +212,26 @@ export function B2bPartnerLogin() {
           aria-label={t("emailAria")}
         />
       </label>
-      <label className="block min-w-0">
-        <span className="mb-1.5 block text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-          {t("loginPassword")}
-        </span>
+      <div className="block min-w-0">
+        <div className="mb-1.5 flex items-baseline justify-between gap-3">
+          <label htmlFor={passwordId} className="text-[11px] font-bold uppercase tracking-[0.12em] text-zinc-500">
+            {t("loginPassword")}
+          </label>
+          <button
+            type="button"
+            className="text-[12.5px] font-semibold text-[#5c9dff] transition-colors hover:text-white"
+            onClick={() => {
+              setForgot(true);
+              setError("");
+              setUnverified(false);
+              setResendOk(false);
+            }}
+          >
+            {t("forgotPassword")}
+          </button>
+        </div>
         <input
+          id={passwordId}
           type="password"
           className={styles.inlineInput}
           value={password}
@@ -227,29 +240,18 @@ export function B2bPartnerLogin() {
             setError("");
             setUnverified(false);
           }}
+          placeholder="••••••••"
           autoComplete="current-password"
           enterKeyHint="go"
           aria-label={t("passwordAria")}
         />
-      </label>
+      </div>
       <B2bTurnstile onToken={onTurnstileToken} resetKey={turnstileReset} ariaLabel={t("loginCaptchaAria")} />
       {error ? <p className={styles.inlineFieldError}>{error}</p> : null}
       {resendOk ? <p className="text-[0.75rem] text-zinc-300">{t("verifyResendOk")}</p> : null}
       <button type="submit" className={styles.liquidCta} disabled={busy}>
         <span className={styles.liquidCtaShimmer} aria-hidden />
         <span className={styles.liquidCtaLabel}>{busy ? t("loginLoading") : t("loginSubmit")}</span>
-      </button>
-      <button
-        type="button"
-        className="text-left text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[#93c5fd] underline-offset-2 hover:underline"
-        onClick={() => {
-          setForgot(true);
-          setError("");
-          setUnverified(false);
-          setResendOk(false);
-        }}
-      >
-        {t("forgotPassword")}
       </button>
       {unverified ? (
         <button
@@ -261,20 +263,6 @@ export function B2bPartnerLogin() {
           {resendBusy ? t("verifyResendBusy") : t("verifyResend")}
         </button>
       ) : null}
-      <div className="mt-2 flex items-center gap-3" aria-hidden>
-        <span className="h-px flex-1 bg-white/10" />
-        <span className="text-[0.56rem] font-semibold uppercase tracking-[0.14em] text-zinc-500">
-          {t("quoteDivider")}
-        </span>
-        <span className="h-px flex-1 bg-white/10" />
-      </div>
-      <p className="sr-only">{t("quoteDivider")}</p>
-      <button type="button" className={B2B_SECONDARY_BUTTON_CLASS} onClick={() => setQuoteOpen(true)}>
-        {t("quoteCta")}
-      </button>
-      <p className="-mt-2 text-center text-[0.68rem] leading-snug text-zinc-500">{t("quoteCtaNote")}</p>
     </form>
-    <B2bPartnerQuoteDialog open={quoteOpen} onClose={() => setQuoteOpen(false)} />
-    </>
   );
 }

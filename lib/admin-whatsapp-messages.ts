@@ -9,8 +9,14 @@ import {
   type ReportReadyProductKind,
 } from "@/lib/email/report-ready-copy";
 import { resolveMessageSync } from "@/lib/messages/resolve-message";
-import { buildWaReportReadyVars, waReportReadyTemplateId } from "@/lib/messages/template-vars";
+import { buildWaReportReadyVars, reportReadyVinVar, waReportReadyTemplateId } from "@/lib/messages/template-vars";
 import type { MessageTemplatesDoc } from "@/lib/messages/types";
+
+/** „ (VIN WDC…)” vai tukšs, ja VIN nav derīgs. */
+function vinSuffix(vin?: string | null): string {
+  const v = reportReadyVinVar(vin);
+  return v ? ` (VIN ${v})` : "";
+}
 
 function amountLine(amountEur?: string | null): string {
   const a = (amountEur ?? "").trim();
@@ -37,12 +43,13 @@ export function whatsappPrefillReportReady(
   if (rendered?.text) return rendered.text;
 
   const parts: string[] = ["Labdien!", ""];
+  const v = vinSuffix(opts.vin);
   if (opts.kind === "dealer") {
-    parts.push("Jūsu pasūtītie oficiālā dīlera dati ir gatavi.");
+    parts.push(`Jūsu pasūtītie oficiālā dīlera dati${v} ir gatavi.`);
   } else if (opts.kind === "mini") {
-    parts.push("Jūsu PROVIN MINI atskaite ir gatava.");
+    parts.push(`Jūsu PROVIN MINI atskaite${v} ir gatava.`);
   } else {
-    parts.push("Jūsu PROVIN AUDITS atskaite ir gatava.");
+    parts.push(`Jūsu PROVIN AUDITS atskaite${v} ir gatava.`);
   }
   parts.push("", whatsappQuestionsLine(opts.kind), "", googleReviewPlainBlock(), "", clientMessageSignOff());
   return parts.join("\n");
@@ -85,6 +92,7 @@ export function whatsappPrefillDealerNoDataRefunded(
 ): string {
   const vars = {
     summa: amountLine(amountEur),
+    vin: reportReadyVinVar(vin),
   };
   const rendered = resolveMessageSync("wa.dealer.no_data_refunded", vars, { doc: templatesDoc });
   if (rendered?.text) return rendered.text;
@@ -92,7 +100,7 @@ export function whatsappPrefillDealerNoDataRefunded(
   const amount = amountLine(amountEur);
   return `Labdien!
 
-Pārbaudījām Jūsu auto. Diemžēl oficiālā dīlera dati par to nav pieejami.
+Pārbaudījām Jūsu auto${vinSuffix(vin)}. Diemžēl oficiālā dīlera dati par to nav pieejami.
 
 Atmaksājām ${amount} pilnā apmērā uz karti, ar kuru maksājāt.
 
@@ -109,13 +117,13 @@ ${clientMessageSignOff()}`;
 
 /** Apmaksa atcelta vai atgriezta pēc klienta lūguma, pirms darbs uzsākts. */
 export function whatsappPrefillDealerPaymentCancelled(vin?: string | null, templatesDoc?: MessageTemplatesDoc | null): string {
-  const vars = {};
+  const vars = { vin: reportReadyVinVar(vin) };
   const rendered = resolveMessageSync("wa.dealer.cancelled", vars, { doc: templatesDoc });
   if (rendered?.text) return rendered.text;
 
   return `Labdien!
 
-Atcēlām Jūsu oficiālā dīlera datu pasūtījumu un atmaksājām visu summu.
+Atcēlām Jūsu oficiālā dīlera datu pasūtījumu${vinSuffix(vin)} un atmaksājām visu summu.
 
 Atkarībā no bankas nauda kontā parasti parādās 5 līdz 10 darba dienu laikā.
 

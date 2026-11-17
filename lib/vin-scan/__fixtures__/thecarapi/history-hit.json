@@ -1,0 +1,40 @@
+{
+  "auctions": [
+    {
+      "site_name": "openlane",
+      "auction_id": "OL-55",
+      "mileage": 190100,
+      "start_price": 5000,
+      "current_price": 9100,
+      "final_price": 9100,
+      "public_price_eur": 9100,
+      "first_seen_at": "2024-06-01T08:00:00Z",
+      "last_seen_at": "2024-06-02T12:00:00Z",
+      "is_active": false,
+      "archived": true,
+      "detail_path": "/api/auction/openlane/OL-55",
+      "auction_date": "2024-06-02",
+      "seller": "Openlane DE",
+      "location": "Leipzig",
+      "damage": "priekšpuse",
+      "unknown_portal_code": "X-9"
+    },
+    {
+      "site_name": "auto1",
+      "auction_id": "A1-100",
+      "mileage": 185389,
+      "start_price": 4000,
+      "current_price": 7600,
+      "final_price": 8200,
+      "public_price_eur": 8200,
+      "first_seen_at": "2024-03-12T10:00:00Z",
+      "last_seen_at": "2024-03-15T18:00:00Z",
+      "is_active": false,
+      "archived": true,
+      "detail_path": "/api/auction/auto1/A1-100",
+      "seller": "AUTO1 GmbH",
+      "location": "Berlin",
+      "status": "sold"
+    }
+  ]
+}

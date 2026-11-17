@@ -72,3 +72,20 @@ export function pickOrderEditsForHydration(
   if (orderDraftHasOrderEdits(serverEdits)) return serverEdits;
   return {};
 }
+
+/**
+ * Salīdzināma atslēga (fiksēta lauku secība) - vai orderEdits atšķiras no pēdējā servera stāvokļa.
+ * FABLE v3: atverot pasūtījumu tika sūtīts PATCH ar nemainītiem laukiem, un katra izmaiņa sūtīja papildu
+ * keepalive PATCH (apejot debounce) - paralēli pieprasījumi varēja ierasties nepareizā secībā.
+ */
+export function orderEditsPersistKey(orderEdits: OrderDraftOrderEdits | null | undefined): string {
+  return JSON.stringify(normalizeOrderEditsObject(orderEdits ?? {}));
+}
+
+/** Vai šie orderEdits jāsūta serverim (atšķiras no pēdējā zināmā servera stāvokļa). */
+export function orderEditsNeedServerPatch(
+  orderEdits: OrderDraftOrderEdits | null | undefined,
+  lastServerKey: string | null,
+): boolean {
+  return orderEditsPersistKey(orderEdits) !== lastServerKey;
+}

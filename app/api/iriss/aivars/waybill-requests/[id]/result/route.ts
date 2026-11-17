@@ -1,8 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { irissAivarsApiTokenConfigured, verifyIrissAivarsApiToken } from "@/lib/iriss-aivars-api-token";
-import { toAivarsCreateWaybillAction } from "@/lib/iriss-waybill-create";
-import { completeWaybillRequest } from "@/lib/iriss-waybill-requests-store";
+import { toAivarsCreateWaybillAction, toAivarsWaybillAction } from "@/lib/iriss-waybill-create";
+import { isWaybillStopRequest } from "@/lib/iriss-waybill-stop";
+import { completeWaybillRequest, handAutoFailureToAivars, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
+import { autoFailureHandoff } from "@/lib/iriss-waybill-requests";
+import { wakeAivars } from "@/lib/iriss-aivars-wake";
 import { uploadIrissPavadzime } from "@/lib/iriss-pavadzimes-store";
+import { ensureWaybillRequestInDropbox } from "@/lib/iriss-waybill-dropbox";
+import { waybillDropboxFileName } from "@/lib/iriss-waybill-pdf";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,6 +30,10 @@ export async function POST(req: Request, ctx: Ctx) {
     pdfBase64?: unknown;
     fileName?: unknown;
     errorReason?: unknown;
+    by?: unknown;
+    validFrom?: unknown;
+    validUntil?: unknown;
+    validTo?: unknown;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -34,10 +43,19 @@ export async function POST(req: Request, ctx: Ctx) {
   const ok = body.ok === true;
   let pdfUrl = typeof body.pdfUrl === "string" ? body.pdfUrl.trim() : "";
   const waybillNo = typeof body.waybillNo === "string" ? body.waybillNo.trim() : "";
-  if (ok && typeof body.pdfBase64 === "string" && body.pdfBase64.trim()) {
+  const current = (await readWaybillRequestsDoc()).requests.find((row) => row.id === id) ?? null;
+  // 07.11 (B762): tas pats rezultāts otrreiz - PDF vēlreiz neglabā (completeWaybillRequest arī neraksta notikumu).
+  const alreadyIssued =
+    ok && current?.status === "issued" && (!waybillNo || waybillNo.toUpperCase() === current.waybillNo.toUpperCase());
+  if (ok && !alreadyIssued && typeof body.pdfBase64 === "string" && body.pdfBase64.trim()) {
     try {
       const bytes = Buffer.from(body.pdfBase64.trim(), "base64");
+      // Vienāds nosaukums visām (arī tirdzniecības akta) pavadzīmēm: P0xxxx_MARKA_MODELIS_NUMURS.pdf.
+      const named = current
+        ? waybillDropboxFileName({ waybillNo, brandModel: current.vehicle.brandModel, plate: current.vehicle.plate })
+        : "";
       const fileName =
+        named ||
         (typeof body.fileName === "string" && body.fileName.trim().endsWith(".pdf")
           ? body.fileName.trim()
           : `${waybillNo || "pavadzime"}.pdf`);
@@ -50,19 +68,46 @@ export async function POST(req: Request, ctx: Ctx) {
       );
     }
   }
+  const by = body.by === "auto" ? "auto" : "aivars";
+  const errorReason = typeof body.errorReason === "string" ? body.errorReason : "";
+  // j57: CSDD piešķirtais derīguma laiks (ja rezultāts to sūta) - uzvar pāri pieprasījuma brīdī aprēķinātajam.
+  const validFrom = typeof body.validFrom === "string" ? body.validFrom : undefined;
+  const validUntilRaw = body.validUntil ?? body.validTo;
+  const validUntil = typeof validUntilRaw === "string" ? validUntilRaw : undefined;
+  // j47: automātikas neveiksme nedrīkst palikt klusa "Kļūda" - pavadzīme nav izrakstīta, Aivars par to nezina.
+  // Nododam Aivaram (atpakaļ rindā, neautomātisks) un pamodinām. Izņēmums: "numurs CSDD aizņemts" - lemj lietotājs.
+  if (!ok && by === "auto") {
+    const decision = autoFailureHandoff(errorReason);
+    if (decision.handoff) {
+      const handed = await handAutoFailureToAivars({ id, reason: errorReason, checkCsddFirst: decision.checkCsddFirst });
+      if (handed) {
+        after(() => wakeAivars(handed.id));
+        return NextResponse.json(
+          { ok: true, request: toAivarsCreateWaybillAction(handed), status: handed.status, handedToAivars: true },
+          { headers: { "Cache-Control": "private, no-store" } },
+        );
+      }
+    }
+  }
   const request = await completeWaybillRequest({
     id,
     ok,
     waybillNo,
     pdfUrl,
-    errorReason: typeof body.errorReason === "string" ? body.errorReason : "",
-    by: "aivars",
+    errorReason,
+    by,
+    validFrom,
+    validUntil,
   });
   if (!request) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  // Izdotās pavadzīmes PDF -> Dropbox /Pavadzīmes_IRISS (idempotenti, pārbaudīts); kļūdu cron mēģina vēlreiz.
+  if (request.status === "issued" && !isWaybillStopRequest(request) && !request.dropboxPath) {
+    after(() => ensureWaybillRequestInDropbox(request.id));
+  }
   return NextResponse.json(
     {
       ok: true,
-      request: toAivarsCreateWaybillAction(request),
+      request: toAivarsWaybillAction(request),
       status: request.status,
       waybillNo: request.waybillNo,
       pdfUrl: request.pdfUrl,

@@ -5,7 +5,7 @@ import {
   DZINTARZEME_AUTO_LOGO_WIDTH_PX,
 } from "@/lib/dzintarzeme-logo";
 
-/** Vienīgais Dzintarzeme Auto zīmols (oriģinālais PNG, bez rediģēšanas). */
+/** Vienīgais Dzintarzeme Auto zīmols (plakanais, bez ēnas - Nils 27.10). */
 export const DZINTARZEME_OFFER_LOGO_PATH = DZINTARZEME_AUTO_LOGO_PUBLIC_PATH;
 export const DZINTARZEME_OFFER_PUBLIC_LOGO_PATH = DZINTARZEME_AUTO_LOGO_PUBLIC_PATH;
 

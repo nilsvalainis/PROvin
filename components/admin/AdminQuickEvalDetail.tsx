@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 import { buildCheckcarVinReportUrl, CHECKCAR_VIN_HOME_URL, normalizeVinForServiceUrls } from "@/lib/admin-vin-urls";
 import { fmtLv, QE_TONE_DOT, type CardTone, type SourceCardModel } from "@/lib/quick-eval-cards";
 import type { QuickEvalCandidateView } from "@/lib/quick-eval-service";
@@ -150,7 +151,7 @@ export function AdminQuickEvalVinBar({ peekId, entries }: { peekId: string; entr
 
 const SCAN_TONE: Record<string, CardTone> = { found: "ok", none: "none", unknown: "warn", manual: "none", skipped: "none", needs_input: "none" };
 
-/** CC-VIN foto skaits: PROVIN skripts pārlūkā atver checkcar.vin fonā un atgriež skaitu. */
+/** Izsoļu portālu arhīva foto skaits: PROVIN skripts pārlūkā atver checkcar.vin fonā un atgriež skaitu. */
 function CcVinChip({ peekId, vin, count, at }: { peekId: string; vin: string; count: number | null | undefined; at?: string }) {
   const router = useRouter();
   const [state, setState] = useState<"idle" | "checking" | "error">("idle");
@@ -217,7 +218,7 @@ function CcVinChip({ peekId, vin, count, at }: { peekId: string; vin: string; co
       }}
     >
       <i className={`inline-block h-2 w-2 rounded-full ${QE_TONE_DOT[tone]}`} />
-      <b>CC-VIN</b> {label} ↗
+      <b>{SOURCE_BLOCK_LABELS.cc_vin}</b> {label} ↗
     </a>
   );
 }
@@ -333,7 +334,7 @@ function EmptyRowItem({ r, peekId }: { r: EmptyRow; peekId: string }) {
  * Avotu režģis (variants A): kartītes TIKAI avotiem ar datiem; tukšie / kļūdainie / „nav atrasts” -
  * vienā sakļautā rindā „Bez datiem (N)” ar atkārtošanu katram. VIN SCAN avoti (pilnais katalogs:
  * WMI dekodēšana, tjekbil.dk, esyn.dk, nummerplade.net u.c.) rādās kā parastas kartītes, ja atrada datus.
- * CC-VIN - sava kartīte (ir/nav dati, foto skaits, saite). Pēc atkārtotas ielādes jaunie dati parādās
+ * Izsoļu portālu arhīvs (internal id: cc_vin) - sava kartīte (ir/nav dati, foto skaits, saite). Pēc atkārtotas ielādes jaunie dati parādās
  * automātiski (router.refresh, kamēr kāds avots vēl ielādējas - periodiski).
  */
 export function AdminQuickEvalSourceGrid({
@@ -371,7 +372,7 @@ export function AdminQuickEvalSourceGrid({
   const ccHref = buildCheckcarVinReportUrl(normalizeVinForServiceUrls(vin)) ?? CHECKCAR_VIN_HOME_URL;
   data.push({
     key: "cc_vin",
-    title: "CC-VIN",
+    title: SOURCE_BLOCK_LABELS.cc_vin,
     tone: ccHas ? "ok" : typeof ccVin?.count === "number" ? "none" : "pending",
     meta: ccVin?.at ? fmtLv(ccVin.at) : "nav pārbaudīts",
     link: ccHref,

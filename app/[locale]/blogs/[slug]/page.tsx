@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { BlogPageShell } from "@/components/blog/BlogPageShell";
 import { BlogPostView } from "@/components/blog/BlogPostView";
+import { Footer } from "@/components/Footer";
 import { getAllBlogSlugs, getBlogPost, isBlogLocaleIndexable, resolveBlogLocale } from "@/lib/blog/posts";
 import { PUBLIC_LOCALES } from "@/i18n/locales";
 import { routing } from "@/i18n/routing";
@@ -76,6 +77,11 @@ export default async function BlogPostPage({ params }: Props) {
   return (
     <BlogPageShell>
       <BlogPostView post={post} locale={locale} />
+      <div id="site-content" className="min-w-0 bg-transparent pb-0 text-white home-body-ink">
+        <section className="demo-design-dir__section bg-transparent pb-0">
+          <Footer />
+        </section>
+      </div>
     </BlogPageShell>
   );
 }

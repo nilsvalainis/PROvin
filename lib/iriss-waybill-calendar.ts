@@ -1,0 +1,298 @@
+/**
+ * Pavadzīmju termiņu kalendārs (katram tranzīta numuram sava josla) un vēsture pēc auto (VIN).
+ * Tīra loģika bez React.
+ */
+import type { IrissPavadzimeRecord } from "@/lib/iriss-pavadzimes-types";
+
+export type WaybillCalendarTone = "active" | "soon" | "expired";
+
+export type WaybillCalendarSegment = {
+  id: string;
+  number: string;
+  brandModel: string;
+  validUntil: string;
+  leftPct: number;
+  widthPct: number;
+  tone: WaybillCalendarTone;
+  /** Pārtraukta (CSDD «Pārtraukt» vai aizstāta ar jaunāku tam pašam numuram): josla beidzas tajā brīdī. */
+  interrupted: boolean;
+  /** Apakšrinda joslā (0 = augšējā), lai īsas pavadzīmes vienā dienā neuzklājas viena uz otras. */
+  row: number;
+};
+
+export type WaybillCalendar = {
+  /** Dienu sākumi (ms) kalendāra galvenei. */
+  days: number[];
+  startMs: number;
+  endMs: number;
+  /** Šobrīd kā % no loga (vertikālā līnija). */
+  nowPct: number;
+  lanes: Array<{ plate: string; segments: WaybillCalendarSegment[]; rows: number }>;
+};
+
+/**
+ * Teksts ("VW ARTEON") prasa ~9 % no 7 dienu loga; tik tuvu esošas joslas liek nākamajā apakšrindā.
+ * Tīri vizuāli - laiki nemainās.
+ */
+const LABEL_MIN_PCT = 9;
+
+function packRows(segments: WaybillCalendarSegment[]): { segments: WaybillCalendarSegment[]; rows: number } {
+  const ends: number[] = [];
+  const packed = segments.map((seg) => {
+    const right = seg.leftPct + Math.max(seg.widthPct, LABEL_MIN_PCT);
+    let row = ends.findIndex((end) => end <= seg.leftPct);
+    if (row === -1) {
+      row = ends.length;
+      ends.push(right);
+    } else {
+      ends[row] = right;
+    }
+    return { ...seg, row };
+  });
+  return { segments: packed, rows: Math.max(1, ends.length) };
+}
+
+const DAY = 86_400_000;
+const SOON_MS = 24 * 3_600_000;
+
+function startOfLocalDay(ms: number): number {
+  const d = new Date(ms);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+function plateKey(p: string): string {
+  return p.trim().toUpperCase().replace(/\s+/g, "");
+}
+
+/** Logs: no šodienas sākuma `days` dienas uz priekšu. Joslas sakārtotas pēc numura. */
+export function buildWaybillCalendar(
+  rows: ReadonlyArray<
+    Pick<IrissPavadzimeRecord, "id" | "number" | "brandModel" | "plate" | "issuedAt" | "validUntil"> & {
+      /** "interrupted" = pārtraukta: josla beidzas pārtraukšanas brīdī un ir pelēka (agrāk - līdz sākotnējām beigām, oranža). */
+      lifecycle?: string;
+      supersededBy?: string;
+    }
+  >,
+  nowMs: number,
+  days = 7,
+): WaybillCalendar {
+  const startMs = startOfLocalDay(nowMs);
+  const endMs = startMs + days * DAY;
+  const span = endMs - startMs;
+  const lanes = new Map<string, WaybillCalendarSegment[]>();
+  const issuedByNumber = new Map(rows.map((r) => [r.number.trim().toUpperCase(), Date.parse(r.issuedAt)] as const));
+  /**
+   * 07.11: CSDD vienam numuram ļauj tikai vienu derīgu pavadzīmi - ja tam pašam numuram vēlāk izdota cita, iepriekšējā
+   * tajā brīdī pārtraukta (arī, ja indeksā vēl nav atzīmes "interrupted"). Agrāk tā kalendārā turpinājās oranža.
+   */
+  const nextIssueOnPlate = (r: (typeof rows)[number]): number | null => {
+    const own = Date.parse(r.issuedAt);
+    if (!Number.isFinite(own)) return null;
+    let next: number | null = null;
+    for (const o of rows) {
+      if (o.id === r.id || plateKey(o.plate) !== plateKey(r.plate)) continue;
+      const t = Date.parse(o.issuedAt);
+      if (Number.isFinite(t) && t > own && (next == null || t < next)) next = t;
+    }
+    return next;
+  };
+  for (const r of rows) {
+    const validUntil = Date.parse(r.validUntil);
+    if (!Number.isFinite(validUntil)) continue;
+    const replacedAt = nextIssueOnPlate(r);
+    const replaced = replacedAt != null && replacedAt < validUntil;
+    const interrupted = r.lifecycle === "interrupted" || replaced;
+    const successorIssued = r.supersededBy ? issuedByNumber.get(r.supersededBy.trim().toUpperCase()) : undefined;
+    const stopAt =
+      successorIssued != null && Number.isFinite(successorIssued) ? successorIssued : replaced ? (replacedAt as number) : nowMs;
+    const until = interrupted ? Math.min(validUntil, stopAt) : validUntil;
+    const issued = Date.parse(r.issuedAt);
+    const from = Math.max(Number.isFinite(issued) ? issued : until - SOON_MS, startMs);
+    const to = Math.min(until, endMs);
+    if (to <= startMs || from >= endMs || to <= from) continue;
+    const tone: WaybillCalendarTone = interrupted || until <= nowMs ? "expired" : until - nowMs <= SOON_MS ? "soon" : "active";
+    const plate = plateKey(r.plate) || "Bez numura";
+    const seg: WaybillCalendarSegment = {
+      id: r.id,
+      number: r.number,
+      brandModel: r.brandModel,
+      validUntil: r.validUntil,
+      leftPct: ((from - startMs) / span) * 100,
+      widthPct: Math.max(1.5, ((to - from) / span) * 100),
+      tone,
+      interrupted,
+      row: 0,
+    };
+    lanes.set(plate, [...(lanes.get(plate) ?? []), seg]);
+  }
+  return {
+    days: Array.from({ length: days }, (_, i) => startMs + i * DAY),
+    startMs,
+    endMs,
+    nowPct: Math.min(100, Math.max(0, ((nowMs - startMs) / span) * 100)),
+    lanes: [...lanes.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([plate, segments]) => ({ plate, ...packRows(segments.sort((x, y) => x.leftPct - y.leftPct)) })),
+  };
+}
+
+/** Visas pavadzīmes šim auto (arī arhīvā), jaunākā augšā. */
+export function waybillHistoryForVin<T extends Pick<IrissPavadzimeRecord, "vin" | "issuedAt" | "validUntil">>(rows: readonly T[], vin: string): T[] {
+  const key = vin.trim().toUpperCase();
+  if (key.length < 6) return [];
+  return rows
+    .filter((r) => r.vin.trim().toUpperCase() === key)
+    .sort((a, b) => (b.issuedAt || b.validUntil).localeCompare(a.issuedAt || a.validUntil));
+}
+
+/* ---- Kalendārs v2 telefonā (makets ~/pz-mob-v2/3-kalendars.png): katrs numurs sava kartīte. ---- */
+
+export type WaybillPlateCard = {
+  plate: string;
+  active: {
+    id: string;
+    brandModel: string;
+    vin: string;
+    /** "šodien, 18:00" / "rīt, 06:42" / "24.10., 03:54" */
+    endsLabel: string;
+    hoursLeft: number;
+    /** 0..1 no 48 h (kā apļi). */
+    share: number;
+    tone: "ok" | "soon";
+  } | null;
+  /** Brīvam numuram: pēdējā beigusies pavadzīme. */
+  last: { brandModel: string; endedLabel: string } | null;
+};
+
+type CardRow = Pick<IrissPavadzimeRecord, "id" | "number" | "brandModel" | "plate" | "issuedAt" | "validUntil" | "vin"> & {
+  archived?: boolean;
+  /** "interrupted" = pārtraukta (aizstāta) - vairs nav aktīva, lai gan termiņš vēl nav beidzies. */
+  lifecycle?: string;
+  /** Pēcteča CSDD numurs (ja zināms) - pārtraukšanas brīdis = pēcteča izdošana. */
+  supersededBy?: string;
+};
+
+const RIGA_DT = new Intl.DateTimeFormat("en-GB", {
+  timeZone: "Europe/Riga",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+function rigaParts(ms: number): { y: string; m: string; d: string; hm: string } {
+  const p = Object.fromEntries(RIGA_DT.formatToParts(new Date(ms)).map((x) => [x.type, x.value]));
+  return { y: p.year ?? "", m: p.month ?? "", d: p.day ?? "", hm: `${p.hour}:${p.minute}` };
+}
+
+/** "šodien, 18:00", "rīt, 06:42" vai "24.10., 03:54" (Rīgas laiks). */
+export function waybillEndsLabel(untilMs: number, nowMs: number): string {
+  const u = rigaParts(untilMs);
+  const key = (x: { y: string; m: string; d: string }) => `${x.y}-${x.m}-${x.d}`;
+  if (key(u) === key(rigaParts(nowMs))) return `šodien, ${u.hm}`;
+  if (key(u) === key(rigaParts(nowMs + DAY))) return `rīt, ${u.hm}`;
+  return `${u.d}.${u.m}., ${u.hm}`;
+}
+
+const CARD_SCALE_MS = 48 * 3_600_000;
+
+/** Katram tirdzniecības numuram: aktīvā pavadzīme (auto, VIN, beigas, atlikums) vai "brīvs" + pēdējā. */
+export function waybillPlateCards(rows: readonly CardRow[], plates: readonly string[], nowMs: number): WaybillPlateCard[] {
+  return plates.map((plate) => {
+    const mine = rows
+      .filter((r) => plateKey(r.plate).replace(/-/g, "") === plateKey(plate).replace(/-/g, ""))
+      .map((r) => ({ r, until: Date.parse(r.validUntil) }))
+      .filter((x) => Number.isFinite(x.until))
+      .sort((a, b) => b.until - a.until);
+    const live = mine.find(
+      (x) =>
+        x.until > nowMs &&
+        !x.r.archived &&
+        x.r.lifecycle !== "interrupted" &&
+        (!Number.isFinite(Date.parse(x.r.issuedAt)) || Date.parse(x.r.issuedAt) <= nowMs),
+    );
+    if (live) {
+      const leftMs = live.until - nowMs;
+      return {
+        plate,
+        active: {
+          id: live.r.id,
+          brandModel: live.r.brandModel,
+          vin: live.r.vin,
+          endsLabel: waybillEndsLabel(live.until, nowMs),
+          hoursLeft: Math.floor(leftMs / 3_600_000),
+          share: Math.min(1, leftMs / CARD_SCALE_MS),
+          tone: leftMs <= SOON_MS ? "soon" : "ok",
+        },
+        last: null,
+      };
+    }
+    const prev = mine.find((x) => x.until <= nowMs);
+    return {
+      plate,
+      active: null,
+      last: prev ? { brandModel: prev.r.brandModel, endedLabel: waybillEndsLabel(prev.until, nowMs) } : null,
+    };
+  });
+}
+
+/**
+ * Beigušās pēdējās `days` dienās, pa dienām (jaunākā augšā).
+ * 14.11 (Nils): arī pārtrauktās (CSDD «Pārtraukt» vai aizstātas ar jaunāku tam pašam numuram) - ar atzīmi
+ * `interrupted`, lai telefonā tās rāda pelēkas. Agrāk pārtraukta pavadzīme ar vēl nebeigušos termiņu pazuda no saraksta.
+ */
+export function waybillExpiredByDay(
+  rows: readonly CardRow[],
+  nowMs: number,
+  days = 7,
+): Array<{ day: string; items: Array<{ id: string; plate: string; brandModel: string; time: string; interrupted: boolean }> }> {
+  const from = nowMs - days * DAY;
+  const nextIssueOnPlate = (r: CardRow): number | null => {
+    const own = Date.parse(r.issuedAt);
+    if (!Number.isFinite(own)) return null;
+    let next: number | null = null;
+    for (const o of rows) {
+      if (o.id === r.id || plateKey(o.plate) !== plateKey(r.plate)) continue;
+      const t = Date.parse(o.issuedAt);
+      if (Number.isFinite(t) && t > own && t <= nowMs && (next == null || t < next)) next = t;
+    }
+    return next;
+  };
+  const ended = rows
+    .map((r) => {
+      const validUntil = Date.parse(r.validUntil);
+      if (!Number.isFinite(validUntil)) return null;
+      const replacedAt = nextIssueOnPlate(r);
+      const replaced = replacedAt != null && replacedAt < validUntil;
+      const flagged = r.lifecycle === "interrupted" && validUntil > nowMs;
+      if (replaced) return { r, until: replacedAt as number, interrupted: true, timeKnown: true };
+      // Pārtraukta, bet brīdis nav zināms - liekam pie izdošanas dienas (nevis "tagad", kas katru minūti mainītos).
+      if (flagged) {
+        const successor = r.supersededBy
+          ? rows.find((o) => o.number.trim().toUpperCase() === r.supersededBy!.trim().toUpperCase())
+          : undefined;
+        const succIssued = successor ? Date.parse(successor.issuedAt) : NaN;
+        if (Number.isFinite(succIssued) && succIssued <= nowMs) return { r, until: succIssued, interrupted: true, timeKnown: true };
+        const issued = Date.parse(r.issuedAt);
+        return Number.isFinite(issued) ? { r, until: issued, interrupted: true, timeKnown: false } : null;
+      }
+      return { r, until: validUntil, interrupted: false, timeKnown: true };
+    })
+    .filter((x): x is { r: CardRow; until: number; interrupted: boolean; timeKnown: boolean } => x != null && x.until <= nowMs && x.until > from)
+    .sort((a, b) => b.until - a.until);
+  const out: Array<{ day: string; items: Array<{ id: string; plate: string; brandModel: string; time: string; interrupted: boolean }> }> = [];
+  for (const { r, until, interrupted, timeKnown } of ended) {
+    const p = rigaParts(until);
+    const day = `${p.d}.${p.m}.${p.y}`;
+    let group = out.find((g) => g.day === day);
+    if (!group) {
+      group = { day, items: [] };
+      out.push(group);
+    }
+    group.items.push({ id: r.id, plate: r.plate, brandModel: r.brandModel, time: timeKnown ? p.hm : "", interrupted });
+  }
+  return out;
+}

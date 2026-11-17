@@ -1,10 +1,14 @@
+import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "PROVIN partneriem",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("Partner");
+  return {
+    title: t("metaAccountTitle"),
+    robots: { index: false, follow: false },
+  };
+}
 
 type Props = { params: Promise<{ locale: string }> };
 

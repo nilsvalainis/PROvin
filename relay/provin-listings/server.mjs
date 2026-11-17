@@ -22,10 +22,11 @@
  *   DISPLAY                     Xvfb displejs (systemd): :98, jo :99 jau lieto provin-mnt
  *
  * API (viss zem /listings, prefiksu Caddy nenoņem):
- *   GET  /listings/health                 bez auth: sesiju stāvoklis, rinda, dienas skaitītāji
+ *   GET  /listings/health                 bez auth: tikai { ok: true }; ar Bearer: sesiju stāvoklis, rinda, dienas skaitītāji
  *   POST /listings/fetch                  {platform, sourceUrl, orderId, maxPages?}
  *   POST /listings/page                   {url}  VIN SCAN izsoļu HTML (stat.vin, bid.cars, …)
  *   POST /listings/http                   {url}  car.info super-search JSON (plain HTTP, ne Chrome)
+ *   POST /listings/detail                 {platform, url}  j56: viena Auto1/Openlane auto detaļu lapa
  *   POST /listings/session/check          {platform}
  *   POST /listings/login/:platform        atver redzamu Chrome + īslaicīgs noVNC tokens adminam
  *   POST /listings/login/:platform/close  aizver manuālo login un pārbauda sesiju
@@ -44,7 +45,8 @@ import {
   tokensEqual,
   vncViewerPath,
 } from "./lib/novnc.mjs";
-import { shouldReadPublic } from "./lib/policy.mjs";
+import { bearerTokenMatches, healthResponseBody } from "./lib/health-auth.mjs";
+import { envPositiveInt, shouldReadPublic } from "./lib/policy.mjs";
 import { auto1 } from "./lib/platforms/auto1.mjs";
 import { autobid } from "./lib/platforms/autobid.mjs";
 import { ecarstrade } from "./lib/platforms/ecarstrade.mjs";
@@ -52,23 +54,22 @@ import { openlane } from "./lib/platforms/openlane.mjs";
 import { sanitizeAutobidRelayRaw } from "./lib/sanitize-autobid.mjs";
 import { PLATFORMS, RelayState } from "./lib/state.mjs";
 import { listingsFetchKey, listingsUrlLog } from "./lib/urls.mjs";
+import { fetchAuctionDetail, validDetailUrl } from "./lib/detail-page.mjs";
 import { createVinScanLanes, vinScanPageHost, vinScanProfileName } from "./lib/vinscan-lanes.mjs";
 import { fetchCarinfoSuperSearchHttp, validCarinfoSuperSearchUrl } from "./lib/vinscan-http.mjs";
-import { fetchVinScanPageHtml, validVinScanPageUrl } from "./lib/vinscan-page.mjs";
+import { fetchVinScanPageHtml, validVinScanPageUrl, vinScanFinalUrlAllowed } from "./lib/vinscan-page.mjs";
 
 const HOST = process.env.LISTINGS_RELAY_HOST || "127.0.0.1";
 const PORT = Number(process.env.LISTINGS_RELAY_PORT || 8789);
 const TOKEN = (process.env.LISTINGS_RELAY_TOKEN ?? "").trim();
 const STATE_FILE = process.env.LISTINGS_STATE_FILE || "/var/lib/provin-listings/state.json";
-const MAX_PAGES = Math.max(1, Number(process.env.LISTINGS_MAX_PAGES || 5));
-const MAX_FETCHES_PER_DAY = Math.max(1, Number(process.env.LISTINGS_MAX_FETCHES_PER_DAY || 300));
+const MAX_PAGES = envPositiveInt(process.env.LISTINGS_MAX_PAGES, 5);
+const MAX_FETCHES_PER_DAY = envPositiveInt(process.env.LISTINGS_MAX_FETCHES_PER_DAY, 300);
 const inflightFetches = new Map();
-const VINSCAN_MAX_FETCHES_PER_DAY = Math.max(
-  1,
-  Number(process.env.LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY || 400),
-);
-const MAX_QUEUE = Math.max(1, Number(process.env.LISTINGS_MAX_QUEUE || 40));
-const VINSCAN_CONCURRENCY = Math.max(1, Math.min(3, Number(process.env.LISTINGS_VINSCAN_CONCURRENCY || 2)));
+const VINSCAN_MAX_FETCHES_PER_DAY = envPositiveInt(process.env.LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY, 400);
+const MAX_QUEUE = envPositiveInt(process.env.LISTINGS_MAX_QUEUE, 40);
+const DETAIL_MAX_FETCHES_PER_DAY = envPositiveInt(process.env.LISTINGS_DETAIL_MAX_FETCHES_PER_DAY, 60);
+const VINSCAN_CONCURRENCY = envPositiveInt(process.env.LISTINGS_VINSCAN_CONCURRENCY, 2, 3);
 const vinScanLanes = createVinScanLanes({ limit: VINSCAN_CONCURRENCY });
 const MANUAL_LOGIN_MINUTES = Math.max(1, Number(process.env.LISTINGS_MANUAL_LOGIN_MINUTES || 15));
 const OPENLANE_PUBLIC_FALLBACK = /^(1|true|yes)$/i.test(process.env.OPENLANE_ALLOW_PUBLIC_FALLBACK ?? "");
@@ -89,12 +90,7 @@ function log(msg) {
 }
 
 function bearerOk(req) {
-  const header = req.headers.authorization ?? "";
-  const given = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
-  if (given.length !== TOKEN.length) return false;
-  let diff = 0;
-  for (let i = 0; i < TOKEN.length; i++) diff |= given.charCodeAt(i) ^ TOKEN.charCodeAt(i);
-  return diff === 0;
+  return bearerTokenMatches(req.headers.authorization, TOKEN);
 }
 
 function sendJson(res, status, body) {
@@ -318,11 +314,9 @@ const server = createServer(async (req, res) => {
   }
 
   if (path === "/health" && req.method === "GET") {
-    const profiles = Object.fromEntries(await Promise.all(PLATFORMS.map(async (p) => [p, await profileExists(p)])));
-    return sendJson(
-      res,
-      200,
-      state.healthView({
+    const body = await healthResponseBody(bearerOk(req), async () => {
+      const profiles = Object.fromEntries(await Promise.all(PLATFORMS.map(async (p) => [p, await profileExists(p)])));
+      return state.healthView({
         profiles,
         credentials: Object.fromEntries(PLATFORMS.map((p) => [p, platforms[p].hasCredentials()])),
         queue: { length: browserQueue.queueLength, current: browserQueue.current },
@@ -331,8 +325,9 @@ const server = createServer(async (req, res) => {
           ? { platform: manual.platform, startedAt: manual.startedAt, vncReady: manual.vncReady }
           : null,
         display: process.env.DISPLAY ?? "",
-      }),
-    );
+      });
+    });
+    return sendJson(res, 200, body);
   }
 
   if (req.method !== "POST") return sendJson(res, 405, { ok: false, error: "tikai POST" });
@@ -384,6 +379,10 @@ const server = createServer(async (req, res) => {
         }
       });
       log(`vinscan page HTTP ${out.status} ${out.elapsedMs} ms ${out.finalUrl ? listingsUrlLog(out.finalUrl) : ""}`);
+      if (!vinScanFinalUrlAllowed(out.finalUrl)) {
+        log("vinscan page: novirze ārpus atļautajiem hostiem, HTML neatdod");
+        return sendJson(res, 502, { ok: false, error: "novirze ārpus atļautajiem hostiem" });
+      }
       return sendJson(res, 200, out);
     } catch (e) {
       const note = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "nezināma kļūda";
@@ -417,6 +416,38 @@ const server = createServer(async (req, res) => {
       }
     });
     return sendJson(res, 200, { ok: out.status === "ok", ...out });
+  }
+
+  if (path === "/detail") {
+    const detailUrl = validDetailUrl(platform, body.url);
+    if (!detailUrl) return sendJson(res, 400, { ok: false, status: "error", error: "url nav Auto1/Openlane auto detaļu lapa" });
+    if (browserQueue.queueLength >= MAX_QUEUE) return sendJson(res, 503, { ok: false, status: "error", error: "rinda pilna" });
+    if (state.countFetch("detail", DETAIL_MAX_FETCHES_PER_DAY)) {
+      return sendJson(res, 429, { ok: false, status: "error", error: `dienas limits ${DETAIL_MAX_FETCHES_PER_DAY} detaļu lapas` });
+    }
+    log(`${platform} detail ${listingsUrlLog(detailUrl)} (rinda ${browserQueue.queueLength})`);
+    try {
+      const out = await browserQueue.run(`detail:${platform}`, async () => {
+        const started = Date.now();
+        const p = platforms[platform];
+        const { page, close } = await openProfile(platform);
+        try {
+          const session = await ensureSession(platform, page);
+          if (session.status !== "ok") return { ok: false, status: session.status, note: session.note, detail: null, elapsedMs: Date.now() - started };
+          const r = await fetchAuctionDetail(page, platform, detailUrl, { log, hasChallenge: hasCaptchaOrChallenge });
+          return { ok: r.status === "ok", status: r.status, note: r.note, detail: r.detail, apis: r.apis, elapsedMs: Date.now() - started };
+        } finally {
+          if (typeof p.persistSession === "function") await p.persistSession(page).catch(() => undefined);
+          await close();
+        }
+      });
+      log(`${platform} detail ${out.status} ${out.elapsedMs} ms ${out.note ?? ""}`);
+      return sendJson(res, 200, out);
+    } catch (e) {
+      const note = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "nezināma kļūda";
+      log(`${platform} detail kļūda: ${note}`);
+      return sendJson(res, 500, { ok: false, status: "error", note, detail: null });
+    }
   }
 
   if (path === "/fetch") {

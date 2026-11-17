@@ -297,7 +297,7 @@ exports[`IRISS printable PDF HTML (template defaults) > offer print HTML matches
       .oem-extra{margin-top:0;}
       .pdf-ccvin-flags{margin-bottom:1em;}
   </style></head><body><div class="ipdf-root"><header class="ipdf-header">
-    <img class="ipdf-logo" src="/brands/dzintarzeme-auto-logo-original.png" alt="Dzintarzeme Auto"/>
+    <img class="ipdf-logo" src="/brands/dzintarzeme-auto-logo.png" alt="Dzintarzeme Auto"/>
     <div>
       <p class="ipdf-hero-model">BMW 320d</p>
       <p class="ipdf-hero-sub">2026. gada 15. aprīlis · Auto pārbaude / piedāvājums</p>
@@ -625,13 +625,13 @@ exports[`IRISS printable PDF HTML (template defaults) > pasūtījuma print HTML 
       .oem-extra{margin-top:0;}
       .pdf-ccvin-flags{margin-bottom:1em;}
   </style></head><body><div class="ipdf-root ipdf-root--muted"><header class="ipdf-header">
-    <img class="ipdf-logo" src="/brands/dzintarzeme-auto-logo-original.png" alt="Dzintarzeme Auto"/>
+    <img class="ipdf-logo" src="/brands/dzintarzeme-auto-logo.png" alt="Dzintarzeme Auto"/>
     <div>
       <p class="ipdf-hero-model">VW Golf</p>
       <p class="ipdf-hero-sub">2026. gada 15. aprīlis · IRISS pasūtījums</p>
     </div>
   </header>
-    <section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Klienta dati</h2></div><div class="ipdf-blk-body"><table class="ipdf-kv"><tr><th>Vārds</th><td>Anna</td></tr><tr><th>Uzvārds</th><td>Liepa</td></tr><tr><th>Tālrunis</th><td>+37121111111</td></tr><tr><th>E-pasts</th><td>anna@example.com</td></tr><tr><th>Pasūtījuma datums</th><td>2026-04-10</td></tr></table></div></section>
+    <section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Klienta dati</h2></div><div class="ipdf-blk-body"><table class="ipdf-kv"><tr><th>Vārds</th><td>Anna</td></tr><tr><th>Uzvārds</th><td>Liepa</td></tr><tr><th>Tālrunis</th><td>+37121111111</td></tr><tr><th>E-pasts</th><td>anna@example.com</td></tr><tr><th>Pasūtījuma datums</th><td>10.04.2026</td></tr></table></div></section>
     <section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Transportlīdzekļa specifikācija</h2></div><div class="ipdf-blk-body"><table class="ipdf-kv"><tr><th>Marka / modelis</th><td>VW Golf</td></tr></table><div style="margin-top:10px"><div class="ipdf-grid4"><div class="ipdf-tile"><p class="ipdf-tile-lbl">Dzinēja tips</p><p class="ipdf-tile-val">Benzīns</p></div></div></div></div></section>
     
     <section class="ipdf-blk"><div class="ipdf-sec-head" role="heading" aria-level="2"><h2 class="ipdf-sec-title">Aprīkojums</h2></div><div class="ipdf-blk-body"><div class="ipdf-two"><div class="ipdf-card"><h3>Obligātās prasības</h3><pre>ACC</pre></div></div></div></section>

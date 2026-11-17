@@ -1,0 +1,119 @@
+import { NextResponse } from "next/server";
+import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
+import { embedHostFromUrl, isEmbedHostAllowed } from "@/lib/b2b-partner-embed";
+import {
+  BUSINESS_PARTNER_COOKIE_MAX_AGE_SEC,
+  businessPartnerCookieName,
+  businessPartnerCookieValue,
+} from "@/lib/business-partner-cookie";
+import { getB2bPartnerById } from "@/lib/b2b-partner-store";
+import { businessLinkPublicPath } from "@/lib/business-link";
+import { storeBusinessLinkRecord } from "@/lib/business-link-store";
+import { fetchPartnerListingHtml } from "@/lib/business-partner-listing-fetch";
+import {
+  BUSINESS_LINK_CLOSED_PATH,
+  checkPartnerClick,
+  listingHtmlHasVehicleId,
+  newPartnerBusinessLinkRecord,
+  parsePartnerClickParams,
+} from "@/lib/business-partner-link";
+import { getClientIpFromRequest } from "@/lib/client-ip";
+import { hashClientLinkToken, newClientLinkToken } from "@/lib/client-link-crypto";
+import { fetchCsddTechDataCounted } from "@/lib/csdd-tech-data-counted";
+import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
+import { checkRateLimit } from "@/lib/rate-limit";
+import type { BusinessPogaBlockReason } from "@/lib/business-poga-stats";
+import { recordBusinessPogaEvent } from "@/lib/business-poga-stats-store";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+type Ctx = { params: Promise<{ partnerId: string }> };
+
+const NO_STORE = { "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow", "Referrer-Policy": "no-referrer" };
+
+async function closed(
+  req: Request,
+  reason: BusinessPogaBlockReason,
+  partnerId = "",
+  vin = "",
+): Promise<NextResponse> {
+  /** Uzskaite ar savu limitu, lai uzbrukums nevarētu bezgalīgi rakstīt statistikā. */
+  const ip = getClientIpFromRequest(req);
+  if ((await checkRateLimit(`business-poga-stat:${ip}`, 60, 10 * 60 * 1000)).ok) {
+    await recordBusinessPogaEvent({ type: "blocked", partnerId, reason, vin });
+  }
+  return NextResponse.redirect(new URL(BUSINESS_LINK_CLOSED_PATH, req.url), { status: 303, headers: NO_STORE });
+}
+
+/**
+ * Partnera PROVIN Business poga. Derīgs klikšķis -> jauna vienreizēja `/b/{token}` saite.
+ * Jebkas cits -> slēgtā lapa (bez paskaidrojuma, kāpēc).
+ */
+export async function GET(req: Request, ctx: Ctx) {
+  const ip = getClientIpFromRequest(req);
+  const { partnerId } = await ctx.params;
+  const params = parsePartnerClickParams(new URL(req.url).searchParams);
+  const vehicleKey = isValidVin(params.vin) ? params.vin : params.plate;
+  const block = (reason: BusinessPogaBlockReason) => closed(req, reason, partnerId, vehicleKey);
+
+  if (!(await checkRateLimit(`business-partner-click:${ip}`, 30, 10 * 60 * 1000)).ok) return block("rate");
+  if (!isSafeB2bPartnerId(partnerId)) return block("partner");
+  const partner = await getB2bPartnerById(partnerId);
+
+  const check = checkPartnerClick({ partner, referer: req.headers.get("referer"), params });
+  if (!check.ok) return block(check.reason);
+  if (!partner) return block("partner");
+
+  if (!(await checkRateLimit(`business-partner-total:${partnerId}`, 300, 60 * 60 * 1000)).ok) return block("rate");
+  if (!(await checkRateLimit(`business-partner-vin:${partnerId}:${vehicleKey}`, 20, 60 * 60 * 1000)).ok) {
+    return block("rate");
+  }
+
+  /** VIN jābūt sludinājuma lapā. Ja lapu nevar nolasīt, saite netiek izveidota. */
+  const listing = await fetchPartnerListingHtml(params.listingUrl, partner.businessEmbed.domains);
+  if (!listing.ok) {
+    console.warn("[business-partner-link] sludinājumu neizdevās nolasīt", { partnerId, error: listing.error });
+    return block("listing_fetch");
+  }
+  if (!listingHtmlHasVehicleId(listing.html, params)) return block("vehicle_missing");
+
+  /** Bilde tikai no partnera domēna vai tāda, kas ir sludinājuma lapā. */
+  if (params.car.imageUrl) {
+    const imgHost = embedHostFromUrl(params.car.imageUrl);
+    if (!isEmbedHostAllowed(imgHost, partner.businessEmbed.domains) && !listing.html.includes(imgHost)) {
+      params.car.imageUrl = "";
+    }
+  }
+
+  /** Dīleris VIN nenorāda: VIN no CSDD pēc numurzīmes. Ja neizdodas, saitē paliek numurzīme (VIN nosaka pēc apmaksas). */
+  /** B2B partneriem CSDD limita nav (Nila lēmums 05.11.2026). */
+  if (!isValidVin(params.vin)) {
+    const csdd = await fetchCsddTechDataCounted(params.plate, "checkout", { timeoutMs: 6000 }).catch(() => null);
+    const vin = csdd?.found ? normalizeVin(csdd.data.vin) : "";
+    if (isValidVin(vin)) {
+      params.vin = vin;
+      if (!params.car.title && csdd?.found) {
+        params.car.title = [csdd.data.make, csdd.data.model].filter(Boolean).join(" ").slice(0, 120);
+      }
+      if (!params.car.year && csdd?.found && /^(19|20)\d{2}$/.test(csdd.data.year)) params.car.year = csdd.data.year;
+    }
+  }
+
+  const token = newClientLinkToken();
+  const tokenHash = hashClientLinkToken(token);
+  const record = newPartnerBusinessLinkRecord({ tokenHash, partnerId, params, listingVerified: true });
+  const stored = await storeBusinessLinkRecord(record);
+  if (!stored.ok) return block("store");
+  await recordBusinessPogaEvent({ type: "click", partnerId, vin: record.prefillVin, title: params.car.title });
+
+  const res = NextResponse.redirect(new URL(businessLinkPublicPath(token), req.url), { status: 303, headers: NO_STORE });
+  res.cookies.set(businessPartnerCookieName(tokenHash), businessPartnerCookieValue(tokenHash), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: BUSINESS_PARTNER_COOKIE_MAX_AGE_SEC,
+  });
+  return res;
+}

@@ -1,0 +1,15 @@
+[Unit]
+Description=IRISS CSDD VPN lease controller (idle autostop, admin stop)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/iriss-ttr/env
+WorkingDirectory=/root/iriss-ttr/ctl
+ExecStart=/usr/bin/node /root/iriss-ttr/ctl/vpn-ctl.mjs
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

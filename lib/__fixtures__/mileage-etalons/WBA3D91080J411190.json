@@ -1,0 +1,913 @@
+{
+ "vin": "WBA3D91080J411190",
+ "label": "BMW 316: CSDD 5, AutoDNA 2, carVertical 20, dīleris 82; negadījumi 5",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 90, saglabāts 2026-08-14; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW 316",
+   "registrationNumber": "OK2728",
+   "firstRegistration": "2013-01-07",
+   "nextInspectionDate": "2027-03-03",
+   "prevInspectionDate": "2026-03-03",
+   "engineDisplacementCm3": "1995",
+   "enginePowerKw": "85",
+   "fuelType": "Dīzeļdegviela",
+   "emissionStandard": "Euro 5 J",
+   "grossMassKg": "1960",
+   "curbMassKg": "1485",
+   "roadTaxEur": "54,00",
+   "registrationStatus": "Uzskaitē",
+   "opacityCoefficient": "",
+   "particulateMatter": "3 000",
+   "previousRegistrationCountry": "VĀCIJA",
+   "ownerCountLatvia": "3",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [
+    {
+     "date": "03.03.2026",
+     "label": "Pirmā reģistrācija Latvijā"
+    },
+    {
+     "date": "02.06.2026",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "23.07.2026",
+     "label": "Īpašnieka maiņa"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "Pamatpārbaude",
+    "inspectionDateText": "03.03.2026",
+    "nextInspectionDateText": "",
+    "odometer": "234539",
+    "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+    "ratingLevel": 1,
+    "smokeCoefficient": "",
+    "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+    "defects": [
+     {
+      "code": "5.3.2.",
+      "rating": "1",
+      "description": "Priekšējais tilts. Nav labā amortizatora aizsargapvalka vai tas ir bojāts."
+     }
+    ]
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "03.03.2026",
+     "odometer": "234539",
+     "country": "Latvija"
+    },
+    {
+     "date": "13.06.2024",
+     "odometer": "205642",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.03.2022",
+     "odometer": "175664",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.02.2022",
+     "odometer": "175552",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.01.2020",
+     "odometer": "144688",
+     "country": "Vācija"
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "16",
+   "listingCreated": "29.07.2026",
+   "priceDrop": "€ -500",
+   "priceHistory": [
+    {
+     "date": "06.08.2026",
+     "price": 6500,
+     "mileage": 236587,
+     "year": 2013,
+     "delta": -500
+    },
+    {
+     "date": "29.07.2026",
+     "price": 7000,
+     "mileage": 236587,
+     "year": 2013,
+     "delta": 0
+    }
+   ]
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "03.03.2026",
+     "odometer": "234539",
+     "country": "Latvija"
+    },
+    {
+     "date": "08.09.2015",
+     "odometer": "62182",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.01.2023",
+     "lossAmount": "500 - 600 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.03.2014",
+     "lossAmount": "1 400 - 1 500 €"
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.04.2026",
+     "odometer": "234076",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.03.2026",
+     "odometer": "234539",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.09.2025",
+     "odometer": "233842",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2024",
+     "odometer": "205372",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2023",
+     "odometer": "198605",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2022",
+     "odometer": "174469",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2018",
+     "odometer": "120126",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2018",
+     "odometer": "104953",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2017",
+     "odometer": "99569",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2017",
+     "odometer": "95752",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2016",
+     "odometer": "73081",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2016",
+     "odometer": "70839",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2016",
+     "odometer": "62175",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2015",
+     "odometer": "33272",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2014",
+     "odometer": "40274",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2014",
+     "odometer": "33121",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2014",
+     "odometer": "20561",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2013",
+     "odometer": "18031",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2013",
+     "odometer": "14263",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2012",
+     "odometer": "13",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.03.2014",
+     "lossAmount": "1 001 - 1 500 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.01.2023",
+     "lossAmount": "501 - 750 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.08.2025",
+     "lossAmount": "1 501 - 2 000 €"
+    }
+   ]
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "05.09.2025",
+     "odometer": "234342",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.08.2025",
+     "odometer": "234342",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.06.2024",
+     "odometer": "205872",
+     "country": "Vācija"
+    },
+    {
+     "date": "26.06.2024",
+     "odometer": "205872",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.12.2023",
+     "odometer": "199105",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.02.2022",
+     "odometer": "174969",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.11.2018",
+     "odometer": "120627",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.10.2018",
+     "odometer": "120626",
+     "country": "Vācija"
+    },
+    {
+     "date": "09.01.2018",
+     "odometer": "105453",
+     "country": "Vācija"
+    },
+    {
+     "date": "17.10.2017",
+     "odometer": "100069",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.10.2017",
+     "odometer": "100069",
+     "country": "Vācija"
+    },
+    {
+     "date": "31.07.2017",
+     "odometer": "95952",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.07.2016",
+     "odometer": "73281",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.06.2016",
+     "odometer": "71039",
+     "country": "Vācija"
+    },
+    {
+     "date": "26.01.2016",
+     "odometer": "62375",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.01.2016",
+     "odometer": "62375",
+     "country": "Vācija"
+    },
+    {
+     "date": "09.01.2015",
+     "odometer": "33472",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.10.2014",
+     "odometer": "33472",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.10.2014",
+     "odometer": "41874",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.09.2014",
+     "odometer": "41850",
+     "country": "Vācija"
+    },
+    {
+     "date": "29.09.2014",
+     "odometer": "41785",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.09.2014",
+     "odometer": "41636",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.09.2014",
+     "odometer": "41629",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.09.2014",
+     "odometer": "40814",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.09.2014",
+     "odometer": "40814",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.09.2014",
+     "odometer": "40630",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.09.2014",
+     "odometer": "40625",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.09.2014",
+     "odometer": "40578",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.09.2014",
+     "odometer": "40557",
+     "country": "Vācija"
+    },
+    {
+     "date": "09.09.2014",
+     "odometer": "40497",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.09.2014",
+     "odometer": "40474",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.09.2014",
+     "odometer": "40153",
+     "country": "Vācija"
+    },
+    {
+     "date": "29.08.2014",
+     "odometer": "39998",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.08.2014",
+     "odometer": "39831",
+     "country": "Vācija"
+    },
+    {
+     "date": "21.08.2014",
+     "odometer": "39256",
+     "country": "Vācija"
+    },
+    {
+     "date": "18.08.2014",
+     "odometer": "39020",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.08.2014",
+     "odometer": "38965",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.08.2014",
+     "odometer": "38792",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.08.2014",
+     "odometer": "38792",
+     "country": "Vācija"
+    },
+    {
+     "date": "07.08.2014",
+     "odometer": "38757",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.08.2014",
+     "odometer": "38757",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.08.2014",
+     "odometer": "38524",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.08.2014",
+     "odometer": "38523",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2014",
+     "odometer": "38467",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.07.2014",
+     "odometer": "38179",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.07.2014",
+     "odometer": "38105",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.07.2014",
+     "odometer": "38088",
+     "country": "Vācija"
+    },
+    {
+     "date": "17.07.2014",
+     "odometer": "38044",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.07.2014",
+     "odometer": "37993",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.07.2014",
+     "odometer": "37910",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.07.2014",
+     "odometer": "37761",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.07.2014",
+     "odometer": "37204",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.06.2014",
+     "odometer": "37193",
+     "country": "Vācija"
+    },
+    {
+     "date": "26.06.2014",
+     "odometer": "36911",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.06.2014",
+     "odometer": "36904",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.06.2014",
+     "odometer": "35729",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.06.2014",
+     "odometer": "35676",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.06.2014",
+     "odometer": "35676",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.06.2014",
+     "odometer": "35170",
+     "country": "Vācija"
+    },
+    {
+     "date": "31.05.2014",
+     "odometer": "34988",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.05.2014",
+     "odometer": "34951",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.05.2014",
+     "odometer": "34950",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.05.2014",
+     "odometer": "34940",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.05.2014",
+     "odometer": "34802",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.05.2014",
+     "odometer": "34221",
+     "country": "Vācija"
+    },
+    {
+     "date": "03.05.2014",
+     "odometer": "33472",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.05.2014",
+     "odometer": "33361",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.04.2014",
+     "odometer": "33361",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.04.2014",
+     "odometer": "33321",
+     "country": "Vācija"
+    },
+    {
+     "date": "17.04.2014",
+     "odometer": "32613",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.03.2014",
+     "odometer": "32466",
+     "country": "Vācija"
+    },
+    {
+     "date": "26.03.2014",
+     "odometer": "32319",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.12.2013",
+     "odometer": "20761",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.12.2013",
+     "odometer": "18231",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.10.2013",
+     "odometer": "14863",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.10.2013",
+     "odometer": "14813",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.10.2013",
+     "odometer": "14804",
+     "country": "Vācija"
+    },
+    {
+     "date": "18.10.2013",
+     "odometer": "14590",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.10.2013",
+     "odometer": "14590",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.10.2013",
+     "odometer": "14586",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.10.2013",
+     "odometer": "14464",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.10.2013",
+     "odometer": "14463",
+     "country": "Vācija"
+    },
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "05.09.2025",
+     "odometer": "234342",
+     "location": "Dīlera ID: 00074-1",
+     "works": "detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "27.06.2024",
+     "odometer": "205872",
+     "location": "Dīlera ID: 00074-1",
+     "works": "KASKO apdrošināšanas gadījuma remonts, Plāksnīte"
+    },
+    {
+     "date": "13.12.2023",
+     "odometer": "199105",
+     "location": "Niederlassung Frankfurt BMW AG, Frankfurt am Main",
+     "works": "Digitālā servisa konsultācija, EGR vārsts, Izplūdes spiediena sensors, Šļūtenes skava, Ovālgalvas skrūve, Norāde: automašīnu nemazgāt"
+    },
+    {
+     "date": "01.02.2022",
+     "odometer": "",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "13.11.2018",
+     "odometer": "120627",
+     "location": "Niederlassung Frankfurt BMW AG, Frankfurt am Main",
+     "works": "Maiņas auto"
+    },
+    {
+     "date": "19.10.2018",
+     "odometer": "120626",
+     "location": "Niederlassung Frankfurt BMW AG, Frankfurt am Main",
+     "works": "Slīpēšanas vate un dobumu aizsargaerosols, Skrūvju komplekts, Virsbūves mazgāšana"
+    },
+    {
+     "date": "17.10.2017",
+     "odometer": "100069",
+     "location": "Niederlassung Dreieich BMW AG, Dreieich",
+     "works": "Spuldze, Servisa mazgāšana"
+    },
+    {
+     "date": "26.01.2016",
+     "odometer": "62375",
+     "location": "Autohaus Karl + Co., Mainz-Kastel",
+     "works": "Motoreļļa, Bremžu šķidrums, Aizmugurējās bremzes, Degvielas filtrs, Gaisa filtrs, Tehniskā pārbaude servisā, Salona filtrs, Standarta apkopes apjoms"
+    },
+    {
+     "date": "25.01.2016",
+     "odometer": "62375",
+     "location": "Autohaus Karl + Co. GmbH & Co. KG, Rüsselsheim",
+     "works": "Bremžu šķidrums DOT4, Eļļas filtra komplekts, Degvielas filtrs, Gaisa filtrs, Salona filtrs (ar aktivēto ogli), Bremžu kluču komplekts, Bremžu kluču nodiluma sensors (aizmugurē), Bremžu kluču pasta, Klipsis, Motoreļļa SAE 5W-30 Longlife, Stiklu mazgāšanas šķidrums (ziemas), Šļūtenes skava, BMW atstarojošā veste (2 x)"
+    },
+    {
+     "date": "09.01.2015",
+     "odometer": "33472",
+     "location": "Autohaus Karl + Co. GmbH & Co. KG, Rüsselsheim",
+     "works": "TÜV apskates nodeva"
+    },
+    {
+     "date": "28.10.2014",
+     "odometer": "33472",
+     "location": "Autohaus Karl + Co. GmbH & Co. KG, Rüsselsheim",
+     "works": "Ziemas ritenis (komplektā), Stiklu mazgāšanas šķidrums (ziemas)"
+    },
+    {
+     "date": "24.05.2014",
+     "odometer": "33472",
+     "location": "Autohaus Karl + Co. GmbH & Co. KG, Rüsselsheim",
+     "works": "Vācijas ekoloģiskā uzlīme (zaļā), Vējstikla augšējā apdare, Vējstikls (zaļš, ar lietus un gaismas sensoru), Jumta notekrenes apdare (kreisajā pusē), Jumta notekrenes apdare (labajā pusē), Lietus, gaismas, saules un aizsvīšanas sensors, Drošības spilvena norādījumu uzlīme, Loga stikla remonta komplekts"
+    },
+    {
+     "date": "24.05.2014",
+     "odometer": "19750",
+     "location": "Autohaus Karl + Co. GmbH & Co. KG, Rüsselsheim",
+     "works": "Vācijas ekoloģiskā uzlīme (zaļā), Vējstikla augšējā apdare, Vējstikls (zaļš, ar lietus un gaismas sensoru), Jumta notekrenes apdare (kreisajā pusē), Jumta notekrenes apdare (labajā pusē), Lietus, gaismas, saules un aizsvīšanas sensors, Drošības spilvena norādījumu uzlīme, Loga stikla remonta komplekts"
+    },
+    {
+     "date": "02.05.2014",
+     "odometer": "33472",
+     "location": "Autohaus Karl + Co. GmbH & Co. KG, Rüsselsheim",
+     "works": "detalizēts darbu saraksts atskaitē nav pieejams, Savienojuma cauruļvads, Akumulatora B+ spailes vāciņš, Eļļas filtra komplekts, Motoreļļa SAE 5W-30 Longlife, Salona filtrs (ar aktivēto ogli), Logu tīrītāju slotiņu komplekts"
+    },
+    {
+     "date": "03.04.2014",
+     "odometer": "19750",
+     "location": "Autohaus Karl + Co. GmbH & Co. KG, Rüsselsheim",
+     "works": "Vācijas ekoloģiskā uzlīme (zaļā), Vējstikla augšējā apdare, Vējstikls (zaļš, ar lietus un gaismas sensoru), Jumta notekrenes apdare (kreisajā pusē), Jumta notekrenes apdare (labajā pusē), Lietus, gaismas, saules un aizsvīšanas sensors, Drošības spilvena norādījumu uzlīme, Loga stikla remonta komplekts"
+    },
+    {
+     "date": "02.10.2013",
+     "odometer": "14463",
+     "location": "Autohaus Karl + Co. GmbH & Co. KG, Rüsselsheim",
+     "works": "Ziemas ritenis (komplektā), Riteņa dekoratīvais vāciņš, Stiklu mazgāšanas šķidrums (ziemas)"
+    },
+    {
+     "date": "02.01.2013",
+     "odometer": "",
+     "location": "Autohaus Karl + Co. GmbH & Co. KG, Rüsselsheim",
+     "works": "Riteņa dekoratīvais vāciņš, Pašvītņojoša skrūve ar cilindrisku galvu, Stiklu mazgāšanas šķidrums (ziemas), Ziemas ritenis (komplektā)"
+    }
+   ],
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "BMW F30",
+     "modelSeries": "F30",
+     "vinCode": "WBA3D91080J411190",
+     "vehicleType": "3D91",
+     "transmission": "MECH",
+     "steeringSide": "LL",
+     "engineCode": "N47T",
+     "engineNumber": "80028310",
+     "body": "LIM",
+     "drive": "HECK",
+     "power": "85 kW",
+     "integrationLevel": "F020-12-07-533",
+     "currentILevel": "F020-14-11-501",
+     "developmentCode": "F30",
+     "modelCode": "3D91",
+     "productionDate": "26.09.2012",
+     "firstRegistration": "04.01.2013",
+     "warrantyStartDate": "07.01.2013",
+     "countryRegion": "ECE",
+     "color": "alpinweiss 3",
+     "colorCode": "0300",
+     "interior": "Fabric Move/anthracite",
+     "interiorCode": "BDAT"
+    }
+   }
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

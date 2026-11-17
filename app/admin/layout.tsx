@@ -11,7 +11,9 @@ import "./mobile/workspace-switch.css";
 import "./mobile/pro-home.css";
 import "./mobile/link-contrast.css";
 import "./mobile/order-tones.css";
+import "./mobile/menu-grid.css";
 import "./admin-iriss-theme.css";
+import "./iriss-tokens.css";
 import "./admin-costs-theme.css";
 
 export const metadata: Metadata = {
@@ -34,6 +36,9 @@ export const viewport: Viewport = {
   colorScheme: "light dark",
   width: "device-width",
   initialScale: 1,
+  // Nils 04.11 (iOS 18): bez šī Safari pietuvina visu lapu, pieskaroties laukam ar burtiem < 16 px, un tā paliek
+  // pietuvināta. iOS pirkstu tuvināšanu (pinch) tas neaizliedz - tikai automātisko tuvināšanu ievadei.
+  maximumScale: 1,
   viewportFit: "cover",
 };
 

@@ -1,8 +1,10 @@
 "use client";
 
+import { AdminSaveButton } from "@/components/admin/AdminSaveButton";
 import { useRouter } from "next/navigation";
-import { useState, type ChangeEvent } from "react";
-import { ADMIN_B2B_BTN, ADMIN_B2B_BTN_SOLID, AdminB2bActionLabel } from "@/components/admin/AdminB2bAction";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { ADMIN_SAVED_FLASH_MS } from "@/lib/admin-save-state";
+import { ADMIN_B2B_BTN, AdminB2bActionLabel } from "@/components/admin/AdminB2bAction";
 import {
   ADMIN_PARTNER_INPUT_CLASS,
   ADMIN_PARTNER_LABEL_CLASS,
@@ -43,6 +45,13 @@ export function AdminB2bPartnerEditForm({
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  // Zaļais ķeksis pogā tikai īsu brīdi pēc saglabāšanas.
+  useEffect(() => {
+    if (!saved) return;
+    const t = window.setTimeout(() => setSaved(false), ADMIN_SAVED_FLASH_MS);
+    return () => window.clearTimeout(t);
+  }, [saved]);
   const [deleting, setDeleting] = useState(false);
 
   const set = (key: keyof typeof form) => (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -108,6 +117,7 @@ export function AdminB2bPartnerEditForm({
 
   return (
     <form
+      ref={formRef}
       className="mt-6 rounded-2xl border border-slate-200/70 bg-white p-5 shadow-[0_2px_24px_rgba(15,23,42,0.05)]"
       onSubmit={(event) => {
         event.preventDefault();
@@ -230,15 +240,13 @@ export function AdminB2bPartnerEditForm({
       ) : null}
 
       {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
-      {saved && !error ? <p className="mt-3 text-sm text-emerald-700">Saglabāts.</p> : null}
       <div className="mt-4 flex flex-wrap items-center gap-2">
-        <button
-          type="submit"
-          disabled={busy || deleting}
-          className={ADMIN_B2B_BTN_SOLID}
-        >
-          <AdminB2bActionLabel>{busy ? "Saglabā…" : "Saglabāt"}</AdminB2bActionLabel>
-        </button>
+        <AdminSaveButton
+          onSave={() => formRef.current?.requestSubmit()}
+          state={busy ? "saving" : error ? "error" : saved ? "saved" : "idle"}
+          disabled={deleting}
+          shortcut
+        />
         <button
           type="button"
           disabled={busy || deleting}

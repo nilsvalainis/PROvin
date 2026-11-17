@@ -16,4 +16,28 @@ describe("partner / invite JSON docs", () => {
     expect(parseB2bInviteDoc({ invites: [] }).invites).toEqual([]);
     expect(emptyB2bInviteDoc().invites).toEqual([]);
   });
+
+  it("keeps custom invite prices and fills defaults for old invite rows", () => {
+    const doc = parseB2bInviteDoc({
+      invites: [
+        {
+          token: "inv_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          createdAt: "2026-09-01T00:00:00.000Z",
+          expiresAt: "2026-09-20T00:00:00.000Z",
+        },
+        {
+          token: "inv_bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          createdAt: "2026-09-01T00:00:00.000Z",
+          expiresAt: "2026-09-20T00:00:00.000Z",
+          walletPrices: { business: 6999, dealer_raw: null, dealer_pro: 1999 },
+          prices: { business1: 5000 },
+        },
+      ],
+    });
+    expect(doc.invites[0]?.walletPrices.business).toBeNull();
+    expect(doc.invites[0]?.prices.business1).toBeNull();
+    expect(doc.invites[1]?.walletPrices).toEqual({ business: 6999, dealer_raw: null, dealer_pro: 1999 });
+    expect(doc.invites[1]?.prices.business1).toBe(5000);
+    expect(doc.invites[1]?.prices.dealer10).toBeNull();
+  });
 });

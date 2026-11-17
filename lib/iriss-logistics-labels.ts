@@ -121,3 +121,30 @@ export function logisticsPinCardCars(
 export function logisticsMapFitKey(mode: string, ids: readonly string[]): string {
   return `${mode}|${[...ids].sort().join(",")}`;
 }
+
+/** Vācijas robežas (Nils 27.10: noklusējuma skatā redzama visa Vācija). */
+export const GERMANY_BOUNDS = { south: 47.2, west: 5.8, north: 55.1, east: 15.1 } as const;
+
+export type LatLngBox = { south: number; west: number; north: number; east: number };
+
+/** Noklusējuma kameras rāmis: visa Vācija + visi punkti, kas atrodas ārpus tās. */
+export function logisticsDefaultBox(points: ReadonlyArray<{ lat: number; lng: number }>): LatLngBox {
+  const box: LatLngBox = { ...GERMANY_BOUNDS };
+  for (const p of points) {
+    if (!Number.isFinite(p.lat) || !Number.isFinite(p.lng)) continue;
+    box.south = Math.min(box.south, p.lat);
+    box.north = Math.max(box.north, p.lat);
+    box.west = Math.min(box.west, p.lng);
+    box.east = Math.max(box.east, p.lng);
+  }
+  return box;
+}
+
+/**
+ * Atstarpes, lai Vācija nepaliek zem paneļiem: augšā Loģistikas kartīte, apakšā kartes josla,
+ * datorā labajā pusē Kravu plāns (~30 % platuma). Telefonā paneļi ir pāri kartei citādi - mazas atstarpes.
+ */
+export function logisticsDefaultPadding(width: number): { top: number; right: number; bottom: number; left: number } {
+  if (width < 1024) return { top: 24, right: 16, bottom: 24, left: 16 };
+  return { top: 150, right: Math.round(width * 0.3), bottom: 70, left: 24 };
+}

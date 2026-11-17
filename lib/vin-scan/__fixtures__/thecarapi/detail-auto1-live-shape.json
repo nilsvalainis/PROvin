@@ -1,0 +1,62 @@
+{
+  "success": true,
+  "contract_version": "2026-11-17",
+  "data_updated_at": "2026-10-09T18:00:00Z",
+  "request_id": "req-live-1326383403",
+  "server_time": "2026-10-09T18:01:00Z",
+  "auction": {
+    "id": 1326383403,
+    "site_name": "auto1",
+    "auction_end_at": "2026-10-09T16:00:00Z",
+    "batch_start_date": "2026-10-01",
+    "last_changed_at": "2026-10-08T12:00:00Z",
+    "picture_count": 29,
+    "thumbnail_url": "https://img-pa.auto1.com/img/thumb.jpg",
+    "vault_gallery": { "main": "https://img-pa.auto1.com/img/vault-main.jpg" },
+    "images": [
+      {
+        "url": "https://img-pa.auto1.com/img/live-1.jpg",
+        "index": 0,
+        "image_index": 0,
+        "is_primary": true,
+        "served_url": "/auction-photo/auto1/1326383403/0?k=&sig="
+      },
+      {
+        "url": "https://img-pa.auto1.com/img/live-2.jpg",
+        "index": 1,
+        "image_index": 1,
+        "is_primary": false,
+        "served_url": "/auction-photo/auto1/1326383403/1?k=&sig="
+      }
+    ],
+    "car_identification": {
+      "ImageUrls": ["https://img-pa.auto1.com/img/cid-1.jpg"],
+      "ImageVaultImages": [{ "url": "https://img-pa.auto1.com/img/cid-vault.jpg" }],
+      "DamageImageUrls": ["https://img-pa.auto1.com/img/cid-damage.jpg"],
+      "ServiceImageUrls": ["https://img-pa.auto1.com/img/cid-service.jpg"],
+      "DocumentPhotos": ["https://img-pa.auto1.com/img/cid-doc.jpg"],
+      "VideoUrls": ["https://img-pa.auto1.com/img/cid-video.mp4"]
+    },
+    "Auto1Details": {
+      "kw": 140,
+      "hp": 190,
+      "ccm": 1998,
+      "handoverKeyCount": 2,
+      "totalOwnerCalculated": 1,
+      "inspectionExpiryDate": "2027-01-01",
+      "accidents": false,
+      "originalEngine": true
+    },
+    "DamagesV3": [
+      {
+        "zone": "Priekšējais bamperis",
+        "subAreaImages": [{ "url": "https://img-pa.auto1.com/img/zone-1.jpg" }]
+      }
+    ],
+    "DamagesStructured": [{ "area": "Kreisās durvis" }],
+    "DatEquipmentGroupsTranslated": ["Navigācija"],
+    "market_prices_by_country": { "DE": 12000 },
+    "archived": false,
+    "archived_at": null
+  }
+}

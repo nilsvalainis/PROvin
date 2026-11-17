@@ -14,6 +14,7 @@ import {
   NEGADIJUMU_VESTURE_TITLE,
   vinRegistryIncidentRowHasData,
   SOURCE_BLOCK_LABELS,
+  aiSourceBlockLabel,
   tirgusFormToPlainText,
   toPdfLtabManualBlock,
   toPdfManualVendorBlocks,
@@ -37,7 +38,11 @@ import {
 import type { AiAdminModelTier } from "@/lib/ai-admin-model-tier";
 import type { AiTextStream } from "@/lib/ai-text-stream";
 import { collectUnifiedIncidentRows } from "@/lib/unified-incidents";
-import { collectUnifiedMileageRows } from "@/lib/unified-mileage";
+import {
+  collectUnifiedMileageRows,
+  formatCsddUndatedOdometerLine,
+  resolveCsddUndatedOdometer,
+} from "@/lib/unified-mileage";
 import {
   formatOwnerCountAiContext,
   synthesizeOwnerCountsFromBlocks,
@@ -115,9 +120,12 @@ function unifiedMileagePayload(blocks: WorkspaceSourceBlocks) {
 }
 
 function unifiedMileagePlainText(blocks: WorkspaceSourceBlocks): string {
-  const rows = collectUnifiedMileageRows(unifiedMileagePayload(blocks));
-  if (rows.length === 0) return "";
+  const payload = unifiedMileagePayload(blocks);
+  const rows = collectUnifiedMileageRows(payload);
+  const undated = resolveCsddUndatedOdometer(payload);
+  if (rows.length === 0 && !undated) return "";
   const lines = rows.map((r) => [r.date, r.odometer, r.country, r.sourceLabel].join("\t"));
+  if (undated) lines.push(formatCsddUndatedOdometerLine(undated));
   return [CSDD_MILEAGE_UNIFIED_TITLE, ...lines].join("\n");
 }
 
@@ -138,7 +146,7 @@ function allIncidentRowsPlainText(blocks: WorkspaceSourceBlocks): string {
   for (const key of ["autodna", "carvertical"] as const) {
     const inc = blocks[key].incidents.filter(ltabRowHasData);
     if (inc.length === 0) continue;
-    parts.push(`【${SOURCE_BLOCK_LABELS[key]} — ${NEGADIJUMU_VESTURE_TITLE}】`);
+    parts.push(`【${aiSourceBlockLabel(key)} — ${NEGADIJUMU_VESTURE_TITLE}】`);
     for (const r of inc) {
       parts.push([r.csngDate.trim(), r.lossAmount.trim(), r.incidentNo.trim()].filter(Boolean).join("\t"));
     }
@@ -163,7 +171,7 @@ function allIncidentRowsPlainText(blocks: WorkspaceSourceBlocks): string {
   for (const key of ["tjekbil", "finnik", "mnt_ee", "lkf_ee", "carinfo", "traficom_fi"] as const) {
     const inc = (blocks[key].incidents ?? []).filter(vinRegistryIncidentRowHasData);
     if (inc.length === 0) continue;
-    parts.push(`【${SOURCE_BLOCK_LABELS[key]} — ${NEGADIJUMU_VESTURE_TITLE}】`);
+    parts.push(`【${aiSourceBlockLabel(key)} — ${NEGADIJUMU_VESTURE_TITLE}】`);
     for (const r of inc) {
       parts.push([r.date.trim(), r.amount.trim(), r.country.trim(), r.note.trim()].filter(Boolean).join("\t"));
     }
@@ -176,7 +184,7 @@ function vendorRawLogsPlainText(blocks: WorkspaceSourceBlocks): string {
   for (const key of ["autodna", "carvertical"] as const) {
     const raw = blocks[key].mileagePasteRaw?.trim();
     if (!raw) continue;
-    parts.push(`【${SOURCE_BLOCK_LABELS[key]} raw logs】\n${raw.slice(0, 12_000)}`);
+    parts.push(`【${aiSourceBlockLabel(key)} raw logs】\n${raw.slice(0, 12_000)}`);
   }
   const citiTotal = blocks.citi_avoti.sections.length;
   for (const [i, section] of blocks.citi_avoti.sections.entries()) {
@@ -284,7 +292,7 @@ export function buildAiOrderContextText(input: AiOrderContextInput): string {
       }
     }
     sectionText = appendAiContextRawSection(sectionText, blockAiContextRaw(blocks, key));
-    const section = block(label ?? SOURCE_BLOCK_LABELS[key], sectionText);
+    const section = block(label ?? aiSourceBlockLabel(key), sectionText);
     if (section) parts.push(section);
   }
 
@@ -399,6 +407,9 @@ export function invalidateAiOrderContextCache(): void {
   orderContextCache.clear();
 }
 
+export const AI_GENERAL_KNOWLEDGE_HEADER =
+  "=== VISPĀRĪGAS ZINĀŠANAS (nav šī auto fakts - neraksti kā faktu par šo auto; skaitļus/termiņus ņem tikai no faktu lapas vai avotiem) ===";
+
 async function buildKnowledgePacks(input: AiOrderContextInput): Promise<string> {
   const blocks = mergeSourceBlocksWithDefaults(input.sourceBlocks);
   const historical = await buildHistoricalReportsAiContext({
@@ -412,7 +423,10 @@ async function buildKnowledgePacks(input: AiOrderContextInput): Promise<string> 
     sessionId: input.sessionId,
   });
   const styleCorpus = buildStyleCorpusAiContext();
-  return [styleCorpus, historical, aggregateKnowledge].filter((s) => s.trim()).join("\n\n");
+  const general = [historical, aggregateKnowledge].filter((s) => s.trim()).join("\n\n");
+  // j26: zināšanu pakas nav šī auto fakti.
+  const labeled = general ? `${AI_GENERAL_KNOWLEDGE_HEADER}\n${general}` : "";
+  return [styleCorpus, labeled].filter((s) => s.trim()).join("\n\n");
 }
 
 function instructionBriefs(input: AiOrderContextInput): string {

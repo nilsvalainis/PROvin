@@ -19,6 +19,7 @@ import {
   parseListingSearchUrl,
   type OrderSearchFields,
 } from "@/lib/iriss-listings-ecarstrade-search";
+import { irissScanCriteriaBounds, type IrissScanCriteriaBounds } from "@/lib/iriss-scan-criteria";
 import { buildMarketplaceSearchUrl } from "@/lib/marketplace/search-urls";
 import { marketplaceQueryFromScan } from "@/lib/marketplace/query-from-scan";
 import type { IrissScanFilterPlatform, IrissScanLinkKey } from "@/lib/iriss-scan-sources";
@@ -80,8 +81,11 @@ export function irissScanSearchFilter(fields: OrderSearchFields) {
 }
 
 export function scanOrderSearchFields(rec: IrissScanRecord): OrderSearchFields {
+  const bounds = irissScanCriteriaBounds(rec);
+  // Ar strukturētu marku nosaukuma troksnis («Audi 2.0D manuālis ...») filtrā neiet.
+  const structuredBrand = bounds?.make.length ? [...bounds.make, ...bounds.models].join(" ") : "";
   const fields: OrderSearchFields = {
-    brandModel: rec.brandModel,
+    brandModel: structuredBrand || rec.brandModel,
     productionYears: rec.productionYears,
     engineType: rec.engineType,
     transmission: rec.transmission,
@@ -125,8 +129,30 @@ function marketplaceUrl(platform: MarketplacePlatform, rec: IrissScanRecord, fie
   return buildMarketplaceSearchUrl(platform, q);
 }
 
-function auctionUrl(platform: IrissAuctionSearchPlatform, fields: OrderSearchFields): string | null {
+/** Saglabātie no-līdz diapazoni pārraksta no teksta nolasītos (viens kW lauks vairs nedod from=to). */
+function applyScanBounds(filter: ReturnType<typeof filterFromOrderFields>, bounds: IrissScanCriteriaBounds | null): void {
+  if (!bounds) return;
+  const pairs = [
+    ["yearFrom", "yearTo", bounds.yearFrom, bounds.yearTo],
+    ["mileageFrom", "mileageTo", bounds.mileageFrom, bounds.mileageTo],
+    ["priceFrom", "priceTo", bounds.priceFrom, bounds.priceTo],
+    ["powerFromKw", "powerToKw", bounds.kwFrom, bounds.kwTo],
+    ["engineFromCc", "engineToCc", bounds.ccFrom, bounds.ccTo],
+  ] as const;
+  for (const [fromKey, toKey, from, to] of pairs) {
+    if (from == null && to == null) continue;
+    filter[fromKey] = from;
+    filter[toKey] = to;
+  }
+}
+
+function auctionUrl(
+  platform: IrissAuctionSearchPlatform,
+  fields: OrderSearchFields,
+  bounds: IrissScanCriteriaBounds | null = null,
+): string | null {
   const filter = irissScanSearchFilter(fields);
+  applyScanBounds(filter, bounds);
   if (platform === "auto1") return auto1SearchUrl(filter);
   if (platform === "openline") return openlaneSearchUrl(filter);
   if (platform === "autobid") return autobidSearchUrl(filter);
@@ -152,7 +178,7 @@ export function applyGeneratedScanSourceFilter(
     const key: IrissScanLinkKey = platform === "mobilede" ? "listingLinkMobile" : "listingLinksOther";
     return { record: appendLink(rec, key, url), url };
   }
-  const url = auctionUrl(platform, fields) ?? listingPlatformSearchUrl(platform, fields);
+  const url = auctionUrl(platform, fields, irissScanCriteriaBounds(rec)) ?? listingPlatformSearchUrl(platform, fields);
   if (!url) return { record: rec, url: null };
   return { record: appendLink(rec, AUCTION_LINK_KEY[platform], url), url };
 }

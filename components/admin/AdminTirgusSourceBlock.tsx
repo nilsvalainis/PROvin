@@ -12,7 +12,7 @@ import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawFiel
 import { ListedForSaleFieldChrome } from "@/components/admin/ListedForSaleFieldChrome";
 import { AdminSourceBlockHeader } from "@/components/admin/AdminSourceBlockHeader";
 import { AdminSourceBlockPhotos } from "@/components/admin/AdminSourceBlockPhotos";
-import type { SourceBlockPhotoGroup } from "@/lib/source-block-photo-types";
+import { LISTING_HISTORY_MAX_PHOTOS, type SourceBlockPhotoGroup } from "@/lib/source-block-photo-types";
 import { PriceDropArrowIcon } from "@/components/icons/PriceDropArrowIcon";
 import { loadListingPriceHistorySnapshot } from "@/lib/admin-listing-history-client";
 import { applyAdifyHistoryToTirgus, ADIFY_HISTORY_PAGE_URL } from "@/lib/adify-listing-history";
@@ -315,7 +315,7 @@ export function AdminTirgusSourceBlock({
                   <input
                     type="text"
                     className={`${inp} min-w-0 flex-1`}
-                    placeholder='piem., "€ -3 790"'
+                    placeholder='piem., "-3 790 €"'
                     value={val.priceDrop}
                     disabled={disabled}
                     onChange={(e) => setField("priceDrop", e.target.value)}
@@ -456,6 +456,8 @@ export function AdminTirgusSourceBlock({
         onCommit={onPhotoGroupsStructuralCommit}
         hidePhotoWatermarks={val.hidePhotoWatermarks === true}
         onHidePhotoWatermarksChange={(next) => onChange({ ...val, hidePhotoWatermarks: next })}
+        maxPhotos={LISTING_HISTORY_MAX_PHOTOS}
+        blockKey="tirgus"
       />
     ) : null;
 

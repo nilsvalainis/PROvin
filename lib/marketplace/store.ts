@@ -5,6 +5,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { marketplaceMonthKey, emptyMarketplaceUsageMonth, MARKETPLACE_RUNS_KEEP } from "@/lib/marketplace/cost-caps";
+import { emptyMobileDeCircuit, type MobileDeCircuitFile } from "@/lib/marketplace/mobile-de-guard";
 import { marketplaceListingExpiresAt, marketplaceListingIsExpired, marketplaceListingVehicleId } from "@/lib/marketplace/to-listing-vehicle";
 import {
   emptyMarketplaceAutoCronState,
@@ -28,6 +29,7 @@ import {
 const DEFAULT_RELATIVE_DIR = ".data/iriss-marketplace";
 const LISTINGS_FILENAME = "listings.json";
 const AUTO_CRON_FILENAME = "auto-cron.json";
+const MOBILE_DE_CIRCUIT_FILENAME = "mobile-de-circuit.json";
 
 type ResolvedStorage =
   | { kind: "disabled" }
@@ -93,6 +95,9 @@ function parseStoredListing(v: unknown): MarketplaceStoredListing | null {
     ...(str(v.vin, 17).length === 17 ? { vin: str(v.vin, 17).toUpperCase() } : {}),
     ...(str(v.sellerName, 80) ? { sellerName: str(v.sellerName, 80) } : {}),
     ...(str(v.location, 80) ? { location: str(v.location, 80) } : {}),
+    ...(Array.isArray(v.imageUrls)
+      ? { imageUrls: v.imageUrls.map((u) => str(u, 600)).filter((u) => /^https?:\/\//.test(u)).slice(0, 12) }
+      : {}),
     ...(Array.isArray(v.sourceLinks)
       ? {
           sourceLinks: v.sourceLinks
@@ -137,13 +142,13 @@ function parseQuery(raw: unknown): MarketplaceQuery {
     mileageTo: numOrNull(q.mileageTo),
     priceFrom: numOrNull(q.priceFrom),
     priceTo: numOrNull(q.priceTo),
-    fuel: str(q.fuel, 40),
+    fuel: str(q.fuel, 120),
     gearbox: str(q.gearbox, 40),
     powerFromKw: numOrNull(q.powerFromKw),
     powerToKw: numOrNull(q.powerToKw),
     displacementFromCc: numOrNull(q.displacementFromCc),
     displacementToCc: numOrNull(q.displacementToCc),
-    body: str(q.body, 40),
+    body: str(q.body, 120),
     drive: str(q.drive, 40),
     countries: Array.isArray(q.countries)
       ? q.countries.map((c) => str(c, 8)).filter(Boolean).slice(0, 8)
@@ -347,6 +352,36 @@ export async function writeMarketplaceAutoCronState(
   if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
   try {
     await writeJson(r, AUTO_CRON_FILENAME, JSON.stringify(normalizeMarketplaceAutoCronState(state), null, 2));
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) };
+  }
+}
+
+export function normalizeMobileDeCircuitFile(raw: unknown): MobileDeCircuitFile {
+  const empty = emptyMobileDeCircuit();
+  if (!isObj(raw) || raw.version !== 1) return empty;
+  return {
+    version: 1,
+    pausedUntil: str(raw.pausedUntil, 40),
+    trippedAt: str(raw.trippedAt, 40),
+    reason: str(raw.reason, 180),
+  };
+}
+
+export async function readMobileDeCircuit(): Promise<MobileDeCircuitFile> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return emptyMobileDeCircuit();
+  return normalizeMobileDeCircuitFile(await readJson(r, MOBILE_DE_CIRCUIT_FILENAME));
+}
+
+export async function writeMobileDeCircuit(
+  state: MobileDeCircuitFile,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const r = resolveStorage();
+  if (r.kind === "disabled") return { ok: false, error: "store_disabled" };
+  try {
+    await writeJson(r, MOBILE_DE_CIRCUIT_FILENAME, JSON.stringify(normalizeMobileDeCircuitFile(state)));
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) };

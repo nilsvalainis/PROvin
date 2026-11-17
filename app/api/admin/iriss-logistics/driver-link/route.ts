@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { irissLogisticsScopeHeader, logisticsCabinetWriteForbidden, requireIrissLogisticsApi } from "@/lib/iriss-logistics-access";
-import { driverLinkPath, type DriverLinkBucket } from "@/lib/iriss-logistics-driver-link";
+import { driverLinkPath, isDriverLinkBucket, type DriverLinkBucket } from "@/lib/iriss-logistics-driver-link";
 import { createDriverLink, revokeDriverLinks } from "@/lib/iriss-logistics-driver-link-store";
 
 export const runtime = "nodejs";
@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 function bucketOf(body: unknown): DriverLinkBucket | null {
   const b = body && typeof body === "object" ? (body as { bucket?: unknown }).bucket : null;
-  return b === "next" || b === "after" ? b : null;
+  return isDriverLinkBucket(b) ? b : null;
 }
 
 /** Jauna saite šoferim šai kravai. */

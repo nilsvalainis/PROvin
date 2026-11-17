@@ -122,6 +122,10 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   "Reģistrācijas statuss:": { en: "Registration status:", ru: "Статус регистрации:" },
   "Dūmainības koeficients (m⁻¹):": { en: "Smoke opacity (m⁻¹):", ru: "Коэффициент дымности (м⁻¹):" },
   "Atgāzu cietās daļiņas:": { en: "Exhaust particle count:", ru: "Твёрдые частицы в выхлопе:" },
+  "Atgāzu cietās daļiņas (cm⁻³):": {
+    en: "Exhaust particle count (cm⁻³):",
+    ru: "Твёрдые частицы в выхлопе (см⁻³):",
+  },
   "Iepriekšējās reģistrācijas valsts:": {
     en: "Previous country of registration:",
     ru: "Страна предыдущей регистрации:",
@@ -156,6 +160,13 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
     ru: "В источниках ДТП не зафиксированы",
   },
   "Nav ierakstu": { en: "No records", ru: "Записей нет" },
+  "Nav datu": { en: "No data", ru: "Нет данных" },
+  "Publicēts:": { en: "Published:", ru: "Опубликовано:" },
+  "Izsoļu / reģistru bojājumi bez summas": {
+    en: "Auction / register damage without amount",
+    ru: "Повреждения на аукционах / в реестрах без суммы",
+  },
+  "Bojājumi:": { en: "Damage:", ru: "Повреждения:" },
   "Īpašnieku skaits": { en: "Number of owners", ru: "Количество владельцев" },
   "Reģistrācija Latvijā": { en: "Latvian registration", ru: "Регистрация в Латвии" },
   Nobraukums: { en: "Mileage", ru: "Пробег" },
@@ -267,10 +278,24 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   Kardāns: { en: "Propshaft", ru: "Кардан" },
   Turbokompresors: { en: "Turbocharger", ru: "Турбокомпрессор" },
   "Virsbūve / stikls": { en: "Body / glass", ru: "Кузов / стекло" },
+  // Statiskais krāsas biezuma bloks (lib/paint-gauge-static-block.ts) - agrāk palika LV vai deva "Bodys stāvoklis".
+  // PASŪTĪJUMA DATI bloks (client-report-pdf-layout-draft.ts) un CSDD statuss.
+  "PASŪTĪJUMA DATI": { en: "ORDER DETAILS", ru: "ДАННЫЕ ЗАКАЗА" },
+  Maksājums: { en: "Payment", ru: "Оплата" },
+  Pasūtījums: { en: "Order", ru: "Заказ" },
+  "Vārds, uzvārds": { en: "Name", ru: "Имя, фамилия" },
+  "Klienta komentārs": { en: "Client comment", ru: "Комментарий клиента" },
+  Reģistrēts: { en: "Registered", ru: "Зарегистрирован" },
+  "Virsbūves stāvoklis un krāsas biezums": { en: "Body condition and paint thickness", ru: "Состояние кузова и толщина ЛКП" },
+  "Digitālie dati var neuzrādīt krāsotus elementus, ja darbi veikti neatkarīgā servisā vai mēģinot noslēpt sīkus defektus. Virsbūve jāpārbauda klātienē ar krāsas biezuma mērītāju. Ārējiem paneļiem rūpnīcas rādījums parasti ir ap 100 līdz 150 µm. Visiem paneļiem jābūt ar līdzīgiem mērījumiem. Starpība no 50 līdz 150 µm starp blakus esošajiem elementiem var norādīt uz kosmētisku pārkrāsošanu. Iekšējās ailes un konstrukcijas elementi parasti uzrāda aptuveni uz pusi mazāku mikronu skaitu, kas ir normāli un liecina par rūpnīcas krāsojumu, nevis remonta pēdām.":
+    {
+      en: "Digital records may not show repainted panels if the work was done at an independent garage or to hide minor defects. The body must be checked in person with a paint thickness gauge. On exterior panels the factory reading is usually around 100 to 150 µm. All panels should show similar readings. A difference of 50 to 150 µm between adjacent panels may indicate cosmetic repainting. Inner sills and structural parts usually show roughly half the micron value, which is normal and indicates factory paint, not repair traces.",
+      ru: "Цифровые данные могут не показывать перекрашенные элементы, если работы выполнялись в независимом сервисе или чтобы скрыть мелкие дефекты. Кузов нужно проверить на месте толщиномером ЛКП. На наружных панелях заводское значение обычно от 100 до 150 µm. Все панели должны показывать схожие значения. Разница от 50 до 150 µm между соседними элементами может указывать на косметическую перекраску. Внутренние пороги и силовые элементы обычно показывают примерно вдвое меньшее значение, что нормально и говорит о заводской окраске, а не о следах ремонта.",
+    },
   "Sagatavots klientam:": { en: "Prepared for: ", ru: "Подготовлено для: " },
   "mēn.": { en: "mo.", ru: "мес." },
 
-  // Eļļas intervāli / ASV / CC.VIN / tabulu galviņas, kas paliek LV bez diakritikas
+  // Eļļas intervāli / ASV / Izsoļu portālu arhīvs / tabulu galviņas, kas paliek LV bez diakritikas
   "fiksētas maiņas": { en: "recorded changes", ru: "зафиксированные замены" },
   "vidējais intervāls": { en: "average interval", ru: "средний интервал" },
   "vidējais laiks": { en: "average time", ru: "среднее время" },
@@ -307,7 +332,7 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   },
   "Lūdzam ņemt vērā:": { en: "Please note:", ru: "Просим учесть:" },
   "Ierakstu robežas.": { en: "Limits of the records.", ru: "Границы записей." },
-  "Neiztrūkstošas apkopes.": { en: "Missing services.", ru: "Пропущенные ТО." },
+  "Iztrūkstošas apkopes.": { en: "Missing services.", ru: "Пропущенные ТО." },
   "Vispārīgi apmeklējumi.": { en: "Generic visits.", ru: "Общие визиты." },
   "Secinājums.": { en: "Conclusion.", ru: "Вывод." },
   "Rekomendācija pilnīgai pārbaudei.": {
@@ -341,6 +366,39 @@ const STATIC_TRANSLATIONS: Record<string, StaticTranslationEntry> = {
   "atrasts ieraksts": { en: "record found", ru: "найдена запись" },
   "Dīlera kopsavilkums": { en: "Dealer summary", ru: "Сводка дилера" },
   "Nobraukuma līkne": { en: "Mileage curve", ru: "Кривая пробега" },
+  "precīzs ieraksts": { en: "precise record", ru: "точная запись" },
+  "1 precīzs ieraksts": { en: "1 precise record", ru: "1 точная запись" },
+  "{n} precīzi ieraksti": { en: "{n} precise records", ru: "{n} точных записей" },
+  "1 ieraksts": { en: "1 record", ru: "1 запись" },
+  "{n} ieraksti": { en: "{n} records", ru: "{n} записей" },
+  "NOBRAUKUMS PA GADIEM": { en: "MILEAGE BY YEAR", ru: "ПРОБЕГ ПО ГОДАМ" },
+  "tūkst. km": { en: "thous. km", ru: "тыс. км" },
+  "tūkst. km gadā": { en: "thous. km / year", ru: "тыс. км в год" },
+  nepilns: { en: "partial", ru: "неполный" },
+  "nepārtraukta līnija savieno precīzos ierakstus": {
+    en: "unbroken line connects the precise records",
+    ru: "непрерывная линия соединяет точные записи",
+  },
+  "precīzs gada nobraukums": { en: "precise annual mileage", ru: "точный годовой пробег" },
+  "aptuveni (nav precīzu datu)": { en: "approximate (no precise data)", ru: "примерно (нет точных данных)" },
+  "nepilns gads": { en: "incomplete year", ru: "неполный год" },
+  "Nobraukuma vēsture un nobraukums pa kalendāra gadiem": {
+    en: "Mileage history and mileage by calendar year",
+    ru: "История пробега и пробег по календарным годам",
+  },
+  "Gadu robežās nobraukums interpolēts lineāri starp tuvākajiem precīzajiem ierakstiem. Svītrotie stabiņi: aptuvens vairāku gadu intervāla sadalījums, nevis precīzs gada nobraukums. {y0}: no {d0}; {y1}: līdz {d1} - bez pārrēķina uz pilnu gadu.":
+    {
+      en: "Year-end mileage is linearly interpolated between the nearest precise records. Hatched bars are an approximate split of a multi-year interval, not a precise annual mileage. {y0}: from {d0}; {y1}: until {d1} - not annualized to a full year.",
+      ru: "Пробег на границах года линейно интерполирован между ближайшими точными записями. Штрихованные столбцы - приблизительное деление многолетнего интервала, а не точный годовой пробег. {y0}: с {d0}; {y1}: до {d1} - без пересчёта на полный год.",
+    },
+  "1 ieraksts ar mākslīgu kritumu grafikā nav rādīts - tāpat kā esošajā atskaitē.": {
+    en: "1 record with an artificial drop is not shown on the chart - same as in the existing report.",
+    ru: "1 запись с искусственным падением на графике не показана - как и в существующем отчёте.",
+  },
+  "{n} ieraksti ar mākslīgu kritumu grafikā nav rādīti - tāpat kā esošajā atskaitē.": {
+    en: "{n} records with an artificial drop are not shown on the chart - same as in the existing report.",
+    ru: "{n} записей с искусственным падением на графике не показаны - как и в существующем отчёте.",
+  },
 };
 
 /** Sakārtots pēc garuma (garākais pirmais), lai īsāka frāze nesabojā garāku, kas to satur. */
@@ -348,6 +406,23 @@ const SORTED_STATIC_KEYS: string[] = Object.keys(STATIC_TRANSLATIONS).sort((a, b
 
 function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Atslēga tikai kā vesels vārds / frāze: ne vārda daļa ("Virsbūve" iekš "Virsbūves" deva "Bodys", RU "Кузовs").
+ * Ja atslēga sākas vai beidzas ar burtu/ciparu, blakus nedrīkst būt cits burts/cipars.
+ */
+const STATIC_KEY_PATTERNS = new Map<string, RegExp>();
+function staticKeyPattern(lv: string): RegExp {
+  let re = STATIC_KEY_PATTERNS.get(lv);
+  if (!re) {
+    const head = /^[\p{L}\p{N}]/u.test(lv) ? "(?<![\\p{L}\\p{N}])" : "";
+    const tail = /[\p{L}\p{N}]$/u.test(lv) ? "(?![\\p{L}\\p{N}])" : "";
+    re = new RegExp(`${head}${escapeRegExp(lv)}${tail}`, "gu");
+    STATIC_KEY_PATTERNS.set(lv, re);
+  }
+  re.lastIndex = 0;
+  return re;
 }
 
 /** Vācu statiskais apvalks. Katram STATIC_TRANSLATIONS atslēgas vārdam jābūt ierakstam. */
@@ -422,6 +497,7 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "Reģistrācijas statuss:": "Zulassungsstatus:",
   "Dūmainības koeficients (m⁻¹):": "Trübungskoeffizient (m⁻¹):",
   "Atgāzu cietās daļiņas:": "Partikel im Abgas:",
+  "Atgāzu cietās daļiņas (cm⁻³):": "Partikel im Abgas (cm⁻³):",
   "Iepriekšējās reģistrācijas valsts:": "Land der vorherigen Zulassung:",
   "Īpašnieku skaits Latvijā:": "Anzahl der Halter in Lettland:",
   "Tehnisko apskašu vēsture": "Historie der technischen Prüfungen",
@@ -442,6 +518,10 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "Negadījumi un bojājumi": "Schäden und Beschädigungen",
   "Avotos nav fiksētu negadījumu": "In den Quellen sind keine Unfälle erfasst",
   "Nav ierakstu": "Keine Einträge",
+  "Nav datu": "Keine Daten",
+  "Publicēts:": "Veröffentlicht:",
+  "Izsoļu / reģistru bojājumi bez summas": "Auktions- / Registerschäden ohne Betrag",
+  "Bojājumi:": "Schäden:",
   "Īpašnieku skaits": "Anzahl der Halter",
   "Reģistrācija Latvijā": "Zulassung in Lettland",
   Nobraukums: "Kilometerstand",
@@ -535,6 +615,15 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   Kardāns: "Gelenkwelle",
   Turbokompresors: "Turbolader",
   "Virsbūve / stikls": "Karosserie / Glas",
+  "PASŪTĪJUMA DATI": "BESTELLDATEN",
+  Maksājums: "Zahlung",
+  Pasūtījums: "Bestellung",
+  "Vārds, uzvārds": "Name",
+  "Klienta komentārs": "Kundenkommentar",
+  Reģistrēts: "Zugelassen",
+  "Virsbūves stāvoklis un krāsas biezums": "Karosseriezustand und Lackschichtdicke",
+  "Digitālie dati var neuzrādīt krāsotus elementus, ja darbi veikti neatkarīgā servisā vai mēģinot noslēpt sīkus defektus. Virsbūve jāpārbauda klātienē ar krāsas biezuma mērītāju. Ārējiem paneļiem rūpnīcas rādījums parasti ir ap 100 līdz 150 µm. Visiem paneļiem jābūt ar līdzīgiem mērījumiem. Starpība no 50 līdz 150 µm starp blakus esošajiem elementiem var norādīt uz kosmētisku pārkrāsošanu. Iekšējās ailes un konstrukcijas elementi parasti uzrāda aptuveni uz pusi mazāku mikronu skaitu, kas ir normāli un liecina par rūpnīcas krāsojumu, nevis remonta pēdām.":
+    "Digitale Daten zeigen lackierte Teile möglicherweise nicht, wenn die Arbeiten in einer freien Werkstatt oder zum Verbergen kleiner Mängel durchgeführt wurden. Die Karosserie muss vor Ort mit einem Lackschichtdickenmessgerät geprüft werden. An Außenteilen liegt der Werkswert meist bei etwa 100 bis 150 µm. Alle Teile sollten ähnliche Werte zeigen. Ein Unterschied von 50 bis 150 µm zwischen benachbarten Teilen kann auf eine kosmetische Nachlackierung hindeuten. Innere Schweller und Strukturteile zeigen meist etwa die Hälfte der Mikronwerte, was normal ist und auf Werkslack statt auf Reparaturspuren hinweist.",
   "Sagatavots klientam:": "Erstellt für: ",
   "mēn.": "Mon.",
   "fiksētas maiņas": "erfasste Wechsel",
@@ -556,7 +645,7 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "Svarīga piezīme par apkopes datu interpretāciju": "Wichtiger Hinweis zur Auslegung der Servicedaten",
   "Lūdzam ņemt vērā:": "Bitte beachten:",
   "Ierakstu robežas.": "Grenzen der Einträge.",
-  "Neiztrūkstošas apkopes.": "Fehlende Wartungen.",
+  "Iztrūkstošas apkopes.": "Fehlende Wartungen.",
   "Vispārīgi apmeklējumi.": "Allgemeine Besuche.",
   "Secinājums.": "Schlussfolgerung.",
   "Rekomendācija pilnīgai pārbaudei.": "Empfehlung für eine vollständige Prüfung.",
@@ -581,6 +670,28 @@ export const CLIENT_REPORT_DE: Record<string, string> = {
   "atrasts ieraksts": "Eintrag gefunden",
   "Dīlera kopsavilkums": "Händlerübersicht",
   "Nobraukuma līkne": "Kilometerstandkurve",
+  "precīzs ieraksts": "präziser Eintrag",
+  "1 precīzs ieraksts": "1 präziser Eintrag",
+  "{n} precīzi ieraksti": "{n} präzise Einträge",
+  "1 ieraksts": "1 Eintrag",
+  "{n} ieraksti": "{n} Einträge",
+  "NOBRAUKUMS PA GADIEM": "LAUFLEISTUNG NACH JAHR",
+  "tūkst. km": "Tsd. km",
+  "tūkst. km gadā": "Tsd. km / Jahr",
+  nepilns: "unvollständig",
+  "nepārtraukta līnija savieno precīzos ierakstus":
+    "ununterbrochene Linie verbindet die präzisen Einträge",
+  "precīzs gada nobraukums": "präzise Jahreslaufleistung",
+  "aptuveni (nav precīzu datu)": "ungefähr (keine präzisen Daten)",
+  "nepilns gads": "unvollständiges Jahr",
+  "Nobraukuma vēsture un nobraukums pa kalendāra gadiem":
+    "Laufleistungshistorie und Laufleistung nach Kalenderjahr",
+  "Gadu robežās nobraukums interpolēts lineāri starp tuvākajiem precīzajiem ierakstiem. Svītrotie stabiņi: aptuvens vairāku gadu intervāla sadalījums, nevis precīzs gada nobraukums. {y0}: no {d0}; {y1}: līdz {d1} - bez pārrēķina uz pilnu gadu.":
+    "Der Jahresgrenzen-km wird linear zwischen den nächsten präzisen Einträgen interpoliert. Schraffierte Balken sind eine ungefähre Aufteilung eines mehrjährigen Intervalls, keine präzise Jahreslaufleistung. {y0}: ab {d0}; {y1}: bis {d1} - ohne Hochrechnung auf ein volles Jahr.",
+  "1 ieraksts ar mākslīgu kritumu grafikā nav rādīts - tāpat kā esošajā atskaitē.":
+    "1 Eintrag mit künstlichem Rückgang wird im Diagramm nicht gezeigt - wie im bestehenden Bericht.",
+  "{n} ieraksti ar mākslīgu kritumu grafikā nav rādīti - tāpat kā esošajā atskaitē.":
+    "{n} Einträge mit künstlichem Rückgang werden im Diagramm nicht gezeigt - wie im bestehenden Bericht.",
 };
 
 export function clientReportStaticKeys(): string[] {
@@ -678,7 +789,7 @@ export function applyClientReportStaticTranslations(html: string, lang: ClientRe
   for (const lv of SORTED_STATIC_KEYS) {
     const translated = translateClientReportStatic(lv, lang);
     if (!translated || translated === lv) continue;
-    out = out.replace(new RegExp(escapeRegExp(lv), "g"), translated);
+    out = out.replace(staticKeyPattern(lv), translated);
   }
   const more = translateClientReportLifeMore(lang);
   if (more !== "Vēl") {

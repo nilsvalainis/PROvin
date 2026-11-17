@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireIrissSectionApi } from "@/lib/staff-auth";
+import { primeListingSearchCostsFromStore } from "@/lib/iriss-listings-search-costs-store";
 import {
   MARKETPLACE_LOADS_DISABLED_REASON,
   marketplaceAutoEnabled,
@@ -10,6 +11,7 @@ import { parseMarketplacePlatforms, resolveMarketplaceAdminTarget } from "@/lib/
 import { previewMarketplaceLoad } from "@/lib/marketplace/load";
 import { MARKETPLACE_PLATFORM_LABEL } from "@/lib/marketplace/providers";
 import { marketplaceTooBroadSkipReason } from "@/lib/marketplace/query-from-order";
+import { marketplaceQuerySummaryLv } from "@/lib/marketplace/query-summary";
 import { marketplaceRadarTooBroadSkipReason } from "@/lib/marketplace/query-from-scan";
 import { isMarketplacePlatform } from "@/lib/marketplace/types";
 
@@ -18,6 +20,7 @@ export const runtime = "nodejs";
 export async function GET(req: Request) {
   const gate = await requireIrissSectionApi("radars");
   if (!gate.ok) return gate.response;
+  await primeListingSearchCostsFromStore();
   const url = new URL(req.url);
   const platforms = [
     ...url.searchParams.getAll("platform").map((p) => p.trim()).filter(isMarketplacePlatform),
@@ -48,6 +51,7 @@ export async function GET(req: Request) {
     ok: true,
     ownerKind: target.ownerKind,
     queryReady: preview.queryReady,
+    querySummary: marketplaceQuerySummaryLv(preview.query),
     missingFields: preview.missingFields,
     needsOneOfExtra: preview.needsOneOfExtra,
     tooBroadReason,

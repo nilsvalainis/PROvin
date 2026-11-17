@@ -6,12 +6,15 @@ import type {
   MarketplaceUsageMonth,
 } from "@/lib/marketplace/types";
 
-export const MARKETPLACE_DEFAULT_MONTHLY_USD_CAP = 4.5;
+// Automātiskā (15 $) + manuālās ielādes.
+export const MARKETPLACE_DEFAULT_MONTHLY_USD_CAP = 20;
 export const MARKETPLACE_DEFAULT_PER_RUN_USD_CAP = 0.5;
 export const MARKETPLACE_DEFAULT_MAX_ITEMS = 150;
-export const MARKETPLACE_DEFAULT_AUTO_INTERVAL_DAYS = 3;
+// Nils 30.10: mobile.de automātiski 1x dienā (9:00, izņemot svētdienas).
+export const MARKETPLACE_DEFAULT_AUTO_INTERVAL_DAYS = 1;
 export const MARKETPLACE_DEFAULT_AUTO_MAX_ITEMS = 40;
-export const MARKETPLACE_DEFAULT_AUTO_MONTHLY_USD_CAP = 4.5;
+// ~27 aktīvi pasūtījumi x ~0,02 $ x 26 dienas ≈ 14 $ mēnesī.
+export const MARKETPLACE_DEFAULT_AUTO_MONTHLY_USD_CAP = 15;
 export const MARKETPLACE_HARD_MAX_ITEMS = 300;
 export const MARKETPLACE_RUNS_KEEP = 300;
 export const MARKETPLACE_APIFY_START_USD = 0.005;
@@ -33,14 +36,25 @@ function envNumber(name: string, fallback: number, min: number, max: number): nu
 export const MARKETPLACE_LOADS_DISABLED_REASON = "Ielāde izslēgta (izmaksu kontrole)";
 export const MARKETPLACE_AUTO_DISABLED_REASON = "Automātiskā ielāde izslēgta (izmaksu kontrole)";
 
-/** Tikai precīza vērtība `true`. Tukšs, 1, yes, TRUE = izslēgts. */
+const LOADS_OFF_VALUES = new Set(["false", "0", "off", "no"]);
+
+/**
+ * Nils 30.10: «man ir nepieciešama manuāla ielādes opcija pēc kritērijiem» - manuālā ielāde (poga «Ielādēt» +
+ * apstiprinājums ar cenu) strādā pēc noklusējuma; griesti paliek (vienai ielādei un mēnesim).
+ * MARKETPLACE_LOADS_ENABLED=false (vai 0 / off / no) - avārijas izslēgšana. Automātiskā ielāde - vienmēr izslēgta kodā.
+ */
 export function marketplaceLoadsEnabled(): boolean {
-  return process.env.MARKETPLACE_LOADS_ENABLED === "true";
+  return !LOADS_OFF_VALUES.has((process.env.MARKETPLACE_LOADS_ENABLED ?? "").trim().toLowerCase());
 }
 
 /** Tikai precīza vērtība `true`. Noklusējums izslēgts. */
+/**
+ * Nils 29.10: «automātisko ielādi izslēdz vispār, veikšu to manuāli pēc nepieciešamības un konkrētiem auto».
+ * Automātiskā ielāde ir izslēgta kodā (neatkarīgi no MARKETPLACE_AUTO_ENABLED); manuālā - poga «Ielādēt».
+ */
 export function marketplaceAutoEnabled(): boolean {
-  return process.env.MARKETPLACE_AUTO_ENABLED === "true";
+  // Nils 30.10: «1x dienā pagaidām (9:00), izņemot svētdienas» - tikai mobile.de. MARKETPLACE_AUTO_ENABLED=false - izslēdz.
+  return !["false", "0", "off", "no"].includes((process.env.MARKETPLACE_AUTO_ENABLED ?? "").trim().toLowerCase());
 }
 
 export function marketplaceMonthlyUsdCap(): number {

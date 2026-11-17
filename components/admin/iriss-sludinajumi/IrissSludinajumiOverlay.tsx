@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { type ReactNode, useEffect } from "react";
 import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
 
 const STROKE = 1.6;
@@ -35,11 +36,12 @@ export function IrissSludinajumiScrimPanel({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+  const backdropClose = useModalBackdropClose(onClose);
   if (!open) return null;
   return (
     <AdminBodyPortal>
       <div className="iriss-slud fixed inset-0 z-[60]">
-        <button type="button" aria-label="Aizvērt" className="absolute inset-0 bg-black/35" onClick={onClose} />
+        <button type="button" aria-label="Aizvērt" className="absolute inset-0 bg-black/35" {...backdropClose} />
         <div
           role="dialog"
           aria-modal="true"

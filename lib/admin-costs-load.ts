@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   buildCostDashboard,
+  type BuildCostDashboardInput,
   type CostAlert,
   type CostDashboard,
   type CostMarketplaceMonth,
@@ -13,6 +14,8 @@ import {
   usageSpentUsd,
 } from "@/lib/marketplace/cost-caps";
 import { readMarketplaceUsageMonth } from "@/lib/marketplace/store";
+import { logisticsMapsUsageSummary } from "@/lib/iriss-logistics-maps-quota";
+import { readLogisticsMapsUsage } from "@/lib/iriss-logistics-store";
 import { formatYearMonthKey, parseYearMonthKey } from "@/lib/admin-riga-calendar";
 
 export type CostDashboardLoad = {
@@ -54,11 +57,22 @@ async function loadMarketplace(month: string): Promise<CostMarketplaceMonth | nu
   }
 }
 
+async function loadMapsUnits(month: string): Promise<BuildCostDashboardInput["mapsUnits"]> {
+  try {
+    const summary = logisticsMapsUsageSummary(await readLogisticsMapsUsage());
+    if (summary.month !== month) return null;
+    return { "maps-dynamic": summary.mapsJs.monthlyUsed, "maps-geocoding": summary.geocoding.monthlyUsed };
+  } catch {
+    return null;
+  }
+}
+
 export async function loadCostDashboard(month: string, nowMs = Date.now()): Promise<CostDashboardLoad> {
-  const [eventsDoc, meta, marketplace] = await Promise.all([
+  const [eventsDoc, meta, marketplace, mapsUnits] = await Promise.all([
     readCostEventsMonth(month),
     readCostMeta(),
     loadMarketplace(month),
+    loadMapsUnits(month),
   ]);
   const snapshots = meta.snapshots.filter((s) => s.period === month);
   const dashboard = buildCostDashboard({
@@ -68,6 +82,7 @@ export async function loadCostDashboard(month: string, nowMs = Date.now()): Prom
     snapshots,
     limits: meta.limits,
     marketplace,
+    mapsUnits,
   });
   return { dashboard, alerts: dashboard.alerts };
 }

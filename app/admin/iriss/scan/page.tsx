@@ -23,7 +23,7 @@ export default async function IrissScanListPage({
   const storeEnabled = storage.enabled;
   const data = storeEnabled
     ? await loadIrissScanPageData()
-    : { rows: [], initialListOrder: null, newHitsByScan: {}, finds: [] };
+    : { rows: [], initialListOrder: null, newHitsByScan: {}, finds: [], lastReadAt: "" };
 
   return (
     <div className="relative min-h-full w-full max-w-none pb-24 sm:pb-8">
@@ -33,6 +33,7 @@ export default async function IrissScanListPage({
           initialListOrder={data.initialListOrder}
           newHitsByScan={data.newHitsByScan}
           finds={data.finds}
+          lastReadAt={data.lastReadAt}
           mode="list"
         />
       ) : null}

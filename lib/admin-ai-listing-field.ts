@@ -7,6 +7,10 @@ import {
 } from "@/lib/admin-ai-prompts";
 import { appendAiOperatorNotesSection } from "@/lib/admin-ai-operator-notes";
 import {
+  LISTING_PHOTO_NO_DEFECTS_TEXT,
+  hasListingPhotoNoDefectsMark,
+} from "@/lib/admin-listing-photo-comment-presets";
+import {
   buildAiCommentGenerationContext,
   type AiOrderContextInput,
 } from "@/lib/admin-ai-order-context";
@@ -32,6 +36,13 @@ export async function generateListingFieldCommentWithAi(
 
   if (input.field === "listingSalesContext" && !listingPaste) {
     throw new Error("missing_listing_paste");
+  }
+
+  if (input.field === "photoAnalysis") {
+    const marked =
+      input.existingDraftPlain ?? adminRichHtmlToPlainText(listing.photoAnalysis).trim();
+    // Operators atzīmējis „Nav vizuālo defektu”: fiksēts Nila teksts, modeli neizsauc.
+    if (hasListingPhotoNoDefectsMark(marked)) return LISTING_PHOTO_NO_DEFECTS_TEXT;
   }
 
   const context = await buildAiCommentGenerationContext(input, "summary");

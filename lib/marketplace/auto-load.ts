@@ -3,6 +3,7 @@
  * Izsoļu (Auto1 / Openlane / Autobid / eCarsTrade) sync šeit nesauc.
  * Radara (SCAN) ieraksti šeit NAV: radarā Apify ir tikai manuāla poga, bez cron.
  */
+import { MARKETPLACE_TEST_ORDER_SKIP, marketplaceOrderIsTest } from "@/lib/marketplace/test-orders";
 import { marketplaceActorId, readApifyToken } from "@/lib/marketplace/apify-client";
 import {
   decideMarketplaceBudget,
@@ -20,12 +21,14 @@ import {
   usageSpentUsdByTrigger,
 } from "@/lib/marketplace/cost-caps";
 import { estimateMarketplaceLoad, loadMarketplaceForOrder, type MarketplaceLoadInput } from "@/lib/marketplace/load";
+import { mobileDeAutomationShouldStopSweep } from "@/lib/marketplace/mobile-de-guard";
 import {
   readMarketplaceAutoCronState,
   readMarketplaceListingsState,
   readMarketplaceUsageMonth,
   writeMarketplaceAutoCronState,
 } from "@/lib/marketplace/store";
+import type { MarketplacePlatform } from "@/lib/marketplace/types";
 import type {
   ListingProvider,
   MarketplaceAutoCronState,
@@ -47,7 +50,10 @@ import {
   type IrissPasutijumsListStatus,
 } from "@/lib/iriss-pasutijumi-types";
 
-export const MARKETPLACE_AUTO_CRON_HOUR_UTC = 6;
+/** 07:00 UTC = 9:00 Rīgā ziemā (10:00 vasarā). Grafiks vercel.json: pirmdiena-sestdiena. */
+export const MARKETPLACE_AUTO_CRON_HOUR_UTC = 7;
+/** Automātiski - tikai mobile.de (AutoScout24 vēlāk, pēc Nila lēmuma). */
+export const MARKETPLACE_AUTO_PLATFORMS = ["mobilede"] as const;
 export const MARKETPLACE_AUTO_TIME_BUDGET_MS = 250_000;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -92,6 +98,7 @@ export type MarketplaceAutoSweepDeps = {
   estimateForOrder: (input: {
     order: MarketplaceOrderCriteria;
     maxItems: number;
+    platforms?: MarketplacePlatform[];
     providers?: ListingProvider[];
   }) => { estimates: MarketplaceCostEstimate[] };
   writeAutoState?: (state: MarketplaceAutoCronState) => Promise<void>;
@@ -189,7 +196,8 @@ export function orderDueForMarketplaceAuto(
   if (!lastLoadAt) return true;
   const t = Date.parse(lastLoadAt);
   if (!Number.isFinite(t)) return true;
-  return now.getTime() - t >= intervalDays * DAY_MS;
+  // 3 h rezerve: vakardienas ielāde 9:00:40 nedrīkst atlikt šodienas 9:00:05 cron.
+  return now.getTime() - t >= intervalDays * DAY_MS - 3 * 60 * 60 * 1000;
 }
 
 export function nextDailyCronUtc(now: Date, hourUtc = MARKETPLACE_AUTO_CRON_HOUR_UTC): string {
@@ -324,6 +332,10 @@ export async function runMarketplaceAutoSweep(deps: MarketplaceAutoSweepDeps): P
     }
     const usage = await deps.readUsage();
     const order = await deps.readOrder(row.id);
+    if (marketplaceOrderIsTest(order)) {
+      skipped.push({ orderId: row.id, reason: MARKETPLACE_TEST_ORDER_SKIP });
+      continue;
+    }
     if (!order || !marketplaceOrderHasFetchBounds(order)) {
       skipped.push({ orderId: row.id, reason: marketplaceTooBroadSkipReason(order) });
       continue;
@@ -333,6 +345,7 @@ export async function runMarketplaceAutoSweep(deps: MarketplaceAutoSweepDeps): P
     const est = deps.estimateForOrder({
       order,
       maxItems: items.maxItems,
+      platforms: [...MARKETPLACE_AUTO_PLATFORMS],
       ...(deps.providers ? { providers: deps.providers } : {}),
     });
     const estimates = est.estimates.filter((e) => e.configured);
@@ -357,6 +370,7 @@ export async function runMarketplaceAutoSweep(deps: MarketplaceAutoSweepDeps): P
       orderId: row.id,
       order,
       trigger: "auto",
+      platforms: [...MARKETPLACE_AUTO_PLATFORMS],
       maxItems: items.maxItems,
       sortNewest: items.sortNewest,
       now: new Date().toISOString(),
@@ -372,6 +386,14 @@ export async function runMarketplaceAutoSweep(deps: MarketplaceAutoSweepDeps): P
       skipped.push({ orderId: row.id, reason: "budžets sasniegts" });
       for (const rest of due.slice(due.indexOf(row) + 1)) {
         skipped.push({ orderId: rest.id, reason: "budžets sasniegts" });
+      }
+      break;
+    } else if (loaded.error && mobileDeAutomationShouldStopSweep(loaded.error)) {
+      status = "skipped";
+      reason = loaded.error;
+      skipped.push({ orderId: row.id, reason: loaded.error });
+      for (const rest of due.slice(due.indexOf(row) + 1)) {
+        skipped.push({ orderId: rest.id, reason: loaded.error });
       }
       break;
     } else {
@@ -444,7 +466,7 @@ export async function runMarketplaceAutoLoadNow(now = new Date()): Promise<Marke
       }));
     },
     async readOrder(id) {
-      return readIrissPasutijums(id);
+      return readIrissPasutijums(id, { allowCache: true });
     },
     async readListingsRuns() {
       const state = await readMarketplaceListingsState();

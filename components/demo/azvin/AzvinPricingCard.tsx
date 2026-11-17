@@ -18,6 +18,7 @@ import {
 } from "@/lib/azvin-ui-copy";
 import { getTp5UiCopy, type DealerBrandsTipCopy } from "@/lib/test-pricing-5-ui-copy";
 import { sanitizeVinInput } from "@/lib/order-field-validation";
+import { publicAnchorRel } from "@/lib/seo-crawl-links";
 
 function SampleReportPdfIcon() {
   return (
@@ -356,7 +357,7 @@ export function AzvinPricingCard({
           <a
             href={sampleReportHref}
             target="_blank"
-            rel="noopener noreferrer"
+            rel={publicAnchorRel(sampleReportHref, "noopener noreferrer")}
             className={styles.sampleReportLink}
           >
             <SampleReportPdfIcon />

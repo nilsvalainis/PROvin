@@ -116,17 +116,20 @@ function baseDeps(overrides: Partial<MarketplaceAutoSweepDeps> = {}): Marketplac
 }
 
 describe("marketplace auto interval", () => {
-  it("is due when never loaded or last load is at least 3 days ago", () => {
+  it("is due when never loaded or last load is at least the interval ago (3 h rezerve cron nobīdei)", () => {
     expect(orderDueForMarketplaceAuto(null, NOW, 3)).toBe(true);
     expect(orderDueForMarketplaceAuto("2026-10-16T06:00:00.000Z", NOW, 3)).toBe(true);
-    expect(orderDueForMarketplaceAuto("2026-10-16T06:00:01.000Z", NOW, 3)).toBe(false);
+    expect(orderDueForMarketplaceAuto("2026-10-16T09:00:00.000Z", NOW, 3)).toBe(true);
+    expect(orderDueForMarketplaceAuto("2026-10-16T09:00:01.000Z", NOW, 3)).toBe(false);
     expect(orderDueForMarketplaceAuto("2026-10-18T06:00:00.000Z", NOW, 3)).toBe(false);
+    // Nils 30.10: katru dienu - vakardienas 06:00:40 ielāde neatliek šodienas 06:00:05 cron.
+    expect(orderDueForMarketplaceAuto("2026-10-18T06:00:40.000Z", NOW, 1)).toBe(true);
   });
 
-  it("computes next auto from last load plus interval, or next 06:00 UTC when due", () => {
+  it("computes next auto from last load plus interval, or next 07:00 UTC (9:00 Rīgā) when due", () => {
     expect(nextMarketplaceAutoAt("2026-10-18T06:00:00.000Z", NOW, 3)).toBe("2026-10-21T06:00:00.000Z");
-    expect(nextMarketplaceAutoAt(null, NOW, 3)).toBe("2026-10-19T06:00:00.000Z");
-    expect(nextMarketplaceAutoAt("2026-10-10T06:00:00.000Z", NOW, 3)).toBe("2026-10-19T06:00:00.000Z");
+    expect(nextMarketplaceAutoAt(null, NOW, 3)).toBe("2026-10-19T07:00:00.000Z");
+    expect(nextMarketplaceAutoAt("2026-10-10T06:00:00.000Z", NOW, 3)).toBe("2026-10-19T07:00:00.000Z");
   });
 
   it("sorts newest and active orders first and keeps reserved after searching", () => {
@@ -174,7 +177,7 @@ describe("marketplace auto interval", () => {
     expect(lastMarketplaceLoadAt([emptyManual, failedManual], "o1")).toBeNull();
     expect(orderDueForMarketplaceAuto(lastMarketplaceLoadAt([emptyManual, failedManual], "o1"), NOW, 3)).toBe(true);
     expect(nextMarketplaceAutoAt(lastMarketplaceLoadAt([emptyManual, failedManual], "o1"), NOW, 3)).toBe(
-      "2026-10-19T06:00:00.000Z",
+      "2026-10-19T07:00:00.000Z",
     );
     expect(hasPriorMarketplaceLoad([emptyManual, failedManual], "o1")).toBe(false);
 
@@ -310,7 +313,7 @@ describe("marketplace auto budget and skip", () => {
           runRecord({
             id: "prev",
             orderId: "00000000-0000-4000-8000-000000000001",
-            finishedAt: "2026-10-18T06:00:00.000Z",
+            finishedAt: "2026-10-19T02:00:00.000Z",
             trigger: "manual",
           }),
         ],
@@ -420,25 +423,27 @@ describe("marketplace cost-control switches", () => {
     await rm(dir, { recursive: true, force: true });
   });
 
-  it("skips cron auto-load when MARKETPLACE_AUTO_ENABLED is not true", async () => {
+  it("skips cron auto-load when MARKETPLACE_AUTO_ENABLED=false", async () => {
     process.env.MARKETPLACE_LOADS_ENABLED = "true";
+    process.env.MARKETPLACE_AUTO_ENABLED = "false";
     const out = await runMarketplaceAutoLoadNow(NOW);
     expect(out.status).toBe("skipped");
     expect(out.reason).toBe("Automātiskā ielāde izslēgta (izmaksu kontrole)");
     expect(out.loadedCount).toBe(0);
   });
 
-  it("skips cron auto-load when loads are disabled even if auto is on", async () => {
-    process.env.MARKETPLACE_AUTO_ENABLED = "true";
-    delete process.env.MARKETPLACE_LOADS_ENABLED;
+  it("Nils 30.10: automātiskā ielāde ieslēgta pēc noklusējuma (bez Apify atslēgas - izlaista ar citu iemeslu)", async () => {
+    delete process.env.MARKETPLACE_AUTO_ENABLED;
+    process.env.MARKETPLACE_LOADS_ENABLED = "true";
+    delete process.env.APIFY_TOKEN;
     const out = await runMarketplaceAutoLoadNow(NOW);
-    expect(out.status).toBe("skipped");
-    expect(out.reason).toBe("Ielāde izslēgta (izmaksu kontrole)");
+    expect(out.reason).not.toBe("Automātiskā ielāde izslēgta (izmaksu kontrole)");
+    delete process.env.MARKETPLACE_LOADS_ENABLED;
   });
 
-  it("does not call the Apify runner without MARKETPLACE_LOADS_ENABLED=true", async () => {
+  it("does not call the Apify runner when MARKETPLACE_LOADS_ENABLED=false", async () => {
     process.env.APIFY_TOKEN = "not-a-real-token";
-    delete process.env.MARKETPLACE_LOADS_ENABLED;
+    process.env.MARKETPLACE_LOADS_ENABLED = "false";
     const runner = vi.fn(async () => ({ ok: true, items: [{ id: "x" }], chargedUsd: 1 }));
     setMarketplaceApifyRunner(runner);
     const out = await runMarketplaceApifyActor({
@@ -451,5 +456,52 @@ describe("marketplace cost-control switches", () => {
     expect(out.error).toBe("loads_disabled");
     expect(out.items).toEqual([]);
     expect(runner).not.toHaveBeenCalled();
+  });
+
+  it("stops later orders when mobile.de returns an Akamai denial", async () => {
+    const loadForOrder = vi.fn(async () => ({
+      ok: false,
+      blocked: true,
+      error: "Access Denied Reference #18.5f1f1602.1793612256.2b847f83 https://errors.edgesuite.net/x",
+      added: 0,
+      grouped: 0,
+      estimatedUsd: 0.05,
+      remainingMonthlyUsd: 20,
+    }));
+    const out = await runMarketplaceAutoSweep(
+      baseDeps({
+        listActiveOrders: async () => [
+          brief({ id: "00000000-0000-4000-8000-000000000001" }),
+          brief({ id: "00000000-0000-4000-8000-000000000002" }),
+        ],
+        loadForOrder,
+      }),
+    );
+    expect(loadForOrder).toHaveBeenCalledTimes(1);
+    expect(out.status).toBe("skipped");
+    expect(out.skipped).toHaveLength(2);
+  });
+
+  it("continues the sweep after a plain Apify failure", async () => {
+    const loadForOrder = vi.fn(async () => ({
+      ok: false,
+      error: "Avota kļūda: mobile.de: Apify failed",
+      added: 0,
+      grouped: 0,
+      estimatedUsd: 0.05,
+      remainingMonthlyUsd: 20,
+    }));
+    const out = await runMarketplaceAutoSweep(
+      baseDeps({
+        listActiveOrders: async () => [
+          brief({ id: "00000000-0000-4000-8000-000000000001" }),
+          brief({ id: "00000000-0000-4000-8000-000000000002" }),
+        ],
+        loadForOrder,
+      }),
+    );
+    expect(loadForOrder).toHaveBeenCalledTimes(2);
+    expect(out.skipped).toHaveLength(2);
+    expect(out.status).toBe("ok");
   });
 });

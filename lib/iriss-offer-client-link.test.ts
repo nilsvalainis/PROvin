@@ -22,6 +22,8 @@ import {
   irissOfferClientLinkStatus,
   irissOfferClientLinkStatusLabel,
   irissOfferLinkExpiresAt,
+  irissOfferLinkExpiresAtForDeadline,
+  irissOfferDeadlinesByOfferId,
   irissOfferPublicViewContainsSecret,
   irissOfferPublicViewKeys,
   isIrissOfferLinkPath,
@@ -173,6 +175,49 @@ describe("IRISS offer client link status", () => {
     expect(isIrissOfferLinkUsable(sampleRecord(token), Date.parse("2030-01-01T00:00:00.000Z"))).toBe(true);
   });
 
+  it("shows Beidzies after the deadline without a decision and refuses a late decision", () => {
+    const deadlineAt = "2026-10-26T16:00:00.000Z";
+    const deadline = Date.parse(deadlineAt);
+    const viewed = sampleRecord(token, { firstViewedAt: "2026-10-20T09:00:00.000Z", viewCount: 1 });
+    expect(irissOfferClientLinkStatus(viewed, { deadlineAt, nowMs: deadline - 1 })).toBe("viewed");
+    expect(irissOfferClientLinkStatus(viewed, { deadlineAt, nowMs: deadline })).toBe("expired");
+    expect(irissOfferClientLinkStatusLabel(viewed, { deadlineAt, nowMs: deadline })).toBe("Beidzies");
+    expect(toIrissOfferClientLinkAdminView(viewed, { deadlineAt, nowMs: deadline })).toMatchObject({
+      status: "expired",
+      statusAt: deadlineAt,
+      deadlineAt,
+    });
+
+    const justInTime = applyIrissOfferLinkResponse(viewed, "approve", "", new Date(deadline - 1).toISOString(), { deadlineAt });
+    expect(justInTime.ok).toBe(true);
+    const late = applyIrissOfferLinkResponse(viewed, "approve", "", new Date(deadline).toISOString(), { deadlineAt });
+    expect(late).toEqual({ ok: false, error: "expired" });
+    const lateQuestion = applyIrissOfferLinkResponse(viewed, "question", "Vai var pagarināt?", new Date(deadline + 1).toISOString(), { deadlineAt });
+    expect(lateQuestion.ok).toBe(true);
+
+    if (!justInTime.ok) return;
+    expect(irissOfferClientLinkStatus(justInTime.record, { deadlineAt, nowMs: deadline + 1 })).toBe("approved");
+    const repeat = applyIrissOfferLinkResponse(justInTime.record, "approve", "", new Date(deadline + 1).toISOString(), { deadlineAt });
+    expect(repeat).toMatchObject({ ok: true, unchanged: true });
+  });
+
+  it("keeps old links without a deadline exactly as before", () => {
+    const viewed = sampleRecord(token, { firstViewedAt: "2026-10-20T09:00:00.000Z", viewCount: 1 });
+    expect(irissOfferClientLinkStatus(viewed, { deadlineAt: "", nowMs: Date.parse("2030-01-01T00:00:00.000Z") })).toBe("viewed");
+    const approved = applyIrissOfferLinkResponse(viewed, "approve", "", "2030-01-01T00:00:00.000Z");
+    expect(approved.ok).toBe(true);
+    expect(toIrissOfferClientLinkAdminView(viewed).deadlineAt).toBe("");
+  });
+
+  it("keeps a deadline link open 30 days after the deadline", () => {
+    expect(irissOfferLinkExpiresAtForDeadline("2026-10-26T16:00:00.000Z")).toBe("2026-11-25T16:00:00.000Z");
+    expect(irissOfferLinkExpiresAtForDeadline("")).toBe("");
+    const a = emptyIrissOfferRecord(OFFER_ID, "2026-10-15T08:00:00.000Z", "A");
+    a.validUntilAt = "2026-10-26T16:00:00.000Z";
+    const b = emptyIrissOfferRecord("33333333-3333-4333-8333-333333333333", "2026-10-15T08:00:00.000Z", "B");
+    expect(irissOfferDeadlinesByOfferId([a, b])).toEqual({ [OFFER_ID]: "2026-10-26T16:00:00.000Z" });
+  });
+
   it("caps the question and drops tags", () => {
     expect(sanitizeIrissOfferQuestion("<b>Sveiki</b>")).toBe("Sveiki");
     expect(sanitizeIrissOfferQuestion("a".repeat(500)).length).toBe(400);
@@ -231,6 +276,9 @@ describe("IRISS offer public view", () => {
     expect(view.notes).not.toContain("<script>");
     expect(view.photos).toEqual([{ id: "33333333-3333-4333-8333-333333333333" }]);
     expect(view.validDays).toBe("7 dienas");
+    expect(view.deadlineAt).toBe("");
+    expect(view.decidedAt).toBe("");
+    expect(Number.isFinite(Date.parse(view.serverNow))).toBe(true);
     expect(Object.keys(view)).toEqual([...irissOfferPublicViewKeys()]);
     expect(blob).not.toContain(order.id);
     expect(blob).not.toContain(order.phone);
@@ -249,6 +297,20 @@ describe("IRISS offer public view", () => {
     expect(isIrissOfferPublicImageMime("image/jpeg")).toBe(true);
     expect(isSafeIrissOfferAttachmentId("../etc/passwd")).toBe(false);
     expect(isSafeIrissOfferAttachmentId("33333333-3333-4333-8333-333333333333")).toBe(true);
+  });
+
+  it("passes the exact deadline and server time to the client page", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-15T08:00:00.000Z", "Piedāvājums 1");
+    offer.validUntilAt = "2026-10-26T16:00:00.000Z";
+    const now = Date.parse("2026-10-23T10:00:00.000Z");
+    const view = buildIrissOfferPublicView(
+      offer,
+      { decision: "approve", question: "", decidedAt: "2026-10-24T08:00:00.000Z" },
+      { nowMs: now },
+    );
+    expect(view.deadlineAt).toBe("2026-10-26T16:00:00.000Z");
+    expect(view.serverNow).toBe("2026-10-23T10:00:00.000Z");
+    expect(view.decidedAt).toBe("2026-10-24T08:00:00.000Z");
   });
 
   it("puts the cover photo first in the public gallery", () => {
@@ -276,6 +338,83 @@ describe("IRISS offer public view", () => {
       "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
     ]);
   });
+
+  it("j41 F6: hides a section on the public page when its PDF block is toggled off", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-15T08:00:00.000Z", "Piedāvājums 1");
+    offer.hasFullServiceHistory = true;
+    offer.visualAssessment = "Labs stāvoklis";
+    offer.specialNotes = "Garantija 3 mēneši";
+    offer.carPrice = "15000";
+    offer.blocks = [
+      { id: "vehicle", kind: "vehicle", title: "Transportlīdzeklis", visible: true },
+      { id: "assessment", kind: "assessment", title: "Novērtējums klientam", visible: false },
+      { id: "warranty", kind: "warranty", title: "Garantija un piegāde", visible: true },
+      { id: "pricing", kind: "pricing", title: "Cenas", visible: false },
+    ];
+    const view = buildIrissOfferPublicView(offer, { decision: "", question: "" });
+    // j50 korekcija: "Novērtējums klientam" kontrolē tikai atzīmes/kopsavilkumu, nevis Īpašas atzīmes/Vizuālo novērtējumu -
+    // šiem ir savi, atsevišķi slēdži, kas vecam piedāvājumam (blocks saraksts tos nesatur) tiek atjaunoti kā redzami.
+    expect(view.checks).toEqual([]);
+    expect(view.notes).toBe("");
+    expect(view.specialNotes).toBe("Garantija 3 mēneši");
+    expect(view.visualAssessment).toBe("Labs stāvoklis");
+    expect(view.technicalAssessment).toBe("");
+    expect(view.prices).toEqual([]);
+    expect(view.total).toBe("");
+  });
+
+  it("j41 F6: shows a custom text/table PDF block (added via +Teksts/+Tabula) on the public page when visible", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-15T08:00:00.000Z", "Piedāvājums 1");
+    offer.blocks = [
+      { id: "text-1", kind: "text", title: "Piezīme", visible: true, html: "Rezervēts līdz piektdienai" },
+      { id: "text-2", kind: "text", title: "Slēpts", visible: false, html: "Nerādīt" },
+      {
+        id: "table-1",
+        kind: "table",
+        title: "Papildu aprīkojums",
+        visible: true,
+        rows: [{ id: "r1", label: "Riepas", value: "Ziemas + vasaras" }],
+      },
+    ];
+    const view = buildIrissOfferPublicView(offer, { decision: "", question: "" });
+    expect(view.customBlocks).toEqual([
+      { id: "text-1", title: "Piezīme", kind: "text", html: "Rezervēts līdz piektdienai", rows: [] },
+      {
+        id: "table-1",
+        title: "Papildu aprīkojums",
+        kind: "table",
+        html: "",
+        rows: [{ label: "Riepas", value: "Ziemas + vasaras" }],
+      },
+    ]);
+  });
+
+  it("j50 correction: shows Īpašas atzīmes/Vizuālais/Tehniskais novērtējums as independent fields, each visible by default", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-15T08:00:00.000Z", "Piedāvājums 1");
+    offer.specialNotes = "Īpašas atzīmes teksts";
+    offer.visualAssessment = "Vizuālais teksts";
+    offer.technicalAssessment = "Tehniskais teksts";
+    const view = buildIrissOfferPublicView(offer, { decision: "", question: "" });
+    expect(view.specialNotes).toBe("Īpašas atzīmes teksts");
+    expect(view.visualAssessment).toBe("Vizuālais teksts");
+    expect(view.technicalAssessment).toBe("Tehniskais teksts");
+  });
+
+  it("j50 correction: hides only the one section whose own toggle is off, keeping the other two visible", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-15T08:00:00.000Z", "Piedāvājums 1");
+    offer.specialNotes = "Slēpts teksts";
+    offer.visualAssessment = "Redzams teksts";
+    offer.technicalAssessment = "Arī redzams teksts";
+    offer.blocks = [
+      { id: "specialNotes", kind: "specialNotes", title: "Īpašas atzīmes", visible: false },
+      { id: "visualAssessment", kind: "visualAssessment", title: "Vizuālais novērtējums", visible: true },
+    ];
+    const view = buildIrissOfferPublicView(offer, { decision: "", question: "" });
+    expect(view.specialNotes).toBe("");
+    expect(view.visualAssessment).toBe("Redzams teksts");
+    // Tehniskā novērtējuma slēdzis blocks sarakstā nav - noklusējums ir redzams.
+    expect(view.technicalAssessment).toBe("Arī redzams teksts");
+  });
 });
 
 describe("IRISS offer client link share copy", () => {
@@ -286,7 +425,8 @@ describe("IRISS offer client link share copy", () => {
     const mail = buildIrissOfferClientLinkMailto("anna@example.com", message);
     expect(message.subject.startsWith("Dzintarzeme Auto: piedāvājums")).toBe(true);
     expect(message.text).toContain(url);
-    expect(message.text).toContain("SIA ĪRISS");
+    // Nils 30.10: klientam SIA ĪRISS nemin (Dzintarzeme Auto zīmols).
+    expect(message.text).not.toContain("SIA ĪRISS");
     expect(message.text).not.toContain("PROVIN");
     expect(wa.startsWith("https://wa.me/37120000000?text=")).toBe(true);
     expect(decodeURIComponent(wa)).toContain(url);
@@ -321,5 +461,33 @@ describe("IRISS offer client link record parse", () => {
     expect(admin.path).toBe(`/p/${token}`);
     expect(admin.statusLabel).toBe("Nosūtīts");
     expect(JSON.stringify(admin)).not.toContain(ORDER_ID);
+  });
+});
+
+describe("buildIrissOfferPublicView - «Stāvoklis» (FABLE F3: tehniskais teksts 2x)", () => {
+  const tech = "TA derīga līdz: 01.2021. Īpašnieku skaits: 4.";
+
+  it("tehniskais novērtējums netiek dublēts «Stāvoklis» no mantotā comment", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-26T06:00:00.000Z", "Piedāvājums 1");
+    offer.technicalAssessment = tech;
+    offer.comment = tech;
+    const view = buildIrissOfferPublicView(offer, { decision: "", question: "" });
+    expect(view.technicalAssessment).toBe(tech);
+    expect(view.notes).toBe("");
+  });
+
+  it("izslēgts tehniskais novērtējums neparādās caur comment", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-26T06:00:00.000Z", "Piedāvājums 1");
+    offer.technicalAssessment = tech;
+    offer.comment = tech;
+    offer.blocks = [{ id: "technicalAssessment", kind: "technicalAssessment", title: "Tehniskais novērtējums", visible: false }];
+    const blob = JSON.stringify(buildIrissOfferPublicView(offer, { decision: "", question: "" }));
+    expect(blob).not.toContain("Īpašnieku skaits");
+  });
+
+  it("vecs piedāvājums tikai ar comment - rāda kā līdz šim", () => {
+    const offer = emptyIrissOfferRecord(OFFER_ID, "2026-10-26T06:00:00.000Z", "Piedāvājums 1");
+    offer.comment = "Vecs komentārs";
+    expect(buildIrissOfferPublicView(offer, { decision: "", question: "" }).notes).toBe("Vecs komentārs");
   });
 });

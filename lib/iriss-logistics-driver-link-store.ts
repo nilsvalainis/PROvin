@@ -8,6 +8,7 @@ import { readLogisticsJsonFile, writeLogisticsJsonFile } from "@/lib/iriss-logis
 import {
   DRIVER_LINK_TTL_DAYS,
   driverLinkExpired,
+  isDriverLinkBucket,
   isDriverLinkToken,
   type DriverLinkBucket,
   type DriverLinkRecord,
@@ -23,7 +24,7 @@ async function readAll(): Promise<DriverLinkRecord[]> {
       Boolean(r) &&
       typeof r === "object" &&
       typeof (r as DriverLinkRecord).token === "string" &&
-      ((r as DriverLinkRecord).bucket === "next" || (r as DriverLinkRecord).bucket === "after") &&
+      isDriverLinkBucket((r as DriverLinkRecord).bucket) &&
       typeof (r as DriverLinkRecord).expiresAt === "string",
   );
 }

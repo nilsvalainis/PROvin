@@ -1,0 +1,1374 @@
+{
+ "vin": "WBAUY11040F045354",
+ "label": "BMW 320D: CSDD 6, carVertical 40, dīleris 58; negadījumi 3",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 173, saglabāts 2026-09-02; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW 320D",
+   "registrationNumber": "OP4371",
+   "firstRegistration": "2011-04-08",
+   "nextInspectionDate": "2027-08-12",
+   "prevInspectionDate": "2026-08-12",
+   "engineDisplacementCm3": "1995",
+   "enginePowerKw": "135",
+   "fuelType": "",
+   "emissionStandard": "Euro 5 A",
+   "grossMassKg": "2045",
+   "curbMassKg": "1580",
+   "roadTaxEur": "93,00",
+   "registrationStatus": "Uzskaitē",
+   "opacityCoefficient": "0.00",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "VĀCIJA",
+   "ownerCountLatvia": "1",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [
+    {
+     "date": "12.08.2026",
+     "label": "Pirmā reģistrācija"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "Pamatpārbaude",
+    "inspectionDateText": "12.08.2026",
+    "nextInspectionDateText": "",
+    "odometer": "257609",
+    "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+    "ratingLevel": 1,
+    "smokeCoefficient": "0.00",
+    "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+    "defects": [
+     {
+      "code": "3.2.",
+      "rating": "1",
+      "description": "Redzamību vai izturību būtiski neietekmējoši stiklojuma bojājumi."
+     }
+    ]
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "12.08.2026",
+     "odometer": "257609",
+     "country": "Latvija"
+    },
+    {
+     "date": "20.06.2024",
+     "odometer": "231666",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.06.2022",
+     "odometer": "204009",
+     "country": "Vācija"
+    },
+    {
+     "date": "09.06.2022",
+     "odometer": "203436",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.06.2020",
+     "odometer": "172282",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.05.2018",
+     "odometer": "139793",
+     "country": "Vācija"
+    }
+   ]
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.11.2016",
+     "lossAmount": "400 - 500 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.08.2011",
+     "lossAmount": "100 €"
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.08.2026",
+     "odometer": "257609",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.06.2026",
+     "odometer": "257079",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2026",
+     "odometer": "253859",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2025",
+     "odometer": "249394",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2024",
+     "odometer": "233760",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2024",
+     "odometer": "231534",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2023",
+     "odometer": "224617",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2023",
+     "odometer": "220873",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2023",
+     "odometer": "216660",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2022",
+     "odometer": "208285",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2021",
+     "odometer": "194343",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2021",
+     "odometer": "184338",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2020",
+     "odometer": "178322",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2020",
+     "odometer": "172456",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2019",
+     "odometer": "165035",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2019",
+     "odometer": "159519",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2019",
+     "odometer": "155961",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2018",
+     "odometer": "138636",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2018",
+     "odometer": "136472",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2017",
+     "odometer": "131885",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2017",
+     "odometer": "119389",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2017",
+     "odometer": "114326",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2016",
+     "odometer": "109939",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2016",
+     "odometer": "104664",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2016",
+     "odometer": "97076",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2015",
+     "odometer": "87989",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2015",
+     "odometer": "86241",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2015",
+     "odometer": "81138",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2014",
+     "odometer": "72288",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2014",
+     "odometer": "60272",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2014",
+     "odometer": "57884",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2013",
+     "odometer": "51448",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2013",
+     "odometer": "45891",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2013",
+     "odometer": "41364",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2012",
+     "odometer": "33156",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2012",
+     "odometer": "21377",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2012",
+     "odometer": "19856",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2011",
+     "odometer": "12450",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2011",
+     "odometer": "12347",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2011",
+     "odometer": "11",
+     "country": ""
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.11.2016",
+     "lossAmount": "251 - 500 €"
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "26.06.2026",
+     "odometer": "257132",
+     "country": "Vācija"
+    },
+    {
+     "date": "09.06.2026",
+     "odometer": "257204",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.05.2026",
+     "odometer": "257124",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.04.2026",
+     "odometer": "256413",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.04.2026",
+     "odometer": "254024",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.03.2026",
+     "odometer": "253984",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.11.2025",
+     "odometer": "249517",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.09.2024",
+     "odometer": "234100",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.08.2024",
+     "odometer": "233885",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.06.2024",
+     "odometer": "231659",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.12.2023",
+     "odometer": "224742",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.10.2023",
+     "odometer": "221056",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.10.2023",
+     "odometer": "220998",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.06.2023",
+     "odometer": "216785",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.10.2022",
+     "odometer": "208410",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.10.2022",
+     "odometer": "208392",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.11.2021",
+     "odometer": "194468",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.03.2021",
+     "odometer": "184461",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.10.2020",
+     "odometer": "178543",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2020",
+     "odometer": "178447",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.06.2020",
+     "odometer": "172569",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.06.2020",
+     "odometer": "172275",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.12.2019",
+     "odometer": "166204",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.11.2019",
+     "odometer": "165160",
+     "country": "Vācija"
+    },
+    {
+     "date": "03.07.2019",
+     "odometer": "159634",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.04.2019",
+     "odometer": "156086",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.05.2018",
+     "odometer": "139790",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.04.2018",
+     "odometer": "138761",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.03.2018",
+     "odometer": "136565",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.12.2017",
+     "odometer": "132010",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.04.2017",
+     "odometer": "119514",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.01.2017",
+     "odometer": "114451",
+     "country": "Vācija"
+    },
+    {
+     "date": "07.11.2016",
+     "odometer": "110055",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.09.2016",
+     "odometer": "106406",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2016",
+     "odometer": "104789",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.03.2016",
+     "odometer": "97126",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.10.2015",
+     "odometer": "89523",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.09.2015",
+     "odometer": "88657",
+     "country": "Vācija"
+    },
+    {
+     "date": "09.09.2015",
+     "odometer": "88039",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.07.2015",
+     "odometer": "86291",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.04.2015",
+     "odometer": "81188",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.03.2015",
+     "odometer": "81188",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.11.2014",
+     "odometer": "72338",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.05.2014",
+     "odometer": "60322",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.04.2014",
+     "odometer": "58570",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.03.2014",
+     "odometer": "57934",
+     "country": "Vācija"
+    },
+    {
+     "date": "03.03.2014",
+     "odometer": "56768",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.11.2013",
+     "odometer": "51498",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.07.2013",
+     "odometer": "45941",
+     "country": "Vācija"
+    },
+    {
+     "date": "18.05.2013",
+     "odometer": "44002",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.04.2013",
+     "odometer": "41414",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.10.2012",
+     "odometer": "33206",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.08.2012",
+     "odometer": "27740",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.03.2012",
+     "odometer": "19906",
+     "country": "Vācija"
+    },
+    {
+     "date": "21.11.2011",
+     "odometer": "12500",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.10.2011",
+     "odometer": "12500",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.09.2011",
+     "odometer": "12397",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.09.2011",
+     "odometer": "22997",
+     "country": "Vācija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "26.06.2026",
+     "odometer": "257132",
+     "location": "Dīlera ID: 04553-5",
+     "works": "Eļļas filtra komplekts\nCilindra galvas skrūvju komplekts, Chain tensioner, T-Connector, Anti-freeze\nDetalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "09.06.2026",
+     "odometer": "257204",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "15.05.2026",
+     "odometer": "257124",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "28.04.2026",
+     "odometer": "256418",
+     "location": "Dīlera ID: 04553-5",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "28.04.2026",
+     "odometer": "256413",
+     "location": "Autohaus Kühnert GmbH&Co. KG , Reichenbach",
+     "works": "Standarta apkopes apjoms, Aizmugurējās bremzes"
+    },
+    {
+     "date": "20.04.2026",
+     "odometer": "254024",
+     "location": "Dīlera ID: 04553-5",
+     "works": "Bridgestone Potenza RE 050 A I R"
+    },
+    {
+     "date": "05.03.2026",
+     "odometer": "254021",
+     "location": "Dīlera ID: 04553-5",
+     "works": "Drošības spilvena modulis (vadītāja pusē)"
+    },
+    {
+     "date": "05.03.2026",
+     "odometer": "253988",
+     "location": "Dīlera ID: 04553-5",
+     "works": "Oil filler neck, Sealing cap\nOil filler neck, Vakuuma šļūtene\nBremžu disks (ventilēts)\nBremžu kluču komplekts\nBremžu kluču nodiluma sensors, Klipsis\nBremžu kluču nodiluma sensors, Torx skrūve ar paplāksni, Iekšējā sešstūra skrūve, Cilindra galvas vāks, Blīvējuma turētājs, Profila blīve, Tērauda blīve, Blīvgredzens, Skrūve, Caurule, O-gredzens"
+    },
+    {
+     "date": "05.03.2026",
+     "odometer": "253984",
+     "location": "Autohaus Kühnert GmbH&Co. KG , Reichenbach",
+     "works": "Standarta apkopes apjoms, Aizmugurējās bremzes"
+    },
+    {
+     "date": "14.11.2025",
+     "odometer": "249519",
+     "location": "Dīlera ID: 04553-5",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "14.11.2025",
+     "odometer": "249517",
+     "location": "Autohaus Kühnert GmbH&Co. KG , Reichenbach",
+     "works": "Motoreļļa\nSalona filtrs\nStandarta apkopes apjoms"
+    },
+    {
+     "date": "05.09.2024",
+     "odometer": "234110",
+     "location": "Dīlera ID:",
+     "works": "Sajūga detaļu komplekts, Ball pin, Atsperes skava, Twin Mass Flywheel, ISA skrūve, V-veida savilcējs, Blīve, Izpūtēja skava, Centering sleeve, Pašbloķējošs sešstūra uzgrieznis, Sešstūra skrūve"
+    },
+    {
+     "date": "05.09.2024",
+     "odometer": "234100",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "27.08.2024",
+     "odometer": "233885",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "20.06.2024",
+     "odometer": "231666",
+     "location": "Dīlera ID:",
+     "works": "Bremžu šķidrums DOT4 LV, zema viskozitāte"
+    },
+    {
+     "date": "20.06.2024",
+     "odometer": "231659",
+     "location": "Autohaus Kühnert GmbH&Co. KG , Reichenbach",
+     "works": "Bremžu šķidrums"
+    },
+    {
+     "date": "22.12.2023",
+     "odometer": "224742",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "22.12.2023",
+     "odometer": "",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Spuldze"
+    },
+    {
+     "date": "06.10.2023",
+     "odometer": "221058",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "BMW motoreļļa LL04 0W, Šļūtenes skava\nEļļas filtra komplekts\nDegvielas filtrs\nGaisa filtrs\nSalona filtrs (ar aktivēto ogli), Carrier, door pull, labajā pusē, Clasp, inside door handle, labajā pusē\nEn. code CIC map Europe Premium update"
+    },
+    {
+     "date": "06.10.2023",
+     "odometer": "221056",
+     "location": "Autohaus Kühnert GmbH&Co. KG , Reichenbach",
+     "works": "Motoreļļa\nDegvielas filtrs\nGaisa filtrs\nSalona filtrs"
+    },
+    {
+     "date": "04.10.2023",
+     "odometer": "220998",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "06.06.2023",
+     "odometer": "216785",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "25.04.2023",
+     "odometer": "",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Pašbloķējošs uzgrieznis ar atloku, Blīvpaplāksne, Amortizatora statne (priekšā, kreisajā pusē), Amortizatora statne (priekšā, labajā pusē), Sešstūra skrūve ar paplāksni, Additional damper, priekšā, Protection tube, Atsperes paliktnis (apakšējais), Pašbloķējošs sešstūra uzgrieznis"
+    },
+    {
+     "date": "06.10.2022",
+     "odometer": "208439",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Langenwetzendorf",
+     "works": "Oil for manual gearbox MTF LT, Torx skrūve ar paplāksni\nREMAN 6 Gang Getriebe"
+    },
+    {
+     "date": "06.10.2022",
+     "odometer": "208410",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "06.10.2022",
+     "odometer": "208392",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "08.11.2021",
+     "odometer": "194476",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "BMW motoreļļa LL04 0W\nEļļas filtra komplekts\nSalona filtrs (ar aktivēto ogli)"
+    },
+    {
+     "date": "08.11.2021",
+     "odometer": "194468",
+     "location": "Autohaus Kühnert GmbH&Co. KG , Reichenbach",
+     "works": "Motoreļļa\nSalona filtrs"
+    },
+    {
+     "date": "16.03.2021",
+     "odometer": "184463",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Apsildes vadības remonta vads, Blower regulator"
+    },
+    {
+     "date": "16.03.2021",
+     "odometer": "184461",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "05.10.2020",
+     "odometer": "178543",
+     "location": "Autohaus Kühnert GmbH&Co. KG , Reichenbach",
+     "works": "Bremžu kluču komplekts\nBremžu kluču nodiluma sensors, Klipsis\nBremžu kluču nodiluma sensors\nBremžu kluču pasta\nBremžu disks (ventilēts), Iekšējā sešstūra skrūve\nPriekšējās bremzes, Tehniskā pārbaude servisā"
+    },
+    {
+     "date": "01.10.2020",
+     "odometer": "178447",
+     "location": "Autohaus Kühnert GmbH&Co. KG , Reichenbach",
+     "works": "Priekšējās bremzes, detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "11.06.2020",
+     "odometer": "172569",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "04.06.2020",
+     "odometer": "172581",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Spuldze, Amortizators (aizmugurē), Sešstūra uzgrieznis ar atloku, Guide support, upper part, Auxiliary damper, aizmugurē, Sealing grommet, Guide support, lower part"
+    },
+    {
+     "date": "04.06.2020",
+     "odometer": "172275",
+     "location": "Autohaus Kühnert GmbH&Co. KG , Reichenbach",
+     "works": "Bremžu šķidrums, Obligātā tehniskā apskate"
+    },
+    {
+     "date": "04.12.2019",
+     "odometer": "166214",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "BMW motoreļļa LL04 0W\nEļļas filtra komplekts\nGaisa filtrs\nDegvielas filtrs, Šļūtenes skava\nSalona filtrs (ar aktivēto ogli)"
+    },
+    {
+     "date": "04.12.2019",
+     "odometer": "166204",
+     "location": "Autohaus Kühnert, Reichenbach",
+     "works": "Motoreļļa\nDegvielas filtrs\nGaisa filtrs\nSalona filtrs"
+    },
+    {
+     "date": "08.11.2019",
+     "odometer": "165160",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "03.07.2019",
+     "odometer": "159644",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Remonta vads, B+"
+    },
+    {
+     "date": "03.07.2019",
+     "odometer": "159634",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "25.04.2019",
+     "odometer": "156086",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Oriģinālais BMW AGM akumulators"
+    },
+    {
+     "date": "16.05.2018",
+     "odometer": "139798",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "BMW motoreļļa LL04 0W\nSalona filtrs (ar aktivēto ogli)\nEļļas filtra komplekts\nBremžu šķidrums DOT4 LV, zema viskozitāte\nBremžu kluču komplekts\nBremžu kluču nodiluma sensors\nBremžu kluču pasta\nBremžu tīrītājs (bez acetona)\nPārbaudes uzlīmju komplekts (izplūdes gāzēm)"
+    },
+    {
+     "date": "16.05.2018",
+     "odometer": "139790",
+     "location": "Autohaus Kühnert GmbH&Co. KG , Reichenbach",
+     "works": "Motoreļļa\nSalona filtrs\nBremžu šķidrums, Aizmugurējās bremzes"
+    },
+    {
+     "date": "30.04.2018",
+     "odometer": "138761",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "14.03.2018",
+     "odometer": "136597",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Universal joint, Sešstūra skrūve, Pašbloķējošs sešstūra uzgrieznis"
+    },
+    {
+     "date": "14.03.2018",
+     "odometer": "136565",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "06.12.2017",
+     "odometer": "132010",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "28.04.2017",
+     "odometer": "119522",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "28.04.2017",
+     "odometer": "119514",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "24.01.2017",
+     "odometer": "114461",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "BMW motoreļļa LL04 0W\nEļļas filtra komplekts\nGaisa filtrs\nDegvielas filtrs, Šļūtenes skava\nSalona filtrs (ar aktivēto ogli)\nSalona filtra korpusa tīrītājs"
+    },
+    {
+     "date": "24.01.2017",
+     "odometer": "114451",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "07.11.2016",
+     "odometer": "110064",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Akumulators\nC-veida skavas uzgrieznis, pašbloķējošs, Skrūve ar cilindrisku galvu, Plastmasas uzgrieznis ar paplāksni, Stiprinājuma detaļas, buferis (aizmugurē), Guide for tail lamp, kreisajā pusē, Guide for tail lamp, labajā pusē, Vadīkla, centrā (aizmugurē), Covering cap left, Covering cap right, Insert, bumper, aizmugurē, Bufera vadīkla, sānu (kreisajā pusē), Bufera vadīkla, sānu (labajā pusē), Vāks, PDC turētājs, ārējais (kreisajā pusē), PDC turētājs, ārējais (labajā pusē), Flap, towing eye, primed, Panel, bumper, primed, aizmugurē, PDC turētājs, iekšējais (kreisajā pusē), PDC turētājs, iekšējais (labajā pusē)"
+    },
+    {
+     "date": "07.11.2016",
+     "odometer": "110055",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "08.09.2016",
+     "odometer": "106416",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Atsaistes elements, Izpūtēja skava, V-veida savilcējs, Blīve"
+    },
+    {
+     "date": "08.09.2016",
+     "odometer": "106406",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "01.08.2016",
+     "odometer": "104789",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "11.03.2016",
+     "odometer": "97126",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "02.10.2015",
+     "odometer": "89523",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Bremžu kluču komplekts\nBremžu disks (ventilēts), Iekšējā sešstūra skrūve, Klipsis\nBremžu kluču nodiluma sensors\nBremžu kluču pasta, Auswuchtgewicht\nKlipsis"
+    },
+    {
+     "date": "19.09.2015",
+     "odometer": "88657",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "09.09.2015",
+     "odometer": "88039",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Motoreļļa SAE 0W-40 Longlife\nEļļas filtra komplekts\nSalona filtrs (ar aktivēto ogli)\nSalona filtra korpusa tīrītājs"
+    },
+    {
+     "date": "14.07.2015",
+     "odometer": "86291",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "13.04.2015",
+     "odometer": "81188",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Riepas ventilis, Bridgestone Potenza RE 050 A I R\nKey Read History\nAuswuchtgewicht"
+    },
+    {
+     "date": "04.11.2014",
+     "odometer": "72338",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Auswuchtgewicht"
+    },
+    {
+     "date": "08.05.2014",
+     "odometer": "60322",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "08.04.2014",
+     "odometer": "58570",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Motoreļļa SAE 0W-40 Longlife\nEļļas filtra komplekts, Anti-freeze\nSalona filtrs (ar aktivēto ogli)\nSalona filtra korpusa tīrītājs\nGaisa filtrs\nDegvielas filtrs, Šļūtenes skava\nBremžu šķidrums DOT4 LV, zema viskozitāte, Klipsis\nBremžu kluču komplekts\nBremžu kluču nodiluma sensors\nBremžu kluču pasta"
+    },
+    {
+     "date": "25.03.2014",
+     "odometer": "57934",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "03.03.2014",
+     "odometer": "56768",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "08.11.2013",
+     "odometer": "51498",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Auswuchtgewicht"
+    },
+    {
+     "date": "10.07.2013",
+     "odometer": "45941",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "REP.SATZ REIFEN"
+    },
+    {
+     "date": "18.05.2013",
+     "odometer": "44009",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Klipsis (melna)"
+    },
+    {
+     "date": "18.05.2013",
+     "odometer": "44002",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "12.04.2013",
+     "odometer": "41414",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "AUSWUCHTGEWICHT"
+    },
+    {
+     "date": "25.10.2012",
+     "odometer": "33206",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Riteņu uzglabāšana un tīrīšana, AUSWUCHTGEWICHT"
+    },
+    {
+     "date": "16.08.2012",
+     "odometer": "27740",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "16.08.2012",
+     "odometer": "21427",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Motoreļļa SAE 0W-40 Longlife\nEļļas filtra komplekts\nSalona filtrs (ar aktivēto ogli)"
+    },
+    {
+     "date": "19.03.2012",
+     "odometer": "19906",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Detalizēts darbu saraksts atskaitē nav pieejams"
+    },
+    {
+     "date": "02.12.2011",
+     "odometer": "",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Reichenbach",
+     "works": "Motoreļļa SAE 5W-30 Longlife\nLietoti ziemas riteņi, alumīnija, 205/55 R16 RSC Goodyear, Anti-freeze"
+    },
+    {
+     "date": "21.11.2011",
+     "odometer": "12500",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Saalfeld/Saale",
+     "works": "Motoreļļa SAE 0W-40 Longlife"
+    },
+    {
+     "date": "23.09.2011",
+     "odometer": "12397",
+     "location": "",
+     "works": "Key Read History"
+    },
+    {
+     "date": "22.09.2011",
+     "odometer": "22997",
+     "location": "Autohaus Kühnert GmbH & Co. KG, Saalfeld/Saale",
+     "works": "Motoreļļa SAE 0W-40 Longlife\nTīrīšanas lupatiņas Wypall L, Universāls tīrīšanas līdzeklis (ārējais)"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": []
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "BMW E91",
+     "modelSeries": "E91",
+     "vinCode": "WBAUY11040F045354",
+     "vehicleType": "UY11",
+     "transmission": "MECH",
+     "steeringSide": "LL",
+     "engineCode": "N47T",
+     "engineNumber": "85557769",
+     "body": "TOU",
+     "drive": "HECK",
+     "power": "135 kW",
+     "integrationLevel": "E89X-11-03-502",
+     "currentILevel": "E89X-11-03-502",
+     "developmentCode": "E91",
+     "modelCode": "UY11",
+     "productionDate": "30.03.2011",
+     "firstRegistration": "11.04.2011",
+     "warrantyStartDate": "08.04.2011",
+     "countryRegion": "EUR",
+     "color": "space-grey metallic",
+     "colorCode": "0A52",
+     "interior": "Leather Dakota/black/contrast",
+     "interiorCode": "LCNL",
+     "fuel": "",
+     "displacement": ""
+    }
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "certificate": {
+    "issuedAt": "02.09.2026 10:03:28",
+    "vehicleLine": "Transportlīdzeklis BMW 320D, izlaiduma gads 2011. Valsts numura zīme OP4371.",
+    "makeModel": "BMW 320D",
+    "year": "2011",
+    "plate": "OP4371",
+    "accidentCount": "0",
+    "insuredFrom": "12.08.2026",
+    "insuredTo": "12.09.2026",
+    "insuredDays": "32",
+    "claims": [],
+    "footerNote": "Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas."
+   }
+  },
+  "tirgus": {
+   "listedForSale": "8",
+   "listingCreated": "25.08.2026",
+   "priceDrop": "€ -105",
+   "priceHistory": [
+    {
+     "date": "30.08.2026",
+     "price": 6890,
+     "mileage": 258000,
+     "year": 2011,
+     "delta": -60
+    },
+    {
+     "date": "28.08.2026",
+     "price": 6950,
+     "mileage": 258000,
+     "year": 2011,
+     "delta": -45
+    },
+    {
+     "date": "25.08.2026",
+     "price": 6995,
+     "mileage": 258000,
+     "year": 2011,
+     "delta": 0
+    }
+   ],
+   "listingMileageOdometer": "258 000",
+   "listingMileageDate": "25.08.2026",
+   "listingMileageCountry": "Latvija"
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

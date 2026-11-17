@@ -28,6 +28,7 @@ export default async function IrissScanNewPage({
         initialListOrder={data.initialListOrder}
         newHitsByScan={data.newHitsByScan}
         finds={data.finds}
+        lastReadAt={data.lastReadAt}
         selectedRecord={rec}
         unsavedDraft
         mode="edit"

@@ -20,7 +20,7 @@ export const AI_THIN_DATA_NO_PADDING_RULES = `THIN DATA: Ja avotā ir 0-2 fakti:
 
 export const AI_FACTS_THREE_SOURCES_RULES = `FACT SOURCES (mandatory): Skaitļi, datumi, intervāli, ķēžu skaits, atsaukumu numuri, kodi un ražotāja dati tikai no: (1) šī pasūtījuma avotu datiem, (2) kanoniskās faktu lapas, (3) agregātu faktu bāzes ar statusu verified. Ja tur nav, neraksti. Atsaukuma numuru raksti tikai, ja tas ir dīlera datos vai faktu bāzē.`;
 
-export const AI_EUR_CANON_RULES = `EUR (mandatory, once): Eiro drīkst rakstīt tikai kā avotā fiksētu apdrošināšanas vai zaudējumu summu (AutoDNA, CarVertical, LTAB) negadījumu laukā un tā avota komentārā, kā arī cenu laukā (sludinājums vai tirgus). Remonta, detaļu, apkopes un darba EUR nekad. Kopsavilkumā un tehniskajos riskos EUR nav.`;
+export const AI_EUR_CANON_RULES = `EUR (mandatory, once): Eiro drīkst rakstīt tikai kā avotā fiksētu apdrošināšanas vai zaudējumu summu (AutoDNA, CarVertical, LTAB) negadījumu laukā un tā avota komentārā, kā arī cenu laukā (sludinājums vai tirgus). Remonta, detaļu, apkopes un darba EUR nekad. Kopsavilkumā un tehniskajos riskos EUR nav. Valūta tikai EUR: USD un $ nekad; ASV avota summu dolāros neraksti un nepārrēķini.`;
 
 export const AI_OWNER_COUNT_RULES = `OWNERS: N īpašnieki = N-1 maiņas. Skaitli ņem no kanoniskās faktu lapas, nepārrēķini.`;
 
@@ -28,7 +28,9 @@ export const AI_MILES_KM_RULES = `MILES/KM: Jūdzes (mi, miles, mph) PROVIN teks
 
 export const AI_NO_CROSS_SECTION_REFS_RULES = `NO CROSS-SECTION REFS: Neraksti „kā minēts nobraukuma komentārā”, „skat. sadaļu…”, „detalizēti … KOMENTĀRĀ”.`;
 
-export const AI_ODOMETER_DROP_RULES = `ODOMETER DROP (mandatory when present): Ja kādā avotā vēlāks rādījums ir mazāks par agrāku vai avots dod nobraukuma samazinājuma brīdinājumu (CarVertical/AutoDNA), tas ir lauka pirmais teikums: abi rādījumi, datumi, avots, starpība km. Nekad „neliela nobīde”, „svārstības”, „nelielas nesakritības”. Nolūku neapgalvo: „iespējama odometra korekcija vai datu ievades kļūda; jāpārbauda.” Odometra rādījuma kritums nav neliela nobīde.`;
+export const AI_NO_UNSOURCED_FACTS_RULES = `BEZ AVOTA NAV FAKTA: skaitli, termiņu, garantiju, intervālu raksti tikai no KANONISKAJIEM FAKTIEM vai avota tabulas.`;
+
+export const AI_ODOMETER_DROP_RULES = `ODOMETER DROP (KANONISKIE FAKTI „Kritums” ar avotu): kritums vai CarVertical/AutoDNA brīdinājums ir nobraukuma lauka un kopsavilkuma pirmais teikums (abi rādījumi, datumi, avots, starpība km); avota laukā tikai ŠĪ avota kritums, viens teikums. Nekad „neliela nobīde”. Nolūku neapgalvo: „iespējama odometra korekcija vai datu ievades kļūda; jāpārbauda.” „Atsevišķs neatbilstošs rādījums” nav korekcija: tikai nobraukuma laukā viens neitrāls teikums („Viens {avots} rādījums ({datums}) neatbilst pārējai secībai, visticamāk ievades kļūda.”), citur nepiemin.`;
 
 export const AI_HIDDEN_MAINTENANCE_MILEAGE_RULES = `HIDDEN MAINTENANCE (mileage and summary only): Ja starp pirmo reģistrāciju galamērķa valstī un pārdošanu ir vairāk par 3 nedēļām, nosauc abus datumus: „starp X un Y ir N nedēļas; iemesls datos nav redzams”. Spekulāciju par slēptu uzturēšanu avotu komentāros NERAKSTI.`;
 
@@ -51,6 +53,7 @@ export const AI_STYLE_CANON_SHARED = [
   AI_OWNER_COUNT_RULES,
   AI_MILES_KM_RULES,
   AI_NO_CROSS_SECTION_REFS_RULES,
+  AI_NO_UNSOURCED_FACTS_RULES,
   AI_ODOMETER_DROP_RULES,
   AI_INTERNAL_MARKERS_RULES,
   AI_NO_AUDIT_WORD_RULES,

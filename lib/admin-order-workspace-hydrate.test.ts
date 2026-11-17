@@ -336,6 +336,49 @@ describe("resolveOrderWorkspaceHydration", () => {
     expect(hydrateWorkspaceFromStorage(oldRaw)?.odometerAnomalyOverrides).toBeUndefined();
   });
 
+  it("round-trips optional dealerMajorWorkOverrides and omits the field on old snapshots", () => {
+    const blocks = createDefaultSourceBlocks();
+    const withOverrides = serializeOrderWorkspaceSnapshotFromRef(
+      {
+        sourceBlocks: blocks,
+        iriss: "",
+        apskatesPlāns: "",
+        tehniskoRiskuAnalize: "",
+        cenasAtbilstiba: "",
+        previewConfirmed: false,
+        vehicleAiExtraction: null,
+        vehicleAiExtractionMeta: null,
+        dealerMajorWorkOverrides: [{ key: "engine@D17", action: "hide" }],
+      },
+      DEFAULT_PDF_VISIBILITY,
+      {},
+      "2026-10-17T10:00:00.000Z",
+    );
+    const hydrated = hydrateWorkspaceFromStorage(withOverrides);
+    expect(hydrated?.dealerMajorWorkOverrides).toEqual([{ key: "engine@D17", action: "hide" }]);
+    expect(JSON.parse(withOverrides).dealerMajorWorkOverrides).toEqual([
+      { key: "engine@D17", action: "hide" },
+    ]);
+
+    const oldRaw = serializeOrderWorkspaceSnapshotFromRef(
+      {
+        sourceBlocks: blocks,
+        iriss: "",
+        apskatesPlāns: "",
+        tehniskoRiskuAnalize: "",
+        cenasAtbilstiba: "",
+        previewConfirmed: false,
+        vehicleAiExtraction: null,
+        vehicleAiExtractionMeta: null,
+      },
+      DEFAULT_PDF_VISIBILITY,
+      {},
+      "2026-10-17T10:00:00.000Z",
+    );
+    expect(JSON.parse(oldRaw).dealerMajorWorkOverrides).toBeUndefined();
+    expect(hydrateWorkspaceFromStorage(oldRaw)?.dealerMajorWorkOverrides).toBeUndefined();
+  });
+
   it("uses server revision when newer local snapshot has no workspaceRevision", () => {
     const server = snapshotWithAutodnaComment("Serveris 325", "2026-10-20T22:40:33.549Z");
     const parsedServer = JSON.parse(server) as { workspaceRevision?: number };

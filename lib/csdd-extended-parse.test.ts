@@ -166,7 +166,7 @@ describe("csdd extended parse", () => {
     expect(form.opacityCoefficient).toBe("0.58");
     const html = buildPreviousInspectionBlockHtml(form.prevInspectionBlock, "");
     expect(html).toContain("Priekšējais tilts");
-    expect(html).toContain("274516 km");
+    expect(html).toContain("274 516 km");
     expect(html).toContain("pdf-csdd-ta-year-frame");
   });
 

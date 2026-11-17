@@ -30,6 +30,7 @@ import {
 } from "@/components/admin/AdminCsddInspectionHistoryTable";
 import { previousInspectionBlockHasData } from "@/lib/csdd-extended-parse";
 import { AdminCsddPdfUpload } from "@/components/admin/AdminCsddPdfUpload";
+import { AdminEcsddAutoPanel } from "@/components/admin/AdminEcsddAutoPanel";
 import { AdminCsddTechFetchButton } from "@/components/admin/AdminCsddTechFetchButton";
 import {
   applyCsddPasteToForm,
@@ -209,6 +210,8 @@ type Props = {
   onPhotoGroupsStructuralCommit?: (next: SourceBlockPhotoGroup[]) => void;
   /** Citu avotu datumi FR1 pārbaudei (pasaules pirmā reģistrācija pret agrāko ierakstu). */
   otherRecordDates?: string[];
+  /** e.csdd automātika (tikai pasūtījumiem, ne konsultācijām). */
+  ecsddAuto?: boolean;
 };
 
 const mileCell = "px-1.5 py-0.5";
@@ -230,6 +233,7 @@ export function AdminCsddSourceBlock({
   photosPersistenceEnabled = false,
   onPhotoGroupsStructuralCommit,
   otherRecordDates,
+  ecsddAuto = false,
 }: Props) {
   const firstRegWarnings = useMemo(
     () => collectCsddFirstRegistrationWarnings({ csdd: value, otherRecordDates }),
@@ -325,6 +329,16 @@ export function AdminCsddSourceBlock({
           orderVin={orderVin}
           disabled={disabled}
           onChange={onChange}
+        />
+      ) : null}
+      {ecsddAuto ? (
+        <AdminEcsddAutoPanel
+          sessionId={sessionId}
+          orderVin={orderVin}
+          value={value}
+          disabled={disabled}
+          readOnly={readOnly}
+          onApplyRaw={handleRawInput}
         />
       ) : null}
       {!readOnly ? (

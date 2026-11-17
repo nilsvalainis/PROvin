@@ -19,6 +19,36 @@ export type BannedVocabularyEntry = {
 
 export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
   {
+    label: "maģistrāle",
+    pattern: /maģistrā[lļ]/i,
+    replacement: "šoseja / autobāns",
+    code: "vocabulary_magistrale",
+  },
+  {
+    label: "divpakāpju kaskāde",
+    pattern: /divpakāpju\s+kaskād|kaskād\p{L}*\s+(?:turb|kompresor)|turb\p{L}*\s+kaskād/iu,
+    replacement: "divi turbokompresori",
+    code: "vocabulary_kaskade",
+  },
+  {
+    label: "tuvojas (prognozē)",
+    pattern: /(?<!\p{L})tuvojas(?!\p{L})/iu,
+    replacement: "var tuvoties",
+    code: "vocabulary_tuvojas",
+  },
+  {
+    label: "hibrīda veida tulkojums (spraudņa / vieglais / maigais hibrīds)",
+    pattern: /(?:spraudņa|uzlādējam\p{L}*|pievienojam\p{L}*|viegl\p{L}{0,3}|maig\p{L}{0,3})\s+hibrīd/iu,
+    replacement: "oriģinālā: plug-in hybrid / mild hybrid",
+    code: "vocabulary_hybrid_translated",
+  },
+  {
+    label: "ārējā izsoļu atskaites zīmola nosaukums",
+    pattern: /\bCC\.?\s?VIN\b|checkcar/i,
+    replacement: "Izsoļu portālu arhīvā / Avotā",
+    code: "vocabulary_cc_vin",
+  },
+  {
     label: "saime",
     pattern: /\bsaime/i,
     replacement: "agregāts / konstrukcija / paaudze",
@@ -80,25 +110,25 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
   },
   {
     label: "kontūrā",
-    pattern: /\bkontūrā\b/i,
+    pattern: /(?<!\p{L})kontūrā(?!\p{L})/iu,
     replacement: "virsbūvē (krāsa / virsbūve) vai sistēmā (elektronika / programmatūra)",
     code: "vocabulary_kontura",
   },
   {
     label: "labvēlīgs signāls",
-    pattern: /labvēlīg\w*\s+signāl/i,
+    pattern: /labvēlīg\p{L}*\s+signāl/iu,
     replacement: "tas datos izskatās labi / labs rādījums datos (vai vienkārši konkrētais fakts bez šīs frāzes)",
     code: "vocabulary_labveligs_signals",
   },
   {
     label: "labvēlīgs faktors",
-    pattern: /labvēlīg\w*\s+faktor/i,
+    pattern: /labvēlīg\p{L}*\s+faktor/iu,
     replacement: "tas palīdz / tas šim mezglam nāk par labu (vai vienkārši fakts)",
     code: "vocabulary_labveligs_faktors",
   },
   {
     label: "dokumentāri pierādījumi",
-    pattern: /dokumentār\w*\s+pierādījum/i,
+    pattern: /dokumentār\p{L}*\s+pierādījum/iu,
     replacement: "dokumenti",
     code: "vocabulary_dokumentari_pieradijumi",
   },
@@ -122,13 +152,13 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
   },
   {
     label: "divējādu ainu / pozitīvā puse",
-    pattern: /divējād\w*\s+ain|pozitīvā\s+puse\s+ir/i,
+    pattern: /divējād\p{L}*\s+ain|pozitīvā\s+puse\s+ir/iu,
     replacement: "sāc ar faktiem, bez „divējādās ainas” / „pozitīvās puses” ievada",
     code: "vocabulary_divejada_aina",
   },
   {
     label: "duāla vēsture",
-    pattern: /duāl\w*\s+vēstur/i,
+    pattern: /duāl\p{L}*\s+vēstur/iu,
     replacement: "sāc ar fiksētajiem faktiem, bez vēstures dualisma ievada",
     code: "vocabulary_duala_vesture",
   },
@@ -158,7 +188,7 @@ export const PROVIN_BANNED_VOCABULARY: readonly BannedVocabularyEntry[] = [
   },
   {
     label: "bufer(is/a/i) (bampera vietā)",
-    pattern: /\bbufer(is|a|u|i|iem|us|ā)\b/i,
+    pattern: /(?<!\p{L})bufer(is|a|u|i|iem|us|ā)(?!\p{L})/iu,
     replacement: "bamperis / bampera / bamperi",
     code: "vocabulary_bufers",
   },
@@ -231,7 +261,7 @@ export const PROVIN_INTERNAL_CLIENT_TERMS: readonly BannedVocabularyEntry[] = [
   },
   {
     label: "paka / pakā",
-    pattern: /\bpakā\b|\bpaka\b/i,
+    pattern: /(?<!\p{L})pak[aā](?!\p{L})/iu,
     replacement: "agregātu zināšanas",
     code: "internal_paka",
   },
@@ -280,20 +310,87 @@ export const PROVIN_INTERNAL_CLIENT_TERMS: readonly BannedVocabularyEntry[] = [
 ];
 
 /** Droši aizstājami vārdi bez otra maksas izsaukuma (P13). */
-const SAFE_VOCAB_REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
-  [/\binjektor(?:i|iem|u|a)?\b/gi, "iesmidzinātāji"],
-  [/\bswirl\s+flap\w*/gi, "ieplūdes kolektors"],
-  [/\bvirpuļvārst\w*/gi, "ieplūdes kolektors"],
-  [/\bintegritāt\w*/gi, "stāvoklis"],
+type SafeVocabReplacer = string | ((match: string, ...groups: string[]) => string);
+
+/**
+ * Mazais burts + Lielais burts vārda vidū, kur abas daļas izskatās pēc latviešu vārdiem
+ * (pirmajā ir garumzīme/mīkstinājums vai LV galotne, otrā beidzas ar LV galotni).
+ * TwinPower, BlueMotion, carVertical, xDrive u.c. neatbilst.
+ */
+export const GLUED_LV_WORDS_RE =
+  /(?<!\p{L})(\p{Ll}*[āčēģīķļņšūž]\p{Ll}*|\p{Ll}{2,}[uāēīs])(\p{Lu}\p{Ll}*(?:as|ijas|ija|ijā|iju|ai|am|ām|os|us|ēs|is|ē|ā|u|i|e|s))(?!\p{L})/gu;
+
+/** Replace callback „rest” argumenti: [..., offset, string]. */
+function replaceContextBefore(rest: unknown[], maxChars = 60): string {
+  const offset = rest[rest.length - 2];
+  const whole = rest[rest.length - 1];
+  if (typeof offset !== "number" || typeof whole !== "string") return "";
+  return whole.slice(Math.max(0, offset - maxChars), offset);
+}
+
+/** „ieplūdes kolektora” ne tālāk kā 2 vārdus pirms atrastā termina. */
+function intakeManifoldNamedJustBefore(rest: unknown[]): boolean {
+  return /ieplūdes\s+kolektor\p{L}*(?:\s+\p{L}+){0,2}\s*$/iu.test(replaceContextBefore(rest));
+}
+
+/** Iekavu skaidrojums seko vārstam vai ieplūdes kolektoram (piem. „virpuļvārstiņi (swirl flaps)”). */
+function intakeTermAlreadyNamedBefore(rest: unknown[]): boolean {
+  return /(?:virpuļvārst|vārst|ieplūdes\s+kolektor)\p{L}*\s*$/iu.test(replaceContextBefore(rest));
+}
+
+const SAFE_VOCAB_REPLACEMENTS: ReadonlyArray<readonly [RegExp, SafeVocabReplacer]> = [
+  // maģistrāle → šoseja: katram locījumam savs galotnes pāris (garākās galotnes pirmās).
+  [/(?<!\p{L})Maģistrāļu(?!\p{L})/gu, "Šoseju"],
+  [/(?<!\p{L})maģistrāļu(?!\p{L})/gu, "šoseju"],
+  [/(?<!\p{L})([Mm])aģistrāl(ēm|ēs|ei|es|ē|e|i)(?!\p{L})/gu, (_m: string, m: string, end: string) =>
+    `${m === "M" ? "Š" : "š"}osej${({ ēm: "ām", ēs: "ās", ei: "ai", es: "as", ē: "ā", e: "a", i: "u" } as Record<string, string>)[end]}`],
+  // Prognoze piesardzīgi.
+  [/(?<!\p{L})Tuvojas(?!\p{L})/gu, "Var tuvoties"],
+  [/(?<!\p{L})tuvojas(?!\p{L})/gu, "var tuvoties"],
+  // Hibrīda veidu netulko.
+  [/(?<!\p{L})(?:spraudņa|uzlādējam\p{L}*|pievienojam\p{L}*)\s+hibrīd\p{L}*/giu, (m: string) =>
+    /^\p{Lu}/u.test(m) ? "Plug-in hybrid" : "plug-in hybrid"],
+  [/(?<!\p{L})(?:viegl|maig)(?:ais|ā|ajam|o|ajā|ie|ajiem|ajos)?\s+hibrīd\p{L}*/giu, (m: string) =>
+    /^\p{Lu}/u.test(m) ? "Mild hybrid" : "mild hybrid"],
+  // Ārējā izsoļu atskaites zīmola nosaukums nav klienta avota nosaukums.
+  [/\b(?:CC\.?\s?VIN|checkcar(?:\.vin)?)\s+(?:datos|avotā|ierakstos|arhīvā|pārskatā|atskaitē)/gi, "Izsoļu portālu arhīvā"],
+  [/\b(?:CC\.?\s?VIN|checkcar(?:\.vin)?)\s+(datiem|datu|dati|ierakstiem|ierakstu|ieraksti)(?!\p{L})/giu, "Izsoļu portālu arhīva $1"],
+  [/(?<!\p{L})(?:avotā|datos)\s+(?:CC\.?\s?VIN|checkcar(?:\.vin)?)\b/giu, "Izsoļu portālu arhīvā"],
+  [/\b(?:CC\.?\s?VIN|checkcar(?:\.vin)?)\b/gi, "Izsoļu portālu arhīvs"],
+  // injektor- -> iesmidzinātāj-: tā pati galotne saglabā locījumu (injektoru -> iesmidzinātāju, injektorā -> iesmidzinātājā).
+  [/(?<!\p{L})([Ii])njektor(\p{L}*)/gu, (_m: string, i: string, end: string) =>
+    `${i === "I" ? "I" : "i"}esmidzinātāj${end || "s"}`],
+  // „(swirl flaps)” skaidrojums aiz jau nosaukta vārsta / ieplūdes kolektora - izmet, lai nav dubultā.
+  [/\s*\(\s*(?:swirl\s+flaps?|virpuļvārst\p{L}*)\s*\)/giu, (m: string, ...rest: unknown[]) =>
+    intakeTermAlreadyNamedBefore(rest) ? "" : m],
+  // virpuļvārsts -> „ieplūdes kolektora vārsts” (galotne saglabājas); ja tieši pirms tam jau ir
+  // „ieplūdes kolektora”, paliek tikai „vārst-”, lai nav „ieplūdes kolektora ieplūdes kolektors”.
+  [/(?<!\p{L})([Vv])irpuļvārst(\p{L}*)/gu, (_m: string, v: string, end: string, ...rest: unknown[]) =>
+    intakeManifoldNamedJustBefore(rest)
+      ? `${v}ārst${end}`
+      : `${v === "V" ? "I" : "i"}eplūdes kolektora vārst${end}`],
+  [/(?<!\p{L})(s)wirl\s+flap(s?)(?!\p{L})/giu, (_m: string, sw: string, plural: string, ...rest: unknown[]) => {
+    const noun = plural ? "vārsti" : "vārsts";
+    if (intakeManifoldNamedJustBefore(rest)) return noun;
+    return `${sw === "S" ? "I" : "i"}eplūdes kolektora ${noun}`;
+  }],
+  [/(?<!\p{L})(i)ntegritāt\p{L}*/giu, (_m: string, i: string) => (i === "I" ? "Stāvoklis" : "stāvoklis")],
   [/šim automašīn/gi, "šai automašīn"],
   [/tipiski šim agregātam ir/gi, "šim dzinējam raksturīga"],
   [/tipiski šim agregātam/gi, "šim dzinējam raksturīga"],
+  // j26: zināmas drukas kļūdas (visi locījumi saglabājas, maina tikai saknes daļu).
+  [/(?<!\p{L})([Oo])fic(?!i)āl/gu, "$1ficiāl"],
+  [/(?<!\p{L})([Pp])rotāl/gu, "$1ortāl"],
+  // j26: salīmēti latviski vārdi („protāluZviedrijas”) - atstarpe; zīmolu nosaukumi netiek skarti.
+  [GLUED_LV_WORDS_RE, "$1 $2"],
 ];
 
 export function applyBannedVocabularyReplacements(text: string): string {
   if (!text) return text;
   let out = text;
-  for (const [re, rep] of SAFE_VOCAB_REPLACEMENTS) out = out.replace(re, rep);
+  for (const [re, rep] of SAFE_VOCAB_REPLACEMENTS) {
+    out = typeof rep === "string" ? out.replace(re, rep) : out.replace(re, rep as (m: string, ...a: string[]) => string);
+  }
   return out;
 }
 
@@ -351,7 +448,7 @@ export function findForbiddenPersonaNounHits(text: string): ForbiddenPersonaNoun
 }
 
 const PERSONA_NOUN_REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
-  [/ekspertīz\w*/gi, "izvērtējums"],
+  [/ekspertīz\p{L}*/giu, "izvērtējums"],
   [/tehnisk(?:ais|ā|o)\s+ekspert(?:s|a|am|u|i|iem)?/gi, "tehniskā analīze"],
   [/auto\s+ekspert(?:s|a|am|u|i|iem)?/gi, "analīze"],
   [/eksperta\s+komentār(\w*)/gi, "komentār$1"],
@@ -361,10 +458,11 @@ const PERSONA_NOUN_REPLACEMENTS: ReadonlyArray<readonly [RegExp, string]> = [
   [/eksperta\s+ziņojum(\w*)/gi, "ziņojum$1"],
   [/eksperta\s+atzinum(\w*)/gi, "atzinum$1"],
   [/eksperta\s+viedokl(\w*)/gi, "vērtējum$1"],
-  [/\bekspert(?:s|a|am|u|i|iem|os|e)?\b/gi, ""],
-  [/\bspeciālist(?:s|a|am|u|i|iem|e)?\b/gi, ""],
+  // Visi locījumi (arī „ekspertā”, „speciālistā”) - \b pirms „ā” atstāja pāri galotni.
+  [/(?<!\p{L})ekspert\p{L}*/giu, ""],
+  [/(?<!\p{L})speciālist\p{L}*/giu, ""],
   [/\bexperts?\b/gi, ""],
-  [/эксперт\w*/gi, ""],
+  [/эксперт\p{L}*/giu, ""],
   [/\bExpert(?:e|en|in|innen)?\b/g, ""],
 ];
 

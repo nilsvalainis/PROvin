@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_LISTING_COSTS, listingBidPrice, listingCardPriceLabel, listingComparisonPrice, listingExtrasI, listingFinalPrice, listingMaxBid, listingRealCost, listingVatShareLine, type ListingTaxKind } from "@/lib/iriss-listings-cost";
 
-const I = listingExtrasI(DEFAULT_LISTING_COSTS);
+// v4 kontrolskaitļi rēķināti ar iepriekšējām izmaksām (Neplānotie 1000); noklusējums tagad 500 (Nils 30.10).
+const V4_COSTS = { ...DEFAULT_LISTING_COSTS, unplanned: 1000 };
+const I = listingExtrasI(V4_COSTS);
 const B = 18_000;
 const P = 10_000;
 

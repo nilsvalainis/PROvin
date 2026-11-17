@@ -1,0 +1,1349 @@
+/* Loģistika v4 tokens: tikai šajā saknē, ne globālajos IRISS failos. */
+.iriss-log-screen {
+  /* Nils 21.10: Nākošā krava spilgti sarkana, Aiznākošā melna, pārējie pelēki (kā kartes lāses). */
+  --iriss-log-cargo-next: #ea4335;
+  --krava-next: var(--iriss-log-cargo-next);
+  --krava-next2: #1d1d1f;
+  --iriss-log-cargo-after: var(--krava-next2);
+  --krava-after: var(--krava-next2);
+  --iriss-log-cargo-none: #9aa0a6;
+  --krava-none: var(--iriss-log-cargo-none);
+  --iriss-log-news-bg: #2563eb;
+  --iriss-log-news-fg: #fff;
+  --iriss-log-focus: #2563eb;
+  --iriss-log-ok-bg: #f0fdf4;
+  --iriss-log-ok-dot: #16a34a;
+  --iriss-log-warn-bg: #fffbeb;
+  --iriss-log-warn-dot: #d97706;
+  --iriss-log-bad: #c2362b;
+  --iriss-log-status-chip-bg: #f2f2f7;
+  --iriss-log-status-chip-dot: #8e8e93;
+  --iriss-log-status-chip-fg: #3a3a3c;
+  --iriss-log-ink: #0b0c10;
+  --iriss-log-line: #e5e5ea;
+  --iriss-log-surface: #fff;
+  --iriss-log-surface-2: #f5f5f7;
+  --btn-dark-bg: rgba(31, 36, 48, 0.89);
+  --btn-dark-fg: #fff;
+  --btn-dark-border: transparent;
+  --iriss-log-btn-secondary-bg: #fff;
+  --iriss-log-btn-secondary-border: #d2d2d7;
+  --iriss-log-btn-secondary-fg: #1d1d1f;
+  --iriss-log-check-empty: #c7c7cc;
+}
+
+.iriss-log-screen .iriss-log-btn-dark {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--btn-dark-border);
+  background: var(--btn-dark-bg);
+  padding: 8px 14px;
+  color: var(--btn-dark-fg);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+.iriss-log-screen .iriss-log-btn-sec {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--iriss-log-btn-secondary-border);
+  background: var(--iriss-log-btn-secondary-bg);
+  padding: 8px 14px;
+  color: var(--iriss-log-btn-secondary-fg);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+.iriss-log-screen .iriss-log-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  background: var(--iriss-log-status-chip-bg);
+  padding: 4px 10px;
+  color: var(--iriss-log-status-chip-fg);
+  font-size: 12px;
+  font-weight: 500;
+}
+.iriss-log-screen .iriss-log-status-chip i {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--iriss-log-status-chip-dot);
+}
+.iriss-log-screen .iriss-log-cargo-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--iriss-log-cargo-none);
+}
+.iriss-log-screen .iriss-log-check {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  border: 1.5px solid var(--iriss-log-check-empty);
+  background: #fff;
+  display: inline-grid;
+  place-items: center;
+}
+.iriss-log-screen .iriss-log-check:checked {
+  border-color: transparent;
+  background: var(--iriss-log-ink);
+}
+.iriss-log-screen .iriss-log-check:checked::after {
+  content: "";
+  width: 8px;
+  height: 5px;
+  border-left: 1.5px solid #fff;
+  border-bottom: 1.5px solid #fff;
+  transform: translateY(-1px) rotate(-45deg);
+}
+.iriss-log-screen .iriss-log-switch {
+  position: relative;
+  width: 36px;
+  height: 22px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--iriss-log-line);
+}
+.iriss-log-screen .iriss-log-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #fff;
+}
+.iriss-log-screen .iriss-log-switch.on {
+  background: var(--iriss-log-focus);
+}
+.iriss-log-screen .iriss-log-switch.on::after {
+  left: 16px;
+}
+/* Mazais slēdzis "rādīt kartē": izslēgts gaiši pelēks, ieslēgts tumšs ar pogu pa labi. */
+.iriss-log-screen .iriss-log-switch.sm {
+  width: 28px;
+  height: 16px;
+  background: var(--iriss-log-check-empty);
+}
+.iriss-log-screen .iriss-log-switch.sm::after {
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  box-shadow: 0 1px 2px rgba(11, 12, 16, 0.2);
+  transition: left 0.15s ease;
+}
+.iriss-log-screen .iriss-log-switch.sm.on {
+  background: var(--iriss-log-ink, #1d1d1f);
+}
+.iriss-log-screen .iriss-log-switch.sm.on::after {
+  left: 14px;
+}
+.iriss-log-cargo-logo {
+  display: inline-flex;
+  flex: 0 0 auto;
+  max-width: 72px;
+  justify-content: flex-end;
+}
+.iriss-log-cargo-postal {
+  flex: 0 0 64px;
+  color: #6e6e73;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+.iriss-log-cargo-card {
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--iriss-log-surface);
+}
+.iriss-log-cargo-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 8px;
+}
+/* Kravas kartīte: visa kartīte ir velkama (pele uzreiz, telefonā piespied un turi). */
+.iriss-log-cargo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 10px 12px;
+  border-radius: 12px;
+  transition: background 0.12s ease;
+}
+.iriss-log-cargo-list.over {
+  background: var(--iriss-log-surface-2);
+}
+.iriss-log-cargo-row {
+  display: flex;
+  min-height: 56px;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--iriss-log-line);
+  border-radius: 12px;
+  background: var(--iriss-log-surface);
+  padding: 8px 12px;
+  text-align: left;
+  cursor: grab;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.iriss-log-cargo-row:hover,
+.iriss-log-cargo-row.active {
+  border-color: #c7c7cc;
+  background: var(--iriss-log-surface-2);
+}
+.iriss-log-cargo-row:focus-visible {
+  outline: 2px solid var(--iriss-log-focus);
+  outline-offset: 2px;
+}
+.iriss-log-cargo-row.dragging {
+  opacity: 0.35;
+}
+.iriss-log-cargo-row.overlay {
+  cursor: grabbing;
+  border-color: #c7c7cc;
+  box-shadow: 0 10px 30px rgba(11, 12, 16, 0.18);
+}
+.iriss-log-cargo-num {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--iriss-log-surface-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+.iriss-log-cargo-dot-btn {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+.iriss-log-cargo-dot-btn:hover {
+  background: #e8e8ed;
+}
+.iriss-log-cargo-dot-btn .iriss-log-cargo-dot {
+  width: 12px;
+  height: 12px;
+}
+.iriss-log-cargo-drop {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed #c7c7cc;
+  border-radius: 12px;
+  padding: 10px;
+  color: #8e8e93;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: center;
+}
+.iriss-log-cargo-drop.live {
+  border-color: var(--iriss-log-focus);
+  color: var(--iriss-log-focus);
+  font-weight: 600;
+}
+.iriss-log-cargo-menu {
+  position: absolute;
+  z-index: 8;
+  min-width: 180px;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(11, 12, 16, 0.12);
+  padding: 4px;
+}
+.iriss-log-table-wrap {
+  overflow: auto;
+  border-radius: 14px;
+  background: var(--iriss-log-surface);
+}
+.iriss-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.iriss-log-table th {
+  padding: 10px 12px;
+  color: #6e6e73;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+}
+.iriss-log-table td {
+  padding: 10px 12px;
+  border-top: 1px solid var(--iriss-log-line);
+  vertical-align: middle;
+}
+.iriss-log-table tr:hover td {
+  background: var(--iriss-log-surface-2);
+}
+.iriss-log-confirm {
+  position: absolute;
+  z-index: 9;
+  width: 240px;
+  border-radius: 14px;
+  background: #fff;
+  padding: 12px;
+  box-shadow: 0 8px 28px rgba(11, 12, 16, 0.14);
+}
+.iriss-log-popup {
+  width: min(100%, 420px);
+  border-radius: 14px;
+  background: #fff;
+  padding: 14px;
+}
+.iriss-log-doc-drop {
+  border: 1px dashed var(--iriss-log-focus);
+  border-radius: 14px;
+  padding: 22px 14px;
+  text-align: center;
+  color: #6e6e73;
+  font-size: 13px;
+}
+.iriss-log-pin-wrap {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: auto;
+}
+.iriss-log-pin-wrap.bounce {
+  animation: iriss-log-pin-bounce 0.55s ease-in-out infinite;
+}
+@keyframes iriss-log-pin-bounce {
+  0%,
+  100% {
+    transform: translate(-50%, -100%) translateY(0);
+  }
+  40% {
+    transform: translate(-50%, -100%) translateY(-10px);
+  }
+}
+.iriss-log-pin-needle {
+  width: 22px;
+  height: 30px;
+  filter: drop-shadow(0 1px 2px rgba(11, 12, 16, 0.25));
+}
+/* Kartes punkti: mazs krāsains aplis (krava), grupa ar skaitu. Nosaukums tikai hover vai izceltam auto. */
+.iriss-log-pin-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+.iriss-log-pin,
+.iriss-log-pin-cluster {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+.iriss-log-pin:hover,
+.iriss-log-pin.active,
+.iriss-log-pin-cluster:hover,
+.iriss-log-pin-cluster.active,
+.iriss-log-pin-cluster.open {
+  z-index: 5;
+}
+.iriss-log-pin-dot {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 2.5px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 1px 4px rgba(11, 12, 16, 0.35);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+.iriss-log-pin:hover .iriss-log-pin-dot {
+  transform: scale(1.15);
+}
+.iriss-log-pin.active .iriss-log-pin-dot {
+  animation: iriss-log-dot-bounce 0.55s ease-in-out infinite;
+}
+.iriss-log-pin.selected .iriss-log-pin-dot,
+.iriss-log-pin-cluster.selected .iriss-log-pin-ring {
+  outline: 2px solid var(--iriss-log-focus, #2563eb);
+  outline-offset: 1px;
+}
+.iriss-log-pin-ring {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  padding: 4px;
+  border-radius: 999px;
+  box-shadow: 0 1px 5px rgba(11, 12, 16, 0.3);
+  transition: transform 0.15s ease;
+}
+.iriss-log-pin-ring > span {
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #fff;
+  color: #0b0c10;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+.iriss-log-pin-cluster:hover .iriss-log-pin-ring {
+  transform: scale(1.08);
+}
+.iriss-log-pin-cluster.active .iriss-log-pin-ring {
+  animation: iriss-log-dot-bounce 0.55s ease-in-out infinite;
+}
+@keyframes iriss-log-dot-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-8px);
+  }
+}
+.iriss-log-pin-tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  display: none;
+  transform: translateX(-50%);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 2px 10px rgba(11, 12, 16, 0.18);
+  padding: 5px 9px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.iriss-log-pin-tip b {
+  display: block;
+  color: #1d1d1f;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.iriss-log-pin-tip i {
+  display: block;
+  color: #6e6e73;
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.35;
+}
+.iriss-log-pin:hover .iriss-log-pin-tip,
+.iriss-log-pin.active .iriss-log-pin-tip,
+.iriss-log-pin-cluster:hover .iriss-log-pin-tip,
+.iriss-log-pin-cluster.active .iriss-log-pin-tip {
+  display: block;
+}
+.iriss-log-pin-cluster.open .iriss-log-pin-tip {
+  display: none;
+}
+.iriss-log-pin-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  min-width: 210px;
+  transform: translateX(-50%);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(11, 12, 16, 0.18);
+  padding: 4px;
+}
+.iriss-log-pin-list button {
+  display: flex;
+  width: 100%;
+  min-height: 36px;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: #1d1d1f;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+.iriss-log-pin-list button:hover {
+  background: var(--iriss-log-surface-2, #f5f5f7);
+}
+.iriss-log-pin-list-dot {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+.iriss-log-cab-overlay {
+  position: relative;
+  border-radius: 14px;
+  background: var(--iriss-log-surface);
+}
+
+.iriss-log-label {
+  pointer-events: none;
+  max-width: 148px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.iriss-log-label.on {
+  color: #fff;
+  background: rgba(15, 18, 28, 0.7);
+  box-shadow: 0 1px 4px rgba(15, 18, 28, 0.25);
+}
+.iriss-log-label.off {
+  color: #1f2430;
+  background: rgba(255, 255, 255, 0.62);
+  font-size: 9.5px;
+  font-weight: 500;
+}
+
+.iriss-log-map-hero {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 8 / 7;
+  min-height: 280px;
+}
+@media (min-width: 768px) {
+  .iriss-log-map-hero {
+    min-height: 420px;
+  }
+}
+.iriss-log-map-toolbar {
+  flex: 0 0 auto;
+  border-bottom: 1px solid #f3f4f6;
+}
+.iriss-log-map-hero .iriss-log-map-shell {
+  position: absolute;
+  inset: 0;
+  height: auto !important;
+  min-height: 0;
+  border-radius: 0;
+}
+
+.iriss-log-map-fs {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5vh 5vw;
+  background: rgba(15, 18, 28, 0.45);
+}
+.iriss-log-map-fs-card {
+  display: flex;
+  width: min(90vw, 1280px);
+  height: min(90vh, 860px);
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 24px 80px rgba(15, 18, 28, 0.28);
+}
+.iriss-log-map-fs-card .iriss-log-print-root {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+.iriss-log-map-fs-card .iriss-log-map-hero {
+  flex: 1 1 auto;
+  min-height: 0;
+  aspect-ratio: auto;
+  width: 100%;
+  height: 100%;
+}
+@media (max-width: 700px) {
+  .iriss-log-map-fs {
+    padding: 0;
+  }
+  .iriss-log-map-fs-card {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+}
+
+.iriss-log-cab-sec {
+  overflow: hidden;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+.iriss-log-cab-head {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  text-align: left;
+}
+.iriss-log-cab-letter {
+  display: inline-flex;
+  height: 22px;
+  width: 22px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #111827;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+.iriss-log-cab-chip {
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.iriss-log-cab-chip.on {
+  background: #e8eeff;
+  color: #3d5bd9;
+}
+.iriss-log-cab-chip.done {
+  background: #e8f8ef;
+  color: #157a46;
+}
+.iriss-log-cab-btn {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/*
+ * Druka (Nils 21.10): 1. lapā tieši ekrāna skats (karte ar lāsēm, numuriem un līniju), 2. lapā auto saraksts.
+ * Drukas brīdī JS paslēpj visu pārējo (isolateElementForPrint), tāpēc bloks plūst normāli uz 2 lapām.
+ */
+.iriss-log-print-chrome,
+.iriss-log-print-list {
+  display: none;
+}
+
+html.iriss-log-printing,
+html.iriss-log-printing body {
+  background: #fff !important;
+}
+html.iriss-log-printing .iriss-log-map-fs,
+html.iriss-log-printing .iriss-log-map-fs-card {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  display: block;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+/*
+ * Drukā karte jau ekrānā ir tieši A4 izmērā (277 × 165 mm), lai pārlūks drukājot to nepārzīmē no jauna.
+ * Iepriekš `max-width: 100%` to saspieda līdz kolonnas platumam, bet `.iriss-log-map-shell { height: auto !important }`
+ * augstumu līdz 0, tāpēc drukā karte bija tukša.
+ */
+html.iriss-log-printing .iriss-log-print-root {
+  display: block;
+  width: 277mm;
+  max-width: none;
+  margin: 0 auto;
+  background: #fff;
+}
+html.iriss-log-printing .iriss-log-print-chrome {
+  position: relative;
+  display: flex;
+  margin: 0 0 3mm;
+  font-size: 12px !important;
+  color: #1d1d1f !important;
+}
+html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero {
+  position: relative;
+  width: 277mm;
+  height: 165mm;
+  max-width: none;
+  min-height: 0;
+  aspect-ratio: auto;
+  border-radius: 0 !important;
+  margin: 0 auto;
+}
+/*
+ * Augstāka izšķirtspēja: karte ir divreiz lielāka (zoom +1) un samazināta uz pusi, tāpēc drukā ir
+ * divreiz vairāk detaļu tajā pašā laukumā. Lāses un nosaukumi tiek palielināti atpakaļ, lai izmērs nemainās.
+ */
+html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero {
+  overflow: hidden;
+}
+html.iriss-log-printing .iriss-log-print-root .iriss-log-map-hero .iriss-log-map-shell {
+  position: absolute;
+  inset: auto;
+  left: 0;
+  top: 0;
+  width: 200%;
+  height: 200% !important;
+  max-width: none;
+  border-radius: 0 !important;
+  transform: scale(0.5);
+  transform-origin: 0 0;
+}
+html.iriss-log-printing .iriss-log-tear,
+html.iriss-log-printing .iriss-log-pin-wrap {
+  transform: translate(-50%, -100%) scale(2);
+  transform-origin: 50% 100%;
+}
+html.iriss-log-printing .iriss-log-pin,
+html.iriss-log-printing .iriss-log-pin-cluster,
+html.iriss-log-printing .iriss-log-spread-dot {
+  transform: translate(-50%, -50%) scale(2);
+}
+
+/* Abpusēja druka (pa garo malu): 2. lapa otrādi, lai, apgriežot lapu, saraksts ir pareizi. */
+html.iriss-log-printing.iriss-log-print-duplex .iriss-log-print-list {
+  min-height: 186mm;
+  transform: rotate(180deg);
+}
+html.iriss-log-printing .iriss-log-print-list {
+  display: block;
+  break-before: page;
+  page-break-before: always;
+}
+/* Nosaukumu kartītes un hover padomi drukā netiek rādīti (numuri + saraksts 2. lapā). */
+/* Drukā hover padomus nerāda; nosaukumu kartītes rāda tikai, ja ieslēgts "Rādīt nosaukumus". */
+html.iriss-log-printing .iriss-log-pin-tip {
+  display: none !important;
+}
+
+.iriss-log-print-list {
+  color: #1d1d1f;
+  font-family: Inter, Arial, sans-serif;
+}
+.iriss-log-print-list header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1.5px solid #1d1d1f;
+  padding-bottom: 2mm;
+  margin-bottom: 3mm;
+}
+.iriss-log-print-list h2 {
+  font-size: 15px;
+  font-weight: 700;
+}
+.iriss-log-print-list header p {
+  color: #6e6e73;
+  font-size: 11px;
+}
+.iriss-log-print-list table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.iriss-log-print-list th {
+  padding: 0 2mm 1.5mm;
+  color: #6e6e73;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-align: left;
+  text-transform: uppercase;
+}
+.iriss-log-print-list td {
+  padding: 2mm;
+  border-top: 0.5px solid #d2d2d7;
+  vertical-align: top;
+}
+.iriss-log-print-list tr {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.iriss-log-print-list td b {
+  display: block;
+  font-weight: 600;
+}
+.iriss-log-print-list td small {
+  display: block;
+  color: #48484a;
+  font-size: 10px;
+}
+.iriss-log-print-list .mono {
+  font-family: ui-monospace, Menlo, monospace;
+}
+.iriss-log-print-list .n {
+  width: 10mm;
+}
+.iriss-log-print-list td.n span {
+  display: inline-flex;
+  width: 6mm;
+  height: 6mm;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #ea4335;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+.iriss-log-print-list .hours {
+  width: 42mm;
+}
+.iriss-log-print-list .empty {
+  color: #6e6e73;
+  font-size: 12px;
+}
+
+@page {
+  size: A4 landscape;
+  margin: 10mm;
+}
+@media print {
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .iriss-log-no-print {
+    display: none !important;
+  }
+  .iriss-log-print-chrome {
+    display: flex !important;
+  }
+  .iriss-log-print-list {
+    display: block !important;
+  }
+}
+
+/* Ātrā statusa maiņa: 4 posmi vienā segmentā. */
+.iriss-log-screen .iriss-log-stage {
+  display: inline-flex;
+  gap: 2px;
+  border-radius: 10px;
+  background: var(--iriss-log-surface-2);
+  padding: 2px;
+}
+.iriss-log-screen .iriss-log-stage.full {
+  display: flex;
+  width: 100%;
+}
+.iriss-log-screen .iriss-log-stage button {
+  min-height: 30px;
+  flex: 1 1 0;
+  border-radius: 8px;
+  padding: 4px 9px;
+  color: var(--iriss-log-status-chip-fg);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.iriss-log-screen .iriss-log-stage.full button {
+  min-height: 38px;
+  font-size: 13px;
+}
+.iriss-log-screen .iriss-log-stage button:hover {
+  background: #e8e8ed;
+}
+.iriss-log-screen .iriss-log-stage button.on {
+  background: var(--btn-dark-bg);
+  color: var(--btn-dark-fg);
+  font-weight: 600;
+}
+.iriss-log-screen .iriss-log-bucket-dots {
+  display: inline-flex;
+  gap: 2px;
+}
+.iriss-log-screen .iriss-log-bucket-dots button {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+.iriss-log-screen .iriss-log-bucket-dots button span {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  opacity: 0.35;
+}
+.iriss-log-screen .iriss-log-bucket-dots button:hover span {
+  opacity: 0.7;
+}
+.iriss-log-screen .iriss-log-bucket-dots button.on span {
+  width: 14px;
+  height: 14px;
+  opacity: 1;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3.5px currentColor;
+}
+.iriss-log-car-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px 12px;
+}
+@media (min-width: 1280px) {
+  .iriss-log-car-cards {
+    display: none !important;
+  }
+}
+.iriss-log-car-cards > li {
+  border: 1px solid var(--iriss-log-line);
+  border-radius: 14px;
+  background: var(--iriss-log-surface);
+  padding: 12px;
+}
+
+/* Citu klientu auto ar roku kravu plānā. */
+.iriss-log-manual-add {
+  margin: -4px 10px 12px;
+  display: block;
+  width: calc(100% - 20px);
+  border-radius: 10px;
+  padding: 8px 6px;
+  color: #6e6e73;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+.iriss-log-manual-add:hover {
+  background: var(--iriss-log-surface-2);
+  color: #1d1d1f;
+}
+.iriss-log-manual-form {
+  margin: -4px 10px 12px;
+  border-radius: 12px;
+  background: var(--iriss-log-surface-2);
+  padding: 12px;
+}
+.iriss-log-manual-input {
+  height: 36px;
+  min-width: 0;
+  border: 1px solid var(--iriss-log-line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0 10px;
+  font-size: 14px;
+}
+.iriss-log-manual-choice {
+  display: block;
+  width: 100%;
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px 10px;
+  font-size: 12.5px;
+  text-align: left;
+}
+.iriss-log-manual-choice.on {
+  box-shadow: inset 0 0 0 2px var(--iriss-log-focus);
+}
+.iriss-log-manual-chip {
+  border-radius: 999px;
+  background: #f2f2f7;
+  padding: 2px 8px;
+  color: #3a3a3c;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+@media (min-width: 768px) and (max-width: 1279px) {
+  .iriss-log-car-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  }
+}
+
+/* "Rādīt nosaukumus": pastāvīga etiķete pa labi no punkta. */
+.iriss-log-pin-label {
+  position: absolute;
+  left: calc(100% + 5px);
+  top: 50%;
+  max-width: 170px;
+  transform: translateY(-50%);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 1px 4px rgba(11, 12, 16, 0.18);
+  padding: 3px 7px;
+  pointer-events: none;
+  line-height: 1.25;
+}
+.iriss-log-pin-label .t1 {
+  display: block;
+  overflow: hidden;
+  color: #1d1d1f;
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.iriss-log-pin-label .t2 {
+  display: block;
+  overflow: hidden;
+  color: #6e6e73;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.iriss-log-pin-label .t2 + .t1 {
+  margin-top: 3px;
+}
+.iriss-log-pin-cluster.open .iriss-log-pin-label {
+  display: none;
+}
+
+/* Maršruta sākums/beigas un šabloni: izcelti kā kartītes ar ikonu. */
+.iriss-log-endpoint-add {
+  margin-top: 4px;
+  display: block;
+  width: 100%;
+  border: 1px dashed #c7c7cc;
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: #6e6e73;
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+}
+.iriss-log-endpoint-add:hover {
+  border-color: var(--iriss-log-focus);
+  color: var(--iriss-log-focus);
+}
+.iriss-log-endpoint {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--iriss-log-line);
+  border-radius: 12px;
+  background: #fff;
+  padding: 8px 10px;
+}
+.iriss-log-endpoint-picker {
+  margin-top: 4px;
+  border-radius: 14px;
+  background: var(--iriss-log-surface-2);
+  padding: 10px;
+}
+.iriss-log-tpl {
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid var(--iriss-log-line);
+  border-radius: 12px;
+  background: #fff;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.iriss-log-tpl:hover {
+  border-color: var(--iriss-log-focus);
+  box-shadow: 0 0 0 1px var(--iriss-log-focus);
+}
+.iriss-log-tpl-pick {
+  display: flex;
+  min-height: 52px;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  text-align: left;
+}
+.iriss-log-tpl-icon {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #eef2ff;
+  color: #3730a3;
+}
+.iriss-log-tpl-edit-btn {
+  display: inline-flex;
+  width: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid var(--iriss-log-line);
+  color: #6e6e73;
+}
+.iriss-log-tpl-edit-btn:hover {
+  background: var(--iriss-log-surface-2);
+  color: #1d1d1f;
+}
+.iriss-log-tpl-edit {
+  border: 1px solid var(--iriss-log-focus);
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px;
+}
+
+/* Adreses meklēšana rakstot (kā Google Maps). */
+.iriss-log-ac {
+  position: relative;
+}
+.iriss-log-ac-field {
+  display: flex;
+  height: 40px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--iriss-log-line);
+  border-radius: 999px;
+  background: #fff;
+  padding: 0 14px;
+  color: #6e6e73;
+}
+.iriss-log-ac-field:focus-within {
+  border-color: var(--iriss-log-focus);
+  box-shadow: 0 0 0 1px var(--iriss-log-focus);
+}
+.iriss-log-ac-field input {
+  min-width: 0;
+  height: 100%;
+  flex: 1 1 auto;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  background: transparent !important;
+  color: #1d1d1f;
+  font-size: 14px;
+  outline: none;
+}
+.iriss-log-ac-spin {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 2px solid #d2d2d7;
+  border-top-color: var(--iriss-log-focus);
+  border-radius: 999px;
+  animation: iriss-log-spin 0.7s linear infinite;
+}
+@keyframes iriss-log-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.iriss-log-ac-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 30;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(11, 12, 16, 0.18);
+  padding: 4px 0;
+}
+.iriss-log-ac-list button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  color: #6e6e73;
+  text-align: left;
+}
+.iriss-log-ac-list button.on {
+  background: var(--iriss-log-surface-2);
+}
+.iriss-log-ac-list .m {
+  display: block;
+  overflow: hidden;
+  color: #1d1d1f;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.iriss-log-ac-list .s {
+  display: block;
+  overflow: hidden;
+  color: #6e6e73;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.iriss-log-ac-note {
+  margin-top: 4px;
+  padding: 0 4px;
+  color: #6e6e73;
+  font-size: 12px;
+}
+.iriss-log-ac-note.bad {
+  color: #c2362b;
+}
+
+/* Kartē rādīt: Visi / Nākošā / Aiznākošā krava. */
+.iriss-log-trip-seg {
+  display: inline-flex;
+  gap: 2px;
+  border-radius: 10px;
+  background: var(--iriss-log-surface-2);
+  padding: 2px;
+}
+.iriss-log-trip-seg button {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 6px;
+  border-radius: 8px;
+  padding: 4px 10px;
+  color: #3a3a3c;
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.iriss-log-trip-seg button.on {
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(11, 12, 16, 0.12);
+  color: #0b0c10;
+  font-weight: 600;
+}
+.iriss-log-trip-seg i {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+}
+.iriss-log-trip-seg b {
+  color: #8e8e93;
+  font-weight: 600;
+}
+
+/* Google stila lāses: smaile tieši uz adreses. Nākošā sarkana, Aiznākošā melna, pārējie pelēki. */
+.iriss-log-tear {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  cursor: pointer;
+  line-height: 0;
+  transition: transform 0.12s ease;
+}
+.iriss-log-tear-svg {
+  display: block;
+  filter: drop-shadow(0 2px 3px rgba(11, 12, 16, 0.35));
+}
+.iriss-log-tear:hover,
+.iriss-log-tear.active,
+.iriss-log-tear.open {
+  z-index: 5;
+}
+.iriss-log-tear:hover {
+  transform: translate(-50%, -100%) translateY(-3px);
+}
+.iriss-log-tear.active .iriss-log-tear-svg {
+  animation: iriss-log-dot-bounce 0.55s ease-in-out infinite;
+}
+.iriss-log-tear.selected .iriss-log-tear-svg {
+  filter: drop-shadow(0 0 0 #fff) drop-shadow(0 0 3px #2563eb);
+}
+.iriss-log-tear.small {
+  opacity: 0.9;
+}
+.iriss-log-tear:hover .iriss-log-pin-tip,
+.iriss-log-tear.active .iriss-log-pin-tip {
+  display: block;
+  line-height: normal;
+}
+.iriss-log-tear.open .iriss-log-pin-tip,
+.iriss-log-tear.open .iriss-log-pin-label {
+  display: none;
+}
+.iriss-log-tear .iriss-log-pin-label,
+.iriss-log-tear .iriss-log-pin-list {
+  line-height: normal;
+}
+/* "N auto": skaits blakus lāsei, lai to nevar sajaukt ar pieturas numuru. */
+.iriss-log-tear-count {
+  position: absolute;
+  left: calc(100% - 4px);
+  top: 4px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(11, 12, 16, 0.25);
+  padding: 2px 7px;
+  color: #1d1d1f;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.iriss-log-tear.group .iriss-log-pin-label {
+  top: calc(50% + 14px);
+}
+/* Vairākas pieturas vienā adresē: lāses blakus, tieva līnija uz īsto punktu. */
+.iriss-log-spread-line {
+  position: absolute;
+  height: 1.5px;
+  transform-origin: 0 50%;
+  background: rgba(11, 12, 16, 0.55);
+  pointer-events: none;
+}
+.iriss-log-spread-dot {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  transform: translate(-50%, -50%);
+  border: 1.5px solid #fff;
+  border-radius: 999px;
+  background: #1d1d1f;
+  pointer-events: none;
+}
+
+/* Kartīte, kurai tuvumā nav brīvas vietas: paslēpta, līdz pele ir virs lāses vai auto ir izvēlēts. */
+.iriss-log-pin-label.crowded {
+  display: none;
+}
+.iriss-log-tear:hover .iriss-log-pin-label.crowded,
+.iriss-log-tear.active .iriss-log-pin-label.crowded,
+.iriss-log-tear.selected .iriss-log-pin-label.crowded {
+  z-index: 5;
+  display: block;
+}

@@ -99,6 +99,8 @@ import {
   ADMIN_SOURCE_TABLE_WRAP_CLASS,
 } from "@/lib/admin-source-data-table";
 import { extractDealerFactsFromServiceWorks } from "@/lib/admin-ai-dealer-facts";
+import { AdminDealerMajorWorksEditor } from "@/components/admin/AdminDealerMajorWorksEditor";
+import type { DealerMajorWorkOverride } from "@/lib/dealer-major-works-overrides";
 import type { TechnicalRiskMap } from "@/lib/admin-ai-technical-risk-map-types";
 import {
   collectDealerAdminWarnings,
@@ -164,6 +166,8 @@ type Props = {
   /** Tehnisko risku teksts / karte: DF1/DF2/L14/L15. Tukšs, ja audita nav. */
   techRiskText?: string | null;
   techRiskMap?: TechnicalRiskMap | null;
+  dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
+  onDealerMajorWorkOverridesChange?: (next: DealerMajorWorkOverride[]) => void;
 };
 
 export function AdminAutoRecordsSourceBlock({
@@ -205,6 +209,8 @@ export function AdminAutoRecordsSourceBlock({
   onAutoRecordsPhotoGroupsStructuralCommit,
   techRiskText = null,
   techRiskMap = null,
+  dealerMajorWorkOverrides = [],
+  onDealerMajorWorkOverridesChange,
 }: Props) {
   const mergeVehicleInfoFromText = (raw: string, base: AutoRecordsBlockState): AutoRecordsBlockState => {
     const patch = parseOutvinVehicleInfoFromAutoRecordsText(raw);
@@ -287,9 +293,10 @@ export function AdminAutoRecordsSourceBlock({
       ? (value.serviceWorks ?? [])
       : [emptyAutoRecordsServiceWorkRow()];
 
+  const originalTimeline = value.oneautoIngest?.serviceTimelineOriginal ?? [];
   const dealerFacts = useMemo(
-    () => extractDealerFactsFromServiceWorks(workRows),
-    [workRows],
+    () => extractDealerFactsFromServiceWorks(workRows, originalTimeline),
+    [workRows, originalTimeline],
   );
   const untranslatedWorkCount = useMemo(
     () => countUntranslatedDealerWorkRows(workRows),
@@ -304,7 +311,6 @@ export function AdminAutoRecordsSourceBlock({
       }),
     [workRows, techRiskText, techRiskMap],
   );
-  const originalTimeline = value.oneautoIngest?.serviceTimelineOriginal ?? [];
 
   /** Visas svešvalodas rindas latviski; rezultātu liek tikai tām rindām, kuras operators pa to laiku nav mainījis. */
   const translateAllWorkRows = async (base: AutoRecordsBlockState) => {
@@ -969,6 +975,15 @@ export function AdminAutoRecordsSourceBlock({
             >
               + Rinda
             </button>
+          ) : null}
+          {onDealerMajorWorkOverridesChange ? (
+            <AdminDealerMajorWorksEditor
+              facts={dealerFacts}
+              overrides={dealerMajorWorkOverrides}
+              onChange={onDealerMajorWorkOverridesChange}
+              readOnly={readOnly}
+              disabled={disabled}
+            />
           ) : null}
         </div>
 

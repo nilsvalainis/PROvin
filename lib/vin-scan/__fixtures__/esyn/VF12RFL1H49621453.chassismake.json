@@ -1,0 +1,100 @@
+{
+  "_meta": {
+    "url": "https://findsynsrapport.esyn.dk/webapi/v1/chassismake/VF12RFL1H49621453/Renault",
+    "status": 200,
+    "fetchedAt": "2026-11-17",
+    "note": "Reāla atbilde; personas dati izņemti ar scripts/vin-scan-refresh-fixtures.mjs"
+  },
+  "body": {
+    "vehicle": {
+      "kiDnumber": "9000000000487315",
+      "registrationNumber": "AB12345",
+      "chassisNumber": "VF12RFL1H49621453",
+      "makeName": "RENAULT",
+      "modelName": "Captur",
+      "categoryName": "M1-Personbil <= 3500 kg"
+    },
+    "inspection": [
+      {
+        "id": 36224651,
+        "date": "2025-08-22T15:45:00Z",
+        "conclusion": "GOD",
+        "odometer": 385,
+        "exactOdometer": 385537,
+        "registrationNumber": "AB12345"
+      },
+      {
+        "id": 36207313,
+        "date": "2025-08-20T13:21:00Z",
+        "conclusion": "OOM",
+        "odometer": 385,
+        "exactOdometer": 385292,
+        "registrationNumber": "AB12345"
+      },
+      {
+        "id": 32299942,
+        "date": "2023-10-11T10:19:00Z",
+        "conclusion": "GOD",
+        "odometer": 358,
+        "exactOdometer": 358886,
+        "registrationNumber": "AB12345"
+      },
+      {
+        "id": 32292602,
+        "date": "2023-10-10T11:27:00Z",
+        "conclusion": "OOM",
+        "odometer": 358,
+        "exactOdometer": 358874,
+        "registrationNumber": "AB12345"
+      },
+      {
+        "id": 28970102,
+        "date": "2022-02-02T12:13:00Z",
+        "conclusion": "GOD",
+        "odometer": 320,
+        "exactOdometer": null,
+        "registrationNumber": "AB12345"
+      },
+      {
+        "id": 28939232,
+        "date": "2022-01-27T10:46:00Z",
+        "conclusion": "OOM",
+        "odometer": 320,
+        "exactOdometer": null,
+        "registrationNumber": "AB12345"
+      },
+      {
+        "id": 25261547,
+        "date": "2020-02-03T07:33:00Z",
+        "conclusion": "BET",
+        "odometer": 271,
+        "exactOdometer": null,
+        "registrationNumber": "AB12345"
+      },
+      {
+        "id": 21814279,
+        "date": "2018-02-21T13:08:00Z",
+        "conclusion": "GOD",
+        "odometer": 83,
+        "exactOdometer": null,
+        "registrationNumber": "AB12345"
+      },
+      {
+        "id": 20976068,
+        "date": "2017-08-24T06:08:00Z",
+        "conclusion": "GOD",
+        "odometer": 171,
+        "exactOdometer": null,
+        "registrationNumber": "AB12345"
+      },
+      {
+        "id": 20954715,
+        "date": "2017-08-19T06:50:00Z",
+        "conclusion": "OOM",
+        "odometer": 171,
+        "exactOdometer": null,
+        "registrationNumber": "AB12345"
+      }
+    ]
+  }
+}

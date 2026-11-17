@@ -10,7 +10,7 @@ describe("unpaid reminder mail from /admin/teksti template", () => {
       paymentUrl: "https://www.provin.lv/apmaksa/token",
     });
     const rendered = resolveMessageSync(UNPAID_REMINDER_TEMPLATE_ID, vars);
-    expect(rendered?.subject).toBe("Par Jūsu auto pārbaudi (VIN WVWZZZ1KZAW000123)");
+    expect(rendered?.subject).toBe("PROVIN · Pasūtījums gaida apmaksu · WVWZZZ1KZAW000123");
     expect(rendered?.text.startsWith("Labdien!")).toBe(true);
     expect(rendered?.text).toContain("https://www.provin.lv/apmaksa/token");
     expect(rendered?.text).not.toMatch(/[—–]/);

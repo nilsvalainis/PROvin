@@ -1,0 +1,770 @@
+{
+ "vin": "WDC1660241A808087",
+ "label": "MERCEDES BENZ GLE 350 D 4MATIC: CSDD 8, AutoDNA 18, carVertical 16, dīleris 10; negadījumi 9",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 181, saglabāts 2026-09-01; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "MERCEDES BENZ GLE 350 D 4MATIC",
+   "registrationNumber": "OP1768",
+   "firstRegistration": "2016-08-22",
+   "nextInspectionDate": "2026-11-05",
+   "prevInspectionDate": "2024-10-28",
+   "engineDisplacementCm3": "2987",
+   "enginePowerKw": "190",
+   "fuelType": "Dīzeļdegviela",
+   "emissionStandard": "Euro 6 W",
+   "grossMassKg": "2950",
+   "curbMassKg": "2175",
+   "roadTaxEur": "159,00",
+   "registrationStatus": "Uzskaitē",
+   "opacityCoefficient": "0.01",
+   "particulateMatter": "600",
+   "previousRegistrationCountry": "-LATVIJA",
+   "ownerCountLatvia": "4",
+   "technicalInspectionHistory": [
+    {
+     "date": "28.10.2024",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.06",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "11.10.2023",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "0.02",
+     "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - 1 / 2 riteņi tiek nobloķēti bremžu stendā.",
+     "defects": [
+      {
+       "code": "8.4.1.",
+       "rating": "1",
+       "description": "Neveidojot piles, sūcas eļļa no motora (transmisijas)."
+      }
+     ]
+    },
+    {
+     "date": "27.09.2022",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.03",
+     "notes": "Nav OBD datu par konkrēto modeli.",
+     "defects": []
+    },
+    {
+     "date": "08.09.2021",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "0.02",
+     "notes": "Nav OBD datu par konkrēto modeli. Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+     "defects": [
+      {
+       "code": "5.2.3.",
+       "rating": "1",
+       "description": "Nelieli vietēji vai virspusēji riepas bojājumi."
+      }
+     ]
+    },
+    {
+     "date": "20.08.2020",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.01",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "20.08.2018",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": []
+    }
+   ],
+   "ownerRegistrationEvents": [
+    {
+     "date": "22.08.2016",
+     "label": "Pirmā reģistrācija Latvijā"
+    },
+    {
+     "date": "13.08.2020",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "06.04.2021",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "24.05.2021",
+     "label": "Īpašnieka maiņa"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "Pamatpārbaude",
+    "inspectionDateText": "05.11.2025",
+    "nextInspectionDateText": "",
+    "odometer": "163781",
+    "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "05.11.2025",
+     "odometer": "163781",
+     "country": "Latvija"
+    },
+    {
+     "date": "28.10.2024",
+     "odometer": "136281",
+     "country": "Latvija"
+    },
+    {
+     "date": "11.10.2023",
+     "odometer": "108856",
+     "country": "Latvija"
+    },
+    {
+     "date": "27.09.2022",
+     "odometer": "79670",
+     "country": "Latvija"
+    },
+    {
+     "date": "08.09.2021",
+     "odometer": "52001",
+     "country": "Latvija"
+    },
+    {
+     "date": "20.08.2020",
+     "odometer": "39230",
+     "country": "Latvija"
+    },
+    {
+     "date": "20.08.2018",
+     "odometer": "20956",
+     "country": "Latvija"
+    },
+    {
+     "date": "22.08.2016",
+     "odometer": "8",
+     "country": "Latvija"
+    }
+   ]
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "05.11.2025",
+     "odometer": "163781",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.09.2025",
+     "odometer": "160484",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.12.2024",
+     "odometer": "138670",
+     "country": "Latvija"
+    },
+    {
+     "date": "28.10.2024",
+     "odometer": "136281",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.01.2024",
+     "odometer": "115638",
+     "country": "Latvija"
+    },
+    {
+     "date": "11.10.2023",
+     "odometer": "108856",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.04.2023",
+     "odometer": "94555",
+     "country": "Latvija"
+    },
+    {
+     "date": "27.09.2022",
+     "odometer": "79670",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2022",
+     "odometer": "72348",
+     "country": "Latvija"
+    },
+    {
+     "date": "08.09.2021",
+     "odometer": "52001",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2021",
+     "odometer": "51209",
+     "country": "Latvija"
+    },
+    {
+     "date": "20.08.2020",
+     "odometer": "39230",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2020",
+     "odometer": "38999",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2019",
+     "odometer": "30905",
+     "country": "Latvija"
+    },
+    {
+     "date": "20.08.2018",
+     "odometer": "20956",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2018",
+     "odometer": "20727",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2017",
+     "odometer": "10936",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.09.2016",
+     "odometer": "1328",
+     "country": "Latvija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.03.2026",
+     "lossAmount": "600 - 700 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.07.2025",
+     "lossAmount": "1 400 - 1 500 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.11.2023",
+     "lossAmount": "700 - 800 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.09.2016",
+     "lossAmount": "1 100 - 1 200 €"
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.11.2025",
+     "odometer": "163781",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.09.2025",
+     "odometer": "160413",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.12.2024",
+     "odometer": "138599",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2024",
+     "odometer": "136281",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.01.2024",
+     "odometer": "115567",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2023",
+     "odometer": "108856",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.04.2023",
+     "odometer": "94527",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.09.2022",
+     "odometer": "79670",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2022",
+     "odometer": "72320",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2021",
+     "odometer": "51181",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2020",
+     "odometer": "38971",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2019",
+     "odometer": "30877",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2018",
+     "odometer": "20699",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2017",
+     "odometer": "10908",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.09.2016",
+     "odometer": "1328",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2016",
+     "odometer": "8",
+     "country": "Latvija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.09.2016",
+     "lossAmount": "1 001 - 1 500 €"
+    },
+    {
+     "incidentNo": "",
+     "csngDate": "01.10.2023",
+     "lossAmount": "751 - 1 000 €"
+    },
+    {
+     "incidentNo": "",
+     "csngDate": "01.11.2023",
+     "lossAmount": "751 - 1 000 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.07.2025",
+     "lossAmount": "1 001 - 1 500 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "01.03.2026",
+     "lossAmount": "501 - 750 €"
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "24.09.2025",
+     "odometer": "160484",
+     "country": "Latvija"
+    },
+    {
+     "date": "03.12.2024",
+     "odometer": "138670",
+     "country": "Latvija"
+    },
+    {
+     "date": "11.01.2024",
+     "odometer": "115638",
+     "country": "Latvija"
+    },
+    {
+     "date": "13.04.2023",
+     "odometer": "94555",
+     "country": "Latvija"
+    },
+    {
+     "date": "09.07.2022",
+     "odometer": "72348",
+     "country": "Latvija"
+    },
+    {
+     "date": "30.08.2021",
+     "odometer": "51209",
+     "country": "Latvija"
+    },
+    {
+     "date": "17.08.2020",
+     "odometer": "38999",
+     "country": "Latvija"
+    },
+    {
+     "date": "13.08.2019",
+     "odometer": "30905",
+     "country": "Latvija"
+    },
+    {
+     "date": "16.08.2018",
+     "odometer": "20727",
+     "country": "Latvija"
+    },
+    {
+     "date": "17.08.2017",
+     "odometer": "10936",
+     "country": "Latvija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "",
+     "odometer": "",
+     "location": "",
+     "works": ""
+    }
+   ],
+   "outvin": {
+    "precheckAt": "2026-07-09T14:17:41.579Z",
+    "vin": "WDC1660241A808087",
+    "capabilitySlots": [
+     {
+      "id": "service_1",
+      "historyType": 1,
+      "titleLv": "Oficiālā servisa un nobraukuma vēsture (Type 1)",
+      "creditCost": 1,
+      "status": "available",
+      "category": "service_history"
+     },
+     {
+      "id": "carfax_2",
+      "historyType": 2,
+      "titleLv": "ASV / Carfax vēsture (Type 2)",
+      "creditCost": 1,
+      "status": "disabled",
+      "statusReason": "Eiropas VIN — ASV Carfax (Type 2) parasti nav pieejams",
+      "category": "us_carfax"
+     }
+    ],
+    "purchases": [],
+    "vehicleInfo": {
+     "model": "",
+     "modelSeries": "",
+     "vinCode": "",
+     "vehicleType": "",
+     "transmission": "",
+     "steeringSide": "",
+     "engineCode": "",
+     "engineNumber": "",
+     "body": "",
+     "drive": "",
+     "power": "",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "",
+     "colorCode": "",
+     "interior": "",
+     "interiorCode": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "ML/GLE 350 BLUETEC/D 4MATIC",
+     "modelSeries": "ML",
+     "vinCode": "WDC1660241A808087",
+     "vehicleType": "166",
+     "transmission": "automatic",
+     "steeringSide": "Left",
+     "engineCode": "V6 diesel engine OM642",
+     "engineNumber": "",
+     "body": "",
+     "drive": "",
+     "power": "",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "DIAMOND WHITE - METALLIC PAINT (799U)",
+     "colorCode": "",
+     "interior": "IMITATION LEATHER - BLACK/ANTHRACITE (111A)",
+     "interiorCode": ""
+    }
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "17.10.2023",
+     "lossAmount": "965 €"
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "95",
+   "listingCreated": "06.04.2026",
+   "priceDrop": "-3000",
+   "priceHistory": [],
+   "listingMileageOdometer": "",
+   "listingMileageDate": "",
+   "listingMileageCountry": ""
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

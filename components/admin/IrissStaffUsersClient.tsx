@@ -1,9 +1,42 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { AdminResponsiveModal } from "@/components/admin/AdminResponsiveModal";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { IrissCabinetAccessPanel } from "@/components/admin/IrissCabinetAccessPanel";
-import { IRISS_SECTION_CATALOG, IRISS_SECTION_LABELS, type IrissSection } from "@/lib/staff-roles";
-import type { EnvAdminPublic, StaffAuditEntry, StaffUserPublic } from "@/lib/staff-types";
+import { IrissDisclosure } from "@/components/admin/iriss-ui/IrissUi";
+import { auditTime, groupAuditByDay } from "@/lib/iriss-staff-audit-days";
+import {
+  staffDeleteUserConfirm,
+  staffResetPasswordConfirm,
+  staffResetPasswordLabel,
+  staffUserAdminActions,
+  type StaffAdminActionId,
+} from "@/lib/staff-admin-actions";
+import {
+  AUTOPARKS_V2_SECTION_SHORT_LABELS,
+  IRISS_SECTION_CATALOG,
+  IRISS_SECTION_LABELS,
+  isAutoparksV2Section,
+  type IrissSection,
+} from "@/lib/staff-roles";
+import type { EnvAdminPublic, StaffAuditEntry, StaffStatus, StaffUserPublic } from "@/lib/staff-types";
+
+/** Autoparka apakštiesības: ar atkāpi zem virsraksta "Autoparks" (virsraksts pirms pirmās). */
+function sectionRowLabel(id: IrissSection, label: string): string {
+  return isAutoparksV2Section(id) ? AUTOPARKS_V2_SECTION_SHORT_LABELS[id] : label;
+}
+
+function AutoparksGroupHeader({ id, className }: { id: IrissSection; className: string }) {
+  if (id !== "ap_pamatdati") return null;
+  return <li className={className}>Autoparks</li>;
+}
+
+function uniqueSectionLabels(ids: readonly IrissSection[]): string[] {
+  return [...new Set(ids.map((id) => IRISS_SECTION_LABELS[id]))];
+}
+
+/** Zem `xl` (1280 px) sānu kartītes nav - tiesības atveras logā. */
+const DETAIL_SHEET_MEDIA = "(max-width: 1279.98px)";
 
 type SessionRow = { id: string; createdAt: string; lastSeenAt: string; ip: string; device: string };
 type DirectoryUser = (StaffUserPublic & { envAdmin?: false }) | (EnvAdminPublic & { envAdmin: true });
@@ -16,6 +49,8 @@ const AUDIT_LABEL: Record<StaffAuditEntry["action"], string> = {
   invite_accepted: "pieņēma uzaicinājumu",
   access_revoked: "atsauca pieeju",
   access_restored: "atjaunoja pieeju",
+  password_reset: "atiestatīja paroli",
+  user_deleted: "izdzēsa lietotāju",
   sessions_revoked: "beidza sesijas",
   totp_enabled: "ieslēdza 2FA",
   totp_disabled: "izslēdza 2FA",
@@ -23,7 +58,9 @@ const AUDIT_LABEL: Record<StaffAuditEntry["action"], string> = {
   waybill_requested: "nosūtīja pavadzīmes pieprasījumu",
   waybill_retry: "atkārtoja pavadzīmes pieprasījumu",
   waybill_claimed: "Aivars paņēma pieprasījumu",
+  waybill_cancelled: "atcēla pavadzīmes pieprasījumu",
   waybill_result: "Aivars atgrieza rezultātu",
+  waybill_handoff_aivars: "automātika nodeva pavadzīmi Aivaram",
   point_viewed: "skatīja punktus",
   point_edited: "laboja punktu",
   print: "drukāja karti",
@@ -52,8 +89,8 @@ function formatWhen(iso: string | null): string {
 }
 
 function statusLabel(status: DirectoryUser["status"]): { text: string; className: string } {
-  if (status === "active") return { text: "Aktīvs", className: "bg-[#ECFDF3] text-[#067647]" };
-  if (status === "invited") return { text: "Uzaicināts", className: "bg-[#EEF2FF] text-[#3d5bd9]" };
+  if (status === "active") return { text: "Aktīvs", className: "bg-[#ECFDF3] text-[var(--iriss-ok)]" };
+  if (status === "invited") return { text: "Uzaicināts", className: "bg-[#EEF2FF] text-[var(--iriss-info)]" };
   return { text: "Atsaukts", className: "bg-[#FEF3F2] text-[#B42318]" };
 }
 
@@ -65,10 +102,12 @@ function userSections(user: DirectoryUser): IrissSection[] | "admin" {
 export function IrissStaffUsersClient() {
   const [admin, setAdmin] = useState<EnvAdminPublic | null>(null);
   const [users, setUsers] = useState<StaffUserPublic[]>([]);
+  const [listState, setListState] = useState<"loading" | "ready" | "error">("loading");
   const [audit, setAudit] = useState<StaffAuditEntry[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<SessionRow[]>([]);
   const [modal, setModal] = useState(false);
+  const [detailSheet, setDetailSheet] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [inviteSections, setInviteSections] = useState<IrissSection[]>(["logistika"]);
@@ -77,6 +116,7 @@ export function IrissStaffUsersClient() {
   const [busy, setBusy] = useState(false);
   const [totp, setTotp] = useState<{ secret: string; otpauth: string } | null>(null);
   const [totpCode, setTotpCode] = useState("");
+  const [resetLink, setResetLink] = useState<{ email: string; url: string; emailed: boolean } | null>(null);
 
   const directory = useMemo<DirectoryUser[]>(() => {
     const rows: DirectoryUser[] = [];
@@ -88,16 +128,27 @@ export function IrissStaffUsersClient() {
   const selected = directory.find((u) => u.id === selectedId) ?? directory[0] ?? null;
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/admin/staff/users", { credentials: "include", cache: "no-store" });
-    const data = (await res.json()) as { admin?: EnvAdminPublic; users?: StaffUserPublic[]; audit?: StaffAuditEntry[] };
-    if (data.admin) setAdmin(data.admin);
-    setUsers(data.users ?? []);
-    setAudit(data.audit ?? []);
+    try {
+      const res = await fetch("/api/admin/staff/users", { credentials: "include", cache: "no-store" });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = (await res.json()) as { admin?: EnvAdminPublic; users?: StaffUserPublic[]; audit?: StaffAuditEntry[] };
+      if (data.admin) setAdmin(data.admin);
+      setUsers(data.users ?? []);
+      setAudit(data.audit ?? []);
+      setListState("ready");
+    } catch {
+      setListState((prev) => (prev === "ready" ? "ready" : "error"));
+    }
   }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    setResetLink(null);
+    setError(null);
+  }, [selectedId]);
 
   useEffect(() => {
     if (!selected || selected.envAdmin) {
@@ -147,7 +198,14 @@ export function IrissStaffUsersClient() {
 
   async function act(action: string, extra?: Record<string, unknown>) {
     if (!selected || selected.envAdmin) return;
+    if (action === "reset_password") {
+      if (!window.confirm(staffResetPasswordConfirm(selected.name, selected.email, selected.status))) return;
+    }
+    if (action === "delete") {
+      if (!window.confirm(staffDeleteUserConfirm(selected.name, selected.email))) return;
+    }
     setBusy(true);
+    setError(null);
     try {
       const res = await fetch(`/api/admin/staff/users/${encodeURIComponent(selected.id)}`, {
         method: "POST",
@@ -155,9 +213,27 @@ export function IrissStaffUsersClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, ...extra }),
       });
-      const data = (await res.json()) as { secret?: string; otpauth?: string; error?: string };
+      const data = (await res.json()) as {
+        secret?: string;
+        otpauth?: string;
+        error?: string;
+        inviteUrl?: string;
+        emailed?: boolean;
+      };
+      if (!res.ok) {
+        setError(data.error ?? "Neizdevās izpildīt darbību.");
+        return;
+      }
       if (action === "totp_start" && data.secret) {
         setTotp({ secret: data.secret, otpauth: data.otpauth ?? "" });
+      }
+      if (action === "reset_password" && data.inviteUrl) {
+        setResetLink({ email: selected.email, url: data.inviteUrl, emailed: Boolean(data.emailed) });
+      }
+      if (action === "delete") {
+        setDetailSheet(false);
+        setSelectedId(null);
+        setResetLink(null);
       }
       await load();
     } finally {
@@ -176,14 +252,14 @@ export function IrissStaffUsersClient() {
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-[1.35rem] font-semibold tracking-tight text-[#111827] sm:text-[1.5rem]">
+            <h1 className="text-[1.35rem] font-semibold tracking-tight text-[var(--iriss-ink)] sm:text-[1.5rem]">
               Lietotāji un pieeja
             </h1>
-            <span className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#3d5bd9]">
+            <span className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--iriss-info)]">
               IRISS
             </span>
           </div>
-          <p className="mt-1.5 max-w-xl text-[13px] text-[#6b7280]">
+          <p className="mt-1.5 max-w-xl text-[13px] text-[var(--iriss-ink-2)]">
             Katrai personai var atzīmēt vairākas sadaļas. Navigācijā redzamas tikai atļautās, sākuma lapa - pirmā
             atzīmētā. Pārbaude notiek serverī.
           </p>
@@ -191,7 +267,7 @@ export function IrissStaffUsersClient() {
         <button
           type="button"
           onClick={() => setModal(true)}
-          className="rounded-full bg-[#111827] px-4 py-2 text-[13px] font-medium text-white"
+          className="rounded-full bg-[var(--iriss-graphite)] px-4 py-2 text-[13px] font-medium text-white"
         >
           + Pievienot personu
         </button>
@@ -199,13 +275,22 @@ export function IrissStaffUsersClient() {
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-3 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-3">
-          <section className="overflow-hidden rounded-[22px] border border-[#E5E7EB] bg-white shadow-sm">
-            <div className="hidden grid-cols-[1fr_minmax(0,220px)_88px_140px] gap-2 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#9aa3b2] sm:grid">
+          <section className="overflow-hidden rounded-[22px] border border-[var(--iriss-line)] bg-white shadow-sm">
+            <div className="hidden grid-cols-[1fr_minmax(0,220px)_88px_140px] gap-2 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--iriss-ink-3)] sm:grid">
               <span>Persona</span>
               <span>Sadaļas</span>
               <span>Statuss</span>
               <span>Pēdējā pieteikšanās</span>
             </div>
+            {directory.length === 0 ? (
+              <StaffListPlaceholder
+                state={listState}
+                onRetry={() => {
+                  setListState("loading");
+                  void load();
+                }}
+              />
+            ) : null}
             <ul>
               {directory.map((user) => {
                 const st = statusLabel(user.status);
@@ -215,38 +300,41 @@ export function IrissStaffUsersClient() {
                   <li key={user.id}>
                     <button
                       type="button"
-                      onClick={() => setSelectedId(user.id)}
+                      onClick={() => {
+                        setSelectedId(user.id);
+                        if (window.matchMedia(DETAIL_SHEET_MEDIA).matches) setDetailSheet(true);
+                      }}
                       className={`flex w-full items-center gap-3 border-l-2 px-4 py-3 text-left ${
-                        active ? "border-[#3d5bd9] bg-[#F8FAFF]" : "border-transparent"
+                        active ? "border-[var(--iriss-info)] bg-[#F8FAFF]" : "border-transparent"
                       }`}
                     >
-                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#EEF2FF] text-[12px] font-semibold text-[#3d5bd9]">
+                      <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#EEF2FF] text-[12px] font-semibold text-[var(--iriss-info)]">
                         {initials(user.name)}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[14px] font-medium text-[#111827]">{user.name}</span>
-                        <span className="block truncate text-[12px] text-[#6b7280]">
+                        <span className="block truncate text-[14px] font-medium text-[var(--iriss-ink)]">{user.name}</span>
+                        <span className="block truncate text-[12px] text-[var(--iriss-ink-2)]">
                           {user.email || "env administrators"}
                         </span>
                       </span>
                       <span className="hidden min-w-0 flex-wrap justify-end gap-1 sm:flex">
                         {secs === "admin" ? (
-                          <span className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[11px] font-medium text-[#3d5bd9]">
+                          <span className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[11px] font-medium text-[var(--iriss-info)]">
                             Visas (administrators)
                           </span>
                         ) : (
-                          secs.map((id) => (
+                          uniqueSectionLabels(secs).map((label) => (
                             <span
-                              key={id}
-                              className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[11px] font-medium text-[#3d5bd9]"
+                              key={label}
+                              className="rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[11px] font-medium text-[var(--iriss-info)]"
                             >
-                              {IRISS_SECTION_LABELS[id]}
+                              {label}
                             </span>
                           ))
                         )}
                       </span>
                       <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${st.className}`}>{st.text}</span>
-                      <span className="hidden w-[140px] shrink-0 text-right text-[11px] text-[#9aa3b2] lg:block">
+                      <span className="hidden w-[140px] shrink-0 text-right text-[11px] text-[var(--iriss-ink-3)] lg:block">
                         {formatWhen(user.lastLoginAt)}
                       </span>
                     </button>
@@ -256,32 +344,16 @@ export function IrissStaffUsersClient() {
             </ul>
           </section>
 
-          <section className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm xl:hidden">
-            {selected ? <UserDetailCard
-              selected={selected}
-              draftSections={draftSections}
-              sessions={sessions}
-              totp={totp}
-              totpCode={totpCode}
-              setTotpCode={setTotpCode}
-              busy={busy}
-              dirty={Boolean(dirty)}
-              onToggle={toggleDraft}
-              onSave={() => void act("set_sections", { sections: draftSections })}
-              onAct={act}
-            /> : null}
-          </section>
-
-          <section className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9aa3b2]">Darbību žurnāls</p>
-            <ul className="mt-3 space-y-2">
-              {audit.length === 0 ? (
-                <li className="text-[13px] text-[#6b7280]">Vēl nav ierakstu.</li>
-              ) : (
-                audit.map((row) => (
+          <IrissDisclosure title="Darbību žurnāls" count={`${audit.length} ieraksti`}>
+            {audit.length === 0 ? <p className="text-[13px] text-[var(--iriss-ink-2)]">Vēl nav ierakstu.</p> : null}
+            {groupAuditByDay(audit).map((day) => (
+              <div key={day.key} className="mt-3 first:mt-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--iriss-ink-3)]">{day.label}</p>
+                <ul className="mt-1.5 space-y-2">
+                {day.rows.map((row) => (
                   <li key={row.id} className="flex gap-2 text-[13px]">
-                    <span className="w-16 shrink-0 text-[#9aa3b2]">{formatWhen(row.createdAt).split(" · ")[0]?.replace("šodien ", "")}</span>
-                    <span className="min-w-0 text-[#111827] [overflow-wrap:anywhere]">
+                    <span className="w-12 shrink-0 tabular-nums text-[var(--iriss-ink-3)]">{auditTime(row.createdAt)}</span>
+                    <span className="min-w-0 text-[var(--iriss-ink)] [overflow-wrap:anywhere]">
                       {row.userId === "env-admin"
                         ? admin?.name || "Administrators"
                         : users.find((u) => u.id === row.userId)?.name || row.userId}{" "}
@@ -289,10 +361,11 @@ export function IrissStaffUsersClient() {
                       {typeof row.meta.email === "string" ? ` ${row.meta.email}` : ""}
                     </span>
                   </li>
-                ))
-              )}
-            </ul>
-          </section>
+                ))}
+                </ul>
+              </div>
+            ))}
+          </IrissDisclosure>
         </div>
 
         <aside className="hidden space-y-3 xl:block">
@@ -306,6 +379,8 @@ export function IrissStaffUsersClient() {
               setTotpCode={setTotpCode}
               busy={busy}
               dirty={Boolean(dirty)}
+              error={error}
+              resetLink={resetLink}
               onToggle={toggleDraft}
               onSave={() => void act("set_sections", { sections: draftSections })}
               onAct={act}
@@ -315,69 +390,184 @@ export function IrissStaffUsersClient() {
         </aside>
       </div>
 
-      {modal ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0f172a66] p-4">
-          <div className="w-full max-w-md rounded-[24px] bg-white p-5 shadow-xl">
-            <div className="mb-4 flex items-start justify-between">
-              <h2 className="text-[18px] font-semibold">Pievienot personu</h2>
-              <button type="button" onClick={() => setModal(false)} className="text-[#6b7280]" aria-label="Aizvērt">
-                ×
-              </button>
-            </div>
-            <label className="mb-3 block text-[13px]">
-              Vārds, uzvārds
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2.5 text-[16px]"
-              />
-            </label>
-            <label className="mb-3 block text-[13px]">
-              E-pasts
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full rounded-xl border border-[#E5E7EB] px-3 py-2.5 text-[16px]"
-              />
-            </label>
-            <p className="mb-2 text-[13px] font-medium">Sadaļas</p>
-            <ul className="mb-3 divide-y divide-[#F3F4F6] rounded-2xl border border-[#E5E7EB]">
-              {IRISS_SECTION_CATALOG.map((row) => {
-                const on = inviteSections.includes(row.id);
-                return (
-                  <li key={row.id} className="flex items-center justify-between px-3 py-2.5">
-                    <label className="flex flex-1 items-center gap-2 text-[14px]">
-                      <input type="checkbox" checked={on} onChange={() => toggleInvite(row.id)} />
-                      {row.label}
-                    </label>
-                    {on && inviteSections[0] === row.id ? (
-                      <span className="text-[12px] text-[#3d5bd9]">sākuma lapa</span>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-            <p className="text-[12px] leading-relaxed text-[#6b7280]">
-              Persona saņem vienreizēju uzaicinājuma saiti (derīga 24 h), pēc tam iestata paroli un 2FA. Uzaicinājums tiek
-              nosūtīts tikai pēc šīs apstiprināšanas.
-            </p>
-            {error ? <p className="mt-2 text-[13px] text-[#B42318]">{error}</p> : null}
-            <div className="mt-5 flex justify-end gap-2">
-              <button type="button" onClick={() => setModal(false)} className="rounded-full px-4 py-2 text-[13px]">
-                Atcelt
+      {/* Telefonā/planšetē tiesību kartīte atveras logā - citādi tā ir zem visa saraksta (prod 213 rindas, ~13 000 px). */}
+      <AdminResponsiveModal
+        open={detailSheet && Boolean(selected)}
+        onClose={() => setDetailSheet(false)}
+        title={selected?.name ?? ""}
+        footer={
+          selected && !selected.envAdmin ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setDetailSheet(false)}
+                className="min-h-11 rounded-full px-4 py-2 text-[14px]"
+              >
+                Aizvērt
               </button>
               <button
                 type="button"
-                disabled={busy || inviteSections.length === 0}
-                onClick={() => void invite()}
-                className="rounded-full bg-[#111827] px-4 py-2 text-[13px] font-medium text-white"
+                disabled={busy || !dirty || draftSections.length === 0}
+                onClick={() => void act("set_sections", { sections: draftSections })}
+                className="min-h-11 rounded-full bg-[var(--iriss-graphite)] px-5 py-2 text-[14px] font-medium text-white disabled:opacity-40"
               >
-                Izveidot uzaicinājumu
+                {busy ? "Saglabā…" : "Saglabāt"}
               </button>
-            </div>
-          </div>
-        </div>
+            </>
+          ) : undefined
+        }
+      >
+        {selected ? (
+          <UserDetailCard
+            bare
+            selected={selected}
+            draftSections={draftSections}
+            sessions={sessions}
+            totp={totp}
+            totpCode={totpCode}
+            setTotpCode={setTotpCode}
+            busy={busy}
+            dirty={Boolean(dirty)}
+            error={error}
+            resetLink={resetLink}
+            onToggle={toggleDraft}
+            onSave={() => void act("set_sections", { sections: draftSections })}
+            onAct={act}
+          />
+        ) : null}
+      </AdminResponsiveModal>
+
+      <AdminResponsiveModal
+        open={modal}
+        title="Pievienot personu"
+        onClose={() => setModal(false)}
+        footer={
+          <>
+            <button type="button" onClick={() => setModal(false)} className="min-h-11 rounded-full px-4 py-2 text-[14px]">
+              Atcelt
+            </button>
+            <button
+              type="button"
+              disabled={busy || inviteSections.length === 0}
+              onClick={() => void invite()}
+              className="min-h-11 rounded-full bg-[var(--iriss-graphite)] px-4 py-2 text-[14px] font-medium text-white disabled:opacity-50"
+            >
+              Izveidot uzaicinājumu
+            </button>
+          </>
+        }
+      >
+        <label className="mb-3 block text-[13px]">
+          Vārds, uzvārds
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoComplete="name"
+            className="mt-1 w-full rounded-xl border border-[var(--iriss-line)] px-3 py-2.5 text-[16px]"
+          />
+        </label>
+        <label className="mb-3 block text-[13px]">
+          E-pasts
+          <input
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-[var(--iriss-line)] px-3 py-2.5 text-[16px]"
+          />
+        </label>
+        <p className="mb-2 text-[13px] font-medium">Sadaļas</p>
+        <ul className="mb-3 divide-y divide-[#F3F4F6] rounded-2xl border border-[var(--iriss-line)]">
+          {IRISS_SECTION_CATALOG.map((row) => {
+            const on = inviteSections.includes(row.id);
+            return (
+              <Fragment key={row.id}>
+                <AutoparksGroupHeader id={row.id} className="px-3 py-2.5 text-[14px] font-medium" />
+                <li className={`flex items-center justify-between pr-3 ${isAutoparksV2Section(row.id) ? "pl-8" : "pl-3"}`}>
+                  <label className="flex min-h-11 flex-1 items-center gap-3 py-2 text-[14px]">
+                    <input type="checkbox" className="h-5 w-5 shrink-0" checked={on} onChange={() => toggleInvite(row.id)} />
+                    {sectionRowLabel(row.id, row.label)}
+                  </label>
+                  {on && inviteSections[0] === row.id ? (
+                    <span className="text-[12px] text-[var(--iriss-info)]">sākuma lapa</span>
+                  ) : null}
+                </li>
+              </Fragment>
+            );
+          })}
+        </ul>
+        <p className="text-[12px] leading-relaxed text-[var(--iriss-ink-2)]">
+          Persona saņem vienreizēju uzaicinājuma saiti (derīga 24 h), pēc tam iestata paroli un 2FA. Uzaicinājums tiek
+          nosūtīts tikai pēc šīs apstiprināšanas.
+        </p>
+        {error ? <p className="mt-2 text-[13px] text-[#B42318]">{error}</p> : null}
+      </AdminResponsiveModal>
+    </div>
+  );
+}
+
+export function StaffUserAdminActions({
+  status,
+  busy,
+  onAct,
+}: {
+  status: StaffStatus;
+  busy: boolean;
+  onAct: (action: StaffAdminActionId) => void;
+}) {
+  const actions = staffUserAdminActions(status);
+  return (
+    <div className="mt-4 flex flex-wrap gap-2">
+      {actions.includes("revoke_sessions") ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onAct("revoke_sessions")}
+          className="rounded-full border border-[var(--iriss-line)] px-3 py-1.5 text-[12px]"
+        >
+          Beigt sesijas
+        </button>
+      ) : null}
+      {actions.includes("reset_password") ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onAct("reset_password")}
+          className="rounded-full border border-[var(--iriss-line)] px-3 py-1.5 text-[12px]"
+        >
+          {staffResetPasswordLabel(status)}
+        </button>
+      ) : null}
+      {actions.includes("restore") ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onAct("restore")}
+          className="rounded-full bg-[var(--iriss-graphite)] px-3 py-1.5 text-[12px] text-white"
+        >
+          Atjaunot pieeju
+        </button>
+      ) : null}
+      {actions.includes("revoke") ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onAct("revoke")}
+          className="rounded-full px-3 py-1.5 text-[12px] text-[#B42318]"
+        >
+          Atsaukt pieeju
+        </button>
+      ) : null}
+      {actions.includes("delete") ? (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => onAct("delete")}
+          className="rounded-full px-3 py-1.5 text-[12px] text-[#B42318]"
+        >
+          Dzēst lietotāju
+        </button>
       ) : null}
     </div>
   );
@@ -392,10 +582,15 @@ function UserDetailCard({
   setTotpCode,
   busy,
   dirty,
+  error,
+  resetLink,
   onToggle,
   onSave,
   onAct,
+  bare = false,
 }: {
+  /** Logā: bez kartītes rāmja un galvenes (vārds un Saglabāt ir loga galvenē/kājenē). */
+  bare?: boolean;
   selected: DirectoryUser;
   draftSections: IrissSection[];
   sessions: SessionRow[];
@@ -404,20 +599,26 @@ function UserDetailCard({
   setTotpCode: (v: string) => void;
   busy: boolean;
   dirty: boolean;
+  error: string | null;
+  resetLink: { email: string; url: string; emailed: boolean } | null;
   onToggle: (id: IrissSection) => void;
   onSave: () => void;
   onAct: (action: string, extra?: Record<string, unknown>) => void;
 }) {
+  const Wrapper = bare ? "div" : "section";
   return (
-    <section className="rounded-[22px] border border-[#E5E7EB] bg-white p-4 shadow-sm">
+    <Wrapper className={bare ? "" : "rounded-[22px] border border-[var(--iriss-line)] bg-white p-4 shadow-sm"}>
+      {bare ? (
+        <p className="-mt-1 text-[12px] text-[var(--iriss-ink-2)]">{selected.email || "env administrators"}</p>
+      ) : (
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-full bg-[#EEF2FF] text-[13px] font-semibold text-[#3d5bd9]">
+          <span className="grid h-10 w-10 place-items-center rounded-full bg-[#EEF2FF] text-[13px] font-semibold text-[var(--iriss-info)]">
             {initials(selected.name)}
           </span>
           <div>
             <p className="text-[15px] font-semibold">{selected.name}</p>
-            <p className="text-[12px] text-[#6b7280]">{selected.email || "env administrators"}</p>
+            <p className="text-[12px] text-[var(--iriss-ink-2)]">{selected.email || "env administrators"}</p>
           </div>
         </div>
         {!selected.envAdmin ? (
@@ -425,97 +626,136 @@ function UserDetailCard({
             type="button"
             disabled={busy || !dirty || draftSections.length === 0}
             onClick={onSave}
-            className="rounded-full bg-[#EEF2FF] px-3 py-1.5 text-[12px] font-medium text-[#3d5bd9] disabled:opacity-40"
+            className="min-h-11 rounded-full bg-[#EEF2FF] px-3 py-1.5 text-[12px] font-medium text-[var(--iriss-info)] disabled:opacity-40 sm:min-h-0"
           >
             Saglabāt
           </button>
         ) : null}
       </div>
+      )}
 
       {selected.envAdmin ? (
-        <p className="mt-4 text-[13px] text-[#6b7280]">Visas sadaļas (administrators). Nila env pieteikšanās paliek nemainīta.</p>
+        <p className="mt-4 text-[13px] text-[var(--iriss-ink-2)]">Visas sadaļas (administrators). Nila env pieteikšanās paliek nemainīta.</p>
       ) : (
         <>
-          <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9aa3b2]">Pieejamās sadaļas</p>
+          <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--iriss-ink-3)]">Pieejamās sadaļas</p>
           <ul className="mt-2 divide-y divide-[#F3F4F6]">
             {IRISS_SECTION_CATALOG.map((row) => {
               const on = draftSections.includes(row.id);
               const pos = draftSections.indexOf(row.id);
               const home = pos === 0;
               return (
-                <li key={row.id} className="flex items-center justify-between py-2">
-                  <label className="flex flex-1 items-center gap-2 text-[14px]">
-                    <input type="checkbox" checked={on} onChange={() => onToggle(row.id)} />
-                    {row.label}
-                  </label>
-                  {home ? (
-                    <span className="text-[12px] text-[#3d5bd9]">sākuma lapa</span>
-                  ) : on ? (
-                    <span className="text-[12px] text-[#9aa3b2]">{pos + 1}.</span>
-                  ) : null}
-                </li>
+                <Fragment key={row.id}>
+                  <AutoparksGroupHeader id={row.id} className="py-2 text-[14px] font-medium" />
+                  <li className={`flex items-center justify-between ${isAutoparksV2Section(row.id) ? "pl-5" : ""}`}>
+                    <label className="flex min-h-11 flex-1 items-center gap-3 py-2 text-[14px]">
+                      <input type="checkbox" className="h-5 w-5 shrink-0" checked={on} onChange={() => onToggle(row.id)} />
+                      {sectionRowLabel(row.id, row.label)}
+                    </label>
+                    {home ? (
+                      <span className="text-[12px] text-[var(--iriss-info)]">sākuma lapa</span>
+                    ) : on ? (
+                      <span className="text-[12px] text-[var(--iriss-ink-3)]">{pos + 1}.</span>
+                    ) : null}
+                  </li>
+                </Fragment>
               );
             })}
           </ul>
-          <p className="mt-2 text-[12px] leading-relaxed text-[#6b7280]">
+          <p className="mt-2 text-[12px] leading-relaxed text-[var(--iriss-ink-2)]">
             Sākuma lapa - pirmā atzīmētā ({draftSections[0] ? IRISS_SECTION_LABELS[draftSections[0]] : "-"}). Cenas, klientu
             dati un šofera personas dati šīm sadaļām netiek rādīti, ja tas nav atļauts. Izmaiņas stājas spēkā nākamajā
             pieprasījumā; atvērtās sesijas redz jauno sarakstu.
           </p>
+          {dirty && !bare ? (
+            <div className="sticky bottom-[calc(var(--admin-tabbar-h,0px)+max(0.75rem,env(safe-area-inset-bottom)))] z-10 mt-3 xl:hidden">
+              <button
+                type="button"
+                disabled={busy || draftSections.length === 0}
+                onClick={onSave}
+                className="min-h-11 w-full rounded-full bg-[var(--iriss-graphite)] px-4 py-2.5 text-[14px] font-medium text-white shadow-lg disabled:opacity-50"
+              >
+                {busy ? "Saglabā…" : "Saglabāt izmaiņas"}
+              </button>
+            </div>
+          ) : null}
         </>
       )}
 
       {!selected.envAdmin ? (
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void onAct("revoke_sessions")}
-            className="rounded-full border border-[#E5E7EB] px-3 py-1.5 text-[12px]"
-          >
-            Beigt sesijas
-          </button>
-          {selected.status === "revoked" ? (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void onAct("restore")}
-              className="rounded-full bg-[#111827] px-3 py-1.5 text-[12px] text-white"
-            >
-              Atjaunot pieeju
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void onAct("revoke")}
-              className="rounded-full px-3 py-1.5 text-[12px] text-[#B42318]"
-            >
-              Atsaukt pieeju
-            </button>
-          )}
+        <StaffUserAdminActions status={selected.status} busy={busy} onAct={(action) => void onAct(action)} />
+      ) : null}
+      {!selected.envAdmin && error ? <p className="mt-2 text-[13px] text-[#B42318]">{error}</p> : null}
+      {!selected.envAdmin && resetLink ? (
+        <div className="mt-3 space-y-2 rounded-xl bg-[#F8FAFC] p-3">
+          <p className="text-[13px] text-[var(--iriss-ink)]">
+            {resetLink.emailed
+              ? `Saite nosūtīta uz ${resetLink.email}. Derīga 24 h, vienu reizi.`
+              : `E-pasts nav nosūtīts. Nokopē saiti un nosūti ${resetLink.email}.`}
+          </p>
+          <p className="break-all font-mono text-[11px] text-[var(--iriss-ink-2)]">{resetLink.url}</p>
         </div>
       ) : null}
-      {sessions[0] ? <p className="mt-3 text-[12px] text-[#6b7280]">Ierīce: {sessions[0].device}</p> : null}
+      {sessions[0] ? <p className="mt-3 text-[12px] text-[var(--iriss-ink-2)]">Ierīce: {sessions[0].device}</p> : null}
       {totp && !selected.envAdmin ? (
         <div className="mt-3 space-y-2 rounded-xl bg-[#F8FAFC] p-3">
           <p className="break-all font-mono text-[11px]">{totp.secret}</p>
           <input
             value={totpCode}
             onChange={(e) => setTotpCode(e.target.value)}
-            className="w-full rounded-xl border border-[#E5E7EB] px-3 py-2 text-[16px]"
+            className="w-full rounded-xl border border-[var(--iriss-line)] px-3 py-2 text-[16px]"
             placeholder="6 ciparu kods"
             inputMode="numeric"
           />
           <button
             type="button"
-            className="rounded-full bg-[#111827] px-3 py-1.5 text-[12px] text-white"
+            className="rounded-full bg-[var(--iriss-graphite)] px-3 py-1.5 text-[12px] text-white"
             onClick={() => void onAct("totp_confirm", { code: totpCode })}
           >
             Apstiprināt 2FA
           </button>
         </div>
       ) : null}
-    </section>
+    </Wrapper>
   );
+}
+
+/** Tukša saraksta vieta: ielādes rindas vai kļūda ar «Mēģināt vēlreiz» (nevis 1-2 s tukšs saraksts). */
+export function StaffListPlaceholder({
+  state,
+  onRetry,
+}: {
+  state: "loading" | "ready" | "error";
+  onRetry: () => void;
+}) {
+  if (state === "loading") {
+    return (
+      <ul aria-busy="true" aria-label="Ielādē personas" data-testid="staff-list-loading">
+        {[0, 1, 2, 3].map((i) => (
+          <li key={i} className="flex items-center gap-3 px-4 py-3">
+            <span className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-[#EEF2FF]" />
+            <span className="min-w-0 flex-1 space-y-1.5">
+              <span className="block h-3.5 w-2/5 animate-pulse rounded bg-[#F3F4F6]" />
+              <span className="block h-3 w-3/5 animate-pulse rounded bg-[#F3F4F6]" />
+            </span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  if (state === "error") {
+    return (
+      <div className="flex flex-wrap items-center gap-3 px-4 py-4 text-[13px] text-[var(--iriss-ink-2)]" role="alert">
+        <span>Neizdevās ielādēt personu sarakstu.</span>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="min-h-[44px] rounded-full border border-[var(--iriss-line)] px-4 text-[13px] font-medium text-[var(--iriss-ink)]"
+        >
+          Mēģināt vēlreiz
+        </button>
+      </div>
+    );
+  }
+  return null;
 }

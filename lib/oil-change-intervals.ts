@@ -57,7 +57,7 @@ export function oilClaimCautionHtml(): string {
       "Neatkarīgie autoservisi neiesūta datus starptautiskajās vai dīleru reģistru sistēmās.",
     )}
     ${b(
-      "Neiztrūkstošas apkopes.",
+      "Iztrūkstošas apkopes.",
       "Ja atskaitē novērojams ilgāks laika vai nobraukuma intervāls starp dīlera apkopēm nekā paredzējis ražotājs (vai ieraksti atsevišķos periodos iztrūkst), tas nepierāda, ka apkope nav veikta.",
     )}
     ${b(
@@ -75,8 +75,8 @@ export function oilClaimCautionHtml(): string {
       ),
     )}
     <ul>
-      <li>${escapeHtml("Fiziskās servisa grāmatiņas ierakstiem un izrakstiem/čakiem no servisiem.")}</li>
-      <li>${escapeHtml("Pirmsipirkuma diagnostiku neatkarīgā, uzticamā autoservisā.")}</li>
+      <li>${escapeHtml("Fiziskās servisa grāmatiņas ierakstiem un izrakstiem/čekiem no servisiem.")}</li>
+      <li>${escapeHtml("Pirmspirkuma diagnostiku neatkarīgā, uzticamā autoservisā.")}</li>
     </ul>
   </aside>`;
 }

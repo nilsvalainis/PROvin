@@ -158,10 +158,16 @@ export type LogisticsOrder = {
   pickupDate: string;
   stockNo: string;
   freeParkingUntil: string;
+  /** Pašizmaksas transports - manuāli vai auto-aizpildīts no Auto1 Transport Invoice PDF. */
+  transportCostEur: number | null;
+  /** true, kamēr vērtību nav pārrakstījis lietotājs ar roku - nākamais PDF drīkst to pārrakstīt. */
+  transportCostAuto: boolean;
   status: LogisticsOrderStatus;
   archived: boolean;
   archivedAt: string;
   previousStatus: LogisticsOrderStatus | "";
+  /** "other_company": atvests citam SIA, ar mums nav saistīts (arhīvā ar atzīmi "Cita SIA"). */
+  archiveReason?: "other_company";
   statusNote: string;
   nextAction: string;
   sellerContact: string;
@@ -238,10 +244,11 @@ export const LOGISTICS_ORDER_STATUS_LV: Record<LogisticsOrderStatus, string> = {
   archived: "Arhīvs",
 };
 
+/** Nils 27.10: «Šodien jādara» + «Termiņš tuvu» apvienoti vienā «Termiņš»; «Visi aktīvie» -> «Visi auto». */
 export const LOGISTICS_LIST_VIEW_LV: Record<LogisticsListView, string> = {
-  today: "Šodien jādara",
-  due: "Termiņš tuvu",
-  active: "Visi aktīvie",
+  today: "Šodien",
+  due: "Termiņš",
+  active: "Visi auto",
   trips: "Reisi",
   archive: "Arhīvs",
 };

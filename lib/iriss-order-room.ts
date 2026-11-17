@@ -50,6 +50,12 @@ export type IrissOrderRoomHit = {
   powerKw: string;
   color: string;
   bodyType: string;
+  /** Jau sludinājumā nolasīts, bet iepriekš šeit nepārnests (j41b). Piemēram "5" vai "5/5". */
+  doorCount?: string;
+  /** Avota (Auto1/Openlane/Autobid) raw bojājumu/stāvokļa teksts - nepārtulkots, sk. iriss-auction-listing-field-map.ts. */
+  damageRaw?: string;
+  /** Auto1 pārdevēja valsts; ne vienmēr tas pats, kas countryCode. */
+  sourceCountry?: string;
   imageUrl: string;
   imageUrls: string[];
   thumbUrl?: string;
@@ -98,6 +104,9 @@ export type IrissOrderRoomHitSource = {
   powerKw?: string;
   color?: string;
   bodyType?: string;
+  doorCount?: string;
+  damageRaw?: string;
+  sourceCountry?: string;
   imageUrl?: string;
   imageUrls?: string[];
   vin?: string;
@@ -236,6 +245,9 @@ export function buildIrissOrderRoomHits(
       powerKw: (v.powerKw ?? "").trim(),
       color: (v.color ?? "").trim(),
       bodyType: (v.bodyType ?? "").trim(),
+      ...(typeof row.doorCount === "string" && row.doorCount.trim() ? { doorCount: row.doorCount.trim() } : {}),
+      ...(typeof row.damageRaw === "string" && row.damageRaw.trim() ? { damageRaw: row.damageRaw.trim() } : {}),
+      ...(typeof row.sourceCountry === "string" && row.sourceCountry.trim() ? { sourceCountry: row.sourceCountry.trim() } : {}),
       imageUrl: uniquePhotos[0] ?? "",
       imageUrls: uniquePhotos,
       thumbUrl: typeof row.thumbUrl === "string" ? row.thumbUrl.trim() : undefined,
@@ -317,7 +329,22 @@ function driveHit(orderDrive: string, hay: string): boolean | null {
   return drivesMatchGroups(hay, [raw]);
 }
 
-export function irissOrderRoomMatch(rec: IrissPasutijumsRecord, hit: IrissOrderRoomHit): IrissOrderRoomMatch {
+/** Pasūtījuma lauki, pēc kuriem auto salīdzina ar prasībām (pasūtījuma telpa un Sludinājumu kartīte). */
+export type IrissOrderRoomMatchCriteria = Pick<
+  IrissPasutijumsRecord,
+  | "totalBudget"
+  | "productionYears"
+  | "maxMileage"
+  | "transmission"
+  | "bodyType"
+  | "driveType"
+  | "preferredColors"
+  | "nonPreferredColors"
+  | "engineType"
+  | "modelExtension"
+>;
+
+export function irissOrderRoomCriteriaChecks(rec: IrissOrderRoomMatchCriteria, hit: IrissOrderRoomHit): IrissOrderRoomCheck[] {
   const checks: IrissOrderRoomCheck[] = [];
   const budget = parseLooseNumber(rec.totalBudget);
   if (budget != null) {
@@ -366,6 +393,11 @@ export function irissOrderRoomMatch(rec: IrissPasutijumsRecord, hit: IrissOrderR
     });
   }
 
+  return checks;
+}
+
+export function irissOrderRoomMatch(rec: IrissOrderRoomMatchCriteria, hit: IrissOrderRoomHit): IrissOrderRoomMatch {
+  const checks = irissOrderRoomCriteriaChecks(rec, hit);
   const equipmentBadges: IrissOrderRoomCheck[] = [];
   const trimHay = `${hit.title} ${hit.bodyType}`;
   if (rec.modelExtension.trim() && titleHasAnyModelExtension(trimHay, splitModelExtensions(rec.modelExtension))) {
@@ -472,12 +504,22 @@ export function irissOrderRoomOfferStatus(offer: Pick<IrissOfferRecord, "brandMo
   return "draft";
 }
 
+/** Privātā Vercel Blob saite pārlūkā neielādējas (vajag tokenu) - tikai caur admin starpnieku. */
+const PRIVATE_BLOB_URL_RE = /^https:\/\/[^/]+\.private\.blob\.vercel-storage\.com\//i;
+
 export function irissOrderRoomOfferThumb(
-  offer: Pick<IrissOfferRecord, "attachments" | "coverAttachmentId">,
+  offer: Pick<IrissOfferRecord, "id" | "attachments" | "coverAttachmentId">,
+  orderId?: string,
 ): string {
   for (const a of orderOfferAttachmentsForPdf(offer)) {
     const src = offerImageGridSrc(a);
-    if (src) return src;
+    if (!src) continue;
+    if (PRIVATE_BLOB_URL_RE.test(src)) {
+      // Pirms ?images=thumbs ielādes (un uzreiz pēc piedāvājuma saglabāšanas) bija salauzta bilde.
+      if (!orderId) continue;
+      return `/api/admin/iriss-pasutijumi/${encodeURIComponent(orderId)}/offer/${encodeURIComponent(offer.id)}/photo/${encodeURIComponent(a.id)}`;
+    }
+    return src;
   }
   return "";
 }
@@ -554,8 +596,17 @@ export function irissOrderRoomNextSteps(input: {
   offerCount: number;
   hasPhone: boolean;
   hasVin?: boolean;
+  /** Pasūtījuma saraksta statuss: pēc apstiprināta piedāvājuma («Rezervēts») piedāvājums vairs nav jāgatavo. */
+  listStatus?: string;
 }): IrissOrderRoomNextStep[] {
   const steps: IrissOrderRoomNextStep[] = [];
+  if (input.listStatus === "reserved") {
+    // Audits 27.10: pēc klienta apstiprinājuma rādīja «Sagatavot pirmo piedāvājumu».
+    steps.push({ id: "deposit", label: "Saņemt avansu", tab: "overview" });
+    if (input.hasPhone) steps.push({ id: "contact", label: "Sazināties ar klientu", tab: "communication" });
+    return steps;
+  }
+  if (input.listStatus === "completed" || input.listStatus === "inactive") return steps;
   if (input.newHits > 0) {
     steps.push({
       id: "hits",

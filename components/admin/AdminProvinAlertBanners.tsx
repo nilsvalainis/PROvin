@@ -70,7 +70,7 @@ export function AdminProvinAlertBanners({
 }: {
   banners: ProvinAlertBanner[];
   infoBanners?: ProvinInfoBanner[];
-  /** Četras kopsavilkuma plāksnītes - rediģējamas un slēdzamas, kamēr kartītes nav paslēptas. */
+  /** Kopsavilkuma plāksnītes - rediģējamas un slēdzamas, kamēr kartītes nav paslēptas. */
   summaryTiles?: PdfSummaryTile[];
   pdfInclude?: ProvinBannerPdfInclude;
   onPdfIncludeChange?: (kind: ProvinBannerKind, included: boolean) => void;

@@ -1,0 +1,1182 @@
+{
+ "vin": "WDD2130501A166423",
+ "label": "MERCEDES BENZ E350 E: CSDD 1, AutoDNA 13, carVertical 14, dīleris 10, citi 3; negadījumi 0",
+ "source": "prod pasūtījuma melnraksts (manual), revīzija 90, saglabāts 2026-11-06; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "MERCEDES BENZ E350 E",
+   "registrationNumber": "ON5328",
+   "firstRegistration": "2016-12-16",
+   "firstRegistrationLatvia": "2026-05-28",
+   "nextInspectionDate": "2027-04-27",
+   "prevInspectionDate": "2026-05-28",
+   "engineDisplacementCm3": "1991",
+   "enginePowerKw": "155",
+   "fuelType": "Elektrība un benzīns",
+   "emissionStandard": "",
+   "vehicleType": "Vieglais pasažieru (M1)",
+   "grossMassKg": "2565",
+   "curbMassKg": "1925",
+   "seatCount": "5",
+   "roadTaxEur": "",
+   "registrationStatus": "Noņemts no uzskaites",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "SOMIJA",
+   "ownerCountLatvia": "1",
+   "vin": "WDD2130501A166423",
+   "modelYear": "2016",
+   "color": "Zaļa",
+   "electricPowerKw": "65",
+   "electricPowerKw2": "",
+   "cocCategory": "M1",
+   "cocType": "212",
+   "cocApprovalNumber": "e1*2001/116*0501*30",
+   "cocVariant": "U04MP0",
+   "cocVersion": "CZAA0501",
+   "insuranceValidUntil": "",
+   "technicalInspectionHistory": [
+    {
+     "date": "28.05.2026",
+     "inspectionType": "",
+     "ratingLabel": "",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": []
+    }
+   ],
+   "ownerRegistrationEvents": [
+    {
+     "date": "28.05.2026",
+     "label": "Pirmā reģistrācija Latvijā"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "",
+    "inspectionDateText": "28.05.2026",
+    "nextInspectionDateText": "",
+    "odometer": "155588",
+    "ratingLabel": "",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "28.05.2026",
+     "odometer": "155588",
+     "country": "Latvija"
+    }
+   ],
+   "registry": {
+    "nr1": "WDD2130501A166423",
+    "fetchedAt": "2026-11-06T08:33:57.837Z",
+    "data": {
+     "registrationNumber": "ON5328",
+     "vin": "WDD2130501A166423",
+     "make": "MERCEDES BENZ",
+     "model": "E350 E",
+     "year": "2016",
+     "fuel": "Elektrība un benzīns",
+     "powerKw": "155",
+     "electricPowerKw": "65",
+     "electricPowerKw2": "",
+     "displacementCm3": "1991",
+     "firstRegistrationIso": "2016-12-16",
+     "color": "Zaļa",
+     "vehicleKind": "Vieglais pasažieru",
+     "cocCategory": "M1",
+     "cocType": "212",
+     "cocApprovalNumber": "e1*2001/116*0501*30",
+     "cocVariant": "U04MP0",
+     "cocVersion": "CZAA0501",
+     "grossMassKg": "2565",
+     "curbMassKg": "1925",
+     "insuranceEndIso": "",
+     "inspectionValidUntilIso": "2027-04-27"
+    }
+   }
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "28.05.2026",
+     "odometer": "155588",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2025",
+     "odometer": "149789",
+     "country": "Somija"
+    },
+    {
+     "date": "01.11.2024",
+     "odometer": "140419",
+     "country": "Somija"
+    },
+    {
+     "date": "01.11.2023",
+     "odometer": "127095",
+     "country": "Somija"
+    },
+    {
+     "date": "01.12.2022",
+     "odometer": "113249",
+     "country": "Somija"
+    },
+    {
+     "date": "01.11.2022",
+     "odometer": "111646",
+     "country": "Somija"
+    },
+    {
+     "date": "05.01.2022",
+     "odometer": "101566",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "03.01.2022",
+     "odometer": "101566",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.09.2021",
+     "odometer": "97677",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.07.2020",
+     "odometer": "86159",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.07.2019",
+     "odometer": "66946",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.07.2018",
+     "odometer": "39316",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.09.2017",
+     "odometer": "23176",
+     "country": "Nīderlande"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "11.06.2026",
+     "country": "Latvija",
+     "description": "Transportlīdzekļa noņemšana no uzskaites",
+     "includeInPdf": false
+    },
+    {
+     "date": "28.05.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "odometer": "155588",
+     "includeInPdf": false
+    },
+    {
+     "date": "13.01.2022",
+     "country": "Nīderlande",
+     "description": "Transportlīdzekļa noņemšana no uzskaites",
+     "includeInPdf": false
+    },
+    {
+     "date": "06.01.2022",
+     "country": "Nīderlande",
+     "description": "Ziņots jaunais īpašnieks",
+     "includeInPdf": false
+    },
+    {
+     "date": "05.01.2022",
+     "country": "Nīderlande",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "101566",
+     "includeInPdf": false
+    },
+    {
+     "date": "05.01.2022",
+     "country": "Nīderlande",
+     "description": "Pārdošanā piedāvātais transportlīdzeklis",
+     "odometer": "101566",
+     "includeInPdf": false
+    },
+    {
+     "date": "03.01.2022",
+     "country": "",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "101566",
+     "includeInPdf": false
+    },
+    {
+     "date": "03.01.2022",
+     "country": "Nīderlande",
+     "description": "Automašīna tiek piedāvāta pārdošanai",
+     "odometer": "101566",
+     "includeInPdf": false
+    },
+    {
+     "date": "29.12.2021",
+     "country": "Nīderlande",
+     "description": "Ziņots jaunais īpašnieks",
+     "includeInPdf": false
+    },
+    {
+     "date": "04.11.2020",
+     "country": "Nīderlande",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "16.12.2016",
+     "country": "Nīderlande",
+     "description": "Transportlīdzeklis reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "16.12.2016",
+     "country": "",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    },
+    {
+     "date": "16.12.2016",
+     "country": "Nīderlande",
+     "description": "Ziņots jaunais īpašnieks",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.05.2026",
+     "odometer": "155588",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.04.2026",
+     "odometer": "155085",
+     "country": "Somija"
+    },
+    {
+     "date": "01.10.2025",
+     "odometer": "149623",
+     "country": "Somija"
+    },
+    {
+     "date": "01.11.2024",
+     "odometer": "140253",
+     "country": "Somija"
+    },
+    {
+     "date": "01.03.2024",
+     "odometer": "128483",
+     "country": "Somija"
+    },
+    {
+     "date": "01.11.2023",
+     "odometer": "126929",
+     "country": "Somija"
+    },
+    {
+     "date": "01.11.2022",
+     "odometer": "111480",
+     "country": "Somija"
+    },
+    {
+     "date": "01.03.2022",
+     "odometer": "101580",
+     "country": "Somija"
+    },
+    {
+     "date": "01.09.2021",
+     "odometer": "97611",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.07.2020",
+     "odometer": "86093",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.07.2019",
+     "odometer": "66880",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.07.2018",
+     "odometer": "39250",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.09.2017",
+     "odometer": "23110",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.01.2016",
+     "odometer": "12",
+     "country": ""
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.01.2016",
+     "country": "",
+     "description": "Ražots",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2016",
+     "country": "Nīderlande",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2016",
+     "country": "Nīderlande",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2021",
+     "country": "Nīderlande",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.01.2022",
+     "country": "Nīderlande",
+     "description": "Izlikts pārdošanā Balstoties uz sludinājuma datiem, šis spēkrats ir ticis izlikts pārdošanā. Reizēm valsts, kurā ir publicēts sludinājums, var atšķirties no transportlīdzekļa patiesās atrašanās vietas",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.01.2022",
+     "country": "Nīderlande",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2022",
+     "country": "Somija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2022",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:03.03.2022līdz:23.08.2022",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2022",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:03.03.2022līdz:04.12.2022 VIN numurs:WDD2130501A166423Ģenerēšanas datums:06.11.2026Derīguma termiņšbeidzas06.12.2026 Šajā PDF atskaitē ir iekļauti transportlīdzekļa vēstures svarīgākie dati. Lai iegūtu jaunāko un detalizētāko informāciju, ieskaties digitāla",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2022",
+     "country": "Somija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2022",
+     "country": "Somija",
+     "description": "Reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.08.2022",
+     "country": "Somija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.08.2022",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:24.08.2022līdz:13.09.2022",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.08.2022",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:24.08.2022līdz:24.08.2022",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.09.2022",
+     "country": "Somija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.09.2022",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:13.09.2022līdz:26.10.2022",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2022",
+     "country": "Somija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2022",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:26.10.2022līdz:12.11.2022 VIN numurs:WDD2130501A166423Ģenerēšanas datums:06.11.2026Derīguma termiņšbeidzas06.12.2026 Šajā PDF atskaitē ir iekļauti transportlīdzekļa vēstures svarīgākie dati. Lai iegūtu jaunāko un detalizētāko informāciju, ieskaties digitāla",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2022",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:26.10.2022līdz:26.10.2022",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2022",
+     "country": "Somija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2022",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:12.11.2022līdz:17.02.2023",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2023",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2023",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:11.02.2023līdz:19.04.2023",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2023",
+     "country": "Somija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2023",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:20.02.2023līdz:20.02.2023",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.04.2023",
+     "country": "Somija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2024",
+     "country": "Somija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.04.2026",
+     "country": "Somija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.05.2026",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.05.2026",
+     "country": "Latvija",
+     "description": "Reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.05.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.09.2026",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "fetchedAt": "2026-11-06T08:56:33.510Z"
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "03.03.2022",
+     "odometer": "",
+     "country": "Somija",
+     "event": "Pirmā reģistrācija Somijā"
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "fetchedAt": "2026-11-06T08:57:08.105Z"
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "fetchedAt": "2026-11-06T08:58:00.132Z"
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "fetchedAt": "2026-11-06T08:56:54.321Z"
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "22.10.2025",
+     "odometer": "149789",
+     "country": "Somija"
+    },
+    {
+     "date": "06.11.2024",
+     "odometer": "140419",
+     "country": "Somija"
+    },
+    {
+     "date": "28.11.2023",
+     "odometer": "127095",
+     "country": "Somija"
+    },
+    {
+     "date": "08.12.2022",
+     "odometer": "113249",
+     "country": "Somija"
+    },
+    {
+     "date": "16.11.2022",
+     "odometer": "111646",
+     "country": "Somija"
+    },
+    {
+     "date": "16.09.2021",
+     "odometer": "97677",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "08.07.2020",
+     "odometer": "86159",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "12.07.2019",
+     "odometer": "66946",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "26.07.2018",
+     "odometer": "39316",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "21.09.2017",
+     "odometer": "23176",
+     "country": "Nīderlande"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "22.10.2025",
+     "odometer": "149789",
+     "location": "Veho Koivuhaka, Mäkituvantie 3, FI-01510 Vantaa, Finland",
+     "works": "Apkope"
+    },
+    {
+     "date": "06.11.2024",
+     "odometer": "140419",
+     "location": "Veho Koivuhaka, Mäkituvantie 3, FI-01510 Vantaa, Finland",
+     "works": "Apkope"
+    },
+    {
+     "date": "28.11.2023",
+     "odometer": "127095",
+     "location": "Veho Koivuhaka, Mäkituvantie 3, FI-01510 Vantaa, Finland",
+     "works": "Apkope"
+    },
+    {
+     "date": "08.12.2022",
+     "odometer": "113249",
+     "location": "Veho Airport, Ohtolankatu 10, FI-01510 Vantaa, Finland",
+     "works": "Regulārā apkope\nSalona gaisa filtra maiņa\nEļļas un eļļas filtru maiņa\nDzinējs: eļļas un filtra maiņa.\nPutekļu filtra maiņa."
+    },
+    {
+     "date": "16.11.2022",
+     "odometer": "111646",
+     "location": "Autoks, Takoraudantie 2, FI-00700 Helsinki, Finland",
+     "works": "Regulārā apkope: Automātiskās transmisijas eļļas un filtra maiņa\nAutomātiskā pārnesumkārba: eļļas un filtra maiņa."
+    },
+    {
+     "date": "16.09.2021",
+     "odometer": "97677",
+     "location": "Car motions Mercedes-Benz, Bredaseweg 225, 4705 RN Roosendaal, Netherlands",
+     "works": "Regulārā apkope\nSalona gaisa filtra maiņa\nEļļas un eļļas filtru maiņa\nDzinējs: eļļas un filtra maiņa.\nPutekļu filtra maiņa."
+    },
+    {
+     "date": "08.07.2020",
+     "odometer": "86159",
+     "location": "Car motions Mercedes-Benz, Bredaseweg 225, 4705 RN Roosendaal, Netherlands",
+     "works": "Regulārā apkope\nGaisa filtra elementa maiņa.\nEļļas un eļļas filtru maiņa\nDzinējs: eļļas un filtra maiņa.\nAizdedzes sveču maiņa."
+    },
+    {
+     "date": "12.07.2019",
+     "odometer": "66946",
+     "location": "Car motions Mercedes-Benz, Bredaseweg 225, 4705 RN Roosendaal, Netherlands",
+     "works": "Regulārā apkope\nSalona gaisa filtra maiņa\nEļļas un eļļas filtru maiņa\nDzinējs: eļļas un filtra maiņa.\nPutekļu filtra maiņa.\nBremžu šķidruma maiņa."
+    },
+    {
+     "date": "26.07.2018",
+     "odometer": "39316",
+     "location": "Car motions Mercedes-Benz, Bredaseweg 225, 4705 RN Roosendaal, Netherlands",
+     "works": "Regulārā apkope: Eļļas un eļļas filtru maiņa\nDzinējs: eļļas un filtra maiņa."
+    },
+    {
+     "date": "21.09.2017",
+     "odometer": "23176",
+     "location": "Car motions Mercedes-Benz, Bredaseweg 225, 4705 RN Roosendaal, Netherlands",
+     "works": "Regulārā apkope: Eļļas un eļļas filtru maiņa\nDzinējs: eļļas un filtra maiņa."
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "22.10.2025",
+      "odometer": "149789",
+      "place": "Veho Koivuhaka, Mäkituvantie 3, FI-01510 Vantaa, Finland",
+      "works": "Service"
+     },
+     {
+      "date": "06.11.2024",
+      "odometer": "140419",
+      "place": "Veho Koivuhaka, Mäkituvantie 3, FI-01510 Vantaa, Finland",
+      "works": "Service"
+     },
+     {
+      "date": "28.11.2023",
+      "odometer": "127095",
+      "place": "Veho Koivuhaka, Mäkituvantie 3, FI-01510 Vantaa, Finland",
+      "works": "Service"
+     },
+     {
+      "date": "08.12.2022",
+      "odometer": "113249",
+      "place": "Veho Airport, Ohtolankatu 10, FI-01510 Vantaa, Finland",
+      "works": "Engine: oil and filter change.\nDust filter replaced."
+     },
+     {
+      "date": "16.11.2022",
+      "odometer": "111646",
+      "place": "Autoks, Takoraudantie 2, FI-00700 Helsinki, Finland",
+      "works": "Automatic transmission: oil and filter change."
+     },
+     {
+      "date": "16.09.2021",
+      "odometer": "97677",
+      "place": "Car motions Mercedes-Benz, Bredaseweg 225, 4705 RN Roosendaal, Netherlands",
+      "works": "Engine: oil and filter change.\nDust filter replaced."
+     },
+     {
+      "date": "08.07.2020",
+      "odometer": "86159",
+      "place": "Car motions Mercedes-Benz, Bredaseweg 225, 4705 RN Roosendaal, Netherlands",
+      "works": "Engine: oil and filter change.\nSpark plugs replaced.\nAir filter element replaced."
+     },
+     {
+      "date": "12.07.2019",
+      "odometer": "66946",
+      "place": "Car motions Mercedes-Benz, Bredaseweg 225, 4705 RN Roosendaal, Netherlands",
+      "works": "Engine: oil and filter change.\nBrake fluid replaced.\nDust filter replaced."
+     },
+     {
+      "date": "26.07.2018",
+      "odometer": "39316",
+      "place": "Car motions Mercedes-Benz, Bredaseweg 225, 4705 RN Roosendaal, Netherlands",
+      "works": "Engine: oil and filter change."
+     },
+     {
+      "date": "21.09.2017",
+      "odometer": "23176",
+      "place": "Car motions Mercedes-Benz, Bredaseweg 225, 4705 RN Roosendaal, Netherlands",
+      "works": "Engine: oil and filter change."
+     }
+    ]
+   },
+   "outvin": {
+    "precheckAt": null,
+    "vin": "WDD2130501A166423",
+    "capabilitySlots": [],
+    "purchases": [],
+    "vehicleInfo": {
+     "model": "MERCEDES-BENZ E-CLASS (W213) E 350 e (213.050)",
+     "modelSeries": "E-CLASS (W213)",
+     "vinCode": "WDD2130501A166423",
+     "vehicleType": "",
+     "transmission": "automatic (9-speed automatic transmission)",
+     "steeringSide": "",
+     "engineCode": "M 274.920",
+     "engineNumber": "",
+     "body": "Saloon",
+     "drive": "Rear-Wheel Drive",
+     "power": "210 kW (286 hp)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "2016",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "CALLAITE GREEN - METALLIC PAINT",
+     "colorCode": "997U",
+     "interior": "FABRIC (400A)",
+     "interiorCode": "",
+     "fuel": "Petrol",
+     "displacement": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "MERCEDES-BENZ E-CLASS (W213) E 350 e (213.050)",
+     "modelSeries": "E-CLASS (W213)",
+     "vinCode": "WDD2130501A166423",
+     "vehicleType": "Sedan, M1 category",
+     "transmission": "automatic (9-speed automatic transmission)",
+     "steeringSide": "LHD (left-hand drive)",
+     "engineCode": "M 274.920",
+     "engineNumber": "",
+     "body": "Saloon",
+     "drive": "Rear-Wheel Drive",
+     "power": "210 kW (286 hp)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "F213",
+     "productionDate": "2016",
+     "firstRegistration": "12.2016",
+     "warrantyStartDate": "",
+     "countryRegion": "Netherlands",
+     "color": "CALLAITE GREEN - METALLIC PAINT",
+     "colorCode": "997U",
+     "interior": "FABRIC (400A)",
+     "interiorCode": "415A",
+     "fuel": "Petrol",
+     "displacement": "2.0 liter (M20)"
+    }
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "",
+    "fetchedAt": "",
+    "lastCostUsd": "",
+    "status": "unknown",
+    "summary": ""
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "certificate": {
+    "issuedAt": "06.11.2026 17:14:49",
+    "vehicleLine": "Transportlīdzeklis MERCEDES BENZ E350 E, izlaiduma gads 2016. Valsts numura zīme ON5328.",
+    "makeModel": "MERCEDES BENZ E350 E",
+    "year": "2016",
+    "plate": "ON5328",
+    "accidentCount": "0",
+    "insuredFrom": "",
+    "insuredTo": "",
+    "insuredDays": "",
+    "claims": [],
+    "footerNote": "Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas."
+   }
+  },
+  "tirgus": {
+   "listedForSale": "",
+   "listingCreated": "",
+   "priceDrop": "",
+   "priceHistory": [],
+   "listingMileageOdometer": "155588",
+   "listingMileageDate": "06.11.2026",
+   "listingMileageCountry": "LV"
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "08.02.2023",
+       "odometer": "116000",
+       "country": "Somija"
+      },
+      {
+       "date": "24.10.2022",
+       "odometer": "111000",
+       "country": "Somija"
+      },
+      {
+       "date": "05.09.2022",
+       "odometer": "108000",
+       "country": "Somija"
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": "Nettiauto (Somija)"
+    }
+   ]
+  }
+ }
+}

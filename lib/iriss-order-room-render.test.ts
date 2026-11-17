@@ -222,12 +222,12 @@ describe("IrissOrderRoom render", () => {
     expect(errors).toEqual([]);
     assertOrderStaysOpen(html);
     expect(html).toContain("mobile.de un AutoScout24 nāk no ielādes zemāk");
-    expect(html).toContain("tikai jauniem sludinājumiem");
+    expect(html).toContain("mobile.de ielādējas automātiski katru dienu 9:00");
     expect(html).not.toContain("tikai ar pogu Ielādēt");
     expect(html).not.toMatch(/\u2014|\u2013/);
   });
 
-  it("shows Nolasīt on Pārskats listing links", async () => {
+  it("Pārskatā viena filtru kartīte; saišu saraksti aizvērti (Nils 30.10)", async () => {
     const { html, errors } = await renderHtml(
       room({
         initialTab: "overview",
@@ -238,14 +238,26 @@ describe("IrissOrderRoom render", () => {
       }),
     );
     expect(errors).toEqual([]);
-    expect(html).toContain("Nolasīt");
-    expect(html).toContain("Izveidot");
-    expect(html).toContain("Avanss un darījums");
-    expect(html).toContain("DIAPAZONI");
+    expect(html).not.toContain("Nolasīt");
+    // Nils 30.10 (makets «Meklēšanas filtri»): Auto, Cena, Tehniskie, Stāvoklis un saites vienā kartītē.
+    expect(html).toContain("Meklēšanas filtri");
+    expect(html).toContain("Tehniskie (var atzīmēt vairākus)");
+    expect(html).toContain("Budžets un PVN");
+    expect(html).toContain("1 saite");
+    expect(html).toContain("+ Izveidot");
+    expect(html).toContain("Finansējums, avanss un depozīts");
+    expect(html).toContain("Klienta kontakti");
     expect(html).toContain("Gadi");
     expect(html).not.toContain("Gadi no-līdz");
-    expect(html).toContain("* obligāti. + vismaz viens: nobraukums, tilpums vai jauda.");
-    expect(html).toContain("iriss-spec-full");
+    expect(html).toContain("* filtrē Meklētāju. Cena un Gadi obligāti.");
+    expect(html).not.toContain("vismaz viens: nobraukums");
+    const starred = (label: string) => new RegExp(`${label}<span class="iriss-range-req" aria-hidden="true"> \\*</span>`).test(html);
+    for (const label of ["Marka / modelis", "Cena", "Gadi", "Nobraukums", "Degviela", "Ātrumkārba", "Virsbūve", "Sēdvietas"]) {
+      expect(starred(label), label).toBe(true);
+    }
+    for (const label of ["Komplektācija / līnija", "Piedziņa", "Tilpums", "Jauda", "Valstis", "Bojājumu tolerance", "Vēlamās krāsas", "Nevēlamās krāsas", "Salona apdare"]) {
+      expect(starred(label), label).toBe(false);
+    }
   });
 
   it("lists generated documents newest first", async () => {

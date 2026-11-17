@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getClientIpFromRequest } from "@/lib/client-ip";
-import { fetchCsddTechData } from "@/lib/csdd-tech-data";
+import { fetchCsddTechDataCounted } from "@/lib/csdd-tech-data-counted";
 import {
   MINI_CSDD_LOOKUP_TIMEOUT_MS,
   miniCsddModalVariantFromLookup,
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
   if (cached) return NextResponse.json({ variant: cached });
 
   try {
-    const result = await fetchCsddTechData(vin, { timeoutMs: MINI_CSDD_LOOKUP_TIMEOUT_MS });
+    const result = await fetchCsddTechDataCounted(vin, "checkout", { timeoutMs: MINI_CSDD_LOOKUP_TIMEOUT_MS });
     const variant = miniCsddModalVariantFromLookup(result);
     // Īslaicīgu kļūdu (taimauts, CSDD nav pieejams) nekešo.
     if (result.found || variant === "warning") rememberVariant(vin, variant);

@@ -5,6 +5,12 @@ import { applyCompanyVerifyDecision, runCompanyVerify } from "@/lib/b2b-company-
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 30;
+
+function verifyFailed(err: unknown): NextResponse {
+  const detail = err instanceof Error && err.message.trim() ? err.message.trim().slice(0, 180) : "verify_failed";
+  return NextResponse.json({ error: "verify_failed", detail }, { status: 500 });
+}
 
 function readKind(raw: unknown): CompanyVerifySubjectKind | null {
   return raw === "lead" || raw === "partner" ? raw : null;
@@ -15,33 +21,41 @@ function readId(raw: unknown): string {
 }
 
 export async function GET(req: Request) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const url = new URL(req.url);
-  const kind = readKind(url.searchParams.get("kind"));
-  const id = readId(url.searchParams.get("id"));
-  if (!kind || !id) return NextResponse.json({ error: "invalid" }, { status: 400 });
-  const view = await runCompanyVerify({ kind, id });
-  if (!view) return NextResponse.json({ error: "not_found" }, { status: 404 });
-  return NextResponse.json({ ok: true, ...view });
+  try {
+    if (!(await getAdminSession())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    const url = new URL(req.url);
+    const kind = readKind(url.searchParams.get("kind"));
+    const id = readId(url.searchParams.get("id"));
+    if (!kind || !id) return NextResponse.json({ error: "invalid" }, { status: 400 });
+    const view = await runCompanyVerify({ kind, id });
+    if (!view) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    return NextResponse.json({ ok: true, ...view });
+  } catch (err) {
+    return verifyFailed(err);
+  }
 }
 
 export async function POST(req: Request) {
-  if (!(await getAdminSession())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  let raw: Record<string, unknown>;
   try {
-    raw = (await req.json()) as Record<string, unknown>;
-  } catch {
-    return NextResponse.json({ error: "invalid_body" }, { status: 400 });
-  }
-  const kind = readKind(raw.kind);
-  const id = readId(raw.id);
-  if (!kind || !id) return NextResponse.json({ error: "invalid" }, { status: 400 });
-  if (isCompanyVerifyDecision(raw.decision)) {
-    const view = await applyCompanyVerifyDecision({ kind, id, decision: raw.decision });
+    if (!(await getAdminSession())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+    let raw: Record<string, unknown>;
+    try {
+      raw = (await req.json()) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: "invalid_body" }, { status: 400 });
+    }
+    const kind = readKind(raw.kind);
+    const id = readId(raw.id);
+    if (!kind || !id) return NextResponse.json({ error: "invalid" }, { status: 400 });
+    if (isCompanyVerifyDecision(raw.decision)) {
+      const view = await applyCompanyVerifyDecision({ kind, id, decision: raw.decision });
+      if (!view) return NextResponse.json({ error: "not_found" }, { status: 404 });
+      return NextResponse.json({ ok: true, ...view });
+    }
+    const view = await runCompanyVerify({ kind, id, refresh: raw.refresh === true });
     if (!view) return NextResponse.json({ error: "not_found" }, { status: 404 });
     return NextResponse.json({ ok: true, ...view });
+  } catch (err) {
+    return verifyFailed(err);
   }
-  const view = await runCompanyVerify({ kind, id, refresh: raw.refresh === true });
-  if (!view) return NextResponse.json({ error: "not_found" }, { status: 404 });
-  return NextResponse.json({ ok: true, ...view });
 }

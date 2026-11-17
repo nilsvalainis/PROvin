@@ -7,13 +7,16 @@ import {
   UNPAID_REMINDER_SUBJECT_TEMPLATE,
 } from "@/lib/admin-unpaid-reminder-copy";
 
-describe("unpaid reminder copy v3", () => {
+describe("unpaid reminder copy v4", () => {
   it("keeps the approved subject, Labdien greeting, and payment placeholder", () => {
-    expect(UNPAID_REMINDER_SUBJECT_TEMPLATE).toBe("Par Jūsu auto pārbaudi (VIN {{vin}})");
+    expect(UNPAID_REMINDER_SUBJECT_TEMPLATE).toBe("PROVIN · Pasūtījums gaida apmaksu · {{vin}}");
     expect(UNPAID_REMINDER_BODY_TEMPLATE.startsWith("Labdien!")).toBe(true);
     expect(UNPAID_REMINDER_BODY_TEMPLATE).toContain("{{maksājuma_saite}}");
-    expect(UNPAID_REMINDER_BODY_TEMPLATE).toContain("Nils V. (IRISS)");
-    expect(UNPAID_REMINDER_BODY_TEMPLATE).toContain("+371 29 502 039");
+    // 06.11 (Nils "jā"): bez tālruņa un bez IRISS zīmola; paraksts PROVIN.LV.
+    expect(UNPAID_REMINDER_BODY_TEMPLATE).not.toContain("IRISS");
+    expect(UNPAID_REMINDER_BODY_TEMPLATE).not.toMatch(/\+371|29\s?502\s?039|zvaniet/);
+    expect(UNPAID_REMINDER_BODY_TEMPLATE).toContain("atbildiet uz šo e-pastu");
+    expect(UNPAID_REMINDER_BODY_TEMPLATE).toMatch(/Ar cieņu,\nPROVIN\.LV$/);
     expect(UNPAID_REMINDER_BODY_TEMPLATE).not.toMatch(/[—–]/);
     expect(UNPAID_REMINDER_BODY_TEMPLATE).not.toMatch(/Sveiki,\s+\S/);
   });
@@ -23,7 +26,7 @@ describe("unpaid reminder copy v3", () => {
       vin: "WVWZZZ1KZAW000123",
       paymentUrl: "https://www.provin.lv/apmaksa/abc",
     });
-    expect(copy.subject).toBe("Par Jūsu auto pārbaudi (VIN WVWZZZ1KZAW000123)");
+    expect(copy.subject).toBe("PROVIN · Pasūtījums gaida apmaksu · WVWZZZ1KZAW000123");
     expect(copy.text.startsWith("Labdien!")).toBe(true);
     expect(copy.text).toContain("https://www.provin.lv/apmaksa/abc");
     expect(copy.text).not.toContain("{{");

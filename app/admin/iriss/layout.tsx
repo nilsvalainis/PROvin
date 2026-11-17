@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { IrissStaffAppShell } from "@/components/admin/IrissStaffAppShell";
+import { autoparksV2StaffEnabled } from "@/lib/iriss-autoparks-v2-flag";
 import { IrissPwaRegister } from "@/components/admin/IrissPwaRegister";
 import { getAdminOrStaffActor } from "@/lib/staff-auth";
 import {
@@ -61,7 +62,7 @@ export default async function AdminIrissLayout({ children }: { children: ReactNo
 
   if (actor.kind === "staff") {
     return (
-      <IrissStaffAppShell name={actor.user.name} sections={actor.user.sections}>
+      <IrissStaffAppShell name={actor.user.name} sections={actor.user.sections} autoparksV2Visible={autoparksV2StaffEnabled()}>
         <IrissPwaRegister />
         {children}
       </IrissStaffAppShell>

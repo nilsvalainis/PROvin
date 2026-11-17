@@ -1,10 +1,11 @@
 /**
  * Pasūtījumam: „Šis VIN jau pārbaudīts” un iepriekš nopirkto transportlīdzekļa datu pārnešana.
- * Klienta personas dati netiek kopēti.
+ * Klienta personas dati netiek kopēti. Tikai administratoram: atbilde satur PRO pasūtījumus (klienta vārds/e-pasts)
+ * un POST raksta PRO pasūtījumā - IRISS darbiniekam (arī ar VIN pārbaudi) PRO nav pieejams.
  */
 import { NextResponse } from "next/server";
 
-import { requireIrissSectionApi } from "@/lib/staff-auth";
+import { requireAdminOnlyApi } from "@/lib/staff-auth";
 import { findVinHistory, reuseVehicleData } from "@/lib/vin-history";
 
 export const runtime = "nodejs";
@@ -14,7 +15,7 @@ export const maxDuration = 300;
 const SAFE_SESSION = /^[A-Za-z0-9_]{6,200}$/;
 
 export async function GET(req: Request) {
-  const gate = await requireIrissSectionApi("vin");
+  const gate = await requireAdminOnlyApi();
   if (!gate.ok) return gate.response;
   const url = new URL(req.url);
   const sessionId = (url.searchParams.get("sessionId") ?? "").trim();
@@ -24,7 +25,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const gate = await requireIrissSectionApi("vin");
+  const gate = await requireAdminOnlyApi();
   if (!gate.ok) return gate.response;
   let b: Record<string, unknown>;
   try {
