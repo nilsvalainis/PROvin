@@ -1,5 +1,7 @@
 # VIN atmiņa: Autobid un Openlane masveida ielase
 
+**Apturēts 17.11.2026 (Nila «jā»):** cron ieraksts izņemts no `vercel.json`. Gājiens 3417 Openlane lotes apstrādāja, bet saglabāja 0 VIN, jo Autobid publiskajā sarakstā, Openlane meklēšanā un ielogotā Openlane lotes lapā VIN nav. Kods un admin poga «Nolasīt nākamo soli» paliek. Ieslēgt atpakaļ: atjaunot `{"path": "/api/cron/vin-memory-auction-ingest", "schedule": "*/10 0-4 * * *"}`.
+
 EN below. Nakts `vin-memory-sync` (jau ielādētie IRISS sludinājumi + pasūtījumi) paliek. Šis ir brālis, ne aizvietotājs.
 
 ## Kur adminā
@@ -60,7 +62,6 @@ Auto1 šajā gājienā nav: VIN līdz pirkumam ir jaucējkods.
 - `app/admin/(dashboard)/izsolu-arhivs/page.tsx`
 - `components/admin/AdminAuctionArchiveView.tsx` un PRO sānjosla / telefona ikona
 
-Sapludināšana gaida Nila «jā».
 
 ---
 
