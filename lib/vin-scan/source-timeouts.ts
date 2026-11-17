@@ -17,6 +17,9 @@ const CAPTCHA_TIMEOUT_MS = 90_000;
 /** Hetzner Chrome `/listings/page`: palaišana + Cloudflare izaicinājuma gaidīšana un atkārtojums. */
 export const VIN_SCAN_RELAY_PAGE_TIMEOUT_MS = 100_000;
 
+const THECARAPI_TIMEOUT_MS = 15_000;
+const THECARAPI_SOURCES = new Set<VinScanSourceId>(["thecarapi_eu"]);
+
 const RELAY_PAGE_SOURCES = new Set<VinScanSourceId>([
   "stat_vin",
   "bid_cars",
@@ -38,6 +41,7 @@ const CAPTCHA_SOURCES = new Set<VinScanSourceId>([
 ]);
 
 export function vinScanSourceTimeoutMs(id: VinScanSourceId): number {
+  if (THECARAPI_SOURCES.has(id)) return THECARAPI_TIMEOUT_MS;
   if (RELAY_PAGE_SOURCES.has(id)) return VIN_SCAN_RELAY_PAGE_TIMEOUT_MS;
   if (CAPTCHA_SOURCES.has(id)) return CAPTCHA_TIMEOUT_MS;
   if (SLOW_SOURCES.has(id)) return SLOW_TIMEOUT_MS;

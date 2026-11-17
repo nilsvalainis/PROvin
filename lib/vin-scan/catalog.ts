@@ -4,6 +4,7 @@
  */
 
 import { carinfoSwedenVinUrl } from "@/lib/vin-sources/carinfo-search";
+import { thecarapiVinScanEnabled } from "@/lib/vin-scan/thecarapi-flags";
 import { type VinScanPlateKind, type VinScanPlates, emptyVinScanPlates } from "@/lib/vin-scan/plates";
 
 export const VIN_SCAN_SOURCE_IDS = [
@@ -33,6 +34,7 @@ export const VIN_SCAN_SOURCE_IDS = [
   "lt_itpr",
   "stat_vin",
   "joj_copart_iaai",
+  "thecarapi_eu",
   "bid_cars",
   "auchistory",
   "carfax_eu",
@@ -365,6 +367,14 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
     openUrl: (vin) => `https://www.copart.com/lotSearchResults/?free=true&query=${vinQuery(vin)}`,
   },
   {
+    id: "thecarapi_eu",
+    label: "EU izsoles (TheCarApi)",
+    country: "EU",
+    hint: "AUTO1/Openlane/BCA/Autorola arhīvs",
+    needs: ["vin"],
+    openUrl: (vin) => `https://api.thecarapi.com/api/vin/${vinQuery(vin)}/history`,
+  },
+  {
     id: "bid_cars",
     label: "bid.cars",
     country: "US",
@@ -445,9 +455,14 @@ export function defaultVinScanSourceIds(): VinScanSourceId[] {
   return vinScanPipelineSourceIds();
 }
 
-/** Ātrie vērtējumi un bezmaksas auto-scan: bez JoJ $0.50 un bez paslēptiem avotiem. Speckr tikai manuāli auto_records blokā. */
+/** Ātrie vērtējumi un bezmaksas auto-scan: bez JoJ $0.50, bez TheCarApi, bez paslēptiem avotiem. */
 export function vinScanPipelineSourceIds(): VinScanSourceId[] {
-  return VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai" && !vinScanSourceDisabled(id));
+  const allowThecarapi = thecarapiVinScanEnabled();
+  return VIN_SCAN_SOURCE_IDS.filter((id) => {
+    if (id === "joj_copart_iaai") return false;
+    if (id === "thecarapi_eu" && !allowThecarapi) return false;
+    return !vinScanSourceDisabled(id);
+  });
 }
 
 export function vinScanFastSourceIds(): VinScanSourceId[] {

@@ -12,6 +12,8 @@ import {
   vwGroupRecallCheckUrl,
 } from "@/lib/vin-scan/catalog";
 import { fetchAuctionVinLots } from "@/lib/vin-scan/auction-vin-providers";
+import { fetchThecarapiVinHistory } from "@/lib/vin-scan/thecarapi-api";
+import { thecarapiVinScanEnabled, THECARAPI_DISABLED_SUMMARY } from "@/lib/vin-scan/thecarapi-flags";
 import { statVinBrowserLane } from "@/lib/vin-scan/stat-vin-browser";
 import { scanCaptchaTokenPlaceholder, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
 import { fetchBiluppgifterApi } from "@/lib/vin-scan/biluppgifter-api";
@@ -351,6 +353,18 @@ export async function probeJojCopartIaai(ctx: VinScanContext): Promise<VinScanIn
     return done("joj_copart_iaai", ctx, await fetchAuctionVinLots(ctx.vin, { listingUrl: ctx.listingUrl }));
   } catch (e) {
     return failed("joj_copart_iaai", ctx, e);
+  }
+}
+
+export async function probeThecarapi(ctx: VinScanContext): Promise<VinScanIndicator> {
+  if (!thecarapiVinScanEnabled()) {
+    return done("thecarapi_eu", ctx, { status: "skipped", summary: THECARAPI_DISABLED_SUMMARY });
+  }
+  try {
+    const result = await fetchThecarapiVinHistory(ctx.vin);
+    return done("thecarapi_eu", ctx, result.parse);
+  } catch (e) {
+    return failed("thecarapi_eu", ctx, e);
   }
 }
 

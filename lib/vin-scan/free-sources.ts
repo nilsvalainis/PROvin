@@ -23,11 +23,12 @@ export const VIN_SCAN_PAID_SOURCE_IDS = [
   "oneauto",
   "auto_vin",
   "joj_copart_iaai",
+  "thecarapi_eu",
   "speckr",
 ] as const;
 
-/** JoJ $0.50 API zvans (tikai manuāli ASV blokā). Speckr — `auto_records`, ne VIN SCAN. */
-export const VIN_SCAN_METERED_SOURCE_IDS = ["joj_copart_iaai"] as const;
+/** JoJ $0.50 un TheCarApi (tikai manuāli, ja karogs ieslēgts). Nekad auto/quick-eval. */
+export const VIN_SCAN_METERED_SOURCE_IDS = ["joj_copart_iaai", "thecarapi_eu"] as const;
 
 const PAID = new Set<string>([...VIN_SCAN_PAID_SOURCE_IDS, ...VIN_SCAN_REMOVED_IDS]);
 const METERED = new Set<string>(VIN_SCAN_METERED_SOURCE_IDS);

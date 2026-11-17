@@ -8,6 +8,7 @@ import { applyFinlandLinkToIndicators } from "@/lib/vin-scan/finland-link";
 import { runWithVinScanDeadline } from "@/lib/vin-scan/http";
 import { withVinScanRelayDedupe } from "@/lib/vin-scan/listings-page-relay";
 import { vinScanSourceTimeoutMs } from "@/lib/vin-scan/source-timeouts";
+import { thecarapiVinScanEnabled } from "@/lib/vin-scan/thecarapi-flags";
 import { buildVinScanIndicator, type VinScanContext, type VinScanIndicator } from "@/lib/vin-scan/types";
 
 function timeoutMsFor(id: VinScanSourceId): number {
@@ -41,6 +42,12 @@ export type RunVinScanInput = {
 };
 
 /** Visi avoti paralēli. Viena zonde, kas krīt, kļūst par unknown un neaptur pārējās. */
+function isRunnableVinScanSourceId(id: string): id is VinScanSourceId {
+  if (!isVinScanSourceId(id)) return false;
+  if (id === "thecarapi_eu") return thecarapiVinScanEnabled();
+  return isFreeVinScanSourceId(id);
+}
+
 export async function runVinScan(
   vinOrInput: string | RunVinScanInput,
   sourceIds?: readonly string[],
@@ -52,7 +59,7 @@ export async function runVinScan(
     listingUrl: input.listingUrl?.trim() ?? "",
   };
   const ids = input.sourceIds?.length
-    ? input.sourceIds.filter((id): id is VinScanSourceId => isVinScanSourceId(id) && isFreeVinScanSourceId(id))
+    ? input.sourceIds.filter((id): id is VinScanSourceId => isRunnableVinScanSourceId(id))
     : freeVinScanSourceIds();
   const wanted = VIN_SCAN_CATALOG.filter((item) => ids.includes(item.id));
   return withVinScanRelayDedupe(async () => {
@@ -93,6 +100,6 @@ export function sanitizeVinScanSourceIds(raw: unknown): VinScanSourceId[] | unde
   if (!Array.isArray(raw)) return undefined;
   const ids = raw
     .filter((v): v is string => typeof v === "string")
-    .filter((id): id is VinScanSourceId => isFreeVinScanSourceId(id));
+    .filter((id): id is VinScanSourceId => isRunnableVinScanSourceId(id));
   return ids.length > 0 ? ids : undefined;
 }

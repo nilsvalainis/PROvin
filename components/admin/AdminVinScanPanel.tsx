@@ -397,10 +397,16 @@ export function AdminVinScanPanel({
     return next;
   }, [byId, plates]);
 
-  const rows = CATALOG.map((item) => displayById[item.id]).filter((row): row is ScanRow => Boolean(row));
+  const tiles = useMemo(() => {
+    const extra = VIN_SCAN_CATALOG.find((item) => item.id === "thecarapi_eu");
+    if (!extra || !displayById[extra.id] || CATALOG.some((item) => item.id === extra.id)) return CATALOG;
+    return [...CATALOG, extra];
+  }, [displayById]);
+
+  const rows = tiles.map((item) => displayById[item.id]).filter((row): row is ScanRow => Boolean(row));
   const facts = rows.length > 0 ? buildVinScanFacts(rows) : null;
   const countLine = rows.length > 0 ? formatVinScanCountLine(vinScanCountBreakdown(rows)) : "";
-  const unknownIds = CATALOG.filter((item) => displayById[item.id]?.status === "unknown").map((item) => item.id);
+  const unknownIds = tiles.filter((item) => displayById[item.id]?.status === "unknown").map((item) => item.id);
   const canRetry = !busy && unknownIds.length > 0;
   const nordicLinks = valid ? nordicVinSearchLinks(clean) : [];
   const linkBtn =
@@ -550,7 +556,7 @@ export function AdminVinScanPanel({
     onSnapshot?.({
       scannedAt,
       busy,
-      rows: CATALOG.map((item) => {
+          rows: tiles.map((item) => {
         const row = displayById[item.id];
         return {
           id: item.id,
@@ -572,7 +578,7 @@ export function AdminVinScanPanel({
         };
       }),
     });
-  }, [displayById, scannedAt, busy, clean, onSnapshot, plates, listing]);
+  }, [displayById, scannedAt, busy, clean, onSnapshot, plates, listing, tiles]);
 
   return (
     <section
@@ -666,7 +672,7 @@ export function AdminVinScanPanel({
       {error ? <p className="px-2.5 pb-2 text-[10px] text-rose-600 dark:text-rose-300">{error}</p> : null}
       {copyNote ? <p className="px-2.5 pb-1 text-[10px] text-[var(--color-provin-muted)]">{copyNote}</p> : null}
       <ul className="grid grid-cols-2 gap-1 px-2 py-2 sm:grid-cols-4">
-        {CATALOG.map((item) => {
+        {tiles.map((item) => {
           const row = displayById[item.id];
           const status = busy && !row ? "checking" : busy && row?.status === "unknown" ? "checking" : (row?.status ?? (busy ? "checking" : "idle"));
           const active = openId === item.id;

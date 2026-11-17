@@ -113,7 +113,14 @@ async function writeJson(key: string, value: unknown): Promise<void> {
         JSON.stringify({
           vinScanStore: true,
           event: "blob_write_failed",
-          keyKind: key === INDEX_KEY ? "history" : key.startsWith("joj-") ? "joj" : "snapshot",
+          keyKind:
+            key === INDEX_KEY
+              ? "history"
+              : key.startsWith("joj-")
+                ? "joj"
+                : key.includes("thecarapi")
+                  ? "thecarapi"
+                  : "snapshot",
           msg: e instanceof Error ? e.message.slice(0, 160) : "error",
         }),
       );
@@ -121,8 +128,9 @@ async function writeJson(key: string, value: unknown): Promise<void> {
   }
   const dir = resolveDir();
   if (dir) {
-    await fs.mkdir(dir, { recursive: true });
-    await fs.writeFile(path.join(dir, `${key}.json`), body, "utf8");
+    const filePath = path.join(dir, `${key}.json`);
+    await fs.mkdir(path.dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, body, "utf8");
   }
   if (blob && !blobOk && (!dir || isEphemeralDir(dir))) {
     throw new Error("blob_write_failed");
@@ -256,4 +264,176 @@ export async function readJojDictCache(): Promise<JojDictCache | null> {
 export async function writeJojDictCache(dict: JojNameDict): Promise<void> {
   const body: JojDictCache = { cachedAt: new Date().toISOString(), dict };
   await writeJson(JOJ_DICT_KEY, body);
+}
+
+/** TheCarApi VIN vēsture: found 30 dienas, none 7 dienas. 5xx/401/403/429/timeout nekešo. */
+export const THECARAPI_VIN_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+export const THECARAPI_VIN_NONE_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+export const THECARAPI_DETAIL_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+export const THECARAPI_DETAIL_ACTIVE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+
+export type ThecarapiVinCacheRef = { site: string; id: string; active: boolean };
+
+export type ThecarapiVinCache = {
+  vin: string;
+  cachedAt: string;
+  parse: VinScanParse;
+  httpStatus?: number;
+  etag?: string;
+  refs?: ThecarapiVinCacheRef[];
+};
+
+export type ThecarapiDetailCache = {
+  site: string;
+  id: string;
+  cachedAt: string;
+  etag?: string;
+  active: boolean;
+  json: unknown;
+};
+
+export type ThecarapiUsage = {
+  month: string;
+  count: number;
+};
+
+function thecarapiVinKey(vin: string): string | null {
+  const key = snapshotKey(vin);
+  if (key.length < 11) return null;
+  return `vin_scan/thecarapi/${key}`;
+}
+
+function thecarapiDetailStorageKey(site: string, id: string): string | null {
+  const s = site.toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40);
+  const i = id.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 80);
+  if (!s || !i || s.includes("..") || i.includes("..")) return null;
+  return `vin_scan/thecarapi/detail/${s}_${i}`;
+}
+
+function thecarapiUsageKey(month: string): string | null {
+  if (!/^\d{4}-\d{2}$/.test(month)) return null;
+  return `vin_scan/thecarapi/_usage_${month}`;
+}
+
+function thecarapiVinTtlMs(parse: VinScanParse): number {
+  return parse.status === "none" ? THECARAPI_VIN_NONE_CACHE_TTL_MS : THECARAPI_VIN_CACHE_TTL_MS;
+}
+
+export function asThecarapiVinCache(raw: unknown, nowMs = Date.now(), allowExpired = false): ThecarapiVinCache | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const vin = typeof o.vin === "string" ? o.vin : "";
+  const cachedAt = typeof o.cachedAt === "string" ? o.cachedAt : "";
+  if (!vin || !cachedAt || !o.parse || typeof o.parse !== "object") return null;
+  const parse = o.parse as VinScanParse;
+  if (parse.status !== "found" && parse.status !== "none") return null;
+  const t = Date.parse(cachedAt);
+  if (!Number.isFinite(t)) return null;
+  if (!allowExpired && nowMs - t >= thecarapiVinTtlMs(parse)) return null;
+  const httpStatus = typeof o.httpStatus === "number" && Number.isFinite(o.httpStatus) ? o.httpStatus : undefined;
+  const etag = typeof o.etag === "string" && o.etag.trim() ? o.etag : undefined;
+  const refs = Array.isArray(o.refs)
+    ? o.refs
+        .map((item) => {
+          if (!item || typeof item !== "object") return null;
+          const rec = item as { site?: unknown; id?: unknown; active?: unknown };
+          const site = typeof rec.site === "string" ? rec.site : "";
+          const id = typeof rec.id === "string" ? rec.id : "";
+          if (!site || !id) return null;
+          return { site, id, active: rec.active === true };
+        })
+        .filter((item): item is ThecarapiVinCacheRef => Boolean(item))
+    : undefined;
+  return {
+    vin,
+    cachedAt,
+    parse,
+    ...(httpStatus != null ? { httpStatus } : {}),
+    ...(etag ? { etag } : {}),
+    ...(refs && refs.length ? { refs } : {}),
+  };
+}
+
+export async function readThecarapiVinCache(vin: string, nowMs = Date.now()): Promise<ThecarapiVinCache | null> {
+  const key = thecarapiVinKey(vin);
+  if (!key) return null;
+  return asThecarapiVinCache(await readJson(key), nowMs, false);
+}
+
+export async function readThecarapiVinCacheRaw(vin: string): Promise<ThecarapiVinCache | null> {
+  const key = thecarapiVinKey(vin);
+  if (!key) return null;
+  return asThecarapiVinCache(await readJson(key), Date.now(), true);
+}
+
+export async function writeThecarapiVinCache(
+  vin: string,
+  parse: VinScanParse,
+  extra?: { httpStatus?: number; cachedAt?: string; etag?: string; refs?: ThecarapiVinCacheRef[] },
+): Promise<void> {
+  const key = thecarapiVinKey(vin);
+  if (!key) return;
+  if (parse.status !== "found" && parse.status !== "none") return;
+  const body: ThecarapiVinCache = {
+    vin: vin.trim().toUpperCase(),
+    cachedAt: extra?.cachedAt ?? new Date().toISOString(),
+    parse,
+    ...(extra?.httpStatus != null ? { httpStatus: extra.httpStatus } : {}),
+    ...(extra?.etag ? { etag: extra.etag } : {}),
+    ...(extra?.refs?.length ? { refs: extra.refs } : {}),
+  };
+  await writeJson(key, body);
+}
+
+function detailTtlMs(active: boolean): number {
+  return active ? THECARAPI_DETAIL_ACTIVE_CACHE_TTL_MS : THECARAPI_DETAIL_CACHE_TTL_MS;
+}
+
+export function asThecarapiDetailCache(raw: unknown, nowMs = Date.now(), allowExpired = false): ThecarapiDetailCache | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  const site = typeof o.site === "string" ? o.site : "";
+  const id = typeof o.id === "string" ? o.id : "";
+  const cachedAt = typeof o.cachedAt === "string" ? o.cachedAt : "";
+  if (!site || !id || !cachedAt || !("json" in o)) return null;
+  const t = Date.parse(cachedAt);
+  if (!Number.isFinite(t)) return null;
+  const active = o.active === true;
+  if (!allowExpired && nowMs - t >= detailTtlMs(active)) return null;
+  const etag = typeof o.etag === "string" && o.etag.trim() ? o.etag : undefined;
+  return { site, id, cachedAt, active, json: o.json, ...(etag ? { etag } : {}) };
+}
+
+export async function readThecarapiDetailCache(site: string, id: string, nowMs = Date.now()): Promise<ThecarapiDetailCache | null> {
+  const key = thecarapiDetailStorageKey(site, id);
+  if (!key) return null;
+  return asThecarapiDetailCache(await readJson(key), nowMs, false);
+}
+
+export async function readThecarapiDetailCacheRaw(site: string, id: string): Promise<ThecarapiDetailCache | null> {
+  const key = thecarapiDetailStorageKey(site, id);
+  if (!key) return null;
+  return asThecarapiDetailCache(await readJson(key), Date.now(), true);
+}
+
+export async function writeThecarapiDetailCache(entry: ThecarapiDetailCache): Promise<void> {
+  const key = thecarapiDetailStorageKey(entry.site, entry.id);
+  if (!key) return;
+  await writeJson(key, entry);
+}
+
+export async function readThecarapiMonthlyUsage(month: string): Promise<number> {
+  const key = thecarapiUsageKey(month);
+  if (!key) return 0;
+  const raw = await readJson(key);
+  if (!raw || typeof raw !== "object") return 0;
+  const count = (raw as { count?: unknown }).count;
+  return typeof count === "number" && Number.isFinite(count) && count > 0 ? Math.floor(count) : 0;
+}
+
+export async function writeThecarapiMonthlyUsage(month: string, count: number): Promise<void> {
+  const key = thecarapiUsageKey(month);
+  if (!key) return;
+  const body: ThecarapiUsage = { month, count: Math.max(0, Math.floor(count)) };
+  await writeJson(key, body);
 }
