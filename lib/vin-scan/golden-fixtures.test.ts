@@ -129,20 +129,17 @@ describe("tjekbil.dk pilnā karte (zelta VIN)", () => {
       dmr: fixture("tjekbil", CAPTUR).body as TjekbilDmrResponse,
       mileagelogs: fixture("tjekbil", `${CAPTUR}.mileagelogs`).body as TjekbilMileageLog[],
     });
+    // Tikai valsts reģistru rādījumi (origin 10/20/30). Lietotāja (0) un nedokumentētie (40) izlaisti.
     expect(mapped.mileage.map((r) => [r.date, r.odometer])).toEqual([
-      ["2026-11-13", "86"],
-      ["2026-03-23", "385000"],
       ["2025-08-22", "385537"],
       ["2025-08-22", "385000"],
       ["2025-08-20", "385292"],
-      ["2025-03-27", "358000"],
       ["2023-10-11", "358886"],
       ["2023-10-10", "358874"],
       ["2023-10-10", "358000"],
       ["2022-02-02", "320000"],
       ["2022-01-27", "320000"],
       ["2020-02-03", "271000"],
-      ["2019-04-15", "2000"],
       ["2018-02-21", "83000"],
       ["2017-08-24", "171000"],
       ["2017-08-19", "171000"],
@@ -169,13 +166,16 @@ describe("tjekbil.dk pilnā karte (zelta VIN)", () => {
   // KĻŪDA (atrasta ar zelta VIN): mileagelogs ieraksts ar origin 0 (lietotāja ievadīts tjekbil.dk,
   // ir createdBy) ar 86 km tiek rādīts kā "DMR" rādījums un rada viltus "Odometra pretruna" piezīmi.
   // Pareizi: lietotāja ievadīts rādījums nav DMR avots un nedrīkst radīt odometra pretrunu.
-  it.fails("Captur: lietotāja ievadīts 86 km rādījums netiek uzdots par DMR un nerada pretrunu", () => {
+  it("Captur: lietotāja ievadīts 86 km rādījums netiek uzdots par DMR un nerada pretrunu", () => {
     const mapped = mapTjekbilPayload({
       dmr: fixture("tjekbil", CAPTUR).body as TjekbilDmrResponse,
       mileagelogs: fixture("tjekbil", `${CAPTUR}.mileagelogs`).body as TjekbilMileageLog[],
     });
     expect(mapped.mileage.some((r) => r.odometer === "86" && r.origin === "DMR")).toBe(false);
     expect(sp(mapped.notes).some((n) => n.includes("pēc tam 86 km"))).toBe(false);
+    // 2000 km 2019. gadā (origin 40, nedokumentēts) arī nerada pretrunu pēc 83 000 km.
+    expect(sp(mapped.notes).some((n) => n.includes("pēc tam 2 000 km"))).toBe(false);
+    expect(mapped.mileage.every((r) => r.origin !== "DMR")).toBe(true);
   });
 });
 
