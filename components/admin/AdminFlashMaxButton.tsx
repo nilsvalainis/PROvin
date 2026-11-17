@@ -1,28 +1,17 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 
 import {
-  FLASH_MAX_JOBS,
-  FLASH_MAX_OPERATOR_NOTES_MAX_LEN,
-  clipFlashMaxOperatorNotes,
-  defaultFlashMaxJobBreadth,
-  defaultFlashMaxSelection,
-  emptyFlashMaxSelection,
-  expandFlashMaxMenuJobs,
-  summaryOnlyFlashMaxSelection,
-  type FlashMaxJob,
-  type FlashMaxSelection,
-} from "@/lib/admin-flash-max";
+  AdminFlashMaxPanel,
+  FLASH_MAX_TIER_LEGEND,
+  flashMaxDraftToSelection,
+  flashMaxRunnableCount,
+  useFlashMaxDraft,
+} from "@/components/admin/AdminFlashMaxPanel";
+import type { FlashMaxSelection } from "@/lib/admin-flash-max";
 import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
-import { AI_ADMIN_TIER_BUTTON_ORDER } from "@/lib/ai-admin-field-defaults";
-import { aiAdminModelTierLabel, type AiAdminModelTier } from "@/lib/ai-admin-model-tier";
-import {
-  COMMENT_BREADTH_LEVELS,
-  COMMENT_BREADTH_SHORT,
-  type CommentBreadth,
-} from "@/lib/ai-comment-breadth";
 
 type Props = {
   disabled?: boolean;
@@ -53,84 +42,8 @@ function RailFlashLightningIcon({ className }: { className?: string }) {
   );
 }
 
-const SHORT_TIER: Record<AiAdminModelTier, string> = {
-  "gemini-flash": "Smart",
-  gemini: "Gemini",
-  flash: "Sonnet",
-  pro: "PRO",
-  lite: "Haiku",
-};
-
 const chip =
   "rounded border border-slate-200 bg-white px-1.5 py-0.5 text-[9px] font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-40";
-
-function JobRow({
-  job,
-  checked,
-  tier,
-  breadth,
-  disabled,
-  onToggle,
-  onTier,
-  onBreadth,
-}: {
-  job: FlashMaxJob;
-  checked: boolean;
-  tier: AiAdminModelTier;
-  breadth: CommentBreadth;
-  disabled: boolean;
-  onToggle: (id: string, next: boolean) => void;
-  onTier: (id: string, next: AiAdminModelTier) => void;
-  onBreadth: (id: string, next: CommentBreadth) => void;
-}) {
-  const boxId = useId();
-  return (
-    <label
-      htmlFor={boxId}
-      className={`flex min-w-0 items-center gap-1.5 rounded px-0.5 py-0.5 ${checked ? "" : "opacity-70"}`}
-    >
-      <input
-        id={boxId}
-        type="checkbox"
-        className="h-3 w-3 shrink-0 rounded border-slate-300 text-teal-600 focus:ring-teal-600/30"
-        checked={checked}
-        disabled={disabled}
-        onChange={(e) => onToggle(job.id, e.target.checked)}
-      />
-      <span className="min-w-0 flex-1 truncate text-[10px] font-medium text-[var(--color-apple-text)]">
-        {job.label}
-      </span>
-      <select
-        aria-label={`${job.label} platums`}
-        disabled={disabled}
-        value={breadth}
-        onClick={(e) => e.stopPropagation()}
-        onChange={(e) => onBreadth(job.id, e.target.value as CommentBreadth)}
-        className="h-5 w-[3.4rem] shrink-0 rounded border border-slate-200 bg-white px-0.5 text-[9px] font-semibold text-slate-700 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25"
-      >
-        {COMMENT_BREADTH_LEVELS.map((opt) => (
-          <option key={opt} value={opt}>
-            {COMMENT_BREADTH_SHORT[opt]}
-          </option>
-        ))}
-      </select>
-      <select
-        aria-label={`${job.label} aģents`}
-        disabled={disabled}
-        value={tier}
-        onClick={(e) => e.stopPropagation()}
-        onChange={(e) => onTier(job.id, e.target.value as AiAdminModelTier)}
-        className="h-5 max-w-[6.75rem] shrink-0 rounded border border-slate-200 bg-white px-0.5 text-[9px] font-semibold text-slate-700 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25"
-      >
-        {AI_ADMIN_TIER_BUTTON_ORDER.map((opt) => (
-          <option key={opt} value={opt}>
-            {SHORT_TIER[opt]}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
 
 export function AdminFlashMaxButton({
   disabled,
@@ -145,14 +58,11 @@ export function AdminFlashMaxButton({
   sourceBlocks,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const [selection, setSelection] = useState<FlashMaxSelection>(defaultFlashMaxSelection);
-  const [operatorNotes, setOperatorNotes] = useState("");
+  const draft = useFlashMaxDraft();
   const rootRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
-  const selectedCount = selection.selectedIds.length;
-  const menuJobs = useMemo(() => expandFlashMaxMenuJobs(FLASH_MAX_JOBS, sourceBlocks), [sourceBlocks]);
-  const dailyJobs = useMemo(() => menuJobs.filter((j) => j.group === "daily"), [menuJobs]);
-  const extraJobs = useMemo(() => menuJobs.filter((j) => j.group === "extra"), [menuJobs]);
+  // Datu pārbaude tikai atvērtam logam (poga ir lapā vienmēr; nobraukuma un avotu savākšana nav lēta).
+  const selectedCount = open ? flashMaxRunnableCount(draft, sourceBlocks) : 0;
 
   useEffect(() => {
     if (!open) return;
@@ -170,28 +80,10 @@ export function AdminFlashMaxButton({
     };
   }, [open]);
 
-  const toggle = (id: string, next: boolean) => {
-    setSelection((prev) => ({
-      ...prev,
-      selectedIds: next ? [...new Set([...prev.selectedIds, id])] : prev.selectedIds.filter((x) => x !== id),
-    }));
-  };
-
-  const setTier = (id: string, next: AiAdminModelTier) => {
-    setSelection((prev) => ({ ...prev, tiers: { ...prev.tiers, [id]: next } }));
-  };
-
-  const setBreadth = (id: string, next: CommentBreadth) => {
-    setSelection((prev) => ({ ...prev, breadths: { ...prev.breadths, [id]: next } }));
-  };
-
   const confirm = () => {
     if (busy || selectedCount === 0) return;
     setOpen(false);
-    onRun({
-      ...selection,
-      operatorNotes: clipFlashMaxOperatorNotes(operatorNotes),
-    });
+    onRun(flashMaxDraftToSelection(draft, sourceBlocks));
   };
 
   return (
@@ -229,88 +121,10 @@ export function AdminFlashMaxButton({
             menuAlign === "end" ? "right-0" : "left-0"
           }`}
         >
-          <div className="mb-1.5 flex flex-wrap items-start justify-between gap-1.5">
-            <div className="min-w-0">
-              <p id={titleId} className="text-[11px] font-semibold text-[var(--color-apple-text)]">
-                FLASH MAX
-              </p>
-              <p className="text-[9px] leading-snug text-slate-500">
-                Platums: Komp / Vid / Plašs. Kopsavilkums (1./2./3.) pēc noklusējuma plašs, pārējie
-                kompakti. Aģentu izvēle paliek kā ✨ pogās.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              <button type="button" className={chip} disabled={busy} onClick={() => setSelection(defaultFlashMaxSelection())}>
-                Noklusējumi
-              </button>
-              <button type="button" className={chip} disabled={busy} onClick={() => setSelection(emptyFlashMaxSelection())}>
-                Notīrīt
-              </button>
-              <button
-                type="button"
-                className={chip}
-                disabled={busy}
-                onClick={() => setSelection(summaryOnlyFlashMaxSelection())}
-              >
-                Tikai kopsavilkums
-              </button>
-            </div>
-          </div>
-          <p className="mb-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
-            Ikdienas sadaļas
+          <p id={titleId} className="mb-1 text-[11px] font-semibold text-[var(--color-apple-text)]">
+            FLASH MAX
           </p>
-          <div className="max-h-[40vh] space-y-0.5 overflow-y-auto pr-0.5">
-            {dailyJobs.map((job) => (
-              <JobRow
-                key={job.id}
-                job={job}
-                checked={selection.selectedIds.includes(job.id)}
-                tier={selection.tiers[job.id] ?? "gemini-flash"}
-                breadth={selection.breadths[job.id] ?? defaultFlashMaxJobBreadth(job.id)}
-                disabled={!!busy}
-                onToggle={toggle}
-                onTier={setTier}
-                onBreadth={setBreadth}
-              />
-            ))}
-            <p className="pt-1.5 text-[9px] font-semibold uppercase tracking-wide text-slate-400">
-              Citas sadaļas
-            </p>
-            <p className="pb-0.5 text-[9px] leading-snug text-slate-400">
-              Parasti nav Flash Max - ieķeksē, kad vajag arī šos logus.
-            </p>
-            {extraJobs.map((job) => (
-              <JobRow
-                key={job.id}
-                job={job}
-                checked={selection.selectedIds.includes(job.id)}
-                tier={selection.tiers[job.id] ?? "gemini-flash"}
-                breadth={selection.breadths[job.id] ?? defaultFlashMaxJobBreadth(job.id)}
-                disabled={!!busy}
-                onToggle={toggle}
-                onTier={setTier}
-                onBreadth={setBreadth}
-              />
-            ))}
-          </div>
-          <label className="mt-2 block border-t border-slate-100 pt-2">
-            <span className="mb-0.5 block text-[9px] font-semibold uppercase tracking-wide text-slate-400">
-              Papildu piezīmes / komanda
-            </span>
-            <span className="mb-1 block text-[9px] leading-snug text-slate-500">
-              Iet visiem izvēlētajiem aģentiem. Apstrādā katru tēmu; ja saki „tikai par…”, pārējais netiek
-              papildināts. Jauns fakts - labo visus tekstus pēc tā.
-            </span>
-            <textarea
-              className="min-h-[4.5rem] w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-[11px] leading-snug text-[var(--color-apple-text)] placeholder:text-slate-400 focus:border-[var(--color-provin-accent)] focus:outline-none focus:ring-1 focus:ring-[var(--color-provin-accent)]/25"
-              placeholder="Piem., jauns AutoDNA: 12.03.2019 Vācijā 18 400 €; labo visus komentārus pēc šiem faktiem…"
-              value={operatorNotes}
-              disabled={busy}
-              maxLength={FLASH_MAX_OPERATOR_NOTES_MAX_LEN}
-              onChange={(e) => setOperatorNotes(e.target.value.slice(0, FLASH_MAX_OPERATOR_NOTES_MAX_LEN))}
-              aria-label="Papildu piezīmes FLASH MAX ģenerēšanai"
-            />
-          </label>
+          <AdminFlashMaxPanel draft={draft} sourceBlocks={sourceBlocks} busy={busy} />
           <div className="mt-2 flex items-center justify-end gap-1.5 border-t border-slate-100 pt-2">
             <button type="button" className={chip} disabled={busy} onClick={() => setOpen(false)}>
               Atcelt
@@ -320,7 +134,7 @@ export function AdminFlashMaxButton({
               disabled={busy || selectedCount === 0}
               onClick={confirm}
               className="inline-flex h-7 items-center rounded-lg bg-teal-600 px-2.5 text-[10px] font-semibold text-white hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-45"
-              title={AI_ADMIN_TIER_BUTTON_ORDER.map((t) => `${SHORT_TIER[t]} = ${aiAdminModelTierLabel(t)}`).join(" · ")}
+              title={FLASH_MAX_TIER_LEGEND}
             >
               Ģenerēt {selectedCount}
             </button>

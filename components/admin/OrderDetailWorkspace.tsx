@@ -38,6 +38,7 @@ import { AdminListingCoverPhoto } from "@/components/admin/AdminListingCoverPhot
 import { AdminCitiAvotiSourceBlock } from "@/components/admin/AdminCitiAvotiSourceBlock";
 import { AdminOrderVinScanCard } from "@/components/admin/AdminOrderVinScanCard";
 import { useAdminIsPhone } from "@/lib/use-admin-is-phone";
+import { useLiveElementById } from "@/lib/use-live-element-by-id";
 import {
   ADMIN_MOBILE_ORDER_SECTIONS,
   ADMIN_MOBILE_PAID_SOURCE_BLOCK,
@@ -503,7 +504,8 @@ const workspaceSectionTitle = `font-medium uppercase tracking-wide text-[var(--c
 const workspaceSectionShell =
   "rounded-xl bg-[var(--admin-surface-elevated)] p-2 shadow-sm ring-1 ring-[var(--admin-border-subtle)]";
 
-const WIZARD_SUMMARY_STEP = 12;
+/** Cilne "Kopsavilkums" (wizardStepsUi pēdējā). 17.11: bija 12 = "Sludinājums", tāpēc poga un FLASH MAX beigas atvēra nepareizo cilni. */
+const WIZARD_SUMMARY_STEP = 13;
 
 const WIZARD_STEP_DOT: Record<TrafficFillLevel, string> = {
   empty: "bg-zinc-400",
@@ -883,7 +885,8 @@ export function OrderDetailWorkspace({
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [copilotBusy, setCopilotBusy] = useState(false);
   const [vinBarCopyFlash, setVinBarCopyFlash] = useState(false);
-  const [portfolioPortalEl, setPortfolioPortalEl] = useState<HTMLElement | null>(null);
+  // 17.11: mērķis seko līdzi lapai - sk. lib/use-live-element-by-id.ts ("Pielikumi" tikai pēc pārlādes).
+  const portfolioPortalEl = useLiveElementById(portfolioPortalDomId, payload.sessionId);
   const [alertsPortalEl, setAlertsPortalEl] = useState<HTMLElement | null>(null);
   const bannerCards = useAdminBannerCardsHidden();
   const [portfolioAllFilesModalOpen, setPortfolioAllFilesModalOpen] = useState(false);
@@ -1039,13 +1042,6 @@ export function OrderDetailWorkspace({
 
   const narrowPortfolioLayout = Boolean(portfolioPortalDomId);
 
-  useLayoutEffect(() => {
-    if (!portfolioPortalDomId || typeof document === "undefined") {
-      setPortfolioPortalEl(null);
-      return;
-    }
-    setPortfolioPortalEl(document.getElementById(portfolioPortalDomId));
-  }, [portfolioPortalDomId, payload.sessionId]);
 
   // Telefonā baneri zem pasūtījuma galvenes (makets 06.11), datorā - kā agrāk virs darba virsmas.
   const isMobileViewport = useAdminMobileViewport();
@@ -4654,6 +4650,7 @@ export function OrderDetailWorkspace({
       </div>
     ) : null;
 
+  // Ja portāla mērķa lapā nav (piem. telefonā sakļauta karte "Klients"), sadaļu rāda iekļauti lapā - kā līdz šim.
   const showPortfolioInline = !portfolioPortalDomId || !portfolioPortalEl;
   const showPortfolioPortal = Boolean(portfolioPortalDomId && portfolioPortalEl);
 
@@ -5369,6 +5366,7 @@ export function OrderDetailWorkspace({
         prepareDraftBusy={prepareDraftBusy}
         flashMaxBusy={flashMaxBusy}
         onFlashMax={(selection) => void runFlashMax(selection)}
+        sourceBlocks={ws.sourceBlocks}
         copilotOpen={copilotOpen}
         copilotBusy={copilotBusy}
         onOpenCopilot={() => {
