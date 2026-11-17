@@ -21,3 +21,12 @@ describe("karte Klients: WhatsApp un Zvanīt", () => {
     expect(telHrefForPhone("12345")).toBeNull();
   });
 });
+
+describe("augšējā josla: WhatsApp ar tekstu", () => {
+  it("labeled - poga ar tekstu; bez numura nav spiežama", async () => {
+    const { AdminWhatsAppIconButton } = await import("@/components/admin/AdminWhatsAppOpenButton");
+    expect(renderText(<AdminWhatsAppIconButton labeled title="WhatsApp: 20420539" onClick={() => undefined} />)).toBe("WhatsApp");
+    expect(renderHtml(<AdminWhatsAppIconButton labeled disabled title="Nav tālruņa" />)).not.toContain("<button");
+    expect(renderText(<AdminWhatsAppIconButton title="WhatsApp" onClick={() => undefined} />)).toBe("");
+  });
+});
