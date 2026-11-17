@@ -903,6 +903,41 @@ button.pd-lv {
 .pd-wa {
   color: #f5a623;
 }
+/* Auto1 stila karte: mērījuma punkts, pelēkas zonu etiķetes, lielāks teksts datorā. */
+.pd-pm-a1 .pd-pm-dot {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #3a3a3c;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.pd-pm-a1 .pd-lv {
+  color: #1d1d1f;
+  border-color: #d1d1d6;
+  border-radius: 4px;
+}
+.pd-pm-a1 .pd-lv.sel {
+  color: #1f6fc4;
+  border-color: #1f6fc4;
+}
+.pd-pm-a1 button.pd-lv-zone {
+  color: #8e8e93;
+  font-weight: 500;
+}
+.pd-pm-a1 button.pd-lv-zone.sel {
+  color: #1f6fc4;
+}
+@media (min-width: 768px) {
+  .pd-pm-a1 .pd-lv {
+    font-size: 12.5px;
+    padding: 2px 6px;
+  }
+  .pd-pm-a1 button.pd-lv-zone {
+    font-size: 13.5px;
+  }
+}
 /* Krāsas kartes mērījumi: x no CSS mainīgā, lai telefonā tos varētu pārbīdīt (sk. PdPaintMap SLOTS). */
 .pd-pm .pd-lv-slot {
   left: var(--x);
