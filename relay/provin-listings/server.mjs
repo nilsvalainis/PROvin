@@ -13,6 +13,7 @@
  *   LISTINGS_MAX_PAGES          noklusējums 5 (lapas vienam avotam)
  *   LISTINGS_MAX_FETCHES_PER_DAY noklusējums 300 uz platformu (1 pilna diena + Nolasīt tagad)
  *   LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY noklusējums 400 (POST /listings/page)
+ *   LISTINGS_LOTVIN_MAX_PER_DAY noklusējums 300 (POST /listings/lot-vins, skaita katru loti)
  *   LISTINGS_MAX_QUEUE          noklusējums 40 (garāka rinda -> 503)
  *   LISTINGS_VINSCAN_CONCURRENCY noklusējums 2 (VIN SCAN Chrome joslas; car.info un bid.cars pirmie)
  *   LISTINGS_MANUAL_LOGIN_MINUTES noklusējums 15
@@ -27,6 +28,7 @@
  *   POST /listings/page                   {url}  VIN SCAN izsoļu HTML (stat.vin, bid.cars, …)
  *   POST /listings/http                   {url}  car.info super-search JSON (plain HTTP, ne Chrome)
  *   POST /listings/detail                 {platform, url}  j56: viena Auto1/Openlane auto detaļu lapa
+ *   POST /listings/lot-vins               {platform: openlane|autobid, urls[<=12]}  VIN no ielogotām lotes lapām
  *   POST /listings/session/check          {platform}
  *   POST /listings/login/:platform        atver redzamu Chrome + īslaicīgs noVNC tokens adminam
  *   POST /listings/login/:platform/close  aizver manuālo login un pārbauda sesiju
@@ -55,6 +57,8 @@ import { sanitizeAutobidRelayRaw } from "./lib/sanitize-autobid.mjs";
 import { PLATFORMS, RelayState } from "./lib/state.mjs";
 import { listingsFetchKey, listingsUrlLog } from "./lib/urls.mjs";
 import { fetchAuctionDetail, validDetailUrl } from "./lib/detail-page.mjs";
+import { LOT_VIN_MAX_URLS, LOT_VIN_PLATFORMS, lotVinResult, validLotUrl } from "./lib/lot-vin-logic.mjs";
+import { fetchLotVins } from "./lib/lot-vin-page.mjs";
 import { createVinScanLanes, vinScanPageHost, vinScanProfileName } from "./lib/vinscan-lanes.mjs";
 import { fetchCarinfoSuperSearchHttp, validCarinfoSuperSearchUrl } from "./lib/vinscan-http.mjs";
 import { fetchVinScanPageHtml, validVinScanPageUrl, vinScanFinalUrlAllowed } from "./lib/vinscan-page.mjs";
@@ -69,6 +73,7 @@ const inflightFetches = new Map();
 const VINSCAN_MAX_FETCHES_PER_DAY = envPositiveInt(process.env.LISTINGS_VINSCAN_MAX_FETCHES_PER_DAY, 400);
 const MAX_QUEUE = envPositiveInt(process.env.LISTINGS_MAX_QUEUE, 40);
 const DETAIL_MAX_FETCHES_PER_DAY = envPositiveInt(process.env.LISTINGS_DETAIL_MAX_FETCHES_PER_DAY, 60);
+const LOTVIN_MAX_PER_DAY = envPositiveInt(process.env.LISTINGS_LOTVIN_MAX_PER_DAY, 300);
 const VINSCAN_CONCURRENCY = envPositiveInt(process.env.LISTINGS_VINSCAN_CONCURRENCY, 2, 3);
 const vinScanLanes = createVinScanLanes({ limit: VINSCAN_CONCURRENCY });
 const MANUAL_LOGIN_MINUTES = Math.max(1, Number(process.env.LISTINGS_MANUAL_LOGIN_MINUTES || 15));
@@ -447,6 +452,47 @@ const server = createServer(async (req, res) => {
       const note = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "nezināma kļūda";
       log(`${platform} detail kļūda: ${note}`);
       return sendJson(res, 500, { ok: false, status: "error", note, detail: null });
+    }
+  }
+
+  if (path === "/lot-vins") {
+    if (!LOT_VIN_PLATFORMS.includes(platform)) return sendJson(res, 400, { ok: false, status: "error", error: "platform: openlane | autobid" });
+    const asked = Array.isArray(body.urls) ? body.urls.slice(0, LOT_VIN_MAX_URLS).map((u) => String(u ?? "").slice(0, 600)) : [];
+    if (asked.length === 0) return sendJson(res, 400, { ok: false, status: "error", error: `urls: 1-${LOT_VIN_MAX_URLS} lotes saites` });
+    if (browserQueue.queueLength >= MAX_QUEUE) return sendJson(res, 503, { ok: false, status: "error", error: "rinda pilna" });
+    const slots = asked.map((raw) => ({ raw, url: validLotUrl(platform, raw) }));
+    const validCount = slots.filter((slot) => slot.url).length;
+    const errorResults = () => slots.map((slot) => lotVinResult(slot.raw, null, { status: "error" }));
+    if (validCount === 0) return sendJson(res, 200, { ok: true, status: "ok", note: "nevienas derīgas lotes saites", results: errorResults(), elapsedMs: 0 });
+    const limitNote = `dienas limits ${LOTVIN_MAX_PER_DAY} lotu VIN`;
+    if (state.fetchLimitReached("lotvin", LOTVIN_MAX_PER_DAY)) return sendJson(res, 429, { ok: false, status: "error", error: limitNote });
+    log(`${platform} lot-vins ${validCount} lotes (rinda ${browserQueue.queueLength})`);
+    try {
+      const out = await browserQueue.run(`lot-vins:${platform}`, async () => {
+        const started = Date.now();
+        const p = platforms[platform];
+        const { page, close } = await openProfile(platform);
+        try {
+          const session = await ensureSession(platform, page);
+          if (session.status !== "ok") return { ok: true, status: session.status, note: session.note, results: [], elapsedMs: Date.now() - started };
+          const r = await fetchLotVins(page, platform, slots, {
+            log,
+            hasChallenge: hasCaptchaOrChallenge,
+            countOpen: () => state.countFetch("lotvin", LOTVIN_MAX_PER_DAY),
+            limitNote,
+          });
+          return { ok: true, status: r.status, note: r.note, results: r.results, elapsedMs: Date.now() - started };
+        } finally {
+          if (typeof p.persistSession === "function") await p.persistSession(page).catch(() => undefined);
+          await close();
+        }
+      });
+      log(`${platform} lot-vins ${out.status} ${out.results.length} rezultāti ${out.elapsedMs} ms`);
+      return sendJson(res, 200, out);
+    } catch (e) {
+      const note = e instanceof Error ? e.message.split("\n")[0].slice(0, 200) : "nezināma kļūda";
+      log(`${platform} lot-vins kļūda: ${note}`);
+      return sendJson(res, 500, { ok: false, status: "error", note, results: [] });
     }
   }
 
