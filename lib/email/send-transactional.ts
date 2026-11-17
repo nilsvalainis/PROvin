@@ -1,4 +1,5 @@
 import "server-only";
+import { correctedSubject } from "@/lib/client-report-sends-core";
 
 import nodemailer from "nodemailer";
 import type { SendMailOptions, Transporter } from "nodemailer";
@@ -528,6 +529,8 @@ export async function sendReportReadyEmail(opts: {
   b2bClient?: boolean;
   /** Klienta/partnera izvēlētā atskaites valoda - noklusējums "lv". */
   lang?: ClientReportLang;
+  /** Atkārtots sūtījums pēc labojumiem: tēmā "· labota" (Nils 17.11, G9). */
+  corrected?: boolean;
 }): Promise<void> {
   const transport = getSmtpTransport();
   if (!transport) {
@@ -591,7 +594,8 @@ export async function sendReportReadyEmail(opts: {
       },
       doc,
     );
-  const subject = rendered?.subject ?? buildReportReadySubject(productKind, carVin, lang);
+  const baseSubject = rendered?.subject ?? buildReportReadySubject(productKind, carVin, lang);
+  const subject = opts.corrected ? correctedSubject(baseSubject, lang) : baseSubject;
 
   try {
     await sendSmtpMail({
