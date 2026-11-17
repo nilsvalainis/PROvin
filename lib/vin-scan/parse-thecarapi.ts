@@ -111,8 +111,10 @@ function siteSlug(raw: unknown): string {
   return text(raw).toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40);
 }
 
+/** Reālajā atbildē (17.11) `auction_id` ir skaitlis, fixtures - teksts. */
 function auctionId(raw: unknown): string {
-  return text(raw).replace(/[^\w.-]/g, "").slice(0, 80);
+  const value = typeof raw === "number" && Number.isFinite(raw) ? String(Math.trunc(raw)) : text(raw);
+  return value.replace(/[^\w.-]/g, "").slice(0, 80);
 }
 
 export function thecarapiSiteLabel(site: string): string {
