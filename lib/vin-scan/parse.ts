@@ -21,7 +21,9 @@ function kmLv(n: number): string {
 const ESYN_CONCLUSION_LV: Record<string, string> = {
   GOD: "izturēta",
   OOM: "nav izturēta",
-  BET: "nosacīti",
+  BET: "nosacīti izturēta",
+  // Toldsyn (muitas apskate) vērtējums „Middel”: nav MOT verdikts, bet auto stāvokļa atzīme.
+  MID: "muitas apskate - stāvoklis vidējs",
 };
 
 export function parseTjekbilProbe(status: number, text: string): VinScanParse {

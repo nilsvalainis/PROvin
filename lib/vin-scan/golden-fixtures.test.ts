@@ -179,6 +179,49 @@ describe("tjekbil.dk pilnā karte (zelta VIN)", () => {
   });
 });
 
+describe("tjekbil.dk apskašu rezultātu tulkojumi (zelta VIN)", () => {
+  const DANISH_RESULT = /godkend|middel|omsyn|uden ændring|registreringssyn|periodisk syn/i;
+
+  it("Captur: Betinget godkendt un Registreringssyn uden ændring ir latviski", () => {
+    const mapped = mapTjekbilPayload({
+      dmr: fixture("tjekbil", CAPTUR).body as TjekbilDmrResponse,
+      mileagelogs: fixture("tjekbil", `${CAPTUR}.mileagelogs`).body as TjekbilMileageLog[],
+    });
+    const inspections = mapped.timeline.filter((r) => /apskate/i.test(r.event));
+    expect(inspections.find((r) => r.date === "2020-02-03")?.event).toBe(
+      "Periodiskā apskate: Nosacīti izturēta · Applus Danmark A/S",
+    );
+    expect(inspections.find((r) => r.date === "2018-02-21")?.event).toBe(
+      "Reģistrācijas apskate bez izmaiņām: Izturēta · Jysk-Bilsyn ApS",
+    );
+    expect(mapped.mileage.find((r) => r.date === "2020-02-03")?.origin).toContain("nosacīti izturēta");
+    // Nosacīti izturēta apskate nav neizturēta - incidentos tās nav.
+    expect(mapped.incidents.some((r) => r.date === "2020-02-03")).toBe(false);
+  });
+
+  it("Captur un Sharan: apskašu rindās un nobraukuma avotos nepaliek dāņu rezultātu termini", () => {
+    for (const vin of [CAPTUR, SHARAN]) {
+      const mapped = mapTjekbilPayload({ dmr: fixture("tjekbil", vin).body as TjekbilDmrResponse });
+      for (const row of mapped.timeline.filter((r) => /apskate/i.test(r.event))) {
+        // Aiz " · " ir apskates stacijas nosaukums (īpašvārds), to netulkojam.
+        expect(row.event.split(" · ")[0]).not.toMatch(DANISH_RESULT);
+      }
+      for (const row of mapped.mileage) {
+        expect((row.origin ?? "").replace(/\(synsrapport\)/g, "")).not.toMatch(DANISH_RESULT);
+      }
+      for (const row of mapped.incidents) expect((row.note ?? "").split(" - ")[0]).not.toMatch(DANISH_RESULT);
+    }
+  });
+
+  it("Sharan: muitas apskates vērtējums Middel ir latviski", () => {
+    const mapped = mapTjekbilPayload({ dmr: fixture("tjekbil", SHARAN).body as TjekbilDmrResponse });
+    expect(mapped.timeline.find((r) => /Muitas apskate/.test(r.event))?.event).toBe(
+      "Muitas apskate (imports): Stāvoklis vidējs · LK Invest, Kolding ApS",
+    );
+    expect(mapped.statusRecords).toContain("Stāvoklis pēc importa: Vidējs");
+  });
+});
+
 describe("esyn.dk (zelta VIN)", () => {
   it("Sharan: chassis + chassismake -> 8 apskates, pēdējā ar precīzu odometru", () => {
     const chassis = parseEsynChassis(...asResponse(fixture("esyn", `${SHARAN}.chassis`)), SHARAN);
@@ -212,7 +255,7 @@ describe("esyn.dk (zelta VIN)", () => {
       ["2023-10-10", "nav izturēta", "358 874 km"],
       ["2022-02-02", "izturēta", "320 000 km"],
       ["2022-01-27", "nav izturēta", "320 000 km"],
-      ["2020-02-03", "nosacīti", "271 000 km"],
+      ["2020-02-03", "nosacīti izturēta", "271 000 km"],
       ["2018-02-21", "izturēta", "83 000 km"],
       ["2017-08-24", "izturēta", "171 000 km"],
       ["2017-08-19", "nav izturēta", "171 000 km"],
@@ -220,6 +263,19 @@ describe("esyn.dk (zelta VIN)", () => {
     expect(sp(esynVehicleSummary(chassis.vehicle, inspections).summary)).toBe(
       "Renault Captur, AB12345. 10 apskates, pēdējā 2025-08-22, izturēta, 385 537 km",
     );
+  });
+
+  it("Sharan: muitas apskates kods MID ir iztulkots, neviens verdikts nepaliek kā kods", () => {
+    const inspections = parseEsynInspections(asResponse(fixture("esyn", `${SHARAN}.chassismake`))[1]);
+    const results = inspections.inspections?.map((r) => [r.date, r.result]) ?? [];
+    expect(results).toContainEqual(["2026-09-15", "muitas apskate - stāvoklis vidējs"]);
+    expect(results).toContainEqual(["2017-12-18", "muitas apskate - stāvoklis vidējs"]);
+    expect(results.filter(([, result]) => result === "izturēta").length).toBe(6);
+    for (const vin of [SHARAN, CAPTUR]) {
+      const parsed = parseEsynInspections(asResponse(fixture("esyn", `${vin}.chassismake`))[1]);
+      for (const row of parsed.inspections ?? []) expect(row.result).not.toMatch(/^[A-Z]{2,4}$/);
+      expect(parsed.detail ?? "").not.toMatch(/\b(GOD|OOM|BET|MID)\b/);
+    }
   });
 
   it("Volvo: 404 ar dāņu kļūdas tekstu = nav reģistrā", () => {
