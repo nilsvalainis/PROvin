@@ -263,18 +263,22 @@ function canImportAuction(row: VinScanIndicator): boolean {
   return photoCountOf(row) > 0 || Boolean(row.media?.photoUrl);
 }
 
+function isOperatorAuctionSource(id: string): boolean {
+  return id === "stat_vin" || id === "joj_copart_iaai" || id === "thecarapi_eu";
+}
+
 function rowAction(row: VinScanIndicator, state: OrderVinScanSourceState): OrderVinScanRowAction {
   if (isOrderVinScanBrowserBlocked(row.id, state === "blocked" ? "error" : state, row.summary ?? "")) return "open_import";
   if (state === "blocked" || state === "browser_only") return "open_import";
   if (state === "error" || state === "timeout") return "retry";
-  if ((row.id === "stat_vin" || row.id === "joj_copart_iaai") && canImportAuction(row)) return "import_auction";
+  if (isOperatorAuctionSource(row.id) && canImportAuction(row)) return "import_auction";
   if (row.id === "csdd" && state === "found") return "import_csdd";
   if (row.id === "listing_history" && state === "found") return "import_listing";
   return "open";
 }
 
 function rowRank(row: OrderVinScanSourceRow): number {
-  if ((row.id === "stat_vin" || row.id === "joj_copart_iaai") && row.state === "found") return 0;
+  if (isOperatorAuctionSource(row.id) && row.state === "found") return 0;
   if (row.id === "csdd" && row.state === "found") return 1;
   if (row.id === "listing_history" && row.state === "found") return 2;
   if (row.state === "found") return 3;

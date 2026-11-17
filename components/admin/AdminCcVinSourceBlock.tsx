@@ -11,6 +11,7 @@ import { AdminAutoGrowTextarea } from "@/components/admin/AdminAutoGrowTextarea"
 import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
 import { AdminAiContextRawField } from "@/components/admin/AdminAiContextRawField";
 import { AdminCcVinPhotoProbeButton } from "@/components/admin/AdminCcVinPhotoProbeButton";
+import { AdminThecarapiIngestBar } from "@/components/admin/AdminThecarapiIngestBar";
 import { useAdminVinHandoff } from "@/components/admin/AdminVinHandoffContext";
 import { AdminAiPolishTextareaShell } from "@/components/admin/AdminAiPolishTextareaShell";
 import { AdminClearOdometerButton } from "@/components/admin/AdminClearOdometerButton";
@@ -286,6 +287,14 @@ export function AdminCcVinSourceBlock({
               applyPatchedBlocks={applyPatchedBlocks}
             />
           ) : null}
+
+          <AdminThecarapiIngestBar
+            orderVin={handoffVin}
+            sessionId={sessionId}
+            editable={editable}
+            value={value}
+            onChange={onChange}
+          />
 
           <div className="mb-1 flex flex-wrap items-end gap-2">
             {headerField("Atskaites datums", "reportDate", "13.07.2026")}

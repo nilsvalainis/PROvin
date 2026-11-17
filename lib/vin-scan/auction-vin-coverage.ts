@@ -6,7 +6,7 @@
 import { AUCTION_LOT_MAX, AUCTION_PHOTO_BLOCK_MAX } from "@/lib/vin-scan/auction-photo-urls";
 import type { VinScanAuction, VinScanMileage, VinScanParse } from "@/lib/vin-scan/types";
 
-export type AuctionVinRegion = "us_ca" | "fi_eu";
+export type AuctionVinRegion = "us_ca" | "fi_eu" | "eu";
 
 export type AuctionVinProviderMeta = {
   id: string;
@@ -37,6 +37,20 @@ export const COPART_FI_PROVIDER_COVERAGE: AuctionVinProviderMeta = {
   implemented: false,
   notes:
     "copart.fi is Copart Finland (EU). JoJ Copart/IAAI does not document this site or a copart_fi domain. Wire a dedicated client in EXTRA_AUCTION_VIN_PROVIDERS when a provider exists.",
+};
+
+/**
+ * TheCarApi EU arhīvs. Atsevišķs avots `thecarapi_eu`.
+ * Nedrīkst likt EXTRA_AUCTION_VIN_PROVIDERS: JoJ zars to sauktu klusi un tērētu kvotu.
+ */
+export const THECARAPI_EU_COVERAGE: AuctionVinProviderMeta = {
+  id: "thecarapi_eu",
+  region: "eu",
+  sites: ["auto1", "openlane", "bca", "autorola", "dealercars", "encar", "ecarstrade"],
+  lotDomains: [],
+  implemented: true,
+  notes:
+    "GET /api/vin/{vin}/history un /api/auction/batch. AUTO1, Openlane, BCA, Autorola, dealercars, Encar/Korea, eCarsTrade arhīvs. Nav Copart/IAAI. Maksas: VIN SCAN tikai ar THECARAPI_VIN_SCAN_ENABLED=true, admin tikai ar pogu un THECARAPI_ADMIN_ENABLED=true.",
 };
 
 export const AUCTION_VIN_PROVIDER_COVERAGE = [JOJ_COPART_IAAI_COVERAGE, COPART_FI_PROVIDER_COVERAGE] as const;

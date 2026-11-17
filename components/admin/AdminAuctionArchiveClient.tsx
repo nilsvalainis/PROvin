@@ -18,10 +18,21 @@ type Payload = {
   error?: string;
 };
 
-export function AdminAuctionArchiveClient({ initialVin }: { initialVin: string }) {
+export function AdminAuctionArchiveClient({
+  initialVin,
+  thecarapi = null,
+}: {
+  initialVin: string;
+  thecarapi?: { enabled: boolean; used: number; cap: number; cachedSummary: string } | null;
+}) {
   const [data, setData] = useState<Payload | null>(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [tcBusy, setTcBusy] = useState(false);
+  const [tcNote, setTcNote] = useState("");
+  const [tcRows, setTcRows] = useState<{ date: string; venue: string; odometer: string; price: string }[]>([]);
+  const [tcUsed, setTcUsed] = useState(thecarapi?.used ?? 0);
+  const [tcCached, setTcCached] = useState(thecarapi?.cachedSummary ?? "");
 
   async function load(vin: string) {
     const q = vin ? `?vin=${encodeURIComponent(vin)}` : "";
@@ -96,6 +107,35 @@ export function AdminAuctionArchiveClient({ initialVin }: { initialVin: string }
     }
   }
 
+  async function checkThecarapi(skipCache: boolean) {
+    if (!initialVin || !thecarapi?.enabled) return;
+    setTcBusy(true);
+    setTcNote("");
+    try {
+      const r = await fetch("/api/admin/sources/thecarapi", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vin: initialVin, skipCache }),
+      });
+      const body = (await r.json()) as {
+        error?: string;
+        summary?: string;
+        used?: number;
+        auctions?: { date: string; venue: string; odometer: string; price: string }[];
+      };
+      if (!r.ok) throw new Error(body.summary || body.error || "TheCarApi neizdevās.");
+      if (typeof body.used === "number") setTcUsed(body.used);
+      setTcRows(Array.isArray(body.auctions) ? body.auctions : []);
+      setTcNote(body.summary || "");
+      if (body.summary) setTcCached(body.summary);
+    } catch (err) {
+      setTcNote(err instanceof Error ? err.message : "TheCarApi neizdevās.");
+    } finally {
+      setTcBusy(false);
+    }
+  }
+
   return (
     <AdminAuctionArchiveView
       counts={data?.counts ?? null}
@@ -112,6 +152,20 @@ export function AdminAuctionArchiveClient({ initialVin }: { initialVin: string }
       onRun={() => void runStep()}
       onDeleteVin={initialVin ? () => void deleteVin() : undefined}
       onDeleteLedger={() => void deleteLedger()}
+      thecarapi={
+        initialVin && thecarapi
+          ? {
+              enabled: thecarapi.enabled,
+              used: tcUsed,
+              cap: thecarapi.cap,
+              cachedSummary: tcCached,
+              busy: tcBusy,
+              note: tcNote,
+              rows: tcRows,
+              onCheck: (skipCache) => void checkThecarapi(skipCache),
+            }
+          : null
+      }
     />
   );
 }

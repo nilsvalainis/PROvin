@@ -6,6 +6,7 @@ import {
   AUCTION_VIN_PROVIDER_COVERAGE,
   COPART_FI_PROVIDER_COVERAGE,
   JOJ_COPART_IAAI_COVERAGE,
+  THECARAPI_EU_COVERAGE,
   jojSearchVinCoversCopartEu,
   jojSearchVinCoversCopartFi,
   mergeAuctionVinParses,
@@ -24,7 +25,12 @@ describe("JoJ / Copart FI coverage", () => {
     expect(COPART_FI_PROVIDER_COVERAGE.implemented).toBe(false);
     expect(COPART_FI_PROVIDER_COVERAGE.sites).toEqual(["copart.fi"]);
     expect(AUCTION_VIN_PROVIDER_COVERAGE.map((p) => p.id)).toEqual(["joj_copart_iaai", "copart_fi"]);
+    expect(THECARAPI_EU_COVERAGE.id).toBe("thecarapi_eu");
+    expect(THECARAPI_EU_COVERAGE.implemented).toBe(true);
+    expect(THECARAPI_EU_COVERAGE.sites).toEqual(["auto1", "openlane", "bca", "autorola", "dealercars", "encar", "ecarstrade"]);
+    expect(THECARAPI_EU_COVERAGE.sites).not.toContain("copart.com");
     const providers = readFileSync(path.join(process.cwd(), "lib/vin-scan/auction-vin-providers.ts"), "utf8");
+    expect(providers).not.toContain("thecarapi");
     expect(providers).toMatch(/EXTRA_AUCTION_VIN_PROVIDERS[^=]*= \[\s*\]/);
     expect(providers).toContain("id: \"copart_fi\"");
     const probe = readFileSync(path.join(process.cwd(), "lib/vin-scan/probes-extra.ts"), "utf8");

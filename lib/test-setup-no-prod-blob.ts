@@ -23,4 +23,21 @@ if (process.env.VITEST_ALLOW_PROD_BLOB !== "1") {
   }
   // Ja kods redz Vercel vidi, JSON krātuves raksta /tmp, nevis repo .data - abos gadījumos ne produkcijā.
 }
+
+const thecarapiOriginalFetch = globalThis.fetch.bind(globalThis);
+globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+  const url =
+    typeof input === "string"
+      ? input
+      : input instanceof URL
+        ? input.href
+        : typeof Request !== "undefined" && input instanceof Request
+          ? input.url
+          : String(input);
+  if (url.includes("api.thecarapi.com")) {
+    throw new Error("thecarapi_network_forbidden_in_tests");
+  }
+  return thecarapiOriginalFetch(input, init);
+}) as typeof fetch;
+
 export {};

@@ -2,6 +2,7 @@ import { AdminAuctionArchiveClient } from "@/components/admin/AdminAuctionArchiv
 import { AdminDashboardHeaderWithMenu } from "@/components/admin/AdminDashboardHeaderWithMenu";
 import { requireAdminPage } from "@/lib/admin-auth";
 import { normalizeVin } from "@/lib/order-field-validation";
+import { thecarapiAdminStatus } from "@/lib/thecarapi-cc-vin";
 
 export const metadata = {
   title: "Izsoļu portālu arhīvs",
@@ -17,6 +18,7 @@ export default async function AdminAuctionArchivePage({
   await requireAdminPage();
   const sp = searchParams ? await searchParams : undefined;
   const initialVin = normalizeVin(sp?.vin ?? "");
+  const thecarapi = initialVin ? await thecarapiAdminStatus(initialVin).catch(() => null) : null;
   return (
     <div className="w-full max-w-none">
       <AdminDashboardHeaderWithMenu mobileTitle="Izsoļu portālu arhīvs">
@@ -24,7 +26,19 @@ export default async function AdminAuctionArchivePage({
           Izsoļu portālu arhīvs
         </h1>
       </AdminDashboardHeaderWithMenu>
-      <AdminAuctionArchiveClient initialVin={initialVin} />
+      <AdminAuctionArchiveClient
+        initialVin={initialVin}
+        thecarapi={
+          thecarapi
+            ? {
+                enabled: thecarapi.enabled,
+                used: thecarapi.used,
+                cap: thecarapi.cap,
+                cachedSummary: thecarapi.cache?.summary ?? "",
+              }
+            : null
+        }
+      />
     </div>
   );
 }

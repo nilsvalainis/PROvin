@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   VIN_SCAN_CATALOG,
@@ -55,8 +55,9 @@ describe("vin scan catalog", () => {
     expect(VIN_SCAN_SOURCE_IDS).toContain("listing_history");
     expect(VIN_SCAN_SOURCE_IDS).toContain("lt_itpr");
     expect(VIN_SCAN_SOURCE_IDS).toContain("joj_copart_iaai");
-    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(33);
-    expect(VIN_SCAN_CATALOG).toHaveLength(33);
+    expect(VIN_SCAN_SOURCE_IDS).toContain("thecarapi_eu");
+    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(34);
+    expect(VIN_SCAN_CATALOG).toHaveLength(34);
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "traficom")?.needs).toEqual(["vin"]);
     expect(traficomVehicleInfoUrl("WBA5R1C0XLFH42873")).toBe(
       "https://www.traficom.fi/fi/autoilijat/ajoneuvon-osto-ja-myynti/tarkista-ajoneuvon-tiedot",
@@ -83,11 +84,19 @@ describe("vin scan catalog", () => {
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "nummerplade")?.openUrl("WVWZZZ7NZEV015204")).toContain(
       "/stelnummer/wvwzzz7nzev015204.html",
     );
+    vi.stubEnv("THECARAPI_API_KEY", "");
+    vi.stubEnv("THECARAPI_VIN_SCAN_ENABLED", "");
     expect(defaultVinScanSourceIds()).toEqual(vinScanPipelineSourceIds());
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "vegvesen")?.disabled).toBe(true);
+    expect(VIN_SCAN_CATALOG.find((s) => s.id === "thecarapi_eu")).toMatchObject({
+      label: "EU izsoles (TheCarApi)",
+      country: "EU",
+      hint: "AUTO1/Openlane/BCA/Autorola arhīvs",
+    });
     expect(vinScanPipelineSourceIds()).toEqual(
-      VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai" && id !== "vegvesen"),
+      VIN_SCAN_SOURCE_IDS.filter((id) => id !== "joj_copart_iaai" && id !== "thecarapi_eu" && id !== "vegvesen"),
     );
+    expect(vinScanPipelineSourceIds()).not.toContain("thecarapi_eu");
     expect(vinScanPipelineSourceIds()).not.toContain("vegvesen");
     expect(vinScanFastSourceIds()).toEqual(vinScanPipelineSourceIds());
     for (const removed of VIN_SCAN_REMOVED_IDS) {
@@ -389,6 +398,7 @@ describe("vinScanSourceTimeoutMs", () => {
     expect(vinScanSourceTimeoutMs("poctra")).toBe(100_000);
     expect(vinScanSourceTimeoutMs("lt_itpr")).toBe(90_000);
     expect(vinScanSourceTimeoutMs("vin_decode")).toBe(14_000);
+    expect(vinScanSourceTimeoutMs("thecarapi_eu")).toBe(15_000);
   });
 
   it("CapSolver budžets ir ārējais timeouts mīnus 8 s, un zem 4 s nesāk", () => {

@@ -111,5 +111,36 @@ describe("AdminAuctionArchiveView", () => {
     expect(text).not.toMatch(/CC\.?\s?VIN/i);
     expect(text.toLowerCase()).not.toContain("checkcar");
     expect(html.toLowerCase()).not.toContain("checkcar");
+    expect(text).not.toContain("Pārbaudīt TheCarApi");
+  });
+
+  it("rāda TheCarApi pogu tikai, ja ir thecarapi props", () => {
+    const text = renderText(
+      <AdminAuctionArchiveView
+        counts={counts()}
+        recent={[]}
+        progress={null}
+        passDay="2026-11-02"
+        completedDay={null}
+        vin={VIN}
+        observations={[]}
+        rollback={null}
+        vinNote=""
+        message=""
+        busy={false}
+        thecarapi={{
+          enabled: true,
+          used: 4,
+          cap: 150,
+          cachedSummary: "",
+          busy: false,
+          note: "",
+          rows: [],
+          onCheck: () => undefined,
+        }}
+      />,
+    );
+    expect(text).toContain("Pārbaudīt TheCarApi (maksas)");
+    expect(text).toContain("maksas izsaukums · šomēnes 4/150");
   });
 });

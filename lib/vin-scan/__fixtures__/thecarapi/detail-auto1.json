@@ -1,0 +1,9 @@
+{
+  "site_name": "auto1",
+  "auction_id": "A1-100",
+  "details_pending": false,
+  "is_active": false,
+  "DamageImageUrls": ["https://img-pa.auto1.com/img/front.jpg"],
+  "gallery": ["https://img-pa.auto1.com/img/side.jpg", "http://img-pa.auto1.com/img/insecure.jpg"],
+  "equipment": ["Navigācija", "LED"]
+}

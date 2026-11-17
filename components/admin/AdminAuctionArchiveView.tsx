@@ -28,6 +28,16 @@ export type AuctionArchiveViewProps = {
   onRun?: () => void;
   onDeleteVin?: () => void;
   onDeleteLedger?: () => void;
+  thecarapi?: {
+    enabled: boolean;
+    used: number;
+    cap: number;
+    cachedSummary: string;
+    busy: boolean;
+    note: string;
+    rows: { date: string; venue: string; odometer: string; price: string }[];
+    onCheck: (skipCache: boolean) => void;
+  } | null;
 };
 
 function lvDate(iso: string): string {
@@ -161,6 +171,62 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
           ) : null}
         </form>
         {vin ? <p className="mt-2 font-mono text-[12px] text-[var(--color-apple-text)]">{vin}</p> : null}
+        {vin && props.thecarapi ? (
+          <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+            <p className="text-[12px] text-[var(--color-provin-muted)]">
+              {props.thecarapi.enabled
+                ? `maksas izsaukums · šomēnes ${props.thecarapi.used}/${props.thecarapi.cap}`
+                : "TheCarApi izslēgts (nav apmaksāts / nav atslēgas)"}
+            </p>
+            {props.thecarapi.cachedSummary ? (
+              <p className="mt-1 text-[12px] text-[var(--color-apple-text)]">Kešs: {props.thecarapi.cachedSummary}</p>
+            ) : null}
+            <button
+              type="button"
+              className="mt-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[12px] font-semibold disabled:opacity-50"
+              disabled={props.thecarapi.busy || props.busy || !props.thecarapi.enabled}
+              onClick={() => {
+                if (!props.thecarapi?.enabled) return;
+                if (props.thecarapi.cachedSummary) {
+                  const ok = window.confirm("Šim VIN jau ir TheCarApi kešs. Atjaunot (maksas)?");
+                  if (!ok) return;
+                  props.thecarapi.onCheck(true);
+                  return;
+                }
+                props.thecarapi.onCheck(false);
+              }}
+            >
+              {props.thecarapi.busy
+                ? "Pārbauda…"
+                : props.thecarapi.enabled
+                  ? "Pārbaudīt TheCarApi (maksas)"
+                  : "TheCarApi izslēgts (nav apmaksāts / nav atslēgas)"}
+            </button>
+            {props.thecarapi.note ? <p className="mt-2 text-[12px] text-[var(--color-apple-text)]">{props.thecarapi.note}</p> : null}
+            {props.thecarapi.rows.length ? (
+              <table className="mt-2 w-full text-left text-[12px]">
+                <thead className="text-[11px] uppercase tracking-wide text-[var(--color-provin-muted)]">
+                  <tr>
+                    <th className="py-1 pr-2 font-semibold">Datums</th>
+                    <th className="py-1 pr-2 font-semibold">Platforma</th>
+                    <th className="py-1 pr-2 font-semibold">Nobraukums</th>
+                    <th className="py-1 font-semibold">Cena</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {props.thecarapi.rows.map((row) => (
+                    <tr key={`${row.date}-${row.venue}-${row.odometer}`} className="border-t border-slate-100">
+                      <td className="py-1 pr-2 tabular-nums">{row.date || "-"}</td>
+                      <td className="py-1 pr-2">{row.venue || "-"}</td>
+                      <td className="py-1 pr-2 tabular-nums">{row.odometer || "-"}</td>
+                      <td className="py-1">{row.price || "-"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : null}
+          </div>
+        ) : null}
         {vinNote ? <p className="mt-2 text-[13px] text-[var(--color-provin-muted)]">{vinNote}</p> : null}
         {rollback ? (
           <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-[12px] text-red-800">

@@ -33,6 +33,8 @@ function refererForAuctionPhoto(url: string): string | undefined {
     if (host.includes("copart")) return "https://www.copart.com/";
     if (host.includes("iaai")) return "https://www.iaai.com/";
     if (host.includes("stat.vin")) return "https://stat.vin/";
+    if (host.includes("auto1")) return "https://www.auto1.com/";
+    if (host.includes("openlane")) return "https://www.openlane.eu/";
     if (host.includes("import-motor.com")) return "https://www.copart.com/";
   } catch {
     return undefined;

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { defaultVinScanSourceIds, VIN_SCAN_SOURCE_IDS, vinScanFastSourceIds, vinScanPipelineSourceIds } from "@/lib/vin-scan/catalog";
 import { freeVinScanSourceIds } from "@/lib/vin-scan/free-sources";
@@ -12,14 +12,18 @@ import {
 const VOLVO_SE = "YV1DZ5251B2146640";
 
 describe("Ātrie vērtējumi VIN SCAN cauruļvads", () => {
-  it("lieto tikai bezmaksas VIN SCAN avotus (bez JoJ / Speckr)", () => {
+  it("lieto tikai bezmaksas VIN SCAN avotus (bez JoJ / TheCarApi / Speckr)", () => {
+    vi.stubEnv("THECARAPI_API_KEY", "");
+    vi.stubEnv("THECARAPI_VIN_SCAN_ENABLED", "");
     const ids = quickEvalVinScanSourceIds();
     expect(ids).toEqual(freeVinScanSourceIds());
     expect(ids).toEqual(vinScanPipelineSourceIds());
     expect(ids).toEqual(vinScanFastSourceIds());
     expect(ids).not.toContain("joj_copart_iaai");
+    expect(ids).not.toContain("thecarapi_eu");
     expect(ids).not.toContain("speckr");
     expect(defaultVinScanSourceIds()).not.toContain("joj_copart_iaai");
+    expect(defaultVinScanSourceIds()).not.toContain("thecarapi_eu");
     expect(defaultVinScanSourceIds()).not.toContain("speckr");
     expect(ids[0]).toBe("vin_decode");
     expect(ids).toContain("biluppgifter");
@@ -28,7 +32,7 @@ describe("Ātrie vērtējumi VIN SCAN cauruļvads", () => {
     expect(ids).toContain("nhtsa_recalls");
     expect(ids).toContain("rdw");
     expect(ids).not.toContain("vegvesen");
-    expect(ids.length).toBe(VIN_SCAN_SOURCE_IDS.length - 2);
+    expect(ids.length).toBe(VIN_SCAN_SOURCE_IDS.length - 3);
   });
 
   it("nodod sludinājuma saiti un CSDD numuru VIN SCAN zondēm", () => {
