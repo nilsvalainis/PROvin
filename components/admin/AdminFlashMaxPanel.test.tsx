@@ -44,9 +44,20 @@ describe("FLASH MAX izvēles panelis (dators un telefons)", () => {
 
   it("ģenerēšanai aiziet tikai sadaļas ar datiem, piezīmes apgrieztas", () => {
     const empty = createDefaultSourceBlocks();
-    expect(flashMaxRunnableCount(draft(), empty)).toBe(4);
+    expect(flashMaxRunnableCount(draft(), empty)).toBe(5);
     const sel = flashMaxDraftToSelection(draft("  jauns fakts  "), empty);
-    expect([...sel.selectedIds].sort()).toEqual(["incidents", "inspection", "summary", "technical_risks"]);
+    expect([...sel.selectedIds].sort()).toEqual(["incidents", "inspection", "photo", "summary", "technical_risks"]);
     expect(sel.operatorNotes).toBe("jauns fakts");
+  });
+
+  it("logs atvērts pirms datiem, dati ielikti vēlāk: tā pati izvēle atkal ieķeksē sadaļu un to ģenerē", () => {
+    const d = draft();
+    const empty = createDefaultSourceBlocks();
+    expect(row(renderHtml(<AdminFlashMaxPanel draft={d} sourceBlocks={empty} />), "seller")).not.toMatch(/<input[^>]*checked/);
+    expect(flashMaxDraftToSelection(d, empty).selectedIds).not.toContain("seller");
+    const filled = createDefaultSourceBlocks();
+    filled.listing_analysis.listingPasteRaw = "BMW 320d, 2012";
+    expect(row(renderHtml(<AdminFlashMaxPanel draft={d} sourceBlocks={filled} />), "seller")).toMatch(/<input[^>]*checked/);
+    expect(flashMaxDraftToSelection(d, filled).selectedIds).toContain("seller");
   });
 });

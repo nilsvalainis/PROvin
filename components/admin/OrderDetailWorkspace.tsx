@@ -4650,9 +4650,8 @@ export function OrderDetailWorkspace({
       </div>
     ) : null;
 
-  // Ja mērķi renderē vecāks (kartē "Klients") un tas šobrīd nav lapā (sakļauta karte telefonā), sadaļu nerāda citur -
-  // tā atgriežas, kad karti atver. Iekļauti lapā rāda tikai tad, ja portāla mērķa nav vispār.
-  const showPortfolioInline = !portfolioPortalDomId || (!portfolioPortalEl && !portfolioPortalTargetInParent);
+  // Ja portāla mērķa lapā nav (piem. telefonā sakļauta karte "Klients"), sadaļu rāda iekļauti lapā - kā līdz šim.
+  const showPortfolioInline = !portfolioPortalDomId || !portfolioPortalEl;
   const showPortfolioPortal = Boolean(portfolioPortalDomId && portfolioPortalEl);
 
   /** Telefonā bez brīdinājumiem sekcija paliek tukša balta kartīte, tāpēc to tur nerāda. */

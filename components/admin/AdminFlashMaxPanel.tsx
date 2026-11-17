@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState, type Dispatch, type SetStateAction } from "react";
+import { useId, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 
 import {
   FLASH_MAX_JOBS,
@@ -169,17 +169,13 @@ export function AdminFlashMaxPanel({
   const touch = size === "touch";
   const menuJobs = useMemo(() => expandFlashMaxMenuJobs(FLASH_MAX_JOBS, sourceBlocks), [sourceBlocks]);
   const unavailable = useMemo(() => flashMaxUnavailableMenuJobs(menuJobs, sourceBlocks), [menuJobs, sourceBlocks]);
-  const unavailableKey = Object.keys(unavailable).sort().join("|");
   const dailyJobs = menuJobs.filter((j) => j.group === "daily");
   const extraJobs = menuJobs.filter((j) => j.group === "extra");
 
-  // Atverot logu (un kad dati mainās): tukšās sadaļas izķeksē.
-  useEffect(() => {
-    setSelection((prev) => flashMaxSelectionWithData(prev, unavailable));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [unavailableKey, setSelection]);
-
-  const preset = (next: FlashMaxSelection) => setSelection(flashMaxSelectionWithData(next, unavailable));
+  // Izvēli (draft) nekad nefiltrē: tukša sadaļa tikai RĀDĀS izķeksēta (checked && !unavailable) un netiek
+  // ģenerēta (flashMaxDraftToSelection). Kad dati parādās, ķeksis atgriežas pats - arī ja logs bija atvērts
+  // pirms datu ielādes.
+  const preset = (next: FlashMaxSelection) => setSelection(next);
   const toggle = (id: string, next: boolean) =>
     setSelection((prev) => ({
       ...prev,

@@ -364,7 +364,7 @@ export type FlashMaxSkipReason = "no_source_data" | "no_mileage_data" | "no_oil_
  * tāpēc tukšās izlaiž jau šeit - "izlaists", nevis "kļūda".
  * - Pārdevējs: vajag pārdevēja vārdu vai iekopētu sludinājuma tekstu.
  * - Sludinājuma konteksts: vajag iekopētu sludinājuma tekstu.
- * - Foto: izlaiž tikai tad, ja nav ne foto, ne sludinājuma teksta, ne esoša teksta (piem. atzīmes "Nav vizuālo defektu").
+ * - Foto: neizlaiž nekad - serveris bez foto raksta no sludinājuma saites un pārējiem datiem (kā līdz šim).
  */
 function listingFlashMaxSkip(job: FlashMaxListingJob, sourceBlocks: WorkspaceSourceBlocks): FlashMaxSkipReason | null {
   const listing = sourceBlocks.listing_analysis;
@@ -373,9 +373,7 @@ function listingFlashMaxSkip(job: FlashMaxListingJob, sourceBlocks: WorkspaceSou
     return paste || (listing?.extraSellerName ?? "").trim() ? null : "no_listing_data";
   }
   if (job.id === "listing_sales") return paste ? null : "no_listing_data";
-  const photoCount = (listing?.photoGroups ?? []).reduce((n, g) => n + (g.photos?.length ?? 0), 0);
-  const existing = (listing?.photoAnalysis ?? "").replace(/<[^>]+>/g, "").trim();
-  return photoCount > 0 || paste || existing ? null : "no_listing_data";
+  return null;
 }
 
 export function shouldSkipFlashMaxJob(
@@ -442,7 +440,8 @@ export function isFlashMaxEmptyDataError(error: string): boolean {
   return (
     t.includes("missing_seller_input") ||
     t.includes("missing_listing_paste") ||
-    t.includes("missing_photo_context") ||
+    // Klienta pusē kods jau ir pārvērsts tekstā (lib/admin-ai-client-errors.ts).
+    t.includes("ievadi papildus nosaukumu vai sludinājuma aprakstu") ||
     t.includes("empty_source_data") ||
     t.includes("empty_mileage_data") ||
     t.includes("trūkst avota datu") ||

@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 /**
  * Vai portāla mērķis jānomaina: nav atrasts, atvienots no lapas (React to izveidoja no jauna) vai ar šo id tagad ir cits mezgls.
@@ -20,12 +20,19 @@ export function nextLiveElement<T extends { isConnected: boolean }>(current: T |
  */
 export function useLiveElementById(id: string | undefined, resetKey?: unknown): HTMLElement | null {
   const [el, setEl] = useState<HTMLElement | null>(null);
+  const current = useRef<HTMLElement | null>(null);
   useLayoutEffect(() => {
+    const set = (next: HTMLElement | null) => {
+      // Stāvokli maina tikai pie īstas maiņas: novērotājs izsaucas pēc katras DOM izmaiņas lielā lapā.
+      if (next === current.current) return;
+      current.current = next;
+      setEl(next);
+    };
     if (!id || typeof document === "undefined") {
-      setEl(null);
+      set(null);
       return;
     }
-    const sync = () => setEl((cur) => nextLiveElement(cur, () => document.getElementById(id)));
+    const sync = () => set(nextLiveElement(current.current, () => document.getElementById(id)));
     sync();
     if (typeof MutationObserver === "undefined") return;
     const observer = new MutationObserver(sync);

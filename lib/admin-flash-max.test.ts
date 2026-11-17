@@ -191,7 +191,8 @@ describe("17.11: tukšās sadaļas izķeksētas", () => {
     const empty = createDefaultSourceBlocks();
     expect(shouldSkipFlashMaxJob(job("seller"), empty)).toBe("no_listing_data");
     expect(shouldSkipFlashMaxJob(job("listing_sales"), empty)).toBe("no_listing_data");
-    expect(shouldSkipFlashMaxJob(job("photo"), empty)).toBe("no_listing_data");
+    // Foto serveris ģenerē arī bez foto (no saites un pārējiem datiem) - neizlaižam.
+    expect(shouldSkipFlashMaxJob(job("photo"), empty)).toBeNull();
     const withPaste = createDefaultSourceBlocks();
     withPaste.listing_analysis.listingPasteRaw = "BMW 320d, 2012, 335 000 km";
     expect(shouldSkipFlashMaxJob(job("seller"), withPaste)).toBeNull();
@@ -201,12 +202,6 @@ describe("17.11: tukšās sadaļas izķeksētas", () => {
     sellerOnly.listing_analysis.extraSellerName = "SIA Auto";
     expect(shouldSkipFlashMaxJob(job("seller"), sellerOnly)).toBeNull();
     expect(shouldSkipFlashMaxJob(job("listing_sales"), sellerOnly)).toBe("no_listing_data");
-  });
-
-  it("foto ar operatora atzīmi (esošs teksts) netiek izlaists", () => {
-    const blocks = createDefaultSourceBlocks();
-    blocks.listing_analysis.photoAnalysis = "<p>Nav vizuālo defektu</p>";
-    expect(shouldSkipFlashMaxJob(job("photo"), blocks)).toBeNull();
   });
 
   it("negadījumi, riski, apskate un kopsavilkums paliek arī bez datiem", () => {
@@ -223,7 +218,7 @@ describe("17.11: tukšās sadaļas izķeksētas", () => {
     expect(unavailable.mileage).toBe("no_mileage_data");
     expect(unavailable.seller).toBe("no_listing_data");
     const picked = flashMaxSelectionWithData(defaultFlashMaxSelection(), unavailable);
-    expect([...picked.selectedIds].sort()).toEqual(["incidents", "inspection", "summary", "technical_risks"]);
+    expect([...picked.selectedIds].sort()).toEqual(["incidents", "inspection", "photo", "summary", "technical_risks"]);
   });
 
   it("ja visam ir dati, izvēle nemainās (tas pats objekts)", () => {
@@ -234,6 +229,7 @@ describe("17.11: tukšās sadaļas izķeksētas", () => {
   it("servera 'trūkst sludinājuma ievades' kļūdas skaitās izlaists, ne kļūda", () => {
     expect(isFlashMaxEmptyDataError("missing_seller_input")).toBe(true);
     expect(isFlashMaxEmptyDataError("missing_listing_paste")).toBe(true);
+    expect(isFlashMaxEmptyDataError("Ievadi papildus nosaukumu vai sludinājuma aprakstu")).toBe(true);
     expect(isFlashMaxEmptyDataError("rate_limited")).toBe(false);
   });
 });
