@@ -180,3 +180,14 @@ test("fetchAuctionDetail: «Show more +» tiek atvērts un saraksts nolasīts v�
   const vinList = out.detail.lists.find((l) => /identification/.test(l.heading));
   assert.ok(vinList.items.includes("C"));
 });
+
+test("mergeDetailExtracts: krāsas mērījumi - pilnākais saraksts, dublikāti saglabāti", () => {
+  const base = { title: "Volvo", fields: [], tables: [], lists: [], photos: [], text: "" };
+  const m = mergeDetailExtracts([
+    { ...base, paint: [] },
+    { ...base, paint: [["left", "110 μm"], ["left", "110 μm"], ["right", "270 μm"], ["roof", "N/A Material not measurable"]] },
+    { ...base, paint: [["left", "110 μm"]] },
+    { ...base },
+  ]);
+  assert.deepEqual(m.paint, [["left", "110 μm"], ["left", "110 μm"], ["right", "270 μm"], ["roof", "N/A Material not measurable"]]);
+});
