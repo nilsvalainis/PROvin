@@ -86,7 +86,7 @@ export function buildDriverRouteView(plan: CargoPlanState, orders: readonly Logi
     route.end ? { lat: route.end.lat, lng: route.end.lng } : null,
   ].filter((p): p is { lat: number; lng: number } => Boolean(p));
   return {
-    title: bucket === "next" || bucket === "after" ? `${cargoBucketLabel(plan, bucket)} krava` : cargoBucketLabel(plan, bucket),
+    title: cargoBucketLabel(plan, bucket),
     start: route.start,
     end: route.end,
     distanceKm: route.distanceKm,

@@ -1955,3 +1955,20 @@ html.iriss-log-printing .iriss-log-pin-tip {
     background: rgba(255, 255, 255, 0.94);
   }
 }
+
+/* Nils 14.11: telefonā slēdžiem lielāka pieskāriena zona (izskats nemainās), kravu pogas 36 px. */
+@media (max-width: 767px) {
+  .iriss-log-screen .iriss-log-switch::before {
+    content: "";
+    position: absolute;
+    inset: -10px -6px;
+  }
+  .iriss-log-cargo-dot-btn {
+    width: 36px;
+    height: 36px;
+  }
+  .iriss-log-cargo-pill {
+    min-height: 36px;
+    padding: 0 12px;
+  }
+}
