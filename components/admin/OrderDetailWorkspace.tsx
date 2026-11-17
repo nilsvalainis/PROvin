@@ -5303,19 +5303,17 @@ export function OrderDetailWorkspace({
                   ss.lv
                 </a>
               ) : null}
-              {whatsappPhoneDigits ? (
-                <AdminWhatsAppIconButton
-                  labeled
-                  title={`WhatsApp: ${payload.customerPhone ?? ""}`}
-                  onClick={handleWhatsAppOpen}
-                />
-              ) : (
-                <AdminWhatsAppIconButton
-                  labeled
-                  disabled
-                  title="Nav klienta tālruņa WhatsApp atvēršanai"
-                />
-              )}
+              {/* No lg platuma WhatsApp ir labajā sānu joslā tieši blakus; šī ikona tur palika zem tās (17.11). */}
+              <span className="inline-flex lg:hidden">
+                {whatsappPhoneDigits ? (
+                  <AdminWhatsAppIconButton
+                    title={`WhatsApp: ${payload.customerPhone ?? ""}`}
+                    onClick={handleWhatsAppOpen}
+                  />
+                ) : (
+                  <AdminWhatsAppIconButton disabled title="Nav klienta tālruņa WhatsApp atvēršanai" />
+                )}
+              </span>
               {vinBarCopyFlash ? (
                 <span className="text-[8px] font-semibold text-emerald-600 dark:text-emerald-400" role="status">
                   OK
