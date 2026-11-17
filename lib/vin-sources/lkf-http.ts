@@ -17,6 +17,8 @@ import {
   extractPageFromHtml,
   mergeCookieHeader,
 } from "@/lib/vin-sources/html-extract";
+import { vinScanSolverBudgetMs } from "@/lib/vin-scan/http";
+import { CAPSOLVER_MIN_TIMEOUT_MS } from "@/lib/vin-scan/source-timeouts";
 import { vinHttpFetch } from "@/lib/vin-sources/http";
 import { emptyVinSourceResult, type VinSourceFetchResult } from "@/lib/vin-sources/types";
 
@@ -63,6 +65,11 @@ export async function fetchLkfHttp(vin: string): Promise<VinSourceFetchResult> {
   }
 
   const capProxy = getCaptchaSolverProxy();
+  // VIN SCAN iekšienē CapSolver nedrīkst turpināties pēc avota termiņa; apmaksātam pasūtījumam paliek vecais limits.
+  const solverTimeoutMs = vinScanSolverBudgetMs(capProxy ? CAPSOLVER_PROXIED_TIMEOUT_MS : CAPSOLVER_PROXYLESS_TIMEOUT_MS);
+  if (solverTimeoutMs < CAPSOLVER_MIN_TIMEOUT_MS) {
+    return fail(vin, "lkf.ee: CapSolver izlaists, VIN SCAN avota laiks ir beidzies", page.text);
+  }
   const solved = await solveCaptcha(
     {
       kind: "recaptcha_v2",
@@ -70,7 +77,7 @@ export async function fetchLkfHttp(vin: string): Promise<VinSourceFetchResult> {
       websiteKey: LKF_SITE_KEY,
       proxy: capProxy || undefined,
     },
-    { timeoutMs: capProxy ? CAPSOLVER_PROXIED_TIMEOUT_MS : CAPSOLVER_PROXYLESS_TIMEOUT_MS, sourceLabel: "lkf.ee" },
+    { timeoutMs: solverTimeoutMs, sourceLabel: "lkf.ee" },
   );
   if (!solved.ok) return fail(vin, solved.reason, page.text);
 
