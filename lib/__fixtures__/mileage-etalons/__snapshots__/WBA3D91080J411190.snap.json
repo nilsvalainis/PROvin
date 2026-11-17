@@ -114,10 +114,8 @@
  "faktuLapa": {
   "odometerAnomaly": false,
   "carverticalMileageWarning": false,
-  "maxRollbackDropKm": 8402,
-  "rollbacks": [
-   "02.10.2014 41874 -> 28.10.2014 33472"
-  ],
+  "maxRollbackDropKm": 0,
+  "rollbacks": [],
   "suspectedEntryErrors": [],
   "implausibleReadings": [],
   "latestKm": 234076

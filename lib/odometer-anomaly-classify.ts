@@ -144,7 +144,10 @@ export function classifyOdometerAnomalies(rows: UnifiedMileageRow[]): Classified
 
   for (let i = 0; i < pts.length; i++) {
     const curr = pts[i]!;
-    const prev = i > 0 ? pts[i - 1]! : null;
+    // Ievades kļūda (arī kļūdains pirmais rādījums) nav salīdzināšanas punkts nākamajam.
+    let prevIdx = i - 1;
+    while (prevIdx >= 0 && analysis.dataEntryErrorSourceOrders.has(pts[prevIdx]!.row.sourceOrder)) prevIdx -= 1;
+    const prev = prevIdx >= 0 ? pts[prevIdx]! : null;
     const next = i < pts.length - 1 ? pts[i + 1]! : null;
     const src = curr.row;
 
