@@ -373,6 +373,80 @@ describe("fetchThecarapiVinWithDetails", () => {
     expect(detailCalls).toEqual([]);
   });
 
+  it("arhivēta lote: detaļu sauc pa /api/archive/auction/... un ietinums {archive} dod bildes", async () => {
+    const lot = "1324732982";
+    const history = {
+      auctions: [
+        {
+          site_name: "auto1",
+          auction_id: Number(lot),
+          detail_path: `/api/archive/auction/auto1/${lot}`,
+          archived: true,
+          archived_at: "2026-11-03T05:06:55",
+          mileage: 218863,
+          first_seen: "2026-09-10",
+        },
+      ],
+    };
+    const archive = {
+      success: true,
+      archive: {
+        site_name: "auto1",
+        auction_id: Number(lot),
+        archive_only_field: "arhiva-lauks",
+        car_identification: {
+          ImageUrls: ["https://img-pa.auto1.com/img/arch-1.jpg", "https://img-pa.auto1.com/img/arch-2.jpg"],
+        },
+      },
+    };
+    const { deps, calls } = scripted([jsonResponse(200, history), jsonResponse(200, archive), jsonResponse(200, { images: [] })]);
+    const vin = "TMBLK7NS5J8075631";
+    const result = await fetchThecarapiVinWithDetails(vin, { ...deps, skipCache: true });
+    expect(calls.map((call) => call.url)).toEqual([
+      `https://api.thecarapi.com/api/vin/${vin}/history`,
+      `https://api.thecarapi.com/api/archive/auction/auto1/${lot}`,
+      `https://api.thecarapi.com/api/auction-images/auto1/${lot}`,
+    ]);
+    const rec = result.records.find((row) => row.id === lot);
+    expect(rec?.photoUrls).toEqual(
+      expect.arrayContaining(["https://img-pa.auto1.com/img/arch-1.jpg", "https://img-pa.auto1.com/img/arch-2.jpg"]),
+    );
+    expect(rec?.fields.some((field) => field.key === "archive_only_field")).toBe(true);
+    expect(result.detailDiag).toEqual([]);
+  });
+
+  it("arhīva un aktīvā lote netiek liktas vienā batch; trūkstošai detaļai ir diagnostika", async () => {
+    const history = {
+      auctions: [
+        { site_name: "openlane", auction_id: 11847089, detail_path: "/api/archive/auction/openlane/11847089", archived: true, mileage: 186113, first_seen: "2026-07-27" },
+        { site_name: "auto1", auction_id: 1326383499, detail_path: "/api/auction/auto1/1326383499", archived: false, mileage: 186000, first_seen: "2026-10-01" },
+      ],
+    };
+    const { deps, calls } = scripted([
+      jsonResponse(200, history),
+      jsonResponse(200, { success: true, request_id: "r1", unexpected: { foo: 1 } }),
+      jsonResponse(200, { auctions: [] }),
+      jsonResponse(200, { images: [] }),
+      jsonResponse(200, { images: [] }),
+    ]);
+    const vin = "KNACC81CGM5458422";
+    const result = await fetchThecarapiVinWithDetails(vin, { ...deps, skipCache: true });
+    const detailUrls = calls.map((call) => call.url).filter((url) => !url.includes("/history") && !url.includes("auction-images"));
+    expect(detailUrls).toEqual([
+      "https://api.thecarapi.com/api/archive/auction/openlane/11847089",
+      "https://api.thecarapi.com/api/auction/auto1/1326383499",
+    ]);
+    const archDiag = result.detailDiag?.find((row) => row.id === "11847089");
+    expect(archDiag).toMatchObject({
+      site: "openlane",
+      status: 200,
+      path: "/api/archive/auction/openlane/11847089",
+      topKeys: ["success", "request_id", "unexpected"],
+      note: "detail_absent",
+    });
+    expect(JSON.stringify(result.detailDiag)).not.toContain("r1");
+  });
+
   it("history kešs bez detail izsauc detail_path un apvieno auction.images", async () => {
     const live = JSON.parse(
       readFileSync(path.join(process.cwd(), "lib/vin-scan/__fixtures__/thecarapi/detail-auto1-live-shape.json"), "utf8"),

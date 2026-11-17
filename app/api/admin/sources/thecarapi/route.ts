@@ -106,6 +106,7 @@ export async function POST(req: Request) {
       cap: result.cap,
       auctions,
       records: result.records,
+      detailDiag: result.detailDiag ?? [],
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";

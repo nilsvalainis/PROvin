@@ -22,6 +22,7 @@ import {
   thecarapiConfigured,
   thecarapiUsageSnapshot,
   type ThecarapiDeps,
+  type ThecarapiDetailDiag,
 } from "@/lib/vin-scan/thecarapi-api";
 import { buildVinScanIndicator, type VinScanParse } from "@/lib/vin-scan/types";
 
@@ -74,6 +75,8 @@ export async function fetchThecarapiCcVinMerge(opts: {
   cap: number;
   httpStatus: number | null;
   records: ThecarapiAdminRecord[];
+  /** Lotes bez detaļas: statuss, atbildes atslēgas, ceļš (bez hosta un vērtībām). */
+  detailDiag?: ThecarapiDetailDiag[];
   error?: "missing_thecarapi_credentials" | "thecarapi_disabled";
 }> {
   const env = opts.deps?.env ?? process.env;
@@ -173,5 +176,6 @@ export async function fetchThecarapiCcVinMerge(opts: {
     cap: snap.cap,
     httpStatus: result.httpStatus,
     records,
+    detailDiag: result.detailDiag ?? [],
   };
 }
