@@ -49,6 +49,27 @@ export function irissPdVehicleFromHit(hit: IrissOrderRoomHit, extras: IrissAucti
 // Nils 30.10: izsoles lapā ir arī citu auto bildes («līdzīgie», kājene) un tā pati bilde vairākos izmēros.
 const AUTO1_FILE = /\/(?:(max|sr-x2|sr|[a-z0-9-]+)-)?([A-Z]{2}\d{5})_([0-9a-f]{32})\.(?:jpe?g|png|webp)$/i;
 const AUTO1_VARIANT_RANK: Record<string, number> = { max: 3, "sr-x2": 2, "": 1 };
+
+/**
+ * Tās pašas Auto1 bildes lielākā varianta («max-») adrese, ja saglabātā ir mazāka. `null`, ja nav Auto1 bilde
+ * vai jau ir «max-». Lapā bieži ir tikai mazais variants, tāpēc klienta saitē bilde bija izplūdusi.
+ */
+export function irissPdAuto1MaxPhotoUrl(raw: string): string | null {
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    return null;
+  }
+  if (!u.hostname.toLowerCase().endsWith("auto1.com")) return null;
+  const m = u.pathname.match(AUTO1_FILE);
+  if (!m || (m[1] ?? "").toLowerCase() === "max") return null;
+  const slash = u.pathname.lastIndexOf("/");
+  const ext = u.pathname.slice(u.pathname.lastIndexOf("."));
+  u.pathname = `${u.pathname.slice(0, slash + 1)}max-${m[2]}_${m[3]}${ext}`;
+  return u.toString();
+}
+
 const OPENLANE_CAR = /\/carimgs\/(\d+)\//i;
 const NOT_A_CAR_PHOTO = /\.(svg|gif)(\?|$)|(^|[/_.-])(logo|icon|sprite|flag|badge|banner|footer|placeholder|avatar|payment)([/_.-]|$)/i;
 

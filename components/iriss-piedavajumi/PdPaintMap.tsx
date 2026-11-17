@@ -69,6 +69,12 @@ const SLOTS: Record<IrissPdPaintZoneId, Slot[]> = {
 };
 const PHONE_SIDE_LIMIT = 2;
 
+/**
+ * Nils 17.11: pašreizējais siluets nav pieņemams. Zīmējums paslēpts, līdz jaunais makets ir apstiprināts;
+ * klients redz mērījumu tabulu. Kods paliek, lai jauno zīmējumu varētu ielikt tajā pašā vietā.
+ */
+const SHOW_DRAWING: boolean = false;
+
 const ZONE_ORDER: IrissPdPaintZoneId[] = ["front", "roof", "rear", "left", "right"];
 
 const pctX = (x: number) => `${(x / VIEW_W) * 100}%`;
@@ -95,7 +101,10 @@ export function PdPaintMap({ paint, compact = false }: { paint: NonNullable<Iris
   const sw = (id: IrissPdPaintZoneId) => (sel === id ? 1.6 : 1.2);
   const detail = (id: IrissPdPaintZoneId) => (sel === id ? "#7baaf7" : "#d1d1d6");
   const pick = (id: IrissPdPaintZoneId) => setSel((cur) => (cur === id ? null : id));
-  const tableZones = ZONE_ORDER.map((id) => zoneById.get(id)).filter((z): z is NonNullable<typeof z> => Boolean(z));
+  // Tabulā tikai zonas, kurām ir mērījums vai bojājums (tukšas rindas ar "-" klientam neko nedod).
+  const tableZones = ZONE_ORDER.map((id) => zoneById.get(id)).filter(
+    (z): z is NonNullable<typeof z> => Boolean(z) && (z!.readings.length > 0 || z!.warning),
+  );
 
   const side = (id: "left" | "right") => (
     <g transform={id === "right" ? FLIP : undefined}>
@@ -113,7 +122,8 @@ export function PdPaintMap({ paint, compact = false }: { paint: NonNullable<Iris
 
   return (
     <div>
-      {!compact ? <p className="pd-mu" style={{ fontSize: 11.5, margin: "0 0 6px" }}>Izvēlies zonu, lai uzzinātu vairāk par stāvokli:</p> : null}
+      {SHOW_DRAWING && !compact ? <p className="pd-mu" style={{ fontSize: 11.5, margin: "0 0 6px" }}>Izvēlies zonu, lai uzzinātu vairāk par stāvokli:</p> : null}
+      {SHOW_DRAWING ? (
       <div className="pd-pm pd-pm-a1" style={{ height: "auto", aspectRatio: `${VIEW_W} / ${VIEW_SHOWN_H}` }}>
         <span className="ttl pd-lv-wide">Ārpuse</span>
         <svg viewBox={`0 ${VIEW_Y0} ${VIEW_W} ${VIEW_SHOWN_H}`} aria-hidden="true">
@@ -172,11 +182,12 @@ export function PdPaintMap({ paint, compact = false }: { paint: NonNullable<Iris
           );
         })}
       </div>
+      ) : null}
       <div className="pd-pm-cap">
         Krāsas biezums µm · ◐ pārkrāsots (≥{IRISS_PD_REPAINT_UM} µm) · <span className="pd-wa">▲</span> zonā atrasti bojājumi (buktes, skrāpējumi u.c.)
       </div>
       {/* Visi mērījumi tabulā: kartē ietilpst tikai daļa. */}
-      <table className="mt-2.5 w-full border-collapse text-left text-[12.5px] leading-snug" data-paint-table="">
+      <table className={`${SHOW_DRAWING ? "mt-2.5" : "mt-1"} w-full border-collapse text-left text-[12.5px] leading-snug`} data-paint-table="">
         <thead>
           <tr className="text-[10.5px] uppercase tracking-[0.06em] text-[#6e6e73]">
             <th className="border-b border-[#e4e4e7] py-1.5 pr-2 font-semibold">Zona</th>
