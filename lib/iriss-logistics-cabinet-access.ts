@@ -196,9 +196,63 @@ export function cabinetActorHidesSums(query: Pick<CabinetAccessQuery, "userId" |
   return query.roles.includes("logistika") || query.roles.includes("serviss");
 }
 
-/** Loģistika/Serviss (hideSums): auto cena nav redzama nevienā atbildē - arī pēc PATCH/POST, ne tikai sarakstā. */
+/** Aizstājējs slēptai summai brīvtekstā (Loģistika/Serviss). */
+export const HIDDEN_SUM_TOKEN = "•• €";
+
+/** Brīvteksta lauki, kuros operatori mēdz ierakstīt summas (piem. "samaksāts 12 500 €"). */
+export const LOGISTICS_SUM_TEXT_FIELDS = ["notes", "nextAction", "statusNote"] as const;
+type SumTextField = (typeof LOGISTICS_SUM_TEXT_FIELDS)[number];
+
+// "12 500 €", "12500€", "€ 1 200,50", "1200 EUR", "EUR 900", "12,5k €", "9.900,- eur", "8000 eiro"
+const EUR_AMOUNT_RE =
+  /(?:(?:€|\beur\b)\s*\d(?:[\d\s.,]*\d)?(?:[.,]-)?(?:\s*k\b)?)|(?:\d(?:[\d\s.,]*\d)?(?:[.,]-)?(?:\s*k)?\s*(?:€|\beur\b|\beiro\b))/gi;
+
+/** Aizstāj € summas tekstā ar "•• €". Teksts bez summām paliek nemainīts. */
+export function maskEurAmountsInText(text: string): string {
+  if (!text) return text;
+  return text.replace(EUR_AMOUNT_RE, HIDDEN_SUM_TOKEN);
+}
+
+/**
+ * Loģistika/Serviss (hideSums): auto cena un € summas brīvtekstā nav redzamas nevienā atbildē
+ * (SSR lapā, sarakstā, pēc PATCH/POST). Glabātie dati netiek mainīti.
+ */
 export function maskOrderSums<T extends { priceEur: number | null }>(order: T, hideSums: boolean): T {
-  return hideSums ? { ...order, priceEur: null } : order;
+  if (!hideSums) return order;
+  const out: Record<string, unknown> = { ...order, priceEur: null };
+  for (const f of LOGISTICS_SUM_TEXT_FIELDS) {
+    const v = out[f];
+    if (typeof v === "string") out[f] = maskEurAmountsInText(v);
+  }
+  return out as T;
+}
+
+/**
+ * Loģistika/Serviss raksta ierakstu, kura summas neredz. Lai maskētais teksts nepārrakstītu īstās summas:
+ * - priceEur netiek mainīts;
+ * - ja lauks atnāk tieši tāds pats kā maskētais (nav labots) - tas netiek rakstīts;
+ * - ja laukā ar slēptām summām ir labots teksts, kas joprojām satur "•• €" - atteikums (to labo admins).
+ */
+export function sanitizeHiddenSumsPatch(
+  patch: Record<string, unknown>,
+  existing: Partial<Record<SumTextField, unknown>>,
+): { ok: true; patch: Record<string, unknown> } | { ok: false; field: SumTextField } {
+  const next: Record<string, unknown> = { ...patch };
+  delete next.priceEur;
+  for (const f of LOGISTICS_SUM_TEXT_FIELDS) {
+    if (!(f in next)) continue;
+    const sent = next[f];
+    const stored = typeof existing[f] === "string" ? (existing[f] as string) : "";
+    const masked = maskEurAmountsInText(stored);
+    if (sent === masked) {
+      delete next[f];
+      continue;
+    }
+    if (masked !== stored && typeof sent === "string" && sent.includes(HIDDEN_SUM_TOKEN)) {
+      return { ok: false, field: f };
+    }
+  }
+  return { ok: true, patch: next };
 }
 
 export function buildCabinetAccessView(

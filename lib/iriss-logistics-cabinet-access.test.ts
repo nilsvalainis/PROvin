@@ -7,6 +7,7 @@ import {
   defaultCabinetAccessAllow,
   evaluateCabinetAccess,
   filterDocumentsByCabinetAccess,
+  maskEurAmountsInText,
 } from "@/lib/iriss-logistics-cabinet-access";
 import type { CabinetAccessRule } from "@/lib/iriss-logistics-cabinet";
 
@@ -109,5 +110,22 @@ describe("cabinet access matrix", () => {
     ];
     const kept = filterDocumentsByCabinetAccess(docs, { userId: "s1", roles: ["logistika"], carId: "lo-1" }, []);
     expect(kept.map((d) => d.id)).toEqual(["2"]);
+  });
+});
+
+describe("maskEurAmountsInText", () => {
+  it.each([
+    ["samaksāts 12 500 €, transports 450€", "samaksāts •• €, transports •• €"],
+    ["€ 1 200,50 depozīts", "•• € depozīts"],
+    ["1200 EUR līdz piektdienai", "•• € līdz piektdienai"],
+    ["cena 9.900,- eur", "cena •• €"],
+    ["12,5k € budžets", "•• € budžets"],
+    ["8000 eiro", "•• €"],
+  ])("aizstāj summu: %s", (input, out) => {
+    expect(maskEurAmountsInText(input)).toBe(out);
+  });
+
+  it.each(["2 auto, 3 atslēgas", "Paņemt 14.11 plkst 10:00", "Europe 2020", ""])("teksts bez summām nemainās: %s", (t) => {
+    expect(maskEurAmountsInText(t)).toBe(t);
   });
 });
