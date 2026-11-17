@@ -50,6 +50,22 @@ describe("parseThecarapiHistory", () => {
 });
 
 describe("parseThecarapiDetail", () => {
+  it("atver reālo ietinumu {auction} un lasa visus bilžu laukus", () => {
+    const detail = parseThecarapiDetail(fixture("detail-auto1-wrapped.json"));
+    expect(detail.site).toBe("auto1");
+    expect(detail.id).toBe("A1-200");
+    expect(detail.pending).toBe(false);
+    expect(detail.photoUrls).toEqual(
+      expect.arrayContaining([
+        "https://img-pa.auto1.com/img/w-main.jpg",
+        "https://img-pa.auto1.com/img/w-damage.jpg",
+        "https://img-pa.auto1.com/img/w-service.jpg",
+        "https://img-pa.auto1.com/img/w-vault.jpg",
+        "https://img-pa.auto1.com/img/w-sub.jpg",
+      ]),
+    );
+  });
+
   it("patur tikai atļautās https fotogrāfijas un aprīkojumu", () => {
     const detail = parseThecarapiDetail(fixture("detail-auto1.json"));
     expect(detail.site).toBe("auto1");
