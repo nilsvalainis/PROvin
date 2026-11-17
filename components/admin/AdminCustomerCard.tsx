@@ -144,8 +144,9 @@ export function AdminCustomerCard({
         compact
         hideToolbar
         resetVersion={resetVersion}
-        endAdornment={<AdminWhatsAppOpenButton phone={phone} prefillMessage={whatsappPrefill} />}
       />
+      {/* 17.11: pilna izmēra WhatsApp poga zem tālruņa lauka; telefonā blakus "Zvanīt". */}
+      <AdminWhatsAppOpenButton phone={phone} variant="labeled" prefillMessage={whatsappPrefill} />
       {phoneOnlyOrders.length > 0 ? (
         <p className="-mt-1 flex items-center gap-1.5 px-1 text-[11.5px] text-[#8e8e93]">
           Tālrunis

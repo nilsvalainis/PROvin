@@ -65,3 +65,9 @@ export function openWhatsAppChat(
   }
   window.open(url, "_blank", "noopener,noreferrer");
 }
+
+/** `tel:` saite pogai "Zvanīt" (tas pats numura normalizētājs kā WhatsApp). Nederīgam numuram null. */
+export function telHrefForPhone(raw: string | null | undefined): string | null {
+  const digits = normalizeWhatsAppPhoneDigits(raw);
+  return digits ? `tel:+${digits}` : null;
+}

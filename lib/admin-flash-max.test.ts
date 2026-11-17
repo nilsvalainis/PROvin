@@ -13,6 +13,8 @@ import {
   flashMaxJobBreadth,
   flashMaxJobModelTier,
   flashMaxSelectedJobs,
+  flashMaxSelectionWithData,
+  flashMaxUnavailableMenuJobs,
   formatFlashMaxNotice,
   isFlashMaxEmptyDataError,
   shouldSkipFlashMaxJob,
@@ -179,5 +181,59 @@ describe("FLASH MAX jobs", () => {
     expect(flashMaxJobBreadth(summaryJob, { ...sel, breadths: { ...sel.breadths, summary: "compact" } })).toBe(
       "compact",
     );
+  });
+});
+
+describe("17.11: tukšās sadaļas izķeksētas", () => {
+  const job = (id: string) => FLASH_MAX_JOBS.find((j) => j.id === id)!;
+
+  it("sludinājuma sadaļas bez ievades tiek izlaistas, ar ievadi - nē", () => {
+    const empty = createDefaultSourceBlocks();
+    expect(shouldSkipFlashMaxJob(job("seller"), empty)).toBe("no_listing_data");
+    expect(shouldSkipFlashMaxJob(job("listing_sales"), empty)).toBe("no_listing_data");
+    expect(shouldSkipFlashMaxJob(job("photo"), empty)).toBe("no_listing_data");
+    const withPaste = createDefaultSourceBlocks();
+    withPaste.listing_analysis.listingPasteRaw = "BMW 320d, 2012, 335 000 km";
+    expect(shouldSkipFlashMaxJob(job("seller"), withPaste)).toBeNull();
+    expect(shouldSkipFlashMaxJob(job("listing_sales"), withPaste)).toBeNull();
+    expect(shouldSkipFlashMaxJob(job("photo"), withPaste)).toBeNull();
+    const sellerOnly = createDefaultSourceBlocks();
+    sellerOnly.listing_analysis.extraSellerName = "SIA Auto";
+    expect(shouldSkipFlashMaxJob(job("seller"), sellerOnly)).toBeNull();
+    expect(shouldSkipFlashMaxJob(job("listing_sales"), sellerOnly)).toBe("no_listing_data");
+  });
+
+  it("foto ar operatora atzīmi (esošs teksts) netiek izlaists", () => {
+    const blocks = createDefaultSourceBlocks();
+    blocks.listing_analysis.photoAnalysis = "<p>Nav vizuālo defektu</p>";
+    expect(shouldSkipFlashMaxJob(job("photo"), blocks)).toBeNull();
+  });
+
+  it("negadījumi, riski, apskate un kopsavilkums paliek arī bez datiem", () => {
+    const empty = createDefaultSourceBlocks();
+    for (const id of ["incidents", "technical_risks", "inspection", "summary"]) {
+      expect(shouldSkipFlashMaxJob(job(id), empty)).toBeNull();
+    }
+  });
+
+  it("noklusējuma izvēle bez datiem: paliek tikai sadaļas, kurām nevajag avotu", () => {
+    const empty = createDefaultSourceBlocks();
+    const unavailable = flashMaxUnavailableMenuJobs(expandFlashMaxMenuJobs(FLASH_MAX_JOBS, empty), empty);
+    expect(unavailable.csdd).toBe("no_source_data");
+    expect(unavailable.mileage).toBe("no_mileage_data");
+    expect(unavailable.seller).toBe("no_listing_data");
+    const picked = flashMaxSelectionWithData(defaultFlashMaxSelection(), unavailable);
+    expect([...picked.selectedIds].sort()).toEqual(["incidents", "inspection", "summary", "technical_risks"]);
+  });
+
+  it("ja visam ir dati, izvēle nemainās (tas pats objekts)", () => {
+    const sel = defaultFlashMaxSelection();
+    expect(flashMaxSelectionWithData(sel, {})).toBe(sel);
+  });
+
+  it("servera 'trūkst sludinājuma ievades' kļūdas skaitās izlaists, ne kļūda", () => {
+    expect(isFlashMaxEmptyDataError("missing_seller_input")).toBe(true);
+    expect(isFlashMaxEmptyDataError("missing_listing_paste")).toBe(true);
+    expect(isFlashMaxEmptyDataError("rate_limited")).toBe(false);
   });
 });

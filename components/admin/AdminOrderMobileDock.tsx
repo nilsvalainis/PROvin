@@ -10,7 +10,6 @@ import {
   MessageSquareText,
   Quote,
   Save,
-  Sparkles,
 } from "lucide-react";
 import { AdminMobileSheet } from "@/components/admin/mobile/AdminMobileChrome";
 
@@ -24,12 +23,16 @@ import {
 } from "@/lib/admin-mobile-ds";
 import { normalizeWhatsAppPhoneDigits, whatsAppChatUrl } from "@/lib/admin-whatsapp-phone";
 import {
-  FLASH_MAX_OPERATOR_NOTES_MAX_LEN,
-  clipFlashMaxOperatorNotes,
-  defaultFlashMaxSelection,
-  summaryOnlyFlashMaxSelection,
   type FlashMaxSelection,
 } from "@/lib/admin-flash-max";
+import type { WorkspaceSourceBlocks } from "@/lib/admin-source-blocks";
+import {
+  AdminFlashMaxPanel,
+  flashMaxDraftToSelection,
+  flashMaxRunnableCount,
+  useFlashMaxDraft,
+} from "@/components/admin/AdminFlashMaxPanel";
+import { AdminResponsiveModal } from "@/components/admin/AdminResponsiveModal";
 import { isValidHttpUrl } from "@/lib/order-field-validation";
 
 /**
@@ -43,6 +46,8 @@ type Props = {
   prepareDraftBusy: boolean;
   flashMaxBusy: boolean;
   onFlashMax: (selection: FlashMaxSelection) => void;
+  /** Avotu bloki - lai FLASH MAX logā redzams, kurām sadaļām ir dati. */
+  sourceBlocks?: WorkspaceSourceBlocks | null;
   copilotOpen: boolean;
   copilotBusy: boolean;
   onOpenCopilot: () => void;
@@ -178,6 +183,7 @@ export function AdminOrderMobileDock({
   whatsappPrefill,
   onVinCopied,
   onMore,
+  sourceBlocks,
   flashRequest = 0,
   flashMaxPhase = null,
   flashMaxNotice = null,
@@ -186,7 +192,7 @@ export function AdminOrderMobileDock({
   onDismissNotice,
 }: Props) {
   const [sheet, setSheet] = useState<null | "flash" | "more" | "pdf">(null);
-  const [flashNotes, setFlashNotes] = useState("");
+  const flashDraft = useFlashMaxDraft();
   const [localNotice, setLocalNotice] = useState<AdminMobileDockStatus | null>(null);
   const [flashResultHidden, setFlashResultHidden] = useState(false);
   const noticeTimer = useRef<number | null>(null);
@@ -241,9 +247,11 @@ export function AdminOrderMobileDock({
   const flashDisabled = !aiAllowed || !workspaceHydrated || prepareDraftBusy || flashMaxBusy;
   const whatsappDigits = useMemo(() => normalizeWhatsAppPhoneDigits(customerPhone ?? ""), [customerPhone]);
 
-  const runFlash = (selection: FlashMaxSelection) => {
+  const flashCount = sheet === "flash" ? flashMaxRunnableCount(flashDraft, sourceBlocks) : 0;
+  const runFlash = () => {
+    if (flashCount === 0) return;
     setSheet(null);
-    onFlashMax({ ...selection, operatorNotes: clipFlashMaxOperatorNotes(flashNotes) });
+    onFlashMax(flashMaxDraftToSelection(flashDraft, sourceBlocks));
   };
 
   const runPdf = (fn: () => void) => {
@@ -311,50 +319,43 @@ export function AdminOrderMobileDock({
         />
       )}
 
-      {sheet === "flash" && !dockCovered ? (
-        <AdminMobileSheet open title="FLASH MAX" onClose={() => setSheet(null)}>
-          <button type="button" className={sheetRow} disabled={flashDisabled} onClick={() => runFlash(defaultFlashMaxSelection())}>
-            <Sparkles className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
-            <span className="min-w-0">
-              <span className="block">Ikdienas komplekts</span>
-              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">
-                Visi avotu komentāri, riski, apskate un kopsavilkums
-              </span>
-            </span>
-          </button>
-          <button type="button" className={sheetRow} disabled={flashDisabled} onClick={() => runFlash(summaryOnlyFlashMaxSelection())}>
-            <MessageSquareText className="h-4 w-4 shrink-0 text-[var(--color-provin-muted)]" strokeWidth={1.5} aria-hidden />
-            <span className="min-w-0">
-              <span className="block">Tikai kopsavilkums</span>
-              <span className="block text-[11px] font-normal text-[var(--color-provin-muted)]">
-                Pārģenerē noslēguma tekstus, avotus neaiztiek
-              </span>
-            </span>
-          </button>
-          <label className="block px-3 pt-2">
-            <span className="mb-1 block text-[11px] font-medium text-[var(--color-provin-muted)]">Papildu piezīmes (nav obligāti)</span>
-            <textarea
-              className="min-h-[4.5rem] w-full resize-y rounded-xl border border-[var(--admin-border-subtle)] bg-[var(--admin-surface-elevated)] px-3 py-2 text-[16px] leading-snug text-[var(--color-apple-text)]"
-              placeholder="Piem., jauns fakts, ko ņemt vērā visos tekstos"
-              value={flashNotes}
-              maxLength={FLASH_MAX_OPERATOR_NOTES_MAX_LEN}
-              onChange={(e) => setFlashNotes(e.target.value.slice(0, FLASH_MAX_OPERATOR_NOTES_MAX_LEN))}
-            />
-          </label>
-          {flashDisabled ? (
-            <p className="px-3 pt-2 text-[12px] leading-snug text-[#b42318]">
-              {!aiAllowed
-                ? "AI šim pasūtījumam nav atļauts."
-                : flashMaxBusy
-                  ? "FLASH MAX jau darbojas."
-                  : "Pasūtījums vēl ielādējas. Pagaidi dažas sekundes."}
-            </p>
-          ) : null}
-          <p className="px-3 py-2 text-[11px] leading-relaxed text-[var(--color-provin-muted)]">
-            Pilna aģentu izvēle ar modeļiem pieejama uz datora.
+      {/* 17.11: tas pats izvēles saturs kā datorā (sadaļas, platums, modelis, piezīmes); tukšās sadaļas izķeksētas. */}
+      <AdminResponsiveModal
+        open={sheet === "flash" && !dockCovered}
+        title="FLASH MAX"
+        onClose={() => setSheet(null)}
+        zClass="z-[70]"
+        footer={
+          <>
+            <button
+              type="button"
+              className="min-h-11 rounded-full bg-slate-100 px-4 text-[15px] font-semibold text-slate-700"
+              onClick={() => setSheet(null)}
+            >
+              Atcelt
+            </button>
+            <button
+              type="button"
+              className="min-h-11 flex-1 rounded-full bg-teal-600 px-4 text-[15px] font-semibold text-white disabled:opacity-45"
+              disabled={flashDisabled || flashCount === 0}
+              onClick={runFlash}
+            >
+              Ģenerēt {flashCount}
+            </button>
+          </>
+        }
+      >
+        {flashDisabled ? (
+          <p className="pb-2 text-[13px] leading-snug text-[#b42318]">
+            {!aiAllowed
+              ? "AI šim pasūtījumam nav atļauts."
+              : flashMaxBusy
+                ? "FLASH MAX jau darbojas."
+                : "Pasūtījums vēl ielādējas. Pagaidi dažas sekundes."}
           </p>
-        </AdminMobileSheet>
-      ) : null}
+        ) : null}
+        <AdminFlashMaxPanel draft={flashDraft} sourceBlocks={sourceBlocks} busy={flashDisabled} size="touch" />
+      </AdminResponsiveModal>
 
       {sheet === "pdf" && !dockCovered ? (
         <AdminMobileSheet open title="Ģenerēt PDF" onClose={() => setSheet(null)}>
