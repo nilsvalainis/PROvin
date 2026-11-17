@@ -1,0 +1,611 @@
+{
+  "_meta": {
+    "url": "https://www.tjekbil.dk/api/v3/dmr/vin/VF12RFL1H49621453",
+    "status": 200,
+    "fetchedAt": "2026-11-17",
+    "note": "Reāla atbilde; personas dati izņemti ar scripts/vin-scan-refresh-fixtures.mjs"
+  },
+  "body": {
+    "basic": {
+      "regNr": "AB12345",
+      "stelNr": "VF12RFL1H49621453",
+      "status": "Registreret",
+      "statusDato": "2013-08-28T15:13:35+02:00",
+      "foersteRegistreringDato": "2013-08-28T00:00:00+02:00",
+      "bilLeaset": false,
+      "leasingGyldigFra": null,
+      "leasingGyldigTil": null,
+      "leasingPeriode": null,
+      "foersteRegistreringDatoFormateret": "28. august 2013",
+      "koeretoejArtNavn": "Personbil",
+      "koeretoejAnvendelseNavn": "Privat personkørsel",
+      "totalVaegt": 1729,
+      "egenVaegt": null,
+      "vogntogVaegt": 2629,
+      "koereklarVaegtMinimum": 1358,
+      "tekniskTotalVaegt": 1729,
+      "paahaengVognTotalVaegt": null,
+      "akselAntal": 2,
+      "siddepladserMinimum": 5,
+      "tilkoblingsmulighed": true,
+      "tilkoblingsvaegtUdenBremser": 620,
+      "tilkoblingsvaegtMedBremser": 1200,
+      "ncapTest": true,
+      "koeretoejstand": null,
+      "maerkeTypeNavn": "RENAULT",
+      "modelTypeNavn": "Captur",
+      "modelTypeNavnPure": "CAPTUR",
+      "maerkeTypeNavnPure": "RENAULT",
+      "variantTypeNavn": "dCi 90",
+      "farveTypeNavn": "Sort",
+      "typeGodkendelsesNummer": null,
+      "modelAar": "2013",
+      "karrosseriTypeNavn": "Hatchback",
+      "motorSlagVolumen": 1461,
+      "motorStoerrelse": 1.5,
+      "motorStoersteEffekt": 66,
+      "motorHestekraefter": 90,
+      "motorKmPerLiter": 27.8,
+      "motorKilometerstand": 385,
+      "motorElektriskForbrug": null,
+      "drivkraftTypeNavn": "Diesel",
+      "koeretoejUdstyrSamling": [
+        "Airbags",
+        "ESP (Elektronisk Stabiliserings Program)",
+        "Selealarm",
+        "Radio",
+        "ABS bremser",
+        "16\" aluminiumsfælge",
+        "3-punktsseler ved alle sæder",
+        "ABS-bremser",
+        "BAS",
+        "EBD",
+        "Forsæder m. varme",
+        "Førerairbag",
+        "Passagerairbag",
+        "Aircondition",
+        "Tågeforlygter",
+        "Højdejusterbart førersæde",
+        "Nakkestøtter ved alle sæder",
+        "Selekraftbegrænsere",
+        "Dækreparationssæt",
+        "Kørecomputer",
+        "Læderrat",
+        "Elektronisk startspærre",
+        "El-ruder m. singletouch-funktion",
+        "ESP",
+        "Isofix-beslag",
+        "Omdrejningstæller",
+        "12V stik i midterkonsol",
+        "Splitbagsæde 60/40",
+        "Førersæder m. antidykfunktion",
+        "Radio m. USB- og AUX-stik",
+        "Airbags foran og i siderne (",
+        "Integreret barnesæde"
+      ],
+      "motorMaerkning": "K9K B6",
+      "maksimumHastighed": 171,
+      "motorCylinderAntal": 4,
+      "antalDoere": 4,
+      "faelgDaek": "1. aksel: 205/60 R16 (92)H, 6.50 J 16 - 40 (*). 2. aksel: 205/60 R16 (92)H, 6.50 J 16 - 40 (*)",
+      "sporviddenForrest": 1531,
+      "sporviddenBagest": 1531,
+      "stelNummerAnbringelse": "I bagagerum, til højre for reservehjul",
+      "passagerAntal": 0,
+      "traekkendeAksler": "1",
+      "akselAfstand": 2606,
+      "stoersteAkselTryk": 960,
+      "miljoeOplysningCO2Udslip": 95,
+      "miljoeOplysningEmissionCO": 247.7,
+      "miljoeOplysningEmissionHCPlusNOX": 152.6,
+      "miljoeOplysningEmissionNOX": 136.2,
+      "miljoeOplysningPartikelFilter": true,
+      "miljoeOplysningRoegtaethed": 0.51,
+      "miljoeOplysningRoegtaethedOmdrejningstal": 0,
+      "miljoeOplysningPartikler": 0.24,
+      "motorKoerselStoej": 71,
+      "motorStandStoej": 81,
+      "motorStandStoejOmdrejningstal": 3000,
+      "normTypeNavn": "Euro V",
+      "adressePostNummer": null,
+      "adressePostNummerBy": null,
+      "koeretoejId": 9000000000487315,
+      "sekundaerStatus": "Registreret",
+      "sekundaerStatusDato": "2013-08-28T15:13:35+02:00",
+      "tilladelser": "Synsfri Sammenkobling (udstedt af Virksomhed)",
+      "permissions": [
+        {
+          "datoGyldigFra": "2013-08-28T15:13:35+02:00",
+          "kommentar": "Virksomhed",
+          "typeNavn": "Synsfri Sammenkobling"
+        }
+      ],
+      "leasingHistory": [],
+      "statusHistory": [],
+      "udstyrSamling": [
+        {
+          "antal": 4,
+          "typeNavn": "Airbags",
+          "typeNummer": "9901"
+        },
+        {
+          "antal": 1,
+          "typeNavn": "ESP (Elektronisk Stabiliserings Program)",
+          "typeNummer": "717"
+        },
+        {
+          "antal": 3,
+          "typeNavn": "selealarm",
+          "typeNummer": "6028"
+        },
+        {
+          "antal": 1,
+          "typeNavn": "radio",
+          "typeNummer": "6029"
+        },
+        {
+          "antal": 1,
+          "typeNavn": "ABS bremser",
+          "typeNummer": "506"
+        }
+      ],
+      "typeGodkendelseNummer": "e2*2001/116*0327*56",
+      "euVariant": "2RFL",
+      "euVersion": "2RFL1H",
+      "typegodkendtKategori": "M1",
+      "fabrikant": "RENAULT s.a.s.",
+      "maerkeTypeNummer": "10216",
+      "modelTypeNummer": "70002154",
+      "variantTypeNummer": "7000010270",
+      "typeTypeNavn": "R",
+      "typeTypeNummer": "69999999990012924",
+      "motorInnovativTeknik": null,
+      "motorInnovativTeknikAntal": null,
+      "oplysningOprettetUdFra": "CocDokument"
+    },
+    "extended": {
+      "carId": "9000000000487315",
+      "date": "2026-11-12T12:15:22.2192827+01:00",
+      "taxes": {
+        "opkraevedeAfgifter": [],
+        "afgiftDetaljer": []
+      },
+      "insurance": {
+        "selskab": "TRYG FORSIKRING A/S",
+        "status": "Aktiv",
+        "oprettet": "22-09-2026",
+        "historik": [
+          {
+            "selskab": "TRYG FORSIKRING A/S",
+            "status": "Aktiv",
+            "oprettet": "22-09-2026",
+            "historik": []
+          },
+          {
+            "selskab": "VESTJYLLAND G/S",
+            "status": "Ophørt",
+            "oprettet": "22-09-2026",
+            "historik": []
+          },
+          {
+            "selskab": "VESTJYLLAND G/S",
+            "status": "Aktiv",
+            "oprettet": "16-07-2026",
+            "historik": []
+          },
+          {
+            "selskab": "Codan Forsikring for Alm. Brand Forsikring A/S",
+            "status": "Ophørt",
+            "oprettet": "16-07-2026",
+            "historik": []
+          },
+          {
+            "selskab": "VESTJYLLAND G/S",
+            "status": "Ophørt",
+            "oprettet": "16-07-2026",
+            "historik": []
+          },
+          {
+            "selskab": "Codan Forsikring for Alm. Brand Forsikring A/S",
+            "status": "Aktiv",
+            "oprettet": "15-07-2026",
+            "historik": []
+          },
+          {
+            "selskab": "VESTJYLLAND G/S",
+            "status": "Ophørt",
+            "oprettet": "15-07-2026",
+            "historik": []
+          },
+          {
+            "selskab": "Codan Forsikring for Alm. Brand Forsikring A/S",
+            "status": "Ophørt",
+            "oprettet": "15-07-2026",
+            "historik": []
+          },
+          {
+            "selskab": "VESTJYLLAND G/S",
+            "status": "Aktiv",
+            "oprettet": "28-05-2026",
+            "historik": []
+          },
+          {
+            "selskab": "Codan Forsikring for Alm. Brand Forsikring A/S",
+            "status": "Ophørt",
+            "oprettet": "28-05-2026",
+            "historik": []
+          },
+          {
+            "selskab": "VESTJYLLAND G/S",
+            "status": "Ophørt",
+            "oprettet": "28-05-2026",
+            "historik": []
+          },
+          {
+            "selskab": "Codan Forsikring for Alm. Brand Forsikring A/S",
+            "status": "Aktiv",
+            "oprettet": "27-05-2026",
+            "historik": []
+          },
+          {
+            "selskab": "VESTJYLLAND G/S",
+            "status": "Ophørt",
+            "oprettet": "27-05-2026",
+            "historik": []
+          },
+          {
+            "selskab": "Codan Forsikring for Alm. Brand Forsikring A/S",
+            "status": "Ophørt",
+            "oprettet": "27-05-2026",
+            "historik": []
+          },
+          {
+            "selskab": "VESTJYLLAND G/S",
+            "status": "Aktiv",
+            "oprettet": "24-07-2023",
+            "historik": []
+          },
+          {
+            "selskab": "PROTECTOR FORSIKRING ASA",
+            "status": "Ophørt",
+            "oprettet": "24-07-2023",
+            "historik": []
+          },
+          {
+            "selskab": "VESTJYLLAND G/S",
+            "status": "Ophørt",
+            "oprettet": "24-07-2023",
+            "historik": []
+          },
+          {
+            "selskab": "PROTECTOR FORSIKRING ASA",
+            "status": "Aktiv",
+            "oprettet": "20-07-2023",
+            "historik": []
+          },
+          {
+            "selskab": "VESTJYLLAND G/S",
+            "status": "Ophørt",
+            "oprettet": "20-07-2023",
+            "historik": []
+          },
+          {
+            "selskab": "VESTJYLLAND G/S",
+            "status": "Aktiv",
+            "oprettet": "05-07-2023",
+            "historik": []
+          }
+        ]
+      },
+      "general": {
+        "typeGodkendelsesNummer": "e2*2001/116*0327*56",
+        "stelNummer": "VF12RFL1H49621453",
+        "maerke": "RENAULT",
+        "model": "Captur",
+        "variant": "dCi 90",
+        "koeretoejArt": "Personbil",
+        "regNr": "AB12345",
+        "firstRegDate": "2013-08-28T00:00:00",
+        "koeretoejAnvendelse": "Privat personkørsel",
+        "status": "Registreret",
+        "statusDato": "2013-08-28T00:00:00",
+        "kid": 9000000000487315,
+        "farve": "Sort",
+        "standEfterImport": null,
+        "modelAar": "2013",
+        "ncapTest": true,
+        "type": "R",
+        "automatgear": false,
+        "hoejrestyring": false,
+        "turbo": false,
+        "laederSkindSaede": false,
+        "massageSaede": false,
+        "memorySaede": false,
+        "sportKomfortSaede": false,
+        "ventilationISaede": false,
+        "antalAirbags": 4,
+        "koeretoejMotorKilometerstand": null,
+        "sekundaerStatus": "Registreret (har fået tilknyttet en gyldig registrering)",
+        "sekundaerStatusDato": "2013-08-28T00:00:00",
+        "koeretoejUdstyrSamling": [
+          "ESP (Elektronisk Stabiliserings Program)",
+          "ABS bremser",
+          "Airbags",
+          "Radio",
+          "Selealarm",
+          "Integreret barnesæde",
+          "16\" aluminiumsfælge",
+          "3-punktsseler ved alle sæder",
+          "ABS-bremser",
+          "BAS",
+          "EBD",
+          "Forsæder m. varme",
+          "Førerairbag",
+          "Passagerairbag",
+          "Aircondition",
+          "Tågeforlygter",
+          "Højdejusterbart førersæde",
+          "Nakkestøtter ved alle sæder",
+          "Selekraftbegrænsere",
+          "Dækreparationssæt",
+          "Kørecomputer",
+          "Læderrat",
+          "Elektronisk startspærre",
+          "El-ruder m. singletouch-funktion",
+          "ESP",
+          "Isofix-beslag",
+          "Omdrejningstæller",
+          "12V stik i midterkonsol",
+          "Splitbagsæde 60/40",
+          "Førersæder m. antidykfunktion",
+          "Radio m. USB- og AUX-stik",
+          "Airbags foran og i siderne ("
+        ],
+        "blockedStatus": false,
+        "blockedDescription": "",
+        "kmDisplay": null
+      },
+      "leasing": {
+        "bilenErLeaset": false,
+        "leasingStart": null,
+        "leasingEnd": null,
+        "veteran": false
+      },
+      "techical": {
+        "totalVaegt": 1729,
+        "egenVaegt": null,
+        "koereklarVaegtMinimum": 1358,
+        "tekniskTotalVaegt": 1729,
+        "vogntogVaegt": 2629,
+        "paahaengVognTotalVaegt": null,
+        "akselAntal": 2,
+        "siddepladserMinimum": null,
+        "tilkoblingsmulighed": true,
+        "tilkoblingsvaegtUdenBremser": 620,
+        "tilkoblingsvaegtMedBremser": 1200,
+        "karrosseriTypeNavn": "Hatchback",
+        "motorSlagVolumen": 1461,
+        "motorStoersteEffekt": 66,
+        "motorKmPerLiter": 27.8,
+        "motorElektriskForbrug": null,
+        "motorElektriskForbrugMaalt": null,
+        "motorBraendstofForbrugMaalt": null,
+        "batteriKapacitet": null,
+        "elektriskRaekkevidde": null,
+        "maalenorm": null,
+        "drivkraftTypeNavn": "Diesel",
+        "pluginHybrid": false,
+        "motorMaerkning": "K9K B6",
+        "maksimumHastighed": 171,
+        "motorCylinderAntal": 4,
+        "antalDoere": 4,
+        "faelgDaek": "1. aksel: 205/60 R16 (92)H, 6.50 J 16 - 40 (*). 2. aksel: 205/60 R16 (92)H, 6.50 J 16 - 40 (*)",
+        "sporviddenForrest": 1531,
+        "sporviddenBagest": 1516,
+        "stelNummerAnbringelse": "I bagagerum, til højre for reservehjul",
+        "passagerAntal": null,
+        "traekkendeAksler": "1",
+        "akselAfstand": 2606,
+        "stoersteAkselTryk": 960,
+        "miljoeOplysningCO2Udslip": 95,
+        "miljoeOplysningEmissionCO": 247.7,
+        "miljoeOplysningEmissionHCPlusNOX": 152.6,
+        "miljoeOplysningEmissionNOX": null,
+        "miljoeOplysningPartikelFilter": true,
+        "miljoeOplysningRoegtaethed": 0.51,
+        "miljoeOplysningRoegtaethedOmdrejningstal": null,
+        "miljoeOplysningPartikler": 0.24,
+        "motorKoerselStoej": 71,
+        "motorStandStoej": 81,
+        "motorStandStoejOmdrejningstal": null,
+        "normTypeNavn": "Euro V",
+        "miljoeEftermonteretPartikelFilter": false,
+        "measuredKmPerLiter": 27.8
+      },
+      "inspection": {
+        "naesteSyn": "2027-10-14T00:00:00",
+        "sidsteSyn": "2025-08-22T00:00:00",
+        "sidsteSynResultat": "Godkendt",
+        "sidsteSynType": "PeriodiskSyn"
+      },
+      "hideOwner": false
+    },
+    "inspectionData": {
+      "carId": "9000000000487315",
+      "rapporter": [
+        {
+          "remoteId": 32299942,
+          "firma": "Olling Auto Omsynsværksted",
+          "cvr": "74371418",
+          "postNr": 6933,
+          "synstype": "Omsyn",
+          "regNr": "AB12345",
+          "synsresultat": "Godkendt",
+          "synsdato": "11-10-2023",
+          "slutTime": "12",
+          "slutMinut": "19",
+          "kategori": "Periodisk syn",
+          "kmstand": 358000,
+          "fejl": []
+        },
+        {
+          "remoteId": 32292602,
+          "firma": "Applus Danmark A/S",
+          "cvr": "28312725",
+          "postNr": 6933,
+          "synstype": "Første syn",
+          "regNr": "AB12345",
+          "synsresultat": "Kan godkendes efter omsyn hos (om)synsvirksomhed",
+          "synsdato": "10-10-2023",
+          "slutTime": "13",
+          "slutMinut": "27",
+          "kategori": "Periodisk syn",
+          "kmstand": 358000,
+          "fejl": [
+            {
+              "number": "6,1,1,C,V",
+              "title": "Chassis, eller ramme og dertil fastgjorte dele",
+              "description": "Chassis, eller ramme og dertil fastgjorte dele, Tilstand, For kraftig tæring, som påvirker samlingernes styrke., for,  Væsentlig fejl"
+            },
+            {
+              "number": "5,3,4,A,V",
+              "title": "Aksler, og affjedring",
+              "description": "Aksler, og affjedring, Affjedringsled, For stort slid i styrebolt og/eller bøsninger eller i affjedringsled., 1. aksel, venstre,  Væsentlig fejl"
+            }
+          ]
+        },
+        {
+          "remoteId": 28970102,
+          "firma": "Olling Auto Omsynsværksted",
+          "cvr": "74371418",
+          "postNr": 6933,
+          "synstype": "Omsyn",
+          "regNr": "AB12345",
+          "synsresultat": "Godkendt",
+          "synsdato": "02-02-2022",
+          "slutTime": "13",
+          "slutMinut": "13",
+          "kategori": "Periodisk syn",
+          "kmstand": 320000,
+          "fejl": []
+        },
+        {
+          "remoteId": 28939232,
+          "firma": "Applus Danmark A/S",
+          "cvr": "28312725",
+          "postNr": 7100,
+          "synstype": "Første syn",
+          "regNr": "AB12345",
+          "synsresultat": "Kan godkendes efter omsyn hos (om)synsvirksomhed",
+          "synsdato": "27-01-2022",
+          "slutTime": "11",
+          "slutMinut": "46",
+          "kategori": "Periodisk syn",
+          "kmstand": 320000,
+          "fejl": [
+            {
+              "number": "5,3,4,A,V",
+              "title": "Aksler, og affjedring",
+              "description": "Aksler, og affjedring, Affjedringsled, For stort slid i styrebolt og/eller bøsninger eller i affjedringsled., 1. aksel, højre, for,  Væsentlig fejl"
+            },
+            {
+              "number": "5,3,1,B,V",
+              "title": "Aksler, og affjedring",
+              "description": "Aksler, og affjedring, Fjedre og stabilisator, Fjederkomponent er beskadiget eller har brud., 1. aksel, venstre, for,  Væsentlig fejl"
+            },
+            {
+              "number": "1,2,1,A,V",
+              "title": "Bremseudstyr, driftsbremse",
+              "description": "Bremseudstyr, driftsbremse, Præstationer, Utilstrækkelig bremsevirkning på et eller flere hjul., 2. aksel, højre, bag,  Væsentlig fejl"
+            },
+            {
+              "number": "1,4,1,A,V",
+              "title": "Bremseudstyr, parkeringsbremse",
+              "description": "Bremseudstyr, parkeringsbremse, Præstationer, Bremsen virker ikke på den ene side, eller ved bremseprøve på vej afviger køretøjet stærkt fra sin kurs under opbremsningen., 2. aksel, højre, bag,  Væsentlig fejl"
+            }
+          ]
+        },
+        {
+          "remoteId": 25261547,
+          "firma": "Applus Danmark A/S",
+          "cvr": "28312725",
+          "postNr": 7400,
+          "synstype": "Første syn",
+          "regNr": "AB12345",
+          "synsresultat": "Betinget godkendt",
+          "synsdato": "03-02-2020",
+          "slutTime": "",
+          "slutMinut": "",
+          "kategori": "Periodisk syn",
+          "kmstand": 271000,
+          "fejl": [
+            {
+              "number": "6,1,7,G,M",
+              "title": "Chassis, eller ramme og dertil fastgjorte dele",
+              "description": "Chassis, eller ramme og dertil fastgjorte dele, Transmission, Støvmanchet beskadiget., 1. aksel, højre,  Mindre fejl"
+            }
+          ]
+        },
+        {
+          "remoteId": 21814279,
+          "firma": "Jysk-Bilsyn ApS",
+          "cvr": "38948040",
+          "postNr": 2750,
+          "synstype": "Første syn",
+          "regNr": "AB12345",
+          "synsresultat": "Godkendt",
+          "synsdato": "21-02-2018",
+          "slutTime": "",
+          "slutMinut": "",
+          "kategori": "Registreringssyn uden ændring",
+          "kmstand": 83000,
+          "fejl": []
+        },
+        {
+          "remoteId": 20976068,
+          "firma": "Olling Auto Omsynsværksted",
+          "cvr": "74371418",
+          "postNr": 6933,
+          "synstype": "Omsyn",
+          "regNr": "AB12345",
+          "synsresultat": "Godkendt",
+          "synsdato": "24-08-2017",
+          "slutTime": "",
+          "slutMinut": "",
+          "kategori": "Periodisk syn",
+          "kmstand": 171000,
+          "fejl": []
+        },
+        {
+          "remoteId": 20954715,
+          "firma": "Applus Danmark A/S",
+          "cvr": "28312725",
+          "postNr": 7400,
+          "synstype": "Første syn",
+          "regNr": "AB12345",
+          "synsresultat": "Kan godkendes efter omsyn hos (om)synsvirksomhed",
+          "synsdato": "19-08-2017",
+          "slutTime": "",
+          "slutMinut": "",
+          "kategori": "Periodisk syn",
+          "kmstand": 171000,
+          "fejl": [
+            {
+              "number": "8",
+              "title": "Bærende elementer",
+              "description": "bærekugle i forhjulsophæng, slør, for stor, højre"
+            }
+          ]
+        }
+      ],
+      "mistaenkeligtKmStand": true,
+      "senesteRegNr": "AB12345"
+    },
+    "debtData": {
+      "carId": "9000000000487315",
+      "laaneDokumenter": [],
+      "konkurs": null
+    },
+    "lookupLimitReached": false
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "_meta": {
+    "url": "https://findsynsrapport.esyn.dk/webapi/v1/chassismake/WVWZZZ7NZEV015204/VOLKSWAGEN",
+    "status": 200,
+    "fetchedAt": "2026-11-17",
+    "note": "Reāla atbilde; personas dati izņemti ar scripts/vin-scan-refresh-fixtures.mjs"
+  },
+  "body": {
+    "vehicle": {
+      "kiDnumber": "9000000002522614",
+      "registrationNumber": "CM53865",
+      "chassisNumber": "WVWZZZ7NZEV015204",
+      "makeName": "VOLKSWAGEN",
+      "modelName": "SHARAN",
+      "categoryName": "M1-Personbil <= 3500 kg"
+    },
+    "inspection": [
+      {
+        "id": 38522957,
+        "date": "2026-09-15T09:51:00Z",
+        "conclusion": "GOD",
+        "odometer": 198,
+        "exactOdometer": 198579,
+        "registrationNumber": "CM53865"
+      },
+      {
+        "id": 38522962,
+        "date": "2026-09-15T09:51:00Z",
+        "conclusion": "MID",
+        "odometer": 198,
+        "exactOdometer": 198579,
+        "registrationNumber": "CM53865"
+      },
+      {
+        "id": 37104887,
+        "date": "2026-01-28T12:22:00Z",
+        "conclusion": "GOD",
+        "odometer": 188,
+        "exactOdometer": 188528,
+        "registrationNumber": "CM53865"
+      },
+      {
+        "id": 32809001,
+        "date": "2024-01-23T08:48:00Z",
+        "conclusion": "GOD",
+        "odometer": 153,
+        "exactOdometer": 153497,
+        "registrationNumber": "CM53865"
+      },
+      {
+        "id": 28969293,
+        "date": "2022-02-02T11:27:00Z",
+        "conclusion": "GOD",
+        "odometer": 119,
+        "exactOdometer": null,
+        "registrationNumber": "CM53865"
+      },
+      {
+        "id": 25178220,
+        "date": "2020-01-16T13:00:00Z",
+        "conclusion": "GOD",
+        "odometer": 87,
+        "exactOdometer": null,
+        "registrationNumber": "CM53865"
+      },
+      {
+        "id": 21528364,
+        "date": "2017-12-18T14:06:00Z",
+        "conclusion": "GOD",
+        "odometer": 29,
+        "exactOdometer": null,
+        "registrationNumber": null
+      },
+      {
+        "id": 21528370,
+        "date": "2017-12-18T14:05:00Z",
+        "conclusion": "MID",
+        "odometer": 29,
+        "exactOdometer": null,
+        "registrationNumber": null
+      }
+    ]
+  }
+}
