@@ -248,9 +248,14 @@ export function parseOdometerKm(raw: string): number | null {
   return n;
 }
 
-/** Hronoloģiski: vecākais → jaunākais; vienā datumā — odometrs augošā secībā; nederīgs datums — beigās. */
+/**
+ * Hronoloģiski: vecākais → jaunākais; vienā datumā - odometrs augošā secībā; nederīgs datums - beigās.
+ * 17.11 (etalons, klase A): ja mēnesī ir rādījums ar mēneša precizitāti (carVertical "12.2013" -> 01.12.2013), tā
+ * vieta mēnesī nav zināma - šī mēneša rindas kārto pēc km. Agrāk tas vienmēr stāvēja mēneša sākumā, un precīzs
+ * dīlera rādījums 02.12 izskatījās pēc krituma.
+ */
 export function sortMileageChronological(rows: UnifiedMileageRow[]): UnifiedMileageRow[] {
-  return [...rows].sort((a, b) => {
+  const sorted = [...rows].sort((a, b) => {
     const ta = a.sortableTime === Number.NEGATIVE_INFINITY ? Number.POSITIVE_INFINITY : a.sortableTime;
     const tb = b.sortableTime === Number.NEGATIVE_INFINITY ? Number.POSITIVE_INFINITY : b.sortableTime;
     if (ta !== tb) return ta - tb;
@@ -259,6 +264,29 @@ export function sortMileageChronological(rows: UnifiedMileageRow[]): UnifiedMile
     if (ka !== kb) return ka - kb;
     return a.sourceOrder - b.sourceOrder;
   });
+  const out: UnifiedMileageRow[] = [];
+  let i = 0;
+  while (i < sorted.length) {
+    let j = i + 1;
+    while (j < sorted.length && sameCalendarMonth(sorted[i]!.sortableTime, sorted[j]!.sortableTime)) j += 1;
+    const run = sorted.slice(i, j);
+    if (run.length > 1 && run.some((r) => r.datePrecision === "month")) {
+      run.sort((a, b) => {
+        const ka = parseOdometerKm(a.odometer) ?? Number.POSITIVE_INFINITY;
+        const kb = parseOdometerKm(b.odometer) ?? Number.POSITIVE_INFINITY;
+        if (ka !== kb) return ka - kb;
+        return a.sortableTime - b.sortableTime || a.sourceOrder - b.sourceOrder;
+      });
+    }
+    out.push(...run);
+    i = j;
+  }
+  return out;
+}
+
+/** carVertical dod tikai mēnesi un gadu; mūsu ielasē tas kļūst par 01.MM.GGGG. */
+export function isMonthOnlyVendorReading(sourceLabel: string, dateRaw: string): boolean {
+  return /carvertical/i.test(sourceLabel) && /^0?1[./]\d{1,2}[./]\d{4}$/.test(dateRaw.trim());
 }
 
 /** Back-roll anomālijai: starpībai starp secīgiem rādījumiem jābūt vismaz šādai (km). */
@@ -867,8 +895,9 @@ export function collectUnifiedMileageRows(
     visitOdometer = false,
     allowBlankCountry = false,
   ) => {
-    const datePrecision = detectMileageDatePrecision(dateRaw);
     const date = formatAutoRecordsDateForOutput(dateRaw) || dateRaw.trim();
+    const datePrecision =
+      detectMileageDatePrecision(dateRaw) === "month" || isMonthOnlyVendorReading(sourceLabelRaw, date) ? "month" : "day";
     const unit = parseMileageUnit(unitRaw) ?? parseMileageUnit(odometerRaw);
     const odometer = odometerToKmDisplay(odometerRaw.trim(), unit);
     if (!date || !odometer) return;

@@ -11,12 +11,12 @@
  "rindasSavaktas": 73,
  "rindasTabula": 51,
  "tabula": [
-  "01.09.2019 | 2 | Vācija | CarVertical",
+  "01.09.2019 | 2 | Vācija | CarVertical | mēnesis",
   "06.09.2019 | 2 | Vācija | OFICIĀLĀ DĪLERA DATI",
   "17.10.2019 | 4 | Vācija | OFICIĀLĀ DĪLERA DATI",
   "14.01.2020 | 4 | Vācija | OFICIĀLĀ DĪLERA DATI",
   "14.02.2020 | 4 | Vācija | OFICIĀLĀ DĪLERA DATI",
-  "01.03.2020 | 4 | Vācija | CarVertical",
+  "01.03.2020 | 4 | Vācija | CarVertical | mēnesis",
   "09.03.2020 | 4 | Vācija | OFICIĀLĀ DĪLERA DATI",
   "11.01.2021 | 13491 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "19.01.2021 | 13578 | Vācija | OFICIĀLĀ DĪLERA DATI",
@@ -60,7 +60,7 @@
   "22.12.2025 | 108841 | Igaunija | CSDD",
   "23.12.2025 | 108886 | Igaunija | CSDD + MNT.EE - Igaunijas reģistrs",
   "05.01.2026 | 108999 | Igaunija | OFICIĀLĀ DĪLERA DATI + CarVertical",
-  "01.03.2026 | 109945 | Igaunija | CarVertical",
+  "01.03.2026 | 109945 | Igaunija | CarVertical | mēnesis",
   "26.04.2026 | 110 000 | Latvija | ss.lv + CarVertical + CSDD + AutoDNA"
  ],
  "sarkanaJosla": false,
@@ -75,6 +75,6 @@
   "rollbacks": [],
   "suspectedEntryErrors": [],
   "implausibleReadings": [],
-  "latestKm": 110000
+  "latestKm": 110016
  }
 }

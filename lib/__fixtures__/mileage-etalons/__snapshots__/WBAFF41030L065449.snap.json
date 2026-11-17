@@ -9,7 +9,7 @@
  "rindasSavaktas": 29,
  "rindasTabula": 15,
  "tabula": [
-  "01.09.2007 | 14 | Itālija | CarVertical",
+  "01.09.2007 | 14 | Itālija | CarVertical | mēnesis",
   "13.05.2010 | 83637 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "17.08.2010 | 90281 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "01.12.2011 | 112446 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
@@ -22,7 +22,7 @@
   "17.06.2014 | 148562 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "18.10.2017 | 193994 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "28.10.2023 | 244423 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
-  "01.05.2026 | 279560 | Itālija | CarVertical",
+  "01.05.2026 | 279560 | Itālija | CarVertical | mēnesis",
   "26.06.2026 | 277681 | Latvija | CarVertical + CSDD + AutoDNA | ANOMĀLIJA"
  ],
  "sarkanaJosla": true,
