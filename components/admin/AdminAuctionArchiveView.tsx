@@ -36,6 +36,7 @@ export type AuctionArchiveViewProps = {
     used: number;
     cap: number;
     cachedSummary: string;
+    cacheHasDetail?: boolean;
     busy: boolean;
     note: string;
     rows: { date: string; venue: string; odometer: string; price: string }[];
@@ -193,7 +194,8 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
               disabled={props.thecarapi.busy || props.busy || !props.thecarapi.enabled}
               onClick={() => {
                 if (!props.thecarapi?.enabled) return;
-                if (props.thecarapi.cachedSummary) {
+                const incomplete = Boolean(props.thecarapi.cachedSummary) && props.thecarapi.cacheHasDetail === false;
+                if (props.thecarapi.cachedSummary && !incomplete) {
                   const ok = window.confirm("Šim VIN jau ir TheCarApi kešs. Atjaunot (maksas)?");
                   if (!ok) return;
                   props.thecarapi.onCheck(true);
@@ -205,9 +207,26 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
               {props.thecarapi.busy
                 ? "Pārbauda…"
                 : props.thecarapi.enabled
-                  ? "Pārbaudīt TheCarApi (maksas)"
+                  ? props.thecarapi.cachedSummary && props.thecarapi.cacheHasDetail === false
+                    ? "Ielādēt detaļas (maksas)"
+                    : "Pārbaudīt TheCarApi (maksas)"
                   : "TheCarApi izslēgts (nav apmaksāts / nav atslēgas)"}
             </button>
+            {props.thecarapi.enabled ? (
+              <button
+                type="button"
+                className="ml-2 mt-2 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-[12px] font-semibold disabled:opacity-50"
+                disabled={props.thecarapi.busy || props.busy}
+                onClick={() => {
+                  if (!props.thecarapi?.enabled) return;
+                  const ok = window.confirm("Atjaunot TheCarApi no jauna (maksas)? Kešs tiks ignorēts.");
+                  if (!ok) return;
+                  props.thecarapi.onCheck(true);
+                }}
+              >
+                Atjaunot no jauna
+              </button>
+            ) : null}
             {props.thecarapi.note ? <p className="mt-2 text-[12px] text-[var(--color-apple-text)]">{props.thecarapi.note}</p> : null}
             {props.thecarapi.rows.length ? (
               <table className="mt-2 w-full text-left text-[12px]">
@@ -272,7 +291,10 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
                   .filter((row) => (row.fields?.length ?? 0) > 0 || (row.photos?.length ?? 0) > 0)
                   .map((row) => (
                     <section key={`${row.platform || row.source}-${row.auctionId || row.date}`} className="rounded-lg border border-slate-200 px-2 py-2">
-                      <h3 className="text-[12px] font-semibold">{row.venue || sourceLabel(row.source)} · {row.auctionId || row.date}</h3>
+                      <h3 className="text-[12px] font-semibold">
+                        {row.venue || sourceLabel(row.source)} · {row.auctionId || row.date}
+                        {row.archivedAt ? ` · arhīvā ${row.archivedAt.slice(0, 10)}` : ""}
+                      </h3>
                       {row.fields?.length ? (
                         <dl className="mt-1 grid grid-cols-1 gap-x-3 sm:grid-cols-2">
                           {row.fields.map((field) => (

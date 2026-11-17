@@ -10,9 +10,10 @@ import { syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
 import { vinScanAuctionsToCcVinParsed } from "@/lib/order-vin-scan";
 import { markThecarapiArchived, thecarapiArchiveInputs } from "@/lib/thecarapi-archive";
 import { storeThecarapiGallery, type ThecarapiGalleryFetch, type ThecarapiGalleryWrite } from "@/lib/thecarapi-photos";
+import { forgetArchiveCountsCache } from "@/lib/vin-memory-auction-store";
 import { addVinObservations } from "@/lib/vin-memory-store";
 import { readThecarapiVinCache, readThecarapiVinCacheRaw, writeThecarapiVinCache } from "@/lib/vin-scan/store";
-import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
+import { thecarapiJsonHasDetail, type ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 import {
   fetchThecarapiVinWithDetails,
   THECARAPI_SOURCE_ID,
@@ -31,6 +32,7 @@ export type ThecarapiAdminStatus = {
   used: number;
   cap: number;
   cache: { cachedAt: string; status: string; summary: string } | null;
+  cacheHasDetail: boolean;
   records: ThecarapiAdminRecord[];
 };
 
@@ -39,6 +41,7 @@ export async function thecarapiAdminStatus(vin = "", deps: ThecarapiDeps = {}): 
   const usage = await thecarapiUsageSnapshot(deps);
   const clean = vin.trim().toUpperCase();
   const cached = clean ? await readThecarapiVinCache(clean).catch(() => null) : null;
+  const records = cached?.records ?? [];
   return {
     enabled: thecarapiAdminEnabled(env),
     configured: thecarapiConfigured(env),
@@ -48,7 +51,8 @@ export async function thecarapiAdminStatus(vin = "", deps: ThecarapiDeps = {}): 
     cache: cached
       ? { cachedAt: cached.cachedAt, status: cached.parse.status, summary: cached.parse.summary }
       : null,
-    records: cached?.records ?? [],
+    cacheHasDetail: records.length > 0 && records.every((record) => !record.id || thecarapiJsonHasDetail(record.rawDetail) || thecarapiJsonHasDetail(record.raw)),
+    records,
   };
 }
 
@@ -120,12 +124,15 @@ export async function fetchThecarapiCcVinMerge(opts: {
   const previous = await readThecarapiVinCacheRaw(opts.vin).catch(() => null);
   let records = gallery.records;
   if (records.length > 0) {
-    const marked = markThecarapiArchived(records);
+    const marked = markThecarapiArchived(records, new Date().toISOString());
     const inputs = thecarapiArchiveInputs(opts.vin, marked);
     if (inputs.length > 0) {
       try {
-        await addVinObservations(inputs);
-        records = marked;
+        const written = await addVinObservations(inputs);
+        if (written.ok) {
+          records = marked;
+          if (written.added > 0 || written.updated > 0) await forgetArchiveCountsCache().catch(() => undefined);
+        }
       } catch {
         records = gallery.records;
       }

@@ -39,6 +39,8 @@ export type VinObservation = {
   fields?: VinMemoryField[];
   raw?: unknown;
   photos?: VinMemoryPhoto[];
+  /** Kad ieraksts ielikts mūsu arhīvā (ISO). Nav avota archived_at. */
+  archivedAt?: string;
 };
 
 export type VinMemoryEntry = {
@@ -74,6 +76,13 @@ function cleanDate(v: unknown): string | null {
   return m ? m[1] : null;
 }
 
+function cleanIsoStamp(v: unknown): string | undefined {
+  if (typeof v !== "string") return undefined;
+  const s = v.trim();
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(s)) return undefined;
+  return s.slice(0, 40);
+}
+
 function cleanShort(v: unknown, max = 80): string | undefined {
   if (typeof v !== "string") return undefined;
   const s = v.replace(/\s+/g, " ").trim();
@@ -95,6 +104,7 @@ export type VinObservationInput = {
   fields?: unknown;
   raw?: unknown;
   photos?: unknown;
+  archivedAt?: unknown;
 };
 
 /** Sakārto ievadi; `null`, ja VIN vai datums nederīgs. */
@@ -141,6 +151,8 @@ function extraObservation(input: VinObservationInput): Partial<VinObservation> {
   if (input.raw !== undefined && input.raw !== null) out.raw = input.raw;
   const photos = cleanPhotos(input.photos);
   if (photos.length) out.photos = photos;
+  const archivedAt = cleanIsoStamp(input.archivedAt);
+  if (archivedAt) out.archivedAt = archivedAt;
   return out;
 }
 
@@ -278,6 +290,7 @@ export function parseVinMemoryTable(raw: unknown): VinMemoryTable {
         fields: r.fields,
         raw: r.raw,
         photos: r.photos,
+        archivedAt: r.archivedAt,
       });
       observations.push({ ...obs, ...extra });
     }

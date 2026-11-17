@@ -109,7 +109,7 @@ export type CcVinBlockState = {
   /** Slēpt CheckCar.vin ūdenszīmi pirms foto saglabāšanas (noklusējums: izslēgts). */
   hidePhotoWatermarks?: boolean;
   pdfChecklist?: CcVinPdfChecklist;
-  /** TheCarApi pilnie ieraksti. Tikai admin, nav klienta PDF. */
+  /** TheCarApi pilnie ieraksti. Admin un klienta PDF. */
   thecarapiRecords?: ThecarapiAdminRecord[];
 };
 
@@ -192,7 +192,27 @@ export function ccVinAmountToEurDisplay(raw: string): string {
   return conversion?.display ?? t;
 }
 
-/** Cik faktu ierakstu ir blokā (PDF sadaļas galvenes plāksnītei). */
+/**
+ * Cik ierakstu PDF sadaļa tiešām izdrukā.
+ * Nobraukums ir nobraukuma sadaļā. Bojājums ar summu ir negadījumu tabulā.
+ * TheCarApi lots skaitās, ja tam ir lauki vai bildes.
+ */
+export function countCcVinPdfVisibleRecords(b: CcVinBlockState | null | undefined): number {
+  if (!b) return 0;
+  const lots = (b.thecarapiRecords ?? []).filter(
+    (record) => record.fields.some((field) => field.value.trim()) || record.photos.length > 0 || record.photoUrls.length > 0,
+  ).length;
+  return (
+    (b.damages ?? []).filter((row) => ccVinDamageRowHasData(row) && !row.amount.trim()).length +
+    (b.insurance ?? []).filter(ccVinRecordRowHasData).length +
+    (b.brands ?? []).filter(ccVinRecordRowHasData).length +
+    (b.titles ?? []).filter(ccVinTitleRowHasData).length +
+    (b.sales ?? []).filter(ccVinSaleRowHasData).length +
+    lots
+  );
+}
+
+/** Cik faktu ierakstu ir blokā (arī tie, kas PDF izsoļu sadaļā netiek drukāti). */
 export function countCcVinRecords(b: CcVinBlockState | null | undefined): number {
   if (!b) return 0;
   return (

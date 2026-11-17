@@ -11,6 +11,7 @@ type Status = {
   cap: number;
   cachedSummary: string;
   cachedAt: string;
+  cacheHasDetail?: boolean;
 };
 
 type Props = {
@@ -69,6 +70,7 @@ export function AdminThecarapiIngestBar({
           used?: number;
           cap?: number;
           cache?: { summary?: string; cachedAt?: string } | null;
+          cacheHasDetail?: boolean;
         } | null;
         if (!alive || !body) return;
         setStatus({
@@ -77,6 +79,7 @@ export function AdminThecarapiIngestBar({
           cap: typeof body.cap === "number" ? body.cap : 0,
           cachedSummary: body.cache?.summary || "",
           cachedAt: body.cache?.cachedAt || "",
+          cacheHasDetail: body.cacheHasDetail === true,
         });
       })
       .catch(() => undefined);
@@ -114,6 +117,7 @@ export function AdminThecarapiIngestBar({
         cap?: number;
         fromCache?: boolean;
         cachedAt?: string;
+        cacheHasDetail?: boolean;
       };
       if (typeof body.used === "number" || typeof body.cap === "number") {
         setStatus((prev) => ({
@@ -122,6 +126,7 @@ export function AdminThecarapiIngestBar({
           cap: typeof body.cap === "number" ? body.cap : prev?.cap ?? 0,
           cachedSummary: body.fromCache ? body.summary || prev?.cachedSummary || "" : prev?.cachedSummary || "",
           cachedAt: body.cachedAt || prev?.cachedAt || "",
+          cacheHasDetail: body.cacheHasDetail === true,
         }));
       }
       if (!res.ok || body.error) {
@@ -136,6 +141,7 @@ export function AdminThecarapiIngestBar({
         cap: typeof body.cap === "number" ? body.cap : prev?.cap ?? cap,
         cachedSummary: body.summary || prev?.cachedSummary || "",
         cachedAt: body.cachedAt || prev?.cachedAt || "",
+        cacheHasDetail: body.cacheHasDetail === true,
       }));
     } catch {
       setError(errorLv("upstream_error"));
@@ -144,9 +150,10 @@ export function AdminThecarapiIngestBar({
     }
   };
 
+  const detailMissing = cached && status?.cacheHasDetail === false;
   const onClick = () => {
     if (!enabled) return;
-    if (cached) {
+    if (cached && !detailMissing) {
       const ok = window.confirm(
         `Šim VIN jau ir TheCarApi kešs${status?.cachedAt ? ` (${status.cachedAt.slice(0, 10)})` : ""}. Atjaunot (maksas)?`,
       );
@@ -155,6 +162,12 @@ export function AdminThecarapiIngestBar({
       return;
     }
     void load(false);
+  };
+  const onForce = () => {
+    if (!enabled || !vin) return;
+    const ok = window.confirm("Atjaunot TheCarApi no jauna (maksas)? Kešs tiks ignorēts.");
+    if (!ok) return;
+    void load(true);
   };
 
   return (
@@ -176,8 +189,18 @@ export function AdminThecarapiIngestBar({
         disabled={!editable || busy || !vin || !enabled}
         onClick={onClick}
       >
-        {busy ? "Ielādē…" : !enabled ? DISABLED : cached ? "Atjaunot (maksas)" : "Ielādēt EU izsoles (TheCarApi)"}
+        {busy ? "Ielādē…" : !enabled ? DISABLED : detailMissing ? "Ielādēt detaļas (maksas)" : cached ? "Atjaunot (maksas)" : "Ielādēt EU izsoles (TheCarApi)"}
       </button>
+      {enabled ? (
+        <button
+          type="button"
+          className="ml-2 rounded-md border border-slate-300 bg-white px-2.5 py-1 text-[11px] font-semibold text-[var(--color-apple-text)] disabled:opacity-50"
+          disabled={!editable || busy || !vin}
+          onClick={onForce}
+        >
+          Atjaunot no jauna
+        </button>
+      ) : null}
       {error ? <p className="mt-1.5 text-[10px] text-red-700">{error}</p> : null}
     </div>
   );

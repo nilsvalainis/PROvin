@@ -72,12 +72,12 @@ function sectionOf(key: string): SectionTitle {
   const full = key.toLowerCase();
   if (leaf === "provin_archive" || BASIC_KEYS.has(leaf)) return "Pamatdati";
   if (
-    /image|gallery|^photos$|^url$|^href$|^src$|image_index|image_source|image_status|image_url/.test(leaf) ||
-    /imageurls|imagevault|subareaimages|gallery|auction_images/.test(full)
+    /image|gallery|documentphoto|videourl|thumbnail|vault_gallery|served_url|^photos$|^url$|^href$|^src$|image_index|image_source|image_status|image_url/i.test(leaf) ||
+    /imageurls|imagevault|subareaimages|documentphoto|videourl|gallery|auction_images|thumbnail/.test(full)
   ) {
     return "Bildes";
   }
-  if (/equipment|^options$|^features$/.test(leaf) || full.startsWith("equipment")) return "Aprīkojums";
+  if (/equipment|^options$|^features$/i.test(leaf) || /equipment/.test(full)) return "Aprīkojums";
   if (/service/.test(full)) return "Serviss";
   if (/damage|zone|subarea|severity/.test(full)) return "Bojājumi";
   if (/_at$|_date$|^date$|^first_seen$|^last_seen$|^server_time$/.test(leaf)) return "Datumi";

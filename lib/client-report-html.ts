@@ -117,7 +117,7 @@ import {
   CC_VIN_PDF_SOURCE_LABEL,
   CC_VIN_PDF_TITLE,
   ccVinBlockHasContent,
-  countCcVinRecords,
+  countCcVinPdfVisibleRecords,
   type CcVinBlockState,
 } from "@/lib/cc-vin-report";
 import { thecarapiPdfGroupTitle } from "@/lib/vin-scan/thecarapi-fields";
@@ -631,7 +631,7 @@ function collectPdfCheckedSources(
     out.push({ label: PDF_SOURCE_DEALER_TITLE, count: dealerPdfRecordCount(ar) });
   }
   if (payloadCcVinHasData(p, vis)) {
-    out.push({ label: CC_VIN_PDF_SOURCE_LABEL, count: countCcVinRecords(p.ccVinBlock) });
+    out.push({ label: CC_VIN_PDF_SOURCE_LABEL, count: countCcVinPdfVisibleRecords(p.ccVinBlock) });
   }
   if (payloadAsvHasData(p, vis)) {
     out.push({ label: ASV_PDF_SOURCE_LABEL, count: countAsvRecords(p.asvBlock) });
@@ -2005,7 +2005,7 @@ function buildCcVinAvotuSubsection(
   const head = sectionHeadBrand(
     sectionIconPdfHtml("globe"),
     CC_VIN_PDF_TITLE,
-    sourceRecordCountBadgeHtml(b ? countCcVinRecords(b) : 0),
+    sourceRecordCountBadgeHtml(b ? countCcVinPdfVisibleRecords(b) : 0),
   );
   const bodyParts = [sparkHtml, inner, photosHtml, comments ? pdfAvotuCommentIsland(comments) : ""].filter(
     Boolean,

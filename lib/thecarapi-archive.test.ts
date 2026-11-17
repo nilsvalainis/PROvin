@@ -58,5 +58,15 @@ describe("thecarapiArchiveInputs", () => {
     const savedFields = inputs[0]?.fields;
     expect(Array.isArray(savedFields) ? savedFields[0] : null).toMatchObject({ label: "Arhīvā", value: "jā" });
     expect(markThecarapiArchived(marked)[0]?.fields.filter((field) => field.key === "provin_archive")).toHaveLength(1);
+    const stamped = markThecarapiArchived([record("A-9")], "2026-11-17T18:20:00.000Z");
+    expect(stamped[0]?.fields.find((field) => field.key === "archived_at")).toEqual({
+      key: "archived_at",
+      label: "Ielikts arhīvā",
+      value: "2026-11-17T18:20:00.000Z",
+    });
+    const saved = thecarapiArchiveInputs(VIN, stamped);
+    expect(saved[0]?.archivedAt).toBe("2026-11-17T18:20:00.000Z");
+    const table = mergeObservations({}, saved, new Date("2026-11-17T18:20:00.000Z"));
+    expect(table.table[VIN]?.observations[0]?.archivedAt).toBe("2026-11-17T18:20:00.000Z");
   });
 });

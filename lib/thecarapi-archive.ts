@@ -27,14 +27,22 @@ function kmOf(record: ThecarapiAdminRecord): number | null {
   return Number.isFinite(n) && n > 0 && n < 5_000_000 ? Math.round(n) : null;
 }
 
+function filledStamp(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value.trim());
+}
+
 /** Pēc saglabāšanas VIN atmiņā lauks rāda, ka ieraksts ir mūsu arhīvā. */
-export function markThecarapiArchived(records: readonly ThecarapiAdminRecord[]): ThecarapiAdminRecord[] {
+export function markThecarapiArchived(
+  records: readonly ThecarapiAdminRecord[],
+  archivedAt = "",
+): ThecarapiAdminRecord[] {
+  const stamp = filledStamp(archivedAt) ? archivedAt.trim().slice(0, 40) : "";
   return records.map((record) => {
-    if (record.fields.some((field) => field.key === "provin_archive")) return record;
-    return {
-      ...record,
-      fields: [{ key: "provin_archive", label: "Arhīvā", value: "jā" }, ...record.fields],
-    };
+    let fields = record.fields.filter((field) => field.key !== "provin_archive" && !(stamp && field.key === "archived_at"));
+    const next = [{ key: "provin_archive", label: "Arhīvā", value: "jā" }, ...fields];
+    if (stamp) next.splice(1, 0, { key: "archived_at", label: "Ielikts arhīvā", value: stamp });
+    fields = next;
+    return { ...record, fields };
   });
 }
 
@@ -74,6 +82,7 @@ export function thecarapiArchiveInputs(vin: string, records: readonly ThecarapiA
         sourceUrl: photo.sourceUrl,
         contentHash: photo.contentHash,
       })),
+      archivedAt: fieldValue(record, ["archived_at"]) || undefined,
     });
   }
   return out;

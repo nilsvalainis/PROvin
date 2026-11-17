@@ -32,6 +32,7 @@ describe("AdminThecarapiIngestBar", () => {
       />,
     );
     expect(text).toContain("Ielādēt EU izsoles (TheCarApi)");
+    expect(text).toContain("Atjaunot no jauna");
     expect(text).toContain("maksas izsaukums · šomēnes 3/150");
   });
 

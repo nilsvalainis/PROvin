@@ -21,6 +21,8 @@ export type ThecarapiAuctionRef = {
   site: string;
   id: string;
   active: boolean;
+  /** Tikai `/api/auction/...` no vēstures rindas. Tukšs = būvējam no site un id. */
+  detailPath?: string;
 };
 
 export type ThecarapiDetailParsed = {
@@ -155,13 +157,39 @@ export function thecarapiAbsoluteUrl(baseUrl: string, detailPath: string, site: 
 
 function stampOf(row: Record<string, unknown>): string {
   return (
+    isoDay(row.auction_date) ||
+    isoDay(row.sale_date) ||
+    isoDay(row.end_date) ||
+    isoDay(row.start_date) ||
+    isoDay(row.date) ||
+    isoDay(row.auctionDate) ||
+    isoDay(row.auction_end_at) ||
+    isoDay(row.batch_start_date) ||
+    isoDay(row.last_changed_at) ||
     isoDay(row.last_seen_at) ||
     isoDay(row.first_seen_at) ||
     isoDay(row.last_seen) ||
     isoDay(row.first_seen) ||
-    isoDay(row.date) ||
     isoDay(row.data_updated_at)
   );
+}
+
+function safeDetailPath(raw: unknown): string {
+  const path = text(raw);
+  return path.startsWith("/api/auction/") ? path : "";
+}
+
+export function thecarapiRefFromParts(site: unknown, id: unknown, detailPath = "", active = false): ThecarapiAuctionRef | null {
+  let slug = siteSlug(site);
+  let lot = auctionId(id);
+  const path = safeDetailPath(detailPath);
+  const match = /^\/api\/auction\/([^/]+)\/([^/?#]+)/.exec(path);
+  if (match) {
+    if (!slug) slug = siteSlug(decodeURIComponent(match[1] ?? ""));
+    if (!lot) lot = auctionId(decodeURIComponent(match[2] ?? ""));
+  }
+  if (!slug || !lot) return null;
+  return { site: slug, id: lot, active, ...(path ? { detailPath: path } : {}) };
 }
 
 function pendingFlag(raw: unknown, depth: number): boolean {
@@ -188,8 +216,29 @@ export function thecarapiHistoryRefs(json: unknown): ThecarapiAuctionRef[] {
     const key = `${site}:${id}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push({ site, id, active: row.is_active === true });
+    const ref = thecarapiRefFromParts(site, id, safeDetailPath(row.detail_path), row.is_active === true);
+    if (ref) out.push(ref);
     if (out.length >= 100) break;
+  }
+  return out;
+}
+
+/** Vecs kešs var būt bez refs. Tad detail ceļu ņem no ieraksta detail_path. */
+export function thecarapiRefsFromRecords(
+  records: readonly Pick<ThecarapiAdminRecord, "site" | "id" | "fields" | "rawHistory">[],
+): ThecarapiAuctionRef[] {
+  const out: ThecarapiAuctionRef[] = [];
+  const seen = new Set<string>();
+  for (const record of records) {
+    const fromField = record.fields.find((field) => field.key === "detail_path")?.value ?? "";
+    const history = asRecord(record.rawHistory);
+    const path = safeDetailPath(fromField) || safeDetailPath(history?.detail_path);
+    const ref = thecarapiRefFromParts(record.site, record.id, path, false);
+    if (!ref) continue;
+    const key = `${ref.site}:${ref.id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(ref);
   }
   return out;
 }
@@ -305,6 +354,7 @@ export function buildThecarapiAdminRecords(input: {
     const site = siteSlug(row.site_name ?? row.site ?? row.platform);
     const id = auctionId(row.auction_id ?? row.id ?? row.auctionId);
     if (site && id) detailByKey.set(thecarapiRecordKey(site, id), row);
+    if (id && !detailByKey.has(`:${id}`)) detailByKey.set(`:${id}`, row);
   }
   const historyRows = rowsOf(input.historyJson);
   const sourceRows = historyRows.length > 0 ? historyRows : details;
@@ -317,7 +367,7 @@ export function buildThecarapiAdminRecords(input: {
     if (key && seen.has(key)) continue;
     if (key) seen.add(key);
     const history = historyRows.includes(row) ? row : historyRows.find((item) => thecarapiRecordKey(siteSlug(item.site_name ?? item.site), auctionId(item.auction_id ?? item.id)) === key) ?? null;
-    const detail = (key && detailByKey.get(key)) || (!historyRows.length ? row : null);
+    const detail = (key && detailByKey.get(key)) || (id && detailByKey.get(`:${id}`)) || (!historyRows.length ? row : null);
     const images = key ? input.imagesByKey?.[key] ?? null : null;
     const merged = mergeThecarapiRaw(history, detail, images);
     const photoDate = thecarapiPhotoDate(merged);

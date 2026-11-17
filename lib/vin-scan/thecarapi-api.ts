@@ -14,6 +14,7 @@ import {
   parseThecarapiHistory,
   thecarapiAbsoluteUrl,
   thecarapiPayloadPending,
+  thecarapiRefsFromRecords,
   type ThecarapiAuctionRef,
   type ThecarapiDetailParsed,
   thecarapiAuctionBody,
@@ -29,7 +30,7 @@ import {
   thecarapiUsageMonth,
   type ThecarapiEnv,
 } from "@/lib/vin-scan/thecarapi-flags";
-import { thecarapiRecordKey, type ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
+import { thecarapiJsonHasDetail, thecarapiRecordKey, type ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 import {
   readThecarapiDetailCache,
   readThecarapiDetailCacheRaw,
@@ -331,7 +332,7 @@ export async function fetchThecarapiVinHistory(
 function detailUrl(base: string, refs: readonly ThecarapiAuctionRef[]): string {
   if (refs.length === 1) {
     const ref = refs[0]!;
-    return thecarapiAbsoluteUrl(base, "", ref.site, ref.id);
+    return thecarapiAbsoluteUrl(base, ref.detailPath || "", ref.site, ref.id);
   }
   const ids = refs.map((ref) => `${ref.site}:${ref.id}`).join(",");
   return `${base}/api/auction/batch?ids=${encodeURIComponent(ids)}`;
@@ -359,7 +360,7 @@ export async function fetchThecarapiDetails(
     const key = `${site}:${id}`;
     if (seen.has(key)) continue;
     seen.add(key);
-    unique.push({ site, id, active: ref.active });
+    unique.push({ site, id, active: ref.active, detailPath: ref.detailPath });
     if (unique.length >= 100) break;
   }
   if (!thecarapiCallsAllowed(env) || unique.length === 0) {
@@ -372,9 +373,11 @@ export async function fetchThecarapiDetails(
   if (!deps.skipCache) {
     for (const ref of unique) {
       const cached = await readThecarapiDetailCache(ref.site, ref.id).catch(() => null);
-      if (cached) {
+      if (cached && thecarapiJsonHasDetail(cached.json)) {
         fresh.push(parseThecarapiDetail(cached.json));
         rawByKey[thecarapiRecordKey(ref.site, ref.id)] = cached.json;
+      } else if (cached && thecarapiDetailAbsent(cached.json)) {
+        /* 200 jau pārbaudīts, šī lota atbildē nebija. Vairs nemaksājam. */
       } else stale.push(ref);
     }
   } else {
@@ -385,7 +388,8 @@ export async function fetchThecarapiDetails(
   }
 
   const base = thecarapiBaseUrl(env);
-  const single = stale.length === 1 ? await readThecarapiDetailCacheRaw(stale[0]!.site, stale[0]!.id).catch(() => null) : null;
+  const singleRaw = stale.length === 1 ? await readThecarapiDetailCacheRaw(stale[0]!.site, stale[0]!.id).catch(() => null) : null;
+  const single = singleRaw && thecarapiJsonHasDetail(singleRaw.json) ? singleRaw : null;
   const url = detailUrl(base, stale);
   const call = await thecarapiCall(url, deps, single?.etag);
   if (call.raw.status === 304 && single) {
@@ -419,6 +423,8 @@ export async function fetchThecarapiDetails(
     if (!site || !id || detail.pending) continue;
     const body = call.raw.json && stale.length === 1 ? call.raw.json : detailBody(call.raw.json, detail);
     rawByKey[thecarapiRecordKey(site, id)] = body;
+    const asked = stale.find((item) => item.id === id && item.site === site);
+    if (asked) rawByKey[thecarapiRecordKey(asked.site, asked.id)] = body;
     await writeThecarapiDetailCache({
       site,
       id,
@@ -426,6 +432,32 @@ export async function fetchThecarapiDetails(
       active: detail.active,
       json: body,
       etag: stale.length === 1 ? call.raw.etag || undefined : undefined,
+    }).catch(() => undefined);
+  }
+  if (stale.length === 1 && call.raw.json != null && thecarapiJsonHasDetail(call.raw.json)) {
+    const ref = stale[0]!;
+    const key = thecarapiRecordKey(ref.site, ref.id);
+    if (rawByKey[key] == null) {
+      rawByKey[key] = call.raw.json;
+      await writeThecarapiDetailCache({
+        site: ref.site,
+        id: ref.id,
+        cachedAt,
+        active: ref.active,
+        json: call.raw.json,
+        etag: call.raw.etag || undefined,
+      }).catch(() => undefined);
+    }
+  }
+  for (const ref of stale) {
+    const key = thecarapiRecordKey(ref.site, ref.id);
+    if (rawByKey[key] != null) continue;
+    await writeThecarapiDetailCache({
+      site: ref.site,
+      id: ref.id,
+      cachedAt,
+      active: ref.active,
+      json: { detail_absent: true },
     }).catch(() => undefined);
   }
   return {
@@ -504,19 +536,22 @@ export async function fetchThecarapiAuctionImages(
   return { byKey, billable };
 }
 
+function thecarapiDetailAbsent(raw: unknown): boolean {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return false;
+  return (raw as { detail_absent?: unknown }).detail_absent === true && !thecarapiJsonHasDetail(raw);
+}
+
+function recordHasDetail(record: ThecarapiAdminRecord): boolean {
+  return thecarapiJsonHasDetail(record.rawDetail) || thecarapiJsonHasDetail(record.raw);
+}
+
 function thecarapiCacheHasDetail(
   records: readonly ThecarapiAdminRecord[],
   refs: readonly ThecarapiAuctionRef[],
 ): boolean {
   if (refs.length === 0 || records.length === 0) return false;
-  return refs.some((ref) =>
-    records.some(
-      (record) =>
-        record.site === ref.site &&
-        record.id === ref.id &&
-        record.rawDetail != null &&
-        typeof record.rawDetail === "object",
-    ),
+  return refs.every((ref) =>
+    records.some((record) => record.site === ref.site && record.id === ref.id && recordHasDetail(record)),
   );
 }
 
@@ -533,6 +568,9 @@ export async function fetchThecarapiVinWithDetails(
   deps: ThecarapiDeps = {},
 ): Promise<ThecarapiHistoryResult & { detailsBillable: boolean }> {
   let history = await fetchThecarapiVinHistory(vin, deps);
+  if (history.refs.length === 0 && history.records.length > 0) {
+    history = { ...history, refs: thecarapiRefsFromRecords(history.records) };
+  }
   if (history.parse.status !== "found" || history.refs.length === 0) {
     return { ...history, detailsBillable: false };
   }

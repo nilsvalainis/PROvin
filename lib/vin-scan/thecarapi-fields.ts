@@ -85,6 +85,15 @@ export const THECARAPI_FIELD_LABELS: Record<string, string> = {
   image_vault_images: "Bildes arhīvs",
   subAreaImages: "Zonas bildes",
   sub_area_images: "Zonas bildes",
+  DocumentPhotos: "Dokumentu bildes",
+  document_photos: "Dokumentu bildes",
+  VideoUrls: "Video",
+  video_urls: "Video",
+  vault_gallery: "Bildes arhīvs",
+  thumbnail_url: "Sīktēls",
+  picture_count: "Bilžu skaits",
+  served_url: "Servētā saite",
+  is_primary: "Galvenā bilde",
   gallery: "Galerija",
   images: "Bildes",
   photos: "Bildes",
@@ -92,6 +101,10 @@ export const THECARAPI_FIELD_LABELS: Record<string, string> = {
   image_index: "Bildes indekss",
   image_source: "Bildes avots",
   image_status: "Bildes statuss",
+  auction_end_at: "Izsoles beigas",
+  batch_start_date: "Partijas sākums",
+  last_changed_at: "Pēdējās izmaiņas",
+  archived_at: "Ielikts arhīvā",
   data_updated_at: "Dati atjaunoti",
   url: "Saite",
   equipment: "Aprīkojums",
@@ -125,6 +138,13 @@ const IMAGE_COLLECTION_KEYS = new Set([
   "image_vault_images",
   "subAreaImages",
   "sub_area_images",
+  "DocumentPhotos",
+  "document_photos",
+  "VideoUrls",
+  "video_urls",
+  "vault_gallery",
+  "thumbnail_url",
+  "ThumbnailUrl",
   "gallery",
   "images",
   "photos",
@@ -140,6 +160,10 @@ const PHOTO_URL_KEYS = [
   "ServiceImageUrls",
   "ImageVaultImages",
   "subAreaImages",
+  "DocumentPhotos",
+  "VideoUrls",
+  "vault_gallery",
+  "thumbnail_url",
   "gallery",
   "images",
   "photos",
@@ -233,12 +257,51 @@ export function thecarapiPhotoDate(row: Record<string, unknown>): string {
     if (day) return day;
   }
   return (
+    isoDay(row.auction_end_at) ||
+    isoDay(row.batch_start_date) ||
+    isoDay(row.last_changed_at) ||
     isoDay(row.first_seen_at) ||
     isoDay(row.last_seen_at) ||
     isoDay(row.first_seen) ||
     isoDay(row.last_seen) ||
     isoDay(row.data_updated_at)
   );
+}
+
+const DETAIL_BODY_KEYS = new Set([
+  "images",
+  "car_identification",
+  "ImageUrls",
+  "image_urls",
+  "DamageImageUrls",
+  "ServiceImageUrls",
+  "ImageVaultImages",
+  "DocumentPhotos",
+  "VideoUrls",
+  "subAreaImages",
+  "vault_gallery",
+  "thumbnail_url",
+  "picture_count",
+  "Auto1Details",
+  "DamagesV3",
+  "DamagesStructured",
+  "gallery",
+  "photos",
+]);
+
+/** Search/history rinda ir plakana un satur tikai detail_path. Detaļa ir auction.images vai car_identification. */
+export function thecarapiJsonHasDetail(raw: unknown, depth = 0): boolean {
+  if (depth > 3 || raw == null) return false;
+  if (Array.isArray(raw)) return raw.some((item) => thecarapiJsonHasDetail(item, depth + 1));
+  const rec = asRecord(raw);
+  if (!rec) return false;
+  for (const [key, value] of Object.entries(rec)) {
+    if (value == null || value === "") continue;
+    if (Array.isArray(value) && value.length === 0) continue;
+    if (DETAIL_BODY_KEYS.has(key)) return true;
+    if ((key === "auction" || key === "auctions") && thecarapiJsonHasDetail(value, depth + 1)) return true;
+  }
+  return false;
 }
 
 function pushHttps(raw: string, out: string[], seen: Set<string>): void {

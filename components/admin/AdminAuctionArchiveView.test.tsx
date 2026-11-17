@@ -141,6 +141,7 @@ describe("AdminAuctionArchiveView", () => {
       />,
     );
     expect(text).toContain("Pārbaudīt TheCarApi (maksas)");
+    expect(text).toContain("Atjaunot no jauna");
     expect(text).toContain("maksas izsaukums · šomēnes 4/150");
   });
 });
