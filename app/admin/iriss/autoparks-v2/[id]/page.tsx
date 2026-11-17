@@ -4,6 +4,8 @@ import { AutoparksV2Cabinet } from "@/components/admin/iriss-autoparks-v2/Autopa
 import { autoparksV2Basics } from "@/lib/iriss-autoparks-v2";
 import { getAutoparksV2PageActor } from "@/lib/iriss-autoparks-v2-access";
 import { readAutoparksV2Car } from "@/lib/iriss-autoparks-v2-store";
+import { readAutoparksRegistryImportStamp } from "@/lib/iriss-autoparks-registry-dropbox";
+import { registryFreshness } from "@/lib/iriss-autoparks-registry-freshness";
 import { staffHasSection } from "@/lib/staff-roles";
 import { buildAutoparksTransit, type AutoparksTransit } from "@/lib/iriss-autoparks-transit";
 import { isLogisticsOrderActive } from "@/lib/iriss-logistics-archive";
@@ -23,7 +25,7 @@ export default async function AutoparksV2CarPage({ params }: Props) {
   const access = await getAutoparksV2PageActor();
   if (!access) redirect("/admin/iriss");
   const { id } = await params;
-  const found = await readAutoparksV2Car(id);
+  const [found, registryStamp] = await Promise.all([readAutoparksV2Car(id), readAutoparksRegistryImportStamp()]);
   if (!found) notFound();
   // "Izveidot piedāvājumu" tikai ar Pasūtījumu tiesību (j20 Nila atbilde 5).
   const canCreateOffer = access.actor.kind === "admin" || staffHasSection(access.actor.user, "pasutijumi");
@@ -46,6 +48,7 @@ export default async function AutoparksV2CarPage({ params }: Props) {
       perms={access.perms}
       canCreateOffer={canCreateOffer}
       canWaybill={canWaybill}
+      registryFresh={registryFreshness(registryStamp)}
     />
   );
 }
