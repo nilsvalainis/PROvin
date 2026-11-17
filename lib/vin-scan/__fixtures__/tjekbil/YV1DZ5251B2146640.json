@@ -1,0 +1,14 @@
+{
+  "_meta": {
+    "url": "https://www.tjekbil.dk/api/v3/dmr/vin/YV1DZ5251B2146640",
+    "status": 404,
+    "fetchedAt": "2026-11-17",
+    "note": "Reāla atbilde; personas dati izņemti ar scripts/vin-scan-refresh-fixtures.mjs"
+  },
+  "body": {
+    "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+    "title": "Not Found",
+    "status": 404,
+    "traceId": "00-067c467bfcb23cc3454fb1380350ec00-1917a3b32203fd61-00"
+  }
+}

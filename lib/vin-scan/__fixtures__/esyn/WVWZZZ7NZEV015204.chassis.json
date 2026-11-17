@@ -1,0 +1,17 @@
+{
+  "_meta": {
+    "url": "https://findsynsrapport.esyn.dk/webapi/v1/chassis/WVWZZZ7NZEV015204",
+    "status": 200,
+    "fetchedAt": "2026-11-17",
+    "note": "Reāla atbilde; personas dati izņemti ar scripts/vin-scan-refresh-fixtures.mjs"
+  },
+  "body": [
+    {
+      "kiDnumber": "",
+      "registrationNumber": "",
+      "chassisNumber": "WVWZZZ7NZEV015204",
+      "model": "SHARAN",
+      "make": "VOLKSWAGEN"
+    }
+  ]
+}

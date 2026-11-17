@@ -1,0 +1,17 @@
+{
+  "_meta": {
+    "url": "https://findsynsrapport.esyn.dk/webapi/v1/chassis/VF12RFL1H49621453",
+    "status": 200,
+    "fetchedAt": "2026-11-17",
+    "note": "Reāla atbilde; personas dati izņemti ar scripts/vin-scan-refresh-fixtures.mjs"
+  },
+  "body": [
+    {
+      "kiDnumber": "9000000000487315",
+      "registrationNumber": "AB12345",
+      "chassisNumber": "VF12RFL1H49621453",
+      "model": "Captur",
+      "make": "Renault"
+    }
+  ]
+}
