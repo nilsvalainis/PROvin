@@ -1,0 +1,1175 @@
+{
+ "vin": "WBA7J21040G829261",
+ "label": "BMW 740LE XDRIVE IPERFORMANCE: CSDD 2, AutoDNA 3, carVertical 18, dīleris 16, citi 1; negadījumi 0",
+ "source": "prod pasūtījuma melnraksts (manual), revīzija 69, saglabāts 2026-11-06; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW 740LE XDRIVE IPERFORMANCE",
+   "registrationNumber": "OP1862",
+   "firstRegistration": "2017-04-20",
+   "firstRegistrationLatvia": "2026-06-26",
+   "nextInspectionDate": "2027-07-02",
+   "prevInspectionDate": "2026-07-02",
+   "engineDisplacementCm3": "1998",
+   "enginePowerKw": "190",
+   "fuelType": "Elektrība un benzīns",
+   "emissionStandard": "",
+   "vehicleType": "Vieglais pasažieru (M1)",
+   "grossMassKg": "2655",
+   "curbMassKg": "2075",
+   "seatCount": "5",
+   "roadTaxEur": "",
+   "registrationStatus": "Noņemts no uzskaites",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "SOMIJA",
+   "ownerCountLatvia": "1",
+   "vin": "WBA7J21040G829261",
+   "modelYear": "2017",
+   "color": "Pelēka",
+   "electricPowerKw": "83",
+   "electricPowerKw2": "",
+   "cocCategory": "M1",
+   "cocType": "7L",
+   "cocApprovalNumber": "e1*2007/46*0276*15",
+   "cocVariant": "7J21",
+   "cocVersion": "CA150000",
+   "insuranceValidUntil": "",
+   "technicalInspectionHistory": [
+    {
+     "date": "02.07.2026",
+     "inspectionType": "",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "01.07.2026",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "2 - Ar mēneša laikā labojamiem defektiem",
+     "ratingLevel": 2,
+     "maxDefectLevel": 2,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": [
+      {
+       "code": "1.2.1.",
+       "rating": "2",
+       "description": "Palielinātas bremzēšanas spēku svārstības ritenim."
+      }
+     ]
+    }
+   ],
+   "ownerRegistrationEvents": [
+    {
+     "date": "26.06.2026",
+     "label": "Pirmā reģistrācija Latvijā"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "pamatpārbaude",
+    "inspectionDateText": "01.07.2026",
+    "nextInspectionDateText": "",
+    "odometer": "202242",
+    "ratingLabel": "2 - Ar mēneša laikā labojamiem defektiem",
+    "ratingLevel": 2,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": [
+     {
+      "code": "1.2.1.",
+      "rating": "2",
+      "description": "Palielinātas bremzēšanas spēku svārstības ritenim."
+     }
+    ]
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "02.07.2026",
+     "odometer": "202265",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2026",
+     "odometer": "202242",
+     "country": "Latvija"
+    }
+   ],
+   "registry": {
+    "nr1": "WBA7J21040G829261",
+    "fetchedAt": "2026-11-06T08:35:15.888Z",
+    "data": {
+     "registrationNumber": "OP1862",
+     "vin": "WBA7J21040G829261",
+     "make": "BMW",
+     "model": "740LE XDRIVE IPERFORMANCE",
+     "year": "2017",
+     "fuel": "Elektrība un benzīns",
+     "powerKw": "190",
+     "electricPowerKw": "83",
+     "electricPowerKw2": "",
+     "displacementCm3": "1998",
+     "firstRegistrationIso": "2017-04-20",
+     "color": "Pelēka",
+     "vehicleKind": "Vieglais pasažieru",
+     "cocCategory": "M1",
+     "cocType": "7L",
+     "cocApprovalNumber": "e1*2007/46*0276*15",
+     "cocVariant": "7J21",
+     "cocVersion": "CA150000",
+     "grossMassKg": "2655",
+     "curbMassKg": "2075",
+     "insuranceEndIso": "",
+     "inspectionValidUntilIso": "2027-07-02"
+    }
+   }
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "02.07.2026",
+     "odometer": "202265",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2026",
+     "odometer": "202242",
+     "country": "Latvija"
+    },
+    {
+     "date": "03.02.2021",
+     "odometer": "114784",
+     "country": "Beļģija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "02.07.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "202265",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.07.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Neizgāja",
+     "odometer": "202242",
+     "includeInPdf": false
+    },
+    {
+     "date": "29.06.2026",
+     "country": "Latvija",
+     "description": "Transportlīdzekļa noņemšana no uzskaites",
+     "includeInPdf": false
+    },
+    {
+     "date": "03.02.2021",
+     "country": "Beļģija",
+     "description": "Automašīna tiek piedāvāta pārdošanai",
+     "odometer": "114784",
+     "includeInPdf": false
+    },
+    {
+     "date": "20.04.2017",
+     "country": "",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.06.2026",
+     "odometer": "201480",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.08.2025",
+     "odometer": "200500",
+     "country": "Somija"
+    },
+    {
+     "date": "01.04.2025",
+     "odometer": "189930",
+     "country": "Somija"
+    },
+    {
+     "date": "01.06.2024",
+     "odometer": "169959",
+     "country": "Somija"
+    },
+    {
+     "date": "01.03.2023",
+     "odometer": "145277",
+     "country": "Somija"
+    },
+    {
+     "date": "01.07.2022",
+     "odometer": "128705",
+     "country": "Somija"
+    },
+    {
+     "date": "01.03.2021",
+     "odometer": "114863",
+     "country": "Somija"
+    },
+    {
+     "date": "01.02.2021",
+     "odometer": "114284",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.09.2020",
+     "odometer": "104077",
+     "country": "Luksemburga"
+    },
+    {
+     "date": "01.06.2020",
+     "odometer": "88025",
+     "country": "Luksemburga"
+    },
+    {
+     "date": "01.03.2020",
+     "odometer": "83419",
+     "country": "Luksemburga"
+    },
+    {
+     "date": "01.08.2019",
+     "odometer": "66325",
+     "country": "Luksemburga"
+    },
+    {
+     "date": "01.05.2019",
+     "odometer": "59428",
+     "country": "Luksemburga"
+    },
+    {
+     "date": "01.11.2018",
+     "odometer": "45448",
+     "country": "Luksemburga"
+    },
+    {
+     "date": "01.07.2018",
+     "odometer": "32858",
+     "country": "Luksemburga"
+    },
+    {
+     "date": "01.01.2018",
+     "odometer": "19302",
+     "country": "Luksemburga"
+    },
+    {
+     "date": "01.06.2017",
+     "odometer": "2071",
+     "country": "Luksemburga"
+    },
+    {
+     "date": "01.04.2017",
+     "odometer": "2",
+     "country": "Luksemburga"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.03.2017",
+     "country": "",
+     "description": "Ražots",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.04.2017",
+     "country": "",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2021",
+     "country": "Beļģija",
+     "description": "Izlikts pārdošanā Balstoties uz sludinājuma datiem, šis spēkrats ir ticis izlikts pārdošanā. Reizēm valsts, kurā ir publicēts sludinājums, var atšķirties no transportlīdzekļa patiesās atrašanās vietas",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2021",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:16.03.2021līdz:17.12.2021",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2021",
+     "country": "Somija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.09.2021",
+     "country": "Somija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.09.2021",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:29.09.2021līdz:08.11.2022",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.09.2021",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:29.09.2021līdz:29.09.2021",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.09.2021",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:29.09.2021līdz:25.11.2021",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.09.2021",
+     "country": "Somija",
+     "description": "Reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2021",
+     "country": "Somija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2022",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:09.11.2022līdz:02.07.2023",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2022",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:09.11.2022līdz:09.11.2022",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2023",
+     "country": "Somija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.07.2023",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:03.07.2023līdz:24.10.2023",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2023",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:25.10.2023līdz:01.06.2025",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2023",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:25.10.2023līdz:25.10.2023",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2023",
+     "country": "Somija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.04.2025",
+     "country": "Somija",
+     "description": "Nenokārtoja tehnisko apskatiŠim transportlīdzeklim ir fiksēta nenokārtota apskate. Tas var būt noticis neizietu",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.04.2025",
+     "country": "Somija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.08.2025",
+     "country": "Somija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.06.2026",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.06.2026",
+     "country": "Latvija",
+     "description": "Reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.07.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "29.09.2021",
+     "odometer": "",
+     "country": "Somija",
+     "event": "Pirmā reģistrācija Somijā"
+    },
+    {
+     "date": "20.04.2017",
+     "odometer": "",
+     "country": "",
+     "event": "Nodošana ekspluatācijā"
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "14.08.2025",
+     "odometer": "201311",
+     "country": "Somija"
+    },
+    {
+     "date": "17.04.2025",
+     "odometer": "190047",
+     "country": ""
+    },
+    {
+     "date": "04.06.2024",
+     "odometer": "170459",
+     "country": "Somija"
+    },
+    {
+     "date": "05.07.2022",
+     "odometer": "129205",
+     "country": ""
+    },
+    {
+     "date": "09.09.2020",
+     "odometer": "104577",
+     "country": "Luksemburga"
+    },
+    {
+     "date": "21.07.2020",
+     "odometer": "95549",
+     "country": ""
+    },
+    {
+     "date": "18.06.2020",
+     "odometer": "88225",
+     "country": "Luksemburga"
+    },
+    {
+     "date": "01.03.2020",
+     "odometer": "83619",
+     "country": ""
+    },
+    {
+     "date": "14.08.2019",
+     "odometer": "66525",
+     "country": "Luksemburga"
+    },
+    {
+     "date": "06.05.2019",
+     "odometer": "59628",
+     "country": ""
+    },
+    {
+     "date": "13.11.2018",
+     "odometer": "45648",
+     "country": ""
+    },
+    {
+     "date": "02.07.2018",
+     "odometer": "33058",
+     "country": "Luksemburga"
+    },
+    {
+     "date": "30.01.2018",
+     "odometer": "19504",
+     "country": ""
+    },
+    {
+     "date": "24.01.2018",
+     "odometer": "19502",
+     "country": ""
+    },
+    {
+     "date": "13.06.2017",
+     "odometer": "2121",
+     "country": ""
+    },
+    {
+     "date": "24.04.2017",
+     "odometer": "2",
+     "country": "Luksemburga"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "14.08.2025",
+     "odometer": "201311",
+     "location": "AutoFixed Oy, Koskelontie 19, FI-02920 Espoo, Finland",
+     "works": "Dzinēja eļļa.\nSalona mikrofiltrs (nepieciešamības gadījumā papildu darbi)"
+    },
+    {
+     "date": "17.04.2025",
+     "odometer": "190047",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "04.06.2024",
+     "odometer": "170459",
+     "location": "Auto-Huiput Espoo, Koskelontie 19, FI-02920 Espoo, Finland",
+     "works": "Dzinēja eļļa.\nSalona mikrofiltrs (nepieciešamības gadījumā papildu darbi)\nAutomašīnas pārbaude.\nStandarta apkopes apjoms."
+    },
+    {
+     "date": "05.07.2022",
+     "odometer": "129205",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "09.09.2020",
+     "odometer": "104577",
+     "location": "Fonds de garantie des dépôts Luxembourg (FGDL), 283 Route d'Arlon, L-1150 Belair, Luxembourg",
+     "works": "Dzinēja eļļa.\nSalona mikrofiltrs (nepieciešamības gadījumā papildu darbi)"
+    },
+    {
+     "date": "21.07.2020",
+     "odometer": "95549",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "18.06.2020",
+     "odometer": "88225",
+     "location": "Fonds de garantie des dépôts Luxembourg (FGDL), 283 Route d'Arlon, L-1150 Belair, Luxembourg",
+     "works": "Bremžu šķidruma maiņa."
+    },
+    {
+     "date": "01.03.2020",
+     "odometer": "83619",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "14.08.2019",
+     "odometer": "66525",
+     "location": "Fonds de garantie des dépôts Luxembourg (FGDL), 283 Route d'Arlon, L-1150 Belair, Luxembourg",
+     "works": "Dzinēja eļļa.\nGaisa filtra ieliktnis.\nSalona mikrofiltrs (nepieciešamības gadījumā papildu darbi)\nAutomašīnas pārbaude.\nNav norādīts."
+    },
+    {
+     "date": "06.05.2019",
+     "odometer": "59628",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "13.11.2018",
+     "odometer": "45648",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "02.07.2018",
+     "odometer": "33058",
+     "location": "Fonds de garantie des dépôts Luxembourg (FGDL), 283 Route d'Arlon, L-1150 Belair, Luxembourg",
+     "works": "Dzinēja eļļa.\nSalona mikrofiltrs (nepieciešamības gadījumā papildu darbi)"
+    },
+    {
+     "date": "30.01.2018",
+     "odometer": "19504",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "24.01.2018",
+     "odometer": "19502",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "13.06.2017",
+     "odometer": "2121",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "24.04.2017",
+     "odometer": "2",
+     "location": "Fonds de garantie des dépôts Luxembourg (FGDL), 283 Route d'Arlon, L-1150 Belair, Luxembourg",
+     "works": "Nav norādīts."
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "14.08.2025",
+      "odometer": "201311",
+      "place": "AutoFixed Oy, Koskelontie 19, FI-02920 Espoo, Finland",
+      "works": "Engine oil.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "17.04.2025",
+      "odometer": "190047",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "04.06.2024",
+      "odometer": "170459",
+      "place": "Auto-Huiput Espoo, Koskelontie 19, FI-02920 Espoo, Finland",
+      "works": "Engine oil.\nVehicle check.\nMicrofilter (consider further additional job(s) if appropriate)\nStandard scope."
+     },
+     {
+      "date": "05.07.2022",
+      "odometer": "129205",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "09.09.2020",
+      "odometer": "104577",
+      "place": "Fonds de garantie des dépôts Luxembourg (FGDL), 283 Route d'Arlon, L-1150 Belair, Luxembourg",
+      "works": "Engine oil.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "21.07.2020",
+      "odometer": "95549",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "18.06.2020",
+      "odometer": "88225",
+      "place": "Fonds de garantie des dépôts Luxembourg (FGDL), 283 Route d'Arlon, L-1150 Belair, Luxembourg",
+      "works": "Brake fluid service."
+     },
+     {
+      "date": "01.03.2020",
+      "odometer": "83619",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "14.08.2019",
+      "odometer": "66525",
+      "place": "Fonds de garantie des dépôts Luxembourg (FGDL), 283 Route d'Arlon, L-1150 Belair, Luxembourg",
+      "works": "Engine oil.\nVehicle check.\nAir filter element.\nMicrofilter (consider further additional job(s) if appropriate)\nUnknown."
+     },
+     {
+      "date": "06.05.2019",
+      "odometer": "59628",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.11.2018",
+      "odometer": "45648",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "02.07.2018",
+      "odometer": "33058",
+      "place": "Fonds de garantie des dépôts Luxembourg (FGDL), 283 Route d'Arlon, L-1150 Belair, Luxembourg",
+      "works": "Engine oil.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "30.01.2018",
+      "odometer": "19504",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "24.01.2018",
+      "odometer": "19502",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.06.2017",
+      "odometer": "2121",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "24.04.2017",
+      "odometer": "2",
+      "place": "Fonds de garantie des dépôts Luxembourg (FGDL), 283 Route d'Arlon, L-1150 Belair, Luxembourg",
+      "works": "Unknown."
+     }
+    ]
+   },
+   "outvin": {
+    "precheckAt": null,
+    "vin": "WBA7J21040G829261",
+    "capabilitySlots": [],
+    "purchases": [],
+    "vehicleInfo": {
+     "model": "BMW 7 (G11, G12) 740 Le xDrive",
+     "modelSeries": "7 (G11, G12)",
+     "vinCode": "WBA7J21040G829261",
+     "vehicleType": "",
+     "transmission": "Automatic Transmission (GA8HP-75Z)",
+     "steeringSide": "",
+     "engineCode": "B48 B20 B",
+     "engineNumber": "",
+     "body": "Saloon",
+     "drive": "All-wheel Drive",
+     "power": "240 kW (326 hp)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "2017",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "magellan-grau metallic",
+     "colorCode": "C26",
+     "interior": "Leather \"Dakota\"/schwarz (PLCSW)",
+     "interiorCode": "",
+     "fuel": "Petrol",
+     "displacement": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "BMW 7 (G11, G12) 740 Le xDrive",
+     "modelSeries": "7 (G11, G12)",
+     "vinCode": "WBA7J21040G829261",
+     "vehicleType": "Sedan",
+     "transmission": "Automatic Transmission (GA8HP-75Z)",
+     "steeringSide": "LHD (left-hand drive)",
+     "engineCode": "B48 B20 B",
+     "engineNumber": "",
+     "body": "Saloon",
+     "drive": "All-wheel Drive",
+     "power": "240 kW (326 hp)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "G12",
+     "productionDate": "2017",
+     "firstRegistration": "04.2017",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "magellan-grau metallic",
+     "colorCode": "C26",
+     "interior": "Leather \"Dakota\"/schwarz (PLCSW)",
+     "interiorCode": "",
+     "fuel": "Petrol",
+     "displacement": "2.0 l"
+    }
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "",
+    "fetchedAt": "",
+    "lastCostUsd": "",
+    "status": "unknown",
+    "summary": ""
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "certificate": {
+    "issuedAt": "06.11.2026 18:15:58",
+    "vehicleLine": "Transportlīdzeklis BMW 740LE XDRIVE IPERFORMANCE, izlaiduma gads 2017. Valsts numura zīme OP1862.",
+    "makeModel": "BMW 740LE XDRIVE IPERFORMANCE",
+    "year": "2017",
+    "plate": "OP1862",
+    "accidentCount": "0",
+    "insuredFrom": "",
+    "insuredTo": "",
+    "insuredDays": "",
+    "claims": [],
+    "footerNote": "Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas."
+   }
+  },
+  "tirgus": {
+   "listedForSale": "",
+   "listingCreated": "",
+   "priceDrop": "",
+   "priceHistory": [],
+   "listingMileageOdometer": "",
+   "listingMileageDate": "",
+   "listingMileageCountry": ""
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "11.08.2025",
+       "odometer": "201000",
+       "country": "Somija"
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": "Nettiauto"
+    }
+   ]
+  }
+ }
+}

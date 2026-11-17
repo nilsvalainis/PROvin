@@ -1,0 +1,765 @@
+{
+ "vin": "WVGZZZE2ZNP009103",
+ "label": "VW ID.4 GTX 220 KW: CSDD 1, AutoDNA 2, carVertical 2, dīleris 2, reģistri 3, citi 1; negadījumi 1",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 627, saglabāts 2026-10-14; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "VW ID.4 GTX 220 KW",
+   "registrationNumber": "EI1060",
+   "firstRegistration": "2021-11-08",
+   "nextInspectionDate": "",
+   "prevInspectionDate": "",
+   "engineDisplacementCm3": "",
+   "enginePowerKw": "220",
+   "fuelType": "Elektrība",
+   "emissionStandard": "AX",
+   "vehicleType": "",
+   "grossMassKg": "2750",
+   "curbMassKg": "2224",
+   "seatCount": "",
+   "roadTaxEur": "",
+   "registrationStatus": "Noņemts no uzskaites, atļauts piedalīties ceļu satiksmē līdz 28.09.2026",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "SOMIJA",
+   "ownerCountLatvia": "1",
+   "vin": "",
+   "modelYear": "",
+   "color": "",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "",
+   "cocType": "",
+   "cocApprovalNumber": "",
+   "cocVariant": "",
+   "cocVersion": "",
+   "insuranceValidUntil": "",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [
+    {
+     "date": "22.09.2026",
+     "label": "Pirmā reģistrācija Latvijā"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "",
+    "inspectionDateText": "",
+    "nextInspectionDateText": "",
+    "odometer": "76237",
+    "ratingLabel": "",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "27.09.2026",
+     "odometer": "76237",
+     "country": "Latvija"
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "264",
+   "listingCreated": "05.01.2026",
+   "priceDrop": "€ -2 600",
+   "priceHistory": [
+    {
+     "date": "28.08.2026",
+     "price": 31980,
+     "mileage": 76255,
+     "year": 2021,
+     "delta": -1000
+    },
+    {
+     "date": "07.08.2026",
+     "price": 32980,
+     "mileage": 76255,
+     "year": 2021,
+     "delta": -500
+    },
+    {
+     "date": "16.07.2026",
+     "price": 33480,
+     "mileage": 76255,
+     "year": 2021,
+     "delta": 500
+    },
+    {
+     "date": "17.06.2026",
+     "price": 32980,
+     "mileage": 76255,
+     "year": 2021,
+     "delta": -500
+    },
+    {
+     "date": "11.06.2026",
+     "price": 33480,
+     "mileage": 76255,
+     "year": 2021,
+     "delta": -500
+    },
+    {
+     "date": "19.05.2026",
+     "price": 33980,
+     "mileage": 76255,
+     "year": 2021,
+     "delta": 0
+    },
+    {
+     "date": "28.04.2026",
+     "price": 33980,
+     "mileage": 76255,
+     "year": 2021,
+     "delta": 0
+    },
+    {
+     "date": "07.04.2026",
+     "price": 33980,
+     "mileage": 76255,
+     "year": 2021,
+     "delta": 0
+    },
+    {
+     "date": "16.03.2026",
+     "price": 33980,
+     "mileage": 76255,
+     "year": 2021,
+     "delta": 0
+    },
+    {
+     "date": "20.02.2026",
+     "price": 33980,
+     "mileage": 76255,
+     "year": 2021,
+     "delta": 0
+    },
+    {
+     "date": "27.01.2026",
+     "price": 33980,
+     "mileage": 76255,
+     "year": 2021,
+     "delta": 0
+    },
+    {
+     "date": "27.01.2026",
+     "price": 33980,
+     "mileage": 76255,
+     "year": 2021,
+     "delta": -600
+    },
+    {
+     "date": "05.01.2026",
+     "price": 34580,
+     "mileage": 76255,
+     "year": 2021,
+     "delta": 0
+    }
+   ],
+   "listingMileageOdometer": "76 255",
+   "listingMileageDate": "05.01.2026",
+   "listingMileageCountry": "Latvija"
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "01.10.2023",
+     "odometer": "49469",
+     "country": "Somija"
+    },
+    {
+     "date": "01.11.2021",
+     "odometer": "5",
+     "country": "Somija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.10.2023",
+     "odometer": "49403",
+     "country": "Somija"
+    },
+    {
+     "date": "01.11.2021",
+     "odometer": "5",
+     "country": "Somija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Somija",
+     "csngDate": "12.12.2024",
+     "lossAmount": "Dati nav pieejami"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.11.2021",
+     "country": "",
+     "description": "Somija Mainītas īpašumtiesībasŠim transportlīdzeklim ir fiksēta īpašumtiesību maiņa vai tehniskās apliecības datu izmaiņas. Dažas izmaiņas var būt formālas, piemēram, īpašnieka maiņa pēc līzinga izmaksāšanas",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2021",
+     "country": "",
+     "description": "Somija Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:08.11.2021līdz:01.11.2024",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2021",
+     "country": "",
+     "description": "Somija Pirmā reģistrācijaŠim transportlīdzeklim ir fiksēts ieraksts par reģistrāciju. Tas var attiekties uz pirmo reģistrāciju, īpašumtiesību maiņu vai kādu citu līdzīgu darbību",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2024",
+     "country": "",
+     "description": "Somija Mainītas īpašumtiesībasŠim transportlīdzeklim ir fiksēta īpašumtiesību maiņa vai tehniskās apliecības datu izmaiņas. Dažas izmaiņas var būt formālas, piemēram, īpašnieka maiņa pēc līzinga izmaksāšanas. VIN numurs:WVGZZZE2ZNP009103Ģenerēšanas datums:26.09.2026Derīguma termiņšbeidzas26.10.2026 Šajā PDF atskaitē ir iekļauti transportlīdzekļa vēstures svarīgākie dati. Lai iegūtu jaunāko un deta",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2024",
+     "country": "",
+     "description": "Somija Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:05.11.2024līdz:25.11.2024",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2024",
+     "country": "",
+     "description": "Somija Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:25.11.2024līdz:31.12.2024",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2024",
+     "country": "",
+     "description": "Somija Fiksēts bojājumsMēs atradām ierakstu, kas liecina, kašis transportlīdzeklis ir bojāts. Ieskaties sadaļā \"Bojājumi\", lai uzzinātu vairāk",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2024",
+     "country": "",
+     "description": "Somija Noņemts no uzskaitesŠim transportlīdzeklim ir fiksēta noņemšana no uzskaites. Tas var tikt veikts īpašumtiesību izmaiņu, dokumentu atjaunošanas vai kādu citu līdzīgu administratīvu darbību dēļ",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.01.2025",
+     "country": "",
+     "description": "Somija Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:01.01.2025līdz:12.12.2024",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.01.2025",
+     "country": "",
+     "description": "Somija Mainītas īpašumtiesībasŠim transportlīdzeklim ir fiksēta īpašumtiesību maiņa vai tehniskās apliecības datu izmaiņas. Dažas izmaiņas var būt formālas, piemēram, īpašnieka maiņa pēc līzinga izmaksāšanas",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.09.2026",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.09.2026",
+     "country": "Latvija",
+     "description": "Reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2021",
+     "country": "Somija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2021",
+     "country": "Somija",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2024",
+     "country": "Somija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2024",
+     "country": "Somija",
+     "description": "Noņemts no uzskaites",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.01.2025",
+     "country": "Somija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "25.10.2023",
+     "odometer": "49469",
+     "country": "Somija"
+    },
+    {
+     "date": "02.11.2021",
+     "odometer": "5",
+     "country": "Somija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "25.10.2023",
+     "odometer": "49469",
+     "location": "Alppilan Autohuolto Oy, Takkatie 7, FI-00370 Helsinki, Finland",
+     "works": "Regulārā apkope\nPutekļu un ziedputekšņu filtrs\nSalona gaisa filtra maiņa\nBremžu šķidruma serviss\nPārbaude"
+    },
+    {
+     "date": "02.11.2021",
+     "odometer": "5",
+     "location": "SE Mäkinen, Lamminsuontie 1, FI-01750 Vantaa, Finland",
+     "works": "Pirmsatdošanas pārbaude\nPirms piegādes sagatavošana"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "02.11.2021",
+      "odometer": "5",
+      "place": "SE Mäkinen, Lamminsuontie 1, FI-01750 Vantaa, Finland",
+      "works": "Delivery inspection"
+     },
+     {
+      "date": "25.10.2023",
+      "odometer": "49469",
+      "place": "Alppilan Autohuolto Oy, Takkatie 7, FI-00370 Helsinki, Finland",
+      "works": "Brake fluid service\nInspection\nDust and pollen filter"
+     }
+    ]
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "VW ID.4 GTX 220 KW",
+     "modelSeries": "1.Generation",
+     "vinCode": "WVGZZZE2ZNP009103",
+     "vehicleType": "KROSOVERIS",
+     "transmission": "AUTOMĀTS",
+     "steeringSide": "LHD (automašīna ar stūri kreisajā pusē)",
+     "engineCode": "EBRA",
+     "engineNumber": "",
+     "body": "Apvidus auto",
+     "drive": "AWD",
+     "power": "220KW (299HP)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "",
+     "firstRegistration": "01.11.2021",
+     "warrantyStartDate": "",
+     "countryRegion": "Somija",
+     "color": "Balts",
+     "colorCode": "",
+     "interior": "",
+     "interiorCode": "",
+     "fuel": "ELEKTRO",
+     "displacement": ""
+    }
+   }
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "12.11.2024",
+     "odometer": "73500",
+     "country": "Somija",
+     "origin": "Sludinājums"
+    },
+    {
+     "date": "25.10.2023",
+     "odometer": "49469",
+     "country": "Somija",
+     "origin": "Reģistrs"
+    },
+    {
+     "date": "02.11.2021",
+     "odometer": "5",
+     "country": "Somija",
+     "origin": "Reģistrs"
+    }
+   ],
+   "incidents": [
+    {
+     "date": "12.12.2024",
+     "amount": "Dati nav pieejami",
+     "country": "Somija",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "12.11.2024",
+     "odometer": "73500",
+     "country": "Somija",
+     "event": "NettiAuto sludinājums (aktīvs 10 dienas), tirgotājs Uusimaa reģionā. Pārdošanas cena: 38 500€"
+    },
+    {
+     "date": "25.10.2023",
+     "odometer": "49469",
+     "country": "Somija",
+     "event": "Apkope, bremžu šķidrums, salona filtrs, Alppilan Autohuolto, Helsinki"
+    },
+    {
+     "date": "02.11.2021",
+     "odometer": "5",
+     "country": "Somija",
+     "event": "Pirmspārdošanas pārbaude, SE Mäkinen, Vantaa"
+    }
+   ],
+   "ownersSummary": "",
+   "fetchedAt": "2026-09-27T10:41:51.866Z"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "certificate": {
+    "issuedAt": "27.09.2026 17:13:02",
+    "vehicleLine": "Transportlīdzeklis VW ID.4 GTX 220 KW, izlaiduma gads 2021. Valsts numura zīme EI1060. Negadījumu skaits: 0 Laikā no līdz apdrošināts dienas. Zaudējumu dati: Uz 27.09.2026 17:13:02 automašīnai ar valsts numura zīmi EI1060 nav reģistrēts neviens negadījums Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas. Biedrība \"Latvijas Transportlīdzekļu apdrošinātāju birojs\"; Reģ.Nr. 40008084453 ",
+    "makeModel": "",
+    "year": "",
+    "plate": "",
+    "accidentCount": "0",
+    "insuredFrom": "",
+    "insuredTo": "",
+    "insuredDays": "",
+    "claims": [],
+    "footerNote": "Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas."
+   }
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "12.11.2024",
+       "odometer": "73500",
+       "country": "Somija"
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": "REKKARI"
+    },
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": "COPART FIN"
+    }
+   ]
+  }
+ }
+}

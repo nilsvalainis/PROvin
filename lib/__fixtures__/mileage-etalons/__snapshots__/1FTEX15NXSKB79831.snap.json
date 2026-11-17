@@ -1,0 +1,57 @@
+{
+ "label": "FORD F150: CSDD 9, AutoDNA 4, carVertical 5, reģistri 5, citi 12; negadījumi 2",
+ "rindasPaAvotiem": {
+  "CSDD": 9,
+  "AutoDNA": 4,
+  "CarVertical": 5,
+  "MNT.EE - Igaunijas reģistrs": 5,
+  "CITI AVOTI - CARFAX": 12,
+  "CARFAX": 12
+ },
+ "rindasSavaktas": 47,
+ "rindasTabula": 22,
+ "tabula": [
+  "22.08.1995 | 882 | ASV | AutoDNA + CITI AVOTI - CARFAX + CARFAX + CarVertical",
+  "05.11.2003 | 12875 | ASV | CITI AVOTI - CARFAX + CARFAX",
+  "12.12.2003 | 13060 | ASV | CITI AVOTI - CARFAX + CARFAX",
+  "30.09.2009 | 80752 | ASV | CITI AVOTI - CARFAX + CARFAX",
+  "21.07.2010 | 94201 | ASV | CITI AVOTI - CARFAX + CARFAX",
+  "05.04.2011 | 104961 | ASV | CITI AVOTI - CARFAX + CARFAX",
+  "17.04.2013 | 123536 | ASV | CITI AVOTI - CARFAX + CARFAX",
+  "29.07.2014 | 128134 | ASV | CITI AVOTI - CARFAX + CARFAX",
+  "14.08.2015 | 132848 | ASV | CITI AVOTI - CARFAX + CARFAX",
+  "14.06.2016 | 138381 | ASV | CITI AVOTI - CARFAX + CARFAX",
+  "04.09.2019 | 165246 | ASV | AutoDNA + CITI AVOTI - CARFAX + CARFAX + CarVertical",
+  "11.05.2022 | 337323 | ASV | AutoDNA + CITI AVOTI - CARFAX + CARFAX",
+  "17.10.2022 | 337322 | Igaunija | CSDD",
+  "24.11.2022 | 337418 | Igaunija | CSDD + MNT.EE - Igaunijas reģistrs",
+  "23.12.2022 | 337961 | Igaunija | CSDD + MNT.EE - Igaunijas reģistrs",
+  "30.05.2024 | 339645 | Igaunija | CSDD + MNT.EE - Igaunijas reģistrs",
+  "25.06.2024 | 339854 | Igaunija | CSDD + MNT.EE - Igaunijas reģistrs",
+  "10.07.2025 | 340543 | Igaunija | CSDD + MNT.EE - Igaunijas reģistrs",
+  "01.12.2025 | 339738 | Igaunija | CarVertical",
+  "05.03.2026 | 72348 | Latvija | CarVertical + CSDD + AutoDNA | ANOMĀLIJA",
+  "10.09.2026 | 74973 | Latvija | CSDD",
+  "10.09.2026 | 74968 | Latvija | CarVertical + CSDD"
+ ],
+ "sarkanaJosla": true,
+ "klases": [
+  "rollback: 01.12.2025 339738 -> 05.03.2026 72348 (kritums 267390) [05.03.2026 | 72348 | CarVertical + CSDD + AutoDNA]"
+ ],
+ "kritumsBezNilaLemumiem": true,
+ "nilaLemumi": [],
+ "klasesPecNilaLemumiem": [
+  "rollback: 05.03.2026 72348"
+ ],
+ "faktuLapa": {
+  "odometerAnomaly": true,
+  "carverticalMileageWarning": false,
+  "maxRollbackDropKm": 267390,
+  "rollbacks": [
+   "01.12.2025 339738 -> 05.03.2026 72348"
+  ],
+  "suspectedEntryErrors": [],
+  "implausibleReadings": [],
+  "latestKm": 74973
+ }
+}

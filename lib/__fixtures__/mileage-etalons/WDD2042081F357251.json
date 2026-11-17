@@ -1,0 +1,448 @@
+{
+ "vin": "WDD2042081F357251",
+ "label": "MERCEDES BENZ C220 CDI: CSDD 5, AutoDNA 15, carVertical 14, dīleris 12; negadījumi 6",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 236, saglabāts 2026-08-01; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "MERCEDES BENZ C220 CDI",
+   "registrationNumber": "OL9719",
+   "firstRegistration": "2009-06-22",
+   "nextInspectionDate": "2027-04-27",
+   "prevInspectionDate": "2026-04-17",
+   "engineDisplacementCm3": "2148",
+   "enginePowerKw": "125",
+   "fuelType": "Dīzeļdegviela",
+   "emissionStandard": "Euro 4",
+   "grossMassKg": "2180",
+   "curbMassKg": "1650",
+   "roadTaxEur": "186,00",
+   "registrationStatus": "Uzskaitē",
+   "opacityCoefficient": "0.03",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "",
+   "ownerCountLatvia": "",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "Pamatpārbaude",
+    "inspectionDateText": "17.04.2026",
+    "nextInspectionDateText": "",
+    "odometer": "291984",
+    "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+    "ratingLevel": 1,
+    "smokeCoefficient": "0.03",
+    "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+    "defects": [
+     {
+      "code": "4.5.1.",
+      "rating": "1",
+      "description": "Nelieli bojājumi kreisajā priekšējā miglas lukturī."
+     }
+    ]
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "17.04.2026",
+     "odometer": "291984",
+     "country": "Latvija"
+    },
+    {
+     "date": "14.05.2024",
+     "odometer": "269311",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.06.2022",
+     "odometer": "250047",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.05.2020",
+     "odometer": "229993",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.06.2018",
+     "odometer": "210857",
+     "country": "Vācija"
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "98",
+   "listingCreated": "25.04.2026",
+   "priceDrop": "-1 000"
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "17.04.2026",
+     "odometer": "291984",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.05.2022",
+     "odometer": "247544",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2021",
+     "odometer": "238913",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2019",
+     "odometer": "218611",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2017",
+     "odometer": "197146",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2016",
+     "odometer": "182907",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2015",
+     "odometer": "167477",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.09.2014",
+     "odometer": "159772",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.02.2014",
+     "odometer": "145700",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2014",
+     "odometer": "145700",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2013",
+     "odometer": "120388",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2012",
+     "odometer": "95590",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2011",
+     "odometer": "76430",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2011",
+     "odometer": "49681",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2010",
+     "odometer": "25581",
+     "country": "Vācija"
+    },
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.06.2011",
+     "lossAmount": "400 - 500 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.09.2012",
+     "lossAmount": "1 200 - 1 300 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.08.2014",
+     "lossAmount": "3 750 - 4 000 €"
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.04.2026",
+     "odometer": "291984",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.05.2022",
+     "odometer": "247044",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2021",
+     "odometer": "238413",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2019",
+     "odometer": "218111",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2017",
+     "odometer": "196646",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2016",
+     "odometer": "182407",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2015",
+     "odometer": "166977",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2014",
+     "odometer": "145200",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2013",
+     "odometer": "119888",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2012",
+     "odometer": "95390",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2011",
+     "odometer": "76230",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2011",
+     "odometer": "49481",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2010",
+     "odometer": "25381",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2009",
+     "odometer": "12",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.06.2011",
+     "lossAmount": "251 - 500 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.09.2012",
+     "lossAmount": "1 001 - 1 500 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.08.2014",
+     "lossAmount": "3 501 - 4 000 €"
+    }
+   ]
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "04.05.2022",
+     "odometer": "247544",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.06.2021",
+     "odometer": "238913",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.04.2019",
+     "odometer": "218611",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.04.2017",
+     "odometer": "197146",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.02.2016",
+     "odometer": "182907",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.02.2015",
+     "odometer": "167477",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.02.2014",
+     "odometer": "145700",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.04.2013",
+     "odometer": "120388",
+     "country": "Vācija"
+    },
+    {
+     "date": "18.06.2012",
+     "odometer": "95590",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.10.2011",
+     "odometer": "76430",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.01.2011",
+     "odometer": "49681",
+     "country": "Vācija"
+    },
+    {
+     "date": "29.03.2010",
+     "odometer": "25581",
+     "country": "Vācija"
+    }
+   ],
+   "outvin": {
+    "precheckAt": "2026-07-31T16:52:10.939Z",
+    "vin": "WDD2042081F357251",
+    "capabilitySlots": [
+     {
+      "id": "service_1",
+      "historyType": 1,
+      "titleLv": "Oficiālā servisa un nobraukuma vēsture (Type 1)",
+      "creditCost": 1,
+      "status": "available",
+      "category": "service_history"
+     },
+     {
+      "id": "carfax_2",
+      "historyType": 2,
+      "titleLv": "ASV / Carfax vēsture (Type 2)",
+      "creditCost": 1,
+      "status": "disabled",
+      "statusReason": "Eiropas VIN — ASV Carfax (Type 2) parasti nav pieejams",
+      "category": "us_carfax"
+     }
+    ],
+    "purchases": [],
+    "vehicleInfo": {
+     "vinCode": "",
+     "series": "",
+     "typeCode": "",
+     "steeringSide": "",
+     "interior": "",
+     "model": "",
+     "generation": "",
+     "engineCode": "",
+     "color": "",
+     "transmission": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "vinCode": "WDD2042081F357251",
+     "series": "",
+     "typeCode": "",
+     "steeringSide": "",
+     "interior": "",
+     "model": "",
+     "generation": "",
+     "engineCode": "",
+     "color": "",
+     "transmission": ""
+    }
+   }
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

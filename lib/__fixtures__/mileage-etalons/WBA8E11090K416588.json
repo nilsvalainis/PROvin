@@ -1,0 +1,1034 @@
+{
+ "vin": "WBA8E11090K416588",
+ "label": "BMW 330E: CSDD 19, AutoDNA 3, carVertical 16, dīleris 20, reģistri 1; negadījumi 0",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 221, saglabāts 2026-09-25; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW 330E",
+   "registrationNumber": "",
+   "firstRegistration": "",
+   "nextInspectionDate": "",
+   "prevInspectionDate": "",
+   "engineDisplacementCm3": "1998",
+   "enginePowerKw": "135",
+   "fuelType": "",
+   "emissionStandard": "Euro 6 W",
+   "grossMassKg": "2195",
+   "curbMassKg": "1735",
+   "roadTaxEur": "",
+   "registrationStatus": "nav reģistrēts",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "",
+   "ownerCountLatvia": "",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "",
+    "inspectionDateText": "",
+    "nextInspectionDateText": "",
+    "odometer": "225805",
+    "ratingLabel": "",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "30.07.2026",
+     "odometer": "225620",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "27.07.2026",
+     "odometer": "225620",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "07.07.2026",
+     "odometer": "225593",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "05.05.2026",
+     "odometer": "224168",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "12.03.2026",
+     "odometer": "224060",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "25.02.2026",
+     "odometer": "224032",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "16.01.2026",
+     "odometer": "224030",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "10.09.2025",
+     "odometer": "221519",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "30.08.2024",
+     "odometer": "206702",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "29.09.2023",
+     "odometer": "191520",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "14.09.2023",
+     "odometer": "191242",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "21.07.2023",
+     "odometer": "188785",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "11.07.2022",
+     "odometer": "168025",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "03.02.2021",
+     "odometer": "123456",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "07.12.2020",
+     "odometer": "120146",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "13.05.2020",
+     "odometer": "105705",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "24.01.2019",
+     "odometer": "72605",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "21.02.2018",
+     "odometer": "54691",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "18.05.2016",
+     "odometer": "10",
+     "country": "Nīderlande"
+    }
+   ]
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "27.07.2026",
+     "odometer": "225620",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "16.07.2026",
+     "odometer": "225620",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "18.04.2026",
+     "odometer": "224168",
+     "country": "Nīderlande"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.09.2026",
+     "odometer": "225842",
+     "country": ""
+    },
+    {
+     "date": "01.03.2026",
+     "odometer": "223971",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.04.2025",
+     "odometer": "215872",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.09.2023",
+     "odometer": "191180",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.07.2023",
+     "odometer": "188723",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.05.2023",
+     "odometer": "182861",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.09.2022",
+     "odometer": "171855",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.06.2021",
+     "odometer": "133848",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.01.2020",
+     "odometer": "98095",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.07.2018",
+     "odometer": "63453",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.02.2018",
+     "odometer": "54666",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.05.2017",
+     "odometer": "31015",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.04.2017",
+     "odometer": "28821",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.01.2017",
+     "odometer": "19744",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.12.2016",
+     "odometer": "15100",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "01.04.2016",
+     "odometer": "18",
+     "country": ""
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "27.07.2026",
+     "odometer": "225620",
+     "country": "Nīderlande",
+     "origin": "RDW"
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "27.07.2026",
+     "odometer": "225620",
+     "country": "Nīderlande",
+     "event": "Īpašnieks: Autosalons"
+    },
+    {
+     "date": "07.07.2026",
+     "odometer": "",
+     "country": "Nīderlande",
+     "event": "Īpašnieks: Autosalons"
+    },
+    {
+     "date": "12.03.2026",
+     "odometer": "",
+     "country": "Nīderlande",
+     "event": "Tehniskā apskate"
+    },
+    {
+     "date": "25.02.2026",
+     "odometer": "",
+     "country": "Nīderlande",
+     "event": "Īpašnieks: Autosalons"
+    },
+    {
+     "date": "16.01.2026",
+     "odometer": "",
+     "country": "Nīderlande",
+     "event": "Īpašnieks: Autosalons"
+    },
+    {
+     "date": "10.09.2025",
+     "odometer": "",
+     "country": "Nīderlande",
+     "event": "Tehniskā apskate"
+    },
+    {
+     "date": "30.08.2024",
+     "odometer": "",
+     "country": "Nīderlande",
+     "event": "Tehniskā apskate"
+    },
+    {
+     "date": "11.07.2022",
+     "odometer": "",
+     "country": "Nīderlande",
+     "event": "Tehniskā apskate"
+    },
+    {
+     "date": "03.02.2021",
+     "odometer": "",
+     "country": "Nīderlande",
+     "event": "Īpašnieks: Autosalons"
+    },
+    {
+     "date": "07.12.2020",
+     "odometer": "",
+     "country": "Nīderlande",
+     "event": "Īpašnieks: Juridiska persona"
+    },
+    {
+     "date": "13.05.2020",
+     "odometer": "",
+     "country": "Nīderlande",
+     "event": "Tehniskā apskate"
+    },
+    {
+     "date": "18.05.2016",
+     "odometer": "",
+     "country": "Nīderlande",
+     "event": "Pirmā reģistrācija"
+    },
+    {
+     "date": "11.05.2016",
+     "odometer": "",
+     "country": "Nīderlande",
+     "event": "Īpašnieks: Līzinga uzņēmums"
+    }
+   ],
+   "ownersSummary": "11.05.2016-18.05.2016 Līzinga uzņēmums\n07.12.2020-07.12.2020 Autosalons\n07.12.2020-03.02.2021 Juridiska persona\n03.02.2021-10.02.2021 Autosalons\n16.01.2026-25.02.2026 Autosalons\n25.02.2026-05.05.2026 Autosalons\n07.07.2026-27.07.2026 Autosalons\n27.07.2026-šobrīd Autosalons"
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "01.09.2026",
+     "odometer": "225904",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "09.03.2026",
+     "odometer": "224033",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "18.04.2025",
+     "odometer": "215934",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "21.09.2023",
+     "odometer": "191520",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "13.09.2023",
+     "odometer": "191242",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "21.07.2023",
+     "odometer": "188785",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "16.05.2023",
+     "odometer": "183312",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "10.05.2023",
+     "odometer": "182923",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "08.10.2022",
+     "odometer": "172921",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "22.09.2022",
+     "odometer": "171917",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "18.06.2021",
+     "odometer": "133910",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "18.01.2020",
+     "odometer": "98120",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "19.07.2018",
+     "odometer": "63478",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "02.02.2018",
+     "odometer": "54691",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "22.05.2017",
+     "odometer": "32488",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "09.05.2017",
+     "odometer": "31040",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "10.04.2017",
+     "odometer": "28846",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "13.01.2017",
+     "odometer": "19769",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "19.12.2016",
+     "odometer": "16448",
+     "country": "Nīderlande"
+    },
+    {
+     "date": "07.12.2016",
+     "odometer": "15125",
+     "country": "Nīderlande"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "01.09.2026",
+     "odometer": "225904",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "09.03.2026",
+     "odometer": "224033",
+     "location": "Autobedrijf Verwoert- en Landbouwmechanisatie, Burgemeester Houtkoperweg 37, 4033 BJ Lienden, Netherlands",
+     "works": "Dzinēja eļļa.\nGaisa filtra elements.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nBremžu šķidruma maiņa.\nNezināms.\nStandarta apjoms."
+    },
+    {
+     "date": "18.04.2025",
+     "odometer": "215934",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "21.09.2023",
+     "odometer": "191520",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "13.09.2023",
+     "odometer": "191242",
+     "location": "Design Post Amsterdam, Zandstrooierstraat 111m, 1019 Amsterdam, Netherlands",
+     "works": "Bremžu šķidruma maiņa."
+    },
+    {
+     "date": "21.07.2023",
+     "odometer": "188785",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "16.05.2023",
+     "odometer": "183312",
+     "location": "Kroon Banden Amsterdam Zuidoost, Kuiperbergweg 18, 1101 AG Amsterdam, Netherlands",
+     "works": "Dzinēja eļļa.\nGaisa filtra elements.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nTransportlīdzekļa pārbaude.\nNezināms."
+    },
+    {
+     "date": "10.05.2023",
+     "odometer": "182923",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "08.10.2022",
+     "odometer": "172921",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "22.09.2022",
+     "odometer": "171917",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "18.06.2021",
+     "odometer": "133910",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "18.01.2020",
+     "odometer": "98120",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "19.07.2018",
+     "odometer": "63478",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "02.02.2018",
+     "odometer": "54691",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "22.05.2017",
+     "odometer": "32488",
+     "location": "Renault Zwolle Terwolde, Molenland 1, 8024 AL Zwolle, Netherlands",
+     "works": "Dzinēja eļļa.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)"
+    },
+    {
+     "date": "09.05.2017",
+     "odometer": "31040",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "10.04.2017",
+     "odometer": "28846",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "13.01.2017",
+     "odometer": "19769",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "19.12.2016",
+     "odometer": "16448",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "07.12.2016",
+     "odometer": "15125",
+     "location": "",
+     "works": "Apkope"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "01.09.2026",
+      "odometer": "225904",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "09.03.2026",
+      "odometer": "224033",
+      "place": "Autobedrijf Verwoert- en Landbouwmechanisatie, Burgemeester Houtkoperweg 37, 4033 BJ Lienden, Netherlands",
+      "works": "Engine oil.\nBrake fluid service.\nAir filter element.\nMicrofilter (consider further additional job(s) if appropriate)\nUnknown.\nStandard scope."
+     },
+     {
+      "date": "18.04.2025",
+      "odometer": "215934",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "21.09.2023",
+      "odometer": "191520",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.09.2023",
+      "odometer": "191242",
+      "place": "Design Post Amsterdam, Zandstrooierstraat 111m, 1019 Amsterdam, Netherlands",
+      "works": "Brake fluid service."
+     },
+     {
+      "date": "21.07.2023",
+      "odometer": "188785",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "16.05.2023",
+      "odometer": "183312",
+      "place": "Kroon Banden Amsterdam Zuidoost, Kuiperbergweg 18, 1101 AG Amsterdam, Netherlands",
+      "works": "Engine oil.\nVehicle check.\nAir filter element.\nMicrofilter (consider further additional job(s) if appropriate)\nUnknown."
+     },
+     {
+      "date": "10.05.2023",
+      "odometer": "182923",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "08.10.2022",
+      "odometer": "172921",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "22.09.2022",
+      "odometer": "171917",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "18.06.2021",
+      "odometer": "133910",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "18.01.2020",
+      "odometer": "98120",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "19.07.2018",
+      "odometer": "63478",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "02.02.2018",
+      "odometer": "54691",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "22.05.2017",
+      "odometer": "32488",
+      "place": "Renault Zwolle Terwolde, Molenland 1, 8024 AL Zwolle, Netherlands",
+      "works": "Engine oil.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "09.05.2017",
+      "odometer": "31040",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "10.04.2017",
+      "odometer": "28846",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.01.2017",
+      "odometer": "19769",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "19.12.2016",
+      "odometer": "16448",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "07.12.2016",
+      "odometer": "15125",
+      "place": "",
+      "works": "Service"
+     }
+    ]
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "330E",
+     "modelSeries": "F30 (MUE) / 8E11",
+     "vinCode": "WBA8E11090K416588",
+     "vehicleType": "Sedan (4 Doors)",
+     "transmission": "automatic",
+     "steeringSide": "left",
+     "engineCode": "XB1H",
+     "engineNumber": "",
+     "body": "Sedan",
+     "drive": "Rear-Wheel Drive",
+     "power": "135KW (183HP)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "8E11",
+     "productionDate": "26.04.2016",
+     "firstRegistration": "18.05.2016",
+     "warrantyStartDate": "",
+     "countryRegion": "Europe / Munich, Germany",
+     "color": "Citrinschwarz Metallic",
+     "colorCode": "X02",
+     "interior": "Leder \"dakota\"/schwarz",
+     "interiorCode": "LCSW",
+     "fuel": "Benzīns",
+     "displacement": "2.00 l"
+    }
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "21",
+   "listingCreated": "29.08.2026",
+   "priceDrop": "€ -200",
+   "priceHistory": [
+    {
+     "date": "14.09.2026",
+     "price": 14750,
+     "mileage": null,
+     "year": 2016,
+     "delta": -200
+    },
+    {
+     "date": "04.09.2026",
+     "price": 14950,
+     "mileage": null,
+     "year": 2016,
+     "delta": 0
+    },
+    {
+     "date": "29.08.2026",
+     "price": 14950,
+     "mileage": null,
+     "year": 2016,
+     "delta": 0
+    }
+   ],
+   "listingMileageOdometer": "",
+   "listingMileageDate": "29.08.2026",
+   "listingMileageCountry": "Latvija"
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

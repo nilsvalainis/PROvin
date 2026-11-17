@@ -1,0 +1,1896 @@
+{
+ "vin": "WBAYM9C55DDW20079",
+ "label": "BMW 650i 2013 (ASV): jūdzes, 48 dīlera rindas",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 302, saglabāts 2026-10-17; nolasīts 17.11.2026, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": "https://ss.lv/",
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW 650I",
+   "registrationNumber": "FZ6500",
+   "firstRegistration": "",
+   "firstRegistrationLatvia": "2021-11-02",
+   "nextInspectionDate": "2027-04-09",
+   "prevInspectionDate": "2026-04-09",
+   "engineDisplacementCm3": "4395",
+   "enginePowerKw": "332",
+   "fuelType": "Benzīns",
+   "emissionStandard": "",
+   "vehicleType": "Vieglais pasažieru (M1)",
+   "grossMassKg": "2549",
+   "curbMassKg": "1990",
+   "seatCount": "4",
+   "roadTaxEur": "939,00",
+   "registrationStatus": "Noņemts no uzskaites, atļauts piedalīties ceļu satiksmē līdz 13.07.2025",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "LIETUVA",
+   "ownerCountLatvia": "3",
+   "vin": "WBAYM9C55DDW20079",
+   "modelYear": "2013",
+   "color": "Melna",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "M1",
+   "cocType": "-",
+   "cocApprovalNumber": "e32*NIV18/858*M1M267",
+   "cocVariant": "",
+   "cocVersion": "",
+   "insuranceValidUntil": "",
+   "technicalInspectionHistory": [
+    {
+     "date": "09.04.2026",
+     "inspectionType": "",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "06.11.2024",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+     "defects": []
+    },
+    {
+     "date": "08.11.2023",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+     "defects": []
+    },
+    {
+     "date": "07.11.2022",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "1 - Ar pieļaujamiem defektiem",
+     "ratingLevel": 1,
+     "maxDefectLevel": 1,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": [
+      {
+       "code": "1.2.1.",
+       "rating": "1",
+       "description": "Nepakāpenisks bremzēšanas spēku pieaugums."
+      }
+     ]
+    },
+    {
+     "date": "02.11.2021",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+     "defects": []
+    }
+   ],
+   "ownerRegistrationEvents": [
+    {
+     "date": "02.11.2021",
+     "label": "Pirmā reģistrācija Latvijā"
+    },
+    {
+     "date": "05.11.2021",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "08.07.2025",
+     "label": "Īpašnieka maiņa"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "Pamatpārbaude",
+    "inspectionDateText": "09.04.2026",
+    "nextInspectionDateText": "",
+    "odometer": "203514",
+    "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "09.04.2026",
+     "odometer": "203514",
+     "country": "Latvija"
+    },
+    {
+     "date": "06.11.2024",
+     "odometer": "202161",
+     "country": "Latvija"
+    },
+    {
+     "date": "08.11.2023",
+     "odometer": "202152",
+     "country": "Latvija"
+    },
+    {
+     "date": "07.11.2022",
+     "odometer": "199077",
+     "country": "Latvija"
+    },
+    {
+     "date": "02.11.2021",
+     "odometer": "192844",
+     "country": "Latvija"
+    }
+   ],
+   "registry": {
+    "nr1": "WBAYM9C55DDW20079",
+    "fetchedAt": "2026-10-15T09:22:37.989Z",
+    "data": {
+     "registrationNumber": "FZ6500",
+     "vin": "WBAYM9C55DDW20079",
+     "make": "BMW",
+     "model": "650I",
+     "year": "2013",
+     "fuel": "Benzīns",
+     "powerKw": "332",
+     "electricPowerKw": "",
+     "electricPowerKw2": "",
+     "displacementCm3": "4395",
+     "firstRegistrationIso": "",
+     "color": "Melna",
+     "vehicleKind": "Vieglais pasažieru",
+     "cocCategory": "M1",
+     "cocType": "-",
+     "cocApprovalNumber": "e32*NIV18/858*M1M267",
+     "cocVariant": "",
+     "cocVersion": "",
+     "grossMassKg": "2549",
+     "curbMassKg": "1990",
+     "insuranceEndIso": "",
+     "inspectionValidUntilIso": "2027-04-09"
+    }
+   }
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "09.04.2026",
+     "odometer": "203514",
+     "country": "Latvija"
+    },
+    {
+     "date": "06.11.2024",
+     "odometer": "202161",
+     "country": "Latvija"
+    },
+    {
+     "date": "08.11.2023",
+     "odometer": "202152",
+     "country": "Latvija"
+    },
+    {
+     "date": "07.11.2022",
+     "odometer": "199077",
+     "country": "Latvija"
+    },
+    {
+     "date": "02.11.2021",
+     "odometer": "192844",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.11.2020",
+     "odometer": "186766",
+     "country": "Lietuva"
+    },
+    {
+     "date": "25.06.2020",
+     "odometer": "183436",
+     "country": "Lietuva"
+    },
+    {
+     "date": "04.10.2018",
+     "odometer": "178650",
+     "country": "ASV"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Lietuva",
+     "csngDate": "01.11.2020",
+     "lossAmount": "7 500 - 8 000 €"
+    },
+    {
+     "incidentNo": "Lietuva",
+     "csngDate": "01.01.2019",
+     "lossAmount": "21 000 - 22 000 €"
+    },
+    {
+     "incidentNo": "Lietuva",
+     "csngDate": "01.12.2018",
+     "lossAmount": "1 000 - 1 100 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "09.04.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "203514",
+     "includeInPdf": false
+    },
+    {
+     "date": "06.11.2024",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "202161",
+     "includeInPdf": false
+    },
+    {
+     "date": "08.11.2023",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "202152",
+     "includeInPdf": false
+    },
+    {
+     "date": "07.11.2022",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja ar piezīmi",
+     "odometer": "199077",
+     "includeInPdf": false
+    },
+    {
+     "date": "02.11.2021",
+     "country": "Latvija",
+     "description": "Transportlīdzeklis reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "02.11.2021",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "odometer": "192844",
+     "includeInPdf": false
+    },
+    {
+     "date": "02.11.2021",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "192844",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2020",
+     "country": "",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "186766",
+     "includeInPdf": false
+    },
+    {
+     "date": "25.06.2020",
+     "country": "Lietuva",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "183436",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.10.2018",
+     "country": "ASV",
+     "description": "Ziņots par transportlīdzekļa bojājumiem",
+     "includeInPdf": true
+    },
+    {
+     "date": "04.10.2018",
+     "country": "ASV",
+     "description": "Pārdošanā piedāvātais transportlīdzeklis",
+     "includeInPdf": true
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.04.2026",
+     "odometer": "203514",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.11.2024",
+     "odometer": "202161",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.11.2023",
+     "odometer": "202152",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.11.2022",
+     "odometer": "199077",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.11.2021",
+     "odometer": "192844",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.12.2020",
+     "odometer": "186766",
+     "country": "Lietuva"
+    },
+    {
+     "date": "01.07.2018",
+     "odometer": "124040",
+     "country": "ASV"
+    },
+    {
+     "date": "01.09.2017",
+     "odometer": "176504",
+     "country": "ASV"
+    },
+    {
+     "date": "01.07.2017",
+     "odometer": "176347",
+     "country": "ASV"
+    },
+    {
+     "date": "01.04.2017",
+     "odometer": "172436",
+     "country": "ASV"
+    },
+    {
+     "date": "01.12.2016",
+     "odometer": "161568",
+     "country": "ASV"
+    },
+    {
+     "date": "01.07.2016",
+     "odometer": "138029",
+     "country": "ASV"
+    },
+    {
+     "date": "01.01.2016",
+     "odometer": "123000",
+     "country": "ASV"
+    },
+    {
+     "date": "01.12.2015",
+     "odometer": "118914",
+     "country": "ASV"
+    },
+    {
+     "date": "01.06.2015",
+     "odometer": "99904",
+     "country": "ASV"
+    },
+    {
+     "date": "01.02.2015",
+     "odometer": "90745",
+     "country": "ASV"
+    },
+    {
+     "date": "01.11.2014",
+     "odometer": "84638",
+     "country": "ASV"
+    },
+    {
+     "date": "01.06.2014",
+     "odometer": "62746",
+     "country": "ASV"
+    },
+    {
+     "date": "01.04.2014",
+     "odometer": "55475",
+     "country": "ASV"
+    },
+    {
+     "date": "01.12.2013",
+     "odometer": "35820",
+     "country": "ASV"
+    },
+    {
+     "date": "01.09.2013",
+     "odometer": "23965",
+     "country": "ASV"
+    },
+    {
+     "date": "01.06.2013",
+     "odometer": "11436",
+     "country": "ASV"
+    },
+    {
+     "date": "01.05.2013",
+     "odometer": "131",
+     "country": "ASV"
+    },
+    {
+     "date": "01.09.2012",
+     "odometer": "5",
+     "country": ""
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Lietuva",
+     "csngDate": "01.01.2019",
+     "lossAmount": "20 001 - 22 500 €"
+    },
+    {
+     "incidentNo": "Lietuva",
+     "csngDate": "01.11.2020",
+     "lossAmount": "7 501 - 8 000 €"
+    },
+    {
+     "incidentNo": "Lietuva",
+     "csngDate": "01.12.2020",
+     "lossAmount": "7 501 - 8 000 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.07.2012",
+     "country": "",
+     "description": "Ražots",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.05.2013",
+     "country": "",
+     "description": "Amerikas Savienotās Valstis Mainītas īpašumtiesībasŠim transportlīdzeklim ir fiksēta īpašumtiesību maiņa vai tehniskās apliecības datu izmaiņas. Dažas izmaiņas var būt formālas, piemēram, īpašnieka maiņa pēc līzinga izmaksāšanas",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.05.2013",
+     "country": "",
+     "description": "Amerikas Savienotās Valstis Mainīts \"title\" statussŠim transportlīdzeklim ir fiksētas izmaiņas reģistrācijas apliecībā (\"title\"). Tas var būt noticis īpašumtiesību izmaiņu rezultātā, kā arī tehnisku vai dokumenta atjauninājumu dēļ",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.07.2018",
+     "country": "",
+     "description": "Amerikas Savienotās Valstis Mainītas īpašumtiesībasŠim transportlīdzeklim ir fiksēta īpašumtiesību maiņa vai tehniskās apliecības datu izmaiņas. Dažas izmaiņas var būt formālas, piemēram, īpašnieka maiņa pēc līzinga izmaksāšanas",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.07.2018",
+     "country": "",
+     "description": "Amerikas Savienotās Valstis Mainīts \"title\" statussŠim transportlīdzeklim ir fiksētas izmaiņas reģistrācijas apliecībā (\"title\"). Tas var būt noticis īpašumtiesību izmaiņu rezultātā, kā arī tehnisku vai dokumenta atjauninājumu dēļ",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2018",
+     "country": "",
+     "description": "Amerikas Savienotās Valstis Fiksēts bojājums",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2018",
+     "country": "Kanāda",
+     "description": "Fiksēts bojājums",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.10.2018",
+     "country": "",
+     "description": "Amerikas Savienotās Valstis Izlikts pārdošanā",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2018",
+     "country": "Kanāda",
+     "description": "Izlikts pārdošanā",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.01.2019",
+     "country": "Lietuva",
+     "description": "Fiksēts novērtējums",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2020",
+     "country": "Lietuva",
+     "description": "Fiksēts bojājumsMēs atradām ierakstu, kas liecina, kašis transportlīdzeklis ir bojāts. Ieskaties sadaļā \"Bojājumi\", lai uzzinātu vairāk",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2020",
+     "country": "Lietuva",
+     "description": "Fiksēts novērtējums",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2021",
+     "country": "Latvija",
+     "description": "Reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2021",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2021",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2022",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.06.2023",
+     "country": "Latvija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:02.06.2023līdz:01.07.2023",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2023",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2024",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.07.2025",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.04.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-10-15T09:21:53.712Z"
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-10-15T09:22:06.643Z"
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-10-15T09:22:37.987Z"
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-10-15T09:21:46.077Z"
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "25.09.2017",
+     "odometer": "178762",
+     "country": "ASV"
+    },
+    {
+     "date": "25.09.2017",
+     "odometer": "178689",
+     "country": "ASV"
+    },
+    {
+     "date": "12.09.2017",
+     "odometer": "176631",
+     "country": "ASV"
+    },
+    {
+     "date": "05.09.2017",
+     "odometer": "176631",
+     "country": "ASV"
+    },
+    {
+     "date": "05.09.2017",
+     "odometer": "176559",
+     "country": "ASV"
+    },
+    {
+     "date": "24.08.2017",
+     "odometer": "176504",
+     "country": "ASV"
+    },
+    {
+     "date": "24.08.2017",
+     "odometer": "176432",
+     "country": "ASV"
+    },
+    {
+     "date": "31.07.2017",
+     "odometer": "176474",
+     "country": "ASV"
+    },
+    {
+     "date": "31.07.2017",
+     "odometer": "176402",
+     "country": "ASV"
+    },
+    {
+     "date": "03.04.2017",
+     "odometer": "172491",
+     "country": "ASV"
+    },
+    {
+     "date": "20.01.2017",
+     "odometer": "163302",
+     "country": "ASV"
+    },
+    {
+     "date": "20.01.2017",
+     "odometer": "163235",
+     "country": "ASV"
+    },
+    {
+     "date": "27.12.2016",
+     "odometer": "161623",
+     "country": "ASV"
+    },
+    {
+     "date": "27.12.2016",
+     "odometer": "161557",
+     "country": "ASV"
+    },
+    {
+     "date": "21.11.2016",
+     "odometer": "154600",
+     "country": "ASV"
+    },
+    {
+     "date": "21.11.2016",
+     "odometer": "154537",
+     "country": "ASV"
+    },
+    {
+     "date": "24.09.2016",
+     "odometer": "149735",
+     "country": "ASV"
+    },
+    {
+     "date": "24.08.2016",
+     "odometer": "146377",
+     "country": "ASV"
+    },
+    {
+     "date": "19.07.2016",
+     "odometer": "138084",
+     "country": "ASV"
+    },
+    {
+     "date": "05.07.2016",
+     "odometer": "135633",
+     "country": "ASV"
+    },
+    {
+     "date": "03.06.2016",
+     "odometer": "128821",
+     "country": "ASV"
+    },
+    {
+     "date": "02.06.2016",
+     "odometer": "128608",
+     "country": "ASV"
+    },
+    {
+     "date": "24.05.2016",
+     "odometer": "126376",
+     "country": "ASV"
+    },
+    {
+     "date": "19.05.2016",
+     "odometer": "124974",
+     "country": "ASV"
+    },
+    {
+     "date": "18.05.2016",
+     "odometer": "124894",
+     "country": "ASV"
+    },
+    {
+     "date": "18.03.2016",
+     "odometer": "105643",
+     "country": "ASV"
+    },
+    {
+     "date": "08.03.2016",
+     "odometer": "124040",
+     "country": "ASV"
+    },
+    {
+     "date": "27.01.2016",
+     "odometer": "123055",
+     "country": "ASV"
+    },
+    {
+     "date": "07.12.2015",
+     "odometer": "118969",
+     "country": "ASV"
+    },
+    {
+     "date": "22.10.2015",
+     "odometer": "114419",
+     "country": "ASV"
+    },
+    {
+     "date": "19.10.2015",
+     "odometer": "114416",
+     "country": "ASV"
+    },
+    {
+     "date": "19.09.2015",
+     "odometer": "111181",
+     "country": "ASV"
+    },
+    {
+     "date": "20.06.2015",
+     "odometer": "99926",
+     "country": "ASV"
+    },
+    {
+     "date": "03.02.2015",
+     "odometer": "90767",
+     "country": "ASV"
+    },
+    {
+     "date": "15.11.2014",
+     "odometer": "84660",
+     "country": "ASV"
+    },
+    {
+     "date": "10.10.2014",
+     "odometer": "80198",
+     "country": "ASV"
+    },
+    {
+     "date": "27.09.2014",
+     "odometer": "78085",
+     "country": "ASV"
+    },
+    {
+     "date": "21.06.2014",
+     "odometer": "63960",
+     "country": "ASV"
+    },
+    {
+     "date": "13.06.2014",
+     "odometer": "62768",
+     "country": "ASV"
+    },
+    {
+     "date": "14.05.2014",
+     "odometer": "59304",
+     "country": "ASV"
+    },
+    {
+     "date": "21.04.2014",
+     "odometer": "55497",
+     "country": "ASV"
+    },
+    {
+     "date": "14.12.2013",
+     "odometer": "35842",
+     "country": "ASV"
+    },
+    {
+     "date": "02.12.2013",
+     "odometer": "33694",
+     "country": "ASV"
+    },
+    {
+     "date": "28.10.2013",
+     "odometer": "28355",
+     "country": "ASV"
+    },
+    {
+     "date": "30.09.2013",
+     "odometer": "23987",
+     "country": "ASV"
+    },
+    {
+     "date": "26.06.2013",
+     "odometer": "11458",
+     "country": "ASV"
+    },
+    {
+     "date": "23.05.2013",
+     "odometer": "7735",
+     "country": "ASV"
+    },
+    {
+     "date": "10.09.2012",
+     "odometer": "5",
+     "country": "ASV"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "25.09.2017",
+     "odometer": "178762",
+     "location": "Brian Harris BMW Sales and Service, 12336 Airline Hwy, Baton Rouge, LA 70817-4413, United States",
+     "works": "Apkope"
+    },
+    {
+     "date": "12.09.2017",
+     "odometer": "176631",
+     "location": "Brian Harris BMW Sales and Service, 12336 Airline Hwy, Baton Rouge, LA 70817-4413, United States",
+     "works": "Riteņu balansēšanas atsvari (WW2) 275/30 R20 97Y Dunlop Sport-extra load (36110440569)\nAizdedzes svece High Power (12120040581) Aizdedzes spole (12138647689)"
+    },
+    {
+     "date": "05.09.2017",
+     "odometer": "176559",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "24.08.2017",
+     "odometer": "176504",
+     "location": "Brian Harris BMW Sales and Service, 12336 Airline Hwy, Baton Rouge, LA 70817-4413, United States",
+     "works": "Apkope"
+    },
+    {
+     "date": "31.07.2017",
+     "odometer": "176474",
+     "location": "Brian Harris BMW Sales and Service, 12336 Airline Hwy, Baton Rouge, LA 70817-4413, United States",
+     "works": "Apkope\nRiteņu balansēšanas atsvari (WW2) 275/30 R20 97Y Dunlop Sport-extra load (36110440569) Piedziņas vārpsta Kreisā (33207566087) Uzgrieznis ar atloku (33411133785) Remonta komplekts\nPadziļināts uzgrieznis Zils (33127607158)"
+    },
+    {
+     "date": "03.04.2017",
+     "odometer": "172491",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "20.01.2017",
+     "odometer": "163302",
+     "location": "Brian Harris BMW Sales and Service, 12336 Airline Hwy, Baton Rouge, LA 70817-4413, United States",
+     "works": "Apkope\nRiteņu balansēšanas atsvari (WW2) 245/35 R20 95Y Dunlop Sport-extra load (36110440568)"
+    },
+    {
+     "date": "27.12.2016",
+     "odometer": "161623",
+     "location": "Brian Harris BMW Sales and Service, 12336 Airline Hwy, Baton Rouge, LA 70817-4413, United States",
+     "works": "Apkope"
+    },
+    {
+     "date": "21.11.2016",
+     "odometer": "154600",
+     "location": "Brian Harris BMW Sales and Service, 12336 Airline Hwy, Baton Rouge, LA 70817-4413, United States",
+     "works": "Apkope\nRiteņu balansēšanas atsvari (WW2) 275/30 R20 97Y Dunlop Sport-extra load (36110440569)"
+    },
+    {
+     "date": "24.09.2016",
+     "odometer": "149735",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "24.08.2016",
+     "odometer": "146377",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "19.07.2016",
+     "odometer": "138084",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "05.07.2016",
+     "odometer": "135633",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "03.06.2016",
+     "odometer": "128821",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "02.06.2016",
+     "odometer": "128608",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "24.05.2016",
+     "odometer": "126376",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "19.05.2016",
+     "odometer": "124974",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "18.05.2016",
+     "odometer": "124894",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "18.03.2016",
+     "odometer": "105643",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "08.03.2016",
+     "odometer": "124040",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "27.01.2016",
+     "odometer": "123055",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "07.12.2015",
+     "odometer": "118969",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "22.10.2015",
+     "odometer": "114419",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "19.10.2015",
+     "odometer": "114416",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "19.09.2015",
+     "odometer": "111181",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "20.06.2015",
+     "odometer": "99926",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "03.02.2015",
+     "odometer": "90767",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "15.11.2014",
+     "odometer": "84660",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "10.10.2014",
+     "odometer": "80198",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "27.09.2014",
+     "odometer": "78085",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "21.06.2014",
+     "odometer": "63960",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "13.06.2014",
+     "odometer": "62768",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "14.05.2014",
+     "odometer": "59304",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "21.04.2014",
+     "odometer": "55497",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "14.12.2013",
+     "odometer": "35842",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "02.12.2013",
+     "odometer": "33694",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "28.10.2013",
+     "odometer": "28355",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "30.09.2013",
+     "odometer": "23987",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "26.06.2013",
+     "odometer": "11458",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "23.05.2013",
+     "odometer": "7735",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "10.09.2012",
+     "odometer": "5",
+     "location": "",
+     "works": "Apkope"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "25.09.2017",
+      "odometer": "178689",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "25.09.2017",
+      "odometer": "178762",
+      "place": "Brian Harris BMW Sales and Service, 12336 Airline Hwy, Baton Rouge, LA 70817-4413, United States",
+      "works": "Service"
+     },
+     {
+      "date": "12.09.2017",
+      "odometer": "176631",
+      "place": "Brian Harris BMW Sales and Service, 12336 Airline Hwy, Baton Rouge, LA 70817-4413, United States",
+      "works": "WHEEL WEIGHT (WW2)\n275/30 R20 97Y Dunlop Sport-extra load (36110440569)"
+     },
+     {
+      "date": "05.09.2017",
+      "odometer": "176631",
+      "place": "Brian Harris BMW Sales and Service, 12336 Airline Hwy, Baton Rouge, LA 70817-4413, United States",
+      "works": "Spark plug\nHigh Power (12120040581)\nIgnition coil (12138647689)"
+     },
+     {
+      "date": "05.09.2017",
+      "odometer": "176559",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "24.08.2017",
+      "odometer": "176504",
+      "place": "Brian Harris BMW Sales and Service, 12336 Airline Hwy, Baton Rouge, LA 70817-4413, United States",
+      "works": "Service"
+     },
+     {
+      "date": "24.08.2017",
+      "odometer": "176432",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "31.07.2017",
+      "odometer": "176474",
+      "place": "Brian Harris BMW Sales and Service, 12336 Airline Hwy, Baton Rouge, LA 70817-4413, United States",
+      "works": "WHEEL WEIGHT (WW2)\n275/30 R20 97Y Dunlop Sport-extra load (36110440569)\nOutput shaft\nLeft (33207566087)\nCollar nut (33411133785)\nRepair kit, recessed nut\nBlue (33127607158)"
+     },
+     {
+      "date": "31.07.2017",
+      "odometer": "176402",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "03.04.2017",
+      "odometer": "172491",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "20.01.2017",
+      "odometer": "163302",
+      "place": "Brian Harris BMW Sales and Service, 12336 Airline Hwy, Baton Rouge, LA 70817-4413, United States",
+      "works": "WHEEL WEIGHT (WW2)\n245/35 R20 95Y Dunlop Sport-extra load (36110440568)"
+     },
+     {
+      "date": "20.01.2017",
+      "odometer": "163235",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "27.12.2016",
+      "odometer": "161623",
+      "place": "Brian Harris BMW Sales and Service, 12336 Airline Hwy, Baton Rouge, LA 70817-4413, United States",
+      "works": "Service"
+     },
+     {
+      "date": "27.12.2016",
+      "odometer": "161557",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "21.11.2016",
+      "odometer": "154537",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "21.11.2016",
+      "odometer": "154600",
+      "place": "Brian Harris BMW Sales and Service, 12336 Airline Hwy, Baton Rouge, LA 70817-4413, United States",
+      "works": "WHEEL WEIGHT (WW2)\n275/30 R20 97Y Dunlop Sport-extra load (36110440569)"
+     },
+     {
+      "date": "24.09.2016",
+      "odometer": "149735",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "24.08.2016",
+      "odometer": "146377",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "19.07.2016",
+      "odometer": "138084",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "05.07.2016",
+      "odometer": "135633",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "03.06.2016",
+      "odometer": "128821",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "02.06.2016",
+      "odometer": "128608",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "24.05.2016",
+      "odometer": "126376",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "19.05.2016",
+      "odometer": "124974",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "18.05.2016",
+      "odometer": "124894",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "18.03.2016",
+      "odometer": "105643",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "08.03.2016",
+      "odometer": "124040",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "27.01.2016",
+      "odometer": "123055",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "07.12.2015",
+      "odometer": "118969",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "22.10.2015",
+      "odometer": "114419",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "19.10.2015",
+      "odometer": "114416",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "19.09.2015",
+      "odometer": "111181",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "20.06.2015",
+      "odometer": "99926",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "03.02.2015",
+      "odometer": "90767",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "15.11.2014",
+      "odometer": "84660",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "10.10.2014",
+      "odometer": "80198",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "27.09.2014",
+      "odometer": "78085",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "21.06.2014",
+      "odometer": "63960",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.06.2014",
+      "odometer": "62768",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "14.05.2014",
+      "odometer": "59304",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "21.04.2014",
+      "odometer": "55497",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "14.12.2013",
+      "odometer": "35842",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "02.12.2013",
+      "odometer": "33694",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "28.10.2013",
+      "odometer": "28355",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "30.09.2013",
+      "odometer": "23987",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "26.06.2013",
+      "odometer": "11458",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "23.05.2013",
+      "odometer": "7735",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "10.09.2012",
+      "odometer": "5",
+      "place": "",
+      "works": "Service"
+     }
+    ]
+   },
+   "outvin": {
+    "precheckAt": null,
+    "vin": "WBAYM9C55DDW20079",
+    "capabilitySlots": [],
+    "purchases": [],
+    "vehicleInfo": {
+     "model": "",
+     "modelSeries": "",
+     "vinCode": "",
+     "vehicleType": "",
+     "transmission": "",
+     "steeringSide": "",
+     "engineCode": "",
+     "engineNumber": "",
+     "body": "",
+     "drive": "",
+     "power": "",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "Germany",
+     "color": "",
+     "colorCode": "",
+     "interior": "",
+     "interiorCode": "",
+     "fuel": "",
+     "displacement": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "650I",
+     "modelSeries": "F13",
+     "vinCode": "WBAYM9C55DDW20079",
+     "vehicleType": "Coupe",
+     "transmission": "8-speed Sport Automatic Transmission (GA8HP-70Z)",
+     "steeringSide": "LHD (left-hand drive)",
+     "engineCode": "N63T",
+     "engineNumber": "",
+     "body": "Coupe",
+     "drive": "RWD",
+     "power": "330 kW (443 hp)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "YM93",
+     "productionDate": "01.01.2012",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "Germany",
+     "color": "Black Sapphire Metallic (475)",
+     "colorCode": "475",
+     "interior": "Schwarz (NASW)",
+     "interiorCode": "NASW",
+     "fuel": "Petrol",
+     "displacement": "4395"
+    },
+    "accidentCheck": "",
+    "stolenCheck": ""
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "11.10.2018",
+     "region": "ASV, Baton Rouge, LA – Copart",
+     "amount": "",
+     "description": "Mehānisks bojājums"
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "11.10.2018",
+     "region": "ASV, Luiziāna",
+     "odometer": "178689",
+     "note": "LA Certificate of Title (tīrs), 111 032 jūdzes (Actual)"
+    }
+   ],
+   "sales": [
+    {
+     "date": "11.10.2018",
+     "venue": "ASV, Baton Rouge, LA – Copart, lots 43393158",
+     "odometer": "178 689",
+     "price": "7 360 €",
+     "status": "Pārdots"
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "WBAYM9C55DDW20079",
+    "fetchedAt": "2026-10-15T18:12:15.607Z",
+    "lastCostUsd": "$0.50",
+    "status": "none",
+    "summary": "nav ierakstu"
+   },
+   "sources": {
+    "joj": {
+     "reportDate": "",
+     "attentionMarks": "",
+     "ownersCount": "",
+     "checks": [],
+     "mileage": [],
+     "damages": [],
+     "brands": [],
+     "titles": [],
+     "sales": [],
+     "liens": [],
+     "thefts": [],
+     "notes": []
+    }
+   },
+   "sourceAttribution": {
+    "defaultSource": "oneauto",
+    "scalars": {
+     "reportDate": "oneauto",
+     "attentionMarks": "oneauto",
+     "ownersCount": "oneauto"
+    }
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "certificate": {
+    "issuedAt": "15.10.2026 17:01:41",
+    "vehicleLine": "Transportlīdzeklis BMW 650I, izlaiduma gads 2013. Valsts numura zīme FZ6500.",
+    "makeModel": "BMW 650I",
+    "year": "2013",
+    "plate": "FZ6500",
+    "accidentCount": "0",
+    "insuredFrom": "02.11.2021",
+    "insuredTo": "28.06.2025",
+    "insuredDays": "1019",
+    "claims": [],
+    "footerNote": "Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas."
+   }
+  },
+  "tirgus": {
+   "listedForSale": "219",
+   "listingCreated": "10.03.2026",
+   "priceDrop": "€ -500",
+   "priceHistory": [
+    {
+     "date": "28.09.2026",
+     "price": 16990,
+     "mileage": null,
+     "year": 2013,
+     "delta": -500
+    },
+    {
+     "date": "08.09.2026",
+     "price": 17490,
+     "mileage": null,
+     "year": 2013,
+     "delta": 0
+    },
+    {
+     "date": "31.08.2026",
+     "price": 17490,
+     "mileage": null,
+     "year": 2013,
+     "delta": 0
+    },
+    {
+     "date": "06.07.2026",
+     "price": 17490,
+     "mileage": null,
+     "year": 2013,
+     "delta": 0
+    },
+    {
+     "date": "10.05.2026",
+     "price": 17490,
+     "mileage": null,
+     "year": 2013,
+     "delta": 0
+    },
+    {
+     "date": "10.03.2026",
+     "price": 17490,
+     "mileage": null,
+     "year": 2013,
+     "delta": 0
+    }
+   ],
+   "listingMileageOdometer": "200 000",
+   "listingMileageDate": "10.03.2026",
+   "listingMileageCountry": "Latvija"
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "comments": "",
+     "label": ""
+    }
+   ]
+  }
+ }
+}

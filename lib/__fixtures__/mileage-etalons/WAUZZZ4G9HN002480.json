@@ -1,0 +1,523 @@
+{
+ "vin": "WAUZZZ4G9HN002480",
+ "label": "AUDI A6 AVANT: CSDD 17, AutoDNA 15, carVertical 15, dīleris 14; negadījumi 2",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 119, saglabāts 2026-08-04; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "AUDI A6 AVANT",
+   "registrationNumber": "OP4313",
+   "firstRegistration": "2016-06-14",
+   "nextInspectionDate": "",
+   "prevInspectionDate": "",
+   "engineDisplacementCm3": "2967",
+   "enginePowerKw": "240",
+   "fuelType": "Dīzeļdegviela",
+   "emissionStandard": "Euro 6 W",
+   "grossMassKg": "2560",
+   "curbMassKg": "2005",
+   "roadTaxEur": "159,00",
+   "registrationStatus": "Uzskaitē",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "Vācija",
+   "ownerCountLatvia": "",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "",
+    "inspectionDateText": "",
+    "nextInspectionDateText": "",
+    "odometer": "285707",
+    "ratingLabel": "",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "21.10.2021",
+     "odometer": "173980",
+     "country": "Beļģija"
+    },
+    {
+     "date": "02.06.2021",
+     "odometer": "163841",
+     "country": "Beļģija"
+    },
+    {
+     "date": "11.02.2021",
+     "odometer": "156960",
+     "country": "Beļģija"
+    },
+    {
+     "date": "20.11.2020",
+     "odometer": "153946",
+     "country": "Beļģija"
+    },
+    {
+     "date": "22.06.2020",
+     "odometer": "145733",
+     "country": "Beļģija"
+    },
+    {
+     "date": "22.01.2020",
+     "odometer": "136567",
+     "country": "Beļģija"
+    },
+    {
+     "date": "09.05.2019",
+     "odometer": "121218",
+     "country": "Beļģija"
+    },
+    {
+     "date": "28.02.2019",
+     "odometer": "113534",
+     "country": "Beļģija"
+    },
+    {
+     "date": "30.11.2018",
+     "odometer": "105166",
+     "country": "Beļģija"
+    },
+    {
+     "date": "14.06.2018",
+     "odometer": "84905",
+     "country": "Beļģija"
+    },
+    {
+     "date": "08.03.2018",
+     "odometer": "72020",
+     "country": "Beļģija"
+    },
+    {
+     "date": "19.12.2017",
+     "odometer": "60473",
+     "country": "Beļģija"
+    },
+    {
+     "date": "11.10.2017",
+     "odometer": "53049",
+     "country": "Beļģija"
+    },
+    {
+     "date": "06.06.2017",
+     "odometer": "42044",
+     "country": "Beļģija"
+    },
+    {
+     "date": "03.04.2017",
+     "odometer": "33989",
+     "country": "Beļģija"
+    },
+    {
+     "date": "14.10.2016",
+     "odometer": "12240",
+     "country": "Beļģija"
+    },
+    {
+     "date": "20.09.2016",
+     "odometer": "11050",
+     "country": "Beļģija"
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "",
+   "listingCreated": "",
+   "priceDrop": ""
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "01.02.2026",
+     "odometer": "278484",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2025",
+     "odometer": "261315",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2025",
+     "odometer": "250103",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2024",
+     "odometer": "231804",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2023",
+     "odometer": "202424",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2022",
+     "odometer": "179631",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2021",
+     "odometer": "173960",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.06.2021",
+     "odometer": "163841",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.03.2021",
+     "odometer": "156960",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.06.2020",
+     "odometer": "145733",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.05.2020",
+     "odometer": "144462",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.02.2019",
+     "odometer": "113554",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.07.2018",
+     "odometer": "84905",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.12.2017",
+     "odometer": "59757",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.03.2017",
+     "odometer": "29409",
+     "country": "Beļģija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.05.2022",
+     "lossAmount": "900 - 1 000 €"
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.02.2026",
+     "odometer": "277984",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2025",
+     "odometer": "260815",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2025",
+     "odometer": "249603",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2024",
+     "odometer": "231304",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2023",
+     "odometer": "201924",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2022",
+     "odometer": "185646",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2022",
+     "odometer": "179131",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.10.2021",
+     "odometer": "173460",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.03.2021",
+     "odometer": "156460",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.05.2020",
+     "odometer": "143962",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.02.2019",
+     "odometer": "113054",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.07.2018",
+     "odometer": "84705",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.12.2017",
+     "odometer": "59557",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.03.2017",
+     "odometer": "29209",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.06.2016",
+     "odometer": "10",
+     "country": "Beļģija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.05.2022",
+     "lossAmount": "751 - 1 000 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.06.2016",
+     "country": "",
+     "description": "Ražots"
+    },
+    {
+     "date": "01.06.2016",
+     "country": "",
+     "description": "Pirmā reģistrācija"
+    },
+    {
+     "date": "01.05.2022",
+     "country": "Vācija",
+     "description": "Fiksēts novērtējums"
+    },
+    {
+     "date": "01.06.2022",
+     "country": "Vācija",
+     "description": "Veikta apkopeŠim transportlīdzeklim ir fiksēts ieraksts par apko"
+    }
+   ],
+   "damageDetails": [
+    {
+     "date": "01.05.2022",
+     "country": "Vācija",
+     "lossAmount": "751 - 1 000 €",
+     "damagedSides": "",
+     "damageGroups": "Stikli; Kopsavilkums; Pārliecinies, ka transportlīdzekļa specifikācija un aprīkojums atbilst pārdevēja teiktajam.; Specifikācija un aprīkojums; Transportlīdzekļa fiksētā tehniskā specifikācija un oriģinālais aprīkojums.; Šajā sadaļā ir iekļauti vienkāršoti, mākslīgā intelekta ģenerēti apraksti, lai palīdzētu labāk izprast ikkatru transportlīdzekļa funkciju.; VIN numurs: WAUZZZ4G9HN002480 Ģenerēšanas datums:"
+    }
+   ]
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "01.02.2026",
+     "odometer": "278484",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2025",
+     "odometer": "261315",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2025",
+     "odometer": "250103",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2024",
+     "odometer": "231804",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2023",
+     "odometer": "202424",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2022",
+     "odometer": "179631",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2021",
+     "odometer": "173960",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.03.2021",
+     "odometer": "156960",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.05.2020",
+     "odometer": "144462",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.02.2019",
+     "odometer": "113554",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.07.2018",
+     "odometer": "84905",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.12.2017",
+     "odometer": "59757",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.03.2017",
+     "odometer": "29409",
+     "country": "Beļģija"
+    },
+    {
+     "date": "01.06.2016",
+     "odometer": "10",
+     "country": "Beļģija"
+    }
+   ],
+   "outvin": {
+    "precheckAt": "2026-08-04T15:43:36.753Z",
+    "vin": "WAUZZZ4G9HN002480",
+    "capabilitySlots": [
+     {
+      "id": "service_1",
+      "historyType": 1,
+      "titleLv": "Oficiālā servisa un nobraukuma vēsture (Type 1)",
+      "creditCost": 1,
+      "status": "available",
+      "category": "service_history"
+     },
+     {
+      "id": "carfax_2",
+      "historyType": 2,
+      "titleLv": "ASV / Carfax vēsture (Type 2)",
+      "creditCost": 1,
+      "status": "disabled",
+      "statusReason": "Eiropas VIN — ASV Carfax (Type 2) parasti nav pieejams",
+      "category": "us_carfax"
+     }
+    ],
+    "purchases": [],
+    "vehicleInfo": {
+     "vinCode": "",
+     "series": "",
+     "typeCode": "",
+     "steeringSide": "",
+     "interior": "",
+     "model": "",
+     "generation": "",
+     "engineCode": "",
+     "color": "",
+     "transmission": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "vinCode": "WAUZZZ4G9HN002480",
+     "series": "",
+     "typeCode": "",
+     "steeringSide": "",
+     "interior": "",
+     "model": "",
+     "generation": "",
+     "engineCode": "CVUB",
+     "color": "",
+     "transmission": "PPE"
+    }
+   }
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

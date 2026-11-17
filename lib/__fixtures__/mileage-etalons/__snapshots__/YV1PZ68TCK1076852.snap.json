@@ -1,0 +1,37 @@
+{
+ "label": "Volvo V90 CC: 4 valstis, reģistru dati",
+ "rindasPaAvotiem": {
+  "AutoDNA": 5,
+  "CarVertical": 6,
+  "DĀNIJAS REĢISTRI": 7,
+  "ss.lv": 1
+ },
+ "rindasSavaktas": 19,
+ "rindasTabula": 10,
+ "tabula": [
+  "01.10.2018 | 11 | Vācija | CarVertical",
+  "16.11.2018 | 0 | Dānija | DĀNIJAS REĢISTRI",
+  "01.01.2020 | 24000 | Vācija | AutoDNA + CarVertical",
+  "18.02.2022 | 75000 | Dānija | CarVertical + AutoDNA + DĀNIJAS REĢISTRI",
+  "29.02.2024 | 147000 | Dānija | CarVertical + AutoDNA + DĀNIJAS REĢISTRI",
+  "05.04.2024 | 150044 | Dānija | AutoDNA + DĀNIJAS REĢISTRI",
+  "05.04.2024 | 150000 | Dānija | CarVertical + DĀNIJAS REĢISTRI",
+  "02.03.2026 | 219659 | Dānija | AutoDNA + DĀNIJAS REĢISTRI",
+  "02.03.2026 | 219000 | Dānija | CarVertical + DĀNIJAS REĢISTRI",
+  "08.10.2026 | 225 070 | Latvija | ss.lv"
+ ],
+ "sarkanaJosla": false,
+ "klases": [],
+ "kritumsBezNilaLemumiem": false,
+ "nilaLemumi": [],
+ "klasesPecNilaLemumiem": [],
+ "faktuLapa": {
+  "odometerAnomaly": false,
+  "carverticalMileageWarning": false,
+  "maxRollbackDropKm": 0,
+  "rollbacks": [],
+  "suspectedEntryErrors": [],
+  "implausibleReadings": [],
+  "latestKm": 225070
+ }
+}
