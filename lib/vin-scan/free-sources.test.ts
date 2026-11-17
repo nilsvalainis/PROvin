@@ -1,8 +1,9 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { VIN_SCAN_REMOVED_IDS, VIN_SCAN_SOURCE_IDS } from "@/lib/vin-scan/catalog";
+vi.mock("server-only", () => ({}));
+
+import { VIN_SCAN_BROWSER_FETCH_IDS, browserFetchAwaiting, browserFetchSummary } from "@/lib/vin-scan/browser-fetch";
+import { VIN_SCAN_REMOVED_IDS, VIN_SCAN_SOURCE_IDS, vinScanCatalogItem } from "@/lib/vin-scan/catalog";
 import {
   freeVinScanSourceIds,
   isFreeVinScanSourceId,
@@ -12,8 +13,14 @@ import {
   VIN_SCAN_PAID_SOURCE_IDS,
   vinScanAutoSourceIds,
 } from "@/lib/vin-scan/free-sources";
+import { emptyVinScanPlates } from "@/lib/vin-scan/plates";
+import { vinScanProbeFor } from "@/lib/vin-scan/probes";
 
-const ROOT = process.cwd();
+const VIN = "WBA5R1C0XLFH42873";
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("free VIN SCAN avoti", () => {
   it("automātiskais saraksts ir kataloga avoti bez maksas pirkumiem un JoJ $0.50", () => {
@@ -42,24 +49,29 @@ describe("free VIN SCAN avoti", () => {
   it("stat.vin ir vērtīgais noklusējuma avots", () => {
     expect(isValuableVinScanSourceId("stat_vin")).toBe(true);
     expect(isValuableVinScanSourceId("carvertical")).toBe(false);
-    const probe = readFileSync(path.join(ROOT, "lib/vin-scan/probes-extra.ts"), "utf8");
-    expect(probe).toContain('https://stat.vin/');
-    expect(probe).toContain("statVinBrowserLane");
-    expect(probe).toContain("browserFetchLane");
-    expect(probe).not.toContain("fetchVinScanAuctionPage");
-    expect(probe).not.toContain("fetchAuctionHtml");
-    expect(probe).not.toContain("wafBypass");
-    expect(probe).not.toContain("STAT_VIN_ORIGIN");
-    expect(probe).toContain("Datucentra IP");
   });
 
-  it("automātiskās plūsmas palaiž tikai freeVinScanSourceIds", () => {
-    const run = readFileSync(path.join(ROOT, "lib/order-vin-scan-run.ts"), "utf8");
-    expect(run).toContain("vinScanAutoSourceIds");
-    expect(run).toContain("already_running");
-    expect(run).not.toMatch(/carvertical/i);
-    expect(run).not.toMatch(/purchaseCarVerticalReport/);
+  it("stat.vin un pārējos bloķētos avotus serveris nelasa: zonde uzreiz atdod from-browser joslu", async () => {
+    /* Datucentra IP šajās lapās saņem 403, tāpēc servera pieprasījums būtu tikai lieks troksnis. */
+    const fetchSpy = vi.fn(async () => {
+      throw new Error("serveris nedrīkst lasīt from-browser avotu");
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    for (const id of VIN_SCAN_BROWSER_FETCH_IDS) {
+      const row = await vinScanProbeFor(id)!({ vin: VIN, plates: emptyVinScanPlates(), listingUrl: "" });
+      expect(row, id).toMatchObject({
+        id,
+        status: "browser_only",
+        summary: browserFetchSummary(id),
+        openUrl: vinScanCatalogItem(id).openUrl(VIN),
+      });
+      expect(browserFetchAwaiting(row), id).toBe(true);
+    }
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
+
+  /* "Automātiskās plūsmas palaiž tikai bezmaksas avotus" un "jau notiekošu skenējumu neatkārto" tagad
+     ir uzvedības testi ar īstu runOrderFreeVinScan: lib/vin-scan/auto-flow-paid-sources.test.ts. */
 
   it("automātiskais scan neiekļauj maksas avotus (JoJ / paid sourceIds)", () => {
     const free = freeVinScanSourceIds();
@@ -71,31 +83,6 @@ describe("free VIN SCAN avoti", () => {
     expect(vinScanAutoSourceIds({ sourceIds: ["carvertical"] })).toEqual(free);
   });
 
-  it("melnraksta persistēšana saglabā vinScan blakus autoIngest", () => {
-    const store = readFileSync(path.join(ROOT, "lib/admin-order-draft-store.ts"), "utf8");
-    expect(store).toContain("...(prev?.vinScan ? { vinScan: prev.vinScan } : {})");
-    expect(store).toContain("function extraDraftPersistFields");
-    expect(store).toContain("withDraftWriteLock");
-    expect(store).toContain("upsertOrderDraftVinScan");
-    const vinScanFn = store.slice(store.indexOf("async function upsertOrderDraftVinScanUnlocked"));
-    expect(vinScanFn).toContain("workspaceRevision: prev.workspaceRevision");
-    expect(vinScanFn.slice(0, 2500)).not.toContain("prevRev + 1");
-    const patch = readFileSync(path.join(ROOT, "app/api/admin/order-draft/route.ts"), "utf8");
-    expect(patch).toContain("shouldStartOrderVinScanOnDraftPatch");
-    const card = readFileSync(path.join(ROOT, "components/admin/AdminOrderVinScanCard.tsx"), "utf8");
-    expect(card).toContain("VIN SCAN avoti");
-    expect(card).toContain("Ielikt AUCTION");
-    expect(card).toContain("Ielikt CSDD");
-    expect(card).toContain("Ielikt SLUDIN");
-    expect(card).not.toMatch(/paraugs/i);
-    const dash = readFileSync(path.join(ROOT, "app/admin/(dashboard)/dashboard/page.tsx"), "utf8");
-    expect(dash).toContain("AdminOrderVinScanDashboardCards");
-    expect(dash).toContain("pickOrderVinScanDashboardCards");
-    const photos = readFileSync(path.join(ROOT, "app/api/admin/order-vin-scan-photos/route.ts"), "utf8");
-    expect(photos).toContain("importVinScanAuctionPhotoGroupsToCcVin");
-    expect(photos).not.toMatch(/purchaseCarVerticalReport/);
-    const table = readFileSync(path.join(ROOT, "components/admin/AdminOrdersTable.tsx"), "utf8");
-    expect(table).toContain("h-[46px]");
-    expect(table).not.toContain("vinScan");
-  });
+  /* Melnraksta krātuves uzvedība (vinScan paliek blakus autoIngest, revīzija nemainās):
+     lib/vin-scan/draft-vin-scan-persist.test.ts. Kartītes renderis: components/admin/AdminOrderVinScanCard.test.tsx. */
 });
