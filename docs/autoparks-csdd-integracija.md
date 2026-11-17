@@ -1,6 +1,12 @@
 # Autoparks + CSDD tirdzniecības reģistrs - izpēte
 
-Statuss: izpēte un apspriešana, nekas nav ieviests. Lēmums - pēc Nila atbildēm (sk. beigās).
+Statuss: izpēte un apspriešana, nekas nav ieviests.
+
+## Lēmumi
+
+- **17.11. Nils: "nedrīkst"** - CSDD pieprasījumu par tirdzniecības reģistra datiem nesūtām, un tirdzniecības reģistra datus automātiski neielasām un neglabājam PROVIN. Tātad varianti A, B, C un D (3. sadaļa) **atmesti**.
+- Paliek tikai tas, kas nav atkarīgs no tirdzniecības reģistra: CSDD tehniskie dati pēc jau esošā līguma (`tl_tehn_dati`) un cenu šabloni.
+- Akta nr. kartītē - tikai tad, ja darbinieks to ieraksta ar roku no IRISS paša akta. Arī to darām tikai pēc Nila "jā".
 
 Mērķis: Autoparks auto kartītē redzēt datus par auto, kas jau **pieņemti tirdzniecībā** CSDD tirdzniecības reģistrā (pieņemšanas akta nr., datums, odometrs, pieņemšanas cena), un no tiem kopā ar tehniskajiem datiem veidot **cenu šablonus**.
 
@@ -118,10 +124,9 @@ Ieteiktā cena = pirkuma cena + `costs` + (tāme) + max(marginPct, marginMinEur)
 - **Drošība**: CSDD 2026. gadā piedzīvoja kiberincidentu - iespējamas pēkšņas piekļuves izmaiņas un stingrākas prasības pieslēgumiem.
 - **Summas**: jaunais cenas lauks nedrīkst nopludināt summas Servisam/Loģistikai.
 
-## 7. Ieteicamie soļi
+## 7. Ieteicamie soļi (pēc 17.11. lēmuma)
 
-1. Nils sūta CSDD pieprasījumu (līguma pielikums): tirdzniecībā pieņemto TL saraksts SIA ĪRISS + akts pēc VIN; lauki, formāts, maksa, vai pietiek ar esošo VPN.
-2. PROVIN (bez CSDD): Autoparks kartītē poga "Ielasīt no CSDD", kas izsauc jau esošo `csdd-tech-data` un saglabā `csddTech`. Tas uzreiz dod laukus cenu šabloniem.
-3. Cenu šabloni ar roku ievadītu pirkuma cenu + tāmi (nav atkarīgi no tirdzniecības reģistra).
-4. Pagaidu tilts (C vai D, pēc Nila izvēles): akta nr. un pieņemšanas datums kartītē, `source` atzīme.
-5. Kad CSDD atbild: jauna metode `lib/csdd-trade-register.ts`, releja baltais saraksts, ikdienas sinhronizācija + ieraksts pēc VIN.
+1. Autoparks kartītē poga "Ielasīt no CSDD", kas izsauc jau esošo `csdd-tech-data` un saglabā `csddTech`. Releja baltais saraksts un līgums nemainās.
+2. Cenu šabloni (5.2.) uz `csddTech` laukiem + ar roku ievadīta pirkuma cena + tāme.
+3. `csddTrade` (5.1.) **neveidojam**. Ja Nils piekrīt, kartītē var būt viens ar roku aizpildāms lauks "Pieņemšanas akta nr." bez sinhronizācijas.
+4. Varianti A-D paliek dokumentā tikai kā vēsture. Pie tiem atgriežamies tikai tad, ja Nils lēmumu maina.
