@@ -22,8 +22,8 @@ describe("userscript sync with VIN scan catalog", () => {
   const src = readFileSync(PUBLIC_SCRIPT, "utf8");
 
   it("versija un SCAN_URLS sakrīt ar katalogu", () => {
-    expect(src).toMatch(/@version\s+1\.25\.0/);
-    expect(src).toContain('const SCRIPT_VERSION = "1.25.0"');
+    expect(src).toMatch(/@version\s+1\.26\.0/);
+    expect(src).toContain('const SCRIPT_VERSION = "1.26.0"');
     expect(src).toContain("function stampUserscriptVersion()");
     expect(src).toContain('document.addEventListener("provin-userscript-ping"');
     expect(src).toContain('new CustomEvent("provin-userscript-pong", { detail: SCRIPT_VERSION })');
