@@ -32,6 +32,16 @@ describe("lotu VIN rinda", () => {
     expect(enqueueLotsWithoutVin(out.queue, [ol("11862697")], "2026-11-19", now).added).toBe(0);
   });
 
+  it("pārtraukta partija: neapstrādātās lotes nezaudē mēģinājumus, īsta kļūda zaudē", () => {
+    const q = enqueueLotsWithoutVin(emptyLotVinQueue(now), [ol("11862697")], "2026-11-18", now).queue;
+    const picked = pickLotVinBatch(q, now)!;
+    const row = { url: picked.items[0]!.url, status: "error", vin: "", mileageKm: null, firstRegistration: "", title: "" };
+    const cut = applyLotVinResult(q, picked, mapLotVinRelayResponse(200, { ok: true, status: "blocked", note: "blocked: captcha", results: [row] }), "2026-11-18", now);
+    expect(cut.queue.pending[0]!.attempts).toBe(0);
+    const real = applyLotVinResult(q, picked, mapLotVinRelayResponse(200, { ok: true, status: "ok", note: "", results: [row] }), "2026-11-18", now);
+    expect(real.queue.pending[0]!.attempts).toBe(1);
+  });
+
   it("dienas limits vai login: lotes paliek rindā un platforma ir pauzē", () => {
     const q = enqueueLotsWithoutVin(emptyLotVinQueue(now), [ol("11862697")], "2026-11-18", now).queue;
     const picked = pickLotVinBatch(q, now)!;

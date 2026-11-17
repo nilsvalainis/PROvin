@@ -228,6 +228,7 @@ export function applyLotVinResult(
   const finished = new Set<string>();
   const retry = new Map<string, number>();
   const totals = { ...queue.totals };
+  const interrupted = result.status !== "ok" || /limits/i.test(result.note);
   const sameOrder = result.results.length === picked.items.length;
   for (const [i, item] of picked.items.entries()) {
     /* Relejs var normalizēt saiti (piem. /en/), tad sakrīt secība, ne teksts. */
@@ -254,6 +255,9 @@ export function applyLotVinResult(
     } else if (row.status === "gone") {
       totals.gone += 1;
       finished.add(item.key);
+    } else if (interrupted) {
+      /* Partija pārtraukta (limits, login, WAF): lote nav vainīga, mēģinājumu neskaitām. */
+      totals.asked -= 1;
     } else {
       totals.errors += 1;
       if (item.attempts + 1 >= LOT_VIN_LIMITS.maxAttempts) finished.add(item.key);
