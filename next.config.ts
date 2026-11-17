@@ -62,7 +62,7 @@ const nextConfig: NextConfig = {
     "/**": ["./public/brands/dzintarzeme-auto-logo.png"],
     "/api/admin/**": ["./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"],
     // Servera PDF (Chromium Vercel vidē): bināros failus lasa pēc ceļa no bin/.
-    "/api/admin/report-pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
+    "/api/admin/report-pdf": ["./node_modules/@sparticuz/chromium/bin/**", "./public/fonts/report-inter/**"],
     "/api/admin/iriss-listings/vin-ocr": [
       "./node_modules/tesseract.js/dist/**",
       "./node_modules/tesseract.js/src/worker-script/**",
