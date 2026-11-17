@@ -36,3 +36,9 @@ export function hidePhotoWatermarksFromCcVinWorkspace(workspace: unknown): boole
   if (!blocks || typeof blocks !== "object") return HIDE_PHOTO_WATERMARKS_DEFAULT;
   return parseCcVinHidePhotoWatermarks((blocks as { cc_vin?: unknown }).cc_vin);
 }
+
+/** Ielāde (TheCarApi u.c.) neieslēdz slēdzi. Paliek tikai iepriekš skaidri saglabāts true. */
+export function retainSavedHidePhotoWatermarks(previous: unknown): boolean {
+  if (!previous || typeof previous !== "object") return HIDE_PHOTO_WATERMARKS_DEFAULT;
+  return (previous as { hidePhotoWatermarks?: unknown }).hidePhotoWatermarks === true;
+}

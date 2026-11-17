@@ -618,6 +618,7 @@ export function emptyTirgusFields(): TirgusFormFields {
     listingMileageCountry: "",
     photos: [],
     photoGroups: [],
+    hidePhotoWatermarks: false,
   };
 }
 
@@ -743,6 +744,7 @@ export function emptyCsddFields(): CsddFormFields {
     pdfChecklist: undefined,
     photos: [],
     photoGroups: [],
+    hidePhotoWatermarks: false,
   };
 }
 
@@ -1208,6 +1210,7 @@ export function emptyAutoRecordsBlock(): AutoRecordsBlockState {
     oilChangeIntervalNotes: "",
     photos: [],
     photoGroups: [],
+    hidePhotoWatermarks: false,
     aiContextRaw: "",
     oneautoIngest: emptyOneautoIngest(),
   };
@@ -1218,7 +1221,15 @@ export function emptyLtabRow(): LtabIncidentRow {
 }
 
 export function emptyLtabBlock(): LtabBlockState {
-  return { rows: [emptyLtabRow()], comments: "", pdfImportRaw: "", aiContextRaw: "", photos: [], photoGroups: [] };
+  return {
+    rows: [emptyLtabRow()],
+    comments: "",
+    pdfImportRaw: "",
+    aiContextRaw: "",
+    photos: [],
+    photoGroups: [],
+    hidePhotoWatermarks: false,
+  };
 }
 
 export function emptyVendorAvotuBlock(): VendorAvotuBlockState {
@@ -1229,6 +1240,7 @@ export function emptyVendorAvotuBlock(): VendorAvotuBlockState {
     aiContextRaw: "",
     photos: [],
     photoGroups: [],
+    hidePhotoWatermarks: false,
   };
 }
 
@@ -1263,6 +1275,7 @@ export function emptyVinRegistryBlock(): VinRegistryBlockState {
     aiContextRaw: "",
     photos: [],
     photoGroups: [],
+    hidePhotoWatermarks: false,
   };
 }
 
@@ -1433,6 +1446,7 @@ export function emptyListingAnalysisBlock(): ListingAnalysisBlockState {
     photoAnalysis: "",
     photos: [],
     photoGroups: [],
+    hidePhotoWatermarks: false,
     extraSellerName: "",
     listingPasteRaw: "",
     listingSalesContext: "",

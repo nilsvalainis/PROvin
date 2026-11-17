@@ -4889,7 +4889,7 @@ export function OrderDetailWorkspace({
         email={(payload.customerEmail ?? "").trim()}
         defaultKind={sendReportDefaultKind}
         b2b={b2bClientOrder}
-        attachments={portfolio.map((p) => ({ id: p.id, name: p.name, size: p.size }))}
+        attachments={portfolio.map((p) => ({ id: p.id, name: p.name, size: p.size, mime: p.mime }))}
         whatsappHref={sendReportWhatsappHref}
         prepare={prepareSendReportPdf}
         send={sendPreparedReport}

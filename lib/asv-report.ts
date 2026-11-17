@@ -181,6 +181,7 @@ export function emptyAsvBlock(): AsvBlockState {
     aiContextRaw: "",
     photos: [],
     photoGroups: [],
+    hidePhotoWatermarks: false,
   };
 }
 
