@@ -3,10 +3,13 @@
  */
 import type { CronNotifyEntries } from "@/lib/cron-notify-entries";
 import type { AdminPushMessage } from "@/lib/admin-push-shared";
+import { isVinScanSourceId, vinScanCatalogItem } from "@/lib/vin-scan/catalog";
 
 export type VinScanCanaryRun = {
   vin: string;
   statVinRecord: boolean;
+  /** Avoti, kam šim VIN jāatrod ieraksts. */
+  expectFound?: readonly string[];
   /** sourceId -> status (found/none/error/timeout/...); `missing`, ja avots neatgrieza rezultātu. */
   statuses: Record<string, string>;
   /** Viss skenējums izmeta kļūdu. */
@@ -33,10 +36,21 @@ export function evaluateVinScanCanary(runs: readonly VinScanCanaryRun[], sourceI
       const decodeMissed = id === "vin_decode" && status !== "found";
       /** Zināmais stat.vin ieraksts pazudis. `browser_only` nav kļūme: serveris stat.vin nelasa (403), dati nāk no pārlūka. */
       const recordLost = id === "stat_vin" && run.statVinRecord && status === "none";
-      if (BROKEN.has(status) || decodeMissed || recordLost) out.push({ vin: run.vin, sourceId: id, status });
+      /** Zināmais ieraksts publiskā API pazudis (piem. tjekbil/esyn dod none vai cita formāta atbildi). */
+      const expectedMissed = Boolean(run.expectFound?.includes(id)) && status !== "found";
+      if (BROKEN.has(status) || decodeMissed || recordLost || expectedMissed) out.push({ vin: run.vin, sourceId: id, status });
     }
   }
   return out;
+}
+
+/** Avoti, kas reālos skenējumos krīt N reizes pēc kārtas (mnt.ee, lkf.ee, car.info, relejs). Bez jauniem zvaniem. */
+export function canaryStreakFailures(
+  streaks: readonly { id: string; streak: number }[],
+): VinScanCanaryFailure[] {
+  return streaks
+    .filter((row) => isVinScanSourceId(row.id))
+    .map((row) => ({ vin: "", sourceId: row.id, status: `${row.streak} kļūdas pēc kārtas` }));
 }
 
 /** Paraksts: kuri avoti krīt (bez VIN), lai tas pats bojājums nedod jaunu push. */
@@ -65,11 +79,15 @@ export function decideCanaryAlert(
 
 const SOURCE_LABEL: Record<string, string> = { vin_decode: "VIN dekodēšana", stat_vin: "stat.vin", scan: "skenēšana" };
 
+function sourceLabel(id: string): string {
+  return SOURCE_LABEL[id] ?? (isVinScanSourceId(id) ? vinScanCatalogItem(id).label : id);
+}
+
 export function adminPushVinScanCanaryMessage(failures: readonly VinScanCanaryFailure[]): AdminPushMessage {
   const ids = canaryFailureSignature(failures).split(",").filter(Boolean);
   return {
     title: "VIN SCAN avots nestrādā",
-    body: `Krīt: ${ids.map((id) => SOURCE_LABEL[id] ?? id).join(", ")} (${failures.length} pārbaudes)`,
+    body: `Krīt: ${ids.map(sourceLabel).join(", ")} (${failures.length} pārbaudes)`,
     url: "/admin/vin-scan",
     tag: "vin-scan-canary",
     audience: "pro",

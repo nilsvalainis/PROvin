@@ -255,7 +255,8 @@ export async function probeCsdd(ctx: VinScanContext): Promise<VinScanIndicator> 
 
 export async function probeMntEe(ctx: VinScanContext): Promise<VinScanIndicator> {
   try {
-    return done("mnt_ee", ctx, parseVinSourceScan(await fetchVinSource("mnt_ee", ctx.vin, ctx.plates.lv)));
+    // mnt.ee `regMark` ir Igaunijas numurs. LV numurs tur nav derīgs un var sabojāt meklējumu, tāpēc tikai VIN.
+    return done("mnt_ee", ctx, parseVinSourceScan(await fetchVinSource("mnt_ee", ctx.vin)));
   } catch (e) {
     return failed("mnt_ee", ctx, e);
   }

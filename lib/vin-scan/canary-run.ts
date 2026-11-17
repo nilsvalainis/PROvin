@@ -2,9 +2,12 @@ import "server-only";
 
 import { sendAdminPush } from "@/lib/admin-push";
 import { isCronNotifyStoreDurable, readCronNotifyEntries, writeCronNotifyEntries } from "@/lib/cron-notify-dedupe-store";
-import { VIN_SCAN_CANARY_VINS, vinScanCanarySourceIds } from "@/lib/vin-scan/canary";
+import { readSourceHealth } from "@/lib/source-health-store";
+import { sourcesFailingInARow } from "@/lib/source-health";
+import { VIN_SCAN_CANARY_STREAK_MIN, VIN_SCAN_CANARY_VINS, vinScanCanarySourceIds } from "@/lib/vin-scan/canary";
 import {
   adminPushVinScanCanaryMessage,
+  canaryStreakFailures,
   decideCanaryAlert,
   evaluateVinScanCanary,
   type VinScanCanaryRun,
@@ -23,7 +26,7 @@ export async function runVinScanCanaryWithAlert(nowMs = Date.now()) {
       const indicators = await runVinScan({ vin: row.vin, sourceIds });
       const statuses: Record<string, string> = {};
       for (const item of indicators) statuses[item.id] = item.status || "missing";
-      runs.push({ vin: row.vin, statVinRecord: row.statVinRecord, statuses });
+      runs.push({ vin: row.vin, statVinRecord: row.statVinRecord, expectFound: row.expectFound, statuses });
       console.info(JSON.stringify({ canary: true, vin: row.vin, statuses, ms: Date.now() - started }));
     } catch (err) {
       const reason = err instanceof Error ? err.message : "canary_failed";
@@ -32,7 +35,10 @@ export async function runVinScanCanaryWithAlert(nowMs = Date.now()) {
     }
   }
 
-  const failures = evaluateVinScanCanary(runs, sourceIds);
+  const streaks = await readSourceHealth()
+    .then((doc) => sourcesFailingInARow(doc, VIN_SCAN_CANARY_STREAK_MIN))
+    .catch(() => []);
+  const failures = [...evaluateVinScanCanary(runs, sourceIds), ...canaryStreakFailures(streaks)];
   let alert: "ok" | "already_sent" | "sent" | "push_not_delivered" | "store_not_durable" = "ok";
   if (failures.length > 0 && !isCronNotifyStoreDurable()) {
     alert = "store_not_durable";
