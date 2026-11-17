@@ -7,8 +7,18 @@
  * Viens VIN - viens ieraksts ar novērojumu sarakstu; vienā dienā no viena avota tikai viens novērojums.
  */
 
-export const VIN_MEMORY_SOURCES = ["auto1", "autobid", "openline", "ecarstrade", "order", "quick_eval", "logistics"] as const;
+export const VIN_MEMORY_SOURCES = ["auto1", "autobid", "openline", "ecarstrade", "order", "quick_eval", "logistics", "thecarapi"] as const;
 export type VinMemorySource = (typeof VIN_MEMORY_SOURCES)[number];
+
+export type VinMemoryField = { key: string; label: string; value: string };
+
+export type VinMemoryPhoto = {
+  id: string;
+  date?: string;
+  caption?: string;
+  sourceUrl?: string;
+  contentHash?: string;
+};
 
 export type VinObservation = {
   /** `YYYY-MM-DD` (Europe/Riga nav svarīgs - diena, kad redzēts). */
@@ -21,6 +31,14 @@ export type VinObservation = {
   /** `YYYY-MM` vai `YYYY-MM-DD` pirmā reģistrācija, ja zināma. */
   firstRegistration?: string;
   country?: string;
+  /** Izsoles ID. Kopā ar platformu dod dedup atslēgu. */
+  auctionId?: string;
+  platform?: string;
+  venue?: string;
+  price?: string;
+  fields?: VinMemoryField[];
+  raw?: unknown;
+  photos?: VinMemoryPhoto[];
 };
 
 export type VinMemoryEntry = {
@@ -70,6 +88,13 @@ export type VinObservationInput = {
   model?: unknown;
   firstRegistration?: unknown;
   country?: unknown;
+  auctionId?: unknown;
+  platform?: unknown;
+  venue?: unknown;
+  price?: unknown;
+  fields?: unknown;
+  raw?: unknown;
+  photos?: unknown;
 };
 
 /** Sakārto ievadi; `null`, ja VIN vai datums nederīgs. */
@@ -84,11 +109,80 @@ export function toObservation(input: VinObservationInput): { vin: string; obs: V
   if (fr && /^\d{4}(-\d{2}){1,2}$/.test(fr)) obs.firstRegistration = fr;
   const country = cleanShort(input.country, 2);
   if (country && /^[A-Z]{2}$/i.test(country)) obs.country = country.toUpperCase();
-  return { vin: normalizeVin(input.vin), obs };
+  const extra = extraObservation(input);
+  return { vin: normalizeVin(input.vin), obs: { ...obs, ...extra } };
+}
+
+function lotKey(obs: VinObservation): string {
+  const id = (obs.auctionId || "").trim();
+  if (!id) return "";
+  return `${(obs.platform || obs.source).trim().toLowerCase()}|${id}`;
 }
 
 function sameObservation(a: VinObservation, b: VinObservation): boolean {
+  const aLot = lotKey(a);
+  const bLot = lotKey(b);
+  if (aLot || bLot) return aLot !== "" && aLot === bLot;
   return a.date === b.date && a.source === b.source;
+}
+
+function extraObservation(input: VinObservationInput): Partial<VinObservation> {
+  const out: Partial<VinObservation> = {};
+  const auctionId = cleanShort(input.auctionId, 80);
+  if (auctionId) out.auctionId = auctionId;
+  const platform = cleanShort(input.platform, 40);
+  if (platform) out.platform = platform.toLowerCase();
+  const venue = cleanShort(input.venue, 80);
+  if (venue) out.venue = venue;
+  const price = cleanShort(input.price, 40);
+  if (price) out.price = price;
+  const fields = cleanFields(input.fields);
+  if (fields.length) out.fields = fields;
+  if (input.raw !== undefined && input.raw !== null) out.raw = input.raw;
+  const photos = cleanPhotos(input.photos);
+  if (photos.length) out.photos = photos;
+  return out;
+}
+
+function cleanFields(raw: unknown): VinMemoryField[] {
+  if (!Array.isArray(raw)) return [];
+  const out: VinMemoryField[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as { key?: unknown; label?: unknown; value?: unknown };
+    const key = cleanShort(row.key, 200);
+    if (!key) continue;
+    out.push({
+      key,
+      label: cleanShort(row.label, 200) || key,
+      value: typeof row.value === "string" ? row.value.slice(0, 2000) : "",
+    });
+    if (out.length >= 200) break;
+  }
+  return out;
+}
+
+function cleanPhotos(raw: unknown): VinMemoryPhoto[] {
+  if (!Array.isArray(raw)) return [];
+  const out: VinMemoryPhoto[] = [];
+  for (const item of raw) {
+    if (!item || typeof item !== "object") continue;
+    const row = item as { id?: unknown; date?: unknown; caption?: unknown; sourceUrl?: unknown; contentHash?: unknown };
+    const id = typeof row.id === "string" ? row.id : "";
+    if (!/^ih_ph_[a-f0-9]{24}$/.test(id)) continue;
+    const photo: VinMemoryPhoto = { id };
+    const date = cleanDate(row.date);
+    if (date) photo.date = date;
+    const caption = cleanShort(row.caption, 120);
+    if (caption) photo.caption = caption;
+    const sourceUrl = cleanShort(row.sourceUrl, 500);
+    if (sourceUrl) photo.sourceUrl = sourceUrl;
+    const contentHash = cleanShort(row.contentHash, 80);
+    if (contentHash) photo.contentHash = contentHash;
+    out.push(photo);
+    if (out.length >= 40) break;
+  }
+  return out;
 }
 
 /**
@@ -173,7 +267,19 @@ export function parseVinMemoryTable(raw: unknown): VinMemoryTable {
       if (fr) obs.firstRegistration = fr;
       const c = cleanShort(r.country, 2);
       if (c) obs.country = c.toUpperCase();
-      observations.push(obs);
+      const extra = extraObservation({
+        vin,
+        date,
+        source,
+        auctionId: r.auctionId,
+        platform: r.platform,
+        venue: r.venue,
+        price: r.price,
+        fields: r.fields,
+        raw: r.raw,
+        photos: r.photos,
+      });
+      observations.push({ ...obs, ...extra });
     }
     if (!observations.length) continue;
     const updatedAt = typeof (e as { updatedAt?: unknown }).updatedAt === "string" ? (e as { updatedAt: string }).updatedAt : new Date(0).toISOString();

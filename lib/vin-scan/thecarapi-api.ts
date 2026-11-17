@@ -8,6 +8,7 @@ import "server-only";
 
 import {
   mergeThecarapiDetails,
+  buildThecarapiAdminRecords,
   parseThecarapiDetail,
   parseThecarapiDetailList,
   parseThecarapiHistory,
@@ -17,7 +18,6 @@ import {
   type ThecarapiDetailParsed,
 } from "@/lib/vin-scan/parse-thecarapi";
 import {
-  THECARAPI_CAP_SUMMARY,
   THECARAPI_DISABLED_SUMMARY,
   THECARAPI_KEY_INVALID_SUMMARY,
   THECARAPI_LIMITS_SUMMARY,
@@ -31,13 +31,18 @@ import {
 import {
   readThecarapiDetailCache,
   readThecarapiDetailCacheRaw,
+  readThecarapiImageCache,
+  readThecarapiImageCacheRaw,
   readThecarapiMonthlyUsage,
   readThecarapiVinCache,
   readThecarapiVinCacheRaw,
   writeThecarapiDetailCache,
+  writeThecarapiImageCache,
   writeThecarapiMonthlyUsage,
   writeThecarapiVinCache,
 } from "@/lib/vin-scan/store";
+import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
+import { thecarapiRecordKey } from "@/lib/vin-scan/thecarapi-fields";
 import type { VinScanParse } from "@/lib/vin-scan/types";
 
 export {
@@ -71,6 +76,10 @@ export type ThecarapiHistoryResult = {
   cachedAt: string | null;
   billable: boolean;
   refs: ThecarapiAuctionRef[];
+  records: ThecarapiAdminRecord[];
+  recordsComplete: boolean;
+  etag: string | null;
+  rawJson: unknown;
 };
 
 export type ThecarapiDetailsResult = {
@@ -78,6 +87,7 @@ export type ThecarapiDetailsResult = {
   httpStatus: number | null;
   fromCache: boolean;
   billable: boolean;
+  rawByKey: Record<string, unknown>;
 };
 
 type RawCall = {
@@ -114,17 +124,10 @@ function disabledResult(): ThecarapiHistoryResult {
     cachedAt: null,
     billable: false,
     refs: [],
-  };
-}
-
-function capResult(): ThecarapiHistoryResult {
-  return {
-    parse: { status: "unknown", summary: THECARAPI_CAP_SUMMARY },
-    httpStatus: null,
-    fromCache: false,
-    cachedAt: null,
-    billable: false,
-    refs: [],
+    records: [],
+    recordsComplete: false,
+    etag: null,
+    rawJson: null,
   };
 }
 
@@ -132,11 +135,6 @@ export async function thecarapiUsageSnapshot(deps: ThecarapiDeps = {}): Promise<
   const month = monthOf(deps);
   const used = await readThecarapiMonthlyUsage(month).catch(() => 0);
   return { used, cap: thecarapiMonthlyCap(envOf(deps)), month };
-}
-
-async function usageAllows(deps: ThecarapiDeps): Promise<boolean> {
-  const snap = await thecarapiUsageSnapshot(deps);
-  return snap.used < snap.cap;
 }
 
 async function bumpUsage(deps: ThecarapiDeps): Promise<void> {
@@ -205,14 +203,7 @@ async function thecarapiCall(
   url: string,
   deps: ThecarapiDeps,
   etag?: string,
-): Promise<{ raw: RawCall; billable: boolean; capped: boolean }> {
-  if (!(await usageAllows(deps))) {
-    return {
-      raw: { status: 0, json: null, text: "", etag: null, retryAfter: null, network: null },
-      billable: false,
-      capped: true,
-    };
-  }
+): Promise<{ raw: RawCall; billable: boolean }> {
   let raw = await thecarapiGet(url, deps, etag);
   if (shouldRetry(raw)) {
     const pendingOnly = !raw.network && raw.status < 500 && thecarapiPayloadPending(raw.status, raw.json, raw.text);
@@ -221,7 +212,7 @@ async function thecarapiCall(
   }
   const billable = isBillable(raw);
   if (billable) await bumpUsage(deps);
-  return { raw, billable, capped: false };
+  return { raw, billable };
 }
 
 function historyFromRaw(raw: RawCall, base: string): { parse: VinScanParse; refs: ThecarapiAuctionRef[] } {
@@ -277,6 +268,10 @@ export async function fetchThecarapiVinHistory(
         cachedAt: cached.cachedAt,
         billable: false,
         refs: cached.refs ?? [],
+        records: cached.records ?? [],
+        recordsComplete: cached.recordsComplete === true,
+        etag: cached.etag ?? null,
+        rawJson: null,
       };
     }
   }
@@ -284,7 +279,6 @@ export async function fetchThecarapiVinHistory(
   const base = thecarapiBaseUrl(env);
   const url = `${base}/api/vin/${encodeURIComponent(clean)}/history`;
   const call = await thecarapiCall(url, deps, previous?.etag);
-  if (call.capped) return capResult();
   if (call.raw.status === 304 && previous) {
     const cachedAt = new Date().toISOString();
     await writeThecarapiVinCache(clean, previous.parse, {
@@ -292,6 +286,8 @@ export async function fetchThecarapiVinHistory(
       cachedAt,
       etag: call.raw.etag || previous.etag,
       refs: previous.refs,
+      records: previous.records,
+      recordsComplete: previous.recordsComplete,
     }).catch(() => undefined);
     return {
       parse: previous.parse,
@@ -300,14 +296,22 @@ export async function fetchThecarapiVinHistory(
       cachedAt,
       billable: false,
       refs: previous.refs ?? [],
+      records: previous.records ?? [],
+      recordsComplete: previous.recordsComplete === true,
+      etag: call.raw.etag || previous.etag || null,
+      rawJson: null,
     };
   }
   const mapped = historyFromRaw(call.raw, base);
+  const records =
+    mapped.parse.status === "found" ? buildThecarapiAdminRecords({ historyJson: call.raw.json }) : [];
   if (historyCacheable(mapped.parse, call.raw.status)) {
     await writeThecarapiVinCache(clean, mapped.parse, {
       httpStatus: call.raw.status,
       etag: call.raw.etag || undefined,
       refs: mapped.refs,
+      records,
+      recordsComplete: false,
     }).catch(() => undefined);
   }
   return {
@@ -317,6 +321,10 @@ export async function fetchThecarapiVinHistory(
     cachedAt: null,
     billable: call.billable,
     refs: mapped.refs,
+    records,
+    recordsComplete: false,
+    etag: call.raw.etag,
+    rawJson: call.raw.json,
   };
 }
 
@@ -355,31 +363,31 @@ export async function fetchThecarapiDetails(
     if (unique.length >= 100) break;
   }
   if (!thecarapiCallsAllowed(env) || unique.length === 0) {
-    return { details: [], httpStatus: null, fromCache: false, billable: false };
+    return { details: [], httpStatus: null, fromCache: false, billable: false, rawByKey: {} };
   }
 
   const fresh: ThecarapiDetailParsed[] = [];
+  const rawByKey: Record<string, unknown> = {};
   const stale: ThecarapiAuctionRef[] = [];
   if (!deps.skipCache) {
     for (const ref of unique) {
       const cached = await readThecarapiDetailCache(ref.site, ref.id).catch(() => null);
-      if (cached) fresh.push(parseThecarapiDetail(cached.json));
-      else stale.push(ref);
+      if (cached) {
+        fresh.push(parseThecarapiDetail(cached.json));
+        rawByKey[thecarapiRecordKey(ref.site, ref.id)] = cached.json;
+      } else stale.push(ref);
     }
   } else {
     stale.push(...unique);
   }
   if (stale.length === 0) {
-    return { details: fresh, httpStatus: 200, fromCache: true, billable: false };
+    return { details: fresh, httpStatus: 200, fromCache: true, billable: false, rawByKey };
   }
 
   const base = thecarapiBaseUrl(env);
   const single = stale.length === 1 ? await readThecarapiDetailCacheRaw(stale[0]!.site, stale[0]!.id).catch(() => null) : null;
   const url = detailUrl(base, stale);
   const call = await thecarapiCall(url, deps, single?.etag);
-  if (call.capped) {
-    return { details: fresh, httpStatus: null, fromCache: fresh.length > 0, billable: false };
-  }
   if (call.raw.status === 304 && single) {
     const cachedAt = new Date().toISOString();
     await writeThecarapiDetailCache({
@@ -390,15 +398,17 @@ export async function fetchThecarapiDetails(
       json: single.json,
       etag: call.raw.etag || single.etag,
     }).catch(() => undefined);
+    rawByKey[thecarapiRecordKey(single.site, single.id)] = single.json;
     return {
       details: [...fresh, parseThecarapiDetail(single.json)],
       httpStatus: 304,
       fromCache: true,
       billable: false,
+      rawByKey,
     };
   }
   if (!detailCacheable(call.raw)) {
-    return { details: fresh, httpStatus: call.raw.status || null, fromCache: false, billable: call.billable };
+    return { details: fresh, httpStatus: call.raw.status || null, fromCache: false, billable: call.billable, rawByKey };
   }
   const parsed = parseThecarapiDetailList(call.raw.json);
   const cachedAt = new Date().toISOString();
@@ -407,12 +417,14 @@ export async function fetchThecarapiDetails(
     const site = detail.site || ref?.site || "";
     const id = detail.id || ref?.id || "";
     if (!site || !id || detail.pending) continue;
+    const body = call.raw.json && stale.length === 1 ? call.raw.json : detailBody(call.raw.json, detail);
+    rawByKey[thecarapiRecordKey(site, id)] = body;
     await writeThecarapiDetailCache({
       site,
       id,
       cachedAt,
       active: detail.active,
-      json: call.raw.json && stale.length === 1 ? call.raw.json : detailBody(call.raw.json, detail),
+      json: body,
       etag: stale.length === 1 ? call.raw.etag || undefined : undefined,
     }).catch(() => undefined);
   }
@@ -421,6 +433,7 @@ export async function fetchThecarapiDetails(
     httpStatus: call.raw.status,
     fromCache: false,
     billable: call.billable,
+    rawByKey,
   };
 }
 
@@ -439,19 +452,104 @@ function detailBody(json: unknown, detail: ThecarapiDetailParsed): unknown {
   return hit ?? { site_name: detail.site, auction_id: detail.id, gallery: detail.photoUrls, equipment: detail.equipment };
 }
 
+function imageUrl(base: string, ref: ThecarapiAuctionRef): string {
+  return `${base}/api/auction-images/${encodeURIComponent(ref.site)}/${encodeURIComponent(ref.id)}`;
+}
+
+export async function fetchThecarapiAuctionImages(
+  refs: readonly ThecarapiAuctionRef[],
+  deps: ThecarapiDeps = {},
+): Promise<{ byKey: Record<string, unknown>; billable: boolean }> {
+  const env = envOf(deps);
+  const byKey: Record<string, unknown> = {};
+  if (!thecarapiCallsAllowed(env) || refs.length === 0) return { byKey, billable: false };
+  const base = thecarapiBaseUrl(env);
+  let billable = false;
+  for (const ref of refs) {
+    const key = thecarapiRecordKey(ref.site, ref.id);
+    if (!deps.skipCache) {
+      const cached = await readThecarapiImageCache(ref.site, ref.id).catch(() => null);
+      if (cached) {
+        byKey[key] = cached.json;
+        continue;
+      }
+    }
+    const previous = await readThecarapiImageCacheRaw(ref.site, ref.id).catch(() => null);
+    const call = await thecarapiCall(imageUrl(base, ref), deps, previous?.etag);
+    billable = billable || call.billable;
+    if (call.raw.status === 304 && previous) {
+      byKey[key] = previous.json;
+      await writeThecarapiImageCache({
+        site: previous.site,
+        id: previous.id,
+        cachedAt: new Date().toISOString(),
+        active: previous.active,
+        json: previous.json,
+        etag: call.raw.etag || previous.etag,
+      }).catch(() => undefined);
+      continue;
+    }
+    if (call.raw.status === 200 && call.raw.json != null && !thecarapiPayloadPending(call.raw.status, call.raw.json, call.raw.text)) {
+      byKey[key] = call.raw.json;
+      await writeThecarapiImageCache({
+        site: ref.site,
+        id: ref.id,
+        cachedAt: new Date().toISOString(),
+        active: ref.active,
+        json: call.raw.json,
+        etag: call.raw.etag || undefined,
+      }).catch(() => undefined);
+    }
+  }
+  return { byKey, billable };
+}
+
 export async function fetchThecarapiVinWithDetails(
   vin: string,
   deps: ThecarapiDeps = {},
 ): Promise<ThecarapiHistoryResult & { detailsBillable: boolean }> {
-  const history = await fetchThecarapiVinHistory(vin, deps);
+  let history = await fetchThecarapiVinHistory(vin, deps);
   if (history.parse.status !== "found" || history.refs.length === 0) {
     return { ...history, detailsBillable: false };
   }
+  if (!deps.skipCache && history.recordsComplete && history.records.length > 0) {
+    return { ...history, detailsBillable: false };
+  }
+  if (history.fromCache && !history.rawJson && history.records.length === 0) {
+    history = await fetchThecarapiVinHistory(vin, { ...deps, skipCache: true });
+    if (history.parse.status !== "found" || history.refs.length === 0) {
+      return { ...history, detailsBillable: false };
+    }
+  }
   const details = await fetchThecarapiDetails(history.refs, deps);
+  const images = await fetchThecarapiAuctionImages(history.refs, deps);
+  const historyJson =
+    history.rawJson ??
+    ({
+      auctions: history.records.map((record) => record.rawHistory).filter((row) => row && typeof row === "object"),
+    } as unknown);
+  const records = buildThecarapiAdminRecords({
+    historyJson,
+    detailJson: { auctions: Object.values(details.rawByKey) },
+    imagesByKey: images.byKey,
+  });
+  const clean = vin.trim().toUpperCase();
+  const previous = await readThecarapiVinCacheRaw(clean).catch(() => null);
+  if (history.parse.status === "found") {
+    await writeThecarapiVinCache(clean, mergeThecarapiDetails(history.parse, details.details), {
+      httpStatus: history.httpStatus ?? previous?.httpStatus,
+      etag: history.etag || previous?.etag,
+      refs: history.refs,
+      records,
+      recordsComplete: true,
+    }).catch(() => undefined);
+  }
   return {
     ...history,
     parse: mergeThecarapiDetails(history.parse, details.details),
-    billable: history.billable || details.billable,
-    detailsBillable: details.billable,
+    records,
+    recordsComplete: true,
+    billable: history.billable || details.billable || images.billable,
+    detailsBillable: details.billable || images.billable,
   };
 }

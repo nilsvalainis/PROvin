@@ -4,21 +4,21 @@
  */
 import "server-only";
 
-import { makeCcVinPhotoId, writeCcVinPhotoJpeg, CC_VIN_PHOTO_MAX_BYTES } from "@/lib/admin-cc-vin-photo-store";
-import { fetchAuctionPhotoJpegs } from "@/lib/auction-photo-fetch";
 import { applyCcVinParsedReport } from "@/lib/cc-vin-report-apply";
 import { emptyCcVinBlock, normalizeCcVinBlock, type CcVinBlockState } from "@/lib/cc-vin-report";
-import { makeCcVinPhotoGroupId, syncCcVinPhotoGroupsAndFlat, type CcVinPhotoGroup } from "@/lib/cc-vin-photo-types";
-import { isAllowedVinScanAuctionPhotoUrl, type VinScanAuctionPhotoGroupPlan } from "@/lib/order-vin-scan-photos";
+import { syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
 import { vinScanAuctionsToCcVinParsed } from "@/lib/order-vin-scan";
-import { readThecarapiVinCache } from "@/lib/vin-scan/store";
+import { thecarapiArchiveInputs } from "@/lib/thecarapi-archive";
+import { storeThecarapiGallery, type ThecarapiGalleryFetch, type ThecarapiGalleryWrite } from "@/lib/thecarapi-photos";
+import { addVinObservations } from "@/lib/vin-memory-store";
+import { readThecarapiVinCache, readThecarapiVinCacheRaw, writeThecarapiVinCache } from "@/lib/vin-scan/store";
+import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 import {
   fetchThecarapiVinWithDetails,
   THECARAPI_SOURCE_ID,
   thecarapiAdminEnabled,
   thecarapiAdminFlag,
   thecarapiConfigured,
-  thecarapiMonthlyCap,
   thecarapiUsageSnapshot,
   type ThecarapiDeps,
 } from "@/lib/vin-scan/thecarapi-api";
@@ -31,6 +31,7 @@ export type ThecarapiAdminStatus = {
   used: number;
   cap: number;
   cache: { cachedAt: string; status: string; summary: string } | null;
+  records: ThecarapiAdminRecord[];
 };
 
 export async function thecarapiAdminStatus(vin = "", deps: ThecarapiDeps = {}): Promise<ThecarapiAdminStatus> {
@@ -43,66 +44,12 @@ export async function thecarapiAdminStatus(vin = "", deps: ThecarapiDeps = {}): 
     configured: thecarapiConfigured(env),
     adminFlag: thecarapiAdminFlag(env),
     used: usage.used,
-    cap: usage.cap || thecarapiMonthlyCap(env),
+    cap: usage.cap,
     cache: cached
       ? { cachedAt: cached.cachedAt, status: cached.parse.status, summary: cached.parse.summary }
       : null,
+    records: cached?.records ?? [],
   };
-}
-
-async function storePhotoGroups(opts: {
-  sessionId: string;
-  plans: readonly VinScanAuctionPhotoGroupPlan[];
-  existing?: CcVinPhotoGroup[] | null;
-}): Promise<CcVinPhotoGroup[]> {
-  const groups: CcVinPhotoGroup[] = [];
-  const known = new Set<string>();
-  for (const group of opts.existing ?? []) {
-    for (const photo of group.photos ?? []) {
-      if (photo.sourceUrl) known.add(photo.sourceUrl);
-    }
-  }
-  for (const plan of opts.plans) {
-    const wanted = plan.urls.filter((url) => isAllowedVinScanAuctionPhotoUrl(url) && !known.has(url));
-    if (wanted.length === 0) continue;
-    const fetched = await fetchAuctionPhotoJpegs(wanted, CC_VIN_PHOTO_MAX_BYTES);
-    const photos = [];
-    for (const row of fetched.ok) {
-      if (known.has(row.url)) continue;
-      const photoId = makeCcVinPhotoId();
-      try {
-        await writeCcVinPhotoJpeg(opts.sessionId, photoId, row.jpeg);
-      } catch {
-        continue;
-      }
-      known.add(row.url);
-      photos.push({ id: photoId, sourceUrl: row.url, contentHash: row.contentHash });
-    }
-    if (photos.length > 0) {
-      groups.push({ id: makeCcVinPhotoGroupId(), title: plan.title.slice(0, 120), photos });
-    }
-  }
-  return groups;
-}
-
-function plansFromParse(vin: string, parse: VinScanParse): VinScanAuctionPhotoGroupPlan[] {
-  const indicator = buildVinScanIndicator(THECARAPI_SOURCE_ID, vin, parse);
-  const plans: VinScanAuctionPhotoGroupPlan[] = [];
-  for (const auction of indicator.auctions ?? []) {
-    const urls = (auction.photoUrls ?? []).filter((url) => isAllowedVinScanAuctionPhotoUrl(url));
-    if (urls.length === 0) continue;
-    const title = ["TheCarApi", auction.venue, auction.lot ? `lots ${auction.lot}` : "", auction.date?.slice(0, 4)]
-      .filter(Boolean)
-      .join(" · ")
-      .slice(0, 80);
-    plans.push({
-      key: `${THECARAPI_SOURCE_ID}|${auction.lot || ""}|${auction.date || ""}`,
-      title,
-      sourceId: THECARAPI_SOURCE_ID,
-      urls,
-    });
-  }
-  return plans;
 }
 
 export async function fetchThecarapiCcVinMerge(opts: {
@@ -111,6 +58,8 @@ export async function fetchThecarapiCcVinMerge(opts: {
   sessionId?: string;
   skipCache?: boolean;
   deps?: ThecarapiDeps;
+  fetchJpegs?: ThecarapiGalleryFetch;
+  writeJpeg?: ThecarapiGalleryWrite;
 }): Promise<{
   parse: VinScanParse;
   block: CcVinBlockState;
@@ -120,7 +69,8 @@ export async function fetchThecarapiCcVinMerge(opts: {
   used: number;
   cap: number;
   httpStatus: number | null;
-  error?: "missing_thecarapi_credentials" | "thecarapi_disabled" | "monthly_cap";
+  records: ThecarapiAdminRecord[];
+  error?: "missing_thecarapi_credentials" | "thecarapi_disabled";
 }> {
   const env = opts.deps?.env ?? process.env;
   const prev = opts.prev ?? emptyCcVinBlock();
@@ -136,6 +86,7 @@ export async function fetchThecarapiCcVinMerge(opts: {
       used: snap.used,
       cap: snap.cap,
       httpStatus: null,
+      records: [],
       error: "missing_thecarapi_credentials",
     };
   }
@@ -150,24 +101,35 @@ export async function fetchThecarapiCcVinMerge(opts: {
       used: snap.used,
       cap: snap.cap,
       httpStatus: null,
+      records: [],
       error: "thecarapi_disabled",
     };
   }
 
   const result = await fetchThecarapiVinWithDetails(opts.vin, { ...opts.deps, env, skipCache: opts.skipCache === true });
   const snap = await usage();
-  if (result.parse.summary === "mēneša limits") {
-    return {
-      parse: result.parse,
-      block: prev,
-      fromCache: false,
-      cachedAt: null,
-      billable: false,
-      used: snap.used,
-      cap: snap.cap,
-      httpStatus: null,
-      error: "monthly_cap",
-    };
+
+  const gallery = await storeThecarapiGallery({
+    vin: opts.vin,
+    sessionId: opts.sessionId,
+    records: result.records ?? [],
+    existing: prev.photoGroups,
+    fetchJpegs: opts.fetchJpegs,
+    writeJpeg: opts.writeJpeg,
+  });
+  const previous = await readThecarapiVinCacheRaw(opts.vin).catch(() => null);
+  if (gallery.records.length > 0) {
+    await addVinObservations(thecarapiArchiveInputs(opts.vin, gallery.records)).catch(() => undefined);
+  }
+  if (previous && gallery.records.length > 0) {
+    await writeThecarapiVinCache(opts.vin, result.parse, {
+      httpStatus: previous.httpStatus,
+      etag: previous.etag,
+      refs: previous.refs,
+      records: gallery.records,
+      recordsComplete: true,
+      cachedAt: previous.cachedAt,
+    }).catch(() => undefined);
   }
 
   const indicator = buildVinScanIndicator(THECARAPI_SOURCE_ID, opts.vin, result.parse);
@@ -179,16 +141,10 @@ export async function fetchThecarapiCcVinMerge(opts: {
       aiContextRaw: [block.aiContextRaw.trim(), result.parse.detail.trim()].filter(Boolean).join("\n\n").slice(0, 20_000),
     };
   }
-  if (opts.sessionId && result.parse.status === "found") {
-    const stored = await storePhotoGroups({
-      sessionId: opts.sessionId,
-      plans: plansFromParse(opts.vin, result.parse),
-      existing: prev.photoGroups,
-    });
-    if (stored.length > 0) {
-      const synced = syncCcVinPhotoGroupsAndFlat([...(block.photoGroups ?? []), ...stored]);
-      block = { ...block, photoGroups: synced.photoGroups, photos: synced.photos };
-    }
+  block = { ...block, thecarapiRecords: gallery.records };
+  if (gallery.groups.length > 0) {
+    const synced = syncCcVinPhotoGroupsAndFlat([...(block.photoGroups ?? []), ...gallery.groups]);
+    block = { ...block, photoGroups: synced.photoGroups, photos: synced.photos };
   }
   return {
     parse: result.parse,
@@ -199,5 +155,6 @@ export async function fetchThecarapiCcVinMerge(opts: {
     used: snap.used,
     cap: snap.cap,
     httpStatus: result.httpStatus,
+    records: gallery.records,
   };
 }

@@ -12,6 +12,7 @@ import { VIN_SCAN_TTL_MS } from "@/lib/vin-scan/catalog";
 import { vinScanIndicatorsAreCacheable } from "@/lib/vin-scan/health";
 import type { JojNameDict } from "@/lib/vin-scan/joj-labels";
 import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
+import { normalizeThecarapiAdminRecords, type ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 import type { VinScanIndicator, VinScanParse } from "@/lib/vin-scan/types";
 
 export type VinScanSnapshot = {
@@ -281,6 +282,8 @@ export type ThecarapiVinCache = {
   httpStatus?: number;
   etag?: string;
   refs?: ThecarapiVinCacheRef[];
+  records?: ThecarapiAdminRecord[];
+  recordsComplete?: boolean;
 };
 
 export type ThecarapiDetailCache = {
@@ -303,11 +306,19 @@ function thecarapiVinKey(vin: string): string | null {
   return `vin_scan/thecarapi/${key}`;
 }
 
-function thecarapiDetailStorageKey(site: string, id: string): string | null {
+function thecarapiPairKey(site: string, id: string, kind: "detail" | "images"): string | null {
   const s = site.toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 40);
   const i = id.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 80);
   if (!s || !i || s.includes("..") || i.includes("..")) return null;
-  return `vin_scan/thecarapi/detail/${s}_${i}`;
+  return `vin_scan/thecarapi/${kind}/${s}_${i}`;
+}
+
+function thecarapiDetailStorageKey(site: string, id: string): string | null {
+  return thecarapiPairKey(site, id, "detail");
+}
+
+function thecarapiImageStorageKey(site: string, id: string): string | null {
+  return thecarapiPairKey(site, id, "images");
 }
 
 function thecarapiUsageKey(month: string): string | null {
@@ -351,6 +362,8 @@ export function asThecarapiVinCache(raw: unknown, nowMs = Date.now(), allowExpir
     ...(httpStatus != null ? { httpStatus } : {}),
     ...(etag ? { etag } : {}),
     ...(refs && refs.length ? { refs } : {}),
+    ...(Array.isArray(o.records) ? { records: normalizeThecarapiAdminRecords(o.records) } : {}),
+    ...(o.recordsComplete === true ? { recordsComplete: true } : {}),
   };
 }
 
@@ -369,7 +382,14 @@ export async function readThecarapiVinCacheRaw(vin: string): Promise<ThecarapiVi
 export async function writeThecarapiVinCache(
   vin: string,
   parse: VinScanParse,
-  extra?: { httpStatus?: number; cachedAt?: string; etag?: string; refs?: ThecarapiVinCacheRef[] },
+  extra?: {
+    httpStatus?: number;
+    cachedAt?: string;
+    etag?: string;
+    refs?: ThecarapiVinCacheRef[];
+    records?: ThecarapiAdminRecord[];
+    recordsComplete?: boolean;
+  },
 ): Promise<void> {
   const key = thecarapiVinKey(vin);
   if (!key) return;
@@ -381,8 +401,28 @@ export async function writeThecarapiVinCache(
     ...(extra?.httpStatus != null ? { httpStatus: extra.httpStatus } : {}),
     ...(extra?.etag ? { etag: extra.etag } : {}),
     ...(extra?.refs?.length ? { refs: extra.refs } : {}),
+    ...(extra?.records?.length ? { records: extra.records } : {}),
+    ...(extra?.recordsComplete ? { recordsComplete: true } : {}),
   };
   await writeJson(key, body);
+}
+
+export async function readThecarapiImageCache(site: string, id: string, nowMs = Date.now()): Promise<ThecarapiDetailCache | null> {
+  const key = thecarapiImageStorageKey(site, id);
+  if (!key) return null;
+  return asThecarapiDetailCache(await readJson(key), nowMs, false);
+}
+
+export async function readThecarapiImageCacheRaw(site: string, id: string): Promise<ThecarapiDetailCache | null> {
+  const key = thecarapiImageStorageKey(site, id);
+  if (!key) return null;
+  return asThecarapiDetailCache(await readJson(key), Date.now(), true);
+}
+
+export async function writeThecarapiImageCache(entry: ThecarapiDetailCache): Promise<void> {
+  const key = thecarapiImageStorageKey(entry.site, entry.id);
+  if (!key) return;
+  await writeJson(key, entry);
 }
 
 function detailTtlMs(active: boolean): number {

@@ -4,6 +4,16 @@
  */
 
 import { isAllowedVinScanAuctionPhotoUrl } from "@/lib/order-vin-scan-photos";
+import {
+  mergeThecarapiRaw,
+  thecarapiAllUrls,
+  thecarapiDownloadUrls,
+  thecarapiFieldsOf,
+  thecarapiPhotoCaption,
+  thecarapiPhotoDate,
+  thecarapiRecordKey,
+  type ThecarapiAdminRecord,
+} from "@/lib/vin-scan/thecarapi-fields";
 import { THECARAPI_DEFAULT_BASE } from "@/lib/vin-scan/thecarapi-flags";
 import type { VinScanAuction, VinScanParse } from "@/lib/vin-scan/types";
 
@@ -120,12 +130,18 @@ function stampOf(row: Record<string, unknown>): string {
   return isoDay(row.last_seen_at) || isoDay(row.first_seen_at) || isoDay(row.date);
 }
 
+function pendingFlag(raw: unknown, depth: number): boolean {
+  if (depth > 6 || !raw || typeof raw !== "object") return false;
+  if (Array.isArray(raw)) return raw.some((item) => pendingFlag(item, depth + 1));
+  const rec = raw as Record<string, unknown>;
+  if (rec.details_pending === true || rec.read_again === true) return true;
+  return Object.values(rec).some((value) => pendingFlag(value, depth + 1));
+}
+
 export function thecarapiPayloadPending(status: number, json: unknown, bodyText = ""): boolean {
   if (status === 202) return true;
-  const root = asRecord(json);
-  if (root?.details_pending === true || root?.read_again === true) return true;
-  const blob = `${text(root?.message)} ${text(root?.status)} ${text(root?.error)} ${bodyText}`;
-  return /read again|details_pending/i.test(blob);
+  if (json != null) return pendingFlag(json, 0);
+  return /read again|details_pending/i.test(bodyText);
 }
 
 export function thecarapiHistoryRefs(json: unknown): ThecarapiAuctionRef[] {
@@ -258,6 +274,62 @@ export function parseThecarapiDetailList(json: unknown): ThecarapiDetailParsed[]
     return one.site || one.id || one.photoUrls.length ? [one] : [];
   }
   return rows.map((row) => parseThecarapiDetail(row));
+}
+
+export function thecarapiDetailRows(json: unknown): Record<string, unknown>[] {
+  return rowsOf(json);
+}
+
+export function buildThecarapiAdminRecords(input: {
+  historyJson: unknown;
+  detailJson?: unknown;
+  imagesByKey?: Readonly<Record<string, unknown>>;
+}): ThecarapiAdminRecord[] {
+  const details = thecarapiDetailRows(input.detailJson);
+  const detailByKey = new Map<string, Record<string, unknown>>();
+  for (const row of details) {
+    const site = siteSlug(row.site_name ?? row.site);
+    const id = auctionId(row.auction_id ?? row.id);
+    if (site && id) detailByKey.set(thecarapiRecordKey(site, id), row);
+  }
+  const historyRows = rowsOf(input.historyJson);
+  const sourceRows = historyRows.length > 0 ? historyRows : details;
+  const out: ThecarapiAdminRecord[] = [];
+  const seen = new Set<string>();
+  for (const row of sourceRows) {
+    const site = siteSlug(row.site_name ?? row.site ?? row.platform);
+    const id = auctionId(row.auction_id ?? row.id ?? row.auctionId);
+    const key = site && id ? thecarapiRecordKey(site, id) : "";
+    if (key && seen.has(key)) continue;
+    if (key) seen.add(key);
+    const history = historyRows.includes(row) ? row : historyRows.find((item) => thecarapiRecordKey(siteSlug(item.site_name ?? item.site), auctionId(item.auction_id ?? item.id)) === key) ?? null;
+    const detail = (key && detailByKey.get(key)) || (!historyRows.length ? row : null);
+    const images = key ? input.imagesByKey?.[key] ?? null : null;
+    const merged = mergeThecarapiRaw(history, detail, images);
+    const photoDate = thecarapiPhotoDate(merged);
+    const venue = thecarapiSiteLabel(site || text(row.site_name));
+    const urls = thecarapiDownloadUrls(thecarapiAllUrls(history, detail, images, merged), isAllowedVinScanAuctionPhotoUrl);
+    out.push({
+      site,
+      id,
+      date: stampOf(merged) || photoDate,
+      venue,
+      photoDate,
+      photoUrls: urls,
+      fields: thecarapiFieldsOf(merged),
+      raw: merged,
+      rawHistory: history,
+      rawDetail: detail,
+      rawImages: images,
+      photos: [],
+    });
+    if (out.length >= 100) break;
+  }
+  return out;
+}
+
+export function thecarapiImageCaption(record: Pick<ThecarapiAdminRecord, "venue" | "photoDate">): string {
+  return thecarapiPhotoCaption(record.venue, record.photoDate);
 }
 
 export function mergeThecarapiDetails(parse: VinScanParse, details: readonly ThecarapiDetailParsed[]): VinScanParse {

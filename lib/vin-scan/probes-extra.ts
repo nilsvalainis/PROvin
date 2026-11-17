@@ -12,7 +12,11 @@ import {
   vwGroupRecallCheckUrl,
 } from "@/lib/vin-scan/catalog";
 import { fetchAuctionVinLots } from "@/lib/vin-scan/auction-vin-providers";
-import { fetchThecarapiVinHistory } from "@/lib/vin-scan/thecarapi-api";
+import { thecarapiArchiveInputs } from "@/lib/thecarapi-archive";
+import { storeThecarapiGallery } from "@/lib/thecarapi-photos";
+import { addVinObservations } from "@/lib/vin-memory-store";
+import { readThecarapiVinCacheRaw, writeThecarapiVinCache } from "@/lib/vin-scan/store";
+import { fetchThecarapiVinWithDetails } from "@/lib/vin-scan/thecarapi-api";
 import { thecarapiVinScanEnabled, THECARAPI_DISABLED_SUMMARY } from "@/lib/vin-scan/thecarapi-flags";
 import { statVinBrowserLane } from "@/lib/vin-scan/stat-vin-browser";
 import { scanCaptchaTokenPlaceholder, scanFetch, scanFetchSmart, solveScanRecaptcha } from "@/lib/vin-scan/http";
@@ -361,7 +365,22 @@ export async function probeThecarapi(ctx: VinScanContext): Promise<VinScanIndica
     return done("thecarapi_eu", ctx, { status: "skipped", summary: THECARAPI_DISABLED_SUMMARY });
   }
   try {
-    const result = await fetchThecarapiVinHistory(ctx.vin);
+    const result = await fetchThecarapiVinWithDetails(ctx.vin);
+    if (result.records.length > 0) {
+      const gallery = await storeThecarapiGallery({ vin: ctx.vin, records: result.records });
+      await addVinObservations(thecarapiArchiveInputs(ctx.vin, gallery.records)).catch(() => undefined);
+      const previous = await readThecarapiVinCacheRaw(ctx.vin).catch(() => null);
+      if (previous) {
+        await writeThecarapiVinCache(ctx.vin, result.parse, {
+          httpStatus: previous.httpStatus,
+          etag: previous.etag,
+          refs: previous.refs,
+          records: gallery.records,
+          recordsComplete: true,
+          cachedAt: previous.cachedAt,
+        }).catch(() => undefined);
+      }
+    }
     return done("thecarapi_eu", ctx, result.parse);
   } catch (e) {
     return failed("thecarapi_eu", ctx, e);

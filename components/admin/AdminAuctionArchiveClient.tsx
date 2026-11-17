@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AdminAuctionArchiveView, type AuctionArchiveCounts } from "@/components/admin/AdminAuctionArchiveView";
+import { normalizeThecarapiAdminRecords, type ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 import type { VinObservation } from "@/lib/vin-memory";
 import type { AuctionSourceProgress, VinMemoryBrowseRow } from "@/lib/vin-memory-auction";
 
@@ -23,7 +24,13 @@ export function AdminAuctionArchiveClient({
   thecarapi = null,
 }: {
   initialVin: string;
-  thecarapi?: { enabled: boolean; used: number; cap: number; cachedSummary: string } | null;
+  thecarapi?: {
+    enabled: boolean;
+    used: number;
+    cap: number;
+    cachedSummary: string;
+    records?: ThecarapiAdminRecord[];
+  } | null;
 }) {
   const [data, setData] = useState<Payload | null>(null);
   const [message, setMessage] = useState("");
@@ -31,6 +38,7 @@ export function AdminAuctionArchiveClient({
   const [tcBusy, setTcBusy] = useState(false);
   const [tcNote, setTcNote] = useState("");
   const [tcRows, setTcRows] = useState<{ date: string; venue: string; odometer: string; price: string }[]>([]);
+  const [tcRecords, setTcRecords] = useState<ThecarapiAdminRecord[]>(thecarapi?.records ?? []);
   const [tcUsed, setTcUsed] = useState(thecarapi?.used ?? 0);
   const [tcCached, setTcCached] = useState(thecarapi?.cachedSummary ?? "");
 
@@ -123,12 +131,15 @@ export function AdminAuctionArchiveClient({
         summary?: string;
         used?: number;
         auctions?: { date: string; venue: string; odometer: string; price: string }[];
+        records?: unknown;
       };
       if (!r.ok) throw new Error(body.summary || body.error || "TheCarApi neizdevās.");
       if (typeof body.used === "number") setTcUsed(body.used);
       setTcRows(Array.isArray(body.auctions) ? body.auctions : []);
+      if (Array.isArray(body.records)) setTcRecords(normalizeThecarapiAdminRecords(body.records));
       setTcNote(body.summary || "");
       if (body.summary) setTcCached(body.summary);
+      await load(initialVin);
     } catch (err) {
       setTcNote(err instanceof Error ? err.message : "TheCarApi neizdevās.");
     } finally {
@@ -162,6 +173,7 @@ export function AdminAuctionArchiveClient({
               busy: tcBusy,
               note: tcNote,
               rows: tcRows,
+              records: tcRecords,
               onCheck: (skipCache) => void checkThecarapi(skipCache),
             }
           : null

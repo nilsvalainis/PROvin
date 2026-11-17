@@ -1,3 +1,5 @@
+import { AdminThecarapiRecords } from "@/components/admin/AdminThecarapiRecords";
+import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 import type { VinObservation } from "@/lib/vin-memory";
 import type { AuctionSourceProgress, VinMemoryArchiveCounts, VinMemoryBrowseRow } from "@/lib/vin-memory-auction";
 
@@ -9,6 +11,7 @@ const SOURCE_LV: Record<string, string> = {
   order: "PROVIN pasūtījums",
   quick_eval: "Ātrais vērtējums",
   logistics: "Loģistika",
+  thecarapi: "TheCarApi",
 };
 
 export type AuctionArchiveCounts = VinMemoryArchiveCounts & { countedAt: string; shards: number; recent?: VinMemoryBrowseRow[] };
@@ -36,6 +39,7 @@ export type AuctionArchiveViewProps = {
     busy: boolean;
     note: string;
     rows: { date: string; venue: string; odometer: string; price: string }[];
+    records?: ThecarapiAdminRecord[];
     onCheck: (skipCache: boolean) => void;
   } | null;
 };
@@ -82,7 +86,7 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-4">
       <p className="text-[13px] leading-relaxed text-[var(--color-provin-muted)]">
         Izsoļu portālu arhīvs ir mūsu VIN atmiņa: datums, nobraukums, avots, modelis un pirmā reģistrācija. Autobid un Openlane nāk masveidā.
-        Bildes un personas datus šeit neliek. Pārdoto arhīva bez meklēšanā redzamā auto nav.
+        TheCarApi ieraksti ar laukiem un bildēm nāk no admin pogas un VIN SCAN. Personas datus šeit neliek.
       </p>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Kopsavilkums">
@@ -175,7 +179,9 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
           <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
             <p className="text-[12px] text-[var(--color-provin-muted)]">
               {props.thecarapi.enabled
-                ? `maksas izsaukums · šomēnes ${props.thecarapi.used}/${props.thecarapi.cap}`
+                ? props.thecarapi.cap > 0
+                  ? `maksas izsaukums · šomēnes ${props.thecarapi.used}/${props.thecarapi.cap}`
+                  : `maksas izsaukums · šomēnes ${props.thecarapi.used}`
                 : "TheCarApi izslēgts (nav apmaksāts / nav atslēgas)"}
             </p>
             {props.thecarapi.cachedSummary ? (
@@ -225,6 +231,7 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
                 </tbody>
               </table>
             ) : null}
+            <AdminThecarapiRecords vin={vin} records={props.thecarapi.records ?? []} />
           </div>
         ) : null}
         {vinNote ? <p className="mt-2 text-[13px] text-[var(--color-provin-muted)]">{vinNote}</p> : null}
@@ -248,10 +255,10 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
               </thead>
               <tbody>
                 {[...observations].reverse().map((o) => (
-                  <tr key={`${o.date}-${o.source}`} className="border-b border-slate-100 last:border-b-0">
+                  <tr key={`${o.date}-${o.platform || o.source}-${o.auctionId || o.km || ""}`} className="border-b border-slate-100 last:border-b-0">
                     <td className="py-2 pr-3 tabular-nums">{lvDate(o.date)}</td>
                     <td className="py-2 pr-3 tabular-nums">{km(o.km)}</td>
-                    <td className="py-2 pr-3">{sourceLabel(o.source)}</td>
+                    <td className="py-2 pr-3">{o.venue || sourceLabel(o.source)}</td>
                     <td className="py-2 pr-3">{o.model || "-"}</td>
                     <td className="py-2 pr-3 tabular-nums">{o.firstRegistration || "-"}</td>
                     <td className="py-2">{o.country || "-"}</td>
@@ -259,6 +266,47 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
                 ))}
               </tbody>
             </table>
+            {observations.some((row) => (row.fields?.length ?? 0) > 0 || (row.photos?.length ?? 0) > 0) ? (
+              <div className="mt-3 space-y-3">
+                {observations
+                  .filter((row) => (row.fields?.length ?? 0) > 0 || (row.photos?.length ?? 0) > 0)
+                  .map((row) => (
+                    <section key={`${row.platform || row.source}-${row.auctionId || row.date}`} className="rounded-lg border border-slate-200 px-2 py-2">
+                      <h3 className="text-[12px] font-semibold">{row.venue || sourceLabel(row.source)} · {row.auctionId || row.date}</h3>
+                      {row.fields?.length ? (
+                        <dl className="mt-1 grid grid-cols-1 gap-x-3 sm:grid-cols-2">
+                          {row.fields.map((field) => (
+                            <div key={field.key} className="text-[11px] leading-snug">
+                              <dt className="inline font-medium text-[var(--color-provin-muted)]">{field.label}: </dt>
+                              <dd className="inline break-words">{field.value || "-"}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      ) : null}
+                      {row.raw ? (
+                        <details className="mt-2">
+                          <summary className="cursor-pointer text-[11px] text-[var(--color-provin-muted)]">Neapstrādātais JSON</summary>
+                          <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-words text-[10px]">{JSON.stringify(row.raw, null, 2)}</pre>
+                        </details>
+                      ) : null}
+                      {row.photos?.length ? (
+                        <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                          {row.photos.map((photo) => (
+                            <figure key={photo.id}>
+                              <img
+                                src={`/api/admin/sources/thecarapi/photo?vin=${encodeURIComponent(vin)}&photoId=${encodeURIComponent(photo.id)}`}
+                                alt={photo.caption || row.venue || "Izsole"}
+                                className="h-24 w-full rounded-md object-cover"
+                              />
+                              <figcaption className="mt-1 text-[10px]">{photo.caption || photo.date || row.date}</figcaption>
+                            </figure>
+                          ))}
+                        </div>
+                      ) : null}
+                    </section>
+                  ))}
+              </div>
+            ) : null}
           </div>
         ) : null}
       </section>

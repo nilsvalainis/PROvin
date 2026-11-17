@@ -10,6 +10,7 @@
 import type { AutoRecordsServiceRow } from "@/lib/auto-records-paste-parse";
 import { autoRecordsRowHasData } from "@/lib/auto-records-paste-parse";
 import type { CcVinPhotoGroup, CcVinPhotoMeta } from "@/lib/cc-vin-photo-types";
+import { normalizeThecarapiAdminRecords, type ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 import { normalizeCcVinPhotoGroups, syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
 import { convertAmountTextToEur, displayUsdAsEur } from "@/lib/currency-eur-convert";
 
@@ -108,6 +109,8 @@ export type CcVinBlockState = {
   /** Slēpt CheckCar.vin ūdenszīmi pirms foto saglabāšanas (noklusējums: izslēgts). */
   hidePhotoWatermarks?: boolean;
   pdfChecklist?: CcVinPdfChecklist;
+  /** TheCarApi pilnie ieraksti. Tikai admin, nav klienta PDF. */
+  thecarapiRecords?: ThecarapiAdminRecord[];
 };
 
 /** Lokāls dublikāts (bez `admin-source-blocks` importa - tas pats importē šo moduli). */
@@ -152,6 +155,7 @@ export function emptyCcVinBlock(): CcVinBlockState {
     aiContextRaw: "",
     photos: [],
     photoGroups: [],
+    thecarapiRecords: [],
   };
 }
 
@@ -210,6 +214,7 @@ export function ccVinBlockHasContent(b: CcVinBlockState | null | undefined): boo
   if (countCcVinRecords(b) > 0) return true;
   if ((b.checks ?? []).some(ccVinCheckRowHasData)) return true;
   if ((b.photoGroups ?? []).some((g) => (g.photos ?? []).length > 0)) return true;
+  if ((b.thecarapiRecords ?? []).some((record) => record.fields.length > 0 || record.photos.length > 0)) return true;
   return Boolean(b.comments.trim() || b.reportDate.trim() || b.attentionMarks.trim());
 }
 
@@ -334,6 +339,7 @@ export function normalizeCcVinBlock(raw: unknown): CcVinBlockState {
     aiContextRaw: str(o.aiContextRaw, 200000),
     photos: synced.photos,
     photoGroups: synced.photoGroups,
+    thecarapiRecords: normalizeThecarapiAdminRecords(o.thecarapiRecords),
     hidePhotoWatermarks: o.hidePhotoWatermarks === true,
     ...("pdfChecklist" in o ? { pdfChecklist: normalizeChecklist(o.pdfChecklist) } : {}),
   };
