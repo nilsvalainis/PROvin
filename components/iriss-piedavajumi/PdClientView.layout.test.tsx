@@ -82,6 +82,47 @@ describe("Krāsas karte", () => {
     expect(text).toContain("▲ zonā atrasti bojājumi (buktes, skrāpējumi u.c.)");
     expect(text).not.toContain("Vēl:");
   });
+
+  it("karte ir audita atskaites auto bilde, ne zīmējums; plastmasas zona - «nav mērāms»", () => {
+    const paint = { zones: [...AUTO1.paint!.zones.filter((z) => z.id !== "rear"), { id: "rear" as const, readings: [], warning: false, notMeasurable: true }], unassigned: [] };
+    const html = renderHtml(<PdPaintMap paint={paint} />);
+    expect(html).toContain('src="/brand/damage-car-top-east.jpg"');
+    expect(html).not.toContain("<svg");
+    const text = renderText(<PdPaintMap paint={paint} />);
+    expect(text).toContain("nav mērāms");
+    expect(text).toContain("nav mērāms (materiāls)");
+    // Izvēlēta pirmā zona ar ▲ (priekšpuse): tās laukums iezīmēts.
+    expect(html).toMatch(/pd-pm-area sel/);
+  });
+});
+
+describe("Bojājumu tabula", () => {
+  it("grupē pa ārpusi/salonu, saskaita pa veidiem un tulko detaļas", () => {
+    const blocks: IrissPdAuto1Blocks = {
+      ...AUTO1,
+      damage: [
+        { area: "exterior", damage: "Scratch", severity: "", description: "", quantity: "25", parts: "Hood (4), Front bumper (21)" },
+        { area: "exterior", damage: "Scratch", severity: "", description: "", quantity: "3", parts: "Roof (3)" },
+        { area: "exterior", damage: "Dent", severity: "", description: "", quantity: "1", parts: "Front right door (1)" },
+        { area: "interior", damage: "Dirty", severity: "", description: "", quantity: "2", parts: "Driver seat (2)" },
+      ],
+    };
+    const base = rec();
+    const r: IrissPiedavajums = {
+      ...base,
+      auto1: blocks,
+      visibility: { ...base.visibility, blocks: { ...base.visibility.blocks, damage: { pdf: true, link: true } } },
+    };
+    const html = renderHtml(<PdClientView view={buildIrissPdPublicView(r, "link", NOW)} mode="link" photoSrc={src} />);
+    const text = renderText(<PdClientView view={buildIrissPdPublicView(r, "link", NOW)} mode="link" photoSrc={src} />);
+    expect(html).toContain("data-damage-table");
+    expect(text).toContain("Skrāpējumi");
+    expect(text).toContain("28");
+    expect(text).toContain("Motora pārsegs (4)");
+    expect(text).toContain("Priekšējās labās durvis (1)");
+    expect(text).toContain("Salons");
+    expect(text).not.toContain("Scratch");
+  });
 });
 
 describe("Klienta skata secība (Nils 17.11)", () => {
