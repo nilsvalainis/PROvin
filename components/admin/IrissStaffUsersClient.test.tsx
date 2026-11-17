@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { StaffUserAdminActions } from "@/components/admin/IrissStaffUsersClient";
-import { renderText } from "@/lib/test-render";
+import { IrissStaffUsersClient, StaffListPlaceholder, StaffUserAdminActions } from "@/components/admin/IrissStaffUsersClient";
+import { renderHtml, renderText } from "@/lib/test-render";
 
 describe("StaffUserAdminActions", () => {
   it("shows reset and hard-delete for an active staff user", () => {
@@ -26,5 +26,23 @@ describe("StaffUserAdminActions", () => {
     expect(text).not.toContain("Atiestatīt paroli");
     expect(text).not.toContain("Nosūtīt saiti vēlreiz");
     expect(text).not.toContain("Atsaukt pieeju");
+  });
+});
+
+describe("Personu saraksta ielāde", () => {
+  it("pirms datu ielādes rāda ielādes rindas, nevis tukšu sarakstu", () => {
+    const html = renderHtml(<IrissStaffUsersClient />);
+    expect(html).toContain('data-testid="staff-list-loading"');
+    expect(html).toContain('aria-busy="true"');
+  });
+
+  it("kļūdas gadījumā rāda paziņojumu un «Mēģināt vēlreiz»", () => {
+    const text = renderText(<StaffListPlaceholder state="error" onRetry={() => undefined} />);
+    expect(text).toContain("Neizdevās ielādēt personu sarakstu.");
+    expect(text).toContain("Mēģināt vēlreiz");
+  });
+
+  it("pēc ielādes neko nerāda", () => {
+    expect(renderText(<StaffListPlaceholder state="ready" onRetry={() => undefined} />)).toBe("");
   });
 });

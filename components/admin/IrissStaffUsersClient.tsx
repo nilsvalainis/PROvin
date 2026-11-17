@@ -102,6 +102,7 @@ function userSections(user: DirectoryUser): IrissSection[] | "admin" {
 export function IrissStaffUsersClient() {
   const [admin, setAdmin] = useState<EnvAdminPublic | null>(null);
   const [users, setUsers] = useState<StaffUserPublic[]>([]);
+  const [listState, setListState] = useState<"loading" | "ready" | "error">("loading");
   const [audit, setAudit] = useState<StaffAuditEntry[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [sessions, setSessions] = useState<SessionRow[]>([]);
@@ -127,11 +128,17 @@ export function IrissStaffUsersClient() {
   const selected = directory.find((u) => u.id === selectedId) ?? directory[0] ?? null;
 
   const load = useCallback(async () => {
-    const res = await fetch("/api/admin/staff/users", { credentials: "include", cache: "no-store" });
-    const data = (await res.json()) as { admin?: EnvAdminPublic; users?: StaffUserPublic[]; audit?: StaffAuditEntry[] };
-    if (data.admin) setAdmin(data.admin);
-    setUsers(data.users ?? []);
-    setAudit(data.audit ?? []);
+    try {
+      const res = await fetch("/api/admin/staff/users", { credentials: "include", cache: "no-store" });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = (await res.json()) as { admin?: EnvAdminPublic; users?: StaffUserPublic[]; audit?: StaffAuditEntry[] };
+      if (data.admin) setAdmin(data.admin);
+      setUsers(data.users ?? []);
+      setAudit(data.audit ?? []);
+      setListState("ready");
+    } catch {
+      setListState((prev) => (prev === "ready" ? "ready" : "error"));
+    }
   }, []);
 
   useEffect(() => {
@@ -275,6 +282,15 @@ export function IrissStaffUsersClient() {
               <span>Statuss</span>
               <span>Pēdējā pieteikšanās</span>
             </div>
+            {directory.length === 0 ? (
+              <StaffListPlaceholder
+                state={listState}
+                onRetry={() => {
+                  setListState("loading");
+                  void load();
+                }}
+              />
+            ) : null}
             <ul>
               {directory.map((user) => {
                 const st = statusLabel(user.status);
@@ -702,4 +718,44 @@ function UserDetailCard({
       ) : null}
     </Wrapper>
   );
+}
+
+/** Tukša saraksta vieta: ielādes rindas vai kļūda ar «Mēģināt vēlreiz» (nevis 1-2 s tukšs saraksts). */
+export function StaffListPlaceholder({
+  state,
+  onRetry,
+}: {
+  state: "loading" | "ready" | "error";
+  onRetry: () => void;
+}) {
+  if (state === "loading") {
+    return (
+      <ul aria-busy="true" aria-label="Ielādē personas" data-testid="staff-list-loading">
+        {[0, 1, 2, 3].map((i) => (
+          <li key={i} className="flex items-center gap-3 px-4 py-3">
+            <span className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-[#EEF2FF]" />
+            <span className="min-w-0 flex-1 space-y-1.5">
+              <span className="block h-3.5 w-2/5 animate-pulse rounded bg-[#F3F4F6]" />
+              <span className="block h-3 w-3/5 animate-pulse rounded bg-[#F3F4F6]" />
+            </span>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+  if (state === "error") {
+    return (
+      <div className="flex flex-wrap items-center gap-3 px-4 py-4 text-[13px] text-[var(--iriss-ink-2)]" role="alert">
+        <span>Neizdevās ielādēt personu sarakstu.</span>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="min-h-[44px] rounded-full border border-[var(--iriss-line)] px-4 text-[13px] font-medium text-[var(--iriss-ink)]"
+        >
+          Mēģināt vēlreiz
+        </button>
+      </div>
+    );
+  }
+  return null;
 }
