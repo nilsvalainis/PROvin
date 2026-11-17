@@ -59,11 +59,28 @@ function unwrap(json: unknown): Record<string, unknown> {
   return root;
 }
 
+/**
+ * Reālā detaļu atbilde (17.11) ir ietīta: `{ auction: {...}, success, request_id, ... }`.
+ * Atgriež iekšējo izsoles objektu; parastu rindu atstāj kā ir.
+ */
+export function thecarapiAuctionBody(raw: unknown): Record<string, unknown> | null {
+  const rec = asRecord(raw);
+  if (!rec) return null;
+  const inner = asRecord(rec.auction);
+  if (inner && rec.site_name == null && rec.site == null && rec.auction_id == null) return inner;
+  return rec;
+}
+
 function rowsOf(json: unknown): Record<string, unknown>[] {
   const root = unwrap(json);
   const list = root.auctions ?? root.records ?? root.items ?? root.results ?? root.details;
-  if (!Array.isArray(list)) return [];
-  return list.filter((row): row is Record<string, unknown> => Boolean(asRecord(row)));
+  if (!Array.isArray(list)) {
+    const single = thecarapiAuctionBody(root);
+    return single && single !== root ? [single] : [];
+  }
+  return list
+    .map((row) => thecarapiAuctionBody(row))
+    .filter((row): row is Record<string, unknown> => Boolean(row));
 }
 
 function text(raw: unknown): string {
@@ -225,7 +242,13 @@ function urlList(raw: unknown): string[] {
     if (typeof item === "string") out.push(item.trim());
     else {
       const rec = asRecord(item);
-      const url = text(rec?.url ?? rec?.Url ?? rec?.href);
+      const named = text(rec?.url ?? rec?.Url ?? rec?.href ?? rec?.src ?? rec?.image_url ?? rec?.ImageUrl);
+      const url =
+        named ||
+        Object.values(rec ?? {})
+          .map((value) => text(value))
+          .find((value) => /^https?:\/\//i.test(value)) ||
+        "";
       if (url) out.push(url);
     }
   }
@@ -233,13 +256,18 @@ function urlList(raw: unknown): string[] {
 }
 
 export function parseThecarapiDetail(json: unknown): ThecarapiDetailParsed {
-  const row = asRecord(json) ?? {};
+  const row = thecarapiAuctionBody(json) ?? {};
   const site = siteSlug(row.site_name ?? row.site);
   const id = auctionId(row.auction_id ?? row.id);
   const pending = thecarapiPayloadPending(200, json);
   const urls = [
+    ...urlList(row.ImageUrls),
+    ...urlList(row.image_urls),
     ...urlList(row.DamageImageUrls),
     ...urlList(row.damage_image_urls),
+    ...urlList(row.ServiceImageUrls),
+    ...urlList(row.ImageVaultImages),
+    ...urlList(row.subAreaImages),
     ...urlList(row.gallery),
     ...urlList(row.images),
     ...urlList(row.photos),
