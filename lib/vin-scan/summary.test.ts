@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildVinScanIndicator } from "@/lib/vin-scan/types";
 import {
+  buildVinScanFacts,
   buildVinScanOverview,
   collectVinScanMileage,
   detectVinScanMileageRollback,
@@ -167,5 +168,14 @@ describe("detectVinScanMileageRollback ar jauktiem formātiem", () => {
 describe("odometerKm ar papildu tekstu", () => {
   it("neapvieno km ar gadu, kas seko aiz teksta", () => {
     expect(odometerKm("145 230 km · 2024")).toBe(145_230);
+  });
+});
+
+describe("reģistrācijas valstis", () => {
+  it("Čehijas reģistra atradums parādās faktos", () => {
+    const facts = buildVinScanFacts([
+      { id: "cz_rsv", label: "Čehijas reģistrs", status: "found", summary: "ok", flags: { registrationCountry: "CZ" } },
+    ] as never);
+    expect(facts.registrations).toEqual(["CZ"]);
   });
 });

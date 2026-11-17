@@ -57,8 +57,8 @@ describe("vin scan catalog", () => {
     expect(VIN_SCAN_SOURCE_IDS).toContain("lt_itpr");
     expect(VIN_SCAN_SOURCE_IDS).toContain("joj_copart_iaai");
     expect(VIN_SCAN_SOURCE_IDS).toContain("thecarapi_eu");
-    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(34);
-    expect(VIN_SCAN_CATALOG).toHaveLength(34);
+    expect(VIN_SCAN_SOURCE_IDS).toHaveLength(36);
+    expect(VIN_SCAN_CATALOG).toHaveLength(36);
     expect(VIN_SCAN_CATALOG.find((s) => s.id === "traficom")?.needs).toEqual(["vin"]);
     expect(traficomVehicleInfoUrl("WBA5R1C0XLFH42873")).toBe(
       "https://www.traficom.fi/fi/autoilijat/ajoneuvon-osto-ja-myynti/tarkista-ajoneuvon-tiedot",
@@ -107,7 +107,7 @@ describe("vin scan catalog", () => {
 
   it("katram servera avotam ir VIN meklēšanas URL", () => {
     const vin = "WBA5R1C0XLFH42873";
-    const formOnly = new Set(["traficom", "regitra", "rdw"]);
+    const formOnly = new Set(["traficom", "regitra", "rdw", "dvsa_mot"]);
     for (const item of VIN_SCAN_CATALOG) {
       const url = item.openUrl(vin);
       expect(url).toMatch(/^https:\/\//);

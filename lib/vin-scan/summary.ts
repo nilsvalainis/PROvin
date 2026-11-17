@@ -160,7 +160,7 @@ export function buildVinScanFacts(rows: readonly VinScanOverviewRow[]): VinScanF
     const photos = row.flags?.photoCount ?? row.media?.photoCount ?? 0;
     if (photos > 0) auctionPhotos.push(`${row.label || row.id}: ${photos} foto`);
     const country = row.flags?.registrationCountry || row.country;
-    if (country && ["LV", "LT", "EE", "DK", "SE", "FI", "NO", "NL", "UK", "BE"].includes(country)) {
+    if (country && ["LV", "LT", "EE", "DK", "SE", "FI", "NO", "NL", "UK", "BE", "CZ"].includes(country)) {
       countries.add(country);
     }
   }
