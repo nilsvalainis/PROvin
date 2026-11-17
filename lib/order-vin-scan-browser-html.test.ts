@@ -390,3 +390,51 @@ describe("safeBrowserImportOpenUrl (klienta pageUrl -> openUrl)", () => {
     expect(applied.record.indicators[0]?.openUrl).toBe(pageUrl);
   });
 });
+
+describe("pārlūka HTML foto: tikai zināmie izsoļu hosti", () => {
+  function photosFor(id: "bidfax" | "stat_vin", html: string): string[] {
+    const applied = applyBrowserArchiveHtml({
+      record: record([]),
+      id,
+      html,
+      pageUrl: id === "stat_vin" ? `https://stat.vin/cars/${VIN}` : `https://bidfax.info/?vin=${VIN}`,
+      vin: VIN,
+    });
+    expect(applied.ok, id).toBe(true);
+    if (!applied.ok) return [];
+    const row = applied.record.indicators.find((r) => r.id === id);
+    const fromAuctions = (row?.auctions ?? []).flatMap((a) => [a.photoUrl, ...(a.photoUrls ?? [])]);
+    return [row?.media?.photoUrl, ...(row?.media?.photoUrls ?? []), ...fromAuctions].filter((u): u is string => Boolean(u));
+  }
+
+  it("izsoļu arhīvs: sveša hosta attēls ir izmests, atļautie paliek", () => {
+    const html = `<div><h1>Audi ${VIN}</h1><p>Copart lot 555, damage: rear, 15 photos</p>
+      <img src="https://tracker.evil.example/open.jpg?admin=1">
+      <img src="http://bidfax.info/photos/http-only.jpg">
+      <img data-src="https://10.0.0.5/internal.jpg">
+      <img src="https://bidfax.info/photos/1.jpg">
+      <img data-src="https://cs.copart.com/v1/auth/img/lot/555/2.jpg">
+      <img src="https://d1abc.cloudfront.net/lots/555/3.jpg">
+      <img src="https://vis.iaai.com/resizer?imageKeys=1~SID~B1~S0~I1&width=640"></div>`;
+    const urls = photosFor("bidfax", html);
+    expect(urls.length).toBeGreaterThan(0);
+    expect(urls.some((u) => u.includes("evil.example"))).toBe(false);
+    expect(urls.some((u) => u.startsWith("http://"))).toBe(false);
+    expect(urls.some((u) => u.includes("10.0.0.5"))).toBe(false);
+    expect(urls).toContain("https://bidfax.info/photos/1.jpg");
+    expect(urls).toContain("https://cs.copart.com/v1/auth/img/lot/555/2.jpg");
+    expect(urls).toContain("https://d1abc.cloudfront.net/lots/555/3.jpg");
+    expect(urls.some((u) => u.includes("vis.iaai.com"))).toBe(true);
+  });
+
+  it("stat.vin: sveša hosta attēls ir izmests arī no parsera savāktajiem", () => {
+    const html = STAT_HTML.replace(
+      "</body>",
+      `<img src="https://tracker.evil.example/auction/open.jpg"><a href="https://evil.example/x.png">x</a></body>`,
+    );
+    const urls = photosFor("stat_vin", html);
+    expect(urls.some((u) => u.includes("evil.example"))).toBe(false);
+    expect(urls).toContain("https://cs.copart.com/v1/auth/img/lot/50558298/1.jpg");
+    expect(urls).toContain("https://cs.copart.com/v1/auth/img/lot/50558298/2.jpg");
+  });
+});

@@ -23,7 +23,10 @@ export type VinScanHttpLike = {
 };
 
 export type VinScanRelayPageOk = { ok: true; status: number; html: string; finalUrl: string };
-export type VinScanRelayPageErr = { ok: false; reason: string };
+/** `httpStatus`: releja paša HTTP kods, ja tas atbildēja ar kļūdu. */
+export type VinScanRelayPageErr = { ok: false; reason: string; httpStatus?: number };
+
+const RELAY_NOT_CONFIGURED = "Relejs nav konfigurēts (IRISS_LISTINGS_RELAY_URL)";
 export type VinScanRelayPage = VinScanRelayPageOk | VinScanRelayPageErr;
 
 const DEFAULT_TIMEOUT_MS = 90_000;
@@ -82,6 +85,26 @@ export function vinScanPageNeedsRelay(page: VinScanHttpLike): boolean {
   return page.status === 403 || page.status === 429 || page.status === 503;
 }
 
+/** Releja HTTP kļūda operatoram saprotamā tekstā. Releja paša `error` teksts ir precīzāks par noklusējumu. */
+function relayHttpErrorReason(status: number, err: string): string {
+  if (status === 401 || status === 403) return "Relejs noraidīja tokenu (IRISS_LISTINGS_RELAY_TOKEN)";
+  if (status === 429) return err || "Releja dienas limits VIN SCAN";
+  if (status === 503) return err || "Relejs aizņemts (rinda pilna)";
+  return err || `Relejs atbildēja HTTP ${status}`;
+}
+
+/**
+ * Relejs neizdevās un lapa joprojām ir bloķēta: operatoram jāredz releja īstais iemesls
+ * (dienas limits, rinda pilna, tokens, noildze), nevis tikai vispārīgs "bloķē".
+ * Lapu ar īstu saturu neaiztiek.
+ */
+function withRelayFailureReason(page: VinScanHttpLike, relayReason: string): VinScanHttpLike {
+  if (!relayReason || !vinScanPageNeedsRelay(page)) return page;
+  const own = String(page.challengeReason ?? "").trim();
+  if (own.includes(relayReason)) return page;
+  return { ...page, challengeReason: own ? `${relayReason}; ${own}` : relayReason };
+}
+
 export async function fetchVinScanPageViaRelay(
   url: string,
   deps: { fetchImpl?: FetchLike; env?: Record<string, string | undefined>; timeoutMs?: number } = {},
@@ -101,7 +124,7 @@ async function fetchVinScanPageViaRelayOnce(
   deps: { fetchImpl?: FetchLike; env?: Record<string, string | undefined>; timeoutMs?: number } = {},
 ): Promise<VinScanRelayPage> {
   const cfg = readIrissRelayConfig(deps.env ?? process.env);
-  if (!cfg) return { ok: false, reason: "Relejs nav konfigurēts (IRISS_LISTINGS_RELAY_URL)" };
+  if (!cfg) return { ok: false, reason: RELAY_NOT_CONFIGURED };
   const fetchImpl = deps.fetchImpl ?? fetch;
   const timeoutMs = deps.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const controller = new AbortController();
@@ -124,12 +147,7 @@ async function fetchVinScanPageViaRelayOnce(
     const rec = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
     if (!res.ok) {
       const err = String(rec.error ?? rec.note ?? "").trim();
-      if (res.status === 401 || res.status === 403) {
-        return { ok: false, reason: "Relejs noraidīja tokenu (IRISS_LISTINGS_RELAY_TOKEN)" };
-      }
-      if (res.status === 429) return { ok: false, reason: err || "Releja dienas limits VIN SCAN" };
-      if (res.status === 503) return { ok: false, reason: err || "Relejs aizņemts (rinda pilna)" };
-      return { ok: false, reason: err || `Relejs atbildēja HTTP ${res.status}` };
+      return { ok: false, reason: relayHttpErrorReason(res.status, err), httpStatus: res.status };
     }
     const html = String(rec.html ?? "");
     if (!html.trim()) return { ok: false, reason: "Relejs atgrieza tukšu HTML" };
@@ -177,7 +195,7 @@ export async function fetchCarinfoSuperSearchViaRelay(
   const target = validCarinfoSuperSearchUrl(url);
   if (!target) return { ok: false, reason: "url nav car.info super-search" };
   const cfg = readIrissRelayConfig(deps.env ?? process.env);
-  if (!cfg) return { ok: false, reason: "Relejs nav konfigurēts (IRISS_LISTINGS_RELAY_URL)" };
+  if (!cfg) return { ok: false, reason: RELAY_NOT_CONFIGURED };
   const fetchImpl = deps.fetchImpl ?? fetch;
   const timeoutMs = deps.timeoutMs ?? 8_000;
   const controller = new AbortController();
@@ -200,10 +218,7 @@ export async function fetchCarinfoSuperSearchViaRelay(
     const rec = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
     if (!res.ok || rec.ok === false) {
       const err = String(rec.error ?? rec.note ?? "").trim();
-      if (res.status === 401 || res.status === 403) {
-        return { ok: false, reason: "Relejs noraidīja tokenu (IRISS_LISTINGS_RELAY_TOKEN)" };
-      }
-      return { ok: false, reason: err || `Relejs atbildēja HTTP ${res.status}` };
+      return { ok: false, reason: relayHttpErrorReason(res.status, err), httpStatus: res.status };
     }
     const html = String(rec.html ?? "");
     if (!html.trim()) return { ok: false, reason: "Relejs atgrieza tukšu atbildi" };
@@ -230,7 +245,11 @@ export async function applyCarinfoSuperSearchHttp(
 ): Promise<VinScanHttpLike> {
   if (!isCarinfoSuperSearchUrl(url)) return page;
   const relayed = await fetchCarinfoSuperSearchViaRelay(url, deps);
-  if (!relayed.ok) return page;
+  if (!relayed.ok) {
+    // Bez env relejs nav mēģināts. HTTP 400: vecs relejs, kas `/http` ceļu nezina. Abos gadījumos iemesla nav.
+    if (relayed.reason === RELAY_NOT_CONFIGURED || relayed.httpStatus === 400) return page;
+    return withRelayFailureReason(page, relayed.reason);
+  }
   return {
     status: relayed.status || 200,
     text: relayed.html,
@@ -250,8 +269,8 @@ export async function applyVinScanRelayIfBlocked(
   if (!vinScanPageNeedsRelay(page)) return page;
   const relayed = await fetchVinScanPageViaRelay(url, deps);
   if (!relayed.ok) {
-    if (/nav konfigurēts/i.test(relayed.reason)) return page;
-    return { ...page, challengeReason: page.challengeReason || relayed.reason };
+    if (relayed.reason === RELAY_NOT_CONFIGURED) return page;
+    return withRelayFailureReason(page, relayed.reason);
   }
   return {
     status: relayed.status || 200,
@@ -286,7 +305,9 @@ export async function fetchVinScanAuctionPage(
     }
     // Relejs jau mēģināts (kļūda vai noildze). Otrs POST tikai pagarina rindu.
     try {
-      return await directFetch();
+      const direct = await directFetch();
+      // Tiešā atbilde ar īstu saturu paliek kā ir. Ja arī tā ir bloķēta, līdzi iet releja iemesls.
+      return relayed.ok ? direct : withRelayFailureReason(direct, relayed.reason);
     } catch (e) {
       const reason = !relayed.ok ? relayed.reason : e instanceof Error ? e.message : "Relejs neatbildēja";
       return { status: 0, text: "", cookie: "", challengeReason: reason };
