@@ -269,7 +269,7 @@ export function IrissListingVehicleCard({
                 <span>VIN {listingVinShort(vinUi.vin)}</span>
                 <button
                   type="button"
-                  className="inline-flex h-7 items-center whitespace-nowrap rounded border border-slate-200 bg-white px-2.5 text-[11.5px] font-semibold text-slate-600 hover:bg-slate-50"
+                  className="inline-flex h-7 max-md:h-9 items-center whitespace-nowrap rounded border border-slate-200 bg-white px-2.5 text-[11.5px] font-semibold text-slate-600 hover:bg-slate-50"
                   onClick={(e) => {
                     e.stopPropagation();
                     copyVin();
@@ -279,7 +279,7 @@ export function IrissListingVehicleCard({
                 </button>
                 <a
                   href={vinUi.scanHref}
-                  className="inline-flex h-7 items-center whitespace-nowrap rounded border border-slate-200 bg-white px-2.5 text-[11.5px] font-semibold text-[var(--color-provin-accent)] hover:bg-slate-50"
+                  className="inline-flex h-7 max-md:h-9 items-center whitespace-nowrap rounded border border-slate-200 bg-white px-2.5 text-[11.5px] font-semibold text-[var(--color-provin-accent)] hover:bg-slate-50"
                   onClick={(e) => e.stopPropagation()}
                 >
                   VIN SCAN
@@ -421,7 +421,7 @@ export function IrissListingVehicleCard({
         {phone && !noteOpen && !(prefs.notes[v.id] ?? "").trim() ? (
           <button
             type="button"
-            className="mt-auto w-full rounded-md border border-dashed border-slate-200 bg-slate-50 px-2 py-1 text-left text-[12px] text-slate-500"
+            className="mt-auto w-full max-md:min-h-10 rounded-md border border-dashed border-slate-200 bg-slate-50 px-2 py-1 text-left text-[12px] text-slate-500"
             onClick={(e) => {
               e.stopPropagation();
               setNoteOpen(true);

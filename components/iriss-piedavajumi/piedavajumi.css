@@ -2127,3 +2127,21 @@ button.pd-lv {
   border-color: var(--iriss-graphite);
   color: var(--iriss-on-graphite);
 }
+
+/* Nils 14.11: telefonā pogas un slēdži ērti nospiežami ar pirkstu (bija 21-26 px augsti). */
+@media (max-width: 767px) {
+  .pd-btn.s {
+    height: 36px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+  .pd-tg {
+    min-height: 36px;
+    padding: 0 4px;
+  }
+  .pde-sw::before {
+    content: "";
+    position: absolute;
+    inset: -10px -6px;
+  }
+}

@@ -89,7 +89,6 @@ export function IrissLogistikaCarPopup({ order, plan, stage, onClose, onPlanChan
             onClick={() => onPlanChange(moveCargoCar(plan, order.id, b))}
           >
             {cargoBucketLabel(plan, b)}
-            {b === "next" || b === "after" ? " krava" : ""}
           </button>
         ))}
         <button

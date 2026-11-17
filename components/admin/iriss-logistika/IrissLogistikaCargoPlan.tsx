@@ -417,7 +417,7 @@ export function IrissLogistikaCargoPlan({
                 ) : extra ? (
                   <button
                     type="button"
-                    className="text-left text-[13px] font-semibold"
+                    className="min-h-9 text-left text-[13px] font-semibold"
                     title="Mainīt nosaukumu"
                     onClick={() => setRenaming({ id: extra, name: cargoBucketLabel(plan, bucket) })}
                   >

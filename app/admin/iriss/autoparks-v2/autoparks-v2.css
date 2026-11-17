@@ -4631,3 +4631,25 @@
   font-weight: 600;
   cursor: pointer;
 }
+
+/* Nils 14.11: telefonā bildes maiņas poga un Jā/Nē slēdzis ērti nospiežami. */
+@media (max-width: 767px) {
+  .ap2.ap2.ap2 .ap2-cambtn {
+    width: 32px;
+    height: 32px;
+  }
+  .ap2.ap2.ap2 .ap2-cambtn::before {
+    content: "";
+    position: absolute;
+    inset: -6px;
+  }
+  .ap2.ap2.ap2 .v.ap2-switch {
+    justify-self: start;
+    flex-shrink: 0;
+    min-width: 56px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
