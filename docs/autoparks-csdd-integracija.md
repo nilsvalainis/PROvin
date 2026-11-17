@@ -17,6 +17,7 @@ Statuss: izpēte un apspriešana, nekas nav ieviests.
 
 - Vercel cron (Dropbox imports) iet katru dienu ar HTTP 200.
 - Hetzner nolasījums uz `/api/iriss/csdd-registrs` veiksmīgi atnācis tikai 26.10 un 28.10 (rokas palaidieni). No 29.10 līdz 17.11 nav neviena veiksmīga POST, 06.11 bija viens `401` (nepareizs tokens).
+- Produkcijas Autoparks 17.11. rāda pēdējo nolasījumu 09.11. Tas atnāca pa Dropbox rezerves ceļu, jo Hetzner POST tajā dienā nebija.
 - Sekas: ja arī Aivars nav ielicis jaunu failu Dropbox, kartīšu akta nr. un statusi var būt ~3 nedēļas veci. Jauni pieņemtie auto kartītēs neparādās, un pārdotie netiek atzīmēti.
 - Jāpārbauda uz Hetzner (vajag SSH, no šī Mac nav atslēgas): `systemctl list-timers | grep csdd-registrs`, `cat /var/lib/csdd-registrs/last-run.json`, `journalctl -u csdd-registrs --since -3d`. Jāpārbauda arī, vai `PROVIN_REGISTRS_TOKEN` sakrīt ar Vercel `IRISS_CSDD_REGISTRS_TOKEN` (06.11 bija 401).
 - Ieteikums: Autoparka sarakstā rādīt "Reģistrs atjaunots: <datums>" no `autoparks-registry-import.json`. Ja dati vecāki par 2 dienām, rādīt sarkanu brīdinājumu, lai visi redz, ka dati nav svaigi.
