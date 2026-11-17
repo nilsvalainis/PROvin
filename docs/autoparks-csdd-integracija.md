@@ -2,11 +2,24 @@
 
 Statuss: izpēte un apspriešana, nekas nav ieviests.
 
-## Lēmumi
+## Stāvoklis 17.11. (svarīgāk par visu zemāk)
 
-- **17.11. Nils: "nedrīkst"** - CSDD pieprasījumu par tirdzniecības reģistra datiem nesūtām, un tirdzniecības reģistra datus automātiski neielasām un neglabājam PROVIN. Tātad varianti A, B, C un D (3. sadaļa) **atmesti**.
-- Paliek tikai tas, kas nav atkarīgs no tirdzniecības reģistra: CSDD tehniskie dati pēc jau esošā līguma (`tl_tehn_dati`) un cenu šabloni.
-- Akta nr. kartītē - tikai tad, ja darbinieks to ieraksta ar roku no IRISS paša akta. Arī to darām tikai pēc Nila "jā".
+Šī dokumenta 1.-7. sadaļa rakstīta 22.10. Kopš tā laika main jau ir uzbūvēts tirdzniecības reģistra imports, tāpēc turpmāk galvenie ir šie dokumenti:
+
+- `docs/csdd-registrs-imports.md` - JSON shēma, kā imports raksta kartītē, "pieņemtie tirdzniecībā" filtrs, personas dati, iestatījumi.
+- `relay/csdd-registrs/README.md` - Hetzner cron, kas katru nakti 03:30 **tikai lasa** reģistru (IRISS un DZA) un sūta uz `POST /api/iriss/csdd-registrs`.
+- Rezerves ceļš: Aivars ieliek JSON Dropbox `/CSDD_registrs_IRISS`, Vercel cron `/api/cron/iriss-autoparks-registrs` to importē katru dienu 04:40 UTC.
+- Kartītē: cilne "CSDD reģistrs" (akta nr. un datums, statuss, nobraukums), cenu lapa ar drošības sistēmām un CSDD atzīmēm. Tātad 5. sadaļas datu modelis un "cenu šabloni" jau ir realizēti citā formā.
+
+**Nila atbilde 17.11. "nedrīkst"**: CSDD pieprasījumu par līguma papildinājumu nesūtām. Esošais lasīšanas ceļš paliek.
+
+**Problēma, kas jāatrisina (pārbaudīts Vercel pieprasījumu žurnālā 17.11.):**
+
+- Vercel cron (Dropbox imports) iet katru dienu ar HTTP 200.
+- Hetzner nolasījums uz `/api/iriss/csdd-registrs` veiksmīgi atnācis tikai 26.10 un 28.10 (rokas palaidieni). No 29.10 līdz 17.11 nav neviena veiksmīga POST, 06.11 bija viens `401` (nepareizs tokens).
+- Sekas: ja arī Aivars nav ielicis jaunu failu Dropbox, kartīšu akta nr. un statusi var būt ~3 nedēļas veci. Jauni pieņemtie auto kartītēs neparādās, un pārdotie netiek atzīmēti.
+- Jāpārbauda uz Hetzner (vajag SSH, no šī Mac nav atslēgas): `systemctl list-timers | grep csdd-registrs`, `cat /var/lib/csdd-registrs/last-run.json`, `journalctl -u csdd-registrs --since -3d`. Jāpārbauda arī, vai `PROVIN_REGISTRS_TOKEN` sakrīt ar Vercel `IRISS_CSDD_REGISTRS_TOKEN` (06.11 bija 401).
+- Ieteikums: Autoparka sarakstā rādīt "Reģistrs atjaunots: <datums>" no `autoparks-registry-import.json`. Ja dati vecāki par 2 dienām, rādīt sarkanu brīdinājumu, lai visi redz, ka dati nav svaigi.
 
 Mērķis: Autoparks auto kartītē redzēt datus par auto, kas jau **pieņemti tirdzniecībā** CSDD tirdzniecības reģistrā (pieņemšanas akta nr., datums, odometrs, pieņemšanas cena), un no tiem kopā ar tehniskajiem datiem veidot **cenu šablonus**.
 
