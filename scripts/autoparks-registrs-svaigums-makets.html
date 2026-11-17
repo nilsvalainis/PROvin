@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reģistra svaigums - makets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Tokeni no app/admin/iriss/autoparks-v2/autoparks-v2.css */
+:root {
+  --ink: #0b0c10; --ink2: #6e6e73; --ink3: #8e8e93; --line: #e5e5ea; --line2: #f0f0f3;
+  --bad: #c2362b; --ok: #16a34a; --warn: #b45309; --btn: rgba(31, 36, 48, 0.89);
+  --st-ordered: #0891b2; --st-in_transit: #0d9488; --st-prep_waiting: #d97706; --st-in_service: #5e5ce6;
+  --st-for_sale: #2563eb; --st-reserved: #16a34a; --st-sold: #8e8e93;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: #e9e9ee; color: var(--ink); font-family: Inter, -apple-system, system-ui, sans-serif; font-size: 14px; }
+.wrap { max-width: 1500px; margin: 0 auto; padding: 24px 16px 60px; }
+.intro { max-width: 860px; margin-bottom: 22px; }
+.intro h1 { font-size: 22px; margin: 0 0 6px; letter-spacing: -0.01em; }
+.intro p { margin: 4px 0; color: #3a3a3c; line-height: 1.5; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 14px 0 20px; }
+.tabs button { font: inherit; border: 0; box-shadow: inset 0 0 0 1px var(--line); background: #fff; border-radius: 99px; padding: 7px 14px; font-size: 13px; font-weight: 600; color: #3a3a3c; cursor: pointer; }
+.tabs button.on { background: var(--btn); color: #fff; box-shadow: none; }
+.frames { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+.frame-l { font-size: 12px; font-weight: 600; color: var(--ink2); margin: 0 0 8px; text-transform: uppercase; letter-spacing: .04em; }
+.desk { width: 1040px; max-width: 100%; background: #fafafb; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 8px 30px rgba(0,0,0,.06); padding: 24px 28px 28px; overflow: hidden; }
+.phone { width: 390px; max-width: 100%; background: #f2f2f7; border-radius: 34px; box-shadow: 0 0 0 10px #1c1c1e, 0 12px 40px rgba(0,0,0,.2); padding: 14px 16px 24px; overflow: hidden; }
+/* Autoparka galva */
+.top { display: flex; align-items: center; gap: 10px; min-height: 40px; margin-bottom: 14px; }
+.top h2 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.top .n { font-size: 14px; color: #4a4a4f; flex: 1; }
+.search { height: 36px; border-radius: 10px; background: #fff; box-shadow: inset 0 0 0 1px var(--line); width: 320px; padding: 0 12px; display: flex; align-items: center; color: var(--ink3); font-size: 13px; }
+.add { height: 36px; border-radius: 10px; background: var(--btn); color: #fff; font-weight: 600; font-size: 13px; padding: 0 14px; display: inline-flex; align-items: center; border: 0; }
+.pipe { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 14px; }
+.pp { border-radius: 14px; background: #fff; box-shadow: inset 0 0 0 1px var(--line); padding: 10px 14px; }
+.pp.on { box-shadow: inset 0 0 0 2px #1d1d1f; }
+.pp b { display: block; font-size: 22px; font-weight: 600; }
+.pp span { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink2); white-space: nowrap; }
+.pp span::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--st, var(--ink)); }
+.chips-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.chips { display: flex; gap: 6px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.chip { border-radius: 99px; background: #fff; box-shadow: inset 0 0 0 1px var(--line); padding: 6px 12px; font-size: 12.5px; font-weight: 600; color: #3a3a3c; white-space: nowrap; }
+.chip.on { background: var(--btn); color: #fff; box-shadow: none; }
+.sort { font-size: 12.5px; color: var(--ink2); white-space: nowrap; }
+.rows { background: #fff; border-radius: 14px; box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; }
+.row { display: grid; grid-template-columns: 56px minmax(0,2fr) minmax(0,1.6fr) 140px; gap: 16px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--line2); }
+.row:first-child { border-top: 0; }
+.ph { width: 56px; height: 40px; border-radius: 8px; background: linear-gradient(135deg,#d9dbe1,#eef0f3); }
+.row .t { font-weight: 600; }
+.row .s { font-size: 12px; color: var(--ink2); }
+.vin { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; color: #3a3a3c; }
+.st { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; }
+.st::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--st); }
+
+/* JAUNAIS: reģistra svaigums */
+.fresh { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink2); white-space: nowrap; }
+.fresh i { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); flex: none; }
+.fresh.warn { color: var(--warn); }
+.fresh.warn i { background: #d97706; }
+.fresh.bad { color: var(--bad); font-weight: 600; }
+.fresh.bad i { background: var(--bad); }
+.banner { display: flex; align-items: flex-start; gap: 12px; background: #fdf2f1; box-shadow: inset 0 0 0 1px #f3c7c3; border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; }
+.banner .ic { width: 22px; height: 22px; border-radius: 50%; background: var(--bad); color: #fff; font-weight: 700; font-size: 13px; display: grid; place-items: center; flex: none; margin-top: 1px; }
+.banner b { display: block; color: var(--bad); font-size: 14px; }
+.banner p { margin: 3px 0 0; font-size: 13px; color: #3a3a3c; line-height: 1.45; }
+.banner .act { margin-left: auto; align-self: center; border: 0; font: inherit; font-size: 12.5px; font-weight: 600; background: #fff; box-shadow: inset 0 0 0 1px #d2d2d7; border-radius: 10px; padding: 7px 12px; white-space: nowrap; }
+.ph-only { display: none; }
+
+/* Telefona varianti */
+.phone .top { margin-bottom: 8px; }
+.phone .top .n { flex: 1; }
+.phone .msearch { height: 38px; border-radius: 10px; background: #fff; box-shadow: inset 0 0 0 1px var(--line); padding: 0 12px; display: flex; align-items: center; color: var(--ink3); font-size: 14px; margin-bottom: 10px; }
+.phone .chips { margin-bottom: 6px; }
+.phone .fresh-line { margin: 2px 2px 10px; }
+.phone .banner { flex-wrap: wrap; padding: 12px; }
+.phone .banner .act { margin-left: 34px; align-self: auto; }
+.mcard { background: #fff; border-radius: 14px; box-shadow: inset 0 0 0 1px var(--line); padding: 10px 12px; display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+.mcard .ph { width: 64px; height: 48px; }
+.mcard .t { font-weight: 600; font-size: 14px; }
+.mcard .s { font-size: 12px; color: var(--ink2); }
+
+/* CSDD cilne kartītē */
+.card { background: #fff; border-radius: 14px; box-shadow: inset 0 0 0 1px var(--line); padding: 14px 16px; width: 420px; max-width: 100%; }
+.card h3 { margin: 0 0 8px; font-size: 15px; }
+.f { display: grid; grid-template-columns: 12px 120px 1fr; gap: 8px; align-items: center; padding: 7px 0; border-top: 1px solid var(--line2); font-size: 13.5px; }
+.f:first-of-type { border-top: 0; }
+.cd { width: 7px; height: 7px; border-radius: 50%; background: transparent; }
+.cd.on { background: var(--ok); }
+.f .k { color: var(--ink2); }
+.f.new { background: #f5f8ff; margin: 0 -8px; padding: 7px 8px; border-radius: 8px; }
+.note { font-size: 12px; color: var(--ink2); margin-top: 6px; }
+.notes { margin-top: 26px; max-width: 900px; background: #fff; border-radius: 14px; box-shadow: inset 0 0 0 1px var(--line); padding: 16px 18px; }
+.notes h3 { margin: 0 0 8px; font-size: 15px; }
+.notes ul { margin: 0; padding-left: 18px; line-height: 1.6; color: #3a3a3c; }
+.notes code { font-size: 12.5px; background: #f2f2f7; padding: 1px 5px; border-radius: 5px; }
+.tag { display: inline-block; font-size: 11px; font-weight: 700; background: #eef2ff; color: #3730a3; border-radius: 6px; padding: 2px 6px; margin-left: 6px; vertical-align: 2px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="intro">
+    <h1>Autoparks - "Reģistrs atjaunots" makets</h1>
+    <p>Mērķis: katrs Autoparka lietotājs uzreiz redz, cik svaigi ir CSDD tirdzniecības reģistra dati (akta nr., statusi, jaunie pieņemtie auto).</p>
+    <p>Datums ņemts no pēdējā veiksmīgā importa (Hetzner nakts nolasījums vai Dropbox fails, kurš jaunāks). Jaunais elements atzīmēts ar <span class="tag">JAUNS</span>.</p>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="on" data-s="ok">1. Svaigs (šodien)</button>
+    <button data-s="warn">2. 2-7 dienas vecs</button>
+    <button data-s="bad">3. Vecāks par 7 dienām</button>
+  </div>
+
+  <div class="frames">
+    <div>
+      <p class="frame-l">Dators 1440 px</p>
+      <div class="desk">
+        <div class="top">
+          <h2>Autoparks</h2><span class="n">38 auto</span>
+          <div class="search">Meklēt VIN, numuru, modeli</div>
+          <button class="add">+ Auto</button>
+        </div>
+        <div class="banner" data-show="bad">
+          <span class="ic">!</span>
+          <div>
+            <b>CSDD reģistra dati nav atjaunoti 20 dienas</b>
+            <p>Pēdējo reizi 28.10. 03:41. Akta nr. un statusi var būt veci, jaunie pieņemtie auto var neparādīties. Pirms pavadzīmes vai pārdošanas pārbaudi e-CSDD.</p>
+          </div>
+          <button class="act">Kas jādara?</button>
+        </div>
+        <div class="pipe">
+          <div class="pp on"><b>38</b><span>Visi</span></div>
+          <div class="pp" style="--st:var(--st-in_transit)"><b>4</b><span>Loģistika →</span></div>
+          <div class="pp" style="--st:var(--st-prep_waiting)"><b>7</b><span>Gaida</span></div>
+          <div class="pp" style="--st:var(--st-in_service)"><b>5</b><span>Servisā</span></div>
+          <div class="pp" style="--st:var(--st-for_sale)"><b>17</b><span>Pārdošanā</span></div>
+          <div class="pp" style="--st:var(--st-reserved)"><b>3</b><span>Rezervēts</span></div>
+          <div class="pp" style="--st:var(--st-sold)"><b>2</b><span>Pārdots</span></div>
+        </div>
+        <div class="chips-row">
+          <div class="chips">
+            <span class="chip on">Visi</span><span class="chip">IRISS</span><span class="chip">DZA</span><span class="chip">Pieņemti tirdzniecībā 24</span>
+          </div>
+          <span class="fresh" data-fresh><i></i><span>CSDD reģistrs: šodien 03:41</span></span><span class="tag">JAUNS</span>
+          <span class="sort">Kārtot: jaunākie ▾</span>
+        </div>
+        <div class="rows">
+          <div class="row" style="--st:var(--st-for_sale)"><div class="ph"></div><div><div class="t">Audi A4 Avant 2018</div><div class="s">Akts TA-2026-0042 · 01.10.2026</div></div><div class="vin">WAUZZZ8K0FA036715</div><div class="st">Pārdošanā</div></div>
+          <div class="row" style="--st:var(--st-in_service)"><div class="ph"></div><div><div class="t">Volvo XC60 2019</div><div class="s">Akts TA-2026-0047 · 06.10.2026</div></div><div class="vin">YV1UZ25UCK1234567</div><div class="st">Servisā</div></div>
+          <div class="row" style="--st:var(--st-prep_waiting)"><div class="ph"></div><div><div class="t">VW Passat 2017</div><div class="s">Akts nav</div></div><div class="vin">WVWZZZ3CZHE012345</div><div class="st">Gaida</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <p class="frame-l">Telefons 390 px</p>
+      <div class="phone">
+        <div class="top"><h2>Autoparks</h2><span class="n">38 auto</span><button class="add">+ Auto</button></div>
+        <div class="msearch">Meklēt VIN, numuru, modeli</div>
+        <div class="banner" data-show="bad">
+          <span class="ic">!</span>
+          <div style="flex:1;min-width:0">
+            <b>CSDD reģistrs nav atjaunots 20 dienas</b>
+            <p>Pēdējo reizi 28.10. Akta nr. un statusi var būt veci.</p>
+          </div>
+          <button class="act">Kas jādara?</button>
+        </div>
+        <div class="chips"><span class="chip on">Visi</span><span class="chip">IRISS</span><span class="chip">DZA</span><span class="chip">Tirdzniecībā 24</span></div>
+        <div class="fresh-line"><span class="fresh" data-fresh><i></i><span>CSDD reģistrs: šodien 03:41</span></span><span class="tag">JAUNS</span></div>
+        <div class="mcard"><div class="ph"></div><div><div class="t">Audi A4 Avant 2018</div><div class="s">Pārdošanā · TA-2026-0042</div></div></div>
+        <div class="mcard"><div class="ph"></div><div><div class="t">Volvo XC60 2019</div><div class="s">Servisā · TA-2026-0047</div></div></div>
+        <div class="mcard"><div class="ph"></div><div><div class="t">VW Passat 2017</div><div class="s">Gaida · akts nav</div></div></div>
+      </div>
+    </div>
+
+    <div>
+      <p class="frame-l">Auto kartīte - cilne "CSDD reģistrs"</p>
+      <div class="card">
+        <h3>CSDD reģistrs</h3>
+        <div class="f"><i class="cd on"></i><span class="k">Reģ. numurs</span><span>NG8493</span></div>
+        <div class="f"><i class="cd on"></i><span class="k">Nobraukums</span><span>123 456 km</span></div>
+        <div class="f"><i class="cd on"></i><span class="k">Statuss</span><span>Tirdzniecībā</span></div>
+        <div class="f"><i class="cd on"></i><span class="k">Īpašnieks</span><span>SIA ĪRISS</span></div>
+        <div class="f"><i class="cd on"></i><span class="k">Akts</span><span>TA-2026-0042 · 01.10.2026</span></div>
+        <div class="f new"><i class="cd"></i><span class="k">Atjaunots</span><span class="fresh" data-fresh><i></i><span>šodien 03:41</span></span></div>
+        <p class="note">Jaunā rinda (iekrāsota tikai maketā) - tas pats datums un krāsa kā sarakstā.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <h3>Kā tas strādās</h3>
+    <ul>
+      <li><b>Zaļš</b> - imports šodien vai vakar. <b>Dzeltens</b> - 2-7 dienas: "CSDD reģistrs: pirms 3 d. (14.11.)". <b>Sarkans</b> - vairāk par 7 dienām: teksts sarkans, un saraksta augšā ir josla.</li>
+      <li>Josla nav aizverama, kamēr dati nav atjaunoti. Tā neaizsedz sarakstu, tikai pabīda to uz leju. Galvene nav sticky.</li>
+      <li>"Kas jādara?" atver īsu paskaidrojumu: kam ziņot (Andrim - Hetzner nakts nolasījums) un ka rezerves ceļš ir Aivara fails Dropbox.</li>
+      <li>Datums nāk no jau esošā <code>autoparks-registry-import.json</code> (pēdējais veiksmīgais imports), un jaunu datu avotu nevajag. Redz visi, kam ir Autoparka tiesības. Summas un VIN saraksti netiek rādīti.</li>
+      <li>Ja datuma vispār nav (imports nekad nav bijis): pelēks "CSDD reģistrs: nav datu".</li>
+    </ul>
+  </div>
+</div>
+<script>
+const S = {
+  ok:   { cls: "",     list: "CSDD reģistrs: šodien 03:41",           card: "šodien 03:41" },
+  warn: { cls: "warn", list: "CSDD reģistrs: pirms 3 d. (14.11.)",     card: "pirms 3 d. (14.11. 03:41)" },
+  bad:  { cls: "bad",  list: "CSDD reģistrs: pirms 20 d. (28.10.)",    card: "pirms 20 d. (28.10. 03:41)" }
+};
+function show(s) {
+  document.querySelectorAll(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.s === s));
+  document.querySelectorAll("[data-fresh]").forEach(el => {
+    el.className = "fresh " + S[s].cls;
+    el.querySelector("span").textContent = el.closest(".card") ? S[s].card : S[s].list;
+  });
+  document.querySelectorAll("[data-show]").forEach(el => { el.style.display = el.dataset.show === s ? "" : "none"; });
+}
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => show(b.dataset.s)));
+show("ok");
+</script>
+</body>
+</html>
