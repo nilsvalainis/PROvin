@@ -8,6 +8,8 @@ import os from "os";
 import path from "path";
 import { get, put } from "@vercel/blob";
 
+import { ORDER_VIN_SCAN_BROWSER_IMPORT_IDS } from "@/lib/order-vin-scan";
+import { overlayVinScanBrowserImports, type VinScanBrowserImport } from "@/lib/vin-scan/browser-import-overlay";
 import { vinScanIndicatorsFresh } from "@/lib/vin-scan/source-ttl";
 import type { JojNameDict } from "@/lib/vin-scan/joj-labels";
 import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
@@ -120,7 +122,9 @@ async function writeJson(key: string, value: unknown): Promise<void> {
                 ? "joj"
                 : key.includes("thecarapi")
                   ? "thecarapi"
-                  : "snapshot",
+                  : key.includes(".browser.")
+                    ? "browser_import"
+                    : "snapshot",
           msg: e instanceof Error ? e.message.slice(0, 160) : "error",
         }),
       );
@@ -152,10 +156,57 @@ export function vinScanSnapshotFresh(snapshot: VinScanSnapshot, nowMs = Date.now
   return vinScanIndicatorsFresh(snapshot.indicators, snapshot.scannedAt, nowMs);
 }
 
-export async function readVinScanSnapshot(vin: string): Promise<VinScanSnapshot | null> {
+function browserImportKey(vin: string, sourceId: string): string | null {
+  const key = snapshotKey(vin);
+  const id = sourceId.trim();
+  if (key.length < 11 || !ORDER_VIN_SCAN_BROWSER_IMPORT_IDS.includes(id) || !/^[a-z0-9_]+$/.test(id)) return null;
+  return `${key}.browser.${id}`;
+}
+
+function asBrowserImport(raw: unknown, vin: string, id: string): VinScanBrowserImport | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  if (typeof o.vin !== "string" || snapshotKey(o.vin) !== snapshotKey(vin)) return null;
+  if (o.id !== id || typeof o.importedAt !== "string" || !Number.isFinite(Date.parse(o.importedAt))) return null;
+  const row = o.row as VinScanIndicator | undefined;
+  if (!row || typeof row !== "object" || row.id !== id || typeof row.status !== "string") return null;
+  return { vin: o.vin, id, importedAt: o.importedAt, row };
+}
+
+/**
+ * Pārlūka imports savā atslēgā (`<VIN>.browser.<avots>`): momentuzņēmumu var pārrakstīt paralēla skenēšana
+ * vai cits imports, šo ierakstu - tikai tā paša avota jaunāks imports.
+ */
+export async function writeVinScanBrowserImport(vin: string, row: VinScanIndicator, importedAt: string): Promise<void> {
+  const key = browserImportKey(vin, row.id);
+  if (!key) return;
+  const body: VinScanBrowserImport = { vin: vin.trim().toUpperCase(), id: row.id, importedAt, row };
+  await writeJson(key, body);
+}
+
+export async function readVinScanBrowserImports(vin: string): Promise<VinScanBrowserImport[]> {
+  const all = await Promise.all(
+    ORDER_VIN_SCAN_BROWSER_IMPORT_IDS.map(async (id) => {
+      const key = browserImportKey(vin, id);
+      if (!key) return null;
+      return asBrowserImport(await readJson(key).catch(() => null), vin, id);
+    }),
+  );
+  return all.filter((item): item is VinScanBrowserImport => Boolean(item));
+}
+
+/** Momentuzņēmums ar virsū uzliktiem derīgiem pārlūka importiem (sk. browser-import-overlay.ts). */
+export async function readVinScanSnapshot(vin: string, nowMs = Date.now()): Promise<VinScanSnapshot | null> {
   const key = snapshotKey(vin);
   if (key.length < 11) return null;
-  return asSnapshot(await readJson(key));
+  const snapshot = asSnapshot(await readJson(key));
+  if (!snapshot) return null;
+  const imports = await readVinScanBrowserImports(vin);
+  if (!imports.length) return snapshot;
+  return {
+    ...snapshot,
+    indicators: overlayVinScanBrowserImports(snapshot.indicators, snapshot.scannedAt, imports, nowMs),
+  };
 }
 
 export async function writeVinScanSnapshot(snapshot: VinScanSnapshot): Promise<void> {

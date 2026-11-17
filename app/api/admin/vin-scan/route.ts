@@ -19,7 +19,15 @@ import { preferBrowserArchiveImport } from "@/lib/order-vin-scan-browser-html";
 import { runVinScan, sanitizeVinScanSourceIds } from "@/lib/vin-scan/run";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
 import { vinScanSourceHealthOutcomes } from "@/lib/vin-scan/source-health-outcomes";
-import { listVinScanHistory, readVinScanSnapshot, vinScanSnapshotFresh, writeVinScanSnapshot } from "@/lib/vin-scan/store";
+import { overlayVinScanBrowserImports } from "@/lib/vin-scan/browser-import-overlay";
+import {
+  listVinScanHistory,
+  readVinScanBrowserImports,
+  readVinScanSnapshot,
+  vinScanSnapshotFresh,
+  writeVinScanBrowserImport,
+  writeVinScanSnapshot,
+} from "@/lib/vin-scan/store";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -85,11 +93,12 @@ export async function POST(req: Request) {
         ...(httpStatus != null ? { httpStatus } : {}),
       },
     });
+    const importedAt = new Date().toISOString();
     if (applied.ok) {
       // Importētā rinda ir svaiga; pārējās patur savu vecumu (momentuzņēmuma scannedAt nemainās).
       applied.snapshot = {
         ...applied.snapshot,
-        indicators: stampVinScanRowById(applied.snapshot.indicators, sourceId, new Date().toISOString()),
+        indicators: stampVinScanRowById(applied.snapshot.indicators, sourceId, importedAt),
       };
     }
     if (!applied.ok) {
@@ -103,6 +112,19 @@ export async function POST(req: Request) {
         html,
       });
       return NextResponse.json({ error: applied.error }, { status: 400 });
+    }
+    // Vispirms savā atslēgā: momentuzņēmumu var pārrakstīt skenēšana, kas vēl rit, vai paralēls cita avota imports.
+    const importedRow = applied.snapshot.indicators.find((row) => row.id === sourceId);
+    if (importedRow) {
+      await writeVinScanBrowserImport(vin, importedRow, importedAt).catch((err) => {
+        console.warn(
+          JSON.stringify({
+            vinScanStore: true,
+            event: "browser_import_write_failed",
+            msg: err instanceof Error ? err.message : "write_failed",
+          }),
+        );
+      });
     }
     try {
       await writeVinScanSnapshot(applied.snapshot);
@@ -194,11 +216,17 @@ export async function POST(req: Request) {
   );
   // Vecās rindas patur savu laiku, citādi jaunais momentuzņēmuma scannedAt tās padarītu "svaigas".
   const base = prev ? stampVinScanRows(prev.indicators, prev.scannedAt) : [];
+  const scannedAt = scanned.length ? new Date().toISOString() : prev?.scannedAt || new Date().toISOString();
+  // Skenēšana ilgst līdz ~105 s; pa to laiku saglabātie pārlūka importi nav `prev`, tāpēc tos pārlasa tieši pirms rakstīšanas.
+  const lateImports = isValidVin(vin) && scanned.length ? await readVinScanBrowserImports(vin).catch(() => []) : [];
   const indicators = applyFinlandLinkToIndicators(
-    preferBrowserArchiveImport(base, mergeVinScanIndicators(base, scanned)),
+    overlayVinScanBrowserImports(
+      preferBrowserArchiveImport(base, mergeVinScanIndicators(base, scanned)),
+      scannedAt,
+      lateImports,
+    ),
     plates,
   );
-  const scannedAt = scanned.length ? new Date().toISOString() : prev?.scannedAt || new Date().toISOString();
   after(() => recordSourceOutcomes(vinScanSourceHealthOutcomes(scanned)));
   if (isValidVin(vin) && scanned.length) {
     await writeVinScanSnapshot({ vin, plates, scannedAt, indicators }).catch((err) => {
