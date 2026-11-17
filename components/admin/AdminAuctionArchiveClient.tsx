@@ -139,6 +139,7 @@ export function AdminAuctionArchiveClient({
       if (Array.isArray(body.records)) setTcRecords(normalizeThecarapiAdminRecords(body.records));
       setTcNote(body.summary || "");
       if (body.summary) setTcCached(body.summary);
+      await load(initialVin);
     } catch (err) {
       setTcNote(err instanceof Error ? err.message : "TheCarApi neizdevās.");
     } finally {

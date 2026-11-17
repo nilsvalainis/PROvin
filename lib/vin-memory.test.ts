@@ -85,6 +85,41 @@ describe("serialize / parse", () => {
   });
 });
 
+describe("TheCarApi dedup", () => {
+  it("vienāds VIN, platforma un izsoles ID atjauno, cits ID paliek", () => {
+    const vin = "WBA2M11090VB64724";
+    const first = mergeObservations({}, [{
+      vin,
+      date: "2026-10-31",
+      source: "auto1",
+      km: 77387,
+      auctionId: "A1-1",
+      platform: "auto1",
+      venue: "AUTO1",
+      price: "12 268 EUR",
+      fields: [{ key: "seller", label: "Pārdevējs", value: "AUTO1 GmbH" }],
+      raw: { keep: true },
+    }], NOW);
+    expect(first.added).toBe(1);
+    const second = mergeObservations(first.table, [
+      { vin, date: "2026-11-01", source: "auto1", km: 78000, auctionId: "A1-1", platform: "auto1", venue: "AUTO1" },
+      { vin, date: "2026-10-31", source: "auto1", km: 100, auctionId: "A1-2", platform: "auto1", venue: "AUTO1" },
+    ], NOW);
+    expect(second.updated).toBe(1);
+    expect(second.added).toBe(1);
+    expect(second.table[vin].observations).toHaveLength(2);
+    expect(second.table[vin].observations.find((row) => row.auctionId === "A1-1")?.km).toBe(78000);
+    const parsed = parseVinMemoryTable(JSON.parse(serializeVinMemoryTable(first.table)));
+    expect(parsed[vin].observations[0]).toMatchObject({
+      auctionId: "A1-1",
+      platform: "auto1",
+      price: "12 268 EUR",
+      raw: { keep: true },
+    });
+    expect(parsed[vin].observations[0].fields?.[0]).toMatchObject({ key: "seller", label: "Pārdevējs" });
+  });
+});
+
 describe("removeVinFromTable", () => {
   it("izņem vienu VIN un atstāj pārējos šķembā", () => {
     const vin = "WVWZZZ7NZEV015204";

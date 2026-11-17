@@ -6,6 +6,7 @@ EU izsoļu arhīvs. Avots nav bezmaksas VIN SCAN sarakstā. Abi karogi pēc nokl
 
 - VIN SCAN sauc TheCarApi tikai ja ir `THECARAPI_API_KEY` un `THECARAPI_VIN_SCAN_ENABLED=true`.
 - Admin sauc tikai ar pogu, ja ir atslēga un `THECARAPI_ADMIN_ENABLED=true`.
+- Pēc ielādes ieraksts nonāk VIN atmiņā (`vin_memory`), tāpēc «Mūsu arhīvā» to rāda. Dedup ir VIN + platforma + izsoles ID. VIN SCAN ar ieslēgtu karogu saglabā tos pašus laukus, raw un bildes.
 - Nav cron un nav reģistrācijas `EXTRA_AUCTION_VIN_PROVIDERS`.
 - Kešs un ETag paliek. Mūsu pašu mēneša limita nav: `THECARAPI_MONTHLY_CAP` neko neaptur. Pakalpojuma 429 joprojām ir `limits`. 304 un 5xx neskaitās kā veiksmīgs maksas izsaukums skaitītājā.
 - `GET /api/auction-images/{site}/{id}` ir API izsaukums un skaitās limitā.

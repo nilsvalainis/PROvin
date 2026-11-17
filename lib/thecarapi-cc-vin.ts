@@ -8,7 +8,9 @@ import { applyCcVinParsedReport } from "@/lib/cc-vin-report-apply";
 import { emptyCcVinBlock, normalizeCcVinBlock, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
 import { vinScanAuctionsToCcVinParsed } from "@/lib/order-vin-scan";
+import { thecarapiArchiveInputs } from "@/lib/thecarapi-archive";
 import { storeThecarapiGallery, type ThecarapiGalleryFetch, type ThecarapiGalleryWrite } from "@/lib/thecarapi-photos";
+import { addVinObservations } from "@/lib/vin-memory-store";
 import { readThecarapiVinCache, readThecarapiVinCacheRaw, writeThecarapiVinCache } from "@/lib/vin-scan/store";
 import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 import {
@@ -116,6 +118,9 @@ export async function fetchThecarapiCcVinMerge(opts: {
     writeJpeg: opts.writeJpeg,
   });
   const previous = await readThecarapiVinCacheRaw(opts.vin).catch(() => null);
+  if (gallery.records.length > 0) {
+    await addVinObservations(thecarapiArchiveInputs(opts.vin, gallery.records)).catch(() => undefined);
+  }
   if (previous && gallery.records.length > 0) {
     await writeThecarapiVinCache(opts.vin, result.parse, {
       httpStatus: previous.httpStatus,
