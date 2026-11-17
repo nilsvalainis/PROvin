@@ -5,6 +5,7 @@
  */
 
 import { ORDER_VIN_SCAN_BROWSER_IMPORT_IDS, type OrderVinScanRecord } from "@/lib/order-vin-scan";
+import { isAllowedVinScanAuctionPhotoUrl } from "@/lib/order-vin-scan-photos";
 import { classifyBrowserProbe } from "@/lib/vin-scan/browser-classify";
 import { isVinScanSourceId, vinScanCatalogItem, type VinScanSourceId } from "@/lib/vin-scan/catalog";
 import { classifyCheckcarVinText, classifyPlcAuction } from "@/lib/vin-scan/parse";
@@ -129,11 +130,45 @@ function htmlPhotoUrls(html: string): string[] {
     if (!/\.(jpe?g|webp|png)(\?|$)/i.test(url) && !/copart|iaai|stat\.vin|bidfax|poctra|bid\.cars|checkcar|cloudfront|auction/i.test(url)) {
       continue;
     }
+    // Svešs HTML: admin UI šos URL liek <img src>. Tikai https un zināmie izsoļu foto hosti, citādi izsekošanas pikselis.
+    if (!isAllowedVinScanAuctionPhotoUrl(url)) continue;
     seen.add(url);
     out.push(url);
     if (out.length >= 20) break;
   }
   return out;
+}
+
+/**
+ * Parseri (stat.vin, izsoļu arhīvi) foto URL savāc paši no tā paša svešā HTML.
+ * Pirms saglabāšanas paliek tikai https un zināmie izsoļu foto hosti, tāpat kā `htmlPhotoUrls`.
+ */
+function onlyAllowedPhotos(parsed: VinScanParse): VinScanParse {
+  const keep = (urls: readonly string[] | undefined) => (urls ?? []).filter(isAllowedVinScanAuctionPhotoUrl);
+  const one = (url: string | undefined) => (url && isAllowedVinScanAuctionPhotoUrl(url) ? url : undefined);
+  let next = parsed;
+  if (parsed.media?.photoUrl || parsed.media?.photoUrls?.length) {
+    const photoUrls = keep(parsed.media.photoUrls);
+    next = {
+      ...next,
+      media: {
+        ...parsed.media,
+        photoUrl: one(parsed.media.photoUrl) ?? photoUrls[0],
+        photoUrls: parsed.media.photoUrls ? photoUrls : undefined,
+      },
+    };
+  }
+  if (parsed.auctions?.some((row) => row.photoUrl || row.photoUrls?.length)) {
+    next = {
+      ...next,
+      auctions: parsed.auctions.map((row) => {
+        if (!row.photoUrl && !row.photoUrls?.length) return row;
+        const photoUrls = keep(row.photoUrls);
+        return { ...row, photoUrl: one(row.photoUrl) ?? photoUrls[0], photoUrls: row.photoUrls ? photoUrls : undefined };
+      }),
+    };
+  }
+  return next;
 }
 
 function withPhotos(parsed: VinScanParse, html: string, limit = 20): VinScanParse {
@@ -345,9 +380,10 @@ export function applyBrowserArchiveHtml(input: {
 
   const parsed = parseArchiveHtml(id, html, pageUrl, vin, input.httpStatus);
   if (typeof parsed === "string") return { ok: false, error: parsed };
+  const safe = onlyAllowedPhotos(parsed);
   const enriched = isSwedishBrowserSourceId(id)
-    ? parsed
-    : enrichFound(withPhotos(parsed, html, id === "stat_vin" ? 200 : 20), html);
+    ? safe
+    : enrichFound(withPhotos(safe, html, id === "stat_vin" ? 200 : 20), html);
   const prev = input.record.indicators.find((row) => row.id === id);
   // pageUrl paliek parsēšanai (VIN pārbaude, avota atpazīšana), bet saglabātā saite tikai pārbaudīta.
   const openUrl = safeBrowserImportOpenUrl(id, pageUrl, vin);

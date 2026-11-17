@@ -303,3 +303,120 @@ describe("car.info super-search HTTP relejs", () => {
     expect(out).toEqual({ ok: false, reason: "Relejs neatbildēja 1 s laikā" });
   });
 });
+
+const REAL = "<html>RAM 2500 Sale History Copart Lot 50558298</html>";
+
+function relayFailing(status: number, body: unknown = {}): typeof fetch {
+  return (async () =>
+    ({ ok: false, status, text: async () => JSON.stringify(body) }) as Response) as typeof fetch;
+}
+
+describe("releja īstais iemesls nepazūd", () => {
+  it("relejs 429 + tiešais 403: rezultātā ir releja dienas limits", async () => {
+    const out = await fetchVinScanAuctionPage(
+      "https://stat.vin/cars/WBA",
+      async () => ({ status: 403, text: WAF, cookie: "" }),
+      { fetchImpl: relayFailing(429), env: ENV },
+    );
+    expect(out.status).toBe(403);
+    expect(out.text).toBe(WAF);
+    expect(out.challengeReason).toBe("Releja dienas limits VIN SCAN");
+  });
+
+  it("relejs 503 + tiešais 403: rezultātā ir rindas iemesls", async () => {
+    const out = await fetchVinScanAuctionPage(
+      "https://stat.vin/cars/WBA",
+      async () => ({ status: 403, text: WAF, cookie: "" }),
+      { fetchImpl: relayFailing(503), env: ENV },
+    );
+    expect(out.challengeReason).toBe("Relejs aizņemts (rinda pilna)");
+  });
+
+  it("relejs 401 + tiešais 403: tokena iemesls", async () => {
+    const out = await fetchVinScanAuctionPage(
+      "https://stat.vin/cars/WBA",
+      async () => ({ status: 403, text: WAF, cookie: "" }),
+      { fetchImpl: relayFailing(401), env: ENV },
+    );
+    expect(out.challengeReason).toBe("Relejs noraidīja tokenu (IRISS_LISTINGS_RELAY_TOKEN)");
+  });
+
+  it("releja noildze + tiešais 403: noildzes iemesls", async () => {
+    const fetchImpl = (async (_input: RequestInfo | URL, init?: RequestInit) => {
+      await new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          const err = new Error("aborted");
+          err.name = "AbortError";
+          reject(err);
+        });
+      });
+      return { ok: true, status: 200, text: async () => "{}" } as Response;
+    }) as typeof fetch;
+    const out = await fetchVinScanAuctionPage(
+      "https://stat.vin/cars/WBA",
+      async () => ({ status: 403, text: WAF, cookie: "" }),
+      { fetchImpl, env: ENV, timeoutMs: 30 },
+    );
+    expect(out.status).toBe(403);
+    expect(out.challengeReason).toMatch(/^Relejs neatbildēja \d+ s laikā$/);
+  });
+
+  it("releja kļūda + tiešais 200 ar īstu saturu: saturs bez iemesla", async () => {
+    const out = await fetchVinScanAuctionPage(
+      "https://stat.vin/cars/WBA",
+      async () => ({ status: 200, text: REAL, cookie: "" }),
+      { fetchImpl: relayFailing(429), env: ENV },
+    );
+    expect(out.status).toBe(200);
+    expect(out.text).toBe(REAL);
+    expect(out.challengeReason).toBeUndefined();
+  });
+
+  it("tiešās lapas paša iemesls paliek blakus releja iemeslam", async () => {
+    const out = await applyVinScanRelayIfBlocked(
+      "https://stat.vin/cars/WBA",
+      { status: 403, text: WAF, cookie: "", challengeReason: "Cloudflare palika lapā pēc CapSolver" },
+      { fetchImpl: relayFailing(429), env: ENV },
+    );
+    expect(out.challengeReason).toBe("Releja dienas limits VIN SCAN; Cloudflare palika lapā pēc CapSolver");
+  });
+
+  it("applyVinScanRelayIfBlocked: relejs 503 ar paša tekstu to nodod tālāk", async () => {
+    const out = await applyVinScanRelayIfBlocked(
+      "https://stat.vin/cars/WBA",
+      { status: 403, text: WAF, cookie: "" },
+      { fetchImpl: relayFailing(503, { error: "rinda pilna" }), env: ENV },
+    );
+    expect(out.status).toBe(403);
+    expect(out.challengeReason).toBe("rinda pilna");
+  });
+
+  it("car.info super-search: relejs 429 + bloķēta tiešā atbilde nes limita iemeslu", async () => {
+    const page = { status: 403, text: "<html><title>403 Forbidden</title></html>", cookie: "" };
+    const out = await applyCarinfoSuperSearchHttp(SUPER, page, { fetchImpl: relayFailing(429), env: ENV, timeoutMs: 1_000 });
+    expect(out.status).toBe(403);
+    expect(out.text).toBe(page.text);
+    expect(out.challengeReason).toBe("Releja dienas limits VIN SCAN");
+  });
+
+  it("car.info super-search: relejs 503 + tiešā noildze nes rindas iemeslu", async () => {
+    const out = await applyCarinfoSuperSearchHttp(
+      SUPER,
+      { status: 0, text: "", cookie: "" },
+      { fetchImpl: relayFailing(503), env: ENV, timeoutMs: 1_000 },
+    );
+    expect(out.challengeReason).toBe("Relejs aizņemts (rinda pilna)");
+  });
+
+  it("car.info super-search: bez releja env iemesla nav", async () => {
+    const page = { status: 403, text: "<html><title>403 Forbidden</title></html>", cookie: "" };
+    const out = await applyCarinfoSuperSearchHttp(SUPER, page, { fetchImpl: relayFailing(429), env: {}, timeoutMs: 1_000 });
+    expect(out).toBe(page);
+  });
+
+  it("car.info super-search: īstu tiešo atbildi releja kļūda neaiztiek", async () => {
+    const page = { status: 200, text: JSON.stringify({ hits: { idents: [] } }), cookie: "" };
+    const out = await applyCarinfoSuperSearchHttp(SUPER, page, { fetchImpl: relayFailing(429), env: ENV, timeoutMs: 1_000 });
+    expect(out).toBe(page);
+  });
+});

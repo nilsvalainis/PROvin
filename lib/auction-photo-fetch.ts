@@ -10,6 +10,12 @@ import { isAllowedVinScanAuctionPhotoUrl } from "@/lib/order-vin-scan-photos";
 export const AUCTION_PHOTO_FETCH_TIMEOUT_MS = 25_000;
 export const AUCTION_PHOTO_FETCH_ATTEMPTS = 3;
 export const AUCTION_PHOTO_CONCURRENCY = 6;
+/** Pāradresācijas sekojam pašas, lai katru soli pārbaudītu pret hostu atļauju (SSRF). */
+export const AUCTION_PHOTO_MAX_REDIRECTS = 3;
+
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+/** Atkārtošana neko nemaina: atbilde ir atkarīga no URL, ne no tīkla. */
+const NO_RETRY_REASONS = new Set(["host_not_allowed", "too_large", "redirect_not_allowed", "too_many_redirects"]);
 
 export type AuctionPhotoFetchOk = {
   ok: true;
@@ -51,20 +57,39 @@ async function fetchOnce(url: string, storedMaxBytes: number): Promise<AuctionPh
     return { ok: false, url, reason: "host_not_allowed" };
   }
   const referer = refererForAuctionPhoto(url);
+  // Viens laika limits visai ķēdei, ne katram solim.
+  const signal = AbortSignal.timeout(AUCTION_PHOTO_FETCH_TIMEOUT_MS);
+  let current = url;
   let res: Response;
-  try {
-    res = await fetch(url, {
-      cache: "no-store",
-      redirect: "follow",
-      signal: AbortSignal.timeout(AUCTION_PHOTO_FETCH_TIMEOUT_MS),
-      headers: {
-        Accept: "image/jpeg,image/webp,image/png,image/*;q=0.8,*/*;q=0.5",
-        ...(referer ? { Referer: referer } : {}),
-      },
-    });
-  } catch (e) {
-    const msg = e instanceof Error ? e.name : "fetch_error";
-    return { ok: false, url, reason: msg === "TimeoutError" ? "timeout" : "network" };
+  for (let hop = 0; ; hop += 1) {
+    try {
+      res = await fetch(current, {
+        cache: "no-store",
+        redirect: "manual",
+        signal,
+        headers: {
+          Accept: "image/jpeg,image/webp,image/png,image/*;q=0.8,*/*;q=0.5",
+          ...(referer ? { Referer: referer } : {}),
+        },
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.name : "fetch_error";
+      return { ok: false, url, reason: msg === "TimeoutError" ? "timeout" : "network" };
+    }
+    if (!REDIRECT_STATUSES.has(res.status)) break;
+    const location = res.headers.get("location")?.trim() ?? "";
+    void res.body?.cancel().catch(() => undefined);
+    if (!location) return { ok: false, url, reason: `http_${res.status}` };
+    if (hop >= AUCTION_PHOTO_MAX_REDIRECTS) return { ok: false, url, reason: "too_many_redirects" };
+    let next: string;
+    try {
+      next = new URL(location, current).toString();
+    } catch {
+      return { ok: false, url, reason: "redirect_not_allowed" };
+    }
+    // Katrs solis: tikai https un tikai atļautie izsoļu hosti. Citādi allowlist apietu ar vienu 302.
+    if (!isAllowedVinScanAuctionPhotoUrl(next)) return { ok: false, url, reason: "redirect_not_allowed" };
+    current = next;
   }
   if (!res.ok) return { ok: false, url, reason: `http_${res.status}` };
   const buf = Buffer.from(await res.arrayBuffer());
@@ -88,7 +113,7 @@ export async function fetchAuctionPhotoJpeg(
   for (let attempt = 0; attempt < AUCTION_PHOTO_FETCH_ATTEMPTS; attempt += 1) {
     last = await fetchOnce(url, storedMaxBytes);
     if (last.ok) return last;
-    if (last.reason === "host_not_allowed" || last.reason === "too_large") return last;
+    if (NO_RETRY_REASONS.has(last.reason)) return last;
   }
   return last;
 }
