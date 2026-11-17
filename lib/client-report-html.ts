@@ -120,6 +120,7 @@ import {
   countCcVinRecords,
   type CcVinBlockState,
 } from "@/lib/cc-vin-report";
+import { thecarapiPdfGroupTitle } from "@/lib/vin-scan/thecarapi-fields";
 import {
   ASV_PDF_SOURCE_LABEL,
   ASV_PDF_TITLE,
@@ -1973,7 +1974,15 @@ function buildCcVinAvotuSubsection(
   if ((!b || !ccVinBlockHasContent(b)) && !sparkHtml) return "";
   const inner = b && ccVinBlockHasContent(b) ? buildCcVinPdfInnerHtml(b) : "";
   const photosHtml = b
-    ? buildSourcePhotoGroupsPdfHtml(b.photoGroups, b.photos, photoDataUrls, normalizeCcVinPhotoGroups)
+    ? buildSourcePhotoGroupsPdfHtml(
+        (b.photoGroups ?? []).map((group) => ({
+          ...group,
+          title: thecarapiPdfGroupTitle(group.title),
+        })),
+        b.photos,
+        photoDataUrls,
+        normalizeCcVinPhotoGroups,
+      )
     : "";
   const comments = (b?.comments ?? "").trim();
   if (!inner && !photosHtml && !comments && !sparkHtml) return "";

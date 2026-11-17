@@ -74,7 +74,7 @@ export function AdminThecarapiIngestBar({
         setStatus({
           enabled: body.enabled === true,
           used: typeof body.used === "number" ? body.used : 0,
-          cap: typeof body.cap === "number" ? body.cap : 150,
+          cap: typeof body.cap === "number" ? body.cap : 0,
           cachedSummary: body.cache?.summary || "",
           cachedAt: body.cache?.cachedAt || "",
         });
@@ -87,7 +87,7 @@ export function AdminThecarapiIngestBar({
 
   const enabled = status?.enabled === true;
   const used = status?.used ?? 0;
-  const cap = status?.cap ?? 150;
+  const cap = status?.cap ?? 0;
   const cached = Boolean(status?.cachedSummary);
 
   const load = async (skipCache: boolean) => {
@@ -119,7 +119,7 @@ export function AdminThecarapiIngestBar({
         setStatus((prev) => ({
           enabled: prev?.enabled === true && body.error !== "thecarapi_disabled" && body.error !== "missing_thecarapi_credentials",
           used: typeof body.used === "number" ? body.used : prev?.used ?? 0,
-          cap: typeof body.cap === "number" ? body.cap : prev?.cap ?? 150,
+          cap: typeof body.cap === "number" ? body.cap : prev?.cap ?? 0,
           cachedSummary: body.fromCache ? body.summary || prev?.cachedSummary || "" : prev?.cachedSummary || "",
           cachedAt: body.cachedAt || prev?.cachedAt || "",
         }));
@@ -161,7 +161,7 @@ export function AdminThecarapiIngestBar({
     <div className="mb-3 rounded-lg border border-slate-200/90 bg-slate-50/70 px-2 py-2">
       <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">EU izsoles (TheCarApi)</p>
       <p className="mb-2 text-[10px] leading-snug text-slate-500">
-        {enabled ? `maksas izsaukums · šomēnes ${used}/${cap}` : DISABLED}
+        {enabled ? (cap > 0 ? `maksas izsaukums · šomēnes ${used}/${cap}` : `maksas izsaukums · šomēnes ${used}`) : DISABLED}
       </p>
       {cached ? (
         <p className="mb-2 text-[11px] text-slate-600">

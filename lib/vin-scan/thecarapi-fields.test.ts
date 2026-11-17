@@ -1,0 +1,76 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
+import { describe, expect, it } from "vitest";
+
+import { isAllowedVinScanAuctionPhotoUrl } from "@/lib/order-vin-scan-photos";
+import { buildThecarapiAdminRecords } from "@/lib/vin-scan/parse-thecarapi";
+import {
+  thecarapiDownloadUrls,
+  thecarapiFieldsOf,
+  thecarapiPdfGroupTitle,
+  thecarapiPhotoDate,
+} from "@/lib/vin-scan/thecarapi-fields";
+
+function fixture(name: string): unknown {
+  const file = path.join(process.cwd(), "lib/vin-scan/__fixtures__/thecarapi", name);
+  return JSON.parse(readFileSync(file, "utf8")) as unknown;
+}
+
+describe("TheCarApi lauki", () => {
+  it("patur visus laukus, latviski zināmos un atslēgu nezināmajiem", () => {
+    const records = buildThecarapiAdminRecords({
+      historyJson: fixture("history-hit.json"),
+      detailJson: { auctions: [fixture("detail-auto1.json")] },
+      imagesByKey: { "auto1:A1-100": fixture("images-auto1.json") },
+    });
+    const openlane = records.find((row) => row.id === "OL-55");
+    const auto1 = records.find((row) => row.id === "A1-100");
+    expect(openlane?.photoDate).toBe("2024-06-02");
+    expect(auto1?.photoDate).toBe("2024-03-12");
+    expect(openlane?.fields.find((field) => field.key === "seller")).toMatchObject({
+      label: "Pārdevējs",
+      value: "Openlane DE",
+    });
+    expect(openlane?.fields.find((field) => field.key === "unknown_portal_code")).toMatchObject({
+      label: "unknown_portal_code",
+      value: "X-9",
+    });
+    expect(auto1?.fields.find((field) => field.key === "mystery_flag")?.value).toBe("keep-me");
+    expect(auto1?.fields.find((field) => field.key === "damage.zone")).toMatchObject({
+      label: "Bojājuma zona",
+      value: "priekšpuse",
+    });
+    expect(JSON.stringify(auto1?.raw)).toContain("keep-me");
+    expect(JSON.stringify(auto1?.raw)).toContain("insecure.jpg");
+    expect(auto1?.photoUrls).toEqual([
+      "https://img-pa.auto1.com/img/front.jpg",
+      "https://img-pa.auto1.com/img/side.jpg",
+      "https://img-pa.auto1.com/img/extra.jpg",
+    ]);
+    expect(auto1?.photoUrls.some((url) => url.startsWith("http://"))).toBe(false);
+  });
+
+  it("bildes datums ir izsoles datums, citādi first_seen_at, tad last_seen_at", () => {
+    expect(thecarapiPhotoDate({ auction_date: "2024-06-02", first_seen_at: "2024-06-01", last_seen_at: "2024-06-03" })).toBe(
+      "2024-06-02",
+    );
+    expect(thecarapiPhotoDate({ first_seen_at: "2024-03-12T10:00:00Z", last_seen_at: "2024-03-15T18:00:00Z" })).toBe("2024-03-12");
+    expect(thecarapiPhotoDate({ last_seen_at: "2024-03-15T18:00:00Z" })).toBe("2024-03-15");
+  });
+
+  it("nezināma atslēga paliek, http saite netiek lejupielādēta", () => {
+    const fields = thecarapiFieldsOf({ mystery_flag: "keep-me", gallery: ["http://img-pa.auto1.com/img/insecure.jpg"] });
+    expect(fields.find((field) => field.key === "mystery_flag")?.label).toBe("mystery_flag");
+    const urls = thecarapiDownloadUrls(
+      ["http://img-pa.auto1.com/img/insecure.jpg", "https://img-pa.auto1.com/img/front.jpg"],
+      isAllowedVinScanAuctionPhotoUrl,
+    );
+    expect(urls).toEqual(["https://img-pa.auto1.com/img/front.jpg"]);
+  });
+
+  it("klienta PDF virsrakstā nav TheCarApi", () => {
+    expect(thecarapiPdfGroupTitle("TheCarApi · AUTO1 · 2024-03-12")).toBe("AUTO1 · 2024-03-12");
+    expect(thecarapiPdfGroupTitle("Openlane · 2024-06-02")).toBe("Openlane · 2024-06-02");
+  });
+});

@@ -4,11 +4,9 @@
  */
 
 export const THECARAPI_DEFAULT_BASE = "https://api.thecarapi.com";
-export const THECARAPI_MONTHLY_CAP_DEFAULT = 150;
 export const THECARAPI_DISABLED_SUMMARY = "TheCarApi izslēgts (maksas)";
 export const THECARAPI_KEY_INVALID_SUMMARY = "atslēga nederīga/beigusies";
 export const THECARAPI_LIMITS_SUMMARY = "limits";
-export const THECARAPI_CAP_SUMMARY = "mēneša limits";
 
 export type ThecarapiEnv = Record<string, string | undefined>;
 
@@ -48,12 +46,10 @@ export function thecarapiCallsAllowed(env: ThecarapiEnv = process.env): boolean 
   return thecarapiAdminEnabled(env) || thecarapiVinScanEnabled(env);
 }
 
+/** Nav mūsu pašu mēneša griestu. 0 nozīmē, ka lokāli neatsakām, arī ja env ir iestatīts. */
 export function thecarapiMonthlyCap(env: ThecarapiEnv = process.env): number {
-  const raw = String(env.THECARAPI_MONTHLY_CAP ?? "").trim();
-  if (!raw) return THECARAPI_MONTHLY_CAP_DEFAULT;
-  const n = Number(raw);
-  if (!Number.isFinite(n) || n < 0) return THECARAPI_MONTHLY_CAP_DEFAULT;
-  return Math.floor(n);
+  void env.THECARAPI_MONTHLY_CAP;
+  return 0;
 }
 
 export function thecarapiUsageMonth(now = new Date()): string {

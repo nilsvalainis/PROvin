@@ -1,3 +1,5 @@
+import { AdminThecarapiRecords } from "@/components/admin/AdminThecarapiRecords";
+import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 import type { VinObservation } from "@/lib/vin-memory";
 import type { AuctionSourceProgress, VinMemoryArchiveCounts, VinMemoryBrowseRow } from "@/lib/vin-memory-auction";
 
@@ -36,6 +38,7 @@ export type AuctionArchiveViewProps = {
     busy: boolean;
     note: string;
     rows: { date: string; venue: string; odometer: string; price: string }[];
+    records?: ThecarapiAdminRecord[];
     onCheck: (skipCache: boolean) => void;
   } | null;
 };
@@ -175,7 +178,9 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
           <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
             <p className="text-[12px] text-[var(--color-provin-muted)]">
               {props.thecarapi.enabled
-                ? `maksas izsaukums · šomēnes ${props.thecarapi.used}/${props.thecarapi.cap}`
+                ? props.thecarapi.cap > 0
+                  ? `maksas izsaukums · šomēnes ${props.thecarapi.used}/${props.thecarapi.cap}`
+                  : `maksas izsaukums · šomēnes ${props.thecarapi.used}`
                 : "TheCarApi izslēgts (nav apmaksāts / nav atslēgas)"}
             </p>
             {props.thecarapi.cachedSummary ? (
@@ -225,6 +230,7 @@ export function AdminAuctionArchiveView(props: AuctionArchiveViewProps) {
                 </tbody>
               </table>
             ) : null}
+            <AdminThecarapiRecords vin={vin} records={props.thecarapi.records ?? []} />
           </div>
         ) : null}
         {vinNote ? <p className="mt-2 text-[13px] text-[var(--color-provin-muted)]">{vinNote}</p> : null}

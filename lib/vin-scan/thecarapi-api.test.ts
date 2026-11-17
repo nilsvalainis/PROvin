@@ -5,10 +5,11 @@ import path from "node:path";
 
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+import { fetchThecarapiCcVinMerge } from "@/lib/thecarapi-cc-vin";
 import { isFreeVinScanSourceId } from "@/lib/vin-scan/free-sources";
 import { probeThecarapi } from "@/lib/vin-scan/probes-extra";
 import { emptyVinScanPlates } from "@/lib/vin-scan/plates";
-import { fetchThecarapiVinHistory } from "@/lib/vin-scan/thecarapi-api";
+import { fetchThecarapiVinHistory, fetchThecarapiVinWithDetails, thecarapiMonthlyCap } from "@/lib/vin-scan/thecarapi-api";
 import { vinScanPipelineSourceIds } from "@/lib/vin-scan/catalog";
 import type { ThecarapiDeps } from "@/lib/vin-scan/thecarapi-api";
 
@@ -17,6 +18,12 @@ const hit = JSON.parse(
 ) as unknown;
 const empty = JSON.parse(
   readFileSync(path.join(process.cwd(), "lib/vin-scan/__fixtures__/thecarapi/history-empty.json"), "utf8"),
+) as unknown;
+const detailAuto1 = JSON.parse(
+  readFileSync(path.join(process.cwd(), "lib/vin-scan/__fixtures__/thecarapi/detail-auto1.json"), "utf8"),
+) as unknown;
+const imagesAuto1 = JSON.parse(
+  readFileSync(path.join(process.cwd(), "lib/vin-scan/__fixtures__/thecarapi/images-auto1.json"), "utf8"),
 ) as unknown;
 
 let dir = "";
@@ -171,7 +178,9 @@ describe("fetchThecarapiVinHistory", () => {
     expect(calls).toHaveLength(1);
   });
 
-  it("mēneša limits atsakās lokāli bez HTTP", async () => {
+  it("THECARAPI_MONTHLY_CAP neaptur izsaukumu", async () => {
+    expect(thecarapiMonthlyCap({})).toBe(0);
+    expect(thecarapiMonthlyCap(paidEnv({ THECARAPI_MONTHLY_CAP: "1" }))).toBe(0);
     const first = scripted([jsonResponse(200, empty)]);
     first.deps.env = paidEnv({ THECARAPI_MONTHLY_CAP: "1" });
     first.deps.now = () => new Date("2099-04-02T00:00:00.000Z");
@@ -183,10 +192,10 @@ describe("fetchThecarapiVinHistory", () => {
     second.deps.env = paidEnv({ THECARAPI_MONTHLY_CAP: "1" });
     second.deps.now = () => new Date("2099-04-02T00:00:00.000Z");
     second.deps.skipCache = true;
-    const capped = await fetchThecarapiVinHistory("WBA5R1C00LFH42879", second.deps);
-    expect(second.calls).toHaveLength(0);
-    expect(capped.parse).toMatchObject({ status: "unknown", summary: "mēneša limits" });
-    expect(capped.billable).toBe(false);
+    const again = await fetchThecarapiVinHistory("WBA5R1C00LFH42879", second.deps);
+    expect(second.calls).toHaveLength(1);
+    expect(again.parse.summary).not.toBe("mēneša limits");
+    expect(again.billable).toBe(true);
   });
 });
 
@@ -216,5 +225,66 @@ describe("TheCarApi VIN SCAN slēdzis", () => {
     } finally {
       globalThis.fetch = prev;
     }
+  });
+});
+
+describe("fetchThecarapiVinWithDetails", () => {
+  it("sauc vēsturi, batch un auction-images, bet ne CDN", async () => {
+    const batch = { auctions: [detailAuto1] };
+    const { deps, calls } = scripted([
+      jsonResponse(200, hit, { etag: "W/\"hist\"" }),
+      jsonResponse(200, batch),
+      jsonResponse(200, { images: [] }),
+      jsonResponse(200, imagesAuto1),
+    ]);
+    const vin = "WBA5R1C00LFH42881";
+    const result = await fetchThecarapiVinWithDetails(vin, deps);
+    expect(calls.map((call) => call.url)).toEqual([
+      `https://api.thecarapi.com/api/vin/${vin}/history`,
+      "https://api.thecarapi.com/api/auction/batch?ids=openlane%3AOL-55%2Cauto1%3AA1-100",
+      "https://api.thecarapi.com/api/auction-images/openlane/OL-55",
+      "https://api.thecarapi.com/api/auction-images/auto1/A1-100",
+    ]);
+    expect(calls.every((call) => call.url.startsWith("https://api.thecarapi.com/"))).toBe(true);
+    const auto1 = result.records.find((row) => row.id === "A1-100");
+    expect(auto1?.photoDate).toBe("2024-03-12");
+    expect(auto1?.photoUrls).toContain("https://img-pa.auto1.com/img/extra.jpg");
+    expect(auto1?.photoUrls.some((url) => url.startsWith("http://"))).toBe(false);
+    expect(auto1?.fields.some((field) => field.key === "mystery_flag" && field.value === "keep-me")).toBe(true);
+    expect(result.billable).toBe(true);
+    const again = scripted([]);
+    const cached = await fetchThecarapiVinWithDetails(vin, { ...again.deps, env: deps.env });
+    expect(again.calls).toEqual([]);
+    expect(cached.recordsComplete).toBe(true);
+    expect(cached.records.find((row) => row.id === "A1-100")?.photoUrls).toContain("https://img-pa.auto1.com/img/extra.jpg");
+  });
+
+  it("pēc ielādes liek bildes pasūtījuma galerijā un arhīva sesijā", async () => {
+    const { deps, calls } = scripted([
+      jsonResponse(200, hit),
+      jsonResponse(200, { auctions: [detailAuto1] }),
+      jsonResponse(200, { images: [] }),
+      jsonResponse(200, imagesAuto1),
+    ]);
+    const vin = "WBA5R1C00LFH42882";
+    const writes: string[] = [];
+    const result = await fetchThecarapiCcVinMerge({
+      vin,
+      sessionId: "orderSession82",
+      deps,
+      fetchJpegs: async (urls) => ({
+        ok: urls.map((url) => ({ ok: true as const, url, jpeg: Buffer.from("jpeg"), contentHash: `h-${url}` })),
+        failed: [],
+      }),
+      writeJpeg: async (sessionId) => {
+        writes.push(sessionId);
+      },
+    });
+    expect(calls.every((call) => call.url.startsWith("https://api.thecarapi.com/"))).toBe(true);
+    expect(writes).toContain(`tc${vin}`);
+    expect(writes).toContain("orderSession82");
+    expect(result.block.thecarapiRecords?.find((row) => row.id === "A1-100")?.photos.length).toBeGreaterThan(0);
+    expect(result.block.photoGroups?.some((group) => group.title.startsWith("TheCarApi · "))).toBe(true);
+    expect(result.records.find((row) => row.id === "OL-55")?.fields.some((field) => field.key === "unknown_portal_code")).toBe(true);
   });
 });

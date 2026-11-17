@@ -5,5 +5,9 @@
   "is_active": false,
   "DamageImageUrls": ["https://img-pa.auto1.com/img/front.jpg"],
   "gallery": ["https://img-pa.auto1.com/img/side.jpg", "http://img-pa.auto1.com/img/insecure.jpg"],
-  "equipment": ["Navigācija", "LED"]
+  "equipment": ["Navigācija", "LED"],
+  "seller": "AUTO1 GmbH",
+  "location": "Berlin",
+  "damage": { "zone": "priekšpuse", "note": "bamperis" },
+  "mystery_flag": "keep-me"
 }

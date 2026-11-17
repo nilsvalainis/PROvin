@@ -35,6 +35,7 @@ export default async function AdminAuctionArchivePage({
                 used: thecarapi.used,
                 cap: thecarapi.cap,
                 cachedSummary: thecarapi.cache?.summary ?? "",
+                records: thecarapi.records,
               }
             : null
         }

@@ -62,12 +62,6 @@ export async function POST(req: Request) {
         { status: 403 },
       );
     }
-    if (result.error === "monthly_cap") {
-      return NextResponse.json(
-        { error: "monthly_cap", summary: result.parse.summary, used: result.used, cap: result.cap },
-        { status: 429 },
-      );
-    }
     const auctions = (result.parse.auctions ?? []).map((row) => ({
       date: row.date || "",
       venue: row.venue || "",
@@ -89,6 +83,7 @@ export async function POST(req: Request) {
           used: result.used,
           cap: result.cap,
           auctions,
+          records: result.records,
         },
         { status: 502 },
       );
@@ -105,6 +100,7 @@ export async function POST(req: Request) {
       used: result.used,
       cap: result.cap,
       auctions,
+      records: result.records,
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "unknown";
