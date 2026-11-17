@@ -273,6 +273,7 @@ import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWi
 import { AdminFlashMaxButton } from "@/components/admin/AdminFlashMaxButton";
 import { AdminOrderMobileDock } from "@/components/admin/AdminOrderMobileDock";
 import { AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
+import { renderReportPdfOnServer } from "@/lib/report-pdf-client";
 import { AdminOrderStickyActionRail } from "@/components/admin/AdminOrderStickyActionRail";
 import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
 import {
@@ -3638,6 +3639,8 @@ export function OrderDetailWorkspace({
     asvOnly?: boolean;
     businessBrand?: boolean;
     lang?: ClientReportLang;
+    /** Izmēģinājums (Sūtīt atskaiti 1. posms): tas pats HTML, PDF top serverī ar Chromium un tiek lejupielādēts. */
+    serverPdf?: boolean;
   }) => {
     if (pdfBusyRef.current) return;
     // Telefonā (iOS Safari) logs jāatver sinhroni pieskāriena brīdī, citādi pēc `await` to bloķē.
@@ -3721,7 +3724,9 @@ export function OrderDetailWorkspace({
             ? "business"
             : opts?.printInk
               ? "ink"
-              : "pdf",
+              : opts?.serverPdf
+                ? "server"
+                : "pdf",
       opts?.lang && opts.lang !== "lv" ? opts.lang : "",
     ]
       .filter(Boolean)
@@ -4129,6 +4134,22 @@ export function OrderDetailWorkspace({
       : langSuffix
         ? printTitle.replace(/\.pdf$/i, `${langSuffix}.pdf`)
         : printTitle;
+    if (opts?.serverPdf) {
+      try {
+        const r = await renderReportPdfOnServer({ sessionId: payload.sessionId, html: translatedHtml, filename: printFileTitle });
+        bumpPdf(100);
+        const a = document.createElement("a");
+        a.href = r.downloadUrl;
+        a.download = r.filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        console.info("[servera PDF]", { ms: r.ms, bytes: r.bytes, fontsReady: r.fontsReady });
+      } catch (e) {
+        alert(`Servera PDF neizdevās: ${e instanceof Error ? e.message : "kļūda"}. Lieto "Ģenerēt PDF".`);
+      }
+      return;
+    }
     const opened = openGeneratedHtmlInPreopened(phonePre, translatedHtml, printFileTitle.replace(/\.pdf$/i, ".html"));
     if (opened.window && opened.window === phonePre?.window) phonePreUsed = true;
     if (!opened.opened) {
@@ -6352,6 +6373,15 @@ export function OrderDetailWorkspace({
           />
           <button type="button" onClick={() => void openOemDealerReport()} className={wizardFooterOem} title="Oficiāla OEM izdruka (portrets A4): markas logo, oriģinālie API dati bez tulkojuma. Atsevišķs no PROVIN dīlera atskaites.">
             OEM dīlera PDF
+          </button>
+          <button
+            type="button"
+            disabled={pdfJob !== null}
+            onClick={() => void openPrintReport({ serverPdf: true })}
+            className={wizardFooterPrintInk}
+            title="Izmēģinājums: tā pati AUDITS atskaite, bet PDF top serverī un tiek lejupielādēts. Neko nesūta."
+          >
+            {pdfButtonLabel("server", "PDF serverī (tests)")}
           </button>
           <button type="button" disabled={pdfJob !== null} onClick={() => void openPrintReport({ printInk: true })} className={wizardFooterPrintInk} title="Tā pati atskaite ar tumšāku tekstu un kontūrām papīra drukai">
             {pdfButtonLabel("ink", "Drukājamā versija")}

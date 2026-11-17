@@ -44,6 +44,7 @@ const nextConfig: NextConfig = {
   /** Neiekļaut Webpack: stealth spraudņiem ir dinamiski require (clone-deep u.c.). */
   serverExternalPackages: [
     "pdf-parse",
+    "@sparticuz/chromium",
     "pdfjs-dist",
     "playwright",
     "playwright-core",
@@ -60,6 +61,8 @@ const nextConfig: NextConfig = {
     // Dzintarzeme Auto logo PDF failos lasa no diska (fs.readFile) - bez šī produkcijā PDF bija bez logo (#729).
     "/**": ["./public/brands/dzintarzeme-auto-logo.png"],
     "/api/admin/**": ["./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"],
+    // Servera PDF (Chromium Vercel vidē): bināros failus lasa pēc ceļa no bin/.
+    "/api/admin/report-pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
     "/api/admin/iriss-listings/vin-ocr": [
       "./node_modules/tesseract.js/dist/**",
       "./node_modules/tesseract.js/src/worker-script/**",

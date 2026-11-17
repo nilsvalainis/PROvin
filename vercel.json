@@ -18,6 +18,10 @@
       "maxDuration": 120,
       "memory": 3008
     },
+    "app/api/admin/report-pdf/route.ts": {
+      "maxDuration": 120,
+      "memory": 3008
+    },
     "app/api/admin/notify-report-ready/route.ts": {
       "maxDuration": 60
     },
