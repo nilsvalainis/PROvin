@@ -11,7 +11,8 @@ import { IrissAuctionLogo } from "@/components/admin/iriss-logistika/IrissAuctio
 import { IrissLogistikaAuctionSourcesPanel } from "@/components/admin/iriss-logistika/IrissLogistikaAuctionSourcesPanel";
 import { IrissLogistikaCabinet } from "@/components/admin/iriss-logistika/IrissLogistikaCabinet";
 import { IrissLogistikaCarPopup } from "@/components/admin/iriss-logistika/IrissLogistikaCarPopup";
-import { CabinetPhoneMapAndCard, LogisticsCarEndAction } from "@/components/admin/iriss-logistika/IrissLogistikaCarsTable";
+import { CabinetPhoneMapAndCard } from "@/components/admin/iriss-logistika/IrissLogistikaCarsTable";
+import { cargoExitNotice, type CargoExitKind } from "@/lib/iriss-logistics-cargo-exit";
 import { autoparksSaitesHref } from "@/lib/iriss-car-share";
 import { IrissLogistikaCargoPlan, type ManualCarInput } from "@/components/admin/iriss-logistika/IrissLogistikaCargoPlan";
 import { CargoPlanBoundary } from "@/components/admin/iriss-logistika/CargoPlanBoundary";
@@ -469,20 +470,48 @@ export function IrissLogistikaClient({
 
   /** Statuss ar vienu klikšķi: uzreiz redzams, ja serveris atsaka - atgriežas. */
   async function moveToAutopark(orderId: string) {
+    const ok = await moveOneToAutopark(orderId);
+    setNotice(cargoExitNotice("autoparks", ok ? 1 : 0, ok ? 0 : 1));
+  }
+
+  async function moveOneToAutopark(orderId: string): Promise<boolean> {
     const res = await fetch("/api/admin/iriss-logistics/autoparks", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ fromOrderId: orderId }),
     }).catch(() => null);
-    if (!res?.ok) {
-      setNotice("Neizdevās pārvietot uz Autoparku.");
-      return;
-    }
+    if (!res?.ok) return false;
     const body = (await res.json()) as { order?: LogisticsOrder; car?: { id: string } };
     if (body.order) setOrders((prev) => prev.map((o) => (o.id === orderId ? body.order! : o)));
-    setNotice(body.car ? "Auto ir Autoparkā." : "");
     if (body.car) setAutoparkLink(`/admin/iriss/autoparks?auto=${encodeURIComponent(body.car.id)}`);
+    return Boolean(body.car);
+  }
+
+  async function archiveOneAsOtherCompany(orderId: string): Promise<boolean> {
+    const res = await fetch(`/api/admin/iriss-logistics/orders/${encodeURIComponent(orderId)}`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "other_company" }),
+    }).catch(() => null);
+    if (!res?.ok) return false;
+    const body = (await res.json()) as { order?: LogisticsOrder };
+    if (body.order) setOrders((prev) => prev.map((o) => (o.id === orderId ? body.order! : o)));
+    return Boolean(body.order);
+  }
+
+  /** Kravas «Uz ▾»: vairāki auto pēc kārtas (katrs savs ieraksts Autoparkā / arhīvā). */
+  async function exitCars(ids: string[], kind: CargoExitKind) {
+    let done = 0;
+    for (const id of ids) {
+      const ok = kind === "autoparks" ? await moveOneToAutopark(id) : await archiveOneAsOtherCompany(id);
+      if (ok) done += 1;
+    }
+    if (kind === "autoparks" && done > 1) setAutoparkLink("/admin/iriss/autoparks");
+    setSelectedIds((prev) => prev.filter((x) => !ids.includes(x)));
+    if (popupId && ids.includes(popupId)) setPopupId(null);
+    setNotice(cargoExitNotice(kind, done, ids.length - done));
   }
 
   async function reloadTemplates() {
@@ -519,18 +548,6 @@ export function IrissLogistikaClient({
     setOrders((prev) => [order, ...prev]);
     await persistCargoPlan(moveCargoCar(cargoPlan, order.id, bucket));
     return true;
-  }
-
-  async function deleteManualCar(id: string) {
-    const res = await fetch(`/api/admin/iriss-logistics/orders/${encodeURIComponent(id)}`, { method: "DELETE", credentials: "include" }).catch(() => null);
-    if (!res?.ok) {
-      setNotice("Neizdevās dzēst.");
-      return;
-    }
-    setOrders((prev) => prev.filter((o) => o.id !== id));
-    setCargoPlan((prev) => ({ ...prev, cars: prev.cars.filter((c) => c.carId !== id) }));
-    setSelectedIds((prev) => prev.filter((x) => x !== id));
-    if (popupId === id) setPopupId(null);
   }
 
   async function assignPoint(orderId: string, pickupPointId: string) {
@@ -1210,12 +1227,6 @@ export function IrissLogistikaClient({
                       onToggleMap={(next) => void persistCargoPlan(setCargoShowOnMap(cargoPlan, active.id, next))}
                       cardHref={autoparksByOrder[active.id] ? autoparksSaitesHref(autoparksByOrder[active.id]!) : undefined}
                     />
-                    <LogisticsCarEndAction
-                      order={active}
-                      stage={(cargoPickups.find((p) => p.carId === active.id)?.stage ?? "waiting") as CabinetPickupStage}
-                      onMoveToAutopark={(id) => void moveToAutopark(id)}
-                      onDeleteManual={(id) => void deleteManualCar(id)}
-                    />
                   </>
                 }
               />
@@ -1239,6 +1250,7 @@ export function IrissLogistikaClient({
                 readinessOn={readinessOn}
                 onToggleReadiness={toggleReadiness}
                 readinessByCarId={readinessByCarId}
+                onExitCars={(ids, kind) => void exitCars(ids, kind)}
                 cardHrefByCarId={autoparksByOrder}
                 stageLabelByCarId={stageLabelByCarId}
                 onOpenCabinet={(id) => {

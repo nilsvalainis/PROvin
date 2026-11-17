@@ -12,6 +12,7 @@ import { readFileSync } from "node:fs";
 import {
   archiveLogisticsOrder,
   isLogisticsOrderActive,
+  markLogisticsOrderOtherCompany,
   wakeLogisticsOrder,
 } from "@/lib/iriss-logistics-archive";
 import {
@@ -322,6 +323,7 @@ function normalizeOrder(raw: unknown): LogisticsOrder | null {
     archived,
     archivedAt: str(raw.archivedAt, 40),
     previousStatus: isLogisticsOrderStatus(raw.previousStatus) ? raw.previousStatus : "",
+    ...(archived && raw.archiveReason === "other_company" ? { archiveReason: "other_company" as const } : {}),
     statusNote: str(raw.statusNote, 240),
     nextAction: str(raw.nextAction, 240),
     sellerContact: str(raw.sellerContact, 240),
@@ -612,7 +614,7 @@ export async function removeManualLogisticsOrder(id: string): Promise<"removed" 
 
 export async function setLogisticsOrderArchiveState(
   id: string,
-  action: "picked_up" | "delivered" | "archive" | "wake",
+  action: "picked_up" | "delivered" | "archive" | "wake" | "other_company",
 ): Promise<LogisticsOrder | null> {
   const items = await listLogisticsOrders();
   const prev = items.find((p) => p.id === id);
@@ -621,7 +623,9 @@ export async function setLogisticsOrderArchiveState(
   const next =
     action === "wake"
       ? wakeLogisticsOrder(prev, now)
-      : archiveLogisticsOrder(prev, action === "archive" ? "archived" : action, now);
+      : action === "other_company"
+        ? markLogisticsOrderOtherCompany(prev, now)
+        : archiveLogisticsOrder(prev, action === "archive" ? "archived" : action, now);
   await writeLogisticsOrders(items.map((p) => (p.id === id ? next : p)));
   return next;
 }
