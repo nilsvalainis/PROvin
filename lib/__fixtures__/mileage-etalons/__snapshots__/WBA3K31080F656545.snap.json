@@ -2,7 +2,8 @@
  "label": "BMW 320d Touring 2012 (DE->DK->LV): ievades kļūda 90 000 km pirmajā ierakstā, AutoDNA sludinājums 90 000, mēneša precizitāte 04.2014",
  "rindasPaAvotiem": {
   "OFICIĀLĀ DĪLERA DATI": 39,
-  "AutoDNA": 8,
+  "AutoDNA": 7,
+  "AutoDNA (sludinājums)": 1,
   "CarVertical": 23,
   "DĀNIJAS REĢISTRI": 7,
   "ss.lv": 1
@@ -36,7 +37,7 @@
   "08.04.2015 | 91767 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "30.06.2015 | 99953 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "18.08.2015 | 103880 | Vācija | OFICIĀLĀ DĪLERA DATI",
-  "27.09.2015 | 90000 | Vācija | AutoDNA | nav grafikā, ievades kļūda",
+  "27.09.2015 | 90000 | Vācija | AutoDNA (sludinājums) | nav grafikā, sludinājumā mazāk",
   "12.10.2015 | 107993 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "15.01.2016 | 108290 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "03.02.2016 | 109000 | Dānija | AutoDNA + DĀNIJAS REĢISTRI",
@@ -58,9 +59,7 @@
   "03.08.2026 | 335 000 | Latvija | ss.lv"
  ],
  "sarkanaJosla": false,
- "klases": [
-  "typo_outlier: 18.08.2015 103880 -> 27.09.2015 90000 (kritums 13880) [27.09.2015 | 90000 | AutoDNA]"
- ],
+ "klases": [],
  "kritumsBezNilaLemumiem": false,
  "nilaLemumi": [
   {
@@ -80,16 +79,14 @@
    "action": "dismiss"
   }
  ],
- "klasesPecNilaLemumiem": [
-  "typo_outlier: 27.09.2015 90000"
- ],
+ "klasesPecNilaLemumiem": [],
  "faktuLapa": {
   "odometerAnomaly": false,
   "carverticalMileageWarning": false,
   "maxRollbackDropKm": 0,
   "rollbacks": [],
   "suspectedEntryErrors": [
-   "27.09.2015 90000 AutoDNA"
+   "27.09.2015 90000 AutoDNA (sludinājums)"
   ],
   "implausibleReadings": [],
   "latestKm": 335000

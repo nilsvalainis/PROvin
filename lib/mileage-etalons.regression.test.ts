@@ -75,6 +75,7 @@ function snapshotOf(fx: Fixture) {
           analysis.chartExcludeSourceOrders.has(r.sourceOrder) ? "nav grafikā" : "",
           analysis.dataEntryErrorSourceOrders.has(r.sourceOrder) ? "ievades kļūda" : "",
           analysis.staleDocumentSourceOrders.has(r.sourceOrder) ? "novecojis dokuments" : "",
+          analysis.listingBelowRecordedSourceOrders.has(r.sourceOrder) ? "sludinājumā mazāk" : "",
           r.datePrecision === "month" ? "mēnesis" : "",
           r.unit === "mi" ? "jūdzes" : "",
         ].filter(Boolean);
