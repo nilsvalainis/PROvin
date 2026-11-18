@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="lv"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>02 Stikls - PRO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+@font-face{font-family:InterLocal;src:url(assets/Inter-Regular.ttf);font-weight:400}
+@font-face{font-family:InterLocal;src:url(assets/Inter-Bold.ttf);font-weight:700}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:390px;height:852px;overflow:hidden}
+body{font-family:Inter,InterLocal,-apple-system,sans-serif;color:#1c1c1e;-webkit-font-smoothing:antialiased;}
+a{color:inherit;text-decoration:none;-webkit-tap-highlight-color:transparent}
+.screen{position:relative;width:390px;height:852px;overflow:hidden;padding:0 20px}
+.iriss{background:linear-gradient(180deg,#eef1f6 0%,#e2e7ef 55%,#d6dde8 100%)}
+.pro{background:linear-gradient(180deg,#e4e4ea 0%,#cfcfd6 100%)}
+.sb{position:absolute;top:0;left:0;right:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 30px 0 44px}
+.sb-t{font-size:17px;font-weight:600;letter-spacing:-.2px}
+.island{position:absolute;left:50%;top:11px;width:125px;height:37px;margin-left:-62.5px;background:#000;border-radius:999px}
+.sb-r{display:flex;gap:6px;align-items:center}
+.hd{padding-top:60px;display:flex;align-items:center;gap:14px;height:108px}
+.hd h1{font-size:34px;font-weight:700;letter-spacing:-.8px}
+.seg{display:flex;background:rgba(118,118,128,.14);border-radius:999px;padding:3px;height:36px}
+.seg span{min-width:62px;padding:0 14px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;color:#6e6e73;border-radius:999px}
+.seg .on-i{background:#34c759;color:#fff}
+.seg .on-p{background:#1c1c1e;color:#fff}
+.w{display:block;position:relative}
+.wp{margin-top:14px;padding:4px 0 2px}
+.wl{margin-top:22px;padding:2px 0}
+.wl.pt0{margin-top:20px}
+.cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.col{display:flex;flex-direction:column;align-items:center;text-align:center}
+.ringbox{position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:9px}
+.ringbox>svg{position:absolute;top:50%;left:50%;translate:-50% -50%}
+.ringbox>svg[style*="rotate(-90deg)"]{translate:none;top:auto;left:auto;position:static}
+.ringc{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
+.num{font-weight:600;letter-spacing:-.5px;line-height:1;font-variant-numeric:tabular-nums}
+.num small{font-weight:500;margin-left:1px;opacity:.75;letter-spacing:0}
+.plate{display:inline-flex;align-items:center;height:22px;padding:0 7px;border:1.5px solid #d92d20;border-radius:6px;font-size:13px;font-weight:600;letter-spacing:.2px;color:#1c1c1e;background:rgba(255,255,255,.55);white-space:nowrap}
+.car{display:block;margin-top:4px;font-size:13px;color:#6e6e73;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lab{display:block;font-size:13px;color:#6e6e73;margin-top:4px;white-space:nowrap}
+.lh{display:flex;align-items:center;gap:6px;font-size:13px;color:#6e6e73;font-weight:500;margin-bottom:10px}
+.lh .chev{margin-left:auto}
+/* 01 */
+.segline{display:flex;gap:8px}
+.seg1{display:flex;flex-direction:column;min-width:0}
+.seg1 .num{margin-bottom:8px}
+.track{display:block;height:3px;border-radius:999px}
+/* 02 */
+.glass{background:rgba(255,255,255,.34);-webkit-backdrop-filter:blur(20px) saturate(1.4);backdrop-filter:blur(20px) saturate(1.4);border:1px solid rgba(255,255,255,.55)}
+.glassbar{display:grid;grid-template-columns:repeat(3,1fr);border-radius:14px;height:76px}
+.gcell{display:flex;align-items:center;gap:10px;padding-left:16px}
+.gcell.sep{border-left:1px solid rgba(60,60,67,.12)}
+.tick{width:3px;height:34px;border-radius:999px}
+/* 03 */
+.lv{gap:8px}
+.lvl{display:flex;align-items:flex-end;gap:10px;padding-left:10px}
+.lvtrack{position:relative;width:12px;height:54px;border-radius:6px;background:rgba(60,60,67,.12);overflow:hidden;display:block}
+.lvtrack span{position:absolute;left:0;right:0;bottom:0;border-radius:6px;display:block}
+/* 05 */
+.axis{position:relative;height:150px}
+.am{position:absolute;width:72px;display:flex;flex-direction:column;align-items:center}
+.am .num{margin-bottom:5px}
+.stem{position:absolute;width:1.5px;opacity:.5}
+.axsvg{position:absolute;left:0;top:0;pointer-events:none}
+.aline{position:absolute;left:14px;right:14px;top:121px;height:2px;border-radius:999px;background:rgba(60,60,67,.18)}
+.adot{position:absolute;top:119px;width:8px;height:8px;border-radius:999px}
+.atick{position:absolute;top:132px;white-space:nowrap;font-size:11px;color:#8e8e93;translate:-50% 0;font-variant-numeric:tabular-nums}
+.blocks{display:flex;gap:14px}
+.bgrp{display:flex;flex-direction:column}
+.brow{display:flex;gap:5px}
+.blk{flex:1;height:30px;border-radius:6px;min-width:0}
+.bgrp .lab b{font-weight:600}
+/* 06 */
+.sentence{display:flex;align-items:baseline;gap:8px;flex-wrap:nowrap;padding:6px 0}
+.sentence>svg{align-self:center;margin-right:2px}
+.sw{display:inline-flex;align-items:baseline;gap:5px;white-space:nowrap}
+.lab2{font-size:15px;color:#6e6e73}
+.dotsep{color:#aeaeb2;font-size:18px}
+/* 07 */
+.frame{margin-top:14px;border-radius:14px;background:rgba(255,255,255,.26);border:1px solid rgba(255,255,255,.6)}
+.frame .w{margin:0;padding:14px 10px}
+.frame .wl{border-top:1px solid rgba(60,60,67,.12)}
+.row2{flex-direction:row;align-items:center;gap:8px;text-align:left;justify-content:flex-start;padding-left:2px}
+.row2 .ringbox{margin:0;flex:none}
+.row2 .plate{height:20px;font-size:12px;padding:0 5px}
+.row2 .car{font-size:12px;margin-top:3px}
+.pc{display:flex;flex-direction:column;align-items:flex-start;min-width:0}
+.lrow{padding-left:8px;gap:10px}
+.vtick{width:4px;height:36px;border-radius:999px}
+/* 08 */
+.pierow{display:flex;align-items:center;gap:8px;height:40px}
+.stack{display:flex;gap:3px;height:32px;border-radius:10px;overflow:hidden}
+.stack>span{display:flex;align-items:center;padding-left:10px}
+.stacklab{display:flex;gap:3px}
+.stacklab .lab{padding-left:10px}
+/* 09 */
+.route{position:relative;display:grid;grid-template-columns:repeat(3,1fr);padding-top:4px}
+.rline{position:absolute;left:16%;right:16%;top:46px;border-top:2px dashed rgba(60,60,67,.25)}
+.rstop{position:relative;display:flex;flex-direction:column;align-items:center}
+.rstop svg{position:relative;z-index:1}
+.rnum{position:absolute;top:8px;left:0;right:0;text-align:center;z-index:2;font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+/* 10 */
+.rows{display:flex;flex-direction:column}
+.rw{display:flex;align-items:center;gap:10px;height:44px;border-bottom:1px solid rgba(60,60,67,.10)}
+.rw:last-child{border-bottom:0}
+.rw .plate{flex:none}
+.rbar{flex:1;height:4px;border-radius:999px;background:rgba(60,60,67,.12);overflow:hidden;display:block}
+.rbar span{display:block;height:100%;border-radius:999px}
+.rw .num{width:44px;text-align:right}
+.hair .col{padding:2px 0}
+.sepv{border-left:1px solid rgba(60,60,67,.14)}
+/* režģis */
+.grid{margin:30px -8px 0;display:grid;grid-template-columns:repeat(4,1fr);row-gap:16px}
+.tile{position:relative;display:flex;flex-direction:column;align-items:center;min-height:44px}
+.ic{width:60px;height:60px;border-radius:14px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.ic-white{background:#fff}
+.tl{margin-top:6px;font-size:12px;font-weight:500;color:#1c1c1e;white-space:nowrap;letter-spacing:-.1px}
+.badge{position:absolute;top:-6px;left:calc(50% + 18px);min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#ff3b30;color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
+/* josla C */
+.bar{position:absolute;left:50%;bottom:34px;margin-left:-88px;width:176px;height:48px;border-radius:999px;background:rgba(255,255,255,.97);display:flex;align-items:center;justify-content:space-around;padding:0 6px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+.bb{width:52px;height:44px;display:flex;align-items:center;justify-content:center;color:#8e8e93}
+.bb.on{color:#1c1c1e}
+.hi{position:absolute;left:50%;bottom:8px;width:134px;height:5px;margin-left:-67px;border-radius:999px;background:#1c1c1e}
+/* Vairāk */
+.vt{font-size:34px;font-weight:700;letter-spacing:-.8px;padding-top:62px}
+.sec{font-size:13px;font-weight:600;color:#6e6e73;letter-spacing:.4px;text-transform:uppercase;margin:22px 0 12px}
+.vgrid{position:static;margin:0 -8px}
+</style></head>
+<body><main class="screen pro"><div class="sb"><span class="sb-t">9:41</span><span class="island"></span><span class="sb-r"><svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" fill="#1c1c1e"/><rect x="5" y="5.5" width="3" height="6.5" rx="1" fill="#1c1c1e"/><rect x="10" y="3" width="3" height="9" rx="1" fill="#1c1c1e"/><rect x="15" y="0" width="3" height="12" rx="1" fill="#1c1c1e"/></svg><svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 11.2 5.6 8.6a3.4 3.4 0 0 1 4.8 0zM3.4 6.4a6.5 6.5 0 0 1 9.2 0l-1.3 1.3a4.7 4.7 0 0 0-6.6 0zM1.1 4.1a9.8 9.8 0 0 1 13.8 0l-1.3 1.3a8 8 0 0 0-11.2 0z" fill="#1c1c1e"/></svg><svg width="26" height="12" viewBox="0 0 26 12"><rect x=".5" y=".5" width="22" height="11" rx="3.5" fill="none" stroke="#1c1c1e" opacity=".4"/><rect x="2" y="2" width="16" height="8" rx="2" fill="#1c1c1e"/><rect x="24" y="4" width="1.6" height="4" rx=".8" fill="#1c1c1e" opacity=".4"/></svg></span></div><header class="hd"><h1>PRO</h1><div class="seg" role="tablist"><span class="">IRISS</span><span class="on-p">PRO</span></div></header><section id="w"><a class="w wp " href="#pavadzime-jauna" aria-label="Pavadzīmes - rakstīt jaunu pavadzīmi"><div class="cols3"><div class="col"><div class="ringbox glass" style="width:84px;height:84px;border-radius:999px"><svg width="74" height="74" viewBox="0 0 74 74" style="transform:rotate(-90deg)"><circle cx="37" cy="37" r="35.75" fill="none" stroke="rgba(60,60,67,.12)" stroke-width="2.5"/><circle cx="37" cy="37" r="35.75" fill="none" stroke="#1c1c1e" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="201.23 224.62"/></svg><div class="ringc"><span class="num" style="font-size:22px;color:#1c1c1e;font-weight:600">43<small style="font-size:11px">h</small></span></div></div><span class="plate" >B 193-7</span><span class="car">Audi Q7</span></div><div class="col"><div class="ringbox glass" style="width:84px;height:84px;border-radius:999px"><svg width="74" height="74" viewBox="0 0 74 74" style="transform:rotate(-90deg)"><circle cx="37" cy="37" r="35.75" fill="none" stroke="rgba(60,60,67,.12)" stroke-width="2.5"/><circle cx="37" cy="37" r="35.75" fill="none" stroke="#e5484d" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="70.19 224.62"/></svg><div class="ringc"><span class="num" style="font-size:22px;color:#e5484d;font-weight:600">15<small style="font-size:11px">h</small></span></div></div><span class="plate" >B 762-7</span><span class="car">MB E250</span></div><div class="col"><div class="ringbox glass" style="width:84px;height:84px;border-radius:999px"><svg width="74" height="74" viewBox="0 0 74 74" style="transform:rotate(-90deg)"><circle cx="37" cy="37" r="35.75" fill="none" stroke="rgba(60,60,67,.12)" stroke-width="2.5"/><circle cx="37" cy="37" r="35.75" fill="none" stroke="#1c1c1e" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="210.58 224.62"/></svg><div class="ringc"><span class="num" style="font-size:22px;color:#1c1c1e;font-weight:600">45<small style="font-size:11px">h</small></span></div></div><span class="plate" >B 192-7</span><span class="car">VW Touran</span></div></div></a><a class="w wl " href="#logistika" aria-label="Loģistika - atvērt"><div class="glass glassbar"><div class="gcell"><span class="tick" style="background:#1e9e4a"></span><div><span class="num" style="font-size:24px;color:#1c1c1e">2</span><span class="lab">Nākošā</span></div></div><div class="gcell sep"><span class="tick" style="background:#f59e0b"></span><div><span class="num" style="font-size:24px;color:#1c1c1e">1</span><span class="lab">Aiznākošā</span></div></div><div class="gcell sep"><span class="tick" style="background:#8e8e93"></span><div><span class="num" style="font-size:24px;color:#1c1c1e">3</span><span class="lab">Gaida</span></div></div></div></a></section><div id="gridpos"><nav class="grid" aria-label="Sadaļas"><a class="tile" href="#pas"><span class="ic" style="background:linear-gradient(180deg,#3077e6,#1c4fc2)"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="2.8" width="10" height="14" rx="2"/><path d="m6 7 1.2 1.2L9.6 6M6 11.5l1.2 1.2 2.4-2.2"/><path d="M14.6 21.2h-.8a1.2 1.2 0 0 1-1.2-1.2v-2.3l1.4-3.2a1.2 1.2 0 0 1 1.1-.7h3.8a1.2 1.2 0 0 1 1.1.7l1.4 3.2V20a1.2 1.2 0 0 1-1.2 1.2h-.8"/><path d="M12.6 17.6h8.8"/></svg></span><span class="badge">4</span><span class="tl">Pasūtījumi</span></a><a class="tile" href="#rits"><span class="ic" style="background:linear-gradient(180deg,#ffcc12,#ff9f0a)"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0"/><path d="M12 6.5v2M5.6 9.6l1.4 1.4M18.4 9.6 17 11M2.8 14.5h2M19.2 14.5h2"/></svg></span><span class="tl">Rīta kopsav.</span></a><a class="tile" href="#vin"><span class="ic" style="background:linear-gradient(180deg,#3c3d43,#232428)"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></svg></span><span class="tl">VIN pārbaude</span></a><a class="tile" href="#atrie"><span class="ic" style="background:linear-gradient(180deg,#ffc40a,#f4a300)"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.2 2.5 4.5 13.6h6.6l-1 7.9 8.7-11.1h-6.6z"/></svg></span><span class="tl">Ātrie vērt.</span></a><a class="tile" href="#stat"><span class="ic" style="background:linear-gradient(180deg,#5c5ce8,#3f3fc9)"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20.5h16M6.5 17v-4M10 17V8M13.5 17v-6M17 17V5"/></svg></span><span class="tl">Statistika</span></a><a class="tile" href="#rek"><span class="ic" style="background:linear-gradient(180deg,#34c759,#1f9a43)"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7.5A2.5 2.5 0 0 0 5 5.5v13A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V8z"/><path d="M14 3v5h5M8.5 12.5h7M8.5 16h7"/></svg></span><span class="tl">Rēķini</span></a><a class="tile" href="#partn"><span class="ic" style="background:linear-gradient(180deg,#bf5af2,#9a35d6)"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.4"/><path d="M2.8 20a6.2 6.2 0 0 1 12.4 0"/><circle cx="16.8" cy="8.6" r="2.6"/><path d="M16.6 14a5 5 0 0 1 4.8 5"/></svg></span><span class="tl">Partneri</span></a><a class="tile" href="#blogs"><span class="ic" style="background:linear-gradient(180deg,#ff5f8f,#e33772)"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="4"/><path d="M8 9h4M8 12.5h2.5"/><path d="m11.5 16.5.5-2.4 4.6-4.6a1.3 1.3 0 0 1 1.9 1.9l-4.6 4.6z"/></svg></span><span class="tl">Blogs</span></a></nav></div><div class="bar"><a class="bb on" href="#home" aria-label="Sākums"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 10.2 12 3.5l8.5 6.7"/><path d="M5.5 8.8V19a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V8.8"/><path d="M10 20v-5h4v5"/></svg></a><a class="bb " href="#more" aria-label="Vairāk"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2.2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2.2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2.2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2.2"/></svg></a><a class="bb " href="#search" aria-label="Meklēt"><svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg></a></div><div class="hi"></div></main></body></html>

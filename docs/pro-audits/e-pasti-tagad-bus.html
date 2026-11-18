@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E-pastu sakārtošana</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f5f7;--card:#fff;--ink:#111;--muted:#6e6e73;--line:#e3e3e8;--old:#b42318;--new:#0f6b3a;--chip:#eef0f4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111214;--card:#1b1c1f;--ink:#f2f2f2;--muted:#9a9aa1;--line:#2c2d31;--old:#ff8a80;--new:#7ddc9f;--chip:#26282c}}
+:root[data-theme="dark"]{--bg:#111214;--card:#1b1c1f;--ink:#f2f2f2;--muted:#9a9aa1;--line:#2c2d31;--old:#ff8a80;--new:#7ddc9f;--chip:#26282c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,system-ui,sans-serif}
+main{max-width:900px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:24px;margin:0 0 4px}
+h2{font-size:17px;margin:32px 0 10px}
+p.lead{color:var(--muted);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:10px 0}
+.card h3{font-size:14px;margin:0 0 8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tag{font-size:11px;font-weight:600;background:var(--chip);border-radius:6px;padding:2px 7px;color:var(--muted)}
+.row{display:grid;grid-template-columns:64px 1fr;gap:6px 10px;font-size:14px;margin:4px 0}
+.row .k{color:var(--muted)}
+.old{color:var(--old);text-decoration:line-through;text-decoration-thickness:1px}
+.new{color:var(--new);font-weight:500}
+ul{margin:6px 0 0 18px;padding:0}
+li{margin:3px 0}
+.why{color:var(--muted);font-size:13px;margin-top:6px}
+code{font-size:13px;background:var(--chip);border-radius:4px;padding:1px 5px}
+</style>
+</head>
+<body>
+<main>
+<h1>E-pastu sakārtošana</h1>
+<p class="lead">PRO audits 06.11. Katram e-pastam: kas ir tagad un kas būs. Nils atbild ar "jā" vai labojumiem pa punktiem (A1, B2...). Bez "jā" nekas netiek mainīts.</p>
+
+<h2>A. Tēmas - viens formāts: PROVIN · notikums · VIN</h2>
+<div class="card"><h3>A1 Maksājums saņemts <span class="tag">automātiski</span></h3>
+<div class="row"><span class="k">Tagad</span><span class="old">PROVIN: maksājums saņemts, rēķins pielikumā</span></div>
+<div class="row"><span class="k">Būs</span><span class="new">PROVIN · Maksājums saņemts · WDC1671191A002835</span></div></div>
+<div class="card"><h3>A2 Apmaksas saite <span class="tag">manuāli</span></h3>
+<div class="row"><span class="k">Tagad</span><span class="old">PROVIN AUDITS PRO: Jūsu apmaksas saite</span></div>
+<div class="row"><span class="k">Būs</span><span class="new">PROVIN · Apmaksas saite · PROVIN AUDITS · VIN</span></div></div>
+<div class="card"><h3>A3 Atgādinājums par neapmaksātu <span class="tag">manuāli</span></h3>
+<div class="row"><span class="k">Tagad</span><span class="old">Par Jūsu auto pārbaudi (VIN ...)</span></div>
+<div class="row"><span class="k">Būs</span><span class="new">PROVIN · Pasūtījums gaida apmaksu · VIN</span></div></div>
+<div class="card"><h3>A4 Atskaite gatava (AUDITS / MINI / dīleris)</h3>
+<div class="row"><span class="k">Tagad</span><span class="old">PROVIN AUDITS atskaite ir gatava (VIN) · PROVIN: oficiālā dīlera dati ir gatavi (VIN) · PROVIN.LV: oficiālā dīlera dati pielikumā</span></div>
+<div class="row"><span class="k">Būs</span><span class="new">PROVIN · Atskaite gatava · PROVIN AUDITS · VIN</span> (MINI un dīlerim tas pats, mainās tikai produkta nosaukums)</div>
+<div class="why">Dīlera datiem tagad ir 2 dažādas tēmas diviem gandrīz vienādiem e-pastiem - paliks viens.</div></div>
+<div class="card"><h3>A5 Atmaksa / atcelšana / dīlera dati nav</h3>
+<div class="row"><span class="k">Tagad</span><span class="old">PROVIN.LV: dīlera dati nav pieejami · PROVIN.LV: pasūtījums atcelts un maksājums atgriezts</span></div>
+<div class="row"><span class="k">Būs</span><span class="new">PROVIN · Dīlera dati nav pieejami, nauda atgriezta · VIN</span> / <span class="new">PROVIN · Pasūtījums atcelts, nauda atgriezta · VIN</span></div></div>
+<div class="card"><h3>A6 Piedāvājumi (MINI → dīleris, dīleris → AUDITS)</h3>
+<div class="row"><span class="k">Tagad</span><span class="old">PROVIN.LV: oficiālā dīlera dati esošajam pasūtījumam · PROVIN.LV: PROVIN AUDITS Jūsu pasūtījumam</span></div>
+<div class="row"><span class="k">Būs</span><span class="new">PROVIN · Piedāvājums: oficiālā dīlera dati · VIN</span> / <span class="new">PROVIN · Piedāvājums: PROVIN AUDITS · VIN</span></div></div>
+
+<h2>B. Teksts</h2>
+<div class="card"><h3>B1 Atgādinājums par neapmaksātu</h3>
+<ul>
+<li class="old">"...droši zvaniet man: +371 29 502 039"</li>
+<li class="new">"...atbildiet uz šo e-pastu vai rakstiet WhatsApp" (tālrunis netiek publicēts)</li>
+<li class="old">Paraksts "Nils V. (IRISS) / PROVIN.LV"</li>
+<li class="new">Standarta PROVIN paraksts, kā visos citos e-pastos</li>
+</ul></div>
+<div class="card"><h3>B2 Summas</h3>
+<ul><li><span class="old">24.99 EUR</span>, <span class="old">24.99 €</span> → <span class="new">24,99 €</span> visos e-pastos (maksājums, atmaksa, saite)</li></ul></div>
+<div class="card"><h3>B3 Produktu nosaukumi</h3>
+<ul><li><span class="old">PROVIN AUDITS PRO</span>, <span class="old">AUDITS PRO</span> → <span class="new">PROVIN AUDITS</span>; tikai 4 nosaukumi: PROVIN AUDITS, PROVIN MINI, PROVIN BUSINESS, Oficiālie dīlera dati</li></ul></div>
+<div class="card"><h3>B4 "Atskaite gatava" pielikumu saraksts</h3>
+<ul><li><span class="old">Fiksēts teksts "Kopsavilkuma PDF atskaiti, Papildu materiālus"</span> → <span class="new">reālie pievienotie faktiskie faili</span> (kā dīlera e-pastā jau ir)</li></ul></div>
+
+<h2>C. Pogas un darbības adminā</h2>
+<div class="card"><h3>C1 Pogas pēc nolūka</h3>
+<ul>
+<li class="old">Dīlera e-pastā jebkura saite pēdējā rindā automātiski kļūst par pogu "Apmaksāt"</li>
+<li class="new">Poga tikai, ja tā ir izvēlēta: "Atvērt atskaiti", "Lejupielādēt rēķinu", "Apmaksāt", "Pasūtīt PROVIN AUDITS"</li>
+</ul></div>
+<div class="card"><h3>C2 Atmaksa - viens e-pasts</h3>
+<ul>
+<li class="old">Atmaksa sūta e-pastu automātiski + blakus poga "Nosūtīt e-pastu (nav datu)" var aizsūtīt otru</li>
+<li class="new">Atmaksas logā izvēle: "Atmaksāt un nosūtīt e-pastu" vai "Atmaksāt bez e-pasta"</li>
+</ul></div>
+<div class="card"><h3>C3 Priekšskatījums pirms sūtīšanas <span class="tag">UI - vajag maketu</span></h3>
+<ul><li class="new">Katrā sūtīšanas logā redzams: saņēmējs, tēma, valoda, pielikumi. Pasūtījumā "E-pastu vēsture": kas, kad, kam nosūtīts.</li></ul></div>
+<div class="card"><h3>C4 Valoda</h3>
+<ul><li class="new">Maksājuma, atmaksas un piedāvājuma e-pasti klienta izvēlētajā valodā (tagad tikai latviski; atskaite gatava jau ir lokalizēta).</li></ul></div>
+
+<h2>Secība pēc "jā"</h2>
+<p>1) A + B (teksti un formāti, bez UI maiņas) → 2) C1, C2 → 3) C4 → 4) C3 ar maketu. Katru soli testēju ar sūtījumu uz gustavs.ansons@gmail.com.</p>
+<p class="why">Svarīgi: veidnes var būt rediģētas adminā (Ziņu veidnes). Ja tur ir Tavs teksts, to nepārrakstu - tikai noklusējumu kodā; rediģētās parādīšu sarakstā.</p>
+</main>
+</body>
+</html>

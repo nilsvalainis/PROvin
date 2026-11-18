@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PROVIN Business poga - statistikas makets</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;background:#f5f5f7;color:#1d1d1f;-webkit-font-smoothing:antialiased;padding:28px 20px 60px}
+.wrap{max-width:720px;margin:0 auto}
+.lbl{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#1d1d1f}
+.sec{margin:34px 0 10px;font-size:12px;font-weight:600;color:#86868b;letter-spacing:.06em;text-transform:uppercase}
+.card{background:#fff;border:1px solid #e8e8ed;border-radius:18px;padding:22px 20px}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.title{margin-top:4px;font-size:15px;font-weight:600}
+.big{font-size:30px;font-weight:600;letter-spacing:-.02em}
+.sub{margin-top:10px;font-size:12.5px;color:#424245}
+.per{margin-top:14px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pill{font-size:12px;padding:6px 11px;border-radius:999px;border:1px solid #e0e0e5;background:#fff;color:#1d1d1f}
+.pill.on{background:#1d1d1f;color:#fff;border-color:#1d1d1f}
+.pill.ghost{color:#86868b}
+.nav{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;margin-right:6px}
+.nav span{color:#86868b;font-weight:400;cursor:pointer}
+.tiles{margin-top:16px;display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.t{background:#f5f5f7;border-radius:12px;padding:10px 11px}
+.t .v{margin-top:3px;font-size:17px;font-weight:600}
+.t .n{margin-top:2px;font-size:10.5px;color:#86868b}
+.chart{margin-top:18px}
+.bars{display:flex;align-items:flex-end;gap:3px;height:90px;border-bottom:1px solid #e8e8ed}
+.bars div{flex:1;background:#d2d2d7;border-radius:3px 3px 0 0;position:relative}
+.bars div i{position:absolute;left:0;right:0;bottom:0;background:#2563eb;border-radius:3px 3px 0 0}
+.leg{margin-top:6px;display:flex;gap:14px;font-size:11px;color:#86868b}
+.leg b{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+table{width:100%;border-collapse:collapse;margin-top:6px;font-size:12.5px}
+th{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#1d1d1f;text-align:right;padding:8px 0 6px}
+th:first-child,td:first-child{text-align:left}
+td{padding:8px 0;border-top:1px solid #f0f0f3;text-align:right;font-variant-numeric:tabular-nums}
+td.mono{font-family:ui-monospace,Menlo,monospace;font-size:11.5px}
+.h3{margin-top:22px;font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.row{display:flex;justify-content:space-between;padding:8px 0;border-top:1px solid #f0f0f3;font-size:12.5px}
+.ok{color:#16a34a;font-weight:600}
+.no{color:#86868b}
+.link{margin-top:14px;font-size:12.5px;color:#2563eb}
+.note{margin-top:8px;font-size:11.5px;color:#86868b;line-height:1.5}
+.mail{background:#fff;border:1px solid #e8e8ed;border-radius:14px;padding:14px 16px;font-size:12.5px;line-height:1.55}
+.mail .s{font-weight:600}
+.mail .m{color:#86868b;font-size:11.5px}
+.cab{background:#fff;border:1px solid #e8e8ed;border-radius:18px;padding:22px 20px}
+</style>
+</head>
+<body><div class="wrap">
+
+<p class="sec">A. Admin - Statistika (jauns bloks)</p>
+<div class="card">
+  <div class="head">
+    <div><p class="lbl">PROVIN Business poga · partneru vietnes</p><p class="title">Klikšķis → pirkums</p></div>
+    <div class="big">6,8%</div>
+  </div>
+  <div class="per">
+    <span class="nav"><span>‹</span> Novembris 2026 <span>›</span></span>
+    <span class="pill on">Mēnesis</span><span class="pill">Viss laiks</span><span class="pill ghost">Periods: no - līdz</span>
+  </div>
+  <p class="sub">12 apmaksāti pasūtījumi no 176 klikšķiem 3 partneru vietnēs.</p>
+  <div class="tiles">
+    <div class="t"><p class="lbl">Klikšķi</p><p class="v">176</p><p class="n">atvērta apmaksas lapa</p></div>
+    <div class="t"><p class="lbl">Bloķēti</p><p class="v">9</p><p class="n">saite netika atvērta</p></div>
+    <div class="t"><p class="lbl">Apmaksa sākta</p><p class="v">21</p><p class="n">aizgāja līdz Stripe</p></div>
+    <div class="t"><p class="lbl">Apmaksāti</p><p class="v">12</p><p class="n">57% no sāktajiem</p></div>
+    <div class="t"><p class="lbl">Ieņēmumi</p><p class="v">839,88 €</p><p class="n">12 × 69,99 €</p></div>
+  </div>
+
+  <div class="chart">
+    <div class="bars">
+      <div style="height:20%"><i style="height:0"></i></div><div style="height:35%"><i style="height:6%"></i></div><div style="height:28%"></div><div style="height:50%"><i style="height:8%"></i></div><div style="height:44%"></div><div style="height:18%"></div><div style="height:12%"></div><div style="height:60%"><i style="height:10%"></i></div><div style="height:72%"><i style="height:14%"></i></div><div style="height:55%"></div><div style="height:66%"><i style="height:9%"></i></div><div style="height:40%"></div><div style="height:22%"></div><div style="height:15%"></div><div style="height:80%"><i style="height:12%"></i></div><div style="height:90%"><i style="height:18%"></i></div><div style="height:62%"><i style="height:8%"></i></div><div style="height:48%"></div><div style="height:58%"><i style="height:9%"></i></div><div style="height:30%"></div><div style="height:16%"></div><div style="height:70%"><i style="height:10%"></i></div><div style="height:64%"></div><div style="height:52%"><i style="height:8%"></i></div><div style="height:46%"></div><div style="height:38%"></div><div style="height:20%"></div><div style="height:14%"></div><div style="height:0"></div><div style="height:0"></div>
+    </div>
+    <div class="leg"><span><b style="background:#d2d2d7"></b>Klikšķi dienā</span><span><b style="background:#2563eb"></b>Apmaksāti</span></div>
+  </div>
+
+  <p class="h3">Pa partneriem</p>
+  <table>
+    <tr><th>Partneris</th><th>Klikšķi</th><th>Bloķēti</th><th>Sākta</th><th>Apmaksāti</th><th>Ieņēmumi</th><th>Konv.</th></tr>
+    <tr><td>SIA ĪRISS (dzintarzemeauto.lv)</td><td>98</td><td>2</td><td>12</td><td>7</td><td>489,93 €</td><td>7,1%</td></tr>
+    <tr><td>Auto2000 Import-Export GmbH</td><td>51</td><td>6</td><td>6</td><td>3</td><td>209,97 €</td><td>5,9%</td></tr>
+    <tr><td>SIA RZ Autoparks</td><td>27</td><td>1</td><td>3</td><td>2</td><td>139,98 €</td><td>7,4%</td></tr>
+  </table>
+
+  <div class="two">
+    <div>
+      <p class="h3">Bloķēto iemesli</p>
+      <div class="row"><span>VIN nav sludinājuma lapā</span><span>4</span></div>
+      <div class="row"><span>Nav no partnera vietnes</span><span>3</span></div>
+      <div class="row"><span>Pārāk daudz mēģinājumu</span><span>1</span></div>
+      <div class="row"><span>Pārsūtīta saite</span><span>1</span></div>
+    </div>
+    <div>
+      <p class="h3">Klikšķis → apmaksa</p>
+      <div class="row"><span>Klikšķis → apmaksa sākta</span><span>11,9%</span></div>
+      <div class="row"><span>Sākta → apmaksāta</span><span>57,1%</span></div>
+      <div class="row"><span>Vidēji līdz pirkumam</span><span>4 min</span></div>
+    </div>
+  </div>
+
+  <p class="h3">Pa auto</p>
+  <table>
+    <tr><th>Auto</th><th>VIN</th><th>Partneris</th><th>Klikšķi</th><th>Statuss</th></tr>
+    <tr><td>Audi Q5 2017</td><td class="mono">WAUZZZFY7H2024825</td><td>ĪRISS</td><td>14</td><td class="ok">Apmaksāts</td></tr>
+    <tr><td>BMW iX 2022</td><td class="mono">WBY11CF060CM04850</td><td>ĪRISS</td><td>11</td><td class="ok">Apmaksāts ×2</td></tr>
+    <tr><td>VW Arteon 2017</td><td class="mono">WVWZZZ3HZHE703058</td><td>ĪRISS</td><td>9</td><td class="no">Nav pirkts</td></tr>
+    <tr><td>Mercedes GLE 2019</td><td class="mono">WDC1671191A0XXXXX</td><td>Auto2000</td><td>8</td><td class="ok">Apmaksāts</td></tr>
+  </table>
+  <p class="link">Visi auto (38) ›</p>
+  <p class="note">Skaitļi maketā ir izdomāti. Klikšķis = derīga pogas saite (atvērta apmaksas lapa); bloķēts = saite netika atvērta.</p>
+</div>
+
+<p class="sec">B. Admin - partnera lapa (tas pats, tikai šim partnerim)</p>
+<div class="card">
+  <div class="head">
+    <div><p class="lbl">Business poga · dzintarzemeauto.lv</p><p class="title">Klikšķis → pirkums</p></div>
+    <div class="big">7,1%</div>
+  </div>
+  <div class="per"><span class="nav"><span>‹</span> Novembris 2026 <span>›</span></span><span class="pill on">Mēnesis</span><span class="pill">Viss laiks</span><span class="pill ghost">Periods: no - līdz</span></div>
+  <div class="tiles">
+    <div class="t"><p class="lbl">Klikšķi</p><p class="v">98</p></div>
+    <div class="t"><p class="lbl">Bloķēti</p><p class="v">2</p></div>
+    <div class="t"><p class="lbl">Sākta</p><p class="v">12</p></div>
+    <div class="t"><p class="lbl">Apmaksāti</p><p class="v">7</p></div>
+    <div class="t"><p class="lbl">Ieņēmumi</p><p class="v">489,93 €</p></div>
+  </div>
+  <p class="note">Zem tā paliek esošais «Pirkumi caur pogu» saraksts (datums, VIN, summa).</p>
+</div>
+
+<p class="sec">C. Partnera B2B kabinets (tikai izpildītie pasūtījumi)</p>
+<div class="cab">
+  <p class="lbl">PROVIN poga jūsu vietnē</p>
+  <p class="title">Izpildītās atskaites jūsu klientiem</p>
+  <div class="per"><span class="nav"><span>‹</span> Novembris 2026 <span>›</span></span><span class="pill on">Mēnesis</span><span class="pill">Viss laiks</span></div>
+  <div class="tiles" style="grid-template-columns:repeat(2,1fr);max-width:320px">
+    <div class="t"><p class="lbl">Izpildītas</p><p class="v">6</p></div>
+    <div class="t"><p class="lbl">Kopā</p><p class="v">23</p><p class="n">visu laiku</p></div>
+  </div>
+  <table>
+    <tr><th>Datums</th><th>Auto</th><th>VIN</th><th>Statuss</th></tr>
+    <tr><td>04.11.2026</td><td>Audi Q5 2017</td><td class="mono">WAUZZZFY7H2024825</td><td class="ok">Atskaite nosūtīta</td></tr>
+    <tr><td>02.11.2026</td><td>BMW iX 2022</td><td class="mono">WBY11CF060CM04850</td><td class="ok">Atskaite nosūtīta</td></tr>
+  </table>
+  <p class="note">Bez cenām un bez klientu kontaktiem (klientu dati paliek PROVIN pusē).</p>
+</div>
+
+<p class="sec">D. E-pasta paziņojumi</p>
+<div class="mail">
+  <p class="s">PROVIN poga: jauns pirkums - Audi Q5 2017 (dzintarzemeauto.lv)</p>
+  <p class="m">Katram apmaksātam pasūtījumam caur pogu. VIN, partneris, summa, saite uz pasūtījumu adminā.</p>
+</div>
+<div class="mail" style="margin-top:8px">
+  <p class="s">PROVIN poga: daudz bloķētu klikšķu - Auto2000 (12 pēdējā stundā)</p>
+  <p class="m">Ja vienam partnerim stundā ≥ 10 bloķētu klikšķu (iespējama ļaunprātīga izmantošana).</p>
+</div>
+
+</div></body></html>

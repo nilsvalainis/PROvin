@@ -1,0 +1,62 @@
+[
+  {
+    "id": "01-gredzeni-un-kapsulas",
+    "name": "Gredzeni un kapsulas",
+    "icons": "A",
+    "desc": "Divas vienādas baltas kartītes ar vienu rādiusu un atstarpēm. Pavadzīmes - 4 gredzeni, laiks iekšā, numurs un marka zem tā. Loģistika - 3 tonētas kapsulas tajā pašā līnijas biezumā. Forma atšķiras: aplis vai kapsula."
+  },
+  {
+    "id": "02-viens-panelis",
+    "name": "Viens panelis",
+    "icons": "B",
+    "desc": "Abi vidžeti vienā kartītē, sadalīti ar matu līniju - augšā gredzeni, apakšā loģistika (2 atsevišķi pieskārieni). Loģistika ir viena proporcionāla josla: garums = kravu skaits. Tā pati 5 px līnija kā gredzeniem."
+  },
+  {
+    "id": "03-bento",
+    "name": "Bento",
+    "icons": "C",
+    "desc": "iOS logrīku režģis: katrs auto ir sava maza kartīte (gredzens + liels laiks + numurs + marka), loģistika - 3 tādas pašas kartītes ar biezu krāsainu kapsulu. Viena ģimene - viena kartīte; atšķiras pēc formas (aplis / kapsula) un klusa virsraksta."
+  },
+  {
+    "id": "04-grafits",
+    "name": "Grafīts",
+    "icons": "A",
+    "desc": "Abi vidžeti tumšā grafīta kartītēs (ne zaļā) - spilgti gredzeni uz tumša, ļoti uzskatāmi arī saulē. Loģistika - šaura tumša josla ar 3 segmentiem. Kopā tos tur tumšā virsma, atšķir forma un augstums."
+  },
+  {
+    "id": "05-rindas",
+    "name": "Rindas ar mini gredzeniem",
+    "icons": "B",
+    "desc": "Funkcionālākais: katrs auto sava rinda (mini gredzens, numurs, marka, laiks labajā malā lielā cipariem). Lasās kā Apple Atgādinājumi. Loģistika - viena tāda pati rinda ar 3 tonētām birkām. Kopā: viens saraksta ritms."
+  },
+  {
+    "id": "06-sliede",
+    "name": "Gredzeni un sliede",
+    "icons": "C",
+    "desc": "Pavadzīmes - gredzeni. Loģistika - maršruta sliede kā metro līnija: bieza līnija 3 krāsās, katrā posmā noapaļots kvadrāts ar skaitli. Sasaucas ar Maps ikonu un ar gredzenu līnijas biezumu, bet nekad nav aplis."
+  },
+  {
+    "id": "07-viens-rezgis",
+    "name": "Viens režģis",
+    "icons": "B",
+    "desc": "Viss uz tā paša 4 kolonnu režģa kā flīzes: gredzeni stāv tieši virs ikonām, loģistikas skaitļi ir tāda paša izmēra krāsaini kvadrāti. Ekrāns lasās kā viena kopīga sistēma: aplis = pavadzīme, kvadrāts = loģistika, flīze = sadaļa."
+  },
+  {
+    "id": "08-komplikacijas",
+    "name": "Pulksteņa komplikācijas",
+    "icons": "A",
+    "desc": "Apple Watch valoda: pavadzīmes - apaļās komplikācijas (270° mērierīce, laiks iekšā), loģistika - taisnstūra komplikācijas ar etiķeti, lielu skaitli un īsu ziņu. Pulkstenī tās vienmēr ir viena ģimene - šeit tāpat."
+  },
+  {
+    "id": "09-klusais",
+    "name": "Klusais",
+    "icons": "C",
+    "desc": "Gandrīz vienkrāsains: gredzeni grafītā, krāsa parādās tikai tad, kad laiks beidzas (sarkans < 1 h, oranžs < 6 h). Loģistika - 3 kolonnas ar matu līnijām, krāsa tikai šaurā zīmē. Visvairāk Apple, vismazāk krāsu - steidzamais uzreiz izceļas."
+  },
+  {
+    "id": "10-iedalas",
+    "name": "Iedaļas",
+    "icons": "B",
+    "desc": "Viss sastāv no iedaļām: gredzenā 48 iedaļas = 48 h, deg tik, cik stundu atlicis (kā akumulatora indikators). Loģistikā 1 iedaļa = 1 krava, sagrupētas pēc statusa. Viena valoda - skaiti iedaļas; forma atšķiras (aplis / taisne)."
+  }
+]

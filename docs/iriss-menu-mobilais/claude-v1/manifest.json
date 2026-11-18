@@ -1,0 +1,142 @@
+[
+  {
+    "n": "01",
+    "brand": "iriss",
+    "name": "Aplis un taisne",
+    "cap": "Pavadzīmes - 3 px apļi; Loģistika - tā pati 3 px līnija, taisna un sadalīta pēc kravu skaita.",
+    "file": "01-aplis-un-taisne-iriss.html"
+  },
+  {
+    "n": "01",
+    "brand": "pro",
+    "name": "Aplis un taisne",
+    "cap": "Pavadzīmes - 3 px apļi; Loģistika - tā pati 3 px līnija, taisna un sadalīta pēc kravu skaita.",
+    "file": "01-aplis-un-taisne-pro.html"
+  },
+  {
+    "n": "02",
+    "brand": "iriss",
+    "name": "Stikls",
+    "cap": "Abi vidžeti matētā stiklā: pavadzīmes - apaļas lēcas, loģistika - viena taisnstūra stikla josla ar 3 nodalījumiem.",
+    "file": "02-stikls-iriss.html"
+  },
+  {
+    "n": "02",
+    "brand": "pro",
+    "name": "Stikls",
+    "cap": "Abi vidžeti matētā stiklā: pavadzīmes - apaļas lēcas, loģistika - viena taisnstūra stikla josla ar 3 nodalījumiem.",
+    "file": "02-stikls-pro.html"
+  },
+  {
+    "n": "03",
+    "brand": "iriss",
+    "name": "Spidometrs un līmenis",
+    "cap": "Mērinstrumentu ģimene: pavadzīmes - 240° spidometra loki CSDD zaļā; loģistika - vertikāli līmeņa stabiņi kā degvielas skala.",
+    "file": "03-spidometrs-un-limenis-iriss.html"
+  },
+  {
+    "n": "03",
+    "brand": "pro",
+    "name": "Spidometrs un līmenis",
+    "cap": "Mērinstrumentu ģimene: pavadzīmes - 240° spidometra loki CSDD zaļā; loģistika - vertikāli līmeņa stabiņi kā degvielas skala.",
+    "file": "03-spidometrs-un-limenis-pro.html"
+  },
+  {
+    "n": "04",
+    "brand": "iriss",
+    "name": "Aplis un kvadrāts",
+    "cap": "Viens režģis, viena līnija: pavadzīmes - apļa progress (stundas); loģistika - noapaļota kvadrāta kontūra (daļa no visām kravām).",
+    "file": "04-aplis-un-kvadrats-iriss.html"
+  },
+  {
+    "n": "04",
+    "brand": "pro",
+    "name": "Aplis un kvadrāts",
+    "cap": "Viens režģis, viena līnija: pavadzīmes - apļa progress (stundas); loģistika - noapaļota kvadrāta kontūra (daļa no visām kravām).",
+    "file": "04-aplis-un-kvadrats-pro.html"
+  },
+  {
+    "n": "05",
+    "brand": "iriss",
+    "name": "Laika ass un bloki",
+    "cap": "Pavadzīmes sakārtotas pēc atlikušā laika un savienotas ar vienu 0-48 h asi (steidzamākā kreisāk); loģistika - viens bloks = viena krava, sagrupēti pēc statusa.",
+    "file": "05-laika-ass-un-bloki-iriss.html"
+  },
+  {
+    "n": "05",
+    "brand": "pro",
+    "name": "Laika ass un bloki",
+    "cap": "Pavadzīmes sakārtotas pēc atlikušā laika un savienotas ar vienu 0-48 h asi (steidzamākā kreisāk); loģistika - viens bloks = viena krava, sagrupēti pēc statusa.",
+    "file": "05-laika-ass-un-bloki-pro.html"
+  },
+  {
+    "n": "06",
+    "brand": "iriss",
+    "name": "Tikai cipari",
+    "cap": "Tipogrāfiskā ģimene bez formām: pavadzīmes - lieli cipari kolonnās; loģistika - viens teikums vienā rindā ar krāsainiem cipariem.",
+    "file": "06-tikai-cipari-iriss.html"
+  },
+  {
+    "n": "06",
+    "brand": "pro",
+    "name": "Tikai cipari",
+    "cap": "Tipogrāfiskā ģimene bez formām: pavadzīmes - lieli cipari kolonnās; loģistika - viens teikums vienā rindā ar krāsainiem cipariem.",
+    "file": "06-tikai-cipari-pro.html"
+  },
+  {
+    "n": "07",
+    "brand": "iriss",
+    "name": "Divi stāvi",
+    "cap": "Abi vidžeti vienā caurspīdīgā rāmī ar matu līniju starp tiem: augšā apļi (pavadzīmes), apakšā rindas ar svītru (loģistika). Divi atsevišķi pieskārieni.",
+    "file": "07-divi-stavi-iriss.html"
+  },
+  {
+    "n": "07",
+    "brand": "pro",
+    "name": "Divi stāvi",
+    "cap": "Abi vidžeti vienā caurspīdīgā rāmī ar matu līniju starp tiem: augšā apļi (pavadzīmes), apakšā rindas ar svītru (loģistika). Divi atsevišķi pieskārieni.",
+    "file": "07-divi-stavi-pro.html"
+  },
+  {
+    "n": "08",
+    "brand": "iriss",
+    "name": "Pilni laukumi",
+    "cap": "Aizpildītas formas, bez kontūrām: pavadzīmes - pulksteņa sektori (atlikušais laiks); loģistika - viena aizpildīta josla, sadalīta pēc statusa.",
+    "file": "08-pilni-laukumi-iriss.html"
+  },
+  {
+    "n": "08",
+    "brand": "pro",
+    "name": "Pilni laukumi",
+    "cap": "Aizpildītas formas, bez kontūrām: pavadzīmes - pulksteņa sektori (atlikušais laiks); loģistika - viena aizpildīta josla, sadalīta pēc statusa.",
+    "file": "08-pilni-laukumi-pro.html"
+  },
+  {
+    "n": "09",
+    "brand": "iriss",
+    "name": "Maršruts ar tapām",
+    "cap": "Pavadzīmes - apļi; loģistika - maršruta līnija ar Google Maps formas tapām (skaitlis tapā), kas sasaucas ar Loģistikas ikonu.",
+    "file": "09-marsruts-ar-tapam-iriss.html"
+  },
+  {
+    "n": "09",
+    "brand": "pro",
+    "name": "Maršruts ar tapām",
+    "cap": "Pavadzīmes - apļi; loģistika - maršruta līnija ar Google Maps formas tapām (skaitlis tapā), kas sasaucas ar Loģistikas ikonu.",
+    "file": "09-marsruts-ar-tapam-pro.html"
+  },
+  {
+    "n": "10",
+    "brand": "iriss",
+    "name": "Rindas un kolonnas",
+    "cap": "Pavadzīmes - 3 rindas kā Apple Atgādinājumi (numurzīme, auto, joslas atlikums); loģistika - 3 kolonnas ar matu līnijām kā segmentu slēdzis.",
+    "file": "10-rindas-un-kolonnas-iriss.html"
+  },
+  {
+    "n": "10",
+    "brand": "pro",
+    "name": "Rindas un kolonnas",
+    "cap": "Pavadzīmes - 3 rindas kā Apple Atgādinājumi (numurzīme, auto, joslas atlikums); loģistika - 3 kolonnas ar matu līnijām kā segmentu slēdzis.",
+    "file": "10-rindas-un-kolonnas-pro.html"
+  }
+]

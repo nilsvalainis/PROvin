@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nakts audits 07.11</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f5f7;--card:#fff;--ink:#111;--muted:#6e6e73;--line:#e3e3e8;--ok:#0f6b3a;--okbg:#e8f5e9;--warn:#8a5a00;--warnbg:#fff4e0;--bad:#b42318;--badbg:#fdecec;--chip:#eef0f4}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111214;--card:#1b1c1f;--ink:#f2f2f2;--muted:#9a9aa1;--line:#2c2d31;--ok:#7ddc9f;--okbg:#16301f;--warn:#f5c36b;--warnbg:#33280f;--bad:#ff8a80;--badbg:#3a1714;--chip:#26282c}}
+:root[data-theme="dark"]{--bg:#111214;--card:#1b1c1f;--ink:#f2f2f2;--muted:#9a9aa1;--line:#2c2d31;--ok:#7ddc9f;--okbg:#16301f;--warn:#f5c36b;--warnbg:#33280f;--bad:#ff8a80;--badbg:#3a1714;--chip:#26282c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Inter,system-ui,sans-serif}
+main{max-width:900px;margin:0 auto;padding:24px 16px 64px}
+h1{font-size:24px;margin:0 0 4px}
+h2{font-size:17px;margin:30px 0 10px}
+h3{font-size:14px;margin:0 0 6px}
+p.lead{color:var(--muted);margin:0 0 18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:10px 0}
+.tag{display:inline-block;font-size:11px;font-weight:600;border-radius:6px;padding:2px 7px;margin-right:4px}
+.ok{background:var(--okbg);color:var(--ok)}.warn{background:var(--warnbg);color:var(--warn)}.bad{background:var(--badbg);color:var(--bad)}.neu{background:var(--chip);color:var(--muted)}
+ul{margin:6px 0 0 18px;padding:0}li{margin:4px 0}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600}
+.scroll{overflow-x:auto}
+code{font-size:13px;background:var(--chip);border-radius:4px;padding:1px 5px}
+a{color:inherit}
+.small{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+<h1>Nakts audits 07.11</h1>
+<p class="lead">Claude, 00:35-01:25 (Rīgas laiks). Izmaksas: <b>0,00 €</b> - nekas netika pirkts, maksas avoti netika ielādēti, CAPTCHA netika lietota.</p>
+
+<div class="card">
+<h3>Galvenais no rīta</h3>
+<ul>
+<li><b>4 PR gatavi, CI zaļš, NEVIENS nav sapludināts</b> - <code>gh pr merge</code> šajā sesijā bloķē atļaujas; apiet nemēģināju. Visi 4 kopā lokāli apvienojas bez konfliktiem: tsc bez jaunām kļūdām, 12 026 testi zaļi.</li>
+<li>Ieteicamā secība: <b>#931 → #925 → #924 → #932</b> (pa vienam, pēc katra Vercel READY + provin.lv/lv 200).</li>
+<li><b>Prodā izdarīts:</b> iztīrīti 207 testa darbinieki; VPN pogas cikls pārbaudīts.</li>
+<li><b>Vajag Hetzner worker deploy</b> pēc #931 (pavadzīmju atcelšana procesā).</li>
+<li>Uz <b>īsta iPhone / Android nekas nav testēts</b> - fizisku ierīču nav.</li>
+</ul>
+</div>
+
+<h2>Pull requests</h2>
+<div class="card scroll">
+<table>
+<tr><th>PR</th><th>Saturs</th><th>CI</th><th>Prodā</th></tr>
+<tr><td><a href="https://github.com/nilsvalainis/PROvin/pull/931">#931</a></td><td>Pavadzīmes: 48 h visur, atcelšana arī procesā, taimauti, idempotence, B762 cēloņi (28 faili)</td><td><span class="tag ok">zaļš</span></td><td><span class="tag warn">nav sapludināts</span></td></tr>
+<tr><td><a href="https://github.com/nilsvalainis/PROvin/pull/925">#925</a></td><td>Telefona modāļi (tiesību logs), testi neraksta produkcijā, lomu matrica, skārienmērķi</td><td><span class="tag ok">zaļš</span></td><td><span class="tag warn">nav sapludināts</span></td></tr>
+<tr><td><a href="https://github.com/nilsvalainis/PROvin/pull/924">#924</a></td><td>PRO pasūtījums telefonā: FLASH MAX, VIN SCAN, maksas avoti, PDF iPhone u.c.</td><td><span class="tag ok">zaļš</span></td><td><span class="tag warn">nav sapludināts</span></td></tr>
+<tr><td><a href="https://github.com/nilsvalainis/PROvin/pull/932">#932</a></td><td>Radars: kritēriji reālos laukos; klienta saitē Noraidīt + Uzdot jautājumu (38 faili)</td><td><span class="tag ok">zaļš</span></td><td><span class="tag warn">nav sapludināts</span></td></tr>
+</table>
+<p class="small">Pārklāšanās: #924 un #925 abi skar <code>AdminMobileChrome.tsx</code> (dažādas funkcijas), #925 un #931 - <code>IrissStaffUsersClient.tsx</code> (dažādas vietas). Apvienošana pārbaudīta lokāli - bez konfliktiem.</p>
+</div>
+
+<h2>1. Mobilā optimizācija</h2>
+<div class="card">
+<h3>Tiesību modālis (IRISS → Iestatījumi → Lietotāji → Pievienot personu) <span class="tag ok">labots #925</span></h3>
+<ul>
+<li><b>Pirms</b> (prodā, 390×844, admin): logs 1073 px augsts, virsraksts 94 px virs ekrāna, poga "Izveidot uzaicinājumu" 903-938 px (zem ekrāna), <code>overflow: visible</code> - ritināt nevar.</li>
+<li><b>Pēc</b>: jauns <code>AdminResponsiveModal</code> - telefonā apakšējā lapa, augstums pēc redzamā loga (arī ar atvērtu tastatūru), iekšēja ritināšana, galvene un pogas vienmēr redzamas, iPhone drošā zona, 44 px mērķi. Tiesību labošanā rūtiņas 44 px un lipīga "Saglabāt izmaiņas". <span class="tag neu">prodā vēl nav - nav sapludināts</span></li>
+<li>Telefona apakšlapa (Darbības, PDF, FLASH MAX) un vēl 3 dialogi - augstums ierobežots ar ekrānu.</li>
+</ul>
+</div>
+<div class="card">
+<h3>Demo darbinieki <span class="tag ok">iztīrīts prodā</span></h3>
+<ul>
+<li>Sarakstā bija 212 ieraksti, no tiem <b>207 testa</b> (e-pasts @example.lv, 10 testa vārdi kā "Anna Piemere", "Toms Dzēšamais", partijas ik ~5 s, 29.-31.10).</li>
+<li><b>Cēlonis</b>: tests <code>lib/staff-store.test.ts</code> tika palaists vidē ar īstu produkcijas Blob atslēgu (ne šajā Mac) - katra palaišana ielika ~10 testa lietotājus produkcijā.</li>
+<li>Dzēsti tikai tie, kam sakrīt visi 3 kritēriji (e-pasts @example.lv + testa vārds + izveidoja env-admin). Palika 5 īstie: Ingus, Claude Demo, Laine, Toms, Taivo - tiesības nemainītas. Katrs dzēšums ir darbību žurnālā.</li>
+<li><b>Aizsardzība</b> (#925): testi vairs neredz produkcijas atslēgu. Pārbaudīts ar viltotu atslēgu; pilna kopa zaļa.</li>
+</ul>
+</div>
+<div class="card">
+<h3>PRO pasūtījums telefonā <span class="tag ok">labots #924</span></h3>
+<ul>
+<li>FLASH MAX: palaidās uzreiz, bez izvēles un bez redzama progresa (progress bija tikai datora joslā) → izvēle + piezīmes, progress virs apakšējās joslas.</li>
+<li>Maksas avotu pogas (OneAuto, ASV, JoJ, Speckr): pēc apstiprinājuma nekas, jo poga atradās sakļautā blokā → atver bloku un spiež īsto pogu.</li>
+<li>VIN SCAN: skenēja "klusi" → atver bloku, rāda statusu. Kopēt VIN / reģ. nr. → paziņojums.</li>
+<li>PDF iPhone: logs tika atvērts pēc gaidīšanas (Safari bloķē) → atver uzreiz pēc pieskāriena.</li>
+<li>Cilne "Nobraukums" neritināja; komentāru galvene nogriezta 390 px; pēc ielādes rādīja "Nav saglabāts".</li>
+</ul>
+</div>
+<div class="card">
+<h3>Lapu pārbaude 390 px</h3>
+<ul>
+<li>IRISS sākums, Pasūtījumi, Pavadzīmes, Radars - bez horizontālas pārplūdes, mērķi pietiekami lieli.</li>
+<li>Sludinājumi (26 mazi mērķi: "Kopēt ID" 61×21 u.c.) un Loģistikas karte (slēdži 28×16, Drukāt, Pilnekrāns) - palielināti #925.</li>
+<li>Paralēli strādā IRISS nakts sesija (Kārļa): CSS drošības tīkls visiem logiem + tiesību kartīte apakšas logā. Darbs sadalīts, lai nepārklājas.</li>
+</ul>
+</div>
+
+<h2>2. Pavadzīmes maks. 48 h <span class="tag ok">#931</span></h2>
+<div class="card"><ul>
+<li>Saskaņots API, UI, worker, dokumentācijā un komentāros. API: 48 h pieņem, 49 h un 2160 h noraida (400). Veciem ierakstiem &gt;48 h darbu vairs neizsniedz; vecie dati nemainīti.</li>
+<li>Vecā rinda <code>docs/komandu-zinojumi.md</code> ("Cits (1-2160)") paliek kā vēsture.</li>
+</ul></div>
+
+<h2>3. B762 pavadzīme &gt;10 min <span class="tag ok">#931</span></h2>
+<div class="card"><ul>
+<li><b>Izmērīts</b> (Vercel logi; numurzīme logos nav, ticamākais darbs 06.11): izveidots 12:50 UTC, Aivars paņēma pēc 2 min; pēc 30 min darbs atkal parādījās rindā un tika paņemts <b>otrreiz</b>; rezultāts 14:06 - <b>76 min</b>. Aivara progresa ziņas atgrieza 400 (nederīgs formāts).</li>
+<li>Salīdzinājumam: automātika 11 s - 3,5 min; Aivars ar roku parasti 1-2,5 min.</li>
+<li><b>Kāpēc nevarēja atcelt</b>: "Atcelt" rādīja tikai statusam "Gaida", ne "Izveido".</li>
+<li><b>Ieviests</b>: atcelšana arī procesā (worker pārbauda pirms katra CSDD soļa un tieši pirms saglabāšanas; ja CSDD jau saglabāts - "Izdota - jāanulē manuāli", nevis klusi pazūd); otrreizēja izsniegšana aizliegta; iestrēguša darba taimauts → "Kļūda - Pārbaudi CSDD"; atkārtota iesniegšana ar to pašu atslēgu neveido otru; UI stāvokļi "Atceļ / Atcelts / Izdota - jāanulē manuāli"; atcelšanas logs lietotnē (nevis pārlūka confirm).</li>
+<li>Testi: 24 jauni, pavadzīmju 387 zaļi.</li>
+<li><b>Vajag Hetzner worker deploy</b>: <code>scripts/iriss-ttr/waybill-worker-core.mjs</code>, <code>waybill-worker.mjs</code>, restart <code>iriss-waybill-worker</code>. Līdz tam drošs: vecais worker atcelšanu neredz → "jāanulē manuāli".</li>
+<li>Grok Aivaram: jāsūta derīgas progresa ziņas un jāievēro atcelšana (līgums <code>docs/iriss-aivars-api.md</code>).</li>
+</ul></div>
+
+<h2>4. VIN skenēšana ar kameru</h2>
+<div class="card"><ul>
+<li><span class="tag bad">NAV TESTĒTS</span> uz īsta iPhone un Android.</li>
+<li>Kods statiski pareizs: iOS playsinline/muted, aizmugurējā kamera, plūsmas apturēšana, CSP <code>camera=(self)</code>.</li>
+<li>Ieteikums: atšķirt "atļauja liegta" (kā atļaut Iestatījumos) no "kameras nav" - tagad viens teksts.</li>
+</ul></div>
+
+<h2>5. Klienta skatā Noraidīt / Uzdot jautājumu <span class="tag ok">#932</span></h2>
+<div class="card"><ul>
+<li>Klienta saitē <code>/p/…</code>: "Noraidīt" (ar apstiprinājumu, neobligāts iemesls) un "Uzdot jautājumu" (līdz 400 zīmēm).</li>
+<li>Autorizācija: tikai saites tokens + tā pati izcelsme; limiti (IP, tokens, 5 jautājumi stundā); pirmais lēmums (apstiprināt/noraidīt) uzvar.</li>
+<li>Adminā: piedāvājuma vēsture, bloks "Klienta ziņas", zīme sarakstā, pasūtījuma laika josla. Iekšējs paziņojums tikai Tev. <b>Klientam nekas netiek sūtīts.</b></li>
+<li>Testi: 23 jauni (atļauts/aizliegts, statusi, ievade).</li>
+</ul></div>
+
+<h2>6. Radars <span class="tag ok">#932</span></h2>
+<div class="card"><ul>
+<li>Kritēriji tagad reālos laukos (marka, modelis, gadi, cena, km, kW, degviela, kārba, virsbūve). Vecie ieraksti netiek pārrakstīti - lasot kritērijus izvelk no nosaukuma (piem. "Audi 2.0D manuālis 2009-2015, 150-330k, 3000-12000 EUR" → Audi, 2009-2015, 150 000-330 000 km, 3 000-12 000 €, dīzelis, manuāla).</li>
+<li>Kritēriji nonāk izsoļu meklēšanas saitēs un kartītes ✓/✕ pārbaudēs.</li>
+<li>Acīmredzami nepareizais "Pasūtījuma detaļas" radarā → pagaidām "Radara detaļas" (galīgais teksts - Tavs lēmums zemāk).</li>
+</ul></div>
+
+<h2>7. Pavadzīmju lietojamība - ieteikumi (nav darīti)</h2>
+<div class="card"><ol>
+<li>Datorā forma ir aiz ~17 000 px sarakstes - likt formu augšā vai ierobežot sarakstes augstumu.</li>
+<li>Ielādes brīdī numuram rādīt "…", nevis "Brīvs"; numuram ar aktīvu pieprasījumu - "gaida Aivaru".</li>
+<li>"Pagarināt" - logā pie kartes ar tekstu "pārtrauks P0xxxx, jaunā derīga līdz …".</li>
+<li>Noskaidrot, vai worker "anulē" vai "pārtrauc" iepriekšējo pavadzīmi, un labot vārdu.</li>
+<li>Kalendārā pārtrauktās pavadzīmes rādīt pelēkas.</li>
+<li>Marku izvēli ņemt no CSDD saraksta jau formā ("BMW ix40" pret "BMW IX").</li>
+<li>Vienot telefona un datora formu (datorā nav "Sākuma adrese").</li>
+</ol></div>
+
+<h2>8. Testi</h2>
+<div class="card"><ul>
+<li><b>Lomu matrica</b>: 265 reālie <code>/api/admin</code> maršruti × anonīms, admins, katra no 15 sadaļām un visas kopā - 20 testi zaļi. Nav noplūdes uz darbinieku pārvaldību vai PRO API; anonīms netiek nekur.</li>
+<li><b>VPN poga</b>: stāvoklis vpn=down; pieprasījums 200 → serveris apstiprina pēc 4 s (01:04). Serveris VPN nelietoja - nekas netika pārtraukts. Pārbaudīts API ceļš, ko lieto poga.</li>
+<li>Kopējā testu kopa (visi 4 PR kopā): 12 026 zaļi.</li>
+</ul></div>
+
+<h2>NAV TESTĒTS</h2>
+<div class="card"><ul>
+<li>Viss uz <b>īsta iPhone un Android</b> (arī VIN kamera, modāļi ar tastatūru, PDF Safari) - fizisku ierīču nav; emulāciju par testu neskaitu.</li>
+<li>Labojumu stāvoklis <b>prodā pēc sapludināšanas</b> - neviens PR nav sapludināts.</li>
+<li>Reāls CSDD - nekas netika iesniegts, saglabāts vai anulēts.</li>
+<li>Grok Aivara reakcija uz atcelšanu; Hetzner worker jaunā versija nav izvietota.</li>
+<li>#931 un #932 vizuāli pārlūkā nav skatīti (aģenti strādāja tikai ar kodu un testiem).</li>
+</ul></div>
+
+<h2>Lēmumi Tev</h2>
+<div class="card"><ol>
+<li><b>Sapludināšana</b>: 4 PR gaida (secība #931 → #925 → #924 → #932) - sapludini pats vai atļauj man.</li>
+<li><b>Hetzner worker deploy</b> pēc #931.</li>
+<li>Pavadzīmju taimauti <b>15 min</b> (automātika) un <b>30 min</b> (Aivars) - der? (izmērīts maks. 3,5 min un 19 min)</li>
+<li>"Jāanulē manuāli" pavadzīmēm - vajag push paziņojumu?</li>
+<li>#931 (28 faili) un #932 (38 faili) pārsniedz 25 failu robežu - der kā viens PR katrs, vai sadalīt?</li>
+<li>Radara teksti: "Radara detaļas" → "Meklējuma detaļas" vai "Radara kritēriji"? Nosaukuma lauks "Marka modelis" → "Nosaukums"?</li>
+<li>Vienota semantika vietās bez klienta ("Saglabāt / Kopīgot" nevis "Nosūtīt klientam").</li>
+<li>Klienta "Apstiprināt" - pievienot apstiprinājuma soli kā "Noraidīt"? Publiskajā auto saitē <code>/a/</code> - vajag "Uzdot jautājumu"? Adminā - "Atzīmēt kā atbildētu"?</li>
+</ol></div>
+
+<p class="small">Darba žurnāls: <code>docs/pro-audits/nakts-2026-11-07.md</code>. Andrim ziņa nav ierakstīta <code>docs/komandu-zinojumi.md</code>, jo tieša rakstīšana mainā nav atļauta šonakt - šī lapa ir kopsavilkums arī viņam.</p>
+</main>
+</body>
+</html>
