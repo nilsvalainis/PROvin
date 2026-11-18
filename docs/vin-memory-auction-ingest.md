@@ -1,6 +1,11 @@
 # VIN atmiņa: Autobid un Openlane masveida ielase
 
-**Apturēts 17.11.2026 (Nila «jā»):** cron ieraksts izņemts no `vercel.json`. Gājiens 3417 Openlane lotes apstrādāja, bet saglabāja 0 VIN, jo Autobid publiskajā sarakstā, Openlane meklēšanā un ielogotā Openlane lotes lapā VIN nav. Kods un admin poga «Nolasīt nākamo soli» paliek. Ieslēgt atpakaļ: atjaunot `{"path": "/api/cron/vin-memory-auction-ingest", "schedule": "*/10 0-4 * * *"}`.
+**Lotu VIN (17.11.2026):** sarakstos un meklēšanā VIN nav, bet ielogotā Autobid un Openlane lotes lapā ir. Tāpēc gājiens strādā divos soļos:
+
+1. `vin-memory-auction-ingest` (`*/10 0-4 * * *` UTC) lasa sarakstus un lotes bez VIN ieliek rindā `vin_memory/_lot_vin_queue.json` (līdz 3000, jaunākās pa priekšu).
+2. `vin-memory-lot-vins` (`3-59/5 0-4 * * *` UTC) pa 8 lotēm (`VIN_MEMORY_LOT_VIN_BATCH`, 1-12) prasa relejam `POST /lot-vins` un atrastos VIN ieraksta VIN atmiņā. Releja dienas limits: `LISTINGS_LOTVIN_MAX_PER_DAY` (noklusējums 300).
+
+Login, WAF vai dienas limits noliek platformu pauzē līdz nākamajai naktij; lotes paliek rindā. Lote bez VIN vai beigusies lote vairs netiek prasīta. Progress: admin API `vin-memory-archive` lauks `lotVins`. Kods: `lib/vin-memory-lot-vins.ts`, `lib/vin-memory-lot-vins-run.ts`, `app/api/cron/vin-memory-lot-vins/route.ts`.
 
 EN below. Nakts `vin-memory-sync` (jau ielādētie IRISS sludinājumi + pasūtījumi) paliek. Šis ir brālis, ne aizvietotājs.
 

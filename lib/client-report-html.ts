@@ -1182,6 +1182,14 @@ function buildPdfMileageSourceLegendHtml(mileageRows: UnifiedMileageDisplayRow[]
   return buildPdfSourceLegendHtml(labels);
 }
 
+/** 17.11 (Nils B2): sludinājumā pārdevēja norādītais nobraukums zem iepriekš fiksētā. */
+const PDF_MILEAGE_LISTING_BELOW_NOTE =
+  "Sludinājumā pārdevēja norādītais nobraukums ir mazāks par iepriekš fiksēto. Sludinājums nav oficiāls nobraukuma fiksējums, tāpēc grafikā netiek attēlots. Klātienē pārbaudiet faktisko odometra rādījumu.";
+
+/** 18.11 (Nils B7): avota jūdzes pārrēķinātas; tabulā un grafikā tikai km. */
+export const PDF_MILEAGE_MILES_CONVERTED_NOTE =
+  "Daļa rādījumu avotā bija norādīti jūdzēs. Tie pārrēķināti uz kilometriem (1 jūdze = 1,609 km), tāpēc tabulā un grafikā viss ir kilometros.";
+
 /** Skaidrojums zem tabulas, ja kāds rādījums nāk no vēlāk datēta dokumenta. */
 const PDF_MILEAGE_STALE_DOCUMENT_NOTE =
   "Ieraksts atspoguļo dokumenta grāmatošanas brīdi vai datu ievades kļūdu, radot mākslīgu nobraukuma kritumu. Tas nav nobraukuma viltojums, tāpēc grafikā netiek attēlots.";
@@ -1276,9 +1284,19 @@ export function buildUnifiedMileageTableHtml(
   const mileageRows = prepareUnifiedMileageDisplayRows(collected);
   if (mileageRows.length === 0) return "";
 
-  const { anomalyBySourceOrder, chartExcludeSourceOrders, staleDocumentSourceOrders, dataEntryErrorSourceOrders } =
-    analyzeUnifiedMileageAnomalies(mileageRows);
-  const staleOrEntryError = new Set([...staleDocumentSourceOrders, ...dataEntryErrorSourceOrders]);
+  const {
+    anomalyBySourceOrder,
+    chartExcludeSourceOrders,
+    staleDocumentSourceOrders,
+    dataEntryErrorSourceOrders,
+    listingBelowRecordedSourceOrders,
+  } = analyzeUnifiedMileageAnomalies(mileageRows);
+  const staleOrEntryError = new Set([
+    ...staleDocumentSourceOrders,
+    ...dataEntryErrorSourceOrders,
+    ...listingBelowRecordedSourceOrders,
+  ]);
+  const staleOrEntryOnly = staleDocumentSourceOrders.size + dataEntryErrorSourceOrders.size > 0;
 
   const rows = [...mileageRows].sort((a, b) => {
     if (a.sortableTime !== b.sortableTime) return b.sortableTime - a.sortableTime;
@@ -1314,10 +1332,11 @@ export function buildUnifiedMileageTableHtml(
   const sourceCount = new Set(mileageRows.flatMap((r) => r.sourceLabels)).size;
   const legend = buildPdfMileageSourceLegendHtml(mileageRows);
   const sourceCountHtml = `<div class="pdf-source-count-note pdf-source-count-note--mileage"><span class="pdf-mileage-source-count-title">Grafika ģenerēšanā izmantotais avotu skaits: ${sourceCount}</span>${legend}</div>`;
+  const yellowNote = (text: string) =>
+    `<p class="pdf-mileage-smart-note"><span class="pdf-mileage-smart-note__ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("yellow")}</span>${escapeHtml(text)}</p>`;
   const staleNoteHtml =
-    staleOrEntryError.size > 0
-      ? `<p class="pdf-mileage-smart-note"><span class="pdf-mileage-smart-note__ico" aria-hidden="true">${pdfLossAmountAlertIconHtml("yellow")}</span>${escapeHtml(PDF_MILEAGE_STALE_DOCUMENT_NOTE)}</p>`
-      : "";
+    (staleOrEntryOnly ? yellowNote(PDF_MILEAGE_STALE_DOCUMENT_NOTE) : "") +
+    (listingBelowRecordedSourceOrders.size > 0 ? yellowNote(PDF_MILEAGE_LISTING_BELOW_NOTE) : "");
 
   const head = sectionHeadBrand(sectionIconPdfHtml("route"), "NOBRAUKUMA VĒSTURE");
   const commentHtml = pdfReportCommentBox(p.mileageComment ?? "", PDF_MILEAGE_HISTORY_COMMENT_LABEL);
@@ -1336,7 +1355,11 @@ export function buildUnifiedMileageTableHtml(
         )}</p>`
       : "";
 
-  const body = `${chartHtml}${dualTables}${approxNoteHtml}${implausibleNoteHtml}${sourceCountHtml}${staleNoteHtml}${commentHtml}`;
+  const milesNoteHtml = mileageRows.some((r) => r.unit === "mi")
+    ? `<p class="pdf-mileage-smart-note pdf-mileage-approx-note">${escapeHtml(PDF_MILEAGE_MILES_CONVERTED_NOTE)}</p>`
+    : "";
+
+  const body = `${chartHtml}${dualTables}${approxNoteHtml}${milesNoteHtml}${implausibleNoteHtml}${sourceCountHtml}${staleNoteHtml}${commentHtml}`;
   return `<div class="pdf-page-flow-chunk pdf-unified-mileage-zone pdf-surface-card pdf-hub-tint--mileage" role="region">${head}<div class="pdf-unified-mileage-zone__body">${body}</div></div>`;
 }
 

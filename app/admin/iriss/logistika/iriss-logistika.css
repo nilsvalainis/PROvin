@@ -1028,6 +1028,18 @@ html.iriss-log-printing .iriss-log-pin-tip {
 .iriss-log-print-list .mono {
   font-family: ui-monospace, Menlo, monospace;
 }
+/* Liels VIN šoferim (Nils 18.11): pēdējās 6 zīmes treknas, pārbaudei pie vārtiem. */
+.iriss-log-print-list .vin {
+  margin: 0.5mm 0;
+  color: #6e6e73;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.iriss-log-print-list .vin .vin-tail {
+  color: #1d1d1f;
+  font-weight: 700;
+}
 .iriss-log-print-list .n {
   width: 10mm;
 }

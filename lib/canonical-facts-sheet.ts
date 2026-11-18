@@ -13,6 +13,7 @@ import {
 import { collectEngineOilChangeRows } from "@/lib/oil-change-intervals";
 import { computeReportIncidentCount, collectDamageEvidence, type DamageEvidence } from "@/lib/damage-evidence";
 import { computeProvinAlertBannersFromWorkspace } from "@/lib/provin-alert-banners";
+import { classifyOdometerAnomalies } from "@/lib/odometer-anomaly-classify";
 import {
   ODOMETER_REPLACEMENT_RE,
   analyzeOdometerRollbackBounds,
@@ -79,6 +80,7 @@ import {
   resolveCsddUndatedOdometer,
   type CsddUndatedOdometer,
   parseOdometerKm,
+  prepareUnifiedMileageDisplayRows,
   sortMileageChronological,
   type UnifiedMileageSourcePayload,
 } from "@/lib/unified-mileage";
@@ -353,10 +355,22 @@ export function buildCanonicalFacts(input: CanonicalFactsInput): CanonicalFacts 
     // j26: valsts maiņa krituma brīdī tikai no reģistru laika līnijas, ne no avota cilnes.
     countryAt: (t) => countryAtFromPeriods(countryPeriods, t),
   });
-  const rollbacks = allDrops.filter(isRealOdometerDrop);
-  const suspectedEntryErrors = allDrops
-    .filter((b) => !isRealOdometerDrop(b) && b.suspect)
-    .map((b) => b.suspect!);
+  // 17.11 (etalons, klase C): AI faktu lapa nedrīkst saukt par kritumu to, ko nobraukuma tabula atzīst par ievades
+  // kļūdu, novecojušu dokumentu vai sludinājumu. Kritums paliek, ja tabulas klasifikācija tajā pašā vietā redz
+  // `rollback` (sakrīt sākuma vai beigu punkts) - īstās korekcijas (Galaxy, Superb, F-150) tā paliek.
+  // Tās pašas apvienotās rindas, ko rāda tabula (citādi sākuma/beigu km var nesakrist).
+  const tableClasses = classifyOdometerAnomalies(prepareUnifiedMileageDisplayRows(mileageRows));
+  const tableRollback = (b: OdometerRollbackBound) =>
+    tableClasses.some((c) => c.class === "rollback" && (c.fromKm === b.fromKm || c.toKm === b.toKm));
+  const tableTypo = (b: OdometerRollbackBound) =>
+    tableClasses.some((c) => c.class === "typo_outlier" && c.toKm === b.toKm);
+  const rollbacks = allDrops.filter((b) => isRealOdometerDrop(b) && tableRollback(b));
+  const suspectedEntryErrors = [
+    ...allDrops.filter((b) => !isRealOdometerDrop(b) && b.suspect).map((b) => b.suspect!),
+    ...allDrops
+      .filter((b) => isRealOdometerDrop(b) && !tableRollback(b) && tableTypo(b))
+      .map((b) => ({ date: b.toDate, km: b.toKm, source: b.toSource ?? "" })),
+  ];
   const anomalyMap = computeOdometerAnomalyBySourceOrder(mileageRows);
   // Tabulas karogs no tā paša izolētā punkta nav korekcijas pazīme.
   const odometerAnomaly =

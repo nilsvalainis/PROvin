@@ -116,6 +116,9 @@ export type AuctionIngestStep = {
 
 export type AuctionLotForMemory = {
   platform: "autobid" | "openline";
+  /** Lotes ID un lapa: lotēm bez VIN to vēlāk nolasa `vin-memory-lot-vins`. */
+  externalId?: string;
+  detailUrl?: string;
   vin?: string;
   vinSource?: string;
   title?: string;

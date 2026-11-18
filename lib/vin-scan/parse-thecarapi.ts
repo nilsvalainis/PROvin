@@ -61,8 +61,25 @@ function unwrap(json: unknown): Record<string, unknown> {
   return root;
 }
 
+/** Vienskaitļa ietinumi: `auction` (reāls), arhīvam nezināms, tāpēc pieņemam arī šos. */
+export const THECARAPI_DETAIL_WRAPPERS = ["auction", "archive", "archived_auction", "item", "result", "data"] as const;
+
+const LOT_HINT_KEYS = ["site_name", "site", "auction_id", "id", "images", "car_identification", "ImageUrls", "image_urls"];
+
+function detailWrapper(row: Record<string, unknown>): Record<string, unknown> | null {
+  const outer = asRecord(row.auction);
+  if (outer) return outer;
+  // Citi ietinumi tikai tad, ja pati rinda nav lots (citādi `data`/`result` var būt parasts lauks).
+  if (row.site_name != null || row.site != null || row.auction_id != null) return null;
+  for (const key of THECARAPI_DETAIL_WRAPPERS) {
+    const inner = asRecord(row[key]);
+    if (inner && LOT_HINT_KEYS.some((hint) => inner[hint] != null)) return inner;
+  }
+  return null;
+}
+
 function asAuctionRecord(row: Record<string, unknown>): Record<string, unknown> {
-  const inner = asRecord(row.auction);
+  const inner = detailWrapper(row);
   if (!inner) return row;
   const next: Record<string, unknown> = { ...inner };
   for (const key of ["contract_version", "data_updated_at", "request_id", "server_time", "success"]) {
@@ -89,7 +106,7 @@ function rowsOf(json: unknown): Record<string, unknown>[] {
       .filter((row): row is Record<string, unknown> => Boolean(row))
       .map(asAuctionRecord);
   }
-  if (asRecord(root.auction)) return [asAuctionRecord(root)];
+  if (detailWrapper(root)) return [asAuctionRecord(root)];
   return [];
 }
 
@@ -178,7 +195,16 @@ function stampOf(row: Record<string, unknown>): string {
 
 function safeDetailPath(raw: unknown): string {
   const path = text(raw);
-  return path.startsWith("/api/auction/") ? path : "";
+  return thecarapiDetailPathAllowed(path) ? path : "";
+}
+
+/** Aktīvai lotei `/api/auction/...`, arhivētai (17.11 reālā atbilde) `/api/archive/auction/...`. */
+export function thecarapiDetailPathAllowed(path: string): boolean {
+  return /^\/api\/(?:archive\/)?auction\/[\w.-]+\/[\w.-]+$/.test(path);
+}
+
+export function thecarapiDetailPathIsArchive(path: string | undefined): boolean {
+  return Boolean(path && path.startsWith("/api/archive/auction/"));
 }
 
 export function thecarapiRefFromParts(site: unknown, id: unknown, detailPath = "", active = false): ThecarapiAuctionRef | null {

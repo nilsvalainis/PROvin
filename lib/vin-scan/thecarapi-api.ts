@@ -14,6 +14,7 @@ import {
   parseThecarapiHistory,
   thecarapiAbsoluteUrl,
   thecarapiPayloadPending,
+  thecarapiDetailPathIsArchive,
   thecarapiRefsFromRecords,
   type ThecarapiAuctionRef,
   type ThecarapiDetailParsed,
@@ -89,6 +90,17 @@ export type ThecarapiDetailsResult = {
   fromCache: boolean;
   billable: boolean;
   rawByKey: Record<string, unknown>;
+  /** Lotes, kurām detaļa netika atrasta: HTTP statuss un atbildes augšējās atslēgas (bez vērtībām). */
+  diag: ThecarapiDetailDiag[];
+};
+
+export type ThecarapiDetailDiag = {
+  site: string;
+  id: string;
+  status: number | null;
+  topKeys: string[];
+  path: string;
+  note: "detail_absent" | "not_cacheable";
 };
 
 type RawCall = {
@@ -364,7 +376,7 @@ export async function fetchThecarapiDetails(
     if (unique.length >= 100) break;
   }
   if (!thecarapiCallsAllowed(env) || unique.length === 0) {
-    return { details: [], httpStatus: null, fromCache: false, billable: false, rawByKey: {} };
+    return { details: [], httpStatus: null, fromCache: false, billable: false, rawByKey: {}, diag: [] };
   }
 
   const fresh: ThecarapiDetailParsed[] = [];
@@ -376,7 +388,7 @@ export async function fetchThecarapiDetails(
       if (cached && thecarapiJsonHasDetail(cached.json)) {
         fresh.push(parseThecarapiDetail(cached.json));
         rawByKey[thecarapiRecordKey(ref.site, ref.id)] = cached.json;
-      } else if (cached && thecarapiDetailAbsent(cached.json)) {
+      } else if (cached && thecarapiDetailAbsent(cached.json) && !absentMarkerStale(cached.json, ref)) {
         /* 200 jau pārbaudīts, šī lota atbildē nebija. Vairs nemaksājam. */
       } else stale.push(ref);
     }
@@ -384,13 +396,55 @@ export async function fetchThecarapiDetails(
     stale.push(...unique);
   }
   if (stale.length === 0) {
-    return { details: fresh, httpStatus: 200, fromCache: true, billable: false, rawByKey };
+    return { details: fresh, httpStatus: 200, fromCache: true, billable: false, rawByKey, diag: [] };
   }
 
+  // Arhivētās lotes batch neatdod - katrai savs `/api/archive/auction/...` izsaukums.
+  const archived = stale.filter((ref) => thecarapiDetailPathIsArchive(ref.detailPath));
+  const live = stale.filter((ref) => !thecarapiDetailPathIsArchive(ref.detailPath));
+  const groups = [...archived.map((ref) => [ref]), ...(live.length ? [live] : [])];
   const base = thecarapiBaseUrl(env);
+  const details = [...fresh];
+  const diag: ThecarapiDetailDiag[] = [];
+  let httpStatus: number | null = null;
+  let billable = false;
+  let fromCache = true;
+  for (const group of groups) {
+    const r = await fetchThecarapiDetailGroup(base, group, deps, rawByKey);
+    details.push(...r.details);
+    diag.push(...r.diag);
+    if (httpStatus == null || (r.httpStatus != null && r.httpStatus !== 200 && r.httpStatus !== 304)) httpStatus = r.httpStatus;
+    billable = billable || r.billable;
+    fromCache = fromCache && r.fromCache;
+  }
+  return { details, httpStatus, fromCache, billable, rawByKey, diag };
+}
+
+/** Tikai atslēgu nosaukumi (ne vērtības), lai redzētu nezināmu atbildes formu. */
+function topKeys(json: unknown): string[] {
+  if (Array.isArray(json)) return ["[array]"];
+  if (!json || typeof json !== "object") return [];
+  return Object.keys(json as Record<string, unknown>).slice(0, 30);
+}
+
+function urlPath(url: string): string {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return "";
+  }
+}
+
+async function fetchThecarapiDetailGroup(
+  base: string,
+  stale: readonly ThecarapiAuctionRef[],
+  deps: ThecarapiDeps,
+  rawByKey: Record<string, unknown>,
+): Promise<{ details: ThecarapiDetailParsed[]; httpStatus: number | null; fromCache: boolean; billable: boolean; diag: ThecarapiDetailDiag[] }> {
   const singleRaw = stale.length === 1 ? await readThecarapiDetailCacheRaw(stale[0]!.site, stale[0]!.id).catch(() => null) : null;
   const single = singleRaw && thecarapiJsonHasDetail(singleRaw.json) ? singleRaw : null;
   const url = detailUrl(base, stale);
+  const path = urlPath(url);
   const call = await thecarapiCall(url, deps, single?.etag);
   if (call.raw.status === 304 && single) {
     const cachedAt = new Date().toISOString();
@@ -403,16 +457,12 @@ export async function fetchThecarapiDetails(
       etag: call.raw.etag || single.etag,
     }).catch(() => undefined);
     rawByKey[thecarapiRecordKey(single.site, single.id)] = single.json;
-    return {
-      details: [...fresh, parseThecarapiDetail(single.json)],
-      httpStatus: 304,
-      fromCache: true,
-      billable: false,
-      rawByKey,
-    };
+    return { details: [parseThecarapiDetail(single.json)], httpStatus: 304, fromCache: true, billable: false, diag: [] };
   }
+  const keys = topKeys(call.raw.json);
   if (!detailCacheable(call.raw)) {
-    return { details: fresh, httpStatus: call.raw.status || null, fromCache: false, billable: call.billable, rawByKey };
+    const diag = stale.map((ref) => ({ site: ref.site, id: ref.id, status: call.raw.status || null, topKeys: keys, path, note: "not_cacheable" as const }));
+    return { details: [], httpStatus: call.raw.status || null, fromCache: false, billable: call.billable, diag };
   }
   const parsed = parseThecarapiDetailList(call.raw.json);
   const cachedAt = new Date().toISOString();
@@ -449,24 +499,30 @@ export async function fetchThecarapiDetails(
       }).catch(() => undefined);
     }
   }
+  const diag: ThecarapiDetailDiag[] = [];
   for (const ref of stale) {
     const key = thecarapiRecordKey(ref.site, ref.id);
     if (rawByKey[key] != null) continue;
+    diag.push({ site: ref.site, id: ref.id, status: call.raw.status, topKeys: keys, path, note: "detail_absent" });
     await writeThecarapiDetailCache({
       site: ref.site,
       id: ref.id,
       cachedAt,
       active: ref.active,
-      json: { detail_absent: true },
+      json: { detail_absent: true, http_status: call.raw.status, top_keys: keys, path },
     }).catch(() => undefined);
   }
-  return {
-    details: [...fresh, ...parsed],
-    httpStatus: call.raw.status,
-    fromCache: false,
-    billable: call.billable,
-    rawByKey,
-  };
+  return { details: parsed, httpStatus: call.raw.status, fromCache: false, billable: call.billable, diag };
+}
+
+/**
+ * Vecs marķieris (bez `http_status`) radās, kad arhīva ceļš tika nomests un sauca `/api/auction/...`.
+ * Arhivētai lotei to pārbaudām vēlreiz pa pareizo ceļu.
+ */
+function absentMarkerStale(raw: unknown, ref: ThecarapiAuctionRef): boolean {
+  if (!thecarapiDetailPathIsArchive(ref.detailPath)) return false;
+  const rec = raw as { http_status?: unknown; path?: unknown };
+  return typeof rec.http_status !== "number" || rec.path !== ref.detailPath;
 }
 
 function detailBody(json: unknown, detail: ThecarapiDetailParsed): unknown {
@@ -566,7 +622,7 @@ function thecarapiDetailStored(
 export async function fetchThecarapiVinWithDetails(
   vin: string,
   deps: ThecarapiDeps = {},
-): Promise<ThecarapiHistoryResult & { detailsBillable: boolean }> {
+): Promise<ThecarapiHistoryResult & { detailsBillable: boolean; detailDiag?: ThecarapiDetailDiag[] }> {
   let history = await fetchThecarapiVinHistory(vin, deps);
   if (history.refs.length === 0 && history.records.length > 0) {
     history = { ...history, refs: thecarapiRefsFromRecords(history.records) };
@@ -613,5 +669,6 @@ export async function fetchThecarapiVinWithDetails(
     recordsComplete: thecarapiDetailStored(details.rawByKey, history.refs),
     billable: history.billable || details.billable || images.billable,
     detailsBillable: details.billable || images.billable,
+    detailDiag: details.diag,
   };
 }

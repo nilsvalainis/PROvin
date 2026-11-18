@@ -13,6 +13,7 @@ import {
   type VinMemoryArchiveCounts,
   type VinMemoryBrowseRow,
 } from "@/lib/vin-memory-auction";
+import { parseLotVinQueue, type LotVinQueue } from "@/lib/vin-memory-lot-vins";
 import { parseVinMemoryTable, VIN_MEMORY_SOURCES, type VinMemoryEntry, type VinMemorySource } from "@/lib/vin-memory";
 
 /**
@@ -23,6 +24,7 @@ import { parseVinMemoryTable, VIN_MEMORY_SOURCES, type VinMemoryEntry, type VinM
 
 const CURSOR_REL = "vin_memory/_auction_ingest.json";
 const COUNTS_REL = "vin_memory/_archive_counts.json";
+const LOT_VIN_QUEUE_REL = "vin_memory/_lot_vin_queue.json";
 const COUNTS_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const WMI_FILE_RE = /(?:^|\/)([A-HJ-NPR-Z0-9]{3})\.json$/;
 
@@ -107,6 +109,21 @@ export async function readAuctionIngestState(): Promise<AuctionIngestState | nul
 
 export async function writeAuctionIngestState(state: AuctionIngestState): Promise<boolean> {
   return writeText(CURSOR_REL, JSON.stringify(state));
+}
+
+/** Lotu VIN rinda (`vin-memory-lot-vins`). Nav faila = tukša rinda. */
+export async function readLotVinQueue(now: Date = new Date()): Promise<LotVinQueue> {
+  const text = await readText(LOT_VIN_QUEUE_REL);
+  if (!text) return parseLotVinQueue(null, now);
+  try {
+    return parseLotVinQueue(JSON.parse(text), now);
+  } catch {
+    return parseLotVinQueue(null, now);
+  }
+}
+
+export async function writeLotVinQueue(queue: LotVinQueue): Promise<boolean> {
+  return writeText(LOT_VIN_QUEUE_REL, JSON.stringify(queue));
 }
 
 function parseCounts(raw: unknown): StoredArchiveCounts | null {

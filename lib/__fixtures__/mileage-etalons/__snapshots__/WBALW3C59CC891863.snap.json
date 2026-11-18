@@ -65,10 +65,11 @@
   "carverticalMileageWarning": false,
   "maxRollbackDropKm": 13358,
   "rollbacks": [
-   "01.08.2015 93063 -> 11.09.2015 81116",
    "16.03.2017 126012 -> 20.12.2019 112654"
   ],
-  "suspectedEntryErrors": [],
+  "suspectedEntryErrors": [
+   "11.09.2015 81116 IZSOĻU PORTĀLU ARHĪVS"
+  ],
   "implausibleReadings": [],
   "latestKm": 193496
  }

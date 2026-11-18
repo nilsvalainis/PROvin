@@ -75,8 +75,10 @@ function snapshotOf(fx: Fixture) {
           analysis.chartExcludeSourceOrders.has(r.sourceOrder) ? "nav grafikā" : "",
           analysis.dataEntryErrorSourceOrders.has(r.sourceOrder) ? "ievades kļūda" : "",
           analysis.staleDocumentSourceOrders.has(r.sourceOrder) ? "novecojis dokuments" : "",
+          analysis.listingBelowRecordedSourceOrders.has(r.sourceOrder) ? "sludinājumā mazāk" : "",
           r.datePrecision === "month" ? "mēnesis" : "",
           r.unit === "mi" ? "jūdzes" : "",
+          r.countryInferred ? "secināta valsts" : "",
         ].filter(Boolean);
         return `${r.date} | ${r.odometer} | ${r.country} | ${r.sourceLabels?.join(" + ") ?? r.sourceLabel}${marks.length ? ` | ${marks.join(", ")}` : ""}`;
       }),

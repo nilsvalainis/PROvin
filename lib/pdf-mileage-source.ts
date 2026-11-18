@@ -62,6 +62,8 @@ export function mileageSourceLabelToPdfKey(raw: string): MileagePdfSourceKey {
   if (
     t === normLabel(SOURCE_BLOCK_LABELS.carvertical) ||
     sq === "carvertical" ||
+    // "carVertical (sludinājums)" - avota sludinājuma rādījums (17.11) paliek CV.
+    sq.startsWith("carvertical") ||
     sq === "cv"
   ) {
     return "carvertical";
