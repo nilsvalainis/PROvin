@@ -1,0 +1,42 @@
+{
+ "label": "Audi Q5: neatbilstības",
+ "rindasPaAvotiem": {
+  "CSDD": 6,
+  "OFICIĀLĀ DĪLERA DATI": 9,
+  "CarVertical": 2,
+  "ss.lv": 1
+ },
+ "rindasSavaktas": 18,
+ "rindasTabula": 15,
+ "tabula": [
+  "01.10.2012 | 18 | Vācija | CarVertical | mēnesis",
+  "25.03.2015 | 9424 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "27.10.2015 | 25205 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "11.06.2016 | 40002 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "02.11.2017 | 56123 | Vācija | CSDD + OFICIĀLĀ DĪLERA DATI",
+  "12.06.2018 | 63408 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "07.11.2019 | 77223 | Vācija | OFICIĀLĀ DĪLERA DATI + CSDD",
+  "11.06.2020 | 85886 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "25.11.2021 | 102720 | Vācija | CSDD + OFICIĀLĀ DĪLERA DATI",
+  "05.07.2022 | 110057 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "15.11.2023 | 127891 | Vācija | CSDD",
+  "10.12.2025 | 170055 | Vācija | CSDD",
+  "01.07.2026 | 188500 | Vācija | CarVertical | mēnesis",
+  "19.09.2026 | 188 000 | Latvija | ss.lv",
+  "24.09.2026 | 188368 | Latvija | CSDD"
+ ],
+ "sarkanaJosla": false,
+ "klases": [],
+ "kritumsBezNilaLemumiem": false,
+ "nilaLemumi": [],
+ "klasesPecNilaLemumiem": [],
+ "faktuLapa": {
+  "odometerAnomaly": false,
+  "carverticalMileageWarning": false,
+  "maxRollbackDropKm": 0,
+  "rollbacks": [],
+  "suspectedEntryErrors": [],
+  "implausibleReadings": [],
+  "latestKm": 188368
+ }
+}

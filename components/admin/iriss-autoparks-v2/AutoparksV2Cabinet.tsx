@@ -19,6 +19,7 @@ import { IrissCreateOfferButton } from "@/components/admin/IrissCreateOfferButto
 import type { AutoparksTransit } from "@/lib/iriss-autoparks-transit";
 import { AutoparksV2Cela } from "./AutoparksV2Cela";
 import { AutoparksV2Csdd } from "./AutoparksV2Csdd";
+import type { RegistryFreshness } from "@/lib/iriss-autoparks-registry-freshness";
 import { AutoparksV2History } from "./AutoparksV2History";
 import { AutoparksV2OfferActions } from "./AutoparksV2OfferActions";
 import { AutoparksV2Pamatdati } from "./AutoparksV2Pamatdati";
@@ -46,8 +47,11 @@ export function AutoparksV2Cabinet({
   canWaybill = false,
   transit = null,
   transitCanWrite = false,
+  registryFresh = null,
 }: {
   initialBasics: AutoparksV2Basics;
+  /** CSDD reģistra datu svaigums (serveris aprēķina no pēdējā importa). */
+  registryFresh?: RegistryFreshness | null;
   /** «Ceļā» posms (Nils 27.10): Loģistikas dati, ja auto ir aktīvs Loģistikas ieraksts un ir Loģistikas tiesība. */
   transit?: AutoparksTransit | null;
   transitCanWrite?: boolean;
@@ -229,7 +233,7 @@ export function AutoparksV2Cabinet({
             {canWaybill && !desktop ? <AutoparksV2Waybill car={{ title: basics.title, vin: basics.vin }} /> : null}
             {desktop ? (
               <>
-                <AutoparksV2Csdd basics={basics} />
+                <AutoparksV2Csdd basics={basics} fresh={registryFresh} />
                 {perms.pamatdati ? <OwnerCard basics={basics} onBasics={onBasics} /> : null}
               </>
             ) : null}
@@ -239,7 +243,7 @@ export function AutoparksV2Cabinet({
             <AutoparksV2Pamatdati basics={basics} onBasics={onBasics} />
           </div>
           <div className="ap2-pd-bottom">
-            {desktop ? null : <AutoparksV2Csdd basics={basics} />}
+            {desktop ? null : <AutoparksV2Csdd basics={basics} fresh={registryFresh} />}
             {perms.admin ? <DeleteCarButton carId={basics.id} title={basics.title} /> : null}
           </div>
         </div>

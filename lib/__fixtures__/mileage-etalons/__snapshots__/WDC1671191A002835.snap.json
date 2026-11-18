@@ -1,0 +1,38 @@
+{
+ "label": "Mercedes GLE 300d: 5 negadījumi, 10 avoti, pilnīgs zaudējums",
+ "rindasPaAvotiem": {
+  "CSDD": 4,
+  "OFICIĀLĀ DĪLERA DATI": 4,
+  "AutoDNA": 9,
+  "CarVertical": 10
+ },
+ "rindasSavaktas": 27,
+ "rindasTabula": 11,
+ "tabula": [
+  "01.01.2019 | 11 | Nezināmā | CarVertical | mēnesis",
+  "01.10.2019 | 24539 | Igaunija | OFICIĀLĀ DĪLERA DATI + AutoDNA + CarVertical",
+  "01.04.2020 | 44893 | Igaunija | OFICIĀLĀ DĪLERA DATI + AutoDNA + CarVertical",
+  "01.04.2021 | 73969 | Igaunija | OFICIĀLĀ DĪLERA DATI + AutoDNA + CarVertical",
+  "01.01.2022 | 98756 | Igaunija | OFICIĀLĀ DĪLERA DATI + AutoDNA + CarVertical",
+  "09.06.2023 | 119918 | Latvija | CarVertical + CSDD + AutoDNA",
+  "01.10.2023 | 119900 | Latvija | CarVertical | mēnesis",
+  "01.06.2024 | 130229 | Latvija | AutoDNA + CarVertical",
+  "11.06.2024 | 130348 | Latvija | CSDD + AutoDNA",
+  "08.07.2025 | 145254 | Latvija | CarVertical + CSDD + AutoDNA",
+  "10.07.2026 | 158759 | Latvija | CarVertical + CSDD + AutoDNA"
+ ],
+ "sarkanaJosla": false,
+ "klases": [],
+ "kritumsBezNilaLemumiem": false,
+ "nilaLemumi": [],
+ "klasesPecNilaLemumiem": [],
+ "faktuLapa": {
+  "odometerAnomaly": false,
+  "carverticalMileageWarning": false,
+  "maxRollbackDropKm": 0,
+  "rollbacks": [],
+  "suspectedEntryErrors": [],
+  "implausibleReadings": [],
+  "latestKm": 158759
+ }
+}

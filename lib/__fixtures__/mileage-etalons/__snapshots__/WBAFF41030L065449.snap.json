@@ -1,0 +1,48 @@
+{
+ "label": "BMW X5 3.0d 2007: ievades kļūda",
+ "rindasPaAvotiem": {
+  "CSDD": 1,
+  "OFICIĀLĀ DĪLERA DATI": 12,
+  "AutoDNA": 1,
+  "CarVertical": 15
+ },
+ "rindasSavaktas": 29,
+ "rindasTabula": 15,
+ "tabula": [
+  "01.09.2007 | 14 | Itālija | CarVertical | mēnesis",
+  "13.05.2010 | 83637 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "17.08.2010 | 90281 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "01.12.2011 | 112446 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "21.03.2012 | 119624 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "27.06.2012 | 124970 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "04.12.2012 | 128129 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "13.03.2013 | 131919 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "28.08.2013 | 136266 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "29.11.2013 | 140370 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "17.06.2014 | 148562 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "18.10.2017 | 193994 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "28.10.2023 | 244423 | Itālija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "01.05.2026 | 279560 | Itālija | CarVertical | mēnesis",
+  "26.06.2026 | 277681 | Latvija | CarVertical + CSDD + AutoDNA | ANOMĀLIJA"
+ ],
+ "sarkanaJosla": true,
+ "klases": [
+  "rollback: 01.05.2026 279560 -> 26.06.2026 277681 (kritums 1879) [26.06.2026 | 277681 | CarVertical + CSDD + AutoDNA]"
+ ],
+ "kritumsBezNilaLemumiem": true,
+ "nilaLemumi": [],
+ "klasesPecNilaLemumiem": [
+  "rollback: 26.06.2026 277681"
+ ],
+ "faktuLapa": {
+  "odometerAnomaly": true,
+  "carverticalMileageWarning": false,
+  "maxRollbackDropKm": 1879,
+  "rollbacks": [
+   "01.05.2026 279560 -> 26.06.2026 277681"
+  ],
+  "suspectedEntryErrors": [],
+  "implausibleReadings": [],
+  "latestKm": 277681
+ }
+}

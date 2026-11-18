@@ -1,0 +1,1044 @@
+{
+ "vin": "WDC1671191A002835",
+ "label": "Mercedes GLE 300d: 5 negadījumi, 10 avoti, pilnīgs zaudējums",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 83, saglabāts 2026-11-05; nolasīts 17.11.2026, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "MERCEDES BENZ GLE 300 D 4MATIC",
+   "registrationNumber": "OA1736",
+   "firstRegistration": "2019-03-26",
+   "firstRegistrationLatvia": "2023-03-01",
+   "nextInspectionDate": "2028-07-10",
+   "prevInspectionDate": "2026-07-10",
+   "engineDisplacementCm3": "1950",
+   "enginePowerKw": "180",
+   "fuelType": "Dīzeļdegviela",
+   "emissionStandard": "",
+   "vehicleType": "Vieglais plašlietojuma (M1G)",
+   "grossMassKg": "2950",
+   "curbMassKg": "2330",
+   "seatCount": "5",
+   "roadTaxEur": "",
+   "registrationStatus": "Uzskaitē",
+   "opacityCoefficient": "0.35",
+   "particulateMatter": "500",
+   "previousRegistrationCountry": "IGAUNIJA",
+   "ownerCountLatvia": "4",
+   "vin": "WDC1671191A002835",
+   "modelYear": "2019",
+   "color": "Melna",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "M1G",
+   "cocType": "H1GLE",
+   "cocApprovalNumber": "e1*2007/46*1885*00",
+   "cocVariant": "B218T1",
+   "cocVersion": "CZAAE5CA",
+   "insuranceValidUntil": "2027-03-06",
+   "technicalInspectionHistory": [
+    {
+     "date": "10.07.2026",
+     "inspectionType": "",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "08.07.2025",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "500",
+     "notes": "Atgāzu cietās daļiņas: 500 Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+     "defects": []
+    },
+    {
+     "date": "11.06.2024",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.02",
+     "notes": "",
+     "defects": []
+    },
+    {
+     "date": "09.06.2023",
+     "inspectionType": "pamatpārbaude",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "0.35",
+     "notes": "Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+     "defects": []
+    }
+   ],
+   "ownerRegistrationEvents": [
+    {
+     "date": "01.03.2023",
+     "label": "Pirmā reģistrācija Latvijā"
+    },
+    {
+     "date": "06.02.2024",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "02.12.2024",
+     "label": "Īpašnieka maiņa"
+    },
+    {
+     "date": "07.03.2025",
+     "label": "Īpašnieka maiņa"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "pamatpārbaude",
+    "inspectionDateText": "08.07.2025",
+    "nextInspectionDateText": "",
+    "odometer": "145254",
+    "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+    "ratingLevel": null,
+    "smokeCoefficient": "500",
+    "notes": "Atgāzu cietās daļiņas: 500 Stāvbremzes bremzēšanas efektivitāte pietiekoša - riteņi tiek nobloķēti bremžu stendā.",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "10.07.2026",
+     "odometer": "158759",
+     "country": "Latvija"
+    },
+    {
+     "date": "08.07.2025",
+     "odometer": "145254",
+     "country": "Latvija"
+    },
+    {
+     "date": "11.06.2024",
+     "odometer": "130348",
+     "country": "Latvija"
+    },
+    {
+     "date": "09.06.2023",
+     "odometer": "119918",
+     "country": "Latvija"
+    }
+   ],
+   "registry": {
+    "nr1": "WDC1671191A002835",
+    "fetchedAt": "2026-11-04T17:33:22.705Z",
+    "data": {
+     "registrationNumber": "OA1736",
+     "vin": "WDC1671191A002835",
+     "make": "MERCEDES BENZ",
+     "model": "GLE 300 D 4MATIC",
+     "year": "2019",
+     "fuel": "Dīzeļdegviela",
+     "powerKw": "180",
+     "electricPowerKw": "",
+     "electricPowerKw2": "",
+     "displacementCm3": "1950",
+     "firstRegistrationIso": "2019-03-26",
+     "color": "Melna",
+     "vehicleKind": "Vieglais plašlietojuma",
+     "cocCategory": "M1G",
+     "cocType": "H1GLE",
+     "cocApprovalNumber": "e1*2007/46*1885*00",
+     "cocVariant": "B218T1",
+     "cocVersion": "CZAAE5CA",
+     "grossMassKg": "2950",
+     "curbMassKg": "2330",
+     "insuranceEndIso": "2027-03-06",
+     "inspectionValidUntilIso": "2028-07-10"
+    }
+   }
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "10.07.2026",
+     "odometer": "158759",
+     "country": "Latvija"
+    },
+    {
+     "date": "08.07.2025",
+     "odometer": "145254",
+     "country": "Latvija"
+    },
+    {
+     "date": "11.06.2024",
+     "odometer": "130348",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.06.2024",
+     "odometer": "130229",
+     "country": "Latvija"
+    },
+    {
+     "date": "09.06.2023",
+     "odometer": "119918",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.01.2022",
+     "odometer": "98756",
+     "country": "Igaunija"
+    },
+    {
+     "date": "01.04.2021",
+     "odometer": "73969",
+     "country": "Igaunija"
+    },
+    {
+     "date": "01.04.2020",
+     "odometer": "44893",
+     "country": "Igaunija"
+    },
+    {
+     "date": "01.10.2019",
+     "odometer": "24539",
+     "country": "Igaunija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "05.2025",
+     "lossAmount": "400 - 500 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "07.2024",
+     "lossAmount": "6 000 - 6 500 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "10.07.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "158759",
+     "includeInPdf": false
+    },
+    {
+     "date": "08.07.2025",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "145254",
+     "includeInPdf": false
+    },
+    {
+     "date": "11.06.2024",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "130348",
+     "includeInPdf": false
+    },
+    {
+     "date": "09.06.2023",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "119918",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2023",
+     "country": "Latvija",
+     "description": "Transportlīdzeklis reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2023",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "22.12.2022",
+     "country": "Igaunija",
+     "description": "Veikta papildus tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "13.12.2022",
+     "country": "Igaunija",
+     "description": "Transportlīdzekļa pārreģistrācija",
+     "includeInPdf": false
+    },
+    {
+     "date": "02.11.2021",
+     "country": "Igaunija",
+     "description": "Transportlīdzekļa pārreģistrācija",
+     "includeInPdf": false
+    },
+    {
+     "date": "11.07.2019",
+     "country": "Igaunija",
+     "description": "Transportlīdzekļa pārreģistrācija",
+     "includeInPdf": false
+    },
+    {
+     "date": "26.03.2019",
+     "country": "",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    },
+    {
+     "date": "26.03.2019",
+     "country": "Igaunija",
+     "description": "Transportlīdzeklis reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "26.03.2019",
+     "country": "Igaunija",
+     "description": "Veikta periodiska tehniskā apskate: Nokārtots atbilst tehniskajiem nosacījumiem",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.07.2026",
+     "odometer": "158759",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.07.2025",
+     "odometer": "145254",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.06.2024",
+     "odometer": "130129",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2023",
+     "odometer": "119900",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.06.2023",
+     "odometer": "119918",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.01.2022",
+     "odometer": "98716",
+     "country": "Igaunija"
+    },
+    {
+     "date": "01.04.2021",
+     "odometer": "73929",
+     "country": "Igaunija"
+    },
+    {
+     "date": "01.04.2020",
+     "odometer": "44853",
+     "country": "Igaunija"
+    },
+    {
+     "date": "01.10.2019",
+     "odometer": "24499",
+     "country": "Igaunija"
+    },
+    {
+     "date": "01.01.2019",
+     "odometer": "11",
+     "country": ""
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "07.2024",
+     "lossAmount": "6 001 - 6 500 €"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "11.2024",
+     "lossAmount": "Dati nav pieejami"
+    },
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "05.2025",
+     "lossAmount": "251 - 500 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.01.2019",
+     "country": "",
+     "description": "Ražots",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2019",
+     "country": "",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2023",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2023",
+     "country": "Latvija",
+     "description": "Reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.05.2023",
+     "country": "Latvija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:26.05.2023līdz:25.05.2024",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.06.2023",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.09.2023",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2023",
+     "country": "Latvija",
+     "description": "Izlikts pārdošanā Balstoties uz sludinājuma datiem, šis spēkrats ir ticis izlikts pārdošanā. Reizēm valsts, kurā ir publicēts sludinājums, var atšķirties no transportlīdzekļa patiesās atrašanās vietas",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2024",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2024",
+     "country": "Latvija",
+     "description": "Apdrošināts Šajā valstī (vaištatā) ir fiksēts apdrošināšanas ieraksts. Tas var attiekties uz OCTA, Kasko vai kāda cita veida apdrošināšanu. No:06.02.2024līdz:06.02.2025",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.06.2024",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.07.2024",
+     "country": "Latvija",
+     "description": "Fiksēts novērtējums",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2024",
+     "country": "Latvija",
+     "description": "Fiksēts bojājumsMēs atradām ierakstu, kas liecina, kašis transportlīdzeklis ir bojāts. Ieskaties sadaļā \"Bojājumi\", lai uzzinātu vairāk. VIN numurs:WDC1671191A002835Ģenerēšanas datums:05.11.2026Derīguma termiņšbeidzas05.12.2026 Šajā PDF atskaitē ir iekļauti transportlīdzekļa vēstures svarīgākie dati. Lai iegūtu jaunāko un detalizētāko informāciju, ieskaties digitālajā “carVertical” atskaitē, kas i",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2025",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2025",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.07.2025",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.07.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-11-04T17:33:18.372Z"
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "2023-02-03",
+     "odometer": "",
+     "country": "Igaunija",
+     "event": "Kustutamine riigist välja, Reg.märk tagastatud"
+    },
+    {
+     "date": "2023-01-19",
+     "odometer": "",
+     "country": "Igaunija",
+     "event": "Ajutine registrist kustutamine"
+    },
+    {
+     "date": "2023-01-11",
+     "odometer": "",
+     "country": "Igaunija",
+     "event": "Võõrandamisest teatamine"
+    },
+    {
+     "date": "2022-12-23",
+     "odometer": "",
+     "country": "Igaunija",
+     "event": "Registreerimistunnistuse väljastamine"
+    },
+    {
+     "date": "2022-12-22",
+     "odometer": "",
+     "country": "Igaunija",
+     "event": "Reg.tunnistuse vahetus"
+    },
+    {
+     "date": "2022-12-22",
+     "odometer": "",
+     "country": "Igaunija",
+     "event": "Tehniskā apskate (Liiklusõnnetus): Majanduslikus mõttes hävinenud, -"
+    },
+    {
+     "date": "2019-03-26",
+     "odometer": "",
+     "country": "Igaunija",
+     "event": "Tehniskā apskate (Korraline): Tehniliselt izturēta, Maanteeamet"
+    }
+   ],
+   "ownersSummary": "Igaunijas reģ. nr. / modelis: 897DBM - MERCEDES-BENZ GLE 300 D 4MATIC\nEsmane registreerimine: 26.03.2019\nRegistreerimistunnistus: EN009660\nEestis registreerimine: 26.03.2019",
+   "statusRecords": "Kiiruse piirang: -\nPēdējā tehniskā apskate: 22.12.2022 (Majanduslikus mõttes hävinenud), derīga līdz 12.2022",
+   "fetchedAt": "2026-11-05T17:39:19.632Z"
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "2022-11-23",
+     "amount": ">4 000.00 €",
+     "country": "Igaunija",
+     "note": "Tallinn, Harjumaa · MERCEDES-BENZ GLE 300 D 4MATIC, 2019 · 0% · ERGO Insurance SE"
+    },
+    {
+     "date": "2022-12-22",
+     "amount": ">4000.00 €",
+     "country": "Igaunija",
+     "note": "Makstud sõidukikahju hüvitis"
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-11-05T17:39:54.051Z"
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-11-04T17:33:12.298Z"
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "01.01.2022",
+     "odometer": "98756",
+     "country": "Igaunija"
+    },
+    {
+     "date": "01.04.2021",
+     "odometer": "73969",
+     "country": "Igaunija"
+    },
+    {
+     "date": "01.04.2020",
+     "odometer": "44893",
+     "country": "Igaunija"
+    },
+    {
+     "date": "01.10.2019",
+     "odometer": "24539",
+     "country": "Igaunija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "01.01.2022",
+     "odometer": "98756",
+     "location": "",
+     "works": "Regulārā apkope\nSalona gaisa filtra maiņa\nEļļas un eļļas filtru maiņa"
+    },
+    {
+     "date": "01.04.2021",
+     "odometer": "73969",
+     "location": "",
+     "works": "Regulārā apkope\nSalona gaisa filtra maiņa, AdBlue papildināšana\nDzinēja gaisa filtra maiņa\nDegvielas filtra maiņa\nEļļas un eļļas filtru maiņa\nBremžušķidruma maiņa\nBremžu šķidruma maiņa"
+    },
+    {
+     "date": "01.04.2020",
+     "odometer": "44893",
+     "location": "",
+     "works": "Regulārā apkope: Eļļas un eļļas filtru maiņa"
+    },
+    {
+     "date": "01.10.2019",
+     "odometer": "24539",
+     "location": "",
+     "works": "Regulārā apkope: Eļļas un eļļas filtru maiņa"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": []
+   },
+   "outvin": {
+    "precheckAt": null,
+    "vin": "WDC1671191A002835",
+    "capabilitySlots": [],
+    "purchases": [],
+    "vehicleInfo": {
+     "model": "MERCEDES-BENZ GLE (V167) GLE 300 d 4-matic (167.119)",
+     "modelSeries": "GLE (V167)",
+     "vinCode": "WDC1671191A002835",
+     "vehicleType": "",
+     "transmission": "AUTOMATIC (9-speed automatic transmission)",
+     "steeringSide": "",
+     "engineCode": "OM 654.920",
+     "engineNumber": "",
+     "body": "SUV",
+     "drive": "All-wheel Drive",
+     "power": "180 kW (245 hp)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "2019",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "Obsidian black - metallic finish",
+     "colorCode": "197U",
+     "interior": "LEATHER - BROWN (284A)",
+     "interiorCode": "",
+     "fuel": "Diesel",
+     "displacement": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "MERCEDES-BENZ GLE (V167) GLE 300 d 4-matic (167.119)",
+     "modelSeries": "GLE (V167)",
+     "vinCode": "WDC1671191A002835",
+     "vehicleType": "",
+     "transmission": "AUTOMATIC (9-speed automatic transmission)",
+     "steeringSide": "",
+     "engineCode": "OM 654.920",
+     "engineNumber": "",
+     "body": "SUV",
+     "drive": "All-wheel Drive",
+     "power": "180 kW (245 hp)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "2019",
+     "firstRegistration": "26.03.2019",
+     "warrantyStartDate": "",
+     "countryRegion": "Estonia",
+     "color": "Obsidian black - metallic finish",
+     "colorCode": "197U",
+     "interior": "LEATHER - BROWN (284A)",
+     "interiorCode": "",
+     "fuel": "Diesel",
+     "displacement": "1950"
+    },
+    "accidentCheck": "",
+    "stolenCheck": ""
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "",
+    "fetchedAt": "",
+    "lastCostUsd": "",
+    "status": "unknown",
+    "summary": ""
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "Latvija",
+     "csngDate": "16.11.2024",
+     "lossAmount": "Dati nav pieejami"
+    }
+   ],
+   "certificate": {
+    "issuedAt": "05.11.2026 19:32:08",
+    "vehicleLine": "Transportlīdzeklis MERCEDES BENZ GLE 300 D 4MATIC, izlaiduma gads 2019. Valsts numura zīme OA1736.",
+    "makeModel": "MERCEDES BENZ GLE 300 D 4MATIC",
+    "year": "2019",
+    "plate": "OA1736",
+    "accidentCount": "1",
+    "insuredFrom": "26.05.2023",
+    "insuredTo": "06.03.2027",
+    "insuredDays": "1231",
+    "claims": [
+     {
+      "date": "16.11.2024",
+      "time": "13:10",
+      "status": "Cietušais",
+      "amount": "0.00"
+     }
+    ],
+    "footerNote": "Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas."
+   }
+  },
+  "tirgus": {
+   "listedForSale": "",
+   "listingCreated": "",
+   "priceDrop": "",
+   "priceHistory": [],
+   "listingMileageOdometer": "",
+   "listingMileageDate": "",
+   "listingMileageCountry": ""
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "comments": "",
+     "label": ""
+    }
+   ]
+  }
+ }
+}

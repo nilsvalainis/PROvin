@@ -67,6 +67,9 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         ok: true,
+        // Auto1 krāsas shēmas čipi, ko relejs nolasīja (zona, teksts) - piedāvājuma «Krāsas mērījumi» avots.
+        paint: (d.paint ?? []).slice(0, 60),
+        paintCount: (d.paint ?? []).length,
         fields: (d.fields ?? []).slice(0, 120),
         lists: (d.lists ?? []).map((l) => ({ heading: l.heading, count: l.items.length, first: l.items.slice(0, 3) })),
         tables: (d.tables ?? []).length,

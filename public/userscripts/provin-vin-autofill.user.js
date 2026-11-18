@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PROVIN VIN un Tirgus dati auto-fill
 // @namespace    https://github.com/nilsvalainis/PROvin
-// @version      1.26.0
+// @version      1.26.1
 // @description  Admin MENU VIN auto-fill. VIN SCAN cilnes atver jau aizpildītu meklēšanu. Izsoļu arhīva HTML (stat.vin, bid.cars, bidfax, poctra, checkcar.vin, plc.auction, CARFAX.eu) un Zviedrijas reģistrs (biluppgifter, Transportstyrelsen, car.info) nosūta adminam. stat.vin, bid.cars, BidFax, checkcar.vin, plc.auction, CARFAX.eu, Poctra, epolicija.lt, biluppgifter.se un NICB ielādē no jūsu pārlūka (GM_xmlhttpRequest), jo servera IP ir bloķēti. Pēc apstiprināta CarVertical pirkuma iziet checkout soļus; 3-D Secure paliek operatoram.
 // @updateURL    https://www.provin.lv/userscripts/provin-vin-autofill.user.js
 // @downloadURL  https://www.provin.lv/userscripts/provin-vin-autofill.user.js
@@ -105,12 +105,13 @@
 // @connect      www.nicb.org
 // @connect      nicb.org
 // @run-at       document-idle
+// @sandbox      raw
 // ==/UserScript==
 
 (function () {
   "use strict";
 
-  const SCRIPT_VERSION = "1.26.0";
+  const SCRIPT_VERSION = "1.26.1";
   const host = window.location.hostname.replace(/^www\./, "");
   const params = new URLSearchParams(window.location.search);
   const path = window.location.pathname || "";
@@ -119,25 +120,76 @@
   const IS_PROVIN_ADMIN =
     ["provin.lv", "localhost", "127.0.0.1"].indexOf(window.location.hostname.replace(/^www\./, "")) !== -1 &&
     /^\/admin(?:\/|$)/.test(path);
-  function stampUserscriptVersion() {
+  /* TM 5.5 USER_SCRIPT / grant sandbox: document var būt ietīts; lapas DOM ir unsafeWindow. */
+  function pageDocumentElement() {
     try {
-      if (document.documentElement.getAttribute("data-provin-userscript") !== SCRIPT_VERSION) {
-        document.documentElement.setAttribute("data-provin-userscript", SCRIPT_VERSION);
+      const uw = typeof unsafeWindow !== "undefined" ? unsafeWindow : null;
+      if (uw && uw.document && uw.document.documentElement) return uw.document.documentElement;
+    } catch {
+      /* ignore */
+    }
+    return document.documentElement;
+  }
+  function userscriptAttrVersion(html) {
+    try {
+      return String(html.getAttribute("data-provin-userscript") || "");
+    } catch {
+      return "";
+    }
+  }
+  let stampObserver = null;
+  let stampTimer = 0;
+  let stampReadbackOk = true;
+  function stopStampObserver() {
+    stampReadbackOk = false;
+    if (stampTimer) {
+      window.clearTimeout(stampTimer);
+      stampTimer = 0;
+    }
+    if (stampObserver) {
+      stampObserver.disconnect();
+      stampObserver = null;
+    }
+  }
+  function stampUserscriptVersion() {
+    if (!stampReadbackOk) return;
+    try {
+      const html = pageDocumentElement();
+      if (!html) return;
+      if (userscriptAttrVersion(html) === SCRIPT_VERSION) return;
+      html.setAttribute("data-provin-userscript", SCRIPT_VERSION);
+      try {
+        window.__provinUserscriptVersion = SCRIPT_VERSION;
+      } catch {
+        /* ignore */
       }
+      /* Ja getAttribute pēc setAttribute joprojām nav versija (TM 5.5 sandbox /
+         USER_SCRIPT world), observeris citādi raksta bezgalīgi ~100% CPU. */
+      if (userscriptAttrVersion(html) !== SCRIPT_VERSION) stopStampObserver();
     } catch {
       /* ignore */
     }
   }
+  function scheduleStampUserscriptVersion() {
+    if (!stampReadbackOk || stampTimer) return;
+    stampTimer = window.setTimeout(function () {
+      stampTimer = 0;
+      stampUserscriptVersion();
+    }, 32);
+  }
   stampUserscriptVersion();
   if (IS_PROVIN_ADMIN) {
     /* React 19 noņem visus <html> atribūtus, kad saknes singletonu iegūst no jauna; tad admin rāda „nav aktīvs”. */
-    try {
-      new MutationObserver(stampUserscriptVersion).observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ["data-provin-userscript"],
-      });
-    } catch {
-      /* ignore */
+    if (stampReadbackOk) {
+      try {
+        stampObserver = new MutationObserver(scheduleStampUserscriptVersion);
+        stampObserver.observe(pageDocumentElement(), {
+          attributes: true,
+          attributeFilter: ["data-provin-userscript"],
+        });
+      } catch {
+        /* ignore */
+      }
     }
     document.addEventListener("provin-userscript-ping", function () {
       stampUserscriptVersion();

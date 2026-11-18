@@ -1,0 +1,1379 @@
+{
+ "vin": "WBALW3C59CC891863",
+ "label": "BMW 640I: CSDD 1, AutoDNA 6, carVertical 16, dīleris 13, izsoles 10; negadījumi 2",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 3, saglabāts 2026-10-20; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": [
+  {
+   "key": "11.09.2015|81116|IZSOĻU PORTĀLU ARHĪVS|21",
+   "action": "confirm"
+  }
+ ],
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW 640I",
+   "registrationNumber": "OR8671",
+   "firstRegistration": "",
+   "firstRegistrationLatvia": "2026-10-02",
+   "nextInspectionDate": "2027-10-29",
+   "prevInspectionDate": "2026-10-02",
+   "engineDisplacementCm3": "2979",
+   "enginePowerKw": "235",
+   "fuelType": "Benzīns",
+   "emissionStandard": "",
+   "vehicleType": "Vieglais pasažieru (M1)",
+   "grossMassKg": "2190",
+   "curbMassKg": "1850",
+   "seatCount": "4",
+   "roadTaxEur": "369,00",
+   "registrationStatus": "Uzskaitē",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "LIETUVA",
+   "ownerCountLatvia": "2",
+   "vin": "WBALW3C59CC891863",
+   "modelYear": "2012",
+   "color": "Balta",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "M1",
+   "cocType": "-",
+   "cocApprovalNumber": "e32*NIV18/858*M1T488",
+   "cocVariant": "",
+   "cocVersion": "",
+   "insuranceValidUntil": "2026-11-02",
+   "technicalInspectionHistory": [
+    {
+     "date": "02.10.2026",
+     "inspectionType": "",
+     "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+     "ratingLevel": null,
+     "maxDefectLevel": null,
+     "smokeCoefficient": "",
+     "notes": "",
+     "defects": []
+    }
+   ],
+   "ownerRegistrationEvents": [
+    {
+     "date": "02.10.2026",
+     "label": "Pirmā reģistrācija Latvijā"
+    },
+    {
+     "date": "02.10.2026",
+     "label": "Īpašnieka maiņa"
+    }
+   ],
+   "prevInspectionBlock": {
+    "inspectionType": "Pamatpārbaude",
+    "inspectionDateText": "02.10.2026",
+    "nextInspectionDateText": "",
+    "odometer": "193496",
+    "ratingLabel": "0 - Teicamā tehniskā stāvoklī",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "02.10.2026",
+     "odometer": "193496",
+     "country": "Latvija"
+    }
+   ],
+   "registry": {
+    "nr1": "WBALW3C59CC891863",
+    "fetchedAt": "2026-10-18T13:52:08.344Z",
+    "data": {
+     "registrationNumber": "OR8671",
+     "vin": "WBALW3C59CC891863",
+     "make": "BMW",
+     "model": "640I",
+     "year": "2012",
+     "fuel": "Benzīns",
+     "powerKw": "235",
+     "electricPowerKw": "",
+     "electricPowerKw2": "",
+     "displacementCm3": "2979",
+     "firstRegistrationIso": "",
+     "color": "Balta",
+     "vehicleKind": "Vieglais pasažieru",
+     "cocCategory": "M1",
+     "cocType": "-",
+     "cocApprovalNumber": "e32*NIV18/858*M1T488",
+     "cocVariant": "",
+     "cocVersion": "",
+     "grossMassKg": "2190",
+     "curbMassKg": "1850",
+     "insuranceEndIso": "2026-11-02",
+     "inspectionValidUntilIso": "2027-10-29"
+    }
+   }
+  },
+  "tirgus": {
+   "listedForSale": "39",
+   "listingCreated": "09.09.2026",
+   "priceDrop": "€ +450",
+   "priceHistory": [
+    {
+     "date": "14.10.2026",
+     "price": 15800,
+     "mileage": 192000,
+     "year": 2012,
+     "delta": 1000
+    },
+    {
+     "date": "13.10.2026",
+     "price": 14800,
+     "mileage": null,
+     "year": 2012,
+     "delta": -700
+    },
+    {
+     "date": "09.10.2026",
+     "price": 15500,
+     "mileage": null,
+     "year": 2012,
+     "delta": -450
+    },
+    {
+     "date": "02.10.2026",
+     "price": 15950,
+     "mileage": null,
+     "year": 2012,
+     "delta": 600
+    },
+    {
+     "date": "09.09.2026",
+     "price": 15350,
+     "mileage": null,
+     "year": 2012,
+     "delta": 0
+    },
+    {
+     "date": "09.09.2026",
+     "price": 15350,
+     "mileage": null,
+     "year": 2012,
+     "delta": 0
+    }
+   ],
+   "listingMileageOdometer": "192 000",
+   "listingMileageDate": "09.09.2026",
+   "listingMileageCountry": "Latvija"
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "04.11.2025",
+     "odometer": "184667",
+     "country": "Lietuva"
+    },
+    {
+     "date": "26.10.2023",
+     "odometer": "157822",
+     "country": "Lietuva"
+    },
+    {
+     "date": "01.10.2023",
+     "odometer": "135063",
+     "country": "Lietuva"
+    },
+    {
+     "date": "27.12.2021",
+     "odometer": "135063",
+     "country": "Lietuva"
+    },
+    {
+     "date": "08.06.2021",
+     "odometer": "133370",
+     "country": "ASV"
+    },
+    {
+     "date": "16.03.2017",
+     "odometer": "126012",
+     "country": "ASV"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Lietuva",
+     "csngDate": "10.2023",
+     "lossAmount": "1 600 - 1 700 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "04.11.2025",
+     "country": "Lietuva",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "184667",
+     "includeInPdf": false
+    },
+    {
+     "date": "26.10.2023",
+     "country": "Lietuva",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "157822",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2023",
+     "country": "Lietuva",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "135063",
+     "includeInPdf": false
+    },
+    {
+     "date": "27.12.2021",
+     "country": "Lietuva",
+     "description": "Ziņots par pirmo reģistrāciju",
+     "odometer": "135063",
+     "includeInPdf": false
+    },
+    {
+     "date": "27.12.2021",
+     "country": "Lietuva",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "135063",
+     "includeInPdf": false
+    },
+    {
+     "date": "08.06.2021",
+     "country": "ASV",
+     "description": "Pārdošanā piedāvātais transportlīdzeklis",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.03.2017",
+     "country": "ASV",
+     "description": "Ziņots par transportlīdzekļa bojājumiem",
+     "includeInPdf": true
+    },
+    {
+     "date": "16.03.2017",
+     "country": "ASV",
+     "description": "Pārdošanā piedāvātais transportlīdzeklis",
+     "includeInPdf": true
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.10.2026",
+     "odometer": "193496",
+     "country": "Latvija"
+    },
+    {
+     "date": "01.10.2023",
+     "odometer": "135063",
+     "country": "Lietuva"
+    },
+    {
+     "date": "01.06.2021",
+     "odometer": "133399",
+     "country": "ASV"
+    },
+    {
+     "date": "01.12.2019",
+     "odometer": "112654",
+     "country": "ASV"
+    },
+    {
+     "date": "01.12.2015",
+     "odometer": "93593",
+     "country": "ASV"
+    },
+    {
+     "date": "01.08.2015",
+     "odometer": "93063",
+     "country": "ASV"
+    },
+    {
+     "date": "01.02.2015",
+     "odometer": "81115",
+     "country": "ASV"
+    },
+    {
+     "date": "01.12.2014",
+     "odometer": "81049",
+     "country": "ASV"
+    },
+    {
+     "date": "01.07.2014",
+     "odometer": "68659",
+     "country": "ASV"
+    },
+    {
+     "date": "01.01.2014",
+     "odometer": "56802",
+     "country": "ASV"
+    },
+    {
+     "date": "01.12.2013",
+     "odometer": "53197",
+     "country": "ASV"
+    },
+    {
+     "date": "01.09.2013",
+     "odometer": "44995",
+     "country": "ASV"
+    },
+    {
+     "date": "01.01.2013",
+     "odometer": "26445",
+     "country": "ASV"
+    },
+    {
+     "date": "01.01.2012",
+     "odometer": "318",
+     "country": "ASV"
+    },
+    {
+     "date": "01.11.2011",
+     "odometer": "178",
+     "country": "ASV"
+    },
+    {
+     "date": "01.09.2011",
+     "odometer": "13",
+     "country": "ASV"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Lietuva",
+     "csngDate": "10.2023",
+     "lossAmount": "1 501 - 2 000 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.09.2011",
+     "country": "",
+     "description": "Ražots",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.01.2012",
+     "country": "ASV",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.01.2012",
+     "country": "ASV",
+     "description": "Mainīts \"title\" statuss",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.01.2012",
+     "country": "ASV",
+     "description": "Mainīts \"title\" statuss",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2015",
+     "country": "ASV",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2015",
+     "country": "ASV",
+     "description": "Mainīts \"title\" statuss",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.09.2015",
+     "country": "ASV",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.09.2015",
+     "country": "ASV",
+     "description": "Mainīts \"title\" statuss",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2015",
+     "country": "ASV",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2015",
+     "country": "ASV",
+     "description": "Mainīts \"title\" statuss",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2016",
+     "country": "ASV",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2016",
+     "country": "ASV",
+     "description": "Mainīts \"title\" statuss",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2019",
+     "country": "ASV",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2019",
+     "country": "ASV",
+     "description": "Mainīts \"title\" statuss",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.05.2021",
+     "country": "ASV",
+     "description": "Fiksēts bojājums",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.06.2021",
+     "country": "ASV",
+     "description": "Mainīts \"title\" statuss",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.06.2021",
+     "country": "ASV",
+     "description": "Izlikts pārdošanā",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2023",
+     "country": "Lietuva",
+     "description": "Fiksēts bojājums",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.05.2026",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.05.2026",
+     "country": "Latvija",
+     "description": "Reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2026",
+     "country": "Latvija",
+     "description": "Mainītas īpašumtiesības",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.10.2026",
+     "country": "Latvija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "02.09.2014",
+     "odometer": "73545",
+     "country": "ASV"
+    },
+    {
+     "date": "21.07.2014",
+     "odometer": "71028",
+     "country": "ASV"
+    },
+    {
+     "date": "01.07.2014",
+     "odometer": "68725",
+     "country": "ASV"
+    },
+    {
+     "date": "16.04.2014",
+     "odometer": "62879",
+     "country": "ASV"
+    },
+    {
+     "date": "06.02.2014",
+     "odometer": "57438",
+     "country": "ASV"
+    },
+    {
+     "date": "27.01.2014",
+     "odometer": "56868",
+     "country": "ASV"
+    },
+    {
+     "date": "18.12.2013",
+     "odometer": "53263",
+     "country": "ASV"
+    },
+    {
+     "date": "02.10.2013",
+     "odometer": "47239",
+     "country": "ASV"
+    },
+    {
+     "date": "16.09.2013",
+     "odometer": "46207",
+     "country": "ASV"
+    },
+    {
+     "date": "03.09.2013",
+     "odometer": "45061",
+     "country": "ASV"
+    },
+    {
+     "date": "16.01.2013",
+     "odometer": "27493",
+     "country": "ASV"
+    },
+    {
+     "date": "08.01.2013",
+     "odometer": "26511",
+     "country": "ASV"
+    },
+    {
+     "date": "26.11.2011",
+     "odometer": "181",
+     "country": "ASV"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "02.09.2014",
+     "odometer": "73545",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "21.07.2014",
+     "odometer": "71028",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "01.07.2014",
+     "odometer": "68725",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "16.04.2014",
+     "odometer": "62879",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "06.02.2014",
+     "odometer": "57438",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "27.01.2014",
+     "odometer": "56868",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "18.12.2013",
+     "odometer": "53263",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "02.10.2013",
+     "odometer": "47239",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "16.09.2013",
+     "odometer": "46207",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "03.09.2013",
+     "odometer": "45061",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "16.01.2013",
+     "odometer": "27493",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "08.01.2013",
+     "odometer": "26511",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "26.11.2011",
+     "odometer": "181",
+     "location": "",
+     "works": "Apkope"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "02.09.2014",
+      "odometer": "73545",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "21.07.2014",
+      "odometer": "71028",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "01.07.2014",
+      "odometer": "68725",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "16.04.2014",
+      "odometer": "62879",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "06.02.2014",
+      "odometer": "57438",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "27.01.2014",
+      "odometer": "56868",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "18.12.2013",
+      "odometer": "53263",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "02.10.2013",
+      "odometer": "47239",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "16.09.2013",
+      "odometer": "46207",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "03.09.2013",
+      "odometer": "45061",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "16.01.2013",
+      "odometer": "27493",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "08.01.2013",
+      "odometer": "26511",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "26.11.2011",
+      "odometer": "181",
+      "place": "",
+      "works": "Service"
+     }
+    ]
+   },
+   "outvin": {
+    "precheckAt": null,
+    "vin": "WBALW3C59CC891863",
+    "capabilitySlots": [],
+    "purchases": [],
+    "vehicleInfo": {
+     "model": "BMW I",
+     "modelSeries": "640",
+     "vinCode": "",
+     "vehicleType": "",
+     "transmission": "",
+     "steeringSide": "",
+     "engineCode": "",
+     "engineNumber": "",
+     "body": "COUPE",
+     "drive": "",
+     "power": "",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "2012",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "",
+     "colorCode": "",
+     "interior": "",
+     "interiorCode": "",
+     "fuel": "PETROL",
+     "displacement": ""
+    },
+    "accidentCheck": "",
+    "stolenCheck": "",
+    "dealerServiceLog": [
+     {
+      "date": "",
+      "odometer": "",
+      "country": "",
+      "serviceNotes": ""
+     }
+    ],
+    "usCarfax": {
+     "importDate": "",
+     "registeredDamage": "",
+     "auctionData": "",
+     "usOdometer": "",
+     "notes": ""
+    },
+    "europeanRegisters": [
+     {
+      "date": "",
+      "country": "",
+      "registerType": "",
+      "details": ""
+     }
+    ],
+    "pdfSections": {
+     "vehicleEquipment": true,
+     "dealerService": true,
+     "usCarfax": true,
+     "europeanRegisters": true
+    }
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "BMW I",
+     "modelSeries": "640",
+     "vinCode": "WBALW3C59CC891863",
+     "vehicleType": "Coupe",
+     "transmission": "Sport automatic transmission (8-speed)",
+     "steeringSide": "LHD (left-hand drive)",
+     "engineCode": "N55",
+     "engineNumber": "",
+     "body": "COUPE",
+     "drive": "Rear-wheel drive",
+     "power": "235 kW (315 HP / 320 PS)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "2012",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "USA",
+     "color": "Alpinweiss 3",
+     "colorCode": "S0300",
+     "interior": "Leather Dakota/elfenbein-weiss",
+     "interiorCode": "SLCEX",
+     "fuel": "PETROL",
+     "displacement": "3.0 L"
+    }
+   }
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "cc_vin": {
+   "reportDate": "20.10.2026",
+   "attentionMarks": "10/12",
+   "ownersCount": "7",
+   "checks": [
+    {
+     "label": "Odometra ieraksti",
+     "status": "133 398 km",
+     "severity": "ok"
+    },
+    {
+     "label": "Fiksētie bojājumi",
+     "status": "1 bojājums",
+     "severity": "ok"
+    },
+    {
+     "label": "Negadījumi",
+     "status": "Atrastas problēmas",
+     "severity": "alert"
+    },
+    {
+     "label": "Norakstīto auto izsoles",
+     "status": "Atrastas problēmas",
+     "severity": "alert"
+    },
+    {
+     "label": "Zādzību ieraksti",
+     "status": "1 problēma",
+     "severity": "ok"
+    },
+    {
+     "label": "Ķīlas, aresta un eksporta ieraksti",
+     "status": "Atrastas problēmas",
+     "severity": "alert"
+    },
+    {
+     "label": "Apdrošinātāju un norakstīšanas ieraksti",
+     "status": "Atrastas problēmas",
+     "severity": "alert"
+    },
+    {
+     "label": "Citas īpašumtiesību atzīmes",
+     "status": "Nav atrastu problēmu",
+     "severity": "ok"
+    },
+    {
+     "label": "Īpašumtiesību vēsture",
+     "status": "7 problēmas",
+     "severity": "ok"
+    },
+    {
+     "label": "Pārdošanas vēsture",
+     "status": "3 pārdošanas",
+     "severity": "ok"
+    },
+    {
+     "label": "Īpašnieku skaits",
+     "status": "7 īpašnieki",
+     "severity": "ok"
+    },
+    {
+     "label": "Izmantots kā taksometrs",
+     "status": "Nav atrastu problēmu",
+     "severity": "ok"
+    }
+   ],
+   "mileage": [
+    {
+     "date": "28.06.2021",
+     "odometer": "133398",
+     "country": "ASV"
+    },
+    {
+     "date": "18.06.2021",
+     "odometer": "133399",
+     "country": "ASV"
+    },
+    {
+     "date": "02.06.2021",
+     "odometer": "133398",
+     "country": "ASV"
+    },
+    {
+     "date": "20.12.2019",
+     "odometer": "112654",
+     "country": "ASV"
+    },
+    {
+     "date": "01.12.2016",
+     "odometer": "93593",
+     "country": "ASV"
+    },
+    {
+     "date": "10.12.2015",
+     "odometer": "93593",
+     "country": "ASV"
+    },
+    {
+     "date": "17.11.2015",
+     "odometer": "93323",
+     "country": "ASV"
+    },
+    {
+     "date": "11.09.2015",
+     "odometer": "81116",
+     "country": "ASV"
+    },
+    {
+     "date": "03.02.2015",
+     "odometer": "81116",
+     "country": "ASV"
+    },
+    {
+     "date": "19.01.2012",
+     "odometer": "319",
+     "country": "ASV"
+    }
+   ],
+   "damages": [
+    {
+     "date": "28.06.2021",
+     "region": "COPART",
+     "amount": "",
+     "description": "Norakstīto auto izsole: Izjaukts / nokomplektēts"
+    },
+    {
+     "date": "02.06.2021",
+     "region": "COPART",
+     "amount": "",
+     "description": "Norakstīto auto izsole: Izjaukts / nokomplektēts"
+    }
+   ],
+   "insurance": [
+    {
+     "date": "12.05.2021",
+     "label": "Copart Inc.",
+     "detail": "Statuss: Pārdots · Vieta: Dallas"
+    },
+    {
+     "date": "12.05.2021",
+     "label": "Copart Inc.",
+     "detail": "Statuss: Nav noteikts · Vieta: Dallas"
+    }
+   ],
+   "brands": [
+    {
+     "date": "18.06.2021",
+     "label": "Norakstīts pēc bojājumiem (salvage)",
+     "detail": "Reģistrēts: California (ASV)"
+    }
+   ],
+   "titles": [
+    {
+     "date": "18.06.2021",
+     "region": "California (ASV)",
+     "odometer": "133399",
+     "note": ""
+    },
+    {
+     "date": "20.12.2019",
+     "region": "California (ASV)",
+     "odometer": "112654",
+     "note": ""
+    },
+    {
+     "date": "01.12.2016",
+     "region": "California (ASV)",
+     "odometer": "93593",
+     "note": ""
+    },
+    {
+     "date": "10.12.2015",
+     "region": "California (ASV)",
+     "odometer": "93593",
+     "note": ""
+    },
+    {
+     "date": "11.09.2015",
+     "region": "California (ASV)",
+     "odometer": "81116",
+     "note": ""
+    },
+    {
+     "date": "03.02.2015",
+     "region": "California (ASV)",
+     "odometer": "81116",
+     "note": ""
+    },
+    {
+     "date": "19.01.2012",
+     "region": "California (ASV)",
+     "odometer": "319",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "28.06.2021",
+     "venue": "COPART",
+     "odometer": "133 398",
+     "price": "5 788 EUR",
+     "status": "Pārdots"
+    },
+    {
+     "date": "17.11.2015",
+     "venue": "St George Auto Sales (Saint George, KS)",
+     "odometer": "93 323",
+     "price": "33 740 EUR",
+     "status": "Pārdots"
+    },
+    {
+     "date": "23.08.2015",
+     "venue": "St George Auto Sales (Saint George, KS)",
+     "odometer": "",
+     "price": "33 740 EUR",
+     "status": "Nav pārdots"
+    },
+    {
+     "date": "21.08.2015",
+     "venue": "St George Auto Sales (Saint George, KS)",
+     "odometer": "",
+     "price": "33 740 EUR",
+     "status": "Nav pārdots"
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "WBALW3C59CC891863",
+    "fetchedAt": "2026-10-19T21:29:57.442Z",
+    "lastCostUsd": "$0.00",
+    "status": "none",
+    "summary": "nav ierakstu",
+    "fromCache": true,
+    "cachedAt": "2026-10-18T14:15:42.963Z",
+    "httpStatus": 404
+   },
+   "sources": {
+    "joj": {
+     "reportDate": "",
+     "attentionMarks": "",
+     "ownersCount": "",
+     "checks": [],
+     "mileage": [],
+     "damages": [],
+     "brands": [],
+     "titles": [],
+     "sales": [],
+     "liens": [],
+     "thefts": [],
+     "notes": []
+    }
+   },
+   "sourceAttribution": {
+    "defaultSource": "oneauto",
+    "scalars": {
+     "reportDate": "oneauto",
+     "attentionMarks": "oneauto",
+     "ownersCount": "oneauto"
+    }
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "fetchedAt": "2026-10-18T13:51:51.707Z"
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "fetchedAt": "2026-10-18T13:51:59.623Z"
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "fetchedAt": "2026-10-18T13:52:08.343Z"
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "fetchedAt": "2026-10-18T13:51:48.488Z"
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ],
+   "certificate": {
+    "issuedAt": "20.10.2026 20:56:11",
+    "vehicleLine": "Transportlīdzeklis BMW 640I, izlaiduma gads 2012. Valsts numura zīme OR8671.",
+    "makeModel": "BMW 640I",
+    "year": "2012",
+    "plate": "OR8671",
+    "accidentCount": "0",
+    "insuredFrom": "28.05.2026",
+    "insuredTo": "02.11.2026",
+    "insuredDays": "63",
+    "claims": [],
+    "footerNote": "Izziņa ir sagatavota automātiski no OCTA informācijas sistēmas."
+   }
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "ASV",
+       "csngDate": "03.2017",
+       "lossAmount": "Dati nav pieejami"
+      },
+      {
+       "incidentNo": "ASV",
+       "csngDate": "05.2021",
+       "lossAmount": "Dati nav pieejami"
+      },
+      {
+       "incidentNo": "Lietuva",
+       "csngDate": "10.2023",
+       "lossAmount": "1 600 - 1 700 €; 1 501 - 2 000 €"
+      }
+     ],
+     "vehicleHistoryTimeline": [
+      {
+       "date": "29.09.2026",
+       "country": "Latvija",
+       "description": "CSDD pārbaudes protokols M1/26-0900 (individuālā apstiprināšana, Antenas iela 2a, Rīga) un agregātu salīdzināšana. Atbilst tehniskajam aprakstam; neatbilstības MK 295: bojāts numura apgaismojuma lukturis, bremžu lukturi iedegas kopā ar aizmugurējiem gabarītiem.",
+       "includeInPdf": true
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

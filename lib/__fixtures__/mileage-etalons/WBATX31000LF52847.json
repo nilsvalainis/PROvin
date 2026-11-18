@@ -1,0 +1,1293 @@
+{
+ "vin": "WBATX31000LF52847",
+ "label": "BMW X3: AutoDNA 2, carVertical 19, dīleris 35; negadījumi 15",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 184, saglabāts 2026-10-06; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW X3",
+   "registrationNumber": "",
+   "firstRegistration": "",
+   "nextInspectionDate": "",
+   "prevInspectionDate": "",
+   "engineDisplacementCm3": "",
+   "enginePowerKw": "",
+   "fuelType": "",
+   "emissionStandard": "",
+   "vehicleType": "",
+   "grossMassKg": "",
+   "curbMassKg": "",
+   "seatCount": "",
+   "roadTaxEur": "",
+   "registrationStatus": "",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "",
+   "ownerCountLatvia": "",
+   "vin": "",
+   "modelYear": "",
+   "color": "",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "",
+   "cocType": "",
+   "cocApprovalNumber": "",
+   "cocVariant": "",
+   "cocVersion": "",
+   "insuranceValidUntil": "",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "",
+    "inspectionDateText": "",
+    "nextInspectionDateText": "",
+    "odometer": "",
+    "ratingLabel": "",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": []
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "02.07.2020",
+     "odometer": "69900",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.03.2020",
+     "odometer": "64822",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.06.2026",
+     "lossAmount": "1 500 - 1 600 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.05.2026",
+     "lossAmount": "1 300 - 1 400 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.06.2025",
+     "lossAmount": "1 400 - 1 500 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.04.2024",
+     "lossAmount": "800 - 900 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.09.2023",
+     "lossAmount": "800 - 900 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.12.2022",
+     "lossAmount": "4 500 - 4 750 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.06.2022",
+     "lossAmount": "13 000 - 14 000 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "02.07.2020",
+     "country": "Vācija",
+     "description": "Automašīna tiek piedāvāta pārdošanai",
+     "odometer": "69900",
+     "includeInPdf": true
+    },
+    {
+     "date": "01.07.2020",
+     "country": "Vācija",
+     "description": "Ziņots par transportlīdzekļa bojājumiem",
+     "includeInPdf": false
+    },
+    {
+     "date": "12.03.2020",
+     "country": "Vācija",
+     "description": "Automašīnai ir veikta periodiskā apskate",
+     "odometer": "64822",
+     "includeInPdf": true
+    },
+    {
+     "date": "05.01.2019",
+     "country": "",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.07.2026",
+     "odometer": "191200",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2026",
+     "odometer": "184310",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2025",
+     "odometer": "177748",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2025",
+     "odometer": "173922",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2025",
+     "odometer": "167070",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2024",
+     "odometer": "149439",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2024",
+     "odometer": "146008",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2023",
+     "odometer": "125319",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2023",
+     "odometer": "120227",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2022",
+     "odometer": "115701",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2022",
+     "odometer": "104078",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2022",
+     "odometer": "91150",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2021",
+     "odometer": "80722",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2021",
+     "odometer": "71179",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2020",
+     "odometer": "64794",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2020",
+     "odometer": "35206",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2019",
+     "odometer": "28792",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2019",
+     "odometer": "15862",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2019",
+     "odometer": "7",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.06.2022",
+     "lossAmount": "13 001 - 14 000 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.12.2022",
+     "lossAmount": "4 501 - 5 000 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.09.2023",
+     "lossAmount": "751 - 1 000 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.04.2024",
+     "lossAmount": "751 - 1 000 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.06.2025",
+     "lossAmount": "1 001 - 1 500 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.01.2026",
+     "lossAmount": "1 001 - 1 500 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.05.2026",
+     "lossAmount": "1 001 - 1 500 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.06.2026",
+     "lossAmount": "1 501 - 2 000 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.08.2018",
+     "country": "",
+     "description": "Ražots",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.06.2022",
+     "country": "Vācija",
+     "description": "Fiksēts novērtējums",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.12.2022",
+     "country": "Vācija",
+     "description": "Fiksēts novērtējums",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.09.2023",
+     "country": "Vācija",
+     "description": "Fiksēts novērtējums",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.04.2024",
+     "country": "Vācija",
+     "description": "Fiksēts novērtējums",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.06.2025",
+     "country": "Vācija",
+     "description": "Fiksēts novērtējums",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.01.2026",
+     "country": "Vācija",
+     "description": "Fiksēts novērtējums",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "19.08.2026",
+     "odometer": "191301",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.08.2026",
+     "odometer": "191247",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.02.2026",
+     "odometer": "184381",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.10.2025",
+     "odometer": "177819",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.08.2025",
+     "odometer": "173993",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.05.2025",
+     "odometer": "167605",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.05.2025",
+     "odometer": "167141",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.07.2024",
+     "odometer": "149510",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.06.2024",
+     "odometer": "147079",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.06.2024",
+     "odometer": "145970",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.05.2024",
+     "odometer": "146079",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.09.2023",
+     "odometer": "127028",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2023",
+     "odometer": "125390",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.04.2023",
+     "odometer": "120884",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.04.2023",
+     "odometer": "120801",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.03.2023",
+     "odometer": "120298",
+     "country": "Vācija"
+    },
+    {
+     "date": "29.12.2022",
+     "odometer": "115799",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.12.2022",
+     "odometer": "115772",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.08.2022",
+     "odometer": "104508",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.08.2022",
+     "odometer": "104508",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.08.2022",
+     "odometer": "104149",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2022",
+     "odometer": "92432",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.02.2022",
+     "odometer": "91178",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.09.2021",
+     "odometer": "80750",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.05.2021",
+     "odometer": "72527",
+     "country": "Vācija"
+    },
+    {
+     "date": "07.05.2021",
+     "odometer": "71207",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.03.2020",
+     "odometer": "64822",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.02.2020",
+     "odometer": "57832",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.02.2020",
+     "odometer": "35234",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.08.2019",
+     "odometer": "29294",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.08.2019",
+     "odometer": "28820",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.07.2019",
+     "odometer": "25019",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.05.2019",
+     "odometer": "15890",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.01.2019",
+     "odometer": "7",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.01.2019",
+     "odometer": "0",
+     "country": "Vācija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "19.08.2026",
+     "odometer": "191301",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "11.08.2026",
+     "odometer": "191247",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "24.02.2026",
+     "odometer": "184381",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "30.10.2025",
+     "odometer": "177819",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "08.08.2025",
+     "odometer": "173993",
+     "location": "Philipp Öhl Kfz-Handwerk GmbH, Brückwiesenstraße 7, 76889 Kapellen-Drusweiler, Germany",
+     "works": "Dzinēja eļļa.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nAizmugurējās bremzes.\nStandarta apjoms."
+    },
+    {
+     "date": "22.05.2025",
+     "odometer": "167605",
+     "location": "",
+     "works": "Izplūdes gāzu radiators augstai temperatūrai (11717822347)\nEGR mazo detaļu komplekts (11718490640)\nVakuuma šļūtene melna (11658595650)\nCauruļu savienojums (11717799853)\nTurētājs (61131369832)\nSavienojuma detaļa (11657803012)\nBlīvgredzens (11618512681)\nPriekšējais akustiskais pārsegs (11148490576)\nRadiatora antifrīzs (83515A6CDD7)\nSkrūve (51475B6EE14)\nPaplāksne (51475B65B62)"
+    },
+    {
+     "date": "08.05.2025",
+     "odometer": "167141",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "08.07.2024",
+     "odometer": "149510",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "11.06.2024",
+     "odometer": "147079",
+     "location": "Günters garage auto repair shop, Karl-Lehr-Straße 22, 67363 Lustadt, Germany",
+     "works": "Dzinēja eļļa.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nBremžu šķidruma maiņa."
+    },
+    {
+     "date": "04.06.2024",
+     "odometer": "145970",
+     "location": "Günters garage auto repair shop, Karl-Lehr-Straße 22, 67363 Lustadt, Germany",
+     "works": "Priekšējās bremzes."
+    },
+    {
+     "date": "27.05.2024",
+     "odometer": "146079",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "27.09.2023",
+     "odometer": "127028",
+     "location": "Autohaus Adolf Cuntz KG, Landwehrstraße 33, 67346 Speyer, Germany",
+     "works": "Bremžu šķidruma maiņa. Pārbaudīt motora pārsega gāzes amortizatorus."
+    },
+    {
+     "date": "01.09.2023",
+     "odometer": "125390",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "11.04.2023",
+     "odometer": "120884",
+     "location": "Autohaus Adolf Cuntz KG, Landwehrstraße 33, 67346 Speyer, Germany",
+     "works": "Apkope\nDzinēja eļļa.\nDegvielas filtrs.\nGaisa filtra elements.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nTransportlīdzekļa pārbaude."
+    },
+    {
+     "date": "24.03.2023",
+     "odometer": "120298",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "29.12.2022",
+     "odometer": "115799",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "28.12.2022",
+     "odometer": "115772",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "25.08.2022",
+     "odometer": "104508",
+     "location": "Autohaus Adolf Cuntz KG, Landwehrstraße 33, 67346 Speyer, Germany",
+     "works": "Apkope\nAizmugurējās bremzes."
+    },
+    {
+     "date": "22.08.2022",
+     "odometer": "104149",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "01.03.2022",
+     "odometer": "92432",
+     "location": "Autohaus Adolf Cuntz KG, Landwehrstraße 33, 67346 Speyer, Germany",
+     "works": "Dzinēja eļļa. Mikrofiltrs (apsvērt papildu darbus, ja nepieciešams)"
+    },
+    {
+     "date": "15.02.2022",
+     "odometer": "91178",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "08.09.2021",
+     "odometer": "80750",
+     "location": "Autohaus Adolf Cuntz KG, Landwehrstraße 33, 67346 Speyer, Germany",
+     "works": "Bremžu šķidruma maiņa."
+    },
+    {
+     "date": "27.05.2021",
+     "odometer": "72527",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "07.05.2021",
+     "odometer": "71207",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "12.03.2020",
+     "odometer": "64822",
+     "location": "AutoCenter-Erlensee, Beethovenstraße 26, 63526 Erlensee, Germany",
+     "works": "Dzinēja eļļa.\nDegvielas filtrs.\nGaisa filtra elements.\nTransportlīdzekļa pārbaude."
+    },
+    {
+     "date": "04.03.2020",
+     "odometer": "62559",
+     "location": "Autohaus Tekken Leer GmbH & Co. KG, Ringstraße 22, 26789 Leer (Ostfriesland), Germany",
+     "works": "Apkope"
+    },
+    {
+     "date": "11.02.2020",
+     "odometer": "57832",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "05.02.2020",
+     "odometer": "35234",
+     "location": "Autohaus Tekken Leer GmbH & Co. KG, Ringstraße 22, 26789 Leer (Ostfriesland), Germany",
+     "works": "Remonts.\nStikla līmes komplekts (FT908900238)\nVējstikls, zaļš, lietus/gaismas/kondensāta sensors.\nVējstikla nosegs.\nAugšējā daļa (51317399014)\nAtbalsts (51317288462)\nVējstikla skaņas izolācija (51489493821)"
+    },
+    {
+     "date": "08.08.2019",
+     "odometer": "29294",
+     "location": "AutoCenter-Erlensee, Beethovenstraße 26, 63526 Erlensee, Germany",
+     "works": "Dzinēja eļļa. Mikrofiltrs (apsvērt papildu darbus, ja nepieciešams)"
+    },
+    {
+     "date": "06.08.2019",
+     "odometer": "28820",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "16.07.2019",
+     "odometer": "25019",
+     "location": "Autohaus Tekken Leer GmbH & Co. KG, Ringstraße 22, 26789 Leer (Ostfriesland), Germany",
+     "works": "Apkope"
+    },
+    {
+     "date": "27.05.2019",
+     "odometer": "15890",
+     "location": "Autohaus Tekken Leer GmbH & Co. KG, Ringstraße 22, 26789 Leer (Ostfriesland), Germany",
+     "works": "Apkope"
+    },
+    {
+     "date": "10.01.2019",
+     "odometer": "7",
+     "location": "BMW & MINI Autohaus Michael Schmidt Starnberg, Leutstettener Straße 26, 82319 Starnberg, Germany",
+     "works": "Nav zināms."
+    },
+    {
+     "date": "08.01.2019",
+     "odometer": "0",
+     "location": "BMW & MINI Autohaus Michael Schmidt Starnberg, Leutstettener Straße 26, 82319 Starnberg, Germany",
+     "works": "Vējstikla mazgāšanas šķidruma koncentrāts (83122413061)\nTPM riteņu un ziemas riepu komplekts orbit grey (36110003064)\nUzlīmju komplekts Frozen Black kreisā/labā puse (51142447017)\nJumta reliņu šķērsstieņi (82712414373)\nJumta kaste 320 (82732420634)\nPriekšējie salona paklājiņi (51472450514)"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "19.08.2026",
+      "odometer": "191301",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "11.08.2026",
+      "odometer": "191247",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "24.02.2026",
+      "odometer": "184381",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "30.10.2025",
+      "odometer": "177819",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "08.08.2025",
+      "odometer": "173993",
+      "place": "Philipp Öhl Kfz-Handwerk GmbH, Brückwiesenstraße 7, 76889 Kapellen-Drusweiler, Germany",
+      "works": "Engine oil.\nRear Brake.\nStandard scope.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "22.05.2025",
+      "odometer": "167605",
+      "place": "",
+      "works": "Exhaust gas radiator high temperature (11717822347)\nEGR small parts set (11718490640)\nVacuum hose black (11658595650)\nPipe union (11717799853)\nHolder (61131369832)\nConnection piece (11657803012)\nO-ring (11618512681)\nAcoustic cover front (11148490576)\nRadiator antifreeze (83515A6CDD7)\nUnknown part: Schraube (51475B6EE14)\nUnknown part: Unterlegscheibe (51475B65B62)"
+     },
+     {
+      "date": "08.05.2025",
+      "odometer": "167141",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "08.07.2024",
+      "odometer": "149510",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "11.06.2024",
+      "odometer": "147079",
+      "place": "Günters garage auto repair shop, Karl-Lehr-Straße 22, 67363 Lustadt, Germany",
+      "works": "Engine oil.\nBrake fluid service.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "04.06.2024",
+      "odometer": "145970",
+      "place": "Günters garage auto repair shop, Karl-Lehr-Straße 22, 67363 Lustadt, Germany",
+      "works": "Front Brake."
+     },
+     {
+      "date": "27.05.2024",
+      "odometer": "146079",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "27.09.2023",
+      "odometer": "127028",
+      "place": "Autohaus Adolf Cuntz KG, Landwehrstraße 33, 67346 Speyer, Germany",
+      "works": "Brake fluid service.\nCheck gas pressure springs for bonnet."
+     },
+     {
+      "date": "01.09.2023",
+      "odometer": "125390",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "11.04.2023",
+      "odometer": "120801",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "11.04.2023",
+      "odometer": "120884",
+      "place": "Autohaus Adolf Cuntz KG, Landwehrstraße 33, 67346 Speyer, Germany",
+      "works": "Engine oil.\nVehicle check.\nFuel filter.\nAir filter element.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "24.03.2023",
+      "odometer": "120298",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "29.12.2022",
+      "odometer": "115799",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "28.12.2022",
+      "odometer": "115772",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "25.08.2022",
+      "odometer": "104508",
+      "place": "Autohaus Adolf Cuntz KG, Landwehrstraße 33, 67346 Speyer, Germany",
+      "works": "Rear Brake."
+     },
+     {
+      "date": "24.08.2022",
+      "odometer": "104508",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "22.08.2022",
+      "odometer": "104149",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "01.03.2022",
+      "odometer": "92432",
+      "place": "Autohaus Adolf Cuntz KG, Landwehrstraße 33, 67346 Speyer, Germany",
+      "works": "Engine oil.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "15.02.2022",
+      "odometer": "91178",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "08.09.2021",
+      "odometer": "80750",
+      "place": "Autohaus Adolf Cuntz KG, Landwehrstraße 33, 67346 Speyer, Germany",
+      "works": "Brake fluid service."
+     },
+     {
+      "date": "27.05.2021",
+      "odometer": "72527",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "07.05.2021",
+      "odometer": "71207",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "12.03.2020",
+      "odometer": "64822",
+      "place": "AutoCenter-Erlensee, Beethovenstraße 26, 63526 Erlensee, Germany",
+      "works": "Engine oil.\nVehicle check.\nFuel filter.\nAir filter element."
+     },
+     {
+      "date": "04.03.2020",
+      "odometer": "62559",
+      "place": "Autohaus Tekken Leer GmbH & Co. KG, Ringstraße 22, 26789 Leer (Ostfriesland), Germany",
+      "works": "Service"
+     },
+     {
+      "date": "11.02.2020",
+      "odometer": "57832",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "05.02.2020",
+      "odometer": "35234",
+      "place": "Autohaus Tekken Leer GmbH & Co. KG, Ringstraße 22, 26789 Leer (Ostfriesland), Germany",
+      "works": "REP.\nSATZ SCHEIBENKLEBER (FT908900238)\nWindscreen, green, rain/light/condens.\nCover, windshield\nTop (51317399014)\nBump stop (51317288462)\nSound insulation windscreen (51489493821)"
+     },
+     {
+      "date": "08.08.2019",
+      "odometer": "29294",
+      "place": "AutoCenter-Erlensee, Beethovenstraße 26, 63526 Erlensee, Germany",
+      "works": "Engine oil.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "06.08.2019",
+      "odometer": "28820",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "16.07.2019",
+      "odometer": "25019",
+      "place": "Autohaus Tekken Leer GmbH & Co. KG, Ringstraße 22, 26789 Leer (Ostfriesland), Germany",
+      "works": "Service"
+     },
+     {
+      "date": "27.05.2019",
+      "odometer": "15890",
+      "place": "Autohaus Tekken Leer GmbH & Co. KG, Ringstraße 22, 26789 Leer (Ostfriesland), Germany",
+      "works": "Service"
+     },
+     {
+      "date": "10.01.2019",
+      "odometer": "7",
+      "place": "BMW & MINI Autohaus Michael Schmidt Starnberg, Leutstettener Straße 26, 82319 Starnberg, Germany",
+      "works": "Unknown."
+     },
+     {
+      "date": "08.01.2019",
+      "odometer": "0",
+      "place": "BMW & MINI Autohaus Michael Schmidt Starnberg, Leutstettener Straße 26, 82319 Starnberg, Germany",
+      "works": "Windshield washer antifreeze (83122413061)\nTPM wheel&tyre winter orbit grey (36110003064)\nFoil application Frozen Black left/right (51142447017)\nRailing carrier (82712414373)\nRoof box 320 (82732420634)\nFloor liner front (51472450514)"
+     }
+    ]
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "BMW X3 (G01, F97, G08) xDrive 20 d",
+     "modelSeries": "X3 (G01, F97, G08)",
+     "vinCode": "WBATX31000LF52847",
+     "vehicleType": "",
+     "transmission": "Automatic Transmission (GA8HP-50X)",
+     "steeringSide": "LHD",
+     "engineCode": "B47 D20 A",
+     "engineNumber": "",
+     "body": "SUV",
+     "drive": "All-wheel Drive",
+     "power": "140 kW (190 ZS)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "TX31",
+     "productionDate": "2018",
+     "firstRegistration": "05.01.2019",
+     "warrantyStartDate": "",
+     "countryRegion": "DE",
+     "color": "Alpinweiss 3",
+     "colorCode": "300",
+     "interior": "Leather Vernasca black seam grey (MAH7)",
+     "interiorCode": "",
+     "fuel": "Diesel",
+     "displacement": "2 l"
+    }
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "",
+    "fetchedAt": "",
+    "lastCostUsd": "",
+    "status": "unknown",
+    "summary": ""
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "",
+   "listingCreated": "",
+   "priceDrop": "",
+   "priceHistory": [],
+   "listingMileageOdometer": "191950",
+   "listingMileageDate": "05.10.2026",
+   "listingMileageCountry": "Vācija"
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

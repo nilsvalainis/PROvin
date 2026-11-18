@@ -1,0 +1,48 @@
+{
+ "label": "JAGUAR F-PACE: CSDD 2, AutoDNA 14, carVertical 13, dīleris 8, reģistri 6; negadījumi 0",
+ "rindasPaAvotiem": {
+  "CSDD": 2,
+  "OFICIĀLĀ DĪLERA DATI": 8,
+  "AutoDNA": 14,
+  "CarVertical": 13,
+  "DĀNIJAS REĢISTRI": 6,
+  "ss.lv": 1
+ },
+ "rindasSavaktas": 44,
+ "rindasTabula": 19,
+ "tabula": [
+  "01.12.2016 | 17 | Dānija | AutoDNA",
+  "01.12.2016 | 17 | Dānija | CarVertical | mēnesis",
+  "19.12.2016 | 17 | Dānija | OFICIĀLĀ DĪLERA DATI",
+  "05.01.2017 | 0 | Dānija | DĀNIJAS REĢISTRI",
+  "12.12.2017 | 26034 | Dānija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "01.04.2018 | 49416 | Dānija | CarVertical | mēnesis",
+  "04.12.2018 | 49456 | Dānija | AutoDNA + OFICIĀLĀ DĪLERA DATI",
+  "24.10.2019 | 68976 | Dānija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "24.11.2020 | 93236 | Dānija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "18.12.2020 | 96000 | Dānija | AutoDNA + DĀNIJAS REĢISTRI",
+  "26.10.2021 | 122990 | Dānija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "29.09.2022 | 148380 | Dānija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "22.11.2022 | 151000 | Dānija | CarVertical + AutoDNA + DĀNIJAS REĢISTRI",
+  "16.08.2023 | 179148 | Dānija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "16.10.2024 | 214992 | Dānija | CarVertical + AutoDNA + DĀNIJAS REĢISTRI",
+  "16.10.2024 | 214000 | Dānija | DĀNIJAS REĢISTRI",
+  "06.02.2025 | 215117 | Latvija | CarVertical + CSDD + AutoDNA",
+  "14.10.2025 | 216 000 | Latvija | ss.lv + CarVertical",
+  "26.02.2026 | 216076 | Latvija | CarVertical + CSDD + AutoDNA"
+ ],
+ "sarkanaJosla": false,
+ "klases": [],
+ "kritumsBezNilaLemumiem": false,
+ "nilaLemumi": [],
+ "klasesPecNilaLemumiem": [],
+ "faktuLapa": {
+  "odometerAnomaly": false,
+  "carverticalMileageWarning": false,
+  "maxRollbackDropKm": 0,
+  "rollbacks": [],
+  "suspectedEntryErrors": [],
+  "implausibleReadings": [],
+  "latestKm": 216076
+ }
+}

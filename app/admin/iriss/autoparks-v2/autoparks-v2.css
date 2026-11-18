@@ -4653,3 +4653,73 @@
     justify-content: center;
   }
 }
+
+/* CSDD reģistra svaigums (makets 17.11): zaļš <= 1 d., dzeltens 2-7 d., sarkans > 7 d. ar joslu. */
+.ap2.ap2.ap2 .ap2-fresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--ink2);
+  white-space: nowrap;
+}
+.ap2.ap2.ap2 .ap2-fresh > i {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink3);
+}
+.ap2.ap2.ap2 .ap2-fresh.ok > i { background: var(--ok); }
+.ap2.ap2.ap2 .ap2-fresh.warn { color: #b45309; }
+.ap2.ap2.ap2 .ap2-fresh.warn > i { background: #d97706; }
+.ap2.ap2.ap2 .ap2-fresh.bad { color: var(--bad); font-weight: 600; }
+.ap2.ap2.ap2 .ap2-fresh.bad > i { background: var(--bad); }
+.ap2.ap2.ap2 .ap2-fresh-d { display: none; }
+.ap2.ap2.ap2 .ap2-fresh-m { margin: 2px 2px 8px; }
+.ap2.ap2.ap2 .ap2-stale {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px 12px;
+  margin: 10px 0 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #fdf2f1;
+  box-shadow: inset 0 0 0 1px #f3c7c3;
+}
+.ap2.ap2.ap2 .ap2-stale .ic {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: var(--bad);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+.ap2.ap2.ap2 .ap2-stale .tx { flex: 1 1 calc(100% - 34px); min-width: 0; }
+.ap2.ap2.ap2 .ap2-stale b { display: block; color: var(--bad); font-size: 14px; }
+.ap2.ap2.ap2 .ap2-stale p { margin: 3px 0 0; font-size: 13px; line-height: 1.45; color: #3a3a3c; }
+.ap2.ap2.ap2 .ap2-stale p.help { margin-top: 8px; }
+.ap2.ap2.ap2 .ap2-stale .act {
+  margin-left: 34px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #d2d2d7;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+@media (min-width: 900px) {
+  .ap2.ap2.ap2 .ap2-fresh-d { display: inline-flex; }
+  .ap2.ap2.ap2 .ap2-fresh-m { display: none; }
+  .ap2.ap2.ap2 .ap2-stale { flex-wrap: nowrap; padding: 12px 14px; margin: 0 0 14px; }
+  .ap2.ap2.ap2 .ap2-stale .tx { flex: 1; }
+  .ap2.ap2.ap2 .ap2-stale .act { margin-left: auto; align-self: center; }
+}

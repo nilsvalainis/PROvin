@@ -1,0 +1,1810 @@
+{
+ "vin": "WBA3K31080F656545",
+ "label": "BMW 320d Touring 2012 (DE->DK->LV): ievades kļūda 90 000 km pirmajā ierakstā, AutoDNA sludinājums 90 000, mēneša precizitāte 04.2014",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 76, saglabāts 2026-11-06; nolasīts 17.11.2026, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": "https://ss.com/",
+ "odometerAnomalyOverrides": [
+  {
+   "key": "27.09.2015|90000|AutoDNA|47",
+   "action": "confirm"
+  },
+  {
+   "key": "04.12.2012|2954|OFICIĀLĀ DĪLERA DATI|39",
+   "action": "dismiss"
+  },
+  {
+   "key": "23.04.2014|50740|OFICIĀLĀ DĪLERA DATI|24",
+   "action": "dismiss"
+  },
+  {
+   "key": "27.09.2015|90000|AutoDNA|46",
+   "action": "dismiss"
+  }
+ ],
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW 320D",
+   "registrationNumber": "",
+   "firstRegistration": "",
+   "firstRegistrationLatvia": "",
+   "nextInspectionDate": "",
+   "prevInspectionDate": "",
+   "engineDisplacementCm3": "1995",
+   "enginePowerKw": "135",
+   "fuelType": "",
+   "emissionStandard": "Euro 5",
+   "vehicleType": "",
+   "grossMassKg": "2050",
+   "curbMassKg": "1575",
+   "seatCount": "",
+   "roadTaxEur": "",
+   "registrationStatus": "nav reģistrēts",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "",
+   "ownerCountLatvia": "",
+   "vin": "",
+   "modelYear": "",
+   "color": "",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "",
+   "cocType": "",
+   "cocApprovalNumber": "",
+   "cocVariant": "",
+   "cocVersion": "",
+   "insuranceValidUntil": "",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "",
+    "inspectionDateText": "",
+    "nextInspectionDateText": "",
+    "odometer": "335635",
+    "ratingLabel": "",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ]
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "25.03.2026",
+     "odometer": "334193",
+     "country": "Dānija"
+    },
+    {
+     "date": "19.02.2024",
+     "odometer": "316450",
+     "country": "Dānija"
+    },
+    {
+     "date": "15.02.2022",
+     "odometer": "279000",
+     "country": "Dānija"
+    },
+    {
+     "date": "06.02.2020",
+     "odometer": "245000",
+     "country": "Dānija"
+    },
+    {
+     "date": "23.02.2018",
+     "odometer": "186000",
+     "country": "Dānija"
+    },
+    {
+     "date": "03.02.2016",
+     "odometer": "109000",
+     "country": "Dānija"
+    },
+    {
+     "date": "27.09.2015",
+     "odometer": "90000",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2014",
+     "odometer": "53500",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "08.2015",
+     "lossAmount": "400 - 500 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "05.2014",
+     "lossAmount": "800 - 900 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "04.2014",
+     "lossAmount": "2 000 - 2 200 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "25.03.2026",
+     "country": "Dānija",
+     "description": "Veikta periodiska tehniskā apskate: Izgāja",
+     "odometer": "334193",
+     "includeInPdf": false
+    },
+    {
+     "date": "19.02.2024",
+     "country": "Dānija",
+     "description": "Veikta periodiska tehniskā apskate: Izgāja",
+     "odometer": "316450",
+     "includeInPdf": false
+    },
+    {
+     "date": "15.02.2022",
+     "country": "Dānija",
+     "description": "Veikta periodiska tehniskā apskate: Izgāja",
+     "odometer": "279000",
+     "includeInPdf": false
+    },
+    {
+     "date": "06.02.2020",
+     "country": "Dānija",
+     "description": "Veikta periodiska tehniskā apskate: Izgāja",
+     "odometer": "245000",
+     "includeInPdf": false
+    },
+    {
+     "date": "23.02.2018",
+     "country": "Dānija",
+     "description": "Veikta periodiska tehniskā apskate: Izgāja ar piezīmi",
+     "odometer": "186000",
+     "includeInPdf": false
+    },
+    {
+     "date": "03.02.2016",
+     "country": "Dānija",
+     "description": "Veikta papildus tehniskā apskate",
+     "odometer": "109000",
+     "includeInPdf": false
+    },
+    {
+     "date": "03.02.2016",
+     "country": "Dānija",
+     "description": "Veikta tehniskā apskate: Izgāja",
+     "odometer": "109000",
+     "includeInPdf": false
+    },
+    {
+     "date": "27.09.2015",
+     "country": "Vācija",
+     "description": "Pārdošanai piedāvātas automašīnas (30800 EUR)",
+     "odometer": "90000",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.04.2014",
+     "country": "",
+     "description": "Ziņots par odometra rādījumu",
+     "odometer": "53500",
+     "includeInPdf": false
+    },
+    {
+     "date": "14.11.2012",
+     "country": "",
+     "description": "Ziņots par pirmo reģistrāciju",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.03.2026",
+     "odometer": "334000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.02.2024",
+     "odometer": "316000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.07.2023",
+     "odometer": "302260",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.03.2023",
+     "odometer": "295916",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.02.2022",
+     "odometer": "279000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.02.2020",
+     "odometer": "245000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.08.2019",
+     "odometer": "231826",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.07.2019",
+     "odometer": "228116",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.04.2018",
+     "odometer": "189884",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.02.2018",
+     "odometer": "186000",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.04.2017",
+     "odometer": "156802",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.05.2016",
+     "odometer": "126014",
+     "country": "Dānija"
+    },
+    {
+     "date": "01.01.2016",
+     "odometer": "108190",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2015",
+     "odometer": "107893",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2015",
+     "odometer": "99913",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2015",
+     "odometer": "91727",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2014",
+     "odometer": "80288",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2014",
+     "odometer": "60726",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2014",
+     "odometer": "46942",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2013",
+     "odometer": "37769",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.07.2013",
+     "odometer": "25759",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2013",
+     "odometer": "17773",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2013",
+     "odometer": "8990",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "04.2014",
+     "lossAmount": "2 001 - 2 500 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "08.2015",
+     "lossAmount": "251 - 500 €"
+    }
+   ],
+   "vehicleHistoryTimeline": [
+    {
+     "date": "01.11.2012",
+     "country": "",
+     "description": "Ražots",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.11.2012",
+     "country": "",
+     "description": "Pirmā reģistrācija",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.04.2014",
+     "country": "Vācija",
+     "description": "Fiksēts novērtējums",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.05.2014",
+     "country": "Vācija",
+     "description": "Izlikts pārdošanā Balstoties uz sludinājuma datiem, šis spēkrats ir ticis izlikts pārdošanā. Reizēm valsts, kurā ir publicēts sludinājums, var atšķirties no transportlīdzekļa patiesās atrašanās vietas",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.08.2015",
+     "country": "Vācija",
+     "description": "Fiksēts novērtējums",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2016",
+     "country": "Dānija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2018",
+     "country": "Dānija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2020",
+     "country": "Dānija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2022",
+     "country": "Dānija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2024",
+     "country": "Dānija",
+     "description": "Reģistrēts",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.02.2024",
+     "country": "Dānija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.03.2026",
+     "country": "Dānija",
+     "description": "Veikta tehniskā apskate",
+     "includeInPdf": false
+    },
+    {
+     "date": "01.04.2026",
+     "country": "Dānija",
+     "description": "Noņemts no uzskaites",
+     "includeInPdf": false
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "2026-03-25",
+     "odometer": "334000",
+     "country": "Dānija",
+     "origin": "Motorstyrelsen (nodokļu reģistrs)"
+    },
+    {
+     "date": "2024-02-19",
+     "odometer": "316450",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Færdselsstyrelsen (synsrapport) — izturēta"
+    },
+    {
+     "date": "2024-02-19",
+     "odometer": "316000",
+     "country": "Dānija",
+     "origin": "Motorstyrelsen (nodokļu reģistrs)"
+    },
+    {
+     "date": "2022-02-15",
+     "odometer": "279000",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Færdselsstyrelsen (synsrapport) — izturēta"
+    },
+    {
+     "date": "2020-02-06",
+     "odometer": "245000",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Færdselsstyrelsen (synsrapport) — izturēta"
+    },
+    {
+     "date": "2018-02-23",
+     "odometer": "186000",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Færdselsstyrelsen (synsrapport) — Betinget godkendt"
+    },
+    {
+     "date": "2016-02-03",
+     "odometer": "109000",
+     "country": "Dānija",
+     "origin": "Færdselsstyrelsen (synsrapport); Færdselsstyrelsen (synsrapport) — izturēta; Færdselsstyrelsen (muitas apskate)"
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "2026-04-24",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings beidzas"
+    },
+    {
+     "date": "2026-04-23",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Reģistrācijas statuss: Noņemts no uzskaites"
+    },
+    {
+     "date": "2025-04-25",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings sākas"
+    },
+    {
+     "date": "2025-04-25",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings beidzas"
+    },
+    {
+     "date": "2025-04-25",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRYG FORSIKRING A/S, aktīva"
+    },
+    {
+     "date": "2025-04-25",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRYG FORSIKRING A/S, beigusies"
+    },
+    {
+     "date": "2024-04-26",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings beidzas"
+    },
+    {
+     "date": "2024-04-26",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings sākas"
+    },
+    {
+     "date": "2024-04-26",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRYG FORSIKRING A/S, aktīva"
+    },
+    {
+     "date": "2024-04-26",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRYG FORSIKRING A/S, beigusies"
+    },
+    {
+     "date": "2024-02-19",
+     "odometer": "316450",
+     "country": "Dānija",
+     "event": "Periodiskā apskate: Izturēta · Applus Danmark A/S"
+    },
+    {
+     "date": "2023-04-28",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings sākas"
+    },
+    {
+     "date": "2023-04-28",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings beidzas"
+    },
+    {
+     "date": "2023-04-28",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRYG FORSIKRING A/S, aktīva"
+    },
+    {
+     "date": "2023-04-28",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRYG FORSIKRING A/S, beigusies"
+    },
+    {
+     "date": "2022-03-30",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings sākas"
+    },
+    {
+     "date": "2022-03-30",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings beidzas"
+    },
+    {
+     "date": "2022-03-30",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRYG FORSIKRING A/S, aktīva"
+    },
+    {
+     "date": "2022-03-30",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRYG FORSIKRING A/S, beigusies"
+    },
+    {
+     "date": "2022-02-15",
+     "odometer": "279000",
+     "country": "Dānija",
+     "event": "Periodiskā apskate: Izturēta · Top Bilsyn ApS"
+    },
+    {
+     "date": "2021-04-29",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRYG FORSIKRING A/S, aktīva"
+    },
+    {
+     "date": "2021-04-29",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Alm. Brand, beigusies"
+    },
+    {
+     "date": "2021-03-31",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings sākas"
+    },
+    {
+     "date": "2021-03-31",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings beidzas"
+    },
+    {
+     "date": "2021-03-31",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Alm. Brand, aktīva"
+    },
+    {
+     "date": "2021-03-31",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRYG FORSIKRING A/S, beigusies"
+    },
+    {
+     "date": "2020-04-01",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings beidzas"
+    },
+    {
+     "date": "2020-04-01",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings sākas"
+    },
+    {
+     "date": "2020-04-01",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRYG FORSIKRING A/S, aktīva"
+    },
+    {
+     "date": "2020-04-01",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRYG FORSIKRING A/S, beigusies"
+    },
+    {
+     "date": "2020-02-06",
+     "odometer": "245000",
+     "country": "Dānija",
+     "event": "Periodiskā apskate: Izturēta · Applus Danmark A/S"
+    },
+    {
+     "date": "2019-04-01",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings sākas"
+    },
+    {
+     "date": "2019-04-01",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: TRYG FORSIKRING A/S, aktīva"
+    },
+    {
+     "date": "2019-04-01",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Alm. Brand, beigusies"
+    },
+    {
+     "date": "2019-03-31",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings beidzas"
+    },
+    {
+     "date": "2019-03-04",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Alm. Brand, aktīva"
+    },
+    {
+     "date": "2019-03-04",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Topdanmark A/S, beigusies"
+    },
+    {
+     "date": "2018-04-02",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings beidzas"
+    },
+    {
+     "date": "2018-04-02",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Apdrošināšana: Topdanmark A/S, aktīva"
+    },
+    {
+     "date": "2018-04-01",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings sākas"
+    },
+    {
+     "date": "2018-02-23",
+     "odometer": "186000",
+     "country": "Dānija",
+     "event": "Periodiskā apskate: Betinget godkendt · Bilsyn Roskilde ApS"
+    },
+    {
+     "date": "2017-02-02",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings sākas"
+    },
+    {
+     "date": "2017-02-02",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings beidzas"
+    },
+    {
+     "date": "2016-02-03",
+     "odometer": "109000",
+     "country": "Dānija",
+     "event": "Reģistrācijas apskate: Izturēta · LB Bilsyn ApS - Bov(ophørt)"
+    },
+    {
+     "date": "2016-02-03",
+     "odometer": "109000",
+     "country": "Dānija",
+     "event": "Muitas apskate (imports): Stāvoklis vidējs · LB Bilsyn ApS - Bov(ophørt)"
+    },
+    {
+     "date": "2016-02-03",
+     "odometer": "",
+     "country": "Dānija",
+     "event": "Līzings sākas"
+    }
+   ],
+   "ownersSummary": "Īpašnieku skaits Dānijā: 1.",
+   "statusRecords": "Izmantošanas veids: Privāti\nDegviela: Dīzelis\nJauda / piedziņa: 184 HK (135 kW) · Aizmugurējo riteņu piedziņa\nLīzings: 28.04.2023 - 31.03.2021 (10 periodi)\nReģistrācijas statuss: Noņemts no uzskaites (23.04.2026)\nStāvoklis pēc importa: Vidējs\nPēdējā apskate: 19.02.2024, Izturēta\nNākamā apskate (DK): 20.02.2026\nPašreizējā OCTA: TRYG FORSIKRING A/S (Aktīva)",
+   "fetchedAt": "2026-11-06T15:17:38.227Z"
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-11-06T15:19:24.117Z"
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": "",
+   "fetchedAt": "2026-11-06T15:19:24.645Z"
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "17.07.2023",
+     "odometer": "302360",
+     "country": "Dānija"
+    },
+    {
+     "date": "13.03.2023",
+     "odometer": "296016",
+     "country": "Dānija"
+    },
+    {
+     "date": "30.08.2019",
+     "odometer": "231926",
+     "country": "Dānija"
+    },
+    {
+     "date": "04.07.2019",
+     "odometer": "228216",
+     "country": "Dānija"
+    },
+    {
+     "date": "10.04.2018",
+     "odometer": "189984",
+     "country": "Dānija"
+    },
+    {
+     "date": "11.04.2017",
+     "odometer": "156902",
+     "country": "Dānija"
+    },
+    {
+     "date": "19.05.2016",
+     "odometer": "127528",
+     "country": "Dānija"
+    },
+    {
+     "date": "04.05.2016",
+     "odometer": "126114",
+     "country": "Dānija"
+    },
+    {
+     "date": "15.01.2016",
+     "odometer": "108290",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.10.2015",
+     "odometer": "107993",
+     "country": "Vācija"
+    },
+    {
+     "date": "07.10.2015",
+     "odometer": "107993",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.10.2015",
+     "odometer": "107993",
+     "country": "Vācija"
+    },
+    {
+     "date": "18.08.2015",
+     "odometer": "103880",
+     "country": "Vācija"
+    },
+    {
+     "date": "17.08.2015",
+     "odometer": "103880",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.06.2015",
+     "odometer": "99953",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.04.2015",
+     "odometer": "91767",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.12.2014",
+     "odometer": "80328",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.12.2014",
+     "odometer": "80221",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.11.2014",
+     "odometer": "75628",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.09.2014",
+     "odometer": "69838",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.08.2014",
+     "odometer": "66579",
+     "country": "Vācija"
+    },
+    {
+     "date": "07.07.2014",
+     "odometer": "60766",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.05.2014",
+     "odometer": "54832",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.04.2014",
+     "odometer": "53741",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.03.2014",
+     "odometer": "50740",
+     "country": "Vācija"
+    },
+    {
+     "date": "07.03.2014",
+     "odometer": "49243",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.03.2014",
+     "odometer": "49240",
+     "country": "Vācija"
+    },
+    {
+     "date": "17.02.2014",
+     "odometer": "46982",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.11.2013",
+     "odometer": "37811",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.11.2013",
+     "odometer": "37809",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.11.2013",
+     "odometer": "37809",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.10.2013",
+     "odometer": "33724",
+     "country": "Vācija"
+    },
+    {
+     "date": "29.07.2013",
+     "odometer": "25799",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.06.2013",
+     "odometer": "23298",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.06.2013",
+     "odometer": "23134",
+     "country": "Vācija"
+    },
+    {
+     "date": "11.06.2013",
+     "odometer": "22267",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.04.2013",
+     "odometer": "17813",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.01.2013",
+     "odometer": "9000",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.12.2012",
+     "odometer": "2954",
+     "country": "Vācija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "17.07.2023",
+     "odometer": "302360",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "13.03.2023",
+     "odometer": "296016",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "30.08.2019",
+     "odometer": "231926",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "04.07.2019",
+     "odometer": "228216",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "10.04.2018",
+     "odometer": "189984",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "11.04.2017",
+     "odometer": "156902",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "19.05.2016",
+     "odometer": "127528",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "04.05.2016",
+     "odometer": "126114",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "01.03.2016",
+     "odometer": "",
+     "location": "Autopark Totic GmbH, Albert-Moser-Straße 10, 78713 Schramberg, Germany",
+     "works": "Apkope\nVējstikla mazgāšanas šķidrums (83120404498)\nBremžu šķidrums DOT 4 (FT998894001)\nDrošības veste (FT908110006)\nNumura zīmes pamatne (51118054157)"
+    },
+    {
+     "date": "15.01.2016",
+     "odometer": "108290",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "12.10.2015",
+     "odometer": "107993",
+     "location": "PS Cars World - Autohandel in Schramberg, Albert-Moser-Straße 18, 78713 Schramberg, Germany",
+     "works": "Apkope\nBremžu šķidruma maiņa.\nStandarta apkopes apjoms."
+    },
+    {
+     "date": "18.08.2015",
+     "odometer": "103880",
+     "location": "Auer Gruppe GmbH, Bodenseeallee 2, 78333 Stockach, Germany",
+     "works": "Dzinēja eļļas maiņa.\nDzinēja eļļa BMW LL04 0W30 (83212405950)\nDegvielas filtrs (13328572522)\nGaisa filtrs (13718511668)\nSalona ogles filtrs (64119237555)\nEļļas filtra komplekts (11428507683)\nAizmugurējo bremžu apkope.\nBremžu disks\nBezazbesta bremžu kluči (34216873093)\nBremžu kluču nodiluma sensors\nBremžu kluču pasta (83192158851)\nVentilējamais disks (34216864900)\nTransportlīdzekļa pārbaude.\nStandarta apkopes apjoms.\nIekšējā seškanta skrūve (34211161806)\nRemonta komplekts aizmugurē (34356792292)"
+    },
+    {
+     "date": "30.06.2015",
+     "odometer": "99953",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "08.04.2015",
+     "odometer": "91767",
+     "location": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+     "works": "Riepas Michelin Pilot Sport 225/40 R19 Y (FR2254019YM)\nMichelin Pilot Sport PS2 (FR2553519YM)"
+    },
+    {
+     "date": "19.12.2014",
+     "odometer": "80328",
+     "location": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+     "works": "Apkope\nBezazbesta bremžu kluči (34106859181)\nBremžu kluču nodiluma sensors\nBremžu kluču pasta (83192158851)\nRemonta komplekts priekšā pa kreisi (34356792289)"
+    },
+    {
+     "date": "12.11.2014",
+     "odometer": "75628",
+     "location": "Auer Gruppe GmbH, Bodenseeallee 2, 78333 Stockach, Germany",
+     "works": "Dzinēja eļļas maiņa.\nSalona mikrofiltrs.\nStandarta apkopes apjoms."
+    },
+    {
+     "date": "11.09.2014",
+     "odometer": "69838",
+     "location": "Auer Gruppe GmbH, Bodenseeallee 2, 78333 Stockach, Germany",
+     "works": "Aizmugurējo bremžu apkope: bremžu disks\nBezazbesta bremžu kluči (34216873093)\nBremžu kluču nodiluma sensors\nBremžu kluču pasta (83192158851)\nVentilējamais disks (34216864900)\nBezazbesta stāvbremzes loku remonta komplekts (34416761292)\nStikla tīrītāju slotiņu komplekts (61612241375)\nStikla tīrītāja slotiņa (61627356763)\nSeškanta skrūve (34211161806)\nAizmugurējais remonta komplekts (34356792292)\nStandarta apkopes apjoms."
+    },
+    {
+     "date": "15.08.2014",
+     "odometer": "66579",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "07.07.2014",
+     "odometer": "60766",
+     "location": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+     "works": "Apkope"
+    },
+    {
+     "date": "12.05.2014",
+     "odometer": "54832",
+     "location": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+     "works": "Dzinēja pārsegs (41007290944)"
+    },
+    {
+     "date": "30.04.2014",
+     "odometer": "53741",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "23.04.2014",
+     "odometer": "50740",
+     "location": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+     "works": "Apkope\nDzinēja eļļa SAE 5W-30 Longlife-04 (83210398511)\nEļļas filtra komplekts (11428507683)\nSalona ogles filtrs (64119237555)\nGaisa filtrs (13718507320)\nDegvielas filtrs (13328572522)\nRiepas Michelin PS2 225/40 R19 93Y (2254019)\nMichelin PS2 255/35 R19 96Y (2553519)\nŠļūtenes skava (07129952104)"
+    },
+    {
+     "date": "07.03.2014",
+     "odometer": "49243",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "05.03.2014",
+     "odometer": "49240",
+     "location": "Auer Gruppe GmbH, Bodenseeallee 2, 78333 Stockach, Germany",
+     "works": "Priekšējo bremžu apkope.\nStandarta apkopes apjoms."
+    },
+    {
+     "date": "17.02.2014",
+     "odometer": "46982",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "15.11.2013",
+     "odometer": "37811",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "13.11.2013",
+     "odometer": "37809",
+     "location": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+     "works": "Apkope\nBezazbesta bremžu kluči (34216850569)\nBremžu kluču nodiluma sensors\nRiepas Michelin Alpin A4 225/55 R16 99V (2255516)\nAizmugurējais remonta komplekts (34356792292)"
+    },
+    {
+     "date": "02.10.2013",
+     "odometer": "33724",
+     "location": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+     "works": "Apkope"
+    },
+    {
+     "date": "29.07.2013",
+     "odometer": "25799",
+     "location": "Auer Gruppe GmbH, Bodenseeallee 2, 78333 Stockach, Germany",
+     "works": "Dzinēja eļļas maiņa.\nSalona mikrofiltrs.\nStandarta apkopes apjoms."
+    },
+    {
+     "date": "27.06.2013",
+     "odometer": "23298",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "24.06.2013",
+     "odometer": "23134",
+     "location": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+     "works": "Kompensācijas elements (63127280779)\nLietus/gaismas/saules/rasošanas sensors HUD (61359293279)"
+    },
+    {
+     "date": "11.06.2013",
+     "odometer": "22267",
+     "location": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+     "works": "Stikla līmēšanas komplekts ar grunti (FT992294074), fiksators\nLietus ūdens noteces līste (51137258183)\nVējstikla augšējā apdare (51317258053), tonēts zaļš vējstikls ar lietus/gaismas sensoru\nNoteces līste kreisā (51317258187)\nNoteces līste labā (51317258188)\nAtsitējs (51317288462)\nLietus/gaismas/saules/rasošanas sensors HUD (61359293279)"
+    },
+    {
+     "date": "30.04.2013",
+     "odometer": "17813",
+     "location": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+     "works": "Apkope"
+    },
+    {
+     "date": "30.01.2013",
+     "odometer": "9000",
+     "location": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+     "works": "Durvju loga rāmja blīvējums\nIekšējais priekšējais kreisais (51337323507)"
+    },
+    {
+     "date": "04.12.2012",
+     "odometer": "2954",
+     "location": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+     "works": "Apsildāms platleņķa spoguļa stikls\nKreisais (51167284999), gruntēts ārējā spoguļa korpusa vāks\nKreisais (51167292745), apsildāms ārējais spogulis\nKreisais (51167345657)"
+    },
+    {
+     "date": "20.11.2012",
+     "odometer": "",
+     "location": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+     "works": "Vieglmetāla diska ziemas riteņa komplekts (36112304697)"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "17.07.2023",
+      "odometer": "302360",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.03.2023",
+      "odometer": "296016",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "30.08.2019",
+      "odometer": "231926",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "04.07.2019",
+      "odometer": "228216",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "10.04.2018",
+      "odometer": "189984",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "11.04.2017",
+      "odometer": "156902",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "19.05.2016",
+      "odometer": "127528",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "04.05.2016",
+      "odometer": "126114",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "01.03.2016",
+      "odometer": "0",
+      "place": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "15.01.2016",
+      "odometer": "108290",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "12.10.2015",
+      "odometer": "107993",
+      "place": "PS Cars World - Autohandel in Schramberg, Albert-Moser-Straße 18, 78713 Schramberg, Germany",
+      "works": "Brake fluid service.\nStandard scope."
+     },
+     {
+      "date": "08.10.2015",
+      "odometer": "0",
+      "place": "Autopark Totic GmbH, Albert-Moser-Straße 10, 78713 Schramberg, Germany",
+      "works": "Windshield washer antifreeze (83120404498)\nBremsflüssigkeit DOT 4 (FT998894001)\nWarnweste (FT908110006)\nLicence plate base (51118054157)"
+     },
+     {
+      "date": "07.10.2015",
+      "odometer": "107993",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "06.10.2015",
+      "odometer": "107993",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "18.08.2015",
+      "odometer": "103880",
+      "place": "Auer Gruppe GmbH, Bodenseeallee 2, 78333 Stockach, Germany",
+      "works": "Engine oil.\nRear Brake.\nVehicle check.\nFuel filter.\nAir filter element.\nMicrofilter (consider further additional job(s) if appropriate)\nStandard scope."
+     },
+     {
+      "date": "17.08.2015",
+      "odometer": "103880",
+      "place": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+      "works": "Set oil-filter element (11428507683)\nBMW Engine Oil LL04 0W30 (83212405950)\nBrake disc\nBrake pads asbestos-free (34216873093)\nBrake-pad sensor\nBrake-pad paste (83192158851)\nVentilated (34216864900)\nMicrofilter/activated Carbon container (64119237555)\nFuel filter cartridge (13328572522)\nAir filter element (13718511668)\nInner hex bolt (34211161806)\nRepair kit\nRear (34356792292)"
+     },
+     {
+      "date": "30.06.2015",
+      "odometer": "99953",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "08.04.2015",
+      "odometer": "91767",
+      "place": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+      "works": "Michelin Pilot Sport 225/40 R 19 Y (FR2254019YM)\nMICHELIN PILOT SPORT PS2 (FR2553519YM)"
+     },
+     {
+      "date": "19.12.2014",
+      "odometer": "80221",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "19.12.2014",
+      "odometer": "80328",
+      "place": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+      "works": "Brake pads asbestos-free (34106859181)\nBrake pad wear sensor\nBrake-pad paste (83192158851)\nRepair kit\nFront left (34356792289)"
+     },
+     {
+      "date": "12.11.2014",
+      "odometer": "75628",
+      "place": "Auer Gruppe GmbH, Bodenseeallee 2, 78333 Stockach, Germany",
+      "works": "Engine oil.\nMicrofilter (consider further additional job(s) if appropriate)\nStandard scope."
+     },
+     {
+      "date": "11.09.2014",
+      "odometer": "69838",
+      "place": "Auer Gruppe GmbH, Bodenseeallee 2, 78333 Stockach, Germany",
+      "works": "Rear Brake.\nBrake disc\nBrake pads asbestos-free (34216873093)\nBrake-pad sensor\nRepair kit brake shoe asbestos-free (34416761292)\nBrake-pad paste (83192158851)\nVentilated (34216864900)\nStandard scope.\nSet of wiper blades (61612241375)\nWiper blade (61627356763)\nInner hex bolt (34211161806)\nRepair kit\nRear (34356792292)"
+     },
+     {
+      "date": "15.08.2014",
+      "odometer": "66579",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "07.07.2014",
+      "odometer": "60766",
+      "place": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "12.05.2014",
+      "odometer": "54832",
+      "place": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+      "works": "Hood (41007290944)"
+     },
+     {
+      "date": "30.04.2014",
+      "odometer": "53741",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "23.04.2014",
+      "odometer": "50740",
+      "place": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+      "works": "Set oil-filter element (11428507683)\nMotor oil SAE 5W-30 Longlife-04 (83210398511)\nMICHELIN PS2 225/40 R19 93Y (2254019)\nMichelin PS2 255/35 R19 96Y (2553519)\nMicrofilter/activated Carbon container (64119237555)\nHose clamp (07129952104)\nAir filter element (13718507320)\nFuel filter cartridge (13328572522)"
+     },
+     {
+      "date": "28.03.2014",
+      "odometer": "50740",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "07.03.2014",
+      "odometer": "49243",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "05.03.2014",
+      "odometer": "49240",
+      "place": "Auer Gruppe GmbH, Bodenseeallee 2, 78333 Stockach, Germany",
+      "works": "Front Brake.\nStandard scope."
+     },
+     {
+      "date": "17.02.2014",
+      "odometer": "46982",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "15.11.2013",
+      "odometer": "37811",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.11.2013",
+      "odometer": "37809",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "12.11.2013",
+      "odometer": "37809",
+      "place": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+      "works": "Brake pads asbestos-free (34216850569)\nBrake-pad sensor\nMichelin Alpina A4 225/55 R16 99V (2255516)\nRepair kit\nRear (34356792292)"
+     },
+     {
+      "date": "02.10.2013",
+      "odometer": "33724",
+      "place": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "29.07.2013",
+      "odometer": "25799",
+      "place": "Auer Gruppe GmbH, Bodenseeallee 2, 78333 Stockach, Germany",
+      "works": "Engine oil.\nMicrofilter (consider further additional job(s) if appropriate)\nStandard scope."
+     },
+     {
+      "date": "27.06.2013",
+      "odometer": "23298",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "24.06.2013",
+      "odometer": "23134",
+      "place": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+      "works": "Compensating element (63127280779)\nSensor rain/light/solar/misting over HUD (61359293279)"
+     },
+     {
+      "date": "11.06.2013",
+      "odometer": "22267",
+      "place": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+      "works": "FENSTERKLEBESET inkl.\nHaftgrund (FT992294074)\nClip\nDrip moulding (51137258183)\nCover, windshield\nTop (51317258053)\nWindscreen, green, rain/light/condens.\nDrip moulding\nLeft (51317258187)\nRight (51317258188)\nBump stop (51317288462)\nSensor rain/light/solar/misting over HUD (61359293279)"
+     },
+     {
+      "date": "30.04.2013",
+      "odometer": "17813",
+      "place": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "30.01.2013",
+      "odometer": "9000",
+      "place": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+      "works": "Sealing, window frame\nInterior frnt left (51337323507)"
+     },
+     {
+      "date": "04.12.2012",
+      "odometer": "2954",
+      "place": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+      "works": "Mirror glass, heated, wide-angle\nLeft (51167284999)\nOutside mirror cover cap, primed\nLeft (51167292745)\nHeated outside mirror\nLeft (51167345657)"
+     },
+     {
+      "date": "20.11.2012",
+      "odometer": "90000",
+      "place": "Car parts Seliger, Hardtring 17, 78333 Stockach, Germany",
+      "works": "Complete alloy wheel winter (36112304697)"
+     }
+    ]
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "320",
+     "modelSeries": "F31",
+     "vinCode": "WBA3K31080F656545",
+     "vehicleType": "Estate",
+     "transmission": "automatic transmission",
+     "steeringSide": "LHD (left-hand drive)",
+     "engineCode": "N47D20O1",
+     "engineNumber": "",
+     "body": "Estate",
+     "drive": "Rear-wheel drive",
+     "power": "135 kW (181 HP / 184 PS)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "3K31",
+     "productionDate": "11.2012",
+     "firstRegistration": "11.2012",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "Alpinweiss 3 (S0300)",
+     "colorCode": "S0300",
+     "interior": "Leather Dakota black (SLCSW)",
+     "interiorCode": "SLCSW",
+     "fuel": "Diesel",
+     "displacement": "2.0 l"
+    },
+    "accidentCheck": "",
+    "stolenCheck": ""
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "",
+    "fetchedAt": "",
+    "lastCostUsd": "",
+    "status": "unknown",
+    "summary": ""
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "95",
+   "listingCreated": "03.08.2026",
+   "priceDrop": "-510 €",
+   "priceHistory": [
+    {
+     "date": "08.09.2026",
+     "price": 9990,
+     "mileage": 335000,
+     "year": 2012,
+     "delta": 0
+    },
+    {
+     "date": "25.08.2026",
+     "price": 9990,
+     "mileage": null,
+     "year": 2012,
+     "delta": -510
+    },
+    {
+     "date": "03.08.2026",
+     "price": 10500,
+     "mileage": null,
+     "year": 2012,
+     "delta": 0
+    }
+   ],
+   "listingMileageOdometer": "335 000",
+   "listingMileageDate": "03.08.2026",
+   "listingMileageCountry": "Latvija"
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "comments": "",
+     "label": ""
+    }
+   ]
+  }
+ }
+}

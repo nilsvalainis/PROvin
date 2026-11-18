@@ -171,3 +171,19 @@ issued vai ir waybillNo), šobrīd darbā esošus, kļūdas "Pārbaudi CSDD". Id
 node scripts/iriss-ttr/cleanup-waybill-requests.mjs --load-env-local           # dry-run + backup
 node scripts/iriss-ttr/cleanup-waybill-requests.mjs --load-env-local --apply   # backup + dzēš
 ```
+
+## #928 atcelšanas tests bez CSDD (`waybill-cancel-probe.mjs`)
+
+Pārbauda, ka «Atcelt pieprasījumu» aptur automātiku pirms CSDD Saglabāt. Lieto īsto `processJob` un prod API
+(claim, events, statuss), bet VPN neieslēdz, CSDD skriptus nepalaiž (sync/fill ir imitācija), `save.js`/`annul.js`
+nav iespējami, numuru momentuzņēmumu serverim nesūta. Testi: `lib/iriss-waybill-cancel-probe.test.ts`.
+
+1. Hetzner: `install -m 644 waybill-cancel-probe-core.mjs waybill-cancel-probe.mjs /root/iriss-ttr/ctl/`
+   (blakus `waybill-worker-core.mjs`, kas jau ir no #928).
+2. `systemctl stop iriss-waybill-worker` (citādi īstais worker paņem testa darbu). Klusā laikā, tests ~3 min.
+3. IRISS izveido standarta pieprasījumu (B193-7, Tukums -> Tukuma CSDD, testa auto nosaukums), nokopē `wbr_...` id.
+4. `cd /root/iriss-ttr/ctl && set -a && . /etc/iriss-ttr/env && set +a && IRISS_CANCEL_PROBE=1 node waybill-cancel-probe.mjs wbr_... saving`
+5. Kad logā `probe_wait_cancel` - IRISS nospied «Atcelt pieprasījumu» (gaida līdz 3 min).
+6. Pēdējā rinda: `{"pass":true,"outcome":"cancelled",...,"serverStatus":"cancelled","waybillNo":""}` = PASS.
+   Pēc izvēles atkārto ar jaunu pieprasījumu un `filling` (atcelšana numura pārbaudes laikā).
+7. VIENMĒR: `systemctl start iriss-waybill-worker` un `systemctl is-active iriss-waybill-worker` = active.

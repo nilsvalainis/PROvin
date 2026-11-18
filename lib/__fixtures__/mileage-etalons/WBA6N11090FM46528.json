@@ -1,0 +1,1069 @@
+{
+ "vin": "WBA6N11090FM46528",
+ "label": "BMW M340i G21: tīra vēsture (kontrole)",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 102, saglabāts 2026-09-27; nolasīts 17.11.2026, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": "https://suchen.mobile.de/",
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "BMW M340i xD",
+   "registrationNumber": "",
+   "firstRegistration": "",
+   "firstRegistrationLatvia": "",
+   "nextInspectionDate": "",
+   "prevInspectionDate": "",
+   "engineDisplacementCm3": "",
+   "enginePowerKw": "",
+   "fuelType": "",
+   "emissionStandard": "",
+   "vehicleType": "",
+   "grossMassKg": "",
+   "curbMassKg": "",
+   "seatCount": "",
+   "roadTaxEur": "",
+   "registrationStatus": "",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "",
+   "ownerCountLatvia": "",
+   "vin": "",
+   "modelYear": "",
+   "color": "",
+   "electricPowerKw": "",
+   "electricPowerKw2": "",
+   "cocCategory": "",
+   "cocType": "",
+   "cocApprovalNumber": "",
+   "cocVariant": "",
+   "cocVersion": "",
+   "insuranceValidUntil": "",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "",
+    "inspectionDateText": "",
+    "nextInspectionDateText": "",
+    "odometer": "",
+    "ratingLabel": "",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": []
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.01.2025",
+     "lossAmount": "7 500 - 8 000 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.10.2024",
+     "lossAmount": "1 800 - 1 900 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.10.2024",
+     "lossAmount": "2 600 - 2 800 €"
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.09.2026",
+     "odometer": "92312",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2025",
+     "odometer": "73591",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2025",
+     "odometer": "63927",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2025",
+     "odometer": "60937",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2025",
+     "odometer": "55738",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2025",
+     "odometer": "42998",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2024",
+     "odometer": "42997",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2024",
+     "odometer": "40008",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2024",
+     "odometer": "30916",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2023",
+     "odometer": "11957",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2023",
+     "odometer": "11919",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2022",
+     "odometer": "7097",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2022",
+     "odometer": "4258",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2022",
+     "odometer": "2373",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2022",
+     "odometer": "11",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.10.2024",
+     "lossAmount": "2 501 - 3 000 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.01.2025",
+     "lossAmount": "7 501 - 8 000 €"
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "finnik": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "traficom_fi": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": "",
+   "statusRecords": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "15.09.2026",
+     "odometer": "92338",
+     "country": "Vācija"
+    },
+    {
+     "date": "26.08.2026",
+     "odometer": "92337",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.12.2025",
+     "odometer": "73950",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.12.2025",
+     "odometer": "73950",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.12.2025",
+     "odometer": "73616",
+     "country": "Vācija"
+    },
+    {
+     "date": "07.08.2025",
+     "odometer": "63952",
+     "country": "Vācija"
+    },
+    {
+     "date": "21.07.2025",
+     "odometer": "63952",
+     "country": "Vācija"
+    },
+    {
+     "date": "26.06.2025",
+     "odometer": "60962",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.04.2025",
+     "odometer": "55763",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.01.2025",
+     "odometer": "48549",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.01.2025",
+     "odometer": "43023",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.11.2024",
+     "odometer": "43022",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.10.2024",
+     "odometer": "43022",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.10.2024",
+     "odometer": "40131",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.10.2024",
+     "odometer": "40033",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.05.2024",
+     "odometer": "31618",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.04.2024",
+     "odometer": "30941",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.10.2023",
+     "odometer": "11982",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.07.2023",
+     "odometer": "11982",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.02.2023",
+     "odometer": "11944",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.02.2023",
+     "odometer": "11944",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.11.2022",
+     "odometer": "7249",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.11.2022",
+     "odometer": "7249",
+     "country": "Vācija"
+    },
+    {
+     "date": "03.11.2022",
+     "odometer": "7103",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.10.2022",
+     "odometer": "4744",
+     "country": "Vācija"
+    },
+    {
+     "date": "06.10.2022",
+     "odometer": "4264",
+     "country": "Vācija"
+    },
+    {
+     "date": "23.09.2022",
+     "odometer": "3747",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.09.2022",
+     "odometer": "3379",
+     "country": "Vācija"
+    },
+    {
+     "date": "09.09.2022",
+     "odometer": "2788",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.09.2022",
+     "odometer": "2379",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.09.2022",
+     "odometer": "1929",
+     "country": "Vācija"
+    },
+    {
+     "date": "12.08.2022",
+     "odometer": "9",
+     "country": "Vācija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "15.09.2026",
+     "odometer": "92338",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "26.08.2026",
+     "odometer": "92337",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "16.12.2025",
+     "odometer": "73950",
+     "location": "Esso Station Kronberg, Frankfurter Straße 15, 61476 Kronberg im Taunus, Germany",
+     "works": "Apkope\nŪdens novadīšanas elements labais (51319466592)\nPriekšējā stikla augšējā noseglīste (51317427861)\nPriekšējais stikls zaļš ar lietus sensoru (51317477267)\nŪdens uztvērējlīste kreisā (51317427873)\nPriekšējā stikla skaņas izolācija (51487941312)\nŪdens uztvērējlīste labā (51317427874)\nŪdens novadīšanas elements kreisais (51319466591)\nBuferis (51317288462)\nTīrīšanas līdzeklis R1 (83192211217)"
+    },
+    {
+     "date": "10.12.2025",
+     "odometer": "73616",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "07.08.2025",
+     "odometer": "63952",
+     "location": "Esso Station Kronberg, Frankfurter Straße 15, 61476 Kronberg im Taunus, Germany",
+     "works": "Apkope\nDzinēja eļļa.\nGaisa filtra elements.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nTransportlīdzekļa pārbaude.\nStandarta apjoms.\nNezināms."
+    },
+    {
+     "date": "26.06.2025",
+     "odometer": "60962",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "22.04.2025",
+     "odometer": "55763",
+     "location": "Esso Station Kronberg, Frankfurter Straße 15, 61476 Kronberg im Taunus, Germany",
+     "works": "Bremžu šķidruma maiņa.\nPārbaudīt dzinēja pārsega gāzes amortizatorus.\nStandarta apjoms."
+    },
+    {
+     "date": "16.01.2025",
+     "odometer": "48549",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "15.01.2025",
+     "odometer": "43023",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "27.11.2024",
+     "odometer": "43022",
+     "location": "",
+     "works": "Apkope\nSpoguļa stikls, apsildāms, platleņķa\nKreisais (51165A07757)\nNosegvāciņš Cerium Grey kreisais krāsots (51165A420C7)\nApsildāms ārējais spogulis\nKreisais (51169854797)\nPapildu pagrieziena rādītājs spogulī\nKreisais (63137498159)\nBlīvējums\nĀrējā kreisā spoguļa trīsstūris (51217432203)\nDurvju sānu stikls\nPriekšējais kreisais (51337466961)\nSešstūra skrūve\nPašvītņojoša (07147482347)"
+    },
+    {
+     "date": "24.10.2024",
+     "odometer": "40131",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "22.10.2024",
+     "odometer": "40033",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "27.05.2024",
+     "odometer": "31618",
+     "location": "Esso Station Kronberg, Frankfurter Straße 15, 61476 Kronberg im Taunus, Germany",
+     "works": "Dzinēja eļļa.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)"
+    },
+    {
+     "date": "30.04.2024",
+     "odometer": "30941",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "19.10.2023",
+     "odometer": "11982",
+     "location": "Esso Station Kronberg, Frankfurter Straße 15, 61476 Kronberg im Taunus, Germany",
+     "works": "Apkope\nRDC ritenis ar ziemas riepu\nMelns matēts (36112462648)\nMelns matēts (36112462649)"
+    },
+    {
+     "date": "15.02.2023",
+     "odometer": "11944",
+     "location": "Esso Station Kronberg, Frankfurter Straße 15, 61476 Kronberg im Taunus, Germany",
+     "works": "Apkope"
+    },
+    {
+     "date": "16.11.2022",
+     "odometer": "7249",
+     "location": "Esso Station Kronberg, Frankfurter Straße 15, 61476 Kronberg im Taunus, Germany",
+     "works": "Apkope\nRDC ritenis ar ziemas riepu\nZiemas Ferricgrey (36112462643)"
+    },
+    {
+     "date": "03.11.2022",
+     "odometer": "7103",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "14.10.2022",
+     "odometer": "4744",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "06.10.2022",
+     "odometer": "4264",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "23.09.2022",
+     "odometer": "3747",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "16.09.2022",
+     "odometer": "3379",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "09.09.2022",
+     "odometer": "2788",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "05.09.2022",
+     "odometer": "2379",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "02.09.2022",
+     "odometer": "1929",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "12.08.2022",
+     "odometer": "9",
+     "location": "Esso Station Kronberg, Frankfurter Straße 15, 61476 Kronberg im Taunus, Germany",
+     "works": "Nezināms."
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "15.09.2026",
+      "odometer": "92338",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "26.08.2026",
+      "odometer": "92337",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "16.12.2025",
+      "odometer": "73950",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "15.12.2025",
+      "odometer": "73950",
+      "place": "Esso Station Kronberg, Frankfurter Straße 15, 61476 Kronberg im Taunus, Germany",
+      "works": "Wasserleitelement rechts (51319466592)\nAbdeckung Frontscheibe ob (51317427861)\nFrontscheibe grün Regen/L (51317477267)\nWasserfangleiste links (51317427873)\nSchallisolierung Frontsch (51487941312)\nWasserfangleiste rechts (51317427874)\nWasserleitelement links (51319466591)\nPUFFER (51317288462)\nReiniger R1 (83192211217)"
+     },
+     {
+      "date": "10.12.2025",
+      "odometer": "73616",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "07.08.2025",
+      "odometer": "63952",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "21.07.2025",
+      "odometer": "63952",
+      "place": "Esso Station Kronberg, Frankfurter Straße 15, 61476 Kronberg im Taunus, Germany",
+      "works": "Engine oil.\nVehicle check.\nStandard scope.\nAir filter element.\nMicrofilter (consider further additional job(s) if appropriate)\nUnknown."
+     },
+     {
+      "date": "26.06.2025",
+      "odometer": "60962",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "22.04.2025",
+      "odometer": "55763",
+      "place": "Esso Station Kronberg, Frankfurter Straße 15, 61476 Kronberg im Taunus, Germany",
+      "works": "Brake fluid service.\nCheck gas pressure springs for bonnet.\nStandard scope."
+     },
+     {
+      "date": "16.01.2025",
+      "odometer": "48549",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "15.01.2025",
+      "odometer": "43023",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "27.11.2024",
+      "odometer": "43022",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "24.10.2024",
+      "odometer": "40131",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "24.10.2024",
+      "odometer": "43022",
+      "place": "",
+      "works": "Mirror glass, heated, wide-angle\nLeft (51165A07757)\nCover cap Cerium Grey left painted (51165A420C7)\nHeated outside mirror\nLeft (51169854797)\nAuxiliary turn indicator, mirror\nLeft (63137498159)\nSeal\nOuter left mirror triangle (51217432203)\nSide window glass, door\nFront left (51337466961)\nHexagon screw\nSelf-tapping (07147482347)"
+     },
+     {
+      "date": "22.10.2024",
+      "odometer": "40033",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "27.05.2024",
+      "odometer": "31618",
+      "place": "Esso Station Kronberg, Frankfurter Straße 15, 61476 Kronberg im Taunus, Germany",
+      "works": "Engine oil.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "30.04.2024",
+      "odometer": "30941",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "19.10.2023",
+      "odometer": "11982",
+      "place": "Esso Station Kronberg, Frankfurter Straße 15, 61476 Kronberg im Taunus, Germany",
+      "works": "RDC wheel with tyre Winter black matt (36112462648)\nRDC wheel with tyre Winter black matt (36112462649)"
+     },
+     {
+      "date": "14.07.2023",
+      "odometer": "11982",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "15.02.2023",
+      "odometer": "11944",
+      "place": "Esso Station Kronberg, Frankfurter Straße 15, 61476 Kronberg im Taunus, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "14.02.2023",
+      "odometer": "11944",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "16.11.2022",
+      "odometer": "7249",
+      "place": "Esso Station Kronberg, Frankfurter Straße 15, 61476 Kronberg im Taunus, Germany",
+      "works": "RDC wheel with tyre\nWinter Ferricgrey (36112462643)"
+     },
+     {
+      "date": "04.11.2022",
+      "odometer": "7249",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "03.11.2022",
+      "odometer": "7103",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "14.10.2022",
+      "odometer": "4744",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "06.10.2022",
+      "odometer": "4264",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "23.09.2022",
+      "odometer": "3747",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "16.09.2022",
+      "odometer": "3379",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "09.09.2022",
+      "odometer": "2788",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "05.09.2022",
+      "odometer": "2379",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "02.09.2022",
+      "odometer": "1929",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "12.08.2022",
+      "odometer": "9",
+      "place": "Esso Station Kronberg, Frankfurter Straße 15, 61476 Kronberg im Taunus, Germany",
+      "works": "Unknown."
+     }
+    ]
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "M340",
+     "modelSeries": "G21",
+     "vinCode": "WBA6N11090FM46528",
+     "vehicleType": "3' G21 Touring",
+     "transmission": "Automātiskā ātrumkārba",
+     "steeringSide": "LHD (automašīna ar stūri kreisajā pusē)",
+     "engineCode": "B58D",
+     "engineNumber": "",
+     "body": "Universālis",
+     "drive": "Pilnpiedziņa",
+     "power": "285 kW (382 ZS / 387 PS)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "",
+     "modelCode": "",
+     "productionDate": "01.01.2022",
+     "firstRegistration": "01.08.2022",
+     "warrantyStartDate": "",
+     "countryRegion": "",
+     "color": "Tansanitblau II metallic (S0C3Z)",
+     "colorCode": "S0C3Z",
+     "interior": "Leather Merino ivory white (SVAEW)",
+     "interiorCode": "SVAEW",
+     "fuel": "Benzīns",
+     "displacement": "3 l"
+    },
+    "accidentCheck": "",
+    "stolenCheck": ""
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "jojIngest": {
+    "lastFetchedVin": "",
+    "fetchedAt": "",
+    "lastCostUsd": "",
+    "status": "unknown",
+    "summary": ""
+   },
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "",
+   "listingCreated": "",
+   "priceDrop": "",
+   "priceHistory": [],
+   "listingMileageOdometer": "",
+   "listingMileageDate": "",
+   "listingMileageCountry": ""
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "",
+       "csngDate": "",
+       "lossAmount": ""
+      }
+     ],
+     "comments": "",
+     "label": ""
+    }
+   ]
+  }
+ }
+}

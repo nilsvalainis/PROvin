@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -16,7 +18,13 @@ import { vinScanUserscriptUpdateNeeded } from "@/lib/vin-scan/catalog";
 type Listener = (ev: Event) => void;
 
 /** Minimāls `<html>` + MutationObserver (kā jsdom/Chrome): setAttribute ziņo arī, ja vērtība nemainās. */
-function installFakeDom(opts?: { maxAttrMutations?: number }) {
+function installFakeDom(opts?: {
+  maxAttrMutations?: number;
+  /** TM 5.5 USER_SCRIPT / sandbox: getAttribute neredz setAttribute. */
+  blindUserscriptAttr?: boolean;
+  /** TM sandbox prototips: getAttribute atgriež String objektu, ne primitīvu. */
+  boxedUserscriptAttr?: boolean;
+}) {
   const attrs = new Map<string, string>();
   const observers = new Set<() => void>();
   const listeners = new Map<string, Set<Listener>>();
@@ -40,7 +48,13 @@ function installFakeDom(opts?: { maxAttrMutations?: number }) {
       }
     });
   const documentElement = {
-    getAttribute: (name: string) => (attrs.has(name) ? attrs.get(name)! : null),
+    getAttribute: (name: string) => {
+      if (opts?.blindUserscriptAttr && name === PROVIN_USERSCRIPT_ATTR) return null;
+      if (!attrs.has(name)) return null;
+      const value = attrs.get(name)!;
+      if (opts?.boxedUserscriptAttr && name === PROVIN_USERSCRIPT_ATTR) return Object(value);
+      return value;
+    },
     setAttribute: (name: string, value: string) => {
       bump();
       attrs.set(name, String(value));
@@ -78,6 +92,7 @@ function installFakeDom(opts?: { maxAttrMutations?: number }) {
   }
   const store = new Map<string, string>();
   const win = {
+    location: { hostname: "www.provin.lv", pathname: "/admin", search: "" },
     setTimeout: (fn: () => void, ms: number) => setTimeout(fn, ms),
     clearTimeout: (id: ReturnType<typeof setTimeout>) => clearTimeout(id),
     setInterval: (fn: () => void, ms: number) => {
@@ -96,6 +111,7 @@ function installFakeDom(opts?: { maxAttrMutations?: number }) {
       },
     },
   } as Record<string, unknown>;
+  win.document = document;
   vi.stubGlobal("document", document);
   vi.stubGlobal("window", win);
   vi.stubGlobal("MutationObserver", FakeMutationObserver);
@@ -147,6 +163,15 @@ function installUserscript126Header(version = "1.26.0") {
   } catch {
     /* ignore */
   }
+}
+
+/** Pašreizējā skripta admin galvene (stamp + observer + ping/pong) no public kopijas. */
+function installCurrentUserscriptAdminHeader() {
+  const src = readFileSync(path.join(process.cwd(), "public/userscripts/provin-vin-autofill.user.js"), "utf8");
+  const start = src.indexOf("  const SCRIPT_VERSION");
+  const end = src.indexOf("  const GM_PENDING_VIN");
+  if (start < 0 || end <= start) throw new Error("nav userscript admin galvenes");
+  new Function(`"use strict";\n${src.slice(start, end)}`)();
 }
 
 const flush = () => new Promise<void>((resolve) => queueMicrotask(resolve));
@@ -261,5 +286,64 @@ describe("PROVIN skripta klātbūtne admin lapā", () => {
     expect(dom.attrMutations).toBe(mutationsAfter);
     expect(dom.observerFires).toBe(firesAfter);
     stop();
+  });
+
+  it("1.26.0 stamp + TM 5.5 akls getAttribute pēc React noņemšanas ieciklējas", async () => {
+    const dom = installFakeDom({ maxAttrMutations: 200, blindUserscriptAttr: true });
+    installUserscript126Header("1.26.0");
+    reactWipesHtml(dom);
+    await flushMany(25);
+    expect(dom.attrMutations).toBeGreaterThan(20);
+    expect(dom.observerFires).toBeGreaterThan(20);
+  });
+
+  it("1.26.0 stamp + TM sandbox boxed getAttribute ieciklējas", async () => {
+    const dom = installFakeDom({ maxAttrMutations: 200, boxedUserscriptAttr: true });
+    installUserscript126Header("1.26.0");
+    reactWipesHtml(dom);
+    await flushMany(25);
+    expect(dom.attrMutations).toBeGreaterThan(20);
+    expect(dom.observerFires).toBeGreaterThan(20);
+  });
+
+  it("1.26.1 stamp TM 5.5 aklā getAttribute gadījumā atvieno observeri un nestormo", async () => {
+    const dom = installFakeDom({ maxAttrMutations: 40, blindUserscriptAttr: true });
+    installCurrentUserscriptAdminHeader();
+    reactWipesHtml(dom);
+    await flushMany(10);
+    vi.advanceTimersByTime(200);
+    await flushMany(10);
+    expect(dom.attrMutations).toBeLessThan(8);
+    expect(dom.observerFires).toBeLessThan(12);
+    expect(vinScanUserscriptUpdateNeeded("1.26.1")).toBe(false);
+  });
+
+  it("1.26.1 + aizsargs + watch atjauno atribūtu pēc React noņemšanas un nestormo", async () => {
+    const dom = installFakeDom({ maxAttrMutations: 40 });
+    new Function(PROVIN_USERSCRIPT_GUARD_SNIPPET)();
+    installCurrentUserscriptAdminHeader();
+    const versions: string[] = [];
+    const stop = watchProvinUserscript((v) => versions.push(v), () => {});
+    reactWipesHtml(dom);
+    await flushMany(10);
+    vi.advanceTimersByTime(50);
+    await flushMany(10);
+    expect(versions.filter(Boolean).at(-1)).toBe("1.26.1");
+    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.26.1");
+    expect(vinScanUserscriptUpdateNeeded("1.26.1")).toBe(false);
+    expect(dom.attrMutations).toBeLessThan(20);
+    stop();
+  });
+
+  it("1.26.1 stamp ar boxed getAttribute nostājas pēc React noņemšanas", async () => {
+    const dom = installFakeDom({ maxAttrMutations: 40, boxedUserscriptAttr: true });
+    installCurrentUserscriptAdminHeader();
+    reactWipesHtml(dom);
+    await flushMany(10);
+    vi.advanceTimersByTime(200);
+    await flushMany(10);
+    expect(dom.attrs.get(PROVIN_USERSCRIPT_ATTR)).toBe("1.26.1");
+    expect(dom.attrMutations).toBeLessThan(8);
+    expect(vinScanUserscriptUpdateNeeded("1.26.1")).toBe(false);
   });
 });

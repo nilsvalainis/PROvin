@@ -70,7 +70,7 @@ export function IrissLogistikaCarPopup({ order, plan, stage, onClose, onPlanChan
         <dd>{formatLogisticsDate(order.pickupDate) || "-"}</dd>
         {order.priceEur != null ? (
           <>
-            <dt className="text-[var(--iriss-ink-2)]">Transports</dt>
+            <dt className="text-[var(--iriss-ink-2)]">Pirkuma cena</dt>
             <dd>{formatLogisticsEur(order.priceEur)}</dd>
           </>
         ) : null}

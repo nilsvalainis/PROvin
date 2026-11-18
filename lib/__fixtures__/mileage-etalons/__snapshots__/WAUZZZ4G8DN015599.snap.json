@@ -1,0 +1,56 @@
+{
+ "label": "Audi A6 Allroad: daudz neatbilstību starp avotiem, izsoļu arhīvs",
+ "rindasPaAvotiem": {
+  "CSDD": 3,
+  "OFICIĀLĀ DĪLERA DATI": 8,
+  "IZSOĻU PORTĀLU ARHĪVS": 6,
+  "AutoDNA": 2,
+  "CarVertical": 5,
+  "ss.lv": 1
+ },
+ "rindasSavaktas": 25,
+ "rindasTabula": 19,
+ "tabula": [
+  "01.11.2012 | 14 | Vācija | CarVertical | mēnesis",
+  "19.03.2014 | 25258 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "09.04.2015 | 51328 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "25.02.2016 | 77669 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "02.05.2016 | 82797 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "26.01.2017 | 103802 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "15.05.2017 | 111228 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "22.01.2018 | 129158 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "02.08.2018 | 143127 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "01.09.2019 | 146500 | Vācija | IZSOĻU PORTĀLU ARHĪVS + AutoDNA",
+  "19.03.2020 | 170984 | Vācija | CSDD",
+  "01.09.2020 | 146500 | Vācija | IZSOĻU PORTĀLU ARHĪVS | nav grafikā, novecojis dokuments",
+  "01.12.2021 | 146500 | Vācija | IZSOĻU PORTĀLU ARHĪVS + CarVertical | nav grafikā, novecojis dokuments",
+  "28.04.2022 | 216060 | Vācija | CSDD",
+  "01.07.2022 | 207000 | Vācija | IZSOĻU PORTĀLU ARHĪVS + AutoDNA + CarVertical | ANOMĀLIJA",
+  "23.05.2024 | 267020 | Vācija | CSDD",
+  "01.11.2025 | 305663 | Vācija | CarVertical | mēnesis",
+  "01.05.2026 | 310000 | Vācija | CarVertical + IZSOĻU PORTĀLU ARHĪVS",
+  "05.09.2026 | 309 000 | Latvija | ss.lv"
+ ],
+ "sarkanaJosla": true,
+ "klases": [
+  "rollback: 28.04.2022 216060 -> 01.07.2022 207000 (kritums 9060) [01.07.2022 | 207000 | IZSOĻU PORTĀLU ARHĪVS + AutoDNA + CarVertical]"
+ ],
+ "kritumsBezNilaLemumiem": true,
+ "nilaLemumi": [],
+ "klasesPecNilaLemumiem": [
+  "rollback: 01.07.2022 207000"
+ ],
+ "faktuLapa": {
+  "odometerAnomaly": true,
+  "carverticalMileageWarning": false,
+  "maxRollbackDropKm": 24484,
+  "rollbacks": [
+   "19.03.2020 170984 -> 01.09.2020 146500",
+   "28.04.2022 216060 -> 01.07.2022 207000",
+   "01.05.2026 310000 -> 05.09.2026 309000"
+  ],
+  "suspectedEntryErrors": [],
+  "implausibleReadings": [],
+  "latestKm": 309000
+ }
+}

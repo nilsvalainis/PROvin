@@ -3,7 +3,7 @@
 import { upload } from "@vercel/blob/client";
 import { reportPdfPathPrefix } from "@/lib/report-pdf-constants";
 
-export type ServerReportPdfResult = { downloadUrl: string; filename: string; bytes: number; ms: number; fontsReady: boolean };
+export type ServerReportPdfResult = { pdfPathname: string; downloadUrl: string; filename: string; bytes: number; ms: number; fontsReady: boolean };
 
 /**
  * Servera PDF izmēģinājums: atskaites HTML -> privāts Blob -> `/api/admin/report-pdf` (Chromium) -> lejupielādes saite.
@@ -34,6 +34,7 @@ export async function renderReportPdfOnServer(input: { sessionId: string; html: 
   }
   const q = new URLSearchParams({ sessionId: sid, pathname: j.pdfPathname });
   return {
+    pdfPathname: j.pdfPathname,
     downloadUrl: `/api/admin/report-pdf?${q.toString()}`,
     filename: j.filename ?? input.filename,
     bytes: j.bytes ?? 0,

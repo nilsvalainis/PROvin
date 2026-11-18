@@ -19,6 +19,8 @@ import {
   type AutoparksV2OwnerFilter,
 } from "@/lib/iriss-autoparks-v2-list";
 import { CarImg, VinCopy, yearColor } from "./ui";
+import { RegistryFreshText, RegistryStaleBanner } from "./AutoparksV2RegistryFresh";
+import type { RegistryFreshness } from "@/lib/iriss-autoparks-registry-freshness";
 
 /** Kārtošana pēc iegādes summas - izslēgta līdz izmaksu sadaļai (Nils 27.10). */
 const SHOW_SUM_SORT = false;
@@ -33,8 +35,11 @@ export function AutoparksV2List({
   canSortBySum = false,
   canChangeStatus = false,
   showVat = false,
+  registryFresh = null,
 }: {
   initialCars: AutoparksV2ListRow[];
+  /** CSDD reģistra svaigums (serveris); null - krātuve nav pieslēgta, nerāda. */
+  registryFresh?: RegistryFreshness | null;
   /** Statusa maiņa sarakstā (Nils 27.10) - tikai ar Pamatdatu tiesību (API to pārbauda arī pats). */
   canChangeStatus?: boolean;
   /** PVN kolonna (PVN / Margin / Neto) - ar tiesību «Iegāde». */
@@ -116,6 +121,8 @@ export function AutoparksV2List({
         <input data-bare value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Marka, modelis vai VIN" aria-label="Meklēt" />
       </div>
 
+      {registryFresh ? <RegistryStaleBanner fresh={registryFresh} /> : null}
+
       <div className="ap2-pipe" role="tablist" aria-label="Statusi">
         <button type="button" className={`ap2-pp ${status === null ? "on" : ""}`} onClick={() => setStatus(null)}>
           <span className="n">{base.length}</span>
@@ -148,6 +155,11 @@ export function AutoparksV2List({
             <span className="ap2-d">Pieņemti tirdzniecībā {inTradeCount}</span>
           </button>
         </div>
+        {registryFresh ? (
+          <span className="ap2-fresh-d">
+            <RegistryFreshText fresh={registryFresh} prefix="CSDD reģistrs: " />
+          </span>
+        ) : null}
         <label className="ap2-sort">
           <span className="sr-only">Kārtot</span>
           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -162,6 +174,12 @@ export function AutoparksV2List({
           </select>
         </label>
       </div>
+
+      {registryFresh ? (
+        <div className="ap2-fresh-m">
+          <RegistryFreshText fresh={registryFresh} prefix="CSDD reģistrs: " />
+        </div>
+      ) : null}
 
       {statusErr ? <p className="ap2-err" role="alert">{statusErr}</p> : null}
 

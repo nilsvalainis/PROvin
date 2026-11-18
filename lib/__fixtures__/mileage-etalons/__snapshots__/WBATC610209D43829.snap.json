@@ -1,0 +1,45 @@
+{
+ "label": "BMW X6 XDRIVE40D: CSDD 4, AutoDNA 4, carVertical 13, dīleris 10, citi 1; negadījumi 4",
+ "rindasPaAvotiem": {
+  "CSDD": 4,
+  "OFICIĀLĀ DĪLERA DATI": 10,
+  "AutoDNA": 4,
+  "CarVertical": 13,
+  "CITI AVOTI - CITS": 1,
+  "CITS": 1
+ },
+ "rindasSavaktas": 33,
+ "rindasTabula": 16,
+ "tabula": [
+  "01.11.2020 | 12 | Ungārija | CarVertical | mēnesis",
+  "05.11.2020 | 12 | Ungārija | OFICIĀLĀ DĪLERA DATI",
+  "10.11.2020 | 12 | Ungārija | OFICIĀLĀ DĪLERA DATI",
+  "08.04.2021 | 12 | Ungārija | CSDD",
+  "29.06.2021 | 2948 | Ungārija | AutoDNA + OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "27.12.2021 | 9385 | Latvija / Vācija | CarVertical + AutoDNA + CSDD + CITI AVOTI - CITS + CITS",
+  "08.07.2022 | 12900 | Spānija / Latvija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "28.03.2023 | 16162 | Latvija | CarVertical + CSDD + AutoDNA",
+  "18.07.2023 | 18486 | Latvija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "19.07.2024 | 26989 | Latvija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "01.04.2025 | 40042 | Latvija | CSDD + AutoDNA + CarVertical",
+  "07.07.2025 | 45578 | Latvija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "02.09.2025 | 47860 | Latvija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "03.12.2025 | 55494 | Latvija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "16.02.2026 | 60250 | Latvija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "01.06.2026 | 65178 | Latvija | CarVertical | mēnesis"
+ ],
+ "sarkanaJosla": false,
+ "klases": [],
+ "kritumsBezNilaLemumiem": false,
+ "nilaLemumi": [],
+ "klasesPecNilaLemumiem": [],
+ "faktuLapa": {
+  "odometerAnomaly": false,
+  "carverticalMileageWarning": false,
+  "maxRollbackDropKm": 0,
+  "rollbacks": [],
+  "suspectedEntryErrors": [],
+  "implausibleReadings": [],
+  "latestKm": 65178
+ }
+}

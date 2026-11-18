@@ -5,6 +5,7 @@ import path from "node:path";
 
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
+import { emptyCcVinBlock } from "@/lib/cc-vin-report";
 import { fetchThecarapiCcVinMerge } from "@/lib/thecarapi-cc-vin";
 import { isFreeVinScanSourceId } from "@/lib/vin-scan/free-sources";
 import { probeThecarapi } from "@/lib/vin-scan/probes-extra";
@@ -569,5 +570,35 @@ describe("fetchThecarapiVinWithDetails", () => {
     expect(result.block.thecarapiRecords?.find((row) => row.id === "A1-100")?.photos.length).toBeGreaterThan(0);
     expect(result.block.photoGroups?.some((group) => group.title.startsWith("TheCarApi · "))).toBe(true);
     expect(result.records.find((row) => row.id === "OL-55")?.fields.some((field) => field.key === "unknown_portal_code")).toBe(true);
+    expect(result.block.hidePhotoWatermarks).toBe(false);
+  });
+
+  it("TheCarApi ielāde neieslēdz slēdzi, saglabāto true atstāj", async () => {
+    const unsetScript = scripted([
+      jsonResponse(200, hit),
+      jsonResponse(200, { auctions: [detailAuto1] }),
+      jsonResponse(200, { images: [] }),
+      jsonResponse(200, imagesAuto1),
+    ]);
+    const unset = await fetchThecarapiCcVinMerge({
+      vin: "WBA5R1C00LFH42883",
+      deps: unsetScript.deps,
+      fetchJpegs: async () => ({ ok: [], failed: [] }),
+    });
+    expect(unset.block.hidePhotoWatermarks).toBe(false);
+
+    const keptScript = scripted([
+      jsonResponse(200, hit),
+      jsonResponse(200, { auctions: [detailAuto1] }),
+      jsonResponse(200, { images: [] }),
+      jsonResponse(200, imagesAuto1),
+    ]);
+    const kept = await fetchThecarapiCcVinMerge({
+      vin: "WBA5R1C00LFH42884",
+      prev: { ...emptyCcVinBlock(), hidePhotoWatermarks: true },
+      deps: keptScript.deps,
+      fetchJpegs: async () => ({ ok: [], failed: [] }),
+    });
+    expect(kept.block.hidePhotoWatermarks).toBe(true);
   });
 });

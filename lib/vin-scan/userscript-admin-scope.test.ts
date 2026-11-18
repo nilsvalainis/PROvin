@@ -1,95 +1,6 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import vm from "node:vm";
 import { describe, expect, it } from "vitest";
 
-const SRC = readFileSync(path.join(process.cwd(), "public/userscripts/provin-vin-autofill.user.js"), "utf8");
-
-type Listener = (ev: unknown) => void;
-
-/** Palaiž userscript minimālā pārlūka imitācijā un atgriež reģistrētos document klausītājus un GM zvanus. */
-function runAt(href: string) {
-  const url = new URL(href);
-  const listeners = new Map<string, Listener[]>();
-  const gm = { xhr: [] as unknown[], set: new Map<string, unknown>() };
-  const el = () => ({
-    setAttribute() {},
-    getAttribute: () => null,
-    appendChild() {},
-    remove() {},
-    style: {},
-    dataset: {},
-    classList: { add() {}, remove() {} },
-    addEventListener() {},
-    querySelector: () => null,
-    querySelectorAll: () => [],
-  });
-  const document = {
-    documentElement: el(),
-    body: el(),
-    head: el(),
-    readyState: "complete",
-    title: "",
-    addEventListener(type: string, fn: Listener) {
-      listeners.set(type, [...(listeners.get(type) ?? []), fn]);
-    },
-    removeEventListener() {},
-    dispatchEvent() {
-      return true;
-    },
-    createElement: el,
-    querySelector: () => null,
-    querySelectorAll: () => [],
-    getElementById: () => null,
-  };
-  const window: Record<string, unknown> = {
-    location: { href, hostname: url.hostname, pathname: url.pathname, search: url.search, origin: url.origin },
-    addEventListener() {},
-    setTimeout: () => 0,
-    setInterval: () => 0,
-    clearTimeout() {},
-    clearInterval() {},
-  };
-  const ctx = {
-    window,
-    document,
-    location: window.location,
-    console: { log() {}, warn() {}, info() {}, error() {} },
-    URL,
-    URLSearchParams,
-    JSON,
-    Date,
-    Math,
-    setTimeout: () => 0,
-    setInterval: () => 0,
-    clearTimeout() {},
-    clearInterval() {},
-    CustomEvent: class {
-      constructor(
-        public type: string,
-        public init?: { detail?: unknown },
-      ) {}
-    },
-    MutationObserver: class {
-      observe() {}
-      disconnect() {}
-    },
-    HTMLAnchorElement: class {},
-    navigator: { userAgent: "test", clipboard: { writeText: async () => undefined } },
-    GM_getValue: (k: string, d: unknown) => (gm.set.has(k) ? gm.set.get(k) : d),
-    GM_setValue: (k: string, v: unknown) => void gm.set.set(k, v),
-    GM_deleteValue: (k: string) => void gm.set.delete(k),
-    GM_setClipboard() {},
-    GM_xmlhttpRequest: (req: unknown) => void gm.xhr.push(req),
-  };
-  window.document = document;
-  try {
-    vm.runInNewContext(SRC, ctx, { timeout: 2000 });
-  } catch {
-    /* lapas specifiskās daļas imitācijā var krist; admin tilts tiek reģistrēts skripta sākumā */
-  }
-  return { listeners, gm };
-}
+import { FakeElement, runUserscriptAt as runAt } from "@/lib/vin-scan/test-helpers/userscript-vm";
 
 const BRIDGE_EVENTS = [
   "provin-listing-history-request",
@@ -131,22 +42,38 @@ describe("userscript admin tilts tikai PROVIN hostos", () => {
     expect(gm.xhr).toHaveLength(1);
   });
 
-  it("sintētisks klikšķis neieslēdz CarVertical pirkumu", () => {
-    const { listeners, gm } = runAt("https://www.provin.lv/admin/orders/x");
-    const anchor = Object.assign(Object.create(null), {
-      dataset: { provinCarverticalPurchase: "1", provinHandoffVin: "WBA5R1C0XLFH42873" },
-      href: "https://www.carvertical.com/",
-    });
+  /** Admin poga pēc apstiprinājuma izveido šādu saiti un to nospiež (sk. openCarVerticalPurchaseTab). */
+  function clickPurchaseAnchor(isTrusted: boolean) {
+    const run = runAt("https://www.provin.lv/admin/orders/x");
+    const anchor = new FakeElement("a", { attrs: { href: "https://www.carvertical.com/lv/precheck" } });
+    anchor.dataset = { provinCarverticalPurchase: "1", provinHandoffVin: "WBA5R1C0XLFH42873" };
     const target = { closest: (sel: string) => (sel.startsWith("a") ? anchor : null) };
-    const clicks = listeners.get("click") ?? [];
+    const clicks = run.listeners.get("click") ?? [];
     expect(clicks.length).toBeGreaterThan(0);
-    for (const fn of clicks) {
-      try {
-        fn({ target, isTrusted: false, preventDefault() {} });
-      } catch {
-        /* imitācijā nav HTMLAnchorElement prototipa */
-      }
-    }
+    for (const fn of clicks) fn({ target, isTrusted, preventDefault() {} });
+    return run;
+  }
+
+  it("sintētisks klikšķis neieslēdz CarVertical pirkumu", () => {
+    const { gm } = clickPurchaseAnchor(false);
     expect(gm.set.get("provin_cv_purchase")).toBeUndefined();
+    expect(gm.set.get("provin_cv_purchase_vin")).toBeUndefined();
+    /* VIN hand-off (bezmaksas auto-fill) drīkst notikt arī bez pirkuma karoga. */
+    expect(gm.set.get("provin_pending_vin")).toBe("WBA5R1C0XLFH42873");
+  });
+
+  it("īsts operatora klikšķis uz pirkuma saites ieslēdz karogu ar VIN", () => {
+    const { gm } = clickPurchaseAnchor(true);
+    expect(gm.set.get("provin_cv_purchase")).toBe("1");
+    expect(gm.set.get("provin_cv_purchase_vin")).toBe("WBA5R1C0XLFH42873");
+  });
+
+  it("klikšķis uz parastas CarVertical saites (bez pirkuma atzīmes) iepriekšējo karogu nodzēš", () => {
+    const run = runAt("https://www.provin.lv/admin/orders/x", { gm: { provin_cv_purchase: "1", provin_cv_purchase_vin: "X" } });
+    const anchor = new FakeElement("a", { attrs: { href: "https://www.carvertical.com/lv" } });
+    const target = { closest: (sel: string) => (sel.startsWith("a") ? anchor : null) };
+    for (const fn of run.listeners.get("click") ?? []) fn({ target, isTrusted: true, preventDefault() {} });
+    expect(run.gm.set.has("provin_cv_purchase")).toBe(false);
+    expect(run.gm.set.has("provin_cv_purchase_vin")).toBe(false);
   });
 });

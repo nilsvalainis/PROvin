@@ -1,0 +1,173 @@
+{
+ "_meta": {
+  "status": 200,
+  "source": "POST https://ec.europa.eu/safety-gate-alerts/public/api/search",
+  "fetched": "2026-11-17",
+  "language": "lv",
+  "note": "fullTextSearch=MINI, gadi 2022-2026: 610 rezultāti, neviens nav MINI auto. Apgriezts līdz 6 ierakstiem, lapošanas lauki kā oriģinālā."
+ },
+ "body": {
+  "content": [
+   {
+    "id": 10119609,
+    "reference": "SR/03277/26",
+    "publicationDate": "2026-11-16T10:49:27.843+00:00",
+    "product": {
+     "id": 10322126,
+     "nameSpecific": "Mini Chainsaw, 4L",
+     "nameSpecificKnown": true,
+     "brandKnown": false,
+     "brands": [],
+     "name": " Ķēdes zāģis"
+    },
+    "risk": {
+     "id": 10022788,
+     "riskType": [
+      {
+       "key": "riskType.electric.shock",
+       "name": "ELECTRIC_SHOCK"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10119639,
+    "reference": "SR/03238/26",
+    "publicationDate": "2026-11-13T10:06:25.489+00:00",
+    "product": {
+     "id": 10322430,
+     "nameSpecific": "20/50/100/200 Stück Emotion Serie Latex Luftballons, 12 Zoll Luftballon Smiley",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "YOUYIKE"
+      }
+     ],
+     "name": "Baloni"
+    },
+    "risk": {
+     "id": 10022805,
+     "riskType": [
+      {
+       "key": "riskType.chemical",
+       "name": "CHEMICAL"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10119627,
+    "reference": "SR/03237/26",
+    "publicationDate": "2026-11-13T10:06:06.477+00:00",
+    "product": {
+     "id": 10322426,
+     "nameSpecific": "12 Zoll Latexballons",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Belsvor"
+      }
+     ],
+     "name": "Baloni"
+    },
+    "risk": {
+     "id": 10022804,
+     "riskType": [
+      {
+       "key": "riskType.chemical",
+       "name": "CHEMICAL"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10119635,
+    "reference": "SR/03236/26",
+    "publicationDate": "2026-11-13T10:01:45.493+00:00",
+    "product": {
+     "id": 10322189,
+     "nameSpecific": " Balloons",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "UDRKFOPK"
+      }
+     ],
+     "name": "Baloni"
+    },
+    "risk": {
+     "id": 10022796,
+     "riskType": [
+      {
+       "key": "riskType.chemical",
+       "name": "CHEMICAL"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10119539,
+    "reference": "SR/03148/26",
+    "publicationDate": "2026-11-11T16:04:45.133+00:00",
+    "product": {
+     "id": 10321231,
+     "nameSpecific": "Atom kävelysauvat / Trekking poles",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Atom"
+      }
+     ],
+     "name": "Pastaigu stabi"
+    },
+    "risk": {
+     "id": 10022690,
+     "riskType": [
+      {
+       "key": "riskType.chemical",
+       "name": "CHEMICAL"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10119513,
+    "reference": "SR/03173/26",
+    "publicationDate": "2026-11-11T15:47:05.164+00:00",
+    "product": {
+     "id": 10321205,
+     "nameSpecific": "Honey Therapy Keratin (Mini Kit)",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "BRAZILICIOUS"
+      }
+     ],
+     "name": "Matu iztaisnošanas līdzeklis"
+    },
+    "risk": {
+     "id": 10022682,
+     "riskType": [
+      {
+       "key": "riskType.chemical",
+       "name": "CHEMICAL"
+      }
+     ]
+    }
+   }
+  ],
+  "totalElements": 610,
+  "totalPages": 13,
+  "last": false,
+  "size": 50,
+  "number": 0,
+  "first": true,
+  "numberOfElements": 50,
+  "empty": false
+ }
+}

@@ -1,0 +1,73 @@
+{
+ "label": "FORD GALAXY: CSDD 2, AutoDNA 19, carVertical 16, dīleris 11, reģistri 7, citi 8; negadījumi 0",
+ "rindasPaAvotiem": {
+  "CSDD": 2,
+  "OFICIĀLĀ DĪLERA DATI": 11,
+  "AutoDNA": 19,
+  "CarVertical": 16,
+  "DĀNIJAS REĢISTRI": 7,
+  "CITI AVOTI - DĀNIJAS NACIONĀLO REĢISTRU DATI": 7,
+  "CITI AVOTI - DĀNIJAS TRANSPORTA PĀRVALDE": 1,
+  "DĀNIJAS NACIONĀLO REĢISTRU DATI": 7,
+  "DĀNIJAS TRANSPORTA PĀRVALDE": 1
+ },
+ "rindasSavaktas": 71,
+ "rindasTabula": 34,
+ "tabula": [
+  "01.04.2016 | 10 | Dānija | CarVertical | mēnesis",
+  "25.04.2016 | 0 | Dānija | DĀNIJAS REĢISTRI",
+  "25.04.2016 | 0 | Dānija | CITI AVOTI - DĀNIJAS NACIONĀLO REĢISTRU DATI",
+  "25.04.2016 | 0 | Dānija | DĀNIJAS NACIONĀLO REĢISTRU DATI",
+  "01.10.2016 | 56378 | Dānija | OFICIĀLĀ DĪLERA DATI + AutoDNA",
+  "01.10.2016 | 56178 | Dānija | CarVertical | mēnesis",
+  "01.02.2017 | 121100 | Dānija | OFICIĀLĀ DĪLERA DATI",
+  "01.02.2017 | 91794 | Dānija | OFICIĀLĀ DĪLERA DATI + AutoDNA",
+  "01.02.2017 | 91594 | Dānija | CarVertical | mēnesis",
+  "19.04.2017 | 114000 | Dānija | AutoDNA + DĀNIJAS REĢISTRI + CITI AVOTI - DĀNIJAS NACIONĀLO REĢISTRU DATI + DĀNIJAS NACIONĀLO REĢISTRU DATI | ANOMĀLIJA",
+  "01.05.2017 | 121100 | Dānija | AutoDNA",
+  "01.05.2017 | 120600 | Dānija | CarVertical | mēnesis",
+  "01.11.2017 | 180150 | Dānija | OFICIĀLĀ DĪLERA DATI + AutoDNA",
+  "01.11.2017 | 179650 | Dānija | CarVertical | mēnesis",
+  "01.03.2018 | 209995 | Dānija | OFICIĀLĀ DĪLERA DATI + AutoDNA",
+  "01.03.2018 | 209495 | Dānija | CarVertical | mēnesis",
+  "13.04.2018 | 217000 | Dānija | AutoDNA + DĀNIJAS REĢISTRI + CITI AVOTI - DĀNIJAS NACIONĀLO REĢISTRU DATI + DĀNIJAS NACIONĀLO REĢISTRU DATI",
+  "01.05.2018 | 226855 | Dānija | OFICIĀLĀ DĪLERA DATI + AutoDNA",
+  "01.05.2018 | 226355 | Dānija | CarVertical | mēnesis",
+  "01.07.2018 | 240678 | Dānija | OFICIĀLĀ DĪLERA DATI + AutoDNA",
+  "01.09.2018 | 256867 | Dānija | OFICIĀLĀ DĪLERA DATI + AutoDNA",
+  "01.09.2018 | 256367 | Dānija | CarVertical | mēnesis",
+  "01.11.2018 | 272390 | Dānija | OFICIĀLĀ DĪLERA DATI + AutoDNA",
+  "01.02.2019 | 292300 | Dānija | OFICIĀLĀ DĪLERA DATI + AutoDNA",
+  "01.02.2019 | 291800 | Dānija | CarVertical | mēnesis",
+  "13.05.2019 | 311000 | Dānija | CarVertical + AutoDNA + DĀNIJAS REĢISTRI + CITI AVOTI - DĀNIJAS NACIONĀLO REĢISTRU DATI + DĀNIJAS NACIONĀLO REĢISTRU DATI",
+  "01.10.2019 | 353000 | Dānija | OFICIĀLĀ DĪLERA DATI + AutoDNA",
+  "01.10.2019 | 352500 | Dānija | CarVertical | mēnesis",
+  "17.03.2020 | 385000 | Dānija | CarVertical + AutoDNA + DĀNIJAS REĢISTRI + CITI AVOTI - DĀNIJAS NACIONĀLO REĢISTRU DATI + DĀNIJAS NACIONĀLO REĢISTRU DATI",
+  "16.04.2021 | 452000 | Dānija | CarVertical + AutoDNA + DĀNIJAS REĢISTRI + CITI AVOTI - DĀNIJAS NACIONĀLO REĢISTRU DATI + DĀNIJAS NACIONĀLO REĢISTRU DATI",
+  "20.04.2022 | 529000 | Dānija | CarVertical + AutoDNA + DĀNIJAS REĢISTRI + CITI AVOTI - DĀNIJAS NACIONĀLO REĢISTRU DATI + CITI AVOTI - DĀNIJAS TRANSPORTA PĀRVALDE + DĀNIJAS NACIONĀLO REĢISTRU DATI + DĀNIJAS TRANSPORTA PĀRVALDE",
+  "01.09.2024 | 195623 | Latvija | CarVertical | ANOMĀLIJA, mēnesis",
+  "24.09.2024 | 196158 | Latvija | CSDD + AutoDNA",
+  "02.10.2025 | 200596 | Latvija | CarVertical + CSDD + AutoDNA"
+ ],
+ "sarkanaJosla": true,
+ "klases": [
+  "rollback: 20.04.2022 529000 -> 01.09.2024 195623 (kritums 333377) [01.09.2024 | 195623 | CarVertical]"
+ ],
+ "kritumsBezNilaLemumiem": true,
+ "nilaLemumi": [],
+ "klasesPecNilaLemumiem": [
+  "rollback: 01.09.2024 195623"
+ ],
+ "faktuLapa": {
+  "odometerAnomaly": true,
+  "carverticalMileageWarning": false,
+  "maxRollbackDropKm": 333377,
+  "rollbacks": [
+   "01.02.2017 121100 -> 19.04.2017 114000",
+   "20.04.2022 529000 -> 01.09.2024 195623"
+  ],
+  "suspectedEntryErrors": [],
+  "implausibleReadings": [],
+  "latestKm": 200596
+ }
+}

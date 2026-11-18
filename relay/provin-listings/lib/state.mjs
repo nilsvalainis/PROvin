@@ -113,6 +113,13 @@ export class RelayState {
     return false;
   }
 
+  /** Vai dienas limits jau pilns (neskaita). */
+  fetchLimitReached(p, maxPerDay) {
+    const day = new Date().toISOString().slice(0, 10);
+    if (this.data.daily.day !== day) return false;
+    return (this.data.daily.fetches[p] ?? 0) >= maxPerDay;
+  }
+
   healthView(extra = {}) {
     return {
       ok: true,

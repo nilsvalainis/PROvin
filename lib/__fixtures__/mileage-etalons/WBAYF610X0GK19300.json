@@ -1,0 +1,1369 @@
+{
+ "vin": "WBAYF610X0GK19300",
+ "label": "750LdX: AutoDNA 1, carVertical 25, dīleris 53; negadījumi 4",
+ "source": "prod pasūtījuma melnraksts (stripe), revīzija 164, saglabāts 2026-09-17; nolasīts 17.11.2026 no admin eksporta, bez komentāriem, foto un neapstrādātiem tekstiem",
+ "listingUrl": null,
+ "odometerAnomalyOverrides": null,
+ "sourceBlocks": {
+  "csdd": {
+   "makeModel": "",
+   "registrationNumber": "",
+   "firstRegistration": "",
+   "nextInspectionDate": "",
+   "prevInspectionDate": "",
+   "engineDisplacementCm3": "",
+   "enginePowerKw": "",
+   "fuelType": "",
+   "emissionStandard": "",
+   "grossMassKg": "",
+   "curbMassKg": "",
+   "roadTaxEur": "",
+   "registrationStatus": "",
+   "opacityCoefficient": "",
+   "particulateMatter": "",
+   "previousRegistrationCountry": "",
+   "ownerCountLatvia": "",
+   "technicalInspectionHistory": [],
+   "ownerRegistrationEvents": [],
+   "prevInspectionBlock": {
+    "inspectionType": "",
+    "inspectionDateText": "",
+    "nextInspectionDateText": "",
+    "odometer": "",
+    "ratingLabel": "",
+    "ratingLevel": null,
+    "smokeCoefficient": "",
+    "notes": "",
+    "defects": []
+   },
+   "prevInspectionWarnings": [],
+   "technicalInspectionWarnings": [],
+   "mileageHistory": []
+  },
+  "autodna": {
+   "serviceHistory": [
+    {
+     "date": "11.05.2016",
+     "odometer": "42170",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.08.2025",
+     "lossAmount": "3 250 - 3 500 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.02.2022",
+     "lossAmount": "200 - 300 €"
+    }
+   ]
+  },
+  "carvertical": {
+   "serviceHistory": [
+    {
+     "date": "01.12.2024",
+     "odometer": "210961",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2024",
+     "odometer": "200947",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2024",
+     "odometer": "192283",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.10.2023",
+     "odometer": "188146",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2023",
+     "odometer": "175300",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2022",
+     "odometer": "155094",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2022",
+     "odometer": "149952",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2022",
+     "odometer": "146351",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2021",
+     "odometer": "129638",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.01.2021",
+     "odometer": "124627",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2020",
+     "odometer": "111917",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2019",
+     "odometer": "103876",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.06.2019",
+     "odometer": "100591",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2019",
+     "odometer": "95456",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2018",
+     "odometer": "78840",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2018",
+     "odometer": "75793",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2017",
+     "odometer": "69654",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2017",
+     "odometer": "56659",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.02.2017",
+     "odometer": "52433",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.11.2016",
+     "odometer": "45604",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.09.2016",
+     "odometer": "42000",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.05.2016",
+     "odometer": "41970",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.12.2015",
+     "odometer": "30466",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.08.2015",
+     "odometer": "14422",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.03.2015",
+     "odometer": "3",
+     "country": "Vācija"
+    }
+   ],
+   "incidents": [
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.02.2022",
+     "lossAmount": "101 - 250 €"
+    },
+    {
+     "incidentNo": "Vācija",
+     "csngDate": "01.08.2025",
+     "lossAmount": "3 001 - 3 500 €"
+    }
+   ]
+  },
+  "tjekbil": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "mnt_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "lkf_ee": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "carinfo": {
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "origin": ""
+    }
+   ],
+   "incidents": [
+    {
+     "date": "",
+     "amount": "",
+     "country": "",
+     "note": ""
+    }
+   ],
+   "timeline": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": "",
+     "event": ""
+    }
+   ],
+   "ownersSummary": ""
+  },
+  "auto_records": {
+   "serviceHistory": [
+    {
+     "date": "25.12.2024",
+     "odometer": "211461",
+     "country": "Vācija"
+    },
+    {
+     "date": "03.08.2024",
+     "odometer": "201447",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.05.2024",
+     "odometer": "196653",
+     "country": "Vācija"
+    },
+    {
+     "date": "03.02.2024",
+     "odometer": "192783",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.10.2023",
+     "odometer": "188646",
+     "country": "Vācija"
+    },
+    {
+     "date": "29.05.2023",
+     "odometer": "175800",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.06.2022",
+     "odometer": "155589",
+     "country": "Vācija"
+    },
+    {
+     "date": "09.06.2022",
+     "odometer": "155594",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.04.2022",
+     "odometer": "150452",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2022",
+     "odometer": "148086",
+     "country": "Vācija"
+    },
+    {
+     "date": "07.03.2022",
+     "odometer": "147112",
+     "country": "Vācija"
+    },
+    {
+     "date": "02.03.2022",
+     "odometer": "146851",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.07.2021",
+     "odometer": "130755",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.07.2021",
+     "odometer": "130745",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.06.2021",
+     "odometer": "130359",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.06.2021",
+     "odometer": "130353",
+     "country": "Vācija"
+    },
+    {
+     "date": "18.06.2021",
+     "odometer": "130138",
+     "country": "Vācija"
+    },
+    {
+     "date": "27.01.2021",
+     "odometer": "125127",
+     "country": "Vācija"
+    },
+    {
+     "date": "31.03.2020",
+     "odometer": "112697",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.03.2020",
+     "odometer": "112697",
+     "country": "Vācija"
+    },
+    {
+     "date": "20.03.2020",
+     "odometer": "112417",
+     "country": "Vācija"
+    },
+    {
+     "date": "18.09.2019",
+     "odometer": "104397",
+     "country": "Vācija"
+    },
+    {
+     "date": "09.09.2019",
+     "odometer": "104376",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.08.2019",
+     "odometer": "104397",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.07.2019",
+     "odometer": "102170",
+     "country": "Vācija"
+    },
+    {
+     "date": "28.06.2019",
+     "odometer": "101091",
+     "country": "Vācija"
+    },
+    {
+     "date": "15.05.2019",
+     "odometer": "95656",
+     "country": "Vācija"
+    },
+    {
+     "date": "10.04.2019",
+     "odometer": "95656",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.05.2018",
+     "odometer": "79380",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.05.2018",
+     "odometer": "79374",
+     "country": "Vācija"
+    },
+    {
+     "date": "14.05.2018",
+     "odometer": "79040",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.03.2018",
+     "odometer": "76142",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.03.2018",
+     "odometer": "75993",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.11.2017",
+     "odometer": "69854",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.04.2017",
+     "odometer": "57945",
+     "country": "Vācija"
+    },
+    {
+     "date": "03.04.2017",
+     "odometer": "56859",
+     "country": "Vācija"
+    },
+    {
+     "date": "16.02.2017",
+     "odometer": "53711",
+     "country": "Vācija"
+    },
+    {
+     "date": "13.02.2017",
+     "odometer": "52633",
+     "country": "Vācija"
+    },
+    {
+     "date": "30.01.2017",
+     "odometer": "52633",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.11.2016",
+     "odometer": "45804",
+     "country": "Vācija"
+    },
+    {
+     "date": "08.11.2016",
+     "odometer": "45804",
+     "country": "Vācija"
+    },
+    {
+     "date": "07.11.2016",
+     "odometer": "45804",
+     "country": "Vācija"
+    },
+    {
+     "date": "24.10.2016",
+     "odometer": "42172",
+     "country": "Vācija"
+    },
+    {
+     "date": "22.09.2016",
+     "odometer": "42200",
+     "country": "Vācija"
+    },
+    {
+     "date": "04.05.2016",
+     "odometer": "42170",
+     "country": "Vācija"
+    },
+    {
+     "date": "03.05.2016",
+     "odometer": "42170",
+     "country": "Vācija"
+    },
+    {
+     "date": "29.04.2016",
+     "odometer": "42170",
+     "country": "Vācija"
+    },
+    {
+     "date": "01.04.2016",
+     "odometer": "42170",
+     "country": "Vācija"
+    },
+    {
+     "date": "21.12.2015",
+     "odometer": "30666",
+     "country": "Vācija"
+    },
+    {
+     "date": "19.11.2015",
+     "odometer": "26315",
+     "country": "Vācija"
+    },
+    {
+     "date": "25.08.2015",
+     "odometer": "14622",
+     "country": "Vācija"
+    },
+    {
+     "date": "05.08.2015",
+     "odometer": "14622",
+     "country": "Vācija"
+    },
+    {
+     "date": "17.03.2015",
+     "odometer": "3",
+     "country": "Vācija"
+    }
+   ],
+   "serviceWorks": [
+    {
+     "date": "01.05.2026",
+     "odometer": "",
+     "location": "",
+     "works": "Apkope"
+    },
+    {
+     "date": "25.12.2024",
+     "odometer": "211461",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "03.08.2024",
+     "odometer": "201447",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "25.05.2024",
+     "odometer": "196653",
+     "location": "LND Kfz- Meisterbetrieb, Bergmühlstraße 34, 86153 Augsburg, Germany",
+     "works": "Dzinēja eļļa.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nTransportlīdzekļa pārbaude.\nAtgāzu pārbaude.\nValsts tehniskā apskate."
+    },
+    {
+     "date": "03.02.2024",
+     "odometer": "192783",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "20.10.2023",
+     "odometer": "188646",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "29.05.2023",
+     "odometer": "175800",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "10.06.2022",
+     "odometer": "155589",
+     "location": "Siemens AG - Corporate Headquarters, Werner-von-Siemens-Straße 1, 80333 Munich, Germany",
+     "works": "Dzinēja eļļa.\nDegvielas filtrs.\nGaisa filtra elements.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nBremžu šķidruma serviss.\nTransportlīdzekļa pārbaude."
+    },
+    {
+     "date": "09.06.2022",
+     "odometer": "155594",
+     "location": "Siemens AG - Corporate Headquarters, Werner-von-Siemens-Straße 1, 80333 Munich, Germany",
+     "works": "BMW dzinēja eļļa LL04 5W30 (83212405948)\nZemas viskozitātes eļļa (83130443030)\nEļļas filtra elementu komplekts (11427807177)\nDegvielas filtra kasetne (13327822499)\nGaisa filtra elements (13718518111)\nMikrofiltrs/ogles filtrs (64119272642)\nBremžu šķidrums DOT4 LV\nAkumulators (61319217643)\nŠļūtenes skava (07129952104)\nKomplekts"
+    },
+    {
+     "date": "14.04.2022",
+     "odometer": "150452",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "01.04.2022",
+     "odometer": "148086",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "07.03.2022",
+     "odometer": "147112",
+     "location": "Siemens AG - Corporate Headquarters, Werner-von-Siemens-Straße 1, 80333 Munich, Germany",
+     "works": "TÜV nodevas (FT0000150)"
+    },
+    {
+     "date": "02.03.2022",
+     "odometer": "146851",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "05.07.2021",
+     "odometer": "130755",
+     "location": "Siemens AG - Corporate Headquarters, Werner-von-Siemens-Straße 1, 80333 Munich, Germany",
+     "works": "Hipoīdā asu eļļa G2 (83222413511)\nPutekļu sargu remonta komplekts\nĀrējais (31607606091)\nSmērviela Optitemp 2 LN 584 LO (83190447919)\nSkrūve ar paplāksni un atsperi (31206795249)\nVārpstas blīvslēgs ar fiksācijas gredzenu (31508743675)\nTorx skrūve (31106789333)\nKombinētais uzgrieznis (31106765451)\nPašfiksējošais uzgrieznis (33306760349)\nSešstūra skrūve ar atloku (07119906495)\nSešstūra skrūve (33176760342)\nM dzinēja nodalījuma aizsargs (51758035943)\nDzinēja nodalījuma aizsarga starpposms (51757898889)\nSešstūra skrūve (07149213164)"
+    },
+    {
+     "date": "05.07.2021",
+     "odometer": "130745",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "22.06.2021",
+     "odometer": "130359",
+     "location": "Siemens AG - Corporate Headquarters, Werner-von-Siemens-Straße 1, 80333 Munich, Germany",
+     "works": "Smalko putekļu uzlīme (FT999900007)\nZaļš vējstikls (51317333847)\nStikla remonta komplekts, aukstais\n1 Stunda (83192289285)\nVējstikla noseglīste\nAugšējā (51317184565)\nSkava (51137232420)\nSkava (51137184575)\nSkava (51137157702)\nSkava (51137217789)\nAtbalsts (51312996980)\nTīrīšanas līdzeklis R1 (83192211217)\nVējstikla skaņas izolācija (51489113232)\nAtbalsts (51317288462)"
+    },
+    {
+     "date": "22.06.2021",
+     "odometer": "130353",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "18.06.2021",
+     "odometer": "130138",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "27.01.2021",
+     "odometer": "125127",
+     "location": "BMW Frankfurt, Hanauer Landstraße 255, 60314 Frankfurt, Germany",
+     "works": "Dzinēja eļļa.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)"
+    },
+    {
+     "date": "31.03.2020",
+     "odometer": "112697",
+     "location": "BMW Frankfurt, Hanauer Landstraße 255, 60314 Frankfurt, Germany",
+     "works": "Hipoīdā asu eļļa G1 (83222295532)\nZemas viskozitātes eļļa (83130443030)\nBremžu šķidrums DOT4 LV\nPārbaude saskaņā ar § 29 STVZO (0012159)\nServiss\nSešstūra skrūve ar paplāksni (33176760336)\nSkrūvējams aizbāznis ar blīvgredzenu (33117525064)\nGumijas stiprinājums\nAizmugurējais (33316797238)\nPriekšējais (33316792873)\nKombinētais uzgrieznis (33306787062)\nDiferenciāļa blīvju komplekts (33107568368)\nRemonta komplekts, padziļināts uzgrieznis\nZils (33127607158)\nSešstūra uzgrieznis ar atloku (18307620549)\nBlīve (18308572007)\nBezmaksas automašīnas virsbūves mazgāšana (0011319)"
+    },
+    {
+     "date": "20.03.2020",
+     "odometer": "112417",
+     "location": "BMW Frankfurt, Hanauer Landstraße 255, 60314 Frankfurt, Germany",
+     "works": "Bremžu šķidruma serviss."
+    },
+    {
+     "date": "18.09.2019",
+     "odometer": "104397",
+     "location": "MINI München, Karosserie- und Lackzentrum, Schleißheimer Straße 82, 85748 Garching bei München, Germany",
+     "works": "Serviss\nTransportēšanas izmaksas virsbūve/krāsošana (11318)\nRemonta tīrīšana pēc bojājumiem (11321)\nSānu panelis\nPriekšējais kreisais (41007261461)\nPriekšējās kreisās durvis (41007203977)\nNoseglīste\nPriekšējā kreisā (51137298869)\nDurvju savienojuma blīve, A statne\nKreisā (51767177935)\nDurvju spraugas blīve, durvis\nPriekšējā apakšējā (51337178005)\nDurvju blīvgumija\nPriekšējā (51337177998)\nSliekšņa uzlika\nGruntēta\nKreisā (51777225923)\nĀrējais spogulis bez stikla, apsildāms\nKreisais (51167308513)\nB-statnes blīve\nKreisā (51337178011)\nB-statnes blīvējums\nAugšējais kreisais (51337248687)\nSkava (51337177961)\nIzplešanās uzgrieznis (07149177765)\nSkaņas izolācija\nEmblēma (51148058881)\nKreisā aizsargplēve (51777233009)\nSānu pagrieziena rādītāja apdare\nKreisā (63137182189)\nIzplešanās kniede (51161881149)\nKrāsošanas materiāli (99999999990)"
+    },
+    {
+     "date": "09.09.2019",
+     "odometer": "104376",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "19.07.2019",
+     "odometer": "102170",
+     "location": "BMW Frankfurt, Hanauer Landstraße 255, 60314 Frankfurt, Germany",
+     "works": "Dzinēja eļļa.\nDegvielas filtrs.\nGaisa filtra elements.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nTransportlīdzekļa pārbaude."
+    },
+    {
+     "date": "28.06.2019",
+     "odometer": "101091",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "15.05.2019",
+     "odometer": "95656",
+     "location": "BMW Frankfurt, Hanauer Landstraße 255, 60314 Frankfurt, Germany",
+     "works": "Maiņas automašīna (0000158)\nBezmaksas automašīnas virsbūves mazgāšana (0011319)"
+    },
+    {
+     "date": "22.05.2018",
+     "odometer": "79380",
+     "location": "Simon Gruber Autoservice GmbH & Co. KG - BMW, Rosenheimer Landstraße 50, 85521 Ottobrunn, Germany",
+     "works": "5W-30 eļļa LL04 no mucas (99992102951)\nEļļas filtra elementu komplekts (11427807177)\nMikrofiltrs/ogles filtrs (64119272642)\nBremžu kluči bez azbesta (34116794464)\nBremžu kluču nodiluma sensors\nBremžu kluču pasta (83192158851)\nBremžu kluči bez azbesta (34216790966)\nBremžu kluču sensors\nBremžu tīrītājs 2.\nBremžu disks, vieglmetāla\nBremžu disks\nVentilējams\nVentilējams (34216775291)\nTīrīšanas līdzeklis (99999111007)\nKomplekts\nRemonta komplekts\nPriekšējais kreisais (34356791958)\nAizmugurējais (34356791960)\nIekšējā sešstūra skrūve (34211161806)\nKreisais (34116789543)\nLabais (34116789544)"
+    },
+    {
+     "date": "22.05.2018",
+     "odometer": "79374",
+     "location": "Simon Gruber Autoservice GmbH & Co. KG - BMW, Rosenheimer Landstraße 50, 85521 Ottobrunn, Germany",
+     "works": "Dzinēja eļļa.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nPriekšējās bremzes.\nAizmugurējās bremzes."
+    },
+    {
+     "date": "14.05.2018",
+     "odometer": "79040",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "22.03.2018",
+     "odometer": "76142",
+     "location": "Simon Gruber Autoservice GmbH & Co. KG - BMW, Rosenheimer Landstraße 50, 85521 Ottobrunn, Germany",
+     "works": "Zemas viskozitātes eļļa (83132184843)\nBremžu šķidrums DOT4 LV\nBremžu šķidruma serviss."
+    },
+    {
+     "date": "19.03.2018",
+     "odometer": "75993",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "08.11.2017",
+     "odometer": "69854",
+     "location": "BMW Frankfurt, Hanauer Landstraße 255, 60314 Frankfurt, Germany",
+     "works": "Ventilācijas caurule (27107593377)\nSkrūvējams aizbāznis ar blīvgredzenu (33117525064)\nDtf 1 (83222409710)\nSešstūra skrūve (07119906978)\nSešstūra uzgrieznis (07119906050)\nPārnesumkārbas stiprinājums (22326856421)\nAtjaunota sadales kārba (27107649725)\nKrusta savienojums (26117610061)\nTorx skrūve ar rievām (26117529387)\nSešstūra skrūve (26117635643)\nPašfiksējošais sešstūra uzgrieznis (26127536563)\nSešstūra skrūve (26117527475)\nSešstūra uzgrieznis ar atloku (18307620549)\nBlīve (18308572007)\nServisa tīrīšana (11320)"
+    },
+    {
+     "date": "24.04.2017",
+     "odometer": "57945",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "03.04.2017",
+     "odometer": "56859",
+     "location": "Robert-Koch-Straße, Robert-Koch-Straße, 97080 Würzburg, Germany",
+     "works": "Dzinēja eļļa.\nDegvielas filtrs.\nGaisa filtra elements.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nTransportlīdzekļa pārbaude.\nStandarta apjoms."
+    },
+    {
+     "date": "16.02.2017",
+     "odometer": "53711",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "13.02.2017",
+     "odometer": "52633",
+     "location": "BMW München, Filiale Solln, Drygalski-Allee 35, 81477 Munich, Germany",
+     "works": "Maiņas automašīna (24 stundas) (0000160)\nMaiņas automašīna (0000158)\nServisa tīrīšana (11320)"
+    },
+    {
+     "date": "24.11.2016",
+     "odometer": "45804",
+     "location": "BMW/MINI München - Airportservice, Munich Airport",
+     "works": "Maiņas automašīna (0000158)\nAizmugurējās bremzes.\nStandarta apjoms.\nServiss"
+    },
+    {
+     "date": "24.10.2016",
+     "odometer": "42172",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "22.09.2016",
+     "odometer": "42200",
+     "location": "BMW München, Filiale Fröttmaning, Werner-Heisenberg-Allee 10, 80939 Munich, Germany",
+     "works": "Spuldze (63217160908)"
+    },
+    {
+     "date": "04.05.2016",
+     "odometer": "42170",
+     "location": "BMW München, Filiale Fröttmaning, Werner-Heisenberg-Allee 10, 80939 Munich, Germany",
+     "works": "Gambs 23-101926-05-16 (0000154)\nVieglmetāla disks (36117841823)\nServiss\nSilikona paliktnis rasas sensoram 31 mm (99999775537)\nZaļš vējstikls (51317333847)\nVējstikla noseglīste\nAugšējā (51317184565)\nAtbalsts (51317288462)\nSkava (51137157702)\nSkava (51137217789)\nKrāsas aktivators\nZīmulis (83192154458)\nStikla remonta komplekts, aukstais\n1 Stunda (83192289287)"
+    },
+    {
+     "date": "21.12.2015",
+     "odometer": "30666",
+     "location": "HORNBACH München-Fröttmaning, Muthmannstraße 4, 80939 Munich, Germany",
+     "works": "Dzinēja eļļa.\nMikrofiltrs (apsvērt papildu darbus, ja nepieciešams)\nStandarta apjoms."
+    },
+    {
+     "date": "19.11.2015",
+     "odometer": "26315",
+     "location": "",
+     "works": "Serviss"
+    },
+    {
+     "date": "25.08.2015",
+     "odometer": "14622",
+     "location": "BMW München, Filiale Fröttmaning, Werner-Heisenberg-Allee 10, 80939 Munich, Germany",
+     "works": "Saņemšanas un piegādes pakalpojums (00006)\nServisa tīrīšana (11320)\nServiss"
+    },
+    {
+     "date": "17.03.2015",
+     "odometer": "3",
+     "location": "BMW München, Filiale Fröttmaning, Werner-Heisenberg-Allee 10, 80939 Munich, Germany",
+     "works": "Vējstikla mazgāšanas šķidruma koncentrāts (83122298528)"
+    }
+   ],
+   "oneautoIngest": {
+    "serviceTimelineOriginal": [
+     {
+      "date": "25.12.2024",
+      "odometer": "211461",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "03.08.2024",
+      "odometer": "201447",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "25.05.2024",
+      "odometer": "196653",
+      "place": "LND Kfz- Meisterbetrieb, Bergmühlstraße 34, 86153 Augsburg, Germany",
+      "works": "Engine oil.\nVehicle check.\nStatutory vehicle inspection.\nStatutory emissions test.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "03.02.2024",
+      "odometer": "192783",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "20.10.2023",
+      "odometer": "188646",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "29.05.2023",
+      "odometer": "175800",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "10.06.2022",
+      "odometer": "155589",
+      "place": "Siemens AG - Corporate Headquarters, Werner-von-Siemens-Straße 1, 80333 Munich, Germany",
+      "works": "Engine oil.\nBrake fluid service.\nVehicle check.\nFuel filter.\nAir filter element.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "09.06.2022",
+      "odometer": "155594",
+      "place": "Siemens AG - Corporate Headquarters, Werner-von-Siemens-Straße 1, 80333 Munich, Germany",
+      "works": "Set oil-filter element (11427807177)\nBMW Engine Oil LL04 5W30 (83212405948)\nBrake fluid DOT4 LV\nBattery (61319217643)\nHose clamp (07129952104)\nFuel filter cartridge (13327822499)\nAir filter element (13718518111)\nSet\nMicrofilter/carbon canister (64119272642)\nLow viscosity (83130443030)"
+     },
+     {
+      "date": "14.04.2022",
+      "odometer": "150452",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "01.04.2022",
+      "odometer": "148086",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "07.03.2022",
+      "odometer": "147112",
+      "place": "Siemens AG - Corporate Headquarters, Werner-von-Siemens-Straße 1, 80333 Munich, Germany",
+      "works": "TÜV Gebühren (FT0000150)"
+     },
+     {
+      "date": "02.03.2022",
+      "odometer": "146851",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "05.07.2021",
+      "odometer": "130755",
+      "place": "Siemens AG - Corporate Headquarters, Werner-von-Siemens-Straße 1, 80333 Munich, Germany",
+      "works": "Hypoid axle oil G2 (83222413511)\nRepair kit bellows\nExterior (31607606091)\nLubricating mat. Optitemp 2 LN 584 LO (83190447919)\nCollar bolt with compression spring (31206795249)\nShaft seal with lock ring (31508743675)\nTorx screw (31106789333)\nCombination nut (31106765451)\nSelf-locking collar nut (33306760349)\nHexagon screw with flange (07119906495)\nHex Bolt (33176760342)\nM engine compartment shielding (51758035943)\nInterm. piece engine compartm. shielding (51757898889)\nHex Bolt (07149213164)"
+     },
+     {
+      "date": "05.07.2021",
+      "odometer": "130745",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "22.06.2021",
+      "odometer": "130359",
+      "place": "Siemens AG - Corporate Headquarters, Werner-von-Siemens-Straße 1, 80333 Munich, Germany",
+      "works": "Feinstaubplakette (FT999900007)\nGreen windscreen (51317333847)\nRepair kit, window glass, cold\n1 Hour (83192289285)\nCover, windshield\nTop (51317184565)\nClamp (51137232420)\nClamp (51137184575)\nClamp (51137157702)\nClamp (51137217789)\nBump stop (51312996980)\nCleaner R1 (83192211217)\nSound insulation windshield - windscreen (51489113232)\nBump stop (51317288462)"
+     },
+     {
+      "date": "22.06.2021",
+      "odometer": "130353",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "18.06.2021",
+      "odometer": "130138",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "27.01.2021",
+      "odometer": "125127",
+      "place": "BMW Frankfurt, Hanauer Landstraße 255, 60314 Frankfurt, Germany",
+      "works": "Engine oil.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "31.03.2020",
+      "odometer": "112697",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "20.03.2020",
+      "odometer": "112417",
+      "place": "BMW Frankfurt, Hanauer Landstraße 255, 60314 Frankfurt, Germany",
+      "works": "Brake fluid service."
+     },
+     {
+      "date": "20.03.2020",
+      "odometer": "112697",
+      "place": "BMW Frankfurt, Hanauer Landstraße 255, 60314 Frankfurt, Germany",
+      "works": "Hypoid axle oil G1 (83222295532)\nHex Bolt with washer (33176760336)\nHex Bolt with washer (07119906460)\nBrake fluid DOT4 LV\nScrew plug with O-ring (33117525064)\nRubber mounting rear (33316797238)\nRubber mounting front (33316792873)\nCombination nut (33306787062)\nGasket set differential (33107568368)\nRepair kit, recessed nut\nBlue (33127607158)\nHex nut with flange (18307620549)\nGasket (18308572007)\nLow viscosity (83130443030)\nÜberprüfung nach § 29 STVZO (0012159)\nKostenlose Fahrzeugoberwäsche (0011319)"
+     },
+     {
+      "date": "18.09.2019",
+      "odometer": "104397",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "09.09.2019",
+      "odometer": "104376",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "28.08.2019",
+      "odometer": "104397",
+      "place": "MINI München, Karosserie- und Lackzentrum, Schleißheimer Straße 82, 85748 Garching bei München, Germany",
+      "works": "Verbringungskosten Karo/Lack 150\nEuro (11318)\nSchadenbedingte Reparaturreinigung (11321)\nSide panel\nFront left (41007261461)\nDoor front left (41007203977)\nCovering front left (51137298869)\nGasket, door joint, A column\nLeft (51767177935)\nSeal, door gap, door\nFront bottom (51337178005)\nDoor weatherstrip\nFront (51337177998)\nDoor sill cover\nPrimed left (51777225923)\nExterior mirror w/o glass, heated\nLeft (51167308513)\nSeal, closing panel, B-pillar\nLeft (51337178011)\nSealing, B-column\nTop left (51337248687)\nClip (51337177961)\nExpanding nut (07149177765)\nSound insulating door front left (51487179515)\nEmblem (51148058881)\nLeft protection foil (51777233009)\nTrim, aux. direction indicator\nLeft (63137182189)\nExpanding rivet (51161881149)\nLackmaterial (99999999990)"
+     },
+     {
+      "date": "19.07.2019",
+      "odometer": "102170",
+      "place": "BMW Frankfurt, Hanauer Landstraße 255, 60314 Frankfurt, Germany",
+      "works": "Engine oil.\nVehicle check.\nFuel filter.\nAir filter element.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "28.06.2019",
+      "odometer": "101091",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "15.05.2019",
+      "odometer": "95656",
+      "place": "BMW Frankfurt, Hanauer Landstraße 255, 60314 Frankfurt, Germany",
+      "works": "Ersatzfahrzeug (0000158)"
+     },
+     {
+      "date": "10.04.2019",
+      "odometer": "95656",
+      "place": "BMW Frankfurt, Hanauer Landstraße 255, 60314 Frankfurt, Germany",
+      "works": "Ersatzfahrzeug über GW (TA) (0000158)\nKostenlose Fahrzeugoberwäsche (0011319)"
+     },
+     {
+      "date": "22.05.2018",
+      "odometer": "79374",
+      "place": "Simon Gruber Autoservice GmbH & Co. KG - BMW, Rosenheimer Landstraße 50, 85521 Ottobrunn, Germany",
+      "works": "Engine oil.\nFront Brake.\nRear Brake.\nMicrofilter (consider further additional job(s) if appropriate)"
+     },
+     {
+      "date": "22.05.2018",
+      "odometer": "79380",
+      "place": "Simon Gruber Autoservice GmbH & Co. KG - BMW, Rosenheimer Landstraße 50, 85521 Ottobrunn, Germany",
+      "works": "Set oil-filter element (11427807177)\nBrake pads asbestos-free (34116794464)\nBrake pad wear sensor\nBrake-pad paste (83192158851)\nBrake pads asbestos-free (34216790966)\nBrake-pad sensor\nBrake cleaner 2.\nBrake disc, lightweight\nBrake disc\nVentilated\nVentilated (34216775291)\n5W-30 Öl LL04 Tankware (99992102951)\nReiniger (99999111007)\nSet\nMicrofilter/carbon canister (64119272642)\nRepair kit\nFront left (34356791958)\nRear (34356791960)\nInner hex bolt (34211161806)\nLeft (34116789543)\nRight (34116789544)"
+     },
+     {
+      "date": "14.05.2018",
+      "odometer": "79040",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "22.03.2018",
+      "odometer": "76142",
+      "place": "Simon Gruber Autoservice GmbH & Co. KG - BMW, Rosenheimer Landstraße 50, 85521 Ottobrunn, Germany",
+      "works": "Brake fluid DOT4 LV\nBrake fluid service.\nLow viscosity (83132184843)"
+     },
+     {
+      "date": "19.03.2018",
+      "odometer": "75993",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "08.11.2017",
+      "odometer": "69854",
+      "place": "BMW Frankfurt, Hanauer Landstraße 255, 60314 Frankfurt, Germany",
+      "works": "Screw plug with O-ring (33117525064)\nDtf 1 (83222409710)\nHex Bolt (07119906978)\nHex nut (07119906050)\nGearbox mount (22326856421)\nRP REMAN Transfer box (27107649725)\nUniversal joint (26117610061)\nTorx screw with ribs (26117529387)\nHex Bolt (26117635643)\nSelf-locking hex nut (26127536563)\nHex Bolt (26117527475)\nVent pipe (27107593377)\nHex nut with flange (18307620549)\nGasket (18308572007)\nService-Reinigung (11320)"
+     },
+     {
+      "date": "24.04.2017",
+      "odometer": "57945",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "03.04.2017",
+      "odometer": "56859",
+      "place": "Robert-Koch-Straße, Robert-Koch-Straße, 97080 Würzburg, Germany",
+      "works": "Engine oil.\nVehicle check.\nFuel filter.\nAir filter element.\nMicrofilter (consider further additional job(s) if appropriate)\nStandard scope."
+     },
+     {
+      "date": "16.02.2017",
+      "odometer": "53711",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "13.02.2017",
+      "odometer": "52633",
+      "place": "BMW München, Filiale Solln, Drygalski-Allee 35, 81477 Munich, Germany",
+      "works": "Ersatzfahrzeug (24 Stunden) (0000160)"
+     },
+     {
+      "date": "30.01.2017",
+      "odometer": "52633",
+      "place": "BMW München, Filiale Solln, Drygalski-Allee 35, 81477 Munich, Germany",
+      "works": "Ersatzfahrzeug (0000158)\nService-Reinigung (11320)"
+     },
+     {
+      "date": "24.11.2016",
+      "odometer": "45804",
+      "place": "BMW/MINI München - Airportservice, Munich Airport",
+      "works": "Ersatzfahrzeug (0000158)"
+     },
+     {
+      "date": "08.11.2016",
+      "odometer": "45804",
+      "place": "BMW/MINI München - Airportservice, Munich Airport",
+      "works": "Rear Brake.\nStandard scope."
+     },
+     {
+      "date": "07.11.2016",
+      "odometer": "45804",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "24.10.2016",
+      "odometer": "42172",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "22.09.2016",
+      "odometer": "42200",
+      "place": "BMW München, Filiale Fröttmaning, Werner-Heisenberg-Allee 10, 80939 Munich, Germany",
+      "works": "Bulb (63217160908)"
+     },
+     {
+      "date": "04.05.2016",
+      "odometer": "42170",
+      "place": "BMW München, Filiale Fröttmaning, Werner-Heisenberg-Allee 10, 80939 Munich, Germany",
+      "works": "Gambs 23-101926-05-16 (0000154)\nLight alloy rim (36117841823)"
+     },
+     {
+      "date": "03.05.2016",
+      "odometer": "42170",
+      "place": "BMW München, Filiale Fröttmaning, Werner-Heisenberg-Allee 10, 80939 Munich, Germany",
+      "works": "Service"
+     },
+     {
+      "date": "29.04.2016",
+      "odometer": "42170",
+      "place": "BMW München, Filiale Fröttmaning, Werner-Heisenberg-Allee 10, 80939 Munich, Germany",
+      "works": "Silikonpad für Beschlagsensor 31 mm (99999775537)\nGreen windscreen (51317333847)\nCover, windshield\nTop (51317184565)\nBump stop (51317288462)\nClamp (51137157702)\nClamp (51137217789)\nPaint activator\nStick (83192154458)\nRepair kit, window glass, cold\n1 Hour (83192289287)"
+     },
+     {
+      "date": "01.04.2016",
+      "odometer": "42170",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "21.12.2015",
+      "odometer": "30666",
+      "place": "HORNBACH München-Fröttmaning, Muthmannstraße 4, 80939 Munich, Germany",
+      "works": "Engine oil.\nMicrofilter (consider further additional job(s) if appropriate)\nStandard scope."
+     },
+     {
+      "date": "19.11.2015",
+      "odometer": "26315",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "25.08.2015",
+      "odometer": "14622",
+      "place": "BMW München, Filiale Fröttmaning, Werner-Heisenberg-Allee 10, 80939 Munich, Germany",
+      "works": "Hol- und Bringservice (48 Eur inkl. MwSt) (00006)\nService-Reinigung (11320)"
+     },
+     {
+      "date": "05.08.2015",
+      "odometer": "14622",
+      "place": "",
+      "works": "Service"
+     },
+     {
+      "date": "17.03.2015",
+      "odometer": "3",
+      "place": "BMW München, Filiale Fröttmaning, Werner-Heisenberg-Allee 10, 80939 Munich, Germany",
+      "works": "Windshield washer antifreeze (83122298528)"
+     }
+    ]
+   },
+   "outvinReport": {
+    "vehicleInfo": {
+     "model": "750LdX",
+     "modelSeries": "7 (F02)",
+     "vinCode": "WBAYF610X0GK19300",
+     "vehicleType": "",
+     "transmission": "AUTOMATIC (Steptronic)",
+     "steeringSide": "LHD",
+     "engineCode": "N57X",
+     "engineNumber": "",
+     "body": "Sedans",
+     "drive": "xDrive",
+     "power": "280 kW (375 ZS / 381 PS)",
+     "integrationLevel": "",
+     "currentILevel": "",
+     "developmentCode": "F02 (MUE)",
+     "modelCode": "750Ld",
+     "productionDate": "01.03.2015",
+     "firstRegistration": "",
+     "warrantyStartDate": "",
+     "countryRegion": "Dingolfing, Germany",
+     "color": "Schwarz 2",
+     "colorCode": "668",
+     "interior": "Leather \"Nappa/elfenbein-weiss\"",
+     "interiorCode": "SNAEW",
+     "fuel": "D",
+     "displacement": "3.0"
+    }
+   }
+  },
+  "cc_vin": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "insurance": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ]
+  },
+  "asv": {
+   "reportDate": "",
+   "attentionMarks": "",
+   "ownersCount": "",
+   "productUsed": "",
+   "reportId": "",
+   "lastCostUsd": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "checks": [],
+   "mileage": [
+    {
+     "date": "",
+     "odometer": "",
+     "country": ""
+    }
+   ],
+   "damages": [
+    {
+     "date": "",
+     "region": "",
+     "amount": "",
+     "description": ""
+    }
+   ],
+   "brands": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "titles": [
+    {
+     "date": "",
+     "region": "",
+     "odometer": "",
+     "note": ""
+    }
+   ],
+   "sales": [
+    {
+     "date": "",
+     "venue": "",
+     "odometer": "",
+     "price": "",
+     "status": ""
+    }
+   ],
+   "liens": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ],
+   "thefts": [
+    {
+     "date": "",
+     "label": "",
+     "detail": ""
+    }
+   ]
+  },
+  "oneauto": {
+   "vinOverride": "",
+   "lastFetchedVin": "",
+   "fetchedAt": "",
+   "selectedProducts": [
+    "oe_service_history"
+   ],
+   "lastCostEur": "",
+   "display": {
+    "serviceTimeline": [],
+    "powertrain": []
+   },
+   "source": "oneautoapi"
+  },
+  "ltab": {
+   "rows": [
+    {
+     "incidentNo": "",
+     "csngDate": "",
+     "lossAmount": ""
+    }
+   ]
+  },
+  "tirgus": {
+   "listedForSale": "",
+   "listingCreated": "",
+   "priceDrop": "",
+   "priceHistory": [],
+   "listingMileageOdometer": "",
+   "listingMileageDate": "",
+   "listingMileageCountry": ""
+  },
+  "citi_avoti": {
+   "sections": [
+    {
+     "serviceHistory": [
+      {
+       "date": "",
+       "odometer": "",
+       "country": ""
+      }
+     ],
+     "incidents": [
+      {
+       "incidentNo": "Vācija",
+       "csngDate": "18.09.2019",
+       "lossAmount": "Dati nav pieejami"
+      }
+     ],
+     "label": ""
+    }
+   ]
+  }
+ }
+}

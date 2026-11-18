@@ -1,0 +1,31 @@
+{
+ "label": "Volvo V70 2010: 3 valstis, kritumi",
+ "rindasPaAvotiem": {
+  "CSDD": 4,
+  "AutoDNA": 1,
+  "CarVertical": 2
+ },
+ "rindasSavaktas": 7,
+ "rindasTabula": 5,
+ "tabula": [
+  "01.02.2010 | 11 | Vācija | CarVertical | mēnesis",
+  "22.04.2020 | 294184 | Vācija | CSDD",
+  "06.04.2022 | 323918 | Vācija | CSDD",
+  "19.06.2024 | 380408 | Vācija | CSDD",
+  "04.03.2026 | 390911 | Latvija | CarVertical + CSDD + AutoDNA"
+ ],
+ "sarkanaJosla": false,
+ "klases": [],
+ "kritumsBezNilaLemumiem": false,
+ "nilaLemumi": [],
+ "klasesPecNilaLemumiem": [],
+ "faktuLapa": {
+  "odometerAnomaly": false,
+  "carverticalMileageWarning": false,
+  "maxRollbackDropKm": 0,
+  "rollbacks": [],
+  "suspectedEntryErrors": [],
+  "implausibleReadings": [],
+  "latestKm": 390911
+ }
+}

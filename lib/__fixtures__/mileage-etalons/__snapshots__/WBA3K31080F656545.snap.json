@@ -1,0 +1,97 @@
+{
+ "label": "BMW 320d Touring 2012 (DE->DK->LV): ievades kļūda 90 000 km pirmajā ierakstā, AutoDNA sludinājums 90 000, mēneša precizitāte 04.2014",
+ "rindasPaAvotiem": {
+  "OFICIĀLĀ DĪLERA DATI": 39,
+  "AutoDNA": 8,
+  "CarVertical": 23,
+  "DĀNIJAS REĢISTRI": 7,
+  "ss.lv": 1
+ },
+ "rindasSavaktas": 78,
+ "rindasTabula": 46,
+ "tabula": [
+  "04.12.2012 | 2954 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "30.01.2013 | 9000 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "30.04.2013 | 17813 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "11.06.2013 | 22267 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "24.06.2013 | 23134 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "27.06.2013 | 23298 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "29.07.2013 | 25799 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "02.10.2013 | 33724 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "13.11.2013 | 37809 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "15.11.2013 | 37811 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "17.02.2014 | 46982 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "05.03.2014 | 49240 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "07.03.2014 | 49243 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "28.03.2014 | 50740 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "01.04.2014 | 53500 | Vācija | AutoDNA",
+  "30.04.2014 | 53741 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "12.05.2014 | 54832 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "07.07.2014 | 60766 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "15.08.2014 | 66579 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "11.09.2014 | 69838 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "12.11.2014 | 75628 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "19.12.2014 | 80328 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "19.12.2014 | 80221 | Vācija | CarVertical + OFICIĀLĀ DĪLERA DATI",
+  "08.04.2015 | 91767 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "30.06.2015 | 99953 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "18.08.2015 | 103880 | Vācija | OFICIĀLĀ DĪLERA DATI",
+  "27.09.2015 | 90000 | Vācija | AutoDNA | nav grafikā, ievades kļūda",
+  "12.10.2015 | 107993 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "15.01.2016 | 108290 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "03.02.2016 | 109000 | Dānija | AutoDNA + DĀNIJAS REĢISTRI",
+  "04.05.2016 | 126114 | Dānija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "19.05.2016 | 127528 | Dānija | OFICIĀLĀ DĪLERA DATI",
+  "11.04.2017 | 156902 | Dānija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "23.02.2018 | 186000 | Dānija | CarVertical + AutoDNA + DĀNIJAS REĢISTRI",
+  "10.04.2018 | 189984 | Dānija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "04.07.2019 | 228216 | Dānija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "30.08.2019 | 231926 | Dānija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "06.02.2020 | 245000 | Dānija | CarVertical + AutoDNA + DĀNIJAS REĢISTRI",
+  "15.02.2022 | 279000 | Dānija | CarVertical + AutoDNA + DĀNIJAS REĢISTRI",
+  "13.03.2023 | 296016 | Dānija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "17.07.2023 | 302360 | Dānija | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "19.02.2024 | 316450 | Dānija | AutoDNA + DĀNIJAS REĢISTRI",
+  "19.02.2024 | 316000 | Dānija | CarVertical + DĀNIJAS REĢISTRI",
+  "25.03.2026 | 334193 | Dānija | AutoDNA",
+  "25.03.2026 | 334000 | Dānija | CarVertical + DĀNIJAS REĢISTRI",
+  "03.08.2026 | 335 000 | Latvija | ss.lv"
+ ],
+ "sarkanaJosla": false,
+ "klases": [
+  "typo_outlier: 18.08.2015 103880 -> 27.09.2015 90000 (kritums 13880) [27.09.2015 | 90000 | AutoDNA]"
+ ],
+ "kritumsBezNilaLemumiem": false,
+ "nilaLemumi": [
+  {
+   "key": "27.09.2015|90000|AutoDNA|47",
+   "action": "confirm"
+  },
+  {
+   "key": "04.12.2012|2954|OFICIĀLĀ DĪLERA DATI|39",
+   "action": "dismiss"
+  },
+  {
+   "key": "23.04.2014|50740|OFICIĀLĀ DĪLERA DATI|24",
+   "action": "dismiss"
+  },
+  {
+   "key": "27.09.2015|90000|AutoDNA|46",
+   "action": "dismiss"
+  }
+ ],
+ "klasesPecNilaLemumiem": [
+  "typo_outlier: 27.09.2015 90000"
+ ],
+ "faktuLapa": {
+  "odometerAnomaly": false,
+  "carverticalMileageWarning": false,
+  "maxRollbackDropKm": 0,
+  "rollbacks": [],
+  "suspectedEntryErrors": [
+   "27.09.2015 90000 AutoDNA"
+  ],
+  "implausibleReadings": [],
+  "latestKm": 335000
+ }
+}

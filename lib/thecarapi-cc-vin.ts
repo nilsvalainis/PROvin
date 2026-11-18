@@ -4,6 +4,7 @@
  */
 import "server-only";
 
+import { retainSavedHidePhotoWatermarks } from "@/lib/admin-photo-watermark";
 import { applyCcVinParsedReport } from "@/lib/cc-vin-report-apply";
 import { emptyCcVinBlock, normalizeCcVinBlock, type CcVinBlockState } from "@/lib/cc-vin-report";
 import { syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
@@ -166,6 +167,10 @@ export async function fetchThecarapiCcVinMerge(opts: {
     const synced = syncCcVinPhotoGroupsAndFlat([...(block.photoGroups ?? []), ...gallery.groups]);
     block = { ...block, photoGroups: synced.photoGroups, photos: synced.photos };
   }
+  block = {
+    ...block,
+    hidePhotoWatermarks: retainSavedHidePhotoWatermarks(prev),
+  };
   return {
     parse: result.parse,
     block: normalizeCcVinBlock(block),

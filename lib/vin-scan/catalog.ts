@@ -44,6 +44,7 @@ export const VIN_SCAN_SOURCE_IDS = [
   "poctra",
   "cz_rsv",
   "dvsa_mot",
+  "eu_safety_gate",
 ] as const;
 
 export type VinScanSourceId = (typeof VIN_SCAN_SOURCE_IDS)[number];
@@ -451,6 +452,18 @@ export const VIN_SCAN_CATALOG: readonly VinScanCatalogItem[] = [
       void vin;
       const reg = plates?.uk ? encodeURIComponent(normalizeScanPlate(plates.uk)) : "";
       return reg ? `https://www.check-mot.service.gov.uk/results?registration=${reg}` : "https://www.gov.uk/check-mot-history";
+    },
+  },
+  {
+    id: "eu_safety_gate",
+    label: "ES Safety Gate",
+    country: "EU",
+    hint: "ES brīdinājumi par bīstamiem auto (bij. RAPEX) pēc markas un modeļa. Modeļa līmenis, var neattiekties uz šo auto",
+    needs: ["vin"],
+    // Safety Gate nemeklē pēc VIN: saite atver meklēšanas lapu, marku ievada operators.
+    openUrl: (vin) => {
+      void vin;
+      return "https://ec.europa.eu/safety-gate-alerts/screen/search?resetSearch=true";
     },
   },
 ];

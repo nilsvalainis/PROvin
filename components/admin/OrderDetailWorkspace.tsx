@@ -273,7 +273,15 @@ import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWi
 import { AdminFlashMaxButton } from "@/components/admin/AdminFlashMaxButton";
 import { AdminOrderMobileDock } from "@/components/admin/AdminOrderMobileDock";
 import { AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
-import { renderReportPdfOnServer } from "@/lib/report-pdf-client";
+import { renderReportPdfOnServer, type ServerReportPdfResult } from "@/lib/report-pdf-client";
+import {
+  AdminSendReportDialog,
+  type SendReportKind,
+  type SendReportPrepared,
+  type SendReportResult,
+} from "@/components/admin/AdminSendReportDialog";
+import { postAdminAuditComplete } from "@/lib/admin-audit-complete-client";
+import { isDealerHighlightAdminOrder } from "@/lib/admin-customer-identity";
 import { AdminOrderStickyActionRail } from "@/components/admin/AdminOrderStickyActionRail";
 import type { AdminAiSourceCommentSlot } from "@/components/admin/AdminSourceCommentField";
 import {
@@ -966,6 +974,8 @@ export function OrderDetailWorkspace({
         asvOnly?: boolean;
         businessBrand?: boolean;
         lang?: ClientReportLang;
+        serverPdf?: boolean;
+        onServerPdf?: (r: ServerReportPdfResult | null, err?: string) => void;
       }
     | undefined
   >(undefined);
@@ -3639,8 +3649,9 @@ export function OrderDetailWorkspace({
     asvOnly?: boolean;
     businessBrand?: boolean;
     lang?: ClientReportLang;
-    /** Izmēģinājums (Sūtīt atskaiti 1. posms): tas pats HTML, PDF top serverī ar Chromium un tiek lejupielādēts. */
+    /** "Sūtīt atskaiti": tas pats HTML, PDF top serverī ar Chromium; rezultāts nonāk `onServerPdf`. */
     serverPdf?: boolean;
+    onServerPdf?: (r: ServerReportPdfResult | null, err?: string) => void;
   }) => {
     if (pdfBusyRef.current) return;
     // Telefonā (iOS Safari) logs jāatver sinhroni pieskāriena brīdī, citādi pēc `await` to bloķē.
@@ -4138,15 +4149,9 @@ export function OrderDetailWorkspace({
       try {
         const r = await renderReportPdfOnServer({ sessionId: payload.sessionId, html: translatedHtml, filename: printFileTitle });
         bumpPdf(100);
-        const a = document.createElement("a");
-        a.href = r.downloadUrl;
-        a.download = r.filename;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        console.info("[servera PDF]", { ms: r.ms, bytes: r.bytes, fontsReady: r.fontsReady });
+        opts.onServerPdf?.(r);
       } catch (e) {
-        alert(`Servera PDF neizdevās: ${e instanceof Error ? e.message : "kļūda"}. Lieto "Ģenerēt PDF".`);
+        opts.onServerPdf?.(null, `Servera PDF neizdevās: ${e instanceof Error ? e.message : "kļūda"}`);
       }
       return;
     }
@@ -4453,6 +4458,15 @@ export function OrderDetailWorkspace({
                 Sagatavot melnrakstu
               </button>
             ) : null}
+            <button
+              type="button"
+              onClick={() => setSendReportOpen(true)}
+              className={adminProBtn("client")}
+              title="Atskaites PDF serverī, Skatīt PDF, sūtīšana ar versiju, kopija Dropbox /_PROv/"
+            >
+              <Send className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden />
+              Sūtīt atskaiti
+            </button>
             <button
               type="button"
               onClick={openNotifyClientDialog}
@@ -4766,6 +4780,94 @@ export function OrderDetailWorkspace({
     [showMobileNotice],
   );
 
+  /* ---- "Sūtīt atskaiti" (2. posms, Nils 17.11): PDF serverī, versijas, Dropbox, «Izpildīts» ---- */
+  const [sendReportOpen, setSendReportOpen] = useState(false);
+  const sendReportDefaultKind: SendReportKind = isDealerHighlightAdminOrder({
+    checkoutLine: payload.checkoutLine,
+    amountTotalCents: payload.amountTotal,
+  })
+    ? "dealer"
+    : b2bClientOrder
+      ? "business"
+      : "audits";
+
+  const prepareSendReportPdf = (kind: SendReportKind, lang: ClientReportLang): Promise<SendReportPrepared> =>
+    new Promise((resolve, reject) => {
+      if (pdfBusyRef.current) {
+        reject(new Error("PDF jau tiek veidots - pagaidi."));
+        return;
+      }
+      let settled = false;
+      const opts = {
+        dealerOnly: kind === "dealer",
+        asvOnly: kind === "asv",
+        businessBrand: kind === "business",
+        lang,
+        serverPdf: true,
+        onServerPdf: (r: ServerReportPdfResult | null, err?: string) => {
+          settled = true;
+          if (r) resolve({ pdfPathname: r.pdfPathname, downloadUrl: r.downloadUrl, filename: r.filename, bytes: r.bytes });
+          else reject(new Error(err || "PDF netika izveidots."));
+        },
+      };
+      void openPrintReport(opts)
+        .then(() => {
+          // Faktu pārbaudes logs: rezultāts nāks pēc «Turpināt tik un tā» vai «Atpakaļ».
+          if (!settled && pendingPrintOptsRef.current !== opts) reject(new Error("PDF netika izveidots."));
+        })
+        .catch((e: unknown) => {
+          if (!settled) reject(e instanceof Error ? e : new Error("PDF netika izveidots."));
+        });
+    });
+
+  const sendPreparedReport = async (input: {
+    prepared: SendReportPrepared;
+    lang: ClientReportLang;
+    attachmentIds: string[];
+    includeGoogleReview: boolean;
+    markComplete: boolean;
+    saveDropbox: boolean;
+  }): Promise<SendReportResult> => {
+    if (!canNotifyClientOrder(payload, payload.customerEmail)) throw new Error(notifyClientBlockedMessage(payload));
+    const email = (payload.customerEmail ?? "").trim();
+    if (!email || !isValidOrderEmail(email)) throw new Error("Nepieciešams derīgs klienta e-pasts (sadaļā «Klienta dati»).");
+    const uploads: NotifyPortfolioUploadItem[] = [];
+    for (const p of portfolio.filter((x) => input.attachmentIds.includes(x.id))) {
+      const blob = await fetch(p.blobUrl).then((r) => r.blob());
+      const mime = fileMimeForPortfolio(p, blob);
+      if (!NOTIFY_ALLOWED_MIME.has(mime)) throw new Error(`Neatbalstīts faila veids: «${p.name}». Atļauti PDF un JPEG/PNG/WEBP/GIF.`);
+      uploads.push({ buffer: await blob.arrayBuffer(), name: p.name, mime, lastModified: Date.now() });
+    }
+    const { res, data } = await postNotifyReportReadyViaBlob({
+      sessionId: payload.sessionId,
+      customerEmail: email,
+      uploads,
+      includeGoogleReview: input.includeGoogleReview,
+      lang: input.lang,
+      serverPdfPathname: input.prepared.pdfPathname,
+      markComplete: input.markComplete,
+      saveDropbox: input.saveDropbox,
+    });
+    if (!res.ok) {
+      const msg = [data.message, data.detail].filter((x) => typeof x === "string" && x).join(" - ");
+      throw new Error(msg || (typeof data.error === "string" ? data.error : "Neizdevās nosūtīt"));
+    }
+    const ss = (data.serverSend ?? {}) as Partial<SendReportResult>;
+    return {
+      sentTo: typeof data.sentTo === "string" ? data.sentTo : email,
+      version: typeof ss.version === "number" ? ss.version : 1,
+      ...(typeof ss.dropboxPath === "string" ? { dropboxPath: ss.dropboxPath } : {}),
+      ...(typeof ss.dropboxError === "string" ? { dropboxError: ss.dropboxError } : {}),
+      completedAt: typeof ss.completedAt === "string" ? ss.completedAt : null,
+    };
+  };
+
+  const sendReportWhatsappHref = whatsappPhoneDigits
+    ? `https://wa.me/${whatsappPhoneDigits}?text=${encodeURIComponent(
+        `Labdien! PROVIN atskaite${payload.vin ? ` (${payload.vin})` : ""} ir nosūtīta uz Jūsu e-pastu.`,
+      )}`
+    : null;
+
   const autoIngestChips = useMemo(
     () => autoIngestChipsByBlock(payload.autoIngest),
     [payload.autoIngest],
@@ -4779,6 +4881,22 @@ export function OrderDetailWorkspace({
       {portfolioAllFilesModal != null && typeof document !== "undefined"
         ? createPortal(portfolioAllFilesModal, document.body)
         : null}
+
+      <AdminSendReportDialog
+        open={sendReportOpen}
+        onClose={() => setSendReportOpen(false)}
+        dark={adminDark}
+        email={(payload.customerEmail ?? "").trim()}
+        defaultKind={sendReportDefaultKind}
+        b2b={b2bClientOrder}
+        attachments={portfolio.map((p) => ({ id: p.id, name: p.name, size: p.size, mime: p.mime }))}
+        whatsappHref={sendReportWhatsappHref}
+        prepare={prepareSendReportPdf}
+        send={sendPreparedReport}
+        undoComplete={async () => {
+          if (!(await postAdminAuditComplete(payload.sessionId, false))) throw new Error("undo_failed");
+        }}
+      />
 
       {notifyDialogOpen && typeof document !== "undefined"
         ? createPortal(
@@ -6374,15 +6492,6 @@ export function OrderDetailWorkspace({
           <button type="button" onClick={() => void openOemDealerReport()} className={wizardFooterOem} title="Oficiāla OEM izdruka (portrets A4): markas logo, oriģinālie API dati bez tulkojuma. Atsevišķs no PROVIN dīlera atskaites.">
             OEM dīlera PDF
           </button>
-          <button
-            type="button"
-            disabled={pdfJob !== null}
-            onClick={() => void openPrintReport({ serverPdf: true })}
-            className={wizardFooterPrintInk}
-            title="Izmēģinājums: tā pati AUDITS atskaite, bet PDF top serverī un tiek lejupielādēts. Neko nesūta."
-          >
-            {pdfButtonLabel("server", "PDF serverī (tests)")}
-          </button>
           <button type="button" disabled={pdfJob !== null} onClick={() => void openPrintReport({ printInk: true })} className={wizardFooterPrintInk} title="Tā pati atskaite ar tumšāku tekstu un kontūrām papīra drukai">
             {pdfButtonLabel("ink", "Drukājamā versija")}
           </button>
@@ -6393,6 +6502,7 @@ export function OrderDetailWorkspace({
             <AdminFactCheckPublishConfirm
               items={factCheckPublishItems}
               onBack={() => {
+                pendingPrintOptsRef.current?.onServerPdf?.(null, "Atcelts faktu pārbaudē.");
                 pendingPrintOptsRef.current = undefined;
                 setFactCheckPublishItems(null);
               }}

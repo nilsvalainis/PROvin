@@ -54,6 +54,10 @@ export async function postNotifyReportReadyViaBlob(input: {
   extraAuditPdf?: File | null;
   includeGoogleReview?: boolean;
   lang?: ClientReportLang;
+  /** "Sūtīt atskaiti": serverī izveidotais PDF un "Izpildīts" pēc sūtīšanas. */
+  serverPdfPathname?: string;
+  markComplete?: boolean;
+  saveDropbox?: boolean;
 }): Promise<{ res: Response; rawText: string; data: Record<string, unknown> }> {
   const files: { blob: Blob; filename: string; mime: string }[] = [];
   for (const u of input.uploads) {
@@ -85,6 +89,9 @@ export async function postNotifyReportReadyViaBlob(input: {
       ...(input.includeGoogleReview ? { includeGoogleReview: true } : {}),
       ...(input.lang && input.lang !== "lv" ? { lang: input.lang } : {}),
       blobAttachments,
+      ...(input.serverPdfPathname ? { serverPdfPathname: input.serverPdfPathname } : {}),
+      ...(input.markComplete ? { markComplete: true } : {}),
+      ...(input.serverPdfPathname && input.saveDropbox === false ? { saveDropbox: false } : {}),
     }),
   });
   const rawText = await res.text();

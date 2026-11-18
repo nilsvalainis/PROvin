@@ -1,0 +1,75 @@
+{
+ "label": "BMW 640I: CSDD 1, AutoDNA 6, carVertical 16, dīleris 13, izsoles 10; negadījumi 2",
+ "rindasPaAvotiem": {
+  "CSDD": 1,
+  "OFICIĀLĀ DĪLERA DATI": 13,
+  "IZSOĻU PORTĀLU ARHĪVS": 10,
+  "AutoDNA": 6,
+  "CarVertical": 16,
+  "ss.lv": 1
+ },
+ "rindasSavaktas": 47,
+ "rindasTabula": 32,
+ "tabula": [
+  "01.09.2011 | 13 | ASV | CarVertical | mēnesis",
+  "26.11.2011 | 181 | ASV | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "19.01.2012 | 319 | ASV | IZSOĻU PORTĀLU ARHĪVS + CarVertical",
+  "08.01.2013 | 26511 | ASV | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "16.01.2013 | 27493 | ASV | OFICIĀLĀ DĪLERA DATI",
+  "03.09.2013 | 45061 | ASV | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "16.09.2013 | 46207 | ASV | OFICIĀLĀ DĪLERA DATI",
+  "02.10.2013 | 47239 | ASV | OFICIĀLĀ DĪLERA DATI",
+  "18.12.2013 | 53263 | ASV | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "27.01.2014 | 56868 | ASV | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "06.02.2014 | 57438 | ASV | OFICIĀLĀ DĪLERA DATI",
+  "16.04.2014 | 62879 | ASV | OFICIĀLĀ DĪLERA DATI",
+  "01.07.2014 | 68725 | ASV | OFICIĀLĀ DĪLERA DATI + CarVertical",
+  "21.07.2014 | 71028 | ASV | OFICIĀLĀ DĪLERA DATI",
+  "02.09.2014 | 73545 | ASV | OFICIĀLĀ DĪLERA DATI",
+  "01.12.2014 | 81049 | ASV | CarVertical | mēnesis",
+  "03.02.2015 | 81116 | ASV | IZSOĻU PORTĀLU ARHĪVS + CarVertical",
+  "01.08.2015 | 93063 | ASV | CarVertical | mēnesis",
+  "11.09.2015 | 81116 | ASV | IZSOĻU PORTĀLU ARHĪVS | nav grafikā, ievades kļūda",
+  "17.11.2015 | 93323 | ASV | IZSOĻU PORTĀLU ARHĪVS",
+  "10.12.2015 | 93593 | ASV | CarVertical + IZSOĻU PORTĀLU ARHĪVS",
+  "01.12.2016 | 93593 | ASV | IZSOĻU PORTĀLU ARHĪVS",
+  "16.03.2017 | 126012 | ASV | AutoDNA",
+  "20.12.2019 | 112654 | ASV | CarVertical + IZSOĻU PORTĀLU ARHĪVS | ANOMĀLIJA",
+  "18.06.2021 | 133399 | ASV | CarVertical + IZSOĻU PORTĀLU ARHĪVS + AutoDNA",
+  "28.06.2021 | 133398 | ASV | IZSOĻU PORTĀLU ARHĪVS",
+  "27.12.2021 | 135063 | Lietuva | AutoDNA",
+  "01.10.2023 | 135063 | Lietuva | AutoDNA + CarVertical",
+  "26.10.2023 | 157822 | Lietuva | AutoDNA",
+  "04.11.2025 | 184667 | Lietuva | AutoDNA",
+  "09.09.2026 | 192 000 | Latvija | ss.lv",
+  "02.10.2026 | 193496 | Latvija | CarVertical + CSDD"
+ ],
+ "sarkanaJosla": true,
+ "klases": [
+  "typo_outlier: 01.08.2015 93063 -> 11.09.2015 81116 (kritums 11947) [11.09.2015 | 81116 | IZSOĻU PORTĀLU ARHĪVS]",
+  "rollback: 16.03.2017 126012 -> 20.12.2019 112654 (kritums 13358) [20.12.2019 | 112654 | CarVertical + IZSOĻU PORTĀLU ARHĪVS]"
+ ],
+ "kritumsBezNilaLemumiem": true,
+ "nilaLemumi": [
+  {
+   "key": "11.09.2015|81116|IZSOĻU PORTĀLU ARHĪVS|21",
+   "action": "confirm"
+  }
+ ],
+ "klasesPecNilaLemumiem": [
+  "typo_outlier: 11.09.2015 81116",
+  "rollback: 20.12.2019 112654"
+ ],
+ "faktuLapa": {
+  "odometerAnomaly": true,
+  "carverticalMileageWarning": false,
+  "maxRollbackDropKm": 13358,
+  "rollbacks": [
+   "01.08.2015 93063 -> 11.09.2015 81116",
+   "16.03.2017 126012 -> 20.12.2019 112654"
+  ],
+  "suspectedEntryErrors": [],
+  "implausibleReadings": [],
+  "latestKm": 193496
+ }
+}

@@ -30,43 +30,57 @@ export function ltabPdfFileName(plate: string): string {
   return `${sanitizeDropboxName(`LTAB - ${plate.trim().toUpperCase()}`, 80) || "LTAB"}.pdf`;
 }
 
+/** Atrod pasūtījuma mapi `/_PROv/` pēc VIN vai izveido jaunu ("Marka Modelis Gads VIN"). */
+export async function findOrCreateProvOrderFolder(
+  client: DropboxClient,
+  car: LtabOrderCar,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<{ folderPath: string; folderCreated: boolean }> {
+  const root = provOrdersDropboxRoot(env);
+  const { entries } = await client.listAll(root, { recursive: false, maxPages: 20 });
+  const folders = entries.filter((e) => e.tag === "folder");
+  const vin = normalizeVin(car.vin);
+  if (vin.length === 17) {
+    const hit = matchStockFolderByVin(
+      folders.map((f) => f.name),
+      vin,
+    );
+    if (hit.kind === "found") return { folderPath: folders[hit.index]!.pathDisplay || joinDropboxPath(root, hit.name), folderCreated: false };
+    if (hit.kind === "ambiguous") {
+      // Vairākas vienlīdz derīgas mapes (pilnā VIN priekšroku jau deva matchStockFolderByVin): pirmā pēc nosaukuma.
+      return { folderPath: joinDropboxPath(root, [...hit.names].sort()[0]!), folderCreated: false };
+    }
+  }
+  const entry = await client.ensureFolder(joinDropboxPath(root, provOrderFolderName(car)));
+  return { folderPath: entry.pathDisplay || joinDropboxPath(root, provOrderFolderName(car)), folderCreated: true };
+}
+
 /**
- * Atrod vai izveido pasūtījuma mapi un augšupielādē PDF (nekad nepārraksta: `add` + autorename).
+ * Augšupielādē failu pasūtījuma mapē (nekad nepārraksta: `add` + autorename).
  * Pēc augšupielādes pārbauda, ka fails tiešām ir mapē (metadati caur API).
  */
+export async function saveFileToProvOrderFolder(
+  client: DropboxClient,
+  car: LtabOrderCar,
+  fileName: string,
+  bytes: Uint8Array,
+  env: NodeJS.ProcessEnv = process.env,
+): Promise<{ path: string; name: string; size: number; folderCreated: boolean }> {
+  const { folderPath, folderCreated } = await findOrCreateProvOrderFolder(client, car, env);
+  const uploaded = await client.upload(joinDropboxPath(folderPath, fileName), bytes, "add");
+  const check = await client.getMetadata(uploaded.id || uploaded.pathDisplay);
+  if (!check || check.tag !== "file" || (check.size && check.size !== bytes.byteLength)) {
+    throw new Error("dropbox_verify_failed");
+  }
+  return { path: check.pathDisplay || uploaded.pathDisplay, name: check.name || uploaded.name, size: bytes.byteLength, folderCreated };
+}
+
+/** Oriģinālais LTAB PDF pasūtījuma mapē. */
 export async function saveLtabPdfToOrderFolder(
   client: DropboxClient,
   car: LtabOrderCar,
   bytes: Uint8Array,
   env: NodeJS.ProcessEnv = process.env,
 ): Promise<{ path: string; name: string; size: number; folderCreated: boolean }> {
-  const root = provOrdersDropboxRoot(env);
-  const { entries } = await client.listAll(root, { recursive: false, maxPages: 20 });
-  const folders = entries.filter((e) => e.tag === "folder");
-  const vin = normalizeVin(car.vin);
-  let folderPath = "";
-  let folderCreated = false;
-  if (vin.length === 17) {
-    const hit = matchStockFolderByVin(
-      folders.map((f) => f.name),
-      vin,
-    );
-    if (hit.kind === "found") folderPath = folders[hit.index]!.pathDisplay || joinDropboxPath(root, hit.name);
-    if (hit.kind === "ambiguous") {
-      // Vairākas vienlīdz derīgas mapes (pilnā VIN priekšroku jau deva matchStockFolderByVin): pirmā pēc nosaukuma.
-      const name = [...hit.names].sort()[0]!;
-      folderPath = joinDropboxPath(root, name);
-    }
-  }
-  if (!folderPath) {
-    const entry = await client.ensureFolder(joinDropboxPath(root, provOrderFolderName(car)));
-    folderPath = entry.pathDisplay || joinDropboxPath(root, provOrderFolderName(car));
-    folderCreated = true;
-  }
-  const uploaded = await client.upload(joinDropboxPath(folderPath, ltabPdfFileName(car.plate)), bytes, "add");
-  const check = await client.getMetadata(uploaded.id || uploaded.pathDisplay);
-  if (!check || check.tag !== "file" || (check.size && check.size !== bytes.byteLength)) {
-    throw new Error("dropbox_verify_failed");
-  }
-  return { path: check.pathDisplay || uploaded.pathDisplay, name: check.name || uploaded.name, size: bytes.byteLength, folderCreated };
+  return saveFileToProvOrderFolder(client, car, ltabPdfFileName(car.plate), bytes, env);
 }
