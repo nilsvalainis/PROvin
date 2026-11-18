@@ -1,4 +1,5 @@
 import type { LogisticsPrintRow } from "@/lib/iriss-logistics-map-print";
+import { BigVin } from "@/components/admin/iriss-logistika/BigVin";
 
 /**
  * Drukas 2. lapa: auto saraksts tieši tādā secībā un ar tiem numuriem kā lāses kartē.
@@ -32,7 +33,7 @@ export function IrissLogistikaPrintList({ heading, meta, rows }: { heading: stri
                 </td>
                 <td>
                   <b>{r.car}</b>
-                  {r.vin ? <small className="mono">{r.vin}</small> : null}
+                  {r.vin ? <BigVin vin={r.vin} className="vin mono" /> : null}
                   {r.cargo ? <small>{r.cargo}</small> : null}
                 </td>
                 <td>
