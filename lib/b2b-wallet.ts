@@ -611,6 +611,58 @@ export function applyB2bWalletAdjust(
   return { ok: true, duplicate: false, txn, wallet: pushTxn(wallet, txn, { balanceCents }, now) };
 }
 
+export function stripeCorrectionKeyPrefix(sessionId: string): string {
+  return `stripe_corr:${sessionId.trim()}:`;
+}
+
+/**
+ * Stripe atmaksa vai zaudēts strīds maka papildinājumam: noraksta no maka tik, lai kopējā
+ * korekcija par šo sesiju būtu `targetCents` (Stripe paņemtā summa, ne vairāk par papildinājumu).
+ * Idempotents: atkārtots notikums ar to pašu mērķi neko nemaina; lielāks mērķis noraksta tikai starpību.
+ * Atlikums var kļūt negatīvs (nauda jau iztērēta) - to redz admin, un partneris nevar pirkt.
+ */
+export function applyB2bWalletStripeCorrection(
+  wallet: B2bWallet,
+  args: { sessionId: string; targetCents: number; note: string; now?: Date },
+): { applied: boolean; wallet: B2bWallet; txn: B2bWalletTxn | null; deltaCents: number } {
+  const now = args.now ?? new Date();
+  const sessionId = args.sessionId.trim();
+  const topup = findB2bWalletTxnByKey(wallet, topupKey(sessionId));
+  const cap = topup ? topup.amountCents : 0;
+  const target = Math.min(Math.max(0, Math.round(args.targetCents)), cap);
+  const prefix = stripeCorrectionKeyPrefix(sessionId);
+  const already = wallet.txns
+    .filter((t) => t.key.startsWith(prefix))
+    .reduce((sum, t) => sum - t.amountCents, 0);
+  const delta = target - already;
+  if (!topup || !Number.isFinite(delta) || delta <= 0) {
+    return { applied: false, wallet, txn: null, deltaCents: 0 };
+  }
+  const balanceCents = wallet.balanceCents - delta;
+  const txn: B2bWalletTxn = {
+    id: newB2bWalletTxnId(now),
+    kind: "adjust",
+    amountCents: -delta,
+    balanceAfterCents: balanceCents,
+    at: now.toISOString(),
+    key: `${prefix}${target}`,
+    sessionId,
+    note: args.note.trim().slice(0, 300),
+    refundOf: topup.id,
+  };
+  return {
+    applied: true,
+    txn,
+    deltaCents: delta,
+    wallet: pushTxn(
+      wallet,
+      txn,
+      { balanceCents, topupTotalCents: Math.max(0, wallet.topupTotalCents - delta) },
+      now,
+    ),
+  };
+}
+
 export type B2bWalletSummary = {
   balanceCents: number;
   topupTotalCents: number;
