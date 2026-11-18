@@ -10,6 +10,7 @@ import {
   detectSpecialUseLabels,
   translateTermLv,
   translateTextLv,
+  translateTextLvChecked,
 } from "@/lib/vin-sources/translate-lv";
 import type { VinSourceIncidentRow, VinSourceMileageRow } from "@/lib/vin-sources/types";
 
@@ -76,6 +77,8 @@ export function isFailedMot(r: TjekbilInspection): boolean {
   if (isCustomsInspection(r)) return false;
   const result = str(r.synsresultat).trim();
   if (!result) return false;
+  // „Ikke godkendt” satur vārdu „godkendt”, tāpēc noliegums jāpārbauda pirms tā.
+  if (/\bikke\s+godkendt/i.test(result)) return true;
   if (/godkendt/i.test(result)) return false;
   return /ikke|omsyn|kan ikke|betinget/i.test(result);
 }
@@ -323,20 +326,67 @@ export function buildTjekbilMileage(logs: TjekbilMileageLog[], inspections: Tjek
   return merged.sort((a, b) => b.date.localeCompare(a.date));
 }
 
+/** Atstarpes, tukši komatu posmi un „.,” savienojumi trūkuma aprakstā. */
+function tidyFaultText(text: string, dropSentenceDots: boolean): string {
+  let t = text.replace(/\s+/g, " ");
+  if (dropSentenceDots) t = t.replace(/\.\s*(?=,|$)/g, "").replace(/\.\s+-\s+/g, ", ");
+  return t
+    .replace(/\s+,/g, ",")
+    .replace(/(?:,\s*){2,}/g, ", ")
+    .replace(/^[,\s]+|[,\s]+$/g, "");
+}
+
+/**
+ * Viens apskates trūkums latviski. tjekbil `description` sākas ar to pašu grupas virsrakstu, kas ir `title`,
+ * tāpēc virsrakstu rādām vienreiz. Pustulkotu teikumu klientam nerādām:
+ * - viss zināms: „Grupa: apraksts”;
+ * - grupa zināma, apraksts nē: „Grupa (da: "oriģināls")”;
+ * - grupa nezināma: „da: "oriģināls"”.
+ */
+export function tjekbilFaultLv(fault: { title?: unknown; description?: unknown }): string {
+  const title = str(fault.title).trim();
+  let rest = str(fault.description).trim();
+  if (title) {
+    // Tikai kā vesels komatu posms („Bremser, ...”), ne vārda daļa („bremserør”) un ne teikuma vidū.
+    const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\s+/g, "\\s+");
+    rest = rest.replace(new RegExp(`(^|,\\s*)${escaped}\\s*(?=,|$)`, "giu"), "$1");
+  }
+  rest = tidyFaultText(rest, false);
+  if (!title && !rest) return "";
+
+  const original = [title, rest].filter(Boolean).join(": ");
+  if (!title) {
+    const body = translateTextLvChecked(rest, "da");
+    return body.complete ? capitalizeRegistryEvent(tidyFaultText(body.text, true)) : `da: "${original}"`;
+  }
+  const heading = translateTextLvChecked(title, "da");
+  if (!heading.complete) return `da: "${original}"`;
+  const headingLv = capitalizeRegistryEvent(heading.text);
+  if (!rest) return headingLv;
+  const body = translateTextLvChecked(rest, "da");
+  return body.complete ? `${headingLv}: ${tidyFaultText(body.text, true)}` : `${headingLv} (da: "${rest}")`;
+}
+
+/** „Apskate nav izturēta[, jāveic atkārtota apskate]” - tāds pats formulējums kā esyn kodam OOM. */
+function failedInspectionLabel(r: TjekbilInspection): string {
+  const result = translateTermLv(str(r.synsresultat), "da");
+  if (/^nav izturēta/i.test(result)) return `Apskate ${result}`;
+  return result ? `Apskate nav izturēta (${result})` : "Apskate nav izturēta";
+}
+
 export function buildTjekbilIncidents(dmr: TjekbilDmrResponse, inspections: TjekbilInspection[]): VinSourceIncidentRow[] {
   const rows: VinSourceIncidentRow[] = [];
   for (const r of inspections) {
     if (!isFailedMot(r)) continue;
-    const faults = asArray(r.fejl).map(asRecord);
-    const faultText = faults
-      .map((f) => [str(f.title), str(f.description)].filter(Boolean).join(": "))
+    const faultText = asArray(r.fejl)
+      .map((f) => tjekbilFaultLv(asRecord(f)))
       .filter(Boolean)
       .join(" | ");
     rows.push({
       date: isoDay(r.synsdato),
       amount: "",
       country: DK_COUNTRY_LV,
-      note: `Apskate nav izturēta (${translateTermLv(str(r.synsresultat), "da")})${faultText ? ` - ${translateTextLv(faultText, "da")}` : ""}`,
+      note: `${failedInspectionLabel(r)}${faultText ? ` - ${faultText}` : ""}`,
     });
   }
 
