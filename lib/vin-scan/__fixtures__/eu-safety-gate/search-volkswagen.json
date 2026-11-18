@@ -1,0 +1,229 @@
+{
+ "_meta": {
+  "status": 200,
+  "source": "POST https://ec.europa.eu/safety-gate-alerts/public/api/search",
+  "fetched": "2026-11-17",
+  "language": "en",
+  "note": "fullTextSearch=Volkswagen, gadi 2025-2026. Apgriezts: bez foto un webReport laukiem."
+ },
+ "body": {
+  "content": [
+   {
+    "id": 10119519,
+    "reference": "SR/03126/26",
+    "publicationDate": "2026-11-03T13:56:46.985+00:00",
+    "product": {
+     "id": 10320787,
+     "nameSpecific": "ID.BUZZ PEOPLE, ID.BUZZ PEOPLE CARGO, ID.3, ID.4, ID.7",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Volkswagen"
+      }
+     ],
+     "name": "Passenger car / Passenger van"
+    },
+    "risk": {
+     "id": 10022663,
+     "riskType": [
+      {
+       "key": "riskType.fire",
+       "name": "FIRE"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10119515,
+    "reference": "SR/03125/26",
+    "publicationDate": "2026-11-03T13:56:27.967+00:00",
+    "product": {
+     "id": 10320784,
+     "nameSpecific": "ID.4, ID.7\t\t\t\t\t\t\t",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Volkswagen"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10022662,
+     "riskType": [
+      {
+       "key": "riskType.fire",
+       "name": "FIRE"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10119471,
+    "reference": "SR/03090/26",
+    "publicationDate": "2026-10-29T11:00:46.446+00:00",
+    "product": {
+     "id": 10320514,
+     "nameSpecific": "Atlas, Tiguan Allspace\t\t\t\t\t\t\t",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Volkswagen"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10022630,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10119264,
+    "reference": "SR/02935/26",
+    "publicationDate": "2026-10-23T09:42:37.293+00:00",
+    "product": {
+     "id": 10319060,
+     "nameSpecific": "Caddy, Golf Sportsvan, Golf Variant 7, Tiguan, Tiguan Allspace, Touran",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Volkswagen (VW)"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10022462,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10119278,
+    "reference": "SR/03001/26",
+    "publicationDate": "2026-10-20T12:20:57.657+00:00",
+    "product": {
+     "id": 10319055,
+     "nameSpecific": "ID.Polo",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Volkswagen (VW)"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10022461,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10097591,
+    "reference": "SR/00355/26",
+    "publicationDate": "2026-02-03T13:04:20.236+00:00",
+    "product": {
+     "id": 10273792,
+     "nameSpecific": "Amarok",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Volkswagen"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10019697,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10095896,
+    "reference": "SR/03282/25",
+    "publicationDate": "2025-09-11T12:18:22.938+00:00",
+    "product": {
+     "id": 10258154,
+     "nameSpecific": "Polo",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Volkswagen"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10018056,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10093368,
+    "reference": "SR/00793/25",
+    "publicationDate": "2025-02-25T16:48:14.543+00:00",
+    "product": {
+     "id": 10233098,
+     "nameSpecific": "Beetle, New Beetle, EOS + EOS GP, Fox, Golf A6 + Cabrio + Plus, Passat B6 + B7 + CC, Polo Vivo + A04",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Volkswagen"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10015430,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   }
+  ],
+  "totalElements": 8,
+  "totalPages": 1,
+  "last": true,
+  "size": 25,
+  "number": 0,
+  "first": true,
+  "numberOfElements": 8,
+  "empty": false
+ }
+}
