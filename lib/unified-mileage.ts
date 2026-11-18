@@ -27,6 +27,7 @@ import { ASV_PDF_SOURCE_LABEL, type AsvBlockState } from "@/lib/asv-report";
 import { resolveListingMileageChartRow } from "@/lib/listing-odometer";
 import { countryLabelToIso2, normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { milesToKmRounded } from "@/lib/miles-to-km";
+import { buildCountryTimeline, resolveCountryForDate } from "@/lib/vehicle-country-timeline";
 
 export { MILES_TO_KM } from "@/lib/miles-to-km";
 
@@ -51,6 +52,11 @@ export type UnifiedMileageRow = {
    * to nedrīkst izmantot robežšķērsošanas (importa) notikumu atvasināšanai laikposma hronoloģijā.
    */
   countryUnverified?: boolean;
+  /**
+   * 18.11 (valstu aizpilde): avots valsti nedeva, tā secināta no citiem rādījumiem (tas pats mēnesis vai
+   * abi kaimiņi vienā valstī). Saglabātie dati netiek mainīti; valsts maiņas noteikšanā neskaitās.
+   */
+  countryInferred?: boolean;
   /** CarVertical `12.2013` - salīdzina mēnesī, ne kā 01.12 pret tā paša mēneša dīlera dienu. */
   datePrecision?: MileageDatePrecision;
   /** Avota mērvienība pirms pārrēķina; tabulā odometrs vienmēr km. */
@@ -371,6 +377,7 @@ function mergeMileageCluster(cluster: UnifiedMileageRow[]): UnifiedMileageDispla
   // Valsts paliek nesertificēta tikai tad, ja pilnīgi visi avoti šajā km klasterī ir nesertificēti
   // (piem. tikai sludinājums) — ja klāt ir kaut viens oficiāls avots, valsts vairs nav tikai pieņēmums.
   const countryUnverified = cluster.every((r) => r.countryUnverified === true);
+  const countryInferred = cluster.every((r) => r.countryInferred === true);
   const visitOdometer = cluster.every((r) => r.visitOdometer === true);
   const datePrecision = cluster.every((r) => r.datePrecision === "month") ? "month" : "day";
   const knownCountries = countries.filter((c) => c && c !== CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL);
@@ -388,6 +395,7 @@ function mergeMileageCluster(cluster: UnifiedMileageRow[]): UnifiedMileageDispla
     datePrecision,
     ...(documentValue ? { documentValue: true } : { documentValue: undefined }),
     ...(countryUnverified ? { countryUnverified: true } : { countryUnverified: undefined }),
+    ...(countryInferred ? { countryInferred: true } : { countryInferred: undefined }),
     ...(visitOdometer ? { visitOdometer: true } : { visitOdometer: undefined }),
     // Nils B7: ja kaut viens apvienotais avots bija jūdzēs, PDF to paskaidro.
     ...(cluster.some((r) => r.unit === "mi") ? { unit: "mi" as const } : {}),
@@ -682,14 +690,23 @@ function findStaleDocumentSourceOrders(
  * Tikai pārbaudītas valstis (sludinājuma vieta neskaitās).
  */
 export function isMileageCountryChange(
-  a: Pick<UnifiedMileageRow, "country" | "countryUnverified"> | undefined,
-  b: Pick<UnifiedMileageRow, "country" | "countryUnverified"> | undefined,
+  a: Pick<UnifiedMileageRow, "country" | "countryUnverified" | "countryInferred"> | undefined,
+  b: Pick<UnifiedMileageRow, "country" | "countryUnverified" | "countryInferred"> | undefined,
 ): boolean {
   if (!a || !b || a.countryUnverified || b.countryUnverified) return false;
-  const ca = normalizeCountryNameLv(a.country.trim());
-  const cb = normalizeCountryNameLv(b.country.trim());
-  if (!ca || !cb) return false;
-  return ca.toLocaleLowerCase("lv") !== cb.toLocaleLowerCase("lv");
+  if (a.countryInferred || b.countryInferred) return false;
+  // Apvienotā rinda var nest vairākas valstis ("ASV / Kanāda"); maiņa tikai, ja kopīgas valsts nav.
+  const set = (c: string) =>
+    new Set(
+      c
+        .split("/")
+        .map((x) => normalizeCountryNameLv(x.trim()).toLocaleLowerCase("lv"))
+        .filter((x) => x && !isUnknownMileageCountry(x)),
+    );
+  const ca = set(a.country);
+  const cb = set(b.country);
+  if (ca.size === 0 || cb.size === 0) return false;
+  return ![...ca].some((x) => cb.has(x));
 }
 
 export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): UnifiedMileageAnomalyAnalysis {
@@ -1107,7 +1124,7 @@ export function collectUnifiedMileageRows(
 
   const dedup = new Set<string>();
   const out: UnifiedMileageRow[] = [];
-  for (const r of rows) {
+  for (const r of inferMissingMileageCountries(rows)) {
     const k = `${r.date.trim().toLowerCase()}|${r.odometer.replace(/\D/g, "")}|${r.country.trim().toLowerCase()}|${r.sourceLabel.trim().toLowerCase()}`;
     if (dedup.has(k)) continue;
     dedup.add(k);
@@ -1118,6 +1135,31 @@ export function collectUnifiedMileageRows(
     findImplausibleMileageReadings(out, { odometerReplacementNoted: odometerReplacementNotedIn(p) }),
   );
   return implausible.size > 0 ? out.filter((r) => !implausible.has(r)) : out;
+}
+
+function isUnknownMileageCountry(country: string): boolean {
+  const c = country.trim();
+  return !c || c === CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL || /^nezināma/i.test(c);
+}
+
+/**
+ * 18.11 (Nila plāns, 3. tēma): tukšu vai „Nezināmā” valsti aizpilda no pārējiem rādījumiem - tikai, ja tajā pašā
+ * mēnesī ir viena valsts vai abi tuvākie kaimiņi ir vienā valstī. Pāri valsts maiņai un pirms pirmā / pēc pēdējā
+ * zināmā rādījuma neaizpilda. Sludinājumu vieta nav pierādījums. Tikai nolasot - saglabātie dati netiek mainīti.
+ */
+export function inferMissingMileageCountries<T extends UnifiedMileageRow>(rows: T[]): T[] {
+  const evidence = rows.filter((r) => !r.countryUnverified && !isUnknownMileageCountry(r.country));
+  if (evidence.length === 0 || evidence.length === rows.length) return rows;
+  const timeline = buildCountryTimeline(
+    evidence.map((r) => ({ date: formatAutoRecordsDateForOutput(r.date) || r.date, country: r.country })),
+  );
+  return rows.map((r) => {
+    if (!isUnknownMileageCountry(r.country)) return r;
+    const country = resolveCountryForDate(timeline, formatAutoRecordsDateForOutput(r.date) || r.date, {
+      extrapolateAfterLast: false,
+    });
+    return country ? { ...r, country, countryInferred: true } : r;
+  });
 }
 
 function odometerReplacementNotedIn(p: UnifiedMileageSourcePayload): boolean {

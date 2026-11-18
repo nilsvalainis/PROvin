@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { emptyAsvBlock } from "@/lib/asv-report";
 import { buildUnifiedMileageTableHtml, PDF_MILEAGE_MILES_CONVERTED_NOTE } from "@/lib/client-report-html";
 
-function asvWith(rows: { date: string; odometer: string; unit?: string }[]) {
+function asvWith(rows: { date: string; odometer: string; unit?: "km" | "mi" }[]) {
   const b = emptyAsvBlock();
-  b.mileage = rows.map((r) => ({ ...b.mileage[0]!, date: r.date, odometer: r.odometer, country: "ASV", unit: r.unit }));
+  b.mileage = rows.map((r) => ({ ...b.mileage[0]!, date: r.date, odometer: r.odometer, country: "ASV", ...(r.unit ? { unit: r.unit } : {}) }));
   return b;
 }
 

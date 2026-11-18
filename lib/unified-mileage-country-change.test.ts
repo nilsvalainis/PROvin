@@ -46,3 +46,11 @@ describe("nobraukums ap valsts maiņu (Nils 18.11)", () => {
     expect(analyzeUnifiedMileageAnomalies(rows).dataEntryErrorSourceOrders.has(2)).toBe(true);
   });
 });
+
+describe("apvienota rinda ar vairākām valstīm", () => {
+  it("'ASV / Kanāda' pret 'Kanāda' nav valsts maiņa", async () => {
+    const { isMileageCountryChange } = await import("@/lib/unified-mileage");
+    expect(isMileageCountryChange({ country: "ASV / Kanāda" }, { country: "Kanāda" })).toBe(false);
+    expect(isMileageCountryChange({ country: "ASV / Kanāda" }, { country: "Latvija" })).toBe(true);
+  });
+});

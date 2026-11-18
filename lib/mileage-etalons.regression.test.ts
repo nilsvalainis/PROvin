@@ -78,6 +78,7 @@ function snapshotOf(fx: Fixture) {
           analysis.listingBelowRecordedSourceOrders.has(r.sourceOrder) ? "sludinājumā mazāk" : "",
           r.datePrecision === "month" ? "mēnesis" : "",
           r.unit === "mi" ? "jūdzes" : "",
+          r.countryInferred ? "secināta valsts" : "",
         ].filter(Boolean);
         return `${r.date} | ${r.odometer} | ${r.country} | ${r.sourceLabels?.join(" + ") ?? r.sourceLabel}${marks.length ? ` | ${marks.join(", ")}` : ""}`;
       }),
