@@ -45,6 +45,7 @@ const RECALL_IDS: ReadonlySet<string> = new Set([
   "recall_mercedes",
   "recall_volvo",
   "recall_toyota",
+  "eu_safety_gate",
 ]);
 
 /** Cik ilgi rindu drīkst ņemt no keša. 0 = vienmēr skenēt vēlreiz. */

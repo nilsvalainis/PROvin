@@ -1,0 +1,367 @@
+{
+ "_meta": {
+  "status": 200,
+  "source": "POST https://ec.europa.eu/safety-gate-alerts/public/api/search",
+  "fetched": "2026-11-17",
+  "language": "en",
+  "note": "fullTextSearch=Skoda, gadi 2022-2026. Apgriezts: bez foto un webReport laukiem."
+ },
+ "body": {
+  "content": [
+   {
+    "id": 10119544,
+    "reference": "SR/03168/26",
+    "publicationDate": "2026-11-05T11:03:25.562+00:00",
+    "product": {
+     "id": 10321374,
+     "nameSpecific": "Octavia III, Superb III, Karoq, Kodiaq I",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Skoda"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10022716,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10099330,
+    "reference": "SR/01853/26",
+    "publicationDate": "2026-08-26T07:38:38.656+00:00",
+    "product": {
+     "id": 10289460,
+     "nameSpecific": "Fabia, Rapid, Yeti, Octavia, Superb, Citigo, Kodiaq, Roomster",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Skoda"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10021295,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10098196,
+    "reference": "SR/00778/26",
+    "publicationDate": "2026-03-12T16:00:24.891+00:00",
+    "product": {
+     "id": 10278790,
+     "nameSpecific": "Kodiaq",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Skoda"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10020197,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10098055,
+    "reference": "SR/00680/26",
+    "publicationDate": "2026-03-03T13:01:03.386+00:00",
+    "product": {
+     "id": 10277811,
+     "nameSpecific": "CITIGO, FABIA, ROOMSTER, OCTAVIA, RAPID, SUPERB, YETI",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Skoda"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10020089,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10095436,
+    "reference": "SR/02896/25",
+    "publicationDate": "2025-08-04T08:05:33.117+00:00",
+    "product": {
+     "id": 10253867,
+     "nameSpecific": "Fabia IV, Superb IV\t\t\t\t\t",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Skoda"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10017613,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10014005,
+    "reference": "A12/02080/24",
+    "publicationDate": "2024-08-06T14:38:14.015+00:00",
+    "product": {
+     "id": 10128776,
+     "nameSpecific": "Citigo, Roomster, Praktik, Fabia II,  Fabia III,Rapid, Octavia III, Superb III, Karoq, Kodiaq",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Skoda"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10012580,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10010483,
+    "reference": "A12/02508/23",
+    "publicationDate": "2023-10-19T08:45:05.864+00:00",
+    "product": {
+     "id": 10098678,
+     "nameSpecific": "Octavia IV, Octavia IV combi",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Skoda"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10009610,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10010368,
+    "reference": "A12/02322/23",
+    "publicationDate": "2023-09-28T08:46:27.258+00:00",
+    "product": {
+     "id": 10097000,
+     "nameSpecific": "Fabia",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Skoda"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10009419,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10008407,
+    "reference": "A12/00787/23",
+    "publicationDate": "2023-04-13T08:11:27.814+00:00",
+    "product": {
+     "id": 10077491,
+     "nameSpecific": "Citigo, Roomster, Fabia II, Fabia III, Rapid, Yeti, Kodiaq, Octavia III, Superb II, Superb III     ",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Skoda"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10007711,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10006086,
+    "reference": "A12/00733/22",
+    "publicationDate": "2022-05-19T09:41:34.378+00:00",
+    "product": {
+     "id": 10054932,
+     "nameSpecific": "Skoda Roof Box 400l",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Skoda"
+      }
+     ],
+     "name": "Vehicle part / roof box"
+    },
+    "risk": {
+     "id": 10005639,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10006022,
+    "reference": "A12/00636/22",
+    "publicationDate": "2022-04-28T06:48:12.713+00:00",
+    "product": {
+     "id": 10053871,
+     "nameSpecific": "Octavia, Superb",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Skoda"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10005525,
+     "riskType": [
+      {
+       "key": "riskType.fire",
+       "name": "FIRE"
+      },
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10005912,
+    "reference": "A12/00566/22",
+    "publicationDate": "2022-04-12T15:33:51.918+00:00",
+    "product": {
+     "id": 10052899,
+     "nameSpecific": "Kodiaq, Octavia, Superb",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Skoda"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10005440,
+     "riskType": [
+      {
+       "key": "riskType.burns",
+       "name": "BURNS"
+      },
+      {
+       "key": "riskType.fire",
+       "name": "FIRE"
+      }
+     ]
+    }
+   },
+   {
+    "id": 10005413,
+    "reference": "A12/00242/22",
+    "publicationDate": "2022-02-11T08:34:00.824+00:00",
+    "product": {
+     "id": 10047160,
+     "nameSpecific": "Fabia",
+     "nameSpecificKnown": true,
+     "brandKnown": true,
+     "brands": [
+      {
+       "brand": "Skoda"
+      }
+     ],
+     "name": "Passenger car"
+    },
+    "risk": {
+     "id": 10004977,
+     "riskType": [
+      {
+       "key": "riskType.injuries",
+       "name": "INJURIES"
+      }
+     ]
+    }
+   }
+  ],
+  "totalElements": 13,
+  "totalPages": 1,
+  "last": true,
+  "size": 100,
+  "number": 0,
+  "first": true,
+  "numberOfElements": 13,
+  "empty": false
+ }
+}
