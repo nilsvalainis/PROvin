@@ -12,6 +12,7 @@ import { ORDER_VIN_SCAN_BROWSER_IMPORT_IDS } from "@/lib/order-vin-scan";
 import { overlayVinScanBrowserImports, type VinScanBrowserImport } from "@/lib/vin-scan/browser-import-overlay";
 import { vinScanIndicatorsFresh } from "@/lib/vin-scan/source-ttl";
 import type { JojNameDict } from "@/lib/vin-scan/joj-labels";
+import { thecarapiDetailPathAllowed } from "@/lib/vin-scan/parse-thecarapi";
 import { emptyVinScanPlates, type VinScanPlates } from "@/lib/vin-scan/plates";
 import { normalizeThecarapiAdminRecords, type ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 import type { VinScanIndicator, VinScanParse } from "@/lib/vin-scan/types";
@@ -400,7 +401,7 @@ export function asThecarapiVinCache(raw: unknown, nowMs = Date.now(), allowExpir
           const id = typeof rec.id === "string" ? rec.id : "";
           if (!site || !id) return null;
           const detailPath =
-            typeof rec.detailPath === "string" && rec.detailPath.startsWith("/api/auction/") ? rec.detailPath : "";
+            typeof rec.detailPath === "string" && thecarapiDetailPathAllowed(rec.detailPath) ? rec.detailPath : "";
           return { site, id, active: rec.active === true, ...(detailPath ? { detailPath } : {}) };
         })
         .filter((item): item is ThecarapiVinCacheRef => Boolean(item))

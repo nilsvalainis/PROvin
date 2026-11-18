@@ -61,6 +61,20 @@ describe("parseThecarapiHistory", () => {
     expect(parse.auctions?.[0]?.lot).toBe("1326383403");
   });
 
+  it("arhivētai lotei saglabā /api/archive/auction/... ceļu, svešu ceļu nomet", () => {
+    const json = {
+      auctions: [
+        { site_name: "auto1", auction_id: 1324732982, archived: true, detail_path: "/api/archive/auction/auto1/1324732982" },
+        { site_name: "openlane", auction_id: 11847089, detail_path: "https://evil.example/x" },
+      ],
+    };
+    const { refs } = parseThecarapiHistory({ json });
+    expect(refs).toEqual([
+      { site: "auto1", id: "1324732982", active: false, detailPath: "/api/archive/auction/auto1/1324732982" },
+      { site: "openlane", id: "11847089", active: false },
+    ]);
+  });
+
   it("tukšs saraksts ir none", () => {
     const { parse, refs } = parseThecarapiHistory({ json: fixture("history-empty.json") });
     expect(parse.status).toBe("none");

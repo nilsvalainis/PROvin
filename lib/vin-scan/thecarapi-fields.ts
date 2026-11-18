@@ -268,6 +268,9 @@ export function thecarapiPhotoDate(row: Record<string, unknown>): string {
   );
 }
 
+/** `auction(s)` un arhīva atbildes iespējamie ietinumi. */
+const DETAIL_WRAPPER_KEYS = new Set(["auction", "auctions", "archive", "archived_auction", "item", "result", "data"]);
+
 const DETAIL_BODY_KEYS = new Set([
   "images",
   "car_identification",
@@ -299,7 +302,7 @@ export function thecarapiJsonHasDetail(raw: unknown, depth = 0): boolean {
     if (value == null || value === "") continue;
     if (Array.isArray(value) && value.length === 0) continue;
     if (DETAIL_BODY_KEYS.has(key)) return true;
-    if ((key === "auction" || key === "auctions") && thecarapiJsonHasDetail(value, depth + 1)) return true;
+    if (DETAIL_WRAPPER_KEYS.has(key) && thecarapiJsonHasDetail(value, depth + 1)) return true;
   }
   return false;
 }
