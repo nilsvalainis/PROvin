@@ -54,10 +54,16 @@ Momentuzņēmums nav pareizā atbilde. Mainot nobraukuma loģiku, katra atšķir
 | Klase | Lietas |
 |---|---|
 | A. Mēneša datums kā 1. datums (carVertical, AutoDNA). **carVertical labots 17.11:** tā rādījumi ir mēneša precizitātē un mēnesī kārtoti pēc km - pazuda 6 viltus kritumi (A3, 318d, 525, 320d, 650i x2), jaunu nav. Atlikušie: AutoDNA mēneša datumi, CV pret dīleri dažādos mēnešos (120d xDrive, X5) - sk. B | 650i `WBAYM9C55DDW20079`, 120d `WBAUD91050PA62588`, X5 `WBAFF41030L065449`, 120d xDrive `WBA1B51010J842587` (CV 01.07.2023 167 422 pret dīleri 05.02.2024 159 891 - josla uz dīlera), 318d `WBA8X11080BH25532`, 525 `WBAMX31050C524401`, A3 `WAUZZZ8V1H1033853`, Galaxy 2017 |
-| B. Vainots pareizais punkts, nevis kļūdainais | 320d `WBAUY11040F045354`: dīleris 22.09.2011 22 997, nākamajā dienā 12 397, CV 10.2011 12 347 - josla uz 12 397 (pareizā); 320d `WBA3K31080F656545` (90 000 pirmajā ierakstā) |
-| C. Faktu lapa pretrunā ar klasifikāciju | 650i, 120d, 316 `WBA3D91080J411190`, 318d, 525 `WBAMX31050C524401`, 525 `WBAPX51050CU09550` |
+| B. Vainots pareizais punkts, nevis kļūdainais. **Kļūdains pirmais rādījums labots 17.11** (`isLeadingMileageEntryError`): 320d `WBAUY11040F045354` josla nodzisa, kļūda tagad uz 22 997. 320d `WBA3K31080F656545` 90 000 nav tabulā (tikai OneAuto oriģinālā) - jālabo komentāra avotā, ne analīzē | 320d `WBAUY11040F045354`: dīleris 22.09.2011 22 997, nākamajā dienā 12 397, CV 10.2011 12 347 - josla uz 12 397 (pareizā); 320d `WBA3K31080F656545` (90 000 pirmajā ierakstā) |
+| C. Faktu lapa pretrunā ar klasifikāciju. **Labots 17.11:** faktu lapas kritumi tikai tur, kur tabula redz `rollback` - pazuda 11 viltus kritumi, visas 8 lietas ar joslu savus kritumus patur | 650i, 120d, 316 `WBA3D91080J411190`, 318d, 525 `WBAMX31050C524401`, 525 `WBAPX51050CU09550` |
 | D. Novecojis dokuments / sludinājums kā kritums | Audi A6 Allroad (izsoļu arhīvs, ss.lv noapaļots), 640i `WBALW3C59CC891863` (izsoļu arhīvs atkārto 81 116 un 93 593) |
 | E. Jūdzes / km aizdomas (ASV auto) | 330i `WBA5R1C0XLFH42873` (ASV 11.08.2020 49 890 -> DE dīleris 2022 32 552 km), 640i (AutoDNA 2017 126 012 starp ASV jūdzēm?), 650i (0 rindu atzīmētas kā jūdzes) |
+
+### Jāvērtē Nilam (josla paliek - var būt īsta korekcija)
+
+- BMW 120d xDrive `WBA1B51010J842587` (Francija): ar CV 07.2023 167 422 temps vienmērīgs (~2 650 km/mēn.), bez tā
+  11.2022-02.2024 tikai 1 336 km. Aizdomīgs ir dīlera 159 891, nevis CV.
+- BMW X5 `WBAFF41030L065449`: Itālija 05.2026 279 560 -> LV CSDD 26.06.2026 277 681 (imports, -1 879 km).
 
 ### Īstas manipulācijas (kontrole - josla jāpaliek)
 

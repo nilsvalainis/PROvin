@@ -43,11 +43,9 @@
  "faktuLapa": {
   "odometerAnomaly": true,
   "carverticalMileageWarning": false,
-  "maxRollbackDropKm": 24484,
+  "maxRollbackDropKm": 9060,
   "rollbacks": [
-   "19.03.2020 170984 -> 01.09.2020 146500",
-   "28.04.2022 216060 -> 01.07.2022 207000",
-   "01.05.2026 310000 -> 05.09.2026 309000"
+   "28.04.2022 216060 -> 01.07.2022 207000"
   ],
   "suspectedEntryErrors": [],
   "implausibleReadings": [],

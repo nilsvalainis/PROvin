@@ -565,6 +565,29 @@ export function isIsolatedMileageDrop(
   return drop >= UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM;
 }
 
+/** Pirmā rādījuma kļūda: nākamais rādījums ne vēlāk kā pēc tik ilga laika. */
+export const LEADING_MILEAGE_ENTRY_ERROR_MAX_GAP_MS = 31 * 24 * 60 * 60 * 1000;
+
+/**
+ * Sērijas pirmais rādījums ir kļūda, ja: nākamais ir vismaz {@link UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM} zemāks un
+ * nolasīts ne vēlāk kā pēc 31 dienas, bet sērija turpinās no nākamā (aiznākamais ~ nākamais, < pirmais).
+ * Piem. dīleris 22.09.2011 22 997, 23.09.2011 12 397, CV 10.2011 12 347, 11.2011 12 500.
+ * Ja aiznākamais jau pārsniedz pirmo, nevar zināt, kurš ir kļūdains - netiek aiztikts.
+ */
+export function isLeadingMileageEntryError(
+  firstKm: number,
+  firstTime: number,
+  nextKm: number,
+  nextTime: number,
+  afterKm: number,
+): boolean {
+  if (firstKm - nextKm < UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM) return false;
+  if (!Number.isFinite(firstTime) || !Number.isFinite(nextTime)) return false;
+  if (nextTime - firstTime > LEADING_MILEAGE_ENTRY_ERROR_MAX_GAP_MS || nextTime < firstTime) return false;
+  // Pielaide kā citur analīzē: mēneša avoti (CV) var būt par dažiem desmitiem km zem precīzā rādījuma.
+  return afterKm > nextKm - UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM && afterKm < firstKm;
+}
+
 /** Cita avota atkārtots tas pats novecojušais dokumenta rādījums — pieļaujamā km atšķirība. */
 const STALE_DOCUMENT_MIRROR_TOLERANCE_KM = 1_000;
 
@@ -669,6 +692,15 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
     // Spike kā pēdējais punkts: tikai ×10 pret iepriekšējo.
     if (next == null && prev != null && looksLikeExtraDigitOdometerTypo(curr.km, prev)) {
       chartExclude.add(curr.sourceOrder);
+    }
+    // 17.11 (etalons, klase B): kļūdains PIRMAIS rādījums. Agrāk vainots nākamais (pareizais) punkts.
+    if (prev == null && i + 2 < pts.length && src && !isListingMileageSource(src)) {
+      const n1 = pts[i + 1]!;
+      const n2 = pts[i + 2]!;
+      if (isLeadingMileageEntryError(curr.km, curr.time, n1.km, n1.time, n2.km)) {
+        dataEntryErrors.add(curr.sourceOrder);
+        chartExclude.add(curr.sourceOrder);
+      }
     }
   }
 

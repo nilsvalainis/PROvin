@@ -63,7 +63,6 @@
   "carverticalMileageWarning": false,
   "maxRollbackDropKm": 333377,
   "rollbacks": [
-   "01.02.2017 121100 -> 19.04.2017 114000",
    "20.04.2022 529000 -> 01.09.2024 195623"
   ],
   "suspectedEntryErrors": [],

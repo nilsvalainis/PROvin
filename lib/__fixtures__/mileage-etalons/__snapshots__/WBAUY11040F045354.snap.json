@@ -10,8 +10,8 @@
  "rindasTabula": 63,
  "tabula": [
   "01.03.2011 | 11 | Nezināmā | CarVertical | mēnesis",
-  "22.09.2011 | 22997 | Vācija | OFICIĀLĀ DĪLERA DATI",
-  "23.09.2011 | 12397 | Vācija | OFICIĀLĀ DĪLERA DATI | ANOMĀLIJA",
+  "22.09.2011 | 22997 | Vācija | OFICIĀLĀ DĪLERA DATI | nav grafikā, ievades kļūda",
+  "23.09.2011 | 12397 | Vācija | OFICIĀLĀ DĪLERA DATI",
   "01.10.2011 | 12347 | Vācija | CarVertical | mēnesis",
   "21.11.2011 | 12500 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
   "19.03.2012 | 19906 | Vācija | OFICIĀLĀ DĪLERA DATI + CarVertical",
@@ -73,22 +73,20 @@
   "12.08.2026 | 257609 | Latvija | CarVertical + CSDD",
   "25.08.2026 | 258 000 | Latvija | ss.lv"
  ],
- "sarkanaJosla": true,
+ "sarkanaJosla": false,
  "klases": [
-  "rollback: 22.09.2011 22997 -> 23.09.2011 12397 (kritums 10600) [23.09.2011 | 12397 | OFICIĀLĀ DĪLERA DATI]"
+  "typo_outlier: 22.09.2011 22997 -> 22.09.2011 22997 (kritums 0) [22.09.2011 | 22997 | OFICIĀLĀ DĪLERA DATI]"
  ],
- "kritumsBezNilaLemumiem": true,
+ "kritumsBezNilaLemumiem": false,
  "nilaLemumi": [],
  "klasesPecNilaLemumiem": [
-  "rollback: 23.09.2011 12397"
+  "typo_outlier: 22.09.2011 22997"
  ],
  "faktuLapa": {
-  "odometerAnomaly": true,
+  "odometerAnomaly": false,
   "carverticalMileageWarning": false,
-  "maxRollbackDropKm": 10600,
-  "rollbacks": [
-   "22.09.2011 22997 -> 23.09.2011 12397"
-  ],
+  "maxRollbackDropKm": 0,
+  "rollbacks": [],
   "suspectedEntryErrors": [],
   "implausibleReadings": [],
   "latestKm": 258000
