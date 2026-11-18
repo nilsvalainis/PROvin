@@ -30,6 +30,9 @@ function stored(partial: Partial<MarketplaceStoredListing>): MarketplaceStoredLi
   };
 }
 
+/** Fiksēts pulkstenis: sludinājums ielasīts 19.10, derīgs 30 dienas. Ar Date.now() tests krita no 18.11. */
+const NOW_MS = Date.parse("2026-10-20T12:00:00.000Z");
+
 describe("mergeMarketplaceIntoLatestView", () => {
   it("collapses the same car from two portals into one card and keeps both links", () => {
     const view = mergeMarketplaceIntoLatestView(null, [
@@ -42,10 +45,15 @@ describe("mergeMarketplaceIntoLatestView", () => {
         id: "veh-as-1",
         mileageKm: 212070,
       }),
-    ]);
+    ], NOW_MS);
     expect(view?.vehicles).toHaveLength(1);
     expect(view?.vehicles[0]?.platform).toBe("mobilede");
     expect(view?.vehicles[0]?.detailUrl).toContain("mobile.de");
     expect(view?.vehicles[0]?.sourceLinks?.map((l) => l.url)).toEqual(["https://www.autoscout24.de/angebote/as-1"]);
+  });
+
+  it("drops listings whose 30-day validity has passed", () => {
+    const after = Date.parse("2026-11-18T12:00:00.000Z");
+    expect(mergeMarketplaceIntoLatestView(null, [stored({})], after)).toBeNull();
   });
 });

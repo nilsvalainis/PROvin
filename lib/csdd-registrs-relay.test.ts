@@ -199,6 +199,19 @@ describe("CSDD reģistrs: meklēšanas POST whitelist (rep_lapt_tl)", () => {
     expect(isClickAllowed({ ...loginBtn, text: "Anulēt" }, "login").allowed).toBe(false);
     expect(isClickAllowed({ tag: "A", text: "Atlasīt", href: "#", inSearchForm: true }, "search").allowed).toBe(false);
   });
+
+  it("search: the real CSDD report button 'Izveidot atskaiti...' is allowed only in the search form", () => {
+    const real = { tag: "BUTTON", type: "submit", text: "Izveidot atskaiti...", inSearchForm: true };
+    expect(isClickAllowed(real, "search")).toEqual({ allowed: true, reason: "csdd_search_report_button" });
+    expect(isClickAllowed({ ...real, text: "Izveidot atskaiti" }, "search").allowed).toBe(true);
+    expect(isClickAllowed({ ...real, inSearchForm: false }, "search").allowed).toBe(false);
+    expect(isClickAllowed(real, "read").allowed).toBe(false);
+    expect(isClickAllowed(real, "login").allowed).toBe(false);
+    expect(isClickAllowed({ ...real, text: "Izveidot pavadzīmi" }, "search").allowed).toBe(false);
+    expect(isClickAllowed({ ...real, text: "Izveidot atskaiti un saglabāt" }, "search").allowed).toBe(false);
+    expect(isClickAllowed({ ...real, onclick: "save()" }, "search").allowed).toBe(false);
+    expect(isClickAllowed({ ...real, tag: "A" }, "search").allowed).toBe(false);
+  });
 });
 
 /** CSDD TTR imitācija reģistram: sesija, firmas izvēle, atskaites forma, lapas. Skaita ex() un klikšķus. */

@@ -93,7 +93,7 @@ function startKeepAlive(onLost) {
 }
 
 async function postToProvin(file) {
-  const url = env.PROVIN_REGISTRS_URL || "https://provin.lv/api/iriss/csdd-registrs";
+  const url = env.PROVIN_REGISTRS_URL || "https://www.provin.lv/api/iriss/csdd-registrs";
   const token = env.PROVIN_REGISTRS_TOKEN || "";
   if (!token) throw new Error("provin_token_missing");
   const res = await fetch(url, {
