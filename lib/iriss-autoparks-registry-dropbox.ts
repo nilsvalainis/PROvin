@@ -2,6 +2,7 @@ import "server-only";
 
 import { applyAutoparksRegistryFile, type AutoparksRegistryImportResult } from "@/lib/iriss-autoparks-store";
 import { parseRegistryFile } from "@/lib/iriss-autoparks-registry";
+import { registryImportStampFromMeta, type RegistryImportStamp } from "@/lib/iriss-autoparks-registry-freshness";
 import { getDropboxClient } from "@/lib/dropbox-client";
 import { downloadDropboxFile, getDropboxAccessToken } from "@/lib/iriss-pavadzimes-dropbox";
 import { readLogisticsJsonFile, writeLogisticsJsonFile } from "@/lib/iriss-logistics-store";
@@ -92,6 +93,15 @@ export async function runAutoparksRegistryImport(opts: { force?: boolean } = {})
 }
 
 type ImportMeta = { contentHash?: string; registryDate?: string };
+
+/** Pēdējā veiksmīgā importa datumi svaiguma rādītājam (Autoparka saraksts un CSDD cilne). Kļūdas gadījumā null. */
+export async function readAutoparksRegistryImportStamp(): Promise<RegistryImportStamp | null> {
+  try {
+    return registryImportStampFromMeta(await readLogisticsJsonFile(IMPORT_META_FILE));
+  } catch {
+    return null;
+  }
+}
 
 /** `generatedAt` salīdzinājums pēc datuma (YYYY-MM-DD...). Nezināms datums nekad nav "vecāks". */
 export function isOlderRegistry(generatedAt: string, lastRegistryDate: string | undefined): boolean {

@@ -15,7 +15,11 @@ const DA_TERMS: Record<string, string> = {
   godkendt: "izturēta",
   "godkendt med frist": "izturēta ar termiņu trūkumu novēršanai",
   "betinget godkendt": "nosacīti izturēta",
-  "kan godkendes efter omsyn hos (om)synsvirksomhed": "jāveic atkārtota apskate",
+  // Tas pats iznākums kā esyn kodam OOM („nav izturēta”) - formulējumam jāsakrīt abos avotos.
+  "kan godkendes efter omsyn hos (om)synsvirksomhed": "nav izturēta, jāveic atkārtota apskate",
+  "kan godkendes efter omsyn hos omsynsvirksomhed": "nav izturēta, jāveic atkārtota apskate",
+  "kan godkendes efter omsyn hos synsvirksomhed": "nav izturēta, jāveic atkārtota apskate",
+  "kan godkendes efter omsyn": "nav izturēta, jāveic atkārtota apskate",
   "kan ikke godkendes": "nav izturēta",
   omsyn: "atkārtota apskate",
   "første syn": "pirmā apskate",
@@ -62,6 +66,152 @@ const DA_TERMS: Record<string, string> = {
   personbil: "vieglā automašīna",
   varebil: "furgons",
   "stor personbil": "liela vieglā automašīna",
+  // --- apskates trūkumu GRUPAS (synsrapport virsraksti; jaunais ES 2014/45 formāts un vecais formāts) ---
+  "identifikation af køretøjet": "transportlīdzekļa identifikācija",
+  identifikation: "identifikācija",
+  bremseudstyr: "bremžu iekārta",
+  "bremseudstyr, driftsbremse": "bremžu iekārta, darba bremze",
+  "bremseudstyr, parkeringsbremse": "bremžu iekārta, stāvbremze",
+  "bremseudstyr, nødbremse": "bremžu iekārta, avārijas bremze",
+  bremser: "bremzes",
+  styreapparat: "stūres iekārta",
+  styretøj: "stūres iekārta",
+  udsyn: "redzamība",
+  "udsyn (ruder, spejle, viskere)": "redzamība (stikli, spoguļi, tīrītāji)",
+  "lygter, reflekser og elektrisk udstyr": "lukturi, atstarotāji un elektroiekārta",
+  "lygter, reflekser, og elektrisk udstyr": "lukturi, atstarotāji un elektroiekārta",
+  "aksler, hjul, dæk og affjedring": "asis, riteņi, riepas un balstiekārta",
+  "aksler, hjul og affjedring": "asis, riteņi un balstiekārta",
+  "aksler, og affjedring": "asis un balstiekārta",
+  "aksler og affjedring": "asis un balstiekārta",
+  "hjul og dæk": "riteņi un riepas",
+  "chassis, eller ramme og dertil fastgjorte dele": "šasija vai rāmis un pie tā piestiprinātās daļas",
+  "chassis og dertil fastgjorte dele": "šasija un pie tās piestiprinātās daļas",
+  "bærende elementer": "nesošie elementi",
+  "bærende dele": "nesošās daļas",
+  karrosseri: "virsbūve",
+  "andet udstyr": "cits aprīkojums",
+  "øvrigt udstyr": "pārējais aprīkojums",
+  "gener, udstødning": "ietekme uz vidi, izplūdes gāzes",
+  "gener, støj": "ietekme uz vidi, troksnis",
+  gener: "ietekme uz vidi",
+  miljø: "vide",
+  "motor og transmission": "motors un transmisija",
+  // --- apakšgrupas ---
+  tilstand: "stāvoklis",
+  præstationer: "darbības rādītāji",
+  affjedringsled: "balstiekārtas šarnīri",
+  "fjedre og stabilisator": "atsperes un stabilizators",
+  transmission: "transmisija",
+  "motor med kompressionstænding": "kompresijas aizdedzes motors (dīzelis)",
+  "motor med styret tænding": "dzirksteļaizdedzes motors (benzīns)",
+  // --- trūkuma smagums ---
+  "mindre fejl": "neliels trūkums",
+  "væsentlig fejl": "būtisks trūkums",
+  "farlig fejl": "bīstams trūkums",
+  // --- standarta trūkumu teikumi (ES 2014/45 formulējumi; tulkojam teikumu kopumā, ne pa vārdam) ---
+  "for kraftig tæring, som påvirker samlingernes styrke": "pārmērīga korozija, kas ietekmē savienojumu stiprību",
+  "for stort slid i styrebolt og/eller bøsninger eller i affjedringsled":
+    "pārmērīgs nodilums šarnīra tapā un/vai buksēs vai balstiekārtas šarnīros",
+  "fjederkomponent er beskadiget eller har brud": "atsperes detaļa ir bojāta vai lūzusi",
+  "utilstrækkelig bremsevirkning på et eller flere hjul":
+    "nepietiekama bremzēšanas iedarbība uz vienu vai vairākiem riteņiem",
+  "bremsen virker ikke på den ene side, eller ved bremseprøve på vej afviger køretøjet stærkt fra sin kurs under opbremsningen":
+    "bremze nedarbojas vienā pusē, vai bremžu pārbaudē uz ceļa transportlīdzeklis bremzējot stipri novirzās no kursa",
+  "støvmanchet beskadiget": "putekļu aizsargmanšete bojāta",
+  "emissionskontroludstyr monteret af fabrikanten mangler eller er tydeligvis defekt":
+    "ražotāja uzstādītā izmešu kontroles iekārta trūkst vai ir acīmredzami bojāta",
+  "bærekugle i forhjulsophæng": "lodbalsts priekšējā piekarē",
+  "ujævn bremsevirkning": "nevienmērīga bremzēšanas iedarbība",
+  "for stor": "pārāk liela",
+  "for stort": "pārāk liels",
+  "i begge sider": "abās pusēs",
+  // --- novietojums ---
+  venstre: "kreisā puse",
+  højre: "labā puse",
+  aksel: "ass",
+  foraksel: "priekšējā ass",
+  bagaksel: "aizmugurējā ass",
+  forhjul: "priekšējais ritenis",
+  baghjul: "aizmugurējais ritenis",
+  // --- trūkumu vārdnīca ---
+  // lietvārda formā - dāņu īpašības vārds neseko latviešu dzimtei („bremžu caurule, korozija”)
+  tæret: "korozija",
+  gennemtæret: "caurrūsējums",
+  tæring: "korozija",
+  rust: "rūsa",
+  utæt: "nehermētiskums",
+  utæthed: "noplūde",
+  olielækage: "eļļas noplūde",
+  slør: "brīvkustība",
+  defekt: "defekts",
+  beskadiget: "bojājums",
+  mangler: "trūkst",
+  slidt: "nodilums",
+  slid: "nodilums",
+  bremsevirkning: "bremzēšanas iedarbība",
+  bremserør: "bremžu caurule",
+  bremseslange: "bremžu šļūtene",
+  bremseskive: "bremžu disks",
+  bremseskiver: "bremžu diski",
+  bremseklods: "bremžu klucis",
+  bremseklodser: "bremžu kluči",
+  bremsekaliber: "bremžu suports",
+  bremsetromle: "bremžu trumulis",
+  bremsevæske: "bremžu šķidrums",
+  driftsbremse: "darba bremze",
+  parkeringsbremse: "stāvbremze",
+  håndbremse: "rokas bremze",
+  støddæmper: "amortizators",
+  støddæmpere: "amortizatori",
+  fjeder: "atspere",
+  fjedre: "atsperes",
+  stabilisator: "stabilizators",
+  bærearm: "balstsvira",
+  bærekugle: "lodbalsts",
+  kugleled: "lodveida šarnīrs",
+  styrekugle: "stūres šarnīrs",
+  forhjulsophæng: "priekšējā piekare",
+  baghjulsophæng: "aizmugurējā piekare",
+  hjulleje: "riteņa gultnis",
+  drivaksel: "pusass",
+  bøsning: "bukse",
+  bøsninger: "bukses",
+  støvmanchet: "putekļu aizsargmanšete",
+  manchet: "manšete",
+  hjul: "ritenis",
+  mønsterdybde: "protektora dziļums",
+  udstødning: "izplūdes sistēma",
+  udstødningsrør: "izplūdes caurule",
+  lyddæmper: "trokšņa slāpētājs",
+  partikelfilter: "daļiņu filtrs",
+  katalysator: "katalizators",
+  lygte: "lukturis",
+  lygter: "lukturi",
+  forlygte: "priekšējais lukturis",
+  baglygte: "aizmugurējais lukturis",
+  stoplygte: "bremžu signāllukturis",
+  tågelygte: "miglas lukturis",
+  nærlys: "tuvās gaismas",
+  fjernlys: "tālās gaismas",
+  positionslys: "gabarītgaismas",
+  blinklys: "virzienrādītājs",
+  nummerpladelys: "numura zīmes apgaismojums",
+  forrude: "priekšējais stikls",
+  visker: "stikla tīrītājs",
+  viskere: "stikla tīrītāji",
+  vinduesvisker: "stikla tīrītājs",
+  sikkerhedssele: "drošības josta",
+};
+
+/**
+ * Īsie dāņu vārdi (< 4 burti), ko tulkojam TIKAI apskates trūkumu tekstā (`translateTextLvChecked`).
+ * Vispārīgā `translateTextLv` tos neaiztiek: „for” un „bag” citur ir prievārdi, ne novietojums.
+ */
+const DA_FAULT_SHORT_TERMS: Record<string, string> = {
+  for: "priekšā",
+  bag: "aizmugurē",
+  dæk: "riepa",
 };
 
 const ET_TERMS: Record<string, string> = {
@@ -147,19 +297,47 @@ export function translateTextLv(value: string, lang: "da" | "et"): string {
   const exact = translateTermLv(raw, lang);
   if (exact !== raw) return exact;
 
-  const { re, byKey } = textTermMatcher(lang);
-  return raw.replace(re, (m) => byKey.get(m.toLocaleLowerCase().replace(/\s+/g, " ")) ?? m);
+  const { re, byKey } = textTermMatcher(lang, false);
+  return raw.replace(re, (m) => byKey.get(termKey(m)) ?? m);
 }
 
-const textTermMatchers = new Map<"da" | "et", { re: RegExp; byKey: Map<string, string> }>();
+/**
+ * Tas pats, kas `translateTextLv`, bet pasaka, vai iztulkots VISS teksts: `complete` ir true tikai tad,
+ * ja ārpus vārdnīcas terminiem nepaliek neviens burts (cipari un pieturzīmes drīkst palikt).
+ * Klienta atskaitē pustulkotu teikumu nerādām - izsaucējs pie `complete: false` rāda oriģinālu.
+ * Dāņu valodai papildus tulko īsos novietojuma vārdus („for”, „bag”).
+ */
+export function translateTextLvChecked(value: string, lang: "da" | "et"): { text: string; complete: boolean } {
+  const raw = (value ?? "").trim();
+  if (!raw) return { text: "", complete: true };
+  const { re, byKey } = textTermMatcher(lang, true);
+  let rest = "";
+  let last = 0;
+  const text = raw.replace(re, (m, offset: number) => {
+    const hit = byKey.get(termKey(m));
+    if (hit == null) return m;
+    rest += raw.slice(last, offset);
+    last = offset + m.length;
+    return hit;
+  });
+  rest += raw.slice(last);
+  return { text, complete: !/\p{L}/u.test(rest) };
+}
+
+function termKey(match: string): string {
+  return match.toLocaleLowerCase().replace(/\s+/g, " ");
+}
+
+const textTermMatchers = new Map<string, { re: RegExp; byKey: Map<string, string> }>();
 
 /**
  * Viena regulārā izteiksme visiem terminiem: garākie pirmie (frāze pirms atsevišķa vārda),
  * Unicode robežas (\b nestrādā pirms/pēc „õ”, „ü”, „ø”), viena caurlaide - jau iztulkotais
  * latviskais teksts netiek tulkots vēlreiz.
  */
-function textTermMatcher(lang: "da" | "et"): { re: RegExp; byKey: Map<string, string> } {
-  const cached = textTermMatchers.get(lang);
+function textTermMatcher(lang: "da" | "et", withShortFaultTerms: boolean): { re: RegExp; byKey: Map<string, string> } {
+  const cacheKey = `${lang}:${withShortFaultTerms ? "fault" : "text"}`;
+  const cached = textTermMatchers.get(cacheKey);
   if (cached) return cached;
   const dict = lang === "da" ? DA_TERMS : ET_TERMS;
   const byKey = new Map<string, string>();
@@ -167,12 +345,15 @@ function textTermMatcher(lang: "da" | "et"): { re: RegExp; byKey: Map<string, st
     if (term.length < 4) continue;
     byKey.set(term.toLocaleLowerCase(), lv);
   }
+  if (withShortFaultTerms && lang === "da") {
+    for (const [term, lv] of Object.entries(DA_FAULT_SHORT_TERMS)) byKey.set(term, lv);
+  }
   const alternation = [...byKey.keys()]
     .sort((a, b) => b.length - a.length)
     .map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/ /g, "\\s+"))
     .join("|");
   const built = { re: new RegExp(`(?<![\\p{L}\\p{N}])(?:${alternation})(?![\\p{L}\\p{N}])`, "giu"), byKey };
-  textTermMatchers.set(lang, built);
+  textTermMatchers.set(cacheKey, built);
   return built;
 }
 

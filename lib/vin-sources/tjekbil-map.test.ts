@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isCustomsInspection, isFailedMot, extractDkRegistrationSignals, mapTjekbilPayload, type TjekbilDmrResponse } from "@/lib/vin-sources/tjekbil-map";
+import { isCustomsInspection, isFailedMot, extractDkRegistrationSignals, mapTjekbilPayload, tjekbilFaultLv, type TjekbilDmrResponse } from "@/lib/vin-sources/tjekbil-map";
 
 const SHARAN: TjekbilDmrResponse = {
   basic: {
@@ -72,6 +72,9 @@ describe("tjekbil-map", () => {
     expect(isCustomsInspection(toldsyn)).toBe(true);
     expect(isFailedMot(toldsyn)).toBe(false);
     expect(isFailedMot({ kategori: "Periodisk syn", synsresultat: "Kan ikke godkendes" })).toBe(true);
+    expect(isFailedMot({ kategori: "Periodisk syn", synsresultat: "Ikke godkendt" })).toBe(true);
+    expect(isFailedMot({ kategori: "Periodisk syn", synsresultat: "Godkendt" })).toBe(false);
+    expect(isFailedMot({ kategori: "Periodisk syn", synsresultat: "Betinget godkendt" })).toBe(false);
   });
 
   it("fills timeline, mileage and import without counting insurance as owners", () => {
@@ -141,6 +144,82 @@ describe("tjekbil-map", () => {
     expect(signals.some((s) => s.date === "2019-11-11")).toBe(false);
     expect(mapTjekbilPayload({ dmr, mileagelogs: [], wanted: [] }).ownersSummary).toMatch(
       /Īpašnieku skaits Dānijā: 2/,
+    );
+  });
+});
+
+describe("tjekbilFaultLv - apskates trūkums klienta atskaitei", () => {
+  it("viss zināms: grupa vienreiz un latvisks apraksts bez liekiem komatiem", () => {
+    expect(
+      tjekbilFaultLv({
+        title: "Aksler, og affjedring",
+        description:
+          "Aksler, og affjedring, Fjedre og stabilisator, Aksler, og affjedring, Fjederkomponent er beskadiget eller har brud.,  , højre, 1. aksel, Væsentlig fejl",
+      }),
+    ).toBe(
+      "Asis un balstiekārta: atsperes un stabilizators, atsperes detaļa ir bojāta vai lūzusi, labā puse, 1. ass, būtisks trūkums",
+    );
+    expect(
+      tjekbilFaultLv({
+        title: "Gener, udstødning",
+        description:
+          "Gener, udstødning, Motor med kompressionstænding, Emissionskontroludstyr monteret af fabrikanten mangler eller er tydeligvis defekt. - Væsentlig fejl",
+      }),
+    ).toBe(
+      "Ietekme uz vidi, izplūdes gāzes: kompresijas aizdedzes motors (dīzelis), ražotāja uzstādītā izmešu kontroles iekārta trūkst vai ir acīmredzami bojāta, būtisks trūkums",
+    );
+    expect(tjekbilFaultLv({ title: "Bremser", description: "bremserør, tæret, bag, venstre" })).toBe(
+      "Bremzes: bremžu caurule, korozija, aizmugurē, kreisā puse",
+    );
+  });
+
+  it("apraksts nav pilnībā tulkojams: latviska grupa + dāņu oriģināls iekavās, bez valodu jaukuma", () => {
+    expect(tjekbilFaultLv({ title: "Bremser", description: "Bremserør er meget tæret ved bagaksel." })).toBe(
+      'Bremzes (da: "Bremserør er meget tæret ved bagaksel.")',
+    );
+    expect(
+      tjekbilFaultLv({ title: "Styretøj", description: "Styretøj, Tandstang utæt ved manchet, venstre" }),
+    ).toBe('Stūres iekārta (da: "Tandstang utæt ved manchet, venstre")');
+  });
+
+  it("nezināma grupa: viss teksts paliek dāniski ar atzīmi", () => {
+    expect(tjekbilFaultLv({ title: "Ukendt gruppe", description: "noget helt andet" })).toBe(
+      'da: "Ukendt gruppe: noget helt andet"',
+    );
+  });
+
+  it("tikai virsraksts vai tikai apraksts", () => {
+    expect(tjekbilFaultLv({ title: "Bremser" })).toBe("Bremzes");
+    expect(tjekbilFaultLv({ title: "Bremser", description: "Bremser" })).toBe("Bremzes");
+    expect(tjekbilFaultLv({ description: "slør, for stor, højre" })).toBe("Brīvkustība, pārāk liela, labā puse");
+    expect(tjekbilFaultLv({ description: "noget andet" })).toBe('da: "noget andet"');
+    expect(tjekbilFaultLv({})).toBe("");
+  });
+});
+
+describe("neizturētas apskates piezīme", () => {
+  const withInspection = (synsresultat: string, fejl: unknown[] = []): TjekbilDmrResponse => ({
+    inspectionData: {
+      rapporter: [{ synsdato: "10-10-2023", kategori: "Periodisk syn", synstype: "Første syn", synsresultat, fejl }],
+    },
+  });
+
+  it("„Kan godkendes efter omsyn” un „Kan ikke godkendes” - bez dubulta „nav izturēta”", () => {
+    expect(mapTjekbilPayload({ dmr: withInspection("Kan godkendes efter omsyn hos (om)synsvirksomhed") }).incidents).toEqual([
+      { date: "2023-10-10", amount: "", country: "Dānija", note: "Apskate nav izturēta, jāveic atkārtota apskate" },
+    ]);
+    expect(mapTjekbilPayload({ dmr: withInspection("Kan ikke godkendes") }).incidents[0]?.note).toBe(
+      "Apskate nav izturēta",
+    );
+  });
+
+  it("jaukts saraksts: tulkojamais trūkums latviski, netulkojamais ar oriģinālu", () => {
+    const dmr = withInspection("Kan godkendes efter omsyn", [
+      { title: "Bremser", description: "bremseslange, defekt, for, højre" },
+      { title: "Karrosseri", description: "Karrosseri, dørtrin gennemtæret i højre side" },
+    ]);
+    expect(mapTjekbilPayload({ dmr }).incidents[0]?.note).toBe(
+      'Apskate nav izturēta, jāveic atkārtota apskate - Bremzes: bremžu šļūtene, defekts, priekšā, labā puse | Virsbūve (da: "dørtrin gennemtæret i højre side")',
     );
   });
 });
