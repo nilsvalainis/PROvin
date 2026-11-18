@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BigVin } from "@/components/admin/iriss-logistika/BigVin";
 import { isLogisticsOrderActive } from "@/lib/iriss-logistics-archive";
 import { formatCargoDuration, formatCargoKm } from "@/lib/iriss-logistics-cargo-plan";
 import { loadCargoPlanForActiveOrders } from "@/lib/iriss-logistics-cargo-store";
@@ -64,7 +65,12 @@ export default async function DriverRoutePage({ params }: { params: Promise<{ to
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-[16px] font-semibold">{s.car}</p>
-                {s.vin ? <p className="font-mono text-[13px] text-[#3a3a3c]">{s.vin}</p> : null}
+                {s.vin ? (
+                  <BigVin
+                    vin={s.vin}
+                    className="mt-1 break-all font-mono text-[19px] leading-tight tracking-[0.04em] text-[#6e6e73] [&_.vin-tail]:font-bold [&_.vin-tail]:text-[#1d1d1f]"
+                  />
+                ) : null}
                 {s.place ? <p className="mt-1 text-[15px] font-medium">{s.place}</p> : null}
                 {s.address ? <p className="text-[14px] text-[#3a3a3c]">{s.address}</p> : null}
                 {s.hours ? <p className="mt-1 text-[13px] text-[#6e6e73]">Darba laiks: {s.hours}</p> : null}
