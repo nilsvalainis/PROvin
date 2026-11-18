@@ -1,7 +1,6 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { SITE_PERMISSIONS_POLICY } from "@/lib/csp";
+import { importChain, reachableExternalImports, reachableProjectFiles } from "@/lib/vin-scan/test-helpers/import-graph";
 import {
   CAMERA_OCR_VARIANT_ORDER,
   CAMERA_SHEET_FRESH,
@@ -101,39 +100,47 @@ describe("VIN SCAN kameras pogas un OCR secība", () => {
 });
 
 describe("VIN camera client boundary", () => {
+  /*
+   * Klienta pakotnē nedrīkst nonākt servera kods (node:crypto, server-only, tesseract/sharp OCR).
+   * To nevar pārbaudīt, izpildot kodu, tāpēc pārbauda īstu importu grafu no kameras lapas -
+   * tranzitīvi, ne tikai septiņos ar roku uzskaitītos failos.
+   */
   it("keeps node:crypto and server-only off the camera sheet import chain", () => {
-    const root = process.cwd();
-    const files = [
-      "components/admin/mobile/AdminMobileVinCameraSheet.tsx",
-      "lib/vin-scan/camera-vin.ts",
-      "lib/vin-scan/camera-frame.ts",
-      "lib/vin-scan/vin-decode.ts",
-      "lib/vin-scan/vin-check.ts",
-      "lib/vin-iso3779.ts",
-      "lib/order-field-validation.ts",
-    ];
-    for (const file of files) {
-      const src = readFileSync(path.join(root, file), "utf8");
-      expect(src, file).not.toMatch(/from\s+["']node:crypto["']/);
-      expect(src, file).not.toMatch(/import\s+["']server-only["']/);
-      expect(src, file).not.toMatch(/camera-ocr-server/);
+    const entry = ["components/admin/mobile/AdminMobileVinCameraSheet.tsx"];
+    const files = reachableProjectFiles(entry);
+    for (const needed of ["lib/vin-scan/camera-vin.ts", "lib/vin-scan/camera-frame.ts", "lib/vin-scan/vin-check.ts"]) {
+      expect(files.has(needed), needed).toBe(true);
+    }
+    const server = "lib/vin-scan/camera-ocr-server.ts";
+    expect(files.has(server), importChain(files, server).join(" -> ")).toBe(false);
+    const external = reachableExternalImports(entry);
+    for (const banned of ["node:crypto", "crypto", "server-only", "tesseract.js", "sharp", "node:fs", "fs", "fs/promises"]) {
+      expect(external.has(banned), `${banned} <- ${external.get(banned)}`).toBe(false);
     }
   });
 
-  it("Permissions-Policy atļauj kameru šajā izcelsmē", () => {
-    expect(SITE_PERMISSIONS_POLICY).toMatch(/camera=\(self\)/);
-    expect(SITE_PERMISSIONS_POLICY).not.toMatch(/camera=\(\)/);
-    const cfg = readFileSync(path.join(process.cwd(), "next.config.ts"), "utf8");
-    expect(cfg).toMatch(/SITE_PERMISSIONS_POLICY/);
-    expect(cfg).not.toMatch(/camera=\(\)/);
+  it("importu grafa pārbaude redz servera moduli tur, kur tas tiešām ir (pozitīvā kontrole)", () => {
+    const route = ["app/api/admin/vin-scan/camera-ocr/route.ts"];
+    expect(reachableProjectFiles(route).has("lib/vin-scan/camera-ocr-server.ts")).toBe(true);
+    expect(reachableExternalImports(route).has("server-only")).toBe(true);
   });
 
-  it("camera-ocr serveris lieto inversiju pirmo un klienta aborta signālu", () => {
-    const src = readFileSync(path.join(process.cwd(), "lib/vin-scan/camera-ocr-server.ts"), "utf8");
-    expect(src).toMatch(/CAMERA_OCR_VARIANT_ORDER/);
-    expect(src).toMatch(/cameraOcrStopAfterPick/);
-    expect(src).toMatch(/signal\?\.aborted/);
-    const route = readFileSync(path.join(process.cwd(), "app/api/admin/vin-scan/camera-ocr/route.ts"), "utf8");
-    expect(route).toMatch(/req\.signal/);
+  it("Permissions-Policy atļauj kameru šajā izcelsmē, un vietne šo galveni tiešām sūta", async () => {
+    expect(SITE_PERMISSIONS_POLICY).toMatch(/camera=\(self\)/);
+    expect(SITE_PERMISSIONS_POLICY).not.toMatch(/camera=\(\)/);
+    const { default: nextConfig } = await import("@/next.config");
+    const rules = (await nextConfig.headers?.()) ?? [];
+    const policies = rules.flatMap((rule) =>
+      rule.headers.filter((h) => h.key.toLowerCase() === "permissions-policy").map((h) => ({ source: rule.source, value: h.value })),
+    );
+    expect(policies.length).toBeGreaterThan(0);
+    for (const policy of policies) {
+      expect(policy.value, policy.source).toBe(SITE_PERMISSIONS_POLICY);
+    }
+    /* Galvenei jāattiecas arī uz admin kameras lapu. */
+    expect(policies.some((p) => new RegExp(`^${p.source.replace(/:path\*/g, ".*").replace(/\(\.\*\)/g, ".*")}$`).test("/admin/vin-scan"))).toBe(true);
   });
+
+  /* OCR variantu secība, apstāšanās pēc pirmā VIN un klienta aborts: lib/vin-scan/camera-ocr-server.test.ts
+     (īstais modulis ar viltotu tesseract/sharp) un maršruts - lib/vin-scan/camera-ocr-route.test.ts. */
 });

@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { applyVinScanBrowserResultToSnapshot } from "@/lib/vin-scan/apply-browser-result";
@@ -8,7 +6,6 @@ import { VIN_SCAN_PAID_SOURCE_IDS } from "@/lib/vin-scan/free-sources";
 import { emptyVinScanPlates } from "@/lib/vin-scan/plates";
 import type { VinScanIndicator } from "@/lib/vin-scan/types";
 
-const ROOT = process.cwd();
 const VIN = "WBA5R1C0XLFH42873";
 
 function awaiting(id: (typeof VIN_SCAN_BROWSER_FETCH_IDS)[number]): VinScanIndicator {
@@ -121,33 +118,26 @@ describe("atsevišķā VIN SCAN pārlūka rezultāts", () => {
     expect(empty.ok).toBe(false);
   });
 
-  it("atsevišķais rīks un API saglabā pārlūka rezultātu tajā pašā Blob ceļā", () => {
-    const panel = readFileSync(path.join(ROOT, "components/admin/AdminVinScanPanel.tsx"), "utf8");
-    const route = readFileSync(path.join(ROOT, "app/api/admin/vin-scan/route.ts"), "utf8");
-    const orderRoute = readFileSync(path.join(ROOT, "app/api/admin/order-vin-scan/route.ts"), "utf8");
-    const store = readFileSync(path.join(ROOT, "lib/vin-scan/store.ts"), "utf8");
-    const handoff = readFileSync(path.join(ROOT, "components/admin/AdminVinScanBrowserFetchHandoff.tsx"), "utf8");
-    const card = readFileSync(path.join(ROOT, "components/admin/AdminOrderVinScanCard.tsx"), "utf8");
-    expect(panel).toContain("AdminVinScanBrowserFetchHandoff");
-    expect(panel).toContain("provin-vin-scan-result");
-    expect(panel).toContain("browserResult");
-    expect(panel).toContain("/api/admin/vin-scan");
-    expect(panel).not.toContain("purchaseCarVerticalReport");
-    expect(handoff).toContain("data-provin-browser-fetch");
-    expect(handoff).toContain("data-provin-stat-vin-fetch");
-    expect(card).toContain("AdminVinScanBrowserFetchHandoff");
-    expect(route).toContain("applyVinScanBrowserResultToSnapshot");
-    expect(route).toContain("browserResult");
-    expect(route).toContain("writeVinScanSnapshot");
-    expect(route).toContain("logVinScanBrowserImport");
-    expect(route).toContain("finalUrl");
-    expect(route).toContain("preferBrowserArchiveImport");
-    expect(orderRoute).toContain("logVinScanBrowserImport");
-    expect(orderRoute).toContain("finalUrl");
-    expect(store).toContain("blob_write_failed");
-    expect(store).toContain("isEphemeralDir");
-    expect(route).not.toMatch(/purchaseCarVerticalReport|carvertical/i);
+  it("maksas avota (CarVertical) rezultātu caur pārlūka importu nepieņem", () => {
+    for (const id of [...VIN_SCAN_PAID_SOURCE_IDS, "carvertical_preview"]) {
+      const applied = applyVinScanBrowserResultToSnapshot({
+        snapshot: {
+          vin: VIN,
+          plates: emptyVinScanPlates(),
+          scannedAt: "2026-10-17T10:00:00.000Z",
+          indicators: [awaiting("stat_vin")],
+        },
+        vin: VIN,
+        browserResult: { id, status: "found", summary: "CarVertical atskaite nopirkta", html: `<p>${VIN}</p>` },
+      });
+      expect(applied.ok, id).toBe(false);
+    }
   });
+
+  /* Maršruts /api/admin/vin-scan ar browserResult (saglabāšana, žurnāls, sacensība ar skenēšanu) ir
+     pārbaudīts ar īstu maršrutu lib/vin-scan/vin-scan-route-import-race.test.ts; krātuves kļūda, kad
+     Blob nav pieejams - lib/vin-scan/store-write.test.ts; marķieris, ko lasa Tampermonkey -
+     lib/vin-scan/userscript-sync.test.ts un components/admin/AdminOrderVinScanCard.test.tsx. */
 });
 
 describe("atsevišķā rīka pageUrl pārbaude", () => {
