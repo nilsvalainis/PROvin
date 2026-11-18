@@ -173,13 +173,13 @@ describe("b2b wallet prices", () => {
   });
 
   it("locks the default and minimum catalog prices", () => {
-    expect(B2B_WALLET_PRODUCTS.business).toMatchObject({ defaultCents: 7999, minCents: 6999 });
+    expect(B2B_WALLET_PRODUCTS.business).toMatchObject({ defaultCents: 6999, minCents: 6999 });
     expect(B2B_WALLET_PRODUCTS.dealer_raw).toMatchObject({ defaultCents: 1999, minCents: 1199 });
     expect(B2B_WALLET_PRODUCTS.dealer_pro).toMatchObject({ defaultCents: 2499, minCents: 1499 });
   });
 
   it("empty override means the default price", () => {
-    expect(resolveB2bWalletPrice("business", null)).toEqual({ product: "business", priceCents: 7999, defaultCents: 7999, discountPct: 0 });
+    expect(resolveB2bWalletPrice("business", null)).toEqual({ product: "business", priceCents: 6999, defaultCents: 6999, discountPct: 0 });
     expect(resolveB2bWalletPrice("dealer_raw", { business: null, dealer_raw: null, dealer_pro: null })).toEqual({
       product: "dealer_raw",
       priceCents: 1999,
@@ -204,7 +204,7 @@ describe("b2b wallet prices", () => {
   });
 
   it("computes the discount badge percentage", () => {
-    expect(resolveB2bWalletPrice("business", { business: 7199, dealer_raw: null, dealer_pro: null }).discountPct).toBe(10);
+    expect(resolveB2bWalletPrice("dealer_pro", { business: null, dealer_raw: null, dealer_pro: 2249 }).discountPct).toBe(10);
     expect(b2bWalletDiscountPct(1199, 1599)).toBe(25);
     expect(b2bWalletDiscountPct(7998, 7999)).toBe(1);
     expect(b2bWalletDiscountPct(7999, 7999)).toBe(0);
@@ -287,5 +287,17 @@ describe("b2b wallet prices", () => {
       dealer_raw: null,
       dealer_pro: "de",
     });
+  });
+});
+
+describe("Business 69,99 € visur (Nils 18.11)", () => {
+  it("saglabāta individuālā cena virs kataloga netiek iekasēta", () => {
+    const stored = parseB2bWalletPrices({ business: 7199, dealer_raw: null, dealer_pro: 2999 });
+    expect(resolveB2bWalletPrice("business", stored)).toMatchObject({ priceCents: 6999, discountPct: 0 });
+    expect(resolveB2bWalletPrice("dealer_pro", stored)).toMatchObject({ priceCents: 2499, discountPct: 0 });
+  });
+
+  it("Business nevar iestatīt zem 69,99 €", () => {
+    expect(validateB2bWalletPriceInput({ business: "65,00" })).toMatchObject({ ok: false, product: "business", reason: "below_min" });
   });
 });

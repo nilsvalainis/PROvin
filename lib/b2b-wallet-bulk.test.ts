@@ -261,7 +261,7 @@ describe("POST /api/partner/wallet/bulk", () => {
     state.wallet = funded(9000);
     const { status, body } = await post(bulkRequest("business", [{ vin: VIN_A }, { vin: VIN_B }]));
     expect(status).toBe(402);
-    expect(body).toMatchObject({ error: "insufficient", needCents: 2 * 7999, count: 2 });
+    expect(body).toMatchObject({ error: "insufficient", needCents: 2 * 6999, count: 2 });
     expect(state.wallet.balanceCents).toBe(9000);
     expect(state.createOrder).not.toHaveBeenCalled();
   });

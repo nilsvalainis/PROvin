@@ -25,7 +25,7 @@ export type B2bWalletProductSpec = {
 };
 
 export const B2B_WALLET_PRODUCTS: Record<B2bWalletProductId, B2bWalletProductSpec> = {
-  business: { id: "business", defaultCents: 7999, minCents: 6999, plan: "business", refundOnNoData: false },
+  business: { id: "business", defaultCents: 6999, minCents: 6999, plan: "business", refundOnNoData: false },
   dealer_raw: { id: "dealer_raw", defaultCents: 1999, minCents: 1199, plan: "dealer", refundOnNoData: true },
   dealer_pro: { id: "dealer_pro", defaultCents: 2499, minCents: 1499, plan: "dealer", refundOnNoData: true },
 };
@@ -131,7 +131,9 @@ export function resolveB2bWalletPrice(
 ): B2bWalletResolvedPrice {
   const spec = B2B_WALLET_PRODUCTS[product];
   const override = overrides?.[product] ?? null;
-  const priceCents = override != null && override >= spec.minCents ? override : spec.defaultCents;
+  // Individuālā cena ir atlaide: nekad augstāka par kataloga cenu (Business 69,99 € visiem, Nils 18.11).
+  const priceCents =
+    override != null && override >= spec.minCents ? Math.min(override, spec.defaultCents) : spec.defaultCents;
   return {
     product,
     priceCents,
