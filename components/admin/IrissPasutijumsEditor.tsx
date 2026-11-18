@@ -1,7 +1,7 @@
 "use client";
 
 import { AdminSaveButton, useSaveMessageState } from "@/components/admin/AdminSaveButton";
-import { ArrowLeft, FileDown, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, FileDown, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -2112,18 +2112,8 @@ export function IrissPasutijumsEditor({
               label="Izveidot pasūtījumu"
               className="min-h-[44px] w-full sm:w-auto"
             />
-            <button
-              type="button"
-              disabled={busy || deleteBusy}
-              onClick={() => {
-                setOfferOpen(false);
-                setDeleteConfirmOpen(true);
-              }}
-              className="inline-flex min-h-[44px] w-full shrink-0 items-center justify-center gap-2 rounded-full border border-red-300/90 bg-white px-4 text-[13px] font-semibold text-red-800 shadow-sm transition hover:bg-red-50 disabled:opacity-50 sm:w-auto"
-            >
-              <Trash2 className="h-4 w-4 shrink-0" strokeWidth={2.2} aria-hidden />
-              Dzēst pasūtījumu
-            </button>
+            {/* Jaunam, vēl nesaglabātam pasūtījumam nav ko dzēst (IRISS audits 27.10). Pēc pirmās
+                saglabāšanas lapa pāriet uz /pasutijumi/{id}, kur «Dzēst pasūtījumu» ir. */}
           </div>
         </section>
       </div>
