@@ -20,6 +20,12 @@ const READ_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 /** Vienīgā CSDD lasīšanas POST darbība: tirdzniecības atskaite (saraksts, meklēšana, lapošana porcijas_numurs). */
 export const CSDD_SEARCH_ACTION = "rep_lapt_tl";
+/**
+ * CSDD meklēšanas pogas teksts «Izveidot atskaiti...». Vārds «izveidot» ir FORBIDDEN_ACTION_RE,
+ * tāpēc šis teksts atļauts TIKAI meklēšanas formā (#lapt_veids), bez onclick/title/aria-label.
+ * Tīkla līmenī joprojām iziet tikai `rep_lapt_tl` POST bez rakstošiem vārdiem.
+ */
+export const CSDD_SEARCH_BUTTON_TEXT_RE = /^\s*izveidot\s+atskaiti\s*(\.{0,3}|…)\s*$/i;
 const CSDD_SEARCH_RE = new RegExp(`(^|[^A-Za-z0-9_])${CSDD_SEARCH_ACTION}([^A-Za-z0-9_]|$)`);
 /** CSDD pieslēgšanās (#vards/#parole) un firmas izvēles (kiest_id) formas lauki. */
 const CSDD_LOGIN_BODY_RE = /(^|&)(vards|kiest_id)=/;
@@ -101,6 +107,13 @@ export function isClickAllowed(el, phase) {
   // CSDD: tikai tirdzniecības atskaites meklēšanas formas (ar #lapt_veids) poga.
   if (phase === "search") {
     if (formButton && el.inSearchForm && cleanAction) return { allowed: true, reason: "csdd_search_form" };
+    const reportButton =
+      CSDD_SEARCH_BUTTON_TEXT_RE.test(String(el.text || el.value || "")) &&
+      !el.onclick &&
+      !el.title &&
+      !el.ariaLabel &&
+      (!el.value || CSDD_SEARCH_BUTTON_TEXT_RE.test(String(el.value)));
+    if (formButton && el.inSearchForm && reportButton) return { allowed: true, reason: "csdd_search_report_button" };
     return { allowed: false, reason: "not_search_button" };
   }
   if (FORBIDDEN_ACTION_RE.test(parts)) return { allowed: false, reason: "forbidden_label" };
