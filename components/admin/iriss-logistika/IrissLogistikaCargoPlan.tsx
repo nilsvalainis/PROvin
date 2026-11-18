@@ -184,6 +184,14 @@ export function IrissLogistikaCargoPlan({
   useEffect(() => () => {
     if (undoTimer.current) clearTimeout(undoTimer.current);
   }, []);
+  /*
+   * Telefonā atvērtā «Uz ▾» izvēlne pārsedz nākamās rindas «Uz ▾»: pieskāriens trāpīja «⤒ sākumā»
+   * un nemanāmi pārvietoja auto. Pieskāriens ārpus izvēlnes (vai Esc) to aizver (Nils 17.11).
+   */
+  useCloseOnOutside(colorFor != null || bulkMenu, () => {
+    setColorFor(null);
+    setBulkMenu(false);
+  });
 
   function carLabel(id: string): string {
     const o = byId.get(id);
@@ -314,7 +322,14 @@ export function IrissLogistikaCargoPlan({
         <div className="iriss-log-cargo-bulk" role="toolbar" aria-label="Atzīmētie auto">
           <span className="text-[12.5px] font-semibold">{selected.length} auto</span>
           <span className="relative ml-auto">
-            <button type="button" className="iriss-log-cargo-pill" disabled={selected.length === 0} onClick={() => setBulkMenu((v) => !v)}>
+            <button
+              type="button"
+              className="iriss-log-cargo-pill"
+              data-move-toggle=""
+              aria-expanded={bulkMenu}
+              disabled={selected.length === 0}
+              onClick={() => setBulkMenu((v) => !v)}
+            >
               Uz ▾
             </button>
             {bulkMenu && selected.length > 0 ? (
@@ -794,6 +809,7 @@ function SortableCargoRow({
           <button
             type="button"
             className="uz"
+            data-move-toggle=""
             aria-label="Pārvietot uz kravu"
             aria-expanded={colorOpen}
             onClick={(e) => {
@@ -939,6 +955,35 @@ function ManualCarAdd({ bucket, onAdd }: { bucket: CargoBucket; onAdd: (bucket: 
       </div>
     </div>
   );
+}
+
+/**
+ * Aizver izvēlni, ja pieskaras vai klikšķina ārpus tās (un ārpus «Uz ▾» pogām, kas pašas pārslēdz), vai nospiež Esc.
+ * Pieskāriens citas rindas «Uz ▾» aizver veco un atver jauno ar to pašu pieskārienu.
+ */
+export function keepsMoveMenuOpen(target: unknown): boolean {
+  const el = target as { closest?: (sel: string) => unknown } | null;
+  return typeof el?.closest === "function" && el.closest(".iriss-log-cargo-menu, [data-move-toggle]") != null;
+}
+
+function useCloseOnOutside(open: boolean, close: () => void) {
+  const closeRef = useRef(close);
+  closeRef.current = close;
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: Event) => {
+      if (!keepsMoveMenuOpen(e.target)) closeRef.current();
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeRef.current();
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 }
 
 /** «Uz ▾»: uz jebkuru kravu (beigās) vai kravas sākumā. */

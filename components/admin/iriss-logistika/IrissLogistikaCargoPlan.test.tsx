@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { IrissLogistikaCargoPlan, MoveMenu } from "@/components/admin/iriss-logistika/IrissLogistikaCargoPlan";
+import { IrissLogistikaCargoPlan, keepsMoveMenuOpen, MoveMenu } from "@/components/admin/iriss-logistika/IrissLogistikaCargoPlan";
 import { emptyCargoPlan, ensureCargoCars, moveCargoCar } from "@/lib/iriss-logistics-cargo-plan";
 import type { ReadinessKind } from "@/lib/iriss-logistics-readiness";
 import type { LogisticsOrder } from "@/lib/iriss-logistics-types";
@@ -202,5 +202,42 @@ describe("«Uz ▾» izvēlne - Autoparks un Dzēst (cita SIA)", () => {
       />,
     );
     expect(text).toContain("Cita SIA");
+  });
+});
+
+describe("«Uz ▾» aizveras, pieskaroties ārpus (Nils 17.11)", () => {
+  /** Mazs elementa aizstājējs: closest() atrod sevi vai vecāku pēc klases / atribūta. */
+  function el(match: (sel: string) => boolean, parent: unknown = null) {
+    return { closest: (sel: string) => (match(sel) ? {} : (parent as { closest?: (s: string) => unknown })?.closest?.(sel) ?? null) };
+  }
+  const inMenu = el(() => false, el((s) => s.includes(".iriss-log-cargo-menu")));
+  const toggle = el((s) => s.includes("[data-move-toggle]"));
+  const otherRow = el(() => false);
+
+  it("pieskāriens izvēlnē vai uz «Uz ▾» pogas to neaizver; jebkur citur aizver", () => {
+    expect(keepsMoveMenuOpen(inMenu)).toBe(true);
+    expect(keepsMoveMenuOpen(toggle)).toBe(true);
+    expect(keepsMoveMenuOpen(otherRow)).toBe(false);
+    expect(keepsMoveMenuOpen(null)).toBe(false);
+    expect(keepsMoveMenuOpen({})).toBe(false);
+  });
+
+  it("rindas un atzīmēto «Uz ▾» pogas ir pārslēdzēji (nevis «ārpus»)", () => {
+    const html = renderHtml(
+      <IrissLogistikaCargoPlan
+        orders={orders}
+        plan={plan}
+        templates={[]}
+        bounceId={null}
+        hoverId={null}
+        onPlanChange={() => undefined}
+        onRowClick={() => undefined}
+        onRowHover={() => undefined}
+        onRefreshDirections={() => undefined}
+      />,
+    );
+    const toggles = html.match(/<button[^>]*data-move-toggle=""[^>]*>/g) ?? [];
+    expect(toggles.length).toBe(orders.length);
+    expect(toggles.every((b) => b.includes('aria-label="Pārvietot uz kravu"'))).toBe(true);
   });
 });
