@@ -150,8 +150,18 @@ function squishMileageSource(raw: string): string {
     .replace(/\s+/g, "");
 }
 
+/** Avota nosaukuma piedēklis rādījumam, kas avotā ir sludinājums (piem. "AutoDNA (sludinājums)"). */
+export const VENDOR_LISTING_LABEL_SUFFIX = "(sludinājums)";
+
+/** Atslēga rādījuma salīdzināšanai ar avota laika joslas sludinājumu: datums + km cipari. */
+export function vendorListingKey(date: string, odometer: string): string {
+  const d = (formatAutoRecordsDateForOutput(date) || date).trim();
+  return `${d}|${odometer.replace(/\D/g, "")}`;
+}
+
 export function isListingMileageSource(r: Pick<UnifiedMileageRow, "sourceLabel" | "countryUnverified">): boolean {
   const sq = squishMileageSource(r.sourceLabel);
+  if (r.sourceLabel.trim().toLowerCase().endsWith(VENDOR_LISTING_LABEL_SUFFIX)) return true;
   return (
     sq === "sslv" ||
     sq.includes("ss.lv") ||
@@ -538,6 +548,11 @@ export type UnifiedMileageAnomalyAnalysis = {
   staleDocumentSourceOrders: Set<number>;
   /** A → zems → A+ izolēts kritums: datu ievades kļūda, ne pretruna. */
   dataEntryErrorSourceOrders: Set<number>;
+  /**
+   * 17.11 (Nils B2): sludinājuma rādījums >= 1 000 km zem iepriekšējā fiksētā - "pārdevējs norādījis mazāku
+   * nobraukumu". Atsevišķs dzeltens brīdinājums, nekad sarkanā josla (sludinājums nav oficiāls fiksējums).
+   */
+  listingBelowRecordedSourceOrders: Set<number>;
 };
 
 /** Izolēts kritums starp diviem augstākiem kaimiņiem (A → zems → A+). */
@@ -705,10 +720,9 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
   }
 
   const staleDocuments = findStaleDocumentSourceOrders(sorted, chartExclude);
-  const newestVerifiedKm = selectNewestVerifiedMileageRow(sorted);
-  const verifiedKm = newestVerifiedKm ? parseOdometerKm(newestVerifiedKm.odometer) : null;
 
   const map = new Map<number, boolean>();
+  const listingBelow = new Set<number>();
   let prevKm: number | null = null;
   let prevRow: UnifiedMileageRow | null = null;
   for (const r of sorted) {
@@ -728,19 +742,14 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
       map.set(r.sourceOrder, true);
       continue;
     }
-    if (isListingMileageSource(r) && verifiedKm != null && km <= verifiedKm) {
-      // Sludinājums pēc pēdējā verificētā rādījuma (Copart 87 000 pret dīlera 88 310) nav pretruna.
-      // Vidū starp verificētiem rādījumiem (ss.lv 300 000 starp CSDD 330 488 un 330 779) paliek anomālija.
-      const laterVerified = sorted.some(
-        (later) =>
-          later.sourceOrder !== r.sourceOrder &&
-          later.sortableTime > r.sortableTime &&
-          isVerifiedMileageSource(later),
-      );
-      if (!laterVerified) {
-        map.set(r.sourceOrder, false);
-        continue;
+    if (isListingMileageSource(r)) {
+      // Sludinājums nekad nav sarkanā pretruna; ja zem iepriekšējā fiksētā - atsevišķs dzeltens brīdinājums.
+      map.set(r.sourceOrder, false);
+      if (prevKm !== null && prevKm - km >= UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM) {
+        listingBelow.add(r.sourceOrder);
+        chartExclude.add(r.sourceOrder);
       }
+      continue;
     }
     const sameMonthAsPrev =
       prevRow != null &&
@@ -763,6 +772,7 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
     chartExcludeSourceOrders: chartExclude,
     staleDocumentSourceOrders: staleDocuments,
     dataEntryErrorSourceOrders: dataEntryErrors,
+    listingBelowRecordedSourceOrders: listingBelow,
   };
 }
 
@@ -1008,9 +1018,25 @@ export function collectUnifiedMileageRows(
   const omitTitles = options?.omitVendorBlockTitles;
   const vendors = (p.manualVendorBlocks ?? []).filter((b) => !omitTitles || !omitTitles.has(b.title));
   for (const b of vendors) {
+    // 17.11 (etalons, B2): rādījums, kas avota laika joslā ir sludinājums ("Pārdošanai piedāvātas automašīnas",
+    // dīlera piedāvājums, izsole), nav oficiāls fiksējums - apzīmē kā sludinājumu (nav kritumu bāze, nav kritums).
+    const listingKeys = new Set(
+      (b.listingCountryHints ?? [])
+        .filter((h) => h.odometer?.trim())
+        .map((h) => vendorListingKey(h.date, h.odometer!)),
+    );
     for (const r of (b.mileageRows ?? []).filter(autoRecordsRowHasData)) {
       const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
-      pushRow(r.date, odoOut, r.country, b.title, false, false, r.unit ?? r.odometer);
+      const isListing = listingKeys.size > 0 && listingKeys.has(vendorListingKey(r.date, r.odometer));
+      pushRow(
+        r.date,
+        odoOut,
+        r.country,
+        isListing ? `${b.title} ${VENDOR_LISTING_LABEL_SUFFIX}` : b.title,
+        false,
+        isListing,
+        r.unit ?? r.odometer,
+      );
     }
   }
 
