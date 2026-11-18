@@ -119,11 +119,11 @@
  "faktuLapa": {
   "odometerAnomaly": false,
   "carverticalMileageWarning": false,
-  "maxRollbackDropKm": 1307,
-  "rollbacks": [
-   "27.01.2012 60755 -> 23.02.2012 59448"
+  "maxRollbackDropKm": 0,
+  "rollbacks": [],
+  "suspectedEntryErrors": [
+   "23.02.2012 59448 OFICIĀLĀ DĪLERA DATI"
   ],
-  "suspectedEntryErrors": [],
   "implausibleReadings": [],
   "latestKm": 305048
  }

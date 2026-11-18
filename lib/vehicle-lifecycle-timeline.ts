@@ -802,7 +802,7 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
     }),
   );
   if (rows.length === 0) return [];
-  const { anomalyBySourceOrder, staleDocumentSourceOrders, dataEntryErrorSourceOrders } =
+  const { anomalyBySourceOrder, staleDocumentSourceOrders, dataEntryErrorSourceOrders, listingBelowRecordedSourceOrders } =
     analyzeUnifiedMileageAnomalies(rows);
   const listingKeys = collectVendorListingHintKeys(input);
   const confirmedUs = inputHasConfirmedUsResidence(input);
@@ -811,6 +811,8 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
       return [];
     }
     const anomaly = anomalyBySourceOrder.get(r.sourceOrder) === true;
+    // 17.11 (Nils B2): sludinājumā mazāk nekā iepriekš fiksēts - atsevišķs brīdinājums, ne odometra pretruna.
+    const listingBelow = listingBelowRecordedSourceOrders.has(r.sourceOrder);
     const listingCountry = odometerMatchesVendorListing(listingKeys, r.date, r.country, r.odometer);
     const vendorCaDisputed = vendorCanadaDisputedAgainstUs(
       r.country,
@@ -818,12 +820,16 @@ function collectOdometerEvents(input: LifecycleInput): LifecycleEvent[] {
       confirmedUs,
     );
     const ev = makeEvent({
-      kind: anomaly ? "anomaly" : "odometer",
+      kind: anomaly || listingBelow ? "anomaly" : "odometer",
       rawDate: r.date,
-      title: anomaly ? "Iespējama odometra pretruna" : "Odometra ieraksts",
+      title: anomaly
+        ? "Iespējama odometra pretruna"
+        : listingBelow
+          ? "Sludinājumā norādīts mazāks nobraukums"
+          : "Odometra ieraksts",
       country: r.country,
       odometer: r.odometer,
-      tone: anomaly ? "alert" : "info",
+      tone: anomaly ? "alert" : listingBelow ? "warn" : "info",
       countryUnverified: r.countryUnverified === true || listingCountry || vendorCaDisputed,
     });
     ev.sources = r.sourceLabels.length > 0 ? [...r.sourceLabels] : [r.sourceLabel || "Nezināms avots"];

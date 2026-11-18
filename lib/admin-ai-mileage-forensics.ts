@@ -276,7 +276,7 @@ export function buildSourceIndependenceBrief(rows: UnifiedMileageRow[]): string 
 }
 
 /**
- * „real” - kritums jāraksta kā iespējama odometra korekcija.
+ * „real” - kritums jāraksta kā odometra manipulācija (Nils 18.11, neatkarīgi no iemesla).
  * „suspectedEntryError” - viens izolēts rādījums ārpus secības (visticamāk ievades kļūda).
  */
 export type OdometerDropKind = "real" | "suspectedEntryError";
@@ -506,8 +506,8 @@ export function buildOdometerRollbackBoundsBrief(
   }
   const lines = [
     "### Odometra krituma robežas (deterministisks - NEIZDOMĀ pretējo)",
-    "- Minimums ir novērotais kritums. Maksimums ir aritmētiska robeža, JA iepriekšējais temps turpinājās tukšuma laikā. Neviens no tiem NAV pierādīta manipulācija.",
-    "- Ja ekstrēmais temps UN gandrīz stāvēšana abi nav ticami, saki klientam, ka neatbilstību līdz galam izskaidrot nevaram. Drīkst dot vairākas interpretācijas. Aizliegts pārvērst „nezinām” par „ļoti iespējams, ka odometrs koriģēts”.",
+    "- Minimums ir novērotais kritums. Maksimums ir aritmētiska robeža, JA iepriekšējais temps turpinājās tukšuma laikā. Pats kritums ir odometra manipulācija (tā to arī nosauc); robežas raksturo tikai tās apjomu.",
+    "- Ja ekstrēmais temps UN gandrīz stāvēšana abi nav ticami, saki klientam, ka neatbilstību līdz galam izskaidrot nevaram. Drīkst dot vairākas interpretācijas par manipulācijas APJOMU, ne par to, vai tā bija.",
   ];
   for (const b of bounds) {
     lines.push(
@@ -515,7 +515,7 @@ export function buildOdometerRollbackBoundsBrief(
     );
     if (b.previousKmPerDay != null && b.ceilingAdditionalKm != null && b.maxDropKm != null) {
       lines.push(
-        `- Iepriekš novērotais temps: ${formatForensicsInt(b.previousKmPerDay)} km/dienā${b.previousRateClass === "extreme" ? " (EKSTRĒMS)" : b.previousRateClass === "commercial" ? " (komerciāls)" : ""}. Aritmētiskie griesti, ja tas turpinājās tukšumā: +${formatForensicsInt(b.ceilingAdditionalKm)} km; kopējā korekcijas robeža ~${formatForensicsInt(b.maxDropKm)} km. Tā ir APRĒĶINA robeža, ne apgalvojums, ka auto tik tālu brauca.`,
+        `- Iepriekš novērotais temps: ${formatForensicsInt(b.previousKmPerDay)} km/dienā${b.previousRateClass === "extreme" ? " (EKSTRĒMS)" : b.previousRateClass === "commercial" ? " (komerciāls)" : ""}. Aritmētiskie griesti, ja tas turpinājās tukšumā: +${formatForensicsInt(b.ceilingAdditionalKm)} km; kopējā manipulācijas apjoma robeža ~${formatForensicsInt(b.maxDropKm)} km. Tā ir APRĒĶINA robeža, ne apgalvojums, ka auto tik tālu brauca.`,
       );
     }
   }

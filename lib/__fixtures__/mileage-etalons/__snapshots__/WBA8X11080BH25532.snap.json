@@ -79,11 +79,11 @@
  "faktuLapa": {
   "odometerAnomaly": false,
   "carverticalMileageWarning": false,
-  "maxRollbackDropKm": 3998,
-  "rollbacks": [
-   "23.12.2019 64964 -> 24.12.2019 60966"
+  "maxRollbackDropKm": 0,
+  "rollbacks": [],
+  "suspectedEntryErrors": [
+   "24.12.2019 60966 CSDD"
   ],
-  "suspectedEntryErrors": [],
   "implausibleReadings": [],
   "latestKm": 261022
  }

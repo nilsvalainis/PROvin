@@ -28,7 +28,7 @@ ${orderContext}
 
 Sagatavo komentāru laukam „${ADMIN_MILEAGE_HISTORY_COMMENT_LABEL}”.
 Šis ir APKOPOJOŠAIS nobraukuma lauks: sintezē visu avotu odometra ainu (lineārums, periodi bez datiem, neatbilstības, motorstundas, ja dati ļauj).
-Garums: **3–5 rindkopas**, koncentrēti. Tonis atturīgs — nesakritības apraksti kā neatbilstības digitālos ierakstos (kas var būt arī ievades kļūda), nevis kā pierādītu manipulāciju; bez vārdiem „kritisks”, „anomālija”.
+Garums: **3–5 rindkopas**, koncentrēti. Tonis atturīgs, bez vārdiem „kritisks”, „anomālija”. KANONISKO FAKTU kritumu („Kritums”) vienmēr nosauc par odometra manipulāciju (ne „korekcija”, ne „ievades kļūda”); rādījumi ap valsts maiņu (imports/eksports) jāvērtē īpaši uzmanīgi. Tikai „Atsevišķs neatbilstošs rādījums” ir ievades kļūda (viens neitrāls teikums).
 Neatkārto avotu bojājumu/TA/dīlera komentāru tekstu, eļļas maiņas intervālu matemātiku, tehnisko risku eseju vai kopsavilkuma verdiktu — fokusējas uz nobraukumu — IZŅEMOT, ja OPERATORA KOMANDĀS iedots plašs materiāls: tad to saglabā pilnībā (pārkārto, neapgraizi).`,
     {
       operatorNotes: input.operatorNotes,

@@ -27,6 +27,7 @@ import { ASV_PDF_SOURCE_LABEL, type AsvBlockState } from "@/lib/asv-report";
 import { resolveListingMileageChartRow } from "@/lib/listing-odometer";
 import { countryLabelToIso2, normalizeCountryNameLv } from "@/lib/country-names-lv";
 import { milesToKmRounded } from "@/lib/miles-to-km";
+import { buildCountryTimeline, resolveCountryForDate } from "@/lib/vehicle-country-timeline";
 
 export { MILES_TO_KM } from "@/lib/miles-to-km";
 
@@ -51,6 +52,11 @@ export type UnifiedMileageRow = {
    * to nedrīkst izmantot robežšķērsošanas (importa) notikumu atvasināšanai laikposma hronoloģijā.
    */
   countryUnverified?: boolean;
+  /**
+   * 18.11 (valstu aizpilde): avots valsti nedeva, tā secināta no citiem rādījumiem (tas pats mēnesis vai
+   * abi kaimiņi vienā valstī). Saglabātie dati netiek mainīti; valsts maiņas noteikšanā neskaitās.
+   */
+  countryInferred?: boolean;
   /** CarVertical `12.2013` - salīdzina mēnesī, ne kā 01.12 pret tā paša mēneša dīlera dienu. */
   datePrecision?: MileageDatePrecision;
   /** Avota mērvienība pirms pārrēķina; tabulā odometrs vienmēr km. */
@@ -150,8 +156,18 @@ function squishMileageSource(raw: string): string {
     .replace(/\s+/g, "");
 }
 
+/** Avota nosaukuma piedēklis rādījumam, kas avotā ir sludinājums (piem. "AutoDNA (sludinājums)"). */
+export const VENDOR_LISTING_LABEL_SUFFIX = "(sludinājums)";
+
+/** Atslēga rādījuma salīdzināšanai ar avota laika joslas sludinājumu: datums + km cipari. */
+export function vendorListingKey(date: string, odometer: string): string {
+  const d = (formatAutoRecordsDateForOutput(date) || date).trim();
+  return `${d}|${odometer.replace(/\D/g, "")}`;
+}
+
 export function isListingMileageSource(r: Pick<UnifiedMileageRow, "sourceLabel" | "countryUnverified">): boolean {
   const sq = squishMileageSource(r.sourceLabel);
+  if (r.sourceLabel.trim().toLowerCase().endsWith(VENDOR_LISTING_LABEL_SUFFIX)) return true;
   return (
     sq === "sslv" ||
     sq.includes("ss.lv") ||
@@ -361,6 +377,7 @@ function mergeMileageCluster(cluster: UnifiedMileageRow[]): UnifiedMileageDispla
   // Valsts paliek nesertificēta tikai tad, ja pilnīgi visi avoti šajā km klasterī ir nesertificēti
   // (piem. tikai sludinājums) — ja klāt ir kaut viens oficiāls avots, valsts vairs nav tikai pieņēmums.
   const countryUnverified = cluster.every((r) => r.countryUnverified === true);
+  const countryInferred = cluster.every((r) => r.countryInferred === true);
   const visitOdometer = cluster.every((r) => r.visitOdometer === true);
   const datePrecision = cluster.every((r) => r.datePrecision === "month") ? "month" : "day";
   const knownCountries = countries.filter((c) => c && c !== CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL);
@@ -378,7 +395,10 @@ function mergeMileageCluster(cluster: UnifiedMileageRow[]): UnifiedMileageDispla
     datePrecision,
     ...(documentValue ? { documentValue: true } : { documentValue: undefined }),
     ...(countryUnverified ? { countryUnverified: true } : { countryUnverified: undefined }),
+    ...(countryInferred ? { countryInferred: true } : { countryInferred: undefined }),
     ...(visitOdometer ? { visitOdometer: true } : { visitOdometer: undefined }),
+    // Nils B7: ja kaut viens apvienotais avots bija jūdzēs, PDF to paskaidro.
+    ...(cluster.some((r) => r.unit === "mi") ? { unit: "mi" as const } : {}),
   };
 }
 
@@ -538,6 +558,11 @@ export type UnifiedMileageAnomalyAnalysis = {
   staleDocumentSourceOrders: Set<number>;
   /** A → zems → A+ izolēts kritums: datu ievades kļūda, ne pretruna. */
   dataEntryErrorSourceOrders: Set<number>;
+  /**
+   * 17.11 (Nils B2): sludinājuma rādījums >= 1 000 km zem iepriekšējā fiksētā - "pārdevējs norādījis mazāku
+   * nobraukumu". Atsevišķs dzeltens brīdinājums, nekad sarkanā josla (sludinājums nav oficiāls fiksējums).
+   */
+  listingBelowRecordedSourceOrders: Set<number>;
 };
 
 /** Izolēts kritums starp diviem augstākiem kaimiņiem (A → zems → A+). */
@@ -563,6 +588,29 @@ export function isIsolatedMileageDrop(
   }
   const drop = prevKm - currKm;
   return drop >= UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM;
+}
+
+/** Pirmā rādījuma kļūda: nākamais rādījums ne vēlāk kā pēc tik ilga laika. */
+export const LEADING_MILEAGE_ENTRY_ERROR_MAX_GAP_MS = 31 * 24 * 60 * 60 * 1000;
+
+/**
+ * Sērijas pirmais rādījums ir kļūda, ja: nākamais ir vismaz {@link UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM} zemāks un
+ * nolasīts ne vēlāk kā pēc 31 dienas, bet sērija turpinās no nākamā (aiznākamais ~ nākamais, < pirmais).
+ * Piem. dīleris 22.09.2011 22 997, 23.09.2011 12 397, CV 10.2011 12 347, 11.2011 12 500.
+ * Ja aiznākamais jau pārsniedz pirmo, nevar zināt, kurš ir kļūdains - netiek aiztikts.
+ */
+export function isLeadingMileageEntryError(
+  firstKm: number,
+  firstTime: number,
+  nextKm: number,
+  nextTime: number,
+  afterKm: number,
+): boolean {
+  if (firstKm - nextKm < UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM) return false;
+  if (!Number.isFinite(firstTime) || !Number.isFinite(nextTime)) return false;
+  if (nextTime - firstTime > LEADING_MILEAGE_ENTRY_ERROR_MAX_GAP_MS || nextTime < firstTime) return false;
+  // Pielaide kā citur analīzē: mēneša avoti (CV) var būt par dažiem desmitiem km zem precīzā rādījuma.
+  return afterKm > nextKm - UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM && afterKm < firstKm;
 }
 
 /** Cita avota atkārtots tas pats novecojušais dokumenta rādījums — pieļaujamā km atšķirība. */
@@ -637,8 +685,33 @@ function findStaleDocumentSourceOrders(
  * 2) Novecojuši dokumenta rādījumi (dīlera pasūtījums) — nav pretruna, arī ārpus ķēdes un līknes.
  * 3) Back-roll uz ķēdes *bez* šiem spike: V_current < V_previous un Δ ≥ {@link UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM}.
  */
+/**
+ * Nils 18.11: rādījumi ap valsts maiņu jāvērtē īpaši uzmanīgi - tur kritumu nenoraksta kā ievades kļūdu.
+ * Tikai pārbaudītas valstis (sludinājuma vieta neskaitās).
+ */
+export function isMileageCountryChange(
+  a: Pick<UnifiedMileageRow, "country" | "countryUnverified" | "countryInferred"> | undefined,
+  b: Pick<UnifiedMileageRow, "country" | "countryUnverified" | "countryInferred"> | undefined,
+): boolean {
+  if (!a || !b || a.countryUnverified || b.countryUnverified) return false;
+  if (a.countryInferred || b.countryInferred) return false;
+  // Apvienotā rinda var nest vairākas valstis ("ASV / Kanāda"); maiņa tikai, ja kopīgas valsts nav.
+  const set = (c: string) =>
+    new Set(
+      c
+        .split("/")
+        .map((x) => normalizeCountryNameLv(x.trim()).toLocaleLowerCase("lv"))
+        .filter((x) => x && !isUnknownMileageCountry(x)),
+    );
+  const ca = set(a.country);
+  const cb = set(b.country);
+  if (ca.size === 0 || cb.size === 0) return false;
+  return ![...ca].some((x) => cb.has(x));
+}
+
 export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): UnifiedMileageAnomalyAnalysis {
   const sorted = sortMileageChronological(rows);
+  const rowByOrder = new Map(sorted.map((r) => [r.sourceOrder, r]));
   const chartExclude = new Set<number>();
   const dataEntryErrors = new Set<number>();
 
@@ -656,11 +729,13 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
       chartExclude.add(curr.sourceOrder);
       continue;
     }
-    const src = sorted.find((r) => r.sourceOrder === curr.sourceOrder);
+    const src = rowByOrder.get(curr.sourceOrder);
     const nextTime = i < pts.length - 1 ? pts[i + 1]!.time : undefined;
+    const prevRowForCountry = i > 0 ? rowByOrder.get(pts[i - 1]!.sourceOrder) : undefined;
     if (
       isIsolatedMileageDrop(curr.km, prev, next, curr.time, nextTime) &&
-      !(src && isListingMileageSource(src))
+      !(src && isListingMileageSource(src)) &&
+      !isMileageCountryChange(prevRowForCountry, src)
     ) {
       dataEntryErrors.add(curr.sourceOrder);
       chartExclude.add(curr.sourceOrder);
@@ -670,13 +745,24 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
     if (next == null && prev != null && looksLikeExtraDigitOdometerTypo(curr.km, prev)) {
       chartExclude.add(curr.sourceOrder);
     }
+    // 17.11 (etalons, klase B): kļūdains PIRMAIS rādījums. Agrāk vainots nākamais (pareizais) punkts.
+    if (prev == null && i + 2 < pts.length && src && !isListingMileageSource(src)) {
+      const n1 = pts[i + 1]!;
+      const n2 = pts[i + 2]!;
+      if (
+        isLeadingMileageEntryError(curr.km, curr.time, n1.km, n1.time, n2.km) &&
+        !isMileageCountryChange(src, rowByOrder.get(n1.sourceOrder))
+      ) {
+        dataEntryErrors.add(curr.sourceOrder);
+        chartExclude.add(curr.sourceOrder);
+      }
+    }
   }
 
   const staleDocuments = findStaleDocumentSourceOrders(sorted, chartExclude);
-  const newestVerifiedKm = selectNewestVerifiedMileageRow(sorted);
-  const verifiedKm = newestVerifiedKm ? parseOdometerKm(newestVerifiedKm.odometer) : null;
 
   const map = new Map<number, boolean>();
+  const listingBelow = new Set<number>();
   let prevKm: number | null = null;
   let prevRow: UnifiedMileageRow | null = null;
   for (const r of sorted) {
@@ -696,19 +782,14 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
       map.set(r.sourceOrder, true);
       continue;
     }
-    if (isListingMileageSource(r) && verifiedKm != null && km <= verifiedKm) {
-      // Sludinājums pēc pēdējā verificētā rādījuma (Copart 87 000 pret dīlera 88 310) nav pretruna.
-      // Vidū starp verificētiem rādījumiem (ss.lv 300 000 starp CSDD 330 488 un 330 779) paliek anomālija.
-      const laterVerified = sorted.some(
-        (later) =>
-          later.sourceOrder !== r.sourceOrder &&
-          later.sortableTime > r.sortableTime &&
-          isVerifiedMileageSource(later),
-      );
-      if (!laterVerified) {
-        map.set(r.sourceOrder, false);
-        continue;
+    if (isListingMileageSource(r)) {
+      // Sludinājums nekad nav sarkanā pretruna; ja zem iepriekšējā fiksētā - atsevišķs dzeltens brīdinājums.
+      map.set(r.sourceOrder, false);
+      if (prevKm !== null && prevKm - km >= UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM) {
+        listingBelow.add(r.sourceOrder);
+        chartExclude.add(r.sourceOrder);
       }
+      continue;
     }
     const sameMonthAsPrev =
       prevRow != null &&
@@ -731,6 +812,7 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
     chartExcludeSourceOrders: chartExclude,
     staleDocumentSourceOrders: staleDocuments,
     dataEntryErrorSourceOrders: dataEntryErrors,
+    listingBelowRecordedSourceOrders: listingBelow,
   };
 }
 
@@ -976,9 +1058,25 @@ export function collectUnifiedMileageRows(
   const omitTitles = options?.omitVendorBlockTitles;
   const vendors = (p.manualVendorBlocks ?? []).filter((b) => !omitTitles || !omitTitles.has(b.title));
   for (const b of vendors) {
+    // 17.11 (etalons, B2): rādījums, kas avota laika joslā ir sludinājums ("Pārdošanai piedāvātas automašīnas",
+    // dīlera piedāvājums, izsole), nav oficiāls fiksējums - apzīmē kā sludinājumu (nav kritumu bāze, nav kritums).
+    const listingKeys = new Set(
+      (b.listingCountryHints ?? [])
+        .filter((h) => h.odometer?.trim())
+        .map((h) => vendorListingKey(h.date, h.odometer!)),
+    );
     for (const r of (b.mileageRows ?? []).filter(autoRecordsRowHasData)) {
       const odoOut = normalizeAutoRecordsOdometer(r.odometer) || r.odometer.replace(/\D/g, "");
-      pushRow(r.date, odoOut, r.country, b.title, false, false, r.unit ?? r.odometer);
+      const isListing = listingKeys.size > 0 && listingKeys.has(vendorListingKey(r.date, r.odometer));
+      pushRow(
+        r.date,
+        odoOut,
+        r.country,
+        isListing ? `${b.title} ${VENDOR_LISTING_LABEL_SUFFIX}` : b.title,
+        false,
+        isListing,
+        r.unit ?? r.odometer,
+      );
     }
   }
 
@@ -1026,7 +1124,7 @@ export function collectUnifiedMileageRows(
 
   const dedup = new Set<string>();
   const out: UnifiedMileageRow[] = [];
-  for (const r of rows) {
+  for (const r of inferMissingMileageCountries(rows)) {
     const k = `${r.date.trim().toLowerCase()}|${r.odometer.replace(/\D/g, "")}|${r.country.trim().toLowerCase()}|${r.sourceLabel.trim().toLowerCase()}`;
     if (dedup.has(k)) continue;
     dedup.add(k);
@@ -1037,6 +1135,31 @@ export function collectUnifiedMileageRows(
     findImplausibleMileageReadings(out, { odometerReplacementNoted: odometerReplacementNotedIn(p) }),
   );
   return implausible.size > 0 ? out.filter((r) => !implausible.has(r)) : out;
+}
+
+function isUnknownMileageCountry(country: string): boolean {
+  const c = country.trim();
+  return !c || c === CSDD_MILEAGE_COUNTRY_UNKNOWN_LABEL || /^nezināma/i.test(c);
+}
+
+/**
+ * 18.11 (Nila plāns, 3. tēma): tukšu vai „Nezināmā” valsti aizpilda no pārējiem rādījumiem - tikai, ja tajā pašā
+ * mēnesī ir viena valsts vai abi tuvākie kaimiņi ir vienā valstī. Pāri valsts maiņai un pirms pirmā / pēc pēdējā
+ * zināmā rādījuma neaizpilda. Sludinājumu vieta nav pierādījums. Tikai nolasot - saglabātie dati netiek mainīti.
+ */
+export function inferMissingMileageCountries<T extends UnifiedMileageRow>(rows: T[]): T[] {
+  const evidence = rows.filter((r) => !r.countryUnverified && !isUnknownMileageCountry(r.country));
+  if (evidence.length === 0 || evidence.length === rows.length) return rows;
+  const timeline = buildCountryTimeline(
+    evidence.map((r) => ({ date: formatAutoRecordsDateForOutput(r.date) || r.date, country: r.country })),
+  );
+  return rows.map((r) => {
+    if (!isUnknownMileageCountry(r.country)) return r;
+    const country = resolveCountryForDate(timeline, formatAutoRecordsDateForOutput(r.date) || r.date, {
+      extrapolateAfterLast: false,
+    });
+    return country ? { ...r, country, countryInferred: true } : r;
+  });
 }
 
 function odometerReplacementNotedIn(p: UnifiedMileageSourcePayload): boolean {
