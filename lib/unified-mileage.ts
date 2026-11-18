@@ -675,8 +675,24 @@ function findStaleDocumentSourceOrders(
  * 2) Novecojuši dokumenta rādījumi (dīlera pasūtījums) — nav pretruna, arī ārpus ķēdes un līknes.
  * 3) Back-roll uz ķēdes *bez* šiem spike: V_current < V_previous un Δ ≥ {@link UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM}.
  */
+/**
+ * Nils 18.11: rādījumi ap valsts maiņu jāvērtē īpaši uzmanīgi - tur kritumu nenoraksta kā ievades kļūdu.
+ * Tikai pārbaudītas valstis (sludinājuma vieta neskaitās).
+ */
+export function isMileageCountryChange(
+  a: Pick<UnifiedMileageRow, "country" | "countryUnverified"> | undefined,
+  b: Pick<UnifiedMileageRow, "country" | "countryUnverified"> | undefined,
+): boolean {
+  if (!a || !b || a.countryUnverified || b.countryUnverified) return false;
+  const ca = normalizeCountryNameLv(a.country.trim());
+  const cb = normalizeCountryNameLv(b.country.trim());
+  if (!ca || !cb) return false;
+  return ca.toLocaleLowerCase("lv") !== cb.toLocaleLowerCase("lv");
+}
+
 export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): UnifiedMileageAnomalyAnalysis {
   const sorted = sortMileageChronological(rows);
+  const rowByOrder = new Map(sorted.map((r) => [r.sourceOrder, r]));
   const chartExclude = new Set<number>();
   const dataEntryErrors = new Set<number>();
 
@@ -694,11 +710,13 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
       chartExclude.add(curr.sourceOrder);
       continue;
     }
-    const src = sorted.find((r) => r.sourceOrder === curr.sourceOrder);
+    const src = rowByOrder.get(curr.sourceOrder);
     const nextTime = i < pts.length - 1 ? pts[i + 1]!.time : undefined;
+    const prevRowForCountry = i > 0 ? rowByOrder.get(pts[i - 1]!.sourceOrder) : undefined;
     if (
       isIsolatedMileageDrop(curr.km, prev, next, curr.time, nextTime) &&
-      !(src && isListingMileageSource(src))
+      !(src && isListingMileageSource(src)) &&
+      !isMileageCountryChange(prevRowForCountry, src)
     ) {
       dataEntryErrors.add(curr.sourceOrder);
       chartExclude.add(curr.sourceOrder);
@@ -712,7 +730,10 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
     if (prev == null && i + 2 < pts.length && src && !isListingMileageSource(src)) {
       const n1 = pts[i + 1]!;
       const n2 = pts[i + 2]!;
-      if (isLeadingMileageEntryError(curr.km, curr.time, n1.km, n1.time, n2.km)) {
+      if (
+        isLeadingMileageEntryError(curr.km, curr.time, n1.km, n1.time, n2.km) &&
+        !isMileageCountryChange(src, rowByOrder.get(n1.sourceOrder))
+      ) {
         dataEntryErrors.add(curr.sourceOrder);
         chartExclude.add(curr.sourceOrder);
       }

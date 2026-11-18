@@ -8,6 +8,7 @@ import {
   analyzeUnifiedMileageAnomalies,
   isIsolatedMileageDrop,
   isListingMileageSource,
+  isMileageCountryChange,
   parseOdometerKm,
   sortMileageChronological,
   type UnifiedMileageRow,
@@ -159,7 +160,8 @@ export function classifyOdometerAnomalies(rows: UnifiedMileageRow[]): Classified
     if (
       prev &&
       isIsolatedMileageDrop(curr.km, prev.km, next?.km ?? null, src.sortableTime, next?.row.sortableTime) &&
-      !isListingMileageSource(src)
+      !isListingMileageSource(src) &&
+      !isMileageCountryChange(prev.row, src)
     ) {
       push(src, "typo_outlier", prev.row.date, prev.km, curr.km);
       continue;
@@ -178,7 +180,8 @@ export function classifyOdometerAnomalies(rows: UnifiedMileageRow[]): Classified
       continue;
     }
 
-    if (laterPointsStayBelow(pts, i, prev.km)) {
+    // Nils 18.11: kritums valsts maiņas brīdī ir manipulācija arī tad, ja vēlāk rādījumi atgūstas.
+    if (isMileageCountryChange(prev.row, src) || laterPointsStayBelow(pts, i, prev.km)) {
       push(src, "rollback", prev.row.date, prev.km, curr.km);
     }
   }

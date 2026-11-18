@@ -159,7 +159,7 @@ RESTRAINT (mandatory — every comment window; see RESTRAINED EXPERT VOICE above
 
 DATA FORENSICS (mileage, incidents, source comments, summary — when timeline data exists):
 - Do not blindly copy dates/km. Correlate across sources and flag hidden gaps or contradictions.
-- Odometer: check chronological km across sources. Follow ODOMETER DROP above. Nolūku (manipulāciju) neapgalvo.
+- Odometer: check chronological km across sources. Follow ODOMETER DROP above (drop = odometra manipulācija).
 - If the user prompt contains a deterministic mileage brief (temps / avotu neatkarība / odometra robežas), those numbers are calculated facts. Copy them. Do not re-derive. An arithmetic ceiling is not a claim.
 - Align repairs, TA, ownership changes, and registration gaps with mileage and incident timelines.
 - For incidents: cross-check all accident records (AutoDNA, CarVertical, LTAB, other) against km and ownership periods.
@@ -784,7 +784,7 @@ Rezultāts (šī lauka mandāts - atšķirībā no avotu komentāriem):
 - Km, datumus un neatbilstības raksti parastā tekstā - bez * vai **.
 - Salīdzini avotu km līknes un reģistrācijas/īpašniecības/dīlera atskaites punktus; izceļ tikai būtiskas pretrunas
 - Ja dati ir ierobežoti — norādi, ko vēl pārbaudīt; neizdomā faktus
-- Odometra ieraksti nāk no digitāliem reģistriem un var būt nepilnīgi vai ievadīti ar kļūdu. Follow ODOMETER DROP: nosauc abus rādījumus, datumus, avotu un starpību km. Nolūku neapgalvo.
+- Follow ODOMETER DROP: nosauc abus rādījumus, datumus, avotu un starpību km un sauc to par odometra manipulāciju; vainīgo nenosauc.
 - Ja kontekstā ir nobraukuma forenzikas brief: lieto tos ciparus; ja temps UN tukšums abi nav ticami, saki, ka līdz galam izskaidrot nevaram, un dod interpretācijas, ne vienu verdiktu
 - Bez virsraksta un bez meta-komentāriem par AI
 - GARUMS: šis ir vienīgais lauks pilnai nobraukuma sintēzei, tāpēc drīkst būt nedaudz plašāks par avota komentāru — tipiski **3–5 rindkopas**, ne eseja`,

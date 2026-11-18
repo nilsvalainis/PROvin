@@ -30,7 +30,7 @@ export const AI_NO_CROSS_SECTION_REFS_RULES = `NO CROSS-SECTION REFS: Neraksti �
 
 export const AI_NO_UNSOURCED_FACTS_RULES = `BEZ AVOTA NAV FAKTA: skaitli, termiņu, garantiju, intervālu raksti tikai no KANONISKAJIEM FAKTIEM vai avota tabulas.`;
 
-export const AI_ODOMETER_DROP_RULES = `ODOMETER DROP (KANONISKIE FAKTI „Kritums” ar avotu): kritums vai CarVertical/AutoDNA brīdinājums ir nobraukuma lauka un kopsavilkuma pirmais teikums (abi rādījumi, datumi, avots, starpība km); avota laukā tikai ŠĪ avota kritums, viens teikums. Nekad „neliela nobīde”. Nolūku neapgalvo: „iespējama odometra korekcija vai datu ievades kļūda; jāpārbauda.” „Atsevišķs neatbilstošs rādījums” nav korekcija: tikai nobraukuma laukā viens neitrāls teikums („Viens {avots} rādījums ({datums}) neatbilst pārējai secībai, visticamāk ievades kļūda.”), citur nepiemin.`;
+export const AI_ODOMETER_DROP_RULES = `ODOMETER DROP (KANONISKIE FAKTI „Kritums” ar avotu): kritums vai CarVertical/AutoDNA brīdinājums ir nobraukuma lauka un kopsavilkuma pirmais teikums (abi rādījumi, datumi, avots, starpība km); avota laukā tikai ŠĪ avota kritums, viens teikums. Nekad „neliela nobīde”. Kritums VIENMĒR ir „odometra manipulācija” (ne korekcija/kļūda); vainīgo nenosauc. „Atsevišķs neatbilstošs rādījums” nav korekcija: tikai nobraukuma laukā viens neitrāls teikums („Viens {avots} rādījums ({datums}) neatbilst pārējai secībai, visticamāk ievades kļūda.”), citur nepiemin.`;
 
 export const AI_HIDDEN_MAINTENANCE_MILEAGE_RULES = `HIDDEN MAINTENANCE (mileage and summary only): Ja starp pirmo reģistrāciju galamērķa valstī un pārdošanu ir vairāk par 3 nedēļām, nosauc abus datumus: „starp X un Y ir N nedēļas; iemesls datos nav redzams”. Spekulāciju par slēptu uzturēšanu avotu komentāros NERAKSTI.`;
 
