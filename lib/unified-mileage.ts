@@ -389,6 +389,8 @@ function mergeMileageCluster(cluster: UnifiedMileageRow[]): UnifiedMileageDispla
     ...(documentValue ? { documentValue: true } : { documentValue: undefined }),
     ...(countryUnverified ? { countryUnverified: true } : { countryUnverified: undefined }),
     ...(visitOdometer ? { visitOdometer: true } : { visitOdometer: undefined }),
+    // Nils B7: ja kaut viens apvienotais avots bija jūdzēs, PDF to paskaidro.
+    ...(cluster.some((r) => r.unit === "mi") ? { unit: "mi" as const } : {}),
   };
 }
 
