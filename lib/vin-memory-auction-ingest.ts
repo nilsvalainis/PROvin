@@ -18,7 +18,8 @@ import {
   type AuctionSourceProgress,
   type AuctionStepFetch,
 } from "@/lib/vin-memory-auction";
-import { auctionIngestStoreDurable, readAuctionIngestState, writeAuctionIngestState } from "@/lib/vin-memory-auction-store";
+import { auctionIngestStoreDurable, readAuctionIngestState, readLotVinQueue, writeAuctionIngestState, writeLotVinQueue } from "@/lib/vin-memory-auction-store";
+import { enqueueLotsWithoutVin } from "@/lib/vin-memory-lot-vins";
 
 /**
  * Viens masveida solis: vai nu dažas Autobid lapas (publisks HTTP, bez login),
@@ -81,6 +82,8 @@ function emptyTick(state: AuctionIngestState, idle: AuctionIngestTick["idle"], n
 function autobidLots(vehicles: Awaited<ReturnType<typeof fetchAutobidSource>>["vehicles"]): AuctionLotForMemory[] {
   return vehicles.map((v) => ({
     platform: "autobid",
+    externalId: v.externalId,
+    detailUrl: v.detailUrl,
     vin: v.vin,
     title: v.title,
     manufacturer: v.manufacturer,
@@ -141,6 +144,8 @@ async function fetchStep(
     pageCount: r.pageCount,
     vehicles: r.vehicles.map((v) => ({
       platform: "openline",
+      externalId: v.externalId,
+      detailUrl: v.detailUrl,
       vin: v.vin,
       vinSource: v.vinSource,
       title: v.title,
@@ -175,6 +180,11 @@ export async function runVinMemoryAuctionIngest(now: Date = new Date()): Promise
   }
   const fetched = await fetchStep(step);
   const mapped = observationsFromAuctionLots(fetched.vehicles, rigaDay(now));
+  /* Sarakstos VIN nav: lotes bez VIN iet rindā, VIN nolasa `vin-memory-lot-vins` no lotes lapas. */
+  if (fetched.status === "ok" && fetched.vehicles.length) {
+    const queued = enqueueLotsWithoutVin(await readLotVinQueue(now), fetched.vehicles, rigaDay(now), now);
+    if (queued.added > 0) await writeLotVinQueue(queued.queue).catch(() => false);
+  }
   const next = applyIngestStep(
     state,
     step,
