@@ -39,6 +39,8 @@ Momentuzņēmums nav pareizā atbilde. Mainot nobraukuma loģiku, katra atšķir
 5. **Neapstrādātais dīlera ieraksts apiet tabulu.** BMW 320d: OneAuto oriģinālā ir `20.11.2012 90000 km` (6 dienas pēc
    pirmās reģistrācijas). Tabulā tā nav, bet dīlera komentārs to ņēma no oriģināla un uzrakstīja "kritums par 87 046 km".
    Nils šai lietai ar roku noraidīja 3 atzīmes un apstiprināja 1 (sk. `odometerAnomalyOverrides`).
+   **Pārbaudīts 18.11:** tagad AI saņem tulkotās dīlera rindas, kur šai rindai km nav; to sargā
+   `lib/dealer-comment-raw-odometer-leak.test.ts`.
 6. **Izsoļu arhīva mēneša datumi.** Audi A6: `01.07.2022 207000 izsoļu arhīvs` pēc `28.04.2022 216060 CSDD` - sarkanā
    josla; jānoskaidro, vai izsoles rādījums ir no agrāka brīža (dokumenta datums) vai īsts kritums.
 
