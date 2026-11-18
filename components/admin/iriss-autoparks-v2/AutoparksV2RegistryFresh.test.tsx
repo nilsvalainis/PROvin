@@ -42,6 +42,13 @@ describe("CSDD reģistra svaigums Autoparkā", () => {
     expect(text).toContain("Kas jādara?");
   });
 
+  it("datums bez laika - joslā viens punkts, ne divi", () => {
+    const dateOnly = registryFreshness({ registryDate: "2026-11-09", importedAt: "2026-11-10T04:40:00Z" }, NOW);
+    const text = renderText(<RegistryStaleBanner fresh={dateOnly} />);
+    expect(text).toContain("Pēdējo reizi 09.11. Akta nr.");
+    expect(text).not.toContain("09.11..");
+  });
+
   it("bez krātuves (null) neko nerāda", () => {
     const html = renderHtml(<AutoparksV2List initialCars={[]} registryFresh={null} />);
     expect(html).not.toContain("ap2-fresh");

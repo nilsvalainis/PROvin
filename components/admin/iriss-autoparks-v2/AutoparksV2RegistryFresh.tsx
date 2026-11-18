@@ -28,7 +28,8 @@ export function RegistryStaleBanner({ fresh }: { fresh: RegistryFreshness }) {
       <div className="tx">
         <b>CSDD reģistra dati nav atjaunoti {lvDaysAccusative(fresh.ageDays)}</b>
         <p>
-          Pēdējo reizi {fresh.lastLabel}. Akta nr. un statusi var būt veci, jaunie pieņemtie auto var neparādīties. Pirms pavadzīmes vai
+          {/* "09.11." jau beidzas ar punktu - otru neliek. */}
+          Pēdējo reizi {fresh.lastLabel.endsWith(".") ? fresh.lastLabel : `${fresh.lastLabel}.`} Akta nr. un statusi var būt veci, jaunie pieņemtie auto var neparādīties. Pirms pavadzīmes vai
           pārdošanas pārbaudi e-CSDD.
         </p>
         {help ? (
