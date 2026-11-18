@@ -2,6 +2,8 @@ import "./autoparks-v2.css";
 import { redirect } from "next/navigation";
 import { AutoparksV2List } from "@/components/admin/iriss-autoparks-v2/AutoparksV2List";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
+import { readAutoparksRegistryImportStamp } from "@/lib/iriss-autoparks-registry-dropbox";
+import { registryFreshness } from "@/lib/iriss-autoparks-registry-freshness";
 import { getAutoparksV2PageActor } from "@/lib/iriss-autoparks-v2-access";
 import { autoparksV2ListRows } from "@/lib/iriss-autoparks-v2-list";
 import { readAutoparksV2State } from "@/lib/iriss-autoparks-v2-store";
@@ -21,7 +23,9 @@ export default async function AutoparksV2Page() {
   const access = await getAutoparksV2PageActor();
   if (!access) redirect("/admin/iriss");
   const storeEnabled = getIrissLogisticsStorageState().enabled;
-  const [v1, v2] = storeEnabled ? await Promise.all([readAutoparksState(), readAutoparksV2State()]) : [null, null];
+  const [v1, v2, registryStamp] = storeEnabled
+    ? await Promise.all([readAutoparksState(), readAutoparksV2State(), readAutoparksRegistryImportStamp()])
+    : [null, null, null];
   // Ātrā pāreja uz Loģistiku (makets 26.10: posms "Ceļā") - tikai ar Loģistikas tiesību.
   const logisticsCount =
     storeEnabled && staffHasLogisticsCabinet(access.actor) ? (await listLogisticsOrders()).filter(isLogisticsOrderActive).length : null;
@@ -33,6 +37,7 @@ export default async function AutoparksV2Page() {
       canChangeStatus={access.perms.pamatdati}
       showVat={access.perms.iegade}
       logisticsCount={logisticsCount}
+      registryFresh={storeEnabled ? registryFreshness(registryStamp) : null}
     />
   );
 }

@@ -288,3 +288,53 @@ describe("esyn.dk (zelta VIN)", () => {
     });
   });
 });
+
+describe("tjekbil.dk neizturēto apskašu trūkumi latviski (zelta VIN)", () => {
+  const RESULT = "Apskate nav izturēta, jāveic atkārtota apskate";
+
+  it("Captur: trīs neizturētas apskates ar pilnībā latviskiem trūkumu aprakstiem", () => {
+    const mapped = mapTjekbilPayload({
+      dmr: fixture("tjekbil", CAPTUR).body as TjekbilDmrResponse,
+      mileagelogs: fixture("tjekbil", `${CAPTUR}.mileagelogs`).body as TjekbilMileageLog[],
+    });
+    expect(mapped.incidents.map((r) => [r.date, r.note])).toEqual([
+      [
+        "2023-10-10",
+        `${RESULT} - Šasija vai rāmis un pie tā piestiprinātās daļas: stāvoklis, pārmērīga korozija, kas ietekmē savienojumu stiprību, priekšā, būtisks trūkums` +
+          " | Asis un balstiekārta: balstiekārtas šarnīri, pārmērīgs nodilums šarnīra tapā un/vai buksēs vai balstiekārtas šarnīros, 1. ass, kreisā puse, būtisks trūkums",
+      ],
+      [
+        "2022-01-27",
+        `${RESULT} - Asis un balstiekārta: balstiekārtas šarnīri, pārmērīgs nodilums šarnīra tapā un/vai buksēs vai balstiekārtas šarnīros, 1. ass, labā puse, priekšā, būtisks trūkums` +
+          " | Asis un balstiekārta: atsperes un stabilizators, atsperes detaļa ir bojāta vai lūzusi, 1. ass, kreisā puse, priekšā, būtisks trūkums" +
+          " | Bremžu iekārta, darba bremze: darbības rādītāji, nepietiekama bremzēšanas iedarbība uz vienu vai vairākiem riteņiem, 2. ass, labā puse, aizmugurē, būtisks trūkums" +
+          " | Bremžu iekārta, stāvbremze: darbības rādītāji, bremze nedarbojas vienā pusē, vai bremžu pārbaudē uz ceļa transportlīdzeklis bremzējot stipri novirzās no kursa, 2. ass, labā puse, aizmugurē, būtisks trūkums",
+      ],
+      [
+        "2017-08-19",
+        `${RESULT} - Nesošie elementi: lodbalsts priekšējā piekarē, brīvkustība, pārāk liela, labā puse`,
+      ],
+    ]);
+  });
+
+  it("Captur: tas pats iznākums vienādi nosaukts hronoloģijā, nobraukuma avotā un esyn zondē", () => {
+    const mapped = mapTjekbilPayload({
+      dmr: fixture("tjekbil", CAPTUR).body as TjekbilDmrResponse,
+      mileagelogs: fixture("tjekbil", `${CAPTUR}.mileagelogs`).body as TjekbilMileageLog[],
+    });
+    expect(mapped.timeline.find((r) => r.date === "2022-01-27" && /apskate/i.test(r.event))?.event).toBe(
+      "Periodiskā apskate: Nav izturēta, jāveic atkārtota apskate · Applus Danmark A/S",
+    );
+    expect(mapped.mileage.find((r) => r.date === "2022-01-27")?.origin).toContain(
+      "nav izturēta, jāveic atkārtota apskate",
+    );
+    // Neizturēto apskašu skaits balstās uz dāņu avota tekstu, ne tulkojumu.
+    expect(mapped.notes).toContain("Neizturētas apskates: 3.");
+  });
+
+  it("Sharan: neizturētu apskašu nav - incidentu saraksts tukšs", () => {
+    const mapped = mapTjekbilPayload({ dmr: fixture("tjekbil", SHARAN).body as TjekbilDmrResponse });
+    expect(mapped.incidents).toEqual([]);
+    expect(mapped.notes.some((n) => /Neizturētas apskates/.test(n))).toBe(false);
+  });
+});
