@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PRO admin plāns 17.11</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Izkārtojums: viena lasāma kolonna; katra tēma = "tagad / būs" pāris; jautājumi kā numurēts saraksts ar ieteikumu. */
+:root{--bg:#f4f5f7;--card:#fff;--ink:#14161a;--muted:#646a75;--line:#e1e4ea;--acc:#1d4ed8;--accbg:#eaf0ff;--ok:#0f6b3a;--okbg:#e7f5ec;--warn:#8a5a00;--warnbg:#fff4de;--bad:#b42318;--badbg:#fdecea;--chip:#eceef2;
+--f:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101114;--card:#1a1c20;--ink:#f1f2f4;--muted:#9aa0ab;--line:#2b2e35;--acc:#8fb0ff;--accbg:#1b2540;--ok:#7ddc9f;--okbg:#14301f;--warn:#f0c46a;--warnbg:#3a2c0d;--bad:#ff8a80;--badbg:#3a1714;--chip:#262930;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101114;--card:#1a1c20;--ink:#f1f2f4;--muted:#9aa0ab;--line:#2b2e35;--acc:#8fb0ff;--accbg:#1b2540;--ok:#7ddc9f;--okbg:#14301f;--warn:#f0c46a;--warnbg:#3a2c0d;--bad:#ff8a80;--badbg:#3a1714;--chip:#262930;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 var(--f)}
+main{max-width:860px;margin:0 auto;padding:28px 16px 72px;display:flex;flex-direction:column;gap:14px}
+h1{font-size:26px;line-height:1.2;margin:0;text-wrap:balance}
+h2{font-size:19px;margin:22px 0 0;text-wrap:balance}
+h3{font-size:15px;margin:0 0 6px}
+p{margin:0 0 8px;max-width:68ch}
+.lead{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:640px){.pair{grid-template-columns:1fr}}
+.k{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+ul,ol{margin:4px 0 0;padding-left:20px}
+li{margin:4px 0;max-width:68ch}
+.tag{display:inline-block;font-size:11px;font-weight:600;border-radius:6px;padding:2px 7px;background:var(--chip);color:var(--muted);vertical-align:middle}
+.tag.ok{background:var(--okbg);color:var(--ok)}.tag.warn{background:var(--warnbg);color:var(--warn)}.tag.bad{background:var(--badbg);color:var(--bad)}.tag.acc{background:var(--accbg);color:var(--acc)}
+code{font-size:13px;background:var(--chip);border-radius:4px;padding:1px 5px}
+.q li{margin:9px 0}
+.q b{font-weight:600}
+.rec{display:block;color:var(--muted);font-size:13.5px;margin-top:2px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+nav{display:flex;flex-wrap:wrap;gap:6px}
+nav a{font-size:13px;text-decoration:none;color:var(--acc);background:var(--accbg);border-radius:999px;padding:4px 10px}
+nav a:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.case td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums}
+</style>
+</head>
+<body>
+<main>
+<h1>PRO admin: izmaiņu analīze, jautājumi un plāns</h1>
+<p class="lead">17.11.2026. Izpētīts esošais kods un BMW 320d lieta WBA3K31080F656545 no Dropbox. Kodā nekas nav mainīts. Atbildi uz jautājumiem pa kodiem (piem. "D3 jā, E4 b"); kur atbildes nav, ņemu savu ieteikumu.</p>
+<nav aria-label="Sadaļas">
+<a href="#seciba">Secība</a><a href="#atrie">Ātrie labojumi</a><a href="#nobraukums">Nobraukums</a><a href="#valstis">Valstis</a><a href="#dileris">Dīlera platforma</a><a href="#lielie">Lielie darbi</a><a href="#redaktors">Noslēguma pārbaude</a><a href="#sutit">Sūtīt atskaiti</a><a href="#versijas">Versijas</a>
+</nav>
+
+<h2 id="seciba">Secība pirms un pēc testiem</h2>
+<div class="card tbl">
+<table>
+<tr><th>Solis</th><th>Kas</th><th>Kāpēc šajā vietā</th></tr>
+<tr><td class="n">0</td><td><b>Ātrie labojumi</b> (WhatsApp, zvanīt, pielikumu poga, FLASH telefonā, tukšie lauki, cilnes kļūda)</td><td>Mazi, zināms cēlonis. Jāizlabo pirms testiem, citādi testi ķers jau zināmas kļūdas.</td></tr>
+<tr><td class="n">1</td><td><b>Etalona kopa</b>: 8-10 Dropbox lietas (BMW īpaši) nofiksētas "kā ir tagad"</td><td>Šis ir "pirms" momentuzņēmums nobraukuma un valstu izmaiņām. Bez tā nevar pierādīt, ka nekas nav sabojāts.</td></tr>
+<tr><td class="n">2</td><td><b>Fundamentālie testi 1.-8.</b> (apmaksa, manuālais, dīleris, atmaksa, lomas, veidnes)</td><td>Pārbauda esošo sistēmu pirms lielajām izmaiņām. Īsto iPhone testu dari Tu paralēli.</td></tr>
+<tr><td class="n">3</td><td><b>Nobraukuma kļūdu sistēma + valstu aizpilde</b></td><td>Tikai datu slānis, bez UI pārbūves. Pēc tam etalona kopu palaiž vēlreiz un salīdzina.</td></tr>
+<tr><td class="n">4</td><td><b>PDF ģenerēšana serverī</b>, tad <b>Sūtīt atskaiti</b> un <b>komentāru versijas</b></td><td>Servera PDF ir pamats gan vienas pogas sūtīšanai, gan dīlera eksportam. Pēc tam atkārto 1., 3., 5. un 8. testu.</td></tr>
+<tr><td class="n">5</td><td><b>Dīlera datu platforma</b> un <b>lielo darbu izcelšana</b></td><td>Izmanto 3. un 4. soļa rezultātus. PDF izskata izmaiņām vispirms makets un Tavs jā.</td></tr>
+<tr><td class="n">6</td><td><b>FLASH MAX noslēguma pārbaude</b></td><td>Tai vajag gatavu nobraukuma slēdzienu no 3. soļa, citādi tā pārbaudīs pret nepareiziem faktiem.</td></tr>
+<tr><td class="n">7</td><td><b>Pilna regresija</b> un TESTS ierakstu dzēšana</td><td>Visi 8 testi vēlreiz, saraksta salīdzinājums ar bāzes līniju.</td></tr>
+</table>
+</div>
+<p class="lead">Apjoms pārsniedz 1 h un 25 failus, tāpēc šis ir arī novērtējums: 0. solis ir šodienas darbs, 3.-6. solis katrs ir vairāku PR darbs. Maksas avoti netiek aiztikti, eksperimentiem izmantoju jau nopirktos PDF.</p>
+
+<h2 id="atrie">0. Ātrie labojumi</h2>
+<div class="card">
+<h3>WhatsApp un zvanīšana Pārskatā</h3>
+<div class="pair"><div><div class="k">Tagad</div><p>WhatsApp poga pie tālruņa lauka ir 10 px teksts ar 14 px ikonu. Zvanīšanas pogas pasūtījuma lapā nav vispār.</p></div>
+<div><div class="k">Būs</div><p>Datorā pilna izmēra plakana WhatsApp poga ar ikonu un tekstu. Telefonā blakus poga "Zvanīt".</p></div></div>
+</div>
+<div class="card">
+<h3>Pielikumu poga parādās tikai pēc pārlādes <span class="tag ok">cēlonis atrasts kodā</span></h3>
+<p>Sadaļa "Pielikumi" tiek ielikta vietā, ko lapa sameklē tikai vienreiz atvēršanas brīdī. Ja šī vieta pēc tam tiek izveidota no jauna, sadaļa paliek piesaistīta vecajai, neredzamajai. Tas notiek, pārslēdzot cilni prom no "Pārskats" un atpakaļ, pēc FLASH MAX, un telefonā pirmajā ielādē. Labojums: lapa vietu sameklē atkārtoti. Pārlūkā to vēl neesmu atkārtojis, to izdarīšu pirms labojuma.</p>
+</div>
+<div class="card">
+<h3>Blakus atradums: "Pāriet uz kopsavilkumu" atver nepareizo cilni</h3>
+<p>Poga un FLASH MAX beigas atver cilni "Sludinājums" (12.), nevis "Kopsavilkums" (13.). Kods tāds ir kopš oktobra. Izlabošu kopā ar pārējo.</p>
+</div>
+<div class="card">
+<h3>FLASH telefonā un tukšie lauki</h3>
+<div class="pair"><div><div class="k">Tagad</div><ul>
+<li>Telefonā tikai 2 pogas ("Ikdienas komplekts", "Tikai kopsavilkums") un piezīmes. Sadaļu izvēle ir tikai datorā.</li>
+<li>Datora izvēlnē ķekši vienmēr ir noklusējumā. Avotus bez datiem sistēma izlaiž tikai palaišanas brīdī.</li>
+<li>Pārdevējs, foto, sludinājums, negadījumi, riski, apskate un kopsavilkums netiek izlaisti nekad. Tukšiem daļa beidzas ar kļūdu, nevis "izlaists".</li>
+</ul></div>
+<div><div class="k">Būs</div><ul>
+<li>Viens kopīgs logs datorā un telefonā: sadaļu ķekši, plašums, modelis, piezīmes.</li>
+<li>Atverot logu, katrai sadaļai redzams "ir dati" vai "nav datu". Tukšās ir izķeksētas un pelēkas, ar roku var ieķeksēt.</li>
+<li>Tukša sadaļa vienmēr beidzas ar "izlaists", nevis kļūdu.</li>
+</ul></div></div>
+</div>
+
+<h2 id="nobraukums">3. Nobraukuma datu kļūdas</h2>
+<div class="card">
+<h3>Ko rāda BMW 320d lieta</h3>
+<div class="tbl"><table class="case">
+<tr><th>Ieraksts</th><th>Kas tas ir</th><th>Ko mēs uzrakstījām klientam</th></tr>
+<tr><td>20.11.2012<br>90 000 km</td><td>Dīlera ieraksts 6 dienas pēc pirmās reģistrācijas, nākamais ir 2 954 km. Fiziski neiespējams, ievades kļūda.</td><td>"Odometra kritums par 87 046 km" kopsavilkuma pirmajā teikumā un vēl 3 vietās; ieteikta visu vadības bloku diagnostika.</td></tr>
+<tr><td>27.09.2015<br>90 000 km</td><td>AutoDNA "Pārdošanai piedāvātas automašīnas, dīlera piedāvājums". Sludinājums, apaļš skaitlis, starp dīlera 103 880 un 107 993 km.</td><td>Tabulā izslēgts no grafika, bet tekstā "kritums par 13 880 km".</td></tr>
+<tr><td>04.2014<br>53 500 km</td><td>AutoDNA dod tikai mēnesi. Mēs pieliekam 1. datumu, tāpēc tas nonāk pirms dīlera 50 740 km.</td><td>"Starpība 2 760 km" kā nesakritība.</td></tr>
+</table></div>
+<p style="margin-top:10px">Papildus: vienam dīlera ierakstam (50 740 km) laika joslā ir 23.04.2014, bet tabulā 28.03.2014. To pārbaudīšu atsevišķi.</p>
+<p>Precizējums par carVertical: šajā lietā arī viņi brīdina par kritumu starp 11.2012 un 01.2013. Tātad viņi šo kļūdu nav salabojuši, viņi tikai neuzsver to tik skaļi kā mēs.</p>
+</div>
+<div class="card">
+<h3>Kas sistēmā jau ir un kas trūkst</h3>
+<div class="pair"><div><div class="k">Jau strādā</div><ul>
+<li>Atpazīst lieku ciparu (x10) un kritumu, kas 183 dienās atgriežas līknē.</li>
+<li>Klases "ievades kļūda", "kritums", "datuma precizitāte"; adminā var apstiprināt vai noraidīt.</li>
+<li>ss.lv rādījums nekad nav atskaites punkts kritumam.</li>
+<li>AutoDNA pilns teksts joprojām tiek saglabāts AI kontekstā.</li>
+</ul></div>
+<div><div class="k">Trūkst</div><ul>
+<li><b>Ieraksta veids.</b> Katrs AutoDNA rādījums kļūst par anonīmu rindu. Sludinājums, tehniskā apskate un "ziņots rādījums" izskatās vienādi.</li>
+<li><b>Pirmais punkts.</b> Kļūdu atzīst tikai tad, ja ir kaimiņi abās pusēs. 20.11.2012 ir pirmais ieraksts, tāpēc paliek "kritums".</li>
+<li><b>Slēdziens nenonāk līdz tekstiem.</b> Nobraukuma analīzi saņem tikai Copilot. FLASH MAX komentāri to nesaņem, un avotu komentāri kritumu apraksta kā faktu.</li>
+<li><b>Sarkanā josla</b> neņem vērā klasifikāciju.</li>
+<li>Mēneša precizitāte no AutoDNA pazūd; samainīti cipari un jūdzes netiek atpazītas; carVertical brīdinājums netiek glabāts kā dati.</li>
+</ul></div></div>
+</div>
+<div class="card">
+<h3>Piedāvātā sistēma</h3>
+<ol>
+<li><b>Katram rādījumam veids un precizitāte:</b> oficiāls (TA, reģistrs), dīleris, sludinājums vai pārdevēja norādīts, ziņots bez avota; diena vai mēnesis.</li>
+<li><b>Ticamā līkne.</b> Sistēma atrod garāko augošo rādījumu virkni, kur oficiālajiem un dīlera ierakstiem ir lielāks svars. Viss, kas tajā neiederas, ir kandidāts.</li>
+<li><b>Katram kandidātam klase ar pamatojumu:</b> lieks vai trūkstošs cipars, samainīti cipari, jūdzes, fiziski neiespējams (km pret auto vecumu), sludinājuma rādījums, mēneša precizitāte, dokumenta datums.</li>
+<li><b>Drošības nosacījumi.</b> Par kļūdu atzīst tikai tad, ja izpildās visi:
+  <ul><li>līkne pirms un pēc ir saskanīga bez šī punkta, ar ticamu km dienā;</li>
+  <li>zemo vērtību neapstiprina otrs neatkarīgs avots;</li>
+  <li>tajā brīdī nav valsts, īpašnieka vai importa maiņas;</li>
+  <li>vēlākā līkne nav nobīdīta uz leju (īsta manipulācija nobīda visus turpmākos rādījumus).</li></ul>
+  Ja kaut viens neizpildās, paliek "aizdomas" un sarkanais brīdinājums.</li>
+<li><b>Viens slēdziens visiem.</b> Josla, flīze, tabula un visi AI komentāri saņem to pašu slēdzienu. Pārbaude pirms PDF noķer tekstu, kas izslēgtu ierakstu sauc par kritumu.</li>
+<li><b>Nekas netiek dzēsts.</b> Izslēgtais ieraksts paliek redzams ar atzīmi un paskaidrojumu.</li>
+<li><b>Etalona kopa testos:</b> Dropbox lietas ar zināmu pareizo atbildi, arī vismaz 2 īstas manipulācijas kā kontrole.</li>
+</ol>
+</div>
+<div class="card q">
+<h3>Jautājumi par nobraukumu</h3>
+<ol>
+<li><b>B1.</b> Kur klientam rādīt izslēgto ierakstu: (a) tabulā ar atzīmi, (b) atsevišķā sarakstā zem tabulas, (c) nerādīt? <span class="rec">Ieteikums: (b), ar vienu teikumu, kāpēc.</span></li>
+<li><b>B2.</b> Sludinājumu rādījumiem (AutoDNA "pārdošanai piedāvāts", ss.lv, mobile.de) sava atzīme "pārdevēja norādīts, nav oficiāls fiksējums"? Ja sludinājumā ir būtiski mazāk nekā oficiāli, rādīt atsevišķu brīdinājumu "pārdevējs norādījis mazāku nobraukumu"? <span class="rec">Ieteikums: jā abiem.</span></li>
+<li><b>B3.</b> Ja carVertical brīdina, bet mūsu analīze saka "ievades kļūda": pieminēt klientam vai noklusēt? <span class="rec">Ieteikums: pieminēt vienā teikumā, jo klients var pats nopirkt carVertical.</span></li>
+<li><b>B4.</b> Vai sistēma drīkst pati atzīt kļūdu, ja izpildās visi drošības nosacījumi, un Tev rādīt tikai robežgadījumus? <span class="rec">Ieteikums: jā, ar sarakstu "ko sistēma izslēdza" pirms PDF.</span></li>
+<li><b>B5.</b> Ja visi kritumi ir izskaidroti: kopsavilkumā to pieminēt vai atstāt tikai nobraukuma sadaļā? <span class="rec">Ieteikums: tikai nobraukuma sadaļā.</span></li>
+<li><b>B6.</b> Kuras Dropbox lietas drīkstu ņemt etalonam? Vai ir lietas, kur Tu zini, ka manipulācija bija īsta?</li>
+<li><b>B7.</b> Cik bieži ir auto no Lielbritānijas vai ASV (jūdžu un km sajaukums)?</li>
+<li><b>B8.</b> Legāla odometra vai paneļa maiņa dīlera datos: kā to rādīt klientam?</li>
+</ol>
+</div>
+
+<h2 id="valstis">3. Valstu lauku aizpilde</h2>
+<div class="card">
+<div class="pair"><div><div class="k">Tagad</div><ul>
+<li>Mehānisms pastāv: savāc valsti un datumu no visiem avotiem un aizpilda tukšos.</li>
+<li>Tas strādā tikai PDF ielasīšanā caur Copilot un tikai nobraukuma un negadījumu rindām.</li>
+<li>Dīlera vizītēm valsti ņem tikai no dīlera nosaukuma, ja tajā ir valsts vārds. OneAuto ielādei un dīlera lapai aizpilde nestrādā.</li>
+</ul></div>
+<div><div class="k">Būs</div><ul>
+<li>Aizpilde pēc katras ielādes visiem avotiem, arī dīlera vizītēm, un ar pogu "Aizpildīt valstis".</li>
+<li>Aizpilda tikai tukšos. Noteikumi: tajā pašā mēnesī viena valsts; kaimiņi abās pusēs sakrīt; dīlera adrese. Pāri valsts maiņas robežai neaizpilda.</li>
+<li>Adminā aizpildītais lauks ir atzīmēts "secināts no: avots".</li>
+</ul></div></div>
+<p style="margin-top:8px"><b>S7.</b> Ja avoti nesakrīt, lauku atstāt tukšu? PDF secināto valsti rādīt tāpat kā parastu? <span class="rec">Ieteikums: jā abiem.</span></p>
+</div>
+
+<h2 id="dileris">5. Dīlera datu platforma</h2>
+<div class="card">
+<div class="pair"><div><div class="k">Tagad: /admin/dilera-dati</div><ul>
+<li>VIN vai numurzīme, OneAuto 4 produkti (0,18 / 0,36 / 1,95 / 3,00 €).</li>
+<li>Vienkāršs HTML dokuments, ko drukā pārlūkā.</li>
+<li>Saglabātās pārbaudes, izmaksu uzskaite, auto atrašana Autoparkā pēc VIN.</li>
+<li>Pieejama tikai PRO adminam. IRISS darbinieki netiek klāt.</li>
+<li>Nav: PDF augšupielādes, valstu, lielo darbu, klienta stila PDF, e-pasta, eksporta.</li>
+</ul></div>
+<div><div class="k">Ieteikums</div><ul>
+<li>Nebūvēt jaunu, bet paplašināt šo lapu. Ielikt tajā to pašu dīlera bloku un PDF, kas ir pasūtījumā, bez pasūtījuma izveides.</li>
+<li>Jauna tiesība "Dīlera dati", lai lapa ir gan PRO, gan IRISS izvēlnē.</li>
+<li>Avoti: OneAuto, dīlera PDF augšupielāde, teksta ielīmēšana.</li>
+<li>Divas pogas: "Sūtīt PDF uz e-pastu" un "Uz Autoparku" (kartītes dokumenti un STOCK mape).</li>
+<li>Brīdinājums, ja VIN jau pārbaudīts, lai nemaksā divreiz.</li>
+</ul></div></div>
+</div>
+<div class="card q">
+<h3>10 jautājumi</h3>
+<ol>
+<li><b>D1.</b> Kam IRISS pusē dot piekļuvi: visiem ar Autoparka tiesībām vai atsevišķa tiesība? <span class="rec">Ieteikums: atsevišķa tiesība.</span></li>
+<li><b>D2.</b> Vai darbinieki drīkst paši spiest maksas ielādi? Vajag mēneša limitu? <span class="rec">Ieteikums: 0,36 € brīvi, 3,00 € ar limitu, ko nosaki Tu.</span></li>
+<li><b>D3.</b> Kuri avoti vajadzīgi pirmajā versijā: OneAuto, dīlera PDF (BMW portāls u.c.), teksta ielīmēšana, OutVin? <span class="rec">Ieteikums: pirmie trīs, OutVin vēlāk.</span></li>
+<li><b>D4.</b> PDF izskats: tāds pats kā klienta "Oficiālie dīlera dati" vai vienkāršāks iekšējs? Kurš zīmols: PROVIN, Dzintarzeme Auto, bez zīmola, pēc izvēles?</li>
+<li><b>D5.</b> Kam sūtīsi PDF: sev, kolēģiem, klientiem, partneriem? Vajag teksta veidni un valodas izvēli? No kuras adreses?</li>
+<li><b>D6.</b> Eksports: auto kartītes dokumentos un Dropbox STOCK mapē "doc"? Ko darīt, ja auto ar šo VIN Autoparkā nav: ļaut izvēlēties auto, izveidot jaunu vai tikai paziņot?</li>
+<li><b>D7.</b> AI komentāri (servisa vēsture, eļļas intervāli): ģenerēt uzreiz pēc ielādes vai tikai ar pogu? Vajag īsu iekšēju slēdzienu iepirkumam?</li>
+<li><b>D8.</b> Poga "izveidot pasūtījumu no pārbaudes": paturēt kā retu iespēju vai noņemt?</li>
+<li><b>D9.</b> Saglabātās pārbaudes tagad redz tikai tas, kurš ielādēja. Vajag kopīgu vēsturi visai komandai?</li>
+<li><b>D10.</b> Vai lietosi galvenokārt telefonā (izsoles, apskates)? Ja jā, vai pirmais solis ir VIN vai numurzīmes skenēšana ar kameru?</li>
+</ol>
+</div>
+
+<h2 id="lielie">5. Lielo darbu izcelšana dīlera datos</h2>
+<div class="card">
+<div class="pair"><div><div class="k">Tagad</div><ul>
+<li>12 mezgli pēc atslēgvārdiem vairākās valodās: dzinējs, sadales ķēde, siksna, kārba, sajūgs, turbo, diferenciālis u.c.</li>
+<li>Bloks "Lielie darbi" PDF vākā, pasūtījumā ar roku labojams.</li>
+<li>Nav negadījumu un virsbūves remonta kategorijas. Vizīšu sarakstā izcēluma nav.</li>
+<li>BMW lietā "Dzinējs 12.05.2014" patiesībā bija dzinēja pārsegs. Tas labots 07.11 (#923).</li>
+</ul></div>
+<div><div class="k">Piedāvātā sistēma</div><ol>
+<li><b>Noteikumi</b> (bez maksas, paredzami): paplašināts kategoriju saraksts un izņēmumi.</li>
+<li><b>AI otrā kārta</b> tikai tām vizītēm, ko noteikumi neatpazīst. Tā tikai ierosina, ar pamatojumu.</li>
+<li><b>Ķeksis pie katras vizītes</b> adminā: automātika ieķeksē, Tu vari mainīt.</li>
+<li><b>Sasaiste ar negadījumiem:</b> virsbūves remonts, kas datumos sakrīt ar bojājuma ierakstu, tiek rādīts kopā.</li>
+<li><b>PDF:</b> atzīme pie vizītes un kopsavilkums. Vispirms makets.</li>
+</ol></div></div>
+</div>
+<div class="card q">
+<h3>10 jautājumi</h3>
+<ol>
+<li><b>E1.</b> Ko pievienot kategorijām: virsbūves remonts un krāsošana, drošības spilveni, EGR/DPF/AdBlue, inžektori un augstspiediena sūknis, stūres iekārta, pneimatiskā piekare, kondicioniera kompresors, augstsprieguma akumulators, atsaukuma kampaņas? Kas vēl?</li>
+<li><b>E2.</b> Divi līmeņi ("liels remonts vai negadījums" un "svarīga plānota apkope", piem. siksna) vai viens? <span class="rec">Ieteikums: divi.</span></li>
+<li><b>E3.</b> Riepas, bremžu diski un kluči, 12 V akumulators: neizcelt nekad? <span class="rec">Ieteikums: neizcelt.</span></li>
+<li><b>E4.</b> Kur PDF rādīt: (a) tikai blokā "Lielie darbi", (b) arī atzīme pašā vizīšu sarakstā? <span class="rec">Ieteikums: (b).</span></li>
+<li><b>E5.</b> Rādīt arī to, kā nav: piem. siksnas maiņa nav fiksēta pēc ražotāja intervāla, kārbas eļļa nekad nav mainīta?</li>
+<li><b>E6.</b> Tikai noteikumi, vai noteikumi un AI otrā kārta (daži centi par atskaiti)? <span class="rec">Ieteikums: abi.</span></li>
+<li><b>E7.</b> Automātikas rezultāts iet uzreiz PDF, vai pirms PDF obligāti jāpārskata?</li>
+<li><b>E8.</b> Sasaistīt dīlera virsbūves remontu ar AutoDNA vai carVertical bojājuma ierakstu un rādīt kopā?</li>
+<li><b>E9.</b> Ražotāja kampaņu un garantijas darbus izcelt atsevišķi kā pozitīvu faktu?</li>
+<li><b>E10.</b> Vai izcēlumam jāparādās arī AUDITS laika joslā, AI komentāros (obligāti pieminēt visus lielos darbus) un BUSINESS atskaitē?</li>
+</ol>
+</div>
+
+<h2 id="redaktors">6. FLASH MAX noslēguma pārbaude</h2>
+<div class="card">
+<div class="pair"><div><div class="k">Tagad</div><ul>
+<li>Katram laukam atsevišķi: Claude Opus labo tikai valodu un redz tikai šo vienu tekstu, bez datiem un citiem komentāriem.</li>
+<li>Faktu pārbaude ir noteikumu saraksts. Tā rāda karogus, tekstu nemaina.</li>
+<li>Kopīga soļa pāri visiem komentāriem nav.</li>
+</ul></div>
+<div><div class="k">Būs</div><ul>
+<li>Viens noslēguma solis pēc visiem komentāriem. Tas saņem visus tekstus, faktu lapu, nobraukuma slēdzienu un agregātu zināšanas šim dzinējam un kārbai.</li>
+<li>Pārbauda: pretrunas starp sadaļām, skaitļus pret faktiem, vai pieminēti visi zināmie tehniskie riski, vai apgalvojumiem ir pamats datos.</li>
+<li>Rezultāts: labojumu saraksts ar "bija / būs" un iemeslu.</li>
+</ul></div></div>
+<div class="q" style="margin-top:8px"><ol>
+<li><b>S5.</b> Drīkst labot pati vai tikai ierosina? <span class="rec">Ieteikums: valodu un skaitļu pretrunas labo pati un parāda, ko mainīja; trūkstošos riskus un apgalvojumus tikai ierosina.</span></li>
+<li><b>S6.</b> Tas ir viens papildu Claude izsaukums katram auditam. Vienmēr vai tikai ar ķeksi? <span class="rec">Ieteikums: vienmēr "Ikdienas komplektam".</span></li>
+</ol></div>
+</div>
+
+<h2 id="sutit">4. Sūtīt atskaiti ar vienu pogu</h2>
+<div class="card">
+<div class="pair"><div><div class="k">Tagad</div><ol>
+<li>"Ģenerēt PDF", drukas logā saglabā failu diskā.</li>
+<li>Augšupielādē failu pie pielikumiem vai sūtīšanas logā.</li>
+<li>Izvēlas valodu, Google atsauksmi, spiež "Sūtīt".</li>
+</ol><p>PDF top tikai pārlūkā. Nosūtītais PDF arhīvā tiek pārrakstīts katru reizi.</p></div>
+<div><div class="k">Būs</div><ol>
+<li>"Sūtīt atskaiti": logs ar veidu, valodu, pielikumiem.</li>
+<li>Pārbaudes pirms PDF kā tagad.</li>
+<li>PDF top serverī, e-pasts aiziet ar to pašu veidni kā tagad.</li>
+<li>PDF un komentāru gala versija tiek saglabāta ar versijas numuru.</li>
+</ol><p>Esošā manuālā plūsma paliek kā rezerve.</p></div></div>
+<p style="margin-top:8px">Tehniskais priekšnoteikums: PDF ģenerēšana serverī. Vispirms izmēģināšu ar vienu atskaiti un salīdzināšu ar pārlūka PDF lapu pa lapai. PDF dizains nemainās.</p>
+</div>
+<div class="card q">
+<h3>10 jautājumi</h3>
+<ol>
+<li><b>G1.</b> Veidi izvēlnē: PROVIN AUDITS, BUSINESS, dīlera dati, ASV. Noklusējums pēc pasūtījuma produkta? Vai vienā sūtījumā drīkst būt vairāki PDF (piem. AUDITS un dīlera oriģināls)?</li>
+<li><b>G2.</b> Valodas noklusējums no klienta pasūtījuma valodas? Vai e-pasta valoda vienmēr ir tāda pati kā PDF?</li>
+<li><b>G3.</b> Priekšskatījums: (a) obligāts pirms sūtīšanas, (b) saite "Skatīt PDF" apstiprinājuma logā, (c) nav? <span class="rec">Ieteikums: (b).</span></li>
+<li><b>G4.</b> Ja faktu pārbaudē ir sarkani karogi: bloķēt sūtīšanu vai ļaut "sūtīt tik un tā" kā tagad?</li>
+<li><b>G5.</b> Papildu pielikumi (dīlera oriģināls, Tavi faili no "Pielikumi"): pievienot visus automātiski vai ar ķekšiem?</li>
+<li><b>G6.</b> Google atsauksmes lūgums: noklusējumā ieslēgts? Atkārtotam sūtījumam izslēgts?</li>
+<li><b>G7.</b> Vai nosūtīto PDF automātiski saglabāt arī Dropbox mapē /_PROv/auto, kā Tu to dari ar roku? Vajag slēpto kopiju uz info@provin.lv?</li>
+<li><b>G8.</b> Pēc e-pasta piedāvāt atvērt WhatsApp ar tekstu "atskaite nosūtīta e-pastā"?</li>
+<li><b>G9.</b> Atkārtota sūtīšana pēc labojumiem: jauna versija, vecā paliek arhīvā? Tēmā atzīme "labota"?</li>
+<li><b>G10.</b> Pēc nosūtīšanas pasūtījums automātiski "Izpildīts" ar laiku un vārdu? Vajag 30 sekunžu "Atsaukt"?</li>
+</ol>
+</div>
+
+<h2 id="versijas">4. Komentāru versijas apmācībai</h2>
+<div class="card">
+<div class="pair"><div><div class="k">Tagad</div><ul>
+<li>Daļēji ir: atsevišķā krātuvē glabājas pēdējais AI melnraksts un pēdējā rediģētā versija katram laukam.</li>
+<li>Rediģēto pārraksta katra saglabāšana, tāpēc tā nav "gala versija nosūtīšanas brīdī".</li>
+<li>Pārģenerējot pazūd iepriekšējais AI teksts.</li>
+</ul></div>
+<div><div class="k">Būs</div><ul>
+<li><b>1. versija:</b> AI teksts ģenerēšanas brīdī, ar modeli, laiku un instrukciju versiju.</li>
+<li><b>2. versija:</b> visu lauku momentuzņēmums brīdī, kad atskaite nosūtīta e-pastā.</li>
+<li>Skats "AI pret gala" ar atšķirībām un eksports apmācībai.</li>
+</ul></div></div>
+<div class="q" style="margin-top:8px"><ol>
+<li><b>S8.</b> Glabāt katru pārģenerēšanu vai tikai pirmo AI versiju? Ja atskaite aiziet ārpus sistēmas (WhatsApp), vajag pogu "Atzīmēt kā gala versiju"? <span class="rec">Ieteikums: glabāt visas AI versijas; poga jā.</span></li>
+</ol></div>
+</div>
+
+<h2>Jautājumi par ātrajiem labojumiem</h2>
+<div class="card q"><ol>
+<li><b>S1.</b> WhatsApp poga datorā: pie tālruņa lauka kartē "Klients", augšējā joslā vai abās vietās? Pilna zaļa vai kontūra?</li>
+<li><b>S2.</b> "Zvanīt": tikai telefonā vai arī datorā?</li>
+<li><b>S3.</b> Tu rakstīji "tāds pats logs kā Copilot". Saprotu to kā datora FLASH MAX izvēlni ar sadaļu ķekšiem. Telefonā vajag arī plašumu (Komp / Vid / Plašs) un modeli (Smart / PRO), vai tikai ķekšus?</li>
+<li><b>S4.</b> "Negadījumi" bez datiem: ģenerēt tekstu "negadījumi nav fiksēti" kā tagad, vai izķeksēt? <span class="rec">Ieteikums: ģenerēt, jo klientam tas ir vērtīgs teikums.</span></li>
+</ol></div>
+</main>
+</body>
+</html>

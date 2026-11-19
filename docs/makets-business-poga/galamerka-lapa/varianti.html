@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>PROVIN Business - galamērķa lapas varianti</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+#app>div{min-height:100vh}
+body{font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh}
+a{color:inherit}
+.wm{font-weight:800;letter-spacing:-.035em;line-height:1;white-space:nowrap}
+.wm i{font-style:normal;color:#2563eb}
+.dark .wm i{color:#5c9dff}
+.mono{font-family:ui-monospace,"SF Mono",Menlo,monospace;letter-spacing:.08em}
+.dlogo{display:block;height:26px;width:auto}
+.co{display:flex;align-items:center;gap:14px}
+.chip{display:inline-flex;align-items:center;background:#fff;border-radius:10px;padding:8px 12px}
+.x{color:#a1a1aa;font-size:14px}
+svg.ic{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+input[type=email],input[type=tel],input[type=text]{width:100%;height:48px;border-radius:12px;font:inherit;font-size:16px;padding:0 14px;outline:none}
+.btn{width:100%;height:56px;border:0;border-radius:14px;background:#2563eb;color:#fff;font:inherit;font-size:17px;font-weight:700;cursor:pointer}
+.lbl{display:block;margin-top:14px;font-size:13px;font-weight:600}
+.lbl em{font-style:normal;font-weight:400;opacity:.6}
+.lbl input{margin-top:7px}
+.cons{margin-top:16px;display:flex;gap:10px;font-size:12px;line-height:1.5}
+.cons input{margin-top:2px;width:16px;height:16px;flex:none;accent-color:#2563eb}
+.sec{margin-top:12px;display:flex;justify-content:center;align-items:center;gap:6px;font-size:12px;opacity:.6}
+.sec svg{width:13px;height:13px}
+details{margin-top:16px;padding-top:14px;border-top:1px solid currentColor;border-color:rgba(127,127,127,.2)}
+summary{cursor:pointer;font-size:13px;font-weight:600;list-style:none;display:flex;justify-content:space-between}
+summary::after{content:"+";opacity:.5}
+.vinbox .k{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;opacity:.55}
+.vinbox .v{margin-top:6px;font-size:20px;font-weight:600}
+
+/* ===== V1 tumšais, divas kolonnas ===== */
+.v1{background:#09090b;color:#f4f4f5}
+.v1::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(900px 500px at 78% -10%,rgba(37,99,235,.2),transparent 60%),radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.2px) 0 0/14px 14px;-webkit-mask-image:linear-gradient(180deg,#000 40%,transparent 85%);mask-image:linear-gradient(180deg,#000 40%,transparent 85%)}
+.v1 .w{position:relative;max-width:1120px;margin:0 auto;padding:0 32px}
+.v1 header{display:flex;align-items:center;justify-content:space-between;height:84px}
+.v1 .co{display:flex;align-items:center;gap:14px}
+.v1 .g{display:grid;grid-template-columns:1fr 420px;gap:40px;padding:24px 0 56px;align-items:start}
+.v1 .glass,.v5 .glass{border-radius:24px;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.12)}
+.v1 .eb{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#71717a}
+.v1 h1{margin-top:12px;font-size:42px;line-height:1.08;font-weight:800;letter-spacing:-.035em}
+.v1 h1 span{color:#5c9dff}
+.v1 .car{margin-top:26px;display:grid;grid-template-columns:240px 1fr;overflow:hidden}
+.v1 .car img{width:100%;height:100%;object-fit:cover;display:block}
+.v1 .car .in{padding:20px 22px}
+.v1 .car h2{font-size:20px;font-weight:700;letter-spacing:-.02em}
+.v1 .meta{margin-top:6px;font-size:14px;color:#a1a1aa}
+.v1 .vinbox{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.1)}
+.v1 .list{margin-top:26px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.it{display:flex;gap:12px;padding:14px 16px;border-radius:16px}
+.it svg{color:#5c9dff;margin-top:1px}
+.it b{display:block;font-size:14px;font-weight:600}
+.it span{display:block;margin-top:3px;font-size:13px;line-height:1.4;opacity:.65}
+.v1 .it,.v5 .it{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08)}
+.v1 .pay{padding:26px;position:sticky;top:24px}
+.prod{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.prod p{font-size:15px;font-weight:600}
+.prod small{display:block;margin-top:4px;font-size:13px;font-weight:400;opacity:.6}
+.price{font-size:32px;font-weight:800;letter-spacing:-.03em}
+.hr{height:1px;margin:20px 0;background:rgba(127,127,127,.2)}
+.v1 input,.v5 input,.v3 input{border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.35);color:#fff}
+.v1 .cons,.v5 .cons,.v3 .cons{color:#a1a1aa}
+.foot{text-align:center;font-size:11px;opacity:.45;padding:22px 0 34px}
+
+/* ===== V2 gaišais ===== */
+.v2{background:#f5f5f7;color:#1d1d1f}
+.v2 .w{max-width:1120px;margin:0 auto;padding:0 32px}
+.v2 header{display:flex;align-items:center;justify-content:space-between;height:84px}
+.v2 .co{display:flex;align-items:center;gap:14px}
+.v2 .co .x{color:#aeaeb2}
+.v2 .g{display:grid;grid-template-columns:1fr 420px;gap:28px;padding:12px 0 56px;align-items:start}
+.v2 .card{background:linear-gradient(160deg,#fff,#f3f4f6);border:1px solid rgba(0,0,0,.08);border-radius:24px;box-shadow:inset 0 1px 0 #fff,0 18px 40px -28px rgba(0,0,0,.25)}
+.v2 .hero{overflow:hidden}
+.v2 .hero img{display:block;width:100%;height:300px;object-fit:cover}
+.v2 .hero .in{padding:24px 26px 26px}
+.v2 .eb{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#8e8e93}
+.v2 h1{margin-top:8px;font-size:30px;font-weight:800;letter-spacing:-.03em}
+.v2 .meta{margin-top:6px;font-size:15px;color:#6e6e73}
+.v2 .vinrow{margin-top:18px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 16px;border-radius:14px;background:#f5f5f7;border:1px solid rgba(0,0,0,.06)}
+.v2 .vinrow .v{font-size:19px;margin-top:4px}
+.v2 .ok{font-size:12px;font-weight:600;color:#16a34a;display:flex;gap:6px;align-items:center;white-space:nowrap}
+.v2 .ok svg{width:15px;height:15px}
+.v2 .list{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.v2 .it{background:#fff;border:1px solid rgba(0,0,0,.07)}
+.v2 .it svg{color:#2563eb}
+.v2 .pay{padding:26px;position:sticky;top:24px}
+.v2 .slog{font-size:20px;font-weight:800;letter-spacing:-.025em;line-height:1.2}
+.v2 .slog span{color:#2563eb}
+.v2 input{border:1px solid #e5e5ea;background:#f5f5f7;color:#1d1d1f}
+.v2 input:focus{background:#fff;border-color:#1d1d1f}
+.v2 .cons{color:#6e6e73}
+
+/* ===== V3 auto virsrakstā ===== */
+.v3{background:#0b0b0d;color:#f4f4f5}
+.v3 .top{position:relative;height:480px;overflow:hidden}
+.v3 .top>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 60%}
+.v3 .top::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,.1) 30%,rgba(11,11,13,.6) 65%,#0b0b0d 100%)}
+.v3 .bar{position:absolute;z-index:2;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;max-width:1120px;margin:0 auto;padding:22px 32px}
+.v3 .hd{position:absolute;z-index:2;left:0;right:0;bottom:30px;max-width:1120px;margin:0 auto;padding:0 32px}
+.v3 .hd h1{font-size:44px;font-weight:800;letter-spacing:-.035em}
+.v3 .meta{margin-top:6px;font-size:16px;color:#d4d4d8}
+.v3 .vinp{margin-top:16px;display:inline-flex;gap:12px;align-items:center;padding:10px 16px;border-radius:12px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:18px}
+.v3 .vinp .k{font-size:11px;font-weight:600;letter-spacing:.14em;opacity:.7}
+.v3 .w{max-width:1120px;margin:0 auto;padding:10px 32px 50px;display:grid;grid-template-columns:1fr 420px;gap:40px;align-items:start}
+.v3 h2{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1.15}
+.v3 h2 span{color:#5c9dff}
+.v3 .rows{margin-top:20px}
+.v3 .row{display:flex;gap:14px;padding:14px 0;border-top:1px solid rgba(255,255,255,.08)}
+.v3 .row svg{color:#5c9dff}
+.v3 .row b{font-size:15px;font-weight:600}
+.v3 .row span{display:block;font-size:13px;color:#a1a1aa;margin-top:3px}
+.v3 .pay{padding:26px;border-radius:24px;background:linear-gradient(160deg,#1c1e24,#111216);border:1px solid rgba(255,255,255,.12);margin-top:-120px;position:relative;z-index:3;box-shadow:0 30px 60px -30px rgba(0,0,0,.8)}
+
+/* ===== V4 dalītais ekrāns ===== */
+.v4{display:grid;align-items:stretch;grid-template-columns:1fr 1fr;min-height:100vh}
+.v4 .l{background:#09090b;color:#f4f4f5;padding:40px 56px;position:relative;overflow:hidden}
+.v4 .l::before{content:"";position:absolute;inset:0;background:radial-gradient(700px 400px at 0% 0%,rgba(37,99,235,.22),transparent 60%),radial-gradient(rgba(255,255,255,.06) 1px,transparent 1.2px) 0 0/14px 14px;pointer-events:none}
+.v4 .l>*{position:relative}
+.v4 .co{display:flex;align-items:center;gap:14px}
+.v4 .lin{width:100%;max-width:500px}
+.v4 .slog{margin-top:44px;font-size:15px;color:#a1a1aa}
+.v4 .slog b{color:#fff}
+.v4 h1{margin-top:10px;font-size:34px;font-weight:800;letter-spacing:-.03em}
+.v4 .meta{margin-top:6px;color:#a1a1aa}
+.v4 .ph{margin-top:22px;border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.1)}
+.v4 .ph img{display:block;width:100%;height:240px;object-fit:cover}
+.v4 .vinbox{margin-top:20px}
+.v4 .rows{margin-top:24px;display:grid;grid-template-columns:1fr}
+.v4 .row{display:flex;gap:12px;padding:11px 0;border-top:1px solid rgba(255,255,255,.08)}
+.v4 .row svg{color:#5c9dff;margin-top:1px}
+.v4 .row b{display:block;font-size:14px;font-weight:600}
+.v4 .row span{display:block;font-size:13px;color:#a1a1aa;margin-top:3px;line-height:1.4}
+.v4 .seg{margin-top:24px;display:grid;gap:10px}
+.v4 .sg{padding:14px 16px;border-radius:14px;background:linear-gradient(160deg,rgba(28,30,36,.92),rgba(14,15,19,.92));border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.v4 .sg b{display:block;font-size:15px;font-weight:600;color:#fff;line-height:1.3}
+.v4 .sg span{display:block;margin-top:4px;font-size:13px;line-height:1.55;color:#a1a1aa}
+.v4 .fn{margin-top:14px;font-size:12px;line-height:1.5;color:#71717a}
+.v4 .eb{margin-top:40px;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#5c9dff}
+.v4 .ttl{margin-top:10px;font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1.15}
+.v4 .car{margin-top:26px;display:grid;grid-template-columns:200px 1fr;gap:18px;align-items:center}
+.v4 .car img{display:block;width:100%;height:134px;object-fit:cover;border-radius:14px;border:1px solid rgba(255,255,255,.1)}
+.v4 .car h1{margin:0;font-size:20px;font-weight:700;letter-spacing:-.02em}
+.v4 .car .meta{font-size:14px}
+.v4 .car .vinbox{margin-top:12px}
+.v4 .car .vinbox .v{font-size:18px}
+.v4 .desc{margin-top:8px;font-size:14px;line-height:1.5;color:#6e6e73}
+.v4 .aud{margin-top:16px;display:flex;gap:10px;padding:12px 14px;border-radius:12px;background:#f5f5f7;font-size:12px;line-height:1.5;color:#6e6e73}
+.v4 .aud svg{width:16px;height:16px;color:#8e8e93;margin-top:1px}
+.v4 .aud a{color:#1d1d1f;font-weight:600}
+.v4 .r{background:#fff;color:#1d1d1f;padding:40px 56px;display:flex;align-items:center}
+.v4 .l{display:flex;align-items:center;justify-content:flex-end}
+.v4 .rin{max-width:420px}
+.v4 .r h3{margin-top:0;font-size:15px;font-weight:600;color:#6e6e73}
+.v4 .r .price{margin-top:4px;font-size:40px}
+.v4 input{border:1px solid #e5e5ea;background:#fff;color:#1d1d1f}
+.v4 .cons{color:#6e6e73}
+
+/* ===== V5 kompaktā kartīte ===== */
+.v5{background:#09090b;color:#f4f4f5;display:flex;flex-direction:column;align-items:center}
+.v5::before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(800px 500px at 50% -10%,rgba(37,99,235,.22),transparent 60%),radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.2px) 0 0/14px 14px;-webkit-mask-image:linear-gradient(180deg,#000 30%,transparent 80%);mask-image:linear-gradient(180deg,#000 30%,transparent 80%)}
+.v5 .co{position:relative;display:flex;align-items:center;gap:14px;margin-top:40px}
+.v5 .tag{position:relative;margin-top:22px;font-size:26px;font-weight:800;letter-spacing:-.03em;text-align:center;line-height:1.2}
+.v5 .tag span{color:#5c9dff}
+.v5 .card{position:relative;width:100%;max-width:480px;margin:26px 16px 0;overflow:hidden}
+.v5 .card img{display:block;width:100%;height:220px;object-fit:cover}
+.v5 .in{padding:22px 24px 26px}
+.v5 h1{font-size:21px;font-weight:700;letter-spacing:-.02em}
+.v5 .meta{margin-top:4px;font-size:14px;color:#a1a1aa}
+.v5 .vinbox{margin-top:16px;padding:12px 14px;border-radius:12px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.1)}
+.v5 .vinbox .v{font-size:18px}
+.v5 .pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.v5 .pills span{font-size:12px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#d4d4d8}
+
+
+/* V4 foni */
+.v4 .l.bgA::before{background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.045) 45%,transparent 60%),linear-gradient(160deg,#1c1e24 0%,#0b0c0f 70%)}
+.v4 .l.bgB::before{background:none}
+.v4 .l.bgB .blur{position:absolute;inset:-60px;background:url(auto-foto.jpg) center/cover;filter:blur(48px) saturate(.6);opacity:.38;transform:scale(1.1)}
+.v4 .l.bgB::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(9,9,11,.55),rgba(9,9,11,.85))}
+.v4 .l.bgB>.lin{z-index:1}
+.v4 .l.bgC{background:#0b0b0d}
+.v4 .l.bgC::before{background:linear-gradient(180deg,rgba(255,255,255,.05),transparent 240px)}
+/* V4 logo pāri */
+.lk1{display:flex;align-items:center;gap:18px}
+.lk1 .dv{width:1px;height:30px;background:rgba(255,255,255,.28)}
+.lk2{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.lk2 .dlogo{height:30px}
+.lk2 p{font-size:12px;color:#a1a1aa;display:flex;align-items:center;gap:8px}
+.lk2 p .wm{font-size:14px}
+.lk3{display:inline-flex;align-items:center;gap:14px;padding:12px 18px;border-radius:16px;background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.14);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.lk3 small{font-size:11px;color:#a1a1aa;letter-spacing:.02em}
+@media (max-width:860px){.lk1{gap:12px}.lk1 .dv{height:22px}.lk2 .dlogo{height:22px}.lk3{padding:9px 12px;gap:10px;border-radius:12px}}
+@media (max-width:860px){
+  .v1 .w,.v2 .w{padding:0 16px}
+  .v1 header,.v2 header{height:68px}
+  .v1 .g,.v2 .g,.v3 .w{grid-template-columns:1fr;gap:18px;padding-top:6px}
+  .v1 h1{font-size:28px}
+  .v1 .car{grid-template-columns:1fr}.v1 .car img{height:190px}
+  .v1 .list,.v2 .list{grid-template-columns:1fr}
+  .v1 .pay,.v2 .pay{position:static;padding:20px}
+  .v2 .hero img{height:200px}.v2 h1{font-size:23px}.v2 .hero .in{padding:18px}
+  .v2 .vinrow{flex-direction:column;align-items:flex-start;gap:8px}
+  .dlogo{height:20px}.chip{padding:6px 9px;border-radius:8px}
+  .wm.big{font-size:20px!important}
+  .v3 .top{height:400px}.v3 .bar{padding:16px}.v3 .hd{padding:0 16px;bottom:24px}.v3 .hd h1{font-size:28px}.v3 .vinp{font-size:15px;padding:9px 12px}
+  .v3 .w{padding:0 16px 40px}.v3 .pay{margin-top:0;padding:20px}.v3 h2{font-size:23px}
+  .v4{grid-template-columns:1fr}.v4 .l,.v4 .r{padding:22px 16px;display:block}.v4 .lin{margin:0}
+  .v4 .slog{margin-top:24px}.v4 h1{font-size:25px}.v4 .ph img{height:190px}.v4 .r h3{margin-top:4px}
+  .v4 .l{padding:16px 16px 18px}.v4 .r{padding:18px 16px 8px}
+  .v4 .eb{margin-top:16px;font-size:11px}.v4 .ttl{font-size:20px;margin-top:6px}
+  .v4 .car{margin-top:14px;grid-template-columns:112px 1fr;gap:12px;align-items:start}
+  .v4 .car img{height:80px;border-radius:10px}
+  .v4 .car h1{font-size:15px}.v4 .car .meta{font-size:12px;margin-top:3px}
+  .v4 .car .vinbox{margin-top:6px}.v4 .car .vinbox .k{font-size:10px}.v4 .car .vinbox .v{font-size:13.5px;margin-top:2px;letter-spacing:.04em}
+  .v4 .rows{grid-template-columns:1fr;margin-top:12px}.v4 .row{padding:9px 0;gap:10px}.v4 .row b{font-size:14px}.v4 .row span{font-size:12px;margin-top:2px}.v4 .row svg{width:16px;height:16px}
+  .v4 .fn{margin-top:10px;font-size:11px}
+  .v4 .r h3{font-size:13px}.v4 .r .price{font-size:30px}.v4 .desc{font-size:13px;margin-top:4px}
+  .v4 .aud{margin-top:10px;padding:10px 12px}
+  .v4 .hr{margin:14px 0}
+  .v4 .lbl{margin-top:10px}.v4 input[type=email],.v4 input[type=tel]{height:44px;margin-top:5px}
+  .v4 details{margin-top:12px;padding-top:10px}
+  .v4 .cons{margin-top:12px}.v4 .btn{height:52px;margin-top:14px!important}
+  .v4 .foot{padding:12px 0 16px}
+  .v5 .co{margin-top:24px}.v5 .tag{font-size:21px;padding:0 16px}.v5 .card{margin:20px 0 0;width:calc(100% - 32px)}
+  .v5 .card img{height:190px}.v5 .in{padding:18px}
+}
+
+@media (max-width:860px){
+  .v4{display:flex;flex-direction:column;background:linear-gradient(180deg,#17181c 0%,#09090b 420px);color:#f4f4f5;padding:16px 16px 0}
+  .v4 .l,.v4 .lin,.v4 .r,.v4 .rin{display:contents}
+  .v4 .l::before,.v4 .l::after,.v4 .blur{display:none}
+  .v4 .lin>*{order:1}
+  .v4 .rin>*{order:2}
+  .v4 .rin>h3{margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.1)}
+  .v4 .lin>.rows,.v4 .lin>.fn{order:3}
+  .v4 .lin>.rows{margin-top:22px}
+  .v4 .rin>.foot{order:4}
+  .v4 .r{color:#f4f4f5}
+  .v4 .r h3{color:#a1a1aa}
+  .v4 .desc{color:#a1a1aa}
+  .v4 .aud{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#a1a1aa}
+  .v4 .aud svg{color:#71717a}.v4 .aud a{color:#fff}
+  .v4 input[type=email],.v4 input[type=tel]{border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.35);color:#fff}
+  .v4 .cons{color:#a1a1aa}
+  .v4 .hr{background:rgba(255,255,255,.1)}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const P = new URLSearchParams(location.search), V = P.get('v') || '1';
+const CAR = { name: 'Audi Q5 Quattro 3.0 TDI', meta: '2010 · 370 225 km · dīzelis · automāts', vin: 'WAUZZZ8R0AA012345' };
+const lock = '<svg class="ic" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+const chk = '<svg class="ic" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>';
+const wm = (s) => `<span class="wm big" style="font-size:${s}px">PRO<i>VIN</i></span>`;
+const dlogo = (dark) => `<img class="dlogo" src="${dark ? 'pcb-logo.svg' : 'pcb-logo-dark.svg'}" alt="Pērc un brauc">`;
+const co = (chip, s = 24) => `<div class="co">${dlogo(chip)}<span class="x">×</span>${wm(s)}</div>`;
+const ITEMS = [
+  ['Dīlera servisa vēsture*', 'Apkopes un remonti no oficiālās sistēmas'],
+  ['Nobraukuma pārbaude', 'Rādījumi no vairākiem avotiem pa gadiem'],
+  ['carVertical un AutoDNA', 'Abu datubāzu dati vienuviet'],
+  ['Izsoļu portālu arhīvs*', 'Bojājumi un foto no auto izsolēm'],
+  ['Reģistri', 'CSDD un Eiropas valstu reģistru dati'],
+  ['Viena skaidra atskaite', 'PDF uz e-pastu 12-24 h laikā'],
+];
+const SEG = [
+  ['Oficiālo dīleru servisa dati*', 'Detalizēti nobraukuma, apkopju intervālu un remontu dati.'],
+  ['Maksas vēstures atskaites', 'carVertical, autoDNA u.c. vienā atskaitē - avoti papildina cits citu.'],
+  ['Oficiālie valstu reģistri', 'Vēsturi pārbaudām arī ES valstu oficiālajos reģistros. Citi reģioni - pēc pieprasījuma.'],
+  ['Eiropas izsoļu portālu arhīvi*', 'Ieraksti un foto no brīža, kad auto bija bojāts vai pārdots izsolē.'],
+  ['Latvijas avoti', 'Apdrošinātāju dati, sludinājuma un tehnisko apskašu vēsture.'],
+];
+const items = () => ITEMS.map(([b, s]) => `<div class="it">${chk}<div><b>${b}</b><span>${s}</span></div></div>`).join('');
+const vinbox = () => `<div class="vinbox"><div class="k">VIN</div><div class="v mono">${CAR.vin}</div></div>`;
+const form = (btn = 'Maksāt 69,99 €') => `
+  <label class="lbl">E-pasts<input type="email" placeholder="epasts@piemers.lv"></label>
+  <label class="lbl">Tālrunis <em>(neobligāti)</em><input type="tel" placeholder="+371"></label>
+  <details><summary>Rēķins uzņēmumam</summary></details>
+  <label class="cons"><input type="checkbox"><span>Piekrītu <a href="#">Lietošanas noteikumiem</a> un <a href="#">Privātuma politikai</a>, pilnvaroju PROVIN iegūt auto datus un piekrītu tūlītējai izpildei.</span></label>
+  <button class="btn" style="margin-top:18px">${btn}</button>
+  <p class="sec">${lock}Droša apmaksa ar Stripe</p>`;
+const prod = () => `<div class="prod"><p>PROVIN Business<small>Atskaite šim auto</small></p><div class="price">69,99 €</div></div>`;
+
+const BG = P.get('bg') || 'A', LG = P.get('lg') || '1';
+const lockup = () => LG === '2'
+  ? `<div class="lk2">${dlogo(true)}<p>Auto vēstures pārbaude sadarbībā ar ${wm(14)}</p></div>`
+  : LG === '3'
+  ? `<div class="lk3">${dlogo(true)}<small>sadarbībā ar</small>${wm(22)}</div>`
+  : `<div class="lk1">${dlogo(true)}<span class="dv"></span>${wm(24)}</div>`;
+const R = {
+  '1': () => `<div class="v1 dark"><div class="w">
+    <header>${co(true)}</header>
+    <main class="g"><section>
+      <p class="eb">PROVIN Business atskaite</p>
+      <h1>Pilnīgākā auto vēstures pārbaude <span>Eiropā</span></h1>
+      <div class="car glass"><img src="auto-foto.jpg" alt=""><div class="in"><h2>${CAR.name}</h2><p class="meta">${CAR.meta}</p>${vinbox()}</div></div>
+      <div class="list">${items()}</div>
+    </section>
+    <aside class="pay glass">${prod()}<div class="hr"></div>${form()}</aside></main>
+    <p class="foot">PROVIN · rekvizīti kā esošajā /b/ lapā</p></div></div>`,
+
+  '2': () => `<div class="v2"><div class="w">
+    <header>${co(false)}</header>
+    <main class="g"><section>
+      <div class="card hero"><img src="auto-foto.jpg" alt=""><div class="in">
+        <p class="eb">Pārbaudāmais auto</p><h1>${CAR.name}</h1><p class="meta">${CAR.meta}</p>
+        <div class="vinrow"><div class="vinbox"><div class="k">VIN</div><div class="v mono">${CAR.vin}</div></div><span class="ok">${chk}Piesaistīts no sludinājuma</span></div>
+      </div></div>
+      <div class="list">${items()}</div>
+    </section>
+    <aside class="card pay"><p class="slog">Pilnīgākā auto vēstures pārbaude <span>Eiropā</span></p><div class="hr"></div>${prod()}<div class="hr"></div>${form()}</aside></main>
+    <p class="foot">PROVIN · rekvizīti kā esošajā /b/ lapā</p></div></div>`,
+
+  '3': () => `<div class="v3 dark">
+    <div class="top"><img src="auto-foto.jpg" alt="">
+      <div class="bar">${co(true)}</div>
+      <div class="hd"><h1>${CAR.name}</h1><p class="meta">${CAR.meta}</p><div class="vinp"><span class="k">VIN</span><span class="mono">${CAR.vin}</span></div></div>
+    </div>
+    <div class="w"><section>
+      <h2>Pilnīgākā auto vēstures pārbaude <span>Eiropā</span></h2>
+      <div class="rows">${ITEMS.map(([b, s]) => `<div class="row">${chk}<div><b>${b}</b><span>${s}</span></div></div>`).join('')}</div>
+    </section>
+    <aside class="pay">${prod()}<div class="hr"></div>${form()}</aside></div>
+    <p class="foot">PROVIN · rekvizīti kā esošajā /b/ lapā</p></div>`,
+
+  '4': () => `<div class="v4">
+    <div class="l dark bg${BG}">${BG === 'B' ? '<div class="blur"></div>' : ''}<div class="lin">
+      ${lockup()}
+      <p class="eb">PROVIN Business datu atskaite</p>
+      <p class="ttl">Pilna auto vēstures pārbaude dažādos avotos</p>
+      <div class="car"><img src="auto-foto.jpg" alt=""><div>
+        <h1>${CAR.name}</h1><p class="meta">${CAR.meta}</p>${vinbox()}
+      </div></div>
+      <div class="rows">${SEG.map(([b, s]) => `<div class="row">${chk}<div><b>${b}</b><span>${s}</span></div></div>`).join('')}</div>
+      <p class="fn">* Dīleru un izsoļu dati pieejami noteiktiem ražotājiem un modeļiem. Vecākiem auto dīlera datu var nebūt.</p>
+    </div></div>
+    <div class="r"><div class="rin">
+      <h3>PROVIN Business datu atskaite</h3><div class="price">69,99 €</div>
+      <p class="desc">Visi pieejamie vēstures dati par šo auto vienā atskaitē.</p>
+      <div class="aud"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg><span>Šī ir vēstures datu atskaite. Tehnisko risku izvērtējumu un konsultāciju piedāvā <a href="#">PROVIN audits</a>.</span></div>
+      <div class="hr"></div>${form()}
+      <p class="foot" style="padding-bottom:0">PROVIN · rekvizīti kā esošajā /b/ lapā</p>
+    </div></div></div>`,
+
+  '5': () => `<div class="v5 dark">
+    ${co(true, 22)}
+    <p class="tag">Pilnīgākā auto vēstures<br>pārbaude <span>Eiropā</span></p>
+    <div class="card glass"><img src="auto-foto.jpg" alt=""><div class="in">
+      <h1>${CAR.name}</h1><p class="meta">${CAR.meta}</p>${vinbox()}
+      <div class="pills">${ITEMS.slice(0, 5).map(([b]) => `<span>${b}</span>`).join('')}</div>
+      <div class="hr"></div>${prod()}${form()}
+    </div></div>
+    <p class="foot">PROVIN · rekvizīti kā esošajā /b/ lapā</p></div>`,
+};
+document.getElementById('app').innerHTML = R[V]();
+</script>
+</body>
+</html>

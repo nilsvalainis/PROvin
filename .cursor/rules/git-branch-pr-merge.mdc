@@ -19,3 +19,8 @@ Kad testi un `tsc` ir zaļi:
 Ja mainīts `relay/` vai `provin-listings`: atskaites **beigās** raksti tieši `VAJAG RELEJA DEPLOY` (to izdara Grok Bot). Citādi šo rindu NERAKSTI.
 
 Atskaitē **vienmēr**: PR nr., sapludinātais commit (squash SHA uz `main`), Vercel production statuss.
+
+## Vercel būves (19.11.2026)
+- Vercel būvē tikai `main` (production) un `pakete/*` (preview) zarus - `scripts/vercel-ignore-build.sh` (vercel.json `ignoreCommand`; exit 1 = būvē, exit 0 = izlaiž).
+- Citi zari Vercel preview nebūvē; PR pārbaude ir GitHub Actions CI (vitest + `next build`). Vercel statusa trūkums PR nav kļūda.
+- Vairākus gatavus PR apvieno `pakete/YYYY-MM-DD[-x]` zarā un sapludina vienā squash (viena production būve).

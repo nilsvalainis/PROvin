@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>PROVIN Business - makets</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#09090b;color:#f4f4f5;font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;position:relative;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;
+  background:radial-gradient(900px 500px at 78% -10%,rgba(37,99,235,.20),transparent 60%),
+  radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.2px) 0 0/14px 14px;
+  -webkit-mask-image:linear-gradient(180deg,#000 0,#000 40%,transparent 85%);mask-image:linear-gradient(180deg,#000 0,#000 40%,transparent 85%)}
+a{color:inherit}
+.wrap{position:relative;max-width:1120px;margin:0 auto;padding:0 32px}
+header{display:flex;align-items:center;justify-content:space-between;height:76px}
+.logo{font-weight:800;font-size:24px;letter-spacing:-.035em}
+.logo i{font-style:normal;color:#5c9dff}
+.via{display:flex;align-items:center;gap:10px;font-size:13px;color:#a1a1aa}
+.via b{color:#f4f4f5;font-weight:600;padding:7px 12px;border:1px solid rgba(255,255,255,.14);border-radius:999px}
+.grid{display:grid;grid-template-columns:1fr 420px;gap:40px;padding:36px 0 56px;align-items:start}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#71717a}
+h1{margin-top:14px;font-size:44px;line-height:1.08;font-weight:800;letter-spacing:-.035em}
+h1 span{color:#5c9dff}
+.lead{margin-top:14px;font-size:17px;line-height:1.55;color:#a1a1aa;max-width:520px}
+.glass{border-radius:24px;background:linear-gradient(160deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.car{margin-top:28px;display:flex;gap:18px;padding:16px;align-items:center}
+.ph{flex:none;width:168px;height:112px;border-radius:14px;background:linear-gradient(160deg,#2a2d35,#17191e);display:grid;place-items:center;font-size:11px;color:#71717a;text-align:center;border:1px solid rgba(255,255,255,.08)}
+.car h2{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.meta{margin-top:6px;font-size:14px;color:#a1a1aa}
+.vin{margin-top:12px;display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#d4d4d8;padding:7px 11px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.10)}
+.vin code{font-family:ui-monospace,Menlo,monospace;letter-spacing:.06em;color:#fff}
+.vin svg{width:14px;height:14px;color:#5c9dff}
+.inc{margin-top:28px}
+.inc h3{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#71717a}
+.list{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.it{display:flex;gap:12px;padding:14px 16px;border-radius:16px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08)}
+.it svg{flex:none;width:18px;height:18px;margin-top:1px;color:#5c9dff}
+.it b{display:block;font-size:14px;font-weight:600}
+.it span{display:block;margin-top:3px;font-size:13px;line-height:1.4;color:#a1a1aa}
+.facts{margin-top:22px;display:flex;gap:26px;font-size:13px;color:#a1a1aa}
+.facts b{display:block;font-size:20px;color:#fff;font-weight:700;letter-spacing:-.02em}
+.pay{padding:26px;position:sticky;top:24px}
+.prod{display:flex;justify-content:space-between;align-items:baseline}
+.prod p{font-size:15px;font-weight:600}
+.prod small{display:block;margin-top:4px;font-size:13px;font-weight:400;color:#a1a1aa}
+.price{font-size:32px;font-weight:800;letter-spacing:-.03em}
+.sep{height:1px;background:rgba(255,255,255,.10);margin:20px 0}
+label{display:block;margin-top:14px}
+label>span{font-size:13px;font-weight:600;color:#d4d4d8}
+label>span em{font-style:normal;font-weight:400;color:#71717a}
+input[type=email],input[type=tel],input[type=text]{margin-top:7px;width:100%;height:48px;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.35);color:#fff;font:inherit;font-size:16px;padding:0 14px;outline:none}
+input:focus{border-color:#5c9dff}
+input::placeholder{color:#52525b}
+details{margin-top:16px;border-top:1px solid rgba(255,255,255,.08);padding-top:14px}
+summary{cursor:pointer;font-size:13px;font-weight:600;color:#d4d4d8;list-style:none;display:flex;justify-content:space-between}
+summary::after{content:"+";color:#71717a}
+details[open] summary::after{content:"-"}
+.cons{margin-top:18px;display:flex;gap:10px;font-size:12px;line-height:1.5;color:#a1a1aa}
+.cons input{margin-top:2px;width:16px;height:16px;flex:none;accent-color:#2563eb}
+.cons a{color:#d4d4d8}
+.btn{margin-top:20px;width:100%;height:56px;border:0;border-radius:14px;background:#2563eb;color:#fff;font:inherit;font-size:17px;font-weight:700;cursor:pointer}
+.btn:hover{background:#1d4ed8}
+.secure{margin-top:12px;display:flex;justify-content:center;align-items:center;gap:6px;font-size:12px;color:#71717a}
+.secure svg{width:13px;height:13px}
+.note{margin-top:18px;font-size:12px;line-height:1.5;color:#71717a;text-align:center}
+footer{position:relative;border-top:1px solid rgba(255,255,255,.08);padding:22px 0 36px;font-size:11px;color:#52525b;text-align:center;line-height:1.6}
+/* slēgtā lapa */
+.closed{min-height:calc(100vh - 76px - 90px);display:grid;place-items:center;text-align:center;padding:40px 0}
+.closed .glass{max-width:460px;padding:40px 36px}
+.lock{width:52px;height:52px;margin:0 auto;border-radius:16px;display:grid;place-items:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.lock svg{width:22px;height:22px;color:#d4d4d8}
+.closed h1{font-size:28px;margin-top:22px}
+.closed p{margin-top:12px;font-size:15px;line-height:1.6;color:#a1a1aa}
+.ghost{display:inline-flex;margin-top:24px;height:46px;align-items:center;padding:0 20px;border-radius:999px;border:1px solid rgba(255,255,255,.2);font-size:14px;font-weight:600;text-decoration:none}
+.st-closed .open-only,.st-open .closed-only{display:none}
+@media (max-width:860px){
+  .wrap{padding:0 18px}
+  header{height:64px}.logo{font-size:21px}
+  .via{font-size:12px}.via b{padding:6px 10px}
+  .grid{grid-template-columns:1fr;gap:22px;padding:14px 0 36px}
+  h1{font-size:30px}.lead{font-size:15px}
+  .car{gap:14px;padding:12px}.ph{width:112px;height:84px}
+  .car h2{font-size:16px}.meta{font-size:13px}
+  .vin{font-size:12px}
+  .list{grid-template-columns:1fr}
+  .pay{position:static;padding:20px}
+  .m-first{order:-1}
+  .facts{gap:18px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">PRO<i>VIN</i></div>
+    <div class="via"><span class="open-only">Piedāvā</span><b class="open-only">Pērc un brauc</b></div>
+  </header>
+
+  <!-- ATVĒRTĀ LAPA (no partnera pogas) -->
+  <main class="grid open-only">
+    <section>
+      <p class="eyebrow">PROVIN Business atskaite</p>
+      <h1>Pilnīgākā auto vēstures pārbaude <span>Eiropā</span></h1>
+      <p class="lead">Visas datubāzes vienā atskaitē. Pārbaudām šo auto pirms pirkuma, lai Jūs zinātu tā patieso vēsturi.</p>
+
+      <div class="car glass">
+        <div class="ph">Foto no<br>sludinājuma</div>
+        <div>
+          <h2>Volkswagen Passat Variant 2.0 TDI</h2>
+          <p class="meta">2019 · 148 200 km · dīzelis · automāts</p>
+          <div class="vin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span>VIN</span><code>WVW•••••••••4821</code></div>
+        </div>
+      </div>
+
+      <div class="inc">
+        <h3>Kas ir atskaitē</h3>
+        <div class="list">
+          <div class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><div><b>Dīlera servisa vēsture</b><span>Apkopes un remonti no oficiālās sistēmas</span></div></div>
+          <div class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><div><b>Nobraukuma pārbaude</b><span>Rādījumi no vairākiem avotiem pa gadiem</span></div></div>
+          <div class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><div><b>carVertical un AutoDNA</b><span>Abu datubāzu dati vienuviet</span></div></div>
+          <div class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><div><b>Negadījumi un bojājumi</b><span>Zināmie gadījumi un izsoļu foto arhīvs</span></div></div>
+          <div class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><div><b>Reģistri</b><span>CSDD un Eiropas valstu reģistru dati</span></div></div>
+          <div class="it"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><div><b>Viena skaidra atskaite</b><span>PDF uz e-pastu, viss vienā vietā</span></div></div>
+        </div>
+        <div class="facts">
+          <div><b>12-24 h</b>atskaite e-pastā</div>
+          <div><b>5,0</b>Google vērtējums</div>
+          <div><b>ES</b>datubāzes vienuviet</div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="pay glass m-first">
+      <div class="prod">
+        <p>PROVIN Business<small>Atskaite šim auto</small></p>
+        <div class="price">69,99 €</div>
+      </div>
+      <div class="sep"></div>
+      <label><span>E-pasts</span><input type="email" placeholder="epasts@piemers.lv" autocomplete="email"></label>
+      <label><span>Tālrunis <em>(neobligāti)</em></span><input type="tel" placeholder="+371" autocomplete="tel"></label>
+      <details>
+        <summary>Rēķins uzņēmumam</summary>
+        <label><span>Uzņēmums</span><input type="text"></label>
+        <label><span>Reģ. nr.</span><input type="text"></label>
+        <label><span>Juridiskā adrese</span><input type="text"></label>
+      </details>
+      <label class="cons"><input type="checkbox"><span>Piekrītu <a href="#">Lietošanas noteikumiem</a> un <a href="#">Privātuma politikai</a>, pilnvaroju PROVIN iegūt auto datus un piekrītu tūlītējai izpildei.</span></label>
+      <button class="btn" type="button">Maksāt 69,99 €</button>
+      <p class="secure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Droša apmaksa ar Stripe</p>
+      <p class="note">Saite ir piesaistīta šim auto un derīga 30 minūtes.</p>
+    </aside>
+  </main>
+
+  <!-- SLĒGTĀ LAPA (atver tieši, bez partnera pogas) -->
+  <main class="closed closed-only">
+    <div class="glass">
+      <div class="lock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+      <h1>Saite nav pieejama</h1>
+      <p>Šī lapa atveras tikai no PROVIN partnera auto sludinājuma. Atveriet auto sludinājumu partnera vietnē un spiediet PROVIN pogu vēlreiz.</p>
+      <a class="ghost" href="#">Uz provin.lv</a>
+    </div>
+  </main>
+</div>
+<footer>PROVIN · uzņēmuma rekvizīti kā esošajā /b/ lapā</footer>
+<script>
+document.body.className = new URLSearchParams(location.search).get('s') === 'slegta' ? 'st-closed' : 'st-open';
+</script>
+</body>
+</html>

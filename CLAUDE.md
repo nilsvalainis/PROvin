@@ -38,6 +38,7 @@ Katrs Claude aģents pirms jebkura uzdevuma izlasa un stingri ievēro `docs/resu
 - Testi pārbauda uzvedību, nevis avota tekstu (`.cursor/rules/tests-behavior-first.mdc`).
 - Atskaitē vienmēr: PR nr., squash commit uz `main`, Vercel production statuss, kas nav pārbaudīts.
 - Ja mainīts `relay/` vai `provin-listings`: atskaites beigās raksti `VAJAG RELEJA DEPLOY`.
+- **Vercel būvē TIKAI `main` un `pakete/*` zarus** (`scripts/vercel-ignore-build.sh`, 19.11.2026). Aģentu `feat/`, `fix/`, `chore/`, `docs/`, `backup/` u.c. zari Vercel preview nebūvē - PR pārbaude ir GitHub Actions CI (vitest + `next build`). Vairākus PR apvieno vienā `pakete/YYYY-MM-DD[-x]` zarā; tikai tam ir Vercel preview, un tieši to sapludina uz `main` (viena production būve). `main` commits, kas maina tikai `docs/` vai `*.md`, arī nebūvē.
 
 ## Komanda
 
