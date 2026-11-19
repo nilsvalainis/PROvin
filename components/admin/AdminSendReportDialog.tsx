@@ -25,6 +25,16 @@ const RECIPIENT_ROLE_LV: Record<SendReportRecipientRole, string> = { client: "Kl
 
 const LANG_LV: Record<ClientReportLang, string> = { lv: "Latviešu", en: "Angļu", ru: "Krievu", de: "Vācu" };
 
+/**
+ * Valodas atskaitei un e-pastam: dīlera dati un B2B - LV/EN/RU/DE; AUDITS un BUSINESS - LV/EN/RU (Nils 19.11);
+ * ASV vēsture - tikai LV.
+ */
+export function sendReportLangOptions(kind: SendReportKind, b2b: boolean): ClientReportLang[] {
+  if (kind === "dealer" || b2b) return CLIENT_REPORT_LANGS;
+  if (kind === "audits" || kind === "business") return ["lv", "en", "ru"];
+  return ["lv"];
+}
+
 const SECONDARY_BTN =
   "rounded-lg border border-[var(--admin-border-subtle)] px-3 py-2 text-[13px] font-semibold text-[var(--color-apple-text)] hover:bg-black/[0.04] dark:hover:bg-white/[0.06] disabled:opacity-50";
 
@@ -40,7 +50,7 @@ export type SendReportResult = {
 /**
  * "Sūtīt atskaiti" (2. posms, Nils 17.11): veids, valoda, pielikumu ķekši -> PDF serverī -> "Skatīt PDF" -> sūtīt.
  * Pēc sūtīšanas: versija, Dropbox, "Izpildīts" ar 30 s "Atsaukt", WhatsApp ziņa.
- * Valodas izvēle tikai dīlera datiem un B2B (G2); Google atsauksme noklusējumā izslēgta (G6).
+ * Valodas izvēle dīlera datiem, B2B (G2), AUDITS un BUSINESS (19.11); Google atsauksme noklusējumā izslēgta (G6).
  */
 export function AdminSendReportDialog({
   open,
@@ -123,8 +133,9 @@ export function AdminSendReportDialog({
 
   if (!open) return null;
 
-  const langSelectable = kind === "dealer" || b2b;
-  const effLang: ClientReportLang = langSelectable ? lang : "lv";
+  const langOptions = sendReportLangOptions(kind, b2b);
+  const langSelectable = langOptions.length > 1;
+  const effLang: ClientReportLang = langOptions.includes(lang) ? lang : "lv";
   const busy = phase === "preparing" || phase === "sending";
   // Izvēle mainīta pēc PDF sagatavošanas: PDF jāveido no jauna.
   const reset = () => {
@@ -273,14 +284,14 @@ export function AdminSendReportDialog({
                   <span className={label}>Valoda (atskaite un e-pasts)</span>
                   <select
                     className="mt-1.5 block w-full rounded-lg border border-[var(--admin-border-subtle)] bg-transparent px-2.5 py-2 text-[13px] text-[var(--color-apple-text)]"
-                    value={lang}
+                    value={effLang}
                     disabled={busy}
                     onChange={(e) => {
                       setLang(e.target.value as ClientReportLang);
                       reset();
                     }}
                   >
-                    {CLIENT_REPORT_LANGS.map((l) => (
+                    {langOptions.map((l) => (
                       <option key={l} value={l}>
                         {LANG_LV[l]}
                       </option>

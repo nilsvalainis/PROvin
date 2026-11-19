@@ -111,3 +111,18 @@ describe("applyClientReportStaticTranslations", () => {
     expect(out).toContain("Vēl nav datu");
   });
 });
+
+describe("PASŪTĪJUMA DATI bloks (AUDITS EN/RU, Nils 19.11)", () => {
+  it("«Summa» un «Klients» tiek tulkoti, citi vārdi netiek aizskarti", () => {
+    const html = '<html lang="lv"><body><p>Klients</p><td>Summa</td><p>Klientsx Summas</p></body></html>';
+    const en = applyClientReportStaticTranslations(html, "en");
+    expect(en).toContain("<p>Client</p>");
+    expect(en).toContain("<td>Amount</td>");
+    expect(en).toContain("Klientsx Summas");
+    const ru = applyClientReportStaticTranslations(html, "ru");
+    expect(ru).toContain("<p>Клиент</p>");
+    expect(ru).toContain("<td>Сумма</td>");
+    expect(CLIENT_REPORT_DE.Summa).toBe("Betrag");
+    expect(CLIENT_REPORT_DE.Klients).toBe("Kunde");
+  });
+});
