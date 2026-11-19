@@ -94,6 +94,8 @@ export type TotalLossSourceInput = {
     comments?: string;
     /** Reģistru bloki (MNT EE, Traficom, …): strukturēts statusu teksts. */
     statusRecords?: string;
+    /** AutoDNA / CarVertical iekopētais RAW (kartīti neieslēdz). */
+    sourceRaw?: string;
     incidentRows?: Array<{ csngDate?: string; lossAmount?: string; incidentNo?: string }>;
     vehicleHistoryTimeline?: Array<{ date?: string; description?: string; country?: string }>;
   }> | null;
@@ -110,6 +112,19 @@ export type TotalLossSourceInput = {
   asvBlock?: {
     comments?: string;
     damages?: Array<{ date?: string; description?: string; region?: string }>;
+  } | null;
+  /**
+   * „Citi avoti” (piem. CARFAX PDF, ko ielasa kā nezināmu avotu). Kartīti NEIESLĒDZ;
+   * izmanto tikai, lai komentāra brīdinājums nesauktu avota faktu par „nav avotu datos”.
+   */
+  citiAvoti?: {
+    sections?: Array<{
+      label?: string;
+      incidents?: Array<{ csngDate?: string; lossAmount?: string; incidentNo?: string }>;
+      vehicleHistoryTimeline?: Array<{ date?: string; description?: string; country?: string }>;
+      damageDetails?: Array<{ date?: string; damageGroups?: string; damagedSides?: string }>;
+      rawUnprocessedData?: string;
+    }>;
   } | null;
 };
 
@@ -220,6 +235,43 @@ export function textIndicatesTotalLoss(text: string): boolean {
  */
 export function detectTotalLossFromPdfInput(input: TotalLossSourceInput): TotalLossHit {
   return matchTotalLoss(structuredLines(input).join("\n")) ?? { found: false, evidence: "" };
+}
+
+/**
+ * Avota dati, kas nav kartītes strukturētie lauki: „Citi avoti” rindas un ielasītā PDF teksts
+ * (CARFAX u.c.), AutoDNA / CarVertical RAW. Tikai komentāra brīdinājumam (c8_total_loss_comment).
+ */
+function sourceEvidenceLines(input: TotalLossSourceInput): string[] {
+  const lines: string[] = [];
+  const row = (...cells: Array<string | undefined>) => {
+    const joined = cells
+      .map((c) => (c ?? "").replace(/\s+/g, " ").trim())
+      .filter(Boolean)
+      .join(" ");
+    if (joined) lines.push(joined);
+  };
+  const raw = (text: string | undefined) => {
+    for (const line of (text ?? "").replace(/\r\n?/g, "\n").split(/\n+/)) row(line);
+  };
+  for (const s of input.citiAvoti?.sections ?? []) {
+    for (const r of s.incidents ?? []) row(r.csngDate, r.lossAmount, r.incidentNo);
+    for (const t of s.vehicleHistoryTimeline ?? []) row(t.date, t.description, t.country);
+    for (const d of s.damageDetails ?? []) row(d.date, d.damageGroups, d.damagedSides);
+    raw(s.rawUnprocessedData);
+  }
+  for (const b of input.manualVendorBlocks ?? []) raw(b.sourceRaw);
+  return lines;
+}
+
+/**
+ * Pilnīgs zaudējums kādā šī pasūtījuma avotā (strukturētie lauki + „Citi avoti” + ielasītā PDF
+ * teksts). Kartītei lieto `detectTotalLossFromPdfInput`; šo - lai komentāru brīdinājums nebūtu
+ * viltus trauksme, ja fakts ir avota PDF (piem. CARFAX), bet nav strukturētā rindā.
+ */
+export function detectTotalLossInSourceEvidence(input: TotalLossSourceInput): TotalLossHit {
+  const structured = detectTotalLossFromPdfInput(input);
+  if (structured.found) return structured;
+  return matchTotalLoss(sourceEvidenceLines(input).join("\n")) ?? { found: false, evidence: "" };
 }
 
 /** Plain teksts bez zināmajiem sagatavju teikumiem (CC VIN izsoļu pārbaude, LTAB, CSDD, …). */

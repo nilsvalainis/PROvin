@@ -208,4 +208,87 @@ describe("listing km as note segment", () => {
     const mileage = tiles.find((t) => t.id === "mileage");
     expect(mileage?.noteSegments?.some((s) => /sludinājumā/.test(s) && /181/.test(s))).toBe(true);
   });
+
+  // 18.11 (YV1CZ): kopsavilkuma kartītes labojums (summary:incidents) - pārbaude skatās drukāto kartīti.
+  describe("summary:incidents override", () => {
+    const lossInput = {
+      manualVendorBlocks: [
+        {
+          title: SOURCE_BLOCK_LABELS.carvertical,
+          mileageRows: [],
+          incidentRows: [{ incidentNo: "", csngDate: "01.06.2019", lossAmount: "1 200 EUR" }],
+          comments: "",
+          vehicleHistoryTimeline: [{ date: "2019", description: "Record of totaled vehicle", country: "US" }],
+        },
+      ],
+    };
+
+    it("no C8 when the operator override already names the total loss on the tile", () => {
+      const flags = checkPrePdfContradictions({
+        summaryInput: lossInput,
+        manualBanners: [
+          {
+            id: "kind:summary:incidents",
+            kind: "summary:incidents",
+            severity: "red",
+            text: "Pilnīgs zaudējums 2019 (ASV)",
+            value: "1 negadījums",
+          },
+        ],
+      });
+      expect(flags.some((f) => f.id === "c8_total_loss")).toBe(false);
+    });
+
+    it("C8 when the override note hides the total loss from the printed tile", () => {
+      const flags = checkPrePdfContradictions({
+        summaryInput: lossInput,
+        manualBanners: [
+          {
+            id: "kind:summary:incidents",
+            kind: "summary:incidents",
+            severity: "yellow",
+            text: "Viens bojājums 2019",
+            value: "1 bojājums",
+          },
+        ],
+      });
+      expect(flags.some((f) => f.id === "c8_total_loss")).toBe(true);
+    });
+
+    it("C8 without override still uses the computed tile", () => {
+      const flags = checkPrePdfContradictions({ summaryInput: lossInput });
+      expect(flags.some((f) => f.id === "c8_total_loss")).toBe(false);
+      const tile = buildPdfReportSummaryTiles(lossInput).find((t) => t.id === "incidents");
+      expect(tile?.note).toMatch(/Pilnīgs zaudējums/);
+    });
+
+    it("no C9 when the owners tile override replaced „Nav ierakstu”", () => {
+      const summaryInput = {
+        manualVendorBlocks: [
+          {
+            title: SOURCE_BLOCK_LABELS.carvertical,
+            mileageRows: [],
+            incidentRows: [],
+            comments: "",
+            vehicleHistoryTimeline: [
+              { date: "2018", description: "Ownership change", country: "DE" },
+              { date: "2021", description: "Ownership change", country: "LV" },
+            ],
+          },
+        ],
+      };
+      const withoutOverride = checkPrePdfContradictions({
+        summaryInput,
+        tiles: [{ id: "owners", label: "Īpašnieku skaits", value: "Nav ierakstu", note: "", tone: "neutral" }],
+      });
+      const withOverride = checkPrePdfContradictions({
+        summaryInput,
+        manualBanners: [
+          { id: "kind:summary:owners", kind: "summary:owners", severity: "grey", text: "", value: "3 īpašnieki" },
+        ],
+      });
+      expect(withoutOverride.some((f) => f.id === "c9_owners_empty")).toBe(true);
+      expect(withOverride.some((f) => f.id === "c9_owners_empty")).toBe(false);
+    });
+  });
 });

@@ -3703,6 +3703,8 @@ export function OrderDetailWorkspace({
           odometerAnomalyOverrides,
         },
         overrides: odometerAnomalyOverrides,
+        manualBanners: opts?.dealerOnly ? [] : manualBannersRef.current,
+        pdfBannerInclude: opts?.dealerOnly ? {} : pdfBannerIncludeRef.current,
         clientTextFields: collectPrePdfClientTextFields({
           tehniskoRiskuAnalize: cur.tehniskoRiskuAnalize,
           iriss: cur.iriss,
