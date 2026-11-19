@@ -192,3 +192,34 @@ describe("Lielie mezgli kopsavilkuma šūna", () => {
     expect(html.match(/Negadījuma \/ virsbūves remonts/g)?.length).toBe(1);
   });
 });
+
+describe("Saplūdusi vizīte: mezgla nomaiņa + tā eļļa", () => {
+  it.each([
+    ["DE", "Getriebe getauscht\nGetriebeöl erneuert"],
+    ["DE vienā rindā", "Getriebe getauscht Getriebeöl erneuert"],
+    ["EN", "Gearbox replaced. Gearbox oil refilled"],
+    ["EN vienā rindā", "Gearbox replaced gearbox oil"],
+    ["EN replacement of", "Replacement of automatic transmission, ATF filled"],
+    ["RU", "Коробка передач заменена, масло залито"],
+    ["RU замена коробки", "Замена коробки передач и масла"],
+    ["LV", "Ātrumkārbas nomaiņa, ātrumkārbas eļļa"],
+  ])("ātrumkārbas maiņa tiek atpazīta: %s", (_l, works) => {
+    expect(isMajorAssemblyRepairWork(works, "gearbox")).toBe(true);
+    expect(isRoutineMaintenanceWork(works)).toBe(false);
+  });
+
+  it.each([
+    ["DE Getriebeöl", "Getriebeöl erneuert"],
+    ["DE Ölwechsel Getriebe", "Ölwechsel Getriebe"],
+    ["EN gearbox oil", "Gearbox oil replaced"],
+    ["EN gearbox oil change", "Gearbox oil and filter change"],
+    ["EN ATF", "ATF change automatic transmission"],
+    ["EN fluid", "Transmission fluid replaced"],
+    ["RU масло АКПП", "Замена масла АКПП"],
+    ["RU масло в коробке", "Замена масла в коробке передач"],
+    ["LV eļļa", "Ātrumkārbas eļļas maiņa"],
+  ])("tikai eļļas maiņa paliek rutīna: %s", (_l, works) => {
+    expect(isMajorAssemblyRepairWork(works, "gearbox")).toBe(false);
+    expect(hasAnyMajorAssemblyRepair(works)).toBe(false);
+  });
+});

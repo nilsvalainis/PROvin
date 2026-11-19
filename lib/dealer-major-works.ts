@@ -167,7 +167,7 @@ const OVERHAUL_RE =
   /overhaul|rebuild|rebuilt|instandgesetz|instandsetz|uberholt|generaluberhol|kapitalais\s+remont|капитальн\p{L}*\s+ремонт|переборк|recondition/u;
 
 const UNIT_REPAIR_VERB_RE =
-  /replac\p{L}*|\brep\.|exchang\p{L}*|swapp\p{L}*|getauscht|erneuert|ausgetauscht|austausch|nomain|wechsel|zamena|замена|\bchange\b|maina|\bremont|ремонт|repaired|reparatur|repariert|erneuerung|tausch(?:en|te)?|ersetzt|vervangen|bytt|parkras|lackier|remplac\p{L}*|sostituit\p{L}*|sostituz\p{L}*|reemplaz\p{L}*|sustitu\p{L}*|cambiato/u;
+  /replac\p{L}*|\brep\.|exchang\p{L}*|swapp\p{L}*|getauscht|erneuert|ausgetauscht|austausch|nomain|wechsel|zamena|замена|заменен\p{L}*|\bchange\b|maina|\bremont|ремонт|repaired|reparatur|repariert|erneuerung|tausch(?:en|te)?|ersetzt|vervangen|bytt|parkras|lackier|remplac\p{L}*|sostituit\p{L}*|sostituz\p{L}*|reemplaz\p{L}*|sustitu\p{L}*|cambiato/u;
 
 const CAMPAIGN_CLAUSE_RE =
   /\bqb\b|acc(?:ording)?\.?\s*to:?\s*qb|nach\s+qb|technische\s+aktion|safety\s+recall|\brecalls?\b|ruckruf|service\s+action|field\s+fix|\btsb\b|\bsib\b/u;
@@ -512,6 +512,69 @@ export function hasAnyMajorAssemblyRepair(works: string): boolean {
   return MAJOR_ASSEMBLY_SPECS.some((spec) => isMajorAssemblyRepairWork(works, spec.id));
 }
 
+const PHRASE_BOUNDARY = "|";
+
+function isConsumableToken(token: string): boolean {
+  return token !== PHRASE_BOUNDARY && hasConsumableSignal(token);
+}
+
+const EXTRA_VERB_TOKEN_RE = /^(?:замен\p{L}*|заменен\p{L}*|nomain\p{L}*)$/u;
+
+function isRepairVerbToken(token: string): boolean {
+  if (token === PHRASE_BOUNDARY) return false;
+  UNIT_REPAIR_VERB_RE.lastIndex = 0;
+  return UNIT_REPAIR_VERB_RE.test(token) || EXTRA_VERB_TOKEN_RE.test(token) || isOverhaul(token);
+}
+
+/** Pēcpozīcijas divdabis („getauscht”, „replaced”, „заменена”) - attiecas uz iepriekšējo mezglu. */
+const PARTICIPLE_TOKEN_RE = /(?:ed|(?<!men)t|ен[аоы]?|ён)$/u;
+
+function phraseTokens(folded: string): string[] {
+  return folded
+    .replace(/[,;:()]+/gu, ` ${PHRASE_BOUNDARY} `)
+    .split(/\s+/u)
+    .filter(Boolean);
+}
+
+/**
+ * Saplūdušā tekstā (piem. „Getriebe getauscht Getriebeöl erneuert”) eļļas vārds nedrīkst
+ * bloķēt skaidru mezgla nomaiņas frāzi. Frāze = mezgls + ≤2 vārdi + darbības vārds (vai otrādi),
+ * starpā nav eļļas/filtra/šķidruma vārda vai pieturzīmes; darbības vārds-lietvārds
+ * („замена”, „replacement”), kam seko eļļa, attiecas uz eļļu, ne mezglu.
+ */
+function hasExplicitUnitReplacePhrase(folded: string, assembly: DealerMajorAssemblyId): boolean {
+  const tokens = phraseTokens(folded);
+  const at = (k: number) => (k >= 0 && k < tokens.length ? tokens[k]! : PHRASE_BOUNDARY);
+  for (let i = 0; i < tokens.length; i++) {
+    for (let len = 1; len <= 2 && i + len <= tokens.length; len++) {
+      const parts = tokens.slice(i, i + len);
+      if (parts.includes(PHRASE_BOUNDARY)) continue;
+      const window = parts.join(" ");
+      if (isConsumableToken(window) || !mentionsAssembly(window, assembly)) continue;
+      // Uz priekšu: „Getriebe getauscht”, „коробка передач заменена”.
+      for (let j = i + len; j < Math.min(tokens.length, i + len + 3); j++) {
+        const t = at(j);
+        if (t === PHRASE_BOUNDARY || isConsumableToken(t)) break;
+        if (isRepairVerbToken(t)) {
+          if (isConsumableToken(at(j + 1)) && !PARTICIPLE_TOKEN_RE.test(t)) break;
+          return true;
+        }
+      }
+      // Atpakaļ: „Замена коробки”, „replacement of gearbox”; mezglam nedrīkst sekot eļļas vārds.
+      if (isConsumableToken(at(i + len))) continue;
+      for (let j = i - 1; j >= Math.max(0, i - 3); j--) {
+        const t = at(j);
+        if (t === PHRASE_BOUNDARY || isConsumableToken(t)) break;
+        if (isRepairVerbToken(t)) {
+          if (isConsumableToken(at(j - 1))) break;
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 function clauseIsUnitRepairOf(foldedClause: string, assembly: DealerMajorAssemblyId): boolean {
   if (isCampaignClause(foldedClause)) return false;
   if (isSoftwareClause(foldedClause)) return false;
@@ -528,7 +591,7 @@ function clauseIsUnitRepairOf(foldedClause: string, assembly: DealerMajorAssembl
   if (!mentionsAssembly(foldedClause, assembly)) return false;
   if (isUnitReplacementSignal(foldedClause, assembly)) return true;
   if (!hasUnitRepairVerb(foldedClause)) return false;
-  if (hasConsumableSignal(foldedClause)) return false;
+  if (hasConsumableSignal(foldedClause)) return hasExplicitUnitReplacePhrase(foldedClause, assembly);
   return true;
 }
 
