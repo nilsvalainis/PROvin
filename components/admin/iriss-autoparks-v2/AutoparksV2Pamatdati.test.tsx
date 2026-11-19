@@ -28,6 +28,7 @@ const basics: AutoparksV2Basics = {
   engine: { value: "", csdd: false },
   registry: { status: "none", actNo: "", actDate: "", known: false },
   hasPhoto: false,
+  extras: { keysCount: null, ownersCount: null, secondWheels: "", inspectionUntil: "" },
 } as AutoparksV2Basics;
 
 describe("Autoparks v2 Pamatdati - Atrašanās vieta j62", () => {
@@ -44,5 +45,30 @@ describe("Autoparks v2 Pamatdati - Atrašanās vieta j62", () => {
     expect(text).not.toContain("CSDD reģistrs");
     expect(text).not.toContain("Akta datums");
     expect(text).toContain("Tehniskie dati");
+  });
+});
+
+describe("Autoparks v2 Pamatdati - lauki no izsoles (IRISS 18.11)", () => {
+  it("tukši lauki - «+ Pievienot» ar nosaukumiem", () => {
+    const text = renderText(<AutoparksV2Pamatdati basics={basics} onBasics={() => undefined} />);
+    for (const label of ["Īpašnieku skaits", "Atslēgas", "TA/HU līdz", "Otrs disku komplekts"]) expect(text).toContain(label);
+  });
+
+  it("aizpildītas vērtības redzamas", () => {
+    const text = renderText(
+      <AutoparksV2Pamatdati
+        basics={{ ...basics, extras: { keysCount: 2, ownersCount: 3, secondWheels: "Ziemas 17 uz diskiem", inspectionUntil: "04.2028" } }}
+        onBasics={() => undefined}
+      />,
+    );
+    expect(text).toMatch(/Īpašnieku skaits\s*3/);
+    expect(text).toMatch(/Atslēgas\s*2/);
+    expect(text).toMatch(/TA\/HU līdz\s*04\.2028/);
+    expect(text).toMatch(/Otrs disku komplekts\s*Ziemas 17 uz diskiem/);
+  });
+
+  it("cenas Pamatdatos nav", () => {
+    const text = renderText(<AutoparksV2Pamatdati basics={basics} onBasics={() => undefined} />);
+    expect(text).not.toMatch(/cena|€/i);
   });
 });

@@ -24,6 +24,7 @@ import {
   type CabinetSectionId,
 } from "@/lib/iriss-logistics-cabinet";
 import type { CabinetAccessView } from "@/lib/iriss-logistics-cabinet-access";
+import { cabinetPickupCodeValue, parseCabinetLoad } from "@/lib/iriss-logistics-cabinet-load";
 import { isLogisticsOrderArchived } from "@/lib/iriss-logistics-archive";
 import { logisticsGoogleMapsDirUrl } from "@/lib/iriss-logistics-maps-dir";
 import { logisticsParkingDeadlineTimer } from "@/lib/iriss-logistics-parking-timer";
@@ -129,10 +130,12 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
     sections: [],
   });
   const [accessReady, setAccessReady] = useState(false);
+  /** Kabineta dati (tiesības, dokumenti) neielādējās - lauki paliek bloķēti, bet ar kļūdu un «Mēģināt vēlreiz». */
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   useEffect(() => {
-    setPickupCode(order.pickupRef);
     setNote(order.notes);
     setParkingUntil(order.freeParkingUntil);
     setPickupDate(order.pickupDate);
@@ -140,7 +143,6 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
     setPickupAddress(order.pickupAddress || formatLogisticsAddress(order.pickupSnapshot ?? {}));
   }, [
     order.id,
-    order.pickupRef,
     order.notes,
     order.freeParkingUntil,
     order.pickupDate,
@@ -148,6 +150,12 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
     order.pickupAddress,
     order.pickupSnapshot,
   ]);
+
+  // Pickup kods: pasūtījuma `pickupRef`, ja tukšs - kabineta pickup ieraksta kods (tas pats, ko rāda Autoparka «Ceļā»).
+  const pickupCodeSource = cabinetPickupCodeValue(order.pickupRef, pickup);
+  useEffect(() => {
+    setPickupCode(pickupCodeSource);
+  }, [order.id, pickupCodeSource]);
 
   // Atsevišķi no citu lauku sinhronizācijas: citādi saglabāšana (kas pati maina order.pickupAddress) uzreiz nodzēstu tikko uzrādīto ģeokodēšanas kļūdu.
   useEffect(() => {
@@ -200,20 +208,27 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
 
   useEffect(() => {
     let cancelled = false;
+    setLoadFailed(false);
+    setPickup(null);
     void fetch(`/api/admin/iriss-logistics/orders/${encodeURIComponent(order.id)}/cabinet`, { credentials: "include" })
-      .then((res) => res.json() as Promise<{ documents?: CabinetDocument[]; pickup?: CabinetPickup; access?: CabinetAccessView }>)
-      .then((body) => {
+      .then(async (res) => parseCabinetLoad(res.ok, await res.json().catch(() => null)))
+      .catch(() => parseCabinetLoad(false, null))
+      .then((loaded) => {
         if (cancelled) return;
-        setDocuments(body.documents ?? []);
-        setPickup(body.pickup ?? null);
-        if (body.access) setAccess(body.access);
+        if (!loaded.ok) {
+          setLoadFailed(true);
+          return;
+        }
+        setDocuments(loaded.documents);
+        setPickup(loaded.pickup);
+        setAccess(loaded.access);
         setAccessReady(true);
-      })
-      .catch(() => undefined);
+      });
     return () => {
       cancelled = true;
     };
-  }, [order.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pārlādē tikai cits auto vai «Mēģināt vēlreiz»
+  }, [order.id, loadAttempt]);
 
   const toggleDocs = useCallback(() => {
     const phase = cabinetPhaseForStage(stage);
@@ -391,6 +406,15 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
         <IrissSaitesPanel from="logistics" id={order.id} vehicle={order.title || `${order.make} ${order.model}`} />
       </div>
 
+      {loadFailed ? (
+        <p role="alert" className="mt-3 rounded-xl border border-[var(--iriss-line)] px-3 py-2 text-[12.5px] text-[var(--iriss-danger,#b42318)]">
+          Kabinetu neizdevās ielādēt - lauki bloķēti.{" "}
+          <button type="button" className="font-semibold underline" onClick={() => setLoadAttempt((n) => n + 1)}>
+            Mēģināt vēlreiz
+          </button>
+        </p>
+      ) : null}
+
       <p className="mt-3 rounded-xl bg-[var(--iriss-surface-2)] px-3 py-2 text-[13px]">
         {order.createdAt ? `Nopirkts ${formatLogisticsDate(order.createdAt.slice(0, 10))}` : LOGISTICS_ORDER_STATUS_LV[order.status]}
         {!access.hideSums && order.priceEur != null ? ` · apmaksāts ${formatLogisticsEur(order.priceEur)}` : ""}
@@ -436,7 +460,7 @@ export function IrissLogistikaCabinet({ order, groupedPoints, onAssignPoint, onP
             disabled={!access.write}
             onChange={(e) => setPickupCode(e.target.value)}
             onBlur={() => {
-              if (!access.write || pickupCode.trim() === (order.pickupRef || "").trim()) return;
+              if (!access.write || pickupCode.trim() === pickupCodeSource) return;
               void savePickupCode(pickupCode.trim());
             }}
             className="mt-1 h-10 w-full rounded-xl border border-[var(--iriss-line)] px-2 font-mono text-[13px]"

@@ -29,6 +29,7 @@ const basics: AutoparksV2Basics = {
   engine: { value: "", csdd: false },
   registry: { status: "accepted", actNo: "A-100", actDate: "2026-10-22", known: true },
   hasPhoto: false,
+  extras: { keysCount: null, ownersCount: null, secondWheels: "", inspectionUntil: "" },
 };
 
 describe("Autoparks v2 CSDD reģistrs (m03)", () => {
