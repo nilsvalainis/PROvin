@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   detectTotalLossFromPdfInput,
+  detectTotalLossInSourceEvidence,
   findTotalLossCommentMentions,
   headerMentionsTotalLoss,
   textIndicatesTotalLoss,
 } from "@/lib/total-loss-detect";
-import { emptyCsddFields, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
+import { emptyCitiAvotiSection, emptyCsddFields, SOURCE_BLOCK_LABELS } from "@/lib/admin-source-blocks";
 import { buildPdfReportSummaryTiles } from "@/lib/pdf-report-summary";
 import { checkPrePdfContradictions } from "@/lib/pre-pdf-contradiction-check";
 import { emptyAsvBlock } from "@/lib/asv-report";
@@ -204,5 +205,75 @@ describe("c8_total_loss_comment (comment-only mention warning)", () => {
       },
     });
     expect(flags.some((f) => f.id === "c8_total_loss_comment")).toBe(false);
+  });
+
+  // 18.11: CARFAX PDF ielasīts „Citi avoti” sadaļā; komentārs pareizi min total loss, bet
+  // brīdinājums teica „avotu datos tas nav”. Sintētiski dati, bez klienta informācijas.
+  describe("CARFAX PDF citi avoti (c8 comment false alarm)", () => {
+    const carfaxSection = (raw: string, timeline: Array<{ date: string; description: string; country: string }> = []) => ({
+      sections: [
+        {
+          ...emptyCitiAvotiSection(),
+          label: "CARFAX",
+          rawUnprocessedData: raw,
+          vehicleHistoryTimeline: timeline,
+        },
+      ],
+    });
+    const comment = [{ label: "Kopsavilkums", text: "CARFAX atskaitē 2010. gadā fiksēts total loss." }];
+
+    it("no comment warning when CARFAX raw text has a total loss record", () => {
+      const flags = checkPrePdfContradictions({
+        summaryInput: {
+          csddForm: emptyCsddFields(),
+          citiAvoti: carfaxSection("Damage records\n03/2010 Germany Total loss reported by insurer\nOdometer 98 000 km"),
+        },
+        tiles: tileWithoutLoss,
+        clientTextFields: comment,
+      });
+      expect(flags.some((f) => f.id === "c8_total_loss_comment")).toBe(false);
+    });
+
+    it("no comment warning when the CARFAX timeline row has the total loss", () => {
+      const flags = checkPrePdfContradictions({
+        summaryInput: {
+          csddForm: emptyCsddFields(),
+          citiAvoti: carfaxSection("", [{ date: "03.2010", description: "Vehicle declared a total loss", country: "DE" }]),
+        },
+        tiles: tileWithoutLoss,
+        clientTextFields: comment,
+      });
+      expect(flags.some((f) => f.id === "c8_total_loss_comment")).toBe(false);
+    });
+
+    it("still warns when CARFAX says there is no total loss", () => {
+      const flags = checkPrePdfContradictions({
+        summaryInput: {
+          csddForm: emptyCsddFields(),
+          citiAvoti: carfaxSection("Total loss: No\nNo total loss records found"),
+        },
+        tiles: tileWithoutLoss,
+        clientTextFields: comment,
+      });
+      expect(flags.some((f) => f.id === "c8_total_loss_comment")).toBe(true);
+    });
+
+    it("still warns when no source has it", () => {
+      const flags = checkPrePdfContradictions({
+        summaryInput: { csddForm: emptyCsddFields(), citiAvoti: carfaxSection("Service record 2015 oil change") },
+        tiles: tileWithoutLoss,
+        clientTextFields: comment,
+      });
+      expect(flags.some((f) => f.id === "c8_total_loss_comment")).toBe(true);
+    });
+
+    it("CARFAX raw text does not switch the incidents tile to total loss", () => {
+      const tiles = buildPdfReportSummaryTiles({
+        csddForm: emptyCsddFields(),
+        citiAvoti: carfaxSection("03/2010 Germany Total loss reported by insurer"),
+      });
+      expect(tiles.find((t) => t.id === "incidents")?.value).not.toBe("Pilnīgs zaudējums");
+      expect(detectTotalLossInSourceEvidence({ citiAvoti: carfaxSection("03/2010 Total loss reported") }).found).toBe(true);
+    });
   });
 });
