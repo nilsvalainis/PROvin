@@ -1,8 +1,10 @@
 /**
- * Avota bloka PDF augšupielāde (AutoDNA / CarVertical) — pilnībā Copilot aģenta kontrolē.
+ * Avota bloka PDF augšupielāde (AutoDNA / CarVertical / LTAB / CC VIN u.c.) - Copilot aģents.
  *
- * Atgriež TIKAI strukturētās tabulu rindas un dīlera specifikācijas laukus; RAW / AI konteksta
- * laukus šis ceļš neaizpilda (operators tos pārvalda pats).
+ * Atgriež strukturētās tabulu rindas un dīlera specifikācijas laukus. AutoDNA / CarVertical
+ * gadījumā PDF teksts tiek ielikts arī AI konteksta laukā kā marķēts automātiskais bloks
+ * (`upsertVendorPdfAiContext`): jaunāks tā paša avota PDF nomaina tikai šo bloku, operatora un
+ * Copilot teksts paliek neskarts. RAW laukus šis ceļš neaizpilda.
  */
 import { NextResponse } from "next/server";
 
@@ -19,7 +21,7 @@ import { applyFinnikReportToBlock } from "@/lib/finnik-report-parse";
 import { applyTraficomReportToBlock } from "@/lib/traficom-report-parse";
 import { extractPdfTextDetailed } from "@/lib/pdf-text-extract-server";
 import { PDF_AI_INLINE_MAX_BYTES, PDF_MAX_FILE_BYTES } from "@/lib/pdf-api-limits";
-import { fillVendorAiContextIfEmpty } from "@/lib/vendor-ai-context-fill";
+import { upsertVendorPdfAiContext } from "@/lib/vendor-ai-context-fill";
 import type { VendorReportVendor } from "@/lib/vendor-report-extract";
 
 /** Gemini lasījums (līdz 60 s) + Sonnet rezerve, ja `VENDOR_PDF_PRIMARY=gemini`. */
@@ -288,7 +290,10 @@ export async function POST(req: Request) {
     if (target === "autodna" || target === "carvertical") {
       const extracted = await extractPdfTextDetailed(buffer, { fileName });
       const current = result.sourceBlocks[target];
-      const filled = fillVendorAiContextIfEmpty(current, extracted.text ?? "");
+      const filled = upsertVendorPdfAiContext(current, extracted.text ?? "", {
+        sourceLabel: target === "carvertical" ? "CarVertical" : "AutoDNA",
+        previousAutoTexts: [current.mileagePasteRaw],
+      });
       if (filled !== current) {
         result.sourceBlocks = { ...result.sourceBlocks, [target]: filled };
         if (!changedKeys.includes(target)) changedKeys.push(target);

@@ -4,7 +4,11 @@ import { buildCanonicalFacts, LISTING_BELOW_RECORDED_LINE_PREFIX } from "@/lib/c
 import { classifyOdometerAnomalies } from "@/lib/odometer-anomaly-classify";
 import {
   analyzeUnifiedMileageAnomalies,
+  differsBySingleDigit,
+  findSameDaySourceEntryErrors,
   isMileageCountryChange,
+  parseOdometerKm,
+  sortMileageChronological,
   singleDigitTypoFitsBetween,
   type UnifiedMileageRow,
 } from "@/lib/unified-mileage";
@@ -37,6 +41,13 @@ const row = (
   };
 };
 
+const pts = (rows: UnifiedMileageRow[]) =>
+  sortMileageChronological(rows).map((r) => ({
+    sourceOrder: r.sourceOrder,
+    km: parseOdometerKm(r.odometer)!,
+    time: r.sortableTime,
+    row: r,
+  }));
 const classes = (rows: UnifiedMileageRow[]) =>
   classifyOdometerAnomalies(rows).map((c) => `${c.class}:${c.toDate}:${c.toKm}`);
 const redRows = (rows: UnifiedMileageRow[]) => {
@@ -163,5 +174,90 @@ describe("AI faktu lapa: sludinājums nav ievades kļūda", () => {
     expect(facts.listingBelowRecorded?.map((e) => `${e.date} ${e.km}`)).toEqual(["27.09.2015 90000"]);
     expect(facts.sheet).toContain(LISTING_BELOW_RECORDED_LINE_PREFIX);
     expect(facts.rollbacks).toEqual([]);
+  });
+});
+
+describe("viena avota divi rādījumi vienā dienā ar starpību > 1000 km", () => {
+  it("16.03.2018 90 044 un 99 044: kļūda ir 99 044 (neiekļaujas līknē), nekas nav sarkans", () => {
+    const rows = [
+      row("10.03.2017", 76_120),
+      row("16.03.2018", 90_044),
+      row("16.03.2018", 99_044),
+      row("20.09.2018", 96_310),
+      row("02.04.2019", 103_870),
+    ];
+    const a = analyzeUnifiedMileageAnomalies(rows);
+    const bad = rows[2]!.sourceOrder;
+    expect([...a.dataEntryErrorSourceOrders]).toEqual([bad]);
+    expect(a.chartExcludeSourceOrders.has(bad)).toBe(true);
+    expect(a.chartExcludeSourceOrders.has(rows[1]!.sourceOrder)).toBe(false);
+    expect(redRows(rows)).toEqual([]);
+    expect(classes(rows)).toEqual(["typo_outlier:16.03.2018:99044"]);
+  });
+
+  it("zemākais vienas dienas rādījums ir kļūda, ja tas neiekļaujas līknē", () => {
+    const rows = [
+      row("10.03.2017", 92_000),
+      row("16.03.2018", 90_044),
+      row("16.03.2018", 99_044),
+      row("20.09.2018", 104_310),
+    ];
+    const a = analyzeUnifiedMileageAnomalies(rows);
+    expect([...a.dataEntryErrorSourceOrders]).toEqual([rows[1]!.sourceOrder]);
+    expect(redRows(rows)).toEqual([]);
+    expect(classes(rows)).toEqual(["typo_outlier:16.03.2018:90044"]);
+  });
+
+  it("ja abi iekļaujas līknē - nemarķē", () => {
+    const rows = [
+      row("10.03.2017", 80_000),
+      row("16.03.2018", 90_044),
+      row("16.03.2018", 99_044),
+      row("20.09.2018", 120_000),
+    ];
+    const a = analyzeUnifiedMileageAnomalies(rows);
+    expect(a.dataEntryErrorSourceOrders.size).toBe(0);
+    expect(classes(rows)).toEqual([]);
+  });
+
+  it("dažādi avoti tajā pašā dienā - šis noteikums neattiecas", () => {
+    const rows = [
+      row("10.03.2017", 76_120),
+      row("16.03.2018", 90_044),
+      row("16.03.2018", 99_044, "AutoDNA"),
+      row("20.09.2018", 96_310),
+      row("02.04.2019", 103_870),
+    ];
+    const a = analyzeUnifiedMileageAnomalies(rows);
+    expect(a.dataEntryErrorSourceOrders.has(rows[2]!.sourceOrder)).toBe(false);
+  });
+
+  it("īsta manipulācija paliek sarkana: tajā pašā dienā 150 000 un 90 000, turpmāk no 90 000", () => {
+    const rows = [
+      row("10.03.2017", 140_000),
+      row("16.03.2018", 150_000),
+      row("16.03.2018", 90_000),
+      row("20.09.2018", 95_000),
+      row("02.04.2019", 101_000),
+    ];
+    // Pāra noteikums nemarķē nevienu (neviens neiekļaujas līknē); kritums paliek sarkans.
+    expect(findSameDaySourceEntryErrors(pts(rows)).size).toBe(0);
+    expect(redRows(rows).length).toBeGreaterThan(0);
+    expect(classes(rows).some((c) => c.startsWith("rollback:"))).toBe(true);
+  });
+
+  it("pēdējais pāris bez nākamā kaimiņa: marķē tikai, ja atšķiras vienā ciparā", () => {
+    const typo = [row("10.03.2017", 76_120), row("16.03.2018", 90_044), row("16.03.2018", 60_044)];
+    expect([...findSameDaySourceEntryErrors(pts(typo))]).toEqual([typo[2]!.sourceOrder]);
+    const notTypo = [row("10.03.2017", 76_120), row("16.03.2018", 90_000), row("16.03.2018", 51_300)];
+    expect(findSameDaySourceEntryErrors(pts(notTypo)).size).toBe(0);
+  });
+});
+
+describe("differsBySingleDigit", () => {
+  it("90 044 / 99 044 - viens cipars; 90 000 / 51 300 - nē", () => {
+    expect(differsBySingleDigit(90_044, 99_044)).toBe(true);
+    expect(differsBySingleDigit(90_000, 51_300)).toBe(false);
+    expect(differsBySingleDigit(9_044, 90_044)).toBe(false);
   });
 });
