@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AdminMileageRangeBar } from "@/components/admin/AdminMileageRangeBar";
+import { inferServiceWorkCountries } from "@/lib/service-works-country";
+import type { CountryTimelineEntry } from "@/lib/vehicle-country-timeline";
 import {
   AdminSourceCommentField,
   type AdminAiSourceCommentSlot,
@@ -168,6 +170,8 @@ type Props = {
   techRiskMap?: TechnicalRiskMap | null;
   dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
   onDealerMajorWorkOverridesChange?: (next: DealerMajorWorkOverride[]) => void;
+  /** Citu avotu valstu laika josla: vizītei bez valsts rāda secināto valsti (nesaglabā). */
+  countryEvidence?: CountryTimelineEntry[];
 };
 
 export function AdminAutoRecordsSourceBlock({
@@ -211,6 +215,7 @@ export function AdminAutoRecordsSourceBlock({
   techRiskMap = null,
   dealerMajorWorkOverrides = [],
   onDealerMajorWorkOverridesChange,
+  countryEvidence,
 }: Props) {
   const mergeVehicleInfoFromText = (raw: string, base: AutoRecordsBlockState): AutoRecordsBlockState => {
     const patch = parseOutvinVehicleInfoFromAutoRecordsText(raw);
@@ -292,6 +297,13 @@ export function AdminAutoRecordsSourceBlock({
     (value.serviceWorks ?? []).length > 0
       ? (value.serviceWorks ?? [])
       : [emptyAutoRecordsServiceWorkRow()];
+  const workRowCountries = useMemo(
+    () =>
+      countryEvidence && countryEvidence.length > 0
+        ? inferServiceWorkCountries(workRows, countryEvidence)
+        : [],
+    [workRows, countryEvidence],
+  );
 
   const originalTimeline = value.oneautoIngest?.serviceTimelineOriginal ?? [];
   const dealerFacts = useMemo(
@@ -874,8 +886,10 @@ export function AdminAutoRecordsSourceBlock({
                           data-row-index={i}
                         >
                           {row.location.trim() || "-"}
+                          {workRowCountries[i]?.countryInferred ? ` · ${workRowCountries[i]!.country}` : ""}
                         </span>
                       ) : (
+                        <>
                         <AdminAutoGrowTextarea
                           className={inp}
                           rows={1}
@@ -891,6 +905,16 @@ export function AdminAutoRecordsSourceBlock({
                           onChange={(e) => setWorkRow(i, { location: e.target.value })}
                           aria-label={`${DEALER_ARIA} servisa vieta ${i + 1}`}
                         />
+                        {workRowCountries[i]?.countryInferred ? (
+                          <span
+                            className="mt-0.5 block text-[10px] text-[var(--color-provin-muted)]"
+                            data-country-inferred="1"
+                            title="Valsts secināta no citiem avotiem"
+                          >
+                            {workRowCountries[i]!.country}
+                          </span>
+                        ) : null}
+                        </>
                       )}
                     </td>
                     <td className={`${mileCell} align-top`}>

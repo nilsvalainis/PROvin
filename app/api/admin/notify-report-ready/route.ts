@@ -18,7 +18,13 @@ import { resolveReportReadyProductKind } from "@/lib/email/report-ready-copy";
 import { isB2bInternationalClientReport } from "@/lib/b2b-pdf-brand";
 import { del, get } from "@vercel/blob";
 import { isReportPdfPathname, reportPdfPathPrefix } from "@/lib/report-pdf-constants";
-import { readClientReportSends, recordClientReportSend } from "@/lib/client-report-sends";
+import {
+  readClientReportCommentSnapshots,
+  readClientReportSends,
+  recordClientReportCommentSnapshot,
+  recordClientReportSend,
+} from "@/lib/client-report-sends";
+import { buildClientReportCommentSnapshot } from "@/lib/client-report-comment-snapshot-core";
 import { dropboxReportFilename } from "@/lib/client-report-sends-core";
 import { getDropboxClient } from "@/lib/dropbox-client";
 import { saveFileToProvOrderFolder } from "@/lib/ltab-dropbox";
@@ -439,6 +445,23 @@ export async function POST(req: Request) {
       const done = await setAuditDeadlineComplete(sessionId, true);
       serverSend.completedAt = done.ok ? done.completedAt : null;
     }
+  }
+
+  // AI komentāru gala versija pie sūtījuma (apmācībai), neatkarīgi no TRAINING_V2. Kļūda sūtījumu neaptur.
+  try {
+    const prevSnapshots = await readClientReportCommentSnapshots(sessionId);
+    await recordClientReportCommentSnapshot(
+      sessionId,
+      buildClientReportCommentSnapshot({
+        draft,
+        sentAt: new Date().toISOString(),
+        lang: reportLang,
+        corrected: previousSends.length > 0 || prevSnapshots.length > 0,
+        ...(serverSend ? { version: serverSend.version } : {}),
+      }),
+    );
+  } catch (e) {
+    console.error("[api/admin/notify-report-ready] comment snapshot", e instanceof Error ? e.message.slice(0, 200) : e);
   }
 
   console.info("[api/admin/notify-report-ready] sent", {

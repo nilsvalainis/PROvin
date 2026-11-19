@@ -217,6 +217,7 @@ import {
   type UnifiedMileageRow,
   type UnifiedMileageSourcePayload,
 } from "@/lib/unified-mileage";
+import { countryEvidenceFromRows } from "@/lib/service-works-country";
 import {
   assessLvVignette,
   getLvVignetteFieldUiFlag,
@@ -1759,6 +1760,7 @@ function buildAutoRecordsServiceWorksTableHtml(
     condenseRecords?: boolean;
     extraMileageRows?: AutoRecordsServiceWorkRow[];
     lang?: ClientReportLang;
+    countryEvidence?: import("@/lib/vehicle-country-timeline").CountryTimelineEntry[];
   },
 ): string {
   const body = buildDealerServiceVisitsHtml(rows, {
@@ -1766,6 +1768,7 @@ function buildAutoRecordsServiceWorksTableHtml(
     condenseRecords: extra?.condenseRecords,
     extraMileageRows: extra?.extraMileageRows,
     lang: extra?.lang,
+    countryEvidence: extra?.countryEvidence,
   });
   if (!body) return "";
   const subheadHtml = pdfFieldLabelWithIcon(sectionIconPdfHtml("wrench"), PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL);
@@ -1873,6 +1876,7 @@ function buildAutoRecordsAvotuSubsection(
   maskDemoVin = false,
   lang: ClientReportLang = "lv",
   dealerMajorWorkOverrides?: import("@/lib/dealer-major-works-override-persist").DealerMajorWorkOverride[] | null,
+  countryEvidence?: import("@/lib/vehicle-country-timeline").CountryTimelineEntry[],
 ): string {
   if (!vis.auto_records) return "";
   if ((!b || !autoRecordsBlockHasContent(b)) && !sparkHtml) return "";
@@ -1915,6 +1919,7 @@ function buildAutoRecordsAvotuSubsection(
     condenseRecords,
     extraMileageRows: condenseRecords ? [] : dealerExtraMileageRows(b),
     lang,
+    countryEvidence,
   });
   const summaryHtml = buildDealerVisitSummaryHtml(
     b.serviceWorks ?? [],
@@ -2339,6 +2344,7 @@ function buildAvotuDatiSectionHtml(
     p.isDemo === true,
     lang,
     p.dealerMajorWorkOverrides,
+    countryEvidenceFromRows(sparkCtx.rows),
   );
   const ccVin = buildCcVinAvotuSubsection(
     p.ccVinBlock ?? null,

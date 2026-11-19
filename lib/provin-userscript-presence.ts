@@ -151,3 +151,32 @@ export function watchProvinUserscript(
     window.clearTimeout(settle);
   };
 }
+
+export type UserscriptBrowserInfo = {
+  userAgent?: string;
+  platform?: string;
+  maxTouchPoints?: number;
+};
+
+/**
+ * iOS/iPadOS (arī iPad ar «desktop» UA - Macintosh + skārienekrāns) un Safari bez Chrome:
+ * Tampermonkey skripts tur nestrādā, tāpēc banneri «nav aktīvs» / «atjauniniet» nerāda.
+ */
+export function isUserscriptUnsupportedBrowser(info?: UserscriptBrowserInfo): boolean {
+  let ua = info?.userAgent;
+  let platform = info?.platform;
+  let touch = info?.maxTouchPoints;
+  if (!info) {
+    if (typeof navigator === "undefined") return false;
+    ua = navigator.userAgent;
+    platform = navigator.platform;
+    touch = navigator.maxTouchPoints;
+  }
+  const u = String(ua ?? "");
+  const p = String(platform ?? "");
+  const t = typeof touch === "number" ? touch : 0;
+  if (/iPhone|iPad|iPod/i.test(u) || /iPhone|iPad|iPod/i.test(p)) return true;
+  if (/Macintosh/i.test(u) && t > 1) return true;
+  const isSafari = /Safari\//.test(u) && !/(Chrome|Chromium|CriOS|Edg|EdgiOS|FxiOS|Firefox|OPR|Opera)\//i.test(u);
+  return isSafari;
+}

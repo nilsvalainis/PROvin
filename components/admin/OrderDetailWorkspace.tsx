@@ -398,6 +398,7 @@ import {
 } from "@/lib/admin-fact-check-client";
 import { applyFactCheckFixToField } from "@/lib/fact-check-suggested-fix";
 import type { FactCheckFlag, FactCheckResult } from "@/lib/unit-facts/types";
+import { collectWorkspaceCountryTimeline } from "@/lib/workspace-country-timeline";
 
 function aiFetchErrorMessage(
   res: Response,
@@ -1050,6 +1051,11 @@ export function OrderDetailWorkspace({
   const blocksDisplaySafe = useMemo(
     () => mergeSourceBlocksWithDefaults(ws.sourceBlocks as unknown),
     [ws.sourceBlocks],
+  );
+  /** Citu avotu valstu laika josla - dīlera vizītēm bez valsts (tikai attēlošana). */
+  const workspaceCountryEvidence = useMemo(
+    () => collectWorkspaceCountryTimeline(blocksDisplaySafe),
+    [blocksDisplaySafe],
   );
 
   const narrowPortfolioLayout = Boolean(portfolioPortalDomId);
@@ -5797,6 +5803,7 @@ export function OrderDetailWorkspace({
           <div id="admin-order-block-auto-records" className="min-w-0">
             <AdminAutoRecordsSourceBlock
               value={blocksDisplaySafe.auto_records}
+              countryEvidence={workspaceCountryEvidence}
               readOnly={false}
               onChange={(next) => updateSourceBlock("auto_records", next)}
               trafficFillLevel={traffic.auto_records}

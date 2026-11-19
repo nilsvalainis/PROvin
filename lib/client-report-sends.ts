@@ -5,6 +5,10 @@ import path from "node:path";
 import { get, put } from "@vercel/blob";
 import { getOrderDraftBlobConfig, getOrderDraftStorageDir, isSafeOrderDraftSessionId } from "@/lib/admin-order-draft-store";
 import { nextClientReportVersion, versionedReportFilename, type ClientReportSend } from "@/lib/client-report-sends-core";
+import {
+  appendCommentSnapshot,
+  type ClientReportCommentSnapshot,
+} from "@/lib/client-report-comment-snapshot-core";
 
 /**
  * "Sūtīt atskaiti" (2. posms, Nils 17.11, G9): katrs nosūtītais servera PDF paliek arhīvā ar versijas numuru,
@@ -70,4 +74,58 @@ export async function recordClientReportSend(
     await fs.writeFile(logPath, JSON.stringify([...prev, out], null, 1));
   }
   return out;
+}
+
+/**
+ * AI komentāru gala versijas pie katra sūtījuma (apmācībai: AI v1 pret gala tekstu).
+ * Tā pati krātuve kā sūtījumu žurnāls: `client-report-comment-snapshots/<id>.json`. Neatkarīgi no TRAINING_V2.
+ */
+export async function readClientReportCommentSnapshots(sessionId: string): Promise<ClientReportCommentSnapshot[]> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return [];
+  const blob = getOrderDraftBlobConfig();
+  try {
+    if (blob) {
+      const res = await get(`${pfx(blob.prefix)}client-report-comment-snapshots/${sessionId}.json`, {
+        access: "private",
+        token: blob.token,
+        useCache: false,
+      });
+      if (!res || res.statusCode !== 200 || !res.stream) return [];
+      const j = JSON.parse(await new Response(res.stream).text()) as unknown;
+      return Array.isArray(j) ? (j as ClientReportCommentSnapshot[]) : [];
+    }
+    const dir = getOrderDraftStorageDir();
+    if (!dir) return [];
+    const j = JSON.parse(
+      await fs.readFile(path.join(dir, "client-report-comment-snapshots", `${sessionId}.json`), "utf8"),
+    ) as unknown;
+    return Array.isArray(j) ? (j as ClientReportCommentSnapshot[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function recordClientReportCommentSnapshot(
+  sessionId: string,
+  snapshot: ClientReportCommentSnapshot,
+): Promise<void> {
+  if (!isSafeOrderDraftSessionId(sessionId)) return;
+  const prev = await readClientReportCommentSnapshots(sessionId);
+  const body = JSON.stringify(appendCommentSnapshot(prev, snapshot), null, 1);
+  const blob = getOrderDraftBlobConfig();
+  if (blob) {
+    await put(`${pfx(blob.prefix)}client-report-comment-snapshots/${sessionId}.json`, body, {
+      access: "private",
+      token: blob.token,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json",
+    });
+    return;
+  }
+  const dir = getOrderDraftStorageDir();
+  if (!dir) return;
+  const fp = path.join(dir, "client-report-comment-snapshots", `${sessionId}.json`);
+  await fs.mkdir(path.dirname(fp), { recursive: true });
+  await fs.writeFile(fp, body);
 }
