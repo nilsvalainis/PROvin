@@ -24,6 +24,7 @@ import { AdminCsddSourceBlock } from "@/components/admin/AdminCsddSourceBlock";
 import { autoIngestChipsByBlock, type AutoIngestStatus } from "@/lib/admin-auto-ingest";
 import { AdminLtabSourceBlock } from "@/components/admin/AdminLtabSourceBlock";
 import { AdminAutoRecordsSourceBlock } from "@/components/admin/AdminAutoRecordsSourceBlock";
+import type { DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
 import { AdminCcVinSourceBlock } from "@/components/admin/AdminCcVinSourceBlock";
 import { AdminAsvSourceBlock } from "@/components/admin/AdminAsvSourceBlock";
 import { makeCcVinPhotoGroupId, syncCcVinPhotoGroupsAndFlat } from "@/lib/cc-vin-photo-types";
@@ -4831,6 +4832,9 @@ export function OrderDetailWorkspace({
     markComplete: boolean;
     saveDropbox: boolean;
     confirmRecipientOverride?: boolean;
+    /** Dīlera «Sūtīt klientam» logs: admina rediģēts temats + teksts. */
+    customSubject?: string;
+    customText?: string;
   }): Promise<SendReportResult> => {
     if (!canNotifyClientOrder(payload, payload.customerEmail)) throw new Error(notifyClientBlockedMessage(payload));
     const email = (payload.customerEmail ?? "").trim();
@@ -4852,6 +4856,9 @@ export function OrderDetailWorkspace({
       markComplete: input.markComplete,
       saveDropbox: input.saveDropbox,
       ...(input.confirmRecipientOverride ? { confirmRecipientOverride: true } : {}),
+      ...(input.customSubject && input.customText
+        ? { customSubject: input.customSubject, customText: input.customText }
+        : {}),
     });
     if (!res.ok) {
       if (res.status === 409 && data.error === "recipient_mismatch") {
@@ -4872,6 +4879,35 @@ export function OrderDetailWorkspace({
       ...(typeof ss.dropboxError === "string" ? { dropboxError: ss.dropboxError } : {}),
       completedAt: typeof ss.completedAt === "string" ? ss.completedAt : null,
     };
+  };
+
+  /** Dīlera bloks «Sūtīt klientam»: tas pats servera PDF un sūtīšanas ceļš kā «Sūtīt atskaiti». */
+  const dealerSendBridge: DealerSendBridge = {
+    customerPhoneDigits: whatsappPhoneDigits ?? null,
+    paidCents: typeof payload.amountTotal === "number" ? payload.amountTotal : null,
+    prepareDealerPdf: (lang) => prepareSendReportPdf("dealer", lang),
+    sendDealerReport: async ({ prepared, lang, subject, text }) => {
+      const run = (confirmRecipientOverride: boolean) =>
+        sendPreparedReport({
+          prepared,
+          lang,
+          attachmentIds: [],
+          includeGoogleReview: false,
+          markComplete: true,
+          saveDropbox: true,
+          customSubject: subject,
+          customText: text,
+          ...(confirmRecipientOverride ? { confirmRecipientOverride: true } : {}),
+        });
+      try {
+        return await run(false);
+      } catch (e) {
+        if (e instanceof ReportRecipientMismatchError && window.confirm(`${e.message}\n\nSūtīt uz ${e.requested}?`)) {
+          return await run(true);
+        }
+        throw e;
+      }
+    },
   };
 
   const sendReportWhatsappHref = whatsappPhoneDigits
@@ -5835,6 +5871,7 @@ export function OrderDetailWorkspace({
               walletProduct={walletMarks?.product ?? null}
               dealerPdfProgressKey={pdfJob?.key ?? null}
               dealerPdfProgressPct={pdfJob?.pct ?? null}
+              dealerSend={dealerSendBridge}
               techRiskText={ws.tehniskoRiskuAnalize ?? ""}
               techRiskMap={ws.technicalRiskMap ?? null}
               dealerMajorWorkOverrides={dealerMajorWorkOverrides}

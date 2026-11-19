@@ -64,25 +64,14 @@ export type PartnerVinOrderFollowup = {
   vin: string;
   listingUrl: string;
   dealerQueued: boolean;
-  /** RAW dīlera dati: OEM oriģinālvalodā, bez citiem avotiem. Gemini komentārs paliek. */
+  /**
+   * RAW dīlera dati: OEM oriģinālvalodā (bez tulkojuma). Fona avoti (CSDD API, VIN SCAN EU izsoles)
+   * tiek ielasīti tāpat kā dealer_pro, bet dīlera PDF tos nerāda (DEALER_ONLY_PDF_VISIBILITY).
+   */
   dealerOnlyRaw?: boolean;
 };
 
-export async function runPartnerCreditVinOrderFollowup(args: PartnerVinOrderFollowup): Promise<void> {
-  if (args.dealerOnlyRaw) {
-    if (!args.dealerQueued) return;
-    try {
-      await runDealerDataJob({
-        sessionId: args.orderId,
-        vin: args.vin,
-        trigger: "webhook",
-        skipTranslate: true,
-      });
-    } catch (err) {
-      console.error("[partner/orders] dealer raw job:", err);
-    }
-    return;
-  }
+async function runPaidOrderBackgroundSources(args: PartnerVinOrderFollowup): Promise<void> {
   try {
     const [seedRes, scanRes] = await Promise.allSettled([
       seedPaidOrderAutoSources(args.orderId, {
@@ -104,11 +93,20 @@ export async function runPartnerCreditVinOrderFollowup(args: PartnerVinOrderFoll
   } catch (err) {
     console.error("[partner/orders] auto sources:", err);
   }
+}
+
+export async function runPartnerCreditVinOrderFollowup(args: PartnerVinOrderFollowup): Promise<void> {
+  await runPaidOrderBackgroundSources(args);
   if (!args.dealerQueued) return;
   try {
-    await runDealerDataJob({ sessionId: args.orderId, vin: args.vin, trigger: "webhook" });
+    await runDealerDataJob({
+      sessionId: args.orderId,
+      vin: args.vin,
+      trigger: "webhook",
+      ...(args.dealerOnlyRaw ? { skipTranslate: true } : {}),
+    });
   } catch (err) {
-    console.error("[partner/orders] dealer data job:", err);
+    console.error(args.dealerOnlyRaw ? "[partner/orders] dealer raw job:" : "[partner/orders] dealer data job:", err);
   }
 }
 

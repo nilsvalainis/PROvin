@@ -121,6 +121,8 @@ export async function POST(req: Request) {
   let saveDropbox = true;
   /** Admins apzināti apstiprina adresi, kas atšķiras no pasūtījumā saglabātās. */
   let confirmRecipientOverride = false;
+  /** Dīlera «Sūtīt klientam» logs: admina rediģēts temats + teksts (PDF tas pats servera ceļš). */
+  let customMail: { subject: string; text: string } | null = null;
 
   try {
     if (contentType.includes("multipart/form-data")) {
@@ -152,6 +154,9 @@ export async function POST(req: Request) {
       markComplete = b.markComplete === true;
       saveDropbox = b.saveDropbox !== false;
       confirmRecipientOverride = b.confirmRecipientOverride === true;
+      const cs = typeof b.customSubject === "string" ? b.customSubject.trim().slice(0, 180) : "";
+      const ct = typeof b.customText === "string" ? b.customText.trim().slice(0, 12_000) : "";
+      if (cs && ct) customMail = { subject: cs, text: ct };
       if (Array.isArray(b.blobAttachments) && b.blobAttachments.length > 0) {
         if (b.blobAttachments.length > MAX_NOTIFY_FILES) {
           return NextResponse.json({ error: "too_many_attachments", message: "Pārāk daudz failu." }, { status: 400 });
@@ -373,6 +378,7 @@ export async function POST(req: Request) {
       }),
       lang: reportLang,
       corrected: previousSends.length > 0,
+      custom: customMail,
     });
     try {
       const stored = await persistClientReportFromNotify(sessionId, manualAttachments);

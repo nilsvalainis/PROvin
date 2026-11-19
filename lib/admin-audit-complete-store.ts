@@ -185,3 +185,39 @@ export async function getAuditDeadlineCompleteMap(
   }
   return out;
 }
+
+/** «Izpildīts» brīdis (ISO) vai null - atsauksmju lūgumu rindai. Kļūda = null (nerāda rindā). */
+async function readCompletedAtOnce(sessionId: string): Promise<string | null> {
+  const dir = getOrderDraftStorageDir();
+  const blob = getOrderDraftBlobConfig();
+  const pick = (raw: unknown): string | null => {
+    const r = raw as { complete?: unknown; at?: unknown } | null;
+    return r?.complete === true && typeof r.at === "string" ? r.at : null;
+  };
+  if (blob) {
+    try {
+      const res = await get(blobFlagPath(blob.prefix, sessionId), { access: "private", token: blob.token, useCache: false });
+      if (res?.statusCode === 200 && res.stream) return pick(JSON.parse(await new Response(res.stream).text()));
+    } catch {
+      /* nav faila */
+    }
+    if (process.env.VERCEL === "1" || !dir) return null;
+  }
+  if (dir && process.env.VERCEL !== "1") {
+    try {
+      return pick(JSON.parse(await fs.readFile(fsFlagPath(dir, sessionId), "utf8")));
+    } catch {
+      /* nav faila */
+    }
+  }
+  return null;
+}
+
+export async function getAuditCompletedAtMap(sessionIds: string[]): Promise<Map<string, string | null>> {
+  const out = new Map<string, string | null>();
+  const ids = sessionIds.filter(isSafeOrderDraftSessionId);
+  await mapLimit(ids, 8, async (id) => {
+    out.set(id, await readCompletedAtOnce(id));
+  });
+  return out;
+}

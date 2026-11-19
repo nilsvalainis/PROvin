@@ -1,9 +1,9 @@
 import { provinEmailSubject } from "@/lib/email/email-subject";
 /**
  * Piepirkums esošam pasūtījumam.
- * Vienīgā B2C atlaide: dīlera dati 24,99 € + 75,00 € = pilnais audits,
- * vai MINI pasūtījumam dīlera dati par 19,99 €.
- * Jaunam klientam atlaides nav. B2B cenas te neietilpst.
+ * Dīlera dati -> pilnais audits: B2C kopā vienmēr 99,99 €, B2B kopā 69,99 €
+ * (piemaksa = mērķis - jau samaksātais; ja samaksāts >= mērķis, piedāvājuma nav).
+ * MINI pasūtījumam dīlera dati par 19,99 €. Jaunam klientam atlaides nav.
  */
 
 import {
@@ -26,8 +26,8 @@ export const UPSELL_LINK_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 export const AUDIT_PRICE_CENTS = 9999;
 export const DEALER_CATALOG_CENTS = 2499;
 export const MINI_CATALOG_CENTS = 3999;
-/** Fiksēts papildinājums no dīlera datiem līdz pilnajam auditam. */
-export const DEALER_TO_AUDIT_CENTS = 7500;
+/** B2B (partneris) dīlera dati -> AUDITS: kopā maksimāli 69,99 € (Nila lēmums 19.11.2026). */
+export const B2B_AUDIT_TARGET_CENTS = 6999;
 /** MINI pasūtījumam dīlera dati lētāk nekā atsevišķs jaunais pasūtījums. */
 export const MINI_DEALER_ADDON_CENTS = 1999;
 
@@ -74,7 +74,14 @@ export function formatEurFromCents(cents: number): string {
 export type UpsellOrderSnapshot = {
   checkoutLine?: string | null;
   amountTotalCents?: number | null;
+  /** B2B partnera pasūtījums: AUDITS mērķis 69,99 €, nevis 99,99 €. */
+  b2b?: boolean;
 };
+
+/** Dīlera dati -> AUDITS: kopējā mērķa cena centos (B2C 99,99 €, B2B 69,99 €). */
+export function dealerToAuditTargetCents(b2b?: boolean): number {
+  return b2b ? B2B_AUDIT_TARGET_CENTS : AUDIT_PRICE_CENTS;
+}
 
 export type UpsellOfferSnapshot = {
   kind: OrderUpsellKind;
@@ -142,11 +149,14 @@ export function quoteOrderUpsell(
   if (kind === "dealer_to_audit") {
     if (!isDealerHighlightAdminOrder(order) || isMiniHighlightAdminOrder(order)) return null;
     const prior = priorCents(order.amountTotalCents, DEALER_CATALOG_CENTS);
+    const target = dealerToAuditTargetCents(order.b2b);
+    const charge = target - prior;
+    if (charge <= 0) return null;
     return {
       kind,
-      chargeCents: DEALER_TO_AUDIT_CENTS,
+      chargeCents: charge,
       priorCents: prior,
-      targetCents: prior + DEALER_TO_AUDIT_CENTS,
+      targetCents: target,
       targetLine: "audit",
     };
   }
@@ -344,7 +354,7 @@ export function buildUpsellDraft(
       ? "wa.upsell.mini_to_dealer"
       : opts.kind === "dealer_to_audit"
         ? "wa.upsell.dealer_to_audit"
-        : "email.upsell.mini_to_audit";
+        : "wa.upsell.mini_to_audit";
   const vars = buildUpsellEmailVars(opts);
   const waVars = buildUpsellWaVars(opts);
   const emailRendered = renderTemplateById(emailId, vars, templatesDoc);

@@ -9,7 +9,7 @@ import {
   buildOrderUpsellCheckoutSessionParams,
   buildOrderUpsellStripeMetadata,
   buildUpsellDraft,
-  DEALER_TO_AUDIT_CENTS,
+  B2B_AUDIT_TARGET_CENTS,
   ensureUpsellUrlInText,
   isStripeHostedPaymentUrl,
   MINI_CATALOG_CENTS,
@@ -33,14 +33,44 @@ function offer(partial: Partial<UpsellOfferSnapshot> & Pick<UpsellOfferSnapshot,
 }
 
 describe("order upsell quotes", () => {
-  it("charges 75 EUR to turn dealer data into a full audit", () => {
+  it("charges the rest up to 99,99 EUR to turn dealer data into a full audit", () => {
     const q = quoteOrderUpsell("dealer_to_audit", { checkoutLine: "dealer", amountTotalCents: 2499 });
     expect(q).toMatchObject({
-      chargeCents: DEALER_TO_AUDIT_CENTS,
+      chargeCents: 7500,
       priorCents: 2499,
       targetCents: 9999,
       targetLine: "audit",
     });
+  });
+
+  it("keeps the B2C total at 99,99 EUR whatever the dealer order cost", () => {
+    const q = quoteOrderUpsell("dealer_to_audit", { checkoutLine: "dealer", amountTotalCents: 1999 });
+    expect(q).toMatchObject({ chargeCents: 8000, priorCents: 1999, targetCents: 9999 });
+  });
+
+  it("caps a B2B partner dealer order upgrade at 69,99 EUR in total", () => {
+    const q = quoteOrderUpsell("dealer_to_audit", { checkoutLine: "dealer", amountTotalCents: 2499, b2b: true });
+    expect(q).toMatchObject({ chargeCents: 4500, priorCents: 2499, targetCents: B2B_AUDIT_TARGET_CENTS });
+  });
+
+  it("does not offer the upgrade when the paid amount already reaches the target", () => {
+    expect(quoteOrderUpsell("dealer_to_audit", { checkoutLine: "dealer", amountTotalCents: 6999, b2b: true })).toBeNull();
+    expect(quoteOrderUpsell("dealer_to_audit", { checkoutLine: "dealer", amountTotalCents: 7500, b2b: true })).toBeNull();
+  });
+
+  it("uses the WhatsApp template (not the e-mail one) for the MINI to AUDITS WhatsApp text", () => {
+    const draft = buildUpsellDraft({
+      kind: "mini_to_audit",
+      customerName: "Anna",
+      car: "VW Passat",
+      url: "https://checkout.stripe.com/c/pay/cs_test_x",
+      priorCents: MINI_CATALOG_CENTS,
+      chargeCents: 6000,
+      targetCents: 9999,
+    });
+    expect(draft.whatsappText).toContain("Labdien, Anna!");
+    expect(draft.whatsappText).toContain("https://checkout.stripe.com/c/pay/cs_test_x");
+    expect(draft.whatsappText).not.toContain("PROVIN · Ieteikums");
   });
 
   it("does not offer a consumer 20% audit price", () => {

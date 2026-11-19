@@ -4,6 +4,7 @@ import { extractCsddMakeModelFromWorkspace } from "@/lib/admin-csdd-make-model";
 import { isSafeOrderDraftSessionId, readOrderDraft } from "@/lib/admin-order-draft-store";
 import { getCheckoutSessionDetail } from "@/lib/admin-orders";
 import { normalizeWhatsAppPhoneDigits } from "@/lib/admin-whatsapp-phone";
+import { isPartnerHighlightAdminOrder } from "@/lib/b2b-partner-orders";
 import { isValidOrderEmail } from "@/lib/order-field-validation";
 import {
   availableUpsellQuotes,
@@ -48,7 +49,14 @@ async function loadContext(sessionId: string) {
     "";
   const vin = [draft?.orderEdits?.vin, order.vin].find((v) => typeof v === "string" && v.trim())?.trim() ?? "";
   const car = extractCsddMakeModelFromWorkspace(draft?.workspace) ?? "";
-  return { order, offers, email: email.trim(), phone, customerName, vin, car };
+  /** B2B partnera pasūtījums: dīlera dati -> AUDITS kopā 69,99 €. */
+  const b2b = isPartnerHighlightAdminOrder({
+    partnerId: order.partnerId,
+    partnerCompanyName: order.companyName,
+    notes: order.notes,
+  });
+  const snapshot = { checkoutLine: order.checkoutLine, amountTotalCents: order.amountTotal, b2b };
+  return { order, offers, email: email.trim(), phone, customerName, vin, car, snapshot };
 }
 
 export async function GET(req: Request) {
@@ -61,8 +69,7 @@ export async function GET(req: Request) {
   }
   const ctx = await loadContext(sessionId);
   if (!ctx) return NextResponse.json({ error: "not_found" }, { status: 404 });
-  const snapshot = { checkoutLine: ctx.order.checkoutLine, amountTotalCents: ctx.order.amountTotal };
-  const quotes = availableUpsellQuotes(snapshot, ctx.offers);
+  const quotes = availableUpsellQuotes(ctx.snapshot, ctx.offers);
   const applied = upsellListOverlay(ctx.offers);
   return NextResponse.json({
     email: ctx.email,
@@ -92,11 +99,7 @@ export async function POST(req: Request) {
   }
   const ctx = await loadContext(sessionId);
   if (!ctx) return NextResponse.json({ error: "not_found" }, { status: 404 });
-  const quote = quoteOrderUpsell(
-    kindRaw,
-    { checkoutLine: ctx.order.checkoutLine, amountTotalCents: ctx.order.amountTotal },
-    ctx.offers,
-  );
+  const quote = quoteOrderUpsell(kindRaw, ctx.snapshot, ctx.offers);
   if (!quote) return NextResponse.json({ error: "not_available" }, { status: 400 });
   const opened = await openUpsellOffer(sessionId, quote);
   if (!opened.ok) {
@@ -135,6 +138,9 @@ export async function POST(req: Request) {
     phone: ctx.phone,
     customerName: ctx.customerName,
     car: ctx.car,
+    priorCents: quote.priorCents,
+    chargeCents: quote.chargeCents,
+    targetCents: quote.targetCents,
     ...draft,
   });
 }

@@ -2,25 +2,10 @@
 
 import { formatRigaIsoShort } from "@/lib/riga-datetime";
 import { ADMIN_PRO_TONE } from "@/lib/admin-pro-tones";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
-import { buildProvinDilerisPdfFilename } from "@/lib/audit-report-pdf-filename";
+import { useCallback, useEffect, useState } from "react";
 import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
-
-import {
-  whatsappPrefillDealerNoDataRefunded,
-  whatsappPrefillDealerPaymentCancelled,
-} from "@/lib/admin-whatsapp-messages";
-import {
-  buildDealerCancelledEmailDraft,
-  buildDealerNoDataEmailDraft,
-  buildDealerReadyEmailDraft,
-  type DealerClientEmailKind,
-} from "@/lib/dealer-data-client-email";
 import {
   DEALER_REFUND_EMAIL_CHOICE_PROMPT,
-  dealerRefundEmailAlreadySentPrompt,
-  dealerRefundEmailSheetHint,
   dealerRefundResultNotice,
   planDealerRefund,
   shouldOpenDealerRefundEmailSheet,
@@ -32,16 +17,17 @@ import {
   describeDealerDataJob,
   type DealerDataJob,
 } from "@/lib/dealer-data-job-types";
-import { isValidOrderEmail } from "@/lib/order-field-validation";
+import type { DealerSendSituation } from "@/lib/dealer-send-message";
+import { dealerSendStatusLine, lastDealerSend, type OrderClientMarks } from "@/lib/order-client-marks";
 import { ADMIN_B2B_BTN, AdminB2bActionLabel } from "@/components/admin/AdminB2bAction";
 import { AdminPdfLangSplitButton, type PdfLockLang } from "@/components/admin/AdminPdfLangSplitButton";
-import { AdminOrderUpsellPanel } from "@/components/admin/AdminOrderUpsellPanel";
+import { AdminDealerSendDialog, type DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
 
 /**
  * Automātiskās dīlera datu ielases statuss pēc apmaksas + klienta saziņa.
- * WA un e-pasts vienmēr redzami; atmaksa pie no_data, failed vai bez job
- * (canRefund: Stripe cs_* vai B2B partner_id=). Bez no_data sūta override.
- * B2C Stripe «Atgriezt maksājumu»: atmaksa un klienta e-pasts vienā solī.
+ * Viena galvenā poga «Sūtīt klientam» (logs: kanāls, situācija, piedāvājums / atsauksme, teksts,
+ * servera PDF - Nila apstiprinātais makets 19.11.2026). Sekundāri: PDF, ielase, atmaksa
+ * (canRefund: Stripe cs_* vai B2B partner_id=). Zem pogām - pēdējā sūtīšana.
  */
 
 type Props = {
@@ -66,6 +52,8 @@ type Props = {
   b2bClient?: boolean;
   reportLang?: string | null;
   walletProduct?: string | null;
+  /** Servera PDF + sūtīšana no pasūtījuma darba zonas (tas pats ceļš kā «Sūtīt atskaiti»). */
+  dealerSend?: DealerSendBridge | null;
 };
 
 const STATUS_TONE: Record<DealerDataJob["status"], string> = {
@@ -92,18 +80,11 @@ function formatRefund(job: DealerDataJob): string {
   return `Atmaksāts ${eur} € · ${formatRigaIsoShort(job.refund.at)}`;
 }
 
-function refundAmountEur(job: DealerDataJob | null): string | null {
+function refundCentsOf(job: DealerDataJob | null): number | null {
   if (!job?.refund) return null;
-  if (job.refund.kind === "credit" || job.refund.stripeRefundId.startsWith("credit_")) {
-    return "1 kredīts";
-  }
-  return `${(job.refund.amountCents / 100).toFixed(2)} €`;
+  if (job.refund.kind === "credit" || job.refund.stripeRefundId.startsWith("credit_")) return null;
+  return job.refund.amountCents;
 }
-
-type MailSheet = {
-  mode: "message" | "pdf";
-  kind: DealerClientEmailKind;
-};
 
 export function AdminDealerDataJobStrip({
   sessionId,
@@ -122,20 +103,14 @@ export function AdminDealerDataJobStrip({
   pdfProgressPct = null,
   b2bClient = false,
   reportLang = null,
-  walletProduct = null,
+  dealerSend = null,
 }: Props) {
   const [job, setJob] = useState<DealerDataJob | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [busy, setBusy] = useState<null | "run" | "refund" | "email" | "pdf">(null);
+  const [busy, setBusy] = useState<null | "run" | "refund">(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [sheet, setSheet] = useState<MailSheet | null>(null);
-  const [sheetHint, setSheetHint] = useState<string | null>(null);
-  const [mailTo, setMailTo] = useState("");
-  const [mailSubject, setMailSubject] = useState("");
-  const [mailText, setMailText] = useState("");
-  const [mailLang, setMailLang] = useState<ClientReportLang>("lv");
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<DealerSendSituation | null>(null);
+  const [marks, setMarks] = useState<OrderClientMarks | null>(null);
 
   const load = useCallback(async () => {
     if (!sessionId) return;
@@ -158,14 +133,15 @@ export function AdminDealerDataJobStrip({
   }, [load]);
 
   useEffect(() => {
-    if (!pdfFile) {
-      setPdfPreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(pdfFile);
-    setPdfPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [pdfFile]);
+    if (!sessionId) return;
+    void fetch(`/api/admin/order-client-marks?sessionId=${encodeURIComponent(sessionId)}`, {
+      credentials: "include",
+      cache: "no-store",
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { marks?: OrderClientMarks } | null) => setMarks(d?.marks ?? null))
+      .catch(() => undefined);
+  }, [sessionId]);
 
   useEffect(() => {
     if (job?.status !== "pending" && job?.status !== "running") return;
@@ -183,41 +159,6 @@ export function AdminDealerDataJobStrip({
   )
     ? ((reportLang ?? "").trim().toLowerCase() as ClientReportLang)
     : "lv";
-
-  const openMail = (mode: MailSheet["mode"], kind: DealerClientEmailKind) => {
-    if (kind !== "ready") {
-      const again = dealerRefundEmailAlreadySentPrompt(job?.refund);
-      if (again && !window.confirm(again)) return;
-    }
-    const lang = kind === "ready" ? resolvedInitialLang : "lv";
-    const draft =
-      kind === "cancelled"
-        ? buildDealerCancelledEmailDraft({ vin, amountEur: refundAmountEur(job) })
-        : kind === "ready"
-          ? buildDealerReadyEmailDraft({ vin, b2bClient, lang, walletProduct })
-          : buildDealerNoDataEmailDraft({
-              vin,
-              amountEur: refundAmountEur(job),
-              refunded: Boolean(job?.refund),
-            });
-    setMailTo((customerEmail ?? "").trim());
-    setMailSubject(draft.subject);
-    setMailText(draft.text);
-    setMailLang(lang);
-    setPdfFile(null);
-    setSheet({ mode, kind });
-    setSheetHint(null);
-    setNotice(null);
-  };
-
-  const changeMailLang = (lang: ClientReportLang) => {
-    setMailLang(lang);
-    if (sheet?.kind === "ready") {
-      const draft = buildDealerReadyEmailDraft({ vin, b2bClient, lang, walletProduct });
-      setMailSubject(draft.subject);
-      setMailText(draft.text);
-    }
-  };
 
   const rerun = async (force: boolean) => {
     if (!editable || busy) return;
@@ -289,21 +230,7 @@ export function AdminDealerDataJobStrip({
         requestBody.notifyEmail !== false &&
         shouldOpenDealerRefundEmailSheet({ kind: plan.kind, ok, emailSent: body.emailSent })
       ) {
-        const amount =
-          body.job?.refund != null
-            ? `${(body.job.refund.amountCents / 100).toFixed(2)} €`
-            : refundAmountEur(job);
-        const draft = buildDealerNoDataEmailDraft({
-          vin: body.job?.vin || vin,
-          amountEur: amount,
-          refunded: true,
-        });
-        setMailTo((customerEmail ?? "").trim());
-        setMailSubject(draft.subject);
-        setMailText(draft.text);
-        setPdfFile(null);
-        setSheet({ mode: "message", kind: "no_data" });
-        setSheetHint(dealerRefundEmailSheetHint({ kind: plan.kind, emailSent: body.emailSent }));
+        setDialog("no_data");
       }
     } catch {
       setNotice("Neizdevās sazināties ar serveri.");
@@ -311,121 +238,17 @@ export function AdminDealerDataJobStrip({
       setBusy(null);
     }
   };
-
-  const copyTemplate = async (cancelled: boolean) => {
-    const text = cancelled
-      ? whatsappPrefillDealerPaymentCancelled(vin)
-      : whatsappPrefillDealerNoDataRefunded(vin, refundAmountEur(job));
-    try {
-      await navigator.clipboard.writeText(text);
-      setNotice("WhatsApp šablons nokopēts.");
-    } catch {
-      setNotice("Kopēšana neizdevās.");
-    }
-  };
-
-  const sendMail = async () => {
-    if (!sheet || busy) return;
-    const to = mailTo.trim();
-    if (!isValidOrderEmail(to)) {
-      setNotice("Nepieciešams derīgs klienta e-pasts.");
-      return;
-    }
-    if (!mailSubject.trim() || !mailText.trim()) {
-      setNotice("Aizpildi tematu un tekstu.");
-      return;
-    }
-
-    if (sheet.mode === "pdf") {
-      if (!pdfFile || pdfFile.size <= 0) {
-        setNotice("Pievieno dīlera PDF (vispirms „Ģenerēt dīlera PDF”, tad saglabā un izvēlies failu).");
-        return;
-      }
-      setBusy("pdf");
-      setNotice(null);
-      try {
-        const fd = new FormData();
-        fd.append("sessionId", sessionId);
-        fd.append("customerEmail", to);
-        fd.append("subject", mailSubject.trim());
-        fd.append("text", mailText.trim());
-        fd.append("lang", mailLang);
-        fd.append("reportPdf", pdfFile, pdfFile.name || "dealer.pdf");
-        const res = await fetch("/api/admin/dealer-data/send-pdf", {
-          method: "POST",
-          credentials: "include",
-          body: fd,
-        });
-        const body = (await res.json().catch(() => ({}))) as {
-          ok?: boolean;
-          error?: string;
-          message?: string;
-          to?: string;
-        };
-        if (!res.ok || !body.ok) {
-          setNotice(body.message || body.error || `Nosūtīšana neizdevās (${res.status}).`);
-          return;
-        }
-        setNotice(`Dīlera PDF nosūtīts uz ${body.to ?? to}.`);
-        setSheet(null);
-      } catch {
-        setNotice("Neizdevās sazināties ar serveri.");
-      } finally {
-        setBusy(null);
-      }
-      return;
-    }
-
-    setBusy("email");
-    setNotice(null);
-    try {
-      const res = await fetch("/api/admin/dealer-data/notify-email", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId,
-          customerEmail: to,
-          subject: mailSubject.trim(),
-          text: mailText.trim(),
-        }),
-      });
-      const body = (await res.json().catch(() => ({}))) as {
-        ok?: boolean;
-        error?: string;
-        message?: string;
-        to?: string;
-      };
-      if (!res.ok || !body.ok) {
-        setNotice(body.message || body.error || `Nosūtīšana neizdevās (${res.status}).`);
-        return;
-      }
-      setNotice(`E-pasts nosūtīts uz ${body.to ?? to}.`);
-      setSheet(null);
-    } catch {
-      setNotice("Neizdevās sazināties ar serveri.");
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  const sheetTitle = useMemo(() => {
-    if (!sheet) return "";
-    if (sheet.mode === "pdf") return "Nosūtīt dīlera PDF";
-    if (sheet.kind === "cancelled") return "Nosūtīt e-pastu (atcelts)";
-    return "Nosūtīt e-pastu (nav datu)";
-  }, [sheet]);
-
-  const sheetBackdropClose = useModalBackdropClose(() => setSheet(null), busy === null);
 
   if (!loaded) return null;
 
   const refunded = Boolean(job?.refund);
   const showRefund = shouldShowDealerRefundButton({ canRefund, job });
+  const defaultSituation: DealerSendSituation =
+    job?.status === "no_data" ? "no_data" : refunded ? "cancelled" : "ready";
+  const b2bRefund = walletRefund || sessionId.startsWith("manual_order_");
 
   return (
     <section className="mb-2 rounded-lg border border-slate-200/90 bg-white px-2 py-2">
-      <AdminOrderUpsellPanel sessionId={sessionId} placement="dealer" />
       {job ? (
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
@@ -451,74 +274,24 @@ export function AdminDealerDataJobStrip({
           ) : null}
         </div>
       ) : (
-        <p className="text-[10px] text-[var(--color-provin-muted)]">
-          Automātiskā ielase nav palaista (vai nav dīlera Stripe pasūtījums). WA un e-pasts pieejami manuāli.
-        </p>
+        <p className="text-[10px] text-[var(--color-provin-muted)]">Automātiskā ielase nav palaista.</p>
       )}
 
-      <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-        {job ? (
-          <button
-            type="button"
-            className={job.status === "failed" ? `${btn} ${ADMIN_PRO_TONE.danger}` : btn}
-            disabled={!editable || busy !== null}
-            onClick={() => void rerun(job.status === "done" || job.status === "no_data")}
-          >
-            {busy === "run" ? "Ielasa…" : dealerDataRetryButtonLabel(job)}
-          </button>
-        ) : null}
-        {showRefund ? (
-          <button
-            type="button"
-            className={walletRefund || sessionId.startsWith("manual_order_") ? ADMIN_B2B_BTN : `${btn} ${ADMIN_PRO_TONE.danger}`}
-            disabled={!editable || busy !== null}
-            onClick={() => void refund()}
-          >
-            {walletRefund || sessionId.startsWith("manual_order_") ? (
-              <AdminB2bActionLabel>
-                {busy === "refund"
-                  ? "Atgriež…"
-                  : walletRefund
-                    ? "Datu nav, atmaksa uz atlikumu"
-                    : "Atgriezt kredītu"}
-              </AdminB2bActionLabel>
-            ) : busy === "refund" ? (
-              "Atmaksā…"
-            ) : (
-              "Atgriezt maksājumu"
-            )}
-          </button>
-        ) : null}
-
-        <button type="button" className={`${btn} ${ADMIN_PRO_TONE.client}`} onClick={() => void copyTemplate(false)}>
-          WhatsApp: nav datu
-        </button>
-        <button type="button" className={`${btn} ${ADMIN_PRO_TONE.client}`} onClick={() => void copyTemplate(true)}>
-          WhatsApp: atcelts
-        </button>
+      <div className="mt-2">
         <button
           type="button"
-          className={`${btn} ${ADMIN_PRO_TONE.client}`}
+          className="min-h-9 w-full rounded-md border border-transparent bg-[#1d1d1f] px-4 text-[12.5px] font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           disabled={busy !== null}
-          onClick={() => openMail("message", "no_data")}
+          onClick={() => setDialog(defaultSituation)}
         >
-          Nosūtīt e-pastu
-        </button>
-        <button
-          type="button"
-          className={`${btn} ${ADMIN_PRO_TONE.client}`}
-          disabled={busy !== null}
-          onClick={() => openMail("message", "cancelled")}
-        >
-          E-pasts: atcelts
+          Sūtīt klientam
         </button>
       </div>
 
-      <div className="mt-1.5 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-1.5">
-        <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">Piegāde</span>
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
         {onGenerateDealerPdf ? (
           <AdminPdfLangSplitButton
-            label="Ģenerēt dīlera PDF"
+            label="Ģenerēt PDF"
             disabled={busy !== null || pdfProgressKey !== null}
             busyLabel={
               pdfProgressKey === "dealer" || pdfProgressKey?.startsWith("dealer-")
@@ -538,134 +311,60 @@ export function AdminDealerDataJobStrip({
             }}
           />
         ) : null}
-        <button
-          type="button"
-          className={`${btn} ${ADMIN_PRO_TONE.client}`}
-          disabled={busy !== null}
-          onClick={() => openMail("pdf", "ready")}
-        >
-          Nosūtīt dīlera PDF
-        </button>
+        {job ? (
+          <button
+            type="button"
+            className={job.status === "failed" ? `${btn} ${ADMIN_PRO_TONE.danger}` : btn}
+            disabled={!editable || busy !== null}
+            onClick={() => void rerun(job.status === "done" || job.status === "no_data")}
+          >
+            {busy === "run" ? "Ielasa…" : dealerDataRetryButtonLabel(job)}
+          </button>
+        ) : null}
+        {showRefund ? (
+          <button
+            type="button"
+            className={b2bRefund ? ADMIN_B2B_BTN : `${btn} ${ADMIN_PRO_TONE.danger}`}
+            disabled={!editable || busy !== null}
+            onClick={() => void refund()}
+          >
+            {b2bRefund ? (
+              <AdminB2bActionLabel>
+                {busy === "refund"
+                  ? "Atgriež…"
+                  : walletRefund
+                    ? "Datu nav, atmaksa uz atlikumu"
+                    : "Atgriezt kredītu"}
+              </AdminB2bActionLabel>
+            ) : busy === "refund" ? (
+              "Atmaksā…"
+            ) : (
+              "Atgriezt maksājumu"
+            )}
+          </button>
+        ) : null}
       </div>
 
-      {sheet ? (
-        <div
-          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-3 sm:items-center"
-          role="dialog"
-          aria-modal="true"
-          aria-label={sheetTitle}
-          {...sheetBackdropClose}
-        >
-          <div
-            className="max-h-[min(92vh,640px)] w-full max-w-lg overflow-y-auto rounded-xl border border-slate-200 bg-white p-3 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="text-sm font-semibold text-slate-900">{sheetTitle}</h3>
-              <button
-                type="button"
-                className={btn}
-                disabled={busy !== null}
-                onClick={() => setSheet(null)}
-              >
-                Aizvērt
-              </button>
-            </div>
-            <p className="mt-1 text-[11px] leading-snug text-[var(--color-provin-muted)]">
-              {sheetHint ??
-                "Tekstu vari papildināt vai labot pirms sūtīšanas. Atmaksa šajā dialogā nenotiek."}
-            </p>
+      <p className="mt-1.5 text-[10.5px] text-[var(--color-provin-muted)]">
+        {dealerSendStatusLine(lastDealerSend(marks))}
+      </p>
 
-            <label className="mt-3 block text-[10px] font-medium text-slate-500">Klienta e-pasts</label>
-            <input
-              type="email"
-              className="mt-0.5 w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12px]"
-              value={mailTo}
-              onChange={(e) => setMailTo(e.target.value)}
-              disabled={busy !== null}
-            />
-
-            {sheet.kind === "ready" ? (
-              <>
-                <label className="mt-2 block text-[10px] font-medium text-slate-500">E-pasta valoda</label>
-                <select
-                  className="mt-0.5 w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12px]"
-                  value={mailLang}
-                  onChange={(e) => changeMailLang(e.target.value as ClientReportLang)}
-                  disabled={busy !== null}
-                >
-                  <option value="lv">Latviešu (LV)</option>
-                  <option value="en">English (EN)</option>
-                  <option value="ru">Русский (RU)</option>
-                  <option value="de">Deutsch (DE)</option>
-                </select>
-              </>
-            ) : null}
-
-            <label className="mt-2 block text-[10px] font-medium text-slate-500">Temats</label>
-            <input
-              type="text"
-              className="mt-0.5 w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12px]"
-              value={mailSubject}
-              onChange={(e) => setMailSubject(e.target.value)}
-              disabled={busy !== null}
-            />
-
-            <label className="mt-2 block text-[10px] font-medium text-slate-500">Teksts</label>
-            <textarea
-              className="mt-0.5 min-h-[160px] w-full rounded-md border border-slate-300 px-2 py-1.5 text-[12px] leading-relaxed"
-              value={mailText}
-              onChange={(e) => setMailText(e.target.value)}
-              disabled={busy !== null}
-            />
-
-            {sheet.mode === "pdf" ? (
-              <div className="mt-2">
-                <label className="block text-[10px] font-medium text-slate-500">Dīlera PDF fails</label>
-                <input
-                  type="file"
-                  accept="application/pdf,.pdf"
-                  className="mt-0.5 block w-full text-[11px]"
-                  disabled={busy !== null}
-                  onChange={(e) => setPdfFile(e.target.files?.[0] ?? null)}
-                />
-                <p className="mt-1 text-[10px] text-[var(--color-provin-muted)]">
-                  1) „Ģenerēt dīlera PDF” - Drukāt - Saglabāt kā PDF. 2) Izvēlies failu šeit. 3) Nosūti. Nosūtīts kā{" "}
-                  <span className="font-mono">{buildProvinDilerisPdfFilename(vin, mailLang)}</span>.
-                </p>
-                {pdfPreviewUrl ? (
-                  <div className="mt-2">
-                    <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-500">
-                      Mobilais priekšskatījums
-                    </p>
-                    <div className="mx-auto w-[390px] max-w-full overflow-hidden rounded-md border border-slate-200 bg-slate-50">
-                      <iframe
-                        title="Dīlera PDF mobilais priekšskatījums"
-                        src={pdfPreviewUrl}
-                        className="h-[520px] w-full bg-white"
-                      />
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-
-            <div className="mt-3 flex flex-wrap justify-end gap-1.5">
-              <button type="button" className={btn} disabled={busy !== null} onClick={() => setSheet(null)}>
-                Atcelt
-              </button>
-              <button
-                type="button"
-                className={`${btn} ${ADMIN_PRO_TONE.client}`}
-                disabled={busy !== null}
-                onClick={() => void sendMail()}
-              >
-                {busy === "email" || busy === "pdf" ? "Sūta…" : "Nosūtīt"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <AdminDealerSendDialog
+        open={dialog !== null}
+        onClose={() => setDialog(null)}
+        sessionId={sessionId}
+        vin={vin}
+        b2b={b2bClient}
+        customerEmail={(customerEmail ?? "").trim()}
+        defaultSituation={dialog ?? defaultSituation}
+        refundCents={refundCentsOf(job)}
+        pdfLang={resolvedInitialLang}
+        bridge={dealerSend}
+        onSent={(next, msg) => {
+          if (next) setMarks(next);
+          setNotice(msg);
+        }}
+      />
 
       {notice ? (
         <p className="mt-1.5 text-[10px] text-[var(--color-provin-muted)]">{notice}</p>
