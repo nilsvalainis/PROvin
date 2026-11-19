@@ -125,6 +125,7 @@ import {
   buildThecarapiPdfGalleryHtml,
   collectPdfPhotoKeys,
   selectThecarapiPdfPhotos,
+  thecarapiPdfPhotoCategories,
   THECARAPI_PDF_GALLERY_MAX,
 } from "@/lib/thecarapi-pdf";
 import {
@@ -2023,7 +2024,7 @@ function buildCcVinAvotuSubsection(
   const photosHtml = b
     ? [
         buildSourcePhotoGroupsPdfHtml(otherGroups, b.photos, photoDataUrls, normalizeCcVinPhotoGroups),
-        buildThecarapiPdfGalleryHtml(tcPhotos, photoDataUrls),
+        buildThecarapiPdfGalleryHtml(tcPhotos, photoDataUrls, thecarapiPdfPhotoCategories(b.thecarapiRecords)),
       ]
         .filter(Boolean)
         .join("")
@@ -2871,6 +2872,11 @@ ${clientReportPageChromeCss(running)}
       .pdf-listing-photo-grid--appendix .pdf-listing-photo-img{
         max-height:none;width:100%;height:168px;object-fit:cover;border:0;border-radius:0;
       }
+      .pdf-listing-photo-grid--tc{grid-template-columns:repeat(4,1fr);gap:6px;}
+      .pdf-listing-photo-grid--tc .pdf-listing-photo-img{
+        width:100%;height:30mm;max-height:none;object-fit:cover;border:0;border-radius:0;
+      }
+      .pdf-listing-photo-grid--tc .pdf-listing-photo-cap{padding:3px 5px;font-size:8px;letter-spacing:0;}
       .pdf-listing-photo-cap{
         padding:5px 8px;font-size:9px;font-weight:600;color:#64748b;letter-spacing:0.02em;
       }

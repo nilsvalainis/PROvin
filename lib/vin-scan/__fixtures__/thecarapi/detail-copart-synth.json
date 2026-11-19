@@ -1,0 +1,21 @@
+{
+  "auction": {
+    "site_name": "copart",
+    "auction_id": "COP-77812",
+    "clean_make": "BMW",
+    "clean_model": "320d",
+    "registration_year": 2018,
+    "mileage": 132500,
+    "auction_date": "2026-09-30",
+    "final_price": 4200,
+    "location": "Berlin",
+    "data": {
+      "run_and_drive": true,
+      "primary_damage": "front-end",
+      "secondary_damage": "minor-dent-scratches",
+      "keys_available": true,
+      "title_type": "salvage",
+      "build_sheet_series": "3er G20"
+    }
+  }
+}

@@ -196,19 +196,28 @@ export function ccVinAmountToEurDisplay(raw: string): string {
 /**
  * Cik ierakstu PDF sadaļa tiešām izdrukā.
  * Nobraukums ir nobraukuma sadaļā. Bojājums ar summu ir negadījumu tabulā.
- * TheCarApi lots skaitās, ja tam ir lauki vai bildes.
+ * TheCarApi lots skaitās, ja tam ir lauki vai bildes un tā pati izsole (vieta + datums) nav jau pārdošanas rindā.
  */
 export function countCcVinPdfVisibleRecords(b: CcVinBlockState | null | undefined): number {
   if (!b) return 0;
+  const sales = (b.sales ?? []).filter(ccVinSaleRowHasData);
+  // Izsoles detaļu bloks par to pašu izsoli, kas jau ir rindā «Pārdošanas un izsoļu vēsture», nav otrs ieraksts.
+  const saleKeys = new Set(sales.map((row) => `${row.venue.trim().toLowerCase()}|${row.date.trim()}`));
+  const lotDay = (raw: string): string => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(raw.trim());
+    return m ? `${m[3]}.${m[2]}.${m[1]}` : raw.trim();
+  };
   const lots = (b.thecarapiRecords ?? []).filter(
-    (record) => record.fields.some((field) => field.value.trim()) || record.photos.length > 0 || record.photoUrls.length > 0,
+    (record) =>
+      (record.fields.some((field) => field.value.trim()) || record.photos.length > 0 || record.photoUrls.length > 0) &&
+      !saleKeys.has(`${record.venue.trim().toLowerCase()}|${lotDay(record.date)}`),
   ).length;
   return (
     (b.damages ?? []).filter((row) => ccVinDamageRowHasData(row) && !row.amount.trim()).length +
     (b.insurance ?? []).filter(ccVinRecordRowHasData).length +
     (b.brands ?? []).filter(ccVinRecordRowHasData).length +
     (b.titles ?? []).filter(ccVinTitleRowHasData).length +
-    (b.sales ?? []).filter(ccVinSaleRowHasData).length +
+    sales.length +
     lots
   );
 }

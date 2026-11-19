@@ -1,0 +1,43 @@
+{
+  "success": true,
+  "request_id": "req-synth-bca-1",
+  "auction": {
+    "site_name": "bca",
+    "auction_id": "BCA-4410",
+    "clean_make": "Volkswagen",
+    "clean_model": "Passat Variant",
+    "registration_year": 2019,
+    "mileage": 158400,
+    "fuel_group": "Diesel",
+    "gearbox_group": "Manual",
+    "auction_date": "2026-10-21",
+    "current_price": 8900,
+    "start_price": 6000,
+    "location": "Mechelen",
+    "seller": "BCA Belgium",
+    "vat_type": "margin",
+    "details": {
+      "condition_grade": "3",
+      "keys": 2,
+      "service_book": "partial",
+      "previous_use": "company-car",
+      "co2_emissions": 118
+    },
+    "vehicle_details": {
+      "damages": [
+        { "location": "Rear bumper", "description": "Dent", "severity": "minor" },
+        { "location": "Windscreen", "description": "Stone chip", "severity": "minor" }
+      ],
+      "paint_measurements": [
+        { "panel": "bonnet", "value": 105 },
+        { "panel": "front-left-door", "value": 245 },
+        { "panel": "rear-right-door", "value": 380 }
+      ],
+      "technical_issues": "Engine warning light on",
+      "has_technical_issues": true,
+      "equipment": ["Navigation system", "Tow bar"],
+      "technical_inspection_date": "2026-08-30",
+      "new_portal_field": "brand_new_enum_value"
+    }
+  }
+}

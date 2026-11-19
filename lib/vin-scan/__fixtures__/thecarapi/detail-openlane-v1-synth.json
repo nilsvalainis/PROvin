@@ -1,0 +1,68 @@
+{
+  "success": true,
+  "contract_version": "2026-10-05",
+  "request_id": "req-synth-ol-1",
+  "server_time": "2026-11-18T10:00:00Z",
+  "data": {
+    "site": "openlane",
+    "id": "11125938",
+    "clean_make": "Kia",
+    "clean_model": "Niro",
+    "registration_year": 2021,
+    "first_registration": "2021-03-15",
+    "vin": "KNATEST0000000001",
+    "mileage": 77205,
+    "fuel_group": "Petrol",
+    "gearbox_group": "Automatic",
+    "body_type": "suv",
+    "color": "white",
+    "steering": "left",
+    "auction_end_at": "2026-11-12T14:00:00Z",
+    "first_seen_at": "2026-11-08T07:30:00Z",
+    "details_pending": false,
+    "picture_count": 19,
+    "prices": {
+      "start": { "amount": 7500, "currency": "EUR" },
+      "current": { "amount": 9800, "currency": "EUR" },
+      "buy_now": null,
+      "final": { "amount": 9800, "currency": "EUR" },
+      "public": { "amount": 11210, "currency": "EUR" },
+      "native": { "amount": 9800, "currency": "EUR" }
+    },
+    "live_price": { "price": 9800, "currency": "EUR", "source": "openlane", "fetched_at": "2026-11-12T13:58:00Z" },
+    "vehicle_details": {
+      "damages": [
+        { "part": "front-bumper", "type": "scratch", "area": "front", "comment": "Scratch on lower lip, approx. 4 cm" },
+        { "part": "rear-left-door", "type": "dent", "area": "left", "comment": "Small dent without paint damage" }
+      ],
+      "damage_comment": "Normal signs of use",
+      "is_damaged": true,
+      "has_technical_issues": false,
+      "estimated_repair_costs": 450,
+      "inspection_reports": [
+        { "type": "external_damage_report", "type_id": 2, "url": "https://cdn.example/ol/ext.pdf" },
+        { "type": "maintenance_records", "type_id": 3, "url": "https://cdn.example/ol/maint.pdf" }
+      ],
+      "paperwork": { "COCAvailable": true, "RegistrationDocsAvailable": true, "IsV5Present": false, "LicensePlate": false },
+      "service_history": [
+        { "date": "2025-04-02", "mileage_km": 61200, "company": "Kia Partner Leipzig", "description": "Inspection with oil change", "price_eur": 289 },
+        { "date": "2024-03-28", "mileage_km": 44800, "company": "Kia Partner Leipzig", "description": "Annual service", "price_eur": 241 }
+      ],
+      "service_history_summary": { "service_book": "digital", "last_service_date": "2025-04-02", "last_service_mileage": 61200 },
+      "equipment": [{ "category": "Comfort", "name": "Heated seats" }],
+      "location": { "city": "Leipzig", "country": "DE" },
+      "seller": { "name": "Openlane Leasing DE", "type": "leasing" },
+      "drivetrain": "FWD",
+      "drivetrain_source": "stated",
+      "remarks": "Two keys available"
+    },
+    "auction": {
+      "extracted_fields": {
+        "images": [
+          { "url": "https://cdn.example/ol/11125938-1.jpg", "index": 0, "is_primary": true },
+          { "url": "https://cdn.example/ol/11125938-2.jpg", "index": 1, "is_primary": false }
+        ]
+      }
+    }
+  }
+}
