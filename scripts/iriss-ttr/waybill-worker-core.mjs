@@ -312,12 +312,13 @@ export async function processJob(job, deps) {
       if (!replaceNo) {
         const text = plateBusyText(displayPlate(plate), active);
         deps.log("plate_busy", { id: job.id, plate, active: active.map((a) => a.waybillNo) });
-        await deps.api.result(job.id, { ok: false, errorReason: text, by: "auto" }).catch(() => {});
+        // activeWaybillNo: serveris piedāvā «Pārrakstīt» («Pārtraukt» darbs Aivaram, tad jauna) - worker pats neko nepārtrauc.
+        await deps.api.result(job.id, { ok: false, errorReason: text, activeWaybillNo: active[0].waybillNo, by: "auto" }).catch(() => {});
         return { outcome: "plate_busy", active: active.map((a) => a.waybillNo) };
       }
       if (active.length !== 1 || active[0].waybillNo !== replaceNo) {
         const text = `Numuru ${displayPlate(plate)} CSDD aizņem ${active.map((a) => a.waybillNo).join(", ")}, nevis apstiprinātā ${replaceNo}. Neko neanulēju, jaunā pavadzīme nav izveidota.`;
-        await deps.api.result(job.id, { ok: false, errorReason: text, by: "auto" }).catch(() => {});
+        await deps.api.result(job.id, { ok: false, errorReason: text, activeWaybillNo: active[0].waybillNo, by: "auto" }).catch(() => {});
         return { outcome: "plate_busy_other", active: active.map((a) => a.waybillNo) };
       }
       await stage("annulling");
@@ -337,7 +338,7 @@ export async function processJob(job, deps) {
     const filled = await deps.runScript("fill", input);
     if (filled?.busy?.waybillNo && !annulDone) {
       const text = plateBusyText(displayPlate(plate), [filled.busy]);
-      await deps.api.result(job.id, { ok: false, errorReason: text, by: "auto" }).catch(() => {});
+      await deps.api.result(job.id, { ok: false, errorReason: text, activeWaybillNo: filled.busy.waybillNo, by: "auto" }).catch(() => {});
       return { outcome: "plate_busy", active: [filled.busy.waybillNo] };
     }
     if (!filled?.ok) throw new Error(filled?.error || "forma netika aizpildīta");

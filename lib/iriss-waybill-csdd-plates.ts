@@ -215,3 +215,19 @@ export function knownWaybillNumbers(
   for (const n of index) nums.add(n);
   return [...nums].slice(0, 12);
 }
+
+/** Cik svaigs ir CSDD numura nolasījums: fresh (<= 15 min, izdevies), vpn_down (vecs un VPN izslēgts), stale (vecs/nav). */
+export type CsddPlateSyncState = "fresh" | "stale" | "vpn_down";
+
+export function csddPlateSyncState(
+  doc: CsddPlatesDoc | null,
+  plate: string,
+  vpn: "up" | "down" | "unknown",
+  nowMs = Date.now(),
+): CsddPlateSyncState {
+  const want = compactDealerPlate(plate);
+  const entry = doc?.plates.find((e) => compactDealerPlate(e.plate) === want);
+  const checked = entry ? Date.parse(entry.checkedAt) : Number.NaN;
+  if (entry?.ok && Number.isFinite(checked) && nowMs - checked <= CSDD_PLATES_FRESH_MS) return "fresh";
+  return vpn === "down" ? "vpn_down" : "stale";
+}

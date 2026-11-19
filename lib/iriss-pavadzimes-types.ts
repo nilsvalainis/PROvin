@@ -47,10 +47,20 @@ export type IrissPavadzimeListRow = IrissPavadzimeRecord & {
   supersededBy?: string;
 };
 
+/** Administratora dzēsts ieraksts: Dropbox sinhronizācija to neatjauno (lib/iriss-pavadzimes-delete.ts). */
+export type IrissPavadzimeTombstone = {
+  id: string;
+  number: string;
+  dropboxId: string;
+  deletedAt: string;
+  by: string;
+};
+
 export type IrissPavadzimesIndex = {
   version: 1;
   updatedAt: string;
   items: IrissPavadzimeRecord[];
+  deleted?: IrissPavadzimeTombstone[];
 };
 
 export function emptyIrissPavadzimeRecord(id: string, nowIso: string): IrissPavadzimeRecord {

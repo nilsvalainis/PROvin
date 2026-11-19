@@ -29,6 +29,7 @@ import {
   waybillNoProgressMinutes,
   waybillNoProgressText,
   waybillRequestDismissable,
+  waybillReplaceOffer,
   waybillStuckStageText,
   type WaybillAivarsReply,
   type WaybillAutoMode,
@@ -294,6 +295,10 @@ export type WaybillMobileRequestRow = {
   pdfFileName: string;
   /** Dropbox saglabāšanas kļūda (tikai adminam; kolēģim serveris to nesūta). */
   dropboxError: string;
+  /** «Pārrakstīt (pārtraukt P0xxxx un izrakstīt jaunu)»: aktīvā pavadzīme, ko drīkst pārtraukt; tukšs = pogas nav. */
+  replaceWaybillNo: string;
+  /** CSDD numura nolasījums vecs vai VPN izslēgts: «Numura statuss var būt novecojis». */
+  plateStatusStale: boolean;
 };
 
 export { waybillWrittenOffAtMs };
@@ -343,6 +348,9 @@ export type WaybillMobileProgress = {
 /** Joslas platums pēc reālā soļa. */
 const STAGE_PCT: Record<WaybillWorkerStage, number> = { claimed: 40, vpn: 50, checking: 54, annulling: 58, filling: 62, saving: 78, pdf: 90 };
 
+export const WAYBILL_RESUBMIT_WAIT_LINE = (no: string) =>
+  `Vispirms CSDD «Pārtraukt»${no ? ` ${no}` : ""}, pēc tam tiks izrakstīta jaunā.`;
+
 /** Pēc cik ilga gaidīšanas rāda "Gaida ilgāk nekā parasti" un ļauj atkārtot. */
 export const WAYBILL_MOBILE_LONG_WAIT_MS = 15 * 60 * 1000;
 
@@ -377,10 +385,12 @@ export function waybillStopProgress(status: WaybillRequestStatus, waybillNo: str
 
 export function waybillMobileProgress(
   request: Pick<WaybillRequest, "status" | "createdAt" | "updatedAt" | "pickedAt" | "errorReason" | "validUntil" | "waybillNo"> &
-    Partial<Pick<WaybillRequest, "stage" | "stageAt">>,
+    Partial<Pick<WaybillRequest, "stage" | "stageAt" | "waitStopId" | "waitStopWaybillNo">>,
   nowMs = Date.now(),
   auto: { autoMode?: WaybillAutoMode; autoStandard?: boolean; autoReason?: string } = {},
 ): WaybillMobileProgress {
+  // «Pārrakstīt»: vispirms Aivars CSDD «Pārtraukt» veco, tad šis atkal rindā.
+  if (request.waitStopId) return { step: 1, pct: 10, text: WAYBILL_RESUBMIT_WAIT_LINE(request.waitStopWaybillNo || "") };
   if (request.status === "issued") {
     const until = formatRigaDateTimeComma(request.validUntil);
     const text = [request.waybillNo ? `Nr. ${request.waybillNo}` : "", until ? `derīga līdz ${until}` : ""].filter(Boolean).join(" · ");
@@ -451,6 +461,10 @@ export function waybillMobileRequestRows(
      * aktīva (CSDD derīgums garāks par pieprasīto), kartīte nav «Izrakstīta … atkal brīvs».
      */
     plates?: ReadonlyArray<WaybillPlateState>;
+    /** «Pārrakstīt» atļauts (Nils, Toms, Ingus); partnerim (tikai Pavadzīmes) - nē. */
+    canReplace?: boolean;
+    /** Serveris: CSDD numura nolasījuma svaigums «Pārrakstīt» numuriem. */
+    plateSync?: ReadonlyArray<{ plate: string; state: string }>;
   } = {},
 ): WaybillMobileRequestRow[] {
   const nowMs = opts.nowMs ?? Date.now();
@@ -528,6 +542,7 @@ export function waybillMobileRequestRows(
       const plate = displayDealerPlate(request.vehicle.plate) || request.vehicle.plate;
       const plateBusyNow = plateState(request)?.busy === true;
       const pdfUrl = reply?.pdfUrl || request.pdfUrl;
+      const waitingStop = status === "error" && Boolean(request.waitStopId);
       const offSub = writtenOff
         ? [
             `Izrakstīta ${formatRigaDateTimeComma(new Date(offAt).toISOString())}`,
@@ -546,17 +561,19 @@ export function waybillMobileRequestRows(
             ? WAYBILL_STOP_STATUS_LABEL[status]
             : writtenOff
               ? WAYBILL_WRITTEN_OFF_LABEL
-              : WAYBILL_MOBILE_STATUS[status].label,
-        tone: stale || writtenOff ? "wait" : WAYBILL_MOBILE_STATUS[status].tone,
+              : waitingStop
+                ? WAYBILL_MOBILE_STATUS.queued.label
+                : WAYBILL_MOBILE_STATUS[status].label,
+        tone: stale || writtenOff || waitingStop ? "wait" : WAYBILL_MOBILE_STATUS[status].tone,
         pdfUrl,
         canRetry:
-          status === "error" ||
+          (status === "error" && !waitingStop) ||
           (status === "in_progress" && quietMinutes != null) ||
           (status === "queued" && (longWait || stale) && !waybillPendingExpired(request, nowMs)),
         canCancel: waybillRequestCancellable({ status }) && !stale,
         cancelText: waybillCancelConfirmText({ status, pickedBy: request.pickedBy, kind: request.kind }),
         quietMinutes,
-        canDismiss: waybillRequestDismissable({ ...request, status }, requests, nowMs),
+        canDismiss: !waitingStop && waybillRequestDismissable({ ...request, status }, requests, nowMs),
         errorText: status === "error" ? request.errorReason || reply?.text || "" : "",
         stale,
         writtenOff,
@@ -569,6 +586,10 @@ export function waybillMobileRequestRows(
           waybillDropboxFileName({ waybillNo, brandModel: request.vehicle.brandModel, plate: request.vehicle.plate }) ||
           `${waybillNo || "pavadzime"}.pdf`,
         dropboxError: status === "issued" ? (reply?.dropboxError ?? "") : "",
+        replaceWaybillNo: waybillReplaceOffer({ ...request, status }, { waybillOnly: opts.canReplace !== true })?.waybillNo ?? "",
+        plateStatusStale: (opts.plateSync ?? []).some(
+          (p) => compactDealerPlate(p.plate) === compactDealerPlate(request.vehicle.plate) && (p.state === "stale" || p.state === "vpn_down"),
+        ),
       };
     });
 }

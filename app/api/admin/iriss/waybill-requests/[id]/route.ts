@@ -10,7 +10,12 @@ import {
   waybillRequestWithoutOrder,
 } from "@/lib/iriss-waybill-requests";
 import { dismissWaybillRequestForActor } from "@/lib/iriss-waybill-dismissed-store";
-import { cancelWaybillRequest, readWaybillRequestsDoc, retryWaybillRequest } from "@/lib/iriss-waybill-requests-store";
+import {
+  cancelWaybillRequest,
+  readWaybillRequestsDoc,
+  replaceBusyWaybillRequest,
+  retryWaybillRequest,
+} from "@/lib/iriss-waybill-requests-store";
 import { waybillAutoContext } from "@/lib/iriss-waybill-auto-server";
 import { canSeeWaybillOrders } from "@/lib/iriss-pavadzimes-list";
 import { isWaybillOnlyActor, requireIrissSectionApi, waybillOnlyForbidden, waybillPdfViewer } from "@/lib/staff-auth";
@@ -56,17 +61,73 @@ export async function POST(req: Request, ctx: Ctx) {
   const gate = await requireIrissSectionApi("pavadzimes");
   if (!gate.ok) return gate.response;
   const { id } = await ctx.params;
-  let body: { action?: string };
+  let body: { action?: string; replaceWaybillNo?: unknown };
   try {
-    body = (await req.json()) as { action?: string };
+    body = (await req.json()) as { action?: string; replaceWaybillNo?: unknown };
   } catch {
     return NextResponse.json({ error: "Nederīgs pieprasījums." }, { status: 400, ...NO_STORE });
   }
-  if (body.action !== "retry" && body.action !== "cancel" && body.action !== "dropbox" && body.action !== "dismiss") {
+  if (
+    body.action !== "retry" &&
+    body.action !== "cancel" &&
+    body.action !== "dropbox" &&
+    body.action !== "dismiss" &&
+    body.action !== "replace"
+  ) {
     return NextResponse.json({ error: "Nederīga darbība." }, { status: 400, ...NO_STORE });
   }
   const actor = gate.actor;
   const viewer = waybillPdfViewer(actor);
+  if (body.action === "replace") {
+    // «Pārrakstīt» = «Pārtraukt» aktīvo + tad jauna: partneris (tikai Pavadzīmes) - nekad; Nils/Toms/Ingus - arī cita pieprasījumu.
+    if (isWaybillOnlyActor(actor)) return waybillOnlyForbidden();
+    const waybillNo = typeof body.replaceWaybillNo === "string" ? body.replaceWaybillNo.trim().toUpperCase() : "";
+    try {
+      const result = await replaceBusyWaybillRequest({
+        id,
+        waybillNo,
+        actorId: actor.kind === "admin" ? "env-admin" : actor.user.id,
+        actorName: actor.kind === "admin" ? actor.name : actor.user.name,
+      });
+      if (!result.ok) {
+        if (result.reason === "not_found") {
+          return NextResponse.json({ error: "Pieprasījums nav atrasts." }, { status: 404, ...NO_STORE });
+        }
+        if (result.reason === "pending") {
+          return NextResponse.json(
+            { error: "Šim numuram jau ir pieprasījums, kas vēl tiek izrakstīts. Pagaidi vai atcel to.", pending: true, pendingId: result.pendingId },
+            { status: 409, ...NO_STORE },
+          );
+        }
+        return NextResponse.json(
+          { error: "Numura stāvoklis ir mainījies. Atjauno sarakstu un mēģini vēlreiz." },
+          { status: 409, ...NO_STORE },
+        );
+      }
+      // 1. solis - «Pārtraukt» darbs Aivaram (tā pati plūsma kā pogai «Pārtraukt»; nekad anulēšana). Jaunā pavadzīme
+      // šim pieprasījumam rindā nonāk tikai pēc tam, kad «Pārtraukt» izdots (completeWaybillRequest).
+      after(() => wakeAivars(result.stop.id));
+      const doc = await readWaybillRequestsDoc();
+      const auto = await waybillAutoContext(doc);
+      const withOrders = canSeeWaybillOrders(actor);
+      return NextResponse.json(
+        {
+          ok: true,
+          request: withOrders ? result.request : waybillRequestWithoutOrder(result.request),
+          reply: waybillAivarsReply(result.request, doc.events),
+          ...withWaybillPdfAccess(
+            waybillChatPayload(withOrders ? waybillDocForViewer(doc, viewer) : waybillDocWithoutOrders(waybillDocForViewer(doc, viewer)), Date.now(), auto),
+            viewer,
+          ),
+          autoMode: auto.mode,
+        },
+        NO_STORE,
+      );
+    } catch (err) {
+      console.error("[iriss-waybill] replace_failed", err instanceof Error ? err.message : err);
+      return NextResponse.json({ error: "Neizdevās nosūtīt pieprasījumu." }, { status: 500, ...NO_STORE });
+    }
+  }
   if (viewer.waybillOnly) {
     // Partneris drīkst atcelt / atkārtot / paslēpt tikai savu pieprasījumu (sarakstā viņš redz tikai savus).
     try {

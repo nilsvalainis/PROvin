@@ -3,7 +3,7 @@ import { irissAivarsApiTokenConfigured, verifyIrissAivarsApiToken } from "@/lib/
 import { toAivarsCreateWaybillAction, toAivarsWaybillAction } from "@/lib/iriss-waybill-create";
 import { isWaybillStopRequest } from "@/lib/iriss-waybill-stop";
 import { completeWaybillRequest, handAutoFailureToAivars, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
-import { autoFailureHandoff } from "@/lib/iriss-waybill-requests";
+import { autoFailureHandoff, plateBusyActiveWaybillNo } from "@/lib/iriss-waybill-requests";
 import { wakeAivars } from "@/lib/iriss-aivars-wake";
 import { uploadIrissPavadzime } from "@/lib/iriss-pavadzimes-store";
 import { ensureWaybillRequestInDropbox } from "@/lib/iriss-waybill-dropbox";
@@ -34,6 +34,7 @@ export async function POST(req: Request, ctx: Ctx) {
     validFrom?: unknown;
     validUntil?: unknown;
     validTo?: unknown;
+    activeWaybillNo?: unknown;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -89,6 +90,9 @@ export async function POST(req: Request, ctx: Ctx) {
       }
     }
   }
+  const waitingBefore = current && isWaybillStopRequest(current)
+    ? (await readWaybillRequestsDoc()).requests.filter((row) => row.waitStopId === current.id).map((row) => row.id)
+    : [];
   const request = await completeWaybillRequest({
     id,
     ok,
@@ -98,8 +102,17 @@ export async function POST(req: Request, ctx: Ctx) {
     by,
     validFrom,
     validUntil,
+    // «Numurs CSDD aizņemts»: aktīvā pavadzīme pieprasījumā -> UI «Pārrakstīt (pārtraukt P0xxxx un izrakstīt jaunu)».
+    activeWaybillNo: ok ? "" : plateBusyActiveWaybillNo({ activeWaybillNo: body.activeWaybillNo, errorReason }),
   });
   if (!request) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  // «Pārrakstīt»: «Pārtraukt» izdots -> gaidošais pieprasījums atkal rindā; pamodina Aivaru/automātiku tam.
+  if (isWaybillStopRequest(request) && request.status === "issued") {
+    const requeued = (await readWaybillRequestsDoc()).requests.filter(
+      (row) => waitingBefore.includes(row.id) && row.status === "queued",
+    );
+    for (const row of requeued) after(() => wakeAivars(row.id));
+  }
   // Izdotās pavadzīmes PDF -> Dropbox /Pavadzīmes_IRISS (idempotenti, pārbaudīts); kļūdu cron mēģina vēlreiz.
   if (request.status === "issued" && !isWaybillStopRequest(request) && !request.dropboxPath) {
     after(() => ensureWaybillRequestInDropbox(request.id));
