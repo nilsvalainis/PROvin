@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { keyLabel, resetThecarapiUntranslated, thecarapiUntranslated, translateDamageType, translateI18n } from "@/lib/thecarapi-i18n-lv";
 import { buildThecarapiPdfModel } from "@/lib/thecarapi-pdf-model";
-import { buildThecarapiRecordsPdfHtml, thecarapiPaintTone } from "@/lib/thecarapi-pdf";
+import { buildThecarapiRecordsPdfHtml, THECARAPI_PDF_VEHICLE_LABELS, thecarapiPaintTone, thecarapiPdfVehicleRows } from "@/lib/thecarapi-pdf";
 import { buildThecarapiAdminRecords } from "@/lib/vin-scan/parse-thecarapi";
 import { thecarapiFieldsOf, type ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 
@@ -112,6 +112,32 @@ describe("TheCarApi PDF modelis (AUTO1 pilnā forma, anonimizēts)", () => {
     expect(model.basics.filter((r) => r.label === "VIN")).toHaveLength(1);
   });
 
+  it("«Automašīnas pamatdati»: tikai 9 lauki šajā secībā, pārējie pamatdati netiek drukāti", () => {
+    const rows = thecarapiPdfVehicleRows(model.basics);
+    expect(rows.map((r) => r.label)).toEqual([...THECARAPI_PDF_VEHICLE_LABELS]);
+    const section = html.slice(html.indexOf(">Automašīnas pamatdati<"), html.indexOf(">Cenas<"));
+    for (const row of rows) expect(section).toContain(row.value);
+    expect(section).toContain("Uzņēmuma auto");
+    for (const hidden of ["Marka, modelis", "VIN", "Pirmā reģistrācija", "Dzinējs", "CO₂", "Virsbūve", "Degviela", "Krāsa", "Emisiju klase"]) {
+      expect(text, hidden).not.toContain(hidden);
+    }
+    expect(text).not.toContain("BMW 2er");
+    expect(text).not.toContain("1 995 cm³");
+  });
+
+  it("lakas biezums uz virsbūves shēmas: 11 mērījumi uz savām detaļām, zonas pēc sliktākā", () => {
+    expect(html.match(/<svg class="pdf-paint-map"/g)).toHaveLength(1);
+    expect(html.match(/data-paint-slot="/g)).toHaveLength(11);
+    for (const slot of ["front-0", "roof-0", "rear-0", "left-0", "left-1", "left-2", "left-3", "right-0", "right-1", "right-2", "right-3"]) {
+      expect(html, slot).toContain(`data-paint-slot="${slot}" data-tone="ok"`);
+    }
+    for (const zone of ["front", "roof", "rear", "left", "right"]) expect(html).toContain(`data-zone="${zone}" data-tone="ok"`);
+    // Viss uz shēmas - atsevišķas lakas tabulas nav.
+    const paint = html.slice(html.indexOf(">Lakas biezums<"), html.indexOf(">Bremzes<"));
+    expect(paint).not.toContain("pdf-dealer-vehicle-kv");
+    expect(paint).toContain("data:image/jpeg;base64,");
+  });
+
   it("bojājumi: 3 rindas pa zonām, kopā 5, latviski", () => {
     expect(model.damages).toEqual([
       { zone: "Priekša", part: "Priekšējais buferis", type: "Skrāpējums līdz gruntij", size: "20-50 mm", quantity: "1", repair: "", notes: "" },
@@ -124,7 +150,7 @@ describe("TheCarApi PDF modelis (AUTO1 pilnā forma, anonimizēts)", () => {
 
   it("laka 11 zonas, bremzes 4, riepas 4, aprīkojums pa grupām, serviss", () => {
     expect(model.paint).toHaveLength(11);
-    expect(model.paint[0]).toEqual({ label: "Motora pārsegs", value: "120", highlight: false });
+    expect(model.paint[0]).toEqual({ label: "Motora pārsegs", value: "120", highlight: false, area: "hood" });
     expect(model.brakes?.rows).toHaveLength(4);
     expect(model.brakes?.rows[0]).toEqual(["Priekšējais kreisais", "Disku bremzes", "≥3 mm", "nav izmērāms", "OK"]);
     expect(model.wheels).toHaveLength(1);
@@ -146,7 +172,7 @@ describe("TheCarApi PDF modelis (AUTO1 pilnā forma, anonimizēts)", () => {
   });
 
   it("sadaļas ir spec secībā", () => {
-    const order = ["Pamatdati", "Cenas", "Nobraukums", "Datumi", "Bojājumi", "Lakas biezums", "Bremzes", "Riepas un diski", "Servisa vēsture", "Dokumenti", "Citi dati"];
+    const order = ["Automašīnas pamatdati", "Cenas", "Nobraukums", "Datumi", "Bojājumi", "Lakas biezums", "Bremzes", "Riepas un diski", "Servisa vēsture", "Dokumenti", "Citi dati"];
     const at = order.map((t) => html.indexOf(`class="pdf-subhead">${t}`));
     expect(at.every((i) => i > 0)).toBe(true);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
@@ -162,7 +188,8 @@ describe("TheCarApi PDF modelis (AUTO1 pilnā forma, anonimizēts)", () => {
     expect(html).toContain("izsolē 09.10.2026");
     expect(html.match(/pdf-svc-major pdf-tc-zone/g)).toHaveLength(2);
     expect(html).toContain("Skrāpējums līdz gruntij");
-    expect(html).toContain('pdf-tc-tone--ok">120 µm');
+    expect(html).toContain('data-paint-slot="front-0" data-tone="ok"');
+    expect(html).toMatch(/data-paint-slot="front-0"[^]*?>120 µm</);
     expect(text).toContain("≤160 µm rūpnīcas krāsojums");
     expect(text).toContain("161-300 µm iespējama pārkrāsošana");
     expect(html).toContain("&gt;300 µm iespējams špaktelis");
@@ -292,7 +319,10 @@ describe("citas platformas (sintētiskas fixtures pēc publiskās dokumentācija
     expect(model.basics).toContainEqual({ label: "PVN režīms", value: "Peļņas daļas režīms (bez PVN)" });
     expect(model.damages).toContainEqual(expect.objectContaining({ zone: "Aizmugure", part: "Aizmugurējais buferis", type: "Iespiedums neliels" }));
     expect(model.paint.map((p) => p.value)).toEqual(["105", "245", "380"]);
-    expect(html).toContain('pdf-tc-tone--alert">380 µm');
+    expect(html).toMatch(/data-paint-slot="right-2" data-tone="alert">[^]*?>380 µm</);
+    expect(html).toMatch(/data-paint-slot="left-1" data-tone="warn">[^]*?>245 µm</);
+    expect(html).toContain('data-zone="right" data-tone="alert"');
+    expect(html).toContain('data-zone="roof" data-tone="neutral"');
     expect(text).not.toContain("Navigation system");
   });
 

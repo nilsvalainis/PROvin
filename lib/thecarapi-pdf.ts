@@ -4,6 +4,7 @@
  * Ārējā pakalpojuma nosaukums netiek drukāts. Saites, bilžu tehniskie lauki un iekšējie id netiek drukāti.
  */
 import { CC_VIN_MAX_PHOTOS } from "@/lib/cc-vin-photo-types";
+import { buildPaintMapSvg, paintMapSlotOf, type PaintMapReading } from "@/lib/paint-map-svg";
 import { buildPdfKvPairHtml } from "@/lib/pdf-fact-card";
 import {
   buildThecarapiPdfModel,
@@ -12,6 +13,7 @@ import {
   type ThecarapiPdfGrid,
   type ThecarapiPdfKv,
   type ThecarapiPdfModel,
+  type ThecarapiPdfPaint,
 } from "@/lib/thecarapi-pdf-model";
 import {
   thecarapiPdfGroupTitle,
@@ -176,17 +178,63 @@ export function thecarapiPaintTone(value: string): Tone {
   return n <= 300 ? "warn" : "alert";
 }
 
-function paintBlock(rows: readonly ThecarapiPdfKv[]): string {
+/** Shēmas tonis (bez «neutral»): skaitlis bez vērtības paliek tikai tabulā. */
+function paintMapTone(value: string): PaintMapReading["tone"] | null {
+  const tone = thecarapiPaintTone(value);
+  return tone === "neutral" ? null : tone;
+}
+
+function paintValueText(value: string): string {
+  return /^\d+([.,]\d+)?$/.test(value.trim()) ? `${value} µm` : value;
+}
+
+/**
+ * Lakas biezums: IRISS piedāvājuma virsbūves shēma (tā pati ģeometrija kā `PdPaintMap`) ar µm uz detaļām.
+ * Mērījumi, kam shēmā nav vietas (vai vieta jau aizņemta), - tabulā zem shēmas, lai nekas nepazūd.
+ */
+function paintBlock(rows: readonly ThecarapiPdfPaint[]): string {
   if (rows.length === 0) return "";
-  const table = buildPdfKvPairHtml(
-    rows.map((row) => {
-      const unit = /^\d+([.,]\d+)?$/.test(row.value.trim()) ? " µm" : "";
-      const v = `${row.value}${unit}`;
-      return { k: row.label, v, vHtml: toneText(v, thecarapiPaintTone(row.value)) };
-    }),
-  );
+  const readings: PaintMapReading[] = [];
+  const taken = new Set<string>();
+  const rest: ThecarapiPdfPaint[] = [];
+  for (const row of rows) {
+    const slot = paintMapSlotOf(row.area || row.label);
+    const tone = paintMapTone(row.value);
+    const key = slot ? `${slot.zone}:${slot.slot}` : "";
+    if (slot && tone && !taken.has(key)) {
+      taken.add(key);
+      readings.push({ slot, text: paintValueText(row.value), tone });
+    } else rest.push(row);
+  }
+  const map = readings.length ? `<div class="pdf-tc-paint-map">${buildPaintMapSvg(readings)}</div>` : "";
+  const table = rest.length
+    ? `<div class="pdf-dealer-vehicle-kv">${buildPdfKvPairHtml(
+        rest.map((row) => {
+          const v = paintValueText(row.value);
+          return { k: row.label, v, vHtml: toneText(v, thecarapiPaintTone(row.value)) };
+        }),
+      )}</div>`
+    : "";
   const legend = `<p class="pdf-dealer-cover-note pdf-tc-legend">${toneText("≤160 µm rūpnīcas krāsojums", "ok")} · ${toneText("161-300 µm iespējama pārkrāsošana", "warn")} · ${toneText(">300 µm iespējams špaktelis", "alert")}</p>`;
-  return `<div class="pdf-dealer-vehicle-kv">${table}</div>${legend}`;
+  return `${map}${table}${legend}`;
+}
+
+/** «Automašīnas pamatdati» - tikai šie lauki un šajā secībā (Nils 19.11, v4). Pārējie pamatdati PDF netiek drukāti. */
+export const THECARAPI_PDF_VEHICLE_LABELS = [
+  "Izcelsmes valsts",
+  "Reģistrācijas valsts",
+  "Iepriekšējā lietošana",
+  "Komerclietošana",
+  "Auto statuss",
+  "Īpašnieku skaits",
+  "Atslēgu skaits",
+  "Tehniskā apskate derīga līdz",
+  "Negadījumi",
+] as const;
+
+export function thecarapiPdfVehicleRows(basics: readonly ThecarapiPdfKv[]): ThecarapiPdfKv[] {
+  const base = (label: string): string => label.replace(/\s+\((cits avots|vēstures dati)\)$/, "");
+  return THECARAPI_PDF_VEHICLE_LABELS.flatMap((label) => basics.filter((row) => base(row.label) === label && row.value.trim()));
 }
 
 function statusTone(value: string): Tone {
@@ -221,7 +269,7 @@ export function renderThecarapiPdfModelHtml(model: ThecarapiPdfModel): string {
     if (html) blocks.push(html);
   };
 
-  push(kvSection("Pamatdati", model.basics));
+  push(kvSection("Automašīnas pamatdati", thecarapiPdfVehicleRows(model.basics)));
   push(kvSection("Cenas", model.prices));
   push(kvSection("Nobraukums", model.mileage));
   push(kvSection("Datumi", model.dates));
@@ -229,7 +277,7 @@ export function renderThecarapiPdfModelHtml(model: ThecarapiPdfModel): string {
   const zones = damageZones(model);
   if (zones) push(`${subhead("Bojājumi")}${zones}`);
   const paint = paintBlock(model.paint);
-  if (paint) push(`<div class="pdf-keep-head">${subhead("Lakas biezums")}${paint}</div>`);
+  if (paint) push(`<div class="pdf-keep-head pdf-tc-paint">${subhead("Lakas biezums")}${paint}</div>`);
   if (model.brakes?.rows.length) push(`<div class="pdf-keep-head">${subhead("Bremzes")}${gridTable(model.brakes, STATUS_COL)}</div>`);
 
   for (const set of model.wheels) {

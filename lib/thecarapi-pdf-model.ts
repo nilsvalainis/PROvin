@@ -37,6 +37,9 @@ import type { ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 
 export type ThecarapiPdfKv = { label: string; value: string; highlight?: boolean };
 
+/** Lakas mērījums: `area` ir avota detaļas nosaukums (shēmas vietai), `label` - latviski. */
+export type ThecarapiPdfPaint = ThecarapiPdfKv & { area: string };
+
 export type ThecarapiPdfGrid = { columns: string[]; rows: string[][] };
 
 export type ThecarapiPdfDamage = {
@@ -63,7 +66,7 @@ export type ThecarapiPdfModel = {
   dates: ThecarapiPdfKv[];
   damages: ThecarapiPdfDamage[];
   damagesTotal: number | null;
-  paint: ThecarapiPdfKv[];
+  paint: ThecarapiPdfPaint[];
   brakes: ThecarapiPdfGrid | null;
   wheels: ThecarapiPdfWheelSet[];
   equipment: ThecarapiPdfEquipmentGroup[];
@@ -722,15 +725,15 @@ function collectUrls(raw: unknown): string[] {
 
 // --- Laka ---
 
-function extractPaint(ctx: Ctx, root: unknown): ThecarapiPdfKv[] {
+function extractPaint(ctx: Ctx, root: unknown): ThecarapiPdfPaint[] {
   const nodes = findNodes(root, (key) => /^(paintthicknesses|paintthickness|paintthicknessmeasurements|paintmeasurements)$/.test(normKey(key)));
-  const rows: { label: string; n: number }[] = [];
+  const rows: { label: string; n: number; area: string }[] = [];
   for (const node of nodes) {
     const add = (labelRaw: string, num: unknown): void => {
       const n = toNumber(num);
       if (n == null) return;
       const label = isI18nKey(labelRaw) ? translateI18n(labelRaw) : translatePart(labelRaw);
-      if (!rows.some((r) => r.label === label && r.n === n)) rows.push({ label, n });
+      if (!rows.some((r) => r.label === label && r.n === n)) rows.push({ label, n, area: labelRaw });
     };
     if (Array.isArray(node.value)) {
       for (const item of node.value) {
@@ -751,7 +754,7 @@ function extractPaint(ctx: Ctx, root: unknown): ThecarapiPdfKv[] {
   if (!rows.length) return [];
   const sorted = [...rows.map((r) => r.n)].sort((a, b) => a - b);
   const median = sorted[Math.floor(sorted.length / 2)]!;
-  return rows.map((r) => ({ label: r.label, value: String(r.n), highlight: r.n > 300 || r.n > 2 * median }));
+  return rows.map((r) => ({ label: r.label, value: String(r.n), highlight: r.n > 300 || r.n > 2 * median, area: r.area }));
 }
 
 // --- Režģa tabulas (bremzes, riteņi) ---

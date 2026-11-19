@@ -188,6 +188,8 @@ export const CC_VIN_PDF_CSS = `
       .pdf-tc-zone .pdf-svc-major__item b{display:block}
       .pdf-tc-zone .pdf-svc-major__meta{display:block;margin-top:1px}
       .pdf-tc-legend{margin:2px 0 8px}
+      .pdf-tc-paint-map{margin:2px 0 4px;break-inside:avoid;page-break-inside:avoid}
+      .pdf-tc-paint-map svg{display:block;width:100%;max-width:520px;height:auto;margin:0 auto}
       .pdf-tc-tone{font-weight:600}
       .pdf-tc-tone--ok{color:#15803d}
       .pdf-tc-tone--warn{color:#B45309}

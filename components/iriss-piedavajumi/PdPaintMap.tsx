@@ -8,44 +8,21 @@ import {
   type IrissPdAuto1Blocks,
   type IrissPdPaintZoneId,
 } from "@/lib/iriss-piedavajumi-auto1";
+import {
+  PAINT_MAP_CAR_SRC as CAR_SRC,
+  PAINT_MAP_H as H,
+  PAINT_MAP_IMG_H as IMG_H,
+  PAINT_MAP_IMG_TOP as IMG_TOP,
+  PAINT_MAP_SIDE as SIDE,
+  PAINT_MAP_SIDE_X as SIDE_X,
+  PAINT_MAP_TOP_CHIP_Y as TOP_CHIP_Y,
+  PAINT_MAP_TOP_DOT_Y as TOP_DOT_Y,
+  PAINT_MAP_W as W,
+  PAINT_MAP_ZONE_ORDER as ZONE_ORDER,
+  PAINT_MAP_ZONES as ZONES,
+} from "@/lib/paint-map-geometry";
 
-/**
- * Krāsas karte (makets apstiprināts 17.11): PROVIN audita atskaites auto (`damage-car-top.jpg`), pagriezts
- * horizontāli - priekšpuse pa kreisi, labā puse augšā, kreisā apakšā (kā Auto1 «Exterior»).
- * Koordinātes laukumā 780×640 (bilde 780×520 ar 60 malu augšā un apakšā).
- */
-const CAR_SRC = "/brand/damage-car-top-east.jpg";
-const W = 780;
-const H = 640;
-const IMG_TOP = 60;
-const IMG_H = 520;
-
-type Zone = {
-  /** Zonas nosaukuma etiķete. */
-  label: [number, number];
-  /** Iezīmētais laukums: x1, y1, x2, y2. */
-  area: [number, number, number, number];
-};
-
-const ZONES: Record<IrissPdPaintZoneId, Zone> = {
-  front: { label: [121, 250], area: [42, 180, 200, 460] },
-  roof: { label: [395, 250], area: [275, 225, 515, 415] },
-  rear: { label: [672, 250], area: [610, 180, 735, 460] },
-  right: { label: [390, 28], area: [70, 155, 700, 225] },
-  left: { label: [390, 612], area: [70, 415, 700, 485] },
-};
-
-/** Sānos līdz 4 mērījumiem (punkts uz virsbūves, etiķete ārpusē), augšskatā 1 (etiķete zem punkta). */
-const SIDE_X = [150, 320, 470, 620];
-const SIDE: Record<"left" | "right", { dot: number; chip: number }> = {
-  right: { dot: 192, chip: 122 },
-  left: { dot: 450, chip: 522 },
-};
-const TOP_DOT_Y = 290;
-const TOP_CHIP_Y = 324;
-
-const ZONE_ORDER: IrissPdPaintZoneId[] = ["front", "roof", "rear", "left", "right"];
-
+/** Krāsas karte (makets apstiprināts 17.11). Ģeometrija kopīga ar izsoles PDF lakas shēmu (`lib/paint-map-geometry.ts`). */
 const px = (x: number) => `${(x / W) * 100}%`;
 const py = (y: number) => `${(y / H) * 100}%`;
 

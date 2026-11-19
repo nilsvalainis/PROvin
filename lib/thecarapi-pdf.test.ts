@@ -62,9 +62,9 @@ describe("TheCarApi PDF bloks WBA6X310305V99966", () => {
     const html = buildThecarapiRecordsPdfHtml(records);
     expect(html).toContain('<h3 class="pdf-dealer-cover__model">AUTO1</h3>');
     expect(html).toContain("Izsole 1326383403 · 09.10.2026");
-    expect(html).toContain("Pamatdati");
-    expect(html).toContain("AUTO1 GmbH");
-    expect(html).toContain("Berlin");
+    // v4: «Automašīnas pamatdati» tikai 9 lauki - pārdevējs un vieta netiek drukāti.
+    expect(html).not.toContain("AUTO1 GmbH");
+    expect(html).not.toContain("Berlin");
     expect(html).toContain("Cenas");
     expect(html).toContain("12 268 €");
     expect(html).toContain("10 000 €");
