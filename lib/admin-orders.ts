@@ -27,6 +27,13 @@ import {
   writeStripePaidIndex,
 } from "@/lib/admin-stripe-paid-index";
 import { getStripe } from "@/lib/stripe";
+import {
+  paymentAdjustmentView,
+  stripeClawbackCents,
+  type PaymentAdjustmentTone,
+  type StripePaymentAdjustment,
+} from "@/lib/stripe-payment-adjustments";
+import { readStripePaymentAdjustments } from "@/lib/stripe-payment-adjustments-store";
 import { parseB2bPackQty } from "@/lib/b2b-partner-orders";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
 import { isOrderUpsellFulfillment } from "@/lib/order-upsell";
@@ -75,7 +82,51 @@ export type AdminOrderRow = {
   packQty?: number | null;
   companyName?: string | null;
   auditPurpose?: "client" | "internal";
+  /** Stripe atmaksa vai strīds (webhook `charge.refunded` / `charge.dispute.*`). */
+  paymentAdjustment?: AdminPaymentAdjustment | null;
 };
+
+export type AdminPaymentAdjustment = {
+  label: string;
+  tone: PaymentAdjustmentTone;
+  /** Stripe paņemtā summa (atmaksa + zaudēts strīds), centi. Statistikā atņem no summas. */
+  clawbackCents: number;
+  /** Rēķins jau izrakstīts: vajag kredītrēķinu (to veido Nils). */
+  invoiceNeedsCreditNote: boolean;
+};
+
+export function toAdminPaymentAdjustment(adj: StripePaymentAdjustment | null | undefined): AdminPaymentAdjustment | null {
+  const view = paymentAdjustmentView(adj);
+  if (!view || !adj) return null;
+  return {
+    label: view.label,
+    tone: view.tone,
+    clawbackCents: stripeClawbackCents(adj),
+    invoiceNeedsCreditNote: adj.invoiceNeedsCreditNote === true,
+  };
+}
+
+/** Statistikai: summa mīnus Stripe atmaksa / zaudēts strīds. */
+export function adminOrderNetAmountCents(row: Pick<AdminOrderRow, "amountTotal" | "paymentAdjustment">): number | null {
+  if (row.amountTotal == null) return null;
+  return Math.max(0, row.amountTotal - (row.paymentAdjustment?.clawbackCents ?? 0));
+}
+
+/** Pievieno atmaksu/strīdu atzīmes. Lasīšanas kļūda nebloķē sarakstu. */
+async function withPaymentAdjustments<T extends AdminOrderRow>(rows: T[]): Promise<T[]> {
+  let doc: Awaited<ReturnType<typeof readStripePaymentAdjustments>>;
+  try {
+    doc = await readStripePaymentAdjustments();
+  } catch (err) {
+    console.warn("[admin-orders] payment adjustments read failed", err);
+    return rows;
+  }
+  if (Object.keys(doc.bySession).length === 0) return rows;
+  return rows.map((r) => {
+    const adj = toAdminPaymentAdjustment(doc.bySession[r.id]);
+    return adj ? { ...r, paymentAdjustment: adj } : r;
+  });
+}
 
 export type AdminOrderDetail = AdminOrderRow & {
   listingUrl: string | null;
@@ -289,7 +340,7 @@ export async function listAdminOrders(): Promise<{
   const includeDemo = isDemoOrdersEnabled() || stripeError !== null;
   const demo = includeDemo ? (getDemoOrderRows() as AdminOrderRow[]) : [];
   /** Visi apmaksātie Checkout (`audit`, `consultation`, `provin_select`) — PROVIN SELECT arī `/admin/konsultacijas`, bet šeit kopējā plūsma. Paraugi (isDemo) nav piesprausti augšā — tieši starp pārējiem pēc datuma. B2B paka paliek kā informatīva rinda. */
-  const rows = [...demo, ...manual, ...real].sort((a, b) => b.created - a.created);
+  const rows = [...demo, ...manual, ...(await withPaymentAdjustments(real))].sort((a, b) => b.created - a.created);
   return { rows, stripeError };
 }
 
@@ -415,7 +466,10 @@ async function fetchCheckoutSessionDetailUncached(sessionId: string): Promise<Ad
 }
 
 export async function getCheckoutSessionDetail(sessionId: string): Promise<AdminOrderDetail | null> {
-  return getCachedCheckoutSessionDetail(sessionId, () => fetchCheckoutSessionDetailUncached(sessionId));
+  const order = await getCachedCheckoutSessionDetail(sessionId, () => fetchCheckoutSessionDetailUncached(sessionId));
+  if (!order || order.isDemo || order.isManual) return order;
+  const [withAdjustment] = await withPaymentAdjustments([order]);
+  return withAdjustment ?? order;
 }
 
 /** Tikai PROVIN SELECT konsultācijas (apmaksātas); citiem session ID — `null`. */

@@ -175,7 +175,7 @@ describe("B2B invite price security", () => {
     });
     expect(lines.find((line) => line.id === "business")?.display).toBe("69,99 €");
     expect(lines.find((line) => line.id === "dealer_raw")?.display).toBe("noklusējums (19,99 €)");
-    expect(lines.find((line) => line.id === "business1")?.display).toBe("noklusējums (79,99 €)");
+    expect(lines.find((line) => line.id === "business1")?.display).toBe("noklusējums (69,99 €)");
   });
 });
 

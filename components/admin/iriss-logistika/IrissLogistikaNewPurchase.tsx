@@ -285,6 +285,16 @@ export function IrissLogistikaNewPurchase({ open: openProp, points, onClose: onC
                 Modelis
                 <input value={model} onChange={(e) => setModel(e.target.value)} className="mt-1 h-10 w-full rounded-xl border border-[var(--iriss-line)] px-3" />
               </label>
+              <label className="col-span-2 text-[12px]">
+                VIN
+                <input
+                  value={vin}
+                  onChange={(e) => setVin(e.target.value)}
+                  autoCapitalize="characters"
+                  spellCheck={false}
+                  className="mt-1 h-10 w-full rounded-xl border border-[var(--iriss-line)] px-3 font-mono text-[12px] uppercase"
+                />
+              </label>
             </div>
           )}
           <label className="mt-3 block text-[12px] font-medium text-[var(--iriss-ink-2)]">Adrese</label>

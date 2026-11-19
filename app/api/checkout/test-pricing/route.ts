@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
 import { getPublicSiteOrigin } from "@/lib/site-url";
 import { getClientIpFromRequest } from "@/lib/client-ip";
@@ -8,7 +7,6 @@ import { normalizeVin } from "@/lib/order-field-validation";
 import { invoiceBuyerMetadataFromUnknown } from "@/lib/invoice-buyer";
 import {
   getCheckoutIntakeCustomFields,
-  getClientCommentCustomField,
   stripeCheckoutLocale,
 } from "@/lib/stripe-session";
 import { stripeAttributionMetadataFromRequest } from "@/lib/ad-attribution";
@@ -21,23 +19,14 @@ import {
   stripeMetaCapiMetadataFromRequest,
 } from "@/lib/meta-capi";
 import { mergeStripeCheckoutMetadata, stripeCheckoutProductMetadata } from "@/lib/stripe-checkout-metadata";
-import {
-  getTestPricingPlan,
-  isTestPricingPlanId,
-  validateTestPricingStep2,
-  type TestPricingPlanId,
-} from "@/lib/test-pricing-plans";
-import {
-  isTestPricingModalCheckoutPage,
-  testPricingCancelPath,
-} from "@/lib/test-pricing-checkout-pages";
+import { getTestPricingPlan, TEST_PRICING_STEP2_MESSAGES } from "@/lib/test-pricing-plans";
+import { testPricingCancelPath } from "@/lib/test-pricing-checkout-pages";
+import { guardTestPricingCheckout } from "@/lib/test-pricing-checkout-guard";
 import {
   getTp5CheckoutSubmitMessage,
   getTp5StripeCheckoutProduct,
-  isTp5CheckoutSource,
   validateTp5InlineFields,
 } from "@/lib/test-pricing-5-inline-checkout";
-import { TP5_KOREA_USA_PUBLIC } from "@/lib/test-pricing-5-mobile";
 import { parseOptionalCheckoutEmail, stripeCheckoutEmailFields } from "@/lib/test-pricing-checkout-email";
 import { routing } from "@/i18n/routing";
 
@@ -49,43 +38,6 @@ const CHECKOUT_WINDOW_MS = 10 * 60 * 1000;
 function resolveStripePriceId(envKey: string): string | null {
   const id = (process.env[envKey] ?? "").trim();
   return id.startsWith("price_") ? id : null;
-}
-
-function buildCheckoutCustomFields(
-  plan: { vinRequired: boolean },
-  locale?: string,
-): Stripe.Checkout.SessionCreateParams.CustomField[] {
-  const listing =
-    locale === "en"
-      ? "Listing link"
-      : locale === "de"
-        ? "Link zum Inserat"
-        : locale === "ru"
-          ? "Ссылка на объявление"
-          : "Sludinājuma saite";
-  const vin =
-    locale === "en"
-      ? "VIN (17 characters, required)"
-      : locale === "de"
-        ? "VIN (17 Zeichen, erforderlich)"
-        : locale === "ru"
-          ? "VIN (17 знаков, обязательно)"
-          : "VIN (17 zīmes, obligāts)";
-  return [
-    {
-      key: "listing_url",
-      label: { type: "custom", custom: listing },
-      type: "text",
-      optional: false,
-    },
-    {
-      key: "vin",
-      label: { type: "custom", custom: vin },
-      type: "text",
-      optional: false,
-    },
-    getClientCommentCustomField(locale),
-  ];
 }
 
 export async function POST(req: Request) {
@@ -123,26 +75,28 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Nederīgs pieprasījums." }, { status: 400 });
   }
 
-  const planRaw = typeof raw.planId === "string" ? raw.planId.trim() : "";
-  if (!isTestPricingPlanId(planRaw)) {
-    return NextResponse.json({ error: "Nederīgs produkts." }, { status: 400 });
-  }
-  const plan = getTestPricingPlan(planRaw as TestPricingPlanId);
-  if (!plan) {
-    return NextResponse.json({ error: "Nederīgs produkts." }, { status: 400 });
-  }
-  if (plan.id === "koreaUsa" && !TP5_KOREA_USA_PUBLIC) {
-    return NextResponse.json({ error: "Šis produkts pagaidām nav pieejams." }, { status: 404 });
-  }
-
   const localeRaw = typeof raw.locale === "string" ? raw.locale : routing.defaultLocale;
   const locale = routing.locales.includes(localeRaw as (typeof routing.locales)[number])
     ? localeRaw
     : routing.defaultLocale;
 
-  /** Stripe metadata vērtība max 500 zīmes; garāka ievade nedrīkst izraisīt 500. */
-  const sourcePageRaw = typeof raw.sourcePage === "string" ? raw.sourcePage.trim().slice(0, 64) : "";
-  const sourcePage = /^[a-z0-9_-]+$/i.test(sourcePageRaw) ? sourcePageRaw : "home-pricing";
+  /** Tikai publiskie plāni, zināma avota lapa un piekrišana (VIN pārbaude zemāk vienmēr). */
+  const guard = guardTestPricingCheckout(raw);
+  if (!guard.ok) {
+    if (guard.reason === "consent_required") {
+      const loc = locale === "en" || locale === "de" || locale === "ru" ? locale : "lv";
+      return NextResponse.json({ error: TEST_PRICING_STEP2_MESSAGES[loc].consent }, { status: 400 });
+    }
+    if (guard.reason === "plan_not_public") {
+      return NextResponse.json({ error: "Šis produkts pagaidām nav pieejams." }, { status: 404 });
+    }
+    return NextResponse.json({ error: "Nederīgs pieprasījums." }, { status: 400 });
+  }
+  const plan = getTestPricingPlan(guard.planId);
+  if (!plan) {
+    return NextResponse.json({ error: "Nederīgs produkts." }, { status: 400 });
+  }
+  const sourcePage = guard.sourcePage;
   const listingUrl = typeof raw.listingUrl === "string" ? raw.listingUrl.trim().slice(0, 500) : "";
   const vinInput = typeof raw.vin === "string" ? raw.vin : "";
   const vin = normalizeVin(vinInput);
@@ -151,19 +105,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsedEmail.error }, { status: 400 });
   }
   const checkoutEmail = stripeCheckoutEmailFields(parsedEmail.email);
-  const withdrawalConsent = raw.withdrawalConsent === true;
-  const clientCollected = isTestPricingModalCheckoutPage(sourcePage);
-
-  if (clientCollected) {
-    const validation = isTp5CheckoutSource(sourcePage)
-      ? validateTp5InlineFields(listingUrl, vinInput, locale)
-      : validateTestPricingStep2(plan, listingUrl, vinInput, withdrawalConsent, locale);
+  /** VIN (vai numurzīme) vienmēr obligāts un pārbaudīts; saite - ja ievadīta. */
+  {
+    const validation = validateTp5InlineFields(listingUrl, vinInput, locale);
     if (!validation.ok) {
       const errors = validation.errors;
       const first =
         errors.listingUrl ??
         errors.vin ??
-        ("consent" in errors ? errors.consent : undefined) ??
         (locale === "en"
           ? "Please fill in the required fields."
           : locale === "de"
@@ -184,9 +133,7 @@ export async function POST(req: Request) {
   const thanksPath = `/${locale}/paldies`;
   const cancelPath = testPricingCancelPath(sourcePage, locale);
 
-  const tp5Product = isTp5CheckoutSource(sourcePage)
-    ? getTp5StripeCheckoutProduct(plan.id, locale)
-    : null;
+  const tp5Product = getTp5StripeCheckoutProduct(plan.id, locale);
 
   const lineItem = tp5Product
     ? {
@@ -228,15 +175,8 @@ export async function POST(req: Request) {
     phone_number_collection: { enabled: true },
     billing_address_collection: "auto",
     ...(checkoutEmail.customer_email ? { customer_email: checkoutEmail.customer_email } : {}),
-    ...(clientCollected
-      ? {
-          /** VIN/saite jau savākti formā — Stripe lapā avots + komentārs. */
-          custom_fields: getCheckoutIntakeCustomFields(locale),
-        }
-      : {
-          consent_collection: { terms_of_service: "required" as const },
-          custom_fields: buildCheckoutCustomFields(plan, locale),
-        }),
+    /** VIN/saite jau savākti un pārbaudīti formā - Stripe lapā avots + komentārs. */
+    custom_fields: getCheckoutIntakeCustomFields(locale),
     metadata: mergeStripeCheckoutMetadata(
       {
         ...stripeAttributionMetadataFromRequest(req.headers.get("cookie"), ATTR_COOKIE_NAME),
@@ -250,13 +190,9 @@ export async function POST(req: Request) {
         vin: vin || "",
         report_delivery: "email",
         source_page: sourcePage,
-        ...(clientCollected
-          ? {
-              withdrawal_waiver_ack: "true",
-              authorization_ack: "true",
-              ...(isTp5CheckoutSource(sourcePage) ? { inline_checkout: "true" } : {}),
-            }
-          : {}),
+        withdrawal_waiver_ack: "true",
+        authorization_ack: "true",
+        inline_checkout: "true",
       },
     ),
     locale: stripeCheckoutLocale(locale),

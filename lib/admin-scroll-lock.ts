@@ -76,6 +76,38 @@ export function acquireAdminScrollLock(): () => void {
   };
 }
 
+type FocusDoc = { activeElement: unknown };
+type FocusRoot = { contains(node: unknown): boolean } | null | undefined;
+
+/**
+ * Aizverot lapu (sheet), kurā fokusā ir lauks (piem. auto meklēšana), vispirms noņem fokusu - tastatūra aizveras,
+ * KAMĒR ritināšana vēl bloķēta. Citādi iOS Safari/Android pēc tastatūras aizvēršanas atstāj lapu nobīdītu un
+ * formas apakšu nevar aizritināt (Pavadzīmes 19.11: pēc auto izvēles no saraksta). Atgriež true, ja fokuss noņemts.
+ */
+export function blurFocusWithin(root: FocusRoot, doc: FocusDoc | null = typeof document === "undefined" ? null : document): boolean {
+  const active = doc?.activeElement as { blur?: () => void } | null | undefined;
+  if (!root || !active || typeof active.blur !== "function" || !root.contains(active)) return false;
+  active.blur();
+  return true;
+}
+
+/**
+ * Bloķē ritināšanu, kamēr `open`; atbrīvojot vispirms noņem fokusu no lauka `rootRef` iekšā (sk. blurFocusWithin),
+ * tad atjauno ritināšanu un tās pozīciju.
+ */
+export function useAdminScrollLockBlurOnClose(open: boolean, rootRef: { readonly current: FocusRoot }): void {
+  useEffect(() => {
+    if (!open) return;
+    const release = acquireAdminScrollLock();
+    return () => {
+      // Apzināti tagadējais mezgls: atverot portāls vēl nav uzzīmēts (ref tukšs), aizverot lapa vēl ir DOM (animācija).
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      blurFocusWithin(rootRef.current);
+      release();
+    };
+  }, [open, rootRef]);
+}
+
 export function useAdminScrollLock(open: boolean): void {
   useEffect(() => {
     if (!open) return;

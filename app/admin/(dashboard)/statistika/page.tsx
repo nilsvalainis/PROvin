@@ -20,7 +20,7 @@ import type { AdsAttributionOrder } from "@/lib/admin-ad-attribution-stats";
 import type { HeardAboutOrder } from "@/lib/admin-heard-about-stats";
 import { filterAdminOrdersForDashboard } from "@/lib/admin-order-amount-filter";
 import { readOrderDraftSummaries } from "@/lib/admin-order-draft-summaries";
-import { listAdminOrders } from "@/lib/admin-orders";
+import { adminOrderNetAmountCents, listAdminOrders } from "@/lib/admin-orders";
 import { loadListingPeekConversionStats } from "@/lib/listing-peek-conversion-load";
 import { getSampleReportClickStats } from "@/lib/sample-report-click-store";
 import { requireAdminPage } from "@/lib/admin-auth";
@@ -66,12 +66,12 @@ async function loadStatistikaOrders(): Promise<{ heard: HeardAboutOrder[]; ads: 
         const label = [d?.customerName || o.companyName || d?.customerEmail || o.customerEmail || "Klients", d?.vin || o.vin]
           .filter(Boolean)
           .join(" · ");
-        return { id: o.id, created: o.created, heardAbout: o.heardAbout ?? null, label, amountTotal: o.amountTotal };
+        return { id: o.id, created: o.created, heardAbout: o.heardAbout ?? null, label, amountTotal: adminOrderNetAmountCents(o) };
       }),
       ads: orders.map((o) => ({
         id: o.id,
         created: o.created,
-        amountTotal: o.amountTotal,
+        amountTotal: adminOrderNetAmountCents(o),
         isDemo: o.isDemo,
         isManual: o.isManual,
         fulfillment: o.fulfillment ?? null,

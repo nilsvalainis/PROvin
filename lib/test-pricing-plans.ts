@@ -161,7 +161,7 @@ export type TestPricingStep2FieldErrors = {
   consent?: string;
 };
 
-const TEST_PRICING_STEP2_MESSAGES = {
+export const TEST_PRICING_STEP2_MESSAGES = {
   lv: {
     listingUrl: "Saitei jābūt pilnai adresei uz konkrētu sludinājumu.",
     vin: "Ievadi derīgu VIN kodu vai valsts numurzīmi (3-6 zīmes).",

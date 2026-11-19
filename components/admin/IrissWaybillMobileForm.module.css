@@ -806,7 +806,9 @@
   border: 1px solid var(--hair, rgba(17, 24, 39, 0.08));
   border-radius: 10px;
   background: #fff;
+  padding: 6px 10px;
   color: var(--ink, #1d1d1f);
   font-size: 14px;
   font-weight: 600;
+  text-align: center;
 }

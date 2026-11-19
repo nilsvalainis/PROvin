@@ -26,6 +26,8 @@ import { formatWaybillDateTime } from "@/lib/iriss-pavadzimes-parse";
 import type { IrissPavadzimeListRow, IrissPavadzimeValidityTone } from "@/lib/iriss-pavadzimes-types";
 import type { WaybillVehicleChip } from "@/lib/iriss-waybill-vehicles";
 import { useWaybillPageOpenAtTop } from "@/components/admin/useWaybillPageOpenAtTop";
+import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
+import { waybillDeleteConfirmText } from "@/lib/iriss-pavadzimes-delete";
 import {
   buildWaybillSarunaFeed,
   countSarunaUnread,
@@ -142,6 +144,72 @@ function PavadzimeSearchFocus({
   return null;
 }
 
+/**
+ * «Dzēst» (tikai administrators): dzēš TIKAI šo ierakstu sarakstā un tā PDF kopiju. CSDD un Dropbox netiek aiztikti.
+ * Nosūta TIKAI poga «Jā, dzēst»; fons, Escape un «Nē» - nekas nenotiek.
+ */
+export function WaybillDeleteDialog({
+  text,
+  busy,
+  error,
+  onYes,
+  onNo,
+}: {
+  text: string;
+  busy: boolean;
+  error: string | null;
+  onYes: () => void;
+  onNo: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onNo();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onNo]);
+  const backdropClose = useModalBackdropClose(onNo);
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#0f172a66] p-4" {...backdropClose}>
+      <div
+        className="w-full max-w-[360px] rounded-2xl border border-[var(--iriss-line)] bg-white p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wb-delete-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 id="wb-delete-title" className="m-0 text-[15px] font-semibold text-[var(--iriss-ink)] [overflow-wrap:anywhere]">
+          {text}
+        </h3>
+        <p className="mt-2 text-[13px] leading-snug text-[#5e636e]">Ieraksts un tā PDF pazudīs no saraksta. CSDD netiek mainīts.</p>
+        {error ? (
+          <p className="mt-2 text-[12.5px] text-[var(--iriss-bad)]" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <div className="mt-3.5 flex flex-col gap-2">
+          <button
+            type="button"
+            className="min-h-11 rounded-[10px] bg-[var(--iriss-graphite)] text-[12.5px] font-semibold text-white disabled:opacity-60"
+            style={{ color: "white" }}
+            onClick={onYes}
+            disabled={busy}
+          >
+            Jā, dzēst
+          </button>
+          <button
+            type="button"
+            className="min-h-11 rounded-[10px] border border-[var(--iriss-line)] bg-white text-[12.5px] font-semibold text-[var(--iriss-ink)]"
+            onClick={onNo}
+          >
+            Nē
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function IrissPavadzimesListClient({
   initial,
   isAdmin = false,
@@ -163,6 +231,34 @@ export function IrissPavadzimesListClient({
   const [sarunaSeenAt, setSarunaSeenAt] = useState<string | null>(null);
   const [sarunaNotes, setSarunaNotes] = useState<SarunaFeedItem[]>([]);
   const refreshRef = useRef<() => Promise<unknown>>(async () => undefined);
+  const [askDelete, setAskDelete] = useState<IrissPavadzimeListRow | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const closeDelete = useCallback(() => {
+    setAskDelete(null);
+    setDeleteError(null);
+  }, []);
+  const confirmDelete = async () => {
+    const row = askDelete;
+    if (!row || !hasIndexedWaybill(row) || deleteBusy) return;
+    setDeleteBusy(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch(`/api/admin/iriss-pavadzimes/${encodeURIComponent(row.id)}`, { method: "DELETE", credentials: "include" });
+      const json = (await res.json().catch(() => null)) as { error?: string } | null;
+      if (!res.ok) {
+        setDeleteError(json?.error || "Neizdevās dzēst.");
+        return;
+      }
+      // Tikai šī rinda; pārējās paliek.
+      setData((prev) => ({ ...prev, rows: prev.rows.filter((r) => r.id !== row.id) }));
+      setAskDelete(null);
+    } catch {
+      setDeleteError("Neizdevās dzēst.");
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
   const stop = useWaybillStop(() => {
     void refreshRef.current().catch(() => undefined);
   });
@@ -398,6 +494,15 @@ export function IrissPavadzimesListClient({
                           onRestored={(body) => applyWaybillRestore(row.id, body.record)}
                         />
                       ) : null}
+                      {isAdmin && hasIndexedWaybill(row) ? (
+                        <button
+                          type="button"
+                          onClick={() => setAskDelete(row)}
+                          className="inline-flex h-11 items-center rounded-full border border-[var(--iriss-line)] px-3.5 text-[12.5px] font-semibold text-[var(--iriss-bad)]"
+                        >
+                          Dzēst
+                        </button>
+                      ) : null}
                       {orderHref ? (
                         <Link href={orderHref} className="inline-flex rounded-full bg-[var(--iriss-surface-2)] px-3.5 py-2 text-xs font-semibold text-[var(--iriss-ink-2)]">
                           Pasūtījums
@@ -483,6 +588,11 @@ export function IrissPavadzimesListClient({
                                 endpoint="/api/admin/change-history"
                                 onRestored={(body) => applyWaybillRestore(row.id, body.record)}
                               />
+                            ) : null}
+                            {isAdmin && indexed ? (
+                              <button type="button" onClick={() => setAskDelete(row)} className="text-[13.5px] text-[var(--iriss-bad)] hover:underline">
+                                Dzēst
+                              </button>
                             ) : null}
                           </div>
                         </td>
@@ -583,6 +693,15 @@ export function IrissPavadzimesListClient({
             error={stop.error}
             onYes={() => void stop.confirm()}
             onNo={stop.cancel}
+          />
+        ) : null}
+        {askDelete && isAdmin ? (
+          <WaybillDeleteDialog
+            text={waybillDeleteConfirmText(askDelete)}
+            busy={deleteBusy}
+            error={deleteError}
+            onYes={() => void confirmDelete()}
+            onNo={closeDelete}
           />
         ) : null}
         <IrissWaybillPdfSheet href={pdfPreview?.href ?? null} title={pdfPreview?.title ?? ""} onClose={() => setPdfPreview(null)} />

@@ -63,3 +63,18 @@ describe("acquireAdminScrollLock", () => {
     expect(html.classes.has(ADMIN_SCROLL_LOCK_CLASS)).toBe(false);
   });
 });
+
+describe("blurFocusWithin (19.11: Pavadzīmes pēc auto izvēles)", () => {
+  it("aizverot lapu noņem fokusu no lauka TIKAI tās iekšā (tastatūra aizveras pirms ritināšanas atbrīvošanas)", async () => {
+    const { blurFocusWithin } = await import("@/lib/admin-scroll-lock");
+    let blurred = 0;
+    const search = { blur: () => (blurred += 1) };
+    const outside = { blur: () => (blurred += 100) };
+    const sheet = { contains: (n: unknown) => n === search };
+    expect(blurFocusWithin(sheet, { activeElement: search })).toBe(true);
+    expect(blurred).toBe(1);
+    expect(blurFocusWithin(sheet, { activeElement: outside })).toBe(false);
+    expect(blurFocusWithin(null, { activeElement: search })).toBe(false);
+    expect(blurred).toBe(1);
+  });
+});

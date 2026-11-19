@@ -172,7 +172,8 @@ import type { ClientReportTranslationCache } from "@/lib/client-report-translate
 import { AdminPdfIncludeToggle } from "@/components/admin/AdminPdfIncludeToggle";
 import { AdminPhoneSectionCollapse } from "@/components/admin/AdminPhoneSectionCollapse";
 import { AdminPartnerArchivePdfButton } from "@/components/admin/AdminPartnerArchivePdfButton";
-import { isPartnerOrderNotes } from "@/lib/b2b-partner-orders";
+import { isPartnerHighlightAdminOrder, isPartnerOrderNotes } from "@/lib/b2b-partner-orders";
+import { ReportRecipientMismatchError } from "@/lib/report-recipient-guard";
 import { isB2bInternationalClientReport } from "@/lib/b2b-pdf-brand";
 import { parseB2bWalletOrderMarks } from "@/lib/b2b-wallet";
 import { confirmUnlockB2bReportLang } from "@/lib/b2b-report-lang-lock";
@@ -4827,6 +4828,7 @@ export function OrderDetailWorkspace({
     includeGoogleReview: boolean;
     markComplete: boolean;
     saveDropbox: boolean;
+    confirmRecipientOverride?: boolean;
   }): Promise<SendReportResult> => {
     if (!canNotifyClientOrder(payload, payload.customerEmail)) throw new Error(notifyClientBlockedMessage(payload));
     const email = (payload.customerEmail ?? "").trim();
@@ -4847,8 +4849,16 @@ export function OrderDetailWorkspace({
       serverPdfPathname: input.prepared.pdfPathname,
       markComplete: input.markComplete,
       saveDropbox: input.saveDropbox,
+      ...(input.confirmRecipientOverride ? { confirmRecipientOverride: true } : {}),
     });
     if (!res.ok) {
+      if (res.status === 409 && data.error === "recipient_mismatch") {
+        throw new ReportRecipientMismatchError(
+          typeof data.message === "string" ? data.message : "Saņēmējs atšķiras no pasūtījumā saglabātā.",
+          typeof data.stored === "string" ? data.stored : "",
+          typeof data.requested === "string" ? data.requested : "",
+        );
+      }
       const msg = [data.message, data.detail].filter((x) => typeof x === "string" && x).join(" - ");
       throw new Error(msg || (typeof data.error === "string" ? data.error : "Neizdevās nosūtīt"));
     }
@@ -4887,6 +4897,15 @@ export function OrderDetailWorkspace({
         onClose={() => setSendReportOpen(false)}
         dark={adminDark}
         email={(payload.customerEmail ?? "").trim()}
+        recipientRole={
+          isPartnerHighlightAdminOrder({
+            partnerId: payload.partnerId,
+            partnerCompanyName: payload.partnerCompanyName,
+            notes: payload.notes,
+          })
+            ? "partner"
+            : "client"
+        }
         defaultKind={sendReportDefaultKind}
         b2b={b2bClientOrder}
         attachments={portfolio.map((p) => ({ id: p.id, name: p.name, size: p.size, mime: p.mime }))}

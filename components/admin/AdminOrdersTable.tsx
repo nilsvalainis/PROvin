@@ -126,6 +126,12 @@ export function adminOrderDayLabel(dayKey: string, nowMs: number): string {
   return `${d}. ${LV_MONTHS[m - 1]}${thisYear ? "" : ` ${y}`}`;
 }
 
+/** Stripe atmaksa / strīds: sarkans teksts tajā pašā čipa formā. */
+function PaymentAdjustmentTag({ row }: { row: { paymentAdjustmentLabel?: string } }) {
+  if (!row.paymentAdjustmentLabel) return null;
+  return <span className={`${CALM_TAG} !border-[#f5c2c0] !text-[#c62828]`}>{row.paymentAdjustmentLabel}</span>;
+}
+
 function PaymentStatusCalm({ status }: { status: string }) {
   const s = status.toLowerCase();
   const label = s === "unpaid" ? "Pirms apmaksas" : s === "no_payment_required" ? "Bez maksas" : status;
@@ -1158,6 +1164,7 @@ export function AdminOrdersTable({
               ) : null}
               <div className="flex flex-wrap gap-1.5 px-1">
                 {view.isPartnerVin ? <span className={CALM_TAG}>{PARTNER_VIN_AMOUNT_LABEL_LV}</span> : <PaymentStatusException status={row.paymentStatus} />}
+                <PaymentAdjustmentTag row={row} />
                 {row.isDemo ? <span className={CALM_TAG}>Paraugs</span> : null}
                 {view.isPack ? <span className={CALM_TAG}>Paka</span> : view.partnerHighlight ? <span className={CALM_TAG}>Partneris{view.partnerCompanyName ? ` · ${view.partnerCompanyName}` : ""}</span> : row.isManual ? <span className={CALM_TAG}>Manuāls</span> : null}
                 {view.partnerPurposeLabel ? <span className={CALM_TAG}>{view.partnerPurposeLabel}</span> : null}
@@ -1356,6 +1363,7 @@ export function AdminOrdersTable({
                   <td className={`${hug} py-1 pr-4 text-right text-[14px] font-semibold tabular-nums text-[#1d1d1f]`}>
                     <span className="inline-flex items-center justify-end gap-1.5">
                       {!isPartnerVin && o.paymentStatus.toLowerCase() !== "paid" ? <PaymentStatusCalm status={o.paymentStatus} /> : null}
+                      <PaymentAdjustmentTag row={o} />
                       {isPartnerVin ? (
                         <>
                           <span className="text-[12px] font-medium text-[#8e8e93]">{PARTNER_VIN_AMOUNT_LABEL_LV}</span>

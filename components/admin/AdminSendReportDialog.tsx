@@ -8,6 +8,7 @@ import {
   type SendReportAttachmentInput,
 } from "@/lib/admin-send-report-attachments";
 import { CLIENT_REPORT_LANGS, type ClientReportLang } from "@/lib/client-report-i18n";
+import { canSubmitSendReport, ReportRecipientMismatchError } from "@/lib/report-recipient-guard";
 
 export type SendReportKind = "audits" | "business" | "dealer" | "asv";
 
@@ -17,6 +18,10 @@ export const SEND_REPORT_KIND_LV: Record<SendReportKind, string> = {
   dealer: "Dīlera dati",
   asv: "ASV vēsture",
 };
+
+export type SendReportRecipientRole = "client" | "partner";
+
+const RECIPIENT_ROLE_LV: Record<SendReportRecipientRole, string> = { client: "Klients", partner: "B2B partneris" };
 
 const LANG_LV: Record<ClientReportLang, string> = { lv: "Latviešu", en: "Angļu", ru: "Krievu", de: "Vācu" };
 
@@ -42,6 +47,7 @@ export function AdminSendReportDialog({
   onClose,
   dark,
   email,
+  recipientRole = "client",
   defaultKind,
   b2b,
   attachments,
@@ -54,6 +60,7 @@ export function AdminSendReportDialog({
   onClose: () => void;
   dark: boolean;
   email: string;
+  recipientRole?: SendReportRecipientRole;
   defaultKind: SendReportKind;
   b2b: boolean;
   attachments: ReadonlyArray<SendReportAttachmentInput>;
@@ -66,6 +73,7 @@ export function AdminSendReportDialog({
     includeGoogleReview: boolean;
     markComplete: boolean;
     saveDropbox: boolean;
+    confirmRecipientOverride?: boolean;
   }) => Promise<SendReportResult>;
   undoComplete: () => Promise<void>;
 }) {
@@ -81,6 +89,8 @@ export function AdminSendReportDialog({
   const [err, setErr] = useState<string | null>(null);
   const [undoLeft, setUndoLeft] = useState(0);
   const [undone, setUndone] = useState(false);
+  const [recipientChecked, setRecipientChecked] = useState(false);
+  const [mismatch, setMismatch] = useState<{ stored: string; requested: string } | null>(null);
   const timer = useRef<number | null>(null);
 
   useEffect(() => {
@@ -97,6 +107,8 @@ export function AdminSendReportDialog({
     setErr(null);
     setUndone(false);
     setUndoLeft(0);
+    setRecipientChecked(false);
+    setMismatch(null);
     // Atverot tikai; pielikumu saraksts dialoga laikā nemainās.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -133,17 +145,31 @@ export function AdminSendReportDialog({
     }
   };
 
-  const doSend = async () => {
+  const doSend = async (confirmRecipientOverride = false) => {
     if (!prepared) return;
+    if (!recipientChecked) return;
     setErr(null);
+    setMismatch(null);
     setPhase("sending");
     try {
-      const r = await send({ prepared, lang: effLang, attachmentIds: [...picked], includeGoogleReview: google, markComplete, saveDropbox });
+      const r = await send({
+        prepared,
+        lang: effLang,
+        attachmentIds: [...picked],
+        includeGoogleReview: google,
+        markComplete,
+        saveDropbox,
+        ...(confirmRecipientOverride ? { confirmRecipientOverride: true } : {}),
+      });
       setResult(r);
       setPhase("sent");
       if (r.completedAt) setUndoLeft(30);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Neizdevās nosūtīt");
+      if (e instanceof ReportRecipientMismatchError) {
+        setMismatch({ stored: e.stored, requested: e.requested });
+      } else {
+        setErr(e instanceof Error ? e.message : "Neizdevās nosūtīt");
+      }
       setPhase("ready");
     }
   };
@@ -184,7 +210,7 @@ export function AdminSendReportDialog({
             Sūtīt atskaiti
           </h3>
           <p className="mt-1 text-[12px] text-[var(--color-provin-muted)]">
-            Uz: <b className="text-[var(--color-apple-text)]">{email || "nav e-pasta"}</b>
+            {RECIPIENT_ROLE_LV[recipientRole]}: <b className="text-[var(--color-apple-text)]">{email || "nav e-pasta"}</b>
           </p>
         </div>
 
@@ -335,6 +361,31 @@ export function AdminSendReportDialog({
                   </a>
                 </p>
               ) : null}
+              <label className="flex items-center gap-2 text-[13px] font-semibold text-[var(--color-apple-text)]">
+                <input
+                  type="checkbox"
+                  disabled={busy}
+                  checked={recipientChecked}
+                  onChange={(e) => setRecipientChecked(e.target.checked)}
+                />
+                Saņēmējs pārbaudīts
+              </label>
+
+              {mismatch ? (
+                <div className="space-y-1.5 rounded-lg border border-red-600 px-3 py-2 text-[12px] text-red-600" data-send-report="mismatch">
+                  <p className="font-semibold">Saņēmējs atšķiras no pasūtījumā saglabātā.</p>
+                  <p>Saglabātais: {mismatch.stored || "-"}</p>
+                  <p>Sūtīšanai: {mismatch.requested || "-"}</p>
+                  <button
+                    type="button"
+                    disabled={busy || !recipientChecked}
+                    className={SECONDARY_BTN}
+                    onClick={() => void doSend(true)}
+                  >
+                    Sūtīt tomēr uz šo adresi
+                  </button>
+                </div>
+              ) : null}
               {err ? <p className="text-[12px] font-medium text-red-600">{err}</p> : null}
             </div>
 
@@ -345,11 +396,11 @@ export function AdminSendReportDialog({
               {prepared ? (
                 <button
                   type="button"
-                  disabled={busy || !email}
+                  disabled={!canSubmitSendReport({ prepared: Boolean(prepared), email, busy, recipientChecked })}
                   className="rounded-lg bg-[#1d1d1f] px-3 py-2 text-[13px] font-semibold text-white disabled:opacity-50"
                   onClick={() => void doSend()}
                 >
-                  {phase === "sending" ? "Sūta..." : "Sūtīt klientam"}
+                  {phase === "sending" ? "Sūta..." : recipientRole === "partner" ? "Sūtīt partnerim" : "Sūtīt klientam"}
                 </button>
               ) : (
                 <button

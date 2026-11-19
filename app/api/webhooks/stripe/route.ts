@@ -44,6 +44,8 @@ import { consumeClientLinkByHash } from "@/lib/client-link-store";
 import { notifyMetaPurchaseFromStripeSession } from "@/lib/meta-capi";
 import { isSafeB2bPartnerId } from "@/lib/b2b-partner-account";
 import { isB2bWalletTopupFulfillment } from "@/lib/b2b-partner-orders";
+import { handleStripeChargeEvent, isStripeChargeAdjustmentEvent } from "@/lib/stripe-charge-events";
+import { updateStripePaymentAdjustment } from "@/lib/stripe-payment-adjustments-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -423,6 +425,35 @@ async function creditB2bWalletTopupFromSession(session: Stripe.Checkout.Session)
   console.info("[stripe webhook] wallet topup", { sessionId: session.id, partnerId, amountCents, applied });
 }
 
+/** Atmaksa / strīds: atzīme pasūtījumam, maka korekcija papildinājumam, push par strīdu. */
+async function handleChargeAdjustmentEvent(stripe: Stripe, event: Stripe.Event): Promise<void> {
+  const r = await handleStripeChargeEvent(event, {
+    async findSessionByPaymentIntent(paymentIntentId) {
+      const res = await stripe.checkout.sessions.list({ payment_intent: paymentIntentId, limit: 1 });
+      const s = res.data[0];
+      if (!s) return null;
+      const partnerId = s.metadata?.partner_id?.trim() ?? "";
+      return {
+        id: s.id,
+        fulfillment: s.metadata?.fulfillment?.trim() || null,
+        partnerId: partnerId || null,
+        vin: getOrderFieldsFromSession(s).vin,
+        amountTotalCents: s.amount_total ?? null,
+      };
+    },
+    async retrieveCharge(chargeId) {
+      const ch = await stripe.charges.retrieve(chargeId);
+      const pi = typeof ch.payment_intent === "string" ? ch.payment_intent : ch.payment_intent?.id ?? "";
+      return { paymentIntentId: pi, amountCents: ch.amount };
+    },
+    updateAdjustment: updateStripePaymentAdjustment,
+    updateWallet: (partnerId, mutate) => updateB2bWallet(partnerId, mutate),
+    push: (msg) => sendAdminPush(msg),
+    now: () => new Date(),
+  });
+  console.info("[stripe webhook] charge adjustment", { type: event.type, eventId: event.id, ...r });
+}
+
 export async function GET() {
   return NextResponse.json(
     { error: "Izmanto POST. Stripe webhook nosūta tikai POST." },
@@ -476,6 +507,25 @@ export async function POST(req: Request) {
       const thin = event.data.object as Stripe.Checkout.Session;
       const state = await fulfillPaidCheckoutSession(stripe, event.id, thin);
       if (state === "done") await completeStripeEvent(event.id);
+    } catch (e) {
+      await releaseStripeEvent(event.id);
+      console.error(`[stripe webhook] ${event.type}:`, e);
+      return NextResponse.json({ error: "Apstrādes kļūda" }, { status: 500 });
+    }
+  }
+
+  if (isStripeChargeAdjustmentEvent(event.type)) {
+    try {
+      if (!(await tryBeginStripeEvent(event.id))) {
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+    } catch (e) {
+      console.error("[stripe webhook] dedupe begin failed:", e);
+      return NextResponse.json({ error: "dedupe_unavailable" }, { status: 500 });
+    }
+    try {
+      await handleChargeAdjustmentEvent(stripe, event);
+      await completeStripeEvent(event.id);
     } catch (e) {
       await releaseStripeEvent(event.id);
       console.error(`[stripe webhook] ${event.type}:`, e);

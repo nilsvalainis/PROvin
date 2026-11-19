@@ -88,7 +88,7 @@ describe("PD saite: noraidīt, jautājums, atjaunot", () => {
         linkToken: token,
         price: "12750",
         vehicle: { ...r.vehicle, title: "TESTS Škoda Octavia", vin: "TMBJJ7NE0K0123456" },
-        client: { name: "TESTS Gustavs Ansons", phone: "+37120000000", email: "gustavs.ansons@gmail.com", orderId: "" },
+        client: { name: "TESTS Klients", phone: "+37120000000", email: "klients@example.com", orderId: "" },
         ...over,
       };
     });

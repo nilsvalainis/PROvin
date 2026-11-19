@@ -30,6 +30,17 @@ function attachmentList(v: unknown): { label: string; fileName: string }[] {
     .filter((x): x is { label: string; fileName: string } => x != null);
 }
 
+function paymentAdjustmentFields(raw: unknown): { paymentAdjustmentLabel?: string; invoiceNeedsCreditNote?: true } {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  const label = str(o.label).trim();
+  if (!label) return {};
+  return {
+    paymentAdjustmentLabel: label,
+    ...(o.invoiceNeedsCreditNote === true ? { invoiceNeedsCreditNote: true as const } : {}),
+  };
+}
+
 /** Normalizē Stripe / demo pasūtījumu props klienta komponentam. */
 export function toAdminOrderDetailClientModel(order: Record<string, unknown>): AdminOrderDetailClientModel {
   return {
@@ -52,6 +63,7 @@ export function toAdminOrderDetailClientModel(order: Record<string, unknown>): A
     internalComment: str(order.internalComment) || null,
     attachments: attachmentList(order.attachments),
     isDemo: Boolean(order.isDemo),
+    ...paymentAdjustmentFields(order.paymentAdjustment),
     ...(Boolean(order.isManual) ? { isManual: true as const } : {}),
     ...(typeof order.fulfillment === "string" && order.fulfillment.trim()
       ? { fulfillment: order.fulfillment.trim() }

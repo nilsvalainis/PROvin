@@ -134,6 +134,10 @@ export type AdminOrderDetailClientModel = {
   selectInteriorMaterial?: string | null;
   selectRequiredEquipment?: string | null;
   selectDesiredEquipment?: string | null;
+  /** Stripe atmaksa / strīds (piem. „Atmaksāts”, „Strīds”). */
+  paymentAdjustmentLabel?: string | null;
+  /** Rēķins izrakstīts pirms atmaksas/strīda: kredītrēķins vēl jāveido. */
+  invoiceNeedsCreditNote?: boolean;
 };
 
 type OrderEdits = {
@@ -543,6 +547,9 @@ export function AdminOrderDetailView({
                     <dt className={metaLabel}>Statuss</dt>
                     <dd className={metaValue}>
                       {isPartnerVin ? PARTNER_VIN_AMOUNT_LABEL_LV : order.paymentStatus}
+                      {order.paymentAdjustmentLabel ? (
+                        <span className="ml-1.5 font-semibold text-[#c62828]">{order.paymentAdjustmentLabel}</span>
+                      ) : null}
                     </dd>
                   </div>
                   {order.paymentStatus === "paid" && order.amountTotal != null && !isPartnerVin ? (
@@ -557,6 +564,9 @@ export function AdminOrderDetailView({
                         >
                           Atvērt PDF ↗
                         </a>
+                        {order.invoiceNeedsCreditNote ? (
+                          <span className="ml-1.5 text-[12px] text-[#c62828]">Vajag kredītrēķinu</span>
+                        ) : null}
                       </dd>
                     </div>
                   ) : null}

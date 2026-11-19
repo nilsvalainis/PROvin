@@ -500,8 +500,10 @@ describe("j10: aizņemts numurs pēc CSDD reģistra, anulēt un izveidot jaunu",
     const res = await processJob(autoJob(), d);
     expect(res).toMatchObject({ outcome: "plate_busy", active: ["P02812"] });
     expect(scriptCalls(d)).toEqual([]);
-    const body = (d.api.result.mock.calls[0] as unknown[])[1] as { ok: boolean; errorReason: string };
+    const body = (d.api.result.mock.calls[0] as unknown[])[1] as { ok: boolean; errorReason: string; activeWaybillNo?: string };
     expect(body.ok).toBe(false);
+    // «Pārrakstīt»: serveris saglabā aktīvo numuru; worker pats neko nepārtrauc (nav annul skripta).
+    expect(body.activeWaybillNo).toBe("P02812");
     expect(body.errorReason).toContain("Numurs B193-7 CSDD aizņemts (P02812 MERCEDES-BENZ ML 350, līdz 25.10.2026 07:35)");
     expect(body.errorReason).toContain("Jaunā pavadzīme nav izveidota");
     expect(body.errorReason).not.toMatch(/[–—]/);
@@ -556,7 +558,10 @@ describe("j10: aizņemts numurs pēc CSDD reģistra, anulēt un izveidot jaunu",
     const res = await processJob(replaceJob("P02812"), d);
     expect(res.outcome).toBe("plate_busy_other");
     expect(scriptCalls(d)).toEqual([]);
-    expect(d.api.result).toHaveBeenCalledWith("wbr_abc123", expect.objectContaining({ ok: false, errorReason: expect.stringContaining("Neko neanulēju") }));
+    expect(d.api.result).toHaveBeenCalledWith(
+      "wbr_abc123",
+      expect.objectContaining({ ok: false, activeWaybillNo: "P02813", errorReason: expect.stringContaining("Neko neanulēju") }),
+    );
   });
 
   it("ar slēdzi: anulēšana neizdodas -> Aivaram, jaunā netiek pildīta", async () => {
@@ -589,6 +594,7 @@ describe("j10: aizņemts numurs pēc CSDD reģistra, anulēt un izveidot jaunu",
     const res = await processJob(autoJob(), d);
     expect(res).toMatchObject({ outcome: "plate_busy", active: ["P02815"] });
     expect(scriptCalls(d).map((c) => c[0])).toEqual(["fill"]);
+    expect(d.api.result).toHaveBeenCalledWith("wbr_abc123", expect.objectContaining({ ok: false, activeWaybillNo: "P02815" }));
   });
 });
 

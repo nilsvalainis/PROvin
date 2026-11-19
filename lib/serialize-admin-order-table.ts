@@ -49,6 +49,9 @@ export type SerializedAdminOrderTableRow = {
   repeatVin?: number;
   /** Klienta kartīte: iepriekšējie pasūtījumi ar to pašu e-pastu. */
   clientOrders?: { id: string; created: number; vin: string | null; amountTotal: number | null; currency: string | null }[];
+  /** Stripe atmaksa / strīds: īss teksts („Atmaksāts”, „Strīds”). */
+  paymentAdjustmentLabel?: string;
+  paymentAdjustmentTone?: "refund" | "dispute";
 };
 
 type RowInput = {
@@ -82,7 +85,16 @@ type RowInput = {
   invoicePdfUrl?: unknown;
   repeatVin?: unknown;
   clientOrders?: unknown;
+  paymentAdjustment?: unknown;
 };
+
+function paymentAdjustmentFields(raw: unknown): Pick<SerializedAdminOrderTableRow, "paymentAdjustmentLabel" | "paymentAdjustmentTone"> {
+  if (!raw || typeof raw !== "object") return {};
+  const o = raw as Record<string, unknown>;
+  const label = typeof o.label === "string" ? o.label.trim() : "";
+  if (!label) return {};
+  return { paymentAdjustmentLabel: label, paymentAdjustmentTone: o.tone === "dispute" ? "dispute" : "refund" };
+}
 
 function optionalCheckoutLine(o: RowInput): CheckoutLineKind | undefined {
   const c = o.checkoutLine;
@@ -176,6 +188,7 @@ export function serializeAdminOrderTableRows(rows: RowInput[]): SerializedAdminO
       ...(typeof o.packQty === "number" && Number.isFinite(o.packQty) && o.packQty > 0
         ? { packQty: Math.trunc(o.packQty) }
         : {}),
+      ...paymentAdjustmentFields(o.paymentAdjustment),
       invoicePdfUrl:
         o.invoicePdfUrl == null || o.invoicePdfUrl === undefined ? null : String(o.invoicePdfUrl),
     };

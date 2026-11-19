@@ -25,7 +25,7 @@ export type B2bWalletProductSpec = {
 };
 
 export const B2B_WALLET_PRODUCTS: Record<B2bWalletProductId, B2bWalletProductSpec> = {
-  business: { id: "business", defaultCents: 7999, minCents: 6999, plan: "business", refundOnNoData: false },
+  business: { id: "business", defaultCents: 6999, minCents: 6999, plan: "business", refundOnNoData: false },
   dealer_raw: { id: "dealer_raw", defaultCents: 1999, minCents: 1199, plan: "dealer", refundOnNoData: true },
   dealer_pro: { id: "dealer_pro", defaultCents: 2499, minCents: 1499, plan: "dealer", refundOnNoData: true },
 };
@@ -131,7 +131,9 @@ export function resolveB2bWalletPrice(
 ): B2bWalletResolvedPrice {
   const spec = B2B_WALLET_PRODUCTS[product];
   const override = overrides?.[product] ?? null;
-  const priceCents = override != null && override >= spec.minCents ? override : spec.defaultCents;
+  // Individuālā cena ir atlaide: nekad augstāka par kataloga cenu (Business 69,99 € visiem, Nils 18.11).
+  const priceCents =
+    override != null && override >= spec.minCents ? Math.min(override, spec.defaultCents) : spec.defaultCents;
   return {
     product,
     priceCents,
@@ -609,6 +611,58 @@ export function applyB2bWalletAdjust(
     note,
   };
   return { ok: true, duplicate: false, txn, wallet: pushTxn(wallet, txn, { balanceCents }, now) };
+}
+
+export function stripeCorrectionKeyPrefix(sessionId: string): string {
+  return `stripe_corr:${sessionId.trim()}:`;
+}
+
+/**
+ * Stripe atmaksa vai zaudēts strīds maka papildinājumam: noraksta no maka tik, lai kopējā
+ * korekcija par šo sesiju būtu `targetCents` (Stripe paņemtā summa, ne vairāk par papildinājumu).
+ * Idempotents: atkārtots notikums ar to pašu mērķi neko nemaina; lielāks mērķis noraksta tikai starpību.
+ * Atlikums var kļūt negatīvs (nauda jau iztērēta) - to redz admin, un partneris nevar pirkt.
+ */
+export function applyB2bWalletStripeCorrection(
+  wallet: B2bWallet,
+  args: { sessionId: string; targetCents: number; note: string; now?: Date },
+): { applied: boolean; wallet: B2bWallet; txn: B2bWalletTxn | null; deltaCents: number } {
+  const now = args.now ?? new Date();
+  const sessionId = args.sessionId.trim();
+  const topup = findB2bWalletTxnByKey(wallet, topupKey(sessionId));
+  const cap = topup ? topup.amountCents : 0;
+  const target = Math.min(Math.max(0, Math.round(args.targetCents)), cap);
+  const prefix = stripeCorrectionKeyPrefix(sessionId);
+  const already = wallet.txns
+    .filter((t) => t.key.startsWith(prefix))
+    .reduce((sum, t) => sum - t.amountCents, 0);
+  const delta = target - already;
+  if (!topup || !Number.isFinite(delta) || delta <= 0) {
+    return { applied: false, wallet, txn: null, deltaCents: 0 };
+  }
+  const balanceCents = wallet.balanceCents - delta;
+  const txn: B2bWalletTxn = {
+    id: newB2bWalletTxnId(now),
+    kind: "adjust",
+    amountCents: -delta,
+    balanceAfterCents: balanceCents,
+    at: now.toISOString(),
+    key: `${prefix}${target}`,
+    sessionId,
+    note: args.note.trim().slice(0, 300),
+    refundOf: topup.id,
+  };
+  return {
+    applied: true,
+    txn,
+    deltaCents: delta,
+    wallet: pushTxn(
+      wallet,
+      txn,
+      { balanceCents, topupTotalCents: Math.max(0, wallet.topupTotalCents - delta) },
+      now,
+    ),
+  };
 }
 
 export type B2bWalletSummary = {

@@ -25,6 +25,13 @@ import { saveFileToProvOrderFolder } from "@/lib/ltab-dropbox";
 import { orderCarFromCsdd } from "@/lib/ltab-auto";
 import { mergeSourceBlocksWithDefaults } from "@/lib/admin-source-blocks";
 import { setAuditDeadlineComplete } from "@/lib/admin-audit-complete-store";
+import { getB2bPartnerByEmail } from "@/lib/b2b-partner-store";
+import {
+  evaluateReportRecipient,
+  maskEmail,
+  parseRecipientBlocklist,
+  REPORT_RECIPIENT_BLOCKLIST_ENV,
+} from "@/lib/report-recipient-guard";
 
 /** Stripe metadata var būt tukšs; VIN bieži ir tikai admina melnrakstā (`orderEdits.vin`). */
 function resolveVinForNotify(sessionVin: string | null | undefined, draftVin: string | undefined): string {
@@ -112,6 +119,8 @@ export async function POST(req: Request) {
   let serverPdfPathname = "";
   let markComplete = false;
   let saveDropbox = true;
+  /** Admins apzināti apstiprina adresi, kas atšķiras no pasūtījumā saglabātās. */
+  let confirmRecipientOverride = false;
 
   try {
     if (contentType.includes("multipart/form-data")) {
@@ -122,6 +131,7 @@ export async function POST(req: Request) {
         String(multipartForm.get("includeGoogleReview") ?? "").trim() === "1" ||
         String(multipartForm.get("includeGoogleReview") ?? "").trim() === "true";
       reportLang = parseReportLang(multipartForm.get("lang"));
+      confirmRecipientOverride = String(multipartForm.get("confirmRecipientOverride") ?? "").trim() === "true";
     } else {
       let body: unknown;
       try {
@@ -141,6 +151,7 @@ export async function POST(req: Request) {
       serverPdfPathname = typeof b.serverPdfPathname === "string" ? b.serverPdfPathname.trim() : "";
       markComplete = b.markComplete === true;
       saveDropbox = b.saveDropbox !== false;
+      confirmRecipientOverride = b.confirmRecipientOverride === true;
       if (Array.isArray(b.blobAttachments) && b.blobAttachments.length > 0) {
         if (b.blobAttachments.length > MAX_NOTIFY_FILES) {
           return NextResponse.json({ error: "too_many_attachments", message: "Pārāk daudz failu." }, { status: 400 });
@@ -178,8 +189,48 @@ export async function POST(req: Request) {
   const draft = await readOrderDraft(sessionId);
   const draftCustomerEmail = draft?.orderEdits?.customerEmail?.trim() ?? "";
   const fromOrder = (order.customerEmail ?? order.customerDetailsEmail ?? "").trim();
-  const toCandidate =
-    [bodyCustomerEmail, draftCustomerEmail, fromOrder].find((v) => v && isValidOrderEmail(v))?.trim() ?? "";
+  /** Saglabātais adresāts: admina melnraksts, citādi Stripe/manuālā pasūtījuma e-pasts. */
+  const storedRecipient =
+    [draftCustomerEmail, fromOrder].find((v) => v && isValidOrderEmail(v))?.trim() ?? "";
+
+  const requestedRecipient = bodyCustomerEmail.trim();
+  let partnerWithRecipientEmail: { id: string } | null = null;
+  const recipientForLookup = requestedRecipient || storedRecipient;
+  if (recipientForLookup && isValidOrderEmail(recipientForLookup)) {
+    try {
+      const p = await getB2bPartnerByEmail(recipientForLookup);
+      partnerWithRecipientEmail = p ? { id: p.id } : null;
+    } catch (e) {
+      console.error("[api/admin/notify-report-ready] partner lookup", e instanceof Error ? e.message.slice(0, 200) : e);
+    }
+  }
+
+  const recipient = evaluateReportRecipient({
+    requested: requestedRecipient,
+    stored: storedRecipient,
+    confirmOverride: confirmRecipientOverride,
+    isValidEmail: isValidOrderEmail,
+    blocklist: parseRecipientBlocklist(process.env[REPORT_RECIPIENT_BLOCKLIST_ENV]),
+    partnerWithRecipientEmail,
+    order: { partnerId: order.partnerId, notes: order.notes },
+  });
+  if (!recipient.ok) {
+    // Pagaidu portfeļa Blob faili vairs nav vajadzīgi; servera PDF paliek atkārtotai sūtīšanai.
+    const blobRwEarly = process.env.BLOB_READ_WRITE_TOKEN?.trim() ?? "";
+    const tmpUrls = jsonBlobAttachments?.map((x) => x.url.trim()).filter(Boolean) ?? [];
+    if (tmpUrls.length > 0 && blobRwEarly) void deleteNotifyBlobUrls(tmpUrls, blobRwEarly);
+    console.warn("[api/admin/notify-report-ready] recipient blocked", { sessionId, error: recipient.error });
+    return NextResponse.json(
+      {
+        error: recipient.error,
+        message: recipient.message,
+        ...(recipient.stored ? { stored: recipient.stored } : {}),
+        ...(recipient.requested ? { requested: recipient.requested } : {}),
+      },
+      { status: recipient.status },
+    );
+  }
+  const toCandidate = recipient.to;
 
   if (!canNotifyClientOrder(order, toCandidate)) {
     const orderPaymentStatus = String(order.paymentStatus ?? "").trim().toLowerCase();
@@ -366,7 +417,17 @@ export async function POST(req: Request) {
     try {
       const rec = await recordClientReportSend(
         sessionId,
-        { sentAt: new Date().toISOString(), to, filename: serverPdf.filename, lang: reportLang, bytes: bytes.byteLength, ...(dropboxPath ? { dropboxPath } : {}) },
+        {
+          sentAt: new Date().toISOString(),
+          to,
+          filename: serverPdf.filename,
+          lang: reportLang,
+          bytes: bytes.byteLength,
+          ...(dropboxPath ? { dropboxPath } : {}),
+          ...(recipient.recipientOverride
+            ? { recipientOverride: true, previousRecipientMasked: recipient.previousRecipientMasked ?? "" }
+            : {}),
+        },
         bytes,
       );
       serverSend.version = rec.version;
@@ -382,9 +443,10 @@ export async function POST(req: Request) {
 
   console.info("[api/admin/notify-report-ready] sent", {
     sessionId,
-    sentTo: to,
+    sentTo: maskEmail(to),
     sentToSource,
     reportLang,
+    ...(recipient.recipientOverride ? { recipientOverride: true } : {}),
   });
 
   return NextResponse.json({ ok: true, sentTo: to, sentToSource, ...(serverSend ? { serverSend } : {}) });
