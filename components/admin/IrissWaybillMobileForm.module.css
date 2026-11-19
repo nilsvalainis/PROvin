@@ -631,6 +631,17 @@
   border-radius: 14px;
   background: var(--s1, #fff);
 }
+/* Telefona logā: viens ritināšanas konteiners - pats logs (AdminMobileSheet), meklēšana pielīp augšā. */
+.picker.pickerInSheet .search {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.picker.pickerInSheet .list {
+  max-height: none;
+  overflow: visible;
+}
+
 .picker .row {
   display: flex;
   width: 100%;

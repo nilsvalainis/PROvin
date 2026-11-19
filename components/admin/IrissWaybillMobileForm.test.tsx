@@ -254,3 +254,12 @@ describe("pavadzīmes forma telefonā v2 (renderēta)", () => {
     expect([...html.matchAll(/<button[^>]*>([^<]+)<\/button>/g)].map((m) => m[1])).toEqual(["Jā", "Nē"]);
   });
 });
+
+describe("IrissWaybillCarPicker telefona logā (19.11 ritināšana)", () => {
+  it("logā saraksts nav atsevišķs ritināšanas bloks (data-in-sheet), ārpus loga - kā līdz šim", () => {
+    const inSheet = renderHtml(<IrissWaybillCarPicker cars={[]} selected="" onChoose={() => undefined} inSheet />);
+    const plain = renderHtml(<IrissWaybillCarPicker cars={[]} selected="" onChoose={() => undefined} />);
+    expect(inSheet).toContain('data-in-sheet="true"');
+    expect(plain).not.toContain("data-in-sheet");
+  });
+});
