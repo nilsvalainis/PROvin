@@ -23,6 +23,7 @@ import type {
 import type { CopilotSourceKey } from "@/lib/admin-copilot-types";
 import { AdminHistoryVendorPdfUpload } from "@/components/admin/AdminHistoryVendorPdfUpload";
 import { AdminDealerDataJobStrip } from "@/components/admin/AdminDealerDataJobStrip";
+import type { DealerSendBridge } from "@/components/admin/AdminDealerSendDialog";
 import { AdminOneautoIngestBar } from "@/components/admin/AdminOneautoIngestBar";
 import { AdminSpeckrCompactBar } from "@/components/admin/AdminSpeckrCompactBar";
 import {
@@ -143,6 +144,8 @@ type Props = {
   walletProduct?: string | null;
   dealerPdfProgressKey?: string | null;
   dealerPdfProgressPct?: number | null;
+  /** Dīlera «Sūtīt klientam»: servera PDF + sūtīšana no pasūtījuma darba zonas. */
+  dealerSend?: DealerSendBridge | null;
   /** Copilot dīlera PDF aģentam vajag visus avotu blokus (valstu noteikšanai). */
   getSourceBlocks?: () => WorkspaceSourceBlocks;
   applyPatchedBlocks?: (
@@ -196,6 +199,7 @@ export function AdminAutoRecordsSourceBlock({
   walletProduct = null,
   dealerPdfProgressKey = null,
   dealerPdfProgressPct = null,
+  dealerSend = null,
   getSourceBlocks,
   applyPatchedBlocks,
   pdfInclude,
@@ -497,6 +501,7 @@ export function AdminAutoRecordsSourceBlock({
               walletProduct={walletProduct}
               pdfProgressKey={dealerPdfProgressKey}
               pdfProgressPct={dealerPdfProgressPct}
+              dealerSend={dealerSend}
             />
           ) : null}
           {onPdfIncludeOneautoChange && pdfIncludeOneauto !== undefined ? (

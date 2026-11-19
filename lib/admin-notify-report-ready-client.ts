@@ -60,6 +60,9 @@ export async function postNotifyReportReadyViaBlob(input: {
   saveDropbox?: boolean;
   /** Admins apstiprina adresi, kas atšķiras no pasūtījumā saglabātās (pēc 409 recipient_mismatch). */
   confirmRecipientOverride?: boolean;
+  /** Dīlera «Sūtīt klientam»: admina rediģēts temats + teksts. */
+  customSubject?: string;
+  customText?: string;
 }): Promise<{ res: Response; rawText: string; data: Record<string, unknown> }> {
   const files: { blob: Blob; filename: string; mime: string }[] = [];
   for (const u of input.uploads) {
@@ -95,6 +98,9 @@ export async function postNotifyReportReadyViaBlob(input: {
       ...(input.markComplete ? { markComplete: true } : {}),
       ...(input.serverPdfPathname && input.saveDropbox === false ? { saveDropbox: false } : {}),
       ...(input.confirmRecipientOverride ? { confirmRecipientOverride: true } : {}),
+      ...(input.customSubject?.trim() && input.customText?.trim()
+        ? { customSubject: input.customSubject.trim(), customText: input.customText.trim() }
+        : {}),
     }),
   });
   const rawText = await res.text();

@@ -56,6 +56,7 @@ import {
 } from "@/components/admin/AdminAuditResultColorControl";
 import { AdminOrdersViewSwitch } from "@/components/admin/AdminOrdersViewSwitch";
 import { AdminOrdersExportButton } from "@/components/admin/AdminOrdersExportButton";
+import { AdminReviewRequestQueue } from "@/components/admin/AdminReviewRequestQueue";
 import { AdminVinCopyButton } from "@/components/admin/AdminVinClipboardAndLinks";
 import { AdminVinNotSeventeenFlag } from "@/components/admin/AdminVinNotSeventeenFlag";
 import { shouldOpenAdminOrderFromRowClick } from "@/lib/admin-vin-urls";
@@ -924,6 +925,11 @@ export function AdminOrdersTable({
         </div>
         {toolbarEnd ? <div className="ml-auto flex shrink-0 items-center gap-1.5">{toolbarEnd}</div> : null}
       </div>
+      {consultationList ? null : (
+        <div className="mt-2 hidden md:block">
+          <AdminReviewRequestQueue orders={orders} orderDetailHrefBase={orderDetailHrefBase} variant="desktop" />
+        </div>
+      )}
 
       {/* Telefonā: stikla josla + kartītes. Desktop tabula zemāk paliek neskarta. */}
       <div className="md:hidden">
@@ -952,6 +958,11 @@ export function AdminOrdersTable({
           </button>
         </div>
       ) : null}
+      {consultationList ? null : (
+        <div className="mx-4 mt-2">
+          <AdminReviewRequestQueue orders={orders} orderDetailHrefBase={orderDetailHrefBase} variant="mobile" />
+        </div>
+      )}
       <ul className="mt-2 space-y-2 px-4">
         {dayGroups.map((g) => (
         <Fragment key={g.key}>
