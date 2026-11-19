@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { translateI18n } from "@/lib/thecarapi-i18n-lv";
 import { buildThecarapiPdfModel } from "@/lib/thecarapi-pdf-model";
-import { buildThecarapiRecordsPdfHtml } from "@/lib/thecarapi-pdf";
+import { buildThecarapiRecordsPdfHtml, thecarapiPaintTone } from "@/lib/thecarapi-pdf";
 import { buildThecarapiAdminRecords } from "@/lib/vin-scan/parse-thecarapi";
 import { thecarapiFieldsOf, type ThecarapiAdminRecord } from "@/lib/vin-scan/thecarapi-fields";
 
@@ -144,9 +144,43 @@ describe("TheCarApi PDF modelis (AUTO1 pilnā forma, anonimizēts)", () => {
 
   it("sadaļas ir spec secībā", () => {
     const order = ["Pamatdati", "Cenas", "Nobraukums", "Datumi", "Bojājumi", "Aprīkojums", "Riepas un diski", "Servisa vēsture", "Citi dati"];
-    const at = order.map((t) => html.indexOf(`>${t}<`));
+    const at = order.map((t) => html.indexOf(`class="pdf-subhead">${t}<`));
     expect(at.every((i) => i > 0)).toBe(true);
     expect([...at].sort((a, b) => a - b)).toEqual(at);
+  });
+
+  it("vizuālā struktūra: galvenie fakti, cenu kāpnes, bojājumu kartītes, lakas krāsas, riteņu kartītes, čipi", () => {
+    const tiles = html.slice(html.indexOf("pdf-tc-tiles"), html.indexOf("</ul>", html.indexOf("pdf-tc-tiles")));
+    expect(tiles.match(/pdf-tc-tile"/g)).toHaveLength(4);
+    for (const t of ["Noslēguma cena", "11 379 €", "Nobraukums", "226 760 km", "Izsoles datums", "09.10.2026", "Bojājumi"]) expect(tiles).toContain(t);
+    // 5 bojājumi -> sarkans (>3).
+    expect(tiles).toContain("pdf-summary-tile--alert");
+    // Kāpnes: Sākuma -> Pārdevēja prasītā -> Noslēguma (izcelta, pēdējā).
+    const ladder = html.slice(html.indexOf("pdf-tc-ladder"));
+    expect(ladder.indexOf("Sākuma cena")).toBeLessThan(ladder.indexOf("Pārdevēja prasītā cena"));
+    expect(ladder.indexOf("Pārdevēja prasītā cena")).toBeLessThan(ladder.indexOf("pdf-tc-price--final"));
+    expect(html).toMatch(/pdf-tc-price--final"><p class="pdf-tc-price__lab">Noslēguma cena/);
+    expect(html).toContain("izsolē 09.10.2026</span>");
+    expect(html.match(/pdf-tc-chip--zone/g)).toHaveLength(2);
+    expect(html).toContain('pdf-tc-chip--alert">Skrāpējums līdz gruntij');
+    expect(html.match(/pdf-tc-paint__cell/g)).toHaveLength(11);
+    expect(html).toContain('pdf-tc-chip--ok">120 µm');
+    expect(text).toContain("≤160 µm rūpnīcas krāsojums");
+    expect(text).toContain("161-300 µm iespējama pārkrāsošana");
+    expect(html).toContain("&gt;300 µm iespējams špaktelis");
+    expect(html.match(/pdf-tc-wheel"/g)).toHaveLength(8);
+    expect(text).toContain("kluči ≥3 mm");
+    expect(text).toContain("DOT 4824 (48. ned. 2024)");
+    expect(html.match(/pdf-tc-eq__group/g)).toHaveLength(model.equipment.length);
+    expect(html).toContain("<li>Headlight LED: LED projector</li>");
+  });
+
+  it("lakas biezuma sliekšņi: ≤160 zaļš, 161-300 dzeltens, >300 sarkans", () => {
+    expect(thecarapiPaintTone("160")).toBe("ok");
+    expect(thecarapiPaintTone("161")).toBe("warn");
+    expect(thecarapiPaintTone("300")).toBe("warn");
+    expect(thecarapiPaintTone("301")).toBe("alert");
+    expect(thecarapiPaintTone("nav")).toBe("neutral");
   });
 
   it("nekas nepazūd: katrs neizslēgtais lauks ir sadaļā, «Citos datos» vai ir dublikāts", () => {
