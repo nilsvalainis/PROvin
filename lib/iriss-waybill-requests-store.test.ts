@@ -124,7 +124,10 @@ describe("cancelWaybillRequest (Atcelt)", () => {
     seed(rows);
     const before = JSON.stringify(mem.doc);
     for (const row of rows) {
-      expect(await cancelWaybillRequest({ id: row.id, ...actor })).toEqual({ ok: false, reason: "not_pending" });
+      expect(await cancelWaybillRequest({ id: row.id, ...actor })).toEqual({
+        ok: false,
+        reason: row.status === "cancelled" ? "already_cancelled" : "not_pending",
+      });
     }
     expect(await cancelWaybillRequest({ id: "wbr_nav", ...actor })).toEqual({ ok: false, reason: "not_found" });
     expect(JSON.stringify(mem.doc)).toBe(before);
@@ -160,6 +163,26 @@ describe("worker stages and expiry", () => {
       status: "issued",
       stage: "",
     });
+  });
+
+  it("19.11: stage notikumi bez teksta notikumu sarakstā tukšus ierakstus neliek (arī pēc atcelšanas)", async () => {
+    seed([sample({ id: "wbr_e" })]);
+    await claimWaybillRequest("wbr_e", "auto");
+    const before = (await readWaybillRequestsDoc()).events.length;
+    for (const stage of ["vpn", "checking", "filling"] as const) {
+      await appendWaybillRequestEvent({ id: "wbr_e", kind: "message", stage, by: "auto" });
+    }
+    await appendWaybillRequestEvent({ id: "wbr_e", kind: "message", text: "   ", by: "auto" });
+    expect((await readWaybillRequestsDoc()).events.length).toBe(before);
+    expect((await readWaybillRequestsDoc()).requests[0]?.stage).toBe("filling");
+    await cancelWaybillRequest({ id: "wbr_e", ...actor });
+    const afterCancel = (await readWaybillRequestsDoc()).events.length;
+    expect(await appendWaybillRequestEvent({ id: "wbr_e", kind: "message", stage: "saving", by: "auto" })).toMatchObject({ status: "cancelled" });
+    expect((await readWaybillRequestsDoc()).events.length).toBe(afterCancel);
+    // Ziņa ar tekstu paliek («Atcelts. Pavadzīme NAV izveidota.»).
+    await appendWaybillRequestEvent({ id: "wbr_e", kind: "message", text: "Atcelts. Pavadzīme NAV izveidota.", by: "auto" });
+    const last = (await readWaybillRequestsDoc()).events.at(-1);
+    expect(last).toMatchObject({ kind: "message", text: "Atcelts. Pavadzīme NAV izveidota." });
   });
 
   it("a pending request whose validity already ended is not offered to Aivars or the worker", async () => {

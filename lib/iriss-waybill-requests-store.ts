@@ -528,7 +528,7 @@ export async function listPendingWaybillRequests(nowMs = Date.now()): Promise<Wa
 
 export type CancelWaybillResult =
   | { ok: true; request: WaybillRequest }
-  | { ok: false; reason: "not_found" | "not_pending" };
+  | { ok: false; reason: "not_found" | "not_pending" | "already_cancelled" };
 
 /**
  * "Atcelt" (07.11, B762): jebkurā stāvoklī pirms "Izdota" - Gaida, pie automātikas vai pie Aivara (pārbaude zem
@@ -544,6 +544,8 @@ export async function cancelWaybillRequest(input: {
   const result = await mutateDoc<CancelWaybillResult & { maybeSaved?: AdminPushMessage | null }>((doc) => {
     const current = doc.requests.find((r) => r.id === input.id);
     if (!current) return { value: { ok: false, reason: "not_found" } };
+    // 19.11: atkārtota atcelšana - godīgs «Jau atcelts», nevis «vēl nav izdots» (07.11 atradums).
+    if (current.status === "cancelled") return { value: { ok: false, reason: "already_cancelled" } };
     if (!waybillRequestCancellable(current)) return { value: { ok: false, reason: "not_pending" } };
     const who = input.actorName ? ` (${input.actorName.slice(0, 60)})` : "";
     const text =
@@ -823,14 +825,18 @@ export async function appendWaybillRequestEvent(input: {
             : (current.activeWaybillNo ?? ""),
     };
     let next = { ...doc, requests: doc.requests.map((r) => (r.id === input.id ? nextReq : r)) };
-    next = pushEvent(next, {
-      requestId: input.id,
-      kind: input.kind,
-      text: (input.text ?? input.errorReason ?? "").slice(0, 2000),
-      waybillNo: nextReq.waybillNo,
-      pdfUrl: nextReq.pdfUrl,
-      by,
-    });
+    // 19.11: automātikas soļi (stage) ir «message» bez teksta - tie maina tikai pieprasījuma stage, notikumu sarakstā
+    // tukšu ierakstu neliek (07.11: krājās rindā, arī pēc atcelšanas, un ēda 4000 notikumu limitu).
+    if (input.kind !== "message" || replyText) {
+      next = pushEvent(next, {
+        requestId: input.id,
+        kind: input.kind,
+        text: (input.text ?? input.errorReason ?? "").slice(0, 2000),
+        waybillNo: nextReq.waybillNo,
+        pdfUrl: nextReq.pdfUrl,
+        by,
+      });
+    }
     return { value: { before: current, after: nextReq }, next };
   });
   if (!changed) return null;

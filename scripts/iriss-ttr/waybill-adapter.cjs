@@ -75,7 +75,66 @@ function exAllowed(key) {
   return ALLOWED_EX.has(key) || ALLOWED_EX_PATTERNS.some((re) => re.test(key));
 }
 
-const MAKE_ALIASES = { MB: "MERCEDES-BENZ", MERCEDES: "MERCEDES-BENZ", VW: "VOLKSWAGEN" };
+/**
+ * Marku aizstājvārdu grupas (salīdzina compact formā). 19.11: CSDD sarakstā Volkswagen ir «VW» (akts GDZ00220:
+ * «VW ARTEON»), Mercedes - «MERCEDES BENZ». Agrāk VW tika pārvērsts par «VOLKSWAGEN» -> «marka nav atrasta».
+ * Tagad meklē visus grupas nosaukumus; sarakstā jāatrod tieši VIENA opcija, citādi kļūda.
+ */
+const MAKE_ALIAS_GROUPS = [
+  ["VW", "VOLKSWAGEN"],
+  ["MB", "MERCEDES", "MERCEDES-BENZ", "MERCEDES BENZ"],
+];
+function makeCandidates(raw) {
+  const c = compact(raw);
+  const group = MAKE_ALIAS_GROUPS.find((g) => g.some((n) => compact(n) === c));
+  return group ? group.map(compact) : [c];
+}
+
+/** Mercedes klases burti («E 350» -> «E350», klase «E-KLASSE»). */
+const MB_CLASS_RE = /^(A|B|C|E|S|G|V|X|CL|CLA|CLK|CLS|GL|GLA|GLB|GLC|GLE|GLK|GLS|ML|SL|SLC|SLK|R)$/;
+/** BMW sērija: «3ER», «3-SERIES», «3 SERIJA». */
+const BMW_SERIES_RE = /^(\d)(ER|SERIES|SERIE|SERIJA)$/;
+/** BMW modeļa kods: «325D», «520I», «X5», «M3», «I4». */
+const BMW_CODE_RE = /^(\d{3}[A-Z]{0,2}|[XZMI]\d{1,2}[A-Z]?)$/;
+
+/**
+ * Modeļa kandidāti pa līmeņiem (19.11, «3ER 325D»). 0: pilns teksts; 1: precīzais modelis (BMW kods «325D», MB «E350»);
+ * 2: sērija/klase («3ER», «3 SERIES», «E-KLASSE»). Nekas netiek minēts - kandidāts der tikai, ja tieši tāds ir CSDD sarakstā.
+ */
+function modelCandidateTiers(makeText, model) {
+  const mk = compact(makeText);
+  const tokens = String(model || "").toUpperCase().trim().split(/\s+/).filter(Boolean);
+  const tiers = [[compact(model)], [], []];
+  if (mk === "BMW") {
+    // «3ER 325D» / «3 SERIES 325D» / «3-SERIES»: sērija no pirmā vārda (vai «3» + «SERIES»).
+    let series = "";
+    const t0 = compact(tokens[0] || "");
+    const m0 = BMW_SERIES_RE.exec(t0);
+    if (m0) series = m0[1];
+    else if (/^\d$/.test(t0) && /^(ER|SERIES|SERIE|SERIJA)$/.test(compact(tokens[1] || ""))) series = t0;
+    const code = tokens.map(compact).find((t) => BMW_CODE_RE.test(t));
+    if (code) tiers[1].push(code);
+    if (!series && code && /^\d/.test(code)) series = code[0];
+    if (series) tiers[2].push(`${series}ER`, `${series}SERIES`, `${series}SERIJA`, `${series}SERIE`);
+  } else if (mk === "MERCEDESBENZ") {
+    const c0 = compact(tokens[0] || "");
+    const c1 = compact(tokens[1] || "");
+    let cls = "";
+    if (MB_CLASS_RE.test(c0) && /^\d{2,3}[A-Z]?$/.test(c1)) {
+      cls = c0;
+      tiers[1].push(c0 + c1);
+    } else {
+      const m = /^([A-Z]{1,3})(\d{2,3}[A-Z]?)$/.exec(c0);
+      if (m && MB_CLASS_RE.test(m[1])) cls = m[1];
+      else if (MB_CLASS_RE.test(c0) && tokens.length === 1) cls = c0;
+      if (m && MB_CLASS_RE.test(m[1])) tiers[1].push(c0);
+    }
+    const kl = /^([A-Z]{1,3})(KLASSE|CLASS|KLASE)$/.exec(c0);
+    if (kl && MB_CLASS_RE.test(kl[1])) cls = kl[1];
+    if (cls) tiers[2].push(`${cls}KLASSE`, `${cls}CLASS`, `${cls}KLASE`);
+  }
+  return tiers.map((t) => [...new Set(t.filter(Boolean))]);
+}
 
 /** Salīdzināšanai: bez diakritikas, atstarpēm un defisēm ("T-ROC" = "T ROC", "ŠKODA" = "SKODA"). */
 const compact = (s) =>
@@ -218,6 +277,36 @@ function playwrightOps(page, h) {
   };
 }
 
+/** Marka pēc garākā prefiksa (ar aizstājvārdu grupām). Tieši viena CSDD opcija, citādi kļūda (darbs Aivaram). */
+function resolveMakeIn(makeOptions, brandModel) {
+  const tokens = String(brandModel || "").toUpperCase().trim().split(/\s+/).filter(Boolean);
+  for (let k = tokens.length - 1; k >= 1; k--) {
+    const raw = tokens.slice(0, k).join(" ");
+    const want = makeCandidates(raw);
+    const hits = makeOptions.filter((o) => o.value && want.includes(compact(o.text)));
+    const unique = [...new Map(hits.map((o) => [o.value, o])).values()];
+    if (unique.length === 1) return { make: unique[0], model: tokens.slice(k).join(" ") };
+    if (unique.length > 1) throw new Error(`marka neviennozīmīga: ${raw}`);
+  }
+  throw new Error(`marka nav atrasta CSDD sarakstā: ${String(brandModel).slice(0, 40)}`);
+}
+
+/**
+ * Modelis: vispirms precīzs teksts, tad drošie kandidāti pa līmeņiem (modelCandidateTiers). Pirmais līmenis ar
+ * atbilstībām uzvar; ja tajā ir vairākas dažādas opcijas -> «neviennozīmīgs» (darbs Aivaram). Nekā -> «nav atrasts».
+ */
+function resolveModelIn(modelOptions, model, makeText) {
+  const opts = modelOptions.filter((o) => o.value);
+  for (const tier of modelCandidateTiers(makeText || "", model)) {
+    if (!tier.length) continue;
+    const hits = opts.filter((o) => tier.includes(compact(o.text)));
+    const unique = [...new Map(hits.map((o) => [o.value, o])).values()];
+    if (unique.length === 1) return unique[0];
+    if (unique.length > 1) throw new Error(`modelis neviennozīmīgs: ${String(model).slice(0, 30)}`);
+  }
+  throw new Error(`modelis nav atrasts: ${String(model).slice(0, 30)}`);
+}
+
 /** @param {(page: unknown, h: object) => ReturnType<typeof playwrightOps>} makeOps */
 function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
   /** Šī procesa darbs (open izsauc pirmo; refill.js un save.js ir atsevišķi procesi). */
@@ -269,23 +358,13 @@ function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
     return { target: iela.id, house: ROUTE.house };
   }
 
-  /** Marka pēc garākā prefiksa (ar aizstājvārdiem MB, VW), modelis pēc precīza teksta. Neviennozīmīgi -> kļūda. */
+  /** Marka pēc garākā prefiksa (ar aizstājvārdu grupām VW/VOLKSWAGEN, MB/MERCEDES-BENZ). Neviennozīmīgi -> kļūda. */
   function resolveMake(makeOptions, brandModel) {
-    const tokens = String(brandModel || "").toUpperCase().trim().split(/\s+/).filter(Boolean);
-    for (let k = tokens.length - 1; k >= 1; k--) {
-      const raw = tokens.slice(0, k).join(" ");
-      const want = compact(MAKE_ALIASES[raw] || raw);
-      const hits = makeOptions.filter((o) => o.value && compact(o.text) === want);
-      if (hits.length === 1) return { make: hits[0], model: tokens.slice(k).join(" ") };
-      if (hits.length > 1) throw new Error(`marka neviennozīmīga: ${raw}`);
-    }
-    throw new Error(`marka nav atrasta CSDD sarakstā: ${String(brandModel).slice(0, 40)}`);
+    return resolveMakeIn(makeOptions, brandModel);
   }
 
-  function resolveModel(modelOptions, model) {
-    const hits = modelOptions.filter((o) => o.value && compact(o.text) === compact(model));
-    if (hits.length !== 1) throw new Error(`modelis ${hits.length ? "neviennozīmīgs" : "nav atrasts"}: ${String(model).slice(0, 30)}`);
-    return hits[0];
+  function resolveModel(modelOptions, model, makeText) {
+    return resolveModelIn(modelOptions, model, makeText);
   }
 
   function pickRepresentative(opts, company) {
@@ -594,7 +673,7 @@ function createAdapter(makeOps = playwrightOps, { env = process.env } = {}) {
       await c.ops.select("select[name=gprs_id_kom_parstavis]", rep.value);
       await c.ops.select("#kmod_id", exp.make.make.value);
       await c.ex("lapv_kmod");
-      const model = resolveModel(await c.ops.options("#kmod_id_mod"), exp.make.model);
+      const model = resolveModel(await c.ops.options("#kmod_id_mod"), exp.make.model, exp.make.make.text);
       await c.ops.select("#kmod_id_mod", model.value);
       await c.ops.setKavSel(exp.route.target);
       await c.ops.waitJx();
@@ -685,3 +764,6 @@ module.exports.ANNUL_EX = ANNUL_EX;
 module.exports.COMPANIES = COMPANIES;
 module.exports.readCredentialFile = readCredentialFile;
 module.exports.parseKavTree = parseKavTree;
+module.exports.resolveMakeIn = resolveMakeIn;
+module.exports.resolveModelIn = resolveModelIn;
+module.exports.modelCandidateTiers = modelCandidateTiers;
