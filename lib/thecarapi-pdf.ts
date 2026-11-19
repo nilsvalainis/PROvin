@@ -232,9 +232,17 @@ export const THECARAPI_PDF_VEHICLE_LABELS = [
   "Negadījumi",
 ] as const;
 
-export function thecarapiPdfVehicleRows(basics: readonly ThecarapiPdfKv[]): ThecarapiPdfKv[] {
+/** Citu izsoļu svarīgie pamatdati, kas pārcelti uz atbilstošo sadaļu (Copart, BCA u.c.). */
+export const THECARAPI_PDF_DAMAGE_LABELS = ["Galvenais bojājums", "Papildu bojājums", "Iedarbojas un brauc", "Dokumentu statuss"] as const;
+export const THECARAPI_PDF_PRICE_LABELS = ["PVN režīms"] as const;
+
+function basicsByLabels(basics: readonly ThecarapiPdfKv[], labels: readonly string[]): ThecarapiPdfKv[] {
   const base = (label: string): string => label.replace(/\s+\((cits avots|vēstures dati)\)$/, "");
-  return THECARAPI_PDF_VEHICLE_LABELS.flatMap((label) => basics.filter((row) => base(row.label) === label && row.value.trim()));
+  return labels.flatMap((label) => basics.filter((row) => base(row.label) === label && row.value.trim()));
+}
+
+export function thecarapiPdfVehicleRows(basics: readonly ThecarapiPdfKv[]): ThecarapiPdfKv[] {
+  return basicsByLabels(basics, THECARAPI_PDF_VEHICLE_LABELS);
 }
 
 function statusTone(value: string): Tone {
@@ -270,12 +278,17 @@ export function renderThecarapiPdfModelHtml(model: ThecarapiPdfModel): string {
   };
 
   push(kvSection("Automašīnas pamatdati", thecarapiPdfVehicleRows(model.basics)));
-  push(kvSection("Cenas", model.prices));
+  push(kvSection("Cenas", [...model.prices, ...basicsByLabels(model.basics, THECARAPI_PDF_PRICE_LABELS)]));
   push(kvSection("Nobraukums", model.mileage));
   push(kvSection("Datumi", model.dates));
 
+  // Bojājumu kopsavilkums (Copart u.c.) īsā kv tabulā pirms zonu kartītēm.
+  const damageRows = basicsByLabels(model.basics, THECARAPI_PDF_DAMAGE_LABELS).map((row) => ({
+    ...row,
+    highlight: /bojājums$/.test(row.label) || (row.label === "Iedarbojas un brauc" && /^nē/i.test(row.value)) || (row.label === "Dokumentu statuss" && /avārij|salvage/i.test(row.value)),
+  }));
   const zones = damageZones(model);
-  if (zones) push(`${subhead("Bojājumi")}${zones}`);
+  if (zones || damageRows.length) push(`${subhead("Bojājumi")}${kvBlock(damageRows)}${zones}`);
   const paint = paintBlock(model.paint);
   if (paint) push(`<div class="pdf-keep-head pdf-tc-paint">${subhead("Lakas biezums")}${paint}</div>`);
   if (model.brakes?.rows.length) push(`<div class="pdf-keep-head">${subhead("Bremzes")}${gridTable(model.brakes, STATUS_COL)}</div>`);

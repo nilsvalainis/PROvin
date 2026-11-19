@@ -317,6 +317,12 @@ describe("citas platformas (sintētiskas fixtures pēc publiskās dokumentācija
     clean(text, html);
     expect(record.venue).toBe("BCA");
     expect(model.basics).toContainEqual({ label: "PVN režīms", value: "Peļņas daļas režīms (bez PVN)" });
+    // PVN režīms pārcelts uz «Cenas»; pārdevējs un vieta netiek drukāti.
+    const prices = html.slice(html.indexOf('pdf-subhead">Cenas<'), html.indexOf('pdf-subhead">Bojājumi<'));
+    expect(prices).toContain("PVN režīms");
+    expect(prices).toContain("Peļņas daļas režīms (bez PVN)");
+    expect(text).not.toContain("Pārdevējs");
+    expect(text).not.toContain("Atrašanās vieta");
     expect(model.damages).toContainEqual(expect.objectContaining({ zone: "Aizmugure", part: "Aizmugurējais buferis", type: "Iespiedums neliels" }));
     expect(model.paint.map((p) => p.value)).toEqual(["105", "245", "380"]);
     expect(html).toMatch(/data-paint-slot="right-2" data-tone="alert">[^]*?>380 µm</);
@@ -334,6 +340,14 @@ describe("citas platformas (sintētiskas fixtures pēc publiskās dokumentācija
     expect(model.basics).toContainEqual({ label: "Papildu bojājums", value: "Nelieli iespiedumi un skrāpējumi" });
     expect(model.basics).toContainEqual({ label: "Dokumentu statuss", value: "Avārijas auto (salvage)" });
     expect(model.basics).toContainEqual({ label: "Iedarbojas un brauc", value: "jā" });
+    // Pārcelts uz «Bojājumi» (pirms zonu kartītēm); pārdevējs, vieta, marka netiek drukāti.
+    const damage = html.slice(html.indexOf('pdf-subhead">Bojājumi<'));
+    for (const v of ["Galvenais bojājums", "Priekšpuses bojājums", "Papildu bojājums", "Nelieli iespiedumi un skrāpējumi", "Iedarbojas un brauc", "Dokumentu statuss", "Avārijas auto (salvage)"]) {
+      expect(damage, v).toContain(v);
+    }
+    expect(html.indexOf('pdf-subhead">Bojājumi<')).toBeGreaterThan(0);
+    expect(text).not.toContain("Atrašanās vieta");
+    expect(text).not.toContain("Marka, modelis");
   });
 
   it("nekas nepazūd arī citām platformām", () => {
