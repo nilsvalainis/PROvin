@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AdminSendReportDialog } from "@/components/admin/AdminSendReportDialog";
+import { AdminSendReportDialog, sendReportLangOptions, type SendReportKind } from "@/components/admin/AdminSendReportDialog";
 import { renderHtml, renderText } from "@/lib/test-render";
 
 const noopAsync = async () => {
@@ -9,6 +9,7 @@ const noopAsync = async () => {
 function dialog(
   attachments: ReadonlyArray<{ id: string; name?: string; filename?: string; mime?: string; size?: number }>,
   recipientRole?: "client" | "partner",
+  defaultKind: SendReportKind = "audits",
 ) {
   return (
     <AdminSendReportDialog
@@ -17,7 +18,7 @@ function dialog(
       dark
       email="klients@example.com"
       recipientRole={recipientRole}
-      defaultKind="audits"
+      defaultKind={defaultKind}
       b2b={false}
       attachments={attachments}
       whatsappHref={null}
@@ -80,5 +81,29 @@ describe("Sūtīt atskaiti dialogs: saņēmējs", () => {
 
   it("partnera pasūtījumā rāda «B2B partneris»", () => {
     expect(renderText(dialog([], "partner"))).toContain("B2B partneris: klients@example.com");
+  });
+});
+
+describe("Sūtīt atskaiti dialogs: valoda (Nils 19.11)", () => {
+  it("AUDITS un BUSINESS - LV/EN/RU; dīleris un B2B - arī DE; ASV - tikai LV", () => {
+    expect(sendReportLangOptions("audits", false)).toEqual(["lv", "en", "ru"]);
+    expect(sendReportLangOptions("business", false)).toEqual(["lv", "en", "ru"]);
+    expect(sendReportLangOptions("dealer", false)).toEqual(["lv", "en", "ru", "de"]);
+    expect(sendReportLangOptions("audits", true)).toEqual(["lv", "en", "ru", "de"]);
+    expect(sendReportLangOptions("asv", false)).toEqual(["lv"]);
+  });
+
+  it("AUDITS dialogā rāda valodas izvēli ar noklusējumu LV", () => {
+    const html = renderHtml(dialog([]));
+    expect(html).toContain("Valoda (atskaite un e-pasts)");
+    expect(html).toMatch(/<option value="lv"[^>]*selected/);
+    expect(html).toContain('<option value="en">Angļu</option>');
+    expect(html).toContain('<option value="ru">Krievu</option>');
+    expect(html).not.toContain('<option value="de">');
+  });
+
+  it("BUSINESS dialogā valoda ir; ASV - nav", () => {
+    expect(renderText(dialog([], "client", "business"))).toContain("Valoda (atskaite un e-pasts)");
+    expect(renderText(dialog([], "client", "asv"))).not.toContain("Valoda (atskaite un e-pasts)");
   });
 });

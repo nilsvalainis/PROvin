@@ -90,6 +90,9 @@ type Props = {
   flashMaxPhase?: string | null;
   flashMaxNotice?: string | null;
   flashMaxErr?: string | null;
+  /** FLASH MAX noslēguma pārbaudes neizlemtie ieteikumi (poga statusā atver sarakstu). */
+  finalReviewPending?: number;
+  onOpenFinalReview?: () => void;
   /** Ārējs paziņojums (piem. „Reģ. numurs nokopēts”, maksas avota ielāde). */
   notice?: AdminMobileDockStatus | null;
   onDismissNotice?: () => void;
@@ -188,6 +191,8 @@ export function AdminOrderMobileDock({
   flashMaxPhase = null,
   flashMaxNotice = null,
   flashMaxErr = null,
+  finalReviewPending = 0,
+  onOpenFinalReview,
   notice = null,
   onDismissNotice,
 }: Props) {
@@ -236,7 +241,13 @@ export function AdminOrderMobileDock({
       : flashMaxErr
         ? { text: flashMaxErr, tone: "error" }
         : flashMaxNotice
-          ? { text: flashMaxNotice, tone: "ok" }
+          ? {
+              text: flashMaxNotice,
+              tone: "ok",
+              ...(finalReviewPending > 0 && onOpenFinalReview
+                ? { action: { label: `Skatīt (${finalReviewPending})`, onClick: onOpenFinalReview } }
+                : {}),
+            }
           : null;
   const dockStatus = flashStatus ?? notice ?? localNotice;
   const dockCovered = useAdminOverlayCover();

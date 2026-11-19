@@ -4,6 +4,7 @@
  */
 
 type DealerMajorAssemblyId =
+  | "accident_repair"
   | "engine"
   | "timing_chain"
   | "timing_belt"
@@ -32,6 +33,7 @@ export type DealerMajorWorkOverride = {
 };
 
 const ASSEMBLY_IDS = new Set<string>([
+  "accident_repair",
   "engine",
   "timing_chain",
   "timing_belt",

@@ -273,6 +273,8 @@ import { AdminTechnicalRiskMapPanel } from "@/components/admin/AdminTechnicalRis
 import { AdminAiPolishRichCommentShell } from "@/components/admin/AdminAiPolishRichCommentShell";
 import { AdminAiGenerateWithPrefill } from "@/components/admin/AdminAiGenerateWithPrefill";
 import { AdminFlashMaxButton } from "@/components/admin/AdminFlashMaxButton";
+import { AdminFlashMaxReviewPanel } from "@/components/admin/AdminFlashMaxReviewPanel";
+import { AdminResponsiveModal } from "@/components/admin/AdminResponsiveModal";
 import { AdminOrderMobileDock } from "@/components/admin/AdminOrderMobileDock";
 import { AdminPdfLangSplitButton } from "@/components/admin/AdminPdfLangSplitButton";
 import { renderReportPdfOnServer, type ServerReportPdfResult } from "@/lib/report-pdf-client";
@@ -375,8 +377,17 @@ import {
   isFlashMaxEmptyDataError,
   shouldSkipFlashMaxJob,
   type FlashMaxJobResult,
+  type FlashMaxRunJob,
   type FlashMaxSelection,
 } from "@/lib/admin-flash-max";
+import {
+  applyFlashMaxReviewFinding,
+  formatFlashMaxReviewNotice,
+  type FlashMaxReviewField,
+  type FlashMaxReviewFinding,
+  type FlashMaxReviewState,
+} from "@/lib/flash-max-final-review";
+import { postFlashMaxFinalReview } from "@/lib/flash-max-final-review-client";
 import {
   applySsLvAdifyAutofill,
   shouldAutofillSsLvListing,
@@ -945,6 +956,12 @@ export function OrderDetailWorkspace({
   const [flashMaxPhase, setFlashMaxPhase] = useState<string | null>(null);
   const [flashMaxErr, setFlashMaxErr] = useState<string | null>(null);
   const [flashMaxNotice, setFlashMaxNotice] = useState<string | null>(null);
+  /** FLASH MAX noslēguma pārbaude (Opus): ieteikumi pa laukiem, tikai ar operatora klikšķi. */
+  const [flashReview, setFlashReview] = useState<FlashMaxReviewState>({ status: "idle" });
+  const [flashReviewOpen, setFlashReviewOpen] = useState(false);
+  const [flashReviewHandled, setFlashReviewHandled] = useState<Record<string, "accepted" | "rejected">>({});
+  const [flashReviewStale, setFlashReviewStale] = useState<Set<string>>(() => new Set());
+  const flashReviewJobsRef = useRef<Map<string, FlashMaxRunJob>>(new Map());
   const adifyAutofillAttemptedRef = useRef(false);
   const portfolioDragDepth = useRef(0);
   const hydrationSnapshotRef = useRef("");
@@ -2229,6 +2246,117 @@ export function OrderDetailWorkspace({
     [buildAiOrderPayload, orderDraftPersistenceEnabled, payload.aiAllowed, payload.vin, persistFullWorkspaceRef, runFactCheck, updateSourceBlock],
   );
 
+  /** FLASH MAX lauka pašreizējais teksts (vienkāršs teksts). */
+  const flashMaxJobPlain = useCallback((job: FlashMaxRunJob): string => {
+    const cur = wsPersistRef.current;
+    const edits = orderEditsRef.current;
+    if (job.kind === "source") {
+      return adminRichHtmlToPlainText(
+        sourceBlockCommentsPlainForAi(job.blockKey, cur.sourceBlocks, job.citiAvotiSectionIndex, job.targetField),
+      ).trim();
+    }
+    if (job.kind === "listing") {
+      const listing = cur.sourceBlocks.listing_analysis;
+      if (job.id === "seller") return adminRichHtmlToPlainText(listing.sellerPortrait).trim();
+      if (job.id === "photo") return adminRichHtmlToPlainText(listing.photoAnalysis).trim();
+      if (job.id === "listing_sales") return adminRichHtmlToPlainText(listing.listingSalesContext).trim();
+      return "";
+    }
+    if (job.id === "incidents") return adminRichHtmlToPlainText(edits.internal).trim();
+    if (job.id === "mileage") return adminRichHtmlToPlainText(edits.mileage).trim();
+    if (job.id === "sources_comparison") return adminRichHtmlToPlainText(edits.sourcesComparison).trim();
+    if (job.id === "technical_risks") return adminRichHtmlToPlainText(cur.tehniskoRiskuAnalize).trim();
+    if (job.id === "inspection") return adminRichHtmlToPlainText(cur.apskatesPlāns).trim();
+    if (job.id === "summary") return adminRichHtmlToPlainText(cur.iriss).trim();
+    return "";
+  }, []);
+
+  /** Noslēguma pārbaudes pieņemtais labojums -> FLASH MAX lauks (bez jaunas ģenerēšanas zīmes). */
+  const writeFlashMaxJobHtml = useCallback(
+    (job: FlashMaxRunJob, html: string) => {
+      if (job.kind === "source") {
+        updateSourceBlock(
+          job.blockKey,
+          applySourceBlockGeneratedComment(job.blockKey, wsStateRef.current.sourceBlocks[job.blockKey], html, {
+            targetField: job.targetField,
+            citiAvotiSectionIndex: job.citiAvotiSectionIndex,
+          }),
+        );
+        return;
+      }
+      if (job.kind === "listing") {
+        const listing = wsPersistRef.current.sourceBlocks.listing_analysis;
+        if (job.id === "seller") updateSourceBlock("listing_analysis", { ...listing, sellerPortrait: html });
+        else if (job.id === "photo") updateSourceBlock("listing_analysis", { ...listing, photoAnalysis: html });
+        else if (job.id === "listing_sales") updateSourceBlock("listing_analysis", { ...listing, listingSalesContext: html });
+        return;
+      }
+      if (job.id === "incidents") onInternalCommentChange(html);
+      else if (job.id === "mileage") onMileageCommentChange(html);
+      else if (job.id === "sources_comparison") onSourcesComparisonCommentChange(html);
+      else if (job.id === "technical_risks") updateWs({ tehniskoRiskuAnalize: html });
+      else if (job.id === "inspection") updateWs({ apskatesPlāns: html });
+      else if (job.id === "summary") updateWs({ iriss: html });
+    },
+    [onInternalCommentChange, onMileageCommentChange, onSourcesComparisonCommentChange, updateSourceBlock, updateWs],
+  );
+
+  /** Viens Opus izsaukums pāri visiem šajā FLASH MAX palaišanā ģenerētajiem laukiem. Bez atkārtojumiem. */
+  const runFlashMaxFinalReview = useCallback(
+    async (jobs: FlashMaxRunJob[]): Promise<FlashMaxReviewState> => {
+      const fields: FlashMaxReviewField[] = [];
+      const map = new Map<string, FlashMaxRunJob>();
+      for (const job of jobs) {
+        const text = flashMaxJobPlain(job);
+        if (!text) continue;
+        fields.push({ id: job.runId, label: job.runLabel, text });
+        map.set(job.runId, job);
+      }
+      flashReviewJobsRef.current = map;
+      setFlashReviewHandled({});
+      setFlashReviewStale(new Set());
+      if (fields.length === 0) {
+        const empty: FlashMaxReviewState = { status: "done", findings: [], fieldLabels: {} };
+        setFlashReview(empty);
+        return empty;
+      }
+      setFlashReview({ status: "running" });
+      const res = await postFlashMaxFinalReview({ ...buildAiOrderPayload(), fields });
+      const next: FlashMaxReviewState = res.ok
+        ? {
+            status: "done",
+            findings: res.findings,
+            fieldLabels: Object.fromEntries(fields.map((f) => [f.id, f.label])),
+          }
+        : { status: "error", error: res.error };
+      setFlashReview(next);
+      if (next.status === "done" && next.findings.length > 0) setFlashReviewOpen(true);
+      return next;
+    },
+    [buildAiOrderPayload, flashMaxJobPlain],
+  );
+
+  const acceptFlashReviewFinding = useCallback(
+    (finding: FlashMaxReviewFinding) => {
+      const job = flashReviewJobsRef.current.get(finding.fieldId);
+      const next = job ? applyFlashMaxReviewFinding(flashMaxJobPlain(job), finding) : null;
+      if (!job || next == null) {
+        setFlashReviewStale((prev) => new Set(prev).add(finding.id));
+        return;
+      }
+      writeFlashMaxJobHtml(job, aiExpertSourceCommentToRichHtml(next));
+      setFlashReviewHandled((prev) => ({ ...prev, [finding.id]: "accepted" }));
+    },
+    [flashMaxJobPlain, writeFlashMaxJobHtml],
+  );
+
+  const rejectFlashReviewFinding = useCallback((finding: FlashMaxReviewFinding) => {
+    setFlashReviewHandled((prev) => ({ ...prev, [finding.id]: "rejected" }));
+  }, []);
+
+  const flashReviewPending =
+    flashReview.status === "done" ? flashReview.findings.filter((f) => !flashReviewHandled[f.id]).length : 0;
+
   const runFlashMax = useCallback(async (selection: FlashMaxSelection) => {
     if (!payload.aiAllowed || flashMaxBusy || !workspaceHydrated) return;
     const picked = flashMaxSelectedJobs(selection);
@@ -2237,6 +2365,7 @@ export function OrderDetailWorkspace({
     setFlashMaxErr(null);
     setFlashMaxNotice(null);
     const results: FlashMaxJobResult[] = [];
+    const okJobs: FlashMaxRunJob[] = [];
     const runs = expandFlashMaxRunJobs(picked, wsPersistRef.current.sourceBlocks, selection.selectedIds);
     const total = runs.length;
     try {
@@ -2257,39 +2386,7 @@ export function OrderDetailWorkspace({
         }
 
         setFlashMaxPhase(`${job.runLabel} (${i + 1}/${total})`);
-        const edits = orderEditsRef.current;
-        let existingDraftPlain = "";
-        if (job.kind === "source") {
-          existingDraftPlain = adminRichHtmlToPlainText(
-            sourceBlockCommentsPlainForAi(
-              job.blockKey,
-              cur.sourceBlocks,
-              job.citiAvotiSectionIndex,
-              job.targetField,
-            ),
-          ).trim();
-        } else if (job.kind === "listing") {
-          existingDraftPlain =
-            job.id === "seller"
-              ? adminRichHtmlToPlainText(cur.sourceBlocks.listing_analysis.sellerPortrait).trim()
-              : job.id === "photo"
-                ? adminRichHtmlToPlainText(cur.sourceBlocks.listing_analysis.photoAnalysis).trim()
-                : job.id === "listing_sales"
-                  ? adminRichHtmlToPlainText(cur.sourceBlocks.listing_analysis.listingSalesContext).trim()
-                  : "";
-        } else if (job.id === "incidents") {
-          existingDraftPlain = adminRichHtmlToPlainText(edits.internal).trim();
-        } else if (job.id === "mileage") {
-          existingDraftPlain = adminRichHtmlToPlainText(edits.mileage).trim();
-        } else if (job.id === "sources_comparison") {
-          existingDraftPlain = adminRichHtmlToPlainText(edits.sourcesComparison).trim();
-        } else if (job.id === "technical_risks") {
-          existingDraftPlain = adminRichHtmlToPlainText(cur.tehniskoRiskuAnalize).trim();
-        } else if (job.id === "inspection") {
-          existingDraftPlain = adminRichHtmlToPlainText(cur.apskatesPlāns).trim();
-        } else if (job.id === "summary") {
-          existingDraftPlain = adminRichHtmlToPlainText(cur.iriss).trim();
-        }
+        const existingDraftPlain = flashMaxJobPlain(job);
 
         const endpoint = job.kind === "source" ? "/api/admin/ai/source-comment" : job.endpoint;
         const operatorNotes = selection.operatorNotes?.trim() ?? "";
@@ -2426,6 +2523,7 @@ export function OrderDetailWorkspace({
           });
           if (applied) {
             results.push({ id: job.runId, label: job.runLabel, status: "ok" });
+            okJobs.push(job);
             if (generated.text) {
               const factField =
                 job.kind === "source"
@@ -2453,12 +2551,17 @@ export function OrderDetailWorkspace({
           setFlashMaxErr(`${job.runLabel}: neizdevās savienoties`);
         }
       }
-      setFlashMaxNotice(formatFlashMaxNotice(results));
+      const notice = formatFlashMaxNotice(results);
+      setFlashMaxNotice(notice);
       if (results.some((r) => r.status === "ok")) {
         if (orderDraftPersistenceEnabled) {
           await persistFullWorkspaceRef("flash-max", { showFlash: false });
         }
         setWizardStep(WIZARD_SUMMARY_STEP);
+        // Noslēguma pārbaude: kļūda neaiztiek FLASH MAX tekstus (tie jau saglabāti), tikai atzīme.
+        setFlashMaxPhase("Noslēguma pārbaude (Opus)…");
+        const review = await runFlashMaxFinalReview(okJobs);
+        setFlashMaxNotice(`${notice} ${formatFlashMaxReviewNotice(review)}`);
       }
     } finally {
       setFlashMaxBusy(false);
@@ -2467,6 +2570,7 @@ export function OrderDetailWorkspace({
   }, [
     buildAiOrderPayload,
     flashMaxBusy,
+    flashMaxJobPlain,
     payload.vin,
     onInternalCommentChange,
     onMileageCommentChange,
@@ -2475,6 +2579,7 @@ export function OrderDetailWorkspace({
     payload.aiAllowed,
     persistFullWorkspaceRef,
     runFactCheck,
+    runFlashMaxFinalReview,
     updateSourceBlock,
     updateWs,
     workspaceHydrated,
@@ -5415,6 +5520,22 @@ export function OrderDetailWorkspace({
               />
             </span>
           ) : null}
+          {flashReview.status === "done" || flashReview.status === "error" ? (
+            <span className="max-md:hidden">
+              <button
+                type="button"
+                onClick={() => setFlashReviewOpen(true)}
+                className={`inline-flex h-7 items-center rounded-lg border px-2 text-[10px] font-semibold ${
+                  flashReviewPending > 0
+                    ? "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"
+                    : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                }`}
+                title="FLASH MAX noslēguma pārbaudes ieteikumi"
+              >
+                Pārbaude{flashReviewPending > 0 ? ` (${flashReviewPending})` : ""}
+              </button>
+            </span>
+          ) : null}
           <span className="max-md:hidden">
             <AdminCommonPhrasesDrawerTrigger open={phrasesOpen} onOpen={() => setPhrasesOpen(true)} />
           </span>
@@ -5562,6 +5683,31 @@ export function OrderDetailWorkspace({
         </div>
       </nav>
 
+      <AdminResponsiveModal
+        open={flashReviewOpen && flashReview.status !== "idle"}
+        title="FLASH MAX noslēguma pārbaude"
+        onClose={() => setFlashReviewOpen(false)}
+        maxWidthClass="sm:max-w-2xl"
+        zClass="z-[75]"
+        footer={
+          <button
+            type="button"
+            className="min-h-11 flex-1 rounded-full bg-slate-100 px-4 text-[15px] font-semibold text-slate-700 md:min-h-0 md:flex-none md:rounded-lg md:py-1.5 md:text-[12px]"
+            onClick={() => setFlashReviewOpen(false)}
+          >
+            Aizvērt
+          </button>
+        }
+      >
+        <AdminFlashMaxReviewPanel
+          state={flashReview}
+          handled={flashReviewHandled}
+          unappliable={flashReviewStale}
+          onAccept={acceptFlashReviewFinding}
+          onReject={rejectFlashReviewFinding}
+        />
+      </AdminResponsiveModal>
+
       <AdminOrderMobileDock
         aiAllowed={payload.aiAllowed}
         workspaceHydrated={workspaceHydrated}
@@ -5622,6 +5768,8 @@ export function OrderDetailWorkspace({
         flashMaxPhase={flashMaxPhase}
         flashMaxNotice={flashMaxNotice}
         flashMaxErr={flashMaxErr}
+        finalReviewPending={flashReviewPending}
+        onOpenFinalReview={() => setFlashReviewOpen(true)}
         notice={mobileNotice}
         onDismissNotice={() => showMobileNotice(null)}
       />

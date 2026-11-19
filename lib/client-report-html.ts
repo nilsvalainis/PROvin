@@ -87,9 +87,13 @@ import {
 } from "@/lib/auto-records-service-works";
 import { extractDealerFactsFromServiceWorks } from "@/lib/admin-ai-dealer-facts";
 import { shouldCondenseDealerPdfRecords, type DealerProductScopeArgs } from "@/lib/dealer-product-scope";
-import { buildDealerServiceVisitsHtml } from "@/lib/pdf-dealer-service-visits";
+import {
+  buildDealerServiceVisitsHtml,
+  type DealerServiceVisitsPdfOpts,
+} from "@/lib/pdf-dealer-service-visits";
 import {
   buildDealerMajorWorksHtml,
+  dealerVisitMajorMarker,
   buildDealerVisitSummaryHtml,
 } from "@/lib/pdf-dealer-timeline";
 import { buildOilIntervalSeriesForBlock } from "@/lib/oil-change-interval-chart";
@@ -1762,6 +1766,7 @@ function buildAutoRecordsServiceWorksTableHtml(
     extraMileageRows?: AutoRecordsServiceWorkRow[];
     lang?: ClientReportLang;
     countryEvidence?: import("@/lib/vehicle-country-timeline").CountryTimelineEntry[];
+    majorMarksForRow?: DealerServiceVisitsPdfOpts["majorMarksForRow"];
   },
 ): string {
   const body = buildDealerServiceVisitsHtml(rows, {
@@ -1770,6 +1775,7 @@ function buildAutoRecordsServiceWorksTableHtml(
     extraMileageRows: extra?.extraMileageRows,
     lang: extra?.lang,
     countryEvidence: extra?.countryEvidence,
+    majorMarksForRow: extra?.majorMarksForRow,
   });
   if (!body) return "";
   const subheadHtml = pdfFieldLabelWithIcon(sectionIconPdfHtml("wrench"), PDF_AUTO_RECORDS_SERVICE_WORKS_LABEL);
@@ -1921,6 +1927,7 @@ function buildAutoRecordsAvotuSubsection(
     extraMileageRows: condenseRecords ? [] : dealerExtraMileageRows(b),
     lang,
     countryEvidence,
+    majorMarksForRow: dealerVisitMajorMarker(dealerFacts, dealerMajorWorkOverrides),
   });
   const summaryHtml = buildDealerVisitSummaryHtml(
     b.serviceWorks ?? [],
@@ -3196,6 +3203,7 @@ ${sourceDotColorCss()}
       .pdf-svc-major__item{display:flex;justify-content:space-between;gap:10px;align-items:baseline;}
       .pdf-svc-major__item b{font-size:12px;font-weight:750;color:#0f172a;}
       .pdf-svc-major__item span,.pdf-svc-major__meta{font-size:10.5px;color:#64748b;font-variant-numeric:tabular-nums;}
+      .pdf-svc-major__item--accident b{color:#B42318;}
       .pdf-svc-year-block{break-before:auto;break-after:auto;page-break-after:auto;break-inside:auto;page-break-inside:auto;}
       .pdf-svc-visit{
         display:grid;grid-template-columns:78px 18px minmax(0,1fr);gap:0 12px;align-items:stretch;
@@ -3240,6 +3248,13 @@ ${sourceDotColorCss()}
       .pdf-svc-tag--campaign{background:#E8EEEC;color:#0E4F42;}
       .pdf-svc-tag--warranty{background:#F8FAFC;color:#334155;border:1px solid #E2E8F0;}
       .pdf-svc-tag--key_read{background:#F8FAFC;color:#64748b;}
+      .pdf-svc-box--major{
+        border-left:3px solid #C2410C;border-radius:0 8px 8px 0;background:#FFF8F1;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-svc-box--accident{border-left-color:#C81E1E;background:#FEF4F3;}
+      .pdf-svc-major-chip--mechanical{background:#FDEBD8;color:#9A3412;}
+      .pdf-svc-major-chip--accident{background:#FDE0DD;color:#9B1C1C;}
       .pdf-svc-gap{
         display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;
         margin:4px 0 4px 106px;padding:6px 10px;border-radius:8px;background:#F8FAFC;border:1px dashed #C5CBD3;
@@ -3263,6 +3278,7 @@ ${sourceDotColorCss()}
         .pdf-svc-date{text-align:left;padding:0;}
         .pdf-svc-rail{display:none;}
         .pdf-svc-box{margin:0;padding:0;}
+        .pdf-svc-box--major{padding:6px 8px;}
         .pdf-svc-gap{margin-left:0;}
       }
       .pdf-mileage-odo-value{color:#1d1d1f;font-weight:500;}
