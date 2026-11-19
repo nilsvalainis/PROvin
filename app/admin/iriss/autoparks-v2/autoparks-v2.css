@@ -5059,13 +5059,34 @@
     padding: 0;
     background: #fff;
   }
+  /* 19.11: iPhone/Safari drukā pievieno savas malas - fiksēts 210x297 mm lapa neietilpa (nogriezta labā mala,
+     paraksti un CSDD bilde pārlēca uz nākamo lapu, 4 lapas 2 vietā). Drukā lapa = drukas laukuma platums, bez min-height. */
   .ap2.ap2.ap2 .ap2-svl-sheet {
     margin: 0;
     box-shadow: none;
-    min-height: 296mm;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    height: auto;
+    padding: 4mm 3mm;
     break-after: page;
+    page-break-after: always;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .ap2.ap2.ap2 .ap2-svl-scan {
+    flex: none;
+  }
+  .ap2.ap2.ap2 .ap2-svl-scan img {
+    max-height: 225mm;
+    width: auto;
+    max-width: 100%;
+  }
+  .ap2.ap2.ap2 .ap2-svl-sign {
+    margin-top: 8mm;
   }
   .ap2.ap2.ap2 .ap2-svl-sheet:last-of-type {
     break-after: auto;
+    page-break-after: auto;
   }
 }
