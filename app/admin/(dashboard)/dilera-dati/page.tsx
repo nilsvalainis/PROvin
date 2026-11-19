@@ -1,3 +1,4 @@
+import { requireAdminPage } from "@/lib/admin-auth";
 import { AdminDealerCheckServerPage, type DealerCheckSearchParams } from "@/components/admin/AdminDealerCheckServerPage";
 
 export const metadata = {
@@ -6,6 +7,7 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function AdminDealerCheckRoute({ searchParams }: { searchParams?: Promise<DealerCheckSearchParams> }) {
+export default async function AdminDealerCheckRoute({ searchParams }: { searchParams?: Promise<DealerCheckSearchParams> }) {
+  await requireAdminPage();
   return <AdminDealerCheckServerPage searchParams={searchParams} />;
 }
