@@ -63,7 +63,7 @@ describe("aggregateUnifiedIncidents", () => {
     );
   });
 
-  it("apvieno viena mēneša ierakstus no dažādiem avotiem par vienu negadījumu", () => {
+  it("viena mēneša dažādu avotu ierakstus ar nesakrītošu summu un dienu skaita atsevišķi", () => {
     const agg = aggregateUnifiedIncidents([
       row({
         date: "01.06.2021",
@@ -87,15 +87,17 @@ describe("aggregateUnifiedIncidents", () => {
         sourceOrder: 2,
       }),
     ]);
-    expect(agg.uniqueCount).toBe(2);
-    expect(agg.clusters[0]?.date).toBe("06.2021");
-    expect(agg.clusters[0]?.averaged).toBe(false);
-    expect(agg.clusters[0]?.displayAmount).toBe("2 778 - 4 000 €");
-    expect(agg.clusters[1]?.date).toBe("20.10.2020");
-    expect(agg.clusters[1]?.averaged).toBe(false);
+    // 19.11: AutoDNA 3 501 - 4 000 € un LTAB 2 778 € nesakrīt ne dienā, ne summā -> divi negadījumi.
+    expect(agg.uniqueCount).toBe(3);
+    expect(agg.clusters.map((c) => [c.date, c.displayAmount])).toEqual([
+      ["16.06.2021", "2 778 €"],
+      ["01.06.2021", "3 501 - 4 000 €"],
+      ["20.10.2020", "1 599 €"],
+    ]);
+    expect(agg.clusters.every((c) => c.averaged === false)).toBe(true);
   });
 
-  it("AutoDNA vairākas rindas tajā pašā mēnesī nesaskaita kā atsevišķus negadījumus", () => {
+  it("AutoDNA divas dažādas rindas tajā pašā mēnesī ir divi negadījumi (Nila lēmums 19.11)", () => {
     const agg = aggregateUnifiedIncidents([
       row({
         date: "01.06.2021",
@@ -120,15 +122,54 @@ describe("aggregateUnifiedIncidents", () => {
       }),
     ]);
     expect(agg.rawCount).toBe(3);
+    expect(agg.uniqueCount).toBe(3);
+    expect(agg.clusters.every((c) => c.sourceValuations.length === 1)).toBe(true);
+  });
+
+  it("divi dažādi negadījumi tajā pašā mēnesī un valstī ir 2, nevis 1", () => {
+    const agg = aggregateUnifiedIncidents([
+      row({ date: "05.03.2022", lossAmount: "800 €", sourceLabel: "LTAB", sortableTime: Date.UTC(2022, 2, 5), sourceOrder: 0 }),
+      row({ date: "24.03.2022", lossAmount: "2 400 €", sourceLabel: "LTAB", sortableTime: Date.UTC(2022, 2, 24), sourceOrder: 1 }),
+    ]);
+    expect(agg.uniqueCount).toBe(2);
+    expect(formatUnifiedIncidentCountLabel(agg.uniqueCount, "accident")).toBe("2 negadījumi");
+  });
+
+  it("to pašu negadījumu no AutoDNA un CarVertical (mēneša precizitāte, summas pārklājas) skaita vienreiz", () => {
+    const t = Date.UTC(2022, 2, 1);
+    const agg = aggregateUnifiedIncidents([
+      row({ date: "03.2022", lossAmount: "1 300 - 1 400 €", sourceLabel: "AutoDNA", sortableTime: t, sourceOrder: 0 }),
+      row({ date: "03.2022", lossAmount: "1 001 - 1 500 €", sourceLabel: "CarVertical", sortableTime: t, sourceOrder: 1 }),
+    ]);
     expect(agg.uniqueCount).toBe(1);
-    expect(agg.clusters[0]?.sourceValuations).toHaveLength(2);
-    const autodna = agg.clusters[0]?.sourceValuations.find((s) => s.sourceLabel === "AutoDNA");
-    expect(autodna?.displayAmount).toBe("1 200 €; 3 500 €");
-    expect(autodna?.amountEur).toBeNull();
-    expect(autodna?.amountBounds).toEqual({ lo: 1200, hi: 3500 });
-    expect(autodna?.rowCount).toBe(2);
-    expect(agg.clusters[0]?.displayAmount).toBe("1 200 - 3 500 €");
-    expect(agg.clusters[0]?.averaged).toBe(false);
+    expect(agg.clusters[0]?.sourceValuations.map((s) => s.sourceLabel)).toEqual(["AutoDNA", "CarVertical"]);
+  });
+
+  it("LTAB precīzā summa pievienojas tam AutoDNA ierakstam, kura diapazonam tā atbilst", () => {
+    const agg = aggregateUnifiedIncidents([
+      row({ date: "01.06.2021", lossAmount: "3 501 - 4 000 €", sourceLabel: "AutoDNA", sortableTime: Date.UTC(2021, 5, 1), sourceOrder: 0 }),
+      row({ date: "01.06.2021", lossAmount: "1 001 - 1 500 €", sourceLabel: "AutoDNA", sortableTime: Date.UTC(2021, 5, 1), sourceOrder: 1 }),
+      row({ date: "16.06.2021", lossAmount: "1 412,50 €", sourceLabel: "LTAB", sortableTime: Date.UTC(2021, 5, 16), sourceOrder: 2 }),
+    ]);
+    expect(agg.uniqueCount).toBe(2);
+    const withLtab = agg.clusters.find((c) => c.sourceValuations.some((s) => s.sourceLabel === "LTAB"));
+    expect(withLtab?.sourceValuations.find((s) => s.sourceLabel === "AutoDNA")?.displayAmount).toBe("1 001 - 1 500 €");
+    expect(withLtab?.kindLabel).toBe("Negadījums");
+  });
+
+  it("bojājumu zona sasaista divus avotus, ja summas nav salīdzināmas", () => {
+    const t = Date.UTC(2020, 9, 1);
+    const agg = aggregateUnifiedIncidents(
+      [
+        row({ date: "01.10.2020", lossAmount: "1 300 - 1 400 €", sourceLabel: "AutoDNA", sortableTime: t, sourceOrder: 0 }),
+        row({ date: "01.10.2020", lossAmount: "2 501 - 3 000 €", sourceLabel: "CarVertical", sortableTime: t, sourceOrder: 1 }),
+      ],
+      [
+        { date: "01.10.2020", country: "Latvija", lossAmount: "1 300 - 1 400 €", damagedSides: "Priekšpuse", damageGroups: "" },
+        { date: "01.10.2020", country: "Latvija", lossAmount: "2 501 - 3 000 €", damagedSides: "Priekšpuse", damageGroups: "" },
+      ],
+    );
+    expect(agg.uniqueCount).toBe(1);
   });
 
   it("apvieno 1 mēneša logā to pašu summu un zonas pat ja valsts atšķiras", () => {
@@ -402,7 +443,7 @@ Aptuvenā iepriekš gūto bojājumu vērtība
     expect(y2015?.damage).toBeNull();
   });
 
-  it("rāda divus CarVertical ierakstus vienā mēnesī atsevišķi, bez saskaitīšanas", () => {
+  it("divi dažādi CarVertical ieraksti vienā mēnesī ir divi negadījumi; LTAB pievienojas tam, ar kuru sakrīt summa", () => {
     const t = Date.UTC(2023, 10, 1);
     const agg = aggregateUnifiedIncidents([
       row({
@@ -427,13 +468,15 @@ Aptuvenā iepriekš gūto bojājumu vērtība
         sourceOrder: 2,
       }),
     ]);
-    expect(agg.uniqueCount).toBe(1);
-    const cv = agg.clusters[0]?.sourceValuations.find((s) => s.sourceLabel === "CarVertical");
-    expect(cv?.amountEur).toBeNull();
-    expect(cv?.displayAmount).toBe("2 001 - 2 500 €; 2 501 - 3 000 €");
-    expect(cv?.rowCount).toBe(2);
-    expect(agg.clusters[0]?.displayAmount).toBe("2 001 - 3 000 €");
-    expect(agg.clusters[0]?.averaged).toBe(false);
+    expect(agg.uniqueCount).toBe(2);
+    const withLtab = agg.clusters.find((c) => c.sourceValuations.some((s) => s.sourceLabel === "LTAB"));
+    const cv = withLtab?.sourceValuations.find((s) => s.sourceLabel === "CarVertical");
+    expect(cv?.displayAmount).toBe("2 501 - 3 000 €");
+    expect(cv?.rowCount).toBe(1);
+    expect(withLtab?.displayAmount).toBe("2 501 - 3 000 €");
+    const alone = agg.clusters.find((c) => c !== withLtab);
+    expect(alone?.displayAmount).toBe("2 001 - 2 500 €");
+    expect(agg.clusters.every((c) => c.averaged === false)).toBe(true);
   });
 
   it("neskaita divreiz identisku CarVertical rindu", () => {
@@ -442,6 +485,7 @@ Aptuvenā iepriekš gūto bojājumu vērtība
       row({ date: "01.11.2023", lossAmount: "2001 € – 2500 €", sourceLabel: "CarVertical", sortableTime: t, sourceOrder: 0 }),
       row({ date: "01.11.2023", lossAmount: "2001 € – 2500 €", sourceLabel: "CarVertical", sortableTime: t, sourceOrder: 1 }),
     ]);
+    expect(agg.uniqueCount).toBe(1);
     expect(agg.clusters[0]?.sourceValuations[0]?.displayAmount).toBe("2 001 - 2 500 €");
     expect(agg.clusters[0]?.sourceValuations[0]?.rowCount).toBe(1);
     expect(agg.clusters[0]?.sourceValuations[0]?.amountEur).toBeNull();

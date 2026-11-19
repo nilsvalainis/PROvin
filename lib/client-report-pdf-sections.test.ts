@@ -1730,7 +1730,8 @@ describe("unified PDF sections single block", () => {
         {
           title: "AutoDNA",
           mileageRows: [],
-          incidentRows: [{ csngDate: "01.06.2021", lossAmount: "3500", incidentNo: "Latvija" }],
+          // 19.11: vienam notikumam no trim avotiem summām jābūt salīdzināmām (citādi tie ir atsevišķi negadījumi).
+          incidentRows: [{ csngDate: "01.06.2021", lossAmount: "2700", incidentNo: "Latvija" }],
           comments: "",
         },
         {
@@ -1753,7 +1754,7 @@ describe("unified PDF sections single block", () => {
     expect(html).toContain("pdf-src-dot--carvertical");
     expect(html).not.toContain("pdf-incident-source-vals");
     expect(html).not.toMatch(/~[\d\s]+€/);
-    expect(html).toContain("2 584 - 3 500 €");
+    expect(html).toContain("2 584 - 2 778 €");
     expect(html).not.toContain("vid.");
   });
 
