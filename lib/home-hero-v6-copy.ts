@@ -71,7 +71,7 @@ const LV: HomeV6HeroCopy = {
   turnaround: "Izpilde",
   turnaroundFast: "24 h",
   urgent: "Steidzami?",
-  urgentBody: "Pamata datus un īsu komentāru varam sniegt dažu stundu laikā.",
+  urgentBody: "Pamata datus un īsu komentāru varam sniegt dažu stundu laikā pēc pasūtījuma veikšanas.",
   call: "Zvanīt",
   close: "Aizvērt",
   waText: "Sveiki! Vēlos steidzamu auditu.",
