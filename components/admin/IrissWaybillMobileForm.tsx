@@ -557,6 +557,7 @@ export function IrissWaybillMobileForm({
           selected={form.manual ? "manual" : (form.car?.vin || form.car?.brandModel || "")}
           onChoose={chooseCar}
           ownerBadge={isB192 ? "DZA" : undefined}
+          inSheet
         />
       </AdminMobileSheet>
     </div>
@@ -1084,6 +1085,7 @@ export function IrissWaybillCarPicker({
   selected,
   onChoose,
   ownerBadge,
+  inSheet = false,
 }: {
   cars: WaybillTradeCar[] | null;
   /** VIN vai marka izvēlētajam auto; "manual" = ar roku. */
@@ -1091,11 +1093,14 @@ export function IrissWaybillCarPicker({
   onChoose: (car: WaybillMobileCar | "manual") => void;
   /** Pārraksta rindas birku (piem. "DZA" B192-7 sarakstam, kur visi auto jau ir pieņemti); citādi "Pieņemts"/statusa birka kā parasti. */
   ownerBadge?: string;
+  /** Telefona apakšējā logā (AdminMobileSheet): saraksts ritinās kopā ar logu, meklēšana paliek augšā. Bez tā saraksta augstums
+   * tika rēķināts no visa ekrāna (100dvh), un apakšējās rindas palika zem loga malas (19.11). */
+  inSheet?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const shown = useMemo(() => filterWaybillTradeCars(cars ?? [], query), [cars, query]);
   return (
-    <div className={styles.picker}>
+    <div className={inSheet ? `${styles.picker} ${styles.pickerInSheet}` : styles.picker} data-in-sheet={inSheet ? "true" : undefined}>
       <input
         type="search"
         className={styles.search}

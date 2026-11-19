@@ -430,7 +430,7 @@ export function AdminMobileSheet({
             <AdminMobileIcon name="aizvert" className="h-4 w-4" />
           </button>
         </div>
-        <div className="min-h-0 overflow-y-auto overscroll-contain">
+        <div className="min-h-0 overflow-y-auto overscroll-contain [touch-action:pan-y] [-webkit-overflow-scrolling:touch]">
           {children}
           {action}
         </div>
