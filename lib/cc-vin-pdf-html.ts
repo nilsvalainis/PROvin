@@ -176,9 +176,24 @@ export const CC_VIN_PDF_CSS = `
       .pdf-ccvin-flag-label{flex:1 1 auto;color:#0f172a;font-weight:600}
       .pdf-ccvin-flag-value{flex:0 0 auto;color:#B91C1C;font-weight:600;text-align:right}
       .pdf-ccvin-facts{margin:0 0 4px;font-size:var(--pdf-fs-label);color:#86868b;line-height:1.5}
-      .pdf-tc-lot{margin:0 0 12px}
-      .pdf-tc-kv{width:100%;margin:0 0 8px}
-      .pdf-tc-kv th{width:42%;text-align:left;font-weight:600;color:#86868b;vertical-align:top;padding:3px 8px 3px 0}
-      .pdf-tc-kv td{vertical-align:top;padding:3px 0}
-      .pdf-tc-zone{margin:4px 0 2px;font-size:var(--pdf-fs-label);font-weight:600;color:#0f172a}
+      /* Izsoles bloks: tās pašas klases kā OFICIĀLĀ DĪLERA DATI; šeit tikai izkārtojums un krāsu teksts. */
+      .pdf-tc-lot{margin:14px 0 18px}
+      .pdf-tc-lot + .pdf-tc-lot{margin-top:22px}
+      .pdf-tc-intro{break-inside:avoid;page-break-inside:avoid;break-after:avoid;page-break-after:avoid}
+      .pdf-tc-summary{break-inside:avoid;page-break-inside:avoid}
+      .pdf-tc-cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:start;margin:0 0 12px}
+      .pdf-tc-cols > .pdf-tc-zone{margin:0;break-inside:avoid;page-break-inside:avoid}
+      .pdf-tc-zone .pdf-subhead{margin:0 0 6px}
+      .pdf-tc-zone .pdf-svc-major__item{display:block}
+      .pdf-tc-zone .pdf-svc-major__item b{display:block}
+      .pdf-tc-zone .pdf-svc-major__meta{display:block;margin-top:1px}
+      .pdf-tc-legend{margin:2px 0 8px}
+      .pdf-tc-paint-map{margin:2px 0 4px;break-inside:avoid;page-break-inside:avoid}
+      .pdf-tc-paint-map svg{display:block;width:100%;max-width:520px;height:auto;margin:0 auto}
+      .pdf-tc-tone{font-weight:600}
+      .pdf-tc-tone--ok{color:#15803d}
+      .pdf-tc-tone--warn{color:#B45309}
+      .pdf-tc-tone--alert{color:#B91C1C}
+      .pdf-tc-lot .pdf-tc-grid{margin:0 0 8px}
+      .pdf-tc-lot .pdf-dealer-eq{margin:0 0 8px}
 `;

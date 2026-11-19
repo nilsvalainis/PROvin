@@ -34,7 +34,15 @@ Ja vēsture un detaļas dod dažādas vērtības tai pašai atslēgai, detaļa p
 
 Datums pie bildes: izsoles datums (`auction_date`, `sale_date`, `end_date`, `start_date`, `date`), tad `auction_end_at`, `batch_start_date`, `last_changed_at`, tad `first_seen_at` / `first_seen`, citādi `last_seen_at` / `last_seen`, un ja to nav, tad `data_updated_at`. Bildēm sava datuma lauka nav.
 
-Klienta PDF izsoļu sadaļas virsraksta skaits ir tas, ko sadaļa izdrukā (pārdošanas rindas, TheCarApi loti ar laukiem vai bildēm, bojājumi bez summas). Nobraukuma rinda šajā skaitā nav, jo tā ir nobraukuma sadaļā. Katram TheCarApi ierakstam ir grupas: pamatdati, cenas, nobraukums, datumi, bojājumi pa zonām, aprīkojums, serviss, bildes un «Citi dati». Nezināmie lauki netiek izmesti. Galerijā bildēm ir datums. Tā pati bilde (URL vai satura hash) no cita avota PDF netiek drukāta otrreiz. Galerijas griesti nav zem 100. PDF virsrakstā nav TheCarApi. Paraksts adminā: `TheCarApi · platforma · datums`. Klienta PDF no virsraksta noņem `TheCarApi ·`, jo PDF nedrīkst rādīt ārējā pakalpojuma nosaukumu. Dedup ir pēc URL un satura hash. `http://` saites paliek laukos un raw, bet netiek lejupielādētas.
+Klienta PDF izsoļu sadaļas virsraksta skaits ir tas, ko sadaļa izdrukā (pārdošanas rindas, TheCarApi loti ar laukiem vai bildēm, bojājumi bez summas). Nobraukuma rinda šajā skaitā nav, jo tā ir nobraukuma sadaļā. Katram TheCarApi ierakstam ir grupas: pamatdati, cenas, nobraukums, datumi, bojājumi pa zonām, laka, bremzes, riepas, serviss, dokumenti, bildes un «Citi dati». Bloks lieto tās pašas klases kā «OFICIĀLĀ DĪLERA DATI» (vāks, kopsavilkuma josla, kv tabulas). Aprīkojums PDF netiek drukāts (Nils 19.11), tas paliek tikai modelī un adminā. Remontu un servisa EUR summas netiek drukātas. Nezināmie lauki netiek izmesti. Galerijā bildēm ir datums. Tā pati bilde (URL vai satura hash) no cita avota PDF netiek drukāta otrreiz. Galerijas griesti nav zem 100. PDF virsrakstā nav TheCarApi. Paraksts adminā: `TheCarApi · platforma · datums`. Klienta PDF no virsraksta noņem `TheCarApi ·`, jo PDF nedrīkst rādīt ārējā pakalpojuma nosaukumu. Dedup ir pēc URL un satura hash. `http://` saites paliek laukos un raw, bet netiek lejupielādētas.
+
+## Platformas
+
+TheCarApi `/api/v1/sites` (publiskā dokumentācija 11.2026): auto1, openlane, bca, copart, schadeautos, autorola, dealercars, encar, kbchachacha, koreaauctions, japan, guazi. Galvenē rāda platformas nosaukumu (`SITE_LABELS`). Modelis ir platformas neatkarīgs: lauki tiek atpazīti pēc nozīmes (atslēgas nosaukuma), nevis pēc platformas. v1 forma `{ data: { site, id, clean_make, prices: { start: { amount, currency } }, vehicle_details, auction } }` tiek atpazīta; Openlane `auction` ir tikai bilžu konteiners, tāpēc lots netiek pazaudēts. Nezināmie lauki nonāk «Citos datos».
+
+## Tulkojumi
+
+Vārdnīca: `lib/thecarapi-i18n-lv.ts`. Ja vērtībai nav tulkojuma, rezerve dod lasāmu tekstu un reģistrē to (`thecarapiUntranslated()`, žurnālā «[thecarapi-i18n] neiztulkots: ...»). Šīs vērtības pievieno vārdnīcai. AI tulkošana netiek lietota. Brīvs teksts (komentāri, servisa apraksti) paliek oriģinālvalodā.
 
 ## Testi
 

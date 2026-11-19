@@ -52,7 +52,7 @@ describe("TheCarApi PDF bloks WBA6X310305V99966", () => {
     detailJson: fixture("detail-auto1-wrapped.json"),
   });
 
-  it("saliek visus laukus grupās un nefiltrē nezināmo", () => {
+  it("sakārto laukus sadaļās, nezināmo liek «Citos datos», saites un tehnisko nedrukā", () => {
     const row = records[0];
     expect(row?.id).toBe("1326383403");
     expect(row?.date).toBe("2026-10-09");
@@ -60,37 +60,37 @@ describe("TheCarApi PDF bloks WBA6X310305V99966", () => {
     expect(row?.rawDetail).toBeTruthy();
 
     const html = buildThecarapiRecordsPdfHtml(records);
-    expect(html).toContain("AUTO1 · 2026-10-09 · 1326383403");
-    expect(html).toContain("Pamatdati");
-    expect(html).toContain("AUTO1 GmbH");
-    expect(html).toContain("Berlin");
+    expect(html).toContain('<h3 class="pdf-dealer-cover__model">AUTO1</h3>');
+    expect(html).toContain("Izsole 1326383403 · 09.10.2026");
+    // v4: «Automašīnas pamatdati» tikai 9 lauki - pārdevējs un vieta netiek drukāti.
+    expect(html).not.toContain("AUTO1 GmbH");
+    expect(html).not.toContain("Berlin");
     expect(html).toContain("Cenas");
-    expect(html).toContain("12268");
-    expect(html).toContain("10000");
+    expect(html).toContain("12 268 €");
+    expect(html).toContain("10 000 €");
     expect(html).toContain("Nobraukums");
-    expect(html).toContain("77387");
-    expect(html).toContain("Datumi");
-    expect(html).toContain("2026-10-09");
+    expect(html).toContain("77 387 km");
     expect(html).toContain("Bojājumi");
     expect(html).toContain("Priekšējais bamperis");
     expect(html).toContain("skrāpējums");
     expect(html).toContain("Kreisās durvis");
-    expect(html).toContain("Aprīkojums");
-    expect(html).toContain("Navigācija");
-    expect(html).toContain("Serviss");
+    expect(html).not.toContain("Aprīkojums");
+    expect(html).not.toContain("Navigācija");
+    expect(html).toContain("Servisa vēsture");
     expect(html).toContain("Eļļa mainīta 2026-09");
-    expect(html).toContain("Bildes");
-    expect(html).toContain("main-1.jpg");
     expect(html).toContain("Citi dati");
-    expect(html.split("Citi dati")[1]).toContain("keep-zone");
+    expect(html.split("Citi dati")[1]).toContain("Keep zone");
     expect(html).not.toContain("TheCarApi");
-    expect(html.split("keep-zone").length - 1).toBe(1);
+    expect(html).not.toContain("main-1.jpg");
+    expect(html).not.toContain("https://");
+    expect(html).not.toContain("request_id");
+    expect(html).not.toContain("null");
 
     const block = emptyCcVinBlock();
     block.thecarapiRecords = records;
     const section = buildCcVinPdfInnerHtml(block);
     expect(section).toContain("Priekšējais bamperis");
-    expect(section).toContain("keep-zone");
+    expect(section).toContain("Keep zone");
     expect(section).not.toContain("TheCarApi");
   });
 
@@ -108,10 +108,21 @@ describe("TheCarApi PDF bloks WBA6X310305V99966", () => {
     expect(selectThecarapiPdfPhotos([record]).length).toBe(120);
 
     const urls = new Map(kept.slice(0, 2).map((item) => [item.id, `data:image/jpeg;base64,${item.id}`]));
-    const html = buildThecarapiPdfGalleryHtml(kept.slice(0, 2), urls);
-    expect(html).toContain("2026-10-09");
+    const html = buildThecarapiPdfGalleryHtml(kept.slice(0, 2), urls, new Map([[kept[0]!.sourceUrl, "Bojājums: aizmugurējais buferis"]]));
+    expect(html).toContain("09.10.2026 · Bojājums: aizmugurējais buferis");
+    expect(html).toContain("pdf-listing-photo-grid--tc");
+    expect(html).not.toContain(kept[0]!.sourceUrl);
     expect(html).toContain(urls.get(kept[0]!.id));
     expect(html).not.toContain("TheCarApi");
+  });
+
+  it("izsoles detaļu bloks par to pašu izsoli, kas ir pārdošanas rindā, netiek skaitīts otrreiz", () => {
+    const block = emptyCcVinBlock();
+    block.sales = [{ date: "09.10.2026", venue: "AUTO1", odometer: "77 387", price: "12 268", status: "Izsole" }];
+    block.thecarapiRecords = records;
+    expect(countCcVinPdfVisibleRecords(block)).toBe(1);
+    block.sales = [{ date: "01.05.2025", venue: "Openlane", odometer: "50 000", price: "9 000", status: "Izsole" }];
+    expect(countCcVinPdfVisibleRecords(block)).toBe(2);
   });
 
   it("PDF virsraksta skaits ir redzamās rindas, ne nobraukums", () => {

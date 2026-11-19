@@ -792,6 +792,98 @@ export function isMileageCountryChange(
   return ![...ca].some((x) => cb.has(x));
 }
 
+/**
+ * 19.11 (Nils): viena avota divi rādījumi vienā dienā ar starpību > {@link UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM}
+ * (piem. dīleris 16.03.2018 90 044 un 99 044) - viens no tiem ir ievades kļūda.
+ */
+export const SAME_DAY_SOURCE_PAIR_MIN_DIFF_KM = UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM;
+
+/** Abi skaitļi atšķiras tieši vienā ciparā (vienāds garums). */
+export function differsBySingleDigit(a: number, b: number): boolean {
+  const da = String(Math.round(a));
+  const db = String(Math.round(b));
+  if (da.length !== db.length || da === db) return false;
+  let diff = 0;
+  for (let i = 0; i < da.length; i++) if (da[i] !== db[i]) diff += 1;
+  return diff === 1;
+}
+
+/**
+ * Vienas dienas viena avota pāris: ievades kļūda ir tas rādījums, kas neiekļaujas līknē starp kaimiņiem
+ * (iepriekšējo un nākamo citas dienas rādījumu, ± {@link UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM}).
+ * Ja abi iekļaujas vai neiekļaujas neviens - neko nemarķē (īsta korekcija paliek sarkana).
+ * Ja ir tikai viens kaimiņš, marķē tikai tad, ja abi rādījumi atšķiras vienā ciparā (tipiska pārrakstīšanās).
+ */
+export function findSameDaySourceEntryErrors(
+  pts: readonly { sourceOrder: number; km: number; time: number; row: UnifiedMileageRow }[],
+): Set<number> {
+  const out = new Set<number>();
+  const groups = new Map<string, number[]>();
+  pts.forEach((p, idx) => {
+    const r = p.row;
+    if (!Number.isFinite(p.time) || r.datePrecision === "month" || isListingMileageSource(r)) return;
+    const key = `${p.time}|${r.sourceLabel.trim().toLocaleLowerCase("lv")}`;
+    const arr = groups.get(key);
+    if (arr) arr.push(idx);
+    else groups.set(key, [idx]);
+  });
+  const tol = UNIFIED_MILEAGE_ANOMALY_MIN_DROP_KM;
+  for (const idxs of groups.values()) {
+    if (idxs.length !== 2) continue;
+    const [a, b] = idxs.map((i) => pts[i]!);
+    if (Math.abs(a!.km - b!.km) <= SAME_DAY_SOURCE_PAIR_MIN_DIFF_KM) continue;
+    const time = a!.time;
+    let prevKm: number | null = null;
+    for (let i = idxs[0]! - 1; i >= 0; i--) {
+      const p = pts[i]!;
+      if (p.time < time && !out.has(p.sourceOrder) && !isListingMileageSource(p.row)) {
+        prevKm = p.km;
+        break;
+      }
+    }
+    let nextKm: number | null = null;
+    for (let i = idxs[1]! + 1; i < pts.length; i++) {
+      const p = pts[i]!;
+      if (p.time > time && !isListingMileageSource(p.row)) {
+        nextKm = p.km;
+        break;
+      }
+    }
+    if (prevKm == null && nextKm == null) continue;
+    if ((prevKm == null || nextKm == null) && !differsBySingleDigit(a!.km, b!.km)) continue;
+    const fits = (km: number) =>
+      (prevKm == null || km >= prevKm - tol) && (nextKm == null || km <= nextKm + tol);
+    const fa = fits(a!.km);
+    const fb = fits(b!.km);
+    if (fa === fb) continue;
+    out.add(fa ? b!.sourceOrder : a!.sourceOrder);
+  }
+  return out;
+}
+
+/**
+ * 19.11 (drošības princips): sērijas PĒDĒJAIS vienas dienas viena avota pāris (> 1000 km starpība, nākamā rādījuma
+ * nav). Kārtojot pēc km, zemākais nonāk pirmais, un augstākais partneris izskatās pēc "atgūšanās" - zemāko nedrīkst
+ * norakstīt kā izolētu ievades kļūdu. Šaubu gadījumā kritumu rāda (viena cipara gadījumu marķē
+ * {@link findSameDaySourceEntryErrors}).
+ */
+export function isTrailingSameDaySourcePair(
+  curr: Pick<UnifiedMileageRow, "sortableTime" | "sourceLabel" | "datePrecision" | "odometer" | "countryUnverified">,
+  partner: Pick<UnifiedMileageRow, "sortableTime" | "sourceLabel" | "datePrecision" | "odometer" | "countryUnverified"> | undefined,
+  partnerIsLast: boolean,
+): boolean {
+  if (!partner || !partnerIsLast) return false;
+  if (!Number.isFinite(curr.sortableTime) || curr.sortableTime !== partner.sortableTime) return false;
+  if (curr.datePrecision === "month" || partner.datePrecision === "month") return false;
+  if (isListingMileageSource(curr) || isListingMileageSource(partner)) return false;
+  if (curr.sourceLabel.trim().toLocaleLowerCase("lv") !== partner.sourceLabel.trim().toLocaleLowerCase("lv")) {
+    return false;
+  }
+  const a = parseOdometerKm(curr.odometer);
+  const b = parseOdometerKm(partner.odometer);
+  return a != null && b != null && Math.abs(a - b) > SAME_DAY_SOURCE_PAIR_MIN_DIFF_KM;
+}
+
 export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): UnifiedMileageAnomalyAnalysis {
   const sorted = sortMileageChronological(rows);
   const rowByOrder = new Map(sorted.map((r) => [r.sourceOrder, r]));
@@ -799,11 +891,18 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
   const dataEntryErrors = new Set<number>();
   const typoSpikes = new Set<number>();
 
-  const pts: { sourceOrder: number; km: number; time: number }[] = [];
+  const allPts: { sourceOrder: number; km: number; time: number; row: UnifiedMileageRow }[] = [];
   for (const r of sorted) {
     const km = parseOdometerKm(r.odometer);
-    if (km !== null) pts.push({ sourceOrder: r.sourceOrder, km, time: r.sortableTime });
+    if (km !== null) allPts.push({ sourceOrder: r.sourceOrder, km, time: r.sortableTime, row: r });
   }
+  // 19.11: vienas dienas viena avota pāra ievades kļūda - nav līknē un nav kaimiņš/bāze tālākajā analīzē.
+  const sameDayErrors = findSameDaySourceEntryErrors(allPts);
+  for (const so of sameDayErrors) {
+    dataEntryErrors.add(so);
+    chartExclude.add(so);
+  }
+  const pts = allPts.filter((p) => !sameDayErrors.has(p.sourceOrder));
 
   for (let i = 0; i < pts.length; i++) {
     const prev = i > 0 ? pts[i - 1]!.km : null;
@@ -825,7 +924,12 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
     const src = rowByOrder.get(curr.sourceOrder);
     const nextTime = i < pts.length - 1 ? pts[i + 1]!.time : undefined;
     const prevRowForCountry = i > 0 ? rowByOrder.get(pts[i - 1]!.sourceOrder) : undefined;
+    const trailingPair =
+      src != null &&
+      i + 1 < pts.length &&
+      isTrailingSameDaySourcePair(src, rowByOrder.get(pts[i + 1]!.sourceOrder), i + 2 >= pts.length);
     if (
+      !trailingPair &&
       isIsolatedMileageDrop(curr.km, prev, next, curr.time, nextTime) &&
       !(src && isListingMileageSource(src)) &&
       !isMileageCountryChange(prevRowForCountry, src)

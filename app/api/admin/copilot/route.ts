@@ -49,7 +49,7 @@ import { csddParseHasData } from "@/lib/source-pdf-ai-extract";
 import { detectVendorFromReport, runCcVinPdfAgent, runVendorPdfAgent } from "@/lib/copilot-vendor-pdf-agent";
 import { applyFinnikReportToBlock, looksLikeFinnikReport } from "@/lib/finnik-report-parse";
 import { applyTraficomReportToBlock, looksLikeTraficomReport } from "@/lib/traficom-report-parse";
-import { fillVendorAiContextIfEmpty } from "@/lib/vendor-ai-context-fill";
+import { upsertVendorPdfAiContext } from "@/lib/vendor-ai-context-fill";
 import { looksLikeCcVinReport } from "@/lib/cc-vin-report-parse";
 import { buildCarinfoCopilotActions, looksLikeCarinfoDump } from "@/lib/admin-copilot-vin-registry";
 import {
@@ -510,7 +510,10 @@ export async function POST(req: Request) {
           });
           workingBlocks = result.sourceBlocks;
           if (detected === "autodna" || detected === "carvertical") {
-            const filled = fillVendorAiContextIfEmpty(workingBlocks[detected], pdfText);
+            const filled = upsertVendorPdfAiContext(workingBlocks[detected], pdfText, {
+              sourceLabel: detected === "carvertical" ? "CarVertical" : "AutoDNA",
+              previousAutoTexts: [workingBlocks[detected].mileagePasteRaw],
+            });
             if (filled.aiContextRaw !== workingBlocks[detected].aiContextRaw) {
               workingBlocks = { ...workingBlocks, [detected]: filled };
             }
