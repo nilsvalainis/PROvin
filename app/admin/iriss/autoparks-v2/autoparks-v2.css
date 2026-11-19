@@ -5090,3 +5090,24 @@
     page-break-after: auto;
   }
 }
+
+/* 19.11 (Nils): kompaktāka servisa lapa - vairāk vietas problēmām un tukšas rindas jaunām problēmām. */
+.ap2.ap2.ap2 .ap2-svl-sheet { font-size: 9.5pt; padding-top: 9mm; padding-bottom: 8mm; }
+.ap2.ap2.ap2 .ap2-svl-sia { padding: 2.5mm 5mm; min-width: 52mm; }
+.ap2.ap2.ap2 .ap2-svl-sia .name { font-size: 15pt; }
+.ap2.ap2.ap2 .ap2-svl-title { padding: 2.5mm 4mm; }
+.ap2.ap2.ap2 .ap2-svl-title h1 { font-size: 14pt; }
+.ap2.ap2.ap2 .ap2-svl-car { margin-top: 3mm; padding: 2.5mm 4mm; }
+.ap2.ap2.ap2 .ap2-svl-car .model { font-size: 12pt; }
+.ap2.ap2.ap2 .ap2-svl-car .vin { font-size: 10pt; }
+.ap2.ap2.ap2 .ap2-svl-grid { grid-template-columns: repeat(5, 1fr); gap: 1.5mm 3mm; margin-top: 2mm; }
+.ap2.ap2.ap2 .ap2-svl-grid b { font-size: 9pt; }
+.ap2.ap2.ap2 .ap2-svl-sheet h2 { margin: 3.5mm 0 1.5mm; font-size: 8.5pt; }
+.ap2.ap2.ap2 .ap2-svl-tab { font-size: 9.5pt; }
+.ap2.ap2.ap2 .ap2-svl-tab td { padding-top: 1.6mm; padding-bottom: 1.6mm; }
+.ap2.ap2.ap2 .ap2-svl-tab td.t .line { margin: 0 4mm 0 0; border-bottom: 1px solid #aeaeb2; }
+.ap2.ap2.ap2 .ap2-svl-tab tr.blank td { padding-top: 2.2mm; padding-bottom: 1.2mm; }
+.ap2.ap2.ap2 .ap2-svl-tab .line { height: 4.5mm; }
+.ap2.ap2.ap2 .ap2-svl-tab .sq { width: 4mm; height: 4mm; }
+.ap2.ap2.ap2 .ap2-svl-notes { min-height: 10mm; padding: 2mm 3mm; font-size: 9pt; }
+.ap2.ap2.ap2 .ap2-svl-sign { padding-top: 5mm; }
