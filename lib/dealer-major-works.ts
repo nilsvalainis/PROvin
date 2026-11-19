@@ -542,7 +542,11 @@ function phraseTokens(folded: string): string[] {
  * starpā nav eļļas/filtra/šķidruma vārda vai pieturzīmes; darbības vārds-lietvārds
  * („замена”, „replacement”), kam seko eļļa, attiecas uz eļļu, ne mezglu.
  */
-function hasExplicitUnitReplacePhrase(folded: string, assembly: DealerMajorAssemblyId): boolean {
+function hasExplicitUnitReplacePhrase(
+  folded: string,
+  assembly: DealerMajorAssemblyId,
+  isVerb: (token: string) => boolean = isRepairVerbToken,
+): boolean {
   const tokens = phraseTokens(folded);
   const at = (k: number) => (k >= 0 && k < tokens.length ? tokens[k]! : PHRASE_BOUNDARY);
   for (let i = 0; i < tokens.length; i++) {
@@ -555,7 +559,7 @@ function hasExplicitUnitReplacePhrase(folded: string, assembly: DealerMajorAssem
       for (let j = i + len; j < Math.min(tokens.length, i + len + 3); j++) {
         const t = at(j);
         if (t === PHRASE_BOUNDARY || isConsumableToken(t)) break;
-        if (isRepairVerbToken(t)) {
+        if (isVerb(t)) {
           if (isConsumableToken(at(j + 1)) && !PARTICIPLE_TOKEN_RE.test(t)) break;
           return true;
         }
@@ -565,7 +569,7 @@ function hasExplicitUnitReplacePhrase(folded: string, assembly: DealerMajorAssem
       for (let j = i - 1; j >= Math.max(0, i - 3); j--) {
         const t = at(j);
         if (t === PHRASE_BOUNDARY || isConsumableToken(t)) break;
-        if (isRepairVerbToken(t)) {
+        if (isVerb(t)) {
           if (isConsumableToken(at(j - 1))) break;
           return true;
         }
@@ -613,4 +617,82 @@ export function dealerMajorAssembliesInWork(works: string): DealerMajorAssemblyI
 
 export function majorAssemblyLabel(id: DealerMajorAssemblyId): string {
   return MAJOR_ASSEMBLY_SPECS.find((s) => s.id === id)?.label ?? id;
+}
+
+/* ---------- Servisa vizītes galvenes precizācija (PDF) ---------- */
+
+/** Tikai nomaiņa (ne remonts / kapitālais remonts). Teksts jau salocīts (bez diakritikas, mazie burti). */
+const REPLACE_VERB_TOKEN_RE =
+  /^(?:getauscht|ausgetauscht|austausch\p{L}*|tausch|ersetzt|ersetzen|erneuert|erneuern|gewechselt|replace|replaced|replacement|renewed|exchanged|nomain\p{L}*|aizvietot\p{L}*|замен\p{L}*)$/u;
+
+function isReplaceVerbToken(token: string): boolean {
+  return token !== PHRASE_BOUNDARY && REPLACE_VERB_TOKEN_RE.test(token);
+}
+
+/** Mezgla nomaiņas precizācija LV (dzimte pēc etiķetes). „Virsbūve / stikls” - bez precizācijas. */
+const REPLACED_DETAIL_LV: Partial<Record<DealerMajorAssemblyId, string>> = {
+  engine: "nomainīts",
+  timing_chain: "nomainīta",
+  timing_belt: "nomainīta",
+  crankshaft_seal: "nomainīts",
+  gearbox: "nomainīta",
+  clutch: "nomainīts",
+  transfer_case: "nomainīta",
+  differential: "nomainīts",
+  propshaft: "nomainīts",
+  dual_mass_flywheel: "nomainīts",
+  turbo: "nomainīts",
+};
+
+/**
+ * „nomainīts/-a”, ja ierakstā ir skaidra šī mezgla nomaiņa (frāze mezgls + nomaiņas darbības vārds
+ * vai REMAN/Austausch vienība). Remonts, kapitālais remonts vai neskaidrs teksts - "".
+ */
+export function dealerAssemblyReplacedDetail(works: string, assembly: string): string {
+  const detail = REPLACED_DETAIL_LV[assembly as DealerMajorAssemblyId];
+  if (!detail) return "";
+  const id = assembly as DealerMajorAssemblyId;
+  const folded = foldDealerWorkText(works);
+  if (!folded) return "";
+  for (const clause of splitClauses(folded)) {
+    if (!clauseIsUnitRepairOf(clause, id)) continue;
+    if (isOverhaul(clause)) continue;
+    if (hasExplicitUnitReplacePhrase(clause, id, isReplaceVerbToken)) return detail;
+    if (isRemanOrExchange(clause) && mentionsAssembly(clause, id)) return detail;
+  }
+  return "";
+}
+
+/** Teksts salocīts: bez diakritikas (LV „priekšā” -> „prieksa”, RU „й” -> „и”), mazie burti. */
+const FRONT_F =
+  /(?<!\p{L})(?:vorne?|vorder\p{L}*|front|frontschaden|frontpartie|prieksa|priekse\p{L}*|priekspus\p{L}*|передн\p{L}*|спереди)(?!\p{L})/u;
+const REAR_F =
+  /(?<!\p{L})(?:hinten|hinter(?:e|en|er|es)?|heck\p{L}*|rear|aizmugur\p{L}*|задн\p{L}*|сзади)(?!\p{L})/u;
+const LEFT_F =
+  /(?<!\p{L})(?:links|linke[nrs]?|left|lh|kreis\p{L}*|лев(?:ы\p{L}?|ая|ое|ои|ую|ого|ому|ом)|слева)(?!\p{L})/u;
+const RIGHT_F =
+  /(?<!\p{L})(?:rechts|rechte[nrs]?|right|rh|lab(?:a|ais|aja|ajai|ajam|as|ie|ajos|ajas)|прав(?:ы\p{L}?|ая|ое|ои|ую|ого|ому|ом)|справа)(?!\p{L})/u;
+
+/**
+ * Bojājuma zona LV no negadījuma klauzulām („priekšā labajā pusē”, „aizmugurē”).
+ * Ja zona nav minēta vai ir pretrunīga (priekšā un aizmugurē, kreisajā un labajā) - "".
+ */
+export function dealerAccidentZoneDetail(works: string): string {
+  const folded = foldDealerWorkText(works);
+  if (!folded) return "";
+  let front = false;
+  let rear = false;
+  let left = false;
+  let right = false;
+  for (const clause of splitClauses(folded)) {
+    if (!isAccidentRepairClause(clause)) continue;
+    front ||= FRONT_F.test(clause);
+    rear ||= REAR_F.test(clause);
+    left ||= LEFT_F.test(clause);
+    right ||= RIGHT_F.test(clause);
+  }
+  if ((front && rear) || (left && right)) return "";
+  const fb = front ? "priekšā" : rear ? "aizmugurē" : "";
+  const side = left ? "kreisajā pusē" : right ? "labajā pusē" : "";
+  return [fb, side].filter(Boolean).join(" ");
 }

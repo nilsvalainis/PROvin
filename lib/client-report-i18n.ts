@@ -756,6 +756,28 @@ export function translateClientReportYesNo(value: boolean, lang: ClientReportLan
   }
 }
 
+/**
+ * Dīlera servisa vizītes galvenes precizācija („priekšā labajā pusē”, „nomainīta”).
+ * Nav STATIC_TRANSLATIONS atslēgas, lai sweep neaizvietotu šos vispārīgos vārdus citos tekstos.
+ */
+const DEALER_HIGHLIGHT_DETAIL: Record<string, { en: string; ru: string; de: string }> = {
+  nomainīts: { en: "replaced", ru: "замена", de: "ersetzt" },
+  nomainīta: { en: "replaced", ru: "замена", de: "ersetzt" },
+  priekšā: { en: "front", ru: "спереди", de: "vorne" },
+  aizmugurē: { en: "rear", ru: "сзади", de: "hinten" },
+  "kreisajā pusē": { en: "left side", ru: "слева", de: "links" },
+  "labajā pusē": { en: "right side", ru: "справа", de: "rechts" },
+  "priekšā kreisajā pusē": { en: "front left", ru: "спереди слева", de: "vorne links" },
+  "priekšā labajā pusē": { en: "front right", ru: "спереди справа", de: "vorne rechts" },
+  "aizmugurē kreisajā pusē": { en: "rear left", ru: "сзади слева", de: "hinten links" },
+  "aizmugurē labajā pusē": { en: "rear right", ru: "сзади справа", de: "hinten rechts" },
+};
+
+export function translateDealerHighlightDetail(lv: string, lang: ClientReportLang): string {
+  if (lang === "lv") return lv;
+  return DEALER_HIGHLIGHT_DETAIL[lv]?.[lang] ?? lv;
+}
+
 /** Kartītes „Vēl” poga. Nav STATIC_TRANSLATIONS atslēga, lai sweep neaizvietotu citus „Vēl”. */
 export function translateClientReportLifeMore(lang: ClientReportLang): string {
   switch (lang) {

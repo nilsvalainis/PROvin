@@ -3248,13 +3248,24 @@ ${sourceDotColorCss()}
       .pdf-svc-tag--campaign{background:#E8EEEC;color:#0E4F42;}
       .pdf-svc-tag--warranty{background:#F8FAFC;color:#334155;border:1px solid #E2E8F0;}
       .pdf-svc-tag--key_read{background:#F8FAFC;color:#64748b;}
-      .pdf-svc-box--major{
-        border-left:3px solid #C2410C;border-radius:0 8px 8px 0;background:#FFF8F1;
+      .pdf-svc-box--hl{
+        margin:6px 0;padding:0;border-radius:10px;overflow:hidden;border:1px solid #CBD5E1;
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
       }
-      .pdf-svc-box--accident{border-left-color:#C81E1E;background:#FEF4F3;}
-      .pdf-svc-major-chip--mechanical{background:#FDEBD8;color:#9A3412;}
-      .pdf-svc-major-chip--accident{background:#FDE0DD;color:#9B1C1C;}
+      .pdf-svc-box--accident{border-color:#EBC3BF;}
+      .pdf-svc-box-in{padding:8px 12px;}
+      .pdf-svc-hl{
+        display:flex;flex-wrap:wrap;align-items:center;gap:2px 14px;padding:4px 12px;
+        font-size:9.5px;line-height:1.3;background:#F1F5F9;color:#334155;border-bottom:1px solid #CBD5E1;
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+      }
+      .pdf-svc-box--accident .pdf-svc-hl{background:#FBEEED;color:#B42318;border-bottom-color:#EBC3BF;}
+      .pdf-svc-hl__item{display:inline-flex;align-items:center;gap:6px;}
+      .pdf-svc-hl__item--accident{color:#B42318;}
+      .pdf-svc-hl__item--mechanical{color:#334155;}
+      .pdf-svc-hl__item b{font-weight:750;letter-spacing:0.05em;text-transform:uppercase;}
+      .pdf-svc-hl__detail{font-weight:500;}
+      .pdf-svc-hl__ico{width:12px;height:12px;flex:none;display:block;}
       .pdf-svc-gap{
         display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;
         margin:4px 0 4px 106px;padding:6px 10px;border-radius:8px;background:#F8FAFC;border:1px dashed #C5CBD3;
@@ -3278,7 +3289,9 @@ ${sourceDotColorCss()}
         .pdf-svc-date{text-align:left;padding:0;}
         .pdf-svc-rail{display:none;}
         .pdf-svc-box{margin:0;padding:0;}
-        .pdf-svc-box--major{padding:6px 8px;}
+        .pdf-svc-box--hl{margin:0;padding:0;}
+        .pdf-svc-box--hl .pdf-svc-box-in{padding:6px 10px 8px;}
+        .pdf-svc-hl{padding:4px 10px;}
         .pdf-svc-gap{margin-left:0;}
       }
       .pdf-mileage-odo-value{color:#1d1d1f;font-weight:500;}
