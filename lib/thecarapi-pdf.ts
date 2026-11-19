@@ -1,58 +1,24 @@
 /**
- * TheCarApi ieraksts klienta PDF: visi lauki grupās, bildes ar datumu.
- * Ārējā pakalpojuma nosaukums netiek drukāts.
+ * Izsoļu portāla ieraksts klienta PDF: strukturēts modelis (`buildThecarapiPdfModel`) -> kompaktas tabulas.
+ * Ārējā pakalpojuma nosaukums netiek drukāts. Saites, bilžu tehniskie lauki un iekšējie id netiek drukāti.
  */
 import { CC_VIN_MAX_PHOTOS } from "@/lib/cc-vin-photo-types";
 import {
+  buildThecarapiPdfModel,
+  thecarapiPdfDate,
+  type ThecarapiPdfDamage,
+  type ThecarapiPdfGrid,
+  type ThecarapiPdfKv,
+  type ThecarapiPdfModel,
+} from "@/lib/thecarapi-pdf-model";
+import {
   thecarapiPdfGroupTitle,
   type ThecarapiAdminRecord,
-  type ThecarapiField,
   type ThecarapiStoredPhoto,
 } from "@/lib/vin-scan/thecarapi-fields";
 
 /** Galerija nedrīkst aprauties zem 100 bildēm. cc_vin griesti ir lielāki. */
 export const THECARAPI_PDF_GALLERY_MAX = Math.max(100, CC_VIN_MAX_PHOTOS);
-
-const SECTION_TITLES = [
-  "Pamatdati",
-  "Cenas",
-  "Nobraukums",
-  "Datumi",
-  "Bojājumi",
-  "Aprīkojums",
-  "Serviss",
-  "Bildes",
-  "Citi dati",
-] as const;
-
-type SectionTitle = (typeof SECTION_TITLES)[number];
-
-const BASIC_KEYS = new Set([
-  "site_name",
-  "site",
-  "platform",
-  "auction_id",
-  "id",
-  "auctionId",
-  "vin",
-  "make",
-  "brand",
-  "model",
-  "year",
-  "fuel",
-  "transmission",
-  "color",
-  "colour",
-  "status",
-  "seller",
-  "seller_name",
-  "location",
-  "city",
-  "country",
-  "title",
-  "body",
-  "provin_archive",
-]);
 
 function escapeHtml(s: string): string {
   return s
@@ -62,90 +28,146 @@ function escapeHtml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function leafKey(key: string): string {
-  const last = key.split(".").pop() ?? key;
-  return last.replace(/\[\d+\]/g, "");
+function subhead(title: string): string {
+  return `<p class="pdf-subhead">${escapeHtml(title)}</p>`;
 }
 
-function sectionOf(key: string): SectionTitle {
-  const leaf = leafKey(key);
-  const full = key.toLowerCase();
-  if (leaf === "provin_archive" || BASIC_KEYS.has(leaf)) return "Pamatdati";
-  if (
-    /image|gallery|documentphoto|videourl|thumbnail|vault_gallery|served_url|^photos$|^url$|^href$|^src$|image_index|image_source|image_status|image_url/i.test(leaf) ||
-    /imageurls|imagevault|subareaimages|documentphoto|videourl|gallery|auction_images|thumbnail/.test(full)
-  ) {
-    return "Bildes";
-  }
-  if (/equipment|^options$|^features$/i.test(leaf) || /equipment/.test(full)) return "Aprīkojums";
-  if (/service/.test(full)) return "Serviss";
-  if (/damage|zone|subarea|severity/.test(full)) return "Bojājumi";
-  if (/_at$|_date$|^date$|^first_seen$|^last_seen$|^server_time$/.test(leaf)) return "Datumi";
-  if (/mileage|odometer|^km$/.test(leaf)) return "Nobraukums";
-  if (/price|current_final|^start$|bid_count|^currency$|^vat$/.test(leaf) || /price/.test(full)) return "Cenas";
-  return "Citi dati";
+function minihead(title: string): string {
+  return `<p class="pdf-tc-zone">${escapeHtml(title)}</p>`;
 }
 
-function damagePrefix(key: string): string {
-  const indexed = /^(.*\[\d+\])/.exec(key);
-  if (indexed?.[1]) return indexed[1];
-  const dot = key.lastIndexOf(".");
-  return dot > 0 ? key.slice(0, dot) : key;
-}
-
-function table(rows: readonly ThecarapiField[]): string {
-  if (rows.length === 0) return "";
+function kvTable(rows: readonly ThecarapiPdfKv[]): string {
   const body = rows
     .map(
       (row) =>
-        `<tr><th>${escapeHtml(row.label || row.key)}</th><td>${escapeHtml(row.value || "-")}</td></tr>`,
+        `<tr><td>${escapeHtml(row.label)}</td><td${row.highlight ? ' class="pdf-tc-warn"' : ""}>${escapeHtml(row.value)}</td></tr>`,
     )
     .join("");
-  return `<table class="pdf-v1-kv pdf-tc-kv"><tbody>${body}</tbody></table>`;
+  return `<table class="pdf-v1-kv"><tbody>${body}</tbody></table>`;
 }
 
-function subhead(title: string): string {
-  return `<p class="pdf-subhead">${escapeHtml(title)}</p>`;
+/** Divas kolonnas (pdf-v1-kv-pair), lai sadaļa aizņem uz pusi mazāk rindu. */
+function kvPair(rows: readonly ThecarapiPdfKv[]): string {
+  if (rows.length === 0) return "";
+  if (rows.length < 3) return `<div class="pdf-tc-kv">${kvTable(rows)}</div>`;
+  const half = Math.ceil(rows.length / 2);
+  return `<div class="pdf-v1-kv-pair pdf-tc-kv">${kvTable(rows.slice(0, half))}${kvTable(rows.slice(half))}</div>`;
+}
+
+function gridTable(grid: ThecarapiPdfGrid | null): string {
+  if (!grid || grid.rows.length === 0) return "";
+  const keep = grid.columns.map((_, i) => i === 0 || grid.rows.some((r) => (r[i] ?? "").trim()));
+  const head = grid.columns
+    .filter((_, i) => keep[i])
+    .map((h) => `<th>${escapeHtml(h)}</th>`)
+    .join("");
+  const body = grid.rows
+    .map((r) => `<tr>${r.filter((_, i) => keep[i]).map((c) => `<td>${escapeHtml(c.trim() || "-")}</td>`).join("")}</tr>`)
+    .join("");
+  return `<table class="pdf-v1-kv pdf-v1-kv--outvin-log pdf-tc-grid"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function damagesTable(rows: readonly ThecarapiPdfDamage[]): string {
+  if (rows.length === 0) return "";
+  const cols: { title: string; get: (d: ThecarapiPdfDamage) => string }[] = [
+    { title: "Zona", get: (d) => d.zone },
+    { title: "Detaļa", get: (d) => d.part },
+    { title: "Bojājuma tips", get: (d) => d.type },
+    { title: "Izmērs", get: (d) => d.size },
+    { title: "Daudzums", get: (d) => d.quantity },
+    { title: "Remonts", get: (d) => d.repair },
+    { title: "Piezīmes", get: (d) => d.notes },
+  ];
+  const used = cols.filter((c, i) => i < 3 || rows.some((d) => c.get(d).trim()));
+  const head = used.map((c) => `<th>${escapeHtml(c.title)}</th>`).join("");
+  let prevZone = "";
+  const body = rows
+    .map((d) => {
+      const cells = used.map((c) => {
+        if (c.title === "Zona") {
+          const z = d.zone === prevZone ? "" : d.zone || "-";
+          prevZone = d.zone;
+          return `<td>${escapeHtml(z)}</td>`;
+        }
+        return `<td>${escapeHtml(c.get(d).trim() || "-")}</td>`;
+      });
+      return `<tr>${cells.join("")}</tr>`;
+    })
+    .join("");
+  return `<table class="pdf-v1-kv pdf-v1-kv--outvin-log pdf-tc-grid"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
+}
+
+function line(text: string): string {
+  return text ? `<p class="pdf-tc-line">${escapeHtml(text)}</p>` : "";
+}
+
+/** Viena izsole: galvene + sadaļas spec 3.1-3.11 secībā; tukšās izlaistas. */
+export function renderThecarapiPdfModelHtml(model: ThecarapiPdfModel): string {
+  const blocks: string[] = [`<p class="pdf-subhead pdf-tc-head">${escapeHtml(model.header)}</p>`];
+  const section = (title: string, html: string): void => {
+    if (html) blocks.push(subhead(title), html);
+  };
+  section("Pamatdati", kvPair(model.basics));
+  section("Cenas", kvPair(model.prices));
+  section("Nobraukums", kvPair(model.mileage));
+  section("Datumi", kvPair(model.dates));
+
+  const damage: string[] = [];
+  if (model.damages.length) {
+    damage.push(damagesTable(model.damages));
+    if (model.damagesTotal != null) damage.push(line(`Kopā bojājumi: ${model.damagesTotal}`));
+  }
+  if (model.paint.length) damage.push(minihead("Laka, µm"), kvPair(model.paint));
+  if (model.brakes) damage.push(minihead("Bremzes"), gridTable(model.brakes));
+  section("Bojājumi", damage.join(""));
+
+  if (model.equipment.length) {
+    const groups = model.equipment
+      .map((g) => `<p><strong>${escapeHtml(g.group)}:</strong> ${escapeHtml(g.items.join(" · "))}</p>`)
+      .join("");
+    section("Aprīkojums", `<div class="pdf-tc-eq">${groups}</div>`);
+  }
+
+  section(
+    "Riepas un diski",
+    model.wheels.map((set) => minihead(set.title) + gridTable(set.grid)).join(""),
+  );
+
+  const service = [
+    line(model.service.summary),
+    kvPair(model.service.rows),
+    gridTable(model.service.entries),
+    model.documents.length ? line(`Dokumenti: ${model.documents.join(", ")}`) : "",
+  ].join("");
+  section("Servisa vēsture", service);
+
+  section("Citi dati", kvPair(model.other));
+  return `<section class="pdf-tc-lot">${blocks.join("\n")}</section>`;
+}
+
+function recordHasData(record: ThecarapiAdminRecord): boolean {
+  return Boolean(record.raw || record.rawDetail || record.rawHistory || record.fields.length || record.photos.length || record.photoUrls.length);
 }
 
 export function buildThecarapiRecordsPdfHtml(records: readonly ThecarapiAdminRecord[] | null | undefined): string {
   const parts: string[] = [];
   for (const record of records ?? []) {
-    if (!record.fields.length && !record.photos.length && !record.photoUrls.length) continue;
-    const buckets = new Map<SectionTitle, ThecarapiField[]>();
-    for (const title of SECTION_TITLES) buckets.set(title, []);
-    for (const field of record.fields) {
-      if (!field.value.trim()) continue;
-      buckets.get(sectionOf(field.key))!.push(field);
-    }
-    const headBits = [record.venue, record.photoDate || record.date, record.id].filter(Boolean);
-    const blocks: string[] = [subhead(headBits.join(" · ") || "Izsole")];
-    for (const title of SECTION_TITLES) {
-      const rows = buckets.get(title) ?? [];
-      if (rows.length === 0) continue;
-      blocks.push(subhead(title));
-      if (title === "Bojājumi") {
-        const groups = new Map<string, ThecarapiField[]>();
-        for (const row of rows) {
-          const prefix = damagePrefix(row.key);
-          const list = groups.get(prefix) ?? [];
-          list.push(row);
-          groups.set(prefix, list);
-        }
-        let n = 0;
-        for (const group of groups.values()) {
-          n += 1;
-          const zone = group.find((row) => /zone|area|subarea/i.test(leafKey(row.key)) && !/image/i.test(row.key));
-          blocks.push(`<p class="pdf-tc-zone">${escapeHtml(zone?.value || `Bojājums ${n}`)}</p>`);
-          blocks.push(table(group));
-        }
-        continue;
-      }
-      blocks.push(table(rows));
-    }
-    parts.push(`<section class="pdf-tc-lot">${blocks.join("\n")}</section>`);
+    if (!recordHasData(record)) continue;
+    parts.push(renderThecarapiPdfModelHtml(buildThecarapiPdfModel(record)));
   }
   return parts.join("\n");
+}
+
+/** Bildes saite -> paraksta kategorija visiem ierakstiem (Bojājums: ..., Serviss, Dokuments). */
+export function thecarapiPdfPhotoCategories(records: readonly ThecarapiAdminRecord[] | null | undefined): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const record of records ?? []) {
+    if (!recordHasData(record)) continue;
+    for (const [url, cat] of Object.entries(buildThecarapiPdfModel(record).photoCategories)) {
+      if (!out.has(url)) out.set(url, cat);
+    }
+  }
+  return out;
 }
 
 type PhotoLike = { id?: string; sourceUrl?: string; contentHash?: string };
@@ -192,19 +214,30 @@ export function selectThecarapiPdfPhotos(
   return out;
 }
 
+function photoDay(raw: string): string {
+  const t = raw.trim();
+  return /^\d{4}-\d{2}-\d{2}/.test(t) ? thecarapiPdfDate(t, false) : t;
+}
+
+/** Kompakts 4 kolonnu režģis ar datumu un kategoriju; saites netiek drukātas. */
 export function buildThecarapiPdfGalleryHtml(
   photos: readonly ThecarapiStoredPhoto[],
   dataUrls: ReadonlyMap<string, string> | undefined,
+  categories?: ReadonlyMap<string, string>,
 ): string {
   if (!dataUrls?.size || photos.length === 0) return "";
   const figures: string[] = [];
   for (const photo of photos) {
     const src = dataUrls.get(photo.id);
     if (!src) continue;
-    const date = photo.date || thecarapiPdfGroupTitle(photo.caption);
-    const cap = date ? `<figcaption class="pdf-listing-photo-cap">${escapeHtml(date)}</figcaption>` : "";
-    figures.push(`<figure class="pdf-listing-photo-cell"><img class="pdf-listing-photo-img" src="${src}" alt=""/>${cap}</figure>`);
+    const date = photoDay(photo.date || thecarapiPdfGroupTitle(photo.caption));
+    const cat = categories?.get(photo.sourceUrl) ?? "";
+    const capText = [date, cat].filter(Boolean).join(" · ");
+    const cap = capText ? `<figcaption class="pdf-listing-photo-cap">${escapeHtml(capText)}</figcaption>` : "";
+    figures.push(
+      `<figure class="pdf-listing-photo-cell pdf-listing-photo-cell--appendix"><img class="pdf-listing-photo-img" src="${src}" alt=""/>${cap}</figure>`,
+    );
   }
   if (figures.length === 0) return "";
-  return `<section class="pdf-listing-photo-group"><p class="pdf-subhead">Bildes</p><div class="pdf-listing-photo-grid">${figures.join("")}</div></section>`;
+  return `<section class="pdf-listing-photo-group"><p class="pdf-subhead">Bildes (${figures.length})</p><div class="pdf-listing-photo-grid pdf-listing-photo-grid--tc">${figures.join("")}</div></section>`;
 }

@@ -1,0 +1,463 @@
+{
+ "success": true,
+ "contract_version": "2026-10-05",
+ "data_updated_at": "2026-11-17T18:56:02.292Z",
+ "request_id": "req-test-0001",
+ "server_time": "2026-11-17T18:56:02.292Z",
+ "auction": {
+  "id": 1326383403,
+  "site_name": "auto1",
+  "auction_id_str": "1326383403",
+  "source_auction_id": 23671162,
+  "auction_batch_id": 23671162,
+  "car_id": "BS00000",
+  "vin": "WBATEST0000000001",
+  "chassis_number": "WBATEST0000000001",
+  "title": "BMW 2er 220d Gran Tourer Sport Line",
+  "make": "BMW",
+  "model": "2er",
+  "mileage": 226760,
+  "start_price": 9469,
+  "current_price": 11379,
+  "final_price": 11379,
+  "public_price_eur": 11379,
+  "buy_now_price": null,
+  "consumer_price": null,
+  "special_price": null,
+  "currency": "EUR",
+  "currency_code_id": 1,
+  "offer_link": null,
+  "detail_path": "/api/auction/auto1/1326383403",
+  "auction_end_at": "2026-10-09T13:00:00Z",
+  "batch_start_date": "2026-10-07T01:24:03.559788",
+  "last_changed_at": "2026-10-09T12:58:00Z",
+  "first_seen_at": "2026-10-07T01:24:03.559788",
+  "last_seen_at": "2026-10-09T13:00:00Z",
+  "created_at": "2026-10-07T01:24:03Z",
+  "updated_at": "2026-11-17T18:56:02.292Z",
+  "archived_at": null,
+  "auction_sec_left": 1449,
+  "details_pending": false,
+  "is_active": false,
+  "car_country_extended": "DE",
+  "picture_count": 29,
+  "eur_rates": {
+   "USD": 1.08,
+   "ZAR": 19.9,
+   "TRY": 36.1,
+   "SEK": 11.2
+  },
+  "images": [
+   {
+    "index": 1,
+    "url": "https://img-pa.auto1.com/img3b/test/BS00000_1.jpg",
+    "served_url": "/auction-photo/auto1/1326383403/1?k=166&exp=1798761600&sig=test",
+    "remote_url": "https://img-pa.auto1.com/img3b/test/BS00000_1.jpg",
+    "is_primary": true
+   },
+   {
+    "index": 2,
+    "url": "https://img-pa.auto1.com/img3b/test/BS00000_2.jpg",
+    "served_url": "/auction-photo/auto1/1326383403/2?k=166&exp=1798761600&sig=test",
+    "remote_url": "https://img-pa.auto1.com/img3b/test/BS00000_2.jpg",
+    "is_primary": false
+   },
+   {
+    "index": 3,
+    "url": "https://img-pa.auto1.com/img3b/test/BS00000_3.jpg",
+    "served_url": "/auction-photo/auto1/1326383403/3?k=166&exp=1798761600&sig=test",
+    "remote_url": "https://img-pa.auto1.com/img3b/test/BS00000_3.jpg",
+    "is_primary": false
+   }
+  ],
+  "specification_provenance": {
+   "co2": "Auto1Details.co2Value"
+  },
+  "vehicle_details": {
+   "damages": [
+    {
+     "part": "rear-bumper",
+     "type": "scratch",
+     "quantity": 3,
+     "repair_method": null
+    }
+   ],
+   "specs": {
+    "fuelType": "diesel",
+    "doorCount": 5
+   },
+   "highlights": [
+    "Sport Line"
+   ],
+   "service_history_summary": {
+    "lastServiceDate": "2026-03-27T11:00:00+0100",
+    "lastServiceMileage": 214257,
+    "serviceBookType": "paper",
+    "serviceRecords": "some"
+   }
+  },
+  "car_identification": {
+   "Auto1Details": {
+    "km": 226760,
+    "kw": 110,
+    "hp": 150,
+    "ccm": 1995,
+    "co2Value": 136,
+    "firstRegistrationDate": "2022-11-23",
+    "builtYear": 2022,
+    "bodyType": "van",
+    "fuelType": "diesel",
+    "gearType": "automatic",
+    "doorCount": 5,
+    "seatCount": 5,
+    "color": "black",
+    "metallic": true,
+    "countryOfOrigin": "DE",
+    "carStatus": "NOT_NEW_CAR",
+    "commercialTypes": [
+     "company-car"
+    ],
+    "hasBeenCommercial": true,
+    "handoverKeyCount": 2,
+    "totalOwnerCalculated": 1,
+    "inspectionExpiryDate": "2027-01-01",
+    "accidents": false,
+    "originalEngine": true,
+    "sellerPrice": "9369.00",
+    "euroNorm": "Euro 6d",
+    "interiorType": "cloth",
+    "nonSmoker": true,
+    "mystery_flag": "keep-me"
+   },
+   "SpecEnrichment": {
+    "co2": {
+     "value": 136,
+     "method": "source",
+     "path": "Auto1Details.co2Value"
+    }
+   },
+   "VinOcr": {
+    "checked_at": 1791339871,
+    "status": "ok"
+   },
+   "ZrtLabel": {
+    "code": "Z1"
+   },
+   "meta": {
+    "source": "auto1",
+    "schema": 3
+   },
+   "DamagesTotalCount": 5,
+   "DamagesV3": [
+    {
+     "area": "global.damages-v3.area.rear",
+     "part": "global.damages-v3.part.rear-bumper",
+     "type": "global.damages-v3.type.scratch",
+     "description": "global.damages-v3.description.depth.deep-to-primer",
+     "size": "global.damages-v3.size.length.gte-20mm-lt-50mm",
+     "quantity": "global.damages-v3.quantity.3",
+     "repair_method": null,
+     "subAreaImages": [
+      {
+       "url": "https://img-pa.auto1.com/img3b/test/BS00000_d1.jpg",
+       "source_order": 1
+      }
+     ]
+    },
+    {
+     "area": "global.damages-v3.area.rear",
+     "part": "global.damages-v3.part.rear-bumper",
+     "type": "global.damages-v3.type.missing-parts",
+     "description": null,
+     "size": null,
+     "quantity": "global.damages-v3.quantity.1",
+     "repair_method": null,
+     "subAreaImages": [
+      {
+       "url": "https://img-pa.auto1.com/img3b/test/BS00000_d2.jpg",
+       "source_order": 2
+      }
+     ]
+    },
+    {
+     "area": "global.damages-v3.area.front",
+     "part": "global.damages-v3.part.front-bumper",
+     "type": "global.damages-v3.type.scratch",
+     "description": "global.damages-v3.description.depth.deep-to-primer",
+     "size": "global.damages-v3.size.length.gte-20mm-lt-50mm",
+     "quantity": "global.damages-v3.quantity.1",
+     "repair_method": null,
+     "subAreaImages": [
+      {
+       "url": "https://img-pa.auto1.com/img3b/test/BS00000_d3.jpg",
+       "source_order": 3
+      }
+     ]
+    }
+   ],
+   "DamagesStructured": [
+    {
+     "part_name": "rear-bumper",
+     "type": "scratch",
+     "area": "rear"
+    },
+    {
+     "part_name": "rear-bumper",
+     "type": "missing-parts",
+     "area": "rear"
+    },
+    {
+     "part_name": "front-bumper",
+     "type": "scratch",
+     "area": "front"
+    }
+   ],
+   "DamagesSummaryV3": [
+    {
+     "area": "global.damages-v3.area.rear",
+     "damages": [
+      {
+       "part": "global.damages-v3.part.rear-bumper",
+       "type": "global.damages-v3.type.scratch",
+       "quantityCalculatedV2": {
+        "quantity": 3,
+        "quantityType": "simple"
+       }
+      },
+      {
+       "part": "global.damages-v3.part.rear-bumper",
+       "type": "global.damages-v3.type.missing-parts",
+       "quantityCalculatedV2": {
+        "quantity": 1,
+        "quantityType": "simple"
+       }
+      }
+     ]
+    },
+    {
+     "area": "global.damages-v3.area.front",
+     "damages": [
+      {
+       "part": "global.damages-v3.part.front-bumper",
+       "type": "global.damages-v3.type.scratch",
+       "quantityCalculatedV2": {
+        "quantity": 1,
+        "quantityType": "simple"
+       }
+      }
+     ]
+    }
+   ],
+   "Highlights": [
+    {
+     "area": "global.damages-v3.area.rear",
+     "type": "global.damages-v3.type.scratch",
+     "part": "global.damages-v3.part.rear-bumper"
+    }
+   ],
+   "VehicleExterior": {
+    "paintThicknesses": [
+     {
+      "area": "hood",
+      "value": 120
+     },
+     {
+      "area": "front-left-fender",
+      "value": 107
+     },
+     {
+      "area": "front-left-door",
+      "value": 111
+     },
+     {
+      "area": "rear-left-door",
+      "value": 109
+     },
+     {
+      "area": "rear-left-side-panel",
+      "value": 124
+     },
+     {
+      "area": "tailgate",
+      "value": 118
+     },
+     {
+      "area": "rear-right-side-panel",
+      "value": 112
+     },
+     {
+      "area": "rear-right-door",
+      "value": 110
+     },
+     {
+      "area": "front-right-door",
+      "value": 115
+     },
+     {
+      "area": "front-right-fender",
+      "value": 108
+     },
+     {
+      "area": "roof",
+      "value": 114
+     }
+    ],
+    "wheelSets": [
+     {
+      "isMainSet": true,
+      "wheelDetails": [
+       {
+        "position": "front-left",
+        "tireType": "global.wheels.tireType.summer",
+        "tireCondition": "global.wheels.tireCondition.as-good-as-new",
+        "profileDepth": 4,
+        "profileDepthState": "ok",
+        "dot": "4824",
+        "rimType": "global.wheels.rimType.alloy",
+        "tireSize": "225/45 R17"
+       },
+       {
+        "position": "front-right",
+        "tireType": "global.wheels.tireType.summer",
+        "tireCondition": "global.wheels.tireCondition.as-good-as-new",
+        "profileDepth": 4,
+        "profileDepthState": "ok",
+        "dot": "4824",
+        "rimType": "global.wheels.rimType.alloy",
+        "tireSize": "225/45 R17"
+       },
+       {
+        "position": "rear-left",
+        "tireType": "global.wheels.tireType.summer",
+        "tireCondition": "global.wheels.tireCondition.as-good-as-new",
+        "profileDepth": 4,
+        "profileDepthState": "ok",
+        "dot": "4824",
+        "rimType": "global.wheels.rimType.alloy",
+        "tireSize": "225/45 R17"
+       },
+       {
+        "position": "rear-right",
+        "tireType": "global.wheels.tireType.summer",
+        "tireCondition": "global.wheels.tireCondition.as-good-as-new",
+        "profileDepth": 4,
+        "profileDepthState": "ok",
+        "dot": "4824",
+        "rimType": "global.wheels.rimType.alloy",
+        "tireSize": "225/45 R17"
+       }
+      ]
+     }
+    ]
+   },
+   "VehicleCondition": {
+    "brakes": [
+     {
+      "position": "front-left",
+      "type": "global.brakes.type.disc",
+      "padThickness": "global.brakes.padThickness.gte-3mm",
+      "padThicknessState": "ok",
+      "discCondition": "global.brakes.discCondition.not-measurable"
+     },
+     {
+      "position": "front-right",
+      "type": "global.brakes.type.disc",
+      "padThickness": "global.brakes.padThickness.gte-3mm",
+      "padThicknessState": "ok",
+      "discCondition": "global.brakes.discCondition.not-measurable"
+     },
+     {
+      "position": "rear-left",
+      "type": "global.brakes.type.disc",
+      "padThickness": "global.brakes.padThickness.gte-3mm",
+      "padThicknessState": "ok",
+      "discCondition": "global.brakes.discCondition.not-measurable"
+     },
+     {
+      "position": "rear-right",
+      "type": "global.brakes.type.disc",
+      "padThickness": "global.brakes.padThickness.gte-3mm",
+      "padThicknessState": "ok",
+      "discCondition": "global.brakes.discCondition.not-measurable"
+     }
+    ]
+   },
+   "DatEquipmentGroupsTranslated": {
+    "global.equipment_groups.Headlight LED": [
+     "LED projector"
+    ],
+    "global.equipment_groups.Navigation": [
+     "Navigation system Professional"
+    ],
+    "global.equipment_groups.Seats": [
+     "Sport seats",
+     "Seat heating front"
+    ],
+    "global.equipment_groups.Assistance": [
+     "Park Distance Control front and rear",
+     "Cruise control with braking function"
+    ],
+    "global.equipment_groups.Wheels": [
+     "17\" light alloy wheels"
+    ]
+   },
+   "EquipmentGroupsTranslated": {
+    "global.equipment_groups.Navigation": [
+     "Navigation system Professional"
+    ]
+   },
+   "VehicleFeatures": {
+    "hasAbs": true,
+    "hasNavigation": true,
+    "hasTowBar": true,
+    "hasLpg": false,
+    "hasSunroof": false,
+    "hasXenon": false
+   },
+   "features": [
+    "rain_sensor_wipers",
+    "servo_steering",
+    "tow_bar"
+   ],
+   "ServiceHistory": {
+    "lastServiceDate": "2026-03-27T11:00:00+0100",
+    "lastServiceMileage": 214257,
+    "serviceBookType": "paper",
+    "serviceRecords": "some"
+   },
+   "Documents": [
+    {
+     "type": "service-book",
+     "url": "/report-vault/auto1/1326383403/aaaa.jpg"
+    },
+    {
+     "type": "coc",
+     "url": "/report-vault/auto1/1326383403/bbbb.jpg"
+    }
+   ],
+   "ImageUrls": [
+    "https://img-pa.auto1.com/img3b/test/BS00000_1.jpg",
+    "https://img-pa.auto1.com/img3b/test/BS00000_2.jpg",
+    "https://img-pa.auto1.com/img3b/test/BS00000_3.jpg"
+   ],
+   "DamageImageUrls": [
+    "https://img-pa.auto1.com/img3b/test/BS00000_d1.jpg"
+   ],
+   "ServiceImageUrls": [
+    "https://img-pa.auto1.com/img3b/test/BS00000_s1.jpg"
+   ],
+   "DocumentPhotos": [
+    "https://img-pa.auto1.com/img3b/test/BS00000_doc1.jpg"
+   ],
+   "ImageVaultImages": [
+    {
+     "url": "https://img-pa.auto1.com/img3b/test/BS00000_v1.jpg",
+     "source_order": 1
+    }
+   ],
+   "Auto1GalleryV2": {
+    "count": 3
+   }
+  }
+ }
+}

@@ -177,8 +177,18 @@ export const CC_VIN_PDF_CSS = `
       .pdf-ccvin-flag-value{flex:0 0 auto;color:#B91C1C;font-weight:600;text-align:right}
       .pdf-ccvin-facts{margin:0 0 4px;font-size:var(--pdf-fs-label);color:#86868b;line-height:1.5}
       .pdf-tc-lot{margin:0 0 12px}
-      .pdf-tc-kv{width:100%;margin:0 0 8px}
-      .pdf-tc-kv th{width:42%;text-align:left;font-weight:600;color:#86868b;vertical-align:top;padding:3px 8px 3px 0}
-      .pdf-tc-kv td{vertical-align:top;padding:3px 0}
-      .pdf-tc-zone{margin:4px 0 2px;font-size:var(--pdf-fs-label);font-weight:600;color:#0f172a}
+      .pdf-tc-lot .pdf-tc-head{color:#0f172a;font-weight:700}
+      .pdf-tc-kv{margin:0 0 6px}
+      .pdf-tc-lot .pdf-v1-kv{font-size:var(--pdf-fs-label)}
+      .pdf-tc-lot .pdf-tc-kv .pdf-v1-kv td{padding:3px 0;line-height:1.35}
+      .pdf-tc-lot .pdf-tc-kv .pdf-v1-kv td:first-child{width:46%;padding-right:8px}
+      .pdf-tc-lot .pdf-tc-grid{margin:0 0 6px}
+      .pdf-tc-lot .pdf-tc-grid th,.pdf-tc-lot .pdf-tc-grid td{padding:3px 6px 3px 0;line-height:1.35}
+      .pdf-tc-warn{color:#B91C1C !important;font-weight:600}
+      .pdf-tc-lot .pdf-subhead,.pdf-tc-zone{break-after:avoid;page-break-after:avoid}
+      .pdf-tc-zone{margin:6px 0 2px;font-size:var(--pdf-fs-label);font-weight:600;color:#0f172a}
+      .pdf-tc-line{margin:2px 0 6px;font-size:var(--pdf-fs-label);color:#0f172a;line-height:1.45}
+      .pdf-tc-eq{columns:2;column-gap:22px;font-size:var(--pdf-fs-label);line-height:1.45;margin:0 0 6px}
+      .pdf-tc-eq p{margin:0 0 4px;break-inside:avoid}
+      .pdf-tc-eq strong{font-weight:600;color:#86868b}
 `;
