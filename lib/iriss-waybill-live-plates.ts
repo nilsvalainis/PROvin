@@ -5,7 +5,7 @@
  * Tāpēc: indekss + CSDD (mergeCsddPlateStates) + pieprasījumu rinda (izdotās vēl derīgās un "izdod...").
  */
 
-import { mergeCsddPlateStates, type CsddPlatesDoc } from "@/lib/iriss-waybill-csdd-plates";
+import { mergeCsddPlateStates, withCsddCheckInfo, type CsddPlatesDoc } from "@/lib/iriss-waybill-csdd-plates";
 import {
   compactDealerPlate,
   csddRefutesWaybill,
@@ -163,12 +163,14 @@ export function composeWaybillPlateStates(
 ): WaybillPlateState[] {
   const withdrawn = unionWithdrawnNos(withdrawnWaybillNos(rows, csdd), csddWithdrawnRequestNos(requests, csdd));
   const nowMs = now.getTime();
-  return withWaybillRequestStates(
+  const states = withWaybillRequestStates(
     mergeCsddPlateStates(waybillPlateOccupancy([...rows], now, csdd), csdd, nowMs, withdrawn),
     requests,
     nowMs,
     withdrawn,
   );
+  // 19.11: «Stāvoklis no CSDD pirms N min» pie katra numura.
+  return withCsddCheckInfo(states, csdd);
 }
 
 /** Pārlūkā: pavadzīmju forma (ik 3-10 s) paziņo jaunāko numuru stāvokli, apļi to uzreiz parāda. */

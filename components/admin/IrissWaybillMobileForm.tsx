@@ -50,6 +50,7 @@ import {
   type WaybillRequest,
 } from "@/lib/iriss-waybill-requests";
 import { dzintarzemeAcceptedCars, filterWaybillTradeCars, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
+import { csddModelHint } from "@/lib/iriss-waybill-csdd-model";
 
 export type WaybillMobileDraft = { nonce: number; brandModel: string; vin: string; plate: string };
 
@@ -1025,6 +1026,7 @@ export function IrissWaybillAutoEntry({
             aria-label="Marka, modelis"
             autoComplete="off"
           />
+          <CsddModelHintButton brandModel={manualBrandModel} onApply={onManualBrandModel} />
         </div>
       ) : null}
       {showList && b192Empty ? (
@@ -1077,6 +1079,20 @@ export function IrissWaybillAutoEntry({
         <span className={styles.tag}>Nav tirdzniecībā pieņemto auto sarakstā</span>
       ) : null}
     </>
+  );
+}
+
+/**
+ * 19.11: CSDD modeļu sarakstā nav «XC90 2.4 D5 Edition» -> automātika nodod Aivaram. Ieteikums «CSDD modelis: XC90»;
+ * lauks mainās TIKAI pēc pieskāriena (nosūtītais teksts citādi paliek, kā ierakstīts).
+ */
+export function CsddModelHintButton({ brandModel, onApply }: { brandModel: string; onApply: (value: string) => void }) {
+  const hint = csddModelHint(brandModel);
+  if (!hint) return null;
+  return (
+    <button type="button" className={styles.modelHint} onClick={() => onApply(hint.apply)} aria-label={`Lietot CSDD modeli ${hint.model}`}>
+      CSDD modelis: <b>{hint.model}</b>
+    </button>
   );
 }
 

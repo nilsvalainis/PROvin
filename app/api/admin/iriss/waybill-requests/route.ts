@@ -14,7 +14,7 @@ import {
   WaybillPendingSamePlateError,
   type WaybillRequest,
 } from "@/lib/iriss-waybill-requests";
-import { csddPlateSyncState, type CsddPlateSyncState, type CsddPlatesDoc } from "@/lib/iriss-waybill-csdd-plates";
+import { csddPlateSyncState, withCsddCheckInfo, type CsddPlateSyncState, type CsddPlatesDoc } from "@/lib/iriss-waybill-csdd-plates";
 import { ttrVpnStatus } from "@/lib/iriss-ttr-control";
 import { readTtrControlDoc } from "@/lib/iriss-ttr-control-store";
 import { createWaybillRequest, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
@@ -71,7 +71,8 @@ function livePlates(
 ): WaybillPlateState[] {
   // Izdots pieprasījums, ko CSDD jau atsaucis (Pārtraukt), bet PDF vēl nav indeksā - arī neaizņem numuru.
   const withdrawn = unionWithdrawnNos(occupancy.withdrawnNos, csddWithdrawnRequestNos(requests, occupancy.csdd));
-  return withWaybillRequestStates(occupancy.plates, requests, nowMs, withdrawn);
+  // 19.11: pie numura «Stāvoklis no CSDD pirms N min» (apļi saņem šos numurus arī no formas).
+  return withCsddCheckInfo(withWaybillRequestStates(occupancy.plates, requests, nowMs, withdrawn), occupancy.csdd);
 }
 
 /** "Dzēst" paslēptie (tikai šim lietotājam); kļūda nav fatāla - tad vienkārši nekas nav paslēpts. */

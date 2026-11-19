@@ -33,6 +33,9 @@ export type WaybillGauge = {
   validUntil: string;
   id: string;
   number: string;
+  /** Pēdējais CSDD numura nolasījums (no WaybillPlateState), UI «Stāvoklis no CSDD pirms N min». */
+  csddCheckedAt?: string;
+  csddCheckOk?: boolean;
 };
 
 /** Visas 3 tirdzniecības zīmes vienā skatā: aizņemtās ar atlikušo laiku, pārējās "brīvs". */
@@ -57,43 +60,50 @@ export function waybillGaugesFromPlates(
   rows: readonly WaybillGaugeRow[] = [],
   now = new Date(),
 ): WaybillGauge[] {
-  return plates.map((state) => {
-    if (!state.busy || !state.current || state.issuing) {
-      const issuing = state.issuing;
-      return {
-        plate: state.plate,
-        busy: false,
-        status: issuing ? "issuing" : "free",
-        ...(issuing?.manual ? { manual: true } : {}),
-        hoursLeft: 0,
-        minutesLeft: 0,
-        share: 0,
-        brandModel: issuing?.brandModel ?? "",
-        validUntil: "",
-        id: "",
-        number: "",
-      };
-    }
-    const cur = state.current;
-    const until = Date.parse(cur.validUntil);
-    const leftMs = Number.isFinite(until) ? Math.max(0, until - now.getTime()) : 0;
-    const no = cur.number.trim().toUpperCase();
-    const row =
-      (no ? rows.find((r) => (r.number ?? "").trim().toUpperCase() === no && r.id) : undefined) ??
-      rows.find((r) => r.id && displayDealerPlate(r.plate) === state.plate && r.validUntil === cur.validUntil);
+  return plates.map((state) => withGaugeCsddCheck(gaugeFromPlate(state, rows, now), state));
+}
+
+function withGaugeCsddCheck(g: WaybillGauge, state: WaybillPlateState): WaybillGauge {
+  if (!state.csddCheckedAt) return g;
+  return { ...g, csddCheckedAt: state.csddCheckedAt, ...(state.csddCheckOk === undefined ? {} : { csddCheckOk: state.csddCheckOk }) };
+}
+
+function gaugeFromPlate(state: WaybillPlateState, rows: readonly WaybillGaugeRow[], now: Date): WaybillGauge {
+  if (!state.busy || !state.current || state.issuing) {
+    const issuing = state.issuing;
     return {
       plate: state.plate,
-      busy: true,
-      status: waybillCountdownStatus(cur.validUntil, now),
-      hoursLeft: Math.floor(leftMs / HOUR_MS),
-      minutesLeft: Math.ceil(leftMs / 60_000),
-      share: Math.min(1, leftMs / (WAYBILL_MAX_HOURS * HOUR_MS)),
-      brandModel: cur.brandModel || row?.brandModel || "",
-      validUntil: cur.validUntil,
-      id: row?.id ?? "",
-      number: cur.number,
+      busy: false,
+      status: issuing ? "issuing" : "free",
+      ...(issuing?.manual ? { manual: true } : {}),
+      hoursLeft: 0,
+      minutesLeft: 0,
+      share: 0,
+      brandModel: issuing?.brandModel ?? "",
+      validUntil: "",
+      id: "",
+      number: "",
     };
-  });
+  }
+  const cur = state.current;
+  const until = Date.parse(cur.validUntil);
+  const leftMs = Number.isFinite(until) ? Math.max(0, until - now.getTime()) : 0;
+  const no = cur.number.trim().toUpperCase();
+  const row =
+    (no ? rows.find((r) => (r.number ?? "").trim().toUpperCase() === no && r.id) : undefined) ??
+    rows.find((r) => r.id && displayDealerPlate(r.plate) === state.plate && r.validUntil === cur.validUntil);
+  return {
+    plate: state.plate,
+    busy: true,
+    status: waybillCountdownStatus(cur.validUntil, now),
+    hoursLeft: Math.floor(leftMs / HOUR_MS),
+    minutesLeft: Math.ceil(leftMs / 60_000),
+    share: Math.min(1, leftMs / (WAYBILL_MAX_HOURS * HOUR_MS)),
+    brandModel: cur.brandModel || row?.brandModel || "",
+    validUntil: cur.validUntil,
+    id: row?.id ?? "",
+    number: cur.number,
+  };
 }
 
 /** Sākuma kartītes modeļa rinda: pilns nosaukums, bez vārdu nogriešanas. */

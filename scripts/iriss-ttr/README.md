@@ -5,7 +5,7 @@ Neaiztiek: `provin-csdd-vpn`, `provin-csdd-relay`, `provin-listings*`, `provin-m
 
 ## Esošais (serverī, ne repo)
 
-- `iriss-vpn` (systemd, openconnect, `tun-iriss`, disabled). VPN konts ir kopīgs ar Nilu.
+- `iriss-vpn` (systemd, openconnect, `tun-iriss`, disabled). Līdz 19.11 VPN konts bija kopīgs ar Nilu; kopš 19.11 serverim ir savs konts (sk. «Servera VPN konts»).
 - Playwright serveris `/root/iriss-ttr/srv.js` (127.0.0.1:9333), `main.js`, `jx.js`, `probe.js` (22.10 pārbaude: `refill.js`/`save.js` serverī NAV, tie ir šajā mapē).
 
 ## VPN lease (`iriss-vpn-ctl`)
@@ -27,6 +27,7 @@ Neaiztiek: `provin-csdd-vpn`, `provin-csdd-relay`, `provin-listings*`, `provin-m
   Citi `/lease` (nakts reģistrs) pēc atslēgšanas/izmešanas gaida 30 min (`blocked`); worker skatās `blockedForWaybill`.
   `POST /release` hold režīmā dienā VPN neatlaiž (naktī - atlaiž). Aivara `run.sh`/`run2.sh`/`vpnoff.sh` strādā kā līdz šim (ja tie VPN aptur -
   serveris to neatjauno līdz nākamajam pavadzīmes pieprasījumam).
+- `IRISS_VPN_HOLD_247=1` (Nils 19.11): nakts režīma nav - VPN tur 24/7 (`isNight` vienmēr false). Lieto kopā ar servera VPN kontu.
 - `IRISS_VPN_HOLD=0`: vecais režīms - idle autostop `IRISS_VPN_IDLE_MIN` (15-30, noklusējums 20) min pēc pēdējā darba.
 - Admin poga "Man vajag VPN" (`/admin/iriss/pavadzimes`) -> `POST /api/admin/iriss/vpn` -> serveris to nolasa ik 10 s (`GET /api/iriss/aivars/ttr`, Aivara Bearer) un atslēdz VPN. Statusu serveris ziņo `POST /api/iriss/aivars/ttr` (pie izmaiņām un ik 5 min).
 - Serveris nav publiski sasniedzams: jauns caddy maršruts nav vajadzīgs.
@@ -38,8 +39,35 @@ IRISS_API_BASE=https://www.provin.lv
 IRISS_AIVARS_API_TOKEN=<tas pats, kas Vercel IRISS_AIVARS_API_TOKEN>
 IRISS_VPN_IDLE_MIN=20
 # j10: IRISS_VPN_HOLD=1 (noklusējums), IRISS_WAYBILL_ANNUL_LIVE nav (anulēšana izslēgta)
+# 19.11: IRISS_VPN_HOLD_247=1 (servera VPN konts, hold arī naktī); IRISS_WAYBILL_ANNUL_LIVE=0 vienmēr
 # j13: IRISS_CSDD_SYNC_MIN vairs netiek lietots (var dzēst); IRISS_CSDD_SYNC_PERIODIC=0 izslēdz dienas periodisko sync
 ```
+
+### Servera VPN konts (19.11)
+
+Serverim ir savs ĪRISS VPN konts (vairs neizmet Nilu/Tomu un otrādi). Vērtības repo nav un netiek drukātas.
+- Piekļuve: `/root/iriss-vpn/creds-server` (root 600).
+- Drop-in `/etc/systemd/system/iriss-vpn.service.d/20-servera-konts.conf`: `StandardInput=file:/root/iriss-vpn/creds-server`
+  (openconnect parole no stdin) + `Restart=on-failure` (pārraksta `10-no-restart.conf`, jo savu kontu neviens neizmet).
+- `/etc/iriss-ttr/env`: `IRISS_VPN_HOLD_247=1` -> VPN tur arī naktī.
+- Pēc maiņas: `systemctl daemon-reload && systemctl restart iriss-vpn-ctl`; pārbaude `curl -s http://127.0.0.1:9334/status`.
+- Atcelšana: dzēš drop-in `20-servera-konts.conf`, noņem `IRISS_VPN_HOLD_247`, `systemctl daemon-reload`, restart `iriss-vpn-ctl`.
+
+### Anulēšana VIENMĒR izslēgta
+
+`IRISS_WAYBILL_ANNUL_LIVE=0` (vai nav iestatīts) - vienmēr. Serveris nekad neanulē pavadzīmi; aizņemta numura darbs iet Aivaram,
+kas izmanto tikai «Pārtraukt» pēc Nila «jā».
+
+### Tūlītēja numuru sinhronizācija (`plates-sync-now.mjs`)
+
+Tikai lasa: CSDD numuru (B193-7, B762-7, B192-7) stāvoklis -> `POST /api/iriss/aivars/waybill-plates` uzreiz (tas pats, ko worker dara
+periodiski), piem. pēc pavadzīmes, kas izrakstīta tieši CSDD. Ja VPN nav augšā - `lease` (purpose waybill); ja VPN lieto Nils/Toms - neko.
+
+```
+systemd-run --wait --collect -p EnvironmentFile=/etc/iriss-ttr/env /usr/bin/node /root/iriss-ttr/ctl/plates-sync-now.mjs
+```
+
+Uzstāda `install-waybill-worker.sh` (blakus `waybill-worker-core.mjs`).
 
 Uzstādīšana (root): `bash install-vpn-ctl.sh` (backup uz `/root/backup-pavadzimes-<datums>/`).
 

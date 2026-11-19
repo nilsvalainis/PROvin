@@ -5,6 +5,8 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
+# Nils 19.11: dienas logs 09:30-12:50, pēc 13:00 vairs nemēģina (run.sh noklusējums 0600)
+Environment=REGISTRS_DEADLINE_HHMM=1300
 ExecStart=/opt/csdd-registrs/run.sh
 TimeoutStartSec=25min
 Nice=10

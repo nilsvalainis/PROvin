@@ -31,6 +31,11 @@ export type CsddPlatesDoc = {
 
 /** Momentuzņēmums ir "svaigs" (UI var rakstīt "pārbaudīts CSDD"). Vecāks joprojām skaitās aizņemts līdz validUntil. */
 export const CSDD_PLATES_FRESH_MS = 15 * 60 * 1000;
+/**
+ * UI (19.11): pie numura «Stāvoklis no CSDD pirms N min»; vecāks par 30 min (vai kļūda / VPN izslēgts) - dzintara krāsā
+ * «var būt novecojis». Aizņemtības un «Pārrakstīt» loģika paliek pie CSDD_PLATES_FRESH_MS (15 min).
+ */
+export const CSDD_PLATES_UI_STALE_MS = 90 * 60 * 1000; // 19.11: periodiskā sync ik ~60-75 min - 30 min slieksnis dzeltētu gandrīz vienmēr
 const WAYBILL_NO_RE = /^P\d{5,6}$/;
 
 export function emptyCsddPlatesDoc(): CsddPlatesDoc {
@@ -230,4 +235,44 @@ export function csddPlateSyncState(
   const checked = entry ? Date.parse(entry.checkedAt) : Number.NaN;
   if (entry?.ok && Number.isFinite(checked) && nowMs - checked <= CSDD_PLATES_FRESH_MS) return "fresh";
   return vpn === "down" ? "vpn_down" : "stale";
+}
+
+/** Pievieno katram numuram pēdējā CSDD nolasījuma laiku (csddCheckedAt) un vai tas izdevās (csddCheckOk). */
+export function withCsddCheckInfo<T extends Pick<WaybillPlateState, "plate">>(
+  states: readonly T[],
+  doc: CsddPlatesDoc | null | undefined,
+): Array<T & Pick<WaybillPlateState, "csddCheckedAt" | "csddCheckOk">> {
+  return states.map((state) => {
+    const want = compactDealerPlate(state.plate);
+    const entry = doc?.plates.find((e) => compactDealerPlate(e.plate) === want);
+    if (!entry || !Number.isFinite(Date.parse(entry.checkedAt))) return { ...state };
+    return { ...state, csddCheckedAt: entry.checkedAt, csddCheckOk: entry.ok };
+  });
+}
+
+/** Cik sen: «tikko», «pirms 12 min», «pirms 3 h», «pirms 2 d». */
+function agoText(ageMs: number): string {
+  const min = Math.floor(Math.max(0, ageMs) / 60_000);
+  if (min < 1) return "tikko";
+  if (min < 60) return `pirms ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `pirms ${h} h`;
+  return `pirms ${Math.floor(h / 24)} d`;
+}
+
+/**
+ * Teksts pie numura: «Stāvoklis no CSDD pirms 12 min». stale=true (UI dzintara krāsā + «var būt novecojis"), ja
+ * nolasījums vecāks par 30 min, neizdevās, VPN izslēgts vai nolasījuma nav vispār.
+ */
+export function csddPlateCheckText(
+  info: Pick<WaybillPlateState, "csddCheckedAt" | "csddCheckOk">,
+  nowMs = Date.now(),
+  opts: { vpnDown?: boolean } = {},
+): { text: string; stale: boolean } {
+  const checked = Date.parse(info.csddCheckedAt ?? "");
+  if (!Number.isFinite(checked)) return { text: "Stāvoklis no CSDD nav nolasīts", stale: true };
+  const age = nowMs - checked;
+  const base = `Stāvoklis no CSDD ${agoText(age)}`;
+  const stale = info.csddCheckOk === false || opts.vpnDown === true || age > CSDD_PLATES_UI_STALE_MS;
+  return { text: stale ? `${base} - var būt novecojis` : base, stale };
 }

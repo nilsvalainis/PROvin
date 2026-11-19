@@ -11,7 +11,9 @@
 // - IRISS_VPN_HOLD=0: vecais režīms - idle autostop pēc IRISS_VPN_IDLE_MIN (15-30, nokl. 20) min, /release saīsina lease.
 // - Aivara skripti (run.sh/run2.sh/vpnoff.sh, systemctl start/stop iriss-vpn) strādā kā līdz šim: ja tie VPN aptur,
 //   tas skaitās ārēja atslēgšana (serveris pats nepieslēdzas).
-// Env (/etc/iriss-ttr/env, root 600): IRISS_API_BASE, IRISS_AIVARS_API_TOKEN, IRISS_VPN_IDLE_MIN, IRISS_VPN_HOLD.
+// - IRISS_VPN_HOLD_247=1 (Nils 19.11): serverim savs ĪRISS VPN konts - hold arī naktī (nakts režīma nav).
+// Env (/etc/iriss-ttr/env, root 600): IRISS_API_BASE, IRISS_AIVARS_API_TOKEN, IRISS_VPN_IDLE_MIN, IRISS_VPN_HOLD,
+//   IRISS_VPN_HOLD_247.
 // Nekad neizdrukā tokenu.
 
 import { execFile } from "node:child_process";
@@ -28,8 +30,10 @@ import {
 } from "./vpn-lease.mjs";
 import { isCsddSyncWindow } from "./csdd-sync-schedule.mjs";
 
-/** Nakts (19:00-08:00 Rīgas laikā): hold netiek turēts. */
-const isNight = (ms = Date.now()) => !isCsddSyncWindow(ms);
+/** IRISS_VPN_HOLD_247=1 (Nils 19.11): serverim ir savs ĪRISS VPN konts - VPN tur 24/7, nakts režīma nav. */
+const HOLD_247 = process.env.IRISS_VPN_HOLD_247 === "1";
+/** Nakts (19:00-08:00 Rīgas laikā): hold netiek turēts (izņemot IRISS_VPN_HOLD_247=1). */
+const isNight = (ms = Date.now()) => !HOLD_247 && !isCsddSyncWindow(ms);
 
 const run = promisify(execFile);
 const PORT = 9334;

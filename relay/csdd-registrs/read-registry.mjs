@@ -2,7 +2,7 @@
 /**
  * CSDD tirdzniecības reģistrs (ows.csdd.gov.lv:7775) -> PROVIN Autoparks. Bez AI. TIKAI LASĪŠANA.
  *
- * Palaiž run.sh (systemd taimeris 03:30 Europe/Riga, atkārto ik 20 min līdz 06:00). VPN lease caur vpn-ctl (9334).
+ * Palaiž run.sh (systemd taimeris 09:30 Europe/Riga, atkārto ik 20 min līdz 12:50; Nils 19.11). VPN lease caur vpn-ctl (9334).
  * Katrai firmai sava pieslēgšanās un savs pārlūka konteksts: IRISS (CSDD_TTR_ENV_FILE) un DZA (CSDD_TTR_ENV_FILE_DZA,
  * firma kiest_id 5092). Saraksts kā Aivara export-pien.js: ex('rep_lapt_tl'), ķeksis #lapt_veids, meklēšana, lapošana
  * (lib/csdd-session.mjs). Tad JSON `iriss-csdd-tirdzn-registrs/v1` + snapshot -> POST uz PROVIN importētāju.

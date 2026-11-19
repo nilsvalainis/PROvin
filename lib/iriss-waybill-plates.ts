@@ -44,6 +44,10 @@ export type WaybillPlateState = {
   };
   /** Klienta pusē: stāvoklis vēl nav ielādēts no servera (rāda "…", nevis "brīvs"). Serveris to nesūta. */
   loading?: boolean;
+  /** Pēdējais CSDD numura nolasījums (worker sync.js), UI «Stāvoklis no CSDD pirms N min». Nav - nav nolasīts. */
+  csddCheckedAt?: string;
+  /** Pēdējais nolasījums izdevās (false - kļūda, rāda kā «var būt novecojis»). */
+  csddCheckOk?: boolean;
 };
 
 export type WaybillWithdrawnRow = {

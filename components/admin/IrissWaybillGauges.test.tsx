@@ -81,3 +81,41 @@ describe("Pavadzīmju sākuma hero (v11d-fix stikls)", () => {
     expect(html.match(/aria-pressed=/g)?.length).toBe(3);
   });
 });
+
+describe("Stāvoklis no CSDD pie numura (19.11)", () => {
+  const NOW = Date.parse("2026-11-19T10:00:00.000Z");
+  const free = {
+    plate: "B762-7",
+    busy: false,
+    status: "free",
+    hoursLeft: 0,
+    minutesLeft: 0,
+    share: 0,
+    brandModel: "",
+    validUntil: "",
+    id: "",
+    number: "",
+  } as const;
+
+  it("svaigs nolasījums - pelēks «pirms 12 min», bez brīdinājuma", () => {
+    const html = renderHtml(
+      <WaybillPlateCards gauges={[{ ...free, csddCheckedAt: "2026-11-19T09:48:00.000Z", csddCheckOk: true }]} loading={false} nowMs={NOW} />,
+    );
+    expect(html).toContain("Stāvoklis no CSDD pirms 12 min");
+    expect(html).not.toContain("var būt novecojis");
+    expect(html).not.toContain('data-stale="1"');
+  });
+
+  it("vecāks par 90 min - «var būt novecojis» un iezīmēts kā vecs", () => {
+    const html = renderHtml(
+      <WaybillPlateCards gauges={[{ ...free, csddCheckedAt: "2026-11-19T08:20:00.000Z", csddCheckOk: true }]} loading={false} nowMs={NOW} />,
+    );
+    expect(html).toContain("var būt novecojis");
+    expect(html).toContain('data-stale="1"');
+  });
+
+  it("bez nowMs (vecs izsaukums) - rinda netiek rādīta", () => {
+    const text = renderText(<WaybillPlateCards gauges={[{ ...free, csddCheckedAt: "2026-11-19T09:48:00.000Z" }]} loading={false} />);
+    expect(text).not.toContain("Stāvoklis no CSDD");
+  });
+});
