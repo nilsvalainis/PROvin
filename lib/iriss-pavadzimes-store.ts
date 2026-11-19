@@ -1,6 +1,6 @@
 import "server-only";
 
-import { get, put } from "@vercel/blob";
+import { del, get, put } from "@vercel/blob";
 import fs from "fs/promises";
 import path from "path";
 import { extractPdfTextOnServer } from "@/lib/pdf-text-extract-server";
@@ -15,6 +15,12 @@ import {
   waybillIdFromNumber,
 } from "@/lib/iriss-pavadzimes-parse";
 import { isIrissPavadzimeSyncBlocked } from "@/lib/iriss-pavadzimes-sync-blocklist";
+import {
+  clearTombstonesForNumber,
+  isWaybillTombstoned,
+  parseTombstones,
+  removeWaybillFromIndex,
+} from "@/lib/iriss-pavadzimes-delete";
 import {
   emptyIrissPavadzimeRecord,
   type IrissPavadzimeRecord,
@@ -69,11 +75,15 @@ function parseIndex(raw: string): IrissPavadzimesIndex {
   try {
     const o = JSON.parse(raw) as Partial<IrissPavadzimesIndex>;
     if (!o || typeof o !== "object") return emptyIndex();
-    const items = withoutSyncBlocked(Array.isArray(o.items) ? o.items.filter(isRecord) : []);
+    const deleted = parseTombstones(o.deleted);
+    const items = withoutSyncBlocked(Array.isArray(o.items) ? o.items.filter(isRecord) : []).filter(
+      (rec) => !isWaybillTombstoned(deleted, { id: rec.id }),
+    );
     return {
       version: 1,
       updatedAt: typeof o.updatedAt === "string" ? o.updatedAt : new Date().toISOString(),
       items,
+      ...(deleted.length ? { deleted } : {}),
     };
   } catch {
     return emptyIndex();
@@ -333,6 +343,8 @@ async function syncIrissPavadzimesFromDropboxOnce(): Promise<IrissPavadzimesSync
       for (const file of files) {
         const fromName = parseCsddWaybillFileName(file.name);
         if (!fromName.number) continue;
+        // Administrators ierakstu dzēsa: Dropbox fails paliek, bet sarakstā tas neatgriežas.
+        if (isWaybillTombstoned(index.deleted, { number: fromName.number, dropboxId: file.id })) continue;
         if (
           isIrissPavadzimeSyncBlocked({
             number: fromName.number,
@@ -376,13 +388,16 @@ async function syncIrissPavadzimesFromDropboxOnce(): Promise<IrissPavadzimesSync
       const fresh = await readIndex();
       // Paralēli (piem. manuāla augšupielāde) pievienoti ieraksti netiek pārrakstīti.
       for (const item of fresh.items) if (!byKey.has(item.id)) byKey.set(item.id, item);
-      const nextItems = sortIrissPavadzimes(withoutSyncBlocked([...byKey.values()]));
+      // Paralēli dzēsts (administrators) - nepārrakstām atpakaļ.
+      const nextItems = sortIrissPavadzimes(withoutSyncBlocked([...byKey.values()])).filter(
+        (rec) => !isWaybillTombstoned(fresh.deleted, { id: rec.id, number: rec.number, dropboxId: rec.dropboxId }),
+      );
       const indexChanged = JSON.stringify(fresh.items) !== JSON.stringify(nextItems);
       if (indexChanged) {
         await backupIndexBeforeWrite(fresh).catch((e) => {
           console.error("[iriss pavadzimes] index backup failed", e instanceof Error ? e.message : e);
         });
-        const wrote = await writeIndex({ version: 1, updatedAt: nowIso, items: nextItems })
+        const wrote = await writeIndex({ version: 1, updatedAt: nowIso, items: nextItems, ...(fresh.deleted ? { deleted: fresh.deleted } : {}) })
           .then(() => true)
           .catch(() => false);
         if (wrote) {
@@ -508,13 +523,54 @@ export async function uploadIrissPavadzime(input: UploadWaybillInput): Promise<I
     nowIso,
   );
   const nextItems = sortIrissPavadzimes(withoutSyncBlocked([...index.items.filter((x) => x.id !== id), rec]));
-  await writeIndex({ version: 1, updatedAt: nowIso, items: nextItems });
+  // Apzināta augšupielāde / jauns rezultāts ar šo numuru: iepriekšējā dzēšanas atzīme vairs nav spēkā.
+  const deleted = clearTombstonesForNumber(index.deleted, rec.number).filter((t) => t.id !== id);
+  await writeIndex({ version: 1, updatedAt: nowIso, items: nextItems, ...(deleted.length ? { deleted } : {}) });
   if (existing) {
     await rememberWaybillChanges([existing], [rec]).catch((e) => {
       console.error("[change-history]", e instanceof Error ? e.message : e);
     });
   }
   return rec;
+}
+
+async function deletePdfBytes(blobPath: string): Promise<void> {
+  if (!blobPath) return;
+  const r = resolveStorage();
+  if (r.kind === "blob") {
+    // Tikai šī saraksta PDF kopijas (nekad cits Blob ceļš).
+    if (!blobPath.startsWith(`${BLOB_PREFIX}pdf/`)) return;
+    await del(blobPath, { token: r.token });
+    return;
+  }
+  const abs = path.resolve(path.isAbsolute(blobPath) ? blobPath : path.join(process.cwd(), blobPath));
+  if (!abs.startsWith(path.resolve(r.dir, "pdf") + path.sep)) return;
+  await fs.rm(abs, { force: true });
+}
+
+export type DeleteIrissPavadzimeResult =
+  | { ok: true; removed: IrissPavadzimeRecord }
+  | { ok: false; reason: "not_found" };
+
+/**
+ * Administrators: dzēš TIEŠI vienu ierakstu (indekss + tā PDF kopija Blob/diskā). Pirms tam indeksa rezerves kopija.
+ * CSDD un Dropbox neaiztiek; atzīme indeksā neļauj Dropbox sinhronizācijai to atjaunot.
+ */
+export async function deleteIrissPavadzime(id: string, by: string): Promise<DeleteIrissPavadzimeResult> {
+  if (!isSafeIrissPavadzimeId(id)) return { ok: false, reason: "not_found" };
+  const index = await readIndex();
+  const nowIso = new Date().toISOString();
+  const result = removeWaybillFromIndex(index, id, by, nowIso);
+  if (!result.ok) return result;
+  await backupIndexBeforeWrite(index).catch((e) => {
+    console.error("[iriss pavadzimes] index backup failed", e instanceof Error ? e.message : e);
+  });
+  await writeIndex(result.index);
+  // PDF pēc indeksa: ja tas neizdodas, ieraksts jau nav sarakstā (fails paliek kā bārenis, nekas cits netiek dzēsts).
+  await deletePdfBytes(result.removed.blobPath).catch((e) => {
+    console.error("[iriss pavadzimes] pdf delete failed", e instanceof Error ? e.message : e);
+  });
+  return { ok: true, removed: result.removed };
 }
 
 export async function restoreIrissPavadzimeSnapshot(
@@ -530,7 +586,7 @@ export async function restoreIrissPavadzimeSnapshot(
   const next = applyIrissWaybillSnapshot(existing, snapshot);
   next.updatedAt = new Date().toISOString();
   const items = sortIrissPavadzimes([...index.items.filter((row) => row.id !== id), next]);
-  await writeIndex({ version: 1, updatedAt: next.updatedAt, items });
+  await writeIndex({ version: 1, updatedAt: next.updatedAt, items, ...(index.deleted ? { deleted: index.deleted } : {}) });
   await rememberWaybillChanges([existing], [next], "restore", by).catch((e) => {
     console.error("[change-history]", e instanceof Error ? e.message : e);
   });

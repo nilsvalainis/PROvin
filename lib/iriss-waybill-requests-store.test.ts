@@ -34,6 +34,7 @@ const {
   createWaybillRequest,
   retryWaybillRequest,
   findWaybillByClientRequestId,
+  replaceBusyWaybillRequest,
 } = await import("@/lib/iriss-waybill-requests-store");
 
 const future = new Date(Date.now() + 3_600_000).toISOString();
@@ -384,5 +385,73 @@ describe("07.11 (B762): idempotence and stuck jobs", () => {
     expect(res?.lastReplyText).toContain("vispirms pārbauda CSDD");
     // Svaigu darbu (ziņas < 5 min) atkārtot nedrīkst - Aivars vēl strādā.
     expect(await retryWaybillRequest({ id: "wbr_fresh", ...actor })).toBeNull();
+  });
+});
+
+describe("19.11: «Pārrakstīt» pēc «numurs CSDD aizņemts»", () => {
+  beforeEach(() => seed([]));
+
+  it("worker result plate_busy saglabā aktīvo numuru pieprasījumā (tikai kļūdai)", async () => {
+    seed([sample({ id: "wbr_busy", status: "in_progress", pickedBy: "auto", pickedAt: now })]);
+    const res = await completeWaybillRequest({
+      id: "wbr_busy",
+      ok: false,
+      by: "auto",
+      errorReason: "Numurs B193-7 CSDD aizņemts (P02812 MB ML 350). Jaunā pavadzīme nav izveidota.",
+      activeWaybillNo: "p02812",
+    });
+    expect(res).toMatchObject({ status: "error", activeWaybillNo: "P02812" });
+    expect((await readWaybillRequestsDoc()).requests[0]?.activeWaybillNo).toBe("P02812");
+  });
+
+  it("apstiprināts: tas pats pieprasījums atkal rindā ar replaceWaybillNo = aktīvā, derīgums no šī brīža", async () => {
+    const old = new Date(Date.now() - 2 * 3_600_000).toISOString();
+    seed([
+      sample({
+        id: "wbr_busy",
+        status: "error",
+        activeWaybillNo: "P02812",
+        errorReason: "Numurs B193-7 CSDD aizņemts (P02812).",
+        validHours: 12,
+        validFrom: old,
+        validUntil: old,
+        pickedBy: "auto",
+        pickedAt: old,
+      }),
+    ]);
+    const res = await replaceBusyWaybillRequest({ id: "wbr_busy", waybillNo: "P02812", actorId: "usr_toms", actorName: "Toms" });
+    expect(res).toMatchObject({
+      ok: true,
+      request: { id: "wbr_busy", status: "queued", plateBusyAtCreate: true, replaceWaybillNo: "P02812", activeWaybillNo: "", attempts: 1, pickedBy: "" },
+    });
+    const stored = (await readWaybillRequestsDoc()).requests[0];
+    expect(stored?.replaceWaybillNo).toBe("P02812");
+    expect(Date.parse(stored?.validUntil ?? "")).toBeGreaterThan(Date.now() + 11 * 3_600_000);
+    expect((await readWaybillRequestsDoc()).events.at(-1)?.text).toContain("pārtraukt P02812");
+    expect((await readWaybillRequestsDoc()).events.at(-1)?.text).not.toMatch(/anul/i);
+    expect(mem.audits).toEqual([{ action: "waybill_retry", target: "wbr_busy" }]);
+  });
+
+  it("cits numurs, nekā saglabātais aktīvais, vai pieprasījums bez piedāvājuma - neko nemaina", async () => {
+    seed([
+      sample({ id: "wbr_busy", status: "error", activeWaybillNo: "P02812" }),
+      sample({ id: "wbr_err", status: "error", errorReason: "cits" }),
+    ]);
+    expect(await replaceBusyWaybillRequest({ id: "wbr_busy", waybillNo: "P02813", ...actor })).toEqual({ ok: false, reason: "not_offered" });
+    expect(await replaceBusyWaybillRequest({ id: "wbr_err", waybillNo: "P02812", ...actor })).toEqual({ ok: false, reason: "not_offered" });
+    expect(await replaceBusyWaybillRequest({ id: "wbr_none", waybillNo: "P02812", ...actor })).toEqual({ ok: false, reason: "not_found" });
+    expect((await readWaybillRequestsDoc()).requests.map((r) => r.status)).toEqual(["error", "error"]);
+  });
+
+  it("ja numuram jau ir cits darbā esošs pieprasījums - neliek otru rindā", async () => {
+    seed([
+      sample({ id: "wbr_busy", status: "error", activeWaybillNo: "P02812" }),
+      sample({ id: "wbr_other", status: "queued" }),
+    ]);
+    expect(await replaceBusyWaybillRequest({ id: "wbr_busy", waybillNo: "P02812", ...actor })).toEqual({
+      ok: false,
+      reason: "pending",
+      pendingId: "wbr_other",
+    });
   });
 });

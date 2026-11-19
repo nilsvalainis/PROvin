@@ -42,7 +42,13 @@ import {
   waybillPlateChip,
   type WaybillPlateState,
 } from "@/lib/iriss-waybill-plates";
-import { isStaleWaybillRequest, type WaybillAivarsReply, type WaybillRequest } from "@/lib/iriss-waybill-requests";
+import {
+  isStaleWaybillRequest,
+  waybillReplaceButtonText,
+  WAYBILL_PLATE_STATUS_STALE_TEXT,
+  type WaybillAivarsReply,
+  type WaybillRequest,
+} from "@/lib/iriss-waybill-requests";
 import { dzintarzemeAcceptedCars, filterWaybillTradeCars, type WaybillTradeCar } from "@/lib/iriss-waybill-trade-cars";
 
 export type WaybillMobileDraft = { nonce: number; brandModel: string; vin: string; plate: string };
@@ -67,6 +73,8 @@ export function IrissWaybillMobileForm({
   onSubmit,
   onRetry,
   onCancel,
+  onReplace,
+  plateSync,
   dismissedIds,
   onDismiss,
   onPickerOpen,
@@ -88,6 +96,13 @@ export function IrissWaybillMobileForm({
   onSubmit: (payload: WaybillMobilePayload) => Promise<boolean>;
   onRetry: (id: string) => void;
   onCancel?: (id: string) => void;
+  /**
+   * «Pārrakstīt» (numurs CSDD aizņemts): izsauc TIKAI pēc «Jā» logā. Nav padots (partneris) - pogas nav.
+   * Serveris pārbauda vēlreiz (partneris 403, tikai saglabātais aktīvais numurs).
+   */
+  onReplace?: (id: string, waybillNo: string) => void;
+  /** CSDD numura nolasījuma svaigums (vpn_down/stale -> brīdinājums pie «Pārrakstīt»). */
+  plateSync?: ReadonlyArray<{ plate: string; state: string }>;
   /** "Dzēst" paslēptie (tikai šajā sarakstā; Arhīvs nemainās). */
   dismissedIds?: readonly string[];
   /** Izsauc TIKAI pēc pogas "Jā" apstiprinājuma logā. */
@@ -109,6 +124,7 @@ export function IrissWaybillMobileForm({
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [askDismiss, setAskDismiss] = useState<WaybillMobileRequestRow | null>(null);
   const [askCancel, setAskCancel] = useState<WaybillMobileRequestRow | null>(null);
+  const [askReplace, setAskReplace] = useState<WaybillMobileRequestRow | null>(null);
   const patch = (next: Partial<WaybillMobileFormState>) => setForm((prev) => ({ ...prev, ...next }));
 
   // Pirmais brīvais numurs, kamēr lietotājs nav izvēlējies pats.
@@ -172,8 +188,15 @@ export function IrissWaybillMobileForm({
   const reps = waybillRepresentativeChoices({ owner: form.car?.owner, plate: shownPlate });
   const rep = waybillMobileRepresentative({ representative: form.representative, plate: shownPlate, car: form.car });
   const rows = useMemo(
-    () => waybillMobileRequestRows(requests, replies, WAYBILL_MOBILE_CURRENT_LIMIT, { nowMs, dismissed: dismissedIds, plates }),
-    [requests, replies, nowMs, dismissedIds, plates],
+    () =>
+      waybillMobileRequestRows(requests, replies, WAYBILL_MOBILE_CURRENT_LIMIT, {
+        nowMs,
+        dismissed: dismissedIds,
+        plates,
+        canReplace: Boolean(onReplace),
+        plateSync,
+      }),
+    [requests, replies, nowMs, dismissedIds, plates, onReplace, plateSync],
   );
   const working = rows.filter((r) => r.progress.step < 3 && r.tone !== "bad").length;
   const shownError = localError ?? error;
@@ -462,6 +485,7 @@ export function IrissWaybillMobileForm({
               onRetry={onRetry}
               onCancel={onCancel ? setAskCancel : undefined}
               onDismiss={onDismiss ? setAskDismiss : undefined}
+              onReplace={onReplace ? setAskReplace : undefined}
             />
           ))
         )}
@@ -485,6 +509,20 @@ export function IrissWaybillMobileForm({
             onCancel(id);
           }}
           onNo={() => setAskCancel(null)}
+        />
+      ) : null}
+
+      {askReplace && onReplace && askReplace.replaceWaybillNo ? (
+        <WaybillReplaceDialog
+          title={askReplace.title}
+          waybillNo={askReplace.replaceWaybillNo}
+          staleWarning={askReplace.plateStatusStale}
+          onYes={() => {
+            const { id, replaceWaybillNo } = askReplace;
+            setAskReplace(null);
+            onReplace(id, replaceWaybillNo);
+          }}
+          onNo={() => setAskReplace(null)}
         />
       ) : null}
 
@@ -585,6 +623,73 @@ export function WaybillCancelDialog({
 }
 
 /**
+ * «Pārrakstīt» apstiprinājums: pārtrauc TIKAI norādīto pavadzīmi (CSDD «Pārtraukt», nekad «Anulēt») un izraksta jaunu.
+ * Nosūta TIKAI poga «Jā, pārrakstīt»; fons, Escape un «Nē» - nekas nenotiek.
+ */
+export function WaybillReplaceDialog({
+  title,
+  waybillNo,
+  staleWarning,
+  onYes,
+  onNo,
+}: {
+  title: string;
+  waybillNo: string;
+  staleWarning: boolean;
+  onYes: () => void;
+  onNo: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onNo();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onNo]);
+  const backdropClose = useModalBackdropClose(onNo);
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#0f172a66] p-4" {...backdropClose}>
+      <div
+        className="w-full max-w-[360px] rounded-2xl border border-[var(--iriss-line)] bg-white p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="wb-replace-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 id="wb-replace-title" className="m-0 text-[15px] font-semibold text-[var(--iriss-ink)] [overflow-wrap:anywhere]">
+          {waybillReplaceButtonText(waybillNo)}{title ? ` - ${title}` : ""}?
+        </h3>
+        <p className="mt-2 text-[13px] leading-snug text-[#5e636e]">
+          Vai tiešām pārtraukt {waybillNo} un izrakstīt jaunu? Pārtrauc tikai {waybillNo}.
+        </p>
+        {staleWarning ? (
+          <p className="mt-2 rounded-[10px] bg-[#FEF3C7] px-3 py-2 text-[12.5px] leading-snug text-[#92400e]" role="note">
+            {WAYBILL_PLATE_STATUS_STALE_TEXT}
+          </p>
+        ) : null}
+        <div className="mt-3.5 flex flex-col gap-2">
+          <button
+            type="button"
+            className="min-h-11 rounded-[10px] bg-[var(--iriss-graphite)] text-[12.5px] font-semibold text-white"
+            style={{ color: "white" }}
+            onClick={onYes}
+          >
+            Jā, pārrakstīt
+          </button>
+          <button
+            type="button"
+            className="min-h-11 rounded-[10px] border border-[var(--iriss-line)] bg-white text-[12.5px] font-semibold text-[var(--iriss-ink)]"
+            onClick={onNo}
+          >
+            Nē
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
  * "Dzēst" apstiprinājums: ierakstu noņem TIKAI poga "Jā" (fons, Escape un "Nē" - nekas nenotiek).
  * Tikai paslēpj šajā sarakstā; pavadzīme, PDF, Dropbox un Arhīvs paliek nemainīti.
  */
@@ -635,9 +740,12 @@ export function WaybillLiveRow({
   onRetry,
   onCancel,
   onDismiss,
+  onReplace,
 }: {
   row: WaybillMobileRequestRow;
   onRetry?: (id: string) => void;
+  /** Atver «Pārrakstīt» apstiprinājumu (pats neko nesūta). */
+  onReplace?: (row: WaybillMobileRequestRow) => void;
   /** Atver atcelšanas logu (pats neko neatceļ). */
   onCancel?: (row: WaybillMobileRequestRow) => void;
   /** Atver apstiprinājumu (pats neko nenoņem). */
@@ -702,6 +810,16 @@ export function WaybillLiveRow({
           {row.note ? <p className={styles.progNote}>{row.note}</p> : null}
         </>
       )}
+      {row.replaceWaybillNo && onReplace ? (
+        <>
+          <div className={styles.rowActions}>
+            <button type="button" className={styles.rowBtn} onClick={() => onReplace(row)}>
+              {waybillReplaceButtonText(row.replaceWaybillNo)}
+            </button>
+          </div>
+          {row.plateStatusStale ? <p className={styles.progNote}>{WAYBILL_PLATE_STATUS_STALE_TEXT}</p> : null}
+        </>
+      ) : null}
       {row.canCancel && onCancel ? (
         <div className={styles.rowActions}>
           <button type="button" className={styles.rowBtn} onClick={() => onCancel(row)}>

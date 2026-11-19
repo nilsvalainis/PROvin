@@ -9,6 +9,7 @@ import {
   waybillCancelConfirmText,
   waybillDisplayText,
   waybillRequestCancellable,
+  waybillReplaceRequestBody,
   waybillRequestRetryable,
   type WaybillAivarsReply,
   type WaybillRequest,
@@ -146,6 +147,20 @@ function tradeCarsFrom(data: unknown): { cars: WaybillTradeCar[]; fromAutoparks:
   return Array.isArray(list) ? { cars: list as WaybillTradeCar[], fromAutoparks: tradeCarsSource === "autoparks" } : null;
 }
 
+function replaceInfoFrom(data: unknown): { canReplace: boolean; plateSync: { plate: string; state: string }[] } | null {
+  if (!data || typeof data !== "object" || !("canReplace" in data)) return null;
+  const { canReplace, plateSync } = data as { canReplace?: unknown; plateSync?: unknown };
+  return {
+    canReplace: canReplace === true,
+    plateSync: Array.isArray(plateSync)
+      ? plateSync.filter(
+          (p): p is { plate: string; state: string } =>
+            Boolean(p) && typeof (p as { plate?: unknown }).plate === "string" && typeof (p as { state?: unknown }).state === "string",
+        )
+      : [],
+  };
+}
+
 function firstFreePlate(plates: WaybillPlateState[]): string {
   return plates.find((row) => !row.busy)?.plate || IRISS_DEALER_PLATES[0];
 }
@@ -193,6 +208,9 @@ export function IrissKomandaAivaramChat({
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
   /** Datora "Atcelt pieprasījumu": lietotnes logs (ne window.confirm). */
   const [askCancel, setAskCancel] = useState<WaybillRequest | null>(null);
+  /** «Pārrakstīt» tiesības (tikai GET; partnerim false) un CSDD numura nolasījuma svaigums. */
+  const [canReplace, setCanReplace] = useState(false);
+  const [plateSync, setPlateSync] = useState<{ plate: string; state: string }[]>([]);
   /** 07.11: viena iesniegšana = viena atslēga; dubults klikšķis vai atkārtots POST nerada otru pieprasījumu. */
   const submitKey = useRef<string | null>(null);
   const submitting = useRef(false);
@@ -235,8 +253,14 @@ export function IrissKomandaAivaramChat({
       const res = await fetch(url, { credentials: "include", cache: "no-store" });
       const raw = res.clone();
       const data = await readChatResponse(res);
+      const rawJson = (await raw.json().catch(() => null)) as unknown;
+      const replaceInfo = replaceInfoFrom(rawJson);
+      if (replaceInfo) {
+        setCanReplace(replaceInfo.canReplace);
+        setPlateSync(replaceInfo.plateSync);
+      }
       if (withCars) {
-        const cars = tradeCarsFrom(await raw.json().catch(() => null));
+        const cars = tradeCarsFrom(rawJson);
         if (cars) {
           carsLoaded.current = true;
           setTradeCars(cars.cars);
@@ -466,6 +490,31 @@ export function IrissKomandaAivaramChat({
     }
   }
 
+  /** «Pārrakstīt» (pēc «Jā» logā): tas pats pieprasījums vēlreiz ar replaceWaybillNo = aktīvā pavadzīme. */
+  async function replace(id: string, waybillNo: string) {
+    try {
+      const res = await fetch(`/api/admin/iriss/waybill-requests/${encodeURIComponent(id)}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(waybillReplaceRequestBody(waybillNo)),
+      });
+      const data = await readChatResponse(res);
+      if (isChatBusy(data) || isChatError(data) || !isChatOk(data)) {
+        setError(chatErrorMessage(data, "Neizdevās nosūtīt."));
+        void load();
+        return;
+      }
+      setChat((prev) => ({
+        ...withReplies(data),
+        vehicles: data.vehicles.length ? data.vehicles : prev.vehicles,
+        plates: data.plates.length ? data.plates : prev.plates,
+      }));
+    } catch {
+      setError("Neizdevās nosūtīt.");
+    }
+  }
+
   /** Admins: "Saglabāt Dropbox vēlreiz" pēc kļūdas (serveris kolēģim to aizliedz). */
   async function retryDropbox(id: string) {
     try {
@@ -500,6 +549,8 @@ export function IrissKomandaAivaramChat({
         onSubmit={submitMobile}
         onRetry={(id) => void retry(id)}
         onCancel={(id) => void cancel(id)}
+        onReplace={canReplace ? (id, waybillNo) => void replace(id, waybillNo) : undefined}
+        plateSync={plateSync}
         dismissedIds={dismissedIds}
         onDismiss={(id) => void dismiss(id)}
         onPickerOpen={() => {

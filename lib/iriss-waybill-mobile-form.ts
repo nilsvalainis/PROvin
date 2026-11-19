@@ -29,6 +29,7 @@ import {
   waybillNoProgressMinutes,
   waybillNoProgressText,
   waybillRequestDismissable,
+  waybillReplaceOffer,
   waybillStuckStageText,
   type WaybillAivarsReply,
   type WaybillAutoMode,
@@ -294,6 +295,10 @@ export type WaybillMobileRequestRow = {
   pdfFileName: string;
   /** Dropbox saglabāšanas kļūda (tikai adminam; kolēģim serveris to nesūta). */
   dropboxError: string;
+  /** «Pārrakstīt (pārtraukt P0xxxx un izrakstīt jaunu)»: aktīvā pavadzīme, ko drīkst pārtraukt; tukšs = pogas nav. */
+  replaceWaybillNo: string;
+  /** CSDD numura nolasījums vecs vai VPN izslēgts: «Numura statuss var būt novecojis». */
+  plateStatusStale: boolean;
 };
 
 export { waybillWrittenOffAtMs };
@@ -451,6 +456,10 @@ export function waybillMobileRequestRows(
      * aktīva (CSDD derīgums garāks par pieprasīto), kartīte nav «Izrakstīta … atkal brīvs».
      */
     plates?: ReadonlyArray<WaybillPlateState>;
+    /** «Pārrakstīt» atļauts (Nils, Toms, Ingus); partnerim (tikai Pavadzīmes) - nē. */
+    canReplace?: boolean;
+    /** Serveris: CSDD numura nolasījuma svaigums «Pārrakstīt» numuriem. */
+    plateSync?: ReadonlyArray<{ plate: string; state: string }>;
   } = {},
 ): WaybillMobileRequestRow[] {
   const nowMs = opts.nowMs ?? Date.now();
@@ -569,6 +578,10 @@ export function waybillMobileRequestRows(
           waybillDropboxFileName({ waybillNo, brandModel: request.vehicle.brandModel, plate: request.vehicle.plate }) ||
           `${waybillNo || "pavadzime"}.pdf`,
         dropboxError: status === "issued" ? (reply?.dropboxError ?? "") : "",
+        replaceWaybillNo: waybillReplaceOffer({ ...request, status }, { waybillOnly: opts.canReplace !== true })?.waybillNo ?? "",
+        plateStatusStale: (opts.plateSync ?? []).some(
+          (p) => compactDealerPlate(p.plate) === compactDealerPlate(request.vehicle.plate) && (p.state === "stale" || p.state === "vpn_down"),
+        ),
       };
     });
 }

@@ -5,13 +5,14 @@ import { ADMIN_SEARCH_OPERATOR_TENANT } from "@/lib/admin-global-search";
 import { wakeAivars } from "@/lib/iriss-aivars-wake";
 import { computeWaybillLifecycles } from "@/lib/iriss-pavadzimes-lifecycle";
 import { isSafeIrissPavadzimeId } from "@/lib/iriss-pavadzimes-parse";
-import { getIrissPavadzime } from "@/lib/iriss-pavadzimes-store";
+import { deleteIrissPavadzime, getIrissPavadzime } from "@/lib/iriss-pavadzimes-store";
+import { waybillDeleteBlocked } from "@/lib/iriss-pavadzimes-delete";
 import { readCsddPlatesDocSafe } from "@/lib/iriss-waybill-csdd-plates-store";
 import { waybillWithdrawn } from "@/lib/iriss-waybill-plates";
 import { pendingWaybillRequestForPlate } from "@/lib/iriss-waybill-requests";
 import { queueWaybillStop, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
 import { decideWaybillStop, isWaybillCsddNo, normalizeWaybillCsddNo } from "@/lib/iriss-waybill-stop";
-import { requireIrissSectionApi } from "@/lib/staff-auth";
+import { requireAdminOnlyApi, requireIrissSectionApi } from "@/lib/staff-auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -126,5 +127,46 @@ export async function POST(req: Request, ctx: Ctx) {
   } catch (err) {
     console.error("[iriss-waybill] stop_failed", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Neizdevās pārtraukt pavadzīmi." }, { status: 500, ...NO_STORE });
+  }
+}
+
+/**
+ * Dzēst vienu pavadzīmi no saraksta (tikai administrators; darbinieks/partneris 403). Dzēš TIKAI šo ierakstu indeksā un
+ * tā PDF kopiju Blob. CSDD netiek aiztikts (nekas netiek pārtraukts), Dropbox fails paliek. Derīgu pavadzīmi nedzēš.
+ */
+export async function DELETE(_req: Request, ctx: Ctx) {
+  const gate = await requireAdminOnlyApi();
+  if (!gate.ok) return gate.response;
+  const { id } = await ctx.params;
+  if (!isSafeIrissPavadzimeId(id)) return NextResponse.json({ error: "Nederīgs identifikators." }, { status: 400, ...NO_STORE });
+  try {
+    const rec = await getIrissPavadzime(id);
+    if (!rec) return NextResponse.json({ error: "Pavadzīme nav atrasta." }, { status: 404, ...NO_STORE });
+    const csdd = await readCsddPlatesDocSafe();
+    const lifecycle = computeWaybillLifecycles([rec], new Date(), csdd).get(rec)?.lifecycle;
+    if (!waybillWithdrawn(rec, csdd) && waybillDeleteBlocked(rec, lifecycle)) {
+      return NextResponse.json(
+        { error: "Derīgu pavadzīmi dzēst nevar. Vispirms «Pārtraukt» vai pagaidi, kamēr beidzas termiņš." },
+        { status: 409, ...NO_STORE },
+      );
+    }
+    const by = gate.actor.name;
+    const result = await deleteIrissPavadzime(id, by);
+    if (!result.ok) return NextResponse.json({ error: "Pavadzīme nav atrasta." }, { status: 404, ...NO_STORE });
+    await recordAdminChangeHistory({
+      kind: "iriss-waybill",
+      recordId: result.removed.id,
+      tenantId: ADMIN_SEARCH_OPERATOR_TENANT,
+      before: snapshotIrissWaybill(result.removed),
+      after: { ...snapshotIrissWaybill(result.removed), deleted: "1" },
+      by,
+      action: "save",
+    }).catch((err) => {
+      console.error("[iriss-waybill] delete_history_failed", err instanceof Error ? err.message : err);
+    });
+    return NextResponse.json({ ok: true, id: result.removed.id }, NO_STORE);
+  } catch (err) {
+    console.error("[iriss-waybill] delete_failed", err instanceof Error ? err.message : err);
+    return NextResponse.json({ error: "Neizdevās dzēst pavadzīmi." }, { status: 500, ...NO_STORE });
   }
 }

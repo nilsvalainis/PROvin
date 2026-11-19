@@ -9,9 +9,14 @@ import {
   waybillDocForCreator,
   waybillDocForViewer,
   waybillDocWithoutOrders,
+  waybillReplaceOffer,
   waybillRequestWithoutOrder,
   WaybillPendingSamePlateError,
+  type WaybillRequest,
 } from "@/lib/iriss-waybill-requests";
+import { csddPlateSyncState, type CsddPlateSyncState, type CsddPlatesDoc } from "@/lib/iriss-waybill-csdd-plates";
+import { ttrVpnStatus } from "@/lib/iriss-ttr-control";
+import { readTtrControlDoc } from "@/lib/iriss-ttr-control-store";
 import { createWaybillRequest, readWaybillRequestsDoc } from "@/lib/iriss-waybill-requests-store";
 import { readDismissedWaybillIds } from "@/lib/iriss-waybill-dismissed-store";
 import { displayDealerPlate, emptyWaybillPlateStates, type WaybillPlateState } from "@/lib/iriss-waybill-plates";
@@ -84,6 +89,33 @@ function busyFromPlates(plates: WaybillPlateState[]): (plate: string) => boolean
   return (plate) => busy.has(displayDealerPlate(plate));
 }
 
+/**
+ * «Pārrakstīt» piedāvājumu numuriem: cik svaigs ir CSDD numura nolasījums (vpn_down/stale -> UI brīdinājums).
+ * VPN stāvokli lasa tikai tad, ja kāds piedāvājums ir (taupa Blob lasījumus ik 3-10 s atjaunošanā).
+ */
+async function plateSyncForOffers(
+  requests: readonly WaybillRequest[],
+  csdd: CsddPlatesDoc | null,
+  viewer: { waybillOnly: boolean },
+): Promise<{ plate: string; state: CsddPlateSyncState }[]> {
+  const plates = [
+    ...new Set(
+      requests
+        .filter((r) => waybillReplaceOffer(r, viewer))
+        .map((r) => displayDealerPlate(r.vehicle.plate))
+        .filter(Boolean),
+    ),
+  ];
+  if (!plates.length) return [];
+  let vpn: "up" | "down" | "unknown" = "unknown";
+  try {
+    vpn = ttrVpnStatus(await readTtrControlDoc()).vpn;
+  } catch (err) {
+    console.error("[iriss-waybill] vpn_status_failed", err instanceof Error ? err.message : err);
+  }
+  return plates.map((plate) => ({ plate, state: csddPlateSyncState(csdd, plate, vpn) }));
+}
+
 function confirmBusy(body: unknown): boolean {
   return Boolean(body && typeof body === "object" && !Array.isArray(body) && (body as { confirmBusy?: unknown }).confirmBusy === true);
 }
@@ -118,6 +150,8 @@ export async function GET(req: Request) {
     const withOrders = canSeeWaybillOrders(gate.actor);
     // Partneris ("tikai Pavadzīmes") redz tikai savus pieprasījumus; numuru stāvoklis (plates) - no visiem.
     const visible = gate.actor.kind === "staff" && isWaybillOnlyActor(gate.actor) ? waybillDocForCreator(doc, gate.actor.user.id) : doc;
+    const viewer = waybillPdfViewer(gate.actor);
+    const plateSync = await plateSyncForOffers(visible.requests, occupancy.csdd, viewer);
     return NextResponse.json(
       {
         ok: true,
@@ -129,6 +163,9 @@ export async function GET(req: Request) {
         vehicles: withOrders ? vehicles : vehicles.map((v) => ({ ...v, orderId: "" })),
         plates,
         dismissedIds,
+        // «Pārrakstīt» (pārtraukt aktīvo un izrakstīt jaunu): Nils, Toms, Ingus - jā; partneris - nē (serveris arī 403).
+        canReplace: !viewer.waybillOnly,
+        plateSync,
         ...(tradeCars ? { tradeCars: tradeCars.cars, tradeCarsSource: tradeCars.source } : {}),
       },
       NO_STORE,

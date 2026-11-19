@@ -11,7 +11,7 @@ import {
   waybillPushMessage,
   waybillPushRecipients,
 } from "@/lib/iriss-waybill-push";
-import { sanitizeNoteUntrusted, type CreateWaybillInput } from "@/lib/iriss-waybill-create";
+import { sanitizeNoteUntrusted, waybillValidityWindow, type CreateWaybillInput } from "@/lib/iriss-waybill-create";
 import {
   emptyWaybillRequestsDoc,
   inProgressIsStale,
@@ -25,6 +25,7 @@ import {
   WaybillPendingSamePlateError,
   waybillRequestCancellable,
   withWaybillLegacyTimeFixes,
+  waybillReplaceOffer,
   WAYBILL_HANDOFF_TEXT,
   type WaybillWorkerStage,
   type WaybillRequest,
@@ -341,6 +342,7 @@ export async function retryWaybillRequest(input: {
       ...handoff,
       status: "queued",
       errorReason: "",
+      activeWaybillNo: "",
       lastReplyText: wasWorking
         ? `Atkārtots (mēģinājums ${current.attempts + 1}). Aivars vispirms pārbauda CSDD, vai pavadzīme jau nav izveidota.`
         : `Atkārtots (mēģinājums ${current.attempts + 1}).`,
@@ -374,6 +376,69 @@ export async function retryWaybillRequest(input: {
     });
   }
   return updated;
+}
+
+export type ReplaceBusyWaybillResult =
+  | { ok: true; request: WaybillRequest }
+  | { ok: false; reason: "not_found" | "not_offered" | "pending"; pendingId?: string };
+
+/**
+ * «Pārrakstīt (pārtraukt P0xxxx un izrakstīt jaunu)»: automātika atteica (numurs CSDD aizņemts). Tas pats pieprasījums
+ * atkal rindā kā «Vai tiešām pārtraukt iepriekšējo un izveidot jaunu?» -> Jā: plateBusyAtCreate + replaceWaybillNo.
+ * Pārtraukt drīkst TIKAI apstiprināto numuru (tam jāsakrīt ar saglabāto aktīvo); nekad neanulē. Derīgums no šī brīža.
+ * Mēģinājumu skaits nemainās: CSDD formā nekas netika darīts (tikai numura pārbaude).
+ */
+export async function replaceBusyWaybillRequest(input: {
+  id: string;
+  waybillNo: string;
+  actorId: string;
+  actorName: string;
+}): Promise<ReplaceBusyWaybillResult> {
+  const want = input.waybillNo.trim().toUpperCase();
+  const result = await mutateDoc<ReplaceBusyWaybillResult>((doc) => {
+    const current = doc.requests.find((r) => r.id === input.id);
+    if (!current) return { value: { ok: false, reason: "not_found" } };
+    const offer = waybillReplaceOffer(current, { waybillOnly: false });
+    if (!offer || !/^P\d{5,6}$/.test(want) || offer.waybillNo !== want) {
+      return { value: { ok: false, reason: "not_offered" } };
+    }
+    const pending = pendingWaybillRequestForPlate(
+      doc.requests.filter((r) => r.id !== current.id),
+      current.vehicle.plate,
+    );
+    if (pending) return { value: { ok: false, reason: "pending", pendingId: pending.id } };
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const validity = current.validHours ? waybillValidityWindow(current.validHours, now) : null;
+    const text = `Pārrakstīt: pārtraukt ${want} un izrakstīt jaunu (apstiprināja ${input.actorName || input.actorId}).`;
+    const nextReq: WaybillRequest = {
+      ...current,
+      status: "queued",
+      plateBusyAtCreate: true,
+      replaceWaybillNo: want,
+      activeWaybillNo: "",
+      errorReason: "",
+      lastReplyText: text,
+      pickedBy: "",
+      pickedAt: "",
+      stage: "",
+      stageAt: "",
+      updatedAt: nowIso,
+      ...(validity ? { validFrom: validity.validFrom, validUntil: validity.validUntil } : {}),
+    };
+    let next = { ...doc, requests: doc.requests.map((r) => (r.id === current.id ? nextReq : r)) };
+    next = pushEvent(next, { requestId: current.id, kind: "received", text, waybillNo: "", pdfUrl: "", by: input.actorId });
+    return { value: { ok: true, request: nextReq }, next };
+  });
+  if (result.ok) {
+    await recordWaybillAudit({
+      userId: input.actorId,
+      action: "waybill_retry",
+      target: result.request.id,
+      meta: { replaceWaybillNo: want, plate: result.request.vehicle.plate },
+    });
+  }
+  return result;
 }
 
 export async function listPendingWaybillRequests(nowMs = Date.now()): Promise<WaybillRequest[]> {
@@ -632,6 +697,8 @@ export async function appendWaybillRequestEvent(input: {
    */
   validFrom?: string;
   validUntil?: string;
+  /** Kļūda «numurs CSDD aizņemts»: aktīvā pavadzīme (UI piedāvā «Pārrakstīt»). Citos notikumos netiek lietots. */
+  activeWaybillNo?: string;
 }): Promise<WaybillRequest | null> {
   const by = (input.by ?? "aivars").slice(0, 80);
   const now = new Date().toISOString();
@@ -664,6 +731,15 @@ export async function appendWaybillRequestEvent(input: {
       // j57: izdodot, CSDD īstie laiki (ja zināmi) pārraksta pieprasījuma brīdī aprēķinātos.
       validFrom: status === "issued" ? validIso(input.validFrom) || current.validFrom : current.validFrom,
       validUntil: status === "issued" ? validIso(input.validUntil) || current.validUntil : current.validUntil,
+      // Tikai kļūdai: jauna kļūda nomaina (vai notīra) aktīvo numuru; ārpus «Kļūda» piedāvājuma nav.
+      activeWaybillNo:
+        status !== "error"
+          ? ""
+          : input.kind === "error"
+            ? /^P\d{5,6}$/.test((input.activeWaybillNo ?? "").trim().toUpperCase())
+              ? (input.activeWaybillNo ?? "").trim().toUpperCase()
+              : ""
+            : (current.activeWaybillNo ?? ""),
     };
     let next = { ...doc, requests: doc.requests.map((r) => (r.id === input.id ? nextReq : r)) };
     next = pushEvent(next, {
@@ -704,6 +780,8 @@ export async function completeWaybillRequest(input: {
   /** CSDD piešķirtais derīguma laiks (ja zināms); uzvar pāri pieprasījuma brīdī aprēķinātajam. */
   validFrom?: string;
   validUntil?: string;
+  /** Neveiksme «numurs CSDD aizņemts»: aktīvā pavadzīme (sk. plateBusyActiveWaybillNo). */
+  activeWaybillNo?: string;
 }): Promise<WaybillRequest | null> {
   const current = (await readWaybillRequestsDoc()).requests.find((row) => row.id === input.id);
   // 07.11 (B762): tas pats rezultāts otrreiz (Aivars sūtīja 2x) - nekādu jaunu notikumu un push ziņu.
@@ -730,6 +808,7 @@ export async function completeWaybillRequest(input: {
     by: input.by,
     validFrom: input.validFrom,
     validUntil: input.validUntil,
+    activeWaybillNo: input.ok ? "" : input.activeWaybillNo,
   });
   if (result) {
     await recordWaybillAudit({

@@ -125,6 +125,11 @@ export type WaybillRequest = {
   kind?: "create" | "stop";
   /** Pārtraucamā pavadzīme (kind=stop). CSDD P0xxxx. */
   stopWaybillNo?: string;
+  /**
+   * Automātika atteica, jo CSDD numuru aizņem šī pavadzīme (pirmā aktīvā, worker plate_busy). Tikai statusā «Kļūda»;
+   * UI piedāvā «Pārrakstīt» (pārtraukt TIKAI šo un izrakstīt jaunu). Tukšs = nav piedāvājuma.
+   */
+  activeWaybillNo?: string;
   /** Automātika darbu nodeva Aivaram; to vairs automātiski neņem. */
   autoDisabled: boolean;
   /** Auto ir tirdzniecībā pieņemts: pavadzīme no akta ("Noformēt pavadzīmi"), bez maršruta. */
@@ -232,6 +237,7 @@ export function parseWaybillRequest(raw: unknown): WaybillRequest | null {
     replaceWaybillNo: /^P\d{5,6}$/.test(str(o.replaceWaybillNo, 12).toUpperCase()) ? str(o.replaceWaybillNo, 12).toUpperCase() : "",
     kind: o.kind === "stop" ? "stop" : "create",
     stopWaybillNo: /^P\d{5,6}$/.test(str(o.stopWaybillNo, 12).toUpperCase()) ? str(o.stopWaybillNo, 12).toUpperCase() : "",
+    activeWaybillNo: status === "error" ? normalizeActiveWaybillNo(o.activeWaybillNo) : "",
     autoDisabled: o.autoDisabled === true,
     tradeAct: o.tradeAct === true,
     representative: o.tradeAct === true ? str(o.representative, 60) : "",
@@ -246,6 +252,43 @@ export function parseWaybillRequest(raw: unknown): WaybillRequest | null {
     clientRequestId: parseWaybillClientRequestId(o.clientRequestId),
   };
 }
+
+function normalizeActiveWaybillNo(value: unknown): string {
+  const no = typeof value === "string" ? value.trim().toUpperCase() : "";
+  return /^P\d{5,6}$/.test(no) ? no : "";
+}
+
+/**
+ * Automātikas «numurs CSDD aizņemts» rezultāts: aktīvās pavadzīmes numurs (pirmā). Jaunais worker to sūta laukā
+ * `activeWaybillNo`; vecais - tikai tekstā ("Numurs B193-7 CSDD aizņemts (P02812 ..."), tad to nolasa no teksta.
+ * Citām kļūdām - tukšs (nekāda «Pārrakstīt» piedāvājuma).
+ */
+export function plateBusyActiveWaybillNo(input: { activeWaybillNo?: unknown; errorReason?: unknown }): string {
+  const reason = typeof input.errorReason === "string" ? input.errorReason : "";
+  if (!/CSDD aizņem/i.test(reason)) return "";
+  return normalizeActiveWaybillNo(input.activeWaybillNo) || (reason.match(/\bP\d{5,6}\b/)?.[0] ?? "");
+}
+
+/** «Pārrakstīt» piedāvājums: kļūda «numurs aizņemts» ar zināmu aktīvo pavadzīmi. Partnerim (tikai Pavadzīmes) - nekad. */
+export function waybillReplaceOffer(
+  req: Pick<WaybillRequest, "status"> & Partial<Pick<WaybillRequest, "kind" | "activeWaybillNo">>,
+  viewer: { waybillOnly: boolean },
+): { waybillNo: string } | null {
+  if (viewer.waybillOnly || req.status !== "error" || req.kind === "stop") return null;
+  const no = normalizeActiveWaybillNo(req.activeWaybillNo);
+  return no ? { waybillNo: no } : null;
+}
+
+export function waybillReplaceButtonText(waybillNo: string): string {
+  return `Pārrakstīt (pārtraukt ${waybillNo} un izrakstīt jaunu)`;
+}
+
+/** «Pārrakstīt» POST ķermenis: tas pats pieprasījums, pārtraukt drīkst TIKAI šo pavadzīmi. */
+export function waybillReplaceRequestBody(waybillNo: string): { action: "replace"; replaceWaybillNo: string } {
+  return { action: "replace", replaceWaybillNo: waybillNo.trim().toUpperCase() };
+}
+
+export const WAYBILL_PLATE_STATUS_STALE_TEXT = "Numura statuss var būt novecojis";
 
 /** Iesniegšanas atslēga: 8-64 zīmes [A-Za-z0-9_-]; citādi tukšs (vecs klients - bez dublikātu atslēgas). */
 export function parseWaybillClientRequestId(value: unknown): string {

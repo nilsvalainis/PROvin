@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { AdminBodyPortal } from "@/components/admin/AdminBodyPortal";
 import { useAdminShellLayout } from "@/components/admin/AdminShellLayoutContext";
 import { useModalBackdropClose } from "@/hooks/useModalBackdropClose";
 import { useAdminMobileColorScheme } from "@/components/admin/useAdminMobileViewport";
-import { useAdminScrollLock } from "@/lib/admin-scroll-lock";
+import { useAdminScrollLockBlurOnClose } from "@/lib/admin-scroll-lock";
 import { useVisualViewportHeight } from "@/lib/use-visual-viewport-height";
 import { adminChromeDataset } from "@/lib/admin-chrome-attrs";
 import { AdminMobileIcon } from "@/components/admin/mobile/AdminMobileIcon";
@@ -384,7 +384,10 @@ export function AdminMobileSheet({
   const [shown, setShown] = useState(open);
   const theme = useAdminMobileColorScheme();
   const layoutWorkspace = useAdminShellLayout()?.workspace ?? "pro";
-  useAdminScrollLock(open);
+  const rootRef = useRef<HTMLDivElement>(null);
+  // Aizverot: fokuss (meklēšanas lauks) tiek noņemts PIRMS ritināšanas atbrīvošanas - citādi telefonā pēc auto izvēles
+  // tastatūra atstāja lapu nobīdītu un formas apakšu nevarēja aizritināt (Pavadzīmes, 19.11).
+  useAdminScrollLockBlurOnClose(open, rootRef);
   // Ar atvērtu tastatūru 85vh paliek zem tās - ierobežojam ar redzamo logu.
   const vvh = useVisualViewportHeight(open);
   useEffect(() => {
@@ -401,7 +404,7 @@ export function AdminMobileSheet({
   const scrimClose = useModalBackdropClose(onClose);
   if (!shown) return null;
   const panel = (
-    <div className="admin-m admin-sheet-root md:hidden" role="dialog" aria-modal="true" aria-label={title} data-open={open ? "true" : "false"} style={zIndex != null ? { zIndex } : undefined} {...adminChromeDataset(layoutWorkspace, theme)}>
+    <div ref={rootRef} className="admin-m admin-sheet-root md:hidden" role="dialog" aria-modal="true" aria-label={title} data-open={open ? "true" : "false"} style={zIndex != null ? { zIndex } : undefined} {...adminChromeDataset(layoutWorkspace, theme)}>
       <button
         type="button"
         aria-label="Aizvērt"
