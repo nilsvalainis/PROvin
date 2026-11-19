@@ -861,6 +861,29 @@ export function findSameDaySourceEntryErrors(
   return out;
 }
 
+/**
+ * 19.11 (drošības princips): sērijas PĒDĒJAIS vienas dienas viena avota pāris (> 1000 km starpība, nākamā rādījuma
+ * nav). Kārtojot pēc km, zemākais nonāk pirmais, un augstākais partneris izskatās pēc "atgūšanās" - zemāko nedrīkst
+ * norakstīt kā izolētu ievades kļūdu. Šaubu gadījumā kritumu rāda (viena cipara gadījumu marķē
+ * {@link findSameDaySourceEntryErrors}).
+ */
+export function isTrailingSameDaySourcePair(
+  curr: Pick<UnifiedMileageRow, "sortableTime" | "sourceLabel" | "datePrecision" | "odometer" | "countryUnverified">,
+  partner: Pick<UnifiedMileageRow, "sortableTime" | "sourceLabel" | "datePrecision" | "odometer" | "countryUnverified"> | undefined,
+  partnerIsLast: boolean,
+): boolean {
+  if (!partner || !partnerIsLast) return false;
+  if (!Number.isFinite(curr.sortableTime) || curr.sortableTime !== partner.sortableTime) return false;
+  if (curr.datePrecision === "month" || partner.datePrecision === "month") return false;
+  if (isListingMileageSource(curr) || isListingMileageSource(partner)) return false;
+  if (curr.sourceLabel.trim().toLocaleLowerCase("lv") !== partner.sourceLabel.trim().toLocaleLowerCase("lv")) {
+    return false;
+  }
+  const a = parseOdometerKm(curr.odometer);
+  const b = parseOdometerKm(partner.odometer);
+  return a != null && b != null && Math.abs(a - b) > SAME_DAY_SOURCE_PAIR_MIN_DIFF_KM;
+}
+
 export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): UnifiedMileageAnomalyAnalysis {
   const sorted = sortMileageChronological(rows);
   const rowByOrder = new Map(sorted.map((r) => [r.sourceOrder, r]));
@@ -901,7 +924,12 @@ export function analyzeUnifiedMileageAnomalies(rows: UnifiedMileageRow[]): Unifi
     const src = rowByOrder.get(curr.sourceOrder);
     const nextTime = i < pts.length - 1 ? pts[i + 1]!.time : undefined;
     const prevRowForCountry = i > 0 ? rowByOrder.get(pts[i - 1]!.sourceOrder) : undefined;
+    const trailingPair =
+      src != null &&
+      i + 1 < pts.length &&
+      isTrailingSameDaySourcePair(src, rowByOrder.get(pts[i + 1]!.sourceOrder), i + 2 >= pts.length);
     if (
+      !trailingPair &&
       isIsolatedMileageDrop(curr.km, prev, next, curr.time, nextTime) &&
       !(src && isListingMileageSource(src)) &&
       !isMileageCountryChange(prevRowForCountry, src)

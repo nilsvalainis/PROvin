@@ -254,6 +254,35 @@ describe("viena avota divi rādījumi vienā dienā ar starpību > 1000 km", () 
   });
 });
 
+describe("sērijas pēdējais vienas dienas pāris (drošības princips: šaubās kritumu rāda)", () => {
+  it("90 000 / 51 300 pēdējie -> 51 300 ir sarkans kritums, nevis ievades kļūda", () => {
+    const rows = [row("10.03.2017", 76_120), row("16.03.2018", 90_000), row("16.03.2018", 51_300)];
+    const a = analyzeUnifiedMileageAnomalies(rows);
+    expect(a.dataEntryErrorSourceOrders.size).toBe(0);
+    expect(redRows(rows)).toEqual(["16.03.2018:51300"]);
+    expect(classes(rows)).toEqual(["rollback:16.03.2018:51300"]);
+  });
+
+  it("90 044 / 99 044 pēdējie (iepriekšējais 95 000) -> 90 044 ir ievades kļūda, nekas nav sarkans", () => {
+    const rows = [row("10.03.2017", 95_000), row("16.03.2018", 90_044), row("16.03.2018", 99_044)];
+    const a = analyzeUnifiedMileageAnomalies(rows);
+    expect([...a.dataEntryErrorSourceOrders]).toEqual([rows[1]!.sourceOrder]);
+    expect(a.chartExcludeSourceOrders.has(rows[1]!.sourceOrder)).toBe(true);
+    expect(redRows(rows)).toEqual([]);
+    expect(classes(rows)).toEqual(["typo_outlier:16.03.2018:90044"]);
+  });
+
+  it("pāris ar nākamo rādījumu - izolēta krituma loģika kā līdz šim", () => {
+    const rows = [
+      row("10.03.2017", 76_120),
+      row("16.03.2018", 90_000),
+      row("16.03.2018", 51_300),
+      row("20.04.2018", 91_000),
+    ];
+    expect(analyzeUnifiedMileageAnomalies(rows).dataEntryErrorSourceOrders.has(rows[2]!.sourceOrder)).toBe(true);
+  });
+});
+
 describe("differsBySingleDigit", () => {
   it("90 044 / 99 044 - viens cipars; 90 000 / 51 300 - nē", () => {
     expect(differsBySingleDigit(90_044, 99_044)).toBe(true);
