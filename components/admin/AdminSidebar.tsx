@@ -152,12 +152,20 @@ const I_WAYBILLS: Item = { href: "/admin/iriss/pavadzimes", label: L.irissWaybil
 const I_LIST: Item = { href: "/admin/iriss/sludinajumi", label: L.irissList, icon: List, match: starts("/admin/iriss/sludinajumi") };
 const I_SETTINGS: Item = { href: "/admin/iriss/iestatijumi", label: L.irissSettings, icon: Settings, match: starts("/admin/iriss/iestatijumi") };
 
+/** Tā pati «Dīlera dati» lapa IRISS izvēlnē (AdminSidebar ir tikai adminiem; Nils 19.11). */
+const I_DEALER_CHECK: Item = {
+  href: "/admin/iriss/dilera-dati",
+  label: L.dealerCheck,
+  icon: Factory,
+  match: starts("/admin/iriss/dilera-dati"),
+};
+
 /** Tā pati VIN pārbaudes lapa arī IRISS izvēlnē (dublēts ieraksts). */
 const I_VIN: Item = { ...VIN, label: L.vinScan };
 
 export const ADMIN_NAV_GROUPS: Group[] = [
   { title: L.groupPro, items: [MORNING, SAKUMS, VIN, AUCTION_ARCHIVE, DEALER_CHECK, FAST] },
-  { title: L.groupIriss, items: [I_MENU, I_HOME, I_PIEDAVAJUMI, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_WAYBILLS, I_SETTINGS] },
+  { title: L.groupIriss, items: [I_MENU, I_HOME, I_PIEDAVAJUMI, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_DEALER_CHECK, I_WAYBILLS, I_SETTINGS] },
   {
     title: L.groupWeb,
     items: [
@@ -189,7 +197,7 @@ const WS_GROUPS: Record<AdminWorkspace, Group[]> = {
   pro: ADMIN_NAV_GROUPS.filter((g) => g.title !== L.groupIriss),
   /** IRISS: Pārvaldība starp Iestatījumi un Pavadzīmes (sānjoslas kartītes). */
   iriss: [
-    { title: L.groupIriss, items: [I_MENU, I_HOME, I_PIEDAVAJUMI, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_WAYBILLS, I_SETTINGS] },
+    { title: L.groupIriss, items: [I_MENU, I_HOME, I_PIEDAVAJUMI, I_LIST, I_SCAN, I_LOGISTICS, I_AUTOPARKS, I_VIN, I_DEALER_CHECK, I_WAYBILLS, I_SETTINGS] },
     { title: L.groupOps, items: [I_IZMAKSAS] },
   ],
 };
@@ -618,6 +626,7 @@ const MORE_ROW_ICON: Record<string, AdminMobileIconName> = {
   "/admin/iriss/autoparks": "avatar",
   "/admin/iriss/atskaite": "atskaite",
   "/admin/iriss/pavadzimes": "pavadzimes",
+  "/admin/iriss/dilera-dati": "dileri",
   "/admin/iriss/iestatijumi": "iestatijumi",
   "/admin/izmaksas": "rekini",
   "/admin/iriss/izmaksas": "rekini",

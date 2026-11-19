@@ -21,8 +21,11 @@ import { LV_MONTH_NAMES, rigaYearMonthKey } from "@/lib/admin-riga-calendar";
 import { formatRigaIsoShort } from "@/lib/riga-datetime";
 import type { CsddTechData } from "@/lib/csdd-tech-data";
 import type { OneautoProductResult } from "@/lib/oneauto-block";
+import type { DealerMajorWorkOverride } from "@/lib/dealer-major-works-override-persist";
 
 export const DEALER_CHECK_PAGE_PATH = "/admin/dilera-dati" as const;
+/** Tā pati lapa IRISS izvēlnē (tikai admini). */
+export const DEALER_CHECK_IRISS_PAGE_PATH = "/admin/iriss/dilera-dati" as const;
 
 export const DEALER_CHECK_TEMPLATES = ["dzintarzeme", "cits"] as const;
 export type DealerCheckTemplateId = (typeof DEALER_CHECK_TEMPLATES)[number];
@@ -135,7 +138,23 @@ export type DealerCheckRecord = {
   orderId?: string;
   /** Pilns CSDD reģistra snapshots, ko lapa rāda pēc ielādes. */
   csddSnapshot?: CsddTechData | null;
+  /** «Lielie darbi» operatora labojumi servera PDF (tas pats lauks kā pasūtījumā). */
+  dealerMajorWorkOverrides?: DealerMajorWorkOverride[];
+  /** Servera PDF piegādes: e-pasts vai Autoparks + STOCK. Jaunākā pirmā. */
+  deliveries?: DealerCheckDelivery[];
 };
+
+export type DealerCheckDelivery = {
+  kind: "email" | "autoparks";
+  at: string;
+  /** E-pasta adresāts vai Autoparka auto nosaukums. */
+  target: string;
+  /** Dropbox ceļš (autoparks). */
+  path?: string;
+  by?: string;
+};
+
+export const DEALER_CHECK_MAX_DELIVERIES = 30;
 
 const HTTP_206_ERROR = "http_206";
 

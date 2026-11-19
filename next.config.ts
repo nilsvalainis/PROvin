@@ -63,6 +63,9 @@ const nextConfig: NextConfig = {
     "/api/admin/**": ["./node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs"],
     // Servera PDF (Chromium Vercel vidē): bināros failus lasa pēc ceļa no bin/.
     "/api/admin/report-pdf": ["./node_modules/@sparticuz/chromium/bin/**", "./public/fonts/report-inter/**"],
+    // Dīlera datu platforma: tas pats servera PDF (priekšskatījums, e-pasts, Autoparks + STOCK).
+    "/api/admin/dealer-check/server-pdf": ["./node_modules/@sparticuz/chromium/bin/**", "./public/fonts/report-inter/**"],
+    "/api/admin/dealer-check/deliver": ["./node_modules/@sparticuz/chromium/bin/**", "./public/fonts/report-inter/**"],
     "/api/admin/iriss-listings/vin-ocr": [
       "./node_modules/tesseract.js/dist/**",
       "./node_modules/tesseract.js/src/worker-script/**",

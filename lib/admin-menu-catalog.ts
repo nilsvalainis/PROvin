@@ -32,6 +32,7 @@ const IRISS_APP_META: Record<string, { icon: string; tone: string; ink?: string;
   autoparks: { icon: "dz", tone: MENU_TONE.white },
   pavadzimes: { icon: "csdd", tone: MENU_TONE.csdd },
   vin: { icon: "scan", tone: MENU_TONE.white, ink: IRISS_MENU_INK.graphite },
+  "dilera-dati": { icon: "dealers", tone: MENU_TONE.white, ink: IRISS_MENU_INK.blue },
   atskaite: { icon: "rep", tone: MENU_TONE.white, ink: IRISS_MENU_INK.graphite },
   iestatijumi: { icon: "set", tone: MENU_TONE.white, ink: IRISS_MENU_INK.graphite },
 };

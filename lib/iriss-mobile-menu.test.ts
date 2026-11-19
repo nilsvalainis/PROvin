@@ -16,6 +16,7 @@ describe("IRISS mobile menu home", () => {
       "autoparks",
       "pavadzimes",
       "vin",
+      "dilera-dati",
       "iestatijumi",
     ]);
     expect(items.find((row) => row.id === "iestatijumi")?.label).toBe("Iestatījumi");

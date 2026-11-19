@@ -4,16 +4,8 @@ import { randomUUID } from "node:crypto";
 import { fetchOneautoProducts } from "@/lib/oneauto-api";
 import { translateOneautoWorksOnIngest } from "@/lib/admin-ai-oneauto-translate";
 import { generateSourceCommentWithAi } from "@/lib/admin-ai-source-comment";
-import {
-  emptyAutoRecordsBlock,
-  createDefaultSourceBlocks,
-  type AutoRecordsBlockState,
-} from "@/lib/admin-source-blocks";
+import { createDefaultSourceBlocks } from "@/lib/admin-source-blocks";
 import { emptyOneautoBlock } from "@/lib/oneauto-block";
-import {
-  applyOneautoToAutoRecords,
-  emptyOneautoIngest,
-} from "@/lib/oneauto-to-auto-records";
 import { fetchCsddTechDataCounted } from "@/lib/csdd-tech-data-counted";
 import { readAutoparksState } from "@/lib/iriss-autoparks-store";
 import { readAutoparksV2State } from "@/lib/iriss-autoparks-v2-store";
@@ -23,6 +15,7 @@ import { isValidVin, normalizeVin } from "@/lib/order-field-validation";
 import { parseOneautoProductIds, type OneautoProductId } from "@/lib/oneauto-catalog";
 import { rigaYearMonthKey } from "@/lib/admin-riga-calendar";
 import { buildOemDealerDocumentHtml } from "@/lib/pdf-dealer-oem";
+import { dealerCheckAutoRecords } from "@/lib/dealer-check-delivery";
 import {
   compareDealerCheckCsdd,
   dealerCheckChargedCents,
@@ -118,28 +111,6 @@ async function lookupCsdd(
   }
 }
 
-function autoRecordsFromCheck(record: DealerCheckRecord): AutoRecordsBlockState {
-  const ingest = {
-    ...emptyOneautoIngest(),
-    lastFetchedVin: record.vin,
-    fetchedAt: record.fetchedAt,
-    selectedProducts: record.selectedProducts,
-    lastCostEur: (record.chargedCents / 100).toFixed(2),
-    results: record.results,
-    serviceTimelineOriginal: record.displayOriginal.serviceTimeline,
-  };
-  return applyOneautoToAutoRecords(emptyAutoRecordsBlock(), {
-    display: record.display,
-    ingest,
-    notes: {
-      serviceHistoryNotes: record.comments.serviceHistory,
-      oilChangeIntervalNotes: record.comments.oilIntervals,
-      comments: record.comments.serviceHistory,
-    },
-    vehicleOverride: true,
-  });
-}
-
 export function dealerCheckToOemHtml(record: DealerCheckRecord): string {
   const oneauto = {
     ...emptyOneautoBlock(),
@@ -152,7 +123,7 @@ export function dealerCheckToOemHtml(record: DealerCheckRecord): string {
   return buildOemDealerDocumentHtml({
     vin: record.vin,
     makeModel: [record.vehicle.make, record.vehicle.model].filter(Boolean).join(" "),
-    autoRecords: autoRecordsFromCheck({ ...record, display: record.displayOriginal }),
+    autoRecords: dealerCheckAutoRecords({ ...record, display: record.displayOriginal }),
     oneauto,
     includeEquipment: true,
   });
@@ -163,7 +134,7 @@ export async function generateDealerCheckComments(record: DealerCheckRecord): Pr
     return dealerCheckHttp206Comments(record.vehicle.make);
   }
   const blocks = createDefaultSourceBlocks();
-  blocks.auto_records = autoRecordsFromCheck(record);
+  blocks.auto_records = dealerCheckAutoRecords(record);
   blocks.oneauto = {
     ...emptyOneautoBlock(),
     lastFetchedVin: record.vin,

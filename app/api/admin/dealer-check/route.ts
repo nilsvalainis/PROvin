@@ -20,6 +20,7 @@ import {
   readOwnedDealerCheck,
 } from "@/lib/dealer-check-store";
 import { generateDealerCheckComments, runDealerCheck } from "@/lib/dealer-check-run";
+import { parseDealerMajorWorkOverrides } from "@/lib/dealer-major-works-override-persist";
 import {
   dealerCheckHasHttp206,
   formatDealerCheckLedgerBar,
@@ -166,8 +167,10 @@ export async function PATCH(req: Request) {
       : undefined;
   const owned = await readOwnedDealerCheck(id, creator);
   if (!owned) return NextResponse.json({ error: "not_found" }, { status: 404 });
+  const majorOverrides = parseDealerMajorWorkOverrides(o.dealerMajorWorkOverrides);
   const record = await patchDealerCheck(id, {
     ...(comments ? { comments } : {}),
+    ...(majorOverrides ? { dealerMajorWorkOverrides: majorOverrides } : {}),
     saved: o.saved === true ? true : undefined,
   });
   if (!record) return NextResponse.json({ error: "not_found" }, { status: 404 });
