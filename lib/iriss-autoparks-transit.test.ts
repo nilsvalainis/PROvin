@@ -25,7 +25,7 @@ describe("Loģistika = Autoparka posms «Ceļā» (Nils 27.10)", () => {
     expect(t.stageLabel).toBe("Gatavs savākšanai");
     expect(t.cargoLabel).toBe("Nākošā krava");
     expect(t.cargoPlace).toBe(2);
-    expect(t.pickupRef).toBe("KR57312");
+    expect(t.pickupRef).toBe(""); // stock numurs nav pickup kods (19.11)
     expect(JSON.stringify(t)).not.toMatch(/priceEur|transportCost/);
   });
 

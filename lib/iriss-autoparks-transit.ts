@@ -45,7 +45,7 @@ export function buildAutoparksTransit(
     orderId: order.id,
     auction: order.auction || "",
     pickupAddress: order.pickupAddress || "",
-    pickupRef: pickup?.pickupCode || order.pickupRef || order.stockNo || "",
+    pickupRef: pickup?.pickupCode || order.pickupRef || "", // 19.11 Nils: stock numurs NAV pickup kods (IRISS likums)
     pickupDate: pickup?.pickupDate || order.pickupDate || "",
     freeParkingUntil: order.freeParkingUntil || "",
     orderStatusLabel: LOGISTICS_ORDER_STATUS_LV[order.status] ?? "",
